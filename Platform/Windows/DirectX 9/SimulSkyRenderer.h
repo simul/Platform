@@ -79,9 +79,9 @@ public:
 	void SetStepsPerDay(unsigned steps);
 //! Implement the FadeTableCallback
 	void SetSkyTextureSize(unsigned size);
-	void SetFadeTextureSize(unsigned width,unsigned height);
-	void FillSkyTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void FillFadeTextures(	int texture_index,int texel_index,int num_texels,
+	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_alt);
+	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
+	void FillFadeTextures(int alt_index,int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
 						const float *inscatter_float4_array);
 	void CycleTexturesForward();

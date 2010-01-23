@@ -76,7 +76,7 @@ SimulSkyRenderer::SimulSkyRenderer() :
 
 void SimulSkyRenderer::SetStepsPerDay(unsigned steps)
 {
-	fadeTable->SetStepsPerHour((float)steps/24.f);
+	fadeTable->SetStepsPerDay((float)steps);
 }
 
 simul::sky::SkyInterface *SimulSkyRenderer::GetSkyInterface()
@@ -203,7 +203,7 @@ SimulSkyRenderer::~SimulSkyRenderer()
 	Destroy();
 }
 
-void SimulSkyRenderer::FillSkyTexture(int texture_index,int texel_index,int num_texels,const float *float4_array)
+void SimulSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
 {
 	HRESULT hr;
 	LPDIRECT3DTEXTURE9 tex=NULL;
@@ -247,7 +247,7 @@ void SimulSkyRenderer::SetSkyTextureSize(unsigned size)
 	skyTexSize=size;
 	CreateSkyTexture();
 }
-void SimulSkyRenderer::SetFadeTextureSize(unsigned width,unsigned height)
+void SimulSkyRenderer::SetFadeTextureSize(unsigned width,unsigned height,unsigned num_alt)
 {
 	fadeTexWidth=width;
 	fadeTexHeight=height;
@@ -272,7 +272,7 @@ void SimulSkyRenderer::CreateFadeTextures()
 	hr=D3DXCreateTexture(m_pd3dDevice,fadeTexWidth,fadeTexHeight,1,0,sky_tex_format,d3d_memory_pool,&inscatter_texture_next);
 }
 
-void SimulSkyRenderer::FillFadeTextures(int texture_index,int texel_index,int num_texels,
+void SimulSkyRenderer::FillFadeTextures(int alt_index,int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
 						const float *inscatter_float4_array)
 {

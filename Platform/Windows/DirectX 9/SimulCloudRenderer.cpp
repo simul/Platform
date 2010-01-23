@@ -171,7 +171,7 @@ SimulCloudRenderer::SimulCloudRenderer() :
 #endif
 	global_cloudiness(1.f),
 	lightning_active(false),
-	last_hour(0.f),
+	last_time(0.f),
 	timing(0.f),
 	detail(0.75f),
 	fade_interp(0.f),
@@ -212,7 +212,6 @@ SimulCloudRenderer::SimulCloudRenderer() :
 
 	cloudInterface->SetOpticalDensity(1.8f);
 	cloudInterface->SetHumidity(0);
-	cloudInterface->SetActivation(0.01f);
 
 	cloudInterface->SetLightResponse(0.5f);
 	cloudInterface->SetSecondaryLightResponse(0.5f);
@@ -605,19 +604,19 @@ HRESULT SimulCloudRenderer::FillInCloudTextures()
 	if(!skyInterface)
 		return S_OK;
 	HRESULT hr=S_OK;
-	float current_hour=skyInterface->GetHourOfTheDay();
+	float current_time=skyInterface->GetDaytime();
 	if(!interp_time_1)
-		interp_time_1=current_hour;
-	cloud_interp=(current_hour-interp_time_1)/interp_step_time;
+		interp_time_1=current_time;
+	cloud_interp=(current_time-interp_time_1)/interp_step_time;
 	while(cloud_interp>1.f)
 	{
 		interp_time_1+=interp_step_time;
-		cloud_interp=(current_hour-interp_time_1)/interp_step_time;
+		cloud_interp=(current_time-interp_time_1)/interp_step_time;
 	}
 	while(cloud_interp<0.f)
 	{
 		interp_time_1-=interp_step_time;
-		cloud_interp=(current_hour-interp_time_1)/interp_step_time;
+		cloud_interp=(current_time-interp_time_1)/interp_step_time;
 	}
 	simul::math::Vector3 wind_offset(0,0,0);
 	if(y_vertical)
@@ -676,7 +675,7 @@ HRESULT SimulCloudRenderer::FillInCloudTextures()
 			V_FAIL(errmsg);
 		}
 		
-		skyInterface->SetHourOfTheDay(interp_time_1+i*interp_step_time);
+		skyInterface->SetDaytime(interp_time_1+i*interp_step_time);
 		cloudInterface->ReLight(simul::math::Vector3(skyInterface->GetDirectionToSun()));
 
 		if(!simul::clouds::TextureGenerator::Make3DCloudTexture(cloudInterface,(unsigned char *)(lockedBox.pBits)))
@@ -689,10 +688,10 @@ HRESULT SimulCloudRenderer::FillInCloudTextures()
 	// Activate lightning for overcast weather:
 	lightning_active=(overcast_factor_2>0.3f);
 
-	skyInterface->SetHourOfTheDay(interp_time_1+2*interp_step_time);
+	skyInterface->SetDaytime(interp_time_1+2*interp_step_time);
 	next_sun_direction=simul::math::Vector3(skyInterface->GetDirectionToSun());
 	cloudInterface->SetLightDirection(next_sun_direction);
-	skyInterface->SetHourOfTheDay(current_hour);
+	skyInterface->SetDaytime(current_time);
 	return hr;
 }
 
@@ -727,11 +726,11 @@ void SimulCloudRenderer::Update(float dt)
 	if(y_vertical)
 		std::swap(wind_offset.y,wind_offset.z);
 
-	float current_hour=skyInterface->GetHourOfTheDay();
+	float current_time=skyInterface->GetDaytime();
 	float real_dt=0.f;
-	if(last_hour!=0.f)
-		real_dt=3600.f*(current_hour-last_hour);
-	last_hour=current_hour;
+	if(last_time!=0.f)
+		real_dt=3600.f*(current_time-last_time);
+	last_time=current_time;
 	simul::math::AddFloatTimesVector(wind_offset,real_dt,wind_vector);
 	if(y_vertical)
 		std::swap(wind_offset.y,wind_offset.z);
@@ -739,8 +738,8 @@ void SimulCloudRenderer::Update(float dt)
 	if(y_vertical)
 		std::swap(wind_offset.y,wind_offset.z);
 	if(!interp_time_1)
-		interp_time_1=current_hour;
-	cloud_interp=(current_hour-interp_time_1)/interp_step_time;
+		interp_time_1=current_time;
+	cloud_interp=(current_time-interp_time_1)/interp_step_time;
 #ifndef STORM_VERSION
 	simul::base::Timer t;
 	t.StartTime();
@@ -776,7 +775,7 @@ void SimulCloudRenderer::Update(float dt)
 			while(cloud_interp>1.f)
 			{
 				interp_time_1+=interp_step_time;
-				cloud_interp=(current_hour-interp_time_1)/interp_step_time;
+				cloud_interp=(current_time-interp_time_1)/interp_step_time;
 			}
 			// overcast factor for next keyframe:
 			overcast_factor_1=overcast_factor_2;
@@ -806,10 +805,10 @@ void SimulCloudRenderer::Update(float dt)
 			std::swap(cloud_textures[1],cloud_textures[2]);
 
 			// Get the sun direction for the next time step:
-			skyInterface->SetHourOfTheDay(interp_time_1+2*interp_step_time);
+			skyInterface->SetDaytime(interp_time_1+2*interp_step_time);
 			next_sun_direction=simul::math::Vector3(skyInterface->GetDirectionToSun());
 			cloudInterface->SetLightDirection(next_sun_direction);
-			skyInterface->SetHourOfTheDay(current_hour);
+			skyInterface->SetDaytime(current_time);
 			cloudInterface->StartMarching();
 			texture_complete=false;
 		}
@@ -821,7 +820,7 @@ void SimulCloudRenderer::Update(float dt)
 	while(cloud_interp<0.f)
 	{
 		interp_time_1-=interp_step_time;
-		cloud_interp=(current_hour-interp_time_1)/interp_step_time;
+		cloud_interp=(current_time-interp_time_1)/interp_step_time;
 	}
 	overcast_factor=lerp(cloud_interp,overcast_factor_1,overcast_factor_2);
 	precipitation=lerp(cloud_interp,precipitation_1,precipitation_2);

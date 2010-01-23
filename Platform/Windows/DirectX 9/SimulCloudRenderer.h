@@ -209,7 +209,7 @@ protected:
 	float precipitation_1;
 	float precipitation_2;
 
-	float last_hour;
+	float last_time;
 	float fade_interp;
 
 	int noise_texture_size;
