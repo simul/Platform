@@ -48,16 +48,17 @@ public:
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 	HRESULT Render();
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-	void SetLossTextures(LPDIRECT3DTEXTURE9 t1,LPDIRECT3DTEXTURE9 t2)
+	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
 	{
 		loss_texture_1=t1;
 		loss_texture_2=t2;
 	}
-	void SetInscatterTextures(LPDIRECT3DTEXTURE9 t1,LPDIRECT3DTEXTURE9 t2)
+	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
 	{
 		inscatter_texture_1=t1;
 		inscatter_texture_2=t2;
 	}
+	
 	void SetSkyInterface(simul::sky::SkyInterface *si)
 	{
 		skyInterface=si;
@@ -75,18 +76,25 @@ public:
 	{
 		fade_interp=s;
 	}
+	void SetAltitudeTextureCoordinate(float f)
+	{
+		altitude_tex_coord=f;
+	}
 protected:
+	bool use_3d_fades;
+	float altitude_tex_coord;
 	simul::sky::SkyInterface *skyInterface;
 	HRESULT Destroy();
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	vertexDecl;
-	D3DXMATRIX				world,view,proj;
+	D3DXMATRIX						world,view,proj;
 
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	LPD3DXEFFECT					effect;
 	D3DXHANDLE						technique;
 	// Variables for this effect:
 	D3DXHANDLE						invViewProj;
+	D3DXHANDLE						altitudeTexCoord;
 	D3DXHANDLE						lightDir;
 	D3DXHANDLE						MieRayleighRatio;
 	D3DXHANDLE						HazeEccentricity;
@@ -99,10 +107,10 @@ protected:
 	D3DXHANDLE						inscatterTexture1;
 	D3DXHANDLE						inscatterTexture2;
 
-	LPDIRECT3DTEXTURE9		loss_texture_1;
-	LPDIRECT3DTEXTURE9		loss_texture_2;
-	LPDIRECT3DTEXTURE9		inscatter_texture_1;
-	LPDIRECT3DTEXTURE9		inscatter_texture_2;
+	LPDIRECT3DBASETEXTURE9		loss_texture_1;
+	LPDIRECT3DBASETEXTURE9		loss_texture_2;
+	LPDIRECT3DBASETEXTURE9		inscatter_texture_1;
+	LPDIRECT3DBASETEXTURE9		inscatter_texture_2;
 
 	//! The depth buffer.
 	LPDIRECT3DTEXTURE9				depth_texture;

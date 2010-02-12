@@ -15,7 +15,7 @@
 	#include <fstream>
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT(_T("game:\\"));
+	static tstring filepath=TEXT("game:\\");
 	static DWORD default_effect_flags=0;
 #else
 	#include <tchar.h>
@@ -25,6 +25,7 @@
 	static tstring filepath=TEXT("");
 	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #endif
+#include "CreateDX9Effect.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Clouds/CloudInterface.h"
@@ -34,12 +35,15 @@
 #include "Simul2DCloudRenderer.h"
 #include "SimulSkyRenderer.h"
 #include "SimulAtmosphericsRenderer.h"
-#include "CreateDX9Effect.h"
 #include "Simul/Base/Timer.h"
 #include "Macros.h"
 #include "Resources.h"
 
-SimulWeatherRenderer::SimulWeatherRenderer(bool usebuffer,bool tonemap,int width,int height,bool sky,bool clouds3d,bool clouds2d,bool rain) :
+SimulWeatherRenderer::SimulWeatherRenderer(
+	bool usebuffer,bool tonemap,int width,
+	int height,bool sky,bool clouds3d,
+	bool clouds2d,bool rain,
+	bool always_render_clouds_late) :
 	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
 	m_pTonemapEffect(NULL),
@@ -61,7 +65,9 @@ SimulWeatherRenderer::SimulWeatherRenderer(bool usebuffer,bool tonemap,int width
 	timing(0.f),
 	exposure_multiplier(1.f),
 	gamma_resource_id(0),
-	RenderCloudsLate(false)
+	RenderCloudsLate(false),
+	AlwaysRenderCloudsLate(always_render_clouds_late),
+	renderDepthBufferCallback(NULL)
 {
 	if(sky)
 		simulSkyRenderer=new SimulSkyRenderer();
@@ -73,16 +79,6 @@ SimulWeatherRenderer::SimulWeatherRenderer(bool usebuffer,bool tonemap,int width
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
 	
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer;
-
-	if(simulSkyRenderer)
-	{
-		if(simulCloudRenderer)
-			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-		if(simul2DCloudRenderer)
-			simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-		if(simulAtmosphericsRenderer)
-			simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-	}
 }
 
 HRESULT SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)
@@ -116,13 +112,13 @@ HRESULT SimulWeatherRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	m_pd3dDevice=dev;
 	HRESULT hr;
 	if(!m_pTonemapEffect)
-		V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,_T("gamma.fx")));
-	GammaTechnique=m_pTonemapEffect->GetTechniqueByName(("simul_gamma"));
-	CloudBlendTechnique=m_pTonemapEffect->GetTechniqueByName(("simul_cloud_blend"));
+		V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,"gamma.fx"));
+	GammaTechnique=m_pTonemapEffect->GetTechniqueByName("simul_gamma");
+	CloudBlendTechnique=m_pTonemapEffect->GetTechniqueByName("simul_cloud_blend");
 
-	m_hExposure=m_pTonemapEffect->GetParameterByName(NULL,("exposure"));
-	m_hGamma=m_pTonemapEffect->GetParameterByName(NULL,("gamma"));
-	bufferTexture=m_pTonemapEffect->GetParameterByName(NULL,("hdrTexture"));
+	m_hExposure=m_pTonemapEffect->GetParameterByName(NULL,"exposure");
+	m_hGamma=m_pTonemapEffect->GetParameterByName(NULL,"gamma");
+	bufferTexture=m_pTonemapEffect->GetParameterByName(NULL,"hdrTexture");
 	V_RETURN(CreateBuffers());
 	if(simulSkyRenderer)
 		V_RETURN(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
@@ -139,8 +135,6 @@ HRESULT SimulWeatherRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);
-
-	UpdateConnections();
 	return hr;
 }
 
@@ -339,58 +333,19 @@ LPDIRECT3DSURFACE9 SimulWeatherRenderer::MakeRenderTarget(const LPDIRECT3DTEXTUR
 	HRESULT hr=m_pd3dDevice->CreateRenderTarget(
 		desc.Width, desc.Height, desc.Format, D3DMULTISAMPLE_NONE, 0, FALSE, &pRenderTarget,&SurfaceParams);
 	if(hr!=S_OK)
-		std::cerr<<_T("SimulWeatherRenderer::MakeRenderTarget - Failed to create render target!\n");
+		std::cerr<<"SimulWeatherRenderer::MakeRenderTarget - Failed to create render target!\n";
 #else
 	pTexture->GetSurfaceLevel(0,&pRenderTarget);
 #endif
 	return pRenderTarget;
 }
 
-void SimulWeatherRenderer::UpdateConnections()
-{
-	if(simulSkyRenderer)
-	{
-		if(layer1&&simulCloudRenderer)
-		{
-			simulSkyRenderer->SetOvercastFactor(simulCloudRenderer->GetOvercastFactor());
-			simulCloudRenderer->SetLossTextures(simulSkyRenderer->GetLossTexture1(),simulSkyRenderer->GetLossTexture2());
-			simulCloudRenderer->SetInscatterTextures(simulSkyRenderer->GetInscatterTexture1(),simulSkyRenderer->GetInscatterTexture2());
-			simulCloudRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
-			if(simul2DCloudRenderer)
-				simul2DCloudRenderer->SetOvercastFactor(simulCloudRenderer->GetOvercastFactor());
-		}
-		else
-		{
-			simulSkyRenderer->SetOvercastFactor(0.f);
-			if(simulCloudRenderer)
-			{
-				simulCloudRenderer->SetLossTextures(NULL,NULL);
-				simulCloudRenderer->SetInscatterTextures(NULL,NULL);
-			}
-			if(simul2DCloudRenderer)
-				simul2DCloudRenderer->SetOvercastFactor(0.f);
-		}
-		if(simulAtmosphericsRenderer)
-		{
-			if(layer1&&simulCloudRenderer)
-				simulAtmosphericsRenderer->SetOvercastFactor(simulCloudRenderer->GetOvercastFactor());
-			simulAtmosphericsRenderer->SetLossTextures(simulSkyRenderer->GetLossTexture1(),
-				simulSkyRenderer->GetLossTexture2());
-			simulAtmosphericsRenderer->SetInscatterTextures(simulSkyRenderer->GetInscatterTexture1(),
-				simulSkyRenderer->GetInscatterTexture2());
-			simulAtmosphericsRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
-		}
-	}
-}
-
 HRESULT SimulWeatherRenderer::Render()
 {
-	UpdateConnections();
-
 	RenderCloudsLate=false;
 	if(simulCloudRenderer)
-		RenderCloudsLate=simulCloudRenderer->IsCameraAboveCloudBase();
-	PIXBeginNamedEvent(0,_T("Render Weather"));
+		RenderCloudsLate=AlwaysRenderCloudsLate|simulCloudRenderer->IsCameraAboveCloudBase();
+	PIXBeginNamedEvent(0,"Render Weather");
 	if(simulSkyRenderer)
 	{
 		float cloud_occlusion=0;
@@ -408,7 +363,7 @@ HRESULT SimulWeatherRenderer::Render()
 	m_pOldDepthSurface		=NULL;
 	if(use_buffer)
 	{
-		PIXBeginNamedEvent(0,_T("Setup Sky Buffer"));
+		PIXBeginNamedEvent(0,"Setup Sky Buffer");
 		D3DSURFACE_DESC desc;
 		hdr_buffer_texture->GetLevelDesc(0,&desc);
 		hr=m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
@@ -435,13 +390,17 @@ HRESULT SimulWeatherRenderer::Render()
 	if(simul2DCloudRenderer&&layer2)
 		hr=simul2DCloudRenderer->Render();
 	if(simulCloudRenderer&&layer1&&!RenderCloudsLate)
+	{
+		if(renderDepthBufferCallback)
+			renderDepthBufferCallback->Render();
 		hr=simulCloudRenderer->Render();
+	}
 	if(simulPrecipitationRenderer&&layer1) 
 		hr=simulPrecipitationRenderer->Render();
 	static float depth_start=1.f;
 	if(use_buffer)
 	{
-		PIXBeginNamedEvent(0,_T("Sky Buffer To Screen"));
+		PIXBeginNamedEvent(0,"Sky Buffer To Screen");
 #ifdef XBOX
 		m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
 #endif
@@ -492,7 +451,7 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 	HRESULT hr=S_OK;
 	if(!RenderCloudsLate)
 		return hr;
-	PIXBeginNamedEvent(0,_T("Render Late Cloud Layer"));
+	PIXBeginNamedEvent(0,"Render Late Cloud Layer");
 	m_pHDRRenderTarget		=NULL;
 	m_pBufferDepthSurface	=NULL;
 	m_pLDRRenderTarget		=NULL;
@@ -500,7 +459,7 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 	m_pOldDepthSurface		=NULL;
 	if(use_buffer)
 	{
-		PIXBeginNamedEvent(0,_T("Setup Sky Buffer"));
+		PIXBeginNamedEvent(0,"Setup Sky Buffer");
 		D3DSURFACE_DESC desc;
 		hdr_buffer_texture->GetLevelDesc(0,&desc);
 		hr=m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
@@ -521,12 +480,14 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 		hr=m_pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS,0);           // Defaults to zero
 		PIXEndNamedEvent();
 	}
+	if(renderDepthBufferCallback)
+		renderDepthBufferCallback->Render();
 	if(simulCloudRenderer&&layer1)
 		hr=simulCloudRenderer->Render();
 	static float depth_start=1.f;
 	if(use_buffer)
 	{
-		PIXBeginNamedEvent(0,_T("Sky Buffer To Screen"));
+		PIXBeginNamedEvent(0,"Sky Buffer To Screen");
 #ifdef XBOX
 		m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
 #endif
@@ -665,10 +626,37 @@ void SimulWeatherRenderer::Update(float dt)
 	static bool pause=false;
     if(!pause)
 	{
-		PIXBeginNamedEvent(0,_T("Weather Update"));
+		PIXBeginNamedEvent(0,"Weather Update");
 		if(simulSkyRenderer)
 		{
+			LPDIRECT3DBASETEXTURE9 l1,l2,i1,i2;
+			simulSkyRenderer->GetLossAndInscatterTextures(&l1,&l2,&i1,&i2);
 			simulSkyRenderer->Update(dt);
+			if(layer1&&simulCloudRenderer)
+			{
+				simulSkyRenderer->SetOvercastFactor(simulCloudRenderer->GetOvercastFactor());
+				simulCloudRenderer->SetLossTextures(l1,l2);
+				simulCloudRenderer->SetInscatterTextures(i1,i2);
+				simulCloudRenderer->SetAltitudeTextureCoordinate(simulSkyRenderer->GetAltitudeTextureCoordinate());
+				simulCloudRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
+				if(simul2DCloudRenderer)
+					simul2DCloudRenderer->SetOvercastFactor(simulCloudRenderer->GetOvercastFactor());
+			}
+			else
+			{
+				simulSkyRenderer->SetOvercastFactor(0.f);
+				if(simul2DCloudRenderer)
+					simul2DCloudRenderer->SetOvercastFactor(0.f);
+			}
+			if(simulAtmosphericsRenderer)
+			{
+				if(layer1&&simulCloudRenderer)
+					simulAtmosphericsRenderer->SetOvercastFactor(simulCloudRenderer->GetOvercastFactor());
+				simulAtmosphericsRenderer->SetLossTextures(l1,l2);
+				simulAtmosphericsRenderer->SetInscatterTextures(i1,i2);
+				simulAtmosphericsRenderer->SetAltitudeTextureCoordinate(simulSkyRenderer->GetAltitudeTextureCoordinate());
+				simulAtmosphericsRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
+			}
 		}
 		if(simulCloudRenderer)
 		{
@@ -720,12 +708,12 @@ SimulAtmosphericsRenderer *SimulWeatherRenderer::GetAtmosphericsRenderer()
 	return simulAtmosphericsRenderer;
 }
 
-const TCHAR *SimulWeatherRenderer::GetDebugText() const
+const char *SimulWeatherRenderer::GetDebugText() const
 {
-	static TCHAR debug_text[256];
+	static char debug_text[256];
 	if(simul2DCloudRenderer)
-		//sprintf_s(debug_text,256,_T("TIME %2.2g ms\n%s"),timing,simulCloudRenderer->GetDebugText());
-		_stprintf_s(debug_text,256,_T("%s"),simul2DCloudRenderer->GetDebugText());
+		//sprintf_s(debug_text,256,"TIME %2.2g ms\n%s",timing,simulCloudRenderer->GetDebugText());
+		sprintf_s(debug_text,256,"%s",simul2DCloudRenderer->GetDebugText());
 	return debug_text;
 }
 

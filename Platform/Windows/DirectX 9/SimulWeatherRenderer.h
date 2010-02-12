@@ -12,21 +12,27 @@
 	#include <d3d9.h>
 	#include <d3dx9.h>
 #endif
-
+class RenderDepthBufferCallback
+{
+public:
+	virtual void Render()=0;
+};
 //! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX program.
 //! You can take this entire class and use it as source in your project.
 //! Make appropriate modifications where required.
 class SimulWeatherRenderer
 {
 public:
-	SimulWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=320,int height=240,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
+	SimulWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=320,
+		int height=240,bool sky=true,bool clouds3d=true,bool clouds2d=true,
+		bool rain=true,
+		bool always_render_clouds_late=false);
 	virtual ~SimulWeatherRenderer();
 	// Set the resource id:
 	void SetGammaResource(DWORD gr)
 	{
 		gamma_resource_id=gr;
 	}
-
 	//standard d3d object interface functions
 	HRESULT Create( LPDIRECT3DDEVICE9 pd3dDevice);
 	//! Call this when the device has been created
@@ -66,11 +72,17 @@ public:
 	//! Get a pointer to the atmospherics renderer owned by this class instance.
 	class SimulAtmosphericsRenderer *GetAtmosphericsRenderer();
 	//! Get the current debug text as a c-string pointer.
-	const TCHAR *GetDebugText() const;
+	const char *GetDebugText() const;
 	//! Get a timing value - useful for performance evaluation.
 	float GetTiming() const;
+
+	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
+	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb)
+	{
+		renderDepthBufferCallback=cb;
+	}
 protected:
-	void UpdateConnections();
+	bool AlwaysRenderCloudsLate;
 	bool RenderCloudsLate;
 	DWORD gamma_resource_id;
 	//! The size of the 2D buffer the sky is rendered to.
@@ -99,6 +111,7 @@ protected:
 	HRESULT IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
 	HRESULT CreateBuffers();
 	HRESULT RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture,int w,int h,bool do_tonemap,bool blend=false);
+	RenderDepthBufferCallback *renderDepthBufferCallback;
 	class SimulSkyRenderer *simulSkyRenderer;
 	class SimulCloudRenderer *simulCloudRenderer;
 	class Simul2DCloudRenderer *simul2DCloudRenderer;

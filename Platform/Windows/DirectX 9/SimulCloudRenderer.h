@@ -16,6 +16,7 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Base/SmartPtr.h"
+#include "Simul/Clouds/CloudRenderCallback.h"
 #define THREADED_VERSION
 //#define STORM_VERSION
 namespace simul
@@ -23,6 +24,7 @@ namespace simul
 	namespace clouds
 	{
 		class CloudInterface;
+		class CloudKeyframer;
 		class LightningRenderInterface;
 		class CloudGeometryHelper;
 		class ThunderCloudNode;
@@ -44,7 +46,7 @@ typedef long HRESULT;
 
 //! A cloud rendering class. Create an instance of this class within a DirectX program,
 //! or use SimulWeatherRenderer to manage cloud and sky rendering together.
-class SimulCloudRenderer
+class SimulCloudRenderer : public simul::clouds::CloudRenderCallback
 {
 public:
 	SimulCloudRenderer();
@@ -74,7 +76,7 @@ public:
 	simul::clouds::CloudInterface *GetCloudInterface();
 	simul::clouds::LightningRenderInterface *GetLightningRenderInterface();
 	//! Get a float between zero and one which represents the interpolation between cloud keyframes.
-	float GetInterpolation() const {return cloud_interp;}
+	float GetInterpolation() const;
 	//! Between zero and one: how overcast is the sky?
 	float GetOvercastFactor() const;
 	//! How much, if any precipitation should be shown, between zero and one.
@@ -92,31 +94,51 @@ public:
 	const float *GetCloudScales() const;
 	const float *GetCloudOffset() const;
 	void SetDetail(float d);
-	void SetLossTextures(LPDIRECT3DTEXTURE9 t1,LPDIRECT3DTEXTURE9 t2){sky_loss_texture_1=t1;sky_loss_texture_2=t2;}
-	void SetInscatterTextures(LPDIRECT3DTEXTURE9 t1,LPDIRECT3DTEXTURE9 t2){sky_inscatter_texture_1=t1;sky_inscatter_texture_2=t2;}
+	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
+	{
+		sky_loss_texture_1=t1;
+		sky_loss_texture_2=t2;
+	}
+	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
+	{
+		sky_inscatter_texture_1=t1;
+		sky_inscatter_texture_2=t2;
+	}
 	void SetFadeInterpolation(float f)
 	{
 		fade_interp=f;
 	}
-	void SetNoiseTextureProperties(int s,int f,int o,float p)
+	void SetNoiseTextureProperties(int size,int freq,int octaves,float persistence)
 	{
-		noise_texture_size=s;
-		noise_texture_frequency=f;
-		texture_octaves=o;
-		texture_persistence=p;
+		noise_texture_size=size;
+		noise_texture_frequency=freq;
+		texture_octaves=octaves;
+		texture_persistence=persistence;
 		CreateNoiseTexture();
 	}
+	LPDIRECT3DTEXTURE9 GetNoiseTexture()
+	{
+		return noise_texture;
+	}
 	HRESULT RenderDistances();
+	// implementing CloudRenderCallback:
+	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
+	void FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
+	void CycleTexturesForward();
+	void SetAltitudeTextureCoordinate(float f)
+	{
+		altitude_tex_coord=f;
+	}
 protected:
-	void CalculateOvercastFactor();
+	float altitude_tex_coord;
 	bool y_vertical;
 	float sun_occlusion;
-	float global_cloudiness;
 	float detail;
 	simul::clouds::CloudInterface *cloudInterface;
+	simul::clouds::CloudKeyframer *cloudKeyframer;
 	simul::sky::SkyInterface *skyInterface;
 	simul::sky::FadeTableInterface *fadeTableInterface;
-	simul::clouds::CloudGeometryHelper *helper;
+	simul::base::SmartPtr<simul::clouds::CloudGeometryHelper> helper;
 	simul::sound::fmod::NodeSound *sound;
 	unsigned texel_index[4];
 	bool lightning_active;
@@ -125,6 +147,7 @@ protected:
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	m_pVtxDecl;
 	LPDIRECT3DVERTEXDECLARATION9	m_pLightningVtxDecl;
+	LPDIRECT3DVERTEXDECLARATION9 m_pHudVertexDecl;
 
 	LPD3DXEFFECT					m_pLightningEffect;
 	D3DXHANDLE						m_hTechniqueLightning;	// Handle to technique in the effect 
@@ -151,6 +174,8 @@ protected:
 	D3DXHANDLE cornerPos;
 	D3DXHANDLE texScales;
 	D3DXHANDLE layerFade;
+	D3DXHANDLE alphaSharpness;
+	D3DXHANDLE altitudeTexCoord;
 
 	D3DXHANDLE lightningMultipliers;
 	D3DXHANDLE lightningColour;
@@ -172,10 +197,10 @@ protected:
 	LPDIRECT3DTEXTURE9			noise_texture;
 	LPDIRECT3DTEXTURE9			lightning_texture;
 	LPDIRECT3DTEXTURE9			large_scale_cloud_texture;
-	LPDIRECT3DTEXTURE9			sky_loss_texture_1;
-	LPDIRECT3DTEXTURE9			sky_loss_texture_2;
-	LPDIRECT3DTEXTURE9			sky_inscatter_texture_1;
-	LPDIRECT3DTEXTURE9			sky_inscatter_texture_2;
+	LPDIRECT3DBASETEXTURE9		sky_loss_texture_1;
+	LPDIRECT3DBASETEXTURE9		sky_loss_texture_2;
+	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture_1;
+	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture_2;
 	LPDIRECT3DCUBETEXTURE9		cloud_cubemap;
 	D3DXVECTOR4					cam_pos;
 	D3DXVECTOR4					lightning_colour;
@@ -192,22 +217,7 @@ protected:
 	HRESULT CreateCloudEffect();
 	HRESULT MakeCubemap(); // not ready yet
 	simul::base::SmartPtr<simul::clouds::ThunderCloudNode> cloudNode;
-	bool edge_fill;
-	unsigned edge_x,edge_y;
-	unsigned cloud_texel_index;
-	float time_step;
-	float cloud_interp;
-	bool texture_complete;
-	float interp_step_time;
-	float interp_time_1;
 	bool enable_lightning;
-	float overcast_factor;
-	float overcast_factor_1;
-	float overcast_factor_2;
-	
-	float precipitation;
-	float precipitation_1;
-	float precipitation_2;
 
 	float last_time;
 	float fade_interp;

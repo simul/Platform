@@ -33,17 +33,19 @@ class SimulTerrainRenderer
 public:
 	SimulTerrainRenderer();
 	//standard d3d object interface functions
-	HRESULT Create( LPDIRECT3DDEVICE9 pd3dDevice);
-	HRESULT RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
+	HRESULT Create(LPDIRECT3DDEVICE9 pd3dDevice);
+	HRESULT RestoreDeviceObjects(LPDIRECT3DDEVICE9 pd3dDevice);
 	HRESULT InvalidateDeviceObjects();
 	HRESULT Destroy();
 
 	virtual ~SimulTerrainRenderer();
+	HRESULT RenderOnlyDepth();
 	HRESULT Render();
+	HRESULT DrawMap();
 	void Update(float dt);
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-	void SetLossTextures(LPDIRECT3DTEXTURE9 t1,LPDIRECT3DTEXTURE9 t2){sky_loss_texture_1=t1;sky_loss_texture_2=t2;}
-	void SetInscatterTextures(LPDIRECT3DTEXTURE9 t1,LPDIRECT3DTEXTURE9 t2){sky_inscatter_texture_1=t1;sky_inscatter_texture_2=t2;}
+	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2){sky_loss_texture_1=t1;sky_loss_texture_2=t2;}
+	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2){sky_inscatter_texture_1=t1;sky_inscatter_texture_2=t2;}
 	void SetCloudTextures(LPDIRECT3DVOLUMETEXTURE9 *t){cloud_textures=t;}
 	void SetSkyInterface(simul::sky::SkyInterface *si){skyInterface=si;}
 	simul::terrain::HeightMapInterface *GetHeightMapInterface();
@@ -76,21 +78,28 @@ public:
 		exposure=e;
 	}
 protected:
+	HRESULT InternalRender(bool depth_only);
+	float altitude_tex_coord;
 	simul::sky::SkyInterface *skyInterface;
 	LPDIRECT3DDEVICE9		m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
 	LPD3DXEFFECT			m_pTerrainEffect;		// The fx file for the sky
 	LPDIRECT3DTEXTURE9		terrain_texture;
 	LPDIRECT3DTEXTURE9		grass_texture;
-	LPDIRECT3DTEXTURE9		sky_loss_texture_1;
-	LPDIRECT3DTEXTURE9		sky_loss_texture_2;
-	LPDIRECT3DTEXTURE9		sky_inscatter_texture_1;
-	LPDIRECT3DTEXTURE9		sky_inscatter_texture_2;
+
+	LPDIRECT3DTEXTURE9		elevation_map_texture;
+	HRESULT MakeMapTexture();
+
+	LPDIRECT3DBASETEXTURE9		sky_loss_texture_1;
+	LPDIRECT3DBASETEXTURE9		sky_loss_texture_2;
+	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture_1;
+	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture_2;
 	LPDIRECT3DTEXTURE9		road_texture;
 	LPDIRECT3DVOLUMETEXTURE9 *cloud_textures;
 	D3DXHANDLE				worldViewProj;
-	D3DXHANDLE              m_hTechniqueTerrain;	// Handle to technique in the effect 
-	D3DXHANDLE              techniqueRoad;			// Handle to technique in the effect 
+	D3DXHANDLE              m_hTechniqueTerrain;	
+	D3DXHANDLE              m_hTechniqueDepthOnly;	
+	D3DXHANDLE              techniqueRoad;			
 	D3DXHANDLE				eyePosition;
 	D3DXHANDLE				lightDirection;
 	D3DXHANDLE				MieRayleighRatio;
@@ -101,6 +110,7 @@ protected:
 	D3DXHANDLE				cloudInterp;
 	D3DXHANDLE				fadeInterp;
 	D3DXHANDLE				exposureParam;
+	D3DXHANDLE				altitudeTexCoord;
 
 	D3DXHANDLE				lightColour;
 	D3DXHANDLE				ambientColour;

@@ -47,6 +47,7 @@
 #endif
 
 #include "Macros.h"
+#include "CreateDX9Effect.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/FastCloudNode.h"
 #include "Simul/Clouds/TextureGenerator.h"
@@ -55,8 +56,7 @@
 #include "Simul/Sky/FadeTableInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Pi.h"
-#include "Simul/LicenseKey.h"
-#include "CreateDX9Effect.h"
+#include "Samples/LicenseKey.h"
 //
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
@@ -67,7 +67,7 @@
 
 typedef std::basic_string<TCHAR> tstring;
 static float cloud_interp=0.f;
-static float interp_step_time=.2f;
+static float interp_step_time=.008f;
 static float interp_time_1=0.f;
 static simul::math::Vector3 wind_vector(20,20,0);
 static simul::math::Vector3 next_sun_direction;
@@ -188,7 +188,6 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	helper->Set2D(true);
 	helper->SetGrid(6,9);
 	helper->SetCurvedEarth(true);
-	helper->SetEffectiveEarthRadius(0.f);
 	
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 }
@@ -324,7 +323,7 @@ HRESULT Simul2DCloudRenderer::CreateImageTexture()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(image_texture);
-	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,_T("Media/Textures/Cirrus2.jpg"),&image_texture)))
+	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/Cirrus2.jpg",&image_texture)))
 		return hr;
 	return hr;
 }
@@ -378,19 +377,19 @@ HRESULT Simul2DCloudRenderer::FillInCloudTextures()
 	if(!skyInterface)
 		return S_OK;
 	HRESULT hr=S_OK;
-	float current_hour=skyInterface->GetHourOfTheDay();
+	float current_time=skyInterface->GetDaytime();
 	if(!interp_time_1)
-		interp_time_1=current_hour;
-	cloud_interp=(current_hour-interp_time_1)/interp_step_time;
+		interp_time_1=current_time;
+	cloud_interp=(current_time-interp_time_1)/interp_step_time;
 	while(cloud_interp>1.f)
 	{
 		interp_time_1+=interp_step_time;
-		cloud_interp=(current_hour-interp_time_1)/interp_step_time;
+		cloud_interp=(current_time-interp_time_1)/interp_step_time;
 	}
 	while(cloud_interp<0.f)
 	{
 		interp_time_1-=interp_step_time;
-		cloud_interp=(current_hour-interp_time_1)/interp_step_time;
+		cloud_interp=(current_time-interp_time_1)/interp_step_time;
 	}
 	cloudInterface->Generate();
 	for(int i=0;i<2;i++)
@@ -401,24 +400,24 @@ HRESULT Simul2DCloudRenderer::FillInCloudTextures()
 		// RGBA bit-shift is 12,8,4,0
 		// ARGB however, is 8,0,4,12
 		SetBits8();
-		skyInterface->SetHourOfTheDay(interp_time_1+i*interp_step_time);
+		skyInterface->SetDaytime(interp_time_1+i*interp_step_time);
 		cloudInterface->ReLight(simul::math::Vector3(skyInterface->GetDirectionToSun()));
 
 		if(!simul::clouds::TextureGenerator::Make2DCloudTexture(cloudInterface,(unsigned char *)(lockedBox.pBits)))
 			return S_FALSE;
 		hr=cloud_textures[i]->UnlockRect(0);
 	}
-	skyInterface->SetHourOfTheDay(interp_time_1+2*interp_step_time);
+	skyInterface->SetDaytime(interp_time_1+2*interp_step_time);
 	next_sun_direction=simul::math::Vector3(skyInterface->GetDirectionToSun());
 	cloudInterface->SetLightDirection(next_sun_direction);
-	skyInterface->SetHourOfTheDay(current_hour);
+	skyInterface->SetDaytime(current_time);
 	return hr;
 }
 
 
 HRESULT Simul2DCloudRenderer::CreateCloudEffect()
 {
-	return CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,_T("simul_clouds_2d.fx"));
+	return CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"media\\HLSL\\simul_clouds_2d.fx");
 }
 void Simul2DCloudRenderer::Update(float dt)
 {
@@ -426,10 +425,10 @@ void Simul2DCloudRenderer::Update(float dt)
 		return;
 	if(!cloudInterface)
 		return;
-	float current_hour=skyInterface->GetHourOfTheDay();
+	float current_time=skyInterface->GetDaytime();
 	if(!interp_time_1)
-		interp_time_1=current_hour;
-	cloud_interp=(current_hour-interp_time_1)/interp_step_time;
+		interp_time_1=current_time;
+	cloud_interp=(current_time-interp_time_1)/interp_step_time;
 	if(!cloudInterface->UpdatePartial(1.7f*cloud_interp))
 	{
 		UpdateCloudTexture();
@@ -440,17 +439,17 @@ void Simul2DCloudRenderer::Update(float dt)
 		while(cloud_interp>1.f)
 		{
 			interp_time_1+=interp_step_time;
-			cloud_interp=(current_hour-interp_time_1)/interp_step_time;
+			cloud_interp=(current_time-interp_time_1)/interp_step_time;
 		}
 
 		std::swap(cloud_textures[0],cloud_textures[1]);
 		std::swap(cloud_textures[1],cloud_textures[2]);
 
 		// Get the sun direction for the next time step:
-		skyInterface->SetHourOfTheDay(interp_time_1+2*interp_step_time);
+		skyInterface->SetDaytime(interp_time_1+2*interp_step_time);
 		next_sun_direction=simul::math::Vector3(skyInterface->GetDirectionToSun());
 		cloudInterface->SetLightDirection(next_sun_direction);
-		skyInterface->SetHourOfTheDay(current_hour);
+		skyInterface->SetDaytime(current_time);
 		cloudInterface->StartMarching();
 		texture_complete=false;
 	}
@@ -458,7 +457,7 @@ void Simul2DCloudRenderer::Update(float dt)
 	{
 		cloud_texel_index=0;
 		interp_time_1-=interp_step_time;
-		cloud_interp=(current_hour-interp_time_1)/interp_step_time;
+		cloud_interp=(current_time-interp_time_1)/interp_step_time;
 	}
 		
 	simul::math::Vector3 wind_offset=cloudInterface->GetWindOffset();
@@ -649,7 +648,7 @@ static float image_effect=0.5f;
 	simul::math::Vector3 pos;
 	simul::sky::float4 loss2,inscatter2;
 	int i=0;
-	const std::vector<int> &quad_strip_vertices=helper->GetQuadStripVertices();
+	const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 	size_t qs_vert=0;
 	for(std::vector<simul::clouds::CloudGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
 		j!=helper->GetQuadStrips().end();j++,i++)

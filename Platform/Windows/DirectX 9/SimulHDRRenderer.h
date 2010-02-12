@@ -42,7 +42,6 @@ public:
 	//! Set the atmospherics renderer - null means no post-process fade.
 	void SetAtmospherics(class SimulAtmosphericsInterface *a){atmospherics=a;}
 protected:
-	bool fade_applied;
 	HRESULT Destroy();
 	//! The size of the 2D buffer the sky is rendered to.
 	int BufferWidth,BufferHeight;

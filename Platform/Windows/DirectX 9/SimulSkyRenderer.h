@@ -24,7 +24,7 @@ namespace simul
 	{
 		class SkyInterface;
 		class SkyNode;
-		class InterpolatedFadeTable;
+		class AltitudeFadeTable;
 		class FadeTableInterface;
 	}
 }
@@ -71,15 +71,15 @@ public:
 	{
 		overcast_factor=of;
 	}
-	LPDIRECT3DTEXTURE9		GetLossTexture1(){return loss_texture_1;}
-	LPDIRECT3DTEXTURE9		GetLossTexture2(){return loss_texture_2;}
-	LPDIRECT3DTEXTURE9		GetInscatterTexture1(){return inscatter_texture_1;}
-	LPDIRECT3DTEXTURE9		GetInscatterTexture2(){return inscatter_texture_2;}
+	void GetLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LPDIRECT3DBASETEXTURE9 *l2,
+		LPDIRECT3DBASETEXTURE9 *i1,LPDIRECT3DBASETEXTURE9 *i2);
+	float GetAltitudeTextureCoordinate() const;
+	bool Use3DFadeTextures() const{return true;}
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);
 //! Implement the FadeTableCallback
 	void SetSkyTextureSize(unsigned size);
-	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_alt);
+	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
 	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void FillFadeTextures(int alt_index,int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
@@ -90,53 +90,53 @@ protected:
 	float sun_occlusion;
 	simul::sky::float4 sunlight;
 	simul::base::SmartPtr<simul::sky::SkyNode> skyNode;
-	simul::base::SmartPtr<simul::sky::InterpolatedFadeTable> fadeTable;
+	simul::base::SmartPtr<simul::sky::AltitudeFadeTable> fadeTable;
 
 	simul::sky::SkyInterface *skyInterface;
 	unsigned skyTexSize;
 	unsigned skyTexIndex;
+	unsigned numAltitudes;
 	float overcast_factor;
 	float interp;
 	float interp_step_time;
 	float interp_time_1;
 	void CreateFadeTextures();
 	unsigned fadeTexWidth,fadeTexHeight;
-	LPDIRECT3DDEVICE9		m_pd3dDevice;
+	LPDIRECT3DDEVICE9			m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
-	LPD3DXEFFECT			m_pSkyEffect;		// The fx file for the sky
-	D3DXHANDLE				worldViewProj;
-	D3DXHANDLE              m_hTechniqueSky;	// Handle to technique in the effect 
-	D3DXHANDLE				m_hTechniqueSun;
-	D3DXHANDLE				m_hTechniqueQuery;	// A technique that uses the z-test for occlusion queries
-	D3DXHANDLE				m_hTechniqueFlare;
-	D3DXHANDLE				m_hTechniquePlanet;
-	D3DXHANDLE				lightDirection;
-	D3DXHANDLE				MieRayleighRatio;
-	D3DXHANDLE				hazeEccentricity;
-	D3DXHANDLE				overcastFactor;
-	D3DXHANDLE				skyInterp;
-	D3DXHANDLE				colour;
-	D3DXHANDLE				flareTexture;
-	D3DXHANDLE				skyTexture1;
-	D3DXHANDLE				skyTexture2;
-	LPDIRECT3DTEXTURE9		flare_texture;
-	LPDIRECT3DTEXTURE9		moon_texture;
-	LPDIRECT3DTEXTURE9		sky_texture_1;
-	LPDIRECT3DTEXTURE9		sky_texture_2;
-	LPDIRECT3DTEXTURE9		sky_texture_next;
-	LPDIRECT3DTEXTURE9		loss_texture_1;
-	LPDIRECT3DTEXTURE9		loss_texture_2;
-	LPDIRECT3DTEXTURE9		loss_texture_next;
-	LPDIRECT3DTEXTURE9		inscatter_texture_1;
-	LPDIRECT3DTEXTURE9		inscatter_texture_2;
-	LPDIRECT3DTEXTURE9		inscatter_texture_next;
-	D3DXVECTOR3				cam_pos;
-	D3DXMATRIX				world,view,proj;
-	LPDIRECT3DQUERY9 d3dQuery;
-	HRESULT UpdateSkyTexture(float proportion);
-	HRESULT CreateSkyTexture();
-	HRESULT CreateSkyEffect();
-	HRESULT RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
-	HRESULT RenderMoon();
-	HRESULT RenderSun();
+	LPD3DXEFFECT				m_pSkyEffect;		// The fx file for the sky
+	D3DXHANDLE					worldViewProj;
+	D3DXHANDLE                  m_hTechniqueSky;	// Handle to technique in the effect 
+	D3DXHANDLE					m_hTechniqueSun;
+	D3DXHANDLE					m_hTechniqueQuery;	// A technique that uses the z-test for occlusion queries
+	D3DXHANDLE					m_hTechniqueFlare;
+	D3DXHANDLE					m_hTechniquePlanet;
+	D3DXHANDLE					altitudeTexCoord;
+	D3DXHANDLE					lightDirection;
+	D3DXHANDLE					MieRayleighRatio;
+	D3DXHANDLE					hazeEccentricity;
+	D3DXHANDLE					overcastFactor;
+	D3DXHANDLE					skyInterp;
+	D3DXHANDLE					colour;
+	D3DXHANDLE					flareTexture;
+	D3DXHANDLE					skyTexture1;
+	D3DXHANDLE					skyTexture2;
+	LPDIRECT3DTEXTURE9			flare_texture;
+	LPDIRECT3DTEXTURE9			moon_texture;
+	LPDIRECT3DTEXTURE9			sky_textures[3];
+	// If using 1D sky textures and 2D fade textures:
+	LPDIRECT3DTEXTURE9			loss_textures[3];
+	LPDIRECT3DTEXTURE9			inscatter_textures[3];
+	// If using 2D sky textures and 3D fade textures (i.e. altitude is an extra dimension):
+	LPDIRECT3DVOLUMETEXTURE9	loss_textures_3d[3];
+	LPDIRECT3DVOLUMETEXTURE9	inscatter_textures_3d[3];
+	D3DXVECTOR3					cam_pos;
+	D3DXMATRIX					world,view,proj;
+	LPDIRECT3DQUERY9			d3dQuery;
+	HRESULT						UpdateSkyTexture(float proportion);
+	HRESULT						CreateSkyTexture();
+	HRESULT						CreateSkyEffect();
+	HRESULT						RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
+	HRESULT						RenderMoon();
+	HRESULT						RenderSun();
 };

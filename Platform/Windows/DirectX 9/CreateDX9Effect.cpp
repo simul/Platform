@@ -25,7 +25,6 @@
 	static tstring filepath=TEXT("");
 	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #endif
-typedef std::basic_string<TCHAR> tstring;
 	#include <vector>
 #include <iostream>
 #include "Macros.h"
@@ -40,24 +39,62 @@ struct d3dMacro
 	std::string name;
 	std::string define;
 };
-void SetFilepath(const TCHAR *fp)
+static int ShaderModel=2;
+void SetShaderPath(const char *path)
 {
-	filepath=fp;
+#ifdef UNICODE
+	// tstring and TEXT cater for the confusion between wide and regular strings.
+	filepath.resize(strlen(path),L' '); // Make room for characters
+	// Copy string to wstring.
+	std::copy(path,path+strlen(path),filepath.begin());
+
+	filepath+=L"/";
+#else
+	filepath=path;
+	filepath+="/";
+#endif
 }
-HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,const TCHAR *filename,int num_defines,...)
+
+int GetShaderModel()
 {
+	return ShaderModel;
+}
+
+void SetShaderModel(int m)
+{
+	ShaderModel=m;
+}
+
+// Get the named technique. If not supported, 
+D3DXHANDLE GetDX9Technique(LPD3DXEFFECT effect,const char *tech_name)
+{
+	D3DXHANDLE tech=NULL;
+	std::string str=tech_name;
+	tech=effect->GetTechniqueByName(str.c_str());
+	if(effect->ValidateTechnique(tech)!=S_OK)
+	{
+		tech=effect->GetTechniqueByName((str+"_sm2").c_str());
+	}
+	return tech;
+}
+
+HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,const char *filename,int num_defines,...)
+{
+#ifdef BUNDLE_SHADERS
+	return CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename),num_defines,...)
+#else
 	std::cout<<"CreateDX9Effect "<<filename<<std::endl;
 	HRESULT hr;
     LPD3DXBUFFER errors=0;
 #ifdef UNICODE
+	// tstring and TEXT cater for the confusion between wide and regular strings.
+	std::wstring wfilename(strlen(filename),L' '); // Make room for characters
+	// Copy string to wstring.
+	std::copy(filename,filename+strlen(filename),wfilename.begin());
+	tstring fn=filepath+wfilename;
+#else
 	tstring fn=filename;
 	fn=filepath+fn;
-#else
-	// tstring and TEXT cater for the confusion between wide and regular strings.
-	std::wstring wfilename(_tclen(filename),L' '); // Make room for characters
-	// Copy string to wstring.
-	std::copy(filename,filename+_tclen(filename),wfilename.begin());
-	tstring fn=filepath+wfilename;
 #endif
 	D3DXMACRO *macros=NULL;
 	std::vector<std::string> d3dmacros;
@@ -121,6 +158,7 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 	delete [] macros;
 	V_RETURN(hr);
 	return hr;
+#endif
 }
 
 HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWORD resource,int num_defines,...)
@@ -148,6 +186,7 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWOR
 			if(name)
 			{
 				macros[def].Name=txt;
+				macros[def].Definition="";
 			}
 			else
 			{
@@ -227,4 +266,90 @@ HRESULT CanUse16BitFloats(IDirect3DDevice9 *device)
 	if(FAILED(hr))
 		std::cout<<"Cannot create 16-bit float textures"<<std::endl;
 	return hr;
+}
+
+
+
+HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,LPDIRECT3DTEXTURE9 texture)
+{
+	static bool disable=false;
+
+	if(disable)
+		return S_OK;
+	HRESULT hr=S_OK;
+	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;
+	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
+	D3DVERTEXELEMENT9 decl[] = 
+	{
+#ifdef XBOX
+		{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 8, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
+		{ 0, 24, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+#else
+		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
+		{ 0, 16, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
+		{ 0, 32, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+#endif
+		D3DDECL_END()
+	};
+	SAFE_RELEASE(m_pBufferVertexDecl);
+	V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
+#ifdef XBOX
+	float x=-1.f,y=1.f;
+	float w=2.f;
+	float h=-2.f;
+	struct Vertext
+	{
+		float x,y;
+		float r,g,b,a;
+		float tx,ty;
+	};
+	Vertext vertices[4] =
+	{
+		{x,			y,			0	,0},
+		{x+w,		y,			1.f	,0},
+		{x+w,		y+h,		1.f	,1.f},
+		{x,			y+h,		0	,1.f},
+	};
+#else
+	float x=x1,y=y1;
+	struct Vertext
+	{
+		float x,y,z,h;
+		float r,g,b,a;
+		float tx,ty;
+	};
+	float width=dx,height=dy;
+	Vertext vertices[4] =
+	{
+		{x,			y,			1,	1, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
+		{x+width,	y,			1,	1, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
+		{x+width,	y+height,	1,	1, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
+		{x,			y+height,	1,	1, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
+	};
+#endif
+	D3DXMATRIX ident;
+	D3DXMatrixIdentity(&ident);
+	m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
+	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
+	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+
+    m_pd3dDevice->SetVertexShader(NULL);
+    m_pd3dDevice->SetPixelShader(NULL);
+	m_pd3dDevice->SetVertexDeclaration(m_pBufferVertexDecl);
+
+#ifndef XBOX
+	m_pd3dDevice->SetTransform(D3DTS_VIEW,&ident);
+	m_pd3dDevice->SetTransform(D3DTS_WORLD,&ident);
+	m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&ident);
+#endif
+	m_pd3dDevice->SetTexture(0,texture);
+    m_pd3dDevice->SetTextureStageState(0,D3DTSS_COLOROP, D3DTOP_MODULATE);
+    m_pd3dDevice->SetTextureStageState(0,D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
+
+
+	SAFE_RELEASE(m_pBufferVertexDecl);
+	return S_OK;
 }

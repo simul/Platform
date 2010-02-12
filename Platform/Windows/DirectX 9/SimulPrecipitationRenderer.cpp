@@ -29,8 +29,8 @@
 
 #include "Simul/Base/SmartPtr.h"
 #include "Macros.h"
-#include "Resources.h"
 #include "CreateDX9Effect.h"
+#include "Resources.h"
 
 typedef std::basic_string<TCHAR> tstring;
 
@@ -90,10 +90,10 @@ HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	};
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
-	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,_T("simul_rain.fx")));
+	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,"simul_rain.fx"));
 
 	SAFE_RELEASE(rain_texture);
-	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,_T("Media/Textures/Rain.jpg"),&rain_texture));
+	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/Rain.jpg",&rain_texture));
 
 	m_hTechniqueRain	=m_pRainEffect->GetTechniqueByName("simul_rain");
 	worldViewProj		=m_pRainEffect->GetParameterByName(NULL,"worldViewProj");

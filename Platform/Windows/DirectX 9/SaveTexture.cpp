@@ -8,45 +8,45 @@ simul::base::IniFile ini("atmospherics.ini");
 #include <string>
 #include <d3dx9.h>
 #include <dxerr9.h>
-typedef std::basic_string<TCHAR> tstring;
 extern void RenderScene(IDirect3DDevice9* pd3dDevice);
 
-static bool FileExists(const tstring& strFilename)
+static bool FileExists(const std::string& strFilename)
 {
-    FILE* pFile = _tfopen(strFilename.c_str( ),_T("r"));
+    FILE* pFile = fopen(strFilename.c_str( ), "r");
     bool bExists = (pFile != NULL);
     if (pFile)
         fclose(pFile);
     return bExists;
 }
-void SaveTexture(LPDIRECT3DTEXTURE9 ldr_buffer_texture,const TCHAR *txt)
+void SaveTexture(LPDIRECT3DTEXTURE9 ldr_buffer_texture,const char *txt)
 {
-	tstring path;//=simul::base::StringToWString(ini.GetValue("Options","ScreenshotPath"));
-	if(path==_T(""))
+	std::string path=ini.GetValue("Options","ScreenshotPath");
+	if(path=="")
 	{
-		path=_T(".");
+		path=".";
 	}
-	tstring filename=path+_T("\\");
+	std::string filename=path+"\\";
 	filename+=txt;
-	filename+=_T(".jpg");
+	filename+=".jpg";
 	int number=0;
 	while(FileExists(filename))
 	{
 		number++;
-		filename=path+_T("\\");
+		filename=path+"\\";
 		filename+=txt;
-		TCHAR number_text[10];
-		_stprintf_s(number_text,10,_T("%d"),number);
+		char number_text[10];
+		sprintf_s(number_text,10,"%d",number);
 		filename+=number_text;
-		filename+=_T(".jpg");
+		filename+=".jpg";
 	}
-	HRESULT hr=D3DXSaveTextureToFile(filename.c_str(),D3DXIFF_JPG,
-										ldr_buffer_texture,
-										NULL);
+	HRESULT hr=D3DXSaveTextureToFile(simul::base::StringToWString(filename).c_str(),
+												D3DXIFF_JPG,
+												ldr_buffer_texture,
+												NULL);
 	V_CHECK(hr);
 }
 
-void Screenshot(IDirect3DDevice9* pd3dDevice,const _TCHAR *txt)
+void Screenshot(IDirect3DDevice9* pd3dDevice,const char *txt)
 {
 	HRESULT hr=S_OK;
     if(!SUCCEEDED(pd3dDevice->BeginScene()))
@@ -71,7 +71,7 @@ void Screenshot(IDirect3DDevice9* pd3dDevice,const _TCHAR *txt)
 	hr=pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
 	pd3dDevice->SetRenderTarget(0,pRenderTarget);
 
-	//RenderScene(pd3dDevice);
+	RenderScene(pd3dDevice);
 	//SetViewPortHelper(0,0,backBufferDesc.Width,backBufferDesc.Height,pd3dDevice);
 	pd3dDevice->EndScene();
 	pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);

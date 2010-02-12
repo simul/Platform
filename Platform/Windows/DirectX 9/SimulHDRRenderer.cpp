@@ -22,6 +22,7 @@
 	#include <string>
 	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #endif
+#include "CreateDX9Effect.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Clouds/CloudInterface.h"
@@ -32,7 +33,6 @@
 #include "SimulSkyRenderer.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/RandomNumberGenerator.h"
-#include "CreateDX9Effect.h"
 #include "Macros.h"
 #include "SimulAtmosphericsRenderer.h"
 #include "Resources.h"
@@ -72,12 +72,11 @@ HRESULT SimulHDRRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	m_pd3dDevice=dev;
 	HRESULT hr;
 	if(!m_pTonemapEffect)
-
 #ifdef  MONTE_CARLO_BLUR
 	{
 		char blur_size[20];
 		sprintf_s(blur_size,20,"%d",BLUR_SIZE);
-		V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,_T("gamma.fx"),1,"BLUR_SIZE",blur_size));
+		V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,"gamma.fx",1,"BLUR_SIZE",blur_size));
 	}
 #else
 		V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,IDR_GAMMA));
@@ -261,7 +260,7 @@ HRESULT SimulHDRRenderer::CreateBuffers()
 	// Try creating a depth texture
 	if(fmtDepthTex!=D3DFMT_UNKNOWN)
 	{
-		V_CHECK((m_pd3dDevice->CreateTexture(BufferWidth,
+		/*V_CHECK((m_pd3dDevice->CreateTexture(BufferWidth,
 										BufferHeight,
 										1,
 										D3DUSAGE_DEPTHSTENCIL,
@@ -269,7 +268,7 @@ HRESULT SimulHDRRenderer::CreateBuffers()
 										D3DPOOL_DEFAULT,
 										&buffer_depth_texture,
 										NULL
-									)));
+									)));*/
 		hr=S_OK;
 	}
 	SAFE_RELEASE(m_pHDRRenderTarget);
@@ -311,7 +310,6 @@ LPDIRECT3DSURFACE9 SimulHDRRenderer::MakeRenderTarget(const LPDIRECT3DTEXTURE9 p
 
 HRESULT SimulHDRRenderer::StartRender()
 {
-	fade_applied=false;
 	PIXBeginNamedEvent(0,"HDR Render");
 	HRESULT hr=S_OK;
 	m_pLDRRenderTarget		=NULL;
@@ -339,7 +337,7 @@ HRESULT SimulHDRRenderer::RenderBrightpass()
 	// Use the hdr buffer to make the brightpass:
 	m_pBrightpassRenderTarget=MakeRenderTarget(brightpass_buffer_texture);
 	m_pd3dDevice->SetRenderTarget(0,m_pBrightpassRenderTarget);
-	V_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFFFF0000,depth_start, 0L));
+	V_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L));
 	m_pTonemapEffect->SetTechnique(BrightpassTechnique);
 	brightpassThreshold	=m_pTonemapEffect->GetParameterByName(NULL,"brightpassThreshold");
 	brightPassOffsets	=m_pTonemapEffect->GetParameterByName(NULL,"brightpassOffsets");
@@ -381,7 +379,7 @@ HRESULT SimulHDRRenderer::RenderBloom()
 	LPDIRECT3DSURFACE9	BloomRenderTarget;
 	BloomRenderTarget=MakeRenderTarget(bloom_texture);
 	m_pd3dDevice->SetRenderTarget(0,BloomRenderTarget);
-	V_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFFFFFF00,depth_start, 0L));
+	V_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L));
 	m_pTonemapEffect->SetTechnique(BlurTechnique);
 	bloomOffsets	=m_pTonemapEffect->GetParameterByName(NULL,"bloomOffsets");
 	bloomWeights	=m_pTonemapEffect->GetParameterByName(NULL,"bloomWeights");
@@ -472,17 +470,16 @@ HRESULT SimulHDRRenderer::ApplyFade()
 	if(!atmospherics)
 		return hr;
 	PIXBeginNamedEvent(0,"Apply Fade");
-		atmospherics->SetInputTextures(hdr_buffer_texture,buffer_depth_texture);
-		m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
-		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
-		SAFE_RELEASE(m_pFadedRenderTarget)
-		m_pFadedRenderTarget=MakeRenderTarget(faded_texture);
-		m_pd3dDevice->SetRenderTarget(0,m_pFadedRenderTarget);
-		V_RETURN(atmospherics->Render());
-		if(m_pBufferDepthSurface)
-			m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
+	atmospherics->SetInputTextures(hdr_buffer_texture,buffer_depth_texture);
+	m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
+	m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
+	SAFE_RELEASE(m_pFadedRenderTarget)
+	m_pFadedRenderTarget=MakeRenderTarget(faded_texture);
+	m_pd3dDevice->SetRenderTarget(0,m_pFadedRenderTarget);
+	V_RETURN(atmospherics->Render());
+	if(m_pBufferDepthSurface)
+		m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
 	PIXEndNamedEvent();
-	fade_applied=true;
 	return hr;
 }
 
@@ -502,18 +499,17 @@ HRESULT SimulHDRRenderer::FinishRender()
 //	RenderBrightpass();
 	// Use the brightpass to create the blurred bloom texture/
 	//RenderBloom();
+
 	// using gamma, render the hdr image to the LDR buffer:
 	m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
 	m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
 	m_pOldRenderTarget->GetDesc(&desc);
 
+	V_RETURN(m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L));
 	m_pTonemapEffect->SetTechnique(GammaTechnique);
 	V_RETURN(m_pTonemapEffect->SetFloat(Exposure,exposure*exposure_multiplier));
 	V_RETURN(m_pTonemapEffect->SetFloat(Gamma,gamma));
-	if(fade_applied)
-		V_RETURN(m_pTonemapEffect->SetTexture(hdrTexture,faded_texture))
-	else
-		V_RETURN(m_pTonemapEffect->SetTexture(hdrTexture,hdr_buffer_texture))
+	V_RETURN(m_pTonemapEffect->SetTexture(hdrTexture,faded_texture));
 	V_RETURN(m_pTonemapEffect->SetTexture(bloomTexture,bloom_texture));
 
 	RenderBufferToCurrentTarget(desc.Width,desc.Height,true);
@@ -522,7 +518,7 @@ HRESULT SimulHDRRenderer::FinishRender()
 	SAFE_RELEASE(m_pOldDepthSurface)
 	SAFE_RELEASE(m_pLDRRenderTarget)
 	PIXEndNamedEvent();
-	//V_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L));
+	V_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L));
 	PIXEndNamedEvent();
 	return hr;
 }

@@ -25,6 +25,7 @@
 	static tstring filepath=TEXT("");
 	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #endif
+#include "CreateDX9Effect.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Clouds/CloudInterface.h"
@@ -35,7 +36,6 @@
 #include "SimulSkyRenderer.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/RandomNumberGenerator.h"
-#include "CreateDX9Effect.h"
 #include "Macros.h"
 #include "Resources.h"
 
@@ -77,8 +77,7 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer() :
 	skyInterface(NULL),
 	overcast_factor(0.f),
 	fade_interp(0.f),
-	input_texture(NULL),
-	depth_texture(NULL)
+	altitude_tex_coord(0.f)
 {
 }
 
@@ -87,11 +86,12 @@ HRESULT SimulAtmosphericsRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	m_pd3dDevice=dev;
 	HRESULT hr;
 	SAFE_RELEASE(effect);
-	V_RETURN(CreateDX9Effect(m_pd3dDevice,effect,_T("atmospherics.fx")));
+	V_RETURN(CreateDX9Effect(m_pd3dDevice,effect,"atmospherics.fx"));
 
 	technique			=effect->GetTechniqueByName("simul_atmospherics");
 	
 	invViewProj			=effect->GetParameterByName(NULL,"invViewProj");
+	altitudeTexCoord	=effect->GetParameterByName(NULL,"altitudeTexCoord");
 	lightDir			=effect->GetParameterByName(NULL,"lightDir");
 	MieRayleighRatio	=effect->GetParameterByName(NULL,"MieRayleighRatio");
 	HazeEccentricity	=effect->GetParameterByName(NULL,"HazeEccentricity");
@@ -149,8 +149,6 @@ void SimulAtmosphericsRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX
 
 HRESULT SimulAtmosphericsRenderer::Render()
 {
-	static int count=0;
-	count++;
 	HRESULT hr=S_OK;
 	
 //  outpos=mul(wvp,pos);
@@ -159,6 +157,7 @@ HRESULT SimulAtmosphericsRenderer::Render()
 // ((view*proj)')inv output=pos
 	D3DXMATRIX vpt;
 	D3DXMATRIX viewproj;
+	view._41=view._42=view._43=0;
 	D3DXMatrixMultiply(&viewproj, &view,&proj);
 	D3DXMatrixTranspose(&vpt,&viewproj);
 	D3DXMATRIX ivp;
@@ -171,6 +170,7 @@ HRESULT SimulAtmosphericsRenderer::Render()
 	hr=effect->SetTexture(imageTexture,input_texture);
 	hr=effect->SetTexture(depthTexture,depth_texture);
 
+	hr=effect->SetFloat(altitudeTexCoord,altitude_tex_coord);
 	if(skyInterface)
 	{
 		hr=effect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
@@ -188,6 +188,7 @@ HRESULT SimulAtmosphericsRenderer::Render()
 
 	hr=effect->SetTexture(inscatterTexture1,inscatter_texture_1);
 	hr=effect->SetTexture(inscatterTexture2,inscatter_texture_2);
+	
 
 
 #ifdef XBOX

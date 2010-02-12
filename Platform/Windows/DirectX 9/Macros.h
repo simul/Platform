@@ -8,7 +8,7 @@
 	#ifndef SAFE_RELEASE
 		#define SAFE_RELEASE(p)		{ if(p) { (p)->Release(); (p)=NULL; } }
 	#endif
-#ifdef _UNICODE
+#if 1
 
 	#define WIDEN2(x) L ## x
 	#define WIDEN(x) WIDEN2(x)
@@ -34,7 +34,7 @@
 		#define V_CHECK(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_RETURN error "<<hr<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl; } }
 	#endif
 	#ifndef V_FAIL
-		#define V_FAIL(msg)	{ std::cerr<<"V_RETURN error "<<msg<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl; DebugBreak(); }
+		#define V_FAIL(msg)	{ ::cerr<<"V_RETURN error "<<msg<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl; DebugBreak(); }
 	#endif
 #endif
 	#ifndef SAFE_DELETE
