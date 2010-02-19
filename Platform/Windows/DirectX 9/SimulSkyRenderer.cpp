@@ -64,9 +64,9 @@ SimulSkyRenderer::SimulSkyRenderer() :
 	skyNode=new simul::sky::SkyNode();
 	skyInterface=skyNode.get();
 	skyNode->SetMieWavelengthExponent(0.f);
-	fadeTable=new simul::sky::AltitudeFadeTable(skyInterface,0,512,512,32,200.f);
+	fadeTable=new simul::sky::AltitudeFadeTable(skyInterface,0,128,128,32,200.f);
 	fadeTable->SetEarthTest(true);
-	skyNode->SetTimeMultiplier(10.f);
+	skyNode->SetTimeMultiplier(1.f);
 	skyNode->SetHourOfTheDay(11.f);
 	skyNode->SetSunIrradiance(simul::sky::float4(25,25,25,0));
 	skyNode->SetHazeScaleHeightKm(2.f);

@@ -18,7 +18,7 @@ static bool FileExists(const std::string& strFilename)
         fclose(pFile);
     return bExists;
 }
-void SaveTexture(LPDIRECT3DTEXTURE9 ldr_buffer_texture,const char *txt)
+void SaveTexture(LPDIRECT3DTEXTURE9 ldr_buffer_texture,const char *txt,bool as_dds)
 {
 	std::string path=ini.GetValue("Options","ScreenshotPath");
 	if(path=="")
@@ -27,7 +27,10 @@ void SaveTexture(LPDIRECT3DTEXTURE9 ldr_buffer_texture,const char *txt)
 	}
 	std::string filename=path+"\\";
 	filename+=txt;
-	filename+=".jpg";
+	if(as_dds)
+		filename+=".dds";
+	else
+		filename+=".jpg";
 	int number=0;
 	while(FileExists(filename))
 	{
@@ -37,10 +40,13 @@ void SaveTexture(LPDIRECT3DTEXTURE9 ldr_buffer_texture,const char *txt)
 		char number_text[10];
 		sprintf_s(number_text,10,"%d",number);
 		filename+=number_text;
-		filename+=".jpg";
+		if(as_dds)
+			filename+=".dds";
+		else
+			filename+=".jpg";
 	}
 	HRESULT hr=D3DXSaveTextureToFile(simul::base::StringToWString(filename).c_str(),
-												D3DXIFF_JPG,
+												as_dds?D3DXIFF_DDS:D3DXIFF_JPG,
 												ldr_buffer_texture,
 												NULL);
 	V_CHECK(hr);
@@ -75,7 +81,7 @@ void Screenshot(IDirect3DDevice9* pd3dDevice,const char *txt)
 	//SetViewPortHelper(0,0,backBufferDesc.Width,backBufferDesc.Height,pd3dDevice);
 	pd3dDevice->EndScene();
 	pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
-	SaveTexture(ldr_buffer_texture,txt);
+	SaveTexture(ldr_buffer_texture,txt,false);
 	SAFE_RELEASE(ldr_buffer_texture);
 	SAFE_RELEASE(pRenderTarget);
 	SAFE_RELEASE(m_pOldRenderTarget);
