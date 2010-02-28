@@ -41,6 +41,7 @@ public:
 	float GetTiming() const;
 	//! Set the atmospherics renderer - null means no post-process fade.
 	void SetAtmospherics(class SimulAtmosphericsInterface *a){atmospherics=a;}
+	void SetBufferSize(int w,int h);
 protected:
 	HRESULT Destroy();
 	//! The size of the 2D buffer the sky is rendered to.

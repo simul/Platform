@@ -65,10 +65,6 @@ public:
 	{
 		exposure=f;
 	}
-	void SetOvercastFactor(float f)
-	{
-		overcast_factor=f;
-	}
 protected:
 	HRESULT Destroy();
 	std::string filename;
@@ -86,7 +82,6 @@ protected:
 	D3DXHANDLE				eyePosition;
 	D3DXHANDLE				fadeInterp;
 	D3DXHANDLE				cloudInterp;
-	D3DXHANDLE				overcast;
 	D3DXHANDLE				exposureParam;
 	D3DXHANDLE				sunlightColour;
 	D3DXHANDLE				ambientColour;
@@ -110,6 +105,5 @@ D3DXHANDLE cloudLightVector;
 	float fade_interp;
 	float cloud_interp;
 	float exposure;
-	float overcast_factor;
 	float ambient_light[4];
 };

@@ -49,10 +49,6 @@ public:
 	void SetCloudTextures(LPDIRECT3DVOLUMETEXTURE9 *t){cloud_textures=t;}
 	void SetSkyInterface(simul::sky::SkyInterface *si){skyInterface=si;}
 	simul::terrain::HeightMapInterface *GetHeightMapInterface();
-	void SetOvercastFactor(float of)
-	{
-		overcast_factor=of;
-	}
 	void SetCloudScales(const float *s)
 	{
 		cloud_scales[0]=s[0];
@@ -104,7 +100,6 @@ protected:
 	D3DXHANDLE				lightDirection;
 	D3DXHANDLE				MieRayleighRatio;
 	D3DXHANDLE				hazeEccentricity;
-	D3DXHANDLE				overcastFactor;
 	D3DXHANDLE				cloudScales;
 	D3DXHANDLE				cloudOffset;
 	D3DXHANDLE				cloudInterp;
@@ -174,7 +169,6 @@ protected:
 
 	Terrain2D tiles;
 	int TilePosToIndex(int i,int j,int x,int y) const;
-	float overcast_factor;
 
 	float cloud_scales[3];
 	float cloud_offset[3];

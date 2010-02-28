@@ -76,7 +76,9 @@ HRESULT SimulHDRRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	{
 		char blur_size[20];
 		sprintf_s(blur_size,20,"%d",BLUR_SIZE);
-		V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,"gamma.fx",1,"BLUR_SIZE",blur_size));
+		std::map<std::string,std::string> defines;
+		defines["BLUR_SIZE"]=blur_size;
+		V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,"gamma.fx",defines));
 	}
 #else
 		V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,IDR_GAMMA));
@@ -146,6 +148,12 @@ HRESULT SimulHDRRenderer::IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT Adapt
     return hr;
 }
 
+void SimulHDRRenderer::SetBufferSize(int w,int h)
+{
+	BufferWidth=w;
+	BufferHeight=h;
+}
+
 HRESULT SimulHDRRenderer::CreateBuffers()
 {
 	HRESULT hr=S_OK;
@@ -164,44 +172,44 @@ HRESULT SimulHDRRenderer::CreateBuffers()
 #endif
 	V_RETURN(CanUseTexFormat(m_pd3dDevice,hdr_format));
 	V_RETURN(m_pd3dDevice->CreateTexture(	BufferWidth,
-										BufferHeight,
-										1,
-										D3DUSAGE_RENDERTARGET,
-										hdr_format,
-										D3DPOOL_DEFAULT,
-										&hdr_buffer_texture,
-										NULL
-									));
+											BufferHeight,
+											1,
+											D3DUSAGE_RENDERTARGET,
+											hdr_format,
+											D3DPOOL_DEFAULT,
+											&hdr_buffer_texture,
+											NULL
+										));
 	SAFE_RELEASE(faded_texture);
 	V_RETURN(m_pd3dDevice->CreateTexture(	BufferWidth,
-										BufferHeight,
-										1,
-										D3DUSAGE_RENDERTARGET,
-										hdr_format,
-										D3DPOOL_DEFAULT,
-										&faded_texture,
-										NULL
-									));
+											BufferHeight,
+											1,
+											D3DUSAGE_RENDERTARGET,
+											hdr_format,
+											D3DPOOL_DEFAULT,
+											&faded_texture,
+											NULL
+										));
 	SAFE_RELEASE(brightpass_buffer_texture);
 	V_RETURN(m_pd3dDevice->CreateTexture(	BufferWidth/4,
-										BufferHeight/4,
-										1,
-										D3DUSAGE_RENDERTARGET,
-										hdr_format,
-										D3DPOOL_DEFAULT,
-										&brightpass_buffer_texture,
-										NULL
-									));
+											BufferHeight/4,
+											1,
+											D3DUSAGE_RENDERTARGET,
+											hdr_format,
+											D3DPOOL_DEFAULT,
+											&brightpass_buffer_texture,
+											NULL
+										));
 	SAFE_RELEASE(bloom_texture);
 	V_RETURN(m_pd3dDevice->CreateTexture(	BufferWidth/4,
-										BufferHeight/4,
-										1,
-										D3DUSAGE_RENDERTARGET,
-										hdr_format,
-										D3DPOOL_DEFAULT,
-										&bloom_texture,
-										NULL
-									));
+											BufferHeight/4,
+											1,
+											D3DUSAGE_RENDERTARGET,
+											hdr_format,
+											D3DPOOL_DEFAULT,
+											&bloom_texture,
+											NULL
+										));
 	
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 

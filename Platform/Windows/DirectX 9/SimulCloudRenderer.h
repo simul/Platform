@@ -121,24 +121,25 @@ public:
 		return noise_texture;
 	}
 	HRESULT RenderDistances();
-	// implementing CloudRenderCallback:
-	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
-	void FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
-	void CycleTexturesForward();
 	void SetAltitudeTextureCoordinate(float f)
 	{
 		altitude_tex_coord=f;
 	}
+	void EnableFilter(bool f);
+	// implementing CloudRenderCallback:
+	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
+	void FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
+	void CycleTexturesForward();
 protected:
 	float altitude_tex_coord;
 	bool y_vertical;
 	float sun_occlusion;
 	float detail;
 	simul::clouds::CloudInterface *cloudInterface;
-	simul::clouds::CloudKeyframer *cloudKeyframer;
+	simul::base::SmartPtr<simul::clouds::CloudKeyframer> cloudKeyframer;
+	simul::base::SmartPtr<simul::clouds::CloudGeometryHelper> helper;
 	simul::sky::SkyInterface *skyInterface;
 	simul::sky::FadeTableInterface *fadeTableInterface;
-	simul::base::SmartPtr<simul::clouds::CloudGeometryHelper> helper;
 	simul::sound::fmod::NodeSound *sound;
 	unsigned texel_index[4];
 	bool lightning_active;
@@ -169,7 +170,6 @@ protected:
 	D3DXHANDLE hazeEccentricity;
 	D3DXHANDLE cloudEccentricity;
 	D3DXHANDLE fadeInterp;
-	D3DXHANDLE overcast;
 	D3DXHANDLE distance;
 	D3DXHANDLE cornerPos;
 	D3DXHANDLE texScales;

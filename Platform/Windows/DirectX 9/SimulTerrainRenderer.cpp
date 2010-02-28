@@ -198,7 +198,6 @@ HRESULT SimulTerrainRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	lightDirection		=m_pTerrainEffect->GetParameterByName(NULL,"lightDir");
 	MieRayleighRatio	=m_pTerrainEffect->GetParameterByName(NULL,"MieRayleighRatio");
 	hazeEccentricity	=m_pTerrainEffect->GetParameterByName(NULL,"HazeEccentricity");
-	overcastFactor		=m_pTerrainEffect->GetParameterByName(NULL,"overcastFactor");
 	cloudScales			=m_pTerrainEffect->GetParameterByName(NULL,"cloudScales");
 	cloudOffset			=m_pTerrainEffect->GetParameterByName(NULL,"cloudOffset");
 	cloudInterp			=m_pTerrainEffect->GetParameterByName(NULL,"cloudInterp");
@@ -221,7 +220,7 @@ HRESULT SimulTerrainRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 
 	int num_vertices=heightMapInterface->GetPageSize()*heightMapInterface->GetPageSize();
 	if(skyInterface)
-		dir_to_sun=(const float*)skyInterface->GetDirectionToSun();
+		dir_to_sun=(const float*)skyInterface->GetDirectionToLight();
 	int grid=heightMapInterface->GetPageSize();
 
 	SAFE_RELEASE(vertexBuffer);
@@ -351,7 +350,7 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 	if(skyInterface)
 	{
 		D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
-		D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
+		D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 	//if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 
@@ -365,7 +364,6 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 		m_pTerrainEffect->SetVector	(lightColour		,(const D3DXVECTOR4 *)(&light_colour));
 		m_pTerrainEffect->SetVector	(ambientColour		,(const D3DXVECTOR4 *)(&ambient_colour));
 	}
-	m_pTerrainEffect->SetFloat	(overcastFactor		,overcast_factor);
 	m_pTerrainEffect->SetVector	(cloudScales		,(const D3DXVECTOR4 *)(cloud_scales));
 	m_pTerrainEffect->SetVector	(cloudOffset		,(const D3DXVECTOR4 *)(cloud_offset));
 	m_pTerrainEffect->SetFloat	(cloudInterp		,cloud_interp);

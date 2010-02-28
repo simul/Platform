@@ -63,7 +63,6 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer() :
 	MieRayleighRatio(NULL),
 	HazeEccentricity(NULL),
 	fadeInterp(NULL),
-	overcastFactor(NULL),
 	imageTexture(NULL),
 	depthTexture(NULL),
 	lossTexture1(NULL),
@@ -75,7 +74,6 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer() :
 	inscatter_texture_1(NULL),
 	inscatter_texture_2(NULL),
 	skyInterface(NULL),
-	overcast_factor(0.f),
 	fade_interp(0.f),
 	altitude_tex_coord(0.f)
 {
@@ -96,7 +94,6 @@ HRESULT SimulAtmosphericsRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	MieRayleighRatio	=effect->GetParameterByName(NULL,"MieRayleighRatio");
 	HazeEccentricity	=effect->GetParameterByName(NULL,"HazeEccentricity");
 	fadeInterp			=effect->GetParameterByName(NULL,"fadeInterp");
-	overcastFactor		=effect->GetParameterByName(NULL,"overcastFactor");
 	imageTexture		=effect->GetParameterByName(NULL,"imageTexture");
 	depthTexture		=effect->GetParameterByName(NULL,"depthTexture");
 	lossTexture1		=effect->GetParameterByName(NULL,"lossTexture1");
@@ -165,7 +162,6 @@ HRESULT SimulAtmosphericsRenderer::Render()
 
 	hr=effect->SetMatrix(invViewProj,&ivp);
 	hr=effect->SetFloat(fadeInterp,fade_interp);
-	hr=effect->SetFloat(overcastFactor,overcast_factor);
 
 	hr=effect->SetTexture(imageTexture,input_texture);
 	hr=effect->SetTexture(depthTexture,depth_texture);
@@ -175,7 +171,7 @@ HRESULT SimulAtmosphericsRenderer::Render()
 	{
 		hr=effect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
 		D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
-		D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
+		D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 		//if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 

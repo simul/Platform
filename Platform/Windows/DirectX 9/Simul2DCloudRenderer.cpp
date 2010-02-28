@@ -136,7 +136,6 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	image_texture(NULL),
 	cloud_texel_index(0),
 	texture_scale(0.25f),
-	overcast_factor(0.f),
 	texture_complete(false)
 {
 	D3DXMatrixIdentity(&world);
@@ -401,14 +400,14 @@ HRESULT Simul2DCloudRenderer::FillInCloudTextures()
 		// ARGB however, is 8,0,4,12
 		SetBits8();
 		skyInterface->SetDaytime(interp_time_1+i*interp_step_time);
-		cloudInterface->ReLight(simul::math::Vector3(skyInterface->GetDirectionToSun()));
+		cloudInterface->ReLight(simul::math::Vector3(skyInterface->GetDirectionToLight()));
 
 		if(!simul::clouds::TextureGenerator::Make2DCloudTexture(cloudInterface,(unsigned char *)(lockedBox.pBits)))
 			return S_FALSE;
 		hr=cloud_textures[i]->UnlockRect(0);
 	}
 	skyInterface->SetDaytime(interp_time_1+2*interp_step_time);
-	next_sun_direction=simul::math::Vector3(skyInterface->GetDirectionToSun());
+	next_sun_direction=simul::math::Vector3(skyInterface->GetDirectionToLight());
 	cloudInterface->SetLightDirection(next_sun_direction);
 	skyInterface->SetDaytime(current_time);
 	return hr;
@@ -447,7 +446,7 @@ void Simul2DCloudRenderer::Update(float dt)
 
 		// Get the sun direction for the next time step:
 		skyInterface->SetDaytime(interp_time_1+2*interp_step_time);
-		next_sun_direction=simul::math::Vector3(skyInterface->GetDirectionToSun());
+		next_sun_direction=simul::math::Vector3(skyInterface->GetDirectionToLight());
 		cloudInterface->SetLightDirection(next_sun_direction);
 		skyInterface->SetDaytime(current_time);
 		cloudInterface->StartMarching();
@@ -595,7 +594,7 @@ static float light_mult=.05f;
 												cloudInterface->GetAnisotropicLightResponse(),
 												0,
 												light_mult*cloudInterface->GetSecondaryLightResponse());
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToSun();
+	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 //	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	simul::sky::float4 sky_light_colour=skyInterface->GetSkyColour(simul::sky::float4(0,0,1,0),alt_km);
@@ -608,7 +607,7 @@ static float light_mult=.05f;
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->Set2DNoiseTexturing(-0.8f,1.f);
 	helper->MakeGeometry(cloudInterface);
-	helper->CalcInscatterFactors(cloudInterface,skyInterface,fadeTableInterface,overcast_factor);
+	helper->CalcInscatterFactors(cloudInterface,skyInterface,fadeTableInterface,0.f);
 	float image_scale=1.f/texture_scale;
 	simul::math::Vector3 wind_offset=cloudInterface->GetWindOffset();
 	// Make the angular inscatter multipliers:

@@ -28,17 +28,19 @@
 #include "Macros.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/SkyNode.h"
+#include "Simul/Sky/ColourSkyNode.h"
 #include "Simul/Sky/AltitudeFadeTable.h"
+#include "Simul/Sky/ColourFadeTable.h"
 #include "Simul/Sky/TextureGenerator.h"
+#include "Simul/Base/Timer.h"
 #include "Resources.h"
 
-SimulSkyRenderer::SimulSkyRenderer() :
+SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky) :
 	skyTexSize(0),
 	fadeTexWidth(0),
 	fadeTexHeight(0),
 	skyTexIndex(0),
 	numAltitudes(0),
-	overcast_factor(0.f),
 	m_pVtxDecl(NULL),
 	m_pSkyEffect(NULL),
 	m_hTechniqueSky(NULL),	
@@ -60,24 +62,33 @@ SimulSkyRenderer::SimulSkyRenderer() :
 		inscatter_textures[i]=NULL;
 		loss_textures_3d[i]=NULL;
 		inscatter_textures_3d[i]=NULL;
+		sunlight_textures[i]=NULL;
 	}
-	skyNode=new simul::sky::SkyNode();
-	skyInterface=skyNode.get();
-	skyNode->SetMieWavelengthExponent(0.f);
-	fadeTable=new simul::sky::AltitudeFadeTable(skyInterface,0,128,128,32,200.f);
-	fadeTable->SetEarthTest(true);
-	skyNode->SetTimeMultiplier(1.f);
-	skyNode->SetHourOfTheDay(11.f);
-	skyNode->SetSunIrradiance(simul::sky::float4(25,25,25,0));
-	skyNode->SetHazeScaleHeightKm(2.f);
-	skyNode->SetHazeBaseHeightKm(4.f);
+	if(UseColourSky)
+		skyNode=new simul::sky::ColourSkyNode();
+	else
+		skyNode=new simul::sky::SkyNode();
+	skyInterface		=dynamic_cast<simul::sky::SkyInterface*>(skyNode.get());
+	simul::sky::ColourSky *colourSky=dynamic_cast<simul::sky::ColourSky*>(skyNode.get());
+//	skyInterface->SetMieWavelengthExponent(0.f);
+	if(UseColourSky)
+		fadeTable=new simul::sky::ColourFadeTable(colourSky,skyInterface,0,512,512,32,200.f);
+	else
+		fadeTable=new simul::sky::AltitudeFadeTable(skyInterface,0,512,512,32,200.f);
+	fadeTableInterface	=dynamic_cast<simul::sky::FadeTableInterface*>(fadeTable.get());
+//	fadeTableInterface->SetNumAltitudes(4);
+	fadeTableInterface->SetEarthTest(false);
+	skyInterface->SetDaytime(.5f);
+	skyInterface->SetSunIrradiance(simul::sky::float4(25,25,25,0));
+//	skyInterface->SetHazeScaleHeightKm(2.f);
+//	skyInterface->SetHazeBaseHeightKm(4.f);
 	cam_pos.x=cam_pos.z=0;
 	cam_pos.y=400.f;
 }
 
 void SimulSkyRenderer::SetStepsPerDay(unsigned steps)
 {
-	fadeTable->SetStepsPerDay((float)steps);
+//	fadeTable->SetStepsPerDay((float)steps);
 }
 
 simul::sky::SkyInterface *SimulSkyRenderer::GetSkyInterface()
@@ -86,6 +97,11 @@ simul::sky::SkyInterface *SimulSkyRenderer::GetSkyInterface()
 }
 
 simul::sky::FadeTableInterface *SimulSkyRenderer::GetFadeTableInterface()
+{
+	return fadeTableInterface;
+}
+
+simul::sky::InterpolatedFadeTable *SimulSkyRenderer::GetFadeTable()
 {
 	return fadeTable.get();
 }
@@ -129,7 +145,6 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	lightDirection		=m_pSkyEffect->GetParameterByName(NULL,"lightDir");
 	MieRayleighRatio	=m_pSkyEffect->GetParameterByName(NULL,"MieRayleighRatio");
 	hazeEccentricity	=m_pSkyEffect->GetParameterByName(NULL,"HazeEccentricity");
-	overcastFactor		=m_pSkyEffect->GetParameterByName(NULL,"overcastFactor");
 	skyInterp			=m_pSkyEffect->GetParameterByName(NULL,"skyInterp");
 	altitudeTexCoord	=m_pSkyEffect->GetParameterByName(NULL,"altitudeTexCoord");
 	
@@ -143,7 +158,7 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	skyTexture2			=m_pSkyEffect->GetParameterByName(NULL,"skyTexture2");
 
 	m_hTechniqueQuery	=m_pSkyEffect->GetTechniqueByName("simul_query");
-	fadeTable->SetCallback(this);
+	fadeTableInterface->SetCallback(this);
 	// CreateSkyTexture() will be called back
 
 	SAFE_RELEASE(flare_texture);
@@ -173,9 +188,11 @@ HRESULT SimulSkyRenderer::InvalidateDeviceObjects()
 		SAFE_RELEASE(inscatter_textures[i]);
 		SAFE_RELEASE(loss_textures_3d[i]);
 		SAFE_RELEASE(inscatter_textures_3d[i]);
+		SAFE_RELEASE(sunlight_textures[i]);
 	}
+	fadeTexWidth=fadeTexHeight=numAltitudes=0;
 	SAFE_RELEASE(d3dQuery);
-	fadeTable->SetCallback(NULL);
+	fadeTableInterface->SetCallback(NULL);
 	return hr;
 }
 
@@ -183,7 +200,7 @@ HRESULT SimulSkyRenderer::Destroy()
 {
 	HRESULT hr=S_OK;
 	InvalidateDeviceObjects();
-	fadeTable->SetCallback(NULL);
+	fadeTableInterface->SetCallback(NULL);
 	return hr;
 }
 
@@ -222,6 +239,46 @@ void SimulSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_
 	hr=tex->UnlockRect(0);
 }
 
+void SimulSkyRenderer::FillSunlightTexture(int texture_index,int texel_index,int num_texels,const float *float4_array)
+{
+	HRESULT hr;
+	LPDIRECT3DTEXTURE9 tex=NULL;
+	tex=sunlight_textures[texture_index];
+	if(!tex)
+		return;
+	D3DLOCKED_RECT lockedRect={0};
+	if(FAILED(hr=tex->LockRect(0,&lockedRect,NULL,NULL)))
+		return;
+	if(sky_tex_format==D3DFMT_A16B16G16R16F)
+	{
+		// Convert the array of floats into float16 values for the texture.
+		short *short_ptr=(short *)(lockedRect.pBits);
+		short_ptr+=4*texel_index;
+		for(int i=0;i<num_texels*4;i++)
+			*short_ptr++=simul::sky::TextureGenerator::ToFloat16(*float4_array++);
+	}
+	else
+	{
+		// Convert the array of floats into float16 values for the texture.
+		float *float_ptr=(float *)(lockedRect.pBits);
+		float_ptr+=4*texel_index;
+		for(int i=0;i<num_texels*4;i++)
+			*float_ptr++=(*float4_array++);
+	}
+	hr=tex->UnlockRect(0);
+}
+
+void SimulSkyRenderer::SetOvercastFactor(float of)
+{
+	skyInterface->SetOvercast(of);
+}
+
+void SimulSkyRenderer::SetOvercastBaseAndRange(float base_alt_km,float range_km)
+{
+	skyInterface->SetOvercastBaseKm(base_alt_km);
+	skyInterface->SetOvercastRangeKm(range_km);
+}
+
 void SimulSkyRenderer::GetLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LPDIRECT3DBASETEXTURE9 *l2,
 		LPDIRECT3DBASETEXTURE9 *i1,LPDIRECT3DBASETEXTURE9 *i2)
 {
@@ -240,10 +297,9 @@ void SimulSkyRenderer::GetLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LP
 		*i2=inscatter_textures_3d[1];
 	}
 }
-
 float SimulSkyRenderer::GetAltitudeTextureCoordinate() const
 {
-	return fadeTable->GetAltitudeTexCoord();
+	return fadeTableInterface->GetAltitudeTexCoord();
 }
 
 float SimulSkyRenderer::GetFadeInterp() const
@@ -254,7 +310,7 @@ float SimulSkyRenderer::GetFadeInterp() const
 void SimulSkyRenderer::SetSkyTextureSize(unsigned size)
 {
 	skyTexSize=size;
-	CreateSkyTexture();
+	CreateSkyTextures();
 }
 void SimulSkyRenderer::SetFadeTextureSize(unsigned width,unsigned height,unsigned num_alts)
 {
@@ -264,6 +320,7 @@ void SimulSkyRenderer::SetFadeTextureSize(unsigned width,unsigned height,unsigne
 	fadeTexHeight=height;
 	numAltitudes=num_alts;
 	CreateFadeTextures();
+	CreateSunlightTextures();
 }
 
 void SimulSkyRenderer::CreateFadeTextures()
@@ -400,9 +457,12 @@ void SimulSkyRenderer::CycleTexturesForward()
 	std::swap(loss_textures_3d[1],loss_textures_3d[2]);
 	std::swap(inscatter_textures_3d[0],inscatter_textures_3d[1]);
 	std::swap(inscatter_textures_3d[1],inscatter_textures_3d[2]);
+	
+	std::swap(sunlight_textures[0],sunlight_textures[1]);
+	std::swap(sunlight_textures[1],sunlight_textures[2]);
 }
 
-HRESULT SimulSkyRenderer::CreateSkyTexture()
+HRESULT SimulSkyRenderer::CreateSkyTextures()
 {
 	HRESULT hr=S_OK;
 	for(int i=0;i<3;i++)
@@ -424,10 +484,26 @@ HRESULT SimulSkyRenderer::CreateSkyTexture()
 	}
 	return hr;
 }
+HRESULT SimulSkyRenderer::CreateSunlightTextures()
+{
+	HRESULT hr=S_OK;
+	for(int i=0;i<3;i++)
+	{
+		SAFE_RELEASE(sunlight_textures[i]);
+	}
+	for(int i=0;i<3;i++)
+	{
+		if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,numAltitudes,1,1,0,sky_tex_format,d3d_memory_pool,&sunlight_textures[i])))
+			return hr;
+	}
+	return hr;
+}
 
 HRESULT SimulSkyRenderer::CreateSkyEffect()
 {
-	HRESULT hr=CreateDX9Effect(m_pd3dDevice,m_pSkyEffect,"simul_sky.fx",1,"USE_ALTITUDE_INTERPOLATION");
+	std::map<std::string,std::string> defines;
+	defines["USE_ALTITUDE_INTERPOLATION"]="";
+	HRESULT hr=CreateDX9Effect(m_pd3dDevice,m_pSkyEffect,"simul_sky.fx",defines);
 	return hr;
 }
 
@@ -498,6 +574,14 @@ HRESULT SimulSkyRenderer::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radi
 	world._41=cam_pos.x;
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
+	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
+	std::swap(sun_dir.y,sun_dir.z);
+	D3DXVECTOR4 sun2;
+	D3DXVec4Transform(  &sun2,
+						  &sun_dir,
+						  &world);
+	m_pSkyEffect->SetVector	(lightDirection	,&sun2);
+
 	D3DXMatrixMultiply(&tmp1, &world,&view);
 	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
@@ -513,10 +597,10 @@ HRESULT SimulSkyRenderer::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radi
 	float d=w/tan(half_angle_radians);
 	Vertext vertices[4] =
 	{
-		{-w,-w,	d, 0.f	,0.f},
 		{ w,-w,	d, 1.f	,0.f},
 		{ w, w,	d, 1.f	,1.f},
 		{-w, w,	d, 0.f	,1.f},
+		{-w,-w,	d, 0.f	,0.f},
 	};
 	m_pd3dDevice->SetFVF(D3DFVF_XYZ | D3DFVF_TEX0);
 	m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
@@ -540,7 +624,7 @@ void SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 		return;
 	PIXBeginNamedEvent(0,"Sun Occlusion Query");
 	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
-	D3DXVECTOR4 sun_dir(skyNode->GetDirectionToSun());
+	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 	std::swap(sun_dir.y,sun_dir.z);
 	float sun_angular_size=3.14159f/180.f/2.f;
 
@@ -593,7 +677,7 @@ HRESULT SimulSkyRenderer::RenderSun()
 	sunlight*=2700.f;
 	m_pSkyEffect->SetVector(colour	,(D3DXVECTOR4*)(&sunlight));
 	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
-	D3DXVECTOR4 sun_dir(skyNode->GetDirectionToSun());
+	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 	std::swap(sun_dir.y,sun_dir.z);
 	float sun_angular_size=3.14159f/180.f/2.f;
 	HRESULT hr=RenderAngledQuad(sun_dir,sun_angular_size);
@@ -605,19 +689,19 @@ HRESULT SimulSkyRenderer::RenderMoon()
 	float alt_km=0.001f*cam_pos.y;
 	m_pSkyEffect->SetTechnique(m_hTechniquePlanet);
 	m_pSkyEffect->SetTexture(flareTexture,moon_texture);
-	D3DXVECTOR4 sun_dir(skyNode->GetDirectionToSun());
-	std::swap(sun_dir.y,sun_dir.z);
-	m_pSkyEffect->SetVector	(lightDirection	,&sun_dir);
 	float moon_elevation=15.f*3.14159f/180.f;
 	simul::sky::float4 original_irradiance=skyInterface->GetSunIrradiance();
 	// The moon has an albedo of 0.12:
 	simul::sky::float4 moon_colour=0.12f*original_irradiance*skyInterface->GetIsotropicColourLossFactor(alt_km,moon_elevation,1e10f);
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&moon_colour));
 	D3DXVECTOR4 moon_dir(cos(moon_elevation),sin(moon_elevation),0,0);
-	// Make it 5 times bigger than it should be:
-	float moon_angular_size=5*   3.14159f/180.f/2.f;
+	// Make it 2 times bigger than it should be:
+	static float size_mult=2.f;
+	float moon_angular_size=size_mult*   3.14159f/180.f/2.f;
 	// Start the query
 	HRESULT hr=RenderAngledQuad(moon_dir,moon_angular_size);
+	std::swap(moon_dir.y,moon_dir.z);
+//	skyInterface->SetDirectionToMoon((const float*)&moon_dir);
 	return hr;
 }
 
@@ -644,7 +728,7 @@ HRESULT SimulSkyRenderer::RenderFlare(float exposure)
 	m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
 	m_pSkyEffect->SetTexture(flareTexture,flare_texture);
 	float sun_angular_size=3.14159f/180.f/2.f;
-	D3DXVECTOR4 sun_dir(skyNode->GetDirectionToSun());
+	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 	std::swap(sun_dir.y,sun_dir.z);
 	if(magnitude>0.f)
 		hr=RenderAngledQuad(sun_dir,sun_angular_size*20.f);
@@ -689,15 +773,14 @@ HRESULT SimulSkyRenderer::Render()
 
 	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
 	D3DXVECTOR4 ratio(mie_rayleigh_ratio);
-	D3DXVECTOR4 sun_dir(skyNode->GetDirectionToSun());
+	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 	//if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 
 	m_pSkyEffect->SetVector	(lightDirection		,&sun_dir);
 	m_pSkyEffect->SetVector	(MieRayleighRatio	,&ratio);
-	m_pSkyEffect->SetFloat	(hazeEccentricity	,skyNode->GetMieEccentricity());
+	m_pSkyEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
-	m_pSkyEffect->SetFloat	(overcastFactor		,overcast_factor);
 
 	m_pSkyEffect->SetFloat	(skyInterp		,interp);
 	UINT passes=1;
@@ -729,12 +812,23 @@ void SimulSkyRenderer::Update(float dt)
 	{
 		fadeTable->SetAltitudeKM(cam_pos.y*0.001f);
 		skyNode->TimeStep(dt);
+		static simul::base::Timer timer;
+		timer.StartTime();
 		fadeTable->Update();
+		timer.FinishTime();
+		timing=timer.Time;
 		interp=fadeTable->GetInterpolation();
 	}
 }
 
-void SimulSkyRenderer::SetTimeMultiplier(float tm)
+float SimulSkyRenderer::GetTiming() const
 {
-	skyNode->SetTimeMultiplier(tm);
+	return timing;
+}
+
+const char *SimulSkyRenderer::GetDebugText() const
+{
+	static char txt[200];
+	sprintf(txt,"interp %3.3g",fadeTable->GetInterpolation());
+	return txt;
 }

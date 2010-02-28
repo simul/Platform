@@ -68,10 +68,6 @@ public:
 		input_texture=image;
 		depth_texture=depth;
 	}
-	void SetOvercastFactor(float of)
-	{
-		overcast_factor=of;
-	}
 	void SetFadeInterpolation(float s)
 	{
 		fade_interp=s;
@@ -99,7 +95,6 @@ protected:
 	D3DXHANDLE						MieRayleighRatio;
 	D3DXHANDLE						HazeEccentricity;
 	D3DXHANDLE						fadeInterp;
-	D3DXHANDLE						overcastFactor;
 	D3DXHANDLE						imageTexture;
 	D3DXHANDLE						depthTexture;
 	D3DXHANDLE						lossTexture1;
@@ -117,6 +112,6 @@ protected:
 	//! The un-faded image buffer.
 	LPDIRECT3DTEXTURE9				input_texture;
 
-	float fade_interp,overcast_factor;
+	float fade_interp;
 
 };

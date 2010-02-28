@@ -61,6 +61,7 @@ float thunder_volume=0.f;
 #include "Simul/Clouds/ThunderCloudNode.h"
 #include "Simul/Clouds/TextureGenerator.h"
 #include "Simul/Clouds/CloudGeometryHelper.h"
+#include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/FadeTableInterface.h"
 #include "Simul/Sky/Float4.h"
@@ -110,6 +111,7 @@ struct Vertex_t
     float3 texCoords;
     float layerFade;
     float2 texCoordsNoise;
+	float3 sunlightColour;
 };
 struct PosTexVert_t
 {
@@ -124,8 +126,10 @@ Vertex_t *vertices=NULL;
 PosTexVert_t *lightning_vertices=NULL;
 #define MAX_VERTICES (12000)
 
+
 float min_dist=60000.f;
 float max_dist=320000.f;
+
 static void SetBits4()
 {
 	simul::clouds::TextureGenerator::SetBits(bits[0],bits[1],bits[2],bits[3],2,big_endian);
@@ -134,6 +138,40 @@ static void SetBits8()
 {
 	simul::clouds::TextureGenerator::SetBits(bits8[0],bits8[1],bits8[2],bits8[3],(unsigned)4,big_endian);
 }
+
+// This is an example of a noise filter:
+class CircleFilter:public simul::math::NoiseFilter
+	{
+	public:
+		float Filter(float val) const
+		{
+			val=1.f-val;
+			val=sqrt(1.f-val*val);
+			val-=0.866f;
+			val*=0.5f/0.134f;
+			val+=0.5f;
+			if(val<0)
+				val=0;
+			if(val>1.f)
+				val=1.f;
+			return val;
+		}
+	};
+CircleFilter circle_f;
+
+class ExampleHumidityCallback:public simul::clouds::HumidityCallbackInterface
+{
+public:
+	virtual float GetHumidityMultiplier(float x,float y,float z) const
+	{
+		static float mul=0.95f;
+		static float cutoff=0.125f;
+		if(z<cutoff)
+			return 1.f;
+		return mul;
+	}
+};
+ExampleHumidityCallback hum_callback;
 
 SimulCloudRenderer::SimulCloudRenderer() :
 	skyInterface(NULL),
@@ -166,7 +204,7 @@ SimulCloudRenderer::SimulCloudRenderer() :
 	detail(0.5f),
 	fade_interp(0.f),
 	noise_texture_frequency(8),
-	texture_octaves(1),//7),
+	texture_octaves(7),
 	texture_persistence(0.79f),
 	noise_texture_size(1024),
 	altitude_tex_coord(0.f)
@@ -183,41 +221,47 @@ SimulCloudRenderer::SimulCloudRenderer() :
 
 	cloudNode=new simul::clouds::ThunderCloudNode;
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
+
+	cloudNode->SetHumidityCallback(&hum_callback);
+
 	cloudInterface=cloudNode.get();
 	cloudInterface->SetWrap(true);
 
-	cloudInterface->SetGridLength(128);
-	cloudInterface->SetGridWidth(128);
-	cloudInterface->SetGridHeight(16);
+	cloudInterface->SetGridLength(256);
+	cloudInterface->SetGridWidth(256);
+	cloudInterface->SetGridHeight(32);
 
 	cloudInterface->SetExtinction(1.8f);
 	cloudInterface->SetAlphaSharpness(0.5f);
 	cloudInterface->SetFractalEffectScale(5.f);
 	cloudInterface->SetFractalPatternScale(140.f);
 	cloudInterface->SetCloudBaseZ(3300.f);
-	cloudInterface->SetCloudWidth(30000.f);
-	cloudInterface->SetCloudLength(30000.f);
-	cloudInterface->SetCloudHeight(6000.f);
-	cloudInterface->SetNoisePeriod(36);
+	cloudInterface->SetCloudWidth(60000.f);
+	cloudInterface->SetCloudLength(60000.f);
+	cloudInterface->SetCloudHeight(10000.f);
+	cloudInterface->SetNoisePeriod(2500000);
 
 	cloudInterface->SetOpticalDensity(1.8f);
 	cloudInterface->SetHumidity(0);
 
-	cloudInterface->SetLightResponse(0.5f);
-	cloudInterface->SetSecondaryLightResponse(0.5f);
+	cloudInterface->SetLightResponse(0.75f);
+	cloudInterface->SetSecondaryLightResponse(0.75f);
 	cloudInterface->SetAmbientLightResponse(1.f);
 	cloudInterface->SetAnisotropicLightResponse(3.f);
 
 	cloudInterface->SetNoiseResolution(4);
-	cloudInterface->SetNoiseOctaves(3);
+	cloudInterface->SetNoiseOctaves(4);
 	cloudInterface->SetNoisePersistence(.6f);
 
 	cloudNode->SetCacheNoise(true);
-
+	
 	cloudInterface->Generate();
 
-	cloudKeyframer=cloudNode->GetCloudKeyframer();
+	cloudKeyframer=new simul::clouds::CloudKeyframer(cloudInterface);
 	cloudKeyframer->SetUse16Bit(false);
+	// 20 game-minutes for interpolation:
+	//cloudKeyframer->SetInterpStepTime(1.f/24.f/6.f);
+
 	helper=new simul::clouds::CloudGeometryHelper();
 	helper->SetYVertical(y_vertical);
 	helper->Initialize((unsigned)(120.f*detail),min_dist+(max_dist-min_dist)*detail);
@@ -234,12 +278,22 @@ SimulCloudRenderer::SimulCloudRenderer() :
 	sound->StartSound(ident,0);
 	sound->SetSoundVolume(ident,0.f);
 #endif
+
+	// A noise filter improves the shape of the clouds:
+	cloudNode->GetNoiseInterface()->SetFilter(&circle_f);
 }
 
 void SimulCloudRenderer::SetSkyInterface(simul::sky::SkyInterface *si)
 {
 	skyInterface=si;
 	cloudKeyframer->SetSkyInterface(si);
+}
+void SimulCloudRenderer::EnableFilter(bool f)
+{
+	if(f)
+		cloudNode->GetNoiseInterface()->SetFilter(&circle_f);
+	else
+		cloudNode->GetNoiseInterface()->SetFilter(NULL);
 }
 
 void SimulCloudRenderer::SetFadeTableInterface(simul::sky::FadeTableInterface *fti)
@@ -258,6 +312,7 @@ HRESULT SimulCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 		{0, 12	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
 		{0,	24	,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
 		{0,	28	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
+		{0,	36	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
 		D3DDECL_END()
 	};
 	D3DVERTEXELEMENT9 std_decl[] = 
@@ -292,7 +347,6 @@ HRESULT SimulCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	hazeEccentricity		=m_pCloudEffect->GetParameterByName(NULL,"hazeEccentricity");
 	cloudEccentricity		=m_pCloudEffect->GetParameterByName(NULL,"cloudEccentricity");
 	fadeInterp				=m_pCloudEffect->GetParameterByName(NULL,"fadeInterp");
-	overcast				=m_pCloudEffect->GetParameterByName(NULL,"overcast");
 	distance				=m_pCloudEffect->GetParameterByName(NULL,"distance");
 	cornerPos				=m_pCloudEffect->GetParameterByName(NULL,"cornerPos");
 	texScales				=m_pCloudEffect->GetParameterByName(NULL,"texScales");
@@ -402,6 +456,12 @@ HRESULT SimulCloudRenderer::CreateNoiseTexture()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(noise_texture);
+
+	// Can we load it from disk?
+	if((hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/noise.dds",&noise_texture))==S_OK)
+		return hr;
+
+	// Otherwise create it:
 	if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,noise_texture_size,noise_texture_size,0,default_texture_usage,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&noise_texture)))
 		return hr;
 	D3DLOCKED_RECT lockedRect={0};
@@ -602,7 +662,11 @@ void SimulCloudRenderer::Update(float dt)
 	if(y_vertical)
 		std::swap(wind_offset.y,wind_offset.z);
 
+static simul::base::Timer timer;
+timer.StartTime();
 	cloudKeyframer->Update(current_time);
+timer.FinishTime();
+timing=timer.Time;
 	simul::graph::meta::TimeStepVisitor tsv;
 	tsv.SetTimeStep(dt);
 	cloudNode->Accept(tsv);
@@ -713,7 +777,7 @@ HRESULT SimulCloudRenderer::RenderNewMethod()
 												0,
 												0,
 												light_mult*cloudInterface->GetSecondaryLightResponse());
-			simul::sky::float4 sun_dir=skyInterface->GetDirectionToSun();
+			simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 			// calculate sun occlusion for any external classes that need it:
 			if(y_vertical)
 				std::swap(X.y,X.z);
@@ -744,7 +808,6 @@ HRESULT SimulCloudRenderer::RenderNewMethod()
 			m_pCloudEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 			m_pCloudEffect->SetFloat	(cloudEccentricity	,cloudInterface->GetMieAsymmetry());			
 			m_pCloudEffect->SetFloat	(fadeInterp			,fade_interp);
-			m_pCloudEffect->SetFloat	(overcast			,cloudKeyframer->GetOvercastFactor());
 			if(enable_lightning)
 			{
 				static float bb=.1f;
@@ -896,7 +959,7 @@ HRESULT SimulCloudRenderer::Render()
 												0,
 												0,
 												light_mult*cloudInterface->GetSecondaryLightResponse());
-			simul::sky::float4 sun_dir=skyInterface->GetDirectionToSun();
+			simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 
 			// calculate sun occlusion for any external classes that need it:
 			if(y_vertical)
@@ -932,7 +995,6 @@ HRESULT SimulCloudRenderer::Render()
 			m_pCloudEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 			m_pCloudEffect->SetFloat	(cloudEccentricity	,cloudInterface->GetMieAsymmetry());
 			m_pCloudEffect->SetFloat	(fadeInterp			,fade_interp);
-			m_pCloudEffect->SetFloat	(overcast			,cloudKeyframer->GetOvercastFactor());
 			m_pCloudEffect->SetFloat	(altitudeTexCoord	,altitude_tex_coord);
 			m_pCloudEffect->SetFloat	(alphaSharpness		,cloudInterface->GetAlphaSharpness());
 
@@ -984,6 +1046,10 @@ HRESULT SimulCloudRenderer::Render()
 			PIXEndNamedEvent();
 			
 			int v=0;
+					static std::vector<simul::sky::float4> light_colours;
+					unsigned grid_x,el_grid;
+					helper->GetGrid(el_grid,grid_x);
+					light_colours.resize(el_grid+1);
 
 			PIXBeginNamedEvent(0,"Make Slice Geometry");
 				
@@ -999,6 +1065,14 @@ HRESULT SimulCloudRenderer::Render()
 					size_t qs_vert=0;
 					float fade=(*i)->fadeIn;
 					bool start=true;
+					if((*i)->quad_strips.size())
+					for(int j=(*i)->elev_start;j<=(*i)->elev_end;j++)
+					{
+						float j_interp=(float)j/(float)el_grid;
+						float sine=(2.f*j_interp-1.f);
+						float alt_km=min(max(0.f,view_km.y+sine*0.001f*(*i)->distance),skyInterface->GetAtmosphereThickness());
+						light_colours[j]=skyInterface->GetLocalIrradiance(alt_km);
+					}
 					for(std::vector<const simul::clouds::CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
 						j!=(*i)->quad_strips.end();j++)
 					{
@@ -1027,6 +1101,10 @@ HRESULT SimulCloudRenderer::Render()
 							vertex.texCoordsNoise.x=V.noise_tex_x;
 							vertex.texCoordsNoise.y=V.noise_tex_y;
 							vertex.layerFade=fade;
+							const simul::sky::float4 &light_c=light_colours[V.grid_y];
+							vertex.sunlightColour.x=light_c.x;
+							vertex.sunlightColour.y=light_c.y;
+							vertex.sunlightColour.z=light_c.z;
 						}
 					}
 					if(v>=MAX_VERTICES)

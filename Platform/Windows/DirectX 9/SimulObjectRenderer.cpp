@@ -103,8 +103,7 @@ SimulObjectRenderer::SimulObjectRenderer(const char *file) :
 	sky_loss_texture_2(NULL),
 	sky_inscatter_texture_1(NULL),
 	sky_inscatter_texture_2(NULL),
-	skyInterface(NULL),
-	overcast_factor(0)
+	skyInterface(NULL)
 {
 	filename=file;
 }
@@ -150,7 +149,6 @@ HRESULT SimulObjectRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	cloudScales			=m_pEffect->GetParameterByName(NULL,"cloudScales");
 	cloudLightVector			=m_pEffect->GetParameterByName(NULL,"cloudLightVector");
 
-	overcast			=m_pEffect->GetParameterByName(NULL,"overcast");
 	eyePosition			=m_pEffect->GetParameterByName(NULL,"eyePosition");
 	exposureParam		=m_pEffect->GetParameterByName(NULL,"exposure");
 	sunlightColour		=m_pEffect->GetParameterByName(NULL,"sunlightColour");
@@ -225,14 +223,13 @@ HRESULT SimulObjectRenderer::Render()
 	D3DXMATRIX tmp1, tmp2;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
 	D3DXVECTOR4 cam_pos(tmp1._41,tmp1._42,tmp1._43,0);
-	simul::sky::float4 sun_dir(skyInterface->GetDirectionToSun());
+	simul::sky::float4 sun_dir(skyInterface->GetDirectionToLight());
 
 	m_pEffect->SetTechnique(m_hTechnique);
 	m_pEffect->SetFloat(hazeEccentricity,skyInterface->GetMieEccentricity());
 	m_pEffect->SetFloat(fadeInterp,fade_interp);
 	m_pEffect->SetFloat(cloudInterp,cloud_interp);
 	m_pEffect->SetFloat(exposureParam,exposure);
-	m_pEffect->SetFloat(overcast,overcast_factor);
 
 	simul::math::Vector3 cloud_corner(-cloudInterface->GetCloudWidth()/2.f,
 		-cloudInterface->GetCloudLength()/2.f,

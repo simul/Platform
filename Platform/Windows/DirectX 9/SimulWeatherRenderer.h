@@ -81,7 +81,9 @@ public:
 	{
 		renderDepthBufferCallback=cb;
 	}
+	void SetBufferSize(int w,int h);
 protected:
+	void UpdateSkyAndCloudHookup();
 	bool AlwaysRenderCloudsLate;
 	bool RenderCloudsLate;
 	DWORD gamma_resource_id;

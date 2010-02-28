@@ -20,11 +20,22 @@
 
 namespace simul
 {
+	namespace base
+	{
+		class Referenced;
+	}
+	namespace graph
+	{
+		namespace meta
+		{
+			class Node;
+		}
+	}
 	namespace sky
 	{
 		class SkyInterface;
 		class SkyNode;
-		class AltitudeFadeTable;
+		class InterpolatedFadeTable;
 		class FadeTableInterface;
 	}
 }
@@ -37,11 +48,12 @@ typedef long HRESULT;
 class SimulSkyRenderer:public simul::sky::FadeTableCallback
 {
 public:
-	SimulSkyRenderer();
+	SimulSkyRenderer(bool UseColourSky);
 	virtual ~SimulSkyRenderer();
 	//! Get the interface to the sky object so that other classes can use it for lighting, distance fades etc.
 	simul::sky::SkyInterface *GetSkyInterface();
 	simul::sky::FadeTableInterface *GetFadeTableInterface();
+	simul::sky::InterpolatedFadeTable *GetFadeTable();
 
 	//standard d3d object interface functions
 	//! Call this when the D3D device has been created or reset.
@@ -67,10 +79,13 @@ public:
 	//! Set a multiplier for time steps - default is 1.0
 	void SetTimeMultiplier(float tm);
 	//! Set the overcast factor for the horizon. Zero is clear skies, one is cloudy.
-	void SetOvercastFactor(float of)
-	{
-		overcast_factor=of;
-	}
+	//! This factor then goes into sky brightness and fade calculations.
+	void SetOvercastFactor(float of);
+	//! A timing measurement.
+	float GetTiming() const;
+	//! This sets the base altitude and range for the overcast effect - the base should be the cloudbase,
+	//! while the range should be the height of the clouds.
+	void SetOvercastBaseAndRange(float base_alt_km,float range_km);
 	void GetLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LPDIRECT3DBASETEXTURE9 *l2,
 		LPDIRECT3DBASETEXTURE9 *i1,LPDIRECT3DBASETEXTURE9 *i2);
 	float GetAltitudeTextureCoordinate() const;
@@ -84,19 +99,22 @@ public:
 	void FillFadeTextures(int alt_index,int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
 						const float *inscatter_float4_array);
+	void FillSunlightTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void CycleTexturesForward();
+	const char *GetDebugText() const;
 protected:
+	float timing;
 	D3DFORMAT sky_tex_format;
 	float sun_occlusion;
 	simul::sky::float4 sunlight;
-	simul::base::SmartPtr<simul::sky::SkyNode> skyNode;
-	simul::base::SmartPtr<simul::sky::AltitudeFadeTable> fadeTable;
+	simul::base::SmartPtr<simul::graph::meta::Node> skyNode;
+	simul::base::SmartPtr<simul::sky::InterpolatedFadeTable> fadeTable;
 
 	simul::sky::SkyInterface *skyInterface;
+	simul::sky::FadeTableInterface *fadeTableInterface;
 	unsigned skyTexSize;
 	unsigned skyTexIndex;
 	unsigned numAltitudes;
-	float overcast_factor;
 	float interp;
 	float interp_step_time;
 	float interp_time_1;
@@ -115,7 +133,6 @@ protected:
 	D3DXHANDLE					lightDirection;
 	D3DXHANDLE					MieRayleighRatio;
 	D3DXHANDLE					hazeEccentricity;
-	D3DXHANDLE					overcastFactor;
 	D3DXHANDLE					skyInterp;
 	D3DXHANDLE					colour;
 	D3DXHANDLE					flareTexture;
@@ -123,7 +140,10 @@ protected:
 	D3DXHANDLE					skyTexture2;
 	LPDIRECT3DTEXTURE9			flare_texture;
 	LPDIRECT3DTEXTURE9			moon_texture;
+	// Three sky textures - 2 to interpolate and one to fill
 	LPDIRECT3DTEXTURE9			sky_textures[3];
+	// Three sunlight textures.
+	LPDIRECT3DTEXTURE9			sunlight_textures[3];
 	// If using 1D sky textures and 2D fade textures:
 	LPDIRECT3DTEXTURE9			loss_textures[3];
 	LPDIRECT3DTEXTURE9			inscatter_textures[3];
@@ -134,7 +154,8 @@ protected:
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DQUERY9			d3dQuery;
 	HRESULT						UpdateSkyTexture(float proportion);
-	HRESULT						CreateSkyTexture();
+	HRESULT						CreateSkyTextures();
+	HRESULT						CreateSunlightTextures();
 	HRESULT						CreateSkyEffect();
 	HRESULT						RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	HRESULT						RenderMoon();

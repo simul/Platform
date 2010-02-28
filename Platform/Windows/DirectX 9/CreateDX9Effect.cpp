@@ -28,18 +28,23 @@
 	#include <vector>
 #include <iostream>
 #include "Macros.h"
+#include "Resources.h"
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
 #endif
 #ifndef V_RETURN
 #define V_RETURN(x)			{ hr = x; if( FAILED(hr) ) { return hr; } }
 #endif
+
+//#define BUNDLE_SHADERS
+
 struct d3dMacro
 {
 	std::string name;
 	std::string define;
 };
 static int ShaderModel=2;
+static bool shader_path_set=false;
 void SetShaderPath(const char *path)
 {
 #ifdef UNICODE
@@ -53,6 +58,7 @@ void SetShaderPath(const char *path)
 	filepath=path;
 	filepath+="/";
 #endif
+	shader_path_set=true;
 }
 
 int GetShaderModel()
@@ -77,15 +83,45 @@ D3DXHANDLE GetDX9Technique(LPD3DXEFFECT effect,const char *tech_name)
 	}
 	return tech;
 }
+static D3DXMACRO *MakeMacroList(const std::map<std::string,std::string>&defines)
+{
+	bool name=true;
+	D3DXMACRO *macros=NULL;
+	if(defines.size())
+	{
+		macros=new D3DXMACRO[defines.size()+1];
+		macros[defines.size()].Definition=0;
+		macros[defines.size()].Name=0;
+	}
+	size_t def=0;
+	for(std::map<std::string,std::string>::const_iterator i=defines.begin();i!=defines.end();i++)
+	{
+		macros[def].Name=i->first.c_str();
+		macros[def].Definition=i->second.c_str();
+		def++;
+	}
+	return macros;
+}
 
-HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,const char *filename,int num_defines,...)
+HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,const char *filename)
+{
+	std::map<std::string,std::string> defines;
+	return CreateDX9Effect(m_pd3dDevice,effect,filename,defines);
+}
+
+HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,const char *filename,const std::map<std::string,std::string>&defines)
 {
 #ifdef BUNDLE_SHADERS
-	return CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename),num_defines,...)
+	return CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename));
 #else
 	std::cout<<"CreateDX9Effect "<<filename<<std::endl;
 	HRESULT hr;
     LPD3DXBUFFER errors=0;
+
+	if(!shader_path_set)
+	{
+		std::cerr<<"CreateDX9Effect.cpp: Shader path not set, use SetShaderPath() with the relative path to the .fx files."<<std::endl;
+	}
 #ifdef UNICODE
 	// tstring and TEXT cater for the confusion between wide and regular strings.
 	std::wstring wfilename(strlen(filename),L' '); // Make room for characters
@@ -96,36 +132,8 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 	tstring fn=filename;
 	fn=filepath+fn;
 #endif
-	D3DXMACRO *macros=NULL;
-	std::vector<std::string> d3dmacros;
-	{
-		bool name=true;
-		const char *txt=NULL;
-		if(num_defines)
-		{
-			macros=new D3DXMACRO[num_defines+1];
-			macros[num_defines].Definition=0;
-			macros[num_defines].Name=0;
-		}
-		va_list marker;
-		va_start(marker,num_defines);
-		size_t def=0;
-		for(int i=0;i<num_defines*2;i++)
-		{
-			txt=va_arg(marker,const char *);
-			if(name)
-			{
-				macros[def].Name=txt;
-			}
-			else
-			{
-				macros[def].Definition=txt;
-				def++;
-			}
-			name=!name;
-		}
-		va_end(marker); 
-	}
+	D3DXMACRO *macros=MakeMacroList(defines);
+
 	DWORD flags=default_effect_flags;
 	SAFE_RELEASE(effect);
 	
@@ -161,42 +169,18 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 #endif
 }
 
-HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWORD resource,int num_defines,...)
+
+HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWORD resource)
+{
+	std::map<std::string,std::string> defines;
+	return CreateDX9Effect(m_pd3dDevice,effect,resource,defines);
+}
+HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWORD resource,const std::map<std::string,std::string> &defines)
 {
 	std::cout<<"CreateDX9Effect "<<resource<<std::endl;
 	HRESULT hr;
     LPD3DXBUFFER errors=0;
-	D3DXMACRO *macros=NULL;
-	std::vector<std::string> d3dmacros;
-	{
-		bool name=true;
-		const char *txt=NULL;
-		if(num_defines)
-		{
-			macros=new D3DXMACRO[num_defines+1];
-			macros[num_defines].Definition=0;
-			macros[num_defines].Name=0;
-		}
-		va_list marker;
-		va_start(marker,num_defines);
-		size_t def=0;
-		for(int i=0;i<num_defines*2;i++)
-		{
-			txt=va_arg(marker,const char *);
-			if(name)
-			{
-				macros[def].Name=txt;
-				macros[def].Definition="";
-			}
-			else
-			{
-				macros[def].Definition=txt;
-				def++;
-			}
-			name=!name;
-		}
-		va_end(marker); 
-	}
+	D3DXMACRO *macros=MakeMacroList(defines);
 	HMODULE hModule=GetModuleHandle(NULL);
 	LPTSTR rn=MAKEINTRESOURCE(resource);
 	DWORD flags=default_effect_flags;

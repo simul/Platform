@@ -61,11 +61,6 @@ public:
 	void SetWindVelocity(float x,float y);
 	//! Get an interface to the Simul cloud object.
 	simul::clouds::CloudInterface *GetCloudInterface();
-	//! Set the overcast factor for the horizon. Zero is clear skies, one is cloudy.
-	void SetOvercastFactor(float of)
-	{
-		overcast_factor=of;
-	}
 protected:
 	simul::clouds::CloudInterface *cloudInterface;
 	simul::sky::SkyInterface *skyInterface;
@@ -112,6 +107,5 @@ protected:
 	simul::base::SmartPtr<simul::clouds::FastCloudNode> cloudNode;
 	float texture_scale;
 	unsigned cloud_texel_index;
-	float overcast_factor;
 	bool texture_complete;
 };
