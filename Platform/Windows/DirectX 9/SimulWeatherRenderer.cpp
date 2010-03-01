@@ -71,7 +71,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	renderDepthBufferCallback(NULL)
 {
 	if(sky)
-		simulSkyRenderer=new SimulSkyRenderer(true);
+		simulSkyRenderer=new SimulSkyRenderer();
 	if(clouds3d)
 		simulCloudRenderer=new SimulCloudRenderer();
 	if(clouds2d)

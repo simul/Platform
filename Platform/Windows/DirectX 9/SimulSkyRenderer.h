@@ -48,7 +48,7 @@ typedef long HRESULT;
 class SimulSkyRenderer:public simul::sky::FadeTableCallback
 {
 public:
-	SimulSkyRenderer(bool UseColourSky);
+	SimulSkyRenderer(bool UseColourSky=false);
 	virtual ~SimulSkyRenderer();
 	//! Get the interface to the sky object so that other classes can use it for lighting, distance fades etc.
 	simul::sky::SkyInterface *GetSkyInterface();
