@@ -44,7 +44,8 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	bool usebuffer,bool tonemap,int width,
 	int height,bool sky,bool clouds3d,
 	bool clouds2d,bool rain,
-	bool always_render_clouds_late) :
+	bool always_render_clouds_late,
+		bool colour_sky) :
 	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
 	m_pTonemapEffect(NULL),
@@ -71,7 +72,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	renderDepthBufferCallback(NULL)
 {
 	if(sky)
-		simulSkyRenderer=new SimulSkyRenderer();
+		simulSkyRenderer=new SimulSkyRenderer(colour_sky);
 	if(clouds3d)
 		simulCloudRenderer=new SimulCloudRenderer();
 	if(clouds2d)
@@ -386,7 +387,7 @@ HRESULT SimulWeatherRenderer::Render()
 		hr=m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
 		hr=m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_ALPHA);
 		static float depth_start=1.f;
-		hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L);
+		hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF0000A0,depth_start, 0L);
 		hr=m_pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS,0); // Defaults to zero
 		hr=m_pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS,0);           // Defaults to zero
 		PIXEndNamedEvent();

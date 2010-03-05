@@ -16,6 +16,7 @@ typedef long HRESULT;
 #include <vector>
 #include "Simul/Math/float3.h"
 #include "Simul/Math/Vector3.h"
+#include "Simul/Base/Referenced.h"
 namespace simul
 {
 	namespace sky
@@ -28,7 +29,7 @@ namespace simul
 		struct Cutout;
 	}
 }
-class SimulTerrainRenderer
+class SimulTerrainRenderer:public simul::base::Referenced
 {
 public:
 	SimulTerrainRenderer();

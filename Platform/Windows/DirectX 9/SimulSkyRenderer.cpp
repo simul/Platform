@@ -158,6 +158,8 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	skyTexture2			=m_pSkyEffect->GetParameterByName(NULL,"skyTexture2");
 
 	m_hTechniqueQuery	=m_pSkyEffect->GetTechniqueByName("simul_query");
+
+	fadeTableInterface->SetCallback(NULL);
 	fadeTableInterface->SetCallback(this);
 	// CreateSkyTexture() will be called back
 

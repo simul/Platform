@@ -12,8 +12,9 @@
 	#include <d3d9.h>
 	#include <d3dx9.h>
 #endif
+#include "Simul/Base/Referenced.h"
 typedef long HRESULT;
-class SimulHDRRenderer
+class SimulHDRRenderer: public simul::base::Referenced
 {
 public:
 	SimulHDRRenderer(int width,int height);
@@ -76,6 +77,7 @@ protected:
 	LPDIRECT3DSURFACE9		m_pBrightpassRenderTarget;
 	LPDIRECT3DTEXTURE9		brightpass_buffer_texture;
 	LPDIRECT3DTEXTURE9		bloom_texture;
+	LPDIRECT3DTEXTURE9		last_texture;
 	D3DXHANDLE				brightpassThreshold;
 	D3DXHANDLE				brightPassOffsets;
 	D3DXHANDLE				bloomTexture;

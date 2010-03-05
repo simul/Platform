@@ -12,6 +12,7 @@
 	#include <d3d9.h>
 	#include <d3dx9.h>
 #endif
+#include "Simul/Base/Referenced.h"
 class RenderDepthBufferCallback
 {
 public:
@@ -20,13 +21,14 @@ public:
 //! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX program.
 //! You can take this entire class and use it as source in your project.
 //! Make appropriate modifications where required.
-class SimulWeatherRenderer
+class SimulWeatherRenderer:public simul::base::Referenced
 {
 public:
 	SimulWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=320,
 		int height=240,bool sky=true,bool clouds3d=true,bool clouds2d=true,
 		bool rain=true,
-		bool always_render_clouds_late=false);
+		bool always_render_clouds_late=false,
+		bool colour_sky=false);
 	virtual ~SimulWeatherRenderer();
 	// Set the resource id:
 	void SetGammaResource(DWORD gr)
