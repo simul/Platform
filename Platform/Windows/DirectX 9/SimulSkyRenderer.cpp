@@ -11,18 +11,19 @@
 #include "SimulSkyRenderer.h"
 
 #ifdef XBOX
-	#include <dxerr9.h>
+	#include <dxerr.h>
 	#include <string>
 	static D3DPOOL d3d_memory_pool=D3DUSAGE_CPU_CACHED_MEMORY;
 #else
 	#include <tchar.h>
 	#include <d3d9.h>
 	#include <d3dx9.h>
-	#include <dxerr9.h>
+	#include <dxerr.h>
 	#include <string>
 	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 	static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
 #endif
+	#include <fstream>
 
 #include "CreateDX9Effect.h"
 #include "Macros.h"
@@ -65,16 +66,24 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky) :
 		sunlight_textures[i]=NULL;
 	}
 	if(UseColourSky)
-		skyNode=new simul::sky::ColourSkyNode();
+	{
+		simul::sky::ColourSkyNode *csn=new simul::sky::ColourSkyNode();
+		skyNode=csn;
+	}
 	else
 		skyNode=new simul::sky::SkyNode();
 	skyInterface		=dynamic_cast<simul::sky::SkyInterface*>(skyNode.get());
 	simul::sky::ColourSky *colourSky=dynamic_cast<simul::sky::ColourSky*>(skyNode.get());
 //	skyInterface->SetMieWavelengthExponent(0.f);
 	if(UseColourSky)
-		fadeTable=new simul::sky::ColourFadeTable(colourSky,skyInterface,0,512,512,32,200.f);
+	{
+		simul::sky::ColourFadeTable *cft=new simul::sky::ColourFadeTable(colourSky,skyInterface,0,128,128,32,200.f);
+		fadeTable=cft;
+		std::ifstream ifs("skyfile.ssq",std::ios::binary);
+		cft->Load(ifs);
+	}
 	else
-		fadeTable=new simul::sky::AltitudeFadeTable(skyInterface,0,512,512,32,200.f);
+		fadeTable=new simul::sky::AltitudeFadeTable(skyInterface,0,128,128,32,200.f);
 	fadeTableInterface	=dynamic_cast<simul::sky::FadeTableInterface*>(fadeTable.get());
 //	fadeTableInterface->SetNumAltitudes(4);
 	fadeTableInterface->SetEarthTest(false);
@@ -84,11 +93,6 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky) :
 //	skyInterface->SetHazeBaseHeightKm(4.f);
 	cam_pos.x=cam_pos.z=0;
 	cam_pos.y=400.f;
-}
-
-void SimulSkyRenderer::SetStepsPerDay(unsigned steps)
-{
-//	fadeTable->SetStepsPerDay((float)steps);
 }
 
 simul::sky::SkyInterface *SimulSkyRenderer::GetSkyInterface()
@@ -164,7 +168,7 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	// CreateSkyTexture() will be called back
 
 	SAFE_RELEASE(flare_texture);
-	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/Moon.dds",&flare_texture)))
+	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/Sunburst.dds",&flare_texture)))
 		return hr;
 	SAFE_RELEASE(moon_texture);
 	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/Moon.png",&moon_texture)))
@@ -513,7 +517,7 @@ struct Vertex_t
 {
 	float x,y,z;
 };
-	static const float size=250.f;
+	static const float size=2500.f;
 	static Vertex_t vertices[36] =
 	{
 		{-size,		-size,	size},
@@ -622,7 +626,8 @@ HRESULT SimulSkyRenderer::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radi
 int query_issued=0;
 void SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 {
-	if(!m_hTechniqueQuery)
+	sun_occlusion=cloud_occlusion;
+	//if(!m_hTechniqueQuery)
 		return;
 	PIXBeginNamedEvent(0,"Sun Occlusion Query");
 	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
@@ -676,8 +681,8 @@ HRESULT SimulSkyRenderer::RenderSun()
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
-	sunlight*=2700.f;
-	m_pSkyEffect->SetVector(colour	,(D3DXVECTOR4*)(&sunlight));
+	sunlight*=(1.f-sun_occlusion)*25.f;//2700.f;
+	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
 	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 	std::swap(sun_dir.y,sun_dir.z);
@@ -691,19 +696,22 @@ HRESULT SimulSkyRenderer::RenderMoon()
 	float alt_km=0.001f*cam_pos.y;
 	m_pSkyEffect->SetTechnique(m_hTechniquePlanet);
 	m_pSkyEffect->SetTexture(flareTexture,moon_texture);
-	float moon_elevation=15.f*3.14159f/180.f;
+	//float moon_elevation=15.f*3.14159f/180.f;
+	//float moon_azimuth=15.f*3.14159f/180.f;
 	simul::sky::float4 original_irradiance=skyInterface->GetSunIrradiance();
 	// The moon has an albedo of 0.12:
+	simul::sky::float4 moon_dir4=skyInterface->GetDirectionToMoon();
+	float moon_elevation=asin(moon_dir4.z);
 	simul::sky::float4 moon_colour=0.12f*original_irradiance*skyInterface->GetIsotropicColourLossFactor(alt_km,moon_elevation,1e10f);
-	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&moon_colour));
-	D3DXVECTOR4 moon_dir(cos(moon_elevation),sin(moon_elevation),0,0);
+	D3DXVECTOR4 moon_dir(moon_dir4.x,moon_dir4.z,moon_dir4.y,0);//cos(moon_elevation)*cos(moon_azimuth),sin(moon_elevation),cos(moon_elevation)*sin(moon_azimuth),0);
 	// Make it 2 times bigger than it should be:
 	static float size_mult=2.f;
-	float moon_angular_size=size_mult*   3.14159f/180.f/2.f;
+	float moon_angular_size=size_mult*  3.14159f/180.f/2.f;
 	// Start the query
+	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&moon_colour));
 	HRESULT hr=RenderAngledQuad(moon_dir,moon_angular_size);
-	std::swap(moon_dir.y,moon_dir.z);
-//	skyInterface->SetDirectionToMoon((const float*)&moon_dir);
+	//std::swap(moon_dir.y,moon_dir.z);
+
 	return hr;
 }
 
@@ -733,7 +741,7 @@ HRESULT SimulSkyRenderer::RenderFlare(float exposure)
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 	std::swap(sun_dir.y,sun_dir.z);
 	if(magnitude>0.f)
-		hr=RenderAngledQuad(sun_dir,sun_angular_size*20.f);
+		hr=RenderAngledQuad(sun_dir,sun_angular_size*20.f*magnitude);
 	return hr;
 }
 
@@ -746,9 +754,6 @@ HRESULT SimulSkyRenderer::Render()
 	cam_pos.x=tmp1._41;
 	cam_pos.y=tmp1._42;
 	cam_pos.z=tmp1._43;
-	
-	hr=RenderSun();
-	hr=RenderMoon();
 
 	D3DXMatrixIdentity(&world);
 	//set up matrices
@@ -831,6 +836,6 @@ float SimulSkyRenderer::GetTiming() const
 const char *SimulSkyRenderer::GetDebugText() const
 {
 	static char txt[200];
-	sprintf(txt,"interp %3.3g",fadeTable->GetInterpolation());
+	sprintf_s(txt,200,"interp %3.3g",fadeTable->GetInterpolation());
 	return txt;
 }

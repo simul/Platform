@@ -19,7 +19,7 @@
 	static DWORD default_effect_flags=0;
 #else
 	#include <tchar.h>
-	#include <dxerr9.h>
+	#include <dxerr.h>
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("");
@@ -106,10 +106,10 @@ HRESULT SimulAtmosphericsRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	{
 #ifdef XBOX
 		{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0,  8, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+		{ 0,  8, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
 #else
-		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
-		{ 0, 16, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+		{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 8, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
 #endif
 		D3DDECL_END()
 	};
@@ -164,7 +164,6 @@ HRESULT SimulAtmosphericsRenderer::Render()
 	hr=effect->SetFloat(fadeInterp,fade_interp);
 
 	hr=effect->SetTexture(imageTexture,input_texture);
-	hr=effect->SetTexture(depthTexture,depth_texture);
 
 	hr=effect->SetFloat(altitudeTexCoord,altitude_tex_coord);
 	if(skyInterface)
@@ -194,14 +193,14 @@ HRESULT SimulAtmosphericsRenderer::Render()
 	struct Vertext
 	{
 		float x,y;
-		float tx,ty;
+		float tx,ty,tz;
 	};
 	Vertext vertices[4] =
 	{
 		{x,			y,			0	,0},
-		{x+w,		y,			1.f	,0},
-		{x+w,		y+h,		1.f	,1.f},
-		{x,			y+h,		0	,1.f},
+		{x+w,		y,			0	,0},
+		{x+w,		y+h,		1.f,0},
+		{x,			y+h,		1.f,0},
 	};
 #else
 	D3DSURFACE_DESC desc;
@@ -209,31 +208,34 @@ HRESULT SimulAtmosphericsRenderer::Render()
 	float x=0,y=0;
 	struct Vertext
 	{
-		float x,y,z,h;
-		float tx,ty;
+		float x,y;
+		float tx,ty,tz;
 	};
 	Vertext vertices[4] =
 	{
-		{x,				y,			1,	1, 0	,0},
-		{x+desc.Width,	y,			1,	1, 1.f	,0},
-		{x+desc.Width,	y+desc.Height,	1,	1, 1.f	,1.f},
-		{x,				y+desc.Height,	1,	1, 0	,1.f},
+		{-1.f,	-1.f	,0	,0		,1.f},
+		{ 1.f,	-1.f	,0	,1.f	,1.f},
+		{ 1.f,	 1.f	,0	,1.f	,0	},
+		{-1.f,	 1.f	,0	,0		,0	},
+		/*{x-desc.Width/2,	y-desc.Height/2,	0	,0		,0},
+		{x+desc.Width/2,	y-desc.Height/2,	1.f	,0		,0},
+		{x+desc.Width/2,	y+desc.Height/2,	1.f	,1.f	,0},
+		{x-desc.Width/2,	y+desc.Height/2,	0	,1.f	,0},*/
 	};
 #endif
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
-	m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+	//m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
 
-	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
-	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+	//m_pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
+	//m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+	//m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
 
-    m_pd3dDevice->SetVertexShader(NULL);
-    m_pd3dDevice->SetPixelShader(NULL);
+   // m_pd3dDevice->SetVertexShader(NULL);
+   // m_pd3dDevice->SetPixelShader(NULL);
+	m_pd3dDevice->SetVertexDeclaration(vertexDecl);
 	effect->SetTechnique(technique);
 
-	m_pd3dDevice->SetVertexDeclaration(vertexDecl);
-	
 	UINT passes=1;
 	hr=effect->Begin(&passes,0);
 	hr=effect->BeginPass(0);
@@ -241,8 +243,8 @@ HRESULT SimulAtmosphericsRenderer::Render()
 	hr=effect->EndPass();
 	hr=effect->End();
 	
-	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
-	m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
+//	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+	//m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
+	//m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
 	return hr;
 }

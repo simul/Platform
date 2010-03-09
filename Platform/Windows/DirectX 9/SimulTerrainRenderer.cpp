@@ -11,7 +11,7 @@
 #include "Simul/Terrain/HeightMapNode.h"
 
 #ifdef XBOX
-	#include <dxerr9.h>
+	#include <dxerr.h>
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("game:\\");
@@ -21,7 +21,7 @@
 	#include <tchar.h>
 	#include <d3d9.h>
 	#include <d3dx9.h>
-	#include <dxerr9.h>
+	#include <dxerr.h>
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("");
@@ -60,14 +60,14 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	heightmap=new simul::terrain::HeightMapNode();
 	heightmap->SetPageSize(129);
 	heightmap->SetTileSize(33);
-	heightmap->SetMaxHeight(4000.f);
-	heightmap->SetFractalOctaves(3);
-	heightmap->SetFractalScale(160000.f);
-	heightmap->SetPageWorldX(160000.f);
-	heightmap->SetPageWorldZ(160000.f);
-	heightmap->SetBaseAltitude(0.f);
-	heightmap->SetPersistence(0.65f);
-	heightmap->SetFractalFrequency(8);
+	heightmap->SetMaxHeight(8000.f);
+	heightmap->SetFractalOctaves(4);
+	heightmap->SetFractalScale(480000.f);
+	heightmap->SetPageWorldX(480000.f);
+	heightmap->SetPageWorldZ(480000.f);
+	heightmap->SetBaseAltitude(-4000.f);
+	heightmap->SetPersistence(0.75f);
+	heightmap->SetFractalFrequency(4);
 	heightmap->Rebuild();
 	heightMapInterface=heightmap.get();
 	heightmap->SetNumMipMapLevels(1);
@@ -358,7 +358,7 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 		m_pTerrainEffect->SetVector	(MieRayleighRatio	,&mie_rayleigh_ratio);
 		m_pTerrainEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 		float alt_km=cam_pos.y*0.001f;
-		static float light_mult=.25f/6.28f;
+		static float light_mult=1.f/25.f;//.25f/6.28f;
 		simul::sky::float4 light_colour=light_mult*skyInterface->GetLocalIrradiance(alt_km);
 		simul::sky::float4 ambient_colour=light_mult*skyInterface->GetAmbientLight(alt_km);
 		m_pTerrainEffect->SetVector	(lightColour		,(const D3DXVECTOR4 *)(&light_colour));

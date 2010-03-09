@@ -97,6 +97,7 @@ protected:
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	LPD3DXEFFECT					m_pTonemapEffect;
 	D3DXHANDLE						GammaTechnique;
+	D3DXHANDLE						SkyToScreenTechnique;
 	D3DXHANDLE						CloudBlendTechnique;
 	D3DXHANDLE						m_hExposure;
 	D3DXHANDLE						m_hGamma;
@@ -107,11 +108,11 @@ protected:
 	LPDIRECT3DTEXTURE9				buffer_depth_texture;
 	//! The low dynamic range buffer the sky is rendered to.
 	LPDIRECT3DTEXTURE9				ldr_buffer_texture;
-	LPDIRECT3DSURFACE9 m_pHDRRenderTarget	;
-	LPDIRECT3DSURFACE9 m_pBufferDepthSurface;
-	LPDIRECT3DSURFACE9 m_pLDRRenderTarget	;
-	LPDIRECT3DSURFACE9 m_pOldRenderTarget	;
-	LPDIRECT3DSURFACE9 m_pOldDepthSurface	;
+	LPDIRECT3DSURFACE9				m_pHDRRenderTarget	;
+	LPDIRECT3DSURFACE9				m_pBufferDepthSurface;
+	LPDIRECT3DSURFACE9				m_pLDRRenderTarget	;
+	LPDIRECT3DSURFACE9				m_pOldRenderTarget	;
+	LPDIRECT3DSURFACE9				m_pOldDepthSurface	;
 	HRESULT IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
 	HRESULT CreateBuffers();
 	HRESULT RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture,int w,int h,bool do_tonemap,bool blend=false);

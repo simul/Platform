@@ -26,7 +26,7 @@
 	static D3DPOOL default_d3d_pool=D3DUSAGE_CPU_CACHED_MEMORY;
 #else
 	#include <tchar.h>
-	#include <dxerr9.h>
+	#include <dxerr.h>
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("");

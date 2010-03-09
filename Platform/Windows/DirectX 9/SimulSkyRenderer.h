@@ -64,6 +64,8 @@ public:
 	HRESULT Destroy();
 	//! Call this once per frame to update the sky.
 	void Update(float dt);
+	HRESULT						RenderMoon();
+	HRESULT						RenderSun();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	HRESULT Render();
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
@@ -91,7 +93,6 @@ public:
 	float GetAltitudeTextureCoordinate() const;
 	bool Use3DFadeTextures() const{return true;}
 	float GetFadeInterp() const;
-	void SetStepsPerDay(unsigned steps);
 //! Implement the FadeTableCallback
 	void SetSkyTextureSize(unsigned size);
 	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
@@ -158,6 +159,4 @@ protected:
 	HRESULT						CreateSunlightTextures();
 	HRESULT						CreateSkyEffect();
 	HRESULT						RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
-	HRESULT						RenderMoon();
-	HRESULT						RenderSun();
 };

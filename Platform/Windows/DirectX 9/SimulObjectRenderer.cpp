@@ -21,7 +21,7 @@
 	#include <tchar.h>
 	#include <d3d9.h>
 	#include <d3dx9.h>
-	#include <dxerr9.h>
+	#include <dxerr.h>
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("");

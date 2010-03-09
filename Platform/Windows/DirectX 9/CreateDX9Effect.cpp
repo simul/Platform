@@ -19,7 +19,7 @@
 	static DWORD default_effect_flags=0;
 #else
 	#include <tchar.h>
-	#include <dxerr9.h>
+	#include <dxerr.h>
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("");
@@ -254,7 +254,7 @@ HRESULT CanUse16BitFloats(IDirect3DDevice9 *device)
 
 
 
-HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,LPDIRECT3DTEXTURE9 texture)
+HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,LPDIRECT3DBASETEXTURE9 texture)
 {
 	static bool disable=false;
 

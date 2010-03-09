@@ -52,7 +52,8 @@ protected:
 
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	LPD3DXEFFECT			m_pTonemapEffect;
-	D3DXHANDLE				GammaTechnique;
+	D3DXHANDLE				ToneMapTechnique;
+	D3DXHANDLE				ToneMapZWriteTechnique;
 	D3DXHANDLE				Exposure;
 	D3DXHANDLE				Gamma;
 	D3DXHANDLE				hdrTexture;

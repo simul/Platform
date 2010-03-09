@@ -18,7 +18,7 @@
 	static DWORD default_effect_flags=0;
 #else
 	#include <tchar.h>
-	#include <dxerr9.h>
+	#include <dxerr.h>
 	#include <string>
 	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #endif
@@ -83,13 +83,14 @@ HRESULT SimulHDRRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 #else
 		V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,"gamma.fx"));
 #endif
-	GammaTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
-	BrightpassTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_brightpass");
-	BlurTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_blur");
-	Exposure			=m_pTonemapEffect->GetParameterByName(NULL,"exposure");
-	Gamma				=m_pTonemapEffect->GetParameterByName(NULL,"gamma");
-	hdrTexture			=m_pTonemapEffect->GetParameterByName(NULL,"hdrTexture");
-	bloomTexture		=m_pTonemapEffect->GetParameterByName(NULL,"bloomTexture");
+	ToneMapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
+	ToneMapZWriteTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_tonemap_zwrite");
+	BrightpassTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_brightpass");
+	BlurTechnique			=m_pTonemapEffect->GetTechniqueByName("simul_blur");
+	Exposure				=m_pTonemapEffect->GetParameterByName(NULL,"exposure");
+	Gamma					=m_pTonemapEffect->GetParameterByName(NULL,"gamma");
+	hdrTexture				=m_pTonemapEffect->GetParameterByName(NULL,"hdrTexture");
+	bloomTexture			=m_pTonemapEffect->GetParameterByName(NULL,"bloomTexture");
 	V_RETURN(CreateBuffers());
 	return hr;
 }
@@ -163,7 +164,7 @@ HRESULT SimulHDRRenderer::CreateBuffers()
 #else
 	D3DFORMAT hdr_format=D3DFMT_LIN_A16B16G16R16F;
 #endif
-	hr=CanUse16BitFloats(m_pd3dDevice);
+	hr=-1;//CanUse16BitFloats(m_pd3dDevice);
 	if(hr!=S_OK)
 #ifndef XBOX
 		hdr_format=D3DFMT_A32B32G32R32F;
@@ -314,38 +315,6 @@ LPDIRECT3DSURFACE9 SimulHDRRenderer::MakeRenderTarget(const LPDIRECT3DTEXTURE9 p
 }
 	static float depth_start=1.f;
 
-HRESULT SimulHDRRenderer::StartRender()
-{
-	PIXBeginNamedEvent(0,"HDR Render");
-	HRESULT hr=S_OK;
-	m_pLDRRenderTarget		=NULL;
-	m_pOldRenderTarget		=NULL;
-	m_pOldDepthSurface		=NULL;
-	
-	PIXBeginNamedEvent(0,"Setup Sky Buffer");
-	V_RETURN(m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget));
-	V_RETURN(m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface));
-
-	SAFE_RELEASE(m_pHDRRenderTarget);
-	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
-	V_RETURN(m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget));
-	if(m_pBufferDepthSurface)
-		V_RETURN(m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface));
-
-	hr=m_pd3dDevice->SetRenderState(D3DRS_STENCILENABLE,FALSE);
-	hr=m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
-	hr=m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
-	hr=m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_ALPHA);
-	static float depth_start=1.f;
-	hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF00F0F0,depth_start, 0L);
-	hr=m_pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS,0); // Defaults to zero
-	hr=m_pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS,0);  
-
-	PIXEndNamedEvent();
-
-	last_texture=hdr_buffer_texture;
-	return S_OK;
-}
 
 HRESULT SimulHDRRenderer::RenderBrightpass()
 {
@@ -480,6 +449,39 @@ simul::math::RandomNumberGenerator r;
 	return hr;
 }
 
+HRESULT SimulHDRRenderer::StartRender()
+{
+	PIXBeginNamedEvent(0,"HDR Render");
+	HRESULT hr=S_OK;
+	m_pLDRRenderTarget		=NULL;
+	m_pOldRenderTarget		=NULL;
+	m_pOldDepthSurface		=NULL;
+	
+	PIXBeginNamedEvent(0,"Setup Sky Buffer");
+	V_RETURN(m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget));
+	V_RETURN(m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface));
+
+	SAFE_RELEASE(m_pHDRRenderTarget);
+	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
+	V_RETURN(m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget));
+	if(m_pBufferDepthSurface)
+		V_RETURN(m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface));
+
+	hr=m_pd3dDevice->SetRenderState(D3DRS_STENCILENABLE,FALSE);
+	hr=m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
+	hr=m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
+	//hr=m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_ALPHA);
+	static float depth_start=1.f;
+	hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L);
+	hr=m_pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS,0); // Defaults to zero
+	hr=m_pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS,0);  
+
+	PIXEndNamedEvent();
+
+	last_texture=hdr_buffer_texture;
+	return S_OK;
+}
+
 HRESULT SimulHDRRenderer::ApplyFade()
 {
 	HRESULT hr=S_OK;
@@ -488,13 +490,17 @@ HRESULT SimulHDRRenderer::ApplyFade()
 	PIXBeginNamedEvent(0,"Apply Fade");
 	atmospherics->SetInputTextures(hdr_buffer_texture,buffer_depth_texture);
 	m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
-	m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
+	if(m_pOldDepthSurface)
+		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
 	SAFE_RELEASE(m_pFadedRenderTarget)
 	m_pFadedRenderTarget=MakeRenderTarget(faded_texture);
 	m_pd3dDevice->SetRenderTarget(0,m_pFadedRenderTarget);
-	V_RETURN(atmospherics->Render());
 	if(m_pBufferDepthSurface)
 		m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
+	//hr=m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_ALPHA);
+	V_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,1.f, 0L));
+	//m_pTonemapEffect->SetTechnique(ToneMapZWriteTechnique);
+	//V_RETURN(atmospherics->Render());
 	last_texture=faded_texture;
 	PIXEndNamedEvent();
 	return hr;
@@ -519,14 +525,15 @@ HRESULT SimulHDRRenderer::FinishRender()
 
 	// using gamma, render the hdr image to the LDR buffer:
 	m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
-	m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
+	if(m_pOldDepthSurface)
+		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
 	m_pOldRenderTarget->GetDesc(&desc);
 
 	V_RETURN(m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L));
-	m_pTonemapEffect->SetTechnique(GammaTechnique);
+	m_pTonemapEffect->SetTechnique(ToneMapTechnique);
 	V_RETURN(m_pTonemapEffect->SetFloat(Exposure,exposure*exposure_multiplier));
 	V_RETURN(m_pTonemapEffect->SetFloat(Gamma,gamma));
-	V_RETURN(m_pTonemapEffect->SetTexture(hdrTexture,hdr_buffer_texture));
+	V_RETURN(m_pTonemapEffect->SetTexture(hdrTexture,last_texture));
 	V_RETURN(m_pTonemapEffect->SetTexture(bloomTexture,bloom_texture));
 
 	RenderBufferToCurrentTarget(desc.Width,desc.Height,true);
@@ -535,7 +542,7 @@ HRESULT SimulHDRRenderer::FinishRender()
 	SAFE_RELEASE(m_pOldDepthSurface)
 	SAFE_RELEASE(m_pLDRRenderTarget)
 	PIXEndNamedEvent();
-	//V_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L));
+	V_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L));
 	PIXEndNamedEvent();
 	return hr;
 }

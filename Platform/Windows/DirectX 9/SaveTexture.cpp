@@ -7,7 +7,7 @@
 simul::base::IniFile ini("atmospherics.ini");
 #include <string>
 #include <d3dx9.h>
-#include <dxerr9.h>
+#include <dxerr.h>
 extern void RenderScene(IDirect3DDevice9* pd3dDevice);
 
 static bool FileExists(const std::string& strFilename)

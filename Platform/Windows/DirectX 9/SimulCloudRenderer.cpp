@@ -35,7 +35,7 @@
 	static D3DPOOL default_d3d_pool=D3DUSAGE_CPU_CACHED_MEMORY;
 #else
 	#include <tchar.h>
-	#include <dxerr9.h>
+	#include <dxerr.h>
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("");
@@ -227,9 +227,9 @@ SimulCloudRenderer::SimulCloudRenderer() :
 	cloudInterface=cloudNode.get();
 	cloudInterface->SetWrap(true);
 
-	cloudInterface->SetGridLength(256);
-	cloudInterface->SetGridWidth(256);
-	cloudInterface->SetGridHeight(32);
+	cloudInterface->SetGridLength(128);
+	cloudInterface->SetGridWidth(128);
+	cloudInterface->SetGridHeight(16);
 
 	cloudInterface->SetExtinction(1.8f);
 	cloudInterface->SetAlphaSharpness(0.5f);
@@ -241,7 +241,7 @@ SimulCloudRenderer::SimulCloudRenderer() :
 	cloudInterface->SetCloudHeight(10000.f);
 	cloudInterface->SetNoisePeriod(2500000);
 
-	cloudInterface->SetOpticalDensity(1.8f);
+	cloudInterface->SetOpticalDensity(2.4f);
 	cloudInterface->SetHumidity(0);
 
 	cloudInterface->SetLightResponse(0.75f);
@@ -259,8 +259,8 @@ SimulCloudRenderer::SimulCloudRenderer() :
 
 	cloudKeyframer=new simul::clouds::CloudKeyframer(cloudInterface);
 	cloudKeyframer->SetUse16Bit(false);
-	// 20 game-minutes for interpolation:
-	//cloudKeyframer->SetInterpStepTime(1.f/24.f/6.f);
+	// 30 game-minutes for interpolation:
+	cloudKeyframer->SetInterpStepTime(1.f/24.f/2.f);
 
 	helper=new simul::clouds::CloudGeometryHelper();
 	helper->SetYVertical(y_vertical);
@@ -1555,6 +1555,8 @@ HRESULT SimulCloudRenderer::RenderDistances()
 	for(std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_iterator i=helper->GetSlices().begin();
 					i!=helper->GetSlices().end();i++,j++)
 	{
+		if(!(*i))
+			continue;
 		float d=(*i)->distance*0.004f;
 		lines[j].x=120+d; 
 		lines[j].y=300;  

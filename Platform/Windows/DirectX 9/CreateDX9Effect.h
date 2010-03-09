@@ -28,4 +28,4 @@ extern HRESULT CanUseTexFormat(IDirect3DDevice9 *device,D3DFORMAT f);
 extern HRESULT CanUseDepthFormat(IDirect3DDevice9 *device,D3DFORMAT f);
 extern HRESULT CanUse16BitFloats(IDirect3DDevice9 *device);
 
-extern HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,LPDIRECT3DTEXTURE9 texture);
+extern HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,LPDIRECT3DBASETEXTURE9 texture);
