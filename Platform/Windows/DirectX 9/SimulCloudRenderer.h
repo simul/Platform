@@ -71,9 +71,10 @@ public:
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 	HRESULT RenderLightning();
 	//! Set the wind horizontal velocity components in metres per second.
-	void SetWindVelocity(float x,float y);
+	void SetWind(float speed,float heading_degrees);
 	//! Get an interface to the Simul cloud object.
 	simul::clouds::CloudInterface *GetCloudInterface();
+	simul::clouds::CloudKeyframer *GetCloudKeyframer();
 	simul::clouds::LightningRenderInterface *GetLightningRenderInterface();
 	//! Get a float between zero and one which represents the interpolation between cloud keyframes.
 	float GetInterpolation() const;

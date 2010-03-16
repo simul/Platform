@@ -76,6 +76,7 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer() :
 	skyInterface(NULL),
 	fade_interp(0.f),
 	altitude_tex_coord(0.f)
+	,input_texture(NULL)
 {
 }
 
@@ -171,7 +172,7 @@ HRESULT SimulAtmosphericsRenderer::Render()
 		hr=effect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
 		D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
 		D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
-		//if(y_vertical)
+		
 		std::swap(sun_dir.y,sun_dir.z);
 
 		effect->SetVector	(lightDir			,&sun_dir);
@@ -204,7 +205,8 @@ HRESULT SimulAtmosphericsRenderer::Render()
 	};
 #else
 	D3DSURFACE_DESC desc;
-	input_texture->GetLevelDesc(0,&desc);
+	if(input_texture)
+		input_texture->GetLevelDesc(0,&desc);
 	float x=0,y=0;
 	struct Vertext
 	{
@@ -213,10 +215,10 @@ HRESULT SimulAtmosphericsRenderer::Render()
 	};
 	Vertext vertices[4] =
 	{
-		{-1.f,	-1.f	,0	,0		,1.f},
-		{ 1.f,	-1.f	,0	,1.f	,1.f},
-		{ 1.f,	 1.f	,0	,1.f	,0	},
-		{-1.f,	 1.f	,0	,0		,0	},
+		{-1.f,	-1.f	,0.5f	,0		,1.f},
+		{ 1.f,	-1.f	,0.5f	,1.f	,1.f},
+		{ 1.f,	 1.f	,0.5f	,1.f	,0	},
+		{-1.f,	 1.f	,0.5f	,0		,0	},
 		/*{x-desc.Width/2,	y-desc.Height/2,	0	,0		,0},
 		{x+desc.Width/2,	y-desc.Height/2,	1.f	,0		,0},
 		{x+desc.Width/2,	y+desc.Height/2,	1.f	,1.f	,0},

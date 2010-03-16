@@ -162,7 +162,7 @@ CircleFilter circle_f;
 class ExampleHumidityCallback:public simul::clouds::HumidityCallbackInterface
 {
 public:
-	virtual float GetHumidityMultiplier(float x,float y,float z) const
+	virtual float GetHumidityMultiplier(float,float,float z) const
 	{
 		static float mul=0.95f;
 		static float cutoff=0.125f;
@@ -249,9 +249,9 @@ SimulCloudRenderer::SimulCloudRenderer() :
 	cloudInterface->SetAmbientLightResponse(1.f);
 	cloudInterface->SetAnisotropicLightResponse(3.f);
 
-	cloudInterface->SetNoiseResolution(4);
+	cloudInterface->SetNoiseResolution(8);
 	cloudInterface->SetNoiseOctaves(4);
-	cloudInterface->SetNoisePersistence(.6f);
+	cloudInterface->SetNoisePersistence(.55f);
 
 	cloudNode->SetCacheNoise(true);
 	
@@ -264,10 +264,10 @@ SimulCloudRenderer::SimulCloudRenderer() :
 
 	helper=new simul::clouds::CloudGeometryHelper();
 	helper->SetYVertical(y_vertical);
-	helper->Initialize((unsigned)(120.f*detail),min_dist+(max_dist-min_dist)*detail);
+	helper->Initialize((unsigned)(160.f*detail),min_dist+(max_dist-min_dist)*detail);
 
 	helper->SetCurvedEarth(true);
-	
+	helper->SetAdjustCurvature(false);
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 	texel_index[0]=texel_index[1]=texel_index[2]=texel_index[3]=0;
 
@@ -410,7 +410,7 @@ HRESULT SimulCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 	cloudKeyframer->SetRenderCallback(this);
-	cloudKeyframer->Init();
+//	cloudKeyframer->Init();
 	return hr;
 }
 
@@ -655,7 +655,7 @@ void SimulCloudRenderer::Update(float dt)
 	if(last_time!=0.f)
 		real_dt=3600.f*(current_time-last_time);
 	last_time=current_time;
-	simul::math::AddFloatTimesVector(wind_offset,real_dt,wind_vector);
+	//simul::math::AddFloatTimesVector(wind_offset,real_dt,wind_vector);
 	if(y_vertical)
 		std::swap(wind_offset.y,wind_offset.z);
 	cloudInterface->SetWindOffset(wind_offset);
@@ -952,7 +952,7 @@ HRESULT SimulCloudRenderer::Render()
 			simul::sky::float4 view_km=(const float*)cam_pos;
 			helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
 			view_km*=0.001f;
-			float alt_km=0.001f*(cloudInterface->GetCloudBaseZ()+.5f*cloudInterface->GetCloudHeight());
+			float alt_km=0.001f*(cloudInterface->GetCloudBaseZ());//+.5f*cloudInterface->GetCloudHeight());
 
 			static float light_mult=0.05f;
 			simul::sky::float4 light_response(	cloudInterface->GetLightResponse(),
@@ -1070,7 +1070,7 @@ HRESULT SimulCloudRenderer::Render()
 					{
 						float j_interp=(float)j/(float)el_grid;
 						float sine=(2.f*j_interp-1.f);
-						float alt_km=min(max(0.f,view_km.y+sine*0.001f*(*i)->distance),skyInterface->GetAtmosphereThickness());
+						float alt_km=min(max(0.f,view_km.y+sine*0.001f*(*i)->distance),0.001f*(cloudInterface->GetCloudBaseZ()+cloudInterface->GetCloudHeight()));
 						light_colours[j]=skyInterface->GetLocalIrradiance(alt_km);
 					}
 					for(std::vector<const simul::clouds::CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
@@ -1255,9 +1255,10 @@ void SimulCloudRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 	proj=p;
 }
 
-void SimulCloudRenderer::SetWindVelocity(float x,float y)
+void SimulCloudRenderer::SetWind(float speed,float heading_degrees)
 {
-	wind_vector.Define(x,0,y);
+	cloudKeyframer->SetWindSpeed(speed);
+	cloudKeyframer->SetWindHeadingDegrees(heading_degrees);
 }
 
 simul::clouds::CloudInterface *SimulCloudRenderer::GetCloudInterface()
@@ -1265,6 +1266,10 @@ simul::clouds::CloudInterface *SimulCloudRenderer::GetCloudInterface()
 	return cloudInterface;
 }
 
+simul::clouds::CloudKeyframer *SimulCloudRenderer::GetCloudKeyframer()
+{
+	return cloudKeyframer.get();
+}
 
 simul::clouds::LightningRenderInterface *SimulCloudRenderer::GetLightningRenderInterface()
 {
@@ -1282,9 +1287,14 @@ float SimulCloudRenderer::GetOvercastFactor() const
 	return cloudKeyframer->GetOvercastFactor();
 }
 
+
 float SimulCloudRenderer::GetPrecipitationIntensity() const
 {
-	return cloudKeyframer->GetPrecipitation();
+	float p= cloudKeyframer->GetPrecipitation();
+	float above=((cam_pos.y-cloudInterface->GetCloudBaseZ())*cloudInterface->GetGridHeight()/cloudInterface->GetCloudHeight())+1.f;
+	above=min(above,1.f);
+	above=max(above,0.f);
+	return p*above;
 }
 
 float SimulCloudRenderer::GetSunOcclusion() const
@@ -1492,7 +1502,7 @@ void SimulCloudRenderer::SetDetail(float d)
 	if(d!=detail)
 	{
 		detail=d;
-		helper->Initialize((unsigned)(120.f*detail),min_dist+(max_dist-min_dist)*detail);
+		helper->Initialize((unsigned)(160.f*detail),min_dist+(max_dist-min_dist)*detail);
 	}
 }
 

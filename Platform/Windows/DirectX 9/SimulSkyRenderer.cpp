@@ -89,8 +89,8 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky) :
 	fadeTableInterface->SetEarthTest(false);
 	skyInterface->SetDaytime(.5f);
 	skyInterface->SetSunIrradiance(simul::sky::float4(25,25,25,0));
-//	skyInterface->SetHazeScaleHeightKm(2.f);
-//	skyInterface->SetHazeBaseHeightKm(4.f);
+	skyInterface->SetHazeScaleHeightKm(2.f);
+	//skyInterface->Setha(1.f);
 	cam_pos.x=cam_pos.z=0;
 	cam_pos.y=400.f;
 }
@@ -168,7 +168,7 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	// CreateSkyTexture() will be called back
 
 	SAFE_RELEASE(flare_texture);
-	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/Sunburst.dds",&flare_texture)))
+	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/SunFlare.dds",&flare_texture)))
 		return hr;
 	SAFE_RELEASE(moon_texture);
 	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/Moon.png",&moon_texture)))
@@ -681,7 +681,7 @@ HRESULT SimulSkyRenderer::RenderSun()
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
-	sunlight*=(1.f-sun_occlusion)*25.f;//2700.f;
+	sunlight*=pow(1.f-sun_occlusion,0.25f)*25.f;//2700.f;
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
 	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
@@ -696,22 +696,23 @@ HRESULT SimulSkyRenderer::RenderMoon()
 	float alt_km=0.001f*cam_pos.y;
 	m_pSkyEffect->SetTechnique(m_hTechniquePlanet);
 	m_pSkyEffect->SetTexture(flareTexture,moon_texture);
-	//float moon_elevation=15.f*3.14159f/180.f;
-	//float moon_azimuth=15.f*3.14159f/180.f;
+	float moon_elevation=15.f*3.14159f/180.f;
+	float moon_azimuth=15.f*3.14159f/180.f;
 	simul::sky::float4 original_irradiance=skyInterface->GetSunIrradiance();
 	// The moon has an albedo of 0.12:
 	simul::sky::float4 moon_dir4=skyInterface->GetDirectionToMoon();
-	float moon_elevation=asin(moon_dir4.z);
+	//float moon_elevation=asin(moon_dir4.z);
 	simul::sky::float4 moon_colour=0.12f*original_irradiance*skyInterface->GetIsotropicColourLossFactor(alt_km,moon_elevation,1e10f);
-	D3DXVECTOR4 moon_dir(moon_dir4.x,moon_dir4.z,moon_dir4.y,0);//cos(moon_elevation)*cos(moon_azimuth),sin(moon_elevation),cos(moon_elevation)*sin(moon_azimuth),0);
-	// Make it 2 times bigger than it should be:
-	static float size_mult=2.f;
+	D3DXVECTOR4 moon_dir(cos(moon_elevation)*cos(moon_azimuth),sin(moon_elevation),cos(moon_elevation)*sin(moon_azimuth),0);//moon_dir4.x,moon_dir4.z,moon_dir4.y,0);//
+	moon_dir4.Set(moon_dir.x,moon_dir.y,moon_dir.z,0);
+	// Make it 12 times bigger than it should be:
+	static float size_mult=12.f;
 	float moon_angular_size=size_mult*  3.14159f/180.f/2.f;
 	// Start the query
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&moon_colour));
 	HRESULT hr=RenderAngledQuad(moon_dir,moon_angular_size);
-	//std::swap(moon_dir.y,moon_dir.z);
-
+	std::swap(moon_dir.y,moon_dir.z);
+	skyInterface->SetDirectionToMoon(moon_dir4);
 	return hr;
 }
 
@@ -750,11 +751,6 @@ HRESULT SimulSkyRenderer::Render()
 	HRESULT hr=S_OK;
 
 	D3DXMATRIX tmp1, tmp2;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	cam_pos.x=tmp1._41;
-	cam_pos.y=tmp1._42;
-	cam_pos.z=tmp1._43;
-
 	D3DXMatrixIdentity(&world);
 	//set up matrices
 	world._41=cam_pos.x;
@@ -810,6 +806,11 @@ void SimulSkyRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
 	proj=p;
+	D3DXMATRIX tmp1;
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	cam_pos.x=tmp1._41;
+	cam_pos.y=tmp1._42;
+	cam_pos.z=tmp1._43;
 }
 
 void SimulSkyRenderer::Update(float dt)

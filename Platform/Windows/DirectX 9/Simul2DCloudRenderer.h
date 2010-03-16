@@ -15,6 +15,8 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Base/SmartPtr.h"
+#include "Simul/Clouds/CloudRenderCallback.h"
+#include "Simul/Clouds/CloudKeyframer.h"
 namespace simul
 {
 	namespace clouds
@@ -32,7 +34,7 @@ namespace simul
 typedef long HRESULT;
 
 //! A renderer for 2D cloud layers, e.g. cirrus clouds.
-class Simul2DCloudRenderer
+class Simul2DCloudRenderer: public simul::clouds::CloudRenderCallback
 {
 public:
 	Simul2DCloudRenderer();
@@ -61,11 +63,16 @@ public:
 	void SetWindVelocity(float x,float y);
 	//! Get an interface to the Simul cloud object.
 	simul::clouds::CloudInterface *GetCloudInterface();
+	// implementing CloudRenderCallback:
+	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
+	void FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
+	void CycleTexturesForward();
 protected:
 	simul::clouds::CloudInterface *cloudInterface;
 	simul::sky::SkyInterface *skyInterface;
 	simul::sky::FadeTableInterface *fadeTableInterface;
-	simul::clouds::CloudGeometryHelper *helper;
+	simul::base::SmartPtr<simul::clouds::CloudGeometryHelper> helper;
+	simul::base::SmartPtr<simul::clouds::CloudKeyframer> cloudKeyframer;
 
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	m_pVtxDecl;
@@ -97,12 +104,8 @@ protected:
 	D3DXVECTOR4					cam_pos;
 	D3DXMATRIX					world,view,proj;
 
-	HRESULT UpdateCloudTexture();
-	HRESULT FillInCloudTextures();
-	HRESULT CreateCloudTextures();
 	HRESULT CreateNoiseTexture();
 	HRESULT CreateImageTexture();
-	HRESULT CreateCloudEffect();
 	HRESULT MakeCubemap(); // not ready yet
 	simul::base::SmartPtr<simul::clouds::FastCloudNode> cloudNode;
 	float texture_scale;
