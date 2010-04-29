@@ -11,7 +11,7 @@
 #include "SimulObjectRenderer.h"
 
 #ifdef XBOX
-	#include <dxerr9.h>
+	#include <dxerr.h>
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("game:\\");

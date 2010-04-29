@@ -29,7 +29,9 @@ public:
 	void Update(float dt);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	HRESULT Render();
+#ifdef XBOX
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
+#endif
 	//! Set the strength of the rain or precipitation effect.
 	void SetIntensity(float i)
 	{
@@ -37,6 +39,8 @@ public:
 	}
 	//! Set the colour of light, e.g. sunlight, that illuminates the precipitation.
 	void SetLightColour(const float c[4]);
+	// Set a texture not created by this class to be used:
+	HRESULT SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex);
 protected:
 	LPDIRECT3DDEVICE9		m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
@@ -51,4 +55,5 @@ protected:
 	D3DXVECTOR3				cam_pos;
 	float radius,height,offs,rain_intensity;
 	float light_colour[4];
+	bool external_rain_texture;		// Is the rain texture created outside this class?
 };

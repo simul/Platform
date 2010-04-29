@@ -13,19 +13,26 @@
 #else
 	#include <d3dx9.h>
 #endif
-	#include <map>
-	#include <string>
-extern int GetShaderModel();
-extern void SetShaderModel(int m);
+#include <map>
+#include <string>
+enum ShaderModel {NO_SHADERMODEL=0,USE_SHADER_2,USE_SHADER_2A,USE_SHADER_3};
+extern ShaderModel GetShaderModel();
+extern void SetMaxShaderModel(ShaderModel m);
 extern void SetShaderPath(const char *path);
+extern void SetTexturePath(const char *path);
 // Get the technique, or look for a less hardware-demanding equivalent:
 extern D3DXHANDLE GetDX9Technique(LPD3DXEFFECT effect,const char *tech_name);
 extern HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWORD resource);
 extern HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,const char *filename);
 extern HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWORD resource,const std::map<std::string,std::string>&defines);
 extern HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,const char *filename,const std::map<std::string,std::string>&defines);
+extern HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &texture,DWORD resource);
+extern HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &texture,const char *filename);
 extern HRESULT CanUseTexFormat(IDirect3DDevice9 *device,D3DFORMAT f);
 extern HRESULT CanUseDepthFormat(IDirect3DDevice9 *device,D3DFORMAT f);
 extern HRESULT CanUse16BitFloats(IDirect3DDevice9 *device);
 
 extern HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,LPDIRECT3DBASETEXTURE9 texture);
+
+extern void SetBundleShaders(bool b);
+extern void SetResourceModule(const char *txt);

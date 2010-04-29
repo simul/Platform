@@ -63,11 +63,12 @@ public:
 	HRESULT Destroy();
 	//! Call this once per frame to update the clouds.
 	void Update(float dt);
-	HRESULT RenderNewMethod();//experimental, do not use
 	//! Call this to draw the clouds, including any illumination by lightning.
-	HRESULT Render();
+	HRESULT Render(bool cubemap=false);
+#ifdef XBOX
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
+#endif
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 	HRESULT RenderLightning();
 	//! Set the wind horizontal velocity components in metres per second.
@@ -82,6 +83,8 @@ public:
 	float GetOvercastFactor() const;
 	//! How much, if any precipitation should be shown, between zero and one.
 	float GetPrecipitationIntensity() const;
+	void SetPrecipitation(float p){precip_strength=p;}
+	void SetStepsPerHour(unsigned s);
 	//! Return true if the camera is above the cloudbase altitude.
 	bool IsCameraAboveCloudBase() const;
 	float GetSunOcclusion() const;
@@ -132,6 +135,7 @@ public:
 	void FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
 	void CycleTexturesForward();
 protected:
+	float precip_strength;
 	float altitude_tex_coord;
 	bool y_vertical;
 	float sun_occlusion;
@@ -143,16 +147,16 @@ protected:
 	simul::sky::FadeTableInterface *fadeTableInterface;
 	simul::sound::fmod::NodeSound *sound;
 	unsigned texel_index[4];
-	bool lightning_active;
 	float timing;
 
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	m_pVtxDecl;
 	LPDIRECT3DVERTEXDECLARATION9	m_pLightningVtxDecl;
-	LPDIRECT3DVERTEXDECLARATION9 m_pHudVertexDecl;
+	LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl;
 
 	LPD3DXEFFECT					m_pLightningEffect;
-	D3DXHANDLE						m_hTechniqueLightning;	// Handle to technique in the effect 
+	D3DXHANDLE						m_hTechniqueLightningLines;	// Handle to technique in the effect 
+	D3DXHANDLE						m_hTechniqueLightningQuads;	// Handle to technique in the effect 
 	LPD3DXEFFECT					m_pCloudEffect;
 	D3DXHANDLE						m_hTechniqueCloud;		// Handle to technique in the effect
 	D3DXHANDLE						m_hTechniqueCloudsAndLightning;	

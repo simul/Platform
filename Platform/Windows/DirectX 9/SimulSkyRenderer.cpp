@@ -54,7 +54,11 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky) :
 	moon_texture(NULL),
 	sun_occlusion(0.f),
 	d3dQuery(NULL),
-	sky_tex_format(D3DFMT_UNKNOWN)
+	sky_tex_format(D3DFMT_UNKNOWN),
+	sun_angular_size(3.14159f/180.f/2.f),
+	flare_angular_size(3.14159f/180.f*20.f/2.f),
+	external_flare_texture(false),
+	flare_magnitude(0.f)
 {
 	for(int i=0;i<3;i++)
 	{
@@ -98,6 +102,11 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky) :
 simul::sky::SkyInterface *SimulSkyRenderer::GetSkyInterface()
 {
 	return skyInterface;
+}
+
+simul::sky::SiderealSkyInterface *SimulSkyRenderer::GetSiderealSkyInterface()
+{
+	return dynamic_cast<simul::sky::SiderealSkyInterface*>(skyNode.get());
 }
 
 simul::sky::FadeTableInterface *SimulSkyRenderer::GetFadeTableInterface()
@@ -167,12 +176,14 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	fadeTableInterface->SetCallback(this);
 	// CreateSkyTexture() will be called back
 
-	SAFE_RELEASE(flare_texture);
-	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/SunFlare.dds",&flare_texture)))
-		return hr;
+	// OK to fail with these (more or less):
+	if(!external_flare_texture)
+	{
+		SAFE_RELEASE(flare_texture);
+		D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("SunFlare.dds"),&flare_texture);
+	}
 	SAFE_RELEASE(moon_texture);
-	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/Moon.png",&moon_texture)))
-		return hr;
+	D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Moon.png"),&moon_texture);
 
 	return hr;
 }
@@ -185,7 +196,10 @@ HRESULT SimulSkyRenderer::InvalidateDeviceObjects()
         hr=m_pSkyEffect->OnLostDevice();
 	SAFE_RELEASE(m_pSkyEffect);
 	SAFE_RELEASE(m_pVtxDecl);
-	SAFE_RELEASE(flare_texture);
+	if(!external_flare_texture)
+	{
+		SAFE_RELEASE(flare_texture);
+	}
 	SAFE_RELEASE(moon_texture);
 	for(int i=0;i<3;i++)
 	{
@@ -232,15 +246,18 @@ void SimulSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_
 		short *short_ptr=(short *)(lockedRect.pBits);
 		short_ptr+=4*texel_index;
 		for(int i=0;i<num_texels*4;i++)
+		{
 			*short_ptr++=simul::sky::TextureGenerator::ToFloat16(*float4_array++);
+		}
 	}
 	else
 	{
 		// Convert the array of floats into float16 values for the texture.
 		float *float_ptr=(float *)(lockedRect.pBits);
 		float_ptr+=4*texel_index;
-		for(int i=0;i<num_texels*4;i++)
-			*float_ptr++=(*float4_array++);
+		memcpy(float_ptr,float4_array,sizeof(float)*4*num_texels);
+		//for(int i=0;i<num_texels*4;i++)
+		//	*float_ptr++=(*float4_array++);
 	}
 	hr=tex->UnlockRect(0);
 }
@@ -303,6 +320,13 @@ void SimulSkyRenderer::GetLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LP
 		*i2=inscatter_textures_3d[1];
 	}
 }
+
+void SimulSkyRenderer::GetSkyTextures(LPDIRECT3DBASETEXTURE9 *s1,LPDIRECT3DBASETEXTURE9 *s2)
+{
+	*s1=sky_textures[0];
+	*s2=sky_textures[1];
+}
+
 float SimulSkyRenderer::GetAltitudeTextureCoordinate() const
 {
 	return fadeTableInterface->GetAltitudeTexCoord();
@@ -311,6 +335,10 @@ float SimulSkyRenderer::GetAltitudeTextureCoordinate() const
 float SimulSkyRenderer::GetFadeInterp() const
 {
 	return fadeTable->GetInterpolation();
+}
+void SimulSkyRenderer::SetStepsPerDay(float s)
+{
+	fadeTable->SetStepsPerDay(s);
 }
 
 void SimulSkyRenderer::SetSkyTextureSize(unsigned size)
@@ -487,6 +515,27 @@ HRESULT SimulSkyRenderer::CreateSkyTextures()
 			if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,skyTexSize,numAltitudes,1,0,sky_tex_format,d3d_memory_pool,&sky_textures[i])))
 				return hr;
 		}
+		LPDIRECT3DTEXTURE9 tex=sky_textures[i];
+		D3DLOCKED_RECT lockedRect={0};
+		if(FAILED(hr=tex->LockRect(0,&lockedRect,NULL,NULL)))
+			return hr;
+		if(sky_tex_format==D3DFMT_A16B16G16R16F)
+		{
+			// Convert the array of floats into float16 values for the texture.
+			short *short_ptr=(short *)(lockedRect.pBits);
+			for(int i=0;i<(int)skyTexSize*4;i++)
+			{
+				*short_ptr++=simul::sky::TextureGenerator::ToFloat16(0.f);
+			}
+		}
+		else
+		{
+			// Convert the array of floats into float16 values for the texture.
+			float *float_ptr=(float *)(lockedRect.pBits);
+			for(int i=0;i<skyTexSize*4;i++)
+				*float_ptr++=0.f;
+		}
+		hr=tex->UnlockRect(0);
 	}
 	return hr;
 }
@@ -517,7 +566,7 @@ struct Vertex_t
 {
 	float x,y,z;
 };
-	static const float size=2500.f;
+	static const float size=250.f;
 	static Vertex_t vertices[36] =
 	{
 		{-size,		-size,	size},
@@ -671,6 +720,7 @@ void SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	proj=tmp;
 	PIXEndNamedEvent();
 }
+	float sun_angular_size=3.14159f/180.f/2.f;
 
 HRESULT SimulSkyRenderer::RenderSun()
 {
@@ -686,44 +736,106 @@ HRESULT SimulSkyRenderer::RenderSun()
 	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 	std::swap(sun_dir.y,sun_dir.z);
-	float sun_angular_size=3.14159f/180.f/2.f;
 	HRESULT hr=RenderAngledQuad(sun_dir,sun_angular_size);
 	return hr;
 }
 
-HRESULT SimulSkyRenderer::RenderMoon()
+PlanetStruct *SimulSkyRenderer::GetPlanet(int index)
 {
-	float alt_km=0.001f*cam_pos.y;
-	m_pSkyEffect->SetTechnique(m_hTechniquePlanet);
-	m_pSkyEffect->SetTexture(flareTexture,moon_texture);
-	float moon_elevation=15.f*3.14159f/180.f;
-	float moon_azimuth=15.f*3.14159f/180.f;
-	simul::sky::float4 original_irradiance=skyInterface->GetSunIrradiance();
-	// The moon has an albedo of 0.12:
-	simul::sky::float4 moon_dir4=skyInterface->GetDirectionToMoon();
-	//float moon_elevation=asin(moon_dir4.z);
-	simul::sky::float4 moon_colour=0.12f*original_irradiance*skyInterface->GetIsotropicColourLossFactor(alt_km,moon_elevation,1e10f);
-	D3DXVECTOR4 moon_dir(cos(moon_elevation)*cos(moon_azimuth),sin(moon_elevation),cos(moon_elevation)*sin(moon_azimuth),0);//moon_dir4.x,moon_dir4.z,moon_dir4.y,0);//
-	moon_dir4.Set(moon_dir.x,moon_dir.y,moon_dir.z,0);
-	// Make it 12 times bigger than it should be:
-	static float size_mult=12.f;
-	float moon_angular_size=size_mult*  3.14159f/180.f/2.f;
-	// Start the query
-	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&moon_colour));
-	HRESULT hr=RenderAngledQuad(moon_dir,moon_angular_size);
-	std::swap(moon_dir.y,moon_dir.z);
-	skyInterface->SetDirectionToMoon(moon_dir4);
-	return hr;
+	if(planets.find(index)==planets.end())
+		return NULL;
+	return &(planets[index]);
 }
 
+void SimulSkyRenderer::SetPlanet(int index,LPDIRECT3DTEXTURE9 tex,float rad,bool do_lighting)
+{
+	if(tex==NULL)
+	{
+		if(planets.find(index)!=planets.end())
+			planets.erase(index);
+		return;
+	}
+	if(planets.find(index)==planets.end())
+	{
+		planets[index].dir[0]=1.f;
+		planets[index].dir[1]=0;
+		planets[index].dir[2]=0;
+		planets[index].angular_radius=rad;
+		planets[index].do_lighting=do_lighting;
+	}
+	
+	planets[index].pTexturePtr=tex;
+}
+
+void SimulSkyRenderer::SetFlare(LPDIRECT3DTEXTURE9 tex,float rad)
+{
+	if(!external_flare_texture)
+	{
+		SAFE_RELEASE(flare_texture);
+	}
+	flare_angular_size=rad;
+	flare_texture=tex;
+	external_flare_texture=true;
+}
+
+
+void SimulSkyRenderer::SetPlanetDirection(int index,const float *pos)
+{
+	if(planets.find(index)==planets.end())
+		return;
+	simul::sky::float4 planet_dir4(pos[0],pos[1],pos[2],0);
+	planets[index].dir[0]=planet_dir4.x;
+	planets[index].dir[1]=planet_dir4.y;
+	planets[index].dir[2]=planet_dir4.z;
+}
+
+void SimulSkyRenderer::RenderPlanets()
+{
+	for(std::map<int,PlanetStruct>::iterator i=planets.begin();i!=planets.end();i++)
+	{
+	//	RenderPlanet((*i).second.pTexturePtr,i->second.angular_radius,i->second.dir,i->second.do_lighting);
+	}
+}
+
+HRESULT SimulSkyRenderer::RenderPlanet(LPDIRECT3DTEXTURE9 tex,float rad,const float *dir,bool do_lighting)
+{
+	float alt_km=0.001f*cam_pos.y;
+	if(do_lighting)
+		m_pSkyEffect->SetTechnique(m_hTechniquePlanet);
+	else
+		m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
+	m_pSkyEffect->SetTexture(flareTexture,tex);
+	float planet_elevation=15.f*3.14159f/180.f;
+	float planet_azimuth=15.f*3.14159f/180.f;
+	simul::sky::float4 original_irradiance=skyInterface->GetSunIrradiance();
+	// The planet has an albedo of 0.12:
+	simul::sky::float4 planet_dir4=dir;//skyInterface->GetDirectionToMoon();
+	planet_dir4/=simul::sky::length(planet_dir4);
+	//float planet_elevation=asin(planet_dir4.z);
+	simul::sky::float4 planet_colour=0.12f*original_irradiance*skyInterface->GetIsotropicColourLossFactor(alt_km,planet_elevation,1e10f);
+	D3DXVECTOR4 planet_dir(dir);//(cos(planet_elevation)*cos(planet_azimuth),sin(planet_elevation),cos(planet_elevation)*sin(planet_azimuth),0);//planet_dir4.x,planet_dir4.z,planet_dir4.y,0);//
+	//planet_dir4.Set(planet_dir.x,planet_dir.y,planet_dir.z,0);
+	// Make it 12 times bigger than it should be:
+	static float size_mult=1.f;
+	float planet_angular_size=size_mult*rad;//  3.14159f/180.f/2.f;
+	// Start the query
+	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
+	HRESULT hr=RenderAngledQuad(planet_dir,planet_angular_size);
+	std::swap(planet_dir.y,planet_dir.z);
+	skyInterface->SetDirectionToMoon(planet_dir4);
+	return hr;
+}
+#include "Simul/Math/Decay.h"
 HRESULT SimulSkyRenderer::RenderFlare(float exposure)
 {
 	HRESULT hr=S_OK;
 	if(!m_pSkyEffect)
 		return hr;
 	float magnitude=exposure*(1.f-sun_occlusion);
-	if(magnitude>1.f)
-		magnitude=1.f;
+	
+	simul::math::FirstOrderDecay(flare_magnitude,magnitude,5.f,0.01f);
+	if(flare_magnitude>1.f)
+		flare_magnitude=1.f;
 	float alt_km=0.001f*cam_pos.y;
 	sunlight=skyInterface->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
@@ -732,25 +844,31 @@ HRESULT SimulSkyRenderer::RenderFlare(float exposure)
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
 	static float sun_mult=0.5f;
-	sunlight*=sun_mult*magnitude;
+	sunlight*=sun_mult*flare_magnitude;
     m_pd3dDevice->SetVertexShader( NULL );
     m_pd3dDevice->SetPixelShader( NULL );
 	m_pSkyEffect->SetVector(colour	,(D3DXVECTOR4*)(&sunlight));
 	m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
 	m_pSkyEffect->SetTexture(flareTexture,flare_texture);
-	float sun_angular_size=3.14159f/180.f/2.f;
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 	std::swap(sun_dir.y,sun_dir.z);
-	if(magnitude>0.f)
-		hr=RenderAngledQuad(sun_dir,sun_angular_size*20.f*magnitude);
+	if(flare_magnitude>0.f)
+		hr=RenderAngledQuad(sun_dir,flare_angular_size*flare_magnitude);
 	return hr;
 }
 
 HRESULT SimulSkyRenderer::Render()
 {
 	HRESULT hr=S_OK;
-
+#ifndef XBOX
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+#endif
 	D3DXMATRIX tmp1, tmp2;
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	cam_pos.x=tmp1._41;
+	cam_pos.y=tmp1._42;
+	cam_pos.z=tmp1._43;
 	D3DXMatrixIdentity(&world);
 	//set up matrices
 	world._41=cam_pos.x;
@@ -760,11 +878,6 @@ HRESULT SimulSkyRenderer::Render()
 	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
 	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
-
-	//m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-  // hr=m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
-	//m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
-   // m_pd3dDevice->SetRenderState(D3DRS_FILLMODE,D3DFILL_SOLID);
 
 
 	PIXBeginNamedEvent(0,"Render Sky");
@@ -795,13 +908,13 @@ HRESULT SimulSkyRenderer::Render()
 		hr=m_pSkyEffect->EndPass();
 	}
 	hr=m_pSkyEffect->End();
-	m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-    hr=m_pd3dDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
+	//m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+    //hr=m_pd3dDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
 	D3DXMatrixIdentity(&world);
 	PIXEndNamedEvent();
 	return hr;
 }
-
+#ifdef XBOX
 void SimulSkyRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
@@ -812,12 +925,13 @@ void SimulSkyRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 	cam_pos.y=tmp1._42;
 	cam_pos.z=tmp1._43;
 }
-
+#endif
 void SimulSkyRenderer::Update(float dt)
 {
 	static bool pause=false;
     if(!pause)
 	{
+
 		fadeTable->SetAltitudeKM(cam_pos.y*0.001f);
 		skyNode->TimeStep(dt);
 		static simul::base::Timer timer;
@@ -826,6 +940,7 @@ void SimulSkyRenderer::Update(float dt)
 		timer.FinishTime();
 		timing=timer.Time;
 		interp=fadeTable->GetInterpolation();
+		//pause=true;
 	}
 }
 
@@ -834,9 +949,32 @@ float SimulSkyRenderer::GetTiming() const
 	return timing;
 }
 
+simul::sky::float4 SimulSkyRenderer::GetAmbient() const
+{
+	float alt_km=0.001f*cam_pos.y;
+	return skyInterface->GetSkyColour(simul::sky::float4(0,0,1,0),alt_km);
+}
+
+simul::sky::float4 SimulSkyRenderer::GetLightColour() const
+{
+	float alt_km=0.001f*cam_pos.y;
+	return skyInterface->GetLocalIrradiance(alt_km);
+}
+
+simul::sky::float4 SimulSkyRenderer::GetLightDirection() const
+{
+	return skyInterface->GetDirectionToLight();
+}
+
 const char *SimulSkyRenderer::GetDebugText() const
 {
 	static char txt[200];
 	sprintf_s(txt,200,"interp %3.3g",fadeTable->GetInterpolation());
 	return txt;
+}
+
+void SimulSkyRenderer::SetTime(float hour)
+{
+	GetSiderealSkyInterface()->SetHourOfTheDay(hour);
+	GetFadeTableInterface()->Reset();
 }

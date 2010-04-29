@@ -56,7 +56,7 @@
 #include "Simul/Sky/FadeTableInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Pi.h"
-#include "Samples/LicenseKey.h"
+#include "Simul/LicenseKey.h"
 //
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
@@ -113,10 +113,10 @@ struct PosTexVert_t
 
 #define MAX_VERTICES (5000)
 
-static void SetBits4()
+/*static void SetBits4()
 {
 	simul::clouds::TextureGenerator::SetBits(bits[0],bits[1],bits[2],bits[3],2,big_endian);
-}
+}*/
 static void SetBits8()
 {
 	simul::clouds::TextureGenerator::SetBits(bits8[0],bits8[1],bits8[2],bits8[3],(unsigned)4,big_endian);
@@ -308,7 +308,7 @@ HRESULT Simul2DCloudRenderer::CreateNoiseTexture()
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(noise_texture);
 	// Can we load it from disk?
-	if((hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/noise.dds",&noise_texture))==S_OK)
+	if((hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/noise.dds"),&noise_texture))==S_OK)
 		return hr;
 	// Otherwise create it:
 	int size=512;
@@ -330,7 +330,7 @@ HRESULT Simul2DCloudRenderer::CreateImageTexture()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(image_texture);
-	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/Cirrus2.jpg",&image_texture)))
+	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/Cirrus2.jpg"),&image_texture)))
 		return hr;
 	return hr;
 }
@@ -391,7 +391,7 @@ void Simul2DCloudRenderer::FillCloudTexture(int texture_index,int texel_index,in
 }
 
 
-void Simul2DCloudRenderer::Update(float dt)
+void Simul2DCloudRenderer::Update(float )
 {
 	if(!cloud_textures[2])
 		return;

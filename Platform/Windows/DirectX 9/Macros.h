@@ -1,14 +1,20 @@
 #ifndef MACROS_H_DONE
-	#define MACROS_H_DONE
-	#include <iostream>
+#define MACROS_H_DONE
+#include <iostream>
 #include <tchar.h>
+#ifdef ENABLE_PIX
+	#define PIXBeginNamedEvent(a,b) D3DPERF_BeginEvent(a,L##b)
+	#define PIXEndNamedEvent()		D3DPERF_EndEvent()
+	#define PIXWrapper(a,b)			PIXBeginNamedEvent(a,b);for(int pixw=0;pixw<1;pixw++,PIXEndNamedEvent())
+#else
 	#define PIXBeginNamedEvent(a,b) //D3DPERF_BeginEvent(a,L##b)
 	#define PIXEndNamedEvent()		// D3DPERF_EndEvent()
-
+	#define PIXWrapper(a,b)
+#endif
 	#ifndef SAFE_RELEASE
 		#define SAFE_RELEASE(p)		{ if(p) { (p)->Release(); (p)=NULL; } }
 	#endif
-#if 1
+#ifdef UNICODE
 
 	#define WIDEN2(x) L ## x
 	#define WIDEN(x) WIDEN2(x)
@@ -17,7 +23,7 @@
 
 
 	#ifndef V_RETURN
-#define V_RETURN(x)			{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_RETURN error %d at file %s, line %d",hr,__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,_T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);DebugBreak();return hr; } }
+		#define V_RETURN(x)			{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_RETURN error %d at file %s, line %d",hr,__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,_T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);DebugBreak();return hr; } }
 	#endif
 	#ifndef V_CHECK
 		#define V_CHECK(x)	{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_CHECK error %d at file %s, line %d",hr,__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,_T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);DebugBreak();} }

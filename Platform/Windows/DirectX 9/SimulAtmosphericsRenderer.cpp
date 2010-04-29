@@ -139,114 +139,117 @@ SimulAtmosphericsRenderer::~SimulAtmosphericsRenderer()
 	Destroy();
 }
 
+#ifdef XBOX
 void SimulAtmosphericsRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
 	proj=p;
 }
+#endif
 
 HRESULT SimulAtmosphericsRenderer::Render()
 {
 	HRESULT hr=S_OK;
-	
-//  outpos=mul(wvp,pos);
-// outpos=wvp*pos
-// output=(view*proj)t * pos
-// ((view*proj)')inv output=pos
-	D3DXMATRIX vpt;
-	D3DXMATRIX viewproj;
-	view._41=view._42=view._43=0;
-	D3DXMatrixMultiply(&viewproj, &view,&proj);
-	D3DXMatrixTranspose(&vpt,&viewproj);
-	D3DXMATRIX ivp;
-	D3DXMatrixInverse(&ivp,NULL,&vpt);
-
-	hr=effect->SetMatrix(invViewProj,&ivp);
-	hr=effect->SetFloat(fadeInterp,fade_interp);
-
-	hr=effect->SetTexture(imageTexture,input_texture);
-
-	hr=effect->SetFloat(altitudeTexCoord,altitude_tex_coord);
-	if(skyInterface)
+	PIXWrapper(0xFFFFFF00,"Render Atmospherics")
 	{
-		hr=effect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
-		D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
-		D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
-		
-		std::swap(sun_dir.y,sun_dir.z);
-
-		effect->SetVector	(lightDir			,&sun_dir);
-		effect->SetVector	(MieRayleighRatio	,&mie_rayleigh_ratio);
-	}
-
-	hr=effect->SetTexture(lossTexture1,loss_texture_1);
-	hr=effect->SetTexture(lossTexture2,loss_texture_2);
-
-	hr=effect->SetTexture(inscatterTexture1,inscatter_texture_1);
-	hr=effect->SetTexture(inscatterTexture2,inscatter_texture_2);
-	
-
-
-#ifdef XBOX
-	float x=-1.f,y=1.f;
-	float w=2.f;
-	float h=-2.f;
-	struct Vertext
-	{
-		float x,y;
-		float tx,ty,tz;
-	};
-	Vertext vertices[4] =
-	{
-		{x,			y,			0	,0},
-		{x+w,		y,			0	,0},
-		{x+w,		y+h,		1.f,0},
-		{x,			y+h,		1.f,0},
-	};
-#else
-	D3DSURFACE_DESC desc;
-	if(input_texture)
-		input_texture->GetLevelDesc(0,&desc);
-	float x=0,y=0;
-	struct Vertext
-	{
-		float x,y;
-		float tx,ty,tz;
-	};
-	Vertext vertices[4] =
-	{
-		{-1.f,	-1.f	,0.5f	,0		,1.f},
-		{ 1.f,	-1.f	,0.5f	,1.f	,1.f},
-		{ 1.f,	 1.f	,0.5f	,1.f	,0	},
-		{-1.f,	 1.f	,0.5f	,0		,0	},
-		/*{x-desc.Width/2,	y-desc.Height/2,	0	,0		,0},
-		{x+desc.Width/2,	y-desc.Height/2,	1.f	,0		,0},
-		{x+desc.Width/2,	y+desc.Height/2,	1.f	,1.f	,0},
-		{x-desc.Width/2,	y+desc.Height/2,	0	,1.f	,0},*/
-	};
+#ifndef XBOX
+		m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+		m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
 #endif
-	D3DXMATRIX ident;
-	D3DXMatrixIdentity(&ident);
-	//m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+		D3DXMATRIX vpt;
+		D3DXMATRIX viewproj;
+		view._41=view._42=view._43=0;
+		D3DXMatrixMultiply(&viewproj, &view,&proj);
+		D3DXMatrixTranspose(&vpt,&viewproj);
+		D3DXMATRIX ivp;
+		D3DXMatrixInverse(&ivp,NULL,&vpt);
 
-	//m_pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
-	//m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-	//m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
+		hr=effect->SetMatrix(invViewProj,&ivp);
+		hr=effect->SetFloat(fadeInterp,fade_interp);
 
-   // m_pd3dDevice->SetVertexShader(NULL);
-   // m_pd3dDevice->SetPixelShader(NULL);
-	m_pd3dDevice->SetVertexDeclaration(vertexDecl);
-	effect->SetTechnique(technique);
+		hr=effect->SetTexture(imageTexture,input_texture);
 
-	UINT passes=1;
-	hr=effect->Begin(&passes,0);
-	hr=effect->BeginPass(0);
-	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, vertices, sizeof(Vertext) );
-	hr=effect->EndPass();
-	hr=effect->End();
+		hr=effect->SetFloat(altitudeTexCoord,altitude_tex_coord);
+		if(skyInterface)
+		{
+			hr=effect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
+			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
+			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
+			
+			std::swap(sun_dir.y,sun_dir.z);
+
+			effect->SetVector	(lightDir			,&sun_dir);
+			effect->SetVector	(MieRayleighRatio	,&mie_rayleigh_ratio);
+		}
+
+		hr=effect->SetTexture(lossTexture1,loss_texture_1);
+		hr=effect->SetTexture(lossTexture2,loss_texture_2);
+
+		hr=effect->SetTexture(inscatterTexture1,inscatter_texture_1);
+		hr=effect->SetTexture(inscatterTexture2,inscatter_texture_2);
 	
-//	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-	//m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
-	//m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
+
+	#ifdef XBOX
+		float x=-1.f,y=1.f;
+		float w=2.f;
+		float h=-2.f;
+		struct Vertext
+		{
+			float x,y;
+			float tx,ty,tz;
+		};
+		Vertext vertices[4] =
+		{
+			{x,			y,			0	,0},
+			{x+w,		y,			0	,0},
+			{x+w,		y+h,		1.f,0},
+			{x,			y+h,		1.f,0},
+		};
+	#else
+		D3DSURFACE_DESC desc;
+		if(input_texture)
+			input_texture->GetLevelDesc(0,&desc);
+		float x=0,y=0;
+		struct Vertext
+		{
+			float x,y;
+			float tx,ty,tz;
+		};
+		Vertext vertices[4] =
+		{
+			{-1.f,	-1.f	,0.5f	,0		,1.f},
+			{ 1.f,	-1.f	,0.5f	,1.f	,1.f},
+			{ 1.f,	 1.f	,0.5f	,1.f	,0	},
+			{-1.f,	 1.f	,0.5f	,0		,0	},
+			/*{x-desc.Width/2,	y-desc.Height/2,	0	,0		,0},
+			{x+desc.Width/2,	y-desc.Height/2,	1.f	,0		,0},
+			{x+desc.Width/2,	y+desc.Height/2,	1.f	,1.f	,0},
+			{x-desc.Width/2,	y+desc.Height/2,	0	,1.f	,0},*/
+		};
+	#endif
+		D3DXMATRIX ident;
+		D3DXMatrixIdentity(&ident);
+		//m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+
+		//m_pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
+		//m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+		//m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
+
+	   // m_pd3dDevice->SetVertexShader(NULL);
+	   // m_pd3dDevice->SetPixelShader(NULL);
+		m_pd3dDevice->SetVertexDeclaration(vertexDecl);
+		effect->SetTechnique(technique);
+
+		UINT passes=1;
+		hr=effect->Begin(&passes,0);
+		hr=effect->BeginPass(0);
+		m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, vertices, sizeof(Vertext) );
+		hr=effect->EndPass();
+		hr=effect->End();
+		
+	//	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+		//m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
+		//m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
+	}
 	return hr;
 }

@@ -47,7 +47,9 @@ public:
 	HRESULT InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 	HRESULT Render();
+#ifdef XBOX
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
+#endif
 	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
 	{
 		loss_texture_1=t1;

@@ -15,14 +15,16 @@
 	#include <fstream>
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("game:\\");
+	static tstring shader_path=TEXT("game:\\");
+	static tstring texture_path=TEXT("game:\\");
 	static DWORD default_effect_flags=0;
 #else
 	#include <tchar.h>
 	#include <dxerr.h>
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("");
+	static tstring shader_path=TEXT("");
+	static tstring texture_path=TEXT("");
 	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #endif
 	#include <vector>
@@ -36,39 +38,167 @@
 #define V_RETURN(x)			{ hr = x; if( FAILED(hr) ) { return hr; } }
 #endif
 
-//#define BUNDLE_SHADERS
+bool BUNDLE_SHADERS=false;
+
+static tstring module;
+
+void SetBundleShaders(bool b)
+{
+	BUNDLE_SHADERS=b;
+}
 
 struct d3dMacro
 {
 	std::string name;
 	std::string define;
 };
-static int ShaderModel=2;
+static ShaderModel shaderModel=NO_SHADERMODEL;
+static ShaderModel maxShaderModel=USE_SHADER_3;
 static bool shader_path_set=false;
+static bool texture_path_set=false;
 void SetShaderPath(const char *path)
 {
 #ifdef UNICODE
 	// tstring and TEXT cater for the confusion between wide and regular strings.
-	filepath.resize(strlen(path),L' '); // Make room for characters
+	shader_path.resize(strlen(path),L' '); // Make room for characters
 	// Copy string to wstring.
-	std::copy(path,path+strlen(path),filepath.begin());
+	std::copy(path,path+strlen(path),shader_path.begin());
 
-	filepath+=L"/";
+	shader_path+=L"/";
 #else
-	filepath=path;
-	filepath+="/";
+	shader_path=path;
+	shader_path+="/";
 #endif
 	shader_path_set=true;
 }
-
-int GetShaderModel()
+void SetTexturePath(const char *path)
 {
-	return ShaderModel;
+#ifdef UNICODE
+	// tstring and TEXT cater for the confusion between wide and regular strings.
+	texture_path.resize(strlen(path),L' '); // Make room for characters
+	// Copy string to wstring.
+	std::copy(path,path+strlen(path),texture_path.begin());
+	texture_path+=L"/";
+#else
+	texture_path=path;
+	texture_path+="/";
+#endif
+	texture_path_set=true;
+}
+void SetResourceModule(const char *txt)
+{
+#ifdef UNICODE
+	// tstring and TEXT cater for the confusion between wide and regular strings.
+	module.resize(strlen(txt),L' '); // Make room for characters
+	// Copy string to wstring.
+	std::copy(txt,txt+strlen(txt),module.begin());
+#else
+	module=txt;
+#endif
 }
 
-void SetShaderModel(int m)
+
+
+ShaderModel GetShaderModel()
 {
-	ShaderModel=m;
+	return shaderModel;
+}
+LPDIRECT3DDEVICE9 last_d3dDevice=0;
+
+static const char *GetPixelShaderString(const D3DCAPS9 &caps)
+{
+    switch(caps.PixelShaderVersion)
+    {
+		case D3DPS_VERSION(1, 1):
+			return "ps_1_1";
+
+		case D3DPS_VERSION(1, 2):
+			return "ps_1_2";
+
+		case D3DPS_VERSION(1, 3):
+			return "ps_1_3";
+
+		case D3DPS_VERSION(1, 4):
+			return "ps_1_4";
+
+		case D3DPS_VERSION(2, 0):
+			if ((caps.PS20Caps.NumTemps>=22)                          &&
+				(caps.PS20Caps.Caps&D3DPS20CAPS_ARBITRARYSWIZZLE)     &&
+				(caps.PS20Caps.Caps&D3DPS20CAPS_GRADIENTINSTRUCTIONS) &&
+				(caps.PS20Caps.Caps&D3DPS20CAPS_PREDICATION)          &&
+				(caps.PS20Caps.Caps&D3DPS20CAPS_NODEPENDENTREADLIMIT) &&
+				(caps.PS20Caps.Caps&D3DPS20CAPS_NOTEXINSTRUCTIONLIMIT))
+			{
+				return "ps_2_a";
+			}
+			if ((caps.PS20Caps.NumTemps>=32)                          &&
+				(caps.PS20Caps.Caps&D3DPS20CAPS_NOTEXINSTRUCTIONLIMIT))
+			{
+				return "ps_2_b";
+			}
+			return "ps_2_0";
+
+		case D3DPS_VERSION(3, 0):
+        return "ps_3_0";
+    }
+    return NULL;
+}
+static void CalcShaderModel(LPDIRECT3DDEVICE9 m_pd3dDevice)
+{
+	if(last_d3dDevice==m_pd3dDevice)
+		return;
+	if(shaderModel!=NO_SHADERMODEL&&shaderModel<=maxShaderModel)
+		return;
+	last_d3dDevice=m_pd3dDevice;
+	
+	D3DCAPS9 pCaps;//
+	//, D3DFORMAT AdapterFormat, 
+              //                    D3DFORMAT BackBufferFormat, bool bWindowed, void* pUserContext )
+
+	m_pd3dDevice->GetDeviceCaps(&pCaps);
+	const char *shader_str=GetPixelShaderString(pCaps);
+	std::cout<<"Pixel shader version ";
+	std::cout<<shader_str;
+	std::cout<<std::endl;
+    // check vertex shading support
+    if (pCaps.VertexShaderVersion < D3DVS_VERSION(2,0))
+	{
+		std::cerr<<"Device does not support 2.0 vertex shaders!";
+		DebugBreak();
+		shaderModel=NO_SHADERMODEL;
+		return;
+	}
+    // check pixel shader support 
+    if (pCaps.PixelShaderVersion < D3DPS_VERSION(2,0))
+	{
+		std::cerr<<"Device does not support 2.0 pixel shaders!";
+		DebugBreak();
+		shaderModel=NO_SHADERMODEL;
+		return;
+	}
+	shaderModel=USE_SHADER_3;
+    if(pCaps.PixelShaderVersion < D3DPS_VERSION(3,0))
+	{
+		if(pCaps.PixelShaderVersion == D3DPS_VERSION(2,0))
+		{
+			std::cout<<"Device does not support 2.a pixel shaders, defaulting to 2.0"<<std::endl;
+			shaderModel=USE_SHADER_2;
+		}
+		else
+		{
+			std::cout<<"Device does not support 3.0 pixel shaders, defaulting to 2.a"<<std::endl;
+			shaderModel=USE_SHADER_2A;
+		}
+	}
+	if(shaderModel>maxShaderModel)
+		shaderModel=maxShaderModel;
+}
+
+void SetMaxShaderModel(ShaderModel m)
+{
+	maxShaderModel=m;
+	if((int)shaderModel>m)
+		shaderModel=m;
 }
 
 // Get the named technique. If not supported, 
@@ -85,7 +215,6 @@ D3DXHANDLE GetDX9Technique(LPD3DXEFFECT effect,const char *tech_name)
 }
 static D3DXMACRO *MakeMacroList(const std::map<std::string,std::string>&defines)
 {
-	bool name=true;
 	D3DXMACRO *macros=NULL;
 	if(defines.size())
 	{
@@ -103,6 +232,34 @@ static D3DXMACRO *MakeMacroList(const std::map<std::string,std::string>&defines)
 	return macros;
 }
 
+HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &texture,DWORD resource)
+{
+	HMODULE hModule=GetModuleHandle(module.c_str());
+	LPTSTR rn=MAKEINTRESOURCE(resource);
+	return D3DXCreateTextureFromResource(m_pd3dDevice,hModule,rn,&texture);
+}
+
+HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &texture,const char *filename)
+{
+	if(BUNDLE_SHADERS)
+		return CreateDX9Texture(m_pd3dDevice,texture,GetResourceId(filename));
+	if(!texture_path_set)
+	{
+		std::cerr<<"CreateDX9Texture: Texture path not set, use SetTexturePath() with the relative path to the .fx files."<<std::endl;
+	}
+#ifdef UNICODE
+	// tstring and TEXT cater for the confusion between wide and regular strings.
+	std::wstring wfilename(strlen(filename),L' '); // Make room for characters
+	// Copy string to wstring.
+	std::copy(filename,filename+strlen(filename),wfilename.begin());
+	tstring fn=texture_path+wfilename;
+#else
+	tstring fn=filename;
+	fn=texture_path+fn;
+#endif
+	return D3DXCreateTextureFromFile(m_pd3dDevice,fn.c_str(),&texture);
+}
+
 HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,const char *filename)
 {
 	std::map<std::string,std::string> defines;
@@ -111,9 +268,10 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 
 HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,const char *filename,const std::map<std::string,std::string>&defines)
 {
-#ifdef BUNDLE_SHADERS
-	return CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename));
-#else
+	CalcShaderModel(m_pd3dDevice);
+	if(BUNDLE_SHADERS)
+		return CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename));
+
 	std::cout<<"CreateDX9Effect "<<filename<<std::endl;
 	HRESULT hr;
     LPD3DXBUFFER errors=0;
@@ -127,10 +285,10 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 	std::wstring wfilename(strlen(filename),L' '); // Make room for characters
 	// Copy string to wstring.
 	std::copy(filename,filename+strlen(filename),wfilename.begin());
-	tstring fn=filepath+wfilename;
+	tstring fn=shader_path+wfilename;
 #else
 	tstring fn=filename;
-	fn=filepath+fn;
+	fn=shader_path+fn;
 #endif
 	D3DXMACRO *macros=MakeMacroList(defines);
 
@@ -159,14 +317,13 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 	if(FAILED(hr))
 	{
 #ifdef DXTRACE_ERR
-        hr=DXTRACE_ERR( L"CreateDX9Effect", hr );
+        hr=DXTRACE_ERR( "CreateDX9Effect", hr );
 #endif
 		DebugBreak();
 	}
 	delete [] macros;
 	V_RETURN(hr);
 	return hr;
-#endif
 }
 
 
@@ -181,7 +338,7 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWOR
 	HRESULT hr;
     LPD3DXBUFFER errors=0;
 	D3DXMACRO *macros=MakeMacroList(defines);
-	HMODULE hModule=GetModuleHandle(NULL);
+	HMODULE hModule=GetModuleHandle(module.c_str());
 	LPTSTR rn=MAKEINTRESOURCE(resource);
 	DWORD flags=default_effect_flags;
 	SAFE_RELEASE(effect);
@@ -197,18 +354,18 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWOR
 				&effect,
 				&errors);
 	if(FAILED(hr))
-		std::cout<<"Error building "<<rn<<std::endl;
+		std::cout<<"Error building shader"<<std::endl;
 	if(errors)
 	{
 		if(!FAILED(hr))
-			std::cout<<"Warnings building "<<rn<<std::endl;
+			std::cout<<"Warnings building shader"<<std::endl;
 		err=static_cast<const char*>(errors->GetBufferPointer());
 		std::cout<<err<<std::endl;
 	}
 	if(FAILED(hr))
 	{
 #ifdef DXTRACE_ERR
-        hr=DXTRACE_ERR( L"CreateDX9Effect", hr );
+        hr=DXTRACE_ERR( "CreateDX9Effect", hr );
 #endif
 		DebugBreak();
 	}
@@ -296,14 +453,14 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 		{x,			y+h,		0	,1.f},
 	};
 #else
-	float x=x1,y=y1;
+	float x=(float)x1,y=(float)y1;
 	struct Vertext
 	{
 		float x,y,z,h;
 		float r,g,b,a;
 		float tx,ty;
 	};
-	float width=dx,height=dy;
+	float width=(float)dx,height=(float)dy;
 	Vertext vertices[4] =
 	{
 		{x,			y,			1,	1, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
@@ -331,9 +488,9 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	m_pd3dDevice->SetTexture(0,texture);
     m_pd3dDevice->SetTextureStageState(0,D3DTSS_COLOROP, D3DTOP_MODULATE);
     m_pd3dDevice->SetTextureStageState(0,D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+    m_pd3dDevice->SetSamplerState(0,D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+    m_pd3dDevice->SetSamplerState(0,D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
 	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
-
-
 	SAFE_RELEASE(m_pBufferVertexDecl);
 	return S_OK;
 }

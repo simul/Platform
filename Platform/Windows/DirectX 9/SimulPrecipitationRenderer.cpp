@@ -40,7 +40,8 @@ SimulPrecipitationRenderer::SimulPrecipitationRenderer() :
 	rain_texture(NULL),
 	radius(10.f),
 	height(100.f),
-	rain_intensity(0.f)
+	rain_intensity(0.f),
+	external_rain_texture(false)
 {
 }
 
@@ -49,6 +50,7 @@ struct Vertex_t
 	float x,y,z;
 	float tex_x,tex_y,fade;
 };
+
 #define CONE_SIDES 36
 #define NUM_VERT ((CONE_SIDES+1)*4)
 static Vertex_t vertices[NUM_VERT];
@@ -92,18 +94,31 @@ HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
 	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,"simul_rain.fx"));
 
-	SAFE_RELEASE(rain_texture);
-	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/Rain.jpg",&rain_texture));
-
 	m_hTechniqueRain	=m_pRainEffect->GetTechniqueByName("simul_rain");
 	worldViewProj		=m_pRainEffect->GetParameterByName(NULL,"worldViewProj");
 	offset				=m_pRainEffect->GetParameterByName(NULL,"offset");
 	intensity			=m_pRainEffect->GetParameterByName(NULL,"intensity");
 	lightColour			=m_pRainEffect->GetParameterByName(NULL,"lightColour");
-	
+
+	if(!external_rain_texture)
+	{
+		SAFE_RELEASE(rain_texture);
+		V_RETURN(hr=CreateDX9Texture(m_pd3dDevice,rain_texture,"Rain.jpg"));
+	}
+
 	return hr;
 }
 
+HRESULT SimulPrecipitationRenderer::SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex)
+{
+	if(!external_rain_texture)
+	{
+		SAFE_RELEASE(rain_texture);
+	}
+	external_rain_texture=true;
+	rain_texture=tex;
+	return S_OK;
+}
 
 HRESULT SimulPrecipitationRenderer::InvalidateDeviceObjects()
 {
@@ -112,7 +127,8 @@ HRESULT SimulPrecipitationRenderer::InvalidateDeviceObjects()
         hr=m_pRainEffect->OnLostDevice();
 	SAFE_RELEASE(m_pRainEffect);
 	SAFE_RELEASE(m_pVtxDecl);
-	SAFE_RELEASE(rain_texture);
+	if(!external_rain_texture)
+		SAFE_RELEASE(rain_texture);
 	return hr;
 }
 
@@ -121,7 +137,8 @@ HRESULT SimulPrecipitationRenderer::Destroy()
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pRainEffect);
-	SAFE_RELEASE(rain_texture);
+	if(!external_rain_texture)
+		SAFE_RELEASE(rain_texture);
 	return hr;
 }
 
@@ -134,21 +151,28 @@ SimulPrecipitationRenderer::~SimulPrecipitationRenderer()
 
 HRESULT SimulPrecipitationRenderer::Render()
 {
+	if(rain_intensity<=0)
+		return S_OK;
+#ifndef XBOX
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+#endif
+
 	PIXBeginNamedEvent(0,"Render Precipitation");
 	m_pd3dDevice->SetTexture(0,rain_texture);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU,D3DTADDRESS_WRAP);
+	/*m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU,D3DTADDRESS_WRAP);
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSV,D3DTADDRESS_WRAP);
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER,D3DTEXF_LINEAR);
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER,D3DTEXF_LINEAR);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MIPFILTER,D3DTEXF_LINEAR);
+	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MIPFILTER,D3DTEXF_LINEAR);*/
 
-	HRESULT hr=m_pd3dDevice->SetVertexDeclaration( m_pVtxDecl );
+	HRESULT hr=m_pd3dDevice->SetVertexDeclaration(m_pVtxDecl);
 
-	m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	/*m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 	m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
     hr=m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
 	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
-    m_pd3dDevice->SetRenderState(D3DRS_FILLMODE,D3DFILL_SOLID);
+    m_pd3dDevice->SetRenderState(D3DRS_FILLMODE,D3DFILL_SOLID);*/
 
 	m_pRainEffect->SetTechnique( m_hTechniqueRain );
 
@@ -180,8 +204,6 @@ HRESULT SimulPrecipitationRenderer::Render()
 		hr=m_pRainEffect->EndPass();
 	}
 	hr=m_pRainEffect->End();
-	m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-    hr=m_pd3dDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
 	D3DXMatrixIdentity(&world);
 	PIXEndNamedEvent();
 	return hr;
@@ -189,18 +211,20 @@ HRESULT SimulPrecipitationRenderer::Render()
 
 void SimulPrecipitationRenderer::SetLightColour(const float c[4])
 {
-	static float cc=0.05f;
+	static float cc=0.02f;
 	light_colour[0]=cc*c[0];
 	light_colour[1]=cc*c[1];
 	light_colour[2]=cc*c[2];
 	light_colour[3]=1.f;
 }
 
+#ifdef XBOX
 void SimulPrecipitationRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
 	proj=p;
 }
+#endif
 
 void SimulPrecipitationRenderer::Update(float dt)
 {

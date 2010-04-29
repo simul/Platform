@@ -17,6 +17,7 @@ typedef long HRESULT;
 #include "Simul/Math/float3.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Base/Referenced.h"
+#include "Simul/Base/SmartPtr.h"
 namespace simul
 {
 	namespace sky
@@ -26,6 +27,7 @@ namespace simul
 	namespace terrain
 	{
 		class HeightMapInterface;
+		class HeightMapNode;
 		struct Cutout;
 	}
 }
@@ -75,6 +77,7 @@ public:
 		exposure=e;
 	}
 protected:
+	simul::base::SmartPtr<simul::terrain::HeightMapNode> heightmap;
 	HRESULT InternalRender(bool depth_only);
 	float altitude_tex_coord;
 	simul::sky::SkyInterface *skyInterface;

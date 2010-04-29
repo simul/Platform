@@ -44,9 +44,13 @@ public:
 	//! Call this to release the memory for D3D device objects.
 	HRESULT Destroy();
 	//! Call this to draw the sky and clouds.
-	HRESULT Render();
+	HRESULT Render(bool is_cubemap=false);
 	//! Call this to draw the clouds after the main scene.
 	HRESULT RenderLateCloudLayer();
+	//! Call this to draw lightning.
+	HRESULT RenderLightning();
+	//! Call this to draw rain etc.
+	HRESULT RenderPrecipitation();
 	//! Enable or disable the 3d and 2d cloud layers.
 	void EnableLayers(bool clouds3d,bool clouds2d);
 	bool IsCloudLayer1Visible() const
@@ -84,19 +88,26 @@ public:
 		renderDepthBufferCallback=cb;
 	}
 	void SetBufferSize(int w,int h);
+	void EnableRain(bool e=true);
+	void SetAutoExposure(bool a);
+	float GetTotalBrightness() const;
+	void SetPrecipitation(float strength,float speed);
 protected:
 	void UpdateSkyAndCloudHookup();
 	bool AlwaysRenderCloudsLate;
 	bool RenderCloudsLate;
+	bool externally_defined_buffers;
+	bool auto_exposure;
 	DWORD gamma_resource_id;
 	//! The size of the 2D buffer the sky is rendered to.
 	int BufferWidth,BufferHeight;
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl;
-
+LPDIRECT3DTEXTURE9 temp_depth_texture;
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	LPD3DXEFFECT					m_pTonemapEffect;
 	D3DXHANDLE						GammaTechnique;
+	D3DXHANDLE						DirectTechnique;
 	D3DXHANDLE						SkyToScreenTechnique;
 	D3DXHANDLE						CloudBlendTechnique;
 	D3DXHANDLE						m_hExposure;
@@ -130,4 +141,5 @@ protected:
 	bool tone_map;
 	float timing;
 	float exposure_multiplier;
+	bool show_rain;
 };

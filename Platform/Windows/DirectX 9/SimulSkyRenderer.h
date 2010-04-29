@@ -17,6 +17,7 @@
 	#include <d3d9.h>
 	#include <d3dx9.h>
 #endif
+#include <map>
 
 namespace simul
 {
@@ -34,11 +35,19 @@ namespace simul
 	namespace sky
 	{
 		class SkyInterface;
+		class SiderealSkyInterface;
 		class SkyNode;
 		class InterpolatedFadeTable;
 		class FadeTableInterface;
 	}
 }
+struct PlanetStruct
+{
+	LPDIRECT3DTEXTURE9 pTexturePtr;
+	float dir[3];
+	float angular_radius;
+	bool do_lighting;
+};
 
 typedef long HRESULT;
 
@@ -52,6 +61,7 @@ public:
 	virtual ~SimulSkyRenderer();
 	//! Get the interface to the sky object so that other classes can use it for lighting, distance fades etc.
 	simul::sky::SkyInterface *GetSkyInterface();
+	simul::sky::SiderealSkyInterface *GetSiderealSkyInterface();
 	simul::sky::FadeTableInterface *GetFadeTableInterface();
 	simul::sky::InterpolatedFadeTable *GetFadeTable();
 
@@ -64,7 +74,8 @@ public:
 	HRESULT Destroy();
 	//! Call this once per frame to update the sky.
 	void Update(float dt);
-	HRESULT						RenderMoon();
+	void						RenderPlanets();
+	HRESULT						RenderPlanet(LPDIRECT3DTEXTURE9	tex,float rad,const float *dir,bool do_lighting);
 	HRESULT						RenderSun();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	HRESULT						Render();
@@ -76,23 +87,31 @@ public:
 	//! GetSunOcclusion executes a pseudo-render of an invisible billboard, then
 	//! uses a hardware occlusion query to see how many pixels have passed the z-test.
 	void CalcSunOcclusion(float cloud_occlusion=0.f);
+#ifdef XBOX
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
+#endif
 	//! Set a multiplier for time steps - default is 1.0
 	void SetTimeMultiplier(float tm);
+	void SetTime(float hour);
 	//! Set the overcast factor for the horizon. Zero is clear skies, one is cloudy.
 	//! This factor then goes into sky brightness and fade calculations.
 	void SetOvercastFactor(float of);
 	//! A timing measurement.
 	float GetTiming() const;
+	simul::sky::float4 GetAmbient() const;
+	simul::sky::float4 GetLightColour() const;
+	simul::sky::float4 GetLightDirection() const;
 	//! This sets the base altitude and range for the overcast effect - the base should be the cloudbase,
 	//! while the range should be the height of the clouds.
 	void SetOvercastBaseAndRange(float base_alt_km,float range_km);
 	void GetLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LPDIRECT3DBASETEXTURE9 *l2,
 		LPDIRECT3DBASETEXTURE9 *i1,LPDIRECT3DBASETEXTURE9 *i2);
+	void GetSkyTextures(LPDIRECT3DBASETEXTURE9 *s1,LPDIRECT3DBASETEXTURE9 *s2);
 	float GetAltitudeTextureCoordinate() const;
 	bool Use3DFadeTextures() const{return true;}
 	float GetFadeInterp() const;
+	void SetStepsPerDay(float s);
 //! Implement the FadeTableCallback
 	void SetSkyTextureSize(unsigned size);
 	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
@@ -103,8 +122,16 @@ public:
 	void FillSunlightTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void CycleTexturesForward();
 	const char *GetDebugText() const;
+	PlanetStruct *GetPlanet(int index);
+	void SetPlanet(int index,LPDIRECT3DTEXTURE9 tex,float rad,bool do_lighting);
+	void SetFlare(LPDIRECT3DTEXTURE9 tex,float rad);
+	void SetPlanetDirection(int index,const float *pos);
 protected:
+	bool external_flare_texture;
+	float flare_magnitude;
+	std::map<int,PlanetStruct> planets;
 	float timing;
+	float flare_angular_size,sun_angular_size;
 	D3DFORMAT sky_tex_format;
 	float sun_occlusion;
 	simul::sky::float4 sunlight;
