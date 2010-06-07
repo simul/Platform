@@ -20,7 +20,6 @@
 	#include <d3dx9.h>
 	#include <dxerr.h>
 	#include <string>
-	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 	static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
 #endif
 	#include <fstream>
@@ -76,6 +75,7 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky) :
 	}
 	else
 		skyNode=new simul::sky::SkyNode();
+	AddChild(skyNode.get());
 	skyInterface		=dynamic_cast<simul::sky::SkyInterface*>(skyNode.get());
 	simul::sky::ColourSky *colourSky=dynamic_cast<simul::sky::ColourSky*>(skyNode.get());
 //	skyInterface->SetMieWavelengthExponent(0.f);
@@ -94,7 +94,7 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky) :
 	skyInterface->SetDaytime(.5f);
 	skyInterface->SetSunIrradiance(simul::sky::float4(25,25,25,0));
 	skyInterface->SetHazeScaleHeightKm(2.f);
-	//skyInterface->Setha(1.f);
+
 	cam_pos.x=cam_pos.z=0;
 	cam_pos.y=400.f;
 }
@@ -784,16 +784,16 @@ void SimulSkyRenderer::SetPlanetDirection(int index,const float *pos)
 	if(planets.find(index)==planets.end())
 		return;
 	simul::sky::float4 planet_dir4(pos[0],pos[1],pos[2],0);
-	planets[index].dir[0]=planet_dir4.x;
-	planets[index].dir[1]=planet_dir4.y;
-	planets[index].dir[2]=planet_dir4.z;
+	planets[index].dir[0]=pos[0];
+	planets[index].dir[1]=pos[1];
+	planets[index].dir[2]=pos[2];
 }
 
 void SimulSkyRenderer::RenderPlanets()
 {
 	for(std::map<int,PlanetStruct>::iterator i=planets.begin();i!=planets.end();i++)
 	{
-	//	RenderPlanet((*i).second.pTexturePtr,i->second.angular_radius,i->second.dir,i->second.do_lighting);
+		RenderPlanet((*i).second.pTexturePtr,i->second.angular_radius,i->second.dir,i->second.do_lighting);
 	}
 }
 
@@ -977,4 +977,20 @@ void SimulSkyRenderer::SetTime(float hour)
 {
 	GetSiderealSkyInterface()->SetHourOfTheDay(hour);
 	GetFadeTableInterface()->Reset();
+}
+
+std::ostream &SimulSkyRenderer::Save(std::ostream &os) const
+{
+	simul::sky::ColourFadeTable *cft=dynamic_cast<simul::sky::ColourFadeTable *>(fadeTable.get());
+	if(cft)
+		cft->Save(os);
+	return os;
+}
+
+std::istream &SimulSkyRenderer::Load(std::istream &is) const
+{
+	simul::sky::ColourFadeTable *cft=dynamic_cast<simul::sky::ColourFadeTable *>(fadeTable.get());
+	if(cft)
+		cft->Load(is);
+	return is;
 }

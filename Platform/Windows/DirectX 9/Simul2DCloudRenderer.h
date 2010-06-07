@@ -17,12 +17,13 @@
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Clouds/CloudRenderCallback.h"
 #include "Simul/Clouds/CloudKeyframer.h"
+#include "Simul/Graph/Meta/Group.h"
 namespace simul
 {
 	namespace clouds
 	{
 		class CloudInterface;
-		class CloudGeometryHelper;
+		class Cloud2DGeometryHelper;
 		class FastCloudNode;
 	}
 	namespace sky
@@ -34,7 +35,7 @@ namespace simul
 typedef long HRESULT;
 
 //! A renderer for 2D cloud layers, e.g. cirrus clouds.
-class Simul2DCloudRenderer: public simul::clouds::CloudRenderCallback
+class Simul2DCloudRenderer: public simul::clouds::CloudRenderCallback, public simul::graph::meta::Group
 {
 public:
 	Simul2DCloudRenderer();
@@ -60,18 +61,19 @@ public:
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	//! Set the wind horizontal velocity components in metres per second.
-	void SetWindVelocity(float x,float y);
+	void SetWind(float speed,float heading_degrees);
 	//! Get an interface to the Simul cloud object.
 	simul::clouds::CloudInterface *GetCloudInterface();
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
 	void CycleTexturesForward();
+	void SetCloudiness(float c);
 protected:
 	simul::clouds::CloudInterface *cloudInterface;
 	simul::sky::SkyInterface *skyInterface;
 	simul::sky::FadeTableInterface *fadeTableInterface;
-	simul::base::SmartPtr<simul::clouds::CloudGeometryHelper> helper;
+	simul::base::SmartPtr<simul::clouds::Cloud2DGeometryHelper> helper;
 	simul::base::SmartPtr<simul::clouds::CloudKeyframer> cloudKeyframer;
 
 	LPDIRECT3DDEVICE9				m_pd3dDevice;

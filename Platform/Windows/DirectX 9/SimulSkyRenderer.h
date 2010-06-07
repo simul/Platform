@@ -9,6 +9,7 @@
 
 #pragma once
 #include "Simul/Base/SmartPtr.h"
+#include "Simul/Graph/Meta/Group.h"
 #include "Simul/Sky/FadeTableCallback.h"
 #include "Simul/Sky/Float4.h"
 #ifdef XBOX
@@ -54,7 +55,7 @@ typedef long HRESULT;
 //! A renderer for skies, this class will manage an instance of simul::sky::SkyNode and use it to calculate sky colours
 //! in real time for the simul_sky.fx shader.
 
-class SimulSkyRenderer:public simul::sky::FadeTableCallback
+class SimulSkyRenderer:public simul::sky::FadeTableCallback,public simul::graph::meta::Group
 {
 public:
 	SimulSkyRenderer(bool UseColourSky=false);
@@ -126,6 +127,10 @@ public:
 	void SetPlanet(int index,LPDIRECT3DTEXTURE9 tex,float rad,bool do_lighting);
 	void SetFlare(LPDIRECT3DTEXTURE9 tex,float rad);
 	void SetPlanetDirection(int index,const float *pos);
+
+	// Save and load a sky sequence
+	std::ostream &Save(std::ostream &os) const;
+	std::istream &Load(std::istream &is) const;
 protected:
 	bool external_flare_texture;
 	float flare_magnitude;

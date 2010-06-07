@@ -6,6 +6,7 @@
 // in accordance with the terms of that agreement.
 
 #pragma once
+#include "Simul/Graph/Meta/Group.h"
 #ifdef XBOX
 	#include <xtl.h>
 #else
@@ -34,7 +35,7 @@ public:
 };
 
 // A class that takes an image buffer and a z-buffer and applies atmospheric fading.
-class SimulAtmosphericsRenderer : public SimulAtmosphericsInterface
+class SimulAtmosphericsRenderer : public SimulAtmosphericsInterface, public simul::graph::meta::Group
 {
 public:
 	SimulAtmosphericsRenderer();

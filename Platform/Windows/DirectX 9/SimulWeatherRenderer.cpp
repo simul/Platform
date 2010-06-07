@@ -16,14 +16,12 @@
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("game:\\");
-	static DWORD default_effect_flags=0;
 #else
 	#include <tchar.h>
 	#include <dxerr.h>
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("");
-	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #endif
 #include "CreateDX9Effect.h"
 #include "Simul/Sky/SkyInterface.h"
@@ -45,7 +43,6 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	bool usebuffer,bool tonemap,int width,
 	int height,bool sky,bool clouds3d,
 	bool clouds2d,bool rain,
-	bool always_render_clouds_late,
 		bool colour_sky) :
 	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
@@ -74,14 +71,20 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	gamma_resource_id(0),
 	RenderCloudsLate(false),
 	show_rain(false),
-	AlwaysRenderCloudsLate(always_render_clouds_late),
+	AlwaysRenderCloudsLate(false),
 	renderDepthBufferCallback(NULL)
 {
 	D3DXMatrixIdentity(&ident);
 	if(sky)
+	{
 		simulSkyRenderer=new SimulSkyRenderer(colour_sky);
+		AddChild(simulSkyRenderer.get());
+	}
 	if(clouds3d)
+	{
 		simulCloudRenderer=new SimulCloudRenderer();
+		AddChild(simulCloudRenderer.get());
+	}
 	if(clouds2d)
 		simul2DCloudRenderer=new Simul2DCloudRenderer();
 	if(rain)
@@ -205,11 +208,11 @@ HRESULT SimulWeatherRenderer::Destroy()
 SimulWeatherRenderer::~SimulWeatherRenderer()
 {
 	Destroy();
-	SAFE_DELETE(simulSkyRenderer);
-	SAFE_DELETE(simulCloudRenderer);
-	SAFE_DELETE(simul2DCloudRenderer);
-	SAFE_DELETE(simulPrecipitationRenderer);
-	SAFE_DELETE(simulAtmosphericsRenderer);
+	SAFE_DELETE_SMARTPTR(simulSkyRenderer);
+	SAFE_DELETE_SMARTPTR(simulCloudRenderer);
+	SAFE_DELETE_SMARTPTR(simul2DCloudRenderer);
+	SAFE_DELETE_SMARTPTR(simulPrecipitationRenderer);
+	SAFE_DELETE_SMARTPTR(simulAtmosphericsRenderer);
 }
 HRESULT SimulWeatherRenderer::IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat)
 {
@@ -237,6 +240,12 @@ HRESULT SimulWeatherRenderer::IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT A
 void SimulWeatherRenderer::EnableRain(bool e)
 {
 	show_rain=e;
+}
+
+void SimulWeatherRenderer::SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb)
+{
+	renderDepthBufferCallback=cb;
+	AlwaysRenderCloudsLate=(cb!=NULL);
 }
 
 void SimulWeatherRenderer::SetBufferSize(int w,int h)
@@ -403,11 +412,11 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 		hr=m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
 		if(buffer_depth_texture)
 			buffer_depth_texture->GetSurfaceLevel(0,&m_pBufferDepthSurface);
-	/*	hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
+		hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
 		if(m_pBufferDepthSurface)
 			m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
 		static float depth_start=1.f;
-		hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L);*/
+		hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L);
 		PIXEndNamedEvent();
 	}
 	static bool draw_sky=true;
@@ -419,7 +428,7 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 	{
 		if(renderDepthBufferCallback)
 			renderDepthBufferCallback->Render();
-if(!is_cubemap)
+//if(!is_cubemap)
 		hr=simulCloudRenderer->Render(is_cubemap);
 	}
 	static float depth_start=1.f;
@@ -429,7 +438,7 @@ if(!is_cubemap)
 #ifdef XBOX
 		m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
 #endif
-	/*	D3DSURFACE_DESC desc;
+		D3DSURFACE_DESC desc;
 		// here we're going to render to the LDR buffer. If tone_map is disabled, we don't do this:
 
 		if(tone_map)
@@ -443,9 +452,9 @@ if(!is_cubemap)
 			if(m_pOldDepthSurface)
 				m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
 			m_pOldRenderTarget->GetDesc(&desc);
-		simulSkyRenderer->RenderFlare(pow(2.f,exposure));
-		simulSkyRenderer->RenderSun();
-		simulSkyRenderer->RenderPlanets();
+			simulSkyRenderer->RenderFlare(pow(2.f,exposure));
+			simulSkyRenderer->RenderSun();
+			simulSkyRenderer->RenderPlanets();
 			RenderBufferToScreen(ldr_buffer_texture,desc.Width,desc.Height,false);
 		}
 		else
@@ -461,12 +470,10 @@ if(!is_cubemap)
 				simulSkyRenderer->RenderPlanets();
 			}
 			RenderBufferToScreen(hdr_buffer_texture,desc.Width,desc.Height,true,true);
-		}*/
+		}
 		PIXEndNamedEvent();
 	}
 	//hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L);
-	//if(simulCloudRenderer&&layer1)
-	//	hr=simulCloudRenderer->RenderLightning();
 	static bool show_flare=false;
 	//if(simulSkyRenderer&&show_flare)
 	//	hr=simulSkyRenderer->RenderFlare(exposure);
@@ -497,15 +504,15 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 	if(use_buffer)
 	{
 		PIXBeginNamedEvent(0,"Setup Cloud Buffer");
-	/*		hr=m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
-			hr=m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
-			if(buffer_depth_texture)
-				buffer_depth_texture->GetSurfaceLevel(0,&m_pBufferDepthSurface);
-			hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
-			//if(m_pBufferDepthSurface)
-				m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
-			static float depth_start=1.f;
-			hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L);*/
+		hr=m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
+		hr=m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
+		if(buffer_depth_texture)
+			buffer_depth_texture->GetSurfaceLevel(0,&m_pBufferDepthSurface);
+		hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
+		//if(m_pBufferDepthSurface)
+			m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
+		static float depth_start=1.f;
+		hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L);
 		PIXEndNamedEvent();
 	}
 	if(renderDepthBufferCallback)
@@ -516,15 +523,15 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 	if(use_buffer)
 	{
 		PIXBeginNamedEvent(0,"Cloud Buffer To Screen");
-/*	#ifdef XBOX
-			m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
+	#ifdef XBOX
+		m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
 	#endif
-			D3DSURFACE_DESC desc;
-			m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
-			if(m_pOldDepthSurface)
-				m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
-			m_pOldRenderTarget->GetDesc(&desc);
-			RenderBufferToScreen(hdr_buffer_texture,desc.Width,desc.Height,true,true);*/
+		D3DSURFACE_DESC desc;
+		m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
+		if(m_pOldDepthSurface)
+			m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
+		m_pOldRenderTarget->GetDesc(&desc);
+		RenderBufferToScreen(hdr_buffer_texture,desc.Width,desc.Height,true,true);
 		PIXEndNamedEvent();
 	}
 	PIXEndNamedEvent();
@@ -686,7 +693,6 @@ void SimulWeatherRenderer::Update(float dt)
     if(!pause)
 	{
 		PIXBeginNamedEvent(0,"Weather Update");
-		UpdateSkyAndCloudHookup();
 		if(simulSkyRenderer)
 		{
 			simulSkyRenderer->Update(dt);
@@ -700,6 +706,8 @@ void SimulWeatherRenderer::Update(float dt)
 				simulAtmosphericsRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
 			}
 		}
+		// Do this AFTER sky update, to catch any changes:
+		UpdateSkyAndCloudHookup();
 		static simul::base::Timer timer;
 		timer.StartTime();
 		if(simulCloudRenderer)
@@ -729,35 +737,35 @@ void SimulWeatherRenderer::Update(float dt)
 
 SimulSkyRenderer *SimulWeatherRenderer::GetSkyRenderer()
 {
-	return simulSkyRenderer;
+	return simulSkyRenderer.get();
 }
 
 SimulCloudRenderer *SimulWeatherRenderer::GetCloudRenderer()
 {
-	return simulCloudRenderer;
+	return simulCloudRenderer.get();
 }
 
 Simul2DCloudRenderer *SimulWeatherRenderer::Get2DCloudRenderer()
 {
-	return simul2DCloudRenderer;
+	return simul2DCloudRenderer.get();
 }
 
 SimulPrecipitationRenderer *SimulWeatherRenderer::GetPrecipitationRenderer()
 {
-	return simulPrecipitationRenderer;
+	return simulPrecipitationRenderer.get();
 }
 
 SimulAtmosphericsRenderer *SimulWeatherRenderer::GetAtmosphericsRenderer()
 {
-	return simulAtmosphericsRenderer;
+	return simulAtmosphericsRenderer.get();
 }
 
 const char *SimulWeatherRenderer::GetDebugText() const
 {
 	static char debug_text[256];
-	if(simul2DCloudRenderer)
+	if(simulCloudRenderer)
 		//sprintf_s(debug_text,256,"TIME %2.2g ms\n%s",timing,simulCloudRenderer->GetDebugText());
-		sprintf_s(debug_text,256,"%s",simulSkyRenderer->GetDebugText());
+		sprintf_s(debug_text,256,"%s",simulCloudRenderer->GetDebugText());
 	return debug_text;
 }
 
@@ -782,4 +790,33 @@ void SimulWeatherRenderer::SetPrecipitation(float strength,float speed)
 {
 	simulCloudRenderer->SetPrecipitation(strength);
 //	simulPrecipitationRenderer->SetSpeed(speed);
+}
+
+std::ostream &SimulWeatherRenderer::Save(std::ostream &os) const
+{
+	int num_streams=2;
+	os.write((const char*)&num_streams,sizeof(num_streams));
+	int stream_type=0;
+	os.write((const char*)&stream_type,sizeof(stream_type));
+	simulSkyRenderer->Save(os);
+	stream_type=1;
+	os.write((const char*)&stream_type,sizeof(stream_type));
+	simulCloudRenderer->Save(os);
+	return os;
+}
+
+std::istream &SimulWeatherRenderer::Load(std::istream &is) const
+{
+	int num_streams=0;
+	is.read((char*)&num_streams,sizeof(num_streams));
+	for(int i=0;i<num_streams;i++)
+	{
+		int stream_type=-1;
+		is.read((char*)&stream_type,sizeof(stream_type));
+		if(stream_type==0)
+			simulSkyRenderer->Load(is);
+		if(stream_type==1)
+			simulCloudRenderer->Load(is);
+	}
+	return is;
 }

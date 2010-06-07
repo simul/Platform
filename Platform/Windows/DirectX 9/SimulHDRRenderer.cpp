@@ -15,12 +15,10 @@
 	#include <fstream>
 	#include <string>
 	static tstring filepath=TEXT("game:\\");
-	static DWORD default_effect_flags=0;
 #else
 	#include <tchar.h>
 	#include <dxerr.h>
 	#include <string>
-	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #endif
 #include "CreateDX9Effect.h"
 #include "Simul/Sky/SkyInterface.h"

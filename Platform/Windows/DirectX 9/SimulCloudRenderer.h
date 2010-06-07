@@ -16,9 +16,10 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Base/SmartPtr.h"
+#include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/CloudRenderCallback.h"
 #define THREADED_VERSION
-//#define STORM_VERSION
+
 namespace simul
 {
 	namespace clouds
@@ -46,7 +47,7 @@ typedef long HRESULT;
 
 //! A cloud rendering class. Create an instance of this class within a DirectX program,
 //! or use SimulWeatherRenderer to manage cloud and sky rendering together.
-class SimulCloudRenderer : public simul::clouds::CloudRenderCallback
+class SimulCloudRenderer : public simul::clouds::CloudRenderCallback, public simul::graph::meta::Group
 {
 public:
 	SimulCloudRenderer();
@@ -124,6 +125,7 @@ public:
 	{
 		return noise_texture;
 	}
+	HRESULT RenderCrossSections(int width);
 	HRESULT RenderDistances();
 	void SetAltitudeTextureCoordinate(float f)
 	{
@@ -134,6 +136,10 @@ public:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
 	void CycleTexturesForward();
+
+	// Save and load a sky sequence
+	std::ostream &Save(std::ostream &os) const;
+	std::istream &Load(std::istream &is) const;
 protected:
 	float precip_strength;
 	float altitude_tex_coord;
@@ -159,7 +165,9 @@ protected:
 	D3DXHANDLE						m_hTechniqueLightningQuads;	// Handle to technique in the effect 
 	LPD3DXEFFECT					m_pCloudEffect;
 	D3DXHANDLE						m_hTechniqueCloud;		// Handle to technique in the effect
+	D3DXHANDLE						m_hTechniqueCloudMask;		// Handle to technique in the effect
 	D3DXHANDLE						m_hTechniqueCloudsAndLightning;	
+	D3DXHANDLE						m_hTechniqueCrossSection;	
 	
 	D3DXHANDLE l_worldViewProj;
 	D3DXHANDLE worldViewProj;

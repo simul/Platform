@@ -25,7 +25,11 @@
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring shader_path=TEXT("");
 	static tstring texture_path=TEXT("");
+#ifdef D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY
 	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
+#else
+	static DWORD default_effect_flags=0;
+#endif
 #endif
 	#include <vector>
 #include <iostream>
@@ -257,7 +261,13 @@ HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &text
 	tstring fn=filename;
 	fn=texture_path+fn;
 #endif
-	return D3DXCreateTextureFromFile(m_pd3dDevice,fn.c_str(),&texture);
+	HRESULT hr=D3DXCreateTextureFromFile(m_pd3dDevice,fn.c_str(),&texture);
+	// if failed, try to get the resource:
+	if(hr!=S_OK)
+	{
+		hr=CreateDX9Texture(m_pd3dDevice,texture,GetResourceId(filename));
+	}
+	return hr;
 }
 
 HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,const char *filename)
@@ -316,22 +326,26 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 	}
 	if(FAILED(hr))
 	{
+		hr=CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename));
+		if(FAILED(hr))
+		{
 #ifdef DXTRACE_ERR
-        hr=DXTRACE_ERR( "CreateDX9Effect", hr );
+			hr=DXTRACE_ERR(L"CreateDX9Effect", hr );
 #endif
-		DebugBreak();
+			DebugBreak();
+		}
 	}
 	delete [] macros;
 	V_RETURN(hr);
 	return hr;
 }
 
-
 HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWORD resource)
 {
 	std::map<std::string,std::string> defines;
 	return CreateDX9Effect(m_pd3dDevice,effect,resource,defines);
 }
+
 HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWORD resource,const std::map<std::string,std::string> &defines)
 {
 	std::cout<<"CreateDX9Effect "<<resource<<std::endl;
@@ -353,7 +367,11 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWOR
 				NULL,
 				&effect,
 				&errors);
-	if(FAILED(hr))
+	if(hr==D3DXERR_INVALIDDATA)
+		std::cout<<"Invalid data building shader"<<std::endl;
+	else if(hr==D3DERR_INVALIDCALL)
+		std::cout<<"Invalid call building shader"<<std::endl;
+	else if(FAILED(hr))
 		std::cout<<"Error building shader"<<std::endl;
 	if(errors)
 	{
@@ -365,7 +383,7 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWOR
 	if(FAILED(hr))
 	{
 #ifdef DXTRACE_ERR
-        hr=DXTRACE_ERR( "CreateDX9Effect", hr );
+		hr=DXTRACE_ERR(L"CreateDX9Effect", hr );
 #endif
 		DebugBreak();
 	}
@@ -411,7 +429,8 @@ HRESULT CanUse16BitFloats(IDirect3DDevice9 *device)
 
 
 
-HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,LPDIRECT3DBASETEXTURE9 texture)
+HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,
+					  LPDIRECT3DBASETEXTURE9 texture,LPD3DXEFFECT eff,D3DXHANDLE tech)
 {
 	static bool disable=false;
 
@@ -463,34 +482,50 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	float width=(float)dx,height=(float)dy;
 	Vertext vertices[4] =
 	{
-		{x,			y,			1,	1, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
-		{x+width,	y,			1,	1, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
-		{x+width,	y+height,	1,	1, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
-		{x,			y+height,	1,	1, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
+		{x,			y,			1,	1, 1.f,0.f,1.f,1.f	,0.0f	,0.0f},
+		{x+width,	y,			1,	1, 1.f,0.f,1.f,1.f	,1.0f	,0.0f},
+		{x+width,	y+height,	1,	1, 1.f,0.f,1.f,1.f	,1.0f	,1.0f},
+		{x,			y+height,	1,	1, 1.f,0.f,1.f,1.f	,0.0f	,1.0f},
 	};
 #endif
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
-	m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
-	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
-	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
-	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
 
-    m_pd3dDevice->SetVertexShader(NULL);
-    m_pd3dDevice->SetPixelShader(NULL);
 	m_pd3dDevice->SetVertexDeclaration(m_pBufferVertexDecl);
+   // m_pd3dDevice->SetVertexShader(NULL);
+   // m_pd3dDevice->SetPixelShader(NULL);
 
 #ifndef XBOX
 	m_pd3dDevice->SetTransform(D3DTS_VIEW,&ident);
 	m_pd3dDevice->SetTransform(D3DTS_WORLD,&ident);
 	m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&ident);
 #endif
-	m_pd3dDevice->SetTexture(0,texture);
-    m_pd3dDevice->SetTextureStageState(0,D3DTSS_COLOROP, D3DTOP_MODULATE);
-    m_pd3dDevice->SetTextureStageState(0,D3DTSS_ALPHAOP, D3DTOP_MODULATE);
-    m_pd3dDevice->SetSamplerState(0,D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
-    m_pd3dDevice->SetSamplerState(0,D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+	unsigned passes=0;
+	if(eff)
+	{
+		if(tech)
+			eff->SetTechnique(tech);
+		eff->Begin(&passes,0);
+		eff->BeginPass(0);
+	}
+	else
+	{
+		m_pd3dDevice->SetTexture(0,texture);
+		m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+		m_pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
+		m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
+		m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+		m_pd3dDevice->SetTextureStageState(0,D3DTSS_COLOROP, D3DTOP_MODULATE);
+		m_pd3dDevice->SetTextureStageState(0,D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+		m_pd3dDevice->SetSamplerState(0,D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+		m_pd3dDevice->SetSamplerState(0,D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+	}
 	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
+	if(eff)
+	{
+		eff->EndPass();
+		eff->End();
+	}
 	SAFE_RELEASE(m_pBufferVertexDecl);
 	return S_OK;
 }

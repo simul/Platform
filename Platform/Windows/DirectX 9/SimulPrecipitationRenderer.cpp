@@ -13,7 +13,6 @@
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("game:\\");
-	static DWORD default_effect_flags=0;
 	static D3DPOOL d3d_memory_pool=D3DUSAGE_CPU_CACHED_MEMORY;
 #else
 	#include <tchar.h>
@@ -23,7 +22,6 @@
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("");
-	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 	static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
 #endif
 

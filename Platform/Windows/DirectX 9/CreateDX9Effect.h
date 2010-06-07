@@ -32,7 +32,8 @@ extern HRESULT CanUseTexFormat(IDirect3DDevice9 *device,D3DFORMAT f);
 extern HRESULT CanUseDepthFormat(IDirect3DDevice9 *device,D3DFORMAT f);
 extern HRESULT CanUse16BitFloats(IDirect3DDevice9 *device);
 
-extern HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,LPDIRECT3DBASETEXTURE9 texture);
+extern HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,LPDIRECT3DBASETEXTURE9 texture,
+							 LPD3DXEFFECT eff=NULL,D3DXHANDLE tech=NULL);
 
 extern void SetBundleShaders(bool b);
 extern void SetResourceModule(const char *txt);

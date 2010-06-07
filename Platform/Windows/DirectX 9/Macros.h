@@ -46,4 +46,7 @@
 	#ifndef SAFE_DELETE
 		#define SAFE_DELETE(p)		{ if(p) { delete (p);     (p)=NULL; } }
 	#endif
+	#ifndef SAFE_DELETE_SMARTPTR
+		#define SAFE_DELETE_SMARTPTR(p)		{ if(p.get()) { (p)=NULL; } }
+	#endif
 #endif

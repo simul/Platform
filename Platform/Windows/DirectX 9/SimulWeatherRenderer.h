@@ -12,7 +12,7 @@
 	#include <d3d9.h>
 	#include <d3dx9.h>
 #endif
-#include "Simul/Base/Referenced.h"
+#include "Simul/Graph/Meta/Group.h"
 class RenderDepthBufferCallback
 {
 public:
@@ -21,13 +21,12 @@ public:
 //! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX program.
 //! You can take this entire class and use it as source in your project.
 //! Make appropriate modifications where required.
-class SimulWeatherRenderer:public simul::base::Referenced
+class SimulWeatherRenderer:public simul::graph::meta::Group
 {
 public:
 	SimulWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=320,
 		int height=240,bool sky=true,bool clouds3d=true,bool clouds2d=true,
 		bool rain=true,
-		bool always_render_clouds_late=false,
 		bool colour_sky=false);
 	virtual ~SimulWeatherRenderer();
 	// Set the resource id:
@@ -83,15 +82,16 @@ public:
 	float GetTiming() const;
 
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
-	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb)
-	{
-		renderDepthBufferCallback=cb;
-	}
+	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 	void SetBufferSize(int w,int h);
 	void EnableRain(bool e=true);
 	void SetAutoExposure(bool a);
 	float GetTotalBrightness() const;
 	void SetPrecipitation(float strength,float speed);
+
+	// Save and load a sky sequence
+	std::ostream &Save(std::ostream &os) const;
+	std::istream &Load(std::istream &is) const;
 protected:
 	void UpdateSkyAndCloudHookup();
 	bool AlwaysRenderCloudsLate;
@@ -128,11 +128,11 @@ LPDIRECT3DTEXTURE9 temp_depth_texture;
 	HRESULT CreateBuffers();
 	HRESULT RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture,int w,int h,bool do_tonemap,bool blend=false);
 	RenderDepthBufferCallback *renderDepthBufferCallback;
-	class SimulSkyRenderer *simulSkyRenderer;
-	class SimulCloudRenderer *simulCloudRenderer;
-	class Simul2DCloudRenderer *simul2DCloudRenderer;
-	class SimulPrecipitationRenderer *simulPrecipitationRenderer;
-	class SimulAtmosphericsRenderer *simulAtmosphericsRenderer;
+	simul::base::SmartPtr<class SimulSkyRenderer> simulSkyRenderer;
+	simul::base::SmartPtr<class SimulCloudRenderer> simulCloudRenderer;
+	simul::base::SmartPtr<class Simul2DCloudRenderer> simul2DCloudRenderer;
+	simul::base::SmartPtr<class SimulPrecipitationRenderer> simulPrecipitationRenderer;
+	simul::base::SmartPtr<class SimulAtmosphericsRenderer> simulAtmosphericsRenderer;
 	float							exposure;
 	float							gamma;
 	LPDIRECT3DSURFACE9 MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture);

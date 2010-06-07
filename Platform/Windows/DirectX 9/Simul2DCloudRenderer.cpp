@@ -14,7 +14,6 @@
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("game:\\");
-	static DWORD default_effect_flags=0;
 	static D3DFORMAT cloud_tex_format=D3DFMT_LIN_A4R4G4B4;
 	const bool big_endian=true;
 	static DWORD default_texture_usage=0;
@@ -30,7 +29,6 @@
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("");
-	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 	static D3DFORMAT cloud_tex_format=D3DFMT_A8R8G8B8;
 	const bool big_endian=false;
 	static DWORD default_texture_usage=D3DUSAGE_AUTOGENMIPMAP;
@@ -51,7 +49,7 @@
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/FastCloudNode.h"
 #include "Simul/Clouds/TextureGenerator.h"
-#include "Simul/Clouds/CloudGeometryHelper.h"
+#include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/FadeTableInterface.h"
 #include "Simul/Sky/Float4.h"
@@ -66,10 +64,7 @@
 #endif
 
 typedef std::basic_string<TCHAR> tstring;
-static float cloud_interp=0.f;
-static simul::math::Vector3 wind_vector(20,20,0);
-static simul::math::Vector3 next_sun_direction;
-unsigned scale=5;
+
 struct float2
 {
 	float x,y;
@@ -142,6 +137,10 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	for(int i=0;i<3;i++)
 		cloud_textures[i]=NULL;
 
+	simul::base::SmartPtr<simul::base::Referenced> test;
+	test=new simul::base::Referenced;
+	test=NULL;
+
 	cloudNode=new simul::clouds::FastCloudNode;
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 	cloudInterface=cloudNode.get();
@@ -183,10 +182,9 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	// 1/2 game-hour for interpolation:
 	cloudKeyframer->SetInterpStepTime(1.f/24.f/2.f);
 
-	helper=new simul::clouds::CloudGeometryHelper();
+	helper=new simul::clouds::Cloud2DGeometryHelper();
 	helper->SetYVertical(true);
 	helper->Initialize(6,320000.f);
-	helper->Set2D(true);
 	helper->SetGrid(6,9);
 	helper->SetCurvedEarth(true);
 	
@@ -266,7 +264,6 @@ HRESULT Simul2DCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 	cloudKeyframer->SetRenderCallback(this);
-	cloudKeyframer->Init();
 	return hr;
 }
 
@@ -399,7 +396,6 @@ void Simul2DCloudRenderer::Update(float )
 		return;
 	float current_time=skyInterface->GetDaytime();
 	cloudKeyframer->Update(current_time);
-	cloud_interp=cloudKeyframer->GetInterpolation();
 }
 
 HRESULT Simul2DCloudRenderer::RenderTexture()
@@ -524,7 +520,9 @@ HRESULT Simul2DCloudRenderer::Render()
 	simul::math::Vector3 up			(view._12,view._22,view._32);
 
 	simul::sky::float4 view_km=(const float*)cam_pos;
-	helper->Update((const float*)cam_pos,cloudInterface->GetWindOffset(),view_dir,up);
+	simul::math::Vector3 wind_offset=cloudInterface->GetWindOffset();
+	std::swap(wind_offset.y,wind_offset.z);
+	helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
 	view_km*=0.001f;
 	float alt_km=cloudInterface->GetCloudBaseZ()*0.001f;
 static float light_mult=.05f;
@@ -547,12 +545,11 @@ static float light_mult=.05f;
 	helper->MakeGeometry(cloudInterface);
 	helper->CalcInscatterFactors(cloudInterface,skyInterface,fadeTableInterface,0.f);
 	float image_scale=1.f/texture_scale;
-	simul::math::Vector3 wind_offset=cloudInterface->GetWindOffset();
 	// Make the angular inscatter multipliers:
 	unsigned el_start,el_end,az_start,az_end;
 	helper->GetCurrentGrid(el_start,el_end,az_start,az_end);
 static float image_effect=0.5f;
-	D3DXVECTOR4 interp_vec(cloud_interp,1.f-cloud_interp,0,0);
+	D3DXVECTOR4 interp_vec(cloudKeyframer->GetInterpolation(),1.f-cloudKeyframer->GetInterpolation(),0,0);
 	m_pCloudEffect->SetVector	(interp				,(D3DXVECTOR4*)(&interp_vec));
 	m_pCloudEffect->SetVector	(eyePosition		,&cam_pos);
 	m_pCloudEffect->SetVector	(lightResponse		,(D3DXVECTOR4*)(&light_response));
@@ -584,7 +581,7 @@ static float image_effect=0.5f;
 	int i=0;
 	const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 	size_t qs_vert=0;
-	for(std::vector<simul::clouds::CloudGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
+	for(std::vector<simul::clouds::Cloud2DGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
 		j!=helper->GetQuadStrips().end();j++,i++)
 	{
 		// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?
@@ -597,7 +594,7 @@ static float image_effect=0.5f;
 		for(size_t k=0;k<(j)->num_vertices;k++,qs_vert++,v++,bit=!bit)
 		{
 			Vertex2D_t &vertex=vertices[v];
-			const simul::clouds::CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
+			const simul::clouds::Cloud2DGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
 			
 			simul::sky::float4 inscatter;
 			pos.Define(V.x,V.y,V.z);
@@ -637,10 +634,15 @@ void Simul2DCloudRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 	proj=p;
 }
 
-void Simul2DCloudRenderer::SetWindVelocity(float x,float y)
+void Simul2DCloudRenderer::SetWind(float speed,float heading_degrees)
 {
-	cloudKeyframer->SetWindSpeed(sqrt(x*x+y*y));
-	cloudKeyframer->SetWindHeadingDegrees(180.f/3.141f*(atan2(x,y)));
+	cloudKeyframer->SetWindSpeed(speed);
+	cloudKeyframer->SetWindHeadingDegrees(heading_degrees);
+}
+
+void Simul2DCloudRenderer::SetCloudiness(float c)
+{
+	cloudKeyframer->SetCloudiness(c);
 }
 
 simul::clouds::CloudInterface *Simul2DCloudRenderer::GetCloudInterface()
@@ -652,6 +654,6 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 {
 	static char debug_text[256];
 	simul::math::Vector3 wo=cloudInterface->GetWindOffset();
-	sprintf_s(debug_text,256,"interp %2.2g\nnext noise time %2.2g",cloud_interp,cloudNode->GetNoiseInterp());
+	sprintf_s(debug_text,256,"interp %2.2g\nnext noise time %2.2g",cloudKeyframer->GetInterpolation(),cloudNode->GetDaytime());
 	return debug_text;
 }

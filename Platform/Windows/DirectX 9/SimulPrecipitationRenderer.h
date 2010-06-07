@@ -6,6 +6,7 @@
 // in accordance with the terms of that agreement.
 
 #pragma once
+#include "Simul/Graph/Meta/Group.h"
 #ifdef XBOX
 	#include <xtl.h>
 #else
@@ -13,7 +14,7 @@
 	#include <d3dx9.h>
 #endif
 typedef long HRESULT;
-class SimulPrecipitationRenderer
+class SimulPrecipitationRenderer: public simul::graph::meta::Group
 {
 public:
 	SimulPrecipitationRenderer();
