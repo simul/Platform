@@ -50,6 +50,8 @@ public:
 	HRESULT RenderLightning();
 	//! Call this to draw rain etc.
 	HRESULT RenderPrecipitation();
+	//! Call this to draw sun flares etc. after geometry.
+	HRESULT RenderFlares();
 	//! Enable or disable the 3d and 2d cloud layers.
 	void EnableLayers(bool clouds3d,bool clouds2d);
 	bool IsCloudLayer1Visible() const
@@ -89,9 +91,13 @@ public:
 	float GetTotalBrightness() const;
 	void SetPrecipitation(float strength,float speed);
 
-	// Save and load a sky sequence
+	//! Save and load a sky sequence
 	std::ostream &Save(std::ostream &os) const;
-	std::istream &Load(std::istream &is) const;
+	std::istream &Load(std::istream &is);
+	//! Clear the sky sequencer()
+	void New();
+	//! Connect-up sky, clouds:
+	void ConnectInterfaces();
 protected:
 	void UpdateSkyAndCloudHookup();
 	bool AlwaysRenderCloudsLate;
@@ -103,7 +109,7 @@ protected:
 	int BufferWidth,BufferHeight;
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl;
-LPDIRECT3DTEXTURE9 temp_depth_texture;
+	LPDIRECT3DTEXTURE9 temp_depth_texture;
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	LPD3DXEFFECT					m_pTonemapEffect;
 	D3DXHANDLE						GammaTechnique;
@@ -122,8 +128,6 @@ LPDIRECT3DTEXTURE9 temp_depth_texture;
 	LPDIRECT3DSURFACE9				m_pHDRRenderTarget	;
 	LPDIRECT3DSURFACE9				m_pBufferDepthSurface;
 	LPDIRECT3DSURFACE9				m_pLDRRenderTarget	;
-	LPDIRECT3DSURFACE9				m_pOldRenderTarget	;
-	LPDIRECT3DSURFACE9				m_pOldDepthSurface	;
 	HRESULT IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
 	HRESULT CreateBuffers();
 	HRESULT RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture,int w,int h,bool do_tonemap,bool blend=false);

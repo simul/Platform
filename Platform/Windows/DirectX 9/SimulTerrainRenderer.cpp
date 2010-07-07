@@ -54,15 +54,15 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	elevation_map_texture(NULL)
 {
 	heightmap=new simul::terrain::HeightMapNode();
-	heightmap->SetPageSize(257);
-	heightmap->SetTileSize(33);
-	heightmap->SetMaxHeight(4000.f);
+	heightmap->SetPageSize(1025);
+	heightmap->SetTileSize(65);
+	heightmap->SetMaxHeight(7000.f);
 	heightmap->SetFractalOctaves(3);
-	heightmap->SetFractalScale(480000.f);
+	heightmap->SetFractalScale(240000.f);
 	heightmap->SetPageWorldX(240000.f);
 	heightmap->SetPageWorldZ(240000.f);
 	heightmap->SetBaseAltitude(-4000.f);
-	heightmap->SetPersistence(0.5f);
+	heightmap->SetPersistence(0.65f);
 	heightmap->SetFractalFrequency(8);
 	heightmap->Rebuild();
 	heightMapInterface=heightmap.get();

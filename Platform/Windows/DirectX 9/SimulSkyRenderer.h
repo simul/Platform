@@ -38,8 +38,9 @@ namespace simul
 		class SkyInterface;
 		class SiderealSkyInterface;
 		class SkyNode;
-		class InterpolatedFadeTable;
+		class AltitudeFadeTable;
 		class FadeTableInterface;
+		class OvercastCallback;
 	}
 }
 struct PlanetStruct
@@ -60,12 +61,15 @@ class SimulSkyRenderer:public simul::sky::FadeTableCallback,public simul::graph:
 public:
 	SimulSkyRenderer(bool UseColourSky=false);
 	virtual ~SimulSkyRenderer();
+	//! Colour sky being used?
+	bool IsColourSkyEnabled();
+	void EnableColourSky(bool value);
 	//! Get the interface to the sky object so that other classes can use it for lighting, distance fades etc.
 	simul::sky::SkyInterface *GetSkyInterface();
 	simul::sky::SiderealSkyInterface *GetSiderealSkyInterface();
 	simul::sky::FadeTableInterface *GetFadeTableInterface();
-	simul::sky::InterpolatedFadeTable *GetFadeTable();
-
+	simul::sky::AltitudeFadeTable *GetFadeTable();
+	void SetOvercastCallback(simul::sky::OvercastCallback *ocb);
 	//standard d3d object interface functions
 	//! Call this when the D3D device has been created or reset.
 	HRESULT RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
@@ -82,6 +86,8 @@ public:
 	HRESULT						Render();
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	HRESULT						RenderFlare(float exposure);
+	//! Draw the fade textures to screen
+	HRESULT						RenderFades(int width);
 	//! Get a value, from zero to one, which represents how much of the sun is visible.
 	//! Call this when the current rendering surface is the one that has obscuring
 	//! objects like mountains etc. in it, and make sure these have already been drawn.
@@ -112,7 +118,7 @@ public:
 	float GetAltitudeTextureCoordinate() const;
 	bool Use3DFadeTextures() const{return true;}
 	float GetFadeInterp() const;
-	void SetStepsPerDay(float s);
+	void SetStepsPerDay(int s);
 //! Implement the FadeTableCallback
 	void SetSkyTextureSize(unsigned size);
 	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
@@ -125,12 +131,15 @@ public:
 	const char *GetDebugText() const;
 	PlanetStruct *GetPlanet(int index);
 	void SetPlanet(int index,LPDIRECT3DTEXTURE9 tex,float rad,bool do_lighting);
+	void SetPlanetImage(int index,LPDIRECT3DTEXTURE9 tex);
 	void SetFlare(LPDIRECT3DTEXTURE9 tex,float rad);
 	void SetPlanetDirection(int index,const float *pos);
 
 	// Save and load a sky sequence
 	std::ostream &Save(std::ostream &os) const;
 	std::istream &Load(std::istream &is) const;
+	//! Clear the sequence()
+	void New();
 protected:
 	bool external_flare_texture;
 	float flare_magnitude;
@@ -141,7 +150,7 @@ protected:
 	float sun_occlusion;
 	simul::sky::float4 sunlight;
 	simul::base::SmartPtr<simul::graph::meta::Node> skyNode;
-	simul::base::SmartPtr<simul::sky::InterpolatedFadeTable> fadeTable;
+	simul::base::SmartPtr<simul::sky::AltitudeFadeTable> fadeTable;
 
 	simul::sky::SkyInterface *skyInterface;
 	simul::sky::FadeTableInterface *fadeTableInterface;
@@ -162,6 +171,7 @@ protected:
 	D3DXHANDLE					m_hTechniqueQuery;	// A technique that uses the z-test for occlusion queries
 	D3DXHANDLE					m_hTechniqueFlare;
 	D3DXHANDLE					m_hTechniquePlanet;
+	D3DXHANDLE					m_hTechniqueFadeCrossSection;
 	D3DXHANDLE					altitudeTexCoord;
 	D3DXHANDLE					lightDirection;
 	D3DXHANDLE					MieRayleighRatio;
@@ -169,6 +179,7 @@ protected:
 	D3DXHANDLE					skyInterp;
 	D3DXHANDLE					colour;
 	D3DXHANDLE					flareTexture;
+	D3DXHANDLE					fadeTexture;
 	D3DXHANDLE					skyTexture1;
 	D3DXHANDLE					skyTexture2;
 	LPDIRECT3DTEXTURE9			flare_texture;
@@ -178,11 +189,11 @@ protected:
 	// Three sunlight textures.
 	LPDIRECT3DTEXTURE9			sunlight_textures[3];
 	// If using 1D sky textures and 2D fade textures:
-	LPDIRECT3DTEXTURE9			loss_textures[3];
-	LPDIRECT3DTEXTURE9			inscatter_textures[3];
+	LPDIRECT3DBASETEXTURE9			loss_textures[3];
+	LPDIRECT3DBASETEXTURE9			inscatter_textures[3];
 	// If using 2D sky textures and 3D fade textures (i.e. altitude is an extra dimension):
-	LPDIRECT3DVOLUMETEXTURE9	loss_textures_3d[3];
-	LPDIRECT3DVOLUMETEXTURE9	inscatter_textures_3d[3];
+	//LPDIRECT3DVOLUMETEXTURE9	loss_textures_3d[3];
+	//LPDIRECT3DVOLUMETEXTURE9	inscatter_textures_3d[3];
 	D3DXVECTOR3					cam_pos;
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DQUERY9			d3dQuery;

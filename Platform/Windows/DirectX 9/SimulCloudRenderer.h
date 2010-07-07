@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2009 Simul Software Ltd
+// Copyright (c) 2007-2010 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -18,7 +18,6 @@
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/CloudRenderCallback.h"
-#define THREADED_VERSION
 
 namespace simul
 {
@@ -32,8 +31,9 @@ namespace simul
 	}
 	namespace sky
 	{
-		class SkyInterface;
+		class BaseSkyInterface;
 		class FadeTableInterface;
+		class OvercastCallback;
 	}
 	namespace sound
 	{
@@ -53,7 +53,7 @@ public:
 	SimulCloudRenderer();
 	virtual ~SimulCloudRenderer();
 	//! Call this once to set the sky interface that this cloud renderer can use for distance fading.
-	void SetSkyInterface(simul::sky::SkyInterface *si);
+	void SetSkyInterface(simul::sky::BaseSkyInterface *si);
 	//! Call this when the D3D device has been created or reset.
 	void SetFadeTableInterface(simul::sky::FadeTableInterface *fti);
 	//! Call this when the device has been created
@@ -66,12 +66,12 @@ public:
 	void Update(float dt);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	HRESULT Render(bool cubemap=false);
+	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
+	HRESULT RenderLightning();
 #ifdef XBOX
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 #endif
-	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
-	HRESULT RenderLightning();
 	//! Set the wind horizontal velocity components in metres per second.
 	void SetWind(float speed,float heading_degrees);
 	//! Get an interface to the Simul cloud object.
@@ -99,28 +99,16 @@ public:
 	const float *GetCloudScales() const;
 	const float *GetCloudOffset() const;
 	void SetDetail(float d);
-	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
-	{
-		sky_loss_texture_1=t1;
-		sky_loss_texture_2=t2;
-	}
-	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
-	{
-		sky_inscatter_texture_1=t1;
-		sky_inscatter_texture_2=t2;
-	}
+	// a callback function that translates from daytime values to overcast settings. Used for
+	// clouds to tell sky when it is overcast.
+	simul::sky::OvercastCallback *GetOvercastCallback();
+	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2);
+	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2);
 	void SetFadeInterpolation(float f)
 	{
 		fade_interp=f;
 	}
-	void SetNoiseTextureProperties(int size,int freq,int octaves,float persistence)
-	{
-		noise_texture_size=size;
-		noise_texture_frequency=freq;
-		texture_octaves=octaves;
-		texture_persistence=persistence;
-		CreateNoiseTexture();
-	}
+	void SetNoiseTextureProperties(int size,int freq,int octaves,float persistence);
 	LPDIRECT3DTEXTURE9 GetNoiseTexture()
 	{
 		return noise_texture;
@@ -140,7 +128,10 @@ public:
 	// Save and load a sky sequence
 	std::ostream &Save(std::ostream &os) const;
 	std::istream &Load(std::istream &is) const;
+	//! Clear the sequence()
+	void New();
 protected:
+	HRESULT RenderNoiseTexture();
 	float precip_strength;
 	float altitude_tex_coord;
 	bool y_vertical;
@@ -149,11 +140,13 @@ protected:
 	simul::clouds::CloudInterface *cloudInterface;
 	simul::base::SmartPtr<simul::clouds::CloudKeyframer> cloudKeyframer;
 	simul::base::SmartPtr<simul::clouds::CloudGeometryHelper> helper;
-	simul::sky::SkyInterface *skyInterface;
+	simul::sky::BaseSkyInterface *skyInterface;
 	simul::sky::FadeTableInterface *fadeTableInterface;
 	simul::sound::fmod::NodeSound *sound;
-	unsigned texel_index[4];
+	unsigned illumination_texel_index[4];
 	float timing;
+
+	// DirectX values:
 
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	m_pVtxDecl;
@@ -167,7 +160,8 @@ protected:
 	D3DXHANDLE						m_hTechniqueCloud;		// Handle to technique in the effect
 	D3DXHANDLE						m_hTechniqueCloudMask;		// Handle to technique in the effect
 	D3DXHANDLE						m_hTechniqueCloudsAndLightning;	
-	D3DXHANDLE						m_hTechniqueCrossSection;	
+	D3DXHANDLE						m_hTechniqueCrossSectionXZ;	
+	D3DXHANDLE						m_hTechniqueCrossSectionXY;	
 	
 	D3DXHANDLE l_worldViewProj;
 	D3DXHANDLE worldViewProj;
@@ -226,7 +220,7 @@ protected:
 	HRESULT CreateIlluminationTexture();
 	HRESULT CreateCloudTextures();
 	HRESULT CreateLightningTexture();
-	HRESULT CreateNoiseTexture();
+	HRESULT CreateNoiseTexture(bool override_file=false);
 	HRESULT CreateCloudEffect();
 	HRESULT MakeCubemap(); // not ready yet
 	simul::base::SmartPtr<simul::clouds::ThunderCloudNode> cloudNode;
@@ -239,4 +233,7 @@ protected:
 	int noise_texture_frequency;
 	int texture_octaves;
 	float texture_persistence;
+	unsigned cloud_tex_width_x;
+	unsigned cloud_tex_length_y;
+	unsigned cloud_tex_depth_z;
 };

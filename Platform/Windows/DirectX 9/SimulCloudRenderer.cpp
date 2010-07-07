@@ -126,7 +126,7 @@ PosTexVert_t *lightning_vertices=NULL;
 
 
 float min_dist=60000.f;
-float max_dist=320000.f;
+float max_dist=240000.f;
 
 static void SetBits8()
 {
@@ -201,7 +201,10 @@ SimulCloudRenderer::SimulCloudRenderer() :
 	texture_persistence(0.79f),
 	noise_texture_size(1024),
 	altitude_tex_coord(0.f),
-	precip_strength(1.f)
+	precip_strength(1.f),
+	cloud_tex_width_x(0),
+	cloud_tex_length_y(0),
+	cloud_tex_depth_z(0)
 {
 	lightning_colour.x=1.5f;
 	lightning_colour.y=1.5f;
@@ -214,6 +217,8 @@ SimulCloudRenderer::SimulCloudRenderer() :
 		cloud_textures[i]=NULL;
 
 	cloudNode=new simul::clouds::ThunderCloudNode;
+	
+	cloudNode->SetLightExtend(0.5f);
 	AddChild(cloudNode.get());
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 
@@ -226,24 +231,23 @@ SimulCloudRenderer::SimulCloudRenderer() :
 	cloudInterface->SetGridWidth(128);
 	cloudInterface->SetGridHeight(16);
 
-	cloudInterface->SetExtinction(1.4f);
+	cloudInterface->SetExtinction(.2f);
 	cloudInterface->SetAlphaSharpness(0.15f);
 	cloudInterface->SetFractalEffectScale(3.f);
 	cloudInterface->SetFractalPatternScale(140.f);
 	cloudInterface->SetCloudBaseZ(3300.f);
 	cloudInterface->SetCloudWidth(60000.f);
 	cloudInterface->SetCloudLength(60000.f);
-	cloudInterface->SetCloudHeight(8000.f);
-	// How many keyframes for the time-based noise signal to repeat:
-	cloudInterface->SetNoisePeriod(25);
+	cloudInterface->SetCloudHeight(6000.f);
+	// How many days for the time-based noise signal to repeat:
+	cloudInterface->SetNoisePeriod(1.f);
 
-	cloudInterface->SetOpticalDensity(2.1f);
+	cloudInterface->SetOpticalDensity(.2f);
 	cloudInterface->SetHumidity(0);
 
 	cloudInterface->SetLightResponse(0.75f);
 	cloudInterface->SetSecondaryLightResponse(0.75f);
 	cloudInterface->SetAmbientLightResponse(1.f);
-	cloudInterface->SetAnisotropicLightResponse(3.f);
 
 	cloudInterface->SetNoiseResolution(8);
 	cloudInterface->SetNoiseOctaves(3);
@@ -255,6 +259,7 @@ SimulCloudRenderer::SimulCloudRenderer() :
 
 	cloudKeyframer=new simul::clouds::CloudKeyframer(cloudInterface);
 	AddChild(cloudKeyframer.get());
+	cloudKeyframer->SetUserKeyframes(false);
 	cloudKeyframer->SetUse16Bit(false);
 // 30 game-minutes for interpolation:
 	cloudKeyframer->SetInterpStepTime(1.f/24.f/2.f);
@@ -266,7 +271,7 @@ SimulCloudRenderer::SimulCloudRenderer() :
 	helper->SetCurvedEarth(true);
 	helper->SetAdjustCurvature(false);
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
-	texel_index[0]=texel_index[1]=texel_index[2]=texel_index[3]=0;
+	illumination_texel_index[0]=illumination_texel_index[1]=illumination_texel_index[2]=illumination_texel_index[3]=0;
 
 #ifdef DO_SOUND
 	sound=new simul::sound::fmod::NodeSound();
@@ -283,7 +288,7 @@ SimulCloudRenderer::SimulCloudRenderer() :
 	cloudInterface->SetUseTbb(true);
 }
 
-void SimulCloudRenderer::SetSkyInterface(simul::sky::SkyInterface *si)
+void SimulCloudRenderer::SetSkyInterface(simul::sky::BaseSkyInterface *si)
 {
 	skyInterface=si;
 	cloudKeyframer->SetSkyInterface(si);
@@ -326,7 +331,6 @@ HRESULT SimulCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	SAFE_RELEASE(m_pHudVertexDecl);
 	V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
 	V_RETURN(m_pd3dDevice->CreateVertexDeclaration(std_decl,&m_pLightningVtxDecl))
-	V_RETURN(CreateNoiseTexture());
 	V_RETURN(CreateLightningTexture());
 	V_RETURN(CreateIlluminationTexture());
 	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx"));
@@ -334,7 +338,8 @@ HRESULT SimulCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	m_hTechniqueCloud					=GetDX9Technique(m_pCloudEffect,"simul_clouds");
 	m_hTechniqueCloudMask				=GetDX9Technique(m_pCloudEffect,"cloud_mask");
 	m_hTechniqueCloudsAndLightning		=GetDX9Technique(m_pCloudEffect,"simul_clouds_and_lightning");
-	m_hTechniqueCrossSection			=GetDX9Technique(m_pCloudEffect,"cross_section");
+	m_hTechniqueCrossSectionXZ			=GetDX9Technique(m_pCloudEffect,"cross_section_xz");
+	m_hTechniqueCrossSectionXY			=GetDX9Technique(m_pCloudEffect,"cross_section_xy");
 
 	worldViewProj			=m_pCloudEffect->GetParameterByName(NULL,"worldViewProj");
 	eyePosition				=m_pCloudEffect->GetParameterByName(NULL,"eyePosition");
@@ -413,7 +418,7 @@ HRESULT SimulCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 	cloudKeyframer->SetRenderCallback(this);
-//	cloudKeyframer->Init();
+
 	return hr;
 }
 
@@ -437,6 +442,9 @@ HRESULT SimulCloudRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	SAFE_RELEASE(unitSphereIndexBuffer);
 	//SAFE_RELEASE(large_scale_cloud_texture);
+	cloud_tex_width_x=0;
+	cloud_tex_length_y=0;
+	cloud_tex_depth_z=0;
 	return hr;
 }
 
@@ -455,15 +463,91 @@ SimulCloudRenderer::~SimulCloudRenderer()
 	Destroy();
 }
 
-HRESULT SimulCloudRenderer::CreateNoiseTexture()
+HRESULT SimulCloudRenderer::RenderNoiseTexture()
+{
+	HRESULT hr=S_OK;
+	if(!m_pd3dDevice)
+		return hr;
+	SAFE_RELEASE(noise_texture);
+	LPDIRECT3DSURFACE9				pOldRenderTarget=NULL;
+	LPDIRECT3DSURFACE9				pNoiseRenderTarget=NULL;
+	LPD3DXEFFECT					pRenderNoiseEffect=NULL;
+	D3DXHANDLE						inputTexture=NULL;
+	D3DXHANDLE						octaves=NULL;
+	D3DXHANDLE						persistence=NULL;
+	LPDIRECT3DTEXTURE9				input_texture=NULL;
+
+	V_RETURN(CreateDX9Effect(m_pd3dDevice,pRenderNoiseEffect,"simul_rendernoise.fx"));
+	inputTexture					=pRenderNoiseEffect->GetParameterByName(NULL,"noiseTexture");
+	octaves							=pRenderNoiseEffect->GetParameterByName(NULL,"octaves");
+	persistence						=pRenderNoiseEffect->GetParameterByName(NULL,"persistence");
+	//
+	// Make the input texture:
+	{
+		if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,noise_texture_frequency,noise_texture_frequency,0,default_texture_usage,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&input_texture)))
+			return hr;
+		D3DLOCKED_RECT lockedRect={0};
+		if(FAILED(hr=input_texture->LockRect(0,&lockedRect,NULL,NULL)))
+			return hr;
+		SetBits8();
+
+		simul::clouds::TextureGenerator::Make2DRandomTexture((unsigned char *)(lockedRect.pBits),noise_texture_frequency);
+		hr=input_texture->UnlockRect(0);
+		input_texture->GenerateMipSubLevels();
+	}
+
+	{
+		hr=(m_pd3dDevice->CreateTexture(	noise_texture_size,
+											noise_texture_size,
+											0,
+											D3DUSAGE_RENDERTARGET,
+											D3DFMT_A8R8G8B8,
+											D3DPOOL_DEFAULT,
+											&noise_texture,
+											NULL
+										));
+		noise_texture->GetSurfaceLevel(0,&pNoiseRenderTarget);
+		hr=m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget);
+
+		hr=m_pd3dDevice->SetRenderTarget(0,pNoiseRenderTarget);
+		hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x0000000,1.f,0L);
+	}
+	
+	pRenderNoiseEffect->SetTexture(inputTexture,input_texture);
+	pRenderNoiseEffect->SetFloat(persistence,texture_persistence);
+
+	int size=log((float)noise_texture_size)/log(2.f);
+	int freq=log((float)noise_texture_frequency)/log(2.f);
+	texture_octaves=size-freq;
+
+	pRenderNoiseEffect->SetInt(octaves,texture_octaves);
+
+	RenderTexture(m_pd3dDevice,0,0,noise_texture_size,noise_texture_size,
+					  input_texture,pRenderNoiseEffect,NULL);
+
+	{
+		m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
+	}
+	//D3DXSaveTextureToFile(TEXT("Media/Textures/noise.dds"),D3DXIFF_DDS,noise_texture,NULL);
+	noise_texture->GenerateMipSubLevels();
+D3DXSaveTextureToFile(TEXT("Media/Textures/noise.jpg"),D3DXIFF_JPG,noise_texture,NULL);
+	SAFE_RELEASE(pOldRenderTarget);
+	SAFE_RELEASE(pRenderNoiseEffect);
+	SAFE_RELEASE(input_texture);
+	SAFE_RELEASE(pNoiseRenderTarget);
+	return hr;
+}
+
+HRESULT SimulCloudRenderer::CreateNoiseTexture(bool override_file)
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(noise_texture);
 
 	// Can we load it from disk?
+//return RenderNoiseTexture();
+	//SAFE_RELEASE(noise_texture);
 	if((hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/noise.dds"),&noise_texture))==S_OK)
 		return hr;
-
 	// Otherwise create it:
 	if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,noise_texture_size,noise_texture_size,0,default_texture_usage,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&noise_texture)))
 		return hr;
@@ -476,6 +560,9 @@ HRESULT SimulCloudRenderer::CreateNoiseTexture()
 		noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
 	hr=noise_texture->UnlockRect(0);
 	noise_texture->GenerateMipSubLevels();
+
+	D3DXSaveTextureToFile(TEXT("Media/Textures/noise.png"),D3DXIFF_PNG,noise_texture,NULL);
+	D3DXSaveTextureToFile(TEXT("Media/Textures/noise.dds"),D3DXIFF_DDS,noise_texture,NULL);
 	return hr;
 }
 
@@ -553,13 +640,6 @@ HRESULT SimulCloudRenderer::UpdateIlluminationTexture(float dt)
 	// lightning rate : strikes per second
 	static float rr=1.7f;
 	float lightning_rate=rr;
-#ifdef THREADED_VERSION
-//	if(cloudInterface->GetUseTbb())
-		lightning_rate*=4.f;
-#else
-	//if(cloudInterface->GetUseTbb())
-		lightning_rate*=4.f;
-#endif
 	unsigned texels=(unsigned)(lightning_rate*dt/4.f*(float)max_texels);
 	
 	for(unsigned i=0;i<4;i++)
@@ -579,8 +659,8 @@ HRESULT SimulCloudRenderer::UpdateIlluminationTexture(float dt)
 			u[i]=0;
 		if(!cloudNode->CanStartSource(i))
 			continue;
-		t[i]=(float)texel_index[i]/(float)(max_texels);
-		unsigned &index=texel_index[i];
+		t[i]=(float)illumination_texel_index[i]/(float)(max_texels);
+		unsigned &index=illumination_texel_index[i];
 		
 		simul::clouds::TextureGenerator::PartialMake3DLightningTexture(
 			cloudNode.get(),i,
@@ -613,6 +693,11 @@ void SimulCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_y,
 {
 	if(!width_x||!length_y||!depth_z)
 		return;
+	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z)
+		return;
+	cloud_tex_width_x=width_x;
+	cloud_tex_length_y=length_y;
+	cloud_tex_depth_z=depth_z;
 	HRESULT hr=S_OK;
 	V_CHECK(CanUseTexFormat(m_pd3dDevice,cloud_tex_format));
 	for(int i=0;i<3;i++)
@@ -716,6 +801,11 @@ static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 
 HRESULT SimulCloudRenderer::Render(bool cubemap)
 {
+	HRESULT hr=S_OK;
+	if(!noise_texture)
+	{
+		V_RETURN(CreateNoiseTexture());
+	}
 static float effect_on_cloud=20.f;
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_SRGBTEXTURE,0);
@@ -730,7 +820,6 @@ static float effect_on_cloud=20.f;
 #endif
 	PIXBeginNamedEvent(0, "Render Clouds Layers");
 		PIXBeginNamedEvent(0,"Setup");
-			HRESULT hr=S_OK;
 			if(!vertices)
 				vertices=new Vertex_t[MAX_VERTICES];
 			static D3DTEXTUREADDRESS wrap_u=D3DTADDRESS_WRAP,wrap_v=D3DTADDRESS_WRAP,wrap_w=D3DTADDRESS_CLAMP;
@@ -790,8 +879,7 @@ static float effect_on_cloud=20.f;
 			// calculate sun occlusion for any external classes that need it:
 			if(y_vertical)
 				std::swap(X.y,X.z);
-			float len=cloudInterface->GetOpticalPathLength(X.FloatPointer(0),(const float*)sun_dir);
-			float vis=min(1.f,max(0.f,exp(-0.001f*cloudInterface->GetOpticalDensity()*len)));
+			float vis=1;//GetVisibility(X.FloatPointer(0),(const float*)sun_dir);
 			sun_occlusion=1.f-vis;
 			if(y_vertical)
 				std::swap(X.y,X.z);
@@ -1451,18 +1539,34 @@ void SimulCloudRenderer::SetDetail(float d)
 HRESULT SimulCloudRenderer::RenderCrossSections(int width)
 {
 	int w=(width-16)/3;
+
+	int h=(cloudInterface->GetGridHeight()*w)/cloudInterface->GetGridWidth();
 	for(int i=0;i<3;i++)
 	{
-		simul::clouds::CloudKeyframer::Keyframe kf=
-			cloudKeyframer->GetKeyframe(
+		const simul::clouds::CloudKeyframer::Keyframe *kf=
+			dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
 				cloudKeyframer->GetKeyframeAtTime(
-					skyInterface->GetDaytime())+i);
+					skyInterface->GetDaytime())+i));
 
-		D3DXVECTOR4 light_response(kf.direct_light,kf.indirect_light,kf.ambient_light,0);
+		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 		m_pCloudEffect->SetVector	(lightResponse		,(D3DXVECTOR4*)(&light_response));
 			m_pCloudEffect->SetTexture(cloudDensity1				,cloud_textures[i]);
-		RenderTexture(m_pd3dDevice,i*w+8,8,w-2,(64*(w-2))/256,
-					  cloud_textures[i],m_pCloudEffect,m_hTechniqueCrossSection);
+		RenderTexture(m_pd3dDevice,i*w+8,4,w-2,h,
+					  cloud_textures[i],m_pCloudEffect,m_hTechniqueCrossSectionXZ);
+		
+	}
+	for(int i=0;i<3;i++)
+	{
+		const simul::clouds::CloudKeyframer::Keyframe *kf=
+			dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				cloudKeyframer->GetKeyframeAtTime(
+					skyInterface->GetDaytime())+i));
+
+		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
+		m_pCloudEffect->SetVector	(lightResponse		,(D3DXVECTOR4*)(&light_response));
+			m_pCloudEffect->SetTexture(cloudDensity1				,cloud_textures[i]);
+		RenderTexture(m_pd3dDevice,i*130+8,h+8,128,128,
+					  cloud_textures[i],m_pCloudEffect,m_hTechniqueCrossSectionXY);
 		
 	}
 	return S_OK;
@@ -1551,13 +1655,49 @@ HRESULT SimulCloudRenderer::RenderDistances()
 	return S_OK;
 }
 
+simul::sky::OvercastCallback *SimulCloudRenderer::GetOvercastCallback()
+{
+	return cloudKeyframer.get();
+}
+
+void SimulCloudRenderer::SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
+{
+	sky_loss_texture_1=t1;
+	sky_loss_texture_2=t2;
+}
+
+void SimulCloudRenderer::SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
+{
+	sky_inscatter_texture_1=t1;
+	sky_inscatter_texture_2=t2;
+}
+
+void SimulCloudRenderer::SetNoiseTextureProperties(int size,int freq,int octaves,float persistence)
+{
+	if(	noise_texture_size==size&&
+		noise_texture_frequency==freq&&
+		texture_octaves==octaves&&
+		texture_persistence==persistence)
+		return;
+	noise_texture_size=size;
+	noise_texture_frequency=freq;
+	texture_octaves=octaves;
+	texture_persistence=persistence;
+	CreateNoiseTexture(true);
+}
+
 // Save and load a sky sequence
 std::ostream &SimulCloudRenderer::Save(std::ostream &os) const
 {
-	return os;
+	return cloudKeyframer->Save(os);
 }
 
 std::istream &SimulCloudRenderer::Load(std::istream &is) const
 {
-	return is;
+	return cloudKeyframer->Load(is);
+}
+
+void SimulCloudRenderer::New()
+{
+	cloudKeyframer->New();
 }

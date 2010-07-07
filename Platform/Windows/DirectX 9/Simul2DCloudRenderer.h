@@ -64,12 +64,18 @@ public:
 	void SetWind(float speed,float heading_degrees);
 	//! Get an interface to the Simul cloud object.
 	simul::clouds::CloudInterface *GetCloudInterface();
+	simul::clouds::CloudKeyframer *GetCloudKeyframer();
+	void Enable(bool val);
+	void SetStepsPerHour(unsigned s);
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
 	void CycleTexturesForward();
 	void SetCloudiness(float c);
+	// a texture
+	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
 protected:
+	bool enabled;
 	simul::clouds::CloudInterface *cloudInterface;
 	simul::sky::SkyInterface *skyInterface;
 	simul::sky::FadeTableInterface *fadeTableInterface;
@@ -103,6 +109,7 @@ protected:
 	LPDIRECT3DTEXTURE9			cloud_textures[3];
 	LPDIRECT3DTEXTURE9			noise_texture;
 	LPDIRECT3DTEXTURE9			image_texture;
+	bool own_image_texture;
 	D3DXVECTOR4					cam_pos;
 	D3DXMATRIX					world,view,proj;
 

@@ -106,7 +106,7 @@ struct PosTexVert_t
     float2 texCoords;
 };
 
-#define MAX_VERTICES (5000)
+#define MAX_VERTICES (500)
 
 /*static void SetBits4()
 {
@@ -127,9 +127,11 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	m_pCloudEffect(NULL),
 	noise_texture(NULL),
 	image_texture(NULL),
+	own_image_texture(true),
 	cloud_texel_index(0),
 	texture_scale(0.25f),
-	texture_complete(false)
+	texture_complete(false),
+	enabled(true)
 {
 	D3DXMatrixIdentity(&world);
 	D3DXMatrixIdentity(&view);
@@ -167,7 +169,6 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	cloudInterface->SetLightResponse(1.f);
 	cloudInterface->SetSecondaryLightResponse(1.f);
 	cloudInterface->SetAmbientLightResponse(1.f);
-	cloudInterface->SetAnisotropicLightResponse(6.f);
 
 	cloudInterface->SetNoiseResolution(8);
 	cloudInterface->SetNoiseOctaves(5);
@@ -236,7 +237,7 @@ HRESULT Simul2DCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	SAFE_RELEASE(m_pVtxDecl);
 	V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
 	V_RETURN(CreateNoiseTexture());
-	V_RETURN(CreateImageTexture());
+	hr=CreateImageTexture();
 	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_2d.fx"));
 
 	m_hTechniqueCloud	=m_pCloudEffect->GetTechniqueByName("simul_clouds_2d");
@@ -277,7 +278,12 @@ HRESULT Simul2DCloudRenderer::InvalidateDeviceObjects()
 	for(int i=0;i<3;i++)
 		SAFE_RELEASE(cloud_textures[i]);
 	SAFE_RELEASE(noise_texture);
-	SAFE_RELEASE(image_texture);
+	if(own_image_texture)
+	{
+		SAFE_RELEASE(image_texture);
+	}
+	else
+		image_texture=NULL;
 	return hr;
 }
 
@@ -291,7 +297,12 @@ HRESULT Simul2DCloudRenderer::Destroy()
 	for(int i=0;i<3;i++)
 		SAFE_RELEASE(cloud_textures[i]);
 	SAFE_RELEASE(noise_texture);
-	SAFE_RELEASE(image_texture);
+	if(own_image_texture)
+	{
+		SAFE_RELEASE(image_texture);
+	}
+	else
+		image_texture=NULL;
 	return hr;
 }
 
@@ -326,8 +337,10 @@ HRESULT Simul2DCloudRenderer::CreateNoiseTexture()
 HRESULT Simul2DCloudRenderer::CreateImageTexture()
 {
 	HRESULT hr=S_OK;
+	if(!own_image_texture)
+		return hr;
 	SAFE_RELEASE(image_texture);
-	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/Cirrus2.jpg"),&image_texture)))
+	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Cirrus.jpg"),&image_texture)))
 		return hr;
 	return hr;
 }
@@ -479,11 +492,29 @@ void Simul2DCloudRenderer::CycleTexturesForward()
 	std::swap(cloud_textures[0],cloud_textures[1]);
 	std::swap(cloud_textures[1],cloud_textures[2]);
 }
+
+void SetTexture()
+{
+}
+
 HRESULT Simul2DCloudRenderer::Render()
 {
+	if(!enabled)
+		return S_OK;
 	PIXBeginNamedEvent(0, "Render 2D Cloud Layers");
 
 	HRESULT hr;
+	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
+	m_pd3dDevice->SetSamplerState(0, D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(1, D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(2, D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(3, D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(4, D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(5, D3DSAMP_SRGBTEXTURE,0);
+#ifndef XBOX
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+#endif
 	if(!vertices)
 		vertices=new Vertex2D_t[MAX_VERTICES];
 
@@ -548,7 +579,7 @@ static float light_mult=.05f;
 	// Make the angular inscatter multipliers:
 	unsigned el_start,el_end,az_start,az_end;
 	helper->GetCurrentGrid(el_start,el_end,az_start,az_end);
-static float image_effect=0.5f;
+	static float image_effect=0.9f;
 	D3DXVECTOR4 interp_vec(cloudKeyframer->GetInterpolation(),1.f-cloudKeyframer->GetInterpolation(),0,0);
 	m_pCloudEffect->SetVector	(interp				,(D3DXVECTOR4*)(&interp_vec));
 	m_pCloudEffect->SetVector	(eyePosition		,&cam_pos);
@@ -645,9 +676,36 @@ void Simul2DCloudRenderer::SetCloudiness(float c)
 	cloudKeyframer->SetCloudiness(c);
 }
 
+void Simul2DCloudRenderer::SetExternalTexture(LPDIRECT3DTEXTURE9 tex)
+{
+	if(own_image_texture)
+	{
+		SAFE_RELEASE(image_texture);
+	}
+	else
+		image_texture=NULL;
+	image_texture=tex;
+	own_image_texture=false;
+}
+
 simul::clouds::CloudInterface *Simul2DCloudRenderer::GetCloudInterface()
 {
 	return cloudInterface;
+}
+
+simul::clouds::CloudKeyframer *Simul2DCloudRenderer::GetCloudKeyframer()
+{
+	return cloudKeyframer.get();
+}
+
+void Simul2DCloudRenderer::Enable(bool val)
+{
+	enabled=val;
+}
+
+void Simul2DCloudRenderer::SetStepsPerHour(unsigned steps)
+{
+	cloudKeyframer->SetInterpStepTime(1.f/(24.f*(float)steps));
 }
 
 const char *Simul2DCloudRenderer::GetDebugText() const

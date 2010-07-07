@@ -25,11 +25,7 @@
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring shader_path=TEXT("");
 	static tstring texture_path=TEXT("");
-#ifdef D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY
 	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
-#else
-	static DWORD default_effect_flags=0;
-#endif
 #endif
 	#include <vector>
 #include <iostream>
@@ -249,7 +245,7 @@ HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &text
 		return CreateDX9Texture(m_pd3dDevice,texture,GetResourceId(filename));
 	if(!texture_path_set)
 	{
-		std::cerr<<"CreateDX9Texture: Texture path not set, use SetTexturePath() with the relative path to the .fx files."<<std::endl;
+		std::cerr<<"CreateDX9Texture: Texture path not set, use SetTexturePath() with the relative path to the image files."<<std::endl;
 	}
 #ifdef UNICODE
 	// tstring and TEXT cater for the confusion between wide and regular strings.
@@ -288,7 +284,7 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 
 	if(!shader_path_set)
 	{
-		std::cerr<<"CreateDX9Effect.cpp: Shader path not set, use SetShaderPath() with the relative path to the .fx files."<<std::endl;
+		std::cerr<<"CreateDX9Effect.cpp: Shader path not set, use SetShaderPath() with the relative path to the .fx or .hlsl files."<<std::endl;
 	}
 #ifdef UNICODE
 	// tstring and TEXT cater for the confusion between wide and regular strings.
@@ -391,6 +387,7 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWOR
 	V_RETURN(hr);
 	return hr;
 }
+
 HRESULT CanUseTexFormat(IDirect3DDevice9 *device,D3DFORMAT f)
 {
 	IDirect3D9 *pd3d=0;
@@ -406,6 +403,7 @@ HRESULT CanUseTexFormat(IDirect3DDevice9 *device,D3DFORMAT f)
 		std::cout<<"Cannot use texture format"<<f<<std::endl;
 	return hr;
 }
+
 HRESULT CanUseDepthFormat(IDirect3DDevice9 *device,D3DFORMAT f)
 {
 	IDirect3D9 *pd3d=0;
@@ -417,6 +415,7 @@ HRESULT CanUseDepthFormat(IDirect3DDevice9 *device,D3DFORMAT f)
 			D3DUSAGE_DEPTHSTENCIL,D3DRTYPE_SURFACE,f);
 	return hr;
 }
+
 HRESULT CanUse16BitFloats(IDirect3DDevice9 *device)
 {
 	HRESULT hr=CanUseTexFormat(device,D3DFMT_A16B16G16R16F);
@@ -426,8 +425,6 @@ HRESULT CanUse16BitFloats(IDirect3DDevice9 *device)
 		std::cout<<"Cannot create 16-bit float textures"<<std::endl;
 	return hr;
 }
-
-
 
 HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,
 					  LPDIRECT3DBASETEXTURE9 texture,LPD3DXEFFECT eff,D3DXHANDLE tech)
