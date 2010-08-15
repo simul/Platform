@@ -257,7 +257,20 @@ HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &text
 	tstring fn=filename;
 	fn=texture_path+fn;
 #endif
-	HRESULT hr=D3DXCreateTextureFromFile(m_pd3dDevice,fn.c_str(),&texture);
+	HRESULT hr=D3DXCreateTextureFromFileEx(	m_pd3dDevice,
+											fn.c_str(),
+											D3DX_DEFAULT_NONPOW2,
+											D3DX_DEFAULT_NONPOW2,
+											D3DX_DEFAULT,
+											0,
+											D3DFMT_UNKNOWN,
+											D3DPOOL_DEFAULT,
+											D3DX_DEFAULT,
+											D3DX_DEFAULT,
+											0,
+											NULL,
+											NULL,
+											&texture);
 	// if failed, try to get the resource:
 	if(hr!=S_OK)
 	{
@@ -322,7 +335,7 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 	}
 	if(FAILED(hr))
 	{
-		hr=CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename));
+		hr=CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename),defines);
 		if(FAILED(hr))
 		{
 #ifdef DXTRACE_ERR
@@ -479,10 +492,10 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	float width=(float)dx,height=(float)dy;
 	Vertext vertices[4] =
 	{
-		{x,			y,			1,	1, 1.f,0.f,1.f,1.f	,0.0f	,0.0f},
-		{x+width,	y,			1,	1, 1.f,0.f,1.f,1.f	,1.0f	,0.0f},
-		{x+width,	y+height,	1,	1, 1.f,0.f,1.f,1.f	,1.0f	,1.0f},
-		{x,			y+height,	1,	1, 1.f,0.f,1.f,1.f	,0.0f	,1.0f},
+		{x,			y,			1,	1, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
+		{x+width,	y,			1,	1, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
+		{x+width,	y+height,	1,	1, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
+		{x,			y+height,	1,	1, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
 	};
 #endif
 	D3DXMATRIX ident;

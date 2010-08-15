@@ -16,25 +16,12 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Base/SmartPtr.h"
-#include "Simul/Graph/Meta/Group.h"
-#include "Simul/Clouds/CloudRenderCallback.h"
+#include "Simul/Clouds/BaseCloudRenderer.h"
+#include "Simul/Graph/Meta/Resource.h"
+#include "Simul/Graph/StandardNodes/ShowProgressInterface.h"
 
 namespace simul
 {
-	namespace clouds
-	{
-		class CloudInterface;
-		class CloudKeyframer;
-		class LightningRenderInterface;
-		class CloudGeometryHelper;
-		class ThunderCloudNode;
-	}
-	namespace sky
-	{
-		class BaseSkyInterface;
-		class FadeTableInterface;
-		class OvercastCallback;
-	}
 	namespace sound
 	{
 		namespace fmod
@@ -47,7 +34,9 @@ typedef long HRESULT;
 
 //! A cloud rendering class. Create an instance of this class within a DirectX program,
 //! or use SimulWeatherRenderer to manage cloud and sky rendering together.
-class SimulCloudRenderer : public simul::clouds::CloudRenderCallback, public simul::graph::meta::Group
+class SimulCloudRenderer : public simul::clouds::BaseCloudRenderer
+	,public simul::graph::meta::ResourceUser<simul::graph::standardnodes::ShowProgressInterface>
+
 {
 public:
 	SimulCloudRenderer();
@@ -72,19 +61,7 @@ public:
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 #endif
-	//! Set the wind horizontal velocity components in metres per second.
-	void SetWind(float speed,float heading_degrees);
-	//! Get an interface to the Simul cloud object.
-	simul::clouds::CloudInterface *GetCloudInterface();
-	simul::clouds::CloudKeyframer *GetCloudKeyframer();
-	simul::clouds::LightningRenderInterface *GetLightningRenderInterface();
-	//! Get a float between zero and one which represents the interpolation between cloud keyframes.
-	float GetInterpolation() const;
-	//! Between zero and one: how overcast is the sky?
-	float GetOvercastFactor() const;
-	//! How much, if any precipitation should be shown, between zero and one.
 	float GetPrecipitationIntensity() const;
-	void SetPrecipitation(float p){precip_strength=p;}
 	void SetStepsPerHour(unsigned s);
 	//! Return true if the camera is above the cloudbase altitude.
 	bool IsCameraAboveCloudBase() const;
@@ -108,13 +85,21 @@ public:
 	{
 		fade_interp=f;
 	}
+	//! Adjust the noise texture
 	void SetNoiseTextureProperties(int size,int freq,int octaves,float persistence);
+	//! Fade mode: 0=CPU, 1=Vertex, 2=Fragment
+	enum FadeMode
+	{
+		CPU=0,FRAGMENT
+	};
+	void SetFadeMode(FadeMode f);
 	LPDIRECT3DTEXTURE9 GetNoiseTexture()
 	{
 		return noise_texture;
 	}
 	HRESULT RenderCrossSections(int width);
 	HRESULT RenderDistances();
+	HRESULT RenderLightVolume();
 	void SetAltitudeTextureCoordinate(float f)
 	{
 		altitude_tex_coord=f;
@@ -124,24 +109,60 @@ public:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
 	void CycleTexturesForward();
-
-	// Save and load a sky sequence
-	std::ostream &Save(std::ostream &os) const;
-	std::istream &Load(std::istream &is) const;
-	//! Clear the sequence()
-	void New();
 protected:
+	HRESULT InitEffects();
+	bool wrap;
+	bool rebuild_shaders;
+	struct float2
+	{
+		float x,y;
+		void operator=(const float*f)
+		{
+			x=f[0];
+			y=f[1];
+		}
+	};
+	struct float3
+	{
+		float x,y,z;
+		void operator=(const float*f)
+		{
+			x=f[0];
+			y=f[1];
+			z=f[2];
+		}
+	};
+	struct PosTexVert_t
+	{
+		float3 position;	
+		float2 texCoords;
+	};
+	struct PosVert_t
+	{
+		float3 position;
+	};
+	struct Vertex_t
+	{
+		float3 position;
+		float3 texCoords;
+		float layerFade;
+		float2 texCoordsNoise;
+		float3 sunlightColour;
+	};
+	struct CPUFadeVertex_t : public Vertex_t
+	{
+		float3 loss;
+		float3 inscatter;
+	};
+	Vertex_t *vertices;
+	CPUFadeVertex_t *cpu_fade_vertices;
+	PosTexVert_t *lightning_vertices;
 	HRESULT RenderNoiseTexture();
-	float precip_strength;
+	FadeMode fade_mode;
 	float altitude_tex_coord;
 	bool y_vertical;
 	float sun_occlusion;
 	float detail;
-	simul::clouds::CloudInterface *cloudInterface;
-	simul::base::SmartPtr<simul::clouds::CloudKeyframer> cloudKeyframer;
-	simul::base::SmartPtr<simul::clouds::CloudGeometryHelper> helper;
-	simul::sky::BaseSkyInterface *skyInterface;
-	simul::sky::FadeTableInterface *fadeTableInterface;
 	simul::sound::fmod::NodeSound *sound;
 	unsigned illumination_texel_index[4];
 	float timing;
@@ -167,6 +188,7 @@ protected:
 	D3DXHANDLE worldViewProj;
 	D3DXHANDLE eyePosition;
 	D3DXHANDLE lightResponse;
+	D3DXHANDLE crossSectionOffset;
 	D3DXHANDLE lightDir;
 	D3DXHANDLE skylightColour;
 	D3DXHANDLE sunlightColour;
@@ -223,7 +245,6 @@ protected:
 	HRESULT CreateNoiseTexture(bool override_file=false);
 	HRESULT CreateCloudEffect();
 	HRESULT MakeCubemap(); // not ready yet
-	simul::base::SmartPtr<simul::clouds::ThunderCloudNode> cloudNode;
 	bool enable_lightning;
 
 	float last_time;
@@ -233,7 +254,4 @@ protected:
 	int noise_texture_frequency;
 	int texture_octaves;
 	float texture_persistence;
-	unsigned cloud_tex_width_x;
-	unsigned cloud_tex_length_y;
-	unsigned cloud_tex_depth_z;
 };

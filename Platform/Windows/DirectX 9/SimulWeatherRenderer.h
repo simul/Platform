@@ -13,6 +13,7 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Graph/Meta/Group.h"
+#include "Simul/Clouds/BaseWeatherRenderer.h"
 class RenderDepthBufferCallback
 {
 public:
@@ -21,7 +22,7 @@ public:
 //! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX program.
 //! You can take this entire class and use it as source in your project.
 //! Make appropriate modifications where required.
-class SimulWeatherRenderer:public simul::graph::meta::Group
+class SimulWeatherRenderer:public simul::clouds::BaseWeatherRenderer, public simul::graph::meta::Group
 {
 public:
 	SimulWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=320,
@@ -52,6 +53,8 @@ public:
 	HRESULT RenderPrecipitation();
 	//! Call this to draw sun flares etc. after geometry.
 	HRESULT RenderFlares();
+	//! Enable or disable the sky.
+	void EnableSky(bool s);
 	//! Enable or disable the 3d and 2d cloud layers.
 	void EnableLayers(bool clouds3d,bool clouds2d);
 	bool IsCloudLayer1Visible() const
@@ -87,15 +90,9 @@ public:
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 	void SetBufferSize(int w,int h);
 	void EnableRain(bool e=true);
-	void SetAutoExposure(bool a);
 	float GetTotalBrightness() const;
 	void SetPrecipitation(float strength,float speed);
 
-	//! Save and load a sky sequence
-	std::ostream &Save(std::ostream &os) const;
-	std::istream &Load(std::istream &is);
-	//! Clear the sky sequencer()
-	void New();
 	//! Connect-up sky, clouds:
 	void ConnectInterfaces();
 protected:
@@ -103,7 +100,6 @@ protected:
 	bool AlwaysRenderCloudsLate;
 	bool RenderCloudsLate;
 	bool externally_defined_buffers;
-	bool auto_exposure;
 	DWORD gamma_resource_id;
 	//! The size of the 2D buffer the sky is rendered to.
 	int BufferWidth,BufferHeight;
@@ -130,7 +126,7 @@ protected:
 	LPDIRECT3DSURFACE9				m_pLDRRenderTarget	;
 	HRESULT IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
 	HRESULT CreateBuffers();
-	HRESULT RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture,int w,int h,bool do_tonemap,bool blend=false);
+	HRESULT RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture,int w,int h,bool use_shader,bool blend=false);
 	RenderDepthBufferCallback *renderDepthBufferCallback;
 	simul::base::SmartPtr<class SimulSkyRenderer> simulSkyRenderer;
 	simul::base::SmartPtr<class SimulCloudRenderer> simulCloudRenderer;
@@ -146,4 +142,5 @@ protected:
 	float timing;
 	float exposure_multiplier;
 	bool show_rain;
+	bool show_sky;
 };

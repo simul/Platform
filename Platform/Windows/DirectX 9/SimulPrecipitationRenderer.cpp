@@ -26,6 +26,7 @@
 #endif
 
 #include "Simul/Base/SmartPtr.h"
+#include "Simul/Math/Pi.h"
 #include "Macros.h"
 #include "CreateDX9Effect.h"
 #include "Resources.h"
@@ -40,6 +41,7 @@ SimulPrecipitationRenderer::SimulPrecipitationRenderer() :
 	height(100.f),
 	rain_intensity(0.f),
 	external_rain_texture(false)
+	,rain_speed(1.6f)
 {
 }
 
@@ -58,7 +60,6 @@ HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	m_pd3dDevice=dev;
 	HRESULT hr=S_OK;
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
-	D3DXMatrixIdentity(&world);
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
 
@@ -147,6 +148,17 @@ SimulPrecipitationRenderer::~SimulPrecipitationRenderer()
 	static const float radius=50.f;
 	static const float height=150.f;
 
+static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
+{
+	D3DXMATRIX tmp1;
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	D3DXVECTOR3 cam_pos;
+	cam_pos.x=tmp1._41;
+	cam_pos.y=tmp1._42;
+	cam_pos.z=tmp1._43;
+	return cam_pos;
+}
+
 HRESULT SimulPrecipitationRenderer::Render()
 {
 	if(rain_intensity<=0)
@@ -158,32 +170,26 @@ HRESULT SimulPrecipitationRenderer::Render()
 
 	PIXBeginNamedEvent(0,"Render Precipitation");
 	m_pd3dDevice->SetTexture(0,rain_texture);
-	/*m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU,D3DTADDRESS_WRAP);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSV,D3DTADDRESS_WRAP);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER,D3DTEXF_LINEAR);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER,D3DTEXF_LINEAR);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MIPFILTER,D3DTEXF_LINEAR);*/
-
+#ifndef XBOX
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+#endif
 	HRESULT hr=m_pd3dDevice->SetVertexDeclaration(m_pVtxDecl);
 
-	/*m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-	m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
-    hr=m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
-	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
-    m_pd3dDevice->SetRenderState(D3DRS_FILLMODE,D3DFILL_SOLID);*/
-
 	m_pRainEffect->SetTechnique( m_hTechniqueRain );
-
+	cam_pos=GetCameraPosVector(view);
+	D3DXMATRIX	world,direction;
 	D3DXMatrixIdentity(&world);
+	D3DXMatrixRotationY(&direction,wind_heading);
+	float pitch_angle=atan2f(wind_speed,rain_speed);
+	D3DXMatrixRotationX(&world,-pitch_angle);
+	D3DXMatrixMultiply(&world,&world,&direction);
 	world._41=cam_pos.x;
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
 	//set up matrices
 	D3DXMATRIX tmp1, tmp2;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
-	cam_pos.x=tmp1._41;
-	cam_pos.y=tmp1._42;
-	cam_pos.z=tmp1._43;
 	D3DXMatrixMultiply(&tmp1, &world,&view);
 	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
@@ -227,9 +233,11 @@ void SimulPrecipitationRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRI
 void SimulPrecipitationRenderer::Update(float dt)
 {
 	static bool pause=false;
-		static float cc=1.6f;
+	static float low_speed=1.6f;
+	static float high_speed=10.f;
+	rain_speed=low_speed+(high_speed-low_speed)*rain_intensity;
     if(!pause)
 	{
-		offs+=cc*dt;
+		offs+=rain_speed*dt;
 	}
 }

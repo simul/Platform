@@ -21,15 +21,16 @@
 	#define __WFILE__ WIDEN(__FILE__)
 	#define WIDENSTRING(x) L#x
 
+	#define BreakIfDebugging()
 
 	#ifndef V_RETURN
-		#define V_RETURN(x)			{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_RETURN error %d at file %s, line %d",hr,__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,_T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);DebugBreak();return hr; } }
+		#define V_RETURN(x)			{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_RETURN error %d at file %s, line %d",hr,__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,_T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();return hr; } }
 	#endif
 	#ifndef V_CHECK
-		#define V_CHECK(x)	{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_CHECK error %d at file %s, line %d",hr,__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,_T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);DebugBreak();} }
+		#define V_CHECK(x)	{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_CHECK error %d at file %s, line %d",hr,__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,_T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();} }
 	#endif
 	#ifndef V_FAIL
-		#define V_FAIL(msg)	{ wchar_t text[200];wsprintf(text,L"V_FAIL: %s - file %s, line %d",WIDENSTRING(msg),__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,_T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);DebugBreak(); }
+		#define V_FAIL(msg)	{ wchar_t text[200];wsprintf(text,L"V_FAIL: %s - file %s, line %d",WIDENSTRING(msg),__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,_T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging(); }
 	#endif
 
 #else
@@ -40,7 +41,7 @@
 		#define V_CHECK(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_RETURN error "<<hr<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl; } }
 	#endif
 	#ifndef V_FAIL
-		#define V_FAIL(msg)	{ ::cerr<<"V_RETURN error "<<msg<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl; DebugBreak(); }
+		#define V_FAIL(msg)	{ ::cerr<<"V_RETURN error "<<msg<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl; BreakIfDebugging(); }
 	#endif
 #endif
 	#ifndef SAFE_DELETE

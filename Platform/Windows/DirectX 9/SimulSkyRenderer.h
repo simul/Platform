@@ -8,9 +8,7 @@
 // SimulSkyRenderer.h A renderer for skies.
 
 #pragma once
-#include "Simul/Base/SmartPtr.h"
-#include "Simul/Graph/Meta/Group.h"
-#include "Simul/Sky/FadeTableCallback.h"
+#include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Sky/Float4.h"
 #ifdef XBOX
 	#include <xtl.h>
@@ -43,33 +41,17 @@ namespace simul
 		class OvercastCallback;
 	}
 }
-struct PlanetStruct
-{
-	LPDIRECT3DTEXTURE9 pTexturePtr;
-	float dir[3];
-	float angular_radius;
-	bool do_lighting;
-};
 
 typedef long HRESULT;
 
 //! A renderer for skies, this class will manage an instance of simul::sky::SkyNode and use it to calculate sky colours
 //! in real time for the simul_sky.fx shader.
 
-class SimulSkyRenderer:public simul::sky::FadeTableCallback,public simul::graph::meta::Group
+class SimulSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
 	SimulSkyRenderer(bool UseColourSky=false);
 	virtual ~SimulSkyRenderer();
-	//! Colour sky being used?
-	bool IsColourSkyEnabled();
-	void EnableColourSky(bool value);
-	//! Get the interface to the sky object so that other classes can use it for lighting, distance fades etc.
-	simul::sky::SkyInterface *GetSkyInterface();
-	simul::sky::SiderealSkyInterface *GetSiderealSkyInterface();
-	simul::sky::FadeTableInterface *GetFadeTableInterface();
-	simul::sky::AltitudeFadeTable *GetFadeTable();
-	void SetOvercastCallback(simul::sky::OvercastCallback *ocb);
 	//standard d3d object interface functions
 	//! Call this when the D3D device has been created or reset.
 	HRESULT RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
@@ -77,11 +59,10 @@ public:
 	HRESULT InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
 	HRESULT Destroy();
-	//! Call this once per frame to update the sky.
-	void Update(float dt);
-	void						RenderPlanets();
-	HRESULT						RenderPlanet(LPDIRECT3DTEXTURE9	tex,float rad,const float *dir,bool do_lighting);
+	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	HRESULT						RenderSun();
+	//! Render the stars, as a background
+	HRESULT						RenderStars();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	HRESULT						Render();
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
@@ -98,8 +79,6 @@ public:
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 #endif
-	//! Set a multiplier for time steps - default is 1.0
-	void SetTimeMultiplier(float tm);
 	void SetTime(float hour);
 	//! Set the overcast factor for the horizon. Zero is clear skies, one is cloudy.
 	//! This factor then goes into sky brightness and fade calculations.
@@ -108,7 +87,6 @@ public:
 	float GetTiming() const;
 	simul::sky::float4 GetAmbient() const;
 	simul::sky::float4 GetLightColour() const;
-	simul::sky::float4 GetLightDirection() const;
 	//! This sets the base altitude and range for the overcast effect - the base should be the cloudbase,
 	//! while the range should be the height of the clouds.
 	void SetOvercastBaseAndRange(float base_alt_km,float range_km);
@@ -129,44 +107,20 @@ public:
 	void FillSunlightTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void CycleTexturesForward();
 	const char *GetDebugText() const;
-	PlanetStruct *GetPlanet(int index);
-	void SetPlanet(int index,LPDIRECT3DTEXTURE9 tex,float rad,bool do_lighting);
-	void SetPlanetImage(int index,LPDIRECT3DTEXTURE9 tex);
 	void SetFlare(LPDIRECT3DTEXTURE9 tex,float rad);
-	void SetPlanetDirection(int index,const float *pos);
 
-	// Save and load a sky sequence
-	std::ostream &Save(std::ostream &os) const;
-	std::istream &Load(std::istream &is) const;
-	//! Clear the sequence()
-	void New();
 protected:
 	bool external_flare_texture;
-	float flare_magnitude;
-	std::map<int,PlanetStruct> planets;
 	float timing;
-	float flare_angular_size,sun_angular_size;
 	D3DFORMAT sky_tex_format;
-	float sun_occlusion;
-	simul::sky::float4 sunlight;
-	simul::base::SmartPtr<simul::graph::meta::Node> skyNode;
-	simul::base::SmartPtr<simul::sky::AltitudeFadeTable> fadeTable;
-
-	simul::sky::SkyInterface *skyInterface;
-	simul::sky::FadeTableInterface *fadeTableInterface;
-	unsigned skyTexSize;
-	unsigned skyTexIndex;
-	unsigned numAltitudes;
-	float interp;
-	float interp_step_time;
-	float interp_time_1;
 	void CreateFadeTextures();
-	unsigned fadeTexWidth,fadeTexHeight;
+
 	LPDIRECT3DDEVICE9			m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
 	LPD3DXEFFECT				m_pSkyEffect;		// The fx file for the sky
 	D3DXHANDLE					worldViewProj;
 	D3DXHANDLE                  m_hTechniqueSky;	// Handle to technique in the effect 
+	D3DXHANDLE					m_hTechniqueStarrySky;
 	D3DXHANDLE					m_hTechniqueSun;
 	D3DXHANDLE					m_hTechniqueQuery;	// A technique that uses the z-test for occlusion queries
 	D3DXHANDLE					m_hTechniqueFlare;
@@ -182,19 +136,22 @@ protected:
 	D3DXHANDLE					fadeTexture;
 	D3DXHANDLE					skyTexture1;
 	D3DXHANDLE					skyTexture2;
+	D3DXHANDLE					starsTexture;
+	D3DXHANDLE					starBrightness;
+	
 	LPDIRECT3DTEXTURE9			flare_texture;
-	LPDIRECT3DTEXTURE9			moon_texture;
+	LPDIRECT3DTEXTURE9			stars_texture;
+	std::map<int,LPDIRECT3DTEXTURE9> planet_textures;
+	std::vector<LPDIRECT3DTEXTURE9> halo_textures;
 	// Three sky textures - 2 to interpolate and one to fill
 	LPDIRECT3DTEXTURE9			sky_textures[3];
 	// Three sunlight textures.
 	LPDIRECT3DTEXTURE9			sunlight_textures[3];
 	// If using 1D sky textures and 2D fade textures:
-	LPDIRECT3DBASETEXTURE9			loss_textures[3];
-	LPDIRECT3DBASETEXTURE9			inscatter_textures[3];
-	// If using 2D sky textures and 3D fade textures (i.e. altitude is an extra dimension):
-	//LPDIRECT3DVOLUMETEXTURE9	loss_textures_3d[3];
-	//LPDIRECT3DVOLUMETEXTURE9	inscatter_textures_3d[3];
-	D3DXVECTOR3					cam_pos;
+	LPDIRECT3DBASETEXTURE9		loss_textures[3];
+	LPDIRECT3DBASETEXTURE9		inscatter_textures[3];
+	
+	D3DXVECTOR3					cam_dir;
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DQUERY9			d3dQuery;
 	HRESULT						UpdateSkyTexture(float proportion);
@@ -202,4 +159,8 @@ protected:
 	HRESULT						CreateSunlightTextures();
 	HRESULT						CreateSkyEffect();
 	HRESULT						RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
+	virtual bool IsYVertical()
+	{
+		return true;
+	}
 };

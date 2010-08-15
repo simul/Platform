@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <time.h>
 
 class VisualStudioDebugOutput : public simul::base::BufferedStringStreamBuf
 {
@@ -26,6 +27,12 @@ public:
 		}
 		old_cout_buffer=std::cout.rdbuf(this);
 		old_cerr_buffer=std::cerr.rdbuf(this);
+		
+		time_t rawtime;
+		rawtime = time (&rawtime);
+		struct tm * timeinfo;
+		timeinfo = localtime ( &rawtime );
+		std::cout <<asctime (timeinfo) <<std::endl;
 		std::cout << "----------------"<<std::endl;
 		std::cout << "Begin Log output"<<std::endl;
 		std::cout << "----------------"<<std::endl<<std::endl;

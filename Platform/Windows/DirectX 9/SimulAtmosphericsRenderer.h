@@ -18,7 +18,7 @@ namespace simul
 {
 	namespace sky
 	{
-		class SkyInterface;
+		class BaseSkyInterface;
 	}
 }
 
@@ -62,7 +62,7 @@ public:
 		inscatter_texture_2=t2;
 	}
 	
-	void SetSkyInterface(simul::sky::SkyInterface *si)
+	void SetSkyInterface(simul::sky::BaseSkyInterface *si)
 	{
 		skyInterface=si;
 	}
@@ -82,7 +82,7 @@ public:
 protected:
 	bool use_3d_fades;
 	float altitude_tex_coord;
-	simul::sky::SkyInterface *skyInterface;
+	simul::sky::BaseSkyInterface *skyInterface;
 	HRESULT Destroy();
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	vertexDecl;

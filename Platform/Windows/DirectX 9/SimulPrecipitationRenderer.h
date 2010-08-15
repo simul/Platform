@@ -38,6 +38,11 @@ public:
 	{
 		rain_intensity=i;
 	}
+	void SetWind(float speed,float heading_degrees)
+	{
+		wind_heading=heading_degrees*3.14159f/180.f;
+		wind_speed=speed;
+	}
 	//! Set the colour of light, e.g. sunlight, that illuminates the precipitation.
 	void SetLightColour(const float c[4]);
 	// Set a texture not created by this class to be used:
@@ -52,9 +57,10 @@ protected:
 	D3DXHANDLE				lightColour;
 	D3DXHANDLE				intensity;
 	D3DXHANDLE              m_hTechniqueRain;	// Handle to technique in the effect 
-	D3DXMATRIX				world,view,proj;
+	D3DXMATRIX				view,proj;
 	D3DXVECTOR3				cam_pos;
-	float radius,height,offs,rain_intensity;
+	float radius,height,offs,rain_intensity,wind_heading,wind_speed;
 	float light_colour[4];
+	float rain_speed;
 	bool external_rain_texture;		// Is the rain texture created outside this class?
 };

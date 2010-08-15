@@ -39,34 +39,36 @@ typedef std::basic_string<TCHAR> tstring;
 simul::terrain::HeightMapInterface *heightMapInterface;
 
 SimulTerrainRenderer::SimulTerrainRenderer() :
-	m_pVtxDecl(NULL),
-	m_pTerrainEffect(NULL),
-	terrain_texture(NULL),
-	grass_texture(NULL),
-	road_texture(NULL),
-	vertexBuffer(NULL),
-	sky_loss_texture_1(NULL),
-	sky_loss_texture_2(NULL),
-	sky_inscatter_texture_1(NULL),
-	sky_inscatter_texture_2(NULL),
-	cloud_textures(NULL),
-	skyInterface(NULL),
-	elevation_map_texture(NULL)
+	m_pVtxDecl(NULL)
+	,m_pTerrainEffect(NULL)
+	,terrain_texture(NULL)
+	,grass_texture(NULL)
+	,road_texture(NULL)
+	,vertexBuffer(NULL)
+	,sky_loss_texture_1(NULL)
+	,sky_loss_texture_2(NULL)
+	,sky_inscatter_texture_1(NULL)
+	,sky_inscatter_texture_2(NULL)
+	,cloud_textures(NULL)
+	,skyInterface(NULL)
+	,elevation_map_texture(NULL)
+	,show_wireframe(false)
+	,rebuild_effect(true)
 {
 	heightmap=new simul::terrain::HeightMapNode();
-	heightmap->SetPageSize(1025);
-	heightmap->SetTileSize(65);
-	heightmap->SetMaxHeight(7000.f);
-	heightmap->SetFractalOctaves(3);
-	heightmap->SetFractalScale(240000.f);
-	heightmap->SetPageWorldX(240000.f);
-	heightmap->SetPageWorldZ(240000.f);
-	heightmap->SetBaseAltitude(-4000.f);
-	heightmap->SetPersistence(0.65f);
-	heightmap->SetFractalFrequency(8);
-	heightmap->Rebuild();
 	heightMapInterface=heightmap.get();
+	heightmap->SetFractalFrequency(8);
+	heightmap->SetPersistence(0.7f);
 	heightmap->SetNumMipMapLevels(3);
+	heightmap->SetPageSize(513);
+	heightmap->SetTileSize(33);
+	heightmap->SetMaxHeight(4000.f);
+	heightmap->SetFractalOctaves(5);
+	heightmap->SetFractalScale(160000.f);
+	heightmap->SetPageWorldX(120000.f);
+	heightmap->SetPageWorldZ(120000.f);
+	heightmap->SetBaseAltitude(-1000.f);
+	heightmap->Rebuild();
 }
 
 struct TerrainVertex_t
@@ -136,7 +138,7 @@ void SimulTerrainRenderer::GetVertex(int i,int j,TerrainVertex_t *V)
 	V->normal_x=n.x;
 	V->normal_y=n.z;
 	V->normal_z=n.y;
-	V->ca=(1.f-saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f);
+	V->ca=(1.f-saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f)*saturate((800.f-V->y)/200.f);
 	V->tex_x=130.f*X;
 	V->tex_y=130.f*Y;
 	V->offset=0.f;
@@ -154,7 +156,7 @@ void SimulTerrainRenderer::GetVertex(float x,float y,TerrainVertex_t *V)
 	V->normal_x=n.x;
 	V->normal_y=n.z;
 	V->normal_z=n.y;
-	V->ca=(1.f-saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f);
+	V->ca=(1.f-saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f)*saturate((800.f-V->y)/200.f);
 	V->tex_x=130.f*X;
 	V->tex_y=130.f*Y;
 	V->offset=0.f;
@@ -162,6 +164,7 @@ void SimulTerrainRenderer::GetVertex(float x,float y,TerrainVertex_t *V)
 
 HRESULT SimulTerrainRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 {
+	enabled=false;
 	m_pd3dDevice=dev;
 	HRESULT hr;
 	D3DVERTEXELEMENT9 decl[]=
@@ -175,44 +178,16 @@ HRESULT SimulTerrainRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
 
-	CreateDX9Effect(m_pd3dDevice,m_pTerrainEffect,"simul_terrain.fx");
-
 	SAFE_RELEASE(terrain_texture);
-	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/grass02.dds"),&terrain_texture));
+	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/MudGrass01.dds"),&terrain_texture));
 
 	SAFE_RELEASE(grass_texture);
-	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/MudGrass01.dds"),&grass_texture));
+	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/grass02.dds"),&grass_texture));
 
 	SAFE_RELEASE(road_texture);
 	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/road.dds"),&road_texture));
 
-	m_hTechniqueTerrain	=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
-	m_hTechniqueDepthOnly=m_pTerrainEffect->GetTechniqueByName("simul_depth_only");
-	techniqueRoad		=m_pTerrainEffect->GetTechniqueByName("simul_road");
-	worldViewProj		=m_pTerrainEffect->GetParameterByName(NULL,"worldViewProj");
-	eyePosition			=m_pTerrainEffect->GetParameterByName(NULL,"eyePosition");
-	lightDirection		=m_pTerrainEffect->GetParameterByName(NULL,"lightDir");
-	MieRayleighRatio	=m_pTerrainEffect->GetParameterByName(NULL,"MieRayleighRatio");
-	hazeEccentricity	=m_pTerrainEffect->GetParameterByName(NULL,"HazeEccentricity");
-	cloudScales			=m_pTerrainEffect->GetParameterByName(NULL,"cloudScales");
-	cloudOffset			=m_pTerrainEffect->GetParameterByName(NULL,"cloudOffset");
-	cloudInterp			=m_pTerrainEffect->GetParameterByName(NULL,"cloudInterp");
-	fadeInterp			=m_pTerrainEffect->GetParameterByName(NULL,"fadeInterp");
-
-	lightColour			=m_pTerrainEffect->GetParameterByName(NULL,"lightColour");
-	ambientColour		=m_pTerrainEffect->GetParameterByName(NULL,"ambientColour");
-
-	g_mainTexture		=m_pTerrainEffect->GetParameterByName(NULL,"g_mainTexture");
-	grassTexture		=m_pTerrainEffect->GetParameterByName(NULL,"grassTexture");
-	roadTexture			=m_pTerrainEffect->GetParameterByName(NULL,"roadTexture");
-
-	skyLossTexture1		=m_pTerrainEffect->GetParameterByName(NULL,"skyLossTexture1");
-	skyLossTexture2		=m_pTerrainEffect->GetParameterByName(NULL,"skyLossTexture2");
-	skyInscatterTexture1=m_pTerrainEffect->GetParameterByName(NULL,"skyInscatterTexture1");
-	skyInscatterTexture2=m_pTerrainEffect->GetParameterByName(NULL,"skyInscatterTexture2");
-	cloudTexture1		=m_pTerrainEffect->GetParameterByName(NULL,"cloudTexture1");
-	cloudTexture2		=m_pTerrainEffect->GetParameterByName(NULL,"cloudTexture2");
-
+	CreateEffect();
 
 	int num_vertices=heightMapInterface->GetPageSize()*heightMapInterface->GetPageSize();
 	if(skyInterface)
@@ -249,12 +224,51 @@ HRESULT SimulTerrainRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 		{
 			tiles[i].push_back(TerrainTile(squares,heightMapInterface->GetNumMipMapLevels()));
 			for(int m=0;m<heightMapInterface->GetNumMipMapLevels();m++)
-				BuildTile(&(tiles[i][j]),(int)i,(int)j,m);
+				V_RETURN(BuildTile(&(tiles[i][j]),(int)i,(int)j,m));
 		}
 	}
-
+	enabled=true;
 	// Useful:
 	MakeMapTexture();
+	return S_OK;
+}
+
+HRESULT SimulTerrainRenderer::CreateEffect()
+{
+	HRESULT hr=S_OK;
+	std::map<std::string,std::string> defines;
+	if(wrap_clouds)
+		defines["WRAP_CLOUDS"]="1";
+	hr=CreateDX9Effect(m_pd3dDevice,m_pTerrainEffect,"simul_terrain.fx",defines);
+
+	m_hTechniqueTerrain	=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
+	m_hTechniqueDepthOnly=m_pTerrainEffect->GetTechniqueByName("simul_depth_only");
+	techniqueRoad		=m_pTerrainEffect->GetTechniqueByName("simul_road");
+	worldViewProj		=m_pTerrainEffect->GetParameterByName(NULL,"worldViewProj");
+	eyePosition			=m_pTerrainEffect->GetParameterByName(NULL,"eyePosition");
+	lightDirection		=m_pTerrainEffect->GetParameterByName(NULL,"lightDir");
+	MieRayleighRatio	=m_pTerrainEffect->GetParameterByName(NULL,"MieRayleighRatio");
+	hazeEccentricity	=m_pTerrainEffect->GetParameterByName(NULL,"HazeEccentricity");
+	cloudScales			=m_pTerrainEffect->GetParameterByName(NULL,"cloudScales");
+	cloudOffset			=m_pTerrainEffect->GetParameterByName(NULL,"cloudOffset");
+	cloudInterp			=m_pTerrainEffect->GetParameterByName(NULL,"cloudInterp");
+	fadeInterp			=m_pTerrainEffect->GetParameterByName(NULL,"fadeInterp");
+
+	lightColour			=m_pTerrainEffect->GetParameterByName(NULL,"lightColour");
+	ambientColour		=m_pTerrainEffect->GetParameterByName(NULL,"ambientColour");
+
+	g_mainTexture		=m_pTerrainEffect->GetParameterByName(NULL,"g_mainTexture");
+	grassTexture		=m_pTerrainEffect->GetParameterByName(NULL,"grassTexture");
+	roadTexture			=m_pTerrainEffect->GetParameterByName(NULL,"roadTexture");
+
+	skyLossTexture1		=m_pTerrainEffect->GetParameterByName(NULL,"skyLossTexture1");
+	skyLossTexture2		=m_pTerrainEffect->GetParameterByName(NULL,"skyLossTexture2");
+	skyInscatterTexture1=m_pTerrainEffect->GetParameterByName(NULL,"skyInscatterTexture1");
+	skyInscatterTexture2=m_pTerrainEffect->GetParameterByName(NULL,"skyInscatterTexture2");
+	cloudTexture1		=m_pTerrainEffect->GetParameterByName(NULL,"cloudTexture1");
+	cloudTexture2		=m_pTerrainEffect->GetParameterByName(NULL,"cloudTexture2");
+
+	rebuild_effect=false;
 	return hr;
 }
 
@@ -316,8 +330,25 @@ HRESULT SimulTerrainRenderer::Render()
 	return InternalRender(false);
 }
 
+int SimulTerrainRenderer::GetMip(int i,int j) const
+{
+	if(i<0||j<0||i>=tiles.size()||j>=tiles.size())
+		return -1;
+	simul::math::Vector3 pos=tiles[i][j].pos;
+	pos-=simul::math::Vector3((const float*)(&cam_pos));
+	float dist=pos.Magnitude();
+	int mip_level=(int)(dist/12000.f);
+	if(mip_level>heightMapInterface->GetNumMipMapLevels()-1)
+		mip_level=heightMapInterface->GetNumMipMapLevels()-1;
+	return mip_level;
+}
+
 HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 {
+	if(!enabled)
+		return S_OK;
+	if(rebuild_effect)
+		CreateEffect();
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(0,"Render Terrain");
 	PIXBeginNamedEvent(0,"Land");
@@ -331,7 +362,9 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 	if(depth_only)
 		m_pTerrainEffect->SetTechnique( m_hTechniqueDepthOnly );
 	else
+	{
 		m_pTerrainEffect->SetTechnique( m_hTechniqueTerrain );
+	}
 
 	D3DXMATRIX tmp1,tmp2,wvp;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
@@ -357,7 +390,7 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 		float alt_km=cam_pos.y*0.001f;
 		static float light_mult=1.f/25.f;//.25f/6.28f;
 		simul::sky::float4 light_colour=light_mult*skyInterface->GetLocalIrradiance(alt_km);
-		simul::sky::float4 ambient_colour=light_mult*skyInterface->GetAmbientLight(alt_km);
+		simul::sky::float4 ambient_colour=skyInterface->GetAmbientLight(alt_km);
 		m_pTerrainEffect->SetVector	(lightColour		,(const D3DXVECTOR4 *)(&light_colour));
 		m_pTerrainEffect->SetVector	(ambientColour		,(const D3DXVECTOR4 *)(&ambient_colour));
 	}
@@ -398,19 +431,12 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 		PIXBeginNamedEvent(0,"Pass");
 		hr=m_pTerrainEffect->BeginPass(p);
 
-		if(!p||(cloud_textures&&p==2)||(!cloud_textures&&p==1))
+		if(p<2||(cloud_textures&&p==3)||(!cloud_textures&&p==2)||(show_wireframe&&p==4))
 		for(size_t i=0;i<tiles.size();i++)
 		{
 			for(size_t j=0;j<tiles.size();j++)
 			{
-				int mip_level=2;
-				simul::math::Vector3 pos=tiles[i][j].pos;
-				//std::swap(pos.y,pos.z);
-				pos-=simul::math::Vector3((const float*)(&cam_pos));
-				float dist=pos.Magnitude();
-				mip_level=(int)(dist/12000.f);
-				if(mip_level>heightMapInterface->GetNumMipMapLevels()-1)
-					mip_level=heightMapInterface->GetNumMipMapLevels()-1;
+				int mip_level=GetMip(i,j);
 				TerrainTileMIP *mip=&tiles[i][j].mips[mip_level];
 				V_RETURN(hr=m_pd3dDevice->SetIndices(mip->indexBuffer));
 
@@ -418,7 +444,20 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 					V_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLESTRIP,0,0,mip->num_verts,0,mip->num_prims-2))
 				else if(mip->num_squares)
 					V_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,mip->num_verts,0,mip->num_prims/3))
-
+				
+				if(mip->edges.size())
+				for(size_t k=0;k<4;k++)
+				{
+					int other_mip_level=GetMip(i+(k==0)-(k==1),j+(k==2)-(k==3));
+					if(other_mip_level<0)
+						continue;
+					int idx=other_mip_level-mip_level;
+					if(idx<0)
+						idx=0;
+					V_RETURN(hr=m_pd3dDevice->SetIndices(mip->edges[idx].edge[k].indexBuffer));
+					V_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,mip->edges[0].edge[k].num_tris*3,0,mip->edges[0].edge[k].num_tris))
+					
+				}
 				if(mip->extraIndexBuffer)
 				{
 					V_RETURN(hr=m_pd3dDevice->SetStreamSource(0,mip->extraVertexBuffer,0,sizeof(TerrainVertex_t)));
@@ -462,12 +501,15 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 	return hr;
 }
 
-
-
-HRESULT SimulTerrainRenderer::DrawMap()
+HRESULT SimulTerrainRenderer::RenderMap(int width)
 {
-	int size=heightmap->GetPageSize();
-	return RenderTexture(m_pd3dDevice,16,16,size,size,elevation_map_texture);
+	int w=(width-16)/3;
+
+	int h=w;
+	return RenderTexture(m_pd3dDevice,8,8,w,h,elevation_map_texture);
+
+	//int size=heightmap->GetPageSize();
+	//return RenderTexture(m_pd3dDevice,16,16,size,size,elevation_map_texture);
 }
 
 void SimulTerrainRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
@@ -475,6 +517,17 @@ void SimulTerrainRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 	view=v;
 	proj=p;
 }
+
+void SimulTerrainRenderer::SetCloudTextures(LPDIRECT3DVOLUMETEXTURE9 *t,bool wrap)
+{
+	cloud_textures=t;
+	if(wrap_clouds!=wrap)
+	{
+		wrap_clouds=wrap;
+		rebuild_effect=true;
+	}
+}
+
 simul::terrain::HeightMapInterface *SimulTerrainRenderer::GetHeightMapInterface()
 {
 	return heightMapInterface;
@@ -567,11 +620,122 @@ HRESULT SimulTerrainRenderer::BuildRoad()
 	return hr;
 }
 
+HRESULT SimulTerrainRenderer::BuildMIPEdge(TerrainTile *tile,int i,int j,int mip_level,int lower_level,int nsew)
+{
+	HRESULT hr=S_OK;
+	TerrainTileMIP *mip=&(tile->mips[mip_level]);
+	MIPEdges *edges=NULL;
+	int idx=lower_level-mip_level;
+	if(idx>=mip->edges.size())
+	{
+		mip->edges.push_back(MIPEdges());
+	}
+	edges=&(mip->edges[idx]);
+	MIPEdge *edge=&edges->edge[nsew];
+
+	int grid=heightMapInterface->GetTileSize();
+
+	int tile_size=heightMapInterface->GetTileSize();
+	tile_size-=1;
+	tile_size>>=mip_level;
+	int skip1=1<<mip_level;
+
+	int lower_tile_size=heightMapInterface->GetTileSize();
+	lower_tile_size-=1;
+	lower_tile_size>>=lower_level;
+	int skip2=1<<lower_level;
+
+	// now have two tile sizes, e.g. 9 and 3.
+	
+	// for each of the lower sizes, e.g. 3, we have one triangle, plus a fan of size 2^(diff)
+	int diff=lower_level-mip_level;
+	edge->num_tris=lower_tile_size*(1+1<<diff)-2;
+
+	if(edge->num_tris>0)
+	{
+		V_RETURN(m_pd3dDevice->CreateIndexBuffer(edge->num_tris*3*sizeof(unsigned),D3DUSAGE_WRITEONLY,D3DFMT_INDEX32,
+												  D3DPOOL_DEFAULT, &edge->indexBuffer,NULL));
+		unsigned *indexData;
+		V_RETURN(edge->indexBuffer->Lock(0,edge->num_tris,(void**)&indexData,0));
+
+		unsigned *index=indexData;
+		for(int x=0;x<lower_tile_size;x++)
+		{
+			// The big central triangles:
+			int offs=((skip1==skip2)?(x==0?skip2:0):skip2/2);
+			int a1;
+			int a2;
+			int a3;
+			int b1;
+			int b2;
+			int b3;
+			int U=1<<diff;
+			for(int u=0;u<1+U;u++)
+			{
+				if(x==0&&u==1)
+					continue;
+				if(x==lower_tile_size-1&&u==1<<diff)
+					continue;
+				if(!u)
+				{
+					a1=0;
+					a2=0;
+					a3=skip1;
+					b1=(x+1)*skip2;
+					b2=(x  )*skip2;
+					b3=(x  )*skip2+offs;
+				}
+				else
+				{
+					int v=(u-1);
+					int w=U==1?1:(u-1)>=(U/2)?1:0;
+					a1=0;
+					a2=skip1;
+					a3=skip1;
+					b1=(x+w)*skip2;
+					b2=x*skip2+v*skip1;
+					b3=b2+skip1;
+				}
+				if(nsew==0)
+				{
+					*(index++)	=TilePosToIndex(i,j,(grid-1-a1)		,b1		);
+					*(index++)	=TilePosToIndex(i,j,(grid-1-a2)		,b2		);
+					*(index++)	=TilePosToIndex(i,j,(grid-1-a3)		,b3		);
+				}													
+				if(nsew==1)											
+				{													
+					*(index++)	=TilePosToIndex(i,j,(a2)			,b2		);
+					*(index++)	=TilePosToIndex(i,j,(a1)			,b1		);
+					*(index++)	=TilePosToIndex(i,j,(a3)			,b3		);
+				}
+				if(nsew==2)
+				{
+					*(index++)	=TilePosToIndex(i,j,b2			,(grid-1-a2)	);
+					*(index++)	=TilePosToIndex(i,j,b1			,(grid-1-a1)	);
+					*(index++)	=TilePosToIndex(i,j,b3			,(grid-1-a3)	);
+				}
+				if(nsew==3)
+				{
+					*(index++)	=TilePosToIndex(i,j,b1			,(a1)			);
+					*(index++)	=TilePosToIndex(i,j,b2			,(a2)			);
+					*(index++)	=TilePosToIndex(i,j,b3			,(a3)			);
+				}
+			}
+		}
+		V_RETURN(edge->indexBuffer->Unlock());
+	}
+	else
+	{
+		edge->indexBuffer=0;
+	}
+
+	return hr;
+}
+
 HRESULT SimulTerrainRenderer::BuildTile(TerrainTile *tile,int i,int j,int mip_level)
 {
 	int tile_size=heightMapInterface->GetTileSize();
 	int skip=1<<mip_level;
-
 
 	float X=((float)i+0.5f)/((float)tiles.size());
 	float Y=((float)j+0.5f)/((float)tiles.size());
@@ -579,7 +743,6 @@ HRESULT SimulTerrainRenderer::BuildTile(TerrainTile *tile,int i,int j,int mip_le
 	tile->pos[0]=(X-0.5f)*heightMapInterface->GetPageWorldX();
 	tile->pos[1]=heightMapInterface->GetHeightAt(i*(tile_size-1)+tile_size/2,j*(tile_size-1)+tile_size/2);
 	tile->pos[2]=(Y-0.5f)*heightMapInterface->GetPageWorldZ();
-	
 
 	TerrainTileMIP *mip=&(tile->mips[mip_level]);
 
@@ -618,44 +781,67 @@ HRESULT SimulTerrainRenderer::BuildTile(TerrainTile *tile,int i,int j,int mip_le
 
 	mip->ApplyCutouts(heightMapInterface,i,j,skip,&cutout);
 
-
 	HRESULT hr=S_OK;
-//	int grid=heightMapInterface->GetPageSize();
+
 	tile_size-=1;
 	tile_size>>=mip_level;
 	tile_size+=1;
 	if(mip->tri_strip)
 	{
-		mip->num_prims=(tile_size+1)*2*(tile_size-1);
-		V_RETURN(m_pd3dDevice->CreateIndexBuffer(mip->num_prims*sizeof(unsigned),D3DUSAGE_WRITEONLY,D3DFMT_INDEX32,
-										  D3DPOOL_DEFAULT, &mip->indexBuffer,
-										  NULL ));
-		unsigned *indexData;
-		V_RETURN(mip->indexBuffer->Lock(0, mip->num_prims, (void**)&indexData, 0 ));
-
-		unsigned *index=indexData;
-		for(int x=0;x<tile_size-1;x+=2)
+		if(tile_size>=2)
 		{
-			for(int y=0;y<tile_size;y++)
+			mip->num_prims=(tile_size-1)*2*(tile_size-3);
+			V_RETURN(m_pd3dDevice->CreateIndexBuffer(mip->num_prims*sizeof(unsigned),D3DUSAGE_WRITEONLY,D3DFMT_INDEX32,
+											  D3DPOOL_DEFAULT, &mip->indexBuffer,NULL));
+			unsigned *indexData;
+			V_RETURN(mip->indexBuffer->Lock(0,mip->num_prims,(void**)&indexData,0));
+
+			unsigned *index=indexData;
+			int num=0;
+			for(int x=1;x<tile_size-2;x+=2)
 			{
-				*(index++)	=TilePosToIndex(i,j,(x+1)*skip,y*skip);
-				*(index++)	=TilePosToIndex(i,j,(x  )*skip,y*skip);
+				for(int y=1;y<tile_size-1;y++)
+				{
+					*(index++)	=TilePosToIndex(i,j,(x+1)*skip,y*skip);
+					num++;
+					*(index++)	=TilePosToIndex(i,j,(x  )*skip,y*skip);
+					num++;
+				}
+				*(index++)		=TilePosToIndex(i,j,(x  )*skip,(tile_size-2)*skip);
+					num++;
+				*(index++)		=TilePosToIndex(i,j,(x  )*skip,(tile_size-2)*skip);
+					num++;
+				for(int y=1;y<tile_size-1;y++)
+				{
+					*(index++)	=TilePosToIndex(i,j,(x+1)*skip,(tile_size-1-y)*skip);
+					num++;
+					*(index++)	=TilePosToIndex(i,j,(x+2)*skip,(tile_size-1-y)*skip);
+					num++;
+				}
+				*(index++)		=TilePosToIndex(i,j,(x+1)*skip,skip);
+					num++;
+				*(index++)		=TilePosToIndex(i,j,(x+1)*skip,skip);
+					num++;
 			}
-			*(index++)	=TilePosToIndex(i,j,(x  )*skip,(tile_size-1)*skip);
-			for(int y=0;y<tile_size;y++)
+			V_RETURN(mip->indexBuffer->Unlock());
+			for(int lower_level=mip_level;lower_level<heightMapInterface->GetNumMipMapLevels();lower_level++)
 			{
-				*(index++)	=TilePosToIndex(i,j,(x+2)*skip,(tile_size-1-y)*skip);
-				*(index++)	=TilePosToIndex(i,j,(x+1)*skip,(tile_size-1-y)*skip);
+				for(int nsew=0;nsew<4;nsew++)
+				{
+					V_RETURN(BuildMIPEdge(tile,i,j,mip_level,lower_level,nsew));
+				}
 			}
-			*(index++)	=TilePosToIndex(i,j,(x+1)*skip,0);
 		}
-		V_RETURN(mip->indexBuffer->Unlock());
+		else
+		{
+			mip->num_prims=0;
+		}
 	}
 	else
 	{
 		if(mip->num_squares)
 		{
-		// Must create 
+			// Must create 
 			mip->num_prims=6*mip->num_squares;
 			V_RETURN(m_pd3dDevice->CreateIndexBuffer((unsigned)(mip->num_prims*sizeof(unsigned)),D3DUSAGE_WRITEONLY,D3DFMT_INDEX32,
 											  D3DPOOL_DEFAULT, &mip->indexBuffer,
@@ -754,6 +940,19 @@ void SimulTerrainRenderer::TerrainTileMIP::Reset()
 	num_squares=0;
 	num_verts=0;
 	tri_strip=false;
+	for(int i=0;i<edges.size();i++)
+		edges[i].Reset();
+}
+
+void SimulTerrainRenderer::MIPEdge::Reset()
+{
+	SAFE_RELEASE(indexBuffer);
+	num_tris=0;
+}
+void SimulTerrainRenderer::MIPEdges::Reset()
+{
+	for(int i=0;i<4;i++)
+		edge[i].Reset();
 }
 
 void SimulTerrainRenderer::RoadRenderable::Reset()

@@ -22,7 +22,7 @@ namespace simul
 {
 	namespace sky
 	{
-		class SkyInterface;
+		class BaseSkyInterface;
 	}
 	namespace terrain
 	{
@@ -44,13 +44,14 @@ public:
 	virtual ~SimulTerrainRenderer();
 	HRESULT RenderOnlyDepth();
 	HRESULT Render();
-	HRESULT DrawMap();
+	int GetMip(int i,int j) const;
+	HRESULT RenderMap(int w);
 	void Update(float dt);
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2){sky_loss_texture_1=t1;sky_loss_texture_2=t2;}
 	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2){sky_inscatter_texture_1=t1;sky_inscatter_texture_2=t2;}
-	void SetCloudTextures(LPDIRECT3DVOLUMETEXTURE9 *t){cloud_textures=t;}
-	void SetSkyInterface(simul::sky::SkyInterface *si){skyInterface=si;}
+	void SetCloudTextures(LPDIRECT3DVOLUMETEXTURE9 *t,bool wrap);
+	void SetSkyInterface(simul::sky::BaseSkyInterface *si){skyInterface=si;}
 	simul::terrain::HeightMapInterface *GetHeightMapInterface();
 	void SetCloudScales(const float *s)
 	{
@@ -76,11 +77,24 @@ public:
 	{
 		exposure=e;
 	}
+	void SetShowWireframe(bool s)
+	{
+		show_wireframe=s;
+	}
+	void RebuildEffect()
+	{
+		rebuild_effect=true;
+	}
 protected:
+	bool enabled;
+	bool wrap_clouds;
+	bool rebuild_effect;
+	HRESULT CreateEffect();
 	simul::base::SmartPtr<simul::terrain::HeightMapNode> heightmap;
 	HRESULT InternalRender(bool depth_only);
 	float altitude_tex_coord;
-	simul::sky::SkyInterface *skyInterface;
+	bool show_wireframe;
+	simul::sky::BaseSkyInterface *skyInterface;
 	LPDIRECT3DDEVICE9		m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
 	LPD3DXEFFECT			m_pTerrainEffect;		// The fx file for the sky
@@ -129,11 +143,31 @@ protected:
 	LPDIRECT3DVERTEXBUFFER9	vertexBuffer;
 
 	simul::math::Vector3 dir_to_sun;
+	// A MIP edge joins a higher-resolution MIP to a lower-resolution one.
+	// The inner vertices come from the main grid.
+	// The outer vertices are interpolations.
+	struct MIPEdge
+	{
+		LPDIRECT3DINDEXBUFFER9 indexBuffer;
+		int num_tris;
+		void Reset();
+	};
+	struct MIPEdges
+	{
+		MIPEdge edge[4];
+		void Reset();
+	};
 	struct TerrainTileMIP
 	{
+		// The inner square:
 		unsigned num_prims;
 		unsigned num_verts;
 		LPDIRECT3DINDEXBUFFER9 indexBuffer;
+
+		// four MIP edges for each lower MIP level
+		std::vector<MIPEdges> edges;
+
+		// extra vertices for cutouts:
 		LPDIRECT3DVERTEXBUFFER9	extraVertexBuffer;
 		LPDIRECT3DINDEXBUFFER9 extraIndexBuffer;
 		typedef std::vector<bool> BitMask;
@@ -168,6 +202,7 @@ protected:
 	typedef std::vector < TerrainRow > Terrain2D;
 
 	HRESULT BuildRoad();
+	HRESULT BuildMIPEdge(TerrainTile *tile,int i,int j,int mip_level,int lower_level,int nsew);
 	HRESULT BuildTile(TerrainTile *tile,int i,int j,int mip_level);
 	void ReleaseIndexBuffers();
 

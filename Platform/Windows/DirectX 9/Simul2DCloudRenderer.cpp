@@ -159,8 +159,8 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	cloudInterface->SetCloudLength(120000.f);
 	cloudInterface->SetCloudHeight(1200.f);
 
-	cloudInterface->SetFractalEffectScale(20.f);
-	cloudInterface->SetFractalPatternScale(100.f);
+	cloudInterface->SetFractalAmplitude(20.f);
+	cloudInterface->SetFractalWavelength(100.f);
 
 	cloudInterface->SetOpticalDensity(1.5f);
 	cloudInterface->SetHumidity(.45f);

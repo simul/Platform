@@ -162,7 +162,7 @@ HRESULT SimulHDRRenderer::CreateBuffers()
 #else
 	D3DFORMAT hdr_format=D3DFMT_LIN_A16B16G16R16F;
 #endif
-	hr=-1;//CanUse16BitFloats(m_pd3dDevice);
+	hr=CanUse16BitFloats(m_pd3dDevice);
 	if(hr!=S_OK)
 #ifndef XBOX
 		hdr_format=D3DFMT_A32B32G32R32F;
@@ -482,7 +482,7 @@ HRESULT SimulHDRRenderer::StartRender()
 			static float depth_start=1.f;
 			PIXWrapper(0,"Clear")
 			{
-				hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L);
+				hr=m_pd3dDevice->Clear(0L, NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L);
 			}
 			hr=m_pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS,0); // Defaults to zero
 			hr=m_pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS,0);
