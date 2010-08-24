@@ -230,6 +230,7 @@ SimulCloudRenderer::SimulCloudRenderer() :
 	fade_mode(CPU),
 	vertices(NULL),
 	cpu_fade_vertices(NULL)
+	,max_fade_distance_metres(300000.f)
 {
 	lightning_colour.x=1.5f;
 	lightning_colour.y=1.5f;
@@ -431,6 +432,9 @@ HRESULT SimulCloudRenderer::InitEffects()
 	wrap=cloudInterface->GetWrap();
 	if(cloudInterface->GetWrap())
 		defines["WRAP_CLOUDS"]="1";
+	char max_fade_distance_str[25];
+	sprintf(max_fade_distance_str,"%3.1f",max_fade_distance_metres);
+	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
 	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
 
 	m_hTechniqueCloud					=GetDX9Technique(m_pCloudEffect,"simul_clouds");
@@ -480,8 +484,7 @@ HRESULT SimulCloudRenderer::InitEffects()
 	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pLightningEffect,"simul_lightning.fx"));
 	m_hTechniqueLightningLines	=m_pLightningEffect->GetTechniqueByName("simul_lightning_lines");
 	m_hTechniqueLightningQuads	=m_pLightningEffect->GetTechniqueByName("simul_lightning_quads");
-	l_worldViewProj			=m_pLightningEffect->GetParameterByName(NULL,"worldViewProj");
-
+	l_worldViewProj				=m_pLightningEffect->GetParameterByName(NULL,"worldViewProj");
 
 	rebuild_shaders=false;
 	return S_OK;
@@ -624,7 +627,7 @@ HRESULT SimulCloudRenderer::CreateNoiseTexture(bool override_file)
 
 	simul::graph::standardnodes::ShowProgressInterface *progress=GetResourceInterface();
 	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)(lockedRect.pBits),
-		noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence,progress);
+		noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence,progress,this);
 	hr=noise_texture->UnlockRect(0);
 	noise_texture->GenerateMipSubLevels();
 
@@ -774,7 +777,7 @@ void SimulCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_y,
 			return;
 	}
 }
-void SimulCloudRenderer::FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array)
+void SimulCloudRenderer::FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array)
 {
 	if(!num_texels)
 		return;
@@ -972,7 +975,7 @@ static float effect_on_cloud=20.f;
 
 			if(fade_mode==CPU)
 			{
-				helper->CalcInscatterFactors(cloudInterface,skyInterface,fadeTableInterface);
+				helper->CalcInscatterFactors(skyInterface,fadeTableInterface);
 			}
 
 			float cloud_interp=cloudKeyframer->GetInterpolation();

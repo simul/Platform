@@ -58,8 +58,6 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 		sky_textures[i]=NULL;
 		loss_textures[i]=NULL;
 		inscatter_textures[i]=NULL;
-		//loss_textures_3d[i]=NULL;
-		//inscatter_textures_3d[i]=NULL;
 		sunlight_textures[i]=NULL;
 	}
 	EnableColourSky(UseColourSky);
@@ -374,7 +372,7 @@ void SimulSkyRenderer::CreateFadeTextures()
 	}
 }
 
-void SimulSkyRenderer::FillFadeTextures(int alt_index,int texture_index,int texel_index,int num_texels,
+void SimulSkyRenderer::FillFadeTexturesSequentially(int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
 						const float *inscatter_float4_array)
 {
@@ -405,7 +403,6 @@ void SimulSkyRenderer::FillFadeTextures(int alt_index,int texture_index,int texe
 		if(FAILED(hr=tex3d->LockBox(0,&lockedBox,NULL,NULL)))
 			return;
 		tex_ptr=lockedBox.pBits;
-		texel_index+=desc3d.Width*desc3d.Height*alt_index;
 	}
 	// Convert the array of floats into float16 values for the texture.
 	if(sky_tex_format==D3DFMT_A16B16G16R16F)
@@ -765,7 +762,7 @@ bool SimulSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const f
 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(planet_dir4.y);
-	planet_colour*=skyInterface->GetIsotropicColourLossFactor(alt_km,planet_elevation,1e10f);
+	planet_colour*=skyInterface->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 	D3DXVECTOR4 planet_dir(dir);
 
 	// Make it bigger than it should be?

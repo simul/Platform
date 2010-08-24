@@ -54,6 +54,7 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	,elevation_map_texture(NULL)
 	,show_wireframe(false)
 	,rebuild_effect(true)
+	,max_fade_distance_metres(300000.f)
 {
 	heightmap=new simul::terrain::HeightMapNode();
 	heightMapInterface=heightmap.get();
@@ -239,6 +240,9 @@ HRESULT SimulTerrainRenderer::CreateEffect()
 	std::map<std::string,std::string> defines;
 	if(wrap_clouds)
 		defines["WRAP_CLOUDS"]="1";
+	char max_fade_distance_str[25];
+	sprintf(max_fade_distance_str,"%g",max_fade_distance_metres);
+	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
 	hr=CreateDX9Effect(m_pd3dDevice,m_pTerrainEffect,"simul_terrain.fx",defines);
 
 	m_hTechniqueTerrain	=m_pTerrainEffect->GetTechniqueByName("simul_terrain");

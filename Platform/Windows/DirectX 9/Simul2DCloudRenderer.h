@@ -69,7 +69,10 @@ public:
 	void SetStepsPerHour(unsigned s);
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
-	void FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
+	void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
+	void FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array)
+	{
+	}
 	void CycleTexturesForward();
 	void SetCloudiness(float c);
 	// a texture

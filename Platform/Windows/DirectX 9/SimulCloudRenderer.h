@@ -107,9 +107,19 @@ public:
 	void EnableFilter(bool f);
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
-	void FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
+	void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
+	void FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array)
+	{
+	}
 	void CycleTexturesForward();
+	// Distance for fade texture lookups:
+	void SetMaxFadeDistanceKm(float dist_km)
+	{
+		max_fade_distance_metres=dist_km*1000.f;
+		rebuild_shaders=true;
+	}
 protected:
+	float max_fade_distance_metres;
 	HRESULT InitEffects();
 	bool wrap;
 	bool rebuild_shaders;

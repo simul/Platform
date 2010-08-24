@@ -388,7 +388,7 @@ void Simul2DCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_
 	}
 }
 
-void Simul2DCloudRenderer::FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array)
+void Simul2DCloudRenderer::FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array)
 {
 	HRESULT hr=S_OK;
 	D3DLOCKED_RECT lockedRect={0};

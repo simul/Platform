@@ -81,6 +81,11 @@ public:
 	{
 		show_wireframe=s;
 	}
+	void SetMaxFadeDistanceKm(float dist_km)
+	{
+		max_fade_distance_metres=dist_km*1000.f;
+		RebuildEffect();
+	}
 	void RebuildEffect()
 	{
 		rebuild_effect=true;
@@ -217,4 +222,5 @@ protected:
 	void GetVertex(float x,float y,struct TerrainVertex_t *V);
 
 	float exposure;
+	float max_fade_distance_metres;
 };

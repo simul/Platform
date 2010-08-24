@@ -101,14 +101,19 @@ public:
 	void SetSkyTextureSize(unsigned size);
 	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
 	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void FillFadeTextures(int alt_index,int texture_index,int texel_index,int num_texels,
+	void FillFadeTexturesSequentially(int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
 						const float *inscatter_float4_array);
+	void FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,
+						const float *loss_float4_array,
+						const float *inscatter_float4_array)
+	{
+	}
+
 	void FillSunlightTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void CycleTexturesForward();
 	const char *GetDebugText() const;
 	void SetFlare(LPDIRECT3DTEXTURE9 tex,float rad);
-
 protected:
 	bool external_flare_texture;
 	float timing;
