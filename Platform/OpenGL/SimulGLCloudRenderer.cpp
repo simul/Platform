@@ -17,7 +17,7 @@
 #include <map>
 #include <math.h>
 #include <GL/glew.h>
-#include <GL/glut.h>
+//#include <GL/glut.h>
 
 #include "FreeImage.h"
 #include <fstream>
@@ -39,17 +39,18 @@
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/LicenseKey.h"
+#include "LoadGLProgram.h"
+
 
 #ifdef WIN32
 #include "Simul/Platform/Windows/VisualStudioDebugOutput.h"
 #endif
 
 #include <algorithm>
-extern GLuint LoadProgram(GLuint program,const char *path,const char *filename);
 void printShaderInfoLog(GLuint obj);
 void printProgramInfoLog(GLuint obj);
 
-extern bool god_rays;
+bool god_rays=false;
 using std::map;
 using namespace std;
 
@@ -68,9 +69,11 @@ SimulGLCloudRenderer::SimulGLCloudRenderer()
 	cloudKeyframer->SetFillTexturesAsBlocks(true);
 }
 
-bool SimulGLCloudRenderer::CreateNoiseTexture()
+bool SimulGLCloudRenderer::CreateNoiseTexture
+()
 {
-	int size=1024;
+	int size=512;
+
     glGenTextures(1,&noise_tex);
     glBindTexture(GL_TEXTURE_2D,noise_tex);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -120,9 +123,12 @@ void SimulGLCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
+	int *tex=new int[3*depth_z];
+	//glGenTextures(3,cloud_tex);
 	for(int i=0;i<3;i++)
 	{
 		glGenTextures(1,&(cloud_tex[i]));
+		//cloud_tex[i]=tex[i*depth_z];
 		glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
 		if(cloudKeyframer->GetUse16Bit())
 			glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA4,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_SHORT,0);
@@ -144,6 +150,7 @@ void SimulGLCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_
 		}
 		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
 	}
+	delete [] tex;
 }
 
 void SimulGLCloudRenderer::CycleTexturesForward()
@@ -176,9 +183,19 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render()
+bool SimulGLCloudRenderer::Render(float gamma)
 {
-glPushAttrib(GL_ENABLE_BIT);
+	if(gamma>0&&gamma!=1.f)
+	{
+		helper->EnablePrecalculatedGamma(gamma);
+	}
+	else
+	{
+		helper->DisablePrecalculatedGamma();
+		gamma=1.f;
+	}
+	glPushAttrib(GL_ENABLE_BIT);
+    glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	using namespace simul::clouds;
 	cloudKeyframer->Update(skyInterface->GetDaytime());
 	simul::math::Vector3 X1,X2;
@@ -209,12 +226,15 @@ glPushAttrib(GL_ENABLE_BIT);
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 
+	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
 
     glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[0]);
+
     glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[1]);
+
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
 
@@ -226,6 +246,11 @@ glPushAttrib(GL_ENABLE_BIT);
 
 	static float ll=0.05f;
 	simul::sky::float4 light_response(0,cloudInterface->GetLightResponse(),ll*cloudInterface->GetSecondaryLightResponse(),0);
+light_response*=gamma;
+	//light_response=simul::sky::Pow(light_response,gamma);
+	// gamma-compensate for direct light beta function:
+	//light_response.y*=pow(0.079577f,gamma)/(0.079577f);
+
 	glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
 	
 	simul::sky::float4 fractal_scales=helper->GetFractalScales(cloudInterface);
@@ -236,6 +261,7 @@ glPushAttrib(GL_ENABLE_BIT);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 	glUniform3f(lightDirection_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	simul::sky::float4 amb=cloudInterface->GetAmbientLightResponse()*skyInterface->GetAmbientLight(X1.z*.001f);
+	//amb=simul::sky::Pow(amb,gamma);
 	glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
 
 	glUniform1f(cloudEccentricity_param,cloudInterface->GetMieAsymmetry());
@@ -245,17 +271,26 @@ glPushAttrib(GL_ENABLE_BIT);
 	if(mieRayleighRatio_param)
 		glUniform3f(mieRayleighRatio_param,mieRayleighRatio.x,mieRayleighRatio.y,mieRayleighRatio.z);
 
-
 	simul::math::Vector3 view_pos(cam_pos[0],cam_pos[1],cam_pos[2]);
-
-
 	simul::math::Vector3 eye_dir(-viewInv(2,0),-viewInv(2,1),-viewInv(2,2));
 	simul::math::Vector3 up_dir	(viewInv(1,0),viewInv(1,1),viewInv(1,2));
 
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	
 	helper->Update(view_pos,cloudNode->GetWindOffset(),eye_dir,up_dir);
 	simul::math::Matrix4x4 proj;
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
+
+	float zFar=proj(3,2)/(1.f+proj(2,2));
+	float zNear=proj(3,2)/(proj(2,2)-1.f);
+	zFar=helper->GetMaxCloudDistance()*1.1f;
+	proj(2,2)=-(zFar+zNear)/(zFar-zNear);
+	proj(3,2)=-2.f*(zNear*zFar)/(zFar-zNear);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadMatrixf(proj.RowPointer(0));
+
 	float tan_half_fov_vertical=1.f/proj(1,1);
 	float tan_half_fov_horizontal=1.f/proj(0,0);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
@@ -272,6 +307,10 @@ glPushAttrib(GL_ENABLE_BIT);
 	helper->CalcInscatterFactors(skyInterface,fadeTableInterface,god_rays);
 	simul::sky::float4 sunlight1=skyInterface->GetLocalIrradiance(X1.z*.001f);
 	simul::sky::float4 sunlight2=skyInterface->GetLocalIrradiance(X2.z*.001f);
+
+	//sunlight1=simul::sky::Pow(sunlight1,gamma);
+	//sunlight2=simul::sky::Pow(sunlight2,gamma);
+
 	// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,
 	// which is drawn as a latitude-longitude sphere. But we only draw the parts that:
 	// a) are in the view frustum
@@ -282,14 +321,7 @@ glPushAttrib(GL_ENABLE_BIT);
 		i!=helper->GetSlices().end();i++)
 	{
 		// How thick is this layer, optically speaking?
-
-		// Two choices: fadeIn blends better in animation, but OpticalDensity*thickness is more "correct".
-		// If you use OpticalDensity*thickness, the shader needs EXPONENTIAL_DENSITY defined
-#if 1
 		float dens=(*i)->fadeIn;
-#else
-		float dens=0.001f*cloudInterface->GetOpticalDensity()*(*i)->thickness;
-#endif
 		if(!dens)
 			continue;
 		layers_drawn++;
@@ -324,17 +356,15 @@ glPushAttrib(GL_ENABLE_BIT);
 		}
 		glEnd();
 	}
-    //glPopMatrix();
-	
+	glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
     glDisable(GL_BLEND);
     glUseProgram(NULL);
 	glDisable(GL_TEXTURE_3D);
 	glDisable(GL_TEXTURE_2D);
-glPopAttrib();
+	glPopAttrib();
 	return true;
 }
-
-
 
 bool SimulGLCloudRenderer::RestoreDeviceObjects()
 {
@@ -342,8 +372,8 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects()
 	clouds_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
 
 	clouds_program			=glCreateProgram();
-    clouds_vertex_shader	=LoadProgram(clouds_vertex_shader,"shaders/","simul_clouds.vert");
-	clouds_fragment_shader	=LoadProgram(clouds_fragment_shader,"shaders/","simul_clouds.frag");
+	clouds_vertex_shader	=LoadProgram(clouds_vertex_shader,"simul_clouds.vert");
+	clouds_fragment_shader	=LoadProgram(clouds_fragment_shader,"simul_clouds.frag","#define DETAIL_NOISE");
 	glAttachShader(clouds_program, clouds_vertex_shader);
 	glAttachShader(clouds_program, clouds_fragment_shader);
 	glLinkProgram(clouds_program);
@@ -369,7 +399,6 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects()
 
 	printProgramInfoLog(clouds_program);
 
-	cloudKeyframer->SetCloudiness(0.5f);
 	// Because in this sample we are using 32-bit values in the cloud texture:
 	cloudKeyframer->SetUserKeyframes(false);
 	cloudKeyframer->SetUse16Bit(false);
@@ -377,6 +406,7 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects()
 	cloudKeyframer->SetBits(CloudKeyframer::DENSITY,CloudKeyframer::BRIGHTNESS,
 		CloudKeyframer::SECONDARY,CloudKeyframer::AMBIENT);
 	cloudKeyframer->SetRenderCallback(this);
+	glUseProgram(NULL);
 	return true;
 }
 
@@ -397,16 +427,7 @@ bool SimulGLCloudRenderer::Create()
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 	helper=new simul::clouds::CloudGeometryHelper();
 	CreateNoiseTexture();
-// EITHER: load from the demo.cloud file
-// OR: Set individual values for the clouds
-#if 0
-	ifs.open("demo.cloud",std::ios_base::binary);
-	if(!ifs.good())
-		exit(0);
-	cloudNode->RecursiveStreamIn(ifs,false);
-	ifs.close();
-	cloudNode->SetHumidity(humidity);
-#else
+
 	cloudNode->SetSeparateSecondaryLight(true);
 	cloudNode->SetWrap(true);
 
@@ -416,7 +437,7 @@ bool SimulGLCloudRenderer::Create()
 	cloudNode->SetGridWidth(128);
 	cloudNode->SetGridHeight(16);
 
-	cloudNode->SetCloudBaseZ(1900.f);
+	cloudNode->SetCloudBaseZ(2900.f);
 	cloudNode->SetCloudWidth(60000.f);
 	cloudNode->SetCloudLength(60000.f);
 	cloudNode->SetCloudHeight(4000.f);
@@ -430,21 +451,20 @@ bool SimulGLCloudRenderer::Create()
 
 	cloudInterface->SetNoiseResolution(8);
 	cloudInterface->SetNoiseOctaves(3);
-	cloudInterface->SetNoisePersistence(.75f);
+	cloudInterface->SetNoisePersistence(.7f);
 
 	cloudInterface->SetNoisePeriod(1.f);
-#endif
-    float gen_start_time=glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+
+//   float gen_start_time=glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 	cloudNode->Generate();
-	float gen_end_time=glutGet(GLUT_ELAPSED_TIME) / 1000.0;
-	std::cout<<"Generate time: "<<(gen_end_time-gen_start_time)<<" milliseconds"<<std::endl;
+	//float gen_end_time=glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+	//std::cout<<"Generate time: "<<(gen_end_time-gen_start_time)<<" milliseconds"<<std::endl;
 
 	helper->Initialize((unsigned)(120.f*detail),min_dist+(max_dist-min_dist)*detail);
 	unsigned el_grid=24;
 	unsigned az_grid=15;
 	helper->SetGrid(el_grid,az_grid);
 	helper->SetCurvedEarth(true);
-
 // lighting is done in CreateCloudTexture, so memory has now been allocated
 	unsigned cloud_mem=cloudNode->GetMemoryUsage();
 	std::cout<<"Cloud memory usage: "<<cloud_mem/1024<<"k"<<std::endl;

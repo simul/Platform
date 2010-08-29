@@ -7,7 +7,8 @@
 #include "Simul/Sky/AltitudeFadeTable.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "RenderTextureFBO.h"
-#ifdef _MSC_VER
+
+#if 0//def _MSC_VER
 static GLuint buffer_format=GL_RGBA16F_ARB;
 #else
 static GLuint buffer_format=GL_RGBA32F_ARB;
@@ -30,10 +31,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
 	simulSkyRenderer=new SimulGLSkyRenderer();
 	if(simulSkyRenderer)
 	{
-		simulSkyRenderer->Create(0.5f); // start at 0.5km altitude
-	//	simulSkyRenderer->GetSkyInterface()->SetHaze(haze);
-	//	simulSkyRenderer->GetSkyInterface()->SetMieEccentricity(haze_eccentricity);
-	//	simulSkyRenderer->GetSkyInterface()->SetDaytime(hour/24.f);
+		simulSkyRenderer->Create(0.5f);
 		simulSkyRenderer->RestoreDeviceObjects();
 	}
 	//simul2DCloudRenderer=new SimulGL2DCloudRenderer();
@@ -93,15 +91,21 @@ void SimulGLWeatherRenderer::Render(bool)
 
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-
+}
 // Render the clouds to the cloud buffer:
 
+void SimulGLWeatherRenderer::RenderLateCloudLayer(float gamma)
+{
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
 	//clouds_buffer->Activate();
 
     if(simulCloudRenderer)
-		simulCloudRenderer->Render();
+		simulCloudRenderer->Render(gamma);
 
 	//clouds_buffer->DeactivateAndRender(BufferWidth,BufferHeight,0);
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
 }
 
 void SimulGLWeatherRenderer::Update(float dt)

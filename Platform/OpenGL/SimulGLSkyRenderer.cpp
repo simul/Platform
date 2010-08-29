@@ -1,3 +1,5 @@
+
+
 #include "Simul/Base/Timer.h"
 #include <stdio.h>
 #include <math.h>
@@ -5,7 +7,10 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 
+
+
 #include <fstream>
+#include "LoadGLProgram.h"
 
 #include "SimulGLSkyRenderer.h"
 #include "Simul/Sky/SkyNode.h"
@@ -19,7 +24,6 @@
 #include "Simul/Base/SmartPtr.h"
 #include "LoadGLImage.h"
 
-extern GLuint LoadProgram(GLuint program,const char *path,const char *filename);
 void printShaderInfoLog(GLuint obj);
 void printProgramInfoLog(GLuint obj);
 
@@ -31,7 +35,8 @@ GLenum sky_tex_format=GL_FLOAT;
 GLenum internal_format=GL_RGBA32F_ARB;
 #endif
 SimulGLSkyRenderer::SimulGLSkyRenderer()
-	: skyTexSize(128)
+	: BaseSkyRenderer()
+	, skyTexSize(128)
 	, campos_updated(false)
 	, short_ptr(NULL)
 {
@@ -58,11 +63,13 @@ void SimulGLSkyRenderer::SetSkyTextureSize(unsigned size)
 	skyTexSize=size;
 	delete [] short_ptr;
 	short_ptr=new short[skyTexSize*4];
-	glGenTextures(3,sky_tex);
+	//int tex[3];
 	if(numAltitudes==1)
 	{
 		for(int i=0;i<3;i++)
 		{
+			//sky_tex[i]=tex[i];
+			glGenTextures(1,&(sky_tex[i]));
 			glBindTexture(GL_TEXTURE_1D,sky_tex[i]);
 			glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
@@ -78,6 +85,8 @@ void SimulGLSkyRenderer::SetSkyTextureSize(unsigned size)
 	{
 		for(int i=0;i<3;i++)
 		{
+//			sky_tex[i]=tex[i];
+			glGenTextures(1,&(sky_tex[i]));
 			glBindTexture(GL_TEXTURE_2D,sky_tex[i]);
 			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
@@ -162,6 +171,7 @@ static void PartialTextureFill(bool is_3d,int tex_width,int z,int texel_index,in
 		glTexSubImage2D(GL_TEXTURE_2D,0,x_offset,y_offset,width,1,GL_RGBA,sky_tex_format,cptr);
 	else
 		glTexSubImage3D(GL_TEXTURE_2D,0,x_offset,y_offset,z,width,1,1,GL_RGBA,sky_tex_format,cptr);
+	int num_done=width;
 	if(num_texels>top_row)
 	{
 		num_texels-=top_row;
@@ -172,16 +182,23 @@ static void PartialTextureFill(bool is_3d,int tex_width,int z,int texel_index,in
 			glTexSubImage2D(GL_TEXTURE_2D,0,0,y_offset,tex_width,height,GL_RGBA,sky_tex_format,sptr);
 		else
 			glTexSubImage3D(GL_TEXTURE_3D,0,0,y_offset,z,tex_width,height,1,GL_RGBA,sky_tex_format,sptr);
+		num_done+=tex_width*height;
 		if(num_texels>height*tex_width)
 		{
-			num_texels-=height*tex_width;
+			int last_num=num_texels-height*tex_width;
 			sptr+=height*tex_width*texel_size;
 			y_offset+=height;
 			if(!is_3d)
-				glTexSubImage2D(GL_TEXTURE_2D,0,0,y_offset,num_texels,1,GL_RGBA,sky_tex_format,sptr);
+				glTexSubImage2D(GL_TEXTURE_2D,0,0,y_offset,last_num,1,GL_RGBA,sky_tex_format,sptr);
 			else
-				glTexSubImage3D(GL_TEXTURE_3D,0,0,y_offset,z,num_texels,1,1,GL_RGBA,sky_tex_format,sptr);
+				glTexSubImage3D(GL_TEXTURE_3D,0,0,y_offset,z,last_num,1,1,GL_RGBA,sky_tex_format,sptr);
+			num_done+=last_num;
 		}
+
+	}
+	if(num_done!=num_texels)
+	{
+		assert(0);
 	}
 }
 
@@ -191,9 +208,9 @@ void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int
 	if(numAltitudes>1)
 		target=GL_TEXTURE_3D;
 	glBindTexture(target,loss_textures[texture_index]);
-	glTexSubImage3D(GL_TEXTURE_3D,0,x,y,z,w,l,d,GL_RGBA,sky_tex_format,(void*)loss_float4_array);
+//	glTexSubImage3D(GL_TEXTURE_3D,0,x,y,z,w,l,d,GL_RGBA,sky_tex_format,(void*)loss_float4_array);
 	glBindTexture(target,inscatter_textures[texture_index]);
-	glTexSubImage3D(GL_TEXTURE_3D,0,x,y,z,w,l,d,GL_RGBA,sky_tex_format,(void*)inscatter_float4_array);
+//	glTexSubImage3D(GL_TEXTURE_3D,0,x,y,z,w,l,d,GL_RGBA,sky_tex_format,(void*)inscatter_float4_array);
 }
 
 void SimulGLSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
@@ -219,60 +236,6 @@ void SimulGLSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texe
 	{
 		glBindTexture(GL_TEXTURE_2D,sky_tex[texture_index]);
 		PartialTextureFill(false,skyTexSize,0,texel_index+skyTexSize*alt_index,num_texels,float4_array);
-/*
-		texel_index+=skyTexSize*alt_index;
-		if(sky_tex_format==GL_HALF_FLOAT_NV)
-		{
-			// Convert the array of floats into float16 values for the texture.
-			short *sptr=short_ptr;
-			for(int i=0;i<num_texels*4;i++)
-				*sptr++=simul::sky::TextureGenerator::ToFloat16(*float4_array++);
-			int x_offset=texel_index%skyTexSize;
-			int y_offset=texel_index/skyTexSize;
-			int top_row=skyTexSize-texel_index%skyTexSize;
-			int width=num_texels<top_row?num_texels:top_row;
-			int height=1;
-			glTexSubImage2D(GL_TEXTURE_2D,0,x_offset,y_offset,width,1,GL_RGBA,sky_tex_format,short_ptr);
-			if(num_texels>top_row)
-			{
-				num_texels-=top_row;
-				y_offset++;
-				short_ptr+=width;
-				height=num_texels*skyTexSize;
-				glTexSubImage2D(GL_TEXTURE_2D,0,0,y_offset,skyTexSize,height,GL_RGBA,sky_tex_format,short_ptr);
-				if(num_texels>height*(int)skyTexSize)
-				{
-					num_texels-=height*(int)skyTexSize;
-					short_ptr+=height*(int)skyTexSize*2;
-					y_offset+=height;
-					glTexSubImage2D(GL_TEXTURE_2D,0,0,y_offset,num_texels,1,GL_RGBA,sky_tex_format,short_ptr);
-				}
-			}
-		}
-		else
-		{
-			int x_offset=texel_index%skyTexSize;
-			int y_offset=texel_index/skyTexSize;
-			int top_row=skyTexSize-texel_index%skyTexSize;
-			int width=num_texels<top_row?num_texels:top_row;
-			int height=1;
-			glTexSubImage2D(GL_TEXTURE_2D,0,x_offset,y_offset,width,1,GL_RGBA,sky_tex_format,float4_array);
-			if(num_texels>top_row)
-			{
-				num_texels-=top_row;
-				y_offset++;
-				float4_array+=width;
-				height=num_texels*skyTexSize;
-				glTexSubImage2D(GL_TEXTURE_2D,0,0,y_offset,skyTexSize,height,GL_RGBA,sky_tex_format,float4_array);
-				if(num_texels>height*(int)skyTexSize)
-				{
-					num_texels-=height*(int)skyTexSize;
-					float4_array+=height*(int)skyTexSize*2;
-					y_offset+=height;
-					glTexSubImage2D(GL_TEXTURE_2D,0,0,y_offset,num_texels,1,GL_RGBA,sky_tex_format,float4_array);
-				}
-			}
-		}*/
 	}
 }
 
@@ -439,8 +402,8 @@ bool SimulGLSkyRenderer::RestoreDeviceObjects()
 	sky_program			=glCreateProgram();
 	sky_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 	sky_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-    sky_vertex_shader	=LoadProgram(sky_vertex_shader,"shaders/","simul_sky.vert");
-    sky_fragment_shader	=LoadProgram(sky_fragment_shader,"shaders/","simul_sky.frag");
+    sky_vertex_shader	=LoadProgram(sky_vertex_shader,"simul_sky.vert");
+    sky_fragment_shader	=LoadProgram(sky_fragment_shader,"simul_sky.frag");
 	glAttachShader(sky_program, sky_vertex_shader);
 	glAttachShader(sky_program, sky_fragment_shader);
 	glLinkProgram(sky_program);
@@ -459,8 +422,8 @@ bool SimulGLSkyRenderer::RestoreDeviceObjects()
 	planet_program					=glCreateProgram();
 	GLuint planet_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
 	GLuint planet_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-    planet_vertex_shader			=LoadProgram(planet_vertex_shader,"shaders/","simul_planet.vert");
-    planet_fragment_shader			=LoadProgram(planet_fragment_shader,"shaders/","simul_planet.frag");
+    planet_vertex_shader			=LoadProgram(planet_vertex_shader,"simul_planet.vert");
+    planet_fragment_shader			=LoadProgram(planet_fragment_shader,"simul_planet.frag");
 	glAttachShader(planet_program,planet_vertex_shader);
 	glAttachShader(planet_program,planet_fragment_shader);
 	glLinkProgram(planet_program);
@@ -476,6 +439,7 @@ bool SimulGLSkyRenderer::RestoreDeviceObjects()
 
 	moon_texture=(void*)LoadGLImage("textures/Moon.png",GL_CLAMP);
 	SetPlanetImage(moon_index,moon_texture);
+	glUseProgram(NULL);
 	return true;
 }
 

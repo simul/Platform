@@ -1,10 +1,11 @@
 
 #include <GL/glew.h>
 #include <GL/glut.h>
+#include <string>
 #include "LoadGLImage.h"
 #include "FreeImage.h"
 
-
+static std::string image_path="";
 GLuint LoadGLImage(const char *filename,unsigned wrap)
 {
 	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;

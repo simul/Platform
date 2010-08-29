@@ -31,9 +31,9 @@
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/LicenseKey.h"
+#include "LoadGLProgram.h"
 
 using namespace std;
-extern GLuint LoadProgram(GLuint program,const char *path,const char *filename);
 void printShaderInfoLog(GLuint obj);
 void printProgramInfoLog(GLuint obj);
 
@@ -314,8 +314,8 @@ bool SimulGL2DCloudRenderer::RestoreDeviceObjects()
 	clouds_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
 
 	clouds_program			=glCreateProgram();
-    clouds_vertex_shader=LoadProgram(clouds_vertex_shader,"shaders/","simul_clouds_2d.vert");
-	clouds_fragment_shader=LoadProgram(clouds_fragment_shader,"shaders/","simul_clouds_2d.frag");
+    clouds_vertex_shader=LoadProgram(clouds_vertex_shader,"simul_clouds_2d.vert");
+	clouds_fragment_shader=LoadProgram(clouds_fragment_shader,"simul_clouds_2d.frag");
 	glAttachShader(clouds_program, clouds_vertex_shader);
 	glAttachShader(clouds_program, clouds_fragment_shader);
 	glLinkProgram(clouds_program);
