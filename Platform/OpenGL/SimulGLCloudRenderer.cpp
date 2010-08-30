@@ -434,7 +434,6 @@ void SimulGLCloudRenderer::SetCloudiness(float h)
 	{
 		K->cloudiness=h;
 	}
-	cloudKeyframer->SetCloudiness(h);
 }
 
 bool SimulGLCloudRenderer::Create()
