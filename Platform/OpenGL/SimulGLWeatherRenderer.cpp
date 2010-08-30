@@ -1,3 +1,5 @@
+
+#include "RenderTextureFBO.h"
 #include "SimulGLWeatherRenderer.h"
 #include "SimulGLSkyRenderer.h"
 #include "SimulGLCloudRenderer.h"
@@ -6,7 +8,6 @@
 #include "Simul/Sky/FadeTableInterface.h"
 #include "Simul/Sky/AltitudeFadeTable.h"
 #include "Simul/Sky/SkyInterface.h"
-#include "RenderTextureFBO.h"
 
 #if 0//def _MSC_VER
 static GLuint buffer_format=GL_RGBA16F_ARB;
