@@ -13,6 +13,7 @@
 #include "Simul/Base/SmartPtr.h"
 
 #include "Simul/Graph/Meta/Group.h"
+#include "Simul/Clouds/BaseWeatherRenderer.h"
 class SimulGLSkyRenderer;
 class RenderDepthBufferCallback
 {
@@ -40,8 +41,10 @@ public:
 	void Destroy();
 	//! Call this to draw the sky and clouds.
 	void Render(bool is_cubemap=false);
+	//! Apply a gamma-correction on the CPU before calculation, so gamma-correction in shaders is not needed. If 1.0 or zero this is ignored.
+	void SetPrecalculatedGamma(float g);
 	//! Call this to draw the clouds after the main scene.
-	void RenderLateCloudLayer(float gamma=-1.f);
+	void RenderLateCloudLayer(bool depth_testing);
 	//! Call this to draw lightning.
 	void RenderLightning();
 	//! Call this to draw rain etc.

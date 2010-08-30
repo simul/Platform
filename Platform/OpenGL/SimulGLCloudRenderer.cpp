@@ -167,8 +167,8 @@ static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 {
 	const simul::math::Vector3 *XX=reinterpret_cast<const simul::math::Vector3*>(Mat.RowPointer(0));
-	const simul::math::Vector3 *YY=reinterpret_cast<const simul::math::Vector3*>(Mat.RowPointer (1));
-	const simul::math::Vector3 *ZZ=reinterpret_cast<const simul::math::Vector3*>(Mat.RowPointer (2));
+	const simul::math::Vector3 *YY=reinterpret_cast<const simul::math::Vector3*>(Mat.RowPointer(1));
+	const simul::math::Vector3 *ZZ=reinterpret_cast<const simul::math::Vector3*>(Mat.RowPointer(2));
 	Mat.Transpose(Inv);
 	const simul::math::Vector3 &xe=*(reinterpret_cast<const simul::math::Vector3*>(Mat.RowPointer(3)));
 
@@ -183,8 +183,9 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(float gamma)
+bool SimulGLCloudRenderer::Render(bool depth_testing)
 {
+	float gamma=cloudKeyframer->GetPrecalculatedGamma();
 	if(gamma>0&&gamma!=1.f)
 	{
 		helper->EnablePrecalculatedGamma(gamma);
@@ -218,11 +219,15 @@ bool SimulGLCloudRenderer::Render(float gamma)
 		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_ZERO,GL_ONE_MINUS_SRC_ALPHA);
+
 	glDepthMask(GL_FALSE);
 	// disable alpha testing - if we enable this, the usual reference alpha is reversed because
 	// the shaders return transparency, not opacity, in the alpha channel.
     glDisable(GL_ALPHA_TEST);
-    glDisable(GL_DEPTH_TEST);
+	if(depth_testing)
+		glEnable(GL_DEPTH_TEST);
+	else
+		glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 
@@ -246,7 +251,7 @@ bool SimulGLCloudRenderer::Render(float gamma)
 
 	static float ll=0.05f;
 	simul::sky::float4 light_response(0,cloudInterface->GetLightResponse(),ll*cloudInterface->GetSecondaryLightResponse(),0);
-light_response*=gamma;
+//light_response*=gamma;
 	//light_response=simul::sky::Pow(light_response,gamma);
 	// gamma-compensate for direct light beta function:
 	//light_response.y*=pow(0.079577f,gamma)/(0.079577f);
@@ -373,7 +378,7 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects()
 
 	clouds_program			=glCreateProgram();
 	clouds_vertex_shader	=LoadProgram(clouds_vertex_shader,"simul_clouds.vert");
-	clouds_fragment_shader	=LoadProgram(clouds_fragment_shader,"simul_clouds.frag","#define DETAIL_NOISE");
+	clouds_fragment_shader	=LoadProgram(clouds_fragment_shader,"simul_clouds.frag","#define DETAIL_NOISE\r\n#define GAMMA_CORRECTION");
 	glAttachShader(clouds_program, clouds_vertex_shader);
 	glAttachShader(clouds_program, clouds_fragment_shader);
 	glLinkProgram(clouds_program);
@@ -400,7 +405,7 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects()
 	printProgramInfoLog(clouds_program);
 
 	// Because in this sample we are using 32-bit values in the cloud texture:
-	cloudKeyframer->SetUserKeyframes(false);
+	//cloudKeyframer->SetUserKeyframes(false);
 	cloudKeyframer->SetUse16Bit(false);
 	using namespace simul::clouds;
 	cloudKeyframer->SetBits(CloudKeyframer::DENSITY,CloudKeyframer::BRIGHTNESS,
@@ -414,10 +419,21 @@ void SimulGLCloudRenderer::SetWind(float spd,float dir_deg)
 {
 	cloudKeyframer->SetWindSpeed(spd);
 	cloudKeyframer->SetWindHeadingDegrees(dir_deg);
+	simul::clouds::CloudKeyframer::Keyframe *K=cloudKeyframer->GetNextModifiableKeyframe();
+	if(K)
+	{
+		K->wind_speed=spd;
+		K->wind_direction=dir_deg*pi/180.f;
+	}
 }
 
 void SimulGLCloudRenderer::SetCloudiness(float h)
 {
+	simul::clouds::CloudKeyframer::Keyframe *K=cloudKeyframer->GetNextModifiableKeyframe();
+	if(K)
+	{
+		K->cloudiness=h;
+	}
 	cloudKeyframer->SetCloudiness(h);
 }
 

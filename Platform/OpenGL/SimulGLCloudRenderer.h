@@ -36,7 +36,7 @@ public:
 	bool RestoreDeviceObjects( );
 	bool InvalidateDeviceObjects();
 	bool Destroy();
-	bool Render(float gamma=-1.f);
+	bool Render(bool depth_testing=false);
 	void SetWind(float spd,float dir_deg);
 	void SetCloudiness(float h);
 	const char *GetDebugText();

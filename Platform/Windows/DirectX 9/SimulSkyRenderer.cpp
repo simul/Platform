@@ -43,7 +43,7 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	,m_hTechniqueSky(NULL)
 	,m_hTechniqueStarrySky(NULL)
 	,m_hTechniqueSun(NULL)
-	,m_hTechniqueQuery(NULL)	
+	,m_hTechniqueQuery(NULL)
 	,m_hTechniqueFlare(NULL)	
 	,m_hTechniquePlanet(NULL)
 	,m_hTechniqueFadeCrossSection(NULL)
@@ -53,6 +53,8 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	,sky_tex_format(D3DFMT_UNKNOWN)
 	,external_flare_texture(false)
 {
+	MoonTexture="Moon.png";
+	SunTexture="SunFlare.png";
 	for(int i=0;i<3;i++)
 	{
 		sky_textures[i]=NULL;
@@ -68,7 +70,7 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	cam_pos.y=400.f;
 }
 
-HRESULT SimulSkyRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
+HRESULT SimulSkyRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=dev;
@@ -79,7 +81,7 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 #endif
 	hr=CanUse16BitFloats(m_pd3dDevice);
 
-	if(hr!=S_OK)
+	//if(hr!=S_OK)
 	{
 #ifndef XBOX
 		sky_tex_format=D3DFMT_A32B32G32R32F;
@@ -135,7 +137,7 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	if(!external_flare_texture)
 	{
 		SAFE_RELEASE(flare_texture);
-		CreateDX9Texture(m_pd3dDevice,flare_texture,"SunFlare.png");
+		CreateDX9Texture(m_pd3dDevice,flare_texture,SunTexture.c_str());
 	}
 	SAFE_RELEASE(stars_texture);
 	CreateDX9Texture(m_pd3dDevice,stars_texture,"TychoSkymapII.t5_04096x02048.jpg");
@@ -159,9 +161,8 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 		LPDIRECT3DTEXTURE9 &tex=halo_textures[i];
 		CreateDX9Texture(m_pd3dDevice,tex,(tn+".png").c_str());
 	}
-	
 	SAFE_RELEASE((LPDIRECT3DTEXTURE9&)moon_texture);
-	CreateDX9Texture(m_pd3dDevice,(LPDIRECT3DTEXTURE9&)moon_texture,"Moon.png");
+	CreateDX9Texture(m_pd3dDevice,(LPDIRECT3DTEXTURE9&)moon_texture,MoonTexture.c_str());
 	SetPlanetImage(moon_index,moon_texture);
 	return hr;
 }
@@ -877,7 +878,7 @@ HRESULT SimulSkyRenderer::RenderStars()
 
 	m_pSkyEffect->SetTechnique(m_hTechniqueStarrySky);
 	m_pSkyEffect->SetTexture(starsTexture,stars_texture);
-	static float star_brightness=10.f;
+	static float star_brightness=1.f;
 
 	float sb=skyInterface->GetStarlight().x;
 	m_pSkyEffect->SetFloat(starBrightness,sb*star_brightness);

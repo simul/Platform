@@ -227,7 +227,7 @@ SimulCloudRenderer::SimulCloudRenderer() :
 	texture_persistence(0.79f),
 	noise_texture_size(1024),
 	altitude_tex_coord(0.f),
-	fade_mode(CPU),
+	fade_mode(FRAGMENT),
 	vertices(NULL),
 	cpu_fade_vertices(NULL)
 	,max_fade_distance_metres(300000.f)
@@ -854,9 +854,9 @@ static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 bool SimulCloudRenderer::IsCameraAboveCloudBase() const
 {
 	if(y_vertical)
-		return(cam_pos.y>cloudInterface->GetCloudBaseZ());
+		return helper->IsAltitudeAboveCloudBase(cam_pos.y/1000.f);
 	else
-		return(cam_pos.z>cloudInterface->GetCloudBaseZ());
+		return helper->IsAltitudeAboveCloudBase(cam_pos.z/1000.f);
 }
 
 static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
@@ -1555,7 +1555,7 @@ const char *SimulCloudRenderer::GetDebugText() const
 
 void SimulCloudRenderer::SetCloudiness(float h)
 {
-	cloudKeyframer->SetCloudiness(h);
+	cloudKeyframer->GetNextModifiableKeyframe()->cloudiness=h;
 }
 
 void SimulCloudRenderer::SetEnableStorms(bool s)

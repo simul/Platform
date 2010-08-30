@@ -28,13 +28,15 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
     clouds_buffer->InitColor_Tex(0,buffer_format);
 
 	// Now we know what time of day it is, initialize the sky texture:
-	simulSkyRenderer=new SimulGLSkyRenderer();
+	if(sky)
+		simulSkyRenderer=new SimulGLSkyRenderer();
 	if(simulSkyRenderer)
 	{
 		simulSkyRenderer->Create(0.5f);
 		simulSkyRenderer->RestoreDeviceObjects();
 	}
-	//simul2DCloudRenderer=new SimulGL2DCloudRenderer();
+	//if(clouds2d)
+	//	simul2DCloudRenderer=new SimulGL2DCloudRenderer();
 	if(simul2DCloudRenderer)
 	{
 		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
@@ -42,8 +44,8 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
 		simul2DCloudRenderer->Create();
 		simul2DCloudRenderer->RestoreDeviceObjects();
 	}
-	
-	simulCloudRenderer=new SimulGLCloudRenderer();
+	if(clouds3d)
+		simulCloudRenderer=new SimulGLCloudRenderer();
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->Create();
@@ -93,15 +95,20 @@ void SimulGLWeatherRenderer::Render(bool)
     glPopMatrix();
 }
 // Render the clouds to the cloud buffer:
+void SimulGLWeatherRenderer::SetPrecalculatedGamma(float g)
+{
+    if(simulCloudRenderer)
+		simulCloudRenderer->GetCloudKeyframer()->SetPrecalculatedGamma(g);
+}
 
-void SimulGLWeatherRenderer::RenderLateCloudLayer(float gamma)
+void SimulGLWeatherRenderer::RenderLateCloudLayer(bool depth_testing)
 {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 	//clouds_buffer->Activate();
 
     if(simulCloudRenderer)
-		simulCloudRenderer->Render(gamma);
+		simulCloudRenderer->Render(depth_testing);
 
 	//clouds_buffer->DeactivateAndRender(BufferWidth,BufferHeight,0);
     glMatrixMode(GL_MODELVIEW);

@@ -51,7 +51,14 @@ class SimulSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
 	SimulSkyRenderer(bool UseColourSky=false);
+
 	virtual ~SimulSkyRenderer();
+	META_BeginProperties
+		META_ReferenceProperty(std::string,MoonTexture,"Texture filename for the moon.")	
+		META_ReferenceProperty(std::string,SunTexture,"Texture filename for the sun.")			
+	META_EndProperties
+
+	
 	//standard d3d object interface functions
 	//! Call this when the D3D device has been created or reset.
 	HRESULT RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
