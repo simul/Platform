@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#ifndef _MSC_VER
+#include <cstdio>
+#include <cstring>
+#endif
 #include "LoadGLProgram.h"
 static std::string shaderPath;
 static std::string last_filename;
