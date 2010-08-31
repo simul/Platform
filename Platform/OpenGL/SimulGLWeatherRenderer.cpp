@@ -86,8 +86,8 @@ void SimulGLWeatherRenderer::Render(bool)
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	if(simulSkyRenderer)
 	{
-		simulSkyRenderer->Render();
 		simulSkyRenderer->RenderPlanets();
+		simulSkyRenderer->Render();
 	}
     if(simul2DCloudRenderer)
 		simul2DCloudRenderer->Render();

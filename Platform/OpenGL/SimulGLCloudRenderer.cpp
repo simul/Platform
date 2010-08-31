@@ -16,8 +16,6 @@
 #include <ctype.h>
 #include <map>
 #include <math.h>
-#include <GL/glew.h>
-//#include <GL/glut.h>
 
 #include "FreeImage.h"
 #include <fstream>

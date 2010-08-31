@@ -1,6 +1,5 @@
 
 #include <GL/glew.h>
-#include <GL/glut.h>
 #include <string>
 #include "LoadGLImage.h"
 #include "FreeImage.h"

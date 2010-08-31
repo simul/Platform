@@ -5,9 +5,6 @@
 #include <math.h>
 
 #include <GL/glew.h>
-#include <GL/glut.h>
-
-
 
 #include <fstream>
 #include "LoadGLProgram.h"
@@ -34,12 +31,25 @@ GLenum internal_format=GL_RGBA16F_ARB;
 GLenum sky_tex_format=GL_FLOAT;
 GLenum internal_format=GL_RGBA32F_ARB;
 #endif
+
+GLint faces[6][4] = {  /* Vertex indices for the 6 faces of a cube. */
+  {0, 1, 2, 3}, {3, 2, 6, 7}, {7, 6, 5, 4},
+  {4, 5, 1, 0}, {5, 6, 2, 1}, {7, 4, 0, 3} };
+GLfloat v[8][3];  /* Will be filled in with X,Y,Z vertexes. */
+
 SimulGLSkyRenderer::SimulGLSkyRenderer()
 	: BaseSkyRenderer()
 	, skyTexSize(128)
 	, campos_updated(false)
 	, short_ptr(NULL)
 {
+/* Setup cube vertex data. */
+  v[0][0] = v[1][0] = v[2][0] = v[3][0] = -1000.f;
+  v[4][0] = v[5][0] = v[6][0] = v[7][0] =  1000.f;
+  v[0][1] = v[1][1] = v[4][1] = v[5][1] = -1000.f;
+  v[2][1] = v[3][1] = v[6][1] = v[7][1] =  1000.f;
+  v[0][2] = v[3][2] = v[4][2] = v[7][2] =  1000.f;
+  v[1][2] = v[2][2] = v[5][2] = v[6][2] = -1000.f;
 	for(int i=0;i<3;i++)
 		sky_tex[i]=0;
 }
@@ -287,7 +297,15 @@ bool SimulGLSkyRenderer::Render()
 	glUniform1f(skyInterp_param,fadeTable->GetInterpolation());
 	glUniform3f(lightDirection_sky_param,sun_dir.x,sun_dir.y,sun_dir.z);
 
-    glutSolidCube(10000.0);
+	for (int i = 0; i < 6; i++)
+	{
+		glBegin(GL_QUADS);
+		glVertex3fv(&v[faces[i][0]][0]);
+		glVertex3fv(&v[faces[i][1]][0]);
+		glVertex3fv(&v[faces[i][2]][0]);
+		glVertex3fv(&v[faces[i][3]][0]);
+		glEnd();
+	}
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 
@@ -327,6 +345,7 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const
 	glUniform1i(planetTexture_param,0);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToSun();
 	glUniform3f(planetLightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
+	glEnable(GL_BLEND);
 	bool res=RenderAngledQuad(dir,planet_angular_size);
 	glUseProgram(NULL);
 	return res;

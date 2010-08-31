@@ -9,7 +9,6 @@
 #define RENDER_TEXTURE_FBO__H
 
 #include <GL/glew.h>
-#include <GL/glut.h>
 #include "LoadGLImage.h"
 
 class RenderTexture {

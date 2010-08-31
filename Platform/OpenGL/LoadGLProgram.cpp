@@ -1,5 +1,4 @@
 #include <GL/glew.h>
-#include <GL/glut.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -67,7 +66,11 @@ GLuint LoadProgram(GLuint prog,const char *filename,const char *defines)
 	last_filename=filePath;
 	std::ifstream ifs(filePath.c_str());
 	if(!ifs.good())
-		return 0;
+	{
+		std::cerr<<"\nERROR:\tShader file "<<filename<<" not found, exiting.\n";
+		std::cerr<<"\n\t\tShader path is "<<shaderPath.c_str()<<", is this correct?\n";
+		exit(1);
+	}
 	std::string shader_source;
 
 /*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
@@ -99,12 +102,20 @@ GLuint LoadProgram(GLuint prog,const char *filename,const char *defines)
 	lenOfStrings[0]=strlen(strings[0]);
 	glShaderSource(prog,1,strings,NULL);
     if(!prog)
-		std::cout<<std::endl<<"Error creating program "<<filePath.c_str()<<std::endl;
+		std::cerr<<std::endl<<"Error creating program "<<filePath.c_str()<<std::endl;
 	else
 	{
 		glCompileShader(prog);
 	}
 	std::cout<<std::endl<<filePath.c_str()<<": ";
 	printShaderInfoLog(prog);
+
+	int result=1;
+	glGetShaderiv(prog,GL_COMPILE_STATUS,&result);
+	if(!result)
+	{
+		std::cerr<<"\nERROR:\tShader failed to compile, exiting\n";
+		exit(1);
+	}
     return prog;
 }
