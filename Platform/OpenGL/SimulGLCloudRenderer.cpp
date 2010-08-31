@@ -450,14 +450,14 @@ bool SimulGLCloudRenderer::Create()
 	cloudNode->SetGridWidth(128);
 	cloudNode->SetGridHeight(16);
 
-	cloudNode->SetCloudBaseZ(2900.f);
-	cloudNode->SetCloudWidth(60000.f);
-	cloudNode->SetCloudLength(60000.f);
-	cloudNode->SetCloudHeight(4000.f);
+	cloudNode->SetCloudBaseZ(1100.f);
+	cloudNode->SetCloudWidth(30000.f);
+	cloudNode->SetCloudLength(30000.f);
+	cloudNode->SetCloudHeight(2000.f);
 
 	cloudNode->SetOpticalDensity(.4f);
 
-	cloudNode->SetExtinction(.17f);
+	cloudNode->SetExtinction(.27f);
 	cloudNode->SetLightResponse(.5f);
 	cloudNode->SetSecondaryLightResponse(.5f);
 	cloudNode->SetAmbientLightResponse(.5f);

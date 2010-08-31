@@ -26,8 +26,8 @@ public:
 class SimulGLWeatherRenderer:public simul::graph::meta::Group
 {
 public:
-	SimulGLWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=320,
-		int height=240,bool sky=true,bool clouds3d=true,bool clouds2d=true,
+	SimulGLWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=640,
+		int height=480,bool sky=true,bool clouds3d=true,bool clouds2d=true,
 		bool rain=true,
 		bool colour_sky=false);
 	virtual ~SimulGLWeatherRenderer();

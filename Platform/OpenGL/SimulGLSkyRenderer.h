@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Simul/Sky/BaseSkyRenderer.h"
+#include <cstdlib>
 namespace simul
 {
 	namespace sky

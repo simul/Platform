@@ -224,6 +224,7 @@ void RenderTexture::DeactivateAndRender(bool blend)
     glUniform1f(gamma_param,gamma);
     glUniform1i(buffer_tex_param,0);
 
+    glDisable(GL_ALPHA_TEST);
 	if(!blend)
 	{
 		glDisable(GL_DEPTH_TEST);
