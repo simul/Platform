@@ -42,7 +42,7 @@ public:
 	// The FBO needs to be deactivated when using the associated textures.
 	void Activate();
 	void DrawQuad(int w, int h);
-	void DeactivateAndRender(int win_w, int win_h);
+	void DeactivateAndRender(bool blend);
 
 	void Deactivate();
 
@@ -92,6 +92,7 @@ private:
 	void CheckFramebufferStatus();
 	const static int num_col_buffers = 16;
 
+	int main_viewport[4];
 	int m_width, m_height;
 	GLenum m_target;
 	int m_samples; // 0 if not multisampled

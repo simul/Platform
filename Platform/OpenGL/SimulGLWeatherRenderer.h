@@ -39,12 +39,12 @@ public:
 	void InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
 	void Destroy();
-	//! Call this to draw the sky and clouds.
-	void Render(bool is_cubemap=false);
+	//! Call this to draw the sky
+	void RenderSky(bool buffered);
+	//! Call this to draw the clouds
+	void RenderClouds(bool buffered,bool depth_testing);
 	//! Apply a gamma-correction on the CPU before calculation, so gamma-correction in shaders is not needed. If 1.0 or zero this is ignored.
 	void SetPrecalculatedGamma(float g);
-	//! Call this to draw the clouds after the main scene.
-	void RenderLateCloudLayer(bool depth_testing);
 	//! Call this to draw lightning.
 	void RenderLightning();
 	//! Call this to draw rain etc.
@@ -76,7 +76,7 @@ public:
 	//! Connect-up sky, clouds:
 	void ConnectInterfaces();
 protected:
-	class RenderTexture *clouds_buffer;
+	class RenderTexture *scene_buffer;
 	void UpdateSkyAndCloudHookup();
 	bool AlwaysRenderCloudsLate;
 	bool RenderCloudsLate;

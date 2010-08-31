@@ -178,6 +178,10 @@ void RenderTexture::Activate()
 #ifdef _DEBUG
 	CheckFramebufferStatus();
 #endif
+	glGetIntegerv(GL_VIEWPORT,main_viewport);
+	glViewport(0,0,m_width,m_height);
+	glClearColor(0.f,0.f,0.f,1.f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 }
 static void SetOrthoProjection(int w,int h)
 {
@@ -203,11 +207,11 @@ void RenderTexture::DrawQuad(int w,int h)
 	glVertex2f(0.f,0.f);
 	glEnd();
 }
-void RenderTexture::DeactivateAndRender(int win_w,int win_h)
+void RenderTexture::DeactivateAndRender(bool blend)
 {
 	Deactivate();
 	glPushAttrib(GL_ENABLE_BIT);
-    SetOrthoProjection(win_w,win_h);
+    SetOrthoProjection(main_viewport[2],main_viewport[3]);
 
     // bind textures
     glActiveTexture(GL_TEXTURE0);
@@ -220,10 +224,18 @@ void RenderTexture::DeactivateAndRender(int win_w,int win_h)
     glUniform1f(gamma_param,gamma);
     glUniform1i(buffer_tex_param,0);
 
-    glDisable(GL_DEPTH_TEST);
+	if(!blend)
+	{
+		glDisable(GL_DEPTH_TEST);
+	}
+	else
+	{
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
+	}
 	glDepthMask(GL_FALSE);
-    glDisable(GL_BLEND);
-    DrawQuad(win_w,win_h);
+    DrawQuad(main_viewport[2],main_viewport[3]);
 
     glUseProgram(NULL);
 	glPopAttrib();

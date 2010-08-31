@@ -15,6 +15,7 @@ static GLuint buffer_format=GL_RGBA16F_ARB;
 static GLuint buffer_format=GL_RGBA32F_ARB;
 #endif
 
+
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int width,
 		int height,bool sky,bool clouds3d,bool clouds2d,
 		bool rain,
@@ -22,11 +23,12 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
 		BufferWidth(width)
 		,BufferHeight(height)
 {
-	clouds_buffer=NULL;
-    if(clouds_buffer)
-        delete clouds_buffer;
-    clouds_buffer=new RenderTexture(BufferWidth,BufferHeight,GL_TEXTURE_2D);
-    clouds_buffer->InitColor_Tex(0,buffer_format);
+	scene_buffer=NULL;
+    if(scene_buffer)
+        delete scene_buffer;
+    scene_buffer=new RenderTexture(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+    scene_buffer->InitColor_Tex(0,buffer_format);
+    scene_buffer->InitDepth_RB();
 
 	// Now we know what time of day it is, initialize the sky texture:
 	if(sky)
@@ -79,10 +81,17 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 {
 }
 
-void SimulGLWeatherRenderer::Render(bool)
+void SimulGLWeatherRenderer::RenderSky(bool buffered)
 {
+	glPushAttrib(GL_ENABLE_BIT);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
+	// Everything between Activate() and DeactivateAndRender() is drawn to the buffer object.
+	if(buffered)
+		scene_buffer->Activate();
+
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	if(simulSkyRenderer)
 	{
@@ -92,28 +101,44 @@ void SimulGLWeatherRenderer::Render(bool)
     if(simul2DCloudRenderer)
 		simul2DCloudRenderer->Render();
 
+	if(buffered)
+		scene_buffer->DeactivateAndRender(false);
+
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+	glPopAttrib();
 }
+
+
+void SimulGLWeatherRenderer::RenderClouds(bool buffered,bool depth_testing)
+{
+	glPushAttrib(GL_ENABLE_BIT);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+	if(buffered)
+		scene_buffer->Activate();
+
+    if(simulCloudRenderer)
+		simulCloudRenderer->Render(depth_testing);
+
+	if(buffered)
+		scene_buffer->DeactivateAndRender(true);
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+	glPopAttrib();
+}
+
 // Render the clouds to the cloud buffer:
 void SimulGLWeatherRenderer::SetPrecalculatedGamma(float g)
 {
     if(simulCloudRenderer)
 		simulCloudRenderer->GetCloudKeyframer()->SetPrecalculatedGamma(g);
-}
-
-void SimulGLWeatherRenderer::RenderLateCloudLayer(bool depth_testing)
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-	//clouds_buffer->Activate();
-
-    if(simulCloudRenderer)
-		simulCloudRenderer->Render(depth_testing);
-
-	//clouds_buffer->DeactivateAndRender(BufferWidth,BufferHeight,0);
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
 }
 
 void SimulGLWeatherRenderer::Update(float dt)

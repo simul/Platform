@@ -673,7 +673,11 @@ void Simul2DCloudRenderer::SetWind(float speed,float heading_degrees)
 
 void Simul2DCloudRenderer::SetCloudiness(float c)
 {
-	cloudKeyframer->SetCloudiness(c);
+	simul::clouds::CloudKeyframer::Keyframe *K=cloudKeyframer->GetNextModifiableKeyframe();
+	if(K)
+	{
+		K->cloudiness=c;
+	}
 }
 
 void Simul2DCloudRenderer::SetExternalTexture(LPDIRECT3DTEXTURE9 tex)
