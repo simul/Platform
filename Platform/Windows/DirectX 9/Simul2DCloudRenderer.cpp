@@ -340,7 +340,7 @@ HRESULT Simul2DCloudRenderer::CreateImageTexture()
 	if(!own_image_texture)
 		return hr;
 	SAFE_RELEASE(image_texture);
-	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Cirrus.jpg"),&image_texture)))
+	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/Cirrus.jpg"),&image_texture)))
 		return hr;
 	return hr;
 }

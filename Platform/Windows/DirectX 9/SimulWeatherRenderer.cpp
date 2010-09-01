@@ -91,6 +91,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	if(clouds2d)
 	{
 		simul2DCloudRenderer=new Simul2DCloudRenderer();
+		base2DCloudRenderer=simul2DCloudRenderer.get();
 	}
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();

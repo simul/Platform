@@ -181,7 +181,7 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(bool depth_testing)
+bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 {
 	float gamma=cloudKeyframer->GetPrecalculatedGamma();
 	if(gamma>0&&gamma!=1.f)
@@ -215,6 +215,10 @@ bool SimulGLCloudRenderer::Render(bool depth_testing)
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	else
 		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA);
+	if(default_fog)
+		glEnable(GL_FOG);
+	else
+		glDisable(GL_FOG);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_ZERO,GL_ONE_MINUS_SRC_ALPHA);
 
@@ -453,7 +457,7 @@ bool SimulGLCloudRenderer::Create()
 	cloudNode->SetCloudBaseZ(1100.f);
 	cloudNode->SetCloudWidth(30000.f);
 	cloudNode->SetCloudLength(30000.f);
-	cloudNode->SetCloudHeight(2000.f);
+	cloudNode->SetCloudHeight(1500.f);
 
 	cloudNode->SetOpticalDensity(.4f);
 
@@ -468,10 +472,7 @@ bool SimulGLCloudRenderer::Create()
 
 	cloudInterface->SetNoisePeriod(1.f);
 
-//   float gen_start_time=glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 	cloudNode->Generate();
-	//float gen_end_time=glutGet(GLUT_ELAPSED_TIME) / 1000.0;
-	//std::cout<<"Generate time: "<<(gen_end_time-gen_start_time)<<" milliseconds"<<std::endl;
 
 	helper->Initialize((unsigned)(120.f*detail),min_dist+(max_dist-min_dist)*detail);
 	unsigned el_grid=24;

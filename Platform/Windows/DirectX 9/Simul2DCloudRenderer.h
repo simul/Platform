@@ -15,9 +15,8 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Base/SmartPtr.h"
-#include "Simul/Clouds/CloudRenderCallback.h"
+#include "Simul/Clouds/BaseCloudRenderer.h"
 #include "Simul/Clouds/CloudKeyframer.h"
-#include "Simul/Graph/Meta/Group.h"
 namespace simul
 {
 	namespace clouds
@@ -35,7 +34,7 @@ namespace simul
 typedef long HRESULT;
 
 //! A renderer for 2D cloud layers, e.g. cirrus clouds.
-class Simul2DCloudRenderer: public simul::clouds::CloudRenderCallback, public simul::graph::meta::Group
+class Simul2DCloudRenderer: public simul::clouds::BaseCloudRenderer
 {
 public:
 	Simul2DCloudRenderer();

@@ -112,7 +112,7 @@ void SimulGLWeatherRenderer::RenderSky(bool buffered)
 }
 
 
-void SimulGLWeatherRenderer::RenderClouds(bool buffered,bool depth_testing)
+void SimulGLWeatherRenderer::RenderClouds(bool buffered,bool depth_testing,bool default_fog)
 {
 	glPushAttrib(GL_ENABLE_BIT);
     glMatrixMode(GL_PROJECTION);
@@ -123,7 +123,7 @@ void SimulGLWeatherRenderer::RenderClouds(bool buffered,bool depth_testing)
 		scene_buffer->Activate();
 
     if(simulCloudRenderer)
-		simulCloudRenderer->Render(depth_testing);
+		simulCloudRenderer->Render(depth_testing,default_fog);
 
 	if(buffered)
 		scene_buffer->DeactivateAndRender(true);

@@ -9,7 +9,6 @@
 #ifdef _MSC_VER
 #include <GL/glew.h>
 #endif
-#include <GL/glut.h>
 #include "Simul/Base/SmartPtr.h"
 
 #include "Simul/Graph/Meta/Group.h"
@@ -42,7 +41,7 @@ public:
 	//! Call this to draw the sky
 	void RenderSky(bool buffered);
 	//! Call this to draw the clouds
-	void RenderClouds(bool buffered,bool depth_testing);
+	void RenderClouds(bool buffered,bool depth_testing,bool default_fog=false);
 	//! Apply a gamma-correction on the CPU before calculation, so gamma-correction in shaders is not needed. If 1.0 or zero this is ignored.
 	void SetPrecalculatedGamma(float g);
 	//! Call this to draw lightning.
