@@ -207,7 +207,7 @@ HRESULT SimulAtmosphericsRenderer::Render()
 		D3DSURFACE_DESC desc;
 		if(input_texture)
 			input_texture->GetLevelDesc(0,&desc);
-		float x=0,y=0;
+	
 		struct Vertext
 		{
 			float x,y;

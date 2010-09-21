@@ -12,9 +12,9 @@
 #include "SimulGLSkyRenderer.h"
 #include "Simul/Sky/SkyNode.h"
 #include "Simul/Sky/TextureGenerator.h"
-#include "Simul/Sky/AltitudeFadeTable.h"
+#include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Sky/ColourSkyNode.h"
-#include "Simul/Sky/ColourFadeTable.h"
+#include "Simul/Sky/ColourSkyKeyframer.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
@@ -60,10 +60,10 @@ bool SimulGLSkyRenderer::Create(float start_alt_km)
 	skyInterface=dynamic_cast<simul::sky::SkyInterface*>(skyNode.get());
 	skyInterface->SetSunIrradiance(simul::sky::float4(25,25,25,25));
 
-	fadeTable=new simul::sky::AltitudeFadeTable(skyInterface);
+	skyKeyframer=new simul::sky::SkyKeyframer(skyInterface);
 
-	fadeTable->SetFillTexturesAsBlocks(true);
-	fadeTable->SetAltitudeKM(start_alt_km);
+	skyKeyframer->SetFillTexturesAsBlocks(true);
+	skyKeyframer->SetAltitudeKM(start_alt_km);
 	cam_pos[0]=cam_pos[1]=cam_pos[2]=0;
 	return true;
 }
@@ -290,11 +290,11 @@ bool SimulGLSkyRenderer::Render()
 	glUniform1i(skyTexture1_param,0);
 	glUniform1i(skyTexture2_param,1);
 
-	glUniform1f(altitudeTexCoord_param,fadeTable->GetAltitudeTexCoord());
+	glUniform1f(altitudeTexCoord_param,skyKeyframer->GetAltitudeTexCoord());
 	glUniform3f(MieRayleighRatio_param,ratio.x,ratio.y,ratio.z);
 	glUniform1f(hazeEccentricity_param,skyInterface->GetMieEccentricity());
 	skyInterp_param	=glGetUniformLocation(sky_program,"skyInterp");
-	glUniform1f(skyInterp_param,fadeTable->GetInterpolation());
+	glUniform1f(skyInterp_param,skyKeyframer->GetInterpolation());
 	glUniform3f(lightDirection_sky_param,sun_dir.x,sun_dir.y,sun_dir.z);
 
 	for (int i = 0; i < 6; i++)
@@ -454,7 +454,7 @@ bool SimulGLSkyRenderer::RestoreDeviceObjects()
 	printProgramInfoLog(sky_program);
 
 
-	fadeTable->SetCallback(this);
+	skyKeyframer->SetCallback(this);
 
 	moon_texture=(void*)LoadGLImage("textures/Moon.png",GL_CLAMP);
 	SetPlanetImage(moon_index,moon_texture);

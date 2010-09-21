@@ -17,7 +17,7 @@ namespace simul
 		class SkyInterface;
 		class SkyNode;
 		class FadeTableInterface;
-		class AltitudeFadeTable;
+		class SkyKeyframer;
 		class OvercastCallback;
 	}
 }

@@ -27,6 +27,7 @@
 
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Math/Pi.h"
+#include "Simul/Sky/Float4.h"
 #include "Macros.h"
 #include "CreateDX9Effect.h"
 #include "Resources.h"
@@ -37,11 +38,7 @@ SimulPrecipitationRenderer::SimulPrecipitationRenderer() :
 	m_pVtxDecl(NULL),
 	m_pRainEffect(NULL),
 	rain_texture(NULL),
-	radius(10.f),
-	height(100.f),
-	rain_intensity(0.f),
 	external_rain_texture(false)
-	,rain_speed(1.6f)
 {
 }
 
@@ -55,6 +52,11 @@ struct Vertex_t
 #define NUM_VERT ((CONE_SIDES+1)*4)
 static Vertex_t vertices[NUM_VERT];
 
+void SimulPrecipitationRenderer::TextureRepeatChanged()
+{
+	InvalidateDeviceObjects();
+	RestoreDeviceObjects(m_pd3dDevice);
+}
 HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 {
 	m_pd3dDevice=dev;
@@ -62,25 +64,30 @@ HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
-
+	float cc=height/Aspect;
 	int index=0;
-	for(int j=-1;j<=1;j+=2)
+	static float rr=0.2f;
+	for(int j=-1;j<1;j++)
 	for(int i=0;i<CONE_SIDES+1;i++)
 	{
 		float angle1=2.f*3.14159f*(float)i/(float)CONE_SIDES;
-		vertices[index].x=radius*cos(angle1);
-		vertices[index].z=radius*sin(angle1);
-		vertices[index].y=0;
-		vertices[index].tex_x=i*14.f/(float)CONE_SIDES;
-		vertices[index].tex_y=0;
-		vertices[index].fade=1.f;
-		index++;
-		vertices[index].x=0;
-		vertices[index].z=0;
+		float fade=1.f-(float)abs(j);
+		float rad=radius*(rr+fade)/(1.f+rr);
+		vertices[index].x=rad*cos(angle1)*fade;
+		vertices[index].z=rad*sin(angle1)*fade;
 		vertices[index].y=height*j;
-		vertices[index].tex_x=i*14.f/(float)CONE_SIDES;
-		vertices[index].tex_y=(float)j;
-		vertices[index].fade=0.f;
+		vertices[index].tex_x=i*TextureRepeat/(float)CONE_SIDES;
+		vertices[index].tex_y=(float)j*height/radius/Aspect*(float)TextureRepeat;
+		vertices[index].fade=fade;
+		index++;
+		fade=1.f-(float)abs(j+1);
+		rad=radius*(rr+fade)/(1.f+rr);
+		vertices[index].x=rad*cos(angle1)*fade;
+		vertices[index].z=rad*sin(angle1)*fade;
+		vertices[index].y=height*(j+1);
+		vertices[index].tex_x=i*TextureRepeat/(float)CONE_SIDES;
+		vertices[index].tex_y=(float)(j+1)*height/radius/Aspect*(float)TextureRepeat;
+		vertices[index].fade=fade;
 		index++;
 	}
 	D3DVERTEXELEMENT9 decl[]=
@@ -98,6 +105,9 @@ HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	offset				=m_pRainEffect->GetParameterByName(NULL,"offset");
 	intensity			=m_pRainEffect->GetParameterByName(NULL,"intensity");
 	lightColour			=m_pRainEffect->GetParameterByName(NULL,"lightColour");
+	offset1				=m_pRainEffect->GetParameterByName(NULL,"offset1");
+	offset2				=m_pRainEffect->GetParameterByName(NULL,"offset2");
+	offset3				=m_pRainEffect->GetParameterByName(NULL,"offset3");
 
 	if(!external_rain_texture)
 	{
@@ -145,8 +155,6 @@ SimulPrecipitationRenderer::~SimulPrecipitationRenderer()
 {
 	Destroy();
 }
-	static const float radius=50.f;
-	static const float height=150.f;
 
 static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 {
@@ -181,7 +189,7 @@ HRESULT SimulPrecipitationRenderer::Render()
 	D3DXMATRIX	world,direction;
 	D3DXMatrixIdentity(&world);
 	D3DXMatrixRotationY(&direction,wind_heading);
-	float pitch_angle=atan2f(wind_speed,rain_speed);
+	float pitch_angle=atan2f(WindEffect*wind_speed,rain_speed);
 	D3DXMatrixRotationX(&world,-pitch_angle);
 	D3DXMatrixMultiply(&world,&world,&direction);
 	world._41=cam_pos.x;
@@ -196,6 +204,29 @@ HRESULT SimulPrecipitationRenderer::Render()
 	m_pRainEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
 	m_pRainEffect->SetFloat(offset,offs);
 	m_pRainEffect->SetFloat(intensity,rain_intensity);
+
+	static float cc1=3.f;
+	static float cc2=4.f;
+	static float cc3=3.5f;
+	simul::sky::float4 offs1(sin(cc1*offs)		,cos(cc1*offs),0,0);
+	simul::sky::float4 offs2(sin(cc2*offs+2.f)	,cos(cc2*offs+2.f),0,0);
+	simul::sky::float4 offs3(sin(cc3*offs+4.f)	,cos(cc3*offs+4.f),0,0);
+	static float cc1a=1.4f;
+	static float cc2a=1.211f;
+	static float cc3a=0.397f;
+	simul::sky::float4 offs1a(sin(cc1a*offs)	,cos(cc1a*offs),0,0);
+	simul::sky::float4 offs2a(sin(cc2a*offs+2.f),cos(cc2a*offs+2.f),0,0);
+	simul::sky::float4 offs3a(sin(cc3a*offs+4.f),cos(cc3a*offs+4.f),0,0);
+	offs1*=offs1a;
+	offs2*=offs2a;
+	offs3*=offs3a;
+	static float ww=0.01f;
+	offs1*=ww*Waver;
+	offs2*=ww*Waver;
+	offs3*=ww*Waver;
+	m_pRainEffect->SetVector(offset1,(D3DXVECTOR4*)(&offs1));
+	m_pRainEffect->SetVector(offset2,(D3DXVECTOR4*)(&offs2));
+	m_pRainEffect->SetVector(offset3,(D3DXVECTOR4*)(&offs3));
 
 	m_pRainEffect->SetVector(lightColour,(D3DXVECTOR4*)(light_colour));
 
@@ -213,15 +244,6 @@ HRESULT SimulPrecipitationRenderer::Render()
 	return hr;
 }
 
-void SimulPrecipitationRenderer::SetLightColour(const float c[4])
-{
-	static float cc=0.02f;
-	light_colour[0]=cc*c[0];
-	light_colour[1]=cc*c[1];
-	light_colour[2]=cc*c[2];
-	light_colour[3]=1.f;
-}
-
 #ifdef XBOX
 void SimulPrecipitationRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
@@ -229,15 +251,3 @@ void SimulPrecipitationRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRI
 	proj=p;
 }
 #endif
-
-void SimulPrecipitationRenderer::Update(float dt)
-{
-	static bool pause=false;
-	static float low_speed=1.6f;
-	static float high_speed=10.f;
-	rain_speed=low_speed+(high_speed-low_speed)*rain_intensity;
-    if(!pause)
-	{
-		offs+=rain_speed*dt;
-	}
-}

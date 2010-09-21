@@ -6,7 +6,7 @@
 #include "SimulGL2DCloudRenderer.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Sky/FadeTableInterface.h"
-#include "Simul/Sky/AltitudeFadeTable.h"
+#include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Sky/SkyInterface.h"
 
 #if 0//def _MSC_VER
@@ -32,14 +32,17 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
 
 	// Now we know what time of day it is, initialize the sky texture:
 	if(sky)
+	{
 		simulSkyRenderer=new SimulGLSkyRenderer();
+		baseSkyRenderer=simulSkyRenderer.get();
+	}
 	if(simulSkyRenderer)
 	{
 		simulSkyRenderer->Create(0.5f);
 		simulSkyRenderer->RestoreDeviceObjects();
 	}
 	//if(clouds2d)
-	//	simul2DCloudRenderer=new SimulGL2DCloudRenderer();
+	//	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer();
 	if(simul2DCloudRenderer)
 	{
 		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
@@ -48,7 +51,10 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
 		simul2DCloudRenderer->RestoreDeviceObjects();
 	}
 	if(clouds3d)
+	{	
 		simulCloudRenderer=new SimulGLCloudRenderer();
+		baseCloudRenderer=simulCloudRenderer.get();
+	}
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->Create();

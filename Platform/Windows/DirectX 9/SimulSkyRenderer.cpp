@@ -29,8 +29,8 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/SkyNode.h"
 #include "Simul/Sky/ColourSkyNode.h"
-#include "Simul/Sky/AltitudeFadeTable.h"
-#include "Simul/Sky/ColourFadeTable.h"
+#include "Simul/Sky/SkyKeyframer.h"
+#include "Simul/Sky/ColourSkyKeyframer.h"
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Decay.h"
@@ -39,9 +39,12 @@
 SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	:m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
+	,m_pHudVertexDecl(NULL)
 	,m_pSkyEffect(NULL)
 	,m_hTechniqueSky(NULL)
+	,m_hTechniquePlainColour(NULL)
 	,m_hTechniqueStarrySky(NULL)
+	,m_hTechniquePointStars(NULL)
 	,m_hTechniqueSun(NULL)
 	,m_hTechniqueQuery(NULL)
 	,m_hTechniqueFlare(NULL)	
@@ -52,6 +55,8 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	,d3dQuery(NULL)
 	,sky_tex_format(D3DFMT_UNKNOWN)
 	,external_flare_texture(false)
+	,m_pFont(NULL)
+	,star_vertices(NULL)
 {
 	MoonTexture="Moon.png";
 	SunTexture="SunFlare.png";
@@ -106,6 +111,8 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	hr=CreateSkyEffect();
 	m_hTechniqueSky				=m_pSkyEffect->GetTechniqueByName("simul_sky");
 	m_hTechniqueStarrySky		=m_pSkyEffect->GetTechniqueByName("simul_starry_sky");
+	m_hTechniquePointStars		=m_pSkyEffect->GetTechniqueByName("simul_point_stars");
+	m_hTechniquePlainColour		=m_pSkyEffect->GetTechniqueByName("simul_plain_colour");
 	
 	worldViewProj				=m_pSkyEffect->GetParameterByName(NULL,"worldViewProj");
 	lightDirection				=m_pSkyEffect->GetParameterByName(NULL,"lightDir");
@@ -164,16 +171,21 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	SAFE_RELEASE((LPDIRECT3DTEXTURE9&)moon_texture);
 	CreateDX9Texture(m_pd3dDevice,(LPDIRECT3DTEXTURE9&)moon_texture,MoonTexture.c_str());
 	SetPlanetImage(moon_index,moon_texture);
+//	stars.LoadAsText("UrsaMajor.txt");
+	stars.UseDefaultStars();
 	return hr;
 }
 
 HRESULT SimulSkyRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
+	delete [] star_vertices;
+	star_vertices=NULL;
 	sky_tex_format=D3DFMT_UNKNOWN;
 	if(m_pSkyEffect)
         hr=m_pSkyEffect->OnLostDevice();
 	SAFE_RELEASE(m_pSkyEffect);
+	SAFE_RELEASE(m_pFont);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(stars_texture);
 	if(!external_flare_texture)
@@ -319,11 +331,11 @@ float SimulSkyRenderer::GetAltitudeTextureCoordinate() const
 
 float SimulSkyRenderer::GetFadeInterp() const
 {
-	return fadeTable->GetInterpolation();
+	return skyKeyframer->GetInterpolation();
 }
 void SimulSkyRenderer::SetStepsPerDay(int s)
 {
-	fadeTable->SetUniformKeyframes(s);
+	skyKeyframer->SetUniformKeyframes(s);
 }
 
 void SimulSkyRenderer::SetSkyTextureSize(unsigned size)
@@ -522,7 +534,7 @@ HRESULT SimulSkyRenderer::CreateSkyTextures()
 		{
 			// Convert the array of floats into float16 values for the texture.
 			float *float_ptr=(float *)(lockedRect.pBits);
-			for(int i=0;i<skyTexSize*4;i++)
+			for(unsigned i=0;i<skyTexSize*4;i++)
 				*float_ptr++=0.f;
 		}
 		hr=tex->UnlockRect(0);
@@ -780,13 +792,13 @@ HRESULT SimulSkyRenderer::RenderFlare(float exposure)
 	HRESULT hr=S_OK;
 	if(!m_pSkyEffect)
 		return hr;
-	D3DXVECTOR4 sun_dir(fadeTable->GetDirectionToLight());
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
 	float magnitude=exposure*(1.f-sun_occlusion);
 	simul::math::FirstOrderDecay(flare_magnitude,magnitude,5.f,0.1f);
 	if(flare_magnitude>1.f)
 		flare_magnitude=1.f;
 	float alt_km=0.001f*cam_pos.y;
-	simul::sky::float4 sunlight=fadeTable->GetLocalIrradiance(alt_km)*lensFlare.GetStrength();
+	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km)*lensFlare.GetStrength();
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
@@ -818,7 +830,7 @@ HRESULT SimulSkyRenderer::RenderFlare(float exposure)
 	return hr;
 }
 
-HRESULT SimulSkyRenderer::RenderFades(int width)
+HRESULT SimulSkyRenderer::RenderFades(int )
 {
 	HRESULT hr=S_OK;
 	static int size=64;
@@ -843,6 +855,254 @@ HRESULT SimulSkyRenderer::RenderFades(int width)
 	return hr;
 }
 
+HRESULT SimulSkyRenderer::PrintAt(const float *p,const wchar_t *text,int screen_width,int screen_height)
+{
+	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
+#ifndef xbox
+	m_pd3dDevice->SetTransform(D3DTS_WORLD,&world);
+#endif
+	D3DXMATRIX tmp1,tmp2,wvp;
+	D3DXMatrixMultiply(&tmp1,&world,&view);
+	D3DXMatrixMultiply(&wvp,&tmp1,&proj);
+	//D3DXMatrixTranspose(&wvp,&tmp2);
+
+	D3DXVECTOR4 pos(p[0],p[1],p[2],1.f);
+	D3DXVECTOR4 screen_pos;
+	D3DXVec4Transform(&screen_pos,&pos,&wvp);
+	float x=0.5f*(screen_pos.x/screen_pos.w+1.f)*screen_width;//screen_pos.z;
+	float y=0.5f*(1.f-screen_pos.y/screen_pos.w)*screen_height;//screen_pos.z;
+	RECT rcDest;
+	rcDest.left=(long)x-32;
+	rcDest.bottom=(long)y+32;
+	rcDest.right=(long)x+32;
+	rcDest.top=(long)y-32;
+
+	DWORD dwTextFormat = DT_CENTER |  DT_NOCLIP ;//DT_CALCRECT;
+	if(screen_pos.w<0)
+		return S_OK;
+	HRESULT hr = m_pFont->DrawText(NULL,text,-1,&rcDest,dwTextFormat,D3DXCOLOR(1.f,1.f,1.f,1.f));
+	return hr;
+}
+
+HRESULT SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height)
+{
+	HRESULT hr=S_OK;
+	D3DVERTEXELEMENT9 decl[] = 
+	{
+		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 12, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
+		D3DDECL_END()
+	};
+	if(!m_pHudVertexDecl)
+	{
+		V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
+	}
+
+	if(!m_pFont)
+	{
+		V_RETURN(D3DXCreateFont(m_pd3dDevice,32,0,FW_NORMAL,1,FALSE,DEFAULT_CHARSET,
+								OUT_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_DONTCARE,
+								L"Arial",&m_pFont));
+	}
+
+	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
+#ifndef xbox
+	m_pd3dDevice->SetTransform(D3DTS_WORLD,&world);
+#endif
+	
+	D3DXMATRIX tmp1,tmp2,wvp;
+	D3DXMatrixMultiply(&tmp1,&world,&view);
+	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
+	D3DXMatrixTranspose(&wvp,&tmp2);
+	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&wvp));
+
+	struct Vertext
+	{
+		float x,y,z;
+		float r,g,b,a;
+	};
+	m_pd3dDevice->SetVertexDeclaration(m_pHudVertexDecl);
+
+
+	m_pd3dDevice->SetTexture(0,NULL);
+	Vertext *lines=new Vertext[8*2];
+	static float d=10000.f;
+	float pi=3.1415926f;
+	for(int i=0;i<8;i++)
+	{
+		float angle=(float)i/8.f*2.f*pi;
+		lines[i*2].x=d*cos(angle); 
+		lines[i*2].y=0;  
+		lines[i*2].z=d*sin(angle);
+		lines[i*2].r=1.f;
+		lines[i*2].g=1.f;
+		lines[i*2].b=0.f;
+		lines[i*2].a=0.5f;
+		lines[i*2+1].x=d*cos(angle); 
+		lines[i*2+1].y=d*.1f;  
+		lines[i*2+1].z=d*sin(angle);
+		lines[i*2+1].r=1.f;
+		lines[i*2+1].g=1.f;
+		lines[i*2+1].b=0.f;
+		lines[i*2+1].a=0.5f;
+	}
+
+	m_pSkyEffect->SetTechnique(m_hTechniquePlainColour);
+	
+
+	UINT passes=1;
+	hr=m_pSkyEffect->Begin(&passes,0);
+	hr=m_pSkyEffect->BeginPass(0);
+
+
+	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,8,lines,(unsigned)sizeof(Vertext));
+	delete [] lines;
+	lines=new Vertext[65];
+	Vertext *moon_lines=new Vertext[65];
+	float old_time=skyKeyframer->GetDaytime();
+	for(int i=0;i<65;i++)
+	{
+		float time=(float)i/32.f;
+		float daytime=time-(int)time;
+		//skyInterface->SetDaytime(time);
+		skyKeyframer->SetDaytime(time);
+		simul::sky::float4 dir=d*skyInterface->GetDirectionToSun();
+		lines[i].x=dir.x; 
+		lines[i].y=dir.z;
+		lines[i].z=dir.y;
+		lines[i].r=1.f;
+		lines[i].g=.8f;
+		lines[i].b=0.f;
+		lines[i].a=0.1f+0.5f*daytime;
+		simul::sky::float4 moon_dir=d*skyInterface->GetDirectionToMoon();
+		moon_lines[i].x=moon_dir.x; 
+		moon_lines[i].y=moon_dir.z;
+		moon_lines[i].z=moon_dir.y;
+		moon_lines[i].r=0.f;
+		moon_lines[i].g=.5f;
+		moon_lines[i].b=1.f;
+		moon_lines[i].a=0.1f+0.5f*daytime;
+	}
+	skyInterface->SetDaytime(old_time);
+	skyKeyframer->SetDaytime(old_time);
+	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,64,lines,(unsigned)sizeof(Vertext));
+	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,64,moon_lines,(unsigned)sizeof(Vertext));
+
+	hr=m_pSkyEffect->EndPass();
+	hr=m_pSkyEffect->End();
+
+	PrintAt(D3DXVECTOR4( 0.f,0.f, 1.f,1.f)	,L"N",screen_width,screen_height);
+	PrintAt(D3DXVECTOR4( 0.f,0.f,-1.f,1.f)	,L"S",screen_width,screen_height);
+	PrintAt(D3DXVECTOR4( 1.f,0.f, 0.f,1.f)	,L"E",screen_width,screen_height);
+	PrintAt(D3DXVECTOR4(-1.f,0.f, 0.f,1.f)	,L"W",screen_width,screen_height);
+	delete [] lines;
+	delete [] moon_lines;
+	return S_OK;
+}
+
+HRESULT SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)
+{
+	HRESULT hr=S_OK;
+	// Make the stars "wheel" in the sky - strictly speaking they should spin around the same axis as the sun.
+//	D3DXMatrixRotationZ(&world,2.f*3.1415926536f*skyInterface->GetDaytime());
+	if(!GetSiderealSkyInterface())
+	{
+		D3DXMatrixIdentity(world);
+		D3DXMatrixRotationX(world,3.14159f*2.f*skyInterface->GetDaytime());
+	}
+	else
+	{
+		D3DXMATRIX tra(GetSiderealSkyInterface()->SiderealToEarthMatrix());
+		D3DXMATRIX flip_y_z;
+		static float rr=3.1415926536f/2.f;
+		D3DXMatrixRotationX(&flip_y_z,rr);
+		/*D3DXMatrixIdentity(&flip_y_z);
+		flip_y_z._23=1.f;
+		flip_y_z._33=0.f;
+		flip_y_z._32=1.f;
+		flip_y_z._22=0.f;*/
+		D3DXMATRIX tmp1, tmp2;
+		D3DXMatrixMultiply(&tmp1,&flip_y_z,&tra);
+		D3DXMatrixMultiply(&tmp2,&tmp1,&flip_y_z);
+		//*world=tmp2;
+		D3DXMatrixTranspose(world,&tmp2);
+		//world=tmp1;
+		//set up matrices
+	}
+	world->_41=cam_pos.x;
+	world->_42=cam_pos.y;
+	world->_43=cam_pos.z;
+	return hr;
+}
+
+HRESULT SimulSkyRenderer::RenderPointStars()
+{
+	HRESULT hr=S_OK;
+#ifndef XBOX
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+#endif
+	D3DXMATRIX tmp1, tmp2;
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	cam_pos.x=tmp1._41;
+	cam_pos.y=tmp1._42;
+	cam_pos.z=tmp1._43;
+
+	cam_dir.x=tmp1._31;
+	cam_dir.y=tmp1._32;
+	cam_dir.z=tmp1._33;
+
+	GetSiderealTransform(&world);
+	D3DXMatrixMultiply(&tmp1,&world,&view);
+	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
+	D3DXMatrixTranspose(&tmp1,&tmp2);
+	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
+
+	PIXBeginNamedEvent(0,"Render Stars");
+
+	hr=m_pd3dDevice->SetVertexDeclaration(NULL);
+	hr=m_pd3dDevice->SetFVF(D3DFVF_XYZ|D3DFVF_TEX0);
+
+	m_pSkyEffect->SetTechnique(m_hTechniquePointStars);
+	static float star_brightness=1000.f;
+
+	float sb=skyInterface->GetStarlight().x;
+	m_pSkyEffect->SetFloat(starBrightness,sb*star_brightness);
+	
+	int num_stars=stars.GetNumStars();
+	if(!star_vertices)
+	{
+		star_vertices=new StarVertext[num_stars];
+		static float d=100.f;
+		{
+			for(int i=0;i<num_stars;i++)
+			{
+				float ra=(float)stars.GetStar(i).ascension;
+				float de=(float)stars.GetStar(i).declination;
+				star_vertices[i].x= d*cos(de)*sin(ra);
+				star_vertices[i].z=-d*cos(de)*cos(ra);
+				star_vertices[i].y=-d*sin(de);
+				star_vertices[i].b=(float)exp(-stars.GetStar(i).magnitude);
+				star_vertices[i].c=1.f;
+			}
+		}
+	}
+
+	UINT passes=1;
+	hr=m_pd3dDevice->SetFVF(D3DFVF_XYZ|D3DFVF_TEX1 );
+	hr=m_pSkyEffect->Begin(&passes,0);
+	for(unsigned i=0;i<passes;i++)
+	{
+		hr=m_pSkyEffect->BeginPass(i);
+		hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_POINTLIST,num_stars,star_vertices,sizeof(StarVertext));
+		hr=m_pSkyEffect->EndPass();
+	}
+	hr=m_pSkyEffect->End();
+	D3DXMatrixIdentity(&world);
+	PIXEndNamedEvent();
+	return hr;
+}
+
 HRESULT SimulSkyRenderer::RenderStars()
 {
 	HRESULT hr=S_OK;
@@ -860,15 +1120,9 @@ HRESULT SimulSkyRenderer::RenderStars()
 	cam_dir.y=tmp1._32;
 	cam_dir.z=tmp1._33;
 
-	D3DXMatrixIdentity(&world);
-	// Make the stars "wheel" in the sky - strictly speaking they should spin around the same axis as the sun.
-	D3DXMatrixRotationZ(&world,2.f*3.1415926536f*skyInterface->GetDaytime());
-	//set up matrices
-	world._41=cam_pos.x;
-	world._42=cam_pos.y;
-	world._43=cam_pos.z;
-	D3DXMatrixMultiply(&tmp1, &world,&view);
-	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
+	GetSiderealTransform(&world);
+	D3DXMatrixMultiply(&tmp1,&world,&view);
+	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
 	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
 
@@ -934,7 +1188,7 @@ HRESULT SimulSkyRenderer::Render()
 
 	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
 	D3DXVECTOR4 ratio(mie_rayleigh_ratio);
-	D3DXVECTOR4 sun_dir(fadeTable->GetDirectionToLight());
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
 	std::swap(sun_dir.y,sun_dir.z);
 
 	m_pSkyEffect->SetVector	(lightDirection		,&sun_dir);
@@ -942,7 +1196,7 @@ HRESULT SimulSkyRenderer::Render()
 	m_pSkyEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
 
-	m_pSkyEffect->SetFloat	(skyInterp		,fadeTable->GetInterpolation());
+	m_pSkyEffect->SetFloat	(skyInterp		,skyKeyframer->GetInterpolation());
 	UINT passes=1;
 	hr=m_pSkyEffect->Begin( &passes, 0 );
 	for(unsigned i = 0 ; i < passes ; ++i )
@@ -991,7 +1245,7 @@ simul::sky::float4 SimulSkyRenderer::GetLightColour() const
 const char *SimulSkyRenderer::GetDebugText() const
 {
 	static char txt[200];
-	sprintf_s(txt,200,"interp %3.3g",fadeTable->GetInterpolation());
+	sprintf_s(txt,200,"interp %3.3g",skyKeyframer->GetInterpolation());
 	return txt;
 }
 

@@ -36,7 +36,7 @@ namespace simul
 		class SkyInterface;
 		class SiderealSkyInterface;
 		class SkyNode;
-		class AltitudeFadeTable;
+		class SkyKeyframer;
 		class FadeTableInterface;
 		class OvercastCallback;
 	}
@@ -68,7 +68,11 @@ public:
 	HRESULT Destroy();
 	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	HRESULT						RenderSun();
-	//! Render the stars, as a background
+	//! Get the transform that goes from declination/right-ascension to azimuth and elevation.
+	HRESULT GetSiderealTransform(D3DXMATRIX *world);
+	//! Render the stars, as points.
+	HRESULT						RenderPointStars();
+	//! Render the stars, as a background.
 	HRESULT						RenderStars();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	HRESULT						Render();
@@ -76,6 +80,8 @@ public:
 	HRESULT						RenderFlare(float exposure);
 	//! Draw the fade textures to screen
 	HRESULT						RenderFades(int width);
+	//! Draw sidereal and geographic information to screen
+	HRESULT						RenderCelestialDisplay(int screen_width,int screen_height);
 	//! Get a value, from zero to one, which represents how much of the sun is visible.
 	//! Call this when the current rendering surface is the one that has obscuring
 	//! objects like mountains etc. in it, and make sure these have already been drawn.
@@ -111,9 +117,9 @@ public:
 	void FillFadeTexturesSequentially(int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
 						const float *inscatter_float4_array);
-	void FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,
-						const float *loss_float4_array,
-						const float *inscatter_float4_array)
+	void FillFadeTextureBlocks(int,int,int,int,int,int,int,
+						const float *,
+						const float *)
 	{
 	}
 
@@ -122,17 +128,28 @@ public:
 	const char *GetDebugText() const;
 	void SetFlare(LPDIRECT3DTEXTURE9 tex,float rad);
 protected:
+	struct StarVertext
+	{
+		float x,y,z;
+		float b,c;
+	};
+	StarVertext *star_vertices;
+	HRESULT PrintAt(const float *p,const wchar_t *text,int screen_width,int screen_height);
 	bool external_flare_texture;
 	float timing;
 	D3DFORMAT sky_tex_format;
 	void CreateFadeTextures();
 
 	LPDIRECT3DDEVICE9			m_pd3dDevice;
+	LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl;
+
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
 	LPD3DXEFFECT				m_pSkyEffect;		// The fx file for the sky
 	D3DXHANDLE					worldViewProj;
 	D3DXHANDLE                  m_hTechniqueSky;	// Handle to technique in the effect 
 	D3DXHANDLE					m_hTechniqueStarrySky;
+	D3DXHANDLE					m_hTechniquePointStars;
+	D3DXHANDLE					m_hTechniquePlainColour;
 	D3DXHANDLE					m_hTechniqueSun;
 	D3DXHANDLE					m_hTechniqueQuery;	// A technique that uses the z-test for occlusion queries
 	D3DXHANDLE					m_hTechniqueFlare;
@@ -163,6 +180,7 @@ protected:
 	LPDIRECT3DBASETEXTURE9		loss_textures[3];
 	LPDIRECT3DBASETEXTURE9		inscatter_textures[3];
 	
+    ID3DXFont*					m_pFont;
 	D3DXVECTOR3					cam_dir;
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DQUERY9			d3dQuery;

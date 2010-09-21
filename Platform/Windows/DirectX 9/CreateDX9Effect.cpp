@@ -29,6 +29,7 @@
 #endif
 	#include <vector>
 #include <iostream>
+#include <Windows.h>
 #include "Macros.h"
 #include "Resources.h"
 #ifndef SAFE_RELEASE

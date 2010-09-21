@@ -26,7 +26,7 @@
 #include "CreateDX9Effect.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
-#include "Simul/Sky/AltitudeFadeTable.h"
+#include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "SimulCloudRenderer.h"
@@ -466,7 +466,7 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 			m_pd3dDevice->SetRenderTarget(0,m_pLDRRenderTarget);
 			//ldr_buffer_texture->GetLevelDesc(0,&desc);
 			hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
-			simulSkyRenderer->RenderStars();
+			simulSkyRenderer->RenderPointStars();
 			simulSkyRenderer->RenderSun();
 			simulSkyRenderer->RenderPlanets();
 			// using gamma, render to the 8\8\8 buffer:
@@ -484,7 +484,7 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 				m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
 			if(simulSkyRenderer&&show_sky)
 			{
-				simulSkyRenderer->RenderStars();
+				simulSkyRenderer->RenderPointStars();
 				simulSkyRenderer->RenderSun();
 				simulSkyRenderer->RenderPlanets();
 			}
@@ -735,6 +735,11 @@ void SimulWeatherRenderer::Update(float dt)
 			{
 				simulPrecipitationRenderer->SetWind(simulCloudRenderer->GetWindSpeed(),simulCloudRenderer->GetWindHeadingDegrees());
 				simulPrecipitationRenderer->SetIntensity(simulCloudRenderer->GetPrecipitationIntensity());
+				float rts=simulCloudRenderer->GetRainToSnow();
+				if(rts<0.5f)
+					simulPrecipitationRenderer->ApplyDefaultRainSettings();
+				else
+					simulPrecipitationRenderer->ApplyDefaultSnowSettings();
 			}
 			else
 			{

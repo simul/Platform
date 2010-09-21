@@ -1,4 +1,5 @@
 #ifdef _MSC_VER
+#define NOMINMAX
 	#include <windows.h>
 #endif
 
@@ -215,8 +216,12 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	else
 		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA);
+	simul::sky::float4 gl_fog;
 	if(default_fog)
+	{
 		glEnable(GL_FOG);
+		glGetFloatv(GL_FOG_COLOR,gl_fog);
+	}
 	else
 		glDisable(GL_FOG);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
@@ -298,8 +303,12 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(proj.RowPointer(0));
 
+
+	float left	=proj(0,0)+proj(0,3);
+	float right	=proj(0,0)-proj(0,3);
+
 	float tan_half_fov_vertical=1.f/proj(1,1);
-	float tan_half_fov_horizontal=1.f/proj(0,0);
+	float tan_half_fov_horizontal=std::max(1.f/left,1.f/right);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	static float churn=1.f;
 	helper->SetChurn(churn);
@@ -331,6 +340,39 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 		float dens=(*i)->fadeIn;
 		if(!dens)
 			continue;
+		simul::sky::float4 loss			;
+		simul::sky::float4 inscatter	;
+		if(default_fog)
+		{
+			float mix_fog;
+			GLint fogMode;
+			GLfloat fogDens;
+			glGetIntegerv(GL_FOG_MODE,&fogMode);
+			glGetFloatv(GL_FOG_DENSITY,&fogDens);
+			switch(fogMode)
+			{
+			case GL_EXP:
+				mix_fog=1.f-exp(-fogDens*(*i)->distance);
+				break;
+			case GL_EXP2:
+				mix_fog=1.f-exp(-fogDens*(*i)->distance*(*i)->distance);
+				mix_fog=mix_fog*mix_fog;
+				break;
+			default:
+				{
+					GLfloat fogStart,fogEnd;
+					glGetFloatv(GL_FOG_START,&fogStart);
+					glGetFloatv(GL_FOG_END,&fogEnd);
+					mix_fog=(fogEnd-(*i)->distance)/(fogEnd-fogStart);
+					mix_fog=std::min(1.f,mix_fog);
+					mix_fog=std::max(0.f,mix_fog);
+				}
+				break;
+			};
+
+			loss=simul::sky::float4(1,1,1,1)*(1.f-mix_fog);
+			inscatter=gl_fog*mix_fog;
+		}
 		layers_drawn++;
 		helper->MakeLayerGeometry(cloudNode.get(),*i);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
@@ -343,8 +385,11 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 			for(unsigned k=0;k<(*j)->num_vertices;k++,qs_vert++)
 			{
 				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
-				simul::sky::float4 loss			=helper->GetLoss(*i,V);
-				simul::sky::float4 inscatter	=helper->GetInscatter(*i,V);
+				if(!default_fog)
+				{
+					loss		=helper->GetLoss(*i,V);
+					inscatter	=helper->GetInscatter(*i,V);
+				}
 				glMultiTexCoord3f(GL_TEXTURE0,V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
 				glMultiTexCoord2f(GL_TEXTURE1,V.noise_tex_x,V.noise_tex_y);
 				glMultiTexCoord1f(GL_TEXTURE2,dens);

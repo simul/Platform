@@ -1553,9 +1553,11 @@ const char *SimulCloudRenderer::GetDebugText() const
 	return debug_text;
 }
 
-void SimulCloudRenderer::SetCloudiness(float h)
+void SimulCloudRenderer::SetCloudiness(float c)
 {
-	cloudKeyframer->GetNextModifiableKeyframe()->cloudiness=h;
+	simul::clouds::CloudKeyframer::Keyframe *K=cloudKeyframer->GetNextModifiableKeyframe();
+	if(K)
+		K->cloudiness=c;
 }
 
 void SimulCloudRenderer::SetEnableStorms(bool s)

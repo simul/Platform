@@ -22,7 +22,7 @@ public:
 //! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX program.
 //! You can take this entire class and use it as source in your project.
 //! Make appropriate modifications where required.
-class SimulGLWeatherRenderer:public simul::graph::meta::Group
+class SimulGLWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
 	SimulGLWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=640,

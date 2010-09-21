@@ -54,7 +54,7 @@ void SaveTexture(LPDIRECT3DTEXTURE9 ldr_buffer_texture,const char *txt,bool as_d
 												as_dds?D3DXIFF_DDS:D3DXIFF_JPG,
 												ldr_buffer_texture,
 												NULL);
-	V_CHECK(hr);
+//	V_CHECK(hr);
 }
 
 void Screenshot(IDirect3DDevice9* pd3dDevice,const char *txt)
