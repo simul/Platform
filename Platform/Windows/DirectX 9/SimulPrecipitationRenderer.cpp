@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2009 Simul Software Ltd
+// Copyright (c) 2007-2010 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -64,7 +64,6 @@ HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
-	float cc=height/Aspect;
 	int index=0;
 	static float rr=0.2f;
 	for(int j=-1;j<1;j++)
@@ -175,8 +174,6 @@ HRESULT SimulPrecipitationRenderer::Render()
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
 #endif
-
-	PIXBeginNamedEvent(0,"Render Precipitation");
 	m_pd3dDevice->SetTexture(0,rain_texture);
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
@@ -240,7 +237,6 @@ HRESULT SimulPrecipitationRenderer::Render()
 	}
 	hr=m_pRainEffect->End();
 	D3DXMatrixIdentity(&world);
-	PIXEndNamedEvent();
 	return hr;
 }
 

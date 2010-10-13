@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2009 Simul Software Ltd
+// Copyright (c) 2007-2010 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -344,37 +344,7 @@ HRESULT Simul2DCloudRenderer::CreateImageTexture()
 		return hr;
 	return hr;
 }
-/*
-HRESULT Simul2DCloudRenderer::UpdateCloudTexture()
-{
-	HRESULT hr=S_OK;
-	if(!texture_complete&&cloud_interp-0.6f>0.f)
-	{
-		unsigned	w=cloudInterface->GetGridWidth(),
-					h=cloudInterface->GetGridLength();
-		unsigned total_texels=w*h;
-		unsigned next_index=(unsigned)((float)(total_texels*(3.3f*(cloud_interp-.6f))));
-		unsigned texels=next_index-cloud_texel_index;
-		SetBits8();
-		D3DLOCKED_RECT lockedBox={0};
-		if(FAILED(hr=cloud_textures[2]->LockRect(0,&lockedBox,NULL,NULL)))
-			return hr;
-		// RGBA bit-shift is 12,8,4,0
-		// ARGB however, is 8,0,4,12
-		simul::clouds::TextureGenerator::Partial2DCloudTextureFill(
-			cloudInterface,cloud_texel_index,texels,(unsigned char *)(lockedBox.pBits));
-		hr=cloud_textures[2]->UnlockRect(0);
-		cloud_texel_index+=texels;
-		// Only mark as complete if all texels have been filled:
-		if(cloud_texel_index>=total_texels)
-		{
-			texture_complete=true;
-			cloud_texel_index=0;
-		}
-	}
-	return hr;
-}
-*/
+
 void Simul2DCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z)
 {
 	assert(depth_z==1);
@@ -501,7 +471,6 @@ HRESULT Simul2DCloudRenderer::Render()
 {
 	if(!enabled)
 		return S_OK;
-	PIXBeginNamedEvent(0, "Render 2D Cloud Layers");
 
 	HRESULT hr;
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
@@ -655,7 +624,6 @@ static float light_mult=.05f;
 	hr=m_pCloudEffect->End();
 
 	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
-	PIXEndNamedEvent();
 	return hr;
 }
 

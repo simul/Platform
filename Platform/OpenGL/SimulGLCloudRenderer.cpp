@@ -487,7 +487,6 @@ bool SimulGLCloudRenderer::Create()
 {
 	cloudKeyframer->SetOpenGL(true);
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
-	helper=new simul::clouds::CloudGeometryHelper();
 	CreateNoiseTexture();
 
 	cloudNode->SetSeparateSecondaryLight(true);
@@ -495,9 +494,9 @@ bool SimulGLCloudRenderer::Create()
 
 	cloudNode->SetRandomSeed(1);
 
-	cloudNode->SetGridLength(128);
-	cloudNode->SetGridWidth(128);
-	cloudNode->SetGridHeight(16);
+	cloudNode->SetGridLength(64);
+	cloudNode->SetGridWidth(64);
+	cloudNode->SetGridHeight(8);
 
 	cloudNode->SetCloudBaseZ(1100.f);
 	cloudNode->SetCloudWidth(30000.f);

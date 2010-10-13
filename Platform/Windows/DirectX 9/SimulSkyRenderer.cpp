@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2009 Simul Software Ltd
+// Copyright (c) 2007-2010 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -187,6 +187,10 @@ HRESULT SimulSkyRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pSkyEffect);
 	SAFE_RELEASE(m_pFont);
 	SAFE_RELEASE(m_pVtxDecl);
+	SAFE_RELEASE(m_pHudVertexDecl);
+	SAFE_RELEASE(m_pFont);
+	
+
 	SAFE_RELEASE(stars_texture);
 	if(!external_flare_texture)
 	{
@@ -322,11 +326,6 @@ void SimulSkyRenderer::GetSkyTextures(LPDIRECT3DBASETEXTURE9 *s1,LPDIRECT3DBASET
 {
 	*s1=sky_textures[0];
 	*s2=sky_textures[1];
-}
-
-float SimulSkyRenderer::GetAltitudeTextureCoordinate() const
-{
-	return fadeTableInterface->GetAltitudeTexCoord();
 }
 
 float SimulSkyRenderer::GetFadeInterp() const
@@ -680,7 +679,6 @@ void SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	sun_occlusion=cloud_occlusion;
 	//if(!m_hTechniqueQuery)
 		return;
-	PIXBeginNamedEvent(0,"Sun Occlusion Query");
 	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 	std::swap(sun_dir.y,sun_dir.z);
@@ -720,7 +718,6 @@ void SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 		}
 	}
 	proj=tmp;
-	PIXEndNamedEvent();
 }
 	float sun_angular_size=3.14159f/180.f/2.f;
 
@@ -1037,6 +1034,7 @@ HRESULT SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)
 
 HRESULT SimulSkyRenderer::RenderPointStars()
 {
+	PIXBeginNamedEvent(0xFF000FFF,"SimulSkyRenderer::RenderPointStars");
 	HRESULT hr=S_OK;
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
@@ -1057,9 +1055,6 @@ HRESULT SimulSkyRenderer::RenderPointStars()
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
 	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
-
-	PIXBeginNamedEvent(0,"Render Stars");
-
 	hr=m_pd3dDevice->SetVertexDeclaration(NULL);
 	hr=m_pd3dDevice->SetFVF(D3DFVF_XYZ|D3DFVF_TEX0);
 
@@ -1105,6 +1100,7 @@ HRESULT SimulSkyRenderer::RenderPointStars()
 
 HRESULT SimulSkyRenderer::RenderStars()
 {
+return S_OK;
 	HRESULT hr=S_OK;
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
@@ -1126,8 +1122,6 @@ HRESULT SimulSkyRenderer::RenderStars()
 	D3DXMatrixTranspose(&tmp1,&tmp2);
 	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
 
-	PIXBeginNamedEvent(0,"Render Stars");
-
 	hr=m_pd3dDevice->SetVertexDeclaration(m_pVtxDecl);
 
 	m_pSkyEffect->SetTechnique(m_hTechniqueStarrySky);
@@ -1147,12 +1141,12 @@ HRESULT SimulSkyRenderer::RenderStars()
 	}
 	hr=m_pSkyEffect->End();
 	D3DXMatrixIdentity(&world);
-	PIXEndNamedEvent();
 	return hr;
 }
 
 HRESULT SimulSkyRenderer::Render()
 {
+	PIXBeginNamedEvent(0xFF00FFFF,"SimulSkyRenderer::Render");
 	HRESULT hr=S_OK;
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
@@ -1178,7 +1172,6 @@ HRESULT SimulSkyRenderer::Render()
 	D3DXMatrixTranspose(&tmp1,&tmp2);
 	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
 
-	PIXBeginNamedEvent(0,"Render Sky");
 	m_pSkyEffect->SetTexture(skyTexture1,sky_textures[0]);
 	m_pSkyEffect->SetTexture(skyTexture2,sky_textures[1]);
 
@@ -1206,8 +1199,6 @@ HRESULT SimulSkyRenderer::Render()
 		hr=m_pSkyEffect->EndPass();
 	}
 	hr=m_pSkyEffect->End();
-	//m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-    //hr=m_pd3dDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
 	D3DXMatrixIdentity(&world);
 	PIXEndNamedEvent();
 	return hr;

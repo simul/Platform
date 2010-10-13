@@ -100,10 +100,6 @@ public:
 	HRESULT RenderCrossSections(int width);
 	HRESULT RenderDistances();
 	HRESULT RenderLightVolume();
-	void SetAltitudeTextureCoordinate(float f)
-	{
-		altitude_tex_coord=f;
-	}
 	void EnableFilter(bool f);
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
@@ -169,7 +165,6 @@ protected:
 	PosTexVert_t *lightning_vertices;
 	HRESULT RenderNoiseTexture();
 	FadeMode fade_mode;
-	float altitude_tex_coord;
 	bool y_vertical;
 	float sun_occlusion;
 	float detail;

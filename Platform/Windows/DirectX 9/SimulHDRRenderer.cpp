@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2009 Simul Software Ltd
+// Copyright (c) 2007-2010 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -305,7 +305,6 @@ LPDIRECT3DSURFACE9 SimulHDRRenderer::MakeRenderTarget(const LPDIRECT3DTEXTURE9 p
 		return hr;
 	}
 #else
-	PIXBeginNamedEvent(0,"MakeRenderTarget");
 	if(!pTexture)
 	{
 		MessageBox(NULL, _T("Trying to create RenderTarget from NULL texture!"), _T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);
@@ -313,7 +312,6 @@ LPDIRECT3DSURFACE9 SimulHDRRenderer::MakeRenderTarget(const LPDIRECT3DTEXTURE9 p
 	HRESULT hr=S_OK;
 	V_CHECK(pTexture->GetSurfaceLevel(0,&pRenderTarget));
 #endif
-	PIXEndNamedEvent();
 	return pRenderTarget;
 }
 	static float depth_start=1.f;
@@ -453,34 +451,28 @@ simul::math::RandomNumberGenerator r;
 }
 
 HRESULT SimulHDRRenderer::StartRender()
-{
-	PIXBeginNamedEvent(0,"HDR Render");
+{		 
+	PIXBeginNamedEvent(0xFF88FFFF,"SimulHDRRenderer::StartRender FinishRender");
 	HRESULT hr=S_OK;
 	m_pLDRRenderTarget		=NULL;
 	m_pOldRenderTarget		=NULL;
 	m_pOldDepthSurface		=NULL;
 	
-	PIXWrapper(0,"Setup HDR Buffer")
 	{
-		PIXWrapper(0,"Change RenderTarget")
 		{
 			hr=(m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget));
 			hr=(m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface));
-			PIXWrapper(0,"SetRenderTarget")
 			{
 				hr=(m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget));
 			}
 			if(m_pBufferDepthSurface)
 				hr=(m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface));
 		}
-		PIXWrapper(0,"Buffer Init")
 		{
 			hr=m_pd3dDevice->SetRenderState(D3DRS_STENCILENABLE,FALSE);
 			hr=m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
 			hr=m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
-			//hr=m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_ALPHA);
 			static float depth_start=1.f;
-			PIXWrapper(0,"Clear")
 			{
 				hr=m_pd3dDevice->Clear(0L, NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L);
 			}
@@ -497,23 +489,17 @@ HRESULT SimulHDRRenderer::ApplyFade()
 	HRESULT hr=S_OK;
 	if(!atmospherics)
 		return hr;
-	PIXWrapper(D3DCOLOR_RGBA(127,127,255,127),"Apply Fade")
 	{
 		atmospherics->SetInputTextures(hdr_buffer_texture,buffer_depth_texture);
-		PIXWrapper(0,"Change RenderTarget")
 		{
-			//m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
 			m_pd3dDevice->SetRenderTarget(0,m_pFadedRenderTarget);
 			if(m_pBufferDepthSurface)
 				m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
 			else if(m_pOldDepthSurface)
 				m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
 		}
-		PIXWrapper(D3DCOLOR_RGBA(255,255,0,255),"Clear")
-		//hr=m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED | D3DCOLORWRITEENABLE_ALPHA);
 			V_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET,0xFF000000,1.f, 0L));
-		//m_pTonemapEffect->SetTechnique(ToneMapZWriteTechnique);
-		//V_RETURN(atmospherics->Render());
+
 		last_texture=faded_texture;
 	}
 	return hr;
@@ -523,7 +509,6 @@ HRESULT SimulHDRRenderer::FinishRender()
 {
 	HRESULT hr=S_OK;
 	D3DSURFACE_DESC desc;
-	PIXBeginNamedEvent(0,"HDR Buffer To Screen");
 #ifdef XBOX
 	m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
 #endif
@@ -554,8 +539,6 @@ HRESULT SimulHDRRenderer::FinishRender()
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
 	SAFE_RELEASE(m_pLDRRenderTarget)
-	PIXEndNamedEvent();
-	//V_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_ZBUFFER,0xFF00FF00,depth_start, 0L));
 	PIXEndNamedEvent();
 	return hr;
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2009 Simul Software Ltd
+// Copyright (c) 2007-2010 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -241,7 +241,7 @@ HRESULT SimulTerrainRenderer::CreateEffect()
 	if(wrap_clouds)
 		defines["WRAP_CLOUDS"]="1";
 	char max_fade_distance_str[25];
-	sprintf(max_fade_distance_str,"%g",max_fade_distance_metres);
+	sprintf_s(max_fade_distance_str,25,"%g",max_fade_distance_metres);
 	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
 	hr=CreateDX9Effect(m_pd3dDevice,m_pTerrainEffect,"simul_terrain.fx",defines);
 
@@ -326,17 +326,23 @@ SimulTerrainRenderer::~SimulTerrainRenderer()
 
 HRESULT SimulTerrainRenderer::RenderOnlyDepth()
 {
-	return InternalRender(true);
+	PIXBeginNamedEvent(0xFF006600,"SimulTerrainRenderer::RenderOnlyDepth");
+	HRESULT r=InternalRender(true);
+	PIXEndNamedEvent();
+	return r;
 }
 
 HRESULT SimulTerrainRenderer::Render()
 {
-	return InternalRender(false);
+	PIXBeginNamedEvent(0xFF00FF00,"SimulTerrainRenderer::Render");
+	HRESULT r=InternalRender(false);
+	PIXEndNamedEvent();
+	return r;
 }
 
 int SimulTerrainRenderer::GetMip(int i,int j) const
 {
-	if(i<0||j<0||i>=tiles.size()||j>=tiles.size())
+	if(i<0||j<0||i>=(int)tiles.size()||j>=(int)tiles.size())
 		return -1;
 	simul::math::Vector3 pos=tiles[i][j].pos;
 	pos-=simul::math::Vector3((const float*)(&cam_pos));
@@ -354,9 +360,6 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 	if(rebuild_effect)
 		CreateEffect();
 	HRESULT hr=S_OK;
-	PIXBeginNamedEvent(0,"Render Terrain");
-	PIXBeginNamedEvent(0,"Land");
-	
 	m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
 	m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
     m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,TRUE);
@@ -432,7 +435,6 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 	V_RETURN(hr=m_pd3dDevice->SetVertexDeclaration( m_pVtxDecl ));
 	for(unsigned p = 0 ; p < passes ; ++p )
 	{
-		PIXBeginNamedEvent(0,"Pass");
 		hr=m_pTerrainEffect->BeginPass(p);
 
 		if(p<2||(cloud_textures&&p==3)||(!cloud_textures&&p==2)||(show_wireframe&&p==4))
@@ -459,7 +461,7 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 					if(idx<0)
 						idx=0;
 					V_RETURN(hr=m_pd3dDevice->SetIndices(mip->edges[idx].edge[k].indexBuffer));
-					V_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,mip->edges[0].edge[k].num_tris*3,0,mip->edges[0].edge[k].num_tris))
+					V_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,mip->edges[0].edge[k].num_tris*3,0,mip->edges[idx].edge[k].num_tris))
 					
 				}
 				if(mip->extraIndexBuffer)
@@ -473,11 +475,8 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 		}
 
 		hr=m_pTerrainEffect->EndPass();
-		PIXEndNamedEvent();
 	}
 	hr=m_pTerrainEffect->End();
-	PIXEndNamedEvent();
-	PIXBeginNamedEvent(0,"Roads");
 	m_pTerrainEffect->SetTechnique( techniqueRoad );
 	m_pTerrainEffect->SetTexture(g_mainTexture,road_texture);
 	hr=m_pTerrainEffect->Begin( &passes, 0 );
@@ -500,8 +499,6 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 
 	m_pd3dDevice->SetRenderState(D3DRS_CULLMODE,D3DCULL_NONE);
     hr=m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,TRUE);
-	PIXEndNamedEvent();
-	PIXEndNamedEvent();
 	return hr;
 }
 
@@ -630,7 +627,7 @@ HRESULT SimulTerrainRenderer::BuildMIPEdge(TerrainTile *tile,int i,int j,int mip
 	TerrainTileMIP *mip=&(tile->mips[mip_level]);
 	MIPEdges *edges=NULL;
 	int idx=lower_level-mip_level;
-	if(idx>=mip->edges.size())
+	if(idx>=(int)mip->edges.size())
 	{
 		mip->edges.push_back(MIPEdges());
 	}
@@ -653,7 +650,7 @@ HRESULT SimulTerrainRenderer::BuildMIPEdge(TerrainTile *tile,int i,int j,int mip
 	
 	// for each of the lower sizes, e.g. 3, we have one triangle, plus a fan of size 2^(diff)
 	int diff=lower_level-mip_level;
-	edge->num_tris=lower_tile_size*(1+1<<diff)-2;
+	edge->num_tris=lower_tile_size*(1+(1<<diff))-2;
 
 	if(edge->num_tris>0)
 	{
@@ -944,7 +941,7 @@ void SimulTerrainRenderer::TerrainTileMIP::Reset()
 	num_squares=0;
 	num_verts=0;
 	tri_strip=false;
-	for(int i=0;i<edges.size();i++)
+	for(size_t i=0;i<edges.size();i++)
 		edges[i].Reset();
 }
 

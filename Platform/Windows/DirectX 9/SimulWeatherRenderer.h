@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2009 Simul Software Ltd
+// Copyright (c) 2007-2010 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -30,11 +30,6 @@ public:
 		bool rain=true,
 		bool colour_sky=false);
 	virtual ~SimulWeatherRenderer();
-	// Set the resource id:
-	void SetGammaResource(DWORD gr)
-	{
-		gamma_resource_id=gr;
-	}
 	//standard d3d object interface functions
 	HRESULT Create( LPDIRECT3DDEVICE9 pd3dDevice);
 	//! Call this when the device has been created
@@ -82,7 +77,7 @@ public:
 	//! Get a pointer to the atmospherics renderer owned by this class instance.
 	class SimulAtmosphericsRenderer *GetAtmosphericsRenderer();
 	//! Get the current debug text as a c-string pointer.
-	const char *GetDebugText() const;
+	const TCHAR *GetDebugText() const;
 	//! Get a timing value - useful for performance evaluation.
 	float GetTiming() const;
 
@@ -91,7 +86,6 @@ public:
 	void SetBufferSize(int w,int h);
 	void EnableRain(bool e=true);
 	float GetTotalBrightness() const;
-	void SetPrecipitation(float strength,float speed);
 
 	//! Connect-up sky, clouds:
 	void ConnectInterfaces();
@@ -99,8 +93,6 @@ protected:
 	void UpdateSkyAndCloudHookup();
 	bool AlwaysRenderCloudsLate;
 	bool RenderCloudsLate;
-	bool externally_defined_buffers;
-	DWORD gamma_resource_id;
 	//! The size of the 2D buffer the sky is rendered to.
 	int BufferWidth,BufferHeight;
 	LPDIRECT3DDEVICE9				m_pd3dDevice;

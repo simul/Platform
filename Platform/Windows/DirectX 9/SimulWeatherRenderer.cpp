@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2009 Simul Software Ltd
+// Copyright (c) 2007-2010 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -23,6 +23,7 @@
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("");
 #endif
+
 #include "CreateDX9Effect.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
@@ -68,7 +69,6 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	BufferHeight(height),
 	timing(0.f),
 	exposure_multiplier(1.f),
-	gamma_resource_id(0),
 	RenderCloudsLate(false),
 	show_rain(rain),
 	AlwaysRenderCloudsLate(false),
@@ -111,12 +111,12 @@ void SimulWeatherRenderer::ConnectInterfaces()
 		}
 		if(simulCloudRenderer)
 		{
-			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetFadeTable());
+			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 			simulCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
 			simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
 		}
 		if(simulAtmosphericsRenderer)
-			simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetFadeTable());
+			simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 	}
 }
 
@@ -125,12 +125,12 @@ HRESULT SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)
 	m_pd3dDevice=dev;
 	if(simulCloudRenderer)
 	{
-		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetFadeTable());
+		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 		simulCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
 	}
 	if(simul2DCloudRenderer)
 	{
-		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetFadeTable());
+		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 		simul2DCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
 	}
 	if(simulSkyRenderer)
@@ -139,7 +139,7 @@ HRESULT SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)
 			simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
 	}
 	if(simulAtmosphericsRenderer&&simulSkyRenderer)
-		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetFadeTable());
+		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 	HRESULT hr=S_OK;
 	return hr;
 }
@@ -408,13 +408,13 @@ LPDIRECT3DSURFACE9 SimulWeatherRenderer::MakeRenderTarget(const LPDIRECT3DTEXTUR
 
 HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 {
+	PIXBeginNamedEvent(0xFF888888,"SimulWeatherRenderer::Render");
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface=NULL;
 	RenderCloudsLate=false;
 	if(simulCloudRenderer)
 		RenderCloudsLate=AlwaysRenderCloudsLate|simulCloudRenderer->IsCameraAboveCloudBase();
 	D3DSURFACE_DESC desc;
-	PIXBeginNamedEvent(0,"Render Weather");
 	if(simulSkyRenderer)
 	{
 		static bool calc_occlusion=true;
@@ -429,7 +429,6 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 	HRESULT hr=S_OK;
 	if(use_buffer&&!is_cubemap)
 	{
-		PIXBeginNamedEvent(0,"Setup Weather Buffer");
 		hdr_buffer_texture->GetLevelDesc(0,&desc);
 		hr=m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
 		m_pOldRenderTarget->GetDesc(&desc);
@@ -439,7 +438,6 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 			m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
 		static float depth_start=1.f;
 		hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,1.f, 0L);
-		PIXEndNamedEvent();
 	}
 	if(simulSkyRenderer&&show_sky)
 		hr=simulSkyRenderer->Render();
@@ -455,7 +453,6 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 	static float depth_start=1.f;
 	if(use_buffer&&!is_cubemap)
 	{
-		PIXBeginNamedEvent(0,"Sky Buffer To Screen");
 #ifdef XBOX
 		m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
 #endif
@@ -490,13 +487,10 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 			}
 			RenderBufferToScreen(hdr_buffer_texture,desc.Width,desc.Height,true,true);
 		}
-		PIXEndNamedEvent();
 	}
-
-	PIXEndNamedEvent();
-	
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
+	PIXEndNamedEvent();
 	return hr;
 }
 
@@ -516,7 +510,7 @@ HRESULT SimulWeatherRenderer::RenderPrecipitation()
 
 HRESULT SimulWeatherRenderer::RenderFlares()
 {
-	simulSkyRenderer->RenderFlare(pow(2.f,exposure));
+	simulSkyRenderer->RenderFlare(exposure);
 	return S_OK;
 }
 
@@ -528,10 +522,8 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 	
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface=NULL;
-	PIXBeginNamedEvent(0,"Render Late Cloud Layer");
 	if(use_buffer)
 	{
-		PIXBeginNamedEvent(0,"Setup Cloud Buffer");
 		hr=m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
 		hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
 		hr=m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
@@ -539,7 +531,6 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 			m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
 		static float depth_start=1.f;
 		hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
-		PIXEndNamedEvent();
 	}
 	if(renderDepthBufferCallback)
 		renderDepthBufferCallback->Render();
@@ -548,7 +539,6 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 	//static float depth_start=1.f;
 	if(use_buffer)
 	{
-		PIXBeginNamedEvent(0,"Cloud Buffer To Screen");
 	#ifdef XBOX
 		m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
 	#endif
@@ -557,9 +547,7 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
 		m_pOldRenderTarget->GetDesc(&desc);
 		RenderBufferToScreen(hdr_buffer_texture,desc.Width,desc.Height,true,true);
-		PIXEndNamedEvent();
 	}
-	PIXEndNamedEvent();
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 	return hr;
@@ -628,7 +616,6 @@ HRESULT SimulWeatherRenderer::RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture,in
     m_pd3dDevice->SetPixelShader( NULL );
 
 	m_pd3dDevice->SetVertexDeclaration(m_pBufferVertexDecl);
-	exposure_multiplier=1.f;
 	if(use_shader)
 	{
 		if(tone_map)
@@ -704,7 +691,6 @@ void SimulWeatherRenderer::Update(float dt)
 	static bool pause=false;
     if(!pause)
 	{
-		PIXBeginNamedEvent(0,"Weather Update");
 		if(simulSkyRenderer)
 		{
 			simulSkyRenderer->Update(dt);
@@ -752,7 +738,6 @@ void SimulWeatherRenderer::Update(float dt)
 				simulPrecipitationRenderer->SetLightColour((const float*)(l));
 			}
 		}
-		PIXEndNamedEvent();
 	}
 }
 
@@ -781,12 +766,15 @@ SimulAtmosphericsRenderer *SimulWeatherRenderer::GetAtmosphericsRenderer()
 	return simulAtmosphericsRenderer.get();
 }
 
-const char *SimulWeatherRenderer::GetDebugText() const
+const TCHAR *SimulWeatherRenderer::GetDebugText() const
 {
-	static char debug_text[256];
+	static TCHAR debug_text[256];
 	if(simulCloudRenderer)
-		//sprintf_s(debug_text,256,"TIME %2.2g ms\n%s",timing,simulCloudRenderer->GetDebugText());
+#ifdef UNICODE
+		swprintf_s(debug_text,256,L"%s",simulCloudRenderer->GetDebugText());
+#else
 		sprintf_s(debug_text,256,"%s",simulCloudRenderer->GetDebugText());
+#endif
 	return debug_text;
 }
 
@@ -798,11 +786,4 @@ float SimulWeatherRenderer::GetTiming() const
 float SimulWeatherRenderer::GetTotalBrightness() const
 {
 	return exposure*exposure_multiplier;
-}
-
-
-void SimulWeatherRenderer::SetPrecipitation(float strength,float speed)
-{
-	simulCloudRenderer->SetPrecipitation(strength);
-//	simulPrecipitationRenderer->SetSpeed(speed);
 }

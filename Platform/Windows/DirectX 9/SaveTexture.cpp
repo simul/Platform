@@ -50,7 +50,7 @@ void SaveTexture(LPDIRECT3DTEXTURE9 ldr_buffer_texture,const char *txt,bool as_d
 #else
 	std::string filename2=filename;
 #endif
-	HRESULT hr=D3DXSaveTextureToFile(filename2.c_str(),
+	D3DXSaveTextureToFile(filename2.c_str(),
 												as_dds?D3DXIFF_DDS:D3DXIFF_JPG,
 												ldr_buffer_texture,
 												NULL);

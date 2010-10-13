@@ -15,7 +15,6 @@ static GLuint buffer_format=GL_RGBA16F_ARB;
 static GLuint buffer_format=GL_RGBA32F_ARB;
 #endif
 
-
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int width,
 		int height,bool sky,bool clouds3d,bool clouds2d,
 		bool rain,
@@ -74,12 +73,12 @@ void SimulGLWeatherRenderer::ConnectInterfaces()
 		}
 		if(simulCloudRenderer)
 		{
-			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetFadeTable());
+			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 			simulCloudRenderer->SetFadeTable(simulSkyRenderer->GetFadeTableInterface());
 			simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
 		}
 		//if(simulAtmosphericsRenderer)
-		//	simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetFadeTable());
+		//	simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 	}
 }
 

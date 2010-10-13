@@ -462,8 +462,14 @@ bool SimulGLSkyRenderer::RestoreDeviceObjects()
 	return true;
 }
 
+bool SimulGLSkyRenderer::InvalidateDeviceObjects()
+{
+	return true;
+}
+
 bool SimulGLSkyRenderer::Destroy()
 {
+	InvalidateDeviceObjects();
 	delete [] sky_tex_data;
 	sky_tex_data=0;
 	return true;

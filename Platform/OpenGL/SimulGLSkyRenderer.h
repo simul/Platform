@@ -22,19 +22,25 @@ namespace simul
 	}
 }
 
+//! A sky rendering class for OpenGL.
 class SimulGLSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
 	SimulGLSkyRenderer();
 	virtual ~SimulGLSkyRenderer();
 	//standard ogl object interface functions
+
+	//! Initialize the sky renderer.
 	bool Create(float start_alt_km=0.f);
+	//! Create the API-specific objects to be used in rendering. This is usually called from the SimulGLWeatherRenderer that
+	//! owns this object.
 	bool RestoreDeviceObjects();
+	//! Destroy the API-specific objects used in rendering.
 	bool InvalidateDeviceObjects();
 	bool Destroy();
 	bool Render();
 
-	// Implementing simul::sky::FadeTableCallback
+	// Implementing simul::sky::SkyTexturesCallback
 	virtual void SetSkyTextureSize(unsigned size);
 	virtual void SetFadeTextureSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_altitudes);
 	virtual void FillFadeTexturesSequentially(int ,int ,int ,const float *,const float *)

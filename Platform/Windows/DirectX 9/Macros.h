@@ -2,14 +2,15 @@
 #define MACROS_H_DONE
 #include <iostream>
 #include <tchar.h>
+
 #ifdef ENABLE_PIX
-	#define PIXBeginNamedEvent(a,b) D3DPERF_BeginEvent(a,L##b)
-	#define PIXEndNamedEvent()		D3DPERF_EndEvent()
-	#define PIXWrapper(a,b)			PIXBeginNamedEvent(a,b);for(int pixw=0;pixw<1;pixw++,PIXEndNamedEvent())
+	#define PIXBeginNamedEvent(colour,name) D3DPERF_BeginEvent(colour,L##name)
+	#define PIXEndNamedEvent()				D3DPERF_EndEvent()
+	#define PIXWrapper(colour,name)			PIXBeginNamedEvent(colour,name);for(int pixw=0;pixw<1;pixw++,PIXEndNamedEvent())
 #else
-	#define PIXBeginNamedEvent(a,b) //D3DPERF_BeginEvent(a,L##b)
-	#define PIXEndNamedEvent()		// D3DPERF_EndEvent()
-	#define PIXWrapper(a,b)
+	#define PIXBeginNamedEvent(colour,name) //D3DPERF_BeginEvent(colour,L##name)
+	#define PIXEndNamedEvent()				// D3DPERF_EndEvent()
+	#define PIXWrapper(colour,name)
 #endif
 	#ifndef SAFE_RELEASE
 		#define SAFE_RELEASE(p)		{ if(p) { (p)->Release(); (p)=NULL; } }

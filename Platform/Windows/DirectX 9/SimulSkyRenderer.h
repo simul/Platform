@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2009 Simul Software Ltd
+// Copyright (c) 2007-2010 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -106,11 +106,10 @@ public:
 	void GetLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LPDIRECT3DBASETEXTURE9 *l2,
 		LPDIRECT3DBASETEXTURE9 *i1,LPDIRECT3DBASETEXTURE9 *i2);
 	void GetSkyTextures(LPDIRECT3DBASETEXTURE9 *s1,LPDIRECT3DBASETEXTURE9 *s2);
-	float GetAltitudeTextureCoordinate() const;
 	bool Use3DFadeTextures() const{return true;}
 	float GetFadeInterp() const;
 	void SetStepsPerDay(int s);
-//! Implement the FadeTableCallback
+//! Implement the SkyTexturesCallback
 	void SetSkyTextureSize(unsigned size);
 	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
 	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
