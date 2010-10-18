@@ -47,7 +47,7 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	,m_hTechniquePointStars(NULL)
 	,m_hTechniqueSun(NULL)
 	,m_hTechniqueQuery(NULL)
-	,m_hTechniqueFlare(NULL)	
+	,m_hTechniqueFlare(NULL)
 	,m_hTechniquePlanet(NULL)
 	,m_hTechniqueFadeCrossSection(NULL)
 	,flare_texture(NULL)
@@ -171,7 +171,7 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	SAFE_RELEASE((LPDIRECT3DTEXTURE9&)moon_texture);
 	CreateDX9Texture(m_pd3dDevice,(LPDIRECT3DTEXTURE9&)moon_texture,MoonTexture.c_str());
 	SetPlanetImage(moon_index,moon_texture);
-//	stars.LoadAsText("UrsaMajor.txt");
+//	stars.LoadAsText("UrsaMajor.txt"); used for calibration
 	stars.UseDefaultStars();
 	return hr;
 }
@@ -238,6 +238,12 @@ void SimulSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_
 	if(!tex)
 		return;
 	texel_index+=alt_index*skyTexSize;
+	if(texel_index<0)
+		return;
+	if(num_texels<=0)
+		return;
+	if(texel_index+num_texels>skyTexSize*numAltitudes)
+		return;
 	D3DLOCKED_RECT lockedRect={0};
 	if(FAILED(hr=tex->LockRect(0,&lockedRect,NULL,NULL)))
 		return;
@@ -256,9 +262,9 @@ void SimulSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_
 		// Convert the array of floats into float16 values for the texture.
 		float *float_ptr=(float *)(lockedRect.pBits);
 		float_ptr+=4*texel_index;
-		memcpy(float_ptr,float4_array,sizeof(float)*4*num_texels);
-		//for(int i=0;i<num_texels*4;i++)
-		//	*float_ptr++=(*float4_array++);
+		//memcpy(float_ptr,float4_array,sizeof(float)*4*num_texels);
+		for(int i=0;i<num_texels*4;i++)
+			*float_ptr++=(*float4_array++);
 	}
 	hr=tex->UnlockRect(0);
 }
@@ -838,17 +844,17 @@ HRESULT SimulSkyRenderer::RenderFades(int )
 	m_pSkyEffect->SetTexture(fadeTexture, loss_textures[2]);
 	RenderTexture(m_pd3dDevice,8+2*(size+8)	,size+32,size,size,loss_textures[2],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 	m_pSkyEffect->SetTexture(fadeTexture, inscatter_textures[0]);
-	RenderTexture(m_pd3dDevice,8			,size*2+32,size,size,inscatter_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
+	RenderTexture(m_pd3dDevice,8			,size*2+64,size,size,inscatter_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 	m_pSkyEffect->SetTexture(fadeTexture, inscatter_textures[1]);
-	RenderTexture(m_pd3dDevice,8+(size+8)	,size*2+32,size,size,inscatter_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
+	RenderTexture(m_pd3dDevice,8+(size+8)	,size*2+64,size,size,inscatter_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 	m_pSkyEffect->SetTexture(fadeTexture, inscatter_textures[2]);
-	RenderTexture(m_pd3dDevice,8+2*(size+8)	,size*2+32,size,size,inscatter_textures[2],m_pSkyEffect,m_hTechniqueFadeCrossSection);
+	RenderTexture(m_pd3dDevice,8+2*(size+8)	,size*2+64,size,size,inscatter_textures[2],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 	m_pSkyEffect->SetTexture(fadeTexture, sky_textures[0]);
-	RenderTexture(m_pd3dDevice,8			,size*3+32,size,size,sky_textures[0]);
+	RenderTexture(m_pd3dDevice,8			,size*3+96,size,size,sky_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture, sky_textures[1]);
-	RenderTexture(m_pd3dDevice,8+(size+8)	,size*3+32,size,size,sky_textures[1]);
+	RenderTexture(m_pd3dDevice,8+(size+8)	,size*3+96,size,size,sky_textures[1]);
 	m_pSkyEffect->SetTexture(fadeTexture, sky_textures[2]);
-	RenderTexture(m_pd3dDevice,8+2*(size+8)	,size*3+32,size,size,sky_textures[2]);
+	RenderTexture(m_pd3dDevice,8+2*(size+8)	,size*3+96,size,size,sky_textures[2]);
 	return hr;
 }
 
@@ -861,7 +867,7 @@ HRESULT SimulSkyRenderer::PrintAt(const float *p,const wchar_t *text,int screen_
 	D3DXMATRIX tmp1,tmp2,wvp;
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&wvp,&tmp1,&proj);
-	//D3DXMatrixTranspose(&wvp,&tmp2);
+
 
 	D3DXVECTOR4 pos(p[0],p[1],p[2],1.f);
 	D3DXVECTOR4 screen_pos;
@@ -922,24 +928,25 @@ HRESULT SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_hei
 
 
 	m_pd3dDevice->SetTexture(0,NULL);
-	Vertext *lines=new Vertext[8*2];
+	Vertext *lines=new Vertext[64*2];
 	static float d=10000.f;
 	float pi=3.1415926f;
-	for(int i=0;i<8;i++)
+	for(int i=0;i<64;i++)
 	{
-		float angle=(float)i/8.f*2.f*pi;
+		bool D=((8*(i/8))==i);
+		float angle=(float)i/64.f*2.f*pi;
 		lines[i*2].x=d*cos(angle); 
-		lines[i*2].y=0;  
+		lines[i*2].y=-d*(D?.025f:0.01f); 
 		lines[i*2].z=d*sin(angle);
-		lines[i*2].r=1.f;
-		lines[i*2].g=1.f;
+		lines[i*2].r=0.f;
+		lines[i*2].g=0.f;
 		lines[i*2].b=0.f;
 		lines[i*2].a=0.5f;
-		lines[i*2+1].x=d*cos(angle); 
-		lines[i*2+1].y=d*.1f;  
+		lines[i*2+1].x=d*cos(angle);
+		lines[i*2+1].y=d*(D?.025f:0.01f); 
 		lines[i*2+1].z=d*sin(angle);
 		lines[i*2+1].r=1.f;
-		lines[i*2+1].g=1.f;
+		lines[i*2+1].g=0.5f;
 		lines[i*2+1].b=0.f;
 		lines[i*2+1].a=0.5f;
 	}
@@ -952,7 +959,7 @@ HRESULT SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_hei
 	hr=m_pSkyEffect->BeginPass(0);
 
 
-	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,8,lines,(unsigned)sizeof(Vertext));
+	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,64,lines,(unsigned)sizeof(Vertext));
 	delete [] lines;
 	lines=new Vertext[65];
 	Vertext *moon_lines=new Vertext[65];
@@ -988,10 +995,14 @@ HRESULT SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_hei
 	hr=m_pSkyEffect->EndPass();
 	hr=m_pSkyEffect->End();
 
-	PrintAt(D3DXVECTOR4( 0.f,0.f, 1.f,1.f)	,L"N",screen_width,screen_height);
-	PrintAt(D3DXVECTOR4( 0.f,0.f,-1.f,1.f)	,L"S",screen_width,screen_height);
-	PrintAt(D3DXVECTOR4( 1.f,0.f, 0.f,1.f)	,L"E",screen_width,screen_height);
-	PrintAt(D3DXVECTOR4(-1.f,0.f, 0.f,1.f)	,L"W",screen_width,screen_height);
+	PrintAt(D3DXVECTOR4( 0.f, -0.05f, 1.f, 1.f)	,L"N",screen_width,screen_height);
+	PrintAt(D3DXVECTOR4( 0.7f,-0.05f, 0.7f,1.f)	,L"NE",screen_width,screen_height);
+	PrintAt(D3DXVECTOR4( 1.f, -0.05f, 0.f, 1.f)	,L"E",screen_width,screen_height);
+	PrintAt(D3DXVECTOR4( 0.7f,-0.05f,-.7f, 1.f)	,L"SE",screen_width,screen_height);
+	PrintAt(D3DXVECTOR4( 0.f, -0.05f,-1.f, 1.f)	,L"S",screen_width,screen_height);
+	PrintAt(D3DXVECTOR4(-1.f, -0.05f,-1.f, 1.f)	,L"SW",screen_width,screen_height);
+	PrintAt(D3DXVECTOR4(-1.f, -0.05f, 0.f, 1.f)	,L"W",screen_width,screen_height);
+	PrintAt(D3DXVECTOR4(-1.f, -0.05f, 1.f, 1.f)	,L"NW",screen_width,screen_height);
 	delete [] lines;
 	delete [] moon_lines;
 	return S_OK;

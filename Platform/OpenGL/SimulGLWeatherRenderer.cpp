@@ -26,6 +26,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
     if(scene_buffer)
         delete scene_buffer;
     scene_buffer=new RenderTexture(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+
     scene_buffer->InitColor_Tex(0,buffer_format);
     scene_buffer->InitDepth_RB();
 

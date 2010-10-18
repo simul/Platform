@@ -148,7 +148,7 @@ void SimulAtmosphericsRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX
 HRESULT SimulAtmosphericsRenderer::Render()
 {
 	HRESULT hr=S_OK;
-	PIXWrapper(0xFFFFFF00,"Render Atmospherics")
+	//PIXWrapper(0xFFFFFF00,"Render Atmospherics")
 	{
 #ifndef XBOX
 		m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);

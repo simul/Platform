@@ -19,7 +19,6 @@
 #ifdef XBOX
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("game:\\");
 	D3DFORMAT cloud_tex_format=D3DFMT_LIN_A4R4G4B4;
 	D3DFORMAT illumination_tex_format=D3DFMT_LIN_A8R8G8B8;
 	const bool big_endian=true;
@@ -36,8 +35,6 @@
 	#include <tchar.h>
 	#include <dxerr.h>
 	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("");
 	D3DFORMAT cloud_tex_format=D3DFMT_A8R8G8B8;
 	D3DFORMAT illumination_tex_format=D3DFMT_A8R8G8B8;
 	const bool big_endian=false;
@@ -121,12 +118,16 @@ class ExampleHumidityCallback:public simul::clouds::HumidityCallbackInterface
 public:
 	virtual float GetHumidityMultiplier(float ,float ,float z) const
 	{
-		static float base_layer=0.45f;
-		static float mul=0.65f;
-		static float default_=0.5f;
+		static float base_layer=0.25f;
+		static float transition=0.1f;
+		static float mul=0.9f;
+		static float default_=1.f;
 		if(z>base_layer)
 		{
-			return mul;
+			if(z>base_layer+transition)
+				return mul;
+			float i=(z-base_layer)/transition;
+			return default_*(1.f-i)+mul*i;
 		}
 		return default_;
 	}
@@ -244,7 +245,7 @@ SimulCloudRenderer::SimulCloudRenderer()
 	AddChild(cloudNode.get());
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 
-	//cloudNode->SetHumidityCallback(&hum_callback);
+	cloudNode->SetHumidityCallback(&hum_callback);
 	cloudNode->SetCacheNoise(true);
 	
 	cloudInterface->Generate();
@@ -838,6 +839,8 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 	if(rebuild_shaders)
 		InitEffects();
 	HRESULT hr=S_OK;
+	//D3DPERF_SetMarker(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS");
+
 	if(!noise_texture)
 	{
 		V_RETURN(CreateNoiseTexture());
@@ -915,7 +918,6 @@ static float effect_on_cloud=20.f;
 
 			// calculate sun occlusion for any external classes that need it:
 			float vis=cloudKeyframer->GetVisibility(view_pos,sun_dir);
-			sun_occlusion=1.f-vis;
 
 			if(y_vertical)
 				std::swap(sun_dir.y,sun_dir.z);
@@ -1481,14 +1483,6 @@ HRESULT SimulCloudRenderer::MakeCubemap()
 	return hr;
 }
 
-const char *SimulCloudRenderer::GetDebugText() const
-{
-	static char debug_text[256];
-	sprintf_s(debug_text,256,"%2.2g %2.2g %2.2g",
-		cloudKeyframer->GetTime0(),cloudKeyframer->GetTime1(),cloudKeyframer->GetTime2());
-	return debug_text;
-}
-
 void SimulCloudRenderer::SetCloudiness(float c)
 {
 	simul::clouds::CloudKeyframer::Keyframe *K=cloudKeyframer->GetNextModifiableKeyframe();
@@ -1679,6 +1673,7 @@ HRESULT SimulCloudRenderer::RenderLightVolume()
 	delete [] lines;
 	return S_OK;
 }
+
 HRESULT SimulCloudRenderer::RenderDistances()
 {
 	HRESULT hr=S_OK;
@@ -1761,12 +1756,6 @@ HRESULT SimulCloudRenderer::RenderDistances()
 	delete [] lines;
 	return S_OK;
 }
-
-simul::sky::OvercastCallback *SimulCloudRenderer::GetOvercastCallback()
-{
-	return cloudKeyframer.get();
-}
-
 void SimulCloudRenderer::SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
 {
 	sky_loss_texture_1=t1;
@@ -1798,4 +1787,12 @@ void SimulCloudRenderer::SetFadeMode(FadeMode f)
 	fade_mode=f;
 	rebuild_shaders=true;
 	InitEffects();
+}
+
+const TCHAR *SimulCloudRenderer::GetDebugText() const
+{
+	static TCHAR debug_text[256];
+	stprintf_s(debug_text,256,_T("SimulCloudRenderer: %2.2g %2.2g %2.2g"),
+		cloudKeyframer->GetTime0(),cloudKeyframer->GetTime1(),cloudKeyframer->GetTime2());
+	return debug_text;
 }

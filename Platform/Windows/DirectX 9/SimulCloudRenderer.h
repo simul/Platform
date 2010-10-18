@@ -66,7 +66,7 @@ public:
 	//! Return true if the camera is above the cloudbase altitude.
 	bool IsCameraAboveCloudBase() const;
 	float GetSunOcclusion() const;
-	const char *GetDebugText() const;
+	const TCHAR *GetDebugText() const;
 	//! Set the overall required cloudiness, or humidity.
 	void SetCloudiness(float h);
 	void SetEnableStorms(bool s);
@@ -76,9 +76,6 @@ public:
 	const float *GetCloudScales() const;
 	const float *GetCloudOffset() const;
 	void SetDetail(float d);
-	// a callback function that translates from daytime values to overcast settings. Used for
-	// clouds to tell sky when it is overcast.
-	simul::sky::OvercastCallback *GetOvercastCallback();
 	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2);
 	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2);
 	void SetFadeInterpolation(float f)

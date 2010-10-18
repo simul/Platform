@@ -443,11 +443,11 @@ HRESULT CanUse16BitFloats(IDirect3DDevice9 *device)
 HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,
 					  LPDIRECT3DBASETEXTURE9 texture,LPD3DXEFFECT eff,D3DXHANDLE tech)
 {
-	static bool disable=false;
-
-	if(disable)
-		return S_OK;
 	HRESULT hr=S_OK;
+	D3DXMATRIX v,w,p;
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&v);
+	m_pd3dDevice->GetTransform(D3DTS_WORLD,&w);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&p);
 	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 
@@ -493,10 +493,10 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	float width=(float)dx,height=(float)dy;
 	Vertext vertices[4] =
 	{
-		{x,			y,			1,	1, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
-		{x+width,	y,			1,	1, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
-		{x+width,	y+height,	1,	1, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
-		{x,			y+height,	1,	1, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
+		{x,			y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
+		{x+width,	y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
+		{x+width,	y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
+		{x,			y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
 	};
 #endif
 	D3DXMATRIX ident;
@@ -518,6 +518,8 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 			eff->SetTechnique(tech);
 		eff->Begin(&passes,0);
 		eff->BeginPass(0);
+		//D3DXHANDLE h=eff->GetParameterBySemantic(NULL,"TEXUNIT0");
+		//eff->SetTexture(h,texture);
 	}
 	else
 	{
@@ -538,5 +540,8 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 		eff->End();
 	}
 	SAFE_RELEASE(m_pBufferVertexDecl);
+	m_pd3dDevice->SetTransform(D3DTS_VIEW,&v);
+	m_pd3dDevice->SetTransform(D3DTS_WORLD,&w);
+	m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&p);
 	return S_OK;
 }

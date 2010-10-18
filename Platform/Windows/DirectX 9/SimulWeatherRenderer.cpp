@@ -14,14 +14,10 @@
 	#include <xgraphics.h>
 	#include <fstream>
 	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("game:\\");
 #else
 	#include <tchar.h>
 	#include <dxerr.h>
 	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("");
 #endif
 
 #include "CreateDX9Effect.h"
@@ -490,7 +486,7 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 	}
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
-	PIXEndNamedEvent();
+
 	return hr;
 }
 
@@ -535,7 +531,12 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 	if(renderDepthBufferCallback)
 		renderDepthBufferCallback->Render();
 	if(simulCloudRenderer&&layer1)
-		hr=simulCloudRenderer->Render();
+	{
+		PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
+		{
+			hr=simulCloudRenderer->Render();
+		}
+	}
 	//static float depth_start=1.f;
 	if(use_buffer)
 	{
@@ -766,18 +767,6 @@ SimulAtmosphericsRenderer *SimulWeatherRenderer::GetAtmosphericsRenderer()
 	return simulAtmosphericsRenderer.get();
 }
 
-const TCHAR *SimulWeatherRenderer::GetDebugText() const
-{
-	static TCHAR debug_text[256];
-	if(simulCloudRenderer)
-#ifdef UNICODE
-		swprintf_s(debug_text,256,L"%s",simulCloudRenderer->GetDebugText());
-#else
-		sprintf_s(debug_text,256,"%s",simulCloudRenderer->GetDebugText());
-#endif
-	return debug_text;
-}
-
 float SimulWeatherRenderer::GetTiming() const
 {
 	return timing;
@@ -786,4 +775,12 @@ float SimulWeatherRenderer::GetTiming() const
 float SimulWeatherRenderer::GetTotalBrightness() const
 {
 	return exposure*exposure_multiplier;
+}
+
+const TCHAR *SimulWeatherRenderer::GetDebugText() const
+{
+	static TCHAR debug_text[256];
+	if(simulCloudRenderer)
+		stprintf_s(debug_text,256,_T("%s"),simulCloudRenderer->GetDebugText());
+	return debug_text;
 }

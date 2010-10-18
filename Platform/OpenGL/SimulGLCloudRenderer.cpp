@@ -68,6 +68,62 @@ SimulGLCloudRenderer::SimulGLCloudRenderer()
 	cloudKeyframer->SetFillTexturesAsBlocks(true);
 }
 
+bool SimulGLCloudRenderer::Create()
+{
+	cloudKeyframer->SetOpenGL(true);
+	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
+	CreateNoiseTexture();
+
+	cloudInterface->SetHumidity(.5f);
+	cloudNode->SetSeparateSecondaryLight(true);
+	cloudNode->SetWrap(true);
+
+	cloudNode->SetRandomSeed(1);
+
+	cloudNode->SetGridLength(64);
+	cloudNode->SetGridWidth(64);
+	cloudNode->SetGridHeight(8);
+
+	cloudNode->SetCloudBaseZ(1000.f);
+	cloudNode->SetCloudWidth(30000.f);
+	cloudNode->SetCloudLength(30000.f);
+	cloudNode->SetCloudHeight(1500.f);
+
+	cloudNode->SetOpticalDensity(.4f);
+
+	cloudNode->SetExtinction(1.7f);
+	cloudNode->SetLightResponse(.5f);
+	cloudNode->SetSecondaryLightResponse(.5f);
+	cloudNode->SetAmbientLightResponse(.5f);
+
+	cloudInterface->SetNoiseResolution(8);
+	cloudInterface->SetNoiseOctaves(3);
+	cloudInterface->SetNoisePersistence(.7f);
+
+	cloudInterface->SetNoisePeriod(1.f);
+
+	cloudNode->Generate();
+	// Must use this next line to prevent the above properties from being overwritten by the keyframes
+	cloudKeyframer->InitKeyframesFromClouds();
+
+	helper->Initialize((unsigned)(120.f*detail),min_dist+(max_dist-min_dist)*detail);
+	unsigned el_grid=24;
+	unsigned az_grid=15;
+	helper->SetGrid(el_grid,az_grid);
+	helper->SetCurvedEarth(true);
+// lighting is done in CreateCloudTexture, so memory has now been allocated
+	unsigned cloud_mem=cloudNode->GetMemoryUsage();
+	std::cout<<"Cloud memory usage: "<<cloud_mem/1024<<"k"<<std::endl;
+	// Try to use Threading Building Blocks?
+#ifdef _MSC_VER
+	cloudInterface->SetUseTbb(true);
+#else
+	cloudInterface->SetUseTbb(false);
+#endif
+	return true;
+}
+
+
 bool SimulGLCloudRenderer::CreateNoiseTexture
 ()
 {
@@ -215,7 +271,7 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 	if(god_rays)
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	else
-		glBlendFunc(GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA);
+		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	simul::sky::float4 gl_fog;
 	if(default_fog)
 	{
@@ -444,7 +500,6 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects()
 	skyEccentricity_param	= glGetUniformLocation(clouds_program,"skyEccentricity");
 	mieRayleighRatio_param	= glGetUniformLocation(clouds_program,"mieRayleighRatio");
 
-
 	cloudDensity1_param		= glGetUniformLocation(clouds_program,"cloudDensity1");
 	cloudDensity2_param		= glGetUniformLocation(clouds_program,"cloudDensity2");
 	noiseSampler_param		= glGetUniformLocation(clouds_program,"noiseSampler");
@@ -481,58 +536,6 @@ void SimulGLCloudRenderer::SetCloudiness(float h)
 	{
 		K->cloudiness=h;
 	}
-}
-
-bool SimulGLCloudRenderer::Create()
-{
-	cloudKeyframer->SetOpenGL(true);
-	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
-	CreateNoiseTexture();
-
-	cloudNode->SetSeparateSecondaryLight(true);
-	cloudNode->SetWrap(true);
-
-	cloudNode->SetRandomSeed(1);
-
-	cloudNode->SetGridLength(64);
-	cloudNode->SetGridWidth(64);
-	cloudNode->SetGridHeight(8);
-
-	cloudNode->SetCloudBaseZ(1100.f);
-	cloudNode->SetCloudWidth(30000.f);
-	cloudNode->SetCloudLength(30000.f);
-	cloudNode->SetCloudHeight(1500.f);
-
-	cloudNode->SetOpticalDensity(.4f);
-
-	cloudNode->SetExtinction(.27f);
-	cloudNode->SetLightResponse(.5f);
-	cloudNode->SetSecondaryLightResponse(.5f);
-	cloudNode->SetAmbientLightResponse(.5f);
-
-	cloudInterface->SetNoiseResolution(8);
-	cloudInterface->SetNoiseOctaves(3);
-	cloudInterface->SetNoisePersistence(.7f);
-
-	cloudInterface->SetNoisePeriod(1.f);
-
-	cloudNode->Generate();
-
-	helper->Initialize((unsigned)(120.f*detail),min_dist+(max_dist-min_dist)*detail);
-	unsigned el_grid=24;
-	unsigned az_grid=15;
-	helper->SetGrid(el_grid,az_grid);
-	helper->SetCurvedEarth(true);
-// lighting is done in CreateCloudTexture, so memory has now been allocated
-	unsigned cloud_mem=cloudNode->GetMemoryUsage();
-	std::cout<<"Cloud memory usage: "<<cloud_mem/1024<<"k"<<std::endl;
-	// Try to use Threading Building Blocks?
-#ifdef _MSC_VER
-	cloudInterface->SetUseTbb(true);
-#else
-	cloudInterface->SetUseTbb(false);
-#endif
-	return true;
 }
 
 void SimulGLCloudRenderer::SetDetail(float d)
