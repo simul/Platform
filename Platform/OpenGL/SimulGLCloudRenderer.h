@@ -47,7 +47,6 @@ public:
 	//! Callback implementation for filling cloud texture.
 	void FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array);
 	void CycleTexturesForward();
-	void SetDetail(float d);
 	// a callback function that translates from daytime values to overcast settings. Used for
 	// clouds to tell sky when it is overcast.
 	simul::sky::OvercastCallback *GetOvercastCallback();
@@ -57,7 +56,6 @@ public:
 	//! Clear the sequence()
 	void New();
 protected:
-	float detail;
 	GLuint clouds_program;
 	GLuint clouds_vertex_shader,clouds_fragment_shader;
 

@@ -1,15 +1,12 @@
-#ifdef _MSC_VER
-#define NOMINMAX
-	#include <windows.h>
-#endif
+// Copyright (c) 2007-2010 Simul Software Ltd
+// All Rights Reserved.
+//
+// This source code is supplied under the terms of a license agreement or
+// nondisclosure agreement with Simul Software Ltd and may not 
+// be copied or disclosed except in accordance with the terms of that 
+// agreement.
 
-#ifdef WIN64
-#pragma message("WIN64")
-#undef WIN32
-#endif
-#ifdef WIN32
-#pragma message("WIN32")
-#endif
+// SimulGLCloudRenderer.cpp A renderer for 3d clouds.
 
 #include "Simul/Base/Timer.h"
 #include <stdio.h>
@@ -20,10 +17,6 @@
 
 #include "FreeImage.h"
 #include <fstream>
-#ifdef WIN64
-#pragma message("WIN64")
-#undef WIN32
-#endif
 
 #include "RenderTextureFBO.h"
 
@@ -40,14 +33,7 @@
 #include "Simul/LicenseKey.h"
 #include "LoadGLProgram.h"
 
-
-#ifdef WIN32
-#include "Simul/Platform/Windows/VisualStudioDebugOutput.h"
-#endif
-
 #include <algorithm>
-void printShaderInfoLog(GLuint obj);
-void printProgramInfoLog(GLuint obj);
 
 bool god_rays=false;
 using std::map;
@@ -56,14 +42,10 @@ using namespace std;
 float min_dist=180000.f;
 float max_dist=320000.f;
 
-simul::math::Vector3 next_sun_direction;
-unsigned char *cloud_data=NULL;
-
 SimulGLCloudRenderer::SimulGLCloudRenderer()
 	: texture_scale(1.f)
 	, scale(2.f)
 	, texture_effect(1.f)
-	, detail(1.f)
 {
 	cloudKeyframer->SetFillTexturesAsBlocks(true);
 }
@@ -73,59 +55,15 @@ bool SimulGLCloudRenderer::Create()
 	cloudKeyframer->SetOpenGL(true);
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 	CreateNoiseTexture();
-
-	cloudInterface->SetHumidity(.5f);
-	cloudNode->SetSeparateSecondaryLight(true);
-	cloudNode->SetWrap(true);
-
-	cloudNode->SetRandomSeed(1);
-
-	cloudNode->SetGridLength(64);
-	cloudNode->SetGridWidth(64);
-	cloudNode->SetGridHeight(8);
-
-	cloudNode->SetCloudBaseZ(1000.f);
-	cloudNode->SetCloudWidth(30000.f);
-	cloudNode->SetCloudLength(30000.f);
-	cloudNode->SetCloudHeight(1500.f);
-
-	cloudNode->SetOpticalDensity(.4f);
-
-	cloudNode->SetExtinction(1.7f);
-	cloudNode->SetLightResponse(.5f);
-	cloudNode->SetSecondaryLightResponse(.5f);
-	cloudNode->SetAmbientLightResponse(.5f);
-
-	cloudInterface->SetNoiseResolution(8);
-	cloudInterface->SetNoiseOctaves(3);
-	cloudInterface->SetNoisePersistence(.7f);
-
-	cloudInterface->SetNoisePeriod(1.f);
-
-	cloudNode->Generate();
+	cloudInterface->Generate();
 	// Must use this next line to prevent the above properties from being overwritten by the keyframes
+	cloudInterface->SetHumidity(0.5f);
 	cloudKeyframer->InitKeyframesFromClouds();
-
-	helper->Initialize((unsigned)(120.f*detail),min_dist+(max_dist-min_dist)*detail);
-	unsigned el_grid=24;
-	unsigned az_grid=15;
-	helper->SetGrid(el_grid,az_grid);
-	helper->SetCurvedEarth(true);
-// lighting is done in CreateCloudTexture, so memory has now been allocated
-	unsigned cloud_mem=cloudNode->GetMemoryUsage();
-	std::cout<<"Cloud memory usage: "<<cloud_mem/1024<<"k"<<std::endl;
-	// Try to use Threading Building Blocks?
-#ifdef _MSC_VER
-	cloudInterface->SetUseTbb(true);
-#else
-	cloudInterface->SetUseTbb(false);
-#endif
 	return true;
 }
 
 
-bool SimulGLCloudRenderer::CreateNoiseTexture
-()
+bool SimulGLCloudRenderer::CreateNoiseTexture()
 {
 	int size=512;
 
@@ -205,6 +143,10 @@ void SimulGLCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_
 		}
 		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
 	}
+// lighting is done in CreateCloudTexture, so memory has now been allocated
+	unsigned cloud_mem=cloudNode->GetMemoryUsage();
+	std::cout<<"Cloud memory usage: "<<cloud_mem/1024<<"k"<<std::endl;
+
 	delete [] tex;
 }
 
@@ -535,15 +477,6 @@ void SimulGLCloudRenderer::SetCloudiness(float h)
 	if(K)
 	{
 		K->cloudiness=h;
-	}
-}
-
-void SimulGLCloudRenderer::SetDetail(float d)
-{
-	if(d!=detail)
-	{
-		detail=d;
-		helper->Initialize((unsigned)(120.f*detail),min_dist+(max_dist-min_dist)*detail);
 	}
 }
 

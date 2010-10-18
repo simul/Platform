@@ -75,13 +75,9 @@ public:
 	LPDIRECT3DVOLUMETEXTURE9 *GetCloudTextures();
 	const float *GetCloudScales() const;
 	const float *GetCloudOffset() const;
-	void SetDetail(float d);
 	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2);
 	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2);
-	void SetFadeInterpolation(float f)
-	{
-		fade_interp=f;
-	}
+
 	//! Adjust the noise texture
 	void SetNoiseTextureProperties(int size,int freq,int octaves,float persistence);
 	//! Fade mode: 0=CPU, 1=Vertex, 2=Fragment
@@ -164,7 +160,6 @@ protected:
 	FadeMode fade_mode;
 	bool y_vertical;
 	float sun_occlusion;
-	float detail;
 	simul::sound::fmod::NodeSound *sound;
 	unsigned illumination_texel_index[4];
 	float timing;
@@ -250,8 +245,6 @@ protected:
 	bool enable_lightning;
 
 	float last_time;
-	float fade_interp;
-
 	int noise_texture_size;
 	int noise_texture_frequency;
 	int texture_octaves;

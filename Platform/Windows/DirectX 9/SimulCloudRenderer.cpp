@@ -9,9 +9,6 @@
 // SimulCloudRenderer.cpp A renderer for 3d clouds.
 
 #include "SimulCloudRenderer.h"
-#ifdef DO_SOUND
-#include "Simul/Sound/FMOD/NodeSound.h"
-#endif
 #include "Simul/Base/Timer.h"
 #include <fstream>
 #include <math.h>
@@ -50,7 +47,7 @@
 								(unsigned)0xFF000000};
 	static D3DPOOL default_d3d_pool=D3DPOOL_MANAGED;
 #endif
-float thunder_volume=0.f;
+
 #include "CreateDX9Effect.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/ThunderCloudNode.h"
@@ -64,28 +61,9 @@ float thunder_volume=0.f;
 #include "Simul/LicenseKey.h"
 #include "Macros.h"
 #include "Resources.h"
-/*
-static float lerp(float f,float l,float h)
-{
-	return l+((h-l)*f);
-}
-*/
-#ifndef SAFE_RELEASE
-#define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
-#endif
 
-#ifndef V_RETURN
-#define V_RETURN(x)    { hr = x; if( FAILED(hr) ) { return hr; } }
-#endif
 
-typedef std::basic_string<TCHAR> tstring;
-simul::math::Vector3 wind_vector(100,0,100);
-simul::math::Vector3 next_sun_direction(0,.7f,.7f);
 #define MAX_VERTICES (12000)
-
-
-float min_dist=180000.f;
-float max_dist=320000.f;
 
 static void SetBits8()
 {
@@ -195,7 +173,8 @@ ExampleHumidityCallback hum_callback;
 MushroomHumidityCallback mushroom_callback;
 #endif
 SimulCloudRenderer::SimulCloudRenderer()
-	:m_pd3dDevice(NULL)
+	:simul::clouds::BaseCloudRenderer()
+	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pLightningVtxDecl(NULL)
 	,m_pHudVertexDecl(NULL)
@@ -215,13 +194,8 @@ SimulCloudRenderer::SimulCloudRenderer()
 	,enable_lightning(false)
 	,rebuild_shaders(true)
 	,sun_occlusion(0.f)
-#ifdef DO_SOUND
-	,sound(NULL)
-#endif
 	,last_time(0.f)
 	,timing(0.f)
-	,detail(0.75f)
-	,fade_interp(0.f)
 	,noise_texture_frequency(8)
 	,texture_octaves(7)
 	,texture_persistence(0.79f)
@@ -240,13 +214,10 @@ SimulCloudRenderer::SimulCloudRenderer()
 	D3DXMatrixIdentity(&proj);
 	for(int i=0;i<3;i++)
 		cloud_textures[i]=NULL;
-	
-	cloudNode->SetLightExtend(0.5f);
-	AddChild(cloudNode.get());
-	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 
 	cloudNode->SetHumidityCallback(&hum_callback);
 	cloudNode->SetCacheNoise(true);
+	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 	
 	cloudInterface->Generate();
 
@@ -254,32 +225,13 @@ SimulCloudRenderer::SimulCloudRenderer()
 	cloudKeyframer->SetUse16Bit(false);
 // 30 game-minutes for interpolation:
 	cloudKeyframer->SetInterpStepTime(1.f/24.f/2.f);
-
 	helper->SetYVertical(y_vertical);
-	helper->Initialize((unsigned)(160.f*detail),min_dist+(max_dist-min_dist)*detail);
-
-	helper->SetCurvedEarth(true);
-	helper->SetAdjustCurvature(false);
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 	illumination_texel_index[0]=illumination_texel_index[1]=illumination_texel_index[2]=illumination_texel_index[3]=0;
-
-#ifdef DO_SOUND
-	sound=new simul::sound::fmod::NodeSound();
-	sound->Init("Media/Sound/IntelDemo.fev");
-	int ident=sound->GetOrAddSound("rain");
-	sound->StartSound(ident,0);
-	sound->SetSoundVolume(ident,0.f);
-#endif
 
 	// A noise filter improves the shape of the clouds:
 	cloudNode->GetNoiseInterface()->SetFilter(&circle_f);
 
-	// Try to use Threading Building Blocks?
-#ifdef _MSC_VER
-	cloudInterface->SetUseTbb(true);
-#else
-	cloudInterface->SetUseTbb(false);
-#endif
 }
 
 void SimulCloudRenderer::SetSkyInterface(simul::sky::BaseSkyInterface *si)
@@ -287,6 +239,7 @@ void SimulCloudRenderer::SetSkyInterface(simul::sky::BaseSkyInterface *si)
 	skyInterface=si;
 	cloudKeyframer->SetSkyInterface(si);
 }
+
 void SimulCloudRenderer::EnableFilter(bool f)
 {
 	if(f)
@@ -488,10 +441,6 @@ HRESULT SimulCloudRenderer::InvalidateDeviceObjects()
 HRESULT SimulCloudRenderer::Destroy()
 {
 	HRESULT hr=InvalidateDeviceObjects();
-#ifdef DO_SOUND
-	delete sound;
-	sound=NULL;
-#endif
 	return hr;
 }
 
@@ -714,14 +663,6 @@ HRESULT SimulCloudRenderer::UpdateIlluminationTexture(float dt)
 		{
 			index=0;
 			cloudNode->StartSource(i);
-			//float x1[3],x2[3],br1,br2;
-			//cloudNode->GetSegment(0,0,0,br1,br2,x1,x2);
-#ifdef DO_SOUND
-			char sound_name[20];
-			sprintf(sound_name,"thunderclap%d",i);
-			int ident=sound->GetOrAddSound(sound_name);
-			sound->StartSound(ident,x1);
-#endif
 		}
 	}
 	hr=illumination_texture->UnlockBox(0);
@@ -734,6 +675,9 @@ void SimulCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_y,
 		return;
 	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z)
 		return;
+// lighting is done in CreateCloudTexture, so memory has now been allocated
+	unsigned cloud_mem=cloudNode->GetMemoryUsage();
+	std::cout<<"Cloud memory usage: "<<cloud_mem/1024<<"k"<<std::endl;
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
@@ -758,6 +702,7 @@ void SimulCloudRenderer::FillCloudTextureSequentially(int texture_index,int texe
 	memcpy(ptr,uint32_array,num_texels*sizeof(unsigned));
 	cloud_textures[texture_index]->UnlockBox(0);
 }
+
 void SimulCloudRenderer::CycleTexturesForward()
 {
 	std::swap(cloud_textures[0],cloud_textures[1]);
@@ -785,11 +730,6 @@ void SimulCloudRenderer::Update(float dt)
 	cloudNode->Accept(tsv);
 	if(enable_lightning)
 		UpdateIlluminationTexture(dt);
-#ifdef DO_SOUND
-	int ident=sound->GetOrAddSound("rain");
-	sound->SetSoundVolume(ident,precipitation);
-	sound->Update(NULL,dt);
-#endif
 }
 
 void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
@@ -917,7 +857,7 @@ static float effect_on_cloud=20.f;
 			simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 
 			// calculate sun occlusion for any external classes that need it:
-			float vis=cloudKeyframer->GetVisibility(view_pos,sun_dir);
+//		float vis=cloudKeyframer->GetVisibility(view_pos,sun_dir);
 
 			if(y_vertical)
 				std::swap(sun_dir.y,sun_dir.z);
@@ -1523,15 +1463,6 @@ const float *SimulCloudRenderer::GetCloudOffset() const
 	cloudInterface->GetExtents(X1,X2);
 	offset+=X1;
 	return offset.FloatPointer(0);
-} 
-
-void SimulCloudRenderer::SetDetail(float d)
-{
-	if(d!=detail)
-	{
-		detail=d;
-		helper->Initialize((unsigned)(160.f*detail),min_dist+(max_dist-min_dist)*detail);
-	}
 }
 
 HRESULT SimulCloudRenderer::RenderCrossSections(int width)
