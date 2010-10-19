@@ -43,7 +43,8 @@ float min_dist=180000.f;
 float max_dist=320000.f;
 
 SimulGLCloudRenderer::SimulGLCloudRenderer()
-	: texture_scale(1.f)
+	: detail(1.f)
+	, texture_scale(1.f)
 	, scale(2.f)
 	, texture_effect(1.f)
 {
@@ -192,7 +193,7 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 		helper->DisablePrecalculatedGamma();
 		gamma=1.f;
 	}
-	glPushAttrib(GL_ENABLE_BIT);
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	using namespace simul::clouds;
 	cloudKeyframer->Update(skyInterface->GetDaytime());
@@ -225,6 +226,7 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_ZERO,GL_ONE_MINUS_SRC_ALPHA);
 
+	glDisable(GL_STENCIL);
 	glDepthMask(GL_FALSE);
 	// disable alpha testing - if we enable this, the usual reference alpha is reversed because
 	// the shaders return transparency, not opacity, in the alpha channel.
@@ -316,7 +318,7 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 	// Here we make the helper calculate loss and inscatter due to atmospherics.
 	// This is an approach that calculates per-vertex atmospheric values that are then
 	// passed to the shader.
-	// The alternative is to genererate fade textures in the SkyRenderer,
+	// The alternative is to generate fade textures in the SkyRenderer,
 	// then lookup those textures in the cloud shader.
 	helper->CalcInscatterFactors(skyInterface,fadeTableInterface,god_rays);
 	simul::sky::float4 sunlight1=skyInterface->GetLocalIrradiance(X1.z*.001f);
@@ -396,7 +398,7 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 				// Here we're passing sunlight values per-vertex, loss and inscatter
 				// The per-vertex sunlight allows different altitudes of cloud to have different
 				// sunlight colour - good for dawn/sunset.
-				// The per-vertex loss and inscatter is cheap for the pixel shader as it \
+				// The per-vertex loss and inscatter is cheap for the pixel shader as it
 				// then doesn't need fade-texture lookups.
 				glMultiTexCoord3f(GL_TEXTURE3,sunlight.x,sunlight.y,sunlight.z);
 				glMultiTexCoord3f(GL_TEXTURE4,loss.x,loss.y,loss.z);

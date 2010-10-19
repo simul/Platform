@@ -47,9 +47,9 @@ using std::map;
 
 
 SimulGL2DCloudRenderer::SimulGL2DCloudRenderer()
-	: texture_effect(1.f)
-	, texture_scale(1.f)
+	: texture_scale(1.f)
 	, scale(2.f)
+	, texture_effect(1.f)
 	, cloud_data(NULL)
 {
 	cloudKeyframer->SetFillTexturesAsBlocks(true);
@@ -151,7 +151,7 @@ void SimulGL2DCloudRenderer::FillCloudTexture(int texture_index,int texel_index,
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[texture_index]);
 	unsigned y=(texel_index)/tex_width;
 	texel_index+=num_texels;
-	for(cti;cti<(unsigned)texel_index;)
+	for(;cti<(unsigned)texel_index;)
 	{
 		unsigned x=(cti)-y*tex_width;
 		if(x>=tex_width)

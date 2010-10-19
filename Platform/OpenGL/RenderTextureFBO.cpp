@@ -210,7 +210,7 @@ void RenderTexture::DrawQuad(int w,int h)
 void RenderTexture::DeactivateAndRender(bool blend)
 {
 	Deactivate();
-	glPushAttrib(GL_ENABLE_BIT);
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
     SetOrthoProjection(main_viewport[2],main_viewport[3]);
 
     // bind textures

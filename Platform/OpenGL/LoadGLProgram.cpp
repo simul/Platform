@@ -24,7 +24,7 @@ void printShaderInfoLog(GLuint obj)
         glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
 		std::string info_log=infoLog;
 
-		size_t pos=info_log.find_first_of('(');
+		//size_t pos=info_log.find_first_of('(');
 		info_log=info_log.substr(1,info_log.length()-1);
 		
 		std::cout<<std::endl<<last_filename.c_str()<<info_log.c_str()<<std::endl;

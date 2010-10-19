@@ -89,7 +89,7 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 
 void SimulGLWeatherRenderer::RenderSky(bool buffered)
 {
-	glPushAttrib(GL_ENABLE_BIT);
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glMatrixMode(GL_MODELVIEW);
@@ -120,7 +120,7 @@ void SimulGLWeatherRenderer::RenderSky(bool buffered)
 
 void SimulGLWeatherRenderer::RenderClouds(bool buffered,bool depth_testing,bool default_fog)
 {
-	glPushAttrib(GL_ENABLE_BIT);
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glMatrixMode(GL_MODELVIEW);

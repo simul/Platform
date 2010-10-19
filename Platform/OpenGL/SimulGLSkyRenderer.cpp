@@ -455,9 +455,10 @@ bool SimulGLSkyRenderer::RestoreDeviceObjects()
 
 
 	skyKeyframer->SetCallback(this);
-
+#ifdef _MSC_VER
 	moon_texture=(void*)LoadGLImage("textures/Moon.png",GL_CLAMP);
 	SetPlanetImage(moon_index,moon_texture);
+#endif
 	glUseProgram(NULL);
 	return true;
 }
