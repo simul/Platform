@@ -274,7 +274,7 @@ static float ll=0.05f;
 	view_km*=0.001f;
 	helper->MakeGeometry(ci);
 	static float noise_angle=.8;
-	helper->Set2DNoiseTexturing(noise_angle,2.f);
+	helper->Set2DNoiseTexturing(noise_angle,2.f,1.f);
 	helper->CalcInscatterFactors(cloudInterface,skyInterface,fadeTableInterface,0.f);
 	float image_scale=2000.f+texture_scale*20000.f;
 	simul::math::Vector3 wind_offset=cloudNode->GetWindOffset();

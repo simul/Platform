@@ -39,8 +39,37 @@ bool god_rays=false;
 using std::map;
 using namespace std;
 
-float min_dist=180000.f;
-float max_dist=320000.f;
+class CumulonimbusHumidityCallback:public simul::clouds::HumidityCallbackInterface
+{
+public:
+	virtual float GetHumidityMultiplier(float x,float y,float z) const
+	{
+		static float base_layer=0.125f;
+		static float anvil_radius=0.6f;
+
+		float val=1.f;
+#if 1
+		float R=0.5f;
+#if 1
+		if(z>base_layer)
+			R*=anvil_radius*z;
+#endif
+		float dx=x-0.5f;
+		float dy=y-0.5f;
+		float dr=sqrt(dx*dx+dy*dy);
+		if(dr>0.7f*R)
+			val=(1.f-dr/R)/0.3f;
+		else if(dr>R)
+			val=0;
+#endif
+		static float mul=1.f;
+		static float cutoff=0.1f;
+		if(z<cutoff)
+			return val;
+		return mul*val;
+	}
+};
+CumulonimbusHumidityCallback cb;
 
 SimulGLCloudRenderer::SimulGLCloudRenderer()
 	: detail(1.f)
@@ -55,6 +84,11 @@ bool SimulGLCloudRenderer::Create()
 {
 	cloudKeyframer->SetOpenGL(true);
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
+	//cloudNode->SetHumidityCallback(&cb);
+	cloudInterface->SetCloudWidth(10000.f);
+	cloudInterface->SetCloudLength(10000.f);
+	cloudInterface->SetCloudHeight(6000.f);
+	cloudInterface->SetWrap(false);
 	CreateNoiseTexture();
 	cloudInterface->Generate();
 	// Must use this next line to prevent the above properties from being overwritten by the keyframes
