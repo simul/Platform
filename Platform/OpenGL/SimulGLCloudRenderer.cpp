@@ -72,8 +72,7 @@ public:
 CumulonimbusHumidityCallback cb;
 
 SimulGLCloudRenderer::SimulGLCloudRenderer()
-	: detail(1.f)
-	, texture_scale(1.f)
+	: texture_scale(1.f)
 	, scale(2.f)
 	, texture_effect(1.f)
 {
