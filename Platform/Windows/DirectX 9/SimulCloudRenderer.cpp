@@ -191,15 +191,9 @@ SimulCloudRenderer::SimulCloudRenderer()
 	,unitSphereIndexBuffer(NULL)
 	,lightning_vertices(NULL)
 	,y_vertical(true)
-	,enable_lightning(false)
 	,rebuild_shaders(true)
 	,sun_occlusion(0.f)
-	,last_time(0.f)
 	,timing(0.f)
-	,noise_texture_frequency(8)
-	,texture_octaves(7)
-	,texture_persistence(0.79f)
-	,noise_texture_size(1024)
 	,fade_mode(FRAGMENT)
 	,vertices(NULL)
 	,cpu_fade_vertices(NULL)
@@ -605,7 +599,7 @@ float t[4];
 float u[4];
 HRESULT SimulCloudRenderer::UpdateIlluminationTexture(float dt)
 {
-	cloudNode->SetLightningCentreX(simul::math::Vector3(cam_pos.x,cam_pos.z,cam_pos.y));
+	lightningRenderInterface->SetLightningCentreX(simul::math::Vector3(cam_pos.x,cam_pos.z,cam_pos.y));
 	HRESULT hr=S_OK;
 	// RGBA bit-shift is 12,8,4,0
 	simul::clouds::TextureGenerator::SetBits((unsigned)255<<16,(unsigned)255<<8,(unsigned)255<<0,(unsigned)255<<24,4,false);
@@ -614,11 +608,11 @@ HRESULT SimulCloudRenderer::UpdateIlluminationTexture(float dt)
 	unsigned l=64;
 	unsigned h=8;
 	simul::math::Vector3 X1,X2,DX;
-	DX.Define(cloudNode->GetLightningZoneSize(),
-		cloudNode->GetLightningZoneSize(),
-		cloudNode->GetCloudBaseZ()+cloudNode->GetCloudHeight());
-	X1=cloudNode->GetLightningCentreX()-0.5f*DX;
-	X2=cloudNode->GetLightningCentreX()+0.5f*DX;
+	DX.Define(lightningRenderInterface->GetLightningZoneSize(),
+		lightningRenderInterface->GetLightningZoneSize(),
+		cloudInterface->GetCloudBaseZ()+cloudInterface->GetCloudHeight());
+	X1=lightningRenderInterface->GetLightningCentreX()-0.5f*DX;
+	X2=lightningRenderInterface->GetLightningCentreX()+0.5f*DX;
 	X1.z=0;
 	unsigned max_texels=w*l*h;
 	D3DLOCKED_BOX lockedBox={0};
@@ -633,9 +627,9 @@ HRESULT SimulCloudRenderer::UpdateIlluminationTexture(float dt)
 	for(unsigned i=0;i<4;i++)
 	{
 		//thunder_volume[i]*=0.95f;
-		if(cloudNode->GetSourceStarted(i))
+		if(lightningRenderInterface->GetSourceStarted(i))
 		{
-			u[i]=cloudNode->GetLightSourceProgress(i);
+			u[i]=lightningRenderInterface->GetLightSourceProgress(i);
 			if(u[i]<0.5f)
 			{
 				static float ff=0.05f;
@@ -645,13 +639,13 @@ HRESULT SimulCloudRenderer::UpdateIlluminationTexture(float dt)
 		}
 		else
 			u[i]=0;
-		if(!cloudNode->CanStartSource(i))
+		if(!lightningRenderInterface->CanStartSource(i))
 			continue;
 		t[i]=(float)illumination_texel_index[i]/(float)(max_texels);
 		unsigned &index=illumination_texel_index[i];
 		
 		simul::clouds::TextureGenerator::PartialMake3DLightningTexture(
-			cloudNode.get(),i,
+			lightningRenderInterface,i,
 			w,l,h,
 			X1,X2,
 			index,
@@ -662,7 +656,7 @@ HRESULT SimulCloudRenderer::UpdateIlluminationTexture(float dt)
 		if(enable_lightning&&index>=max_texels)
 		{
 			index=0;
-			cloudNode->StartSource(i);
+			lightningRenderInterface->StartSource(i);
 		}
 	}
 	hr=illumination_texture->UnlockBox(0);
@@ -899,8 +893,8 @@ static float effect_on_cloud=20.f;
 				simul::sky::float4 lightning_multipliers;
 				for(unsigned i=0;i<4;i++)
 				{
-					if(i<cloudNode->GetNumLightSources())
-						lightning_multipliers[i]=bb*cloudNode->GetLightSourceBrightness(i);
+					if(i<lightningRenderInterface->GetNumLightSources())
+						lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(i);
 					else lightning_multipliers[i]=0;
 				}
 				
@@ -910,14 +904,14 @@ static float effect_on_cloud=20.f;
 				m_pCloudEffect->SetVector	(lightningColour		,&lightning_colour);
 
 				simul::math::Vector3 light_X1,light_X2,light_DX;
-				light_DX.Define(cloudNode->GetLightningZoneSize(),
-					cloudNode->GetLightningZoneSize(),
+				light_DX.Define(lightningRenderInterface->GetLightningZoneSize(),
+					lightningRenderInterface->GetLightningZoneSize(),
 					cloudNode->GetCloudBaseZ()+cloudNode->GetCloudHeight());
 
-				light_X1=cloudNode->GetLightningCentreX();
+				light_X1=lightningRenderInterface->GetLightningCentreX();
 				light_X1-=0.5f*light_DX;
 				light_X1.z=0;
-				light_X2=cloudNode->GetLightningCentreX();
+				light_X2=lightningRenderInterface->GetLightningCentreX();
 				light_X2+=0.5f*light_DX;
 				light_X2.z=light_DX.z;
 
@@ -1102,7 +1096,7 @@ HRESULT SimulCloudRenderer::RenderLightning()
 	if(!enable_lightning)
 		return S_OK;
 	using namespace simul::clouds;
-	LightningRenderInterface *lri=cloudNode.get();
+	LightningRenderInterface *lri=dynamic_cast<LightningRenderInterface*>(cloudNode.get());
 
 	if(!lightning_vertices)
 		lightning_vertices=new PosTexVert_t[4500];
@@ -1422,21 +1416,6 @@ HRESULT SimulCloudRenderer::MakeCubemap()
 		pOldDepthSurface->Release();
 	return hr;
 }
-
-void SimulCloudRenderer::SetCloudiness(float c)
-{
-	simul::clouds::CloudKeyframer::Keyframe *K=cloudKeyframer->GetNextModifiableKeyframe();
-	if(K)
-		K->cloudiness=c;
-}
-
-void SimulCloudRenderer::SetEnableStorms(bool s)
-{
-	enable_lightning=s;
-	simul::clouds::LightningRenderInterface *lri=cloudNode.get();
-	lri->SetLightningEnabled(s);
-}
-
 float SimulCloudRenderer::GetTiming() const
 {
 	return timing;

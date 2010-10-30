@@ -78,11 +78,7 @@ public:
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
 protected:
 	bool enabled;
-	simul::clouds::CloudInterface *cloudInterface;
-	simul::sky::SkyInterface *skyInterface;
-	simul::sky::FadeTableInterface *fadeTableInterface;
 	simul::base::SmartPtr<simul::clouds::Cloud2DGeometryHelper> helper;
-	simul::base::SmartPtr<simul::clouds::CloudKeyframer> cloudKeyframer;
 
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	m_pVtxDecl;
@@ -118,8 +114,5 @@ protected:
 	HRESULT CreateNoiseTexture();
 	HRESULT CreateImageTexture();
 	HRESULT MakeCubemap(); // not ready yet
-	simul::base::SmartPtr<simul::clouds::FastCloudNode> cloudNode;
 	float texture_scale;
-	unsigned cloud_texel_index;
-	bool texture_complete;
 };

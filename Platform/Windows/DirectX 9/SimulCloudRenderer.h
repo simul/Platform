@@ -67,9 +67,6 @@ public:
 	bool IsCameraAboveCloudBase() const;
 	float GetSunOcclusion() const;
 	const TCHAR *GetDebugText() const;
-	//! Set the overall required cloudiness, or humidity.
-	void SetCloudiness(float h);
-	void SetEnableStorms(bool s);
 	float GetTiming() const;
 	//! Get the list of three textures used for cloud rendering.
 	LPDIRECT3DVOLUMETEXTURE9 *GetCloudTextures();
@@ -242,11 +239,4 @@ protected:
 	HRESULT CreateNoiseTexture(bool override_file=false);
 	HRESULT CreateCloudEffect();
 	HRESULT MakeCubemap(); // not ready yet
-	bool enable_lightning;
-
-	float last_time;
-	int noise_texture_size;
-	int noise_texture_frequency;
-	int texture_octaves;
-	float texture_persistence;
 };

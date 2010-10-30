@@ -59,8 +59,6 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	m_pLDRRenderTarget(NULL),
 	m_pHDRRenderTarget(NULL),
 	m_pBufferDepthSurface(NULL),
-	layer1(true),
-	layer2(true),
 	BufferWidth(width),
 	BufferHeight(height),
 	timing(0.f),
@@ -146,15 +144,15 @@ HRESULT SimulWeatherRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	HRESULT hr;
 	if(!m_pTonemapEffect)
 		V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,"gamma.fx"));
-	GammaTechnique=m_pTonemapEffect->GetTechniqueByName("simul_gamma");
-	DirectTechnique=m_pTonemapEffect->GetTechniqueByName("simul_direct");
+	GammaTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_gamma");
+	DirectTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
 	SkyToScreenTechnique=m_pTonemapEffect->GetTechniqueByName("simul_sky_to_screen");
 	
-	CloudBlendTechnique=m_pTonemapEffect->GetTechniqueByName("simul_cloud_blend");
+	CloudBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_cloud_blend");
 
-	m_hExposure=m_pTonemapEffect->GetParameterByName(NULL,"exposure");
-	m_hGamma=m_pTonemapEffect->GetParameterByName(NULL,"gamma");
-	bufferTexture=m_pTonemapEffect->GetParameterByName(NULL,"hdrTexture");
+	m_hExposure			=m_pTonemapEffect->GetParameterByName(NULL,"exposure");
+	m_hGamma			=m_pTonemapEffect->GetParameterByName(NULL,"gamma");
+	bufferTexture		=m_pTonemapEffect->GetParameterByName(NULL,"hdrTexture");
 	V_RETURN(CreateBuffers());
 	if(simulSkyRenderer)
 		V_RETURN(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
@@ -552,17 +550,6 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 	return hr;
-}
-
-void SimulWeatherRenderer::EnableSky(bool s)
-{
-	show_sky=s;
-}
-
-void SimulWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
-{
-	layer1=clouds3d;
-	layer2=clouds2d;
 }
 
 HRESULT SimulWeatherRenderer::RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture,int width,int height,

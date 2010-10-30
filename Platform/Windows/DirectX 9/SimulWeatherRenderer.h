@@ -48,18 +48,6 @@ public:
 	HRESULT RenderPrecipitation();
 	//! Call this to draw sun flares etc. after geometry.
 	HRESULT RenderFlares();
-	//! Enable or disable the sky.
-	void EnableSky(bool s);
-	//! Enable or disable the 3d and 2d cloud layers.
-	void EnableLayers(bool clouds3d,bool clouds2d);
-	bool IsCloudLayer1Visible() const
-	{
-		return layer1;
-	}
-	bool IsCloudLayer2Visible() const
-	{
-		return layer2;
-	}
 	//! Perform the once-per-frame time update.
 	void Update(float dt);
 	//! Apply the world, view and projection matrices, once per frame.
@@ -128,11 +116,9 @@ protected:
 	float							exposure;
 	float							gamma;
 	LPDIRECT3DSURFACE9 MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture);
-	bool layer1,layer2;
 	bool use_buffer;
 	bool tone_map;
 	float timing;
 	float exposure_multiplier;
 	bool show_rain;
-	bool show_sky;
 };

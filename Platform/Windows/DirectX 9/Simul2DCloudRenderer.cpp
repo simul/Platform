@@ -55,15 +55,6 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/LicenseKey.h"
-//
-#ifndef SAFE_RELEASE
-#define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
-#endif
-#ifndef V_RETURN
-#define V_RETURN(x)    { hr = x; if( FAILED(hr) ) { return hr; } }
-#endif
-
-typedef std::basic_string<TCHAR> tstring;
 
 struct float2
 {
@@ -108,10 +99,6 @@ struct PosTexVert_t
 
 #define MAX_VERTICES (500)
 
-/*static void SetBits4()
-{
-	simul::clouds::TextureGenerator::SetBits(bits[0],bits[1],bits[2],bits[3],2,big_endian);
-}*/
 static void SetBits8()
 {
 	simul::clouds::TextureGenerator::SetBits(bits8[0],bits8[1],bits8[2],bits8[3],(unsigned)4,big_endian);
@@ -119,18 +106,14 @@ static void SetBits8()
 
 
 Simul2DCloudRenderer::Simul2DCloudRenderer() :
-	skyInterface(NULL),
-	fadeTableInterface(NULL),
-	cloudInterface(NULL),
+	BaseCloudRenderer(false),
 	m_pd3dDevice(NULL),
 	m_pVtxDecl(NULL),
 	m_pCloudEffect(NULL),
 	noise_texture(NULL),
 	image_texture(NULL),
 	own_image_texture(true),
-	cloud_texel_index(0),
 	texture_scale(0.25f),
-	texture_complete(false),
 	enabled(true)
 {
 	D3DXMatrixIdentity(&world);
@@ -143,7 +126,6 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	test=new simul::base::Referenced;
 	test=NULL;
 
-	cloudNode=new simul::clouds::FastCloudNode;
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 	cloudInterface=cloudNode.get();
 	
@@ -154,21 +136,21 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	cloudInterface->SetGridWidth(128);
 	cloudInterface->SetGridHeight(2);
 
-	cloudInterface->SetCloudBaseZ(20000.f);
+	cloudInterface->SetCloudBaseZ(12000.f);
 	cloudInterface->SetCloudWidth(120000.f);
 	cloudInterface->SetCloudLength(120000.f);
 	cloudInterface->SetCloudHeight(1200.f);
 
-	cloudInterface->SetFractalAmplitude(20.f);
+	cloudInterface->SetFractalAmplitude(2.f);
 	cloudInterface->SetFractalWavelength(100.f);
 
 	cloudInterface->SetOpticalDensity(1.5f);
-	cloudInterface->SetHumidity(.45f);
+	cloudInterface->SetHumidity(.65f);
 
-	cloudInterface->SetExtinction(2.9f);
-	cloudInterface->SetLightResponse(1.f);
-	cloudInterface->SetSecondaryLightResponse(1.f);
-	cloudInterface->SetAmbientLightResponse(1.f);
+	cloudInterface->SetExtinction(1.9f);
+	cloudInterface->SetLightResponse(0.5f);
+	cloudInterface->SetSecondaryLightResponse(0.5f);
+	cloudInterface->SetAmbientLightResponse(0.5f);
 
 	cloudInterface->SetNoiseResolution(8);
 	cloudInterface->SetNoiseOctaves(5);
@@ -177,11 +159,14 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 
 	cloudInterface->SetSelfShadowScale(0.1f);
 	
-	cloudNode->SetDiffusivity(.5f);
-	cloudKeyframer=new simul::clouds::CloudKeyframer(cloudInterface,true);
+	cloudInterface->SetDiffusivity(.5f);
+
+//	cloudKeyframer=new simul::clouds::CloudKeyframer(cloudInterface,true);
+	cloudKeyframer->SetMake2DTextures(true);
 	cloudKeyframer->SetUse16Bit(false);
 	// 1/2 game-hour for interpolation:
 	cloudKeyframer->SetInterpStepTime(1.f/24.f/2.f);
+	cloudKeyframer->InitKeyframesFromClouds();
 
 	helper=new simul::clouds::Cloud2DGeometryHelper();
 	helper->SetYVertical(true);
@@ -340,7 +325,7 @@ HRESULT Simul2DCloudRenderer::CreateImageTexture()
 	if(!own_image_texture)
 		return hr;
 	SAFE_RELEASE(image_texture);
-	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/Cirrus.jpg"),&image_texture)))
+	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/Cirrocumulus.png"),&image_texture)))
 		return hr;
 	return hr;
 }
@@ -364,8 +349,11 @@ void Simul2DCloudRenderer::FillCloudTextureSequentially(int texture_index,int te
 	D3DLOCKED_RECT lockedRect={0};
 	if(FAILED(hr=cloud_textures[texture_index]->LockRect(0,&lockedRect,NULL,NULL)))
 		return;
-	unsigned *ptr=(unsigned *)(lockedRect.pBits);
+	unsigned char *ptr=(unsigned char *)(lockedRect.pBits);
 	ptr+=texel_index;
+	//unsigned char *src=(unsigned char *)uint32_array;
+	//for(int i=0;i<num_texels*2;i++)
+	//	*ptr++=(*src++);
 	memcpy(ptr,uint32_array,num_texels*sizeof(unsigned));
 	hr=cloud_textures[texture_index]->UnlockRect(0);
 }
@@ -525,7 +513,7 @@ HRESULT Simul2DCloudRenderer::Render()
 	helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
 	view_km*=0.001f;
 	float alt_km=cloudInterface->GetCloudBaseZ()*0.001f;
-static float light_mult=.05f;
+static float light_mult=.03f;
 	simul::sky::float4 light_response(	cloudInterface->GetLightResponse(),
 										light_mult*cloudInterface->GetSecondaryLightResponse(),
 										0,
@@ -533,7 +521,8 @@ static float light_mult=.05f;
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 //	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
-	simul::sky::float4 sky_light_colour=skyInterface->GetSkyColour(simul::sky::float4(0,0,1,0),alt_km);
+	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(alt_km);
+
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(alt_km);
 	simul::sky::float4 fractal_scales=helper->GetFractalScales(cloudInterface);
 	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
@@ -541,7 +530,8 @@ static float light_mult=.05f;
 	float tan_half_fov_vertical=1.f/proj._22;
 	float tan_half_fov_horizontal=1.f/proj._11;
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-	helper->Set2DNoiseTexturing(-0.8f,1.f);
+	static float sc=7.f;
+	helper->Set2DNoiseTexturing(-0.8f,1.f,1.f);
 	helper->MakeGeometry(cloudInterface);
 	helper->CalcInscatterFactors(cloudInterface,skyInterface,fadeTableInterface,0.f);
 	float image_scale=1.f/texture_scale;
@@ -601,7 +591,7 @@ static float light_mult=.05f;
 			if(v>=MAX_VERTICES)
 				break;
 			vertex.position=float3(V.x,V.y,V.z);
-			vertex.texCoords=float2(V.cloud_tex_x,V.cloud_tex_y);
+			vertex.texCoords=float2(sc*V.cloud_tex_x,sc*V.cloud_tex_y);
 			vertex.texCoordNoise=float2(V.noise_tex_x,V.noise_tex_y);
 			inscatter=helper->GetInscatter(0,V);
 			loss=helper->GetLoss(0,V);
@@ -685,3 +675,4 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 	sprintf_s(debug_text,256,"interp %2.2g\nnext noise time %2.2g",cloudKeyframer->GetInterpolation(),cloudNode->GetDaytime());
 	return debug_text;
 }
+
