@@ -83,7 +83,7 @@ protected:
 	GLuint		image_tex;
 	float		cam_pos[3];
 
-	bool CreateNoiseTexture();
+	virtual bool CreateNoiseTexture(bool override_file=false);
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();
 

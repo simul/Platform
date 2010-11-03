@@ -46,7 +46,7 @@ public:
 	HRESULT RenderLightning();
 	//! Call this to draw rain etc.
 	HRESULT RenderPrecipitation();
-	//! Call this to draw sun flares etc. after geometry.
+	//! Call this to draw sun flares etc. Draw this after geometry as it's an optical effect in the camera.
 	HRESULT RenderFlares();
 	//! Perform the once-per-frame time update.
 	void Update(float dt);

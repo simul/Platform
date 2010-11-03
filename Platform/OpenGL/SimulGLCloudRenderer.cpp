@@ -83,21 +83,16 @@ bool SimulGLCloudRenderer::Create()
 {
 	cloudKeyframer->SetOpenGL(true);
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
-	//cloudNode->SetHumidityCallback(&cb);
-	cloudInterface->SetCloudWidth(10000.f);
-	cloudInterface->SetCloudLength(10000.f);
-	cloudInterface->SetCloudHeight(6000.f);
-	cloudInterface->SetWrap(false);
 	CreateNoiseTexture();
 	cloudInterface->Generate();
-	// Must use this next line to prevent the above properties from being overwritten by the keyframes
 	cloudInterface->SetHumidity(0.5f);
+	// Must use this next line to prevent the above properties from being overwritten by the keyframes
 	cloudKeyframer->InitKeyframesFromClouds();
 	return true;
 }
 
 
-bool SimulGLCloudRenderer::CreateNoiseTexture()
+bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
 {
 	int size=512;
 

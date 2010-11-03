@@ -96,9 +96,9 @@ class ExampleHumidityCallback:public simul::clouds::HumidityCallbackInterface
 public:
 	virtual float GetHumidityMultiplier(float ,float ,float z) const
 	{
-		static float base_layer=0.25f;
-		static float transition=0.1f;
-		static float mul=0.9f;
+		static float base_layer=0.28f;
+		static float transition=0.2f;
+		static float mul=0.86f;
 		static float default_=1.f;
 		if(z>base_layer)
 		{
@@ -194,7 +194,6 @@ SimulCloudRenderer::SimulCloudRenderer()
 	,rebuild_shaders(true)
 	,sun_occlusion(0.f)
 	,timing(0.f)
-	,fade_mode(FRAGMENT)
 	,vertices(NULL)
 	,cpu_fade_vertices(NULL)
 	,max_fade_distance_metres(300000.f)
@@ -518,23 +517,19 @@ D3DXSaveTextureToFile(TEXT("Media/Textures/noise.jpg"),D3DXIFF_JPG,noise_texture
 	return hr;
 }
 
-HRESULT SimulCloudRenderer::CreateNoiseTexture(bool override_file)
+bool SimulCloudRenderer::CreateNoiseTexture(bool override_file)
 {
-	HRESULT hr=S_OK;
+	bool result=true;
 	SAFE_RELEASE(noise_texture);
-
-	// Can we load it from disk?
-//return RenderNoiseTexture();
-	//SAFE_RELEASE(noise_texture);
-	
+	HRESULT hr=S_OK;
 	if(!override_file&&(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/noise.dds"),&noise_texture))==S_OK)
-		return hr;
+		return result;
 	// Otherwise create it:
 	if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,noise_texture_size,noise_texture_size,0,default_texture_usage,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&noise_texture)))
-		return hr;
+		return false;
 	D3DLOCKED_RECT lockedRect={0};
 	if(FAILED(hr=noise_texture->LockRect(0,&lockedRect,NULL,NULL)))
-		return hr;
+		return false;
 	SetBits8();
 
 	simul::graph::standardnodes::ShowProgressInterface *progress=GetResourceInterface();
@@ -545,7 +540,7 @@ HRESULT SimulCloudRenderer::CreateNoiseTexture(bool override_file)
 
 	D3DXSaveTextureToFile(TEXT("Media/Textures/noise.png"),D3DXIFF_PNG,noise_texture,NULL);
 	D3DXSaveTextureToFile(TEXT("Media/Textures/noise.dds"),D3DXIFF_DDS,noise_texture,NULL);
-	return hr;
+	return true;
 }
 
 HRESULT SimulCloudRenderer::CreateLightningTexture()
@@ -841,8 +836,8 @@ static float effect_on_cloud=20.f;
 			simul::sky::float4 view_km=(const float*)cam_pos;
 			helper->Update((const float*)cam_pos,wind_offset,view_dir,up,0.f,cubemap);
 			view_km*=0.001f;
-			float alt_km=0.001f*(cloudInterface->GetCloudBaseZ());//+.5f*cloudInterface->GetCloudHeight());
-			float top_alt_km=alt_km+0.001f*cloudInterface->GetCloudHeight();
+			float base_alt_km=0.001f*(cloudInterface->GetCloudBaseZ());//+.5f*cloudInterface->GetCloudHeight());
+			float top_alt_km=base_alt_km+0.001f*cloudInterface->GetCloudHeight();
 			static float light_mult=0.03f;
 			simul::sky::float4 light_response(	cloudInterface->GetLightResponse(),
 												0,
@@ -856,9 +851,9 @@ static float effect_on_cloud=20.f;
 			if(y_vertical)
 				std::swap(sun_dir.y,sun_dir.z);
 			// Get the overall ambient light at this altitude, and multiply it by the cloud's ambient response.
-			simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(top_alt_km)*cloudInterface->GetAmbientLightResponse();
+			simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*cloudInterface->GetAmbientLightResponse();
 			// Get the sunlight at this altitude:
-			simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(alt_km);
+			simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 			simul::sky::float4 fractal_scales=(cubemap?0.f:1.f)*helper->GetFractalScales(cloudInterface);
 
 			float tan_half_fov_vertical=1.f/proj._22;
@@ -1584,7 +1579,7 @@ HRESULT SimulCloudRenderer::RenderLightVolume()
 	return S_OK;
 }
 
-HRESULT SimulCloudRenderer::RenderDistances()
+HRESULT SimulCloudRenderer::RenderDistances(int width,int height)
 {
 	HRESULT hr=S_OK;
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
@@ -1640,22 +1635,23 @@ HRESULT SimulCloudRenderer::RenderDistances()
 	
 	Vertext *lines=new Vertext[2*helper->GetSlices().size()];
 	int j=0;
+	float max_distance=helper->GetMaxCloudDistance();
 	for(std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_iterator i=helper->GetSlices().begin();
 					i!=helper->GetSlices().end();i++,j++)
 	{
 		if(!(*i))
 			continue;
-		float d=(*i)->distance*0.004f;
-		lines[j].x=120+d; 
-		lines[j].y=300;  
+		float d=(*i)->distance/max_distance*width*.9f;
+		lines[j].x=width*0.05f+d; 
+		lines[j].y=0.9f*height;  
 		lines[j].z=0;
 		lines[j].r=1.f;
 		lines[j].g=1.f;
 		lines[j].b=0.f;
 		lines[j].a=(*i)->fadeIn;
 		j++;
-		lines[j].x=120+d; 
-		lines[j].y=340; 
+		lines[j].x=width*0.05f+d; 
+		lines[j].y=0.95f*height; 
 		lines[j].z=0;
 		lines[j].r=1.f;
 		lines[j].g=1.f;
@@ -1678,23 +1674,9 @@ void SimulCloudRenderer::SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT
 	sky_inscatter_texture_2=t2;
 }
 
-void SimulCloudRenderer::SetNoiseTextureProperties(int size,int freq,int octaves,float persistence)
-{
-	if(	noise_texture_size==size&&
-		noise_texture_frequency==freq&&
-		texture_octaves==octaves&&
-		texture_persistence==persistence)
-		return;
-	noise_texture_size=size;
-	noise_texture_frequency=freq;
-	texture_octaves=octaves;
-	texture_persistence=persistence;
-	CreateNoiseTexture(true);
-}
-
 void SimulCloudRenderer::SetFadeMode(FadeMode f)
 {
-	fade_mode=f;
+	BaseCloudRenderer::SetFadeMode(f);
 	rebuild_shaders=true;
 	InitEffects();
 }

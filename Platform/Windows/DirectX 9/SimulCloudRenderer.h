@@ -74,21 +74,12 @@ public:
 	const float *GetCloudOffset() const;
 	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2);
 	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2);
-
-	//! Adjust the noise texture
-	void SetNoiseTextureProperties(int size,int freq,int octaves,float persistence);
-	//! Fade mode: 0=CPU, 1=Vertex, 2=Fragment
-	enum FadeMode
-	{
-		CPU=0,FRAGMENT
-	};
-	void SetFadeMode(FadeMode f);
 	LPDIRECT3DTEXTURE9 GetNoiseTexture()
 	{
 		return noise_texture;
 	}
 	HRESULT RenderCrossSections(int width);
-	HRESULT RenderDistances();
+	HRESULT RenderDistances(int width,int height);
 	HRESULT RenderLightVolume();
 	void EnableFilter(bool f);
 	// implementing CloudRenderCallback:
@@ -104,6 +95,7 @@ public:
 		max_fade_distance_metres=dist_km*1000.f;
 		rebuild_shaders=true;
 	}
+	virtual void SetFadeMode(FadeMode f);
 protected:
 	float max_fade_distance_metres;
 	HRESULT InitEffects();
@@ -154,7 +146,6 @@ protected:
 	CPUFadeVertex_t *cpu_fade_vertices;
 	PosTexVert_t *lightning_vertices;
 	HRESULT RenderNoiseTexture();
-	FadeMode fade_mode;
 	bool y_vertical;
 	float sun_occlusion;
 	simul::sound::fmod::NodeSound *sound;
@@ -236,7 +227,7 @@ protected:
 	HRESULT CreateIlluminationTexture();
 	HRESULT CreateCloudTextures();
 	HRESULT CreateLightningTexture();
-	HRESULT CreateNoiseTexture(bool override_file=false);
+	virtual bool CreateNoiseTexture(bool override_file=false);
 	HRESULT CreateCloudEffect();
 	HRESULT MakeCubemap(); // not ready yet
 };

@@ -296,27 +296,28 @@ Simul2DCloudRenderer::~Simul2DCloudRenderer()
 	Destroy();
 }
 
-HRESULT Simul2DCloudRenderer::CreateNoiseTexture()
+bool Simul2DCloudRenderer::CreateNoiseTexture(bool override_file)
 {
-	HRESULT hr=S_OK;
 	SAFE_RELEASE(noise_texture);
 	// Can we load it from disk?
-	if((hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/noise.dds"),&noise_texture))==S_OK)
-		return hr;
+	HRESULT hr=S_OK;
+	if(!override_file)
+		if((hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/noise.dds"),&noise_texture))==S_OK)
+			return false;
 	// Otherwise create it:
 	int size=512;
 	// NOTE: We specify ONE mipmap for this texture, NOT ZERO. If we use zero, that means
 	// automatically generate mipmaps.
 	if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,size,default_mip_levels,default_texture_usage,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&noise_texture)))
-		return hr;
+		return false;
 	D3DLOCKED_RECT lockedRect={0};
 	if(FAILED(hr=noise_texture->LockRect(0,&lockedRect,NULL,NULL)))
-		return hr;
+		return false;
 	SetBits8();
 	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)(lockedRect.pBits),size,16,8,0.8f);
 	hr=noise_texture->UnlockRect(0);
 	//noise_texture->GenerateMipSubLevels();
-	return hr;
+	return true;
 }
 
 HRESULT Simul2DCloudRenderer::CreateImageTexture()
