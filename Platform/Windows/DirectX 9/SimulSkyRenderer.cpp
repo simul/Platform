@@ -69,7 +69,7 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	}
 	EnableColourSky(UseColourSky);
 	fadeTableInterface->SetEarthTest(false);
-	skyInterface->SetDaytime(.5f);
+	skyInterface->SetDaytime(0.5f);
 
 	cam_pos.x=cam_pos.z=0;
 	cam_pos.y=400.f;
@@ -188,7 +188,6 @@ HRESULT SimulSkyRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pFont);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pHudVertexDecl);
-	SAFE_RELEASE(m_pFont);
 	
 
 	SAFE_RELEASE(stars_texture);
@@ -850,11 +849,11 @@ HRESULT SimulSkyRenderer::RenderFades(int )
 	m_pSkyEffect->SetTexture(fadeTexture, inscatter_textures[2]);
 	RenderTexture(m_pd3dDevice,8+2*(size+8)	,size*2+64,size,size,inscatter_textures[2],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 	m_pSkyEffect->SetTexture(fadeTexture, sky_textures[0]);
-	RenderTexture(m_pd3dDevice,8			,size*3+96,size,size,sky_textures[0]);
+	RenderTexture(m_pd3dDevice,8			,size*3+96,size,size,sky_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 	m_pSkyEffect->SetTexture(fadeTexture, sky_textures[1]);
-	RenderTexture(m_pd3dDevice,8+(size+8)	,size*3+96,size,size,sky_textures[1]);
+	RenderTexture(m_pd3dDevice,8+(size+8)	,size*3+96,size,size,sky_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 	m_pSkyEffect->SetTexture(fadeTexture, sky_textures[2]);
-	RenderTexture(m_pd3dDevice,8+2*(size+8)	,size*3+96,size,size,sky_textures[2]);
+	RenderTexture(m_pd3dDevice,8+2*(size+8)	,size*3+96,size,size,sky_textures[2],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 	return hr;
 }
 

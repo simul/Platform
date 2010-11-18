@@ -208,7 +208,7 @@ SimulCloudRenderer::SimulCloudRenderer()
 	for(int i=0;i<3;i++)
 		cloud_textures[i]=NULL;
 
-	cloudNode->SetHumidityCallback(&hum_callback);
+	//cloudNode->SetHumidityCallback(&hum_callback);
 	cloudNode->SetCacheNoise(true);
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 	
