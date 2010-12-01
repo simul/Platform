@@ -220,7 +220,6 @@ SimulCloudRenderer::SimulCloudRenderer()
 	cloudKeyframer->SetInterpStepTime(1.f/24.f/2.f);
 	helper->SetYVertical(y_vertical);
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
-	illumination_texel_index[0]=illumination_texel_index[1]=illumination_texel_index[2]=illumination_texel_index[3]=0;
 
 	// A noise filter improves the shape of the clouds:
 	cloudNode->GetNoiseInterface()->SetFilter(&circle_f);
@@ -711,7 +710,7 @@ void SimulCloudRenderer::Update(float dt)
 	last_time=current_time;
 	static simul::base::Timer timer;
 	timer.StartTime();
-		cloudKeyframer->Update(current_time);
+	cloudKeyframer->Update(current_time);
 	timer.FinishTime();
 	timing=timer.Time;
 	simul::graph::meta::TimeStepVisitor tsv;

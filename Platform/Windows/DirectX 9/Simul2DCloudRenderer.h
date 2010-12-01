@@ -69,10 +69,13 @@ public:
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
-	void FillCloudTextureBlock(int ,int ,int ,int,int ,int,int ,const unsigned *)
-	{
-	}
+	void FillCloudTextureBlock(int ,int ,int ,int,int ,int,int ,const unsigned *){}
 	void CycleTexturesForward();
+	
+	void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
+	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array){}
+	void FillIlluminationBlock(int source_index,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array){}
+
 	void SetCloudiness(float c);
 	// a texture
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
