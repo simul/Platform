@@ -110,6 +110,7 @@ protected:
 	RenderDepthBufferCallback *renderDepthBufferCallback;
 	simul::base::SmartPtr<class SimulSkyRenderer> simulSkyRenderer;
 	simul::base::SmartPtr<class SimulCloudRenderer> simulCloudRenderer;
+	simul::base::SmartPtr<class SimulLightningRenderer> simulLightningRenderer;
 	simul::base::SmartPtr<class Simul2DCloudRenderer> simul2DCloudRenderer;
 	simul::base::SmartPtr<class SimulPrecipitationRenderer> simulPrecipitationRenderer;
 	simul::base::SmartPtr<class SimulAtmosphericsRenderer> simulAtmosphericsRenderer;

@@ -27,6 +27,7 @@
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "SimulCloudRenderer.h"
+#include "SimulLightningRenderer.h"
 #include "SimulPrecipitationRenderer.h"
 #include "Simul2DCloudRenderer.h"
 #include "SimulSkyRenderer.h"
@@ -81,6 +82,9 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 		simulCloudRenderer=new SimulCloudRenderer();
 		baseCloudRenderer=simulCloudRenderer.get();
 		AddChild(simulCloudRenderer.get());
+
+		simulLightningRenderer=new SimulLightningRenderer(simulCloudRenderer->GetLightningRenderInterface());
+		baseLightningRenderer=simulLightningRenderer.get();
 	}
 	if(clouds2d)
 	{
@@ -89,7 +93,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	}
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
-	
+
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer;
 	ConnectInterfaces();
 }
@@ -166,6 +170,8 @@ HRESULT SimulWeatherRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 		V_RETURN(simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
 	if(simulPrecipitationRenderer)
 		V_RETURN(simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice));
+	if(simulLightningRenderer)
+		V_RETURN(simulLightningRenderer->RestoreDeviceObjects(m_pd3dDevice));
 	
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);
@@ -187,6 +193,8 @@ HRESULT SimulWeatherRenderer::InvalidateDeviceObjects()
 		simulPrecipitationRenderer->InvalidateDeviceObjects();
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
+	if(simulLightningRenderer)
+		simulLightningRenderer->InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pBufferVertexDecl);
 	if(m_pTonemapEffect)
         hr=m_pTonemapEffect->OnLostDevice();
@@ -490,8 +498,8 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 
 HRESULT SimulWeatherRenderer::RenderLightning()
 {
-	if(simulCloudRenderer&&layer1)
-		return simulCloudRenderer->RenderLightning();
+	if(simulCloudRenderer&&simulLightningRenderer&&layer1)
+		return simulLightningRenderer->Render();
 	return S_OK;
 }
 

@@ -6,7 +6,7 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
-#include "SimulPrecipitationRenderer.h"
+#include "SimulLightningRenderer.h"
 
 #ifdef XBOX
 	#include <dxerr.h>
@@ -27,223 +27,268 @@
 
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Math/Pi.h"
+#include "Simul/Math/Vector3.h"
 #include "Simul/Sky/Float4.h"
 #include "Macros.h"
 #include "CreateDX9Effect.h"
 #include "Resources.h"
 
 typedef std::basic_string<TCHAR> tstring;
+using namespace simul::clouds;
 
-SimulPrecipitationRenderer::SimulPrecipitationRenderer() :
-	m_pVtxDecl(NULL),
-	m_pRainEffect(NULL),
-	rain_texture(NULL),
-	external_rain_texture(false)
+SimulLightningRenderer::SimulLightningRenderer(simul::clouds::LightningRenderInterface *lightningRenderInterface) :
+	simul::clouds::BaseLightningRenderer(lightningRenderInterface)
+	,m_pLightningVtxDecl(NULL)
+	,m_pLightningEffect(NULL)
+	,lightning_vertices(NULL)
+	,lightning_texture(NULL)
 {
 }
 
-struct Vertex_t
+SimulLightningRenderer::~SimulLightningRenderer()
 {
-	float x,y,z;
-	float tex_x,tex_y,fade;
-};
-
-#define CONE_SIDES 36
-#define NUM_VERT ((CONE_SIDES+1)*4)
-static Vertex_t vertices[NUM_VERT];
-
-void SimulPrecipitationRenderer::TextureRepeatChanged()
-{
-	InvalidateDeviceObjects();
-	RestoreDeviceObjects(m_pd3dDevice);
 }
-HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
+
+bool SimulLightningRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 pd3dDevice)
 {
-	m_pd3dDevice=dev;
-	HRESULT hr=S_OK;
-	cam_pos.x=cam_pos.y=cam_pos.z=0;
-	D3DXMatrixIdentity(&view);
-	D3DXMatrixIdentity(&proj);
-	int index=0;
-	static float rr=0.2f;
-	for(int j=-1;j<1;j++)
-	for(int i=0;i<CONE_SIDES+1;i++)
+	m_pd3dDevice=pd3dDevice;
+	HRESULT hr;
+	InitEffects();
+	B_RETURN(CreateLightningTexture());
+	return true;
+}
+
+bool SimulLightningRenderer::InitEffects()
+{
+	if(!m_pd3dDevice)
+		return false;
+	HRESULT hr;
+	D3DVERTEXELEMENT9 std_decl[] = 
 	{
-		float angle1=2.f*3.14159f*(float)i/(float)CONE_SIDES;
-		float fade=1.f-(float)abs(j);
-		float rad=radius*(rr+fade)/(1.f+rr);
-		vertices[index].x=rad*cos(angle1)*fade;
-		vertices[index].z=rad*sin(angle1)*fade;
-		vertices[index].y=height*j;
-		vertices[index].tex_x=i*TextureRepeat/(float)CONE_SIDES;
-		vertices[index].tex_y=(float)j*height/radius/Aspect*(float)TextureRepeat;
-		vertices[index].fade=fade;
-		index++;
-		fade=1.f-(float)abs(j+1);
-		rad=radius*(rr+fade)/(1.f+rr);
-		vertices[index].x=rad*cos(angle1)*fade;
-		vertices[index].z=rad*sin(angle1)*fade;
-		vertices[index].y=height*(j+1);
-		vertices[index].tex_x=i*TextureRepeat/(float)CONE_SIDES;
-		vertices[index].tex_y=(float)(j+1)*height/radius/Aspect*(float)TextureRepeat;
-		vertices[index].fade=fade;
-		index++;
-	}
-	D3DVERTEXELEMENT9 decl[]=
-	{
-		{0,0,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
-		{0,12,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
+		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 12, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
 		D3DDECL_END()
 	};
-	SAFE_RELEASE(m_pVtxDecl);
-	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
-	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,"simul_rain.fx"));
+	SAFE_RELEASE(m_pLightningVtxDecl);
+	V_RETURN(m_pd3dDevice->CreateVertexDeclaration(std_decl,&m_pLightningVtxDecl))
+	
+	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pLightningEffect,"simul_lightning.fx"));
+	m_hTechniqueLightningLines	=m_pLightningEffect->GetTechniqueByName("simul_lightning_lines");
+	m_hTechniqueLightningQuads	=m_pLightningEffect->GetTechniqueByName("simul_lightning_quads");
+	l_worldViewProj				=m_pLightningEffect->GetParameterByName(NULL,"worldViewProj");
 
-	m_hTechniqueRain	=m_pRainEffect->GetTechniqueByName("simul_rain");
-	worldViewProj		=m_pRainEffect->GetParameterByName(NULL,"worldViewProj");
-	offset				=m_pRainEffect->GetParameterByName(NULL,"offset");
-	intensity			=m_pRainEffect->GetParameterByName(NULL,"intensity");
-	lightColour			=m_pRainEffect->GetParameterByName(NULL,"lightColour");
-	offset1				=m_pRainEffect->GetParameterByName(NULL,"offset1");
-	offset2				=m_pRainEffect->GetParameterByName(NULL,"offset2");
-	offset3				=m_pRainEffect->GetParameterByName(NULL,"offset3");
-
-	if(!external_rain_texture)
-	{
-		SAFE_RELEASE(rain_texture);
-		V_RETURN(hr=CreateDX9Texture(m_pd3dDevice,rain_texture,"Rain.jpg"));
-	}
-
-	return hr;
+	return true;
 }
 
-HRESULT SimulPrecipitationRenderer::SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex)
-{
-	if(!external_rain_texture)
-	{
-		SAFE_RELEASE(rain_texture);
-	}
-	external_rain_texture=true;
-	rain_texture=tex;
-	return S_OK;
-}
-
-HRESULT SimulPrecipitationRenderer::InvalidateDeviceObjects()
+bool SimulLightningRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-	if(m_pRainEffect)
-        hr=m_pRainEffect->OnLostDevice();
-	SAFE_RELEASE(m_pRainEffect);
-	SAFE_RELEASE(m_pVtxDecl);
-	if(!external_rain_texture)
-		SAFE_RELEASE(rain_texture);
-	return hr;
+	if(m_pLightningEffect)
+        hr=m_pLightningEffect->OnLostDevice();
+	SAFE_RELEASE(m_pLightningVtxDecl);
+	SAFE_RELEASE(m_pLightningEffect);
+	SAFE_RELEASE(lightning_texture);
+	return true;
 }
 
-HRESULT SimulPrecipitationRenderer::Destroy()
+static void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
 {
-	HRESULT hr=S_OK;
-	SAFE_RELEASE(m_pVtxDecl);
-	SAFE_RELEASE(m_pRainEffect);
-	if(!external_rain_texture)
-		SAFE_RELEASE(rain_texture);
-	return hr;
+	//set up matrices
+	D3DXMATRIX tmp1, tmp2;
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	D3DXMatrixMultiply(&tmp1, &world,&view);
+	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
+	D3DXMatrixTranspose(wvp,&tmp2);
 }
 
-SimulPrecipitationRenderer::~SimulPrecipitationRenderer()
-{
-	Destroy();
-}
-
-static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
+static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 {
 	D3DXMATRIX tmp1;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXVECTOR3 cam_pos;
+	D3DXVECTOR4 cam_pos;
 	cam_pos.x=tmp1._41;
 	cam_pos.y=tmp1._42;
 	cam_pos.z=tmp1._43;
 	return cam_pos;
 }
 
-HRESULT SimulPrecipitationRenderer::Render()
+bool SimulLightningRenderer::Render()
 {
-	if(rain_intensity<=0)
-		return S_OK;
-#ifndef XBOX
-	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
-#endif
-	m_pd3dDevice->SetTexture(0,rain_texture);
-#ifndef XBOX
-	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
-#endif
-	HRESULT hr=m_pd3dDevice->SetVertexDeclaration(m_pVtxDecl);
+	if(!lightning_vertices)
+		lightning_vertices=new PosTexVert_t[4500];
 
-	m_pRainEffect->SetTechnique( m_hTechniqueRain );
-	cam_pos=GetCameraPosVector(view);
-	D3DXMATRIX	world,direction;
-	D3DXMatrixIdentity(&world);
-	D3DXMatrixRotationY(&direction,wind_heading);
-	float pitch_angle=atan2f(WindEffect*wind_speed,rain_speed);
-	D3DXMatrixRotationX(&world,-pitch_angle);
-	D3DXMatrixMultiply(&world,&world,&direction);
-	world._41=cam_pos.x;
-	world._42=cam_pos.y;
-	world._43=cam_pos.z;
+	HRESULT hr=S_OK;
+bool y_vertical=true;
+	m_pd3dDevice->SetTexture(0,lightning_texture);
+	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
+	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAXANISOTROPY, 1);
+		
 	//set up matrices
-	D3DXMATRIX tmp1, tmp2;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXMatrixMultiply(&tmp1, &world,&view);
-	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
-	D3DXMatrixTranspose(&tmp1,&tmp2);
-	m_pRainEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
-	m_pRainEffect->SetFloat(offset,offs);
-	m_pRainEffect->SetFloat(intensity,rain_intensity);
-
-	static float cc1=3.f;
-	static float cc2=4.f;
-	static float cc3=3.5f;
-	simul::sky::float4 offs1(sin(cc1*offs)		,cos(cc1*offs),0,0);
-	simul::sky::float4 offs2(sin(cc2*offs+2.f)	,cos(cc2*offs+2.f),0,0);
-	simul::sky::float4 offs3(sin(cc3*offs+4.f)	,cos(cc3*offs+4.f),0,0);
-	static float cc1a=1.4f;
-	static float cc2a=1.211f;
-	static float cc3a=0.397f;
-	simul::sky::float4 offs1a(sin(cc1a*offs)	,cos(cc1a*offs),0,0);
-	simul::sky::float4 offs2a(sin(cc2a*offs+2.f),cos(cc2a*offs+2.f),0,0);
-	simul::sky::float4 offs3a(sin(cc3a*offs+4.f),cos(cc3a*offs+4.f),0,0);
-	offs1*=offs1a;
-	offs2*=offs2a;
-	offs3*=offs3a;
-	static float ww=0.01f;
-	offs1*=ww*Waver;
-	offs2*=ww*Waver;
-	offs3*=ww*Waver;
-	m_pRainEffect->SetVector(offset1,(D3DXVECTOR4*)(&offs1));
-	m_pRainEffect->SetVector(offset2,(D3DXVECTOR4*)(&offs2));
-	m_pRainEffect->SetVector(offset3,(D3DXVECTOR4*)(&offs3));
-
-	m_pRainEffect->SetVector(lightColour,(D3DXVECTOR4*)(light_colour));
-
-	UINT passes=1;
-	hr=m_pRainEffect->Begin( &passes, 0 );
-	for(unsigned i = 0 ; i < passes ; ++i )
-	{
-		hr=m_pRainEffect->BeginPass(i);
-		hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,NUM_VERT-2,vertices,sizeof(Vertex_t));
-		hr=m_pRainEffect->EndPass();
-	}
-	hr=m_pRainEffect->End();
+	D3DXMATRIX wvp;
 	D3DXMatrixIdentity(&world);
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	m_pd3dDevice->GetTransform(D3DTS_WORLD,&world);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+
+	MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
+
+    m_pd3dDevice->SetVertexShader( NULL );
+    m_pd3dDevice->SetPixelShader( NULL );
+
+	simul::math::Vector3 view_dir	(view._13,view._23,view._33);
+	simul::math::Vector3 up			(view._12,view._22,view._32);
+
+	hr=m_pd3dDevice->SetVertexDeclaration( m_pLightningVtxDecl );
+
+	m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
+	m_pd3dDevice->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+
+	simul::math::Vector3 pos;
+
+	static float lm=10.f;
+	static float main_bright=1.f;
+	int vert_start=0;
+	int vert_num=0;
+	m_pLightningEffect->SetMatrix(l_worldViewProj,&wvp);
+	m_pLightningEffect->SetTechnique(m_hTechniqueLightningQuads);
+	UINT passes=1;
+	hr=m_pLightningEffect->Begin(&passes,0);
+	hr=m_pLightningEffect->BeginPass(0);
+	for(unsigned i=0;i<lightningRenderInterface->GetNumLightSources();i++)
+	{
+		if(!lightningRenderInterface->IsSourceStarted(i))
+			continue;
+		bool quads=true;
+		simul::math::Vector3 x1,x2;
+		float bright1=0.f;
+		simul::math::Vector3 camPos(cam_pos);
+		lightningRenderInterface->GetSegmentVertex(i,0,0,bright1,x1.FloatPointer(0));
+		float dist=(x1-camPos).Magnitude();
+		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
+		for(unsigned jj=0;jj<lightningRenderInterface->GetNumBranches(i);jj++)
+		{
+			if(jj==1)
+			{
+				hr=m_pLightningEffect->EndPass();
+				hr=m_pLightningEffect->End();
+				
+				m_pLightningEffect->SetTechnique(m_hTechniqueLightningLines);
+				quads=false;
+
+				hr=m_pLightningEffect->Begin(&passes,0);
+				hr=m_pLightningEffect->BeginPass(0);
+			}
+			simul::math::Vector3 last_transverse;
+			vert_start=vert_num;
+			for(unsigned k=0;k<lightningRenderInterface->GetNumSegments(i,jj)&&vert_num<4500;k++)
+			{
+				lightningRenderInterface->GetSegmentVertex(i,jj,k,bright1,x1.FloatPointer(0));
+				simul::math::Vector3 dir;
+				lightningRenderInterface->GetSegmentVertexDirection(i,jj,k,dir.FloatPointer(0));
+
+				static float ww=50.f;
+				float width=lightningRenderInterface->GetBranchWidth(i,jj);
+				float width1=bright1*width;
+				if(quads)
+					width1*=ww;
+				simul::math::Vector3 transverse;
+				view_dir=x1-simul::math::Vector3(cam_pos.x,cam_pos.z,cam_pos.y);
+				CrossProduct(transverse,view_dir,dir);
+				transverse.Unit();
+				transverse*=width1;
+				simul::math::Vector3 t=transverse;
+				if(k)
+					t=0.5f*(last_transverse+transverse);
+				simul::math::Vector3 x1a=x1;//-t;
+				if(quads)
+					x1a=x1-t;
+				simul::math::Vector3 x1b=x1+t;
+				if(!k)
+					bright1=0;
+				if(k==lightningRenderInterface->GetNumSegments(i,jj)-1)
+					bright1=0;
+				PosTexVert_t &v1=lightning_vertices[vert_num++];
+				if(y_vertical)
+				{
+					std::swap(x1a.y,x1a.z);
+					std::swap(x1b.y,x1b.z);
+				}
+				v1.position.x=x1a.x;
+				v1.position.y=x1a.y+vertical_shift;
+				v1.position.z=x1a.z;
+				v1.texCoords.x=width1;
+				v1.texCoords.y=0;
+
+				if(quads)
+				{
+					PosTexVert_t &v2=lightning_vertices[vert_num++];
+					v2.position.x=x1b.x;
+					v2.position.y=x1b.y+vertical_shift;
+					v2.position.z=x1b.z;
+					v2.texCoords.x=1.f;
+					v2.texCoords.x=width1;
+					v2.texCoords.y=1.f;
+				}
+				last_transverse=transverse;
+			}
+			if(vert_num-vert_start>2)
+			{
+				if(quads)
+				{
+					hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,vert_num-vert_start-2,
+					&(lightning_vertices[vert_start]),
+					sizeof(PosTexVert_t));
+				}
+				else
+				{
+					hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,vert_num-vert_start-2,
+					&(lightning_vertices[vert_start]),
+					sizeof(PosTexVert_t));
+				}
+			}
+			
+		}
+	}
+	hr=m_pLightningEffect->EndPass();
+	hr=m_pLightningEffect->End();
 	return hr;
 }
 
-#ifdef XBOX
-void SimulPrecipitationRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+HRESULT SimulLightningRenderer::CreateLightningTexture()
 {
-	view=v;
-	proj=p;
+	HRESULT hr=S_OK;
+	unsigned size=64;
+	SAFE_RELEASE(lightning_texture);
+	if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,1,0,D3DUSAGE_AUTOGENMIPMAP,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&lightning_texture)))
+		return hr;
+	D3DLOCKED_RECT lockedRect={0};
+	if(FAILED(hr=lightning_texture->LockRect(0,&lockedRect,NULL,NULL)))
+		return hr;
+	const float *lightning_colour=lightningRenderInterface->GetLightningColour();
+	unsigned char *lightning_tex_data=(unsigned char *)(lockedRect.pBits);
+	for(unsigned i=0;i<size;i++)
+	{
+		float linear=1.f-fabs((float)(i+.5f)*2.f/(float)size-1.f);
+		float level=.5f*linear*linear+5.f*(linear>.97f);
+		float r=lightning_colour[0]	*level;
+		float g=lightning_colour[1]	*level;
+		float b=lightning_colour[2]	*level;
+		if(r>1.f)
+			r=1.f;
+		if(g>1.f)
+			g=1.f;
+		if(b>1.f)
+			b=1.f;
+		lightning_tex_data[4*i+0]=(unsigned char)(255.f*b);
+		lightning_tex_data[4*i+1]=(unsigned char)(255.f*b);
+		lightning_tex_data[4*i+2]=(unsigned char)(255.f*g);
+		lightning_tex_data[4*i+3]=(unsigned char)(255.f*r);
+	}
+	hr=lightning_texture->UnlockRect(0);
+	return hr;
 }
-#endif

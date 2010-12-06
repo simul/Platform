@@ -55,8 +55,6 @@ public:
 	void Update(float dt);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	HRESULT Render(bool cubemap=false);
-	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
-	HRESULT RenderLightning();
 #ifdef XBOX
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
@@ -88,8 +86,8 @@ public:
 	void FillCloudTextureBlock(int ,int ,int,int,int,int,int,const unsigned *){}
 	void CycleTexturesForward();
 	
-	void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
-	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array){}
+	void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z);
+	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array);
 	void FillIlluminationBlock(int source_index,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array){}
 
 	// Distance for fade texture lookups:
@@ -123,11 +121,6 @@ protected:
 			z=f[2];
 		}
 	};
-	struct PosTexVert_t
-	{
-		float3 position;	
-		float2 texCoords;
-	};
 	struct PosVert_t
 	{
 		float3 position;
@@ -147,23 +140,16 @@ protected:
 	};
 	Vertex_t *vertices;
 	CPUFadeVertex_t *cpu_fade_vertices;
-	PosTexVert_t *lightning_vertices;
 	HRESULT RenderNoiseTexture();
 	bool y_vertical;
 	float sun_occlusion;
 	simul::sound::fmod::NodeSound *sound;
 	float timing;
 
-	// DirectX values:
-
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	m_pVtxDecl;
-	LPDIRECT3DVERTEXDECLARATION9	m_pLightningVtxDecl;
 	LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl;
 
-	LPD3DXEFFECT					m_pLightningEffect;
-	D3DXHANDLE						m_hTechniqueLightningLines;	// Handle to technique in the effect 
-	D3DXHANDLE						m_hTechniqueLightningQuads;	// Handle to technique in the effect 
 	LPD3DXEFFECT					m_pCloudEffect;
 	D3DXHANDLE						m_hTechniqueCloud;		// Handle to technique in the effect
 	D3DXHANDLE						m_hTechniqueCloudMask;		// Handle to technique in the effect
@@ -171,7 +157,6 @@ protected:
 	D3DXHANDLE						m_hTechniqueCrossSectionXZ;	
 	D3DXHANDLE						m_hTechniqueCrossSectionXY;	
 	
-	D3DXHANDLE l_worldViewProj;
 	D3DXHANDLE worldViewProj;
 	D3DXHANDLE eyePosition;
 	D3DXHANDLE lightResponse;
@@ -211,7 +196,6 @@ protected:
 	LPDIRECT3DVOLUMETEXTURE9	cloud_textures[3];
 	LPDIRECT3DVOLUMETEXTURE9	illumination_texture;
 	LPDIRECT3DTEXTURE9			noise_texture;
-	LPDIRECT3DTEXTURE9			lightning_texture;
 	LPDIRECT3DTEXTURE9			large_scale_cloud_texture;
 	LPDIRECT3DBASETEXTURE9		sky_loss_texture_1;
 	LPDIRECT3DBASETEXTURE9		sky_loss_texture_2;
@@ -223,12 +207,9 @@ protected:
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 	LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;
-	HRESULT UpdateIlluminationTexture(float dt);
 	HRESULT UpdateCloudTexture();
 	HRESULT FillInCloudTextures();
-	HRESULT CreateIlluminationTexture();
 	HRESULT CreateCloudTextures();
-	HRESULT CreateLightningTexture();
 	virtual bool CreateNoiseTexture(bool override_file=false);
 	HRESULT CreateCloudEffect();
 	HRESULT MakeCubemap(); // not ready yet

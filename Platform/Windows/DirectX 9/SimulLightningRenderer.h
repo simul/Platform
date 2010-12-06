@@ -17,10 +17,47 @@ typedef long HRESULT;
 class SimulLightningRenderer: public simul::clouds::BaseLightningRenderer
 {
 public:
-public:
-	OgreSimulLightningObject(simul::clouds::LightningRenderInterface *lri);
-	~OgreSimulLightningObject();
-	bool Update();
+	SimulLightningRenderer(simul::clouds::LightningRenderInterface *lri);
+	~SimulLightningRenderer();
+	bool RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
+	bool Render();
+	bool InvalidateDeviceObjects();
 protected:
-	simul::clouds::LightningRenderInterface *lightningRenderInterface;
+	bool InitEffects();
+	struct float2
+	{
+		float x,y;
+		void operator=(const float*f)
+		{
+			x=f[0];
+			y=f[1];
+		}
+	};
+	struct float3
+	{
+		float x,y,z;
+		void operator=(const float*f)
+		{
+			x=f[0];
+			y=f[1];
+			z=f[2];
+		}
+	};
+	struct PosTexVert_t
+	{
+		float3 position;	
+		float2 texCoords;
+	};
+	PosTexVert_t *lightning_vertices;
+
+	LPDIRECT3DDEVICE9				m_pd3dDevice;
+	LPDIRECT3DVERTEXDECLARATION9	m_pLightningVtxDecl;
+	LPD3DXEFFECT					m_pLightningEffect;
+	D3DXHANDLE						m_hTechniqueLightningLines;
+	D3DXHANDLE						m_hTechniqueLightningQuads;
+	D3DXHANDLE						l_worldViewProj;
+	LPDIRECT3DTEXTURE9				lightning_texture;
+	D3DXMATRIX						world,view,proj;
+
+	HRESULT CreateLightningTexture();
 };
