@@ -5,18 +5,16 @@
 // agreement with Simul Software Ltd and may not be copied or disclosed except
 // in accordance with the terms of that agreement.
 
-// SimulCloudRendererDX11.h A DirectX 10 renderer for clouds. Create an instance of this class in a DX11 program
+// SimulCloudRendererDX1x.h A DirectX 10 renderer for clouds. Create an instance of this class in a DX11 program
 //! and use the Render() function once per frame.
 
 #pragma once
-#ifdef XBOX
-	#include <xtl.h>
-#else
-	#include <d3dx9.h>
-	#include <d3d11.h>
-	#include <d3dx11.h>
-	#include <D3dx11effect.h>
-#endif
+
+#include <d3dx9.h>
+#include <d3d11.h>
+#include <d3dx11.h>
+#include <D3dx11effect.h>
+
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/CloudRenderCallback.h"
@@ -48,11 +46,11 @@ namespace simul
 typedef long HRESULT;
 
 //! A cloud rendering class. Create an instance of this class within a DirectX program.
-class SimulCloudRendererDX11 : public simul::clouds::BaseCloudRenderer
+class SimulCloudRendererDX1x : public simul::clouds::BaseCloudRenderer
 {
 public:
-	SimulCloudRendererDX11();
-	virtual ~SimulCloudRendererDX11();
+	SimulCloudRendererDX1x();
+	virtual ~SimulCloudRendererDX1x();
 	//! Call this once to set the sky interface that this cloud renderer can use for distance fading.
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si);
 	//! Call this when the D3D device has been created or reset.
@@ -100,6 +98,10 @@ public:
 	{
 	}
 	void CycleTexturesForward();
+
+	void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
+	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array){}
+	void FillIlluminationBlock(int source_index,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array){}
 
 	// Save and load a sky sequence
 	std::ostream &Save(std::ostream &os) const;

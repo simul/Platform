@@ -21,15 +21,15 @@ typedef std::basic_string<TCHAR> tstring;
 #include "Simul/Sky/Float4.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
-#include "SimulCloudRendererDX11.h"
+#include "Simul/Platform/Windows/DirectX 1x/SimulCloudRendererDX1x.h"
 //#include "SimulPrecipitationRendererDX11.h"
 //#include "Simul2DCloudRendererDX11.h"
 #include "SimulSkyRendererDX11.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/RandomNumberGenerator.h"
-#include "CreateEffectDX11.h"
+#include "Simul/Platform/Windows/DirectX 1x/CreateEffectDX1x.h"
 #include "SimulAtmosphericsRendererDX11.h"
-#include "Macros.h"
+#include "Simul/Platform/Windows/DirectX 1x/MacrosDX1x.h"
 
 
 #define BLUR_SIZE 9
@@ -65,7 +65,7 @@ HRESULT SimulHDRRendererDX11::RestoreDeviceObjects(ID3D11Device* dev,IDXGISwapCh
 	m_pSwapChain=pSwapChain;
 	if(!m_pTonemapEffect)
 	{
-		V_RETURN(CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("media\\HLSL\\gamma.fx")));
+		V_RETURN(CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx")));
 	}
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
 	Exposure				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();

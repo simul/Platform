@@ -76,7 +76,7 @@ protected:
 	HRESULT CreateBuffers();
 	HRESULT RenderBufferToCurrentTarget(bool do_tonemap);
 	class SimulSkyRenderer *simulSkyRenderer;
-	class SimulCloudRendererDX11 *simulCloudRenderer;
+	class SimulCloudRendererDX1x *simulCloudRenderer;
 	class Simul2DCloudRenderer *simul2DCloudRenderer;
 	class SimulPrecipitationRenderer *simulPrecipitationRenderer;
 	float							exposure;

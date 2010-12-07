@@ -26,7 +26,7 @@ static DXGI_FORMAT sky_tex_format=DXGI_FORMAT_R16G16B16A16_FLOAT;
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Sky/TextureGenerator.h"
 #include "Macros.h"
-#include "CreateEffectDX11.h"
+#include "Simul/Platform/Windows/DirectX 1x/CreateEffectDX1x.h"
 
 struct Vertex_t
 {
@@ -433,7 +433,7 @@ HRESULT SimulSkyRendererDX11::CreateSkyEffect()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pSkyEffect);
-	V_RETURN(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"media\\HLSL\\simul_sky.fx"));
+	V_RETURN(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"simul_sky.fx"));
 	return hr;
 }
 

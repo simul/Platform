@@ -20,12 +20,12 @@
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Base/StringToWString.h"
-#include "SimulSkyRendererDX11.h"
+#include "Simul/Platform/Windows/DirectX 1x/SimulSkyRendererDX1x.h"
 
-#include "SimulCloudRendererDX11.h"
+#include "Simul/Platform/Windows/DirectX 1x/SimulCloudRendererDX1x.h"
 #include "Simul/Base/Timer.h"
-#include "CreateEffectDX11.h"
-#include "Macros.h"
+#include "Simul/Platform/Windows/DirectX 1x/CreateEffectDX1x.h"
+#include "Simul/Platform/Windows/DirectX 1x/MacrosDX1x.h"
 
 SimulWeatherRendererDX11::SimulWeatherRendererDX11(bool usebuffer,bool tonemap,bool sky,bool clouds3d,bool clouds2d,bool rain) :
 	m_pd3dDevice(NULL),
@@ -40,10 +40,10 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(bool usebuffer,bool tonemap,b
 	show_sky(sky),
 	show_rain(rain)
 {
-	simulSkyRenderer=new SimulSkyRendererDX11();
+	simulSkyRenderer=new SimulSkyRendererDX1x();
 	baseSkyRenderer=simulSkyRenderer.get();
 	AddChild(simulSkyRenderer.get());
-	simulCloudRenderer=new SimulCloudRendererDX11();
+	simulCloudRenderer=new SimulCloudRendererDX1x();
 	baseCloudRenderer=simulCloudRenderer.get();
 	AddChild(simulCloudRenderer.get());
 /*	if(clouds2d)
@@ -287,12 +287,12 @@ void SimulWeatherRendererDX11::Update(float dt)
 	}
 }
 
-SimulSkyRendererDX11 *SimulWeatherRendererDX11::GetSkyRenderer()
+SimulSkyRendererDX1x *SimulWeatherRendererDX11::GetSkyRenderer()
 {
 	return simulSkyRenderer.get();
 }
 
-SimulCloudRendererDX11 *SimulWeatherRendererDX11::GetCloudRenderer()
+SimulCloudRendererDX1x *SimulWeatherRendererDX11::GetCloudRenderer()
 {
 	return simulCloudRenderer.get();
 }

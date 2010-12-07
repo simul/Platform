@@ -6,9 +6,9 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
-// SimulCloudRendererDX11.cpp A renderer for 3d clouds.
+// SimulCloudRendererDX1x.cpp A renderer for 3d clouds.
 
-#include "SimulCloudRendererDX11.h"
+#include "SimulCloudRendererDX1x.h"
 #ifdef DO_SOUND
 #include "Simul/Sound/FMOD/NodeSound.h"
 #endif
@@ -50,7 +50,7 @@ float thunder_volume=0.f;
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/LicenseKey.h"
-#include "CreateEffectDX11.h"
+#include "Simul/Platform/Windows/DirectX 1x/CreateEffectDX1x.h"
 
 
 #ifndef SAFE_RELEASE
@@ -104,7 +104,7 @@ CloudVertex_t *vertices=NULL;
 PosTexVert_t *lightning_vertices=NULL;
 #define MAX_VERTICES (4000)
 
-SimulCloudRendererDX11::SimulCloudRendererDX11() :
+SimulCloudRendererDX1x::SimulCloudRendererDX1x() :
 	simul::clouds::BaseCloudRenderer(),
 	m_hTechniqueLightning(NULL),
 	m_pd3dDevice(NULL),
@@ -166,50 +166,50 @@ SimulCloudRendererDX11::SimulCloudRendererDX11() :
 #endif
 }
 
-void SimulCloudRendererDX11::SetSkyInterface(simul::sky::BaseSkyInterface *si)
+void SimulCloudRendererDX1x::SetSkyInterface(simul::sky::BaseSkyInterface *si)
 {
 	skyInterface=si;
 	cloudKeyframer->SetSkyInterface(si);
 }
 
-void SimulCloudRendererDX11::SetFadeTableInterface(simul::sky::FadeTableInterface *fti)
+void SimulCloudRendererDX1x::SetFadeTableInterface(simul::sky::FadeTableInterface *fti)
 {
 	fadeTableInterface=fti;
 }
 
-void SimulCloudRendererDX11::SetLossTextures(ID3D11Resource* t1,ID3D11Resource* t2)
+void SimulCloudRendererDX1x::SetLossTextures(ID3D1xResource* t1,ID3D1xResource* t2)
 {
 	if(sky_loss_texture_1!=t1)
 	{
-		sky_loss_texture_1=static_cast<ID3D11Texture2D*>(t1);
+		sky_loss_texture_1=static_cast<ID3D1xTexture2D*>(t1);
 		SAFE_RELEASE(skyLossTexture1Resource);
 		m_pd3dDevice->CreateShaderResourceView(sky_loss_texture_1,NULL,&skyLossTexture1Resource);
 	}
 	if(sky_loss_texture_2!=t2)
 	{
-		sky_loss_texture_2=static_cast<ID3D11Texture2D*>(t2);
+		sky_loss_texture_2=static_cast<ID3D1xTexture2D*>(t2);
 		SAFE_RELEASE(skyLossTexture2Resource);
 		m_pd3dDevice->CreateShaderResourceView(sky_loss_texture_2,NULL,&skyLossTexture2Resource);
 	}
 }
 
-void SimulCloudRendererDX11::SetInscatterTextures(ID3D11Resource* t1,ID3D11Resource* t2)
+void SimulCloudRendererDX1x::SetInscatterTextures(ID3D1xResource* t1,ID3D1xResource* t2)
 {
 	if(sky_inscatter_texture_1!=t1)
 	{
-		sky_inscatter_texture_1=static_cast<ID3D11Texture2D*>(t1);
+		sky_inscatter_texture_1=static_cast<ID3D1xTexture2D*>(t1);
 		SAFE_RELEASE(skyInscatterTexture1Resource);
 		m_pd3dDevice->CreateShaderResourceView(sky_inscatter_texture_1,NULL,&skyInscatterTexture1Resource);
 	}
 	if(sky_inscatter_texture_1!=t2)
 	{
-		sky_inscatter_texture_2=static_cast<ID3D11Texture2D*>(t2);
+		sky_inscatter_texture_2=static_cast<ID3D1xTexture2D*>(t2);
 		SAFE_RELEASE(skyInscatterTexture2Resource);
 		m_pd3dDevice->CreateShaderResourceView(sky_inscatter_texture_2,NULL,&skyInscatterTexture2Resource);
 	}
 }
 
-void SimulCloudRendererDX11::SetNoiseTextureProperties(int s,int f,int o,float p)
+void SimulCloudRendererDX1x::SetNoiseTextureProperties(int s,int f,int o,float p)
 {
 	noise_texture_size=s;
 	noise_texture_frequency=f;
@@ -218,7 +218,7 @@ void SimulCloudRendererDX11::SetNoiseTextureProperties(int s,int f,int o,float p
 	CreateNoiseTexture();
 }
 
-HRESULT SimulCloudRendererDX11::RestoreDeviceObjects( ID3D11Device* dev)
+HRESULT SimulCloudRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 {
 	m_pd3dDevice=dev;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
@@ -289,7 +289,7 @@ HRESULT SimulCloudRendererDX11::RestoreDeviceObjects( ID3D11Device* dev)
 	noiseTexture				->SetResource(noiseTextureResource);
 	lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 
-	V_RETURN(CreateEffect(m_pd3dDevice,&m_pLightningEffect,L"media\\HLSL\\simul_lightning.fx"));
+	V_RETURN(CreateEffect(m_pd3dDevice,&m_pLightningEffect,L"simul_lightning.fx"));
 	if(m_pLightningEffect)
 	{
 		m_hTechniqueLightning	=m_pLightningEffect->GetTechniqueByName("simul_lightning");
@@ -345,7 +345,7 @@ HRESULT SimulCloudRendererDX11::RestoreDeviceObjects( ID3D11Device* dev)
 	return hr;
 }
 
-HRESULT SimulCloudRendererDX11::InvalidateDeviceObjects()
+HRESULT SimulCloudRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pImmediateContext);
@@ -374,7 +374,7 @@ HRESULT SimulCloudRendererDX11::InvalidateDeviceObjects()
 	return hr;
 }
 
-HRESULT SimulCloudRendererDX11::Destroy()
+HRESULT SimulCloudRendererDX1x::Destroy()
 {
 	HRESULT hr=S_OK;
 	hr=InvalidateDeviceObjects();
@@ -385,12 +385,12 @@ HRESULT SimulCloudRendererDX11::Destroy()
 	return hr;
 }
 
-SimulCloudRendererDX11::~SimulCloudRendererDX11()
+SimulCloudRendererDX1x::~SimulCloudRendererDX1x()
 {
 	Destroy();
 }
 
-bool SimulCloudRendererDX11::CreateNoiseTexture(bool override_file)
+bool SimulCloudRendererDX1x::CreateNoiseTexture(bool override_file)
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(noise_texture);
@@ -420,7 +420,7 @@ bool SimulCloudRendererDX11::CreateNoiseTexture(bool override_file)
 	return true;
 }
 
-HRESULT SimulCloudRendererDX11::CreateLightningTexture()
+HRESULT SimulCloudRendererDX1x::CreateLightningTexture()
 {
 	HRESULT hr=S_OK;
 	unsigned size=64;
@@ -464,7 +464,7 @@ HRESULT SimulCloudRendererDX11::CreateLightningTexture()
 	return hr;
 }
 
-HRESULT SimulCloudRendererDX11::CreateIlluminationTexture()
+HRESULT SimulCloudRendererDX1x::CreateIlluminationTexture()
 {
 	unsigned w=64;
 	unsigned l=64;
@@ -490,7 +490,7 @@ HRESULT SimulCloudRendererDX11::CreateIlluminationTexture()
 }
 float t[4];
 float u[4];
-HRESULT SimulCloudRendererDX11::UpdateIlluminationTexture(float dt)
+HRESULT SimulCloudRendererDX1x::UpdateIlluminationTexture(float dt)
 {
 	HRESULT hr=S_OK;
 	// RGBA bit-shift is 12,8,4,0
@@ -520,7 +520,7 @@ HRESULT SimulCloudRendererDX11::UpdateIlluminationTexture(float dt)
 	for(unsigned i=0;i<1;i++)
 	{
 		//thunder_volume[i]*=0.95f;
-		if(lightningRenderInterface->GetSourceStarted(i))
+		if(lightningRenderInterface->IsSourceStarted(i))
 		{
 			u[i]=lightningRenderInterface->GetLightSourceProgress(i);
 			if(u[i]<0.5f)
@@ -563,33 +563,33 @@ HRESULT SimulCloudRendererDX11::UpdateIlluminationTexture(float dt)
 	m_pImmediateContext->Unmap(illumination_texture,0);
 	return hr;
 }
-void SimulCloudRendererDX11::Unmap()
+void SimulCloudRendererDX1x::Unmap()
 {
 	if(mapped!=-1)
 	{
 		if(mapped>=0)
 		{
-			ID3D11Texture3D  *mapped_dx11_resource=(ID3D11Texture3D*)cloud_textures[mapped];
+			ID3D1xTexture3D  *mapped_dx11_resource=(ID3D1xTexture3D*)cloud_textures[mapped];
 			m_pImmediateContext->Unmap(mapped_dx11_resource,0);
 		}
 		mapped=-1;
 	}
 }
 
-void SimulCloudRendererDX11::Map(int texture_index)
+void SimulCloudRendererDX1x::Map(int texture_index)
 {
 	HRESULT hr=S_OK;
 	if(mapped!=texture_index)
 	{
 		Unmap();
-		ID3D11Texture3D *dx11_resource=cloud_textures[texture_index];
-		hr=m_pImmediateContext->Map(dx11_resource,0,D3D11_MAP_WRITE_DISCARD,0,&mapped_cloud_texture);
+		ID3D1xTexture3D *dx1x_resource=cloud_textures[texture_index];
+		hr=m_pImmediateContext->Map(dx1x_resource,0,D3D11_MAP_WRITE_DISCARD,0,&mapped_cloud_texture);
 		mapped=texture_index;
 	}
 }
 // implementing CloudRenderCallback:
 static int mapped=-1;
-void SimulCloudRendererDX11::SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z)
+void SimulCloudRendererDX1x::SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z)
 {
 	if(!width_x||!length_y||!depth_z)
 		return;
@@ -623,7 +623,7 @@ void SimulCloudRendererDX11::SetCloudTextureSize(unsigned width_x,unsigned lengt
 	mapped=2;
 }
 
-void SimulCloudRendererDX11::FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array)
+void SimulCloudRendererDX1x::FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array)
 {
 	Map(texture_index);
 	unsigned *ptr=(unsigned *)mapped_cloud_texture.pData;
@@ -631,7 +631,7 @@ void SimulCloudRendererDX11::FillCloudTextureSequentially(int texture_index,int 
 	memcpy(ptr,uint32_array,num_texels*sizeof(unsigned));
 }
 
-void SimulCloudRendererDX11::CycleTexturesForward()
+void SimulCloudRendererDX1x::CycleTexturesForward()
 {
 	Unmap();
 	std::swap(cloud_textures[0],cloud_textures[1]);
@@ -641,12 +641,12 @@ void SimulCloudRendererDX11::CycleTexturesForward()
 	Map(2);
 }
 
-HRESULT SimulCloudRendererDX11::CreateCloudEffect()
+HRESULT SimulCloudRendererDX1x::CreateCloudEffect()
 {
-	return CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"media\\HLSL\\simul_clouds_and_lightning.fx");
+	return CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds_and_lightning.fx");
 }
 
-void SimulCloudRendererDX11::Update(float dt)
+void SimulCloudRendererDX1x::Update(float dt)
 {
 	if(!cloudInterface)
 		return;
@@ -691,7 +691,7 @@ D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 }
 
 
-HRESULT SimulCloudRendererDX11::Render(bool)
+HRESULT SimulCloudRendererDX1x::Render(bool)
 {
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
@@ -912,7 +912,7 @@ HRESULT SimulCloudRendererDX11::Render(bool)
 	return hr;
 }
 
-HRESULT SimulCloudRendererDX11::RenderLightning()
+HRESULT SimulCloudRendererDX1x::RenderLightning()
 {
 	if(!enable_lightning)
 		return S_OK;
@@ -971,7 +971,7 @@ HRESULT SimulCloudRendererDX11::RenderLightning()
 //	hr=m_pLightningEffect->BeginPass(0);
 	for(unsigned i=0;i<lightningRenderInterface->GetNumLightSources();i++)
 	{
-		if(!lightningRenderInterface->GetSourceStarted(i))
+		if(!lightningRenderInterface->IsSourceStarted(i))
 			continue;
 		simul::math::Vector3 x1,x2;
 		float bright1=0.f,bright2=0.f;
@@ -1033,30 +1033,30 @@ HRESULT SimulCloudRendererDX11::RenderLightning()
 	return hr;
 }
 
-void SimulCloudRendererDX11::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void SimulCloudRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
 	proj=p;
 }
 
 
-simul::clouds::LightningRenderInterface *SimulCloudRendererDX11::GetLightningRenderInterface()
+simul::clouds::LightningRenderInterface *SimulCloudRendererDX1x::GetLightningRenderInterface()
 {
 	return lightningRenderInterface;
 }
 
-float SimulCloudRendererDX11::GetSunOcclusion() const
+float SimulCloudRendererDX1x::GetSunOcclusion() const
 {
 	return sun_occlusion;
 }
 
-HRESULT SimulCloudRendererDX11::MakeCubemap()
+HRESULT SimulCloudRendererDX1x::MakeCubemap()
 {
 	HRESULT hr=S_OK;
 	return hr;
 }
 
-const char *SimulCloudRendererDX11::GetDebugText() const
+const char *SimulCloudRendererDX1x::GetDebugText() const
 {
 	static char debug_text[256];
 	simul::math::Vector3 wo=cloudInterface->GetWindOffset();
@@ -1065,22 +1065,22 @@ const char *SimulCloudRendererDX11::GetDebugText() const
 }
 
 
-void SimulCloudRendererDX11::SetEnableStorms(bool s)
+void SimulCloudRendererDX1x::SetEnableStorms(bool s)
 {
 	enable_lightning=s;
 }
 
-float SimulCloudRendererDX11::GetTiming() const
+float SimulCloudRendererDX1x::GetTiming() const
 {
 	return timing;
 }
 
-ID3D11Texture3D* *SimulCloudRendererDX11::GetCloudTextures()
+ID3D1xTexture3D* *SimulCloudRendererDX1x::GetCloudTextures()
 {
 	return cloud_textures;
 }
 
-const float *SimulCloudRendererDX11::GetCloudScales() const
+const float *SimulCloudRendererDX1x::GetCloudScales() const
 {
 	static float s[3];
 	s[0]=1.f/cloudInterface->GetCloudWidth();
@@ -1089,7 +1089,7 @@ const float *SimulCloudRendererDX11::GetCloudScales() const
 	return s;
 }
 
-const float *SimulCloudRendererDX11::GetCloudOffset() const
+const float *SimulCloudRendererDX1x::GetCloudOffset() const
 {
 	static simul::math::Vector3 wind_offset;
 	wind_offset=cloudInterface->GetWindOffset();

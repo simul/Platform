@@ -6,27 +6,27 @@
 // in accordance with the terms of that agreement.
 
 #pragma once
-#ifdef XBOX
-	#include <xtl.h>
-#else
-	#include <d3dx9.h>
-	#include <d3DX11.h>
-#endif
+#include <d3dx9.h>
+#include <d3dx11.h>
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
 typedef long HRESULT;
-
+#ifdef DX10
+#define SimulWeatherRendererDX1x SimulWeatherRendererDX10
+#else
+#define SimulWeatherRendererDX1x SimulWeatherRendererDX11
+#endif
 class RenderDepthBufferCallback
 {
 public:
 	virtual void Render()=0;
 };
 
-class SimulWeatherRendererDX11 : public simul::clouds::BaseWeatherRenderer, public simul::graph::meta::Group
+class SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer, public simul::graph::meta::Group
 {
 public:
-	SimulWeatherRendererDX11(bool usebuffer=true,bool tonemap=false,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
-	virtual ~SimulWeatherRendererDX11();
+	SimulWeatherRendererDX1x(bool usebuffer=true,bool tonemap=false,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
+	virtual ~SimulWeatherRendererDX1x();
 	//standard d3d object interface functions
 	HRESULT RestoreDeviceObjects(ID3D11Device* pd3dDevice,IDXGISwapChain *swapChain);
 	HRESULT InvalidateDeviceObjects();
@@ -53,9 +53,9 @@ public:
 	void SetExposure(float ex){exposure=ex;}
 
 	//! Get a pointer to the sky renderer owned by this class instance.
-	class SimulSkyRendererDX11 *GetSkyRenderer();
+	class SimulSkyRendererDX1x *GetSkyRenderer();
 	//! Get a pointer to the 3d cloud renderer owned by this class instance.
-	class SimulCloudRendererDX11 *GetCloudRenderer();
+	class SimulCloudRendererDX1x *GetCloudRenderer();
 	//! Get a pointer to the 2d cloud renderer owned by this class instance.
 	class Simul2DCloudRenderer *Get2DCloudRenderer();
 	//! Get a pointer to the rain renderer owned by this class instance.
@@ -76,8 +76,8 @@ protected:
 	ID3D11Device*					m_pd3dDevice;
 	HRESULT CreateBuffers();
 	HRESULT RenderBufferToScreen(ID3D11ShaderResourceView* texture,int w,int h,bool do_tonemap);
-	simul::base::SmartPtr<class SimulSkyRendererDX11> simulSkyRenderer;
-	simul::base::SmartPtr<class SimulCloudRendererDX11> simulCloudRenderer;
+	simul::base::SmartPtr<class SimulSkyRendererDX1x> simulSkyRenderer;
+	simul::base::SmartPtr<class SimulCloudRendererDX1x> simulCloudRenderer;
 	//simul::base::SmartPtr<class Simul2DCloudRenderer> *simul2DCloudRenderer;
 	//simul::base::SmartPtr<class SimulPrecipitationRenderer> *simulPrecipitationRenderer;
 	//simul::base::SmartPtr<class SimulAtmosphericsRenderer> *simulAtmosphericsRenderer;
