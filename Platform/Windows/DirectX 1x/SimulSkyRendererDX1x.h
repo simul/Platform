@@ -113,16 +113,16 @@ protected:
 	ID3D1xEffectShaderResourceVariable*	skyTexture1;
 	ID3D1xEffectShaderResourceVariable*	skyTexture2;
 
-	ID3D1xTexture2D*						flare_texture;
-	ID3D1xTexture2D*						sky_textures[3];
+	ID3D1xTexture2D*					flare_texture;
+	ID3D1xTexture2D*					sky_textures[3];
 
-	ID3D1xTexture3D*						loss_textures[3];
-	ID3D1xTexture3D*						insc_textures[3];
+	ID3D1xTexture3D*					loss_textures[3];
+	ID3D1xTexture3D*					insc_textures[3];
 
-	ID3D1xShaderResourceView*				flare_texture_SRV;
-	ID3D1xShaderResourceView*				sky_textures_SRV[3];
-	ID3D1xShaderResourceView*				loss_textures_SRV[3];
-	ID3D1xShaderResourceView*				insc_textures_SRV[3];
+	ID3D1xShaderResourceView*			flare_texture_SRV;
+	ID3D1xShaderResourceView*			sky_textures_SRV[3];
+	ID3D1xShaderResourceView*			loss_textures_SRV[3];
+	ID3D1xShaderResourceView*			insc_textures_SRV[3];
 
 	int mapped_sky;
 	D3D1x_MAPPED_TEXTURE2D sky_texture_mapped;
@@ -134,7 +134,6 @@ protected:
 	void UnmapFade();
 	void MapSky(int s);
 	void UnmapSky();
-	D3DXVECTOR3				cam_pos;
 	D3DXMATRIX				world,view,proj;
 	HRESULT UpdateSkyTexture(float proportion);
 	HRESULT CreateSkyTexture();

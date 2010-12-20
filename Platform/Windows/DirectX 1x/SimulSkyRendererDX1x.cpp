@@ -32,58 +32,58 @@ struct Vertex_t
 {
 	float x,y,z;
 };
-	static const float size=5.f;
-	static Vertex_t vertices[36] =
-	{
-		{-size,		-size,	size},
-		{size,		-size,	size},
-		{size,		size,	size},
-		{size,		size,	size},
-		{-size,		size,	size},
-		{-size,		-size,	size},
-		
-		{-size,		-size,	-size},
-		{size,		-size,	-size},
-		{size,		size,	-size},
-		{size,		size,	-size},
-		{-size,		size,	-size},
-		{-size,		-size,	-size},
-		
-		{-size,		size,	-size},
-		{size,		size,	-size},
-		{size,		size,	size},
-		{size,		size,	size},
-		{-size,		size,	size},
-		{-size,		size,	-size},
-					
-		{-size,		-size,  -size},
-		{size,		-size,	-size},
-		{size,		-size,	size},
-		{size,		-size,	size},
-		{-size,		-size,	size},
-		{-size,		-size,  -size},
-		
-		{size,		-size,	-size},
-		{size,		size,	-size},
-		{size,		size,	size},
-		{size,		size,	size},
-		{size,		-size,	size},
-		{size,		-size,	-size},
-					
-		{-size,		-size,	-size},
-		{-size,		size,	-size},
-		{-size,		size,	size},
-		{-size,		size,	size},
-		{-size,		-size,	size},
-		{-size,		-size,	-size},
-	};
+static const float size=5.f;
+static Vertex_t vertices[36] =
+{
+	{-size,		-size,	size},
+	{size,		-size,	size},
+	{size,		size,	size},
+	{size,		size,	size},
+	{-size,		size,	size},
+	{-size,		-size,	size},
+	
+	{-size,		-size,	-size},
+	{ size,		-size,	-size},
+	{ size,		 size,	-size},
+	{ size,		 size,	-size},
+	{-size,		 size,	-size},
+	{-size,		-size,	-size},
+	
+	{-size,		size,	-size},
+	{ size,		size,	-size},
+	{ size,		size,	 size},
+	{ size,		size,	 size},
+	{-size,		size,	 size},
+	{-size,		size,	-size},
+				
+	{-size,		-size,  -size},
+	{ size,		-size,	-size},
+	{ size,		-size,	 size},
+	{ size,		-size,	 size},
+	{-size,		-size,	 size},
+	{-size,		-size,  -size},
+	
+	{ size,		-size,	-size},
+	{ size,		 size,	-size},
+	{ size,		 size,	 size},
+	{ size,		 size,	 size},
+	{ size,		-size,	 size},
+	{ size,		-size,	-size},
+				
+	{-size,		-size,	-size},
+	{-size,		 size,	-size},
+	{-size,		 size,	 size},
+	{-size,		 size,	 size},
+	{-size,		-size,	 size},
+	{-size,		-size,	-size},
+};
 
 typedef std::basic_string<TCHAR> tstring;
 
 SimulSkyRendererDX1x::SimulSkyRendererDX1x() :
 	simul::sky::BaseSkyRenderer(),
 	m_pd3dDevice(NULL),
-	//m_pImmediateContext(NULL),
+	m_pImmediateContext(NULL),
 	m_pVtxDecl(NULL),
 	m_pVertexBuffer(NULL),
 	m_pSkyEffect(NULL),
@@ -224,7 +224,9 @@ HRESULT SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	HRESULT hr=S_OK;
 	UnmapSky();
 	UnmapFade();
-//SAFE_RELEASE(m_pImmediateContext);
+#ifndef DX10
+	SAFE_RELEASE(m_pImmediateContext);
+#endif
 	SAFE_RELEASE(m_pSkyEffect);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pVtxDecl);
@@ -625,18 +627,17 @@ HRESULT SimulSkyRendererDX1x::Render()
 	UINT passes=1;
 	hr=ApplyPass(m_hTechniqueSky->GetPassByIndex(0));
 
-	UINT stride = sizeof( Vertex_t );
+	UINT stride = sizeof(Vertex_t);
 	UINT offset = 0;
     UINT Strides[1];
     UINT Offsets[1];
     Strides[0] = 0;
     Offsets[0] = 0;
-	m_pImmediateContext->IASetVertexBuffers( 
-			0,				// the first input slot for binding
-			1,				// the number of buffers in the array
-			&m_pVertexBuffer,	// the array of vertex buffers
-			&stride,		// array of stride values, one for each buffer
-			&offset );		// array of offset values, one for each buffer
+	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
+												1,					// the number of buffers in the array
+												&m_pVertexBuffer,	// the array of vertex buffers
+												&stride,			// array of stride values, one for each buffer
+												&offset );			// array of offset values, one for each buffer
 
 	// Set the input layout
 	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );

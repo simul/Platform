@@ -27,12 +27,13 @@
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
 
-SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(bool usebuffer,bool tonemap,int w,int h,bool sky,bool clouds3d,bool clouds2d,bool rain) :
+SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(
+		bool usebuffer,bool tonemap,int w,int h,bool sky,bool clouds3d,bool clouds2d,bool rain) :
 	m_pd3dDevice(NULL),
 	simulSkyRenderer(NULL),
 	simulCloudRenderer(NULL),
-	show_3d_clouds(true),
-	layer2(true),
+	show_3d_clouds(clouds3d),
+	layer2(clouds2d),
 	BufferWidth(w),
 	BufferHeight(h),
 	timing(0.f),
@@ -40,18 +41,25 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(bool usebuffer,bool tonemap,i
 	show_sky(sky),
 	show_rain(rain)
 {
-	simulSkyRenderer=new SimulSkyRendererDX1x();
-	baseSkyRenderer=simulSkyRenderer.get();
-	AddChild(simulSkyRenderer.get());
-	simulCloudRenderer=new SimulCloudRendererDX1x();
-	baseCloudRenderer=simulCloudRenderer.get();
-	AddChild(simulCloudRenderer.get());
+	if(show_sky)
+	{
+		simulSkyRenderer=new SimulSkyRendererDX1x();
+		baseSkyRenderer=simulSkyRenderer.get();
+		AddChild(simulSkyRenderer.get());
+	}
+	if(show_3d_clouds)
+	{
+		simulCloudRenderer=new SimulCloudRendererDX1x();
+		baseCloudRenderer=simulCloudRenderer.get();
+		AddChild(simulCloudRenderer.get());
+	}
 /*	if(clouds2d)
 		simul2DCloudRenderer=new Simul2DCloudRenderer();
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
 	
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer;*/
+	ConnectInterfaces();
 }
 void SimulWeatherRendererDX1x::ConnectInterfaces()
 {

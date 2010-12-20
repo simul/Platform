@@ -39,10 +39,9 @@
 
 static D3DXMATRIX ident;
 SimulWeatherRenderer::SimulWeatherRenderer(
-	bool usebuffer,bool tonemap,int width,
-	int height,bool sky,bool clouds3d,
-	bool clouds2d,bool rain,
-		bool colour_sky) :
+			bool usebuffer,bool tonemap,int width,
+			int height,bool sky,bool clouds3d,
+			bool clouds2d,bool rain,bool colour_sky) :
 	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
 	m_pTonemapEffect(NULL),
@@ -82,7 +81,6 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 		simulCloudRenderer=new SimulCloudRenderer();
 		baseCloudRenderer=simulCloudRenderer.get();
 		AddChild(simulCloudRenderer.get());
-
 		simulLightningRenderer=new SimulLightningRenderer(simulCloudRenderer->GetLightningRenderInterface());
 		baseLightningRenderer=simulLightningRenderer.get();
 	}
@@ -136,7 +134,7 @@ HRESULT SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)
 		if(simulCloudRenderer)
 			simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
 	}
-	if(simulAtmosphericsRenderer&&simulSkyRenderer)
+	if(simulCloudRenderer&&simulSkyRenderer)
 		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 	HRESULT hr=S_OK;
 	return hr;

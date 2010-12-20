@@ -88,7 +88,7 @@ public:
 	
 	void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array);
-	void FillIlluminationBlock(int source_index,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array){}
+	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *){}
 
 	// Distance for fade texture lookups:
 	void SetMaxFadeDistanceKm(float dist_km)

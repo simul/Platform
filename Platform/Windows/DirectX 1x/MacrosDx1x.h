@@ -2,6 +2,12 @@
 #define MACROS_H_DONE
 #include <iostream>
 #include <tchar.h>
+typedef std::basic_string<TCHAR> tstring;
+#ifdef UNICODE
+	#define stprintf_s swprintf_s
+#else
+	#define stprintf_s sprintf_s
+#endif
 
 #ifdef DX10
 	#define ID3D1xDevice				ID3D10Device

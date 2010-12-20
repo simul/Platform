@@ -730,7 +730,6 @@ static float effect_on_cloud=20.f;
 	helper->Update((const float*)cam_pos,wind_offset,view_dir,up,0.f,cubemap);
 	view_km*=0.001f;
 	float base_alt_km=0.001f*(cloudInterface->GetCloudBaseZ());//+.5f*cloudInterface->GetCloudHeight());
-	float top_alt_km=base_alt_km+0.001f*cloudInterface->GetCloudHeight();
 	static float light_mult=0.03f;
 	simul::sky::float4 light_response(	cloudInterface->GetLightResponse(),
 										0,

@@ -101,14 +101,14 @@ public:
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
-	void FillCloudTextureBlock(int ,int,int,int,int,int,int,const unsigned *)
+	void FillCloudTextureBlock(int,int,int,int,int,int,int,const unsigned *)
 	{
 	}
 	void CycleTexturesForward();
 
-	void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
-	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array){}
-	void FillIlluminationBlock(int source_index,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array){}
+	void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z);
+	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array);
+	void FillIlluminationBlock(int,int,int,int,int,int,int,const unsigned char *){}
 
 	// Save and load a sky sequence
 	std::ostream &Save(std::ostream &os) const;
@@ -192,7 +192,7 @@ protected:
 	D3D1x_MAPPED_TEXTURE3D mapped_cloud_texture;
 	HRESULT UpdateIlluminationTexture(float dt);
 	float LookupLargeScaleTexture(float x,float y);
-	HRESULT CreateIlluminationTexture();
+
 	HRESULT CreateLightningTexture();
 	virtual bool CreateNoiseTexture(bool override_file=false);
 	HRESULT CreateCloudEffect();
@@ -202,9 +202,4 @@ protected:
 	bool enable_lightning;
 
 	float last_time;
-
-	int noise_texture_size;
-	int noise_texture_frequency;
-	int texture_octaves;
-	float texture_persistence;
 };

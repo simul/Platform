@@ -151,7 +151,7 @@ protected:
 	D3DXHANDLE					m_hTechniqueFadeCrossSection;
 	D3DXHANDLE					altitudeTexCoord;
 	D3DXHANDLE					lightDirection;
-	D3DXHANDLE					MieRayleighRatio;
+	D3DXHANDLE					mieRayleighRatio;
 	D3DXHANDLE					hazeEccentricity;
 	D3DXHANDLE					skyInterp;
 	D3DXHANDLE					colour;

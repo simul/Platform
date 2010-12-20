@@ -83,7 +83,9 @@ HRESULT SimulHDRRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapCh
 HRESULT SimulHDRRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-//SAFE_RELEASE(m_pImmediateContext);
+#ifndef DX10
+	SAFE_RELEASE(m_pImmediateContext);
+#endif
 	SAFE_RELEASE(m_pTonemapEffect);
 	SAFE_RELEASE(m_pBufferVertexDecl);
 	SAFE_RELEASE(m_pVertexBuffer);

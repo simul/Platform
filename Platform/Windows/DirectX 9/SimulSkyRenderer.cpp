@@ -116,8 +116,8 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	
 	worldViewProj				=m_pSkyEffect->GetParameterByName(NULL,"worldViewProj");
 	lightDirection				=m_pSkyEffect->GetParameterByName(NULL,"lightDir");
-	MieRayleighRatio			=m_pSkyEffect->GetParameterByName(NULL,"MieRayleighRatio");
-	hazeEccentricity			=m_pSkyEffect->GetParameterByName(NULL,"HazeEccentricity");
+	mieRayleighRatio			=m_pSkyEffect->GetParameterByName(NULL,"mieRayleighRatio");
+	hazeEccentricity			=m_pSkyEffect->GetParameterByName(NULL,"hazeEccentricity");
 	skyInterp					=m_pSkyEffect->GetParameterByName(NULL,"skyInterp");
 	altitudeTexCoord			=m_pSkyEffect->GetParameterByName(NULL,"altitudeTexCoord");
 
@@ -1195,7 +1195,7 @@ HRESULT SimulSkyRenderer::Render()
 	std::swap(sun_dir.y,sun_dir.z);
 
 	m_pSkyEffect->SetVector	(lightDirection		,&sun_dir);
-	m_pSkyEffect->SetVector	(MieRayleighRatio	,&ratio);
+	m_pSkyEffect->SetVector	(mieRayleighRatio	,&ratio);
 	m_pSkyEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
 
