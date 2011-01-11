@@ -288,6 +288,8 @@ ID3D1xRenderTargetView* SimulHDRRendererDX1x::MakeRenderTarget(const ID3D1xTextu
 HRESULT SimulHDRRendererDX1x::StartRender()
 {
 	HRESULT hr=S_OK;
+	if(hdrTexture)
+		hdrTexture->SetResource(NULL);
 	m_pHDRRenderTarget[0]	=NULL;
 	m_pBufferDepthSurface	=NULL;
 	m_pLDRRenderTarget[0]	=NULL;
@@ -302,7 +304,10 @@ HRESULT SimulHDRRendererDX1x::StartRender()
 										);
 	m_pHDRRenderTarget[0]=MakeRenderTarget(hdr_buffer_texture);
 	//hr=m_pd3dDevice->CreateDepthStencilView((ID3D1xResource*)buffer_depth_texture, NULL, &m_pBufferDepthSurface);
+	//if(m_pBufferDepthSurface)
+	
 	m_pImmediateContext->OMSetRenderTargets(1,m_pHDRRenderTarget,m_pBufferDepthSurface);
+
 	m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget[0],clearColor);
 	if(m_pBufferDepthSurface)
 		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, depth_start, 0);
@@ -335,6 +340,7 @@ HRESULT SimulHDRRendererDX1x::ApplyFade()
 HRESULT SimulHDRRendererDX1x::FinishRender()
 {
 	HRESULT hr=S_OK;
+	hr=hdrTexture->SetResource(hdr_buffer_texture_SRV);
 	D3D1x_TEXTURE2D_DESC desc;
 	PIXBeginNamedEvent(0,"HDR Buffer To Screen");
 
@@ -346,7 +352,6 @@ HRESULT SimulHDRRendererDX1x::FinishRender()
 	ApplyPass(TonemapTechnique->GetPassByIndex(0));
 	Exposure->SetFloat(exposure*exposure_multiplier);
 	Gamma->SetFloat(gamma);
-	hdrTexture->SetResource(hdr_buffer_texture_SRV);
 
 	RenderBufferToCurrentTarget(true);
 	//m_pd3dDevice->ClearDepthStencilView(m_pOldDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL,1.f,0L);
@@ -357,6 +362,7 @@ HRESULT SimulHDRRendererDX1x::FinishRender()
 	SAFE_RELEASE(m_pHDRRenderTarget[0])
 	SAFE_RELEASE(m_pBufferDepthSurface)
 	PIXEndNamedEvent();
+	hdrTexture->SetResource(NULL);
 	return hr;
 }
 

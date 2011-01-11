@@ -142,7 +142,6 @@ protected:
 	CPUFadeVertex_t *cpu_fade_vertices;
 	HRESULT RenderNoiseTexture();
 	bool y_vertical;
-	float sun_occlusion;
 	simul::sound::fmod::NodeSound *sound;
 	float timing;
 

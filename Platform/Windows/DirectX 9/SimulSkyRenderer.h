@@ -77,12 +77,6 @@ public:
 	HRESULT						RenderFades(int width);
 	//! Draw sidereal and geographic information to screen
 	HRESULT						RenderCelestialDisplay(int screen_width,int screen_height);
-	//! Get a value, from zero to one, which represents how much of the sun is visible.
-	//! Call this when the current rendering surface is the one that has obscuring
-	//! objects like mountains etc. in it, and make sure these have already been drawn.
-	//! GetSunOcclusion executes a pseudo-render of an invisible billboard, then
-	//! uses a hardware occlusion query to see how many pixels have passed the z-test.
-	void CalcSunOcclusion(float cloud_occlusion=0.f);
 #ifdef XBOX
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);

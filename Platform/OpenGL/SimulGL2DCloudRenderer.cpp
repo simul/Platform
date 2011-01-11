@@ -340,7 +340,6 @@ bool SimulGL2DCloudRenderer::Create()
 	helper=new simul::clouds::Cloud2DGeometryHelper();
 	CreateNoiseTexture();
 	CreateImageTexture();
-	cloudNode=new simul::clouds::FastCloudNode;
 	cloudInterface=cloudNode.get();
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 
@@ -378,7 +377,7 @@ bool SimulGL2DCloudRenderer::Create()
 	cloudNode->Generate();
 
 	helper->Initialize(16,100000.f);
-	cloudKeyframer=new simul::clouds::CloudKeyframer(cloudInterface,true);
+	cloudKeyframer=new simul::clouds::CloudKeyframer(cloudInterface,NULL,true);
 	cloudKeyframer->SetOpenGL(true);
 	cloudKeyframer->SetUserKeyframes(false);
 // lighting is done in CreateCloudTexture, so memory has now been allocated

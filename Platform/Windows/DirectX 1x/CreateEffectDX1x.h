@@ -14,16 +14,15 @@
 #include <d3dx11.h>
 #include <d3dx11effect.h>
 #endif
+#include <map>
 #include "MacrosDX1x.h"
 
 extern void SetShaderPath(const char *path);
 extern void SetTexturePath(const char *path);
 typedef long HRESULT;
-#ifdef DX10
-extern HRESULT CreateEffect(ID3D10Device *d3dDevice,ID3D10Effect **effect,const TCHAR *filename,int num_defines=0,...);
-#else
-extern HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const TCHAR *filename,int num_defines=0,...);
-#endif
+extern HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename);
+extern HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,const std::map<std::string,std::string>&defines);
+
 extern void SetDevice(ID3D1xDevice* dev);
 
 extern HRESULT Map2D(ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp);

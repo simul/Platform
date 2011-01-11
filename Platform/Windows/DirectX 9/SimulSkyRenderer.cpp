@@ -638,13 +638,15 @@ HRESULT SimulSkyRenderer::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radi
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
 	std::swap(sun_dir.y,sun_dir.z);
 	D3DXVECTOR4 sun2;
+	D3DXMATRIX inv_world;
+	D3DXMatrixInverse(&inv_world,NULL,&world);
 	D3DXVec4Transform(  &sun2,
 						  &sun_dir,
-						  &world);
-	m_pSkyEffect->SetVector	(lightDirection	,&sun2);
+						  &inv_world);
+	m_pSkyEffect->SetVector(lightDirection,&sun2);
 
-	D3DXMatrixMultiply(&tmp1, &world,&view);
-	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
+	D3DXMatrixMultiply(&tmp1,&world,&view);
+	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
 	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
 	struct Vertext
@@ -679,11 +681,11 @@ HRESULT SimulSkyRenderer::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radi
 	return hr;
 }
 int query_issued=0;
-void SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
+float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 {
 	sun_occlusion=cloud_occlusion;
 	//if(!m_hTechniqueQuery)
-		return;
+		return sun_occlusion;
 	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 	std::swap(sun_dir.y,sun_dir.z);
@@ -1010,8 +1012,6 @@ HRESULT SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_hei
 HRESULT SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)
 {
 	HRESULT hr=S_OK;
-	// Make the stars "wheel" in the sky - strictly speaking they should spin around the same axis as the sun.
-//	D3DXMatrixRotationZ(&world,2.f*3.1415926536f*skyInterface->GetDaytime());
 	if(!GetSiderealSkyInterface())
 	{
 		D3DXMatrixIdentity(world);
@@ -1023,18 +1023,10 @@ HRESULT SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)
 		D3DXMATRIX flip_y_z;
 		static float rr=3.1415926536f/2.f;
 		D3DXMatrixRotationX(&flip_y_z,rr);
-		/*D3DXMatrixIdentity(&flip_y_z);
-		flip_y_z._23=1.f;
-		flip_y_z._33=0.f;
-		flip_y_z._32=1.f;
-		flip_y_z._22=0.f;*/
 		D3DXMATRIX tmp1, tmp2;
 		D3DXMatrixMultiply(&tmp1,&flip_y_z,&tra);
 		D3DXMatrixMultiply(&tmp2,&tmp1,&flip_y_z);
-		//*world=tmp2;
 		D3DXMatrixTranspose(world,&tmp2);
-		//world=tmp1;
-		//set up matrices
 	}
 	world->_41=cam_pos.x;
 	world->_42=cam_pos.y;

@@ -188,7 +188,6 @@ SimulCloudRenderer::SimulCloudRenderer()
 	,unitSphereIndexBuffer(NULL)
 	,y_vertical(true)
 	,rebuild_shaders(true)
-	,sun_occlusion(0.f)
 	,timing(0.f)
 	,vertices(NULL)
 	,cpu_fade_vertices(NULL)
@@ -332,6 +331,8 @@ HRESULT SimulCloudRenderer::InitEffects()
 	char max_fade_distance_str[25];
 	sprintf(max_fade_distance_str,"%3.1f",max_fade_distance_metres);
 	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
+	if(!y_vertical)
+		defines["Z_VERTICAL"]='1';
 	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
 
 	m_hTechniqueCloud					=GetDX9Technique(m_pCloudEffect,"simul_clouds");
@@ -713,11 +714,13 @@ static float effect_on_cloud=20.f;
 	D3DXMATRIX wvp;
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	cam_pos=GetCameraPosVector(view);
-	simul::math::Vector3 view_pos(cam_pos.x,cam_pos.y,cam_pos.z);
+	view_pos[0]=cam_pos.x;
+	view_pos[1]=cam_pos.y;
+	view_pos[2]=cam_pos.z;
 	if(y_vertical)
 		std::swap(view_pos.y,view_pos.z);
 	simul::math::Vector3 wind_offset=cloudInterface->GetWindOffset();
-	view_pos-=wind_offset;
+//	view_pos-=wind_offset;
 	if(y_vertical)
 		std::swap(wind_offset.y,wind_offset.z);
 
@@ -930,11 +933,6 @@ float SimulCloudRenderer::GetPrecipitationIntensity() const
 void SimulCloudRenderer::SetStepsPerHour(unsigned steps)
 {
 	cloudKeyframer->SetInterpStepTime(1.f/(24.f*(float)steps));
-}
-
-float SimulCloudRenderer::GetSunOcclusion() const
-{
-	return sun_occlusion;
 }
 
 HRESULT SimulCloudRenderer::MakeCubemap()

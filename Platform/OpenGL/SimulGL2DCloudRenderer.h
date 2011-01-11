@@ -8,7 +8,7 @@
 #pragma once
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Graph/Meta/Group.h"
-#include "Simul/Clouds/CloudRenderCallback.h"
+#include "Simul/Clouds/BaseCloudRenderer.h"
 namespace simul
 {
 	namespace clouds
@@ -25,7 +25,7 @@ namespace simul
 	}
 }
 
-class SimulGL2DCloudRenderer : public simul::clouds::CloudRenderCallback ,public simul::graph::meta::Group
+class SimulGL2DCloudRenderer : public simul::clouds::BaseCloudRenderer
 {
 public:
 	SimulGL2DCloudRenderer();

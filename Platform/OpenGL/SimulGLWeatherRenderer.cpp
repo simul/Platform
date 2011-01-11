@@ -149,12 +149,12 @@ void SimulGLWeatherRenderer::SetPrecalculatedGamma(float g)
 
 void SimulGLWeatherRenderer::Update(float dt)
 {
+	if(simulCloudRenderer.get())
+		simulCloudRenderer->Update(dt);
 	if(simul2DCloudRenderer.get())
 		simul2DCloudRenderer->Update(dt);
 	if(GetSkyRenderer())
-	{
 		GetSkyRenderer()->Update(dt);
-	}
 }
 
 class SimulGLSkyRenderer *SimulGLWeatherRenderer::GetSkyRenderer()

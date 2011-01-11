@@ -107,7 +107,13 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename, UINT FXFlags, I
 	return hr;
 }*/
 
-HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,int num_defines,...)
+HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename)
+{
+	std::map<std::string,std::string> defines;
+	return CreateEffect(d3dDevice,effect,filename,defines);
+}
+
+HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,const std::map<std::string,std::string>&defines)
 {
 	HRESULT hr=S_OK;
 	std::cout<<_T("Create effect: ")<<filename<<std::endl;
@@ -118,7 +124,8 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 	std::vector<std::string> d3dmacros;
 	{
 		bool name=true;
-	const char *txt=NULL;
+		const char *txt=NULL;
+		size_t num_defines=defines.size();
 		if(num_defines)
 		{
 			macros=new D3D10_SHADER_MACRO[num_defines+1];
@@ -149,11 +156,10 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 
 #ifdef DX10
 	ID3D10Blob *errors;
-
 	if(FAILED(
 		hr=D3DX10CreateEffectFromFile(
 				  fn.c_str(),
-				  NULL,
+				  macros,
 				  NULL,
 				   "fx_4_0",
 				  flags,

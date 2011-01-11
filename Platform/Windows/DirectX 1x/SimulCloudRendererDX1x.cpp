@@ -170,12 +170,16 @@ void SimulCloudRendererDX1x::SetLossTextures(ID3D1xResource* t1,ID3D1xResource* 
 	if(sky_loss_texture_1!=t1)
 	{
 		sky_loss_texture_1=static_cast<ID3D1xTexture2D*>(t1);
+		if(skyLossTexture1)
+			skyLossTexture1->SetResource(NULL);
 		SAFE_RELEASE(skyLossTexture1Resource);
 		m_pd3dDevice->CreateShaderResourceView(sky_loss_texture_1,NULL,&skyLossTexture1Resource);
 	}
 	if(sky_loss_texture_2!=t2)
 	{
 		sky_loss_texture_2=static_cast<ID3D1xTexture2D*>(t2);
+		if(skyLossTexture2)
+			skyLossTexture2->SetResource(NULL);
 		SAFE_RELEASE(skyLossTexture2Resource);
 		m_pd3dDevice->CreateShaderResourceView(sky_loss_texture_2,NULL,&skyLossTexture2Resource);
 	}
@@ -186,12 +190,18 @@ void SimulCloudRendererDX1x::SetInscatterTextures(ID3D1xResource* t1,ID3D1xResou
 	if(sky_inscatter_texture_1!=t1)
 	{
 		sky_inscatter_texture_1=static_cast<ID3D1xTexture2D*>(t1);
+		if(skyInscatterTexture1)
+			skyInscatterTexture1->SetResource(NULL);
+		//if(skyInscatterTexture1Resource)
+		//	skyInscatterTexture1Resource->Release();
 		SAFE_RELEASE(skyInscatterTexture1Resource);
 		m_pd3dDevice->CreateShaderResourceView(sky_inscatter_texture_1,NULL,&skyInscatterTexture1Resource);
 	}
-	if(sky_inscatter_texture_1!=t2)
+	if(sky_inscatter_texture_2!=t2)
 	{
 		sky_inscatter_texture_2=static_cast<ID3D1xTexture2D*>(t2);
+		if(skyInscatterTexture2)
+			skyInscatterTexture2->SetResource(NULL);
 		SAFE_RELEASE(skyInscatterTexture2Resource);
 		m_pd3dDevice->CreateShaderResourceView(sky_inscatter_texture_2,NULL,&skyInscatterTexture2Resource);
 	}
@@ -588,11 +598,15 @@ void SimulCloudRendererDX1x::CycleTexturesForward()
 
 HRESULT SimulCloudRendererDX1x::CreateCloudEffect()
 {
-	return CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds_and_lightning.fx");
+	std::map<std::string,std::string> defines;
+	if(!y_vertical)
+		defines["Z_VERTICAL"]='1';
+	return CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds_and_lightning.fx",defines);
 }
 
 void SimulCloudRendererDX1x::Update(float dt)
 {
+	BaseCloudRenderer::Update(dt);
 	if(!cloudInterface)
 		return;
 	float current_time=skyInterface->GetDaytime();
