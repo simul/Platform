@@ -10,7 +10,6 @@
 
 #include "SimulWeatherRendererDX1x.h"
 
-#include <tchar.h>
 #include <dxerr.h>
 #include <string>
 
@@ -322,22 +321,16 @@ SimulAtmosphericsRenderer *SimulWeatherRendererDX1x::GetAtmosphericsRenderer()
 	return NULL;
 }
 
-const char *SimulWeatherRendererDX1x::GetDebugText() const
+const TCHAR *SimulWeatherRendererDX1x::GetDebugText() const
 {
-	static char debug_text[256];
+	static TCHAR debug_text[256];
 	if(simulSkyRenderer)
-		sprintf_s(debug_text,256,"%s",simulSkyRenderer->GetDebugText());
+		_stprintf_s(debug_text,256,_T("%s"),simulCloudRenderer->GetDebugText());
 //		sprintf_s(debug_text,256,"%s",simulCloudRenderer->GetDebugText());
 //	if(simulCloudRenderer)
 		//sprintf_s(debug_text,256,"TIME %2.2g ms\n%s",timing,simulCloudRenderer->GetDebugText());
 //		sprintf_s(debug_text,256,"%s",simulCloudRenderer->GetDebugText());
 	return debug_text;
-}
-const wchar_t *SimulWeatherRendererDX1x::GetWDebugText() const
-{
-	static std::wstring wstr;
-	wstr=simul::base::StringToWString(GetDebugText());
-	return wstr.c_str();
 }
 
 float SimulWeatherRendererDX1x::GetTiming() const

@@ -55,21 +55,18 @@ public:
 	void Update(float dt);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	HRESULT Render(bool cubemap=false);
-#ifdef XBOX
-	//! Call this once per frame to set the matrices.
+#if defined(XBOX) || defined(DOXYGEN)
+	//! Call this once per frame to set the matrices (X360 only).
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 #endif
 	float GetPrecipitationIntensity() const;
 	void SetStepsPerHour(unsigned s);
 	//! Return true if the camera is above the cloudbase altitude.
 	bool IsCameraAboveCloudBase() const;
-	float GetSunOcclusion() const;
 	const TCHAR *GetDebugText() const;
 	float GetTiming() const;
 	//! Get the list of three textures used for cloud rendering.
-	LPDIRECT3DVOLUMETEXTURE9 *GetCloudTextures();
-	const float *GetCloudScales() const;
-	const float *GetCloudOffset() const;
+	void **GetCloudTextures();
 	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2);
 	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2);
 	LPDIRECT3DTEXTURE9 GetNoiseTexture()

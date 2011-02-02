@@ -6,6 +6,7 @@
 // in accordance with the terms of that agreement.
 
 #pragma once
+#include <tchar.h>
 #include "Simul/Platform/Windows/DirectX 1x/MacrosDx1x.h"
 #include <d3dx9.h>
 #ifdef X10
@@ -70,8 +71,7 @@ public:
 	//! Get a pointer to the atmospherics renderer owned by this class instance.
 	class SimulAtmosphericsRenderer *GetAtmosphericsRenderer();
 	//! Get the current debug text as a c-string pointer.
-	const char *GetDebugText() const;
-	const wchar_t *GetWDebugText() const;
+	const TCHAR *GetDebugText() const;
 	//! Get timing value.
 	float GetTiming() const;
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.

@@ -1,10 +1,13 @@
-float4x4 worldViewProj	: WorldViewProjection;
-
-texture lightningTexture;
-sampler2D lightning_texture= sampler_state 
+cbuffer cbPerObject : register(b0)
 {
-    Texture = <lightningTexture>;
+	matrix worldViewProj : packoffset(c0);
+};
+
+Texture2D lightningTexture;
+SamplerState samplerState
+{
 	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Clamp;
 };
 
 struct vertexInput
@@ -15,7 +18,7 @@ struct vertexInput
 
 struct vertexOutput
 {
-    float4 hPosition	: POSITION;
+    float4 hPosition	: SV_POSITION;
     float2 texCoords	: TEXCOORD0;
 };
 
@@ -27,9 +30,9 @@ vertexOutput VS_Main(vertexInput IN)
     return OUT;
 }
 
-half4 PS_Main(vertexOutput IN): color
+float4 PS_Main(vertexOutput IN): SV_TARGET
 {
-	half4 colour=tex2D(lightning_texture,IN.texCoords.xy);
+	float4 colour=lightningTexture.Sample(samplerState,IN.texCoords.xy);
     return colour;
 }
 

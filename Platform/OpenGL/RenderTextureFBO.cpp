@@ -236,10 +236,12 @@ void RenderTexture::DeactivateAndRender(bool blend)
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	}
 	glDepthMask(GL_FALSE);
+	ERROR_CHECK
     DrawQuad(main_viewport[2],main_viewport[3]);
 
     glUseProgram(NULL);
 	glPopAttrib();
+	ERROR_CHECK
 }
 
 void RenderTexture::Deactivate() 

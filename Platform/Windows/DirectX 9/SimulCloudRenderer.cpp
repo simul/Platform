@@ -201,7 +201,6 @@ SimulCloudRenderer::SimulCloudRenderer()
 		cloud_textures[i]=NULL;
 
 	//cloudNode->SetHumidityCallback(&hum_callback);
-	cloudNode->SetCacheNoise(true);
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 	
 	cloudInterface->Generate();
@@ -600,7 +599,7 @@ void SimulCloudRenderer::Update(float dt)
 		return;
 	if(!cloudInterface)
 		return;
-	float current_time=skyInterface->GetDaytime();
+	float current_time=skyInterface->GetTime();
 	float real_dt=0.f;
 	if(last_time!=0.f)
 		real_dt=3600.f*(current_time-last_time);
@@ -668,7 +667,6 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 	{
 		V_RETURN(CreateNoiseTexture());
 	}
-static float effect_on_cloud=20.f;
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
 	m_pd3dDevice->SetSamplerState(0,D3DSAMP_SRGBTEXTURE,0);
 	m_pd3dDevice->SetSamplerState(1,D3DSAMP_SRGBTEXTURE,0);
@@ -718,7 +716,7 @@ static float effect_on_cloud=20.f;
 	view_pos[1]=cam_pos.y;
 	view_pos[2]=cam_pos.z;
 	if(y_vertical)
-		std::swap(view_pos.y,view_pos.z);
+		std::swap(view_pos[1],view_pos[2]);
 	simul::math::Vector3 wind_offset=cloudInterface->GetWindOffset();
 //	view_pos-=wind_offset;
 	if(y_vertical)
@@ -786,7 +784,8 @@ static float effect_on_cloud=20.f;
 				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(i);
 			else lightning_multipliers[i]=0;
 		}
-		lightning_colour.w=effect_on_cloud;
+		static float lightning_effect_on_cloud=20.f;
+		lightning_colour.w=lightning_effect_on_cloud;
 		m_pCloudEffect->SetVector	(lightningMultipliers	,(D3DXVECTOR4*)(&lightning_multipliers));
 		m_pCloudEffect->SetVector	(lightningColour		,&lightning_colour);
 
@@ -871,7 +870,6 @@ static float effect_on_cloud=20.f;
 				vertex->texCoordsNoise.x=V.noise_tex_x;
 				vertex->texCoordsNoise.y=V.noise_tex_y;
 				vertex->layerFade=fade;
-			//	const simul::sky::float4 &light_c=light_colours[V.grid_y];
 				vertex->sunlightColour.x=sunlight.x;
 				vertex->sunlightColour.y=sunlight.y;
 				vertex->sunlightColour.z=sunlight.z;
@@ -1088,27 +1086,9 @@ float SimulCloudRenderer::GetTiming() const
 	return timing;
 }
 
-LPDIRECT3DVOLUMETEXTURE9 *SimulCloudRenderer::GetCloudTextures()
+void **SimulCloudRenderer::GetCloudTextures()
 {
-	return cloud_textures;
-}
-
-const float *SimulCloudRenderer::GetCloudScales() const
-{
-	static float s[3];
-	s[0]=1.f/cloudInterface->GetCloudWidth();
-	s[1]=1.f/cloudInterface->GetCloudLength();
-	s[2]=1.f/cloudInterface->GetCloudHeight();
-	return s;
-}
-
-const float *SimulCloudRenderer::GetCloudOffset() const
-{
-	static simul::math::Vector3 offset,X1,X2;
-	offset=cloudInterface->GetWindOffset();
-	cloudInterface->GetExtents(X1,X2);
-	offset+=X1;
-	return offset.FloatPointer(0);
+	return (void **)cloud_textures;
 }
 
 HRESULT SimulCloudRenderer::RenderCrossSections(int width)
@@ -1119,7 +1099,7 @@ HRESULT SimulCloudRenderer::RenderCrossSections(int width)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
 				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
-				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetDaytime())+i));
+				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 		m_pCloudEffect->SetVector	(lightResponse		,(D3DXVECTOR4*)(&light_response));
 		m_pCloudEffect->SetFloat(crossSectionOffset,cloudInterface->GetWrap()?0.5f:0.f);
@@ -1130,7 +1110,7 @@ HRESULT SimulCloudRenderer::RenderCrossSections(int width)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
 				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
-				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetDaytime())+i));
+				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 		m_pCloudEffect->SetVector(lightResponse		,(D3DXVECTOR4*)(&light_response));
 		m_pCloudEffect->SetFloat(crossSectionOffset	,cloudInterface->GetWrap()?0.5f:0.f);

@@ -91,6 +91,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x() :
 	m_hTechniqueSun(NULL),
 	m_hTechniqueQuery(NULL),	
 	m_hTechniqueFlare(NULL),
+	m_hTechniquePlanet(NULL),
 	flare_texture(NULL),
 	flare_texture_SRV(NULL),
 	sun_occlusion(0.f),
@@ -167,6 +168,7 @@ HRESULT SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 	sunlightColour		=m_pSkyEffect->GetVariableByName("sunlightColour")->AsVector();
 	m_hTechniqueSun		=m_pSkyEffect->GetTechniqueByName("simul_sun");
 	m_hTechniqueFlare	=m_pSkyEffect->GetTechniqueByName("simul_flare");
+	m_hTechniquePlanet	=m_pSkyEffect->GetTechniqueByName("simul_planet");
 	flareTexture		=m_pSkyEffect->GetVariableByName("flareTexture")->AsShaderResource();
 
 	skyTexture1			=m_pSkyEffect->GetVariableByName("skyTexture1")->AsShaderResource();
@@ -501,10 +503,11 @@ HRESULT SimulSkyRendererDX1x::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_
 	return hr;*/
 }
 
-void SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
+float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 {
+	sun_occlusion=cloud_occlusion;
 	if(!m_hTechniqueQuery)
-		return;
+		return sun_occlusion;
 //	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
 	float sun_angular_size=3.14159f/180.f/2.f;
@@ -530,6 +533,7 @@ void SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 		sun_occlusion=0;
 	sun_occlusion=1.f-(1.f-cloud_occlusion)*(1.f-sun_occlusion);
 	proj=tmp;*/
+	return sun_occlusion;
 }
 simul::sky::float4 sunlight;
 HRESULT SimulSkyRendererDX1x::RenderSun()
@@ -559,6 +563,36 @@ HRESULT hr=S_OK;
     
     while (d3dQuery->GetData((void *) &pixelsVisible,sizeof(UINT64),0) == S_FALSE);*/
 	return hr;
+}
+
+bool SimulSkyRendererDX1x::RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
+{
+	float alt_km=0.001f*cam_pos.y;
+
+	if(do_lighting)
+		ApplyPass(m_hTechniquePlanet->GetPassByIndex(0));
+	else
+		ApplyPass(m_hTechniqueFlare->GetPassByIndex(0));
+
+	//m_pSkyEffect->SetTexture(flareTexture,(LPDIRECT3DTEXTURE9)tex);
+
+	simul::sky::float4 original_irradiance=skyInterface->GetSunIrradiance();
+
+	simul::sky::float4 planet_dir4=dir;
+	planet_dir4/=simul::sky::length(planet_dir4);
+
+	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
+	float planet_elevation=asin(planet_dir4.y);
+	planet_colour*=skyInterface->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
+	D3DXVECTOR4 planet_dir(dir);
+
+	// Make it bigger than it should be?
+	static float size_mult=1.f;
+	float planet_angular_size=size_mult*rad;
+	// Start the query
+	//m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
+	HRESULT hr=RenderAngledQuad(planet_dir,planet_angular_size);
+	return hr==S_OK;
 }
 
 HRESULT SimulSkyRendererDX1x::RenderFlare(float exposure)

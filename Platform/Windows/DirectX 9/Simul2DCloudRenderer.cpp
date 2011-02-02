@@ -366,7 +366,7 @@ void Simul2DCloudRenderer::Update(float )
 		return;
 	if(!cloudInterface)
 		return;
-	float current_time=skyInterface->GetDaytime();
+	float current_time=skyInterface->GetTime();
 	cloudKeyframer->Update(current_time);
 }
 
@@ -618,12 +618,13 @@ static float light_mult=.03f;
 	return hr;
 }
 
+#ifdef XBOX
 void Simul2DCloudRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
 	proj=p;
 }
-
+#endif
 void Simul2DCloudRenderer::SetWind(float speed,float heading_degrees)
 {
 	cloudKeyframer->SetWindSpeed(speed);
@@ -673,7 +674,7 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 {
 	static char debug_text[256];
 	simul::math::Vector3 wo=cloudInterface->GetWindOffset();
-	sprintf_s(debug_text,256,"interp %2.2g\nnext noise time %2.2g",cloudKeyframer->GetInterpolation(),cloudNode->GetDaytime());
+	sprintf_s(debug_text,256,"interp %2.2g\nnext noise time %2.2g",cloudKeyframer->GetInterpolation(),cloudNode->GetTime());
 	return debug_text;
 }
 

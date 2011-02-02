@@ -38,7 +38,8 @@ public:
 	bool Destroy();
 	bool Render(bool depth_testing=false,bool default_fog=false);
 	void SetWind(float spd,float dir_deg);
-	void SetCloudiness(float h);
+	//! Get the list of three textures used for cloud rendering.
+	void **GetCloudTextures();
 	const char *GetDebugText();
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
@@ -48,9 +49,9 @@ public:
 	void FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array);
 	void CycleTexturesForward();
 	
-	void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
-	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array){}
-	void FillIlluminationBlock(int source_index,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array){}
+	void SetIlluminationGridSize(unsigned ,unsigned ,unsigned );
+	void FillIlluminationSequentially(int ,int ,int ,const unsigned char *);
+	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *);
 
 	// a callback function that translates from daytime values to overcast settings. Used for
 	// clouds to tell sky when it is overcast.
@@ -78,10 +79,21 @@ protected:
 	GLint cloudDensity1_param;
 	GLint cloudDensity2_param;
 	GLint noiseSampler_param;
+	GLint illumSampler_param;
+
+
+
+GLint illuminationOrigin_param;
+GLint illuminationScales_param;
+GLint lightningMultipliers_param;
+GLint lightningColour_param;
+					 
 
 	GLint cloudEccentricity_param;
 	GLint skyEccentricity_param;
 	GLint mieRayleighRatio_param;
+
+	GLuint		illum_tex;
 
 	GLuint		cloud_tex[3];
 	GLuint		noise_tex;

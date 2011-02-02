@@ -129,6 +129,22 @@ float4 PS_Flare( svertexOutput IN): SV_TARGET
 	return float4(colour,1.f);
 }
 
+float4 PS_Planet(svertexOutput IN): SV_TARGET
+{
+	float4 output=flareTexture.Sample(flareSamplerState,float2(.5f,.5f)-0.5f*IN.tex);
+	// IN.tex is +- 1.
+	float3 normal;
+	normal.x=-IN.tex.x;
+	normal.y=IN.tex.y;
+	float l=length(IN.tex);
+	normal.z=sqrt(1.f-l*l);
+	float light=saturate(dot(normal.xyz,lightDir.xyz));
+	//output.rgb*=colour.rgb;
+	output.rgb*=light;
+	return output;
+}
+
+
 //------------------------------------
 // Technique
 //------------------------------------
@@ -198,6 +214,19 @@ technique11 simul_query
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+    }
+}
+
+technique11 simul_planet
+{
+    pass p0 
+    {		
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }

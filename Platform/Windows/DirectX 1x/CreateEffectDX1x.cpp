@@ -24,6 +24,7 @@ static DWORD default_effect_flags=0;
 #include <assert.h>
 #include <fstream>
 #include "MacrosDX1x.h"
+#include <dxerr.h>
 static bool shader_path_set=false;
 static bool texture_path_set=false;
 
@@ -161,7 +162,7 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 				  fn.c_str(),
 				  macros,
 				  NULL,
-				   "fx_4_0",
+				  "fx_4_0",
 				  flags,
 				  flags,
 				  d3dDevice,

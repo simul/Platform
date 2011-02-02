@@ -14,6 +14,7 @@
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
 class SimulGLSkyRenderer;
+class SimulGLLightningRenderer;
 class RenderDepthBufferCallback
 {
 public:
@@ -65,6 +66,7 @@ public:
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 	void EnableRain(bool e=true);
+	void EnableLayers(bool,bool);
 	void SetPrecipitation(float strength,float speed);
 	//! Save a sky sequence (usually as a .seq file; this is how Sky Sequencer saves sequences).
 	std::ostream &Save(std::ostream &os) const;
@@ -89,6 +91,7 @@ protected:
 	simul::base::SmartPtr<class SimulGLSkyRenderer> simulSkyRenderer;
 	simul::base::SmartPtr<class SimulGLCloudRenderer> simulCloudRenderer;
 	simul::base::SmartPtr<class SimulGL2DCloudRenderer> simul2DCloudRenderer;
+	simul::base::SmartPtr<class SimulGLLightningRenderer> simulLightningRenderer;
 	//simul::base::SmartPtr<class SimulGLPrecipitationRenderer> simulPrecipitationRenderer;
 	//simul::base::SmartPtr<class SimulGLAtmosphericsRenderer> simulAtmosphericsRenderer;
 	float							exposure;

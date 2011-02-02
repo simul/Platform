@@ -56,7 +56,7 @@ public:
 	HRESULT Destroy();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	HRESULT Render();
-	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting){return true;}
+	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	HRESULT RenderFlare(float exposure);
 	//! Get a value, from zero to one, which represents how much of the sun is visible.
@@ -64,7 +64,7 @@ public:
 	//! objects like mountains etc. in it, and make sure these have already been drawn.
 	//! GetSunOcclusion executes a pseudo-render of an invisible billboard, then
 	//! uses a hardware occlusion query to see how many pixels have passed the z-test.
-	void CalcSunOcclusion(float cloud_occlusion=0.f);
+	float CalcSunOcclusion(float cloud_occlusion=0.f);
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 	ID3D1xTexture3D*		GetLossTexture1(){return loss_textures[0];}
@@ -101,6 +101,7 @@ protected:
 	ID3D1xEffectTechnique*					m_hTechniqueSun;
 	ID3D1xEffectTechnique*					m_hTechniqueQuery;
 	ID3D1xEffectTechnique*					m_hTechniqueFlare;
+	ID3D1xEffectTechnique*					m_hTechniquePlanet;
 	ID3D1xEffectVectorVariable*			lightDirection;
 	ID3D1xEffectVectorVariable*			mieRayleighRatio;
 	ID3D1xEffectScalarVariable*			hazeEccentricity;

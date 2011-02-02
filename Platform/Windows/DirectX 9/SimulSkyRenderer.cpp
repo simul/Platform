@@ -69,7 +69,7 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	}
 	EnableColourSky(UseColourSky);
 	fadeTableInterface->SetEarthTest(false);
-	skyInterface->SetDaytime(0.5f);
+	skyInterface->SetTime(0.5f);
 
 	cam_pos.x=cam_pos.z=0;
 	cam_pos.y=400.f;
@@ -964,7 +964,7 @@ HRESULT SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_hei
 	delete [] lines;
 	lines=new Vertext[65];
 	Vertext *moon_lines=new Vertext[65];
-	float old_time=skyKeyframer->GetDaytime();
+	float old_time=skyKeyframer->GetTime();
 	for(int i=0;i<65;i++)
 	{
 		float time=(float)i/32.f;
@@ -988,8 +988,8 @@ HRESULT SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_hei
 		moon_lines[i].b=1.f;
 		moon_lines[i].a=0.1f+0.5f*daytime;
 	}
-	skyInterface->SetDaytime(old_time);
-	skyKeyframer->SetDaytime(old_time);
+	skyInterface->SetTime(old_time);
+	skyKeyframer->SetTime(old_time);
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,64,lines,(unsigned)sizeof(Vertext));
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,64,moon_lines,(unsigned)sizeof(Vertext));
 
@@ -1015,7 +1015,7 @@ HRESULT SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)
 	if(!GetSiderealSkyInterface())
 	{
 		D3DXMatrixIdentity(world);
-		D3DXMatrixRotationX(world,3.14159f*2.f*skyInterface->GetDaytime());
+		D3DXMatrixRotationX(world,3.14159f*2.f*skyInterface->GetTime());
 	}
 	else
 	{

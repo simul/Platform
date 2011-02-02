@@ -76,7 +76,7 @@ struct vertexOutput
     float4 hPosition			: SV_POSITION;
     float2 texCoordsNoise		: TEXCOORD0;
 	float layerFade				: TEXCOORD1;
-    float3 texCoords			: TEXCOORD2;
+    float4 texCoords			: TEXCOORD2;
 	float3 wPosition			: TEXCOORD3;
     float3 texCoordLightning	: TEXCOORD4;
     float3 fade_texc			: TEXCOORD5;
@@ -86,7 +86,8 @@ vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
     OUT.hPosition = mul( worldViewProj,float4(IN.position.xyz,1.0));
-	OUT.texCoords=IN.texCoords;
+	OUT.texCoords.xyz=IN.texCoords;
+	OUT.texCoords.w=0.5f+0.5f*saturate(IN.texCoords.z);
 	const float c=fractalScale.w;
 	OUT.texCoordsNoise=IN.texCoordsNoise;
 	OUT.wPosition=(IN.position.xyz-eyePosition.xyz);
@@ -130,6 +131,10 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
 	float3 inscatter=InscatterFunction(insc,cos0);
 	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.texCoordsNoise.xy).xyz-.5f).xyz;
+#ifdef DETAIL_NOISE
+	noiseval+=(noiseTexture.Sample(noiseSamplerState,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
+	noiseval*=IN.texCoords.w;
+#endif
 	float3 pos=IN.texCoords.xyz+fractalScale.xyz*noiseval;
 	float4 density=cloudDensity1.Sample(cloudSamplerState,pos);
 	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
@@ -170,8 +175,11 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
 	float3 inscatter=InscatterFunction(insc,cos0);
-	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.texCoordsNoise.xy).xyz-.5f).xyz;
-	noiseval*=0.25f+IN.texCoords.z;
+	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.texCoordsNoise.xy).xyz-noise_offset).xyz;
+#ifdef DETAIL_NOISE
+	noiseval+=(noiseTexture.Sample(noiseSamplerState,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
+	noiseval*=IN.texCoords.w;
+#endif
 	float3 pos=IN.texCoords.xyz+fractalScale.xyz*noiseval;
 	float4 density=cloudDensity1.Sample(cloudSamplerState,pos);
 	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);

@@ -47,8 +47,12 @@ SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h) :
 	hdr_buffer_texture_SRV(NULL),
 	faded_texture_SRV(NULL),
 	buffer_depth_texture_SRV(NULL),
+	m_pHDRRenderTarget(NULL),
+	m_pBufferDepthSurface(NULL),
+	m_pOldRenderTarget(NULL),
+	m_pOldDepthSurface(NULL),
 	exposure(1.f),
-	gamma(1.f/2.2f),
+	gamma(1.f),			// no need for shader-based gamma-correction with DX10/11
 	BufferWidth(w),
 	BufferHeight(h),
 	timing(0.f),
@@ -89,6 +93,9 @@ HRESULT SimulHDRRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pTonemapEffect);
 	SAFE_RELEASE(m_pBufferVertexDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
+	
+	SAFE_RELEASE(m_pHDRRenderTarget)
+	SAFE_RELEASE(m_pBufferDepthSurface)
 
 	SAFE_RELEASE(m_pTonemapEffect);
 
@@ -165,6 +172,8 @@ HRESULT SimulHDRRendererDX1x::CreateBuffers()
 										NULL,
 										&hdr_buffer_texture
 									);
+	SAFE_RELEASE(m_pHDRRenderTarget)
+	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
 	//hdr_buffer_texture->GetDesc(&desc);
 	SAFE_RELEASE(hdr_buffer_texture_SRV);
     V_RETURN(m_pd3dDevice->CreateShaderResourceView(hdr_buffer_texture, NULL, &hdr_buffer_texture_SRV ));
@@ -235,7 +244,9 @@ HRESULT SimulHDRRendererDX1x::CreateBuffers()
 		hr=m_pd3dDevice->CreateTexture2D(	&desc,
 											NULL,
 											&buffer_depth_texture);
-	
+	SAFE_RELEASE(m_pBufferDepthSurface)
+	//hr=m_pd3dDevice->CreateDepthStencilView((ID3D1xResource*)buffer_depth_texture, NULL, &m_pBufferDepthSurface);
+
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =
 	{
 		{ "POSITION",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
@@ -290,25 +301,20 @@ HRESULT SimulHDRRendererDX1x::StartRender()
 	HRESULT hr=S_OK;
 	if(hdrTexture)
 		hdrTexture->SetResource(NULL);
-	m_pHDRRenderTarget[0]	=NULL;
-	m_pBufferDepthSurface	=NULL;
-	m_pLDRRenderTarget[0]	=NULL;
 
-	m_pOldRenderTarget[0]	=NULL;
-	m_pOldDepthSurface		=NULL;
+	m_pOldRenderTarget	=NULL;
+	m_pOldDepthSurface	=NULL;
 	PIXBeginNamedEvent(0,"Setup Sky Buffer");
     float clearColor[4] = { 0.0, 0.0, 0.0, 0.0 };
 	m_pImmediateContext->OMGetRenderTargets(	1,
-										m_pOldRenderTarget,
-										&m_pOldDepthSurface
-										);
-	m_pHDRRenderTarget[0]=MakeRenderTarget(hdr_buffer_texture);
-	//hr=m_pd3dDevice->CreateDepthStencilView((ID3D1xResource*)buffer_depth_texture, NULL, &m_pBufferDepthSurface);
-	//if(m_pBufferDepthSurface)
-	
-	m_pImmediateContext->OMSetRenderTargets(1,m_pHDRRenderTarget,m_pBufferDepthSurface);
+												&m_pOldRenderTarget,
+												&m_pOldDepthSurface
+												);
 
-	m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget[0],clearColor);
+	
+	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
+
+	m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
 	if(m_pBufferDepthSurface)
 		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, depth_start, 0);
 
@@ -329,23 +335,23 @@ HRESULT SimulHDRRendererDX1x::ApplyFade()
 	if(!atmospherics)
 		return hr;
 	//atmospherics->SetInputTextures(hdr_buffer_texture,buffer_depth_texture);
-	m_pImmediateContext->OMSetRenderTargets(1,m_pOldRenderTarget,m_pOldDepthSurface);
-	SAFE_RELEASE(m_pHDRRenderTarget[0])
-	m_pHDRRenderTarget[0]=MakeRenderTarget(faded_texture);
-	m_pImmediateContext->OMSetRenderTargets(1,m_pHDRRenderTarget,m_pBufferDepthSurface);
-	hr=atmospherics->Render();
+	//m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
+	//m_pHDRRenderTarget=MakeRenderTarget(faded_texture);
+	//m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
+//	hr=atmospherics->Render();
 	return hr;
 }
 
 HRESULT SimulHDRRendererDX1x::FinishRender()
 {
 	HRESULT hr=S_OK;
+	#
 	hr=hdrTexture->SetResource(hdr_buffer_texture_SRV);
 	D3D1x_TEXTURE2D_DESC desc;
 	PIXBeginNamedEvent(0,"HDR Buffer To Screen");
 
 	// using gamma, render the hdr image to the LDR buffer:
-	m_pImmediateContext->OMSetRenderTargets(1,m_pOldRenderTarget,m_pOldDepthSurface);
+	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	//m_pOldRenderTarget->GetDesc(&desc);
 
 	//m_pd3dDevice->ClearDepthStencilView(m_pOldDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL,1.f,0L);
@@ -356,11 +362,8 @@ HRESULT SimulHDRRendererDX1x::FinishRender()
 	RenderBufferToCurrentTarget(true);
 	//m_pd3dDevice->ClearDepthStencilView(m_pOldDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL,1.f,0L);
 
-	SAFE_RELEASE(m_pOldRenderTarget[0])
+	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
-	SAFE_RELEASE(m_pLDRRenderTarget[0])
-	SAFE_RELEASE(m_pHDRRenderTarget[0])
-	SAFE_RELEASE(m_pBufferDepthSurface)
 	PIXEndNamedEvent();
 	hdrTexture->SetResource(NULL);
 	return hr;

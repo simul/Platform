@@ -515,6 +515,7 @@ HRESULT SimulHDRRenderer::FinishRender()
 	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
 	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
 	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC,D3DCMP_LESSEQUAL);
+	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC,D3DCMP_LESSEQUAL);
 
 	// Create the brightpass - eliminate pixels with brightness below a certain threshold.
 //	RenderBrightpass();

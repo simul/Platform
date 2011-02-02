@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <tchar.h>
 #include <d3dx9.h>
 #ifdef DX10
 #include <d3d10.h>
@@ -77,19 +78,15 @@ public:
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 	simul::clouds::LightningRenderInterface *GetLightningRenderInterface();
-	//! Get a float between zero and one which represents the interpolation between cloud keyframes.
-	float GetInterpolation() const;
-	void SetStepsPerHour(unsigned s);
+
 	//! Return true if the camera is above the cloudbase altitude.
 	bool IsCameraAboveCloudBase() const;
 	float GetSunOcclusion() const;
-	const char *GetDebugText() const;
+	const TCHAR *GetDebugText() const;
 	void SetEnableStorms(bool s);
 	float GetTiming() const;
 	//! Get the list of three textures used for cloud rendering.
-	ID3D1xTexture3D* *GetCloudTextures();
-	const float *GetCloudScales() const;
-	const float *GetCloudOffset() const;
+	void* *GetCloudTextures();
 	void SetLossTextures(ID3D1xResource *l1,ID3D1xResource *l2);
 	void SetInscatterTextures(ID3D1xResource *i1,ID3D1xResource *i2);
 
@@ -177,6 +174,9 @@ protected:
 
 	ID3D1xTexture3D*	cloud_textures[3];
 	ID3D1xTexture3D*	illumination_texture;
+	
+	D3D1x_MAPPED_TEXTURE3D mapped_illumination;
+
 	ID3D1xTexture2D*	noise_texture;
 	ID3D1xTexture1D*	lightning_texture;
 	ID3D1xTexture2D*	large_scale_cloud_texture;

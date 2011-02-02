@@ -1,13 +1,16 @@
 
 #include "RenderTextureFBO.h"
+#include "LoadGLProgram.h"
 #include "SimulGLWeatherRenderer.h"
 #include "SimulGLSkyRenderer.h"
 #include "SimulGLCloudRenderer.h"
 #include "SimulGL2DCloudRenderer.h"
+#include "SimulGLLightningRenderer.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Sky/FadeTableInterface.h"
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Sky/SkyInterface.h"
+#include "Simul/Clouds/LightningRenderInterface.h"
 
 #if 0//def _MSC_VER
 static GLuint buffer_format=GL_RGBA16F_ARB;
@@ -41,6 +44,14 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
 		simulSkyRenderer->Create(0.5f);
 		simulSkyRenderer->RestoreDeviceObjects();
 	}
+	EnableLayers(clouds3d,clouds2d);
+	ConnectInterfaces();
+}
+
+
+void SimulGLWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
+{
+	simul::clouds::BaseWeatherRenderer::EnableLayers(clouds3d,clouds2d);
 	//if(clouds2d)
 	//	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer();
 	if(simul2DCloudRenderer)
@@ -54,13 +65,18 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
 	{	
 		simulCloudRenderer=new SimulGLCloudRenderer();
 		baseCloudRenderer=simulCloudRenderer.get();
+		simulLightningRenderer=new SimulGLLightningRenderer(simulCloudRenderer->GetLightningRenderInterface());
+		baseLightningRenderer=simulLightningRenderer.get();
 	}
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->Create();
 		simulCloudRenderer->RestoreDeviceObjects();
 	}
-	ConnectInterfaces();
+	if(simulLightningRenderer)
+	{
+		simulLightningRenderer->RestoreDeviceObjects();
+	}
 }
 
 void SimulGLWeatherRenderer::ConnectInterfaces()
@@ -89,6 +105,7 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 
 void SimulGLWeatherRenderer::RenderSky(bool buffered)
 {
+	ERROR_CHECK
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -99,27 +116,44 @@ void SimulGLWeatherRenderer::RenderSky(bool buffered)
 		scene_buffer->Activate();
 
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+	ERROR_CHECK
 	if(simulSkyRenderer)
 	{
 		simulSkyRenderer->RenderPlanets();
+	ERROR_CHECK
 		simulSkyRenderer->Render();
 	}
+	ERROR_CHECK
     if(simul2DCloudRenderer)
 		simul2DCloudRenderer->Render();
+	ERROR_CHECK
 
 	if(buffered)
 		scene_buffer->DeactivateAndRender(false);
+	ERROR_CHECK
 
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
+	ERROR_CHECK
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
+	ERROR_CHECK
+		int d=0;
+	glGetIntegerv(GL_ATTRIB_STACK_DEPTH,&d);
 	glPopAttrib();
+	ERROR_CHECK
+}
+
+void SimulGLWeatherRenderer::RenderLightning()
+{
+	if(simulCloudRenderer&&simulLightningRenderer&&layer1)
+		simulLightningRenderer->Render();
 }
 
 
 void SimulGLWeatherRenderer::RenderClouds(bool buffered,bool depth_testing,bool default_fog)
 {
+	ERROR_CHECK
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -138,6 +172,7 @@ void SimulGLWeatherRenderer::RenderClouds(bool buffered,bool depth_testing,bool 
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
 	glPopAttrib();
+	ERROR_CHECK
 }
 
 // Render the clouds to the cloud buffer:

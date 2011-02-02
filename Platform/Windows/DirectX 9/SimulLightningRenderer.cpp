@@ -221,7 +221,7 @@ bool y_vertical=true;
 				v1.position.x=x1a.x;
 				v1.position.y=x1a.y+vertical_shift;
 				v1.position.z=x1a.z;
-				v1.texCoords.x=width1;
+				v1.texCoords.x=0;
 				v1.texCoords.y=0;
 
 				if(quads)
@@ -231,9 +231,10 @@ bool y_vertical=true;
 					v2.position.y=x1b.y+vertical_shift;
 					v2.position.z=x1b.z;
 					v2.texCoords.x=1.f;
-					v2.texCoords.x=width1;
 					v2.texCoords.y=1.f;
 				}
+				else
+					v1.texCoords.x=0.5f;
 				last_transverse=transverse;
 			}
 			if(vert_num-vert_start>2)

@@ -110,6 +110,7 @@ public:
 						const float *)
 	{
 	}
+	float CalcSunOcclusion(float cloud_occlusion=0.f);
 
 	void FillSunlightTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void CycleTexturesForward();

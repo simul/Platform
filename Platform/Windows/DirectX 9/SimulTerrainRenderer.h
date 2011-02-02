@@ -30,6 +30,10 @@ namespace simul
 		class HeightMapNode;
 		struct Cutout;
 	}
+	namespace clouds
+	{
+		class CloudShadowCallback;
+	}
 }
 class SimulTerrainRenderer:public simul::base::Referenced
 {
@@ -47,10 +51,12 @@ public:
 	int GetMip(int i,int j) const;
 	HRESULT RenderMap(int w);
 	void Update(float dt);
+	// Set a callback that will return cloud shadow data and textures:
+	void SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb);
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2){sky_loss_texture_1=t1;sky_loss_texture_2=t2;}
 	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2){sky_inscatter_texture_1=t1;sky_inscatter_texture_2=t2;}
-	void SetCloudTextures(LPDIRECT3DVOLUMETEXTURE9 *t,bool wrap);
+	void SetCloudTextures(void **t,bool wrap);
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si){skyInterface=si;}
 	simul::terrain::HeightMapInterface *GetHeightMapInterface();
 	void SetCloudScales(const float *s)

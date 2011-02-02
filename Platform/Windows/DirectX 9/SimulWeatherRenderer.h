@@ -20,8 +20,70 @@ public:
 	virtual void Render()=0;
 };
 //! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX program.
-//! You can take this entire class and use it as source in your project.
-//! Make appropriate modifications where required.
+//! You can take this entire class and use it as source in your project, and 
+//! make appropriate modifications where required.
+
+//!
+
+/*!
+	\code
+#include "Simul/Platform/Windows/DirectX 9/SimulWeatherRenderer.h"
+	simulWeatherRenderer=new SimulWeatherRenderer(true,false,ScreenWidth/2,ScreenHeight/2,true,true,false,true,false);
+	simulWeatherRenderer->SetDaytime(0.3f);
+	// TRY to load a sequence file:
+	std::ifstream ifs("default.seq",std::ios_base::binary);
+	if(ifs.good())
+	{
+		simulWeatherRenderer->Load(ifs);
+		doing_playpack=true;
+		ifs.close();
+	}
+	\endcode
+	\code
+
+	// Here we can apply global modifications to all the keyframes, by iterating them in turn:
+	simul::clouds::CloudKeyframer *ck=simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer();
+	for(int i=0;i<ck->GetNumKeyframes();i++)
+	{
+		simul::clouds::CloudKeyframer::Keyframe *k=(simul::clouds::CloudKeyframer::Keyframe *)ck->GetKeyframe(i);
+		k->cloudiness=.6f;
+		k->precipitation=0.f;
+		k->lightning=0.f;
+	}
+	\endcode
+	
+	Create() initializes the renderers with the D3D device pointer.
+	\code
+	simulWeatherRenderer->Create(pd3dDevice);
+	\endcode
+
+\section Handling device changes
+	When a new device has been set up:
+\code
+	simulWeatherRenderer->SetBufferSize(pBackBufferSurfaceDesc->Width/2,pBackBufferSurfaceDesc->Height/2);
+	hr=simulWeatherRenderer->RestoreDeviceObjects(pd3dDevice);
+\endcode
+	When the device has been lost (e.g. the screen resolution was changed):
+	\code
+	simulWeatherRenderer->InvalidateDeviceObjects();
+\endcode
+	\section Update and rendering
+Usually once per frame, the weather update should be called, this will update the weather renderer's sub-renderers,
+e.g. clouds, sky:
+\code
+	simulWeatherRenderer->Update(timestep_seconds);
+	\endcode
+	To render, the 
+\code
+	simulWeatherRenderer->SetMatrices(view,proj);
+		PIXWrapper(D3DCOLOR_RGBA(0,255,0,255),"WEATHER")
+		{
+			simulWeatherRenderer->Render();
+		simulWeatherRenderer->RenderLateCloudLayer();
+		simulWeatherRenderer->RenderLightning();
+		simulWeatherRenderer->RenderPrecipitation();
+	\endcode
+*/
 class SimulWeatherRenderer:public simul::clouds::BaseWeatherRenderer, public simul::graph::meta::Group
 {
 public:
@@ -50,8 +112,10 @@ public:
 	HRESULT RenderFlares();
 	//! Perform the once-per-frame time update.
 	void Update(float dt);
-	//! Apply the world, view and projection matrices, once per frame.
+#if defined(XBOX) || defined(DOXYGEN)
+	//! Call this once per frame to set the matrices (X360 only).
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
+#endif
 	//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 	void SetExposure(float ex){exposure=ex;}
 	//! Get a pointer to the sky renderer owned by this class instance.
@@ -68,16 +132,19 @@ public:
 	const TCHAR *GetDebugText() const;
 	//! Get a timing value - useful for performance evaluation.
 	float GetTiming() const;
-
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 	void SetBufferSize(int w,int h);
+	//! Enable or disable the 3d and 2d cloud layers.
+	virtual void EnableLayers(bool clouds3d,bool clouds2d);
 	void EnableRain(bool e=true);
 	float GetTotalBrightness() const;
 
 	//! Connect-up sky, clouds:
 	void ConnectInterfaces();
 protected:
+	HRESULT Restore3DCloudObjects();
+	HRESULT Restore2DCloudObjects();
 	void UpdateSkyAndCloudHookup();
 	bool AlwaysRenderCloudsLate;
 	bool RenderCloudsLate;

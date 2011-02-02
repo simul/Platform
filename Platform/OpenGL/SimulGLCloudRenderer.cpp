@@ -184,6 +184,32 @@ void SimulGLCloudRenderer::CycleTexturesForward()
 	std::swap(cloud_tex[0],cloud_tex[1]);
 	std::swap(cloud_tex[1],cloud_tex[2]);
 }
+	
+void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z)
+{
+	glGenTextures(1,&illum_tex);
+	glBindTexture(GL_TEXTURE_3D,illum_tex);
+	glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_INT,0);
+	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
+}
+
+void SimulGLCloudRenderer::FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array)
+{
+}
+
+void SimulGLCloudRenderer::FillIlluminationBlock(int source_index,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array)
+{
+	glBindTexture(GL_TEXTURE_3D,illum_tex);
+	glTexSubImage3D(	GL_TEXTURE_3D,0,
+						x,y,z,
+						w,l,d,
+						GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
+						uchar8_array);
+}
 
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 {
@@ -224,7 +250,7 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	using namespace simul::clouds;
-	cloudKeyframer->Update(skyInterface->GetDaytime());
+	cloudKeyframer->Update(skyInterface->GetTime());
 	simul::math::Vector3 X1,X2;
 	cloudInterface->GetExtents(X1,X2);
 	if(god_rays)
@@ -254,7 +280,7 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_ZERO,GL_ONE_MINUS_SRC_ALPHA);
 
-	glDisable(GL_STENCIL);
+	glDisable(GL_STENCIL_TEST);
 	glDepthMask(GL_FALSE);
 	// disable alpha testing - if we enable this, the usual reference alpha is reversed because
 	// the shaders return transparency, not opacity, in the alpha channel.
@@ -278,11 +304,43 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
 
+    glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_3D,illum_tex);
+
 	glUseProgram(clouds_program);
 
 	glUniform1i(cloudDensity1_param,0);
 	glUniform1i(cloudDensity2_param,1);
 	glUniform1i(noiseSampler_param,2);
+	glUniform1i(illumSampler_param,3);
+
+	if(enable_lightning)
+	{
+		static float bb=.1f;
+		simul::sky::float4 lightning_multipliers;
+		simul::sky::float4 lightning_colour=lightningRenderInterface->GetLightningColour();
+		for(unsigned i=0;i<4;i++)
+		{
+			if(i<lightningRenderInterface->GetNumLightSources())
+				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(i);
+			else lightning_multipliers[i]=0;
+		}
+		static float lightning_effect_on_cloud=20.f;
+		lightning_colour.w=lightning_effect_on_cloud;
+	
+GLint lightningMultipliers;
+GLint lightningColour;
+//		m_pCloudEffect->SetVector	(lightningMultipliers_param	,(const float*)(&lightning_multipliers));
+//		m_pCloudEffect->SetVector	(lightningColour_param		,(const float*)(&lightning_colour));
+
+		simul::math::Vector3 light_X1,light_X2,light_DX;
+		light_X1=lightningRenderInterface->GetIlluminationOrigin();
+		light_DX=lightningRenderInterface->GetIlluminationScales();
+
+		glUniform3fv	(illuminationOrigin_param,1,(const float *)(&light_X1));
+		glUniform3fv	(illuminationScales_param,1,(const float *)(&light_DX));
+	}
+
 
 	static float ll=0.05f;
 	simul::sky::float4 light_response(0,cloudInterface->GetLightResponse(),ll*cloudInterface->GetSecondaryLightResponse(),0);
@@ -475,6 +533,7 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects()
 	cloudDensity1_param		= glGetUniformLocation(clouds_program,"cloudDensity1");
 	cloudDensity2_param		= glGetUniformLocation(clouds_program,"cloudDensity2");
 	noiseSampler_param		= glGetUniformLocation(clouds_program,"noiseSampler");
+	illumSampler_param		= glGetUniformLocation(clouds_program,"illumSampler");
 
 	printProgramInfoLog(clouds_program);
 
@@ -501,13 +560,9 @@ void SimulGLCloudRenderer::SetWind(float spd,float dir_deg)
 	}
 }
 
-void SimulGLCloudRenderer::SetCloudiness(float h)
+void **SimulGLCloudRenderer::GetCloudTextures()
 {
-	simul::clouds::CloudKeyframer::Keyframe *K=cloudKeyframer->GetNextModifiableKeyframe();
-	if(K)
-	{
-		K->cloudiness=h;
-	}
+	return (void**)cloud_tex;
 }
 
 simul::sky::OvercastCallback *SimulGLCloudRenderer::GetOvercastCallback()

@@ -76,23 +76,34 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 		baseSkyRenderer=simulSkyRenderer.get();
 		AddChild(simulSkyRenderer.get());
 	}
-	if(clouds3d)
+	EnableLayers(clouds3d,clouds2d);
+	if(rain)
+		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
+
+	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer;
+	ConnectInterfaces();
+}
+
+void SimulWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
+{
+	HRESULT hr=S_OK;
+	BaseWeatherRenderer::EnableLayers(clouds3d,clouds2d);
+	if(clouds3d&&simulCloudRenderer.get()==NULL)
 	{
 		simulCloudRenderer=new SimulCloudRenderer();
 		baseCloudRenderer=simulCloudRenderer.get();
 		AddChild(simulCloudRenderer.get());
 		simulLightningRenderer=new SimulLightningRenderer(simulCloudRenderer->GetLightningRenderInterface());
 		baseLightningRenderer=simulLightningRenderer.get();
+		Restore3DCloudObjects();
+		
 	}
-	if(clouds2d)
+	if(clouds2d&&simul2DCloudRenderer.get()==NULL)
 	{
 		simul2DCloudRenderer=new Simul2DCloudRenderer();
 		base2DCloudRenderer=simul2DCloudRenderer.get();
+		Restore2DCloudObjects();
 	}
-	if(rain)
-		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
-
-	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer;
 	ConnectInterfaces();
 }
 
@@ -140,6 +151,35 @@ HRESULT SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)
 	return hr;
 }
 
+
+HRESULT SimulWeatherRenderer::Restore3DCloudObjects()
+{
+	HRESULT hr=S_OK;
+	if(m_pd3dDevice)
+	{
+		if(simulCloudRenderer)
+		{
+			if(simulSkyRenderer)
+				simulCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
+			V_RETURN(simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
+		}
+		if(simulPrecipitationRenderer)
+			V_RETURN(simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice));
+		if(simulLightningRenderer)
+			V_RETURN(simulLightningRenderer->RestoreDeviceObjects(m_pd3dDevice));
+	}
+	return hr;
+}
+HRESULT SimulWeatherRenderer::Restore2DCloudObjects()
+{
+	HRESULT hr=S_OK;
+	if(m_pd3dDevice)
+	{
+		if(simul2DCloudRenderer)
+			V_RETURN(simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
+	}
+	return hr;
+}
 HRESULT SimulWeatherRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 {
 	m_pd3dDevice=dev;
@@ -158,19 +198,8 @@ HRESULT SimulWeatherRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	V_RETURN(CreateBuffers());
 	if(simulSkyRenderer)
 		V_RETURN(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
-	if(simulCloudRenderer)
-	{
-		if(simulSkyRenderer)
-			simulCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
-		V_RETURN(simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
-	}
-	if(simul2DCloudRenderer)
-		V_RETURN(simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
-	if(simulPrecipitationRenderer)
-		V_RETURN(simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice));
-	if(simulLightningRenderer)
-		V_RETURN(simulLightningRenderer->RestoreDeviceObjects(m_pd3dDevice));
-	
+	V_RETURN(Restore3DCloudObjects());
+	V_RETURN(Restore2DCloudObjects());
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);
 
@@ -649,9 +678,9 @@ HRESULT SimulWeatherRenderer::RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture,in
 	return hr;
 }
 
+#ifdef XBOX
 void SimulWeatherRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
-#ifdef XBOX
 	if(simulSkyRenderer)
 		simulSkyRenderer->SetMatrices(v,p);
 	if(simulCloudRenderer)
@@ -660,10 +689,10 @@ void SimulWeatherRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 		simulPrecipitationRenderer->SetMatrices(v,p);
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->SetMatrices(v,p);
-#endif
 	if(simul2DCloudRenderer)
 		simul2DCloudRenderer->SetMatrices(v,p);
 }
+#endif
 
 void SimulWeatherRenderer::UpdateSkyAndCloudHookup()
 {

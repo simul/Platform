@@ -57,8 +57,10 @@ public:
 	//! Call this to draw the clouds, including any illumination by lightning.
 	HRESULT Render();
 	HRESULT RenderTexture();
-	//! Call this once per frame to set the matrices.
+#if defined(XBOX) || defined(DOXYGEN)
+	//! Call this once per frame to set the matrices (X360 only).
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
+#endif
 	//! Set the wind horizontal velocity components in metres per second.
 	void SetWind(float speed,float heading_degrees);
 	//! Get an interface to the Simul cloud object.
@@ -79,6 +81,8 @@ public:
 	void SetCloudiness(float c);
 	// a texture
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
+	
+	virtual void **GetCloudTextures(){return NULL;}
 protected:
 	bool enabled;
 	simul::base::SmartPtr<simul::clouds::Cloud2DGeometryHelper> helper;

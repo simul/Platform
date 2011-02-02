@@ -66,10 +66,9 @@ protected:
 	ID3D1xEffectMatrixVariable*			worldViewProj;
 	ID3D1xEffectShaderResourceVariable*	hdrTexture;
 
-	ID3D1xRenderTargetView*				m_pHDRRenderTarget[1];
+	ID3D1xRenderTargetView*				m_pHDRRenderTarget;
 	ID3D1xDepthStencilView*				m_pBufferDepthSurface;
-	ID3D1xRenderTargetView*				m_pLDRRenderTarget[1];
-	ID3D1xRenderTargetView*				m_pOldRenderTarget[1];
+	ID3D1xRenderTargetView*				m_pOldRenderTarget;
 	ID3D1xDepthStencilView*				m_pOldDepthSurface;
 
 	//! The texture the scene is rendered to.

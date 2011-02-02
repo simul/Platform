@@ -8,6 +8,7 @@
 #include "SimulTerrainRenderer.h"
 #include "Simul/Terrain/Cutout.h"
 #include "Simul/Terrain/HeightMapNode.h"
+#include "Simul/Clouds/BaseCloudRenderer.h"
 
 #ifdef XBOX
 	#include <dxerr.h>
@@ -519,9 +520,9 @@ void SimulTerrainRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 	proj=p;
 }
 
-void SimulTerrainRenderer::SetCloudTextures(LPDIRECT3DVOLUMETEXTURE9 *t,bool wrap)
+void SimulTerrainRenderer::SetCloudTextures(void **t,bool wrap)
 {
-	cloud_textures=t;
+	cloud_textures=(LPDIRECT3DVOLUMETEXTURE9*)t;
 	if(wrap_clouds!=wrap)
 	{
 		wrap_clouds=wrap;
@@ -536,6 +537,13 @@ simul::terrain::HeightMapInterface *SimulTerrainRenderer::GetHeightMapInterface(
 
 void SimulTerrainRenderer::Update(float )
 {
+}
+void SimulTerrainRenderer::SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb)
+{
+	SetCloudTextures	(cb->GetCloudTextures(),cb->GetWrap());
+	SetCloudScales		(cb->GetCloudScales());
+	SetCloudOffset		(cb->GetCloudOffset());
+	setCloudInterpolation(cb->GetInterpolation());
 }
 
 void SimulTerrainRenderer::ReleaseIndexBuffers()

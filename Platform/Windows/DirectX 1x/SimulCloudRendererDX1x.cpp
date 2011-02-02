@@ -142,9 +142,9 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x() :
 
 	cloudKeyframer->SetFillTexturesAsBlocks(false);
 	cloudKeyframer->SetBits(simul::clouds::CloudKeyframer::BRIGHTNESS,
-							simul::clouds::CloudKeyframer::AMBIENT,
+							simul::clouds::CloudKeyframer::SECONDARY,
 							simul::clouds::CloudKeyframer::DENSITY,
-							simul::clouds::CloudKeyframer::SECONDARY);
+							simul::clouds::CloudKeyframer::AMBIENT);
 #ifdef DO_SOUND
 	sound=new simul::sound::fmod::NodeSound();
 	sound->Init("Media/Sound/IntelDemo.fev");
@@ -488,17 +488,15 @@ void SimulCloudRendererDX1x::SetIlluminationGridSize(unsigned width_x,unsigned l
 	memset(mapped.pData,0,4*width_x*length_y*depth_z);
 	Unmap3D(illumination_texture);
     FAILED(m_pd3dDevice->CreateShaderResourceView(illumination_texture,NULL,&lightningIlluminationTextureResource ));
+	FAILED(hr=Map3D(illumination_texture,&mapped_illumination));
 }
 
 void SimulCloudRendererDX1x::FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array)
 {
 	if(!num_texels)
 		return;
-	D3D1x_MAPPED_TEXTURE3D mapped;
-	HRESULT hr;
-	if(FAILED(hr=Map3D(illumination_texture,&mapped)))
-		return;
-	unsigned char *lightning_cloud_tex_data=(unsigned char *)(mapped.pData);
+	HRESULT hr=S_OK;
+	unsigned char *lightning_cloud_tex_data=(unsigned char *)(mapped_illumination.pData);
 	unsigned *ptr=(unsigned *)(lightning_cloud_tex_data);
 	ptr+=texel_index;
 	for(int i=0;i<num_texels;i++)
@@ -513,7 +511,6 @@ void SimulCloudRendererDX1x::FillIlluminationSequentially(int source_index,int t
 		uchar8_array++;
 		ptr++;
 	}
-	Unmap3D(illumination_texture);
 }
 void SimulCloudRendererDX1x::Unmap()
 {
@@ -530,8 +527,8 @@ void SimulCloudRendererDX1x::Unmap()
 
 void SimulCloudRendererDX1x::Map(int texture_index)
 {
-	if(texture_index!=1)
-		return;
+	///if(texture_index!=1)
+	//	return;
 	HRESULT hr=S_OK;
 	if(mapped!=texture_index)
 	{
@@ -601,6 +598,7 @@ HRESULT SimulCloudRendererDX1x::CreateCloudEffect()
 	std::map<std::string,std::string> defines;
 	if(!y_vertical)
 		defines["Z_VERTICAL"]='1';
+	defines["DETAIL_NOISE"]='1';
 	return CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds_and_lightning.fx",defines);
 }
 
@@ -795,7 +793,7 @@ HRESULT SimulCloudRendererDX1x::Render(bool)
 		helper->MakeLayerGeometry(cloudInterface,*i);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
-		float fade=1.f;//(*i)->fadeIn;
+		float fade=(*i)->fadeIn;
 		bool start=true;
 		for(std::vector<const simul::clouds::CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
 			j!=(*i)->quad_strips.end();j++)
@@ -982,11 +980,11 @@ HRESULT SimulCloudRendererDX1x::MakeCubemap()
 	return hr;
 }
 
-const char *SimulCloudRendererDX1x::GetDebugText() const
+const TCHAR *SimulCloudRendererDX1x::GetDebugText() const
 {
-	static char debug_text[256];
+	static TCHAR debug_text[256];
 	simul::math::Vector3 wo=cloudInterface->GetWindOffset();
-	sprintf_s(debug_text,256,"");
+	_stprintf_s(debug_text,256,_T("interp %4.4g"),cloudKeyframer->GetInterpolation());
 	return debug_text;
 }
 
@@ -1001,23 +999,7 @@ float SimulCloudRendererDX1x::GetTiming() const
 	return timing;
 }
 
-ID3D1xTexture3D* *SimulCloudRendererDX1x::GetCloudTextures()
+void **SimulCloudRendererDX1x::GetCloudTextures()
 {
-	return cloud_textures;
+	return (void **)cloud_textures;
 }
-
-const float *SimulCloudRendererDX1x::GetCloudScales() const
-{
-	static float s[3];
-	s[0]=1.f/cloudInterface->GetCloudWidth();
-	s[1]=1.f/cloudInterface->GetCloudLength();
-	s[2]=1.f/cloudInterface->GetCloudHeight();
-	return s;
-}
-
-const float *SimulCloudRendererDX1x::GetCloudOffset() const
-{
-	static simul::math::Vector3 wind_offset;
-	wind_offset=cloudInterface->GetWindOffset();
-	return wind_offset.FloatPointer(0);
-} 

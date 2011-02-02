@@ -206,7 +206,7 @@ void SimulGL2DCloudRenderer::Update(float )
 bool SimulGL2DCloudRenderer::Render()
 {
 	using namespace simul::clouds;
-	cloudKeyframer->Update(skyInterface->GetDaytime());
+	cloudKeyframer->Update(skyInterface->GetTime());
 	CloudInterface *ci=cloudNode.get();
 	simul::math::Vector3 X1,X2;
 	ci->GetExtents(X1,X2);
