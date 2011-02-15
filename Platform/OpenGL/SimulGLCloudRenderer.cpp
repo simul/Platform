@@ -250,7 +250,6 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	using namespace simul::clouds;
-	cloudKeyframer->Update(skyInterface->GetTime());
 	simul::math::Vector3 X1,X2;
 	cloudInterface->GetExtents(X1,X2);
 	if(god_rays)
@@ -406,7 +405,7 @@ GLint lightningColour;
 	// passed to the shader.
 	// The alternative is to generate fade textures in the SkyRenderer,
 	// then lookup those textures in the cloud shader.
-	helper->CalcInscatterFactors(skyInterface,fadeTableInterface,god_rays);
+	helper->CalcInscatterFactors(skyInterface,god_rays);
 	simul::sky::float4 sunlight1=skyInterface->GetLocalIrradiance(X1.z*.001f);
 	simul::sky::float4 sunlight2=skyInterface->GetLocalIrradiance(X2.z*.001f);
 
@@ -548,18 +547,6 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects()
 	return true;
 }
 
-void SimulGLCloudRenderer::SetWind(float spd,float dir_deg)
-{
-	cloudKeyframer->SetWindSpeed(spd);
-	cloudKeyframer->SetWindHeadingDegrees(dir_deg);
-	simul::clouds::CloudKeyframer::Keyframe *K=cloudKeyframer->GetNextModifiableKeyframe();
-	if(K)
-	{
-		K->wind_speed=spd;
-		K->wind_direction=dir_deg*pi/180.f;
-	}
-}
-
 void **SimulGLCloudRenderer::GetCloudTextures()
 {
 	return (void**)cloud_tex;
@@ -577,17 +564,6 @@ bool SimulGLCloudRenderer::Destroy()
 SimulGLCloudRenderer::~SimulGLCloudRenderer()
 {
 	Destroy();
-}
-
-void SimulGLCloudRenderer::SetSkyInterface(simul::sky::BaseSkyInterface *si)
-{
-	skyInterface=si;
-	cloudKeyframer->SetSkyInterface(si);
-}
-
-void SimulGLCloudRenderer::SetFadeTable(simul::sky::FadeTableInterface *fti)
-{
-	fadeTableInterface=fti;
 }
 
 const char *SimulGLCloudRenderer::GetDebugText()

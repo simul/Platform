@@ -64,7 +64,7 @@ bool SimulGLSkyRenderer::Create(float start_alt_km)
 
 	skyKeyframer->SetFillTexturesAsBlocks(true);
 	skyKeyframer->SetAltitudeKM(start_alt_km);
-	cam_pos[0]=cam_pos[1]=cam_pos[2]=0;
+	SetCameraPosition(0,0,400.f);
 	return true;
 }
 
@@ -280,9 +280,7 @@ bool SimulGLSkyRenderer::Render()
 	glGetMatrix(modelview.RowPointer(0),GL_MODELVIEW_MATRIX);
 	simul::math::Matrix4x4 inv;
 	modelview.Inverse(inv);
-	cam_pos[0]=inv(3,0);
-	cam_pos[1]=inv(3,1);
-	cam_pos[2]=inv(3,2);
+	SetCameraPosition(inv(3,0),inv(3,1),inv(3,2));
 	campos_updated=true;
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
 	glUseProgram(sky_program);
@@ -318,7 +316,7 @@ bool SimulGLSkyRenderer::Render()
 
 bool SimulGLSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
-	float alt_km=0.001f*cam_pos.y;
+	float alt_km=0.001f*cam_pos.z;
 	if(do_lighting)
 	{
 	}

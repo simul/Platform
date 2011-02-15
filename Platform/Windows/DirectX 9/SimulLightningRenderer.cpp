@@ -76,6 +76,7 @@ bool SimulLightningRenderer::InitEffects()
 	m_hTechniqueLightningLines	=m_pLightningEffect->GetTechniqueByName("simul_lightning_lines");
 	m_hTechniqueLightningQuads	=m_pLightningEffect->GetTechniqueByName("simul_lightning_quads");
 	l_worldViewProj				=m_pLightningEffect->GetParameterByName(NULL,"worldViewProj");
+	lightningColour				=m_pLightningEffect->GetParameterByName(NULL,"lightningColour");
 
 	return true;
 }
@@ -120,8 +121,6 @@ bool SimulLightningRenderer::Render()
 	HRESULT hr=S_OK;
 bool y_vertical=true;
 	m_pd3dDevice->SetTexture(0,lightning_texture);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAXANISOTROPY, 1);
@@ -157,12 +156,21 @@ bool y_vertical=true;
 	m_pLightningEffect->SetMatrix(l_worldViewProj,&wvp);
 	m_pLightningEffect->SetTechnique(m_hTechniqueLightningQuads);
 	UINT passes=1;
-	hr=m_pLightningEffect->Begin(&passes,0);
-	hr=m_pLightningEffect->BeginPass(0);
 	for(unsigned i=0;i<lightningRenderInterface->GetNumLightSources();i++)
 	{
 		if(!lightningRenderInterface->IsSourceStarted(i))
 			continue;
+	/*	if(i==0)
+			m_pLightningEffect->SetVector(lightningColour,&(D3DXVECTOR4(1,0,0,1)));
+		if(i==1)
+			m_pLightningEffect->SetVector(lightningColour,&(D3DXVECTOR4(0,1,0,1)));
+		if(i==2)
+			m_pLightningEffect->SetVector(lightningColour,&(D3DXVECTOR4(0,0,1,1)));
+		if(i==3)
+			m_pLightningEffect->SetVector(lightningColour,&(D3DXVECTOR4(1,1,1,1)));*/
+		m_pLightningEffect->SetVector(lightningColour,(const D3DXVECTOR4*)lightningRenderInterface->GetLightningColour());
+	hr=m_pLightningEffect->Begin(&passes,0);
+	hr=m_pLightningEffect->BeginPass(0);
 		bool quads=true;
 		simul::math::Vector3 x1,x2;
 		float bright1=0.f;
@@ -222,7 +230,7 @@ bool y_vertical=true;
 				v1.position.y=x1a.y+vertical_shift;
 				v1.position.z=x1a.z;
 				v1.texCoords.x=0;
-				v1.texCoords.y=0;
+				v1.texCoords.y=bright1;
 
 				if(quads)
 				{
@@ -231,7 +239,7 @@ bool y_vertical=true;
 					v2.position.y=x1b.y+vertical_shift;
 					v2.position.z=x1b.z;
 					v2.texCoords.x=1.f;
-					v2.texCoords.y=1.f;
+					v2.texCoords.y=bright1;
 				}
 				else
 					v1.texCoords.x=0.5f;
@@ -252,11 +260,10 @@ bool y_vertical=true;
 					sizeof(PosTexVert_t));
 				}
 			}
-			
 		}
-	}
 	hr=m_pLightningEffect->EndPass();
 	hr=m_pLightningEffect->End();
+	}
 	return hr;
 }
 

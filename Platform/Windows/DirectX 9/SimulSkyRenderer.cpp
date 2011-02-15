@@ -49,6 +49,7 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	,m_hTechniqueQuery(NULL)
 	,m_hTechniqueFlare(NULL)
 	,m_hTechniquePlanet(NULL)
+	,max_distance_texture(NULL)
 	,m_hTechniqueFadeCrossSection(NULL)
 	,flare_texture(NULL)
 	,stars_texture(NULL)
@@ -70,9 +71,7 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	EnableColourSky(UseColourSky);
 	fadeTableInterface->SetEarthTest(false);
 	skyInterface->SetTime(0.5f);
-
-	cam_pos.x=cam_pos.z=0;
-	cam_pos.y=400.f;
+	SetCameraPosition(0,0,400.f);
 }
 
 HRESULT SimulSkyRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
@@ -147,7 +146,7 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 		CreateDX9Texture(m_pd3dDevice,flare_texture,SunTexture.c_str());
 	}
 	SAFE_RELEASE(stars_texture);
-	CreateDX9Texture(m_pd3dDevice,stars_texture,"TychoSkymapII.t5_04096x02048.jpg");
+	//CreateDX9Texture(m_pd3dDevice,stars_texture,"TychoSkymapII.t5_04096x02048.jpg");
 
 	for(size_t i=0;i<halo_textures.size();i++)
 	{
@@ -184,6 +183,7 @@ HRESULT SimulSkyRenderer::InvalidateDeviceObjects()
 	sky_tex_format=D3DFMT_UNKNOWN;
 	if(m_pSkyEffect)
         hr=m_pSkyEffect->OnLostDevice();
+	SAFE_RELEASE(max_distance_texture);
 	SAFE_RELEASE(m_pSkyEffect);
 	SAFE_RELEASE(m_pFont);
 	SAFE_RELEASE(m_pVtxDecl);
@@ -266,6 +266,22 @@ void SimulSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_
 			*float_ptr++=(*float4_array++);
 	}
 	hr=tex->UnlockRect(0);
+}
+
+void SimulSkyRenderer::FillDistanceTexture(int num_elevs_width,int num_alts_height,const float *dist_array)
+{
+	if(!m_pd3dDevice)
+		return;
+	SAFE_RELEASE(max_distance_texture);
+	HRESULT hr=D3DXCreateTexture(m_pd3dDevice,num_elevs_width,num_alts_height,1,0,D3DFMT_R32F,d3d_memory_pool,&max_distance_texture);
+
+	D3DLOCKED_RECT lockedRect={0};
+	if(FAILED(hr=max_distance_texture->LockRect(0,&lockedRect,NULL,NULL)))
+		return;
+	float *float_ptr=(float *)(lockedRect.pBits);
+	for(int i=0;i<num_alts_height*num_elevs_width;i++)
+		*float_ptr++=(*dist_array++);
+	hr=max_distance_texture->UnlockRect(0);
 }
 
 void SimulSkyRenderer::FillSunlightTexture(int texture_index,int texel_index,int num_texels,const float *float4_array)
@@ -681,10 +697,14 @@ HRESULT SimulSkyRenderer::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radi
 	return hr;
 }
 int query_issued=0;
+static float query_occlusion=0.f;
 float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 {
-	sun_occlusion=cloud_occlusion;
-	//if(!m_hTechniqueQuery)
+	sun_occlusion=1.f-(1.f-cloud_occlusion)*(1.f-query_occlusion);
+	static float uu=1000.f;
+	float retain=1.f/(1.f+uu*0.01f);
+	float introduce=1.f-retain;
+	if(!m_hTechniqueQuery)
 		return sun_occlusion;
 	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
@@ -717,10 +737,12 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
     	DWORD pixelsVisible=0;
 		if(d3dQuery->GetData((void *)&pixelsVisible,sizeof(DWORD),0)!=S_FALSE)//D3DGETDATA_FLUSH
 		{
-			sun_occlusion=1.f-(float)pixelsVisible/500.f;
-			if(sun_occlusion<0)
-				sun_occlusion=0;
-			sun_occlusion=1.f-(1.f-cloud_occlusion)*(1.f-sun_occlusion);
+			
+			float q=(1.f-(float)pixelsVisible/500.f);
+			if(q<0)
+				q=0;
+			query_occlusion*=retain;
+			query_occlusion+=introduce*q;
 			query_issued=0;
 		}
 	}
@@ -856,6 +878,8 @@ HRESULT SimulSkyRenderer::RenderFades(int )
 	RenderTexture(m_pd3dDevice,8+(size+8)	,size*3+96,size,size,sky_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 	m_pSkyEffect->SetTexture(fadeTexture, sky_textures[2]);
 	RenderTexture(m_pd3dDevice,8+2*(size+8)	,size*3+96,size,size,sky_textures[2],m_pSkyEffect,m_hTechniqueFadeCrossSection);
+	m_pSkyEffect->SetTexture(fadeTexture, max_distance_texture);
+	RenderTexture(m_pd3dDevice,8+4*(size+8)	,size*3+96,size,size,max_distance_texture,NULL,NULL);
 	return hr;
 }
 
@@ -1044,9 +1068,7 @@ HRESULT SimulSkyRenderer::RenderPointStars()
 #endif
 	D3DXMATRIX tmp1, tmp2;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
-	cam_pos.x=tmp1._41;
-	cam_pos.y=tmp1._42;
-	cam_pos.z=tmp1._43;
+	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 
 	cam_dir.x=tmp1._31;
 	cam_dir.y=tmp1._32;
@@ -1110,9 +1132,7 @@ return S_OK;
 #endif
 	D3DXMATRIX tmp1, tmp2;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
-	cam_pos.x=tmp1._41;
-	cam_pos.y=tmp1._42;
-	cam_pos.z=tmp1._43;
+	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 
 	cam_dir.x=tmp1._31;
 	cam_dir.y=tmp1._32;
@@ -1156,9 +1176,7 @@ HRESULT SimulSkyRenderer::Render()
 #endif
 	D3DXMATRIX tmp1, tmp2;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
-	cam_pos.x=tmp1._41;
-	cam_pos.y=tmp1._42;
-	cam_pos.z=tmp1._43;
+	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 
 	cam_dir.x=tmp1._31;
 	cam_dir.y=tmp1._32;
@@ -1212,9 +1230,7 @@ void SimulSkyRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 	proj=p;
 	D3DXMATRIX tmp1;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
-	cam_pos.x=tmp1._41;
-	cam_pos.y=tmp1._42;
-	cam_pos.z=tmp1._43;
+	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 }
 #endif
 

@@ -56,6 +56,7 @@ protected:
 	D3DXHANDLE						m_hTechniqueLightningLines;
 	D3DXHANDLE						m_hTechniqueLightningQuads;
 	D3DXHANDLE						l_worldViewProj;
+	D3DXHANDLE						lightningColour;
 	LPDIRECT3DTEXTURE9				lightning_texture;
 	D3DXMATRIX						world,view,proj;
 

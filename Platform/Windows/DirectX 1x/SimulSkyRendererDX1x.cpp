@@ -109,10 +109,8 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x() :
 		loss_textures_SRV[i]=NULL;
 		insc_textures_SRV[i]=NULL;
 	}
-	cam_pos.x=cam_pos.z=cam_pos.y=0.f;
-	//loss_texture_mapped.pData=NULL;
-	//insc_texture_mapped.pData=NULL;
 	EnableColourSky(false);
+	SetCameraPosition(0,0,400.f);
 	skyKeyframer->SetCalculateAllAltitudes(true);
 }
 
@@ -305,7 +303,6 @@ void SimulSkyRendererDX1x::UnmapSky()
 }
 void SimulSkyRendererDX1x::FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
 {
-	HRESULT hr;
 	MapSky(texture_index);
 	if(!sky_texture_mapped.pData)
 		return;
@@ -624,9 +621,7 @@ HRESULT SimulSkyRendererDX1x::Render()
 	HRESULT hr=S_OK;
 	D3DXMATRIX tmp1, tmp2,wvp;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
-	cam_pos.x=tmp1._41;
-	cam_pos.y=tmp1._42;
-	cam_pos.z=tmp1._43;
+	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 	D3DXMatrixIdentity(&world);
 	//set up matrices
 	world._41=cam_pos.x;

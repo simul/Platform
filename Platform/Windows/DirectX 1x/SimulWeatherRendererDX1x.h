@@ -9,8 +9,8 @@
 #include <tchar.h>
 #include "Simul/Platform/Windows/DirectX 1x/MacrosDx1x.h"
 #include <d3dx9.h>
-#ifdef X10
-	#include <D3D1x.h>
+#ifdef DX10
+	#include <D3D10.h>
 	#include <d3dx10.h>
 #else
 	#include <d3d11.h>
@@ -19,17 +19,15 @@
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
 typedef long HRESULT;
-#ifdef DX10
-#define SimulWeatherRendererDX1x SimulWeatherRendererDX10
-#else
-#define SimulWeatherRendererDX1x SimulWeatherRendererDX11
-#endif
+
 class RenderDepthBufferCallback
 {
 public:
 	virtual void Render()=0;
 };
 
+//! An implementation of \link simul::clouds::BaseWeatherRenderer BaseWeatherRenderer\endlink for DirectX 10 and 11
+//! The DX10 switch is used
 class SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer, public simul::graph::meta::Group
 {
 public:

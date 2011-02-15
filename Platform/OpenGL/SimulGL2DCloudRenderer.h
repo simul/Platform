@@ -37,7 +37,6 @@ public:
 	bool RestoreDeviceObjects( );
 	bool InvalidateDeviceObjects();
 	bool Destroy();
-	void Update(float dt);
 	bool Render();
 	void SetWindVelocity(float x,float y);
 	simul::clouds::CloudInterface *GetCloudInterface();

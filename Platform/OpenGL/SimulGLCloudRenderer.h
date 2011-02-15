@@ -24,20 +24,19 @@ namespace simul
 	}
 }
 
+//! A renderer for clouds in OpenGL.
 class SimulGLCloudRenderer : public simul::clouds::BaseCloudRenderer
 {
 public:
 	SimulGLCloudRenderer();
 	virtual ~SimulGLCloudRenderer();
-	void SetSkyInterface(simul::sky::BaseSkyInterface *si);
-	void SetFadeTable(simul::sky::FadeTableInterface *fti);
 	//standard ogl object interface functions
-	bool Create( );
-	bool RestoreDeviceObjects( );
+	bool Create();
+	bool RestoreDeviceObjects();
 	bool InvalidateDeviceObjects();
 	bool Destroy();
+	//! Render the clouds.
 	bool Render(bool depth_testing=false,bool default_fog=false);
-	void SetWind(float spd,float dir_deg);
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
 	const char *GetDebugText();

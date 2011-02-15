@@ -65,7 +65,6 @@ void SimulWeatherRendererDX1x::ConnectInterfaces()
 	if(simulCloudRenderer.get()&&simulSkyRenderer.get())
 	{
 		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
-		simulCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
 		simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
 	}
 /*	if(simul2DCloudRenderer)
@@ -80,11 +79,6 @@ void SimulWeatherRendererDX1x::ConnectInterfaces()
 	}
 	//if(simulAtmosphericsRenderer&&simulSkyRenderer)
 	//	simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-	if(simulCloudRenderer)
-	{
-		if(simulSkyRenderer)
-			simulCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
-	}
 	/*if(simul2DCloudRenderer)
 		V_RETURN(simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
 	if(simulPrecipitationRenderer)
@@ -101,7 +95,6 @@ HRESULT SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISw
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
-		simulCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
 	}
 /*	if(simul2DCloudRenderer)
 	{
@@ -121,8 +114,6 @@ HRESULT SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISw
 		V_RETURN(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
 	if(simulCloudRenderer)
 	{
-		if(simulSkyRenderer)
-			simulCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
 		V_RETURN(simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
 	}
 	/*if(simul2DCloudRenderer)

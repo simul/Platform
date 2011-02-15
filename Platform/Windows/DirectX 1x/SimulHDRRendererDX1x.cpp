@@ -124,6 +124,9 @@ SimulHDRRendererDX1x::~SimulHDRRendererDX1x()
 
 HRESULT SimulHDRRendererDX1x::IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat)
 {
+	DepthFormat;
+	AdapterFormat;
+	BackBufferFormat;
 	HRESULT hr=S_OK;
 	/*LPDIRECT3D9 d3d;
 	m_pd3dDevice->GetDirect3D(&d3d);

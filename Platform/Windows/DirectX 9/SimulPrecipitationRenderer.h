@@ -6,6 +6,7 @@
 // in accordance with the terms of that agreement.
 
 #pragma once
+#include "Simul/Math/Vector3.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
 #ifdef XBOX
 	#include <xtl.h>
@@ -49,5 +50,6 @@ protected:
 	D3DXHANDLE              m_hTechniqueRain;	// Handle to technique in the effect 
 	D3DXMATRIX				view,proj;
 	D3DXVECTOR3				cam_pos;
+	simul::math::Vector3	last_cam_pos;
 	bool external_rain_texture;		// Is the rain texture created outside this class?
 };

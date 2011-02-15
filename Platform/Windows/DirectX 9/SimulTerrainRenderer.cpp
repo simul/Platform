@@ -43,7 +43,7 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	m_pVtxDecl(NULL)
 	,m_pTerrainEffect(NULL)
 	,terrain_texture(NULL)
-	,grass_texture(NULL)
+	,detail_texture(NULL)
 	,road_texture(NULL)
 	,vertexBuffer(NULL)
 	,sky_loss_texture_1(NULL)
@@ -64,12 +64,13 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	heightmap->SetNumMipMapLevels(3);
 	heightmap->SetPageSize(513);
 	heightmap->SetTileSize(33);
-	heightmap->SetMaxHeight(4000.f);
+	heightmap->SetMaxHeight(7000.f);
 	heightmap->SetFractalOctaves(5);
 	heightmap->SetFractalScale(160000.f);
 	heightmap->SetPageWorldX(120000.f);
 	heightmap->SetPageWorldZ(120000.f);
-	heightmap->SetBaseAltitude(-1000.f);
+	heightmap->SetBaseAltitude(-2000.f);
+	heightmap->SetFlattenBelow(0.f);
 	heightmap->Rebuild();
 }
 
@@ -126,6 +127,20 @@ static float saturate(float f)
 		return 1.f;
 	return f;
 }
+static float SnowFunction(float altitude_metres,simul::math::Vector3 &normal)
+{
+	float high_enought=1.f;
+	float angle_ok=saturate((normal.z-0.5f)/0.1f);
+	return high_enought*angle_ok;
+}
+static float GrassFunction(float altitude_metres,simul::math::Vector3 &normal)
+{
+	float high_enough=saturate((2000.f-altitude_metres)/200.f);
+	//(1.f-saturate((altitude_metres-4400.f)/200.f))*
+	float angle_ok=saturate((normal.z-0.9f)/0.1f);
+	return high_enough*angle_ok;
+}
+
 
 void SimulTerrainRenderer::GetVertex(int i,int j,TerrainVertex_t *V)
 {
@@ -140,7 +155,8 @@ void SimulTerrainRenderer::GetVertex(int i,int j,TerrainVertex_t *V)
 	V->normal_x=n.x;
 	V->normal_y=n.z;
 	V->normal_z=n.y;
-	V->ca=(1.f-saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f)*saturate((800.f-V->y)/200.f);
+	//V->ca=1.f-(1.f-saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f)*saturate((800.f-V->y)/200.f);
+	V->ca=GrassFunction(V->y,n);
 	V->tex_x=130.f*X;
 	V->tex_y=130.f*Y;
 	V->offset=0.f;
@@ -158,12 +174,17 @@ void SimulTerrainRenderer::GetVertex(float x,float y,TerrainVertex_t *V)
 	V->normal_x=n.x;
 	V->normal_y=n.z;
 	V->normal_z=n.y;
-	V->ca=(1.f-saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f)*saturate((800.f-V->y)/200.f);
+	//V->ca=(saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f)*saturate((800.f-V->y)/200.f);
+	V->ca=GrassFunction(V->y,n);
 	V->tex_x=130.f*X;
 	V->tex_y=130.f*Y;
 	V->offset=0.f;
 }
 
+void SimulTerrainRenderer::TerrainModified()
+{
+	heightmap->Rebuild();
+}
 HRESULT SimulTerrainRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 {
 	enabled=false;
@@ -183,8 +204,8 @@ HRESULT SimulTerrainRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	SAFE_RELEASE(terrain_texture);
 	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/MudGrass01.dds"),&terrain_texture));
 
-	SAFE_RELEASE(grass_texture);
-	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/grass02.dds"),&grass_texture));
+	SAFE_RELEASE(detail_texture);
+	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/grass02.dds"),&detail_texture));
 
 	SAFE_RELEASE(road_texture);
 	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/road.dds"),&road_texture));
@@ -263,7 +284,7 @@ HRESULT SimulTerrainRenderer::CreateEffect()
 	ambientColour		=m_pTerrainEffect->GetParameterByName(NULL,"ambientColour");
 
 	g_mainTexture		=m_pTerrainEffect->GetParameterByName(NULL,"g_mainTexture");
-	grassTexture		=m_pTerrainEffect->GetParameterByName(NULL,"grassTexture");
+	detailTexture		=m_pTerrainEffect->GetParameterByName(NULL,"detailTexture");
 	roadTexture			=m_pTerrainEffect->GetParameterByName(NULL,"roadTexture");
 
 	skyLossTexture1		=m_pTerrainEffect->GetParameterByName(NULL,"skyLossTexture1");
@@ -288,7 +309,7 @@ HRESULT SimulTerrainRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(vertexBuffer);
 	ReleaseIndexBuffers();
 	SAFE_RELEASE(terrain_texture);
-	SAFE_RELEASE(grass_texture);
+	SAFE_RELEASE(detail_texture);
 	SAFE_RELEASE(road_texture);
 	sky_loss_texture_1=NULL;
 	sky_loss_texture_2=NULL;
@@ -307,7 +328,7 @@ HRESULT SimulTerrainRenderer::Destroy()
 	ReleaseIndexBuffers();
 	SAFE_RELEASE(m_pTerrainEffect);
 	SAFE_RELEASE(terrain_texture);
-	SAFE_RELEASE(grass_texture);
+	SAFE_RELEASE(detail_texture);
 	SAFE_RELEASE(road_texture);
 	sky_loss_texture_1=NULL;
 	sky_loss_texture_2=NULL;
@@ -396,7 +417,7 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 		m_pTerrainEffect->SetVector	(MieRayleighRatio	,&mie_rayleigh_ratio);
 		m_pTerrainEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 		float alt_km=cam_pos.y*0.001f;
-		static float light_mult=1.f/25.f;//.25f/6.28f;
+		static float light_mult=0.08f;
 		simul::sky::float4 light_colour=light_mult*skyInterface->GetLocalIrradiance(alt_km);
 		simul::sky::float4 ambient_colour=skyInterface->GetAmbientLight(alt_km);
 		m_pTerrainEffect->SetVector	(lightColour		,(const D3DXVECTOR4 *)(&light_colour));
@@ -408,7 +429,7 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 	m_pTerrainEffect->SetFloat	(fadeInterp			,fade_interp);
 
 	m_pTerrainEffect->SetTexture(g_mainTexture		,terrain_texture);
-	m_pTerrainEffect->SetTexture(grassTexture		,grass_texture);
+	m_pTerrainEffect->SetTexture(detailTexture		,detail_texture);
 	m_pTerrainEffect->SetTexture(skyLossTexture1	,sky_loss_texture_1);
 	m_pTerrainEffect->SetTexture(skyLossTexture2	,sky_loss_texture_2);
 	m_pTerrainEffect->SetTexture(skyInscatterTexture1,sky_inscatter_texture_1);

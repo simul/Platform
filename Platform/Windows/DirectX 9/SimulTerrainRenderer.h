@@ -96,6 +96,7 @@ public:
 	{
 		rebuild_effect=true;
 	}
+	void TerrainModified();
 protected:
 	bool enabled;
 	bool wrap_clouds;
@@ -110,7 +111,7 @@ protected:
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
 	LPD3DXEFFECT			m_pTerrainEffect;		// The fx file for the sky
 	LPDIRECT3DTEXTURE9		terrain_texture;
-	LPDIRECT3DTEXTURE9		grass_texture;
+	LPDIRECT3DTEXTURE9		detail_texture;
 
 	LPDIRECT3DTEXTURE9		elevation_map_texture;
 	HRESULT MakeMapTexture();
@@ -140,7 +141,7 @@ protected:
 	D3DXHANDLE				ambientColour;
 
 	D3DXHANDLE				g_mainTexture;
-	D3DXHANDLE				grassTexture;
+	D3DXHANDLE				detailTexture;
 	D3DXHANDLE				roadTexture;
 	D3DXHANDLE				skyLossTexture1;
 	D3DXHANDLE				skyLossTexture2;

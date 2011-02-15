@@ -95,6 +95,10 @@ public:
 	void GetLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LPDIRECT3DBASETEXTURE9 *l2,
 		LPDIRECT3DBASETEXTURE9 *i1,LPDIRECT3DBASETEXTURE9 *i2);
 	void GetSkyTextures(LPDIRECT3DBASETEXTURE9 *s1,LPDIRECT3DBASETEXTURE9 *s2);
+	LPDIRECT3DTEXTURE9 GetDistanceTexture()
+	{
+		return max_distance_texture;
+	}
 	bool Use3DFadeTextures() const{return true;}
 	float GetFadeInterp() const;
 	void SetStepsPerDay(int s);
@@ -110,6 +114,8 @@ public:
 						const float *)
 	{
 	}
+	
+	void FillDistanceTexture(int num_elevs_width,int num_alts_height,const float *dist_array);
 	float CalcSunOcclusion(float cloud_occlusion=0.f);
 
 	void FillSunlightTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
@@ -168,7 +174,9 @@ protected:
 	// If using 1D sky textures and 2D fade textures:
 	LPDIRECT3DBASETEXTURE9		loss_textures[3];
 	LPDIRECT3DBASETEXTURE9		inscatter_textures[3];
-	
+	// Max fade distance, constant, except towards the ground
+	LPDIRECT3DTEXTURE9			max_distance_texture;
+
     ID3DXFont*					m_pFont;
 	D3DXVECTOR3					cam_dir;
 	D3DXMATRIX					world,view,proj;

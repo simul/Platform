@@ -19,7 +19,7 @@ class RenderDepthBufferCallback
 public:
 	virtual void Render()=0;
 };
-//! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX program.
+//! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX 9 program.
 //! You can take this entire class and use it as source in your project, and 
 //! make appropriate modifications where required.
 
@@ -30,18 +30,20 @@ public:
 #include "Simul/Platform/Windows/DirectX 9/SimulWeatherRenderer.h"
 	simulWeatherRenderer=new SimulWeatherRenderer(true,false,ScreenWidth/2,ScreenHeight/2,true,true,false,true,false);
 	simulWeatherRenderer->SetDaytime(0.3f);
-	// TRY to load a sequence file:
+	\endcode
+
+	We can load a sequence file containing keyframes and weather setup:
+	\code
 	std::ifstream ifs("default.seq",std::ios_base::binary);
 	if(ifs.good())
 	{
 		simulWeatherRenderer->Load(ifs);
-		doing_playpack=true;
 		ifs.close();
 	}
 	\endcode
-	\code
 
-	// Here we can apply global modifications to all the keyframes, by iterating them in turn:
+	We can apply global modifications to all the keyframes, by iterating them in turn:
+	\code
 	simul::clouds::CloudKeyframer *ck=simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer();
 	for(int i=0;i<ck->GetNumKeyframes();i++)
 	{
@@ -57,7 +59,7 @@ public:
 	simulWeatherRenderer->Create(pd3dDevice);
 	\endcode
 
-\section Handling device changes
+\section devc Handling device changes
 	When a new device has been set up:
 \code
 	simulWeatherRenderer->SetBufferSize(pBackBufferSurfaceDesc->Width/2,pBackBufferSurfaceDesc->Height/2);
@@ -67,7 +69,7 @@ public:
 	\code
 	simulWeatherRenderer->InvalidateDeviceObjects();
 \endcode
-	\section Update and rendering
+	\section updr Update and rendering
 Usually once per frame, the weather update should be called, this will update the weather renderer's sub-renderers,
 e.g. clouds, sky:
 \code

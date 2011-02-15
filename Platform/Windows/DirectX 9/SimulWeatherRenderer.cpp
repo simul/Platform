@@ -114,12 +114,10 @@ void SimulWeatherRenderer::ConnectInterfaces()
 		if(simul2DCloudRenderer)
 		{
 			simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-			simul2DCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
 		}
 		if(simulCloudRenderer)
 		{
 			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
-			simulCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
 			simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
 		}
 		if(simulAtmosphericsRenderer)
@@ -133,12 +131,10 @@ HRESULT SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
-		simulCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
 	}
 	if(simul2DCloudRenderer)
 	{
 		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
-		simul2DCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
 	}
 	if(simulSkyRenderer)
 	{
@@ -159,8 +155,6 @@ HRESULT SimulWeatherRenderer::Restore3DCloudObjects()
 	{
 		if(simulCloudRenderer)
 		{
-			if(simulSkyRenderer)
-				simulCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
 			V_RETURN(simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
 		}
 		if(simulPrecipitationRenderer)
@@ -469,7 +463,25 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 		hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,1.f, 0L);
 	}
 	if(simulSkyRenderer&&show_sky)
+	{
 		hr=simulSkyRenderer->Render();
+		// Do these updates now because sky renderer will have calculated the view height.
+		if(simulAtmosphericsRenderer)
+		{
+			simulAtmosphericsRenderer->SetAltitudeTextureCoordinate(simulSkyRenderer->GetAltitudeTextureCoordinate());
+			simulAtmosphericsRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
+		}
+		if(simulCloudRenderer)
+		{
+			simulCloudRenderer->SetAltitudeTextureCoordinate(simulSkyRenderer->GetAltitudeTextureCoordinate());
+			simulCloudRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
+			if(simulAtmosphericsRenderer)
+			{
+				simulAtmosphericsRenderer->SetLightningProperties(simulCloudRenderer->GetIlluminationTexture(),
+														simulCloudRenderer->GetLightningRenderInterface());
+			}
+		}
+	}
 	if(simul2DCloudRenderer&&layer2)
 		hr=simul2DCloudRenderer->Render();
 	if(simulCloudRenderer&&layer1&&(!RenderCloudsLate||is_cubemap))
@@ -546,8 +558,6 @@ HRESULT SimulWeatherRenderer::RenderFlares()
 HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 {
 	HRESULT hr=S_OK;
-	if(!RenderCloudsLate||!layer1)
-		return hr;
 	
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface=NULL;
@@ -561,15 +571,31 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 		static float depth_start=1.f;
 		hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 	}
-	if(renderDepthBufferCallback)
-		renderDepthBufferCallback->Render();
-	if(simulCloudRenderer&&layer1)
+	if(RenderCloudsLate&&layer1)
 	{
-		PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
-		{
-			hr=simulCloudRenderer->Render();
+		if(renderDepthBufferCallback)
+			renderDepthBufferCallback->Render();
+		if(simulCloudRenderer&&layer1)
+		{	
+			PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
+			{
+				hr=simulCloudRenderer->Render();
+			}
 		}
 	}
+/*	if(simulAtmosphericsRenderer&&simulCloudRenderer&&layer1)
+	{
+		float str=simulCloudRenderer->GetCloudInterface()->GetHumidity();
+		static float gr_start=0.65f;
+		str-=gr_start;
+		str/=(1.f-gr_start);
+		if(str<0.f)
+			str=0.f;
+		if(str>1.f)
+			str=1.f;
+		simulAtmosphericsRenderer->RenderGodRays(str);
+		simulAtmosphericsRenderer->RenderAirglow();
+	}*/
 	//static float depth_start=1.f;
 	if(use_buffer)
 	{
@@ -704,8 +730,6 @@ void SimulWeatherRenderer::UpdateSkyAndCloudHookup()
 	{
 		simulCloudRenderer->SetLossTextures(l1,l2);
 		simulCloudRenderer->SetInscatterTextures(i1,i2);
-		simulCloudRenderer->SetAltitudeTextureCoordinate(simulSkyRenderer->GetAltitudeTextureCoordinate());
-		simulCloudRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
 	}
 }
 
@@ -721,10 +745,9 @@ void SimulWeatherRenderer::Update(float dt)
 			simulSkyRenderer->GetLossAndInscatterTextures(&l1,&l2,&i1,&i2);
 			if(simulAtmosphericsRenderer)
 			{
+				simulAtmosphericsRenderer->SetDistanceTexture(simulSkyRenderer->GetDistanceTexture());
 				simulAtmosphericsRenderer->SetLossTextures(l1,l2);
 				simulAtmosphericsRenderer->SetInscatterTextures(i1,i2);
-				simulAtmosphericsRenderer->SetAltitudeTextureCoordinate(simulSkyRenderer->GetAltitudeTextureCoordinate());
-				simulAtmosphericsRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
 			}
 		}
 		// Do this AFTER sky update, to catch any changes:
@@ -737,6 +760,13 @@ void SimulWeatherRenderer::Update(float dt)
 		timing=timer.Time;
 		if(simul2DCloudRenderer)
 			simul2DCloudRenderer->Update(dt);
+		if(simulCloudRenderer&&simulAtmosphericsRenderer)
+		{
+			LPDIRECT3DBASETEXTURE9 *c=(LPDIRECT3DBASETEXTURE9*)simulCloudRenderer->GetCloudTextures();
+			simulAtmosphericsRenderer->SetCloudProperties(c[0],c[1],
+				simulCloudRenderer->GetCloudScales(),simulCloudRenderer->GetCloudOffset(),
+				simulCloudRenderer->GetInterpolation());
+		}
 		if(simulPrecipitationRenderer)
 		{
 			simulPrecipitationRenderer->Update(dt);

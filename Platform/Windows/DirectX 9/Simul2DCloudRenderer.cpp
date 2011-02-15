@@ -183,11 +183,6 @@ void Simul2DCloudRenderer::SetSkyInterface(simul::sky::SkyInterface *si)
 	cloudKeyframer->SetSkyInterface(si);
 }
 
-void Simul2DCloudRenderer::SetFadeTableInterface(simul::sky::FadeTableInterface *fti)
-{
-	fadeTableInterface=fti;
-}
-
 HRESULT Simul2DCloudRenderer::Create( LPDIRECT3DDEVICE9 dev)
 {
 	m_pd3dDevice=dev;
@@ -359,17 +354,6 @@ void Simul2DCloudRenderer::FillCloudTextureSequentially(int texture_index,int te
 	hr=cloud_textures[texture_index]->UnlockRect(0);
 }
 
-
-void Simul2DCloudRenderer::Update(float )
-{
-	if(!cloud_textures[2])
-		return;
-	if(!cloudInterface)
-		return;
-	float current_time=skyInterface->GetTime();
-	cloudKeyframer->Update(current_time);
-}
-
 HRESULT Simul2DCloudRenderer::RenderTexture()
 {
 	HRESULT hr=S_OK;
@@ -534,7 +518,7 @@ static float light_mult=.03f;
 	static float sc=7.f;
 	helper->Set2DNoiseTexturing(-0.8f,1.f,1.f);
 	helper->MakeGeometry(cloudInterface);
-	helper->CalcInscatterFactors(cloudInterface,skyInterface,fadeTableInterface,0.f);
+	helper->CalcInscatterFactors(cloudInterface,skyInterface,0.f);
 	float image_scale=1.f/texture_scale;
 	// Make the angular inscatter multipliers:
 	unsigned el_start,el_end,az_start,az_end;

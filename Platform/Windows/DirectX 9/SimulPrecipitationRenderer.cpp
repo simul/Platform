@@ -49,7 +49,7 @@ struct Vertex_t
 };
 
 #define CONE_SIDES 36
-#define NUM_VERT ((CONE_SIDES+1)*4)
+#define NUM_VERT ((CONE_SIDES+1)*8)
 static Vertex_t vertices[NUM_VERT];
 
 void SimulPrecipitationRenderer::TextureRepeatChanged()
@@ -66,28 +66,30 @@ HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	D3DXMatrixIdentity(&proj);
 	int index=0;
 	static float rr=0.2f;
-	for(int j=-1;j<1;j++)
-	for(int i=0;i<CONE_SIDES+1;i++)
+	for(int j=-2;j<2;j++)
 	{
-		float angle1=2.f*3.14159f*(float)i/(float)CONE_SIDES;
-		float fade=1.f-(float)abs(j);
-		float rad=radius*(rr+fade)/(1.f+rr);
-		vertices[index].x=rad*cos(angle1)*fade;
-		vertices[index].z=rad*sin(angle1)*fade;
-		vertices[index].y=height*j;
-		vertices[index].tex_x=i*TextureRepeat/(float)CONE_SIDES;
-		vertices[index].tex_y=(float)j*height/radius/Aspect*(float)TextureRepeat;
-		vertices[index].fade=fade;
-		index++;
-		fade=1.f-(float)abs(j+1);
-		rad=radius*(rr+fade)/(1.f+rr);
-		vertices[index].x=rad*cos(angle1)*fade;
-		vertices[index].z=rad*sin(angle1)*fade;
-		vertices[index].y=height*(j+1);
-		vertices[index].tex_x=i*TextureRepeat/(float)CONE_SIDES;
-		vertices[index].tex_y=(float)(j+1)*height/radius/Aspect*(float)TextureRepeat;
-		vertices[index].fade=fade;
-		index++;
+		for(int i=0;i<CONE_SIDES+1;i++)
+		{
+			float angle1=2.f*3.14159f*(float)i/(float)CONE_SIDES;
+			float fade=1.f-0.5f*(float)abs(j);
+			float rad=radius*(rr+fade)/(1.f+rr);
+			vertices[index].x=rad*cos(angle1)*fade;
+			vertices[index].z=rad*sin(angle1)*fade;
+			vertices[index].y=height*0.5f*j;
+			vertices[index].tex_x=i*TextureRepeat/(float)CONE_SIDES;
+			vertices[index].tex_y=0.5f*(float)j*height/radius/Aspect*(float)TextureRepeat;
+			vertices[index].fade=fade;
+			index++;
+			fade=1.f-0.5f*(float)abs(j+1);
+			rad=radius*(rr+fade)/(1.f+rr);
+			vertices[index].x=rad*cos(angle1)*fade;
+			vertices[index].z=rad*sin(angle1)*fade;
+			vertices[index].y=height*0.5f*(j+1);
+			vertices[index].tex_x=i*TextureRepeat/(float)CONE_SIDES;
+			vertices[index].tex_y=0.5f*(float)(j+1)*height/radius/Aspect*(float)TextureRepeat;
+			vertices[index].fade=fade;
+			index++;
+		}
 	}
 	D3DVERTEXELEMENT9 decl[]=
 	{
@@ -183,10 +185,27 @@ HRESULT SimulPrecipitationRenderer::Render()
 
 	m_pRainEffect->SetTechnique( m_hTechniqueRain );
 	cam_pos=GetCameraPosVector(view);
+
+	simul::math::Vector3 diff=(const float*)cam_pos;
+	diff-=last_cam_pos;
+	last_cam_pos=(const float*)cam_pos;
+
+	float pitch_angle=pi/2.f-atan2f(WindEffect*wind_speed,rain_speed);
+	float rain_heading=wind_heading;
+	simul::math::Vector3 rain_vector(	cos(pitch_angle)*sin(rain_heading),
+										sin(pitch_angle),
+										cos(pitch_angle)*cos(rain_heading));
+	static float camera_motion_factor=0.1f;
+	rain_vector-=camera_motion_factor*diff;
+	rain_vector.Normalize();
+	pitch_angle=pi/2.f-asin(rain_vector.y);
+	rain_heading=atan2(rain_vector.x,rain_vector.z);
+
 	D3DXMATRIX	world,direction;
 	D3DXMatrixIdentity(&world);
-	D3DXMatrixRotationY(&direction,wind_heading);
-	float pitch_angle=atan2f(WindEffect*wind_speed,rain_speed);
+	D3DXMatrixRotationY(&direction,rain_heading);
+
+
 	D3DXMatrixRotationX(&world,-pitch_angle);
 	D3DXMatrixMultiply(&world,&world,&direction);
 	world._41=cam_pos.x;

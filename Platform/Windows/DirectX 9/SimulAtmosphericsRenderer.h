@@ -7,6 +7,7 @@
 
 #pragma once
 #include "Simul/Graph/Meta/Group.h"
+#include "Simul/Sky/Float4.h"
 #ifdef XBOX
 	#include <xtl.h>
 #else
@@ -19,6 +20,10 @@ namespace simul
 	namespace sky
 	{
 		class BaseSkyInterface;
+	}
+	namespace clouds
+	{
+		class LightningRenderInterface;
 	}
 }
 
@@ -48,9 +53,25 @@ public:
 	HRESULT InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 	HRESULT Render();
+	//! Set properties for rendering cloud godrays.
+	void SetCloudProperties(void* c1,void* c2,
+							const float *cloudscales,
+							const float *cloudoffset,
+							float interp);
+	//! Render godrays
+	bool RenderGodRays(float strength);
+	//! Set properties for rendering lightning airglow.
+	void SetLightningProperties(void *tex,
+		simul::clouds::LightningRenderInterface *lri);
+	//! Render airglow due to lightning
+	bool RenderAirglow();
 #ifdef XBOX
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 #endif
+	void SetDistanceTexture(LPDIRECT3DTEXTURE9 t)
+	{
+		max_distance_texture=t;
+	}
 	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
 	{
 		loss_texture_1=t1;
@@ -61,7 +82,6 @@ public:
 		inscatter_texture_1=t1;
 		inscatter_texture_2=t2;
 	}
-	
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si)
 	{
 		skyInterface=si;
@@ -80,6 +100,7 @@ public:
 		altitude_tex_coord=f;
 	}
 protected:
+	HRESULT DrawFullScreenQuad();
 	bool use_3d_fades;
 	float altitude_tex_coord;
 	simul::sky::BaseSkyInterface *skyInterface;
@@ -100,20 +121,51 @@ protected:
 	D3DXHANDLE						fadeInterp;
 	D3DXHANDLE						imageTexture;
 	D3DXHANDLE						depthTexture;
+	D3DXHANDLE						maxDistanceTexture;
 	D3DXHANDLE						lossTexture1;
 	D3DXHANDLE						lossTexture2;
 	D3DXHANDLE						inscatterTexture1;
 	D3DXHANDLE						inscatterTexture2;
 
-	LPDIRECT3DBASETEXTURE9		loss_texture_1;
-	LPDIRECT3DBASETEXTURE9		loss_texture_2;
-	LPDIRECT3DBASETEXTURE9		inscatter_texture_1;
-	LPDIRECT3DBASETEXTURE9		inscatter_texture_2;
+	// For godrays:
+	D3DXHANDLE						godRaysTechnique;
+	D3DXHANDLE						cloudTexture1;
+	D3DXHANDLE						cloudTexture2;
+	D3DXHANDLE						cloudScales;
+	D3DXHANDLE						cloudOffset;
+	D3DXHANDLE						lightColour;
+	D3DXHANDLE						eyePosition;
+	D3DXHANDLE						cloudInterp;
+	LPDIRECT3DBASETEXTURE9			cloud_texture1;
+	LPDIRECT3DBASETEXTURE9			cloud_texture2;
+	simul::sky::float4				cloud_scales;
+	simul::sky::float4				cloud_offset;
+	float							cloud_interp;
+
+	LPDIRECT3DBASETEXTURE9			loss_texture_1;
+	LPDIRECT3DBASETEXTURE9			loss_texture_2;
+	LPDIRECT3DBASETEXTURE9			inscatter_texture_1;
+	LPDIRECT3DBASETEXTURE9			inscatter_texture_2;
+
+	// For lightning airglow
+	D3DXHANDLE						airglowTechnique;
+	LPDIRECT3DBASETEXTURE9			lightning_illumination_texture;
+	simul::sky::float4				lightning_multipliers;
+	simul::sky::float4				illumination_scales;
+	simul::sky::float4				illumination_offset;
+	simul::sky::float4				lightning_colour;
+	D3DXHANDLE						lightningIlluminationTexture;
+	D3DXHANDLE						lightningMultipliers;
+	D3DXHANDLE						lightningColour;
+	D3DXHANDLE						illuminationOrigin;
+	D3DXHANDLE						illuminationScales;
 
 	//! The depth buffer.
 	LPDIRECT3DTEXTURE9				depth_texture;
 	//! The un-faded image buffer.
 	LPDIRECT3DTEXTURE9				input_texture;
+	//! 
+	LPDIRECT3DTEXTURE9				max_distance_texture;
 
 	float fade_interp;
 

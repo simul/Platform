@@ -91,7 +91,6 @@ void SimulGLWeatherRenderer::ConnectInterfaces()
 		if(simulCloudRenderer)
 		{
 			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
-			simulCloudRenderer->SetFadeTable(simulSkyRenderer->GetFadeTableInterface());
 			simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
 		}
 		//if(simulAtmosphericsRenderer)

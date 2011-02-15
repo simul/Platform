@@ -41,18 +41,14 @@ class SimulCloudRenderer : public simul::clouds::BaseCloudRenderer
 public:
 	SimulCloudRenderer();
 	virtual ~SimulCloudRenderer();
-	//! Call this once to set the sky interface that this cloud renderer can use for distance fading.
-	void SetSkyInterface(simul::sky::BaseSkyInterface *si);
-	//! Call this when the D3D device has been created or reset.
-	void SetFadeTableInterface(simul::sky::FadeTableInterface *fti);
 	//! Call this when the device has been created
 	HRESULT RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
 	//! Call this when the 3D device has been lost.
 	HRESULT InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
 	HRESULT Destroy();
-	//! Call this once per frame to update the clouds.
-	void Update(float dt);
+	//! Draw clouds as horizontal layers
+	HRESULT RenderHorizontal(bool cubemap);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	HRESULT Render(bool cubemap=false);
 #if defined(XBOX) || defined(DOXYGEN)
@@ -65,6 +61,7 @@ public:
 	bool IsCameraAboveCloudBase() const;
 	const TCHAR *GetDebugText() const;
 	float GetTiming() const;
+	void *GetIlluminationTexture();
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
 	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2);
@@ -95,6 +92,8 @@ public:
 	}
 	virtual void SetFadeMode(FadeMode f);
 protected:
+	void InternalRenderHorizontal();
+	void InternalRenderVolumetric();
 	float max_fade_distance_metres;
 	HRESULT InitEffects();
 	bool wrap;
@@ -159,7 +158,6 @@ protected:
 	D3DXHANDLE crossSectionOffset;
 	D3DXHANDLE lightDir;
 	D3DXHANDLE skylightColour;
-	D3DXHANDLE sunlightColour;
 	D3DXHANDLE fractalScale;
 	D3DXHANDLE interp;
 	D3DXHANDLE large_texcoords_scale;
@@ -198,7 +196,6 @@ protected:
 	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture_1;
 	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture_2;
 	LPDIRECT3DCUBETEXTURE9		cloud_cubemap;
-	D3DXVECTOR4					cam_pos;
 	D3DXVECTOR4					lightning_colour;
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;

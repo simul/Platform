@@ -43,13 +43,6 @@ namespace simul
 		class FadeTableInterface;
 		class OvercastCallback;
 	}
-	namespace sound
-	{
-		namespace fmod
-		{
-			class NodeSound;
-		}
-	}
 }
 typedef long HRESULT;
 
@@ -61,16 +54,12 @@ public:
 	virtual ~SimulCloudRendererDX1x();
 	//! Call this once to set the sky interface that this cloud renderer can use for distance fading.
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si);
-	//! Call this when the D3D device has been created or reset.
-	void SetFadeTableInterface(simul::sky::FadeTableInterface *fti);
-	//! Call this when the device has been created
+	//! Call this when the D3D device has been created or reset
 	HRESULT RestoreDeviceObjects( ID3D1xDevice* pd3dDevice);
 	//! Call this when the 3D device has been lost.
 	HRESULT InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
 	HRESULT Destroy();
-	//! Call this once per frame to update the clouds.
-	void Update(float dt);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	HRESULT Render(bool cubemap=false);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
@@ -117,7 +106,6 @@ protected:
 	void Unmap();
 	void Map(int texture_index);
 	bool y_vertical;
-	simul::sound::fmod::NodeSound *sound;
 	unsigned texel_index[4];
 	bool lightning_active;
 	float timing;
@@ -129,9 +117,9 @@ protected:
 	ID3D1xInputLayout*				m_pLightningVtxDecl;
 
 	ID3D1xEffect*					m_pLightningEffect;
-	ID3D1xEffectTechnique*			m_hTechniqueLightning;	// Handle to technique in the effect 
+	ID3D1xEffectTechnique*			m_hTechniqueLightning;
 	ID3D1xEffect*					m_pCloudEffect;
-	ID3D1xEffectTechnique*			m_hTechniqueCloud;		// Handle to technique in the effect
+	ID3D1xEffectTechnique*			m_hTechniqueCloud;
 	ID3D1xEffectTechnique*			m_hTechniqueCloudsAndLightning;	
 
 	ID3D1xEffectMatrixVariable* 	l_worldViewProj;
@@ -198,8 +186,5 @@ protected:
 	HRESULT CreateCloudEffect();
 	HRESULT MakeCubemap(); // not ready yet
 	
-	float time_step;
 	bool enable_lightning;
-
-	float last_time;
 };

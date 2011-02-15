@@ -28,7 +28,6 @@ namespace simul
 	namespace sky
 	{
 		class SkyInterface;
-		class FadeTableInterface;
 	}
 }
 typedef long HRESULT;
@@ -41,7 +40,6 @@ public:
 	virtual ~Simul2DCloudRenderer();
 	//! Call this once to set the sky interface that this cloud renderer can use for distance fading.
 	void SetSkyInterface(simul::sky::SkyInterface *si);
-	void SetFadeTableInterface(simul::sky::FadeTableInterface *fti);
 	//standard d3d object interface functions
 	HRESULT Create( LPDIRECT3DDEVICE9 pd3dDevice);
 	//! Call this when the D3D device has been created or reset.
@@ -50,8 +48,6 @@ public:
 	HRESULT InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
 	HRESULT Destroy();
-	//! Call this once per frame to update the clouds.
-	void Update(float dt);
 	//! Return debugging information.
 	const char *GetDebugText() const;
 	//! Call this to draw the clouds, including any illumination by lightning.

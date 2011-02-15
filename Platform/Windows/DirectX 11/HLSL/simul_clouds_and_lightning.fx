@@ -120,6 +120,7 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 
 float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 {
+	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 view=normalize(IN.wPosition);
 	float3 loss1=skyLossTexture1.Sample(fadeSamplerState,IN.fade_texc).rgb;
 	float3 loss2=skyLossTexture2.Sample(fadeSamplerState,IN.fade_texc).rgb;
@@ -130,7 +131,7 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
 	float3 inscatter=InscatterFunction(insc,cos0);
-	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.texCoordsNoise.xy).xyz-.5f).xyz;
+	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.texCoordsNoise.xy).xyz-noise_offset).xyz;
 #ifdef DETAIL_NOISE
 	noiseval+=(noiseTexture.Sample(noiseSamplerState,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
 	noiseval*=IN.texCoords.w;
@@ -163,6 +164,7 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 
 float4 PS_Clouds( vertexOutput IN): SV_TARGET
 {
+	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 view=normalize(IN.wPosition);
 	
 	float3 loss1=skyLossTexture1.Sample(fadeSamplerState,IN.fade_texc).rgb;

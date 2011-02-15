@@ -196,13 +196,6 @@ static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 	glGetFloatv(src,m);
 }
 
-// this is blank because we require texture updates to occur while GL is active
-// so better to update from within Render()
-void SimulGL2DCloudRenderer::Update(float )
-{
-}
-
-
 bool SimulGL2DCloudRenderer::Render()
 {
 	using namespace simul::clouds;
@@ -275,7 +268,7 @@ static float ll=0.05f;
 	helper->MakeGeometry(ci);
 	static float noise_angle=.8;
 	helper->Set2DNoiseTexturing(noise_angle,2.f,1.f);
-	helper->CalcInscatterFactors(cloudInterface,skyInterface,fadeTableInterface,0.f);
+	helper->CalcInscatterFactors(cloudInterface,skyInterface,0.f);
 	float image_scale=2000.f+texture_scale*20000.f;
 	simul::math::Vector3 wind_offset=cloudNode->GetWindOffset();
 
