@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2010 Simul Software Ltd
+// Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -64,7 +64,7 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	heightmap->SetNumMipMapLevels(3);
 	heightmap->SetPageSize(513);
 	heightmap->SetTileSize(33);
-	heightmap->SetMaxHeight(7000.f);
+	heightmap->SetMaxHeight(5000.f);
 	heightmap->SetFractalOctaves(5);
 	heightmap->SetFractalScale(160000.f);
 	heightmap->SetPageWorldX(120000.f);
@@ -157,8 +157,9 @@ void SimulTerrainRenderer::GetVertex(int i,int j,TerrainVertex_t *V)
 	V->normal_z=n.y;
 	//V->ca=1.f-(1.f-saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f)*saturate((800.f-V->y)/200.f);
 	V->ca=GrassFunction(V->y,n);
-	V->tex_x=130.f*X;
-	V->tex_y=130.f*Y;
+	static float tex_scale=20.f;
+	V->tex_x=tex_scale*X;
+	V->tex_y=tex_scale*Y;
 	V->offset=0.f;
 }
 
@@ -205,7 +206,7 @@ HRESULT SimulTerrainRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/MudGrass01.dds"),&terrain_texture));
 
 	SAFE_RELEASE(detail_texture);
-	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/grass02.dds"),&detail_texture));
+	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/grass01.dds"),&detail_texture));
 
 	SAFE_RELEASE(road_texture);
 	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/road.dds"),&road_texture));

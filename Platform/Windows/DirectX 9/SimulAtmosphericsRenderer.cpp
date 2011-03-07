@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2010 Simul Software Ltd
+// Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -236,6 +236,8 @@ bool SimulAtmosphericsRenderer::RenderGodRays(float strength)
 bool SimulAtmosphericsRenderer::RenderAirglow()
 {
 	HRESULT hr=S_OK;
+	if(simul::sky::length(lightning_multipliers)==0)
+		return hr;
 	effect->SetTechnique(airglowTechnique);
 	PIXWrapper(0xFFFFFF00,"Render Airglow")
 	{

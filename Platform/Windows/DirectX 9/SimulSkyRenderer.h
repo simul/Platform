@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2010 Simul Software Ltd
+// Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -129,6 +129,7 @@ protected:
 		float b,c;
 	};
 	StarVertext *star_vertices;
+	int num_stars;
 	HRESULT PrintAt(const float *p,const wchar_t *text,int screen_width,int screen_height);
 	bool external_flare_texture;
 	float timing;

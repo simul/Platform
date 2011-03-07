@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2010 Simul Software Ltd
+// Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -41,6 +41,11 @@ class SimulCloudRenderer : public simul::clouds::BaseCloudRenderer
 public:
 	SimulCloudRenderer();
 	virtual ~SimulCloudRenderer();
+
+	META_BeginProperties
+		META_ValuePropertyWithSetCall(bool,GPULightingEnabled,ForceRelight,"Whether the GPU will be used for cloud light calculations.")
+	META_EndProperties
+
 	//! Call this when the device has been created
 	HRESULT RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
 	//! Call this when the 3D device has been lost.
@@ -83,7 +88,9 @@ public:
 	void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array);
 	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *){}
-
+	bool CanPerformGPULighting() const;
+	void SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3);
+	void PerformFullGPURelight(int which_texture,float *target_direct_grid,float *target_indirect_grid);
 	// Distance for fade texture lookups:
 	void SetMaxFadeDistanceKm(float dist_km)
 	{
@@ -152,6 +159,8 @@ protected:
 	D3DXHANDLE						m_hTechniqueCrossSectionXZ;	
 	D3DXHANDLE						m_hTechniqueCrossSectionXY;	
 	
+	LPD3DXEFFECT					m_pGPULightingEffect;
+
 	D3DXHANDLE worldViewProj;
 	D3DXHANDLE eyePosition;
 	D3DXHANDLE lightResponse;
@@ -206,4 +215,5 @@ protected:
 	virtual bool CreateNoiseTexture(bool override_file=false);
 	HRESULT CreateCloudEffect();
 	HRESULT MakeCubemap(); // not ready yet
+	float last_time;
 };

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2010 Simul Software Ltd
+// Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -38,8 +38,6 @@ class Simul2DCloudRenderer: public simul::clouds::BaseCloudRenderer
 public:
 	Simul2DCloudRenderer();
 	virtual ~Simul2DCloudRenderer();
-	//! Call this once to set the sky interface that this cloud renderer can use for distance fading.
-	void SetSkyInterface(simul::sky::SkyInterface *si);
 	//standard d3d object interface functions
 	HRESULT Create( LPDIRECT3DDEVICE9 pd3dDevice);
 	//! Call this when the D3D device has been created or reset.
@@ -52,7 +50,7 @@ public:
 	const char *GetDebugText() const;
 	//! Call this to draw the clouds, including any illumination by lightning.
 	HRESULT Render();
-	HRESULT RenderTexture();
+	HRESULT RenderCrossSections(int width);
 #if defined(XBOX) || defined(DOXYGEN)
 	//! Call this once per frame to set the matrices (X360 only).
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
@@ -67,12 +65,8 @@ public:
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
-	void FillCloudTextureBlock(int ,int ,int ,int,int ,int,int ,const unsigned *){}
+	void FillCloudTextureBlock(int,int,int,int,int,int,int,const unsigned *){}
 	void CycleTexturesForward();
-	
-	void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
-	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array){}
-	void FillIlluminationBlock(int source_index,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array){}
 
 	void SetCloudiness(float c);
 	// a texture

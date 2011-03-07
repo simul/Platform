@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2010 Simul Software Ltd
+// Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -95,9 +95,9 @@ class ExampleHumidityCallback:public simul::clouds::HumidityCallbackInterface
 public:
 	virtual float GetHumidityMultiplier(float ,float ,float z) const
 	{
-		static float base_layer=0.28f;
+		static float base_layer=0.16f;
 		static float transition=0.2f;
-		static float mul=0.86f;
+		static float mul=0.5f;
 		static float default_=1.f;
 		if(z>base_layer)
 		{
@@ -109,6 +109,7 @@ public:
 		return default_;
 	}
 };
+
 class CumulonimbusHumidityCallback:public simul::clouds::HumidityCallbackInterface
 {
 public:
@@ -177,6 +178,7 @@ SimulCloudRenderer::SimulCloudRenderer()
 	,m_pVtxDecl(NULL)
 	,m_pHudVertexDecl(NULL)
 	,m_pCloudEffect(NULL)
+	,m_pGPULightingEffect(NULL)
 	,noise_texture(NULL)
 	,illumination_texture(NULL)
 	,sky_loss_texture_1(NULL)
@@ -191,6 +193,8 @@ SimulCloudRenderer::SimulCloudRenderer()
 	,vertices(NULL)
 	,cpu_fade_vertices(NULL)
 	,max_fade_distance_metres(700000.f)
+	,last_time(0)
+	,GPULightingEnabled(true)
 {
 
 	D3DXMatrixIdentity(&world);
@@ -206,8 +210,6 @@ SimulCloudRenderer::SimulCloudRenderer()
 
 	AddChild(cloudKeyframer.get());
 	cloudKeyframer->SetUse16Bit(false);
-// 30 game-minutes for interpolation:
-	cloudKeyframer->SetInterpStepTime(1.f/24.f/2.f);
 	helper->SetYVertical(y_vertical);
 	// A noise filter improves the shape of the clouds:
 	cloudNode->GetNoiseInterface()->SetFilter(&circle_f);
@@ -226,7 +228,7 @@ HRESULT SimulCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 {
 	m_pd3dDevice=dev;
 	HRESULT hr;
-
+	last_time=0.f;
 	// create the unit-sphere vertex buffer determined by the Cloud Geometry Helper:
 	
 	SAFE_RELEASE(unitSphereVertexBuffer);
@@ -260,6 +262,7 @@ HRESULT SimulCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	}
 	V_RETURN(unitSphereIndexBuffer->Unlock());
 	V_RETURN(InitEffects());
+	//V_RETURN(RenderNoiseTexture());
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 	cloudKeyframer->SetRenderCallback(this);
 
@@ -317,7 +320,10 @@ HRESULT SimulCloudRenderer::InitEffects()
 	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
 	if(!y_vertical)
 		defines["Z_VERTICAL"]='1';
+	SAFE_RELEASE(m_pCloudEffect);
 	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
+	SAFE_RELEASE(m_pGPULightingEffect);
+	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pGPULightingEffect,"simul_gpulighting.fx",defines));
 
 	m_hTechniqueCloud					=GetDX9Technique(m_pCloudEffect,"simul_clouds");
 	m_hTechniqueCloudMask				=GetDX9Technique(m_pCloudEffect,"cloud_mask");
@@ -371,9 +377,12 @@ HRESULT SimulCloudRenderer::InvalidateDeviceObjects()
 	HRESULT hr=S_OK;
 	if(m_pCloudEffect)
         hr=m_pCloudEffect->OnLostDevice();
+	if(m_pGPULightingEffect)
+        hr=m_pGPULightingEffect->OnLostDevice();
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pHudVertexDecl);
 	SAFE_RELEASE(m_pCloudEffect);
+	SAFE_RELEASE(m_pGPULightingEffect);
 	for(int i=0;i<3;i++)
 		SAFE_RELEASE(cloud_textures[i]);
 	SAFE_RELEASE(noise_texture);
@@ -535,6 +544,121 @@ void SimulCloudRenderer::FillIlluminationSequentially(int source_index,int texel
 	hr=illumination_texture->UnlockBox(0);
 }
 
+bool SimulCloudRenderer::CanPerformGPULighting() const
+{
+	return GPULightingEnabled;
+}
+
+void SimulCloudRenderer::SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3)
+{
+	for(int i=0;i<16;i++)
+		LightToDensityTransform[i]=Matrix4x4LightToDensityTexcoords[i];
+	for(int i=0;i<3;i++)
+	{
+		light_gridsizes[i]=light_grid[i];
+		light_extinctions[i]=lightspace_extinctions_float3[i];
+	}
+}
+
+void SimulCloudRenderer::PerformFullGPURelight(int which_texture,float *target_direct_grid,float *target_indirect_grid)
+{
+	// To use the GPU to relight clouds:
+
+	// 1. Create two 2D target rendertextures with X and Y sizes given by the light_gridsizes[0] and [1].
+	// 2. Set the transform matrix to LightToDensityTransform.
+	// 3. Initialize the first target to 1.0
+	// 4. Use the first target and the density volume texture as an input to rendering the second target.
+	// 5. Swap targets and repeat for all the positions in the Z grid.
+
+	// 1. Create two 2D target rendertextures:
+	HRESULT hr=S_OK;
+	if(!m_pd3dDevice)
+		return;
+	LPDIRECT3DTEXTURE9				target_textures[]={NULL,NULL};
+	LPDIRECT3DSURFACE9				pOldRenderTarget=NULL;
+	LPDIRECT3DSURFACE9				pLightRenderTarget[]={NULL,NULL};
+	D3DXHANDLE						inputLightTexture=NULL;
+	D3DXHANDLE						cloudDensityTexture=NULL;
+	D3DXHANDLE						zPosition=NULL;
+	D3DXHANDLE						extinctions;
+	D3DXHANDLE						lightToDensityMatrix;
+	D3DXHANDLE						texCoordOffset;
+
+	inputLightTexture				=m_pGPULightingEffect->GetParameterByName(NULL,"inputLightTexture");
+	cloudDensityTexture				=m_pGPULightingEffect->GetParameterByName(NULL,"cloudDensityTexture");
+	zPosition						=m_pGPULightingEffect->GetParameterByName(NULL,"zPosition");
+	extinctions						=m_pGPULightingEffect->GetParameterByName(NULL,"extinctions");
+	lightToDensityMatrix			=m_pGPULightingEffect->GetParameterByName(NULL,"lightToDensityMatrix");
+	texCoordOffset					=m_pGPULightingEffect->GetParameterByName(NULL,"texCoordOffset");
+	// store the current rendertarget for later:
+	hr=m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget);
+	// Make the input texture:
+	static unsigned colr=0x00FFFF00;
+	for(int i=0;i<2;i++)
+	{
+		if(FAILED(hr=m_pd3dDevice->CreateTexture(light_gridsizes[0],light_gridsizes[1],0,D3DUSAGE_RENDERTARGET|D3DUSAGE_AUTOGENMIPMAP,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&(target_textures[i]),NULL)))
+			return;
+		SAFE_RELEASE(pLightRenderTarget[i]);
+		target_textures[i]->GetSurfaceLevel(0,&pLightRenderTarget[i]);
+		hr=m_pd3dDevice->SetRenderTarget(0,pLightRenderTarget[i]);
+		hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,colr,1.f,0L);
+		m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
+	}
+	m_pGPULightingEffect->SetVector(extinctions,(D3DXVECTOR4*)(light_extinctions));
+	float offset[]={0.5f/(float)light_gridsizes[0],0.5f/(float)light_gridsizes[1],0,0};
+	m_pGPULightingEffect->SetVector(texCoordOffset,(D3DXVECTOR4*)(offset));
+	m_pGPULightingEffect->SetMatrix(lightToDensityMatrix,(D3DXMATRIX*)(LightToDensityTransform));
+	m_pGPULightingEffect->SetTexture(cloudDensityTexture,cloud_textures[which_texture]);
+	// 4. Use the first target and the density volume texture as an input to rendering the second target.
+	// 5. Swap targets and repeat for all the positions in the Z grid.#m_pd3dDevice->BeginScene();
+	m_pd3dDevice->BeginScene();
+
+	IDirect3DSurface9 *pBuf;
+	hr=m_pd3dDevice->CreateOffscreenPlainSurface(light_gridsizes[0],light_gridsizes[1],D3DFMT_A32B32G32R32F,D3DPOOL_SYSTEMMEM,&pBuf,NULL);
+	for(int i=0;i<light_gridsizes[2];i++)
+	{
+		// Copy the texture to an offscreen surface:
+		IDirect3DSurface9 *source_surf=NULL;
+		hr=m_pd3dDevice->GetRenderTargetData(pLightRenderTarget[0],pBuf);
+		D3DLOCKED_RECT rect;
+		pBuf->LockRect(&rect,NULL,0);
+		float *source=(float*)rect.pBits;
+		for(int j=0;j<light_gridsizes[0]*light_gridsizes[1];j++)
+		{
+			if(target_indirect_grid)
+			{
+				*target_direct_grid=source[j*4];
+				*target_indirect_grid=source[j*4+1];
+				target_indirect_grid++;
+			}
+			else
+			{
+				*target_direct_grid=0.5f*(source[j*4]+source[j*4+1]);
+			}
+			target_direct_grid++;
+		}
+		pBuf->UnlockRect();
+// Set up the rendertarget:
+		hr=m_pd3dDevice->SetRenderTarget(0,pLightRenderTarget[1]);
+		m_pGPULightingEffect->SetTexture(inputLightTexture,target_textures[0]);
+		m_pGPULightingEffect->SetFloat(zPosition,((float)i+0.5f)/(float(light_gridsizes[2])));
+		RenderTexture(m_pd3dDevice,0,0,light_gridsizes[0],light_gridsizes[1],
+					  target_textures[0],m_pGPULightingEffect,NULL);
+		std::swap(target_textures[0],target_textures[1]);
+		std::swap(pLightRenderTarget[0],pLightRenderTarget[1]);
+	}
+	SAFE_RELEASE(pBuf);
+	m_pd3dDevice->EndScene();
+	m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
+
+	SAFE_RELEASE(pOldRenderTarget);
+	for(int i=0;i<2;i++)
+	{
+		SAFE_RELEASE(target_textures[i]);
+		SAFE_RELEASE(pLightRenderTarget[i]);
+	}
+}
+
 void SimulCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z)
 {
 	if(!width_x||!length_y||!depth_z)
@@ -674,19 +798,24 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 	if(y_vertical)
 		std::swap(wind_offset.y,wind_offset.z);
 
-
 	simul::math::Vector3 view_dir	(view._13,view._23,view._33);
 	simul::math::Vector3 up			(view._12,view._22,view._32);
 
-	helper->Update((const float*)cam_pos,wind_offset,view_dir,up,0.f,cubemap);
+	float t=skyInterface->GetTime();
+	float delta_t=(t-last_time)*cloudKeyframer->GetTimeFactor();
+	if(!last_time)
+		delta_t=0;
+	last_time=t;
+	helper->Update((const float*)cam_pos,wind_offset,view_dir,up,delta_t,cubemap);
 	if(y_vertical)
 		std::swap(cam_pos.y,cam_pos.z);
 
-	static float light_mult=0.03f;
-	simul::sky::float4 light_response(	cloudInterface->GetLightResponse(),
+	static float direct_light_mult=0.25f;
+	static float indirect_light_mult=0.03f;
+	simul::sky::float4 light_response(	direct_light_mult*cloudInterface->GetLightResponse(),
+										indirect_light_mult*cloudInterface->GetSecondaryLightResponse(),
 										0,
-										0,
-										light_mult*cloudInterface->GetSecondaryLightResponse());
+										0);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 
 //	calculate sun occlusion for any external classes that need it:
@@ -725,7 +854,7 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 
 	if(enable_lightning)
 	{
-		static float bb=.1f;
+		static float bb=2.f;
 		simul::sky::float4 lightning_multipliers;
 		lightning_colour=lightningRenderInterface->GetLightningColour();
 		for(unsigned i=0;i<4;i++)
@@ -1014,7 +1143,6 @@ float SimulCloudRenderer::GetPrecipitationIntensity() const
 
 void SimulCloudRenderer::SetStepsPerHour(unsigned steps)
 {
-	cloudKeyframer->SetInterpStepTime(1.f/(24.f*(float)steps));
 }
 
 HRESULT SimulCloudRenderer::MakeCubemap()

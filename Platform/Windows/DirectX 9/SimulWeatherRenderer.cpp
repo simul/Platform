@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2010 Simul Software Ltd
+// Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -59,8 +59,6 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	m_pLDRRenderTarget(NULL),
 	m_pHDRRenderTarget(NULL),
 	m_pBufferDepthSurface(NULL),
-	BufferWidth(width),
-	BufferHeight(height),
 	timing(0.f),
 	exposure_multiplier(1.f),
 	RenderCloudsLate(false),
@@ -79,9 +77,9 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	EnableLayers(clouds3d,clouds2d);
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
-
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer;
 	ConnectInterfaces();
+	this->SetBufferSize(width,height);
 }
 
 void SimulWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
@@ -109,20 +107,19 @@ void SimulWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 
 void SimulWeatherRenderer::ConnectInterfaces()
 {
-	if(simulSkyRenderer)
+	if(!simulSkyRenderer)
+		return;
+	if(simul2DCloudRenderer)
 	{
-		if(simul2DCloudRenderer)
-		{
-			simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-		}
-		if(simulCloudRenderer)
-		{
-			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
-			simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
-		}
-		if(simulAtmosphericsRenderer)
-			simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
+		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 	}
+	if(simulCloudRenderer)
+	{
+		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
+		simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
+	}
+	if(simulAtmosphericsRenderer)
+		simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 }
 
 HRESULT SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)
@@ -286,15 +283,14 @@ void SimulWeatherRenderer::EnableRain(bool e)
 void SimulWeatherRenderer::SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb)
 {
 	renderDepthBufferCallback=cb;
-	AlwaysRenderCloudsLate=(cb!=NULL);
+	//AlwaysRenderCloudsLate=(cb!=NULL);
 }
 
 void SimulWeatherRenderer::SetBufferSize(int w,int h)
 {
-	BufferWidth=w;
-	BufferHeight=h;
+	BufferWidth=w/Downscale;
+	BufferHeight=h/Downscale;
 }
-
 
 HRESULT SimulWeatherRenderer::CreateBuffers()
 {
@@ -315,7 +311,7 @@ HRESULT SimulWeatherRenderer::CreateBuffers()
 
 	{
 		SAFE_RELEASE(hdr_buffer_texture);
-		hr=(m_pd3dDevice->CreateTexture(	BufferWidth,
+		hr=(m_pd3dDevice->CreateTexture(BufferWidth,
 										BufferHeight,
 										1,
 										D3DUSAGE_RENDERTARGET,
@@ -325,15 +321,15 @@ HRESULT SimulWeatherRenderer::CreateBuffers()
 										NULL
 									));
 		SAFE_RELEASE(ldr_buffer_texture);
-		hr=(m_pd3dDevice->CreateTexture(	BufferWidth,
-											BufferHeight,
-											1,
-											D3DUSAGE_RENDERTARGET,
-											D3DFMT_A8R8G8B8,
-											D3DPOOL_DEFAULT,
-											&ldr_buffer_texture,
-											NULL
-										));
+		hr=(m_pd3dDevice->CreateTexture(BufferWidth,
+										BufferHeight,
+										1,
+										D3DUSAGE_RENDERTARGET,
+										D3DFMT_A8R8G8B8,
+										D3DPOOL_DEFAULT,
+										&ldr_buffer_texture,
+										NULL
+									));
 		D3DFORMAT fmtDepthTex = D3DFMT_UNKNOWN;
 		D3DFORMAT possibles[]={D3DFMT_D24S8,D3DFMT_D24FS8,D3DFMT_D32,D3DFMT_D24X8,D3DFMT_D16,D3DFMT_UNKNOWN};
 
@@ -583,19 +579,24 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 			}
 		}
 	}
-/*	if(simulAtmosphericsRenderer&&simulCloudRenderer&&layer1)
+	static bool do_fx=false;
+	if(do_fx)
+	if(simulAtmosphericsRenderer&&simulCloudRenderer&&layer1)
 	{
 		float str=simulCloudRenderer->GetCloudInterface()->GetHumidity();
 		static float gr_start=0.65f;
+		static float gr_strength=0.5f;
 		str-=gr_start;
 		str/=(1.f-gr_start);
 		if(str<0.f)
 			str=0.f;
 		if(str>1.f)
 			str=1.f;
-		simulAtmosphericsRenderer->RenderGodRays(str);
+		str*=gr_strength;
+		if(str>0&&Godrays)
+			simulAtmosphericsRenderer->RenderGodRays(str);
 		simulAtmosphericsRenderer->RenderAirglow();
-	}*/
+	}
 	//static float depth_start=1.f;
 	if(use_buffer)
 	{
@@ -735,61 +736,57 @@ void SimulWeatherRenderer::UpdateSkyAndCloudHookup()
 
 void SimulWeatherRenderer::Update(float dt)
 {
-	static bool pause=false;
-    if(!pause)
+	if(simulSkyRenderer)
 	{
+		simulSkyRenderer->Update(dt);
+		LPDIRECT3DBASETEXTURE9 l1,l2,i1,i2;
+		simulSkyRenderer->GetLossAndInscatterTextures(&l1,&l2,&i1,&i2);
+		if(simulAtmosphericsRenderer)
+		{
+			simulAtmosphericsRenderer->SetDistanceTexture(simulSkyRenderer->GetDistanceTexture());
+			simulAtmosphericsRenderer->SetLossTextures(l1,l2);
+			simulAtmosphericsRenderer->SetInscatterTextures(i1,i2);
+		}
+	}
+	// Do this AFTER sky update, to catch any changes:
+	UpdateSkyAndCloudHookup();
+	static simul::base::Timer timer;
+	timer.StartTime();
+	if(simulCloudRenderer)
+		simulCloudRenderer->Update(dt);
+	timer.FinishTime();
+	timing=timer.Time;
+	if(simul2DCloudRenderer)
+		simul2DCloudRenderer->Update(dt);
+	if(simulCloudRenderer&&simulAtmosphericsRenderer)
+	{
+		LPDIRECT3DBASETEXTURE9 *c=(LPDIRECT3DBASETEXTURE9*)simulCloudRenderer->GetCloudTextures();
+		simulAtmosphericsRenderer->SetCloudProperties(c[0],c[1],
+			simulCloudRenderer->GetCloudScales(),simulCloudRenderer->GetCloudOffset(),
+			simulCloudRenderer->GetInterpolation());
+	}
+	if(simulPrecipitationRenderer)
+	{
+		simulPrecipitationRenderer->Update(dt);
+		if(layer1&&simulCloudRenderer)
+		{
+			simulPrecipitationRenderer->SetWind(simulCloudRenderer->GetWindSpeed(),simulCloudRenderer->GetWindHeadingDegrees());
+			simulPrecipitationRenderer->SetIntensity(simulCloudRenderer->GetPrecipitationIntensity());
+			float rts=simulCloudRenderer->GetRainToSnow();
+			if(rts<0.5f)
+				simulPrecipitationRenderer->ApplyDefaultRainSettings();
+			else
+				simulPrecipitationRenderer->ApplyDefaultSnowSettings();
+		}
+		else
+		{
+			simulPrecipitationRenderer->SetIntensity(0.f);
+			simulPrecipitationRenderer->SetWind(0,0);
+		}
 		if(simulSkyRenderer)
 		{
-			simulSkyRenderer->Update(dt);
-			LPDIRECT3DBASETEXTURE9 l1,l2,i1,i2;
-			simulSkyRenderer->GetLossAndInscatterTextures(&l1,&l2,&i1,&i2);
-			if(simulAtmosphericsRenderer)
-			{
-				simulAtmosphericsRenderer->SetDistanceTexture(simulSkyRenderer->GetDistanceTexture());
-				simulAtmosphericsRenderer->SetLossTextures(l1,l2);
-				simulAtmosphericsRenderer->SetInscatterTextures(i1,i2);
-			}
-		}
-		// Do this AFTER sky update, to catch any changes:
-		UpdateSkyAndCloudHookup();
-		static simul::base::Timer timer;
-		timer.StartTime();
-		if(simulCloudRenderer)
-			simulCloudRenderer->Update(dt);
-		timer.FinishTime();
-		timing=timer.Time;
-		if(simul2DCloudRenderer)
-			simul2DCloudRenderer->Update(dt);
-		if(simulCloudRenderer&&simulAtmosphericsRenderer)
-		{
-			LPDIRECT3DBASETEXTURE9 *c=(LPDIRECT3DBASETEXTURE9*)simulCloudRenderer->GetCloudTextures();
-			simulAtmosphericsRenderer->SetCloudProperties(c[0],c[1],
-				simulCloudRenderer->GetCloudScales(),simulCloudRenderer->GetCloudOffset(),
-				simulCloudRenderer->GetInterpolation());
-		}
-		if(simulPrecipitationRenderer)
-		{
-			simulPrecipitationRenderer->Update(dt);
-			if(layer1&&simulCloudRenderer)
-			{
-				simulPrecipitationRenderer->SetWind(simulCloudRenderer->GetWindSpeed(),simulCloudRenderer->GetWindHeadingDegrees());
-				simulPrecipitationRenderer->SetIntensity(simulCloudRenderer->GetPrecipitationIntensity());
-				float rts=simulCloudRenderer->GetRainToSnow();
-				if(rts<0.5f)
-					simulPrecipitationRenderer->ApplyDefaultRainSettings();
-				else
-					simulPrecipitationRenderer->ApplyDefaultSnowSettings();
-			}
-			else
-			{
-				simulPrecipitationRenderer->SetIntensity(0.f);
-				simulPrecipitationRenderer->SetWind(0,0);
-			}
-			if(simulSkyRenderer)
-			{
-				simul::sky::float4 l=simulSkyRenderer->GetLightColour();
-				simulPrecipitationRenderer->SetLightColour((const float*)(l));
-			}
+			simul::sky::float4 l=simulSkyRenderer->GetLightColour();
+			simulPrecipitationRenderer->SetLightColour((const float*)(l));
 		}
 	}
 }

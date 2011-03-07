@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2010 Simul Software Ltd
+// Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -33,9 +33,9 @@ public:
 	HRESULT FinishRender();
 
 	//! Set the exposure - a brightness factor.
-	void SetExposure(float ex){exposure=ex;}
+	void SetExposure(float ex);
 	//! Set the gamma - a tone-mapping factor.
-	void SetGamma(float g){gamma=g;}
+	void SetGamma(float g);
 	//! Get the current debug text as a c-string pointer.
 	const char *GetDebugText() const;
 	//! Get a timing value for debugging.
@@ -62,7 +62,6 @@ protected:
 	LPDIRECT3DSURFACE9		m_pHDRRenderTarget;
 	LPDIRECT3DSURFACE9		m_pFadedRenderTarget;
 	LPDIRECT3DSURFACE9		m_pBufferDepthSurface;
-	LPDIRECT3DSURFACE9		m_pLDRRenderTarget;
 	LPDIRECT3DSURFACE9		m_pOldRenderTarget;
 	LPDIRECT3DSURFACE9		m_pOldDepthSurface;
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2010 Simul Software Ltd
+// Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -137,8 +137,10 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	cloudInterface->SetGridHeight(2);
 
 	cloudInterface->SetCloudBaseZ(12000.f);
-	cloudInterface->SetCloudWidth(120000.f);
-	cloudInterface->SetCloudLength(120000.f);
+
+	static float ff=12000.f;
+	cloudInterface->SetCloudWidth(ff);
+	cloudInterface->SetCloudLength(ff);
 	cloudInterface->SetCloudHeight(1200.f);
 
 	cloudInterface->SetFractalAmplitude(2.f);
@@ -155,32 +157,26 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	cloudInterface->SetNoiseResolution(8);
 	cloudInterface->SetNoiseOctaves(5);
 	cloudInterface->SetNoisePersistence(0.75f);
-	cloudInterface->SetNoisePeriod(128);
+	cloudInterface->SetNoisePeriod(1);
 
 	cloudInterface->SetSelfShadowScale(0.1f);
 	
 	cloudInterface->SetDiffusivity(.5f);
 
+
 //	cloudKeyframer=new simul::clouds::CloudKeyframer(cloudInterface,true);
 	cloudKeyframer->SetMake2DTextures(true);
 	cloudKeyframer->SetUse16Bit(false);
-	// 1/2 game-hour for interpolation:
-	cloudKeyframer->SetInterpStepTime(1.f/24.f/2.f);
 	cloudKeyframer->InitKeyframesFromClouds();
 
 	helper=new simul::clouds::Cloud2DGeometryHelper();
 	helper->SetYVertical(true);
-	helper->Initialize(6,320000.f);
+	static float max_distance=500000.f;
+	helper->Initialize(8,max_distance);
 	helper->SetGrid(6,9);
 	helper->SetCurvedEarth(true);
 	
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
-}
-
-void Simul2DCloudRenderer::SetSkyInterface(simul::sky::SkyInterface *si)
-{
-	skyInterface=si;
-	cloudKeyframer->SetSkyInterface(si);
 }
 
 HRESULT Simul2DCloudRenderer::Create( LPDIRECT3DDEVICE9 dev)
@@ -346,88 +342,12 @@ void Simul2DCloudRenderer::FillCloudTextureSequentially(int texture_index,int te
 	if(FAILED(hr=cloud_textures[texture_index]->LockRect(0,&lockedRect,NULL,NULL)))
 		return;
 	unsigned char *ptr=(unsigned char *)(lockedRect.pBits);
-	ptr+=texel_index;
+	ptr+=texel_index*sizeof(unsigned);
 	//unsigned char *src=(unsigned char *)uint32_array;
 	//for(int i=0;i<num_texels*2;i++)
 	//	*ptr++=(*src++);
 	memcpy(ptr,uint32_array,num_texels*sizeof(unsigned));
 	hr=cloud_textures[texture_index]->UnlockRect(0);
-}
-
-HRESULT Simul2DCloudRenderer::RenderTexture()
-{
-	HRESULT hr=S_OK;
-	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;
-	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
-	D3DVERTEXELEMENT9 decl[] = 
-	{
-#ifdef XBOX
-		{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0,  8, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#else
-		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
-		{ 0, 16, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#endif
-		D3DDECL_END()
-	};
-	SAFE_RELEASE(m_pBufferVertexDecl);
-	V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
-#ifdef XBOX
-	float x=-1.f,y=1.f;
-	float w=2.f;
-	float h=-2.f;
-	struct Vertext
-	{
-		float x,y;
-		float tx,ty;
-	};
-	Vertext vertices[4] =
-	{
-		{x,			y,			0	,0},
-		{x+w,		y,			1.f	,0},
-		{x+w,		y+h,		1.f	,1.f},
-		{x,			y+h,		0	,1.f},
-	};
-#else
-	float x=0,y=0;
-	struct Vertext
-	{
-		float x,y,z,h;
-		float tx,ty;
-	};
-	int width=256,height=256;
-	Vertext vertices[4] =
-	{
-		{x,			y,			1,	1, 0.5f	,0.5f},
-		{x+width,	y,			1,	1, 1.5f	,0.5f},
-		{x+width,	y+height,	1,	1, 1.5f	,1.5f},
-		{x,			y+height,	1,	1, 0.5f	,1.5f},
-	};
-#endif
-	D3DXMATRIX ident;
-	D3DXMatrixIdentity(&ident);
-	m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
-
-	m_pd3dDevice->SetVertexDeclaration(m_pBufferVertexDecl);
-
-#ifndef XBOX
-	m_pd3dDevice->SetTransform(D3DTS_VIEW,&ident);
-	m_pd3dDevice->SetTransform(D3DTS_WORLD,&ident);
-	m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&ident);
-#endif
-	m_pd3dDevice->SetTexture(0,cloud_textures[0]);
-	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
-
-	for(int i=0;i<4;i++)
-		vertices[i].x+=288;
-	m_pd3dDevice->SetTexture(0,cloud_textures[1]);
-	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
-	for(int i=0;i<4;i++)
-		vertices[i].x+=288;
-	m_pd3dDevice->SetTexture(0,cloud_textures[2]);
-	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
-	SAFE_RELEASE(m_pBufferVertexDecl);
-	return hr;
 }
 
 void Simul2DCloudRenderer::CycleTexturesForward()
@@ -578,8 +498,8 @@ static float light_mult=.03f;
 			vertex.position=float3(V.x,V.y,V.z);
 			vertex.texCoords=float2(sc*V.cloud_tex_x,sc*V.cloud_tex_y);
 			vertex.texCoordNoise=float2(V.noise_tex_x,V.noise_tex_y);
-			inscatter=helper->GetInscatter(0,V);
-			loss=helper->GetLoss(0,V);
+			inscatter=helper->GetInscatter(V);
+			loss=helper->GetLoss(V);
 			vertex.loss=simul::sky::float4(loss.x,loss.y,loss.z,0);
 			vertex.inscatter=simul::sky::float4(inscatter.x,inscatter.y,inscatter.z,0);
 			vertex.imageCoords=float2(vertex.texCoords.x*image_scale,vertex.texCoords.y*image_scale);
@@ -651,7 +571,6 @@ void Simul2DCloudRenderer::Enable(bool val)
 
 void Simul2DCloudRenderer::SetStepsPerHour(unsigned steps)
 {
-	cloudKeyframer->SetInterpStepTime(1.f/(24.f*(float)steps));
 }
 
 const char *Simul2DCloudRenderer::GetDebugText() const
@@ -662,3 +581,79 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 	return debug_text;
 }
 
+HRESULT Simul2DCloudRenderer::RenderCrossSections(int screen_width)
+{
+	int w=(screen_width-16)/6;
+	HRESULT hr=S_OK;
+	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;
+	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
+	D3DVERTEXELEMENT9 decl[] = 
+	{
+#ifdef XBOX
+		{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0,  8, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+#else
+		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
+		{ 0, 16, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+#endif
+		D3DDECL_END()
+	};
+	SAFE_RELEASE(m_pBufferVertexDecl);
+	V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
+#ifdef XBOX
+	float x=-1.f,y=1.f;
+	float w=2.f;
+	float h=-2.f;
+	struct Vertext
+	{
+		float x,y;
+		float tx,ty;
+	};
+	Vertext vertices[4] =
+	{
+		{x,			y,			0	,0},
+		{x+w,		y,			1.f	,0},
+		{x+w,		y+h,		1.f	,1.f},
+		{x,			y+h,		0	,1.f},
+	};
+#else
+	float x=0,y=0;
+	struct Vertext
+	{
+		float x,y,z,h;
+		float tx,ty;
+	};
+	int width=w,height=w;
+	Vertext vertices[4] =
+	{
+		{x,			y,			1,	1, 0.5f	,0.5f},
+		{x+width,	y,			1,	1, 1.5f	,0.5f},
+		{x+width,	y+height,	1,	1, 1.5f	,1.5f},
+		{x,			y+height,	1,	1, 0.5f	,1.5f},
+	};
+#endif
+	D3DXMATRIX ident;
+	D3DXMatrixIdentity(&ident);
+	m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+
+	m_pd3dDevice->SetVertexDeclaration(m_pBufferVertexDecl);
+
+#ifndef XBOX
+	m_pd3dDevice->SetTransform(D3DTS_VIEW,&ident);
+	m_pd3dDevice->SetTransform(D3DTS_WORLD,&ident);
+	m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&ident);
+#endif
+	m_pd3dDevice->SetTexture(0,cloud_textures[0]);
+	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
+
+	for(int i=0;i<4;i++)
+		vertices[i].x+=w+16;
+	m_pd3dDevice->SetTexture(0,cloud_textures[1]);
+	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
+	for(int i=0;i<4;i++)
+		vertices[i].x+=w+16;
+	m_pd3dDevice->SetTexture(0,cloud_textures[2]);
+	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
+	SAFE_RELEASE(m_pBufferVertexDecl);
+	return hr;
+}

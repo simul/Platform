@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2010 Simul Software Ltd
+// Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -37,7 +37,8 @@
 #include "Resources.h"
 
 SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
-	:m_pd3dDevice(NULL)
+	:simul::sky::BaseSkyRenderer()
+	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pHudVertexDecl(NULL)
 	,m_pSkyEffect(NULL)
@@ -58,6 +59,7 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	,external_flare_texture(false)
 	,m_pFont(NULL)
 	,star_vertices(NULL)
+	,num_stars(0)
 {
 	MoonTexture="Moon.png";
 	SunTexture="SunFlare.png";
@@ -170,8 +172,6 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	SAFE_RELEASE((LPDIRECT3DTEXTURE9&)moon_texture);
 	CreateDX9Texture(m_pd3dDevice,(LPDIRECT3DTEXTURE9&)moon_texture,MoonTexture.c_str());
 	SetPlanetImage(moon_index,moon_texture);
-//	stars.LoadAsText("UrsaMajor.txt"); used for calibration
-	stars.UseDefaultStars();
 	return hr;
 }
 
@@ -747,8 +747,9 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 		}
 	}
 	proj=tmp;
+	return sun_occlusion;
 }
-	float sun_angular_size=3.14159f/180.f/2.f;
+float sun_angular_size=3.14159f/180.f/2.f;
 
 HRESULT SimulSkyRenderer::RenderSun()
 {
@@ -1083,25 +1084,26 @@ HRESULT SimulSkyRenderer::RenderPointStars()
 	hr=m_pd3dDevice->SetFVF(D3DFVF_XYZ|D3DFVF_TEX0);
 
 	m_pSkyEffect->SetTechnique(m_hTechniquePointStars);
-	static float star_brightness=1000.f;
 
 	float sb=skyInterface->GetStarlight().x;
-	m_pSkyEffect->SetFloat(starBrightness,sb*star_brightness);
+	m_pSkyEffect->SetFloat(starBrightness,sb*skyKeyframer->GetStarBrightness());
 	
-	int num_stars=stars.GetNumStars();
-	if(!star_vertices)
+	int current_num_stars=skyKeyframer->stars.GetNumStars();
+	if(!star_vertices||current_num_stars!=num_stars)
 	{
+		num_stars=current_num_stars;
+		delete [] star_vertices;
 		star_vertices=new StarVertext[num_stars];
 		static float d=100.f;
 		{
 			for(int i=0;i<num_stars;i++)
 			{
-				float ra=(float)stars.GetStar(i).ascension;
-				float de=(float)stars.GetStar(i).declination;
+				float ra=(float)skyKeyframer->stars.GetStar(i).ascension;
+				float de=(float)skyKeyframer->stars.GetStar(i).declination;
 				star_vertices[i].x= d*cos(de)*sin(ra);
 				star_vertices[i].z=-d*cos(de)*cos(ra);
 				star_vertices[i].y=-d*sin(de);
-				star_vertices[i].b=(float)exp(-stars.GetStar(i).magnitude);
+				star_vertices[i].b=(float)exp(-skyKeyframer->stars.GetStar(i).magnitude);
 				star_vertices[i].c=1.f;
 			}
 		}
@@ -1148,10 +1150,9 @@ return S_OK;
 
 	m_pSkyEffect->SetTechnique(m_hTechniqueStarrySky);
 	m_pSkyEffect->SetTexture(starsTexture,stars_texture);
-	static float star_brightness=1.f;
 
 	float sb=skyInterface->GetStarlight().x;
-	m_pSkyEffect->SetFloat(starBrightness,sb*star_brightness);
+	m_pSkyEffect->SetFloat(starBrightness,sb*skyKeyframer->GetStarBrightness());
 	
 	UINT passes=1;
 	hr=m_pSkyEffect->Begin(&passes,0);

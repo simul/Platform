@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2010 Simul Software Ltd
+// Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -141,7 +141,6 @@ public:
 	virtual void EnableLayers(bool clouds3d,bool clouds2d);
 	void EnableRain(bool e=true);
 	float GetTotalBrightness() const;
-
 	//! Connect-up sky, clouds:
 	void ConnectInterfaces();
 protected:
