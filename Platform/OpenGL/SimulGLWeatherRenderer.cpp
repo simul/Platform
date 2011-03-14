@@ -110,6 +110,8 @@ void SimulGLWeatherRenderer::RenderSky(bool buffered)
     glPushMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
+	if(simulSkyRenderer)
+		simulSkyRenderer->RenderPlanets();
 	// Everything between Activate() and DeactivateAndRender() is drawn to the buffer object.
 	if(buffered)
 		scene_buffer->Activate();
@@ -118,7 +120,6 @@ void SimulGLWeatherRenderer::RenderSky(bool buffered)
 	ERROR_CHECK
 	if(simulSkyRenderer)
 	{
-		simulSkyRenderer->RenderPlanets();
 	ERROR_CHECK
 		simulSkyRenderer->Render();
 	}
@@ -128,7 +129,7 @@ void SimulGLWeatherRenderer::RenderSky(bool buffered)
 	ERROR_CHECK
 
 	if(buffered)
-		scene_buffer->DeactivateAndRender(false);
+		scene_buffer->DeactivateAndRender(true);
 	ERROR_CHECK
 
     glMatrixMode(GL_MODELVIEW);

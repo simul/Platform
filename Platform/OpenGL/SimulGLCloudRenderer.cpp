@@ -223,7 +223,6 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 	const simul::math::Vector3 *ZZ=reinterpret_cast<const simul::math::Vector3*>(Mat.RowPointer(2));
 	Mat.Transpose(Inv);
 	const simul::math::Vector3 &xe=*(reinterpret_cast<const simul::math::Vector3*>(Mat.RowPointer(3)));
-
 	Inv(0,3)=0;
 	Inv(1,3)=0;
 	Inv(2,3)=0;
@@ -262,7 +261,6 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 	cam_pos[0]=viewInv(3,0);
 	cam_pos[1]=viewInv(3,1);
 	cam_pos[2]=viewInv(3,2);
-
     glEnable(GL_BLEND);
 	if(god_rays)
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
@@ -327,8 +325,8 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 		static float lightning_effect_on_cloud=20.f;
 		lightning_colour.w=lightning_effect_on_cloud;
 	
-GLint lightningMultipliers;
-GLint lightningColour;
+//GLint lightningMultipliers;
+//GLint lightningColour;
 //		m_pCloudEffect->SetVector	(lightningMultipliers_param	,(const float*)(&lightning_multipliers));
 //		m_pCloudEffect->SetVector	(lightningColour_param		,(const float*)(&lightning_colour));
 
@@ -340,9 +338,10 @@ GLint lightningColour;
 		glUniform3fv	(illuminationScales_param,1,(const float *)(&light_DX));
 	}
 
-
-	static float ll=0.05f;
-	simul::sky::float4 light_response(0,cloudInterface->GetLightResponse(),ll*cloudInterface->GetSecondaryLightResponse(),0);
+	static float light_direct=0.25f;
+	static float light_indirect=0.03f;
+	simul::sky::float4 light_response(0,light_direct*cloudInterface->GetLightResponse(),
+		light_indirect*cloudInterface->GetSecondaryLightResponse(),0);
 //light_response*=gamma;
 	//light_response=simul::sky::Pow(light_response,gamma);
 	// gamma-compensate for direct light beta function:

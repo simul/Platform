@@ -167,7 +167,7 @@ void SimulAtmosphericsRenderer::SetLightningProperties(	void *tex,
 	lightning_illumination_texture=(LPDIRECT3DBASETEXTURE9)tex;
 	for(int i=0;i<4;i++)
 	{
-		if(i<lri->GetNumLightSources())
+		if(i<(int)lri->GetNumLightSources())
 			(lightning_multipliers.operator float *())[i]=lri->GetLightSourceBrightness(i);
 		else
 			(lightning_multipliers.operator float *())[i]=0;
@@ -237,7 +237,7 @@ bool SimulAtmosphericsRenderer::RenderAirglow()
 {
 	HRESULT hr=S_OK;
 	if(simul::sky::length(lightning_multipliers)==0)
-		return hr;
+		return true;
 	effect->SetTechnique(airglowTechnique);
 	PIXWrapper(0xFFFFFF00,"Render Airglow")
 	{

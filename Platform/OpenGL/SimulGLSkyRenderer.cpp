@@ -64,7 +64,7 @@ bool SimulGLSkyRenderer::Create(float start_alt_km)
 
 	skyKeyframer->SetFillTexturesAsBlocks(true);
 	skyKeyframer->SetAltitudeKM(start_alt_km);
-	SetCameraPosition(0,0,400.f);
+	SetCameraPosition(0,0,0.f);
 	return true;
 }
 
@@ -260,6 +260,16 @@ static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 	glGetFloatv(src,m);
 }
 
+void SimulGLSkyRenderer::CalcCameraPosition()
+{
+	simul::math::Matrix4x4 modelview;
+	glGetMatrix(modelview.RowPointer(0),GL_MODELVIEW_MATRIX);
+	simul::math::Matrix4x4 inv;
+	modelview.Inverse(inv);
+	SetCameraPosition(inv(3,0),inv(3,1),inv(3,2));
+
+}
+
 bool SimulGLSkyRenderer::Render()
 {
 	simul::sky::float4 ratio=skyInterface->GetMieRayleighRatio();
@@ -275,12 +285,8 @@ bool SimulGLSkyRenderer::Render()
     glDisable(GL_BLEND);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
+	CalcCameraPosition();
 
-	simul::math::Matrix4x4 modelview;
-	glGetMatrix(modelview.RowPointer(0),GL_MODELVIEW_MATRIX);
-	simul::math::Matrix4x4 inv;
-	modelview.Inverse(inv);
-	SetCameraPosition(inv(3,0),inv(3,1),inv(3,2));
 	campos_updated=true;
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
 	glUseProgram(sky_program);
@@ -291,7 +297,7 @@ bool SimulGLSkyRenderer::Render()
 	glUniform1f(altitudeTexCoord_param,skyKeyframer->GetAltitudeTexCoord());
 	glUniform3f(MieRayleighRatio_param,ratio.x,ratio.y,ratio.z);
 	glUniform1f(hazeEccentricity_param,skyInterface->GetMieEccentricity());
-	skyInterp_param	=glGetUniformLocation(sky_program,"skyInterp");
+	skyInterp_param=glGetUniformLocation(sky_program,"skyInterp");
 	glUniform1f(skyInterp_param,skyKeyframer->GetInterpolation());
 	glUniform3f(lightDirection_sky_param,sun_dir.x,sun_dir.y,sun_dir.z);
 
@@ -314,8 +320,9 @@ bool SimulGLSkyRenderer::Render()
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
+bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const float *dir,const float *colr,bool do_lighting)
 {
+	CalcCameraPosition();
 	float alt_km=0.001f*cam_pos.z;
 	if(do_lighting)
 	{
@@ -330,10 +337,9 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const
 	planet_dir4/=simul::sky::length(planet_dir4);
 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
-	float planet_elevation=asin(planet_dir4.y);
+	float planet_elevation=asin(planet_dir4.z);
 	planet_colour*=skyInterface->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 
-	float planet_angular_size=rad;
 //	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
 	glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
@@ -351,10 +357,11 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const
 
 bool SimulGLSkyRenderer::RenderAngledQuad(const float *dir,float half_angle_radians)
 {
-	float Yaw=atan2(dir[0],dir[1]);
-	float Pitch=-asin(dir[2]);
+	float Yaw=180.f*atan2(dir[0],dir[1])/pi;
+	float Pitch=180.f*asin(dir[2])/pi;
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
+	//glLoadIdentity();
 	float modelview[16];
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
 	glRotatef(Yaw,0.0f,0.0f,1.0f);
@@ -381,14 +388,19 @@ bool SimulGLSkyRenderer::RenderAngledQuad(const float *dir,float half_angle_radi
 		}
 
 	// set the modelview with no rotations and scaling
-//	glLoadMatrixf(modelview);
+	//glLoadMatrixf(modelview);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToSun();
 	simul::sky::float4 sun2;
 	//m_pSkyEffect->SetVector	(lightDirection	,&sun2);
 
 	// coverage is 2*atan(1/5)=11 degrees.
 	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
-	static float w=1.f;
+	static float relative_distance=10.f;
+	simul::math::Matrix4x4 proj;
+	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
+	//float zFar=proj(3,2)/(1.f+proj(2,2));
+	float zNear=proj(3,2)/(proj(2,2)-1.f);
+	float w=relative_distance*zNear;
 	float d=w/tan(half_angle_radians);
 	struct Vertext
 	{

@@ -282,8 +282,8 @@ static float ll=0.05f;
 		{
 			const Cloud2DGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
 			glMultiTexCoord2f(GL_TEXTURE0,V.cloud_tex_x,V.cloud_tex_y);
-			simul::sky::float4 inscatter=helper->GetInscatter(0,V);
-			simul::sky::float4 loss		=helper->GetLoss(0,V);
+			simul::sky::float4 inscatter=helper->GetInscatter(V);
+			simul::sky::float4 loss		=helper->GetLoss(V);
 			glMultiTexCoord3f(GL_TEXTURE1,loss.x,loss.y,loss.z);
 			glMultiTexCoord3f(GL_TEXTURE2,inscatter.x,inscatter.y,inscatter.z);
 			glMultiTexCoord2f(GL_TEXTURE3,V.noise_tex_x,V.noise_tex_y);

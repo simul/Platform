@@ -21,7 +21,8 @@ public:
 	void SetExposure(float e) {
 		exposure = e;
 	}
-	void SetGamma(float g) {
+	void SetGamma(float g)
+	{
 		gamma = g;
 	}
 

@@ -70,9 +70,9 @@ bool SimulLightningRenderer::InitEffects()
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(m_pLightningVtxDecl);
-	V_RETURN(m_pd3dDevice->CreateVertexDeclaration(std_decl,&m_pLightningVtxDecl))
+	B_RETURN(m_pd3dDevice->CreateVertexDeclaration(std_decl,&m_pLightningVtxDecl))
 	
-	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pLightningEffect,"simul_lightning.fx"));
+	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pLightningEffect,"simul_lightning.fx"));
 	m_hTechniqueLightningLines	=m_pLightningEffect->GetTechniqueByName("simul_lightning_lines");
 	m_hTechniqueLightningQuads	=m_pLightningEffect->GetTechniqueByName("simul_lightning_quads");
 	l_worldViewProj				=m_pLightningEffect->GetParameterByName(NULL,"worldViewProj");
@@ -264,7 +264,7 @@ bool y_vertical=true;
 	hr=m_pLightningEffect->EndPass();
 	hr=m_pLightningEffect->End();
 	}
-	return hr;
+	return true;
 }
 
 HRESULT SimulLightningRenderer::CreateLightningTexture()

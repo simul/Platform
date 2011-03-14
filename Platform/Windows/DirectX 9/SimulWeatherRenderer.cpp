@@ -84,7 +84,6 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 
 void SimulWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 {
-	HRESULT hr=S_OK;
 	BaseWeatherRenderer::EnableLayers(clouds3d,clouds2d);
 	if(clouds3d&&simulCloudRenderer.get()==NULL)
 	{

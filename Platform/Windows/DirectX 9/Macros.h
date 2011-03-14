@@ -8,7 +8,7 @@ typedef std::basic_string<TCHAR> tstring;
 #else
 	#define stprintf_s sprintf_s
 #endif
-#define ENABLE_PIX
+
 #ifdef ENABLE_PIX
 	#define PIXBeginNamedEvent(colour,name) //D3DPERF_BeginEvent(colour,L##name)
 	#define PIXEndNamedEvent()				//D3DPERF_EndEvent()

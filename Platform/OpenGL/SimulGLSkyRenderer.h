@@ -53,6 +53,7 @@ public:
 
 	bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 protected:
+	void CalcCameraPosition();
 	void CreateFadeTextures();
 	bool RenderAngledQuad(const float *dir,float half_angle_radians);
 	GLuint		sky_tex[3];

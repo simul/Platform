@@ -241,7 +241,7 @@ void SimulSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_
 		return;
 	if(num_texels<=0)
 		return;
-	if(texel_index+num_texels>skyTexSize*numAltitudes)
+	if(texel_index+num_texels>(int)(skyTexSize*numAltitudes))
 		return;
 	D3DLOCKED_RECT lockedRect={0};
 	if(FAILED(hr=tex->LockRect(0,&lockedRect,NULL,NULL)))

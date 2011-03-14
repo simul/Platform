@@ -316,7 +316,7 @@ HRESULT SimulCloudRenderer::InitEffects()
 	if(cloudInterface->GetWrap())
 		defines["WRAP_CLOUDS"]="1";
 	char max_fade_distance_str[25];
-	sprintf(max_fade_distance_str,"%3.1f",max_fade_distance_metres);
+	sprintf_s(max_fade_distance_str,25,"%3.1f",max_fade_distance_metres);
 	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
 	if(!y_vertical)
 		defines["Z_VERTICAL"]='1';
@@ -615,7 +615,7 @@ void SimulCloudRenderer::PerformFullGPURelight(int which_texture,float *target_d
 
 	IDirect3DSurface9 *pBuf;
 	hr=m_pd3dDevice->CreateOffscreenPlainSurface(light_gridsizes[0],light_gridsizes[1],D3DFMT_A32B32G32R32F,D3DPOOL_SYSTEMMEM,&pBuf,NULL);
-	for(int i=0;i<light_gridsizes[2];i++)
+	for(int i=0;i<(int)light_gridsizes[2];i++)
 	{
 		// Copy the texture to an offscreen surface:
 		IDirect3DSurface9 *source_surf=NULL;
@@ -623,7 +623,7 @@ void SimulCloudRenderer::PerformFullGPURelight(int which_texture,float *target_d
 		D3DLOCKED_RECT rect;
 		pBuf->LockRect(&rect,NULL,0);
 		float *source=(float*)rect.pBits;
-		for(int j=0;j<light_gridsizes[0]*light_gridsizes[1];j++)
+		for(int j=0;j<(int)(light_gridsizes[0]*light_gridsizes[1]);j++)
 		{
 			if(target_indirect_grid)
 			{
