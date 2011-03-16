@@ -1,45 +1,24 @@
 float4x4 worldViewProj	: WorldViewProjection;
 
-texture cloudDensity1;
-sampler2D cloud_density_1= sampler_state 
+Texture2D cloudDensity1;
+Texture2D cloudDensity2;
+SamplerState cloudSamplerState 
 {
-    Texture = <cloudDensity1>;
-    MipFilter = LINEAR;
-    MinFilter = LINEAR;
-    MagFilter = LINEAR;
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
 
-texture cloudDensity2;
-sampler2D cloud_density_2= sampler_state 
+
+Texture2D noiseTexture;
+SamplerState noiseSamplerState 
 {
-    Texture = <cloudDensity2>;
-    MipFilter = LINEAR;
-    MinFilter = LINEAR;
-    MagFilter = LINEAR;
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
 
-texture noiseTexture;
-sampler2D noiseSampler= sampler_state 
+Texture2D imageTexture;
+SamplerState imageSamplerState
 {
-    Texture = <noiseTexture>;
-    MipFilter = LINEAR;
-    MinFilter = LINEAR;
-    MagFilter = LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-texture imageTexture;
-sampler2D imageSampler= sampler_state 
-{
-    Texture = <imageTexture>;
-    MipFilter = LINEAR;
-    MinFilter = LINEAR;
-    MagFilter = LINEAR;
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
@@ -51,7 +30,7 @@ float4 lightResponse;
 float3 ambientColour ={0,0,0};
 float4 lightDir : Direction = {1.0f, -1.0f, 1.0f, 0.0f};
 float4 fractalScale={600.f/80000.f,600.f/80000.f,600.f/3500.f,0};
-static const float pi=3.1415926536f;
+const float pi=3.1415926536f;
 float2 interp={0,1};
 float layerDensity=1.f;
 float imageEffect=.2f;
@@ -112,18 +91,18 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 }
 
 //#define SMOOTH_BLENDING
-float4 PS_Main( vertexOutput IN): color
+float4 PS_Main( vertexOutput IN): SV_TARGET
 {
 	float3 view=normalize(IN.wPosition);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	//cos0=pow(cos0,36.f);
-	float3 noiseval=(tex2D(noiseSampler,IN.texCoordNoise.xy).xyz).xyz;
+	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.texCoordNoise.xy).xyz).xyz;
 	float2 pos=IN.texCoords+fractalScale.xy*(noiseval.xy-.5f);
-	float4 density=tex2D(cloud_density_1,pos.xy);
-	float4 density2=tex2D(cloud_density_2,pos.xy);
+	float4 density=cloudDensity1.Sample(cloudSamplerState,pos.xy);
+	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos.xy);
 	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
 
-	float3 image=tex2D(imageSampler,IN.imageCoords.xy);
+	float3 image=imageTexture.Sample(imageSamplerState,IN.imageCoords.xy);
 	density=lerp(density,density2,interp.x);
 
 #ifdef SMOOTH_BLENDING
@@ -141,31 +120,41 @@ float4 PS_Main( vertexOutput IN): color
 	final.rgb*=opacity;
     return float4(final.rgb,opacity);
 }
+DepthStencilState DisableDepth
+{
+	DepthEnable = FALSE;
+	DepthWriteMask = ZERO;
+}; 
 
-technique simul_clouds_2d
+BlendState DoBlend
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = SRC_ALPHA;
+	DestBlend = INV_SRC_ALPHA;
+    BlendOp = ADD;
+    SrcBlendAlpha = ZERO;
+    DestBlendAlpha = SRC_ALPHA;
+    BlendOpAlpha = ADD;
+    RenderTargetWriteMask[0] = 0x0F;
+};
+
+RasterizerState RenderNoCull
+{
+	CullMode = none;
+};
+
+
+technique10 simul_clouds_2d
 {
     pass p0 
     {
-		zenable = false;
-		DepthBias =0;
-		SlopeScaleDepthBias =0;
-		ZWriteEnable = false;
-		alphablendenable = true;
-        CullMode = None;
-		AlphaTestEnable=false;
-		FillMode = Solid;
-        AlphaBlendEnable = true;
-		SrcBlend = One;
-		DestBlend = InvSrcAlpha;
-		
-		// We would LIKE to do the following:
-		//SeparateAlphaEnable = true;
-		//SrcBlendAlpha = Zero;
-		//DestBlendAlpha = InvSrcAlpha;
-		// but it's not implemented!
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 
-		VertexShader = compile vs_3_0 VS_Main();
-		PixelShader  = compile ps_3_0 PS_Main();
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Main()));
     }
 }
 

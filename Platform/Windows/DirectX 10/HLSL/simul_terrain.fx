@@ -105,26 +105,53 @@ float4 PS_Outline( vertexOutput IN) : color
     return float4(1,1,1,0.5);
 }
 
-technique simul_terrain
+DepthStencilState DisableDepth
+{
+	DepthEnable = FALSE;
+	DepthWriteMask = ZERO;
+}; 
+
+DepthStencilState EnableDepth
+{
+	DepthEnable = TRUE;
+}; 
+
+BlendState DoBlend
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = SRC_ALPHA;
+	DestBlend = INV_SRC_ALPHA;
+    BlendOp = ADD;
+    SrcBlendAlpha = ZERO;
+    DestBlendAlpha = SRC_ALPHA;
+    BlendOpAlpha = ADD;
+    RenderTargetWriteMask[0] = 0x0F;
+};
+
+RasterizerState RenderNoCull
+{
+	CullMode = none;
+};
+
+
+technique10 simul_terrain
 {
     pass base 
     {		
-		VertexShader = compile vs_2_0 VS_Main();
-		PixelShader  = compile ps_2_0 PS_Main();
+		SetDepthStencilState(EnableDepth,0);
+        SetRasterizerState( RenderNoCull );
 
-		alphablendenable = false;
-        ZWriteEnable = true;
-		ZEnable = true;
-		ZFunc = less;
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Main()));
     }
     pass shadow 
     {
-		PixelShader = compile ps_2_0 PS_Shadow();
-        AlphaBlendEnable = true;
-        ZWriteEnable= false;
-		SrcBlend	= Zero;
-		DestBlend	= SrcColor;
-		ZFunc = lessequal;
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Shadow()));
     }
 #if 0
 	pass outline
@@ -138,60 +165,23 @@ technique simul_terrain
 #endif
     pass cloud_shadow 
     {
-		PixelShader = compile ps_2_0 PS_CloudShadow();
-        AlphaBlendEnable = true;
-        ZWriteEnable= false;
-		SrcBlend	= Zero;
-		DestBlend	= SrcColor;
-		ZFunc = lessequal;
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
+		SetPixelShader(CompileShader(ps_4_0,PS_CloudShadow()));
     }
 }
 
-technique simul_depth_only
+technique10 simul_depth_only
 {
     pass depth 
     {
-		alphablendenable = false;
-		ColorWriteEnable=0;
-        ZWriteEnable = true;
-		ZEnable = true;
-		ZFunc = less;
+		SetDepthStencilState(EnableDepth,0);
+        SetRasterizerState( RenderNoCull );
+
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Main()));
     }
 }
-
-technique simul_at
-{
-    pass grass 
-    {
-		PixelShader = compile ps_2_0 PS_Grass();
-		alphablendenable = true;
-        ZWriteEnable= false;
-		SrcBlend	= SrcAlpha;
-		DestBlend	= InvSrcAlpha;
-    }
-    pass outline
-    {
-        AlphaBlendEnable = true;
-        ZWriteEnable= false;
-        Lighting	= false;
-		PixelShader = compile ps_2_0 PS_Outline();
-		SrcBlend	= SrcAlpha;
-		DestBlend	= One;
-		FillMode	= Wireframe;
-    }
-}
-technique simul_road
-{
-    pass base 
-    {		
-		VertexShader = compile vs_2_0 VS_Main();
-		PixelShader  = compile ps_2_0 PS_Main();
-
-		alphablendenable = false;
-        ZWriteEnable = true;
-		ZEnable = true;
-		ZFunc = less;
-    }
-}
-
-

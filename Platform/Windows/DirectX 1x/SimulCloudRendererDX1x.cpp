@@ -629,11 +629,12 @@ HRESULT SimulCloudRendererDX1x::Render(bool)
 	helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
 	view_km*=0.001f;
 	float base_alt_km=0.001f*(cloudInterface->GetCloudBaseZ());
-	static float light_mult=0.03f;
-	simul::sky::float4 light_response(	cloudInterface->GetLightResponse(),
+	static float direct_light_mult=0.25f;
+	static float indirect_light_mult=0.03f;
+	simul::sky::float4 light_response(	direct_light_mult*cloudInterface->GetLightResponse(),
+										indirect_light_mult*cloudInterface->GetSecondaryLightResponse(),
 										0,
-										0,
-										light_mult*cloudInterface->GetSecondaryLightResponse());
+										0);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 
 	// calculate sun occlusion for any external classes that need it:
