@@ -209,7 +209,7 @@ HRESULT SimulTerrainRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/grass01.dds"),&detail_texture));
 
 	SAFE_RELEASE(road_texture);
-	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/road.dds"),&road_texture));
+	V_CHECK(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/road.dds"),&road_texture));
 
 	CreateEffect();
 
@@ -219,7 +219,7 @@ HRESULT SimulTerrainRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	int grid=heightMapInterface->GetPageSize();
 
 	SAFE_RELEASE(vertexBuffer);
-	V_RETURN(m_pd3dDevice->CreateVertexBuffer( num_vertices*sizeof(TerrainVertex_t),D3DUSAGE_WRITEONLY,0,
+	V_RETURN(m_pd3dDevice->CreateVertexBuffer(num_vertices*sizeof(TerrainVertex_t),D3DUSAGE_WRITEONLY,0,
 									  D3DPOOL_DEFAULT, &vertexBuffer,
 									  NULL ));
 	TerrainVertex_t *vertices;
