@@ -124,8 +124,6 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 	D3D10_SHADER_MACRO *macros=NULL;
 	std::vector<std::string> d3dmacros;
 	{
-		bool name=true;
-		const char *txt=NULL;
 		size_t num_defines=defines.size();
 		if(num_defines)
 		{
@@ -133,24 +131,13 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 			macros[num_defines].Definition=0;
 			macros[num_defines].Name=0;
 		}
-		va_list marker;
-		va_start(marker,num_defines);
 		size_t def=0;
-		for(int i=0;i<num_defines*2;i++)
+		for(std::map<std::string,std::string>::const_iterator i=defines.begin();i!=defines.end();i++)
 		{
-			txt=va_arg(marker,const char *);
-			if(name)
-			{
-				macros[def].Name=txt;
-			}
-			else
-			{
-				macros[def].Definition=txt;
-				def++;
-			}
-			name=!name;
+			macros[def].Name=i->first.c_str();
+			macros[def].Definition=i->second.c_str();
+			def++;
 		}
-		va_end(marker); 
 	}
 	DWORD flags=default_effect_flags;
 	SAFE_RELEASE(*effect);
