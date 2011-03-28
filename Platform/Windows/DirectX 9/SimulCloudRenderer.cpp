@@ -531,7 +531,7 @@ void SimulCloudRenderer::FillIlluminationSequentially(int source_index,int texel
 	unsigned offset[]={16,8,0,24};//*(source_index); // xyzw
 	for(int i=0;i<num_texels;i++)
 	{
-		unsigned ui=(unsigned)(*uchar8_array);
+		unsigned ui=(unsigned)255;//(*uchar8_array);
 		ui<<=offset[source_index];
 		unsigned msk=255<<offset[source_index];
 		msk=~msk;

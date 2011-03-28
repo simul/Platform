@@ -307,16 +307,16 @@ HRESULT SimulAtmosphericsRenderer::DrawFullScreenQuad()
 			{-1.f,	 1.f	,0.5f	,0		,0	},
 		};
 	#endif
-		D3DXMATRIX ident;
-		D3DXMatrixIdentity(&ident);
-		m_pd3dDevice->SetVertexDeclaration(vertexDecl);
+	D3DXMATRIX ident;
+	D3DXMatrixIdentity(&ident);
+	m_pd3dDevice->SetVertexDeclaration(vertexDecl);
 
-		UINT passes=1;
-		hr=effect->Begin(&passes,0);
-		hr=effect->BeginPass(0);
-		m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, vertices, sizeof(Vertext) );
-		hr=effect->EndPass();
-		hr=effect->End();
+	UINT passes=1;
+	hr=effect->Begin(&passes,0);
+	hr=effect->BeginPass(0);
+	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, vertices, sizeof(Vertext) );
+	hr=effect->EndPass();
+	hr=effect->End();
 	return hr;
 }
 

@@ -61,8 +61,7 @@ public:
 	//! Render godrays
 	bool RenderGodRays(float strength);
 	//! Set properties for rendering lightning airglow.
-	void SetLightningProperties(void *tex,
-		simul::clouds::LightningRenderInterface *lri);
+	void SetLightningProperties(void *tex,simul::clouds::LightningRenderInterface *lri);
 	//! Render airglow due to lightning
 	bool RenderAirglow();
 #ifdef XBOX
@@ -168,5 +167,4 @@ protected:
 	LPDIRECT3DTEXTURE9				max_distance_texture;
 
 	float fade_interp;
-
 };
