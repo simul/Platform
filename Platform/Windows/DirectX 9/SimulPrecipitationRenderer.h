@@ -34,7 +34,12 @@ public:
 #endif
 	// Set a texture not created by this class to be used:
 	HRESULT SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex);
+	void SetYVertical(bool y)
+	{
+		y_vertical=y;
+	}
 protected:
+	bool y_vertical;
 	virtual void TextureRepeatChanged();
 	LPDIRECT3DDEVICE9		m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;

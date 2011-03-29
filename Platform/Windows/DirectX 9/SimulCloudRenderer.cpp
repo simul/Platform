@@ -187,7 +187,6 @@ SimulCloudRenderer::SimulCloudRenderer()
 	,sky_inscatter_texture_2(NULL)
 	,unitSphereVertexBuffer(NULL)
 	,unitSphereIndexBuffer(NULL)
-	,y_vertical(true)
 	,rebuild_shaders(true)
 	,timing(0.f)
 	,vertices(NULL)
@@ -195,6 +194,7 @@ SimulCloudRenderer::SimulCloudRenderer()
 	,max_fade_distance_metres(700000.f)
 	,last_time(0)
 	,GPULightingEnabled(true)
+	,y_vertical(true)
 {
 
 	D3DXMatrixIdentity(&world);
@@ -1502,8 +1502,7 @@ HRESULT SimulCloudRenderer::RenderDistances(int width,int height)
 	Vertext *lines=new Vertext[2*helper->GetSlices().size()];
 	int j=0;
 	float max_distance=helper->GetMaxCloudDistance();
-	for(std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_iterator i=helper->GetSlices().begin();
-					i!=helper->GetSlices().end();i++,j++)
+	for(std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,j++)
 	{
 		if(!(*i))
 			continue;
@@ -1545,6 +1544,12 @@ void SimulCloudRenderer::SetFadeMode(FadeMode f)
 	BaseCloudRenderer::SetFadeMode(f);
 	rebuild_shaders=true;
 	InitEffects();
+}
+
+void SimulCloudRenderer::SetYVertical(bool y)
+{
+	y_vertical=y;
+	helper->SetYVertical(y);
 }
 
 const TCHAR *SimulCloudRenderer::GetDebugText() const

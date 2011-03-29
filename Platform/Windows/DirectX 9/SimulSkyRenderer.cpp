@@ -60,6 +60,7 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	,m_pFont(NULL)
 	,star_vertices(NULL)
 	,num_stars(0)
+	,y_vertical(true)
 {
 	MoonTexture="Moon.png";
 	SunTexture="SunFlare.png";
@@ -110,32 +111,6 @@ HRESULT SimulSkyRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
 	SAFE_RELEASE(m_pSkyEffect);
 	hr=CreateSkyEffect();
-	m_hTechniqueSky				=m_pSkyEffect->GetTechniqueByName("simul_sky");
-	m_hTechniqueStarrySky		=m_pSkyEffect->GetTechniqueByName("simul_starry_sky");
-	m_hTechniquePointStars		=m_pSkyEffect->GetTechniqueByName("simul_point_stars");
-	m_hTechniquePlainColour		=m_pSkyEffect->GetTechniqueByName("simul_plain_colour");
-	
-	worldViewProj				=m_pSkyEffect->GetParameterByName(NULL,"worldViewProj");
-	lightDirection				=m_pSkyEffect->GetParameterByName(NULL,"lightDir");
-	mieRayleighRatio			=m_pSkyEffect->GetParameterByName(NULL,"mieRayleighRatio");
-	hazeEccentricity			=m_pSkyEffect->GetParameterByName(NULL,"hazeEccentricity");
-	skyInterp					=m_pSkyEffect->GetParameterByName(NULL,"skyInterp");
-	altitudeTexCoord			=m_pSkyEffect->GetParameterByName(NULL,"altitudeTexCoord");
-
-	colour						=m_pSkyEffect->GetParameterByName(NULL,"colour");
-	m_hTechniqueSun				=m_pSkyEffect->GetTechniqueByName("simul_sun");
-	m_hTechniqueFlare			=m_pSkyEffect->GetTechniqueByName("simul_flare");
-	m_hTechniquePlanet			=m_pSkyEffect->GetTechniqueByName("simul_planet");
-	flareTexture				=m_pSkyEffect->GetParameterByName(NULL,"flareTexture");
-
-	skyTexture1					=m_pSkyEffect->GetParameterByName(NULL,"skyTexture1");
-	skyTexture2					=m_pSkyEffect->GetParameterByName(NULL,"skyTexture2");
-	starsTexture				=m_pSkyEffect->GetParameterByName(NULL,"starsTexture");
-	starBrightness				=m_pSkyEffect->GetParameterByName(NULL,"starBrightness");
-
-	m_hTechniqueQuery			=m_pSkyEffect->GetTechniqueByName("simul_query");
-	m_hTechniqueFadeCrossSection=m_pSkyEffect->GetTechniqueByName("simul_fade_cross_section");
-	fadeTexture					=m_pSkyEffect->GetParameterByName(NULL,"fadeTexture");
 
 	fadeTableInterface->SetCallback(NULL);
 	fadeTableInterface->SetCallback(this);
@@ -509,11 +484,6 @@ void SimulSkyRenderer::CycleTexturesForward()
 	std::swap(inscatter_textures[0],inscatter_textures[1]);
 	std::swap(inscatter_textures[1],inscatter_textures[2]);
 	
-//std::swap(loss_textures_3d[0],loss_textures_3d[1]);
-//	std::swap(loss_textures_3d[1],loss_textures_3d[2]);
-//	std::swap(inscatter_textures_3d[0],inscatter_textures_3d[1]);
-//	std::swap(inscatter_textures_3d[1],inscatter_textures_3d[2]);
-	
 	std::swap(sunlight_textures[0],sunlight_textures[1]);
 	std::swap(sunlight_textures[1],sunlight_textures[2]);
 }
@@ -580,7 +550,36 @@ HRESULT SimulSkyRenderer::CreateSkyEffect()
 {
 	std::map<std::string,std::string> defines;
 	defines["USE_ALTITUDE_INTERPOLATION"]="";
+	if(y_vertical)
+		defines["Y_VERTICAL"]="1";
 	HRESULT hr=CreateDX9Effect(m_pd3dDevice,m_pSkyEffect,"simul_sky.fx",defines);
+	m_hTechniqueSky				=m_pSkyEffect->GetTechniqueByName("simul_sky");
+	m_hTechniqueStarrySky		=m_pSkyEffect->GetTechniqueByName("simul_starry_sky");
+	m_hTechniquePointStars		=m_pSkyEffect->GetTechniqueByName("simul_point_stars");
+	m_hTechniquePlainColour		=m_pSkyEffect->GetTechniqueByName("simul_plain_colour");
+	
+	worldViewProj				=m_pSkyEffect->GetParameterByName(NULL,"worldViewProj");
+	lightDirection				=m_pSkyEffect->GetParameterByName(NULL,"lightDir");
+	mieRayleighRatio			=m_pSkyEffect->GetParameterByName(NULL,"mieRayleighRatio");
+	hazeEccentricity			=m_pSkyEffect->GetParameterByName(NULL,"hazeEccentricity");
+	skyInterp					=m_pSkyEffect->GetParameterByName(NULL,"skyInterp");
+	altitudeTexCoord			=m_pSkyEffect->GetParameterByName(NULL,"altitudeTexCoord");
+
+	colour						=m_pSkyEffect->GetParameterByName(NULL,"colour");
+	m_hTechniqueSun				=m_pSkyEffect->GetTechniqueByName("simul_sun");
+	m_hTechniqueFlare			=m_pSkyEffect->GetTechniqueByName("simul_flare");
+	m_hTechniquePlanet			=m_pSkyEffect->GetTechniqueByName("simul_planet");
+	flareTexture				=m_pSkyEffect->GetParameterByName(NULL,"flareTexture");
+
+	skyTexture1					=m_pSkyEffect->GetParameterByName(NULL,"skyTexture1");
+	skyTexture2					=m_pSkyEffect->GetParameterByName(NULL,"skyTexture2");
+	starsTexture				=m_pSkyEffect->GetParameterByName(NULL,"starsTexture");
+	starBrightness				=m_pSkyEffect->GetParameterByName(NULL,"starBrightness");
+
+	m_hTechniqueQuery			=m_pSkyEffect->GetTechniqueByName("simul_query");
+	m_hTechniqueFadeCrossSection=m_pSkyEffect->GetTechniqueByName("simul_fade_cross_section");
+	fadeTexture					=m_pSkyEffect->GetParameterByName(NULL,"fadeTexture");
+
 	return hr;
 }
 
@@ -652,7 +651,8 @@ HRESULT SimulSkyRenderer::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radi
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
-	std::swap(sun_dir.y,sun_dir.z);
+	if(y_vertical)
+		std::swap(sun_dir.y,sun_dir.z);
 	D3DXVECTOR4 sun2;
 	D3DXMATRIX inv_world;
 	D3DXMatrixInverse(&inv_world,NULL,&world);
@@ -708,7 +708,8 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 		return sun_occlusion;
 	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
-	std::swap(sun_dir.y,sun_dir.z);
+	if(y_vertical)
+		std::swap(sun_dir.y,sun_dir.z);
 	float sun_angular_size=3.14159f/180.f/2.f;
 
 	// fix the projection matrix so this quad is far away:
@@ -764,7 +765,8 @@ HRESULT SimulSkyRenderer::RenderSun()
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
 	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
-	std::swap(sun_dir.y,sun_dir.z);
+	if(y_vertical)
+		std::swap(sun_dir.y,sun_dir.z);
 	HRESULT hr=RenderAngledQuad(sun_dir,sun_angular_size);
 	return hr;
 }
@@ -784,6 +786,14 @@ void SimulSkyRenderer::SetFlare(LPDIRECT3DTEXTURE9 tex,float rad)
 	external_flare_texture=true;
 }
 
+void SimulSkyRenderer::SetYVertical(bool y)
+{
+	if(y!=y_vertical)
+	{
+		y_vertical=y;
+		CreateSkyEffect();
+	}
+}
 
 bool SimulSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
@@ -838,7 +848,8 @@ HRESULT SimulSkyRenderer::RenderFlare(float exposure)
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
 	m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
 	m_pSkyEffect->SetTexture(flareTexture,flare_texture);
-	std::swap(sun_dir.y,sun_dir.z);
+	if(y_vertical)
+		std::swap(sun_dir.y,sun_dir.z);
 	lensFlare.UpdateCamera(cam_dir,sun_dir);
 	if(flare_magnitude>0.f)
 	{
@@ -1203,7 +1214,8 @@ HRESULT SimulSkyRenderer::Render()
 	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
 	D3DXVECTOR4 ratio(mie_rayleigh_ratio);
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
-	std::swap(sun_dir.y,sun_dir.z);
+	if(y_vertical)
+		std::swap(sun_dir.y,sun_dir.z);
 
 	m_pSkyEffect->SetVector	(lightDirection		,&sun_dir);
 	m_pSkyEffect->SetVector	(mieRayleighRatio	,&ratio);

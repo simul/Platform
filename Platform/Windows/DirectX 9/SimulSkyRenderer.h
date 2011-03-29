@@ -122,7 +122,9 @@ public:
 	void CycleTexturesForward();
 	const char *GetDebugText() const;
 	void SetFlare(LPDIRECT3DTEXTURE9 tex,float rad);
+	void SetYVertical(bool y);
 protected:
+	bool y_vertical;
 	struct StarVertext
 	{
 		float x,y,z;
@@ -189,6 +191,6 @@ protected:
 	HRESULT						RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	virtual bool IsYVertical()
 	{
-		return true;
+		return y_vertical;
 	}
 };

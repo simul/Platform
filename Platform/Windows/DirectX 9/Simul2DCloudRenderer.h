@@ -73,7 +73,12 @@ public:
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
 	
 	virtual void **GetCloudTextures(){return NULL;}
+	void SetYVertical(bool y)
+	{
+		y_vertical=y;
+	}
 protected:
+	bool y_vertical;
 	bool enabled;
 	simul::base::SmartPtr<simul::clouds::Cloud2DGeometryHelper> helper;
 
@@ -112,4 +117,8 @@ protected:
 	HRESULT CreateImageTexture();
 	HRESULT MakeCubemap(); // not ready yet
 	float texture_scale;
+	virtual bool IsYVertical()
+	{
+		return y_vertical;
+	}
 };

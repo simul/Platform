@@ -98,7 +98,9 @@ public:
 		rebuild_shaders=true;
 	}
 	virtual void SetFadeMode(FadeMode f);
+	void SetYVertical(bool y);
 protected:
+	bool y_vertical;
 	void InternalRenderHorizontal();
 	void InternalRenderVolumetric();
 	float max_fade_distance_metres;
@@ -144,7 +146,6 @@ protected:
 	Vertex_t *vertices;
 	CPUFadeVertex_t *cpu_fade_vertices;
 	HRESULT RenderNoiseTexture();
-	bool y_vertical;
 	simul::sound::fmod::NodeSound *sound;
 	float timing;
 

@@ -83,9 +83,11 @@ public:
 	void FillFadeTextureBlocks(int ,int ,int ,int ,int ,int ,int ,const float *,const float *){}
 	void CycleTexturesForward();
 	const char *GetDebugText() const;
+	void SetYVertical(bool y);
 protected:
+	bool y_vertical;
 	int cycle;
-	virtual bool IsYVertical(){return true;}
+	bool IsYVertical(){return y_vertical;}
 	float sun_occlusion;
 
 	void CreateFadeTextures();

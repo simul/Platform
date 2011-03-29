@@ -221,39 +221,6 @@ HRESULT SimulCloudRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 	V_RETURN(CreateLightningTexture());
 	V_RETURN(CreateCloudEffect());
 
-	m_hTechniqueCloud					=m_pCloudEffect->GetTechniqueByName("simul_clouds");
-	m_hTechniqueCloudsAndLightning		=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
-
-	worldViewProj						=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
-	eyePosition							=m_pCloudEffect->GetVariableByName("eyePosition")->AsVector();
-	lightResponse						=m_pCloudEffect->GetVariableByName("lightResponse")->AsVector();
-	lightDir							=m_pCloudEffect->GetVariableByName("lightDir")->AsVector();
-	skylightColour						=m_pCloudEffect->GetVariableByName("skylightColour")->AsVector();
-	sunlightColour						=m_pCloudEffect->GetVariableByName("sunlightColour")->AsVector();
-	fractalScale						=m_pCloudEffect->GetVariableByName("fractalScale")->AsVector();
-	interp								=m_pCloudEffect->GetVariableByName("interp")->AsScalar();
-	mieRayleighRatio					=m_pCloudEffect->GetVariableByName("mieRayleighRatio")->AsVector();
-	hazeEccentricity					=m_pCloudEffect->GetVariableByName("hazeEccentricity")->AsScalar();
-	fadeInterp							=m_pCloudEffect->GetVariableByName("fadeInterp")->AsScalar();
-	cloudEccentricity					=m_pCloudEffect->GetVariableByName("cloudEccentricity")->AsScalar();
-	altitudeTexCoord					=m_pCloudEffect->GetVariableByName("altitudeTexCoord")->AsScalar();
-
-	//if(enable_lightning)
-	{
-		lightningMultipliers			=m_pCloudEffect->GetVariableByName("lightningMultipliers")->AsVector();
-		lightningColour					=m_pCloudEffect->GetVariableByName("lightningColour")->AsVector();
-		illuminationOrigin				=m_pCloudEffect->GetVariableByName("illuminationOrigin")->AsVector();
-		illuminationScales				=m_pCloudEffect->GetVariableByName("illuminationScales")->AsVector();
-	}
-
-	cloudDensity1						=m_pCloudEffect->GetVariableByName("cloudDensity1")->AsShaderResource();
-	cloudDensity2						=m_pCloudEffect->GetVariableByName("cloudDensity2")->AsShaderResource();
-	noiseTexture						=m_pCloudEffect->GetVariableByName("noiseTexture")->AsShaderResource();
-	lightningIlluminationTexture		=m_pCloudEffect->GetVariableByName("lightningIlluminationTexture")->AsShaderResource();
-	skyLossTexture1						=m_pCloudEffect->GetVariableByName("skyLossTexture1")->AsShaderResource();
-	skyLossTexture2						=m_pCloudEffect->GetVariableByName("skyLossTexture2")->AsShaderResource();
-	skyInscatterTexture1				=m_pCloudEffect->GetVariableByName("skyInscatterTexture1")->AsShaderResource();
-	skyInscatterTexture2				=m_pCloudEffect->GetVariableByName("skyInscatterTexture2")->AsShaderResource();
 	D3D1x_SHADER_RESOURCE_VIEW_DESC texdesc;
 
 	texdesc.Format=DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -563,11 +530,49 @@ void SimulCloudRendererDX1x::CycleTexturesForward()
 
 HRESULT SimulCloudRendererDX1x::CreateCloudEffect()
 {
+	if(!m_pd3dDevice)
+		return S_OK;
 	std::map<std::string,std::string> defines;
-	if(!y_vertical)
-		defines["Z_VERTICAL"]='1';
 	defines["DETAIL_NOISE"]='1';
-	return CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds_and_lightning.fx",defines);
+	if(y_vertical)
+		defines["Y_VERTICAL"]="1";
+	else
+		defines["Z_VERTICAL"]="1";
+	HRESULT hr=CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds_and_lightning.fx",defines);
+	m_hTechniqueCloud					=m_pCloudEffect->GetTechniqueByName("simul_clouds");
+	m_hTechniqueCloudsAndLightning		=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
+
+	worldViewProj						=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	eyePosition							=m_pCloudEffect->GetVariableByName("eyePosition")->AsVector();
+	lightResponse						=m_pCloudEffect->GetVariableByName("lightResponse")->AsVector();
+	lightDir							=m_pCloudEffect->GetVariableByName("lightDir")->AsVector();
+	skylightColour						=m_pCloudEffect->GetVariableByName("skylightColour")->AsVector();
+	sunlightColour						=m_pCloudEffect->GetVariableByName("sunlightColour")->AsVector();
+	fractalScale						=m_pCloudEffect->GetVariableByName("fractalScale")->AsVector();
+	interp								=m_pCloudEffect->GetVariableByName("interp")->AsScalar();
+	mieRayleighRatio					=m_pCloudEffect->GetVariableByName("mieRayleighRatio")->AsVector();
+	hazeEccentricity					=m_pCloudEffect->GetVariableByName("hazeEccentricity")->AsScalar();
+	fadeInterp							=m_pCloudEffect->GetVariableByName("fadeInterp")->AsScalar();
+	cloudEccentricity					=m_pCloudEffect->GetVariableByName("cloudEccentricity")->AsScalar();
+	altitudeTexCoord					=m_pCloudEffect->GetVariableByName("altitudeTexCoord")->AsScalar();
+
+	//if(enable_lightning)
+	{
+		lightningMultipliers			=m_pCloudEffect->GetVariableByName("lightningMultipliers")->AsVector();
+		lightningColour					=m_pCloudEffect->GetVariableByName("lightningColour")->AsVector();
+		illuminationOrigin				=m_pCloudEffect->GetVariableByName("illuminationOrigin")->AsVector();
+		illuminationScales				=m_pCloudEffect->GetVariableByName("illuminationScales")->AsVector();
+	}
+
+	cloudDensity1						=m_pCloudEffect->GetVariableByName("cloudDensity1")->AsShaderResource();
+	cloudDensity2						=m_pCloudEffect->GetVariableByName("cloudDensity2")->AsShaderResource();
+	noiseTexture						=m_pCloudEffect->GetVariableByName("noiseTexture")->AsShaderResource();
+	lightningIlluminationTexture		=m_pCloudEffect->GetVariableByName("lightningIlluminationTexture")->AsShaderResource();
+	skyLossTexture1						=m_pCloudEffect->GetVariableByName("skyLossTexture1")->AsShaderResource();
+	skyLossTexture2						=m_pCloudEffect->GetVariableByName("skyLossTexture2")->AsShaderResource();
+	skyInscatterTexture1				=m_pCloudEffect->GetVariableByName("skyInscatterTexture1")->AsShaderResource();
+	skyInscatterTexture2				=m_pCloudEffect->GetVariableByName("skyInscatterTexture2")->AsShaderResource();
+	return hr;
 }
 
 void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
@@ -942,4 +947,11 @@ float SimulCloudRendererDX1x::GetTiming() const
 void **SimulCloudRendererDX1x::GetCloudTextures()
 {
 	return (void **)cloud_textures;
+}
+
+void SimulCloudRendererDX1x::SetYVertical(bool y)
+{
+	y_vertical=y;
+	helper->SetYVertical(y);
+	CreateCloudEffect();
 }

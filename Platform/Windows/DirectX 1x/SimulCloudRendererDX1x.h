@@ -101,11 +101,12 @@ public:
 	std::istream &Load(std::istream &is) const;
 	//! Clear the sequence()
 	void New();
+	void SetYVertical(bool y);
 protected:
+	bool y_vertical;
 	int mapped;
 	void Unmap();
 	void Map(int texture_index);
-	bool y_vertical;
 	unsigned texel_index[4];
 	bool lightning_active;
 	float timing;

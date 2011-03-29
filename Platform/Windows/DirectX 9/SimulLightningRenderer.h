@@ -22,7 +22,12 @@ public:
 	bool RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
 	bool Render();
 	bool InvalidateDeviceObjects();
+	void SetYVertical(bool y)
+	{
+		y_vertical=y;
+	}
 protected:
+	bool y_vertical;
 	bool InitEffects();
 	struct float2
 	{

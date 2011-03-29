@@ -61,6 +61,7 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer() :
 	,input_texture(NULL)
 	,max_distance_texture(NULL)
 	,lightning_illumination_texture(NULL)
+	,y_vertical(true)
 {
 }
 
@@ -215,7 +216,8 @@ bool SimulAtmosphericsRenderer::RenderGodRays(float strength)
 			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(cam_pos.y));
 			
 			light_colour*=strength;
-			std::swap(sun_dir.y,sun_dir.z);
+			if(y_vertical)
+				std::swap(sun_dir.y,sun_dir.z);
 
 			effect->SetVector	(lightDir			,&sun_dir);
 			effect->SetVector	(lightColour	,(const D3DXVECTOR4*)&light_colour);
@@ -334,7 +336,8 @@ HRESULT SimulAtmosphericsRenderer::Render()
 			hr=effect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
 			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
 			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
-			std::swap(sun_dir.y,sun_dir.z);
+			if(y_vertical)
+				std::swap(sun_dir.y,sun_dir.z);
 			effect->SetVector	(lightDir			,&sun_dir);
 			effect->SetVector	(MieRayleighRatio	,&mie_rayleigh_ratio);
 		}

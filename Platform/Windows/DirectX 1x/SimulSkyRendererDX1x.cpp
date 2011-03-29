@@ -153,26 +153,7 @@ HRESULT SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
 	//hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
-	SAFE_RELEASE(m_pSkyEffect);
 	hr=CreateSkyEffect();
-	m_hTechniqueSky		=m_pSkyEffect->GetTechniqueByName("simul_sky");
-	worldViewProj		=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
-	lightDirection		=m_pSkyEffect->GetVariableByName("lightDir")->AsVector();
-	mieRayleighRatio	=m_pSkyEffect->GetVariableByName("mieRayleighRatio")->AsVector();
-	hazeEccentricity	=m_pSkyEffect->GetVariableByName("hazeEccentricity")->AsScalar();
-	skyInterp			=m_pSkyEffect->GetVariableByName("skyInterp")->AsScalar();
-	altitudeTexCoord	=m_pSkyEffect->GetVariableByName("altitudeTexCoord")->AsScalar();
-	
-	sunlightColour		=m_pSkyEffect->GetVariableByName("sunlightColour")->AsVector();
-	m_hTechniqueSun		=m_pSkyEffect->GetTechniqueByName("simul_sun");
-	m_hTechniqueFlare	=m_pSkyEffect->GetTechniqueByName("simul_flare");
-	m_hTechniquePlanet	=m_pSkyEffect->GetTechniqueByName("simul_planet");
-	flareTexture		=m_pSkyEffect->GetVariableByName("flareTexture")->AsShaderResource();
-
-	skyTexture1			=m_pSkyEffect->GetVariableByName("skyTexture1")->AsShaderResource();
-	skyTexture2			=m_pSkyEffect->GetVariableByName("skyTexture2")->AsShaderResource();
-
-	m_hTechniqueQuery	=m_pSkyEffect->GetTechniqueByName("simul_query");
 	skyKeyframer->SetCallback(this);
 	// CreateSkyTexture() will be called
 
@@ -437,7 +418,32 @@ HRESULT SimulSkyRendererDX1x::CreateSkyEffect()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pSkyEffect);
-	V_RETURN(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"simul_sky.fx"));
+	if(!m_pd3dDevice)
+		return hr;
+	std::map<std::string,std::string> defines;
+	if(y_vertical)
+		defines["Y_VERTICAL"]="1";
+	else
+		defines["Z_VERTICAL"]="1";
+	V_RETURN(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"simul_sky.fx",defines));
+	m_hTechniqueSky		=m_pSkyEffect->GetTechniqueByName("simul_sky");
+	worldViewProj		=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	lightDirection		=m_pSkyEffect->GetVariableByName("lightDir")->AsVector();
+	mieRayleighRatio	=m_pSkyEffect->GetVariableByName("mieRayleighRatio")->AsVector();
+	hazeEccentricity	=m_pSkyEffect->GetVariableByName("hazeEccentricity")->AsScalar();
+	skyInterp			=m_pSkyEffect->GetVariableByName("skyInterp")->AsScalar();
+	altitudeTexCoord	=m_pSkyEffect->GetVariableByName("altitudeTexCoord")->AsScalar();
+	
+	sunlightColour		=m_pSkyEffect->GetVariableByName("sunlightColour")->AsVector();
+	m_hTechniqueSun		=m_pSkyEffect->GetTechniqueByName("simul_sun");
+	m_hTechniqueFlare	=m_pSkyEffect->GetTechniqueByName("simul_flare");
+	m_hTechniquePlanet	=m_pSkyEffect->GetTechniqueByName("simul_planet");
+	flareTexture		=m_pSkyEffect->GetVariableByName("flareTexture")->AsShaderResource();
+
+	skyTexture1			=m_pSkyEffect->GetVariableByName("skyTexture1")->AsShaderResource();
+	skyTexture2			=m_pSkyEffect->GetVariableByName("skyTexture2")->AsShaderResource();
+
+	m_hTechniqueQuery	=m_pSkyEffect->GetTechniqueByName("simul_query");
 	return hr;
 }
 
@@ -693,4 +699,10 @@ const char *SimulSkyRendererDX1x::GetDebugText() const
 	int minutes=(int)(60.f*(skyKeyframer->GetDaytime()*24.f-(float)hours));
 	sprintf_s(txt,200,"Time: %02d:%02d\ncycle %d interp %3.3g",hours,minutes,cycle,skyKeyframer->GetInterpolation());
 	return txt;
+}
+
+void SimulSkyRendererDX1x::SetYVertical(bool y)
+{
+	y_vertical=y;
+	CreateSkyEffect();
 }

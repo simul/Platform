@@ -115,6 +115,7 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	own_image_texture(true),
 	texture_scale(0.25f),
 	enabled(true)
+	,y_vertical(true)
 {
 	D3DXMatrixIdentity(&world);
 	D3DXMatrixIdentity(&view);

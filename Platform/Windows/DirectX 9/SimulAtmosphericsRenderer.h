@@ -98,7 +98,12 @@ public:
 	{
 		altitude_tex_coord=f;
 	}
+	void SetYVertical(bool y)
+	{
+		y_vertical=y;
+	}
 protected:
+	bool y_vertical;
 	HRESULT DrawFullScreenQuad();
 	bool use_3d_fades;
 	float altitude_tex_coord;

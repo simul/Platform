@@ -42,6 +42,7 @@ SimulLightningRenderer::SimulLightningRenderer(simul::clouds::LightningRenderInt
 	,m_pLightningEffect(NULL)
 	,lightning_vertices(NULL)
 	,lightning_texture(NULL)
+	,y_vertical(true)
 {
 }
 
