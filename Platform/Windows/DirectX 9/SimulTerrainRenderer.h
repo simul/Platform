@@ -59,6 +59,7 @@ public:
 	void SetCloudTextures(void **t,bool wrap);
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si){skyInterface=si;}
 	simul::terrain::HeightMapInterface *GetHeightMapInterface();
+	void Highlight(const float *x,const float *d);
 	void SetCloudScales(const float *s)
 	{
 		cloud_scales[0]=s[0];
@@ -97,6 +98,7 @@ public:
 		rebuild_effect=true;
 	}
 	void TerrainModified();
+	const float *GetHighlightPos() const{return highlight_pos;}
 protected:
 	bool enabled;
 	bool wrap_clouds;
@@ -155,6 +157,7 @@ protected:
 	LPDIRECT3DVERTEXBUFFER9	vertexBuffer;
 
 	simul::math::Vector3 dir_to_sun;
+	D3DXVECTOR3				highlight_pos;
 	// A MIP edge joins a higher-resolution MIP to a lower-resolution one.
 	// The inner vertices come from the main grid.
 	// The outer vertices are interpolations.

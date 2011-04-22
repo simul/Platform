@@ -93,16 +93,6 @@ bool SimulLightningRenderer::InvalidateDeviceObjects()
 	return true;
 }
 
-static void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
-{
-	//set up matrices
-	D3DXMATRIX tmp1, tmp2;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXMatrixMultiply(&tmp1, &world,&view);
-	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
-	D3DXMatrixTranspose(wvp,&tmp2);
-}
-
 static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 {
 	D3DXMATRIX tmp1;
@@ -150,8 +140,8 @@ bool y_vertical=true;
 
 	simul::math::Vector3 pos;
 
-	static float lm=10.f;
-	static float main_bright=1.f;
+
+
 	int vert_start=0;
 	int vert_num=0;
 	m_pLightningEffect->SetMatrix(l_worldViewProj,&wvp);
@@ -210,17 +200,15 @@ bool y_vertical=true;
 				CrossProduct(transverse,view_dir,dir);
 				transverse.Unit();
 				transverse*=width1;
-				simul::math::Vector3 t=transverse;
-				if(k)
+				simul::math::Vector3 t;//=transverse;
+				if(!k)//||k==lightningRenderInterface->GetNumSegments(i,jj)-1)
+					t*=0;
+				else
 					t=0.5f*(last_transverse+transverse);
 				simul::math::Vector3 x1a=x1;//-t;
 				if(quads)
 					x1a=x1-t;
 				simul::math::Vector3 x1b=x1+t;
-				if(!k)
-					bright1=0;
-				if(k==lightningRenderInterface->GetNumSegments(i,jj)-1)
-					bright1=0;
 				PosTexVert_t &v1=lightning_vertices[vert_num++];
 				if(y_vertical)
 				{

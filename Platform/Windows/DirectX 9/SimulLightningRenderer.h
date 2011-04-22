@@ -26,6 +26,7 @@ public:
 	{
 		y_vertical=y;
 	}
+	bool IsYVertical() const{return y_vertical;}
 protected:
 	bool y_vertical;
 	bool InitEffects();

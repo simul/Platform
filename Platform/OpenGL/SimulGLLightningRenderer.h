@@ -16,6 +16,8 @@ public:
 	bool RestoreDeviceObjects();
 	bool Render();
 	bool InvalidateDeviceObjects();
+	//! This function does nothing as Y is never the vertical in this implementation
+	virtual void SetYVertical(bool ){}
 protected:
 	bool InitEffects();
 	struct float2

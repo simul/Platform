@@ -64,7 +64,7 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	heightmap->SetNumMipMapLevels(3);
 	heightmap->SetPageSize(513);
 	heightmap->SetTileSize(33);
-	heightmap->SetMaxHeight(5000.f);
+	heightmap->SetMaxHeight(8000.f);
 	heightmap->SetFractalOctaves(5);
 	heightmap->SetFractalScale(160000.f);
 	heightmap->SetPageWorldX(120000.f);
@@ -360,6 +360,23 @@ HRESULT SimulTerrainRenderer::Render()
 	PIXBeginNamedEvent(0xFF00FF00,"SimulTerrainRenderer::Render");
 	HRESULT r=InternalRender(false);
 	PIXEndNamedEvent();
+
+	if(highlight_pos.x+highlight_pos.y+highlight_pos.z!=0)
+	{
+		static float cc=100.f;
+		float pos[13*3];
+		for(int i=0;i<13;i++)
+		{
+			float angle=2.f*3.14159f*(float)i/12.f;
+			float dx=cc*cos(angle);
+			float dy=cc*sin(angle);
+			pos[i*3+0]=highlight_pos.x+dx;
+			pos[i*3+2]=highlight_pos.z+dy;
+			float z=heightMapInterface->GetHeightAt(pos[i*3+0],pos[i*3+2]);
+			pos[i*3+1]=highlight_pos.y;//z;
+		}
+		RenderLines(m_pd3dDevice,12,pos);
+	}
 	return r;
 }
 
@@ -557,9 +574,31 @@ simul::terrain::HeightMapInterface *SimulTerrainRenderer::GetHeightMapInterface(
 	return heightMapInterface;
 }
 
+void SimulTerrainRenderer::Highlight(const float *x,const float *d)
+{
+	simul::math::Vector3 X(x);
+	simul::math::Vector3 D(d);
+	D.Normalize();
+	simul::math::Vector3 I;
+	std::swap(X.y,X.z);
+	std::swap(D.y,D.z);
+
+	highlight_pos.x=highlight_pos.y=highlight_pos.z=0;
+	if(heightMapInterface->Collide(X,D,I))
+	{
+		if((I-X).Magnitude()<100000.f)
+		{
+			highlight_pos.x=I.x;
+			highlight_pos.y=I.z;
+			highlight_pos.z=I.y;
+		}
+	}
+}
+
 void SimulTerrainRenderer::Update(float )
 {
 }
+
 void SimulTerrainRenderer::SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb)
 {
 	SetCloudTextures	(cb->GetCloudTextures(),cb->GetWrap());

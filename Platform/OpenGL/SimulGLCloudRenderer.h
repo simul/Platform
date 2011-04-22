@@ -60,6 +60,8 @@ public:
 	std::istream &Load(std::istream &is) const;
 	//! Clear the sequence()
 	void New();
+	//! This function does nothing as Y is never the vertical in this implementation
+	virtual void SetYVertical(bool ){}
 protected:
 	GLuint clouds_program;
 	GLuint clouds_vertex_shader,clouds_fragment_shader;

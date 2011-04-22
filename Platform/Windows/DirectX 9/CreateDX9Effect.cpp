@@ -545,3 +545,85 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&p);
 	return S_OK;
 }
+
+LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl=NULL;
+
+HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
+{
+	HRESULT hr=S_OK;
+	D3DVERTEXELEMENT9 decl[] = 
+	{
+		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 16, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
+		{ 0, 32, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+		D3DDECL_END()
+	};
+	if(!m_pHudVertexDecl)
+	{
+		V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
+	}
+
+	struct Vertext
+	{
+		float x,y,z,h;
+		float r,g,b,a;
+		float tx,ty;
+	};
+    m_pd3dDevice->SetVertexShader(NULL);
+    m_pd3dDevice->SetPixelShader(NULL);
+	m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
+	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
+	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+
+	m_pd3dDevice->SetVertexDeclaration(m_pHudVertexDecl);
+
+    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_MODULATE );
+    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE );
+
+	m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+	m_pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_CONSTANT);
+
+// Set the constant to 0.25 alpha (0x40 = 64 = 64/256 = 0.25)
+	m_pd3dDevice->SetTextureStageState(0, D3DTSS_CONSTANT, 0x80000080);
+
+    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_MODULATE );
+    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE );
+	m_pd3dDevice->SetRenderState(D3DRS_SRCBLEND,D3DBLEND_SRCALPHA);
+	m_pd3dDevice->SetRenderState(D3DRS_DESTBLEND,D3DBLEND_INVSRCALPHA);
+
+	m_pd3dDevice->SetTexture(0,NULL);
+	
+	Vertext *lines=new Vertext[num*2];
+
+	for(int i=0;i<num;i++)
+	{
+		lines[i*2].x=pos[i*3];
+		lines[i*2].y=pos[i*3+1];
+		lines[i*2].z=pos[i*3+2];
+		lines[i*2].r=1.f;
+		lines[i*2].g=1.f;
+		lines[i*2].b=0.f;
+		lines[i*2].a=1;
+		lines[i*2+1].x=pos[i*3+3]; 
+		lines[i*2+1].y=pos[i*3+4];  
+		lines[i*2+1].z=pos[i*3+5];
+		lines[i*2+1].r=1.f;
+		lines[i*2+1].g=1.f;
+		lines[i*2+1].b=0.f;
+		lines[i*2+1].a=1;
+	}
+	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,num,lines,(unsigned)sizeof(Vertext));
+	delete [] lines;
+	return S_OK;
+}
+
+void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
+{
+	//set up matrices
+	D3DXMATRIX tmp1, tmp2;
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	D3DXMatrixMultiply(&tmp1, &world,&view);
+	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
+	D3DXMatrixTranspose(wvp,&tmp2);
+}

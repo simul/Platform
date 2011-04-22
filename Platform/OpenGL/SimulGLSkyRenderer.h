@@ -52,6 +52,8 @@ public:
 	virtual void CycleTexturesForward();
 
 	bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	//! This function does nothing as Y is never the vertical in this implementation
+	virtual void SetYVertical(bool ){}
 protected:
 	void CalcCameraPosition();
 	void CreateFadeTextures();

@@ -528,10 +528,10 @@ void SimulCloudRenderer::FillIlluminationSequentially(int source_index,int texel
 		return;
 	unsigned *ptr=(unsigned *)(lockedBox.pBits);
 	ptr+=texel_index;
-	unsigned offset[]={16,8,0,24};//*(source_index); // xyzw
+	static unsigned offset[]={16,8,0,24};
 	for(int i=0;i<num_texels;i++)
 	{
-		unsigned ui=(unsigned)255;//(*uchar8_array);
+		unsigned ui=(unsigned)(*uchar8_array);
 		ui<<=offset[source_index];
 		unsigned msk=255<<offset[source_index];
 		msk=~msk;
@@ -698,16 +698,6 @@ void SimulCloudRenderer::CycleTexturesForward()
 {
 	std::swap(cloud_textures[0],cloud_textures[1]);
 	std::swap(cloud_textures[1],cloud_textures[2]);
-}
-
-static void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
-{
-	//set up matrices
-	D3DXMATRIX tmp1, tmp2;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXMatrixMultiply(&tmp1, &world,&view);
-	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
-	D3DXMatrixTranspose(wvp,&tmp2);
 }
 
 static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
@@ -1015,7 +1005,6 @@ void SimulCloudRenderer::InternalRenderHorizontal()
 void SimulCloudRenderer::InternalRenderVolumetric()
 {
 	HRESULT hr=S_OK;
-	
 	//set up matrices
 	D3DXMATRIX wvp;
 	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f);
@@ -1555,10 +1544,7 @@ void SimulCloudRenderer::SetYVertical(bool y)
 const TCHAR *SimulCloudRenderer::GetDebugText() const
 {
 	static TCHAR debug_text[256];
-	stprintf_s(debug_text,256,_T("SimulCloudRenderer: %2.2g,%2.2g %2.2g,%2.2g %2.2g,%2.2g %2.2g,%2.2g"),
-		lightningRenderInterface->GetLightSourceProgress(0),lightningRenderInterface->GetLightSourceBrightness(0),
-		lightningRenderInterface->GetLightSourceProgress(1),lightningRenderInterface->GetLightSourceBrightness(1),
-		lightningRenderInterface->GetLightSourceProgress(2),lightningRenderInterface->GetLightSourceBrightness(2),
-		lightningRenderInterface->GetLightSourceProgress(3),lightningRenderInterface->GetLightSourceBrightness(3) );
+	stprintf_s(debug_text,256,_T("SimulCloudRenderer: %d slices visible"),
+		helper->GetNumActiveLayers());
 	return debug_text;
 }

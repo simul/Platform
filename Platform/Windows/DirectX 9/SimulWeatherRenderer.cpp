@@ -578,7 +578,7 @@ HRESULT SimulWeatherRenderer::RenderLateCloudLayer()
 			}
 		}
 	}
-	static bool do_fx=false;
+	static bool do_fx=true;
 	if(do_fx)
 	if(simulAtmosphericsRenderer&&simulCloudRenderer&&layer1)
 	{
