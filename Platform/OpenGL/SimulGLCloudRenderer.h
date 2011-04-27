@@ -84,11 +84,11 @@ protected:
 
 
 
-GLint illuminationOrigin_param;
-GLint illuminationScales_param;
-GLint lightningMultipliers_param;
-GLint lightningColour_param;
-					 
+	GLint illuminationOrigin_param;
+	GLint illuminationScales_param;
+	GLint lightningMultipliers_param;
+	GLint lightningColour_param;
+						 
 
 	GLint cloudEccentricity_param;
 	GLint skyEccentricity_param;

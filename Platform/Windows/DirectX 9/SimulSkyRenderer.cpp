@@ -1085,6 +1085,8 @@ HRESULT SimulSkyRenderer::RenderPointStars()
 	cam_dir.x=tmp1._31;
 	cam_dir.y=tmp1._32;
 	cam_dir.z=tmp1._33;
+	if(!y_vertical)
+		cam_dir*=-1.f;
 
 	GetSiderealTransform(&world);
 	D3DXMatrixMultiply(&tmp1,&world,&view);
@@ -1150,8 +1152,11 @@ return S_OK;
 	cam_dir.x=tmp1._31;
 	cam_dir.y=tmp1._32;
 	cam_dir.z=tmp1._33;
+	if(!y_vertical)
+		cam_dir*=-1.f;
 
 	GetSiderealTransform(&world);
+	FixProjectionMatrix(proj,size*4.f,y_vertical);
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);

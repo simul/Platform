@@ -38,5 +38,7 @@ extern HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx
 
 extern void SetBundleShaders(bool b);
 extern void SetResourceModule(const char *txt);
+extern void FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical);
+extern void SetResourceModule(const char *txt);
 
 extern void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);

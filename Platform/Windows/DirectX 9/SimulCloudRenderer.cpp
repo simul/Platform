@@ -254,7 +254,6 @@ HRESULT SimulCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 		D3DPOOL_DEFAULT, &unitSphereIndexBuffer, NULL ));
 	unsigned *indexData;
 	V_RETURN(unitSphereIndexBuffer->Lock(0,num_indices, (void**)&indexData, 0 ));
-
 	unsigned *index=indexData;
 	for(unsigned i=0;i<num_indices;i++)
 	{
@@ -265,7 +264,6 @@ HRESULT SimulCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	//V_RETURN(RenderNoiseTexture());
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 	cloudKeyframer->SetRenderCallback(this);
-
 	return hr;
 }
 
@@ -304,8 +302,6 @@ HRESULT SimulCloudRenderer::InitEffects()
 	{
 		V_RETURN(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
 	}
-	
-	
 	std::map<std::string,std::string> defines;
 	if(fade_mode==FRAGMENT)
 		defines["FADE_MODE"]="1";
@@ -726,13 +722,6 @@ static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 	return &x;
 }
 
-static void FixProjectionMatrix(D3DXMATRIX &proj,float zFar)
-{
-	float zNear=-proj._43/proj._33;
-	proj._33=zFar/(zFar-zNear);
-	proj._43=-zNear*zFar/(zFar-zNear);
-}
-
 HRESULT SimulCloudRenderer::Render(bool cubemap)
 {
 	PIXBeginNamedEvent(0xFF00FFFF,"SimulCloudRenderer::Render");
@@ -790,7 +779,9 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 
 	simul::math::Vector3 view_dir	(view._13,view._23,view._33);
 	simul::math::Vector3 up			(view._12,view._22,view._32);
-
+	
+	if(!y_vertical)
+		view_dir.Define(-view._13,-view._23,-view._33);
 	float t=skyInterface->GetTime();
 	float delta_t=(t-last_time)*cloudKeyframer->GetTimeFactor();
 	if(!last_time)
@@ -822,6 +813,7 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 	float tan_half_fov_vertical=1.f/proj._22;
 	float tan_half_fov_horizontal=1.f/proj._11;
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
+	//helper->SetNoFrustumLimit(true);
 	helper->MakeGeometry(cloudInterface,false);
 
 	if(fade_mode==CPU)
@@ -895,7 +887,7 @@ void SimulCloudRenderer::InternalRenderHorizontal()
 	float max_dist=max_fade_distance_metres;
 	//set up matrices
 	D3DXMATRIX wvp;
-	FixProjectionMatrix(proj,max_dist*1.1f);
+	FixProjectionMatrix(proj,max_dist*1.1f,y_vertical);
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	m_pCloudEffect->SetMatrix(worldViewProj,&wvp);
 	unsigned passes=0;
@@ -1007,7 +999,7 @@ void SimulCloudRenderer::InternalRenderVolumetric()
 	HRESULT hr=S_OK;
 	//set up matrices
 	D3DXMATRIX wvp;
-	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f);
+	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,y_vertical);
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	m_pCloudEffect->SetMatrix(worldViewProj, &wvp);
 	unsigned passes=0;

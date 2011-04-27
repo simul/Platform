@@ -546,6 +546,23 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	return S_OK;
 }
 
+
+void FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical)
+{
+	float zNear;
+	if(y_vertical)
+	{
+		zNear=-proj._43/proj._33;
+		proj._33=zFar/(zFar-zNear);
+	}
+	else
+	{
+		zNear=proj._43/proj._33;
+		proj._33=-zFar/(zFar-zNear);
+	}
+	proj._43=-zNear*zFar/(zFar-zNear);
+}
+
 LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl=NULL;
 
 HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
