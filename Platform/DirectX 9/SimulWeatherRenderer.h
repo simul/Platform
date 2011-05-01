@@ -14,6 +14,13 @@
 #endif
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
+#include "Simul/Platform/DirectX 9/Export.h"
+
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
+
 class RenderDepthBufferCallback
 {
 public:
@@ -86,7 +93,7 @@ e.g. clouds, sky:
 		simulWeatherRenderer->RenderPrecipitation();
 	\endcode
 */
-class SimulWeatherRenderer:public simul::clouds::BaseWeatherRenderer, public simul::graph::meta::Group
+SIMUL_DIRECTX9_EXPORT_CLASS SimulWeatherRenderer:public simul::clouds::BaseWeatherRenderer, public simul::graph::meta::Group
 {
 public:
 	SimulWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=320,
@@ -130,8 +137,8 @@ public:
 	class SimulPrecipitationRenderer *GetPrecipitationRenderer();
 	//! Get a pointer to the atmospherics renderer owned by this class instance.
 	class SimulAtmosphericsRenderer *GetAtmosphericsRenderer();
-	//! Get the current debug text as a c-string pointer.
-	const TCHAR *GetDebugText() const;
+	//! Get the current debug text as a c-string pointer. We don't use TCHAR here because Qt does not support using wchar_t as a built-in type.
+	const char *GetDebugText() const;
 	//! Get a timing value - useful for performance evaluation.
 	float GetTiming() const;
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
@@ -184,10 +191,13 @@ protected:
 	simul::base::SmartPtr<class SimulAtmosphericsRenderer> simulAtmosphericsRenderer;
 	float							exposure;
 	float							gamma;
-	LPDIRECT3DSURFACE9 MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture);
-	bool use_buffer;
-	bool tone_map;
-	float timing;
-	float exposure_multiplier;
-	bool show_rain;
+	bool							use_buffer;
+	bool							tone_map;
+	float							timing;
+	float							exposure_multiplier;
+	bool							show_rain;
+	LPDIRECT3DSURFACE9				MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture);
 };
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif

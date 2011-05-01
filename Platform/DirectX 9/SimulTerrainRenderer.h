@@ -18,6 +18,11 @@ typedef long HRESULT;
 #include "Simul/Math/Vector3.h"
 #include "Simul/Base/Referenced.h"
 #include "Simul/Base/SmartPtr.h"
+#include "Simul/Platform/DirectX 9/Export.h"
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
 namespace simul
 {
 	namespace sky
@@ -35,7 +40,7 @@ namespace simul
 		class CloudShadowCallback;
 	}
 }
-class SimulTerrainRenderer:public simul::base::Referenced
+SIMUL_DIRECTX9_EXPORT_CLASS SimulTerrainRenderer:public simul::base::Referenced
 {
 public:
 	SimulTerrainRenderer();
@@ -234,3 +239,6 @@ protected:
 	float exposure;
 	float max_fade_distance_metres;
 };
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif

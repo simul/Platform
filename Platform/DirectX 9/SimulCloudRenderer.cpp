@@ -614,7 +614,7 @@ void SimulCloudRenderer::PerformFullGPURelight(int which_texture,float *target_d
 	for(int i=0;i<(int)light_gridsizes[2];i++)
 	{
 		// Copy the texture to an offscreen surface:
-		IDirect3DSurface9 *source_surf=NULL;
+	//	IDirect3DSurface9 *source_surf=NULL;
 		hr=m_pd3dDevice->GetRenderTargetData(pLightRenderTarget[0],pBuf);
 		D3DLOCKED_RECT rect;
 		pBuf->LockRect(&rect,NULL,0);
@@ -859,7 +859,7 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 	}
 	
 	hr=m_pd3dDevice->SetVertexDeclaration(m_pVtxDecl);
-	UINT passes=1;
+//UINT passes=1;
 
 	m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
 	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
@@ -1122,9 +1122,6 @@ float SimulCloudRenderer::GetPrecipitationIntensity() const
 	return BaseCloudRenderer::GetPrecipitationIntensity(cp);
 }
 
-void SimulCloudRenderer::SetStepsPerHour(unsigned steps)
-{
-}
 
 HRESULT SimulCloudRenderer::MakeCubemap()
 {
@@ -1533,10 +1530,10 @@ void SimulCloudRenderer::SetYVertical(bool y)
 	helper->SetYVertical(y);
 }
 
-const TCHAR *SimulCloudRenderer::GetDebugText() const
+const char *SimulCloudRenderer::GetDebugText() const
 {
-	static TCHAR debug_text[256];
-	stprintf_s(debug_text,256,_T("SimulCloudRenderer: %d slices visible"),
+	static char debug_text[256];
+	sprintf_s(debug_text,256,"SimulCloudRenderer: %d slices visible",
 		helper->GetNumActiveLayers());
 	return debug_text;
 }

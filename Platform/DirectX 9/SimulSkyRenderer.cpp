@@ -895,7 +895,7 @@ HRESULT SimulSkyRenderer::RenderFades(int )
 	return hr;
 }
 
-HRESULT SimulSkyRenderer::PrintAt(const float *p,const wchar_t *text,int screen_width,int screen_height)
+HRESULT SimulSkyRenderer::PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height)
 {
 	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
 #ifndef xbox
@@ -942,7 +942,7 @@ HRESULT SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_hei
 	{
 		V_RETURN(D3DXCreateFont(m_pd3dDevice,32,0,FW_NORMAL,1,FALSE,DEFAULT_CHARSET,
 								OUT_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_DONTCARE,
-								L"Arial",&m_pFont));
+								_T("Arial"),&m_pFont));
 	}
 
 	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
@@ -1032,14 +1032,14 @@ HRESULT SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_hei
 	hr=m_pSkyEffect->EndPass();
 	hr=m_pSkyEffect->End();
 
-	PrintAt(D3DXVECTOR4( 0.f, -0.05f, 1.f, 1.f)	,L"N",screen_width,screen_height);
-	PrintAt(D3DXVECTOR4( 0.7f,-0.05f, 0.7f,1.f)	,L"NE",screen_width,screen_height);
-	PrintAt(D3DXVECTOR4( 1.f, -0.05f, 0.f, 1.f)	,L"E",screen_width,screen_height);
-	PrintAt(D3DXVECTOR4( 0.7f,-0.05f,-.7f, 1.f)	,L"SE",screen_width,screen_height);
-	PrintAt(D3DXVECTOR4( 0.f, -0.05f,-1.f, 1.f)	,L"S",screen_width,screen_height);
-	PrintAt(D3DXVECTOR4(-1.f, -0.05f,-1.f, 1.f)	,L"SW",screen_width,screen_height);
-	PrintAt(D3DXVECTOR4(-1.f, -0.05f, 0.f, 1.f)	,L"W",screen_width,screen_height);
-	PrintAt(D3DXVECTOR4(-1.f, -0.05f, 1.f, 1.f)	,L"NW",screen_width,screen_height);
+	PrintAt(D3DXVECTOR4( 0.f, -0.05f, 1.f, 1.f)	,_T("N"),screen_width,screen_height);
+	PrintAt(D3DXVECTOR4( 0.7f,-0.05f, 0.7f,1.f)	,_T("NE"),screen_width,screen_height);
+	PrintAt(D3DXVECTOR4( 1.f, -0.05f, 0.f, 1.f)	,_T("E"),screen_width,screen_height);
+	PrintAt(D3DXVECTOR4( 0.7f,-0.05f,-.7f, 1.f)	,_T("SE"),screen_width,screen_height);
+	PrintAt(D3DXVECTOR4( 0.f, -0.05f,-1.f, 1.f)	,_T("S"),screen_width,screen_height);
+	PrintAt(D3DXVECTOR4(-1.f, -0.05f,-1.f, 1.f)	,_T("SW"),screen_width,screen_height);
+	PrintAt(D3DXVECTOR4(-1.f, -0.05f, 0.f, 1.f)	,_T("W"),screen_width,screen_height);
+	PrintAt(D3DXVECTOR4(-1.f, -0.05f, 1.f, 1.f)	,_T("NW"),screen_width,screen_height);
 	delete [] lines;
 	delete [] moon_lines;
 	return S_OK;
@@ -1137,9 +1137,8 @@ HRESULT SimulSkyRenderer::RenderPointStars()
 	return hr;
 }
 
-HRESULT SimulSkyRenderer::RenderStars()
+HRESULT SimulSkyRenderer::RenderTextureStars()
 {
-return S_OK;
 	HRESULT hr=S_OK;
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);

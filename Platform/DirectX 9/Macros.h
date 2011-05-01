@@ -2,6 +2,11 @@
 #define MACROS_H_DONE
 #include <iostream>
 #include <tchar.h>
+#pragma comment(lib,"dxerr")
+#pragma comment(lib,"d3dx9")
+#pragma comment(lib,"d3d9")
+#pragma comment(lib,"d3dx10")
+#pragma comment(lib,"comctl32")
 typedef std::basic_string<TCHAR> tstring;
 #ifdef UNICODE
 	#define stprintf_s swprintf_s
@@ -21,21 +26,28 @@ typedef std::basic_string<TCHAR> tstring;
 	#ifndef SAFE_RELEASE
 		#define SAFE_RELEASE(p)		{ if(p) { (p)->Release(); (p)=NULL; } }
 	#endif
-#ifdef UNICODE
 
+#define BreakIfDebugging()
+	
+#ifdef UNICODE
 	#define WIDEN2(x) L ## x
 	#define WIDEN(x) WIDEN2(x)
 	#define __WFILE__ WIDEN(__FILE__)
+	#define __TFILE__ __WFILE__
 	#define WIDEN4(x) _T(#x)
 	#define WIDEN3(x) WIDEN4(x)
 	#define __WLINE__ WIDEN3(__LINE__)
 	#define WIDENSTRING(x) L#x
+#else
+	#define __TFILE__ __FILE__
+#endif
 
-	#define BreakIfDebugging()
+#ifndef B_RETURN
+	#define B_RETURN(x)	{ hr = x; if( FAILED(hr) ) {TCHAR text[200];_stprintf(text,_T("V_RETURN error %d at file %s, line %d"),(int)hr,__TFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,_T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();return false; } }
+#endif
+	
+#ifdef UNICODE
 
-	#ifndef B_RETURN
-		#define B_RETURN(x)	{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_RETURN error %d at file %s, line %d",(int)hr,__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();return false; } }
-	#endif
 	#ifndef VOID_RETURN
 		#define VOID_RETURN(x)	{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_RETURN error %d at file %s, line %d",(int)hr,__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();return; } }
 	#endif

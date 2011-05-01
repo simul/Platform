@@ -494,10 +494,11 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 #endif
 		// here we're going to render to the LDR buffer. If tone_map is disabled, we don't do this:
 
+	m_pOldRenderTarget->GetDesc(&desc);
 		if(tone_map)
 		{
 			m_pd3dDevice->SetRenderTarget(0,m_pLDRRenderTarget);
-			//ldr_buffer_texture->GetLevelDesc(0,&desc);
+		//ldr_buffer_texture->GetLevelDesc(0,&desc);
 			hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 			simulSkyRenderer->RenderPointStars();
 			simulSkyRenderer->RenderSun();
@@ -507,7 +508,6 @@ HRESULT SimulWeatherRenderer::Render(bool is_cubemap)
 			m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
 			if(m_pOldDepthSurface)
 				m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
-		//	m_pOldRenderTarget->GetDesc(&desc);
 			RenderBufferToScreen(ldr_buffer_texture,desc.Width,desc.Height,false);
 		}
 		else
@@ -823,12 +823,12 @@ float SimulWeatherRenderer::GetTiming() const
 float SimulWeatherRenderer::GetTotalBrightness() const
 {
 	return exposure*exposure_multiplier;
-}
+} 
 
-const TCHAR *SimulWeatherRenderer::GetDebugText() const
+const char *SimulWeatherRenderer::GetDebugText() const
 {
-	static TCHAR debug_text[256];
+	static char debug_text[256];
 	if(simulCloudRenderer)
-		stprintf_s(debug_text,256,_T("%s"),simulCloudRenderer->GetDebugText());
+		sprintf_s(debug_text,256,"%s",simulCloudRenderer->GetDebugText());
 	return debug_text;
 }

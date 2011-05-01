@@ -127,12 +127,12 @@ static float saturate(float f)
 		return 1.f;
 	return f;
 }
-static float SnowFunction(float altitude_metres,simul::math::Vector3 &normal)
+/*static float SnowFunction(float ,simul::math::Vector3 &normal)
 {
 	float high_enought=1.f;
 	float angle_ok=saturate((normal.z-0.5f)/0.1f);
 	return high_enought*angle_ok;
-}
+}*/
 static float GrassFunction(float altitude_metres,simul::math::Vector3 &normal)
 {
 	float high_enough=saturate((2000.f-altitude_metres)/200.f);
@@ -372,7 +372,7 @@ HRESULT SimulTerrainRenderer::Render()
 			float dy=cc*sin(angle);
 			pos[i*3+0]=highlight_pos.x+dx;
 			pos[i*3+2]=highlight_pos.z+dy;
-			float z=heightMapInterface->GetHeightAt(pos[i*3+0],pos[i*3+2]);
+//		float z=heightMapInterface->GetHeightAt(pos[i*3+0],pos[i*3+2]);
 			pos[i*3+1]=highlight_pos.y;//z;
 		}
 		RenderLines(m_pd3dDevice,12,pos);

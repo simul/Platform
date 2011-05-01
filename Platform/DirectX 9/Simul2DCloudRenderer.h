@@ -16,7 +16,16 @@
 #endif
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Clouds/BaseCloudRenderer.h"
+#include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Clouds/CloudKeyframer.h"
+#include "Simul/Platform/DirectX 9/Export.h"
+
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
+
+
 namespace simul
 {
 	namespace clouds
@@ -33,7 +42,7 @@ namespace simul
 typedef long HRESULT;
 
 //! A renderer for 2D cloud layers, e.g. cirrus clouds.
-class Simul2DCloudRenderer: public simul::clouds::BaseCloudRenderer
+SIMUL_DIRECTX9_EXPORT_CLASS Simul2DCloudRenderer: public simul::clouds::BaseCloudRenderer
 {
 public:
 	Simul2DCloudRenderer();
@@ -61,7 +70,6 @@ public:
 	simul::clouds::CloudInterface *GetCloudInterface();
 	simul::clouds::CloudKeyframer *GetCloudKeyframer();
 	void Enable(bool val);
-	void SetStepsPerHour(unsigned s);
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
@@ -122,3 +130,7 @@ protected:
 		return y_vertical;
 	}
 };
+
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif

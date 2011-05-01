@@ -19,6 +19,11 @@
 #include "Simul/Clouds/BaseCloudRenderer.h"
 #include "Simul/Graph/Meta/Resource.h"
 #include "Simul/Graph/StandardNodes/ShowProgressInterface.h"
+#include "Simul/Platform/DirectX 9/Export.h"
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
 
 namespace simul
 {
@@ -34,7 +39,7 @@ typedef long HRESULT;
 
 //! A cloud rendering class. Create an instance of this class within a DirectX program,
 //! or use SimulWeatherRenderer to manage cloud and sky rendering together.
-class SimulCloudRenderer : public simul::clouds::BaseCloudRenderer
+SIMUL_DIRECTX9_EXPORT_CLASS SimulCloudRenderer : public simul::clouds::BaseCloudRenderer
 	,public simul::graph::meta::ResourceUser<simul::graph::standardnodes::ShowProgressInterface>
 
 {
@@ -61,10 +66,9 @@ public:
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 #endif
 	float GetPrecipitationIntensity() const;
-	void SetStepsPerHour(unsigned s);
 	//! Return true if the camera is above the cloudbase altitude.
 	bool IsCameraAboveCloudBase() const;
-	const TCHAR *GetDebugText() const;
+	const char *GetDebugText() const;
 	float GetTiming() const;
 	void *GetIlluminationTexture();
 	//! Get the list of three textures used for cloud rendering.
@@ -218,3 +222,6 @@ protected:
 	HRESULT MakeCubemap(); // not ready yet
 	float last_time;
 };
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif

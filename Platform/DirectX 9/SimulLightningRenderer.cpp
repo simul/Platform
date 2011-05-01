@@ -167,7 +167,7 @@ bool y_vertical=true;
 		float bright1=0.f;
 		simul::math::Vector3 camPos(cam_pos);
 		lightningRenderInterface->GetSegmentVertex(i,0,0,bright1,x1.FloatPointer(0));
-		float dist=(x1-camPos).Magnitude();
+//		float dist=(x1-camPos).Magnitude();
 		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
 		for(unsigned jj=0;jj<lightningRenderInterface->GetNumBranches(i);jj++)
 		{
