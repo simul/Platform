@@ -39,6 +39,8 @@
 #define V_RETURN(x)			{ hr = x; if( FAILED(hr) ) { return hr; } }
 #endif
 
+unsigned (*GetResourceId)(const char *filename)=NULL;
+
 bool BUNDLE_SHADERS=false;
 
 static tstring module;
@@ -243,7 +245,7 @@ HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &text
 HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &texture,const char *filename)
 {
 	if(BUNDLE_SHADERS)
-		return CreateDX9Texture(m_pd3dDevice,texture,GetResourceId(filename));
+		return CreateDX9Texture(m_pd3dDevice,texture,(*GetResourceId)(filename));
 	if(!texture_path_set)
 	{
 		std::cerr<<"CreateDX9Texture: Texture path not set, use SetTexturePath() with the relative path to the image files."<<std::endl;
@@ -336,11 +338,12 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 	}
 	if(FAILED(hr))
 	{
-		hr=CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename),defines);
+		if(GetResourceId)
+			hr=CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename),defines);
 		if(FAILED(hr))
 		{
 #ifdef DXTRACE_ERR
-			hr=DXTRACE_ERR(L"CreateDX9Effect", hr );
+			hr=DXTRACE_ERR(_T("CreateDX9Effect"), hr );
 #endif
 			DebugBreak();
 		}
@@ -393,7 +396,7 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWOR
 	if(FAILED(hr))
 	{
 #ifdef DXTRACE_ERR
-		hr=DXTRACE_ERR(L"CreateDX9Effect", hr );
+		hr=DXTRACE_ERR(_T("CreateDX9Effect"), hr );
 #endif
 		DebugBreak();
 	}

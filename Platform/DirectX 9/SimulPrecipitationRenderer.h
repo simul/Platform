@@ -14,6 +14,7 @@
 	#include <d3d9.h>
 	#include <d3dx9.h>
 #endif
+#include "Simul/Platform/DirectX 9/Export.h"
 typedef long HRESULT;
 class SimulPrecipitationRenderer: public simul::clouds::BasePrecipitationRenderer
 {

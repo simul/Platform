@@ -13,8 +13,13 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Base/Referenced.h"
+#include "Simul/Platform/DirectX 9/Export.h"
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
 typedef long HRESULT;
-class SimulHDRRenderer: public simul::base::Referenced
+SIMUL_DIRECTX9_EXPORT_CLASS SimulHDRRenderer: public simul::base::Referenced
 {
 public:
 	SimulHDRRenderer(int width,int height);
@@ -101,3 +106,6 @@ protected:
 	HRESULT RenderBloom();
 	class SimulAtmosphericsInterface *atmospherics;
 };
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif

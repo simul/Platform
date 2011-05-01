@@ -15,11 +15,12 @@
 #endif
 #include <map>
 #include <string>
+#include "Simul/Platform/DirectX 9/Export.h"
 enum ShaderModel {NO_SHADERMODEL=0,USE_SHADER_2,USE_SHADER_2A,USE_SHADER_3};
 extern ShaderModel GetShaderModel();
 extern void SetMaxShaderModel(ShaderModel m);
-extern void SetShaderPath(const char *path);
-extern void SetTexturePath(const char *path);
+extern void SIMUL_DIRECTX9_EXPORT SetShaderPath(const char *path);
+extern void SIMUL_DIRECTX9_EXPORT SetTexturePath(const char *path);
 // Get the technique, or look for a less hardware-demanding equivalent:
 extern D3DXHANDLE GetDX9Technique(LPD3DXEFFECT effect,const char *tech_name);
 extern HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWORD resource);

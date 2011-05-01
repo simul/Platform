@@ -324,6 +324,7 @@ HRESULT Simul2DCloudRenderer::CreateImageTexture()
 void Simul2DCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z)
 {
 	assert(depth_z==1);
+	depth_z;
 	HRESULT hr=S_OK;
 	V_CHECK(CanUseTexFormat(m_pd3dDevice,cloud_tex_format));
 	for(int i=0;i<3;i++)
@@ -566,10 +567,6 @@ simul::clouds::CloudKeyframer *Simul2DCloudRenderer::GetCloudKeyframer()
 void Simul2DCloudRenderer::Enable(bool val)
 {
 	enabled=val;
-}
-
-void Simul2DCloudRenderer::SetStepsPerHour(unsigned steps)
-{
 }
 
 const char *Simul2DCloudRenderer::GetDebugText() const

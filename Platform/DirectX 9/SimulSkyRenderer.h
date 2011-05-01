@@ -17,6 +17,7 @@
 	#include <d3dx9.h>
 #endif
 #include <map>
+#include "Simul/Platform/DirectX 9/Export.h"
 
 namespace simul
 {
@@ -47,7 +48,7 @@ typedef long HRESULT;
 //! A renderer for skies, this class will manage an instance of simul::sky::SkyNode and use it to calculate sky colours
 //! in real time for the simul_sky.fx shader.
 
-class SimulSkyRenderer : public simul::sky::BaseSkyRenderer
+SIMUL_DIRECTX9_EXPORT_CLASS SimulSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
 	SimulSkyRenderer(bool UseColourSky=false);
@@ -68,7 +69,7 @@ public:
 	//! Render the stars, as points.
 	HRESULT						RenderPointStars();
 	//! Render the stars, as a background.
-	HRESULT						RenderStars();
+	HRESULT						RenderTextureStars();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	HRESULT						Render();
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
@@ -132,7 +133,7 @@ protected:
 	};
 	StarVertext *star_vertices;
 	int num_stars;
-	HRESULT PrintAt(const float *p,const wchar_t *text,int screen_width,int screen_height);
+	HRESULT PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height);
 	bool external_flare_texture;
 	float timing;
 	D3DFORMAT sky_tex_format;
