@@ -573,9 +573,9 @@ HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 	HRESULT hr=S_OK;
 	D3DVERTEXELEMENT9 decl[] = 
 	{
-		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0, 16, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
-		{ 0, 32, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 12, D3DDECLTYPE_D3DCOLOR	,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
+		{ 0, 16, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
 		D3DDECL_END()
 	};
 	if(!m_pHudVertexDecl)
@@ -585,8 +585,8 @@ HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 
 	struct Vertext
 	{
-		float x,y,z,h;
-		float r,g,b,a;
+		float x,y,z;
+		unsigned char r,g,b,a;
 		float tx,ty;
 	};
     m_pd3dDevice->SetVertexShader(NULL);
@@ -621,17 +621,17 @@ HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 		lines[i*2].x=pos[i*3];
 		lines[i*2].y=pos[i*3+1];
 		lines[i*2].z=pos[i*3+2];
-		lines[i*2].r=1.f;
-		lines[i*2].g=1.f;
-		lines[i*2].b=0.f;
-		lines[i*2].a=1;
+		lines[i*2].r=255;
+		lines[i*2].g=255;
+		lines[i*2].b=0;
+		lines[i*2].a=255;
 		lines[i*2+1].x=pos[i*3+3]; 
 		lines[i*2+1].y=pos[i*3+4];  
 		lines[i*2+1].z=pos[i*3+5];
-		lines[i*2+1].r=1.f;
-		lines[i*2+1].g=1.f;
-		lines[i*2+1].b=0.f;
-		lines[i*2+1].a=1;
+		lines[i*2+1].r=255;
+		lines[i*2+1].g=255;
+		lines[i*2+1].b=0;
+		lines[i*2+1].a=255;
 	}
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,num,lines,(unsigned)sizeof(Vertext));
 	delete [] lines;

@@ -18,6 +18,7 @@ typedef long HRESULT;
 #include "Simul/Math/Vector3.h"
 #include "Simul/Base/Referenced.h"
 #include "Simul/Base/SmartPtr.h"
+#include "Simul/Terrain/HeightMapNode.h"
 #include "Simul/Platform/DirectX 9/Export.h"
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -227,7 +228,7 @@ protected:
 	void ReleaseIndexBuffers();
 
 	Terrain2D tiles;
-	int TilePosToIndex(int i,int j,int x,int y) const;
+	unsigned TilePosToIndex(int i,int j,int x,int y) const;
 
 	float cloud_scales[3];
 	float cloud_offset[3];

@@ -1093,7 +1093,7 @@ HRESULT SimulSkyRenderer::RenderPointStars()
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
 	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
-	hr=m_pd3dDevice->SetVertexDeclaration(NULL);
+	//hr=m_pd3dDevice->SetVertexDeclaration(NULL);
 	hr=m_pd3dDevice->SetFVF(D3DFVF_XYZ|D3DFVF_TEX0);
 
 	m_pSkyEffect->SetTechnique(m_hTechniquePointStars);
