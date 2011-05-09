@@ -170,6 +170,7 @@ protected:
 	struct MIPEdge
 	{
 		LPDIRECT3DINDEXBUFFER9 indexBuffer;
+		int num_verts;
 		int num_tris;
 		void Reset();
 	};

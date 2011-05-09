@@ -736,12 +736,12 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 		V_RETURN(CreateNoiseTexture());
 	}
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
-	m_pd3dDevice->SetSamplerState(0,D3DSAMP_SRGBTEXTURE,0);
+	/*m_pd3dDevice->SetSamplerState(0,D3DSAMP_SRGBTEXTURE,0);
 	m_pd3dDevice->SetSamplerState(1,D3DSAMP_SRGBTEXTURE,0);
 	m_pd3dDevice->SetSamplerState(2,D3DSAMP_SRGBTEXTURE,0);
 	m_pd3dDevice->SetSamplerState(3,D3DSAMP_SRGBTEXTURE,0);
 	m_pd3dDevice->SetSamplerState(4,D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(5,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(5,D3DSAMP_SRGBTEXTURE,0);*/
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);

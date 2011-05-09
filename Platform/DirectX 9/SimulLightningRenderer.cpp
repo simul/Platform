@@ -112,9 +112,9 @@ bool SimulLightningRenderer::Render()
 	HRESULT hr=S_OK;
 bool y_vertical=true;
 	m_pd3dDevice->SetTexture(0,lightning_texture);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAXANISOTROPY, 1);
+
+	//m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+	//m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAXANISOTROPY, 1);
 		
 	//set up matrices
 	D3DXMATRIX wvp;

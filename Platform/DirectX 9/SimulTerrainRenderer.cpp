@@ -501,7 +501,9 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 					if(idx<0)
 						idx=0;
 					V_RETURN(hr=m_pd3dDevice->SetIndices(mip->edges[idx].edge[k].indexBuffer));
-					V_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,mip->edges[0].edge[k].num_tris*3,0,mip->edges[idx].edge[k].num_tris))
+					int num_tris=mip->edges[idx].edge[k].num_tris;
+					int num_verts=mip->edges[idx].edge[k].num_verts;
+					V_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,num_verts,0,num_tris))
 					
 				}
 				if(mip->extraIndexBuffer)
@@ -719,7 +721,8 @@ HRESULT SimulTerrainRenderer::BuildMIPEdge(TerrainTile *tile,int i,int j,int mip
 	
 	// for each of the lower sizes, e.g. 3, we have one triangle, plus a fan of size 2^(diff)
 	int diff=lower_level-mip_level;
-			int U=1<<diff;
+	int U=1<<diff;
+	edge->num_verts=lower_tile_size*(1+U);
 	edge->num_tris=lower_tile_size*(1+U)-2;
 
 	if(edge->num_tris>0)
