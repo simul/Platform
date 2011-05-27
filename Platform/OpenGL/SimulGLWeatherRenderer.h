@@ -21,11 +21,14 @@
 
 class SimulGLSkyRenderer;
 class SimulGLLightningRenderer;
+#ifndef RENDERDEPTHBUFFERCALLBACK
+#define RENDERDEPTHBUFFERCALLBACK
 class RenderDepthBufferCallback
 {
 public:
 	virtual void Render()=0;
 };
+#endif
 //! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX program.
 //! You can take this entire class and use it as source in your project.
 //! Make appropriate modifications where required.
@@ -46,7 +49,7 @@ public:
 	//! Call this to release the memory for D3D device objects.
 	void Destroy();
 	//! Call this to draw the sky
-	void RenderSky(bool buffered);
+	void RenderSky(bool buffered=false);
 	//! Call this to draw the clouds
 	void RenderClouds(bool buffered,bool depth_testing,bool default_fog=false);
 	//! Apply a gamma-correction on the CPU before calculation, so gamma-correction in shaders is not needed. If 1.0 or zero this is ignored.

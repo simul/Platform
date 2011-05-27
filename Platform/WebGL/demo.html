@@ -1,0 +1,45 @@
+<html>
+	<head>
+		<title>Demo</title>
+		<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+		<script type="text/javascript" src="./scripts/webgl-utils.js"></script> 
+		<script type="text/javascript" src="./scripts/glMatrix-0.9.5.min.js"></script>
+		<script type="text/javascript" src="./scripts/truesky.js"></script>
+		<script id="shader-fs" type="x-shader/x-fragment">
+			#ifdef GL_ES
+			precision highp float;
+			#endif
+			varying vec4 vColour;
+
+			void main(void)
+			{
+				gl_FragColor = vColour;
+			}
+		</script>
+		<script id="shader-vs" type="x-shader/x-vertex">
+			attribute vec3 aVertexPosition;
+			attribute vec4 aVertexColour;
+
+			uniform mat4 uMVMatrix;
+			uniform mat4 uPMatrix;
+			varying vec4 vColour;
+
+			void main(void)
+			{
+				gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+				vColour = aVertexColour;
+			}
+		</script>
+		<script type="text/javascript" src="./scripts/render.js"></script>
+	</head>
+	<body onload="webGLStart();">
+		<a href="http://learningwebgl.com/blog/?p=28">&lt;&lt; Back to Lesson 1</a>
+		<br />
+
+		<canvas id="simul_canvas" style="border: none;" width="500" height="500">
+		</canvas>
+		<br/>
+		<a href="http://learningwebgl.com/blog/?p=28">&lt;&lt; Back to Lesson 1</a>
+		<br />
+	</body>
+</html> 

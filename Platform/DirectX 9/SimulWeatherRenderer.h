@@ -14,6 +14,8 @@
 #endif
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
+#include "Simul/Platform/DirectX 9/SimulLightningRenderer.h"
+#include "Simul/Platform/DirectX 9/SimulPrecipitationRenderer.h"
 #include "Simul/Platform/DirectX 9/Export.h"
 
 #ifdef _MSC_VER
@@ -21,11 +23,14 @@
 	#pragma warning(disable:4251)
 #endif
 
+#ifndef RENDERDEPTHBUFFERCALLBACK
+#define RENDERDEPTHBUFFERCALLBACK
 class RenderDepthBufferCallback
 {
 public:
 	virtual void Render()=0;
 };
+#endif
 //! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX 9 program.
 //! You can take this entire class and use it as source in your project, and 
 //! make appropriate modifications where required.
@@ -93,7 +98,7 @@ e.g. clouds, sky:
 		simulWeatherRenderer->RenderPrecipitation();
 	\endcode
 */
-SIMUL_DIRECTX9_EXPORT_CLASS SimulWeatherRenderer:public simul::clouds::BaseWeatherRenderer, public simul::graph::meta::Group
+SIMUL_DIRECTX9_EXPORT_CLASS SimulWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
 	SimulWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=320,
