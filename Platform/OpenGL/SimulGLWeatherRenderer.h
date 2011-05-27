@@ -9,10 +9,16 @@
 #ifdef _MSC_VER
 #include <GL/glew.h>
 #endif
+#include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Base/SmartPtr.h"
-
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
+#include "Simul/Platform/OpenGL/SimulGLLightningRenderer.h"
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
+
 class SimulGLSkyRenderer;
 class SimulGLLightningRenderer;
 class RenderDepthBufferCallback
@@ -23,7 +29,7 @@ public:
 //! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX program.
 //! You can take this entire class and use it as source in your project.
 //! Make appropriate modifications where required.
-class SimulGLWeatherRenderer:public simul::clouds::BaseWeatherRenderer
+SIMUL_OPENGL_EXPORT_CLASS SimulGLWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
 	SimulGLWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=640,
@@ -99,3 +105,6 @@ protected:
 	bool use_buffer;
 	bool tone_map;
 };
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif

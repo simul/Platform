@@ -404,20 +404,51 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWOR
 	V_RETURN(hr);
 	return hr;
 }
+/*
 
+{
+LPVOID lpMsgBuf;
+FormatMessage( 
+	FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+	FORMAT_MESSAGE_FROM_SYSTEM | 
+	FORMAT_MESSAGE_IGNORE_INSERTS,
+	NULL,
+	hr,
+	MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+	(LPTSTR) &lpMsgBuf,
+	0,
+	NULL 
+	);
+// Process any inserts in lpMsgBuf.
+// ...
+// Display the string.
+MessageBox( NULL, (LPCTSTR)lpMsgBuf, "Error", MB_OK | MB_ICONINFORMATION );
+// Free the buffer.
+atr=jj;
+LocalFree( lpMsgBuf );
+}
+*/
 HRESULT CanUseTexFormat(IDirect3DDevice9 *device,D3DFORMAT f)
 {
 	IDirect3D9 *pd3d=0;
 	HRESULT hr=device->GetDirect3D(&pd3d);
 	D3DDISPLAYMODE DisplayMode;
-	ZeroMemory(&DisplayMode, sizeof(D3DDISPLAYMODE));
-	device->GetDisplayMode(0, &DisplayMode);
-	hr=pd3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,DisplayMode.Format, 
-			D3DUSAGE_DYNAMIC,D3DRTYPE_TEXTURE,f);
+	ZeroMemory(&DisplayMode,sizeof(D3DDISPLAYMODE));
+	device->GetDisplayMode(0,&DisplayMode);
+	hr=pd3d->CheckDeviceFormat(D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,DisplayMode.Format,0,D3DRTYPE_TEXTURE,f);
+	if(hr==D3DERR_INVALIDCALL)
+	{
+		std::cout<<"D3DERR_INVALIDCALL "<<std::endl;
+	}
+	else if(hr==D3DERR_NOTAVAILABLE)
+	{
+		std::cout<<"D3DERR_NOTAVAILABLE "<<std::endl;
+	}
 	if(SUCCEEDED(hr))
-		std::cout<<"OK to use texture format"<<f<<std::endl;
+		std::cout<<"OK to use texture format "<<f<<std::endl;
 	if(FAILED(hr))
-		std::cout<<"Cannot use texture format"<<f<<std::endl;
+		std::cout<<"Cannot use texture format "<<f<<std::endl;
+	hr=S_OK;
 	return hr;
 }
 

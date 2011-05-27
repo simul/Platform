@@ -9,6 +9,8 @@
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseCloudRenderer.h"
+#include "Simul/Clouds/Cloud2DGeometryHelper.h"
+#include "Simul/Platform/OpenGL/Export.h"
 namespace simul
 {
 	namespace clouds
@@ -25,7 +27,7 @@ namespace simul
 	}
 }
 
-class SimulGL2DCloudRenderer : public simul::clouds::BaseCloudRenderer
+SIMUL_OPENGL_EXPORT_CLASS SimulGL2DCloudRenderer : public simul::clouds::BaseCloudRenderer
 {
 public:
 	SimulGL2DCloudRenderer();

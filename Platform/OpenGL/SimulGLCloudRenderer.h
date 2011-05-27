@@ -7,6 +7,7 @@
 
 #pragma once
 #include "Simul/Clouds/BaseCloudRenderer.h"
+#include "Simul/Platform/OpenGL/Export.h"
 namespace simul
 {
 	namespace clouds
@@ -25,7 +26,7 @@ namespace simul
 }
 
 //! A renderer for clouds in OpenGL.
-class SimulGLCloudRenderer : public simul::clouds::BaseCloudRenderer
+SIMUL_OPENGL_EXPORT_CLASS SimulGLCloudRenderer : public simul::clouds::BaseCloudRenderer
 {
 public:
 	SimulGLCloudRenderer();
