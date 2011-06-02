@@ -1,7 +1,13 @@
 #pragma once
 #include "Simul/Platform/OpenGL/Export.h"
 
-extern SIMUL_OPENGL_EXPORT void SetShaderPath(const char *path);
+namespace simul
+{
+	namespace opengl
+	{
+		extern SIMUL_OPENGL_EXPORT void SetShaderPath(const char *path);
+	}
+}
 extern SIMUL_OPENGL_EXPORT GLuint LoadProgram(GLuint prog,const char *filename,const char *defines=0);
 extern SIMUL_OPENGL_EXPORT void printProgramInfoLog(GLuint obj);
 #ifdef SIMULWEATHER_X_PLANE

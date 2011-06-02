@@ -18,42 +18,49 @@ static bool FileExists(const std::string& strFilename)
         fclose(pFile);
     return bExists;
 }
-void SaveTexture(LPDIRECT3DTEXTURE9 ldr_buffer_texture,const char *txt,bool as_dds)
+
+void SaveTexture(LPDIRECT3DTEXTURE9 texture,const char *txt)
 {
+	D3DXIMAGE_FILEFORMAT ff=D3DXIFF_PNG;
 	std::string path=ini.GetValue("Options","ScreenshotPath");
 	if(path=="")
 	{
 		path=".";
 	}
-	std::string filename=path+"\\";
-	filename+=txt;
-	if(as_dds)
-		filename+=".dds";
+	std::string filename=txt;
+	if(filename.find(':')<=filename.length())
+	{
+	}
 	else
-		filename+=".jpg";
+	{
+		filename=path+"\\";
+		filename+=txt;
+	}
+	if(filename.find(".dds")<=filename.length())
+		ff=D3DXIFF_DDS;
+	else if(filename.find(".hdr")<=filename.length())
+		ff=D3DXIFF_HDR;
+
+	int pos=filename.find_last_of('.');
+	std::string ext=filename.substr(pos,filename.length()-pos);
+	std::string root=filename.substr(0,pos-1);
 	int number=0;
 	while(FileExists(filename))
 	{
 		number++;
 		filename=path+"\\";
-		filename+=txt;
+		filename+=root;
 		char number_text[10];
 		sprintf_s(number_text,10,"%d",number);
 		filename+=number_text;
-		if(as_dds)
-			filename+=".dds";
-		else
-			filename+=".jpg";
+		filename+=ext;
 	}
 #ifdef UNICODE
 	std::wstring filename2=simul::base::StringToWString(filename);
 #else
 	std::string filename2=filename;
 #endif
-	D3DXSaveTextureToFile(filename2.c_str(),
-												as_dds?D3DXIFF_DDS:D3DXIFF_JPG,
-												ldr_buffer_texture,
-												NULL);
+	D3DXSaveTextureToFile(filename2.c_str(),ff,texture,NULL);
 //	V_CHECK(hr);
 }
 
@@ -86,7 +93,7 @@ void Screenshot(IDirect3DDevice9* pd3dDevice,const char *txt)
 	//SetViewPortHelper(0,0,backBufferDesc.Width,backBufferDesc.Height,pd3dDevice);
 	pd3dDevice->EndScene();
 	pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
-	SaveTexture(ldr_buffer_texture,txt,false);
+	SaveTexture(ldr_buffer_texture,txt);
 	SAFE_RELEASE(ldr_buffer_texture);
 	SAFE_RELEASE(pRenderTarget);
 	SAFE_RELEASE(m_pOldRenderTarget);

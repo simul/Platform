@@ -41,9 +41,9 @@ public:
 		bool colour_sky=false);
 	virtual ~SimulGLWeatherRenderer();
 	//standard d3d object interface functions
-	void Create();
+	//void Create();
 	//! Call this when the device has been created
-	void RestoreDeviceObjects();
+	//void RestoreDeviceObjects();
 	//! Call this when the 3D device has been lost.
 	void InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.

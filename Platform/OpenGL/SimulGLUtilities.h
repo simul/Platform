@@ -3,6 +3,11 @@
 
 #include "Simul/Platform/OpenGL/Export.h"
 
+
+extern void SIMUL_OPENGL_EXPORT CheckExtension(const char *txt);
+
+
+
 extern SIMUL_OPENGL_EXPORT void SetOrthoProjection(int w,int h);
 extern SIMUL_OPENGL_EXPORT void SetPerspectiveProjection(int w,int h,float field_of_view);
 extern SIMUL_OPENGL_EXPORT void RenderString(float x, float y, void *font, const char* string);

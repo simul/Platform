@@ -6,6 +6,7 @@
 #include "SimulGLCloudRenderer.h"
 #include "SimulGL2DCloudRenderer.h"
 #include "SimulGLLightningRenderer.h"
+#include "SimulGLUtilities.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Sky/FadeTableInterface.h"
 #include "Simul/Sky/SkyKeyframer.h"
@@ -26,13 +27,21 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
 		BufferWidth(width)
 		,BufferHeight(height)
 {
+	glewInit();
+	CheckExtension("GL_VERSION_2_0");
+	CheckExtension("GL_ARB_fragment_program");
+	CheckExtension("GL_ARB_vertex_program");
+	CheckExtension("GL_ARB_texture_float");
+	CheckExtension("GL_ARB_color_buffer_float");
+	CheckExtension("GL_EXT_framebuffer_object");
+
 	scene_buffer=NULL;
     if(scene_buffer)
         delete scene_buffer;
-    scene_buffer=new RenderTexture(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+   scene_buffer=new RenderTexture(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 
     scene_buffer->InitColor_Tex(0,buffer_format);
-    scene_buffer->InitDepth_RB();
+  // scene_buffer->InitDepth_RB();
 
 	// Now we know what time of day it is, initialize the sky texture:
 	if(sky)
@@ -105,6 +114,7 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 
 void SimulGLWeatherRenderer::RenderSky(bool buffered)
 {
+
 	ERROR_CHECK
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_PROJECTION);

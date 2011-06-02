@@ -105,12 +105,10 @@ void RenderTexture::InitColor_Tex(int index, GLenum iformat)
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(m_target, 0, iformat, m_width, m_height, 0,
-            GL_RGBA, GL_INT, NULL);
+    glTexImage2D(m_target, 0, iformat, m_width, m_height, 0,GL_RGBA, GL_INT, NULL);
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
-            GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 void RenderTexture::InitColor_None()

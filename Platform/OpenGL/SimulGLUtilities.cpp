@@ -3,8 +3,17 @@
 #include <windows.h>
 #include <GL/glew.h>
 #include <GL/glut.h>
+#include <iostream>
 #include "Simul/Base/Timer.h"
 
+void CheckExtension(const char *txt)
+{
+   if(!glewIsSupported(txt))
+    {
+		std::cerr<<"Error - required OpenGL extension is not supported: "<<txt<<std::endl;
+        exit(-1);
+    }
+}
 
 static int win_h=0;
 void SetOrthoProjection(int w,int h)

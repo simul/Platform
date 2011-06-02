@@ -2,21 +2,22 @@ var mvMatrix = mat4.create();
 var mvMatrixStack = [];
 var pMatrix = mat4.create();
 
-function mvPushMatrix()
+function pushMatrix(mat)
 {
 	var copy = mat4.create();
-	mat4.set(mvMatrix, copy);
+	mat4.set(mat, copy);
 	mvMatrixStack.push(copy);
 }
 
-function mvPopMatrix()
+function popMatrix()
 {
 	if (mvMatrixStack.length == 0)
 	{
 		throw "Invalid popMatrix!";
 	}
-	mvMatrix = mvMatrixStack.pop();
+	return mvMatrixStack.pop();
 }
+
 
 function degToRad(degrees)
 {
@@ -197,13 +198,14 @@ function drawScene()
 {
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-	mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+/*	
+	mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 1000.0, pMatrix);
 
 	mat4.identity(mvMatrix);
+	mat4.rotate(mvMatrix, degToRad(180), [1, 0, 0]);
+	mat4.translate(mvMatrix, [0, 0.0,25.0]);
 
-	mat4.translate(mvMatrix, [-1.5, 0.0, -7.0]);
-	mvPushMatrix();
+	pushMatrix(mvMatrix);
 	mat4.rotate(mvMatrix, degToRad(rTri), [0, 1, 0]);
 	gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
 	gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, triangleVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -211,18 +213,15 @@ function drawScene()
 	gl.vertexAttribPointer(shaderProgram.vertexColourAttribute, triangleVertexColourBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	setMatrixUniforms();
 	gl.drawArrays(gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems);
-	mvPopMatrix();
+	mvMatrix=popMatrix();
 
-	mat4.translate(mvMatrix, [3.0, 0.0, 0.0]);
-	mvPushMatrix();
-	mat4.rotate(mvMatrix, degToRad(rSquare), [1, 0, 0]);
-	gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
-	gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-	gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexColourBuffer);
-	gl.vertexAttribPointer(shaderProgram.vertexColourAttribute, squareVertexColourBuffer.itemSize, gl.FLOAT, false, 0, 0);
-	setMatrixUniforms();
-	gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
-	mvPopMatrix();
+
+	pushMatrix(mvMatrix);
+	pos=getJupiter();
+	mat4.translate(mvMatrix,pos);
+	mat4.rotate(mvMatrix, degToRad(rSquare), [0, 0, 1]);
+	drawSphere();
+	mvMatrix=popMatrix();*/
 }
 
 function tick()
@@ -238,8 +237,14 @@ function webGLStart()
 	initGL(canvas);
 	initShaders();
 	initBuffers();
+	initSphere();
 	gl.clearColor(0.0, 0.0, 1.0, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 
+    canvas.onmousedown = handleMouseDown;
+    document.onmouseup = handleMouseUp;
+    document.onmousemove = handleMouseMove;
+
+	jdn=2451545;
 	tick();
 }
