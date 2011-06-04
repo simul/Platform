@@ -52,9 +52,8 @@ SIMUL_DIRECTX9_EXPORT_CLASS SimulSkyRenderer : public simul::sky::BaseSkyRendere
 {
 public:
 	SimulSkyRenderer(bool UseColourSky=false);
-
 	virtual ~SimulSkyRenderer();
-
+	virtual void SaveTextures(const char *base_filename);
 	//standard d3d object interface functions
 	//! Call this when the D3D device has been created or reset.
 	HRESULT RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);

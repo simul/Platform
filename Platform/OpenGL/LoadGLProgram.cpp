@@ -10,6 +10,10 @@
 #include "LoadGLProgram.h"
 static std::string shaderPath;
 static std::string last_filename;
+
+using namespace simul;
+using namespace opengl;
+
 void printShaderInfoLog(GLuint obj)
 {
     int infologLength = 0;
@@ -49,9 +53,15 @@ void printProgramInfoLog(GLuint obj)
     }
 }
 
-void SetShaderPath(const char *path)
+namespace simul
 {
-	shaderPath=path;
+	namespace opengl
+	{
+		void SetShaderPath(const char *path)
+		{
+			shaderPath=path;
+		}
+	}
 }
 
 GLuint LoadProgram(GLuint prog,const char *filename,const char *defines)

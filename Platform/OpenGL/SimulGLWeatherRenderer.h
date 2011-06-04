@@ -9,21 +9,30 @@
 #ifdef _MSC_VER
 #include <GL/glew.h>
 #endif
+#include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Base/SmartPtr.h"
-
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
+#include "Simul/Platform/OpenGL/SimulGLLightningRenderer.h"
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
+
 class SimulGLSkyRenderer;
 class SimulGLLightningRenderer;
+#ifndef RENDERDEPTHBUFFERCALLBACK
+#define RENDERDEPTHBUFFERCALLBACK
 class RenderDepthBufferCallback
 {
 public:
 	virtual void Render()=0;
 };
+#endif
 //! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX program.
 //! You can take this entire class and use it as source in your project.
 //! Make appropriate modifications where required.
-class SimulGLWeatherRenderer:public simul::clouds::BaseWeatherRenderer
+SIMUL_OPENGL_EXPORT_CLASS SimulGLWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
 	SimulGLWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=640,
@@ -32,15 +41,15 @@ public:
 		bool colour_sky=false);
 	virtual ~SimulGLWeatherRenderer();
 	//standard d3d object interface functions
-	void Create();
+	//void Create();
 	//! Call this when the device has been created
-	void RestoreDeviceObjects();
+	//void RestoreDeviceObjects();
 	//! Call this when the 3D device has been lost.
 	void InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
 	void Destroy();
 	//! Call this to draw the sky
-	void RenderSky(bool buffered);
+	void RenderSky(bool buffered=false);
 	//! Call this to draw the clouds
 	void RenderClouds(bool buffered,bool depth_testing,bool default_fog=false);
 	//! Apply a gamma-correction on the CPU before calculation, so gamma-correction in shaders is not needed. If 1.0 or zero this is ignored.
@@ -99,3 +108,6 @@ protected:
 	bool use_buffer;
 	bool tone_map;
 };
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif

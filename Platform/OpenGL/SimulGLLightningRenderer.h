@@ -7,8 +7,9 @@
 
 #pragma once
 #include "Simul/Clouds/BaseLightningRenderer.h"
+#include "Simul/Platform/OpenGL/Export.h"
 
-class SimulGLLightningRenderer: public simul::clouds::BaseLightningRenderer
+SIMUL_OPENGL_EXPORT_CLASS SimulGLLightningRenderer: public simul::clouds::BaseLightningRenderer
 {
 public:
 	SimulGLLightningRenderer(simul::clouds::LightningRenderInterface *lri);

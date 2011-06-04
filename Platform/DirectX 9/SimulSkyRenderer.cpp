@@ -34,6 +34,7 @@
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Decay.h"
+#include "SaveTexture.h"
 #include "Resources.h"
 
 SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
@@ -75,6 +76,23 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	fadeTableInterface->SetEarthTest(false);
 	skyInterface->SetTime(0.5f);
 	SetCameraPosition(0,0,400.f);
+}
+
+void SimulSkyRenderer::SaveTextures(const char *base_filename)
+{
+	std::string filename_root(base_filename);
+	int pos=filename_root.find_last_of('.');
+	std::string ext=filename_root.substr(pos,4);
+	filename_root=filename_root.substr(0,pos);
+	for(int i=0;i<3;i++)
+	{
+		std::string filename=filename_root;
+		char txt[10];
+		sprintf(txt,"_%d",i);
+		filename+=txt;
+		filename+=ext;
+		SaveTexture(sky_textures[i],filename.c_str());
+	}
 }
 
 HRESULT SimulSkyRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
@@ -1093,7 +1111,7 @@ HRESULT SimulSkyRenderer::RenderPointStars()
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
 	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
-	hr=m_pd3dDevice->SetVertexDeclaration(NULL);
+	//hr=m_pd3dDevice->SetVertexDeclaration(NULL);
 	hr=m_pd3dDevice->SetFVF(D3DFVF_XYZ|D3DFVF_TEX0);
 
 	m_pSkyEffect->SetTechnique(m_hTechniquePointStars);

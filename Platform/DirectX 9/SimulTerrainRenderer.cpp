@@ -62,8 +62,8 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	heightmap->SetFractalFrequency(8);
 	heightmap->SetPersistence(0.7f);
 	heightmap->SetNumMipMapLevels(3);
-	heightmap->SetPageSize(513);
-	heightmap->SetTileSize(33);
+	heightmap->SetPageSize(257);
+	heightmap->SetTileSize(17);
 	heightmap->SetMaxHeight(8000.f);
 	heightmap->SetFractalOctaves(5);
 	heightmap->SetFractalScale(160000.f);
@@ -501,7 +501,9 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 					if(idx<0)
 						idx=0;
 					V_RETURN(hr=m_pd3dDevice->SetIndices(mip->edges[idx].edge[k].indexBuffer));
-					V_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,mip->edges[0].edge[k].num_tris*3,0,mip->edges[idx].edge[k].num_tris))
+					int num_tris=mip->edges[idx].edge[k].num_tris;
+					int num_verts=mip->edges[idx].edge[k].num_verts;
+					V_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,num_verts,0,num_tris))
 					
 				}
 				if(mip->extraIndexBuffer)
@@ -622,7 +624,7 @@ void SimulTerrainRenderer::ReleaseIndexBuffers()
 	}
 }
 
-int SimulTerrainRenderer::TilePosToIndex(int i,int j,int x,int y) const
+unsigned SimulTerrainRenderer::TilePosToIndex(int i,int j,int x,int y) const
 {
 	int grid=heightMapInterface->GetPageSize();
 	int tile_size=heightMapInterface->GetTileSize();
@@ -719,7 +721,9 @@ HRESULT SimulTerrainRenderer::BuildMIPEdge(TerrainTile *tile,int i,int j,int mip
 	
 	// for each of the lower sizes, e.g. 3, we have one triangle, plus a fan of size 2^(diff)
 	int diff=lower_level-mip_level;
-	edge->num_tris=lower_tile_size*(1+(1<<diff))-2;
+	int U=1<<diff;
+	edge->num_verts=lower_tile_size*(1+U);
+	edge->num_tris=lower_tile_size*(1+U)-2;
 
 	if(edge->num_tris>0)
 	{
@@ -739,12 +743,11 @@ HRESULT SimulTerrainRenderer::BuildMIPEdge(TerrainTile *tile,int i,int j,int mip
 			int b1;
 			int b2;
 			int b3;
-			int U=1<<diff;
 			for(int u=0;u<1+U;u++)
 			{
 				if(x==0&&u==1)
 					continue;
-				if(x==lower_tile_size-1&&u==1<<diff)
+				if(x==lower_tile_size-1&&u==U)
 					continue;
 				if(!u)
 				{

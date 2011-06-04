@@ -608,13 +608,11 @@ void SimulCloudRenderer::PerformFullGPURelight(int which_texture,float *target_d
 	// 4. Use the first target and the density volume texture as an input to rendering the second target.
 	// 5. Swap targets and repeat for all the positions in the Z grid.#m_pd3dDevice->BeginScene();
 	m_pd3dDevice->BeginScene();
-
 	IDirect3DSurface9 *pBuf;
 	hr=m_pd3dDevice->CreateOffscreenPlainSurface(light_gridsizes[0],light_gridsizes[1],D3DFMT_A32B32G32R32F,D3DPOOL_SYSTEMMEM,&pBuf,NULL);
 	for(int i=0;i<(int)light_gridsizes[2];i++)
 	{
 		// Copy the texture to an offscreen surface:
-	//	IDirect3DSurface9 *source_surf=NULL;
 		hr=m_pd3dDevice->GetRenderTargetData(pLightRenderTarget[0],pBuf);
 		D3DLOCKED_RECT rect;
 		pBuf->LockRect(&rect,NULL,0);
@@ -736,12 +734,12 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 		V_RETURN(CreateNoiseTexture());
 	}
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
-	m_pd3dDevice->SetSamplerState(0,D3DSAMP_SRGBTEXTURE,0);
+	/*m_pd3dDevice->SetSamplerState(0,D3DSAMP_SRGBTEXTURE,0);
 	m_pd3dDevice->SetSamplerState(1,D3DSAMP_SRGBTEXTURE,0);
 	m_pd3dDevice->SetSamplerState(2,D3DSAMP_SRGBTEXTURE,0);
 	m_pd3dDevice->SetSamplerState(3,D3DSAMP_SRGBTEXTURE,0);
 	m_pd3dDevice->SetSamplerState(4,D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(5,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(5,D3DSAMP_SRGBTEXTURE,0);*/
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);

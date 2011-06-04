@@ -404,20 +404,51 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWOR
 	V_RETURN(hr);
 	return hr;
 }
+/*
 
+{
+LPVOID lpMsgBuf;
+FormatMessage( 
+	FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+	FORMAT_MESSAGE_FROM_SYSTEM | 
+	FORMAT_MESSAGE_IGNORE_INSERTS,
+	NULL,
+	hr,
+	MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+	(LPTSTR) &lpMsgBuf,
+	0,
+	NULL 
+	);
+// Process any inserts in lpMsgBuf.
+// ...
+// Display the string.
+MessageBox( NULL, (LPCTSTR)lpMsgBuf, "Error", MB_OK | MB_ICONINFORMATION );
+// Free the buffer.
+atr=jj;
+LocalFree( lpMsgBuf );
+}
+*/
 HRESULT CanUseTexFormat(IDirect3DDevice9 *device,D3DFORMAT f)
 {
 	IDirect3D9 *pd3d=0;
 	HRESULT hr=device->GetDirect3D(&pd3d);
 	D3DDISPLAYMODE DisplayMode;
-	ZeroMemory(&DisplayMode, sizeof(D3DDISPLAYMODE));
-	device->GetDisplayMode(0, &DisplayMode);
-	hr=pd3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL,DisplayMode.Format, 
-			D3DUSAGE_DYNAMIC,D3DRTYPE_TEXTURE,f);
+	ZeroMemory(&DisplayMode,sizeof(D3DDISPLAYMODE));
+	device->GetDisplayMode(0,&DisplayMode);
+	hr=pd3d->CheckDeviceFormat(D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,DisplayMode.Format,0,D3DRTYPE_TEXTURE,f);
+	if(hr==D3DERR_INVALIDCALL)
+	{
+		std::cout<<"D3DERR_INVALIDCALL "<<std::endl;
+	}
+	else if(hr==D3DERR_NOTAVAILABLE)
+	{
+		std::cout<<"D3DERR_NOTAVAILABLE "<<std::endl;
+	}
 	if(SUCCEEDED(hr))
-		std::cout<<"OK to use texture format"<<f<<std::endl;
+		std::cout<<"OK to use texture format "<<f<<std::endl;
 	if(FAILED(hr))
-		std::cout<<"Cannot use texture format"<<f<<std::endl;
+		std::cout<<"Cannot use texture format "<<f<<std::endl;
+	hr=S_OK;
 	return hr;
 }
 
@@ -573,9 +604,9 @@ HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 	HRESULT hr=S_OK;
 	D3DVERTEXELEMENT9 decl[] = 
 	{
-		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0, 16, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
-		{ 0, 32, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 12, D3DDECLTYPE_D3DCOLOR	,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
+		{ 0, 16, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
 		D3DDECL_END()
 	};
 	if(!m_pHudVertexDecl)
@@ -585,8 +616,8 @@ HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 
 	struct Vertext
 	{
-		float x,y,z,h;
-		float r,g,b,a;
+		float x,y,z;
+		unsigned char r,g,b,a;
 		float tx,ty;
 	};
     m_pd3dDevice->SetVertexShader(NULL);
@@ -621,17 +652,17 @@ HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 		lines[i*2].x=pos[i*3];
 		lines[i*2].y=pos[i*3+1];
 		lines[i*2].z=pos[i*3+2];
-		lines[i*2].r=1.f;
-		lines[i*2].g=1.f;
-		lines[i*2].b=0.f;
-		lines[i*2].a=1;
+		lines[i*2].r=255;
+		lines[i*2].g=255;
+		lines[i*2].b=0;
+		lines[i*2].a=255;
 		lines[i*2+1].x=pos[i*3+3]; 
 		lines[i*2+1].y=pos[i*3+4];  
 		lines[i*2+1].z=pos[i*3+5];
-		lines[i*2+1].r=1.f;
-		lines[i*2+1].g=1.f;
-		lines[i*2+1].b=0.f;
-		lines[i*2+1].a=1;
+		lines[i*2+1].r=255;
+		lines[i*2+1].g=255;
+		lines[i*2+1].b=0;
+		lines[i*2+1].a=255;
 	}
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,num,lines,(unsigned)sizeof(Vertext));
 	delete [] lines;

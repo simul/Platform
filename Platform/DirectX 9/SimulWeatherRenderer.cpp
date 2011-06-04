@@ -546,7 +546,8 @@ HRESULT SimulWeatherRenderer::RenderPrecipitation()
 
 HRESULT SimulWeatherRenderer::RenderFlares()
 {
-	simulSkyRenderer->RenderFlare(exposure);
+	if(simulSkyRenderer)
+		simulSkyRenderer->RenderFlare(exposure);
 	return S_OK;
 }
 

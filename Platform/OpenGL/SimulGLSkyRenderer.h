@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Simul/Sky/BaseSkyRenderer.h"
+#include "Simul/Platform/OpenGL/Export.h"
 #include <cstdlib>
 namespace simul
 {
@@ -23,7 +24,7 @@ namespace simul
 }
 
 //! A sky rendering class for OpenGL.
-class SimulGLSkyRenderer : public simul::sky::BaseSkyRenderer
+SIMUL_OPENGL_EXPORT_CLASS SimulGLSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
 	SimulGLSkyRenderer();

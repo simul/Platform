@@ -272,6 +272,9 @@ void SimulGLSkyRenderer::CalcCameraPosition()
 
 bool SimulGLSkyRenderer::Render()
 {
+	glClearColor(1,1,0,1);
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+
 	simul::sky::float4 ratio=skyInterface->GetMieRayleighRatio();
 
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
