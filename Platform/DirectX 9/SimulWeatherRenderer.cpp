@@ -78,6 +78,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer;
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
 	ConnectInterfaces();
 	this->SetBufferSize(width,height);
 }
@@ -649,11 +650,6 @@ HRESULT SimulWeatherRenderer::RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture,in
 		{x,			y+height,	1,	1, 0	,1.f},
 	};
 #endif
-	//m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
-
-	//m_pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_LESSEQUAL);
-	//m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-
 	m_pTonemapEffect->SetTexture(bufferTexture,texture);
 	if(blend)
 		m_pTonemapEffect->SetTechnique(CloudBlendTechnique);

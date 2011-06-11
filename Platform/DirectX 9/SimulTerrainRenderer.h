@@ -94,6 +94,13 @@ public:
 	{
 		show_wireframe=s;
 	}
+	void SetYVertical(bool s)
+	{
+		y_vertical=s;
+		InvalidateDeviceObjects();
+		if(m_pd3dDevice)
+			RestoreDeviceObjects(m_pd3dDevice);
+	}
 	void SetMaxFadeDistanceKm(float dist_km)
 	{
 		max_fade_distance_metres=dist_km*1000.f;
@@ -106,6 +113,7 @@ public:
 	void TerrainModified();
 	const float *GetHighlightPos() const{return highlight_pos;}
 protected:
+	bool y_vertical;
 	bool enabled;
 	bool wrap_clouds;
 	bool rebuild_effect;
