@@ -95,7 +95,7 @@ class ExampleHumidityCallback:public simul::clouds::HumidityCallbackInterface
 public:
 	virtual float GetHumidityMultiplier(float ,float ,float z) const
 	{
-		static float base_layer=0.16f;
+		static float base_layer=0.46f;
 		static float transition=0.2f;
 		static float mul=0.5f;
 		static float default_=1.f;
@@ -187,6 +187,8 @@ SimulCloudRenderer::SimulCloudRenderer()
 	,sky_inscatter_texture_2(NULL)
 	,unitSphereVertexBuffer(NULL)
 	,unitSphereIndexBuffer(NULL)
+	,cloudScales(NULL)
+	,cloudOffset(NULL)
 	,rebuild_shaders(true)
 	,timing(0.f)
 	,vertices(NULL)
@@ -203,7 +205,7 @@ SimulCloudRenderer::SimulCloudRenderer()
 	for(int i=0;i<3;i++)
 		cloud_textures[i]=NULL;
 
-	cloudNode->AddHumidityCallback(&hum_callback);
+	//cloudNode->AddHumidityCallback(&hum_callback);
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 	
 	cloudInterface->Generate();
@@ -212,7 +214,7 @@ SimulCloudRenderer::SimulCloudRenderer()
 	cloudKeyframer->SetUse16Bit(false);
 	helper->SetYVertical(y_vertical);
 	// A noise filter improves the shape of the clouds:
-	cloudNode->GetNoiseInterface()->SetFilter(&circle_f);
+	//cloudNode->GetNoiseInterface()->SetFilter(&circle_f);
 }
 
 void SimulCloudRenderer::EnableFilter(bool f)
@@ -322,7 +324,7 @@ HRESULT SimulCloudRenderer::InitEffects()
 	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pGPULightingEffect,"simul_gpulighting.fx",defines));
 
 	m_hTechniqueCloud					=GetDX9Technique(m_pCloudEffect,"simul_clouds");
-	m_hTechniqueCloudMask				=GetDX9Technique(m_pCloudEffect,"cloud_mask");
+	m_hTechniqueCloudMask				=GetDX9Technique(m_pCloudEffect,"cloud_mask");		m_hTechniqueRaytraceWithLightning	=GetDX9Technique(m_pCloudEffect,"raytrace_clouds_and_lightning");
 	m_hTechniqueCloudsAndLightning		=GetDX9Technique(m_pCloudEffect,"simul_clouds_and_lightning");
 	m_hTechniqueCrossSectionXZ			=GetDX9Technique(m_pCloudEffect,"cross_section_xz");
 	m_hTechniqueCrossSectionXY			=GetDX9Technique(m_pCloudEffect,"cross_section_xy");
@@ -341,8 +343,8 @@ HRESULT SimulCloudRenderer::InitEffects()
 	cloudEccentricity		=m_pCloudEffect->GetParameterByName(NULL,"cloudEccentricity");
 	fadeInterp				=m_pCloudEffect->GetParameterByName(NULL,"fadeInterp");
 	distance				=m_pCloudEffect->GetParameterByName(NULL,"distance");
-	cornerPos				=m_pCloudEffect->GetParameterByName(NULL,"cornerPos");
-	texScales				=m_pCloudEffect->GetParameterByName(NULL,"texScales");
+//	cornerPos				=m_pCloudEffect->GetParameterByName(NULL,"cornerPos");
+//	texScales				=m_pCloudEffect->GetParameterByName(NULL,"texScales");
 	layerFade				=m_pCloudEffect->GetParameterByName(NULL,"layerFade");
 	altitudeTexCoord		=m_pCloudEffect->GetParameterByName(NULL,"altitudeTexCoord");
 	alphaSharpness			=m_pCloudEffect->GetParameterByName(NULL,"alphaSharpness");
@@ -363,6 +365,12 @@ HRESULT SimulCloudRenderer::InitEffects()
 	skyLossTexture2			=m_pCloudEffect->GetParameterByName(NULL,"skyLossTexture2");
 	skyInscatterTexture1	=m_pCloudEffect->GetParameterByName(NULL,"skyInscatterTexture1");
 	skyInscatterTexture2	=m_pCloudEffect->GetParameterByName(NULL,"skyInscatterTexture2");
+	
+	
+	
+	invViewProj			=m_pCloudEffect->GetParameterByName(NULL,"invViewProj");
+	cloudScales			=m_pCloudEffect->GetParameterByName(NULL,"cloudScales");
+	cloudOffset			=m_pCloudEffect->GetParameterByName(NULL,"cloudOffset");
 
 	rebuild_shaders=false;
 	return S_OK;
@@ -871,9 +879,11 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 	else
 		m_pCloudEffect->SetTechnique(m_hTechniqueCloud);
 
-	
 	//InternalRenderHorizontal();
-	InternalRenderVolumetric();
+	if(render_mode==SLICES)
+		InternalRenderVolumetric();
+	else
+		InternalRenderRaytrace();
 	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
 	PIXEndNamedEvent();
 	return hr;
@@ -990,6 +1000,58 @@ void SimulCloudRenderer::InternalRenderHorizontal()
 
 	hr=m_pCloudEffect->EndPass();
 	hr=m_pCloudEffect->End();
+}
+
+void SimulCloudRenderer::InternalRenderRaytrace()
+{
+	HRESULT hr=S_OK;
+	m_pCloudEffect->SetTechnique(m_hTechniqueRaytraceWithLightning);
+	PIXWrapper(0xFFFFFF00,"Render Cloud Raytrace")
+	{
+#ifndef XBOX
+		m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+		m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+#endif
+		D3DXMATRIX wvp,vpt,ivp;
+		//FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,y_vertical);
+		D3DXMATRIX viewproj;
+		view._41=view._42=view._43=0;
+		D3DXMatrixMultiply(&viewproj,&view,&proj);
+		MakeWorldViewProjMatrix(&wvp,world,view,proj);
+		m_pCloudEffect->SetMatrix(worldViewProj, &wvp);
+		D3DXMatrixTranspose(&vpt,&viewproj);
+		D3DXMatrixInverse(&ivp,NULL,&vpt);
+		hr=m_pCloudEffect->SetMatrix(invViewProj,&ivp);
+		simul::sky::float4 cloud_scales=GetCloudScales();
+		simul::sky::float4 cloud_offset=GetCloudOffset();
+	
+		m_pCloudEffect->SetVector	(cloudScales	,(const D3DXVECTOR4*)&cloud_scales);
+		m_pCloudEffect->SetVector	(cloudOffset	,(const D3DXVECTOR4*)&cloud_offset);
+		D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
+		hr=m_pCloudEffect->SetFloat(fadeInterp,fade_interp);
+		hr=m_pCloudEffect->SetFloat(altitudeTexCoord,altitude_tex_coord);
+		if(skyInterface)
+		{
+//		hr=m_pCloudEffect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
+			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
+			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
+			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(cam_pos.y));
+			
+			//light_colour*=strength;
+			if(y_vertical)
+				std::swap(sun_dir.y,sun_dir.z);
+
+			m_pCloudEffect->SetVector	(lightDir			,&sun_dir);
+//		m_pCloudEffect->SetVector	(lightColour	,(const D3DXVECTOR4*)&light_colour);
+		}
+//	hr=m_pCloudEffect->SetTexture(maxDistanceTexture,max_distance_texture);
+		
+		m_pCloudEffect->SetVector	(cloudScales	,(const D3DXVECTOR4*)&cloud_scales);
+		m_pCloudEffect->SetVector	(cloudOffset	,(const D3DXVECTOR4*)&cloud_offset);
+		m_pCloudEffect->SetVector	(eyePosition	,&cam_pos);
+
+		hr=DrawFullScreenQuad(m_pd3dDevice,m_pCloudEffect);
+	}
 }
 
 void SimulCloudRenderer::InternalRenderVolumetric()

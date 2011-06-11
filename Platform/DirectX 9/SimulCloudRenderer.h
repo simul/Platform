@@ -106,6 +106,7 @@ public:
 protected:
 	bool y_vertical;
 	void InternalRenderHorizontal();
+	void InternalRenderRaytrace();
 	void InternalRenderVolumetric();
 	float max_fade_distance_metres;
 	HRESULT InitEffects();
@@ -161,6 +162,7 @@ protected:
 	D3DXHANDLE						m_hTechniqueCloud;		// Handle to technique in the effect
 	D3DXHANDLE						m_hTechniqueCloudMask;		// Handle to technique in the effect
 	D3DXHANDLE						m_hTechniqueCloudsAndLightning;	
+	D3DXHANDLE						m_hTechniqueRaytraceWithLightning;	
 	D3DXHANDLE						m_hTechniqueCrossSectionXZ;	
 	D3DXHANDLE						m_hTechniqueCrossSectionXY;	
 	
@@ -180,8 +182,8 @@ protected:
 	D3DXHANDLE cloudEccentricity;
 	D3DXHANDLE fadeInterp;
 	D3DXHANDLE distance;
-	D3DXHANDLE cornerPos;
-	D3DXHANDLE texScales;
+	//D3DXHANDLE cornerPos;
+	//D3DXHANDLE texScales;
 	D3DXHANDLE layerFade;
 	D3DXHANDLE alphaSharpness;
 	D3DXHANDLE altitudeTexCoord;
@@ -200,6 +202,10 @@ protected:
 	D3DXHANDLE	skyLossTexture2;
 	D3DXHANDLE	skyInscatterTexture1;
 	D3DXHANDLE	skyInscatterTexture2;
+	
+	D3DXHANDLE						invViewProj;
+	D3DXHANDLE						cloudScales;
+	D3DXHANDLE						cloudOffset;
 
 	LPDIRECT3DVOLUMETEXTURE9	cloud_textures[3];
 	LPDIRECT3DVOLUMETEXTURE9	illumination_texture;

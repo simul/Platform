@@ -270,7 +270,7 @@ HRESULT SimulAtmosphericsRenderer::DrawFullScreenQuad()
 		D3DXMATRIX vpt;
 		D3DXMATRIX viewproj;
 		view._41=view._42=view._43=0;
-		D3DXMatrixMultiply(&viewproj, &view,&proj);
+		D3DXMatrixMultiply(&viewproj,&view,&proj);
 		D3DXMatrixTranspose(&vpt,&viewproj);
 		D3DXMATRIX ivp;
 		D3DXMatrixInverse(&ivp,NULL,&vpt);
@@ -286,10 +286,10 @@ HRESULT SimulAtmosphericsRenderer::DrawFullScreenQuad()
 		};
 		Vertext vertices[4] =
 		{
-			{x,			y,			0	,0},
-			{x+w,		y,			0	,0},
-			{x+w,		y+h,		1.f,0},
-			{x,			y+h,		1.f,0},
+			{x,		y,		0	,0},
+			{x+w,	y,		0	,0},
+			{x+w,	y+h,	1.f,0},
+			{x,		y+h,	1.f,0},
 		};
 	#else
 		D3DSURFACE_DESC desc;

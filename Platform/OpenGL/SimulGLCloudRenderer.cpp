@@ -85,12 +85,11 @@ bool SimulGLCloudRenderer::Create()
 	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 	CreateNoiseTexture();
 	cloudInterface->Generate();
-	cloudInterface->SetHumidity(0.5f);
+	//cloudInterface->SetHumidity(0.5f);
 	// Must use this next line to prevent the above properties from being overwritten by the keyframes
-	cloudKeyframer->InitKeyframesFromClouds();
+	//cloudKeyframer->InitKeyframesFromClouds();
 	return true;
 }
-
 
 bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
 {

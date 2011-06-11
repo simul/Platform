@@ -678,3 +678,66 @@ void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,
 	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 	D3DXMatrixTranspose(wvp,&tmp2);
 }
+
+
+
+HRESULT DrawFullScreenQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT effect)
+{
+	HRESULT hr=S_OK;
+	D3DXMATRIX vpt;
+	D3DXMATRIX viewproj,view,proj;
+#ifndef XBOX
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+#endif
+	view._41=view._42=view._43=0;
+	D3DXMatrixMultiply(&viewproj,&view,&proj);
+	D3DXMatrixTranspose(&vpt,&viewproj);
+	D3DXMATRIX ivp;
+	D3DXMatrixInverse(&ivp,NULL,&vpt);
+	//hr=effect->SetMatrix(invViewProj,&ivp);
+	#ifdef XBOX
+	float x=-1.f,y=1.f;
+	float w=2.f;
+	float h=-2.f;
+	struct Vertext
+	{
+		float x,y;
+		float tx,ty,tz;
+	};
+	Vertext vertices[4] =
+	{
+		{x,			y,			0	,0},
+		{x+w,		y,			0	,0},
+		{x+w,		y+h,		1.f,0},
+		{x,			y+h,		1.f,0},
+	};
+#else
+//	D3DSURFACE_DESC desc;
+	//if(input_texture)
+	//	input_texture->GetLevelDesc(0,&desc);
+
+	struct Vertext
+	{
+		float x,y;
+		float tx,ty,tz;
+	};
+	Vertext vertices[4] =
+	{
+		{-1.f,	-1.f	,0.5f	,0		,1.f},
+		{ 1.f,	-1.f	,0.5f	,1.f	,1.f},
+		{ 1.f,	 1.f	,0.5f	,1.f	,0	},
+		{-1.f,	 1.f	,0.5f	,0		,0	},
+	};
+#endif
+	D3DXMATRIX ident;
+	D3DXMatrixIdentity(&ident);
+	//m_pd3dDevice->SetVertexDeclaration(vertexDecl);
+	UINT passes=1;
+	hr=effect->Begin(&passes,0);
+	hr=effect->BeginPass(0);
+	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
+	hr=effect->EndPass();
+	hr=effect->End();
+	return hr;
+}

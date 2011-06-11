@@ -15,6 +15,7 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Platform/DirectX 9/Export.h"
+#include "Simul/Sky/BaseAtmosphericsRenderer.h"
 typedef long HRESULT;
 namespace simul
 {
@@ -41,7 +42,7 @@ public:
 };
 
 // A class that takes an image buffer and a z-buffer and applies atmospheric fading.
-class SimulAtmosphericsRenderer : public SimulAtmosphericsInterface, public simul::graph::meta::Group
+class SimulAtmosphericsRenderer : public SimulAtmosphericsInterface, public simul::sky::BaseAtmosphericsRenderer
 {
 public:
 	SimulAtmosphericsRenderer();
@@ -99,6 +100,7 @@ public:
 	{
 		altitude_tex_coord=f;
 	}
+	// implementing BaseAtmosphericsRenderer
 	void SetYVertical(bool y)
 	{
 		y_vertical=y;

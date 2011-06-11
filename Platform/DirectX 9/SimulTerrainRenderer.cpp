@@ -41,6 +41,7 @@ simul::terrain::HeightMapInterface *heightMapInterface;
 
 SimulTerrainRenderer::SimulTerrainRenderer() :
 	m_pVtxDecl(NULL)
+	,m_pd3dDevice(NULL)
 	,m_pTerrainEffect(NULL)
 	,terrain_texture(NULL)
 	,detail_texture(NULL)
@@ -55,6 +56,7 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	,elevation_map_texture(NULL)
 	,show_wireframe(false)
 	,rebuild_effect(true)
+	,y_vertical(true)
 	,max_fade_distance_metres(300000.f)
 {
 	heightmap=new simul::terrain::HeightMapNode();
@@ -64,7 +66,7 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	heightmap->SetNumMipMapLevels(3);
 	heightmap->SetPageSize(257);
 	heightmap->SetTileSize(17);
-	heightmap->SetMaxHeight(8000.f);
+	heightmap->SetMaxHeight(6000.f);
 	heightmap->SetFractalOctaves(5);
 	heightmap->SetFractalScale(160000.f);
 	heightmap->SetPageWorldX(120000.f);
@@ -151,12 +153,16 @@ void SimulTerrainRenderer::GetVertex(int i,int j,TerrainVertex_t *V)
 	V->x=(X-0.5f)*heightMapInterface->GetPageWorldX();
 	V->y=heightMapInterface->GetHeightAt(i,j);
 	V->z=(Y-0.5f)*heightMapInterface->GetPageWorldZ();
+	if(!y_vertical)
+		std::swap(V->y,V->z);
 	simul::math::Vector3 n=heightMapInterface->GetNormalAt(i,j);
 	V->normal_x=n.x;
 	V->normal_y=n.z;
 	V->normal_z=n.y;
+	if(!y_vertical)
+		std::swap(n.y,n.z);
 	//V->ca=1.f-(1.f-saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f)*saturate((800.f-V->y)/200.f);
-	V->ca=GrassFunction(V->y,n);
+	V->ca=GrassFunction(y_vertical?V->y:V->z,n);
 	static float tex_scale=20.f;
 	V->tex_x=tex_scale*X;
 	V->tex_y=tex_scale*Y;
@@ -171,10 +177,14 @@ void SimulTerrainRenderer::GetVertex(float x,float y,TerrainVertex_t *V)
 	V->x=x;
 	V->y=heightMapInterface->GetHeightAt(x,y);
 	V->z=y;
+	if(!y_vertical)
+		std::swap(V->y,V->z);
 	simul::math::Vector3 n=heightMapInterface->GetNormalAt(x,y);
 	V->normal_x=n.x;
 	V->normal_y=n.z;
 	V->normal_z=n.y;
+	if(!y_vertical)
+		std::swap(n.y,n.z);
 	//V->ca=(saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f)*saturate((800.f-V->y)/200.f);
 	V->ca=GrassFunction(V->y,n);
 	V->tex_x=130.f*X;
@@ -266,6 +276,8 @@ HRESULT SimulTerrainRenderer::CreateEffect()
 	char max_fade_distance_str[25];
 	sprintf_s(max_fade_distance_str,25,"%g",max_fade_distance_metres);
 	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
+	if(y_vertical)
+		defines["Y_VERTICAL"]='1';
 	hr=CreateDX9Effect(m_pd3dDevice,m_pTerrainEffect,"simul_terrain.fx",defines);
 
 	m_hTechniqueTerrain	=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
@@ -371,9 +383,12 @@ HRESULT SimulTerrainRenderer::Render()
 			float dx=cc*cos(angle);
 			float dy=cc*sin(angle);
 			pos[i*3+0]=highlight_pos.x+dx;
-			pos[i*3+2]=highlight_pos.z+dy;
-//		float z=heightMapInterface->GetHeightAt(pos[i*3+0],pos[i*3+2]);
-			pos[i*3+1]=highlight_pos.y;//z;
+			pos[i*3+1]=highlight_pos.z+dy;
+			pos[i*3+2]=highlight_pos.y;//z;
+			if(y_vertical)
+			{
+				std::swap(pos[i*3+1],pos[i*3+2]);
+			}
 		}
 		RenderLines(m_pd3dDevice,12,pos);
 	}
@@ -428,13 +443,15 @@ HRESULT SimulTerrainRenderer::InternalRender(bool depth_only)
 	{
 		D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
 		D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
-	//if(y_vertical)
-		std::swap(sun_dir.y,sun_dir.z);
+		if(y_vertical)
+			std::swap(sun_dir.y,sun_dir.z);
 
 		m_pTerrainEffect->SetVector	(lightDirection		,&sun_dir);
 		m_pTerrainEffect->SetVector	(MieRayleighRatio	,&mie_rayleigh_ratio);
 		m_pTerrainEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
-		float alt_km=cam_pos.y*0.001f;
+		float alt_km=cam_pos.z*0.001f;
+		if(y_vertical)
+			alt_km=cam_pos.y*0.001f;
 		static float light_mult=0.08f;
 		simul::sky::float4 light_colour=light_mult*skyInterface->GetLocalIrradiance(alt_km);
 		simul::sky::float4 ambient_colour=skyInterface->GetAmbientLight(alt_km);
@@ -582,17 +599,21 @@ void SimulTerrainRenderer::Highlight(const float *x,const float *d)
 	simul::math::Vector3 D(d);
 	D.Normalize();
 	simul::math::Vector3 I;
-	std::swap(X.y,X.z);
-	std::swap(D.y,D.z);
-
+	if(y_vertical)
+	{
+		std::swap(X.y,X.z);
+		std::swap(D.y,D.z);
+	}
 	highlight_pos.x=highlight_pos.y=highlight_pos.z=0;
 	if(heightMapInterface->Collide(X,D,I))
 	{
 		if((I-X).Magnitude()<100000.f)
 		{
 			highlight_pos.x=I.x;
-			highlight_pos.y=I.z;
-			highlight_pos.z=I.y;
+			highlight_pos.y=I.y;
+			highlight_pos.z=I.z;
+			if(y_vertical)
+				std::swap(highlight_pos.y,highlight_pos.z);
 		}
 	}
 }
@@ -664,12 +685,14 @@ HRESULT SimulTerrainRenderer::BuildRoad()
 		simul::math::float2 left ((const float*)(x+dx));
 		simul::math::float2 right((const float*)(x-dx));
 		GetVertex(right.x,right.y,V);
-		V->y=x.z;
+		V->z=x.z;
 		V->tex_x=0.f;
 		V->tex_y=along/tex_repeat_length;
 		V++;
 		GetVertex( left.x, left.y,V);
-		V->y=x.z;
+		V->z=x.z;
+		if(y_vertical)
+			std::swap(V->y,V->z);
 		V->tex_x=1.f;
 		V->tex_y=along/tex_repeat_length;
 		V++;
