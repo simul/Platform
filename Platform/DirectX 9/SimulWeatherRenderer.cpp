@@ -165,6 +165,7 @@ bool SimulWeatherRenderer::Restore2DCloudObjects()
 	}
 	return (hr==S_OK);
 }
+
 bool SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
@@ -172,9 +173,7 @@ bool SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 	if(!m_pTonemapEffect)
 		B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,"gamma.fx"));
 	DirectTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
-	
 	CloudBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_cloud_blend");
-
 	bufferTexture		=m_pTonemapEffect->GetParameterByName(NULL,"hdrTexture");
 	B_RETURN(CreateBuffers());
 	if(simulSkyRenderer)
@@ -183,7 +182,6 @@ bool SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 	B_RETURN(Restore2DCloudObjects());
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);
-
 	UpdateSkyAndCloudHookup();
 	return (hr==S_OK);
 }
@@ -211,20 +209,6 @@ bool SimulWeatherRenderer::InvalidateDeviceObjects()
 	lowdef_framebuffer.InvalidateDeviceObjects();
 	return (hr==S_OK);
 }
-/*
-bool SimulWeatherRenderer::Destroy()
-{
-	HRESULT hr=InvalidateDeviceObjects();
-	if(simulSkyRenderer)
-		simulSkyRenderer->Destroy();
-	if(simulCloudRenderer)
-		simulCloudRenderer->Destroy();
-	if(simul2DCloudRenderer)
-		simul2DCloudRenderer->Destroy();
-	if(simulPrecipitationRenderer)
-		simulPrecipitationRenderer->Destroy();
-	return (hr==S_OK);
-}*/
 
 SimulWeatherRenderer::~SimulWeatherRenderer()
 {

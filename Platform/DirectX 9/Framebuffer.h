@@ -6,8 +6,18 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Platform/DirectX 9/Export.h"
+#ifndef FRAMEBUFFER_INTERFACE
+class FramebufferInterface
+{
+public:
+	virtual void Activate()=0;
+	virtual void Deactivate()=0;
+	virtual void DeactivateAndRender()=0;
+	virtual void Render()=0;
+};
+#endif
 
-SIMUL_DIRECTX9_EXPORT_CLASS Framebuffer
+SIMUL_DIRECTX9_EXPORT_CLASS Framebuffer:public FramebufferInterface
 {
 public:
 	Framebuffer();
