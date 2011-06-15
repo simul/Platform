@@ -84,7 +84,7 @@ public:
 protected:
 	//! This is set once the GL device has been initialized - then we can create textures and so forth.
 	bool device_initialized;
-	class RenderTexture *scene_buffer;
+	class FramebufferGL *scene_buffer;
 	void UpdateSkyAndCloudHookup();
 	bool AlwaysRenderCloudsLate;
 	bool RenderCloudsLate;

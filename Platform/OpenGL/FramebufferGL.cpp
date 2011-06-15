@@ -1,4 +1,4 @@
-#include "RenderTextureFBO.h"
+#include "FramebufferGL.h"
 #include <iostream>
 #include "LoadGLProgram.h"
 

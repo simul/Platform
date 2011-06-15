@@ -12,23 +12,23 @@
 #include "LoadGLImage.h"
 
 #ifndef FRAMEBUFFER_INTERFACE
+#define FRAMEBUFFER_INTERFACE
 class FramebufferInterface
 {
 public:
 	virtual void Activate()=0;
 	virtual void Deactivate()=0;
-	virtual void DeactivateAndRender()=0;
-	virtual void Render()=0;
+	virtual void DeactivateAndRender(bool blend)=0;
 };
 #endif
 
-class RenderTexture:public FramebufferInterface
+class FramebufferGL:public FramebufferInterface
 {
 public:
-	RenderTexture(int w, int h, GLenum target = GL_TEXTURE_RECTANGLE_NV,
+	FramebufferGL(int w, int h, GLenum target = GL_TEXTURE_RECTANGLE_NV,
 			int samples = 0, int coverageSamples = 0);
 
-	~RenderTexture();
+	~FramebufferGL();
 
 	void SetExposure(float e)
 	{
@@ -42,70 +42,71 @@ public:
 	// In order to use a color buffer, either
 	// InitColor_RB or InitColor_Tex needs to be called.
 	void InitColor_RB(int index = 0, GLenum iformat = GL_FLOAT_RGBA16_NV);
-
 	void InitColor_Tex(int index = 0, GLenum iformat = GL_FLOAT_RGBA16_NV);
 	void InitColor_None();
-
 	// In order to use a depth buffer, either
 	// InitDepth_RB or InitDepth_Tex needs to be called.
 	void InitDepth_RB(GLenum iformat = GL_DEPTH_COMPONENT24);
-
 	void InitDepth_Tex(GLenum iformat = GL_DEPTH_COMPONENT24);
-
 	// Activate / deactivate the FBO as a render target
 	// The FBO needs to be deactivated when using the associated textures.
 	void Activate();
-	void DrawQuad(int w, int h);
-	void DeactivateAndRender(bool blend);
-
 	void Deactivate();
-
+	void DeactivateAndRender();
+	void DeactivateAndRender(bool blend);
+	void Render();
+	void Render(bool blend);
+	void DrawQuad(int w, int h);
+private:
+	void InitShader();
+	void CheckFramebufferStatus();
 	// Bind the internal textures
-	void BindColor(int index = 0) {
+	void BindColor(int index = 0)
+	{
 		glBindTexture(m_target, m_tex_col[index]);
 	}
-	inline void Bind(int index = 0) {
+	inline void Bind(int index = 0)
+	{
 		BindColor(index);
 	}
 	// aliased to BindColor.  this reduces app code changes while migrating
 	// from the pbuffer implementation.
-	void BindDepth() {
+	void BindDepth()
+	{
 		glBindTexture(m_target, m_tex_depth);
 	}
-	void Release() {
+	void Release()
+	{
 		glBindTexture(m_target, 0);
 	}
-
-	// Get the dimention of the surface
-	inline int GetWidth() {
+	// Get the dimension of the surface
+	inline int GetWidth()
+	{
 		return m_width;
 	}
-	inline int GetHeight() {
+	inline int GetHeight()
+	{
 		return m_height;
 	}
-
 	// Get the internal texutre object IDs.
-	inline GLenum GetColorTex(int index = 0) {
+	inline GLenum GetColorTex(int index = 0)
+	{
 		return m_tex_col[index];
 	}
-	inline GLenum GetDepthTex() {
+	inline GLenum GetDepthTex()
+	{
 		return m_tex_depth;
 	}
-
 	// Get the target texture format (texture2d or texture_rectangle)
-	inline GLenum GetTarget() {
+	inline GLenum GetTarget()
+	{
 		return m_target;
 	}
-
-	inline GLuint GetFramebuffer() {
+	inline GLuint GetFramebuffer()
+	{
 		return m_fb;
 	}
-
-private:
-	void InitShader();
-	void CheckFramebufferStatus();
 	const static int num_col_buffers = 16;
-
 	int main_viewport[4];
 	int m_width, m_height;
 	GLenum m_target;
@@ -119,11 +120,9 @@ private:
 	GLuint tonemap_vertex_shader;
 	GLuint tonemap_fragment_shader;
 	GLuint tonemap_program;
-
 	GLint exposure_param;
 	GLint gamma_param;
 	GLint buffer_tex_param;
-
 	float exposure, gamma;
 };
 

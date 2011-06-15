@@ -1,5 +1,5 @@
 
-#include "RenderTextureFBO.h"
+#include "FramebufferGL.h"
 #include "LoadGLProgram.h"
 #include "SimulGLWeatherRenderer.h"
 #include "SimulGLSkyRenderer.h"
@@ -41,7 +41,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
 	scene_buffer=NULL;
     if(scene_buffer)
         delete scene_buffer;
-   scene_buffer=new RenderTexture(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+   scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 
     scene_buffer->InitColor_Tex(0,buffer_format);
   // scene_buffer->InitDepth_RB();
