@@ -50,10 +50,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/boost&quot;"
 				PreprocessorDefinitions="WIN32;_LIB;VISUAL_CPP;UNIT_TEST;NDEBUG;INTEL_COMPATIBLE;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX9_DLL"
 				MinimalRebuild="false"
@@ -80,7 +76,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ShowProgress="2"
 				OutputFile="$(OutDir)\$(SafeParentName)_MD.dll"
 				AdditionalLibraryDirectories="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)"
 				IgnoreDefaultLibraryNames="$(SafeParentName)_MD.lib"
@@ -108,6 +103,75 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Xbox 360"
+			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
+			ConfigurationType="4"
+			UseOfMFC="-1"
+			UseOfATL="0"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLX360CompilerTool"
+				Optimization="0"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				AdditionalIncludeDirectories="$(SIMUL)/../;$(SIMUL)/External/boost"
+				PreprocessorDefinitions="_LIB;VISUAL_CPP;UNIT_TEST;NDEBUG;_XBOX;_CRT_SECURE_NO_DEPRECATE;SIMUL_BASE_DLL"
+				MinimalRebuild="false"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="2"
+				ForceConformanceInForLoopScope="true"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="0"
+				WarningLevel="4"
+				DebugInformationFormat="3"
+				CallingConvention="0"
+				DisableSpecificWarnings=""
+				ForcedIncludeFiles="&quot;Simul/UseStaticLibs.h&quot;"
+				ForcedUsingFiles=""
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\$(SafeParentName)_MD.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+			<DebuggerTool
 			/>
 		</Configuration>
 		<Configuration
@@ -194,218 +258,6 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Static Debug|Win32"
-			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
-			ConfigurationType="4"
-			CharacterSet="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/boost&quot;"
-				PreprocessorDefinitions="WIN32;_LIB;VISUAL_CPP;UNIT_TEST;INTEL_COMPATIBLE;SIMUL_EXCEPTIONS;CHECK_LIST_BOUNDS;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX9_DLL"
-				MinimalRebuild="false"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				BufferSecurityCheck="true"
-				EnableFunctionLevelLinking="false"
-				EnableEnhancedInstructionSet="2"
-				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="4"
-				CallingConvention="0"
-				DisableSpecificWarnings=""
-				ForcedIncludeFiles="&quot;Simul/UseStaticLibs.h&quot;"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(SafeParentName)_MDd.lib"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Static Release|Win32"
-			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
-			ConfigurationType="4"
-			CharacterSet="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				InlineFunctionExpansion="2"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/boost&quot;"
-				PreprocessorDefinitions="WIN32;_LIB;VISUAL_CPP;UNIT_TEST;NDEBUG;INTEL_COMPATIBLE;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX9_DLL"
-				MinimalRebuild="false"
-				BasicRuntimeChecks="0"
-				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="3"
-				CallingConvention="0"
-				DisableSpecificWarnings=""
-				ForcedIncludeFiles="&quot;Simul/UseStaticLibs.h&quot;"
-				ForcedUsingFiles=""
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(SafeParentName)_MD.lib"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Xbox 360"
-			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
-			ConfigurationType="4"
-			UseOfMFC="-1"
-			UseOfATL="0"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLX360CompilerTool"
-				Optimization="0"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="$(SIMUL)/../;$(SIMUL)/External/boost"
-				PreprocessorDefinitions="_LIB;VISUAL_CPP;UNIT_TEST;NDEBUG;_XBOX;_CRT_SECURE_NO_DEPRECATE;SIMUL_BASE_DLL"
-				MinimalRebuild="false"
-				BasicRuntimeChecks="0"
-				RuntimeLibrary="2"
-				ForceConformanceInForLoopScope="true"
-				RuntimeTypeInfo="true"
-				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				DebugInformationFormat="3"
-				CallingConvention="0"
-				DisableSpecificWarnings=""
-				ForcedIncludeFiles="&quot;Simul/UseStaticLibs.h&quot;"
-				ForcedUsingFiles=""
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(SafeParentName)_MD.lib"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-			<DebuggerTool
-			/>
-		</Configuration>
-		<Configuration
 			Name="Debug|Xbox 360"
 			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
@@ -471,6 +323,78 @@
 				Name="VCPostBuildEventTool"
 			/>
 			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="Static Debug|Win32"
+			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="1"
+			WholeProgramOptimization="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/boost&quot;"
+				PreprocessorDefinitions="WIN32;_LIB;VISUAL_CPP;UNIT_TEST;INTEL_COMPATIBLE;SIMUL_EXCEPTIONS;CHECK_LIST_BOUNDS;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX9_DLL"
+				MinimalRebuild="false"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				BufferSecurityCheck="true"
+				EnableFunctionLevelLinking="false"
+				EnableEnhancedInstructionSet="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="4"
+				WarnAsError="true"
+				Detect64BitPortabilityProblems="false"
+				DebugInformationFormat="4"
+				CallingConvention="0"
+				DisableSpecificWarnings=""
+				ForcedIncludeFiles="&quot;Simul/UseStaticLibs.h&quot;"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\$(SafeParentName)_MD.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
@@ -540,6 +464,79 @@
 				Name="VCPostBuildEventTool"
 			/>
 			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="Static Release|Win32"
+			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="1"
+			WholeProgramOptimization="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/boost&quot;"
+				PreprocessorDefinitions="WIN32;_LIB;VISUAL_CPP;UNIT_TEST;NDEBUG;INTEL_COMPATIBLE;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX9_DLL"
+				MinimalRebuild="false"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="4"
+				WarnAsError="true"
+				Detect64BitPortabilityProblems="false"
+				DebugInformationFormat="3"
+				CallingConvention="0"
+				DisableSpecificWarnings=""
+				ForcedIncludeFiles="&quot;Simul/UseStaticLibs.h&quot;"
+				ForcedUsingFiles=""
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\$(SafeParentName)_MD.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
@@ -947,6 +944,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Direct3D9Renderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Framebuffer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SaveTexture.cpp"
 				>
 			</File>
@@ -997,7 +1002,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Direct3D9Renderer.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Export.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Framebuffer.h"
 				>
 			</File>
 			<File

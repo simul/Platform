@@ -30,9 +30,9 @@ public:
 		
 		time_t rawtime;
 		rawtime = time (&rawtime);
-		struct tm * timeinfo;
-		timeinfo = localtime (&rawtime);
-		std::cout <<asctime (timeinfo) <<std::endl;
+		struct tm timeinfo;
+		localtime_s(&timeinfo,&rawtime);
+		std::cout <<asctime (&timeinfo) <<std::endl;
 		std::cout << "----------------"<<std::endl;
 		std::cout << "Begin Log output"<<std::endl;
 		std::cout << "----------------"<<std::endl<<std::endl;

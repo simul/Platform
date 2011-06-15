@@ -14,6 +14,11 @@
 #include <math.h>
 
 #ifdef XBOX
+	static D3DPOOL d3d_memory_pool=D3DUSAGE_CPU_CACHED_MEMORY;
+#else
+	static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
+#endif
+#ifdef XBOX
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	D3DFORMAT cloud_tex_format=D3DFMT_LIN_A4R4G4B4;
@@ -180,23 +185,21 @@ SimulCloudRenderer::SimulCloudRenderer()
 	,m_pCloudEffect(NULL)
 	,m_pGPULightingEffect(NULL)
 	,noise_texture(NULL)
+	,raytrace_layer_texture(NULL)
 	,illumination_texture(NULL)
-	,sky_loss_texture_1(NULL)
-	,sky_loss_texture_2(NULL)
-	,sky_inscatter_texture_1(NULL)
-	,sky_inscatter_texture_2(NULL)
+	,sky_loss_texture(NULL)
+	,sky_inscatter_texture(NULL)
 	,unitSphereVertexBuffer(NULL)
 	,unitSphereIndexBuffer(NULL)
 	,cloudScales(NULL)
 	,cloudOffset(NULL)
-	,rebuild_shaders(true)
 	,timing(0.f)
 	,vertices(NULL)
 	,cpu_fade_vertices(NULL)
-	,max_fade_distance_metres(700000.f)
 	,last_time(0)
 	,GPULightingEnabled(true)
 	,y_vertical(true)
+	,NumBuffers(1)
 {
 
 	D3DXMatrixIdentity(&world);
@@ -225,21 +228,23 @@ void SimulCloudRenderer::EnableFilter(bool f)
 		cloudNode->GetNoiseInterface()->SetFilter(NULL);
 }
 
-
-HRESULT SimulCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
+bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 {
-	m_pd3dDevice=dev;
-	HRESULT hr;
+	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	HRESULT hr=S_OK;
 	last_time=0.f;
 	// create the unit-sphere vertex buffer determined by the Cloud Geometry Helper:
+	SAFE_RELEASE(raytrace_layer_texture);
 	
+	B_RETURN(hr=D3DXCreateTexture(m_pd3dDevice,128,1,1,0,D3DFMT_A32B32G32R32F,d3d_memory_pool,&raytrace_layer_texture))
+
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	helper->GenerateSphereVertices();
-	V_RETURN(m_pd3dDevice->CreateVertexBuffer((unsigned)(helper->GetVertices().size()*sizeof(PosVert_t)),D3DUSAGE_WRITEONLY,0,
+	B_RETURN(m_pd3dDevice->CreateVertexBuffer((unsigned)(helper->GetVertices().size()*sizeof(PosVert_t)),D3DUSAGE_WRITEONLY,0,
 									  D3DPOOL_DEFAULT, &unitSphereVertexBuffer,
 									  NULL));
 	PosVert_t *unit_sphere_vertices;
-	V_RETURN(unitSphereVertexBuffer->Lock(0,sizeof(PosVert_t),(void**)&unit_sphere_vertices,0 ));
+	B_RETURN(unitSphereVertexBuffer->Lock(0,sizeof(PosVert_t),(void**)&unit_sphere_vertices,0 ));
 	PosVert_t *V=unit_sphere_vertices;
 	for(size_t i=0;i<helper->GetVertices().size();i++)
 	{
@@ -249,31 +254,31 @@ HRESULT SimulCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 		V->position.z=v.z;
 		V++;
 	}
-	V_RETURN(unitSphereVertexBuffer->Unlock());
+	B_RETURN(unitSphereVertexBuffer->Unlock());
 	unsigned num_indices=(unsigned)helper->GetQuadStripIndices().size();
 	SAFE_RELEASE(unitSphereIndexBuffer);
-	V_RETURN(m_pd3dDevice->CreateIndexBuffer(num_indices*sizeof(unsigned),D3DUSAGE_WRITEONLY,D3DFMT_INDEX32,
+	B_RETURN(m_pd3dDevice->CreateIndexBuffer(num_indices*sizeof(unsigned),D3DUSAGE_WRITEONLY,D3DFMT_INDEX32,
 		D3DPOOL_DEFAULT, &unitSphereIndexBuffer, NULL ));
 	unsigned *indexData;
-	V_RETURN(unitSphereIndexBuffer->Lock(0,num_indices, (void**)&indexData, 0 ));
+	B_RETURN(unitSphereIndexBuffer->Lock(0,num_indices, (void**)&indexData, 0 ));
 	unsigned *index=indexData;
 	for(unsigned i=0;i<num_indices;i++)
 	{
 		*(index++)	=helper->GetQuadStripIndices()[i];
 	}
-	V_RETURN(unitSphereIndexBuffer->Unlock());
-	V_RETURN(InitEffects());
-	//V_RETURN(RenderNoiseTexture());
+	B_RETURN(unitSphereIndexBuffer->Unlock());
+	B_RETURN(InitEffects());
+	//B_RETURN(RenderNoiseTexture());
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 	cloudKeyframer->SetRenderCallback(this);
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulCloudRenderer::InitEffects()
+bool SimulCloudRenderer::InitEffects()
 {
+	HRESULT hr=S_OK;
 	if(!m_pd3dDevice)
-		return S_OK;
-	HRESULT hr;
+		return (hr==S_OK);
 	D3DVERTEXELEMENT9 decl[]=
 	{
 		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
@@ -298,11 +303,11 @@ HRESULT SimulCloudRenderer::InitEffects()
 	SAFE_RELEASE(m_pHudVertexDecl);
 	if(fade_mode!=CPU)
 	{
-		V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
+		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
 	}
 	else
 	{
-		V_RETURN(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
+		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
 	}
 	std::map<std::string,std::string> defines;
 	if(fade_mode==FRAGMENT)
@@ -318,13 +323,16 @@ HRESULT SimulCloudRenderer::InitEffects()
 	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
 	if(!y_vertical)
 		defines["Z_VERTICAL"]='1';
+	else
+		defines["Y_VERTICAL"]='1';
 	SAFE_RELEASE(m_pCloudEffect);
-	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
+	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
 	SAFE_RELEASE(m_pGPULightingEffect);
-	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pGPULightingEffect,"simul_gpulighting.fx",defines));
+	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pGPULightingEffect,"simul_gpulighting.fx",defines));
 
 	m_hTechniqueCloud					=GetDX9Technique(m_pCloudEffect,"simul_clouds");
-	m_hTechniqueCloudMask				=GetDX9Technique(m_pCloudEffect,"cloud_mask");		m_hTechniqueRaytraceWithLightning	=GetDX9Technique(m_pCloudEffect,"raytrace_clouds_and_lightning");
+	m_hTechniqueCloudMask				=GetDX9Technique(m_pCloudEffect,"cloud_mask");
+	m_hTechniqueRaytraceWithLightning	=GetDX9Technique(m_pCloudEffect,"raytrace_clouds_and_lightning");
 	m_hTechniqueCloudsAndLightning		=GetDX9Technique(m_pCloudEffect,"simul_clouds_and_lightning");
 	m_hTechniqueCrossSectionXZ			=GetDX9Technique(m_pCloudEffect,"cross_section_xz");
 	m_hTechniqueCrossSectionXY			=GetDX9Technique(m_pCloudEffect,"cross_section_xy");
@@ -361,24 +369,26 @@ HRESULT SimulCloudRenderer::InitEffects()
 	noiseTexture			=m_pCloudEffect->GetParameterByName(NULL,"noiseTexture");
 	largeScaleCloudTexture	=m_pCloudEffect->GetParameterByName(NULL,"largeScaleCloudTexture");
 	lightningIlluminationTexture=m_pCloudEffect->GetParameterByName(NULL,"lightningIlluminationTexture");
-	skyLossTexture1			=m_pCloudEffect->GetParameterByName(NULL,"skyLossTexture1");
-	skyLossTexture2			=m_pCloudEffect->GetParameterByName(NULL,"skyLossTexture2");
-	skyInscatterTexture1	=m_pCloudEffect->GetParameterByName(NULL,"skyInscatterTexture1");
-	skyInscatterTexture2	=m_pCloudEffect->GetParameterByName(NULL,"skyInscatterTexture2");
+	skyLossTexture			=m_pCloudEffect->GetParameterByName(NULL,"skyLossTexture");
+	skyInscatterTexture		=m_pCloudEffect->GetParameterByName(NULL,"skyInscatterTexture");
 	
 	
 	
 	invViewProj			=m_pCloudEffect->GetParameterByName(NULL,"invViewProj");
+	noiseMatrix			=m_pCloudEffect->GetParameterByName(NULL,"noiseMatrix");
+	fractalRepeatLength	=m_pCloudEffect->GetParameterByName(NULL,"fractalRepeatLength");
 	cloudScales			=m_pCloudEffect->GetParameterByName(NULL,"cloudScales");
 	cloudOffset			=m_pCloudEffect->GetParameterByName(NULL,"cloudOffset");
+	raytraceLayerTexture=m_pCloudEffect->GetParameterByName(NULL,"raytraceLayerTexture");
 
 	rebuild_shaders=false;
-	return S_OK;
+	return (hr==S_OK);
 }
 
-HRESULT SimulCloudRenderer::InvalidateDeviceObjects()
+bool SimulCloudRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
+	SAFE_RELEASE(raytrace_layer_texture);
 	if(m_pCloudEffect)
         hr=m_pCloudEffect->OnLostDevice();
 	if(m_pGPULightingEffect)
@@ -397,25 +407,19 @@ HRESULT SimulCloudRenderer::InvalidateDeviceObjects()
 	cloud_tex_width_x=0;
 	cloud_tex_length_y=0;
 	cloud_tex_depth_z=0;
-	return hr;
-}
-
-HRESULT SimulCloudRenderer::Destroy()
-{
-	HRESULT hr=InvalidateDeviceObjects();
-	return hr;
+	return (hr==S_OK);
 }
 
 SimulCloudRenderer::~SimulCloudRenderer()
 {
-	Destroy();
+	InvalidateDeviceObjects();
 }
 
-HRESULT SimulCloudRenderer::RenderNoiseTexture()
+bool SimulCloudRenderer::RenderNoiseTexture()
 {
 	HRESULT hr=S_OK;
 	if(!m_pd3dDevice)
-		return hr;
+		return (hr==S_OK);
 	SAFE_RELEASE(noise_texture);
 	LPDIRECT3DSURFACE9				pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9				pNoiseRenderTarget=NULL;
@@ -425,7 +429,7 @@ HRESULT SimulCloudRenderer::RenderNoiseTexture()
 	D3DXHANDLE						persistence=NULL;
 	LPDIRECT3DTEXTURE9				input_texture=NULL;
 
-	V_RETURN(CreateDX9Effect(m_pd3dDevice,pRenderNoiseEffect,"simul_rendernoise.fx"));
+	B_RETURN(CreateDX9Effect(m_pd3dDevice,pRenderNoiseEffect,"simul_rendernoise.fx"));
 	inputTexture					=pRenderNoiseEffect->GetParameterByName(NULL,"noiseTexture");
 	octaves							=pRenderNoiseEffect->GetParameterByName(NULL,"octaves");
 	persistence						=pRenderNoiseEffect->GetParameterByName(NULL,"persistence");
@@ -433,10 +437,10 @@ HRESULT SimulCloudRenderer::RenderNoiseTexture()
 	// Make the input texture:
 	{
 		if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,noise_texture_frequency,noise_texture_frequency,0,default_texture_usage,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&input_texture)))
-			return hr;
+			return (hr==S_OK);
 		D3DLOCKED_RECT lockedRect={0};
 		if(FAILED(hr=input_texture->LockRect(0,&lockedRect,NULL,NULL)))
-			return hr;
+			return (hr==S_OK);
 		SetBits8();
 
 		simul::clouds::TextureGenerator::Make2DRandomTexture((unsigned char *)(lockedRect.pBits),noise_texture_frequency);
@@ -482,7 +486,7 @@ D3DXSaveTextureToFile(TEXT("Media/Textures/noise.jpg"),D3DXIFF_JPG,noise_texture
 	SAFE_RELEASE(pRenderNoiseEffect);
 	SAFE_RELEASE(input_texture);
 	SAFE_RELEASE(pNoiseRenderTarget);
-	return hr;
+	return (hr==S_OK);
 }
 
 bool SimulCloudRenderer::CreateNoiseTexture(bool override_file)
@@ -713,11 +717,6 @@ static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 	return dcam_pos;
 }
 
-bool SimulCloudRenderer::IsCameraAboveCloudBase() const
-{
-	return helper->IsAltitudeAboveCloudBase(cam_pos.z/1000.f);
-}
-
 static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 {
 	static D3DXVECTOR4 x;
@@ -728,8 +727,15 @@ static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 	return &x;
 }
 
-HRESULT SimulCloudRenderer::Render(bool cubemap)
+bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog)
 {
+	return Render(cubemap,depth_testing,default_fog,0);
+}
+
+bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog,int buffer_index)
+{
+	depth_testing;
+	default_fog;
 	PIXBeginNamedEvent(0xFF00FFFF,"SimulCloudRenderer::Render");
 	if(wrap!=cloudInterface->GetWrap())
 		rebuild_shaders=true;
@@ -739,7 +745,7 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 	enable_lightning=cloudKeyframer->GetInterpolatedKeyframe().lightning>0;
 	if(!noise_texture)
 	{
-		V_RETURN(CreateNoiseTexture());
+		B_RETURN(CreateNoiseTexture());
 	}
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
 	/*m_pd3dDevice->SetSamplerState(0,D3DSAMP_SRGBTEXTURE,0);
@@ -765,10 +771,8 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 
 	if(fade_mode==FRAGMENT)
 	{
-		m_pCloudEffect->SetTexture(skyLossTexture1				,sky_loss_texture_1);
-		m_pCloudEffect->SetTexture(skyLossTexture2				,sky_loss_texture_2);
-		m_pCloudEffect->SetTexture(skyInscatterTexture1			,sky_inscatter_texture_1);
-		m_pCloudEffect->SetTexture(skyInscatterTexture2			,sky_inscatter_texture_2);
+		m_pCloudEffect->SetTexture(skyLossTexture				,sky_loss_texture);
+		m_pCloudEffect->SetTexture(skyInscatterTexture			,sky_inscatter_texture);
 	}
 
 	// Mess with the proj matrix to extend the far clipping plane:
@@ -879,18 +883,23 @@ HRESULT SimulCloudRenderer::Render(bool cubemap)
 	else
 		m_pCloudEffect->SetTechnique(m_hTechniqueCloud);
 
-	//InternalRenderHorizontal();
+	//InternalRenderHorizontal(buffer_index);
 	if(render_mode==SLICES)
-		InternalRenderVolumetric();
+		InternalRenderVolumetric(buffer_index);
 	else
-		InternalRenderRaytrace();
+		InternalRenderRaytrace(buffer_index);
 	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
 	PIXEndNamedEvent();
-	return hr;
+	return (hr==S_OK);
 }
 
-void SimulCloudRenderer::InternalRenderHorizontal()
+void SimulCloudRenderer::NumBuffersChanged()
 {
+}
+
+void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
+{
+	buffer_index;
 	HRESULT hr=S_OK;
 	float max_dist=max_fade_distance_metres;
 	//set up matrices
@@ -1002,8 +1011,32 @@ void SimulCloudRenderer::InternalRenderHorizontal()
 	hr=m_pCloudEffect->End();
 }
 
-void SimulCloudRenderer::InternalRenderRaytrace()
+bool SimulCloudRenderer::FillRaytraceLayerTexture()
 {
+	D3DLOCKED_RECT lockedRect={0};
+	HRESULT hr=S_OK;
+	B_RETURN(hr=raytrace_layer_texture->LockRect(0,&lockedRect,NULL,NULL));
+	float *float_ptr=(float *)(lockedRect.pBits);
+	typedef std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_reverse_iterator iter;
+	static float cutoff=100000.f;
+	int j=0;
+	for(iter i=helper->GetSlices().rbegin();i!=helper->GetSlices().rend()&&j<128;i++,j++)
+	{
+		float distance=(*i)->distance;
+		*float_ptr++=distance;
+		*float_ptr++=(*i)->noise_tex_x;
+		*float_ptr++=(*i)->noise_tex_y;
+		*float_ptr++=0;
+	}
+	memset(float_ptr,0,4*sizeof(float)*(128-j));
+	hr=raytrace_layer_texture->UnlockRect(0);
+	return (hr==S_OK);
+}
+
+void SimulCloudRenderer::InternalRenderRaytrace(int buffer_index)
+{
+	FillRaytraceLayerTexture();
+	buffer_index;
 	HRESULT hr=S_OK;
 	m_pCloudEffect->SetTechnique(m_hTechniqueRaytraceWithLightning);
 	PIXWrapper(0xFFFFFF00,"Render Cloud Raytrace")
@@ -1015,13 +1048,22 @@ void SimulCloudRenderer::InternalRenderRaytrace()
 		D3DXMATRIX wvp,vpt,ivp;
 		//FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,y_vertical);
 		D3DXMATRIX viewproj;
-		view._41=view._42=view._43=0;
+		//view._41=view._42=view._43=0;
 		D3DXMatrixMultiply(&viewproj,&view,&proj);
 		MakeWorldViewProjMatrix(&wvp,world,view,proj);
 		m_pCloudEffect->SetMatrix(worldViewProj, &wvp);
 		D3DXMatrixTranspose(&vpt,&viewproj);
 		D3DXMatrixInverse(&ivp,NULL,&vpt);
+
+
 		hr=m_pCloudEffect->SetMatrix(invViewProj,&ivp);
+
+		// The NOISE matrix is for 2D noise texcoords:
+		const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
+		hr=m_pCloudEffect->SetMatrix(noiseMatrix,(const D3DXMATRIX*)noise_orient.GetInverseMatrix().RowPointer(0));
+		hr=m_pCloudEffect->SetFloat(fractalRepeatLength,cloudInterface->GetFractalRepeatLength());
+
+		hr=m_pCloudEffect->SetTexture(raytraceLayerTexture,raytrace_layer_texture);
 		simul::sky::float4 cloud_scales=GetCloudScales();
 		simul::sky::float4 cloud_offset=GetCloudOffset();
 	
@@ -1042,10 +1084,8 @@ void SimulCloudRenderer::InternalRenderRaytrace()
 				std::swap(sun_dir.y,sun_dir.z);
 
 			m_pCloudEffect->SetVector	(lightDir			,&sun_dir);
-//		m_pCloudEffect->SetVector	(lightColour	,(const D3DXVECTOR4*)&light_colour);
+			//m_pCloudEffect->SetVector	(lightColour	,(const D3DXVECTOR4*)&light_colour);
 		}
-//	hr=m_pCloudEffect->SetTexture(maxDistanceTexture,max_distance_texture);
-		
 		m_pCloudEffect->SetVector	(cloudScales	,(const D3DXVECTOR4*)&cloud_scales);
 		m_pCloudEffect->SetVector	(cloudOffset	,(const D3DXVECTOR4*)&cloud_offset);
 		m_pCloudEffect->SetVector	(eyePosition	,&cam_pos);
@@ -1054,8 +1094,9 @@ void SimulCloudRenderer::InternalRenderRaytrace()
 	}
 }
 
-void SimulCloudRenderer::InternalRenderVolumetric()
+void SimulCloudRenderer::InternalRenderVolumetric(int buffer_index)
 {
+	buffer_index;
 	HRESULT hr=S_OK;
 	//set up matrices
 	D3DXMATRIX wvp;
@@ -1076,9 +1117,18 @@ void SimulCloudRenderer::InternalRenderVolumetric()
 	static std::vector<simul::sky::float4> light_colours;
 	light_colours.resize(el_grid+1);
 	view_km*=0.001f;
-	for(std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_iterator i=helper->GetSlices().begin();
-		i!=helper->GetSlices().end();i++)
+	typedef std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_iterator iter;
+	static float cutoff=100000.f;
+	for(iter i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++)
 	{
+		float distance=(*i)->distance;
+		if(NumBuffers==2)
+		{
+			if(buffer_index==0&&distance<cutoff)
+				continue;
+			else if(buffer_index==1&&distance>=cutoff)
+				continue;
+		}
 		helper->MakeLayerGeometry(cloudInterface,*i);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
@@ -1089,7 +1139,7 @@ void SimulCloudRenderer::InternalRenderVolumetric()
 		{
 			float j_interp=(float)j/(float)el_grid;
 			float sine=(2.f*j_interp-1.f);
-			float alt_km=min(max(0.f,view_km.z+sine*0.001f*(*i)->distance),0.001f*(cloudInterface->GetCloudBaseZ()+cloudInterface->GetCloudHeight()));
+			float alt_km=min(max(0.f,view_km.z+sine*0.001f*distance),0.001f*(cloudInterface->GetCloudBaseZ()+cloudInterface->GetCloudHeight()));
 			light_colours[j]=skyInterface->GetLocalIrradiance(alt_km);
 		}
 		for(std::vector<const simul::clouds::CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
@@ -1175,15 +1225,7 @@ void SimulCloudRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 }
 #endif
 
-float SimulCloudRenderer::GetPrecipitationIntensity() const
-{
-	simul::sky::float4 cp=cam_pos;
-	std::swap(cp.y,cp.z);
-	return BaseCloudRenderer::GetPrecipitationIntensity(cp);
-}
-
-
-HRESULT SimulCloudRenderer::MakeCubemap()
+bool SimulCloudRenderer::MakeCubemap()
 {
 	HRESULT hr=S_OK;
 	D3DSURFACE_DESC desc;
@@ -1313,7 +1355,7 @@ HRESULT SimulCloudRenderer::MakeCubemap()
 		faceViewMatrix.m[2][3]=0;
 		faceViewMatrix.m[3][3]=1;
 
-		Render();
+		Render(true,false,false,0);
 #ifdef XBOX
 		m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, cloud_cubemap, NULL, 0, face, NULL, 0.0f, 0, NULL);
 #endif
@@ -1329,7 +1371,7 @@ HRESULT SimulCloudRenderer::MakeCubemap()
 	//m_pd3dDevice->SetDepthStencilSurface(pOldDepthSurface);
 	if(pOldDepthSurface)
 		pOldDepthSurface->Release();
-	return hr;
+	return (hr==S_OK);
 }
 float SimulCloudRenderer::GetTiming() const
 {
@@ -1346,8 +1388,9 @@ void **SimulCloudRenderer::GetCloudTextures()
 	return (void **)cloud_textures;
 }
 
-HRESULT SimulCloudRenderer::RenderCrossSections(int width)
+bool SimulCloudRenderer::RenderCrossSections(int width)
 {
+	HRESULT hr=S_OK;
 	int w=(width-16)/3;
 	int h=(cloudInterface->GetGridHeight()*w)/cloudInterface->GetGridWidth();
 	for(int i=0;i<3;i++)
@@ -1378,10 +1421,10 @@ HRESULT SimulCloudRenderer::RenderCrossSections(int width)
 					  cloud_textures[i],m_pCloudEffect,m_hTechniqueCrossSectionXY);
 		
 	}
-	return S_OK;
+	return (hr==S_OK);
 }
 
-HRESULT SimulCloudRenderer::RenderLightVolume()
+bool SimulCloudRenderer::RenderLightVolume()
 {
 	HRESULT hr=S_OK;
 	D3DVERTEXELEMENT9 decl[] = 
@@ -1393,7 +1436,7 @@ HRESULT SimulCloudRenderer::RenderLightVolume()
 	};
 	if(!m_pHudVertexDecl)
 	{
-		V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
+		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
 	}
 
 	struct Vertext
@@ -1480,10 +1523,10 @@ HRESULT SimulCloudRenderer::RenderLightVolume()
 	}
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,12,lines,(unsigned)sizeof(Vertext));
 	delete [] lines;
-	return S_OK;
+	return (hr==S_OK);
 }
 
-HRESULT SimulCloudRenderer::RenderDistances(int width,int height)
+bool SimulCloudRenderer::RenderDistances(int width,int height)
 {
 	HRESULT hr=S_OK;
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
@@ -1496,7 +1539,7 @@ HRESULT SimulCloudRenderer::RenderDistances(int width,int height)
 	};
 	if(!m_pHudVertexDecl)
 	{
-		V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
+		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
 	}
 
 	struct Vertext
@@ -1563,18 +1606,16 @@ HRESULT SimulCloudRenderer::RenderDistances(int width,int height)
 	}
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,(unsigned)helper->GetSlices().size(),lines,(unsigned)sizeof(Vertext));
 	delete [] lines;
-	return S_OK;
+	return (hr==S_OK);
 }
-void SimulCloudRenderer::SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
+void SimulCloudRenderer::SetLossTextures(void *t1)
 {
-	sky_loss_texture_1=t1;
-	sky_loss_texture_2=t2;
+	sky_loss_texture=(LPDIRECT3DBASETEXTURE9)t1;
 }
 
-void SimulCloudRenderer::SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
+void SimulCloudRenderer::SetInscatterTextures(void *t1)
 {
-	sky_inscatter_texture_1=t1;
-	sky_inscatter_texture_2=t2;
+	sky_inscatter_texture=(LPDIRECT3DBASETEXTURE9)t1;
 }
 
 void SimulCloudRenderer::SetFadeMode(FadeMode f)

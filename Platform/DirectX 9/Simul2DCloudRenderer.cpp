@@ -178,11 +178,11 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 }
 
-HRESULT Simul2DCloudRenderer::Create( LPDIRECT3DDEVICE9 dev)
+bool Simul2DCloudRenderer::Create( LPDIRECT3DDEVICE9 dev)
 {
 	m_pd3dDevice=dev;
 	HRESULT hr=S_OK;
-	return hr;
+	return (hr==S_OK);
 }
 struct Vertex2D_t
 {
@@ -195,9 +195,9 @@ struct Vertex2D_t
 };
 Vertex2D_t *vertices=NULL;
 
-HRESULT Simul2DCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
+bool Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
 {
-	m_pd3dDevice=dev;
+	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr;
 	D3DVERTEXELEMENT9 decl[]=
 	{
@@ -210,10 +210,10 @@ HRESULT Simul2DCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(m_pVtxDecl);
-	V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	V_RETURN(CreateNoiseTexture());
+	B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
+	B_RETURN(CreateNoiseTexture());
 	hr=CreateImageTexture();
-	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_2d.fx"));
+	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_2d.fx"));
 
 	m_hTechniqueCloud	=m_pCloudEffect->GetTechniqueByName("simul_clouds_2d");
 
@@ -240,10 +240,10 @@ HRESULT Simul2DCloudRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 	cloudKeyframer->SetRenderCallback(this);
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT Simul2DCloudRenderer::InvalidateDeviceObjects()
+bool Simul2DCloudRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	if(m_pCloudEffect)
@@ -259,31 +259,12 @@ HRESULT Simul2DCloudRenderer::InvalidateDeviceObjects()
 	}
 	else
 		image_texture=NULL;
-	return hr;
-}
-
-HRESULT Simul2DCloudRenderer::Destroy()
-{
-	HRESULT hr=S_OK;
-	SAFE_RELEASE(m_pVtxDecl);
-	if(m_pCloudEffect)
-        hr=m_pCloudEffect->OnLostDevice();
-	SAFE_RELEASE(m_pCloudEffect);
-	for(int i=0;i<3;i++)
-		SAFE_RELEASE(cloud_textures[i]);
-	SAFE_RELEASE(noise_texture);
-	if(own_image_texture)
-	{
-		SAFE_RELEASE(image_texture);
-	}
-	else
-		image_texture=NULL;
-	return hr;
+	return (hr==S_OK);
 }
 
 Simul2DCloudRenderer::~Simul2DCloudRenderer()
 {
-	Destroy();
+	InvalidateDeviceObjects();
 }
 
 bool Simul2DCloudRenderer::CreateNoiseTexture(bool override_file)
@@ -310,15 +291,15 @@ bool Simul2DCloudRenderer::CreateNoiseTexture(bool override_file)
 	return true;
 }
 
-HRESULT Simul2DCloudRenderer::CreateImageTexture()
+bool Simul2DCloudRenderer::CreateImageTexture()
 {
 	HRESULT hr=S_OK;
 	if(!own_image_texture)
-		return hr;
+		return (hr==S_OK);
 	SAFE_RELEASE(image_texture);
 	if(FAILED(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/Cirrocumulus.png"),&image_texture)))
-		return hr;
-	return hr;
+		return (hr==S_OK);
+	return (hr==S_OK);
 }
 
 void Simul2DCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z)
@@ -360,12 +341,14 @@ void SetTexture()
 {
 }
 
-HRESULT Simul2DCloudRenderer::Render()
+bool Simul2DCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog)
 {
+	cubemap;
+	depth_testing;
+	default_fog;
+	HRESULT hr=S_OK;
 	if(!enabled)
-		return S_OK;
-
-	HRESULT hr;
+		return (hr==S_OK);
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_SRGBTEXTURE,0);
 	m_pd3dDevice->SetSamplerState(1, D3DSAMP_SRGBTEXTURE,0);
@@ -519,7 +502,7 @@ static float light_mult=.03f;
 	hr=m_pCloudEffect->End();
 
 	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
-	return hr;
+	return (hr==S_OK);
 }
 
 #ifdef XBOX
@@ -577,7 +560,7 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 	return debug_text;
 }
 
-HRESULT Simul2DCloudRenderer::RenderCrossSections(int screen_width)
+bool Simul2DCloudRenderer::RenderCrossSections(int screen_width)
 {
 	int w=(screen_width-16)/6;
 	HRESULT hr=S_OK;
@@ -595,7 +578,7 @@ HRESULT Simul2DCloudRenderer::RenderCrossSections(int screen_width)
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(m_pBufferVertexDecl);
-	V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
+	B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
 #ifdef XBOX
 	float x=-1.f,y=1.f;
 	float w=2.f;
@@ -651,5 +634,5 @@ HRESULT Simul2DCloudRenderer::RenderCrossSections(int screen_width)
 	m_pd3dDevice->SetTexture(0,cloud_textures[2]);
 	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
 	SAFE_RELEASE(m_pBufferVertexDecl);
-	return hr;
+	return (hr==S_OK);
 }

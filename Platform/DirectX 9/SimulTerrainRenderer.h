@@ -12,7 +12,7 @@
 	#include <d3d9.h>
 	#include <d3dx9.h>
 #endif
-typedef long HRESULT;
+
 #include <vector>
 #include "Simul/Math/float3.h"
 #include "Simul/Math/Vector3.h"
@@ -46,22 +46,19 @@ SIMUL_DIRECTX9_EXPORT_CLASS SimulTerrainRenderer:public simul::base::Referenced
 public:
 	SimulTerrainRenderer();
 	//standard d3d object interface functions
-	HRESULT Create(LPDIRECT3DDEVICE9 pd3dDevice);
-	HRESULT RestoreDeviceObjects(LPDIRECT3DDEVICE9 pd3dDevice);
-	HRESULT InvalidateDeviceObjects();
-	HRESULT Destroy();
+	bool Create(LPDIRECT3DDEVICE9 pd3dDevice);
+	bool RestoreDeviceObjects(void *pd3dDevice);
+	bool InvalidateDeviceObjects();
 
 	virtual ~SimulTerrainRenderer();
-	HRESULT RenderOnlyDepth();
-	HRESULT Render();
+	bool RenderOnlyDepth();
+	bool Render();
 	int GetMip(int i,int j) const;
-	HRESULT RenderMap(int w);
+	bool RenderMap(int w);
 	void Update(float dt);
 	// Set a callback that will return cloud shadow data and textures:
 	void SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb);
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2){sky_loss_texture_1=t1;sky_loss_texture_2=t2;}
-	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2){sky_inscatter_texture_1=t1;sky_inscatter_texture_2=t2;}
 	void SetCloudTextures(void **t,bool wrap);
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si){skyInterface=si;}
 	simul::terrain::HeightMapInterface *GetHeightMapInterface();
@@ -117,9 +114,9 @@ protected:
 	bool enabled;
 	bool wrap_clouds;
 	bool rebuild_effect;
-	HRESULT CreateEffect();
+	bool CreateEffect();
 	simul::base::SmartPtr<simul::terrain::HeightMapNode> heightmap;
-	HRESULT InternalRender(bool depth_only);
+	bool InternalRender(bool depth_only);
 	float altitude_tex_coord;
 	bool show_wireframe;
 	simul::sky::BaseSkyInterface *skyInterface;
@@ -130,12 +127,8 @@ protected:
 	LPDIRECT3DTEXTURE9		detail_texture;
 
 	LPDIRECT3DTEXTURE9		elevation_map_texture;
-	HRESULT MakeMapTexture();
+	bool MakeMapTexture();
 
-	LPDIRECT3DBASETEXTURE9		sky_loss_texture_1;
-	LPDIRECT3DBASETEXTURE9		sky_loss_texture_2;
-	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture_1;
-	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture_2;
 	LPDIRECT3DTEXTURE9		road_texture;
 	LPDIRECT3DVOLUMETEXTURE9 *cloud_textures;
 	D3DXHANDLE				worldViewProj;
@@ -159,10 +152,6 @@ protected:
 	D3DXHANDLE				g_mainTexture;
 	D3DXHANDLE				detailTexture;
 	D3DXHANDLE				roadTexture;
-	D3DXHANDLE				skyLossTexture1;
-	D3DXHANDLE				skyLossTexture2;
-	D3DXHANDLE				skyInscatterTexture1;
-	D3DXHANDLE				skyInscatterTexture2;
 	D3DXHANDLE				cloudTexture1;
 	D3DXHANDLE				cloudTexture2;
 	
@@ -231,9 +220,9 @@ protected:
 	typedef std::vector < TerrainTile  > TerrainRow;
 	typedef std::vector < TerrainRow > Terrain2D;
 
-	HRESULT BuildRoad();
-	HRESULT BuildMIPEdge(TerrainTile *tile,int i,int j,int mip_level,int lower_level,int nsew);
-	HRESULT BuildTile(TerrainTile *tile,int i,int j,int mip_level);
+	bool BuildRoad();
+	bool BuildMIPEdge(TerrainTile *tile,int i,int j,int mip_level,int lower_level,int nsew);
+	bool BuildTile(TerrainTile *tile,int i,int j,int mip_level);
 	void ReleaseIndexBuffers();
 
 	Terrain2D tiles;

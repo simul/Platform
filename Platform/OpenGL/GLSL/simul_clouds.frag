@@ -88,6 +88,5 @@ void main(void)
 	final.rgb+=lightning.rgb;
 	final.rgb*=loss;
 	final.rgb+=insc.rgb;
-
     gl_FragColor=vec4(final.rgb,opacity);
 }

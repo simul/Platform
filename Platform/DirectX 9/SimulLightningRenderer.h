@@ -20,7 +20,7 @@ class SimulLightningRenderer: public simul::clouds::BaseLightningRenderer
 public:
 	SimulLightningRenderer(simul::clouds::LightningRenderInterface *lri);
 	~SimulLightningRenderer();
-	bool RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
+	bool RestoreDeviceObjects(void *pd3dDevice);
 	bool Render();
 	bool InvalidateDeviceObjects();
 	void SetYVertical(bool y)

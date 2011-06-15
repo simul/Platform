@@ -196,7 +196,7 @@ static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 	glGetFloatv(src,m);
 }
 
-bool SimulGL2DCloudRenderer::Render()
+bool SimulGL2DCloudRenderer::Render(bool, bool, bool)
 {
 	using namespace simul::clouds;
 	cloudKeyframer->Update(skyInterface->GetTime());
@@ -300,7 +300,7 @@ static float ll=0.05f;
 	return true;
 }
 
-bool SimulGL2DCloudRenderer::RestoreDeviceObjects()
+bool SimulGL2DCloudRenderer::RestoreDeviceObjects(void*)
 {
 	clouds_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 	clouds_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
@@ -325,6 +325,25 @@ bool SimulGL2DCloudRenderer::RestoreDeviceObjects()
 	textureEffect_param		= glGetUniformLocation(clouds_program,"textureEffect");
 	layerDensity_param		= glGetUniformLocation(clouds_program,"layerDensity");
 	cloudKeyframer->SetRenderCallback(this);
+	return true;
+}
+
+bool SimulGL2DCloudRenderer::InvalidateDeviceObjects()
+{
+	clouds_vertex_shader	=0;
+	clouds_fragment_shader	=0;
+	clouds_program			=0;
+    clouds_vertex_shader	=0;
+	clouds_fragment_shader	=0;
+	lightResponse_param		=0;
+	fractalScale_param		=0;
+	interp_param			=0;
+	eyePosition_param		=0;
+	skylightColour_param	=0;
+	lightDir_param			=0;
+	sunlightColour_param	=0;
+	textureEffect_param		=0;
+	layerDensity_param		=0;
 	return true;
 }
 
@@ -379,13 +398,9 @@ bool SimulGL2DCloudRenderer::Create()
 	return true;
 }
 
-bool SimulGL2DCloudRenderer::Destroy()
-{
-	return true;
-}
 SimulGL2DCloudRenderer::~SimulGL2DCloudRenderer()
 {
-	Destroy();
+	InvalidateDeviceObjects();
 }
 
 void SimulGL2DCloudRenderer::SetSkyInterface(simul::sky::SkyInterface *si)

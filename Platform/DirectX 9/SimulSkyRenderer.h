@@ -18,6 +18,7 @@
 #endif
 #include <map>
 #include "Simul/Platform/DirectX 9/Export.h"
+#include "Simul/Platform/DirectX 9/Framebuffer.h"
 
 namespace simul
 {
@@ -56,27 +57,25 @@ public:
 	virtual void SaveTextures(const char *base_filename);
 	//standard d3d object interface functions
 	//! Call this when the D3D device has been created or reset.
-	HRESULT RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
+	bool RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
-	HRESULT InvalidateDeviceObjects();
-	//! Call this to release the memory for D3D device objects.
-	HRESULT Destroy();
+	bool InvalidateDeviceObjects();
 	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	HRESULT						RenderSun();
+	bool						RenderSun();
 	//! Get the transform that goes from declination/right-ascension to azimuth and elevation.
-	HRESULT GetSiderealTransform(D3DXMATRIX *world);
+	bool						GetSiderealTransform(D3DXMATRIX *world);
 	//! Render the stars, as points.
-	HRESULT						RenderPointStars();
+	bool						RenderPointStars();
 	//! Render the stars, as a background.
-	HRESULT						RenderTextureStars();
+	bool						RenderTextureStars();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
-	HRESULT						Render();
+	bool						Render();
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
-	HRESULT						RenderFlare(float exposure);
+	bool						RenderFlare(float exposure);
 	//! Draw the fade textures to screen
-	HRESULT						RenderFades(int width);
+	bool						RenderFades(int width);
 	//! Draw sidereal and geographic information to screen
-	HRESULT						RenderCelestialDisplay(int screen_width,int screen_height);
+	bool						RenderCelestialDisplay(int screen_width,int screen_height);
 #ifdef XBOX
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
@@ -92,8 +91,10 @@ public:
 	//! This sets the base altitude and range for the overcast effect - the base should be the cloudbase,
 	//! while the range should be the height of the clouds.
 	void SetOvercastBaseAndRange(float base_alt_km,float range_km);
-	void GetLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LPDIRECT3DBASETEXTURE9 *l2,
+	void Get3DLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LPDIRECT3DBASETEXTURE9 *l2,
 		LPDIRECT3DBASETEXTURE9 *i1,LPDIRECT3DBASETEXTURE9 *i2);
+	void Get2DLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,
+		LPDIRECT3DBASETEXTURE9 *i1);
 	void GetSkyTextures(LPDIRECT3DBASETEXTURE9 *s1,LPDIRECT3DBASETEXTURE9 *s2);
 	LPDIRECT3DTEXTURE9 GetDistanceTexture()
 	{
@@ -124,6 +125,7 @@ public:
 	void SetFlare(LPDIRECT3DTEXTURE9 tex,float rad);
 	void SetYVertical(bool y);
 protected:
+	bool Render2DFades();
 	bool y_vertical;
 	struct StarVertext
 	{
@@ -132,7 +134,7 @@ protected:
 	};
 	StarVertext *star_vertices;
 	int num_stars;
-	HRESULT PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height);
+	bool PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height);
 	bool external_flare_texture;
 	float timing;
 	D3DFORMAT sky_tex_format;
@@ -153,6 +155,8 @@ protected:
 	D3DXHANDLE					m_hTechniqueFlare;
 	D3DXHANDLE					m_hTechniquePlanet;
 	D3DXHANDLE					m_hTechniqueFadeCrossSection;
+	D3DXHANDLE					m_hTechnique3DTo2DFade;
+	
 	D3DXHANDLE					altitudeTexCoord;
 	D3DXHANDLE					lightDirection;
 	D3DXHANDLE					mieRayleighRatio;
@@ -161,6 +165,7 @@ protected:
 	D3DXHANDLE					colour;
 	D3DXHANDLE					flareTexture;
 	D3DXHANDLE					fadeTexture;
+	D3DXHANDLE					fadeTexture2;
 	D3DXHANDLE					skyTexture1;
 	D3DXHANDLE					skyTexture2;
 	D3DXHANDLE					starsTexture;
@@ -180,15 +185,18 @@ protected:
 	// Max fade distance, constant, except towards the ground
 	LPDIRECT3DTEXTURE9			max_distance_texture;
 
+	// Two in-use 2D sky textures. We render a slice of the 3D textures into these, then use them for all fades.
+	Framebuffer					loss_2d;
+	Framebuffer					inscatter_2d;
     ID3DXFont*					m_pFont;
 	D3DXVECTOR3					cam_dir;
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DQUERY9			d3dQuery;
-	HRESULT						UpdateSkyTexture(float proportion);
-	HRESULT						CreateSkyTextures();
-	HRESULT						CreateSunlightTextures();
-	HRESULT						CreateSkyEffect();
-	HRESULT						RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
+	bool						UpdateSkyTexture(float proportion);
+	bool						CreateSkyTextures();
+	bool						CreateSunlightTextures();
+	bool						CreateSkyEffect();
+	bool						RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	virtual bool IsYVertical()
 	{
 		return y_vertical;

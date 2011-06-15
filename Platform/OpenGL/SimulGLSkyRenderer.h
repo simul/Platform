@@ -38,7 +38,7 @@ public:
 	bool RestoreDeviceObjects();
 	//! Destroy the API-specific objects used in rendering.
 	bool InvalidateDeviceObjects();
-	bool Destroy();
+	//! GL Implementation of render function.
 	bool Render();
 
 	// Implementing simul::sky::SkyTexturesCallback

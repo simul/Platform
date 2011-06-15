@@ -50,9 +50,9 @@ SimulLightningRenderer::~SimulLightningRenderer()
 {
 }
 
-bool SimulLightningRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 pd3dDevice)
+bool SimulLightningRenderer::RestoreDeviceObjects(void *dev)
 {
-	m_pd3dDevice=pd3dDevice;
+	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr;
 	InitEffects();
 	B_RETURN(CreateLightningTexture());

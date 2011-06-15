@@ -1,8 +1,33 @@
 #pragma once
-#include "D3DCallbackInterface.h"
+
+#ifndef D3DCALLBACKINTERFACE_H
+#define D3DCALLBACKINTERFACE_H
+// Direct3D includes
+#include <d3d9.h>
+#include <d3dx9.h>
+#include <dxerr.h>
+class D3DCallbackInterface
+{
+public:
+	virtual bool	IsDeviceAcceptable(D3DCAPS9* pCaps,D3DFORMAT AdapterFormat,D3DFORMAT BackBufferFormat,bool bWindowed)=0;
+	virtual bool    ModifyDeviceSettings(struct DXUTDeviceSettings* pDeviceSettings)=0;
+	virtual HRESULT OnCreateDevice(IDirect3DDevice9* pd3dDevice,const D3DSURFACE_DESC* pBackBufferSurfaceDesc)=0;
+	virtual HRESULT OnResetDevice(IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc)=0;
+	virtual void    OnFrameMove(double fTime, float fTimeStep)=0;
+	virtual void    OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime, float fTimeStep)=0;
+	virtual LRESULT MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing)=0;
+	virtual void    OnLostDevice()=0;
+	virtual void    OnDestroyDevice()=0;
+	virtual const TCHAR *GetDebugText() const=0;
+};
+#endif
+
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Graph/StandardNodes/ShowProgressInterface.h"
 #include "Simul/Graph/Meta/Group.h"
+#include "Simul/Platform/DirectX 9/Export.h"
+#pragma warning(push)
+#pragma warning(disable:4251)
 namespace simul
 {
 	namespace graph
@@ -16,7 +41,7 @@ namespace simul
 class SimulWeatherRenderer;
 class SimulHDRRenderer;
 class SimulTerrainRenderer;
-class Direct3D9Renderer
+class SIMUL_DIRECTX9_EXPORT Direct3D9Renderer
 	:public D3DCallbackInterface
 	,public simul::graph::meta::Group
 {
@@ -72,3 +97,5 @@ protected:
 	int width,height;
 	float time_mult;
 };
+
+#pragma warning(pop)

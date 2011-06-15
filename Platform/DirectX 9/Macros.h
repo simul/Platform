@@ -8,6 +8,7 @@
 #pragma comment(lib,"d3dx10")
 #pragma comment(lib,"comctl32")
 typedef std::basic_string<TCHAR> tstring;
+#define ERROR_CHECK
 #ifdef UNICODE
 	#define stprintf_s swprintf_s
 #else

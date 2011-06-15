@@ -35,11 +35,13 @@ public:
 	void SetSkyInterface(simul::sky::SkyInterface *si);
 	void SetFadeTable(simul::sky::FadeTableInterface *fti);
 	//standard ogl object interface functions
-	bool Create( );
-	bool RestoreDeviceObjects( );
+	bool Create();
+	//! OpenGL Implementation of device object creation - needs a GL context to be present.
+	bool RestoreDeviceObjects(void*);
+	//! OpenGL Implementation of device invalidation - not strictly needed in GL.
 	bool InvalidateDeviceObjects();
-	bool Destroy();
-	bool Render();
+	//! OpenGL Implementation of 2D cloud rendering.
+	bool Render(bool cubemap,bool depth_testing,bool default_fog);
 	void SetWindVelocity(float x,float y);
 	simul::clouds::CloudInterface *GetCloudInterface();
 	void SetFadeTableInterface(simul::sky::FadeTableInterface *fti)
@@ -50,6 +52,7 @@ public:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
 	void CycleTexturesForward();
+	bool IsYVertical() const{return false;}
 protected:
 	simul::clouds::CloudInterface *cloudInterface;
 	simul::sky::SkyInterface *skyInterface;

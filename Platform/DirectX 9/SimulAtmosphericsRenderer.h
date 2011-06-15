@@ -33,11 +33,11 @@ class SimulAtmosphericsInterface
 {
 public:
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-	virtual HRESULT RestoreDeviceObjects(LPDIRECT3DDEVICE9 pd3dDevice)=0;
+	virtual bool RestoreDeviceObjects(void *pd3dDevice)=0;
 	//! Call this when the device has been lost.
-	virtual HRESULT InvalidateDeviceObjects()=0;
+	virtual bool InvalidateDeviceObjects()=0;
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-	virtual HRESULT Render()=0;
+	virtual bool Render()=0;
 	virtual void SetInputTextures(LPDIRECT3DTEXTURE9 image,LPDIRECT3DTEXTURE9 depth)=0;
 };
 
@@ -50,11 +50,11 @@ public:
 	//standard d3d object interface functions
 
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-	HRESULT RestoreDeviceObjects(LPDIRECT3DDEVICE9 pd3dDevice);
+	bool RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the device has been lost.
-	HRESULT InvalidateDeviceObjects();
+	bool InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-	HRESULT Render();
+	bool Render();
 	//! Set properties for rendering cloud godrays.
 	void SetCloudProperties(void* c1,void* c2,
 							const float *cloudscales,
@@ -107,11 +107,10 @@ public:
 	}
 protected:
 	bool y_vertical;
-	HRESULT DrawFullScreenQuad();
+	bool DrawScreenQuad();
 	bool use_3d_fades;
 	float altitude_tex_coord;
 	simul::sky::BaseSkyInterface *skyInterface;
-	HRESULT Destroy();
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	vertexDecl;
 	D3DXMATRIX						world,view,proj;

@@ -27,15 +27,15 @@ public:
 	//standard d3d object interface functions
 
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-	HRESULT RestoreDeviceObjects(LPDIRECT3DDEVICE9 pd3dDevice);
+	bool RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the device has been lost.
-	HRESULT InvalidateDeviceObjects();
+	bool InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-	HRESULT StartRender();
+	bool StartRender();
 	//! ApplyFade: call this after rendering the solid stuff, before rendering transparent and background imagery.
-	HRESULT ApplyFade();
+	bool ApplyFade();
 	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
-	HRESULT FinishRender();
+	bool FinishRender();
 
 	//! Set the exposure - a brightness factor.
 	void SetExposure(float ex);
@@ -50,7 +50,6 @@ public:
 	void SetBufferSize(int w,int h);
 
 protected:
-	HRESULT Destroy();
 	//! The size of the 2D buffer the sky is rendered to.
 	int BufferWidth,BufferHeight;
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
@@ -90,9 +89,9 @@ protected:
 	D3DXHANDLE				bloomOffsets;
 	D3DXHANDLE				bloomWeights;
 		
-	HRESULT IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
-	HRESULT CreateBuffers();
-	HRESULT RenderBufferToCurrentTarget(int w,int h,bool do_tonemap);
+	bool IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
+	bool CreateBuffers();
+	bool RenderBufferToCurrentTarget(int w,int h,bool do_tonemap);
 	class SimulSkyRenderer *simulSkyRenderer;
 	class SimulCloudRenderer *simulCloudRenderer;
 	class Simul2DCloudRenderer *simul2DCloudRenderer;
@@ -102,8 +101,8 @@ protected:
 	LPDIRECT3DSURFACE9 MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture);
 	float timing;
 	float exposure_multiplier;
-	HRESULT RenderBrightpass();
-	HRESULT RenderBloom();
+	bool RenderBrightpass();
+	bool RenderBloom();
 	class SimulAtmosphericsInterface *atmospherics;
 };
 #ifdef _MSC_VER

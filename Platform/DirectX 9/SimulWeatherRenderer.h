@@ -17,6 +17,7 @@
 #include "Simul/Platform/DirectX 9/SimulLightningRenderer.h"
 #include "Simul/Platform/DirectX 9/SimulPrecipitationRenderer.h"
 #include "Simul/Platform/DirectX 9/Export.h"
+#include "Simul/Platform/DirectX 9/Framebuffer.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -40,7 +41,7 @@ public:
 /*!
 	\code
 #include "Simul/Platform/Windows/DirectX 9/SimulWeatherRenderer.h"
-	simulWeatherRenderer=new SimulWeatherRenderer(true,false,ScreenWidth/2,ScreenHeight/2,true,true,false,true,false);
+	simulWeatherRenderer=new SimulWeatherRenderer(true,ScreenWidth/2,ScreenHeight/2,true,true,false,true,false);
 	simulWeatherRenderer->SetDaytime(0.3f);
 	\endcode
 
@@ -78,7 +79,7 @@ public:
 	hr=simulWeatherRenderer->RestoreDeviceObjects(pd3dDevice);
 \endcode
 	When the device has been lost (e.g. the screen resolution was changed):
-	\code
+\code
 	simulWeatherRenderer->InvalidateDeviceObjects();
 \endcode
 	\section updr Update and rendering
@@ -86,44 +87,40 @@ Usually once per frame, the weather update should be called, this will update th
 e.g. clouds, sky:
 \code
 	simulWeatherRenderer->Update(timestep_seconds);
-	\endcode
-	To render, the 
+\endcode
+	To render, the following code is used:
 \code
 	simulWeatherRenderer->SetMatrices(view,proj);
-		PIXWrapper(D3DCOLOR_RGBA(0,255,0,255),"WEATHER")
-		{
-			simulWeatherRenderer->Render();
-		simulWeatherRenderer->RenderLateCloudLayer();
-		simulWeatherRenderer->RenderLightning();
-		simulWeatherRenderer->RenderPrecipitation();
-	\endcode
+	simulWeatherRenderer->Render();
+	simulWeatherRenderer->RenderLateCloudLayer();
+	simulWeatherRenderer->RenderLightning();
+	simulWeatherRenderer->RenderPrecipitation();
+\endcode
 */
 SIMUL_DIRECTX9_EXPORT_CLASS SimulWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
-	SimulWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=320,
+	SimulWeatherRenderer(bool usebuffer=true,int width=320,
 		int height=240,bool sky=true,bool clouds3d=true,bool clouds2d=true,
 		bool rain=true,
 		bool colour_sky=false);
 	virtual ~SimulWeatherRenderer();
 	//standard d3d object interface functions
-	HRESULT Create( LPDIRECT3DDEVICE9 pd3dDevice);
+	bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
 	//! Call this when the device has been created
-	HRESULT RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
+	bool RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the 3D device has been lost.
-	HRESULT InvalidateDeviceObjects();
-	//! Call this to release the memory for D3D device objects.
-	HRESULT Destroy();
+	bool InvalidateDeviceObjects();
 	//! Call this to draw the sky and clouds.
-	HRESULT Render(bool is_cubemap=false);
+	bool RenderSky(bool buffer,bool is_cubemap);
 	//! Call this to draw the clouds after the main scene.
-	HRESULT RenderLateCloudLayer();
+	bool RenderLateCloudLayer(bool buf);
 	//! Call this to draw lightning.
-	HRESULT RenderLightning();
+	bool RenderLightning();
 	//! Call this to draw rain etc.
-	HRESULT RenderPrecipitation();
+	bool RenderPrecipitation();
 	//! Call this to draw sun flares etc. Draw this after geometry as it's an optical effect in the camera.
-	HRESULT RenderFlares();
+	bool RenderFlares();
 	//! Perform the once-per-frame time update.
 	void Update(float dt);
 #if defined(XBOX) || defined(DOXYGEN)
@@ -156,11 +153,12 @@ public:
 	//! Connect-up sky, clouds:
 	void ConnectInterfaces();
 protected:
-	HRESULT Restore3DCloudObjects();
-	HRESULT Restore2DCloudObjects();
+	Framebuffer framebuffer;
+	Framebuffer lowdef_framebuffer;
+	bool RenderLateCloudLayer(int buffer_index,bool buf);
+	bool Restore3DCloudObjects();
+	bool Restore2DCloudObjects();
 	void UpdateSkyAndCloudHookup();
-	bool AlwaysRenderCloudsLate;
-	bool RenderCloudsLate;
 	//! The size of the 2D buffer the sky is rendered to.
 	int BufferWidth,BufferHeight;
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
@@ -168,25 +166,13 @@ protected:
 	LPDIRECT3DTEXTURE9 temp_depth_texture;
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	LPD3DXEFFECT					m_pTonemapEffect;
-	D3DXHANDLE						GammaTechnique;
 	D3DXHANDLE						DirectTechnique;
-	D3DXHANDLE						SkyToScreenTechnique;
 	D3DXHANDLE						CloudBlendTechnique;
-	D3DXHANDLE						m_hExposure;
-	D3DXHANDLE						m_hGamma;
+
 	D3DXHANDLE						bufferTexture;
 
-	//! The texture the sky and clouds are rendered to.
-	LPDIRECT3DTEXTURE9				hdr_buffer_texture;
-	LPDIRECT3DTEXTURE9				buffer_depth_texture;
-	//! The low dynamic range buffer the sky is rendered to.
-	LPDIRECT3DTEXTURE9				ldr_buffer_texture;
-	LPDIRECT3DSURFACE9				m_pHDRRenderTarget	;
-	LPDIRECT3DSURFACE9				m_pBufferDepthSurface;
-	LPDIRECT3DSURFACE9				m_pLDRRenderTarget	;
-	HRESULT IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
-	HRESULT CreateBuffers();
-	HRESULT RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture,int w,int h,bool use_shader,bool blend=false);
+	bool CreateBuffers();
+	bool RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture);
 	RenderDepthBufferCallback *renderDepthBufferCallback;
 	simul::base::SmartPtr<class SimulSkyRenderer> simulSkyRenderer;
 	simul::base::SmartPtr<class SimulCloudRenderer> simulCloudRenderer;
@@ -197,11 +183,12 @@ protected:
 	float							exposure;
 	float							gamma;
 	bool							use_buffer;
-	bool							tone_map;
-	float							timing;
+	float							cloud_timing;
+	float							sky_timing;
+	float							total_timing;
+	float							final_timing;
 	float							exposure_multiplier;
 	bool							show_rain;
-	LPDIRECT3DSURFACE9				MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture);
 };
 #ifdef _MSC_VER
 	#pragma warning(pop)

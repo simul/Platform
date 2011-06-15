@@ -33,11 +33,11 @@ public:
 	virtual ~SimulGLCloudRenderer();
 	//standard ogl object interface functions
 	bool Create();
-	bool RestoreDeviceObjects();
+	bool RestoreDeviceObjects(void*);
 	bool InvalidateDeviceObjects();
-	bool Destroy();
 	//! Render the clouds.
-	bool Render(bool depth_testing=false,bool default_fog=false);
+	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+	//bool depth_testing=false,bool default_fog=false);
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
 	const char *GetDebugText();
@@ -63,6 +63,7 @@ public:
 	void New();
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual void SetYVertical(bool ){}
+	bool IsYVertical() const{return false;}
 protected:
 	GLuint clouds_program;
 	GLuint clouds_vertex_shader,clouds_fragment_shader;

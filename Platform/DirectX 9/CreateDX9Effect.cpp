@@ -596,12 +596,12 @@ void FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical)
 	}
 	proj._43=-zNear*zFar/(zFar-zNear);
 }
-
 LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl=NULL;
 
 HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 {
 	HRESULT hr=S_OK;
+	m_pd3dDevice;num;pos;
 	D3DVERTEXELEMENT9 decl[] = 
 	{
 		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
@@ -613,7 +613,7 @@ HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 	{
 		V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
 	}
-
+/*
 	struct Vertext
 	{
 		float x,y,z;
@@ -665,8 +665,8 @@ HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 		lines[i*2+1].a=255;
 	}
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,num,lines,(unsigned)sizeof(Vertext));
-	delete [] lines;
-	return S_OK;
+	delete [] lines;*/
+	return hr;
 }
 
 void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
@@ -732,6 +732,7 @@ HRESULT DrawFullScreenQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT effect)
 #endif
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
+	m_pd3dDevice->SetFVF(D3DFVF_XYZ  |  D3DFVF_TEX1);
 	//m_pd3dDevice->SetVertexDeclaration(vertexDecl);
 	UINT passes=1;
 	hr=effect->Begin(&passes,0);
@@ -740,4 +741,46 @@ HRESULT DrawFullScreenQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT effect)
 	hr=effect->EndPass();
 	hr=effect->End();
 	return hr;
+}
+
+bool IsDepthFormatOk(LPDIRECT3DDEVICE9 pd3dDevice,D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat)
+{
+	LPDIRECT3D9 d3d;
+	pd3dDevice->GetDirect3D(&d3d);
+    // Verify that the depth format exists
+    HRESULT hr=d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat,
+                                                       D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, DepthFormat);
+    if(FAILED(hr))
+		return (hr==S_OK);
+
+    // Verify that the backbuffer format is valid
+    hr=d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat, D3DUSAGE_RENDERTARGET,
+                                               D3DRTYPE_SURFACE, BackBufferFormat);
+    if(FAILED(hr))
+		return (hr==S_OK);
+
+    // Verify that the depth format is compatible
+    hr = d3d->CheckDepthStencilMatch(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat, BackBufferFormat,
+                                                    DepthFormat);
+
+    return (hr==S_OK);
+}
+
+
+LPDIRECT3DSURFACE9 MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture)
+{
+	LPDIRECT3DSURFACE9 pRenderTarget;
+#ifdef XBOX
+	XGTEXTURE_DESC desc;
+	XGGetTextureDesc( pTexture, 0, &desc );
+	D3DSURFACE_PARAMETERS SurfaceParams = {0};
+	//HANDLE handle=&SurfaceParams;
+	HRESULT hr=m_pd3dDevice->CreateRenderTarget(
+		desc.Width, desc.Height, desc.Format, D3DMULTISAMPLE_NONE, 0, FALSE, &pRenderTarget,&SurfaceParams);
+	if(hr!=S_OK)
+		std::cerr<<"SimulWeatherRenderer::MakeRenderTarget - Failed to create render target!\n";
+#else
+	pTexture->GetSurfaceLevel(0,&pRenderTarget);
+#endif
+	return pRenderTarget;
 }

@@ -77,13 +77,12 @@ SimulGLCloudRenderer::SimulGLCloudRenderer()
 	, texture_effect(1.f)
 {
 	cloudKeyframer->SetFillTexturesAsBlocks(true);
+	cloudKeyframer->SetOpenGL(true);
+	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
 }
 
 bool SimulGLCloudRenderer::Create()
 {
-	cloudKeyframer->SetOpenGL(true);
-	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
-	CreateNoiseTexture();
 	cloudInterface->Generate();
 	//cloudInterface->SetHumidity(0.5f);
 	// Must use this next line to prevent the above properties from being overwritten by the keyframes
@@ -196,7 +195,7 @@ void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned width_x,unsigned len
 	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
 }
 
-void SimulGLCloudRenderer::FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array)
+void SimulGLCloudRenderer::FillIlluminationSequentially(int ,int ,int ,const unsigned char *)
 {
 }
 
@@ -233,7 +232,7 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
+bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog)
 {
 	float gamma=cloudKeyframer->GetPrecalculatedGamma();
 	if(gamma>0&&gamma!=1.f)
@@ -501,8 +500,9 @@ bool SimulGLCloudRenderer::Render(bool depth_testing,bool default_fog)
 	return true;
 }
 
-bool SimulGLCloudRenderer::RestoreDeviceObjects()
+bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 {
+	CreateNoiseTexture();
 	clouds_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 	clouds_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -545,6 +545,28 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects()
 	return true;
 }
 
+bool SimulGLCloudRenderer::InvalidateDeviceObjects()
+{
+	clouds_program			=0;
+	clouds_vertex_shader	=0;
+	clouds_fragment_shader	=0;
+	lightResponse_param		=0;
+	fractalScale_param		=0;
+	interp_param			=0;
+	eyePosition_param		=0;
+	skylightColour_param	=0;
+	lightDirection_param	=0;
+	sunlightColour_param	=0;
+	cloudEccentricity_param	=0;
+	skyEccentricity_param	=0;
+	mieRayleighRatio_param	=0;
+	cloudDensity1_param		=0;
+	cloudDensity2_param		=0;
+	noiseSampler_param		=0;
+	illumSampler_param		=0;
+	return true;
+}
+
 void **SimulGLCloudRenderer::GetCloudTextures()
 {
 	return (void**)cloud_tex;
@@ -555,13 +577,9 @@ simul::sky::OvercastCallback *SimulGLCloudRenderer::GetOvercastCallback()
 	return cloudKeyframer.get();
 }
 
-bool SimulGLCloudRenderer::Destroy()
-{
-	return true;
-}
 SimulGLCloudRenderer::~SimulGLCloudRenderer()
 {
-	Destroy();
+	InvalidateDeviceObjects();
 }
 
 const char *SimulGLCloudRenderer::GetDebugText()

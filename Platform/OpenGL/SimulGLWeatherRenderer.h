@@ -40,16 +40,12 @@ public:
 		bool rain=true,
 		bool colour_sky=false);
 	virtual ~SimulGLWeatherRenderer();
-	//standard d3d object interface functions
-	//void Create();
 	//! Call this when the device has been created
-	//void RestoreDeviceObjects();
+	bool RestoreDeviceObjects();
 	//! Call this when the 3D device has been lost.
-	void InvalidateDeviceObjects();
-	//! Call this to release the memory for D3D device objects.
-	void Destroy();
-	//! Call this to draw the sky
-	void RenderSky(bool buffered=false);
+	bool InvalidateDeviceObjects();
+	//! Platform-dependent. Call this to draw the sky
+	bool RenderSky(bool buffered,bool is_cubemap);
 	//! Call this to draw the clouds
 	void RenderClouds(bool buffered,bool depth_testing,bool default_fog=false);
 	//! Apply a gamma-correction on the CPU before calculation, so gamma-correction in shaders is not needed. If 1.0 or zero this is ignored.
@@ -86,6 +82,8 @@ public:
 	//! Connect-up sky, clouds:
 	void ConnectInterfaces();
 protected:
+	//! This is set once the GL device has been initialized - then we can create textures and so forth.
+	bool device_initialized;
 	class RenderTexture *scene_buffer;
 	void UpdateSkyAndCloudHookup();
 	bool AlwaysRenderCloudsLate;
@@ -105,8 +103,8 @@ protected:
 	//simul::base::SmartPtr<class SimulGLAtmosphericsRenderer> simulAtmosphericsRenderer;
 	float							exposure;
 	float							gamma;
-	bool use_buffer;
-	bool tone_map;
+	bool							use_buffer;
+	bool							tone_map;
 };
 #ifdef _MSC_VER
 	#pragma warning(pop)

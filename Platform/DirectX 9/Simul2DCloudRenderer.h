@@ -48,18 +48,17 @@ public:
 	Simul2DCloudRenderer();
 	virtual ~Simul2DCloudRenderer();
 	//standard d3d object interface functions
-	HRESULT Create( LPDIRECT3DDEVICE9 pd3dDevice);
+	bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
 	//! Call this when the D3D device has been created or reset.
-	HRESULT RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
+	bool RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
-	HRESULT InvalidateDeviceObjects();
-	//! Call this to release the memory for D3D device objects.
-	HRESULT Destroy();
+	bool InvalidateDeviceObjects();
 	//! Return debugging information.
 	const char *GetDebugText() const;
 	//! Call this to draw the clouds, including any illumination by lightning.
-	HRESULT Render();
-	HRESULT RenderCrossSections(int width);
+	//! On DX9, depth_testing and default_fog are ignored for now.
+	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+	bool RenderCrossSections(int width);
 #if defined(XBOX) || defined(DOXYGEN)
 	//! Call this once per frame to set the matrices (X360 only).
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
@@ -85,6 +84,7 @@ public:
 	{
 		y_vertical=y;
 	}
+	bool IsYVertical() const{return y_vertical;}
 protected:
 	bool y_vertical;
 	bool enabled;
@@ -122,8 +122,8 @@ protected:
 	D3DXMATRIX					world,view,proj;
 
 	virtual bool CreateNoiseTexture(bool override_file=false);
-	HRESULT CreateImageTexture();
-	HRESULT MakeCubemap(); // not ready yet
+	bool CreateImageTexture();
+	bool MakeCubemap(); // not ready yet
 	float texture_scale;
 	virtual bool IsYVertical()
 	{

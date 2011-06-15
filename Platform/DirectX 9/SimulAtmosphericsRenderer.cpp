@@ -65,14 +65,18 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer() :
 {
 }
 
-HRESULT SimulAtmosphericsRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
+bool SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 {
-	m_pd3dDevice=dev;
-	HRESULT hr;
+	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	HRESULT hr=S_OK;
 	SAFE_RELEASE(effect);
 	std::map<std::string,std::string> defines;
 	defines["WRAP_CLOUDS"]="1";
-	V_RETURN(CreateDX9Effect(m_pd3dDevice,effect,"atmospherics.fx",defines));
+	if(!y_vertical)
+		defines["Z_VERTICAL"]='1';
+	else
+		defines["Y_VERTICAL"]='1';
+	B_RETURN(CreateDX9Effect(m_pd3dDevice,effect,"atmospherics.fx",defines));
 
 	technique			=effect->GetTechniqueByName("simul_atmospherics");
 	godRaysTechnique	=effect->GetTechniqueByName("simul_godrays");
@@ -113,37 +117,32 @@ HRESULT SimulAtmosphericsRenderer::RestoreDeviceObjects(LPDIRECT3DDEVICE9 dev)
 	D3DVERTEXELEMENT9 decl[] = 
 	{
 #ifdef XBOX
-		{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0,  8, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0,  12, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
 #else
-		{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0, 8, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 12, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
 #endif
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(vertexDecl);
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&vertexDecl);
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulAtmosphericsRenderer::InvalidateDeviceObjects()
+bool SimulAtmosphericsRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(vertexDecl);
 	if(effect)
         hr=effect->OnLostDevice();
 	SAFE_RELEASE(effect);
-	return hr;
-}
-
-HRESULT SimulAtmosphericsRenderer::Destroy()
-{
-	return InvalidateDeviceObjects();
+	return (hr==S_OK);
 }
 
 SimulAtmosphericsRenderer::~SimulAtmosphericsRenderer()
 {
-	Destroy();
+	InvalidateDeviceObjects();
 }
 
 #ifdef XBOX
@@ -230,7 +229,7 @@ bool SimulAtmosphericsRenderer::RenderGodRays(float strength)
 		effect->SetVector	(eyePosition	,&cam_pos);
 		effect->SetFloat	(cloudInterp	,cloud_interp);
 
-		hr=DrawFullScreenQuad();
+		hr=DrawScreenQuad();
 	}
 	return (hr==S_OK);
 }
@@ -255,74 +254,32 @@ bool SimulAtmosphericsRenderer::RenderAirglow()
 		effect->SetVector	(illuminationOrigin		,(const D3DXVECTOR4*)&illumination_offset);
 		effect->SetVector	(lightningMultipliers	,(const D3DXVECTOR4*)&lightning_multipliers);
 		effect->SetVector	(eyePosition			,&cam_pos);
-		hr=DrawFullScreenQuad();
+		hr=DrawScreenQuad();
 	}
 	return (hr==S_OK);
 }
 
-HRESULT SimulAtmosphericsRenderer::DrawFullScreenQuad()
+bool SimulAtmosphericsRenderer::DrawScreenQuad()
 {
 	HRESULT hr=S_OK;
 #ifndef XBOX
-		m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-		m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
 #endif
-		D3DXMATRIX vpt;
-		D3DXMATRIX viewproj;
-		view._41=view._42=view._43=0;
-		D3DXMatrixMultiply(&viewproj,&view,&proj);
-		D3DXMatrixTranspose(&vpt,&viewproj);
-		D3DXMATRIX ivp;
-		D3DXMatrixInverse(&ivp,NULL,&vpt);
-		hr=effect->SetMatrix(invViewProj,&ivp);
-	#ifdef XBOX
-		float x=-1.f,y=1.f;
-		float w=2.f;
-		float h=-2.f;
-		struct Vertext
-		{
-			float x,y;
-			float tx,ty,tz;
-		};
-		Vertext vertices[4] =
-		{
-			{x,		y,		0	,0},
-			{x+w,	y,		0	,0},
-			{x+w,	y+h,	1.f,0},
-			{x,		y+h,	1.f,0},
-		};
-	#else
-		D3DSURFACE_DESC desc;
-		if(input_texture)
-			input_texture->GetLevelDesc(0,&desc);
-	
-		struct Vertext
-		{
-			float x,y;
-			float tx,ty,tz;
-		};
-		Vertext vertices[4] =
-		{
-			{-1.f,	-1.f	,0.5f	,0		,1.f},
-			{ 1.f,	-1.f	,0.5f	,1.f	,1.f},
-			{ 1.f,	 1.f	,0.5f	,1.f	,0	},
-			{-1.f,	 1.f	,0.5f	,0		,0	},
-		};
-	#endif
-	D3DXMATRIX ident;
-	D3DXMatrixIdentity(&ident);
-	m_pd3dDevice->SetVertexDeclaration(vertexDecl);
+	D3DXMATRIX vpt;
+	D3DXMATRIX viewproj;
+	view._41=view._42=view._43=0;
+	D3DXMatrixMultiply(&viewproj,&view,&proj);
+	D3DXMatrixTranspose(&vpt,&viewproj);
+	D3DXMATRIX ivp;
+	D3DXMatrixInverse(&ivp,NULL,&vpt);
+	hr=effect->SetMatrix(invViewProj,&ivp);
 
-	UINT passes=1;
-	hr=effect->Begin(&passes,0);
-	hr=effect->BeginPass(0);
-	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, vertices, sizeof(Vertext) );
-	hr=effect->EndPass();
-	hr=effect->End();
-	return hr;
+	hr=DrawFullScreenQuad(m_pd3dDevice,effect);
+	return (hr==S_OK);
 }
 
-HRESULT SimulAtmosphericsRenderer::Render()
+bool SimulAtmosphericsRenderer::Render()
 {
 	HRESULT hr=S_OK;
 	effect->SetTechnique(technique);
@@ -346,7 +303,7 @@ HRESULT SimulAtmosphericsRenderer::Render()
 		hr=effect->SetTexture(inscatterTexture1,inscatter_texture_1);
 		hr=effect->SetTexture(inscatterTexture2,inscatter_texture_2);
 		hr=effect->SetTexture(maxDistanceTexture,max_distance_texture);
-		hr=DrawFullScreenQuad();
+		hr=DrawScreenQuad();
 	}
-	return hr;
+	return (hr==S_OK);
 }

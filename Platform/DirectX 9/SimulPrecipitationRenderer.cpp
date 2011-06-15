@@ -57,9 +57,9 @@ void SimulPrecipitationRenderer::TextureRepeatChanged()
 	InvalidateDeviceObjects();
 	RestoreDeviceObjects(m_pd3dDevice);
 }
-HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
+bool SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 {
-	m_pd3dDevice=dev;
+	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr=S_OK;
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
 	D3DXMatrixIdentity(&view);
@@ -99,7 +99,7 @@ HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	};
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
-	V_RETURN(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,"simul_rain.fx"));
+	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,"simul_rain.fx"));
 
 	m_hTechniqueRain	=m_pRainEffect->GetTechniqueByName("simul_rain");
 	worldViewProj		=m_pRainEffect->GetParameterByName(NULL,"worldViewProj");
@@ -113,13 +113,13 @@ HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( LPDIRECT3DDEVICE9 dev)
 	if(!external_rain_texture)
 	{
 		SAFE_RELEASE(rain_texture);
-		V_RETURN(hr=CreateDX9Texture(m_pd3dDevice,rain_texture,"Rain.jpg"));
+		B_RETURN(hr=CreateDX9Texture(m_pd3dDevice,rain_texture,"Rain.jpg"));
 	}
 
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulPrecipitationRenderer::SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex)
+bool SimulPrecipitationRenderer::SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex)
 {
 	if(!external_rain_texture)
 	{
@@ -127,10 +127,10 @@ HRESULT SimulPrecipitationRenderer::SetExternalRainTexture(LPDIRECT3DTEXTURE9 te
 	}
 	external_rain_texture=true;
 	rain_texture=tex;
-	return S_OK;
+	return true;
 }
 
-HRESULT SimulPrecipitationRenderer::InvalidateDeviceObjects()
+bool SimulPrecipitationRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	if(m_pRainEffect)
@@ -139,22 +139,12 @@ HRESULT SimulPrecipitationRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pVtxDecl);
 	if(!external_rain_texture)
 		SAFE_RELEASE(rain_texture);
-	return hr;
-}
-
-HRESULT SimulPrecipitationRenderer::Destroy()
-{
-	HRESULT hr=S_OK;
-	SAFE_RELEASE(m_pVtxDecl);
-	SAFE_RELEASE(m_pRainEffect);
-	if(!external_rain_texture)
-		SAFE_RELEASE(rain_texture);
-	return hr;
+	return (hr==S_OK);
 }
 
 SimulPrecipitationRenderer::~SimulPrecipitationRenderer()
 {
-	Destroy();
+	InvalidateDeviceObjects();
 }
 
 static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
@@ -168,10 +158,11 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-HRESULT SimulPrecipitationRenderer::Render()
+bool SimulPrecipitationRenderer::Render()
 {
+	HRESULT hr=S_OK;
 	if(rain_intensity<=0)
-		return S_OK;
+		return (hr==S_OK);
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
@@ -181,7 +172,7 @@ HRESULT SimulPrecipitationRenderer::Render()
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
 #endif
-	HRESULT hr=m_pd3dDevice->SetVertexDeclaration(m_pVtxDecl);
+	hr=m_pd3dDevice->SetVertexDeclaration(m_pVtxDecl);
 
 	m_pRainEffect->SetTechnique( m_hTechniqueRain );
 	cam_pos=GetCameraPosVector(view);
@@ -256,7 +247,7 @@ HRESULT SimulPrecipitationRenderer::Render()
 	}
 	hr=m_pRainEffect->End();
 	D3DXMatrixIdentity(&world);
-	return hr;
+	return (hr==S_OK);
 }
 
 #ifdef XBOX

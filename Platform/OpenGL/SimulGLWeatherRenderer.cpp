@@ -13,6 +13,8 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
+#include "Simul/Base/Timer.h"
+static simul::base::Timer timer;
 
 #if 0//def _MSC_VER
 static GLuint buffer_format=GL_RGBA16F_ARB;
@@ -26,6 +28,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
 		bool colour_sky):
 		BufferWidth(width)
 		,BufferHeight(height)
+		,device_initialized(false)
 {
 	glewInit();
 	CheckExtension("GL_VERSION_2_0");
@@ -52,10 +55,8 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
 	if(simulSkyRenderer)
 	{
 		simulSkyRenderer->Create(0.5f);
-		simulSkyRenderer->RestoreDeviceObjects();
 	}
 	EnableLayers(clouds3d,clouds2d);
-	ConnectInterfaces();
 }
 
 
@@ -64,12 +65,18 @@ void SimulGLWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 	simul::clouds::BaseWeatherRenderer::EnableLayers(clouds3d,clouds2d);
 	//if(clouds2d)
 	//	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer();
+	if(simulSkyRenderer)
+	{
+		if(device_initialized)
+			simulSkyRenderer->RestoreDeviceObjects();
+	}
 	if(simul2DCloudRenderer)
 	{
 		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
 		simul2DCloudRenderer->SetFadeTable(simulSkyRenderer->GetFadeTableInterface());
 		simul2DCloudRenderer->Create();
-		simul2DCloudRenderer->RestoreDeviceObjects();
+		if(device_initialized)
+			simul2DCloudRenderer->RestoreDeviceObjects(NULL);
 	}
 	if(clouds3d)
 	{	
@@ -81,12 +88,15 @@ void SimulGLWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->Create();
-		simulCloudRenderer->RestoreDeviceObjects();
+		if(device_initialized)
+			simulCloudRenderer->RestoreDeviceObjects(NULL);
 	}
 	if(simulLightningRenderer)
 	{
-		simulLightningRenderer->RestoreDeviceObjects();
+		if(device_initialized)
+			simulLightningRenderer->RestoreDeviceObjects();
 	}
+	ConnectInterfaces();
 }
 
 void SimulGLWeatherRenderer::ConnectInterfaces()
@@ -112,10 +122,24 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 {
 }
 
-void SimulGLWeatherRenderer::RenderSky(bool buffered)
+bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 {
+	device_initialized=true;
+	EnableLayers(simulCloudRenderer.get()!=NULL,simul2DCloudRenderer.get()!=NULL);
+	return true;
+}
+bool SimulGLWeatherRenderer::InvalidateDeviceObjects()
+{
+	return true;
+}
 
+bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
+{
 	ERROR_CHECK
+	timer.TimeSum=0;
+	timer.StartTime();
+	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
+	bool hr=false;
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -136,7 +160,7 @@ void SimulGLWeatherRenderer::RenderSky(bool buffered)
 	}
 	ERROR_CHECK
     if(simul2DCloudRenderer)
-		simul2DCloudRenderer->Render();
+		simul2DCloudRenderer->Render(false,false,false);
 	ERROR_CHECK
 
 	if(buffered)
@@ -153,6 +177,8 @@ void SimulGLWeatherRenderer::RenderSky(bool buffered)
 	glGetIntegerv(GL_ATTRIB_STACK_DEPTH,&d);
 	glPopAttrib();
 	ERROR_CHECK
+	timer.FinishTime();
+	return true;
 }
 
 void SimulGLWeatherRenderer::RenderLightning()
@@ -174,7 +200,7 @@ void SimulGLWeatherRenderer::RenderClouds(bool buffered,bool depth_testing,bool 
 		scene_buffer->Activate();
 
     if(simulCloudRenderer)
-		simulCloudRenderer->Render(depth_testing,default_fog);
+		simulCloudRenderer->Render(false,depth_testing,default_fog);
 
 	if(buffered)
 		scene_buffer->DeactivateAndRender(true);

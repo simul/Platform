@@ -23,18 +23,16 @@ public:
 	virtual ~SimulPrecipitationRenderer();
 	//standard d3d object interface functions:
 	//! Call this when the D3D device has been created or reset.
-	HRESULT RestoreDeviceObjects( LPDIRECT3DDEVICE9 pd3dDevice);
+	bool RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
-	HRESULT InvalidateDeviceObjects();
-	//! Call this to release the memory for D3D device objects.
-	HRESULT Destroy();
+	bool InvalidateDeviceObjects();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	HRESULT Render();
+	bool Render();
 #ifdef XBOX
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 #endif
 	// Set a texture not created by this class to be used:
-	HRESULT SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex);
+	bool SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex);
 	void SetYVertical(bool y)
 	{
 		y_vertical=y;
