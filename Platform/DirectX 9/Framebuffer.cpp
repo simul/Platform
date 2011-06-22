@@ -143,7 +143,12 @@ void Framebuffer::Deactivate()
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
 
-void Framebuffer::DeactivateAndRender()
+void Framebuffer::DeactivateAndRender(bool blend)
 {
 	Deactivate();
+	Render(blend);
+}
+void Framebuffer::Render(bool blend)
+{
+	blend;
 }

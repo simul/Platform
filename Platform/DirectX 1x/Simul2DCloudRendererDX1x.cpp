@@ -8,7 +8,7 @@
 
 // Simul2DCloudRenderer.cpp A renderer for 2D cloud layers.
 
-#include "Simul2DCloudRendererdx10.h"
+#include "Simul2DCloudRendererdx1x.h"
 
 
 	#include <tchar.h>

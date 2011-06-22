@@ -249,20 +249,23 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		simulHDRRenderer->SetExposure(Exposure);
 		simulHDRRenderer->StartRender();
 	}
-	if(simulTerrainRenderer&&show_terrain)
-	{
-		simulTerrainRenderer->SetMatrices(view,proj);
-		simulTerrainRenderer->Render();
-	}
-	if(simulHDRRenderer)
-		simulHDRRenderer->ApplyFade();
-	timer.UpdateTime();
 	if(simulWeatherRenderer)
 	{
 #ifdef XBOX
 		simulWeatherRenderer->SetMatrices(view,proj);
 #endif
 		simulWeatherRenderer->RenderSky(true,false);
+	}
+	if(simulTerrainRenderer&&show_terrain)
+	{
+		simulTerrainRenderer->SetMatrices(view,proj);
+		simulTerrainRenderer->Render();
+	}
+	if(simulHDRRenderer)
+		simulHDRRenderer->CopyDepthAlpha();
+	timer.UpdateTime();
+	if(simulWeatherRenderer)
+	{
 		if(simulWeatherRenderer->GetAtmosphericsRenderer())
 			simulWeatherRenderer->GetAtmosphericsRenderer()->Render();
 		simulWeatherRenderer->RenderFlares();

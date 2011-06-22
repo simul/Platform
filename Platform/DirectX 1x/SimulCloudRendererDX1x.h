@@ -26,7 +26,8 @@
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/CloudRenderCallback.h"
 #include "Simul/Clouds/BaseCloudRenderer.h"
-#include "Simul/Platform/Windows/DirectX 1x/MacrosDx1x.h"
+#include "Simul/Platform/DirectX 1x/MacrosDx1x.h"
+#include "Simul/Platform/DirectX 1x/Export.h"
 
 namespace simul
 {
@@ -47,7 +48,7 @@ namespace simul
 typedef long HRESULT;
 
 //! A cloud rendering class. Create an instance of this class within a DirectX program.
-class SimulCloudRendererDX1x : public simul::clouds::BaseCloudRenderer
+SIMUL_DIRECTX1x_EXPORT_CLASS SimulCloudRendererDX1x : public simul::clouds::BaseCloudRenderer
 {
 public:
 	SimulCloudRendererDX1x();
@@ -55,15 +56,15 @@ public:
 	//! Call this once to set the sky interface that this cloud renderer can use for distance fading.
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si);
 	//! Call this when the D3D device has been created or reset
-	HRESULT RestoreDeviceObjects( ID3D1xDevice* pd3dDevice);
+	bool RestoreDeviceObjects( void* pd3dDevice);
 	//! Call this when the 3D device has been lost.
-	HRESULT InvalidateDeviceObjects();
+	bool InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
-	HRESULT Destroy();
+	bool Destroy();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	HRESULT Render(bool cubemap=false);
+	bool Render(bool cubemap,bool depth_testing,bool default_fog);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
-	HRESULT RenderLightning();
+	bool RenderLightning();
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 	simul::clouds::LightningRenderInterface *GetLightningRenderInterface();
@@ -102,6 +103,7 @@ public:
 	//! Clear the sequence()
 	void New();
 	void SetYVertical(bool y);
+	bool IsYVertical() const;
 protected:
 	bool y_vertical;
 	int mapped;
@@ -179,13 +181,13 @@ protected:
 	D3DXMATRIX			world,view,proj;
 
 	D3D1x_MAPPED_TEXTURE3D mapped_cloud_texture;
-	HRESULT UpdateIlluminationTexture(float dt);
+	bool UpdateIlluminationTexture(float dt);
 	float LookupLargeScaleTexture(float x,float y);
 
-	HRESULT CreateLightningTexture();
+	bool CreateLightningTexture();
 	virtual bool CreateNoiseTexture(bool override_file=false);
-	HRESULT CreateCloudEffect();
-	HRESULT MakeCubemap(); // not ready yet
+	bool CreateCloudEffect();
+	bool MakeCubemap(); // not ready yet
 	
 	bool enable_lightning;
 };

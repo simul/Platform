@@ -17,8 +17,6 @@
 #include <fstream>
 #include <algorithm>
 
-#include "RenderTextureFBO.h"
-
 #include "SimulGL2DCloudRenderer.h"
 #include "Simul/Clouds/FastCloudNode.h"
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
@@ -140,48 +138,26 @@ void SimulGL2DCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned lengt
 	}
 }
 
-void SimulGL2DCloudRenderer::FillCloudTexture(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array)
+void SimulGL2DCloudRenderer::FillCloudTextureBlock(
+	int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array)
 {
-	unsigned cti=texel_index;
-	unsigned source_index=0;
-	// Apparently OpenGL can only copy texture data in blocks.
-	// We can't write directly to the texture data like in DirectX,
-	// so we must copy from cloud_data into the texture using glTexSubImage3D.
-
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[texture_index]);
-	unsigned y=(texel_index)/tex_width;
-	texel_index+=num_texels;
-	for(;cti<(unsigned)texel_index;)
+	if(cloudKeyframer->GetUse16Bit())
 	{
-		unsigned x=(cti)-y*tex_width;
-		if(x>=tex_width)
-		{
-			y++;
-			x=0;
-		}
-		assert(x+y*tex_width==cti);
-		// we can copy up to the end of the line:
-		unsigned line=cti/tex_width;
-		unsigned texels_in_line=min((unsigned)texel_index,(line+1)*tex_width)-cti;
-		if(cloudKeyframer->GetUse16Bit())
-		{
-			unsigned short *uint16_array=(unsigned short *)uint32_array;
-			glTexSubImage2D(	GL_TEXTURE_2D,0,
-								x,y,
-								texels_in_line,1,
-								GL_RGBA,GL_UNSIGNED_SHORT_4_4_4_4,
-								&(uint16_array[source_index]));
-		}
-		else
-		{
-			glTexSubImage2D(	GL_TEXTURE_2D,0,
-								x,y,
-								texels_in_line,1,
-								GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
-								&(uint32_array[source_index]));
-		}
-		cti+=texels_in_line;
-		source_index+=texels_in_line;
+		unsigned short *uint16_array=(unsigned short *)uint32_array;
+		glTexSubImage2D(	GL_TEXTURE_3D,0,
+							x,y,
+							w,l,
+							GL_RGBA,GL_UNSIGNED_SHORT_4_4_4_4,
+							uint16_array);
+	}
+	else
+	{
+		glTexSubImage2D(	GL_TEXTURE_3D,0,
+							x,y,
+							w,l,
+							GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
+							uint32_array);
 	}
 }
 

@@ -12,7 +12,7 @@ void main(void)
 	c = c*exposure;
     // gamma correction
 	c.rgb = pow(c.rgb,vec3(gamma,gamma,gamma));
-c.a=1.0-pow(1.0-c.a,gamma);
-c.r=1;
+	c.a=1.0-pow(1.0-c.a,gamma);
+
     gl_FragColor=c;
 }

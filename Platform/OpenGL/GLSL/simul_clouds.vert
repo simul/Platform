@@ -12,10 +12,12 @@ varying vec2 noiseCoord;
 varying vec3 eyespacePosition;
 varying vec3 wPosition;
 varying vec3 sunlight;
+uniform vec3 lightDir;
 
 varying vec3 loss;
 varying vec4 insc;
 varying vec3 texCoordLightning;
+varying float cos0;
 uniform vec3 illuminationOrigin;
 uniform vec3 illuminationScales;
 
@@ -33,4 +35,6 @@ void main(void)
 	insc				=gl_MultiTexCoord5.xyzw;
 	
 	texCoordLightning	=(wPosition.xzy-illuminationOrigin.xyz)/illuminationScales.xyz;
+	vec3 view=normalize(wPosition);
+	cos0=dot(lightDir.xyz,view.xyz);
 }

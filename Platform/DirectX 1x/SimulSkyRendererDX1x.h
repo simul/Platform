@@ -20,7 +20,8 @@
 	#include <d3dx11.h>
 	#include <d3dx11effect.h>
 #endif
-#include "Simul/Platform/Windows/DirectX 1x/MacrosDx1x.h"
+#include "Simul/Platform/DirectX 1x/MacrosDx1x.h"
+#include "Simul/Platform/DirectX 1x/Export.h"
 
 namespace simul
 {
@@ -37,7 +38,7 @@ typedef long HRESULT;
 
 //! A renderer for skies, this class will manage an instance of simul::sky::SkyNode and use it to calculate sky colours
 //! in real time for the simul_sky.fx shader.
-class SimulSkyRendererDX1x:public simul::sky::BaseSkyRenderer
+SIMUL_DIRECTX1x_EXPORT_CLASS SimulSkyRendererDX1x:public simul::sky::BaseSkyRenderer
 {
 public:
 	SimulSkyRendererDX1x();
@@ -49,16 +50,16 @@ public:
 
 	//standard d3d object interface functions
 	//! Call this when the D3D device has been created or reset.
-	HRESULT RestoreDeviceObjects(ID3D1xDevice* pd3dDevice);
+	bool RestoreDeviceObjects(ID3D1xDevice* pd3dDevice);
 	//! Call this when the D3D device has been shut down.
-	HRESULT InvalidateDeviceObjects();
+	bool InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
-	HRESULT Destroy();
+	bool Destroy();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
-	HRESULT Render();
+	bool Render();
 	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
-	HRESULT RenderFlare(float exposure);
+	bool RenderFlare(float exposure);
 	//! Get a value, from zero to one, which represents how much of the sun is visible.
 	//! Call this when the current rendering surface is the one that has obscuring
 	//! objects like mountains etc. in it, and make sure these have already been drawn.
@@ -138,9 +139,9 @@ protected:
 	void MapSky(int s);
 	void UnmapSky();
 	D3DXMATRIX				world,view,proj;
-	HRESULT UpdateSkyTexture(float proportion);
-	HRESULT CreateSkyTexture();
-	HRESULT CreateSkyEffect();
-	HRESULT RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
-	HRESULT RenderSun();
+	bool UpdateSkyTexture(float proportion);
+	bool CreateSkyTexture();
+	bool CreateSkyEffect();
+	bool RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
+	bool RenderSun();
 };

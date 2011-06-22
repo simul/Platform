@@ -7,7 +7,8 @@
 
 #pragma once
 #include <tchar.h>
-#include "Simul/Platform/Windows/DirectX 1x/MacrosDx1x.h"
+#include "Simul/Platform/DirectX 1x/MacrosDx1x.h"
+#include "Simul/Platform/DirectX 1x/Export.h"
 #include <d3dx9.h>
 #ifdef DX10
 	#include <D3D10.h>
@@ -18,26 +19,28 @@
 #endif
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
-typedef long HRESULT;
 
+#ifndef RENDERDEPTHBUFFERCALLBACK
+#define RENDERDEPTHBUFFERCALLBACK
 class RenderDepthBufferCallback
 {
 public:
 	virtual void Render()=0;
 };
+#endif
 
 //! An implementation of \link simul::clouds::BaseWeatherRenderer BaseWeatherRenderer\endlink for DirectX 10 and 11
 //! The DX10 switch is used
-class SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer, public simul::graph::meta::Group
+SIMUL_DIRECTX1x_EXPORT_CLASS SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer
 {
 public:
 	SimulWeatherRendererDX1x(bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
 	virtual ~SimulWeatherRendererDX1x();
 	//standard d3d object interface functions
-	HRESULT RestoreDeviceObjects(ID3D1xDevice* pd3dDevice,IDXGISwapChain *swapChain);
-	HRESULT InvalidateDeviceObjects();
-	HRESULT Destroy();
-	HRESULT Render();
+	bool RestoreDeviceObjects(ID3D1xDevice* pd3dDevice,IDXGISwapChain *swapChain);
+	bool InvalidateDeviceObjects();
+	bool Destroy();
+	bool RenderSky(bool buffered,bool is_cubemap);
 
 	//! Enable or disable the 3d and 2d cloud layers.
 	void Enable(bool sky,bool clouds3d,bool clouds2d,bool rain);
@@ -69,7 +72,7 @@ public:
 	//! Get a pointer to the atmospherics renderer owned by this class instance.
 	class SimulAtmosphericsRenderer *GetAtmosphericsRenderer();
 	//! Get the current debug text as a c-string pointer.
-	const TCHAR *GetDebugText() const;
+	const char *GetDebugText() const;
 	//! Get timing value.
 	float GetTiming() const;
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
@@ -79,8 +82,8 @@ protected:
 	//! The size of the 2D buffer the sky is rendered to.
 	int BufferWidth,BufferHeight;
 	ID3D1xDevice*					m_pd3dDevice;
-	HRESULT CreateBuffers();
-	HRESULT RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
+	bool CreateBuffers();
+	bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
 	simul::base::SmartPtr<class SimulSkyRendererDX1x> simulSkyRenderer;
 	simul::base::SmartPtr<class SimulCloudRendererDX1x> simulCloudRenderer;
 	//simul::base::SmartPtr<class Simul2DCloudRenderer> *simul2DCloudRenderer;

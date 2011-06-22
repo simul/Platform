@@ -9,6 +9,7 @@
 #define RENDER_TEXTURE_FBO__H
 
 #include <GL/glew.h>
+#include <stack>
 #include "LoadGLImage.h"
 
 #ifndef FRAMEBUFFER_INTERFACE
@@ -38,7 +39,7 @@ public:
 	{
 		gamma = g;
 	}
-
+	void SetShader(int i);
 	// In order to use a color buffer, either
 	// InitColor_RB or InitColor_Tex needs to be called.
 	void InitColor_RB(int index = 0, GLenum iformat = GL_FLOAT_RGBA16_NV);
@@ -52,12 +53,12 @@ public:
 	// The FBO needs to be deactivated when using the associated textures.
 	void Activate();
 	void Deactivate();
-	void DeactivateAndRender();
 	void DeactivateAndRender(bool blend);
 	void Render();
 	void Render(bool blend);
 	void DrawQuad(int w, int h);
 private:
+	static std::stack<GLuint> fb_stack;
 	void InitShader();
 	void CheckFramebufferStatus();
 	// Bind the internal textures

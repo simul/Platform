@@ -19,8 +19,14 @@
 enum ShaderModel {NO_SHADERMODEL=0,USE_SHADER_2,USE_SHADER_2A,USE_SHADER_3};
 extern ShaderModel SIMUL_DIRECTX9_EXPORT GetShaderModel();
 extern void SIMUL_DIRECTX9_EXPORT SetMaxShaderModel(ShaderModel m);
-extern void SIMUL_DIRECTX9_EXPORT SetShaderPath(const char *path);
-extern void SIMUL_DIRECTX9_EXPORT SetTexturePath(const char *path);
+namespace simul
+{
+	namespace dx9
+	{
+		extern void SIMUL_DIRECTX9_EXPORT SetShaderPath(const char *path);
+		extern void SIMUL_DIRECTX9_EXPORT SetTexturePath(const char *path);
+	}
+}
 // Get the technique, or look for a less hardware-demanding equivalent:
 extern D3DXHANDLE SIMUL_DIRECTX9_EXPORT GetDX9Technique(LPD3DXEFFECT effect,const char *tech_name);
 extern HRESULT SIMUL_DIRECTX9_EXPORT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,DWORD resource);

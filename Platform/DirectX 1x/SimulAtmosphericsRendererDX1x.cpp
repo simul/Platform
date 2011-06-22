@@ -8,7 +8,7 @@
 
 // SimulAtmosphericsRenderer.cpp A renderer for skies, clouds and weather effects.
 
-#include "SimulAtmosphericsRendererdx10.h"
+#include "SimulAtmosphericsRendererdx1x.h"
 
 #ifdef XBOX
 	#include <xgraphics.h>

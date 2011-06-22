@@ -16,27 +16,29 @@
 	#include <d3dx11.h>
 	#include <d3dx11effect.h>
 #endif
-#include "Simul/Platform/Windows/DirectX 1x/MacrosDx1x.h"
+#include "Simul/Platform/DirectX 1x/MacrosDx1x.h"
+#include "Simul/Platform/DirectX 1x/Export.h"
 
 
 typedef long HRESULT;
-class SimulHDRRendererDX1x
+SIMUL_DIRECTX1x_EXPORT_CLASS SimulHDRRendererDX1x
 {
 public:
 	SimulHDRRendererDX1x(int w,int h);
 	virtual ~SimulHDRRendererDX1x();
+	void SetBufferSize(int w,int h);
 	//standard d3d object interface functions
 
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-	HRESULT RestoreDeviceObjects(ID3D1xDevice* pd3dDevice,IDXGISwapChain* pSwapChain);
+	bool RestoreDeviceObjects(ID3D1xDevice* pd3dDevice,IDXGISwapChain* pSwapChain);
 	//! Call this when the device has been lost.
-	HRESULT InvalidateDeviceObjects();
+	bool InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-	HRESULT StartRender();
+	bool StartRender();
 	//! ApplyFade: call this after rendering the solid stuff, before rendering transparent and background imagery.
-	HRESULT ApplyFade();
+	bool ApplyFade();
 	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
-	HRESULT FinishRender();
+	bool FinishRender();
 
 	//! Set the exposure - a brightness factor.
 	void SetExposure(float ex){exposure=ex;}
@@ -49,7 +51,7 @@ public:
 protected:
 	int screen_width;
 	int screen_height;
-	HRESULT Destroy();
+	bool Destroy();
 	//! The size of the 2D buffer the sky is rendered to.
 	int BufferWidth,BufferHeight;
 	ID3D1xDevice*						m_pd3dDevice;
@@ -81,9 +83,9 @@ protected:
 	ID3D1xTexture2D*					buffer_depth_texture;
 	ID3D1xShaderResourceView*			buffer_depth_texture_SRV;
 
-	HRESULT IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);
-	HRESULT CreateBuffers();
-	HRESULT RenderBufferToCurrentTarget(bool do_tonemap);
+	bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);
+	bool CreateBuffers();
+	bool RenderBufferToCurrentTarget(bool do_tonemap);
 	class SimulSkyRenderer *simulSkyRenderer;
 	class SimulCloudRendererDX1x *simulCloudRenderer;
 	class Simul2DCloudRenderer *simul2DCloudRenderer;

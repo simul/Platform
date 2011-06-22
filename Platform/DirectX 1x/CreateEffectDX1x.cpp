@@ -10,7 +10,6 @@
 
 #include "CreateEffectDX1x.h"
 #include "Simul/Base/StringToWString.h"
-#pragma comment (lib, "d3dcompiler.lib")
 
 #include <tchar.h>
 #include <string>
@@ -25,37 +24,69 @@ static DWORD default_effect_flags=0;
 #include <fstream>
 #include "MacrosDX1x.h"
 #include <dxerr.h>
-static bool shader_path_set=false;
+
+#pragma comment(lib,"d3dx9.lib")
+#pragma comment(lib,"d3d9.lib")
+#pragma comment(lib,"d3dx11.lib")
+#pragma comment(lib,"Effects11.lib")
+#pragma comment(lib,"dxerr.lib")
+#pragma comment(lib,"dxguid.lib")
+#pragma comment(lib,"d3dcompiler.lib")
+
+// winmm.lib comctl32.lib
+static bool shader_path_set	=false;
 static bool texture_path_set=false;
 
-void SetShaderPath(const char *path)
-{
-#ifdef UNICODE
-	// tstring and TEXT cater for the confusion between wide and regular strings.
-	shader_path.resize(strlen(path),L' '); // Make room for characters
-	// Copy string to wstring.
-	std::copy(path,path+strlen(path),shader_path.begin());
+ID3D1xDevice		*m_pd3dDevice		=NULL;
+ID3D1xDeviceContext	*m_pImmediateContext=NULL;
 
-	shader_path+=L"/";
-#else
-	shader_path=path;
-	shader_path+="/";
-#endif
-	shader_path_set=true;
-}
-void SetTexturePath(const char *path)
+namespace simul
 {
-#ifdef UNICODE
-	// tstring and TEXT cater for the confusion between wide and regular strings.
-	texture_path.resize(strlen(path),L' '); // Make room for characters
-	// Copy string to wstring.
-	std::copy(path,path+strlen(path),texture_path.begin());
-	texture_path+=L"/";
-#else
-	texture_path=path;
-	texture_path+="/";
-#endif
-	texture_path_set=true;
+	namespace dx11
+	{
+		void SetShaderPath(const char *path)
+		{
+		#ifdef UNICODE
+			// tstring and TEXT cater for the confusion between wide and regular strings.
+			shader_path.resize(strlen(path),L' '); // Make room for characters
+			// Copy string to wstring.
+			std::copy(path,path+strlen(path),shader_path.begin());
+
+			shader_path+=L"/";
+		#else
+			shader_path=path;
+			shader_path+="/";
+		#endif
+			shader_path_set=true;
+		}
+		void SetTexturePath(const char *path)
+		{
+		#ifdef UNICODE
+			// tstring and TEXT cater for the confusion between wide and regular strings.
+			texture_path.resize(strlen(path),L' '); // Make room for characters
+			// Copy string to wstring.
+			std::copy(path,path+strlen(path),texture_path.begin());
+			texture_path+=L"/";
+		#else
+			texture_path=path;
+			texture_path+="/";
+		#endif
+			texture_path_set=true;
+		}
+		void SetDevice(ID3D1xDevice* dev)
+		{
+			m_pd3dDevice=dev;
+		#ifdef DX10
+			m_pImmediateContext=dev;
+		#else
+			m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+		#endif
+		}
+		void UnsetDevice()
+		{
+			SAFE_RELEASE(m_pImmediateContext);
+		}
+	}
 }
 struct d3dMacro
 {
@@ -81,11 +112,6 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename, UINT FXFlags, I
 	delete [] pData;
 	return hr;
 }
-#define ID3D1xDevice ID3D11Device 
-#define ID3D1xEffect ID3DX11Effect
-#else
-#define ID3D1xDevice ID3D10Device
-#define ID3D1xEffect ID3D10Effect
 #endif
 /*HRESULT WINAPI D3DX10CreateEffectFromFile(const TCHAR *filename, UINT FXFlags, ID3D10Device *pDevice, ID3D10Effect **ppEffect)
 {
@@ -187,20 +213,6 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 	assert((*effect)->IsValid());
 	delete [] macros;
 	return hr;
-}
-
-
-ID3D1xDevice *m_pd3dDevice=NULL;
-ID3D1xDeviceContext*			m_pImmediateContext=NULL;
-
-void SetDevice(ID3D1xDevice* dev)
-{
-	m_pd3dDevice=dev;
-#ifdef DX10
-	m_pImmediateContext=dev;
-#else
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-#endif
 }
 
 

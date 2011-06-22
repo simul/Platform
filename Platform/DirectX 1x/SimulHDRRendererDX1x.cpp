@@ -37,9 +37,10 @@ typedef std::basic_string<TCHAR> tstring;
 #include "Simul/Math/Pi.h"
 
 SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h) :
+	m_pd3dDevice(NULL),
+	m_pImmediateContext(NULL),
 	m_pBufferVertexDecl(NULL),
 	m_pVertexBuffer(NULL),
-	m_pd3dDevice(NULL),
 	m_pTonemapEffect(NULL),
 	hdr_buffer_texture(NULL),
 	faded_texture(NULL),
@@ -61,7 +62,14 @@ SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h) :
 {
 }
 
-HRESULT SimulHDRRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapChain* pSwapChain)
+void SimulHDRRendererDX1x::SetBufferSize(int w,int h)
+{
+	BufferWidth=w;
+	BufferHeight=h;
+	InvalidateDeviceObjects();
+}
+
+bool SimulHDRRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapChain* pSwapChain)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=dev;
@@ -73,18 +81,19 @@ HRESULT SimulHDRRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapCh
 	m_pSwapChain=pSwapChain;
 	if(!m_pTonemapEffect)
 	{
-		V_RETURN(CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx")));
+		B_RETURN(CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx")));
 	}
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
 	Exposure				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
 	Gamma					=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
 	hdrTexture				=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
-	V_RETURN(CreateBuffers());
-	return hr;
+	if(!CreateBuffers())
+		return false;
+	return (hr==S_OK);
 }
 
-HRESULT SimulHDRRendererDX1x::InvalidateDeviceObjects()
+bool SimulHDRRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 #ifndef DX10
@@ -108,10 +117,10 @@ HRESULT SimulHDRRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(buffer_depth_texture);
 	SAFE_RELEASE(buffer_depth_texture_SRV);
 
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulHDRRendererDX1x::Destroy()
+bool SimulHDRRendererDX1x::Destroy()
 {
 	return InvalidateDeviceObjects();
 }
@@ -122,7 +131,7 @@ SimulHDRRendererDX1x::~SimulHDRRendererDX1x()
 }
 
 
-HRESULT SimulHDRRendererDX1x::IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat)
+bool SimulHDRRendererDX1x::IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat)
 {
 	DepthFormat;
 	AdapterFormat;
@@ -134,19 +143,19 @@ HRESULT SimulHDRRendererDX1x::IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORM
     HRESULT hr=d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat,
                                                        D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, DepthFormat);
     if(FAILED(hr))
-		return hr;
+		return (hr==S_OK);
 
     // Verify that the backbuffer format is valid
     hr=d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat, D3DUSAGE_RENDERTARGET,
                                                D3DRTYPE_SURFACE, BackBufferFormat);
     if(FAILED(hr))
-		return hr;
+		return (hr==S_OK);
 
     // Verify that the depth format is compatible
     hr = d3d->CheckDepthStencilMatch(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat, BackBufferFormat,
                                                     DepthFormat);
 */
-    return hr;
+    return (hr==S_OK);
 }
 struct Vertext
 {
@@ -154,7 +163,7 @@ struct Vertext
 	D3DXVECTOR2 tex;
 };
 
-HRESULT SimulHDRRendererDX1x::CreateBuffers()
+bool SimulHDRRendererDX1x::CreateBuffers()
 {
 	HRESULT hr=S_OK;
 	D3D1x_TEXTURE2D_DESC desc=
@@ -179,7 +188,7 @@ HRESULT SimulHDRRendererDX1x::CreateBuffers()
 	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
 	//hdr_buffer_texture->GetDesc(&desc);
 	SAFE_RELEASE(hdr_buffer_texture_SRV);
-    V_RETURN(m_pd3dDevice->CreateShaderResourceView(hdr_buffer_texture, NULL, &hdr_buffer_texture_SRV ));
+    B_RETURN(m_pd3dDevice->CreateShaderResourceView(hdr_buffer_texture, NULL, &hdr_buffer_texture_SRV ));
 
 	SAFE_RELEASE(faded_texture);
 	hr=m_pd3dDevice->CreateTexture2D(	&desc,
@@ -187,7 +196,7 @@ HRESULT SimulHDRRendererDX1x::CreateBuffers()
 										&faded_texture
 									);
 	SAFE_RELEASE(faded_texture_SRV);
-    V_RETURN(m_pd3dDevice->CreateShaderResourceView(faded_texture, NULL, &faded_texture_SRV ));
+    B_RETURN(m_pd3dDevice->CreateShaderResourceView(faded_texture, NULL, &faded_texture_SRV ));
 
 
 	desc.Width=BufferWidth/4;
@@ -213,7 +222,7 @@ HRESULT SimulHDRRendererDX1x::CreateBuffers()
 	m_pd3dDevice->GetDirect3D(&d3d);
 	if(FAILED(hr=d3d->GetAdapterDisplayMode( D3DADAPTER_DEFAULT, &d3ddm )))
     {
-        return hr;
+        return (hr==S_OK);
     }
 	ID3D1xSurface* hdr_rt=MakeRenderTarget(hdr_buffer_texture);
 	hdr_rt->GetDesc(&desc);
@@ -261,7 +270,7 @@ HRESULT SimulHDRRendererDX1x::CreateBuffers()
 	ID3D1xEffectPass *pass=TonemapTechnique->GetPassByIndex(0);
 	assert(pass->IsValid());
 	hr=pass->GetDesc(&PassDesc);
-	V_RETURN(hr);
+	B_RETURN(hr);
 	hr=m_pd3dDevice->CreateInputLayout( decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pBufferVertexDecl);
 
 	float x=-1.f,y=-1.f;
@@ -287,7 +296,7 @@ HRESULT SimulHDRRendererDX1x::CreateBuffers()
     InitData.SysMemSlicePitch = 0;
 	D3D1x_SUBRESOURCE_DATA initialData;
 	hr=m_pd3dDevice->CreateBuffer(&bdesc,&InitData,&m_pVertexBuffer);
-	return hr;
+	return (hr==S_OK);
 }
 
 ID3D1xRenderTargetView* SimulHDRRendererDX1x::MakeRenderTarget(const ID3D1xTexture2D* pTexture)
@@ -299,7 +308,7 @@ ID3D1xRenderTargetView* SimulHDRRendererDX1x::MakeRenderTarget(const ID3D1xTextu
 }
 	static float depth_start=1.f;
 
-HRESULT SimulHDRRendererDX1x::StartRender()
+bool SimulHDRRendererDX1x::StartRender()
 {
 	HRESULT hr=S_OK;
 	if(hdrTexture)
@@ -332,20 +341,20 @@ float gaussian( float x, float mean, float std_deviation )
     return ( 1.0f / sqrt( 2.0f * D3DX_PI * std_deviation * std_deviation ) ) 
             * expf( (-((x-mean)*(x-mean)))/(2.0f * std_deviation * std_deviation) );
 }
-HRESULT SimulHDRRendererDX1x::ApplyFade()
+bool SimulHDRRendererDX1x::ApplyFade()
 {
 	HRESULT hr=S_OK;
 	if(!atmospherics)
-		return hr;
+		return (hr==S_OK);
 	//atmospherics->SetInputTextures(hdr_buffer_texture,buffer_depth_texture);
 	//m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	//m_pHDRRenderTarget=MakeRenderTarget(faded_texture);
 	//m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
 //	hr=atmospherics->Render();
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulHDRRendererDX1x::FinishRender()
+bool SimulHDRRendererDX1x::FinishRender()
 {
 	HRESULT hr=S_OK;
 	#
@@ -369,10 +378,10 @@ HRESULT SimulHDRRendererDX1x::FinishRender()
 	SAFE_RELEASE(m_pOldDepthSurface)
 	PIXEndNamedEvent();
 	hdrTexture->SetResource(NULL);
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulHDRRendererDX1x::RenderBufferToCurrentTarget(bool do_tonemap)
+bool SimulHDRRendererDX1x::RenderBufferToCurrentTarget(bool do_tonemap)
 {
 	HRESULT hr=S_OK;
 	D3DXMATRIX ident;
@@ -393,7 +402,7 @@ HRESULT SimulHDRRendererDX1x::RenderBufferToCurrentTarget(bool do_tonemap)
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
 	m_pImmediateContext->Draw(4,0);
-	return hr;
+	return (hr==S_OK);
 }
 
 const char *SimulHDRRendererDX1x::GetDebugText() const

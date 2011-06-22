@@ -205,9 +205,9 @@ void SimulCloudRendererDX1x::SetNoiseTextureProperties(int s,int f,int o,float p
 	CreateNoiseTexture();
 }
 
-HRESULT SimulCloudRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
+bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 {
-	m_pd3dDevice=dev;
+	m_pd3dDevice=(ID3D1xDevice*)dev;
 #ifdef DX10
 	m_pImmediateContext=dev;
 #else
@@ -215,11 +215,11 @@ HRESULT SimulCloudRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
 	HRESULT hr;
-	//V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	//V_RETURN(m_pd3dDevice->CreateVertexDeclaration(std_decl,&m_pLightningVtxDecl))
-	V_RETURN(CreateNoiseTexture());
-	V_RETURN(CreateLightningTexture());
-	V_RETURN(CreateCloudEffect());
+	//B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
+	//B_RETURN(m_pd3dDevice->CreateVertexDeclaration(std_decl,&m_pLightningVtxDecl))
+	B_RETURN(CreateNoiseTexture());
+	B_RETURN(CreateLightningTexture());
+	B_RETURN(CreateCloudEffect());
 
 	D3D1x_SHADER_RESOURCE_VIEW_DESC texdesc;
 
@@ -227,11 +227,11 @@ HRESULT SimulCloudRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 	texdesc.ViewDimension=D3D1x_SRV_DIMENSION_TEXTURE3D;
 	texdesc.Texture3D.MostDetailedMip=0;
 	texdesc.Texture3D.MipLevels=1;
-    V_RETURN(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
+    B_RETURN(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
 
 	noiseTexture				->SetResource(noiseTextureResource);
 
-	V_RETURN(CreateEffect(m_pd3dDevice,&m_pLightningEffect,L"simul_lightning.fx"));
+	B_RETURN(CreateEffect(m_pd3dDevice,&m_pLightningEffect,L"simul_lightning.fx"));
 	if(m_pLightningEffect)
 	{
 		m_hTechniqueLightning	=m_pLightningEffect->GetTechniqueByName("simul_lightning");
@@ -286,10 +286,10 @@ HRESULT SimulCloudRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 	cloudKeyframer->SetRenderCallback(this);
 	if(lightningIlluminationTextureResource)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulCloudRendererDX1x::InvalidateDeviceObjects()
+bool SimulCloudRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 #ifndef DX10
@@ -317,14 +317,14 @@ HRESULT SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	
 	SAFE_RELEASE(lightningIlluminationTextureResource);
 
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulCloudRendererDX1x::Destroy()
+bool SimulCloudRendererDX1x::Destroy()
 {
 	HRESULT hr=S_OK;
 	hr=InvalidateDeviceObjects();
-	return hr;
+	return (hr==S_OK);
 }
 
 SimulCloudRendererDX1x::~SimulCloudRendererDX1x()
@@ -337,7 +337,7 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(bool override_file)
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(noise_texture);
 	//if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,size,default_mip_levels,default_texture_usage,DXGI_FORMAT_R8G8B8A8_UINT,D3DPOOL_MANAGED,&noise_texture)))
-	//	return hr;
+	//	return (hr==S_OK);
 	D3D1x_TEXTURE2D_DESC desc=
 	{
 		noise_texture_size,
@@ -361,7 +361,7 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(bool override_file)
 	return true;
 }
 
-HRESULT SimulCloudRendererDX1x::CreateLightningTexture()
+bool SimulCloudRendererDX1x::CreateLightningTexture()
 {
 	HRESULT hr=S_OK;
 	unsigned size=64;
@@ -378,10 +378,10 @@ HRESULT SimulCloudRendererDX1x::CreateLightningTexture()
 		0
 	};
 	if(FAILED(hr=m_pd3dDevice->CreateTexture1D(&desc,NULL,&lightning_texture)))
-		return hr;
+		return (hr==S_OK);
 	D3D1x_MAPPED_TEXTURE2D resource;
 	if(FAILED(hr=Map1D(lightning_texture,&resource)))
-		return hr;
+		return (hr==S_OK);
 	unsigned char *lightning_tex_data=(unsigned char *)(resource.pData);
 	for(unsigned i=0;i<size;i++)
 	{
@@ -402,7 +402,7 @@ HRESULT SimulCloudRendererDX1x::CreateLightningTexture()
 		lightning_tex_data[4*i+3]=(unsigned char)(255.f*r);
 	}
 	Unmap1D(lightning_texture);
-	return hr;
+	return (hr==S_OK);
 }
 
 
@@ -528,7 +528,7 @@ void SimulCloudRendererDX1x::CycleTexturesForward()
 	Map(2);
 }
 
-HRESULT SimulCloudRendererDX1x::CreateCloudEffect()
+bool SimulCloudRendererDX1x::CreateCloudEffect()
 {
 	if(!m_pd3dDevice)
 		return S_OK;
@@ -572,7 +572,7 @@ HRESULT SimulCloudRendererDX1x::CreateCloudEffect()
 	skyLossTexture2						=m_pCloudEffect->GetVariableByName("skyLossTexture2")->AsShaderResource();
 	skyInscatterTexture1				=m_pCloudEffect->GetVariableByName("skyInscatterTexture1")->AsShaderResource();
 	skyInscatterTexture2				=m_pCloudEffect->GetVariableByName("skyInscatterTexture2")->AsShaderResource();
-	return hr;
+	return (hr==S_OK);
 }
 
 void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
@@ -596,7 +596,7 @@ D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 }
 
 
-HRESULT SimulCloudRendererDX1x::Render(bool)
+bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default_fog)
 {
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
@@ -804,10 +804,10 @@ HRESULT SimulCloudRendererDX1x::Render(bool)
 	skyInscatterTexture1->SetResource(0);
 	skyLossTexture2->SetResource(0);
 	skyInscatterTexture2->SetResource(0);
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulCloudRendererDX1x::RenderLightning()
+bool SimulCloudRendererDX1x::RenderLightning()
 {
 	if(!enable_lightning)
 		return S_OK;
@@ -899,7 +899,7 @@ HRESULT SimulCloudRendererDX1x::RenderLightning()
 //	hr=m_pLightningEffect->EndPass();
 //	hr=m_pLightningEffect->End();
 	PIXEndNamedEvent();
-	return hr;
+	return (hr==S_OK);
 }
 
 void SimulCloudRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
@@ -919,10 +919,10 @@ float SimulCloudRendererDX1x::GetSunOcclusion() const
 	return sun_occlusion;
 }
 
-HRESULT SimulCloudRendererDX1x::MakeCubemap()
+bool SimulCloudRendererDX1x::MakeCubemap()
 {
 	HRESULT hr=S_OK;
-	return hr;
+	return (hr==S_OK);
 }
 
 const TCHAR *SimulCloudRendererDX1x::GetDebugText() const
@@ -954,4 +954,9 @@ void SimulCloudRendererDX1x::SetYVertical(bool y)
 	y_vertical=y;
 	helper->SetYVertical(y);
 	CreateCloudEffect();
+}
+
+bool SimulCloudRendererDX1x::IsYVertical() const
+{
+	return y_vertical;
 }

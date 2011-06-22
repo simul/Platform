@@ -7,13 +7,13 @@
 #endif
 #include "Simul/Platform/DirectX 9/Export.h"
 #ifndef FRAMEBUFFER_INTERFACE
+#define FRAMEBUFFER_INTERFACE
 class FramebufferInterface
 {
 public:
 	virtual void Activate()=0;
 	virtual void Deactivate()=0;
-	virtual void DeactivateAndRender()=0;
-	virtual void Render()=0;
+	virtual void DeactivateAndRender(bool blend)=0;
 };
 #endif
 
@@ -29,7 +29,8 @@ public:
 	LPDIRECT3DTEXTURE9				buffer_depth_texture;
 	void Activate();
 	void Deactivate();
-	void DeactivateAndRender();
+	void DeactivateAndRender(bool blend);
+	void Render(bool blend);
 	int Width,Height;
 protected:
 	LPDIRECT3DDEVICE9	m_pd3dDevice;

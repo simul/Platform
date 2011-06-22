@@ -135,7 +135,7 @@ simul::sky::FadeTableInterface *SimulSkyRendererDX1x::GetFadeTableInterface()
 	return skyKeyframer.get();
 }
 	
-HRESULT SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
+bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 {
 	m_pd3dDevice=dev;
 #ifdef DX10
@@ -169,7 +169,7 @@ HRESULT SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 									);
 
 	flare_texture=static_cast<ID3D1xTexture2D*>(res);
-    V_RETURN(m_pd3dDevice->CreateShaderResourceView( flare_texture,NULL,&flare_texture_SRV));
+    B_RETURN(m_pd3dDevice->CreateShaderResourceView( flare_texture,NULL,&flare_texture_SRV));
 
     D3D1x_PASS_DESC PassDesc;
 	m_hTechniqueSky->GetPassByIndex(0)->GetDesc(&PassDesc);
@@ -197,10 +197,10 @@ HRESULT SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 
 	fadeTableInterface->SetCallback(NULL);
 	fadeTableInterface->SetCallback(this);
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulSkyRendererDX1x::InvalidateDeviceObjects()
+bool SimulSkyRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	UnmapSky();
@@ -228,10 +228,10 @@ HRESULT SimulSkyRendererDX1x::InvalidateDeviceObjects()
 
 	SAFE_RELEASE(d3dQuery);
 	skyKeyframer->SetCallback(NULL);
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulSkyRendererDX1x::Destroy()
+bool SimulSkyRendererDX1x::Destroy()
 {
 	return InvalidateDeviceObjects();
 }
@@ -390,7 +390,7 @@ void SimulSkyRendererDX1x::CycleTexturesForward()
 	std::swap(insc_textures_SRV[1],insc_textures_SRV[2]);
 }
 
-HRESULT SimulSkyRendererDX1x::CreateSkyTexture()
+bool SimulSkyRendererDX1x::CreateSkyTexture()
 {
 	HRESULT hr=S_OK;
 	D3D1x_TEXTURE2D_DESC desc=
@@ -408,24 +408,24 @@ HRESULT SimulSkyRendererDX1x::CreateSkyTexture()
 	{
 		SAFE_RELEASE(sky_textures[i]);
 		SAFE_RELEASE(sky_textures_SRV[i]);
-		V_RETURN(m_pd3dDevice->CreateTexture2D(&desc,NULL, &sky_textures[i]));
-		V_RETURN(m_pd3dDevice->CreateShaderResourceView(sky_textures[i],NULL,&sky_textures_SRV[i]));
+		B_RETURN(m_pd3dDevice->CreateTexture2D(&desc,NULL, &sky_textures[i]));
+		B_RETURN(m_pd3dDevice->CreateShaderResourceView(sky_textures[i],NULL,&sky_textures_SRV[i]));
 	}
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulSkyRendererDX1x::CreateSkyEffect()
+bool SimulSkyRendererDX1x::CreateSkyEffect()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pSkyEffect);
 	if(!m_pd3dDevice)
-		return hr;
+		return (hr==S_OK);
 	std::map<std::string,std::string> defines;
 	if(y_vertical)
 		defines["Y_VERTICAL"]="1";
 	else
 		defines["Z_VERTICAL"]="1";
-	V_RETURN(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"simul_sky.fx",defines));
+	B_RETURN(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"simul_sky.fx",defines));
 	m_hTechniqueSky		=m_pSkyEffect->GetTechniqueByName("simul_sky");
 	worldViewProj		=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	lightDirection		=m_pSkyEffect->GetVariableByName("lightDir")->AsVector();
@@ -444,18 +444,18 @@ HRESULT SimulSkyRendererDX1x::CreateSkyEffect()
 	skyTexture2			=m_pSkyEffect->GetVariableByName("skyTexture2")->AsShaderResource();
 
 	m_hTechniqueQuery	=m_pSkyEffect->GetTechniqueByName("simul_query");
-	return hr;
+	return (hr==S_OK);
 }
 
 extern void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);
 
 
-HRESULT SimulSkyRendererDX1x::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians)
+bool SimulSkyRendererDX1x::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians)
 {
 	float Yaw=atan2(dir.x,dir.y);
 	float Pitch=-asin(dir.z);
 	HRESULT hr=S_OK;
-	return hr;
+	return (hr==S_OK);
 	/*
 	D3DXMATRIX tmp1, tmp2,wvp;
 	D3DXMatrixIdentity(&world);
@@ -503,7 +503,7 @@ HRESULT SimulSkyRendererDX1x::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_
 		//hr=m_pSkyEffect->EndPass();
 	}
 	//hr=m_pSkyEffect->End();
-	return hr;*/
+	return (hr==S_OK);*/
 }
 
 float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
@@ -539,7 +539,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 	return sun_occlusion;
 }
 simul::sky::float4 sunlight;
-HRESULT SimulSkyRendererDX1x::RenderSun()
+bool SimulSkyRendererDX1x::RenderSun()
 {
 	float alt_km=0.001f*cam_pos.y;
 	sunlight=skyInterface->GetLocalIrradiance(alt_km);
@@ -565,7 +565,7 @@ HRESULT hr=S_OK;
     UINT64 pixelsVisible = 0;
     
     while (d3dQuery->GetData((void *) &pixelsVisible,sizeof(UINT64),0) == S_FALSE);*/
-	return hr;
+	return (hr==S_OK);
 }
 
 bool SimulSkyRendererDX1x::RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
@@ -598,11 +598,11 @@ bool SimulSkyRendererDX1x::RenderPlanet(void* tex,float rad,const float *dir,con
 	return hr==S_OK;
 }
 
-HRESULT SimulSkyRendererDX1x::RenderFlare(float exposure)
+bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 {
 	HRESULT hr=S_OK;
 	if(!m_pSkyEffect)
-		return hr;
+		return (hr==S_OK);
 	float magnitude=exposure*(1.f-sun_occlusion);
 	float alt_km=0.001f*cam_pos.y;
 	sunlight=skyInterface->GetLocalIrradiance(alt_km);
@@ -619,10 +619,10 @@ HRESULT SimulSkyRendererDX1x::RenderFlare(float exposure)
 	float sun_angular_size=3.14159f/180.f/2.f;
 	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
 	hr=RenderAngledQuad(sun_dir,sun_angular_size*20.f*magnitude);
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulSkyRendererDX1x::Render()
+bool SimulSkyRendererDX1x::Render()
 {
 	HRESULT hr=S_OK;
 	D3DXMATRIX tmp1, tmp2,wvp;
@@ -682,7 +682,7 @@ HRESULT SimulSkyRendererDX1x::Render()
 	m_pImmediateContext->Draw(36,0);
 
 	PIXEndNamedEvent();
-	return hr;
+	return (hr==S_OK);
 }
 
 void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

@@ -18,8 +18,6 @@
 #include "FreeImage.h"
 #include <fstream>
 
-#include "RenderTextureFBO.h"
-
 #include "SimulGLCloudRenderer.h"
 #include "Simul/Clouds/FastCloudNode.h"
 #include "Simul/Clouds/CloudGeometryHelper.h"
@@ -308,7 +306,7 @@ bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_f
 	glUniform1i(cloudDensity2_param,1);
 	glUniform1i(noiseSampler_param,2);
 	glUniform1i(illumSampler_param,3);
-
+ERROR_CHECK
 	if(enable_lightning)
 	{
 		static float bb=.1f;
@@ -335,6 +333,7 @@ bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_f
 		glUniform3fv	(illuminationOrigin_param,1,(const float *)(&light_X1));
 		glUniform3fv	(illuminationScales_param,1,(const float *)(&light_DX));
 	}
+ERROR_CHECK
 
 	static float light_direct=0.25f;
 	static float light_indirect=0.03f;
@@ -414,6 +413,7 @@ bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_f
 	// a) are in the view frustum
 	//  ...and...
 	// b) are in the cloud volume
+ERROR_CHECK
 	int layers_drawn=0;
 	for(std::vector<CloudGeometryHelper::RealtimeSlice*>::const_iterator i=helper->GetSlices().begin();
 		i!=helper->GetSlices().end();i++)
@@ -455,6 +455,7 @@ bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_f
 			loss=simul::sky::float4(1,1,1,1)*(1.f-mix_fog);
 			inscatter=gl_fog*mix_fog;
 		}
+ERROR_CHECK
 		layers_drawn++;
 		helper->MakeLayerGeometry(cloudNode.get(),*i);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
@@ -490,6 +491,7 @@ bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_f
 		}
 		glEnd();
 	}
+ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glDisable(GL_BLEND);
@@ -497,6 +499,7 @@ bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_f
 	glDisable(GL_TEXTURE_3D);
 	glDisable(GL_TEXTURE_2D);
 	glPopAttrib();
+ERROR_CHECK
 	return true;
 }
 

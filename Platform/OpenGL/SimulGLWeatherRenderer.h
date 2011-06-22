@@ -13,7 +13,6 @@
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
-#include "Simul/Platform/OpenGL/SimulGLLightningRenderer.h"
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)
@@ -56,8 +55,6 @@ public:
 	void RenderPrecipitation();
 	//! Call this to draw sun flares etc. after geometry.
 	void RenderFlares();
-	//! Perform the once-per-frame time update.
-	void Update(float dt);
 	//! Get a pointer to the sky renderer owned by this class instance.
 	class SimulGLSkyRenderer *GetSkyRenderer();
 	//! Get a pointer to the 3d cloud renderer owned by this class instance.
@@ -81,6 +78,7 @@ public:
 	void New();
 	//! Connect-up sky, clouds:
 	void ConnectInterfaces();
+	const char *GetDebugText() const;
 protected:
 	//! This is set once the GL device has been initialized - then we can create textures and so forth.
 	bool device_initialized;

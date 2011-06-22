@@ -150,16 +150,16 @@ void SimulTerrainRenderer::GetVertex(int i,int j,TerrainVertex_t *V)
 	float Y=(float)j/((float)grid-1.f);
 	
 	V->x=(X-0.5f)*heightMapInterface->GetPageWorldX();
-	V->y=heightMapInterface->GetHeightAt(i,j);
-	V->z=(Y-0.5f)*heightMapInterface->GetPageWorldZ();
-	if(!y_vertical)
+	V->y=(Y-0.5f)*heightMapInterface->GetPageWorldZ();
+	V->z=heightMapInterface->GetHeightAt(i,j);
+	if(y_vertical)
 		std::swap(V->y,V->z);
 	simul::math::Vector3 n=heightMapInterface->GetNormalAt(i,j);
-	V->normal_x=n.x;
-	V->normal_y=n.z;
-	V->normal_z=n.y;
-	if(!y_vertical)
+	if(y_vertical)
 		std::swap(n.y,n.z);
+	V->normal_x=n.x;
+	V->normal_y=n.y;
+	V->normal_z=n.z;
 	//V->ca=1.f-(1.f-saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f)*saturate((800.f-V->y)/200.f);
 	V->ca=GrassFunction(y_vertical?V->y:V->z,n);
 	static float tex_scale=20.f;
@@ -174,15 +174,15 @@ void SimulTerrainRenderer::GetVertex(float x,float y,TerrainVertex_t *V)
 	float Y=y/heightMapInterface->GetPageWorldZ()+0.5f;
 	
 	V->x=x;
-	V->y=heightMapInterface->GetHeightAt(x,y);
-	V->z=y;
-	if(!y_vertical)
+	V->y=y;
+	V->z=heightMapInterface->GetHeightAt(x,y);
+	if(y_vertical)
 		std::swap(V->y,V->z);
 	simul::math::Vector3 n=heightMapInterface->GetNormalAt(x,y);
 	V->normal_x=n.x;
-	V->normal_y=n.z;
-	V->normal_z=n.y;
-	if(!y_vertical)
+	V->normal_y=n.y;
+	V->normal_z=n.z;
+	if(y_vertical)
 		std::swap(n.y,n.z);
 	//V->ca=(saturate((V->y-4400.f)/200.f))*saturate((n.z-0.8f)/0.1f)*saturate((800.f-V->y)/200.f);
 	V->ca=GrassFunction(V->y,n);

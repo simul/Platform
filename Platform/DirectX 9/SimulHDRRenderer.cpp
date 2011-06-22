@@ -50,8 +50,7 @@ SimulHDRRenderer::SimulHDRRenderer(int width,int height) :
 	hdr_buffer_texture(NULL),
 	faded_texture(NULL),
 	buffer_depth_texture(NULL),
-	brightpass_buffer_texture(NULL),
-	bloom_texture(NULL),
+	depth_alpha_texture(NULL),
 	m_pHDRRenderTarget(NULL),
 	m_pBufferDepthSurface(NULL),
 	m_pFadedRenderTarget(NULL),
@@ -83,12 +82,9 @@ bool SimulHDRRenderer::RestoreDeviceObjects(void *dev)
 #endif
 	ToneMapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
 	ToneMapZWriteTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_tonemap_zwrite");
-	BrightpassTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_brightpass");
-	BlurTechnique			=m_pTonemapEffect->GetTechniqueByName("simul_blur");
 	Exposure				=m_pTonemapEffect->GetParameterByName(NULL,"exposure");
 	Gamma					=m_pTonemapEffect->GetParameterByName(NULL,"gamma");
 	hdrTexture				=m_pTonemapEffect->GetParameterByName(NULL,"hdrTexture");
-	bloomTexture			=m_pTonemapEffect->GetParameterByName(NULL,"bloomTexture");
 	B_RETURN(CreateBuffers());
 	return (hr==S_OK);
 }
@@ -96,6 +92,7 @@ bool SimulHDRRenderer::RestoreDeviceObjects(void *dev)
 bool SimulHDRRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
+	SAFE_RELEASE(depth_alpha_texture);
 	SAFE_RELEASE(m_pBufferVertexDecl);
 	SAFE_RELEASE(m_pHDRRenderTarget);
 	SAFE_RELEASE(m_pBufferDepthSurface);
@@ -105,8 +102,6 @@ bool SimulHDRRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pTonemapEffect);
 	SAFE_RELEASE(hdr_buffer_texture);
 	SAFE_RELEASE(faded_texture);
-	SAFE_RELEASE(brightpass_buffer_texture);
-	SAFE_RELEASE(bloom_texture);
 	SAFE_RELEASE(buffer_depth_texture);
 	return (hr==S_OK);
 }
@@ -172,6 +167,17 @@ bool SimulHDRRenderer::CreateBuffers()
 											&hdr_buffer_texture,
 											NULL
 										));
+	
+	SAFE_RELEASE(depth_alpha_texture);
+	B_RETURN(m_pd3dDevice->CreateTexture(	BufferWidth,
+											BufferHeight,
+											1,
+											D3DUSAGE_RENDERTARGET,
+											hdr_format,
+											D3DPOOL_DEFAULT,
+											&depth_alpha_texture,
+											NULL
+										));
 	SAFE_RELEASE(faded_texture);
 	B_RETURN(m_pd3dDevice->CreateTexture(	BufferWidth,
 											BufferHeight,
@@ -180,26 +186,6 @@ bool SimulHDRRenderer::CreateBuffers()
 											hdr_format,
 											D3DPOOL_DEFAULT,
 											&faded_texture,
-											NULL
-										));
-	SAFE_RELEASE(brightpass_buffer_texture);
-	B_RETURN(m_pd3dDevice->CreateTexture(	BufferWidth/4,
-											BufferHeight/4,
-											1,
-											D3DUSAGE_RENDERTARGET,
-											hdr_format,
-											D3DPOOL_DEFAULT,
-											&brightpass_buffer_texture,
-											NULL
-										));
-	SAFE_RELEASE(bloom_texture);
-	B_RETURN(m_pd3dDevice->CreateTexture(	BufferWidth/4,
-											BufferHeight/4,
-											1,
-											D3DUSAGE_RENDERTARGET,
-											hdr_format,
-											D3DPOOL_DEFAULT,
-											&bloom_texture,
 											NULL
 										));
 	
@@ -217,8 +203,6 @@ bool SimulHDRRenderer::CreateBuffers()
 	};
 	SAFE_RELEASE(m_pBufferVertexDecl);
 	B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
-
-
 	D3DFORMAT fmtDepthTex = D3DFMT_UNKNOWN;
 //	D3DFORMAT possibles[]={D3DFMT_D32,D3DFMT_D24S8,D3DFMT_D24FS8,D3DFMT_D24X8,D3DFMT_D16,D3DFMT_UNKNOWN};
 	LPDIRECT3DSURFACE9 g_BackBuffer;
@@ -241,24 +225,6 @@ bool SimulHDRRenderer::CreateBuffers()
 	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
 	SAFE_RELEASE(m_pFadedRenderTarget)
 	m_pFadedRenderTarget=MakeRenderTarget(faded_texture);
-	/*m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
-	m_pHDRRenderTarget->GetDesc(&desc);
-	for(int i=0;i<100;i++)
-	{
-		D3DFORMAT possible=possibles[i];
-		if(possible==D3DFMT_UNKNOWN)
-			break;
-		HRESULT h=CanUseDepthFormat(m_pd3dDevice,possible);
-		if(FAILED(h))
-			continue;
-		h=IsDepthFormatOk(possible,d3ddm.Format,desc.Format);
-		if(SUCCEEDED(h))
-		{
-			fmtDepthTex = possible;
-			std::cout<<"Depth format found: "<<possible<<std::endl;
-			break;
-		}
-	}*/
 	SAFE_RELEASE(buffer_depth_texture);
 	// Try creating a depth texture
 	if(fmtDepthTex!=D3DFMT_UNKNOWN)
@@ -307,141 +273,7 @@ LPDIRECT3DSURFACE9 SimulHDRRenderer::MakeRenderTarget(const LPDIRECT3DTEXTURE9 p
 #endif
 	return pRenderTarget;
 }
-	static float depth_start=1.f;
-
-
-bool SimulHDRRenderer::RenderBrightpass()
-{
-	HRESULT hr=S_OK;
-	// Use the hdr buffer to make the brightpass:
-	m_pBrightpassRenderTarget=MakeRenderTarget(brightpass_buffer_texture);
-	m_pd3dDevice->SetRenderTarget(0,m_pBrightpassRenderTarget);
-	B_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L));
-	m_pTonemapEffect->SetTechnique(BrightpassTechnique);
-	brightpassThreshold	=m_pTonemapEffect->GetParameterByName(NULL,"brightpassThreshold");
-	brightPassOffsets	=m_pTonemapEffect->GetParameterByName(NULL,"brightpassOffsets");
-	B_RETURN(m_pTonemapEffect->SetFloat(brightpassThreshold,10.f));
-	D3DXVECTOR4 brightpass_offsets[4];
-
-	D3DSURFACE_DESC desc;
-	brightpass_buffer_texture->GetLevelDesc(0,&desc);
-
-	// Because the source and destination are NOT the same sizes, we
-	// need to provide offsets to correctly map between them.
-	float sU = (2.0f / static_cast< float >(desc.Width));
-	float sV = (2.0f / static_cast< float >(desc.Height));
-
-	// The last two components (z,w) are unused.
-	brightpass_offsets[0]=D3DXVECTOR4(-0.5f*sU, 0.5f*sV,0.0f,0.0f);
-	brightpass_offsets[1]=D3DXVECTOR4( 0.5f*sU, 0.5f*sV,0.0f,0.0f);
-	brightpass_offsets[2]=D3DXVECTOR4(-0.5f*sU,-0.5f*sV,0.0f,0.0f);
-	brightpass_offsets[3]=D3DXVECTOR4( 0.5f*sU,-0.5f*sV,0.0f,0.0f);
-
-	B_RETURN(m_pTonemapEffect->SetVectorArray(brightPassOffsets,brightpass_offsets,4));
-	B_RETURN(m_pTonemapEffect->SetTexture(hdrTexture,last_texture));
-
-	brightpass_buffer_texture->GetLevelDesc(0,&desc);
-	RenderBufferToCurrentTarget(desc.Width,desc.Height,true);
-	return (hr==S_OK);
-}
-
-float gaussian( float x, float mean, float std_deviation )
-{
-    return ( 1.0f / sqrt( 2.0f * D3DX_PI * std_deviation * std_deviation ) ) 
-            * expf( (-((x-mean)*(x-mean)))/(2.0f * std_deviation * std_deviation) );
-}
-
-bool SimulHDRRenderer::RenderBloom()
-{
-	HRESULT hr=S_OK;
-	// Use the hdr buffer to make the brightpass:
-	LPDIRECT3DSURFACE9	BloomRenderTarget;
-	BloomRenderTarget=MakeRenderTarget(bloom_texture);
-	m_pd3dDevice->SetRenderTarget(0,BloomRenderTarget);
-	B_RETURN(m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L));
-	m_pTonemapEffect->SetTechnique(BlurTechnique);
-	bloomOffsets	=m_pTonemapEffect->GetParameterByName(NULL,"bloomOffsets");
-	bloomWeights	=m_pTonemapEffect->GetParameterByName(NULL,"bloomWeights");
-	D3DSURFACE_DESC desc;
-	brightpass_buffer_texture->GetLevelDesc(0,&desc);
-	static float offset_scale=1.f;
-	static float                       g_GaussMultiplier           = 0.0025f; 
-    static float                       g_GaussStdDev               = 0.005f; 
-#ifdef MONTE_CARLO_BLUR
-simul::math::RandomNumberGenerator r;
-	D3DXVECTOR4 bloom_offsets[BLUR_SIZE];
-	float bloom_weights[BLUR_SIZE];
-	for(int i=0;i<BLUR_SIZE;i++ )
-	{
-		int x=i/3;
-		int y=i-3*x;
-		float offsetx=r.FRand();
-		float offsety=r.FRand();
-		float X=(float)x+offsetx;
-		float Y=(float)y+offsety;
-		float angle=X/4.f*2.f*pi;
-		float rad=4.f*sqrt(Y/4.f)/(float)desc.Width;
-		float tx=rad*cos(angle);
-		float ty=rad*sin(angle);
-		bloom_offsets[i].x=offset_scale*tx;
-		bloom_offsets[i].y=offset_scale*ty;
-		bloom_offsets[i].z=0;
-		bloom_offsets[i].w=0;
-		bloom_weights[i] = g_GaussMultiplier*gaussian(rad,0,g_GaussStdDev );
-	}
-	B_RETURN(m_pTonemapEffect->SetVectorArray(bloomOffsets,bloom_offsets,BLUR_SIZE));
-	B_RETURN(m_pTonemapEffect->SetFloatArray(bloomWeights,bloom_weights,BLUR_SIZE));
-#else
-	D3DXVECTOR4 bloom_offsets[BLUR_SIZE*2+1];
-	float bloom_weights[BLUR_SIZE*2+1];
-	static float weight_mult=5e-7f;
-	int j=0;
-	for( int i = 0; i < BLUR_SIZE+1; i++ )
-	{
-       //     i =  0,  1,  2,  3, 4,  5,  6,  7,  8
-       //Offset = -4, -3, -2, -1, 0, +1, +2, +3, +4
-       // 'x' is just an alias to map the [0,32] range down to a [-1,+1]
-       float x = 2.f*((float)i/(float)BLUR_SIZE) - 1.f;
-		bloom_offsets[j].x=offset_scale*x*(float)BLUR_SIZE/(float)desc.Width;
-		
-		bloom_offsets[j].y=0;
-		bloom_offsets[j].z=0;
-		bloom_offsets[j].w=0;
-		if(x<0)
-			x*=-1.f;
-       bloom_weights[j] = weight_mult /(x+0.001f);//g_GaussMultiplier*gaussian( x, 0,g_GaussStdDev );
-	   j++;
-	}
-	for( int i = 0; i < BLUR_SIZE+1; i++ )
-	{
-		if(i==BLUR_SIZE/2)
-			continue;
-       //     i =  0,  1,  2,  3, 4,  5,  6,  7,  8
-       //Offset = -4, -3, -2, -1, 0, +1, +2, +3, +4
-       // 'x' is just an alias to map the [0,32] range down to a [-1,+1]
-       float x = 2.f*((float)i/(float)BLUR_SIZE) - 1.f;
-		bloom_offsets[j].y=offset_scale*x*(float)BLUR_SIZE/(float)desc.Width;
-		
-		bloom_offsets[j].x=0;
-		bloom_offsets[j].z=0;
-		bloom_offsets[j].w=0;
-		if(x<0)
-			x*=-1.f;
-       bloom_weights[j] = weight_mult /(x+0.001f);//g_GaussMultiplier*gaussian( x, 0,g_GaussStdDev );
-	   j++;
-	}
-	hr=m_pTonemapEffect->SetVectorArray(bloomOffsets,bloom_offsets,BLUR_SIZE*2+1);
-	hr=m_pTonemapEffect->SetFloatArray(bloomWeights,bloom_weights,BLUR_SIZE*2+1);
-#endif
-
-	B_RETURN(m_pTonemapEffect->SetTexture(hdrTexture,last_texture));
-
-	bloom_texture->GetLevelDesc(0,&desc);
-	RenderBufferToCurrentTarget(desc.Width,desc.Height,true);
-	//hr=m_pTonemapEffect->SetTexture(hdrTexture,bloom_texture);
-	//RenderBufferToCurrentTarget(desc.Width,desc.Height,true);
-	return (hr==S_OK);
-}
+static float depth_start=1.f;
 
 bool SimulHDRRenderer::StartRender()
 {		 
@@ -449,38 +281,56 @@ bool SimulHDRRenderer::StartRender()
 	HRESULT hr=S_OK;
 	m_pOldRenderTarget		=NULL;
 	m_pOldDepthSurface		=NULL;
-	
 	hr=m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
 	hr=m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
-	
 	hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
-	
 	if(m_pBufferDepthSurface)
 		hr=(m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface));
-	
 	hr=m_pd3dDevice->SetRenderState(D3DRS_STENCILENABLE,FALSE);
 	hr=m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
 	hr=m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
 	static float depth_start=1.f;
-	hr=m_pd3dDevice->Clear(0L, NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start, 0L);
-
+	hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 	last_texture=hdr_buffer_texture;
-	return (hr==S_OK);;
+	return (hr==S_OK);
+}
+
+bool SimulHDRRenderer::CopyDepthAlpha()
+{
+	// Unselect the current rt
+	HRESULT hr=m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
+	LPDIRECT3DSURFACE9		depthAlphaRenderTarget=NULL;
+	if(depth_alpha_texture)
+		depthAlphaRenderTarget=MakeRenderTarget(depth_alpha_texture);
+	else
+		return false;
+	// Copy its surface to the depth texture.
+	hr=m_pd3dDevice->StretchRect(	m_pHDRRenderTarget,
+									NULL,
+									depthAlphaRenderTarget,
+									NULL,
+									D3DTEXF_NONE	);
+	SAFE_RELEASE(depthAlphaRenderTarget);
+	// copy the render surface to the depth surface depth_alpha_texture
+	hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
+	if(atmospherics)
+		atmospherics->SetInputTextures(depth_alpha_texture,buffer_depth_texture);
+	return (hr==S_OK);
 }
 
 bool SimulHDRRenderer::ApplyFade()
 {
 	HRESULT hr=S_OK;
-	if(!atmospherics)
+/*	if(!atmospherics)
 		return (hr==S_OK);
-	atmospherics->SetInputTextures(hdr_buffer_texture,buffer_depth_texture);
+	atmospherics->SetInputTextures(depth_alpha_texture,buffer_depth_texture);
 	m_pd3dDevice->SetRenderTarget(0,m_pFadedRenderTarget);
 	if(m_pBufferDepthSurface)
 		m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
 	else if(m_pOldDepthSurface)
 		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
 	B_RETURN(m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET,0xFF000000,1.f,0L));
-	last_texture=faded_texture;
+	last_texture=faded_texture;*/
 	return (hr==S_OK);
 }
 
@@ -496,10 +346,6 @@ bool SimulHDRRenderer::FinishRender()
 	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC,D3DCMP_LESSEQUAL);
 	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC,D3DCMP_LESSEQUAL);
 
-	// Create the brightpass - eliminate pixels with brightness below a certain threshold.
-//	RenderBrightpass();
-	// Use the brightpass to create the blurred bloom texture/
-	//RenderBloom();
 
 	// using gamma, render the hdr image to the LDR buffer:
 	m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
@@ -512,7 +358,6 @@ bool SimulHDRRenderer::FinishRender()
 	B_RETURN(m_pTonemapEffect->SetFloat(Exposure,exposure*exposure_multiplier));
 	B_RETURN(m_pTonemapEffect->SetFloat(Gamma,gamma));
 	B_RETURN(m_pTonemapEffect->SetTexture(hdrTexture,last_texture));
-	B_RETURN(m_pTonemapEffect->SetTexture(bloomTexture,bloom_texture));
 
 	RenderBufferToCurrentTarget(desc.Width,desc.Height,true);
 

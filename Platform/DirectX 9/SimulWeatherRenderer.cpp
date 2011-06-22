@@ -53,10 +53,6 @@ SimulWeatherRenderer::SimulWeatherRenderer(
 	simulCloudRenderer(NULL),
 	simul2DCloudRenderer(NULL),
 	simulPrecipitationRenderer(NULL),
-	cloud_timing(0.f),
-	total_timing(0.f),
-	sky_timing(0.f),
-	final_timing(0.f),
 	exposure_multiplier(1.f),
 	show_rain(rain),
 	renderDepthBufferCallback(NULL)
@@ -476,9 +472,9 @@ void SimulWeatherRenderer::UpdateSkyAndCloudHookup()
 
 void SimulWeatherRenderer::Update(float dt)
 {
+	BaseWeatherRenderer::Update(dt);
 	if(simulSkyRenderer)
 	{
-		simulSkyRenderer->Update(dt);
 		LPDIRECT3DBASETEXTURE9 l1,l2,i1,i2;
 		simulSkyRenderer->Get3DLossAndInscatterTextures(&l1,&l2,&i1,&i2);
 		if(simulAtmosphericsRenderer)
@@ -490,10 +486,6 @@ void SimulWeatherRenderer::Update(float dt)
 	}
 	// Do this AFTER sky update, to catch any changes:
 	UpdateSkyAndCloudHookup();
-	if(simulCloudRenderer)
-		simulCloudRenderer->Update(dt);
-	if(simul2DCloudRenderer)
-		simul2DCloudRenderer->Update(dt);
 	if(simulCloudRenderer&&simulAtmosphericsRenderer)
 	{
 		LPDIRECT3DBASETEXTURE9 *c=(LPDIRECT3DBASETEXTURE9*)simulCloudRenderer->GetCloudTextures();

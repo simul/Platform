@@ -1,6 +1,7 @@
 #include "FramebufferGL.h"
 #include <iostream>
 #include "LoadGLProgram.h"
+std::stack<GLuint> FramebufferGL::fb_stack;
 
 FramebufferGL::FramebufferGL(int w, int h, GLenum target, int samples, int coverageSamples):
     m_width(w)
@@ -20,6 +21,15 @@ FramebufferGL::FramebufferGL(int w, int h, GLenum target, int samples, int cover
     }
     glGenFramebuffersEXT(1, &m_fb);
 	InitShader();
+
+	if(fb_stack.size()==0)
+		fb_stack.push((GLuint)0);
+}
+
+void FramebufferGL::SetShader(int i)
+{
+	if(i==0)
+		tonemap_program=0;
 }
 
 void FramebufferGL::InitShader()
@@ -63,15 +73,16 @@ FramebufferGL::~FramebufferGL()
 	{
 		glDeleteRenderbuffersEXT(1,&m_rb_depth);
 	}
-
 	glDeleteFramebuffersEXT(1,&m_fb);
+	if(fb_stack.size()==1)
+		fb_stack.pop();
 }
 
 // In order to use a color buffer, either
 // InitColor_RB or InitColor_Tex needs to be called.
 void FramebufferGL::InitColor_RB(int index, GLenum iformat)
 {
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     {
         glGenRenderbuffersEXT(1, &m_rb_col[index]);
         glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rb_col[index]);
@@ -180,6 +191,7 @@ void FramebufferGL::Activate()
 	glViewport(0,0,m_width,m_height);
 	glClearColor(0.f,0.f,0.f,1.f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	fb_stack.push(m_fb);
 }
 static void SetOrthoProjection(int w,int h)
 {
@@ -217,10 +229,17 @@ void FramebufferGL::DeactivateAndRender(bool blend)
 
 	glUseProgram(tonemap_program);
 
-    glUniform1f(exposure_param,exposure);
+	if(tonemap_program)
+	{
+		glUniform1f(exposure_param,exposure);
 
-    glUniform1f(gamma_param,gamma);
-    glUniform1i(buffer_tex_param,0);
+		glUniform1f(gamma_param,gamma);
+		glUniform1i(buffer_tex_param,0);
+	}
+	else
+	{
+		glEnable(GL_TEXTURE_2D);
+	}
 
     glDisable(GL_ALPHA_TEST);
 	if(!blend)
@@ -244,7 +263,11 @@ void FramebufferGL::DeactivateAndRender(bool blend)
 
 void FramebufferGL::Deactivate() 
 {
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	// remove m_fb from the stack and...
+	fb_stack.pop();
+	// .. restore the next one down.
+	GLuint last_fb=fb_stack.top();
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,last_fb);
 }
 
 

@@ -6,7 +6,7 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
-#include "SimulTerrainRendererdx10.h"
+#include "SimulTerrainRendererdx1x.h"
 #include "Simul/Terrain/Cutout.h"
 #include "Simul/Terrain/HeightMapNode.h"
 

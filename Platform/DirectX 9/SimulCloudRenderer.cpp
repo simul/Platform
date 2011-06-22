@@ -609,7 +609,7 @@ void SimulCloudRenderer::PerformFullGPURelight(int which_texture,float *target_d
 		SAFE_RELEASE(pLightRenderTarget[i]);
 		target_textures[i]->GetSurfaceLevel(0,&pLightRenderTarget[i]);
 		hr=m_pd3dDevice->SetRenderTarget(0,pLightRenderTarget[i]);
-		hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,colr,1.f,0L);
+		hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,colr,1.f,0L);
 		m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
 	}
 	m_pGPULightingEffect->SetVector(extinctions,(D3DXVECTOR4*)(light_extinctions));

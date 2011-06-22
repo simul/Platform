@@ -44,13 +44,13 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(
 	{
 		simulSkyRenderer=new SimulSkyRendererDX1x();
 		baseSkyRenderer=simulSkyRenderer.get();
-		AddChild(simulSkyRenderer.get());
+		Group::AddChild(simulSkyRenderer.get());
 	}
 	if(show_3d_clouds)
 	{
 		simulCloudRenderer=new SimulCloudRendererDX1x();
 		baseCloudRenderer=simulCloudRenderer.get();
-		AddChild(simulCloudRenderer.get());
+		Group::AddChild(simulCloudRenderer.get());
 	}
 /*	if(clouds2d)
 		simul2DCloudRenderer=new Simul2DCloudRenderer();
@@ -88,7 +88,7 @@ void SimulWeatherRendererDX1x::ConnectInterfaces()
 		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);*/
 }
 
-HRESULT SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapChain *swapChain)
+bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapChain *swapChain)
 {
 	m_pd3dDevice=dev;
 	pSwapChain=swapChain;
@@ -111,10 +111,10 @@ HRESULT SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISw
 	HRESULT hr=S_OK;
 	//V_RETURN(CreateBuffers());
 	if(simulSkyRenderer)
-		V_RETURN(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
+		B_RETURN(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
 	if(simulCloudRenderer)
 	{
-		V_RETURN(simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
+		B_RETURN(simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
 	}
 	/*if(simul2DCloudRenderer)
 		V_RETURN(simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
@@ -123,10 +123,10 @@ HRESULT SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISw
 	
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);*/
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulWeatherRendererDX1x::InvalidateDeviceObjects()
+bool SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	if(simulSkyRenderer)
@@ -141,10 +141,10 @@ HRESULT SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();*/
 //	if(m_pTonemapEffect)
 //        hr=m_pTonemapEffect->OnLostDevice();
-	return hr;
+	return (hr==S_OK);
 }
 
-HRESULT SimulWeatherRendererDX1x::Destroy()
+bool SimulWeatherRendererDX1x::Destroy()
 {
 	HRESULT hr=S_OK;
 	InvalidateDeviceObjects();
@@ -152,9 +152,9 @@ HRESULT SimulWeatherRendererDX1x::Destroy()
 		simulSkyRenderer->Destroy();
 	if(simulCloudRenderer.get())
 		simulCloudRenderer->Destroy();
-	RemoveChild(simulSkyRenderer.get());
+	Group::RemoveChild(simulSkyRenderer.get());
 	simulSkyRenderer=NULL;
-	RemoveChild(simulCloudRenderer.get());
+	Group::RemoveChild(simulCloudRenderer.get());
 	simulCloudRenderer=NULL;
 	/*if(simul2DCloudRenderer)
 		simul2DCloudRenderer->Destroy();
@@ -162,7 +162,7 @@ HRESULT SimulWeatherRendererDX1x::Destroy()
 		simulPrecipitationRenderer->Destroy();
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();*/
-	return hr;
+	return (hr==S_OK);
 }
 
 SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
@@ -173,7 +173,7 @@ SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
 	SAFE_DELETE(simulAtmosphericsRenderer);*/
 }
 
-/*HRESULT SimulWeatherRendererDX1x::IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat)
+/*bool SimulWeatherRendererDX1x::IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat)
 {
 	LPDIRECT3D9 d3d;
 	m_pd3dDevice->GetDirect3D(&d3d);
@@ -181,23 +181,23 @@ SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
     HRESULT hr=d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat,
                                                        D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, DepthFormat);
     if(FAILED(hr))
-		return hr;
+		return (hr==S_OK);
 
     // Verify that the backbuffer format is valid
     hr=d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat, D3DUSAGE_RENDERTARGET,
                                                D3DRTYPE_SURFACE, BackBufferFormat);
     if(FAILED(hr))
-		return hr;
+		return (hr==S_OK);
 
     // Verify that the depth format is compatible
     hr = d3d->CheckDepthStencilMatch(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat, BackBufferFormat,
                                                     DepthFormat);
 
-    return hr;
+    return (hr==S_OK);
 }
 */
 
-HRESULT SimulWeatherRendererDX1x::Render()
+bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 {
 	if(simulSkyRenderer)
 	{
@@ -212,8 +212,8 @@ HRESULT SimulWeatherRendererDX1x::Render()
 	if(simulSkyRenderer)
 		hr=simulSkyRenderer->Render();
 	if(simulCloudRenderer)
-		hr=simulCloudRenderer->Render();
-	return hr;
+		hr=simulCloudRenderer->Render(false,false,false);
+	return (hr==S_OK);
 }
 
 void SimulWeatherRendererDX1x::Enable(bool sky,bool clouds3d,bool clouds2d,bool rain)
@@ -312,11 +312,11 @@ SimulAtmosphericsRenderer *SimulWeatherRendererDX1x::GetAtmosphericsRenderer()
 	return NULL;
 }
 
-const TCHAR *SimulWeatherRendererDX1x::GetDebugText() const
+const char *SimulWeatherRendererDX1x::GetDebugText() const
 {
-	static TCHAR debug_text[256];
+	static char debug_text[256];
 	if(simulSkyRenderer)
-		_stprintf_s(debug_text,256,_T("%s"),simulCloudRenderer->GetDebugText());
+		sprintf_s(debug_text,256,"%s",simulCloudRenderer->GetDebugText());
 //		sprintf_s(debug_text,256,"%s",simulCloudRenderer->GetDebugText());
 //	if(simulCloudRenderer)
 		//sprintf_s(debug_text,256,"TIME %2.2g ms\n%s",timing,simulCloudRenderer->GetDebugText());

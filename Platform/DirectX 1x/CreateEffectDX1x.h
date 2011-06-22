@@ -16,25 +16,33 @@
 #endif
 #include <map>
 #include "MacrosDX1x.h"
+#include "Export.h"
 
-extern void SetShaderPath(const char *path);
-extern void SetTexturePath(const char *path);
+namespace simul
+{
+	namespace dx11
+	{
+		extern SIMUL_DIRECTX1x_EXPORT void SetShaderPath(const char *path);
+		extern SIMUL_DIRECTX1x_EXPORT void SetTexturePath(const char *path);
+		extern SIMUL_DIRECTX1x_EXPORT void SetDevice(ID3D1xDevice* dev);
+		extern SIMUL_DIRECTX1x_EXPORT  void UnsetDevice();
+	}
+}
 typedef long HRESULT;
-extern HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename);
-extern HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,const std::map<std::string,std::string>&defines);
+extern SIMUL_DIRECTX1x_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename);
+extern SIMUL_DIRECTX1x_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,const std::map<std::string,std::string>&defines);
 
-extern void SetDevice(ID3D1xDevice* dev);
 
-extern HRESULT Map2D(ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp);
-extern void Unmap2D(ID3D1xTexture2D *tex);
-extern HRESULT Map3D(ID3D1xTexture3D *tex,D3D1x_MAPPED_TEXTURE3D *mp);
-extern void Unmap3D(ID3D1xTexture3D *tex);
-extern HRESULT Map1D(ID3D1xTexture1D *tex,D3D1x_MAPPED_TEXTURE1D *mp);
-extern void Unmap1D(ID3D1xTexture1D *tex);
+extern SIMUL_DIRECTX1x_EXPORT HRESULT Map2D(ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp);
+extern SIMUL_DIRECTX1x_EXPORT void Unmap2D(ID3D1xTexture2D *tex);
+extern SIMUL_DIRECTX1x_EXPORT HRESULT Map3D(ID3D1xTexture3D *tex,D3D1x_MAPPED_TEXTURE3D *mp);
+extern SIMUL_DIRECTX1x_EXPORT void Unmap3D(ID3D1xTexture3D *tex);
+extern SIMUL_DIRECTX1x_EXPORT HRESULT Map1D(ID3D1xTexture1D *tex,D3D1x_MAPPED_TEXTURE1D *mp);
+extern SIMUL_DIRECTX1x_EXPORT void Unmap1D(ID3D1xTexture1D *tex);
 #ifdef DX10
-extern HRESULT MapBuffer(ID3D1xBuffer *vertexBuffer,void **vert);
+extern SIMUL_DIRECTX10_EXPORT HRESULT MapBuffer(ID3D1xBuffer *vertexBuffer,void **vert);
 #else
-extern HRESULT MapBuffer(ID3D1xBuffer *vertexBuffer,D3D11_MAPPED_SUBRESOURCE *vert);
+extern SIMUL_DIRECTX1x_EXPORT HRESULT MapBuffer(ID3D1xBuffer *vertexBuffer,D3D11_MAPPED_SUBRESOURCE *vert);
 #endif
-extern void UnmapBuffer(ID3D1xBuffer *vertexBuffer);
-extern HRESULT ApplyPass(ID3D1xEffectPass *pass);
+extern SIMUL_DIRECTX1x_EXPORT void UnmapBuffer(ID3D1xBuffer *vertexBuffer);
+extern SIMUL_DIRECTX1x_EXPORT HRESULT ApplyPass(ID3D1xEffectPass *pass);

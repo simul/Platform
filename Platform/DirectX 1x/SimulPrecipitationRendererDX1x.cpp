@@ -6,7 +6,7 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
-#include "SimulPrecipitationRendererdx10.h"
+#include "SimulPrecipitationRendererdx1x.h"
 
 #ifdef XBOX
 	#include <dxerr.h>

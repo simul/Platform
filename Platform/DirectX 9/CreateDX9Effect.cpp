@@ -59,34 +59,40 @@ static ShaderModel shaderModel=NO_SHADERMODEL;
 static ShaderModel maxShaderModel=USE_SHADER_3;
 static bool shader_path_set=false;
 static bool texture_path_set=false;
-void SetShaderPath(const char *path)
+namespace simul
 {
-#ifdef UNICODE
-	// tstring and TEXT cater for the confusion between wide and regular strings.
-	shader_path.resize(strlen(path),L' '); // Make room for characters
-	// Copy string to wstring.
-	std::copy(path,path+strlen(path),shader_path.begin());
+	namespace dx9
+	{
+		void SetShaderPath(const char *path)
+		{
+		#ifdef UNICODE
+			// tstring and TEXT cater for the confusion between wide and regular strings.
+			shader_path.resize(strlen(path),L' '); // Make room for characters
+			// Copy string to wstring.
+			std::copy(path,path+strlen(path),shader_path.begin());
 
-	shader_path+=L"/";
-#else
-	shader_path=path;
-	shader_path+="/";
-#endif
-	shader_path_set=true;
-}
-void SetTexturePath(const char *path)
-{
-#ifdef UNICODE
-	// tstring and TEXT cater for the confusion between wide and regular strings.
-	texture_path.resize(strlen(path),L' '); // Make room for characters
-	// Copy string to wstring.
-	std::copy(path,path+strlen(path),texture_path.begin());
-	texture_path+=L"/";
-#else
-	texture_path=path;
-	texture_path+="/";
-#endif
-	texture_path_set=true;
+			shader_path+=L"/";
+		#else
+			shader_path=path;
+			shader_path+="/";
+		#endif
+			shader_path_set=true;
+		}
+		void SetTexturePath(const char *path)
+		{
+		#ifdef UNICODE
+			// tstring and TEXT cater for the confusion between wide and regular strings.
+			texture_path.resize(strlen(path),L' '); // Make room for characters
+			// Copy string to wstring.
+			std::copy(path,path+strlen(path),texture_path.begin());
+			texture_path+=L"/";
+		#else
+			texture_path=path;
+			texture_path+="/";
+		#endif
+			texture_path_set=true;
+		}
+	}
 }
 void SetResourceModule(const char *txt)
 {

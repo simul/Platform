@@ -151,6 +151,9 @@ typedef std::basic_string<TCHAR> tstring;
 	#endif
 
 #else
+	#ifndef B_RETURN
+		#define B_RETURN(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_RETURN error "<<hr<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;return false; } }
+	#endif
 	#ifndef V_RETURN
 		#define V_RETURN(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_RETURN error "<<hr<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;return hr; } }
 	#endif

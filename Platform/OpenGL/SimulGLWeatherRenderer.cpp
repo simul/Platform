@@ -14,7 +14,6 @@
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Base/Timer.h"
-static simul::base::Timer timer;
 
 #if 0//def _MSC_VER
 static GLuint buffer_format=GL_RGBA16F_ARB;
@@ -42,10 +41,9 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int w
     if(scene_buffer)
         delete scene_buffer;
    scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
-
-    scene_buffer->InitColor_Tex(0,buffer_format);
+   scene_buffer->InitColor_Tex(0,buffer_format);
+   scene_buffer->SetShader(0);
   // scene_buffer->InitDepth_RB();
-
 	// Now we know what time of day it is, initialize the sky texture:
 	if(sky)
 	{
@@ -70,6 +68,11 @@ void SimulGLWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 		if(device_initialized)
 			simulSkyRenderer->RestoreDeviceObjects();
 	}
+/*	if(clouds2d&&!simul2DCloudRenderer.get())
+	{	
+		simul2DCloudRenderer=new SimulGL2DCloudRenderer();
+		base2DCloudRenderer=simul2DCloudRenderer.get();
+	}*/
 	if(simul2DCloudRenderer)
 	{
 		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
@@ -78,10 +81,13 @@ void SimulGLWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 		if(device_initialized)
 			simul2DCloudRenderer->RestoreDeviceObjects(NULL);
 	}
-	if(clouds3d)
+	if(clouds3d&&!simulCloudRenderer.get())
 	{	
 		simulCloudRenderer=new SimulGLCloudRenderer();
 		baseCloudRenderer=simulCloudRenderer.get();
+	}
+	if(clouds3d&&!simulLightningRenderer.get())
+	{	
 		simulLightningRenderer=new SimulGLLightningRenderer(simulCloudRenderer->GetLightningRenderInterface());
 		baseLightningRenderer=simulLightningRenderer.get();
 	}
@@ -136,6 +142,7 @@ bool SimulGLWeatherRenderer::InvalidateDeviceObjects()
 bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 {
 	ERROR_CHECK
+static simul::base::Timer timer;
 	timer.TimeSum=0;
 	timer.StartTime();
 	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
@@ -158,11 +165,17 @@ bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	ERROR_CHECK
 		simulSkyRenderer->Render();
 	}
+	timer.UpdateTime();
+	simul::math::FirstOrderDecay(sky_timing,timer.Time,0.1f,0.01f);
 	ERROR_CHECK
     if(simul2DCloudRenderer)
 		simul2DCloudRenderer->Render(false,false,false);
 	ERROR_CHECK
 
+	if(simulCloudRenderer&&layer1)
+		simulCloudRenderer->Render(false,false,false);
+	timer.UpdateTime();
+	simul::math::FirstOrderDecay(cloud_timing,timer.Time,0.1f,0.01f);
 	if(buffered)
 		scene_buffer->DeactivateAndRender(true);
 	ERROR_CHECK
@@ -178,6 +191,8 @@ bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	glPopAttrib();
 	ERROR_CHECK
 	timer.FinishTime();
+	simul::math::FirstOrderDecay(final_timing,timer.Time,0.1f,0.01f);
+	simul::math::FirstOrderDecay(total_timing,timer.TimeSum,0.1f,0.01f);
 	return true;
 }
 
@@ -190,6 +205,8 @@ void SimulGLWeatherRenderer::RenderLightning()
 
 void SimulGLWeatherRenderer::RenderClouds(bool buffered,bool depth_testing,bool default_fog)
 {
+static simul::base::Timer timer;
+	timer.StartTime();
 	ERROR_CHECK
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_PROJECTION);
@@ -198,18 +215,23 @@ void SimulGLWeatherRenderer::RenderClouds(bool buffered,bool depth_testing,bool 
     glPushMatrix();
 	if(buffered)
 		scene_buffer->Activate();
+	ERROR_CHECK
 
     if(simulCloudRenderer)
 		simulCloudRenderer->Render(false,depth_testing,default_fog);
+	ERROR_CHECK
 
 	if(buffered)
 		scene_buffer->DeactivateAndRender(true);
+	ERROR_CHECK
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
 	glPopAttrib();
 	ERROR_CHECK
+	timer.FinishTime();
+	simul::math::FirstOrderDecay(cloud_timing,timer.Time,0.1f,0.01f);
 }
 
 // Render the clouds to the cloud buffer:
@@ -217,16 +239,6 @@ void SimulGLWeatherRenderer::SetPrecalculatedGamma(float g)
 {
     if(simulCloudRenderer)
 		simulCloudRenderer->GetCloudKeyframer()->SetPrecalculatedGamma(g);
-}
-
-void SimulGLWeatherRenderer::Update(float dt)
-{
-	if(GetSkyRenderer())
-		GetSkyRenderer()->Update(dt);
-	if(simulCloudRenderer.get())
-		simulCloudRenderer->Update(dt);
-	if(simul2DCloudRenderer.get())
-		simul2DCloudRenderer->Update(dt);
 }
 
 class SimulGLSkyRenderer *SimulGLWeatherRenderer::GetSkyRenderer()
@@ -304,4 +316,15 @@ std::istream &SimulGLWeatherRenderer::Load(std::istream &is)
 	}
 	ConnectInterfaces();
 	return is;
+}
+
+
+const char *SimulGLWeatherRenderer::GetDebugText() const
+{
+	static char debug_text[256];
+	sprintf_s(debug_text,256,"RENDER %3.3g ms (clouds %3.3g ms, sky %3.3g ms, final %3.3g)\r\n"
+		"UPDATE %3.3g ms (clouds %3.3g ms, sky %3.3g ms)",
+			total_timing,cloud_timing,sky_timing,final_timing,
+			total_update_timing,cloud_update_timing,sky_update_timing);
+	return debug_text;
 }

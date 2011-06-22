@@ -6,6 +6,7 @@
 // in accordance with the terms of that agreement.
 
 #pragma once
+#include <GL/glew.h>
 #include "Simul/Clouds/BaseCloudRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
 namespace simul
@@ -24,7 +25,6 @@ namespace simul
 		class OvercastCallback;
 	}
 }
-
 //! A renderer for clouds in OpenGL.
 SIMUL_OPENGL_EXPORT_CLASS SimulGLCloudRenderer : public simul::clouds::BaseCloudRenderer
 {

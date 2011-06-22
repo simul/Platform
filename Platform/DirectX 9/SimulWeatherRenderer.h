@@ -183,10 +183,6 @@ protected:
 	float							exposure;
 	float							gamma;
 	bool							use_buffer;
-	float							cloud_timing;
-	float							sky_timing;
-	float							total_timing;
-	float							final_timing;
 	float							exposure_multiplier;
 	bool							show_rain;
 };

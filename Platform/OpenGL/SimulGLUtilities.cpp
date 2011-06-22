@@ -39,15 +39,21 @@ void SetPerspectiveProjection(int w,int h,float field_of_view)
 }
 void RenderString(float x, float y, void *font, const char* string)
 {
-  glColor4f(1.f,1.f,1.f,1.f); 
-  glRasterPos2f(x,win_h-y);
+	glColor4f(1.f,1.f,1.f,1.f); 
+	glRasterPos2f(x,win_h-y);
 
-  const char *s=string;
-  while(*s)
-  {
-	  glutBitmapCharacter(font,*s);
-	  s++;
-  }
+	const char *s=string;
+	while(*s)
+	{
+		if(*s=='\n')
+		{
+			y+=12;
+			glRasterPos2f(x,win_h-y);
+		}
+		else
+			glutBitmapCharacter(font,*s);
+		s++;
+	}
 }
 
 float GetFramerate()
