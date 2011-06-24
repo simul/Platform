@@ -20,5 +20,6 @@ public:
 	virtual void paintGL()=0;
 	virtual void resizeGL(int,int)=0;
 	virtual void initializeGL()=0;
+	virtual void renderUI()=0;
 };
 #endif

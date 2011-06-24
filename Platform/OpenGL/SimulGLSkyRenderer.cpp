@@ -10,10 +10,10 @@
 #include "LoadGLProgram.h"
 
 #include "SimulGLSkyRenderer.h"
-#include "Simul/Sky/SkyNode.h"
+#include "Simul/Sky/Sky.h"
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Sky/SkyKeyframer.h"
-#include "Simul/Sky/ColourSkyNode.h"
+#include "Simul/Sky/ColourSky.h"
 #include "Simul/Sky/ColourSkyKeyframer.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Math/Vector3.h"
@@ -56,11 +56,8 @@ SimulGLSkyRenderer::SimulGLSkyRenderer()
 
 bool SimulGLSkyRenderer::Create(float start_alt_km)
 {
-	skyNode=new simul::sky::SkyNode();
-	skyInterface=dynamic_cast<simul::sky::SkyInterface*>(skyNode.get());
-	skyInterface->SetSunIrradiance(simul::sky::float4(25,25,25,25));
-
-	skyKeyframer=new simul::sky::SkyKeyframer(skyInterface);
+	skyKeyframer=new simul::sky::SkyKeyframer();
+	GetSkyInterface()->SetSunIrradiance(simul::sky::float4(25,25,25,25));
 
 	skyKeyframer->SetFillTexturesAsBlocks(true);
 	skyKeyframer->SetAltitudeKM(start_alt_km);
@@ -275,9 +272,9 @@ bool SimulGLSkyRenderer::Render()
 	//glClearColor(1,1,0,1);
 	//glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 
-	simul::sky::float4 ratio=skyInterface->GetMieRayleighRatio();
+	simul::sky::float4 ratio=GetSkyInterface()->GetMieRayleighRatio();
 
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
+	simul::sky::float4 sun_dir=GetSkyInterface()->GetDirectionToLight();
 	glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D,sky_tex[0]);
@@ -299,7 +296,7 @@ bool SimulGLSkyRenderer::Render()
 
 	glUniform1f(altitudeTexCoord_param,skyKeyframer->GetAltitudeTexCoord());
 	glUniform3f(MieRayleighRatio_param,ratio.x,ratio.y,ratio.z);
-	glUniform1f(hazeEccentricity_param,skyInterface->GetMieEccentricity());
+	glUniform1f(hazeEccentricity_param,GetSkyInterface()->GetMieEccentricity());
 	skyInterp_param=glGetUniformLocation(sky_program,"skyInterp");
 	glUniform1f(skyInterp_param,skyKeyframer->GetInterpolation());
 	glUniform3f(lightDirection_sky_param,sun_dir.x,sun_dir.y,sun_dir.z);
@@ -334,14 +331,14 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 	{
 	}
 
-	simul::sky::float4 original_irradiance=skyInterface->GetSunIrradiance();
+	simul::sky::float4 original_irradiance=GetSkyInterface()->GetSunIrradiance();
 
 	simul::sky::float4 planet_dir4=dir;
 	planet_dir4/=simul::sky::length(planet_dir4);
 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(planet_dir4.z);
-	planet_colour*=skyInterface->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
+	planet_colour*=GetSkyInterface()->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 
 //	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
 	glEnable(GL_TEXTURE_2D);
@@ -350,7 +347,7 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 	glUseProgram(planet_program);
 
 	glUniform1i(planetTexture_param,0);
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToSun();
+	simul::sky::float4 sun_dir=GetSkyInterface()->GetDirectionToSun();
 	glUniform3f(planetLightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	glEnable(GL_BLEND);
 	bool res=RenderAngledQuad(dir,planet_angular_size);
@@ -392,7 +389,7 @@ bool SimulGLSkyRenderer::RenderAngledQuad(const float *dir,float half_angle_radi
 
 	// set the modelview with no rotations and scaling
 	//glLoadMatrixf(modelview);
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToSun();
+	simul::sky::float4 sun_dir=GetSkyInterface()->GetDirectionToSun();
 	simul::sky::float4 sun2;
 	//m_pSkyEffect->SetVector	(lightDirection	,&sun2);
 

@@ -49,7 +49,6 @@
 #include "Simul/Clouds/TextureGenerator.h"
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Sky/SkyInterface.h"
-#include "Simul/Sky/FadeTableInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/LicenseKey.h"

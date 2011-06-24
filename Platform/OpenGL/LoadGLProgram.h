@@ -1,6 +1,7 @@
 #pragma once
 #include "Simul/Platform/OpenGL/Export.h"
 
+
 namespace simul
 {
 	namespace opengl
@@ -19,10 +20,3 @@ extern SIMUL_OPENGL_EXPORT void printProgramInfoLog(GLuint obj);
 #include "XPLMGraphics.h"
 #define glGenTextures(a,b) XPLMGenerateTextureNumbers((int*)b,(int)a)
 #endif
-
-#define ERROR_CHECK \
-	if(int err=glGetError()!=0) \
-	{ \
-		const char *c=(const char*)gluErrorString(err); \
-		if(c) std::cerr<<std::endl<<c<<std::endl; else std::cerr<<std::endl<<"unknown error: "<<err<<std::endl;\
-	}

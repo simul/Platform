@@ -17,6 +17,7 @@
 #include "Simul/Sky/Float4.h"
 #include "LoadGLImage.h"
 #include "LoadGLProgram.h"
+#include "SimulGLUtilities.h"
 
 using namespace simul::clouds;
 extern void printProgramInfoLog(GLuint obj);

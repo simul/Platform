@@ -8,6 +8,7 @@
 
 #include <GL/glew.h>
 #include "SimulGLHDRRenderer.h"
+#include "SimulGLUtilities.h"
 #include "LoadGLProgram.h"
 
 SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h)
@@ -18,6 +19,16 @@ SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h)
 SimulGLHDRRenderer::~SimulGLHDRRenderer()
 {
 	delete framebuffer;
+}
+
+void SimulGLHDRRenderer::SetBufferSize(int w,int h)
+{
+	if(w!=framebuffer->GetWidth()||h!=framebuffer->GetHeight())
+	{
+		delete framebuffer;
+		framebuffer=new FramebufferGL(w,h,GL_TEXTURE_2D);
+		RestoreDeviceObjects();
+	}
 }
 
 bool SimulGLHDRRenderer::RestoreDeviceObjects()

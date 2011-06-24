@@ -15,6 +15,7 @@ SIMUL_OPENGL_EXPORT_CLASS SimulGLHDRRenderer:public simul::graph::meta::Group
 public:
 	SimulGLHDRRenderer(int w,int h);
 	~SimulGLHDRRenderer();
+	void SetBufferSize(int w,int h);
 	bool RestoreDeviceObjects();
 	bool InvalidateDeviceObjects();
 	bool StartRender();

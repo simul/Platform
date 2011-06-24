@@ -28,9 +28,8 @@ namespace simul
 	namespace sky
 	{
 		class SkyInterface;
-		class SkyNode;
+		class Sky;
 		class SkyKeyframer;
-		class FadeTableInterface;
 	}
 }
 
@@ -43,10 +42,6 @@ SIMUL_DIRECTX1x_EXPORT_CLASS SimulSkyRendererDX1x:public simul::sky::BaseSkyRend
 public:
 	SimulSkyRendererDX1x();
 	virtual ~SimulSkyRendererDX1x();
-	//! Get the interface to the sky object so that other classes can use it for lighting, distance fades etc.
-	simul::sky::SkyInterface *GetSkyInterface();
-	simul::sky::SkyKeyframer *GetSkyKeyframer();
-	simul::sky::FadeTableInterface *GetFadeTableInterface();
 
 	//standard d3d object interface functions
 	//! Call this when the D3D device has been created or reset.

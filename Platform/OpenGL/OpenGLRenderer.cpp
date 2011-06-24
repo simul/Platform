@@ -1,5 +1,7 @@
 #include "OpenGLRenderer.h"
 #include <GL/glew.h>
+// For font definition define:
+#include <GL/glut.h>
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Graph/Camera/Camera.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
@@ -48,11 +50,27 @@ void OpenGLRenderer::paintGL()
 	glPopAttrib();
 }
 
+void OpenGLRenderer::renderUI()
+{
+	glUseProgram(NULL);
+	glDisable(GL_TEXTURE_3D);
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_TEXTURE_1D);
+	SetOrthoProjection(width,height);
+	static char text[500];
+	int y=12;
+	static int line_height=16;
+	RenderString(12,y+=line_height,GLUT_BITMAP_HELVETICA_12,"OpenGL");
+}
+
 void OpenGLRenderer::resizeGL(int w,int h)
 {
 	width=w;
 	height=h;
-	simulHDRRenderer=new SimulGLHDRRenderer(width,height);
+	if(!simulHDRRenderer.get())
+		simulHDRRenderer=new SimulGLHDRRenderer(width,height);
+	else
+		simulHDRRenderer->SetBufferSize(width,height);
 }
 
 void OpenGLRenderer::initializeGL()

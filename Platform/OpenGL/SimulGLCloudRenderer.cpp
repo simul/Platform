@@ -19,6 +19,7 @@
 #include <fstream>
 
 #include "SimulGLCloudRenderer.h"
+#include "SimulGLUtilities.h"
 #include "Simul/Clouds/FastCloudNode.h"
 #include "Simul/Clouds/CloudGeometryHelper.h"
 #include "Simul/Clouds/TextureGenerator.h"

@@ -112,3 +112,14 @@ void DrawQuad(int w,int h)
     glVertex2f(0.0,0.0);
     glEnd();
 }
+
+void CheckGLError()
+{
+	if(int err=glGetError()!=0)
+	{
+		const char *c=(const char*)gluErrorString(err);
+		if(c) std::cerr<<std::endl<<c<<std::endl; else std::cerr<<std::endl<<"unknown error: "<<err<<std::endl;
+		DebugBreak();
+		assert(0);
+	}
+}

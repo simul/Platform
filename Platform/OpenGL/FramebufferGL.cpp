@@ -1,6 +1,7 @@
 #include "FramebufferGL.h"
 #include <iostream>
 #include "LoadGLProgram.h"
+#include "SimulGLUtilities.h"
 std::stack<GLuint> FramebufferGL::fb_stack;
 
 FramebufferGL::FramebufferGL(int w, int h, GLenum target, int samples, int coverageSamples):
@@ -74,8 +75,6 @@ FramebufferGL::~FramebufferGL()
 		glDeleteRenderbuffersEXT(1,&m_rb_depth);
 	}
 	glDeleteFramebuffersEXT(1,&m_fb);
-	if(fb_stack.size()==1)
-		fb_stack.pop();
 }
 
 // In order to use a color buffer, either
@@ -184,15 +183,20 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 void FramebufferGL::Activate()
 {
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
+	ERROR_CHECK
 #ifdef _DEBUG
 	CheckFramebufferStatus();
 #endif
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
+	ERROR_CHECK
 	glViewport(0,0,m_width,m_height);
+	ERROR_CHECK
 	glClearColor(0.f,0.f,0.f,1.f);
+	ERROR_CHECK
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	ERROR_CHECK
 	fb_stack.push(m_fb);
-}
+}/*
 static void SetOrthoProjection(int w,int h)
 {
 	glMatrixMode(GL_PROJECTION);
@@ -203,7 +207,7 @@ static void SetOrthoProjection(int w,int h)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glViewport(0,0,w,h);
-}
+}*/
 void FramebufferGL::DrawQuad(int w,int h)
 {
 	glBegin(GL_QUADS);

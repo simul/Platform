@@ -37,9 +37,8 @@ namespace simul
 	{
 		class SkyInterface;
 		class SiderealSkyInterface;
-		class SkyNode;
+		class Sky;
 		class SkyKeyframer;
-		class FadeTableInterface;
 		class OvercastCallback;
 	}
 }

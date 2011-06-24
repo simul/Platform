@@ -41,7 +41,6 @@ namespace simul
 	namespace sky
 	{
 		class BaseSkyInterface;
-		class FadeTableInterface;
 		class OvercastCallback;
 	}
 }

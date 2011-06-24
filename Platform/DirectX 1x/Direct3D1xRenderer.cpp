@@ -74,8 +74,8 @@ void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11De
 	D3DXMATRIX world,view,proj;
 	if(camera)
 	{
-		proj=camera->MakeProjectionMatrix(.1,300000.f,1.f);
-		view=camera->MakeViewMatrix();
+		proj=camera->MakeProjectionMatrix(.1,250000.f,1.f,true);
+		view=camera->MakeViewMatrix(false);
 		D3DXMatrixIdentity(&world);
 	}
 	if(simulHDRRenderer)

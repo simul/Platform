@@ -57,6 +57,15 @@ public:
 	void Render();
 	void Render(bool blend);
 	void DrawQuad(int w, int h);
+	// Get the dimension of the surface
+	inline int GetWidth()
+	{
+		return m_width;
+	}
+	inline int GetHeight()
+	{
+		return m_height;
+	}
 private:
 	static std::stack<GLuint> fb_stack;
 	void InitShader();
@@ -79,15 +88,6 @@ private:
 	void Release()
 	{
 		glBindTexture(m_target, 0);
-	}
-	// Get the dimension of the surface
-	inline int GetWidth()
-	{
-		return m_width;
-	}
-	inline int GetHeight()
-	{
-		return m_height;
 	}
 	// Get the internal texutre object IDs.
 	inline GLenum GetColorTex(int index = 0)

@@ -29,6 +29,7 @@ public:
 	virtual void paintGL();
 	virtual void resizeGL(int w,int h);
 	virtual void initializeGL();
+	virtual void renderUI();
 	SimulGLWeatherRenderer *GetSimulGLWeatherRenderer(){return simulWeatherRenderer.get();}
 	void SetCamera(simul::graph::camera::Camera *c);
 protected:

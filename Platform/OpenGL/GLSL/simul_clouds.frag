@@ -70,7 +70,7 @@ void main(void)
 	vec4 density2=texture3D(cloudDensity2,pos);
 	//vec4 lightning=texture3D(illumSampler,texCoordLightning.xyz);
 	density=mix(density,density2,cloud_interp);
-	if(density.x<=0.f)
+	if(density.x<=0.0)
 		discard;
 	float opacity=layerDensity*density.x;
 	vec3 final=(lightResponse.y*density.y*Beta+lightResponse.z*density.z)*sunlight+density.w*ambientColour.rgb;

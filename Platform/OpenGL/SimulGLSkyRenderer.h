@@ -16,7 +16,7 @@ namespace simul
 	{
 		class SiderealSkyInterface;
 		class SkyInterface;
-		class SkyNode;
+		class Sky;
 		class FadeTableInterface;
 		class SkyKeyframer;
 		class OvercastCallback;

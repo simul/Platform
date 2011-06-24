@@ -23,7 +23,6 @@ namespace simul
 	namespace sky
 	{
 		class SkyInterface;
-		class FadeTableInterface;
 	}
 }
 
@@ -33,7 +32,6 @@ public:
 	SimulGL2DCloudRenderer();
 	virtual ~SimulGL2DCloudRenderer();
 	void SetSkyInterface(simul::sky::SkyInterface *si);
-	void SetFadeTable(simul::sky::FadeTableInterface *fti);
 	//standard ogl object interface functions
 	bool Create();
 	//! OpenGL Implementation of device object creation - needs a GL context to be present.
@@ -44,10 +42,6 @@ public:
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
 	void SetWindVelocity(float x,float y);
 	simul::clouds::CloudInterface *GetCloudInterface();
-	void SetFadeTableInterface(simul::sky::FadeTableInterface *fti)
-	{
-		fadeTableInterface=fti;
-	}
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array);
@@ -57,7 +51,6 @@ public:
 protected:
 	simul::clouds::CloudInterface *cloudInterface;
 	simul::sky::SkyInterface *skyInterface;
-	simul::sky::FadeTableInterface *fadeTableInterface;
 	simul::base::SmartPtr<simul::clouds::Cloud2DGeometryHelper> helper;
 	simul::base::SmartPtr<simul::clouds::CloudKeyframer> cloudKeyframer;
 	GLuint clouds_vertex_shader,clouds_fragment_shader;

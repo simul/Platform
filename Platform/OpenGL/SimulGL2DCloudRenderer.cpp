@@ -22,7 +22,7 @@
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Clouds/TextureGenerator.h"
-#include "Simul/Sky/SkyNode.h"
+#include "Simul/Sky/Sky.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Math/Pi.h"
@@ -382,9 +382,4 @@ SimulGL2DCloudRenderer::~SimulGL2DCloudRenderer()
 void SimulGL2DCloudRenderer::SetSkyInterface(simul::sky::SkyInterface *si)
 {
 	skyInterface=si;
-}
-
-void SimulGL2DCloudRenderer::SetFadeTable(simul::sky::FadeTableInterface *fti)
-{
-	fadeTableInterface=fti;
 }

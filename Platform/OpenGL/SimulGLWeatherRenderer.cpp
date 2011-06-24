@@ -8,7 +8,6 @@
 #include "SimulGLLightningRenderer.h"
 #include "SimulGLUtilities.h"
 #include "Simul/Clouds/CloudInterface.h"
-#include "Simul/Sky/FadeTableInterface.h"
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
@@ -76,7 +75,6 @@ void SimulGLWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 	if(simul2DCloudRenderer)
 	{
 		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-		simul2DCloudRenderer->SetFadeTable(simulSkyRenderer->GetFadeTableInterface());
 		simul2DCloudRenderer->Create();
 		if(device_initialized)
 			simul2DCloudRenderer->RestoreDeviceObjects(NULL);
@@ -112,7 +110,6 @@ void SimulGLWeatherRenderer::ConnectInterfaces()
 		if(simul2DCloudRenderer)
 		{
 			simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-			simul2DCloudRenderer->SetFadeTableInterface(simulSkyRenderer->GetFadeTableInterface());
 		}
 		if(simulCloudRenderer)
 		{

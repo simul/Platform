@@ -27,8 +27,8 @@
 #include "CreateDX9Effect.h"
 #include "Macros.h"
 #include "Simul/Sky/SkyInterface.h"
-#include "Simul/Sky/SkyNode.h"
-#include "Simul/Sky/ColourSkyNode.h"
+#include "Simul/Sky/Sky.h"
+#include "Simul/Sky/ColourSky.h"
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Sky/ColourSkyKeyframer.h"
 #include "Simul/Sky/TextureGenerator.h"
@@ -74,8 +74,7 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 		sunlight_textures[i]=NULL;
 	}
 	EnableColourSky(UseColourSky);
-	fadeTableInterface->SetEarthTest(false);
-	skyInterface->SetTime(0.5f);
+	GetSkyInterface()->SetTime(0.5f);
 	SetCameraPosition(0,0,400.f);
 }
 
@@ -131,8 +130,8 @@ bool SimulSkyRenderer::RestoreDeviceObjects(void *dev)
 	SAFE_RELEASE(m_pSkyEffect);
 	hr=CreateSkyEffect();
 
-	fadeTableInterface->SetCallback(NULL);
-	fadeTableInterface->SetCallback(this);
+	skyKeyframer->SetCallback(NULL);
+	skyKeyframer->SetCallback(this);
 	// CreateSkyTexture() will be called back
 
 	// OK to fail with these (more or less):
@@ -209,7 +208,7 @@ bool SimulSkyRenderer::InvalidateDeviceObjects()
 	}
 	fadeTexWidth=fadeTexHeight=numAltitudes=0;
 	SAFE_RELEASE(d3dQuery);
-	fadeTableInterface->SetCallback(NULL);
+	skyKeyframer->SetCallback(NULL);
 	return (hr==S_OK);
 }
 
@@ -304,13 +303,13 @@ void SimulSkyRenderer::FillSunlightTexture(int texture_index,int texel_index,int
 
 void SimulSkyRenderer::SetOvercastFactor(float of)
 {
-	skyInterface->SetOvercast(of);
+	GetSkyInterface()->SetOvercast(of);
 }
 
 void SimulSkyRenderer::SetOvercastBaseAndRange(float base_alt_km,float range_km)
 {
-	skyInterface->SetOvercastBaseKm(base_alt_km);
-	skyInterface->SetOvercastRangeKm(range_km);
+	GetSkyInterface()->SetOvercastBaseKm(base_alt_km);
+	GetSkyInterface()->SetOvercastRangeKm(range_km);
 }
 
 void SimulSkyRenderer::Get3DLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LPDIRECT3DBASETEXTURE9 *l2,
@@ -666,7 +665,7 @@ bool SimulSkyRenderer::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians
 	world._41=cam_pos.x;
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
-	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
+	D3DXVECTOR4 sun_dir(GetSkyInterface()->GetDirectionToSun());
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	D3DXVECTOR4 sun2;
@@ -723,7 +722,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	if(!m_hTechniqueQuery)
 		return sun_occlusion;
 	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
-	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
+	D3DXVECTOR4 sun_dir(GetSkyInterface()->GetDirectionToLight());
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	float sun_angular_size=3.14159f/180.f/2.f;
@@ -771,7 +770,7 @@ float sun_angular_size=3.14159f/180.f/2.f;
 bool SimulSkyRenderer::RenderSun()
 {
 	float alt_km=0.001f*cam_pos.y;
-	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(alt_km);
+	simul::sky::float4 sunlight=GetSkyInterface()->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
@@ -780,7 +779,7 @@ bool SimulSkyRenderer::RenderSun()
 	sunlight*=pow(1.f-sun_occlusion,0.25f)*25.f;//2700.f;
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
 	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
-	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
+	D3DXVECTOR4 sun_dir(GetSkyInterface()->GetDirectionToLight());
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	HRESULT hr=RenderAngledQuad(sun_dir,sun_angular_size);
@@ -821,14 +820,14 @@ bool SimulSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const f
 	m_pSkyEffect->SetTexture(flareTexture,(LPDIRECT3DTEXTURE9)tex);
 
 
-	simul::sky::float4 original_irradiance=skyInterface->GetSunIrradiance();
+	simul::sky::float4 original_irradiance=GetSkyInterface()->GetSunIrradiance();
 
 	simul::sky::float4 planet_dir4=dir;
 	planet_dir4/=simul::sky::length(planet_dir4);
 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(planet_dir4.y);
-	planet_colour*=skyInterface->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
+	planet_colour*=GetSkyInterface()->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 	D3DXVECTOR4 planet_dir(dir);
 
 	// Make it bigger than it should be?
@@ -1021,9 +1020,9 @@ bool SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height
 	{
 		float time=(float)i/32.f;
 		float daytime=time-(int)time;
-		//skyInterface->SetDaytime(time);
+		//GetSkyInterface()->SetDaytime(time);
 		skyKeyframer->SetDaytime(time);
-		simul::sky::float4 dir=d*skyInterface->GetDirectionToSun();
+		simul::sky::float4 dir=d*GetSkyInterface()->GetDirectionToSun();
 		lines[i].x=dir.x; 
 		lines[i].y=dir.z;
 		lines[i].z=dir.y;
@@ -1031,7 +1030,7 @@ bool SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height
 		lines[i].g=.8f;
 		lines[i].b=0.f;
 		lines[i].a=0.1f+0.5f*daytime;
-		simul::sky::float4 moon_dir=d*skyInterface->GetDirectionToMoon();
+		simul::sky::float4 moon_dir=d*GetSkyInterface()->GetDirectionToMoon();
 		moon_lines[i].x=moon_dir.x; 
 		moon_lines[i].y=moon_dir.z;
 		moon_lines[i].z=moon_dir.y;
@@ -1040,7 +1039,7 @@ bool SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height
 		moon_lines[i].b=1.f;
 		moon_lines[i].a=0.1f+0.5f*daytime;
 	}
-	skyInterface->SetTime(old_time);
+	GetSkyInterface()->SetTime(old_time);
 	skyKeyframer->SetTime(old_time);
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,64,lines,(unsigned)sizeof(Vertext));
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,64,moon_lines,(unsigned)sizeof(Vertext));
@@ -1067,7 +1066,7 @@ bool SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)
 	if(!GetSiderealSkyInterface())
 	{
 		D3DXMatrixIdentity(world);
-		D3DXMatrixRotationX(world,3.14159f*2.f*skyInterface->GetTime());
+		D3DXMatrixRotationX(world,3.14159f*2.f*GetSkyInterface()->GetTime());
 	}
 	else
 	{
@@ -1114,7 +1113,7 @@ bool SimulSkyRenderer::RenderPointStars()
 
 	m_pSkyEffect->SetTechnique(m_hTechniquePointStars);
 
-	float sb=skyInterface->GetStarlight().x;
+	float sb=GetSkyInterface()->GetStarlight().x;
 	float star_brightness=sb*skyKeyframer->GetStarBrightness();
 	m_pSkyEffect->SetFloat(starBrightness,star_brightness);
 	
@@ -1183,7 +1182,7 @@ bool SimulSkyRenderer::RenderTextureStars()
 	m_pSkyEffect->SetTechnique(m_hTechniqueStarrySky);
 	m_pSkyEffect->SetTexture(starsTexture,stars_texture);
 
-	float sb=skyInterface->GetStarlight().x;
+	float sb=GetSkyInterface()->GetStarlight().x;
 	m_pSkyEffect->SetFloat(starBrightness,sb*skyKeyframer->GetStarBrightness());
 	
 	UINT passes=1;
@@ -1249,7 +1248,7 @@ bool SimulSkyRenderer::Render()
 
 	m_pSkyEffect->SetTechnique(m_hTechniqueSky);
 
-	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
+	simul::sky::float4 mie_rayleigh_ratio=GetSkyInterface()->GetMieRayleighRatio();
 	D3DXVECTOR4 ratio(mie_rayleigh_ratio);
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
 	if(y_vertical)
@@ -1257,7 +1256,7 @@ bool SimulSkyRenderer::Render()
 
 	m_pSkyEffect->SetVector	(lightDirection		,&sun_dir);
 	m_pSkyEffect->SetVector	(mieRayleighRatio	,&ratio);
-	m_pSkyEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
+	m_pSkyEffect->SetFloat	(hazeEccentricity	,GetSkyInterface()->GetMieEccentricity());
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
 
 	m_pSkyEffect->SetFloat	(skyInterp		,skyKeyframer->GetInterpolation());
@@ -1293,13 +1292,13 @@ float SimulSkyRenderer::GetTiming() const
 simul::sky::float4 SimulSkyRenderer::GetAmbient() const
 {
 	float alt_km=0.001f*cam_pos.y;
-	return skyInterface->GetSkyColour(simul::sky::float4(0,0,1,0),alt_km);
+	return GetSkyInterface()->GetSkyColour(simul::sky::float4(0,0,1,0),alt_km);
 }
 
 simul::sky::float4 SimulSkyRenderer::GetLightColour() const
 {
 	float alt_km=0.001f*cam_pos.y;
-	return skyInterface->GetLocalIrradiance(alt_km);
+	return GetSkyInterface()->GetLocalIrradiance(alt_km);
 }
 
 const char *SimulSkyRenderer::GetDebugText() const
@@ -1312,5 +1311,5 @@ const char *SimulSkyRenderer::GetDebugText() const
 void SimulSkyRenderer::SetTime(float hour)
 {
 	GetSiderealSkyInterface()->SetHourOfTheDay(hour);
-	GetFadeTableInterface()->Reset();
+	skyKeyframer->Reset();
 }

@@ -22,7 +22,7 @@ static DXGI_FORMAT sky_tex_format=DXGI_FORMAT_R16G16B16A16_FLOAT;
 
 
 #include "Simul/Sky/SkyInterface.h"
-#include "Simul/Sky/SkyNode.h"
+#include "Simul/Sky/Sky.h"
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Sky/TextureGenerator.h"
 #include "MacrosDX1x.h"
@@ -119,22 +119,6 @@ void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
 	skyKeyframer->SetUniformKeyframes(steps);
 }
 
-simul::sky::SkyInterface *SimulSkyRendererDX1x::GetSkyInterface()
-{
-	return skyInterface;
-}
-
-simul::sky::SkyKeyframer *SimulSkyRendererDX1x::GetSkyKeyframer()
-{
-	return skyKeyframer.get();
-}
-	
-
-simul::sky::FadeTableInterface *SimulSkyRendererDX1x::GetFadeTableInterface()
-{
-	return skyKeyframer.get();
-}
-	
 bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 {
 	m_pd3dDevice=dev;
@@ -195,8 +179,8 @@ bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 
 	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer);
 
-	fadeTableInterface->SetCallback(NULL);
-	fadeTableInterface->SetCallback(this);
+	skyKeyframer->SetCallback(NULL);
+	skyKeyframer->SetCallback(this);
 	return (hr==S_OK);
 }
 
@@ -512,7 +496,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 	if(!m_hTechniqueQuery)
 		return sun_occlusion;
 //	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
-	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
+	D3DXVECTOR4 sun_dir(GetSkyInterface()->GetDirectionToSun());
 	float sun_angular_size=3.14159f/180.f/2.f;
 
 	// fix the projection matrix so this quad is far away:
@@ -542,7 +526,7 @@ simul::sky::float4 sunlight;
 bool SimulSkyRendererDX1x::RenderSun()
 {
 	float alt_km=0.001f*cam_pos.y;
-	sunlight=skyInterface->GetLocalIrradiance(alt_km);
+	sunlight=GetSkyInterface()->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
@@ -552,7 +536,7 @@ bool SimulSkyRendererDX1x::RenderSun()
 	sunlightColour->SetFloatVector(sunlight);
 
 //	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
-	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
+	D3DXVECTOR4 sun_dir(GetSkyInterface()->GetDirectionToSun());
 	float sun_angular_size=3.14159f/180.f/2.f;
 HRESULT hr=S_OK;
 	// Start the query
@@ -579,14 +563,14 @@ bool SimulSkyRendererDX1x::RenderPlanet(void* tex,float rad,const float *dir,con
 
 	//m_pSkyEffect->SetTexture(flareTexture,(LPDIRECT3DTEXTURE9)tex);
 
-	simul::sky::float4 original_irradiance=skyInterface->GetSunIrradiance();
+	simul::sky::float4 original_irradiance=GetSkyInterface()->GetSunIrradiance();
 
 	simul::sky::float4 planet_dir4=dir;
 	planet_dir4/=simul::sky::length(planet_dir4);
 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(planet_dir4.y);
-	planet_colour*=skyInterface->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
+	planet_colour*=GetSkyInterface()->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 	D3DXVECTOR4 planet_dir(dir);
 
 	// Make it bigger than it should be?
@@ -605,7 +589,7 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 		return (hr==S_OK);
 	float magnitude=exposure*(1.f-sun_occlusion);
 	float alt_km=0.001f*cam_pos.y;
-	sunlight=skyInterface->GetLocalIrradiance(alt_km);
+	sunlight=GetSkyInterface()->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
@@ -617,7 +601,7 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 	//m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
 	//flareTexture->SetResource(flare_texture_SRV);
 	float sun_angular_size=3.14159f/180.f/2.f;
-	D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
+	D3DXVECTOR4 sun_dir(GetSkyInterface()->GetDirectionToSun());
 	hr=RenderAngledQuad(sun_dir,sun_angular_size*20.f*magnitude);
 	return (hr==S_OK);
 }
@@ -649,14 +633,14 @@ bool SimulSkyRendererDX1x::Render()
 
 	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 
-	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
-	simul::sky::float4 sun_dir(skyInterface->GetDirectionToSun());
+	simul::sky::float4 mie_rayleigh_ratio=GetSkyInterface()->GetMieRayleighRatio();
+	simul::sky::float4 sun_dir(GetSkyInterface()->GetDirectionToSun());
 	//if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 
 	lightDirection->SetFloatVector(sun_dir);
 	mieRayleighRatio->SetFloatVector(mie_rayleigh_ratio);
-	hazeEccentricity->SetFloat	(skyInterface->GetMieEccentricity());
+	hazeEccentricity->SetFloat	(GetSkyInterface()->GetMieEccentricity());
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
 	UINT passes=1;
@@ -675,7 +659,7 @@ bool SimulSkyRendererDX1x::Render()
 												&offset );			// array of offset values, one for each buffer
 
 	// Set the input layout
-	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
+	m_pImmediateContext->IASetInputLayout(m_pVtxDecl );
 
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
