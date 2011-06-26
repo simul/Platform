@@ -14,6 +14,7 @@ FramebufferGL::FramebufferGL(int w, int h, GLenum target, int samples, int cover
 	,m_rb_depth(0)
 	,exposure(1.f)
 	,gamma(0.45f)
+	,m_fb(0)
 {
     for(int i = 0; i < num_col_buffers; i++)
 	{
@@ -77,12 +78,18 @@ FramebufferGL::~FramebufferGL()
 	glDeleteFramebuffersEXT(1,&m_fb);
 }
 
+void FramebufferGL::SetWidthAndHeight(int w,int h)
+{
+	m_width=w;
+	m_height=h;
+}
 // In order to use a color buffer, either
 // InitColor_RB or InitColor_Tex needs to be called.
 void FramebufferGL::InitColor_RB(int index, GLenum iformat)
 {
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
-    {
+    
+	ERROR_CHECK
         glGenRenderbuffersEXT(1, &m_rb_col[index]);
         glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rb_col[index]);
 		if (m_samples > 0) {
@@ -103,23 +110,29 @@ void FramebufferGL::InitColor_RB(int index, GLenum iformat)
 		}
         glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,
                 GL_COLOR_ATTACHMENT0_EXT + index, GL_RENDERBUFFER_EXT, m_rb_col[index]);
-    }
+    
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
+	ERROR_CHECK
 }
 
 void FramebufferGL::InitColor_Tex(int index, GLenum iformat)
 {
+	if(!m_width||!m_height)
+		return;
 	glGenTextures(1, &m_tex_col[index]);
+	ERROR_CHECK
 	glBindTexture(m_target, m_tex_col[index]);
+	ERROR_CHECK
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(m_target, 0, iformat, m_width, m_height, 0,GL_RGBA, GL_INT, NULL);
-
+	ERROR_CHECK
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	ERROR_CHECK
 }
 void FramebufferGL::InitColor_None()
 {
@@ -137,7 +150,8 @@ void FramebufferGL::InitColor_None()
 void FramebufferGL::InitDepth_RB(GLenum iformat)
 {
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
-    {
+	ERROR_CHECK
+    
         glGenRenderbuffersEXT(1, &m_rb_depth);
         glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rb_depth);
 		if (m_samples > 0) {
@@ -156,8 +170,9 @@ void FramebufferGL::InitDepth_RB(GLenum iformat)
 		}
         glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,
                 GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_rb_depth);
-    }
+    
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
+	ERROR_CHECK
 }
 
 void FramebufferGL::InitDepth_Tex(GLenum iformat)
@@ -182,6 +197,8 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 // The FBO needs to be deactivated when using the associated textures.
 void FramebufferGL::Activate()
 {
+	glFlush();
+	GLenum check=glCheckFramebufferStatusEXT(m_fb);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
 	ERROR_CHECK
 #ifdef _DEBUG
@@ -196,18 +213,8 @@ void FramebufferGL::Activate()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	ERROR_CHECK
 	fb_stack.push(m_fb);
-}/*
-static void SetOrthoProjection(int w,int h)
-{
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0,w,0,h,-1.0,1.0);
-	glMatrixMode(GL_TEXTURE);
-	glLoadIdentity();
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glViewport(0,0,w,h);
-}*/
+}
+
 void FramebufferGL::DrawQuad(int w,int h)
 {
 	glBegin(GL_QUADS);

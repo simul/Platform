@@ -8,6 +8,7 @@
 
 #include <fstream>
 #include "LoadGLProgram.h"
+#include "SimulGLUtilities.h"
 
 #include "SimulGLSkyRenderer.h"
 #include "Simul/Sky/Sky.h"
@@ -42,6 +43,8 @@ SimulGLSkyRenderer::SimulGLSkyRenderer()
 	, skyTexSize(128)
 	, campos_updated(false)
 	, short_ptr(NULL)
+	, loss_2d(0,0,GL_TEXTURE_2D)
+	, inscatter_2d(0,0,GL_TEXTURE_2D)
 {
 /* Setup cube vertex data. */
   v[0][0] = v[1][0] = v[2][0] = v[3][0] = -1000.f;
@@ -154,6 +157,11 @@ void SimulGLSkyRenderer::CreateFadeTextures()
 		}
 	}
 	delete [] fade_tex_data;
+	loss_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	loss_2d.InitColor_Tex(0,GL_RGBA32F_ARB);
+	inscatter_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB);
+	ERROR_CHECK
 }
 
 static void PartialTextureFill(bool is_3d,int tex_width,int z,int texel_index,int num_texels,const float *float4_array)
@@ -264,11 +272,59 @@ void SimulGLSkyRenderer::CalcCameraPosition()
 	simul::math::Matrix4x4 inv;
 	modelview.Inverse(inv);
 	SetCameraPosition(inv(3,0),inv(3,1),inv(3,2));
+}
 
+bool SimulGLSkyRenderer::Render2DFades()
+{
+	glUseProgram(fade_3d_to_2d_program);
+	for(int i=0;i<2;i++)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		if(i==0)
+			glBindTexture(GL_TEXTURE_2D,loss_textures[0]);
+		else
+			glBindTexture(GL_TEXTURE_2D,inscatter_textures[0]);
+		glActiveTexture(GL_TEXTURE1);
+		if(i==0)
+			glBindTexture(GL_TEXTURE_2D,loss_textures[1]);
+		else
+			glBindTexture(GL_TEXTURE_2D,inscatter_textures[1]);
+		if(i==0)
+			loss_2d.Activate();
+		else
+			inscatter_2d.Activate();
+		{
+			glMatrixMode(GL_PROJECTION);
+			glLoadIdentity();
+			glOrtho(0,1.0,0,1.0,-1.0,1.0);
+			glMatrixMode(GL_TEXTURE);
+			glLoadIdentity();
+			glMatrixMode(GL_MODELVIEW);
+			glLoadIdentity();
+			glViewport(0,0,loss_2d.GetWidth(),loss_2d.GetHeight());
+
+			glBegin(GL_QUADS);
+			glTexCoord2f(0.f,1.f);
+			glVertex2f(0.f,1.f);
+			glTexCoord2f(1.f,1.f);
+			glVertex2f(1.f,1.f);
+			glTexCoord2f(1.0,0.f);
+			glVertex2f(1.f,0.f);
+			glTexCoord2f(0.f,0.f);
+			glVertex2f(0.f,0.f);
+			glEnd();
+		}
+		if(i==0)
+			loss_2d.Deactivate();
+		else
+			inscatter_2d.Deactivate();
+	}
+	return true;
 }
 
 bool SimulGLSkyRenderer::Render()
 {
+	//Render2DFades();
 	//glClearColor(1,1,0,1);
 	//glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 
@@ -355,6 +411,20 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 	return res;
 }
 
+void SimulGLSkyRenderer::Get3DLossAndInscatterTextures(void* *l1,void* *l2,void* *i1,void* *i2)
+{
+	*l1=(void*)loss_textures[0];
+	*l2=(void*)loss_textures[1];
+	*i1=(void*)inscatter_textures[0];
+	*i2=(void*)inscatter_textures[1];
+}
+
+void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1)
+{
+	*l1=(void*)loss_2d.GetColorTex();
+	*i1=(void*)inscatter_2d.GetColorTex();
+}
+
 bool SimulGLSkyRenderer::RenderAngledQuad(const float *dir,float half_angle_radians)
 {
 	float Yaw=180.f*atan2(dir[0],dir[1])/pi;
@@ -428,6 +498,10 @@ bool SimulGLSkyRenderer::RenderAngledQuad(const float *dir,float half_angle_radi
 }
 bool SimulGLSkyRenderer::RestoreDeviceObjects()
 {
+	loss_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	inscatter_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	loss_2d.InitColor_Tex(0,GL_RGBA32F_ARB);
+	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB);
 	sky_program			=glCreateProgram();
 	sky_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 	sky_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
@@ -463,6 +537,16 @@ bool SimulGLSkyRenderer::RestoreDeviceObjects()
 	planetLightDir_param	=glGetUniformLocation(planet_program,"lightDir");
 	printProgramInfoLog(sky_program);
 
+	fade_3d_to_2d_program			=glCreateProgram();
+	GLuint fade_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
+	GLuint fade_fragment_shader		=glCreateShader(GL_FRAGMENT_SHADER);
+    fade_vertex_shader				=LoadProgram(fade_vertex_shader,"simul_fade_3d_to_2d.vert");
+    fade_fragment_shader			=LoadProgram(fade_fragment_shader,"simul_fade_3d_to_2d.frag");
+	glAttachShader(fade_3d_to_2d_program,fade_vertex_shader);
+	glAttachShader(fade_3d_to_2d_program,fade_fragment_shader);
+	glLinkProgram(fade_3d_to_2d_program);
+	glUseProgram(fade_3d_to_2d_program);
+	printProgramInfoLog(fade_3d_to_2d_program);
 
 	skyKeyframer->SetCallback(this);
 #ifdef _MSC_VER
@@ -475,6 +559,8 @@ bool SimulGLSkyRenderer::RestoreDeviceObjects()
 
 bool SimulGLSkyRenderer::InvalidateDeviceObjects()
 {
+//	loss_2d.InvalidateDeviceObjects();
+//	inscatter_2d.InvalidateDeviceObjects();
 	return true;
 }
 

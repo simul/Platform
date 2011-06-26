@@ -78,6 +78,7 @@ public:
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 protected:
+	void UpdateSkyAndCloudHookup();
 	IDXGISwapChain *pSwapChain;
 	//! The size of the 2D buffer the sky is rendered to.
 	int BufferWidth,BufferHeight;

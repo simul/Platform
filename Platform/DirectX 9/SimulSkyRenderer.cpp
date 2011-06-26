@@ -301,36 +301,25 @@ void SimulSkyRenderer::FillSunlightTexture(int texture_index,int texel_index,int
 	hr=tex->UnlockRect(0);
 }
 
-void SimulSkyRenderer::SetOvercastFactor(float of)
+void SimulSkyRenderer::Get3DLossAndInscatterTextures(void* *l1,void* *l2,
+		void* *i1,void* *i2)
 {
-	GetSkyInterface()->SetOvercast(of);
+	*l1=(void*)loss_textures[0];
+	*l2=(void*)loss_textures[1];
+	*i1=(void*)inscatter_textures[0];
+	*i2=(void*)inscatter_textures[1];
+}
+void SimulSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,
+		void* *i1)
+{
+	*l1=(void*)loss_2d.hdr_buffer_texture;
+	*i1=(void*)inscatter_2d.hdr_buffer_texture;
 }
 
-void SimulSkyRenderer::SetOvercastBaseAndRange(float base_alt_km,float range_km)
+void SimulSkyRenderer::GetSkyTextures(void* *s1,void* *s2)
 {
-	GetSkyInterface()->SetOvercastBaseKm(base_alt_km);
-	GetSkyInterface()->SetOvercastRangeKm(range_km);
-}
-
-void SimulSkyRenderer::Get3DLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LPDIRECT3DBASETEXTURE9 *l2,
-		LPDIRECT3DBASETEXTURE9 *i1,LPDIRECT3DBASETEXTURE9 *i2)
-{
-	*l1=loss_textures[0];
-	*l2=loss_textures[1];
-	*i1=inscatter_textures[0];
-	*i2=inscatter_textures[1];
-}
-void SimulSkyRenderer::Get2DLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,
-		LPDIRECT3DBASETEXTURE9 *i1)
-{
-	*l1=loss_2d.hdr_buffer_texture;
-	*i1=inscatter_2d.hdr_buffer_texture;
-}
-
-void SimulSkyRenderer::GetSkyTextures(LPDIRECT3DBASETEXTURE9 *s1,LPDIRECT3DBASETEXTURE9 *s2)
-{
-	*s1=sky_textures[0];
-	*s2=sky_textures[1];
+	*s1=(void*)sky_textures[0];
+	*s2=(void*)sky_textures[1];
 }
 
 float SimulSkyRenderer::GetFadeInterp() const

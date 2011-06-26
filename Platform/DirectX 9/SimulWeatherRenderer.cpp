@@ -461,7 +461,7 @@ void SimulWeatherRenderer::UpdateSkyAndCloudHookup()
 {
 	if(!simulSkyRenderer)
 		return;
-	LPDIRECT3DBASETEXTURE9 l,i;
+	void *l,*i;
 	simulSkyRenderer->Get2DLossAndInscatterTextures(&l,&i);
 	if(layer1&&simulCloudRenderer)
 	{
@@ -473,17 +473,6 @@ void SimulWeatherRenderer::UpdateSkyAndCloudHookup()
 void SimulWeatherRenderer::Update(float dt)
 {
 	BaseWeatherRenderer::Update(dt);
-	if(simulSkyRenderer)
-	{
-		LPDIRECT3DBASETEXTURE9 l1,l2,i1,i2;
-		simulSkyRenderer->Get3DLossAndInscatterTextures(&l1,&l2,&i1,&i2);
-		if(simulAtmosphericsRenderer)
-		{
-			simulAtmosphericsRenderer->SetDistanceTexture(simulSkyRenderer->GetDistanceTexture());
-			simulAtmosphericsRenderer->SetLossTextures(l1,l2);
-			simulAtmosphericsRenderer->SetInscatterTextures(i1,i2);
-		}
-	}
 	// Do this AFTER sky update, to catch any changes:
 	UpdateSkyAndCloudHookup();
 	if(simulCloudRenderer&&simulAtmosphericsRenderer)

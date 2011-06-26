@@ -105,7 +105,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x() :
 		sky_textures[i]=NULL;
 		sky_textures_SRV[i]=NULL;
 		loss_textures[i]=NULL;
-		insc_textures[i]=NULL;
+		inscatter_textures[i]=NULL;
 		loss_textures_SRV[i]=NULL;
 		insc_textures_SRV[i]=NULL;
 	}
@@ -206,7 +206,7 @@ bool SimulSkyRendererDX1x::InvalidateDeviceObjects()
 		SAFE_RELEASE(sky_textures_SRV[i]);
 		SAFE_RELEASE(loss_textures[i]);
 		SAFE_RELEASE(loss_textures_SRV[i]);
-		SAFE_RELEASE(insc_textures[i]);
+		SAFE_RELEASE(inscatter_textures[i]);
 		SAFE_RELEASE(insc_textures_SRV[i]);
 	}
 
@@ -234,7 +234,7 @@ void SimulSkyRendererDX1x::MapFade(int s)
 	HRESULT hr;
 	if(FAILED(hr=Map3D(loss_textures[s],&loss_texture_mapped)))
 		return;	   
-	if(FAILED(hr=Map3D(insc_textures[s],&insc_texture_mapped)))
+	if(FAILED(hr=Map3D(inscatter_textures[s],&insc_texture_mapped)))
 		return;
 	mapped_fade=s;
 }
@@ -244,7 +244,7 @@ void SimulSkyRendererDX1x::UnmapFade()
 	if(mapped_fade==-1)
 		return;
 	Unmap3D(loss_textures[mapped_fade]);
-	Unmap3D(insc_textures[mapped_fade]);
+	Unmap3D(inscatter_textures[mapped_fade]);
 	mapped_fade=-1;
 }
 
@@ -324,9 +324,9 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 	for(int i=0;i<3;i++)
 	{
 		SAFE_RELEASE(loss_textures[i]);
-		SAFE_RELEASE(insc_textures[i]);
+		SAFE_RELEASE(inscatter_textures[i]);
 		hr=m_pd3dDevice->CreateTexture3D(&desc,NULL,&loss_textures[i]);
-		hr=m_pd3dDevice->CreateTexture3D(&desc,NULL,&insc_textures[i]);
+		hr=m_pd3dDevice->CreateTexture3D(&desc,NULL,&inscatter_textures[i]);
 	}
 }
 
@@ -361,8 +361,8 @@ void SimulSkyRendererDX1x::CycleTexturesForward()
 	std::swap(loss_textures[0],loss_textures[1]);
 	std::swap(loss_textures[1],loss_textures[2]);
 
-	std::swap(insc_textures[0],insc_textures[1]);
-	std::swap(insc_textures[1],insc_textures[2]);
+	std::swap(inscatter_textures[0],inscatter_textures[1]);
+	std::swap(inscatter_textures[1],inscatter_textures[2]);
 	
 	std::swap(sky_textures_SRV[0],sky_textures_SRV[1]);
 	std::swap(sky_textures_SRV[1],sky_textures_SRV[2]);
@@ -605,6 +605,10 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 	hr=RenderAngledQuad(sun_dir,sun_angular_size*20.f*magnitude);
 	return (hr==S_OK);
 }
+bool SimulSkyRendererDX1x::Render2DFades()
+{
+	return true;
+}
 
 bool SimulSkyRendererDX1x::Render()
 {
@@ -673,6 +677,20 @@ void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
 	proj=p;
+}
+void SimulSkyRendererDX1x::Get3DLossAndInscatterTextures(void* *l1,void* *l2,
+		void* *i1,void* *i2)
+{
+	*l1=(void*)loss_textures[0];
+	*l2=(void*)loss_textures[1];
+	*i1=(void*)inscatter_textures[0];
+	*i2=(void*)inscatter_textures[1];
+}
+void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,
+		void* *i1)
+{
+//	*l1=(void*)loss_2d.hdr_buffer_texture;
+//	*i1=(void*)inscatter_2d.hdr_buffer_texture;
 }
 
 

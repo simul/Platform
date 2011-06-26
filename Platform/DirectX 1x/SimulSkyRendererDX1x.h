@@ -55,6 +55,7 @@ public:
 	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
+	bool Render2DFades();
 	//! Get a value, from zero to one, which represents how much of the sun is visible.
 	//! Call this when the current rendering surface is the one that has obscuring
 	//! objects like mountains etc. in it, and make sure these have already been drawn.
@@ -63,10 +64,10 @@ public:
 	float CalcSunOcclusion(float cloud_occlusion=0.f);
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
-	ID3D1xTexture3D*		GetLossTexture1(){return loss_textures[0];}
-	ID3D1xTexture3D*		GetLossTexture2(){return loss_textures[1];}
-	ID3D1xTexture3D*		GetInscatterTexture1(){return insc_textures[0];}
-	ID3D1xTexture3D*		GetInscatterTexture2(){return insc_textures[1];}
+
+	void Get3DLossAndInscatterTextures(void* *l1,void* *l2,void* *i1,void* *i2);
+	void Get2DLossAndInscatterTextures(void* *l1,void* *i1);
+
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);
 //! Implement the SkyTexturesCallback
@@ -116,7 +117,7 @@ protected:
 	ID3D1xTexture2D*					sky_textures[3];
 
 	ID3D1xTexture3D*					loss_textures[3];
-	ID3D1xTexture3D*					insc_textures[3];
+	ID3D1xTexture3D*					inscatter_textures[3];
 
 	ID3D1xShaderResourceView*			flare_texture_SRV;
 	ID3D1xShaderResourceView*			sky_textures_SRV[3];

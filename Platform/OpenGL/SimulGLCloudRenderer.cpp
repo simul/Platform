@@ -233,16 +233,6 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog)
 {
-	float gamma=cloudKeyframer->GetPrecalculatedGamma();
-	if(gamma>0&&gamma!=1.f)
-	{
-		helper->EnablePrecalculatedGamma(gamma);
-	}
-	else
-	{
-		helper->DisablePrecalculatedGamma();
-		gamma=1.f;
-	}
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	using namespace simul::clouds;
@@ -385,7 +375,6 @@ ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(proj.RowPointer(0));
 
-
 	float left	=proj(0,0)+proj(0,3);
 	float right	=proj(0,0)-proj(0,3);
 
@@ -394,15 +383,14 @@ ERROR_CHECK
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	static float churn=1.f;
 	helper->SetChurn(churn);
-	
 	helper->MakeGeometry(cloudNode.get(),god_rays,X1.z,god_rays);
-
 	// Here we make the helper calculate loss and inscatter due to atmospherics.
 	// This is an approach that calculates per-vertex atmospheric values that are then
 	// passed to the shader.
 	// The alternative is to generate fade textures in the SkyRenderer,
 	// then lookup those textures in the cloud shader.
 	helper->CalcInscatterFactors(skyInterface,god_rays);
+#if 1
 	simul::sky::float4 sunlight1=skyInterface->GetLocalIrradiance(X1.z*.001f);
 	simul::sky::float4 sunlight2=skyInterface->GetLocalIrradiance(X2.z*.001f);
 
@@ -456,7 +444,6 @@ ERROR_CHECK
 			loss=simul::sky::float4(1,1,1,1)*(1.f-mix_fog);
 			inscatter=gl_fog*mix_fog;
 		}
-ERROR_CHECK
 		layers_drawn++;
 		helper->MakeLayerGeometry(cloudNode.get(),*i);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
@@ -492,6 +479,7 @@ ERROR_CHECK
 		}
 		glEnd();
 	}
+#endif
 ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
     glPopMatrix();

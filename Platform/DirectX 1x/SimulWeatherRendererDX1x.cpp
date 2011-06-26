@@ -235,20 +235,34 @@ void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX 
 		simulAtmosphericsRenderer->SetMatrices(w,v,p);*/
 }
 
+void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()
+{
+	if(!simulSkyRenderer)
+		return;
+	void *l,*i;
+	simulSkyRenderer->Get2DLossAndInscatterTextures(&l,&i);
+	if(simulCloudRenderer)
+	{
+		simulCloudRenderer->SetLossTextures(l);
+		simulCloudRenderer->SetInscatterTextures(i);
+	}
+}
 void SimulWeatherRendererDX1x::Update(float dt)
 {
+	BaseWeatherRenderer::Update(dt);
 	static bool pause=false;
     if(!pause)
 	{
+			UpdateSkyAndCloudHookup();
 		if(simulSkyRenderer)
 		{
 			simulSkyRenderer->Update(dt);
 			if(simulCloudRenderer)
 			{
-				simulCloudRenderer->SetLossTextures(simulSkyRenderer->GetLossTexture1(),
+				/*simulCloudRenderer->SetLossTextures(simulSkyRenderer->GetLossTexture1(),
 					simulSkyRenderer->GetLossTexture2());
 				simulCloudRenderer->SetInscatterTextures(simulSkyRenderer->GetInscatterTexture1(),
-					simulSkyRenderer->GetInscatterTexture2());
+					simulSkyRenderer->GetInscatterTexture2());*/
 				simulCloudRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
 				simulCloudRenderer->SetAltitudeTextureCoordinate(simulSkyRenderer->GetAltitudeTextureCoordinate());
 			}

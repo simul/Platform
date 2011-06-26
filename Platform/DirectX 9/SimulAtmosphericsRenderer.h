@@ -69,19 +69,19 @@ public:
 #ifdef XBOX
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 #endif
-	void SetDistanceTexture(LPDIRECT3DTEXTURE9 t)
+	void SetDistanceTexture(void* t)
 	{
-		max_distance_texture=t;
+		max_distance_texture=(LPDIRECT3DTEXTURE9)t;
 	}
-	void SetLossTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
+	void SetLossTextures(void* t1,void* t2)
 	{
-		loss_texture_1=t1;
-		loss_texture_2=t2;
+		loss_texture_1=(LPDIRECT3DBASETEXTURE9)t1;
+		loss_texture_2=(LPDIRECT3DBASETEXTURE9)t2;
 	}
-	void SetInscatterTextures(LPDIRECT3DBASETEXTURE9 t1,LPDIRECT3DBASETEXTURE9 t2)
+	void SetInscatterTextures(void* t1,void* t2)
 	{
-		inscatter_texture_1=t1;
-		inscatter_texture_2=t2;
+		inscatter_texture_1=(LPDIRECT3DBASETEXTURE9)t1;
+		inscatter_texture_2=(LPDIRECT3DBASETEXTURE9)t2;
 	}
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si)
 	{

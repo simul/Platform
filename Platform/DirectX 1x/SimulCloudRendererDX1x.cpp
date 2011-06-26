@@ -155,8 +155,10 @@ void SimulCloudRendererDX1x::SetSkyInterface(simul::sky::BaseSkyInterface *si)
 	cloudKeyframer->SetSkyInterface(si);
 }
 
-void SimulCloudRendererDX1x::SetLossTextures(ID3D1xResource* t1,ID3D1xResource* t2)
+void SimulCloudRendererDX1x::SetLossTextures(void *t)
 {
+	ID3D1xResource* t1=((ID3D1xResource**)t)[0];
+	ID3D1xResource* t2=((ID3D1xResource**)t)[1];
 	if(sky_loss_texture_1!=t1)
 	{
 		sky_loss_texture_1=static_cast<ID3D1xTexture2D*>(t1);
@@ -175,8 +177,11 @@ void SimulCloudRendererDX1x::SetLossTextures(ID3D1xResource* t1,ID3D1xResource* 
 	}
 }
 
-void SimulCloudRendererDX1x::SetInscatterTextures(ID3D1xResource* t1,ID3D1xResource* t2)
+void SimulCloudRendererDX1x::SetInscatterTextures(void *t)
+//ID3D1xResource* t1,ID3D1xResource* t2)
 {
+	ID3D1xResource* t1=((ID3D1xResource**)t)[0];
+	ID3D1xResource* t2=((ID3D1xResource**)t)[1];
 	if(sky_inscatter_texture_1!=t1)
 	{
 		sky_inscatter_texture_1=static_cast<ID3D1xTexture2D*>(t1);

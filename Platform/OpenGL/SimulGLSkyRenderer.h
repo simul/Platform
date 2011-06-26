@@ -9,6 +9,7 @@
 
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
+#include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include <cstdlib>
 namespace simul
 {
@@ -53,9 +54,14 @@ public:
 	virtual void CycleTexturesForward();
 
 	bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	
+	void Get3DLossAndInscatterTextures(void* *l1,void* *l2,void* *i1,void* *i2);
+	void Get2DLossAndInscatterTextures(void* *l1,void* *i1);
+
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual void SetYVertical(bool ){}
 protected:
+	bool Render2DFades();
 	void CalcCameraPosition();
 	void CreateFadeTextures();
 	bool RenderAngledQuad(const float *dir,float half_angle_radians);
@@ -66,22 +72,26 @@ protected:
 	bool CreateSkyEffect();
 	bool RenderSkyToBuffer();
 
-	unsigned cloud_texel_index;
-	unsigned char *sky_tex_data;
-	GLuint sky_vertex_shader,sky_fragment_shader;
-	GLuint sky_program;
-	GLuint planet_program;
-	GLint planetTexture_param;
-	GLint planetLightDir_param;
+	unsigned		cloud_texel_index;
+	unsigned char	*sky_tex_data;
+	GLuint			sky_vertex_shader,sky_fragment_shader;
+	GLuint			sky_program;
+	GLuint			planet_program;
+	GLuint			fade_3d_to_2d_program;
+	GLint			planetTexture_param;
+	GLint			planetLightDir_param;
 
-	GLint altitudeTexCoord_param;
-	GLint MieRayleighRatio_param;
-	GLint hazeEccentricity_param;
-	GLint lightDirection_sky_param;
-	GLint skyInterp_param;
+	GLint			altitudeTexCoord_param;
+	GLint			MieRayleighRatio_param;
+	GLint			hazeEccentricity_param;
+	GLint			lightDirection_sky_param;
+	GLint			skyInterp_param;
 	
-	GLint skyTexture1_param;
-	GLint skyTexture2_param;
+	GLint			skyTexture1_param;
+	GLint			skyTexture2_param;
+	
+	FramebufferGL	loss_2d;
+	FramebufferGL	inscatter_2d;
 
 	unsigned skyTexSize;
 	bool campos_updated;

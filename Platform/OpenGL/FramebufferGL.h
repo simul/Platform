@@ -40,6 +40,7 @@ public:
 		gamma = g;
 	}
 	void SetShader(int i);
+	void SetWidthAndHeight(int w,int h);
 	// In order to use a color buffer, either
 	// InitColor_RB or InitColor_Tex needs to be called.
 	void InitColor_RB(int index = 0, GLenum iformat = GL_FLOAT_RGBA16_NV);
@@ -66,6 +67,24 @@ public:
 	{
 		return m_height;
 	}
+	// Get the internal texture object IDs.
+	inline GLenum GetColorTex(int index = 0)
+	{
+		return m_tex_col[index];
+	}
+	inline GLenum GetDepthTex()
+	{
+		return m_tex_depth;
+	}
+	// Get the target texture format (texture2d or texture_rectangle)
+	inline GLenum GetTarget()
+	{
+		return m_target;
+	}
+	inline GLuint GetFramebuffer()
+	{
+		return m_fb;
+	}
 private:
 	static std::stack<GLuint> fb_stack;
 	void InitShader();
@@ -88,24 +107,6 @@ private:
 	void Release()
 	{
 		glBindTexture(m_target, 0);
-	}
-	// Get the internal texutre object IDs.
-	inline GLenum GetColorTex(int index = 0)
-	{
-		return m_tex_col[index];
-	}
-	inline GLenum GetDepthTex()
-	{
-		return m_tex_depth;
-	}
-	// Get the target texture format (texture2d or texture_rectangle)
-	inline GLenum GetTarget()
-	{
-		return m_target;
-	}
-	inline GLuint GetFramebuffer()
-	{
-		return m_fb;
 	}
 	const static int num_col_buffers = 16;
 	int main_viewport[4];

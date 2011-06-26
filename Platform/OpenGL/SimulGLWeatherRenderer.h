@@ -47,8 +47,6 @@ public:
 	bool RenderSky(bool buffered,bool is_cubemap);
 	//! Call this to draw the clouds
 	void RenderClouds(bool buffered,bool depth_testing,bool default_fog=false);
-	//! Apply a gamma-correction on the CPU before calculation, so gamma-correction in shaders is not needed. If 1.0 or zero this is ignored.
-	void SetPrecalculatedGamma(float g);
 	//! Call this to draw lightning.
 	void RenderLightning();
 	//! Call this to draw rain etc.

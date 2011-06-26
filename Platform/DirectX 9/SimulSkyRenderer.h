@@ -80,24 +80,16 @@ public:
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 #endif
 	void SetTime(float hour);
-	//! Set the overcast factor for the horizon. Zero is clear skies, one is cloudy.
-	//! This factor then goes into sky brightness and fade calculations.
-	void SetOvercastFactor(float of);
 	//! A timing measurement.
 	float GetTiming() const;
 	simul::sky::float4 GetAmbient() const;
 	simul::sky::float4 GetLightColour() const;
-	//! This sets the base altitude and range for the overcast effect - the base should be the cloudbase,
-	//! while the range should be the height of the clouds.
-	void SetOvercastBaseAndRange(float base_alt_km,float range_km);
-	void Get3DLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,LPDIRECT3DBASETEXTURE9 *l2,
-		LPDIRECT3DBASETEXTURE9 *i1,LPDIRECT3DBASETEXTURE9 *i2);
-	void Get2DLossAndInscatterTextures(LPDIRECT3DBASETEXTURE9 *l1,
-		LPDIRECT3DBASETEXTURE9 *i1);
-	void GetSkyTextures(LPDIRECT3DBASETEXTURE9 *s1,LPDIRECT3DBASETEXTURE9 *s2);
-	LPDIRECT3DTEXTURE9 GetDistanceTexture()
+	void Get3DLossAndInscatterTextures(void **l1,void **l2,void **i1,void **i2);
+	void Get2DLossAndInscatterTextures(void **l1,void **i1);
+	void GetSkyTextures(void * *s1,void * *s2);
+	void * GetDistanceTexture()
 	{
-		return max_distance_texture;
+		return (void *)max_distance_texture;
 	}
 	bool Use3DFadeTextures() const{return true;}
 	float GetFadeInterp() const;

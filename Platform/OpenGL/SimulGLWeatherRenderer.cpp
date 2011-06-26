@@ -129,6 +129,9 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 {
 	device_initialized=true;
 	EnableLayers(simulCloudRenderer.get()!=NULL,simul2DCloudRenderer.get()!=NULL);
+	simulSkyRenderer->RestoreDeviceObjects();
+	simulCloudRenderer->RestoreDeviceObjects(NULL);
+	simulLightningRenderer->RestoreDeviceObjects();
 	return true;
 }
 bool SimulGLWeatherRenderer::InvalidateDeviceObjects()
@@ -231,12 +234,6 @@ static simul::base::Timer timer;
 	simul::math::FirstOrderDecay(cloud_timing,timer.Time,0.1f,0.01f);
 }
 
-// Render the clouds to the cloud buffer:
-void SimulGLWeatherRenderer::SetPrecalculatedGamma(float g)
-{
-    if(simulCloudRenderer)
-		simulCloudRenderer->GetCloudKeyframer()->SetPrecalculatedGamma(g);
-}
 
 class SimulGLSkyRenderer *SimulGLWeatherRenderer::GetSkyRenderer()
 {
