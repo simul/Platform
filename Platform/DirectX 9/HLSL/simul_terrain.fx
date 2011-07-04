@@ -64,14 +64,11 @@ sampler3D cloud_texture2= sampler_state
 //float morphFactor;
 float4 eyePosition;
 float4 lightDir;
-float4 MieRayleighRatio;
-float HazeEccentricity;
 float3 cloudScales;	
 float3 cloudOffset;
 float3 lightColour;
 float3 ambientColour;
 float cloudInterp;
-float fadeInterp;
 #define pi (3.1415926536f)
 
 struct vertexInput

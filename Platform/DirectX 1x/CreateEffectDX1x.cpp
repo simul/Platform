@@ -10,6 +10,7 @@
 
 #include "CreateEffectDX1x.h"
 #include "Simul/Base/StringToWString.h"
+#include "Simul/Base/EnvironmentVariables.h"
 
 #include <tchar.h>
 #include <string>
@@ -94,45 +95,103 @@ struct d3dMacro
 	std::string define;
 };
 #ifdef DX11
+HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
+{
+	HRESULT hr=(HRESULT)(-1);
+	std::string compiled_filename=simul::base::WStringToString(filename)+"o";
+	std::ifstream ifs(compiled_filename.c_str(),std::ios_base::binary);
+	for(int i=0;i<10000&&!ifs.good();i++);
+	if(ifs.good())
+	{
+		ifs.seekg(0,std::ios_base::end);
+		size_t sz=ifs.tellg();
+		ifs.seekg(0,std::ios_base::beg);
+		if(sz>0)
+		{
+			char *pData=new char[sz];
+			ifs.read(pData,sz);
+			hr=D3DX11CreateEffectFromMemory(pData,sz,FXFlags,pDevice,ppEffect);
+			delete [] pData;
+		}
+	}
+	return hr;
+}
+
 HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename, UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
-	char *pData;
-	std::string fn=simul::base::WStringToString(filename)+"o";
-	std::ifstream ifs(fn.c_str(),std::ios_base::binary);
-	if(!ifs.good())
-		return S_FALSE;
-	ifs.seekg(0,std::ios_base::end);
-	size_t sz=ifs.tellg();
-	ifs.seekg(0,std::ios_base::beg);
-	if(sz<=0)
-		return S_FALSE;
-	pData=new char[sz];
-	ifs.read(pData,sz);
-	HRESULT hr=D3DX11CreateEffectFromMemory(pData,sz,FXFlags,pDevice,ppEffect);
-	delete [] pData;
+	// first try to find an existing text source with this filename, and compile it.
+	std::string text_filename=simul::base::WStringToString(filename);
+	std::ifstream ifs(text_filename.c_str(),std::ios_base::binary);
+	if(ifs.good())
+	{
+		std::string command=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("DXSDK_DIR");
+		if(command.length())
+		{
+//>"fxc.exe" /T fx_2_0 /Fo "..\..\gamma.fx"o "..\..\gamma.fx"
+			command="\""+command;
+			command+="Utilities\\Bin\\x86\\fxc.exe\"";
+			command+=" /Tfx_5_0 /Fo \"";
+			command+=text_filename+"o\" \"";
+			command+=text_filename+"\"";
+			//command+=" > \""+text_filename+".log\"";
+#if 0
+			system(command.c_str());
+#else
+#if 0
+			HINSTANCE hi=ShellExecuteA(NULL,
+				LPCTSTR lpOperation,
+				LPCTSTR lpFile,
+				LPCTSTR lpParameters,
+				LPCTSTR lpDirectory,
+				INT nShowCmd
+			);
+#else
+			STARTUPINFOA si;
+			PROCESS_INFORMATION pi;
+			ZeroMemory( &si, sizeof(si) );
+			si.cb = sizeof(si);
+			ZeroMemory( &pi, sizeof(pi) );
+			si.wShowWindow=false;
+			char com[500];
+			strcpy(com,command.c_str());
+			si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+			si.wShowWindow = SW_HIDE;
+			FILE *fp = fopen((text_filename+".log").c_str(), "w");
+			si.hStdOutput = fp;
+			CreateProcessA( NULL,		// No module name (use command line)
+					com,				// Command line
+					NULL,				// Process handle not inheritable
+					NULL,				// Thread handle not inheritable
+					TRUE,				// Set handle inheritance to FALSE
+					0,//CREATE_NO_WINDOW,	// No nasty console windows
+					NULL,				// Use parent's environment block
+					NULL,				// Use parent's starting directory 
+					&si,				// Pointer to STARTUPINFO structure
+					&pi )				// Pointer to PROCESS_INFORMATION structure
+				;
+			// Wait until child process exits.
+			WaitForSingleObject( pi.hProcess, INFINITE );
+			CloseHandle( pi.hProcess );
+			CloseHandle( pi.hThread );
+
+			/**"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Utilities\Bin\x86\fxc.exe" /T fx_5_0 /Fo "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fxo" "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fx""	char [200]
+
+			
+			 \author	Roderick
+			 \date	01/07/2011
+			
+			 \param		The.
+			 */
+
+			fclose(fp);
+#endif
+#endif
+		}
+	}
+	HRESULT hr=D3DX11CreateEffectFromBinaryFile(filename,FXFlags,pDevice,ppEffect);
 	return hr;
 }
 #endif
-/*HRESULT WINAPI D3DX10CreateEffectFromFile(const TCHAR *filename, UINT FXFlags, ID3D10Device *pDevice, ID3D10Effect **ppEffect)
-{
-	char *pData;
-	tstring fn=shader_path+_T("/");
-	fn+=(filename);
-	fn+=_T("o");
-	std::ifstream ifs(fn.c_str(),std::ios_base::binary);
-	if(!ifs.good())
-		return S_FALSE;
-	ifs.seekg(0,std::ios_base::end);
-	size_t sz=ifs.tellg();
-	ifs.seekg(0,std::ios_base::beg);
-	if(sz<=0)
-		return S_FALSE;
-	pData=new char[sz];
-	ifs.read(pData,sz);
-	HRESULT hr=D3D10CreateEffectFromMemory(pData,sz,FXFlags,pDevice,NULL,ppEffect);
-	delete [] pData;
-	return hr;
-}*/
 
 HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename)
 {

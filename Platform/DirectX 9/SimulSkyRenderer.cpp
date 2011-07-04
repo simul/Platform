@@ -378,8 +378,10 @@ void SimulSkyRenderer::CreateFadeTextures()
 	}
 	loss_2d.InvalidateDeviceObjects();
 	inscatter_2d.InvalidateDeviceObjects();
-	loss_2d.RestoreDeviceObjects(m_pd3dDevice,fadeTexWidth,fadeTexHeight);
-	inscatter_2d.RestoreDeviceObjects(m_pd3dDevice,fadeTexWidth,fadeTexHeight);
+	loss_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	loss_2d.RestoreDeviceObjects(m_pd3dDevice);
+	inscatter_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	inscatter_2d.RestoreDeviceObjects(m_pd3dDevice);
 }
 
 void SimulSkyRenderer::FillFadeTexturesSequentially(int texture_index,int texel_index,int num_texels,
@@ -584,6 +586,7 @@ bool SimulSkyRenderer::CreateSkyEffect()
 	fadeTexture					=m_pSkyEffect->GetParameterByName(NULL,"fadeTexture");
 	fadeTexture2				=m_pSkyEffect->GetParameterByName(NULL,"fadeTexture2");
 
+	crossSectionTexture			=m_pSkyEffect->GetParameterByName(NULL,"crossSectionTexture");
 	return (hr==S_OK);
 }
 
@@ -876,6 +879,12 @@ bool SimulSkyRenderer::RenderFades(int )
 {
 	HRESULT hr=S_OK;
 	static int size=64;
+#if 1
+	m_pSkyEffect->SetTexture(crossSectionTexture, loss_2d.hdr_buffer_texture);
+	RenderTexture(m_pd3dDevice,8			,size+32,size,size,loss_2d.hdr_buffer_texture,m_pSkyEffect,m_hTechniqueFadeCrossSection);
+	m_pSkyEffect->SetTexture(crossSectionTexture, inscatter_2d.hdr_buffer_texture);
+	RenderTexture(m_pd3dDevice,8+(size+8)	,size+32,size,size,inscatter_2d.hdr_buffer_texture,m_pSkyEffect,m_hTechniqueFadeCrossSection);
+#else
 	m_pSkyEffect->SetTexture(fadeTexture, loss_textures[0]);
 	RenderTexture(m_pd3dDevice,8			,size+32,size,size,loss_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 	m_pSkyEffect->SetTexture(fadeTexture, loss_textures[1]);
@@ -896,6 +905,7 @@ bool SimulSkyRenderer::RenderFades(int )
 	RenderTexture(m_pd3dDevice,8+2*(size+8)	,size*3+96,size,size,sky_textures[2],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 	m_pSkyEffect->SetTexture(fadeTexture, max_distance_texture);
 	RenderTexture(m_pd3dDevice,8+4*(size+8)	,size*3+96,size,size,max_distance_texture,NULL,NULL);
+#endif
 	return (hr==S_OK);
 }
 
@@ -1192,6 +1202,8 @@ bool SimulSkyRenderer::Render2DFades()
 	m_pSkyEffect->SetTechnique(m_hTechnique3DTo2DFade);
 	m_pSkyEffect->SetTexture(fadeTexture,loss_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,loss_textures[1]);
+	float atc=GetAltitudeTextureCoordinate();
+	m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
 	loss_2d.Activate();
 	DrawFullScreenQuad(m_pd3dDevice,m_pSkyEffect);
 	loss_2d.Deactivate();

@@ -62,7 +62,6 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Pi.h"
-#include "Simul/LicenseKey.h"
 #include "Macros.h"
 #include "Resources.h"
 
@@ -177,8 +176,8 @@ public:
 ExampleHumidityCallback hum_callback;
 MushroomHumidityCallback mushroom_callback;
 #endif
-SimulCloudRenderer::SimulCloudRenderer()
-	:simul::clouds::BaseCloudRenderer()
+SimulCloudRenderer::SimulCloudRenderer(const char *license_key)
+	:simul::clouds::BaseCloudRenderer(license_key)
 	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pHudVertexDecl(NULL)
@@ -209,7 +208,7 @@ SimulCloudRenderer::SimulCloudRenderer()
 		cloud_textures[i]=NULL;
 
 	//cloudNode->AddHumidityCallback(&hum_callback);
-	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
+	cloudNode->SetLicense(license_key);
 	
 	cloudInterface->Generate();
 

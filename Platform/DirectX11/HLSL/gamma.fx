@@ -1,5 +1,6 @@
 Texture2D hdrTexture;
-	matrix worldViewProj;
+float4x4 worldViewProj	: WorldViewProjection;
+
 SamplerState samplerState 
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -12,27 +13,27 @@ float gamma=1.f/2.2f;
 
 struct a2v
 {
-    float4 position  : POSITION;
-    float4 texcoord  : TEXCOORD0;
+    float4 position	: POSITION;
+    float2 texcoord	: TEXCOORD0;
 };
 
 struct v2f
 {
-    float4 position  : SV_POSITION;
-    float4 texcoord  : TEXCOORD0;
+    float4 hPosition	: SV_POSITION;
+    float2 texcoord		: TEXCOORD0;
 };
 
 v2f TonemapVS(a2v IN)
 {
 	v2f OUT;
-    OUT.position=mul(worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.hPosition = mul( worldViewProj, float4(IN.position.xyz , 1.0));
 	OUT.texcoord = IN.texcoord;
     return OUT;
 }
 
 float4 TonemapPS(v2f IN) : SV_TARGET
 {
-	float4 c=hdrTexture.Sample(samplerState,IN.texcoord.xy);
+	float4 c=hdrTexture.Sample(samplerState,IN.texcoord);
     c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
     return float4(c.rgb,1.f);

@@ -20,7 +20,7 @@
 //extern unsigned GetResourceIdImplementation(const char *filename);
 extern LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl;
 
-Direct3D9Renderer::Direct3D9Renderer()
+Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
 	:simul::graph::meta::Group()
 	,Gamma(0.45f)
 	,aspect(1.f)
@@ -39,7 +39,7 @@ Direct3D9Renderer::Direct3D9Renderer()
 	,time_mult(0.f)
 {
 	//GetResourceId=&GetResourceIdImplementation;
-	simulWeatherRenderer=new SimulWeatherRenderer(true,640,360,true,true,false,true,false);
+	simulWeatherRenderer=new SimulWeatherRenderer(license_key,true,640,360,true,true,false,true,false);
 	AddChild(simulWeatherRenderer.get());
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
 	if(simulHDRRenderer)
@@ -81,9 +81,9 @@ HRESULT Direct3D9Renderer::OnCreateDevice(IDirect3DDevice9* pd3dDevice, const D3
 		simul::graph::meta::Node *n=dynamic_cast<simul::graph::meta::Node *>(simulWeatherRenderer->GetSkyRenderer()->GetSkyInterface());
 		AddChild(n);
 	}
-	aspect=pBackBufferSurfaceDesc->Width/(float)pBackBufferSurfaceDesc->Height;
 	width=pBackBufferSurfaceDesc->Width;
 	height=pBackBufferSurfaceDesc->Height;
+	aspect=width/(float)height;
 	return S_OK;
 }
 
@@ -98,9 +98,10 @@ void Direct3D9Renderer::SetCamera(simul::graph::camera::Camera *c)
 
 HRESULT Direct3D9Renderer::OnResetDevice(IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc)
 {
-	aspect=pBackBufferSurfaceDesc->Width/(FLOAT)pBackBufferSurfaceDesc->Height;
+	//aspect=pBackBufferSurfaceDesc->Width/(FLOAT)pBackBufferSurfaceDesc->Height;
 	width=pBackBufferSurfaceDesc->Width;
 	height=pBackBufferSurfaceDesc->Height;
+	aspect=width/(float)height;
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->SetBufferSize(width,height);
@@ -178,8 +179,6 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 			{
 				simulTerrainRenderer->SetCloudTextures		(NULL,false);
 			}
-			if(simulWeatherRenderer->GetSkyRenderer())
-				simulTerrainRenderer->setFadeInterpolation	(simulWeatherRenderer->GetSkyRenderer()->GetFadeInterp());
 		}
 	}
 	timer.FinishTime();
@@ -230,7 +229,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 //since our skybox will blend based on alpha we have to clear the backbuffer to this alpha value
 	D3DXCOLOR fogColor( 0.0f , 1.f , 1.f , 0.0f ); 
 	// Don't need to clear D3DCLEAR_TARGET as we'll be filling every pixel:
-	pd3dDevice->Clear(0L,NULL,D3DCLEAR_ZBUFFER|D3DCLEAR_TARGET,0xFFFF7000,1.0f,0L);
+	pd3dDevice->Clear(0L,NULL,D3DCLEAR_ZBUFFER|D3DCLEAR_TARGET,0xFFFF70F0,1.0f,0L);
 
     pd3dDevice->SetRenderState( D3DRS_ZENABLE,FALSE);
 	pd3dDevice->SetRenderState( D3DRS_ZWRITEENABLE,FALSE);

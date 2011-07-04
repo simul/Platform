@@ -741,11 +741,17 @@ HRESULT DrawFullScreenQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT effect)
 	m_pd3dDevice->SetFVF(D3DFVF_XYZ  |  D3DFVF_TEX1);
 	//m_pd3dDevice->SetVertexDeclaration(vertexDecl);
 	UINT passes=1;
-	hr=effect->Begin(&passes,0);
-	hr=effect->BeginPass(0);
+	if(effect)
+	{
+		hr=effect->Begin(&passes,0);
+		hr=effect->BeginPass(0);
+	}
 	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
-	hr=effect->EndPass();
-	hr=effect->End();
+	if(effect)
+	{
+		hr=effect->EndPass();
+		hr=effect->End();
+	}
 	return hr;
 }
 

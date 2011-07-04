@@ -50,7 +50,7 @@ typedef long HRESULT;
 SIMUL_DIRECTX1x_EXPORT_CLASS SimulCloudRendererDX1x : public simul::clouds::BaseCloudRenderer
 {
 public:
-	SimulCloudRendererDX1x();
+	SimulCloudRendererDX1x(const char *license_key);
 	virtual ~SimulCloudRendererDX1x();
 	//! Call this once to set the sky interface that this cloud renderer can use for distance fading.
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si);
@@ -152,17 +152,13 @@ protected:
 
 	ID3D1xEffectShaderResourceVariable*		lightningIlluminationTexture;
 	ID3D1xEffectShaderResourceVariable*		skyLossTexture1;
-	ID3D1xEffectShaderResourceVariable*		skyLossTexture2;
 	ID3D1xEffectShaderResourceVariable*		skyInscatterTexture1;
-	ID3D1xEffectShaderResourceVariable*		skyInscatterTexture2;
 
 	ID3D1xShaderResourceView*				cloudDensityResource[3];
 	ID3D1xShaderResourceView*				noiseTextureResource;
 	ID3D1xShaderResourceView*				lightningIlluminationTextureResource;
 	ID3D1xShaderResourceView*				skyLossTexture1Resource;
-	ID3D1xShaderResourceView*				skyLossTexture2Resource;
 	ID3D1xShaderResourceView*				skyInscatterTexture1Resource;
-	ID3D1xShaderResourceView*				skyInscatterTexture2Resource;
 
 	ID3D1xTexture3D*	cloud_textures[3];
 	ID3D1xTexture3D*	illumination_texture;
@@ -171,11 +167,8 @@ protected:
 
 	ID3D1xTexture2D*	noise_texture;
 	ID3D1xTexture1D*	lightning_texture;
-	ID3D1xTexture2D*	large_scale_cloud_texture;
 	ID3D1xTexture2D*	sky_loss_texture_1;
-	ID3D1xTexture2D*	sky_loss_texture_2;
 	ID3D1xTexture2D*	sky_inscatter_texture_1;
-	ID3D1xTexture2D*	sky_inscatter_texture_2;
 	ID3D1xTexture2D*	cloud_cubemap;
 	D3DXVECTOR4			cam_pos;
 	D3DXVECTOR4			lightning_colour;

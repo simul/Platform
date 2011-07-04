@@ -133,6 +133,7 @@ technique simul_cloud_blend
 		SrcBlend = One;
 		DestBlend = SrcAlpha;
 		AlphaTestEnable=false;
+		COLORWRITEENABLE=15;
 		VertexShader = compile vs_3_0 TonemapVS();
 		PixelShader = compile ps_3_0 CloudBlendPS();
     }
@@ -221,6 +222,7 @@ technique simul_tonemap
 		ZWriteEnable = false;
 		AlphaBlendEnable = false;
 		AlphaTestEnable=false;
+		COLORWRITEENABLE=15;
 		VertexShader = compile vs_3_0 TonemapVS();
 		PixelShader = compile ps_3_0 TonemapPS();
     }
@@ -236,6 +238,7 @@ technique simul_tonemap_zwrite
 		ZWriteEnable = true;
 		AlphaBlendEnable = false;
 		AlphaTestEnable=false;
+		COLORWRITEENABLE=15;
 		VertexShader = compile vs_3_0 TonemapZWriteVS();
 		PixelShader = compile ps_3_0 TonemapPS();
     }

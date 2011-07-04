@@ -29,7 +29,6 @@
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
-#include "Simul/LicenseKey.h"
 #include "LoadGLProgram.h"
 
 #include <algorithm>
@@ -70,14 +69,17 @@ public:
 };
 CumulonimbusHumidityCallback cb;
 
-SimulGLCloudRenderer::SimulGLCloudRenderer()
-	: texture_scale(1.f)
-	, scale(2.f)
-	, texture_effect(1.f)
+SimulGLCloudRenderer::SimulGLCloudRenderer(const char *license_key)
+	:BaseCloudRenderer(license_key)
+	,texture_scale(1.f)
+	,scale(2.f)
+	,texture_effect(1.f)
+	,loss_tex(0)
+	,inscatter_tex(0)
 {
 	cloudKeyframer->SetFillTexturesAsBlocks(true);
 	cloudKeyframer->SetOpenGL(true);
-	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
+	cloudNode->SetLicense(license_key);
 }
 
 bool SimulGLCloudRenderer::Create()
@@ -288,7 +290,13 @@ bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_f
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
 
-    glActiveTexture(GL_TEXTURE3);
+   glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D,loss_tex);
+
+     glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D,inscatter_tex);
+
+    glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_3D,illum_tex);
 
 	glUseProgram(clouds_program);
@@ -389,7 +397,8 @@ ERROR_CHECK
 	// passed to the shader.
 	// The alternative is to generate fade textures in the SkyRenderer,
 	// then lookup those textures in the cloud shader.
-	helper->CalcInscatterFactors(skyInterface,god_rays);
+	if(!default_fog)
+		helper->CalcInscatterFactors(skyInterface,god_rays);
 #if 1
 	simul::sky::float4 sunlight1=skyInterface->GetLocalIrradiance(X1.z*.001f);
 	simul::sky::float4 sunlight2=skyInterface->GetLocalIrradiance(X2.z*.001f);
@@ -411,6 +420,7 @@ ERROR_CHECK
 		float dens=(*i)->fadeIn;
 		if(!dens)
 			continue;
+		glUniform1f(layerDistance_param,(*i)->distance);
 		simul::sky::float4 loss			;
 		simul::sky::float4 inscatter	;
 		if(default_fog)
@@ -446,6 +456,27 @@ ERROR_CHECK
 		}
 		layers_drawn++;
 		helper->MakeLayerGeometry(cloudNode.get(),*i);
+#if 0
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, sphere_vbo);         // for vertex coordinates
+		//glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, sphere_ibo); // for indices
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+		//glEnableClientState(GL_INDEX_ARRAY);
+		glVertexPointer(3, GL_FLOAT, 0, 0);
+		int first_primitive=((*i)->index_start);
+		int num_primitives=((*i)->index_end-(*i)->index_start);
+		//use indexing
+		glDrawElements(GL_QUAD_STRIP, num_primitives, GL_UNSIGNED_SHORT, &(pIndices[first_primitive]));
+
+		//glDrawElements(GL_QUAD_STRIP,num_primitives, GL_UNSIGNED_SHORT,&(pIndices[first_primitive])); //last 0 is offset in element-array
+
+		//glDisableClientState(GL_INDEX_ARRAY);
+		glDisableClientState(GL_VERTEX_ARRAY);            // deactivate vertex array
+
+		// bind with 0, so, switch back to normal pointer operation
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		//glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+#else
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		glBegin(GL_QUAD_STRIP);
@@ -478,6 +509,7 @@ ERROR_CHECK
 			}
 		}
 		glEnd();
+#endif
 	}
 #endif
 ERROR_CHECK
@@ -490,6 +522,18 @@ ERROR_CHECK
 	glPopAttrib();
 ERROR_CHECK
 	return true;
+}
+
+void SimulGLCloudRenderer::SetLossTextures(void *l)
+{
+	if(l)
+	loss_tex=((GLuint)l);
+}
+
+void SimulGLCloudRenderer::SetInscatterTextures(void *i)
+{
+	if(i)
+	inscatter_tex=((GLuint)i);
 }
 
 bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
@@ -524,6 +568,7 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 	noiseSampler_param		= glGetUniformLocation(clouds_program,"noiseSampler");
 	illumSampler_param		= glGetUniformLocation(clouds_program,"illumSampler");
 
+	layerDistance_param		= glGetUniformLocation(clouds_program,"layerDistance");
 	printProgramInfoLog(clouds_program);
 
 	// Because in this sample we are using 32-bit values in the cloud texture:
@@ -534,8 +579,69 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 		CloudKeyframer::SECONDARY,CloudKeyframer::AMBIENT);
 	cloudKeyframer->SetRenderCallback(this);
 	glUseProgram(NULL);
+
+	BuildSphereVBO();
 	return true;
 }
+struct vertt
+{
+	float x,y,z;
+};
+bool SimulGLCloudRenderer::BuildSphereVBO()
+{
+	unsigned el=0,az=0;
+	helper->GetGrid(el,az);
+
+	int vertex_count=(el+1)*(az+1);
+	vertt *pVertices=new vertt[vertex_count];
+	vertt *vert=pVertices;
+	for(int i=0;i<(int)el+1;i++)
+	{
+		float elevation=((float)i-(float)el/2.f)/(float)el*pi;
+		float z=sin(elevation);
+		float ce=cos(elevation);
+		for(int j=0;j<az+1;j++)
+		{
+			float azimuth=(float)j/(float)az*2.f*pi;
+			vert->x=cos(azimuth)*ce;
+			vert->y=sin(azimuth)*ce;
+			vert->z=z;
+			vert++;
+		}
+	}
+	// Generate And Bind The Vertex Buffer
+	glGenBuffersARB( 1, &sphere_vbo );					// Get A Valid Name
+	glBindBufferARB( GL_ARRAY_BUFFER_ARB, sphere_vbo );			// Bind The Buffer
+	// Load The Data
+	glBufferDataARB( GL_ARRAY_BUFFER_ARB, vertex_count*3*sizeof(float), pVertices, GL_STATIC_DRAW_ARB );
+ERROR_CHECK
+	// Our Copy Of The Data Is No Longer Necessary, It Is Safe In The Graphics Card
+	delete [] pVertices;
+	glBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
+
+	int index_count=(el)*(az+1)*2;
+	pIndices=new unsigned short[index_count];
+	unsigned short *idx=pIndices;
+	for(int i=0;i<el;i++)
+	{
+		int base=i*(az+1);
+		for(int j=0;j<az+1;j++)
+		{
+			*idx=base+j;
+			idx++;
+			*idx=base+(az+1)+j;
+			idx++;
+		}
+	}
+	glGenBuffersARB(1, &sphere_ibo);
+	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, sphere_ibo);
+	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, index_count*sizeof(GLushort), pIndices, GL_STATIC_DRAW_ARB); //upload data
+
+	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+ERROR_CHECK
+	return true;
+}
+
 
 bool SimulGLCloudRenderer::InvalidateDeviceObjects()
 {
@@ -556,6 +662,10 @@ bool SimulGLCloudRenderer::InvalidateDeviceObjects()
 	cloudDensity2_param		=0;
 	noiseSampler_param		=0;
 	illumSampler_param		=0;
+
+	glDeleteBuffersARB(1,&sphere_vbo);
+	glDeleteBuffersARB(1,&sphere_ibo);
+	sphere_vbo=sphere_ibo=0;
 	return true;
 }
 

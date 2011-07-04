@@ -1,18 +1,18 @@
 #include "OpenGLRenderer.h"
 #include <GL/glew.h>
 // For font definition define:
-#include <GL/glut.h>
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Graph/Camera/Camera.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Sky/Float4.h"
+#define GLUT_BITMAP_HELVETICA_12	((void*)7)
 simul::graph::camera::Camera *cam=NULL;
 
 
-OpenGLRenderer::OpenGLRenderer():width(0),height(0)
+OpenGLRenderer::OpenGLRenderer(const char *license_key):width(0),height(0)
 {
 	simul::opengl::SetShaderPath("Media/GLSL/");		// path relative to the root
-	simulWeatherRenderer=new SimulGLWeatherRenderer();
+	simulWeatherRenderer=new SimulGLWeatherRenderer(license_key);
 }
 
 OpenGLRenderer::~OpenGLRenderer()
@@ -58,9 +58,9 @@ void OpenGLRenderer::renderUI()
 	glDisable(GL_TEXTURE_1D);
 	SetOrthoProjection(width,height);
 	static char text[500];
-	int y=12;
+	float y=12.f;
 	static int line_height=16;
-	RenderString(12,y+=line_height,GLUT_BITMAP_HELVETICA_12,"OpenGL");
+	RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,"OpenGL");
 }
 
 void OpenGLRenderer::resizeGL(int w,int h)

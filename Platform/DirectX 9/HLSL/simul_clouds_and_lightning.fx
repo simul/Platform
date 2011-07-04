@@ -287,7 +287,7 @@ float4 PS_Clouds( vertexOutput IN): color
 	density.x*=IN.layerFade;
 	density.x=saturate(density.x*(1.f+alphaSharpness)-alphaSharpness);
 
-	//if(density.x<=0)
+	if(density.x<=0)
 		discard;
 	float3 view=normalize(IN.wPosition);
 	float cos0=dot(lightDir.xyz,view.xyz);
@@ -313,7 +313,6 @@ float4 PS_Clouds( vertexOutput IN): color
 	final+=inscatter;
 
 	final*=opacity;
-
     return float4(final,opacity);
 }
 
@@ -541,7 +540,6 @@ technique simul_clouds
 		AlphaTestEnable=false;
 		FillMode = Solid;
         AlphaBlendEnable = true;
-		COLORWRITEENABLE=15;
 		SrcBlend = One;
 		DestBlend = InvSrcAlpha;
 		
@@ -625,7 +623,6 @@ technique simul_clouds_sm2
 		AlphaTestEnable=false;
 		FillMode = Solid;
         AlphaBlendEnable = true;
-		COLORWRITEENABLE=15;
 		SrcBlend = One;
 		DestBlend = InvSrcAlpha;
 		
@@ -653,7 +650,6 @@ technique simul_clouds_and_lightning
 		AlphaTestEnable=false;
 		FillMode = Solid;
         AlphaBlendEnable = true;
-		COLORWRITEENABLE=15;
 		SrcBlend = One;
 		DestBlend = InvSrcAlpha;
 		
@@ -682,7 +678,6 @@ technique raytrace_clouds_and_lightning
 		AlphaTestEnable=false;
 		FillMode = Solid;
         AlphaBlendEnable = true;
-		COLORWRITEENABLE=15;
 		SrcBlend = One;
 		DestBlend = InvSrcAlpha;
 		

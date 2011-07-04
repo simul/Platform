@@ -19,13 +19,17 @@ Framebuffer::~Framebuffer()
 {
 }
 
-bool Framebuffer::RestoreDeviceObjects(void *dev,int w,int h)
+void Framebuffer::SetWidthAndHeight(int w,int h)
 {
-	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
-	if(!w||!h)
-		return false;
 	Width=w;
 	Height=h;
+}
+
+bool Framebuffer::RestoreDeviceObjects(void *dev)
+{
+	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	if(!Width||!Height)
+		return false;
 #ifndef XBOX
 	D3DFORMAT hdr_format=D3DFMT_A16B16G16R16F;
 #else

@@ -7,8 +7,9 @@
 
 #pragma once
 #include <tchar.h>
-#include "Simul/Platform/DirectX 1x/MacrosDx1x.h"
+#include "Simul/Platform/DirectX 1x/MacrosDX1x.h"
 #include "Simul/Platform/DirectX 1x/Export.h"
+#include "Simul/Platform/DirectX 1x/FramebufferDX1x.h"
 #include <d3dx9.h>
 #ifdef DX10
 	#include <D3D10.h>
@@ -34,7 +35,7 @@ public:
 SIMUL_DIRECTX1x_EXPORT_CLASS SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer
 {
 public:
-	SimulWeatherRendererDX1x(bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
+	SimulWeatherRendererDX1x(const char *license_key,bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
 	virtual ~SimulWeatherRendererDX1x();
 	//standard d3d object interface functions
 	bool RestoreDeviceObjects(ID3D1xDevice* pd3dDevice,IDXGISwapChain *swapChain);
@@ -57,7 +58,7 @@ public:
 	//! Perform the once-per-frame time update.
 	void Update(float dt);
 	//! Apply the view and projection matrices, once per frame.
-	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
+	void SetMatrices(const D3DXMATRIX &viewmat,const D3DXMATRIX &projmat);
 	//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 	void SetExposure(float ex){exposure=ex;}
 
@@ -78,10 +79,16 @@ public:
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 protected:
+	// Keep copies of these matrices:
+	D3DXMATRIX view;
+	D3DXMATRIX screen_proj;
+	D3DXMATRIX buffer_proj;
 	void UpdateSkyAndCloudHookup();
 	IDXGISwapChain *pSwapChain;
 	//! The size of the 2D buffer the sky is rendered to.
 	int BufferWidth,BufferHeight;
+	//! The size of the screen:
+	int ScreenWidth,ScreenHeight;
 	ID3D1xDevice*					m_pd3dDevice;
 	bool CreateBuffers();
 	bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
@@ -90,6 +97,7 @@ protected:
 	//simul::base::SmartPtr<class Simul2DCloudRenderer> *simul2DCloudRenderer;
 	//simul::base::SmartPtr<class SimulPrecipitationRenderer> *simulPrecipitationRenderer;
 	//simul::base::SmartPtr<class SimulAtmosphericsRenderer> *simulAtmosphericsRenderer;
+	FramebufferDX1x					framebuffer;
 	float							exposure;
 	float							gamma;
 	bool show_3d_clouds,layer2;

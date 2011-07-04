@@ -34,7 +34,7 @@ public:
 SIMUL_OPENGL_EXPORT_CLASS SimulGLWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
-	SimulGLWeatherRenderer(bool usebuffer=true,bool tonemap=false,int width=640,
+	SimulGLWeatherRenderer(const char *license_key,bool usebuffer=true,bool tonemap=false,int width=640,
 		int height=480,bool sky=true,bool clouds3d=true,bool clouds2d=true,
 		bool rain=true,
 		bool colour_sky=false);
@@ -81,7 +81,6 @@ protected:
 	//! This is set once the GL device has been initialized - then we can create textures and so forth.
 	bool device_initialized;
 	class FramebufferGL *scene_buffer;
-	void UpdateSkyAndCloudHookup();
 	bool AlwaysRenderCloudsLate;
 	bool RenderCloudsLate;
 	bool externally_defined_buffers;

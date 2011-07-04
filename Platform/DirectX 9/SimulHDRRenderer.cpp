@@ -318,22 +318,6 @@ bool SimulHDRRenderer::CopyDepthAlpha()
 	return (hr==S_OK);
 }
 
-bool SimulHDRRenderer::ApplyFade()
-{
-	HRESULT hr=S_OK;
-/*	if(!atmospherics)
-		return (hr==S_OK);
-	atmospherics->SetInputTextures(depth_alpha_texture,buffer_depth_texture);
-	m_pd3dDevice->SetRenderTarget(0,m_pFadedRenderTarget);
-	if(m_pBufferDepthSurface)
-		m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
-	else if(m_pOldDepthSurface)
-		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
-	B_RETURN(m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET,0xFF000000,1.f,0L));
-	last_texture=faded_texture;*/
-	return (hr==S_OK);
-}
-
 bool SimulHDRRenderer::FinishRender()
 {
 	HRESULT hr=S_OK;
@@ -353,13 +337,13 @@ bool SimulHDRRenderer::FinishRender()
 		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
 	m_pOldRenderTarget->GetDesc(&desc);
 
-	B_RETURN(m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET,0xFF000000,depth_start,0L));
+//	B_RETURN(m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET,0xFF000000,depth_start,0L));
 	m_pTonemapEffect->SetTechnique(ToneMapTechnique);
 	B_RETURN(m_pTonemapEffect->SetFloat(Exposure,exposure*exposure_multiplier));
 	B_RETURN(m_pTonemapEffect->SetFloat(Gamma,gamma));
 	B_RETURN(m_pTonemapEffect->SetTexture(hdrTexture,last_texture));
 
-	RenderBufferToCurrentTarget(desc.Width,desc.Height,true);
+	DrawFullScreenQuad(m_pd3dDevice,m_pTonemapEffect);
 
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
@@ -375,14 +359,6 @@ void SimulHDRRenderer::SetExposure(float ex)
 void SimulHDRRenderer::SetGamma(float g)
 {
 	gamma=g;
-}
-
-bool SimulHDRRenderer::RenderBufferToCurrentTarget(int width,int height,bool do_tonemap)
-{
-	width;height;
-	HRESULT hr=S_OK;
-	DrawFullScreenQuad(m_pd3dDevice,do_tonemap?m_pTonemapEffect:NULL);
-	return (hr==S_OK);
 }
 
 const char *SimulHDRRenderer::GetDebugText() const

@@ -14,6 +14,7 @@ public:
 	virtual void Activate()=0;
 	virtual void Deactivate()=0;
 	virtual void DeactivateAndRender(bool blend)=0;
+	virtual void SetWidthAndHeight(int w,int h)=0;
 };
 #endif
 
@@ -22,7 +23,8 @@ SIMUL_DIRECTX9_EXPORT_CLASS Framebuffer:public FramebufferInterface
 public:
 	Framebuffer();
 	~Framebuffer();
-	bool RestoreDeviceObjects(void *pd3dDevice,int w,int h);
+	void SetWidthAndHeight(int w,int h);
+	bool RestoreDeviceObjects(void *pd3dDevice);
 	bool InvalidateDeviceObjects();
 	//! The texture the sky and clouds are rendered to.
 	LPDIRECT3DTEXTURE9				hdr_buffer_texture;

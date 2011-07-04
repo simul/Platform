@@ -79,10 +79,6 @@ public:
 	{
 		cloud_interp=s;
 	}
-	void setFadeInterpolation(float s)
-	{
-		fade_interp=s;
-	}
 	void SetExposure(float e)
 	{
 		exposure=e;
@@ -137,12 +133,9 @@ protected:
 	D3DXHANDLE              techniqueRoad;			
 	D3DXHANDLE				eyePosition;
 	D3DXHANDLE				lightDirection;
-	D3DXHANDLE				MieRayleighRatio;
-	D3DXHANDLE				hazeEccentricity;
 	D3DXHANDLE				cloudScales;
 	D3DXHANDLE				cloudOffset;
 	D3DXHANDLE				cloudInterp;
-	D3DXHANDLE				fadeInterp;
 	D3DXHANDLE				exposureParam;
 	D3DXHANDLE				altitudeTexCoord;
 
@@ -231,7 +224,6 @@ protected:
 	float cloud_scales[3];
 	float cloud_offset[3];
 	float cloud_interp;
-	float fade_interp;
 	void GetVertex(int i,int j,struct TerrainVertex_t *V);
 	void GetVertex(float x,float y,struct TerrainVertex_t *V);
 

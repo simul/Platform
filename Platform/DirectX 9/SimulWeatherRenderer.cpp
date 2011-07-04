@@ -39,10 +39,11 @@
 static simul::base::Timer timer;
 
 static D3DXMATRIX ident;
-SimulWeatherRenderer::SimulWeatherRenderer(
+SimulWeatherRenderer::SimulWeatherRenderer(const char *lic,
 			bool usebuffer,int width,
 			int height,bool sky,bool clouds3d,
 			bool clouds2d,bool rain,bool colour_sky) :
+	BaseWeatherRenderer(lic),
 	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
 	m_pTonemapEffect(NULL),
@@ -79,7 +80,7 @@ void SimulWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 	BaseWeatherRenderer::EnableLayers(clouds3d,clouds2d);
 	if(clouds3d&&simulCloudRenderer.get()==NULL)
 	{
-		simulCloudRenderer=new SimulCloudRenderer();
+		simulCloudRenderer=new SimulCloudRenderer(license_key);
 		baseCloudRenderer=simulCloudRenderer.get();
 		AddChild(simulCloudRenderer.get());
 		simulLightningRenderer=new SimulLightningRenderer(simulCloudRenderer->GetLightningRenderInterface());
@@ -88,7 +89,7 @@ void SimulWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 	}
 	if(clouds2d&&simul2DCloudRenderer.get()==NULL)
 	{
-		simul2DCloudRenderer=new Simul2DCloudRenderer();
+		simul2DCloudRenderer=new Simul2DCloudRenderer(license_key);
 		base2DCloudRenderer=simul2DCloudRenderer.get();
 		Restore2DCloudObjects();
 	}
@@ -237,8 +238,10 @@ void SimulWeatherRenderer::SetBufferSize(int w,int h)
 bool SimulWeatherRenderer::CreateBuffers()
 {
 	HRESULT hr=S_OK;
-	framebuffer.RestoreDeviceObjects(m_pd3dDevice,BufferWidth,BufferHeight);
-	lowdef_framebuffer.RestoreDeviceObjects(m_pd3dDevice,BufferWidth/2,BufferHeight/2);
+	framebuffer.SetWidthAndHeight(BufferWidth,BufferHeight);
+	framebuffer.RestoreDeviceObjects(m_pd3dDevice);
+	lowdef_framebuffer.SetWidthAndHeight(BufferWidth/2,BufferHeight/2);
+	lowdef_framebuffer.RestoreDeviceObjects(m_pd3dDevice);
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 
 	{
@@ -266,7 +269,7 @@ bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	if(buffered&&!is_cubemap)
 	{
 		framebuffer.Activate();
-		HRESULT hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF0000F0,1.f,0L);
+		HRESULT hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x00000000,1.f,0L);
 		result&=(hr==S_OK);
 	}
 	if(simulSkyRenderer&&show_sky)
@@ -297,9 +300,12 @@ bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	{
 		for(int i=0;i<simulCloudRenderer->GetNumBuffers();i++)
 		{
-			if(renderDepthBufferCallback)
-				renderDepthBufferCallback->Render();
+			//if(renderDepthBufferCallback)
+			//	renderDepthBufferCallback->Render();
+			// Disable writing to alpha for early cloud rendering:
+			m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,7);
 			RenderLateCloudLayer(i,i>0);
+			m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,15);
 			//hr=simulCloudRenderer->Render(is_cubemap);
 		}
 		timer.UpdateTime();
@@ -381,8 +387,8 @@ bool SimulWeatherRenderer::RenderLateCloudLayer(int buffer_index,bool buf)
 	}
 	//if(1)
 	{
-		if(renderDepthBufferCallback)
-			renderDepthBufferCallback->Render();
+		//if(renderDepthBufferCallback)
+		//	renderDepthBufferCallback->Render();
 		if(simulCloudRenderer&&layer1)
 		{	
 			PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
@@ -457,29 +463,15 @@ void SimulWeatherRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 }
 #endif
 
-void SimulWeatherRenderer::UpdateSkyAndCloudHookup()
-{
-	if(!simulSkyRenderer)
-		return;
-	void *l,*i;
-	simulSkyRenderer->Get2DLossAndInscatterTextures(&l,&i);
-	if(layer1&&simulCloudRenderer)
-	{
-		simulCloudRenderer->SetLossTextures(l);
-		simulCloudRenderer->SetInscatterTextures(i);
-	}
-}
-
 void SimulWeatherRenderer::Update(float dt)
 {
 	BaseWeatherRenderer::Update(dt);
-	// Do this AFTER sky update, to catch any changes:
-	UpdateSkyAndCloudHookup();
 	if(simulCloudRenderer&&simulAtmosphericsRenderer)
 	{
 		LPDIRECT3DBASETEXTURE9 *c=(LPDIRECT3DBASETEXTURE9*)simulCloudRenderer->GetCloudTextures();
 		simulAtmosphericsRenderer->SetCloudProperties(c[0],c[1],
-			simulCloudRenderer->GetCloudScales(),simulCloudRenderer->GetCloudOffset(),
+			simulCloudRenderer->GetCloudScales(),
+			simulCloudRenderer->GetCloudOffset(),
 			simulCloudRenderer->GetInterpolation());
 	}
 	if(simulPrecipitationRenderer)

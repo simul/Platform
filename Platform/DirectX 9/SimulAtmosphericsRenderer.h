@@ -73,15 +73,13 @@ public:
 	{
 		max_distance_texture=(LPDIRECT3DTEXTURE9)t;
 	}
-	void SetLossTextures(void* t1,void* t2)
+	void SetLossTexture(void* t)
 	{
-		loss_texture_1=(LPDIRECT3DBASETEXTURE9)t1;
-		loss_texture_2=(LPDIRECT3DBASETEXTURE9)t2;
+		loss_texture_1=(LPDIRECT3DBASETEXTURE9)t;
 	}
-	void SetInscatterTextures(void* t1,void* t2)
+	void SetInscatterTexture(void* t)
 	{
-		inscatter_texture_1=(LPDIRECT3DBASETEXTURE9)t1;
-		inscatter_texture_2=(LPDIRECT3DBASETEXTURE9)t2;
+		inscatter_texture_1=(LPDIRECT3DBASETEXTURE9)t;
 	}
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si)
 	{
@@ -129,9 +127,7 @@ protected:
 	D3DXHANDLE						depthTexture;
 	D3DXHANDLE						maxDistanceTexture;
 	D3DXHANDLE						lossTexture1;
-	D3DXHANDLE						lossTexture2;
 	D3DXHANDLE						inscatterTexture1;
-	D3DXHANDLE						inscatterTexture2;
 
 	// For godrays:
 	D3DXHANDLE						godRaysTechnique;
@@ -149,9 +145,7 @@ protected:
 	float							cloud_interp;
 
 	LPDIRECT3DBASETEXTURE9			loss_texture_1;
-	LPDIRECT3DBASETEXTURE9			loss_texture_2;
 	LPDIRECT3DBASETEXTURE9			inscatter_texture_1;
-	LPDIRECT3DBASETEXTURE9			inscatter_texture_2;
 
 	// For lightning airglow
 	D3DXHANDLE						airglowTechnique;
@@ -165,6 +159,7 @@ protected:
 	D3DXHANDLE						lightningColour;
 	D3DXHANDLE						illuminationOrigin;
 	D3DXHANDLE						illuminationScales;
+	D3DXHANDLE						texelOffsets;
 
 	//! The depth buffer.
 	LPDIRECT3DTEXTURE9				depth_texture;

@@ -44,11 +44,12 @@ static simul::base::SmartPtr<simul::clouds::FastCloudNode> cloudNode;
 using std::map;
 
 
-SimulGL2DCloudRenderer::SimulGL2DCloudRenderer()
-	: texture_scale(1.f)
-	, scale(2.f)
-	, texture_effect(1.f)
-	, cloud_data(NULL)
+SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(const char *license_key)
+	:BaseCloudRenderer(license_key)
+	,texture_scale(1.f)
+	,scale(2.f)
+	,texture_effect(1.f)
+	,cloud_data(NULL)
 {
 	cloudKeyframer->SetFillTexturesAsBlocks(true);
 }

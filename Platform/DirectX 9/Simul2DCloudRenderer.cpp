@@ -51,7 +51,6 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Pi.h"
-#include "Simul/LicenseKey.h"
 
 struct float2
 {
@@ -102,8 +101,8 @@ static void SetBits8()
 }
 
 
-Simul2DCloudRenderer::Simul2DCloudRenderer() :
-	BaseCloudRenderer(false),
+Simul2DCloudRenderer::Simul2DCloudRenderer(const char *license_key) :
+	BaseCloudRenderer(license_key,false),
 	m_pd3dDevice(NULL),
 	m_pVtxDecl(NULL),
 	m_pCloudEffect(NULL),
@@ -124,7 +123,7 @@ Simul2DCloudRenderer::Simul2DCloudRenderer() :
 	test=new simul::base::Referenced;
 	test=NULL;
 
-	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
+	cloudNode->SetLicense(license_key);
 	cloudInterface=cloudNode.get();
 	
 	cloudInterface->SetWrap(true);

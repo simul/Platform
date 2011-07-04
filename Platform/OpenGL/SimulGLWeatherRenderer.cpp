@@ -20,11 +20,10 @@ static GLuint buffer_format=GL_RGBA16F_ARB;
 static GLuint buffer_format=GL_RGBA32F_ARB;
 #endif
 
-SimulGLWeatherRenderer::SimulGLWeatherRenderer(bool usebuffer,bool tonemap,int width,
-		int height,bool sky,bool clouds3d,bool clouds2d,
-		bool rain,
-		bool colour_sky):
-		BufferWidth(width)
+SimulGLWeatherRenderer::SimulGLWeatherRenderer(const char *lic,bool usebuffer,bool tonemap,int width,
+		int height,bool sky,bool clouds3d,bool clouds2d,bool rain,bool colour_sky)
+		:BaseWeatherRenderer(lic)
+		,BufferWidth(width)
 		,BufferHeight(height)
 		,device_initialized(false)
 {
@@ -81,7 +80,7 @@ void SimulGLWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 	}
 	if(clouds3d&&!simulCloudRenderer.get())
 	{	
-		simulCloudRenderer=new SimulGLCloudRenderer();
+		simulCloudRenderer=new SimulGLCloudRenderer(license_key);
 		baseCloudRenderer=simulCloudRenderer.get();
 	}
 	if(clouds3d&&!simulLightningRenderer.get())
@@ -157,7 +156,6 @@ static simul::base::Timer timer;
 	// Everything between Activate() and DeactivateAndRender() is drawn to the buffer object.
 	if(buffered)
 		scene_buffer->Activate();
-
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	ERROR_CHECK
 	if(simulSkyRenderer)
@@ -165,28 +163,27 @@ static simul::base::Timer timer;
 	ERROR_CHECK
 		simulSkyRenderer->Render();
 	}
+	ERROR_CHECK
 	timer.UpdateTime();
 	simul::math::FirstOrderDecay(sky_timing,timer.Time,0.1f,0.01f);
 	ERROR_CHECK
     if(simul2DCloudRenderer)
 		simul2DCloudRenderer->Render(false,false,false);
 	ERROR_CHECK
-
 	if(simulCloudRenderer&&layer1)
-		simulCloudRenderer->Render(false,false,false);
+		simulCloudRenderer->Render(false,false,true);
 	timer.UpdateTime();
 	simul::math::FirstOrderDecay(cloud_timing,timer.Time,0.1f,0.01f);
 	if(buffered)
 		scene_buffer->DeactivateAndRender(true);
 	ERROR_CHECK
-
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 	ERROR_CHECK
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
 	ERROR_CHECK
-		int d=0;
+	int d=0;
 	glGetIntegerv(GL_ATTRIB_STACK_DEPTH,&d);
 	glPopAttrib();
 	ERROR_CHECK

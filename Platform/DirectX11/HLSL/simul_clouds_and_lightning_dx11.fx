@@ -32,16 +32,17 @@ SamplerState lightningSamplerState
 	AddressV = Border;
 	AddressW = Border;
 };
-Texture3D skyLossTexture1;
-Texture3D skyLossTexture2;
-Texture3D skyInscatterTexture1;
-Texture3D skyInscatterTexture2;
+Texture2D skyLossTexture1;
+Texture2D skyInscatterTexture1;
 SamplerState fadeSamplerState 
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
 	AddressV = Mirror;
 };
+#ifndef MAX_FADE_DISTANCE_METRES
+	#define MAX_FADE_DISTANCE_METRES (300000.f)
+#endif
 cbuffer cbUser : register(b2)
 {
 	float4 eyePosition			: packoffset(c0);
@@ -79,7 +80,7 @@ struct vertexOutput
     float4 texCoords			: TEXCOORD2;
 	float3 wPosition			: TEXCOORD3;
     float3 texCoordLightning	: TEXCOORD4;
-    float3 fade_texc			: TEXCOORD5;
+    float2 fade_texc			: TEXCOORD5;
 };
 
 vertexOutput VS_Main(vertexInput IN)
@@ -97,7 +98,7 @@ vertexOutput VS_Main(vertexInput IN)
 	OUT.texCoordLightning=texCoordLightning;
 	float3 view=normalize(OUT.wPosition.xyz);
 	float sine=view.y;
-	OUT.fade_texc=float3(length(OUT.wPosition.xyz)/300000.f,0.5f*(1.f-sine),altitudeTexCoord);
+	OUT.fade_texc=float2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5f*(1.f-sine));
     return OUT;
 }
 
@@ -105,7 +106,8 @@ vertexOutput VS_Main(vertexInput IN)
 float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
-	return 0.5*0.079577+0.5*(1.f-g2)/(4.f*pi*pow(1.f+g2-2.f*g*cos0,1.5f));
+	float u=1.f+g2-2.f*g*cos0;
+	return 0.5*0.079577+0.5*(1.f-g2)/(4.f*pi*sqrt(u*u*u));
 }
 
 float3 InscatterFunction(float4 inscatter_factor,float cos0)
@@ -122,12 +124,8 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 {
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 view=normalize(IN.wPosition);
-	float3 loss1=skyLossTexture1.Sample(fadeSamplerState,IN.fade_texc).rgb;
-	float3 loss2=skyLossTexture2.Sample(fadeSamplerState,IN.fade_texc).rgb;
-    float3 loss=lerp(loss1,loss2,fadeInterp);
-	float4 insc1=skyInscatterTexture1.Sample(fadeSamplerState,IN.fade_texc);
-	float4 insc2=skyInscatterTexture2.Sample(fadeSamplerState,IN.fade_texc);
-    float4 insc=lerp(insc1,insc2,fadeInterp);
+	float3 loss=skyLossTexture1.Sample(fadeSamplerState,IN.fade_texc).rgb;
+	float4 insc=skyInscatterTexture1.Sample(fadeSamplerState,IN.fade_texc);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
 	float3 inscatter=InscatterFunction(insc,cos0);
@@ -142,10 +140,11 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 
 	float4 lightning=lightningIlluminationTexture.Sample(lightningSamplerState,IN.texCoordLightning.xyz);
 
-	density*=(1.f-interp);
-	density+=interp*density2;
+	density=lerp(density,density2,interp);
 	
-	density.x=saturate(density.x+2.f*IN.layerFade-1.f);
+	density.x*=IN.layerFade;
+	if(density.x<=0)
+		discard;
 	float3 ambient=density.w*skylightColour.rgb;
 
 	float opacity=density.x;
@@ -167,12 +166,8 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 view=normalize(IN.wPosition);
 	
-	float3 loss1=skyLossTexture1.Sample(fadeSamplerState,IN.fade_texc).rgb;
-	float3 loss2=skyLossTexture2.Sample(fadeSamplerState,IN.fade_texc).rgb;
-	float3 loss=lerp(loss1,loss2,fadeInterp);
-	float4 insc1=skyInscatterTexture2.Sample(fadeSamplerState,IN.fade_texc);
-	float4 insc2=skyInscatterTexture2.Sample(fadeSamplerState,IN.fade_texc);
-	float4 insc=lerp(insc1,insc2,fadeInterp);
+	float3 loss=skyLossTexture1.Sample(fadeSamplerState,IN.fade_texc).rgb;
+	float4 insc=skyInscatterTexture1.Sample(fadeSamplerState,IN.fade_texc);
 
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
@@ -187,8 +182,9 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
 
 	density=lerp(density,density2,interp);
-
 	density.x*=IN.layerFade;
+	if(density.x<=0)
+		discard;
 	float3 ambient=density.w*skylightColour.rgb;
 
 	float opacity=density.x;
@@ -196,7 +192,7 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 
 	final*=loss;
 	final+=inscatter;
-
+//final.rg=IN.fade_texc;
     return float4(final.rgb,opacity);
 }
 

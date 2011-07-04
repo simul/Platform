@@ -44,7 +44,7 @@ SIMUL_DIRECTX9_EXPORT_CLASS SimulCloudRenderer
 	,public simul::graph::meta::ResourceUser<simul::graph::standardnodes::ShowProgressInterface>
 {
 public:
-	SimulCloudRenderer();
+	SimulCloudRenderer(const char *license_key);
 	virtual ~SimulCloudRenderer();
 
 	META_BeginProperties

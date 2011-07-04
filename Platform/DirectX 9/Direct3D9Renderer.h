@@ -46,7 +46,7 @@ class SIMUL_DIRECTX9_EXPORT Direct3D9Renderer
 	,public simul::graph::meta::Group
 {
 public:
-	Direct3D9Renderer();
+	Direct3D9Renderer(const char *license_key);
 	virtual ~Direct3D9Renderer();
 	META_BeginProperties
 		META_ValueProperty(float,Gamma,"")

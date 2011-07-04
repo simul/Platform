@@ -100,7 +100,7 @@ e.g. clouds, sky:
 SIMUL_DIRECTX9_EXPORT_CLASS SimulWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
-	SimulWeatherRenderer(bool usebuffer=true,int width=320,
+	SimulWeatherRenderer(const char *license_key,bool usebuffer=true,int width=320,
 		int height=240,bool sky=true,bool clouds3d=true,bool clouds2d=true,
 		bool rain=true,
 		bool colour_sky=false);
@@ -158,7 +158,6 @@ protected:
 	bool RenderLateCloudLayer(int buffer_index,bool buf);
 	bool Restore3DCloudObjects();
 	bool Restore2DCloudObjects();
-	void UpdateSkyAndCloudHookup();
 	//! The size of the 2D buffer the sky is rendered to.
 	int BufferWidth,BufferHeight;
 	LPDIRECT3DDEVICE9				m_pd3dDevice;

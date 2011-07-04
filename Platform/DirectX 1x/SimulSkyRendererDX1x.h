@@ -20,8 +20,9 @@
 	#include <d3dx11.h>
 	#include <d3dx11effect.h>
 #endif
-#include "Simul/Platform/DirectX 1x/MacrosDx1x.h"
+#include "Simul/Platform/DirectX 1x/MacrosDX1x.h"
 #include "Simul/Platform/DirectX 1x/Export.h"
+#include "Simul/Platform/DirectX 1x/FramebufferDX1x.h"
 
 namespace simul
 {
@@ -96,11 +97,12 @@ protected:
 	ID3D1xQuery*							d3dQuery;
 
 	ID3D1xEffectMatrixVariable*			worldViewProj;
-	ID3D1xEffectTechnique*					m_hTechniqueSky;
-	ID3D1xEffectTechnique*					m_hTechniqueSun;
-	ID3D1xEffectTechnique*					m_hTechniqueQuery;
-	ID3D1xEffectTechnique*					m_hTechniqueFlare;
-	ID3D1xEffectTechnique*					m_hTechniquePlanet;
+	ID3D1xEffectTechnique*				m_hTechniqueSky;
+	ID3D1xEffectTechnique*				m_hTechniqueFade3DTo2D;
+	ID3D1xEffectTechnique*				m_hTechniqueSun;
+	ID3D1xEffectTechnique*				m_hTechniqueQuery;
+	ID3D1xEffectTechnique*				m_hTechniqueFlare;
+	ID3D1xEffectTechnique*				m_hTechniquePlanet;
 	ID3D1xEffectVectorVariable*			lightDirection;
 	ID3D1xEffectVectorVariable*			mieRayleighRatio;
 	ID3D1xEffectScalarVariable*			hazeEccentricity;
@@ -108,16 +110,23 @@ protected:
 	ID3D1xEffectScalarVariable*			skyInterp;
 	ID3D1xEffectScalarVariable*			altitudeTexCoord;
 	ID3D1xEffectVectorVariable*			sunlightColour;
+	ID3D1xEffectVectorVariable*			fadeTexSizes;
 
 	ID3D1xEffectShaderResourceVariable*	flareTexture;
 	ID3D1xEffectShaderResourceVariable*	skyTexture1;
 	ID3D1xEffectShaderResourceVariable*	skyTexture2;
+	ID3D1xEffectShaderResourceVariable*	fadeTexture1;
+	ID3D1xEffectShaderResourceVariable*	fadeTexture2;
 
 	ID3D1xTexture2D*					flare_texture;
 	ID3D1xTexture2D*					sky_textures[3];
 
 	ID3D1xTexture3D*					loss_textures[3];
 	ID3D1xTexture3D*					inscatter_textures[3];
+
+	// Small framebuffers we render to once per frame to perform fade interpolation.
+	FramebufferDX1x*					loss_2d;
+	FramebufferDX1x*					inscatter_2d;
 
 	ID3D1xShaderResourceView*			flare_texture_SRV;
 	ID3D1xShaderResourceView*			sky_textures_SRV[3];

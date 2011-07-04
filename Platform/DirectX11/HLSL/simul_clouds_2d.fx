@@ -1,48 +1,16 @@
 float4x4 worldViewProj	: WorldViewProjection;
 
-texture cloudDensity1;
-sampler2D cloud_density_1= sampler_state 
+SamplerState samplerState 
 {
-    Texture = <cloudDensity1>;
-    MipFilter = LINEAR;
-    MinFilter = LINEAR;
-    MagFilter = LINEAR;
+	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
 
-texture cloudDensity2;
-sampler2D cloud_density_2= sampler_state 
-{
-    Texture = <cloudDensity2>;
-    MipFilter = LINEAR;
-    MinFilter = LINEAR;
-    MagFilter = LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-texture noiseTexture;
-sampler2D noiseSampler= sampler_state 
-{
-    Texture = <noiseTexture>;
-    MipFilter = LINEAR;
-    MinFilter = LINEAR;
-    MagFilter = LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-texture imageTexture;
-sampler2D imageSampler= sampler_state 
-{
-    Texture = <imageTexture>;
-    MipFilter = LINEAR;
-    MinFilter = LINEAR;
-    MagFilter = LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
+Texture2D cloudDensity1;
+Texture2D cloudDensity2;
+Texture2D noiseTexture;
+Texture2D imageTexture;
 
 float3 sunlightColour=float3(1,1,1);
 float4 eyePosition : EYEPOSITION_WORLDSPACE = {0,0,0,0};
@@ -63,9 +31,9 @@ struct vertexInput
 {
     float3 position			: POSITION;
     float2 texCoords		: TEXCOORD0;
-    float4 loss				: TEXCOORD1;
-    float4 inscatter		: TEXCOORD2;
-    float2 texCoordNoise	: TEXCOORD3;
+    float3 loss				: TEXCOORD1;
+    float3 inscatter		: TEXCOORD2;
+    float2 texCoordsNoise	: TEXCOORD3;
 	float2 imageCoords		: TEXCOORD4;
 };
 
@@ -73,9 +41,9 @@ struct vertexOutput
 {
     float4 hPosition		: POSITION;
     float2 texCoords		: TEXCOORD1;
-    float4 loss				: TEXCOORD2;
-    float4 inscatter		: TEXCOORD3;
-    float2 texCoordNoise	: TEXCOORD4;
+    float3 loss				: TEXCOORD2;
+    float3 inscatter		: TEXCOORD3;
+    float2 texCoordsNoise	: TEXCOORD4;
 	float2 imageCoords		: TEXCOORD5;
 	float3 wPosition		: TEXCOORD6;
 };
@@ -85,7 +53,7 @@ vertexOutput VS_Main(vertexInput IN)
     vertexOutput OUT;
     OUT.hPosition = mul( worldViewProj, float4(IN.position.xyz , 1.0));
 	OUT.texCoords=IN.texCoords;
-	OUT.texCoordNoise=IN.texCoordNoise;
+	OUT.texCoordsNoise=IN.texCoordsNoise;
 	OUT.imageCoords=IN.imageCoords;
 	OUT.loss=IN.loss;
 	OUT.inscatter=IN.inscatter;
@@ -117,13 +85,13 @@ float4 PS_Main( vertexOutput IN): color
 	float3 view=normalize(IN.wPosition);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	//cos0=pow(cos0,36.f);
-	float3 noiseval=(tex2D(noiseSampler,IN.texCoordNoise.xy).xyz).xyz;
+	float3 noiseval=noiseTexture.Sample(samplerState,IN.texCoordsNoise.xy).xyz;
 	float2 pos=IN.texCoords+fractalScale.xy*(noiseval.xy-.5f);
-	float4 density=tex2D(cloud_density_1,pos.xy);
-	float4 density2=tex2D(cloud_density_2,pos.xy);
+	float4 density=cloudDensity1.Sample(samplerState,pos.xy);
+	float4 density2=cloudDensity2.Sample(samplerState,pos.xy);
 	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
 
-	float3 image=tex2D(imageSampler,IN.imageCoords.xy);
+	float3 image=imageTexture.Sample(samplerState,IN.imageCoords.xy).rgb;
 	density=lerp(density,density2,interp.x);
 
 #ifdef SMOOTH_BLENDING

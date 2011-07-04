@@ -15,18 +15,19 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 
-Direct3D11Renderer::Direct3D11Renderer():
-	camera(NULL)
+Direct3D11Renderer::Direct3D11Renderer(const char *license_key):
+		camera(NULL)
+		,timeMult(0.f)
 {
-	simulWeatherRenderer=new SimulWeatherRendererDX1x(true,640,360,true,true,false,true,false);
+	simulWeatherRenderer=new SimulWeatherRendererDX1x(license_key,true,false,640,360,true,true,true);
 	AddChild(simulWeatherRenderer.get());
-	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
-	if(simulHDRRenderer)
-		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
+	//simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
 }
 
 Direct3D11Renderer::~Direct3D11Renderer()
 {
+	Group::RemoveChild(simulWeatherRenderer.get());
+	simulWeatherRenderer=NULL;
 }
 
 // D3D11CallbackInterface
@@ -45,13 +46,13 @@ HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(		ID3D11Device* pd3dDevice,const
 {
 	simul::dx11::SetShaderPath("MEDIA/HLSL/DX11");
 	simul::dx11::SetTexturePath("MEDIA/Textures");
-
 	unsigned ScreenWidth=pBackBufferSurfaceDesc->Width;
 	unsigned ScreenHeight=pBackBufferSurfaceDesc->Height;
+	aspect=(float)ScreenWidth/(float)ScreenHeight;
 	// Create the HDR renderer to perform brightness and gamma-correction (optional component)
-	simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
+	if(simulHDRRenderer)
+		simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
 	// Set Always Render Clouds Late to true - clouds thru mountains.
-	simulWeatherRenderer=new SimulWeatherRendererDX1x(false,false,ScreenWidth/2,ScreenHeight/2,true,true,false,true);
 	// Callback to fill lo-res depth buffer for clouds
 	//if(simulWeatherRenderer)
 //		simulWeatherRenderer->SetRenderDepthBufferCallback(&cb);
@@ -63,10 +64,17 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 	simul::dx11::UnsetDevice();
 	//Set a global device pointer for use by various classes.
 	simul::dx11::SetDevice(pd3dDevice);
+	unsigned ScreenWidth=pBackBufferSurfaceDesc->Width;
+	unsigned ScreenHeight=pBackBufferSurfaceDesc->Height;
+	aspect=(float)ScreenWidth/(float)ScreenHeight;
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->InvalidateDeviceObjects();
+	if(simulHDRRenderer)
+		simulHDRRenderer->InvalidateDeviceObjects();
 	if(simulHDRRenderer&&!simulHDRRenderer->RestoreDeviceObjects(pd3dDevice,pSwapChain))
-		return S_FALSE;
+		return (HRESULT)(-1);
 	if(simulWeatherRenderer&&!simulWeatherRenderer->RestoreDeviceObjects(pd3dDevice,pSwapChain))
-		return S_FALSE;
+		return (HRESULT)(-1);
 }
 
 void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep)
@@ -74,7 +82,7 @@ void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11De
 	D3DXMATRIX world,view,proj;
 	if(camera)
 	{
-		proj=camera->MakeProjectionMatrix(.1,250000.f,1.f,true);
+		proj=camera->MakeProjectionMatrix(.1,250000.f,aspect,true);
 		view=camera->MakeViewMatrix(false);
 		D3DXMatrixIdentity(&world);
 	}
@@ -91,27 +99,40 @@ void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11De
 
 void	Direct3D11Renderer::OnD3D11LostDevice()
 {
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->InvalidateDeviceObjects();
+	if(simulHDRRenderer)
+		simulHDRRenderer->InvalidateDeviceObjects();
 }
 
 void	Direct3D11Renderer::OnD3D11DestroyDevice()
 {
-    simulWeatherRenderer=NULL;
-    simulHDRRenderer=NULL;
+	// We don't clear the renderers because InvalidateDeviceObjects has already handled DX-specific destruction
+	// And after OnD3D11DestroyDevice we might go back to startup without destroying the renderer.
+    //simulWeatherRenderer=NULL;
+    //simulHDRRenderer=NULL;
 	simul::dx11::UnsetDevice();
 }
 
 void	Direct3D11Renderer::OnD3D11ReleasingSwapChain()
 {
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->InvalidateDeviceObjects();
+	if(simulHDRRenderer)
+		simulHDRRenderer->InvalidateDeviceObjects();
 }
 
 bool	Direct3D11Renderer::OnDeviceRemoved()
 {
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->InvalidateDeviceObjects();
+	if(simulHDRRenderer)
+		simulHDRRenderer->InvalidateDeviceObjects();
 	return true;
 }
 
 void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
 {
-	static float timeMult=100.f;
 	// The weather renderer works in days, not seconds
 	float game_timestep=timeMult*fTimeStep/(24.f*60.f*60.f);
 	if(simulWeatherRenderer)

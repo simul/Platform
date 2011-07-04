@@ -67,6 +67,7 @@ texture fadeTexture;
     MagFilter = LINEAR;
 	AddressU = Mirror;
 	AddressV = Clamp;
+	AddressW = Clamp;
 };
 texture fadeTexture2;
 #ifdef USE_ALTITUDE_INTERPOLATION
@@ -76,6 +77,17 @@ texture fadeTexture2;
 #endif
 {
     Texture = <fadeTexture2>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+	AddressU = Mirror;
+	AddressV = Clamp;
+	AddressW = Clamp;
+};
+texture crossSectionTexture;
+sampler2D cross_section_texture= sampler_state
+{
+    Texture = <crossSectionTexture>;
     MipFilter = LINEAR;
     MinFilter = LINEAR;
     MagFilter = LINEAR;
@@ -302,6 +314,30 @@ float4 PS_Plain_Colour(colourVertexOutput IN): color
 {
 	return IN.colour;
 }
+
+
+vertexOutputCS VS_CrossSection(vertexInputCS IN)
+{
+    vertexOutputCS OUT;
+    OUT.hPosition = mul(worldViewProj,float4(IN.position.xyz,1.0));
+//float4(1,1,0,1.0);//
+	OUT.texCoords.xy=IN.texCoords.xy;
+	OUT.texCoords.z=1;
+	OUT.colour=IN.colour;
+    return OUT;
+}
+
+float4 PS_CrossSection( vertexOutputCS IN): color
+{
+#if 0//def USE_ALTITUDE_INTERPOLATION
+	float3 texc=float3(IN.texCoords.x,IN.texCoords.y,altitudeTexCoord);
+	float4 colour=tex3D(fade_texture,texc);
+#else
+	float4 colour=tex2D(cross_section_texture,IN.texCoords.xy);
+#endif
+	colour.rgb=pow(colour.rgb,0.45f);
+    return float4(colour.rgb,1);
+}
 //------------------------------------
 // Technique 
 //------------------------------------
@@ -426,31 +462,6 @@ technique simul_query
 		lighting = false;
 #endif
     }
-}
-
-
-vertexOutputCS VS_CrossSection(vertexInputCS IN)
-{
-    vertexOutputCS OUT;
-    OUT.hPosition = float4(1,1,0,1.0);//mul(worldViewProj,float4(IN.position.xyz,1.0));
-
-	OUT.texCoords.xy=float2(1,1);
-	OUT.texCoords.z=1;
-	OUT.colour=IN.colour;
-    return OUT;
-}
-
-float4 PS_CrossSection( vertexOutputCS IN): color
-{
-#ifdef USE_ALTITUDE_INTERPOLATION
-	float3 texc=float3(IN.texCoords.x,IN.texCoords.y,altitudeTexCoord);
-	float4 colour=tex3D(fade_texture,texc);
-#else
-	float2 texc=float2(IN.texCoords.x,IN.texCoords.y);
-	float4 colour=tex2D(fade_texture,texc);
-#endif
-	colour.rgb=pow(colour.rgb,0.45f);
-    return float4(colour.rgb,1);
 }
 
 

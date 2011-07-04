@@ -287,12 +287,11 @@ bool SimulTerrainRenderer::CreateEffect()
 	worldViewProj		=m_pTerrainEffect->GetParameterByName(NULL,"worldViewProj");
 	eyePosition			=m_pTerrainEffect->GetParameterByName(NULL,"eyePosition");
 	lightDirection		=m_pTerrainEffect->GetParameterByName(NULL,"lightDir");
-	MieRayleighRatio	=m_pTerrainEffect->GetParameterByName(NULL,"MieRayleighRatio");
-	hazeEccentricity	=m_pTerrainEffect->GetParameterByName(NULL,"HazeEccentricity");
+
 	cloudScales			=m_pTerrainEffect->GetParameterByName(NULL,"cloudScales");
 	cloudOffset			=m_pTerrainEffect->GetParameterByName(NULL,"cloudOffset");
 	cloudInterp			=m_pTerrainEffect->GetParameterByName(NULL,"cloudInterp");
-	fadeInterp			=m_pTerrainEffect->GetParameterByName(NULL,"fadeInterp");
+
 
 	lightColour			=m_pTerrainEffect->GetParameterByName(NULL,"lightColour");
 	ambientColour		=m_pTerrainEffect->GetParameterByName(NULL,"ambientColour");
@@ -379,7 +378,7 @@ bool SimulTerrainRenderer::Render()
 				std::swap(pos[i*3+1],pos[i*3+2]);
 			}
 		}
-		RenderLines(m_pd3dDevice,12,pos);
+		//RenderLines(m_pd3dDevice,12,pos);
 	}
 	return (hr==S_OK);
 }
@@ -430,14 +429,11 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 
 	if(skyInterface)
 	{
-		D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
 		D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
 		if(y_vertical)
 			std::swap(sun_dir.y,sun_dir.z);
 
 		m_pTerrainEffect->SetVector	(lightDirection		,&sun_dir);
-		m_pTerrainEffect->SetVector	(MieRayleighRatio	,&mie_rayleigh_ratio);
-		m_pTerrainEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 		float alt_km=cam_pos.z*0.001f;
 		if(y_vertical)
 			alt_km=cam_pos.y*0.001f;
@@ -450,7 +446,6 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 	m_pTerrainEffect->SetVector	(cloudScales		,(const D3DXVECTOR4 *)(cloud_scales));
 	m_pTerrainEffect->SetVector	(cloudOffset		,(const D3DXVECTOR4 *)(cloud_offset));
 	m_pTerrainEffect->SetFloat	(cloudInterp		,cloud_interp);
-	m_pTerrainEffect->SetFloat	(fadeInterp			,fade_interp);
 
 	m_pTerrainEffect->SetTexture(g_mainTexture		,terrain_texture);
 	m_pTerrainEffect->SetTexture(detailTexture		,detail_texture);
@@ -610,10 +605,13 @@ void SimulTerrainRenderer::Update(float )
 
 void SimulTerrainRenderer::SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb)
 {
-	SetCloudTextures	(cb->GetCloudTextures(),cb->GetWrap());
-	SetCloudScales		(cb->GetCloudScales());
-	SetCloudOffset		(cb->GetCloudOffset());
-	setCloudInterpolation(cb->GetInterpolation());
+	if(cb)
+	{
+		SetCloudTextures	(cb->GetCloudTextures(),cb->GetWrap());
+		SetCloudScales		(cb->GetCloudScales());
+		SetCloudOffset		(cb->GetCloudOffset());
+		setCloudInterpolation(cb->GetInterpolation());
+	}
 }
 
 void SimulTerrainRenderer::ReleaseIndexBuffers()

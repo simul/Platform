@@ -30,34 +30,30 @@
 #include "Macros.h"
 #include "Resources.h"
 
-SimulAtmosphericsRenderer::SimulAtmosphericsRenderer() :
-	m_pd3dDevice(NULL),
-	vertexDecl(NULL),
-	effect(NULL),
-	lightDir(NULL),
-	cloudScales(NULL),
-	cloudOffset(NULL),
-	lightColour(NULL),
-	eyePosition(NULL),
-	cloudInterp(NULL),
-	cloudTexture1(NULL),
-	cloudTexture2(NULL),
-	MieRayleighRatio(NULL),
-	HazeEccentricity(NULL),
-	fadeInterp(NULL),
-	imageTexture(NULL),
-	depthTexture(NULL),
-	lossTexture1(NULL),
-	lossTexture2(NULL),
-	inscatterTexture1(NULL),
-	inscatterTexture2(NULL),
-	loss_texture_1(NULL),
-	loss_texture_2(NULL),
-	inscatter_texture_1(NULL),
-	inscatter_texture_2(NULL),
-	skyInterface(NULL),
-	fade_interp(0.f),
-	altitude_tex_coord(0.f)
+SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
+	:m_pd3dDevice(NULL)
+	,vertexDecl(NULL)
+	,effect(NULL)
+	,lightDir(NULL)
+	,cloudScales(NULL)
+	,cloudOffset(NULL)
+	,lightColour(NULL)
+	,eyePosition(NULL)
+	,cloudInterp(NULL)
+	,cloudTexture1(NULL)
+	,cloudTexture2(NULL)
+	,MieRayleighRatio(NULL)
+	,HazeEccentricity(NULL)
+	,fadeInterp(NULL)
+	,imageTexture(NULL)
+	,depthTexture(NULL)
+	,lossTexture1(NULL)
+	,inscatterTexture1(NULL)
+	,loss_texture_1(NULL)
+	,inscatter_texture_1(NULL)
+	,skyInterface(NULL)
+	,fade_interp(0.f)
+	,altitude_tex_coord(0.f)
 	,input_texture(NULL)
 	,max_distance_texture(NULL)
 	,lightning_illumination_texture(NULL)
@@ -91,9 +87,7 @@ bool SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 	imageTexture		=effect->GetParameterByName(NULL,"imageTexture");
 	depthTexture		=effect->GetParameterByName(NULL,"depthTexture");
 	lossTexture1		=effect->GetParameterByName(NULL,"lossTexture1");
-	lossTexture2		=effect->GetParameterByName(NULL,"lossTexture2");
 	inscatterTexture1	=effect->GetParameterByName(NULL,"inscatterTexture1");
-	inscatterTexture2	=effect->GetParameterByName(NULL,"inscatterTexture2");
 
 	maxDistanceTexture	=effect->GetParameterByName(NULL,"maxDistanceTexture");
 
@@ -102,6 +96,8 @@ bool SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 	lightColour			=effect->GetParameterByName(NULL,"lightColour");
 	eyePosition			=effect->GetParameterByName(NULL,"eyePosition");
 	cloudInterp			=effect->GetParameterByName(NULL,"cloudInterp");
+	texelOffsets		=effect->GetParameterByName(NULL,"texelOffsets");
+
 	
 	cloudTexture1		=effect->GetParameterByName(NULL,"cloudTexture1");
 	cloudTexture2		=effect->GetParameterByName(NULL,"cloudTexture2");
@@ -112,7 +108,6 @@ bool SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 	lightningColour					=effect->GetParameterByName(NULL,"lightningColour");
 	illuminationOrigin				=effect->GetParameterByName(NULL,"illuminationOrigin");
 	illuminationScales				=effect->GetParameterByName(NULL,"illuminationScales");
-
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 
 	{
@@ -273,6 +268,15 @@ bool SimulAtmosphericsRenderer::DrawScreenQuad()
 	D3DXMatrixTranspose(&vpt,&viewproj);
 	D3DXMATRIX ivp;
 	D3DXMatrixInverse(&ivp,NULL,&vpt);
+	
+	if(input_texture)
+	{
+		D3DSURFACE_DESC desc;
+		input_texture->GetLevelDesc(0,&desc);
+		D3DXVECTOR4 vec(1.f/(float)desc.Width,1.f/(float)desc.Height,0,0);
+		effect->SetVector(texelOffsets,&vec);
+	}
+
 	hr=effect->SetMatrix(invViewProj,&ivp);
 
 	hr=DrawFullScreenQuad(m_pd3dDevice,effect);
@@ -299,9 +303,7 @@ bool SimulAtmosphericsRenderer::Render()
 			effect->SetVector	(MieRayleighRatio	,&mie_rayleigh_ratio);
 		}
 		hr=effect->SetTexture(lossTexture1,loss_texture_1);
-		hr=effect->SetTexture(lossTexture2,loss_texture_2);
 		hr=effect->SetTexture(inscatterTexture1,inscatter_texture_1);
-		hr=effect->SetTexture(inscatterTexture2,inscatter_texture_2);
 		hr=effect->SetTexture(maxDistanceTexture,max_distance_texture);
 		hr=DrawScreenQuad();
 	}

@@ -34,7 +34,7 @@ sampler2D image_texture= sampler_state
 };
 
 texture lossTexture1;
-sampler3D sky_loss_texture_1= sampler_state 
+sampler2D sky_loss_texture_1= sampler_state 
 {
     Texture = <lossTexture1>;
     MipFilter = LINEAR;
@@ -42,10 +42,9 @@ sampler3D sky_loss_texture_1= sampler_state
     MagFilter = LINEAR;
 	AddressU = Clamp;
 	AddressV = Mirror;
-	AddressW = Clamp;
 };
 texture inscatterTexture1;
-sampler3D sky_inscatter_texture_1= sampler_state 
+sampler2D sky_inscatter_texture_1= sampler_state 
 {
     Texture = <inscatterTexture1>;
     MipFilter = LINEAR;
@@ -53,30 +52,6 @@ sampler3D sky_inscatter_texture_1= sampler_state
     MagFilter = LINEAR;
 	AddressU = Clamp;
 	AddressV = Mirror;
-	AddressW = Clamp;
-};
-
-texture lossTexture2;
-sampler3D sky_loss_texture_2= sampler_state 
-{
-    Texture = <lossTexture2>;
-    MipFilter = LINEAR;
-    MinFilter = LINEAR;
-    MagFilter = LINEAR;
-	AddressU = Clamp;
-	AddressV = Mirror;
-	AddressW = Clamp;
-};
-texture inscatterTexture2;
-sampler3D sky_inscatter_texture_2= sampler_state 
-{
-    Texture = <inscatterTexture2>;
-    MipFilter = LINEAR;
-    MinFilter = LINEAR;
-    MagFilter = LINEAR;
-	AddressU = Clamp;
-	AddressV = Mirror;
-	AddressW = Clamp;
 };
 
 texture cloudTexture1;
@@ -138,6 +113,7 @@ float3 cloudScales;
 float3 cloudOffset;
 float3 lightColour;
 float3 eyePosition;
+float2 texelOffsets;
 float cloudInterp;
 
 // For Lightning Airglow:
@@ -166,7 +142,9 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 	atmosVertexOutput OUT;
 	OUT.position=float4(IN.position.xy,0,1);
 	OUT.hpos_duplicate=float4(IN.position.xy,0,1);
-	OUT.texCoords = IN.texCoords;
+	OUT.texCoords=IN.texCoords;
+	//OUT.texCoords*=(float2(1.0,1.0)+texelOffsets);
+	OUT.texCoords+=0.5*texelOffsets;
 	return OUT;
 }
 
@@ -190,8 +168,8 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 float4 PS_Atmos(atmosVertexOutput IN) : color
 {
 	float4 pos=float4(-1.f,1.f,1.f,1.f);
-	pos.x+=2.f*IN.texCoords.x;
-	pos.y-=2.f*IN.texCoords.y;
+	pos.x+=2.f*IN.texCoords.x+texelOffsets.x;
+	pos.y-=2.f*IN.texCoords.y+texelOffsets.y;
 	float3 view=mul(invViewProj,pos).xyz;
 	view=normalize(view);
 	float4 lookup=tex2D(image_texture,IN.texCoords.xy);
@@ -204,19 +182,14 @@ float4 PS_Atmos(atmosVertexOutput IN) : color
 #else
 	float sine=view.z;
 #endif
-	float2 texc2=float2(0.5f*(1.f-sine),altitudeTexCoord);
 	float maxd=1.0;//tex2D(distance_texture,texc2).x;
-	float3 texc=float3(pow(depth/maxd,0.5f),texc2);
-	float3 loss1=tex3D(sky_loss_texture_1,texc).rgb;
-	float3 loss2=tex3D(sky_loss_texture_2,texc).rgb;
-	float3 loss=lerp(loss1,loss2,fadeInterp);
+	float2 texc2=float2(pow(depth/maxd,0.5f),0.5f*(1.f-sine));
+	float3 loss=tex2D(sky_loss_texture_1,texc2).rgb;
 	colour*=loss;
-	float4 insc1=tex3D(sky_inscatter_texture_1,texc);
-	float4 insc2=tex3D(sky_inscatter_texture_2,texc);
-	float4 inscatter_factor=lerp(insc1,insc2,fadeInterp);
+	float4 inscatter_factor=tex2D(sky_inscatter_texture_1,texc2);
 	float cos0=dot(view,lightDir);
 	colour+=InscatterFunction(inscatter_factor,cos0);
-	colour.r=1;
+
     return float4(colour,1.f);
 }
 

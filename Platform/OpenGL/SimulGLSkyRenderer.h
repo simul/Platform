@@ -52,6 +52,9 @@ public:
 	virtual void FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array);
 	virtual void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
 	virtual void CycleTexturesForward();
+	virtual bool HasFastFadeLookup() const{return true;}
+	virtual const float *GetFastLossLookup(float distance_texcoord,float elevation_texcoord);
+	virtual const float *GetFastInscatterLookup(float distance_texcoord,float elevation_texcoord);
 
 	bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	

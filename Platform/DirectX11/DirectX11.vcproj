@@ -75,6 +75,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				EmbedManifest="false"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -90,6 +91,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
@@ -153,6 +155,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				EmbedManifest="false"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -168,6 +171,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine=""
 			/>
 		</Configuration>
 	</Configurations>
@@ -185,6 +189,10 @@
 			</File>
 			<File
 				RelativePath="..\DirectX 1x\Direct3D1xRenderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX 1x\FramebufferDX1x.cpp"
 				>
 			</File>
 			<File
@@ -219,6 +227,10 @@
 			</File>
 			<File
 				RelativePath="..\DirectX 1x\Export.h"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX 1x\FramebufferDX1x.h"
 				>
 			</File>
 			<File

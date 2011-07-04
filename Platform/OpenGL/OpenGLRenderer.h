@@ -24,7 +24,7 @@ SIMUL_OPENGL_EXPORT_CLASS OpenGLRenderer
 	,public simul::graph::meta::Group
 {
 public:
-	OpenGLRenderer();
+	OpenGLRenderer(const char *license_key);
 	virtual ~OpenGLRenderer();
 	virtual void paintGL();
 	virtual void resizeGL(int w,int h);

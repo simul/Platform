@@ -4,12 +4,12 @@ cbuffer cbPerObject : register(b0)
 };
 
 Texture2D skyTexture1;
+Texture2D skyTexture2;
 SamplerState samplerState
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Mirror;
 };
-Texture2D skyTexture2;
 
 Texture2D flareTexture;
 SamplerState flareSamplerState
@@ -19,6 +19,15 @@ SamplerState flareSamplerState
 	AddressV = Clamp;
 };
 
+Texture3D fadeTexture1;
+Texture3D fadeTexture2;
+SamplerState fadeSamplerState
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Clamp;
+	AddressV = Mirror;
+	AddressW = Clamp;
+};
 //------------------------------------
 // Parameters 
 //------------------------------------
@@ -29,7 +38,6 @@ float hazeEccentricity;
 float skyInterp;
 float altitudeTexCoord;
 #define pi (3.1415926536f)
-
 float3 sunlightColour;
 //------------------------------------
 // Structures 
@@ -88,6 +96,37 @@ float4 PS_Main( vertexOutput IN): SV_TARGET
 	float3 colour=InscatterFunction(insc,cos0);
 
 	return float4(colour.rgb,1.f);
+}
+
+struct vertexInput3Dto2D
+{
+    float4 position			: POSITION;
+    float2 texCoords		: TEXCOORD0;
+};
+
+struct vertexOutput3Dto2D
+{
+    float4 hPosition		: SV_POSITION;
+    float2 texCoords		: TEXCOORD0;
+};
+
+vertexOutput3Dto2D VS_Fade3DTo2D(vertexInput3Dto2D IN) 
+{
+    vertexOutput3Dto2D OUT;
+    OUT.hPosition=float4(IN.position.xy,1.0,1.0);
+    OUT.texCoords=IN.texCoords;
+    return OUT;
+}
+
+float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
+{
+	float3 texc=float3(IN.texCoords.xy,altitudeTexCoord);
+	float4 colour1=fadeTexture1.Sample(fadeSamplerState,texc);
+	float4 colour2=fadeTexture2.Sample(fadeSamplerState,texc);
+	float4 colour=lerp(colour1,colour2,skyInterp);
+//	colour.rg=IN.texCoords.xy;
+//	colour.b=0;
+    return colour;
 }
 
 struct svertexInput
@@ -175,6 +214,18 @@ technique11 simul_sky
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Main()));
+    }
+}
+technique11 simul_fade_3d_to_2d
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
     }
 }
 

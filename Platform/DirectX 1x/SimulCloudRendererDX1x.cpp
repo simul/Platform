@@ -24,7 +24,6 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Pi.h"
-#include "Simul/LicenseKey.h"
 #include "CreateEffectDX1x.h"
 
 typedef std::basic_string<TCHAR> tstring;
@@ -102,26 +101,23 @@ public:
 };
 ExampleHumidityCallback hm;
 
-SimulCloudRendererDX1x::SimulCloudRendererDX1x() :
-	simul::clouds::BaseCloudRenderer(),
+SimulCloudRendererDX1x::SimulCloudRendererDX1x(const char *license_key) :
+	simul::clouds::BaseCloudRenderer(license_key),
 	m_hTechniqueLightning(NULL),
 	m_pd3dDevice(NULL),
 	m_pImmediateContext(NULL),
 	m_pVtxDecl(NULL),
 	m_pLightningVtxDecl(NULL),
 	m_pCloudEffect(NULL),
+	vertexBuffer(NULL),
 	m_pLightningEffect(NULL),
 	noise_texture(NULL),
 	lightning_texture(NULL),
 	illumination_texture(NULL),
 	sky_loss_texture_1(NULL),
-	sky_loss_texture_2(NULL),
 	sky_inscatter_texture_1(NULL),
-	sky_inscatter_texture_2(NULL),
 	skyLossTexture1Resource(NULL),
-	skyLossTexture2Resource(NULL),
 	skyInscatterTexture1Resource(NULL),
-	skyInscatterTexture2Resource(NULL),
 	noiseTextureResource(NULL),
 	lightningIlluminationTextureResource(NULL),
 	y_vertical(true)
@@ -135,9 +131,12 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x() :
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
 	for(int i=0;i<3;i++)
+	{
 		cloud_textures[i]=NULL;
+		cloudDensityResource[i]=NULL;
+	}
 
-	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
+	cloudNode->SetLicense(license_key);
 	helper->SetYVertical(y_vertical);
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 	texel_index[0]=texel_index[1]=texel_index[2]=texel_index[3]=0;
@@ -157,46 +156,29 @@ void SimulCloudRendererDX1x::SetSkyInterface(simul::sky::BaseSkyInterface *si)
 
 void SimulCloudRendererDX1x::SetLossTextures(void *t)
 {
-	ID3D1xResource* t1=((ID3D1xResource**)t)[0];
-	ID3D1xResource* t2=((ID3D1xResource**)t)[1];
+	ID3D1xResource* t1=((ID3D1xResource*)t);
 	if(sky_loss_texture_1!=t1)
 	{
 		sky_loss_texture_1=static_cast<ID3D1xTexture2D*>(t1);
 		if(skyLossTexture1)
 			skyLossTexture1->SetResource(NULL);
 		SAFE_RELEASE(skyLossTexture1Resource);
-		m_pd3dDevice->CreateShaderResourceView(sky_loss_texture_1,NULL,&skyLossTexture1Resource);
-	}
-	if(sky_loss_texture_2!=t2)
-	{
-		sky_loss_texture_2=static_cast<ID3D1xTexture2D*>(t2);
-		if(skyLossTexture2)
-			skyLossTexture2->SetResource(NULL);
-		SAFE_RELEASE(skyLossTexture2Resource);
-		m_pd3dDevice->CreateShaderResourceView(sky_loss_texture_2,NULL,&skyLossTexture2Resource);
+		HRESULT hr;
+		V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_loss_texture_1,NULL,&skyLossTexture1Resource));
 	}
 }
 
 void SimulCloudRendererDX1x::SetInscatterTextures(void *t)
-//ID3D1xResource* t1,ID3D1xResource* t2)
 {
-	ID3D1xResource* t1=((ID3D1xResource**)t)[0];
-	ID3D1xResource* t2=((ID3D1xResource**)t)[1];
+	ID3D1xResource* t1=((ID3D1xResource*)t);
 	if(sky_inscatter_texture_1!=t1)
 	{
 		sky_inscatter_texture_1=static_cast<ID3D1xTexture2D*>(t1);
 		if(skyInscatterTexture1)
 			skyInscatterTexture1->SetResource(NULL);
 		SAFE_RELEASE(skyInscatterTexture1Resource);
-		m_pd3dDevice->CreateShaderResourceView(sky_inscatter_texture_1,NULL,&skyInscatterTexture1Resource);
-	}
-	if(sky_inscatter_texture_2!=t2)
-	{
-		sky_inscatter_texture_2=static_cast<ID3D1xTexture2D*>(t2);
-		if(skyInscatterTexture2)
-			skyInscatterTexture2->SetResource(NULL);
-		SAFE_RELEASE(skyInscatterTexture2Resource);
-		m_pd3dDevice->CreateShaderResourceView(sky_inscatter_texture_2,NULL,&skyInscatterTexture2Resource);
+		HRESULT hr;
+		V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_inscatter_texture_1,NULL,&skyInscatterTexture1Resource));
 	}
 }
 
@@ -219,8 +201,6 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
 	HRESULT hr;
-	//B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	//B_RETURN(m_pd3dDevice->CreateVertexDeclaration(std_decl,&m_pLightningVtxDecl))
 	B_RETURN(CreateNoiseTexture());
 	B_RETURN(CreateLightningTexture());
 	B_RETURN(CreateCloudEffect());
@@ -258,7 +238,7 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	D3D1x_PASS_DESC PassDesc;
 	ID3D1xEffectPass *pass=m_hTechniqueCloud->GetPassByIndex(0);
 	hr=pass->GetDesc(&PassDesc);
-
+//return true;
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pLightningVtxDecl);
 	hr=m_pd3dDevice->CreateInputLayout( decl,4,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
@@ -279,7 +259,7 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
     InitData.pSysMem = vertices;
     InitData.SysMemPitch = sizeof(CloudVertex_t);
 	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
-
+//return true;
 	if(m_hTechniqueLightning)
 	{
 		pass=m_hTechniqueLightning->GetPassByIndex(0);
@@ -296,6 +276,9 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 bool SimulCloudRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
+	Unmap();
+	if(illumination_texture)
+		Unmap3D(illumination_texture);
 #ifndef DX10
 	SAFE_RELEASE(m_pImmediateContext);
 #endif
@@ -308,14 +291,14 @@ bool SimulCloudRendererDX1x::InvalidateDeviceObjects()
 		SAFE_RELEASE(cloud_textures[i]);
 		SAFE_RELEASE(cloudDensityResource[i]);
 	}
+	// Set the stored texture sizes to zero, so the textures will be re-created.
+	cloud_tex_width_x=cloud_tex_length_y=cloud_tex_depth_z=0;
 	SAFE_RELEASE(noise_texture);
 	SAFE_RELEASE(lightning_texture);
 	SAFE_RELEASE(illumination_texture);
 	SAFE_RELEASE(vertexBuffer);
 	SAFE_RELEASE(skyLossTexture1Resource);
-	SAFE_RELEASE(skyLossTexture2Resource);
 	SAFE_RELEASE(skyInscatterTexture1Resource);
-	SAFE_RELEASE(skyInscatterTexture2Resource);
 
 	SAFE_RELEASE(noiseTextureResource);
 	
@@ -355,7 +338,7 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(bool override_file)
 		D3D1x_CPU_ACCESS_WRITE,
 		0
 	};
-	hr=m_pd3dDevice->CreateTexture2D(&desc,NULL,&noise_texture);
+	B_RETURN(m_pd3dDevice->CreateTexture2D(&desc,NULL,&noise_texture));
 	D3D1x_MAPPED_TEXTURE2D mapped;
 	if(FAILED(hr=Map2D(noise_texture,&mapped)))
 		return false;
@@ -409,7 +392,6 @@ bool SimulCloudRendererDX1x::CreateLightningTexture()
 	return (hr==S_OK);
 }
 
-
 void SimulCloudRendererDX1x::SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z)
 {
 	SAFE_RELEASE(illumination_texture);
@@ -429,6 +411,8 @@ void SimulCloudRendererDX1x::SetIlluminationGridSize(unsigned width_x,unsigned l
 		return;
 	memset(mapped.pData,0,4*width_x*length_y*depth_z);
 	Unmap3D(illumination_texture);
+	
+	SAFE_RELEASE(lightningIlluminationTextureResource);
     FAILED(m_pd3dDevice->CreateShaderResourceView(illumination_texture,NULL,&lightningIlluminationTextureResource ));
 	FAILED(hr=Map3D(illumination_texture,&mapped_illumination));
 }
@@ -504,9 +488,11 @@ void SimulCloudRendererDX1x::SetCloudTextureSize(unsigned width_x,unsigned lengt
 		if(FAILED(hr=m_pd3dDevice->CreateTexture3D(&desc,0,&cloud_textures[i])))
 			return;
 	}
-    FAIL_RETURN(m_pd3dDevice->CreateShaderResourceView(cloud_textures[0],NULL,&cloudDensityResource[0]));
-    FAIL_RETURN(m_pd3dDevice->CreateShaderResourceView(cloud_textures[1],NULL,&cloudDensityResource[1]));
-    FAIL_RETURN(m_pd3dDevice->CreateShaderResourceView(cloud_textures[2],NULL,&cloudDensityResource[2]));
+	for(int i=0;i<3;i++)
+	{
+		SAFE_RELEASE(cloudDensityResource[i]);
+	    FAIL_RETURN(m_pd3dDevice->CreateShaderResourceView(cloud_textures[i],NULL,&cloudDensityResource[i]));
+	}
 	Map(2);
 }
 
@@ -542,7 +528,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 		defines["Y_VERTICAL"]="1";
 	else
 		defines["Z_VERTICAL"]="1";
-	HRESULT hr=CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds_and_lightning.fx",defines);
+	HRESULT hr=CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds_and_lightning_dx11.fx",defines);
 	m_hTechniqueCloud					=m_pCloudEffect->GetTechniqueByName("simul_clouds");
 	m_hTechniqueCloudsAndLightning		=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
 
@@ -573,9 +559,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	noiseTexture						=m_pCloudEffect->GetVariableByName("noiseTexture")->AsShaderResource();
 	lightningIlluminationTexture		=m_pCloudEffect->GetVariableByName("lightningIlluminationTexture")->AsShaderResource();
 	skyLossTexture1						=m_pCloudEffect->GetVariableByName("skyLossTexture1")->AsShaderResource();
-	skyLossTexture2						=m_pCloudEffect->GetVariableByName("skyLossTexture2")->AsShaderResource();
 	skyInscatterTexture1				=m_pCloudEffect->GetVariableByName("skyInscatterTexture1")->AsShaderResource();
-	skyInscatterTexture2				=m_pCloudEffect->GetVariableByName("skyInscatterTexture2")->AsShaderResource();
 	return (hr==S_OK);
 }
 
@@ -609,8 +593,6 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	noiseTexture->SetResource(noiseTextureResource);
 	skyLossTexture1->SetResource(skyLossTexture1Resource);
 	skyInscatterTexture1->SetResource(skyInscatterTexture1Resource);
-	skyLossTexture2->SetResource(skyLossTexture2Resource);
-	skyInscatterTexture2->SetResource(skyInscatterTexture2Resource);
 
 	// Mess with the proj matrix to extend the far clipping plane:
 	// According to the documentation for D3DXMatrixPerspectiveFovLH:
@@ -782,7 +764,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 		v++;
 	}
 	UnmapBuffer(vertexBuffer);
-	UINT stride = sizeof( CloudVertex_t );
+	UINT stride = sizeof(CloudVertex_t);
 	UINT offset = 0;
     UINT Strides[1];
     UINT Offsets[1];
@@ -804,10 +786,13 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 		m_pImmediateContext->Draw((v-startv)-2,0);
 
 	PIXEndNamedEvent();
-	skyLossTexture1->SetResource(0);
-	skyInscatterTexture1->SetResource(0);
-	skyLossTexture2->SetResource(0);
-	skyInscatterTexture2->SetResource(0);
+	skyLossTexture1->SetResource(NULL);
+	skyInscatterTexture1->SetResource(NULL);
+// To prevent BIZARRE DX11 warning, we re-apply the bass with the rendertextures unbound:
+	if(enable_lightning)
+		ApplyPass(m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
+	else
+		ApplyPass(m_hTechniqueCloud->GetPassByIndex(0));
 	return (hr==S_OK);
 }
 

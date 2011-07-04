@@ -159,6 +159,7 @@ protected:
 	D3DXHANDLE					fadeTexture2;
 	D3DXHANDLE					skyTexture1;
 	D3DXHANDLE					skyTexture2;
+	D3DXHANDLE					crossSectionTexture;
 	D3DXHANDLE					starsTexture;
 	D3DXHANDLE					starBrightness;
 	

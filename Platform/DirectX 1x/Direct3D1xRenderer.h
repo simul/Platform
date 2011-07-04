@@ -54,7 +54,7 @@ class SIMUL_DIRECTX1x_EXPORT Direct3D11Renderer
 	,public simul::graph::meta::Group
 {
 public:
-	Direct3D11Renderer();
+	Direct3D11Renderer(const char *license_key);
 	virtual ~Direct3D11Renderer();
 	class SimulWeatherRendererDX1x *GetSimulWeatherRenderer()
 	{
@@ -78,8 +78,10 @@ public:
 	virtual const	char *GetDebugText() const;
 protected:
 	simul::graph::camera::Camera *camera;
+	float aspect;
 	simul::base::SmartPtr<SimulWeatherRendererDX1x> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulHDRRendererDX1x> simulHDRRenderer;
+	float timeMult;
 };
 
 #pragma warning(pop)

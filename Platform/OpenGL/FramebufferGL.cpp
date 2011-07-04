@@ -21,9 +21,8 @@ FramebufferGL::FramebufferGL(int w, int h, GLenum target, int samples, int cover
         m_rb_col[i] = 0;
         m_tex_col[i] = 0;
     }
-    glGenFramebuffersEXT(1, &m_fb);
 	InitShader();
-
+    glGenFramebuffersEXT(1, &m_fb);
 	if(fb_stack.size()==0)
 		fb_stack.push((GLuint)0);
 }
@@ -87,6 +86,8 @@ void FramebufferGL::SetWidthAndHeight(int w,int h)
 // InitColor_RB or InitColor_Tex needs to be called.
 void FramebufferGL::InitColor_RB(int index, GLenum iformat)
 {
+	if(!m_width||!m_height)
+		return;
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     
 	ERROR_CHECK
@@ -197,8 +198,8 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 // The FBO needs to be deactivated when using the associated textures.
 void FramebufferGL::Activate()
 {
-	glFlush();
-	GLenum check=glCheckFramebufferStatusEXT(m_fb);
+	//glFlush(); 
+	CheckFramebufferStatus();
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
 	ERROR_CHECK
 #ifdef _DEBUG
@@ -249,9 +250,10 @@ void FramebufferGL::DeactivateAndRender(bool blend)
 	}
 	else
 	{
+		glDisable(GL_TEXTURE_1D);
 		glEnable(GL_TEXTURE_2D);
+		glDisable(GL_TEXTURE_3D);
 	}
-
     glDisable(GL_ALPHA_TEST);
 	if(!blend)
 	{
@@ -279,6 +281,9 @@ void FramebufferGL::Deactivate()
 	// .. restore the next one down.
 	GLuint last_fb=fb_stack.top();
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,last_fb);
+	ERROR_CHECK
+	glViewport(0,0,main_viewport[2],main_viewport[3]);
+	ERROR_CHECK
 }
 
 

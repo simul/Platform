@@ -84,7 +84,6 @@ protected:
 		
 	bool IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
 	bool CreateBuffers();
-	bool RenderBufferToCurrentTarget(int w,int h,bool do_tonemap);
 	class SimulSkyRenderer *simulSkyRenderer;
 	class SimulCloudRenderer *simulCloudRenderer;
 	class Simul2DCloudRenderer *simul2DCloudRenderer;
