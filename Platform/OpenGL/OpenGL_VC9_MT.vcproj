@@ -223,7 +223,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(SafeParentName)_MT.lib"
+				OutputFile="$(OutDir)\$(SafeParentName)_MTd.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"

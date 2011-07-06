@@ -21,8 +21,6 @@ FramebufferGL::FramebufferGL(int w, int h, GLenum target, int samples, int cover
         m_rb_col[i] = 0;
         m_tex_col[i] = 0;
     }
-	InitShader();
-    glGenFramebuffersEXT(1, &m_fb);
 	if(fb_stack.size()==0)
 		fb_stack.push((GLuint)0);
 }
@@ -88,6 +86,11 @@ void FramebufferGL::InitColor_RB(int index, GLenum iformat)
 {
 	if(!m_width||!m_height)
 		return;
+	if(!m_fb)
+	{
+		InitShader();
+		glGenFramebuffersEXT(1, &m_fb);
+	}
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     
 	ERROR_CHECK
@@ -120,6 +123,11 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat)
 {
 	if(!m_width||!m_height)
 		return;
+	if(!m_fb)
+	{
+		InitShader();
+		glGenFramebuffersEXT(1, &m_fb);
+	}
 	glGenTextures(1, &m_tex_col[index]);
 	ERROR_CHECK
 	glBindTexture(m_target, m_tex_col[index]);
@@ -137,6 +145,11 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat)
 }
 void FramebufferGL::InitColor_None()
 {
+	if(!m_fb)
+	{
+		InitShader();
+		glGenFramebuffersEXT(1, &m_fb);
+	}
     // turn the color buffer off in case this is a z only fbo
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
     {
@@ -150,6 +163,11 @@ void FramebufferGL::InitColor_None()
 // InitDepth_RB or InitDepth_Tex needs to be called.
 void FramebufferGL::InitDepth_RB(GLenum iformat)
 {
+	if(!m_fb)
+	{
+		InitShader();
+		glGenFramebuffersEXT(1, &m_fb);
+	}
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
 	ERROR_CHECK
     
@@ -178,6 +196,11 @@ void FramebufferGL::InitDepth_RB(GLenum iformat)
 
 void FramebufferGL::InitDepth_Tex(GLenum iformat)
 {
+	if(!m_fb)
+	{
+		InitShader();
+		glGenFramebuffersEXT(1, &m_fb);
+	}
 	glGenTextures(1, &m_tex_depth);
 	glBindTexture(m_target, m_tex_depth);
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

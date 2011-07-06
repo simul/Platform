@@ -27,22 +27,6 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(const char *lic,bool usebuffer,bo
 		,BufferHeight(height)
 		,device_initialized(false)
 {
-	glewInit();
-	CheckExtension("GL_VERSION_2_0");
-	CheckExtension("GL_ARB_fragment_program");
-	CheckExtension("GL_ARB_vertex_program");
-	CheckExtension("GL_ARB_texture_float");
-	CheckExtension("GL_ARB_color_buffer_float");
-	CheckExtension("GL_EXT_framebuffer_object");
-
-	scene_buffer=NULL;
-    if(scene_buffer)
-        delete scene_buffer;
-   scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
-   scene_buffer->InitColor_Tex(0,buffer_format);
-   scene_buffer->SetShader(0);
-  // scene_buffer->InitDepth_RB();
-	// Now we know what time of day it is, initialize the sky texture:
 	if(sky)
 	{
 		simulSkyRenderer=new SimulGLSkyRenderer();
@@ -126,6 +110,26 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 
 bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 {
+	GLenum res=glewInit();
+	CheckGLError(res);
+	if(!GLEW_VERSION_2_0)
+	{
+		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
+	}
+//	CheckExtension("GL_VERSION_2_0");
+	CheckExtension("GL_ARB_fragment_program");
+	CheckExtension("GL_ARB_vertex_program");
+	CheckExtension("GL_ARB_texture_float");
+	CheckExtension("GL_ARB_color_buffer_float");
+	CheckExtension("GL_EXT_framebuffer_object");
+
+	scene_buffer=NULL;
+    if(scene_buffer)
+        delete scene_buffer;
+	scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+	scene_buffer->InitColor_Tex(0,buffer_format);
+	scene_buffer->SetShader(0);
+
 	device_initialized=true;
 	EnableLayers(simulCloudRenderer.get()!=NULL,simul2DCloudRenderer.get()!=NULL);
 	simulSkyRenderer->RestoreDeviceObjects();

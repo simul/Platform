@@ -78,6 +78,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				EmbedManifest="false"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -158,6 +159,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				EmbedManifest="false"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -223,7 +225,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(SafeParentName)_MD.lib"
+				OutputFile="$(OutDir)\$(SafeParentName)_MDd.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
