@@ -23,6 +23,7 @@ static DWORD default_effect_flags=0;
 #include <iostream>
 #include <assert.h>
 #include <fstream>
+#include <d3dx9.h>
 #include "MacrosDX1x.h"
 #include <dxerr.h>
 
@@ -117,7 +118,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFl
 	return hr;
 }
 
-HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename, UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
+HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	// first try to find an existing text source with this filename, and compile it.
 	std::string text_filename=simul::base::WStringToString(filename);
@@ -133,6 +134,15 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename, UINT FXFlags, I
 			command+=" /Tfx_5_0 /Fo \"";
 			command+=text_filename+"o\" \"";
 			command+=text_filename+"\"";
+			if(macros)
+				while(macros->Name)
+				{
+					command+=" /D";
+					command+=macros->Name;
+					command+="=";
+					command+=macros->Definition;
+					macros++;
+				}
 			//command+=" > \""+text_filename+".log\"";
 #if 0
 			system(command.c_str());
@@ -248,6 +258,7 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 	if(FAILED(
 		hr=D3DX11CreateEffectFromFile(
 				fn.c_str(),
+				macros,
 				flags,
 				d3dDevice,
 				effect)))
@@ -359,4 +370,61 @@ HRESULT ApplyPass(ID3D1xEffectPass *pass)
 #else
 	return pass->Apply(0,m_pImmediateContext);
 #endif
+}
+
+void FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical)
+{
+	float zNear;
+	if(y_vertical)
+	{
+		zNear=-proj._43/proj._33;
+		proj._33=zFar/(zFar-zNear);
+	}
+	else
+	{
+		zNear=proj._43/proj._33;
+		proj._33=-zFar/(zFar-zNear);
+	}
+	proj._43=-zNear*zFar/(zFar-zNear);
+}
+
+void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical)
+{
+	if(y_vertical)
+	{
+		proj._33=zFar/(zFar-zNear);
+	}
+	else
+	{
+		proj._33=-zFar/(zFar-zNear);
+	}
+	proj._43=-zNear*zFar/(zFar-zNear);
+}
+
+
+void MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[])
+{
+    D3DXVECTOR3 vEyePt = D3DXVECTOR3( 0.0f, 0.0f, 0.0f );
+    D3DXVECTOR3 vLookDir;
+    D3DXVECTOR3 vUpDir;
+    ZeroMemory(g_amCubeMapViewAdjust, 6*sizeof(D3DXMATRIX) );
+
+    vLookDir = D3DXVECTOR3( 1.0f, 0.0f, 0.0f );
+     vUpDir = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+   D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[0], &vEyePt, &vLookDir, &vUpDir );
+    vLookDir = D3DXVECTOR3( -1.0f, 0.0f, 0.0f );
+    vUpDir = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+    D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[1], &vEyePt, &vLookDir, &vUpDir );
+   vLookDir = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+    vUpDir = D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
+   D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[2], &vEyePt, &vLookDir, &vUpDir );
+    vLookDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+    vUpDir = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
+    D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[3], &vEyePt, &vLookDir, &vUpDir );
+    vLookDir = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
+    vUpDir = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+    D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[4], &vEyePt, &vLookDir, &vUpDir );
+  vLookDir = D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
+    vUpDir = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+    D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[5], &vEyePt, &vLookDir, &vUpDir );
 }

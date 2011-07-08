@@ -41,6 +41,8 @@ public:
 	bool InvalidateDeviceObjects();
 	//! GL Implementation of render function.
 	bool Render();
+	//! Draw the 2D fades to screen for debugging.
+	bool RenderFades();
 
 	// Implementing simul::sky::SkyTexturesCallback
 	virtual void SetSkyTextureSize(unsigned size);

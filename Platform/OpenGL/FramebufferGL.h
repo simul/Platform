@@ -56,7 +56,7 @@ public:
 	void Activate();
 	void Deactivate();
 	void DeactivateAndRender(bool blend);
-	void Render();
+	//void Render();
 	void Render(bool blend);
 	void DrawQuad(int w, int h);
 	// Get the dimension of the surface

@@ -4,15 +4,17 @@
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Graph/Camera/Camera.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
+#include "Simul/Platform/OpenGL/SimulGLSkyRenderer.h"
 #include "Simul/Sky/Float4.h"
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
-simul::graph::camera::Camera *cam=NULL;
 
 
 OpenGLRenderer::OpenGLRenderer(const char *license_key):width(0),height(0)
+,cam(NULL),y_vertical(false)
 {
 	simul::opengl::SetShaderPath("Media/GLSL/");		// path relative to the root
 	simulWeatherRenderer=new SimulGLWeatherRenderer(license_key);
+	SetYVertical(y_vertical);
 }
 
 OpenGLRenderer::~OpenGLRenderer()
@@ -28,8 +30,9 @@ void OpenGLRenderer::paintGL()
 	// Here we will generate the modelview matrix from the camera class:
     glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(cam->MakeViewMatrix(false));
-	float field_of_view=cam->GetVerticalFieldOfViewDegrees();
-	SetPerspectiveProjection(width,height,field_of_view);
+	glMatrixMode(GL_PROJECTION);
+	glLoadMatrixf(cam->MakeProjectionMatrix(1.f,250000.f,(float)width/(float)height,y_vertical));
+	glViewport(0,0,width,height);
 	if(simulWeatherRenderer.get())
 	{
 		simulWeatherRenderer->Update(0.0);
@@ -45,6 +48,10 @@ void OpenGLRenderer::paintGL()
 		simulHDRRenderer->StartRender();
 		simulWeatherRenderer->RenderSky(false,false);
 		simulWeatherRenderer->RenderClouds(false,false,false);
+
+		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades();
+
 		simulHDRRenderer->FinishRender();
 	}
 	glPopAttrib();
@@ -75,8 +82,10 @@ void OpenGLRenderer::resizeGL(int w,int h)
 
 void OpenGLRenderer::initializeGL()
 {
-	cam=new simul::graph::camera::Camera();
-	cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
+	//if(!cam)
+	//cam=new simul::graph::camera::Camera();
+	if(cam)
+		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 
 	simulWeatherRenderer->RestoreDeviceObjects();
 	simulHDRRenderer->RestoreDeviceObjects();
@@ -87,3 +96,11 @@ void OpenGLRenderer::SetCamera(simul::graph::camera::Camera *c)
 	cam=c;
 }
 
+void OpenGLRenderer::SetYVertical(bool y)
+{
+	y_vertical=y;
+	if(simulWeatherRenderer.get())
+		simulWeatherRenderer->SetYVertical(y);
+	//if(simulTerrainRenderer.get())
+	//	simulTerrainRenderer->SetYVertical(y_vertical);
+}

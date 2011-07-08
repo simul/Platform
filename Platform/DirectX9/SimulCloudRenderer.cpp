@@ -10,6 +10,10 @@
 
 #include "SimulCloudRenderer.h"
 #include "Simul/Base/Timer.h"
+// The framebuffer is used for writing 3D clouds to 2D textures for saving.
+#include "Framebuffer.h"
+#include "SaveTexture.h"
+#include "Simul/Base/StringToWString.h"
 #include <fstream>
 #include <math.h>
 
@@ -335,6 +339,7 @@ bool SimulCloudRenderer::InitEffects()
 	m_hTechniqueCloudsAndLightning		=GetDX9Technique(m_pCloudEffect,"simul_clouds_and_lightning");
 	m_hTechniqueCrossSectionXZ			=GetDX9Technique(m_pCloudEffect,"cross_section_xz");
 	m_hTechniqueCrossSectionXY			=GetDX9Technique(m_pCloudEffect,"cross_section_xy");
+	m_hTechniqueRenderTo2DForSaving		=GetDX9Technique(m_pCloudEffect,"render_to_2d_for_saving");
 
 	worldViewProj			=m_pCloudEffect->GetParameterByName(NULL,"worldViewProj");
 	eyePosition				=m_pCloudEffect->GetParameterByName(NULL,"eyePosition");
@@ -353,7 +358,6 @@ bool SimulCloudRenderer::InitEffects()
 //	cornerPos				=m_pCloudEffect->GetParameterByName(NULL,"cornerPos");
 //	texScales				=m_pCloudEffect->GetParameterByName(NULL,"texScales");
 	layerFade				=m_pCloudEffect->GetParameterByName(NULL,"layerFade");
-	altitudeTexCoord		=m_pCloudEffect->GetParameterByName(NULL,"altitudeTexCoord");
 	alphaSharpness			=m_pCloudEffect->GetParameterByName(NULL,"alphaSharpness");
 	//if(enable_lightning)
 	{
@@ -774,11 +778,7 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 		m_pCloudEffect->SetTexture(skyInscatterTexture			,sky_inscatter_texture);
 	}
 
-	// Mess with the proj matrix to extend the far clipping plane:
-	// According to the documentation for D3DXMatrixPerspectiveFovLH:
-	// proj._33=zf/(zf-zn)  = 1/(1-zn/zf)
-	// proj._43=-zn*zf/(zf-zn)
-	// so proj._43/proj._33=-zn.
+	// Mess with the proj matrix to extend the far clipping plane? not now
 
 	cam_pos=GetCameraPosVector(view);
 	simul::math::Vector3 wind_offset=cloudInterface->GetWindOffset();
@@ -840,7 +840,6 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	m_pCloudEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 	m_pCloudEffect->SetFloat	(cloudEccentricity	,cloudInterface->GetMieAsymmetry());
 	m_pCloudEffect->SetFloat	(fadeInterp			,fade_interp);
-	m_pCloudEffect->SetFloat	(altitudeTexCoord	,altitude_tex_coord);
 	m_pCloudEffect->SetFloat	(alphaSharpness		,cloudInterface->GetAlphaSharpness());
 
 	if(enable_lightning)
@@ -1070,7 +1069,6 @@ void SimulCloudRenderer::InternalRenderRaytrace(int buffer_index)
 		m_pCloudEffect->SetVector	(cloudOffset	,(const D3DXVECTOR4*)&cloud_offset);
 		D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
 		hr=m_pCloudEffect->SetFloat(fadeInterp,fade_interp);
-		hr=m_pCloudEffect->SetFloat(altitudeTexCoord,altitude_tex_coord);
 		if(skyInterface)
 		{
 //		hr=m_pCloudEffect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
@@ -1386,9 +1384,49 @@ void **SimulCloudRenderer::GetCloudTextures()
 {
 	return (void **)cloud_textures;
 }
+void SimulCloudRenderer::SaveCloudTexture(const char *filename)
+{
+	std::wstring fn=simul::base::StringToWString(filename);
+	std::wstring ext=L".png";
+	Framebuffer fb;
+	static D3DFORMAT f=D3DFMT_A8R8G8B8;
+	fb.SetFormat(f);
+	fb.SetWidthAndHeight(cloud_tex_width_x*2,cloud_tex_length_y*cloud_tex_depth_z);
+	fb.RestoreDeviceObjects(m_pd3dDevice);
+	fb.Activate();
+	static unsigned b=0x00000000;
+	HRESULT hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,b,1.f,0L);
+	m_pCloudEffect->SetTechnique(m_hTechniqueRenderTo2DForSaving);
+	D3DXMATRIX ident;
+	D3DXMatrixIdentity(&ident);
+	m_pd3dDevice->SetTransform(D3DTS_VIEW,&ident);
+	m_pd3dDevice->SetTransform(D3DTS_WORLD,&ident);
+	m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&ident);
+	m_pCloudEffect->SetMatrix(worldViewProj,&ident);
+
+
+
+	m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
+	m_pd3dDevice->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+	// blending for alpha:
+	m_pd3dDevice->SetRenderState(D3DRS_SRCBLENDALPHA,D3DBLEND_SRCALPHA);
+	m_pd3dDevice->SetRenderState(D3DRS_DESTBLENDALPHA,D3DBLEND_ZERO);
+
+	hr=DrawFullScreenQuad(m_pd3dDevice,m_pCloudEffect);
+
+	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
+
+	fb.Deactivate();
+	fn+=ext;
+	//hr=D3DXSaveSurfaceToFile((std::wstring(fn)+L".bmp").c_str(),D3DXIFF_BMP,fb.m_pHDRRenderTarget,NULL,NULL);
+	SaveTexture(fb.hdr_buffer_texture,(std::string(filename)+".png").c_str());
+	fb.InvalidateDeviceObjects();
+}
 
 bool SimulCloudRenderer::RenderCrossSections(int width)
 {
+//	SaveCloudTexture("cld");
 	HRESULT hr=S_OK;
 	int w=(width-16)/3;
 	int h=(cloudInterface->GetGridHeight()*w)/cloudInterface->GetGridWidth();

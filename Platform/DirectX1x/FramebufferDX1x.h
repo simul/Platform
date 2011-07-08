@@ -27,7 +27,7 @@ public:
 SIMUL_DIRECTX1x_EXPORT_CLASS FramebufferDX1x:public FramebufferInterface
 {
 public:
-	FramebufferDX1x(int w,int h);
+	FramebufferDX1x(int w=0,int h=0);
 	virtual ~FramebufferDX1x();
 	void SetWidthAndHeight(int w,int h);
 	void SetTargetWidthAndHeight(int w,int h);
@@ -54,7 +54,7 @@ protected:
 	ID3D1xDevice*						m_pd3dDevice;
 	ID3D1xDeviceContext *				m_pImmediateContext;
 	ID3D1xInputLayout*					m_pBufferVertexDecl;
-	ID3D1xBuffer						*m_pVertexBuffer;
+	ID3D1xBuffer*						m_pVertexBuffer;
 
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	ID3D1xEffect*						m_pTonemapEffect;
@@ -69,7 +69,7 @@ public:
 protected:
 	ID3D1xRenderTargetView*				m_pOldRenderTarget;
 	ID3D1xDepthStencilView*				m_pOldDepthSurface;
-	D3D11_VIEWPORT						m_OldViewports[4];
+	D3D1x_VIEWPORT						m_OldViewports[4];
 
 	//! The texture the scene is rendered to.
 public:

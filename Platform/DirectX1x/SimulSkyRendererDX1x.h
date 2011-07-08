@@ -52,7 +52,7 @@ public:
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
-	bool Render();
+	bool Render(bool cubemap);
 	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
@@ -82,6 +82,9 @@ public:
 	void CycleTexturesForward();
 	const char *GetDebugText() const;
 	void SetYVertical(bool y);
+
+	// for testing:
+	void DrawCubemap(ID3D1xShaderResourceView*		m_pCubeEnvMapSRV);
 protected:
 	bool y_vertical;
 	int cycle;
@@ -98,6 +101,7 @@ protected:
 
 	ID3D1xEffectMatrixVariable*			worldViewProj;
 	ID3D1xEffectTechnique*				m_hTechniqueSky;
+	ID3D1xEffectTechnique*				m_hTechniqueSky_CUBEMAP;
 	ID3D1xEffectTechnique*				m_hTechniqueFade3DTo2D;
 	ID3D1xEffectTechnique*				m_hTechniqueSun;
 	ID3D1xEffectTechnique*				m_hTechniqueQuery;
@@ -110,6 +114,9 @@ protected:
 	ID3D1xEffectScalarVariable*			skyInterp;
 	ID3D1xEffectScalarVariable*			altitudeTexCoord;
 	ID3D1xEffectVectorVariable*			sunlightColour;
+
+	ID3D1xEffectMatrixVariable*			projMatrix;
+	ID3D1xEffectMatrixVariable*			cubemapViews;
 
 	ID3D1xEffectShaderResourceVariable*	flareTexture;
 	ID3D1xEffectShaderResourceVariable*	skyTexture1;
@@ -148,4 +155,5 @@ protected:
 	bool CreateSkyEffect();
 	bool RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	bool RenderSun();
+void DrawCube();
 };

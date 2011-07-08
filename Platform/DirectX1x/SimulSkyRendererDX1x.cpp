@@ -19,7 +19,7 @@
 typedef std::basic_string<TCHAR> tstring;
 static tstring filepath=TEXT("");
 static DXGI_FORMAT sky_tex_format=DXGI_FORMAT_R16G16B16A16_FLOAT;
-
+extern 	D3DXMATRIX view_matrices[6];
 
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Sky.h"
@@ -88,6 +88,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x()
 	,m_pVertexBuffer(NULL)
 	,m_pSkyEffect(NULL)
 	,m_hTechniqueSky(NULL)
+	,m_hTechniqueSky_CUBEMAP(NULL)
 	,m_hTechniqueFade3DTo2D(NULL)
 	,m_hTechniqueSun(NULL)
 	,m_hTechniqueQuery(NULL)	
@@ -450,13 +451,18 @@ bool SimulSkyRendererDX1x::CreateSkyEffect()
 	else
 		defines["Z_VERTICAL"]="1";
 	B_RETURN(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"simul_sky.fx",defines));
-	m_hTechniqueSky		=m_pSkyEffect->GetTechniqueByName("simul_sky");
-	worldViewProj		=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
-	lightDirection		=m_pSkyEffect->GetVariableByName("lightDir")->AsVector();
-	mieRayleighRatio	=m_pSkyEffect->GetVariableByName("mieRayleighRatio")->AsVector();
-	hazeEccentricity	=m_pSkyEffect->GetVariableByName("hazeEccentricity")->AsScalar();
-	skyInterp			=m_pSkyEffect->GetVariableByName("skyInterp")->AsScalar();
-	altitudeTexCoord	=m_pSkyEffect->GetVariableByName("altitudeTexCoord")->AsScalar();
+	m_hTechniqueSky				=m_pSkyEffect->GetTechniqueByName("simul_sky");
+	m_hTechniqueSky_CUBEMAP		=m_pSkyEffect->GetTechniqueByName("simul_sky_CUBEMAP");
+	worldViewProj				=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
+
+	projMatrix					=m_pSkyEffect->GetVariableByName("proj")->AsMatrix();
+	cubemapViews				=m_pSkyEffect->GetVariableByName("cubemapViews")->AsMatrix();
+
+	lightDirection				=m_pSkyEffect->GetVariableByName("lightDir")->AsVector();
+	mieRayleighRatio			=m_pSkyEffect->GetVariableByName("mieRayleighRatio")->AsVector();
+	hazeEccentricity			=m_pSkyEffect->GetVariableByName("hazeEccentricity")->AsScalar();
+	skyInterp					=m_pSkyEffect->GetVariableByName("skyInterp")->AsScalar();
+	altitudeTexCoord			=m_pSkyEffect->GetVariableByName("altitudeTexCoord")->AsScalar();
 	
 	m_hTechniqueFade3DTo2D=m_pSkyEffect->GetTechniqueByName("simul_fade_3d_to_2d");
 
@@ -481,8 +487,8 @@ extern void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX
 
 bool SimulSkyRendererDX1x::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians)
 {
-	float Yaw=atan2(dir.x,dir.y);
-	float Pitch=-asin(dir.z);
+	float Yaw=atan2(dir.x,y_vertical?dir.z:dir.y);
+	float Pitch=-asin(y_vertical?dir.y:dir.z);
 	HRESULT hr=S_OK;
 	return (hr==S_OK);
 	/*
@@ -548,8 +554,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 	float zNear=-proj._43/proj._33;
 	static float ff=0.0001f;
 	float zFar=(1.f+ff)/tan(sun_angular_size);
-	proj._33=zFar/(zFar-zNear);
-	proj._43=-zNear*zFar/(zFar-zNear);
+	FixProjectionMatrix(proj,zFar*ff,zFar,IsYVertical());
 /*
 	// Start the query
 	d3dQuery->Begin();
@@ -569,7 +574,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 simul::sky::float4 sunlight;
 bool SimulSkyRendererDX1x::RenderSun()
 {
-	float alt_km=0.001f*cam_pos.y;
+	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	sunlight=GetSkyInterface()->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
@@ -598,7 +603,7 @@ HRESULT hr=S_OK;
 
 bool SimulSkyRendererDX1x::RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
-	float alt_km=0.001f*cam_pos.y;
+	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 
 	if(do_lighting)
 		ApplyPass(m_hTechniquePlanet->GetPassByIndex(0));
@@ -613,7 +618,7 @@ bool SimulSkyRendererDX1x::RenderPlanet(void* tex,float rad,const float *dir,con
 	planet_dir4/=simul::sky::length(planet_dir4);
 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
-	float planet_elevation=asin(planet_dir4.y);
+	float planet_elevation=asin(y_vertical?planet_dir4.y:planet_dir4.z);
 	planet_colour*=GetSkyInterface()->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 	D3DXVECTOR4 planet_dir(dir);
 
@@ -632,7 +637,7 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 	if(!m_pSkyEffect)
 		return (hr==S_OK);
 	float magnitude=exposure*(1.f-sun_occlusion);
-	float alt_km=0.001f*cam_pos.y;
+	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	sunlight=GetSkyInterface()->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
@@ -665,7 +670,7 @@ bool SimulSkyRendererDX1x::Render2DFades()
 	B_RETURN(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 	loss_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
 	loss_2d->Activate();
-	// Clear the screen to black:
+// Clear the screen to black:
     float clearColor[4]={0.0,0.0,0.0,0.0};
 	m_pImmediateContext->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
 	if(loss_2d->m_pBufferDepthSurface)
@@ -687,14 +692,18 @@ bool SimulSkyRendererDX1x::Render2DFades()
 	inscatter_2d->RenderBufferToCurrentTarget();
 	inscatter_2d->Deactivate();
 	
+	B_RETURN(fadeTexture1->SetResource(NULL));
+	B_RETURN(fadeTexture2->SetResource(NULL));
+	B_RETURN(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 	return true;
 }
 
-bool SimulSkyRendererDX1x::Render()
+bool SimulSkyRendererDX1x::Render(bool cubemap)
 {
 	HRESULT hr=S_OK;
-	Render2DFades();
-	D3DXMATRIX tmp1, tmp2,wvp;
+	if(!cubemap)
+		Render2DFades();
+	D3DXMATRIX tmp1,tmp2,wvp;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
 	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 	D3DXMatrixIdentity(&world);
@@ -703,24 +712,28 @@ bool SimulSkyRendererDX1x::Render()
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
 // Fix projection
-	float zNear=-proj._43/proj._33;
-	float zFar=1000.f;
-	proj._33=zFar/(zFar-zNear);
-	proj._43=-zNear*zFar/(zFar-zNear);
+	FixProjectionMatrix(proj,1000.f,IsYVertical());
 
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
-	worldViewProj->AsMatrix()->SetMatrix(&wvp._11);
-
-
+	worldViewProj->SetMatrix(&wvp._11);
+	if(cubemap)
+	{
+		D3DXMATRIX cube_proj;
+		D3DXMatrixPerspectiveFovLH(&cube_proj,
+			3.1415926536f/2.f,
+			1.f,
+			1.f,
+			200000.f);
+		B_RETURN(projMatrix->SetMatrix(&cube_proj._11));
+		B_RETURN(cubemapViews->SetMatrixArray((const float*)view_matrices,0,6));
+	}
 	PIXBeginNamedEvent(0,"Render Sky");
 	skyTexture1->SetResource(sky_textures_SRV[0]);
 	skyTexture2->SetResource(sky_textures_SRV[1]);
 
-	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
-
 	simul::sky::float4 mie_rayleigh_ratio=GetSkyInterface()->GetMieRayleighRatio();
 	simul::sky::float4 sun_dir(GetSkyInterface()->GetDirectionToSun());
-	//if(y_vertical)
+	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 
 	lightDirection->SetFloatVector(sun_dir);
@@ -728,8 +741,35 @@ bool SimulSkyRendererDX1x::Render()
 	hazeEccentricity->SetFloat	(GetSkyInterface()->GetMieEccentricity());
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
-	hr=ApplyPass(m_hTechniqueSky->GetPassByIndex(0));
+	if(cubemap)
+		hr=ApplyPass(m_hTechniqueSky_CUBEMAP->GetPassByIndex(0));
+	else
+		hr=ApplyPass(m_hTechniqueSky->GetPassByIndex(0));
 
+	DrawCube();
+
+	PIXEndNamedEvent();
+	return (hr==S_OK);
+}
+
+void SimulSkyRendererDX1x::DrawCubemap(ID3D1xShaderResourceView*		m_pCubeEnvMapSRV)
+{
+	D3DXMATRIX tmp1,tmp2,wvp;
+	D3DXMatrixTranslation(&world,0.f,495.f,-40.f);
+	MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	worldViewProj->SetMatrix(&wvp._11);
+	ID3D1xEffectTechnique*				tech;
+	tech				=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
+	ID3D1xEffectShaderResourceVariable*	cubeTexture;
+	cubeTexture			=m_pSkyEffect->GetVariableByName("cubeTexture")->AsShaderResource();
+	cubeTexture->SetResource(m_pCubeEnvMapSRV);
+	HRESULT hr=ApplyPass(tech->GetPassByIndex(0));
+	DrawCube();
+}
+
+void SimulSkyRendererDX1x::DrawCube()
+{
+	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 	UINT stride = sizeof(Vertex_t);
 	UINT offset = 0;
     UINT Strides[1];
@@ -748,9 +788,6 @@ bool SimulSkyRendererDX1x::Render()
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	m_pImmediateContext->Draw(36,0);
-
-	PIXEndNamedEvent();
-	return (hr==S_OK);
 }
 
 void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

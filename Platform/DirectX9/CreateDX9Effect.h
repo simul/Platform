@@ -46,6 +46,8 @@ extern HRESULT SIMUL_DIRECTX9_EXPORT RenderTexture(IDirect3DDevice9 *m_pd3dDevic
 extern void SIMUL_DIRECTX9_EXPORT SetBundleShaders(bool b);
 extern void SIMUL_DIRECTX9_EXPORT SetResourceModule(const char *txt);
 extern void SIMUL_DIRECTX9_EXPORT FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical);
+extern void SIMUL_DIRECTX9_EXPORT FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical);
+
 extern void SIMUL_DIRECTX9_EXPORT SetResourceModule(const char *txt);
 
 extern void SIMUL_DIRECTX9_EXPORT MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);

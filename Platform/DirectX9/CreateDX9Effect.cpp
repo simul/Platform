@@ -25,7 +25,7 @@
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring shader_path=TEXT("");
 	static tstring texture_path=TEXT("");
-	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
+	static DWORD default_effect_flags=0;//D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #endif
 	#include <vector>
 #include <iostream>
@@ -342,6 +342,8 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 	}
 	if(FAILED(hr))
 	{
+		const TCHAR *err=DXGetErrorString(hr);
+		std::cerr<<err<<std::endl;
 		if(GetResourceId)
 			hr=CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename),defines);
 		if(FAILED(hr))
@@ -600,6 +602,20 @@ void FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical)
 	}
 	proj._43=-zNear*zFar/(zFar-zNear);
 }
+
+void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical)
+{
+	if(y_vertical)
+	{
+		proj._33=zFar/(zFar-zNear);
+	}
+	else
+	{
+		proj._33=-zFar/(zFar-zNear);
+	}
+	proj._43=-zNear*zFar/(zFar-zNear);
+}
+
 LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl=NULL;
 
 HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)

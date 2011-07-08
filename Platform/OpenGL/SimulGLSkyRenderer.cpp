@@ -397,6 +397,65 @@ ERROR_CHECK
 	return true;
 }
 
+bool SimulGLSkyRenderer::RenderFades()
+{
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+ERROR_CHECK
+	glUseProgram(0);
+	glEnable(GL_TEXTURE_2D);
+	for(int i=0;i<2;i++)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		if(i==0)
+			glBindTexture(GL_TEXTURE_2D,loss_2d.GetColorTex());
+		else
+			glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
+		ERROR_CHECK
+		float w=1.f/8.f;
+		float h=w;
+		float x=(float)i*w;
+		float y=1.f/h;
+		
+		ERROR_CHECK		
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0,1.0,0,1.0,-1.0,1.0);
+		glMatrixMode(GL_TEXTURE);
+		glLoadIdentity();
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+
+		glBegin(GL_QUADS);
+		glTexCoord2f(x,y+h);
+		glVertex2f(0.f,1.f);
+		glTexCoord2f(x+w,y+h);
+		glVertex2f(1.f,1.f);
+		glTexCoord2f(x+w,y);
+		glVertex2f(1.f,0.f);
+		glTexCoord2f(x,y);
+		glVertex2f(0.f,0.f);
+		glEnd();
+		ERROR_CHECK
+	}
+ERROR_CHECK
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,NULL);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D,NULL);
+	glDisable(GL_TEXTURE_2D);
+ERROR_CHECK
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+ERROR_CHECK
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+ERROR_CHECK
+return true;
+}
+
 bool SimulGLSkyRenderer::Render()
 {
 	//Render2DFades();

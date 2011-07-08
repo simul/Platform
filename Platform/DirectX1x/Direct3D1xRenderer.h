@@ -64,6 +64,7 @@ public:
 	{
 		camera=c;
 	}
+	void	SetYVertical(bool y);
 	// D3D11CallbackInterface
 	virtual bool	IsD3D11DeviceAcceptable(	const CD3D11EnumAdapterInfo *AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo *DeviceInfo,DXGI_FORMAT BackBufferFormat,bool bWindowed);
 	virtual bool	ModifyDeviceSettings(		DXUTDeviceSettings* pDeviceSettings);
@@ -77,6 +78,7 @@ public:
 	virtual void    OnFrameMove(double fTime,float fTimeStep);
 	virtual const	char *GetDebugText() const;
 protected:
+	bool y_vertical;
 	simul::graph::camera::Camera *camera;
 	float aspect;
 	simul::base::SmartPtr<SimulWeatherRendererDX1x> simulWeatherRenderer;

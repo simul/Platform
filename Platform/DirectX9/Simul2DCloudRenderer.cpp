@@ -369,15 +369,7 @@ bool Simul2DCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_f
 	m_pCloudEffect->SetTexture(imageTexture					,image_texture);
 
 	// Mess with the proj matrix to extend the far clipping plane:
-	// According to the documentation for D3DXMatrixPerspectiveFovLH:
-	// proj._33=zf/(zf-zn)  = 1/(1-zn/zf)
-	// proj._43=-zn*zf/(zf-zn)
-	// so proj._43/proj._33=-zn.
-
-	float zNear=-proj._43/proj._33;
-	float zFar=helper->GetMaxCloudDistance()*1.1f;
-	proj._33=zFar/(zFar-zNear);
-	proj._43=-zNear*zFar/(zFar-zNear);
+	 FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
 		
 	//set up matrices
 	D3DXMATRIX tmp1, tmp2;

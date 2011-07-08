@@ -26,11 +26,20 @@
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
 
+D3DXMATRIX view_matrices[6];
+
 SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(const char *lic,
 		bool usebuffer,bool tonemap,int w,int h,bool sky,bool clouds3d,bool clouds2d,bool rain) :
 	BaseWeatherRenderer(lic),
 	framebuffer(w,h),
 	m_pd3dDevice(NULL),
+	m_pImmediateContext(NULL),
+	m_pCubeEnvDepthMap(NULL),
+	m_pCubeEnvMap(NULL),
+	m_pCubeEnvMapRTV(NULL),
+	m_pCubeEnvDepthMapDSV(NULL),
+	m_pCubeEnvMapSRV(NULL),
+
 	simulSkyRenderer(NULL),
 	simulCloudRenderer(NULL),
 	show_3d_clouds(clouds3d),
@@ -93,7 +102,20 @@ bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapC
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=dev;
+	
+#ifdef DX10
+	m_pImmediateContext=dev;
+#else
+	SAFE_RELEASE(m_pImmediateContext);
+	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+#endif
+
 	framebuffer.RestoreDeviceObjects(m_pd3dDevice);
+	for(int i=0;i<6;i++)
+	{
+		cubemap_framebuffers[i].RestoreDeviceObjects(m_pd3dDevice);
+		cubemap_framebuffers[i].SetWidthAndHeight(64,64);
+	}
 	pSwapChain=swapChain;
 // Get the back buffer (screen) format so we know how to render the weather buffer to the screen:
 	ID3D1xTexture2D *pBackBuffer=NULL;
@@ -131,6 +153,10 @@ bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapC
 	
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);*/
+
+	MakeCubeMatrices(view_matrices);
+	if(!SetupCubemap())
+		return false;
 	return (hr==S_OK);
 }
 
@@ -138,6 +164,10 @@ bool SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	framebuffer.InvalidateDeviceObjects();
+	for(int i=0;i<6;i++)
+	{
+		cubemap_framebuffers[i].InvalidateDeviceObjects();
+	}
 	if(simulSkyRenderer)
 		simulSkyRenderer->InvalidateDeviceObjects();
 	if(simulCloudRenderer)
@@ -150,6 +180,14 @@ bool SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();*/
 //	if(m_pTonemapEffect)
 //        hr=m_pTonemapEffect->OnLostDevice();
+      
+// Free the cubemap resources. 
+	SAFE_RELEASE(m_pImmediateContext);
+	SAFE_RELEASE(m_pCubeEnvDepthMap);
+	SAFE_RELEASE(m_pCubeEnvMap);
+	SAFE_RELEASE(m_pCubeEnvMapRTV);
+	SAFE_RELEASE(m_pCubeEnvDepthMapDSV);
+	SAFE_RELEASE(m_pCubeEnvMapSRV);
 	return (hr==S_OK);
 }
 
@@ -205,36 +243,149 @@ SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
     return (hr==S_OK);
 }
 */
+const int ENVMAPSIZE=64;
+const int MIPLEVELS=1;
+bool SimulWeatherRendererDX1x::SetupCubemap()
+{
+	HRESULT hr=S_OK;
+	// Create cubic depth stencil texture
+	D3D1x_TEXTURE2D_DESC dstex;
+	dstex.Width = ENVMAPSIZE;
+	dstex.Height = ENVMAPSIZE;
+	dstex.MipLevels = 1;
+	dstex.ArraySize = 6;
+	dstex.SampleDesc.Count = 1;
+	dstex.SampleDesc.Quality = 0;
+	dstex.Format = DXGI_FORMAT_R24G8_TYPELESS;//DXGI_FORMAT_D32_FLOAT;
+	dstex.Usage = D3D1x_USAGE_DEFAULT;
+	dstex.BindFlags = D3D1x_BIND_DEPTH_STENCIL | D3D1x_BIND_SHADER_RESOURCE;
+	dstex.CPUAccessFlags = 0;
+	dstex.MiscFlags = D3D1x_RESOURCE_MISC_TEXTURECUBE;
+ 
+	B_RETURN( m_pd3dDevice->CreateTexture2D( &dstex, NULL, &m_pCubeEnvDepthMap ));
+	//
+
+	// Create the depth stencil view for the entire cube
+	D3D1x_DEPTH_STENCIL_VIEW_DESC DescDS;
+    ZeroMemory( &DescDS, sizeof( DescDS ) );
+	DescDS.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DescDS.ViewDimension = D3D1x_DSV_DIMENSION_TEXTURE2DARRAY;
+	DescDS.Texture2DArray.FirstArraySlice = 0;
+	DescDS.Texture2DArray.ArraySize = 6;
+	DescDS.Texture2DArray.MipSlice = 0;
+ 
+	B_RETURN( m_pd3dDevice->CreateDepthStencilView(m_pCubeEnvDepthMap, &DescDS, &m_pCubeEnvDepthMapDSV ));
+	 
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+	// Create the cube map for env map render target
+	dstex.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	dstex.BindFlags = D3D1x_BIND_RENDER_TARGET | D3D1x_BIND_SHADER_RESOURCE;
+	dstex.MiscFlags = D3D1x_RESOURCE_MISC_GENERATE_MIPS | D3D1x_RESOURCE_MISC_TEXTURECUBE;
+	dstex.MipLevels = MIPLEVELS;
+ 
+	B_RETURN(m_pd3dDevice->CreateTexture2D(&dstex,NULL,&m_pCubeEnvMap));
+
+	// Create the 6-face render target view
+	D3D1x_RENDER_TARGET_VIEW_DESC DescRT;
+	DescRT.Format = dstex.Format;
+	DescRT.ViewDimension = D3D1x_RTV_DIMENSION_TEXTURE2DARRAY;
+	DescRT.Texture2DArray.FirstArraySlice = 0;
+	DescRT.Texture2DArray.ArraySize = 6;
+	DescRT.Texture2DArray.MipSlice = 0;
+	 
+	B_RETURN( m_pd3dDevice->CreateRenderTargetView(m_pCubeEnvMap, &DescRT, &m_pCubeEnvMapRTV ));
+
+	// Create the shader resource view for the cubic env map
+	D3D1x_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+	ZeroMemory( &SRVDesc, sizeof(SRVDesc) );
+	SRVDesc.Format = dstex.Format;
+	SRVDesc.ViewDimension = D3D1x_SRV_DIMENSION_TEXTURECUBE;
+	SRVDesc.TextureCube.MipLevels = MIPLEVELS;
+	SRVDesc.TextureCube.MostDetailedMip = 0;
+	 
+	B_RETURN( m_pd3dDevice->CreateShaderResourceView(m_pCubeEnvMap, &SRVDesc, &m_pCubeEnvMapSRV ));
+
+	return true;
+}
+bool SimulWeatherRendererDX1x::RenderCubemap()
+{
+#if 0
+	for(int i=0;i<6;i++)
+	{
+		cubemap_framebuffers[i].Activate();
+		if(simulSkyRenderer)
+		{
+			simulSkyRenderer->SetMatrices(view_matrices[i],proj);
+			hr=simulSkyRenderer->Render(true);
+		}
+		cubemap_framebuffers[i].Deactivate();
+	}
+#else
+	HRESULT hr=S_OK;
+	ID3D1xRenderTargetView*				m_pOldRenderTarget;
+	ID3D1xDepthStencilView*				m_pOldDepthSurface;
+	D3D1x_VIEWPORT						m_OldViewports[4];
+	unsigned int num_v=0;
+	m_pImmediateContext->RSGetViewports(&num_v,NULL);
+	if(num_v<=4)
+		m_pImmediateContext->RSGetViewports(&num_v,m_OldViewports);
+
+	m_pOldRenderTarget	=NULL;
+	m_pOldDepthSurface	=NULL;
+	m_pImmediateContext->OMGetRenderTargets(	1,
+												&m_pOldRenderTarget,
+												&m_pOldDepthSurface
+												);
+	m_pImmediateContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV,m_pCubeEnvDepthMapDSV);
+	D3D11_VIEWPORT viewport;
+		// Setup the viewport for rendering.
+	viewport.Width = (float)ENVMAPSIZE;
+	viewport.Height = (float)ENVMAPSIZE;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+
+	// Create the viewport.
+	m_pImmediateContext->RSSetViewports(1, &viewport);
+	if(simulSkyRenderer)
+	{
+		simulSkyRenderer->SetMatrices(view,proj);
+		hr=simulSkyRenderer->Render(true);
+	}
+	
+	//ID3D11RenderTargetView* rTargets[2] = { m_pOldRenderTarget, NULL };
+	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
+	SAFE_RELEASE(m_pOldRenderTarget)
+	SAFE_RELEASE(m_pOldDepthSurface)
+	// Create the viewport.
+	m_pImmediateContext->RSSetViewports(1,m_OldViewports);
+#endif
+	return true;
+}
+
+void *SimulWeatherRendererDX1x::GetCubemap()
+{
+	return m_pCubeEnvMapSRV;
+}
 
 bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 {
 	if(buffered)
 	{
 		framebuffer.Activate();
+	}
 	if(simulSkyRenderer)
-		simulSkyRenderer->SetMatrices(view,buffer_proj);
+		simulSkyRenderer->SetMatrices(view,proj);
 	if(simulCloudRenderer)
-		simulCloudRenderer->SetMatrices(view,buffer_proj);
+		simulCloudRenderer->SetMatrices(view,proj);
 /*	if(simul2DCloudRenderer)
 		simul2DCloudRenderer->SetMatrices(view,proj);
 	if(simulPrecipitationRenderer)
 		simulPrecipitationRenderer->SetMatrices(view,proj);
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->SetMatrices(view,proj);*/
-	}
-	else
-	{
-	if(simulSkyRenderer)
-		simulSkyRenderer->SetMatrices(view,screen_proj);
-	if(simulCloudRenderer)
-		simulCloudRenderer->SetMatrices(view,screen_proj);
-/*	if(simul2DCloudRenderer)
-		simul2DCloudRenderer->SetMatrices(view,proj);
-	if(simulPrecipitationRenderer)
-		simulPrecipitationRenderer->SetMatrices(view,proj);
-	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->SetMatrices(view,proj);*/
-	}
+	
 	if(simulSkyRenderer)
 	{
 		float cloud_occlusion=0;
@@ -246,7 +397,7 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 	}
 	HRESULT hr=S_OK;
 	if(simulSkyRenderer)
-		hr=simulSkyRenderer->Render();
+		hr=simulSkyRenderer->Render(false);
 	if(simulCloudRenderer)
 		hr=simulCloudRenderer->Render(false,false,false);
 	if(buffered)
@@ -264,10 +415,7 @@ void SimulWeatherRendererDX1x::Enable(bool sky,bool clouds3d,bool clouds2d,bool 
 void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
-	screen_proj=p;
-	buffer_proj=p;
-	//buffer_proj._11/=(float)BufferWidth;//ScreenWidth;///(float)BufferWidth;
-//	buffer_proj._22/=(float)BufferHeight;//ScreenHeight;///(float)BufferHeight;
+	proj=p;
 }
 
 void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()

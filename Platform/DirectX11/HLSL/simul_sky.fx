@@ -1,6 +1,8 @@
 cbuffer cbPerObject : register(b0)
 {
 	matrix worldViewProj : packoffset(c0);
+	matrix proj : packoffset(c32);
+	matrix cubemapViews[6] : packoffset(c48);
 };
 
 Texture2D skyTexture1;
@@ -28,6 +30,9 @@ SamplerState fadeSamplerState
 	AddressV = Mirror;
 	AddressW = Clamp;
 };
+
+TextureCube cubeTexture;
+
 //------------------------------------
 // Parameters 
 //------------------------------------
@@ -53,6 +58,14 @@ struct vertexOutput
     float3 wDirection		: TEXCOORD0;
 };
 
+struct geomOutput
+{
+    float4 hPosition		: SV_POSITION;
+    float3 wDirection		: TEXCOORD0;
+    uint RTIndex			: SV_RenderTargetArrayIndex;
+};
+
+
 //------------------------------------
 // Vertex Shader 
 //------------------------------------
@@ -64,10 +77,62 @@ vertexOutput VS_Main(vertexInput IN)
     return OUT;
 }
 
+vertexOutput VS_Cubemap(vertexInput IN) 
+{
+    vertexOutput OUT;
+	// World matrix would be identity.
+    OUT.hPosition=float4(IN.position.xyz,1.0);
+    OUT.wDirection=normalize(IN.position.xyz);
+    return OUT;
+}
+
+[maxvertexcount(3)]
+void GS_Main( triangle vertexOutput input[3], inout TriangleStream<geomOutput> CubeMapStream, uint PrimitiveId : SV_PrimitiveID )
+{
+	geomOutput output;
+	output.RTIndex = 0;
+	for( int v = 0; v < 3; v++ )
+	{
+		output.hPosition = input[v].hPosition;
+		output.wDirection = input[v].wDirection;
+		CubeMapStream.Append( output );
+	}
+	CubeMapStream.RestartStrip();
+}
+
+[maxvertexcount(18)]
+void GS_Cubemap( triangle vertexOutput input[3], inout TriangleStream<geomOutput> CubeMapStream, uint PrimitiveId : SV_PrimitiveID )
+{
+	for( int f = 0; f < 6; ++f )
+	{
+		// Compute screen coordinates
+		geomOutput output;
+	 
+		output.RTIndex = f;
+	 
+		for( int v = 0; v < 3; v++ )
+		{
+			output.hPosition = mul(input[v].hPosition,cubemapViews[f]);
+			output.hPosition = mul(output.hPosition,proj);
+			output.wDirection = input[v].wDirection;
+	 
+			CubeMapStream.Append( output );
+		}
+	 
+		CubeMapStream.RestartStrip();
+	}
+}
+
+float4 PS_Test( geomOutput IN): SV_TARGET
+{
+	return float4(1.f,0,0,1.f);
+}
+
 float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
-	return 0.5*0.079577+0.5*(1.f-g2)/(4.f*pi*pow(1.f+g2-2.f*g*cos0,1.5f));
+	float u=1.f+g2-2.f*g*cos0;
+	return 0.5*0.079577+0.5*(1.f-g2)/(4.f*pi*sqrt(u*u*u));
 }
 
 float3 InscatterFunction(float4 inscatter_factor,float cos0)
@@ -78,6 +143,31 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 		/(float3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
 	float3 colour=BetaTotal*inscatter_factor.rgb;
 	return colour;
+}
+
+float4 PS_Cubemap( vertexOutput IN): SV_TARGET
+{
+	float3 view=(IN.wDirection.xyz);
+	float4 colour=cubeTexture.Sample(samplerState,view);
+	return float4(colour.rgb,1.f);
+}
+
+float4 PS_Mainc( geomOutput IN): SV_TARGET
+{
+	float3 view=(IN.wDirection.xyz);
+#ifdef Z_VERTICAL
+	float sine	=view.z;
+#else
+	float sine	=view.y;
+#endif
+	float2 texcoord	=float2(0.5f*(1.f-sine),altitudeTexCoord);
+	float4 insc1=skyTexture1.Sample(samplerState,texcoord);
+	float4 insc2=skyTexture2.Sample(samplerState,texcoord);
+	float4 insc=lerp(insc1,insc2,skyInterp);
+	float cos0=dot(lightDir.xyz,view.xyz);
+	float3 colour=InscatterFunction(insc,cos0);
+
+	return float4(colour.rgb,1.f);
 }
 
 float4 PS_Main( vertexOutput IN): SV_TARGET
@@ -192,6 +282,11 @@ DepthStencilState DisableDepth
 	DepthEnable = FALSE;
 	DepthWriteMask = ZERO;
 }; 
+DepthStencilState EnableDepth
+{
+	DepthEnable = TRUE;
+	DepthWriteMask = ALL;
+}; 
 BlendState DontBlend
 {
 	BlendEnable[0] = FALSE;
@@ -201,6 +296,12 @@ BlendState DoBlend
 	BlendEnable[0] = TRUE;
 	SrcBlend = One;
 	DestBlend = One;
+};
+BlendState PartBlend
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = SRC_ALPHA;
+	DestBlend = INV_SRC_ALPHA;
 };
 RasterizerState RenderNoCull { CullMode = none; };
 
@@ -216,12 +317,26 @@ technique11 simul_sky
 		SetPixelShader(CompileShader(ps_4_0,PS_Main()));
     }
 }
-technique11 simul_fade_3d_to_2d
+
+technique11 simul_sky_CUBEMAP
 {
     pass p0 
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
+	//	SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Cubemap()));
+        SetGeometryShader(CompileShader(gs_4_0,GS_Cubemap()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Mainc()));
+    }
+}
+
+technique11 simul_fade_3d_to_2d
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		//SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
@@ -280,5 +395,17 @@ technique11 simul_planet
 		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+    }
+}
+technique11 draw_cubemap
+{
+    pass p0 
+    {		
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Cubemap()));
+		SetDepthStencilState( EnableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }

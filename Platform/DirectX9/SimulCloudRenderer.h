@@ -61,6 +61,8 @@ public:
 	bool Render(bool cubemap,bool depth_testing,bool default_fog,int buffer_index);
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
+	//! Save the first keyframe texture into a 2D image file by stacking X-Z slices vertically.
+	void SaveCloudTexture(const char *filename);
 	//! Draw clouds as horizontal layers
 	bool RenderHorizontal(bool cubemap);
 #if defined(XBOX) || defined(DOXYGEN)
@@ -157,6 +159,7 @@ protected:
 	D3DXHANDLE						m_hTechniqueRaytraceWithLightning;	
 	D3DXHANDLE						m_hTechniqueCrossSectionXZ;	
 	D3DXHANDLE						m_hTechniqueCrossSectionXY;	
+	D3DXHANDLE						m_hTechniqueRenderTo2DForSaving;	
 	
 	LPD3DXEFFECT					m_pGPULightingEffect;
 
@@ -176,7 +179,6 @@ protected:
 	D3DXHANDLE					distance;
 	D3DXHANDLE					layerFade;
 	D3DXHANDLE					alphaSharpness;
-	D3DXHANDLE					altitudeTexCoord;
 						
 	D3DXHANDLE					lightningMultipliers;
 	D3DXHANDLE					lightningColour;

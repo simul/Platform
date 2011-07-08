@@ -43,7 +43,7 @@ void SaveTexture(LPDIRECT3DTEXTURE9 texture,const char *txt)
 
 	int pos=filename.find_last_of('.');
 	std::string ext=filename.substr(pos,filename.length()-pos);
-	std::string root=filename.substr(0,pos-1);
+	std::string root=filename.substr(0,pos);
 	int number=0;
 	while(FileExists(filename))
 	{

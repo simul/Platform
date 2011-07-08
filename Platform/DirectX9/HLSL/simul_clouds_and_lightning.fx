@@ -125,7 +125,6 @@ float3 cornerPos;
 float3 texScales;
 float layerFade;
 float cloudEccentricity=0.87f;
-float altitudeTexCoord=0;
 float alphaSharpness=0.5f;
 #ifndef MAX_FADE_DISTANCE_METRES
 	#define MAX_FADE_DISTANCE_METRES (200000.f)
@@ -312,14 +311,13 @@ float4 PS_Clouds( vertexOutput IN): color
 	final*=loss;
 	final+=inscatter;
 
-	final*=opacity;
     return float4(final,opacity);
 }
 
 struct vertexInputCS
 {
     float3 position			: POSITION;
-    float4 colour			: COLOR;
+   // float4 colour			: COLOR;
     float2 texCoords		: TEXCOORD0;
 };
 
@@ -327,17 +325,17 @@ struct vertexOutputCS
 {
     float4 hPosition		: POSITION;
     float3 texCoords		: TEXCOORD0;
-    float4 colour			: TEXCOORD2;
+   // float4 colour			: TEXCOORD2;
 };
 
 vertexOutputCS VS_CrossSection(vertexInputCS IN)
 {
     vertexOutputCS OUT;
-    OUT.hPosition = float4(1,1,0,1.0);//mul(worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.hPosition = mul(worldViewProj,float4(IN.position.xyz,1.0));
 
-	OUT.texCoords.xy=float2(1,1);
+	OUT.texCoords.xy=IN.texCoords;
 	OUT.texCoords.z=1;
-	OUT.colour=IN.colour;
+	//OUT.colour=IN.colour;
     return OUT;
 }
 
@@ -379,6 +377,15 @@ float4 PS_CrossSectionXY( vertexOutputCS IN): color
 		accum+=colour;
 	}
     return float4(accum,1);
+}
+
+float4 PS_RenderTo2D( vertexOutputCS IN): color
+{
+	float c=IN.texCoords.y*8.0;
+	float3 texc=float3(IN.texCoords.x,0,0);
+	float4 density=tex3D(cloud_density_1,texc);
+	density.b=0;
+    return density;
 }
 
 float4 PS_Mask( vertexOutput IN): color
@@ -540,7 +547,7 @@ technique simul_clouds
 		AlphaTestEnable=false;
 		FillMode = Solid;
         AlphaBlendEnable = true;
-		SrcBlend = One;
+		SrcBlend = SrcAlpha;
 		DestBlend = InvSrcAlpha;
 		
 		// We would LIKE to do the following:
@@ -692,3 +699,19 @@ technique raytrace_clouds_and_lightning
     }
 }
 
+technique render_to_2d_for_saving
+{
+    pass p0 
+    {
+		zenable = false;
+		zfunc = lessequal;
+		ZWriteEnable = false;
+        CullMode = None;
+		AlphaTestEnable=false;
+		FillMode = Solid;
+        AlphaBlendEnable = false;
+
+		VertexShader = compile vs_3_0 VS_CrossSection();
+		PixelShader  = compile ps_3_0 PS_RenderTo2D();
+    }
+}

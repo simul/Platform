@@ -13,6 +13,17 @@ Framebuffer::Framebuffer()
 	,m_pOldRenderTarget(NULL)
 	,m_pOldDepthSurface(NULL)
 {
+#ifndef XBOX
+	hdr_format=D3DFMT_A16B16G16R16F;
+#else
+	hdr_format=D3DFMT_LIN_A16B16G16R16F;
+#endif
+	//if(hr!=S_OK)
+#ifndef XBOX
+		hdr_format=D3DFMT_A32B32G32R32F;
+#else
+		hdr_format=D3DFMT_LIN_A32B32G32R32F;
+#endif
 }
 
 Framebuffer::~Framebuffer()
@@ -25,24 +36,17 @@ void Framebuffer::SetWidthAndHeight(int w,int h)
 	Height=h;
 }
 
+void Framebuffer::SetFormat(D3DFORMAT f)
+{
+	hdr_format=f;
+}
+
 bool Framebuffer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	if(!Width||!Height)
 		return false;
-#ifndef XBOX
-	D3DFORMAT hdr_format=D3DFMT_A16B16G16R16F;
-#else
-	D3DFORMAT hdr_format=D3DFMT_LIN_A16B16G16R16F;
-#endif
 	HRESULT hr=-1;//CanUse16BitFloats(pd3dDevice);
-
-	if(hr!=S_OK)
-#ifndef XBOX
-		hdr_format=D3DFMT_A32B32G32R32F;
-#else
-		hdr_format=D3DFMT_LIN_A32B32G32R32F;
-#endif
 	SAFE_RELEASE(hdr_buffer_texture);
 	hr=m_pd3dDevice->CreateTexture(	Width,
 									Height,

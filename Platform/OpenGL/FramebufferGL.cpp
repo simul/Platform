@@ -255,6 +255,12 @@ void FramebufferGL::DrawQuad(int w,int h)
 void FramebufferGL::DeactivateAndRender(bool blend)
 {
 	Deactivate();
+	Render(blend);
+}
+
+
+void FramebufferGL::Render(bool blend)
+{
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     SetOrthoProjection(main_viewport[2],main_viewport[3]);
 

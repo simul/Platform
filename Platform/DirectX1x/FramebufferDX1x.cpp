@@ -161,6 +161,8 @@ struct Vertext
 
 bool FramebufferDX1x::CreateBuffers()
 {
+	if(!Width||!Height)
+		return false;
 	HRESULT hr=S_OK;
 	D3D1x_TEXTURE2D_DESC desc=
 	{
@@ -237,10 +239,10 @@ bool FramebufferDX1x::CreateBuffers()
 	static float width=2.f,height=2.f;
 	Vertext vertices[4] =
 	{
-		D3DXVECTOR4(x		,y			,1.f,	1.f), D3DXVECTOR2(0.f	,1.f),
-		D3DXVECTOR4(x+width	,y			,1.f,	1.f), D3DXVECTOR2(1.f	,1.f),
-		D3DXVECTOR4(x		,y+height	,1.f,	1.f), D3DXVECTOR2(0.f	,0.f),
-		D3DXVECTOR4(x+width	,y+height	,1.f,	1.f), D3DXVECTOR2(1.f	,0.f),
+		D3DXVECTOR4(x		,y			,0.f,	1.f), D3DXVECTOR2(0.f	,1.f),
+		D3DXVECTOR4(x+width	,y			,0.f,	1.f), D3DXVECTOR2(1.f	,1.f),
+		D3DXVECTOR4(x		,y+height	,0.f,	1.f), D3DXVECTOR2(0.f	,0.f),
+		D3DXVECTOR4(x+width	,y+height	,0.f,	1.f), D3DXVECTOR2(1.f	,0.f),
 	};
 	D3D1x_BUFFER_DESC bdesc=
 	{
@@ -333,7 +335,7 @@ bool FramebufferDX1x::RenderBufferToCurrentTarget()
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
 
-    D3DXMatrixOrthoLH(&ident,1.f,1.f,-100.f,100.f);
+    D3DXMatrixOrthoLH(&ident,2.f,2.f,-100.f,100.f);
    // D3DXMatrixOrthoLH(&ident,screen_width/(float)Width,screen_height/(float)Height,-100.f,100.f);
     //D3DXMatrixOrthoLH(&ident,screen_width/(float)Width,screen_height/(float)Height,-100.f,100.f);
 	worldViewProj->SetMatrix(ident);

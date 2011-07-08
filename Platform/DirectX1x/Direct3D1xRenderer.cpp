@@ -18,10 +18,12 @@
 Direct3D11Renderer::Direct3D11Renderer(const char *license_key):
 		camera(NULL)
 		,timeMult(0.f)
+		,y_vertical(true)
 {
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(license_key,true,false,640,360,true,true,true);
 	AddChild(simulWeatherRenderer.get());
 	//simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
+	SetYVertical(y_vertical);
 }
 
 Direct3D11Renderer::~Direct3D11Renderer()
@@ -83,8 +85,9 @@ void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11De
 	D3DXMATRIX world,view,proj;
 	if(camera)
 	{
-		proj=camera->MakeProjectionMatrix(.1f,250000.f,aspect,true);
-		view=camera->MakeViewMatrix(false);
+		proj=camera->MakeProjectionMatrix(1.f,250000.f,aspect,y_vertical);
+		//D3DXMatrixPerspectiveFovRH(&proj,camera->GetVerticalFieldOfViewDegrees()*3.141f/180.f,aspect,.1f,250000.f);
+		view=camera->MakeViewMatrix(!y_vertical);
 		D3DXMatrixIdentity(&world);
 	}
 	if(simulHDRRenderer)
@@ -130,6 +133,16 @@ bool	Direct3D11Renderer::OnDeviceRemoved()
 	if(simulHDRRenderer)
 		simulHDRRenderer->InvalidateDeviceObjects();
 	return true;
+}
+
+
+void Direct3D11Renderer::SetYVertical(bool y)
+{
+	y_vertical=y;
+	if(simulWeatherRenderer.get())
+		simulWeatherRenderer->SetYVertical(y);
+	//if(simulTerrainRenderer.get())
+	//	simulTerrainRenderer->SetYVertical(y_vertical);
 }
 
 void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)

@@ -32,8 +32,14 @@ typedef std::basic_string<TCHAR> tstring;
 	#define D3D1x_USAGE_DEFAULT							D3D10_USAGE_DEFAULT
 	#define D3D1x_MAPPED_TEXTURE3D						D3D10_MAPPED_TEXTURE3D
 	#define D3D1x_SHADER_RESOURCE_VIEW_DESC				D3D10_SHADER_RESOURCE_VIEW_DESC
+	#define D3D1x_DEPTH_STENCIL_VIEW_DESC				D3D10_DEPTH_STENCIL_VIEW_DESC
+	#define D3D1x_RENDER_TARGET_VIEW_DESC				D3D10_RENDER_TARGET_VIEW_DESC
 	
 	#define D3D1x_SRV_DIMENSION_TEXTURE3D				D3D10_SRV_DIMENSION_TEXTURE3D
+	#define D3D1x_SRV_DIMENSION_TEXTURECUBE				D3D10_SRV_DIMENSION_TEXTURECUBE
+	#define D3D1x_RTV_DIMENSION_TEXTURE2DARRAY			D3D10_RTV_DIMENSION_TEXTURE2DARRAY
+	#define D3D1x_DSV_DIMENSION_TEXTURE2DARRAY			D3D10_DSV_DIMENSION_TEXTURE2DARRAY
+
 	#define D3D1x_INPUT_ELEMENT_DESC					D3D10_INPUT_ELEMENT_DESC
 	#define D3D1x_QUERY_DESC							D3D10_QUERY_DESC
 	#define D3D1x_QUERY_OCCLUSION						D3D10_QUERY_OCCLUSION
@@ -59,9 +65,12 @@ typedef std::basic_string<TCHAR> tstring;
 	#define ID3D1xDepthStencilView						ID3D10DepthStencilView
 	#define D3D1x_BIND_RENDER_TARGET					D3D10_BIND_RENDER_TARGET
 	#define D3D1x_BIND_DEPTH_STENCIL					D3D10_BIND_DEPTH_STENCIL
+	#define D3D1x_RESOURCE_MISC_TEXTURECUBE				D3D10_RESOURCE_MISC_TEXTURECUBE
+	#define D3D1x_RESOURCE_MISC_GENERATE_MIPS			D3D10_RESOURCE_MISC_GENERATE_MIPS
 	#define D3D1x_CLEAR_DEPTH							D3D10_CLEAR_DEPTH
 	#define D3D1x_CLEAR_STENCIL							D3D10_CLEAR_STENCIL
-
+	#define D3D1x_VIEWPORT								D3D10_VIEWPORT
+	#define dx1x_namespace								dx10
 #else
 	#define ID3D1xDevice								ID3D11Device
 	#define ID3D1xDeviceContext							ID3D11DeviceContext	
@@ -85,8 +94,14 @@ typedef std::basic_string<TCHAR> tstring;
 	#define D3D1x_USAGE_DEFAULT							D3D11_USAGE_DEFAULT
 	#define D3D1x_MAPPED_TEXTURE3D						D3D11_MAPPED_SUBRESOURCE
 	#define D3D1x_SHADER_RESOURCE_VIEW_DESC				D3D11_SHADER_RESOURCE_VIEW_DESC
+	#define D3D1x_DEPTH_STENCIL_VIEW_DESC				D3D11_DEPTH_STENCIL_VIEW_DESC
+	#define D3D1x_RENDER_TARGET_VIEW_DESC				D3D11_RENDER_TARGET_VIEW_DESC
 
 	#define D3D1x_SRV_DIMENSION_TEXTURE3D				D3D11_SRV_DIMENSION_TEXTURE3D
+	#define D3D1x_SRV_DIMENSION_TEXTURECUBE				D3D11_SRV_DIMENSION_TEXTURECUBE
+	#define D3D1x_RTV_DIMENSION_TEXTURE2DARRAY			D3D11_RTV_DIMENSION_TEXTURE2DARRAY
+	#define D3D1x_DSV_DIMENSION_TEXTURE2DARRAY			D3D11_DSV_DIMENSION_TEXTURE2DARRAY
+
 	#define D3D1x_INPUT_ELEMENT_DESC					D3D11_INPUT_ELEMENT_DESC
 	#define D3D1x_QUERY_DESC							D3D11_QUERY_DESC
 	#define D3D1x_QUERY_OCCLUSION						D3D11_QUERY_OCCLUSION
@@ -112,10 +127,15 @@ typedef std::basic_string<TCHAR> tstring;
 	#define ID3D1xDepthStencilView						ID3D11DepthStencilView
 	#define D3D1x_BIND_RENDER_TARGET					D3D11_BIND_RENDER_TARGET
 	#define D3D1x_BIND_DEPTH_STENCIL					D3D11_BIND_DEPTH_STENCIL
+	#define D3D1x_RESOURCE_MISC_TEXTURECUBE				D3D11_RESOURCE_MISC_TEXTURECUBE
+	#define D3D1x_RESOURCE_MISC_GENERATE_MIPS			D3D11_RESOURCE_MISC_GENERATE_MIPS
 	#define D3D1x_CLEAR_DEPTH							D3D11_CLEAR_DEPTH
 	#define D3D1x_CLEAR_STENCIL							D3D11_CLEAR_STENCIL
+	#define D3D1x_VIEWPORT								D3D11_VIEWPORT
+	#define dx1x_namespace								dx11
 #endif
-
+typedef long HRESULT;
+extern const TCHAR *GetErrorText(HRESULT hr);
 #ifdef ENABLE_PIX
 	#define PIXBeginNamedEvent(colour,name) D3DPERF_BeginEvent(colour,L##name)
 	#define PIXEndNamedEvent()				D3DPERF_EndEvent()
@@ -149,16 +169,18 @@ typedef std::basic_string<TCHAR> tstring;
 	#ifndef V_FAIL
 		#define V_FAIL(msg)	{ wchar_t text[200];wsprintf(text,_T("V_FAIL: %s - file %s, line %d"),WIDENSTRING(msg),__WFILE__,__WLINE__);std::cerr<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging(); }
 	#endif
-
+	#ifndef SAFE_DELETE_ARRAY
+	#define SAFE_DELETE_ARRAY(p) { if (p) { delete[] (p);   (p)=NULL; } }
+	#endif
 #else
 	#ifndef B_RETURN
-		#define B_RETURN(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_REB_RETURNTURN error "<<hr<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging();return false; } }
+		#define B_RETURN(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"B_RETURN error "<<GetErrorText(hr)<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging();return false; } }
 	#endif
 	#ifndef V_RETURN
-		#define V_RETURN(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_RETURN error "<<hr<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging();return hr; } }
+		#define V_RETURN(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_RETURN error "<<GetErrorText(hr)<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging();return hr; } }
 	#endif
 	#ifndef V_CHECK
-		#define V_CHECK(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_CHECK error "<<hr<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging(); } }
+		#define V_CHECK(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_CHECK error "<<GetErrorText(hr)<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging(); } }
 	#endif
 	#ifndef V_FAIL
 		#define V_FAIL(msg)	{ std::cerr<<"V_FAIL error "<<msg<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl; BreakIfDebugging(); }
@@ -169,5 +191,8 @@ typedef std::basic_string<TCHAR> tstring;
 	#endif
 	#ifndef SAFE_DELETE_SMARTPTR
 		#define SAFE_DELETE_SMARTPTR(p)		{ if(p.get()) { (p)=NULL; } }
+	#endif
+	#ifndef SAFE_DELETE_ARRAY
+	#define SAFE_DELETE_ARRAY(p) { if (p) { delete[] (p);   (p)=NULL; } }
 	#endif
 #endif

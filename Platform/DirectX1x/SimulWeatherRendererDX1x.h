@@ -45,7 +45,8 @@ public:
 	bool InvalidateDeviceObjects();
 	bool Destroy();
 	bool RenderSky(bool buffered,bool is_cubemap);
-
+	bool RenderCubemap();
+	void *GetCubemap();
 	//! Enable or disable the 3d and 2d cloud layers.
 	void Enable(bool sky,bool clouds3d,bool clouds2d,bool rain);
 	//! Enable or disable the sky.
@@ -81,11 +82,11 @@ public:
 	float GetTiming() const;
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
+
 protected:
 	// Keep copies of these matrices:
 	D3DXMATRIX view;
-	D3DXMATRIX screen_proj;
-	D3DXMATRIX buffer_proj;
+	D3DXMATRIX proj;
 	void UpdateSkyAndCloudHookup();
 	IDXGISwapChain *pSwapChain;
 	//! The size of the 2D buffer the sky is rendered to.
@@ -93,6 +94,13 @@ protected:
 	//! The size of the screen:
 	int ScreenWidth,ScreenHeight;
 	ID3D1xDevice*					m_pd3dDevice;
+	ID3D1xDeviceContext *			m_pImmediateContext;
+	//! Cubemap
+	ID3D1xTexture2D*				m_pCubeEnvDepthMap;
+	ID3D1xTexture2D*				m_pCubeEnvMap;
+	ID3D1xRenderTargetView*			m_pCubeEnvMapRTV;
+	ID3D1xDepthStencilView*			m_pCubeEnvDepthMapDSV;
+	ID3D1xShaderResourceView*		m_pCubeEnvMapSRV;
 	bool CreateBuffers();
 	bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
 	simul::base::SmartPtr<class SimulSkyRendererDX1x> simulSkyRenderer;
@@ -101,6 +109,7 @@ protected:
 	//simul::base::SmartPtr<class SimulPrecipitationRenderer> *simulPrecipitationRenderer;
 	//simul::base::SmartPtr<class SimulAtmosphericsRenderer> *simulAtmosphericsRenderer;
 	FramebufferDX1x					framebuffer;
+	FramebufferDX1x					cubemap_framebuffers[6];
 	float							exposure;
 	float							gamma;
 	bool show_3d_clouds,layer2;
@@ -109,6 +118,7 @@ protected:
 	float timing;
 	float exposure_multiplier;
 	void ConnectInterfaces();
+	bool SetupCubemap();
 };
 #ifdef _MSC_VER
 #pragma warning(pop)

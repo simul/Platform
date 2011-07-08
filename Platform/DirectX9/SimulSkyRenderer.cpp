@@ -565,10 +565,14 @@ bool SimulSkyRenderer::CreateSunlightTextures()
 
 bool SimulSkyRenderer::CreateSkyEffect()
 {
+	if(!m_pd3dDevice)
+		return false;
 	std::map<std::string,std::string> defines;
-	defines["USE_ALTITUDE_INTERPOLATION"]="";
+	defines["USE_ALTITUDE_INTERPOLATION"]="1";
 	if(y_vertical)
 		defines["Y_VERTICAL"]="1";
+	else
+		defines["Z_VERTICAL"]="1";
 	HRESULT hr=CreateDX9Effect(m_pd3dDevice,m_pSkyEffect,"simul_sky.fx",defines);
 	m_hTechniqueSky				=m_pSkyEffect->GetTechniqueByName("simul_sky");
 	m_hTechniqueStarrySky		=m_pSkyEffect->GetTechniqueByName("simul_starry_sky");
@@ -736,12 +740,9 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 		std::swap(sun_dir.y,sun_dir.z);
 	// fix the projection matrix so this quad is far away:
 	D3DXMATRIX tmp=proj;
-	float zNear=-proj._43/proj._33;
 	static float ff=0.0001f;
 	float zFar=(1.f+ff)/tan(sun_angular_size);
-	zNear=zFar*ff;
-	proj._33=zFar/(zFar-zNear);
-	proj._43=-zNear*zFar/(zFar-zNear);
+	FixProjectionMatrix(proj,zFar*ff,zFar,IsYVertical());
 	HRESULT hr;
 	// if the whole quad was visible, how many pixels would it be?
 	float screen_angular_size=2.f*atan((float)proj._22);

@@ -29,15 +29,17 @@ public:
 	//! The texture the sky and clouds are rendered to.
 	LPDIRECT3DTEXTURE9				hdr_buffer_texture;
 	LPDIRECT3DTEXTURE9				buffer_depth_texture;
+	LPDIRECT3DSURFACE9	m_pHDRRenderTarget;
 	void Activate();
 	void Deactivate();
 	void DeactivateAndRender(bool blend);
 	void Render(bool blend);
+	void SetFormat(D3DFORMAT f);
 	int Width,Height;
 protected:
 	LPDIRECT3DDEVICE9	m_pd3dDevice;
-	LPDIRECT3DSURFACE9	m_pHDRRenderTarget;
 	LPDIRECT3DSURFACE9	m_pBufferDepthSurface;
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface;
+	D3DFORMAT hdr_format;
 };

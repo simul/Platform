@@ -26,6 +26,12 @@
 #include "Simul/Math/Pi.h"
 #include "CreateEffectDX1x.h"
 
+const TCHAR *GetErrorText(HRESULT hr)
+{
+	const TCHAR *err=DXGetErrorString(hr);
+	return err;
+}
+
 typedef std::basic_string<TCHAR> tstring;
 static tstring filepath=TEXT("");
 #define PIXBeginNamedEvent(a,b)		// D3DPERF_BeginEvent(a,L##b)
@@ -211,7 +217,7 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	texdesc.ViewDimension=D3D1x_SRV_DIMENSION_TEXTURE3D;
 	texdesc.Texture3D.MostDetailedMip=0;
 	texdesc.Texture3D.MipLevels=1;
-    B_RETURN(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
+
 
 	noiseTexture				->SetResource(noiseTextureResource);
 
@@ -323,13 +329,35 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(bool override_file)
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(noise_texture);
+	
+	D3DX1x_IMAGE_LOAD_INFO loadInfo;
+	ZeroMemory( &loadInfo, sizeof(D3DX11_IMAGE_LOAD_INFO) );
+	loadInfo.BindFlags = D3D1x_BIND_SHADER_RESOURCE;
+	loadInfo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+loadInfo.MipLevels=0;
+	if(!override_file)
+	{
+		hr=D3DX11CreateShaderResourceViewFromFile(
+										m_pd3dDevice,
+										TEXT("./Media/Textures/noise.dds"),
+										&loadInfo,
+										NULL,
+										&noiseTextureResource,
+										&hr);
+		if(hr==S_OK)
+		{
+			return true;
+		}
+		const TCHAR *err=DXGetErrorString(hr);
+		std::cerr<<err<<std::endl;
+	}
 	//if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,size,default_mip_levels,default_texture_usage,DXGI_FORMAT_R8G8B8A8_UINT,D3DPOOL_MANAGED,&noise_texture)))
 	//	return (hr==S_OK);
 	D3D1x_TEXTURE2D_DESC desc=
 	{
 		noise_texture_size,
 		noise_texture_size,
-		1,
+		0,
 		1,
 		DXGI_FORMAT_R8G8B8A8_UNORM,
 		{1,0},
@@ -345,6 +373,7 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(bool override_file)
 	simul::clouds::TextureGenerator::SetBits(0x000000FF,0x0000FF00,0x00FF0000,0xFF000000,(unsigned)4,big_endian);
 	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)(mapped.pData),noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
 	Unmap2D(noise_texture);
+	B_RETURN(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
 	return true;
 }
 
@@ -523,7 +552,16 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	if(!m_pd3dDevice)
 		return S_OK;
 	std::map<std::string,std::string> defines;
+	if(fade_mode==FRAGMENT)
+		defines["FADE_MODE"]="1";
+	if(fade_mode==CPU)
+		defines["FADE_MODE"]="0";
 	defines["DETAIL_NOISE"]='1';
+	if(cloudInterface->GetWrap())
+		defines["WRAP_CLOUDS"]="1";
+	char max_fade_distance_str[25];
+	sprintf_s(max_fade_distance_str,25,"%3.1f",max_fade_distance_metres);
+	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
 	if(y_vertical)
 		defines["Y_VERTICAL"]="1";
 	else
@@ -544,7 +582,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	hazeEccentricity					=m_pCloudEffect->GetVariableByName("hazeEccentricity")->AsScalar();
 	fadeInterp							=m_pCloudEffect->GetVariableByName("fadeInterp")->AsScalar();
 	cloudEccentricity					=m_pCloudEffect->GetVariableByName("cloudEccentricity")->AsScalar();
-	altitudeTexCoord					=m_pCloudEffect->GetVariableByName("altitudeTexCoord")->AsScalar();
+	alphaSharpness						=m_pCloudEffect->GetVariableByName("alphaSharpness")->AsScalar();
 
 	//if(enable_lightning)
 	{
@@ -567,12 +605,14 @@ void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,
 {
 	D3DXMATRIX tmp1, tmp2;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXMatrixMultiply(&tmp1, &world,&view);
-	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
+	//tmp1 = world * view;
+	//D3DXMatrixMultiply(&tmp1, &world,&view);
+	//D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
+	tmp2 = world * view * proj;
 	D3DXMatrixTranspose(wvp,&tmp2);
 }
 
-D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
+static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 {
 	D3DXMATRIX tmp1;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
@@ -595,11 +635,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	skyInscatterTexture1->SetResource(skyInscatterTexture1Resource);
 
 	// Mess with the proj matrix to extend the far clipping plane:
-	// According to the documentation for D3DXMatrixPerspectiveFovLH:
-	float zNear=-proj._43/proj._33;
-	float zFar=helper->GetMaxCloudDistance()*1.1f;
-	proj._33=zFar/(zFar-zNear);
-	proj._43=-zNear*zFar/(zFar-zNear);
+	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
 		
 	//set up matrices
 	D3DXMATRIX wvp;
@@ -614,6 +650,8 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	worldViewProj->AsMatrix()->SetMatrix(&wvp._11);
 
 	simul::math::Vector3 view_dir	(view._13,view._23,view._33);
+	if(!y_vertical)
+		view_dir.Define(-view._13,-view._23,-view._33);
 	simul::math::Vector3 up			(view._12,view._22,view._32);
 
 	simul::sky::float4 view_km=(const float*)cam_pos;
@@ -668,7 +706,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	cloudEccentricity	->SetFloat						(cloudInterface->GetMieAsymmetry());
 	hazeEccentricity	->AsScalar()->SetFloat			(skyInterface->GetMieEccentricity());
 	fadeInterp			->AsScalar()->SetFloat			(fade_interp);
-	altitudeTexCoord	->AsScalar()->SetFloat			(altitude_tex_coord);
+	alphaSharpness		->AsScalar()->SetFloat			(cloudInterface->GetAlphaSharpness());
 
 	if(enable_lightning)
 	{

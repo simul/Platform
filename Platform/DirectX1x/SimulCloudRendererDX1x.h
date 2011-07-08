@@ -143,7 +143,7 @@ protected:
 	ID3D1xEffectScalarVariable* 	cloudEccentricity;
 	ID3D1xEffectScalarVariable* 	hazeEccentricity;
 	ID3D1xEffectScalarVariable* 	fadeInterp;
-	ID3D1xEffectScalarVariable* 	altitudeTexCoord;
+	ID3D1xEffectScalarVariable* 	alphaSharpness;
 
 	ID3D1xEffectVectorVariable* 	lightningMultipliers;
 	ID3D1xEffectVectorVariable* 	lightningColour;

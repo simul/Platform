@@ -20,7 +20,7 @@
 
 namespace simul
 {
-	namespace dx11
+	namespace dx1x_namespace
 	{
 		extern SIMUL_DIRECTX1x_EXPORT void SetShaderPath(const char *path);
 		extern SIMUL_DIRECTX1x_EXPORT void SetTexturePath(const char *path);
@@ -40,9 +40,13 @@ extern SIMUL_DIRECTX1x_EXPORT void Unmap3D(ID3D1xTexture3D *tex);
 extern SIMUL_DIRECTX1x_EXPORT HRESULT Map1D(ID3D1xTexture1D *tex,D3D1x_MAPPED_TEXTURE1D *mp);
 extern SIMUL_DIRECTX1x_EXPORT void Unmap1D(ID3D1xTexture1D *tex);
 #ifdef DX10
-extern SIMUL_DIRECTX10_EXPORT HRESULT MapBuffer(ID3D1xBuffer *vertexBuffer,void **vert);
+extern SIMUL_DIRECTX1x_EXPORT HRESULT MapBuffer(ID3D1xBuffer *vertexBuffer,void **vert);
 #else
 extern SIMUL_DIRECTX1x_EXPORT HRESULT MapBuffer(ID3D1xBuffer *vertexBuffer,D3D11_MAPPED_SUBRESOURCE *vert);
 #endif
 extern SIMUL_DIRECTX1x_EXPORT void UnmapBuffer(ID3D1xBuffer *vertexBuffer);
 extern SIMUL_DIRECTX1x_EXPORT HRESULT ApplyPass(ID3D1xEffectPass *pass);
+extern void SIMUL_DIRECTX1x_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zFar,bool y_vertical);
+extern void SIMUL_DIRECTX1x_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical);
+
+extern void SIMUL_DIRECTX1x_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[]);
