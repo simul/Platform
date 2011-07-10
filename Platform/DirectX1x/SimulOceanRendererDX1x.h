@@ -4,13 +4,16 @@
 #include "ocean_simulator.h"
 #include "Simul/Platform/DirectX1x/MacrosDX1x.h"
 #include "Simul/Platform/DirectX1x/Export.h"
+#include "Simul/Math/Float2.h"
+
+#pragma warning(push)
+#pragma warning(disable:4251)
 // Quadtree structures & routines
 struct QuadNode
 {
-	D3DXVECTOR2 bottom_left;
+	simul::math::float2 bottom_left;
 	float length;
 	int lod;
-
 	int sub_node[4];
 };
 
@@ -92,4 +95,5 @@ protected:
 	// create perlin noise texture for far-sight rendering
 	void loadTextures();
 };
+#pragma warning(pop)
 #endif

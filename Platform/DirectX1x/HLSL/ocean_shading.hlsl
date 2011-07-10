@@ -22,29 +22,27 @@
 // Shading parameters
 cbuffer cbShading : register(b2)
 {
-	// Water-reflected sky color
-	float3		g_SkyColor			: packoffset(c0.x);
 	// The color of bottomless water body
-	float3		g_WaterbodyColor	: packoffset(c1.x);
+	float3		g_WaterbodyColor	: packoffset(c0.x);
 
 	// The strength, direction and color of sun streak
-	float		g_Shineness			: packoffset(c1.w);
-	float3		g_SunDir			: packoffset(c2.x);
-	float3		g_SunColor			: packoffset(c3.x);
+	float		g_Shineness			: packoffset(c0.w);
+	float3		g_SunDir			: packoffset(c1.x);
+	float3		g_SunColor			: packoffset(c2.x);
 	
 	// The parameter is used for fixing an artifact
-	float3		g_BendParam			: packoffset(c4.x);
+	float3		g_BendParam			: packoffset(c3.x);
 
 	// Perlin noise for distant wave crest
-	float		g_PerlinSize		: packoffset(c4.w);
-	float3		g_PerlinAmplitude	: packoffset(c5.x);
-	float3		g_PerlinOctave		: packoffset(c6.x);
-	float3		g_PerlinGradient	: packoffset(c7.x);
+	float		g_PerlinSize		: packoffset(c3.w);
+	float3		g_PerlinAmplitude	: packoffset(c4.x);
+	float3		g_PerlinOctave		: packoffset(c5.x);
+	float3		g_PerlinGradient	: packoffset(c6.x);
 
 	// Constants for calculating texcoord from position
-	float		g_TexelLength_x2	: packoffset(c7.w);
-	float		g_UVScale			: packoffset(c8.x);
-	float		g_UVOffset			: packoffset(c8.y);
+	float		g_TexelLength_x2	: packoffset(c6.w);
+	float		g_UVScale			: packoffset(c7.x);
+	float		g_UVOffset			: packoffset(c7.y);
 };
 
 // Per draw call constants
@@ -115,9 +113,9 @@ VS_OUTPUT OceanSurfVS(float2 vPos : POSITION)
 
 	// Add perlin noise to distant patches
 	float perlin = 0;
+	float2 perlin_tc = uv_local * g_PerlinSize + g_UVBase;
 	if (blend_factor < 1)
 	{
-		float2 perlin_tc = uv_local * g_PerlinSize + g_UVBase;
 		float perlin_0 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.x + g_PerlinMovement, 0).w;
 		float perlin_1 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.y + g_PerlinMovement, 0).w;
 		float perlin_2 = g_texPerlin.SampleLevel(g_samplerPerlin, perlin_tc * g_PerlinOctave.z + g_PerlinMovement, 0).w;
@@ -131,7 +129,7 @@ VS_OUTPUT OceanSurfVS(float2 vPos : POSITION)
 		displacement = g_texDisplacement.SampleLevel(g_samplerDisplacement, uv_local, 0).xyz;
 	displacement = lerp(float3(0, 0, perlin), displacement, blend_factor);
 	pos_local.xyz += displacement;
-
+pos_local.z+=500.f*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_PerlinMovement/4.f, 0).w;
 	// Transform
 	Output.Position = mul(pos_local, g_matWorldViewProj);
    // Output.Position = mul( g_matWorldViewProj,pos_local);
@@ -190,37 +188,24 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 	float3 reflect_vec = reflect(-eye_dir, normal);
 	// dot(N, V)
 	float cos_angle = dot(normal, eye_dir);
-
-	// A coarse way to handle transmitted light
-	float3 body_color = g_WaterbodyColor;
-
-
 	// --------------- Reflected color
-
-	// ramp.x for fresnel term. ramp.y for sky blending
+	// ramp.x for fresnel term.
 	float4 ramp = g_texFresnel.Sample(g_samplerFresnel, cos_angle).xyzw;
 	// A workaround to deal with "indirect reflection vectors" (which are rays requiring multiple
 	// reflections to reach the sky).
-	if (reflect_vec.z < g_BendParam.x)
-		ramp = lerp(ramp, g_BendParam.z, (g_BendParam.x - reflect_vec.z)/(g_BendParam.x - g_BendParam.y));
-	reflect_vec.z = min(0, reflect_vec.z);
+//	if (reflect_vec.z < g_BendParam.x)
+//		ramp = lerp(ramp, g_BendParam.z, (g_BendParam.x - reflect_vec.z)/(g_BendParam.x - g_BendParam.y));
+	reflect_vec.z = max(0, reflect_vec.z);
 
-	float3 reflection = g_texReflectCube.Sample(g_samplerCube, reflect_vec.xzy).xyz;
-	// Hack bit: making higher contrast
-	reflection = reflection * reflection * 2.5f;
-
-	// Blend with predefined sky color
-	float3 reflected_color = lerp(g_SkyColor, reflection, ramp.y);
+	float3 reflected_color = g_texReflectCube.Sample(g_samplerCube, reflect_vec.xzy).xyz;
 
 	// Combine waterbody color and reflected color
-	float3 water_color = lerp(body_color, reflected_color, ramp.x);
-
-
+	float3 water_color = lerp(g_WaterbodyColor, reflected_color, ramp.x);
 	// --------------- Sun spots
-
+/*
 	float cos_spec = clamp(dot(reflect_vec, g_SunDir), 0, 1);
 	float sun_spot = pow(cos_spec, g_Shineness);
-	water_color += g_SunColor * sun_spot;
+	water_color += g_SunColor * sun_spot;*/
 
 
 	return float4(water_color, 1);

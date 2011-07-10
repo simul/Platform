@@ -655,9 +655,11 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	simul::math::Vector3 up			(view._12,view._22,view._32);
 
 	simul::sky::float4 view_km=(const float*)cam_pos;
-	helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
+	if(!cubemap)
+	{
+		helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
+	}
 	view_km*=0.001f;
-	float base_alt_km=0.001f*(cloudInterface->GetCloudBaseZ());
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;
 	simul::sky::float4 light_response(	direct_light_mult*cloudInterface->GetLightResponse(),
@@ -665,24 +667,13 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 										0,
 										0);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
-
-	// calculate sun occlusion for any external classes that need it:
-	if(y_vertical)
-		std::swap(X.y,X.z);
-	float len=cloudInterface->GetOpticalPathLength(X.FloatPointer(0),(const float*)sun_dir);
-	float vis=min(1.f,max(0.f,exp(-0.001f*cloudInterface->GetOpticalDensity()*len)));
-	sun_occlusion=1.f-vis;
-	if(y_vertical)
-		std::swap(X.y,X.z);
-
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
+	float base_alt_km=0.001f*(cloudInterface->GetCloudBaseZ());
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*cloudInterface->GetAmbientLightResponse();
-	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
-	simul::sky::float4 fractal_scales=helper->GetFractalScales(cloudInterface);
-
 	float tan_half_fov_vertical=1.f/proj._22;
 	float tan_half_fov_horizontal=1.f/proj._11;
+	helper->SetNoFrustumLimit(cubemap);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->MakeGeometry(cloudInterface,enable_lightning);
 	if(fade_mode==CPU)
@@ -693,24 +684,25 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	{
 		ID3D1xEffectVectorVariable *lr=cbUser->GetMemberByName("lightResponse")->AsVector();
 	}
-
+	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	float cloud_interp=cloudKeyframer->GetInterpolation();
-	interp				->AsScalar()->SetFloat			(cloud_interp);
-	eyePosition			->AsVector()->SetFloatVector	(cam_pos);
-	lightResponse		->AsVector()->SetFloatVector	(light_response);
-	lightDir			->AsVector()->SetFloatVector	(sun_dir);
-	skylightColour		->AsVector()->SetFloatVector	(sky_light_colour);
-	sunlightColour		->AsVector()->SetFloatVector	(sunlight);
-	fractalScale		->AsVector()->SetFloatVector	(fractal_scales);
-	mieRayleighRatio	->AsVector()->SetFloatVector	(skyInterface->GetMieRayleighRatio());
-	cloudEccentricity	->SetFloat						(cloudInterface->GetMieAsymmetry());
-	hazeEccentricity	->AsScalar()->SetFloat			(skyInterface->GetMieEccentricity());
-	fadeInterp			->AsScalar()->SetFloat			(fade_interp);
-	alphaSharpness		->AsScalar()->SetFloat			(cloudInterface->GetAlphaSharpness());
+	interp				->SetFloat			(cloud_interp);
+	eyePosition			->SetFloatVector	(cam_pos);
+	lightResponse		->SetFloatVector	(light_response);
+	lightDir			->SetFloatVector	(sun_dir);
+	skylightColour		->SetFloatVector	(sky_light_colour);
+	sunlightColour		->SetFloatVector	(sunlight);
+	simul::sky::float4 fractal_scales=helper->GetFractalScales(cloudInterface);
+	fractalScale		->SetFloatVector	(fractal_scales);
+	mieRayleighRatio	->SetFloatVector	(skyInterface->GetMieRayleighRatio());
+	cloudEccentricity	->SetFloat			(cloudInterface->GetMieAsymmetry());
+	hazeEccentricity	->SetFloat			(skyInterface->GetMieEccentricity());
+	fadeInterp			->SetFloat			(fade_interp);
+	alphaSharpness		->SetFloat			(cloudInterface->GetAlphaSharpness());
 
 	if(enable_lightning)
 	{
-		static float bb=.1f;
+		static float bb=.2f;
 		simul::sky::float4 lightning_multipliers;
 		lightning_colour=lightningRenderInterface->GetLightningColour();
 		for(unsigned i=0;i<4;i++)

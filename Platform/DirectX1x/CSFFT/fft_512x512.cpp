@@ -61,7 +61,7 @@ void FFT_512x512::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
 
 	// Constants
 	// Create 6 cbuffers for 512x512 transform
-	create_cbuffers_512x512(pd3dDevice, slices);
+	CreateCBuffers(pd3dDevice, slices);
 
 	// Temp buffer
 	D3D11_BUFFER_DESC buf_desc;
@@ -94,6 +94,7 @@ void FFT_512x512::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
 
 	pd3dDevice->CreateShaderResourceView(pBuffer_Tmp, &srv_desc, &pSRV_Tmp);
 }
+
 void FFT_512x512::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(pSRV_Tmp);
@@ -107,30 +108,29 @@ void FFT_512x512::InvalidateDeviceObjects()
 		SAFE_RELEASE(pRadix008A_CB[i]);
 }
 
-void radix008A(FFT_512x512* fft_plan,
-			   ID3D11UnorderedAccessView* pUAV_Dst,
-			   ID3D11ShaderResourceView* pSRV_Src,
-			   UINT thread_count,
-			   UINT istride)
+void FFT_512x512::radix008A(	ID3D11UnorderedAccessView* pUAV_Dst,
+								ID3D11ShaderResourceView* pSRV_Src,
+								UINT thread_count,
+								UINT istride)
 {
     // Setup execution configuration
 	UINT grid = thread_count / COHERENCY_GRANULARITY;
-	ID3D11DeviceContext* pd3dImmediateContext = fft_plan->pd3dImmediateContext;
 
-	// Buffers
+	// Buffers -
+	//		source
 	ID3D11ShaderResourceView* cs_srvs[1] = {pSRV_Src};
-	pd3dImmediateContext->CSSetShaderResources(0, 1, cs_srvs);
-
+	pd3dImmediateContext->CSSetShaderResources(0, 1,cs_srvs);
+	//		destination
 	ID3D11UnorderedAccessView* cs_uavs[1] = {pUAV_Dst};
-	pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1, cs_uavs, (UINT*)(&cs_uavs[0]));
+	pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1,cs_uavs, 0);
 
 	// Shader
 	if (istride > 1)
-		pd3dImmediateContext->CSSetShader(fft_plan->pRadix008A_CS, NULL, 0);
+		pd3dImmediateContext->CSSetShader(pRadix008A_CS, NULL, 0);
 	else
-		pd3dImmediateContext->CSSetShader(fft_plan->pRadix008A_CS2, NULL, 0);
+		pd3dImmediateContext->CSSetShader(pRadix008A_CS2, NULL, 0);
 
-	// Execute
+	// Dispatch means run the compute shader.
 	pd3dImmediateContext->Dispatch(grid, 1, 1);
 
 	// Unbind resource
@@ -138,12 +138,12 @@ void radix008A(FFT_512x512* fft_plan,
 	pd3dImmediateContext->CSSetShaderResources(0, 1, cs_srvs);
 
 	cs_uavs[0] = NULL;
-	pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1, cs_uavs, (UINT*)(&cs_uavs[0]));
+	pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1, cs_uavs,0);
 }
 					 
-void FFT_512x512::fft_512x512_c2c(ID3D11UnorderedAccessView* pUAV_Dst,
-					 ID3D11ShaderResourceView* pSRV_Dst,
-					 ID3D11ShaderResourceView* pSRV_Src)
+void FFT_512x512::fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
+									ID3D11ShaderResourceView* pSRV_Dst,
+									ID3D11ShaderResourceView* pSRV_Src)
 {
 	const UINT thread_count = slices * (512 * 512) / 8;
 	ID3D11Buffer* cs_cbs[1];
@@ -154,42 +154,17 @@ void FFT_512x512::fft_512x512_c2c(ID3D11UnorderedAccessView* pUAV_Dst,
 	{
 		cs_cbs[0] = pRadix008A_CB[i];
 		pd3dImmediateContext->CSSetConstantBuffers(0, 1, &cs_cbs[0]);
+		// current source for the operation is either pSRV_Src (the first time), or swaps between pSRV_Tmp and pSRV_Dst.
 		ID3D11ShaderResourceView *srv=(i%2==0?(i==0?pSRV_Src:pSRV_Dst):pSRV_Tmp);
+		// destination for the operation alternates between pUAV_Tmp and pUAV_Dst. The final one should always be pUAV_Dst,
+		// so we must do an even number of operations.
 		ID3D11UnorderedAccessView *uav=(i%2==0?pUAV_Tmp:pUAV_Dst);
-		radix008A(this, uav, srv, thread_count, istride);
+		radix008A(uav, srv, thread_count, istride);
 		istride /= 8;
 	}
-/*	cs_cbs[0] = pRadix008A_CB[0];
-	pd3dImmediateContext->CSSetConstantBuffers(0, 1, &cs_cbs[0]);
-	radix008A(this, pUAV_Tmp, pSRV_Src, thread_count, istride);
-
-	istride /= 8;
-	cs_cbs[0] = pRadix008A_CB[1];
-	pd3dImmediateContext->CSSetConstantBuffers(0, 1, &cs_cbs[0]);
-	radix008A(this, pUAV_Dst, pSRV_Tmp, thread_count, istride);
-
-	istride /= 8;
-	cs_cbs[0] = pRadix008A_CB[2];
-	pd3dImmediateContext->CSSetConstantBuffers(0, 1, &cs_cbs[0]);
-	radix008A(this, pUAV_Tmp, pSRV_Dst, thread_count, istride);
-
-	istride /= 8;
-	cs_cbs[0] = pRadix008A_CB[3];
-	pd3dImmediateContext->CSSetConstantBuffers(0, 1, &cs_cbs[0]);
-	radix008A(this, pUAV_Dst, pSRV_Tmp, thread_count, istride);
-
-	istride /= 8;
-	cs_cbs[0] = pRadix008A_CB[4];
-	pd3dImmediateContext->CSSetConstantBuffers(0, 1, &cs_cbs[0]);
-	radix008A(this, pUAV_Tmp, pSRV_Dst, thread_count, istride);
-
-	istride /= 8;
-	cs_cbs[0] = pRadix008A_CB[5];
-	pd3dImmediateContext->CSSetConstantBuffers(0, 1, &cs_cbs[0]);
-	radix008A(this, pUAV_Dst, pSRV_Tmp, thread_count, istride);*/
 }
 
-void FFT_512x512::create_cbuffers_512x512(ID3D11Device* pd3dDevice, UINT slices)
+void FFT_512x512::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
 {
 	// Create 6 cbuffers for 512x512 transform.
 
@@ -220,27 +195,46 @@ void FFT_512x512::create_cbuffers_512x512(ID3D11Device* pd3dDevice, UINT slices)
 	UINT istride = ostride;
 	double phase_base = -TWO_PI / (512.0 * 512.0);
 	
-	CB_Structure cb_data_buf0 = {thread_count, ostride, istride, 512, (float)phase_base};
+	CB_Structure cb_data_buf0 =
+	{
+		thread_count,
+		ostride,
+		istride,
+		512,
+		(float)phase_base
+	};
 	cb_data.pSysMem = &cb_data_buf0;
 
 	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &pRadix008A_CB[0]);
-	assert(pRadix008A_CB[0]);
 
 	// Buffer 1
 	istride /= 8;
 	phase_base *= 8.0;
 	
-	CB_Structure cb_data_buf1 = {thread_count, ostride, istride, 512, (float)phase_base};
+	CB_Structure cb_data_buf1 =
+	{
+		thread_count,
+		ostride,
+		istride,
+		512,
+		(float)phase_base
+	};
 	cb_data.pSysMem = &cb_data_buf1;
 
 	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &pRadix008A_CB[1]);
-	assert(pRadix008A_CB[1]);
 
 	// Buffer 2
 	istride /= 8;
 	phase_base *= 8.0;
 	
-	CB_Structure cb_data_buf2 = {thread_count, ostride, istride, 512, (float)phase_base};
+	CB_Structure cb_data_buf2 =
+	{
+		thread_count,
+		ostride,
+		istride,
+		512,
+		(float)phase_base
+	};
 	cb_data.pSysMem = &cb_data_buf2;
 
 	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &pRadix008A_CB[2]);
@@ -251,7 +245,14 @@ void FFT_512x512::create_cbuffers_512x512(ID3D11Device* pd3dDevice, UINT slices)
 	phase_base *= 8.0;
 	ostride /= 512;
 	
-	CB_Structure cb_data_buf3 = {thread_count, ostride, istride, 1, (float)phase_base};
+	CB_Structure cb_data_buf3 =
+	{
+		thread_count,
+		ostride,
+		istride,
+		1,
+		(float)phase_base
+	};
 	cb_data.pSysMem = &cb_data_buf3;
 
 	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &pRadix008A_CB[3]);
@@ -261,7 +262,14 @@ void FFT_512x512::create_cbuffers_512x512(ID3D11Device* pd3dDevice, UINT slices)
 	istride /= 8;
 	phase_base *= 8.0;
 	
-	CB_Structure cb_data_buf4 = {thread_count, ostride, istride, 1, (float)phase_base};
+	CB_Structure cb_data_buf4 =
+	{
+		thread_count,
+		ostride,
+		istride,
+		1,
+		(float)phase_base
+	};
 	cb_data.pSysMem = &cb_data_buf4;
 
 	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &pRadix008A_CB[4]);
@@ -271,7 +279,14 @@ void FFT_512x512::create_cbuffers_512x512(ID3D11Device* pd3dDevice, UINT slices)
 	istride /= 8;
 	phase_base *= 8.0;
 	
-	CB_Structure cb_data_buf5 = {thread_count, ostride, istride, 1, (float)phase_base};
+	CB_Structure cb_data_buf5 =
+	{
+		thread_count,
+		ostride,
+		istride,
+		1,
+		(float)phase_base
+	};
 	cb_data.pSysMem = &cb_data_buf5;
 
 	pd3dDevice->CreateBuffer(&cb_desc, &cb_data, &pRadix008A_CB[5]);

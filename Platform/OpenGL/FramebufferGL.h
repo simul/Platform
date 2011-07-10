@@ -19,7 +19,7 @@ class FramebufferInterface
 public:
 	virtual void Activate()=0;
 	virtual void Deactivate()=0;
-	virtual void DeactivateAndRender(bool blend)=0;
+	
 	virtual void SetWidthAndHeight(int w,int h)=0;
 };
 #endif
@@ -44,8 +44,8 @@ public:
 	void SetWidthAndHeight(int w,int h);
 	// In order to use a color buffer, either
 	// InitColor_RB or InitColor_Tex needs to be called.
-	void InitColor_RB(int index = 0, GLenum iformat = GL_FLOAT_RGBA16_NV);
-	void InitColor_Tex(int index = 0, GLenum iformat = GL_FLOAT_RGBA16_NV);
+	void InitColor_RB(int index, GLenum internal_format);
+	void InitColor_Tex(int index, GLenum internal_format,GLenum format);
 	void InitColor_None();
 	// In order to use a depth buffer, either
 	// InitDepth_RB or InitDepth_Tex needs to be called.

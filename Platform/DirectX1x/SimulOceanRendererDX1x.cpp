@@ -28,7 +28,7 @@ int g_FurthestCover = 8;
 // Shading properties:
 // Two colors for waterbody and sky color
 D3DXVECTOR3 g_SkyColor= D3DXVECTOR3(0.38f, 0.45f, 0.56f);
-D3DXVECTOR3 g_WaterbodyColor = D3DXVECTOR3(0.07f, 0.15f, 0.2f);
+D3DXVECTOR3 g_WaterbodyColor = D3DXVECTOR3(0.12f, 0.14f, 0.17f);
 // Blending term for sky cubemap
 float g_SkyBlending = 16.0f;
 
@@ -68,9 +68,6 @@ struct Const_Per_Call
 
 struct Const_Shading
 {
-	// Water-reflected sky color
-	D3DXVECTOR3		g_SkyColor;
-	float			unused0;
 	// The color of bottomless water body
 	D3DXVECTOR3		g_WaterbodyColor;
 
@@ -177,9 +174,9 @@ bool SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 	ID3DBlob* pBlobOceanSurfPS = NULL;
 	ID3DBlob* pBlobWireframePS = NULL;
 
-	CompileShaderFromFile(L"MEDIA/HLSL/ocean_shading.hlsl", "OceanSurfVS", "vs_4_0", &pBlobOceanSurfVS);
-	CompileShaderFromFile(L"MEDIA/HLSL/ocean_shading.hlsl", "OceanSurfPS", "ps_4_0", &pBlobOceanSurfPS);
-	CompileShaderFromFile(L"MEDIA/HLSL/ocean_shading.hlsl", "WireframePS", "ps_4_0", &pBlobWireframePS);
+	CompileShaderFromFile(L"MEDIA/HLSL/DX11/ocean_shading.hlsl", "OceanSurfVS", "vs_4_0", &pBlobOceanSurfVS);
+	CompileShaderFromFile(L"MEDIA/HLSL/DX11/ocean_shading.hlsl", "OceanSurfPS", "ps_4_0", &pBlobOceanSurfPS);
+	CompileShaderFromFile(L"MEDIA/HLSL/DX11/ocean_shading.hlsl", "WireframePS", "ps_4_0", &pBlobWireframePS);
 	assert(pBlobOceanSurfVS);
 	assert(pBlobOceanSurfPS);
 	assert(pBlobWireframePS);
@@ -218,7 +215,6 @@ bool SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 	// Grid side length * 2
 	shading_data.g_TexelLength_x2 = ocean_parameters.patch_length / ocean_parameters.dmap_dim * 2;;
 	// Color
-	shading_data.g_SkyColor = g_SkyColor;
 	shading_data.g_WaterbodyColor = g_WaterbodyColor;
 	// Texcoord
 	shading_data.g_UVScale = 1.0f / ocean_parameters.patch_length;
@@ -739,10 +735,6 @@ void SimulOceanRendererDX1x::loadTextures()
     swprintf_s(strPath, MAX_PATH, L"Media/Textures/perlin_noise.dds");
 	D3DX11CreateShaderResourceViewFromFile(m_pd3dDevice, strPath, NULL, NULL, &g_pSRV_Perlin, NULL);
 	assert(g_pSRV_Perlin);
-/*
-    swprintf_s(strPath, MAX_PATH, L"Media/Textures/reflect_cube.dds");
-	D3DX11CreateShaderResourceViewFromFile(m_pd3dDevice, strPath,NULL, NULL, &g_pSRV_ReflectCube, NULL);
-	assert(g_pSRV_ReflectCube);*/
 }
 
 bool SimulOceanRendererDX1x::checkNodeVisibility(const QuadNode& quad_node)
@@ -878,7 +870,7 @@ bool isLeaf(const QuadNode& quad_node)
 	return (quad_node.sub_node[0] == -1 && quad_node.sub_node[1] == -1 && quad_node.sub_node[2] == -1 && quad_node.sub_node[3] == -1);
 }
 
-int searchLeaf(const vector<QuadNode>& node_list, const D3DXVECTOR2& point)
+int searchLeaf(const vector<QuadNode>& node_list, const simul::math::float2& point)
 {
 	int index = -1;
 	
@@ -915,16 +907,16 @@ int searchLeaf(const vector<QuadNode>& node_list, const D3DXVECTOR2& point)
 QuadRenderParam& SimulOceanRendererDX1x::selectMeshPattern(const QuadNode& quad_node)
 {
 	// Check 4 adjacent quad.
-	D3DXVECTOR2 point_left = quad_node.bottom_left + D3DXVECTOR2(-ocean_parameters.patch_length * 0.5f, quad_node.length * 0.5f);
+	simul::math::float2 point_left = quad_node.bottom_left + simul::math::float2(-ocean_parameters.patch_length * 0.5f, quad_node.length * 0.5f);
 	int left_adj_index = searchLeaf(g_render_list, point_left);
 
-	D3DXVECTOR2 point_right = quad_node.bottom_left + D3DXVECTOR2(quad_node.length + ocean_parameters.patch_length * 0.5f, quad_node.length * 0.5f);
+	simul::math::float2 point_right = quad_node.bottom_left + simul::math::float2(quad_node.length + ocean_parameters.patch_length * 0.5f, quad_node.length * 0.5f);
 	int right_adj_index = searchLeaf(g_render_list, point_right);
 
-	D3DXVECTOR2 point_bottom = quad_node.bottom_left + D3DXVECTOR2(quad_node.length * 0.5f, -ocean_parameters.patch_length * 0.5f);
+	simul::math::float2 point_bottom = quad_node.bottom_left + simul::math::float2(quad_node.length * 0.5f, -ocean_parameters.patch_length * 0.5f);
 	int bottom_adj_index = searchLeaf(g_render_list, point_bottom);
 
-	D3DXVECTOR2 point_top = quad_node.bottom_left + D3DXVECTOR2(quad_node.length * 0.5f, quad_node.length + ocean_parameters.patch_length * 0.5f);
+	simul::math::float2 point_top = quad_node.bottom_left + simul::math::float2(quad_node.length * 0.5f, quad_node.length + ocean_parameters.patch_length * 0.5f);
 	int top_adj_index = searchLeaf(g_render_list, point_top);
 
 	int left_type = 0;
@@ -996,13 +988,13 @@ int SimulOceanRendererDX1x::buildNodeList(QuadNode& quad_node)
 		QuadNode sub_node_0 = {quad_node.bottom_left, quad_node.length / 2, 0, {-1, -1, -1, -1}};
 		quad_node.sub_node[0] = buildNodeList(sub_node_0);
 
-		QuadNode sub_node_1 = {quad_node.bottom_left + D3DXVECTOR2(quad_node.length/2, 0), quad_node.length / 2, 0, {-1, -1, -1, -1}};
+		QuadNode sub_node_1 = {quad_node.bottom_left + simul::math::float2(quad_node.length/2, 0), quad_node.length / 2, 0, {-1, -1, -1, -1}};
 		quad_node.sub_node[1] = buildNodeList(sub_node_1);
 
-		QuadNode sub_node_2 = {quad_node.bottom_left + D3DXVECTOR2(quad_node.length/2, quad_node.length/2), quad_node.length / 2, 0, {-1, -1, -1, -1}};
+		QuadNode sub_node_2 = {quad_node.bottom_left + simul::math::float2(quad_node.length/2, quad_node.length/2), quad_node.length / 2, 0, {-1, -1, -1, -1}};
 		quad_node.sub_node[2] = buildNodeList(sub_node_2);
 
-		QuadNode sub_node_3 = {quad_node.bottom_left + D3DXVECTOR2(0, quad_node.length/2), quad_node.length / 2, 0, {-1, -1, -1, -1}};
+		QuadNode sub_node_3 = {quad_node.bottom_left + simul::math::float2(0, quad_node.length/2), quad_node.length / 2, 0, {-1, -1, -1, -1}};
 		quad_node.sub_node[3] = buildNodeList(sub_node_3);
 
 		visible = !isLeaf(quad_node);
@@ -1040,8 +1032,8 @@ void SimulOceanRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p
 
 void SimulOceanRendererDX1x::RenderShaded(float time)
 {
-	ID3D11ShaderResourceView* displacement_map = g_pOceanSimulator->getD3D11DisplacementMap();
-	ID3D11ShaderResourceView* gradient_map = g_pOceanSimulator->getD3D11GradientMap();
+	ID3D11ShaderResourceView* displacement_map = g_pOceanSimulator->getDisplacementMap();
+	ID3D11ShaderResourceView* gradient_map = g_pOceanSimulator->getGradientMap();
 
 	// Build rendering list
 	g_render_list.clear();

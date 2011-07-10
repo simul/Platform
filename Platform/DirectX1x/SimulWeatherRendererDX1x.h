@@ -10,6 +10,7 @@
 #include "Simul/Platform/DirectX1x/MacrosDX1x.h"
 #include "Simul/Platform/DirectX1x/Export.h"
 #include "Simul/Platform/DirectX1x/FramebufferDX1x.h"
+#include "Simul/Platform/DirectX1x/FramebufferCubemapDX1x.h"
 #include <d3dx9.h>
 #ifdef DX10
 	#include <D3D10.h>
@@ -95,12 +96,7 @@ protected:
 	int ScreenWidth,ScreenHeight;
 	ID3D1xDevice*					m_pd3dDevice;
 	ID3D1xDeviceContext *			m_pImmediateContext;
-	//! Cubemap
-	ID3D1xTexture2D*				m_pCubeEnvDepthMap;
-	ID3D1xTexture2D*				m_pCubeEnvMap;
-	ID3D1xRenderTargetView*			m_pCubeEnvMapRTV;
-	ID3D1xDepthStencilView*			m_pCubeEnvDepthMapDSV;
-	ID3D1xShaderResourceView*		m_pCubeEnvMapSRV;
+
 	bool CreateBuffers();
 	bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
 	simul::base::SmartPtr<class SimulSkyRendererDX1x> simulSkyRenderer;
@@ -109,7 +105,7 @@ protected:
 	//simul::base::SmartPtr<class SimulPrecipitationRenderer> *simulPrecipitationRenderer;
 	//simul::base::SmartPtr<class SimulAtmosphericsRenderer> *simulAtmosphericsRenderer;
 	FramebufferDX1x					framebuffer;
-	FramebufferDX1x					cubemap_framebuffers[6];
+	FramebufferCubemapDX1x			framebuffer_cubemap;
 	float							exposure;
 	float							gamma;
 	bool show_3d_clouds,layer2;
@@ -118,7 +114,6 @@ protected:
 	float timing;
 	float exposure_multiplier;
 	void ConnectInterfaces();
-	bool SetupCubemap();
 };
 #ifdef _MSC_VER
 #pragma warning(pop)

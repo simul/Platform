@@ -195,12 +195,16 @@ vertexOutput VS_Main(vertexInput IN)
 #endif
 // Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
 #if FADE_MODE==1
-	OUT.fade_texc=float2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5f*(1.f-sine));
+	float maxd=1.f;
+	float depth=length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES;
+	//OUT.fade_texc=float2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5f*(1.f-sine));
+	OUT.fade_texc=float2(sqrt(depth/maxd),0.5f*(1.f-sine));
 #endif
     return OUT;
 }
 
 #define pi (3.1415926536f)
+
 float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
@@ -213,7 +217,7 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	float BetaRayleigh=0.0596831f*(1.f+cos0*cos0);
 	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
 	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
-		/(float3(1.f,1.f,1.f)+inscatter_factor.a*mieRayleighRatio.xyz);
+		/(float3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
 	float3 colour=BetaTotal*inscatter_factor.rgb;
 	return colour;
 }
@@ -269,6 +273,53 @@ float4 PS_WithLightning(vertexOutput IN): color
 }
 
 float4 PS_Clouds( vertexOutput IN): color
+{
+	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
+	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
+#ifdef DETAIL_NOISE
+	noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
+	noiseval*=IN.texCoords.w;
+#endif
+	float3 texcoord=IN.texCoords.xyz+fractalScale.xyz*noiseval;
+
+	float4 density=tex3D(cloud_density_1,texcoord);
+	float4 density2=tex3D(cloud_density_2,texcoord);
+
+	density=lerp(density,density2,interp);
+
+	density.x*=IN.layerFade;
+	density.x=saturate(density.x*(1.f+alphaSharpness)-alphaSharpness);
+
+	if(density.x<=0)
+		discard;
+	float3 view=normalize(IN.wPosition);
+	float cos0=dot(lightDir.xyz,view.xyz);
+// cloudEccentricity is multiplied by density.z (i.e. direct light) to avoid interpolation artifacts.
+	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
+// Fade mode 1 means using textures for distance fade.
+#if FADE_MODE==1
+	float4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
+	float3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
+	float3 inscatter=InscatterFunction(insc,cos0);
+#endif
+// Fade mode 0 means passing fade values in through vertex properties.
+#if FADE_MODE==0
+	float3 loss=IN.loss;
+	float3 inscatter=IN.inscatter;
+#endif
+	float3 ambient=skylightColour.rgb*density.w;
+
+	float opacity=density.x;
+	float3 final=(density.z*Beta+lightResponse.y*density.y)*IN.lightColour+ambient.rgb;
+
+	final*=loss;
+	final+=inscatter;
+
+    return float4(final,opacity);
+}
+
+
+float4 PS_CloudsPS2( vertexOutput IN): color
 {
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
@@ -630,7 +681,7 @@ technique simul_clouds_sm2
 		AlphaTestEnable=false;
 		FillMode = Solid;
         AlphaBlendEnable = true;
-		SrcBlend = One;
+		SrcBlend = SrcAlpha;
 		DestBlend = InvSrcAlpha;
 		
 		// We would LIKE to do the following:
@@ -640,7 +691,7 @@ technique simul_clouds_sm2
 		// but it's not implemented!
 
 		VertexShader = compile vs_2_0 VS_Main();
-		PixelShader  = compile ps_2_0 PS_Clouds();
+		PixelShader  = compile ps_2_0 PS_CloudsPS2();
     }
 }
 

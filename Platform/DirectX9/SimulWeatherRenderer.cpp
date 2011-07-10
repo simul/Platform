@@ -296,7 +296,7 @@ bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	timer.UpdateTime();
 	simul::math::FirstOrderDecay(sky_timing,timer.Time,1.f,0.01f);
 	if(simul2DCloudRenderer&&layer2)
-		result&=simul2DCloudRenderer->Render(false,false,false);
+		result&=simul2DCloudRenderer->Render(false,false,UseDefaultFog);
 	if(simulCloudRenderer&&layer1&&(!RenderCloudsLate||is_cubemap))
 	{
 		for(int i=0;i<simulCloudRenderer->GetNumBuffers();i++)
@@ -545,8 +545,10 @@ float SimulWeatherRenderer::GetTotalBrightness() const
 const char *SimulWeatherRenderer::GetDebugText() const
 {
 	static char debug_text[256];
-	if(simulCloudRenderer)
+	if(simulSkyRenderer)
+		sprintf_s(debug_text,256,"%s",simulSkyRenderer->GetDebugText());
+/*	if(simulCloudRenderer)
 		sprintf_s(debug_text,256,"%s\ntotal %3.3g ms, clouds %3.3g ms, sky %3.3g ms, final %3.3g",
-			simulCloudRenderer->GetDebugText(),total_timing,cloud_timing,sky_timing,final_timing);
+			simulCloudRenderer->GetDebugText(),total_timing,cloud_timing,sky_timing,final_timing);*/
 	return debug_text;
 }

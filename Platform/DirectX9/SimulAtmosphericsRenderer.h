@@ -120,8 +120,8 @@ protected:
 	D3DXHANDLE						invViewProj;
 	D3DXHANDLE						altitudeTexCoord;
 	D3DXHANDLE						lightDir;
-	D3DXHANDLE						MieRayleighRatio;
-	D3DXHANDLE						HazeEccentricity;
+	D3DXHANDLE						mieRayleighRatio;
+	D3DXHANDLE						hazeEccentricity;
 	D3DXHANDLE						fadeInterp;
 	D3DXHANDLE						imageTexture;
 	D3DXHANDLE						depthTexture;

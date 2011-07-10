@@ -103,8 +103,8 @@ sampler3D lightning_illumination= sampler_state
 
 // For distance-fade:
 float4 lightDir;
-float4 MieRayleighRatio;
-float HazeEccentricity;
+float4 mieRayleighRatio;
+float hazeEccentricity;
 float fadeInterp;
 float altitudeTexCoord;
 
@@ -158,9 +158,9 @@ float HenyeyGreenstein(float g,float cos0)
 float3 InscatterFunction(float4 inscatter_factor,float cos0)
 {
 	float BetaRayleigh=0.0596831f*(1.f+cos0*cos0);
-	float BetaMie=HenyeyGreenstein(HazeEccentricity,cos0);		// Mie's phase function
-	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*MieRayleighRatio.xyz)
-		/(float3(1,1,1)+inscatter_factor.a*MieRayleighRatio.xyz);
+	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
+	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
+		/(float3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
 	float3 colour=BetaTotal*inscatter_factor.rgb;
 	return colour;
 }

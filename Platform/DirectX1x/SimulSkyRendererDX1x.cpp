@@ -698,10 +698,12 @@ bool SimulSkyRendererDX1x::Render2DFades()
 	return true;
 }
 
-bool SimulSkyRendererDX1x::Render(bool cubemap)
+bool SimulSkyRendererDX1x::Render()
 {
 	HRESULT hr=S_OK;
-	if(!cubemap)
+	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
+	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
+	//if(!cubemap)
 		Render2DFades();
 	D3DXMATRIX tmp1,tmp2,wvp;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
@@ -716,6 +718,7 @@ bool SimulSkyRendererDX1x::Render(bool cubemap)
 
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);
+#if 0 // Code for single-pass cubemap. This DX11 feature is not so hot.
 	if(cubemap)
 	{
 		D3DXMATRIX cube_proj;
@@ -727,6 +730,7 @@ bool SimulSkyRendererDX1x::Render(bool cubemap)
 		B_RETURN(projMatrix->SetMatrix(&cube_proj._11));
 		B_RETURN(cubemapViews->SetMatrixArray((const float*)view_matrices,0,6));
 	}
+#endif
 	PIXBeginNamedEvent(0,"Render Sky");
 	skyTexture1->SetResource(sky_textures_SRV[0]);
 	skyTexture2->SetResource(sky_textures_SRV[1]);
@@ -739,11 +743,9 @@ bool SimulSkyRendererDX1x::Render(bool cubemap)
 	lightDirection->SetFloatVector(sun_dir);
 	mieRayleighRatio->SetFloatVector(mie_rayleigh_ratio);
 	hazeEccentricity->SetFloat	(GetSkyInterface()->GetMieEccentricity());
-	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
-	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
-	if(cubemap)
+/*if(cubemap)
 		hr=ApplyPass(m_hTechniqueSky_CUBEMAP->GetPassByIndex(0));
-	else
+	else*/
 		hr=ApplyPass(m_hTechniqueSky->GetPassByIndex(0));
 
 	DrawCube();
@@ -755,7 +757,7 @@ bool SimulSkyRendererDX1x::Render(bool cubemap)
 void SimulSkyRendererDX1x::DrawCubemap(ID3D1xShaderResourceView*		m_pCubeEnvMapSRV)
 {
 	D3DXMATRIX tmp1,tmp2,wvp;
-	D3DXMatrixTranslation(&world,0.f,495.f,-40.f);
+	D3DXMatrixTranslation(&world,0.f,495.f,-20.f);
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);
 	ID3D1xEffectTechnique*				tech;

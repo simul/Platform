@@ -1,4 +1,5 @@
 
+
 #include "FramebufferGL.h"
 #include "LoadGLProgram.h"
 #include "SimulGLWeatherRenderer.h"
@@ -14,10 +15,14 @@
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Base/Timer.h"
 
-#if 0//def _MSC_VER
-static GLuint buffer_format=GL_RGBA16F_ARB;
+#ifdef _MSC_VER
+// for wglGetProcAddress
+#include <Windows.h>
+GLenum buffer_tex_format=GL_FLOAT;//GL_HALF_FLOAT_NV;
+GLenum internal_buffer_format=GL_RGBA32F_ARB;//GL_RGBA16F_ARB;
 #else
-static GLuint buffer_format=GL_RGBA32F_ARB;
+GLenum buffer_tex_format=GL_FLOAT;
+GLenum internal_buffer_format=GL_RGBA32F_ARB;
 #endif
 
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(const char *lic,bool usebuffer,bool tonemap,int width,
@@ -111,6 +116,16 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 {
 	GLenum res=glewInit();
+	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
+
+// If the GL_GREMEDY_string_marker extension is supported:
+	if (glewIsSupported("GL_GREMEDY_string_marker"))
+	{
+		// Get a pointer to the glStringMarkerGREMEDY function:
+		glStringMarkerGREMEDY = (PFNGLSTRINGMARKERGREMEDYPROC)wglGetProcAddress("glStringMarkerGREMEDY");
+	}
+
+
 	CheckGLError(res);
 	if(!GLEW_VERSION_2_0)
 	{
@@ -127,14 +142,14 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
     if(scene_buffer)
         delete scene_buffer;
 	scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
-	scene_buffer->InitColor_Tex(0,buffer_format);
+	scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
 	scene_buffer->SetShader(0);
 
 	device_initialized=true;
 	EnableLayers(simulCloudRenderer.get()!=NULL,simul2DCloudRenderer.get()!=NULL);
-	simulSkyRenderer->RestoreDeviceObjects();
-	simulCloudRenderer->RestoreDeviceObjects(NULL);
-	simulLightningRenderer->RestoreDeviceObjects();
+	///simulSkyRenderer->RestoreDeviceObjects();
+	//simulCloudRenderer->RestoreDeviceObjects(NULL);
+	//simulLightningRenderer->RestoreDeviceObjects();
 	return true;
 }
 bool SimulGLWeatherRenderer::InvalidateDeviceObjects()
@@ -159,7 +174,13 @@ static simul::base::Timer timer;
 		simulSkyRenderer->RenderPlanets();
 	// Everything between Activate() and DeactivateAndRender() is drawn to the buffer object.
 	if(buffered)
+	{
 		scene_buffer->Activate();
+		glClearColor(0.f,0.f,0.f,1.f);
+		ERROR_CHECK
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+		ERROR_CHECK
+	}
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	ERROR_CHECK
 	if(simulSkyRenderer)
@@ -175,7 +196,7 @@ static simul::base::Timer timer;
 		simul2DCloudRenderer->Render(false,false,false);
 	ERROR_CHECK
 	if(simulCloudRenderer&&layer1)
-		simulCloudRenderer->Render(false,false,true);
+		simulCloudRenderer->Render(false,false,UseDefaultFog);
 	timer.UpdateTime();
 	simul::math::FirstOrderDecay(cloud_timing,timer.Time,0.1f,0.01f);
 	if(buffered)
@@ -215,9 +236,13 @@ static simul::base::Timer timer;
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 	if(buffered)
+	{
 		scene_buffer->Activate();
-	ERROR_CHECK
-
+		glClearColor(0.f,0.f,0.f,1.f);
+		ERROR_CHECK
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+		ERROR_CHECK
+	}
     if(simulCloudRenderer)
 		simulCloudRenderer->Render(false,depth_testing,default_fog);
 	ERROR_CHECK

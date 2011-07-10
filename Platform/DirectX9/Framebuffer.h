@@ -13,7 +13,7 @@ class FramebufferInterface
 public:
 	virtual void Activate()=0;
 	virtual void Deactivate()=0;
-	virtual void DeactivateAndRender(bool blend)=0;
+	
 	virtual void SetWidthAndHeight(int w,int h)=0;
 };
 #endif

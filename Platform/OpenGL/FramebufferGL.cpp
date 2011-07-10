@@ -119,7 +119,7 @@ void FramebufferGL::InitColor_RB(int index, GLenum iformat)
 	ERROR_CHECK
 }
 
-void FramebufferGL::InitColor_Tex(int index, GLenum iformat)
+void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 {
 	if(!m_width||!m_height)
 		return;
@@ -136,7 +136,7 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat)
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(m_target, 0, iformat, m_width, m_height, 0,GL_RGBA, GL_INT, NULL);
+    glTexImage2D(m_target, 0,iformat, m_width, m_height, 0,GL_RGBA, format, NULL);
 	ERROR_CHECK
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
@@ -221,7 +221,7 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 // The FBO needs to be deactivated when using the associated textures.
 void FramebufferGL::Activate()
 {
-	//glFlush(); 
+	glFlush(); 
 	CheckFramebufferStatus();
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
 	ERROR_CHECK
@@ -231,10 +231,6 @@ void FramebufferGL::Activate()
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	ERROR_CHECK
 	glViewport(0,0,m_width,m_height);
-	ERROR_CHECK
-	glClearColor(0.f,0.f,0.f,1.f);
-	ERROR_CHECK
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	ERROR_CHECK
 	fb_stack.push(m_fb);
 }
@@ -305,6 +301,8 @@ void FramebufferGL::Render(bool blend)
 
 void FramebufferGL::Deactivate() 
 {
+	glFlush(); 
+	CheckFramebufferStatus();
 	// remove m_fb from the stack and...
 	fb_stack.pop();
 	// .. restore the next one down.

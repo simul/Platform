@@ -500,7 +500,6 @@ void SimulSkyRenderer::CycleTexturesForward()
 	std::swap(loss_textures[1],loss_textures[2]);
 	std::swap(inscatter_textures[0],inscatter_textures[1]);
 	std::swap(inscatter_textures[1],inscatter_textures[2]);
-	
 	std::swap(sunlight_textures[0],sunlight_textures[1]);
 	std::swap(sunlight_textures[1],sunlight_textures[2]);
 }
@@ -1220,6 +1219,9 @@ bool SimulSkyRenderer::RenderTextureStars()
 
 bool SimulSkyRenderer::Render2DFades()
 {
+	// Not needed if called from Render():
+	//m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
+	//m_pSkyEffect->SetFloat	(skyInterp		,skyKeyframer->GetInterpolation());
 	m_pSkyEffect->SetTechnique(m_hTechnique3DTo2DFade);
 	m_pSkyEffect->SetTexture(fadeTexture,loss_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,loss_textures[1]);
@@ -1235,9 +1237,12 @@ bool SimulSkyRenderer::Render2DFades()
 	inscatter_2d.Deactivate();
 	return true;
 }
-
+static float interp_at_last_render=0.f;
 bool SimulSkyRenderer::Render()
 {
+	interp_at_last_render=skyKeyframer->GetInterpolation();
+	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
+	m_pSkyEffect->SetFloat	(skyInterp		,skyKeyframer->GetInterpolation());
 	Render2DFades();
 	PIXBeginNamedEvent(0xFF00FFFF,"SimulSkyRenderer::Render");
 	HRESULT hr=S_OK;
@@ -1279,9 +1284,6 @@ bool SimulSkyRenderer::Render()
 	m_pSkyEffect->SetVector	(lightDirection		,&sun_dir);
 	m_pSkyEffect->SetVector	(mieRayleighRatio	,&ratio);
 	m_pSkyEffect->SetFloat	(hazeEccentricity	,GetSkyInterface()->GetMieEccentricity());
-	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
-
-	m_pSkyEffect->SetFloat	(skyInterp		,skyKeyframer->GetInterpolation());
 	UINT passes=1;
 	hr=m_pSkyEffect->Begin( &passes, 0 );
 	for(unsigned i = 0 ; i < passes ; ++i )
@@ -1326,7 +1328,7 @@ simul::sky::float4 SimulSkyRenderer::GetLightColour() const
 const char *SimulSkyRenderer::GetDebugText() const
 {
 	static char txt[200];
-	sprintf_s(txt,200,"interp %3.3g",skyKeyframer->GetInterpolation());
+	sprintf_s(txt,200,"interp %3.3g",interp_at_last_render);
 	return txt;
 }
 

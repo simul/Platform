@@ -94,9 +94,8 @@ float4 GenGradientFoldingPS(VS_QUAD_OUTPUT In) : SV_Target
 	
 	// Do not store the actual normal value. Using gradient instead, which preserves two differential values.
 	float2 gradient = {-(displace_right.z - displace_left.z), -(displace_front.z - displace_back.z)};
-	
 
-	// Calculate Jacobian corelation from the partial differential of height field
+	// Calculate Jacobian correlation from the partial differential of height field
 	float2 Dx = (displace_right.xy - displace_left.xy) * g_ChoppyScale * g_GridLen;
 	float2 Dy = (displace_front.xy - displace_back.xy) * g_ChoppyScale * g_GridLen;
 	float J = (1.0f + Dx.x) * (1.0f + Dy.y) - Dx.y * Dy.x;

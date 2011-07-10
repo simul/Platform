@@ -807,17 +807,12 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 										0,
 										0);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
-
-//	calculate sun occlusion for any external classes that need it:
-//	float vis=cloudKeyframer->GetVisibility(view_pos,sun_dir);
-
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	// Get the overall ambient light at this altitude, and multiply it by the cloud's ambient response.
 	float base_alt_km=0.001f*(cloudInterface->GetCloudBaseZ());//+.5f*cloudInterface->GetCloudHeight());
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*cloudInterface->GetAmbientLightResponse();
 
-	simul::sky::float4 fractal_scales=(cubemap?0.f:1.f)*helper->GetFractalScales(cloudInterface);
 
 	float tan_half_fov_vertical=1.f/proj._22;
 	float tan_half_fov_horizontal=1.f/proj._11;
@@ -834,9 +829,9 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	m_pCloudEffect->SetVector	(lightResponse		,(D3DXVECTOR4*)(&light_response));
 	m_pCloudEffect->SetVector	(lightDir			,(D3DXVECTOR4*)(&sun_dir));
 	m_pCloudEffect->SetVector	(skylightColour		,(D3DXVECTOR4*)(&sky_light_colour));
+	simul::sky::float4 fractal_scales=(cubemap?0.f:1.f)*helper->GetFractalScales(cloudInterface);
 	m_pCloudEffect->SetVector	(fractalScale		,(D3DXVECTOR4*)(&fractal_scales));
 	m_pCloudEffect->SetVector	(mieRayleighRatio	,MakeD3DVector(skyInterface->GetMieRayleighRatio()));
-	
 	m_pCloudEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 	m_pCloudEffect->SetFloat	(cloudEccentricity	,cloudInterface->GetMieAsymmetry());
 	m_pCloudEffect->SetFloat	(fadeInterp			,fade_interp);
@@ -1106,8 +1101,6 @@ void SimulCloudRenderer::InternalRenderVolumetric(int buffer_index)
 	int v=0;
 	simul::math::Vector3 pos;
 	float base_alt_km=0.001f*(cloudInterface->GetCloudBaseZ());//+.5f*cloudInterface->GetCloudHeight());
-	// Get the sunlight at this altitude:
-	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	unsigned grid_x,el_grid;
 	helper->GetGrid(el_grid,grid_x);
 	simul::sky::float4 view_km=(const float*)cam_pos;
@@ -1115,7 +1108,8 @@ void SimulCloudRenderer::InternalRenderVolumetric(int buffer_index)
 	light_colours.resize(el_grid+1);
 	view_km*=0.001f;
 	typedef std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_iterator iter;
-	static float cutoff=100000.f;
+	static float cutoff=100000.f;	// Get the sunlight at this altitude:
+	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	for(iter i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++)
 	{
 		float distance=(*i)->distance;

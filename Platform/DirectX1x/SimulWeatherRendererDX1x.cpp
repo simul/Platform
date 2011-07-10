@@ -34,11 +34,6 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(const char *lic,
 	framebuffer(w,h),
 	m_pd3dDevice(NULL),
 	m_pImmediateContext(NULL),
-	m_pCubeEnvDepthMap(NULL),
-	m_pCubeEnvMap(NULL),
-	m_pCubeEnvMapRTV(NULL),
-	m_pCubeEnvDepthMapDSV(NULL),
-	m_pCubeEnvMapSRV(NULL),
 
 	simulSkyRenderer(NULL),
 	simulCloudRenderer(NULL),
@@ -111,11 +106,9 @@ bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapC
 #endif
 
 	framebuffer.RestoreDeviceObjects(m_pd3dDevice);
-	for(int i=0;i<6;i++)
-	{
-		cubemap_framebuffers[i].RestoreDeviceObjects(m_pd3dDevice);
-		cubemap_framebuffers[i].SetWidthAndHeight(64,64);
-	}
+	framebuffer_cubemap.SetWidthAndHeight(64,64);
+	framebuffer_cubemap.RestoreDeviceObjects(m_pd3dDevice);
+
 	pSwapChain=swapChain;
 // Get the back buffer (screen) format so we know how to render the weather buffer to the screen:
 	ID3D1xTexture2D *pBackBuffer=NULL;
@@ -155,8 +148,6 @@ bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapC
 		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);*/
 
 	MakeCubeMatrices(view_matrices);
-	if(!SetupCubemap())
-		return false;
 	return (hr==S_OK);
 }
 
@@ -164,10 +155,7 @@ bool SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	framebuffer.InvalidateDeviceObjects();
-	for(int i=0;i<6;i++)
-	{
-		cubemap_framebuffers[i].InvalidateDeviceObjects();
-	}
+	framebuffer_cubemap.InvalidateDeviceObjects();
 	if(simulSkyRenderer)
 		simulSkyRenderer->InvalidateDeviceObjects();
 	if(simulCloudRenderer)
@@ -183,11 +171,6 @@ bool SimulWeatherRendererDX1x::InvalidateDeviceObjects()
       
 // Free the cubemap resources. 
 	SAFE_RELEASE(m_pImmediateContext);
-	SAFE_RELEASE(m_pCubeEnvDepthMap);
-	SAFE_RELEASE(m_pCubeEnvMap);
-	SAFE_RELEASE(m_pCubeEnvMapRTV);
-	SAFE_RELEASE(m_pCubeEnvDepthMapDSV);
-	SAFE_RELEASE(m_pCubeEnvMapSRV);
 	return (hr==S_OK);
 }
 
@@ -243,130 +226,37 @@ SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
     return (hr==S_OK);
 }
 */
-const int ENVMAPSIZE=64;
-const int MIPLEVELS=1;
-bool SimulWeatherRendererDX1x::SetupCubemap()
-{
-	HRESULT hr=S_OK;
-	// Create cubic depth stencil texture
-	D3D1x_TEXTURE2D_DESC dstex;
-	dstex.Width = ENVMAPSIZE;
-	dstex.Height = ENVMAPSIZE;
-	dstex.MipLevels = 1;
-	dstex.ArraySize = 6;
-	dstex.SampleDesc.Count = 1;
-	dstex.SampleDesc.Quality = 0;
-	dstex.Format = DXGI_FORMAT_R24G8_TYPELESS;//DXGI_FORMAT_D32_FLOAT;
-	dstex.Usage = D3D1x_USAGE_DEFAULT;
-	dstex.BindFlags = D3D1x_BIND_DEPTH_STENCIL | D3D1x_BIND_SHADER_RESOURCE;
-	dstex.CPUAccessFlags = 0;
-	dstex.MiscFlags = D3D1x_RESOURCE_MISC_TEXTURECUBE;
- 
-	B_RETURN( m_pd3dDevice->CreateTexture2D( &dstex, NULL, &m_pCubeEnvDepthMap ));
-	//
 
-	// Create the depth stencil view for the entire cube
-	D3D1x_DEPTH_STENCIL_VIEW_DESC DescDS;
-    ZeroMemory( &DescDS, sizeof( DescDS ) );
-	DescDS.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	DescDS.ViewDimension = D3D1x_DSV_DIMENSION_TEXTURE2DARRAY;
-	DescDS.Texture2DArray.FirstArraySlice = 0;
-	DescDS.Texture2DArray.ArraySize = 6;
-	DescDS.Texture2DArray.MipSlice = 0;
- 
-	B_RETURN( m_pd3dDevice->CreateDepthStencilView(m_pCubeEnvDepthMap, &DescDS, &m_pCubeEnvDepthMapDSV ));
-	 
-	//////////////////////////////////////////////////////////////////////////////////////////////////
-	// Create the cube map for env map render target
-	dstex.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	dstex.BindFlags = D3D1x_BIND_RENDER_TARGET | D3D1x_BIND_SHADER_RESOURCE;
-	dstex.MiscFlags = D3D1x_RESOURCE_MISC_GENERATE_MIPS | D3D1x_RESOURCE_MISC_TEXTURECUBE;
-	dstex.MipLevels = MIPLEVELS;
- 
-	B_RETURN(m_pd3dDevice->CreateTexture2D(&dstex,NULL,&m_pCubeEnvMap));
-
-	// Create the 6-face render target view
-	D3D1x_RENDER_TARGET_VIEW_DESC DescRT;
-	DescRT.Format = dstex.Format;
-	DescRT.ViewDimension = D3D1x_RTV_DIMENSION_TEXTURE2DARRAY;
-	DescRT.Texture2DArray.FirstArraySlice = 0;
-	DescRT.Texture2DArray.ArraySize = 6;
-	DescRT.Texture2DArray.MipSlice = 0;
-	 
-	B_RETURN( m_pd3dDevice->CreateRenderTargetView(m_pCubeEnvMap, &DescRT, &m_pCubeEnvMapRTV ));
-
-	// Create the shader resource view for the cubic env map
-	D3D1x_SHADER_RESOURCE_VIEW_DESC SRVDesc;
-	ZeroMemory( &SRVDesc, sizeof(SRVDesc) );
-	SRVDesc.Format = dstex.Format;
-	SRVDesc.ViewDimension = D3D1x_SRV_DIMENSION_TEXTURECUBE;
-	SRVDesc.TextureCube.MipLevels = MIPLEVELS;
-	SRVDesc.TextureCube.MostDetailedMip = 0;
-	 
-	B_RETURN( m_pd3dDevice->CreateShaderResourceView(m_pCubeEnvMap, &SRVDesc, &m_pCubeEnvMapSRV ));
-
-	return true;
-}
 bool SimulWeatherRendererDX1x::RenderCubemap()
 {
-#if 0
+	D3DXMATRIX ov=view;
+	D3DXMATRIX op=proj;
 	for(int i=0;i<6;i++)
 	{
-		cubemap_framebuffers[i].Activate();
+		framebuffer_cubemap.SetCurrentFace(i);
+		framebuffer_cubemap.Activate();
 		if(simulSkyRenderer)
 		{
-			simulSkyRenderer->SetMatrices(view_matrices[i],proj);
-			hr=simulSkyRenderer->Render(true);
+			D3DXMATRIX cube_proj;
+			D3DXMatrixPerspectiveFovLH(&cube_proj,
+				3.1415926536f/2.f,
+				1.f,
+				1.f,
+				200000.f);
+			view=view_matrices[i];
+			proj=cube_proj;
+			HRESULT hr=RenderSky(false,true);
 		}
-		cubemap_framebuffers[i].Deactivate();
+		framebuffer_cubemap.Deactivate();
 	}
-#else
-	HRESULT hr=S_OK;
-	ID3D1xRenderTargetView*				m_pOldRenderTarget;
-	ID3D1xDepthStencilView*				m_pOldDepthSurface;
-	D3D1x_VIEWPORT						m_OldViewports[4];
-	unsigned int num_v=0;
-	m_pImmediateContext->RSGetViewports(&num_v,NULL);
-	if(num_v<=4)
-		m_pImmediateContext->RSGetViewports(&num_v,m_OldViewports);
-
-	m_pOldRenderTarget	=NULL;
-	m_pOldDepthSurface	=NULL;
-	m_pImmediateContext->OMGetRenderTargets(	1,
-												&m_pOldRenderTarget,
-												&m_pOldDepthSurface
-												);
-	m_pImmediateContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV,m_pCubeEnvDepthMapDSV);
-	D3D11_VIEWPORT viewport;
-		// Setup the viewport for rendering.
-	viewport.Width = (float)ENVMAPSIZE;
-	viewport.Height = (float)ENVMAPSIZE;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
-
-	// Create the viewport.
-	m_pImmediateContext->RSSetViewports(1, &viewport);
-	if(simulSkyRenderer)
-	{
-		simulSkyRenderer->SetMatrices(view,proj);
-		hr=simulSkyRenderer->Render(true);
-	}
-	
-	//ID3D11RenderTargetView* rTargets[2] = { m_pOldRenderTarget, NULL };
-	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
-	SAFE_RELEASE(m_pOldRenderTarget)
-	SAFE_RELEASE(m_pOldDepthSurface)
-	// Create the viewport.
-	m_pImmediateContext->RSSetViewports(1,m_OldViewports);
-#endif
+	view=ov;
+	proj=op;
 	return true;
 }
 
 void *SimulWeatherRendererDX1x::GetCubemap()
 {
-	return m_pCubeEnvMapSRV;
+	return framebuffer_cubemap.GetTextureResource();// m_pCubeEnvMapSRV;
 }
 
 bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
@@ -397,9 +287,9 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 	}
 	HRESULT hr=S_OK;
 	if(simulSkyRenderer)
-		hr=simulSkyRenderer->Render(false);
+		hr=simulSkyRenderer->Render();
 	if(simulCloudRenderer)
-		hr=simulCloudRenderer->Render(false,false,false);
+		hr=simulCloudRenderer->Render(is_cubemap,false,UseDefaultFog);
 	if(buffered)
 		framebuffer.DeactivateAndRender(false);
 	return (hr==S_OK);
@@ -511,7 +401,7 @@ const char *SimulWeatherRendererDX1x::GetDebugText() const
 {
 	static char debug_text[256];
 	if(simulSkyRenderer)
-		sprintf_s(debug_text,256,"%s",simulCloudRenderer->GetDebugText());
+		sprintf_s(debug_text,256,"%3.3g",simulSkyRenderer->GetSkyKeyframer()->GetInterpolation());
 //		sprintf_s(debug_text,256,"%s",simulCloudRenderer->GetDebugText());
 //	if(simulCloudRenderer)
 		//sprintf_s(debug_text,256,"TIME %2.2g ms\n%s",timing,simulCloudRenderer->GetDebugText());

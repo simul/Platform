@@ -95,7 +95,7 @@ void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11De
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->SetMatrices(view,proj);
-		simulWeatherRenderer->RenderSky(false,false);
+		simulWeatherRenderer->RenderSky(true,false);
 	}
 	if(simulHDRRenderer)
 		simulHDRRenderer->FinishRender();

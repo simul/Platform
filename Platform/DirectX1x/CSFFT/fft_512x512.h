@@ -30,10 +30,15 @@ struct FFT_512x512
 	~FFT_512x512();
 	void RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT slices);
 	void InvalidateDeviceObjects();
-	void create_cbuffers_512x512(ID3D11Device* pd3dDevice, UINT slices);
+	void CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices);
 	void fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
 							ID3D11ShaderResourceView* pSRV_Dst,
 							ID3D11ShaderResourceView* pSRV_Src);
+	void radix008A(ID3D11UnorderedAccessView* pUAV_Dst,
+				   ID3D11ShaderResourceView* pSRV_Src,
+				   UINT thread_count,
+				   UINT istride);
+protected:
 	// D3D11 objects
 	ID3D11DeviceContext* pd3dImmediateContext;
 	ID3D11ComputeShader* pRadix008A_CS;
@@ -44,7 +49,6 @@ struct FFT_512x512
 
 	// For 512x512 config, we need 6 constant buffers
 	ID3D11Buffer* pRadix008A_CB[6];
-
 	// Temporary buffers
 	ID3D11Buffer* pBuffer_Tmp;
 	ID3D11UnorderedAccessView* pUAV_Tmp;

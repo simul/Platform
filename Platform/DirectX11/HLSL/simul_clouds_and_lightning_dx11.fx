@@ -43,6 +43,9 @@ SamplerState fadeSamplerState
 #ifndef MAX_FADE_DISTANCE_METRES
 	#define MAX_FADE_DISTANCE_METRES (300000.f)
 #endif
+#ifndef FADE_MODE
+	#define FADE_MODE 1
+#endif
 cbuffer cbUser : register(b2)
 {
 	float4 eyePosition			: packoffset(c0);
@@ -100,7 +103,18 @@ vertexOutput VS_Main(vertexInput IN)
 	OUT.texCoordLightning=texCoordLightning;
 	float3 view=normalize(OUT.wPosition.xyz);
 	float sine=view.y;
-	OUT.fade_texc=float2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5f*(1.f-sine));
+// Fade mode ZERO - fade values come from the vertex. So we pass them on to the pixel shader:
+#if FADE_MODE==0
+    OUT.loss			=IN.loss;
+    OUT.inscatter		=IN.inscatter;
+#endif
+// Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
+#if FADE_MODE==1
+	float maxd=1.f;
+	float depth=length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES;
+	//OUT.fade_texc=float2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5f*(1.f-sine));
+	OUT.fade_texc=float2(sqrt(depth/maxd),0.5f*(1.f-sine));
+#endif
     return OUT;
 }
 
@@ -117,7 +131,7 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	float BetaRayleigh=0.0596831f*(1.f+cos0*cos0);
 	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
 	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
-		/(float3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
+		/(float3(1.f,1.f,1.f)+inscatter_factor.a*mieRayleighRatio.xyz);
 	float3 colour=BetaTotal*inscatter_factor.rgb;
 	return colour;
 }
@@ -243,7 +257,7 @@ BlendState DoBlend
 	DestBlend = INV_SRC_ALPHA;
     BlendOp = ADD;
     SrcBlendAlpha = ZERO;
-    DestBlendAlpha = SRC_ALPHA;
+    DestBlendAlpha = INV_SRC_ALPHA;
     BlendOpAlpha = ADD;
     RenderTargetWriteMask[0] = 0x0F;
 };

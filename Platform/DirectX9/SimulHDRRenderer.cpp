@@ -151,7 +151,7 @@ bool SimulHDRRenderer::CreateBuffers()
 	D3DFORMAT hdr_format=D3DFMT_LIN_A16B16G16R16F;
 #endif
 	hr=CanUse16BitFloats(m_pd3dDevice);
-	if(hr!=S_OK)
+	//if(hr!=S_OK)
 #ifndef XBOX
 		hdr_format=D3DFMT_A32B32G32R32F;
 #else

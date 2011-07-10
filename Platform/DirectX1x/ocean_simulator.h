@@ -62,13 +62,12 @@ public:
 	~OceanSimulator();
 
 	// -------------------------- Initialization & simulation routines ------------------------
-
 	// Update ocean wave when tick arrives.
 	void updateDisplacementMap(float time);
 
 	// Texture access
-	ID3D11ShaderResourceView* getD3D11DisplacementMap();
-	ID3D11ShaderResourceView* getD3D11GradientMap();
+	ID3D11ShaderResourceView* getDisplacementMap();
+	ID3D11ShaderResourceView* getGradientMap();
 
 	const OceanParameter& getParameters();
 
@@ -76,24 +75,22 @@ public:
 protected:
 	OceanParameter m_param;
 
-	// ---------------------------------- GPU shading asset -----------------------------------
-
+	// ---------------------------------- GPU shading assets -----------------------------------
 	// D3D objects
-	ID3D11Device* m_pd3dDevice;
-	ID3D11DeviceContext* m_pd3dImmediateContext;
+	ID3D11DeviceContext			* m_pd3dImmediateContext;
 	
 	// Displacement map
-	ID3D11Texture2D* m_pDisplacementMap;		// (RGBA32F)
-	ID3D11ShaderResourceView* m_pDisplacementSRV;
-	ID3D11RenderTargetView* m_pDisplacementRTV;
+	ID3D11Texture2D				* m_pDisplacementMap;		// (RGBA32F)
+	ID3D11ShaderResourceView	* m_pDisplacementSRV;
+	ID3D11RenderTargetView		* m_pDisplacementRTV;
 
 	// Gradient field
-	ID3D11Texture2D* m_pGradientMap;			// (RGBA16F)
-	ID3D11ShaderResourceView* m_pGradientSRV;
-	ID3D11RenderTargetView* m_pGradientRTV;
+	ID3D11Texture2D				* m_pGradientMap;			// (RGBA16F)
+	ID3D11ShaderResourceView	* m_pGradientSRV;
+	ID3D11RenderTargetView		* m_pGradientRTV;
 
 	// Samplers
-	ID3D11SamplerState* m_pPointSamplerState;
+	ID3D11SamplerState			* m_pPointSamplerState;
 
 	// Initialize the vector field.
 	void initHeightMap(OceanParameter& params, D3DXVECTOR2* out_h0, float* out_omega);
@@ -136,7 +133,7 @@ protected:
 	ID3D11Buffer* m_pPerFrameCB;
 
 	// FFT wrap-up
-	CSFFT512x512_Plan m_fft_plan;
+	FFT_512x512 m_fft;
 
 #ifdef CS_DEBUG_BUFFER
 	ID3D11Buffer* m_pDebugBuffer;
