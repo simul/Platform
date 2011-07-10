@@ -24,8 +24,16 @@
 // Common types
 ///////////////////////////////////////////////////////////////////////////////
 
-typedef struct CSFFT_512x512_Data_t
+struct FFT_512x512
 {
+	FFT_512x512();
+	~FFT_512x512();
+	void RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT slices);
+	void InvalidateDeviceObjects();
+	void create_cbuffers_512x512(ID3D11Device* pd3dDevice, UINT slices);
+	void fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
+							ID3D11ShaderResourceView* pSRV_Dst,
+							ID3D11ShaderResourceView* pSRV_Src);
 	// D3D11 objects
 	ID3D11DeviceContext* pd3dImmediateContext;
 	ID3D11ComputeShader* pRadix008A_CS;
@@ -41,24 +49,5 @@ typedef struct CSFFT_512x512_Data_t
 	ID3D11Buffer* pBuffer_Tmp;
 	ID3D11UnorderedAccessView* pUAV_Tmp;
 	ID3D11ShaderResourceView* pSRV_Tmp;
-} CSFFT512x512_Plan;
+};
 
-////////////////////////////////////////////////////////////////////////////////
-// Common constants
-////////////////////////////////////////////////////////////////////////////////
-#define TWO_PI 6.283185307179586476925286766559
-
-#define FFT_DIMENSIONS 3U
-#define FFT_PLAN_SIZE_LIMIT (1U << 27)
-
-#define FFT_FORWARD -1
-#define FFT_INVERSE 1
-
-
-void fft512x512_create_plan(CSFFT512x512_Plan* plan, ID3D11Device* pd3dDevice, UINT slices);
-void fft512x512_destroy_plan(CSFFT512x512_Plan* plan);
-
-void fft_512x512_c2c(CSFFT512x512_Plan* fft_plan, 
-					 ID3D11UnorderedAccessView* pUAV_Dst,
-					 ID3D11ShaderResourceView* pSRV_Dst,
-					 ID3D11ShaderResourceView* pSRV_Src);
