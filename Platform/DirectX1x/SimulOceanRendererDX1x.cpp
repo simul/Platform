@@ -18,12 +18,6 @@ struct ocean_vertex
 OceanSimulator* g_pOceanSimulator=NULL;
 // Mesh properties:
 
-// Mesh grid dimension, must be 2^n. 4x4 ~ 256x256
-int g_MeshDim = 128;
-// Subdivision thredshold. Any quad covers more pixels than this value needs to be subdivided.
-float g_UpperGridCoverage = 64.0f;
-// Draw distance = ocean_parameters.patch_length * 2^g_FurthestCover
-int g_FurthestCover = 8;
 
 // Shading properties:
 // Two colors for waterbody and sky color
@@ -46,15 +40,6 @@ D3DXVECTOR3 g_SunDir = D3DXVECTOR3(0.936016f, -0.343206f, 0.0780013f);
 D3DXVECTOR3 g_SunColor = D3DXVECTOR3(1.0f, 1.0f, 0.6f);
 float g_Shineness = 400.0f;
 
-// Quad-tree LOD, 0 to 9 (1x1 ~ 512x512) 
-int g_Lods = 0;
-// Pattern lookup array. Filled at init time.
-QuadRenderParam g_mesh_patterns[9][3][3][3][3];
-// Pick a proper mesh pattern according to the adjacent patches.
-QuadRenderParam& selectMeshPattern(const QuadNode& quad_node);
-
-// Rendering list
-vector<QuadNode> g_render_list;
 
 // Constant buffer
 struct Const_Per_Call
@@ -128,18 +113,17 @@ SimulOceanRendererDX1x::SimulOceanRendererDX1x()
 	,g_pCubeSampler(NULL)
 {
 }
+
 SimulOceanRendererDX1x::~SimulOceanRendererDX1x()
 {
 	InvalidateDeviceObjects();
 }
-
 
 void SimulOceanRendererDX1x::SetOceanParameters(const OceanParameter& ocean_param)
 {
 	ocean_parameters=ocean_param;
 	ocean_parameters.dmap_dim = ocean_param.dmap_dim;
 	ocean_parameters.wind_dir = ocean_param.wind_dir;
-
 }
 
 void SimulOceanRendererDX1x::Update(float dt)
@@ -382,188 +366,6 @@ void SimulOceanRendererDX1x::InvalidateDeviceObjects()
 
 #define MESH_INDEX_2D(x, y)	(((y) + vert_rect.bottom) * (g_MeshDim + 1) + (x) + vert_rect.left)
 
-// Generate boundary mesh for a patch. Return the number of generated indices
-int generateBoundaryMesh(int left_degree, int right_degree, int bottom_degree, int top_degree,
-						 RECT vert_rect, DWORD* output)
-{
-	// Triangle list for bottom boundary
-	int i, j;
-	int counter = 0;
-	int width = vert_rect.right - vert_rect.left;
-
-	if (bottom_degree > 0)
-	{
-		int b_step = width / bottom_degree;
-
-		for (i = 0; i < width; i += b_step)
-		{
-			output[counter++] = MESH_INDEX_2D(i, 0);
-			output[counter++] = MESH_INDEX_2D(i + b_step / 2, 1);
-			output[counter++] = MESH_INDEX_2D(i + b_step, 0);
-
-			for (j = 0; j < b_step / 2; j ++)
-			{
-				if (i == 0 && j == 0 && left_degree > 0)
-					continue;
-
-				output[counter++] = MESH_INDEX_2D(i, 0);
-				output[counter++] = MESH_INDEX_2D(i + j, 1);
-				output[counter++] = MESH_INDEX_2D(i + j + 1, 1);
-			}
-
-			for (j = b_step / 2; j < b_step; j ++)
-			{
-				if (i == width - b_step && j == b_step - 1 && right_degree > 0)
-					continue;
-
-				output[counter++] = MESH_INDEX_2D(i + b_step, 0);
-				output[counter++] = MESH_INDEX_2D(i + j, 1);
-				output[counter++] = MESH_INDEX_2D(i + j + 1, 1);
-			}
-		}
-	}
-
-	// Right boundary
-	int height = vert_rect.top - vert_rect.bottom;
-
-	if (right_degree > 0)
-	{
-		int r_step = height / right_degree;
-
-		for (i = 0; i < height; i += r_step)
-		{
-			output[counter++] = MESH_INDEX_2D(width, i);
-			output[counter++] = MESH_INDEX_2D(width - 1, i + r_step / 2);
-			output[counter++] = MESH_INDEX_2D(width, i + r_step);
-
-			for (j = 0; j < r_step / 2; j ++)
-			{
-				if (i == 0 && j == 0 && bottom_degree > 0)
-					continue;
-
-				output[counter++] = MESH_INDEX_2D(width, i);
-				output[counter++] = MESH_INDEX_2D(width - 1, i + j);
-				output[counter++] = MESH_INDEX_2D(width - 1, i + j + 1);
-			}
-
-			for (j = r_step / 2; j < r_step; j ++)
-			{
-				if (i == height - r_step && j == r_step - 1 && top_degree > 0)
-					continue;
-
-				output[counter++] = MESH_INDEX_2D(width, i + r_step);
-				output[counter++] = MESH_INDEX_2D(width - 1, i + j);
-				output[counter++] = MESH_INDEX_2D(width - 1, i + j + 1);
-			}
-		}
-	}
-
-	// Top boundary
-	if (top_degree > 0)
-	{
-		int t_step = width / top_degree;
-
-		for (i = 0; i < width; i += t_step)
-		{
-			output[counter++] = MESH_INDEX_2D(i, height);
-			output[counter++] = MESH_INDEX_2D(i + t_step / 2, height - 1);
-			output[counter++] = MESH_INDEX_2D(i + t_step, height);
-
-			for (j = 0; j < t_step / 2; j ++)
-			{
-				if (i == 0 && j == 0 && left_degree > 0)
-					continue;
-
-				output[counter++] = MESH_INDEX_2D(i, height);
-				output[counter++] = MESH_INDEX_2D(i + j, height - 1);
-				output[counter++] = MESH_INDEX_2D(i + j + 1, height - 1);
-			}
-
-			for (j = t_step / 2; j < t_step; j ++)
-			{
-				if (i == width - t_step && j == t_step - 1 && right_degree > 0)
-					continue;
-
-				output[counter++] = MESH_INDEX_2D(i + t_step, height);
-				output[counter++] = MESH_INDEX_2D(i + j, height - 1);
-				output[counter++] = MESH_INDEX_2D(i + j + 1, height - 1);
-			}
-		}
-	}
-
-	// Left boundary
-	if (left_degree > 0)
-	{
-		int l_step = height / left_degree;
-
-		for (i = 0; i < height; i += l_step)
-		{
-			output[counter++] = MESH_INDEX_2D(0, i);
-			output[counter++] = MESH_INDEX_2D(1, i + l_step / 2);
-			output[counter++] = MESH_INDEX_2D(0, i + l_step);
-
-			for (j = 0; j < l_step / 2; j ++)
-			{
-				if (i == 0 && j == 0 && bottom_degree > 0)
-					continue;
-
-				output[counter++] = MESH_INDEX_2D(0, i);
-				output[counter++] = MESH_INDEX_2D(1, i + j);
-				output[counter++] = MESH_INDEX_2D(1, i + j + 1);
-			}
-
-			for (j = l_step / 2; j < l_step; j ++)
-			{
-				if (i == height - l_step && j == l_step - 1 && top_degree > 0)
-					continue;
-
-				output[counter++] = MESH_INDEX_2D(0, i + l_step);
-				output[counter++] = MESH_INDEX_2D(1, i + j);
-				output[counter++] = MESH_INDEX_2D(1, i + j + 1);
-			}
-		}
-	}
-
-	return counter;
-}
-
-// Generate boundary mesh for a patch. Return the number of generated indices
-int generateInnerMesh(RECT vert_rect, DWORD* output)
-{
-	int i, j;
-	int counter = 0;
-	int width = vert_rect.right - vert_rect.left;
-	int height = vert_rect.top - vert_rect.bottom;
-
-	bool reverse = false;
-	for (i = 0; i < height; i++)
-	{
-		if (reverse == false)
-		{
-			output[counter++] = MESH_INDEX_2D(0, i);
-			output[counter++] = MESH_INDEX_2D(0, i + 1);
-			for (j = 0; j < width; j++)
-			{
-				output[counter++] = MESH_INDEX_2D(j + 1, i);
-				output[counter++] = MESH_INDEX_2D(j + 1, i + 1);
-			}
-		}
-		else
-		{
-			output[counter++] = MESH_INDEX_2D(width, i);
-			output[counter++] = MESH_INDEX_2D(width, i + 1);
-			for (j = width - 1; j >= 0; j--)
-			{
-				output[counter++] = MESH_INDEX_2D(j, i);
-				output[counter++] = MESH_INDEX_2D(j, i + 1);
-			}
-		}
-
-		reverse = !reverse;
-	}
-
-	return counter;
-}
 
 void SimulOceanRendererDX1x::createSurfaceMesh()
 {
@@ -597,7 +399,6 @@ void SimulOceanRendererDX1x::createSurfaceMesh()
 	
 	SAFE_RELEASE(g_pMeshVB);
 	m_pd3dDevice->CreateBuffer(&vb_desc, &init_data, &g_pMeshVB);
-	assert(g_pMeshVB);
 
 	SAFE_DELETE_ARRAY(pV);
 
@@ -616,6 +417,25 @@ void SimulOceanRendererDX1x::createSurfaceMesh()
 	// meet water-tight requirement.
 	DWORD* index_array = new DWORD[index_size_lookup[g_Lods]];
 	assert(index_array);
+	EnumeratePatterns(index_array);
+	D3D11_BUFFER_DESC ib_desc;
+	ib_desc.ByteWidth = index_size_lookup[g_Lods] * sizeof(DWORD);
+	ib_desc.Usage = D3D11_USAGE_IMMUTABLE;
+	ib_desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	ib_desc.CPUAccessFlags = 0;
+	ib_desc.MiscFlags = 0;
+	ib_desc.StructureByteStride = sizeof(DWORD);
+
+	init_data.pSysMem = index_array;
+
+	SAFE_RELEASE(g_pMeshIB);
+	m_pd3dDevice->CreateBuffer(&ib_desc, &init_data, &g_pMeshIB);
+
+	SAFE_DELETE_ARRAY(index_array);
+}
+
+void SimulOceanRendererDX1x::EnumeratePatterns(unsigned long* index_array)
+{
 	int offset = 0;
 	int level_size = g_MeshDim;
 	// Enumerate patterns
@@ -635,7 +455,7 @@ void SimulOceanRendererDX1x::createSurfaceMesh()
 					{
 						QuadRenderParam* pattern = &g_mesh_patterns[level][left_type][right_type][bottom_type][top_type];
 						// Inner mesh (triangle strip)
-						RECT inner_rect;
+						Rect inner_rect;
 						inner_rect.left   = (left_degree   == level_size) ? 0 : 1;
 						inner_rect.right  = (right_degree  == level_size) ? level_size : level_size - 1;
 						inner_rect.bottom = (bottom_degree == level_size) ? 0 : 1;
@@ -650,7 +470,7 @@ void SimulOceanRendererDX1x::createSurfaceMesh()
 						int r_degree = (right_degree  == level_size) ? 0 : right_degree;
 						int b_degree = (bottom_degree == level_size) ? 0 : bottom_degree;
 						int t_degree = (top_degree    == level_size) ? 0 : top_degree;
-						RECT outer_rect = {0, level_size, level_size, 0};
+						Rect outer_rect = {0, level_size, level_size, 0};
 						num_new_indices = generateBoundaryMesh(l_degree, r_degree, b_degree, t_degree, outer_rect, index_array + offset);
 						pattern->boundary_start_index = offset;
 						pattern->num_boundary_verts = (level_size + 1) * (level_size + 1);
@@ -668,23 +488,8 @@ void SimulOceanRendererDX1x::createSurfaceMesh()
 		level_size /= 2;
 	}
 
+
 	assert(offset == index_size_lookup[g_Lods]);
-
-	D3D11_BUFFER_DESC ib_desc;
-	ib_desc.ByteWidth = index_size_lookup[g_Lods] * sizeof(DWORD);
-	ib_desc.Usage = D3D11_USAGE_IMMUTABLE;
-	ib_desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	ib_desc.CPUAccessFlags = 0;
-	ib_desc.MiscFlags = 0;
-	ib_desc.StructureByteStride = sizeof(DWORD);
-
-	init_data.pSysMem = index_array;
-
-	SAFE_RELEASE(g_pMeshIB);
-	m_pd3dDevice->CreateBuffer(&ib_desc, &init_data, &g_pMeshIB);
-	assert(g_pMeshIB);
-
-	SAFE_DELETE_ARRAY(index_array);
 }
 
 void SimulOceanRendererDX1x::createFresnelMap()
@@ -865,110 +670,10 @@ float SimulOceanRendererDX1x::estimateGridCoverage(const QuadNode& quad_node, fl
 	return pixel_coverage;
 }
 
-bool isLeaf(const QuadNode& quad_node)
-{
-	return (quad_node.sub_node[0] == -1 && quad_node.sub_node[1] == -1 && quad_node.sub_node[2] == -1 && quad_node.sub_node[3] == -1);
-}
 
-int searchLeaf(const vector<QuadNode>& node_list, const simul::math::float2& point)
-{
-	int index = -1;
-	
-	int size = (int)node_list.size();
-	QuadNode node = node_list[size - 1];
-
-	while (!isLeaf(node))
-	{
-		bool found = false;
-
-		for (int i = 0; i < 4; i++)
-		{
-			index = node.sub_node[i];
-			if (index == -1)
-				continue;
-
-			QuadNode sub_node = node_list[index];
-			if (point.x >= sub_node.bottom_left.x && point.x <= sub_node.bottom_left.x + sub_node.length &&
-				point.y >= sub_node.bottom_left.y && point.y <= sub_node.bottom_left.y + sub_node.length)
-			{
-				node = sub_node;
-				found = true;
-				break;
-			}
-		}
-
-		if (!found)
-			return -1;
-	}
-
-	return index;
-}
-
-QuadRenderParam& SimulOceanRendererDX1x::selectMeshPattern(const QuadNode& quad_node)
-{
-	// Check 4 adjacent quad.
-	simul::math::float2 point_left = quad_node.bottom_left + simul::math::float2(-ocean_parameters.patch_length * 0.5f, quad_node.length * 0.5f);
-	int left_adj_index = searchLeaf(g_render_list, point_left);
-
-	simul::math::float2 point_right = quad_node.bottom_left + simul::math::float2(quad_node.length + ocean_parameters.patch_length * 0.5f, quad_node.length * 0.5f);
-	int right_adj_index = searchLeaf(g_render_list, point_right);
-
-	simul::math::float2 point_bottom = quad_node.bottom_left + simul::math::float2(quad_node.length * 0.5f, -ocean_parameters.patch_length * 0.5f);
-	int bottom_adj_index = searchLeaf(g_render_list, point_bottom);
-
-	simul::math::float2 point_top = quad_node.bottom_left + simul::math::float2(quad_node.length * 0.5f, quad_node.length + ocean_parameters.patch_length * 0.5f);
-	int top_adj_index = searchLeaf(g_render_list, point_top);
-
-	int left_type = 0;
-	if (left_adj_index != -1 && g_render_list[left_adj_index].length > quad_node.length * 0.999f)
-	{
-		QuadNode adj_node = g_render_list[left_adj_index];
-		float scale = adj_node.length / quad_node.length * (g_MeshDim >> quad_node.lod) / (g_MeshDim >> adj_node.lod);
-		if (scale > 3.999f)
-			left_type = 2;
-		else if (scale > 1.999f)
-			left_type = 1;
-	}
-
-	int right_type = 0;
-	if (right_adj_index != -1 && g_render_list[right_adj_index].length > quad_node.length * 0.999f)
-	{
-		QuadNode adj_node = g_render_list[right_adj_index];
-		float scale = adj_node.length / quad_node.length * (g_MeshDim >> quad_node.lod) / (g_MeshDim >> adj_node.lod);
-		if (scale > 3.999f)
-			right_type = 2;
-		else if (scale > 1.999f)
-			right_type = 1;
-	}
-
-	int bottom_type = 0;
-	if (bottom_adj_index != -1 && g_render_list[bottom_adj_index].length > quad_node.length * 0.999f)
-	{
-		QuadNode adj_node = g_render_list[bottom_adj_index];
-		float scale = adj_node.length / quad_node.length * (g_MeshDim >> quad_node.lod) / (g_MeshDim >> adj_node.lod);
-		if (scale > 3.999f)
-			bottom_type = 2;
-		else if (scale > 1.999f)
-			bottom_type = 1;
-	}
-
-	int top_type = 0;
-	if (top_adj_index != -1 && g_render_list[top_adj_index].length > quad_node.length * 0.999f)
-	{
-		QuadNode adj_node = g_render_list[top_adj_index];
-		float scale = adj_node.length / quad_node.length * (g_MeshDim >> quad_node.lod) / (g_MeshDim >> adj_node.lod);
-		if (scale > 3.999f)
-			top_type = 2;
-		else if (scale > 1.999f)
-			top_type = 1;
-	}
-
-	// Check lookup table, [L][R][B][T]
-	return g_mesh_patterns[quad_node.lod][left_type][right_type][bottom_type][top_type];
-}
 
 // Return value: if successful pushed into the list, return the position. If failed, return -1.
-int SimulOceanRendererDX1x::buildNodeList(QuadNode& quad_node)
+int SimulOceanRendererDX1x::buildNodeList(simul::terrain::BaseSeaRenderer::QuadNode& quad_node)
 {
 	// Check against view frustum
 	if (!checkNodeVisibility(quad_node))
@@ -980,41 +685,7 @@ int SimulOceanRendererDX1x::buildNodeList(QuadNode& quad_node)
 	m_pImmediateContext->RSGetViewports(&num_vps, &vp);
 	float min_coverage = estimateGridCoverage(quad_node, (float)vp.Width * vp.Height);
 
-	// Recursively attatch sub-nodes.
-	bool visible = true;
-	if (min_coverage > g_UpperGridCoverage && quad_node.length > ocean_parameters.patch_length)
-	{
-		// Recursive rendering for sub-quads.
-		QuadNode sub_node_0 = {quad_node.bottom_left, quad_node.length / 2, 0, {-1, -1, -1, -1}};
-		quad_node.sub_node[0] = buildNodeList(sub_node_0);
-
-		QuadNode sub_node_1 = {quad_node.bottom_left + simul::math::float2(quad_node.length/2, 0), quad_node.length / 2, 0, {-1, -1, -1, -1}};
-		quad_node.sub_node[1] = buildNodeList(sub_node_1);
-
-		QuadNode sub_node_2 = {quad_node.bottom_left + simul::math::float2(quad_node.length/2, quad_node.length/2), quad_node.length / 2, 0, {-1, -1, -1, -1}};
-		quad_node.sub_node[2] = buildNodeList(sub_node_2);
-
-		QuadNode sub_node_3 = {quad_node.bottom_left + simul::math::float2(0, quad_node.length/2), quad_node.length / 2, 0, {-1, -1, -1, -1}};
-		quad_node.sub_node[3] = buildNodeList(sub_node_3);
-
-		visible = !isLeaf(quad_node);
-	}
-
-	if (visible)
-	{
-		// Estimate mesh LOD
-		int lod = 0;
-		for (lod = 0; lod < g_Lods - 1; lod++)
-		{
-			if (min_coverage > g_UpperGridCoverage)
-				break;
-			min_coverage *= 4;
-		}
-
-		// We don't use 1x1 and 2x2 patch. So the highest level is g_Lods - 2.
-		quad_node.lod = min(lod, g_Lods - 2);
-	}
-	else
+	if(AttachSubNodes(quad_node,min_coverage,ocean_parameters.patch_length)==-1)
 		return -1;
 
 	// Insert into the list
@@ -1022,6 +693,10 @@ int SimulOceanRendererDX1x::buildNodeList(QuadNode& quad_node)
 	g_render_list.push_back(quad_node);
 
 	return position;
+}
+bool isLeaf(const simul::terrain::BaseSeaRenderer::QuadNode& quad_node)
+{
+	return (quad_node.sub_node[0] == -1 && quad_node.sub_node[1] == -1 && quad_node.sub_node[2] == -1 && quad_node.sub_node[3] == -1);
 }
 
 void SimulOceanRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
@@ -1091,7 +766,7 @@ void SimulOceanRendererDX1x::RenderShaded(float time)
 			continue;
 
 		// Check adjacent patches and select mesh pattern
-		QuadRenderParam& render_param = selectMeshPattern(node);
+		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters.patch_length);
 
 		// Find the right LOD to render
 		int level_size = g_MeshDim;
@@ -1222,7 +897,7 @@ void SimulOceanRendererDX1x::RenderWireframe(float time)
 			continue;
 
 		// Check adjacent patches and select mesh pattern
-		QuadRenderParam& render_param = selectMeshPattern(node);
+		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters.patch_length);
 
 		// Find the right LOD to render
 		int level_size = g_MeshDim;

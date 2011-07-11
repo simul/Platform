@@ -4,31 +4,12 @@
 #include "ocean_simulator.h"
 #include "Simul/Platform/DirectX1x/MacrosDX1x.h"
 #include "Simul/Platform/DirectX1x/Export.h"
-#include "Simul/Math/Float2.h"
+#include "Simul/Terrain/BaseSeaRenderer.h"
 
 #pragma warning(push)
 #pragma warning(disable:4251)
-// Quadtree structures & routines
-struct QuadNode
-{
-	simul::math::float2 bottom_left;
-	float length;
-	int lod;
-	int sub_node[4];
-};
 
-struct QuadRenderParam
-{
-	UINT num_inner_verts;
-	UINT num_inner_faces;
-	UINT inner_start_index;
-
-	UINT num_boundary_verts;
-	UINT num_boundary_faces;
-	UINT boundary_start_index;
-};
-
-SIMUL_DIRECTX1x_EXPORT_CLASS SimulOceanRendererDX1x
+SIMUL_DIRECTX1x_EXPORT_CLASS SimulOceanRendererDX1x : public simul::terrain::BaseSeaRenderer
 {
 public:
 	SimulOceanRendererDX1x();
@@ -47,10 +28,9 @@ public:
 protected:
 	OceanParameter ocean_parameters;
 	D3DXMATRIX view,proj;
-	int buildNodeList(QuadNode& quad_node);
+	virtual int buildNodeList(QuadNode& quad_node);
 	bool checkNodeVisibility(const QuadNode& quad_node);
 	float estimateGridCoverage(const QuadNode& quad_node, float screen_area);
-	QuadRenderParam& selectMeshPattern(const QuadNode& quad_node);
 	ID3D11Device*						m_pd3dDevice;
 	ID3D1xDeviceContext*				m_pImmediateContext;
 	// HLSL shaders
@@ -94,6 +74,7 @@ protected:
 	void createFresnelMap();
 	// create perlin noise texture for far-sight rendering
 	void loadTextures();
+	void EnumeratePatterns(unsigned long* index_array);
 };
 #pragma warning(pop)
 #endif
