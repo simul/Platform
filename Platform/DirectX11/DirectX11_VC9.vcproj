@@ -174,6 +174,138 @@
 				CommandLine=""
 			/>
 		</Configuration>
+		<Configuration
+			Name="Static Debug|Win32"
+			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="1"
+			WholeProgramOptimization="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="4"
+				ForcedIncludeFiles="&quot;Simul/UseStaticLibs.h&quot;"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\$(SafeParentName)_MDd.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Static Release|Win32"
+			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
+			ConfigurationType="4"
+			CharacterSet="1"
+			WholeProgramOptimization="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+				ForcedIncludeFiles="&quot;Simul/UseStaticLibs.h&quot;"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)\$(SafeParentName)_MD.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine=""
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -184,31 +316,51 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\DirectX 1x\CreateEffectDX1x.cpp"
+				RelativePath="..\DirectX1x\CompileShaderDX1x.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\Direct3D1xRenderer.cpp"
+				RelativePath="..\DirectX1x\CreateEffectDX1x.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\FramebufferDX1x.cpp"
+				RelativePath="..\DirectX1x\Direct3D1xRenderer.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\SimulCloudRendererDX1x.cpp"
+				RelativePath="..\DirectX1x\CSFFT\fft_512x512.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\SimulHDRRendererDX1x.cpp"
+				RelativePath="..\DirectX1x\FramebufferCubemapDX1x.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\SimulSkyRendererDX1x.cpp"
+				RelativePath="..\DirectX1x\FramebufferDX1x.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\SimulWeatherRendererDX1x.cpp"
+				RelativePath="..\DirectX1x\ocean_simulator.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\SimulCloudRendererDX1x.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\SimulHDRRendererDX1x.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\SimulOceanRendererDX1x.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\SimulSkyRendererDX1x.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\SimulWeatherRendererDX1x.cpp"
 				>
 			</File>
 		</Filter>
@@ -218,43 +370,63 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\DirectX 1x\CreateEffectDX1x.h"
+				RelativePath="..\DirectX1x\CompileShaderDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\Direct3D1xRenderer.h"
+				RelativePath="..\DirectX1x\CreateEffectDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\Export.h"
+				RelativePath="..\DirectX1x\Direct3D1xRenderer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\FramebufferDX1x.h"
+				RelativePath="..\DirectX1x\Export.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\MacrosDx1x.h"
+				RelativePath="..\DirectX1x\CSFFT\fft_512x512.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\ResourcesDx1x.h"
+				RelativePath="..\DirectX1x\FramebufferCubemapDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\SimulCloudRendererDX1x.h"
+				RelativePath="..\DirectX1x\FramebufferDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\SimulHDRRendererDX1x.h"
+				RelativePath="..\DirectX1x\MacrosDx1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\SimulSkyRendererDX1x.h"
+				RelativePath="..\DirectX1x\ocean_simulator.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX 1x\SimulWeatherRendererDX1x.h"
+				RelativePath="..\DirectX1x\ResourcesDx1x.h"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\SimulCloudRendererDX1x.h"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\SimulHDRRendererDX1x.h"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\SimulOceanRendererDX1x.h"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\SimulSkyRendererDX1x.h"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\SimulWeatherRendererDX1x.h"
 				>
 			</File>
 		</Filter>
