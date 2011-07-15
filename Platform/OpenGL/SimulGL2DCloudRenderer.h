@@ -29,7 +29,7 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGL2DCloudRenderer : public simul::clouds::BaseCloudRenderer
 {
 public:
-	SimulGL2DCloudRenderer();
+	SimulGL2DCloudRenderer(const char *license_key);
 	virtual ~SimulGL2DCloudRenderer();
 	void SetSkyInterface(simul::sky::SkyInterface *si);
 	//standard ogl object interface functions

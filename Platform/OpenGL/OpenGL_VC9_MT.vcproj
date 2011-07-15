@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="$(SIMUL)/../;$(SIMUL)/External/OpenGL/include;&quot;$(SIMUL)/External/NVidia OpenGL SDK/external/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/GLEW/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvImage/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvModel/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvWidgets/include&quot;;$(SIMUL)/External/FreeImage/Dist"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -70,7 +70,7 @@
 				IgnoreDefaultLibraryNames="$(SafeParentName)_MT.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
-				ImportLibrary="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)/$(SafeParentName)_MT.lib"
+				ImportLibrary="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)/$(SafeParentName)_MTd.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -120,10 +120,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/external/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/GLEW/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvImage/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvModel/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvWidgets/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -203,7 +202,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="$(SIMUL)/../;$(SIMUL)/External/OpenGL/include;&quot;$(SIMUL)/External/NVidia OpenGL SDK/external/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/GLEW/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvImage/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvModel/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvWidgets/include&quot;;$(SIMUL)/External/FreeImage/Dist"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -224,7 +223,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(SafeParentName)_MT.lib"
+				OutputFile="$(OutDir)\$(SafeParentName)_MTd.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -270,7 +269,7 @@
 				Optimization="0"
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/external/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/GLEW/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvImage/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvModel/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvWidgets/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -318,6 +317,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\FramebufferGL.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\LoadGLImage.cpp"
 				>
 			</File>
@@ -326,7 +329,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\RenderTextureFBO.cpp"
+				RelativePath=".\OpenGLRenderer.cpp"
 				>
 			</File>
 			<File
@@ -335,6 +338,10 @@
 			</File>
 			<File
 				RelativePath=".\SimulGLCloudRenderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulGLHDRRenderer.cpp"
 				>
 			</File>
 			<File
@@ -364,6 +371,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\FramebufferGL.h"
+				>
+			</File>
+			<File
 				RelativePath=".\LoadGLImage.h"
 				>
 			</File>
@@ -372,7 +383,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\RenderTextureFBO.h"
+				RelativePath=".\Macro.h"
+				>
+			</File>
+			<File
+				RelativePath=".\OpenGLRenderer.h"
 				>
 			</File>
 			<File
@@ -381,6 +396,10 @@
 			</File>
 			<File
 				RelativePath=".\SimulGLCloudRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulGLHDRRenderer.h"
 				>
 			</File>
 			<File

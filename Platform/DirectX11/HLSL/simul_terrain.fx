@@ -35,7 +35,7 @@ sampler3D cloud_texture2= sampler_state
 
 float morphFactor;
 float4 eyePosition;
-float4 lightDir;
+float3 lightDir;
 
 float3 cloudScales;	
 float3 cloudOffset;
@@ -84,7 +84,7 @@ float4 PS_Grass( vertexOutput IN) : color
 
 float4 PS_Shadow(vertexOutput IN) : color
 {
-	float3 colour=lightColour*saturate(dot(IN.normal.rgb,lightDir))+ambientColour;
+	float3 colour=lightColour*saturate(dot(IN.normal.rgb,lightDir.xyz))+ambientColour;
     return float4(colour,1.f);
 }
 

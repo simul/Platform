@@ -28,7 +28,7 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGLCloudRenderer : public simul::clouds::BaseCloudRenderer
 {
 public:
-	SimulGLCloudRenderer();
+	SimulGLCloudRenderer(const char *license_key);
 	virtual ~SimulGLCloudRenderer();
 	//standard ogl object interface functions
 	bool Create();
@@ -36,7 +36,8 @@ public:
 	bool InvalidateDeviceObjects();
 	//! Render the clouds.
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
-	//bool depth_testing=false,bool default_fog=false);
+	void SetLossTextures(void *);
+	void SetInscatterTextures(void *);
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
 	const char *GetDebugText();
@@ -77,13 +78,14 @@ protected:
 	GLint layerDensity_param;
 	GLint textureEffect_param;
 	GLint lightDirection_param;
+	GLint layerDistance_param;
 
 	GLint cloudDensity1_param;
 	GLint cloudDensity2_param;
 	GLint noiseSampler_param;
 	GLint illumSampler_param;
 
-
+unsigned short *pIndices;
 
 	GLint illuminationOrigin_param;
 	GLint illuminationScales_param;
@@ -98,8 +100,15 @@ protected:
 	GLuint		illum_tex;
 
 	GLuint		cloud_tex[3];
+	// 2D textures (x=distance, y=elevation) for fades, updated per-frame:
+	GLuint		loss_tex;
+	GLuint		inscatter_tex;
+	// 2D texture
 	GLuint		noise_tex;
-	GLuint		image_tex;
+
+	GLuint		sphere_vbo;
+	GLuint		sphere_ibo;
+
 	float		cam_pos[3];
 
 	virtual bool CreateNoiseTexture(bool override_file=false);
@@ -111,5 +120,6 @@ protected:
 	float texture_effect;
 
 	unsigned max_octave;
+	bool BuildSphereVBO();
 };
 

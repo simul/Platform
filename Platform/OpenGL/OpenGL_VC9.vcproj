@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="$(SIMUL)/../;$(SIMUL)/External/OpenGL/include;&quot;$(SIMUL)/External/NVidia OpenGL SDK/external/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/GLEW/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvImage/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvModel/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvWidgets/include&quot;;$(SIMUL)/External/FreeImage/Dist"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -78,6 +78,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				EmbedManifest="false"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -122,7 +123,7 @@
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/external/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/GLEW/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvImage/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvModel/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvWidgets/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -158,6 +159,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				EmbedManifest="false"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -202,7 +204,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="$(SIMUL)/../;$(SIMUL)/External/OpenGL/include;&quot;$(SIMUL)/External/NVidia OpenGL SDK/external/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/GLEW/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvImage/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvModel/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvWidgets/include&quot;;$(SIMUL)/External/FreeImage/Dist"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -223,7 +225,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(SafeParentName)_MD.lib"
+				OutputFile="$(OutDir)\$(SafeParentName)_MDd.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -269,7 +271,7 @@
 				Optimization="0"
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/external/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/GLEW/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvImage/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvModel/include&quot;;&quot;$(SIMUL)/External/NVidia OpenGL SDK/common/nvWidgets/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"

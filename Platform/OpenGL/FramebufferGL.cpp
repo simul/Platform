@@ -21,9 +21,6 @@ FramebufferGL::FramebufferGL(int w, int h, GLenum target, int samples, int cover
         m_rb_col[i] = 0;
         m_tex_col[i] = 0;
     }
-    glGenFramebuffersEXT(1, &m_fb);
-	InitShader();
-
 	if(fb_stack.size()==0)
 		fb_stack.push((GLuint)0);
 }
@@ -87,6 +84,13 @@ void FramebufferGL::SetWidthAndHeight(int w,int h)
 // InitColor_RB or InitColor_Tex needs to be called.
 void FramebufferGL::InitColor_RB(int index, GLenum iformat)
 {
+	if(!m_width||!m_height)
+		return;
+	if(!m_fb)
+	{
+		InitShader();
+		glGenFramebuffersEXT(1, &m_fb);
+	}
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     
 	ERROR_CHECK
@@ -115,10 +119,15 @@ void FramebufferGL::InitColor_RB(int index, GLenum iformat)
 	ERROR_CHECK
 }
 
-void FramebufferGL::InitColor_Tex(int index, GLenum iformat)
+void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 {
 	if(!m_width||!m_height)
 		return;
+	if(!m_fb)
+	{
+		InitShader();
+		glGenFramebuffersEXT(1, &m_fb);
+	}
 	glGenTextures(1, &m_tex_col[index]);
 	ERROR_CHECK
 	glBindTexture(m_target, m_tex_col[index]);
@@ -127,7 +136,7 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat)
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(m_target, 0, iformat, m_width, m_height, 0,GL_RGBA, GL_INT, NULL);
+    glTexImage2D(m_target, 0,iformat, m_width, m_height, 0,GL_RGBA, format, NULL);
 	ERROR_CHECK
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
@@ -136,6 +145,11 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat)
 }
 void FramebufferGL::InitColor_None()
 {
+	if(!m_fb)
+	{
+		InitShader();
+		glGenFramebuffersEXT(1, &m_fb);
+	}
     // turn the color buffer off in case this is a z only fbo
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
     {
@@ -149,6 +163,11 @@ void FramebufferGL::InitColor_None()
 // InitDepth_RB or InitDepth_Tex needs to be called.
 void FramebufferGL::InitDepth_RB(GLenum iformat)
 {
+	if(!m_fb)
+	{
+		InitShader();
+		glGenFramebuffersEXT(1, &m_fb);
+	}
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
 	ERROR_CHECK
     
@@ -177,6 +196,11 @@ void FramebufferGL::InitDepth_RB(GLenum iformat)
 
 void FramebufferGL::InitDepth_Tex(GLenum iformat)
 {
+	if(!m_fb)
+	{
+		InitShader();
+		glGenFramebuffersEXT(1, &m_fb);
+	}
 	glGenTextures(1, &m_tex_depth);
 	glBindTexture(m_target, m_tex_depth);
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -197,8 +221,8 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 // The FBO needs to be deactivated when using the associated textures.
 void FramebufferGL::Activate()
 {
-	glFlush();
-	GLenum check=glCheckFramebufferStatusEXT(m_fb);
+	glFlush(); 
+	CheckFramebufferStatus();
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
 	ERROR_CHECK
 #ifdef _DEBUG
@@ -207,10 +231,6 @@ void FramebufferGL::Activate()
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	ERROR_CHECK
 	glViewport(0,0,m_width,m_height);
-	ERROR_CHECK
-	glClearColor(0.f,0.f,0.f,1.f);
-	ERROR_CHECK
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	ERROR_CHECK
 	fb_stack.push(m_fb);
 }
@@ -231,6 +251,12 @@ void FramebufferGL::DrawQuad(int w,int h)
 void FramebufferGL::DeactivateAndRender(bool blend)
 {
 	Deactivate();
+	Render(blend);
+}
+
+
+void FramebufferGL::Render(bool blend)
+{
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     SetOrthoProjection(main_viewport[2],main_viewport[3]);
 
@@ -249,9 +275,10 @@ void FramebufferGL::DeactivateAndRender(bool blend)
 	}
 	else
 	{
+		glDisable(GL_TEXTURE_1D);
 		glEnable(GL_TEXTURE_2D);
+		glDisable(GL_TEXTURE_3D);
 	}
-
     glDisable(GL_ALPHA_TEST);
 	if(!blend)
 	{
@@ -274,11 +301,16 @@ void FramebufferGL::DeactivateAndRender(bool blend)
 
 void FramebufferGL::Deactivate() 
 {
+	glFlush(); 
+	CheckFramebufferStatus();
 	// remove m_fb from the stack and...
 	fb_stack.pop();
 	// .. restore the next one down.
 	GLuint last_fb=fb_stack.top();
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,last_fb);
+	ERROR_CHECK
+	glViewport(0,0,main_viewport[2],main_viewport[3]);
+	ERROR_CHECK
 }
 
 

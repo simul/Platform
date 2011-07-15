@@ -20,12 +20,16 @@ varying vec3 texCoordLightning;
 varying float cos0;
 uniform vec3 illuminationOrigin;
 uniform vec3 illuminationScales;
+uniform float layerDistance;
+varying vec2 fade_texc;
 
 void main(void)
 {
-    gl_Position			=gl_ModelViewProjectionMatrix*gl_Vertex;
-    eyespacePosition	=(gl_ModelViewMatrix*gl_Vertex).xyz;
-    wPosition			=gl_Vertex.xyz;
+	vec4 pos			=gl_Vertex;
+	//pos.xyz				*=layerDistance;
+    wPosition			=pos.xyz;
+    gl_Position			=gl_ModelViewProjectionMatrix*pos;
+    eyespacePosition	=(gl_ModelViewMatrix*pos).xyz;
 	texCoordDiffuse.xyz	=gl_MultiTexCoord0.xyz;
 	texCoordDiffuse.w	=0.5+0.5*(gl_MultiTexCoord0.z);// clamp?
 	noiseCoord			=gl_MultiTexCoord1.xy;
@@ -37,4 +41,7 @@ void main(void)
 	texCoordLightning	=(wPosition.xzy-illuminationOrigin.xyz)/illuminationScales.xyz;
 	vec3 view=normalize(wPosition);
 	cos0=dot(lightDir.xyz,view.xyz);
+
+//	float sine=view.z;
+//	fade_texc=vec2(length(eyespacePosition.xyz)/300000.0,0.5*(1.0-sine));
 }

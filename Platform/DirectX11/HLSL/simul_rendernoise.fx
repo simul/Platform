@@ -1,13 +1,11 @@
 
-texture noiseTexture;
-sampler2D noise_texture= sampler_state 
+Texture2D noiseTexture;
+
+SamplerState samplerState 
 {
-    Texture = <noiseTexture>;
-    MipFilter = Linear;
-    MinFilter = Linear;
-    MagFilter = Linear;
-	AddressU = Wrap;
-	AddressV = Wrap;
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Clamp;
+	AddressV = Clamp;
 };
 int octaves;
 float persistence;
@@ -42,7 +40,7 @@ float4 MainPS(v2f IN) : COLOR
 	float az;
 	for(i=0;i<octaves;i++)
 	{
-		float4 lookup=tex2D(noise_texture,IN.texcoord);
+		float4 lookup=noiseTexture.Sample(samplerState,IN.texcoord.xy);
 		r=1.0-pow(lookup.x,4.0);
 		az=lookup.y*6.283;
 		sincos(az,sc.x,sc.y);

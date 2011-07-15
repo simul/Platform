@@ -24,7 +24,7 @@ SIMUL_OPENGL_EXPORT_CLASS OpenGLRenderer
 	,public simul::graph::meta::Group
 {
 public:
-	OpenGLRenderer();
+	OpenGLRenderer(const char *license_key);
 	virtual ~OpenGLRenderer();
 	virtual void paintGL();
 	virtual void resizeGL(int w,int h);
@@ -32,10 +32,13 @@ public:
 	virtual void renderUI();
 	SimulGLWeatherRenderer *GetSimulGLWeatherRenderer(){return simulWeatherRenderer.get();}
 	void SetCamera(simul::graph::camera::Camera *c);
+	void SetYVertical(bool y);
 protected:
 	simul::base::SmartPtr<SimulGLWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulGLHDRRenderer> simulHDRRenderer;
 	int width,height;
+	simul::graph::camera::Camera *cam;
+	bool y_vertical;
 };
 
 #ifdef _MSC_VER

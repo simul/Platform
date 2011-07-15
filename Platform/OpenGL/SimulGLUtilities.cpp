@@ -6,35 +6,52 @@
 #include <iostream>
 #include "Simul/Base/Timer.h"
 
+static bool IsExtensionSupported(const char *name)
+{
+	GLint n=0;
+	glGetIntegerv(GL_NUM_EXTENSIONS, &n);
+	for (GLint i=0; i<n; i++)
+	{
+		const char* extension=(const char*)glGetStringi(GL_EXTENSIONS, i);
+		if (!strcmp(name,extension))
+		{
+			std::cout<<"GL Extension supported: "<<extension<<std::endl;
+			return true;
+		}
+	}
+	return false;
+}
+
+
 void CheckExtension(const char *txt)
 {
-   if(!glewIsSupported(txt))
-    {
+	if(!glewIsSupported(txt)&&!IsExtensionSupported(txt))
+	{
 		std::cerr<<"Error - required OpenGL extension is not supported: "<<txt<<std::endl;
-        exit(-1);
-    }
+		exit(-1);
+	}
 }
 
 static int win_h=0;
 void SetOrthoProjection(int w,int h)
 {
 	win_h=h;
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0,w,0,h,-1.0,1.0);
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glViewport(0,0,w,h);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0,w,0,h,-1.0,1.0);
+		glMatrixMode(GL_TEXTURE);
+		glLoadIdentity();
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glViewport(0,0,w,h);
 }
 
 void SetPerspectiveProjection(int w,int h,float field_of_view)
 {
 	win_h=h;
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(field_of_view,(float)w/(float)h,1.0,325000.0);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(field_of_view,(float)w/(float)h,1.0,325000.0);
 	glViewport(0,0,w,h);
 }
 void RenderString(float x, float y, void *font, const char* string)
@@ -55,6 +72,33 @@ void RenderString(float x, float y, void *font, const char* string)
 		s++;
 	}
 }
+void SetVSync(int vsync)
+{
+#ifdef WIN32
+	// Enable or Disable vsync:
+	typedef BOOL (WINAPI * PFNWGLSWAPINTERVALEXTPROC) (int interval);
+	typedef int (WINAPI * PFNWGLGETSWAPINTERVALEXTPROC) (void);
+	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = NULL;
+	wglSwapIntervalEXT=(PFNWGLSWAPINTERVALEXTPROC) wglGetProcAddress("wglSwapIntervalEXT");
+	wglSwapIntervalEXT(vsync);
+#endif
+}
+
+// draw a quad with texture coordinate for texture rectangle
+void DrawQuad(int w,int h)
+{
+		glBegin(GL_QUADS);
+		glTexCoord2f(0.0,1.0);
+		glVertex2f(0.0,h);
+		glTexCoord2f(1.0,1.0);
+		glVertex2f(w,h);
+		glTexCoord2f(1.0,0.0);
+		glVertex2f(w,0.0);
+		glTexCoord2f(0.0,0.0);
+		glVertex2f(0.0,0.0);
+		glEnd();
+}
+
 
 float GetFramerate()
 {
@@ -86,41 +130,25 @@ float GetFramerate()
 	return framerate;
 }
 
-void SetVSync(int vsync)
-{
-#ifdef WIN32
-	// Enable or Disable vsync:
-	typedef BOOL (WINAPI * PFNWGLSWAPINTERVALEXTPROC) (int interval);
-	typedef int (WINAPI * PFNWGLGETSWAPINTERVALEXTPROC) (void);
-	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = NULL;
-	wglSwapIntervalEXT=(PFNWGLSWAPINTERVALEXTPROC) wglGetProcAddress("wglSwapIntervalEXT");
-	wglSwapIntervalEXT(vsync);
-#endif
-}
-
-// draw a quad with texture coordinate for texture rectangle
-void DrawQuad(int w,int h)
-{
-    glBegin(GL_QUADS);
-    glTexCoord2f(0.0,1.0);
-    glVertex2f(0.0,h);
-    glTexCoord2f(1.0,1.0);
-    glVertex2f(w,h);
-    glTexCoord2f(1.0,0.0);
-    glVertex2f(w,0.0);
-    glTexCoord2f(0.0,0.0);
-    glVertex2f(0.0,0.0);
-    glEnd();
-}
-
 void CheckGLError()
 {
 	if(int err=glGetError()!=0)
 	{
+		CheckGLError(err);
+	}
+}
+
+void CheckGLError(int err)
+{
+	if(err)
+	{
 		const char *c=(const char*)gluErrorString(err);
 		if(c)
 			std::cerr<<std::endl<<c<<std::endl;
-		else
+		const char *d=(const char*)glewGetErrorString(err);
+		if(d)
+			std::cerr<<std::endl<<d<<std::endl;
+		if(!c&&!d)
 			std::cerr<<std::endl<<"unknown error: "<<err<<std::endl;
 		DebugBreak();
 		assert(0);

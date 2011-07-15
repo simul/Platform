@@ -97,6 +97,8 @@ void GetCameraPosVector(simul::math::Vector3 &cam_pos,simul::math::Vector3 &cam_
 
 bool SimulGLLightningRenderer::Render()
 {
+	if(glStringMarkerGREMEDY)
+		glStringMarkerGREMEDY(0,"SimulGLLightningRenderer::Render");
 	if(!lightning_vertices)
 		lightning_vertices=new PosTexVert_t[4500];
 ERROR_CHECK
@@ -227,6 +229,7 @@ ERROR_CHECK
 			ERROR_CHECK
 		}
 	}
+	glDisable(GL_TEXTURE_1D);
 	ERROR_CHECK
 	return true;
 }
@@ -276,5 +279,6 @@ bool SimulGLLightningRenderer::CreateLightningTexture()
 		lightning_tex_data);
 	ERROR_CHECK
 	delete [] lightning_tex_data;
+	glDisable(GL_TEXTURE_1D);
 	return true;
 }
