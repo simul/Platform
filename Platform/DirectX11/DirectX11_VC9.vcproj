@@ -328,10 +328,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\CSFFT\fft_512x512.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\DirectX1x\FramebufferCubemapDX1x.cpp"
 				>
 			</File>
@@ -340,19 +336,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\ocean_simulator.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\DirectX1x\SimulCloudRendererDX1x.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\DirectX1x\SimulHDRRendererDX1x.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\DirectX1x\SimulOceanRendererDX1x.cpp"
 				>
 			</File>
 			<File
@@ -386,10 +374,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\CSFFT\fft_512x512.h"
-				>
-			</File>
-			<File
 				RelativePath="..\DirectX1x\FramebufferCubemapDX1x.h"
 				>
 			</File>
@@ -402,10 +386,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\ocean_simulator.h"
-				>
-			</File>
-			<File
 				RelativePath="..\DirectX1x\ResourcesDx1x.h"
 				>
 			</File>
@@ -415,10 +395,6 @@
 			</File>
 			<File
 				RelativePath="..\DirectX1x\SimulHDRRendererDX1x.h"
-				>
-			</File>
-			<File
-				RelativePath="..\DirectX1x\SimulOceanRendererDX1x.h"
 				>
 			</File>
 			<File

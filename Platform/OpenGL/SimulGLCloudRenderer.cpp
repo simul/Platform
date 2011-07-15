@@ -24,6 +24,7 @@
 #include "Simul/Clouds/CloudGeometryHelper.h"
 #include "Simul/Clouds/TextureGenerator.h"
 #include "Simul/Clouds/CloudKeyframer.h"
+#include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/TextureGenerator.h"
@@ -235,6 +236,7 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog)
 {
+	cubemap;
 	if(glStringMarkerGREMEDY)
 		glStringMarkerGREMEDY(38,"SimulGLCloudRenderer::Render");
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -602,7 +604,7 @@ bool SimulGLCloudRenderer::BuildSphereVBO()
 		float elevation=((float)i-(float)el/2.f)/(float)el*pi;
 		float z=sin(elevation);
 		float ce=cos(elevation);
-		for(int j=0;j<az+1;j++)
+		for(unsigned j=0;j<az+1;j++)
 		{
 			float azimuth=(float)j/(float)az*2.f*pi;
 			vert->x=cos(azimuth)*ce;
@@ -624,14 +626,14 @@ ERROR_CHECK
 	int index_count=(el)*(az+1)*2;
 	pIndices=new unsigned short[index_count];
 	unsigned short *idx=pIndices;
-	for(int i=0;i<el;i++)
+	for(unsigned i=0;i<el;i++)
 	{
 		int base=i*(az+1);
-		for(int j=0;j<az+1;j++)
+		for(unsigned j=0;j<az+1;j++)
 		{
-			*idx=base+j;
+			*idx=(unsigned short)(base+j);
 			idx++;
-			*idx=base+(az+1)+j;
+			*idx=(unsigned short)(base+(az+1)+j);
 			idx++;
 		}
 	}
@@ -689,7 +691,7 @@ SimulGLCloudRenderer::~SimulGLCloudRenderer()
 const char *SimulGLCloudRenderer::GetDebugText()
 {
 	static char txt[100];
-	sprintf(txt,"%3.3g",cloudKeyframer->GetInterpolation());
+	sprintf_s(txt,100,"%3.3g",cloudKeyframer->GetInterpolation());
 	return txt;
 }
 

@@ -73,7 +73,6 @@ void FFT_512x512::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
     buf_desc.StructureByteStride = sizeof(float) * 2;
 
 	pd3dDevice->CreateBuffer(&buf_desc, NULL, &pBuffer_Tmp);
-	assert(plan->pBuffer_Tmp);
 
 	// Temp undordered access view
 	D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
