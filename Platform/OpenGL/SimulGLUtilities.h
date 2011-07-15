@@ -22,4 +22,6 @@ extern void CheckGLError();
 //! Check the given error code, and halt the program if it is non-zero.
 extern void CheckGLError(int err);
 #define ERROR_CHECK CheckGLError();
+#define SAFE_DELETE_PROGRAM(prog)	glDeleteProgram(prog);prog=0;
+#define SAFE_DELETE_TEXTURE(tex)	glDeleteTextures(1,&tex);tex=0;
 #endif

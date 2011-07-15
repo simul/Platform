@@ -275,7 +275,7 @@ bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	if(simulSkyRenderer)
 	{
 		if(ShowSky)
-			simulSkyRenderer->Render();
+			simulSkyRenderer->Render(!buffered);
 		// Do these updates now because sky renderer will have calculated the view height.
 		if(simulAtmosphericsRenderer)
 		{
@@ -355,14 +355,6 @@ bool SimulWeatherRenderer::RenderPrecipitation()
 		return simulPrecipitationRenderer->Render();
 	return true;
 }
-
-bool SimulWeatherRenderer::RenderFlares()
-{
-	if(simulSkyRenderer)
-		simulSkyRenderer->RenderFlare(exposure);
-	return true;
-}
-
 bool SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
 {
 	if(!RenderCloudsLate||!layer1)

@@ -80,7 +80,7 @@ function drawScene()
 	gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
-	mat4.perspective(45,gl.viewportWidth/gl.viewportHeight,0.1,10000.0,pMatrix);
+	mat4.perspective(45,gl.viewportWidth/gl.viewportHeight,0.1,100000.0,pMatrix);
 	mat4.identity(modelMatrix);
 	
 	mat4.identity(viewMatrix);
@@ -88,7 +88,7 @@ function drawScene()
 	mat4.rotate(viewMatrix, degToRad(90-pitch), [-1, 0, 0]);
     mat4.rotate(viewMatrix, degToRad(yaw), [0, 0, 1]);
 
-	mvMatrix=mat4.multiply(modelMatrix,viewMatrix);
+	mat4.multiply(viewMatrix,modelMatrix,mvMatrix);
 
 	mercury=getMercury();
 	venus=getVenus();
@@ -104,9 +104,9 @@ function drawScene()
 
 	grey=[.5,.5,.5];
 	yellow=[1.0,1.0,.5];
-	drawSphere(shaderProgram,getPlanetPos(mercury),0.1	,grey);
 	
 	drawSky();
+	drawClouds();
 	drawSphere(skyProgram,[0,0,0], 0.4	,[0.2,0.4,1.0]);
 }
 
@@ -154,7 +154,7 @@ function onResize()
     drawScene();*/
 }
 		
-function planetStart()
+function trueSkyStart()
 {
 	$(this)[0].oncontextmenu = function() {
         return false;

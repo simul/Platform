@@ -269,7 +269,6 @@ void FramebufferGL::Render(bool blend)
 	if(tonemap_program)
 	{
 		glUniform1f(exposure_param,exposure);
-
 		glUniform1f(gamma_param,gamma);
 		glUniform1i(buffer_tex_param,0);
 	}
@@ -288,7 +287,7 @@ void FramebufferGL::Render(bool blend)
 	{
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
+		glBlendFunc(GL_ONE,GL_ONE);
 	}
 	glDepthMask(GL_FALSE);
 	ERROR_CHECK

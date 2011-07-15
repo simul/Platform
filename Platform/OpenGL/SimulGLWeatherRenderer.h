@@ -51,8 +51,6 @@ public:
 	void RenderLightning();
 	//! Call this to draw rain etc.
 	void RenderPrecipitation();
-	//! Call this to draw sun flares etc. after geometry.
-	void RenderFlares();
 	//! Get a pointer to the sky renderer owned by this class instance.
 	class SimulGLSkyRenderer *GetSkyRenderer();
 	//! Get a pointer to the 3d cloud renderer owned by this class instance.

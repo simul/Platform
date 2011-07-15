@@ -810,3 +810,15 @@ LPDIRECT3DSURFACE9 MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture)
 #endif
 	return pRenderTarget;
 }
+
+const TCHAR *GetErrorText(HRESULT hr)
+{
+	const TCHAR *err=DXGetErrorString(hr);
+	if(!err)
+	{
+		TCHAR txt[10];
+		swprintf(txt,_T("%3.3g"),hr);
+		return txt;
+	}
+	return err;
+}

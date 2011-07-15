@@ -268,7 +268,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		if(simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetAtmosphericsRenderer()->Render();
 		if(simulWeatherRenderer->GetShowFlares())
-			simulWeatherRenderer->RenderFlares();
+			simulWeatherRenderer->RenderFlares(Exposure);
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 		simulWeatherRenderer->RenderLateCloudLayer(true);
 		simulWeatherRenderer->RenderLightning();
@@ -365,4 +365,10 @@ const TCHAR *Direct3D9Renderer::GetDebugText() const
 	if(simulWeatherRenderer)
 		stprintf_s(debug_text,256,_T("DX9: %s\nFramerate %3.3g Render time %3.3g weather %3.3g hdr %3.3g\nUpdate time %3.3g"),weather_text.c_str(),framerate,render_timing,weather_timing,hdr_timing,update_timing);
 	return debug_text;
+}
+
+void Direct3D9Renderer::ReloadShaders()
+{
+	if(simulWeatherRenderer.get())
+		simulWeatherRenderer->ReloadShaders();
 }

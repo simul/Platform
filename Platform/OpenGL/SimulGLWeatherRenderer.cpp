@@ -31,6 +31,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(const char *lic,bool usebuffer,bo
 		,BufferWidth(width)
 		,BufferHeight(height)
 		,device_initialized(false)
+		,scene_buffer(NULL)
 {
 	if(sky)
 	{
@@ -138,7 +139,6 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 	CheckExtension("GL_ARB_color_buffer_float");
 	CheckExtension("GL_EXT_framebuffer_object");
 
-	scene_buffer=NULL;
     if(scene_buffer)
         delete scene_buffer;
 	scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
@@ -171,7 +171,12 @@ static simul::base::Timer timer;
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 	if(simulSkyRenderer)
+	{
 		simulSkyRenderer->RenderPlanets();
+		ERROR_CHECK
+		simulSkyRenderer->RenderSun();
+		ERROR_CHECK
+	}
 	// Everything between Activate() and DeactivateAndRender() is drawn to the buffer object.
 	if(buffered)
 	{
@@ -185,8 +190,9 @@ static simul::base::Timer timer;
 	ERROR_CHECK
 	if(simulSkyRenderer)
 	{
-	ERROR_CHECK
-		simulSkyRenderer->Render();
+		// We call the sky renderer, telling it to blend if we're not buffering the sky,
+		// because otherwise it would overwrite the planets
+		simulSkyRenderer->Render(!buffered);
 	}
 	ERROR_CHECK
 	timer.UpdateTime();

@@ -174,7 +174,10 @@ extern const TCHAR *GetErrorText(HRESULT hr);
 	#endif
 #else
 	#ifndef B_RETURN
-		#define B_RETURN(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"B_RETURN error "<<GetErrorText(hr)<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging();return false; } }
+		#define B_RETURN(x)	{ if(!x) {std::cerr<<"B_RETURN error at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging();return false; } }
+	#endif
+	#ifndef B_CHECK
+		#define B_CHECK(x)	{ if(!x) {std::cerr<<"B_CHECK error at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging();} }
 	#endif
 	#ifndef V_RETURN
 		#define V_RETURN(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_RETURN error "<<GetErrorText(hr)<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging();return hr; } }

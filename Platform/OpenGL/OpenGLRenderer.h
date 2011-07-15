@@ -31,8 +31,10 @@ public:
 	virtual void initializeGL();
 	virtual void renderUI();
 	SimulGLWeatherRenderer *GetSimulGLWeatherRenderer(){return simulWeatherRenderer.get();}
+	SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer.get();}
 	void SetCamera(simul::graph::camera::Camera *c);
 	void SetYVertical(bool y);
+	void ReloadShaders();
 protected:
 	simul::base::SmartPtr<SimulGLWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulGLHDRRenderer> simulHDRRenderer;

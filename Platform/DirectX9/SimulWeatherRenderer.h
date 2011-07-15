@@ -119,8 +119,6 @@ public:
 	bool RenderLightning();
 	//! Call this to draw rain etc.
 	bool RenderPrecipitation();
-	//! Call this to draw sun flares etc. Draw this after geometry as it's an optical effect in the camera.
-	bool RenderFlares();
 	//! Perform the once-per-frame time update.
 	void Update(float dt);
 #if defined(XBOX) || defined(DOXYGEN)

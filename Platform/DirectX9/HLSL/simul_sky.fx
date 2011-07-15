@@ -402,12 +402,13 @@ technique simul_sky
         CullMode = None;
 		zenable = true;
 		zwriteenable = false;
-        AlphaBlendEnable = false;
+      //  AlphaBlendEnable = false;
 #ifndef XBOX
 		lighting = false;
 #endif
     }
 }
+
 technique simul_starry_sky
 {
     pass p0 

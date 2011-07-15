@@ -55,6 +55,7 @@ public:
 	virtual ~SimulSkyRenderer();
 	virtual void SaveTextures(const char *base_filename);
 	//standard d3d object interface functions
+	void ReloadShaders();
 	//! Call this when the D3D device has been created or reset.
 	bool RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
@@ -68,7 +69,7 @@ public:
 	//! Render the stars, as a background.
 	bool						RenderTextureStars();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
-	bool						Render();
+	bool						Render(bool blend);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool						RenderFlare(float exposure);
 	//! Draw the fade textures to screen
@@ -183,13 +184,12 @@ protected:
 	Framebuffer					loss_2d;
 	Framebuffer					inscatter_2d;
     ID3DXFont*					m_pFont;
-	D3DXVECTOR3					cam_dir;
+	simul::sky::float4			cam_dir;
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DQUERY9			d3dQuery;
 	bool						UpdateSkyTexture(float proportion);
 	bool						CreateSkyTextures();
 	bool						CreateSunlightTextures();
-	bool						CreateSkyEffect();
 	bool						RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	virtual bool IsYVertical()
 	{

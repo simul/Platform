@@ -79,6 +79,7 @@ public:
 	void	SetTimeMultiplier(float fTimeMult);
 
 	void	SetYVertical(bool y);
+	void	ReloadShaders();
 protected:
 	simul::graph::camera::Camera *camera;
 	float aspect;

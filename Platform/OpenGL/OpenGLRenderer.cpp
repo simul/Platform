@@ -12,6 +12,7 @@
 OpenGLRenderer::OpenGLRenderer(const char *license_key):width(0),height(0)
 ,cam(NULL),y_vertical(false)
 {
+	simul::opengl::SetTexturePath("Media/Textures");
 	simul::opengl::SetShaderPath("Media/GLSL/");		// path relative to the root
 	simulWeatherRenderer=new SimulGLWeatherRenderer(license_key);
 	SetYVertical(y_vertical);
@@ -46,12 +47,14 @@ void OpenGLRenderer::paintGL()
 		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
 		glEnable(GL_FOG);
 		simulHDRRenderer->StartRender();
-		simulWeatherRenderer->RenderSky(false,false);
-		simulWeatherRenderer->RenderClouds(false,false,false);
+		simulWeatherRenderer->RenderSky(true,false);
+		//simulWeatherRenderer->RenderClouds(false,false,false);
 
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades();
 
+		if(simulWeatherRenderer->GetShowFlares())
+			simulWeatherRenderer->RenderFlares(simulHDRRenderer->GetExposure());
 		simulHDRRenderer->FinishRender();
 	}
 	glPopAttrib();
@@ -103,4 +106,10 @@ void OpenGLRenderer::SetYVertical(bool y)
 		simulWeatherRenderer->SetYVertical(y);
 	//if(simulTerrainRenderer.get())
 	//	simulTerrainRenderer->SetYVertical(y_vertical);
+}
+
+void OpenGLRenderer::ReloadShaders()
+{
+	if(simulWeatherRenderer.get())
+		simulWeatherRenderer->ReloadShaders();
 }
