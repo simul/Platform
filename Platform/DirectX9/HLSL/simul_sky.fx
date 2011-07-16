@@ -267,6 +267,7 @@ float4 PS_Planet(svertexOutput IN): color
 	float light=saturate(dot(normal.xyz,lightDir.xyz));
 	output.rgb*=colour.rgb;
 	output.rgb*=light;
+	output.a=saturate((1.0-l)/0.01);
 	return output;
 }
 
