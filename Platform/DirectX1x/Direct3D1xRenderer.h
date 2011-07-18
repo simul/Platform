@@ -21,12 +21,9 @@
 #pragma warning(disable:4251)
 namespace simul
 {
-	namespace graph
+	namespace camera
 	{
-		namespace camera
-		{
-			class Camera;
-		}
+		class Camera;
 	}
 }
 class SimulWeatherRendererDX1x;
@@ -60,7 +57,7 @@ public:
 	{
 		return simulWeatherRenderer.get();
 	}
-	void SetCamera(simul::graph::camera::Camera *c)
+	void SetCamera(simul::camera::Camera *c)
 	{
 		camera=c;
 	}
@@ -79,7 +76,7 @@ public:
 	virtual const	char *GetDebugText() const;
 protected:
 	bool y_vertical;
-	simul::graph::camera::Camera *camera;
+	simul::camera::Camera *camera;
 	float aspect;
 	simul::base::SmartPtr<SimulWeatherRendererDX1x> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulHDRRendererDX1x> simulHDRRenderer;

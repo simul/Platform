@@ -70,8 +70,6 @@ public:
 	bool						RenderTextureStars();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	bool						Render(bool blend);
-	//! Call this to draw the sun flare, usually drawn last, on the main render target.
-	bool						RenderFlare(float exposure);
 	//! Draw the fade textures to screen
 	bool						RenderFades(int width);
 	//! Draw sidereal and geographic information to screen
@@ -114,7 +112,6 @@ public:
 	void FillSunlightTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void CycleTexturesForward();
 	const char *GetDebugText() const;
-	void SetFlare(LPDIRECT3DTEXTURE9 tex,float rad);
 	void SetYVertical(bool y);
 protected:
 	int CalcScreenPixelHeight();
@@ -129,7 +126,6 @@ protected:
 	StarVertext *star_vertices;
 	int num_stars;
 	bool PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height);
-	bool external_flare_texture;
 	float timing;
 	D3DFORMAT sky_tex_format;
 	void CreateFadeTextures();
@@ -146,7 +142,6 @@ protected:
 	D3DXHANDLE					m_hTechniquePlainColour;
 	D3DXHANDLE					m_hTechniqueSun;
 	D3DXHANDLE					m_hTechniqueQuery;	// A technique that uses the z-test for occlusion queries
-	D3DXHANDLE					m_hTechniqueFlare;
 	D3DXHANDLE					m_hTechniquePlanet;
 	D3DXHANDLE					m_hTechniqueFadeCrossSection;
 	D3DXHANDLE					m_hTechnique3DTo2DFade;
@@ -157,7 +152,6 @@ protected:
 	D3DXHANDLE					hazeEccentricity;
 	D3DXHANDLE					skyInterp;
 	D3DXHANDLE					colour;
-	D3DXHANDLE					flareTexture;
 	D3DXHANDLE					fadeTexture;
 	D3DXHANDLE					fadeTexture2;
 	D3DXHANDLE					skyTexture1;
@@ -165,11 +159,9 @@ protected:
 	D3DXHANDLE					crossSectionTexture;
 	D3DXHANDLE					starsTexture;
 	D3DXHANDLE					starBrightness;
-	
-	LPDIRECT3DTEXTURE9			flare_texture;
+	D3DXHANDLE					planetTexture;
 	LPDIRECT3DTEXTURE9			stars_texture;
 	std::map<int,LPDIRECT3DTEXTURE9> planet_textures;
-	std::vector<LPDIRECT3DTEXTURE9> halo_textures;
 	// Three sky textures - 2 to interpolate and one to fill
 	LPDIRECT3DTEXTURE9			sky_textures[3];
 	// Three sunlight textures.

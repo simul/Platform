@@ -50,8 +50,6 @@ SimulGLSkyRenderer::SimulGLSkyRenderer()
 	,planet_program(0)
 	,fade_3d_to_2d_program(0)
 	,sun_program(0)
-	,flare_program(0)
-	,cam_dir(0,0,0,0)
 {
 /* Setup cube vertex data. */
   v[0][0] = v[1][0] = v[2][0] = v[3][0] = -1000.f;
@@ -322,23 +320,6 @@ const float *SimulGLSkyRenderer::GetFastInscatterLookup(float distance_texcoord,
 }
 
 
-static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
-{
-	glGetFloatv(src,m);
-}
-
-void SimulGLSkyRenderer::CalcCameraPosition()
-{
-	simul::math::Matrix4x4 modelview;
-	glGetMatrix(modelview.RowPointer(0),GL_MODELVIEW_MATRIX);
-	simul::math::Matrix4x4 inv;
-	modelview.Inverse(inv);
-	SetCameraPosition(inv(3,0),inv(3,1),inv(3,2));
-	cam_dir.x=-inv(2,0);
-	cam_dir.y=-inv(2,1);
-	cam_dir.z=-inv(2,2);
-}
-
 bool SimulGLSkyRenderer::Render2DFades()
 {
 	glMatrixMode(GL_MODELVIEW);
@@ -527,7 +508,8 @@ ERROR_CHECK
 		glDisable(GL_BLEND);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-	CalcCameraPosition();
+	simul::sky::float4 cam_dir;
+	CalcCameraPosition(cam_pos,cam_dir);
 
 	campos_updated=true;
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
@@ -564,60 +546,6 @@ ERROR_CHECK
 }
 
 
-bool SimulGLSkyRenderer::RenderFlare(float exposure)
-{
-	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToLight());
-	float magnitude=exposure*(1.f-sun_occlusion);
-	simul::math::FirstOrderDecay(flare_magnitude,magnitude,5.f,0.1f);
-	if(flare_magnitude>1.f)
-		flare_magnitude=1.f;
-	float alt_km=0.001f*cam_pos.y;
-	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
-	sunlight*=lensFlare.GetStrength();
-	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
-	// But our colour values are in Radiance (watts per sq.m. per steradian)
-	// So to get the sun colour, divide by the approximate angular area of the sun.
-	// As the sun has angular radius of about 1/2 a degree, the angular area is 
-	// equal to pi/(120^2), or about 1/2700 steradians;
-	static float sun_mult=0.05f;
-	sunlight*=sun_mult*flare_magnitude;
-	
-	glEnable(GL_BLEND);
-	
-	glBlendFunc(GL_ONE,GL_ONE);
-	
-	glEnable(GL_TEXTURE_2D);
-    glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,(GLuint)((long int)flare_texture));
-
-	glUseProgram(flare_program);
-		ERROR_CHECK
-
-	glUniform3f(flareColour_param,sunlight.x,sunlight.y,sunlight.z);
-	
-	glUniform1i(flareTexture_param,0);
-	//if(y_vertical)
-	//	std::swap(sun_dir.y,sun_dir.z);
-	lensFlare.UpdateCamera(cam_dir,sun_dir);
-	if(flare_magnitude>0.f)
-	{
-		RenderAngledQuad(sun_dir,flare_angular_size*flare_magnitude);
-		sunlight*=0.25f;
-		for(int i=0;i<lensFlare.GetNumArtifacts();i++)
-		{
-			simul::sky::float4 pos=lensFlare.GetArtifactPosition(i);
-			float sz=lensFlare.GetArtifactSize(i);
-			int t=lensFlare.GetArtifactType(i);
-	glUseProgram(0);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)((long int)halo_textures[t]));
-	glUseProgram(flare_program);
-			//m_pSkyEffect->SetTexture(flareTexture,halo_textures[t]);
-			//m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
-			RenderAngledQuad(pos,flare_angular_size*sz*flare_magnitude);
-		}
-	}
-	return true;
-}
 bool SimulGLSkyRenderer::RenderSun()
 {
 	float alt_km=0.001f*cam_pos.y;
@@ -647,7 +575,7 @@ bool SimulGLSkyRenderer::RenderSun()
 
 bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const float *dir,const float *colr,bool do_lighting)
 {
-	CalcCameraPosition();
+	CalcCameraPosition(cam_pos);
 	float alt_km=0.001f*cam_pos.z;
 	if(do_lighting)
 	{
@@ -709,81 +637,13 @@ void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1)
 	*i1=(void*)inscatter_2d.GetColorTex();
 }
 
-bool SimulGLSkyRenderer::RenderAngledQuad(const float *dir,float half_angle_radians)
-{
-	float Yaw=atan2(dir[0],dir[1])/pi;
-	float Pitch=asin(dir[2])/pi;
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-	//glLoadIdentity();
-	simul::math::Matrix4x4 modelview;
-	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
-	glRotatef(180.f*Yaw,0.0f,0.0f,-1.0f);
-	glRotatef(180.f*Pitch,1.0f,0.0f,0.0f);
-	glGetFloatv(GL_MODELVIEW_MATRIX,modelview.RowPointer(0));
-		ERROR_CHECK
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-	glDepthMask(GL_FALSE);
-	// undo all rotations
-	// all scaling is lost as well 
-	for(int i=0; i<3; i++ )
-		for(int j=0; j<3; j++ )
-		{
-			if ( i==j )
-				modelview[i*4+j] = 1.0;
-			else
-				modelview[i*4+j] = 0.0;
-		}
-
-		ERROR_CHECK
-	// set the modelview with no rotations and scaling
-	//glLoadMatrixf(modelview);
-	//m_pSkyEffect->SetVector	(lightDirection	,&sun2);
-
-	// coverage is 2*atan(1/5)=11 degrees.
-	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
-	static float relative_distance=10.f;
-	simul::math::Matrix4x4 proj;
-	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
-	//float zFar=proj(3,2)/(1.f+proj(2,2));
-	float zNear=proj(3,2)/(proj(2,2)-1.f);
-	float w=relative_distance*zNear;
-	float d=w/tan(half_angle_radians);
-	struct Vertext
-	{
-		float x,y,z;
-		float tx,ty;
-	};
-	Vertext vertices[4]=
-	{
-		{ w,d,-w,	 1.f	,0.f},
-		{ w,d, w,	 1.f	,1.f},
-		{-w,d, w,	 0.f	,1.f},
-		{-w,d,-w,	 0.f	,0.f},
-	};
-	glBegin(GL_QUADS);
-	for(int i=0;i<4;i++)
-	{
-		Vertext &V=vertices[i];
-		glMultiTexCoord2f(GL_TEXTURE0,V.tx,V.ty);
-		glVertex3f(V.x,V.y,V.z);
-	}
-	glEnd();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-		ERROR_CHECK
-	return true;
-}
-
 void SimulGLSkyRenderer::ReloadShaders()
 {
 	SAFE_DELETE_PROGRAM(sky_program);
 	SAFE_DELETE_PROGRAM(planet_program);
 	SAFE_DELETE_PROGRAM(fade_3d_to_2d_program);
 	SAFE_DELETE_PROGRAM(sun_program);
-	SAFE_DELETE_PROGRAM(flare_program);
+
 	sky_program						=glCreateProgram();
 	sky_vertex_shader				=glCreateShader(GL_VERTEX_SHADER);
 	sky_fragment_shader				=glCreateShader(GL_FRAGMENT_SHADER);
@@ -807,11 +667,6 @@ void SimulGLSkyRenderer::ReloadShaders()
 	sun_program						=LoadProgram("simul_sun_planet_flare.vert","simul_sun.frag");
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
 	printProgramInfoLog(sun_program);
-
-	flare_program					=LoadProgram("simul_sun_planet_flare.vert","simul_flare.frag");
-	flareColour_param				=glGetUniformLocation(flare_program,"flareColour");
-	flareTexture_param				=glGetUniformLocation(flare_program,"flareTexture");
-	printProgramInfoLog(flare_program);
 
 	planet_program					=glCreateProgram();
 	GLuint planet_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
@@ -852,26 +707,6 @@ bool SimulGLSkyRenderer::RestoreDeviceObjects()
 	moon_texture=(void*)LoadGLImage("Moon.png",GL_CLAMP);
 	SetPlanetImage(moon_index,moon_texture);
 
-	flare_texture=LoadGLImage("SunFlare.png",GL_CLAMP);
-
-	for(size_t i=0;i<halo_textures.size();i++)
-	{
-		SAFE_DELETE_TEXTURE(halo_textures[i]);
-	}
-	halo_textures.clear();
-	int num_halo_textures=0;
-	for(int i=0;i<lensFlare.GetNumArtifacts();i++)
-	{
-		int t=lensFlare.GetArtifactType(i);
-		if(t+1>num_halo_textures)
-			num_halo_textures=t+1;
-	}
-	halo_textures.resize(num_halo_textures);
-	for(int i=0;i<num_halo_textures;i++)
-	{
-		std::string tn=lensFlare.GetTypeName(i);
-		halo_textures[i]=LoadGLImage((tn+".png").c_str(),GL_CLAMP);
-	}
 	glUseProgram(NULL);
 	return true;
 }
@@ -881,11 +716,6 @@ bool SimulGLSkyRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(sky_program);
 	SAFE_DELETE_PROGRAM(planet_program);
 	SAFE_DELETE_PROGRAM(fade_3d_to_2d_program);
-	for(size_t i=0;i<halo_textures.size();i++)
-	{
-		SAFE_DELETE_TEXTURE(halo_textures[i]);
-	}
-	halo_textures.clear();
 	glDeleteTextures(3,loss_textures);
 	glDeleteTextures(3,inscatter_textures);
 	//loss_2d.InvalidateDeviceObjects();
