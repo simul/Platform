@@ -362,6 +362,10 @@
 				RelativePath=".\SimulGLWeatherRenderer.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\SimulOpticsRendererGL.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -382,10 +386,6 @@
 			</File>
 			<File
 				RelativePath=".\LoadGLProgram.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Macro.h"
 				>
 			</File>
 			<File
@@ -418,6 +418,10 @@
 			</File>
 			<File
 				RelativePath=".\SimulGLWeatherRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulOpticsRendererGL.h"
 				>
 			</File>
 		</Filter>

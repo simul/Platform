@@ -23,6 +23,7 @@
 #include "Simul/Clouds/FastCloudNode.h"
 #include "Simul/Clouds/CloudGeometryHelper.h"
 #include "Simul/Clouds/TextureGenerator.h"
+#include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"

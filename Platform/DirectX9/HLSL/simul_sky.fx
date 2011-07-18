@@ -52,6 +52,17 @@ sampler flare_texture = sampler_state
 	AddressU = Clamp;
 	AddressV = Clamp;
 };
+texture planetTexture;
+sampler planet_texture = sampler_state
+{
+    Texture = <planetTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
 
 
 texture fadeTexture;
@@ -257,7 +268,7 @@ float4 PS_Flare(svertexOutput IN): color
 
 float4 PS_Planet(svertexOutput IN): color
 {
-	float4 output=tex2D(flare_texture,float2(0.5f,0.5f)-0.5f*IN.tex);
+	float4 output=tex2D(planet_texture,float2(0.5f,0.5f)-0.5f*IN.tex);
 	// IN.tex is +- 1.
 	float3 normal;
 	normal.x=IN.tex.x;
@@ -267,12 +278,13 @@ float4 PS_Planet(svertexOutput IN): color
 	float light=saturate(dot(normal.xyz,lightDir.xyz));
 	output.rgb*=colour.rgb;
 	output.rgb*=light;
+	output.a=saturate((1.0-l)/0.01);
 	return output;
 }
 
 float4 PS_Query(svertexOutput IN): color
 {
-	return float4(0.f,0.f,0.f,1.f);
+	return float4(1.f,0.f,0.f,0.f);
 }
 
 svertexOutput VS_Point_Stars(svertexInput IN) 
@@ -402,12 +414,13 @@ technique simul_sky
         CullMode = None;
 		zenable = true;
 		zwriteenable = false;
-        AlphaBlendEnable = false;
+      //  AlphaBlendEnable = false;
 #ifndef XBOX
 		lighting = false;
 #endif
     }
 }
+
 technique simul_starry_sky
 {
     pass p0 
@@ -515,8 +528,10 @@ technique simul_query
 		zenable = true;
 		zwriteenable = false;
         AlphaBlendEnable = true;
-		SrcBlend = SrcAlpha;
+		SrcBlend = One;
 		DestBlend = One;
+// Don't write alpha, as that's depth!
+		ColorWriteEnable=7;
 #ifndef XBOX
 		lighting = false;
 #endif

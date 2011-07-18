@@ -32,6 +32,7 @@
 #include <Windows.h>
 #include "Macros.h"
 #include "Resources.h"
+#include "Simul/Geometry/Orientation.h"
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
 #endif
@@ -699,6 +700,80 @@ void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,
 	D3DXMatrixTranspose(wvp,&tmp2);
 }
 
+HRESULT RenderAngledQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,D3DXVECTOR3 cam_pos,D3DXVECTOR3 dir,bool y_vertical,float half_angle_radians,LPD3DXEFFECT effect)
+{
+	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
+	// But D3DXMatrixRotationYawPitchRoll uses only left-handed, hence the change of sign below.
+	float Yaw=atan2(dir.x,y_vertical?dir.z:dir.y);
+	float Pitch=-asin(y_vertical?dir.y:dir.z);
+	HRESULT hr=S_OK;
+	D3DXMATRIX world, view,proj,tmp1, tmp2;
+	D3DXMatrixIdentity(&world);
+	static D3DXMATRIX flip(1.f,0,0,0,0,0,1.f,0,0,1.f,0,0,0,0,0,1.f);
+	if(y_vertical)
+	{
+		D3DXMatrixRotationYawPitchRoll(
+			  &world,
+			  Yaw,
+			  Pitch,
+			  0
+			);
+	}
+	else
+	{
+		simul::geometry::SimulOrientation or;
+		or.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
+		or.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
+		world=*((const D3DXMATRIX*)(or.T4.RowPointer(0)));
+	}
+	//set up matrices
+	world._41=cam_pos.x;
+	world._42=cam_pos.y;
+	world._43=cam_pos.z;
+#ifndef XBOX
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+#endif
+
+	D3DXMatrixMultiply(&tmp1,&world,&view);
+	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
+	D3DXMatrixTranspose(&tmp1,&tmp2);
+	if(effect)
+	{
+		D3DXHANDLE worldViewProj=effect->GetParameterByName(NULL,"worldViewProj");
+		effect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
+	}
+	struct Vertext
+	{
+		float x,y,z;
+		float tx,ty;
+	};
+	// coverage is 2*atan(1/5)=11 degrees.
+	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
+	static float w=1.f;
+	float d=w/tan(half_angle_radians);
+	Vertext vertices[4] =
+	{
+		{ w,-w,	d, 1.f	,0.f},
+		{ w, w,	d, 1.f	,1.f},
+		{-w, w,	d, 0.f	,1.f},
+		{-w,-w,	d, 0.f	,0.f},
+	};
+	m_pd3dDevice->SetFVF(D3DFVF_XYZ | D3DFVF_TEX0);
+	m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+    hr=m_pd3dDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
+     
+	UINT passes=1;
+	hr=effect->Begin(&passes,0);
+	for(unsigned i=0;i<passes;++i)
+	{
+		hr=effect->BeginPass(i);
+		m_pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
+		hr=effect->EndPass();
+	}
+	hr=effect->End();
+	return hr;
+}
 
 
 HRESULT DrawFullScreenQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT effect)
@@ -809,4 +884,43 @@ LPDIRECT3DSURFACE9 MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture)
 	pTexture->GetSurfaceLevel(0,&pRenderTarget);
 #endif
 	return pRenderTarget;
+}
+
+const TCHAR *GetErrorText(HRESULT hr)
+{
+	const TCHAR *err=DXGetErrorString(hr);
+	if(!err)
+	{
+		TCHAR txt[10];
+		swprintf(txt,_T("%3.3g"),hr);
+		return txt;
+	}
+	return err;
+}
+
+
+
+void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir)
+{
+	D3DXMATRIX tmp1;
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	
+	dcam_pos[0]=tmp1._41;
+	dcam_pos[1]=tmp1._42;
+	dcam_pos[2]=tmp1._43;
+	if(view_dir)
+	{
+		if(y_vertical)
+		{
+			view_dir[0]=view._13;
+			view_dir[1]=view._23;
+			view_dir[2]=view._33;
+		}
+		else
+		{
+			view_dir[0]=-view._13;
+			view_dir[1]=-view._23;
+			view_dir[2]=-view._33;
+		}
+	}
 }

@@ -63,6 +63,20 @@ namespace simul
 		}
 	}
 }
+GLuint LoadProgram(const char *vert_filename,const char *frag_filename)
+{
+	GLuint prog						=glCreateProgram();
+	GLuint vertex_shader			=glCreateShader(GL_VERTEX_SHADER);
+	GLuint fragment_shader			=glCreateShader(GL_FRAGMENT_SHADER);
+    vertex_shader					=LoadProgram(vertex_shader,vert_filename);
+    fragment_shader					=LoadProgram(fragment_shader,frag_filename);
+	glAttachShader(prog,vertex_shader);
+	glAttachShader(prog,fragment_shader);
+	glLinkProgram(prog);
+	glUseProgram(prog);
+	printProgramInfoLog(prog);
+	return prog;
+}
 
 GLuint LoadProgram(GLuint prog,const char *filename,const char *defines)
 {

@@ -39,8 +39,9 @@ public:
 	bool RestoreDeviceObjects();
 	//! Destroy the API-specific objects used in rendering.
 	bool InvalidateDeviceObjects();
+	void ReloadShaders();
 	//! GL Implementation of render function.
-	bool Render();
+	bool Render(bool blend);
 	//! Draw the 2D fades to screen for debugging.
 	bool RenderFades();
 
@@ -51,15 +52,16 @@ public:
 	{
 		exit(1);
 	}
-	virtual void FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array);
-	virtual void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	virtual void CycleTexturesForward();
-	virtual bool HasFastFadeLookup() const{return true;}
-	virtual const float *GetFastLossLookup(float distance_texcoord,float elevation_texcoord);
-	virtual const float *GetFastInscatterLookup(float distance_texcoord,float elevation_texcoord);
+	virtual						void FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array);
+	virtual						void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
+	virtual						void CycleTexturesForward();
+	virtual						bool HasFastFadeLookup() const{return true;}
+	virtual						const float *GetFastLossLookup(float distance_texcoord,float elevation_texcoord);
+	virtual						const float *GetFastInscatterLookup(float distance_texcoord,float elevation_texcoord);
 
-	bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	
+	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	bool						RenderSun();
+
 	void Get3DLossAndInscatterTextures(void* *l1,void* *l2,void* *i1,void* *i2);
 	void Get2DLossAndInscatterTextures(void* *l1,void* *i1);
 
@@ -67,9 +69,7 @@ public:
 	virtual void SetYVertical(bool ){}
 protected:
 	bool Render2DFades();
-	void CalcCameraPosition();
 	void CreateFadeTextures();
-	bool RenderAngledQuad(const float *dir,float half_angle_radians);
 	GLuint		sky_tex[3];
 	GLuint		loss_textures[3];
 	GLuint		inscatter_textures[3];
@@ -82,6 +82,8 @@ protected:
 	GLuint			sky_vertex_shader,sky_fragment_shader;
 	GLuint			sky_program;
 	GLuint			planet_program;
+	GLuint			sun_program;
+
 	GLuint			fade_3d_to_2d_program;
 	GLint			planetTexture_param;
 	GLint			planetLightDir_param;
@@ -91,6 +93,7 @@ protected:
 	GLint			hazeEccentricity_param;
 	GLint			lightDirection_sky_param;
 	GLint			skyInterp_param;
+	GLint			sunlight_param;
 	
 	GLint			skyTexture1_param;
 	GLint			skyTexture2_param;

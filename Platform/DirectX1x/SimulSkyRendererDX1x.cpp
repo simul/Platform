@@ -125,6 +125,7 @@ void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
 	skyKeyframer->SetUniformKeyframes(steps);
 }
 
+
 bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 {
 	m_pd3dDevice=dev;
@@ -144,7 +145,7 @@ bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
 	//hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
-	hr=CreateSkyEffect();
+	ReloadShaders();
 	skyKeyframer->SetCallback(this);
 	// CreateSkyTexture() will be called
 
@@ -439,18 +440,18 @@ bool SimulSkyRendererDX1x::CreateSkyTexture()
 	return (hr==S_OK);
 }
 
-bool SimulSkyRendererDX1x::CreateSkyEffect()
+void SimulSkyRendererDX1x::ReloadShaders()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pSkyEffect);
 	if(!m_pd3dDevice)
-		return (hr==S_OK);
+		return ;
 	std::map<std::string,std::string> defines;
 	if(y_vertical)
 		defines["Y_VERTICAL"]="1";
 	else
 		defines["Z_VERTICAL"]="1";
-	B_RETURN(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"simul_sky.fx",defines));
+	B_CHECK(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"simul_sky.fx",defines));
 	m_hTechniqueSky				=m_pSkyEffect->GetTechniqueByName("simul_sky");
 	m_hTechniqueSky_CUBEMAP		=m_pSkyEffect->GetTechniqueByName("simul_sky_CUBEMAP");
 	worldViewProj				=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
@@ -479,7 +480,7 @@ bool SimulSkyRendererDX1x::CreateSkyEffect()
 	fadeTexture2		=m_pSkyEffect->GetVariableByName("fadeTexture2")->AsShaderResource();
 
 	m_hTechniqueQuery	=m_pSkyEffect->GetTechniqueByName("simul_query");
-	return (hr==S_OK);
+
 }
 
 extern void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);
@@ -664,7 +665,6 @@ bool SimulSkyRendererDX1x::Render2DFades()
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
 
-	HRESULT hr;
 	B_RETURN(fadeTexture1->SetResource(loss_textures_SRV[0]));
 	B_RETURN(fadeTexture2->SetResource(loss_textures_SRV[1]));
 	B_RETURN(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
@@ -698,7 +698,7 @@ bool SimulSkyRendererDX1x::Render2DFades()
 	return true;
 }
 
-bool SimulSkyRendererDX1x::Render()
+bool SimulSkyRendererDX1x::Render(bool blend)
 {
 	HRESULT hr=S_OK;
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
@@ -831,5 +831,5 @@ const char *SimulSkyRendererDX1x::GetDebugText() const
 void SimulSkyRendererDX1x::SetYVertical(bool y)
 {
 	y_vertical=y;
-	CreateSkyEffect();
+	ReloadShaders();
 }

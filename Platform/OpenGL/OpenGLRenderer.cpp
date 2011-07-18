@@ -2,7 +2,7 @@
 #include <GL/glew.h>
 // For font definition define:
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
-#include "Simul/Graph/Camera/Camera.h"
+#include "Simul/Camera/Camera.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/SimulGLSkyRenderer.h"
 #include "Simul/Sky/Float4.h"
@@ -12,6 +12,7 @@
 OpenGLRenderer::OpenGLRenderer(const char *license_key):width(0),height(0)
 ,cam(NULL),y_vertical(false)
 {
+	simul::opengl::SetTexturePath("Media/Textures");
 	simul::opengl::SetShaderPath("Media/GLSL/");		// path relative to the root
 	simulWeatherRenderer=new SimulGLWeatherRenderer(license_key);
 	SetYVertical(y_vertical);
@@ -46,12 +47,14 @@ void OpenGLRenderer::paintGL()
 		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
 		glEnable(GL_FOG);
 		simulHDRRenderer->StartRender();
-		simulWeatherRenderer->RenderSky(false,false);
-		simulWeatherRenderer->RenderClouds(false,false,false);
+		simulWeatherRenderer->RenderSky(true,false);
+		//simulWeatherRenderer->RenderClouds(false,false,false);
 
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades();
 
+		//if(GetShowFlares())
+		//	simulWeatherRenderer->RenderFlares(simulHDRRenderer->GetExposure());
 		simulHDRRenderer->FinishRender();
 	}
 	glPopAttrib();
@@ -83,7 +86,7 @@ void OpenGLRenderer::resizeGL(int w,int h)
 void OpenGLRenderer::initializeGL()
 {
 	//if(!cam)
-	//cam=new simul::graph::camera::Camera();
+	//cam=new simul::camera::Camera();
 	if(cam)
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 
@@ -91,7 +94,7 @@ void OpenGLRenderer::initializeGL()
 	simulHDRRenderer->RestoreDeviceObjects();
 }
 
-void OpenGLRenderer::SetCamera(simul::graph::camera::Camera *c)
+void OpenGLRenderer::SetCamera(simul::camera::Camera *c)
 {
 	cam=c;
 }
@@ -103,4 +106,10 @@ void OpenGLRenderer::SetYVertical(bool y)
 		simulWeatherRenderer->SetYVertical(y);
 	//if(simulTerrainRenderer.get())
 	//	simulTerrainRenderer->SetYVertical(y_vertical);
+}
+
+void OpenGLRenderer::ReloadShaders()
+{
+	if(simulWeatherRenderer.get())
+		simulWeatherRenderer->ReloadShaders();
 }

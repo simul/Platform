@@ -10,7 +10,7 @@
 #include "Simul/Platform/DirectX1x/SimulAtmosphericsRendererDX1x.h"
 #include "Simul/Platform/DirectX1x/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX1x/MacrosDX1x.h"
-#include "Simul/Graph/Camera/Camera.h"
+#include "Simul/Camera/Camera.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"

@@ -11,6 +11,7 @@
 #include <GL/glew.h>
 #include <stack>
 #include "LoadGLImage.h"
+#include "Simul/Platform/OpenGL/Export.h"
 
 #ifndef FRAMEBUFFER_INTERFACE
 #define FRAMEBUFFER_INTERFACE
@@ -24,7 +25,7 @@ public:
 };
 #endif
 
-class FramebufferGL:public FramebufferInterface
+SIMUL_OPENGL_EXPORT_CLASS FramebufferGL:public FramebufferInterface
 {
 public:
 	FramebufferGL(int w, int h, GLenum target = GL_TEXTURE_RECTANGLE_NV,
