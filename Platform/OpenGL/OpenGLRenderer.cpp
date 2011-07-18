@@ -2,7 +2,7 @@
 #include <GL/glew.h>
 // For font definition define:
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
-#include "Simul/Graph/Camera/Camera.h"
+#include "Simul/Camera/Camera.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/SimulGLSkyRenderer.h"
 #include "Simul/Sky/Float4.h"
@@ -53,8 +53,8 @@ void OpenGLRenderer::paintGL()
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades();
 
-		if(simulWeatherRenderer->GetShowFlares())
-			simulWeatherRenderer->RenderFlares(simulHDRRenderer->GetExposure());
+		//if(GetShowFlares())
+		//	simulWeatherRenderer->RenderFlares(simulHDRRenderer->GetExposure());
 		simulHDRRenderer->FinishRender();
 	}
 	glPopAttrib();
@@ -86,7 +86,7 @@ void OpenGLRenderer::resizeGL(int w,int h)
 void OpenGLRenderer::initializeGL()
 {
 	//if(!cam)
-	//cam=new simul::graph::camera::Camera();
+	//cam=new simul::camera::Camera();
 	if(cam)
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 
@@ -94,7 +94,7 @@ void OpenGLRenderer::initializeGL()
 	simulHDRRenderer->RestoreDeviceObjects();
 }
 
-void OpenGLRenderer::SetCamera(simul::graph::camera::Camera *c)
+void OpenGLRenderer::SetCamera(simul::camera::Camera *c)
 {
 	cam=c;
 }

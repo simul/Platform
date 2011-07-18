@@ -7,11 +7,12 @@
 #include "Simul/Platform/DirectX9/SimulAtmosphericsRenderer.h"
 #include "Simul/Platform/DirectX9/SimulSkyRenderer.h"
 #include "Simul/Platform/DirectX9/SimulTerrainRenderer.h"
+#include "Simul/Platform/DirectX9/SimulOpticsRendererDX9.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Clouds/CloudInterface.h"
-#include "Simul/Graph/Camera/Camera.h"
+#include "Simul/Camera/Camera.h"
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Platform/DirectX9/Macros.h"
@@ -37,6 +38,7 @@ Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
 	,show_map(false)
 	,show_osd(false)
 	,time_mult(0.f)
+	,ShowFlares(true)
 {
 	//GetResourceId=&GetResourceIdImplementation;
 	simulWeatherRenderer=new SimulWeatherRenderer(license_key,true,640,360,true,true,false,true,false);
@@ -50,6 +52,9 @@ Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
 	SetYVertical(y_vertical);
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->SetYVertical(y_vertical);
+	simulOpticsRenderer=new SimulOpticsRendererDX9();
+	if(simulOpticsRenderer)
+		simulOpticsRenderer->SetYVertical(y_vertical);
 }
 
 Direct3D9Renderer::~Direct3D9Renderer()
@@ -91,7 +96,7 @@ void Direct3D9Renderer::SetShowOSD(bool s)
 {
 	show_osd=s;
 }
-void Direct3D9Renderer::SetCamera(simul::graph::camera::Camera *c)
+void Direct3D9Renderer::SetCamera(simul::camera::Camera *c)
 {
 	camera=c;
 }
@@ -120,6 +125,10 @@ HRESULT Direct3D9Renderer::OnResetDevice(IDirect3DDevice9* pd3dDevice, const D3D
 			simulTerrainRenderer->SetMaxFadeDistanceKm(simulWeatherRenderer->GetSkyRenderer()->GetMaxFadeDistanceKm());
 		}
 		simulTerrainRenderer->RestoreDeviceObjects(pd3dDevice);
+	}
+	if(simulOpticsRenderer)
+	{
+		simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
 	}
 	return S_OK;
 }
@@ -267,8 +276,17 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	{
 		if(simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetAtmosphericsRenderer()->Render();
-		if(simulWeatherRenderer->GetShowFlares())
-			simulWeatherRenderer->RenderFlares(Exposure);
+		simulWeatherRenderer->DoOcclusionTests();
+		if(simulOpticsRenderer&&ShowFlares)
+		{
+			simul::sky::float4 dir,light;
+			dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
+			light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
+			simulOpticsRenderer->SetMatrices(view,proj);
+			simulOpticsRenderer->RenderFlare(
+				Exposure*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
+				,dir,light);
+		}
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 		simulWeatherRenderer->RenderLateCloudLayer(true);
 		simulWeatherRenderer->RenderLightning();
@@ -323,6 +341,8 @@ void Direct3D9Renderer::OnLostDevice()
 		simulHDRRenderer->InvalidateDeviceObjects();
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
+	if(simulOpticsRenderer)
+		simulOpticsRenderer->InvalidateDeviceObjects();
 }
 
 void Direct3D9Renderer::OnDestroyDevice()
@@ -371,4 +391,6 @@ void Direct3D9Renderer::ReloadShaders()
 {
 	if(simulWeatherRenderer.get())
 		simulWeatherRenderer->ReloadShaders();
+	if(simulOpticsRenderer.get())
+		simulOpticsRenderer->ReloadShaders();
 }

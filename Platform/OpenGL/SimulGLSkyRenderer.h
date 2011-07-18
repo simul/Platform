@@ -61,7 +61,6 @@ public:
 
 	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	bool						RenderSun();
-	bool						RenderFlare(float exposure);
 
 	void Get3DLossAndInscatterTextures(void* *l1,void* *l2,void* *i1,void* *i2);
 	void Get2DLossAndInscatterTextures(void* *l1,void* *i1);
@@ -70,14 +69,10 @@ public:
 	virtual void SetYVertical(bool ){}
 protected:
 	bool Render2DFades();
-	void CalcCameraPosition();
 	void CreateFadeTextures();
-	bool RenderAngledQuad(const float *dir,float half_angle_radians);
 	GLuint		sky_tex[3];
 	GLuint		loss_textures[3];
 	GLuint		inscatter_textures[3];
-
-	std::vector<GLuint> halo_textures;
 
 	bool CreateSkyEffect();
 	bool RenderSkyToBuffer();
@@ -88,11 +83,6 @@ protected:
 	GLuint			sky_program;
 	GLuint			planet_program;
 	GLuint			sun_program;
-
-	GLuint			flare_program;
-	GLint			flareColour_param;
-	GLuint			flare_texture;
-	GLint			flareTexture_param;
 
 	GLuint			fade_3d_to_2d_program;
 	GLint			planetTexture_param;
@@ -118,6 +108,5 @@ protected:
 	{
 		return false;
 	}
-	simul::sky::float4			cam_dir;
 };
 

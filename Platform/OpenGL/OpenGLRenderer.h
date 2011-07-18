@@ -10,12 +10,9 @@
 #endif
 namespace simul
 {
-	namespace graph
+	namespace camera
 	{
-		namespace camera
-		{
-			class Camera;
-		}
+		class Camera;
 	}
 }
 
@@ -32,14 +29,14 @@ public:
 	virtual void renderUI();
 	SimulGLWeatherRenderer *GetSimulGLWeatherRenderer(){return simulWeatherRenderer.get();}
 	SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer.get();}
-	void SetCamera(simul::graph::camera::Camera *c);
+	void SetCamera(simul::camera::Camera *c);
 	void SetYVertical(bool y);
 	void ReloadShaders();
 protected:
 	simul::base::SmartPtr<SimulGLWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulGLHDRRenderer> simulHDRRenderer;
 	int width,height;
-	simul::graph::camera::Camera *cam;
+	simul::camera::Camera *cam;
 	bool y_vertical;
 };
 

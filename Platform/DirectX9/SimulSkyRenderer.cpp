@@ -48,18 +48,15 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	,m_hTechniquePlainColour(NULL)
 	,m_hTechniqueStarrySky(NULL)
 	,m_hTechniquePointStars(NULL)
-	,m_hTechniqueSun(NULL)
 	,m_hTechniqueQuery(NULL)
-	,m_hTechniqueFlare(NULL)
 	,m_hTechniquePlanet(NULL)
+	,m_hTechniqueSun(NULL)
 	,max_distance_texture(NULL)
 	,m_hTechniqueFadeCrossSection(NULL)
 	,m_hTechnique3DTo2DFade(NULL)
-	,flare_texture(NULL)
 	,stars_texture(NULL)
 	,d3dQuery(NULL)
 	,sky_tex_format(D3DFMT_UNKNOWN)
-	,external_flare_texture(false)
 	,m_pFont(NULL)
 	,star_vertices(NULL)
 	,num_stars(0)
@@ -68,7 +65,6 @@ SimulSkyRenderer::SimulSkyRenderer(bool UseColourSky)
 	,screen_pixel_height(0)
 {
 	MoonTexture="Moon.png";
-	SunTexture="SunFlare.png";
 	for(int i=0;i<3;i++)
 	{
 		sky_textures[i]=NULL;
@@ -120,12 +116,10 @@ void SimulSkyRenderer::ReloadShaders()
 	hazeEccentricity			=m_pSkyEffect->GetParameterByName(NULL,"hazeEccentricity");
 	skyInterp					=m_pSkyEffect->GetParameterByName(NULL,"skyInterp");
 	altitudeTexCoord			=m_pSkyEffect->GetParameterByName(NULL,"altitudeTexCoord");
-
+	planetTexture				=m_pSkyEffect->GetParameterByName(NULL,"planetTexture");
 	colour						=m_pSkyEffect->GetParameterByName(NULL,"colour");
 	m_hTechniqueSun				=m_pSkyEffect->GetTechniqueByName("simul_sun");
-	m_hTechniqueFlare			=m_pSkyEffect->GetTechniqueByName("simul_flare");
 	m_hTechniquePlanet			=m_pSkyEffect->GetTechniqueByName("simul_planet");
-	flareTexture				=m_pSkyEffect->GetParameterByName(NULL,"flareTexture");
 
 	skyTexture1					=m_pSkyEffect->GetParameterByName(NULL,"skyTexture1");
 	skyTexture2					=m_pSkyEffect->GetParameterByName(NULL,"skyTexture2");
@@ -180,33 +174,9 @@ bool SimulSkyRenderer::RestoreDeviceObjects(void *dev)
 	// CreateSkyTexture() will be called back
 
 	// OK to fail with these (more or less):
-	if(!external_flare_texture)
-	{
-		SAFE_RELEASE(flare_texture);
-		CreateDX9Texture(m_pd3dDevice,flare_texture,SunTexture.c_str());
-	}
 	SAFE_RELEASE(stars_texture);
 	//CreateDX9Texture(m_pd3dDevice,stars_texture,"TychoSkymapII.t5_04096x02048.jpg");
 
-	for(size_t i=0;i<halo_textures.size();i++)
-	{
-		SAFE_RELEASE(halo_textures[i]);
-	}
-	halo_textures.clear();
-	int num_halo_textures=0;
-	for(int i=0;i<lensFlare.GetNumArtifacts();i++)
-	{
-		int t=lensFlare.GetArtifactType(i);
-		if(t+1>num_halo_textures)
-			num_halo_textures=t+1;
-	}
-	halo_textures.resize(num_halo_textures);
-	for(int i=0;i<num_halo_textures;i++)
-	{
-		std::string tn=lensFlare.GetTypeName(i);
-		LPDIRECT3DTEXTURE9 &tex=halo_textures[i];
-		CreateDX9Texture(m_pd3dDevice,tex,(tn+".png").c_str());
-	}
 	SAFE_RELEASE((LPDIRECT3DTEXTURE9&)moon_texture);
 	CreateDX9Texture(m_pd3dDevice,(LPDIRECT3DTEXTURE9&)moon_texture,MoonTexture.c_str());
 	SetPlanetImage(moon_index,moon_texture);
@@ -242,17 +212,7 @@ bool SimulSkyRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pHudVertexDecl);
 	
-
 	SAFE_RELEASE(stars_texture);
-	if(!external_flare_texture)
-	{
-		SAFE_RELEASE(flare_texture);
-	}
-	for(size_t i=0;i<halo_textures.size();i++)
-	{
-		SAFE_RELEASE(halo_textures[i]);
-	}
-	halo_textures.clear();
 	SAFE_RELEASE((LPDIRECT3DTEXTURE9&)moon_texture);
 	for(int i=0;i<3;i++)
 	{
@@ -771,12 +731,13 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 		if(query_issued==1)
     		hr=d3dQuery->Issue(D3DISSUE_END);
 	}
-	else
+	if(query_issued==1)
 	{
 		query_issued=2;
     	// Loop until the data becomes available
     	DWORD pixelsVisible=0;
-		if(d3dQuery->GetData((void *)&pixelsVisible,sizeof(DWORD),0)!=S_FALSE)//D3DGETDATA_FLUSH
+		HRESULT hr=d3dQuery->GetData((void *)&pixelsVisible,sizeof(DWORD),0);
+		if(hr==S_OK)//D3DGETDATA_FLUSH
 		{
 			
 			float q=(1.f-(float)pixelsVisible/maxPixelsVisible);
@@ -811,22 +772,6 @@ bool SimulSkyRenderer::RenderSun()
 	return (hr==S_OK);
 }
 
-void SimulSkyRenderer::SetFlare(LPDIRECT3DTEXTURE9 tex,float rad)
-{
-	if(!external_flare_texture)
-	{
-		SAFE_RELEASE(flare_texture);
-	}
-	for(size_t i=0;i<halo_textures.size();i++)
-	{
-		SAFE_RELEASE(halo_textures[i]);
-	}
-	halo_textures.clear();
-	flare_angular_size=rad;
-	flare_texture=tex;
-	external_flare_texture=true;
-}
-
 void SimulSkyRenderer::SetYVertical(bool y)
 {
 	if(y!=y_vertical)
@@ -842,9 +787,8 @@ bool SimulSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const f
 	if(do_lighting)
 		m_pSkyEffect->SetTechnique(m_hTechniquePlanet);
 	else
-		m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
-	m_pSkyEffect->SetTexture(flareTexture,(LPDIRECT3DTEXTURE9)tex);
-
+		m_pSkyEffect->SetTechnique(m_hTechniqueSun);
+	m_pSkyEffect->SetTexture(planetTexture,(LPDIRECT3DTEXTURE9)tex);
 
 	simul::sky::float4 original_irradiance=GetSkyInterface()->GetSunIrradiance();
 
@@ -864,51 +808,6 @@ bool SimulSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const f
 	HRESULT hr=RenderAngledQuad(planet_dir,planet_angular_size);
 	return hr==S_OK;
 }
-
-bool SimulSkyRenderer::RenderFlare(float exposure)
-{
-	HRESULT hr=S_OK;
-	if(!m_pSkyEffect)
-		return (hr==S_OK);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
-	float magnitude=exposure*(1.f-sun_occlusion);
-	simul::math::FirstOrderDecay(flare_magnitude,magnitude,5.f,0.1f);
-	if(flare_magnitude>1.f)
-		flare_magnitude=1.f;
-	float alt_km=0.001f*cam_pos.y;
-	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km)*lensFlare.GetStrength();
-	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
-	// But our colour values are in Radiance (watts per sq.m. per steradian)
-	// So to get the sun colour, divide by the approximate angular area of the sun.
-	// As the sun has angular radius of about 1/2 a degree, the angular area is 
-	// equal to pi/(120^2), or about 1/2700 steradians;
-	static float sun_mult=0.05f;
-	sunlight*=sun_mult*flare_magnitude;
-    m_pd3dDevice->SetVertexShader(NULL);
-    m_pd3dDevice->SetPixelShader(NULL);
-	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
-	m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
-	m_pSkyEffect->SetTexture(flareTexture,flare_texture);
-	if(y_vertical)
-		std::swap(sun_dir.y,sun_dir.z);
-	lensFlare.UpdateCamera(cam_dir,sun_dir);
-	if(flare_magnitude>0.f)
-	{
-		hr=RenderAngledQuad(sun_dir,flare_angular_size*flare_magnitude);
-		sunlight*=0.25f;
-		for(int i=0;i<lensFlare.GetNumArtifacts();i++)
-		{
-			D3DXVECTOR4 pos=lensFlare.GetArtifactPosition(i);
-			float sz=lensFlare.GetArtifactSize(i);
-			int t=lensFlare.GetArtifactType(i);
-			m_pSkyEffect->SetTexture(flareTexture,halo_textures[t]);
-			m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
-			hr=RenderAngledQuad(pos,flare_angular_size*sz*flare_magnitude);
-		}
-	}
-	return (hr==S_OK);
-}
-
 bool SimulSkyRenderer::RenderFades(int )
 {
 	HRESULT hr=S_OK;
@@ -1406,13 +1305,13 @@ float SimulSkyRenderer::GetTiming() const
 simul::sky::float4 SimulSkyRenderer::GetAmbient() const
 {
 	float alt_km=0.001f*cam_pos.y;
-	return GetSkyInterface()->GetSkyColour(simul::sky::float4(0,0,1,0),alt_km);
+	return GetBaseSkyInterface()->GetAmbientLight(alt_km);
 }
 
 simul::sky::float4 SimulSkyRenderer::GetLightColour() const
 {
 	float alt_km=0.001f*cam_pos.y;
-	return GetSkyInterface()->GetLocalIrradiance(alt_km);
+	return GetBaseSkyInterface()->GetLocalIrradiance(alt_km);
 }
 
 const char *SimulSkyRenderer::GetDebugText() const

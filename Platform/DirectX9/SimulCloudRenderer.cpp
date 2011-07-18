@@ -709,17 +709,6 @@ void SimulCloudRenderer::CycleTexturesForward()
 	std::swap(cloud_textures[1],cloud_textures[2]);
 }
 
-static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
-{
-	D3DXMATRIX tmp1;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXVECTOR4 dcam_pos;
-	dcam_pos.x=tmp1._41;
-	dcam_pos.y=tmp1._42;
-	dcam_pos.z=tmp1._43;
-	return dcam_pos;
-}
-
 static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 {
 	static D3DXVECTOR4 x;
@@ -780,7 +769,7 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 
 	// Mess with the proj matrix to extend the far clipping plane? not now
 
-	cam_pos=GetCameraPosVector(view);
+	GetCameraPosVector(view,y_vertical,cam_pos);
 	simul::math::Vector3 wind_offset=cloudInterface->GetWindOffset();
 
 	if(y_vertical)
@@ -1062,7 +1051,8 @@ void SimulCloudRenderer::InternalRenderRaytrace(int buffer_index)
 	
 		m_pCloudEffect->SetVector	(cloudScales	,(const D3DXVECTOR4*)&cloud_scales);
 		m_pCloudEffect->SetVector	(cloudOffset	,(const D3DXVECTOR4*)&cloud_offset);
-		D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
+		D3DXVECTOR3 cam_pos;
+		GetCameraPosVector(view,y_vertical,(float*)&cam_pos);
 		hr=m_pCloudEffect->SetFloat(fadeInterp,fade_interp);
 		if(skyInterface)
 		{
@@ -1080,7 +1070,7 @@ void SimulCloudRenderer::InternalRenderRaytrace(int buffer_index)
 		}
 		m_pCloudEffect->SetVector	(cloudScales	,(const D3DXVECTOR4*)&cloud_scales);
 		m_pCloudEffect->SetVector	(cloudOffset	,(const D3DXVECTOR4*)&cloud_offset);
-		m_pCloudEffect->SetVector	(eyePosition	,&cam_pos);
+		m_pCloudEffect->SetVector	(eyePosition	,(const D3DXVECTOR4*)&(cam_pos));
 
 		hr=DrawFullScreenQuad(m_pd3dDevice,m_pCloudEffect);
 	}

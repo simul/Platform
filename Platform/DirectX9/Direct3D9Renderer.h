@@ -30,17 +30,16 @@ public:
 #pragma warning(disable:4251)
 namespace simul
 {
-	namespace graph
+	namespace camera
 	{
-		namespace camera
-		{
-			class Camera;
-		}
+		class Camera;
 	}
 }
 class SimulWeatherRenderer;
 class SimulHDRRenderer;
 class SimulTerrainRenderer;
+class SimulOpticsRendererDX9;
+
 class SIMUL_DIRECTX9_EXPORT Direct3D9Renderer
 	:public D3DCallbackInterface
 	,public simul::graph::meta::Group
@@ -51,11 +50,12 @@ public:
 	META_BeginProperties
 		META_ValueProperty(float,Gamma,"")
 		META_ValueProperty(float,Exposure,"")
+		META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")
 	META_EndProperties
 	SimulWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer.get();}
 	SimulTerrainRenderer *GetSimulTerrainRenderer(){return simulTerrainRenderer.get();}
 	void SetShowOSD(bool s);
-	void SetCamera(simul::graph::camera::Camera *c);
+	void SetCamera(simul::camera::Camera *c);
 //D3DCallbackInterface:
 	bool	IsDeviceAcceptable(D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,D3DFORMAT BackBufferFormat, bool bWindowed);
 	bool    ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings);
@@ -81,7 +81,7 @@ public:
 	void	SetYVertical(bool y);
 	void	ReloadShaders();
 protected:
-	simul::graph::camera::Camera *camera;
+	simul::camera::Camera *camera;
 	float aspect;
 	bool y_vertical;
 	bool show_osd;
@@ -92,6 +92,7 @@ protected:
 	bool show_fades;
 	bool show_terrain;
 	bool show_map;
+	simul::base::SmartPtr<SimulOpticsRendererDX9> simulOpticsRenderer;
 	simul::base::SmartPtr<SimulWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulTerrainRenderer> simulTerrainRenderer;
 	simul::base::SmartPtr<SimulHDRRenderer> simulHDRRenderer;
