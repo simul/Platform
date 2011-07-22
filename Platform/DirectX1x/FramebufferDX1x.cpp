@@ -75,10 +75,7 @@ bool FramebufferDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
 	SAFE_RELEASE(m_pTonemapEffect);
-	if(!m_pTonemapEffect)
-	{
-		B_RETURN(CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx")));
-	}
+	hr=CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx"));
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
 	Exposure				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
 	Gamma					=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();

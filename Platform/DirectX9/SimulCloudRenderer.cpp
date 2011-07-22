@@ -785,6 +785,7 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	if(!last_time)
 		delta_t=0;
 	last_time=t;
+	helper->SetChurn(cloudInterface->GetChurn());
 	helper->Update((const float*)cam_pos,wind_offset,view_dir,up,delta_t,cubemap);
 	if(y_vertical)
 		std::swap(cam_pos.y,cam_pos.z);

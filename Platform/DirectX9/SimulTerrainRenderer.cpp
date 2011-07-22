@@ -38,7 +38,6 @@
 #undef min
 #undef max
 typedef std::basic_string<TCHAR> tstring;
-simul::terrain::HeightMapInterface *heightMapInterface;
 
 SimulTerrainRenderer::SimulTerrainRenderer() :
 	m_pVtxDecl(NULL)
@@ -55,6 +54,7 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	,rebuild_effect(true)
 	,y_vertical(true)
 	,max_fade_distance_metres(300000.f)
+	,last_overall_checksum(0)
 {
 	heightmap=new simul::terrain::HeightMapNode();
 	heightMapInterface=heightmap.get();
@@ -67,7 +67,7 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	heightmap->SetFractalOctaves(6);
 	heightmap->SetFractalScale(160000.f);
 	heightmap->SetPageWorldX(120000.f);
-	heightmap->SetPageWorldZ(120000.f);
+	heightmap->SetPageWorldY(120000.f);
 	heightmap->SetBaseAltitude(-2000.f);
 	heightmap->SetFlattenBelow(0.f);
 	heightmap->Rebuild();
@@ -150,7 +150,7 @@ void SimulTerrainRenderer::GetVertex(int i,int j,TerrainVertex_t *V)
 	float Y=(float)j/((float)grid-1.f);
 	
 	V->x=(X-0.5f)*heightMapInterface->GetPageWorldX();
-	V->y=(Y-0.5f)*heightMapInterface->GetPageWorldZ();
+	V->y=(Y-0.5f)*heightMapInterface->GetPageWorldY();
 	V->z=heightMapInterface->GetHeightAt(i,j);
 	if(y_vertical)
 		std::swap(V->y,V->z);
@@ -171,7 +171,7 @@ void SimulTerrainRenderer::GetVertex(int i,int j,TerrainVertex_t *V)
 void SimulTerrainRenderer::GetVertex(float x,float y,TerrainVertex_t *V)
 {
 	float X=x/heightMapInterface->GetPageWorldX()+0.5f;
-	float Y=y/heightMapInterface->GetPageWorldZ()+0.5f;
+	float Y=y/heightMapInterface->GetPageWorldY()+0.5f;
 	
 	V->x=x;
 	V->y=y;
@@ -198,6 +198,7 @@ void SimulTerrainRenderer::TerrainModified()
 bool SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	last_overall_checksum=heightmap->GetChecksum();
 	enabled=false;
 	HRESULT hr;
 	D3DVERTEXELEMENT9 decl[]=
@@ -574,6 +575,11 @@ simul::terrain::HeightMapInterface *SimulTerrainRenderer::GetHeightMapInterface(
 	return heightMapInterface;
 }
 
+simul::terrain::HeightMapNode *SimulTerrainRenderer::GetHeightMap()
+{
+	return heightmap.get();
+}
+
 void SimulTerrainRenderer::Highlight(const float *x,const float *d)
 {
 	simul::math::Vector3 X(x);
@@ -601,6 +607,10 @@ void SimulTerrainRenderer::Highlight(const float *x,const float *d)
 
 void SimulTerrainRenderer::Update(float )
 {
+	if(heightmap->GetChecksum()!=last_overall_checksum)
+	{
+		RestoreDeviceObjects(m_pd3dDevice);
+	}
 }
 
 void SimulTerrainRenderer::SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb)
@@ -822,7 +832,7 @@ bool SimulTerrainRenderer::BuildTile(TerrainTile *tile,int i,int j,int mip_level
 	simul::math::Vector3 pos;
 	tile->pos[0]=(X-0.5f)*heightMapInterface->GetPageWorldX();
 	tile->pos[1]=heightMapInterface->GetHeightAt(i*(tile_size-1)+tile_size/2,j*(tile_size-1)+tile_size/2);
-	tile->pos[2]=(Y-0.5f)*heightMapInterface->GetPageWorldZ();
+	tile->pos[2]=(Y-0.5f)*heightMapInterface->GetPageWorldY();
 
 	TerrainTileMIP *mip=&(tile->mips[mip_level]);
 

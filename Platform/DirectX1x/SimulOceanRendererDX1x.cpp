@@ -489,7 +489,7 @@ void SimulOceanRendererDX1x::EnumeratePatterns(unsigned long* index_array)
 	}
 
 
-	assert(offset == index_size_lookup[g_Lods]);
+//	assert(offset == index_size_lookup[g_Lods]);
 }
 
 void SimulOceanRendererDX1x::createFresnelMap()

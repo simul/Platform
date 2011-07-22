@@ -62,6 +62,7 @@ public:
 	void SetCloudTextures(void **t,bool wrap);
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si){skyInterface=si;}
 	simul::terrain::HeightMapInterface *GetHeightMapInterface();
+	simul::terrain::HeightMapNode *GetHeightMap();
 	void Highlight(const float *x,const float *d);
 	void SetCloudScales(const float *s)
 	{
@@ -106,6 +107,7 @@ public:
 	void TerrainModified();
 	const float *GetHighlightPos() const{return highlight_pos;}
 protected:
+	simul::terrain::HeightMapInterface *heightMapInterface;
 	bool y_vertical;
 	bool enabled;
 	bool wrap_clouds;
@@ -229,6 +231,8 @@ protected:
 
 	float exposure;
 	float max_fade_distance_metres;
+	
+	unsigned last_overall_checksum;
 };
 #ifdef _MSC_VER
 	#pragma warning(pop)
