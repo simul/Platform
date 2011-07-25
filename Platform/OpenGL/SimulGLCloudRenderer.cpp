@@ -512,6 +512,7 @@ ERROR_CHECK
 			}
 		}
 		glEnd();
+ERROR_CHECK
 #endif
 	}
 #endif

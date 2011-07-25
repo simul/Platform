@@ -81,10 +81,6 @@ public:
 	{
 		inscatter_texture_1=(LPDIRECT3DBASETEXTURE9)t;
 	}
-	void SetSkyInterface(simul::sky::BaseSkyInterface *si)
-	{
-		skyInterface=si;
-	}
 	void SetInputTextures(LPDIRECT3DTEXTURE9 image,LPDIRECT3DTEXTURE9 depth)
 	{
 		input_texture=image;
@@ -108,7 +104,6 @@ protected:
 	bool DrawScreenQuad();
 	bool use_3d_fades;
 	float altitude_tex_coord;
-	simul::sky::BaseSkyInterface *skyInterface;
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	vertexDecl;
 	D3DXMATRIX						world,view,proj;

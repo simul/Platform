@@ -74,12 +74,12 @@ void main(void)
 	float opacity=layerDensity*density.x;
 	vec3 final=(lightResponse.y*density.y*Beta+lightResponse.z*density.z)*sunlight+density.w*ambientColour.rgb;
 	vec3 loss_lookup=texture2D(lossSampler,fade_texc).rgb;
-	vec3 insc_lookup=texture2D(inscatterSampler,fade_texc).rgb;
+	vec4 insc_lookup=texture2D(inscatterSampler,fade_texc);
 	//final.rgb+=lightning.rgb;
 	//final.rgb*=texture2D(lossSampler,fade_texc).rgb;
 	//final.rgb+=0.05*texture2D(inscatterSampler,fade_texc).rgb;
-	final.rgb*=loss;
-	final.rgb+=insc.rgb;
+	final.rgb*=loss;//_lookup;
+	final.rgb+=insc;//InscatterFunction(insc_lookup,hazeEccentricity);
 //	final.rgb+=loss_lookup;
     gl_FragColor=vec4(final.rgb,opacity);
 }

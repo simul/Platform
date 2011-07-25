@@ -50,23 +50,26 @@ SimulGLSkyRenderer::SimulGLSkyRenderer()
 	,planet_program(0)
 	,fade_3d_to_2d_program(0)
 	,sun_program(0)
+	,initialized(false)
 {
 /* Setup cube vertex data. */
-  v[0][0] = v[1][0] = v[2][0] = v[3][0] = -1000.f;
-  v[4][0] = v[5][0] = v[6][0] = v[7][0] =  1000.f;
-  v[0][1] = v[1][1] = v[4][1] = v[5][1] = -1000.f;
-  v[2][1] = v[3][1] = v[6][1] = v[7][1] =  1000.f;
-  v[0][2] = v[3][2] = v[4][2] = v[7][2] =  1000.f;
-  v[1][2] = v[2][2] = v[5][2] = v[6][2] = -1000.f;
+	v[0][0] = v[1][0] = v[2][0] = v[3][0] = -1000.f;
+	v[4][0] = v[5][0] = v[6][0] = v[7][0] =  1000.f;
+	v[0][1] = v[1][1] = v[4][1] = v[5][1] = -1000.f;
+	v[2][1] = v[3][1] = v[6][1] = v[7][1] =  1000.f;
+	v[0][2] = v[3][2] = v[4][2] = v[7][2] =  1000.f;
+	v[1][2] = v[2][2] = v[5][2] = v[6][2] = -1000.f;
 	for(int i=0;i<3;i++)
+	{
 		sky_tex[i]=0;
+		loss_textures[i]=inscatter_textures[i]=0;
+	}
 }
 
 bool SimulGLSkyRenderer::Create(float start_alt_km)
 {
 	skyKeyframer=new simul::sky::SkyKeyframer();
 	GetSkyInterface()->SetSunIrradiance(simul::sky::float4(25,25,25,25));
-
 	skyKeyframer->SetFillTexturesAsBlocks(true);
 	skyKeyframer->SetAltitudeKM(start_alt_km);
 	SetCameraPosition(0,0,0.f);
@@ -75,10 +78,12 @@ bool SimulGLSkyRenderer::Create(float start_alt_km)
 
 void SimulGLSkyRenderer::SetSkyTextureSize(unsigned size)
 {
+	// If not initialized we might not have a valid GL context:
+	if(!initialized)
+		return;
 	skyTexSize=size;
 	delete [] short_ptr;
 	short_ptr=new short[skyTexSize*4];
-
 	if(numAltitudes==1)
 	{
 		for(int i=0;i<3;i++)
@@ -116,6 +121,9 @@ void SimulGLSkyRenderer::SetSkyTextureSize(unsigned size)
 
 void SimulGLSkyRenderer::SetFadeTextureSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_alts)
 {
+	// If not initialized we might not have a valid GL context:
+	if(!initialized)
+		return;
 	if(fadeTexWidth==width_num_distances&&fadeTexHeight==height_num_elevations&&numAltitudes==num_alts)
 		return;
 	fadeTexWidth=width_num_distances;
@@ -182,7 +190,9 @@ void SimulGLSkyRenderer::CreateFadeTextures()
 }
 
 static void PartialTextureFill(bool is_3d,int tex_width,int z,int texel_index,int num_texels,const float *float4_array)
-{		// Convert the array of floats into float16 values for the texture.
+{
+ERROR_CHECK
+	// Convert the array of floats into float16 values for the texture.
 	static short short_ptr[512];
 	short *sptr=short_ptr;
 	const char *cptr=(const char *)float4_array;
@@ -203,6 +213,7 @@ static void PartialTextureFill(bool is_3d,int tex_width,int z,int texel_index,in
 		glTexSubImage2D(GL_TEXTURE_2D,0,x_offset,y_offset,width,1,GL_RGBA,sky_tex_format,cptr);
 	else
 		glTexSubImage3D(GL_TEXTURE_2D,0,x_offset,y_offset,z,width,1,1,GL_RGBA,sky_tex_format,cptr);
+ERROR_CHECK
 	int num_done=width;
 	if(num_texels>top_row)
 	{
@@ -214,6 +225,7 @@ static void PartialTextureFill(bool is_3d,int tex_width,int z,int texel_index,in
 			glTexSubImage2D(GL_TEXTURE_2D,0,0,y_offset,tex_width,height,GL_RGBA,sky_tex_format,sptr);
 		else
 			glTexSubImage3D(GL_TEXTURE_3D,0,0,y_offset,z,tex_width,height,1,GL_RGBA,sky_tex_format,sptr);
+ERROR_CHECK
 		num_done+=tex_width*height;
 		if(num_texels>height*tex_width)
 		{
@@ -224,6 +236,7 @@ static void PartialTextureFill(bool is_3d,int tex_width,int z,int texel_index,in
 				glTexSubImage2D(GL_TEXTURE_2D,0,0,y_offset,last_num,1,GL_RGBA,sky_tex_format,sptr);
 			else
 				glTexSubImage3D(GL_TEXTURE_3D,0,0,y_offset,z,last_num,1,1,GL_RGBA,sky_tex_format,sptr);
+ERROR_CHECK
 			num_done+=last_num;
 		}
 
@@ -232,10 +245,13 @@ static void PartialTextureFill(bool is_3d,int tex_width,int z,int texel_index,in
 	{
 		assert(0);
 	}
+ERROR_CHECK
 }
 
 void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array)
 {
+	if(!initialized)
+		return;
 	GLenum target=GL_TEXTURE_2D;
 	if(numAltitudes>1)
 		target=GL_TEXTURE_3D;
@@ -254,6 +270,9 @@ void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int
 
 void SimulGLSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
 {
+	if(!initialized)
+		return;
+ERROR_CHECK
 	if(numAltitudes==1)
 	{
 		glBindTexture(GL_TEXTURE_1D,sky_tex[texture_index]);
@@ -274,6 +293,7 @@ void SimulGLSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texe
 	else
 	{
 		glBindTexture(GL_TEXTURE_2D,sky_tex[texture_index]);
+ERROR_CHECK
 		PartialTextureFill(false,skyTexSize,0,texel_index+skyTexSize*alt_index,num_texels,float4_array);
 	}
 }
@@ -434,6 +454,11 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,0);
 	for(int i=0;i<2;i++)
 	{
+		glActiveTexture(GL_TEXTURE0);
+		if(i==0)
+			glBindTexture(GL_TEXTURE_2D,loss_2d.GetColorTex());
+		else
+			glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
 		glActiveTexture(GL_TEXTURE1);
 		if(i==0)
 			glBindTexture(GL_TEXTURE_2D,loss_2d.GetColorTex());
@@ -643,7 +668,7 @@ void SimulGLSkyRenderer::ReloadShaders()
 	SAFE_DELETE_PROGRAM(planet_program);
 	SAFE_DELETE_PROGRAM(fade_3d_to_2d_program);
 	SAFE_DELETE_PROGRAM(sun_program);
-
+ERROR_CHECK
 	sky_program						=glCreateProgram();
 	sky_vertex_shader				=glCreateShader(GL_VERTEX_SHADER);
 	sky_fragment_shader				=glCreateShader(GL_FRAGMENT_SHADER);
@@ -653,7 +678,7 @@ void SimulGLSkyRenderer::ReloadShaders()
 	glAttachShader(sky_program, sky_fragment_shader);
 	glLinkProgram(sky_program);
 	glUseProgram(sky_program);
-
+ERROR_CHECK
 	printProgramInfoLog(sky_program);
 	MieRayleighRatio_param			=glGetUniformLocation(sky_program,"mieRayleighRatio");
 	lightDirection_sky_param		=glGetUniformLocation(sky_program,"lightDir");
@@ -663,11 +688,11 @@ void SimulGLSkyRenderer::ReloadShaders()
 	skyTexture2_param				=glGetUniformLocation(sky_program,"skyTexture2");
 	altitudeTexCoord_param			=glGetUniformLocation(sky_program,"altitudeTexCoord");
 	printProgramInfoLog(sky_program);
-
+ERROR_CHECK
 	sun_program						=LoadProgram("simul_sun_planet_flare.vert","simul_sun.frag");
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
 	printProgramInfoLog(sun_program);
-
+ERROR_CHECK
 	planet_program					=glCreateProgram();
 	GLuint planet_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
 	GLuint planet_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
@@ -678,11 +703,11 @@ void SimulGLSkyRenderer::ReloadShaders()
 	glLinkProgram(planet_program);
 	glUseProgram(planet_program);
 	printProgramInfoLog(planet_program);
-
+ERROR_CHECK
 	planetTexture_param		=glGetUniformLocation(planet_program,"planetTexture");
 	planetLightDir_param	=glGetUniformLocation(planet_program,"lightDir");
 	printProgramInfoLog(planet_program);
-
+ERROR_CHECK
 	fade_3d_to_2d_program			=glCreateProgram();
 	GLuint fade_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
 	GLuint fade_fragment_shader		=glCreateShader(GL_FRAGMENT_SHADER);
@@ -694,16 +719,23 @@ void SimulGLSkyRenderer::ReloadShaders()
 	glUseProgram(fade_3d_to_2d_program);
 	printProgramInfoLog(fade_3d_to_2d_program);
 }
+
 bool SimulGLSkyRenderer::RestoreDeviceObjects()
 {
+ERROR_CHECK
+	initialized=true;
 	loss_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+ERROR_CHECK
 	inscatter_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+ERROR_CHECK
 	loss_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
+ERROR_CHECK
 	ReloadShaders();
+ERROR_CHECK
 
 	skyKeyframer->SetCallback(this);
-
+ERROR_CHECK
 	moon_texture=(void*)LoadGLImage("Moon.png",GL_CLAMP);
 	SetPlanetImage(moon_index,moon_texture);
 
@@ -713,6 +745,7 @@ bool SimulGLSkyRenderer::RestoreDeviceObjects()
 
 bool SimulGLSkyRenderer::InvalidateDeviceObjects()
 {
+	initialized=false;
 	SAFE_DELETE_PROGRAM(sky_program);
 	SAFE_DELETE_PROGRAM(planet_program);
 	SAFE_DELETE_PROGRAM(fade_3d_to_2d_program);

@@ -72,8 +72,6 @@ public:
 	std::istream &Load(std::istream &is);
 	//! Clear the sky sequence()
 	void New();
-	//! Connect-up sky, clouds:
-	void ConnectInterfaces();
 	const char *GetDebugText() const;
 protected:
 	//! This is set once the GL device has been initialized - then we can create textures and so forth.

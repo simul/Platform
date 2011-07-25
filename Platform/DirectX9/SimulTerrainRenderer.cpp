@@ -154,7 +154,8 @@ void SimulTerrainRenderer::GetVertex(int i,int j,TerrainVertex_t *V)
 	V->z=heightMapInterface->GetHeightAt(i,j);
 	if(y_vertical)
 		std::swap(V->y,V->z);
-	simul::math::Vector3 n=heightMapInterface->GetNormalAt(i,j);
+	static simul::math::Vector3 n;
+	n.DefineValues(heightMapInterface->GetNormalAt(i,j));
 	if(y_vertical)
 		std::swap(n.y,n.z);
 	V->normal_x=n.x;

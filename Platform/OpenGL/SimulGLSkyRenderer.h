@@ -68,6 +68,7 @@ public:
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual void SetYVertical(bool ){}
 protected:
+	bool initialized;
 	bool Render2DFades();
 	void CreateFadeTextures();
 	GLuint		sky_tex[3];

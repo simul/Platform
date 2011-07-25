@@ -92,24 +92,6 @@ void SimulGLWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 	ConnectInterfaces();
 }
 
-void SimulGLWeatherRenderer::ConnectInterfaces()
-{
-	if(simulSkyRenderer)
-	{
-		if(simul2DCloudRenderer)
-		{
-			simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-		}
-		if(simulCloudRenderer)
-		{
-			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
-			simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
-		}
-		//if(simulAtmosphericsRenderer)
-		//	simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
-	}
-}
-
 SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 {
 }
@@ -118,15 +100,12 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 {
 	GLenum res=glewInit();
 	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
-
 // If the GL_GREMEDY_string_marker extension is supported:
-	if (glewIsSupported("GL_GREMEDY_string_marker"))
+	if(glewIsSupported("GL_GREMEDY_string_marker"))
 	{
 		// Get a pointer to the glStringMarkerGREMEDY function:
 		glStringMarkerGREMEDY = (PFNGLSTRINGMARKERGREMEDYPROC)wglGetProcAddress("glStringMarkerGREMEDY");
 	}
-
-
 	CheckGLError(res);
 	if(!GLEW_VERSION_2_0)
 	{
@@ -138,13 +117,11 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 	CheckExtension("GL_ARB_texture_float");
 	CheckExtension("GL_ARB_color_buffer_float");
 	CheckExtension("GL_EXT_framebuffer_object");
-
     if(scene_buffer)
         delete scene_buffer;
 	scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 	scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
 	scene_buffer->SetShader(0);
-
 	device_initialized=true;
 	EnableLayers(simulCloudRenderer.get()!=NULL,simul2DCloudRenderer.get()!=NULL);
 	///simulSkyRenderer->RestoreDeviceObjects();

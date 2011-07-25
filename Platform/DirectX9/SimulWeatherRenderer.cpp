@@ -95,7 +95,7 @@ void SimulWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 	}
 	ConnectInterfaces();
 }
-
+/*
 void SimulWeatherRenderer::ConnectInterfaces()
 {
 	if(!simulSkyRenderer)
@@ -112,7 +112,7 @@ void SimulWeatherRenderer::ConnectInterfaces()
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 }
-
+*/
 bool SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)
 {
 	m_pd3dDevice=dev;

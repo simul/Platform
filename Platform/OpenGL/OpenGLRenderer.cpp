@@ -9,12 +9,18 @@
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 
 
-OpenGLRenderer::OpenGLRenderer(const char *license_key):width(0),height(0)
-,cam(NULL),y_vertical(false)
+OpenGLRenderer::OpenGLRenderer(const char *license_key)
+	:width(0)
+	,height(0)
+	,cam(NULL)
+	,y_vertical(false)
+	,ShowFlares(true)
+	,ShowFades(false)
 {
 	simul::opengl::SetTexturePath("Media/Textures");
 	simul::opengl::SetShaderPath("Media/GLSL/");		// path relative to the root
 	simulWeatherRenderer=new SimulGLWeatherRenderer(license_key);
+	simulOpticsRenderer=new SimulOpticsRendererGL();
 	SetYVertical(y_vertical);
 }
 
@@ -39,7 +45,7 @@ void OpenGLRenderer::paintGL()
 		simulWeatherRenderer->Update(0.0);
 		GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
 		GLuint fogfilter=0;								// Which Fog To Use
-		simul::sky::float4 fogColor=simulWeatherRenderer->GetHorizonColour(cam->GetPosition()[2]);
+		simul::sky::float4 fogColor=simulWeatherRenderer->GetHorizonColour(0.001f*cam->GetPosition()[2]);
 		glFogi(GL_FOG_MODE,fogMode[fogfilter]);			// Fog Mode
 		glFogfv(GL_FOG_COLOR,fogColor);					// Set Fog Color
 		glFogf(GL_FOG_DENSITY,0.35f);					// How Dense Will The Fog Be
@@ -50,9 +56,19 @@ void OpenGLRenderer::paintGL()
 		simulWeatherRenderer->RenderSky(true,false);
 		//simulWeatherRenderer->RenderClouds(false,false,false);
 
-		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
+		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades();
-
+		simulWeatherRenderer->DoOcclusionTests();
+		if(simulOpticsRenderer&&ShowFlares)
+		{
+			simul::sky::float4 dir,light;
+			dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
+			light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
+//		simulOpticsRenderer->SetMatrices(view,proj);
+			simulOpticsRenderer->RenderFlare(
+				simulHDRRenderer->GetExposure()*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
+				,dir,light);
+		}
 		//if(GetShowFlares())
 		//	simulWeatherRenderer->RenderFlares(simulHDRRenderer->GetExposure());
 		simulHDRRenderer->FinishRender();
@@ -92,6 +108,10 @@ void OpenGLRenderer::initializeGL()
 
 	simulWeatherRenderer->RestoreDeviceObjects();
 	simulHDRRenderer->RestoreDeviceObjects();
+	if(simulOpticsRenderer)
+	{
+		simulOpticsRenderer->RestoreDeviceObjects(NULL);
+	}
 }
 
 void OpenGLRenderer::SetCamera(simul::camera::Camera *c)
@@ -106,6 +126,8 @@ void OpenGLRenderer::SetYVertical(bool y)
 		simulWeatherRenderer->SetYVertical(y);
 	//if(simulTerrainRenderer.get())
 	//	simulTerrainRenderer->SetYVertical(y_vertical);
+	if(simulOpticsRenderer)
+		simulOpticsRenderer->SetYVertical(y_vertical);
 }
 
 void OpenGLRenderer::ReloadShaders()

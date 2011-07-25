@@ -8,7 +8,7 @@
 
 
 
-class SimulOpticsRendererGL: simul::camera::BaseOpticsRenderer
+SIMUL_OPENGL_EXPORT_CLASS SimulOpticsRendererGL:public simul::camera::BaseOpticsRenderer
 {
 public:
 	SimulOpticsRendererGL();

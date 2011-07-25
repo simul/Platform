@@ -51,6 +51,12 @@ public:
 		META_ValueProperty(float,Gamma,"")
 		META_ValueProperty(float,Exposure,"")
 		META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")
+
+		META_ValueProperty(bool,ShowCloudCrossSections,"Show cross-sections of the cloud volumes as an overlay.")
+		META_ValueProperty(bool,ShowFades,"Show the fade textures as an overlay.")
+		META_ValueProperty(bool,ShowTerrain,"Whether to draw the terrain.")
+		META_ValueProperty(bool,ShowMap,"Show the terrain map as an overlay.")
+
 	META_EndProperties
 	SimulWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer.get();}
 	SimulTerrainRenderer *GetSimulTerrainRenderer(){return simulTerrainRenderer.get();}
@@ -68,14 +74,9 @@ public:
 	void    OnLostDevice();
 	void    OnDestroyDevice();
 	
-	void	SetShowCloudCrossSections(bool val);
 	void	SetShowLightVolume(bool val);
-	void	SetShowFades(bool val);
 	void	SetCelestialDisplay(bool val);
-	void	SetShowTerrain(bool val);
 
-	void	SetShowMap(bool val);
-	
 	void	SetTimeMultiplier(float fTimeMult);
 
 	void	SetYVertical(bool y);
@@ -88,10 +89,6 @@ protected:
 	float framerate;
 	bool celestial_display;
 	bool render_light_volume;
-	bool show_cloud_sections;
-	bool show_fades;
-	bool show_terrain;
-	bool show_map;
 	simul::base::SmartPtr<SimulOpticsRendererDX9> simulOpticsRenderer;
 	simul::base::SmartPtr<SimulWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulTerrainRenderer> simulTerrainRenderer;

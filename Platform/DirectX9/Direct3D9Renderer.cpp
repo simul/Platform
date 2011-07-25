@@ -30,12 +30,12 @@ Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
 	,simulHDRRenderer(NULL)
 	,simulTerrainRenderer(NULL)
 	,y_vertical(true)
-	,show_cloud_sections(true)
+	,ShowCloudCrossSections(true)
 	,render_light_volume(false)
-	,show_fades(true)
+	,ShowFades(true)
 	,celestial_display(false)
-	,show_terrain(true)
-	,show_map(false)
+	,ShowTerrain(true)
+	,ShowMap(false)
 	,show_osd(false)
 	,time_mult(0.f)
 	,ShowFlares(true)
@@ -193,36 +193,15 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 	timer.FinishTime();
 	simul::math::FirstOrderDecay(update_timing,timer.TimeSum,1.f,fTimeStep);
 }
-	
-void Direct3D9Renderer::SetShowCloudCrossSections(bool val)
-{
-	show_cloud_sections=val;
-}
 
 void Direct3D9Renderer::SetShowLightVolume(bool val)
 {
 	render_light_volume=val;
 }
 	
-	
-void Direct3D9Renderer::SetShowFades(bool val)
-{
-	show_fades=val;
-}
-	
 void Direct3D9Renderer::SetCelestialDisplay(bool val)
 {
 	celestial_display=val;
-}
-
-void Direct3D9Renderer::SetShowTerrain(bool val)
-{
-	show_terrain=val;
-}
-
-void Direct3D9Renderer::SetShowMap(bool val)
-{
-	show_map=val;
 }
 
 void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime, float fTimeStep)
@@ -264,7 +243,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 #endif
 		simulWeatherRenderer->RenderSky(true,false);
 	}
-	if(simulTerrainRenderer&&show_terrain)
+	if(simulTerrainRenderer&&ShowTerrain)
 	{
 		simulTerrainRenderer->SetMatrices(view,proj);
 		simulTerrainRenderer->Render();
@@ -298,7 +277,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	}
 	timer.UpdateTime();
 	simul::math::FirstOrderDecay(weather_timing,timer.Time,1.f,fTimeStep);
-	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&show_fades)
+	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&ShowFades)
 		simulWeatherRenderer->GetSkyRenderer()->RenderFades(width);
 
 	if(simulHDRRenderer)
@@ -306,7 +285,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	timer.UpdateTime();
 	simul::math::FirstOrderDecay(hdr_timing,timer.Time,1.f,fTimeStep);
 
-	if(simulWeatherRenderer&&show_cloud_sections)
+	if(simulWeatherRenderer&&ShowCloudCrossSections)
 	{
 		if(simulWeatherRenderer->IsCloudLayer1Visible())
 		{
@@ -319,7 +298,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		}
 	}
 	
-	if(simulTerrainRenderer&&show_map)
+	if(simulTerrainRenderer&&ShowMap)
 		simulTerrainRenderer->RenderMap(width);
 	pd3dDevice->EndScene();
 	timer.FinishTime();

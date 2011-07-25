@@ -212,8 +212,6 @@ SimulCloudRenderer::SimulCloudRenderer(const char *license_key)
 		cloud_textures[i]=NULL;
 
 	//cloudNode->AddHumidityCallback(&hum_callback);
-	cloudNode->SetLicense(license_key);
-	
 	cloudInterface->Generate();
 
 	AddChild(cloudKeyframer.get());

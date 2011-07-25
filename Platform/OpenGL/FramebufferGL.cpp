@@ -34,20 +34,23 @@ void FramebufferGL::SetShader(int i)
 void FramebufferGL::InitShader()
 {
 	tonemap_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
+ERROR_CHECK
 	tonemap_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-
+ERROR_CHECK
 	tonemap_program			=glCreateProgram();
-
+ERROR_CHECK
     tonemap_vertex_shader	=LoadProgram(tonemap_vertex_shader,"tonemap.vert");
     tonemap_fragment_shader	=LoadProgram(tonemap_fragment_shader,"tonemap.frag");
 	glAttachShader(tonemap_program, tonemap_vertex_shader);
 	glAttachShader(tonemap_program, tonemap_fragment_shader);
 	glLinkProgram(tonemap_program);
 	glUseProgram(tonemap_program);
+	ERROR_CHECK
 	printProgramInfoLog(tonemap_program);
     exposure_param=glGetUniformLocation(tonemap_program,"exposure");
     gamma_param=glGetUniformLocation(tonemap_program,"gamma");
     buffer_tex_param=glGetUniformLocation(tonemap_program,"sceneTex");
+	ERROR_CHECK
 }
 
 FramebufferGL::~FramebufferGL()
@@ -126,7 +129,9 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 	if(!m_fb)
 	{
 		InitShader();
+	ERROR_CHECK
 		glGenFramebuffersEXT(1, &m_fb);
+	ERROR_CHECK
 	}
 	glGenTextures(1, &m_tex_col[index]);
 	ERROR_CHECK
