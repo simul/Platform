@@ -84,7 +84,7 @@ void SimulGLSkyRenderer::SetSkyTextureSize(unsigned size)
 	skyTexSize=size;
 	delete [] short_ptr;
 	short_ptr=new short[skyTexSize*4];
-	if(numAltitudes==1)
+	if(0&&numAltitudes==1)
 	{
 		for(int i=0;i<3;i++)
 		{
@@ -141,7 +141,7 @@ void SimulGLSkyRenderer::CreateFadeTextures()
 	ERROR_CHECK
 	for(int i=0;i<3;i++)
 	{
-		if(numAltitudes<=1)
+		if(0&&numAltitudes<=1)
 		{
 			glBindTexture(GL_TEXTURE_2D,loss_textures[i]);
 	ERROR_CHECK
@@ -253,7 +253,7 @@ void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int
 	if(!initialized)
 		return;
 	GLenum target=GL_TEXTURE_2D;
-	if(numAltitudes>1)
+	if(1||numAltitudes>1)
 		target=GL_TEXTURE_3D;
 	glBindTexture(target,loss_textures[texture_index]);
 		ERROR_CHECK
@@ -273,7 +273,7 @@ void SimulGLSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texe
 	if(!initialized)
 		return;
 ERROR_CHECK
-	if(numAltitudes==1)
+	if(0&&numAltitudes==1)
 	{
 		glBindTexture(GL_TEXTURE_1D,sky_tex[texture_index]);
 

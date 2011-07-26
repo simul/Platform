@@ -113,6 +113,7 @@ bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
 		size,size,
 		GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
 		data);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	delete [] data;
 	return true;
 }

@@ -69,7 +69,7 @@ texture fadeTexture;
 #ifdef USE_ALTITUDE_INTERPOLATION
 	sampler3D fade_texture = sampler_state
 #else
-	sampler2D fade_texture = sampler_state
+	sampler2D fade_texture= sampler_state
 #endif
 {
     Texture = <fadeTexture>;
@@ -223,7 +223,7 @@ float4 PS_Stars(vertexOutput IN): color
 #endif
 	float elev=asin(sine);
 	float2 stars_texcoord=float2(azimuth/(2.0*pi),0.5*(1.f-elev/(pi/2.0)));
-	float3 colour=starBrightness*tex2D(stars_texture,stars_texcoord);
+	float3 colour=starBrightness*tex2D(stars_texture,stars_texcoord).rgb;
 	return float4(colour,1.f);
 }
 
@@ -262,7 +262,7 @@ float4 PS_Sun(svertexOutput IN): color
 
 float4 PS_Flare(svertexOutput IN): color
 {
-	float3 output=colour*tex2D(flare_texture,float2(0.5f,0.5f)+0.5f*IN.tex);
+	float3 output=colour*tex2D(flare_texture,float2(0.5f,0.5f)+0.5f*IN.tex).rgb;
 	return float4(output,1.f);
 }
 
@@ -328,7 +328,7 @@ float4 PS_Plain_Colour(colourVertexOutput IN): color
 }
 
 
-vertexOutputCS VS_CrossSection(vertexInputCS IN)
+vertexOutputCS VS_ShowFade(vertexInputCS IN)
 {
     vertexOutputCS OUT;
     OUT.hPosition = mul(worldViewProj,float4(IN.position.xyz,1.0));
@@ -339,15 +339,34 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
     return OUT;
 }
 
+float4 PS_ShowFade( vertexOutputCS IN): color
+{
+	float4 colour=tex2D(cross_section_texture,IN.texCoords.xy);
+	//colour.rgb=pow(colour.rgb,0.45f);
+    return float4(colour.rgb,1);
+}
+
+
+vertexOutputCS VS_CrossSection(vertexInputCS IN)
+{
+    vertexOutputCS OUT;
+    OUT.hPosition = mul(worldViewProj,float4(IN.position.xyz,1.0));
+	OUT.texCoords.xy=IN.texCoords.xy;
+	OUT.texCoords.z=1;
+	OUT.colour=IN.colour;
+    return OUT;
+}
+
 float4 PS_CrossSection( vertexOutputCS IN): color
 {
-#if 0//def USE_ALTITUDE_INTERPOLATION
-	float3 texc=float3(IN.texCoords.x,IN.texCoords.y,altitudeTexCoord);
+#ifdef USE_ALTITUDE_INTERPOLATION
+// Reverse Z co-ordinate so that up is up.
+	float3 texc=float3(IN.texCoords.x,0.5,1.f-IN.texCoords.y);
 	float4 colour=tex3D(fade_texture,texc);
 #else
-	float4 colour=tex2D(cross_section_texture,IN.texCoords.xy);
+	float4 colour=tex2D(fade_texture,IN.texCoords.xy);
 #endif
-	colour.rgb=pow(colour.rgb,0.45f);
+	//colour.rgb=pow(colour.rgb,0.45f);
     return float4(colour.rgb,1);
 }
 
@@ -537,6 +556,22 @@ technique simul_query
 #endif
     }
 }
+
+technique simul_show_fade
+{
+    pass p0 
+    {		
+		VertexShader = compile vs_3_0 VS_ShowFade();
+		PixelShader  = compile ps_3_0 PS_ShowFade();
+		zenable = false;
+		zwriteenable = false;
+        AlphaBlendEnable = false;
+#ifndef XBOX
+		lighting = false;
+#endif
+    }
+}
+
 technique simul_fade_cross_section
 {
     pass p0 

@@ -40,11 +40,11 @@ Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
 	,time_mult(0.f)
 	,ShowFlares(true)
 {
-	//GetResourceId=&GetResourceIdImplementation;
-	simulWeatherRenderer=new SimulWeatherRenderer(license_key,true,640,360,true,true,false,true,false);
-	AddChild(simulWeatherRenderer.get());
+	simulWeatherRenderer=new SimulWeatherRenderer(license_key,true,640,360,true,true,false,false,false);
+	if(simulWeatherRenderer)
+		AddChild(simulWeatherRenderer.get());
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
-	if(simulHDRRenderer)
+	if(simulHDRRenderer&&simulWeatherRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
 	simulTerrainRenderer=new SimulTerrainRenderer();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
@@ -59,6 +59,10 @@ Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
 
 Direct3D9Renderer::~Direct3D9Renderer()
 {
+	/*simulHDRRenderer=NULL;
+	simulTerrainRenderer=NULL;
+	simulWeatherRenderer=NULL;
+	simulOpticsRenderer=NULL;*/
 }
 
 bool Direct3D9Renderer::IsDeviceAcceptable(D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,D3DFORMAT BackBufferFormat, bool bWindowed)
@@ -159,8 +163,10 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 		new_framerate=1.f/fTimeStep;
 	framerate+=0.01f*(new_framerate);
 
-	// Using daytime:
-	float dt=time_mult*fTimeStep/(24.f*60.f*60.f);
+	// Using daytime? or regular time?
+	float dt=time_mult*fTimeStep;
+	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyKeyframer()&&simulWeatherRenderer->GetSkyKeyframer()->GetLinkKeyframeTimeAndDaytime())
+		dt/=(24.f*60.f*60.f);
 	static float constant_timestep=0.f;
 	if(constant_timestep)
 		dt=constant_timestep;
@@ -258,18 +264,21 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{
-			simul::sky::float4 dir,light;
-			dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
-			light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
-			simulOpticsRenderer->SetMatrices(view,proj);
-			simulOpticsRenderer->RenderFlare(
-				Exposure*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
-				,dir,light);
+			simul::sky::float4 dir(0,0,1.f,0),light(0,0,0,0);
+			if(simulWeatherRenderer->GetSkyRenderer())
+			{
+				dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
+				light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
+				simulOpticsRenderer->SetMatrices(view,proj);
+				simulOpticsRenderer->RenderFlare(
+					Exposure*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
+					,dir,light);
+			}
 		}
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 		simulWeatherRenderer->RenderLateCloudLayer(true);
 		simulWeatherRenderer->RenderLightning();
-		if(render_light_volume)
+		if(render_light_volume&&simulWeatherRenderer->GetCloudRenderer())
 			simulWeatherRenderer->GetCloudRenderer()->RenderLightVolume();
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);

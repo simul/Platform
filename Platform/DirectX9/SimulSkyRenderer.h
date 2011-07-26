@@ -144,6 +144,7 @@ protected:
 	D3DXHANDLE					m_hTechniqueQuery;	// A technique that uses the z-test for occlusion queries
 	D3DXHANDLE					m_hTechniquePlanet;
 	D3DXHANDLE					m_hTechniqueFadeCrossSection;
+	D3DXHANDLE					m_hTechniqueShowFade;
 	D3DXHANDLE					m_hTechnique3DTo2DFade;
 	
 	D3DXHANDLE					altitudeTexCoord;
@@ -156,7 +157,7 @@ protected:
 	D3DXHANDLE					fadeTexture2;
 	D3DXHANDLE					skyTexture1;
 	D3DXHANDLE					skyTexture2;
-	D3DXHANDLE					crossSectionTexture;
+	D3DXHANDLE					fadeTexture2D;
 	D3DXHANDLE					starsTexture;
 	D3DXHANDLE					starBrightness;
 	D3DXHANDLE					planetTexture;
