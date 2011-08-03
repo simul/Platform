@@ -59,10 +59,6 @@ Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
 
 Direct3D9Renderer::~Direct3D9Renderer()
 {
-	/*simulHDRRenderer=NULL;
-	simulTerrainRenderer=NULL;
-	simulWeatherRenderer=NULL;
-	simulOpticsRenderer=NULL;*/
 }
 
 bool Direct3D9Renderer::IsDeviceAcceptable(D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,D3DFORMAT BackBufferFormat, bool bWindowed)
@@ -149,6 +145,8 @@ void Direct3D9Renderer::SetYVertical(bool y)
 		simulWeatherRenderer->SetYVertical(y);
 	if(simulTerrainRenderer.get())
 		simulTerrainRenderer->SetYVertical(y_vertical);
+	if(simulOpticsRenderer)
+		simulOpticsRenderer->SetYVertical(y_vertical);
 }
 static float render_timing=0,update_timing=0,weather_timing=0,hdr_timing=0;
 void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)

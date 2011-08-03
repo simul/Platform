@@ -898,8 +898,6 @@ const TCHAR *GetErrorText(HRESULT hr)
 	return err;
 }
 
-
-
 void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir)
 {
 	D3DXMATRIX tmp1;

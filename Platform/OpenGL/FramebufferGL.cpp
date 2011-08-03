@@ -292,7 +292,8 @@ void FramebufferGL::Render(bool blend)
 	{
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE,GL_ONE);
+		// retain background based on alpha in overlay
+		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	}
 	glDepthMask(GL_FALSE);
 	ERROR_CHECK

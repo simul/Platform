@@ -8,6 +8,7 @@
 //#include "Simul/Platform/Windows/DirectX 11/Simul2DCloudRendererDX1x.h"
 #include "Simul/Platform/DirectX1x/SimulSkyRendererDX1x.h"
 #include "Simul/Platform/DirectX1x/SimulAtmosphericsRendererDX1x.h"
+#include "Simul/Platform/DirectX1x/SimulOpticsRendererDX1x.h"
 #include "Simul/Platform/DirectX1x/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX1x/MacrosDX1x.h"
 #include "Simul/Camera/Camera.h"
@@ -23,6 +24,9 @@ Direct3D11Renderer::Direct3D11Renderer(const char *license_key):
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(license_key,true,false,640,360,true,true,true);
 	AddChild(simulWeatherRenderer.get());
 	//simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
+	simulOpticsRenderer=new SimulOpticsRendererDX1x();
+	if(simulOpticsRenderer)
+		simulOpticsRenderer->SetYVertical(y_vertical);
 	SetYVertical(y_vertical);
 }
 
@@ -73,10 +77,14 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 		simulWeatherRenderer->InvalidateDeviceObjects();
 	if(simulHDRRenderer)
 		simulHDRRenderer->InvalidateDeviceObjects();
+	if(simulOpticsRenderer)
+		simulOpticsRenderer->InvalidateDeviceObjects();
 	if(simulHDRRenderer&&!simulHDRRenderer->RestoreDeviceObjects(pd3dDevice,pSwapChain))
 		return (HRESULT)(-1);
 	if(simulWeatherRenderer&&!simulWeatherRenderer->RestoreDeviceObjects(pd3dDevice,pSwapChain))
 		return (HRESULT)(-1);
+	if(simulOpticsRenderer)
+		simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
 	return S_OK;
 }
 
@@ -96,6 +104,18 @@ void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11De
 	{
 		simulWeatherRenderer->SetMatrices(view,proj);
 		simulWeatherRenderer->RenderSky(true,false);
+//		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
+//			simulWeatherRenderer->GetSkyRenderer()->RenderFades();
+		simulWeatherRenderer->DoOcclusionTests();
+		if(simulOpticsRenderer&&ShowFlares)
+		{
+			simul::sky::float4 dir,light;
+			dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
+			light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
+		simulOpticsRenderer->SetMatrices(view,proj);
+			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-(simulWeatherRenderer?simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion():0.f));
+			simulOpticsRenderer->RenderFlare(exp,dir,light);
+		}
 	}
 	if(simulHDRRenderer)
 		simulHDRRenderer->FinishRender();
@@ -107,6 +127,8 @@ void	Direct3D11Renderer::OnD3D11LostDevice()
 		simulWeatherRenderer->InvalidateDeviceObjects();
 	if(simulHDRRenderer)
 		simulHDRRenderer->InvalidateDeviceObjects();
+	if(simulOpticsRenderer)
+		simulOpticsRenderer->InvalidateDeviceObjects();
 }
 
 void	Direct3D11Renderer::OnD3D11DestroyDevice()
@@ -143,6 +165,10 @@ void Direct3D11Renderer::SetYVertical(bool y)
 		simulWeatherRenderer->SetYVertical(y);
 	//if(simulTerrainRenderer.get())
 	//	simulTerrainRenderer->SetYVertical(y_vertical);
+	if(simulOpticsRenderer)
+		simulOpticsRenderer->SetYVertical(y_vertical);
+	if(simulOpticsRenderer)
+		simulOpticsRenderer->SetYVertical(y_vertical);
 }
 
 void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)

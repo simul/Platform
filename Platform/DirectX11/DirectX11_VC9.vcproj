@@ -356,6 +356,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\DirectX1x\SimulOpticsRendererDX1x.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\DirectX1x\SimulSkyRendererDX1x.cpp"
 				>
 			</File>
@@ -419,6 +423,10 @@
 			</File>
 			<File
 				RelativePath="..\DirectX1x\SimulOceanRendererDX1x.h"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\SimulOpticsRendererDX1x.h"
 				>
 			</File>
 			<File

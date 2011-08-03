@@ -28,6 +28,8 @@ namespace simul
 		extern SIMUL_DIRECTX1x_EXPORT  void UnsetDevice();
 	}
 }
+extern ID3D1xShaderResourceView* LoadTexture(const TCHAR *filename);
+
 typedef long HRESULT;
 extern SIMUL_DIRECTX1x_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename);
 extern SIMUL_DIRECTX1x_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,const std::map<std::string,std::string>&defines);
@@ -50,3 +52,10 @@ extern void SIMUL_DIRECTX1x_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,f
 extern void SIMUL_DIRECTX1x_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical);
 
 extern void SIMUL_DIRECTX1x_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[]);
+extern void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir);
+extern void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *cam_pos,const float *dir,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj);
+
+
+
+void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
+void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );

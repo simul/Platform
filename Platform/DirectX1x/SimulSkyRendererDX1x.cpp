@@ -161,7 +161,7 @@ bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 									);
 
 	flare_texture=static_cast<ID3D1xTexture2D*>(res);
-    B_RETURN(m_pd3dDevice->CreateShaderResourceView( flare_texture,NULL,&flare_texture_SRV));
+    V_CHECK(m_pd3dDevice->CreateShaderResourceView( flare_texture,NULL,&flare_texture_SRV));
 
     D3D1x_PASS_DESC PassDesc;
 	m_hTechniqueSky->GetPassByIndex(0)->GetDesc(&PassDesc);
@@ -434,8 +434,8 @@ bool SimulSkyRendererDX1x::CreateSkyTexture()
 	{
 		SAFE_RELEASE(sky_textures[i]);
 		SAFE_RELEASE(sky_textures_SRV[i]);
-		B_RETURN(m_pd3dDevice->CreateTexture2D(&desc,NULL, &sky_textures[i]));
-		B_RETURN(m_pd3dDevice->CreateShaderResourceView(sky_textures[i],NULL,&sky_textures_SRV[i]));
+		V_CHECK(m_pd3dDevice->CreateTexture2D(&desc,NULL, &sky_textures[i]));
+		V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_textures[i],NULL,&sky_textures_SRV[i]));
 	}
 	return (hr==S_OK);
 }
@@ -451,7 +451,7 @@ void SimulSkyRendererDX1x::ReloadShaders()
 		defines["Y_VERTICAL"]="1";
 	else
 		defines["Z_VERTICAL"]="1";
-	B_CHECK(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"simul_sky.fx",defines));
+	V_CHECK(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"simul_sky.fx",defines));
 	m_hTechniqueSky				=m_pSkyEffect->GetTechniqueByName("simul_sky");
 	m_hTechniqueSky_CUBEMAP		=m_pSkyEffect->GetTechniqueByName("simul_sky_CUBEMAP");
 	worldViewProj				=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
@@ -661,13 +661,13 @@ bool SimulSkyRendererDX1x::Render2DFades()
 		return false;
 	if(!loss_2d||!inscatter_2d)
 		return false;
-
+	HRESULT hr;
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
 
-	B_RETURN(fadeTexture1->SetResource(loss_textures_SRV[0]));
-	B_RETURN(fadeTexture2->SetResource(loss_textures_SRV[1]));
-	B_RETURN(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+	V_CHECK(fadeTexture1->SetResource(loss_textures_SRV[0]));
+	V_CHECK(fadeTexture2->SetResource(loss_textures_SRV[1]));
+	V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 	loss_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
 	loss_2d->Activate();
 // Clear the screen to black:
@@ -678,9 +678,9 @@ bool SimulSkyRendererDX1x::Render2DFades()
 	loss_2d->RenderBufferToCurrentTarget();
 	loss_2d->Deactivate();
 
-	B_RETURN(fadeTexture1->SetResource(insc_textures_SRV[0]));
-	B_RETURN(fadeTexture2->SetResource(insc_textures_SRV[1]));
-	B_RETURN(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+	V_CHECK(fadeTexture1->SetResource(insc_textures_SRV[0]));
+	V_CHECK(fadeTexture2->SetResource(insc_textures_SRV[1]));
+	V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 	
 	inscatter_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
 	inscatter_2d->Activate();
@@ -692,9 +692,9 @@ bool SimulSkyRendererDX1x::Render2DFades()
 	inscatter_2d->RenderBufferToCurrentTarget();
 	inscatter_2d->Deactivate();
 	
-	B_RETURN(fadeTexture1->SetResource(NULL));
-	B_RETURN(fadeTexture2->SetResource(NULL));
-	B_RETURN(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+	V_CHECK(fadeTexture1->SetResource(NULL));
+	V_CHECK(fadeTexture2->SetResource(NULL));
+	V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 	return true;
 }
 
@@ -760,13 +760,12 @@ void SimulSkyRendererDX1x::DrawCubemap(ID3D1xShaderResourceView*		m_pCubeEnvMapS
 	D3DXMatrixTranslation(&world,0.f,495.f,-20.f);
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);
-	ID3D1xEffectTechnique*				tech;
-	tech				=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
-	ID3D1xEffectShaderResourceVariable*	cubeTexture;
-	cubeTexture			=m_pSkyEffect->GetVariableByName("cubeTexture")->AsShaderResource();
+	ID3D1xEffectTechnique*				tech=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
+	ID3D1xEffectShaderResourceVariable*	cubeTexture=m_pSkyEffect->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
 	HRESULT hr=ApplyPass(tech->GetPassByIndex(0));
-	DrawCube();
+return;
+	//DrawCube();
 }
 
 void SimulSkyRendererDX1x::DrawCube()

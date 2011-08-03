@@ -159,7 +159,8 @@ protected:
 	D3DXHANDLE						m_hTechniqueRaytraceWithLightning;	
 	D3DXHANDLE						m_hTechniqueCrossSectionXZ;	
 	D3DXHANDLE						m_hTechniqueCrossSectionXY;	
-	D3DXHANDLE						m_hTechniqueRenderTo2DForSaving;	
+	D3DXHANDLE						m_hTechniqueRenderTo2DForSaving;
+	D3DXHANDLE						m_hTechniqueColourLines;	
 	
 	LPD3DXEFFECT					m_pGPULightingEffect;
 

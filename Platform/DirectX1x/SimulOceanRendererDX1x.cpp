@@ -91,6 +91,7 @@ SimulOceanRendererDX1x::SimulOceanRendererDX1x()
 	,g_pDSState_Disable(NULL)
 	,g_pDSState_Enable(NULL)
 	,g_pBState_Transparent(NULL)
+	,g_pBState_Solid(NULL)
 	,g_pPerCallCB(NULL)
 	,g_pPerFrameCB(NULL)
 	,g_pShadingCB(NULL)
@@ -319,6 +320,11 @@ bool SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 	blend_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	m_pd3dDevice->CreateBlendState(&blend_desc, &g_pBState_Transparent);
 	assert(g_pBState_Transparent);
+	
+	blend_desc.RenderTarget[0].BlendEnable = FALSE;
+	blend_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	m_pd3dDevice->CreateBlendState(&blend_desc, &g_pBState_Solid);
+	assert(g_pBState_Solid);
 	return true;
 }
 
@@ -358,6 +364,7 @@ void SimulOceanRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(g_pDSState_Disable);
 	SAFE_RELEASE(g_pDSState_Enable);
 	SAFE_RELEASE(g_pBState_Transparent);
+	SAFE_RELEASE(g_pBState_Solid);
 
 	SAFE_RELEASE(m_pImmediateContext);
 
@@ -751,6 +758,8 @@ void SimulOceanRendererDX1x::RenderShaded(float time)
 	// State blocks
 	m_pImmediateContext->RSSetState(g_pRSState_Solid);
 	m_pImmediateContext->OMSetDepthStencilState(g_pDSState_Enable,0);
+
+	m_pImmediateContext->OMSetBlendState(g_pBState_Solid,0,0xFFFFFFFF);
 
 	// Constants
 	ID3D11Buffer* cbs[1] = {g_pShadingCB};

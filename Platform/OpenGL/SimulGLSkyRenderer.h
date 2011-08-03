@@ -33,15 +33,17 @@ public:
 	//standard ogl object interface functions
 
 	//! Initialize the sky renderer.
-	bool Create(float start_alt_km=0.f);
+	bool						Create(float start_alt_km=0.f);
 	//! Create the API-specific objects to be used in rendering. This is usually called from the SimulGLWeatherRenderer that
 	//! owns this object.
-	bool RestoreDeviceObjects();
+	bool						RestoreDeviceObjects();
 	//! Destroy the API-specific objects used in rendering.
-	bool InvalidateDeviceObjects();
-	void ReloadShaders();
+	bool						InvalidateDeviceObjects();
+	void						ReloadShaders();
 	//! GL Implementation of render function.
-	bool Render(bool blend);
+	bool						Render(bool blend);
+	//! Render the stars, as points.
+	bool						RenderPointStars();
 	//! Draw the 2D fades to screen for debugging.
 	bool RenderFades();
 
@@ -84,6 +86,7 @@ protected:
 	GLuint			sky_program;
 	GLuint			planet_program;
 	GLuint			sun_program;
+	GLuint			stars_program;
 
 	GLuint			fade_3d_to_2d_program;
 	GLint			planetTexture_param;
@@ -96,6 +99,8 @@ protected:
 	GLint			skyInterp_param;
 	GLint			sunlight_param;
 	
+	GLint			starBrightness_param;
+
 	GLint			skyTexture1_param;
 	GLint			skyTexture2_param;
 	

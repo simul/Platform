@@ -143,9 +143,17 @@ struct vertexInput
 #endif
 };
 
-struct vertexInputNew
+struct vertexInputPositionColour
 {
     float3 position			: POSITION;
+    float4 colour			: TEXCOORD0;
+    float2 texc				: TEXCOORD1;
+};
+struct vertexOutputPositionColour
+{
+    float4 hPosition		: POSITION;
+    float4 colour			: TEXCOORD0;
+    float2 texc				: TEXCOORD1;
 };
 
 struct vertexOutput
@@ -165,6 +173,19 @@ struct vertexOutput
     float3 inscatter			: TEXCOORD7;
 #endif
 };
+
+vertexOutputPositionColour VS_PositionColour(vertexInputPositionColour IN)
+{
+	vertexOutputPositionColour OUT;
+    OUT.hPosition = mul( worldViewProj, float4(IN.position.xyz,1.0));
+	OUT.colour=IN.colour;
+	OUT.texc=IN.texc;
+	return OUT;
+}
+float4 PS_PositionColour(vertexOutputPositionColour IN): color
+{
+	return IN.colour;
+}
 
 vertexOutput VS_Main(vertexInput IN)
 {
@@ -764,5 +785,22 @@ technique render_to_2d_for_saving
 
 		VertexShader = compile vs_3_0 VS_CrossSection();
 		PixelShader  = compile ps_3_0 PS_RenderTo2D();
+    }
+}
+
+technique colour_lines
+{
+    pass p0 
+    {
+		zenable = false;
+		zfunc = lessequal;
+		ZWriteEnable = false;
+        CullMode = None;
+		AlphaTestEnable=false;
+		FillMode = Solid;
+        AlphaBlendEnable = true;
+
+		VertexShader = compile vs_3_0 VS_PositionColour();
+		PixelShader  = compile ps_3_0 PS_PositionColour();
     }
 }

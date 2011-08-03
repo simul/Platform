@@ -41,7 +41,7 @@ SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h) :
 	m_pImmediateContext(NULL),
 	m_pVertexBuffer(NULL),
 	m_pTonemapEffect(NULL),
-	exposure(1.f),
+	Exposure(1.f),
 	gamma(1.f),			// no need for shader-based gamma-correction with DX10/11
 	Width(w),
 	Height(h),
@@ -81,10 +81,10 @@ bool SimulHDRRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapChain
 	SAFE_RELEASE(m_pTonemapEffect);
 	if(!m_pTonemapEffect)
 	{
-		B_RETURN(CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx")));
+		V_CHECK(CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx")));
 	}
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
-	Exposure				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
+	Exposure_param			=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
 	Gamma					=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
 	hdrTexture				=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
@@ -120,6 +120,7 @@ SimulHDRRendererDX1x::~SimulHDRRendererDX1x()
 
 bool SimulHDRRendererDX1x::StartRender()
 {
+	framebuffer->SetExposure(Exposure);
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
 	framebuffer->Activate();
 	// Clear the screen to black:
@@ -143,12 +144,6 @@ bool SimulHDRRendererDX1x::FinishRender()
 	framebuffer->DeactivateAndRender(false);
 	PIXEndNamedEvent();
 	return true;
-}
-
-void SimulHDRRendererDX1x::SetExposure(float ex)
-{
-	exposure=ex;
-	framebuffer->SetExposure(ex);
 }
 
 const char *SimulHDRRendererDX1x::GetDebugText() const

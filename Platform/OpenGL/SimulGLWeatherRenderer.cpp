@@ -149,6 +149,7 @@ static simul::base::Timer timer;
     glPushMatrix();
 	if(simulSkyRenderer)
 	{
+		simulSkyRenderer->RenderPointStars();
 		simulSkyRenderer->RenderPlanets();
 		ERROR_CHECK
 		simulSkyRenderer->RenderSun();

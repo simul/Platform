@@ -79,7 +79,7 @@ void main(void)
 	//final.rgb*=texture2D(lossSampler,fade_texc).rgb;
 	//final.rgb+=0.05*texture2D(inscatterSampler,fade_texc).rgb;
 	final.rgb*=loss;//_lookup;
-	final.rgb+=insc;//InscatterFunction(insc_lookup,hazeEccentricity);
+	final.rgb+=insc.rgb;//InscatterFunction(insc_lookup,hazeEccentricity);
 //	final.rgb+=loss_lookup;
     gl_FragColor=vec4(final.rgb,opacity);
 }

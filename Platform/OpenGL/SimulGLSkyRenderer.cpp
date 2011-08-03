@@ -50,6 +50,7 @@ SimulGLSkyRenderer::SimulGLSkyRenderer()
 	,planet_program(0)
 	,fade_3d_to_2d_program(0)
 	,sun_program(0)
+	,stars_program(0)
 	,initialized(false)
 {
 /* Setup cube vertex data. */
@@ -550,7 +551,7 @@ ERROR_CHECK
 	glUniform1f(skyInterp_param,skyKeyframer->GetInterpolation());
 	glUniform3f(lightDirection_sky_param,sun_dir.x,sun_dir.y,sun_dir.z);
 ERROR_CHECK
-	for (int i = 0; i < 6; i++)
+	for(int i=0;i<6;i++)
 	{
 		glBegin(GL_QUADS);
 		glVertex3fv(&v[faces[i][0]][0]);
@@ -570,6 +571,59 @@ ERROR_CHECK
 	return true;
 }
 
+bool SimulGLSkyRenderer::RenderPointStars()
+{
+	float sid[16];
+	CalcCameraPosition(cam_pos);
+	GetSiderealTransform(sid);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
+	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
+	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE,GL_SRC_ALPHA,GL_ONE);
+	int current_num_stars=skyKeyframer->stars.GetNumStars();
+	if(!star_vertices||current_num_stars!=num_stars)
+	{
+		num_stars=current_num_stars;
+		delete [] star_vertices;
+		star_vertices=new StarVertext[num_stars];
+		static float d=100.f;
+		{
+			for(int i=0;i<num_stars;i++)
+			{
+				float ra=(float)skyKeyframer->stars.GetStar(i).ascension;
+				float de=(float)skyKeyframer->stars.GetStar(i).declination;
+				star_vertices[i].x= d*cos(de)*sin(ra);
+				star_vertices[i].z=-d*cos(de)*cos(ra);
+				star_vertices[i].y=-d*sin(de);
+				star_vertices[i].b=(float)exp(-skyKeyframer->stars.GetStar(i).magnitude);
+				star_vertices[i].c=1.f;
+			}
+		}
+	}
+	glUseProgram(stars_program);
+	float sb=GetSkyInterface()->GetStarlight().x;
+	glUniform1f(starBrightness_param,sb*skyKeyframer->GetStarBrightness());
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+	float mat1[16],mat2[16];
+	glGetFloatv(GL_MODELVIEW_MATRIX,mat1);
+
+	glTranslatef(cam_pos.x,cam_pos.y,cam_pos.z);
+	glGetFloatv(GL_MODELVIEW_MATRIX,mat2);
+
+
+	glBegin(GL_POINTS);
+	for(int i=0;i<num_stars;i++)
+	{
+		StarVertext &V=star_vertices[i];
+		glMultiTexCoord2f(GL_TEXTURE0,V.b,V.c);
+		glVertex3f(V.x,V.y,V.z);
+	}
+	glEnd();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+	return true;
+}
 
 bool SimulGLSkyRenderer::RenderSun()
 {
@@ -668,6 +722,7 @@ void SimulGLSkyRenderer::ReloadShaders()
 	SAFE_DELETE_PROGRAM(planet_program);
 	SAFE_DELETE_PROGRAM(fade_3d_to_2d_program);
 	SAFE_DELETE_PROGRAM(sun_program);
+	SAFE_DELETE_PROGRAM(stars_program);
 ERROR_CHECK
 	sky_program						=glCreateProgram();
 	sky_vertex_shader				=glCreateShader(GL_VERTEX_SHADER);
@@ -692,6 +747,9 @@ ERROR_CHECK
 	sun_program						=LoadProgram("simul_sun_planet_flare.vert","simul_sun.frag");
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
 	printProgramInfoLog(sun_program);
+	stars_program					=LoadProgram("simul_sun_planet_flare.vert","simul_stars.frag");
+	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
+	printProgramInfoLog(stars_program);
 ERROR_CHECK
 	planet_program					=glCreateProgram();
 	GLuint planet_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);

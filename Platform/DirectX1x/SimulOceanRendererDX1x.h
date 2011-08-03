@@ -43,6 +43,7 @@ protected:
 	ID3D11DepthStencilState* g_pDSState_Disable;
 	ID3D11DepthStencilState* g_pDSState_Enable;
 	ID3D11BlendState* g_pBState_Transparent;
+	ID3D11BlendState* g_pBState_Solid;
 	ID3D11Buffer* g_pPerCallCB;
 	ID3D11Buffer* g_pPerFrameCB;
 	ID3D11Buffer* g_pShadingCB;

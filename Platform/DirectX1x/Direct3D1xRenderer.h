@@ -29,6 +29,7 @@ namespace simul
 class SimulWeatherRendererDX1x;
 class SimulHDRRendererDX1x;
 class SimulTerrainRendererDX1x;
+class SimulOpticsRendererDX1x;
 class D3D11CallbackInterface
 {
 public:
@@ -53,6 +54,10 @@ class SIMUL_DIRECTX1x_EXPORT Direct3D11Renderer
 public:
 	Direct3D11Renderer(const char *license_key);
 	virtual ~Direct3D11Renderer();
+	META_BeginProperties
+		META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")
+		META_ValueProperty(bool,ShowFades,"Show the fade textures as an overlay.")
+	META_EndProperties
 	class SimulWeatherRendererDX1x *GetSimulWeatherRenderer()
 	{
 		return simulWeatherRenderer.get();
@@ -78,6 +83,7 @@ protected:
 	bool y_vertical;
 	simul::camera::Camera *camera;
 	float aspect;
+	simul::base::SmartPtr<SimulOpticsRendererDX1x> simulOpticsRenderer;
 	simul::base::SmartPtr<SimulWeatherRendererDX1x> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulHDRRendererDX1x> simulHDRRenderer;
 	float timeMult;

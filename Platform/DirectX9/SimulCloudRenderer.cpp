@@ -338,6 +338,7 @@ bool SimulCloudRenderer::InitEffects()
 	m_hTechniqueCrossSectionXZ			=GetDX9Technique(m_pCloudEffect,"cross_section_xz");
 	m_hTechniqueCrossSectionXY			=GetDX9Technique(m_pCloudEffect,"cross_section_xy");
 	m_hTechniqueRenderTo2DForSaving		=GetDX9Technique(m_pCloudEffect,"render_to_2d_for_saving");
+	m_hTechniqueColourLines				=GetDX9Technique(m_pCloudEffect,"colour_lines");
 
 	worldViewProj			=m_pCloudEffect->GetParameterByName(NULL,"worldViewProj");
 	eyePosition				=m_pCloudEffect->GetParameterByName(NULL,"eyePosition");
@@ -1449,9 +1450,9 @@ bool SimulCloudRenderer::RenderLightVolume()
 	HRESULT hr=S_OK;
 	D3DVERTEXELEMENT9 decl[] = 
 	{
-		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0, 16, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
-		{ 0, 32, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 12, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+		{ 0, 28, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1 },
 		D3DDECL_END()
 	};
 	if(!m_pHudVertexDecl)
@@ -1461,32 +1462,10 @@ bool SimulCloudRenderer::RenderLightVolume()
 
 	struct Vertext
 	{
-		float x,y,z,h;
+		float x,y,z;
 		float r,g,b,a;
 		float tx,ty;
 	};
-	m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
-	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
-	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
-	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
-
-    m_pd3dDevice->SetVertexShader(NULL);
-    m_pd3dDevice->SetPixelShader(NULL);
-	m_pd3dDevice->SetVertexDeclaration(m_pHudVertexDecl);
-
-    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_MODULATE );
-    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE );
-
-	m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-	m_pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_CONSTANT);
-
-// Set the constant to 0.25 alpha (0x40 = 64 = 64/256 = 0.25)
-	m_pd3dDevice->SetTextureStageState(0, D3DTSS_CONSTANT, 0x80000080);
-
-    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_MODULATE );
-    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE );
-	m_pd3dDevice->SetRenderState(D3DRS_SRCBLEND,D3DBLEND_SRCALPHA);
-	m_pd3dDevice->SetRenderState(D3DRS_DESTBLEND,D3DBLEND_INVSRCALPHA);
 
 	m_pd3dDevice->SetTexture(0,NULL);
 	
@@ -1532,16 +1511,68 @@ bool SimulCloudRenderer::RenderLightVolume()
 		lines[i*2].r=1.f;
 		lines[i*2].g=1.f;
 		lines[i*2].b=0.f;
-		lines[i*2].a=1;
+		lines[i*2].a=1.f;
+		lines[i*2].tx=0;
+		lines[i*2].ty=0;
 		lines[i*2+1].x=X2.x; 
 		lines[i*2+1].y=X2.y;  
 		lines[i*2+1].z=X2.z;
 		lines[i*2+1].r=1.f;
 		lines[i*2+1].g=1.f;
 		lines[i*2+1].b=0.f;
-		lines[i*2+1].a=1;
+		lines[i*2+1].a=1.f;
+		lines[i*2+1].tx=0;
+		lines[i*2+1].ty=0;
+	}
+	unsigned passes=0;
+	m_pCloudEffect->SetTechnique(m_hTechniqueColourLines);
+	hr=m_pCloudEffect->Begin(&passes,0);
+	hr=m_pCloudEffect->BeginPass(0);
+	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,12,lines,(unsigned)sizeof(Vertext));
+
+	// Now draw the density volume:
+	
+	for(int i=0;i<12;i++)
+	{
+		int i1=0;
+		int i2=0;
+		if(i<4||i>=8)
+		{
+			i1=i%4;
+			i2=(i+1)%4;
+			if(i>=8)
+			{
+				i1+=4;
+				i2+=4;
+			}
+		}
+		else
+		{
+			i1=i%4;
+			i2=i1+4;
+		}
+		simul::math::Vector3 X1=cloudNode->ConvertTextureCoordsToReal(vertices[i1].x,vertices[i1].y,vertices[i1].z);
+		simul::math::Vector3 X2=cloudNode->ConvertTextureCoordsToReal(vertices[i2].x,vertices[i2].y,vertices[i2].z);
+		std::swap(X1.y,X1.z);
+		std::swap(X2.y,X2.z);
+		lines[i*2].x=X1.x; 
+		lines[i*2].y=X1.y;  
+		lines[i*2].z=X1.z;
+		lines[i*2].r=0.f;
+		lines[i*2].g=0.5f;
+		lines[i*2].b=1.f;
+		lines[i*2].a=1.f;
+		lines[i*2+1].x=X2.x; 
+		lines[i*2+1].y=X2.y;  
+		lines[i*2+1].z=X2.z;
+		lines[i*2+1].r=0.f;
+		lines[i*2+1].g=0.5f;
+		lines[i*2+1].b=1.f;
+		lines[i*2+1].a=1.f;
 	}
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,12,lines,(unsigned)sizeof(Vertext));
+	hr=m_pCloudEffect->EndPass();
+	hr=m_pCloudEffect->End();
 	delete [] lines;
 	return (hr==S_OK);
 }

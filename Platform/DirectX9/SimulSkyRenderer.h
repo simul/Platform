@@ -118,13 +118,6 @@ protected:
 	int screen_pixel_height;
 	bool Render2DFades();
 	bool y_vertical;
-	struct StarVertext
-	{
-		float x,y,z;
-		float b,c;
-	};
-	StarVertext *star_vertices;
-	int num_stars;
 	bool PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height);
 	float timing;
 	D3DFORMAT sky_tex_format;

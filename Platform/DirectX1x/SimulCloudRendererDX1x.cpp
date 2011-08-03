@@ -26,9 +26,9 @@
 #include "Simul/Math/Pi.h"
 #include "CreateEffectDX1x.h"
 
-const TCHAR *GetErrorText(HRESULT hr)
+const char *GetErrorText(HRESULT hr)
 {
-	const TCHAR *err=DXGetErrorString(hr);
+	const char *err=DXGetErrorStringA(hr);
 	return err;
 }
 
@@ -221,7 +221,7 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 
 	noiseTexture				->SetResource(noiseTextureResource);
 
-	B_RETURN(CreateEffect(m_pd3dDevice,&m_pLightningEffect,L"simul_lightning.fx"));
+	V_CHECK(CreateEffect(m_pd3dDevice,&m_pLightningEffect,L"simul_lightning.fx"));
 	if(m_pLightningEffect)
 	{
 		m_hTechniqueLightning	=m_pLightningEffect->GetTechniqueByName("simul_lightning");
@@ -353,27 +353,27 @@ loadInfo.MipLevels=0;
 	}
 	//if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,size,default_mip_levels,default_texture_usage,DXGI_FORMAT_R8G8B8A8_UINT,D3DPOOL_MANAGED,&noise_texture)))
 	//	return (hr==S_OK);
-	D3D1x_TEXTURE2D_DESC desc=
-	{
-		noise_texture_size,
-		noise_texture_size,
-		0,
-		1,
-		DXGI_FORMAT_R8G8B8A8_UNORM,
-		{1,0},
-		D3D1x_USAGE_DYNAMIC,
-		D3D1x_BIND_SHADER_RESOURCE,
-		D3D1x_CPU_ACCESS_WRITE,
-		0
-	};
-	B_RETURN(m_pd3dDevice->CreateTexture2D(&desc,NULL,&noise_texture));
+	D3D11_TEXTURE2D_DESC tex_desc;
+	tex_desc.Width			=noise_texture_size;
+	tex_desc.Height			=noise_texture_size;
+	tex_desc.MipLevels = 0;
+	tex_desc.ArraySize = 1;
+	tex_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	tex_desc.SampleDesc.Count = 1;
+	tex_desc.SampleDesc.Quality = 0;
+	tex_desc.Usage = D3D11_USAGE_DYNAMIC;
+	tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	tex_desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+ 
+	V_CHECK(m_pd3dDevice->CreateTexture2D(&tex_desc,NULL,&noise_texture));
 	D3D1x_MAPPED_TEXTURE2D mapped;
 	if(FAILED(hr=Map2D(noise_texture,&mapped)))
 		return false;
 	simul::clouds::TextureGenerator::SetBits(0x000000FF,0x0000FF00,0x00FF0000,0xFF000000,(unsigned)4,big_endian);
 	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)(mapped.pData),noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
 	Unmap2D(noise_texture);
-	B_RETURN(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
+	V_CHECK(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
 	return true;
 }
 

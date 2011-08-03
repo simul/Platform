@@ -207,8 +207,8 @@ float4 PS_Main( vertexOutput IN): color
 #endif
 	float4 inscatter_factor=lerp(inscatter_factor1,inscatter_factor2,skyInterp);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float3 colour=InscatterFunction(inscatter_factor,cos0);
-	return float4(colour,1.f);
+	float3 output=InscatterFunction(inscatter_factor,cos0);
+	return float4(output,1.f);
 }
 
 float4 PS_Stars(vertexOutput IN): color
@@ -223,8 +223,8 @@ float4 PS_Stars(vertexOutput IN): color
 #endif
 	float elev=asin(sine);
 	float2 stars_texcoord=float2(azimuth/(2.0*pi),0.5*(1.f-elev/(pi/2.0)));
-	float3 colour=starBrightness*tex2D(stars_texture,stars_texcoord).rgb;
-	return float4(colour,1.f);
+	float3 output=starBrightness*tex2D(stars_texture,stars_texcoord).rgb;
+	return float4(output,1.f);
 }
 
 struct svertexInput
@@ -297,8 +297,7 @@ svertexOutput VS_Point_Stars(svertexInput IN)
 
 float4 PS_Point_Stars(svertexOutput IN): color
 {
-	float3 colour=float3(1.f,1.f,1.f);
-	colour=colour*saturate(starBrightness*IN.tex.x);
+	float3 colour=float3(1.f,1.f,1.f)*saturate(starBrightness*IN.tex.x);
 	return float4(colour,1.f);
 }
 
