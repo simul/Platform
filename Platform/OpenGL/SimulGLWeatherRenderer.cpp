@@ -35,7 +35,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(const char *lic,bool usebuffer,bo
 {
 	if(sky)
 	{
-		simulSkyRenderer=new SimulGLSkyRenderer();
+		simulSkyRenderer=new SimulGLSkyRenderer(colour_sky);
 		baseSkyRenderer=simulSkyRenderer.get();
 	}
 	if(simulSkyRenderer)

@@ -113,7 +113,7 @@ bool SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	if(!external_rain_texture)
 	{
 		SAFE_RELEASE(rain_texture);
-		B_RETURN(hr=CreateDX9Texture(m_pd3dDevice,rain_texture,"Rain.jpg"));
+		B_RETURN(CreateDX9Texture(m_pd3dDevice,rain_texture,"Rain.jpg"));
 	}
 
 	return (hr==S_OK);

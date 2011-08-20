@@ -1,6 +1,17 @@
 float4x4 worldViewProj	: WorldViewProjection;
 float4x4 world			: World;
 
+texture heightTexture;
+sampler height_texture = sampler_state
+{
+    Texture = <heightTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
 texture g_mainTexture;
 sampler mainTexture = sampler_state
 {
@@ -69,7 +80,38 @@ float3 cloudOffset;
 float3 lightColour;
 float3 ambientColour;
 float cloudInterp;
+
+float altitudeBase=0.0;
+float altitudeRange=1000.0;
+
 #define pi (3.1415926536f)
+
+
+struct mapVertexInput
+{
+    float3 position			: POSITION;
+    float2 texCoordDiffuse	: TEXCOORD0;
+};
+
+struct mapVertexOutput
+{
+    float4 hPosition		: POSITION;
+    float2 texCoordDiffuse	: TEXCOORD0;
+};
+
+mapVertexOutput VS_Map(mapVertexInput IN)
+{
+    mapVertexOutput OUT;
+    OUT.hPosition = mul(worldViewProj,float4(IN.position.xyz,1.f));
+    OUT.texCoordDiffuse=IN.texCoordDiffuse;
+    return OUT;
+}
+
+float4 PS_Map( mapVertexOutput IN) : color
+{
+	float3 final=(tex2D(height_texture,IN.texCoordDiffuse.xy).rgb-altitudeBase)/altitudeRange;
+    return float4(final.rgb,1.f);
+}
 
 struct vertexInput
 {
@@ -77,6 +119,7 @@ struct vertexInput
     float4 normal			: TEXCOORD0;
     float2 texCoordDiffuse	: TEXCOORD1;
     float offset			: TEXCOORD2;
+    float2 texCoordHeightmap: TEXCOORD3;
 };
 
 struct vertexOutput
@@ -85,13 +128,15 @@ struct vertexOutput
     float4 normal			: TEXCOORD0;
     float2 texCoordDiffuse	: TEXCOORD1;
     float4 wPosition		: TEXCOORD2;
+    float test				: TEXCOORD3;
 };
 
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-    OUT.hPosition = mul(worldViewProj, float4(IN.position.xyz,1.f));
-    OUT.wPosition = float4(IN.position.xyz,1.f);
+	OUT.test=tex2Dlod(height_texture,float4(IN.texCoordHeightmap.xy,0,1.f)).r;
+    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.f));
+    OUT.wPosition=float4(IN.position.xyz,1.f);
     OUT.texCoordDiffuse=IN.texCoordDiffuse;
     OUT.normal=saturate(IN.normal);
     return OUT;
@@ -101,6 +146,7 @@ float4 PS_Main( vertexOutput IN) : color
 {
 	float3 final=tex2D(mainTexture,IN.texCoordDiffuse.xy/5.f);
 	float depth=length(IN.wPosition-eyePosition)/MAX_FADE_DISTANCE_METRES;
+	final.r=IN.test;
     return float4(final,depth);
 }
 
@@ -152,8 +198,8 @@ technique simul_terrain
 {
     pass base 
     {		
-		VertexShader = compile vs_2_0 VS_Main();
-		PixelShader  = compile ps_2_0 PS_Main();
+		VertexShader = compile vs_3_0 VS_Main();
+		PixelShader  = compile ps_3_0 PS_Main();
 
 		ColorWriteEnable=blue|red|green|alpha;
 		alphablendenable = false;
@@ -163,8 +209,8 @@ technique simul_terrain
     }
     pass detail 
     {		
-		VertexShader=compile vs_2_0 VS_Main();
-		PixelShader =compile ps_2_0 PS_Detail();
+		VertexShader=compile vs_3_0 VS_Main();
+		PixelShader =compile ps_3_0 PS_Detail();
 		ColorWriteEnable=blue|red|green;
 
         AlphaBlendEnable=true;
@@ -177,7 +223,7 @@ technique simul_terrain
     }
     pass shadow 
     {
-		PixelShader = compile ps_2_0 PS_Shadow();
+		PixelShader = compile ps_3_0 PS_Shadow();
         AlphaBlendEnable = true;
         ZWriteEnable= false;
 		SrcBlend	= Zero;
@@ -186,7 +232,7 @@ technique simul_terrain
     }
     pass cloud_shadow 
     {
-		PixelShader = compile ps_2_0 PS_CloudShadow();
+		PixelShader = compile ps_3_0 PS_CloudShadow();
         AlphaBlendEnable = true;
         ZWriteEnable= false;
 		SrcBlend	= Zero;
@@ -199,7 +245,7 @@ technique simul_terrain
         ZWriteEnable= false;
         ZEnable		= true;
         Lighting	= false;
-		PixelShader = compile ps_2_0 PS_Outline();
+		PixelShader = compile ps_3_0 PS_Outline();
 		SrcBlend	= SrcAlpha;
 		DestBlend	= InvSrcAlpha;
 		FillMode	= Wireframe;
@@ -223,7 +269,7 @@ technique simul_at
 {
     pass grass 
     {
-		PixelShader = compile ps_2_0 PS_Detail();
+		PixelShader = compile ps_3_0 PS_Detail();
 		alphablendenable = true;
         ZWriteEnable= false;
 		SrcBlend	= SrcAlpha;
@@ -234,7 +280,7 @@ technique simul_at
         AlphaBlendEnable = true;
         ZWriteEnable= false;
         Lighting	= false;
-		PixelShader = compile ps_2_0 PS_Outline();
+		PixelShader = compile ps_3_0 PS_Outline();
 		SrcBlend	= SrcAlpha;
 		DestBlend	= One;
 		FillMode	= Wireframe;
@@ -244,8 +290,8 @@ technique simul_road
 {
     pass base 
     {		
-		VertexShader = compile vs_2_0 VS_Main();
-		PixelShader  = compile ps_2_0 PS_Main();
+		VertexShader = compile vs_3_0 VS_Main();
+		PixelShader  = compile ps_3_0 PS_Main();
 
 		alphablendenable = false;
         ZWriteEnable = true;
@@ -254,4 +300,16 @@ technique simul_road
     }
 }
 
+technique simul_map
+{
+    pass base 
+    {		
+		VertexShader = compile vs_3_0 VS_Map();
+		PixelShader  = compile ps_3_0 PS_Map();
 
+		alphablendenable = false;
+        ZWriteEnable = true;
+		ZEnable = true;
+		ZFunc = less;
+    }
+}

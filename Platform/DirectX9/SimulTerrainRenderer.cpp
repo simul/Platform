@@ -79,6 +79,7 @@ struct TerrainVertex_t
 	float normal_x,normal_y,normal_z,ca;
 	float tex_x,tex_y;
 	float offset;
+	float hm_tex_x,hm_tex_y;
 };
 
 bool SimulTerrainRenderer::Create( LPDIRECT3DDEVICE9 dev)
@@ -93,31 +94,29 @@ bool SimulTerrainRenderer::Create( LPDIRECT3DDEVICE9 dev)
 
 bool SimulTerrainRenderer::MakeMapTexture()
 {
-	HRESULT hr=S_OK;
-	int size=heightmap->GetPageSize();
+	int size=heightmap->GetPageSize()-1;
 	SAFE_RELEASE(elevation_map_texture);
-	if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_AUTOGENMIPMAP,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&elevation_map_texture)))
-		return (hr==S_OK);
+	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,0,D3DUSAGE_AUTOGENMIPMAP,D3DFMT_R32F,D3DPOOL_MANAGED,&elevation_map_texture));
+
 	D3DLOCKED_RECT lockedRect={0};
-	if(FAILED(hr=elevation_map_texture->LockRect(0,&lockedRect,NULL,NULL)))
-		return (hr==S_OK);
-	unsigned char *ptr=(unsigned char *)(lockedRect.pBits);
-	float base=std::max(heightmap->GetBaseAltitude(),heightmap->GetFlattenBelow());
-	float max_height=heightmap->GetMaxHeight();
+	V_CHECK(elevation_map_texture->LockRect(0,&lockedRect,NULL,NULL));
+	float *ptr=(float *)(lockedRect.pBits);
+	//float base=std::max(heightmap->GetBaseAltitude(),heightmap->GetFlattenBelow());
+//float max_height=heightmap->GetMaxHeight();
 	for(int i=0;i<size;i++)
 	{
 		for(int j=0;j<size;j++)
 		{
-			float h=1.f*(0.f+(heightmap->GetHeightAt(i,j)-base)/max_height);
-			float c=h*255.f;
-			*(ptr++)=(unsigned char)(c);
-			*(ptr++)=(unsigned char)(c);
-			*(ptr++)=(unsigned char)(c);
-			*(ptr++)=(unsigned char)(c);
+			float h=heightmap->GetHeightAt(i,j);
+			*(ptr++)=h;
+			/**(ptr++)=127;
+			*(ptr++)=255;
+			*(ptr++)=255;*/
 		}
 	}
-	hr=elevation_map_texture->UnlockRect(0);
-	return (hr==S_OK);
+	V_CHECK(elevation_map_texture->UnlockRect(0));
+	elevation_map_texture->GenerateMipSubLevels();
+	return true;
 }
 
 static float saturate(float f)
@@ -128,12 +127,14 @@ static float saturate(float f)
 		return 1.f;
 	return f;
 }
+
 /*static float SnowFunction(float ,simul::math::Vector3 &normal)
 {
 	float high_enought=1.f;
 	float angle_ok=saturate((normal.z-0.5f)/0.1f);
 	return high_enought*angle_ok;
 }*/
+
 static float GrassFunction(float altitude_metres,simul::math::Vector3 &normal)
 {
 	float high_enough=saturate((2000.f-altitude_metres)/200.f);
@@ -166,6 +167,8 @@ void SimulTerrainRenderer::GetVertex(int i,int j,TerrainVertex_t *V)
 	static float tex_scale=20.f;
 	V->tex_x=tex_scale*X;
 	V->tex_y=tex_scale*Y;
+	V->hm_tex_x=X;
+	V->hm_tex_y=Y;
 	V->offset=0.f;
 }
 
@@ -189,6 +192,8 @@ void SimulTerrainRenderer::GetVertex(float x,float y,TerrainVertex_t *V)
 	V->ca=GrassFunction(V->y,n);
 	V->tex_x=130.f*X;
 	V->tex_y=130.f*Y;
+	V->hm_tex_x=X;
+	V->hm_tex_y=Y;
 	V->offset=0.f;
 }
 
@@ -208,19 +213,20 @@ bool SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
 		{0,12,D3DDECLTYPE_FLOAT4,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
 		{0,28,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
 		{0,36,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
+		{0,40,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
 
 	SAFE_RELEASE(terrain_texture);
-	B_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/MudGrass01.dds"),&terrain_texture));
+	B_RETURN(D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/MudGrass01.dds"),&terrain_texture));
 
 	SAFE_RELEASE(detail_texture);
-	B_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/grass01.dds"),&detail_texture));
+	B_RETURN(D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/grass01.dds"),&detail_texture));
 
 	SAFE_RELEASE(road_texture);
-	V_CHECK(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/road.dds"),&road_texture));
+	V_CHECK(D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/road.dds"),&road_texture));
 
 	CreateEffect();
 
@@ -283,27 +289,28 @@ bool SimulTerrainRenderer::CreateEffect()
 		defines["Y_VERTICAL"]='1';
 	hr=CreateDX9Effect(m_pd3dDevice,m_pTerrainEffect,"simul_terrain.fx",defines);
 
-	m_hTechniqueTerrain	=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
-	m_hTechniqueDepthOnly=m_pTerrainEffect->GetTechniqueByName("simul_depth_only");
-	techniqueRoad		=m_pTerrainEffect->GetTechniqueByName("simul_road");
-	worldViewProj		=m_pTerrainEffect->GetParameterByName(NULL,"worldViewProj");
-	eyePosition			=m_pTerrainEffect->GetParameterByName(NULL,"eyePosition");
-	lightDirection		=m_pTerrainEffect->GetParameterByName(NULL,"lightDir");
+	m_hTechniqueTerrain		=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
+	m_hTechniqueDepthOnly	=m_pTerrainEffect->GetTechniqueByName("simul_depth_only");
+	m_hTechniqueMap			=m_pTerrainEffect->GetTechniqueByName("simul_map");
+	techniqueRoad			=m_pTerrainEffect->GetTechniqueByName("simul_road");
+	worldViewProj			=m_pTerrainEffect->GetParameterByName(NULL,"worldViewProj");
+	eyePosition				=m_pTerrainEffect->GetParameterByName(NULL,"eyePosition");
+	lightDirection			=m_pTerrainEffect->GetParameterByName(NULL,"lightDir");
 
-	cloudScales			=m_pTerrainEffect->GetParameterByName(NULL,"cloudScales");
-	cloudOffset			=m_pTerrainEffect->GetParameterByName(NULL,"cloudOffset");
-	cloudInterp			=m_pTerrainEffect->GetParameterByName(NULL,"cloudInterp");
+	cloudScales				=m_pTerrainEffect->GetParameterByName(NULL,"cloudScales");
+	cloudOffset				=m_pTerrainEffect->GetParameterByName(NULL,"cloudOffset");
+	cloudInterp				=m_pTerrainEffect->GetParameterByName(NULL,"cloudInterp");
 
 
-	lightColour			=m_pTerrainEffect->GetParameterByName(NULL,"lightColour");
-	ambientColour		=m_pTerrainEffect->GetParameterByName(NULL,"ambientColour");
+	lightColour				=m_pTerrainEffect->GetParameterByName(NULL,"lightColour");
+	ambientColour			=m_pTerrainEffect->GetParameterByName(NULL,"ambientColour");
 
-	g_mainTexture		=m_pTerrainEffect->GetParameterByName(NULL,"g_mainTexture");
-	detailTexture		=m_pTerrainEffect->GetParameterByName(NULL,"detailTexture");
-	roadTexture			=m_pTerrainEffect->GetParameterByName(NULL,"roadTexture");
+	g_mainTexture			=m_pTerrainEffect->GetParameterByName(NULL,"g_mainTexture");
+	detailTexture			=m_pTerrainEffect->GetParameterByName(NULL,"detailTexture");
+	roadTexture				=m_pTerrainEffect->GetParameterByName(NULL,"roadTexture");
 
-	cloudTexture1		=m_pTerrainEffect->GetParameterByName(NULL,"cloudTexture1");
-	cloudTexture2		=m_pTerrainEffect->GetParameterByName(NULL,"cloudTexture2");
+	cloudTexture1			=m_pTerrainEffect->GetParameterByName(NULL,"cloudTexture1");
+	cloudTexture2			=m_pTerrainEffect->GetParameterByName(NULL,"cloudTexture2");
 
 	rebuild_effect=false;
 	return (hr==S_OK);
@@ -326,21 +333,6 @@ bool SimulTerrainRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(elevation_map_texture);
 	return (hr==S_OK);
 }
-/*
-bool SimulTerrainRenderer::Destroy()
-{
-	HRESULT hr=InvalidateDeviceObjects();
-	SAFE_RELEASE(m_pVtxDecl);
-	SAFE_RELEASE(vertexBuffer);
-	ReleaseIndexBuffers();
-	SAFE_RELEASE(m_pTerrainEffect);
-	SAFE_RELEASE(terrain_texture);
-	SAFE_RELEASE(detail_texture);
-	SAFE_RELEASE(road_texture);
-	cloud_textures=NULL;
-	heightmap=NULL;
-	return (hr==S_OK);
-}*/
 
 SimulTerrainRenderer::~SimulTerrainRenderer()
 {
@@ -465,13 +457,13 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 	UINT passes=1;
 	hr=m_pTerrainEffect->Begin( &passes, 0 );
 
-	B_RETURN(hr=m_pd3dDevice->SetStreamSource(0,
+	B_RETURN(m_pd3dDevice->SetStreamSource(0,
 			vertexBuffer,
 			0,
 			sizeof(TerrainVertex_t)
 			));
 
-	B_RETURN(hr=m_pd3dDevice->SetVertexDeclaration( m_pVtxDecl ));
+	B_RETURN(m_pd3dDevice->SetVertexDeclaration( m_pVtxDecl ));
 	for(unsigned p = 0 ; p < passes ; ++p )
 	{
 		hr=m_pTerrainEffect->BeginPass(p);
@@ -483,12 +475,12 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 			{
 				int mip_level=GetMip(i,j);
 				TerrainTileMIP *mip=&tiles[i][j].mips[mip_level];
-				B_RETURN(hr=m_pd3dDevice->SetIndices(mip->indexBuffer));
+				B_RETURN(m_pd3dDevice->SetIndices(mip->indexBuffer));
 
 				if(mip->tri_strip)
-					B_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLESTRIP,0,0,mip->num_verts,0,mip->num_prims-2))
+					B_RETURN(m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLESTRIP,0,0,mip->num_verts,0,mip->num_prims-2))
 				else if(mip->num_squares)
-					B_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,mip->num_verts,0,mip->num_prims/3))
+					B_RETURN(m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,mip->num_verts,0,mip->num_prims/3))
 				
 				if(mip->edges.size())
 				for(size_t k=0;k<4;k++)
@@ -499,18 +491,18 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 					int idx=other_mip_level-mip_level;
 					if(idx<0)
 						idx=0;
-					B_RETURN(hr=m_pd3dDevice->SetIndices(mip->edges[idx].edge[k].indexBuffer));
+					B_RETURN(m_pd3dDevice->SetIndices(mip->edges[idx].edge[k].indexBuffer));
 					int num_tris=mip->edges[idx].edge[k].num_tris;
 					int num_verts=mip->edges[idx].edge[k].num_verts;
-					B_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,num_verts,0,num_tris))
+					B_RETURN(m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,num_verts,0,num_tris))
 					
 				}
 				if(mip->extraIndexBuffer)
 				{
-					B_RETURN(hr=m_pd3dDevice->SetStreamSource(0,mip->extraVertexBuffer,0,sizeof(TerrainVertex_t)));
-					B_RETURN(hr=m_pd3dDevice->SetIndices(mip->extraIndexBuffer));
-					B_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,(unsigned)mip->extra_vertices.size(),0,(unsigned)mip->extra_triangles.size()/3))
-					B_RETURN(hr=m_pd3dDevice->SetStreamSource(0,vertexBuffer,0,sizeof(TerrainVertex_t)));
+					B_RETURN(m_pd3dDevice->SetStreamSource(0,mip->extraVertexBuffer,0,sizeof(TerrainVertex_t)));
+					B_RETURN(m_pd3dDevice->SetIndices(mip->extraIndexBuffer));
+					B_RETURN(m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST,0,0,(unsigned)mip->extra_vertices.size(),0,(unsigned)mip->extra_triangles.size()/3))
+					B_RETURN(m_pd3dDevice->SetStreamSource(0,vertexBuffer,0,sizeof(TerrainVertex_t)));
 				}
 			}
 		}
@@ -528,10 +520,10 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 		{
 			if(roads[i].roadVertexBuffer)
 			{
-				B_RETURN(hr=m_pd3dDevice->SetStreamSource(0,roads[i].roadVertexBuffer,0,sizeof(TerrainVertex_t)));
-				B_RETURN(hr=m_pd3dDevice->SetIndices(roads[i].roadIndexBuffer));
-				B_RETURN(hr=m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLESTRIP,0,0,roads[i].num_verts,0,roads[i].num_verts-2))
-				B_RETURN(hr=m_pd3dDevice->SetStreamSource(0,vertexBuffer,0,sizeof(TerrainVertex_t)));
+				B_RETURN(m_pd3dDevice->SetStreamSource(0,roads[i].roadVertexBuffer,0,sizeof(TerrainVertex_t)));
+				B_RETURN(m_pd3dDevice->SetIndices(roads[i].roadIndexBuffer));
+				B_RETURN(m_pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLESTRIP,0,0,roads[i].num_verts,0,roads[i].num_verts-2))
+				B_RETURN(m_pd3dDevice->SetStreamSource(0,vertexBuffer,0,sizeof(TerrainVertex_t)));
 			}
 		}
 		hr=m_pTerrainEffect->EndPass();
@@ -546,13 +538,20 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 bool SimulTerrainRenderer::RenderMap(int width)
 {
 	int w=(width-16)/3;
-
 	int h=w;
-	HRESULT hr=RenderTexture(m_pd3dDevice,8,8,w,h,elevation_map_texture);
-
+	
+	D3DXHANDLE param_altitudeBase	=m_pTerrainEffect->GetParameterByName(NULL,"altitudeBase");
+	D3DXHANDLE param_altitudeRange	=m_pTerrainEffect->GetParameterByName(NULL,"altitudeRange");
+	D3DXHANDLE heightTexture		=m_pTerrainEffect->GetParameterByName(NULL,"heightTexture");
+	static float altitudeBase=0.f;
+	static float altitudeRange=1.f;
+//altitudeBase=0.f;
+altitudeRange=heightMapInterface->GetMaxHeight();
+	m_pTerrainEffect->SetFloat	(param_altitudeBase		,altitudeBase);
+	m_pTerrainEffect->SetFloat	(param_altitudeRange	,altitudeRange);
+	m_pTerrainEffect->SetTexture(heightTexture			,elevation_map_texture);
+	HRESULT hr=RenderTexture(m_pd3dDevice,8,8,w,h,elevation_map_texture,m_pTerrainEffect,m_hTechniqueMap);
 	return(hr==S_OK);
-	//int size=heightmap->GetPageSize();
-	//return RenderTexture(m_pd3dDevice,16,16,size,size,elevation_map_texture);
 }
 
 void SimulTerrainRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
@@ -683,6 +682,8 @@ bool SimulTerrainRenderer::BuildRoad()
 		V->z=x.z;
 		V->tex_x=0.f;
 		V->tex_y=along/tex_repeat_length;
+	V->hm_tex_x=0;
+	V->hm_tex_y=0;
 		V++;
 		GetVertex( left.x, left.y,V);
 		V->z=x.z;
@@ -690,6 +691,8 @@ bool SimulTerrainRenderer::BuildRoad()
 			std::swap(V->y,V->z);
 		V->tex_x=1.f;
 		V->tex_y=along/tex_repeat_length;
+	V->hm_tex_x=0;
+	V->hm_tex_y=0;
 		V++;
 		along+=simul::math::float3::length(nextx-x);
 	}

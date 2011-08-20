@@ -220,8 +220,6 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 
 //since our skybox will blend based on alpha we have to clear the backbuffer to this alpha value
 	D3DXCOLOR fogColor( 0.0f , 1.f , 1.f , 0.0f ); 
-	// Don't need to clear D3DCLEAR_TARGET as we'll be filling every pixel:
-	pd3dDevice->Clear(0L,NULL,D3DCLEAR_ZBUFFER|D3DCLEAR_TARGET,0xFFFF70F0,1.0f,0L);
 
     pd3dDevice->SetRenderState( D3DRS_ZENABLE,FALSE);
 	pd3dDevice->SetRenderState( D3DRS_ZWRITEENABLE,FALSE);
@@ -236,9 +234,14 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	pd3dDevice->SetTransform(D3DTS_PROJECTION,&proj);
 	if(simulHDRRenderer)
 	{
+	// Don't need to clear D3DCLEAR_TARGET as we'll be filling every pixel:
 		simulHDRRenderer->SetGamma(Gamma);
 		simulHDRRenderer->SetExposure(Exposure);
 		simulHDRRenderer->StartRender();
+	}
+	else
+	{
+		pd3dDevice->Clear(0L,NULL,D3DCLEAR_ZBUFFER|D3DCLEAR_TARGET,0xFF000000,1.0f,0L);
 	}
 	if(simulWeatherRenderer)
 	{
@@ -336,22 +339,8 @@ void Direct3D9Renderer::OnDestroyDevice()
 	OnLostDevice();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
-//	if(simulHDRRenderer)
-//		simulHDRRenderer->Destroy();
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
-	/*if(simulHDRRenderer)
-	{
-		simulHDRRenderer=NULL;
-	}
-	if(simulWeatherRenderer)
-	{
-		simulWeatherRenderer=NULL;
-	}
-	if(simulTerrainRenderer)
-	{
-		simulTerrainRenderer=NULL;
-	}*/
 	SAFE_RELEASE(m_pHudVertexDecl);
 }
 
@@ -379,4 +368,6 @@ void Direct3D9Renderer::ReloadShaders()
 		simulWeatherRenderer->ReloadShaders();
 	if(simulOpticsRenderer.get())
 		simulOpticsRenderer->ReloadShaders();
+	if(simulHDRRenderer.get())
+		simulHDRRenderer->ReloadShaders();
 }

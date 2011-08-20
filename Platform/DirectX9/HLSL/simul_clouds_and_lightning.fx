@@ -389,7 +389,6 @@ float4 PS_CloudsPS2( vertexOutput IN): color
 struct vertexInputCS
 {
     float3 position			: POSITION;
-   // float4 colour			: COLOR;
     float2 texCoords		: TEXCOORD0;
 };
 
@@ -397,7 +396,6 @@ struct vertexOutputCS
 {
     float4 hPosition		: POSITION;
     float3 texCoords		: TEXCOORD0;
-   // float4 colour			: TEXCOORD2;
 };
 
 vertexOutputCS VS_CrossSection(vertexInputCS IN)

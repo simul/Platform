@@ -64,6 +64,26 @@ bool SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr=S_OK;
+	ReloadShaders();
+	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
+	D3DVERTEXELEMENT9 decl[] = 
+	{
+#ifdef XBOX
+		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0,  12, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+#else
+		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 12, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+#endif
+		D3DDECL_END()
+	};
+	SAFE_RELEASE(vertexDecl);
+	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&vertexDecl);
+	return (hr==S_OK);
+}
+
+void SimulAtmosphericsRenderer::ReloadShaders()
+{
 	SAFE_RELEASE(effect);
 	std::map<std::string,std::string> defines;
 	defines["WRAP_CLOUDS"]="1";
@@ -71,7 +91,7 @@ bool SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 		defines["Z_VERTICAL"]='1';
 	else
 		defines["Y_VERTICAL"]='1';
-	B_RETURN(CreateDX9Effect(m_pd3dDevice,effect,"atmospherics.fx",defines));
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,effect,"atmospherics.fx",defines));
 
 	technique			=effect->GetTechniqueByName("simul_atmospherics");
 	godRaysTechnique	=effect->GetTechniqueByName("simul_godrays");
@@ -107,21 +127,6 @@ bool SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 	lightningColour					=effect->GetParameterByName(NULL,"lightningColour");
 	illuminationOrigin				=effect->GetParameterByName(NULL,"illuminationOrigin");
 	illuminationScales				=effect->GetParameterByName(NULL,"illuminationScales");
-	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
-	D3DVERTEXELEMENT9 decl[] = 
-	{
-#ifdef XBOX
-		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0,  12, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#else
-		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0, 12, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#endif
-		D3DDECL_END()
-	};
-	SAFE_RELEASE(vertexDecl);
-	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&vertexDecl);
-	return (hr==S_OK);
 }
 
 bool SimulAtmosphericsRenderer::InvalidateDeviceObjects()

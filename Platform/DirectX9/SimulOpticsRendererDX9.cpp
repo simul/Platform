@@ -65,7 +65,6 @@ void SimulOpticsRendererDX9::ReloadShaders()
 		return;
 	SAFE_RELEASE(m_pFlareEffect);
 	std::map<std::string,std::string> defines;
-	HRESULT hr;
 	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pFlareEffect,"simul_sky.fx",defines));
 	m_hTechniqueFlare			=m_pFlareEffect->GetTechniqueByName("simul_flare");
 	worldViewProj				=m_pFlareEffect->GetParameterByName(NULL,"worldViewProj");

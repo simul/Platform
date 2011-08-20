@@ -237,7 +237,7 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 	// create the unit-sphere vertex buffer determined by the Cloud Geometry Helper:
 	SAFE_RELEASE(raytrace_layer_texture);
 	
-	B_RETURN(hr=D3DXCreateTexture(m_pd3dDevice,128,1,1,0,D3DFMT_A32B32G32R32F,d3d_memory_pool,&raytrace_layer_texture))
+	B_RETURN(D3DXCreateTexture(m_pd3dDevice,128,1,1,0,D3DFMT_A32B32G32R32F,d3d_memory_pool,&raytrace_layer_texture))
 
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	helper->GenerateSphereVertices();
@@ -275,41 +275,8 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 	return (hr==S_OK);
 }
 
-bool SimulCloudRenderer::InitEffects()
+void SimulCloudRenderer::ReloadShaders()
 {
-	HRESULT hr=S_OK;
-	if(!m_pd3dDevice)
-		return (hr==S_OK);
-	D3DVERTEXELEMENT9 decl[]=
-	{
-		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
-		{0, 12	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
-		{0,	24	,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
-		{0,	28	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
-		{0,	36	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
-		D3DDECL_END()
-	};
-	D3DVERTEXELEMENT9 cpu_decl[]=
-	{
-		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
-		{0, 12	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
-		{0,	24	,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
-		{0,	28	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
-		{0,	36	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
-		{0,	48	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,4},
-		{0,	60	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,5},
-		D3DDECL_END()
-	};
-	SAFE_RELEASE(m_pVtxDecl);
-	SAFE_RELEASE(m_pHudVertexDecl);
-	if(fade_mode!=CPU)
-	{
-		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	}
-	else
-	{
-		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
-	}
 	std::map<std::string,std::string> defines;
 	if(fade_mode==FRAGMENT)
 		defines["FADE_MODE"]="1";
@@ -327,9 +294,9 @@ bool SimulCloudRenderer::InitEffects()
 	else
 		defines["Y_VERTICAL"]='1';
 	SAFE_RELEASE(m_pCloudEffect);
-	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
 	SAFE_RELEASE(m_pGPULightingEffect);
-	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pGPULightingEffect,"simul_gpulighting.fx",defines));
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pGPULightingEffect,"simul_gpulighting.fx",defines));
 
 	m_hTechniqueCloud					=GetDX9Technique(m_pCloudEffect,"simul_clouds");
 	m_hTechniqueCloudMask				=GetDX9Technique(m_pCloudEffect,"cloud_mask");
@@ -384,6 +351,44 @@ bool SimulCloudRenderer::InitEffects()
 	raytraceLayerTexture=m_pCloudEffect->GetParameterByName(NULL,"raytraceLayerTexture");
 
 	rebuild_shaders=false;
+}
+
+bool SimulCloudRenderer::InitEffects()
+{
+	HRESULT hr=S_OK;
+	if(!m_pd3dDevice)
+		return (hr==S_OK);
+	D3DVERTEXELEMENT9 decl[]=
+	{
+		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
+		{0, 12	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
+		{0,	24	,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
+		{0,	28	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
+		{0,	36	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
+		D3DDECL_END()
+	};
+	D3DVERTEXELEMENT9 cpu_decl[]=
+	{
+		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
+		{0, 12	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
+		{0,	24	,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
+		{0,	28	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
+		{0,	36	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
+		{0,	48	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,4},
+		{0,	60	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,5},
+		D3DDECL_END()
+	};
+	SAFE_RELEASE(m_pVtxDecl);
+	SAFE_RELEASE(m_pHudVertexDecl);
+	if(fade_mode!=CPU)
+	{
+		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
+	}
+	else
+	{
+		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
+	}
+	ReloadShaders();
 	return (hr==S_OK);
 }
 
@@ -779,11 +784,13 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	
 	if(!y_vertical)
 		view_dir.Define(-view._13,-view._23,-view._33);
+
 	float t=skyInterface->GetTime();
 	float delta_t=(t-last_time)*cloudKeyframer->GetTimeFactor();
 	if(!last_time)
 		delta_t=0;
 	last_time=t;
+
 	helper->SetChurn(cloudInterface->GetChurn());
 	helper->Update((const float*)cam_pos,wind_offset,view_dir,up,delta_t,cubemap);
 	if(y_vertical)
@@ -997,7 +1004,7 @@ bool SimulCloudRenderer::FillRaytraceLayerTexture()
 {
 	D3DLOCKED_RECT lockedRect={0};
 	HRESULT hr=S_OK;
-	B_RETURN(hr=raytrace_layer_texture->LockRect(0,&lockedRect,NULL,NULL));
+	B_RETURN(raytrace_layer_texture->LockRect(0,&lockedRect,NULL,NULL));
 	float *float_ptr=(float *)(lockedRect.pBits);
 	typedef std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_reverse_iterator iter;
 	static float cutoff=100000.f;

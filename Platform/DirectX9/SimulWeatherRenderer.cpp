@@ -166,12 +166,11 @@ bool SimulWeatherRenderer::Restore2DCloudObjects()
 bool SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
-	HRESULT hr;
 	if(!m_pBufferToScreenEffect)
 		B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pBufferToScreenEffect,"gamma.fx"));
 	SkyOverStarsTechnique		=m_pBufferToScreenEffect->GetTechniqueByName("simul_sky_over_stars");
-	CloudBlendTechnique	=m_pBufferToScreenEffect->GetTechniqueByName("simul_cloud_blend");
-	bufferTexture		=m_pBufferToScreenEffect->GetParameterByName(NULL,"hdrTexture");
+	CloudBlendTechnique			=m_pBufferToScreenEffect->GetTechniqueByName("simul_cloud_blend");
+	bufferTexture				=m_pBufferToScreenEffect->GetParameterByName(NULL,"hdrTexture");
 	B_RETURN(CreateBuffers());
 	if(simulSkyRenderer)
 		B_RETURN(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
@@ -180,7 +179,7 @@ bool SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);
 	UpdateSkyAndCloudHookup();
-	return (hr==S_OK);
+	return true;
 }
 
 bool SimulWeatherRenderer::InvalidateDeviceObjects()

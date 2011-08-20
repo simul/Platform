@@ -182,15 +182,15 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
 {
 	float cam_dir[3],cam_pos[3];
 	CalcCameraPosition(cam_pos,cam_dir);
-	float Yaw=atan2(dir[0],dir[1])/pi;
-	float Pitch=asin(dir[2])/pi;
+	float Yaw=atan2(dir[0],dir[1]);
+	float Pitch=asin(dir[2]);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 	//glLoadIdentity();
 	simul::math::Matrix4x4 modelview;
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
-	glRotatef(180.f*Yaw,0.0f,0.0f,-1.0f);
-	glRotatef(180.f*Pitch,1.0f,0.0f,0.0f);
+	glRotatef(180.f*Yaw/pi,0.0f,0.0f,-1.0f);
+	glRotatef(180.f*Pitch/pi,1.0f,0.0f,0.0f);
 	glGetFloatv(GL_MODELVIEW_MATRIX,modelview.RowPointer(0));
 		ERROR_CHECK
     glDisable(GL_ALPHA_TEST);

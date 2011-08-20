@@ -102,8 +102,7 @@ void SimulSkyRenderer::ReloadShaders()
 		defines["Y_VERTICAL"]="1";
 	else
 		defines["Z_VERTICAL"]="1";
-	HRESULT hr;
-	V_CHECK(hr=CreateDX9Effect(m_pd3dDevice,m_pSkyEffect,"simul_sky.fx",defines));
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pSkyEffect,"simul_sky.fx",defines));
 	m_hTechniqueSky				=m_pSkyEffect->GetTechniqueByName("simul_sky");
 	m_hTechniqueStarrySky		=m_pSkyEffect->GetTechniqueByName("simul_starry_sky");
 	m_hTechniquePointStars		=m_pSkyEffect->GetTechniqueByName("simul_point_stars");
@@ -622,8 +621,8 @@ bool SimulSkyRenderer::RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians
 	// But D3DXMatrixRotationYawPitchRoll uses only left-handed, hence the change of sign below.
 	float Yaw=atan2(dir.x,y_vertical?dir.z:dir.y);
 	float Pitch=-asin(y_vertical?dir.y:dir.z);
-	HRESULT hr=S_OK;
-	D3DXMATRIX tmp1, tmp2;
+ 	HRESULT hr=S_OK;
+	D3DXMATRIX tmp1,tmp2;
 	D3DXMatrixIdentity(&world);
 	static D3DXMATRIX flip(1.f,0,0,0,0,0,1.f,0,0,1.f,0,0,0,0,0,1.f);
 	if(y_vertical)
@@ -790,7 +789,7 @@ bool SimulSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const f
 		m_pSkyEffect->SetTechnique(m_hTechniqueSun);
 	m_pSkyEffect->SetTexture(planetTexture,(LPDIRECT3DTEXTURE9)tex);
 
-	simul::sky::float4 original_irradiance=GetSkyInterface()->GetSunIrradiance();
+	//simul::sky::float4 original_irradiance=GetSkyInterface()->GetSunIrradiance();
 
 	simul::sky::float4 planet_dir4=dir;
 	planet_dir4/=simul::sky::length(planet_dir4);
@@ -1064,8 +1063,8 @@ bool SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)
 	HRESULT hr=S_OK;
 	if(!GetSiderealSkyInterface())
 	{
-		D3DXMatrixIdentity(world);
-		D3DXMatrixRotationX(world,3.14159f*2.f*GetSkyInterface()->GetTime());
+		//D3DXMatrixIdentity(world);
+		//D3DXMatrixRotationX(world,3.14159f*2.f*GetSkyInterface()->GetTime());
 	}
 	else
 	{

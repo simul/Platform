@@ -55,9 +55,9 @@ public:
 	virtual ~SimulSkyRenderer();
 	virtual void SaveTextures(const char *base_filename);
 	//standard d3d object interface functions
-	void ReloadShaders();
+	void						ReloadShaders();
 	//! Call this when the D3D device has been created or reset.
-	bool RestoreDeviceObjects(void *pd3dDevice);
+	bool						RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
 	bool						InvalidateDeviceObjects();
 	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);

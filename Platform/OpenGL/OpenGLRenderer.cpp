@@ -52,7 +52,8 @@ void OpenGLRenderer::paintGL()
 		glFogf(GL_FOG_START,1.0f);						// Fog Start Depth
 		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
 		glEnable(GL_FOG);
-		simulHDRRenderer->StartRender();
+		if(simulHDRRenderer)
+			simulHDRRenderer->StartRender();
 		simulWeatherRenderer->RenderSky(true,false);
 		//simulWeatherRenderer->RenderClouds(false,false,false);
 
@@ -64,14 +65,13 @@ void OpenGLRenderer::paintGL()
 			simul::sky::float4 dir,light;
 			dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
 			light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
-//		simulOpticsRenderer->SetMatrices(view,proj);
+
 			simulOpticsRenderer->RenderFlare(
-				simulHDRRenderer->GetExposure()*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
+				(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
 				,dir,light);
 		}
-		//if(GetShowFlares())
-		//	simulWeatherRenderer->RenderFlares(simulHDRRenderer->GetExposure());
-		simulHDRRenderer->FinishRender();
+		if(simulHDRRenderer)
+			simulHDRRenderer->FinishRender();
 	}
 	glPopAttrib();
 }
@@ -101,17 +101,15 @@ void OpenGLRenderer::resizeGL(int w,int h)
 
 void OpenGLRenderer::initializeGL()
 {
-	//if(!cam)
-	//cam=new simul::camera::Camera();
 	if(cam)
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 
-	simulWeatherRenderer->RestoreDeviceObjects();
-	simulHDRRenderer->RestoreDeviceObjects();
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->RestoreDeviceObjects();
+	if(simulHDRRenderer)
+		simulHDRRenderer->RestoreDeviceObjects();
 	if(simulOpticsRenderer)
-	{
 		simulOpticsRenderer->RestoreDeviceObjects(NULL);
-	}
 }
 
 void OpenGLRenderer::SetCamera(simul::camera::Camera *c)

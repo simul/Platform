@@ -25,7 +25,7 @@
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring shader_path=TEXT("");
 	static tstring texture_path=TEXT("");
-	static DWORD default_effect_flags=0;//D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
+	static DWORD default_effect_flags=D3DXSHADER_SKIPVALIDATION;//D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #endif
 	#include <vector>
 #include <iostream>
@@ -319,7 +319,6 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 #endif
 	D3DXMACRO *macros=MakeMacroList(defines);
 
-	DWORD flags=default_effect_flags;
 	SAFE_RELEASE(effect);
 	
 	hr=D3DXCreateEffectFromFile(
@@ -327,7 +326,7 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 			fn.c_str(),
 			macros,
 			NULL,
-			flags,
+			default_effect_flags,
 			NULL,
 			&effect,
 			&errors);
@@ -891,8 +890,8 @@ const TCHAR *GetErrorText(HRESULT hr)
 	const TCHAR *err=DXGetErrorString(hr);
 	if(!err)
 	{
-		TCHAR txt[10];
-		swprintf(txt,_T("%3.3g"),hr);
+		static TCHAR txt[10];
+		_stprintf(txt,_T("%3.3g"),hr);
 		return txt;
 	}
 	return err;

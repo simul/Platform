@@ -51,6 +51,7 @@ public:
 		META_ValuePropertyWithSetCall(bool,GPULightingEnabled,ForceRelight,"Whether the GPU will be used for cloud light calculations.")
 		META_ValueRangePropertyWithSetCall(int,NumBuffers,1,2,NumBuffersChanged,"Number of buffers to use in cloud rendering. More = faster.")
 	META_EndProperties
+	void ReloadShaders();
 	//! Call this when the device has been created
 	bool RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the 3D device has been lost.

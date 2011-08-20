@@ -120,7 +120,7 @@ protected:
 	simul::sky::BaseSkyInterface *skyInterface;
 	LPDIRECT3DDEVICE9		m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
-	LPD3DXEFFECT			m_pTerrainEffect;		// The fx file for the sky
+	LPD3DXEFFECT			m_pTerrainEffect;
 	LPDIRECT3DTEXTURE9		terrain_texture;
 	LPDIRECT3DTEXTURE9		detail_texture;
 
@@ -132,6 +132,7 @@ protected:
 	D3DXHANDLE				worldViewProj;
 	D3DXHANDLE              m_hTechniqueTerrain;	
 	D3DXHANDLE              m_hTechniqueDepthOnly;	
+	D3DXHANDLE              m_hTechniqueMap;	
 	D3DXHANDLE              techniqueRoad;			
 	D3DXHANDLE				eyePosition;
 	D3DXHANDLE				lightDirection;

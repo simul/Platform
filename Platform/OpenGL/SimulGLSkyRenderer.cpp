@@ -34,12 +34,12 @@ GLenum sky_tex_format=GL_FLOAT;
 GLenum internal_format=GL_RGBA32F_ARB;
 #endif
 
-GLint faces[6][4] = {  /* Vertex indices for the 6 faces of a cube. */
+static GLint faces[6][4] = {  /* Vertex indices for the 6 faces of a cube. */
   {0, 1, 2, 3}, {3, 2, 6, 7}, {7, 6, 5, 4},
   {4, 5, 1, 0}, {5, 6, 2, 1}, {7, 4, 0, 3} };
-GLfloat v[8][3];  /* Will be filled in with X,Y,Z vertexes. */
+static GLfloat v[8][3];  /* Will be filled in with X,Y,Z vertexes. */
 
-SimulGLSkyRenderer::SimulGLSkyRenderer()
+SimulGLSkyRenderer::SimulGLSkyRenderer(bool UseColourSky)
 	:BaseSkyRenderer()
 	,skyTexSize(128)
 	,campos_updated(false)
@@ -53,6 +53,7 @@ SimulGLSkyRenderer::SimulGLSkyRenderer()
 	,stars_program(0)
 	,initialized(false)
 {
+	EnableColourSky(UseColourSky);
 /* Setup cube vertex data. */
 	v[0][0] = v[1][0] = v[2][0] = v[3][0] = -1000.f;
 	v[4][0] = v[5][0] = v[6][0] = v[7][0] =  1000.f;
@@ -69,11 +70,9 @@ SimulGLSkyRenderer::SimulGLSkyRenderer()
 
 bool SimulGLSkyRenderer::Create(float start_alt_km)
 {
-	skyKeyframer=new simul::sky::SkyKeyframer();
-	GetSkyInterface()->SetSunIrradiance(simul::sky::float4(25,25,25,25));
 	skyKeyframer->SetFillTexturesAsBlocks(true);
 	skyKeyframer->SetAltitudeKM(start_alt_km);
-	SetCameraPosition(0,0,0.f);
+	SetCameraPosition(0,0,start_alt_km*1000.f);
 	return true;
 }
 
@@ -83,8 +82,8 @@ void SimulGLSkyRenderer::SetSkyTextureSize(unsigned size)
 	if(!initialized)
 		return;
 	skyTexSize=size;
-	delete [] short_ptr;
-	short_ptr=new short[skyTexSize*4];
+//	delete [] short_ptr;
+//	short_ptr=new short[skyTexSize*4];
 	if(0&&numAltitudes==1)
 	{
 		for(int i=0;i<3;i++)
@@ -94,11 +93,11 @@ void SimulGLSkyRenderer::SetSkyTextureSize(unsigned size)
 			glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-			if(sky_tex_format==GL_HALF_FLOAT_NV)
-				sky_tex_data=new unsigned char[8*skyTexSize];// 8 bytes = 4 * 2 bytes = 4 * 16 bits
-			else
-				sky_tex_data=new unsigned char[16*skyTexSize];// 4*32 bits.
-			glTexImage1D(GL_TEXTURE_1D,0,internal_format,skyTexSize,0,GL_RGBA,sky_tex_format,sky_tex_data);
+//			if(sky_tex_format==GL_HALF_FLOAT_NV)
+//				sky_tex_data=new unsigned char[8*skyTexSize];// 8 bytes = 4 * 2 bytes = 4 * 16 bits
+//			else
+//				sky_tex_data=new unsigned char[16*skyTexSize];// 4*32 bits.
+			glTexImage1D(GL_TEXTURE_1D,0,internal_format,skyTexSize,0,GL_RGBA,sky_tex_format,0);
 		}
 	}
 	else
@@ -111,11 +110,11 @@ void SimulGLSkyRenderer::SetSkyTextureSize(unsigned size)
 			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-			if(sky_tex_format==GL_HALF_FLOAT_NV)
+	/*		if(sky_tex_format==GL_HALF_FLOAT_NV)
 				sky_tex_data=new unsigned char[8*skyTexSize*numAltitudes];// 8 bytes = 4 * 2 bytes = 4 * 16 bits
 			else
-				sky_tex_data=new unsigned char[16*skyTexSize*numAltitudes];// 4*32 bits.
-			glTexImage2D(GL_TEXTURE_2D,0,internal_format,skyTexSize,numAltitudes,0,GL_RGBA,sky_tex_format,sky_tex_data);
+				sky_tex_data=new unsigned char[16*skyTexSize*numAltitudes];// 4*32 bits.*/
+			glTexImage2D(GL_TEXTURE_2D,0,internal_format,skyTexSize,numAltitudes,0,GL_RGBA,sky_tex_format,0);
 		}
 	}
 }
@@ -510,12 +509,15 @@ return true;
 
 bool SimulGLSkyRenderer::Render(bool blend)
 {
+	simul::sky::float4 cam_dir;
+	CalcCameraPosition(cam_pos,cam_dir);
+	SetCameraPosition(cam_pos.x,cam_pos.y,cam_pos.z);
 	Render2DFades();
 ERROR_CHECK
 	glClearColor(1,1,0,1);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	simul::sky::float4 ratio=GetSkyInterface()->GetMieRayleighRatio();
-	simul::sky::float4 sun_dir=GetSkyInterface()->GetDirectionToLight();
+	simul::sky::float4 sun_dir=skyKeyframer->GetDirectionToLight();
 	glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D,sky_tex[0]);
@@ -534,8 +536,6 @@ ERROR_CHECK
 		glDisable(GL_BLEND);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-	simul::sky::float4 cam_dir;
-	CalcCameraPosition(cam_pos,cam_dir);
 
 	campos_updated=true;
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
@@ -573,6 +573,8 @@ ERROR_CHECK
 
 bool SimulGLSkyRenderer::RenderPointStars()
 {
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
 	float sid[16];
 	CalcCameraPosition(cam_pos);
 	GetSiderealTransform(sid);
@@ -602,9 +604,8 @@ bool SimulGLSkyRenderer::RenderPointStars()
 	}
 	glUseProgram(stars_program);
 	float sb=GetSkyInterface()->GetStarlight().x;
-	glUniform1f(starBrightness_param,sb*skyKeyframer->GetStarBrightness());
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+	float star_brightness=sb*skyKeyframer->GetStarBrightness();
+	glUniform1f(starBrightness_param,star_brightness);
 	float mat1[16],mat2[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX,mat1);
 
@@ -671,15 +672,18 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(planet_dir4.z);
 	planet_colour*=GetSkyInterface()->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
+
 	glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)((long int)tex));
 	glUseProgram(planet_program);
-
+		ERROR_CHECK
+	glUniform3f(planetColour_param,planet_colour.x,planet_colour.y,planet_colour.z);
+		ERROR_CHECK
 	glUniform1i(planetTexture_param,0);
 	// Transform light into planet space
-	float Yaw=atan2(dir[0],dir[1])/pi;
-	float Pitch=asin(dir[2])/pi;
+	float Yaw=atan2(dir[0],dir[1]);
+	float Pitch=-asin(dir[2]);
 	simul::math::Vector3 sun_dir=GetSkyInterface()->GetDirectionToSun();
 	simul::math::Vector3 sun2;
 	{
@@ -687,11 +691,13 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 		or.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
 		or.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
 		
-		simul::math::Multiply3(sun2,or.GetInverseMatrix(),sun_dir);
+		simul::math::Multiply3(sun2,or.T4,sun_dir);
 	}
 		ERROR_CHECK
 	glUniform3f(planetLightDir_param,sun2.x,sun2.y,sun2.z);
 	
+	glUniform1i(planetTexture_param,0);
+	glUniform3f(planetLightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
@@ -718,6 +724,10 @@ void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1)
 
 void SimulGLSkyRenderer::ReloadShaders()
 {
+	loss_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	inscatter_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	loss_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
+	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	SAFE_DELETE_PROGRAM(sky_program);
 	SAFE_DELETE_PROGRAM(planet_program);
 	SAFE_DELETE_PROGRAM(fade_3d_to_2d_program);
@@ -763,6 +773,7 @@ ERROR_CHECK
 	printProgramInfoLog(planet_program);
 ERROR_CHECK
 	planetTexture_param		=glGetUniformLocation(planet_program,"planetTexture");
+	planetColour_param		=glGetUniformLocation(planet_program,"colour");
 	planetLightDir_param	=glGetUniformLocation(planet_program,"lightDir");
 	printProgramInfoLog(planet_program);
 ERROR_CHECK
@@ -816,6 +827,6 @@ bool SimulGLSkyRenderer::InvalidateDeviceObjects()
 
 SimulGLSkyRenderer::~SimulGLSkyRenderer()
 {
-	delete [] sky_tex_data;
-	sky_tex_data=0;
+	//delete [] sky_tex_data;
+	//sk/y_tex_data=0;
 }

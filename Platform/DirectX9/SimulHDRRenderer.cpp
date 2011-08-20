@@ -64,10 +64,9 @@ SimulHDRRenderer::SimulHDRRenderer(int width,int height) :
 {
 }
 
-bool SimulHDRRenderer::RestoreDeviceObjects(void *dev)
+void SimulHDRRenderer::ReloadShaders()
 {
-	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
-	HRESULT hr=S_OK;
+	SAFE_RELEASE(m_pTonemapEffect);
 	if(!m_pTonemapEffect)
 #ifdef  MONTE_CARLO_BLUR
 	{
@@ -75,16 +74,23 @@ bool SimulHDRRenderer::RestoreDeviceObjects(void *dev)
 		sprintf_s(blur_size,20,"%d",BLUR_SIZE);
 		std::map<std::string,std::string> defines;
 		defines["BLUR_SIZE"]=blur_size;
-		B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,"gamma.fx",defines));
+		V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,"gamma.fx",defines));
 	}
 #else
-		B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,"gamma.fx"));
+		V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pTonemapEffect,"gamma.fx"));
 #endif
 	ToneMapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
 	ToneMapZWriteTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_tonemap_zwrite");
 	Exposure				=m_pTonemapEffect->GetParameterByName(NULL,"exposure");
 	Gamma					=m_pTonemapEffect->GetParameterByName(NULL,"gamma");
 	hdrTexture				=m_pTonemapEffect->GetParameterByName(NULL,"hdrTexture");
+}
+
+bool SimulHDRRenderer::RestoreDeviceObjects(void *dev)
+{
+	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	HRESULT hr=S_OK;
+	ReloadShaders();
 	B_RETURN(CreateBuffers());
 	return (hr==S_OK);
 }
@@ -268,7 +274,6 @@ LPDIRECT3DSURFACE9 SimulHDRRenderer::MakeRenderTarget(const LPDIRECT3DTEXTURE9 p
 	{
 		MessageBox(NULL, _T("Trying to create RenderTarget from NULL texture!"), _T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);
 	}
-	HRESULT hr=S_OK;
 	V_CHECK(pTexture->GetSurfaceLevel(0,&pRenderTarget));
 #endif
 	return pRenderTarget;

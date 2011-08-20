@@ -53,7 +53,6 @@ SimulLightningRenderer::~SimulLightningRenderer()
 bool SimulLightningRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
-	HRESULT hr;
 	InitEffects();
 	B_RETURN(CreateLightningTexture());
 	return true;
@@ -63,7 +62,6 @@ bool SimulLightningRenderer::InitEffects()
 {
 	if(!m_pd3dDevice)
 		return false;
-	HRESULT hr;
 	D3DVERTEXELEMENT9 std_decl[] = 
 	{
 		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },

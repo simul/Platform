@@ -294,7 +294,7 @@ bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_f
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
 
-   glActiveTexture(GL_TEXTURE3);
+	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D,loss_tex);
 
      glActiveTexture(GL_TEXTURE4);
@@ -373,8 +373,15 @@ ERROR_CHECK
 
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
-	
-	helper->Update(view_pos,cloudNode->GetWindOffset(),eye_dir,up_dir);
+
+	float t=skyInterface->GetTime();
+	float delta_t=(t-last_time)*cloudKeyframer->GetTimeFactor();
+	if(!last_time)
+		delta_t=0;
+	last_time=t;
+
+	helper->SetChurn(cloudInterface->GetChurn());
+	helper->Update(view_pos,cloudNode->GetWindOffset(),eye_dir,up_dir,delta_t,cubemap);
 	simul::math::Matrix4x4 proj;
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
 
@@ -448,7 +455,8 @@ ERROR_CHECK
 					GLfloat fogStart,fogEnd;
 					glGetFloatv(GL_FOG_START,&fogStart);
 					glGetFloatv(GL_FOG_END,&fogEnd);
-					mix_fog=(fogEnd-(*i)->distance)/(fogEnd-fogStart);
+					float distance=(*i)->distance>fogEnd?fogEnd:(*i)->distance;
+					mix_fog=(distance-fogStart)/(fogEnd-fogStart);
 					mix_fog=std::min(1.f,mix_fog);
 					mix_fog=std::max(0.f,mix_fog);
 				}
@@ -541,9 +549,8 @@ void SimulGLCloudRenderer::SetInscatterTextures(void *i)
 	inscatter_tex=((GLuint)i);
 }
 
-bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
+void SimulGLCloudRenderer::ReloadShaders()
 {
-	CreateNoiseTexture();
 	clouds_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 	clouds_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -575,7 +582,13 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 
 	layerDistance_param		= glGetUniformLocation(clouds_program,"layerDistance");
 	printProgramInfoLog(clouds_program);
+}
 
+bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
+{
+	CreateNoiseTexture();
+
+	ReloadShaders();
 	// Because in this sample we are using 32-bit values in the cloud texture:
 	//cloudKeyframer->SetUserKeyframes(false);
 	cloudKeyframer->SetUse16Bit(false);

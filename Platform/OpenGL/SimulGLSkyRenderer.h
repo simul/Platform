@@ -28,7 +28,7 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGLSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
-	SimulGLSkyRenderer();
+	SimulGLSkyRenderer(bool UseColourSky);
 	virtual ~SimulGLSkyRenderer();
 	//standard ogl object interface functions
 
@@ -91,6 +91,7 @@ protected:
 	GLuint			fade_3d_to_2d_program;
 	GLint			planetTexture_param;
 	GLint			planetLightDir_param;
+	GLint			planetColour_param;
 
 	GLint			altitudeTexCoord_param;
 	GLint			MieRayleighRatio_param;

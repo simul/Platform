@@ -197,6 +197,19 @@ void SimulCloudRendererDX1x::SetNoiseTextureProperties(int s,int f,int o,float p
 	CreateNoiseTexture();
 }
 
+void SimulCloudRendererDX1x::ReloadShaders()
+{
+	CreateCloudEffect();
+	HRESULT hr;
+	V_CHECK(CreateEffect(m_pd3dDevice,&m_pLightningEffect,L"simul_lightning.fx"));
+	if(m_pLightningEffect)
+	{
+		m_hTechniqueLightning	=m_pLightningEffect->GetTechniqueByName("simul_lightning");
+		l_worldViewProj			=m_pLightningEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	}
+
+}
+
 bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 {
 	m_pd3dDevice=(ID3D1xDevice*)dev;
@@ -209,7 +222,7 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	HRESULT hr;
 	B_RETURN(CreateNoiseTexture());
 	B_RETURN(CreateLightningTexture());
-	B_RETURN(CreateCloudEffect());
+	ReloadShaders();
 
 	D3D1x_SHADER_RESOURCE_VIEW_DESC texdesc;
 
@@ -220,13 +233,6 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 
 
 	noiseTexture				->SetResource(noiseTextureResource);
-
-	V_CHECK(CreateEffect(m_pd3dDevice,&m_pLightningEffect,L"simul_lightning.fx"));
-	if(m_pLightningEffect)
-	{
-		m_hTechniqueLightning	=m_pLightningEffect->GetTechniqueByName("simul_lightning");
-		l_worldViewProj			=m_pLightningEffect->GetVariableByName("worldViewProj")->AsMatrix();
-	}
 
 	
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =
