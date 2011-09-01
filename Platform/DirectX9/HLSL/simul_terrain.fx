@@ -68,11 +68,21 @@ sampler3D cloud_texture2= sampler_state
 	AddressW = Clamp;
 };
 
+texture colourkeyTexture;
+sampler1D colourkey_texture=sampler_state
+{
+    Texture = <colourkeyTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+	AddressU = Clamp;
+};
+
 #ifndef MAX_FADE_DISTANCE_METRES
 #define MAX_FADE_DISTANCE_METRES (300000.f)
 #endif
-
-//float morphFactor;
+float mipLevels;
+float2 morphFactor;
 float4 eyePosition;
 float4 lightDir;
 float3 cloudScales;	
@@ -80,12 +90,12 @@ float3 cloudOffset;
 float3 lightColour;
 float3 ambientColour;
 float cloudInterp;
+float2 texOffsetH; // offset in heightmap for texcoords
 
 float altitudeBase=0.0;
 float altitudeRange=1000.0;
 
 #define pi (3.1415926536f)
-
 
 struct mapVertexInput
 {
@@ -107,46 +117,61 @@ mapVertexOutput VS_Map(mapVertexInput IN)
     return OUT;
 }
 
-float4 PS_Map( mapVertexOutput IN) : color
+float4 PS_Map(mapVertexOutput IN) : color
 {
-	float3 final=(tex2D(height_texture,IN.texCoordDiffuse.xy).rgb-altitudeBase)/altitudeRange;
-    return float4(final.rgb,1.f);
+	float H=(tex2D(height_texture,IN.texCoordDiffuse.xy).r-altitudeBase)/altitudeRange;
+	float3 colour=tex1D(colourkey_texture,H).rgb;
+    return float4(colour.rgb,1.f);
 }
 
 struct vertexInput
 {
     float3 position			: POSITION;
-    float4 normal			: TEXCOORD0;
     float2 texCoordDiffuse	: TEXCOORD1;
-    float offset			: TEXCOORD2;
-    float2 texCoordHeightmap: TEXCOORD3;
+    float2 morph			: TEXCOORD2;
+    float2 texCoordH		: TEXCOORD3;
+    float2 texCoordH1		: TEXCOORD4;
+    float2 texCoordH2		: TEXCOORD5;
 };
 
 struct vertexOutput
 {
     float4 hPosition		: POSITION;
-    float4 normal			: TEXCOORD0;
     float2 texCoordDiffuse	: TEXCOORD1;
     float4 wPosition		: TEXCOORD2;
-    float test				: TEXCOORD3;
+    float2 heightmap_texc	: TEXCOORD3;
+    float2 test				: TEXCOORD4;
 };
 
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-	OUT.test=tex2Dlod(height_texture,float4(IN.texCoordHeightmap.xy,0,1.f)).r;
-    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.f));
-    OUT.wPosition=float4(IN.position.xyz,1.f);
+	float3 position=mul(float4(IN.position.xyz,1.f),world);
+	float2 heightmap_texc=IN.texCoordH+texOffsetH;
+	float2 heightmap_texc_1=IN.texCoordH1+texOffsetH;
+	float2 heightmap_texc_2=IN.texCoordH2+texOffsetH;
+	float m=IN.morph.y*(lerp(morphFactor.x,morphFactor.y,IN.morph.x));
+	float mip=mipLevels*m;
+//	heightmap_texc=heightmap_texc+pow(2.0,mip)/512.0;
+	float h=tex2Dlod(height_texture,float4(heightmap_texc,0,0)).r;
+	float h1=tex2Dlod(height_texture,float4(heightmap_texc_1,0,0)).r;
+	float h2=tex2Dlod(height_texture,float4(heightmap_texc_2,0,0)).r;
+	OUT.test.g=frac(mip);
+	h=lerp(h,0.5*(h1+h2),OUT.test.g);
+	OUT.test.r=h;
+	position.y=OUT.test.r;
+    OUT.hPosition=mul(worldViewProj,float4(position.xyz,1.f));
+    OUT.wPosition=float4(position.xyz,1.f);
     OUT.texCoordDiffuse=IN.texCoordDiffuse;
-    OUT.normal=saturate(IN.normal);
+	OUT.heightmap_texc=heightmap_texc;
     return OUT;
 }
 
 float4 PS_Main( vertexOutput IN) : color
 {
-	float3 final=tex2D(mainTexture,IN.texCoordDiffuse.xy/5.f);
+	float3 final=tex2D(mainTexture,IN.texCoordDiffuse.xy);
 	float depth=length(IN.wPosition-eyePosition)/MAX_FADE_DISTANCE_METRES;
-	final.r=IN.test;
+	//final.rgb=IN.test.ggg;
     return float4(final,depth);
 }
 
@@ -154,12 +179,17 @@ float4 PS_Detail( vertexOutput IN) : color
 {
 	float3 final=tex2D(detail_texture,IN.texCoordDiffuse.xy);
 	float depth=length(IN.wPosition-eyePosition)/MAX_FADE_DISTANCE_METRES;
-    return float4(final,IN.normal.a);
+    return float4(final,0.f);
 }
 
 float4 PS_Shadow(vertexOutput IN) : color
 {
-	float direct_light=saturate(dot(IN.normal.rgb,lightDir));
+#ifdef Y_VERTICAL
+	float3 normal=tex2D(height_texture,IN.heightmap_texc.xy).ywz;
+#else
+	float3 normal=tex2D(height_texture,IN.heightmap_texc.xy).yzw;
+#endif
+	float direct_light=saturate(dot(normal.rgb,lightDir));
 	float3 colour=lightColour*direct_light+ambientColour;
     return float4(colour,1.f);
 }
@@ -167,11 +197,13 @@ float4 PS_Shadow(vertexOutput IN) : color
 float4 PS_CloudShadow(vertexOutput IN) : color
 {
 #ifdef Y_VERTICAL
+	float3 normal=tex2D(height_texture,IN.heightmap_texc.xy).ywz;
 	float3 lightVec=lightDir/lightDir.y;
 	float dz=IN.wPosition.y-cloudOffset.z;
 	float3 wPos=float3(IN.wPosition.xz-cloudOffset.xy,0);
 	wPos.xy-=lightVec.xz*dz;
 #else
+	float3 normal=tex2D(height_texture,IN.heightmap_texc.xy).yzw;
 	float3 lightVec=lightDir/lightDir.z;
 	float dz=IN.wPosition.z-cloudOffset.z;
 	float3 wPos=float3(IN.wPosition.xy-cloudOffset.xy,0);
@@ -182,7 +214,7 @@ float4 PS_CloudShadow(vertexOutput IN) : color
 	float4 cloud1=tex3D(cloud_texture1,cloud_texc);
 	float4 cloud2=tex3D(cloud_texture2,cloud_texc);
 	
-	float direct_light=saturate(dot(IN.normal.rgb,lightDir));
+	float direct_light=saturate(dot(normal.xyz,lightDir));
 	float light=lerp(cloud1.z,cloud2.z,cloudInterp);
 
 	float3 colour=lightColour*light*direct_light+ambientColour;
@@ -191,7 +223,7 @@ float4 PS_CloudShadow(vertexOutput IN) : color
 
 float4 PS_Outline( vertexOutput IN) : color
 {
-    return float4(1.f,0.f,0.f,0.5f);
+    return float4(lightColour,0.5f);
 }
 
 technique simul_terrain
@@ -223,6 +255,7 @@ technique simul_terrain
     }
     pass shadow 
     {
+		VertexShader=compile vs_3_0 VS_Main();
 		PixelShader = compile ps_3_0 PS_Shadow();
         AlphaBlendEnable = true;
         ZWriteEnable= false;
@@ -232,6 +265,7 @@ technique simul_terrain
     }
     pass cloud_shadow 
     {
+		VertexShader=compile vs_3_0 VS_Main();
 		PixelShader = compile ps_3_0 PS_CloudShadow();
         AlphaBlendEnable = true;
         ZWriteEnable= false;
@@ -245,6 +279,7 @@ technique simul_terrain
         ZWriteEnable= false;
         ZEnable		= true;
         Lighting	= false;
+		VertexShader=compile vs_3_0 VS_Main();
 		PixelShader = compile ps_3_0 PS_Outline();
 		SrcBlend	= SrcAlpha;
 		DestBlend	= InvSrcAlpha;

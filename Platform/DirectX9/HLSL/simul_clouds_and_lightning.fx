@@ -1,3 +1,17 @@
+
+#ifndef Z_VERTICAL
+	#define Y_VERTICAL 1
+#endif
+#ifndef WRAP_CLOUDS
+	#define WRAP_CLOUDS 1
+#endif
+#ifndef DETAIL_NOISE
+	#define DETAIL_NOISE 1
+#endif
+#ifndef FADE_MODE
+	#define FADE_MODE 1
+#endif
+
 float4x4 worldViewProj	: WorldViewProjection;
 
 // raytrace
@@ -103,6 +117,7 @@ sampler1D raytrace_layer_texture= sampler_state
 };
 
 float4 eyePosition : EYEPOSITION_WORLDSPACE;
+float maxFadeDistanceMetres;
 // Light response: primary,secondary,anisotropic,ambient
 float4 lightResponse;
 float3 lightDir : Direction;
@@ -126,9 +141,6 @@ float3 texScales;
 float layerFade;
 float cloudEccentricity=0.87f;
 float alphaSharpness=0.5f;
-#ifndef MAX_FADE_DISTANCE_METRES
-	#define MAX_FADE_DISTANCE_METRES (200000.f)
-#endif
 
 struct vertexInput
 {
@@ -191,15 +203,18 @@ vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
     OUT.hPosition = mul( worldViewProj, float4(IN.position.xyz , 1.0));
-	
 	OUT.texCoords.xyz=IN.texCoords;
 	OUT.texCoords.w=0.5f+0.5f*saturate(IN.texCoords.z);
 	const float c=fractalScale.w;
 	OUT.texCoordsNoise=IN.texCoordsNoise;
 	OUT.wPosition=(IN.position.xyz-eyePosition.xyz);
 	OUT.layerFade=IN.layerFade;
-	// Note position.xzy is used!
+// Note position.xzy is used if Y is vertical!
+#ifdef Z_VERTICAL
+	float3 texCoordLightning=(IN.position.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
+#else
 	float3 texCoordLightning=(IN.position.xzy-illuminationOrigin.xyz)/illuminationScales.xyz;
+#endif
 	texCoordLightning.z=0.5f;
 	OUT.texCoordLightning=texCoordLightning;
 	float3 view=normalize(OUT.wPosition.xyz);
@@ -217,8 +232,8 @@ vertexOutput VS_Main(vertexInput IN)
 // Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
 #if FADE_MODE==1
 	float maxd=1.f;
-	float depth=length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES;
-	//OUT.fade_texc=float2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5f*(1.f-sine));
+	float depth=length(OUT.wPosition.xyz)/maxFadeDistanceMetres;
+	//OUT.fade_texc=float2(length(OUT.wPosition.xyz)/maxFadeDistanceMetres,0.5f*(1.f-sine));
 	OUT.fade_texc=float2(sqrt(depth/maxd),0.5f*(1.f-sine));
 #endif
     return OUT;
@@ -247,7 +262,7 @@ float4 PS_WithLightning(vertexOutput IN): color
 {
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
-#ifdef DETAIL_NOISE
+#if DETAIL_NOISE==1
 	noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
 	noiseval*=IN.texCoords.w;
 #endif
@@ -297,7 +312,7 @@ float4 PS_Clouds( vertexOutput IN): color
 {
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
-#ifdef DETAIL_NOISE
+#if DETAIL_NOISE==1
 	noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
 	noiseval*=IN.texCoords.w;
 #endif
@@ -344,7 +359,7 @@ float4 PS_CloudsPS2( vertexOutput IN): color
 {
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
-#ifdef DETAIL_NOISE
+#if DETAIL_NOISE==1
 	noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
 	noiseval*=IN.texCoords.w;
 #endif
@@ -537,7 +552,7 @@ float4 PS_RaytraceWithLightning(raytraceVertexOutput IN) : color
 		//d*=200000.0;
 		wPosition*=d;
 #if FADE_MODE==1
-		fade_texc.x=d/MAX_FADE_DISTANCE_METRES;
+		fade_texc.x=d/maxFadeDistanceMetres;
 #endif
 		wPosition+=eyePosition.xyz;
 
@@ -554,7 +569,7 @@ float4 PS_RaytraceWithLightning(raytraceVertexOutput IN) : color
 #else
 		float3 cloud_texc=(wPosition.xyz-cloudOffset.xyz)*cloudScales.xyz;
 #endif
-#ifdef DETAIL_NOISE
+#if DETAIL_NOISE==1
 		noiseval+=(tex2D(noise_texture,noise_texc.xy*8).xyz-noise_offset)/2.0;
 		noiseval*=0.5+0.5*cloud_texc.z;
 #endif
