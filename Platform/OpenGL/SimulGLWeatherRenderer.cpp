@@ -106,7 +106,7 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 		// Get a pointer to the glStringMarkerGREMEDY function:
 		glStringMarkerGREMEDY = (PFNGLSTRINGMARKERGREMEDYPROC)wglGetProcAddress("glStringMarkerGREMEDY");
 	}
-	CheckGLError(res);
+	CheckGLError(__FILE__,__LINE__,res);
 	if(!GLEW_VERSION_2_0)
 	{
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
@@ -149,7 +149,9 @@ static simul::base::Timer timer;
     glPushMatrix();
 	if(simulSkyRenderer)
 	{
-		simulSkyRenderer->RenderPointStars();
+		ERROR_CHECK
+		//simulSkyRenderer->RenderPointStars();
+		ERROR_CHECK
 		simulSkyRenderer->RenderPlanets();
 		ERROR_CHECK
 		simulSkyRenderer->RenderSun();

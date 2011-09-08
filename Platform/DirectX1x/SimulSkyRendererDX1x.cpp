@@ -145,7 +145,7 @@ bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
 	//hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
-	ReloadShaders();
+	RecompileShaders();
 	skyKeyframer->SetCallback(this);
 	// CreateSkyTexture() will be called
 
@@ -440,7 +440,7 @@ bool SimulSkyRendererDX1x::CreateSkyTexture()
 	return (hr==S_OK);
 }
 
-void SimulSkyRendererDX1x::ReloadShaders()
+void SimulSkyRendererDX1x::RecompileShaders()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pSkyEffect);
@@ -830,5 +830,5 @@ const char *SimulSkyRendererDX1x::GetDebugText() const
 void SimulSkyRendererDX1x::SetYVertical(bool y)
 {
 	y_vertical=y;
-	ReloadShaders();
+	RecompileShaders();
 }

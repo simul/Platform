@@ -18,7 +18,7 @@ SimulOpticsRendererGL::~SimulOpticsRendererGL()
 
 void SimulOpticsRendererGL::RestoreDeviceObjects(void *)
 {
-	ReloadShaders();
+	RecompileShaders();
 	flare_texture=LoadGLImage("SunFlare.png",GL_CLAMP);
 
 	for(size_t i=0;i<halo_textures.size();i++)
@@ -41,7 +41,7 @@ void SimulOpticsRendererGL::RestoreDeviceObjects(void *)
 	}
 }
 
-void SimulOpticsRendererGL::ReloadShaders()
+void SimulOpticsRendererGL::RecompileShaders()
 {
 	SAFE_DELETE_PROGRAM(flare_program);
 	flare_program					=LoadProgram("simul_sun_planet_flare.vert","simul_flare.frag");

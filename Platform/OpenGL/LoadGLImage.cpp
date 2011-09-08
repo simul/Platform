@@ -16,10 +16,9 @@ namespace simul
 		}
 	}
 }
-GLuint LoadGLImage(const char *filename,unsigned wrap)
+GLuint LoadGLTexture(const char *filename,unsigned wrap)
 {
-	std::string fn=image_path+"/";
-	fn+=filename;
+	std::string fn=filename;
 	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
 	fif = FreeImage_GetFileType(fn.c_str(), 0);
 	if(fif == FIF_UNKNOWN)
@@ -56,4 +55,11 @@ GLuint LoadGLImage(const char *filename,unsigned wrap)
 	if(bpp==32)
 		glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
 	return image_tex;
+}
+
+GLuint LoadGLImage(const char *filename,unsigned wrap)
+{
+	std::string fn=image_path+"/";
+	fn+=filename;
+	return LoadGLTexture(fn.c_str(),wrap);
 }

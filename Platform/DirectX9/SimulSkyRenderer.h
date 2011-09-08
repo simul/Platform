@@ -55,7 +55,7 @@ public:
 	virtual ~SimulSkyRenderer();
 	virtual void SaveTextures(const char *base_filename);
 	//standard d3d object interface functions
-	void						ReloadShaders();
+	void						RecompileShaders();
 	//! Call this when the D3D device has been created or reset.
 	bool						RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
@@ -130,6 +130,7 @@ protected:
 	LPD3DXEFFECT				m_pSkyEffect;		// The fx file for the sky
 	D3DXHANDLE					worldViewProj;
 	D3DXHANDLE                  m_hTechniqueSky;	// Handle to technique in the effect 
+	D3DXHANDLE					m_hTechniqueShowSkyTexture;
 	D3DXHANDLE					m_hTechniqueStarrySky;
 	D3DXHANDLE					m_hTechniquePointStars;
 	D3DXHANDLE					m_hTechniquePlainColour;
@@ -148,6 +149,7 @@ protected:
 	D3DXHANDLE					colour;
 	D3DXHANDLE					fadeTexture;
 	D3DXHANDLE					fadeTexture2;
+	D3DXHANDLE					texelOffset,texelScale;
 	D3DXHANDLE					skyTexture1;
 	D3DXHANDLE					skyTexture2;
 	D3DXHANDLE					fadeTexture2D;

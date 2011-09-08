@@ -128,8 +128,8 @@ void OpenGLRenderer::SetYVertical(bool y)
 		simulOpticsRenderer->SetYVertical(y_vertical);
 }
 
-void OpenGLRenderer::ReloadShaders()
+void OpenGLRenderer::RecompileShaders()
 {
 	if(simulWeatherRenderer.get())
-		simulWeatherRenderer->ReloadShaders();
+		simulWeatherRenderer->RecompileShaders();
 }

@@ -51,7 +51,7 @@ public:
 		META_ValuePropertyWithSetCall(bool,GPULightingEnabled,ForceRelight,"Whether the GPU will be used for cloud light calculations.")
 		META_ValueRangePropertyWithSetCall(int,NumBuffers,1,2,NumBuffersChanged,"Number of buffers to use in cloud rendering. More = faster.")
 	META_EndProperties
-	void ReloadShaders();
+	void RecompileShaders();
 	//! Call this when the device has been created
 	bool RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the 3D device has been lost.
@@ -100,6 +100,7 @@ public:
 	void SetYVertical(bool y);
 	bool IsYVertical() const{return y_vertical;}
 protected:
+	void LoadShaders();
 	void NumBuffersChanged();
 	bool y_vertical;
 	void InternalRenderHorizontal(int buffer_index=0);
@@ -167,6 +168,7 @@ protected:
 
 	D3DXHANDLE					worldViewProj;
 	D3DXHANDLE					eyePosition;
+	D3DXHANDLE					maxFadeDistanceMetres;
 	D3DXHANDLE					lightResponse;
 	D3DXHANDLE					crossSectionOffset;
 	D3DXHANDLE					lightDir;

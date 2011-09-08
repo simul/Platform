@@ -39,7 +39,7 @@ public:
 	bool						RestoreDeviceObjects();
 	//! Destroy the API-specific objects used in rendering.
 	bool						InvalidateDeviceObjects();
-	void						ReloadShaders();
+	void						RecompileShaders();
 	//! GL Implementation of render function.
 	bool						Render(bool blend);
 	//! Render the stars, as points.

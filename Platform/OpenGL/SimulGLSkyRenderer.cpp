@@ -655,6 +655,7 @@ bool SimulGLSkyRenderer::RenderSun()
 
 bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const float *dir,const float *colr,bool do_lighting)
 {
+		ERROR_CHECK
 	CalcCameraPosition(cam_pos);
 	float alt_km=0.001f*cam_pos.z;
 	if(do_lighting)
@@ -695,13 +696,19 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 	}
 		ERROR_CHECK
 	glUniform3f(planetLightDir_param,sun2.x,sun2.y,sun2.z);
-	
+		ERROR_CHECK
 	glUniform1i(planetTexture_param,0);
+		ERROR_CHECK
 	glUniform3f(planetLightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
+		ERROR_CHECK
 	glEnable(GL_BLEND);
+		ERROR_CHECK
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
+		ERROR_CHECK
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
+		ERROR_CHECK
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE,GL_SRC_ALPHA,GL_ONE);
+		ERROR_CHECK
 
 	bool res=RenderAngledQuad(dir,planet_angular_size);
 	glUseProgram(NULL);
@@ -722,7 +729,7 @@ void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1)
 	*i1=(void*)inscatter_2d.GetColorTex();
 }
 
-void SimulGLSkyRenderer::ReloadShaders()
+void SimulGLSkyRenderer::RecompileShaders()
 {
 	loss_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
 	inscatter_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
@@ -800,7 +807,7 @@ ERROR_CHECK
 	loss_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 ERROR_CHECK
-	ReloadShaders();
+	RecompileShaders();
 ERROR_CHECK
 
 	skyKeyframer->SetCallback(this);

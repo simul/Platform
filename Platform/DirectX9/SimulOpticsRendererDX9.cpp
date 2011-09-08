@@ -26,7 +26,7 @@ void SimulOpticsRendererDX9::RestoreDeviceObjects(void *dev)
 		SAFE_RELEASE(flare_texture);
 		CreateDX9Texture(m_pd3dDevice,flare_texture,FlareTexture.c_str());
 	}
-	ReloadShaders();
+	RecompileShaders();
 	for(size_t i=0;i<halo_textures.size();i++)
 	{
 		SAFE_RELEASE(halo_textures[i]);
@@ -40,7 +40,7 @@ void SimulOpticsRendererDX9::RestoreDeviceObjects(void *dev)
 		LPDIRECT3DTEXTURE9 &tex=halo_textures[i];
 		CreateDX9Texture(m_pd3dDevice,tex,(tn+".png").c_str());
 	}
-	ReloadShaders();
+	RecompileShaders();
 }
 
 void SimulOpticsRendererDX9::InvalidateDeviceObjects()
@@ -59,7 +59,7 @@ void SimulOpticsRendererDX9::InvalidateDeviceObjects()
 	halo_textures.clear();
 }
 
-void SimulOpticsRendererDX9::ReloadShaders()
+void SimulOpticsRendererDX9::RecompileShaders()
 {
 	if(!m_pd3dDevice)
 		return;

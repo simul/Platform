@@ -133,6 +133,7 @@ void	Direct3D11Renderer::OnD3D11LostDevice()
 
 void	Direct3D11Renderer::OnD3D11DestroyDevice()
 {
+	OnD3D11LostDevice();
 	// We don't clear the renderers because InvalidateDeviceObjects has already handled DX-specific destruction
 	// And after OnD3D11DestroyDevice we might go back to startup without destroying the renderer.
     //simulWeatherRenderer=NULL;

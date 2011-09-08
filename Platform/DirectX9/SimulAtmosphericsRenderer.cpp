@@ -64,7 +64,7 @@ bool SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr=S_OK;
-	ReloadShaders();
+	RecompileShaders();
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 
 	{
@@ -82,7 +82,7 @@ bool SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 	return (hr==S_OK);
 }
 
-void SimulAtmosphericsRenderer::ReloadShaders()
+void SimulAtmosphericsRenderer::RecompileShaders()
 {
 	SAFE_RELEASE(effect);
 	std::map<std::string,std::string> defines;

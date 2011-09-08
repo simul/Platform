@@ -15,6 +15,7 @@
 #include "SaveTexture.h"
 #include "Simul/Base/StringToWString.h"
 #include <fstream>
+#include <iomanip>
 #include <math.h>
 
 #ifdef XBOX
@@ -231,6 +232,7 @@ void SimulCloudRenderer::EnableFilter(bool f)
 
 bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 {
+	simul::base::Timer timer;
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr=S_OK;
 	last_time=0.f;
@@ -238,6 +240,7 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 	SAFE_RELEASE(raytrace_layer_texture);
 	
 	B_RETURN(D3DXCreateTexture(m_pd3dDevice,128,1,1,0,D3DFMT_A32B32G32R32F,d3d_memory_pool,&raytrace_layer_texture))
+	float create_raytrace_layer=timer.UpdateTime()/1000.f;
 
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	helper->GenerateSphereVertices();
@@ -268,15 +271,26 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 		*(index++)	=helper->GetQuadStripIndices()[i];
 	}
 	B_RETURN(unitSphereIndexBuffer->Unlock());
+	float create_unit_sphere=timer.UpdateTime()/1000.f;
 	B_RETURN(InitEffects());
+	float init_effects=timer.UpdateTime()/1000.f;
 	//B_RETURN(RenderNoiseTexture());
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 	cloudKeyframer->SetRenderCallback(this);
+	float set_callback=timer.UpdateTime()/1000.f;
+	std::cout<<std::setprecision(4)<<"CLOUDS RESTORE TIMINGS: create_raytrace_layer="<<create_raytrace_layer
+		<<", create_unit_sphere="<<create_unit_sphere<<", init_effects="<<init_effects<<", set_callback="<<set_callback<<std::endl;
 	return (hr==S_OK);
 }
 
-void SimulCloudRenderer::ReloadShaders()
+void SimulCloudRenderer::RecompileShaders()
 {
+	LoadShaders();
+}
+
+void SimulCloudRenderer::LoadShaders()
+{
+	simul::base::Timer timer;
 	std::map<std::string,std::string> defines;
 	if(fade_mode==FRAGMENT)
 		defines["FADE_MODE"]="1";
@@ -286,17 +300,17 @@ void SimulCloudRenderer::ReloadShaders()
 	wrap=cloudInterface->GetWrap();
 	if(cloudInterface->GetWrap())
 		defines["WRAP_CLOUDS"]="1";
-	char max_fade_distance_str[25];
-	sprintf_s(max_fade_distance_str,25,"%3.1f",max_fade_distance_metres);
-	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
 	if(!y_vertical)
 		defines["Z_VERTICAL"]='1';
 	else
 		defines["Y_VERTICAL"]='1';
+	float defines_time=timer.UpdateTime()/1000.f;
 	SAFE_RELEASE(m_pCloudEffect);
 	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
+	float clouds_effect=timer.UpdateTime()/1000.f;
 	SAFE_RELEASE(m_pGPULightingEffect);
 	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pGPULightingEffect,"simul_gpulighting.fx",defines));
+	float gpulighting_effect=timer.UpdateTime()/1000.f;
 
 	m_hTechniqueCloud					=GetDX9Technique(m_pCloudEffect,"simul_clouds");
 	m_hTechniqueCloudMask				=GetDX9Technique(m_pCloudEffect,"cloud_mask");
@@ -306,16 +320,18 @@ void SimulCloudRenderer::ReloadShaders()
 	m_hTechniqueCrossSectionXY			=GetDX9Technique(m_pCloudEffect,"cross_section_xy");
 	m_hTechniqueRenderTo2DForSaving		=GetDX9Technique(m_pCloudEffect,"render_to_2d_for_saving");
 	m_hTechniqueColourLines				=GetDX9Technique(m_pCloudEffect,"colour_lines");
+	float techniques=timer.UpdateTime()/1000.f;
 
 	worldViewProj			=m_pCloudEffect->GetParameterByName(NULL,"worldViewProj");
 	eyePosition				=m_pCloudEffect->GetParameterByName(NULL,"eyePosition");
+	maxFadeDistanceMetres	=m_pCloudEffect->GetParameterByName(NULL,"maxFadeDistanceMetres");
 	lightResponse			=m_pCloudEffect->GetParameterByName(NULL,"lightResponse");
 	crossSectionOffset		=m_pCloudEffect->GetParameterByName(NULL,"crossSectionOffset");
 	lightDir				=m_pCloudEffect->GetParameterByName(NULL,"lightDir");
 	skylightColour			=m_pCloudEffect->GetParameterByName(NULL,"skylightColour");
 	fractalScale			=m_pCloudEffect->GetParameterByName(NULL,"fractalScale");
 	interp					=m_pCloudEffect->GetParameterByName(NULL,"interp");
-	large_texcoords_scale	=m_pCloudEffect->GetParameterByName(NULL,"large_texcoords_scale");
+
 	mieRayleighRatio		=m_pCloudEffect->GetParameterByName(NULL,"mieRayleighRatio");
 	hazeEccentricity		=m_pCloudEffect->GetParameterByName(NULL,"hazeEccentricity");
 	cloudEccentricity		=m_pCloudEffect->GetParameterByName(NULL,"cloudEccentricity");
@@ -336,7 +352,7 @@ void SimulCloudRenderer::ReloadShaders()
 	cloudDensity1			=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity1");
 	cloudDensity2			=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity2");
 	noiseTexture			=m_pCloudEffect->GetParameterByName(NULL,"noiseTexture");
-	largeScaleCloudTexture	=m_pCloudEffect->GetParameterByName(NULL,"largeScaleCloudTexture");
+
 	lightningIlluminationTexture=m_pCloudEffect->GetParameterByName(NULL,"lightningIlluminationTexture");
 	skyLossTexture			=m_pCloudEffect->GetParameterByName(NULL,"skyLossTexture");
 	skyInscatterTexture		=m_pCloudEffect->GetParameterByName(NULL,"skyInscatterTexture");
@@ -350,7 +366,14 @@ void SimulCloudRenderer::ReloadShaders()
 	cloudOffset			=m_pCloudEffect->GetParameterByName(NULL,"cloudOffset");
 	raytraceLayerTexture=m_pCloudEffect->GetParameterByName(NULL,"raytraceLayerTexture");
 
+	float params=timer.UpdateTime()/1000.f;
 	rebuild_shaders=false;
+	std::cout<<std::setprecision(4)<<"CLOUDS RELOAD SHADERS TIMINGS: defines="<<defines_time
+		<<"clouds_effect="<<clouds_effect
+		<<", gpulighting_effect="<<gpulighting_effect
+		<<", techniques="<<techniques
+		<<", params="<<params<<std::endl;
+
 }
 
 bool SimulCloudRenderer::InitEffects()
@@ -388,7 +411,7 @@ bool SimulCloudRenderer::InitEffects()
 	{
 		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
 	}
-	ReloadShaders();
+	LoadShaders();
 	return (hr==S_OK);
 }
 
@@ -793,8 +816,8 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 
 	helper->SetChurn(cloudInterface->GetChurn());
 	helper->Update((const float*)cam_pos,wind_offset,view_dir,up,delta_t,cubemap);
-	if(y_vertical)
-		std::swap(cam_pos.y,cam_pos.z);
+	//if(y_vertical)
+	//	std::swap(cam_pos.y,cam_pos.z);
 
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;
@@ -820,9 +843,10 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 		helper->CalcInscatterFactors(skyInterface);
 
 	float cloud_interp=cloudKeyframer->GetInterpolation();
-	m_pCloudEffect->SetFloat	(interp				,cloud_interp);
-	m_pCloudEffect->SetVector	(eyePosition		,(D3DXVECTOR4*)(&cam_pos));
-	m_pCloudEffect->SetVector	(lightResponse		,(D3DXVECTOR4*)(&light_response));
+	m_pCloudEffect->SetFloat	(interp					,cloud_interp);
+	m_pCloudEffect->SetVector	(eyePosition			,(D3DXVECTOR4*)(&cam_pos));
+	m_pCloudEffect->SetFloat	(maxFadeDistanceMetres	,max_fade_distance_metres);
+	m_pCloudEffect->SetVector	(lightResponse			,(D3DXVECTOR4*)(&light_response));
 	m_pCloudEffect->SetVector	(lightDir			,(D3DXVECTOR4*)(&sun_dir));
 	m_pCloudEffect->SetVector	(skylightColour		,(D3DXVECTOR4*)(&sky_light_colour));
 	simul::sky::float4 fractal_scales=(cubemap?0.f:1.f)*helper->GetFractalScales(cloudInterface);
@@ -907,7 +931,7 @@ void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
 	float min_dist=helper->GetMaxCloudDistance()*0.5f;
 	float fadeout_dist=helper->GetMaxCloudDistance();
 	float base_alt_km=0.001f*(cloudInterface->GetCloudBaseZ());
-	float view_alt_km=0.001f*cam_pos.z;
+	float view_alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 	// Convert metres to km:
@@ -943,7 +967,7 @@ void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
 					if(fadeout>1.f)
 						fadeout=1.f;
 					float x=cam_pos.x+dist*cs;
-					float y=cam_pos.y+dist*sn;
+					float y=(y_vertical?cam_pos.z:cam_pos.y)+dist*sn;
 					float z=z0+helper->GetVerticalShiftDueToCurvature(dist,z0);
 					float elev=atan2(z,dist);
 					pos.Define(x,y,z);
@@ -1006,7 +1030,7 @@ bool SimulCloudRenderer::FillRaytraceLayerTexture()
 	HRESULT hr=S_OK;
 	B_RETURN(raytrace_layer_texture->LockRect(0,&lockedRect,NULL,NULL));
 	float *float_ptr=(float *)(lockedRect.pBits);
-	typedef std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_reverse_iterator iter;
+	typedef std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_reverse_iterator iter;
 	static float cutoff=100000.f;
 	int j=0;
 	for(iter i=helper->GetSlices().rbegin();i!=helper->GetSlices().rend()&&j<128;i++,j++)
@@ -1058,15 +1082,16 @@ void SimulCloudRenderer::InternalRenderRaytrace(int buffer_index)
 	
 		m_pCloudEffect->SetVector	(cloudScales	,(const D3DXVECTOR4*)&cloud_scales);
 		m_pCloudEffect->SetVector	(cloudOffset	,(const D3DXVECTOR4*)&cloud_offset);
-		D3DXVECTOR3 cam_pos;
-		GetCameraPosVector(view,y_vertical,(float*)&cam_pos);
+		D3DXVECTOR3 d3dcam_pos;
+		GetCameraPosVector(view,y_vertical,(float*)&d3dcam_pos);
+		float altitude=y_vertical?d3dcam_pos.y:d3dcam_pos.z;
 		hr=m_pCloudEffect->SetFloat(fadeInterp,fade_interp);
 		if(skyInterface)
 		{
 //		hr=m_pCloudEffect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
 			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
 			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
-			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(cam_pos.y));
+			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(altitude));
 			
 			//light_colour*=strength;
 			if(y_vertical)
@@ -1104,7 +1129,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int buffer_index)
 	static std::vector<simul::sky::float4> light_colours;
 	light_colours.resize(el_grid+1);
 	view_km*=0.001f;
-	typedef std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_iterator iter;
+	typedef std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator iter;
 	static float cutoff=100000.f;	// Get the sunlight at this altitude:
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	for(iter i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++)
@@ -1641,7 +1666,7 @@ bool SimulCloudRenderer::RenderDistances(int width,int height)
 	Vertext *lines=new Vertext[2*helper->GetSlices().size()];
 	int j=0;
 	float max_distance=helper->GetMaxCloudDistance();
-	for(std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,j++)
+	for(std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,j++)
 	{
 		if(!(*i))
 			continue;

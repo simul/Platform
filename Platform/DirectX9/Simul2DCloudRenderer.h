@@ -49,7 +49,7 @@ public:
 	virtual ~Simul2DCloudRenderer();
 	//standard d3d object interface functions
 	bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
-	void ReloadShaders();
+	void RecompileShaders();
 	//! Call this when the D3D device has been created or reset.
 	bool RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.

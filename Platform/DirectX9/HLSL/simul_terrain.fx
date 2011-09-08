@@ -33,6 +33,17 @@ sampler detail_texture = sampler_state
 	AddressV = Wrap;
 };
 
+texture waterTexture;
+sampler water_texture = sampler_state
+{
+    Texture = <waterTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
 texture cloudTexture1;
 sampler3D cloud_texture1= sampler_state 
 {
@@ -120,7 +131,11 @@ mapVertexOutput VS_Map(mapVertexInput IN)
 float4 PS_Map(mapVertexOutput IN) : color
 {
 	float H=(tex2D(height_texture,IN.texCoordDiffuse.xy).r-altitudeBase)/altitudeRange;
-	float3 colour=tex1D(colourkey_texture,H).rgb;
+	float3 colour=tex1D(colourkey_texture,saturate(H)).rgb;
+	float4 W=tex2D(water_texture,IN.texCoordDiffuse.xy);
+	float3 water_colour=float3(0.2,0.7,1.0);
+	water_colour=lerp(water_colour,float3(1.0,0.0,0.0),saturate(W.z/(W.w+0.001)));
+	colour=lerp(colour,water_colour,saturate(W.w/10.0));
     return float4(colour.rgb,1.f);
 }
 
@@ -153,9 +168,9 @@ vertexOutput VS_Main(vertexInput IN)
 	float m=IN.morph.y*(lerp(morphFactor.x,morphFactor.y,IN.morph.x));
 	float mip=mipLevels*m;
 //	heightmap_texc=heightmap_texc+pow(2.0,mip)/512.0;
-	float h=tex2Dlod(height_texture,float4(heightmap_texc,0,0)).r;
-	float h1=tex2Dlod(height_texture,float4(heightmap_texc_1,0,0)).r;
-	float h2=tex2Dlod(height_texture,float4(heightmap_texc_2,0,0)).r;
+	float h=tex2Dlod(height_texture,float4(heightmap_texc,0,0)).r+tex2Dlod(water_texture,float4(heightmap_texc,0,0)).w;
+	float h1=tex2Dlod(height_texture,float4(heightmap_texc_1,0,0)).r+tex2Dlod(water_texture,float4(heightmap_texc_1,0,0)).w;
+	float h2=tex2Dlod(height_texture,float4(heightmap_texc_2,0,0)).r+tex2Dlod(water_texture,float4(heightmap_texc_2,0,0)).w;
 	OUT.test.g=frac(mip);
 	h=lerp(h,0.5*(h1+h2),OUT.test.g);
 	OUT.test.r=h;
@@ -169,54 +184,68 @@ vertexOutput VS_Main(vertexInput IN)
 
 float4 PS_Main( vertexOutput IN) : color
 {
+	float2 height_soil=tex2D(height_texture,IN.heightmap_texc.xy).xw;
 	float3 final=tex2D(mainTexture,IN.texCoordDiffuse.xy);
+	final=lerp(float3(0.5,0.45,0.3),final,saturate(height_soil.y/1.0));
+	float4 water_texel=tex2D(water_texture,IN.heightmap_texc.xy);
+	float3 water_colour=lerp(float3(0.1,0.2,0.5),float3(1.0,1.0,1.0),saturate(0.1*water_texel.x));
+	water_colour=lerp(water_colour,float3(1.0,0.5,0.0),saturate(water_texel.z/10.0));
+	final=lerp(final,water_colour,saturate(water_texel.w/10.0));
 	float depth=length(IN.wPosition-eyePosition)/MAX_FADE_DISTANCE_METRES;
-	//final.rgb=IN.test.ggg;
     return float4(final,depth);
 }
 
 float4 PS_Detail( vertexOutput IN) : color
 {
+	float2 height_soil=tex2D(height_texture,IN.heightmap_texc.xy).xw;
 	float3 final=tex2D(detail_texture,IN.texCoordDiffuse.xy);
+	final=lerp(float3(0.5,0.45,0.3),final,saturate(height_soil.y/1.0));
+	float4 water_texel=tex2D(water_texture,IN.heightmap_texc.xy);
+	float3 water_colour=lerp(float3(0.1,0.2,0.5),float3(1.0,1.0,1.0),saturate(0.1*water_texel.x));
+	water_colour=lerp(water_colour,float3(1.0,0.5,0.0),saturate(water_texel.z/10.0));
+	final=lerp(final,water_colour,saturate(water_texel.w/10.0));
 	float depth=length(IN.wPosition-eyePosition)/MAX_FADE_DISTANCE_METRES;
     return float4(final,0.f);
 }
 
 float4 PS_Shadow(vertexOutput IN) : color
 {
+	float3 normal;
 #ifdef Y_VERTICAL
-	float3 normal=tex2D(height_texture,IN.heightmap_texc.xy).ywz;
+	normal.xz=tex2D(height_texture,IN.heightmap_texc.xy).yz;
+	normal.y=1.0-sqrt(dot(normal.xz,normal.xz));
 #else
-	float3 normal=tex2D(height_texture,IN.heightmap_texc.xy).yzw;
+	normal.xy=tex2D(height_texture,IN.heightmap_texc.xy).yz;
+	normal.z=1.0-sqrt(dot(normal.xy,normal.xy));
 #endif
-	float direct_light=saturate(dot(normal.rgb,lightDir));
+	float direct_light=saturate(dot(normal.xyz,lightDir));
 	float3 colour=lightColour*direct_light+ambientColour;
     return float4(colour,1.f);
 }
 
 float4 PS_CloudShadow(vertexOutput IN) : color
 {
+	float3 normal;
 #ifdef Y_VERTICAL
-	float3 normal=tex2D(height_texture,IN.heightmap_texc.xy).ywz;
+	normal.xz=tex2D(height_texture,IN.heightmap_texc.xy).yz;
+	normal.y=1.0-sqrt(dot(normal.xz,normal.xz));
 	float3 lightVec=lightDir/lightDir.y;
 	float dz=IN.wPosition.y-cloudOffset.z;
 	float3 wPos=float3(IN.wPosition.xz-cloudOffset.xy,0);
 	wPos.xy-=lightVec.xz*dz;
 #else
-	float3 normal=tex2D(height_texture,IN.heightmap_texc.xy).yzw;
+	normal.xy=tex2D(height_texture,IN.heightmap_texc.xy).yz;
+	normal.z=1.0-sqrt(dot(normal.xy,normal.xy));
 	float3 lightVec=lightDir/lightDir.z;
 	float dz=IN.wPosition.z-cloudOffset.z;
 	float3 wPos=float3(IN.wPosition.xy-cloudOffset.xy,0);
 	wPos.xy-=lightVec.xy*dz;
 #endif
-
 	float3 cloud_texc=wPos*cloudScales;
 	float4 cloud1=tex3D(cloud_texture1,cloud_texc);
 	float4 cloud2=tex3D(cloud_texture2,cloud_texc);
-	
 	float direct_light=saturate(dot(normal.xyz,lightDir));
 	float light=lerp(cloud1.z,cloud2.z,cloudInterp);
-
 	float3 colour=lightColour*light*direct_light+ambientColour;
     return float4(colour.rgb,1.f);
 }
@@ -239,7 +268,7 @@ technique simul_terrain
 		ZEnable = true;
 		ZFunc = less;
     }
-    pass detail 
+    pass detail
     {		
 		VertexShader=compile vs_3_0 VS_Main();
 		PixelShader =compile ps_3_0 PS_Detail();
@@ -253,7 +282,7 @@ technique simul_terrain
 		DestBlend		= InvSrcAlpha;
 		ZFunc			= lessequal;
     }
-    pass shadow 
+    pass shadow
     {
 		VertexShader=compile vs_3_0 VS_Main();
 		PixelShader = compile ps_3_0 PS_Shadow();
@@ -263,7 +292,7 @@ technique simul_terrain
 		DestBlend	= SrcColor;
 		ZFunc = lessequal;
     }
-    pass cloud_shadow 
+    pass cloud_shadow
     {
 		VertexShader=compile vs_3_0 VS_Main();
 		PixelShader = compile ps_3_0 PS_CloudShadow();
@@ -290,7 +319,7 @@ technique simul_terrain
 
 technique simul_depth_only
 {
-    pass depth 
+    pass depth
     {
 		alphablendenable = false;
 		ColorWriteEnable=0;
@@ -302,7 +331,7 @@ technique simul_depth_only
 
 technique simul_at
 {
-    pass grass 
+    pass grass
     {
 		PixelShader = compile ps_3_0 PS_Detail();
 		alphablendenable = true;
@@ -323,7 +352,7 @@ technique simul_at
 }
 technique simul_road
 {
-    pass base 
+    pass base
     {		
 		VertexShader = compile vs_3_0 VS_Main();
 		PixelShader  = compile ps_3_0 PS_Main();
@@ -337,7 +366,7 @@ technique simul_road
 
 technique simul_map
 {
-    pass base 
+    pass base
     {		
 		VertexShader = compile vs_3_0 VS_Map();
 		PixelShader  = compile ps_3_0 PS_Map();

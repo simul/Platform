@@ -45,9 +45,8 @@ public:
 	void SetWidthAndHeight(int w,int h);
 	// In order to use a color buffer, either
 	// InitColor_RB or InitColor_Tex needs to be called.
-	void InitColor_RB(int index, GLenum internal_format);
+	//void InitColor_RB(int index, GLenum internal_format);
 	void InitColor_Tex(int index, GLenum internal_format,GLenum format);
-	void InitColor_None();
 	// In order to use a depth buffer, either
 	// InitDepth_RB or InitDepth_Tex needs to be called.
 	void InitDepth_RB(GLenum iformat = GL_DEPTH_COMPONENT24);
@@ -117,7 +116,6 @@ private:
 	int m_samples; // 0 if not multisampled
 	int m_coverageSamples; // for CSAA
 	GLuint m_fb;
-	GLuint m_old_fb;
 	GLuint m_tex_col[num_col_buffers], m_rb_col[num_col_buffers];
 	GLuint m_tex_depth, m_rb_depth;
 	// shaders

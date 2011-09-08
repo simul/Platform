@@ -424,7 +424,7 @@ ERROR_CHECK
 	// b) are in the cloud volume
 ERROR_CHECK
 	int layers_drawn=0;
-	for(std::vector<CloudGeometryHelper::RealtimeSlice*>::const_iterator i=helper->GetSlices().begin();
+	for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
 		i!=helper->GetSlices().end();i++)
 	{
 		// How thick is this layer, optically speaking?
@@ -549,7 +549,7 @@ void SimulGLCloudRenderer::SetInscatterTextures(void *i)
 	inscatter_tex=((GLuint)i);
 }
 
-void SimulGLCloudRenderer::ReloadShaders()
+void SimulGLCloudRenderer::RecompileShaders()
 {
 	clouds_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 	clouds_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
@@ -588,7 +588,7 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 {
 	CreateNoiseTexture();
 
-	ReloadShaders();
+	RecompileShaders();
 	// Because in this sample we are using 32-bit values in the cloud texture:
 	//cloudKeyframer->SetUserKeyframes(false);
 	cloudKeyframer->SetUse16Bit(false);

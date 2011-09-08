@@ -64,7 +64,7 @@ SimulHDRRenderer::SimulHDRRenderer(int width,int height) :
 {
 }
 
-void SimulHDRRenderer::ReloadShaders()
+void SimulHDRRenderer::RecompileShaders()
 {
 	SAFE_RELEASE(m_pTonemapEffect);
 	if(!m_pTonemapEffect)
@@ -90,7 +90,7 @@ bool SimulHDRRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr=S_OK;
-	ReloadShaders();
+	RecompileShaders();
 	B_RETURN(CreateBuffers());
 	return (hr==S_OK);
 }

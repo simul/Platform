@@ -45,7 +45,7 @@ public:
 	virtual ~SimulSkyRendererDX1x();
 
 	//standard d3d object interface functions
-	void ReloadShaders();
+	void RecompileShaders();
 	//! Call this when the D3D device has been created or reset.
 	bool RestoreDeviceObjects(ID3D1xDevice* pd3dDevice);
 	//! Call this when the D3D device has been shut down.

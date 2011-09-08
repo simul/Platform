@@ -193,7 +193,7 @@ struct Vertex2D_t
 };
 Vertex2D_t *vertices=NULL;
 
-void Simul2DCloudRenderer::ReloadShaders()
+void Simul2DCloudRenderer::RecompileShaders()
 {
 	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_2d.fx"));
 
@@ -239,7 +239,7 @@ bool Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
 	B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
 	B_RETURN(CreateNoiseTexture());
 	hr=CreateImageTexture();
-	ReloadShaders();
+	RecompileShaders();
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 	cloudKeyframer->SetRenderCallback(this);
 	return (hr==S_OK);

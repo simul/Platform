@@ -37,7 +37,7 @@ public:
 	SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer.get();}
 	void SetCamera(simul::camera::Camera *c);
 	void SetYVertical(bool y);
-	void ReloadShaders();
+	void RecompileShaders();
 protected:
 	simul::base::SmartPtr<SimulGLWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulGLHDRRenderer> simulHDRRenderer;

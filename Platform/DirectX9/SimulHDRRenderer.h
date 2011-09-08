@@ -25,7 +25,7 @@ public:
 	SimulHDRRenderer(int width,int height);
 	virtual ~SimulHDRRenderer();
 	//standard d3d object interface functions
-	void ReloadShaders();
+	void RecompileShaders();
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 	bool RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the device has been lost.

@@ -16,7 +16,7 @@ public:
 	virtual void RestoreDeviceObjects(void *device);
 	virtual void InvalidateDeviceObjects();
 	virtual void RenderFlare(float exposure,const float *dir,const float *light);
-	virtual void ReloadShaders();
+	virtual void RecompileShaders();
 
 	GLuint			flare_program;
 	GLint			flareColour_param;

@@ -85,7 +85,7 @@ void FramebufferGL::SetWidthAndHeight(int w,int h)
 }
 // In order to use a color buffer, either
 // InitColor_RB or InitColor_Tex needs to be called.
-void FramebufferGL::InitColor_RB(int index, GLenum iformat)
+/*void FramebufferGL::InitColor_RB(int index, GLenum iformat)
 {
 	if(!m_width||!m_height)
 		return;
@@ -120,7 +120,7 @@ void FramebufferGL::InitColor_RB(int index, GLenum iformat)
     
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
 	ERROR_CHECK
-}
+}*/
 
 void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 {
@@ -145,23 +145,40 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 	ERROR_CHECK
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-	ERROR_CHECK
-}
-void FramebufferGL::InitColor_None()
-{
-	if(!m_fb)
+
+
+
+	if(!m_rb_depth)
 	{
-		InitShader();
-		glGenFramebuffersEXT(1, &m_fb);
+	ERROR_CHECK
+		glGenRenderbuffersEXT(1, &m_rb_depth);
+	ERROR_CHECK
 	}
-    // turn the color buffer off in case this is a z only fbo
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
-    {
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-    }
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); 
+	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rb_depth);
+	   ERROR_CHECK
+	glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, m_width, m_height);
+	   ERROR_CHECK
+	//-------------------------
+	//Attach depth buffer to FBO
+	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_rb_depth);
+		ERROR_CHECK
+	//-------------------------
+	//Does the GPU support current FBO configuration?
+	GLenum status;
+	status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+	   ERROR_CHECK
+	switch(status)
+	{
+	   case GL_FRAMEBUFFER_COMPLETE_EXT:
+		   break;
+	default:
+	   ERROR_CHECK
+	}
+
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
+
+	ERROR_CHECK
 }
 
 // In order to use a depth buffer, either

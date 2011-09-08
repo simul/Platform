@@ -35,6 +35,8 @@
 #include "Simul/Base/Timer.h"
 #include "Simul/Platform/DirectX9/Macros.h"
 #include "Simul/Platform/DirectX9/Resources.h"
+#include <iomanip>
+
 #define WRITE_PERFORMANCE_DATA
 static simul::base::Timer timer;
 
@@ -143,6 +145,8 @@ bool SimulWeatherRenderer::Restore3DCloudObjects()
 	{
 		if(simulCloudRenderer)
 		{
+			if(simulSkyRenderer)
+				simulCloudRenderer->SetMaxFadeDistanceKm(simulSkyRenderer->GetMaxFadeDistanceKm());
 			B_RETURN(simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
 		}
 		if(simulPrecipitationRenderer)
@@ -165,6 +169,10 @@ bool SimulWeatherRenderer::Restore2DCloudObjects()
 
 bool SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 {
+	simul::base::Timer timer;
+	timer.TimeSum=0;
+	timer.StartTime();
+
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	if(!m_pBufferToScreenEffect)
 		B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pBufferToScreenEffect,"gamma.fx"));
@@ -172,12 +180,28 @@ bool SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 	CloudBlendTechnique			=m_pBufferToScreenEffect->GetTechniqueByName("simul_cloud_blend");
 	bufferTexture				=m_pBufferToScreenEffect->GetParameterByName(NULL,"hdrTexture");
 	B_RETURN(CreateBuffers());
+	
+	timer.UpdateTime();
+	float create_buffers_time=timer.Time/1000.f;
+
 	if(simulSkyRenderer)
 		B_RETURN(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
+	timer.UpdateTime();
+	float sky_restore_time=timer.Time/1000.f;
 	B_RETURN(Restore3DCloudObjects());
+	timer.UpdateTime();
+	float clouds_3d_restore_time=timer.Time/1000.f;
 	B_RETURN(Restore2DCloudObjects());
+	timer.UpdateTime();
+	float clouds_2d_restore_time=timer.Time/1000.f;
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);
+	timer.UpdateTime();
+	float atmospherics_restore_time=timer.Time/1000.f;
+	std::cout<<std::setprecision(4)<<"RESTORE TIMINGS: create_buffers="<<create_buffers_time
+		<<", sky="<<sky_restore_time<<", clouds_3d="<<clouds_3d_restore_time<<", clouds_2d="<<clouds_2d_restore_time
+		<<", atmospherics="<<atmospherics_restore_time<<std::endl;
+
 	UpdateSkyAndCloudHookup();
 	return true;
 }

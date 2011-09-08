@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <time.h>
+#include <direct.h>
 
 class VisualStudioDebugOutput : public simul::base::BufferedStringStreamBuf
 {
@@ -18,16 +19,26 @@ public:
 	{
 		to_output_window=send_to_output_window;
 		to_logfile=send_to_logfile;
+		char buffer[_MAX_PATH];
+		if(_getcwd(buffer,_MAX_PATH))
+		{
+			
+		}
+		std::string fn=buffer;
 		if(send_to_logfile)
 		{
-			if(logfilename)
-				logFile.open(logfilename);
-			else
-				logFile.open("logfile.txt");
+			if(!logfilename)
+				logfilename="logfile.txt";
+			fn+="/";
+			fn+=logfilename;
+			logFile.open(fn.c_str());
 		}
 		old_cout_buffer=std::cout.rdbuf(this);
 		old_cerr_buffer=std::cerr.rdbuf(this);
 		
+		logFile << "This is a short text file." << std::endl;
+		logFile << 10 << " " << 123.23 << std::endl;
+writeString("test");
 		time_t rawtime;
 		rawtime = time (&rawtime);
 		struct tm timeinfo;
@@ -39,12 +50,15 @@ public:
 	}
 	virtual ~VisualStudioDebugOutput()
 	{
+		logFile<<std::endl;
+		logFile.close();
 		std::cout.rdbuf(old_cout_buffer);
 		std::cerr.rdbuf(old_cerr_buffer);
 	}
     virtual void writeString(const std::string &str)
     {
-		if(to_output_window)
+		logFile<<str.c_str()<<std::endl;
+	/*	if(to_output_window)
 		{
 #ifdef UNICODE
 			std::wstring wstr(str.length(), L' '); // Make room for characters
@@ -54,11 +68,8 @@ public:
 #else
 	        OutputDebugString(str.c_str());
 #endif
-		}
-		if(to_logfile)
-		{
-			logFile<<str.c_str();
-		}
+		}*/
+
     }
 protected:
 	std::ofstream logFile;

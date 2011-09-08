@@ -32,7 +32,7 @@ void SimulOpticsRendererDX1x::RestoreDeviceObjects(void *dev)
 	SAFE_RELEASE(flare_texture);
 	flare_texture=LoadTexture(FlareTexture.c_str());
 	
-	ReloadShaders();
+	RecompileShaders();
 	for(size_t i=0;i<halo_textures.size();i++)
 	{
 		SAFE_RELEASE(halo_textures[i]);
@@ -47,7 +47,7 @@ void SimulOpticsRendererDX1x::RestoreDeviceObjects(void *dev)
 		SAFE_RELEASE(tex);
 		tex=LoadTexture((tn+_T(".png")).c_str());
 	}
-	ReloadShaders();
+	RecompileShaders();
 }
 
 void SimulOpticsRendererDX1x::InvalidateDeviceObjects()
@@ -62,7 +62,7 @@ void SimulOpticsRendererDX1x::InvalidateDeviceObjects()
 	halo_textures.clear();
 }
 
-void SimulOpticsRendererDX1x::ReloadShaders()
+void SimulOpticsRendererDX1x::RecompileShaders()
 {
 	if(!m_pd3dDevice)
 		return;

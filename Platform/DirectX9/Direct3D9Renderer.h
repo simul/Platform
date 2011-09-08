@@ -80,10 +80,12 @@ public:
 	void	SetTimeMultiplier(float fTimeMult);
 
 	void	SetYVertical(bool y);
-	void	ReloadShaders();
+	void	RecompileShaders();
 protected:
+	HRESULT RestoreDeviceObjects(IDirect3DDevice9* pDevice);
 	simul::camera::Camera *camera;
 	float aspect;
+	bool device_reset;
 	bool y_vertical;
 	bool show_osd;
 	float framerate;

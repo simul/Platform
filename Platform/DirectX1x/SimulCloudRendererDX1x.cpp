@@ -197,7 +197,7 @@ void SimulCloudRendererDX1x::SetNoiseTextureProperties(int s,int f,int o,float p
 	CreateNoiseTexture();
 }
 
-void SimulCloudRendererDX1x::ReloadShaders()
+void SimulCloudRendererDX1x::RecompileShaders()
 {
 	CreateCloudEffect();
 	HRESULT hr;
@@ -222,7 +222,7 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	HRESULT hr;
 	B_RETURN(CreateNoiseTexture());
 	B_RETURN(CreateLightningTexture());
-	ReloadShaders();
+	RecompileShaders();
 
 	D3D1x_SHADER_RESOURCE_VIEW_DESC texdesc;
 
@@ -754,7 +754,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 #else
 	vertices=(CloudVertex_t*)mapped_vertices.pData;
 #endif
-	for(std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_iterator i=helper->GetSlices().begin();
+	for(std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
 		i!=helper->GetSlices().end();i++)
 	{
 		helper->MakeLayerGeometry(cloudInterface,*i);

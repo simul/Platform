@@ -16,9 +16,9 @@
 #include <vector>
 #include "Simul/Math/float3.h"
 #include "Simul/Math/Vector3.h"
-#include "Simul/Base/Referenced.h"
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Terrain/HeightMapNode.h"
+#include "Simul/Terrain/BaseTerrainRenderer.h"
 #include "Simul/Platform/DirectX9/Export.h"
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -41,21 +41,25 @@ namespace simul
 		class CloudShadowCallback;
 	}
 }
-SIMUL_DIRECTX9_EXPORT_CLASS SimulTerrainRenderer:public simul::base::Referenced
+SIMUL_DIRECTX9_EXPORT_CLASS SimulTerrainRenderer:public simul::terrain::BaseTerrainRenderer
 {
 public:
 	SimulTerrainRenderer();
 	//standard d3d object interface functions
 	bool Create(LPDIRECT3DDEVICE9 pd3dDevice);
+	bool RecompileShaders();
 	bool RestoreDeviceObjects(void *pd3dDevice);
 	bool InvalidateDeviceObjects();
 
 	virtual ~SimulTerrainRenderer();
 	bool RenderOnlyDepth();
 	bool Render();
-	int GetMip(int i,int j) const;
+	float GetMip(int i,int j) const;
 	bool RenderMap(int w);
 	void Update(float dt);
+	void GpuMakeNormals();
+	void GpuThermalErosion(float time_step);
+	void GpuWaterErosion(float time_step);
 	// Set a callback that will return cloud shadow data and textures:
 	void SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb);
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
@@ -64,6 +68,7 @@ public:
 	simul::terrain::HeightMapInterface *GetHeightMapInterface();
 	simul::terrain::HeightMapNode *GetHeightMap();
 	void Highlight(const float *x,const float *d);
+	void GPUGenerateHeightmap();
 	void SetCloudScales(const float *s)
 	{
 		cloud_scales[0]=s[0];
@@ -107,55 +112,66 @@ public:
 	void TerrainModified();
 	const float *GetHighlightPos() const{return highlight_pos;}
 protected:
+	int LIGHTING_PASS;
+	int LIGHTING_PASS_WITH_SHADOWS;
+	int WIREFRAME_PASS;
 	simul::terrain::HeightMapInterface *heightMapInterface;
 	bool y_vertical;
 	bool enabled;
 	bool wrap_clouds;
 	bool rebuild_effect;
-	bool CreateEffect();
 	simul::base::SmartPtr<simul::terrain::HeightMapNode> heightmap;
 	bool InternalRender(bool depth_only);
-	float altitude_tex_coord;
 	bool show_wireframe;
 	simul::sky::BaseSkyInterface *skyInterface;
 	LPDIRECT3DDEVICE9		m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
 	LPD3DXEFFECT			m_pTerrainEffect;
+	LPD3DXEFFECT			pRenderHeightmapEffect;
 	LPDIRECT3DTEXTURE9		terrain_texture;
 	LPDIRECT3DTEXTURE9		detail_texture;
+	LPDIRECT3DTEXTURE9		colourkey_texture;
 
-	LPDIRECT3DTEXTURE9		elevation_map_texture;
+	LPDIRECT3DTEXTURE9		height_texture;
+	LPDIRECT3DTEXTURE9		rock_height_texture;
+	LPDIRECT3DTEXTURE9		soil_depth_texture;
+	LPDIRECT3DTEXTURE9		water_texture;
 	bool MakeMapTexture();
 
 	LPDIRECT3DTEXTURE9		road_texture;
 	LPDIRECT3DVOLUMETEXTURE9 *cloud_textures;
 	D3DXHANDLE				worldViewProj;
+	D3DXHANDLE				world;
 	D3DXHANDLE              m_hTechniqueTerrain;	
 	D3DXHANDLE              m_hTechniqueDepthOnly;	
 	D3DXHANDLE              m_hTechniqueMap;	
-	D3DXHANDLE              techniqueRoad;			
+	D3DXHANDLE              techniqueRoad;
+	D3DXHANDLE				texOffsetH;
+	D3DXHANDLE				morphFactor;
 	D3DXHANDLE				eyePosition;
 	D3DXHANDLE				lightDirection;
 	D3DXHANDLE				cloudScales;
 	D3DXHANDLE				cloudOffset;
 	D3DXHANDLE				cloudInterp;
 	D3DXHANDLE				exposureParam;
-	D3DXHANDLE				altitudeTexCoord;
+	D3DXHANDLE				mipLevels;
 
 	D3DXHANDLE				lightColour;
 	D3DXHANDLE				ambientColour;
 
 	D3DXHANDLE				g_mainTexture;
+	D3DXHANDLE				elevationMapTexture;
 	D3DXHANDLE				detailTexture;
 	D3DXHANDLE				roadTexture;
+	D3DXHANDLE				waterTexture;
+	D3DXHANDLE				colourkeyTexture;
 	D3DXHANDLE				cloudTexture1;
 	D3DXHANDLE				cloudTexture2;
 	
 	D3DXMATRIX				view,proj;
 	D3DXVECTOR3				cam_pos;
-	LPDIRECT3DVERTEXBUFFER9	vertexBuffer;
+	LPDIRECT3DVERTEXBUFFER9	mainVertexBuffer;
 
-	simul::math::Vector3 dir_to_sun;
 	D3DXVECTOR3				highlight_pos;
 	// A MIP edge joins a higher-resolution MIP to a lower-resolution one.
 	// The inner vertices come from the main grid.
@@ -167,12 +183,28 @@ protected:
 		int num_tris;
 		void Reset();
 	};
-	struct MIPEdges
+	struct FourMipEdges
 	{
 		MIPEdge edge[4];
 		void Reset();
 	};
-	struct TerrainTileMIP
+	struct TileMipGeneric
+	{
+		TileMipGeneric()
+			:num_prims(0)
+			,num_verts(0)
+			,indexBuffer(NULL)
+		{
+		}
+		// The inner square:
+		unsigned num_prims;
+		unsigned num_verts;
+		LPDIRECT3DINDEXBUFFER9 indexBuffer;
+		// four MIP edges for each lower MIP level
+		std::vector<FourMipEdges> edges;
+		void Reset();
+	};
+	struct TileMipInstance
 	{
 		// The inner square:
 		unsigned num_prims;
@@ -180,7 +212,7 @@ protected:
 		LPDIRECT3DINDEXBUFFER9 indexBuffer;
 
 		// four MIP edges for each lower MIP level
-		std::vector<MIPEdges> edges;
+		std::vector<FourMipEdges> edges;
 
 		// extra vertices for cutouts:
 		LPDIRECT3DVERTEXBUFFER9	extraVertexBuffer;
@@ -192,7 +224,7 @@ protected:
 		BitMap unimpeded_squares;
 		int num_squares;
 		bool tri_strip;
-		TerrainTileMIP(int tilesize);
+		TileMipInstance(int tilesize);
 
 		int tile_size;
 		void Reset();
@@ -208,21 +240,25 @@ protected:
 	std::vector < RoadRenderable  > roads;
 	struct TerrainTile
 	{
-		std::vector<TerrainTileMIP> mips;
+		std::vector<TileMipInstance> mips;
 		TerrainTile(int tilesize,int num_mips);
 		void Reset();
 		float pos[3];
+		float offset[3];
 	};
-	typedef std::vector < TerrainTile  > TerrainRow;
+	std::vector<TileMipGeneric> generic_mips;
+	typedef std::vector < TerrainTile* > TerrainRow;
 	typedef std::vector < TerrainRow > Terrain2D;
 
 	bool BuildRoad();
-	bool BuildMIPEdge(TerrainTile *tile,int i,int j,int mip_level,int lower_level,int nsew);
-	bool BuildTile(TerrainTile *tile,int i,int j,int mip_level);
+	bool BuildMIPEdge(MIPEdge *edge,int mip_level,int lower_level,int nsew);
+	bool BuildTile(TerrainTile *tile,int i,int j);
+	bool BuildTileMip(TerrainTile *tile,int i,int j,int mip_level);
 	void ReleaseIndexBuffers();
 
 	Terrain2D tiles;
-	unsigned TilePosToIndex(int i,int j,int x,int y) const;
+void ClearTiles();
+	unsigned TilePosToIndex(int x,int y,int tile_size) const;
 
 	float cloud_scales[3];
 	float cloud_offset[3];
@@ -234,6 +270,9 @@ protected:
 	float max_fade_distance_metres;
 	
 	unsigned last_overall_checksum;
+	unsigned last_buffer_checksum;
+	unsigned GetBufferChecksum();
+	void RebuildBuffers();
 };
 #ifdef _MSC_VER
 	#pragma warning(pop)

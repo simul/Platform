@@ -131,18 +131,19 @@ float GetFramerate()
 	return framerate;
 }
 
-void CheckGLError()
+void CheckGLError(const char *filename,int line_number)
 {
 	if(int err=glGetError()!=0)
 	{
-		CheckGLError(err);
+		CheckGLError(filename,line_number,err);
 	}
 }
 
-void CheckGLError(int err)
+void CheckGLError(const char *filename,int line_number,int err)
 {
 	if(err)
 	{
+		std::cerr<<filename<<" ("<<line_number<<"): ";
 		const char *c=(const char*)gluErrorString(err);
 		if(c)
 			std::cerr<<std::endl<<c<<std::endl;
@@ -166,6 +167,7 @@ void CalcCameraPosition(float *cam_pos,float *cam_dir)
 {
 	simul::math::Matrix4x4 modelview;
 	glGetFloatv(GL_MODELVIEW_MATRIX,modelview.RowPointer(0));
+		ERROR_CHECK
 	simul::math::Matrix4x4 inv;
 	modelview.Inverse(inv);
 	cam_pos[0]=inv(3,0);
@@ -180,17 +182,24 @@ void CalcCameraPosition(float *cam_pos,float *cam_dir)
 }
 bool RenderAngledQuad(const float *dir,float half_angle_radians)
 {
+		ERROR_CHECK
 	float cam_dir[3],cam_pos[3];
 	CalcCameraPosition(cam_pos,cam_dir);
 	float Yaw=atan2(dir[0],dir[1]);
 	float Pitch=asin(dir[2]);
     glMatrixMode(GL_MODELVIEW);
+		ERROR_CHECK
     glPushMatrix();
+		ERROR_CHECK
 	//glLoadIdentity();
 	simul::math::Matrix4x4 modelview;
+		ERROR_CHECK
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
+		ERROR_CHECK
 	glRotatef(180.f*Yaw/pi,0.0f,0.0f,-1.0f);
+		ERROR_CHECK
 	glRotatef(180.f*Pitch/pi,1.0f,0.0f,0.0f);
+		ERROR_CHECK
 	glGetFloatv(GL_MODELVIEW_MATRIX,modelview.RowPointer(0));
 		ERROR_CHECK
     glDisable(GL_ALPHA_TEST);

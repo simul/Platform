@@ -20,7 +20,7 @@ public:
 	virtual void RestoreDeviceObjects(void *device);
 	virtual void InvalidateDeviceObjects();
 	virtual void RenderFlare(float exposure,const float *dir,const float *light);
-	virtual void ReloadShaders();
+	virtual void RecompileShaders();
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	void SetFlare(LPDIRECT3DTEXTURE9 tex,float rad);
 protected:
