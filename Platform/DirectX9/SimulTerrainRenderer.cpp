@@ -53,14 +53,20 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	,skyInterface(NULL)
 	,height_texture(NULL)
 	,rock_height_texture(NULL)
-	,soil_depth_texture(NULL)
+	,temp_texture(NULL)
 	,water_texture(NULL)
+	,flux_texture(NULL)
 	,show_wireframe(false)
 	,rebuild_effect(true)
 	,y_vertical(true)
 	,max_fade_distance_metres(300000.f)
 	,last_overall_checksum(0)
 	,last_buffer_checksum(0)
+	,highlight_pos(0,0,0)
+	,last_highlight_pos(0,0,0)
+	,left_mouse(false)
+	,right_mouse(false)
+	,tool_radius_metres(2000.f)
 {
 	heightmap=new simul::terrain::HeightMapNode();
 	heightMapInterface=heightmap.get();
@@ -105,26 +111,34 @@ bool SimulTerrainRenderer::MakeMapTexture()
 	int size=heightmap->GetPageSize()-1;
 	SAFE_RELEASE(rock_height_texture);
 	SAFE_RELEASE(height_texture);
-	SAFE_RELEASE(soil_depth_texture);
+	SAFE_RELEASE(temp_texture);
 	SAFE_RELEASE(water_texture);
+	SAFE_RELEASE(flux_texture);
 	int mips=heightmap->GetNumMipMapLevels();
 	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&height_texture));
 	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&rock_height_texture));
-	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&soil_depth_texture));
+	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&temp_texture));
 	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&water_texture));
+	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&flux_texture));
 
 	
 	int terrain_size=heightmap->GetPageSize()-1;
 	LPDIRECT3DSURFACE9						pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9						pRenderTarget=NULL;
 	V_CHECK(m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget));
+
 	water_texture->GetSurfaceLevel(0,&pRenderTarget);
 	V_CHECK(m_pd3dDevice->SetRenderTarget(0,pRenderTarget));
 	m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x00000000,1.0f,0L);
-	V_CHECK(m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget));
-	SAFE_RELEASE(pOldRenderTarget);
 	SAFE_RELEASE(pRenderTarget);
 
+	flux_texture->GetSurfaceLevel(0,&pRenderTarget);
+	V_CHECK(m_pd3dDevice->SetRenderTarget(0,pRenderTarget));
+	m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x00000000,1.0f,0L);
+	SAFE_RELEASE(pRenderTarget);
+
+	V_CHECK(m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget));
+	SAFE_RELEASE(pOldRenderTarget);
 
 	/*
 	int skip=1;
@@ -292,20 +306,105 @@ void SimulTerrainRenderer::GpuMakeNormals()
 	D3DXHANDLE soilTexture					=pRenderHeightmapEffect->GetParameterByName(NULL,"soilTexture");
 	D3DXHANDLE makeNormalsTechnique			=pRenderHeightmapEffect->GetTechniqueByName("height_to_normals");
 	{
-	/*	SAFE_RELEASE(height_texture);
-		HRESULT hr=(m_pd3dDevice->CreateTexture(	terrain_size,
-													terrain_size,
-													1,
-													D3DUSAGE_RENDERTARGET,
-													D3DFMT_A32B32G32R32F,
-													D3DPOOL_DEFAULT,
-													&height_texture,
-													NULL	));*/
 		height_texture->GetSurfaceLevel(0,&pRenderTarget);
 		m_pd3dDevice->SetRenderTarget(0,pRenderTarget);
 		RenderTexture(m_pd3dDevice,0,0,terrain_size,terrain_size,NULL,pRenderHeightmapEffect,makeNormalsTechnique);
-		SAFE_RELEASE(pRenderTarget);
 	}
+	// Now copy to heightmap
+	if(0)
+	{
+		LPDIRECT3DSURFACE9 offscreenSurface;
+		V_CHECK(m_pd3dDevice->CreateOffscreenPlainSurface( terrain_size, terrain_size, D3DFMT_A32B32G32R32F, D3DPOOL_SYSTEMMEM, &offscreenSurface, NULL ));
+		V_CHECK(m_pd3dDevice->GetRenderTargetData( pRenderTarget, offscreenSurface ))
+        // Here we have data in offscreenSurface.
+        D3DLOCKED_RECT lockedRect;
+        RECT rect;
+        rect.left = 0;
+        rect.right = terrain_size;
+        rect.top = 0;
+        rect.bottom = terrain_size;
+        // Lock the surface to read pixels
+        V_CHECK(offscreenSurface->LockRect( &lockedRect, &rect, D3DLOCK_READONLY));
+		
+		heightmap->SetPageSize(terrain_size+1);
+		heightmap->GetData();
+		heightmap->SetData((const float*)lockedRect.pBits,lockedRect.Pitch/4/sizeof(float),4);
+		offscreenSurface->UnlockRect();
+		SAFE_RELEASE(offscreenSurface);
+	}
+	SAFE_RELEASE(pRenderTarget);
+}
+
+void SimulTerrainRenderer::GpuApplyTool(float time_step)
+{
+	HRESULT hr=S_OK;
+	if(!m_pd3dDevice)
+		return;
+	if(highlight_pos.x==0&&
+		highlight_pos.y==0&&highlight_pos.z==0)
+		return;
+	int terrain_size=heightmap->GetPageSize()-1;
+	LPDIRECT3DTEXTURE9				out_texture=NULL;
+	static float st=0.02f;
+	float strength=st;
+	// input: height_texture, including normals.
+	// output: modified heightmap.
+	// post-process: convert to new height_texture, including normals
+	const char *technique_name="";
+	switch(toolType)
+	{
+	case RAISE_TERRAIN:
+		technique_name="raise_terrain";
+		strength*=tool_radius_metres;
+		break;
+	case FLATTEN_TERRAIN:
+		technique_name="flatten_terrain";
+		break;
+	default:
+		return;
+	};
+	LPDIRECT3DSURFACE9						pOldRenderTarget=NULL;
+	LPDIRECT3DSURFACE9						pRenderTarget=NULL;
+	D3DXHANDLE gridSize						=pRenderHeightmapEffect->GetParameterByName(NULL,"gridSize");
+	pRenderHeightmapEffect->SetFloat(gridSize,(float)terrain_size);
+	D3DXHANDLE toolTechnique				=pRenderHeightmapEffect->GetTechniqueByName(technique_name);
+	D3DXHANDLE heightTexture				=pRenderHeightmapEffect->GetParameterByName(NULL,"heightTexture");
+	D3DXHANDLE toolCentre					=pRenderHeightmapEffect->GetParameterByName(NULL,"toolCentre");
+	D3DXHANDLE toolRadius					=pRenderHeightmapEffect->GetParameterByName(NULL,"toolRadius");
+	D3DXHANDLE toolStrength					=pRenderHeightmapEffect->GetParameterByName(NULL,"toolStrength");
+	D3DXHANDLE eightOffsets					=pRenderHeightmapEffect->GetParameterByName(NULL,"eight_offsets");
+	D3DXHANDLE offsetSize					=pRenderHeightmapEffect->GetParameterByName(NULL,"offsetSize");
+
+	D3DXVECTOR4 eight_offsets[8];
+	eight_offsets[0]=D3DXVECTOR4( 0.f, 1.f,1.f,0.f);
+	eight_offsets[1]=D3DXVECTOR4(-1.f, 0.f,1.f,0.f);
+	eight_offsets[2]=D3DXVECTOR4( 1.f, 0.f,1.f,0.f);
+	eight_offsets[3]=D3DXVECTOR4( 0.f,-1.f,1.f,0.f);
+	eight_offsets[4]=D3DXVECTOR4(-1.f, 1.f,1.404f,0.f); 
+	eight_offsets[5]=D3DXVECTOR4(-1.f,-1.f,1.404f,0.f);
+	eight_offsets[6]=D3DXVECTOR4( 1.f, 1.f,1.404f,0.f);
+	eight_offsets[7]=D3DXVECTOR4( 1.f,-1.f,1.404f,0.f);
+	pRenderHeightmapEffect->SetVectorArray(eightOffsets,eight_offsets,8);
+	pRenderHeightmapEffect->SetFloat(toolRadius,tool_radius_metres/heightmap->GetPageWorldX());
+	pRenderHeightmapEffect->SetFloat(toolStrength,strength);
+	pRenderHeightmapEffect->SetFloat(offsetSize,1.f/(float)terrain_size);
+	D3DXVECTOR4 tool_texc(highlight_pos.x/heightmap->GetPageWorldX()-0.5f/(float)terrain_size,
+		highlight_pos.z/heightmap->GetPageWorldX()-0.5f/(float)terrain_size,0,0);
+	pRenderHeightmapEffect->SetVector(toolCentre,&tool_texc);
+
+	pRenderHeightmapEffect->SetTexture(heightTexture,height_texture);
+	hr=m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget);
+	{
+		temp_texture->GetSurfaceLevel(0,&pRenderTarget);
+		hr=m_pd3dDevice->SetRenderTarget(0,pRenderTarget);
+		RenderTexture(m_pd3dDevice,0,0,terrain_size,terrain_size,NULL,pRenderHeightmapEffect,toolTechnique);
+	}
+	pRenderHeightmapEffect->SetTexture(heightTexture,temp_texture);
+	GpuMakeNormals();
+	hr=m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
+	SAFE_RELEASE(pRenderTarget);
+	SAFE_RELEASE(pOldRenderTarget);
+	SAFE_RELEASE(out_texture);
 }
 
 void SimulTerrainRenderer::GpuThermalErosion(float time_step)
@@ -314,7 +413,6 @@ void SimulTerrainRenderer::GpuThermalErosion(float time_step)
 	if(!m_pd3dDevice)
 		return;
 	int terrain_size=heightmap->GetPageSize()-1;
-	LPDIRECT3DTEXTURE9				out_texture=NULL;
 	// input: height_texture, including normals.
 	// output: eroded heightmap.
 	// post-process: convert to new height_texture, including normals
@@ -327,36 +425,42 @@ void SimulTerrainRenderer::GpuThermalErosion(float time_step)
 	D3DXHANDLE heightTexture				=pRenderHeightmapEffect->GetParameterByName(NULL,"heightTexture");
 	D3DXHANDLE addTexture					=pRenderHeightmapEffect->GetParameterByName(NULL,"addTexture");
 	D3DXHANDLE talusTangent					=pRenderHeightmapEffect->GetParameterByName(NULL,"talusTangent");
+	D3DXHANDLE eightOffsets					=pRenderHeightmapEffect->GetParameterByName(NULL,"eight_offsets");
+	D3DXHANDLE offsetSize					=pRenderHeightmapEffect->GetParameterByName(NULL,"offsetSize");
+
+	D3DXVECTOR4 eight_offsets[8];
+	eight_offsets[0]=D3DXVECTOR4( 0.f, 1.f,1.f,0.f);
+	eight_offsets[1]=D3DXVECTOR4(-1.f, 0.f,1.f,0.f);
+	eight_offsets[2]=D3DXVECTOR4( 1.f, 0.f,1.f,0.f);
+	eight_offsets[3]=D3DXVECTOR4( 0.f,-1.f,1.f,0.f);
+	eight_offsets[4]=D3DXVECTOR4(-1.f, 1.f,1.404f,0.f); 
+	eight_offsets[5]=D3DXVECTOR4(-1.f,-1.f,1.404f,0.f);
+	eight_offsets[6]=D3DXVECTOR4( 1.f, 1.f,1.404f,0.f);
+	eight_offsets[7]=D3DXVECTOR4( 1.f,-1.f,1.404f,0.f);
+	pRenderHeightmapEffect->SetVectorArray(eightOffsets,eight_offsets,8);
+
+	pRenderHeightmapEffect->SetFloat(offsetSize,1.f/(float)terrain_size);
 	pRenderHeightmapEffect->SetFloat(talusTangent,tan(heightmap->GetTalusAngleDegrees()*3.13159f/180.f));
 	pRenderHeightmapEffect->SetTexture(heightTexture,height_texture);
 	hr=m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget);
 	{
-		hr=(m_pd3dDevice->CreateTexture(	terrain_size,
-											terrain_size,
-											1,
-											D3DUSAGE_RENDERTARGET,
-											D3DFMT_A32B32G32R32F,
-											D3DPOOL_DEFAULT,
-											&out_texture,
-											NULL	));
-		out_texture->GetSurfaceLevel(0,&pRenderTarget);
+		temp_texture->GetSurfaceLevel(0,&pRenderTarget);
 		hr=m_pd3dDevice->SetRenderTarget(0,pRenderTarget);
 		RenderTexture(m_pd3dDevice,0,0,terrain_size,terrain_size,NULL,pRenderHeightmapEffect,thermalErosionTechnique1);
 	}
 	{
-		pRenderHeightmapEffect->SetTexture(heightTexture,height_texture);
-		pRenderHeightmapEffect->SetTexture(addTexture,out_texture);
+		//pRenderHeightmapEffect->SetTexture(heightTexture,temp_texture);
+		pRenderHeightmapEffect->SetTexture(addTexture,temp_texture);
 		SAFE_RELEASE(pRenderTarget);
-		soil_depth_texture->GetSurfaceLevel(0,&pRenderTarget);
-		hr=m_pd3dDevice->SetRenderTarget(0,pRenderTarget);
+		V_CHECK(rock_height_texture->GetSurfaceLevel(0,&pRenderTarget));
+		V_CHECK(m_pd3dDevice->SetRenderTarget(0,pRenderTarget));
 		RenderTexture(m_pd3dDevice,0,0,terrain_size,terrain_size,NULL,pRenderHeightmapEffect,thermalErosionTechnique2);
 	}
-	pRenderHeightmapEffect->SetTexture(heightTexture,soil_depth_texture);
+	pRenderHeightmapEffect->SetTexture(heightTexture,rock_height_texture);
 	GpuMakeNormals();
 	hr=m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
 	SAFE_RELEASE(pRenderTarget);
 	SAFE_RELEASE(pOldRenderTarget);
-	SAFE_RELEASE(out_texture);
 }
 
 void SimulTerrainRenderer::GpuWaterErosion(float time_step)
@@ -385,18 +489,36 @@ void SimulTerrainRenderer::GpuWaterErosion(float time_step)
 	D3DXHANDLE waterTexture					=pRenderHeightmapEffect->GetParameterByName(NULL,"waterTexture");
 	D3DXHANDLE rainfall						=pRenderHeightmapEffect->GetParameterByName(NULL,"rainfall");
 	D3DXHANDLE evaporation					=pRenderHeightmapEffect->GetParameterByName(NULL,"evaporation");
-	pRenderHeightmapEffect->SetTexture(addTexture,water_texture);
+	pRenderHeightmapEffect->SetTexture(waterTexture,water_texture);
 	pRenderHeightmapEffect->SetTexture(heightTexture,height_texture);
+	pRenderHeightmapEffect->SetTexture(addTexture,flux_texture);
 	pRenderHeightmapEffect->SetFloat(rainfall,0.05*heightmap->GetRainfall());
 	pRenderHeightmapEffect->SetFloat(evaporation,0.01*heightmap->GetEvaporation());
+	D3DXHANDLE offsetSize					=pRenderHeightmapEffect->GetParameterByName(NULL,"offsetSize");
+	D3DXHANDLE eightOffsets					=pRenderHeightmapEffect->GetParameterByName(NULL,"eight_offsets");
+
+	D3DXVECTOR4 eight_offsets[8];
+	eight_offsets[0]=D3DXVECTOR4( 0.f, 1.f,1.f,0.f);
+	eight_offsets[1]=D3DXVECTOR4(-1.f, 0.f,1.f,0.f);
+	eight_offsets[2]=D3DXVECTOR4( 1.f, 0.f,1.f,0.f);
+	eight_offsets[3]=D3DXVECTOR4( 0.f,-1.f,1.f,0.f);
+	eight_offsets[4]=D3DXVECTOR4(-1.f, 1.f,1.404f,0.f); 
+	eight_offsets[5]=D3DXVECTOR4(-1.f,-1.f,1.404f,0.f);
+	eight_offsets[6]=D3DXVECTOR4( 1.f, 1.f,1.404f,0.f);
+	eight_offsets[7]=D3DXVECTOR4( 1.f,-1.f,1.404f,0.f);
+	pRenderHeightmapEffect->SetVectorArray(eightOffsets,eight_offsets,8);
 	hr=m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget);
+
+
+
 	{
-		soil_depth_texture->GetSurfaceLevel(0,&pRenderTarget);
+		temp_texture->GetSurfaceLevel(0,&pRenderTarget);
 		hr=m_pd3dDevice->SetRenderTarget(0,pRenderTarget);
 		RenderTexture(m_pd3dDevice,0,0,terrain_size,terrain_size,NULL,pRenderHeightmapEffect,hydraulicErosionTechnique1);
 	}
+	std::swap(temp_texture,flux_texture);
 	{
-		pRenderHeightmapEffect->SetTexture(addTexture,soil_depth_texture);
+		pRenderHeightmapEffect->SetTexture(addTexture,flux_texture);
 		SAFE_RELEASE(pRenderTarget);
 		water_texture->GetSurfaceLevel(0,&pRenderTarget);
 		hr=m_pd3dDevice->SetRenderTarget(0,pRenderTarget);
@@ -405,11 +527,11 @@ void SimulTerrainRenderer::GpuWaterErosion(float time_step)
 	{
 		pRenderHeightmapEffect->SetTexture(addTexture,water_texture);
 		SAFE_RELEASE(pRenderTarget);
-		soil_depth_texture->GetSurfaceLevel(0,&pRenderTarget);
+		temp_texture->GetSurfaceLevel(0,&pRenderTarget);
 		hr=m_pd3dDevice->SetRenderTarget(0,pRenderTarget);
 		RenderTexture(m_pd3dDevice,0,0,terrain_size,terrain_size,NULL,pRenderHeightmapEffect,hydraulicErosionTechnique3);
 	}
-	pRenderHeightmapEffect->SetTexture(heightTexture,soil_depth_texture);
+	pRenderHeightmapEffect->SetTexture(heightTexture,temp_texture);
 	GpuMakeNormals();
 	hr=m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
 	SAFE_RELEASE(pOldRenderTarget);
@@ -803,7 +925,8 @@ bool SimulTerrainRenderer::InvalidateDeviceObjects()
 	cloud_textures=NULL;
 	SAFE_RELEASE(height_texture);
 	SAFE_RELEASE(rock_height_texture);
-	SAFE_RELEASE(soil_depth_texture);
+	SAFE_RELEASE(temp_texture);
+	SAFE_RELEASE(flux_texture);
 	SAFE_RELEASE(water_texture);
 	return (hr==S_OK);
 }
@@ -828,25 +951,26 @@ bool SimulTerrainRenderer::Render()
 	PIXBeginNamedEvent(0xFF00FF00,"SimulTerrainRenderer::Render");
 	HRESULT hr=InternalRender(false);
 	PIXEndNamedEvent();
-
 	if(highlight_pos.x+highlight_pos.y+highlight_pos.z!=0)
 	{
-		static float cc=100.f;
-		float pos[13*3];
-		for(int i=0;i<13;i++)
+		static float cc=1000.f;
+		static float dz=1.f;
+		float pos[33*3];
+		for(int i=0;i<33;i++)
 		{
 			float angle=2.f*3.14159f*(float)i/12.f;
 			float dx=cc*cos(angle);
 			float dy=cc*sin(angle);
 			pos[i*3+0]=highlight_pos.x+dx;
 			pos[i*3+1]=highlight_pos.z+dy;
-			pos[i*3+2]=highlight_pos.y;//z;
+			float z=heightmap->GetHeightAt(pos[i*3+0],pos[i*3+1]);
+			pos[i*3+2]=z+dz;
 			if(y_vertical)
 			{
 				std::swap(pos[i*3+1],pos[i*3+2]);
 			}
 		}
-		//RenderLines(m_pd3dDevice,12,pos);
+		RenderLines(m_pd3dDevice,12,pos);
 	}
 	return (hr==S_OK);
 }
@@ -886,9 +1010,10 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 		m_pTerrainEffect->SetTechnique( m_hTechniqueTerrain );
 	D3DXMATRIX tmp1,tmp2,wvp,w,ident;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
-	cam_pos.x=tmp1._41;
-	cam_pos.y=tmp1._42;
-	cam_pos.z=tmp1._43;
+	GetCameraPosVector(view,y_vertical,cam_pos,cam_dir);
+//	cam_pos.x=tmp1._41;
+//	cam_pos.y=tmp1._42;
+//	cam_pos.z=tmp1._43;
 	D3DXMatrixMultiply(&tmp2,&view,&proj);
 	D3DXMatrixTranspose(&wvp,&tmp2);
 	D3DXMatrixIdentity(&ident);
@@ -1072,6 +1197,8 @@ bool SimulTerrainRenderer::RenderMap(int width)
 	
 	D3DXHANDLE param_altitudeBase	=m_pTerrainEffect->GetParameterByName(NULL,"altitudeBase");
 	D3DXHANDLE param_altitudeRange	=m_pTerrainEffect->GetParameterByName(NULL,"altitudeRange");
+	D3DXHANDLE erosionTexture		=m_pTerrainEffect->GetParameterByName(NULL,"erosionTexture");
+	D3DXHANDLE fluxTexture			=m_pTerrainEffect->GetParameterByName(NULL,"fluxTexture");
 	float altitudeBase=heightMapInterface->GetBaseAltitude();
 	float altitudeRange=heightMapInterface->GetMaxHeight()-altitudeBase;
 	m_pTerrainEffect->SetFloat	(param_altitudeBase		,altitudeBase);
@@ -1079,6 +1206,8 @@ bool SimulTerrainRenderer::RenderMap(int width)
 	m_pTerrainEffect->SetTexture(elevationMapTexture	,height_texture);
 	m_pTerrainEffect->SetTexture(colourkeyTexture		,colourkey_texture);
 	m_pTerrainEffect->SetTexture(waterTexture			,water_texture);
+	m_pTerrainEffect->SetTexture(fluxTexture			,flux_texture);
+	m_pTerrainEffect->SetTexture(erosionTexture			,temp_texture);
 	HRESULT hr=RenderTexture(m_pd3dDevice,8,8,w,h,height_texture,m_pTerrainEffect,m_hTechniqueMap);
 	return(hr==S_OK);
 }
@@ -1109,8 +1238,10 @@ simul::terrain::HeightMapNode *SimulTerrainRenderer::GetHeightMap()
 	return heightmap.get();
 }
 
-void SimulTerrainRenderer::Highlight(const float *x,const float *d)
+void SimulTerrainRenderer::Highlight(const float *x,const float *d,bool left,bool right)
 {
+	left_mouse=left;
+	right_mouse=right;
 	simul::math::Vector3 X(x);
 	simul::math::Vector3 D(d);
 	D.Normalize();
@@ -1120,6 +1251,7 @@ void SimulTerrainRenderer::Highlight(const float *x,const float *d)
 		std::swap(X.y,X.z);
 		std::swap(D.y,D.z);
 	}
+	last_highlight_pos=highlight_pos;
 	highlight_pos.x=highlight_pos.y=highlight_pos.z=0;
 	if(heightMapInterface->Collide(X,D,I))
 	{
@@ -1140,10 +1272,16 @@ void SimulTerrainRenderer::Update(float dt)
 	{
 		//RestoreDeviceObjects(m_pd3dDevice);
 	}
-	if(ThermalErosion)
-		GpuThermalErosion(dt);
+	if(!pRenderHeightmapEffect)
+		return;
 	if(WaterErosion)
 		GpuWaterErosion(dt);
+	if(left_mouse&&toolType!=SELECT)
+	{
+		GpuApplyTool(dt);
+	}
+	if(ThermalErosion)
+		GpuThermalErosion(dt);
 }
 
 void SimulTerrainRenderer::SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb)

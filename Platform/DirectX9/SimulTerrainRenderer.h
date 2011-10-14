@@ -41,6 +41,10 @@ namespace simul
 		class CloudShadowCallback;
 	}
 }
+enum ToolType
+{
+	SELECT=0,RAISE_TERRAIN=1,LOWER_TERRAIN,FLATTEN_TERRAIN
+};
 SIMUL_DIRECTX9_EXPORT_CLASS SimulTerrainRenderer:public simul::terrain::BaseTerrainRenderer
 {
 public:
@@ -67,7 +71,7 @@ public:
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si){skyInterface=si;}
 	simul::terrain::HeightMapInterface *GetHeightMapInterface();
 	simul::terrain::HeightMapNode *GetHeightMap();
-	void Highlight(const float *x,const float *d);
+	void Highlight(const float *x,const float *d,bool left_mouse=false,bool right_mouse=false);
 	void GPUGenerateHeightmap();
 	void SetCloudScales(const float *s)
 	{
@@ -111,7 +115,13 @@ public:
 	}
 	void TerrainModified();
 	const float *GetHighlightPos() const{return highlight_pos;}
+	void SetTool(ToolType t){toolType=t;}
+	void GpuApplyTool(float time_step);
+	void SetToolRadius(float r_metres){tool_radius_metres=r_metres;}
 protected:
+	ToolType toolType;
+	bool left_mouse,right_mouse;
+	float tool_radius_metres;
 	int LIGHTING_PASS;
 	int LIGHTING_PASS_WITH_SHADOWS;
 	int WIREFRAME_PASS;
@@ -134,8 +144,9 @@ protected:
 
 	LPDIRECT3DTEXTURE9		height_texture;
 	LPDIRECT3DTEXTURE9		rock_height_texture;
-	LPDIRECT3DTEXTURE9		soil_depth_texture;
+	LPDIRECT3DTEXTURE9		temp_texture;
 	LPDIRECT3DTEXTURE9		water_texture;
+	LPDIRECT3DTEXTURE9		flux_texture;
 	bool MakeMapTexture();
 
 	LPDIRECT3DTEXTURE9		road_texture;
@@ -169,10 +180,11 @@ protected:
 	D3DXHANDLE				cloudTexture2;
 	
 	D3DXMATRIX				view,proj;
-	D3DXVECTOR3				cam_pos;
+	D3DXVECTOR3				cam_pos,cam_dir;
 	LPDIRECT3DVERTEXBUFFER9	mainVertexBuffer;
 
 	D3DXVECTOR3				highlight_pos;
+	D3DXVECTOR3				last_highlight_pos;
 	// A MIP edge joins a higher-resolution MIP to a lower-resolution one.
 	// The inner vertices come from the main grid.
 	// The outer vertices are interpolations.

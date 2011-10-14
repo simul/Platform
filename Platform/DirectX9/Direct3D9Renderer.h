@@ -18,7 +18,7 @@ public:
 	virtual LRESULT MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing)=0;
 	virtual void    OnLostDevice()=0;
 	virtual void    OnDestroyDevice()=0;
-	virtual const TCHAR *GetDebugText() const=0;
+	virtual const char *GetDebugText() const=0;
 };
 #endif
 
@@ -62,6 +62,8 @@ public:
 	SimulTerrainRenderer *GetSimulTerrainRenderer(){return simulTerrainRenderer.get();}
 	void SetShowOSD(bool s);
 	void SetCamera(simul::camera::Camera *c);
+	//! For picking
+	void SetMousePosition(int x,int y,bool left,bool right,bool middle);
 //D3DCallbackInterface:
 	bool	IsDeviceAcceptable(D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,D3DFORMAT BackBufferFormat, bool bWindowed);
 	bool    ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings);
@@ -82,8 +84,10 @@ public:
 	void	SetYVertical(bool y);
 	void	RecompileShaders();
 protected:
+	bool left_mouse,right_mouse,middle_mouse;
 	HRESULT RestoreDeviceObjects(IDirect3DDevice9* pDevice);
 	simul::camera::Camera *camera;
+	D3DXVECTOR4 mouse_dir_viewspace;
 	float aspect;
 	bool device_reset;
 	bool y_vertical;
@@ -95,7 +99,7 @@ protected:
 	simul::base::SmartPtr<SimulWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulTerrainRenderer> simulTerrainRenderer;
 	simul::base::SmartPtr<SimulHDRRenderer> simulHDRRenderer;
-	const TCHAR *GetDebugText() const;
+	const char *GetDebugText() const;
 	int width,height;
 	float time_mult;
 };

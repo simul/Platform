@@ -31,9 +31,9 @@ Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
 	,simulHDRRenderer(NULL)
 	,simulTerrainRenderer(NULL)
 	,y_vertical(true)
-	,ShowCloudCrossSections(true)
+	,ShowCloudCrossSections(false)
 	,render_light_volume(false)
-	,ShowFades(true)
+	,ShowFades(false)
 	,celestial_display(false)
 	,ShowTerrain(true)
 	,ShowMap(false)
@@ -41,6 +41,10 @@ Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
 	,time_mult(0.f)
 	,ShowFlares(true)
 	,device_reset(true)
+	,left_mouse(false)
+	,right_mouse(false)
+	,middle_mouse(false)
+	,camera(NULL)
 {
 	simulWeatherRenderer=new SimulWeatherRenderer(license_key,true,640,360,true,true,false,false,false);
 	if(simulWeatherRenderer)
@@ -101,6 +105,14 @@ void Direct3D9Renderer::SetShowOSD(bool s)
 void Direct3D9Renderer::SetCamera(simul::camera::Camera *c)
 {
 	camera=c;
+}
+
+void Direct3D9Renderer::SetMousePosition(int x,int y,bool left,bool right,bool middle)
+{
+	left_mouse=left;
+	right_mouse=right;
+	middle_mouse=middle;
+	mouse_dir_viewspace=D3DXVECTOR4(2.f*x/(float)width-1.f,2.f*(height-y)/(float)height-1.f,1.f,1.f);
 }
 
 HRESULT Direct3D9Renderer::OnResetDevice(IDirect3DDevice9* , const D3DSURFACE_DESC* pBackBufferSurfaceDesc)
@@ -256,6 +268,19 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	// Make left-handed matrix if y is vertical
 	D3DXMATRIX proj(camera->MakeProjectionMatrix(1.f,250000.f,aspect,y_vertical));
 	pd3dDevice->SetTransform(D3DTS_PROJECTION,&proj);
+	if(simulTerrainRenderer)
+	{
+		//
+		D3DXMATRIX viewproj=proj*view;
+		D3DXMATRIX invView,invProj;
+		D3DXMatrixInverse(&invProj,NULL,&proj);
+		D3DXMatrixInverse(&invView,NULL,&view);
+		D3DXVECTOR4 mouse_dir_worldspace,mouse_dir_camspace;
+		D3DXVec4Transform(&mouse_dir_camspace,&mouse_dir_viewspace,&invProj);
+		mouse_dir_camspace.w=0;
+		D3DXVec4Transform(&mouse_dir_worldspace,&mouse_dir_camspace,&invView);
+		simulTerrainRenderer->Highlight(camera->GetPosition(),mouse_dir_worldspace,left_mouse,right_mouse);
+	}
 	if(simulHDRRenderer)
 	{
 	// Don't need to clear D3DCLEAR_TARGET as we'll be filling every pixel:
@@ -368,21 +393,21 @@ void Direct3D9Renderer::OnDestroyDevice()
 	SAFE_RELEASE(m_pHudVertexDecl);
 }
 
-const TCHAR *Direct3D9Renderer::GetDebugText() const
+const char *Direct3D9Renderer::GetDebugText() const
 {
-	static TCHAR debug_text[512];
+	static char debug_text[512];
 	if(!show_osd)
-		return (_T(""));
+		return ("");
 	tstring weather_text;
 	if(!simulWeatherRenderer.get())
-		return (_T(""));
+		return ("");
 #ifdef _UNICODE
 	weather_text=simul::base::StringToWString(simulWeatherRenderer->GetDebugText());
 #else
 	weather_text=simulWeatherRenderer->GetDebugText();
 #endif
 	if(simulWeatherRenderer)
-		stprintf_s(debug_text,256,_T("DX9: %s\nFramerate %3.3g Render time %3.3g weather %3.3g hdr %3.3g\nUpdate time %3.3g"),weather_text.c_str(),framerate,render_timing,weather_timing,hdr_timing,update_timing);
+		sprintf_s(debug_text,256,("DX9: %s\nFramerate %3.3g Render time %3.3g weather %3.3g hdr %3.3g\nUpdate time %3.3g"),weather_text.c_str(),framerate,render_timing,weather_timing,hdr_timing,update_timing);
 	return debug_text;
 }
 

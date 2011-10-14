@@ -334,7 +334,6 @@ bool SimulGL2DCloudRenderer::Create()
 
 	cloudNode->SetSeparateSecondaryLight(true);
 	cloudNode->SetWrap(true);
-	cloudNode->SetThinLayer(true);
 
 	cloudNode->SetRandomSeed(239);
 

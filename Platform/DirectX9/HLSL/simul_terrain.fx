@@ -44,6 +44,28 @@ sampler water_texture = sampler_state
 	AddressV = Clamp;
 };
 
+texture fluxTexture;
+sampler flux_texture = sampler_state
+{
+    Texture = <fluxTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
+texture erosionTexture;
+sampler erosion_texture = sampler_state
+{
+    Texture = <erosionTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
 texture cloudTexture1;
 sampler3D cloud_texture1= sampler_state 
 {
@@ -136,6 +158,10 @@ float4 PS_Map(mapVertexOutput IN) : color
 	float3 water_colour=float3(0.2,0.7,1.0);
 	water_colour=lerp(water_colour,float3(1.0,0.0,0.0),saturate(W.z/(W.w+0.001)));
 	colour=lerp(colour,water_colour,saturate(W.w/10.0));
+	float4 flux_texel=saturate(tex2D(flux_texture,IN.texCoordDiffuse.xy));
+	colour=flux_texel;//lerp(colour,flux_texel,dot(flux_texel,float4(1.0,1.0,1.0,1.0)));
+	//float4 er_texel=tex2D(erosion_texture,IN.texCoordDiffuse.xy);
+	//colour=lerp(colour,float3(0,0,0),saturate(er_texel.x/1.0));
     return float4(colour.rgb,1.f);
 }
 
@@ -186,7 +212,7 @@ float4 PS_Main( vertexOutput IN) : color
 {
 	float2 height_soil=tex2D(height_texture,IN.heightmap_texc.xy).xw;
 	float3 final=tex2D(mainTexture,IN.texCoordDiffuse.xy);
-	final=lerp(float3(0.5,0.45,0.3),final,saturate(height_soil.y/1.0));
+	final=lerp(float3(0.5,0.45,0.3),final,saturate(height_soil.y/100.0));
 	float4 water_texel=tex2D(water_texture,IN.heightmap_texc.xy);
 	float3 water_colour=lerp(float3(0.1,0.2,0.5),float3(1.0,1.0,1.0),saturate(0.1*water_texel.x));
 	water_colour=lerp(water_colour,float3(1.0,0.5,0.0),saturate(water_texel.z/10.0));
@@ -199,7 +225,7 @@ float4 PS_Detail( vertexOutput IN) : color
 {
 	float2 height_soil=tex2D(height_texture,IN.heightmap_texc.xy).xw;
 	float3 final=tex2D(detail_texture,IN.texCoordDiffuse.xy);
-	final=lerp(float3(0.5,0.45,0.3),final,saturate(height_soil.y/1.0));
+	final=lerp(float3(0.5,0.45,0.3),final,saturate(height_soil.y/100.0));
 	float4 water_texel=tex2D(water_texture,IN.heightmap_texc.xy);
 	float3 water_colour=lerp(float3(0.1,0.2,0.5),float3(1.0,1.0,1.0),saturate(0.1*water_texel.x));
 	water_colour=lerp(water_colour,float3(1.0,0.5,0.0),saturate(water_texel.z/10.0));
