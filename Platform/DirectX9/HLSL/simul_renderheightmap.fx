@@ -214,12 +214,14 @@ float4 HydraulicErosionOutPS(v2f IN) : COLOR
 		float4 height_texel_=tex2D(height_texture,t_);
 		float h=water_texel_.w+height_texel_.x;
 		// The difference in height means a difference in pressure.
-		float b_=0.1*max(0.0,H-h);
+		float b_=0.2*max(0.0,H-h);
 		// We want to accumulate the outflow. So we only add up if H>h.
 		outflow+=b_;
 	}
 	float prop=1.0;
 	W+=rainfall;
+	if(t.x==0||t.y==0&&H<0)
+		W-=H;
 	if(outflow>W)
 	{
 		prop=W/outflow;
@@ -250,14 +252,12 @@ float4 HydraulicErosionInPS(v2f IN) : COLOR
 		float4 height_texel_=tex2D(height_texture,t_);
 		float h=flow_texel_.w+height_texel_.x;
 		// The difference in height means a difference in pressure.
-		float b_=0.1*max(0.0,h-H)*flow_texel_.z;
+		float b_=0.2*max(0.0,h-H)*flow_texel_.z;
 		W+=b_;
 		// sediment flows in proportionally to the water, and the sediment density at the offset
 		//sediment+=b_*flow_texel_.y/flow_texel_.w;
 	}
 	//W-=flow_texel.x;
-	if(t.x==0||t.y==0&&H<0)
-		W-=H;
 	if(W<=0)
 		W=0;
 	else

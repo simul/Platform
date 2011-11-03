@@ -55,6 +55,7 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	,rock_height_texture(NULL)
 	,soil_depth_texture(NULL)
 	,water_texture(NULL)
+	,flux_texture(NULL)
 	,show_wireframe(false)
 	,rebuild_effect(true)
 	,y_vertical(true)
@@ -107,25 +108,31 @@ bool SimulTerrainRenderer::MakeMapTexture()
 	SAFE_RELEASE(height_texture);
 	SAFE_RELEASE(soil_depth_texture);
 	SAFE_RELEASE(water_texture);
+	SAFE_RELEASE(flux_texture);
 	int mips=heightmap->GetNumMipMapLevels();
 	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&height_texture));
 	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&rock_height_texture));
 	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&soil_depth_texture));
 	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&water_texture));
+	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&flux_texture));
 
-	
-	int terrain_size=heightmap->GetPageSize()-1;
 	LPDIRECT3DSURFACE9						pOldRenderTarget=NULL;
-	LPDIRECT3DSURFACE9						pRenderTarget=NULL;
 	V_CHECK(m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget));
-	water_texture->GetSurfaceLevel(0,&pRenderTarget);
-	V_CHECK(m_pd3dDevice->SetRenderTarget(0,pRenderTarget));
-	m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x00000000,1.0f,0L);
+	{
+		int terrain_size=heightmap->GetPageSize()-1;
+		LPDIRECT3DSURFACE9						pRenderTarget=NULL;
+		water_texture->GetSurfaceLevel(0,&pRenderTarget);
+		V_CHECK(m_pd3dDevice->SetRenderTarget(0,pRenderTarget));
+		m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x00000000,1.0f,0L);
+		SAFE_RELEASE(pRenderTarget);
+	
+		flux_texture->GetSurfaceLevel(0,&pRenderTarget);
+		V_CHECK(m_pd3dDevice->SetRenderTarget(0,pRenderTarget));
+		m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x00000000,1.0f,0L);
+		SAFE_RELEASE(pRenderTarget);
+	}
 	V_CHECK(m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget));
 	SAFE_RELEASE(pOldRenderTarget);
-	SAFE_RELEASE(pRenderTarget);
-
-
 	/*
 	int skip=1;
 	D3DLOCKED_RECT lockedRect={0};

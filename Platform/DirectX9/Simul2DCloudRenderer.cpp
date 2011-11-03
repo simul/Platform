@@ -163,7 +163,6 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(const char *license_key) :
 
 //	cloudKeyframer=new simul::clouds::CloudKeyframer(cloudInterface,true);
 	cloudKeyframer->SetMake2DTextures(true);
-	cloudKeyframer->SetUse16Bit(false);
 	cloudKeyframer->InitKeyframesFromClouds();
 
 	helper=new simul::clouds::Cloud2DGeometryHelper();

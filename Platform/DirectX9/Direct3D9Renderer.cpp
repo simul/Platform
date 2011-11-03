@@ -48,7 +48,7 @@ Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
 	if(simulHDRRenderer&&simulWeatherRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
-	simulTerrainRenderer=new SimulTerrainRenderer();
+	//simulTerrainRenderer=new SimulTerrainRenderer();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->EnableMoon(true);
 	SetYVertical(y_vertical);

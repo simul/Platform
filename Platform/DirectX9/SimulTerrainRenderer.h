@@ -131,11 +131,13 @@ protected:
 	LPDIRECT3DTEXTURE9		terrain_texture;
 	LPDIRECT3DTEXTURE9		detail_texture;
 	LPDIRECT3DTEXTURE9		colourkey_texture;
-
+// persistent textures:
 	LPDIRECT3DTEXTURE9		height_texture;
+	LPDIRECT3DTEXTURE9		water_texture;
+	LPDIRECT3DTEXTURE9		flux_texture;
+// temporary textures:
 	LPDIRECT3DTEXTURE9		rock_height_texture;
 	LPDIRECT3DTEXTURE9		soil_depth_texture;
-	LPDIRECT3DTEXTURE9		water_texture;
 	bool MakeMapTexture();
 
 	LPDIRECT3DTEXTURE9		road_texture;

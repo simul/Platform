@@ -143,16 +143,6 @@ void SimulGL2DCloudRenderer::FillCloudTextureBlock(
 	int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array)
 {
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[texture_index]);
-	if(cloudKeyframer->GetUse16Bit())
-	{
-		unsigned short *uint16_array=(unsigned short *)uint32_array;
-		glTexSubImage2D(	GL_TEXTURE_3D,0,
-							x,y,
-							w,l,
-							GL_RGBA,GL_UNSIGNED_SHORT_4_4_4_4,
-							uint16_array);
-	}
-	else
 	{
 		glTexSubImage2D(	GL_TEXTURE_3D,0,
 							x,y,

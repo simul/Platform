@@ -121,7 +121,7 @@ bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
 void SimulGLCloudRenderer::FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array)
 {
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[texture_index]);
-	if(cloudKeyframer->GetUse16Bit())
+	if(sizeof(simul::clouds::CloudTexelType)==2)
 	{
 		unsigned short *uint16_array=(unsigned short *)uint32_array;
 		glTexSubImage3D(	GL_TEXTURE_3D,0,
@@ -130,7 +130,7 @@ void SimulGLCloudRenderer::FillCloudTextureBlock(int texture_index,int x,int y,i
 							GL_RGBA,GL_UNSIGNED_SHORT_4_4_4_4,
 							uint16_array);
 	}
-	else
+	else if(sizeof(simul::clouds::CloudTexelType)==4)
 	{
 		glTexSubImage3D(	GL_TEXTURE_3D,0,
 							x,y,z,
@@ -153,9 +153,9 @@ void SimulGLCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_
 		glGenTextures(1,&(cloud_tex[i]));
 		//cloud_tex[i]=tex[i*depth_z];
 		glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
-		if(cloudKeyframer->GetUse16Bit())
+		if(sizeof(GL_UNSIGNED_SHORT)==sizeof(simul::clouds::CloudTexelType))
 			glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA4,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_SHORT,0);
-		else
+		else if(sizeof(GL_UNSIGNED_SHORT)==sizeof(simul::clouds::CloudTexelType))
 			glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_INT,0);
 
 		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -587,11 +587,7 @@ void SimulGLCloudRenderer::RecompileShaders()
 bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 {
 	CreateNoiseTexture();
-
 	RecompileShaders();
-	// Because in this sample we are using 32-bit values in the cloud texture:
-	//cloudKeyframer->SetUserKeyframes(false);
-	cloudKeyframer->SetUse16Bit(false);
 	using namespace simul::clouds;
 	cloudKeyframer->SetBits(CloudKeyframer::DENSITY,CloudKeyframer::BRIGHTNESS,
 		CloudKeyframer::SECONDARY,CloudKeyframer::AMBIENT);
@@ -618,7 +614,7 @@ bool SimulGLCloudRenderer::BuildSphereVBO()
 		float elevation=((float)i-(float)el/2.f)/(float)el*pi;
 		float z=sin(elevation);
 		float ce=cos(elevation);
-		for(int j=0;j<az+1;j++)
+		for(unsigned j=0;j<az+1;j++)
 		{
 			float azimuth=(float)j/(float)az*2.f*pi;
 			vert->x=cos(azimuth)*ce;
