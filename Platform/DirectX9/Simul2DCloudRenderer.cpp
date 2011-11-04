@@ -127,10 +127,11 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(const char *license_key) :
 	cloudInterface=cloudNode.get();
 	
 	cloudInterface->SetWrap(true);
+	cloudInterface->SetThinLayer(true);
 
-	cloudInterface->SetGridLength(512);
-	cloudInterface->SetGridWidth(512);
-	cloudInterface->SetGridHeight(1);
+	cloudInterface->SetGridLength(128);
+	cloudInterface->SetGridWidth(128);
+	cloudInterface->SetGridHeight(2);
 
 	cloudInterface->SetCloudBaseZ(12000.f);
 
@@ -162,7 +163,6 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(const char *license_key) :
 
 //	cloudKeyframer=new simul::clouds::CloudKeyframer(cloudInterface,true);
 	cloudKeyframer->SetMake2DTextures(true);
-	cloudKeyframer->SetUse16Bit(false);
 	cloudKeyframer->InitKeyframesFromClouds();
 
 	helper=new simul::clouds::Cloud2DGeometryHelper();
@@ -325,6 +325,9 @@ void Simul2DCloudRenderer::FillCloudTextureSequentially(int texture_index,int te
 		return;
 	unsigned char *ptr=(unsigned char *)(lockedRect.pBits);
 	ptr+=texel_index*sizeof(unsigned);
+	//unsigned char *src=(unsigned char *)uint32_array;
+	//for(int i=0;i<num_texels*2;i++)
+	//	*ptr++=(*src++);
 	memcpy(ptr,uint32_array,num_texels*sizeof(unsigned));
 	hr=cloud_textures[texture_index]->UnlockRect(0);
 }

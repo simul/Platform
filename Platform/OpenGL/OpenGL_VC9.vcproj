@@ -331,10 +331,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\objload.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\OpenGLRenderer.cpp"
 				>
 			</File>

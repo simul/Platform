@@ -633,7 +633,7 @@ HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 	{
 		V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
 	}
-
+/*
 	struct Vertext
 	{
 		float x,y,z;
@@ -685,7 +685,7 @@ HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 		lines[i*2+1].a=255;
 	}
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,num,lines,(unsigned)sizeof(Vertext));
-	delete [] lines;
+	delete [] lines;*/
 	return hr;
 }
 
@@ -758,7 +758,7 @@ HRESULT RenderAngledQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,D3DXVECTOR3 cam_pos,D3DX
 		{-w, w,	d, 0.f	,1.f},
 		{-w,-w,	d, 0.f	,0.f},
 	};
-	m_pd3dDevice->SetFVF(D3DFVF_XYZ | D3DFVF_TEX1);
+	m_pd3dDevice->SetFVF(D3DFVF_XYZ | D3DFVF_TEX0);
 	m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
     hr=m_pd3dDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
      

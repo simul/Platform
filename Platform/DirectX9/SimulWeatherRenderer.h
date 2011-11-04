@@ -148,6 +148,8 @@ public:
 	virtual void EnableLayers(bool clouds3d,bool clouds2d);
 	void EnableRain(bool e=true);
 	float GetTotalBrightness() const;
+	// Connect-up sky, clouds - now in base
+	//void ConnectInterfaces();
 protected:
 	Framebuffer framebuffer;
 	Framebuffer lowdef_framebuffer;
