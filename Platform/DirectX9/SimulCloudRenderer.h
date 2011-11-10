@@ -95,10 +95,11 @@ public:
 	bool CanPerformGPULighting() const;
 	void SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3);
 	void PerformFullGPURelight(int which_texture,float *target_direct_grid,float *target_indirect_grid);
-	void GPUTransferDataToTexture(unsigned char *target_texture
-									,unsigned char *direct_grid
-									,unsigned char *indirect_grid
-									,unsigned char *ambient_grid);
+	void GPUTransferDataToTexture(	int which_texture
+									,unsigned char *target_texture
+									,const unsigned char *direct_grid
+									,const unsigned char *indirect_grid
+									,const unsigned char *ambient_grid);
 	virtual void SetFadeMode(FadeMode f);
 	void SetYVertical(bool y);
 	bool IsYVertical() const{return y_vertical;}

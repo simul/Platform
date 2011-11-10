@@ -1,9 +1,62 @@
-float4x4 lightToDensityMatrix;
+float4x4 transformMatrix;// either lightToDensityMatrix or vice versa;
 
 texture cloudDensityTexture;
+	
 sampler3D cloud_density= sampler_state 
 {
     Texture = <cloudDensityTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+#ifdef WRAP_CLOUDS
+	AddressU = Wrap;
+	AddressV = Wrap;
+#else
+	AddressU = Clamp;
+	AddressV = Clamp;
+#endif
+	AddressW = Clamp;
+	SRGBTexture = 0;
+};
+
+texture inputDirectLightTexture;
+sampler3D direct_light_texture= sampler_state 
+{
+    Texture = <inputDirectLightTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+#ifdef WRAP_CLOUDS
+	AddressU = Wrap;
+	AddressV = Wrap;
+#else
+	AddressU = Clamp;
+	AddressV = Clamp;
+#endif
+	AddressW = Clamp;
+	SRGBTexture = 0;
+};
+texture inputIndirectLightTexture;
+sampler3D indirect_light_texture= sampler_state 
+{
+    Texture = <inputIndirectLightTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+#ifdef WRAP_CLOUDS
+	AddressU = Wrap;
+	AddressV = Wrap;
+#else
+	AddressU = Clamp;
+	AddressV = Clamp;
+#endif
+	AddressW = Clamp;
+	SRGBTexture = 0;
+};
+texture inputAmbientLightTexture;
+sampler3D ambient_light_texture= sampler_state 
+{
+    Texture = <inputAmbientLightTexture>;
     MipFilter = LINEAR;
     MinFilter = LINEAR;
     MagFilter = LINEAR;
@@ -59,7 +112,7 @@ float4 GPULightPS(v2f IN) : COLOR
 	float2 texcoord=IN.texcoord.xy+texCoordOffset;
 	float4 previous_light=tex2D(input_light_texture,texcoord.xy);
 	float3 lightspace_texcoord=float3(texcoord.xy,zPosition);
-	float3 densityspace_texcoord=mul(lightToDensityMatrix,float4(lightspace_texcoord,1.0)).xyz;
+	float3 densityspace_texcoord=mul(transformMatrix,float4(lightspace_texcoord,1.0)).xyz;
 	float4 dens_lookup=tex3D(cloud_density,densityspace_texcoord);
 /*
 	float ff=2.f;
@@ -77,6 +130,19 @@ float4 GPULightPS(v2f IN) : COLOR
     return float4(direct_light,indirect_light,dens_lookup.x,0.25f);
 }
 
+float4 GPUTransformPS(v2f IN): COLOR
+{
+	float2 texcoord=IN.texcoord.xy+texCoordOffset;
+	float3 densityspace_texcoord=float3(texcoord.xy,zPosition);
+	float3 lightspace_texcoord=mul(transformMatrix,float4(densityspace_texcoord,1.0)).xyz;
+	float light_lookup=tex3D(direct_light_texture,lightspace_texcoord).x;
+	float indirect_lookup=tex3D(indirect_light_texture,lightspace_texcoord).x;
+	float ambient_lookup=tex3D(ambient_light_texture,densityspace_texcoord).x;
+	float density=tex3D(cloud_density,densityspace_texcoord).x;
+	float4 result=float4(density,indirect_lookup,light_lookup,ambient_lookup);
+	return result;
+}
+
 technique simul_gpulighting
 {
     pass p0
@@ -88,5 +154,19 @@ technique simul_gpulighting
 		AlphaTestEnable=false;
 		VertexShader = compile vs_3_0 GPULightVS();
 		PixelShader = compile ps_3_0 GPULightPS();
+    }
+}
+
+technique simul_transform_lightgrid
+{
+    pass p0
+    {
+		cullmode = none;
+		ZEnable = false;
+		ZWriteEnable = false;
+		AlphaBlendEnable = false;
+		AlphaTestEnable=false;
+		VertexShader = compile vs_3_0 GPULightVS();
+		PixelShader = compile ps_3_0 GPUTransformPS();
     }
 }
