@@ -93,7 +93,6 @@ public:
 	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array);
 	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *){}
 	bool CanPerformGPULighting() const;
-	void SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3);
 	void PerformFullGPURelight(int which_texture,float *target_direct_grid,float *target_indirect_grid);
 	void GPUTransferDataToTexture(	int which_texture
 									,unsigned char *target_texture

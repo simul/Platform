@@ -114,13 +114,6 @@ float4 GPULightPS(v2f IN) : COLOR
 	float3 lightspace_texcoord=float3(texcoord.xy,zPosition);
 	float3 densityspace_texcoord=mul(transformMatrix,float4(lightspace_texcoord,1.0)).xyz;
 	float4 dens_lookup=tex3D(cloud_density,densityspace_texcoord);
-/*
-	float ff=2.f;
-	previous_light+=tex2D(input_light_texture,texcoord+float2(ff*texCoordOffset.x,0));
-	previous_light+=tex2D(input_light_texture,texcoord-float2(ff*texCoordOffset.x,0));
-	previous_light+=tex2D(input_light_texture,texcoord+float2(0,ff*texCoordOffset.y));
-	previous_light+=tex2D(input_light_texture,texcoord-float2(0,ff*texCoordOffset.y));
-	previous_light/=5.f;*/
 
 	float previous_density=previous_light.z;
 

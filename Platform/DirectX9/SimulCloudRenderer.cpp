@@ -586,23 +586,6 @@ bool SimulCloudRenderer::CanPerformGPULighting() const
 	return GPULightingEnabled;
 }
 
-void SimulCloudRenderer::SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3)
-{
-	for(int i=0;i<16;i++)
-		LightToDensityTransform[i]=Matrix4x4LightToDensityTexcoords[i];
-	simul::math::Matrix m1(4,4);
-	m1=Matrix4x4LightToDensityTexcoords;
-	simul::math::Matrix m2(4,4);
-	m1.Inverse(m2);
-	for(int i=0;i<16;i++)
-		DensityToLightTransform[i]=m2.RowPointer(0)[i];
-	for(int i=0;i<3;i++)
-	{
-		light_gridsizes[i]=light_grid[i];
-		light_extinctions[i]=lightspace_extinctions_float3[i];
-	}
-}
-
 void SimulCloudRenderer::PerformFullGPURelight(int which_texture,
 	float *target_direct_grid,float *target_indirect_grid)
 {
@@ -754,7 +737,7 @@ void SimulCloudRenderer::GPUTransferDataToTexture(int which_texture,
 	// Make the input textures:
 	static unsigned colr=0x00FFFF00;
 	
-	// Make a 32-bit density texture.
+	// Make a 32-bit target texture.
 	if(FAILED(hr=m_pd3dDevice->CreateTexture(cloud_tex_width_x,
 		cloud_tex_length_y,0,D3DUSAGE_RENDERTARGET|D3DUSAGE_AUTOGENMIPMAP,
 		cloud_tex_format,D3DPOOL_DEFAULT,&target_texture,NULL)))
@@ -765,15 +748,15 @@ void SimulCloudRenderer::GPUTransferDataToTexture(int which_texture,
 	hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,colr,1.f,0L);
 	m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
 	
-	// the light textures:
-	if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
-		light_gridsizes[0],light_gridsizes[0],light_gridsizes[2],
-		1,0,D3DFMT_L8,D3DPOOL_MANAGED,&direct_texture)))
-		return;
 	D3DLOCKED_RECT rect;
 	D3DLOCKED_BOX lockedBox;
 	unsigned size2d=4*sizeof(unsigned char)*cloud_tex_width_x*cloud_tex_length_y;
-	unsigned size3d=sizeof(unsigned char)*cloud_tex_width_x*cloud_tex_length_y*cloud_tex_depth_z;
+	unsigned size3d=sizeof(unsigned char)*light_gridsizes[0]*light_gridsizes[1]*light_gridsizes[2];
+	// the light textures:
+	if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
+		light_gridsizes[0],light_gridsizes[1],light_gridsizes[2],
+		1,0,D3DFMT_L8,D3DPOOL_MANAGED,&direct_texture)))
+		return;
 	// Copy the light data to the target 3D grid:
 	direct_texture->LockBox(0,&lockedBox,NULL,NULL);
 	unsigned char *target=(unsigned char*)lockedBox.pBits;
@@ -781,7 +764,7 @@ void SimulCloudRenderer::GPUTransferDataToTexture(int which_texture,
 	direct_texture->UnlockBox(0);
 	
 	if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
-		light_gridsizes[0],light_gridsizes[0],light_gridsizes[2],
+		light_gridsizes[0],light_gridsizes[1],light_gridsizes[2],
 		1,0,D3DFMT_L8,D3DPOOL_MANAGED,&indirect_texture)))
 		return;
 	indirect_texture->LockBox(0,&lockedBox,NULL,NULL);
@@ -790,7 +773,7 @@ void SimulCloudRenderer::GPUTransferDataToTexture(int which_texture,
 	indirect_texture->UnlockBox(0);
 	
 	if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
-		light_gridsizes[0],light_gridsizes[0],light_gridsizes[2]
+		cloud_tex_width_x,cloud_tex_length_y,cloud_tex_depth_z
 		,1,0,D3DFMT_L8,D3DPOOL_MANAGED,&ambient_texture)))
 		return;
 	ambient_texture->LockBox(0,&lockedBox,NULL,NULL);
