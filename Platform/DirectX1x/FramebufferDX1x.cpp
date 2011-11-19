@@ -75,10 +75,7 @@ bool FramebufferDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
 	SAFE_RELEASE(m_pTonemapEffect);
-	if(!m_pTonemapEffect)
-	{
-		B_RETURN(CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx")));
-	}
+	hr=CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx"));
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
 	Exposure				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
 	Gamma					=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
@@ -178,7 +175,7 @@ bool FramebufferDX1x::CreateBuffers()
 		0
 	};
 	SAFE_RELEASE(hdr_buffer_texture);
-	B_RETURN(m_pd3dDevice->CreateTexture2D(	&desc,
+	V_CHECK(m_pd3dDevice->CreateTexture2D(	&desc,
 										NULL,
 										&hdr_buffer_texture
 									))
@@ -186,7 +183,7 @@ bool FramebufferDX1x::CreateBuffers()
 	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
 	//hdr_buffer_texture->GetDesc(&desc);
 	SAFE_RELEASE(hdr_buffer_texture_SRV);
-    B_RETURN(m_pd3dDevice->CreateShaderResourceView(hdr_buffer_texture, NULL, &hdr_buffer_texture_SRV ));
+    V_CHECK(m_pd3dDevice->CreateShaderResourceView(hdr_buffer_texture, NULL, &hdr_buffer_texture_SRV ));
 
  	//desc.Width=Width/4;
 	//desc.Height=Height/4;
@@ -214,7 +211,7 @@ bool FramebufferDX1x::CreateBuffers()
 	desc.MiscFlags = 0;
 	if(fmtDepthTex!=DXGI_FORMAT_UNKNOWN)
 	{
-		B_RETURN(m_pd3dDevice->CreateTexture2D(	&desc,
+		V_CHECK(m_pd3dDevice->CreateTexture2D(	&desc,
 											NULL,
 											&buffer_depth_texture))
 	}
@@ -232,7 +229,7 @@ bool FramebufferDX1x::CreateBuffers()
 	ID3D1xEffectPass *pass=TonemapTechnique->GetPassByIndex(0);
 	assert(pass->IsValid());
 	hr=pass->GetDesc(&PassDesc);
-	B_RETURN(hr);
+	V_CHECK(hr);
 	hr=m_pd3dDevice->CreateInputLayout( decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pBufferVertexDecl);
 
 	static float x=-1.f,y=-1.f;

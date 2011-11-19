@@ -193,25 +193,10 @@ struct Vertex2D_t
 };
 Vertex2D_t *vertices=NULL;
 
-bool Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
+void Simul2DCloudRenderer::ReloadShaders()
 {
-	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr;
-	D3DVERTEXELEMENT9 decl[]=
-	{
-		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
-		{0, 12	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
-		{0, 20	,D3DDECLTYPE_FLOAT4,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
-		{0, 36	,D3DDECLTYPE_FLOAT4,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
-		{0,	52	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
-		{0,	60	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,4},
-		D3DDECL_END()
-	};
-	SAFE_RELEASE(m_pVtxDecl);
-	B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	B_RETURN(CreateNoiseTexture());
-	hr=CreateImageTexture();
-	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_2d.fx"));
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_2d.fxo"));
 
 	m_hTechniqueCloud	=m_pCloudEffect->GetTechniqueByName("simul_clouds_2d");
 
@@ -235,7 +220,27 @@ bool Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
 	cloudDensity2		=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity2");
 	noiseTexture		=m_pCloudEffect->GetParameterByName(NULL,"noiseTexture");
 	imageTexture		=m_pCloudEffect->GetParameterByName(NULL,"imageTexture");
+}
 
+bool Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
+{
+	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	HRESULT hr;
+	D3DVERTEXELEMENT9 decl[]=
+	{
+		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
+		{0, 12	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
+		{0, 20	,D3DDECLTYPE_FLOAT4,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
+		{0, 36	,D3DDECLTYPE_FLOAT4,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
+		{0,	52	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
+		{0,	60	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,4},
+		D3DDECL_END()
+	};
+	SAFE_RELEASE(m_pVtxDecl);
+	B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
+	B_RETURN(CreateNoiseTexture());
+	hr=CreateImageTexture();
+	ReloadShaders();
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 	cloudKeyframer->SetRenderCallback(this);
 	return (hr==S_OK);

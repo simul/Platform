@@ -20,7 +20,17 @@ float HenyeyGreenstein(float g,float cos0)
 	return 0.5*0.079577+0.5*(1.0-g2)/(4.0*pi*pow(1.+g2-2.*g*cos0,1.5));
 }
 
-void main(void)
+vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
+{
+	float BetaRayleigh=0.0596831*(1.0+cos0*cos0);
+	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
+	vec3 BetaTotal=(vec3(BetaRayleigh,BetaRayleigh,BetaRayleigh)+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
+		/(vec3(1.0,1.0,1.0)+inscatter_factor.a*mieRayleighRatio.xyz);
+	vec3 output=BetaTotal*inscatter_factor.rgb;
+	return output;
+}
+
+void main()
 {
 	vec3 view=normalize(dir);
 	float sine=view.z;
@@ -29,11 +39,6 @@ void main(void)
 	vec4 inscatter_factor_2=texture2D(skyTexture2,texcoord);
 	vec4 inscatter_factor=mix(inscatter_factor_1,inscatter_factor_2,skyInterp);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float BetaRayleigh=0.0596831*(1.0+cos0*cos0);
-
-	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);			// Mie's phase function
-	vec3 BetaTotal=(vec3(BetaRayleigh,BetaRayleigh,BetaRayleigh)+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
-		/(vec3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
-	vec3 colour=inscatter_factor.rgb*BetaTotal;
+	vec3 colour=InscatterFunction(inscatter_factor,cos0);
     gl_FragColor=vec4(colour.rgb,1.0);
 }

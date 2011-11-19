@@ -2,13 +2,15 @@
 #define MACROS_H_DONE
 #include <iostream>
 #include <tchar.h>
+#include "Simul/Platform/DirectX1x/Export.h"
 typedef std::basic_string<TCHAR> tstring;
 #ifdef UNICODE
 	#define stprintf_s swprintf_s
 #else
 	#define stprintf_s sprintf_s
 #endif
-
+// SIMUL_HELP: Here we define aliases for all the D3D10 and D3D11 classes, structures and interfaces
+// so that they are used interchangeably in the implementation.
 #ifdef DX10
 	#define ID3D1xDevice								ID3D10Device
 	#define ID3D1xDeviceContext							ID3D10Device	
@@ -135,7 +137,13 @@ typedef std::basic_string<TCHAR> tstring;
 	#define dx1x_namespace								dx11
 #endif
 typedef long HRESULT;
-extern const TCHAR *GetErrorText(HRESULT hr);
+
+// SIMUL_HELP
+// Here we define a compile-time assert for type-checking:
+#define COMPILE_ASSERT(x) extern int __dummy[(int)x]
+#define VERIFY_EXPLICIT_CAST(from, to) COMPILE_ASSERT(sizeof(from) == sizeof(to)) 
+
+extern const char *GetErrorText(HRESULT hr);
 #ifdef ENABLE_PIX
 	#define PIXBeginNamedEvent(colour,name) D3DPERF_BeginEvent(colour,L##name)
 	#define PIXEndNamedEvent()				D3DPERF_EndEvent()
@@ -149,8 +157,8 @@ extern const TCHAR *GetErrorText(HRESULT hr);
 		#define SAFE_RELEASE(p)		{ if(p) { (p)->Release(); (p)=NULL; } }
 	#endif
 
-	#define BreakIfDebugging()
-#if 0//def UNICODE
+extern void SIMUL_DIRECTX1x_EXPORT BreakIfDebugging();
+#ifdef UNICODE
 
 	#define WIDEN2(x) L ## x
 	#define WIDEN(x) WIDEN2(x)
@@ -160,30 +168,36 @@ extern const TCHAR *GetErrorText(HRESULT hr);
 	#define __WLINE__ WIDEN3(__LINE__)
 	#define WIDENSTRING(x) L#x
 
+	#ifndef B_RETURN//  : error C2065: 'B_RET' : undeclared identifier
+		#define B_RETURN(x)	{VERIFY_EXPLICIT_CAST(x,bool); if(!x) {std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: B_RETURN error, return value is false."<<std::endl;BreakIfDebugging();return false; } }
+	#endif
+	#ifndef B_CHECK
+		#define B_CHECK(x)	{VERIFY_EXPLICIT_CAST(x,bool);if(!x) {std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: B_CHECK error, return value is false."<<std::endl;BreakIfDebugging();} }
+	#endif
 	#ifndef V_RETURN
-		#define V_RETURN(x)	{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_RETURN error %d at file %s, line %d",(int)hr,__WFILE__,__LINE__);std::cerr<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();return hr; } }
+		#define V_RETURN(x)	{VERIFY_EXPLICIT_CAST(x,HRESULT);hr = x; if( FAILED(hr) ) {std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_RETURN error, return value is  "<<GetErrorText(x)<<std::endl;BreakIfDebugging();return hr; } }
 	#endif
 	#ifndef V_CHECK
-		#define V_CHECK(x)	{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_CHECK error %d at file %s, line %d",(int)hr,__WFILE__,__LINE__);std::cerr<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();} }
+		#define V_CHECK(x)	{VERIFY_EXPLICIT_CAST(x,HRESULT);hr = x; if( FAILED(hr) ) {std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_CHECK error, return value is "<<GetErrorText(x)<<std::endl;BreakIfDebugging(); } }
 	#endif
 	#ifndef V_FAIL
-		#define V_FAIL(msg)	{ wchar_t text[200];wsprintf(text,_T("V_FAIL: %s - file %s, line %d"),WIDENSTRING(msg),__WFILE__,__WLINE__);std::cerr<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging(); }
-	#endif
-	#ifndef SAFE_DELETE_ARRAY
-	#define SAFE_DELETE_ARRAY(p) { if (p) { delete[] (p);   (p)=NULL; } }
+		#define V_FAIL(msg)	{ std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_FAIL error."<<std::endl;BreakIfDebugging();  }
 	#endif
 #else
-	#ifndef B_RETURN
-		#define B_RETURN(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"B_RETURN error "<<GetErrorText(hr)<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging();return false; } }
+	#ifndef B_RETURN//  : error C2065: 'B_RET' : undeclared identifier
+		#define B_RETURN(x)	{VERIFY_EXPLICIT_CAST(x,bool); if(!x) {std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: B_RETURN error, return value is false."<<std::endl;BreakIfDebugging();return false; } }
+	#endif
+	#ifndef B_CHECK
+		#define B_CHECK(x)	{VERIFY_EXPLICIT_CAST(x,bool);if(!x) {std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: B_CHECK error, return value is false."<<std::endl;BreakIfDebugging();} }
 	#endif
 	#ifndef V_RETURN
-		#define V_RETURN(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_RETURN error "<<GetErrorText(hr)<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging();return hr; } }
+		#define V_RETURN(x)	{VERIFY_EXPLICIT_CAST(x,HRESULT);hr = x; if( FAILED(hr) ) {std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_RETURN error, return value is  "<<GetErrorText(x)<<std::endl;BreakIfDebugging();return hr; } }
 	#endif
 	#ifndef V_CHECK
-		#define V_CHECK(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_CHECK error "<<GetErrorText(hr)<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging(); } }
+		#define V_CHECK(x)	{VERIFY_EXPLICIT_CAST(x,HRESULT);hr = x; if( FAILED(hr) ) {std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_CHECK error, return value is "<<GetErrorText(x)<<std::endl;BreakIfDebugging(); } }
 	#endif
 	#ifndef V_FAIL
-		#define V_FAIL(msg)	{ std::cerr<<"V_FAIL error "<<msg<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl; BreakIfDebugging(); }
+		#define V_FAIL(msg)	{ std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_FAIL error."<<std::endl;BreakIfDebugging();  }
 	#endif
 #endif
 	#ifndef SAFE_DELETE

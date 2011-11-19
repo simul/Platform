@@ -32,6 +32,7 @@ public:
 	virtual ~SimulGLCloudRenderer();
 	//standard ogl object interface functions
 	bool Create();
+	void ReloadShaders();
 	bool RestoreDeviceObjects(void*);
 	bool InvalidateDeviceObjects();
 	//! Render the clouds.

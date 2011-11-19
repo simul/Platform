@@ -96,6 +96,7 @@ void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11De
 	{
 		simulWeatherRenderer->SetMatrices(view,proj);
 		simulWeatherRenderer->RenderSky(true,false);
+		simulWeatherRenderer->DoOcclusionTests();
 	}
 	if(simulHDRRenderer)
 		simulHDRRenderer->FinishRender();
@@ -111,10 +112,11 @@ void	Direct3D11Renderer::OnD3D11LostDevice()
 
 void	Direct3D11Renderer::OnD3D11DestroyDevice()
 {
+	OnD3D11LostDevice();
 	// We don't clear the renderers because InvalidateDeviceObjects has already handled DX-specific destruction
 	// And after OnD3D11DestroyDevice we might go back to startup without destroying the renderer.
-    //simulWeatherRenderer=NULL;
-    //simulHDRRenderer=NULL;
+	simulWeatherRenderer=NULL;
+	simulHDRRenderer=NULL;
 	simul::dx11::UnsetDevice();
 }
 

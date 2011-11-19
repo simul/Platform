@@ -23,8 +23,8 @@
 #include "Simul/Clouds/FastCloudNode.h"
 #include "Simul/Clouds/CloudGeometryHelper.h"
 #include "Simul/Clouds/TextureGenerator.h"
-#include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
+#include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/TextureGenerator.h"
@@ -113,6 +113,7 @@ bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
 		size,size,
 		GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
 		data);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	delete [] data;
 	return true;
 }
@@ -374,7 +375,14 @@ ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	
-	helper->Update(view_pos,cloudNode->GetWindOffset(),eye_dir,up_dir);
+	float t=skyInterface->GetTime();
+	float delta_t=(t-last_time)*cloudKeyframer->GetTimeFactor();
+	if(!last_time)
+		delta_t=0;
+	last_time=t;
+
+	helper->SetChurn(cloudInterface->GetChurn());
+	helper->Update(view_pos,cloudNode->GetWindOffset(),eye_dir,up_dir,delta_t,cubemap);
 	simul::math::Matrix4x4 proj;
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
 
@@ -540,9 +548,8 @@ void SimulGLCloudRenderer::SetInscatterTextures(void *i)
 	inscatter_tex=((GLuint)i);
 }
 
-bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
+void SimulGLCloudRenderer::ReloadShaders()
 {
-	CreateNoiseTexture();
 	clouds_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 	clouds_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -574,7 +581,13 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 
 	layerDistance_param		= glGetUniformLocation(clouds_program,"layerDistance");
 	printProgramInfoLog(clouds_program);
+}
 
+bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
+{
+	CreateNoiseTexture();
+
+	ReloadShaders();
 	// Because in this sample we are using 32-bit values in the cloud texture:
 	//cloudKeyframer->SetUserKeyframes(false);
 	cloudKeyframer->SetUse16Bit(false);

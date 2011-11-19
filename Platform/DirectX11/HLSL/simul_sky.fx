@@ -43,7 +43,7 @@ float hazeEccentricity;
 float skyInterp;
 float altitudeTexCoord;
 #define pi (3.1415926536f)
-float3 sunlightColour;
+float3 colour;
 //------------------------------------
 // Structures 
 //------------------------------------
@@ -248,14 +248,14 @@ float4 PS_Sun( svertexOutput IN): SV_TARGET
 	else
 		brightness=0.f;
 	brightness=saturate(brightness);
-	float3 colour=brightness*sunlightColour;
-	return float4(colour,1.f);
+	float3 output=brightness*colour;
+	return float4(output,1.f);
 }
 
 float4 PS_Flare( svertexOutput IN): SV_TARGET
 {
-	float3 colour=sunlightColour.rgb*flareTexture.Sample(flareSamplerState,float2(.5f,.5f)+0.5f*IN.tex).rgb;
-	return float4(colour,1.f);
+	float3 output=colour.rgb*flareTexture.Sample(flareSamplerState,float2(.5f,.5f)+0.5f*IN.tex).rgb;
+	return float4(output,1.f);
 }
 
 float4 PS_Planet(svertexOutput IN): SV_TARGET
@@ -406,6 +406,6 @@ technique11 draw_cubemap
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Cubemap()));
 		SetDepthStencilState( EnableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		//SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }

@@ -15,6 +15,7 @@
 #include "SaveTexture.h"
 #include "Simul/Base/StringToWString.h"
 #include <fstream>
+#include <iomanip>
 #include <math.h>
 
 #ifdef XBOX
@@ -233,13 +234,16 @@ void SimulCloudRenderer::EnableFilter(bool f)
 
 bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 {
+	simul::base::Timer timer;
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr=S_OK;
 	last_time=0.f;
 	// create the unit-sphere vertex buffer determined by the Cloud Geometry Helper:
 	SAFE_RELEASE(raytrace_layer_texture);
 	
-	B_RETURN(hr=D3DXCreateTexture(m_pd3dDevice,128,1,1,0,D3DFMT_A32B32G32R32F,d3d_memory_pool,&raytrace_layer_texture))
+	B_RETURN(D3DXCreateTexture(m_pd3dDevice,128,1,1,0,D3DFMT_A32B32G32R32F,d3d_memory_pool,&raytrace_layer_texture));
+	
+	float create_raytrace_layer=timer.UpdateTime()/1000.f;
 
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	helper->GenerateSphereVertices();
@@ -270,11 +274,150 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 		*(index++)	=helper->GetQuadStripIndices()[i];
 	}
 	B_RETURN(unitSphereIndexBuffer->Unlock());
+	float create_unit_sphere=timer.UpdateTime()/1000.f;
 	B_RETURN(InitEffects());
+	float init_effects=timer.UpdateTime()/1000.f;
 	//B_RETURN(RenderNoiseTexture());
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 	cloudKeyframer->SetRenderCallback(this);
+	float set_callback=timer.UpdateTime()/1000.f;
+	std::cout<<std::setprecision(4)<<"CLOUDS RESTORE TIMINGS: create_raytrace_layer="<<create_raytrace_layer
+		<<", create_unit_sphere="<<create_unit_sphere<<", init_effects="<<init_effects<<", set_callback="<<set_callback<<std::endl;
 	return (hr==S_OK);
+}
+
+static std::string GetCompiledFilename(int fade_mde,int wrap_clouds,bool z_vertical)
+{
+	std::string compiled_filename="simul_clouds_and_lightning_";
+	if(fade_mde==SimulCloudRenderer::FRAGMENT)
+		compiled_filename+="f1_";
+	else if(fade_mde==SimulCloudRenderer::CPU)
+		compiled_filename+="f0_";
+	if(wrap_clouds)
+		compiled_filename+="w1_";
+	else
+		compiled_filename+="w0_";
+	if(z_vertical)
+		compiled_filename+="z";
+	else
+		compiled_filename+="y";
+	compiled_filename+=".fxo";
+	return compiled_filename;
+}
+
+void SimulCloudRenderer::ReloadShaders()
+{
+	std::map<std::string,std::string> defines;
+	for(int fade_mde=0;fade_mde<2;fade_mde++)
+	{
+		for(int wrap_clouds=0;wrap_clouds<2;wrap_clouds++)
+		{
+			for(int z_vertical=0;z_vertical<2;z_vertical++)
+			{
+				std::string compiled_filename=GetCompiledFilename(fade_mde,wrap_clouds,z_vertical);
+				if(fade_mde==FRAGMENT)
+					defines["FADE_MODE"]="1";
+				else if(fade_mde==CPU)
+					defines["FADE_MODE"]="0";
+				if(wrap_clouds)
+					defines["WRAP_CLOUDS"]="1";
+				else
+					defines["WRAP_CLOUDS"]="0";
+				if(z_vertical)
+					defines["Z_VERTICAL"]='1';
+				else
+					defines["Y_VERTICAL"]='1';
+			}
+		}
+	}
+	LoadShaders();
+}
+
+void SimulCloudRenderer::LoadShaders()
+{
+	simul::base::Timer timer;
+	std::map<std::string,std::string> defines;
+/*	if(fade_mode==FRAGMENT)
+		defines["FADE_MODE"]="1";
+	if(fade_mode==CPU)
+		defines["FADE_MODE"]="0";
+	wrap=cloudInterface->GetWrap();
+	if(cloudInterface->GetWrap())
+		defines["WRAP_CLOUDS"]="1";
+	if(!y_vertical)
+		defines["Z_VERTICAL"]='1';
+	else
+		defines["Y_VERTICAL"]='1';*/
+	float defines_time=timer.UpdateTime()/1000.f;
+	SAFE_RELEASE(m_pCloudEffect);
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
+	float clouds_effect=timer.UpdateTime()/1000.f;
+	SAFE_RELEASE(m_pGPULightingEffect);
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pGPULightingEffect,"simul_gpulighting.fxo",defines));
+	float gpulighting_effect=timer.UpdateTime()/1000.f;
+
+	m_hTechniqueCloud					=GetDX9Technique(m_pCloudEffect,"simul_clouds");
+	m_hTechniqueCloudMask				=GetDX9Technique(m_pCloudEffect,"cloud_mask");
+	m_hTechniqueRaytraceWithLightning	=GetDX9Technique(m_pCloudEffect,"raytrace_clouds_and_lightning");
+	m_hTechniqueCloudsAndLightning		=GetDX9Technique(m_pCloudEffect,"simul_clouds_and_lightning");
+	m_hTechniqueCrossSectionXZ			=GetDX9Technique(m_pCloudEffect,"cross_section_xz");
+	m_hTechniqueCrossSectionXY			=GetDX9Technique(m_pCloudEffect,"cross_section_xy");
+	m_hTechniqueRenderTo2DForSaving		=GetDX9Technique(m_pCloudEffect,"render_to_2d_for_saving");
+	m_hTechniqueColourLines				=GetDX9Technique(m_pCloudEffect,"colour_lines");
+	float techniques=timer.UpdateTime()/1000.f;
+
+	worldViewProj			=m_pCloudEffect->GetParameterByName(NULL,"worldViewProj");
+	eyePosition				=m_pCloudEffect->GetParameterByName(NULL,"eyePosition");
+	maxFadeDistanceMetres	=m_pCloudEffect->GetParameterByName(NULL,"maxFadeDistanceMetres");
+	lightResponse			=m_pCloudEffect->GetParameterByName(NULL,"lightResponse");
+	crossSectionOffset		=m_pCloudEffect->GetParameterByName(NULL,"crossSectionOffset");
+	lightDir				=m_pCloudEffect->GetParameterByName(NULL,"lightDir");
+	skylightColour			=m_pCloudEffect->GetParameterByName(NULL,"skylightColour");
+	fractalScale			=m_pCloudEffect->GetParameterByName(NULL,"fractalScale");
+	interp					=m_pCloudEffect->GetParameterByName(NULL,"interp");
+
+	mieRayleighRatio		=m_pCloudEffect->GetParameterByName(NULL,"mieRayleighRatio");
+	hazeEccentricity		=m_pCloudEffect->GetParameterByName(NULL,"hazeEccentricity");
+	cloudEccentricity		=m_pCloudEffect->GetParameterByName(NULL,"cloudEccentricity");
+	fadeInterp				=m_pCloudEffect->GetParameterByName(NULL,"fadeInterp");
+	distance				=m_pCloudEffect->GetParameterByName(NULL,"distance");
+//	cornerPos				=m_pCloudEffect->GetParameterByName(NULL,"cornerPos");
+//	texScales				=m_pCloudEffect->GetParameterByName(NULL,"texScales");
+	layerFade				=m_pCloudEffect->GetParameterByName(NULL,"layerFade");
+	alphaSharpness			=m_pCloudEffect->GetParameterByName(NULL,"alphaSharpness");
+	//if(enable_lightning)
+	{
+		lightningMultipliers=m_pCloudEffect->GetParameterByName(NULL,"lightningMultipliers");
+		lightningColour		=m_pCloudEffect->GetParameterByName(NULL,"lightningColour");
+		illuminationOrigin	=m_pCloudEffect->GetParameterByName(NULL,"illuminationOrigin");
+		illuminationScales	=m_pCloudEffect->GetParameterByName(NULL,"illuminationScales");
+	}
+
+	cloudDensity1			=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity1");
+	cloudDensity2			=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity2");
+	noiseTexture			=m_pCloudEffect->GetParameterByName(NULL,"noiseTexture");
+
+	lightningIlluminationTexture=m_pCloudEffect->GetParameterByName(NULL,"lightningIlluminationTexture");
+	skyLossTexture			=m_pCloudEffect->GetParameterByName(NULL,"skyLossTexture");
+	skyInscatterTexture		=m_pCloudEffect->GetParameterByName(NULL,"skyInscatterTexture");
+	
+	
+	
+	invViewProj			=m_pCloudEffect->GetParameterByName(NULL,"invViewProj");
+	noiseMatrix			=m_pCloudEffect->GetParameterByName(NULL,"noiseMatrix");
+	fractalRepeatLength	=m_pCloudEffect->GetParameterByName(NULL,"fractalRepeatLength");
+	cloudScales			=m_pCloudEffect->GetParameterByName(NULL,"cloudScales");
+	cloudOffset			=m_pCloudEffect->GetParameterByName(NULL,"cloudOffset");
+	raytraceLayerTexture=m_pCloudEffect->GetParameterByName(NULL,"raytraceLayerTexture");
+
+	float params=timer.UpdateTime()/1000.f;
+	rebuild_shaders=false;
+	std::cout<<std::setprecision(4)<<"CLOUDS RELOAD SHADERS TIMINGS: defines="<<defines_time
+		<<"clouds_effect="<<clouds_effect
+		<<", gpulighting_effect="<<gpulighting_effect
+		<<", techniques="<<techniques
+		<<", params="<<params<<std::endl;
+
 }
 
 bool SimulCloudRenderer::InitEffects()
@@ -312,79 +455,7 @@ bool SimulCloudRenderer::InitEffects()
 	{
 		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
 	}
-	std::map<std::string,std::string> defines;
-	if(fade_mode==FRAGMENT)
-		defines["FADE_MODE"]="1";
-	if(fade_mode==CPU)
-		defines["FADE_MODE"]="0";
-	defines["DETAIL_NOISE"]="1";
-	wrap=cloudInterface->GetWrap();
-	if(cloudInterface->GetWrap())
-		defines["WRAP_CLOUDS"]="1";
-	char max_fade_distance_str[25];
-	sprintf_s(max_fade_distance_str,25,"%3.1f",max_fade_distance_metres);
-	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
-	if(!y_vertical)
-		defines["Z_VERTICAL"]='1';
-	else
-		defines["Y_VERTICAL"]='1';
-	SAFE_RELEASE(m_pCloudEffect);
-	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
-	SAFE_RELEASE(m_pGPULightingEffect);
-	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pGPULightingEffect,"simul_gpulighting.fx",defines));
-
-	m_hTechniqueCloud					=GetDX9Technique(m_pCloudEffect,"simul_clouds");
-	m_hTechniqueCloudMask				=GetDX9Technique(m_pCloudEffect,"cloud_mask");
-	m_hTechniqueRaytraceWithLightning	=GetDX9Technique(m_pCloudEffect,"raytrace_clouds_and_lightning");
-	m_hTechniqueCloudsAndLightning		=GetDX9Technique(m_pCloudEffect,"simul_clouds_and_lightning");
-	m_hTechniqueCrossSectionXZ			=GetDX9Technique(m_pCloudEffect,"cross_section_xz");
-	m_hTechniqueCrossSectionXY			=GetDX9Technique(m_pCloudEffect,"cross_section_xy");
-	m_hTechniqueRenderTo2DForSaving		=GetDX9Technique(m_pCloudEffect,"render_to_2d_for_saving");
-
-	worldViewProj			=m_pCloudEffect->GetParameterByName(NULL,"worldViewProj");
-	eyePosition				=m_pCloudEffect->GetParameterByName(NULL,"eyePosition");
-	lightResponse			=m_pCloudEffect->GetParameterByName(NULL,"lightResponse");
-	crossSectionOffset		=m_pCloudEffect->GetParameterByName(NULL,"crossSectionOffset");
-	lightDir				=m_pCloudEffect->GetParameterByName(NULL,"lightDir");
-	skylightColour			=m_pCloudEffect->GetParameterByName(NULL,"skylightColour");
-	fractalScale			=m_pCloudEffect->GetParameterByName(NULL,"fractalScale");
-	interp					=m_pCloudEffect->GetParameterByName(NULL,"interp");
-	large_texcoords_scale	=m_pCloudEffect->GetParameterByName(NULL,"large_texcoords_scale");
-	mieRayleighRatio		=m_pCloudEffect->GetParameterByName(NULL,"mieRayleighRatio");
-	hazeEccentricity		=m_pCloudEffect->GetParameterByName(NULL,"hazeEccentricity");
-	cloudEccentricity		=m_pCloudEffect->GetParameterByName(NULL,"cloudEccentricity");
-	fadeInterp				=m_pCloudEffect->GetParameterByName(NULL,"fadeInterp");
-	distance				=m_pCloudEffect->GetParameterByName(NULL,"distance");
-//	cornerPos				=m_pCloudEffect->GetParameterByName(NULL,"cornerPos");
-//	texScales				=m_pCloudEffect->GetParameterByName(NULL,"texScales");
-	layerFade				=m_pCloudEffect->GetParameterByName(NULL,"layerFade");
-	alphaSharpness			=m_pCloudEffect->GetParameterByName(NULL,"alphaSharpness");
-	//if(enable_lightning)
-	{
-		lightningMultipliers=m_pCloudEffect->GetParameterByName(NULL,"lightningMultipliers");
-		lightningColour		=m_pCloudEffect->GetParameterByName(NULL,"lightningColour");
-		illuminationOrigin	=m_pCloudEffect->GetParameterByName(NULL,"illuminationOrigin");
-		illuminationScales	=m_pCloudEffect->GetParameterByName(NULL,"illuminationScales");
-	}
-
-	cloudDensity1			=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity1");
-	cloudDensity2			=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity2");
-	noiseTexture			=m_pCloudEffect->GetParameterByName(NULL,"noiseTexture");
-	largeScaleCloudTexture	=m_pCloudEffect->GetParameterByName(NULL,"largeScaleCloudTexture");
-	lightningIlluminationTexture=m_pCloudEffect->GetParameterByName(NULL,"lightningIlluminationTexture");
-	skyLossTexture			=m_pCloudEffect->GetParameterByName(NULL,"skyLossTexture");
-	skyInscatterTexture		=m_pCloudEffect->GetParameterByName(NULL,"skyInscatterTexture");
-	
-	
-	
-	invViewProj			=m_pCloudEffect->GetParameterByName(NULL,"invViewProj");
-	noiseMatrix			=m_pCloudEffect->GetParameterByName(NULL,"noiseMatrix");
-	fractalRepeatLength	=m_pCloudEffect->GetParameterByName(NULL,"fractalRepeatLength");
-	cloudScales			=m_pCloudEffect->GetParameterByName(NULL,"cloudScales");
-	cloudOffset			=m_pCloudEffect->GetParameterByName(NULL,"cloudOffset");
-	raytraceLayerTexture=m_pCloudEffect->GetParameterByName(NULL,"raytraceLayerTexture");
-
-	rebuild_shaders=false;
+	ReloadShaders();
 	return (hr==S_OK);
 }
 
@@ -709,17 +780,6 @@ void SimulCloudRenderer::CycleTexturesForward()
 	std::swap(cloud_textures[1],cloud_textures[2]);
 }
 
-static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
-{
-	D3DXMATRIX tmp1;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXVECTOR4 dcam_pos;
-	dcam_pos.x=tmp1._41;
-	dcam_pos.y=tmp1._42;
-	dcam_pos.z=tmp1._43;
-	return dcam_pos;
-}
-
 static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 {
 	static D3DXVECTOR4 x;
@@ -780,7 +840,7 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 
 	// Mess with the proj matrix to extend the far clipping plane? not now
 
-	cam_pos=GetCameraPosVector(view);
+	GetCameraPosVector(view,y_vertical,cam_pos);
 	simul::math::Vector3 wind_offset=cloudInterface->GetWindOffset();
 
 	if(y_vertical)
@@ -796,9 +856,11 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	if(!last_time)
 		delta_t=0;
 	last_time=t;
+
+	helper->SetChurn(cloudInterface->GetChurn());
 	helper->Update((const float*)cam_pos,wind_offset,view_dir,up,delta_t,cubemap);
-	if(y_vertical)
-		std::swap(cam_pos.y,cam_pos.z);
+	//if(y_vertical)
+	//	std::swap(cam_pos.y,cam_pos.z);
 
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;
@@ -826,6 +888,7 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	float cloud_interp=cloudKeyframer->GetInterpolation();
 	m_pCloudEffect->SetFloat	(interp				,cloud_interp);
 	m_pCloudEffect->SetVector	(eyePosition		,(D3DXVECTOR4*)(&cam_pos));
+	m_pCloudEffect->SetFloat	(maxFadeDistanceMetres	,max_fade_distance_metres);
 	m_pCloudEffect->SetVector	(lightResponse		,(D3DXVECTOR4*)(&light_response));
 	m_pCloudEffect->SetVector	(lightDir			,(D3DXVECTOR4*)(&sun_dir));
 	m_pCloudEffect->SetVector	(skylightColour		,(D3DXVECTOR4*)(&sky_light_colour));
@@ -911,7 +974,7 @@ void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
 	float min_dist=helper->GetMaxCloudDistance()*0.5f;
 	float fadeout_dist=helper->GetMaxCloudDistance();
 	float base_alt_km=0.001f*(cloudInterface->GetCloudBaseZ());
-	float view_alt_km=0.001f*cam_pos.z;
+	float view_alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 	// Convert metres to km:
@@ -947,7 +1010,7 @@ void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
 					if(fadeout>1.f)
 						fadeout=1.f;
 					float x=cam_pos.x+dist*cs;
-					float y=cam_pos.y+dist*sn;
+					float y=(y_vertical?cam_pos.z:cam_pos.y)+dist*sn;
 					float z=z0+helper->GetVerticalShiftDueToCurvature(dist,z0);
 					float elev=atan2(z,dist);
 					pos.Define(x,y,z);
@@ -1008,7 +1071,7 @@ bool SimulCloudRenderer::FillRaytraceLayerTexture()
 {
 	D3DLOCKED_RECT lockedRect={0};
 	HRESULT hr=S_OK;
-	B_RETURN(hr=raytrace_layer_texture->LockRect(0,&lockedRect,NULL,NULL));
+	B_RETURN(raytrace_layer_texture->LockRect(0,&lockedRect,NULL,NULL));
 	float *float_ptr=(float *)(lockedRect.pBits);
 	typedef std::vector<simul::clouds::CloudGeometryHelper::RealtimeSlice*>::const_reverse_iterator iter;
 	static float cutoff=100000.f;
@@ -1062,14 +1125,16 @@ void SimulCloudRenderer::InternalRenderRaytrace(int buffer_index)
 	
 		m_pCloudEffect->SetVector	(cloudScales	,(const D3DXVECTOR4*)&cloud_scales);
 		m_pCloudEffect->SetVector	(cloudOffset	,(const D3DXVECTOR4*)&cloud_offset);
-		D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
+		D3DXVECTOR3 d3dcam_pos;
+		GetCameraPosVector(view,y_vertical,(float*)&d3dcam_pos);
+		float altitude=y_vertical?d3dcam_pos.y:d3dcam_pos.z;
 		hr=m_pCloudEffect->SetFloat(fadeInterp,fade_interp);
 		if(skyInterface)
 		{
 //		hr=m_pCloudEffect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
 			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
 			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
-			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(cam_pos.y));
+			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(altitude));
 			
 			//light_colour*=strength;
 			if(y_vertical)
@@ -1080,7 +1145,7 @@ void SimulCloudRenderer::InternalRenderRaytrace(int buffer_index)
 		}
 		m_pCloudEffect->SetVector	(cloudScales	,(const D3DXVECTOR4*)&cloud_scales);
 		m_pCloudEffect->SetVector	(cloudOffset	,(const D3DXVECTOR4*)&cloud_offset);
-		m_pCloudEffect->SetVector	(eyePosition	,&cam_pos);
+		m_pCloudEffect->SetVector	(eyePosition	,(const D3DXVECTOR4*)&(cam_pos));
 
 		hr=DrawFullScreenQuad(m_pd3dDevice,m_pCloudEffect);
 	}
@@ -1460,9 +1525,9 @@ bool SimulCloudRenderer::RenderLightVolume()
 	HRESULT hr=S_OK;
 	D3DVERTEXELEMENT9 decl[] = 
 	{
-		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0, 16, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
-		{ 0, 32, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 12, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+		{ 0, 28, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1 },
 		D3DDECL_END()
 	};
 	if(!m_pHudVertexDecl)
@@ -1472,32 +1537,10 @@ bool SimulCloudRenderer::RenderLightVolume()
 
 	struct Vertext
 	{
-		float x,y,z,h;
+		float x,y,z;
 		float r,g,b,a;
 		float tx,ty;
 	};
-	m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
-	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC, D3DCMP_ALWAYS);
-	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
-	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
-
-    m_pd3dDevice->SetVertexShader(NULL);
-    m_pd3dDevice->SetPixelShader(NULL);
-	m_pd3dDevice->SetVertexDeclaration(m_pHudVertexDecl);
-
-    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_MODULATE );
-    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE );
-
-	m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-	m_pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_CONSTANT);
-
-// Set the constant to 0.25 alpha (0x40 = 64 = 64/256 = 0.25)
-	m_pd3dDevice->SetTextureStageState(0, D3DTSS_CONSTANT, 0x80000080);
-
-    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_MODULATE );
-    m_pd3dDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE );
-	m_pd3dDevice->SetRenderState(D3DRS_SRCBLEND,D3DBLEND_SRCALPHA);
-	m_pd3dDevice->SetRenderState(D3DRS_DESTBLEND,D3DBLEND_INVSRCALPHA);
 
 	m_pd3dDevice->SetTexture(0,NULL);
 	
@@ -1543,16 +1586,68 @@ bool SimulCloudRenderer::RenderLightVolume()
 		lines[i*2].r=1.f;
 		lines[i*2].g=1.f;
 		lines[i*2].b=0.f;
-		lines[i*2].a=1;
+		lines[i*2].a=1.f;
+		lines[i*2].tx=0;
+		lines[i*2].ty=0;
 		lines[i*2+1].x=X2.x; 
 		lines[i*2+1].y=X2.y;  
 		lines[i*2+1].z=X2.z;
 		lines[i*2+1].r=1.f;
 		lines[i*2+1].g=1.f;
 		lines[i*2+1].b=0.f;
-		lines[i*2+1].a=1;
+		lines[i*2+1].a=1.f;
+		lines[i*2+1].tx=0;
+		lines[i*2+1].ty=0;
+	}
+	unsigned passes=0;
+	m_pCloudEffect->SetTechnique(m_hTechniqueColourLines);
+	hr=m_pCloudEffect->Begin(&passes,0);
+	hr=m_pCloudEffect->BeginPass(0);
+	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,12,lines,(unsigned)sizeof(Vertext));
+
+	// Now draw the density volume:
+	
+	for(int i=0;i<12;i++)
+	{
+		int i1=0;
+		int i2=0;
+		if(i<4||i>=8)
+		{
+			i1=i%4;
+			i2=(i+1)%4;
+			if(i>=8)
+			{
+				i1+=4;
+				i2+=4;
+			}
+		}
+		else
+		{
+			i1=i%4;
+			i2=i1+4;
+		}
+		simul::math::Vector3 X1=cloudNode->ConvertTextureCoordsToReal(vertices[i1].x,vertices[i1].y,vertices[i1].z);
+		simul::math::Vector3 X2=cloudNode->ConvertTextureCoordsToReal(vertices[i2].x,vertices[i2].y,vertices[i2].z);
+		std::swap(X1.y,X1.z);
+		std::swap(X2.y,X2.z);
+		lines[i*2].x=X1.x; 
+		lines[i*2].y=X1.y;  
+		lines[i*2].z=X1.z;
+		lines[i*2].r=0.f;
+		lines[i*2].g=0.5f;
+		lines[i*2].b=1.f;
+		lines[i*2].a=1.f;
+		lines[i*2+1].x=X2.x; 
+		lines[i*2+1].y=X2.y;  
+		lines[i*2+1].z=X2.z;
+		lines[i*2+1].r=0.f;
+		lines[i*2+1].g=0.5f;
+		lines[i*2+1].b=1.f;
+		lines[i*2+1].a=1.f;
 	}
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,12,lines,(unsigned)sizeof(Vertext));
+	hr=m_pCloudEffect->EndPass();
+	hr=m_pCloudEffect->End();
 	delete [] lines;
 	return (hr==S_OK);
 }

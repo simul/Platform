@@ -53,7 +53,7 @@ bool FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
 	dstex.CPUAccessFlags = 0;
 	dstex.MiscFlags = D3D1x_RESOURCE_MISC_TEXTURECUBE;
  
-	B_RETURN( pd3dDevice->CreateTexture2D( &dstex, NULL, &m_pCubeEnvDepthMap ));
+	V_CHECK( pd3dDevice->CreateTexture2D( &dstex, NULL, &m_pCubeEnvDepthMap ));
 
 	// Create the depth stencil view for the entire cube
 	D3D1x_DEPTH_STENCIL_VIEW_DESC DescDS;
@@ -69,7 +69,7 @@ bool FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
 	{
 		DescDS.Texture2DArray.FirstArraySlice = i;
 		DescDS.Texture2DArray.ArraySize = 1;
-		B_RETURN(pd3dDevice->CreateDepthStencilView(m_pCubeEnvDepthMap, &DescDS, &(m_pCubeEnvDepthMapDSV[i])));
+		V_CHECK(pd3dDevice->CreateDepthStencilView(m_pCubeEnvDepthMap, &DescDS, &(m_pCubeEnvDepthMapDSV[i])));
 	}
 	 
 	//////////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ bool FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
 	dstex.MiscFlags = D3D1x_RESOURCE_MISC_GENERATE_MIPS | D3D1x_RESOURCE_MISC_TEXTURECUBE;
 	dstex.MipLevels = MIPLEVELS;
  
-	B_RETURN(pd3dDevice->CreateTexture2D(&dstex,NULL,&m_pCubeEnvMap));
+	V_CHECK(pd3dDevice->CreateTexture2D(&dstex,NULL,&m_pCubeEnvMap));
 
 	// Create the 6-face render target view
 	D3D1x_RENDER_TARGET_VIEW_DESC DescRT;
@@ -93,7 +93,7 @@ bool FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
 	{
 		DescRT.Texture2DArray.FirstArraySlice = i;
 		DescRT.Texture2DArray.ArraySize = 1;
-		B_RETURN( pd3dDevice->CreateRenderTargetView(m_pCubeEnvMap, &DescRT, &(m_pCubeEnvMapRTV[i])));
+		V_CHECK( pd3dDevice->CreateRenderTargetView(m_pCubeEnvMap, &DescRT, &(m_pCubeEnvMapRTV[i])));
 	}
 
 	// Create the shader resource view for the cubic env map
@@ -104,7 +104,7 @@ bool FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
 	SRVDesc.TextureCube.MipLevels = MIPLEVELS;
 	SRVDesc.TextureCube.MostDetailedMip = 0;
 	 
-	B_RETURN( pd3dDevice->CreateShaderResourceView(m_pCubeEnvMap, &SRVDesc, &m_pCubeEnvMapSRV ));
+	V_CHECK( pd3dDevice->CreateShaderResourceView(m_pCubeEnvMap, &SRVDesc, &m_pCubeEnvMapSRV ));
 
 	return true;
 }

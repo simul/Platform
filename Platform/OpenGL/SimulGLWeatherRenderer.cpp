@@ -1,4 +1,7 @@
 
+#ifdef _MSC_VER
+#include <GL/glew.h>
+#endif
 
 #include "FramebufferGL.h"
 #include "LoadGLProgram.h"
@@ -14,6 +17,7 @@
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Base/Timer.h"
+#include "Simul/Math/Decay.h"
 
 #ifdef _MSC_VER
 // for wglGetProcAddress
@@ -31,10 +35,11 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(const char *lic,bool usebuffer,bo
 		,BufferWidth(width)
 		,BufferHeight(height)
 		,device_initialized(false)
+		,scene_buffer(NULL)
 {
 	if(sky)
 	{
-		simulSkyRenderer=new SimulGLSkyRenderer();
+		simulSkyRenderer=new SimulGLSkyRenderer(colour_sky);
 		baseSkyRenderer=simulSkyRenderer.get();
 	}
 	if(simulSkyRenderer)
@@ -91,24 +96,6 @@ void SimulGLWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
 	ConnectInterfaces();
 }
 
-void SimulGLWeatherRenderer::ConnectInterfaces()
-{
-	if(simulSkyRenderer)
-	{
-		if(simul2DCloudRenderer)
-		{
-			simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-		}
-		if(simulCloudRenderer)
-		{
-			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
-			simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
-		}
-		//if(simulAtmosphericsRenderer)
-		//	simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
-	}
-}
-
 SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 {
 }
@@ -137,8 +124,6 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 	CheckExtension("GL_ARB_texture_float");
 	CheckExtension("GL_ARB_color_buffer_float");
 	CheckExtension("GL_EXT_framebuffer_object");
-
-	scene_buffer=NULL;
     if(scene_buffer)
         delete scene_buffer;
 	scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
@@ -171,7 +156,13 @@ static simul::base::Timer timer;
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 	if(simulSkyRenderer)
+	{
+		simulSkyRenderer->RenderPointStars();
 		simulSkyRenderer->RenderPlanets();
+		ERROR_CHECK
+		simulSkyRenderer->RenderSun();
+		ERROR_CHECK
+	}
 	// Everything between Activate() and DeactivateAndRender() is drawn to the buffer object.
 	if(buffered)
 	{
@@ -185,8 +176,9 @@ static simul::base::Timer timer;
 	ERROR_CHECK
 	if(simulSkyRenderer)
 	{
-	ERROR_CHECK
-		simulSkyRenderer->Render();
+		// We call the sky renderer, telling it to blend if we're not buffering the sky,
+		// because otherwise it would overwrite the planets
+		simulSkyRenderer->Render(!buffered);
 	}
 	ERROR_CHECK
 	timer.UpdateTime();

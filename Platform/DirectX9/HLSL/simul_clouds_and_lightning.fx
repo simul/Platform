@@ -1,3 +1,19 @@
+#ifndef MAX_FADE_DISTANCE_METRES
+	#define MAX_FADE_DISTANCE_METRES (200000.f)
+#endif
+#ifndef Z_VERTICAL
+	#define Y_VERTICAL 1
+#endif
+#ifndef WRAP_CLOUDS
+	#define WRAP_CLOUDS 1
+#endif
+#ifndef DETAIL_NOISE
+	#define DETAIL_NOISE 1
+#endif
+#ifndef FADE_MODE
+	#define FADE_MODE 1
+#endif
+
 float4x4 worldViewProj	: WorldViewProjection;
 
 // raytrace
@@ -126,9 +142,6 @@ float3 texScales;
 float layerFade;
 float cloudEccentricity=0.87f;
 float alphaSharpness=0.5f;
-#ifndef MAX_FADE_DISTANCE_METRES
-	#define MAX_FADE_DISTANCE_METRES (200000.f)
-#endif
 
 struct vertexInput
 {
@@ -143,9 +156,17 @@ struct vertexInput
 #endif
 };
 
-struct vertexInputNew
+struct vertexInputPositionColour
 {
     float3 position			: POSITION;
+    float4 colour			: TEXCOORD0;
+    float2 texc				: TEXCOORD1;
+};
+struct vertexOutputPositionColour
+{
+    float4 hPosition		: POSITION;
+    float4 colour			: TEXCOORD0;
+    float2 texc				: TEXCOORD1;
 };
 
 struct vertexOutput
@@ -165,6 +186,19 @@ struct vertexOutput
     float3 inscatter			: TEXCOORD7;
 #endif
 };
+
+vertexOutputPositionColour VS_PositionColour(vertexInputPositionColour IN)
+{
+	vertexOutputPositionColour OUT;
+    OUT.hPosition = mul( worldViewProj, float4(IN.position.xyz,1.0));
+	OUT.colour=IN.colour;
+	OUT.texc=IN.texc;
+	return OUT;
+}
+float4 PS_PositionColour(vertexOutputPositionColour IN): color
+{
+	return IN.colour;
+}
 
 vertexOutput VS_Main(vertexInput IN)
 {
@@ -226,7 +260,7 @@ float4 PS_WithLightning(vertexOutput IN): color
 {
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
-#ifdef DETAIL_NOISE
+#if DETAIL_NOISE==1
 	noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
 	noiseval*=IN.texCoords.w;
 #endif
@@ -276,7 +310,7 @@ float4 PS_Clouds( vertexOutput IN): color
 {
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
-#ifdef DETAIL_NOISE
+#if DETAIL_NOISE==1
 	noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
 	noiseval*=IN.texCoords.w;
 #endif
@@ -323,7 +357,7 @@ float4 PS_CloudsPS2( vertexOutput IN): color
 {
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
-#ifdef DETAIL_NOISE
+#if DETAIL_NOISE==1
 	noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
 	noiseval*=IN.texCoords.w;
 #endif
@@ -368,7 +402,6 @@ float4 PS_CloudsPS2( vertexOutput IN): color
 struct vertexInputCS
 {
     float3 position			: POSITION;
-   // float4 colour			: COLOR;
     float2 texCoords		: TEXCOORD0;
 };
 
@@ -376,7 +409,6 @@ struct vertexOutputCS
 {
     float4 hPosition		: POSITION;
     float3 texCoords		: TEXCOORD0;
-   // float4 colour			: TEXCOORD2;
 };
 
 vertexOutputCS VS_CrossSection(vertexInputCS IN)
@@ -535,7 +567,7 @@ float4 PS_RaytraceWithLightning(raytraceVertexOutput IN) : color
 #else
 		float3 cloud_texc=(wPosition.xyz-cloudOffset.xyz)*cloudScales.xyz;
 #endif
-#ifdef DETAIL_NOISE
+#if DETAIL_NOISE==1
 		noiseval+=(tex2D(noise_texture,noise_texc.xy*8).xyz-noise_offset)/2.0;
 		noiseval*=0.5+0.5*cloud_texc.z;
 #endif
@@ -764,5 +796,22 @@ technique render_to_2d_for_saving
 
 		VertexShader = compile vs_3_0 VS_CrossSection();
 		PixelShader  = compile ps_3_0 PS_RenderTo2D();
+    }
+}
+
+technique colour_lines
+{
+    pass p0 
+    {
+		zenable = false;
+		zfunc = lessequal;
+		ZWriteEnable = false;
+        CullMode = None;
+		AlphaTestEnable=false;
+		FillMode = Solid;
+        AlphaBlendEnable = true;
+
+		VertexShader = compile vs_3_0 VS_PositionColour();
+		PixelShader  = compile ps_3_0 PS_PositionColour();
     }
 }

@@ -47,6 +47,7 @@ public:
 	SimulTerrainRenderer();
 	//standard d3d object interface functions
 	bool Create(LPDIRECT3DDEVICE9 pd3dDevice);
+	bool ReloadShaders();
 	bool RestoreDeviceObjects(void *pd3dDevice);
 	bool InvalidateDeviceObjects();
 
@@ -62,6 +63,7 @@ public:
 	void SetCloudTextures(void **t,bool wrap);
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si){skyInterface=si;}
 	simul::terrain::HeightMapInterface *GetHeightMapInterface();
+	simul::terrain::HeightMapNode *GetHeightMap();
 	void Highlight(const float *x,const float *d);
 	void SetCloudScales(const float *s)
 	{
@@ -106,11 +108,11 @@ public:
 	void TerrainModified();
 	const float *GetHighlightPos() const{return highlight_pos;}
 protected:
+	simul::terrain::HeightMapInterface *heightMapInterface;
 	bool y_vertical;
 	bool enabled;
 	bool wrap_clouds;
 	bool rebuild_effect;
-	bool CreateEffect();
 	simul::base::SmartPtr<simul::terrain::HeightMapNode> heightmap;
 	bool InternalRender(bool depth_only);
 	float altitude_tex_coord;
@@ -229,6 +231,8 @@ protected:
 
 	float exposure;
 	float max_fade_distance_metres;
+	
+	unsigned last_overall_checksum;
 };
 #ifdef _MSC_VER
 	#pragma warning(pop)

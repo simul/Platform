@@ -20,6 +20,7 @@
 #include "Simul/Platform/DirectX1x/Export.h"
 #include "Simul/Platform/DirectX1x/FramebufferDX1x.h"
 #include "Simul/Base/Referenced.h"
+#include "Simul/Base/PropertyMacros.h"
 
 //! A class that provides gamma-correction of an HDR render to the screen.
 SIMUL_DIRECTX1x_EXPORT_CLASS SimulHDRRendererDX1x: public simul::base::Referenced
@@ -27,6 +28,9 @@ SIMUL_DIRECTX1x_EXPORT_CLASS SimulHDRRendererDX1x: public simul::base::Reference
 public:
 	SimulHDRRendererDX1x(int w,int h);
 	virtual ~SimulHDRRendererDX1x();
+	META_BeginProperties
+		META_ValueProperty(float,Exposure,"Brightness parameter.")
+	META_EndProperties
 	void SetBufferSize(int w,int h);
 	// Standard d3d object interface functions
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
@@ -39,8 +43,6 @@ public:
 	bool ApplyFade();
 	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
 	bool FinishRender();
-	//! Set the exposure - a brightness factor.
-	void SetExposure(float ex);
 	//! Get the current debug text as a c-string pointer.
 	const char *GetDebugText() const;
 	//! Get a timing value for debugging.
@@ -59,12 +61,11 @@ protected:
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	ID3D1xEffect*						m_pTonemapEffect;
 	ID3D1xEffectTechnique*				TonemapTechnique;
-	ID3D1xEffectScalarVariable*			Exposure;
+	ID3D1xEffectScalarVariable*			Exposure_param;
 	ID3D1xEffectScalarVariable*			Gamma;
 	ID3D1xEffectMatrixVariable*			worldViewProj;
 	ID3D1xEffectShaderResourceVariable*	hdrTexture;
 
-	float								exposure;
 	float								gamma;
 	float timing;
 };

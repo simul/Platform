@@ -18,8 +18,13 @@ extern SIMUL_OPENGL_EXPORT void DrawQuad(int w,int h);
 //! Get the current framerate - must be called once every frame to work correctly.
 extern SIMUL_OPENGL_EXPORT float GetFramerate();
 //! Check for a GL error, and halt the program if found.
-extern void CheckGLError();
+extern SIMUL_OPENGL_EXPORT void CheckGLError();
 //! Check the given error code, and halt the program if it is non-zero.
-extern void CheckGLError(int err);
+extern SIMUL_OPENGL_EXPORT void CheckGLError(int err);
 #define ERROR_CHECK CheckGLError();
+#define SAFE_DELETE_PROGRAM(prog)	glDeleteProgram(prog);prog=0;
+#define SAFE_DELETE_TEXTURE(tex)	glDeleteTextures(1,&tex);tex=0;
 #endif
+extern SIMUL_OPENGL_EXPORT bool RenderAngledQuad(const float *dir,float half_angle_radians);
+
+extern void CalcCameraPosition(float *cam_pos,float *cam_dir=0);

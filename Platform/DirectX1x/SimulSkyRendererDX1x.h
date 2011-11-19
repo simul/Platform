@@ -45,6 +45,7 @@ public:
 	virtual ~SimulSkyRendererDX1x();
 
 	//standard d3d object interface functions
+	void ReloadShaders();
 	//! Call this when the D3D device has been created or reset.
 	bool RestoreDeviceObjects(ID3D1xDevice* pd3dDevice);
 	//! Call this when the D3D device has been shut down.
@@ -52,7 +53,8 @@ public:
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
-	bool Render();
+	bool Render(bool blend);
+	bool RenderPointStars(){return false;}
 	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
@@ -152,7 +154,6 @@ protected:
 	D3DXMATRIX				world,view,proj;
 	bool UpdateSkyTexture(float proportion);
 	bool CreateSkyTexture();
-	bool CreateSkyEffect();
 	bool RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	bool RenderSun();
 void DrawCube();

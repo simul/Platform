@@ -287,7 +287,7 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 	}
 	HRESULT hr=S_OK;
 	if(simulSkyRenderer)
-		hr=simulSkyRenderer->Render();
+		hr=simulSkyRenderer->Render(!buffered);
 	if(simulCloudRenderer)
 		hr=simulCloudRenderer->Render(is_cubemap,false,UseDefaultFog);
 	if(buffered)

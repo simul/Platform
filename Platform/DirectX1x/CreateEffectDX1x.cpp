@@ -11,6 +11,7 @@
 #include "CreateEffectDX1x.h"
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Base/EnvironmentVariables.h"
+#include "Simul/Geometry/Orientation.h"
 
 #include <tchar.h>
 #include <string>
@@ -90,6 +91,25 @@ namespace simul
 		}
 	}
 }
+
+ID3D1xShaderResourceView* LoadTexture(const TCHAR *filename)
+{
+	ID3D1xShaderResourceView* tex=NULL;
+	D3DX1x_IMAGE_LOAD_INFO loadInfo;
+	ZeroMemory( &loadInfo, sizeof(D3DX11_IMAGE_LOAD_INFO) );
+	loadInfo.BindFlags = D3D1x_BIND_SHADER_RESOURCE;
+	loadInfo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	loadInfo.MipLevels=0;
+	HRESULT hr=D3DX11CreateShaderResourceViewFromFile(
+										m_pd3dDevice,
+										(texture_path+filename).c_str(),
+										&loadInfo,
+										NULL,
+										&tex,
+										&hr);
+	return tex;
+}
+
 struct d3dMacro
 {
 	std::string name;
@@ -184,13 +204,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 			CloseHandle( pi.hProcess );
 			CloseHandle( pi.hThread );
 
-			/**"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Utilities\Bin\x86\fxc.exe" /T fx_5_0 /Fo "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fxo" "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fx""	char [200]
-
-			
-			 \author	Roderick
-			 \date	01/07/2011
-			
-			 \param		The.
+			/*"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Utilities\Bin\x86\fxc.exe" /T fx_5_0 /Fo "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fxo" "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fx""	char [200]
 			 */
 
 			fclose(fp);
@@ -427,4 +441,170 @@ void MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[])
   vLookDir = D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
     vUpDir = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
     D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[5], &vEyePt, &vLookDir, &vUpDir );
+}
+
+void BreakIfDebugging()
+{
+	DebugBreak();
+}
+
+void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir)
+{
+	D3DXMATRIX tmp1;
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	
+	dcam_pos[0]=tmp1._41;
+	dcam_pos[1]=tmp1._42;
+	dcam_pos[2]=tmp1._43;
+	if(view_dir)
+	{
+		if(y_vertical)
+		{
+			view_dir[0]=view._13;
+			view_dir[1]=view._23;
+			view_dir[2]=view._33;
+		}
+		else
+		{
+			view_dir[0]=-view._13;
+			view_dir[1]=-view._23;
+			view_dir[2]=-view._33;
+		}
+	}
+}
+
+void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *cam_pos,const float *cam_dir,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj)
+{
+	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
+	// But D3DXMatrixRotationYawPitchRoll uses only left-handed, hence the change of sign below.
+	D3DXVECTOR3 pos(cam_pos);
+	D3DXVECTOR3 dir(cam_dir);
+	float Yaw=atan2(dir.x,y_vertical?dir.z:dir.y);
+	float Pitch=-asin(y_vertical?dir.y:dir.z);
+	HRESULT hr=S_OK;
+	D3DXMATRIX world, tmp1, tmp2;
+	D3DXMatrixIdentity(&world);
+	static D3DXMATRIX flip(1.f,0,0,0,0,0,1.f,0,0,1.f,0,0,0,0,0,1.f);
+	if(y_vertical)
+	{
+		D3DXMatrixRotationYawPitchRoll(
+			  &world,
+			  Yaw,
+			  Pitch,
+			  0
+			);
+	}
+	else
+	{
+		simul::geometry::SimulOrientation or;
+		or.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
+		or.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
+		world=*((const D3DXMATRIX*)(or.T4.RowPointer(0)));
+	}
+	//set up matrices
+	world._41=pos.x;
+	world._42=pos.y;
+	world._43=pos.z;
+	D3DXMatrixMultiply(&tmp1,&world,&view);
+	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
+	D3DXMatrixTranspose(&tmp1,&tmp2);
+	if(effect)
+	{
+		ID3D1xEffectMatrixVariable*	worldViewProj=effect->GetVariableByName("worldViewProj")->AsMatrix();
+		worldViewProj->SetMatrix((const float *)(&tmp1));
+	}
+	struct Vertext
+	{
+		float x,y,z;
+		float tx,ty;
+	};
+	// coverage is 2*atan(1/5)=11 degrees.
+	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
+	static float w=1.f;
+	float d=w/tan(half_angle_radians);
+	Vertext vertices[4] =
+	{
+		{ w,-w,	d, 1.f	,0.f},
+		{ w, w,	d, 1.f	,1.f},
+		{-w,-w,	d, 0.f	,0.f},
+		{-w, w,	d, 0.f	,1.f},
+	};
+	ID3D1xBuffer *					vertexBuffer=NULL;
+
+	// Create the vertex buffer:
+	D3D1x_BUFFER_DESC desc=
+	{
+        4*sizeof(Vertext),
+        D3D1x_USAGE_DYNAMIC,
+        D3D1x_BIND_VERTEX_BUFFER,
+        D3D1x_CPU_ACCESS_WRITE,
+        0
+	};
+    D3D1x_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    InitData.pSysMem = vertices;
+    InitData.SysMemPitch = sizeof(Vertext);
+	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
+
+	const D3D1x_INPUT_ELEMENT_DESC decl[] =
+    {
+        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
+    };
+	D3D1x_PASS_DESC PassDesc;
+	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
+	hr=pass->GetDesc(&PassDesc);
+//return true;
+	ID3D1xInputLayout*				m_pVtxDecl=NULL;
+	SAFE_RELEASE(m_pVtxDecl);
+	hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	UINT stride = sizeof(Vertext);
+	UINT offset = 0;
+    UINT Strides[1];
+    UINT Offsets[1];
+    Strides[0] = 0;
+    Offsets[0] = 0;
+	m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
+												1,				// the number of buffers in the array
+												&vertexBuffer,	// the array of vertex buffers
+												&stride,		// array of stride values, one for each buffer
+												&offset);		// array of 
+	hr=ApplyPass(tech->GetPassByIndex(0));
+	m_pImmediateContext->Draw(4,0);
+	//hr=ApplyPass(tech->GetPassByIndex(0));
+	SAFE_RELEASE(vertexBuffer);
+	SAFE_RELEASE(m_pVtxDecl);
+}
+
+
+// Stored states
+static ID3D11DepthStencilState* m_pDepthStencilStateStored11=NULL;
+static UINT m_StencilRefStored11;
+static ID3D11RasterizerState* m_pRasterizerStateStored11=NULL;
+static ID3D11BlendState* m_pBlendStateStored11=NULL;
+static float m_BlendFactorStored11[4];
+static UINT m_SampleMaskStored11;
+static ID3D11SamplerState* m_pSamplerStateStored11=NULL;
+
+void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
+{
+    pd3dImmediateContext->OMGetDepthStencilState( &m_pDepthStencilStateStored11, &m_StencilRefStored11 );
+    pd3dImmediateContext->RSGetState( &m_pRasterizerStateStored11 );
+    pd3dImmediateContext->OMGetBlendState( &m_pBlendStateStored11, m_BlendFactorStored11, &m_SampleMaskStored11 );
+    pd3dImmediateContext->PSGetSamplers( 0, 1, &m_pSamplerStateStored11 );
+}
+
+void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
+{
+    pd3dImmediateContext->OMSetDepthStencilState( m_pDepthStencilStateStored11, m_StencilRefStored11 );
+    pd3dImmediateContext->RSSetState( m_pRasterizerStateStored11 );
+    pd3dImmediateContext->OMSetBlendState( m_pBlendStateStored11, m_BlendFactorStored11, m_SampleMaskStored11 );
+    pd3dImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerStateStored11 );
+
+    SAFE_RELEASE( m_pDepthStencilStateStored11 );
+    SAFE_RELEASE( m_pRasterizerStateStored11 );
+    SAFE_RELEASE( m_pBlendStateStored11 );
+    SAFE_RELEASE( m_pSamplerStateStored11 );
 }

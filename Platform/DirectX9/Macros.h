@@ -14,6 +14,7 @@ typedef std::basic_string<TCHAR> tstring;
 #else
 	#define stprintf_s sprintf_s
 #endif
+extern const TCHAR *GetErrorText(HRESULT hr);
 
 #ifdef ENABLE_PIX
 	#define PIXBeginNamedEvent(colour,name) //D3DPERF_BeginEvent(colour,L##name)
@@ -44,19 +45,19 @@ typedef std::basic_string<TCHAR> tstring;
 #endif
 
 #ifndef B_RETURN
-	#define B_RETURN(x)	{ hr = x; if( FAILED(hr) ) {TCHAR text[200];_stprintf(text,_T("V_RETURN error %d at file %s, line %d"),(int)hr,__TFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,_T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();return false; } }
+	#define B_RETURN(x)	{ HRESULT hr=x; if( FAILED(hr) ) {TCHAR text[200];_stprintf(text,_T("V_RETURN error %d at file %s, line %d"),(int)hr,__TFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,_T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();return false; } }
 #endif
 	
 #ifdef UNICODE
 
 	#ifndef VOID_RETURN
-		#define VOID_RETURN(x)	{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_RETURN error %d at file %s, line %d",(int)hr,__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();return; } }
+		#define VOID_RETURN(x)	{ HRESULT hr=x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_RETURN error %s at file %s, line %d",GetErrorText(hr),__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();return; } }
 	#endif
 	#ifndef V_RETURN
-		#define V_RETURN(x)	{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_RETURN error %d at file %s, line %d",(int)hr,__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();return hr; } }
+		#define V_RETURN(x)	{ HRESULT hr=x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_RETURN error %s at file %s, line %d",GetErrorText(hr),__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();return hr; } }
 	#endif
 	#ifndef V_CHECK
-		#define V_CHECK(x)	{ hr = x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_CHECK error %d at file %s, line %d",(int)hr,__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();} }
+		#define V_CHECK(x)	{ HRESULT hr=x; if( FAILED(hr) ) {wchar_t text[200];wsprintf(text,L"V_CHECK error %s at file %s, line %d",GetErrorText(hr),__WFILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();} }
 	#endif
 	#ifndef V_FAIL
 		#define V_FAIL(msg)	{ wchar_t text[200];wsprintf(text,_T("V_FAIL: %s - file %s, line %d"),WIDENSTRING(msg),__WFILE__,__WLINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,L"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging(); }
@@ -64,10 +65,10 @@ typedef std::basic_string<TCHAR> tstring;
 
 #else
 	#ifndef V_RETURN
-		#define V_RETURN(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_RETURN error "<<hr<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;return hr; } }
+		#define V_RETURN(x)	{ HRESULT hr=x; if( FAILED(hr) ) {std::cerr<<"V_RETURN error "<<GetErrorText(hr)<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;return hr; } }
 	#endif
 	#ifndef V_CHECK
-		#define V_CHECK(x)	{ hr = x; if( FAILED(hr) ) {std::cerr<<"V_RETURN error "<<hr<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl; } }
+		#define V_CHECK(x)	{ HRESULT hr=x; if( FAILED(hr) ) {std::cerr<<"V_RETURN error "<<GetErrorText(hr)<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl; } }
 	#endif
 	#ifndef V_FAIL
 		#define V_FAIL(msg)	{ ::cerr<<"V_RETURN error "<<msg<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl; BreakIfDebugging(); }

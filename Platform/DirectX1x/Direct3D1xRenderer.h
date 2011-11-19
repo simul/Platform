@@ -56,6 +56,10 @@ class SIMUL_DIRECTX1x_EXPORT Direct3D11Renderer
 public:
 	Direct3D11Renderer(const char *license_key);
 	virtual ~Direct3D11Renderer();
+	META_BeginProperties
+		META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")
+		META_ValueProperty(bool,ShowFades,"Show the fade textures as an overlay.")
+	META_EndProperties
 	class SimulWeatherRendererDX1x *GetSimulWeatherRenderer()
 	{
 		return simulWeatherRenderer.get();

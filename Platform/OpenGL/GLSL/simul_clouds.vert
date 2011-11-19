@@ -42,6 +42,6 @@ void main(void)
 	vec3 view=normalize(wPosition);
 	cos0=dot(lightDir.xyz,view.xyz);
 
-//	float sine=view.z;
-//	fade_texc=vec2(length(eyespacePosition.xyz)/300000.0,0.5*(1.0-sine));
+	float sine=view.z;
+	fade_texc=vec2(length(eyespacePosition.xyz)/300000.0,0.5*(1.0-sine));
 }
