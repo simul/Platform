@@ -100,7 +100,6 @@ static void SetBits8()
 	simul::clouds::TextureGenerator::SetBits(bits8[0],bits8[1],bits8[2],bits8[3],(unsigned)4,big_endian);
 }
 
-
 Simul2DCloudRenderer::Simul2DCloudRenderer(const char *license_key) :
 	BaseCloudRenderer(license_key,false),
 	m_pd3dDevice(NULL),
@@ -129,9 +128,9 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(const char *license_key) :
 	cloudInterface->SetWrap(true);
 	cloudInterface->SetThinLayer(true);
 
-	cloudInterface->SetGridLength(128);
-	cloudInterface->SetGridWidth(128);
-	cloudInterface->SetGridHeight(2);
+	cloudGridInterface->SetGridLength(128);
+	cloudGridInterface->SetGridWidth(128);
+	cloudGridInterface->SetGridHeight(2);
 
 	cloudInterface->SetCloudBaseZ(12000.f);
 
@@ -169,7 +168,7 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(const char *license_key) :
 	helper->SetYVertical(true);
 	static float max_distance=500000.f;
 	helper->Initialize(8,max_distance);
-	helper->SetGrid(6,9);
+	helper->SetGrid(12,24);
 	helper->SetCurvedEarth(true);
 	
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
@@ -400,7 +399,7 @@ static float light_mult=.03f;
 										0,
 										0);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
-//	if(y_vertical)
+	if(IsYVertical())
 		std::swap(sun_dir.y,sun_dir.z);
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(alt_km);
 
@@ -509,13 +508,6 @@ void Simul2DCloudRenderer::SetWind(float speed,float heading_degrees)
 {
 	cloudKeyframer->SetWindSpeed(speed);
 	cloudKeyframer->SetWindHeadingDegrees(heading_degrees);
-}
-
-void Simul2DCloudRenderer::SetCloudiness(float c)
-{
-	simul::clouds::CloudKeyframer::Keyframe *K=cloudKeyframer->GetNextModifiableKeyframe();
-	if(K)
-		K->cloudiness=c;
 }
 
 void Simul2DCloudRenderer::SetExternalTexture(LPDIRECT3DTEXTURE9 tex)

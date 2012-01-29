@@ -369,8 +369,3 @@ SimulGL2DCloudRenderer::~SimulGL2DCloudRenderer()
 {
 	InvalidateDeviceObjects();
 }
-
-void SimulGL2DCloudRenderer::SetSkyInterface(simul::sky::SkyInterface *si)
-{
-	skyInterface=si;
-}

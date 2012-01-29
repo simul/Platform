@@ -76,7 +76,6 @@ public:
 	void FillCloudTextureBlock(int,int,int,int,int,int,int,const unsigned *){}
 	void CycleTexturesForward();
 
-	void SetCloudiness(float c);
 	// a texture
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
 	

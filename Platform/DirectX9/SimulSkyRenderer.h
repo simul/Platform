@@ -155,7 +155,7 @@ protected:
 	D3DXHANDLE					fadeTexture2D;
 	D3DXHANDLE					starsTexture;
 	D3DXHANDLE					starBrightness;
-	D3DXHANDLE					planetTexture;
+	D3DXHANDLE					flareTexture;
 	LPDIRECT3DTEXTURE9			stars_texture;
 	std::map<int,LPDIRECT3DTEXTURE9> planet_textures;
 	// Three sky textures - 2 to interpolate and one to fill

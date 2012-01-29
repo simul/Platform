@@ -681,7 +681,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	float tan_half_fov_horizontal=1.f/proj._11;
 	helper->SetNoFrustumLimit(cubemap);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-	helper->MakeGeometry(cloudInterface,enable_lightning);
+	helper->MakeGeometry(cloudInterface,cloudGridInterface,enable_lightning);
 	if(fade_mode==CPU)
 		helper->CalcInscatterFactors(skyInterface);
 

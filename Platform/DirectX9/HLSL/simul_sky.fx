@@ -52,17 +52,6 @@ sampler flare_texture = sampler_state
 	AddressU = Clamp;
 	AddressV = Clamp;
 };
-texture planetTexture;
-sampler planet_texture = sampler_state
-{
-    Texture = <planetTexture>;
-    MipFilter = LINEAR;
-    MinFilter = LINEAR;
-    MagFilter = LINEAR;
-	AddressU = Clamp;
-	AddressV = Clamp;
-};
-
 
 
 texture fadeTexture;
@@ -270,7 +259,7 @@ float4 PS_Flare(svertexOutput IN): color
 
 float4 PS_Planet(svertexOutput IN): color
 {
-	float4 output=tex2D(planet_texture,float2(0.5f,0.5f)-0.5f*IN.tex);
+	float4 output=tex2D(flare_texture,float2(0.5f,0.5f)-0.5f*IN.tex);
 	// IN.tex is +- 1.
 	float3 normal;
 	normal.x=IN.tex.x;
@@ -280,7 +269,7 @@ float4 PS_Planet(svertexOutput IN): color
 	float light=saturate(dot(normal.xyz,lightDir.xyz));
 	output.rgb*=colour.rgb;
 	output.rgb*=light;
-	output.a=saturate((1.0-l)/0.01);
+	output.a*=saturate((1.0-l)/0.01);
 	return output;
 }
 

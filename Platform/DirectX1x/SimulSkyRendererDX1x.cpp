@@ -547,7 +547,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 	if(!m_hTechniqueQuery)
 		return sun_occlusion;
 //	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
-	D3DXVECTOR4 sun_dir(GetSkyInterface()->GetDirectionToSun());
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
 	float sun_angular_size=3.14159f/180.f/2.f;
 
 	// fix the projection matrix so this quad is far away:
@@ -576,7 +576,7 @@ simul::sky::float4 sunlight;
 bool SimulSkyRendererDX1x::RenderSun()
 {
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
-	sunlight=GetSkyInterface()->GetLocalIrradiance(alt_km);
+	sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
@@ -586,7 +586,7 @@ bool SimulSkyRendererDX1x::RenderSun()
 	sunlightColour->SetFloatVector(sunlight);
 
 //	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
-	D3DXVECTOR4 sun_dir(GetSkyInterface()->GetDirectionToSun());
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
 	float sun_angular_size=3.14159f/180.f/2.f;
 HRESULT hr=S_OK;
 	// Start the query
@@ -613,14 +613,14 @@ bool SimulSkyRendererDX1x::RenderPlanet(void* tex,float rad,const float *dir,con
 
 	//m_pSkyEffect->SetTexture(flareTexture,(LPDIRECT3DTEXTURE9)tex);
 
-	simul::sky::float4 original_irradiance=GetSkyInterface()->GetSunIrradiance();
+	simul::sky::float4 original_irradiance=skyKeyframer->GetSkyInterface()->GetSunIrradiance();
 
 	simul::sky::float4 planet_dir4=dir;
 	planet_dir4/=simul::sky::length(planet_dir4);
 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(y_vertical?planet_dir4.y:planet_dir4.z);
-	planet_colour*=GetSkyInterface()->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
+	planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 	D3DXVECTOR4 planet_dir(dir);
 
 	// Make it bigger than it should be?
@@ -639,7 +639,7 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 		return (hr==S_OK);
 	float magnitude=exposure*(1.f-sun_occlusion);
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
-	sunlight=GetSkyInterface()->GetLocalIrradiance(alt_km);
+	sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
@@ -651,7 +651,7 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 	//m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
 	//flareTexture->SetResource(flare_texture_SRV);
 	float sun_angular_size=3.14159f/180.f/2.f;
-	D3DXVECTOR4 sun_dir(GetSkyInterface()->GetDirectionToSun());
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
 	hr=RenderAngledQuad(sun_dir,sun_angular_size*20.f*magnitude);
 	return (hr==S_OK);
 }
@@ -735,14 +735,14 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 	skyTexture1->SetResource(sky_textures_SRV[0]);
 	skyTexture2->SetResource(sky_textures_SRV[1]);
 
-	simul::sky::float4 mie_rayleigh_ratio=GetSkyInterface()->GetMieRayleighRatio();
-	simul::sky::float4 sun_dir(GetSkyInterface()->GetDirectionToSun());
+	simul::sky::float4 mie_rayleigh_ratio=skyKeyframer->GetMieRayleighRatio();
+	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 
 	lightDirection->SetFloatVector(sun_dir);
 	mieRayleighRatio->SetFloatVector(mie_rayleigh_ratio);
-	hazeEccentricity->SetFloat	(GetSkyInterface()->GetMieEccentricity());
+	hazeEccentricity->SetFloat	(skyKeyframer->GetMieEccentricity());
 /*if(cubemap)
 		hr=ApplyPass(m_hTechniqueSky_CUBEMAP->GetPassByIndex(0));
 	else*/

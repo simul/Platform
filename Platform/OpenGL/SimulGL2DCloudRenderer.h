@@ -31,7 +31,6 @@ SIMUL_OPENGL_EXPORT_CLASS SimulGL2DCloudRenderer : public simul::clouds::BaseClo
 public:
 	SimulGL2DCloudRenderer(const char *license_key);
 	virtual ~SimulGL2DCloudRenderer();
-	void SetSkyInterface(simul::sky::SkyInterface *si);
 	//standard ogl object interface functions
 	bool Create();
 	//! OpenGL Implementation of device object creation - needs a GL context to be present.

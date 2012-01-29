@@ -402,7 +402,7 @@ ERROR_CHECK
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	static float churn=1.f;
 	helper->SetChurn(churn);
-	helper->MakeGeometry(cloudNode.get(),god_rays,X1.z,god_rays);
+	helper->MakeGeometry(cloudNode.get(),cloudNode.get(),god_rays,X1.z,god_rays);
 	// Here we make the helper calculate loss and inscatter due to atmospherics.
 	// This is an approach that calculates per-vertex atmospheric values that are then
 	// passed to the shader.

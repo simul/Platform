@@ -516,7 +516,7 @@ bool SimulGLSkyRenderer::Render(bool blend)
 ERROR_CHECK
 	glClearColor(1,1,0,1);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-	simul::sky::float4 ratio=GetSkyInterface()->GetMieRayleighRatio();
+	simul::sky::float4 ratio=skyKeyframer->GetMieRayleighRatio();
 	simul::sky::float4 sun_dir=skyKeyframer->GetDirectionToLight();
 	glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
@@ -546,7 +546,7 @@ ERROR_CHECK
 ERROR_CHECK
 	glUniform1f(altitudeTexCoord_param,skyKeyframer->GetAltitudeTexCoord());
 	glUniform3f(MieRayleighRatio_param,ratio.x,ratio.y,ratio.z);
-	glUniform1f(hazeEccentricity_param,GetSkyInterface()->GetMieEccentricity());
+	glUniform1f(hazeEccentricity_param,skyKeyframer->GetMieEccentricity());
 	skyInterp_param=glGetUniformLocation(sky_program,"skyInterp");
 	glUniform1f(skyInterp_param,skyKeyframer->GetInterpolation());
 	glUniform3f(lightDirection_sky_param,sun_dir.x,sun_dir.y,sun_dir.z);
@@ -603,7 +603,7 @@ bool SimulGLSkyRenderer::RenderPointStars()
 		}
 	}
 	glUseProgram(stars_program);
-	float sb=GetSkyInterface()->GetStarlight().x;
+	float sb=skyKeyframer->GetSkyInterface()->GetStarlight().x;
 	float star_brightness=sb*skyKeyframer->GetStarBrightness();
 	glUniform1f(starBrightness_param,star_brightness);
 	float mat1[16],mat2[16];
@@ -629,7 +629,7 @@ bool SimulGLSkyRenderer::RenderPointStars()
 bool SimulGLSkyRenderer::RenderSun()
 {
 	float alt_km=0.001f*cam_pos.y;
-	simul::sky::float4 sunlight=GetSkyInterface()->GetLocalIrradiance(alt_km);
+	simul::sky::float4 sunlight=skyKeyframer->GetSkyInterface()->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
@@ -640,7 +640,7 @@ bool SimulGLSkyRenderer::RenderSun()
 		ERROR_CHECK
 	glUniform3f(sunlight_param,sunlight.x,sunlight.y,sunlight.z);
 		ERROR_CHECK
-	simul::sky::float4 sun_dir(GetSkyInterface()->GetDirectionToLight());
+	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToLight());
 	//if(y_vertical)
 	//	std::swap(sun_dir.y,sun_dir.z);
 	glEnable(GL_BLEND);
@@ -665,14 +665,14 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 	{
 	}
 
-	simul::sky::float4 original_irradiance=GetSkyInterface()->GetSunIrradiance();
+	simul::sky::float4 original_irradiance=skyKeyframer->GetSkyInterface()->GetSunIrradiance();
 
 	simul::sky::float4 planet_dir4=dir;
 	planet_dir4/=simul::sky::length(planet_dir4);
 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(planet_dir4.z);
-	planet_colour*=GetSkyInterface()->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
+	planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 
 	glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
@@ -685,7 +685,7 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 	// Transform light into planet space
 	float Yaw=atan2(dir[0],dir[1]);
 	float Pitch=-asin(dir[2]);
-	simul::math::Vector3 sun_dir=GetSkyInterface()->GetDirectionToSun();
+	simul::math::Vector3 sun_dir=skyKeyframer->GetSkyInterface()->GetDirectionToSun();
 	simul::math::Vector3 sun2;
 	{
 		simul::geometry::SimulOrientation or;

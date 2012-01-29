@@ -753,34 +753,40 @@ void SimulCloudRenderer::GPUTransferDataToTexture(int which_texture,
 	unsigned size2d=4*sizeof(unsigned char)*cloud_tex_width_x*cloud_tex_length_y;
 	unsigned size3d=sizeof(unsigned char)*light_gridsizes[0]*light_gridsizes[1]*light_gridsizes[2];
 	// the light textures:
-	if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
-		light_gridsizes[0],light_gridsizes[1],light_gridsizes[2],
-		1,0,D3DFMT_L8,D3DPOOL_MANAGED,&direct_texture)))
-		return;
-	// Copy the light data to the target 3D grid:
-	direct_texture->LockBox(0,&lockedBox,NULL,NULL);
-	unsigned char *target=(unsigned char*)lockedBox.pBits;
-	memcpy(target,direct_grid,size3d);
-	direct_texture->UnlockBox(0);
-	
-	if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
-		light_gridsizes[0],light_gridsizes[1],light_gridsizes[2],
-		1,0,D3DFMT_L8,D3DPOOL_MANAGED,&indirect_texture)))
-		return;
-	indirect_texture->LockBox(0,&lockedBox,NULL,NULL);
-	target=(unsigned char*)lockedBox.pBits;
-	memcpy(target,indirect_grid,size3d);
-	indirect_texture->UnlockBox(0);
-	
-	if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
-		cloud_tex_width_x,cloud_tex_length_y,cloud_tex_depth_z
-		,1,0,D3DFMT_L8,D3DPOOL_MANAGED,&ambient_texture)))
-		return;
-	ambient_texture->LockBox(0,&lockedBox,NULL,NULL);
-	target=(unsigned char*)lockedBox.pBits;
-	memcpy(target,ambient_grid,size3d);
-	ambient_texture->UnlockBox(0);
-	
+	if(direct_grid)
+	{
+		if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
+			light_gridsizes[0],light_gridsizes[1],light_gridsizes[2],
+			1,0,D3DFMT_L8,D3DPOOL_MANAGED,&direct_texture)))
+			return;
+		// Copy the light data to the target 3D grid:
+		direct_texture->LockBox(0,&lockedBox,NULL,NULL);
+		unsigned char *target=(unsigned char*)lockedBox.pBits;
+		memcpy(target,direct_grid,size3d);
+		direct_texture->UnlockBox(0);
+	}
+	if(indirect_grid)
+	{
+		if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
+			light_gridsizes[0],light_gridsizes[1],light_gridsizes[2],
+			1,0,D3DFMT_L8,D3DPOOL_MANAGED,&indirect_texture)))
+			return;
+		indirect_texture->LockBox(0,&lockedBox,NULL,NULL);
+		unsigned char *target=(unsigned char*)lockedBox.pBits;
+		memcpy(target,indirect_grid,size3d);
+		indirect_texture->UnlockBox(0);
+	}
+	if(ambient_grid)
+	{
+		if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
+			cloud_tex_width_x,cloud_tex_length_y,cloud_tex_depth_z
+			,1,0,D3DFMT_L8,D3DPOOL_MANAGED,&ambient_texture)))
+			return;
+		ambient_texture->LockBox(0,&lockedBox,NULL,NULL);
+		unsigned char *target=(unsigned char*)lockedBox.pBits;
+		memcpy(target,ambient_grid,size3d);
+		ambient_texture->UnlockBox(0);
+	}
 	float offset[]={0.5f/(float)cloud_tex_width_x,0.5f/(float)cloud_tex_length_y,0,0};
 	m_pGPULightingEffect->SetVector(texCoordOffset,(D3DXVECTOR4*)(offset));
 	m_pGPULightingEffect->SetMatrix(densityToLightMatrix,(D3DXMATRIX*)(DensityToLightTransform));
@@ -965,7 +971,7 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	float tan_half_fov_horizontal=1.f/proj._11;
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	//helper->SetNoFrustumLimit(true);
-	helper->MakeGeometry(cloudInterface,false);
+	helper->MakeGeometry(cloudInterface,cloudNode.get(),false);
 
 	if(fade_mode==CPU)
 		helper->CalcInscatterFactors(skyInterface);
@@ -1573,7 +1579,7 @@ bool SimulCloudRenderer::RenderCrossSections(int width)
 //	SaveCloudTexture("cld");
 	HRESULT hr=S_OK;
 	int w=(width-16)/3;
-	int h=(cloudInterface->GetGridHeight()*w)/cloudInterface->GetGridWidth();
+	int h=(cloudGridInterface->GetGridHeight()*w)/cloudGridInterface->GetGridWidth();
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
@@ -1831,15 +1837,22 @@ void SimulCloudRenderer::SetInscatterTextures(void *t1)
 
 void SimulCloudRenderer::SetFadeMode(FadeMode f)
 {
-	BaseCloudRenderer::SetFadeMode(f);
-	rebuild_shaders=true;
-	InitEffects();
+	if(fade_mode!=f)
+	{
+		BaseCloudRenderer::SetFadeMode(f);
+		rebuild_shaders=true;
+		InitEffects();
+	}
 }
 
 void SimulCloudRenderer::SetYVertical(bool y)
 {
-	y_vertical=y;
-	helper->SetYVertical(y);
+	if(y_vertical!=y)
+	{
+		y_vertical=y;
+		rebuild_shaders=true;
+		helper->SetYVertical(y);
+	}
 }
 
 const char *SimulCloudRenderer::GetDebugText() const
