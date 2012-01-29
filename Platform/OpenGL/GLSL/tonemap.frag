@@ -1,5 +1,5 @@
 
-uniform sampler2D sceneTex;
+uniform sampler2D image_texture;
 uniform float exposure;
 uniform float gamma;
 varying vec2 texc;
@@ -7,7 +7,7 @@ varying vec2 texc;
 void main(void)
 {
     // original image
-    vec4 c = texture2D(sceneTex,texc);
+    vec4 c = texture2D(image_texture,texc);
     // exposure
 	c = c*exposure;
     // gamma correction

@@ -6,9 +6,6 @@
 // in accordance with the terms of that agreement.
 
 #pragma once
-#ifdef _MSC_VER
-#include <GL/glew.h>
-#endif
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Graph/Meta/Group.h"
@@ -17,7 +14,7 @@
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
-
+typedef unsigned GLuint;
 class SimulGLSkyRenderer;
 class SimulGLLightningRenderer;
 #ifndef RENDERDEPTHBUFFERCALLBACK

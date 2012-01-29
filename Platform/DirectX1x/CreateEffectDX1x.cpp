@@ -16,8 +16,8 @@
 #include <tchar.h>
 #include <string>
 typedef std::basic_string<TCHAR> tstring;
-static tstring shader_path=TEXT("");
-static tstring texture_path=TEXT("");
+static tstring shader_path=TEXT("media/hlsl/dx11");
+static tstring texture_path=TEXT("media/textures");
 static DWORD default_effect_flags=0;
 
 #include <vector>
@@ -54,7 +54,6 @@ namespace simul
 			shader_path.resize(strlen(path),L' '); // Make room for characters
 			// Copy string to wstring.
 			std::copy(path,path+strlen(path),shader_path.begin());
-
 			shader_path+=L"/";
 		#else
 			shader_path=path;

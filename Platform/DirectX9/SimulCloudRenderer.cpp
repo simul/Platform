@@ -239,6 +239,7 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 	SAFE_RELEASE(raytrace_layer_texture);
 	
 	B_RETURN(D3DXCreateTexture(m_pd3dDevice,128,1,1,0,D3DFMT_A32B32G32R32F,d3d_memory_pool,&raytrace_layer_texture))
+
 	float create_raytrace_layer=timer.UpdateTime()/1000.f;
 
 	SAFE_RELEASE(unitSphereVertexBuffer);
@@ -282,27 +283,64 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 	return (hr==S_OK);
 }
 
-void SimulCloudRenderer::RecompileShaders()
+static std::string GetCompiledFilename(int fade_mde,int wrap_clouds,bool z_vertical)
 {
-	LoadShaders();
+	std::string compiled_filename="simul_clouds_and_lightning_";
+	if(fade_mde==SimulCloudRenderer::FRAGMENT)
+		compiled_filename+="f1_";
+	else if(fade_mde==SimulCloudRenderer::CPU)
+		compiled_filename+="f0_";
+	if(wrap_clouds)
+		compiled_filename+="w1_";
+	else
+		compiled_filename+="w0_";
+	if(z_vertical)
+		compiled_filename+="z";
+	else
+		compiled_filename+="y";
+	compiled_filename+=".fxo";
+	return compiled_filename;
 }
 
-void SimulCloudRenderer::LoadShaders()
+void SimulCloudRenderer::RecompileShaders()
 {
+	/*std::map<std::string,std::string> defines;
+	for(int fade_mde=0;fade_mde<2;fade_mde++)
+	{
+		for(int wrap_clouds=0;wrap_clouds<2;wrap_clouds++)
+		{
+			for(int z_vertical=0;z_vertical<2;z_vertical++)
+			{
+				std::string compiled_filename=GetCompiledFilename(fade_mde,wrap_clouds,(bool)z_vertical);
+				if(fade_mde==FRAGMENT)
+					defines["FADE_MODE"]="1";
+				else if(fade_mde==CPU)
+					defines["FADE_MODE"]="0";
+				if(wrap_clouds)
+					defines["WRAP_CLOUDS"]="1";
+				else
+					defines["WRAP_CLOUDS"]="0";
+				if(z_vertical)
+					defines["Z_VERTICAL"]='1';
+				else
+					defines["Y_VERTICAL"]='1';
+			}
+		}
+	}*/
+	wrap=cloudInterface->GetWrap();
 	simul::base::Timer timer;
 	std::map<std::string,std::string> defines;
 	if(fade_mode==FRAGMENT)
 		defines["FADE_MODE"]="1";
 	if(fade_mode==CPU)
 		defines["FADE_MODE"]="0";
-	defines["DETAIL_NOISE"]="1";
-	wrap=cloudInterface->GetWrap();
 	if(cloudInterface->GetWrap())
 		defines["WRAP_CLOUDS"]="1";
 	if(!y_vertical)
 		defines["Z_VERTICAL"]='1';
 	else
 		defines["Y_VERTICAL"]='1';
+	wrap=cloudInterface->GetWrap();
 	float defines_time=timer.UpdateTime()/1000.f;
 	SAFE_RELEASE(m_pCloudEffect);
 	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
@@ -410,7 +448,7 @@ bool SimulCloudRenderer::InitEffects()
 	{
 		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
 	}
-	LoadShaders();
+	RecompileShaders();
 	return (hr==S_OK);
 }
 
@@ -891,7 +929,9 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	default_fog;
 	PIXBeginNamedEvent(0xFF00FFFF,"SimulCloudRenderer::Render");
 	if(wrap!=cloudInterface->GetWrap())
+	{
 		rebuild_shaders=true;
+	}
 	if(rebuild_shaders)
 		InitEffects();
 	HRESULT hr=S_OK;
@@ -1852,6 +1892,8 @@ void SimulCloudRenderer::SetYVertical(bool y)
 		y_vertical=y;
 		rebuild_shaders=true;
 		helper->SetYVertical(y);
+		rebuild_shaders=true;
+		InitEffects();
 	}
 }
 

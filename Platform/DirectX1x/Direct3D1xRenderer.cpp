@@ -50,8 +50,6 @@ bool	Direct3D11Renderer::ModifyDeviceSettings(		DXUTDeviceSettings* pDeviceSetti
 
 HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(		ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
-	simul::dx11::SetShaderPath("MEDIA/HLSL/DX11");
-	simul::dx11::SetTexturePath("MEDIA/Textures");
 	unsigned ScreenWidth=pBackBufferSurfaceDesc->Width;
 	unsigned ScreenHeight=pBackBufferSurfaceDesc->Height;
 	aspect=(float)ScreenWidth/(float)ScreenHeight;
@@ -136,8 +134,8 @@ void	Direct3D11Renderer::OnD3D11DestroyDevice()
 	OnD3D11LostDevice();
 	// We don't clear the renderers because InvalidateDeviceObjects has already handled DX-specific destruction
 	// And after OnD3D11DestroyDevice we might go back to startup without destroying the renderer.
-    //simulWeatherRenderer=NULL;
-    //simulHDRRenderer=NULL;
+	simulWeatherRenderer=NULL;
+	simulHDRRenderer=NULL;
 	simul::dx11::UnsetDevice();
 }
 

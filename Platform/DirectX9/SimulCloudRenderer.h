@@ -103,7 +103,6 @@ public:
 	void SetYVertical(bool y);
 	bool IsYVertical() const{return y_vertical;}
 protected:
-	void LoadShaders();
 	void NumBuffersChanged();
 	bool y_vertical;
 	void InternalRenderHorizontal(int buffer_index=0);

@@ -65,6 +65,9 @@
 		#endif
 
 	#else
+		#ifndef VOID_RETURN
+			#define VOID_RETURN(x)	{ HRESULT hrx=x; if( FAILED(hrx) ) {char text[200];sprintf(text,"V_RETURN error %s at file %s, line %d",GetErrorText(hrx),__FILE__,__LINE__);std::cout<<text<<std::endl;MessageBox(NULL,text,"ERROR", MB_OK|MB_SETFOREGROUND|MB_TOPMOST);BreakIfDebugging();return; } }
+		#endif
 		#ifndef V_RETURN
 			#define V_RETURN(x)	{ HRESULT hrx=x; if( FAILED(hrx) ) {std::cerr<<"V_RETURN error "<<GetErrorText(hrx)<<" at file "<<__FILE__<<" line "<<__LINE__<<std::endl;BreakIfDebugging(); return hrx; } }
 		#endif

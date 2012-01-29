@@ -1,3 +1,19 @@
+#ifndef MAX_FADE_DISTANCE_METRES
+	#define MAX_FADE_DISTANCE_METRES (300000.f)
+#endif
+#ifndef Z_VERTICAL
+	#define Y_VERTICAL 1
+#endif
+#ifndef WRAP_CLOUDS
+	#define WRAP_CLOUDS 1
+#endif
+#ifndef DETAIL_NOISE
+	#define DETAIL_NOISE 1
+#endif
+#ifndef FADE_MODE
+	#define FADE_MODE 1
+#endif
+
 cbuffer cbPerObject : register( b0 )
 {
 	matrix		worldViewProj		: packoffset( c0 );
@@ -40,12 +56,6 @@ SamplerState fadeSamplerState
 	AddressU = Clamp;
 	AddressV = Mirror;
 };
-#ifndef MAX_FADE_DISTANCE_METRES
-	#define MAX_FADE_DISTANCE_METRES (300000.f)
-#endif
-#ifndef FADE_MODE
-	#define FADE_MODE 1
-#endif
 cbuffer cbUser : register(b2)
 {
 	float4 eyePosition			: packoffset(c0);
