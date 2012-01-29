@@ -17,8 +17,6 @@ OpenGLRenderer::OpenGLRenderer(const char *license_key)
 	,ShowFlares(true)
 	,ShowFades(false)
 {
-	simul::opengl::SetTexturePath("Media/Textures");
-	simul::opengl::SetShaderPath("Media/GLSL/");		// path relative to the root
 	simulWeatherRenderer=new SimulGLWeatherRenderer(license_key);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
 	SetYVertical(y_vertical);
@@ -57,6 +55,7 @@ void OpenGLRenderer::paintGL()
 		simulWeatherRenderer->RenderSky(true,false);
 		//simulWeatherRenderer->RenderClouds(false,false,false);
 
+		simulWeatherRenderer->DoOcclusionTests();
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades();
 		simulWeatherRenderer->DoOcclusionTests();

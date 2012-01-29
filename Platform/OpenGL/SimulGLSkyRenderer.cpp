@@ -768,6 +768,13 @@ ERROR_CHECK
 	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
 	printProgramInfoLog(stars_program);
 ERROR_CHECK
+	sun_program						=LoadProgram("simul_sun_planet_flare.vert","simul_sun.frag");
+	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
+	printProgramInfoLog(sun_program);
+	stars_program					=LoadProgram("simul_sun_planet_flare.vert","simul_stars.frag");
+	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
+	printProgramInfoLog(stars_program);
+ERROR_CHECK
 	planet_program					=glCreateProgram();
 	GLuint planet_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
 	GLuint planet_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);

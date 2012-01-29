@@ -21,6 +21,7 @@
 #endif
 
 #include "Simul/Platform/DirectX9/CreateDX9Effect.h"
+#include "Simul/Math/Decay.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/SkyKeyframer.h"
@@ -175,7 +176,7 @@ bool SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	if(!m_pBufferToScreenEffect)
-		B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pBufferToScreenEffect,"gamma.fx"));
+		B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pBufferToScreenEffect,"gamma.fxo"));
 	SkyOverStarsTechnique		=m_pBufferToScreenEffect->GetTechniqueByName("simul_sky_over_stars");
 	CloudBlendTechnique			=m_pBufferToScreenEffect->GetTechniqueByName("simul_cloud_blend");
 	bufferTexture				=m_pBufferToScreenEffect->GetParameterByName(NULL,"hdrTexture");

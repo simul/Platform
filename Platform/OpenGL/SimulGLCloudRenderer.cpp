@@ -212,6 +212,14 @@ void SimulGLCloudRenderer::FillIlluminationBlock(int source_index,int x,int y,in
 						uchar8_array);
 }
 
+void SimulGLCloudRenderer::GPUTransferDataToTexture(	int which_texture
+									,unsigned char *target_texture
+									,const unsigned char *direct_grid
+									,const unsigned char *indirect_grid
+									,const unsigned char *ambient_grid)
+{
+}
+
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 {
 	glGetFloatv(src,m);
@@ -237,6 +245,7 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog)
 {
+	cubemap;
 	if(glStringMarkerGREMEDY)
 		glStringMarkerGREMEDY(38,"SimulGLCloudRenderer::Render");
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -636,14 +645,14 @@ ERROR_CHECK
 	int index_count=(el)*(az+1)*2;
 	pIndices=new unsigned short[index_count];
 	unsigned short *idx=pIndices;
-	for(int i=0;i<el;i++)
+	for(unsigned i=0;i<el;i++)
 	{
 		int base=i*(az+1);
-		for(int j=0;j<az+1;j++)
+		for(unsigned j=0;j<az+1;j++)
 		{
-			*idx=base+j;
+			*idx=(unsigned short)(base+j);
 			idx++;
-			*idx=base+(az+1)+j;
+			*idx=(unsigned short)(base+(az+1)+j);
 			idx++;
 		}
 	}
@@ -701,7 +710,7 @@ SimulGLCloudRenderer::~SimulGLCloudRenderer()
 const char *SimulGLCloudRenderer::GetDebugText()
 {
 	static char txt[100];
-	sprintf(txt,"%3.3g",cloudKeyframer->GetInterpolation());
+	sprintf_s(txt,100,"%3.3g",cloudKeyframer->GetInterpolation());
 	return txt;
 }
 

@@ -1,4 +1,7 @@
 
+#ifdef _MSC_VER
+#include <GL/glew.h>
+#endif
 
 #include "FramebufferGL.h"
 #include "LoadGLProgram.h"
@@ -14,6 +17,7 @@
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Base/Timer.h"
+#include "Simul/Math/Decay.h"
 
 #ifdef _MSC_VER
 // for wglGetProcAddress

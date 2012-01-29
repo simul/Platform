@@ -475,6 +475,7 @@ void SimulTerrainRenderer::TerrainModified()
 bool SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	last_overall_checksum=heightmap->GetChecksum();
 	enabled=false;
 	HRESULT hr;
 	D3DVERTEXELEMENT9 decl[]=
@@ -501,6 +502,8 @@ bool SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
 
 	SAFE_RELEASE(colourkey_texture);
 	D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/colourkey.png"),&colourkey_texture);
+
+	rebuild_effect=true;
 
 	RebuildBuffers();
 	RecompileShaders();
