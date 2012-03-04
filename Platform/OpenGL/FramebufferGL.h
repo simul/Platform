@@ -86,9 +86,13 @@ public:
 	{
 		return m_fb;
 	}
+	void ReloadShaders();
+	GLuint GetProgram() const 
+	{
+		return tonemap_program;
+	}
 private:
 	static std::stack<GLuint> fb_stack;
-	void InitShader();
 	void CheckFramebufferStatus();
 	// Bind the internal textures
 	void BindColor(int index = 0)

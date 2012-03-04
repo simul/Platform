@@ -100,6 +100,9 @@ public:
 	{
 		y_vertical=y;
 	}
+	void SetBufferSize(int,int){}
+	void StartRender(){}
+	void FinishRender(){}
 protected:
 	bool y_vertical;
 	bool DrawScreenQuad();

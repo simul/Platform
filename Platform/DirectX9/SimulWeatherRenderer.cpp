@@ -42,10 +42,11 @@
 static simul::base::Timer timer;
 
 static D3DXMATRIX ident;
-SimulWeatherRenderer::SimulWeatherRenderer(const char *lic,
-			bool usebuffer,int width,
-			int height,bool sky,bool clouds3d,
-			bool clouds2d,bool rain,bool colour_sky) :
+SimulWeatherRenderer::SimulWeatherRenderer(	const char *lic,
+											simul::clouds::CloudKeyframer *ck3d,
+											bool usebuffer,int width,
+											int height,bool sky,bool clouds3d,
+											bool clouds2d,bool rain,bool colour_sky) :
 	BaseWeatherRenderer(lic),
 	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
@@ -69,7 +70,22 @@ SimulWeatherRenderer::SimulWeatherRenderer(const char *lic,
 		baseSkyRenderer=simulSkyRenderer.get();
 		AddChild(simulSkyRenderer.get());
 	}
-	EnableLayers(clouds3d,clouds2d);
+	if(clouds3d)
+	{
+		simulCloudRenderer=new SimulCloudRenderer(license_key,ck3d);
+		baseCloudRenderer=simulCloudRenderer.get();
+		AddChild(simulCloudRenderer.get());
+		simulLightningRenderer=new SimulLightningRenderer(simulCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
+		baseLightningRenderer=simulLightningRenderer.get();
+		Restore3DCloudObjects();
+	}
+	if(clouds2d)
+	{
+		simul2DCloudRenderer=new Simul2DCloudRenderer(license_key,NULL);
+		base2DCloudRenderer=simul2DCloudRenderer.get();
+		Restore2DCloudObjects();
+	}
+	EnableCloudLayers(clouds3d,clouds2d);
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer;
@@ -78,24 +94,9 @@ SimulWeatherRenderer::SimulWeatherRenderer(const char *lic,
 	this->SetBufferSize(width,height);
 }
 
-void SimulWeatherRenderer::EnableLayers(bool clouds3d,bool clouds2d)
+void SimulWeatherRenderer::EnableCloudLayers(bool clouds3d,bool clouds2d)
 {
-	BaseWeatherRenderer::EnableLayers(clouds3d,clouds2d);
-	if(clouds3d&&simulCloudRenderer.get()==NULL)
-	{
-		simulCloudRenderer=new SimulCloudRenderer(license_key);
-		baseCloudRenderer=simulCloudRenderer.get();
-		AddChild(simulCloudRenderer.get());
-		simulLightningRenderer=new SimulLightningRenderer(simulCloudRenderer->GetLightningRenderInterface());
-		baseLightningRenderer=simulLightningRenderer.get();
-		Restore3DCloudObjects();
-	}
-	if(clouds2d&&simul2DCloudRenderer.get()==NULL)
-	{
-		simul2DCloudRenderer=new Simul2DCloudRenderer(license_key);
-		base2DCloudRenderer=simul2DCloudRenderer.get();
-		Restore2DCloudObjects();
-	}
+	BaseWeatherRenderer::EnableCloudLayers(clouds3d,clouds2d);
 	ConnectInterfaces();
 }
 /*
@@ -176,7 +177,7 @@ bool SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	if(!m_pBufferToScreenEffect)
-		B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pBufferToScreenEffect,"gamma.fxo"));
+		B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pBufferToScreenEffect,"gamma.fx"));
 	SkyOverStarsTechnique		=m_pBufferToScreenEffect->GetTechniqueByName("simul_sky_over_stars");
 	CloudBlendTechnique			=m_pBufferToScreenEffect->GetTechniqueByName("simul_cloud_blend");
 	bufferTexture				=m_pBufferToScreenEffect->GetParameterByName(NULL,"hdrTexture");
@@ -313,7 +314,7 @@ bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 			if(simulAtmosphericsRenderer)
 			{
 				simulAtmosphericsRenderer->SetLightningProperties(simulCloudRenderer->GetIlluminationTexture(),
-																simulCloudRenderer->GetLightningRenderInterface());
+																simulCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
 			}
 		}
 	}

@@ -39,7 +39,7 @@ public:
 SIMUL_DIRECTX1x_EXPORT_CLASS SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer
 {
 public:
-	SimulWeatherRendererDX1x(const char *license_key,bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
+	SimulWeatherRendererDX1x(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer,bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
 	virtual ~SimulWeatherRendererDX1x();
 	//standard d3d object interface functions
 	bool RestoreDeviceObjects(ID3D1xDevice* pd3dDevice,IDXGISwapChain *swapChain);
@@ -73,10 +73,6 @@ public:
 	class SimulCloudRendererDX1x *GetCloudRenderer();
 	//! Get a pointer to the 2d cloud renderer owned by this class instance.
 	class Simul2DCloudRenderer *Get2DCloudRenderer();
-	//! Get a pointer to the rain renderer owned by this class instance.
-	class SimulPrecipitationRenderer *GetPrecipitationRenderer();
-	//! Get a pointer to the atmospherics renderer owned by this class instance.
-	class SimulAtmosphericsRenderer *GetAtmosphericsRenderer();
 	//! Get the current debug text as a c-string pointer.
 	const char *GetDebugText() const;
 	//! Get timing value.
@@ -101,6 +97,7 @@ protected:
 	bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
 	simul::base::SmartPtr<class SimulSkyRendererDX1x> simulSkyRenderer;
 	simul::base::SmartPtr<class SimulCloudRendererDX1x> simulCloudRenderer;
+	simul::base::SmartPtr<class SimulAtmosphericsRendererDX1x> simulAtmosphericsRenderer;
 	//simul::base::SmartPtr<class Simul2DCloudRenderer> *simul2DCloudRenderer;
 	//simul::base::SmartPtr<class SimulPrecipitationRenderer> *simulPrecipitationRenderer;
 	//simul::base::SmartPtr<class SimulAtmosphericsRenderer> *simulAtmosphericsRenderer;

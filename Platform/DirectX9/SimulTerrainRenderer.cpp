@@ -394,8 +394,8 @@ void SimulTerrainRenderer::GpuWaterErosion(float time_step)
 	D3DXHANDLE evaporation					=pRenderHeightmapEffect->GetParameterByName(NULL,"evaporation");
 	pRenderHeightmapEffect->SetTexture(addTexture,water_texture);
 	pRenderHeightmapEffect->SetTexture(heightTexture,height_texture);
-	pRenderHeightmapEffect->SetFloat(rainfall,0.05*heightmap->GetRainfall());
-	pRenderHeightmapEffect->SetFloat(evaporation,0.01*heightmap->GetEvaporation());
+	pRenderHeightmapEffect->SetFloat(rainfall,0.05f*heightmap->GetRainfall());
+	pRenderHeightmapEffect->SetFloat(evaporation,0.01f*heightmap->GetEvaporation());
 	hr=m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget);
 	{
 		soil_depth_texture->GetSurfaceLevel(0,&pRenderTarget);
@@ -815,6 +815,8 @@ bool SimulTerrainRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(rock_height_texture);
 	SAFE_RELEASE(soil_depth_texture);
 	SAFE_RELEASE(water_texture);
+	
+	SAFE_RELEASE(flux_texture);
 	return (hr==S_OK);
 }
 

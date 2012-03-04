@@ -52,6 +52,46 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(const char *license_key)
 	,cloud_data(NULL)
 {
 	cloudKeyframer->SetFillTexturesAsBlocks(true);
+/*	cloudInterface=cloudNode.get();
+	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
+
+	cloudNode->SetSeparateSecondaryLight(true);
+	cloudNode->SetWrap(true);
+	cloudNode->SetThinLayer(true);
+
+	cloudNode->SetRandomSeed(239);
+
+	cloudNode->SetGridLength(128);
+	cloudNode->SetGridWidth(128);
+	cloudNode->SetGridHeight(1);
+
+	cloudNode->SetCloudBaseZ(12600.f);
+	cloudNode->SetCloudWidth(120000.f);
+	cloudNode->SetCloudLength(120000.f);
+	cloudNode->SetCloudHeight(4000.f);
+
+	cloudNode->SetOpticalDensity(.5f);
+	cloudNode->SetHumidity(0.65f);
+
+	cloudNode->SetExtinction(1.5f);
+	cloudNode->SetLightResponse(1.f);
+	cloudNode->SetSecondaryLightResponse(1.f);
+	cloudNode->SetAmbientLightResponse(1.f);
+	cloudNode->SetDiffusivity(1.f);
+
+	unsigned noise_octave=(unsigned)scale;
+	unsigned noise_res=1<<(unsigned)scale;
+	unsigned octaves=5-noise_octave;
+	cloudNode->SetNoiseResolution(noise_res);
+	cloudNode->SetNoiseOctaves(octaves);
+	cloudNode->SetNoisePeriod(4);
+
+	cloudNode->Generate();
+*/
+	helper->Initialize(16,100000.f);
+	//cloudKeyframer=new simul::clouds::CloudKeyframer(license_key,false,true);
+	cloudKeyframer->SetOpenGL(true);
+	cloudKeyframer->SetUserKeyframes(false);
 }
 
 bool SimulGL2DCloudRenderer::CreateNoiseTexture()
@@ -233,7 +273,7 @@ static float ll=0.05f;
 	// convert metres to km:
 	view_km*=0.001f;
 	helper->MakeGeometry(ci);
-	static float noise_angle=.8;
+	static float noise_angle=0.8f;
 	helper->Set2DNoiseTexturing(noise_angle,2.f,1.f);
 	helper->CalcInscatterFactors(cloudInterface,skyInterface,0.f);
 	float image_scale=2000.f+texture_scale*20000.f;
@@ -291,7 +331,7 @@ bool SimulGL2DCloudRenderer::RestoreDeviceObjects(void*)
 
 	textureEffect_param		= glGetUniformLocation(clouds_program,"textureEffect");
 	layerDensity_param		= glGetUniformLocation(clouds_program,"layerDensity");
-	cloudKeyframer->SetRenderCallback(this);
+//cloudKeyframer->SetRenderCallback(this);
 	return true;
 }
 
@@ -319,46 +359,6 @@ bool SimulGL2DCloudRenderer::Create()
 	helper=new simul::clouds::Cloud2DGeometryHelper();
 	CreateNoiseTexture();
 	CreateImageTexture();
-	cloudInterface=cloudNode.get();
-	cloudNode->SetLicense(SIMUL_LICENSE_KEY);
-
-	cloudNode->SetSeparateSecondaryLight(true);
-	cloudNode->SetWrap(true);
-	cloudNode->SetThinLayer(true);
-
-	cloudNode->SetRandomSeed(239);
-
-	cloudNode->SetGridLength(128);
-	cloudNode->SetGridWidth(128);
-	cloudNode->SetGridHeight(1);
-
-	cloudNode->SetCloudBaseZ(12600.f);
-	cloudNode->SetCloudWidth(120000.f);
-	cloudNode->SetCloudLength(120000.f);
-	cloudNode->SetCloudHeight(4000.f);
-
-	cloudNode->SetOpticalDensity(.5f);
-	cloudNode->SetHumidity(0.65f);
-
-	cloudNode->SetExtinction(1.5f);
-	cloudNode->SetLightResponse(1.f);
-	cloudNode->SetSecondaryLightResponse(1.f);
-	cloudNode->SetAmbientLightResponse(1.f);
-	cloudNode->SetDiffusivity(1.f);
-
-	unsigned noise_octave=(unsigned)scale;
-	unsigned noise_res=1<<(unsigned)scale;
-	unsigned octaves=5-noise_octave;
-	cloudNode->SetNoiseResolution(noise_res);
-	cloudNode->SetNoiseOctaves(octaves);
-	cloudNode->SetNoisePeriod(4);
-
-	cloudNode->Generate();
-
-	helper->Initialize(16,100000.f);
-	cloudKeyframer=new simul::clouds::CloudKeyframer(cloudInterface,NULL,true);
-	cloudKeyframer->SetOpenGL(true);
-	cloudKeyframer->SetUserKeyframes(false);
 // lighting is done in CreateCloudTexture, so memory has now been allocated
 	unsigned cloud_mem=cloudNode->GetMemoryUsage();
 	std::cout<<"Cloud memory usage: "<<cloud_mem/1024<<"k"<<std::endl;

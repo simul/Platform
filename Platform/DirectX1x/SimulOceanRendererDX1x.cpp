@@ -159,9 +159,9 @@ bool SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 	ID3DBlob* pBlobOceanSurfPS = NULL;
 	ID3DBlob* pBlobWireframePS = NULL;
 
-	CompileShaderFromFile(L"MEDIA/HLSL/DX11/ocean_shading.hlsl", "OceanSurfVS", "vs_4_0", &pBlobOceanSurfVS);
-	CompileShaderFromFile(L"MEDIA/HLSL/DX11/ocean_shading.hlsl", "OceanSurfPS", "ps_4_0", &pBlobOceanSurfPS);
-	CompileShaderFromFile(L"MEDIA/HLSL/DX11/ocean_shading.hlsl", "WireframePS", "ps_4_0", &pBlobWireframePS);
+	CompileShaderFromFile(L"../../Platform/DirectX1x/HLSL/ocean_shading.hlsl", "OceanSurfVS", "vs_4_0", &pBlobOceanSurfVS);
+	CompileShaderFromFile(L"../../Platform/DirectX1x/HLSL/ocean_shading.hlsl", "OceanSurfPS", "ps_4_0", &pBlobOceanSurfPS);
+	CompileShaderFromFile(L"../../Platform/DirectX1x/HLSL/ocean_shading.hlsl", "WireframePS", "ps_4_0", &pBlobWireframePS);
 	assert(pBlobOceanSurfVS);
 	assert(pBlobOceanSurfPS);
 	assert(pBlobWireframePS);
@@ -544,7 +544,7 @@ void SimulOceanRendererDX1x::createFresnelMap()
 void SimulOceanRendererDX1x::loadTextures()
 {
     WCHAR strPath[MAX_PATH];
-    swprintf_s(strPath, MAX_PATH, L"Media/Textures/perlin_noise.dds");
+    swprintf_s(strPath, MAX_PATH, L"../../Platform/DirectX1x/Textures/perlin_noise.dds");
 	D3DX11CreateShaderResourceViewFromFile(m_pd3dDevice, strPath, NULL, NULL, &g_pSRV_Perlin, NULL);
 	assert(g_pSRV_Perlin);
 }

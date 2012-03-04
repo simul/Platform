@@ -344,6 +344,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\DirectX1x\SimulAtmosphericsRendererDX1x.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\DirectX1x\SimulCloudRendererDX1x.cpp"
 				>
 			</File>
@@ -411,6 +415,10 @@
 			</File>
 			<File
 				RelativePath="..\DirectX1x\ResourcesDx1x.h"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\SimulAtmosphericsRendererDX1x.h"
 				>
 			</File>
 			<File

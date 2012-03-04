@@ -40,8 +40,15 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	m_pHDRRenderTarget(NULL),
 	m_pBufferDepthSurface(NULL),
 	m_pOldRenderTarget(NULL),
-	m_pOldDepthSurface(NULL),
-	exposure(1.f),
+	m_pOldDepthSurface(NULL)
+
+	,TonemapTechnique(NULL)
+	,Exposure(NULL)
+	,Gamma(NULL)
+	,hdrTexture(NULL)
+	,worldViewProj(NULL)
+
+	,exposure(1.f),
 	gamma(1.f),			// no need for shader-based gamma-correction with DX10/11
 	Width(w),
 	Height(h),
@@ -76,11 +83,11 @@ bool FramebufferDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
 #endif
 	SAFE_RELEASE(m_pTonemapEffect);
 	hr=CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx"));
-	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
-	Exposure				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
-	Gamma					=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
-	hdrTexture				=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
-	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	TonemapTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
+	Exposure			=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
+	Gamma				=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
+	hdrTexture			=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
+	worldViewProj		=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	if(!CreateBuffers())
 		return false;
 	return (hr==S_OK);
@@ -230,7 +237,9 @@ bool FramebufferDX1x::CreateBuffers()
 	assert(pass->IsValid());
 	hr=pass->GetDesc(&PassDesc);
 	V_CHECK(hr);
-	hr=m_pd3dDevice->CreateInputLayout( decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pBufferVertexDecl);
+	hr=m_pd3dDevice->CreateInputLayout(
+		decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize
+		, &m_pBufferVertexDecl);
 
 	static float x=-1.f,y=-1.f;
 	static float width=2.f,height=2.f;
@@ -333,8 +342,6 @@ bool FramebufferDX1x::RenderBufferToCurrentTarget()
 	D3DXMatrixIdentity(&ident);
 
     D3DXMatrixOrthoLH(&ident,2.f,2.f,-100.f,100.f);
-   // D3DXMatrixOrthoLH(&ident,screen_width/(float)Width,screen_height/(float)Height,-100.f,100.f);
-    //D3DXMatrixOrthoLH(&ident,screen_width/(float)Width,screen_height/(float)Height,-100.f,100.f);
 	worldViewProj->SetMatrix(ident);
 	UINT stride = sizeof(Vertext);
 	UINT offset = 0;

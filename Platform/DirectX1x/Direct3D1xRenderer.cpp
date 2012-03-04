@@ -16,12 +16,12 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 
-Direct3D11Renderer::Direct3D11Renderer(const char *license_key):
+Direct3D11Renderer::Direct3D11Renderer(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer):
 		camera(NULL)
 		,timeMult(0.f)
 		,y_vertical(true)
 {
-	simulWeatherRenderer=new SimulWeatherRendererDX1x(license_key,true,false,640,360,true,true,true);
+	simulWeatherRenderer=new SimulWeatherRendererDX1x(license_key,cloudKeyframer,true,false,640,360,true,true,true);
 	AddChild(simulWeatherRenderer.get());
 	//simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
 	simulOpticsRenderer=new SimulOpticsRendererDX1x();
@@ -89,9 +89,11 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep)
 {
 	D3DXMATRIX world,view,proj;
+	static float nr=0.01f;
+	static float fr=250000.f;
 	if(camera)
 	{
-		proj=camera->MakeProjectionMatrix(1.f,250000.f,aspect,y_vertical);
+		proj=camera->MakeProjectionMatrix(nr,fr,aspect,y_vertical);
 		//D3DXMatrixPerspectiveFovRH(&proj,camera->GetVerticalFieldOfViewDegrees()*3.141f/180.f,aspect,.1f,250000.f);
 		view=camera->MakeViewMatrix(!y_vertical);
 		D3DXMatrixIdentity(&world);
@@ -168,6 +170,18 @@ void Direct3D11Renderer::SetYVertical(bool y)
 		simulOpticsRenderer->SetYVertical(y_vertical);
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->SetYVertical(y_vertical);
+}
+
+void Direct3D11Renderer::RecompileShaders()
+{
+	if(simulWeatherRenderer.get())
+		simulWeatherRenderer->RecompileShaders();
+	if(simulOpticsRenderer.get())
+		simulOpticsRenderer->RecompileShaders();
+	if(simulHDRRenderer.get())
+		simulHDRRenderer->RecompileShaders();
+//	if(simulTerrainRenderer.get())
+//		simulTerrainRenderer->RecompileShaders();
 }
 
 void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)

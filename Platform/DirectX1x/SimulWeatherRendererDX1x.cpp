@@ -20,6 +20,7 @@
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Base/StringToWString.h"
 #include "SimulSkyRendererDX1x.h"
+#include "SimulAtmosphericsRendererDX1x.h"
 
 #include "SimulCloudRendererDX1x.h"
 #include "Simul/Base/Timer.h"
@@ -28,7 +29,7 @@
 
 D3DXMATRIX view_matrices[6];
 
-SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(const char *lic,
+SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(const char *lic,simul::clouds::CloudKeyframer *cloudKeyframer,
 		bool usebuffer,bool tonemap,int w,int h,bool sky,bool clouds3d,bool clouds2d,bool rain) :
 	BaseWeatherRenderer(lic),
 	framebuffer(w,h),
@@ -54,7 +55,7 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(const char *lic,
 	}
 	if(show_3d_clouds)
 	{
-		simulCloudRenderer=new SimulCloudRendererDX1x(license_key);
+		simulCloudRenderer=new SimulCloudRendererDX1x(license_key,cloudKeyframer);
 		baseCloudRenderer=simulCloudRenderer.get();
 		Group::AddChild(simulCloudRenderer.get());
 	}
@@ -62,8 +63,9 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(const char *lic,
 		simul2DCloudRenderer=new Simul2DCloudRenderer();
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
-	
-	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer;*/
+	*/
+	simulAtmosphericsRenderer=new SimulAtmosphericsRendererDX1x;
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
 	ConnectInterfaces();
 }
 void SimulWeatherRendererDX1x::ConnectInterfaces()
@@ -88,9 +90,9 @@ void SimulWeatherRendererDX1x::ConnectInterfaces()
 		V_RETURN(simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
 	if(simulPrecipitationRenderer)
 		V_RETURN(simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice));
-	
-	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);*/
+	*/
+	//if(simulAtmosphericsRenderer)
+	//	simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
 }
 
 bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapChain *swapChain)
@@ -143,9 +145,9 @@ bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapC
 		V_RETURN(simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
 	if(simulPrecipitationRenderer)
 		V_RETURN(simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice));
-	
+	*/
 	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);*/
+		simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
 
 	MakeCubeMatrices(view_matrices);
 	return (hr==S_OK);
@@ -381,18 +383,6 @@ SimulCloudRendererDX1x *SimulWeatherRendererDX1x::GetCloudRenderer()
 }
 
 Simul2DCloudRenderer *SimulWeatherRendererDX1x::Get2DCloudRenderer()
-{
-	return NULL;
-}
-
-SimulPrecipitationRenderer *SimulWeatherRendererDX1x::GetPrecipitationRenderer()
-{
-	if(show_rain)
-		return NULL;
-	else return NULL;
-}
-
-SimulAtmosphericsRenderer *SimulWeatherRendererDX1x::GetAtmosphericsRenderer()
 {
 	return NULL;
 }

@@ -5,11 +5,12 @@
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/SimulGLSkyRenderer.h"
+#include "Simul/Platform/OpenGL/SimulGLCloudRenderer.h"
 #include "Simul/Sky/Float4.h"
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 
 
-OpenGLRenderer::OpenGLRenderer(const char *license_key)
+OpenGLRenderer::OpenGLRenderer(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer)
 	:width(0)
 	,height(0)
 	,cam(NULL)
@@ -17,7 +18,7 @@ OpenGLRenderer::OpenGLRenderer(const char *license_key)
 	,ShowFlares(true)
 	,ShowFades(false)
 {
-	simulWeatherRenderer=new SimulGLWeatherRenderer(license_key);
+	simulWeatherRenderer=new SimulGLWeatherRenderer(license_key,cloudKeyframer);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
 	SetYVertical(y_vertical);
 }
@@ -53,7 +54,7 @@ void OpenGLRenderer::paintGL()
 		if(simulHDRRenderer)
 			simulHDRRenderer->StartRender();
 		simulWeatherRenderer->RenderSky(true,false);
-		//simulWeatherRenderer->RenderClouds(false,false,false);
+
 
 		simulWeatherRenderer->DoOcclusionTests();
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
@@ -69,6 +70,12 @@ void OpenGLRenderer::paintGL()
 				(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
 				,dir,light);
 		}
+		if(simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())
+		{
+			SetTopDownOrthoProjection(width,height);
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width/3);
+		}
+
 		if(simulHDRRenderer)
 			simulHDRRenderer->FinishRender();
 	}

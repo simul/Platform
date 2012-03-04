@@ -47,6 +47,19 @@ void SetOrthoProjection(int w,int h)
 		glViewport(0,0,w,h);
 }
 
+void SetTopDownOrthoProjection(int w,int h)
+{
+	win_h=h;
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0,w,h,0,-1.0,1.0);
+		glMatrixMode(GL_TEXTURE);
+		glLoadIdentity();
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glViewport(0,0,w,h);
+}
+
 void SetPerspectiveProjection(int w,int h,float field_of_view)
 {
 	win_h=h;
@@ -86,18 +99,18 @@ void SetVSync(int vsync)
 }
 
 // draw a quad with texture coordinate for texture rectangle
-void DrawQuad(int w,int h)
+void DrawQuad(int x,int y,int w,int h)
 {
-		glBegin(GL_QUADS);
-		glTexCoord2f(0.0,1.0);
-		glVertex2f(0.0,h);
-		glTexCoord2f(1.0,1.0);
-		glVertex2f(w,h);
-		glTexCoord2f(1.0,0.0);
-		glVertex2f(w,0.0);
-		glTexCoord2f(0.0,0.0);
-		glVertex2f(0.0,0.0);
-		glEnd();
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.0,1.0);
+	glVertex2f(x,y+h);
+	glTexCoord2f(1.0,1.0);
+	glVertex2f(x+w,y+h);
+	glTexCoord2f(1.0,0.0);
+	glVertex2f(x+w,y);
+	glTexCoord2f(0.0,0.0);
+	glVertex2f(x,y);
+	glEnd();
 }
 
 

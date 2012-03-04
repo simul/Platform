@@ -78,6 +78,13 @@ bool SimulHDRRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapChain
 #else
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
+	RecompileShaders();
+	return (hr==S_OK);
+}
+
+void SimulHDRRendererDX1x::RecompileShaders()
+{
+	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pTonemapEffect);
 	if(!m_pTonemapEffect)
 	{
@@ -88,8 +95,6 @@ bool SimulHDRRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapChain
 	Gamma					=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
 	hdrTexture				=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
-
-	return (hr==S_OK);
 }
 
 bool SimulHDRRendererDX1x::InvalidateDeviceObjects()

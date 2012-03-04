@@ -84,7 +84,7 @@ struct PosTexVert_t
 };
 CloudVertex_t *vertices=NULL;
 PosTexVert_t *lightning_vertices=NULL;
-#define MAX_VERTICES (4000)
+#define MAX_VERTICES (12000)
 
 class ExampleHumidityCallback:public simul::clouds::HumidityCallbackInterface
 {
@@ -107,8 +107,8 @@ public:
 };
 ExampleHumidityCallback hm;
 
-SimulCloudRendererDX1x::SimulCloudRendererDX1x(const char *license_key) :
-	simul::clouds::BaseCloudRenderer(license_key),
+SimulCloudRendererDX1x::SimulCloudRendererDX1x(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer) :
+	simul::clouds::BaseCloudRenderer(license_key,true,cloudKeyframer),
 	m_hTechniqueLightning(NULL),
 	m_pd3dDevice(NULL),
 	m_pImmediateContext(NULL),
@@ -141,17 +141,14 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(const char *license_key) :
 		cloud_textures[i]=NULL;
 		cloudDensityResource[i]=NULL;
 	}
-
-	cloudNode->SetLicense(license_key);
 	helper->SetYVertical(y_vertical);
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 	texel_index[0]=texel_index[1]=texel_index[2]=texel_index[3]=0;
-	cloudNode->AddHumidityCallback(&hm);
-	cloudKeyframer->SetFillTexturesAsBlocks(false);
+/*	cloudKeyframer->SetFillTexturesAsBlocks(false);
 	cloudKeyframer->SetBits(simul::clouds::CloudKeyframer::BRIGHTNESS,
 							simul::clouds::CloudKeyframer::SECONDARY,
 							simul::clouds::CloudKeyframer::DENSITY,
-							simul::clouds::CloudKeyframer::AMBIENT);
+							simul::clouds::CloudKeyframer::AMBIENT);*/
 }
 
 void SimulCloudRendererDX1x::SetSkyInterface(simul::sky::BaseSkyInterface *si)
@@ -278,8 +275,8 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 		hr=pass->GetDesc(&PassDesc);
 		hr=m_pd3dDevice->CreateInputLayout( std_decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pLightningVtxDecl);
 	}
-	cloudKeyframer->SetRenderCallback(NULL);
-	cloudKeyframer->SetRenderCallback(this);
+//	cloudKeyframer->SetRenderCallback(NULL);
+//	cloudKeyframer->SetRenderCallback(this);
 	if(lightningIlluminationTextureResource)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 	return (hr==S_OK);
@@ -315,7 +312,7 @@ bool SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(noiseTextureResource);
 	
 	SAFE_RELEASE(lightningIlluminationTextureResource);
-
+	ClearIterators();
 	return (hr==S_OK);
 }
 
@@ -359,7 +356,7 @@ loadInfo.MipLevels=0;
 	}
 	//if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,size,default_mip_levels,default_texture_usage,DXGI_FORMAT_R8G8B8A8_UINT,D3DPOOL_MANAGED,&noise_texture)))
 	//	return (hr==S_OK);
-	D3D11_TEXTURE2D_DESC tex_desc;
+	D3D1x_TEXTURE2D_DESC tex_desc;
 	tex_desc.Width			=noise_texture_size;
 	tex_desc.Height			=noise_texture_size;
 	tex_desc.MipLevels = 0;
@@ -367,12 +364,26 @@ loadInfo.MipLevels=0;
 	tex_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	tex_desc.SampleDesc.Count = 1;
 	tex_desc.SampleDesc.Quality = 0;
-	tex_desc.Usage = D3D11_USAGE_DYNAMIC;
-	tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	tex_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	tex_desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+	tex_desc.Usage = D3D1x_USAGE_DYNAMIC;
+	tex_desc.BindFlags = D3D1x_BIND_SHADER_RESOURCE;
+	tex_desc.CPUAccessFlags = 0;//D3D1x_CPU_ACCESS_WRITE;
+	tex_desc.MiscFlags = 0;//D3D1x_RESOURCE_MISC_GENERATE_MIPS only works with a rendertarget;
  
-	V_CHECK(m_pd3dDevice->CreateTexture2D(&tex_desc,NULL,&noise_texture));
+	D3D1x_TEXTURE2D_DESC desc=
+	{
+		noise_texture_size,
+		noise_texture_size,
+		1,
+		1,
+		DXGI_FORMAT_R8G8B8A8_UNORM,
+		{1,0},
+		D3D1x_USAGE_DYNAMIC,
+		D3D1x_BIND_SHADER_RESOURCE,
+		D3D1x_CPU_ACCESS_WRITE,
+		0
+	};
+	hr=m_pd3dDevice->CreateTexture2D(&desc,NULL,&noise_texture);
+	V_CHECK(hr);
 	D3D1x_MAPPED_TEXTURE2D mapped;
 	if(FAILED(hr=Map2D(noise_texture,&mapped)))
 		return false;
@@ -380,6 +391,7 @@ loadInfo.MipLevels=0;
 	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)(mapped.pData),noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
 	Unmap2D(noise_texture);
 	V_CHECK(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
+	m_pImmediateContext->GenerateMips(noiseTextureResource);
 	return true;
 }
 
@@ -496,62 +508,6 @@ void SimulCloudRendererDX1x::Map(int texture_index)
 	}
 }
 
-void SimulCloudRendererDX1x::SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z)
-{
-	if(!width_x||!length_y||!depth_z)
-		return;
-	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z)
-		return;
-	cloud_tex_width_x=width_x;
-	cloud_tex_length_y=length_y;
-	cloud_tex_depth_z=depth_z;
-	HRESULT hr=S_OK;
-	static DXGI_FORMAT cloud_tex_format=DXGI_FORMAT_R8G8B8A8_UNORM;
-	D3D1x_TEXTURE3D_DESC desc=
-	{
-		width_x,length_y,depth_z,
-		1,
-		cloud_tex_format,
-		D3D1x_USAGE_DYNAMIC,
-		D3D1x_BIND_SHADER_RESOURCE,
-		D3D1x_CPU_ACCESS_WRITE,
-		0
-	};
-	for(int i=0;i<3;i++)
-	{
-		SAFE_RELEASE(cloud_textures[i]);
-		if(FAILED(hr=m_pd3dDevice->CreateTexture3D(&desc,0,&cloud_textures[i])))
-			return;
-	}
-	for(int i=0;i<3;i++)
-	{
-		SAFE_RELEASE(cloudDensityResource[i]);
-	    FAIL_RETURN(m_pd3dDevice->CreateShaderResourceView(cloud_textures[i],NULL,&cloudDensityResource[i]));
-	}
-	Map(2);
-}
-
-void SimulCloudRendererDX1x::FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array)
-{
-	Map(texture_index);
-	unsigned *ptr=(unsigned *)mapped_cloud_texture.pData;
-	if(!ptr)
-		return;
-	ptr+=texel_index;
-	memcpy(ptr,uint32_array,num_texels*sizeof(unsigned));
-	if(texture_index!=2)
-		Unmap();
-}
-
-void SimulCloudRendererDX1x::CycleTexturesForward()
-{
-	Unmap();
-	std::swap(cloud_textures[0],cloud_textures[1]);
-	std::swap(cloud_textures[1],cloud_textures[2]);
-	std::swap(cloudDensityResource[0],cloudDensityResource[1]);
-	std::swap(cloudDensityResource[1],cloudDensityResource[2]);
-	Map(2);
-}
 
 bool SimulCloudRendererDX1x::CreateCloudEffect()
 {
@@ -563,7 +519,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	if(fade_mode==CPU)
 		defines["FADE_MODE"]="0";
 	defines["DETAIL_NOISE"]='1';
-	if(cloudInterface->GetWrap())
+	if(GetCloudInterface()->GetWrap())
 		defines["WRAP_CLOUDS"]="1";
 	char max_fade_distance_str[25];
 	sprintf_s(max_fade_distance_str,25,"%3.1f",max_fade_distance_metres);
@@ -629,9 +585,9 @@ static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-
 bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default_fog)
 {
+	EnsureTexturesAreUpToDate();
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
 	cloudDensity1->SetResource(cloudDensityResource[0]);
@@ -648,7 +604,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	cam_pos=GetCameraPosVector(view);
 	simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
-	simul::math::Vector3 wind_offset=cloudInterface->GetWindOffset();
+	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
 	if(y_vertical)
 		std::swap(wind_offset.y,wind_offset.z);
 	X+=wind_offset;
@@ -668,20 +624,20 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	view_km*=0.001f;
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;
-	simul::sky::float4 light_response(	direct_light_mult*cloudInterface->GetLightResponse(),
-										indirect_light_mult*cloudInterface->GetSecondaryLightResponse(),
+	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse(),
+										indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse(),
 										0,
 										0);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
-	float base_alt_km=0.001f*(cloudInterface->GetCloudBaseZ());
-	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*cloudInterface->GetAmbientLightResponse();
+	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
+	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
 	float tan_half_fov_vertical=1.f/proj._22;
 	float tan_half_fov_horizontal=1.f/proj._11;
-	helper->SetNoFrustumLimit(cubemap);
+	helper->SetNoFrustumLimit(true);//cubemap);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-	helper->MakeGeometry(cloudInterface,cloudGridInterface,enable_lightning);
+	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
 	if(fade_mode==CPU)
 		helper->CalcInscatterFactors(skyInterface);
 
@@ -698,13 +654,13 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	lightDir			->SetFloatVector	(sun_dir);
 	skylightColour		->SetFloatVector	(sky_light_colour);
 	sunlightColour		->SetFloatVector	(sunlight);
-	simul::sky::float4 fractal_scales=helper->GetFractalScales(cloudInterface);
+	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
 	fractalScale		->SetFloatVector	(fractal_scales);
 	mieRayleighRatio	->SetFloatVector	(skyInterface->GetMieRayleighRatio());
-	cloudEccentricity	->SetFloat			(cloudInterface->GetMieAsymmetry());
+	cloudEccentricity	->SetFloat			(GetCloudInterface()->GetMieAsymmetry());
 	hazeEccentricity	->SetFloat			(skyInterface->GetMieEccentricity());
 	fadeInterp			->SetFloat			(fade_interp);
-	alphaSharpness		->SetFloat			(cloudInterface->GetAlphaSharpness());
+	alphaSharpness		->SetFloat			(GetCloudInterface()->GetAlphaSharpness());
 
 	if(enable_lightning)
 	{
@@ -724,8 +680,8 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 
 		simul::math::Vector3 light_X1,light_X2,light_DX;
 		light_DX.Define(lightningRenderInterface->GetLightningZoneSize(),
-			lightningRenderInterface->GetLightningZoneSize(),
-			cloudNode->GetCloudBaseZ()+cloudNode->GetCloudHeight());
+						lightningRenderInterface->GetLightningZoneSize(),
+						GetCloudInterface()->GetCloudBaseZ()+GetCloudInterface()->GetCloudHeight());
 
 		light_X1=lightningRenderInterface->GetLightningCentreX();
 		light_X1-=0.5f*light_DX;
@@ -757,7 +713,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	for(std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
 		i!=helper->GetSlices().end();i++)
 	{
-		helper->MakeLayerGeometry(cloudInterface,*i);
+		helper->MakeLayerGeometry(GetCloudInterface(),*i);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		float fade=(*i)->fadeIn;
@@ -769,7 +725,6 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 			for(size_t k=0;k<(*j)->num_vertices;k++,qs_vert++,l++,v++)
 			{
 				const simul::clouds::CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
-				
 				pos.Define(V.x,V.y,V.z);
 				simul::math::Vector3 tex_pos(V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
 				if(v>=MAX_VERTICES)
@@ -953,7 +908,7 @@ bool SimulCloudRendererDX1x::MakeCubemap()
 const TCHAR *SimulCloudRendererDX1x::GetDebugText() const
 {
 	static TCHAR debug_text[256];
-	simul::math::Vector3 wo=cloudInterface->GetWindOffset();
+	simul::math::Vector3 wo=GetCloudInterface()->GetWindOffset();
 	_stprintf_s(debug_text,256,_T("interp %4.4g"),cloudKeyframer->GetInterpolation());
 	return debug_text;
 }
@@ -984,4 +939,89 @@ void SimulCloudRendererDX1x::SetYVertical(bool y)
 bool SimulCloudRendererDX1x::IsYVertical() const
 {
 	return y_vertical;
+}
+
+void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
+{
+	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
+	int width_x=i.x;
+	int length_y=i.y;
+	int depth_z=i.z;
+	if(!width_x||!length_y||!depth_z)
+		return;
+	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[0]!=NULL)
+		return;
+	cloud_tex_width_x=width_x;
+	cloud_tex_length_y=length_y;
+	cloud_tex_depth_z=depth_z;
+	HRESULT hr=S_OK;
+	static DXGI_FORMAT cloud_tex_format=DXGI_FORMAT_R8G8B8A8_UNORM;
+	D3D1x_TEXTURE3D_DESC desc=
+	{
+		width_x,length_y,depth_z,
+		1,
+		cloud_tex_format,
+		D3D1x_USAGE_DYNAMIC,
+		D3D1x_BIND_SHADER_RESOURCE,
+		D3D1x_CPU_ACCESS_WRITE,
+		0
+	};
+	for(int i=0;i<3;i++)
+	{
+		SAFE_RELEASE(cloud_textures[i]);
+		if(FAILED(hr=m_pd3dDevice->CreateTexture3D(&desc,0,&cloud_textures[i])))
+			return;
+	}
+	for(int i=0;i<3;i++)
+	{
+		SAFE_RELEASE(cloudDensityResource[i]);
+	    FAIL_RETURN(m_pd3dDevice->CreateShaderResourceView(cloud_textures[i],NULL,&cloudDensityResource[i]));
+	}
+	Map(2);
+}
+
+void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate()
+{
+	EnsureCorrectTextureSizes();
+	EnsureTextureCycle();
+	for(int i=0;i<3;i++)
+	{
+		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
+		if(!texture_fill.num_texels)
+			continue;
+		Map(i);
+		unsigned *ptr=(unsigned *)mapped_cloud_texture.pData;
+		if(!ptr)
+			continue;
+		ptr+=texture_fill.texel_index;
+		memcpy(ptr,texture_fill.uint32_array,texture_fill.num_texels*sizeof(unsigned));
+		if(i!=2)
+			Unmap();
+	}
+}
+
+void SimulCloudRendererDX1x::EnsureCorrectIlluminationTextureSizes()
+{
+}
+
+void SimulCloudRendererDX1x::EnsureIlluminationTexturesAreUpToDate()
+{
+}
+
+void SimulCloudRendererDX1x::EnsureTextureCycle()
+{
+	Unmap();
+	int cyc=(cloudKeyframer->GetTextureCycle())%3;
+	while(texture_cycle!=cyc)
+	{
+		std::swap(cloud_textures[0],cloud_textures[1]);
+		std::swap(cloud_textures[1],cloud_textures[2]);
+		std::swap(cloudDensityResource[0],cloudDensityResource[1]);
+		std::swap(cloudDensityResource[1],cloudDensityResource[2]);
+		texture_cycle++;
+		texture_cycle=texture_cycle%3;
+		if(texture_cycle<0)
+			texture_cycle+=3;
+	}
+	Map(2);
 }

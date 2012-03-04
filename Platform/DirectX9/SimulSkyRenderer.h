@@ -97,9 +97,9 @@ public:
 	void SetSkyTextureSize(unsigned size);
 	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
 	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void FillFadeTexturesSequentially(int texture_index,int texel_index,int num_texels,
-						const float *loss_float4_array,
-						const float *inscatter_float4_array);
+	void FillFadeTexturesSequentially(int,int,int,
+						const float *,
+						const float *);
 	void FillFadeTextureBlocks(int,int,int,int,int,int,int,
 						const float *,
 						const float *)
@@ -114,6 +114,11 @@ public:
 	const char *GetDebugText() const;
 	void SetYVertical(bool y);
 protected:
+	void FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
+	void FillFadeTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *loss_float4_array,const float *inscatter_float4_array);
+	void EnsureCorrectTextureSizes();
+	void EnsureTexturesAreUpToDate();
+	void EnsureTextureCycle();
 	int CalcScreenPixelHeight();
 	int screen_pixel_height;
 	bool Render2DFades();

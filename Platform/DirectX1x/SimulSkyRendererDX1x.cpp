@@ -81,7 +81,7 @@ static Vertex_t vertices[36] =
 typedef std::basic_string<TCHAR> tstring;
 
 SimulSkyRendererDX1x::SimulSkyRendererDX1x()
-	:simul::sky::BaseSkyRenderer()
+	:simul::sky::BaseSkyRenderer(NULL)
 	,m_pd3dDevice(NULL)
 	,m_pImmediateContext(NULL)
 	,m_pVtxDecl(NULL)

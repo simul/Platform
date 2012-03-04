@@ -40,7 +40,7 @@ static GLint faces[6][4] = {  /* Vertex indices for the 6 faces of a cube. */
 static GLfloat v[8][3];  /* Will be filled in with X,Y,Z vertexes. */
 
 SimulGLSkyRenderer::SimulGLSkyRenderer(bool UseColourSky)
-	:BaseSkyRenderer()
+	:BaseSkyRenderer(NULL)
 	,skyTexSize(128)
 	,campos_updated(false)
 	,short_ptr(NULL)
@@ -76,7 +76,7 @@ bool SimulGLSkyRenderer::Create(float start_alt_km)
 	return true;
 }
 
-void SimulGLSkyRenderer::SetSkyTextureSize(unsigned size)
+void SimulGLSkyRenderer::SetSkyTexSize(unsigned size)
 {
 	// If not initialized we might not have a valid GL context:
 	if(!initialized)
@@ -119,7 +119,7 @@ void SimulGLSkyRenderer::SetSkyTextureSize(unsigned size)
 	}
 }
 
-void SimulGLSkyRenderer::SetFadeTextureSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_alts)
+void SimulGLSkyRenderer::SetFadeTexSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_alts)
 {
 	// If not initialized we might not have a valid GL context:
 	if(!initialized)
@@ -250,59 +250,16 @@ ERROR_CHECK
 
 void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array)
 {
-	if(!initialized)
-		return;
-	GLenum target=GL_TEXTURE_2D;
-	if(1||numAltitudes>1)
-		target=GL_TEXTURE_3D;
-	glBindTexture(target,loss_textures[texture_index]);
-		ERROR_CHECK
-	glTexSubImage3D(GL_TEXTURE_3D,0,x,y,z,w,l,d,GL_RGBA,sky_tex_format,(void*)loss_float4_array);
-		ERROR_CHECK
-	glBindTexture(target,inscatter_textures[texture_index]);
-		ERROR_CHECK
-	glTexSubImage3D(GL_TEXTURE_3D,0,x,y,z,w,l,d,GL_RGBA,sky_tex_format,(void*)inscatter_float4_array);
-		ERROR_CHECK
-	
-	glBindTexture(target,NULL);
-		ERROR_CHECK
 }
 
 void SimulGLSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
 {
-	if(!initialized)
-		return;
-ERROR_CHECK
-	if(0&&numAltitudes==1)
-	{
-		glBindTexture(GL_TEXTURE_1D,sky_tex[texture_index]);
-
-		if(sky_tex_format==GL_HALF_FLOAT_NV)
-		{
-			// Convert the array of floats into float16 values for the texture.
-			short *sptr=short_ptr;
-			for(int i=0;i<num_texels*4;i++)
-				*sptr++=simul::sky::TextureGenerator::ToFloat16(*float4_array++);
-			glTexSubImage1D(GL_TEXTURE_1D,0,texel_index,num_texels,GL_RGBA,sky_tex_format,short_ptr);
-		}
-		else
-		{
-			glTexSubImage1D(GL_TEXTURE_1D,0,texel_index,num_texels,GL_RGBA,sky_tex_format,float4_array);
-		}
-	}
-	else
-	{
-		glBindTexture(GL_TEXTURE_2D,sky_tex[texture_index]);
-ERROR_CHECK
-		PartialTextureFill(false,skyTexSize,0,texel_index+skyTexSize*alt_index,num_texels,float4_array);
-	}
 }
 
 void SimulGLSkyRenderer::CycleTexturesForward()
 {
-	std::swap(sky_tex[0],sky_tex[1]);
-	std::swap(sky_tex[1],sky_tex[2]);
 }
+
 static simul::sky::float4 Lookup(FramebufferGL fb,float distance_texcoord,float elevation_texcoord)
 {
 	distance_texcoord*=(float)fb.GetWidth();
@@ -509,6 +466,7 @@ return true;
 
 bool SimulGLSkyRenderer::Render(bool blend)
 {
+	EnsureTexturesAreUpToDate();
 	simul::sky::float4 cam_dir;
 	CalcCameraPosition(cam_pos,cam_dir);
 	SetCameraPosition(cam_pos.x,cam_pos.y,cam_pos.z);
@@ -727,6 +685,111 @@ void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1)
 {
 	*l1=(void*)loss_2d.GetColorTex();
 	*i1=(void*)inscatter_2d.GetColorTex();
+}
+
+void SimulGLSkyRenderer::FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
+{
+	if(!initialized)
+		return;
+ERROR_CHECK
+	if(0&&numAltitudes==1)
+	{
+		glBindTexture(GL_TEXTURE_1D,sky_tex[texture_index]);
+
+		if(sky_tex_format==GL_HALF_FLOAT_NV)
+		{
+			// Convert the array of floats into float16 values for the texture.
+			short *sptr=short_ptr;
+			for(int i=0;i<num_texels*4;i++)
+				*sptr++=simul::sky::TextureGenerator::ToFloat16(*float4_array++);
+			glTexSubImage1D(GL_TEXTURE_1D,0,texel_index,num_texels,GL_RGBA,sky_tex_format,short_ptr);
+		}
+		else
+		{
+			glTexSubImage1D(GL_TEXTURE_1D,0,texel_index,num_texels,GL_RGBA,sky_tex_format,float4_array);
+		}
+	}
+	else
+	{
+		glBindTexture(GL_TEXTURE_2D,sky_tex[texture_index]);
+ERROR_CHECK
+		PartialTextureFill(false,skyTexSize,0,texel_index+skyTexSize*alt_index,num_texels,float4_array);
+	}
+}
+
+void SimulGLSkyRenderer::FillFadeTex(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array)
+{
+	if(!initialized)
+		return;
+	GLenum target=GL_TEXTURE_2D;
+	if(1||numAltitudes>1)
+		target=GL_TEXTURE_3D;
+	glBindTexture(target,loss_textures[texture_index]);
+		ERROR_CHECK
+	glTexSubImage3D(GL_TEXTURE_3D,0,x,y,z,w,l,d,GL_RGBA,sky_tex_format,(void*)loss_float4_array);
+		ERROR_CHECK
+	glBindTexture(target,inscatter_textures[texture_index]);
+		ERROR_CHECK
+	glTexSubImage3D(GL_TEXTURE_3D,0,x,y,z,w,l,d,GL_RGBA,sky_tex_format,(void*)inscatter_float4_array);
+		ERROR_CHECK
+	
+	glBindTexture(target,NULL);
+		ERROR_CHECK
+}
+
+void SimulGLSkyRenderer::EnsureCorrectTextureSizes()
+{
+	simul::sky::BaseKeyframer::int3 i=skyKeyframer->GetTextureSizes();
+	int num_dist=i.x;
+	int num_elev=i.y;
+	int num_alt=i.z;
+	if(!num_dist||!num_elev||!num_alt)
+		return;
+	if(fadeTexWidth==num_dist&&fadeTexHeight==num_elev&&numAltitudes==num_alt&&skyTexSize==num_elev&&sky_texture_iterator[0].size()==numAltitudes)
+		return;
+	SetFadeTexSize(num_dist,num_elev,num_alt);
+	SetSkyTexSize(num_elev);
+	for(int i=0;i<3;i++)
+	{
+		fade_texture_iterator[i].resize(numAltitudes);
+		sky_texture_iterator[i].resize(numAltitudes);
+	}
+}
+
+void SimulGLSkyRenderer::EnsureTexturesAreUpToDate()
+{
+	EnsureCorrectTextureSizes();
+	EnsureTextureCycle();
+	for(int i=0;i<3;i++)
+	{
+		for(int j=0;j<numAltitudes;j++)
+		{
+			simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSkyTextureFill(j,i,sky_texture_iterator[i][j]);
+			if(texture_fill.num_texels&&sky_tex[i])
+			{
+				FillSkyTex(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1);
+			}
+			simul::sky::BaseKeyframer::block_texture_fill t=skyKeyframer->GetBlockFadeTextureFill(j,i,fade_texture_iterator[i][j]);
+			if(t.w&&loss_textures[i])
+			{
+			//	FillFadeTex(i,t.x,t.y,t.z,t.w,t.l,t.d,(const float*)t.float_array_1,(const float*)t.float_array_2);
+			}
+		}
+	}
+}
+
+void SimulGLSkyRenderer::EnsureTextureCycle()
+{
+	int cyc=(skyKeyframer->GetTextureCycle())%3;
+	while(texture_cycle!=cyc)
+	{
+		std::swap(sky_tex[0],sky_tex[1]);
+		std::swap(sky_tex[1],sky_tex[2]);
+		texture_cycle++;
+		texture_cycle=texture_cycle%3;
+		if(texture_cycle<0)
+			texture_cycle+=3;
+	}
 }
 
 void SimulGLSkyRenderer::RecompileShaders()

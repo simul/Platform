@@ -26,6 +26,9 @@ struct v2f
 v2f TonemapVS(a2v IN)
 {
 	v2f OUT;
+    OUT.hPosition.xy=IN.position.xy;
+	OUT.hPosition.z=0.05*IN.position.z;
+	OUT.hPosition.w=0.5*IN.position.z+IN.position.w;
     OUT.hPosition = mul( worldViewProj, float4(IN.position.xyz , 1.0));
 	OUT.texcoord = IN.texcoord;
     return OUT;

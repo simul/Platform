@@ -50,8 +50,8 @@ void FFT_512x512::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
     ID3DBlob* pBlobCS = NULL;
     ID3DBlob* pBlobCS2 = NULL;
 
-    CompileShaderFromFile(L"MEDIA/HLSL/DX11/CSFFT/fft_512x512_c2c.hlsl", "Radix008A_CS", "cs_4_0", &pBlobCS);
-    CompileShaderFromFile(L"MEDIA/HLSL/DX11/CSFFT/fft_512x512_c2c.hlsl", "Radix008A_CS2", "cs_4_0", &pBlobCS2);
+    CompileShaderFromFile(L"../../Platform/DirectX1x/CSFFT/fft_512x512_c2c.hlsl", "Radix008A_CS", "cs_4_0", &pBlobCS);
+    CompileShaderFromFile(L"../../Platform/DirectX1x/CSFFT/fft_512x512_c2c.hlsl", "Radix008A_CS2", "cs_4_0", &pBlobCS2);
 
     pd3dDevice->CreateComputeShader(pBlobCS->GetBufferPointer(), pBlobCS->GetBufferSize(), NULL, &pRadix008A_CS);
     pd3dDevice->CreateComputeShader(pBlobCS2->GetBufferPointer(), pBlobCS2->GetBufferSize(), NULL, &pRadix008A_CS2);

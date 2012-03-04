@@ -31,7 +31,7 @@ void FramebufferGL::SetShader(int i)
 		tonemap_program=0;
 }
 
-void FramebufferGL::InitShader()
+void FramebufferGL::ReloadShaders()
 {
 	tonemap_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 ERROR_CHECK
@@ -91,7 +91,7 @@ void FramebufferGL::SetWidthAndHeight(int w,int h)
 		return;
 	if(!m_fb)
 	{
-		InitShader();
+		ReloadShaders();
 		glGenFramebuffersEXT(1, &m_fb);
 	}
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
@@ -128,7 +128,7 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 		return;
 	if(!m_fb)
 	{
-		InitShader();
+		ReloadShaders();
 	ERROR_CHECK
 		glGenFramebuffersEXT(1, &m_fb);
 	ERROR_CHECK
@@ -187,7 +187,7 @@ void FramebufferGL::InitDepth_RB(GLenum iformat)
 {
 	if(!m_fb)
 	{
-		InitShader();
+		ReloadShaders();
 		glGenFramebuffersEXT(1, &m_fb);
 	}
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
@@ -220,7 +220,7 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 {
 	if(!m_fb)
 	{
-		InitShader();
+		ReloadShaders();
 		glGenFramebuffersEXT(1, &m_fb);
 	}
 	glGenTextures(1, &m_tex_depth);

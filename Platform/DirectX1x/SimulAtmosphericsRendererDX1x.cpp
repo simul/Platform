@@ -6,9 +6,9 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
-// SimulAtmosphericsRenderer.cpp A renderer for skies, clouds and weather effects.
+// SimulAtmosphericsRendererDX1x.cpp A renderer for skies, clouds and weather effects.
 
-#include "SimulAtmosphericsRendererdx1x.h"
+#include "SimulAtmosphericsRendererDX1x.h"
 
 #ifdef XBOX
 	#include <xgraphics.h>
@@ -56,49 +56,85 @@
 #include "Simul/Math/Pi.h"
 #endif
 
-SimulAtmosphericsRenderer::SimulAtmosphericsRenderer() :
+SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	m_pd3dDevice(NULL),
 	vertexDecl(NULL),
+	framebuffer(NULL),
 	effect(NULL),
 	lightDir(NULL),
+	m_pImmediateContext(NULL),
 	MieRayleighRatio(NULL),
 	HazeEccentricity(NULL),
 	fadeInterp(NULL),
-	overcastFactor(NULL),
 	imageTexture(NULL),
 	depthTexture(NULL),
 	lossTexture1(NULL),
-	lossTexture2(NULL),
 	inscatterTexture1(NULL),
-	inscatterTexture2(NULL),
 	skyInterface(NULL),
-	overcast_factor(0.f),
 	fade_interp(0.f)
+{
+	framebuffer=new FramebufferDX1x(256,256);
+}
+
+void SimulAtmosphericsRendererDX1x::SetBufferSize(int w,int h)
+{
+	if(framebuffer)
+		framebuffer->SetWidthAndHeight(w,h);
+	InvalidateDeviceObjects();
+}
+
+void SimulAtmosphericsRendererDX1x::SetYVertical(bool y)
 {
 }
 
-HRESULT SimulAtmosphericsRenderer::RestoreDeviceObjects(ID3D10Device* dev)
+void SimulAtmosphericsRendererDX1x::SetDistanceTexture(void* t)
 {
-	m_pd3dDevice=dev;
-	HRESULT hr;
+	depth_texture=(ID3D1xTexture2D*)t;
+}
+
+void SimulAtmosphericsRendererDX1x::SetLossTexture(void* t)
+{
+	loss_texture_1=(ID3D1xTexture2D*)t;
+}
+
+void SimulAtmosphericsRendererDX1x::SetInscatterTexture(void* t)
+{
+	inscatter_texture_1=(ID3D1xTexture2D*)t;
+}
+
+void SimulAtmosphericsRendererDX1x::RecompileShaders()
+{
 	SAFE_RELEASE(effect);
-	V_RETURN(CreateEffect(m_pd3dDevice,&effect,"media\\HLSL\\atmospherics.fx"));
+	HRESULT hr=S_OK;
+	V_CHECK(CreateEffect(m_pd3dDevice,&effect,L"atmospherics.fx"));
 
 	technique			=effect->GetTechniqueByName("simul_atmospherics");
 	
-	invViewProj			=effect->GetVariableByName("invViewProj");
-	lightDir			=effect->GetVariableByName("lightDir");
-	MieRayleighRatio	=effect->GetVariableByName("MieRayleighRatio");
-	HazeEccentricity	=effect->GetVariableByName("HazeEccentricity");
-	fadeInterp			=effect->GetVariableByName("fadeInterp");
-	overcastFactor		=effect->GetVariableByName("overcastFactor");
-	imageTexture		=effect->GetVariableByName("imageTexture");
-	depthTexture		=effect->GetVariableByName("depthTexture");
-	lossTexture1		=effect->GetVariableByName("lossTexture1");
-	lossTexture2		=effect->GetVariableByName("lossTexture2");
-	inscatterTexture1	=effect->GetVariableByName("inscatterTexture1");
-	inscatterTexture2	=effect->GetVariableByName("inscatterTexture2");
-	
+	invViewProj			=effect->GetVariableByName("invViewProj")->AsMatrix();
+	lightDir			=effect->GetVariableByName("lightDir")->AsVector();
+	MieRayleighRatio	=effect->GetVariableByName("MieRayleighRatio")->AsVector();
+	HazeEccentricity	=effect->GetVariableByName("HazeEccentricity")->AsScalar();
+	fadeInterp			=effect->GetVariableByName("fadeInterp")->AsScalar();
+	imageTexture		=effect->GetVariableByName("imageTexture")->AsShaderResource();
+	depthTexture		=effect->GetVariableByName("depthTexture")->AsShaderResource();
+	lossTexture1		=effect->GetVariableByName("lossTexture1")->AsShaderResource();
+	inscatterTexture1	=effect->GetVariableByName("inscatterTexture1")->AsShaderResource();
+}
+
+HRESULT SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
+{
+	m_pd3dDevice=dev;
+#ifdef DX10
+	m_pImmediateContext=dev;
+#else
+	SAFE_RELEASE(m_pImmediateContext);
+	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+#endif
+	HRESULT hr=S_OK;
+	RecompileShaders();
+	if(framebuffer)
+		framebuffer->RestoreDeviceObjects(dev);
+	/*
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 
 	{
@@ -112,28 +148,32 @@ HRESULT SimulAtmosphericsRenderer::RestoreDeviceObjects(ID3D10Device* dev)
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(vertexDecl);
-	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&vertexDecl);
+	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&vertexDecl);*/
 	return hr;
 }
 
-HRESULT SimulAtmosphericsRenderer::InvalidateDeviceObjects()
+HRESULT SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
+	if(framebuffer)
+		framebuffer->InvalidateDeviceObjects();
+#ifndef DX10
+	SAFE_RELEASE(m_pImmediateContext);
+#endif
 	SAFE_RELEASE(vertexDecl);
-	if(effect)
-        hr=effect->OnLostDevice();
 	SAFE_RELEASE(effect);
 	return hr;
 }
 
-HRESULT SimulAtmosphericsRenderer::Destroy()
+HRESULT SimulAtmosphericsRendererDX1x::Destroy()
 {
 	return InvalidateDeviceObjects();
 }
 
-SimulAtmosphericsRenderer::~SimulAtmosphericsRenderer()
+SimulAtmosphericsRendererDX1x::~SimulAtmosphericsRendererDX1x()
 {
 	Destroy();
+	delete framebuffer;
 }
 static void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
 {
@@ -145,14 +185,38 @@ static void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX
 	D3DXMatrixTranspose(wvp,&tmp2);
 }
 
-void SimulAtmosphericsRenderer::SetMatrices(const D3DXMATRIX &w,const D3DXMATRIX &v,const D3DXMATRIX &p)
+void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &w,const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	world=w;
 	view=v;
 	proj=p;
 }
 
-HRESULT SimulAtmosphericsRenderer::Render()
+void SimulAtmosphericsRendererDX1x::StartRender()
+{
+	if(!framebuffer)
+		return;
+	framebuffer->SetExposure(1.f);
+	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
+	framebuffer->Activate();
+	// Clear the screen to black:
+    float clearColor[4]={0.0,0.0,0.0,0.0};
+	m_pImmediateContext->ClearRenderTargetView(framebuffer->m_pHDRRenderTarget,clearColor);
+	if(framebuffer->m_pBufferDepthSurface)
+		m_pImmediateContext->ClearDepthStencilView(framebuffer->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+	PIXEndNamedEvent();
+}
+
+void SimulAtmosphericsRendererDX1x::FinishRender()
+{
+	if(!framebuffer)
+		return;
+	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
+	framebuffer->DeactivateAndRender(false);
+	PIXEndNamedEvent();
+}
+/*
+HRESULT SimulAtmosphericsRendererDX1x::Render()
 {
 	HRESULT hr=S_OK;
 	
@@ -169,11 +233,11 @@ HRESULT SimulAtmosphericsRenderer::Render()
 	D3DXMatrixInverse(&ivp,NULL,&vpt);
 
 	hr=effect->SetMatrix(invViewProj,&ivp);
-	hr=effect->AsScalar()->SetFloat(fadeInterp,fade_interp);
-	hr=effect->AsScalar()->SetFloat(overcastFactor,overcast_factor);
+	hr=fadeInterp->SetFloat(fade_interp);
+	hr=overcastFactor->SetFloat(overcast_factor);
 
-	hr=effect->SetTexture(imageTexture,input_texture);
-	hr=effect->SetTexture(depthTexture,depth_texture);
+	hr=imageTexture->SetTexture(input_texture);
+	hr=depthTexture->SetTexture(depth_texture);
 
 	if(skyInterface)
 	{
@@ -252,3 +316,4 @@ HRESULT SimulAtmosphericsRenderer::Render()
 	m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
 	return hr;
 }
+*/

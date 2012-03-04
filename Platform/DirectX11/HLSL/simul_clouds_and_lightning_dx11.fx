@@ -167,16 +167,16 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 	float4 lightning=lightningIlluminationTexture.Sample(lightningSamplerState,IN.texCoordLightning.xyz);
 
 	density=lerp(density,density2,interp);
-	density.x*=IN.layerFade;
-	density.x=saturate(density.x*(1.f+alphaSharpness)-alphaSharpness);
-	if(density.x<=0)
+	density.z*=IN.layerFade;
+	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
+	if(density.z<=0)
 		discard;
 	float3 ambient=density.w*skylightColour.rgb;
 
-	float opacity=density.x;
+	float opacity=density.z;
 	float l=dot(lightningMultipliers,lightning);
 	float3 lightningC=l*lightningColour.xyz;
-	float3 final=(density.z*Beta+lightResponse.w*density.y)*sunlightColour+ambient.rgb+lightningColour.w*lightningC;
+	float3 final=(density.x*Beta+lightResponse.w*density.y)*sunlightColour+ambient.rgb+lightningColour.w*lightningC;
 	
 	final*=loss.xyz;
 	final+=inscatter.xyz;
@@ -196,9 +196,9 @@ float4 PS_CloudsLowDef( vertexOutput IN): SV_TARGET
 	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
 
 	density=lerp(density,density2,interp);
-	density.x*=IN.layerFade;
-	density.x=saturate(density.x*(1.f+alphaSharpness)-alphaSharpness);
-	if(density.x<=0)
+	density.z*=IN.layerFade;
+	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
+	if(density.z<=0)
 		discard;
 
 	float3 view=normalize(IN.wPosition);
@@ -209,8 +209,8 @@ float4 PS_CloudsLowDef( vertexOutput IN): SV_TARGET
 	float4 insc=skyInscatterTexture1.Sample(fadeSamplerState,IN.fade_texc);
 	float3 ambient=density.w*skylightColour.rgb;
 
-	float opacity=density.x;
-	float3 final=(density.z*Beta+lightResponse.y*density.y)*sunlightColour+ambient.rgb;
+	float opacity=density.z;
+	float3 final=(density.x*Beta+lightResponse.y*density.y)*sunlightColour+ambient.rgb;
 	float3 inscatter=InscatterFunction(insc,cos0);
 
 	final*=loss;
@@ -231,9 +231,9 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
 
 	density=lerp(density,density2,interp);
-	density.x*=IN.layerFade;
-	density.x=saturate(density.x*(1.f+alphaSharpness)-alphaSharpness);
-	if(density.x<=0)
+	density.z*=IN.layerFade;
+	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
+	if(density.z<=0)
 		discard;
 
 	float3 view=normalize(IN.wPosition);
@@ -244,8 +244,8 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 	float4 insc=skyInscatterTexture1.Sample(fadeSamplerState,IN.fade_texc);
 	float3 ambient=density.w*skylightColour.rgb;
 
-	float opacity=density.x;
-	float3 final=(density.z*Beta+lightResponse.y*density.y)*sunlightColour+ambient.rgb;
+	float opacity=density.z;
+	float3 final=(density.x*Beta+lightResponse.y*density.y)*sunlightColour+ambient.rgb;
 	float3 inscatter=InscatterFunction(insc,cos0);
 
 	final*=loss;

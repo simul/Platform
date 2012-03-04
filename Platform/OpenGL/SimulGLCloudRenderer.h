@@ -28,7 +28,7 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGLCloudRenderer : public simul::clouds::BaseCloudRenderer
 {
 public:
-	SimulGLCloudRenderer(const char *license_key);
+	SimulGLCloudRenderer(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer);
 	virtual ~SimulGLCloudRenderer();
 	//standard ogl object interface functions
 	bool Create();
@@ -37,6 +37,8 @@ public:
 	bool InvalidateDeviceObjects();
 	//! Render the clouds.
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+	//! Show the cross sections on-screen.
+	void RenderCrossSections(int width);
 	void SetLossTextures(void *);
 	void SetInscatterTextures(void *);
 	//! Get the list of three textures used for cloud rendering.
@@ -71,8 +73,20 @@ public:
 	virtual void SetYVertical(bool ){}
 	bool IsYVertical() const{return false;}
 protected:
+	simul::clouds::CloudKeyframer::seq_texture_iterator seq_texture_iterator[3];
+	simul::clouds::CloudKeyframer::seq_texture_iterator seq_illum_texture_iterator[4];
+	// Make up to date with respect to keyframer:
+	void EnsureCorrectTextureSizes();
+	void EnsureTexturesAreUpToDate();
+	void EnsureCorrectIlluminationTextureSizes();
+	void EnsureIlluminationTexturesAreUpToDate();
+	void EnsureTextureCycle();
+
 	GLuint clouds_program;
 	GLuint clouds_vertex_shader,clouds_fragment_shader;
+
+	GLuint cross_section_program;
+	GLuint cross_section_vertex_shader,cross_section_fragment_shader;
 
 	GLint eyePosition_param;
 	GLint lightResponse_param;

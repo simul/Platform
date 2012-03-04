@@ -58,7 +58,7 @@ writeString("test");
     virtual void writeString(const std::string &str)
     {
 		logFile<<str.c_str()<<std::endl;
-	/*	if(to_output_window)
+		if(to_output_window)
 		{
 #ifdef UNICODE
 			std::wstring wstr(str.length(), L' '); // Make room for characters
@@ -68,7 +68,7 @@ writeString("test");
 #else
 	        OutputDebugString(str.c_str());
 #endif
-		}*/
+		}
 
     }
 protected:

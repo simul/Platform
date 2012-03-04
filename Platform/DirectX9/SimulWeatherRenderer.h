@@ -100,7 +100,7 @@ e.g. clouds, sky:
 SIMUL_DIRECTX9_EXPORT_CLASS SimulWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
-	SimulWeatherRenderer(const char *license_key,bool usebuffer=true,int width=320,
+	SimulWeatherRenderer(const char *license_key,simul::clouds::CloudKeyframer *ck,bool usebuffer=true,int width=320,
 		int height=240,bool sky=true,bool clouds3d=true,bool clouds2d=true,
 		bool rain=true,
 		bool colour_sky=false);
@@ -145,7 +145,7 @@ public:
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 	void SetBufferSize(int w,int h);
 	//! Enable or disable the 3d and 2d cloud layers.
-	virtual void EnableLayers(bool clouds3d,bool clouds2d);
+	virtual void EnableCloudLayers(bool clouds3d,bool clouds2d);
 	void EnableRain(bool e=true);
 	float GetTotalBrightness() const;
 	// Connect-up sky, clouds - now in base

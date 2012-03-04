@@ -23,7 +23,7 @@ SIMUL_OPENGL_EXPORT_CLASS OpenGLRenderer
 	,public simul::graph::meta::Group
 {
 public:
-	OpenGLRenderer(const char *license_key);
+	OpenGLRenderer(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer);
 	virtual ~OpenGLRenderer();
 	META_BeginProperties
 		META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")

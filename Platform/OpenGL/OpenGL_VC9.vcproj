@@ -343,6 +343,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimulGLAtmosphericsRenderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SimulGLCloudRenderer.cpp"
 				>
 			</File>
@@ -402,6 +406,10 @@
 			</File>
 			<File
 				RelativePath=".\SimulGL2DCloudRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulGLAtmosphericsRenderer.h"
 				>
 			</File>
 			<File

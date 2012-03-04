@@ -71,7 +71,7 @@ bool SimulLightningRenderer::InitEffects()
 	SAFE_RELEASE(m_pLightningVtxDecl);
 	B_RETURN(m_pd3dDevice->CreateVertexDeclaration(std_decl,&m_pLightningVtxDecl))
 	
-	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pLightningEffect,"simul_lightning.fxo"));
+	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pLightningEffect,"simul_lightning.fx"));
 	m_hTechniqueLightningLines	=m_pLightningEffect->GetTechniqueByName("simul_lightning_lines");
 	m_hTechniqueLightningQuads	=m_pLightningEffect->GetTechniqueByName("simul_lightning_quads");
 	l_worldViewProj				=m_pLightningEffect->GetParameterByName(NULL,"worldViewProj");

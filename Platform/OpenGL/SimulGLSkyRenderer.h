@@ -48,31 +48,39 @@ public:
 	bool						RenderFades();
 
 	// Implementing simul::sky::SkyTexturesCallback
-	virtual void SetSkyTextureSize(unsigned size);
-	virtual void SetFadeTextureSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_altitudes);
+	virtual void SetSkyTextureSize(unsigned size){}
+	virtual void SetFadeTextureSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_altitudes){}
 	virtual void FillFadeTexturesSequentially(int ,int ,int ,const float *,const float *)
 	{
 		exit(1);
 	}
-	virtual						void FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array);
-	virtual						void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	virtual						void CycleTexturesForward();
-	virtual						bool HasFastFadeLookup() const{return true;}
-	virtual						const float *GetFastLossLookup(float distance_texcoord,float elevation_texcoord);
-	virtual						const float *GetFastInscatterLookup(float distance_texcoord,float elevation_texcoord);
+	virtual		void FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array);
+	virtual		void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
+	virtual		void CycleTexturesForward();
+	virtual		bool HasFastFadeLookup() const{return true;}
+	virtual		const float *GetFastLossLookup(float distance_texcoord,float elevation_texcoord);
+	virtual		const float *GetFastInscatterLookup(float distance_texcoord,float elevation_texcoord);
 
-	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	bool						RenderSun();
+	bool		RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	bool		RenderSun();
 
-	void Get3DLossAndInscatterTextures(void* *l1,void* *l2,void* *i1,void* *i2);
-	void Get2DLossAndInscatterTextures(void* *l1,void* *i1);
+	void		Get3DLossAndInscatterTextures(void* *l1,void* *l2,void* *i1,void* *i2);
+	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1);
 
 	//! This function does nothing as Y is never the vertical in this implementation
-	virtual void SetYVertical(bool ){}
+	virtual		void SetYVertical(bool ){}
 protected:
-	bool initialized;
-	bool Render2DFades();
-	void CreateFadeTextures();
+	void		SetSkyTexSize(unsigned size);
+	void		SetFadeTexSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_altitudes);
+	void		FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
+	void		FillFadeTex(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array);
+	void		EnsureCorrectTextureSizes();
+	void		EnsureTexturesAreUpToDate();
+	void		EnsureTextureCycle();
+
+	bool		initialized;
+	bool		Render2DFades();
+	void		CreateFadeTextures();
 	GLuint		sky_tex[3];
 	GLuint		loss_textures[3];
 	GLuint		inscatter_textures[3];

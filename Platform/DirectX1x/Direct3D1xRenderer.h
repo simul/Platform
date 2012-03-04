@@ -25,6 +25,10 @@ namespace simul
 	{
 		class Camera;
 	}
+	namespace clouds
+	{
+		class CloudKeyframer;
+	}
 }
 class SimulWeatherRendererDX1x;
 class SimulHDRRendererDX1x;
@@ -52,7 +56,7 @@ class SIMUL_DIRECTX1x_EXPORT Direct3D11Renderer
 	,public simul::graph::meta::Group
 {
 public:
-	Direct3D11Renderer(const char *license_key);
+	Direct3D11Renderer(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer);
 	virtual ~Direct3D11Renderer();
 	META_BeginProperties
 		META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")
@@ -67,6 +71,7 @@ public:
 		camera=c;
 	}
 	void	SetYVertical(bool y);
+	void	RecompileShaders();
 	// D3D11CallbackInterface
 	virtual bool	IsD3D11DeviceAcceptable(	const CD3D11EnumAdapterInfo *AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo *DeviceInfo,DXGI_FORMAT BackBufferFormat,bool bWindowed);
 	virtual bool	ModifyDeviceSettings(		DXUTDeviceSettings* pDeviceSettings);

@@ -42,13 +42,13 @@ Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
 	,ShowFlares(true)
 	,device_reset(true)
 {
-	simulWeatherRenderer=new SimulWeatherRenderer(license_key,true,640,360,true,true,false,false,false);
+	simulWeatherRenderer=new SimulWeatherRenderer(license_key,NULL,true,1920,1080,true,true,false,false,false);
 	if(simulWeatherRenderer)
 		AddChild(simulWeatherRenderer.get());
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
 	if(simulHDRRenderer&&simulWeatherRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
-	//simulTerrainRenderer=new SimulTerrainRenderer();
+	simulTerrainRenderer=new SimulTerrainRenderer();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->EnableMoon(true);
 	SetYVertical(y_vertical);

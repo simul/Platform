@@ -14,7 +14,7 @@
 
 //-----------------------------------------------------------------------------
 // Global variables
-//-----------------------------------------------------------------------------
+//------------------------------- ----------------------------------------------
 
 #define PATCH_BLEND_BEGIN		800
 #define PATCH_BLEND_END			20000
@@ -152,10 +152,7 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 	// Calculate eye vector.
 	float3 eye_vec = g_LocalEye - In.LocalPos;
 	float3 eye_dir = normalize(eye_vec);
-	
-
 	// --------------- Blend perlin noise for reducing the tiling artifacts
-
 	// Blend displacement to avoid tiling artifact
 	float dist_2d = length(eye_vec.xy);
 	float blend_factor = (PATCH_BLEND_END - dist_2d) / (PATCH_BLEND_END - PATCH_BLEND_BEGIN);
@@ -173,9 +170,7 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 	
 	float2 perlin = (perlin_0 * g_PerlinGradient.x + perlin_1 * g_PerlinGradient.y + perlin_2 * g_PerlinGradient.z);
 
-
 	// --------------- Water body color
-
 	// Texcoord mash optimization: Texcoord of FFT wave is not required when blend_factor > 1
 	float2 fft_tc = (blend_factor > 0) ? In.TexCoord : 0;
 
@@ -191,8 +186,7 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 	// --------------- Reflected color
 	// ramp.x for fresnel term.
 	float4 ramp = g_texFresnel.Sample(g_samplerFresnel, cos_angle).xyzw;
-	// A workaround to deal with "indirect reflection vectors" (which are rays requiring multiple
-	// reflections to reach the sky).
+// A workaround to deal with "indirect reflection vectors" (which are rays requiring multiple reflections to reach the sky).
 //	if (reflect_vec.z < g_BendParam.x)
 //		ramp = lerp(ramp, g_BendParam.z, (g_BendParam.x - reflect_vec.z)/(g_BendParam.x - g_BendParam.y));
 	reflect_vec.z = max(0, reflect_vec.z);
@@ -202,12 +196,9 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 	// Combine waterbody color and reflected color
 	float3 water_color = lerp(g_WaterbodyColor, reflected_color, ramp.x);
 	// --------------- Sun spots
-/*
-	float cos_spec = clamp(dot(reflect_vec, g_SunDir), 0, 1);
+/*	float cos_spec = clamp(dot(reflect_vec, g_SunDir), 0, 1);
 	float sun_spot = pow(cos_spec, g_Shineness);
 	water_color += g_SunColor * sun_spot;*/
-
-
 	return float4(water_color, 1);
 }
 

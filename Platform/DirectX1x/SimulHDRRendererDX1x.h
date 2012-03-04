@@ -47,6 +47,8 @@ public:
 	const char *GetDebugText() const;
 	//! Get a timing value for debugging.
 	float GetTiming() const;
+
+	void RecompileShaders();
 protected:
 	bool Destroy();
 	int screen_width;

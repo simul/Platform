@@ -45,7 +45,7 @@ typedef long HRESULT;
 SIMUL_DIRECTX9_EXPORT_CLASS Simul2DCloudRenderer: public simul::clouds::BaseCloudRenderer
 {
 public:
-	Simul2DCloudRenderer(const char *license_key);
+	Simul2DCloudRenderer(const char *license_key,simul::clouds::CloudKeyframer *ck);
 	virtual ~Simul2DCloudRenderer();
 	//standard d3d object interface functions
 	bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
@@ -67,14 +67,13 @@ public:
 	//! Set the wind horizontal velocity components in metres per second.
 	void SetWind(float speed,float heading_degrees);
 	//! Get an interface to the Simul cloud object.
-	simul::clouds::CloudInterface *GetCloudInterface();
 	simul::clouds::CloudKeyframer *GetCloudKeyframer();
 	void Enable(bool val);
 	// implementing CloudRenderCallback:
-	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
-	void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
+	void SetCloudTextureSize(unsigned ,unsigned ,unsigned ){}
+	void FillCloudTextureSequentially(int ,int ,int ,const unsigned *){}
 	void FillCloudTextureBlock(int,int,int,int,int,int,int,const unsigned *){}
-	void CycleTexturesForward();
+	void CycleTexturesForward(){}
 
 	// a texture
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
@@ -86,6 +85,13 @@ public:
 	}
 	bool IsYVertical() const{return y_vertical;}
 protected:
+	// Make up to date with respect to keyframer:
+	void EnsureCorrectTextureSizes();
+	void EnsureTexturesAreUpToDate();
+	void EnsureCorrectIlluminationTextureSizes(){}
+	void EnsureIlluminationTexturesAreUpToDate(){}
+	void EnsureTextureCycle();
+
 	bool y_vertical;
 	bool enabled;
 	simul::base::SmartPtr<simul::clouds::Cloud2DGeometryHelper> helper;

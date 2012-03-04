@@ -1,0 +1,34 @@
+// Copyright (c) 2011-2012 Simul Software Ltd
+// All Rights Reserved.
+//
+// This source code is supplied under the terms of a license or nondisclosure
+// agreement with Simul Software Ltd and may not be copied or disclosed except
+// in accordance with the terms of that agreement.
+
+#pragma once
+#include "Simul/Math/Vector3.h"
+#include "Simul/Clouds/BasePrecipitationRenderer.h"
+#include "Simul/Platform/OpenGl/Export.h"
+typedef long HRESULT;
+class SimulGLPrecipitationRenderer: public simul::clouds::BasePrecipitationRenderer
+{
+public:
+	SimulGLPrecipitationRenderer();
+	virtual ~SimulGLPrecipitationRenderer();
+	//! Call this when the device has been created or reset.
+	bool RestoreDeviceObjects(void *pd3dDevice);
+	//! Call this when the D3D device has been shut down.
+	bool InvalidateDeviceObjects();
+	//! Call this to draw the clouds, including any illumination by lightning.
+	bool Render();
+	// Set a texture not created by this class to be used:
+	bool SetExternalRainTexture(void* tex);
+	void SetYVertical(bool y)
+	{
+		y_vertical=y;
+	}
+protected:
+	bool y_vertical;
+	virtual void TextureRepeatChanged();
+	bool external_rain_texture;
+};

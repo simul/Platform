@@ -54,7 +54,7 @@ typedef long HRESULT;
 SIMUL_DIRECTX1x_EXPORT_CLASS SimulCloudRendererDX1x : public simul::clouds::BaseCloudRenderer
 {
 public:
-	SimulCloudRendererDX1x(const char *license_key);
+	SimulCloudRendererDX1x(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer);
 	virtual ~SimulCloudRendererDX1x();
 	//! Call this once to set the sky interface that this cloud renderer can use for distance fading.
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si);
@@ -92,12 +92,10 @@ public:
 		altitude_tex_coord=f;
 	}
 	// implementing CloudRenderCallback:
-	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
-	void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
-	void FillCloudTextureBlock(int,int,int,int,int,int,int,const unsigned *)
-	{
-	}
-	void CycleTexturesForward();
+	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
+	void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array){}
+	void FillCloudTextureBlock(int,int,int,int,int,int,int,const unsigned *){}
+	void CycleTexturesForward(){}
 
 	void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array);
@@ -111,6 +109,13 @@ public:
 	void SetYVertical(bool y);
 	bool IsYVertical() const;
 protected:
+	// Make up to date with respect to keyframer:
+	void EnsureCorrectTextureSizes();
+	void EnsureTexturesAreUpToDate();
+	void EnsureCorrectIlluminationTextureSizes();
+	void EnsureIlluminationTexturesAreUpToDate();
+	void EnsureTextureCycle();
+
 	bool y_vertical;
 	int mapped;
 	void Unmap();

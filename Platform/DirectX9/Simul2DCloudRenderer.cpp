@@ -100,8 +100,8 @@ static void SetBits8()
 	simul::clouds::TextureGenerator::SetBits(bits8[0],bits8[1],bits8[2],bits8[3],(unsigned)4,big_endian);
 }
 
-Simul2DCloudRenderer::Simul2DCloudRenderer(const char *license_key) :
-	BaseCloudRenderer(license_key,false),
+Simul2DCloudRenderer::Simul2DCloudRenderer(const char *license_key,simul::clouds::CloudKeyframer *ck) :
+	BaseCloudRenderer(license_key,false,ck),
 	m_pd3dDevice(NULL),
 	m_pVtxDecl(NULL),
 	m_pCloudEffect(NULL),
@@ -121,46 +121,45 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(const char *license_key) :
 	simul::base::SmartPtr<simul::base::Referenced> test;
 	test=new simul::base::Referenced;
 	test=NULL;
-
-	cloudNode->SetLicense(license_key);
-	cloudInterface=cloudNode.get();
+/*
+	GetCloudInterface()=cloudNode.get();
 	
-	cloudInterface->SetWrap(true);
-	cloudInterface->SetThinLayer(true);
+	GetCloudInterface()->SetWrap(true);
+	GetCloudInterface()->SetThinLayer(true);
 
-	cloudGridInterface->SetGridLength(128);
-	cloudGridInterface->SetGridWidth(128);
-	cloudGridInterface->SetGridHeight(2);
+	GetCloudGridInterface()->SetGridLength(128);
+	GetCloudGridInterface()->SetGridWidth(128);
+	GetCloudGridInterface()->SetGridHeight(2);
 
-	cloudInterface->SetCloudBaseZ(12000.f);
+	GetCloudInterface()->SetCloudBaseZ(12000.f);
 
 	static float ff=12000.f;
-	cloudInterface->SetCloudWidth(ff);
-	cloudInterface->SetCloudLength(ff);
-	cloudInterface->SetCloudHeight(1200.f);
+	GetCloudInterface()->SetCloudWidth(ff);
+	GetCloudInterface()->SetCloudLength(ff);
+	GetCloudInterface()->SetCloudHeight(1200.f);
 
-	cloudInterface->SetFractalAmplitude(2.f);
-	cloudInterface->SetFractalWavelength(100.f);
+	GetCloudInterface()->SetFractalAmplitude(2.f);
+	GetCloudInterface()->SetFractalWavelength(100.f);
 
-	cloudInterface->SetOpticalDensity(1.5f);
-	cloudInterface->SetHumidity(.65f);
+	GetCloudInterface()->SetOpticalDensity(1.5f);
+	GetCloudInterface()->SetHumidity(.65f);
 
-	cloudInterface->SetExtinction(1.9f);
-	cloudInterface->SetLightResponse(0.5f);
-	cloudInterface->SetSecondaryLightResponse(0.5f);
-	cloudInterface->SetAmbientLightResponse(0.5f);
+	GetCloudInterface()->SetExtinction(1.9f);
+	GetCloudInterface()->SetLightResponse(0.5f);
+	GetCloudInterface()->SetSecondaryLightResponse(0.5f);
+	GetCloudInterface()->SetAmbientLightResponse(0.5f);
 
-	cloudInterface->SetNoiseResolution(8);
-	cloudInterface->SetNoiseOctaves(5);
-	cloudInterface->SetNoisePersistence(0.75f);
-	cloudInterface->SetNoisePeriod(1);
+	GetCloudInterface()->SetNoiseResolution(8);
+	GetCloudInterface()->SetNoiseOctaves(5);
+	GetCloudInterface()->SetNoisePersistence(0.75f);
+	GetCloudInterface()->SetNoisePeriod(1);
 
-	cloudInterface->SetSelfShadowScale(0.1f);
+	GetCloudInterface()->SetSelfShadowScale(0.1f);
 	
-	cloudInterface->SetDiffusivity(.5f);
+	GetCloudInterface()->SetDiffusivity(.5f);
 
-
-//	cloudKeyframer=new simul::clouds::CloudKeyframer(cloudInterface,true);
+*/
+//	cloudKeyframer=new simul::clouds::CloudKeyframer(GetCloudInterface(),true);
 	cloudKeyframer->SetMake2DTextures(true);
 	cloudKeyframer->InitKeyframesFromClouds();
 
@@ -239,7 +238,7 @@ bool Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
 	hr=CreateImageTexture();
 	RecompileShaders();
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
-	cloudKeyframer->SetRenderCallback(this);
+//	cloudKeyframer->SetRenderCallback(this);
 	return (hr==S_OK);
 }
 
@@ -302,41 +301,6 @@ bool Simul2DCloudRenderer::CreateImageTexture()
 	return (hr==S_OK);
 }
 
-void Simul2DCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z)
-{
-	assert(depth_z==1);
-	depth_z;
-	HRESULT hr=S_OK;
-	V_CHECK(CanUseTexFormat(m_pd3dDevice,cloud_tex_format));
-	for(int i=0;i<3;i++)
-	{
-		SAFE_RELEASE(cloud_textures[i]);
-		if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,width_x,length_y,1,0,cloud_tex_format,default_d3d_pool,&cloud_textures[i])))
-			return;
-	}
-}
-
-void Simul2DCloudRenderer::FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array)
-{
-	HRESULT hr=S_OK;
-	D3DLOCKED_RECT lockedRect={0};
-	if(FAILED(hr=cloud_textures[texture_index]->LockRect(0,&lockedRect,NULL,NULL)))
-		return;
-	unsigned char *ptr=(unsigned char *)(lockedRect.pBits);
-	ptr+=texel_index*sizeof(unsigned);
-	//unsigned char *src=(unsigned char *)uint32_array;
-	//for(int i=0;i<num_texels*2;i++)
-	//	*ptr++=(*src++);
-	memcpy(ptr,uint32_array,num_texels*sizeof(unsigned));
-	hr=cloud_textures[texture_index]->UnlockRect(0);
-}
-
-void Simul2DCloudRenderer::CycleTexturesForward()
-{
-	std::swap(cloud_textures[0],cloud_textures[1]);
-	std::swap(cloud_textures[1],cloud_textures[2]);
-}
-
 void SetTexture()
 {
 }
@@ -388,14 +352,14 @@ bool Simul2DCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_f
 	simul::math::Vector3 up			(view._12,view._22,view._32);
 
 	simul::sky::float4 view_km=(const float*)cam_pos;
-	simul::math::Vector3 wind_offset=cloudInterface->GetWindOffset();
+	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
 	std::swap(wind_offset.y,wind_offset.z);
 	helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
 	view_km*=0.001f;
-	float alt_km=cloudInterface->GetCloudBaseZ()*0.001f;
+	float alt_km=GetCloudInterface()->GetCloudBaseZ()*0.001f;
 static float light_mult=.03f;
-	simul::sky::float4 light_response(	cloudInterface->GetLightResponse(),
-										light_mult*cloudInterface->GetSecondaryLightResponse(),
+	simul::sky::float4 light_response(	GetCloudInterface()->GetLightResponse(),
+										light_mult*GetCloudInterface()->GetSecondaryLightResponse(),
 										0,
 										0);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
@@ -404,7 +368,7 @@ static float light_mult=.03f;
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(alt_km);
 
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(alt_km);
-	simul::sky::float4 fractal_scales=helper->GetFractalScales(cloudInterface);
+	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
 	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
 
 	float tan_half_fov_vertical=1.f/proj._22;
@@ -412,8 +376,8 @@ static float light_mult=.03f;
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	static float sc=7.f;
 	helper->Set2DNoiseTexturing(-0.8f,1.f,1.f);
-	helper->MakeGeometry(cloudInterface);
-	helper->CalcInscatterFactors(cloudInterface,skyInterface,0.f);
+	helper->MakeGeometry(GetCloudInterface());
+	helper->CalcInscatterFactors(GetCloudInterface(),skyInterface,0.f);
 	float image_scale=1.f/texture_scale;
 	// Make the angular inscatter multipliers:
 	unsigned el_start,el_end,az_start,az_end;
@@ -428,12 +392,12 @@ static float light_mult=.03f;
 	m_pCloudEffect->SetVector	(sunlightColour		,(D3DXVECTOR4*)(&sunlight));
 	m_pCloudEffect->SetVector	(fractalScale		,(D3DXVECTOR4*)(&fractal_scales));
 
-	m_pCloudEffect->SetFloat	(layerDensity		,1.f-exp(-cloudInterface->GetCloudHeight()*0.001f*cloudInterface->GetOpticalDensity()));
+	m_pCloudEffect->SetFloat	(layerDensity		,1.f-exp(-GetCloudInterface()->GetCloudHeight()*0.001f*GetCloudInterface()->GetOpticalDensity()));
 	m_pCloudEffect->SetFloat	(imageEffect		,image_effect);
 	
 	m_pCloudEffect->SetVector	(mieRayleighRatio	,(D3DXVECTOR4*)(&mie_rayleigh_ratio));
 	m_pCloudEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
-	m_pCloudEffect->SetFloat	(cloudEccentricity	,cloudInterface->GetMieAsymmetry());	
+	m_pCloudEffect->SetFloat	(cloudEccentricity	,GetCloudInterface()->GetMieAsymmetry());	
 	int startv=0;
 	int v=0;
 	hr=m_pd3dDevice->SetVertexDeclaration( m_pVtxDecl );
@@ -522,9 +486,59 @@ void Simul2DCloudRenderer::SetExternalTexture(LPDIRECT3DTEXTURE9 tex)
 	own_image_texture=false;
 }
 
-simul::clouds::CloudInterface *Simul2DCloudRenderer::GetCloudInterface()
+void Simul2DCloudRenderer::EnsureCorrectTextureSizes()
 {
-	return cloudInterface;
+	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
+	int width_x=i.x;
+	int length_y=i.y;
+	int depth_z=i.z;
+	if(!width_x||!length_y||!depth_z)
+		return;
+	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[0]!=NULL)
+		return;
+	assert(depth_z==1);
+	depth_z;
+	HRESULT hr=S_OK;
+	V_CHECK(CanUseTexFormat(m_pd3dDevice,cloud_tex_format));
+	for(int i=0;i<3;i++)
+	{
+		SAFE_RELEASE(cloud_textures[i]);
+		if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,width_x,length_y,1,0,cloud_tex_format,default_d3d_pool,&cloud_textures[i])))
+			return;
+	}
+}
+
+void Simul2DCloudRenderer::EnsureTexturesAreUpToDate()
+{
+	EnsureTextureCycle();
+	for(int i=0;i<3;i++)
+	{
+		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
+		if(!texture_fill.num_texels)
+			continue;
+		HRESULT hr=S_OK;
+		D3DLOCKED_RECT lockedRect={0};
+		if(FAILED(hr=cloud_textures[i]->LockRect(0,&lockedRect,NULL,NULL)))
+			return;
+		unsigned char *ptr=(unsigned char *)(lockedRect.pBits);
+		ptr+=texture_fill.texel_index*sizeof(unsigned);
+		memcpy(ptr,texture_fill.uint32_array,texture_fill.num_texels*sizeof(unsigned));
+		hr=cloud_textures[i]->UnlockRect(0);
+	}
+}
+
+void Simul2DCloudRenderer::EnsureTextureCycle()
+{
+	int cyc=(cloudKeyframer->GetTextureCycle())%3;
+	while(texture_cycle!=cyc)
+	{
+		std::swap(cloud_textures[0],cloud_textures[1]);
+		std::swap(cloud_textures[1],cloud_textures[2]);
+		texture_cycle++;
+		texture_cycle=texture_cycle%3;
+		if(texture_cycle<0)
+			texture_cycle+=3;
+	}
 }
 
 simul::clouds::CloudKeyframer *Simul2DCloudRenderer::GetCloudKeyframer()
@@ -540,8 +554,8 @@ void Simul2DCloudRenderer::Enable(bool val)
 const char *Simul2DCloudRenderer::GetDebugText() const
 {
 	static char debug_text[256];
-	simul::math::Vector3 wo=cloudInterface->GetWindOffset();
-	sprintf_s(debug_text,256,"interp %2.2g\nnext noise time %2.2g",cloudKeyframer->GetInterpolation(),cloudNode->GetTime());
+	simul::math::Vector3 wo=GetCloudInterface()->GetWindOffset();
+	//sprintf_s(debug_text,256,"interp %2.2g\nnext noise time %2.2g",cloudKeyframer->GetInterpolation(),cloudKeyframer->GetTime());
 	return debug_text;
 }
 

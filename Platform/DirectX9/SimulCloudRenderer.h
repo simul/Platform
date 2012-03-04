@@ -44,9 +44,8 @@ SIMUL_DIRECTX9_EXPORT_CLASS SimulCloudRenderer
 	,public simul::graph::meta::ResourceUser<simul::graph::standardnodes::ShowProgressInterface>
 {
 public:
-	SimulCloudRenderer(const char *license_key);
+	SimulCloudRenderer(const char *license_key,simul::clouds::CloudKeyframer *ck);
 	virtual ~SimulCloudRenderer();
-
 	META_BeginProperties
 		META_ValuePropertyWithSetCall(bool,GPULightingEnabled,ForceRelight,"Whether the GPU will be used for cloud light calculations.")
 		META_ValueRangePropertyWithSetCall(int,NumBuffers,1,2,NumBuffersChanged,"Number of buffers to use in cloud rendering. More = faster.")
@@ -83,15 +82,19 @@ public:
 	bool RenderDistances(int width,int height);
 	bool RenderLightVolume();
 	void EnableFilter(bool f);
+	virtual void SetFadeMode(FadeMode f);
+	void SetYVertical(bool y);
+	bool IsYVertical() const{return y_vertical;}
 	// implementing CloudRenderCallback:
-	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
-	void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array);
+	void SetCloudTextureSize(unsigned ,unsigned ,unsigned ){}
+	void FillCloudTextureSequentially(int ,int ,int ,const unsigned *){}
 	void FillCloudTextureBlock(int ,int ,int,int,int,int,int,const unsigned *){}
-	void CycleTexturesForward();
-	
-	void SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z);
-	void FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array);
+	void CycleTexturesForward(){}
+	void SetIlluminationGridSize(unsigned ,unsigned ,unsigned ){}
+	void FillIlluminationSequentially(int ,int ,int ,const unsigned char *){}
 	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *){}
+
+	// implementing GpuLightingCallback:
 	bool CanPerformGPULighting() const;
 	void PerformFullGPURelight(int which_texture,float *target_direct_grid,float *target_indirect_grid);
 	void GPUTransferDataToTexture(	int which_texture
@@ -99,10 +102,14 @@ public:
 									,const unsigned char *direct_grid
 									,const unsigned char *indirect_grid
 									,const unsigned char *ambient_grid);
-	virtual void SetFadeMode(FadeMode f);
-	void SetYVertical(bool y);
-	bool IsYVertical() const{return y_vertical;}
 protected:
+	// Make up to date with respect to keyframer:
+	void EnsureCorrectTextureSizes();
+	void EnsureTexturesAreUpToDate();
+	void EnsureCorrectIlluminationTextureSizes();
+	void EnsureIlluminationTexturesAreUpToDate();
+	void EnsureTextureCycle();
+
 	void NumBuffersChanged();
 	bool y_vertical;
 	void InternalRenderHorizontal(int buffer_index=0);

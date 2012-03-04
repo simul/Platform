@@ -70,8 +70,8 @@ void main(void)
 	//if(density.x<=0.0)
 	//	discard;
 	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
-	float opacity=layerDensity*density.x;
-	vec3 final=(lightResponse.y*density.y*Beta+lightResponse.z*density.z)*sunlight+density.w*ambientColour.rgb;
+	float opacity=layerDensity*density.y;
+	vec3 final=(lightResponse.y*density.z*Beta+lightResponse.z*density.w)*sunlight+density.x*ambientColour.rgb;
 	vec3 loss_lookup=texture2D(lossSampler,fade_texc).rgb;
 	vec4 insc_lookup=texture2D(inscatterSampler,fade_texc);
 	//final.rgb+=lightning.rgb;
