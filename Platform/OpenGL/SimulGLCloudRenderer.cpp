@@ -77,6 +77,7 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(const char *license_key,simul::clouds
 	,texture_effect(1.f)
 	,loss_tex(0)
 	,inscatter_tex(0)
+	,illum_tex(0)
 {
 	for(int i=0;i<3;i++)
 	{
@@ -102,7 +103,7 @@ bool SimulGLCloudRenderer::Create()
 bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
 {
 	int size=512;
-
+ERROR_CHECK
     glGenTextures(1,&noise_tex);
     glBindTexture(GL_TEXTURE_2D,noise_tex);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -120,8 +121,10 @@ bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
 		size,size,
 		GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
 		data);
+ERROR_CHECK
 	glGenerateMipmap(GL_TEXTURE_2D);
 	delete [] data;
+ERROR_CHECK
 	return true;
 }
 
@@ -273,7 +276,10 @@ ERROR_CHECK
 	glUniform1i(cloudDensity1_param,0);
 	glUniform1i(cloudDensity2_param,1);
 	glUniform1i(noiseSampler_param,2);
-	glUniform1i(illumSampler_param,3);
+	glUniform1i(illumSampler_param,5);
+	glUniform1i(lossSampler_param,3);
+	glUniform1i(inscatterSampler_param,4);
+	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 ERROR_CHECK
 	if(enable_lightning)
 	{
@@ -307,7 +313,7 @@ ERROR_CHECK
 	static float light_indirect=0.03f;
 	simul::sky::float4 light_response(0,light_direct*GetCloudInterface()->GetLightResponse(),
 		light_indirect*GetCloudInterface()->GetSecondaryLightResponse(),0);
-//light_response*=gamma;
+	//light_response*=gamma;
 	//light_response=simul::sky::Pow(light_response,gamma);
 	// gamma-compensate for direct light beta function:
 	//light_response.y*=pow(0.079577f,gamma)/(0.079577f);
@@ -326,11 +332,9 @@ ERROR_CHECK
 	glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
 
 	glUniform1f(cloudEccentricity_param,GetCloudInterface()->GetMieAsymmetry());
-	if(skyEccentricity_param)
-		glUniform1f(skyEccentricity_param,skyInterface->GetMieEccentricity());
+	glUniform1f(hazeEccentricity_param,skyInterface->GetMieEccentricity());
 	simul::sky::float4 mieRayleighRatio=skyInterface->GetMieRayleighRatio();
-	if(mieRayleighRatio_param)
-		glUniform3f(mieRayleighRatio_param,mieRayleighRatio.x,mieRayleighRatio.y,mieRayleighRatio.z);
+	glUniform3f(mieRayleighRatio_param,mieRayleighRatio.x,mieRayleighRatio.y,mieRayleighRatio.z);
 
 	simul::math::Vector3 view_pos(cam_pos[0],cam_pos[1],cam_pos[2]);
 	simul::math::Vector3 eye_dir(-viewInv(2,0),-viewInv(2,1),-viewInv(2,2));
@@ -338,7 +342,6 @@ ERROR_CHECK
 
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
-
 	float t=skyInterface->GetTime();
 	float delta_t=(t-last_time)*cloudKeyframer->GetTimeFactor();
 	if(!last_time)
@@ -378,9 +381,6 @@ ERROR_CHECK
 #if 1
 	simul::sky::float4 sunlight1=skyInterface->GetLocalIrradiance(X1.z*.001f);
 	simul::sky::float4 sunlight2=skyInterface->GetLocalIrradiance(X2.z*.001f);
-
-	//sunlight1=simul::sky::Pow(sunlight1,gamma);
-	//sunlight2=simul::sky::Pow(sunlight2,gamma);
 
 	// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,
 	// which is drawn as a latitude-longitude sphere. But we only draw the parts that:
@@ -454,6 +454,7 @@ ERROR_CHECK
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		//glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 #else
+ERROR_CHECK
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		glBegin(GL_QUAD_STRIP);
@@ -516,18 +517,19 @@ void SimulGLCloudRenderer::SetInscatterTextures(void *i)
 
 void SimulGLCloudRenderer::RecompileShaders()
 {
-	cross_section_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
-	clouds_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
+ERROR_CHECK
+	clouds_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
+	clouds_fragment_shader		=glCreateShader(GL_FRAGMENT_SHADER);
 
-	clouds_program			=glCreateProgram();
-	cross_section_vertex_shader	=LoadProgram(cross_section_vertex_shader,"simul_clouds.vert");
-	clouds_fragment_shader	=LoadProgram(clouds_fragment_shader,"simul_clouds.frag","#define DETAIL_NOISE\r\n#define GAMMA_CORRECTION");
-	glAttachShader(clouds_program, cross_section_vertex_shader);
+	clouds_program				=glCreateProgram();
+	clouds_vertex_shader		=LoadProgram(clouds_vertex_shader,"simul_clouds.vert");
+	clouds_fragment_shader		=LoadProgram(clouds_fragment_shader,"simul_clouds.frag","#define DETAIL_NOISE\r\n#define GAMMA_CORRECTION");
+	glAttachShader(clouds_program, clouds_vertex_shader);
 	glAttachShader(clouds_program, clouds_fragment_shader);
 	glLinkProgram(clouds_program);
 	glUseProgram(clouds_program);
 	printProgramInfoLog(clouds_program);
-
+ERROR_CHECK
 	lightResponse_param		= glGetUniformLocation(clouds_program,"lightResponse");
 	fractalScale_param		= glGetUniformLocation(clouds_program,"fractalScale");
 	interp_param			= glGetUniformLocation(clouds_program,"cloud_interp");
@@ -537,17 +539,20 @@ void SimulGLCloudRenderer::RecompileShaders()
 	sunlightColour_param	= glGetUniformLocation(clouds_program,"sunlight");
 
 	cloudEccentricity_param	= glGetUniformLocation(clouds_program,"cloudEccentricity");
-	skyEccentricity_param	= glGetUniformLocation(clouds_program,"skyEccentricity");
+	hazeEccentricity_param	= glGetUniformLocation(clouds_program,"hazeEccentricity");
 	mieRayleighRatio_param	= glGetUniformLocation(clouds_program,"mieRayleighRatio");
+	maxFadeDistanceMetres_param	= glGetUniformLocation(clouds_program,"maxFadeDistanceMetres");
 
 	cloudDensity1_param		= glGetUniformLocation(clouds_program,"cloudDensity1");
 	cloudDensity2_param		= glGetUniformLocation(clouds_program,"cloudDensity2");
 	noiseSampler_param		= glGetUniformLocation(clouds_program,"noiseSampler");
 	illumSampler_param		= glGetUniformLocation(clouds_program,"illumSampler");
+	lossSampler_param		= glGetUniformLocation(clouds_program,"lossSampler");
+	inscatterSampler_param	= glGetUniformLocation(clouds_program,"inscatterSampler");
 
 	layerDistance_param		= glGetUniformLocation(clouds_program,"layerDistance");
 	printProgramInfoLog(clouds_program);
-
+ERROR_CHECK
 	
 	cross_section_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
 	cross_section_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
@@ -562,6 +567,7 @@ ERROR_CHECK
 	glUseProgram(cross_section_program);
 	printProgramInfoLog(cross_section_program);
 ERROR_CHECK
+	glUseProgram(0);
 }
 
 bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
@@ -645,23 +651,25 @@ bool SimulGLCloudRenderer::InvalidateDeviceObjects()
 	glDeleteShader(cross_section_fragment_shader);
 
 	glDeleteProgram(clouds_program);
-	clouds_program			=0;
+	glDeleteShader(clouds_vertex_shader);
+	glDeleteShader(clouds_fragment_shader);
+	clouds_program				=0;
 	cross_section_vertex_shader	=0;
-	clouds_fragment_shader	=0;
-	lightResponse_param		=0;
-	fractalScale_param		=0;
-	interp_param			=0;
-	eyePosition_param		=0;
-	skylightColour_param	=0;
-	lightDirection_param	=0;
-	sunlightColour_param	=0;
-	cloudEccentricity_param	=0;
-	skyEccentricity_param	=0;
-	mieRayleighRatio_param	=0;
-	cloudDensity1_param		=0;
-	cloudDensity2_param		=0;
-	noiseSampler_param		=0;
-	illumSampler_param		=0;
+	clouds_fragment_shader		=0;
+	lightResponse_param			=0;
+	fractalScale_param			=0;
+	interp_param				=0;
+	eyePosition_param			=0;
+	skylightColour_param		=0;
+	lightDirection_param		=0;
+	sunlightColour_param		=0;
+	cloudEccentricity_param		=0;
+	hazeEccentricity_param		=0;
+	mieRayleighRatio_param		=0;
+	cloudDensity1_param			=0;
+	cloudDensity2_param			=0;
+	noiseSampler_param			=0;
+	illumSampler_param			=0;
 
 	glDeleteBuffersARB(1,&sphere_vbo);
 	glDeleteBuffersARB(1,&sphere_ibo);
@@ -822,7 +830,7 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 
 void SimulGLCloudRenderer::RenderCrossSections(int width)
 {
-
+return;
 	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
 	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
 	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");

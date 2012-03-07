@@ -3,6 +3,7 @@
 #include <string>
 #include "LoadGLImage.h"
 #include "FreeImage.h"
+#include "SimulGLUtilities.h"
 
 static std::string image_path="";
 
@@ -39,21 +40,32 @@ GLuint LoadGLTexture(const char *filename,unsigned wrap)
 				height = FreeImage_GetHeight(dib);
 
 	unsigned bpp=FreeImage_GetBPP(dib);
-	//if(bpp!=24)
-	//	return 0;
+	if(bpp!=24)
+		return 0;
+
+ERROR_CHECK
 	GLuint image_tex=0;
     glGenTextures(1,&image_tex);
+ERROR_CHECK
     glBindTexture(GL_TEXTURE_2D,image_tex);
+ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,wrap);
+ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap);
+ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap);
-		BYTE *pixels = (BYTE*)FreeImage_GetBits(dib);
+ERROR_CHECK
+	BYTE *pixels = (BYTE*)FreeImage_GetBits(dib);
+ERROR_CHECK
 	if(bpp==24)
 		glTexImage2D(GL_TEXTURE_2D,0, GL_RGB8,width,height,0,GL_RGB,GL_UNSIGNED_BYTE,pixels);
 	if(bpp==32)
 		glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
+ERROR_CHECK
 	return image_tex;
 }
 

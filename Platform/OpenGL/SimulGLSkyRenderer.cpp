@@ -248,18 +248,6 @@ ERROR_CHECK
 ERROR_CHECK
 }
 
-void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array)
-{
-}
-
-void SimulGLSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
-{
-}
-
-void SimulGLSkyRenderer::CycleTexturesForward()
-{
-}
-
 static simul::sky::float4 Lookup(FramebufferGL fb,float distance_texcoord,float elevation_texcoord)
 {
 	distance_texcoord*=(float)fb.GetWidth();
@@ -296,7 +284,8 @@ const float *SimulGLSkyRenderer::GetFastInscatterLookup(float distance_texcoord,
 	return Lookup(inscatter_2d,distance_texcoord,elevation_texcoord);
 }
 
-
+// Here we blend the four 3D fade textures (distance x elevation x altitude at two keyframes, for loss and inscatter)
+// into pair of 2D textures (distance x elevation), eliminating the viewing altitude and time factor.
 bool SimulGLSkyRenderer::Render2DFades()
 {
 	glMatrixMode(GL_MODELVIEW);
@@ -527,6 +516,24 @@ ERROR_CHECK
 	glUseProgram(NULL);
 ERROR_CHECK
 	return true;
+}
+
+void SimulGLSkyRenderer::RenderFades(int width)
+{
+	int w=width/3-8;
+    glDisable(GL_BLEND);
+	glDisable(GL_CULL_FACE);
+	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+ERROR_CHECK
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_TEXTURE_3D);
+	glUseProgram(0);
+ERROR_CHECK
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,loss_2d.GetColorTex());
+	DrawQuad(8,8,w,w);
+	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
+	DrawQuad(16+w,8,w,w);
 }
 
 bool SimulGLSkyRenderer::RenderPointStars()
@@ -764,15 +771,17 @@ void SimulGLSkyRenderer::EnsureTexturesAreUpToDate()
 	{
 		for(int j=0;j<numAltitudes;j++)
 		{
-			simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSkyTextureFill(j,i,sky_texture_iterator[i][j]);
+			simul::sky::BaseKeyframer::seq_texture_iterator &it=sky_texture_iterator[i][j];
+			simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSkyTextureFill(j,i,it);
 			if(texture_fill.num_texels&&sky_tex[i])
 			{
 				FillSkyTex(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1);
 			}
-			simul::sky::BaseKeyframer::block_texture_fill t=skyKeyframer->GetBlockFadeTextureFill(j,i,fade_texture_iterator[i][j]);
-			if(t.w&&loss_textures[i])
+			simul::sky::BaseKeyframer::seq_texture_iterator &ft=fade_texture_iterator[i][j];
+			simul::sky::BaseKeyframer::block_texture_fill t;
+			while((t=skyKeyframer->GetBlockFadeTextureFill(j,i,ft)).w!=0)
 			{
-			//	FillFadeTex(i,t.x,t.y,t.z,t.w,t.l,t.d,(const float*)t.float_array_1,(const float*)t.float_array_2);
+				FillFadeTex(i,t.x,t.y,t.z,t.w,t.l,t.d,(const float*)t.float_array_1,(const float*)t.float_array_2);
 			}
 		}
 	}
@@ -886,6 +895,7 @@ ERROR_CHECK
 	SetPlanetImage(moon_index,moon_texture);
 
 	glUseProgram(NULL);
+	ClearIterators();
 	return true;
 }
 

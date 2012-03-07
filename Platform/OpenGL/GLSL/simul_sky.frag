@@ -26,8 +26,8 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
 	vec3 BetaTotal=(vec3(BetaRayleigh,BetaRayleigh,BetaRayleigh)+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
 		/(vec3(1.0,1.0,1.0)+inscatter_factor.a*mieRayleighRatio.xyz);
-	vec3 output=BetaTotal*inscatter_factor.rgb;
-	return output;
+	vec3 insc=BetaTotal*inscatter_factor.rgb;
+	return insc;
 }
 
 void main()

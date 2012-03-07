@@ -146,7 +146,8 @@ float GetFramerate()
 
 void CheckGLError(const char *filename,int line_number)
 {
-	if(int err=glGetError()!=0)
+	int err=glGetError();
+	if(err!=0)
 	{
 		CheckGLError(filename,line_number,err);
 	}

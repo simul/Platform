@@ -279,6 +279,7 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 //	cloudKeyframer->SetRenderCallback(this);
 	if(lightningIlluminationTextureResource)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
+	ClearIterators();
 	return (hr==S_OK);
 }
 

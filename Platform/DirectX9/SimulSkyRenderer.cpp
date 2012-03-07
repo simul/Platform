@@ -182,6 +182,7 @@ bool SimulSkyRenderer::RestoreDeviceObjects(void *dev)
 	CreateDX9Texture(m_pd3dDevice,(LPDIRECT3DTEXTURE9&)moon_texture,MoonTexture.c_str());
 	SetPlanetImage(moon_index,moon_texture);
 	screen_pixel_height=0;
+	ClearIterators();
 	return (hr==S_OK);
 }
 

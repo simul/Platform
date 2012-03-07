@@ -104,6 +104,8 @@ protected:
 	GLint cloudDensity2_param;
 	GLint noiseSampler_param;
 	GLint illumSampler_param;
+	GLint lossSampler_param;
+	GLint inscatterSampler_param;
 
 unsigned short *pIndices;
 
@@ -114,9 +116,10 @@ unsigned short *pIndices;
 						 
 
 	GLint cloudEccentricity_param;
-	GLint skyEccentricity_param;
+	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;
 
+	GLint maxFadeDistanceMetres_param;
 	GLuint		illum_tex;
 
 	GLuint		cloud_tex[3];

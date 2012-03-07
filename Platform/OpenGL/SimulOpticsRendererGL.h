@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SIMULOPTICSRENDERERGL_H
+#define SIMULOPTICSRENDERERGL_H
 #include "Simul/Camera/BaseOpticsRenderer.h"
 #include "Simul/Camera/LensFlare.h"
 #include "Simul/Sky/Float4.h"
@@ -6,6 +7,10 @@
 #include "Simul/Platform/OpenGL/Export.h"
 #include <vector>
 
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
 
 
 SIMUL_OPENGL_EXPORT_CLASS SimulOpticsRendererGL:public simul::camera::BaseOpticsRenderer
@@ -25,3 +30,9 @@ public:
 
 	std::vector<GLuint> halo_textures;
 };
+
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif
+
+#endif

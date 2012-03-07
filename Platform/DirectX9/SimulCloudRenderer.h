@@ -41,6 +41,7 @@ typedef long HRESULT;
 //! or use SimulWeatherRenderer to manage cloud and sky rendering together.
 SIMUL_DIRECTX9_EXPORT_CLASS SimulCloudRenderer
 	: public simul::clouds::BaseCloudRenderer
+	,public simul::clouds::GpuLightingCallback
 	,public simul::graph::meta::ResourceUser<simul::graph::standardnodes::ShowProgressInterface>
 {
 public:
@@ -95,7 +96,8 @@ public:
 	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *){}
 
 	// implementing GpuLightingCallback:
-	bool CanPerformGPULighting() const;
+	bool CanPerformGPULighting() const;			
+	void SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3);
 	void PerformFullGPURelight(int which_texture,float *target_direct_grid,float *target_indirect_grid);
 	void GPUTransferDataToTexture(	int which_texture
 									,unsigned char *target_texture

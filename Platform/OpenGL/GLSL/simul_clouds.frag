@@ -35,7 +35,7 @@ varying vec4 insc;
 varying float cos0;
 varying vec3 texCoordLightning;
 varying vec2 fade_texc;
-
+varying vec3 view;
 #define pi (3.1415926536)
 float HenyeyGreenstein(float g,float cos0)
 {
@@ -67,18 +67,18 @@ void main(void)
 	vec4 density2=texture3D(cloudDensity2,pos);
 	//vec4 lightning=texture3D(illumSampler,texCoordLightning.xyz);
 	density=mix(density,density2,cloud_interp);
-	//if(density.x<=0.0)
-	//	discard;
+	if(density.x<=0.0)
+		discard;
 	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
 	float opacity=layerDensity*density.y;
-	vec3 final=(lightResponse.y*density.z*Beta+lightResponse.z*density.w)*sunlight+density.x*ambientColour.rgb;
+	vec3 final=(lightResponse.y*density.w*Beta+lightResponse.z*density.z)*sunlight+density.x*ambientColour.rgb;
 	vec3 loss_lookup=texture2D(lossSampler,fade_texc).rgb;
 	vec4 insc_lookup=texture2D(inscatterSampler,fade_texc);
 	//final.rgb+=lightning.rgb;
 	//final.rgb*=texture2D(lossSampler,fade_texc).rgb;
 	//final.rgb+=0.05*texture2D(inscatterSampler,fade_texc).rgb;
-	final.rgb*=loss;//_lookup;
-	final.rgb+=insc.rgb;//InscatterFunction(insc_lookup,hazeEccentricity);
+	final.rgb*=loss_lookup;
+	final.rgb+=InscatterFunction(insc_lookup,cos0);
 //	final.rgb+=loss_lookup;
     gl_FragColor=vec4(final.rgb,opacity);
 }

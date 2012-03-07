@@ -231,10 +231,9 @@ vertexOutput VS_Main(vertexInput IN)
 #endif
 // Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
 #if FADE_MODE==1
-	float maxd=1.f;
 	float depth=length(OUT.wPosition.xyz)/maxFadeDistanceMetres;
-	//OUT.fade_texc=float2(length(OUT.wPosition.xyz)/maxFadeDistanceMetres,0.5f*(1.f-sine));
-	OUT.fade_texc=float2(sqrt(depth/maxd),0.5f*(1.f-sine));
+	//OUT.fade_texc=float2(,0.5f*(1.f-sine));
+	OUT.fade_texc=float2(sqrt(depth),0.5f*(1.f-sine));
 #endif
     return OUT;
 }
@@ -351,7 +350,7 @@ float4 PS_Clouds( vertexOutput IN): color
 	final*=loss;
 	final+=inscatter;
 
-    return float4(final,opacity);
+    return float4(final.rgb,opacity);
 }
 
 

@@ -202,7 +202,7 @@ SimulCloudRenderer::SimulCloudRenderer(const char *license_key,simul::clouds::Cl
 	,vertices(NULL)
 	,cpu_fade_vertices(NULL)
 	,last_time(0)
-	,GPULightingEnabled(false)
+	,GPULightingEnabled(true)
 	,y_vertical(true)
 	,NumBuffers(1)
 {
@@ -282,6 +282,9 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 	float set_callback=timer.UpdateTime()/1000.f;
 	std::cout<<std::setprecision(4)<<"CLOUDS RESTORE TIMINGS: create_raytrace_layer="<<create_raytrace_layer
 		<<", create_unit_sphere="<<create_unit_sphere<<", init_effects="<<init_effects<<", set_callback="<<set_callback<<std::endl;
+
+	cloudKeyframer->SetGpuLightingCallback(this);
+	ClearIterators();
 	return (hr==S_OK);
 }
 
@@ -588,6 +591,23 @@ bool SimulCloudRenderer::CreateNoiseTexture(bool override_file)
 bool SimulCloudRenderer::CanPerformGPULighting() const
 {
 	return GPULightingEnabled;
+}
+
+void SimulCloudRenderer::SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3)
+{
+	for(int i=0;i<16;i++)
+		LightToDensityTransform[i]=Matrix4x4LightToDensityTexcoords[i];
+	simul::math::Matrix m1(4,4);
+	m1=Matrix4x4LightToDensityTexcoords;
+	simul::math::Matrix m2(4,4);
+	m1.Inverse(m2);
+	for(int i=0;i<16;i++)
+		DensityToLightTransform[i]=m2.RowPointer(0)[i];
+	for(int i=0;i<3;i++)
+	{
+		light_gridsizes[i]=light_grid[i];
+		light_extinctions[i]=lightspace_extinctions_float3[i];
+	}
 }
 
 void SimulCloudRenderer::PerformFullGPURelight(int which_texture,

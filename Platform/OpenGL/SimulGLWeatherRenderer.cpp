@@ -48,6 +48,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(const char *lic,simul::clouds::Cl
 	}
 	simulCloudRenderer=new SimulGLCloudRenderer(license_key,cloudKeyframer);
 	baseCloudRenderer=simulCloudRenderer.get();
+	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(license_key);
 	
 	simulLightningRenderer=new SimulGLLightningRenderer(simulCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
 	baseLightningRenderer=simulLightningRenderer.get();
@@ -59,18 +60,11 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(const char *lic,simul::clouds::Cl
 void SimulGLWeatherRenderer::EnableCloudLayers(bool clouds3d,bool clouds2d)
 {
 	simul::clouds::BaseWeatherRenderer::EnableCloudLayers(clouds3d,clouds2d);
-	//if(clouds2d)
-	//	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer();
 	if(simulSkyRenderer)
 	{
 		if(device_initialized)
 			simulSkyRenderer->RestoreDeviceObjects();
 	}
-/*	if(clouds2d&&!simul2DCloudRenderer.get())
-	{	
-		simul2DCloudRenderer=new SimulGL2DCloudRenderer();
-		base2DCloudRenderer=simul2DCloudRenderer.get();
-	}*/
 	if(simul2DCloudRenderer)
 	{
 		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetBaseSkyInterface());
@@ -174,6 +168,8 @@ static simul::base::Timer timer;
 		// because otherwise it would overwrite the planets
 		simulSkyRenderer->Render(!buffered);
 	}
+	// Do this AFTER sky render, to catch any changes to texture definitions:
+	UpdateSkyAndCloudHookup();
 	ERROR_CHECK
 	timer.UpdateTime();
 	simul::math::FirstOrderDecay(sky_timing,timer.Time,0.1f,0.01f);

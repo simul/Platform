@@ -8,7 +8,7 @@
 #pragma once
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Graph/Meta/Group.h"
-#include "Simul/Clouds/BaseCloudRenderer.h"
+#include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Platform/OpenGL/Export.h"
 namespace simul
@@ -16,7 +16,6 @@ namespace simul
 	namespace clouds
 	{
 		class CloudInterface;
-		class Cloud2DGeometryHelper;
 		class CloudKeyframer;
 		class FastCloudNode;
 	}
@@ -26,7 +25,7 @@ namespace simul
 	}
 }
 
-SIMUL_OPENGL_EXPORT_CLASS SimulGL2DCloudRenderer : public simul::clouds::BaseCloudRenderer
+SIMUL_OPENGL_EXPORT_CLASS SimulGL2DCloudRenderer : public simul::clouds::Base2DCloudRenderer
 {
 public:
 	SimulGL2DCloudRenderer(const char *license_key);
@@ -35,10 +34,15 @@ public:
 	bool Create();
 	//! OpenGL Implementation of device object creation - needs a GL context to be present.
 	bool RestoreDeviceObjects(void*);
+	void RecompileShaders();
 	//! OpenGL Implementation of device invalidation - not strictly needed in GL.
 	bool InvalidateDeviceObjects();
 	//! OpenGL Implementation of 2D cloud rendering.
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+	//! Set the platform-dependent atmospheric loss texture.
+	void SetLossTextures(void *l);
+	//! Set the platform-dependent atmospheric inscatter texture.
+	void SetInscatterTextures(void *i);
 	void SetWindVelocity(float x,float y);
 	simul::clouds::CloudInterface *GetCloudInterface();
 	// implementing CloudRenderCallback:
@@ -46,12 +50,16 @@ public:
 	void FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array);
 	void FillCloudTextureSequentially(int,int,int,const unsigned int *){}
 	void CycleTexturesForward();
+	void SetYVertical(bool ){}
 	bool IsYVertical() const{return false;}
+	//CloudShadowCallback
+	void **GetCloudTextures(){return 0;}
 protected:
-	simul::clouds::CloudInterface *cloudInterface;
-	simul::sky::SkyInterface *skyInterface;
-	simul::base::SmartPtr<simul::clouds::Cloud2DGeometryHelper> helper;
-	simul::base::SmartPtr<simul::clouds::CloudKeyframer> cloudKeyframer;
+	void EnsureCorrectTextureSizes(){}
+	void EnsureTexturesAreUpToDate(){}
+	void EnsureCorrectIlluminationTextureSizes(){}
+	void EnsureIlluminationTexturesAreUpToDate(){}
+	void EnsureTextureCycle(){}
 	GLuint clouds_vertex_shader,clouds_fragment_shader;
 	GLuint clouds_program;
 
@@ -64,13 +72,22 @@ protected:
 	GLint interp_param;
 	GLint layerDensity_param;
 	GLint textureEffect_param;
+	GLint imageTexture_param;
+	GLint lossSampler_param;
+	GLint inscatterSampler_param;
+	GLint cloudEccentricity_param;
+	GLint hazeEccentricity_param;
+	GLint mieRayleighRatio_param;
+	GLint maxFadeDistanceMetres_param;
 
 	GLuint	cloud_tex[3];
+	GLuint		loss_tex;
+	GLuint		inscatter_tex;
 	GLuint	noise_tex;
 	GLuint	image_tex;
 	float	cam_pos[3];
 
-	bool CreateNoiseTexture();
+	bool CreateNoiseTexture(bool override_file=false);
 	bool CreateImageTexture();
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();

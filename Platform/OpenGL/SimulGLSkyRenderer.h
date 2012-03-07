@@ -42,21 +42,22 @@ public:
 	void						RecompileShaders();
 	//! GL Implementation of render function.
 	bool						Render(bool blend);
+	void						RenderFades(int width);
 	//! Render the stars, as points.
 	bool						RenderPointStars();
 	//! Draw the 2D fades to screen for debugging.
 	bool						RenderFades();
 
 	// Implementing simul::sky::SkyTexturesCallback
-	virtual void SetSkyTextureSize(unsigned size){}
-	virtual void SetFadeTextureSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_altitudes){}
+	virtual void SetSkyTextureSize(unsigned ){}
+	virtual void SetFadeTextureSize(unsigned ,unsigned ,unsigned ){}
 	virtual void FillFadeTexturesSequentially(int ,int ,int ,const float *,const float *)
 	{
 		exit(1);
 	}
-	virtual		void FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array);
-	virtual		void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	virtual		void CycleTexturesForward();
+	virtual		void FillFadeTextureBlocks(int ,int ,int ,int ,int ,int ,int ,const float *,const float *){}
+	virtual		void FillSkyTexture(int ,int ,int ,int ,const float *){}
+	virtual		void CycleTexturesForward(){}
 	virtual		bool HasFastFadeLookup() const{return true;}
 	virtual		const float *GetFastLossLookup(float distance_texcoord,float elevation_texcoord);
 	virtual		const float *GetFastInscatterLookup(float distance_texcoord,float elevation_texcoord);

@@ -147,8 +147,6 @@ bool SimulWeatherRenderer::Restore3DCloudObjects()
 	{
 		if(simulCloudRenderer)
 		{
-			if(simulSkyRenderer)
-				simulCloudRenderer->SetMaxFadeDistanceKm(simulSkyRenderer->GetMaxFadeDistanceKm());
 			B_RETURN(simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
 		}
 		if(simulPrecipitationRenderer)
@@ -301,6 +299,11 @@ bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	{
 		if(ShowSky)
 			simulSkyRenderer->Render(!buffered);
+	}
+	if(simulSkyRenderer)
+	{
+		// Do this AFTER sky render, to catch any changes to texture definitions:
+		UpdateSkyAndCloudHookup();
 		// Do these updates now because sky renderer will have calculated the view height.
 		if(simulAtmosphericsRenderer)
 		{
