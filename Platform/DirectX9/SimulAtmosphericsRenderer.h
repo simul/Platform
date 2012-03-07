@@ -131,7 +131,7 @@ protected:
 
 	D3DXHANDLE						heightAboveFogLayer;
 	D3DXHANDLE						fogColour;
-	D3DXHANDLE						fogScaleHeight;
+	D3DXHANDLE						fogExtinction;
 	D3DXHANDLE						fogDensity;
 	// For godrays:
 	D3DXHANDLE						godRaysTechnique;

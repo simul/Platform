@@ -104,7 +104,7 @@ void SimulAtmosphericsRenderer::RecompileShaders()
 	heightAboveFogLayer	=effect->GetParameterByName(NULL,"heightAboveFogLayer");
 	fogColour			=effect->GetParameterByName(NULL,"fogColour");
 
-	fogScaleHeight		=effect->GetParameterByName(NULL,"fogScaleHeight");
+	fogExtinction		=effect->GetParameterByName(NULL,"fogExtinction");
 	fogDensity			=effect->GetParameterByName(NULL,"fogDensity");
 
 
@@ -312,7 +312,10 @@ bool SimulAtmosphericsRenderer::Render()
 		D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
 		float h=y_vertical?cam_pos.y:cam_pos.z;
 		hr=effect->SetFloat(heightAboveFogLayer,(h/1000.f-fog_height_km)/(fade_distance_km));
-		hr=effect->SetFloat(fogScaleHeight,fog_scale_height_km/(fade_distance_km));
+		static float cc=10.f;
+		simul::sky::float4 e=cc*skyInterface->GetMie()*fade_distance_km/fog_scale_height_km;
+		D3DXVECTOR4 ext(e.x,e.y,e.z,e.w);
+		hr=effect->SetVector(fogExtinction,&ext);
 		hr=effect->SetVector(fogColour,(D3DXVECTOR4*)(&fog_colour));
 		hr=effect->SetFloat(fogDensity,fog_dens);
 		if(skyInterface)

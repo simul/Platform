@@ -173,7 +173,7 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 float heightAboveFogLayer=0.f;// in depth units.
 float4 fogColour;
 
-float fogScaleHeight;
+float3 fogExtinction;
 float fogDensity;
 
 
@@ -197,15 +197,15 @@ float4 PS_Atmos(atmosVertexOutput IN) : color
 #endif
 	float dh=-(depth*sine);
 	
-	float f=max(1.f-fogDensity,exp(min(0,-(dh-heightAboveFogLayer)/fogScaleHeight)));
+	float3 f=max(1.f-fogDensity,exp(min(0,-(dh-heightAboveFogLayer)*fogExtinction)));
 	float maxd=1.0;//tex2D(distance_texture,texc2).x;
 	float2 texc2=float2(pow(depth/maxd,0.5f),0.5f*(1.f-sine));
 	float3 loss=tex2D(sky_loss_texture_1,texc2).rgb;
 	colour*=f;
-	colour+=fogColour*(1-f);
+	float cos0=dot(view,lightDir);
+	colour+=InscatterFunction(fogColour,cos0)*(1-f);
 	colour*=loss;
 	float4 inscatter_factor=tex2D(sky_inscatter_texture_1,texc2);
-	float cos0=dot(view,lightDir);
 	colour+=InscatterFunction(inscatter_factor,cos0);
     return float4(colour,1.f);
 }
