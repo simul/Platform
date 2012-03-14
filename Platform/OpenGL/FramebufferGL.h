@@ -25,6 +25,12 @@ public:
 };
 #endif
 
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
+
+
 SIMUL_OPENGL_EXPORT_CLASS FramebufferGL:public FramebufferInterface
 {
 public:
@@ -131,5 +137,9 @@ private:
 	GLint buffer_tex_param;
 	float exposure, gamma;
 };
+
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif
 
 #endif // RENDER_TEXTURE_FBO__H

@@ -29,25 +29,29 @@ GLenum buffer_tex_format=GL_FLOAT;
 GLenum internal_buffer_format=GL_RGBA32F_ARB;
 #endif
 
-SimulGLWeatherRenderer::SimulGLWeatherRenderer(const char *lic,simul::clouds::CloudKeyframer *cloudKeyframer,bool usebuffer,bool tonemap,int width,
-		int height,bool sky,bool clouds3d,bool clouds2d,bool rain,bool colour_sky)
-		:BaseWeatherRenderer(lic)
+SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,bool usebuffer,bool tonemap,int width,
+		int height,bool sky,bool clouds3d,bool clouds2d,bool rain)
+		:BaseWeatherRenderer(env)
 		,BufferWidth(width)
 		,BufferHeight(height)
 		,device_initialized(false)
 		,scene_buffer(NULL)
 {
+	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
+	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer.get();
+	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer.get();
 	if(sky)
 	{
-		simulSkyRenderer=new SimulGLSkyRenderer(colour_sky);
+		simulSkyRenderer=new SimulGLSkyRenderer(sk);
 		baseSkyRenderer=simulSkyRenderer.get();
 	}
 	if(simulSkyRenderer)
 	{
 		simulSkyRenderer->Create(0.5f);
 	}
-	simulCloudRenderer=new SimulGLCloudRenderer(license_key,cloudKeyframer);
+	simulCloudRenderer=new SimulGLCloudRenderer(ck3d);
 	baseCloudRenderer=simulCloudRenderer.get();
+	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d);
 	
 	simulLightningRenderer=new SimulGLLightningRenderer(simulCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
 	baseLightningRenderer=simulLightningRenderer.get();
@@ -59,18 +63,11 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(const char *lic,simul::clouds::Cl
 void SimulGLWeatherRenderer::EnableCloudLayers(bool clouds3d,bool clouds2d)
 {
 	simul::clouds::BaseWeatherRenderer::EnableCloudLayers(clouds3d,clouds2d);
-	//if(clouds2d)
-	//	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer();
 	if(simulSkyRenderer)
 	{
 		if(device_initialized)
 			simulSkyRenderer->RestoreDeviceObjects();
 	}
-/*	if(clouds2d&&!simul2DCloudRenderer.get())
-	{	
-		simul2DCloudRenderer=new SimulGL2DCloudRenderer();
-		base2DCloudRenderer=simul2DCloudRenderer.get();
-	}*/
 	if(simul2DCloudRenderer)
 	{
 		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetBaseSkyInterface());
@@ -141,7 +138,7 @@ static simul::base::Timer timer;
 	timer.TimeSum=0;
 	timer.StartTime();
 	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
-	bool hr=false;
+
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -150,7 +147,7 @@ static simul::base::Timer timer;
 	if(simulSkyRenderer)
 	{
 		ERROR_CHECK
-		//simulSkyRenderer->RenderPointStars();
+		simulSkyRenderer->RenderPointStars();
 		ERROR_CHECK
 		simulSkyRenderer->RenderPlanets();
 		ERROR_CHECK
@@ -174,6 +171,8 @@ static simul::base::Timer timer;
 		// because otherwise it would overwrite the planets
 		simulSkyRenderer->Render(!buffered);
 	}
+	// Do this AFTER sky render, to catch any changes to texture definitions:
+	UpdateSkyAndCloudHookup();
 	ERROR_CHECK
 	timer.UpdateTime();
 	simul::math::FirstOrderDecay(sky_timing,timer.Time,0.1f,0.01f);
@@ -312,7 +311,7 @@ std::istream &SimulGLWeatherRenderer::Load(std::istream &is)
 		is.read((char*)&stream_type,sizeof(stream_type));
 		if(stream_type==1||stream_type==2)
 		{
-			simulSkyRenderer->EnableColourSky(stream_type==2);
+//			simulSkyRenderer->EnableColourSky(stream_type==2);
 			simulSkyRenderer->Load(is);
 		}
 		if(stream_type==0)

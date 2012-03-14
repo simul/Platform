@@ -199,6 +199,7 @@ bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 		inscatter_2d->SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
 		inscatter_2d->RestoreDeviceObjects(dev);
 	}
+	ClearIterators();
 	return (hr==S_OK);
 }
 

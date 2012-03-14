@@ -952,7 +952,7 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 	B_RETURN(m_pd3dDevice->SetVertexDeclaration(m_pVtxDecl));
 	float tile_texsize=(float)(heightMapInterface->GetTileSize()-1)/(float)(heightMapInterface->GetPageSize()-1);
 	static bool only=false;
-	for(unsigned p=0;p<passes;++p)
+	for(int p=0;p<passes;++p)
 	{
 		//D3DXHANDLE h=m_pTerrainEffect->GetPass(m_hTechniqueTerrain,p);
 		if((p!=LIGHTING_PASS_WITH_SHADOWS&&p!=LIGHTING_PASS&&p!=WIREFRAME_PASS)||

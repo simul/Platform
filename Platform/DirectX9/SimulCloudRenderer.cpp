@@ -190,6 +190,7 @@ SimulCloudRenderer::SimulCloudRenderer(const char *license_key,simul::clouds::Cl
 	,m_pCloudEffect(NULL)
 	,m_pGPULightingEffect(NULL)
 	,noise_texture(NULL)
+	,volume_noise_texture(NULL)
 	,raytrace_layer_texture(NULL)
 	,illumination_texture(NULL)
 	,sky_loss_texture(NULL)
@@ -202,7 +203,7 @@ SimulCloudRenderer::SimulCloudRenderer(const char *license_key,simul::clouds::Cl
 	,vertices(NULL)
 	,cpu_fade_vertices(NULL)
 	,last_time(0)
-	,GPULightingEnabled(false)
+	,GPULightingEnabled(true)
 	,y_vertical(true)
 	,NumBuffers(1)
 {
@@ -282,6 +283,9 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 	float set_callback=timer.UpdateTime()/1000.f;
 	std::cout<<std::setprecision(4)<<"CLOUDS RESTORE TIMINGS: create_raytrace_layer="<<create_raytrace_layer
 		<<", create_unit_sphere="<<create_unit_sphere<<", init_effects="<<init_effects<<", set_callback="<<set_callback<<std::endl;
+
+	cloudKeyframer->SetGpuLightingCallback(this);
+	ClearIterators();
 	return (hr==S_OK);
 }
 
@@ -469,6 +473,7 @@ bool SimulCloudRenderer::InvalidateDeviceObjects()
 	for(int i=0;i<3;i++)
 		SAFE_RELEASE(cloud_textures[i]);
 	SAFE_RELEASE(noise_texture);
+	SAFE_RELEASE(volume_noise_texture);
 	SAFE_RELEASE(illumination_texture);
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	SAFE_RELEASE(unitSphereIndexBuffer);
@@ -559,6 +564,31 @@ D3DXSaveTextureToFile(TEXT("Media/Textures/noise.jpg"),D3DXIFF_JPG,noise_texture
 	return (hr==S_OK);
 }
 
+void SimulCloudRenderer::CreateVolumeNoiseTexture()
+{
+	bool result=true;
+	SAFE_RELEASE(volume_noise_texture);
+	HRESULT hr=S_OK;
+	// Otherwise create it:
+#ifndef XBOX
+	D3DFORMAT tex_format=D3DFMT_A32B32G32R32F;
+#else
+	D3DFORMAT tex_format=D3DFMT_LIN_A32B32G32R32F;
+#endif
+	int size=GetCloudInterface()->GetNoiseResolution();
+	if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,size,size,size,1,0,tex_format,default_d3d_pool,&volume_noise_texture)))
+		return;
+	D3DLOCKED_BOX lockedBox={0};
+	if(FAILED(hr=volume_noise_texture->LockBox(0,&lockedBox,NULL,NULL)))
+		return;
+		// Copy the array of floats into the texture.
+	const float *src_ptr=GetCloudGridInterface()->GetNoiseInterface()->GetData();
+	float *float_ptr=(float *)(lockedBox.pBits);
+	for(int i=0;i<size*size*size;i++)
+		*float_ptr++=(*src_ptr++);
+	hr=volume_noise_texture->UnlockBox(0);
+	volume_noise_texture->GenerateMipSubLevels();
+}
 bool SimulCloudRenderer::CreateNoiseTexture(bool override_file)
 {
 	bool result=true;
@@ -590,6 +620,23 @@ bool SimulCloudRenderer::CanPerformGPULighting() const
 	return GPULightingEnabled;
 }
 
+void SimulCloudRenderer::SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3)
+{
+	for(int i=0;i<16;i++)
+		LightToDensityTransform[i]=Matrix4x4LightToDensityTexcoords[i];
+	simul::math::Matrix m1(4,4);
+	m1=Matrix4x4LightToDensityTexcoords;
+	simul::math::Matrix m2(4,4);
+	m1.Inverse(m2);
+	for(int i=0;i<16;i++)
+		DensityToLightTransform[i]=m2.RowPointer(0)[i];
+	for(int i=0;i<3;i++)
+	{
+		light_gridsizes[i]=light_grid[i];
+		light_extinctions[i]=lightspace_extinctions_float3[i];
+	}
+}
+
 void SimulCloudRenderer::PerformFullGPURelight(int which_texture,
 	float *target_direct_grid,float *target_indirect_grid)
 {
@@ -610,6 +657,7 @@ void SimulCloudRenderer::PerformFullGPURelight(int which_texture,
 	LPDIRECT3DSURFACE9				pLightRenderTarget[]={NULL,NULL};
 	D3DXHANDLE						inputLightTexture=NULL;
 	D3DXHANDLE						cloudDensityTexture=NULL;
+	D3DXHANDLE						volumeNoiseTexture=NULL;
 	D3DXHANDLE						zPosition=NULL;
 	D3DXHANDLE						extinctions;
 	D3DXHANDLE						lightToDensityMatrix;
@@ -618,6 +666,7 @@ void SimulCloudRenderer::PerformFullGPURelight(int which_texture,
 
 	inputLightTexture				=m_pGPULightingEffect->GetParameterByName(NULL,"inputLightTexture");
 	cloudDensityTexture				=m_pGPULightingEffect->GetParameterByName(NULL,"cloudDensityTexture");
+	volumeNoiseTexture				=m_pGPULightingEffect->GetParameterByName(NULL,"volumeNoiseTexture");
 	zPosition						=m_pGPULightingEffect->GetParameterByName(NULL,"zPosition");
 	extinctions						=m_pGPULightingEffect->GetParameterByName(NULL,"extinctions");
 	lightToDensityMatrix			=m_pGPULightingEffect->GetParameterByName(NULL,"transformMatrix");
@@ -646,6 +695,7 @@ void SimulCloudRenderer::PerformFullGPURelight(int which_texture,
 	m_pGPULightingEffect->SetVector(texCoordOffset,(D3DXVECTOR4*)(offset));
 	m_pGPULightingEffect->SetMatrix(lightToDensityMatrix,(D3DXMATRIX*)(LightToDensityTransform));
 	m_pGPULightingEffect->SetTexture(cloudDensityTexture,cloud_textures[(which_texture)%3]);
+	m_pGPULightingEffect->SetTexture(volumeNoiseTexture,volume_noise_texture);
 	// 4. Use the first target and the density volume texture as an input to rendering the second target.
 	// 5. Swap targets and repeat for all the positions in the Z grid.#m_pd3dDevice->BeginScene();
 	m_pd3dDevice->BeginScene();
@@ -908,6 +958,10 @@ void SimulCloudRenderer::EnsureCorrectTextureSizes()
 
 void SimulCloudRenderer::EnsureTexturesAreUpToDate()
 {
+	if(!volume_noise_texture)
+	{
+		CreateVolumeNoiseTexture();
+	}
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
 	for(int i=0;i<3;i++)

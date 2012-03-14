@@ -104,7 +104,7 @@ float4 mieRayleighRatio;
 float hazeEccentricity;
 float skyInterp;
 #ifdef USE_ALTITUDE_INTERPOLATION
-	float altitudeTexCoord=0;
+	float altitudeTexCoord;
 #endif
 #define pi (3.1415926536f)
 
@@ -359,7 +359,7 @@ float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 {
 #ifdef USE_ALTITUDE_INTERPOLATION
 // Reverse Z co-ordinate so that up is up.
-	float3 texc=float3(IN.texCoords.x,0.5,1.f-IN.texCoords.y);
+	float3 texc=float3(IN.texCoords.x,1.f-IN.texCoords.y,altitudeTexCoord);
 	float4 colour=tex3D(fade_texture,texc);
 #else
 	float4 colour=tex2D(fade_texture,IN.texCoords.xy);

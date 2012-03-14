@@ -17,6 +17,13 @@
 typedef unsigned GLuint;
 class SimulGLSkyRenderer;
 class SimulGLLightningRenderer;
+namespace simul
+{
+	namespace clouds
+	{
+		class Environment;
+	}
+}
 #ifndef RENDERDEPTHBUFFERCALLBACK
 #define RENDERDEPTHBUFFERCALLBACK
 class RenderDepthBufferCallback
@@ -31,10 +38,9 @@ public:
 SIMUL_OPENGL_EXPORT_CLASS SimulGLWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
-	SimulGLWeatherRenderer(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer,bool usebuffer=true,bool tonemap=false,int width=640,
+	SimulGLWeatherRenderer(simul::clouds::Environment *env,bool usebuffer=true,bool tonemap=false,int width=640,
 		int height=480,bool sky=true,bool clouds3d=true,bool clouds2d=true,
-		bool rain=true,
-		bool colour_sky=false);
+		bool rain=true);
 	virtual ~SimulGLWeatherRenderer();
 	//! Call this when the device has been created
 	bool RestoreDeviceObjects();

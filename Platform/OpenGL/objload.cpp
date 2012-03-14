@@ -1654,5 +1654,5 @@ unsigned int File::OnLoadTexture(const char filename[])
 	std::string fn = Filename.substr(0, last_slash);
 	fn += "/";
 	fn += filename;
-	return LoadGLTexture(fn.c_str(), GL_REPEAT);
+	return LoadGLImage(fn.c_str(), GL_REPEAT);
 }

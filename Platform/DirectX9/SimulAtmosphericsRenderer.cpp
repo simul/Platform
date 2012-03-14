@@ -99,6 +99,15 @@ void SimulAtmosphericsRenderer::RecompileShaders()
 
 	invViewProj			=effect->GetParameterByName(NULL,"invViewProj");
 	altitudeTexCoord	=effect->GetParameterByName(NULL,"altitudeTexCoord");
+
+
+	heightAboveFogLayer	=effect->GetParameterByName(NULL,"heightAboveFogLayer");
+	fogColour			=effect->GetParameterByName(NULL,"fogColour");
+
+	fogExtinction		=effect->GetParameterByName(NULL,"fogExtinction");
+	fogDensity			=effect->GetParameterByName(NULL,"fogDensity");
+
+
 	lightDir			=effect->GetParameterByName(NULL,"lightDir");
 	mieRayleighRatio	=effect->GetParameterByName(NULL,"mieRayleighRatio");
 	hazeEccentricity	=effect->GetParameterByName(NULL,"hazeEccentricity");
@@ -296,6 +305,19 @@ bool SimulAtmosphericsRenderer::Render()
 		hr=effect->SetFloat(fadeInterp,fade_interp);
 		hr=effect->SetTexture(imageTexture,input_texture);
 		hr=effect->SetFloat(altitudeTexCoord,altitude_tex_coord);
+
+#ifndef XBOX
+		m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+#endif
+		D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
+		float h=y_vertical?cam_pos.y:cam_pos.z;
+		hr=effect->SetFloat(heightAboveFogLayer,(h/1000.f-fog_height_km)/(fade_distance_km));
+		static float cc=10.f;
+		simul::sky::float4 e=cc*skyInterface->GetMie()*fade_distance_km/fog_scale_height_km;
+		D3DXVECTOR4 ext(e.x,e.y,e.z,e.w);
+		hr=effect->SetVector(fogExtinction,&ext);
+		hr=effect->SetVector(fogColour,(D3DXVECTOR4*)(&fog_colour));
+		hr=effect->SetFloat(fogDensity,fog_dens);
 		if(skyInterface)
 		{
 			hr=effect->SetFloat(hazeEccentricity,skyInterface->GetMieEccentricity());

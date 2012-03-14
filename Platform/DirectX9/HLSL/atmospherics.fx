@@ -164,6 +164,19 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	float3 colour=BetaTotal*inscatter_factor.rgb;
 	return colour;
 }
+// height of target above viewer is equal to depth*sin(elevation).
+// so height of viewer above target is dh=(-depth*sine)
+// but fog layer is present, and viewer has heightAboveFogLayer.
+// if target is between fog layer and viewer then dh<heightAboveFogLayer;
+// Fog is exponential. Optical density is equal to f=exp(-fog*dh).
+// then colour->colour f+fogColour(1-f)
+float heightAboveFogLayer=0.f;// in depth units.
+float4 fogColour;
+
+float3 fogExtinction;
+float fogDensity;
+
+
 
 float4 PS_Atmos(atmosVertexOutput IN) : color
 {
@@ -182,14 +195,18 @@ float4 PS_Atmos(atmosVertexOutput IN) : color
 #else
 	float sine=view.z;
 #endif
+	float dh=-(depth*sine);
+	
+	float3 f=max(1.f-fogDensity,exp(min(0,-(dh-heightAboveFogLayer)*fogExtinction)));
 	float maxd=1.0;//tex2D(distance_texture,texc2).x;
 	float2 texc2=float2(pow(depth/maxd,0.5f),0.5f*(1.f-sine));
 	float3 loss=tex2D(sky_loss_texture_1,texc2).rgb;
+	colour*=f;
+	float cos0=dot(view,lightDir);
+	colour+=InscatterFunction(fogColour,cos0)*(1-f);
 	colour*=loss;
 	float4 inscatter_factor=tex2D(sky_inscatter_texture_1,texc2);
-	float cos0=dot(view,lightDir);
 	colour+=InscatterFunction(inscatter_factor,cos0);
-
     return float4(colour,1.f);
 }
 

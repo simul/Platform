@@ -3,6 +3,7 @@
 #include <string>
 #include "LoadGLImage.h"
 #include "FreeImage.h"
+#include "SimulGLUtilities.h"
 
 static std::string image_path="";
 
@@ -41,19 +42,30 @@ GLuint LoadGLTexture(const char *filename,unsigned wrap)
 	unsigned bpp=FreeImage_GetBPP(dib);
 	//if(bpp!=24)
 	//	return 0;
+
+ERROR_CHECK
 	GLuint image_tex=0;
     glGenTextures(1,&image_tex);
+ERROR_CHECK
     glBindTexture(GL_TEXTURE_2D,image_tex);
+ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,wrap);
+ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap);
+ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap);
-		BYTE *pixels = (BYTE*)FreeImage_GetBits(dib);
+ERROR_CHECK
+	BYTE *pixels = (BYTE*)FreeImage_GetBits(dib);
+ERROR_CHECK
 	if(bpp==24)
 		glTexImage2D(GL_TEXTURE_2D,0, GL_RGB8,width,height,0,GL_RGB,GL_UNSIGNED_BYTE,pixels);
 	if(bpp==32)
 		glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
+ERROR_CHECK
 	return image_tex;
 }
 
@@ -62,4 +74,13 @@ GLuint LoadGLImage(const char *filename,unsigned wrap)
 	std::string fn=image_path+"/";
 	fn+=filename;
 	return LoadGLTexture(fn.c_str(),wrap);
+}
+
+void SaveGLImage(const char *filename,GLuint tex)
+{
+	std::string fn=image_path+"/";
+	fn+=filename;
+/*	FIBITMAP *bitmap2 = FreeImage_Allocate(w, h, 32);
+	FreeImage_Paste(bitmap2, bitmap, 0, 0, 255);
+    FreeImage_Save(FIF_PNG, bitmap2, "mybitmap.png", 0);*/
 }

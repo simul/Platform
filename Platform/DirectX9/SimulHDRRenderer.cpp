@@ -302,6 +302,10 @@ bool SimulHDRRenderer::StartRender()
 
 bool SimulHDRRenderer::CopyDepthAlpha()
 {
+	D3DXMATRIX view;
+#ifndef XBOX
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+#endif
 	// Unselect the current rt
 	HRESULT hr=m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
 	LPDIRECT3DSURFACE9		depthAlphaRenderTarget=NULL;
@@ -320,6 +324,9 @@ bool SimulHDRRenderer::CopyDepthAlpha()
 	hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
 	if(atmospherics)
 		atmospherics->SetInputTextures(depth_alpha_texture,buffer_depth_texture);
+#ifndef XBOX
+	m_pd3dDevice->SetTransform(D3DTS_VIEW,&view);
+#endif
 	return (hr==S_OK);
 }
 

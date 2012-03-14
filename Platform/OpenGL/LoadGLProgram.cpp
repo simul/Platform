@@ -29,10 +29,12 @@ void printShaderInfoLog(GLuint obj)
 		std::string info_log=infoLog;
 
 		//size_t pos=info_log.find_first_of('(');
-		info_log=info_log.substr(1,info_log.length()-1);
-		
-		std::cout<<std::endl<<last_filename.c_str()<<info_log.c_str()<<std::endl;
-        free(infoLog);
+		//info_log=info_log.substr(1,info_log.length()-1);
+		if(info_log.find("No errors")>=info_log.length())
+		{
+			std::cout<<std::endl<<last_filename.c_str()<<": "<<info_log.c_str()<<std::endl;
+		}
+		free(infoLog);
     }
 }
 
@@ -48,7 +50,9 @@ void printProgramInfoLog(GLuint obj)
     {
         infoLog = (char *)malloc(infologLength);
         glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
-		std::cout<<std::endl<<infoLog<<std::endl;
+		std::string info_log=infoLog;
+		if(info_log.find("No errors")>=info_log.length())
+			std::cout<<std::endl<<infoLog<<std::endl;
         free(infoLog);
     }
 }
@@ -118,6 +122,7 @@ GLuint LoadProgram(GLuint prog,const char *filename,const char *defines)
 		ptr[len]='\n';
 		ptr+=len+1;
 	}
+	ifs.close();
 	ptr[0]=0;
 
 	const char *strings[1];

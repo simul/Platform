@@ -290,6 +290,8 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 	HRESULT hr=S_OK;
 	if(simulSkyRenderer)
 		hr=simulSkyRenderer->Render(!buffered);
+	// Do this AFTER sky render, to catch any changes to texture definitions:
+	UpdateSkyAndCloudHookup();
 	if(simulCloudRenderer)
 		hr=simulCloudRenderer->Render(is_cubemap,false,UseDefaultFog);
 	if(buffered)

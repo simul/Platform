@@ -10,15 +10,16 @@
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 
 
-OpenGLRenderer::OpenGLRenderer(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer)
+OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	:width(0)
 	,height(0)
 	,cam(NULL)
 	,y_vertical(false)
 	,ShowFlares(true)
 	,ShowFades(false)
+	,ShowCloudCrossSections(false)
 {
-	simulWeatherRenderer=new SimulGLWeatherRenderer(license_key,cloudKeyframer);
+	simulWeatherRenderer=new SimulGLWeatherRenderer(env);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
 	SetYVertical(y_vertical);
 }
@@ -73,7 +74,8 @@ void OpenGLRenderer::paintGL()
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			SetTopDownOrthoProjection(width,height);
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width/3);
+			if(ShowCloudCrossSections)
+				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width/3);
 		}
 
 		if(simulHDRRenderer)

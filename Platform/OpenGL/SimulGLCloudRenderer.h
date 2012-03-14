@@ -28,7 +28,7 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGLCloudRenderer : public simul::clouds::BaseCloudRenderer
 {
 public:
-	SimulGLCloudRenderer(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer);
+	SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudKeyframer);
 	virtual ~SimulGLCloudRenderer();
 	//standard ogl object interface functions
 	bool Create();
@@ -104,6 +104,8 @@ protected:
 	GLint cloudDensity2_param;
 	GLint noiseSampler_param;
 	GLint illumSampler_param;
+	GLint lossSampler_param;
+	GLint inscatterSampler_param;
 
 unsigned short *pIndices;
 
@@ -114,9 +116,10 @@ unsigned short *pIndices;
 						 
 
 	GLint cloudEccentricity_param;
-	GLint skyEccentricity_param;
+	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;
 
+	GLint maxFadeDistanceMetres_param;
 	GLuint		illum_tex;
 
 	GLuint		cloud_tex[3];
@@ -125,12 +128,14 @@ unsigned short *pIndices;
 	GLuint		inscatter_tex;
 	// 2D texture
 	GLuint		noise_tex;
+	GLuint		volume_noise_tex;
 
 	GLuint		sphere_vbo;
 	GLuint		sphere_ibo;
 
 	float		cam_pos[3];
 
+	void CreateVolumeNoise();
 	virtual bool CreateNoiseTexture(bool override_file=false);
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();

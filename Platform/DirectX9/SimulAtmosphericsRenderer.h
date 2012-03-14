@@ -128,6 +128,11 @@ protected:
 	D3DXHANDLE						lossTexture1;
 	D3DXHANDLE						inscatterTexture1;
 
+
+	D3DXHANDLE						heightAboveFogLayer;
+	D3DXHANDLE						fogColour;
+	D3DXHANDLE						fogExtinction;
+	D3DXHANDLE						fogDensity;
 	// For godrays:
 	D3DXHANDLE						godRaysTechnique;
 	D3DXHANDLE						cloudTexture1;

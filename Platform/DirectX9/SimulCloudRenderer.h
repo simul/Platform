@@ -41,6 +41,7 @@ typedef long HRESULT;
 //! or use SimulWeatherRenderer to manage cloud and sky rendering together.
 SIMUL_DIRECTX9_EXPORT_CLASS SimulCloudRenderer
 	: public simul::clouds::BaseCloudRenderer
+	,public simul::clouds::GpuLightingCallback
 	,public simul::graph::meta::ResourceUser<simul::graph::standardnodes::ShowProgressInterface>
 {
 public:
@@ -95,7 +96,8 @@ public:
 	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *){}
 
 	// implementing GpuLightingCallback:
-	bool CanPerformGPULighting() const;
+	bool CanPerformGPULighting() const;			
+	void SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3);
 	void PerformFullGPURelight(int which_texture,float *target_direct_grid,float *target_indirect_grid);
 	void GPUTransferDataToTexture(	int which_texture
 									,unsigned char *target_texture
@@ -216,6 +218,7 @@ protected:
 	LPDIRECT3DVOLUMETEXTURE9	cloud_textures[3];
 	LPDIRECT3DVOLUMETEXTURE9	illumination_texture;
 	LPDIRECT3DTEXTURE9			noise_texture;
+	LPDIRECT3DVOLUMETEXTURE9	volume_noise_texture;
 	LPDIRECT3DTEXTURE9			raytrace_layer_texture;
 	LPDIRECT3DBASETEXTURE9		sky_loss_texture;
 	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture;
@@ -225,6 +228,7 @@ protected:
 	LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 	LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;
 	virtual bool CreateNoiseTexture(bool override_file=false);
+	void CreateVolumeNoiseTexture();
 	bool MakeCubemap(); // not ready yet
 	//! Once per frame, fill this 1-D texture with information on the layer distances and noise offsets
 	bool FillRaytraceLayerTexture();
