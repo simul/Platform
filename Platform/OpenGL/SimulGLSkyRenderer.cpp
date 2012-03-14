@@ -53,7 +53,7 @@ SimulGLSkyRenderer::SimulGLSkyRenderer(bool UseColourSky)
 	,stars_program(0)
 	,initialized(false)
 {
-	EnableColourSky(UseColourSky);
+//	EnableColourSky(UseColourSky);
 /* Setup cube vertex data. */
 	v[0][0] = v[1][0] = v[2][0] = v[3][0] = -1000.f;
 	v[4][0] = v[5][0] = v[6][0] = v[7][0] =  1000.f;
@@ -70,7 +70,7 @@ SimulGLSkyRenderer::SimulGLSkyRenderer(bool UseColourSky)
 
 bool SimulGLSkyRenderer::Create(float start_alt_km)
 {
-	skyKeyframer->SetFillTexturesAsBlocks(true);
+//	skyKeyframer->SetFillTexturesAsBlocks(true);
 	skyKeyframer->SetAltitudeKM(start_alt_km);
 	SetCameraPosition(0,0,start_alt_km*1000.f);
 	return true;
@@ -605,7 +605,7 @@ bool SimulGLSkyRenderer::RenderSun()
 		ERROR_CHECK
 	glUniform3f(sunlight_param,sunlight.x,sunlight.y,sunlight.z);
 		ERROR_CHECK
-	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToLight());
+	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
 	//if(y_vertical)
 	//	std::swap(sun_dir.y,sun_dir.z);
 	glEnable(GL_BLEND);
@@ -650,7 +650,7 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 	// Transform light into planet space
 	float Yaw=atan2(dir[0],dir[1]);
 	float Pitch=-asin(dir[2]);
-	simul::math::Vector3 sun_dir=skyKeyframer->GetSkyInterface()->GetDirectionToSun();
+	simul::math::Vector3 sun_dir=skyKeyframer->GetDirectionToSun();
 	simul::math::Vector3 sun2;
 	{
 		simul::geometry::SimulOrientation or;
@@ -666,13 +666,13 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 		ERROR_CHECK
 	glUniform3f(planetLightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
 		ERROR_CHECK
-	glEnable(GL_BLEND);
+	glDisable(GL_BLEND);
 		ERROR_CHECK
-	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
+	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		ERROR_CHECK
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 		ERROR_CHECK
-	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE,GL_SRC_ALPHA,GL_ONE);
+	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		ERROR_CHECK
 
 	bool res=RenderAngledQuad(dir,planet_angular_size);
@@ -760,6 +760,11 @@ void SimulGLSkyRenderer::EnsureCorrectTextureSizes()
 	{
 		fade_texture_iterator[i].resize(numAltitudes);
 		sky_texture_iterator[i].resize(numAltitudes);
+		for(int j=0;j<numAltitudes;j++)
+		{
+			fade_texture_iterator[i][j].texture_index=i;
+			sky_texture_iterator[i][j].texture_index=i;
+		}
 	}
 }
 

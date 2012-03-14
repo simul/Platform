@@ -11,3 +11,4 @@ namespace simul
 }
 // Load a texture from the predefined texture path.
 extern SIMUL_OPENGL_EXPORT GLuint LoadGLImage(const char *filename,unsigned wrap=GL_CLAMP);
+extern SIMUL_OPENGL_EXPORT void SaveGLImage(const char *filename,GLuint tex);

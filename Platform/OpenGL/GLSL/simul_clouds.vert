@@ -11,12 +11,10 @@ varying vec2 noiseCoord;
 varying vec3 eyespacePosition;
 varying vec3 wPosition;
 varying vec3 sunlight;
-uniform vec3 lightDir;
 
 varying vec3 loss;
 varying vec4 insc;
 varying vec3 texCoordLightning;
-varying float cos0;
 uniform vec3 illuminationOrigin;
 uniform vec3 illuminationScales;
 uniform vec3 eyePosition;
@@ -42,7 +40,6 @@ void main(void)
 	
 	texCoordLightning	=(wPosition.xzy-illuminationOrigin.xyz)/illuminationScales.xyz;
 	view=normalize(wPosition);
-	cos0=dot(lightDir.xyz,view.xyz);
 
 	float sine=view.z;
 	float depth=length(wPosition)/maxFadeDistanceMetres;

@@ -122,6 +122,7 @@ GLuint LoadProgram(GLuint prog,const char *filename,const char *defines)
 		ptr[len]='\n';
 		ptr+=len+1;
 	}
+	ifs.close();
 	ptr[0]=0;
 
 	const char *strings[1];

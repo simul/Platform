@@ -51,7 +51,7 @@ typedef long HRESULT;
 SIMUL_DIRECTX9_EXPORT_CLASS SimulSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
-	SimulSkyRenderer(bool UseColourSky=false);
+	SimulSkyRenderer(simul::sky::SkyKeyframer *sk);
 	virtual ~SimulSkyRenderer();
 	virtual void SaveTextures(const char *base_filename);
 	//standard d3d object interface functions
@@ -71,7 +71,7 @@ public:
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	bool						Render(bool blend);
 	//! Draw the fade textures to screen
-	bool						RenderFades(int width);
+	bool						RenderFades(int w,int h);
 	//! Draw sidereal and geographic information to screen
 	bool						RenderCelestialDisplay(int screen_width,int screen_height);
 #ifdef XBOX

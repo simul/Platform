@@ -6,7 +6,7 @@
 #include <GL/gl.h>
 #include <iostream>
 #include "Simul/Base/Timer.h"
-
+int res=6;
 static bool IsExtensionSupported(const char *name)
 {
 	GLint n=0;
@@ -116,12 +116,15 @@ void DrawQuad(int x,int y,int w,int h)
 
 float GetFramerate()
 {
-	static float framerate=100.f;
+	static float framerate=0.f;
 #if 1
 	static simul::base::Timer timer;
 	timer.FinishTime();
 	framerate*=.99f;
-	framerate+=0.01f*(1000.f/timer.Time);
+	if(framerate)
+		framerate+=0.01f*(1000.f/timer.Time);
+	else
+		framerate=60.f;
 	timer.StartTime();
 #else
 	static int count=0;

@@ -16,6 +16,12 @@ void main()
 	float light=clamp(dot(normal.xyz,lightDir.xyz),0.0,1.0);
 	result.rgb*=colour.rgb;
 	result.rgb*=light;
+	float opacity=(0.9-l)/0.01;
+	opacity=min(opacity,1.0);
+	opacity=max(opacity,0.0);
+	result.a*=opacity;
+	result.rgb*=opacity;
+	//result.rgb=vec3(opacity,opacity,opacity);
     gl_FragColor=result;
 }
 

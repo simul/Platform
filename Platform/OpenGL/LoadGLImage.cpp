@@ -40,8 +40,8 @@ GLuint LoadGLTexture(const char *filename,unsigned wrap)
 				height = FreeImage_GetHeight(dib);
 
 	unsigned bpp=FreeImage_GetBPP(dib);
-	if(bpp!=24)
-		return 0;
+	//if(bpp!=24)
+	//	return 0;
 
 ERROR_CHECK
 	GLuint image_tex=0;
@@ -74,4 +74,13 @@ GLuint LoadGLImage(const char *filename,unsigned wrap)
 	std::string fn=image_path+"/";
 	fn+=filename;
 	return LoadGLTexture(fn.c_str(),wrap);
+}
+
+void SaveGLImage(const char *filename,GLuint tex)
+{
+	std::string fn=image_path+"/";
+	fn+=filename;
+/*	FIBITMAP *bitmap2 = FreeImage_Allocate(w, h, 32);
+	FreeImage_Paste(bitmap2, bitmap, 0, 0, 255);
+    FreeImage_Save(FIF_PNG, bitmap2, "mybitmap.png", 0);*/
 }

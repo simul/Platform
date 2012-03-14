@@ -182,8 +182,8 @@ ExampleHumidityCallback hum_callback;
 MushroomHumidityCallback mushroom_callback;
 #endif
 
-SimulCloudRenderer::SimulCloudRenderer(const char *license_key,simul::clouds::CloudKeyframer *ck)
-	:simul::clouds::BaseCloudRenderer(license_key,true,ck)
+SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck)
+	:simul::clouds::BaseCloudRenderer(ck)
 	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pHudVertexDecl(NULL)
@@ -202,7 +202,7 @@ SimulCloudRenderer::SimulCloudRenderer(const char *license_key,simul::clouds::Cl
 	,vertices(NULL)
 	,cpu_fade_vertices(NULL)
 	,last_time(0)
-	,GPULightingEnabled(true)
+	,GPULightingEnabled(false)
 	,y_vertical(true)
 	,NumBuffers(1)
 {
@@ -1050,7 +1050,7 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 		delta_t=0;
 	last_time=t;
 
-	helper->SetChurn(GetCloudInterface()->GetChurn());
+	->SetChurn(GetCloudInterface()->GetChurn());
 	helper->Update((const float*)cam_pos,wind_offset,view_dir,up,delta_t,cubemap);
 	//if(y_vertical)
 	//	std::swap(cam_pos.y,cam_pos.z);

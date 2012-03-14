@@ -13,11 +13,13 @@ uniform float skyInterp;
 
 // varyings are written by vert shader, interpolated, and read by frag shader.
 varying vec3 dir;
+#define pi (3.1415926536)
 float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
-	const float pi=3.1415926536;
-	return 0.5*0.079577+0.5*(1.0-g2)/(4.0*pi*pow(1.+g2-2.*g*cos0,1.5));
+	float u=1.0+g2-2.0*g*cos0;
+	return 0.5*0.079577+.5*(1.0-g2)/(4.0*pi*pow(u,1.5));
+	//return 0.5*0.079577+.5*(1.0-g2)/(4.0*pi*sqrt(u*u*u));
 }
 
 vec3 InscatterFunction(vec4 inscatter_factor,float cos0)

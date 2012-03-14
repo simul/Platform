@@ -28,7 +28,7 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGL2DCloudRenderer : public simul::clouds::Base2DCloudRenderer
 {
 public:
-	SimulGL2DCloudRenderer(const char *license_key);
+	SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck=NULL);
 	virtual ~SimulGL2DCloudRenderer();
 	//standard ogl object interface functions
 	bool Create();

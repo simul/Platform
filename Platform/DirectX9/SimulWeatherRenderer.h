@@ -41,7 +41,7 @@ public:
 /*!
 	\code
 #include "Simul/Platform/Windows/DirectX 9/SimulWeatherRenderer.h"
-	simulWeatherRenderer=new SimulWeatherRenderer(true,ScreenWidth/2,ScreenHeight/2,true,true,false,true,false);
+	simulWeatherRenderer=new SimulWeatherRenderer(license,env,true,ScreenWidth/2,ScreenHeight/2,true,true,false,true,false);
 	simulWeatherRenderer->SetDaytime(0.3f);
 	\endcode
 
@@ -97,13 +97,22 @@ e.g. clouds, sky:
 	simulWeatherRenderer->RenderPrecipitation();
 \endcode
 */
+namespace simul
+{
+	namespace clouds
+	{
+		class Environment;
+	}
+}
+
 SIMUL_DIRECTX9_EXPORT_CLASS SimulWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
-	SimulWeatherRenderer(const char *license_key,simul::clouds::CloudKeyframer *ck,bool usebuffer=true,int width=320,
+	SimulWeatherRenderer(simul::clouds::Environment *env
+							,bool usebuffer=true
+							,int width=320,
 		int height=240,bool sky=true,bool clouds3d=true,bool clouds2d=true,
-		bool rain=true,
-		bool colour_sky=false);
+		bool rain=true);
 	virtual ~SimulWeatherRenderer();
 	//standard d3d object interface functions
 	bool Create( LPDIRECT3DDEVICE9 pd3dDevice);

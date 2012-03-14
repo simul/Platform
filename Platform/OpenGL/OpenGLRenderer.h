@@ -12,6 +12,10 @@
 #endif
 namespace simul
 {
+	namespace clouds
+	{
+		class Environment;
+	}
 	namespace camera
 	{
 		class Camera;
@@ -23,9 +27,10 @@ SIMUL_OPENGL_EXPORT_CLASS OpenGLRenderer
 	,public simul::graph::meta::Group
 {
 public:
-	OpenGLRenderer(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer);
+	OpenGLRenderer(simul::clouds::Environment *env);
 	virtual ~OpenGLRenderer();
 	META_BeginProperties
+		META_ValueProperty(bool,ShowCloudCrossSections,"Show cross-sections of the cloud volumes as an overlay.")
 		META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")
 		META_ValueProperty(bool,ShowFades,"Show the fade textures as an overlay.")
 	META_EndProperties

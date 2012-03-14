@@ -16,12 +16,12 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 
-Direct3D11Renderer::Direct3D11Renderer(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer):
+Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env):
 		camera(NULL)
 		,timeMult(0.f)
 		,y_vertical(true)
 {
-	simulWeatherRenderer=new SimulWeatherRendererDX1x(license_key,cloudKeyframer,true,false,640,360,true,true,true);
+	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,true,false,640,360,true,true,true);
 	AddChild(simulWeatherRenderer.get());
 	//simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
 	simulOpticsRenderer=new SimulOpticsRendererDX1x();

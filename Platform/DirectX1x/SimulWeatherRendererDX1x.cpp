@@ -29,9 +29,9 @@
 
 D3DXMATRIX view_matrices[6];
 
-SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(const char *lic,simul::clouds::CloudKeyframer *cloudKeyframer,
+SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *env,
 		bool usebuffer,bool tonemap,int w,int h,bool sky,bool clouds3d,bool clouds2d,bool rain) :
-	BaseWeatherRenderer(lic),
+	BaseWeatherRenderer(env),
 	framebuffer(w,h),
 	m_pd3dDevice(NULL),
 	m_pImmediateContext(NULL),
@@ -47,20 +47,23 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(const char *lic,simul::clouds
 	show_sky(sky),
 	show_rain(rain)
 {
+	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
+	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer.get();
+	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer.get();
 	if(show_sky)
 	{
-		simulSkyRenderer=new SimulSkyRendererDX1x();
+		simulSkyRenderer=new SimulSkyRendererDX1x(sk);
 		baseSkyRenderer=simulSkyRenderer.get();
 		Group::AddChild(simulSkyRenderer.get());
 	}
 	if(show_3d_clouds)
 	{
-		simulCloudRenderer=new SimulCloudRendererDX1x(license_key,cloudKeyframer);
+		simulCloudRenderer=new SimulCloudRendererDX1x(ck3d);
 		baseCloudRenderer=simulCloudRenderer.get();
 		Group::AddChild(simulCloudRenderer.get());
 	}
 /*	if(clouds2d)
-		simul2DCloudRenderer=new Simul2DCloudRenderer();
+		simul2DCloudRenderer=new Simul2DCloudRenderer(ck2d);
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
 	*/

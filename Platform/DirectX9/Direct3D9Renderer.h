@@ -30,6 +30,10 @@ public:
 #pragma warning(disable:4251)
 namespace simul
 {
+	namespace clouds
+	{
+		class Environment;
+	}
 	namespace camera
 	{
 		class Camera;
@@ -45,7 +49,7 @@ class SIMUL_DIRECTX9_EXPORT Direct3D9Renderer
 	,public simul::graph::meta::Group
 {
 public:
-	Direct3D9Renderer(const char *license_key);
+	Direct3D9Renderer(simul::clouds::Environment *env);
 	virtual ~Direct3D9Renderer();
 	META_BeginProperties
 		META_ValueProperty(float,Gamma,"")

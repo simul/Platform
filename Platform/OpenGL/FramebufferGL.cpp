@@ -172,7 +172,7 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 	   case GL_FRAMEBUFFER_COMPLETE_EXT:
 		   break;
 	default:
-	   ERROR_CHECK
+	   ERROR_CHECK;
 	}
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);

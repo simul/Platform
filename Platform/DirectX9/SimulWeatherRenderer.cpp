@@ -27,6 +27,7 @@
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
+#include "Simul/Clouds/Environment.h"
 #include "Simul/Platform/DirectX9/SimulCloudRenderer.h"
 #include "Simul/Platform/DirectX9/SimulLightningRenderer.h"
 #include "Simul/Platform/DirectX9/SimulPrecipitationRenderer.h"
@@ -42,12 +43,11 @@
 static simul::base::Timer timer;
 
 static D3DXMATRIX ident;
-SimulWeatherRenderer::SimulWeatherRenderer(	const char *lic,
-											simul::clouds::CloudKeyframer *ck3d,
+SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 											bool usebuffer,int width,
 											int height,bool sky,bool clouds3d,
-											bool clouds2d,bool rain,bool colour_sky) :
-	BaseWeatherRenderer(lic),
+											bool clouds2d,bool rain) :
+	BaseWeatherRenderer(env),
 	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
 	m_pBufferToScreenEffect(NULL),
@@ -62,17 +62,20 @@ SimulWeatherRenderer::SimulWeatherRenderer(	const char *lic,
 	show_rain(rain),
 	renderDepthBufferCallback(NULL)
 {
+	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
+	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer.get();
+	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer.get();
 	D3DXMatrixIdentity(&ident);
 	ShowSky=sky;
 	if(sky)
 	{
-		simulSkyRenderer=new SimulSkyRenderer(colour_sky);
+		simulSkyRenderer=new SimulSkyRenderer(sk);
 		baseSkyRenderer=simulSkyRenderer.get();
 		AddChild(simulSkyRenderer.get());
 	}
 	if(clouds3d)
 	{
-		simulCloudRenderer=new SimulCloudRenderer(license_key,ck3d);
+		simulCloudRenderer=new SimulCloudRenderer(ck3d);
 		baseCloudRenderer=simulCloudRenderer.get();
 		AddChild(simulCloudRenderer.get());
 		simulLightningRenderer=new SimulLightningRenderer(simulCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
@@ -81,7 +84,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	const char *lic,
 	}
 	if(clouds2d)
 	{
-		simul2DCloudRenderer=new Simul2DCloudRenderer(license_key,NULL);
+		simul2DCloudRenderer=new Simul2DCloudRenderer(ck2d);
 		base2DCloudRenderer=simul2DCloudRenderer.get();
 		Restore2DCloudObjects();
 	}

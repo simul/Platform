@@ -330,6 +330,7 @@ vertexOutputCS VS_ShowFade(vertexInputCS IN)
 
 float4 PS_ShowFade( vertexOutputCS IN): color
 {
+	IN.texCoords.y=1.0-IN.texCoords.y;
 	float4 colour=tex2D(fade_texture_2d,IN.texCoords.xy);
     return float4(colour.rgb,1);
 }
@@ -359,7 +360,7 @@ float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 {
 #ifdef USE_ALTITUDE_INTERPOLATION
 // Reverse Z co-ordinate so that up is up.
-	float3 texc=float3(IN.texCoords.x,0.5,1.f-IN.texCoords.y);
+	float3 texc=float3(IN.texCoords.x,1.f-IN.texCoords.y,altitudeTexCoord);
 	float4 colour=tex3D(fade_texture,texc);
 #else
 	float4 colour=tex2D(fade_texture,IN.texCoords.xy);

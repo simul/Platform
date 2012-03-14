@@ -40,12 +40,10 @@ void printProgramInfoLog(GLuint obj);
 #pragma comment(lib,"freeImage.lib")
 #endif
 
-
 using std::map;
 
-
-SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(const char *license_key)
-	:Base2DCloudRenderer(license_key)
+SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck)
+	:Base2DCloudRenderer(ck)
 	,texture_scale(1.f)
 	,scale(2.f)
 	,texture_effect(1.f)
@@ -56,7 +54,6 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(const char *license_key)
 {
 	cloudKeyframer->SetFillTexturesAsBlocks(true);
 	helper->Initialize(16,400000.f);
-	cloudKeyframer->SetUserKeyframes(false);
 }
 
 bool SimulGL2DCloudRenderer::CreateNoiseTexture(bool override_file)

@@ -70,8 +70,8 @@ public:
 };
 CumulonimbusHumidityCallback cb;
 
-SimulGLCloudRenderer::SimulGLCloudRenderer(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer)
-	:BaseCloudRenderer(license_key,true,cloudKeyframer)
+SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudKeyframer)
+	:BaseCloudRenderer(cloudKeyframer)
 	,texture_scale(1.f)
 	,scale(2.f)
 	,texture_effect(1.f)
@@ -100,9 +100,29 @@ bool SimulGLCloudRenderer::Create()
 	return true;
 }
 
+void SimulGLCloudRenderer::CreateVolumeNoise()
+{
+	GetCloudInterface()->GetNoiseOctaves();
+	GetCloudInterface()->GetNoisePeriod();
+	GetCloudInterface()->GetNoisePersistence();
+	int size=GetCloudInterface()->GetNoiseResolution();
+ERROR_CHECK
+    glGenTextures(1,&volume_noise_tex);
+    glBindTexture(GL_TEXTURE_3D,volume_noise_tex);
+    glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+	const float *data=GetCloudGridInterface()->GetNoise()->GetData();
+    glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA32F_ARB,size,size,size,0,GL_RGBA,GL_FLOAT,data);
+	glGenerateMipmap(GL_TEXTURE_3D);
+ERROR_CHECK
+}
+
 bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
 {
-	int size=512;
+	int size=256;
 ERROR_CHECK
     glGenTextures(1,&noise_tex);
     glBindTexture(GL_TEXTURE_2D,noise_tex);
@@ -113,8 +133,20 @@ ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
     glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,size,size,0,GL_RGBA,GL_UNSIGNED_INT,0);
 	unsigned char *data=new unsigned char[4*size*size];
-	simul::clouds::TextureGenerator::SetBits((unsigned)255<<24,(unsigned)255<<8,(unsigned)255<<16,(unsigned)255<<0,4,false);
-	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)data,size,16,6,.79f);
+	bool got_data=false;
+	if(!override_file)
+	{
+		ifstream ifs("noise",ios_base::binary);
+		if(ifs.good()){
+			ifs.read(( char*)data,size*size*sizeof(unsigned));
+			got_data=true;
+		}
+	}
+	if(!got_data)
+	{
+		simul::clouds::TextureGenerator::SetBits((unsigned)255<<24,(unsigned)255<<8,(unsigned)255<<16,(unsigned)255<<0,4,false);
+		simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)data,size,16,6,.79f);
+	}
 	glTexSubImage2D(
 		GL_TEXTURE_2D,0,
 		0,0,
@@ -123,17 +155,22 @@ ERROR_CHECK
 		data);
 ERROR_CHECK
 	glGenerateMipmap(GL_TEXTURE_2D);
+	if(!got_data)
+	{
+		ofstream ofs("noise",ios_base::binary);
+		ofs.write((const char*)data,size*size*sizeof(unsigned));
+	}
 	delete [] data;
 ERROR_CHECK
 	return true;
 }
 
-void SimulGLCloudRenderer::FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array)
+void SimulGLCloudRenderer::FillCloudTextureBlock(int ,int,int ,int ,int ,int ,int ,const unsigned *)
 {
 }
 
 
-void SimulGLCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z)
+void SimulGLCloudRenderer::SetCloudTextureSize(unsigned ,unsigned ,unsigned )
 {
 }
 
@@ -523,7 +560,7 @@ ERROR_CHECK
 
 	clouds_program				=glCreateProgram();
 	clouds_vertex_shader		=LoadProgram(clouds_vertex_shader,"simul_clouds.vert");
-	clouds_fragment_shader		=LoadProgram(clouds_fragment_shader,"simul_clouds.frag","#define DETAIL_NOISE\r\n#define GAMMA_CORRECTION");
+	clouds_fragment_shader		=LoadProgram(clouds_fragment_shader,"simul_clouds.frag","#define DETAIL_NOISE 1\r\n");
 	glAttachShader(clouds_program, clouds_vertex_shader);
 	glAttachShader(clouds_program, clouds_fragment_shader);
 	glLinkProgram(clouds_program);
@@ -573,6 +610,7 @@ ERROR_CHECK
 bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 {
 	CreateNoiseTexture();
+	CreateVolumeNoise();
 	RecompileShaders();
 	using namespace simul::clouds;
 	cloudKeyframer->SetBits(CloudKeyframer::DENSITY,CloudKeyframer::BRIGHTNESS,
@@ -674,6 +712,10 @@ bool SimulGLCloudRenderer::InvalidateDeviceObjects()
 	glDeleteBuffersARB(1,&sphere_vbo);
 	glDeleteBuffersARB(1,&sphere_ibo);
 	sphere_vbo=sphere_ibo=0;
+
+	//glDeleteTexture(volume_noise_tex);
+	volume_noise_tex=0;
+
 	ClearIterators();
 	return true;
 }
@@ -830,7 +872,6 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 
 void SimulGLCloudRenderer::RenderCrossSections(int width)
 {
-return;
 	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
 	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
 	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");

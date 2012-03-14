@@ -3,10 +3,12 @@
 
 // varyings are written by vert shader, interpolated, and read by frag shader.
 varying vec2 texcoord;
+varying vec3 pos;
 
 void main(void)
 {
-    gl_Position		= ftransform();
+	pos=gl_Vertex.xyz;
+    gl_Position		= gl_ModelViewProjectionMatrix * gl_Vertex;
     texcoord		= gl_MultiTexCoord0.xy;
 }
 

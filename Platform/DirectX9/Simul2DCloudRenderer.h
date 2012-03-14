@@ -45,7 +45,7 @@ typedef long HRESULT;
 SIMUL_DIRECTX9_EXPORT_CLASS Simul2DCloudRenderer: public simul::clouds::BaseCloudRenderer
 {
 public:
-	Simul2DCloudRenderer(const char *license_key,simul::clouds::CloudKeyframer *ck);
+	Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck);
 	virtual ~Simul2DCloudRenderer();
 	//standard d3d object interface functions
 	bool Create( LPDIRECT3DDEVICE9 pd3dDevice);

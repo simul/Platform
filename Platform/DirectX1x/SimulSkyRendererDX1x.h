@@ -41,7 +41,7 @@ typedef long HRESULT;
 SIMUL_DIRECTX1x_EXPORT_CLASS SimulSkyRendererDX1x:public simul::sky::BaseSkyRenderer
 {
 public:
-	SimulSkyRendererDX1x();
+	SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk);
 	virtual ~SimulSkyRendererDX1x();
 
 	//standard d3d object interface functions

@@ -12,6 +12,7 @@ uniform vec3 ambientColour;
 uniform vec3 fractalScale;
 uniform vec4 lightResponse;
 uniform float cloud_interp;
+uniform vec3 lightDir;
 
 // the App updates uniforms "slowly" (eg once per frame) for animation.
 uniform float hazeEccentricity;
@@ -32,7 +33,6 @@ varying vec3 sunlight;
 
 varying vec3 loss;
 varying vec4 insc;
-varying float cos0;
 varying vec3 texCoordLightning;
 varying vec2 fade_texc;
 varying vec3 view;
@@ -41,7 +41,8 @@ float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
 	float u=1.0+g2-2.0*g*cos0;
-	return 0.5*0.079577+.5*(1.0-g2)/(4.0*pi*sqrt(u*u*u));
+	return 0.5*0.079577+.5*(1.0-g2)*pow(u,-1.5)/(4.0*pi);
+	//return 0.5*0.079577+.5*(1.0-g2)/(4.0*pi*sqrt(u*u*u));
 }
 
 vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
@@ -56,8 +57,11 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 
 void main(void)
 {
+	float cos0=dot(lightDir.xyz,normalize(view.xyz));
 	vec3 noiseval=texture2D(noiseSampler,noiseCoord).xyz-0.5;
+#if DETAIL_NOISE==1
 	noiseval+=(texture2D(noiseSampler,noiseCoord*8.0).xyz-0.5)/2.0;
+#endif
 	noiseval*=texCoordDiffuse.w;
 	// Would use InscatterFunction if we passed in an isotropic inscatter factors. But otherwise the angular dependence is
 	// built into the vertex value.

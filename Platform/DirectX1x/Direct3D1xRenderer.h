@@ -27,7 +27,7 @@ namespace simul
 	}
 	namespace clouds
 	{
-		class CloudKeyframer;
+		class Environment;
 	}
 }
 class SimulWeatherRendererDX1x;
@@ -56,7 +56,7 @@ class SIMUL_DIRECTX1x_EXPORT Direct3D11Renderer
 	,public simul::graph::meta::Group
 {
 public:
-	Direct3D11Renderer(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer);
+	Direct3D11Renderer(simul::clouds::Environment *env);
 	virtual ~Direct3D11Renderer();
 	META_BeginProperties
 		META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")
