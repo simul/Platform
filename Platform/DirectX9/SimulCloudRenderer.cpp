@@ -182,8 +182,8 @@ ExampleHumidityCallback hum_callback;
 MushroomHumidityCallback mushroom_callback;
 #endif
 
-SimulCloudRenderer::SimulCloudRenderer(const char *license_key,simul::clouds::CloudKeyframer *ck)
-	:simul::clouds::BaseCloudRenderer(license_key,true,ck)
+SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck)
+	:simul::clouds::BaseCloudRenderer(ck)
 	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pHudVertexDecl(NULL)

@@ -22,7 +22,7 @@
 //extern unsigned GetResourceIdImplementation(const char *filename);
 extern LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl;
 
-Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
+Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env)
 	:simul::graph::meta::Group()
 	,Gamma(0.45f)
 	,aspect(1.f)
@@ -42,7 +42,7 @@ Direct3D9Renderer::Direct3D9Renderer(const char *license_key)
 	,ShowFlares(true)
 	,device_reset(true)
 {
-	simulWeatherRenderer=new SimulWeatherRenderer(license_key,NULL,true,1920,1080,true,true,false,false,false);
+	simulWeatherRenderer=new SimulWeatherRenderer(env,true,1920,1080,true,true,false,false);
 	if(simulWeatherRenderer)
 		AddChild(simulWeatherRenderer.get());
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
@@ -312,7 +312,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	timer.UpdateTime();
 	simul::math::FirstOrderDecay(weather_timing,timer.Time,1.f,fTimeStep);
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&ShowFades)
-		simulWeatherRenderer->GetSkyRenderer()->RenderFades(width);
+		simulWeatherRenderer->GetSkyRenderer()->RenderFades(width,height);
 
 	if(simulHDRRenderer)
 		simulHDRRenderer->FinishRender();

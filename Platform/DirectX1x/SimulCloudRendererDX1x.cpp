@@ -107,8 +107,8 @@ public:
 };
 ExampleHumidityCallback hm;
 
-SimulCloudRendererDX1x::SimulCloudRendererDX1x(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer) :
-	simul::clouds::BaseCloudRenderer(license_key,true,cloudKeyframer),
+SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cloudKeyframer) :
+	simul::clouds::BaseCloudRenderer(cloudKeyframer),
 	m_hTechniqueLightning(NULL),
 	m_pd3dDevice(NULL),
 	m_pImmediateContext(NULL),

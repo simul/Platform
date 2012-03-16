@@ -39,7 +39,7 @@ public:
 SIMUL_DIRECTX1x_EXPORT_CLASS SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer
 {
 public:
-	SimulWeatherRendererDX1x(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer,bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
+	SimulWeatherRendererDX1x(simul::clouds::Environment *env,bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
 	virtual ~SimulWeatherRendererDX1x();
 	//standard d3d object interface functions
 	bool RestoreDeviceObjects(ID3D1xDevice* pd3dDevice,IDXGISwapChain *swapChain);

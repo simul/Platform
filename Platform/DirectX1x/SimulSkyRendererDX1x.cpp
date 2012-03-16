@@ -80,8 +80,8 @@ static Vertex_t vertices[36] =
 
 typedef std::basic_string<TCHAR> tstring;
 
-SimulSkyRendererDX1x::SimulSkyRendererDX1x()
-	:simul::sky::BaseSkyRenderer(NULL)
+SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
+	:simul::sky::BaseSkyRenderer(sk)
 	,m_pd3dDevice(NULL)
 	,m_pImmediateContext(NULL)
 	,m_pVtxDecl(NULL)
@@ -113,7 +113,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x()
 		loss_textures_SRV[i]=NULL;
 		insc_textures_SRV[i]=NULL;
 	}
-	EnableColourSky(false);
+//EnableColourSky(false);
 	SetCameraPosition(0,0,400.f);
 	skyKeyframer->SetCalculateAllAltitudes(true);
 	loss_2d		=new FramebufferDX1x(0,0);

@@ -345,7 +345,7 @@ float4 PS_Clouds( vertexOutput IN): color
 	float3 ambient=skylightColour.rgb*density.w;
 
 	float opacity=density.x;
-	float3 final=(density.z*Beta+lightResponse.y*density.y)*IN.lightColour+ambient.rgb;
+	float3 final=(density.y*Beta+lightResponse.y*density.z)*IN.lightColour+ambient.rgb;
 
 	final*=loss;
 	final+=inscatter;
@@ -425,7 +425,7 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
 
 float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 {
-	float3 texc=float3(crossSectionOffset+IN.texCoords.x,0,1.-IN.texCoords.y);
+	float3 texc=float3(crossSectionOffset+IN.texCoords.x,0,1.0-IN.texCoords.y);
 	int i=0;
 	float3 accum=float3(0.f,0.5f,1.f);
 	for(i=0;i<32;i++)

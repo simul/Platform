@@ -45,7 +45,7 @@ SIMUL_DIRECTX9_EXPORT_CLASS SimulCloudRenderer
 	,public simul::graph::meta::ResourceUser<simul::graph::standardnodes::ShowProgressInterface>
 {
 public:
-	SimulCloudRenderer(const char *license_key,simul::clouds::CloudKeyframer *ck);
+	SimulCloudRenderer(simul::clouds::CloudKeyframer *ck);
 	virtual ~SimulCloudRenderer();
 	META_BeginProperties
 		META_ValuePropertyWithSetCall(bool,GPULightingEnabled,ForceRelight,"Whether the GPU will be used for cloud light calculations.")

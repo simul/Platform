@@ -5,7 +5,7 @@
 // agreement with Simul Software Ltd and may not be copied or disclosed except
 // in accordance with the terms of that agreement.
 
-// SimulCloudRendererDX1x.h A DirectX 10 renderer for clouds. Create an instance of this class in a dx10 program
+// SimulCloudRendererDX1x.h A DirectX 10/11 renderer for clouds. Create an instance of this class in a dx10 program
 //! and use the Render() function once per frame.
 
 #pragma once
@@ -54,7 +54,7 @@ typedef long HRESULT;
 SIMUL_DIRECTX1x_EXPORT_CLASS SimulCloudRendererDX1x : public simul::clouds::BaseCloudRenderer
 {
 public:
-	SimulCloudRendererDX1x(const char *license_key,simul::clouds::CloudKeyframer *cloudKeyframer);
+	SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cloudKeyframer);
 	virtual ~SimulCloudRendererDX1x();
 	//! Call this once to set the sky interface that this cloud renderer can use for distance fading.
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si);

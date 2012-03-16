@@ -65,7 +65,7 @@ texture fadeTexture;
     MipFilter = LINEAR;
     MinFilter = LINEAR;
     MagFilter = LINEAR;
-	AddressU = Mirror;
+	AddressU = Clamp;
 	AddressV = Clamp;
 	AddressW = Clamp;
 };
@@ -80,7 +80,7 @@ texture fadeTexture2;
     MipFilter = LINEAR;
     MinFilter = LINEAR;
     MagFilter = LINEAR;
-	AddressU = Mirror;
+	AddressU = Clamp;
 	AddressV = Clamp;
 	AddressW = Clamp;
 };
@@ -358,8 +358,7 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
 float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 {
 #ifdef USE_ALTITUDE_INTERPOLATION
-// Reverse Z co-ordinate so that up is up.
-	float3 texc=float3(IN.texCoords.x,1.f-IN.texCoords.y,altitudeTexCoord);
+	float3 texc=float3(IN.texCoords.x,IN.texCoords.y,altitudeTexCoord);
 	float4 colour=tex3D(fade_texture,texc);
 #else
 	float4 colour=tex2D(fade_texture,IN.texCoords.xy);
