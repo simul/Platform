@@ -218,6 +218,7 @@ protected:
 	LPDIRECT3DVOLUMETEXTURE9	cloud_textures[3];
 	LPDIRECT3DVOLUMETEXTURE9	illumination_texture;
 	LPDIRECT3DTEXTURE9			noise_texture;
+	LPDIRECT3DVOLUMETEXTURE9	volume_noise_texture;
 	LPDIRECT3DTEXTURE9			raytrace_layer_texture;
 	LPDIRECT3DBASETEXTURE9		sky_loss_texture;
 	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture;
@@ -227,6 +228,7 @@ protected:
 	LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 	LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;
 	virtual bool CreateNoiseTexture(bool override_file=false);
+	void CreateVolumeNoiseTexture();
 	bool MakeCubemap(); // not ready yet
 	//! Once per frame, fill this 1-D texture with information on the layer distances and noise offsets
 	bool FillRaytraceLayerTexture();

@@ -403,7 +403,7 @@ void SimulSkyRenderer::FillFadeTex(int alt_index,int texture_index,int texel_ind
 						const float *loss_float4_array,
 						const float *inscatter_float4_array)
 {
-	texel_index+=alt_index*NumDistances*NumElevations;
+	texel_index+=alt_index*fadeTexWidth*fadeTexHeight;
 	HRESULT hr=S_OK;
 	D3DLOCKED_RECT lockedRect={0};
 	D3DLOCKED_BOX lockedBox={0};
@@ -445,8 +445,9 @@ void SimulSkyRenderer::FillFadeTex(int alt_index,int texture_index,int texel_ind
 		// Copy the array of floats into the texture.
 		float *float_ptr=(float *)(tex_ptr);
 		float_ptr+=4*texel_index;
-		for(int i=0;i<num_texels*4;i++)
-			*float_ptr++=(*loss_float4_array++);
+		memcpy(float_ptr,loss_float4_array,4*num_texels*sizeof(float));
+		//for(int i=0;i<num_texels*4;i++)
+		//	*float_ptr++=(*loss_float4_array++);
 	}
 	if(0&&numAltitudes<=1)
 	{
@@ -485,8 +486,9 @@ void SimulSkyRenderer::FillFadeTex(int alt_index,int texture_index,int texel_ind
 		// Convert the array of floats into float16 values for the texture.
 		float *float_ptr=(float *)(tex_ptr);
 		float_ptr+=4*texel_index;
-		for(int i=0;i<num_texels*4;i++)
-			*float_ptr++=(*inscatter_float4_array++);
+		memcpy(float_ptr,inscatter_float4_array,4*num_texels*sizeof(float));
+		//for(int i=0;i<num_texels*4;i++)
+		//	*float_ptr++=(*inscatter_float4_array++);
 	}
 	if(0&&numAltitudes<=1)
 		hr=tex->UnlockRect(0);
@@ -497,12 +499,12 @@ void SimulSkyRenderer::FillFadeTex(int alt_index,int texture_index,int texel_ind
 
 void SimulSkyRenderer::CycleTexturesForward()
 {
-	std::swap(loss_textures[0],loss_textures[1]);
+/*	std::swap(loss_textures[0],loss_textures[1]);
 	std::swap(loss_textures[1],loss_textures[2]);
 	std::swap(inscatter_textures[0],inscatter_textures[1]);
 	std::swap(inscatter_textures[1],inscatter_textures[2]);
 	std::swap(sunlight_textures[0],sunlight_textures[1]);
-	std::swap(sunlight_textures[1],sunlight_textures[2]);
+	std::swap(sunlight_textures[1],sunlight_textures[2]);*/
 }
 
 
@@ -892,12 +894,25 @@ bool SimulSkyRenderer::RenderFades(int w,int h)
 
 	for(int i=0;i<numAltitudes;i++)
 	{
+<<<<<<< HEAD
 		float atc=(float)(i)/(float)(numAltitudes);
+=======
+		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
+>>>>>>> 1497fb7d37e8d34698ea89935dfaa7bf86b0762a
 		m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
 		m_pSkyEffect->SetTexture(fadeTexture, inscatter_textures[0]);
 		RenderTexture(m_pd3dDevice,8+2*(size+8)	,(i)*(size+8)+8,size,size,inscatter_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 		m_pSkyEffect->SetTexture(fadeTexture, inscatter_textures[1]);
 		RenderTexture(m_pd3dDevice,8+3*(size+8)	,(i)*(size+8)+8,size,size,inscatter_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
+<<<<<<< HEAD
+=======
+
+		
+		m_pSkyEffect->SetTexture(fadeTexture2D, sky_textures[0]);
+		RenderTexture(m_pd3dDevice,8+4*(size+8)		,(i)*(size+8)+8,8,size,sky_textures[0],m_pSkyEffect,m_hTechniqueShowSkyTexture);
+		m_pSkyEffect->SetTexture(fadeTexture2D, sky_textures[1]);
+		RenderTexture(m_pd3dDevice,8+4*(size+8)+16	,(i)*(size+8)+8,8,size,sky_textures[1],m_pSkyEffect,m_hTechniqueShowSkyTexture);
+>>>>>>> 1497fb7d37e8d34698ea89935dfaa7bf86b0762a
 	}
 #endif
 	return (hr==S_OK);
