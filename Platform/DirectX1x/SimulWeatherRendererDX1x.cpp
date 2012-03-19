@@ -336,7 +336,6 @@ void SimulWeatherRendererDX1x::Update(float dt)
 		UpdateSkyAndCloudHookup();
 		if(simulSkyRenderer)
 		{
-			simulSkyRenderer->Update(dt);
 			if(simulCloudRenderer)
 			{
 				/*simulCloudRenderer->SetLossTextures(simulSkyRenderer->GetLossTexture1(),

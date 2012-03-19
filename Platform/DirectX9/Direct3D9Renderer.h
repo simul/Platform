@@ -81,8 +81,6 @@ public:
 	void	SetShowLightVolume(bool val);
 	void	SetCelestialDisplay(bool val);
 
-	void	SetTimeMultiplier(float fTimeMult);
-
 	void	SetYVertical(bool y);
 	void	RecompileShaders();
 protected:

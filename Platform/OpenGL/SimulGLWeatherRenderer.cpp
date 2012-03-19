@@ -45,10 +45,6 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 		simulSkyRenderer=new SimulGLSkyRenderer(sk);
 		baseSkyRenderer=simulSkyRenderer.get();
 	}
-	if(simulSkyRenderer)
-	{
-		simulSkyRenderer->Create(0.5f);
-	}
 	simulCloudRenderer=new SimulGLCloudRenderer(ck3d);
 	baseCloudRenderer=simulCloudRenderer.get();
 	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d);

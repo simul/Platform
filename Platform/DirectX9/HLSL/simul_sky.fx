@@ -330,6 +330,7 @@ vertexOutputCS VS_ShowFade(vertexInputCS IN)
 
 float4 PS_ShowFade( vertexOutputCS IN): color
 {
+	IN.texCoords.y=1.0-IN.texCoords.y;
 	float4 colour=tex2D(fade_texture_2d,IN.texCoords.xy);
     return float4(colour.rgb,1);
 }

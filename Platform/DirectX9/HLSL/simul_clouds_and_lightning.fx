@@ -349,7 +349,6 @@ float4 PS_Clouds( vertexOutput IN): color
 
 	final*=loss;
 	final+=inscatter;
-
     return float4(final.rgb,opacity);
 }
 
