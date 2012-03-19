@@ -114,11 +114,7 @@ ERROR_CHECK
     glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-<<<<<<< HEAD
-	const float *data=GetCloudGridInterface()->GetNoise()->GetData();
-=======
 	const float *data=GetCloudGridInterface()->GetNoiseInterface()->GetData();
->>>>>>> 1497fb7d37e8d34698ea89935dfaa7bf86b0762a
     glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA32F_ARB,size,size,size,0,GL_RGBA,GL_FLOAT,data);
 	glGenerateMipmap(GL_TEXTURE_3D);
 ERROR_CHECK

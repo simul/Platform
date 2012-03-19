@@ -146,8 +146,6 @@ bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 	D3DXMatrixIdentity(&proj);
 	//hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
 	RecompileShaders();
-	skyKeyframer->SetCallback(this);
-	// CreateSkyTexture() will be called
 
 	SAFE_RELEASE(flare_texture);
 	D3DX1x_IMAGE_LOAD_INFO loadInfo;
@@ -187,8 +185,6 @@ bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 
 	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer);
 
-	skyKeyframer->SetCallback(NULL);
-	skyKeyframer->SetCallback(this);
 	if(loss_2d)
 	{
 		loss_2d->SetWidthAndHeight(fadeTexWidth,fadeTexHeight);

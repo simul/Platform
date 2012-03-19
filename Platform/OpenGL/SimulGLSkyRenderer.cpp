@@ -39,9 +39,8 @@ static GLint faces[6][4] = {  /* Vertex indices for the 6 faces of a cube. */
   {4, 5, 1, 0}, {5, 6, 2, 1}, {7, 4, 0, 3} };
 static GLfloat v[8][3];  /* Will be filled in with X,Y,Z vertexes. */
 
-SimulGLSkyRenderer::SimulGLSkyRenderer(bool UseColourSky)
-	:BaseSkyRenderer(NULL)
-	,skyTexSize(128)
+SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk)
+	:BaseSkyRenderer(sk)
 	,campos_updated(false)
 	,short_ptr(NULL)
 	,loss_2d(0,0,GL_TEXTURE_2D)
@@ -66,14 +65,8 @@ SimulGLSkyRenderer::SimulGLSkyRenderer(bool UseColourSky)
 		sky_tex[i]=0;
 		loss_textures[i]=inscatter_textures[i]=0;
 	}
-}
-
-bool SimulGLSkyRenderer::Create(float start_alt_km)
-{
 //	skyKeyframer->SetFillTexturesAsBlocks(true);
-	skyKeyframer->SetAltitudeKM(start_alt_km);
-	SetCameraPosition(0,0,start_alt_km*1000.f);
-	return true;
+	SetCameraPosition(0,0,skyKeyframer->GetAltitudeKM()*1000.f);
 }
 
 void SimulGLSkyRenderer::SetSkyTexSize(unsigned size)
@@ -892,9 +885,6 @@ ERROR_CHECK
 	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 ERROR_CHECK
 	RecompileShaders();
-ERROR_CHECK
-
-	skyKeyframer->SetCallback(this);
 ERROR_CHECK
 	moon_texture=(void*)LoadGLImage("Moon.png",GL_CLAMP);
 	SetPlanetImage(moon_index,moon_texture);

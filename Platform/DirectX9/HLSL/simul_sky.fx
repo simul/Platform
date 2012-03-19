@@ -359,12 +359,7 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
 float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 {
 #ifdef USE_ALTITUDE_INTERPOLATION
-<<<<<<< HEAD
-// Reverse Z co-ordinate so that up is up.
-	float3 texc=float3(IN.texCoords.x,1.f-IN.texCoords.y,altitudeTexCoord);
-=======
 	float3 texc=float3(IN.texCoords.x,IN.texCoords.y,altitudeTexCoord);
->>>>>>> 1497fb7d37e8d34698ea89935dfaa7bf86b0762a
 	float4 colour=tex3D(fade_texture,texc);
 #else
 	float4 colour=tex2D(fade_texture,IN.texCoords.xy);

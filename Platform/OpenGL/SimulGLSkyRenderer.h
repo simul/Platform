@@ -28,12 +28,10 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGLSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
-	SimulGLSkyRenderer(bool UseColourSky);
+	SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk);
 	virtual ~SimulGLSkyRenderer();
 	//standard ogl object interface functions
 
-	//! Initialize the sky renderer.
-	bool						Create(float start_alt_km=0.f);
 	//! Create the API-specific objects to be used in rendering. This is usually called from the SimulGLWeatherRenderer that
 	//! owns this object.
 	bool						RestoreDeviceObjects();
@@ -117,7 +115,6 @@ protected:
 	FramebufferGL	loss_2d;
 	FramebufferGL	inscatter_2d;
 
-	unsigned skyTexSize;
 	bool campos_updated;
 	short *short_ptr;
 	virtual bool IsYVertical()

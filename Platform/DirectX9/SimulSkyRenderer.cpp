@@ -165,9 +165,6 @@ bool SimulSkyRenderer::RestoreDeviceObjects(void *dev)
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
 	SAFE_RELEASE(m_pSkyEffect);
 	RecompileShaders();
-
-	skyKeyframer->SetCallback(NULL);
-	skyKeyframer->SetCallback(this);
 	// CreateSkyTexture() will be called back
 
 	// OK to fail with these (more or less):
@@ -894,25 +891,19 @@ bool SimulSkyRenderer::RenderFades(int w,int h)
 
 	for(int i=0;i<numAltitudes;i++)
 	{
-<<<<<<< HEAD
-		float atc=(float)(i)/(float)(numAltitudes);
-=======
+		//float atc=(float)(i)/(float)(numAltitudes);
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
->>>>>>> 1497fb7d37e8d34698ea89935dfaa7bf86b0762a
 		m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
 		m_pSkyEffect->SetTexture(fadeTexture, inscatter_textures[0]);
 		RenderTexture(m_pd3dDevice,8+2*(size+8)	,(i)*(size+8)+8,size,size,inscatter_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 		m_pSkyEffect->SetTexture(fadeTexture, inscatter_textures[1]);
 		RenderTexture(m_pd3dDevice,8+3*(size+8)	,(i)*(size+8)+8,size,size,inscatter_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
-<<<<<<< HEAD
-=======
-
-		
+	
 		m_pSkyEffect->SetTexture(fadeTexture2D, sky_textures[0]);
 		RenderTexture(m_pd3dDevice,8+4*(size+8)		,(i)*(size+8)+8,8,size,sky_textures[0],m_pSkyEffect,m_hTechniqueShowSkyTexture);
 		m_pSkyEffect->SetTexture(fadeTexture2D, sky_textures[1]);
 		RenderTexture(m_pd3dDevice,8+4*(size+8)+16	,(i)*(size+8)+8,8,size,sky_textures[1],m_pSkyEffect,m_hTechniqueShowSkyTexture);
->>>>>>> 1497fb7d37e8d34698ea89935dfaa7bf86b0762a
+
 	}
 #endif
 	return (hr==S_OK);

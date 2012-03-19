@@ -136,7 +136,7 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		{
 			simulTerrainRenderer->SetSkyInterface(simulWeatherRenderer->GetSkyRenderer()->GetSkyKeyframer());
-			simulTerrainRenderer->SetMaxFadeDistanceKm(simulWeatherRenderer->GetSkyRenderer()->GetMaxFadeDistanceKm());
+			simulTerrainRenderer->SetMaxFadeDistanceKm(simulWeatherRenderer->GetSkyRenderer()->GetSkyKeyframer()->GetMaxDistanceKm());
 		}
 		simulTerrainRenderer->RestoreDeviceObjects(pd3dDevice);
 	}
@@ -153,11 +153,6 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 		<<", hdr="<<hdr_restore_time<<", terrain="<<terrain_restore_time<<", optics="<<optics_restore_time<<std::endl;
 	device_reset=false;
 	return S_OK;
-}
-
-void Direct3D9Renderer::SetTimeMultiplier(float fTimeMult)
-{
-	time_mult=fTimeMult;
 }
 
 void Direct3D9Renderer::SetYVertical(bool y)
