@@ -78,6 +78,7 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudK
 	,loss_tex(0)
 	,inscatter_tex(0)
 	,illum_tex(0)
+	,init(false)
 {
 	for(int i=0;i<3;i++)
 	{
@@ -122,7 +123,8 @@ ERROR_CHECK
 
 bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
 {
-	int size=256;
+	if(!init)
+		return false;
 ERROR_CHECK
     glGenTextures(1,&noise_tex);
     glBindTexture(GL_TEXTURE_2D,noise_tex);
@@ -131,26 +133,26 @@ ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,size,size,0,GL_RGBA,GL_UNSIGNED_INT,0);
-	unsigned char *data=new unsigned char[4*size*size];
+    glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,noise_texture_size,noise_texture_size,0,GL_RGBA,GL_UNSIGNED_INT,0);
+	unsigned char *data=new unsigned char[4*noise_texture_size*noise_texture_size];
 	bool got_data=false;
 	if(!override_file)
 	{
 		ifstream ifs("noise",ios_base::binary);
 		if(ifs.good()){
-			ifs.read(( char*)data,size*size*sizeof(unsigned));
+			ifs.read(( char*)data,noise_texture_size*noise_texture_size*sizeof(unsigned));
 			got_data=true;
 		}
 	}
 	if(!got_data)
 	{
 		simul::clouds::TextureGenerator::SetBits((unsigned)255<<24,(unsigned)255<<8,(unsigned)255<<16,(unsigned)255<<0,4,false);
-		simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)data,size,16,6,.79f);
+		simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)data,noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
 	}
 	glTexSubImage2D(
 		GL_TEXTURE_2D,0,
 		0,0,
-		size,size,
+		noise_texture_size,noise_texture_size,
 		GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
 		data);
 ERROR_CHECK
@@ -158,7 +160,7 @@ ERROR_CHECK
 	if(!got_data)
 	{
 		ofstream ofs("noise",ios_base::binary);
-		ofs.write((const char*)data,size*size*sizeof(unsigned));
+		ofs.write((const char*)data,noise_texture_size*noise_texture_size*sizeof(unsigned));
 	}
 	delete [] data;
 ERROR_CHECK
@@ -609,6 +611,7 @@ ERROR_CHECK
 
 bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 {
+	init=true;
 	CreateNoiseTexture();
 	CreateVolumeNoise();
 	RecompileShaders();
@@ -684,6 +687,7 @@ ERROR_CHECK
 
 bool SimulGLCloudRenderer::InvalidateDeviceObjects()
 {
+	init=false;
 	glDeleteProgram(cross_section_program);
 	glDeleteShader(cross_section_vertex_shader);
 	glDeleteShader(cross_section_fragment_shader);

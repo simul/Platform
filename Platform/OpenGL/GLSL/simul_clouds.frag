@@ -57,8 +57,9 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 
 void main(void)
 {
+	vec3 noise_offset=vec3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float cos0=dot(lightDir.xyz,normalize(view.xyz));
-	vec3 noiseval=texture2D(noiseSampler,noiseCoord).xyz-0.5;
+	vec3 noiseval=texture2D(noiseSampler,noiseCoord).xyz-noise_offset;
 #if DETAIL_NOISE==1
 	noiseval+=(texture2D(noiseSampler,noiseCoord*8.0).xyz-0.5)/2.0;
 #endif
@@ -75,7 +76,7 @@ void main(void)
 		discard;
 	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
 	float opacity=layerDensity*density.y;
-	vec3 final=(lightResponse.y*density.w*Beta+lightResponse.z*density.z)*sunlight+density.x*ambientColour.rgb;
+	vec3 final=(lightResponse.y*density.z*Beta+lightResponse.z*density.w)*sunlight+density.x*ambientColour.rgb;
 	vec3 loss_lookup=texture2D(lossSampler,fade_texc).rgb;
 	vec4 insc_lookup=texture2D(inscatterSampler,fade_texc);
 	//final.rgb+=lightning.rgb;

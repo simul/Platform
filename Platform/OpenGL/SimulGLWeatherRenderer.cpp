@@ -89,6 +89,19 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 {
 }
 
+void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
+{
+	BufferWidth=w/Downscale;
+	BufferHeight=h/Downscale;
+    if(scene_buffer)
+	{
+		delete scene_buffer;
+		scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+		scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
+		scene_buffer->SetShader(0);
+	}
+}
+
 bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 {
 	GLenum res=glewInit();

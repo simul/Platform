@@ -22,7 +22,7 @@
 //extern unsigned GetResourceIdImplementation(const char *filename);
 extern LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl;
 
-Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env)
+Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h)
 	:simul::graph::meta::Group()
 	,Gamma(0.45f)
 	,aspect(1.f)
@@ -42,7 +42,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env)
 	,ShowFlares(true)
 	,device_reset(true)
 {
-	simulWeatherRenderer=new SimulWeatherRenderer(env,true,1920,1080,true,true,false,false);
+	simulWeatherRenderer=new SimulWeatherRenderer(env,true,w,h,true,true,false,false);
 	if(simulWeatherRenderer)
 		AddChild(simulWeatherRenderer.get());
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
@@ -119,7 +119,7 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->SetBufferSize(width,height);
+		simulWeatherRenderer->SetScreenSize(width,height);
 		simulWeatherRenderer->RestoreDeviceObjects(pd3dDevice);
 	}
 	timer.UpdateTime();

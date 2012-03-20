@@ -19,7 +19,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,ShowFades(false)
 	,ShowCloudCrossSections(false)
 {
-	simulWeatherRenderer=new SimulGLWeatherRenderer(env);
+	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
 	SetYVertical(y_vertical);
 }
@@ -105,6 +105,8 @@ void OpenGLRenderer::resizeGL(int w,int h)
 		simulHDRRenderer=new SimulGLHDRRenderer(width,height);
 	else
 		simulHDRRenderer->SetBufferSize(width,height);
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->SetScreenSize(width,height);
 }
 
 void OpenGLRenderer::initializeGL()

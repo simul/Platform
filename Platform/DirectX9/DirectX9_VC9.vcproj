@@ -1069,6 +1069,74 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="Shaders"
+			>
+			<File
+				RelativePath=".\HLSL\atmospherics.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\gamma.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\land.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\metal.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_clouds_2d.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_clouds_and_lightning.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_foliage.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_gpulighting.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_lightning.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_object.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_rain.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_renderheightmap.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_rendernoise.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_sky.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_terrain.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\tonemap.fx"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

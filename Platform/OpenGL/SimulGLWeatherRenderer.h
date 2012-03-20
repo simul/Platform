@@ -42,6 +42,7 @@ public:
 		int height=480,bool sky=true,bool clouds3d=true,bool clouds2d=true,
 		bool rain=true);
 	virtual ~SimulGLWeatherRenderer();
+	void SetScreenSize(int w,int h);
 	//! Call this when the device has been created
 	bool RestoreDeviceObjects();
 	//! Call this when the 3D device has been lost.

@@ -73,6 +73,7 @@ public:
 	virtual void SetYVertical(bool ){}
 	bool IsYVertical() const{return false;}
 protected:
+	bool init;
 	simul::clouds::CloudKeyframer::seq_texture_iterator seq_texture_iterator[3];
 	simul::clouds::CloudKeyframer::seq_texture_iterator seq_illum_texture_iterator[4];
 	// Make up to date with respect to keyframer:
@@ -119,7 +120,7 @@ unsigned short *pIndices;
 	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;
 
-	GLint maxFadeDistanceMetres_param;
+	GLint		maxFadeDistanceMetres_param;
 	GLuint		illum_tex;
 
 	GLuint		cloud_tex[3];

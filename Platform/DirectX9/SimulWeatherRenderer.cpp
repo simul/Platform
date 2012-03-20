@@ -94,7 +94,6 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer;
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
 	ConnectInterfaces();
-	this->SetBufferSize(width,height);
 }
 
 void SimulWeatherRenderer::EnableCloudLayers(bool clouds3d,bool clouds2d)
@@ -120,6 +119,13 @@ void SimulWeatherRenderer::ConnectInterfaces()
 		simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 }
 */
+void SimulWeatherRenderer::SetScreenSize(int w,int h)
+{
+	BufferWidth=w/Downscale;
+	BufferHeight=h/Downscale;
+}
+
+
 bool SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)
 {
 	m_pd3dDevice=dev;
@@ -253,12 +259,6 @@ void SimulWeatherRenderer::SetRenderDepthBufferCallback(RenderDepthBufferCallbac
 {
 	renderDepthBufferCallback=cb;
 	//AlwaysRenderCloudsLate=(cb!=NULL);
-}
-
-void SimulWeatherRenderer::SetBufferSize(int w,int h)
-{
-	BufferWidth=w/Downscale;
-	BufferHeight=h/Downscale;
 }
 
 bool SimulWeatherRenderer::CreateBuffers()

@@ -41,6 +41,7 @@ SIMUL_DIRECTX1x_EXPORT_CLASS SimulWeatherRendererDX1x : public simul::clouds::Ba
 public:
 	SimulWeatherRendererDX1x(simul::clouds::Environment *env,bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
 	virtual ~SimulWeatherRendererDX1x();
+	void SetScreenSize(int w,int h);
 	//standard d3d object interface functions
 	bool RestoreDeviceObjects(ID3D1xDevice* pd3dDevice,IDXGISwapChain *swapChain);
 	bool InvalidateDeviceObjects();

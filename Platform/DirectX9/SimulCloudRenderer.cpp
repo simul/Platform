@@ -591,6 +591,8 @@ void SimulCloudRenderer::CreateVolumeNoiseTexture()
 }
 bool SimulCloudRenderer::CreateNoiseTexture(bool override_file)
 {
+	if(!m_pd3dDevice)
+		return false;
 	bool result=true;
 	SAFE_RELEASE(noise_texture);
 	HRESULT hr=S_OK;

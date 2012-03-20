@@ -312,9 +312,9 @@ float4 PS_Clouds( vertexOutput IN): color
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
 #if DETAIL_NOISE==1
-	noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
-	noiseval*=IN.texCoords.w;
+	noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8.0).xyz-noise_offset)/2.0;
 #endif
+	noiseval*=IN.texCoords.w;
 	float3 texcoord=IN.texCoords.xyz+fractalScale.xyz*noiseval;
 
 	float4 density=tex3D(cloud_density_1,texcoord);

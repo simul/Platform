@@ -145,9 +145,6 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 	ERROR_CHECK
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
-
-
-
 	if(!m_rb_depth)
 	{
 	ERROR_CHECK

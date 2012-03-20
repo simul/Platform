@@ -114,6 +114,7 @@ public:
 		int height=240,bool sky=true,bool clouds3d=true,bool clouds2d=true,
 		bool rain=true);
 	virtual ~SimulWeatherRenderer();
+	void SetScreenSize(int w,int h);
 	//standard d3d object interface functions
 	bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
 	//! Call this when the device has been created
@@ -152,7 +153,6 @@ public:
 	float GetTiming() const;
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
-	void SetBufferSize(int w,int h);
 	//! Enable or disable the 3d and 2d cloud layers.
 	virtual void EnableCloudLayers(bool clouds3d,bool clouds2d);
 	void EnableRain(bool e=true);

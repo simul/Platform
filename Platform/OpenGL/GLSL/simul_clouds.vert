@@ -31,7 +31,7 @@ void main(void)
     gl_Position			=gl_ModelViewProjectionMatrix*pos;
     eyespacePosition	=(gl_ModelViewMatrix*pos).xyz;
 	texCoordDiffuse.xyz	=gl_MultiTexCoord0.xyz;
-	texCoordDiffuse.w	=0.5+0.5*(gl_MultiTexCoord0.z);// clamp?
+	texCoordDiffuse.w	=0.5+0.5*clamp(gl_MultiTexCoord0.z,0.0,1.0);// clamp?
 	noiseCoord			=gl_MultiTexCoord1.xy;
 	layerDensity		=gl_MultiTexCoord2.x;
 	sunlight			=gl_MultiTexCoord3.xyz;

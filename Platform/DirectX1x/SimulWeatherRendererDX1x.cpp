@@ -98,6 +98,13 @@ void SimulWeatherRendererDX1x::ConnectInterfaces()
 	//	simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
 }
 
+
+void SimulWeatherRendererDX1x::SetScreenSize(int w,int h)
+{
+	BufferWidth=w/Downscale;
+	BufferHeight=h/Downscale;
+	
+}
 bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapChain *swapChain)
 {
 	HRESULT hr=S_OK;
@@ -123,7 +130,7 @@ bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapC
 	SAFE_RELEASE(pBackBuffer);
 	ScreenWidth=desc.Width;
 	ScreenHeight=desc.Height;
-	framebuffer.SetTargetWidthAndHeight(desc.Width,desc.Height);
+	framebuffer.SetTargetWidthAndHeight(BufferWidth,BufferHeight);
 
 	if(simulCloudRenderer)
 	{

@@ -49,7 +49,7 @@ class SIMUL_DIRECTX9_EXPORT Direct3D9Renderer
 	,public simul::graph::meta::Group
 {
 public:
-	Direct3D9Renderer(simul::clouds::Environment *env);
+	Direct3D9Renderer(simul::clouds::Environment *env,int w,int h);
 	virtual ~Direct3D9Renderer();
 	META_BeginProperties
 		META_ValueProperty(float,Gamma,"")

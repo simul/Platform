@@ -25,8 +25,6 @@ void SimulGLHDRRenderer::SetBufferSize(int w,int h)
 {
 	if(w!=framebuffer->GetWidth()||h!=framebuffer->GetHeight())
 	{
-		//delete framebuffer;
-		//framebuffer=new FramebufferGL(w,h,GL_TEXTURE_2D);
 		framebuffer->SetWidthAndHeight(w,h);
 		RestoreDeviceObjects();
 	}
