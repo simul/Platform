@@ -37,9 +37,9 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 		,device_initialized(false)
 		,scene_buffer(NULL)
 {
-	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
-	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer.get();
-	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer.get();
+	simul::sky::SkyKeyframer *sk=environment->skyKeyframer.get();
+	simul::clouds::CloudKeyframer *ck2d=environment->cloud2DKeyframer.get();
+	simul::clouds::CloudKeyframer *ck3d=environment->cloudKeyframer.get();
 	if(sky)
 	{
 		simulSkyRenderer=new SimulGLSkyRenderer(sk);
