@@ -463,7 +463,6 @@ ERROR_CHECK
     glBindTexture(GL_TEXTURE_2D,sky_tex[0]);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D,sky_tex[1]);
-
 ERROR_CHECK
     glDisable(GL_DEPTH_TEST);
 // We normally BLEND the sky because there may be hi-res things behind it like planets.

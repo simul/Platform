@@ -10,6 +10,7 @@
 #include "SimulGLCloudRenderer.h"
 #include "SimulGL2DCloudRenderer.h"
 #include "SimulGLLightningRenderer.h"
+#include "SimulGLAtmosphericsRenderer.h"
 #include "SimulGLUtilities.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Sky/SkyKeyframer.h"
@@ -32,8 +33,8 @@ GLenum internal_buffer_format=GL_RGBA32F_ARB;
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,bool usebuffer,bool tonemap,int width,
 		int height,bool sky,bool clouds3d,bool clouds2d,bool rain)
 		:BaseWeatherRenderer(env)
-		,BufferWidth(width)
-		,BufferHeight(height)
+		,BufferWidth(0)
+		,BufferHeight(0)
 		,device_initialized(false)
 		,scene_buffer(NULL)
 {
@@ -51,8 +52,12 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	
 	simulLightningRenderer=new SimulGLLightningRenderer(simulCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
 	baseLightningRenderer=simulLightningRenderer.get();
-	
+
+	simulAtmosphericsRenderer=new SimulGLAtmosphericsRenderer;
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
+
 	EnableCloudLayers(clouds3d,clouds2d);
+	SetScreenSize(width,height);
 }
 
 
@@ -91,6 +96,7 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 
 void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
 {
+	simulAtmosphericsRenderer->SetBufferSize(w,h);
 	BufferWidth=w/Downscale;
 	BufferHeight=h/Downscale;
     if(scene_buffer)
@@ -133,6 +139,7 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 	///simulSkyRenderer->RestoreDeviceObjects();
 	//simulCloudRenderer->RestoreDeviceObjects(NULL);
 	//simulLightningRenderer->RestoreDeviceObjects();
+	simulAtmosphericsRenderer->RestoreDeviceObjects(NULL);
 	return true;
 }
 bool SimulGLWeatherRenderer::InvalidateDeviceObjects()
@@ -189,6 +196,20 @@ static simul::base::Timer timer;
     if(simul2DCloudRenderer)
 		simul2DCloudRenderer->Render(false,false,false);
 	ERROR_CHECK
+	// Render the sky to the screen, then set up to render the clouds to the buffer.
+	if(buffered)
+	{
+		scene_buffer->DeactivateAndRender(false);
+	}
+	if(buffered)
+	{
+		scene_buffer->Activate();
+		glClearColor(0.f,0.f,0.f,1.f);
+		ERROR_CHECK
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+		ERROR_CHECK
+	}
+    glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	if(simulCloudRenderer&&layer1)
 		simulCloudRenderer->Render(false,false,UseDefaultFog);
 	timer.UpdateTime();
@@ -341,4 +362,9 @@ const char *SimulGLWeatherRenderer::GetDebugText() const
 			total_timing,cloud_timing,sky_timing,final_timing,
 			total_update_timing,cloud_update_timing,sky_update_timing);
 	return debug_text;
+}
+
+GLuint SimulGLWeatherRenderer::GetFramebufferTexture()
+{
+	return scene_buffer->GetColorTex(0);
 }

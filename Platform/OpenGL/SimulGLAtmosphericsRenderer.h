@@ -18,16 +18,20 @@ public:
 	SimulGLAtmosphericsRenderer();
 	virtual ~SimulGLAtmosphericsRenderer();
 	//standard ogl object interface functions
-	void ReloadShaders();
+	void RecompileShaders();
 	bool RestoreDeviceObjects(void *);
 	bool InvalidateDeviceObjects();
 	// Interface
 	void SetBufferSize(int w,int h);
 	void SetMaxFadeDistanceKm(float dist_km);
-	void SetYVertical(bool y)
+	void SetYVertical(bool )
 	{
 	}
-
+	// Assign the clouds framebuffer texture
+	void SetCloudsTexture(void* t)
+	{
+		clouds_texture=(GLuint)t;
+	}
 	void SetLossTexture(void* t)
 	{
 		loss_texture=(GLuint)t;
@@ -45,8 +49,15 @@ public:
 	void StartRender();
 	void FinishRender();
 private:
+	
+	GLuint cloudmix_vertex_shader;
+	GLuint cloudmix_fragment_shader;
+	GLuint cloudmix_program;
+
 	GLuint loss_texture,inscatter_texture;
 	GLuint input_texture,depth_texture;
+	GLuint clouds_texture;
+	GLint clouds_texture_param;
 
 	GLint image_texture_param;
 	GLint loss_texture_param;

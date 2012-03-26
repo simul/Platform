@@ -274,7 +274,7 @@ ERROR_CHECK
 	else
 		glDisable(GL_FOG);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
-	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_ZERO,GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFuncSeparate(GL_ONE,GL_SRC_ALPHA,GL_ZERO,GL_SRC_ALPHA);
 ERROR_CHECK
 	glDisable(GL_STENCIL_TEST);
 	glDepthMask(GL_FALSE);
@@ -315,9 +315,9 @@ ERROR_CHECK
 	glUniform1i(cloudDensity1_param,0);
 	glUniform1i(cloudDensity2_param,1);
 	glUniform1i(noiseSampler_param,2);
-	glUniform1i(illumSampler_param,5);
 	glUniform1i(lossSampler_param,3);
 	glUniform1i(inscatterSampler_param,4);
+	glUniform1i(illumSampler_param,5);
 	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 ERROR_CHECK
 	if(enable_lightning)
@@ -367,7 +367,7 @@ ERROR_CHECK
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 	glUniform3f(lightDirection_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	simul::sky::float4 amb=GetCloudInterface()->GetAmbientLightResponse()*skyInterface->GetAmbientLight(X1.z*.001f);
-	//amb=simul::sky::Pow(amb,gamma);
+
 	glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
 
 	glUniform1f(cloudEccentricity_param,GetCloudInterface()->GetMieAsymmetry());
@@ -407,8 +407,6 @@ ERROR_CHECK
 	float tan_half_fov_vertical=1.f/proj(1,1);
 	float tan_half_fov_horizontal=std::max(1.f/left,1.f/right);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-	static float churn=1.f;
-	helper->SetChurn(churn);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),god_rays,X1.z,god_rays);
 	// Here we make the helper calculate loss and inscatter due to atmospherics.
 	// This is an approach that calculates per-vertex atmospheric values that are then

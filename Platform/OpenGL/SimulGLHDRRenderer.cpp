@@ -13,7 +13,7 @@
 
 SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h):Gamma(0.45f),Exposure(1.f)
 {
-	framebuffer=new FramebufferGL(w,h,GL_TEXTURE_2D);
+	framebuffer=new FramebufferGL(w,h,GL_TEXTURE_2D,"tonemap");
 }
 
 SimulGLHDRRenderer::~SimulGLHDRRenderer()

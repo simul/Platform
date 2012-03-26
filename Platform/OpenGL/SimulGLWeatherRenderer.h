@@ -77,6 +77,7 @@ public:
 	//! Clear the sky sequence()
 	void New();
 	const char *GetDebugText() const;
+	GLuint GetFramebufferTexture();
 protected:
 	std::string shader;
 	//! This is set once the GL device has been initialized - then we can create textures and so forth.
@@ -96,7 +97,7 @@ protected:
 	simul::base::SmartPtr<class SimulGL2DCloudRenderer> simul2DCloudRenderer;
 	simul::base::SmartPtr<class SimulGLLightningRenderer> simulLightningRenderer;
 	//simul::base::SmartPtr<class SimulGLPrecipitationRenderer> simulPrecipitationRenderer;
-	//simul::base::SmartPtr<class SimulGLAtmosphericsRenderer> simulAtmosphericsRenderer;
+	simul::base::SmartPtr<class SimulGLAtmosphericsRenderer> simulAtmosphericsRenderer;
 	float							exposure;
 	float							gamma;
 	bool							use_buffer;

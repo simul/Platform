@@ -34,7 +34,7 @@ public:
 SIMUL_OPENGL_EXPORT_CLASS FramebufferGL:public FramebufferInterface
 {
 public:
-	FramebufferGL(int w, int h, GLenum target = GL_TEXTURE_RECTANGLE_NV,
+	FramebufferGL(int w, int h, GLenum target = GL_TEXTURE_RECTANGLE_NV,const char *shader=0,
 			int samples = 0, int coverageSamples = 0);
 
 	~FramebufferGL();
@@ -63,7 +63,8 @@ public:
 	void Deactivate();
 	void DeactivateAndRender(bool blend);
 	//void Render();
-	void Render(bool blend);
+	void Render(GLuint prog,bool blend);
+void Render1(GLuint prog,bool blend);
 	void DrawQuad(int w, int h);
 	// Get the dimension of the surface
 	inline int GetWidth()
@@ -75,7 +76,7 @@ public:
 		return m_height;
 	}
 	// Get the internal texture object IDs.
-	inline GLenum GetColorTex(int index = 0)
+	inline GLuint GetColorTex(int index = 0)
 	{
 		return m_tex_col[index];
 	}
@@ -98,6 +99,7 @@ public:
 		return tonemap_program;
 	}
 private:
+	const char *shader_filename;
 	static std::stack<GLuint> fb_stack;
 	void CheckFramebufferStatus();
 	// Bind the internal textures

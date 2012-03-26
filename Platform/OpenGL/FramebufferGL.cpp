@@ -1,10 +1,11 @@
 #include "FramebufferGL.h"
 #include <iostream>
+#include <string>
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
 std::stack<GLuint> FramebufferGL::fb_stack;
 
-FramebufferGL::FramebufferGL(int w, int h, GLenum target, int samples, int coverageSamples):
+FramebufferGL::FramebufferGL(int w, int h,GLenum target,const char *shader,int samples, int coverageSamples):
     m_width(w)
 	,m_height(h)
 	,m_target(target)
@@ -15,6 +16,8 @@ FramebufferGL::FramebufferGL(int w, int h, GLenum target, int samples, int cover
 	,exposure(1.f)
 	,gamma(0.45f)
 	,m_fb(0)
+	,shader_filename(shader)
+	,tonemap_program(0)
 {
     for(int i = 0; i < num_col_buffers; i++)
 	{
@@ -33,14 +36,17 @@ void FramebufferGL::SetShader(int i)
 
 void FramebufferGL::ReloadShaders()
 {
+	if(!shader_filename)
+		return;
 	tonemap_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 ERROR_CHECK
 	tonemap_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
 ERROR_CHECK
 	tonemap_program			=glCreateProgram();
 ERROR_CHECK
-    tonemap_vertex_shader	=LoadProgram(tonemap_vertex_shader,"tonemap.vert");
-    tonemap_fragment_shader	=LoadProgram(tonemap_fragment_shader,"tonemap.frag");
+	std::string str1=std::string(shader_filename)+".vert";
+	tonemap_vertex_shader	=LoadProgram(tonemap_vertex_shader,str1.c_str());
+    tonemap_fragment_shader	=LoadProgram(tonemap_fragment_shader,(std::string(shader_filename)+std::string(".frag")).c_str());
 	glAttachShader(tonemap_program, tonemap_vertex_shader);
 	glAttachShader(tonemap_program, tonemap_fragment_shader);
 	glLinkProgram(tonemap_program);
@@ -49,7 +55,7 @@ ERROR_CHECK
 	printProgramInfoLog(tonemap_program);
     exposure_param=glGetUniformLocation(tonemap_program,"exposure");
     gamma_param=glGetUniformLocation(tonemap_program,"gamma");
-    buffer_tex_param=glGetUniformLocation(tonemap_program,"sceneTex");
+    buffer_tex_param=glGetUniformLocation(tonemap_program,"image_texture");
 	ERROR_CHECK
 }
 
@@ -83,44 +89,6 @@ void FramebufferGL::SetWidthAndHeight(int w,int h)
 	m_width=w;
 	m_height=h;
 }
-// In order to use a color buffer, either
-// InitColor_RB or InitColor_Tex needs to be called.
-/*void FramebufferGL::InitColor_RB(int index, GLenum iformat)
-{
-	if(!m_width||!m_height)
-		return;
-	if(!m_fb)
-	{
-		ReloadShaders();
-		glGenFramebuffersEXT(1, &m_fb);
-	}
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
-    
-	ERROR_CHECK
-        glGenRenderbuffersEXT(1, &m_rb_col[index]);
-        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rb_col[index]);
-		if (m_samples > 0) {
-            if ((m_coverageSamples > 0) && glRenderbufferStorageMultisampleCoverageNV)
-			{
-                glRenderbufferStorageMultisampleCoverageNV(
-                    GL_RENDERBUFFER_EXT, m_coverageSamples, m_samples, iformat, m_width, m_height);
-            }
-			else
-			{
-		        glRenderbufferStorageMultisampleEXT(
-                    GL_RENDERBUFFER_EXT, m_samples, iformat, m_width, m_height);
-            }
-		}
-		else
-		{
-			glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, iformat, m_width, m_height);
-		}
-        glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,
-                GL_COLOR_ATTACHMENT0_EXT + index, GL_RENDERBUFFER_EXT, m_rb_col[index]);
-    
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
-	ERROR_CHECK
-}*/
 
 void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 {
@@ -145,39 +113,9 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 	ERROR_CHECK
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
-	if(!m_rb_depth)
-	{
-	ERROR_CHECK
-		glGenRenderbuffersEXT(1, &m_rb_depth);
-	ERROR_CHECK
-	}
-	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rb_depth);
-	   ERROR_CHECK
-	glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, m_width, m_height);
-	   ERROR_CHECK
-	//-------------------------
-	//Attach depth buffer to FBO
-	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_rb_depth);
-		ERROR_CHECK
-	//-------------------------
-	//Does the GPU support current FBO configuration?
-	GLenum status;
-	status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-	   ERROR_CHECK
-	switch(status)
-	{
-	   case GL_FRAMEBUFFER_COMPLETE_EXT:
-		   break;
-	default:
-	   ERROR_CHECK;
-	}
-
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-
-
 	ERROR_CHECK
 }
-
 // In order to use a depth buffer, either
 // InitDepth_RB or InitDepth_Tex needs to be called.
 void FramebufferGL::InitDepth_RB(GLenum iformat)
@@ -269,23 +207,27 @@ void FramebufferGL::DrawQuad(int w,int h)
 }
 void FramebufferGL::DeactivateAndRender(bool blend)
 {
+	ERROR_CHECK
 	Deactivate();
-	Render(blend);
+	Render(tonemap_program,blend);
 }
 
-
-void FramebufferGL::Render(bool blend)
+void FramebufferGL::Render1(GLuint prog,bool blend)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
     SetOrthoProjection(main_viewport[2],main_viewport[3]);
 
     // bind textures
-    glActiveTexture(GL_TEXTURE0);
-    Bind();
+  //  glActiveTexture(GL_TEXTURE0);
+   // Bind();
 
-	glUseProgram(tonemap_program);
+	glUseProgram(prog);
 
-	if(tonemap_program)
+	if(prog)
 	{
 		glUniform1f(exposure_param,exposure);
 		glUniform1f(gamma_param,gamma);
@@ -314,18 +256,81 @@ void FramebufferGL::Render(bool blend)
     DrawQuad(main_viewport[2],main_viewport[3]);
 
     glUseProgram(NULL);
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 	glPopAttrib();
 	ERROR_CHECK
+	Release();
+}
+
+
+void FramebufferGL::Render(GLuint prog,bool blend)
+{
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+    SetOrthoProjection(main_viewport[2],main_viewport[3]);
+
+    // bind textures
+    glActiveTexture(GL_TEXTURE0);
+    Bind();
+
+	glUseProgram(prog);
+
+	if(prog)
+	{
+		glUniform1f(exposure_param,exposure);
+		glUniform1f(gamma_param,gamma);
+		glUniform1i(buffer_tex_param,0);
+	}
+	else
+	{
+		glDisable(GL_TEXTURE_1D);
+		glEnable(GL_TEXTURE_2D);
+		glDisable(GL_TEXTURE_3D);
+	}
+    glDisable(GL_ALPHA_TEST);
+	if(!blend)
+	{
+		glDisable(GL_DEPTH_TEST);
+	}
+	else
+	{
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		// retain background based on alpha in overlay
+		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
+	}
+	glDepthMask(GL_FALSE);
+	ERROR_CHECK
+    DrawQuad(main_viewport[2],main_viewport[3]);
+
+    glUseProgram(NULL);
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glPopAttrib();
+	ERROR_CHECK
+	Release();
 }
 
 void FramebufferGL::Deactivate() 
 {
+	ERROR_CHECK
 	glFlush(); 
+	ERROR_CHECK
 	CheckFramebufferStatus();
+	ERROR_CHECK
 	// remove m_fb from the stack and...
 	fb_stack.pop();
 	// .. restore the next one down.
 	GLuint last_fb=fb_stack.top();
+	ERROR_CHECK
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,last_fb);
 	ERROR_CHECK
 	glViewport(0,0,main_viewport[2],main_viewport[3]);

@@ -72,8 +72,8 @@ void main(void)
 	vec4 density2=texture3D(cloudDensity2,pos);
 	//vec4 lightning=texture3D(illumSampler,texCoordLightning.xyz);
 	density=mix(density,density2,cloud_interp);
-	if(density.x<=0.0)
-		discard;
+	//if(density.y<=0.0)
+	//	discard;
 	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
 	float opacity=layerDensity*density.y;
 	vec3 final=(lightResponse.y*density.z*Beta+lightResponse.z*density.w)*sunlight+density.x*ambientColour.rgb;
@@ -85,5 +85,5 @@ void main(void)
 	final.rgb*=loss_lookup;
 	final.rgb+=InscatterFunction(insc_lookup,cos0);
 //	final.rgb+=loss_lookup;
-    gl_FragColor=vec4(final.rgb,opacity);
+    gl_FragColor=vec4(final.rgb*opacity,1.0-opacity);
 }

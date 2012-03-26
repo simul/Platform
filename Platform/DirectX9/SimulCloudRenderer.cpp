@@ -1057,7 +1057,6 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 		EnsureCorrectIlluminationTextureSizes();
 		EnsureIlluminationTexturesAreUpToDate();
 		m_pCloudEffect->SetTexture(lightningIlluminationTexture	,illumination_texture);
-
 	}
 
 	if(fade_mode==FRAGMENT)
@@ -1067,7 +1066,6 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	}
 
 	// Mess with the proj matrix to extend the far clipping plane? not now
-
 	GetCameraPosVector(view,y_vertical,cam_pos);
 	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
 
