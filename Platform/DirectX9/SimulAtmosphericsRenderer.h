@@ -82,6 +82,7 @@ public:
 	{
 		inscatter_texture_1=(LPDIRECT3DBASETEXTURE9)t;
 	}
+	void SetCloudsTexture(void *){}
 	void SetInputTextures(LPDIRECT3DTEXTURE9 image,LPDIRECT3DTEXTURE9 depth)
 	{
 		input_texture=image;

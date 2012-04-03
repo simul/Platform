@@ -44,6 +44,7 @@ public:
 	void SetDistanceTexture(void* t);
 	void SetLossTexture(void* t);
 	void SetInscatterTexture(void* t);
+	void SetCloudsTexture(void* t){}
 	void RecompileShaders();
 
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
