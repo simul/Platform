@@ -887,6 +887,7 @@ ERROR_CHECK
 	glEnable(GL_TEXTURE_3D);
 	glUseProgram(cross_section_program);
 ERROR_CHECK
+static float mult=.1f;
 	glUniform1i(cloudDensity1_param,0);
 	for(int i=0;i<3;i++)
 	{
@@ -895,7 +896,7 @@ ERROR_CHECK
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;
-		simul::sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
+		simul::sky::float4 light_response(mult*kf->direct_light,mult*kf->indirect_light,mult*kf->ambient_light,0);
 
 	ERROR_CHECK
 		glActiveTexture(GL_TEXTURE0);

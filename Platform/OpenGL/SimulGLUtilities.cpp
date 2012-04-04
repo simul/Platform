@@ -217,31 +217,13 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
 		ERROR_CHECK
 	glRotatef(180.f*Pitch/pi,1.0f,0.0f,0.0f);
 		ERROR_CHECK
-	glGetFloatv(GL_MODELVIEW_MATRIX,modelview.RowPointer(0));
-		ERROR_CHECK
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 	glDepthMask(GL_FALSE);
-	// undo all rotations
-	// all scaling is lost as well 
-	for(int i=0; i<3; i++ )
-		for(int j=0; j<3; j++ )
-		{
-			if ( i==j )
-				modelview[i*4+j] = 1.0;
-			else
-				modelview[i*4+j] = 0.0;
-		}
-
-		ERROR_CHECK
-	// set the modelview with no rotations and scaling
-	//glLoadMatrixf(modelview);
-	//m_pSkyEffect->SetVector	(lightDirection	,&sun2);
-
 	// coverage is 2*atan(1/5)=11 degrees.
 	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
-	static float relative_distance=10.f;
+	static float relative_distance=1000.f;
 	simul::math::Matrix4x4 proj;
 	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
 	//float zFar=proj(3,2)/(1.f+proj(2,2));

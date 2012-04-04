@@ -7,7 +7,7 @@ void main(void)
 	vec4 lookup			=texture2D(image_texture,texCoords);
     vec4 clouds_lookup	=texture2D(clouds_texture,texCoords);
 	float vis			=lookup.a;
-	if(vis<=0)
+	if(vis<=0.0)
 		discard;
 	vis=1.0-(1.0-vis)*(1.0-clouds_lookup.a);
 	vec3 colour=clouds_lookup.rgb*(1.0-vis)+lookup.rgb*vis;
