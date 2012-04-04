@@ -569,6 +569,8 @@ bool SimulGLSkyRenderer::RenderPointStars()
 	glTranslatef(cam_pos.x,cam_pos.y,cam_pos.z);
 	glGetFloatv(GL_MODELVIEW_MATRIX,mat2);
 
+	glMultMatrixf(sid);
+	glGetFloatv(GL_MODELVIEW_MATRIX,mat1);
 
 	glBegin(GL_POINTS);
 	for(int i=0;i<num_stars;i++)

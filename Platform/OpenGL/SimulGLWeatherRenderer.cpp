@@ -199,7 +199,7 @@ static simul::base::Timer timer;
 	// Render the sky to the screen, then set up to render the clouds to the buffer.
 	if(buffered)
 	{
-		scene_buffer->DeactivateAndRender(false);
+		scene_buffer->DeactivateAndRender(true);
 	}
 	if(buffered)
 	{

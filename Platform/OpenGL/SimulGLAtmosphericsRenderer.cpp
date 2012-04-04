@@ -9,6 +9,7 @@
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
 	:max_fade_distance_metres(200000.f)
 	,clouds_texture(0)
+	,initialized(false)
 {
 	framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D,"simul_atmospherics");
 }
@@ -23,12 +24,14 @@ void SimulGLAtmosphericsRenderer::SetBufferSize(int w,int h)
 	if(w!=framebuffer->GetWidth()||h!=framebuffer->GetHeight())
 	{
 		framebuffer->SetWidthAndHeight(w,h);
-		RestoreDeviceObjects(NULL);
+		if(initialized)
+			RestoreDeviceObjects(NULL);
 	}
 }
 
 bool SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 {
+	initialized=true;
 	framebuffer->InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	RecompileShaders();
 	return true;
