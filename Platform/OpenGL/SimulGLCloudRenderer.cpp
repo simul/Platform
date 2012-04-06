@@ -406,6 +406,7 @@ ERROR_CHECK
 
 	float tan_half_fov_vertical=1.f/proj(1,1);
 	float tan_half_fov_horizontal=std::max(1.f/left,1.f/right);
+	helper->SetNoFrustumLimit(true);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),god_rays,X1.z,god_rays);
 	// Here we make the helper calculate loss and inscatter due to atmospherics.
