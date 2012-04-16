@@ -67,6 +67,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer.get();
 	D3DXMatrixIdentity(&ident);
 	ShowSky=sky;
+	SetScreenSize(width,height);
 	if(sky)
 	{
 		simulSkyRenderer=new SimulSkyRenderer(sk);

@@ -138,10 +138,19 @@ ERROR_CHECK
 	bool got_data=false;
 	if(!override_file)
 	{
-		ifstream ifs("noise",ios_base::binary);
+		ifstream ifs("noise_3d_clouds",ios_base::binary);
 		if(ifs.good()){
-			ifs.read(( char*)data,noise_texture_size*noise_texture_size*sizeof(unsigned));
-			got_data=true;
+			int size=0,octaves=0,freq=0;
+			float pers=0.f;
+			ifs.read(( char*)&size,sizeof(size));
+			ifs.read(( char*)&freq,sizeof(freq));
+			ifs.read(( char*)&octaves,sizeof(octaves));
+			ifs.read(( char*)&pers,sizeof(pers));
+			if(size==noise_texture_size&&freq==noise_texture_frequency&&octaves==texture_octaves&&pers==texture_persistence)
+			{
+				ifs.read(( char*)data,noise_texture_size*noise_texture_size*sizeof(unsigned));
+				got_data=true;
+			}
 		}
 	}
 	if(!got_data)
@@ -159,7 +168,11 @@ ERROR_CHECK
 	glGenerateMipmap(GL_TEXTURE_2D);
 	if(!got_data)
 	{
-		ofstream ofs("noise",ios_base::binary);
+		ofstream ofs("noise_3d_clouds",ios_base::binary);
+		ofs.write((const char*)&noise_texture_size,sizeof(noise_texture_size));
+		ofs.write((const char*)&noise_texture_frequency,sizeof(noise_texture_frequency));
+		ofs.write((const char*)&texture_octaves,sizeof(texture_octaves));
+		ofs.write((const char*)&texture_persistence,sizeof(texture_persistence));
 		ofs.write((const char*)data,noise_texture_size*noise_texture_size*sizeof(unsigned));
 	}
 	delete [] data;
@@ -777,7 +790,7 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 	for(int i=0;i<3;i++)
 	{
 		glGenTextures(1,&(cloud_tex[i]));
-		//cloud_tex[i]=tex[i*depth_z];
+
 		glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
 		if(sizeof(GL_UNSIGNED_SHORT)==sizeof(simul::clouds::CloudTexelType))
 			glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA4,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_SHORT,0);

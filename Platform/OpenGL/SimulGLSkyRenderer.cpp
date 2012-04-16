@@ -14,8 +14,6 @@
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Sky/SkyKeyframer.h"
-#include "Simul/Sky/ColourSky.h"
-#include "Simul/Sky/ColourSkyKeyframer.h"
 #include "Simul/Geometry/Orientation.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Math/Vector3.h"

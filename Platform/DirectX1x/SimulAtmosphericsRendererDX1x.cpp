@@ -23,8 +23,6 @@
 	#include <string>
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("");
-	#define PIXBeginNamedEvent(a,b) D3DPERF_BeginEvent(a,L##b)
-	#define PIXEndNamedEvent D3DPERF_EndEvent
 	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #endif
 #include "Simul/Sky/SkyInterface.h"
