@@ -92,6 +92,7 @@ void SimulGLWeatherRenderer::EnableCloudLayers(bool clouds3d,bool clouds2d)
 
 SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 {
+	InvalidateDeviceObjects();
 }
 
 void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
@@ -110,7 +111,7 @@ void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
 
 bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 {
-	GLenum res=glewInit();
+	/*GLenum res=glewInit();
 	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
 // If the GL_GREMEDY_string_marker extension is supported:
 	if(glewIsSupported("GL_GREMEDY_string_marker"))
@@ -122,7 +123,7 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 	if(!GLEW_VERSION_2_0)
 	{
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
-	}
+	}*/
 //	CheckExtension("GL_VERSION_2_0");
 	CheckExtension("GL_ARB_fragment_program");
 	CheckExtension("GL_ARB_vertex_program");
@@ -144,6 +145,16 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 }
 bool SimulGLWeatherRenderer::InvalidateDeviceObjects()
 {
+	if(simulSkyRenderer)
+		simulSkyRenderer->InvalidateDeviceObjects();
+	if(simulCloudRenderer)
+		simulCloudRenderer->InvalidateDeviceObjects();
+	if(simulLightningRenderer)
+		simulLightningRenderer->InvalidateDeviceObjects();
+	if(simulAtmosphericsRenderer)
+		simulAtmosphericsRenderer->InvalidateDeviceObjects();
+	if(scene_buffer)
+		scene_buffer->InvalidateDeviceObjects();
 	return true;
 }
 

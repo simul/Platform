@@ -19,6 +19,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,ShowFades(false)
 	,ShowCloudCrossSections(false)
 {
+	GLenum res=glewInit();
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
 	SetYVertical(y_vertical);
