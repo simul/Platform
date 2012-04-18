@@ -19,8 +19,8 @@ public:
 	bool InvalidateDeviceObjects();
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual void SetYVertical(bool ){}
+	void RecompileShaders();
 protected:
-	bool InitEffects();
 	struct float2
 	{
 		float x,y;
@@ -52,7 +52,6 @@ protected:
 	GLuint				lightning_fragment_shader;
 	GLuint				lightning_texture;
 	GLuint				lightningTexture_param;
-	//D3DXMATRIX						world,view,proj;
 
 	bool CreateLightningTexture();
 };

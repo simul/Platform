@@ -28,9 +28,9 @@ public:
 		y_vertical=y;
 	}
 	bool IsYVertical() const{return y_vertical;}
+	void RecompileShaders();
 protected:
 	bool y_vertical;
-	bool InitEffects();
 	struct float2
 	{
 		float x,y;

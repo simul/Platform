@@ -57,6 +57,7 @@ void OpenGLRenderer::paintGL()
 			simulHDRRenderer->StartRender();
 		simulWeatherRenderer->RenderSky(true,false);
 
+		simulWeatherRenderer->RenderLightning();
 
 		simulWeatherRenderer->DoOcclusionTests();
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
