@@ -35,11 +35,11 @@ SimulGLLightningRenderer::~SimulGLLightningRenderer()
 
 bool SimulGLLightningRenderer::RestoreDeviceObjects()
 {
-	InitEffects();
+	RecompileShaders();
 	return CreateLightningTexture();
 }
 
-bool SimulGLLightningRenderer::InitEffects()
+void SimulGLLightningRenderer::RecompileShaders()
 {
 	lightning_program			=glCreateProgram();
 	lightning_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
@@ -55,24 +55,12 @@ bool SimulGLLightningRenderer::InitEffects()
 	
 	printProgramInfoLog(lightning_program);
 	glUseProgram(NULL);
-	return true;
 }
 
 bool SimulGLLightningRenderer::InvalidateDeviceObjects()
 {
 	return true;
 }
-/*
-static void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
-{
-	//set up matrices
-	D3DXMATRIX tmp1, tmp2;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXMatrixMultiply(&tmp1, &world,&view);
-	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
-	D3DXMatrixTranspose(wvp,&tmp2);
-}
-*/
 
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 {

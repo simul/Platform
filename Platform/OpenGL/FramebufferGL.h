@@ -38,7 +38,7 @@ public:
 			int samples = 0, int coverageSamples = 0);
 
 	~FramebufferGL();
-
+	void InvalidateDeviceObjects();
 	void SetExposure(float e)
 	{
 		exposure = e;
