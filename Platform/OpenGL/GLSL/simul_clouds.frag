@@ -72,11 +72,11 @@ void main(void)
 	vec4 density2=texture3D(cloudDensity2,pos);
 	//vec4 lightning=texture3D(illumSampler,texCoordLightning.xyz);
 	density=mix(density,density2,cloud_interp);
-	//if(density.y<=0.0)
-	//	discard;
-	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
+	if(density.y<=0.0)
+		discard;
+	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
 	float opacity=layerDensity*density.y;
-	vec3 final=(lightResponse.y*density.z*Beta+lightResponse.z*density.w)*sunlight+density.x*ambientColour.rgb;
+	vec3 final=(density.z*Beta+lightResponse.y*density.w)*sunlight+density.x*ambientColour.rgb;
 	vec3 loss_lookup=texture2D(lossSampler,fade_texc).rgb;
 	vec4 insc_lookup=texture2D(inscatterSampler,fade_texc);
 	//final.rgb+=lightning.rgb;

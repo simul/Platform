@@ -12,7 +12,7 @@ void main(void)
 	float l=length(rad);
 	result.rgb=sunlight;
 	result.a=clamp((1.0-l)/0.01,0.0,1.0);
-    gl_FragColor=result;
+    gl_FragColor=vec4(1.0,0.0,1.0,1.0);
 }
 
  

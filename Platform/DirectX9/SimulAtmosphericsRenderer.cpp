@@ -49,8 +49,9 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
 	,depthTexture(NULL)
 	,lossTexture1(NULL)
 	,inscatterTexture1(NULL)
-	,loss_texture_1(NULL)
-	,inscatter_texture_1(NULL)
+	,loss_texture(NULL)
+	,inscatter_texture(NULL)
+	,clouds_texture(NULL)
 	,fade_interp(0.f)
 	,altitude_tex_coord(0.f)
 	,input_texture(NULL)
@@ -328,8 +329,8 @@ bool SimulAtmosphericsRenderer::Render()
 			effect->SetVector	(lightDir			,&sun_dir);
 			effect->SetVector	(mieRayleighRatio	,&mie_rayleigh_ratio);
 		}
-		hr=effect->SetTexture(lossTexture1,loss_texture_1);
-		hr=effect->SetTexture(inscatterTexture1,inscatter_texture_1);
+		hr=effect->SetTexture(lossTexture1,loss_texture);
+		hr=effect->SetTexture(inscatterTexture1,inscatter_texture);
 		hr=effect->SetTexture(maxDistanceTexture,max_distance_texture);
 		hr=DrawScreenQuad();
 	}

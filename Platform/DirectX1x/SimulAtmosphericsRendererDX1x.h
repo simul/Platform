@@ -44,6 +44,7 @@ public:
 	void SetDistanceTexture(void* t);
 	void SetLossTexture(void* t);
 	void SetInscatterTexture(void* t);
+	void SetCloudsTexture(void* t);
 	void RecompileShaders();
 
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
@@ -90,8 +91,9 @@ protected:
 	ID3D1xEffectShaderResourceVariable*			lossTexture1;
 	ID3D1xEffectShaderResourceVariable*			inscatterTexture1;
 
-	ID3D1xTexture2D*					loss_texture_1;
-	ID3D1xTexture2D*					inscatter_texture_1;
+	ID3D1xTexture2D*					loss_texture;
+	ID3D1xTexture2D*					inscatter_texture;
+	ID3D1xTexture2D*					clouds_texture;
 
 	//! The depth buffer.
 	ID3D1xTexture2D*				depth_texture;

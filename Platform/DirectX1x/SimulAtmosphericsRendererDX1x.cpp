@@ -71,6 +71,11 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	lossTexture1(NULL),
 	inscatterTexture1(NULL),
 	skyInterface(NULL),
+	
+
+	loss_texture(NULL),
+	inscatter_texture(NULL),
+	clouds_texture(NULL),
 	fade_interp(0.f)
 {
 	framebuffer=new FramebufferDX1x(256,256);
@@ -94,12 +99,18 @@ void SimulAtmosphericsRendererDX1x::SetDistanceTexture(void* t)
 
 void SimulAtmosphericsRendererDX1x::SetLossTexture(void* t)
 {
-	loss_texture_1=(ID3D1xTexture2D*)t;
+	loss_texture=(ID3D1xTexture2D*)t;
 }
 
 void SimulAtmosphericsRendererDX1x::SetInscatterTexture(void* t)
 {
-	inscatter_texture_1=(ID3D1xTexture2D*)t;
+	inscatter_texture=(ID3D1xTexture2D*)t;
+}
+
+
+void SimulAtmosphericsRendererDX1x::SetCloudsTexture(void* t)
+{
+	clouds_texture=(ID3D1xTexture2D*)t;
 }
 
 void SimulAtmosphericsRendererDX1x::RecompileShaders()
@@ -251,10 +262,10 @@ HRESULT SimulAtmosphericsRendererDX1x::Render()
 		effect->SetVector	(MieRayleighRatio	,&mie_rayleigh_ratio);
 	}
 
-	hr=effect->SetTexture(lossTexture1,loss_texture_1);
+	hr=effect->SetTexture(lossTexture1,loss_texture);
 	hr=effect->SetTexture(lossTexture2,loss_texture_2);
 
-	hr=effect->SetTexture(inscatterTexture1,inscatter_texture_1);
+	hr=effect->SetTexture(inscatterTexture1,inscatter_texture);
 	hr=effect->SetTexture(inscatterTexture2,inscatter_texture_2);
 
 

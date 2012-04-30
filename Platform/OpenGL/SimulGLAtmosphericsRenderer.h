@@ -49,7 +49,7 @@ public:
 	void StartRender();
 	void FinishRender();
 private:
-	
+	bool initialized;
 	GLuint cloudmix_vertex_shader;
 	GLuint cloudmix_fragment_shader;
 	GLuint cloudmix_program;

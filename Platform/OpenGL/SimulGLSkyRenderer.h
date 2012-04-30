@@ -44,7 +44,7 @@ public:
 	//! Render the stars, as points.
 	bool						RenderPointStars();
 	//! Draw the 2D fades to screen for debugging.
-	bool						RenderFades();
+	bool						RenderFades(int w,int h);
 
 	// Implementing simul::sky::SkyTexturesCallback
 	virtual void SetSkyTextureSize(unsigned ){}

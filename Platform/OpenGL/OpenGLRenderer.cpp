@@ -59,7 +59,7 @@ void OpenGLRenderer::paintGL()
 
 		simulWeatherRenderer->DoOcclusionTests();
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades();
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(width,height);
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{
@@ -81,6 +81,7 @@ void OpenGLRenderer::paintGL()
 		if(simulHDRRenderer)
 			simulHDRRenderer->FinishRender();
 	}
+	renderUI();
 	glPopAttrib();
 }
 
@@ -140,6 +141,8 @@ void OpenGLRenderer::SetYVertical(bool y)
 
 void OpenGLRenderer::RecompileShaders()
 {
+	if(simulHDRRenderer.get())
+		simulHDRRenderer->RecompileShaders();
 	if(simulWeatherRenderer.get())
 		simulWeatherRenderer->RecompileShaders();
 }

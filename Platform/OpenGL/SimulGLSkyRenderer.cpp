@@ -306,11 +306,8 @@ ERROR_CHECK
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
 		glOrtho(0,1.0,0,1.0,-1.0,1.0);
-		//glMatrixMode(GL_TEXTURE);
-		//glLoadIdentity();
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		//glViewport(0,0,loss_2d.GetWidth(),loss_2d.GetHeight());
 
 		//2147482496
 		glActiveTexture(GL_TEXTURE0);
@@ -371,9 +368,32 @@ ERROR_CHECK
 ERROR_CHECK
 	return true;
 }
-
-bool SimulGLSkyRenderer::RenderFades()
+void RenderTexture(int x,int y,int w,int h)
 {
+	ERROR_CHECK		
+	//glMatrixMode(GL_TEXTURE);
+	//glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.f,1.f);
+	glVertex2f(x,y+h);
+	glTexCoord2f(1.f,1.f);
+	glVertex2f(x+w,y+h);
+	glTexCoord2f(1.f,0.f);
+	glVertex2f(x+w,y);
+	glTexCoord2f(0.f,0.f);
+	glVertex2f(x,y);
+	glEnd();
+	ERROR_CHECK
+}
+
+bool SimulGLSkyRenderer::RenderFades(int w,int h)
+{
+	int size=w/4;
+	if(h/(numAltitudes+2)<size)
+		size=h/(numAltitudes+2);
 	if(glStringMarkerGREMEDY)
 		glStringMarkerGREMEDY(11,"RenderFades");
 	static int main_viewport[]={0,0,1,1};
@@ -382,6 +402,9 @@ bool SimulGLSkyRenderer::RenderFades()
 	glPushMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0,(double)main_viewport[2],(double)main_viewport[3],0,-1.0,1.0);
 ERROR_CHECK
 	glUseProgram(0);
 	glDisable(GL_TEXTURE_1D);
@@ -391,45 +414,40 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,0);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,0);
-	for(int i=0;i<2;i++)
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
+	ERROR_CHECK
+	RenderTexture(8,32,size,size);
+	glBindTexture(GL_TEXTURE_2D,sky_tex[0]);
+	RenderTexture(16+size,32,8,size);
+	glBindTexture(GL_TEXTURE_2D,sky_tex[1]);
+	RenderTexture(32+size,32,8,size);
+	for(int i=0;i<numAltitudes;i++)
 	{
+		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
 		glActiveTexture(GL_TEXTURE0);
-		if(i==0)
-			glBindTexture(GL_TEXTURE_2D,loss_2d.GetColorTex());
-		else
-			glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
-		glActiveTexture(GL_TEXTURE1);
-		if(i==0)
-			glBindTexture(GL_TEXTURE_2D,loss_2d.GetColorTex());
-		else
-			glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
-		ERROR_CHECK
-		static float w=main_viewport[2]/4.f;
-		float h=w;
-		float x=(float)i*w*1.2f;
-		float y=main_viewport[3]-2.f*h;
-		
-		ERROR_CHECK		
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glOrtho(0,(double)main_viewport[2],0,(double)main_viewport[3],-1.0,1.0);
-		//glMatrixMode(GL_TEXTURE);
-		//glLoadIdentity();
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
+		glBindTexture(GL_TEXTURE_3D,inscatter_textures[0]);
 
-		glBegin(GL_QUADS);
-		glTexCoord2f(0.f,1.f);
-		glVertex2f(x,y+h);
-		glTexCoord2f(1.f,1.f);
-		glVertex2f(x+w,y+h);
-		glTexCoord2f(1.f,0.f);
-		glVertex2f(x+w,y);
-		glTexCoord2f(0.f,0.f);
-		glVertex2f(x,y);
-		glEnd();
-		ERROR_CHECK
+		glUseProgram(fade_3d_to_2d_program);
+		GLint			altitudeTexCoord_fade;
+		GLint			skyInterp_fade;
+		GLint			fadeTexture1_fade;
+		GLint			fadeTexture2_fade;
+		altitudeTexCoord_fade	=glGetUniformLocation(fade_3d_to_2d_program,"altitudeTexCoord");
+		skyInterp_fade			=glGetUniformLocation(fade_3d_to_2d_program,"skyInterp");
+		fadeTexture1_fade		=glGetUniformLocation(fade_3d_to_2d_program,"fadeTexture1");
+		fadeTexture2_fade		=glGetUniformLocation(fade_3d_to_2d_program,"fadeTexture2");
+
+		glUniform1f(skyInterp_fade,0);
+		glUniform1f(altitudeTexCoord_fade,atc);
+		glUniform1i(fadeTexture1_fade,0);
+		glUniform1i(fadeTexture2_fade,0);
+		RenderTexture(8+2*(size+8)	,i*(size+8)+8, size,size);
+
+		glBindTexture(GL_TEXTURE_3D,inscatter_textures[1]);
+		RenderTexture(8+3*(size+8)	,i*(size+8)+8, size,size);
 	}
+	glUseProgram(0);
 ERROR_CHECK
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,NULL);
@@ -585,7 +603,7 @@ bool SimulGLSkyRenderer::RenderPointStars()
 
 bool SimulGLSkyRenderer::RenderSun()
 {
-	float alt_km=0.001f*cam_pos.y;
+	float alt_km=0.001f*cam_pos.z;
 	simul::sky::float4 sunlight=skyKeyframer->GetSkyInterface()->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)

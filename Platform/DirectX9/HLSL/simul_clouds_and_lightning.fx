@@ -330,7 +330,7 @@ float4 PS_Clouds( vertexOutput IN): color
 	float3 view=normalize(IN.wPosition);
 	float cos0=dot(lightDir.xyz,view.xyz);
 // cloudEccentricity is multiplied by density.z (i.e. direct light) to avoid interpolation artifacts.
-	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
+	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.y,cos0);
 // Fade mode 1 means using textures for distance fade.
 #if FADE_MODE==1
 	float4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);

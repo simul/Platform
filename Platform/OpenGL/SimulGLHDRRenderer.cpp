@@ -21,6 +21,11 @@ SimulGLHDRRenderer::~SimulGLHDRRenderer()
 	delete framebuffer;
 }
 
+void SimulGLHDRRenderer::RecompileShaders()
+{
+	framebuffer->RecompileShaders();
+}
+
 void SimulGLHDRRenderer::SetBufferSize(int w,int h)
 {
 	if(w!=framebuffer->GetWidth()||h!=framebuffer->GetHeight())

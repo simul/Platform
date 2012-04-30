@@ -15,6 +15,7 @@ SIMUL_OPENGL_EXPORT_CLASS SimulGLHDRRenderer:public simul::graph::meta::Group
 public:
 	SimulGLHDRRenderer(int w,int h);
 	~SimulGLHDRRenderer();
+	void RecompileShaders();
 	META_BeginProperties
 		META_ValueProperty(float,Gamma,"")
 		META_ValueProperty(float,Exposure,"")
