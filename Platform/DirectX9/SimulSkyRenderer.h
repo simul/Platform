@@ -95,7 +95,6 @@ public:
 	void SetStepsPerDay(int s);
 //! Implement the SkyTexturesCallback
 	void SetSkyTextureSize(unsigned size);
-	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
 	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void FillFadeTexturesSequentially(int,int,int,
 						const float *,

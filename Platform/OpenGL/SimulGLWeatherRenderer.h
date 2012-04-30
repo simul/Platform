@@ -70,12 +70,6 @@ public:
 	void EnableRain(bool e=true);
 	void EnableCloudLayers(bool,bool);
 	void SetPrecipitation(float strength,float speed);
-	//! Save a sky sequence (usually as a .seq file; this is how Sky Sequencer saves sequences).
-	std::ostream &Save(std::ostream &os) const;
-	//! Load a sequence (usually as a .seq file from Sky Sequencer).
-	std::istream &Load(std::istream &is);
-	//! Clear the sky sequence()
-	void New();
 	const char *GetDebugText() const;
 	GLuint GetFramebufferTexture();
 protected:

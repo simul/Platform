@@ -60,6 +60,7 @@ public:
 	virtual ~Direct3D11Renderer();
 	META_BeginProperties
 		META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")
+		META_ValueProperty(bool,ShowCloudCrossSections,"Show the cloud textures as an overlay.")
 		META_ValueProperty(bool,ShowFades,"Show the fade textures as an overlay.")
 	META_EndProperties
 	class SimulWeatherRendererDX1x *GetSimulWeatherRenderer()

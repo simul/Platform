@@ -61,6 +61,11 @@ ERROR_CHECK
 
 FramebufferGL::~FramebufferGL()
 {
+	InvalidateDeviceObjects();
+}
+
+void FramebufferGL::InvalidateDeviceObjects()
+{
     int i;
     for(i = 0; i < num_col_buffers; i++)
 	{
@@ -68,20 +73,25 @@ FramebufferGL::~FramebufferGL()
 		{
 			glDeleteTextures(1,&m_tex_col[i]);
 		}
+		m_tex_col[i]=0;
         if(m_rb_col[i])
 		{
 			glDeleteRenderbuffersEXT(1,&m_rb_col[i]);
 		}
+		m_rb_col[i]=0;
     }
     if(m_tex_depth)
 	{
 		glDeleteTextures(1,&m_tex_depth);
+		m_tex_depth=0;
 	}
 	if(m_rb_depth)
 	{
 		glDeleteRenderbuffersEXT(1,&m_rb_depth);
+		m_rb_depth=0;
 	}
 	glDeleteFramebuffersEXT(1,&m_fb);
+	m_fb=0;
 }
 
 void FramebufferGL::SetWidthAndHeight(int w,int h)

@@ -50,7 +50,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	baseCloudRenderer=simulCloudRenderer.get();
 	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d);
 	
-	simulLightningRenderer=new SimulGLLightningRenderer(simulCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
+	simulLightningRenderer=new SimulGLLightningRenderer(environment->lightning.get());
 	baseLightningRenderer=simulLightningRenderer.get();
 
 	simulAtmosphericsRenderer=new SimulGLAtmosphericsRenderer;
@@ -92,6 +92,7 @@ void SimulGLWeatherRenderer::EnableCloudLayers(bool clouds3d,bool clouds2d)
 
 SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 {
+	InvalidateDeviceObjects();
 }
 
 void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
@@ -110,7 +111,7 @@ void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
 
 bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 {
-	GLenum res=glewInit();
+	/*GLenum res=glewInit();
 	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
 // If the GL_GREMEDY_string_marker extension is supported:
 	if(glewIsSupported("GL_GREMEDY_string_marker"))
@@ -122,7 +123,7 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 	if(!GLEW_VERSION_2_0)
 	{
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
-	}
+	}*/
 //	CheckExtension("GL_VERSION_2_0");
 	CheckExtension("GL_ARB_fragment_program");
 	CheckExtension("GL_ARB_vertex_program");
@@ -144,6 +145,16 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 }
 bool SimulGLWeatherRenderer::InvalidateDeviceObjects()
 {
+	if(simulSkyRenderer)
+		simulSkyRenderer->InvalidateDeviceObjects();
+	if(simulCloudRenderer)
+		simulCloudRenderer->InvalidateDeviceObjects();
+	if(simulLightningRenderer)
+		simulLightningRenderer->InvalidateDeviceObjects();
+	if(simulAtmosphericsRenderer)
+		simulAtmosphericsRenderer->InvalidateDeviceObjects();
+	if(scene_buffer)
+		scene_buffer->InvalidateDeviceObjects();
 	return true;
 }
 
@@ -199,7 +210,7 @@ static simul::base::Timer timer;
 	// Render the sky to the screen, then set up to render the clouds to the buffer.
 	if(buffered)
 	{
-		scene_buffer->DeactivateAndRender(false);
+		scene_buffer->DeactivateAndRender(true);
 	}
 	if(buffered)
 	{
@@ -290,69 +301,6 @@ class SimulGL2DCloudRenderer *SimulGLWeatherRenderer::Get2DCloudRenderer()
 {
 	return simul2DCloudRenderer.get();
 }
-
-static void writechar(std::ostream &os,char c)
-{
-	os.write((const char*)&c,sizeof(c));
-}
-static char readchar(std::istream &is)
-{
-	char c;
-	is.read((char*)&c,sizeof(c));
-	return c;
-}
-
-std::ostream &SimulGLWeatherRenderer::Save(std::ostream &os) const
-{
-	//\211   P   N   G  \r  \n \032 \n
-	writechar(os,-45);
-	writechar(os,'S');
-	writechar(os,'E');
-	writechar(os,'Q');
-	writechar(os,'\r');
-	writechar(os,'\n');
-	writechar(os,32);
-	int num_streams=2;
-	os.write((const char*)&num_streams,sizeof(num_streams));
-	int stream_type=simulSkyRenderer->IsColourSkyEnabled()?2:1;
-	os.write((const char*)&stream_type,sizeof(stream_type));
-	simulSkyRenderer->Save(os);
-	stream_type=0;
-	os.write((const char*)&stream_type,sizeof(stream_type));
-	simulCloudRenderer->Save(os);
-	return os;
-}
-
-std::istream &SimulGLWeatherRenderer::Load(std::istream &is)
-{
-	if(readchar(is)!=-45) return is;
-	if(readchar(is)!='S') return is;
-	if(readchar(is)!='E') return is;
-	if(readchar(is)!='Q') return is;
-	if(readchar(is)!='\r') return is;
-	if(readchar(is)!='\n') return is;
-	if(readchar(is)!=32) return is;
-	if(readchar(is)!='\n') return is;
-	int num_streams=0;
-	is.read((char*)&num_streams,sizeof(num_streams));
-	for(int i=0;i<num_streams;i++)
-	{
-		int stream_type=-1;
-		is.read((char*)&stream_type,sizeof(stream_type));
-		if(stream_type==1||stream_type==2)
-		{
-//			simulSkyRenderer->EnableColourSky(stream_type==2);
-			simulSkyRenderer->Load(is);
-		}
-		if(stream_type==0)
-		{
-			simulCloudRenderer->Load(is);
-		}
-	}
-	ConnectInterfaces();
-	return is;
-}
-
 
 const char *SimulGLWeatherRenderer::GetDebugText() const
 {

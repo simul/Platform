@@ -353,18 +353,7 @@ void SimulSkyRenderer::SetSkyTextureSize(unsigned size)
 	skyTexSize=size;
 	CreateSkyTextures();
 }
-void SimulSkyRenderer::SetFadeTextureSize(unsigned width,unsigned height,unsigned num_alts)
-{
-	if(fadeTexWidth==width&&fadeTexHeight==height&&numAltitudes==num_alts)
-		return;
-	//if(!m_pd3dDevice)
-		return;
-	fadeTexWidth=width;
-	fadeTexHeight=height;
-	numAltitudes=num_alts;
-	CreateFadeTextures();
-	CreateSunlightTextures();
-}
+
 void SimulSkyRenderer::CreateFadeTextures()
 {
 	HRESULT hr;
