@@ -174,7 +174,7 @@ float4 GPUTransformPS(v2f IN): COLOR
 	float ambient_lookup=tex3D(ambient_light_texture,densityspace_texcoord).x;
 	float density=GetDensity(densityspace_texcoord);
 	//float density=tex3D(cloud_density,densityspace_texcoord).x;
-	float4 result=float4(density,indirect_lookup,light_lookup,ambient_lookup);
+	float4 result=float4(density,light_lookup,indirect_lookup,ambient_lookup);
 	return result;
 }
 

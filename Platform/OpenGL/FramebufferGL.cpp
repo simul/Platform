@@ -34,7 +34,7 @@ void FramebufferGL::SetShader(int i)
 		tonemap_program=0;
 }
 
-void FramebufferGL::ReloadShaders()
+void FramebufferGL::RecompileShaders()
 {
 	if(!shader_filename)
 		return;
@@ -106,7 +106,7 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 		return;
 	if(!m_fb)
 	{
-		ReloadShaders();
+		RecompileShaders();
 	ERROR_CHECK
 		glGenFramebuffersEXT(1, &m_fb);
 	ERROR_CHECK
@@ -132,7 +132,7 @@ void FramebufferGL::InitDepth_RB(GLenum iformat)
 {
 	if(!m_fb)
 	{
-		ReloadShaders();
+		RecompileShaders();
 		glGenFramebuffersEXT(1, &m_fb);
 	}
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
@@ -165,7 +165,7 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 {
 	if(!m_fb)
 	{
-		ReloadShaders();
+		RecompileShaders();
 		glGenFramebuffersEXT(1, &m_fb);
 	}
 	glGenTextures(1, &m_tex_depth);

@@ -93,7 +93,7 @@ void Render1(GLuint prog,bool blend);
 	{
 		return m_fb;
 	}
-	void ReloadShaders();
+	void RecompileShaders();
 	GLuint GetProgram() const 
 	{
 		return tonemap_program;

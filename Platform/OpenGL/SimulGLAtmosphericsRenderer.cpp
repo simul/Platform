@@ -39,7 +39,9 @@ bool SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 
 void SimulGLAtmosphericsRenderer::RecompileShaders()
 {
-	framebuffer->ReloadShaders();
+	if(!initialized)
+		return;
+	framebuffer->RecompileShaders();
 	cloudmix_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
 ERROR_CHECK
 	cloudmix_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);

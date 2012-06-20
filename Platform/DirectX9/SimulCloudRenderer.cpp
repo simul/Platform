@@ -1091,10 +1091,10 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;
-	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse(),
-										indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse(),
-										0,
-										0);
+	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse()
+										,indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse()
+										,0
+										,0);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);

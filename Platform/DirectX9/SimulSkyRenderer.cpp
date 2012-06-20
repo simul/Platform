@@ -741,7 +741,8 @@ float sun_angular_size=3.14159f/180.f/2.f;
 
 bool SimulSkyRenderer::RenderSun()
 {
-	float alt_km=0.001f*cam_pos.y;
+	float alt_km=0.001f*y_vertical?cam_pos.y:cam_pos.z;
+
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
@@ -871,16 +872,15 @@ bool SimulSkyRenderer::RenderFades(int w,int h)
 	if(h/(numAltitudes+2)<size)
 		size=h/(numAltitudes+2);
 #if 1
-	m_pSkyEffect->SetTexture(fadeTexture2D, inscatter_2d.hdr_buffer_texture);
-	RenderTexture(m_pd3dDevice,8	,32,size,size,inscatter_2d.hdr_buffer_texture,m_pSkyEffect,m_hTechniqueShowFade);
-	m_pSkyEffect->SetTexture(fadeTexture2D, sky_textures[0]);
-	RenderTexture(m_pd3dDevice,16+(size)	,32,8,size,sky_textures[0],m_pSkyEffect,m_hTechniqueShowSkyTexture);
-	m_pSkyEffect->SetTexture(fadeTexture2D, sky_textures[1]);
-	RenderTexture(m_pd3dDevice,24+size+8	,32,8,size,sky_textures[1],m_pSkyEffect,m_hTechniqueShowSkyTexture);
+	m_pSkyEffect->SetTexture(fadeTexture2D,inscatter_2d.hdr_buffer_texture);
+	RenderTexture(m_pd3dDevice,8			,32,size,size,inscatter_2d.hdr_buffer_texture,m_pSkyEffect,m_hTechniqueShowFade);
+	m_pSkyEffect->SetTexture(fadeTexture2D,sky_textures[0]);
+	RenderTexture(m_pd3dDevice,16+size		,32,8,size,sky_textures[0],m_pSkyEffect,m_hTechniqueShowSkyTexture);
+	m_pSkyEffect->SetTexture(fadeTexture2D,sky_textures[1]);
+	RenderTexture(m_pd3dDevice,32+size		,32,8,size,sky_textures[1],m_pSkyEffect,m_hTechniqueShowSkyTexture);
 
 	for(int i=0;i<numAltitudes;i++)
 	{
-		//float atc=(float)(i)/(float)(numAltitudes);
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
 		m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
 		m_pSkyEffect->SetTexture(fadeTexture, inscatter_textures[0]);

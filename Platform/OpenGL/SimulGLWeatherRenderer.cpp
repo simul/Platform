@@ -50,7 +50,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	baseCloudRenderer=simulCloudRenderer.get();
 	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d);
 	
-	simulLightningRenderer=new SimulGLLightningRenderer(simulCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
+	simulLightningRenderer=new SimulGLLightningRenderer(environment->lightning.get());
 	baseLightningRenderer=simulLightningRenderer.get();
 
 	simulAtmosphericsRenderer=new SimulGLAtmosphericsRenderer;

@@ -182,10 +182,10 @@ ERROR_CHECK
 				if(quads)
 					x1a=x1-t;
 				simul::math::Vector3 x1b=x1+t;
-				if(!k)
-					bright1=0;
-				if(k==lightningRenderInterface->GetNumSegments(i,jj)-1)
-					bright1=0;
+				//if(!k)
+				//	bright1=0;
+				//if(k==lightningRenderInterface->GetNumSegments(i,jj)-1)
+				//	bright1=0;
 				PosTexVert_t &v1=lightning_vertices[vert_num++];
 
 				v1.position.x=x1a.x;

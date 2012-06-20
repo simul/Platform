@@ -52,7 +52,7 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	,loss_tex(0)
 	,inscatter_tex(0)
 {
-	cloudKeyframer->SetFillTexturesAsBlocks(true);
+//cloudKeyframer->SetFillTexturesAsBlocks(true);
 	helper->Initialize(16,400000.f);
 }
 

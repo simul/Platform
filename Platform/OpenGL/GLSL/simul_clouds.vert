@@ -43,5 +43,5 @@ void main(void)
 
 	float sine=view.z;
 	float depth=length(wPosition)/maxFadeDistanceMetres;
-	fade_texc=vec2(sqrt(depth),0.5*(1.f-sine));
+	fade_texc=vec2(sqrt(depth),0.5*(1.0-sine));
 }

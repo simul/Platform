@@ -76,11 +76,15 @@ public:
 	}
 	void SetLossTexture(void* t)
 	{
-		loss_texture_1=(LPDIRECT3DBASETEXTURE9)t;
+		loss_texture=(LPDIRECT3DBASETEXTURE9)t;
 	}
 	void SetInscatterTexture(void* t)
 	{
-		inscatter_texture_1=(LPDIRECT3DBASETEXTURE9)t;
+		inscatter_texture=(LPDIRECT3DBASETEXTURE9)t;
+	}
+	void SetCloudsTexture(void* t)
+	{
+		clouds_texture=(LPDIRECT3DBASETEXTURE9)t;
 	}
 	void SetCloudsTexture(void *){}
 	void SetInputTextures(LPDIRECT3DTEXTURE9 image,LPDIRECT3DTEXTURE9 depth)
@@ -149,8 +153,9 @@ protected:
 	simul::sky::float4				cloud_offset;
 	float							cloud_interp;
 
-	LPDIRECT3DBASETEXTURE9			loss_texture_1;
-	LPDIRECT3DBASETEXTURE9			inscatter_texture_1;
+	LPDIRECT3DBASETEXTURE9			loss_texture;
+	LPDIRECT3DBASETEXTURE9			inscatter_texture;
+	LPDIRECT3DBASETEXTURE9			clouds_texture;
 
 	// For lightning airglow
 	D3DXHANDLE						airglowTechnique;

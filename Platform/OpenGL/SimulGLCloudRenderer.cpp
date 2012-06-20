@@ -361,15 +361,12 @@ ERROR_CHECK
 	}
 ERROR_CHECK
 
-	static float light_direct=0.25f;
-	static float light_indirect=0.03f;
-	simul::sky::float4 light_response(0,light_direct*GetCloudInterface()->GetLightResponse(),
-		light_indirect*GetCloudInterface()->GetSecondaryLightResponse(),0);
-	//light_response*=gamma;
-	//light_response=simul::sky::Pow(light_response,gamma);
-	// gamma-compensate for direct light beta function:
-	//light_response.y*=pow(0.079577f,gamma)/(0.079577f);
-
+	static float direct_light_mult=0.25f;
+	static float indirect_light_mult=0.03f;
+	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse()
+										,indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse()
+										,0
+										,0);
 	glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
 	
 	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
