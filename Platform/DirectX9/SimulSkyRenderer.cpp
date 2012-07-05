@@ -1279,7 +1279,7 @@ bool SimulSkyRenderer::Render2DFades()
 	inscatter_2d.Deactivate();
 	return true;
 }
-static float interp_at_last_render=0.f;
+
 bool SimulSkyRenderer::Render(bool blend)
 {
 	interp_at_last_render=skyKeyframer->GetInterpolation();
