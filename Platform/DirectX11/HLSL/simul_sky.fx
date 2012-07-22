@@ -184,7 +184,6 @@ float4 PS_Main( vertexOutput IN): SV_TARGET
 	float4 insc=lerp(insc1,insc2,skyInterp);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float3 colour=InscatterFunction(insc,cos0);
-
 	return float4(colour.rgb,1.f);
 }
 
@@ -214,9 +213,17 @@ float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 	float4 colour1=fadeTexture1.Sample(fadeSamplerState,texc);
 	float4 colour2=fadeTexture2.Sample(fadeSamplerState,texc);
 	float4 colour=lerp(colour1,colour2,skyInterp);
-//	colour.rg=IN.texCoords.xy;
-//	colour.b=0;
     return colour;
+}
+
+float4 PS_ShowSkyTexture(vertexOutput3Dto2D IN): SV_TARGET
+{
+#ifdef USE_ALTITUDE_INTERPOLATION
+	float4 colour=skyTexture1.Sample(fadeSamplerState,float2(IN.texCoords.y,altitudeTexCoord));
+#else
+	float4 colour=skyTexture1.Sample(fadeSamplerState,float2(IN.texCoords.y,0));
+#endif
+    return float4(colour.rgb,1);
 }
 
 struct svertexInput
@@ -328,6 +335,19 @@ technique11 simul_sky_CUBEMAP
 		SetVertexShader(CompileShader(vs_4_0,VS_Cubemap()));
         SetGeometryShader(CompileShader(gs_4_0,GS_Cubemap()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Mainc()));
+    }
+}
+
+technique11 simul_show_sky_texture
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		//SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
     }
 }
 

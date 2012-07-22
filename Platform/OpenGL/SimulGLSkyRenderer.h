@@ -40,10 +40,10 @@ public:
 	void						RecompileShaders();
 	//! GL Implementation of render function.
 	bool						Render(bool blend);
-	void						RenderFades(int width);
 	//! Render the stars, as points.
 	bool						RenderPointStars();
 	//! Draw the 2D fades to screen for debugging.
+	//void						RenderFades(int width);
 	bool						RenderFades(int w,int h);
 
 	// Implementing simul::sky::SkyTexturesCallback

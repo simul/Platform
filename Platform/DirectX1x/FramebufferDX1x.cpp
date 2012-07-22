@@ -262,7 +262,6 @@ bool FramebufferDX1x::CreateBuffers()
     InitData.pSysMem = vertices;
     InitData.SysMemPitch = sizeof(Vertext);
     InitData.SysMemSlicePitch = 0;
-//	D3D1x_SUBRESOURCE_DATA initialData;
 	hr=m_pd3dDevice->CreateBuffer(&bdesc,&InitData,&m_pVertexBuffer);
 	return (hr==S_OK);
 }

@@ -50,12 +50,12 @@ bool	Direct3D11Renderer::ModifyDeviceSettings(		DXUTDeviceSettings* pDeviceSetti
 
 HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(		ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
-	unsigned ScreenWidth=pBackBufferSurfaceDesc->Width;
-	unsigned ScreenHeight=pBackBufferSurfaceDesc->Height;
-	aspect=(float)ScreenWidth/(float)ScreenHeight;
+	width=pBackBufferSurfaceDesc->Width;
+	height=pBackBufferSurfaceDesc->Height;
+	aspect=(float)width/(float)height;
 	// Create the HDR renderer to perform brightness and gamma-correction (optional component)
 	if(simulHDRRenderer)
-		simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
+		simulHDRRenderer->SetBufferSize(width,height);
 	// Set Always Render Clouds Late to true - clouds thru mountains.
 	// Callback to fill lo-res depth buffer for clouds
 	//if(simulWeatherRenderer)
@@ -104,8 +104,8 @@ void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11De
 	{
 		simulWeatherRenderer->SetMatrices(view,proj);
 		simulWeatherRenderer->RenderSky(true,false);
-//		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
-//			simulWeatherRenderer->GetSkyRenderer()->RenderFades();
+		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(width,height);
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{

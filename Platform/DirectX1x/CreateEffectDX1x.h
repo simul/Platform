@@ -55,6 +55,7 @@ extern void SIMUL_DIRECTX1x_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAd
 extern void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir);
 extern void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *cam_pos,const float *dir,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj);
 
+extern void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech);
 
 
 void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
