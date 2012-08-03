@@ -112,7 +112,11 @@ vertexOutput VS_Main(vertexInput IN)
 	float3 texCoordLightning=(IN.position.xzy-illuminationOrigin.xyz)/illuminationScales.xyz;
 	OUT.texCoordLightning=texCoordLightning;
 	float3 view=normalize(OUT.wPosition.xyz);
+#ifdef Y_VERTICAL
 	float sine=view.y;
+#else
+	float sine=view.z;
+#endif
 // Fade mode ZERO - fade values come from the vertex. So we pass them on to the pixel shader:
 #if FADE_MODE==0
     OUT.loss			=IN.loss;

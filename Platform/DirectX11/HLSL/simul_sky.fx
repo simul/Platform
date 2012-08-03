@@ -216,6 +216,14 @@ float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
     return colour;
 }
 
+vertexOutput3Dto2D VS_ShowSkyTexture(vertexInput3Dto2D IN) 
+{
+    vertexOutput3Dto2D OUT;
+    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.texCoords=IN.texCoords;
+    return OUT;
+}
+
 float4 PS_ShowSkyTexture(vertexOutput3Dto2D IN): SV_TARGET
 {
 #ifdef USE_ALTITUDE_INTERPOLATION
@@ -223,7 +231,7 @@ float4 PS_ShowSkyTexture(vertexOutput3Dto2D IN): SV_TARGET
 #else
 	float4 colour=skyTexture1.Sample(fadeSamplerState,float2(IN.texCoords.y,0));
 #endif
-    return float4(colour.rgb,1);
+    return float4(.05*colour.rgb,1);
 }
 
 struct svertexInput
@@ -343,11 +351,11 @@ technique11 simul_show_sky_texture
     pass p0 
     {
 		SetRasterizerState( RenderNoCull );
-		//SetDepthStencilState( DisableDepth, 0 );
+		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowSkyTexture()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowSkyTexture()));
     }
 }
 

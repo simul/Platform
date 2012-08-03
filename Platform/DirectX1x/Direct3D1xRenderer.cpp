@@ -50,12 +50,12 @@ bool	Direct3D11Renderer::ModifyDeviceSettings(		DXUTDeviceSettings* pDeviceSetti
 
 HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(		ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
-	width=pBackBufferSurfaceDesc->Width;
-	height=pBackBufferSurfaceDesc->Height;
-	aspect=(float)width/(float)height;
+	ScreenWidth=pBackBufferSurfaceDesc->Width;
+	ScreenHeight=pBackBufferSurfaceDesc->Height;
+	aspect=(float)ScreenWidth/(float)ScreenHeight;
 	// Create the HDR renderer to perform brightness and gamma-correction (optional component)
 	if(simulHDRRenderer)
-		simulHDRRenderer->SetBufferSize(width,height);
+		simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
 	// Set Always Render Clouds Late to true - clouds thru mountains.
 	// Callback to fill lo-res depth buffer for clouds
 	//if(simulWeatherRenderer)
@@ -68,8 +68,8 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 	simul::dx11::UnsetDevice();
 	//Set a global device pointer for use by various classes.
 	simul::dx11::SetDevice(pd3dDevice);
-	unsigned ScreenWidth=pBackBufferSurfaceDesc->Width;
-	unsigned ScreenHeight=pBackBufferSurfaceDesc->Height;
+	ScreenWidth=pBackBufferSurfaceDesc->Width;
+	ScreenHeight=pBackBufferSurfaceDesc->Height;
 	aspect=(float)ScreenWidth/(float)ScreenHeight;
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
@@ -104,21 +104,25 @@ void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11De
 	{
 		simulWeatherRenderer->SetMatrices(view,proj);
 		simulWeatherRenderer->RenderSky(true,false);
-		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(width,height);
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light;
-			dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
-			light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
-		simulOpticsRenderer->SetMatrices(view,proj);
-			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-(simulWeatherRenderer?simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion():0.f));
-			simulOpticsRenderer->RenderFlare(exp,dir,light);
+			if(simulWeatherRenderer->GetSkyRenderer())
+			{
+				dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
+				light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
+				simulOpticsRenderer->SetMatrices(view,proj);
+				float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
+				float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
+				simulOpticsRenderer->RenderFlare(exp,dir,light);
+			}
 		}
 	}
 	if(simulHDRRenderer)
 		simulHDRRenderer->FinishRender();
+	if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
+		simulWeatherRenderer->GetSkyRenderer()->RenderFades(ScreenWidth,ScreenHeight);
 }
 
 void	Direct3D11Renderer::OnD3D11LostDevice()

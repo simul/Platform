@@ -608,12 +608,13 @@ void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float d
 	D3D1x_BUFFER_DESC bdesc=
 	{
         4*sizeof(Vertext),
-        D3D1x_USAGE_DEFAULT,
+        D3D1x_USAGE_DYNAMIC,
         D3D1x_BIND_VERTEX_BUFFER,
-        0,
+        D3D1x_CPU_ACCESS_WRITE,
         0
 	};
     D3D1x_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
     InitData.pSysMem = vertices;
     InitData.SysMemPitch = sizeof(Vertext);
     InitData.SysMemSlicePitch = 0;

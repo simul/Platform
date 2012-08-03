@@ -38,13 +38,10 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 
 	simulSkyRenderer(NULL),
 	simulCloudRenderer(NULL),
-	show_3d_clouds(clouds3d),
-	layer2(clouds2d),
 	BufferWidth(w),
 	BufferHeight(h),
 	timing(0.f),
 	exposure_multiplier(1.f),
-	show_sky(sky),
 	show_rain(rain)
 {
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
@@ -56,7 +53,7 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 		baseSkyRenderer=simulSkyRenderer.get();
 		Group::AddChild(simulSkyRenderer.get());
 	}
-	if(show_3d_clouds)
+	if(layer1)
 	{
 		simulCloudRenderer=new SimulCloudRendererDX1x(ck3d);
 		baseCloudRenderer=simulCloudRenderer.get();
@@ -190,14 +187,19 @@ bool SimulWeatherRendererDX1x::Destroy()
 {
 	HRESULT hr=S_OK;
 	InvalidateDeviceObjects();
+
 	if(simulSkyRenderer.get())
 		simulSkyRenderer->Destroy();
-	if(simulCloudRenderer.get())
-		simulCloudRenderer->Destroy();
 	Group::RemoveChild(simulSkyRenderer.get());
 	simulSkyRenderer=NULL;
+
+	if(simulCloudRenderer.get())
+		simulCloudRenderer->Destroy();
 	Group::RemoveChild(simulCloudRenderer.get());
 	simulCloudRenderer=NULL;
+
+	Group::RemoveChild(simulAtmosphericsRenderer.get());
+	simulAtmosphericsRenderer=NULL;
 	/*if(simul2DCloudRenderer)
 		simul2DCloudRenderer->Destroy();
 	if(simulPrecipitationRenderer)
@@ -273,6 +275,7 @@ void *SimulWeatherRendererDX1x::GetCubemap()
 
 bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 {
+	HRESULT hr=S_OK;
 	if(buffered)
 	{
 		framebuffer.Activate();
@@ -287,35 +290,28 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 		simulPrecipitationRenderer->SetMatrices(view,proj);
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->SetMatrices(view,proj);*/
-	
+#if 1
 	if(simulSkyRenderer)
 	{
 		float cloud_occlusion=0;
-		if(show_3d_clouds&&simulCloudRenderer)
+		if(layer1&&simulCloudRenderer)
 		{
 			cloud_occlusion=simulCloudRenderer->GetSunOcclusion();
 		}
 		simulSkyRenderer->CalcSunOcclusion(cloud_occlusion);
 	}
-	HRESULT hr=S_OK;
 	if(simulSkyRenderer)
 		hr=simulSkyRenderer->Render(!buffered);
 	// Do this AFTER sky render, to catch any changes to texture definitions:
 	UpdateSkyAndCloudHookup();
-	if(simulCloudRenderer)
+	if(simulCloudRenderer&&layer1)
 		hr=simulCloudRenderer->Render(is_cubemap,false,UseDefaultFog);
+#endif
 	if(buffered)
 		framebuffer.DeactivateAndRender(false);
 	return (hr==S_OK);
 }
 
-void SimulWeatherRendererDX1x::Enable(bool sky,bool clouds3d,bool clouds2d,bool rain)
-{
-	show_3d_clouds=clouds3d;
-	layer2=clouds2d;
-	show_sky=sky;
-	show_rain=rain;
-}
 void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;

@@ -93,7 +93,7 @@ protected:
 	simul::base::SmartPtr<SimulWeatherRendererDX1x> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulHDRRendererDX1x> simulHDRRenderer;
 	float timeMult;
-	int width,height;
-};
+	unsigned ScreenWidth,ScreenHeight;
+};	
 
 #pragma warning(pop)
