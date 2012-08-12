@@ -386,7 +386,25 @@ void RenderTexture(int x,int y,int w,int h)
 	glEnd();
 	ERROR_CHECK
 }
-
+/*
+void SimulGLSkyRenderer::RenderFades(int width)
+{
+	int w=width/3-8;
+    glDisable(GL_BLEND);
+	glDisable(GL_CULL_FACE);
+	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+ERROR_CHECK
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_TEXTURE_3D);
+	glUseProgram(0);
+ERROR_CHECK
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,loss_2d.GetColorTex());
+	DrawQuad(8,8,w,w);
+	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
+	DrawQuad(16+w,8,w,w);
+}
+*/
 bool SimulGLSkyRenderer::RenderFades(int w,int h)
 {
 	int size=w/4;
@@ -524,24 +542,6 @@ ERROR_CHECK
 	glUseProgram(NULL);
 ERROR_CHECK
 	return true;
-}
-
-void SimulGLSkyRenderer::RenderFades(int width)
-{
-	int w=width/3-8;
-    glDisable(GL_BLEND);
-	glDisable(GL_CULL_FACE);
-	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-ERROR_CHECK
-	glEnable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_3D);
-	glUseProgram(0);
-ERROR_CHECK
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,loss_2d.GetColorTex());
-	DrawQuad(8,8,w,w);
-	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
-	DrawQuad(16+w,8,w,w);
 }
 
 bool SimulGLSkyRenderer::RenderPointStars()

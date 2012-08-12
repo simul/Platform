@@ -554,7 +554,7 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *cam_pos,const floa
 	D3D1x_PASS_DESC PassDesc;
 	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
 	hr=pass->GetDesc(&PassDesc);
-//return true;
+
 	ID3D1xInputLayout*				m_pVtxDecl=NULL;
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
@@ -578,6 +578,68 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *cam_pos,const floa
 	SAFE_RELEASE(m_pVtxDecl);
 }
 
+void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech)
+{
+	struct Vertext
+	{
+		D3DXVECTOR4 pos;
+		D3DXVECTOR2 tex;
+	};
+
+	HRESULT hr=S_OK;
+	const D3D1x_INPUT_ELEMENT_DESC decl[] =
+	{
+		{ "POSITION",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	16,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
+	};
+	D3D1x_PASS_DESC PassDesc;
+	tech->GetPassByIndex(0)->GetDesc(&PassDesc);
+	ID3D1xInputLayout*					m_pBufferVertexDecl;
+	hr=m_pd3dDevice->CreateInputLayout(decl,2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pBufferVertexDecl);
+
+
+	Vertext vertices[4] =
+	{
+		D3DXVECTOR4(x1		,y1			,0.f,	1.f), D3DXVECTOR2(0.f	,1.f),
+		D3DXVECTOR4(x1+dx	,y1			,0.f,	1.f), D3DXVECTOR2(1.f	,1.f),
+		D3DXVECTOR4(x1		,y1+dy		,0.f,	1.f), D3DXVECTOR2(0.f	,0.f),
+		D3DXVECTOR4(x1+dx	,y1+dy		,0.f,	1.f), D3DXVECTOR2(1.f	,0.f),
+	};
+	D3D1x_BUFFER_DESC bdesc=
+	{
+        4*sizeof(Vertext),
+        D3D1x_USAGE_DYNAMIC,
+        D3D1x_BIND_VERTEX_BUFFER,
+        D3D1x_CPU_ACCESS_WRITE,
+        0
+	};
+    D3D1x_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    InitData.pSysMem = vertices;
+    InitData.SysMemPitch = sizeof(Vertext);
+    InitData.SysMemSlicePitch = 0;
+
+	ID3D1xBuffer*						m_pVertexBuffer;
+	hr=m_pd3dDevice->CreateBuffer(&bdesc,&InitData,&m_pVertexBuffer);
+
+	UINT stride = sizeof(Vertext);
+	UINT offset = 0;
+    UINT Strides[1];
+    UINT Offsets[1];
+    Strides[0] = 0;
+    Offsets[0] = 0;
+	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
+												1,					// the number of buffers in the array
+												&m_pVertexBuffer,	// the array of vertex buffers
+												&stride,			// array of stride values, one for each buffer
+												&offset);			// array of offset values, one for each buffer
+	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
+	m_pImmediateContext->Draw(4,0);
+	SAFE_RELEASE(m_pVertexBuffer);
+	SAFE_RELEASE(m_pBufferVertexDecl);
+
+}
 
 // Stored states
 static ID3D11DepthStencilState* m_pDepthStencilStateStored11=NULL;

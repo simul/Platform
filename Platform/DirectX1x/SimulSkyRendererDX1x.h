@@ -55,6 +55,8 @@ public:
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	bool Render(bool blend);
 	bool RenderPointStars(){return false;}
+	//! Draw the fade textures to screen
+	bool RenderFades(int w,int h);
 	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
@@ -74,13 +76,11 @@ public:
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);
 //! Implement the SkyTexturesCallback
-	void SetSkyTextureSize(unsigned size);
 	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
-	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void FillFadeTexturesSequentially(int texture_index,int texel_index,int num_texels,
+	void FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
+	void FillFadeTex(int alt_index,int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
 						const float *inscatter_float4_array);
-	void FillFadeTextureBlocks(int ,int ,int ,int ,int ,int ,int ,const float *,const float *){}
 	void CycleTexturesForward();
 	const char *GetDebugText() const;
 	void SetYVertical(bool y);
@@ -88,12 +88,16 @@ public:
 	// for testing:
 	void DrawCubemap(ID3D1xShaderResourceView*		m_pCubeEnvMapSRV);
 protected:
+
 	bool y_vertical;
 	int cycle;
 	bool IsYVertical(){return y_vertical;}
 	float sun_occlusion;
 
 	void CreateFadeTextures();
+	void EnsureCorrectTextureSizes();
+	void EnsureTexturesAreUpToDate();
+	void EnsureTextureCycle();
 	ID3D1xDevice*							m_pd3dDevice;
 	ID3D1xDeviceContext *					m_pImmediateContext;
 	ID3D1xBuffer*							m_pVertexBuffer;
@@ -153,7 +157,7 @@ protected:
 	void UnmapSky();
 	D3DXMATRIX				world,view,proj;
 	bool UpdateSkyTexture(float proportion);
-	bool CreateSkyTexture();
+	bool CreateSkyTextures();
 	bool RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	bool RenderSun();
 void DrawCube();
