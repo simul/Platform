@@ -125,7 +125,6 @@ protected:
 	bool PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height);
 	float timing;
 	D3DFORMAT sky_tex_format;
-	void CreateFadeTextures();
 
 	LPDIRECT3DDEVICE9			m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl;
@@ -180,8 +179,9 @@ protected:
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DQUERY9			d3dQuery;
 	bool						UpdateSkyTexture(float proportion);
-	bool						CreateSkyTextures();
-	bool						CreateSunlightTextures();
+	void						CreateFadeTextures();
+	void						CreateSkyTextures();
+	void						CreateSunlightTextures();
 	bool						RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	virtual bool IsYVertical()
 	{

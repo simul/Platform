@@ -734,7 +734,7 @@ ERROR_CHECK
 	}
 }
 
-void SimulGLSkyRenderer::FillFadeTex(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array)
+void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array)
 {
 	if(!initialized)
 		return;
@@ -752,30 +752,6 @@ void SimulGLSkyRenderer::FillFadeTex(int texture_index,int x,int y,int z,int w,i
 	
 	glBindTexture(target,NULL);
 		ERROR_CHECK
-}
-
-void SimulGLSkyRenderer::EnsureCorrectTextureSizes()
-{
-	simul::sky::BaseKeyframer::int3 i=skyKeyframer->GetTextureSizes();
-	int num_dist=i.x;
-	int num_elev=i.y;
-	int num_alt=i.z;
-	if(!num_dist||!num_elev||!num_alt)
-		return;
-	if(fadeTexWidth==num_dist&&fadeTexHeight==num_elev&&numAltitudes==num_alt&&skyTexSize==num_elev&&sky_texture_iterator[0].size()==numAltitudes)
-		return;
-	SetFadeTexSize(num_dist,num_elev,num_alt);
-	SetSkyTexSize(num_elev);
-	for(int i=0;i<3;i++)
-	{
-		fade_texture_iterator[i].resize(numAltitudes);
-		sky_texture_iterator[i].resize(numAltitudes);
-		for(int j=0;j<numAltitudes;j++)
-		{
-			fade_texture_iterator[i][j].texture_index=i;
-			sky_texture_iterator[i][j].texture_index=i;
-		}
-	}
 }
 
 void SimulGLSkyRenderer::EnsureTexturesAreUpToDate()
@@ -796,7 +772,7 @@ void SimulGLSkyRenderer::EnsureTexturesAreUpToDate()
 			simul::sky::BaseKeyframer::block_texture_fill t;
 			while((t=skyKeyframer->GetBlockFadeTextureFill(j,i,ft)).w!=0)
 			{
-				FillFadeTex(i,t.x,t.y,t.z,t.w,t.l,t.d,(const float*)t.float_array_1,(const float*)t.float_array_2);
+				FillFadeTextureBlocks(i,t.x,t.y,t.z,t.w,t.l,t.d,(const float*)t.float_array_1,(const float*)t.float_array_2);
 			}
 		}
 	}

@@ -494,7 +494,7 @@ void SimulSkyRenderer::CycleTexturesForward()
 }
 
 
-bool SimulSkyRenderer::CreateSkyTextures()
+void SimulSkyRenderer::CreateSkyTextures()
 {
 	HRESULT hr=S_OK;
 	for(int i=0;i<3;i++)
@@ -506,12 +506,12 @@ bool SimulSkyRenderer::CreateSkyTextures()
 		if(0&&numAltitudes<=1)
 		{
 			if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,skyTexSize,1,1,0,sky_tex_format,d3d_memory_pool,&sky_textures[i])))
-				return (hr==S_OK);
+				return;
 		}
 		else
 		{
 			if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,skyTexSize,numAltitudes,1,0,sky_tex_format,d3d_memory_pool,&sky_textures[i])))
-				return (hr==S_OK);
+				return;
 		}
 		LPDIRECT3DTEXTURE9 tex=sky_textures[i];
 		D3DLOCKED_RECT lockedRect={0};
@@ -535,9 +535,9 @@ bool SimulSkyRenderer::CreateSkyTextures()
 		}
 		hr=tex->UnlockRect(0);
 	}
-	return (hr==S_OK);
 }
-bool SimulSkyRenderer::CreateSunlightTextures()
+
+void SimulSkyRenderer::CreateSunlightTextures()
 {
 	HRESULT hr=S_OK;
 	for(int i=0;i<3;i++)
@@ -547,9 +547,8 @@ bool SimulSkyRenderer::CreateSunlightTextures()
 	for(int i=0;i<3;i++)
 	{
 		if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,numAltitudes,1,1,0,sky_tex_format,d3d_memory_pool,&sunlight_textures[i])))
-			return (hr==S_OK);
+			return;
 	}
-	return (hr==S_OK);
 }
 
 struct Vertex_t
@@ -770,33 +769,9 @@ void SimulSkyRenderer::SetYVertical(bool y)
 
 void SimulSkyRenderer::EnsureCorrectTextureSizes()
 {
-	simul::sky::BaseKeyframer::int3 i=skyKeyframer->GetTextureSizes();
-	int num_dist=i.x;
-	int num_elev=i.y;
-	int num_alt=i.z;
-	if(!num_dist||!num_elev||!num_alt)
-		return;
-	if(fadeTexWidth==num_dist&&fadeTexHeight==num_elev&&numAltitudes==num_alt&&skyTexSize==num_elev&&sky_texture_iterator[0].size()==numAltitudes)
-		return;
 	if(!m_pd3dDevice)
 		return;
-	fadeTexWidth=num_dist;
-	fadeTexHeight=num_elev;
-	numAltitudes=num_alt;
-	for(int i=0;i<3;i++)
-	{
-		fade_texture_iterator[i].resize(numAltitudes);
-		sky_texture_iterator[i].resize(numAltitudes);
-		for(int j=0;j<numAltitudes;j++)
-		{
-			fade_texture_iterator[i][j].texture_index=i;
-			sky_texture_iterator[i][j].texture_index=i;
-		}
-	}
-	CreateFadeTextures();
-	CreateSunlightTextures();
-	skyTexSize=num_elev;
-	CreateSkyTextures();
+	simul::sky::BaseSkyRenderer::EnsureCorrectTextureSizes();
 }
 
 void SimulSkyRenderer::EnsureTexturesAreUpToDate()

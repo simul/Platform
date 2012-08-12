@@ -53,7 +53,6 @@ public:
 	{
 		exit(1);
 	}
-	virtual		void FillFadeTextureBlocks(int ,int ,int ,int ,int ,int ,int ,const float *,const float *){}
 	virtual		void FillSkyTexture(int ,int ,int ,int ,const float *){}
 	virtual		void CycleTexturesForward(){}
 	virtual		bool HasFastFadeLookup() const{return true;}
@@ -72,8 +71,8 @@ protected:
 	void		SetSkyTexSize(unsigned size);
 	void		SetFadeTexSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_altitudes);
 	void		FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void		FillFadeTex(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array);
-	void		EnsureCorrectTextureSizes();
+	void		FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array);
+	//void		EnsureCorrectTextureSizes();
 	void		EnsureTexturesAreUpToDate();
 	void		EnsureTextureCycle();
 
