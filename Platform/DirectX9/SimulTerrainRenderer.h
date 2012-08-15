@@ -95,10 +95,15 @@ public:
 	}
 	void SetYVertical(bool s)
 	{
-		y_vertical=s;
-		InvalidateDeviceObjects();
-		if(m_pd3dDevice)
-			RestoreDeviceObjects(m_pd3dDevice);
+		if(s!=y_vertical)
+		{
+			y_vertical=s;
+			if(m_pd3dDevice)
+			{
+				InvalidateDeviceObjects();
+				RestoreDeviceObjects(m_pd3dDevice);
+			}
+		}
 	}
 	void SetMaxFadeDistanceKm(float dist_km)
 	{

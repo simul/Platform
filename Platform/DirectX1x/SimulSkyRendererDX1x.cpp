@@ -235,7 +235,6 @@ bool SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	// Set the stored texture sizes to zero, so the textures will be re-created.
 	fadeTexWidth=fadeTexHeight=numAltitudes=0;
 	SAFE_RELEASE(d3dQuery);
-	skyKeyframer->SetCallback(NULL);
 	return (hr==S_OK);
 }
 
@@ -468,7 +467,7 @@ void SimulSkyRendererDX1x::FillFadeTex(int alt_index,int texture_index,int texel
 		*float_ptr++=(*inscatter_float4_array++);
 }
 
-bool SimulSkyRendererDX1x::CreateSkyTextures()
+void SimulSkyRendererDX1x::CreateSkyTextures()
 {
 	HRESULT hr=S_OK;
 	D3D1x_TEXTURE2D_DESC desc=
@@ -489,7 +488,6 @@ bool SimulSkyRendererDX1x::CreateSkyTextures()
 		V_CHECK(m_pd3dDevice->CreateTexture2D(&desc,NULL, &sky_textures[i]));
 		V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_textures[i],NULL,&sky_textures_SRV[i]));
 	}
-	return (hr==S_OK);
 }
 
 void SimulSkyRendererDX1x::RecompileShaders()

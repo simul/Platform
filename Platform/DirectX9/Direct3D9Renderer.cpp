@@ -82,12 +82,7 @@ HRESULT Direct3D9Renderer::OnCreateDevice(IDirect3DDevice9* pd3dDevice, const D3
 		simulTerrainRenderer->Create(pd3dDevice);
 	if(simulWeatherRenderer&&simulHDRRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
-	if(simulWeatherRenderer)
-	if(simulWeatherRenderer->GetSkyRenderer())
-	{
-		//simul::graph::meta::Node *n=dynamic_cast<simul::graph::meta::Node *>(simulWeatherRenderer->GetSkyRenderer()->GetSkyInterface());
-		//AddChild(n);
-	}
+
 	width=pBackBufferSurfaceDesc->Width;
 	height=pBackBufferSurfaceDesc->Height;
 	aspect=width/(float)height;

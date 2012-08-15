@@ -1,6 +1,7 @@
 
 #ifdef _MSC_VER
 #include <GL/glew.h>
+#include <GL/glut.h>
 #endif
 
 #include "FramebufferGL.h"
@@ -48,7 +49,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	}
 	simulCloudRenderer=new SimulGLCloudRenderer(ck3d);
 	baseCloudRenderer=simulCloudRenderer.get();
-	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d);
+	base2DCloudRenderer=simul2DCloudRenderer=NULL;//new SimulGL2DCloudRenderer(ck2d);
 	
 	simulLightningRenderer=new SimulGLLightningRenderer(environment->lightning.get());
 	baseLightningRenderer=simulLightningRenderer.get();
@@ -111,8 +112,9 @@ void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
 
 bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 {
-	/*GLenum res=glewInit();
-	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
+	GLenum res=glewInit();
+	
+	/*const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
 // If the GL_GREMEDY_string_marker extension is supported:
 	if(glewIsSupported("GL_GREMEDY_string_marker"))
 	{

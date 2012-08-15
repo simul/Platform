@@ -1,5 +1,10 @@
-#include "OpenGLRenderer.h"
+#ifdef _MSC_VER
 #include <GL/glew.h>
+#include <GL/glut.h>
+// for wglGetProcAddress
+#include <Windows.h>
+#endif
+#include "OpenGLRenderer.h"
 // For font definition define:
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Camera/Camera.h"
@@ -19,7 +24,6 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,ShowFades(false)
 	,ShowCloudCrossSections(false)
 {
-	GLenum res=glewInit();
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
 	SetYVertical(y_vertical);
@@ -73,15 +77,15 @@ void OpenGLRenderer::paintGL()
 				(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
 				,dir,light);
 		}
+
+		if(simulHDRRenderer)
+			simulHDRRenderer->FinishRender();
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			SetTopDownOrthoProjection(width,height);
 			if(ShowCloudCrossSections)
-				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width/3);
+				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width);
 		}
-
-		if(simulHDRRenderer)
-			simulHDRRenderer->FinishRender();
 	}
 	renderUI();
 	glPopAttrib();
@@ -114,6 +118,32 @@ void OpenGLRenderer::resizeGL(int w,int h)
 
 void OpenGLRenderer::initializeGL()
 {
+    GLenum glewError = glewInit();
+    if( glewError != GLEW_OK )
+    {
+        std::cerr<<"Error initializing GLEW! "<<glewGetErrorString( glewError )<<"\n";
+        return;
+    }
+    //Make sure OpenGL 2.1 is supported
+    if( !GLEW_VERSION_2_1 )
+    {
+        std::cerr<<"OpenGL 2.1 not supported!\n" ;
+        return;
+    }
+	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
+// If the GL_GREMEDY_string_marker extension is supported:
+	if(glewIsSupported("GL_GREMEDY_string_marker"))
+	{
+		// Get a pointer to the glStringMarkerGREMEDY function:
+		glStringMarkerGREMEDY = (PFNGLSTRINGMARKERGREMEDYPROC)wglGetProcAddress("glStringMarkerGREMEDY");
+	}
+//CheckGLError(__FILE__,__LINE__,res);
+	if(!GLEW_VERSION_2_0)
+	{
+		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
+	}
+	CheckExtension("GL_VERSION_2_0");
+
 	if(cam)
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 

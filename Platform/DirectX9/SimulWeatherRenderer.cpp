@@ -62,7 +62,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	show_rain(rain),
 	renderDepthBufferCallback(NULL)
 {
-	sky=rain=clouds2d=clouds3d=false;
+	//sky=rain=clouds2d=false;
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
 	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer.get();
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer.get();
@@ -131,7 +131,7 @@ void SimulWeatherRenderer::SetScreenSize(int w,int h)
 bool SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)
 {
 	m_pd3dDevice=dev;
-	if(simulCloudRenderer)
+/*	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 	}
@@ -145,7 +145,7 @@ bool SimulWeatherRenderer::Create(LPDIRECT3DDEVICE9 dev)
 			simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
 	}
 	if(simulCloudRenderer&&simulSkyRenderer)
-		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
+		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());*/
 	HRESULT hr=S_OK;
 	return (hr==S_OK);
 }

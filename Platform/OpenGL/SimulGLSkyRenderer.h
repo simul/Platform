@@ -79,6 +79,8 @@ protected:
 	bool		initialized;
 	bool		Render2DFades();
 	void		CreateFadeTextures();
+	void		CreateSkyTextures();
+
 	GLuint		sky_tex[3];
 	GLuint		loss_textures[3];
 	GLuint		inscatter_textures[3];

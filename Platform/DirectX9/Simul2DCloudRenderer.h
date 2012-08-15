@@ -69,11 +69,6 @@ public:
 	//! Get an interface to the Simul cloud object.
 	simul::clouds::CloudKeyframer *GetCloudKeyframer();
 	void Enable(bool val);
-	// implementing CloudRenderCallback:
-	void SetCloudTextureSize(unsigned ,unsigned ,unsigned ){}
-	void FillCloudTextureSequentially(int ,int ,int ,const unsigned *){}
-	void FillCloudTextureBlock(int,int,int,int,int,int,int,const unsigned *){}
-	void CycleTexturesForward(){}
 
 	// a texture
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);

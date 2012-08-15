@@ -86,24 +86,18 @@ public:
 	virtual void SetFadeMode(FadeMode f);
 	void SetYVertical(bool y);
 	bool IsYVertical() const{return y_vertical;}
-	// implementing CloudRenderCallback:
-	void SetCloudTextureSize(unsigned ,unsigned ,unsigned ){}
-	void FillCloudTextureSequentially(int ,int ,int ,const unsigned *){}
-	void FillCloudTextureBlock(int ,int ,int,int,int,int,int,const unsigned *){}
-	void CycleTexturesForward(){}
-	void SetIlluminationGridSize(unsigned ,unsigned ,unsigned ){}
-	void FillIlluminationSequentially(int ,int ,int ,const unsigned char *){}
-	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *){}
 
 	// implementing GpuLightingCallback:
 	bool CanPerformGPULighting() const;			
 	void SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3);
-	void PerformFullGPURelight(int which_texture,float *target_direct_grid,float *target_indirect_grid);
+	void PerformFullGPURelight(int which_texture,float *target_direct_grid,float *target_indirect_grid,int num_octaves,float persistence_val,float humidity_val);
 	void GPUTransferDataToTexture(	int which_texture
 									,unsigned char *target_texture
 									,const unsigned char *direct_grid
 									,const unsigned char *indirect_grid
-									,const unsigned char *ambient_grid);
+									,const unsigned char *ambient_grid
+									,int num_octaves,float persistence_val
+									,float humidity_val);
 protected:
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();

@@ -86,6 +86,9 @@ sampler3D ambient_light_texture= sampler_state
 float zPosition;
 float2 extinctions;
 float2 texCoordOffset;
+float octaves;
+float persistence;
+float humidity;
 
 texture inputLightTexture;
 sampler2D input_light_texture= sampler_state 
@@ -119,14 +122,16 @@ v2f GPULightVS(a2v IN)
     return OUT;
 }
 
-float NoiseFunction(float3 pos,int octaves,float persistence)
+float NoiseFunction(float3 pos,int oct,float pers)
 {
 	float dens=0;
 	float mul=0.5f;
-	for(int i=0;i<octaves;i++)
+	for(int i=0;i<5;i++)
 	{
+		if(i>=oct)
+			return dens;
 		dens+=mul*tex3D(volume_noise_texture,pos).x;
-		mul*=persistence;
+		mul*=pers;
 		pos*=2.f;
 	}
 	return dens;
@@ -135,12 +140,12 @@ float NoiseFunction(float3 pos,int octaves,float persistence)
 float GetDensity(float3 densityspace_texcoord)
 {
 	float3 noisespace_texcoord=float3(densityspace_texcoord.xy,densityspace_texcoord.z/8.f);
-	float noise_val=NoiseFunction(noisespace_texcoord,3,0.65f);
+	float noise_val=NoiseFunction(noisespace_texcoord,octaves,persistence);
 	const float pixel=1.0/8.0;
 	float mul=saturate(densityspace_texcoord.z/pixel)*saturate((1.0-densityspace_texcoord.z)/pixel);
-float active_humidity=0.5;
+
 float diffusivity=0.005;
-	float dens=saturate((noise_val+active_humidity*mul-1.0)/diffusivity);
+	float dens=saturate((noise_val+humidity*mul-1.0)/diffusivity);
 	return dens;
 }
 

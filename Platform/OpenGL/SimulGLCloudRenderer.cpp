@@ -877,6 +877,7 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 
 void SimulGLCloudRenderer::RenderCrossSections(int width)
 {
+	int w=(width-16)/3;
 	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
 	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
 	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
@@ -890,7 +891,7 @@ ERROR_CHECK
 	glEnable(GL_TEXTURE_3D);
 	glUseProgram(cross_section_program);
 ERROR_CHECK
-static float mult=.1f;
+static float mult=1.f;
 	glUniform1i(cloudDensity1_param,0);
 	for(int i=0;i<3;i++)
 	{
@@ -905,13 +906,13 @@ static float mult=.1f;
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
 		simul::clouds::CloudGridInterface *gi=cloudKeyframer->GetCloudGridInterface();
-		int h=gi->GetGridHeight()*width/gi->GetGridWidth();
+		int h=gi->GetGridHeight()*w/gi->GetGridWidth();
 		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
 		glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
 		glUniform1f(yz_param,0.f);
-		DrawQuad((width+8)*i,8,width,h);
+		DrawQuad(i*(w+8)+8,8,w,h);
 		glUniform1f(yz_param,1.f);
-		DrawQuad((width+8)*i,h+16,width,width);
+		DrawQuad(i*(w+8)+8,h+16,w,w);
 	}
 
 	glUseProgram(0);
