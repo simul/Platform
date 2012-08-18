@@ -157,7 +157,7 @@ protected:
 	void UnmapSky();
 	D3DXMATRIX				world,view,proj;
 	bool UpdateSkyTexture(float proportion);
-	bool CreateSkyTextures();
+	void CreateSkyTextures();
 	bool RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	bool RenderSun();
 void DrawCube();

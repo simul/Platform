@@ -220,7 +220,6 @@ bool SimulSkyRenderer::InvalidateDeviceObjects()
 	}
 	fadeTexWidth=fadeTexHeight=numAltitudes=0;
 	SAFE_RELEASE(d3dQuery);
-	skyKeyframer->SetCallback(NULL);
 	return (hr==S_OK);
 }
 
@@ -516,7 +515,7 @@ void SimulSkyRenderer::CreateSkyTextures()
 		LPDIRECT3DTEXTURE9 tex=sky_textures[i];
 		D3DLOCKED_RECT lockedRect={0};
 		if(FAILED(hr=tex->LockRect(0,&lockedRect,NULL,NULL)))
-			return (hr==S_OK);
+			return;
 		if(sky_tex_format==D3DFMT_A16B16G16R16F)
 		{
 			// Convert the array of floats into float16 values for the texture.
