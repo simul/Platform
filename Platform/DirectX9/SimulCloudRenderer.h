@@ -90,14 +90,13 @@ public:
 	// implementing GpuLightingCallback:
 	bool CanPerformGPULighting() const;			
 	void SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3);
-	void PerformFullGPURelight(int which_texture,float *target_direct_grid,float *target_indirect_grid,int num_octaves,float persistence_val,float humidity_val);
+	void PerformFullGPURelight(int which_texture,float *target_direct_grid,int num_octaves,float persistence_val,float humidity_val,float time_val);
 	void GPUTransferDataToTexture(	int which_texture
 									,unsigned char *target_texture
-									,const unsigned char *direct_grid
-									,const unsigned char *indirect_grid
-									,const unsigned char *ambient_grid
+									,const float *light_grid
+									,const float *ambient_grid
 									,int num_octaves,float persistence_val
-									,float humidity_val);
+									,float humidity_val,float time_val);
 protected:
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
@@ -111,7 +110,6 @@ protected:
 	void InternalRenderHorizontal(int buffer_index=0);
 	void InternalRenderRaytrace(int buffer_index=0);
 	void InternalRenderVolumetric(int buffer_index=0);
-	bool InitEffects();
 	bool wrap;
 	struct float2
 	{
@@ -169,7 +167,9 @@ protected:
 	D3DXHANDLE						m_hTechniqueRenderTo2DForSaving;
 	D3DXHANDLE						m_hTechniqueColourLines;	
 	
+	// Things to store for GPU-based lighting
 	LPD3DXEFFECT					m_pGPULightingEffect;
+	IDirect3DSurface9				*gpuLighting2DSurface;
 
 	D3DXHANDLE					worldViewProj;
 	D3DXHANDLE					eyePosition;

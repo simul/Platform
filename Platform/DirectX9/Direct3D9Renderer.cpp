@@ -98,12 +98,14 @@ void Direct3D9Renderer::SetCamera(simul::camera::Camera *c)
 	camera=c;
 }
 
-HRESULT Direct3D9Renderer::OnResetDevice(IDirect3DDevice9* , const D3DSURFACE_DESC* pBackBufferSurfaceDesc)
+HRESULT Direct3D9Renderer::OnResetDevice(IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc)
 {
 	width=pBackBufferSurfaceDesc->Width;
 	height=pBackBufferSurfaceDesc->Height;
 	aspect=width/(float)height;
 	device_reset=true;
+	if(device_reset)
+		RestoreDeviceObjects(pd3dDevice);
 	return S_OK;
 }
 

@@ -782,9 +782,9 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 		glGenTextures(1,&(cloud_tex[i]));
 
 		glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
-		if(sizeof(GL_UNSIGNED_SHORT)==sizeof(simul::clouds::CloudTexelType))
+		if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLushort))
 			glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA4,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_SHORT,0);
-		else if(sizeof(GL_UNSIGNED_SHORT)==sizeof(simul::clouds::CloudTexelType))
+		else if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLuint))
 			glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_INT,0);
 
 		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -827,7 +827,7 @@ ERROR_CHECK
 
 			glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
 ERROR_CHECK
-			if(sizeof(simul::clouds::CloudTexelType)==2)
+			if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLushort))
 			{
 				unsigned short *uint16_array=(unsigned short *)texture_fill.uint32_array;
 				glTexSubImage3D(	GL_TEXTURE_3D,0,
@@ -837,7 +837,7 @@ ERROR_CHECK
 									uint16_array);
 ERROR_CHECK
 			}
-			else if(sizeof(simul::clouds::CloudTexelType)==4)
+			else if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLuint))
 			{
 				glTexSubImage3D(	GL_TEXTURE_3D,0,
 									texture_fill.x,texture_fill.y,texture_fill.z,

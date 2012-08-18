@@ -22,14 +22,12 @@
 #include "Simul/Math/Decay.h"
 
 #ifdef _MSC_VER
-// for wglGetProcAddress
-#include <Windows.h>
-GLenum buffer_tex_format=GL_FLOAT;//GL_HALF_FLOAT_NV;
-GLenum internal_buffer_format=GL_RGBA32F_ARB;//GL_RGBA16F_ARB;
-#else
-GLenum buffer_tex_format=GL_FLOAT;
-GLenum internal_buffer_format=GL_RGBA32F_ARB;
+	// for wglGetProcAddress
+	#include <Windows.h>
 #endif
+
+static const GLenum buffer_tex_format		=GL_FLOAT;
+static const GLenum internal_buffer_format	=GL_RGBA32F_ARB;
 
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,bool usebuffer,bool tonemap,int width,
 		int height,bool sky,bool clouds3d,bool clouds2d,bool rain)
