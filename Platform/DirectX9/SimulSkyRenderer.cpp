@@ -228,11 +228,6 @@ SimulSkyRenderer::~SimulSkyRenderer()
 	InvalidateDeviceObjects();
 }
 
-void SimulSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
-{
-	//FillSkyTex(alt_index,texture_index,texel_index,num_texels,float4_array);
-}
-
 void SimulSkyRenderer::FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
 {
 	HRESULT hr;
@@ -377,37 +372,16 @@ void SimulSkyRenderer::CreateFadeTextures()
 	inscatter_2d.RestoreDeviceObjects(m_pd3dDevice);
 }
 
-void SimulSkyRenderer::FillFadeTexturesSequentially(int texture_index,int texel_index,int num_texels,
-						const float *loss_float4_array,
-						const float *inscatter_float4_array)
-{
-//	FillFadeTex(0,texture_index,texel_index,num_texels,loss_float4_array,inscatter_float4_array);
-}
-
-void SimulSkyRenderer::FillFadeTex(int alt_index,int texture_index,int texel_index,int num_texels,
+void SimulSkyRenderer::FillFadeTexturesSequentially(int alt_index,int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
 						const float *inscatter_float4_array)
 {
 	texel_index+=alt_index*fadeTexWidth*fadeTexHeight;
 	HRESULT hr=S_OK;
-	D3DLOCKED_RECT lockedRect={0};
 	D3DLOCKED_BOX lockedBox={0};
-	D3DSURFACE_DESC desc;
 	D3DVOLUME_DESC desc3d;
-	LPDIRECT3DTEXTURE9 tex=NULL;
 	LPDIRECT3DVOLUMETEXTURE9 tex3d=NULL;
 	void *tex_ptr=NULL;
-	if(0&&numAltitudes<=1)
-	{
-		tex=(LPDIRECT3DTEXTURE9)loss_textures[texture_index];
-		if(!tex)
-			return;
-		if(FAILED(hr=tex->LockRect(0,&lockedRect,NULL,NULL)))
-			return;
-		tex->GetLevelDesc(0,&desc);
-		tex_ptr=lockedRect.pBits;
-	}
-	else
 	{
 		tex3d=(LPDIRECT3DVOLUMETEXTURE9)loss_textures[texture_index];
 		tex3d->GetLevelDesc(0,&desc3d);
@@ -431,21 +405,7 @@ void SimulSkyRenderer::FillFadeTex(int alt_index,int texture_index,int texel_ind
 		float *float_ptr=(float *)(tex_ptr);
 		float_ptr+=4*texel_index;
 		memcpy(float_ptr,loss_float4_array,4*num_texels*sizeof(float));
-		//for(int i=0;i<num_texels*4;i++)
-		//	*float_ptr++=(*loss_float4_array++);
 	}
-	if(0&&numAltitudes<=1)
-	{
-		hr=tex->UnlockRect(0);
-		tex=(LPDIRECT3DTEXTURE9)inscatter_textures[texture_index];
-		if(!tex)
-			return;
-		if(FAILED(hr=tex->LockRect(0,&lockedRect,NULL,NULL)))
-			return;
-		tex->GetLevelDesc(0,&desc);
-		tex_ptr=lockedRect.pBits;
-	}
-	else
 	{
 		hr=tex3d->UnlockBox(0);
 		tex3d=(LPDIRECT3DVOLUMETEXTURE9)inscatter_textures[texture_index];
@@ -475,10 +435,7 @@ void SimulSkyRenderer::FillFadeTex(int alt_index,int texture_index,int texel_ind
 		//for(int i=0;i<num_texels*4;i++)
 		//	*float_ptr++=(*inscatter_float4_array++);
 	}
-	if(0&&numAltitudes<=1)
-		hr=tex->UnlockRect(0);
-	else
-		hr=tex3d->UnlockBox(0);
+	hr=tex3d->UnlockBox(0);
 
 }
 
@@ -502,12 +459,6 @@ void SimulSkyRenderer::CreateSkyTextures()
 	}
 	for(int i=0;i<3;i++)
 	{
-		if(0&&numAltitudes<=1)
-		{
-			if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,skyTexSize,1,1,0,sky_tex_format,d3d_memory_pool,&sky_textures[i])))
-				return;
-		}
-		else
 		{
 			if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,skyTexSize,numAltitudes,1,0,sky_tex_format,d3d_memory_pool,&sky_textures[i])))
 				return;
@@ -529,7 +480,7 @@ void SimulSkyRenderer::CreateSkyTextures()
 		{
 			// Convert the array of floats into float16 values for the texture.
 			float *float_ptr=(float *)(lockedRect.pBits);
-			for(unsigned i=0;i<skyTexSize*4;i++)
+			for(int i=0;i<skyTexSize*4;i++)
 				*float_ptr++=0.f;
 		}
 		hr=tex->UnlockRect(0);
@@ -789,7 +740,7 @@ void SimulSkyRenderer::EnsureTexturesAreUpToDate()
 			texture_fill=skyKeyframer->GetSequentialFadeTextureFill(j,i,fade_texture_iterator[i][j]);
 			if(texture_fill.num_texels&&sky_textures[i])
 			{
-				FillFadeTex(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1,(const float*)texture_fill.float_array_2);
+				FillFadeTexturesSequentially(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1,(const float*)texture_fill.float_array_2);
 			}
 		}
 	}

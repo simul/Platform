@@ -179,7 +179,7 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	return output;
 }
 
-float4 PS_Main( vertexOutput IN): color
+float4 PS_Main( vertexOutput IN): COLOR
 {
 	float3 view=normalize(IN.wDirection.xyz);
 #ifdef Y_VERTICAL
@@ -202,7 +202,7 @@ float4 PS_Main( vertexOutput IN): color
 	return float4(output,1.f);
 }
 
-float4 PS_Stars(vertexOutput IN): color
+float4 PS_Stars(vertexOutput IN): COLOR
 {
 	float3 view=normalize(IN.wDirection.xyz);
 #ifdef Y_VERTICAL

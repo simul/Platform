@@ -429,15 +429,14 @@ float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 	float3 accum=float3(0.f,0.5f,1.f);
 	for(i=0;i<32;i++)
 	{
-		texc.y=i/32.f;
 		float4 density=tex3D(cloud_density_1,texc);
-		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.z+lightResponse.y*density.y);
+		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.z);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
-		float opacity=density.x+.05f;
+		float opacity=density.x;
 		colour*=opacity;
-		accum*=0.9998f;
 		accum*=1.f-opacity;
 		accum+=colour;
+		texc.y+=1.f/32.f;
 	}
     return float4(accum,1);
 }
@@ -447,17 +446,16 @@ float4 PS_CrossSectionXY( vertexOutputCS IN): color
 	float3 texc=float3(crossSectionOffset+IN.texCoords.x,crossSectionOffset+IN.texCoords.y,0.125);
 	int i=0;
 	float3 accum=float3(0.f,0.5f,1.f);
-	for(i=0;i<16;i++)
+	for(i=0;i<32;i++)
 	{
-		texc.z=i/16.f;
 		float4 density=tex3D(cloud_density_1,texc);
-		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.z+lightResponse.y*density.y);
+		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.z);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
-		float opacity=density.x+.05f;
+		float opacity=density.x;//+.05f;
 		colour*=opacity;
-		accum*=0.9998f;
 		accum*=1.f-opacity;
 		accum+=colour;
+		texc.z+=1.f/32.f;
 	}
     return float4(accum,1);
 }

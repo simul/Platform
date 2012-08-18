@@ -73,6 +73,11 @@ void SimulGLSkyRenderer::SetSkyTexSize(unsigned size)
 	if(!initialized)
 		return;
 	skyTexSize=size;
+	CreateSkyTextures();
+}
+
+void SimulGLSkyRenderer::CreateSkyTextures()
+{
 //	delete [] short_ptr;
 //	short_ptr=new short[skyTexSize*4];
 	if(0&&numAltitudes==1)

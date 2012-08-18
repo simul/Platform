@@ -143,6 +143,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glut32.lib glew32.lib"
+				ShowProgress="2"
 				OutputFile="$(OutDir)\$(SafeParentName)_MD.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
@@ -438,6 +439,114 @@
 			</File>
 			<File
 				RelativePath=".\SimulOpticsRendererGL.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Shaders"
+			>
+			<File
+				RelativePath=".\GLSL\simul_atmospherics.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_atmospherics.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_cloud_cross_section.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_cloud_cross_section.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_cloudmix.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_cloudmix.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_clouds.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_clouds.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_clouds_2d.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_clouds_2d.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_fade_3d_to_2d.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_fade_3d_to_2d.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_flare.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_lightning.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_lightning.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_planet.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_sky.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_sky.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_stars.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_sun.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_sun.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_sun_planet_flare.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_terrain.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_terrain.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\tonemap.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\tonemap.vert"
 				>
 			</File>
 		</Filter>

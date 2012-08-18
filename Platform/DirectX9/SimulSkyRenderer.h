@@ -95,16 +95,6 @@ public:
 	void SetStepsPerDay(int s);
 //! Implement the SkyTexturesCallback
 	void SetSkyTextureSize(unsigned size);
-	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void FillFadeTexturesSequentially(int,int,int,
-						const float *,
-						const float *);
-	void FillFadeTextureBlocks(int,int,int,int,int,int,int,
-						const float *,
-						const float *)
-	{
-	}
-	
 	void FillDistanceTexture(int num_elevs_width,int num_alts_height,const float *dist_array);
 	float CalcSunOcclusion(float cloud_occlusion);
 
@@ -114,7 +104,7 @@ public:
 	void SetYVertical(bool y);
 protected:
 	void FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void FillFadeTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *loss_float4_array,const float *inscatter_float4_array);
+	void FillFadeTexturesSequentially(int alt_index,int texture_index,int texel_index,int num_texels,const float *loss_float4_array,const float *inscatter_float4_array);
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate();
 	void EnsureTextureCycle();
