@@ -16,6 +16,7 @@
 #include <map>
 #include <string>
 #include "Simul/Platform/DirectX9/Export.h"
+#include "Simul/Clouds/BaseCloudRenderer.h"
 enum ShaderModel {NO_SHADERMODEL=0,USE_SHADER_2,USE_SHADER_2A,USE_SHADER_3};
 extern ShaderModel SIMUL_DIRECTX9_EXPORT GetShaderModel();
 extern void SIMUL_DIRECTX9_EXPORT SetMaxShaderModel(ShaderModel m);
@@ -40,7 +41,18 @@ extern HRESULT SIMUL_DIRECTX9_EXPORT CanUseDepthFormat(IDirect3DDevice9 *device,
 extern HRESULT SIMUL_DIRECTX9_EXPORT CanUse16BitFloats(IDirect3DDevice9 *device);
 
 extern HRESULT SIMUL_DIRECTX9_EXPORT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos);
-extern HRESULT SIMUL_DIRECTX9_EXPORT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,LPDIRECT3DBASETEXTURE9 texture,
+
+SIMUL_DIRECTX9_EXPORT_CLASS RT
+{
+	static int count;
+public:
+	RT();
+	~RT();
+	static void RestoreDeviceObjects(IDirect3DDevice9 *m_pd3dDevice);
+	static void InvalidateDeviceObjects();
+	static LPDIRECT3DVERTEXDECLARATION9 m_pBufferVertexDecl;
+};
+extern HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,LPDIRECT3DBASETEXTURE9 texture,
 							 LPD3DXEFFECT eff=NULL,D3DXHANDLE tech=NULL);
 
 extern void SIMUL_DIRECTX9_EXPORT SetBundleShaders(bool b);
@@ -61,3 +73,6 @@ extern LPDIRECT3DSURFACE9 SIMUL_DIRECTX9_EXPORT MakeRenderTarget(const LPDIRECT3
 
 
 extern void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir=NULL);
+
+
+extern std::map<std::string,std::string> MakeDefinesList(simul::clouds::BaseCloudRenderer::FadeMode fade_mode,bool wrap,bool y_vertical);

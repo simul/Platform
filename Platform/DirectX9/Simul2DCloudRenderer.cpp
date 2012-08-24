@@ -559,7 +559,7 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 	return debug_text;
 }
 
-bool Simul2DCloudRenderer::RenderCrossSections(int screen_width)
+void Simul2DCloudRenderer::RenderCrossSections(int screen_width,int screen_height)
 {
 	int w=(screen_width-16)/6;
 	HRESULT hr=S_OK;
@@ -577,7 +577,7 @@ bool Simul2DCloudRenderer::RenderCrossSections(int screen_width)
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(m_pBufferVertexDecl);
-	B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
+	V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
 #ifdef XBOX
 	float x=-1.f,y=1.f;
 	float w=2.f;
@@ -633,5 +633,4 @@ bool Simul2DCloudRenderer::RenderCrossSections(int screen_width)
 	m_pd3dDevice->SetTexture(0,cloud_textures[2]);
 	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
 	SAFE_RELEASE(m_pBufferVertexDecl);
-	return (hr==S_OK);
 }

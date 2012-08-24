@@ -84,7 +84,7 @@ void OpenGLRenderer::paintGL()
 		{
 			SetTopDownOrthoProjection(width,height);
 			if(ShowCloudCrossSections)
-				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width);
+				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width,height);
 		}
 	}
 	renderUI();

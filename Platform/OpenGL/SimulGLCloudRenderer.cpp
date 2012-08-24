@@ -212,8 +212,7 @@ void SimulGLCloudRenderer::FillIlluminationBlock(int source_index,int x,int y,in
 						uchar8_array);
 }
 
-void SimulGLCloudRenderer::GPUTransferDataToTexture(	int which_texture
-									,unsigned char *target_texture
+void SimulGLCloudRenderer::GPUTransferDataToTexture(	unsigned char *target_texture
 									,const unsigned char *direct_grid
 									,const unsigned char *indirect_grid
 									,const unsigned char *ambient_grid)
@@ -776,7 +775,7 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
 	int *tex=new int[3*depth_z];
-	//glGenTextures(3,cloud_tex);
+
 	for(int i=0;i<3;i++)
 	{
 		glGenTextures(1,&(cloud_tex[i]));
@@ -875,7 +874,7 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 	}
 }
 
-void SimulGLCloudRenderer::RenderCrossSections(int width)
+void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
 {
 	int w=(width-16)/3;
 	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");

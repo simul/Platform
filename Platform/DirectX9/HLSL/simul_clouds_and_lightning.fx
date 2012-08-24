@@ -37,6 +37,22 @@ sampler3D cloud_density_1= sampler_state
 	AddressW = Clamp;
 	SRGBTexture = 0;
 };
+sampler3D cloud_density_1a= sampler_state 
+{
+    Texture = <cloudDensity1>;
+    MipFilter = POINT;
+    MinFilter = POINT;
+    MagFilter = POINT;
+#ifdef WRAP_CLOUDS
+	AddressU = Wrap;
+	AddressV = Wrap;
+#else
+	AddressU = Clamp;
+	AddressV = Clamp;
+#endif
+	AddressW = Clamp;
+	SRGBTexture = 0;
+};
 
 texture cloudDensity2;
 sampler3D cloud_density_2= sampler_state 
@@ -124,7 +140,7 @@ float3 lightDir : Direction;
 float3 skylightColour;
 float4 fractalScale;
 float interp;
-float crossSectionOffset;
+float3 crossSectionOffset;
 // Noise in raytracing:
 float fractalRepeatLength;
 // Lightning glow:
@@ -421,41 +437,43 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
 	//OUT.colour=IN.colour;
     return OUT;
 }
-
+#define CROSS_SECTION_STEPS 1
 float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 {
-	float3 texc=float3(crossSectionOffset+IN.texCoords.x,0,1.0-IN.texCoords.y);
+	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,0,crossSectionOffset.z+IN.texCoords.y);
 	int i=0;
 	float3 accum=float3(0.f,0.5f,1.f);
-	for(i=0;i<32;i++)
+	texc.y+=.5f/(float)CROSS_SECTION_STEPS;
+	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		float4 density=tex3D(cloud_density_1,texc);
+		float4 density=tex3D(cloud_density_1a,texc);
 		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.z);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.x;
 		colour*=opacity;
 		accum*=1.f-opacity;
 		accum+=colour;
-		texc.y+=1.f/32.f;
+		texc.y+=1.f/(float)CROSS_SECTION_STEPS;
 	}
     return float4(accum,1);
 }
 
 float4 PS_CrossSectionXY( vertexOutputCS IN): color
 {
-	float3 texc=float3(crossSectionOffset+IN.texCoords.x,crossSectionOffset+IN.texCoords.y,0.125);
+	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,crossSectionOffset.y+IN.texCoords.y,0);
 	int i=0;
 	float3 accum=float3(0.f,0.5f,1.f);
-	for(i=0;i<32;i++)
+	texc.z+=.5f/(float)CROSS_SECTION_STEPS;
+	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		float4 density=tex3D(cloud_density_1,texc);
+		float4 density=tex3D(cloud_density_1a,texc);
 		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.z);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.x;//+.05f;
 		colour*=opacity;
 		accum*=1.f-opacity;
 		accum+=colour;
-		texc.z+=1.f/32.f;
+		texc.z+=1.f/(float)CROSS_SECTION_STEPS;
 	}
     return float4(accum,1);
 }

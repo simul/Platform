@@ -796,7 +796,7 @@ bool SimulSkyRenderer::RenderFades(int w,int h)
 	int size=w/4;
 	if(h/(numAltitudes+2)<size)
 		size=h/(numAltitudes+2);
-#if 1
+
 	m_pSkyEffect->SetTexture(fadeTexture2D,inscatter_2d.hdr_buffer_texture);
 	RenderTexture(m_pd3dDevice,8			,32,size,size,inscatter_2d.hdr_buffer_texture,m_pSkyEffect,m_hTechniqueShowFade);
 	m_pSkyEffect->SetTexture(fadeTexture2D,sky_textures[0]);
@@ -819,11 +819,11 @@ bool SimulSkyRenderer::RenderFades(int w,int h)
 		RenderTexture(m_pd3dDevice,8+4*(size+8)+16	,(i)*(size+8)+8,8,size,sky_textures[1],m_pSkyEffect,m_hTechniqueShowSkyTexture);
 
 	}
-#endif
+
 	return (hr==S_OK);
 }
 
-bool SimulSkyRenderer::PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height)
+bool SimulSkyRenderer::PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height,D3DXCOLOR colr,int offsetx,int offsety)
 {
 	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
 #ifndef xbox
@@ -837,8 +837,8 @@ bool SimulSkyRenderer::PrintAt(const float *p,const TCHAR *text,int screen_width
 	D3DXVECTOR4 pos(p[0],p[1],p[2],1.f);
 	D3DXVECTOR4 screen_pos;
 	D3DXVec4Transform(&screen_pos,&pos,&wvp);
-	float x=0.5f*(screen_pos.x/screen_pos.w+1.f)*screen_width;//screen_pos.z;
-	float y=0.5f*(1.f-screen_pos.y/screen_pos.w)*screen_height;//screen_pos.z;
+	float x=0.5f*(screen_pos.x/screen_pos.w+1.f)*screen_width+offsetx;
+	float y=0.5f*(1.f-screen_pos.y/screen_pos.w)*screen_height+offsety;
 	RECT rcDest;
 	rcDest.left=(long)x-32;
 	rcDest.bottom=(long)y+32;
@@ -848,7 +848,7 @@ bool SimulSkyRenderer::PrintAt(const float *p,const TCHAR *text,int screen_width
 	DWORD dwTextFormat = DT_CENTER |  DT_NOCLIP ;//DT_CALCRECT;
 	if(screen_pos.w<0)
 		return (hr==S_OK);
-	hr = m_pFont->DrawText(NULL,text,-1,&rcDest,dwTextFormat,D3DXCOLOR(1.f,1.f,1.f,1.f));
+	hr = m_pFont->DrawText(NULL,text,-1,&rcDest,dwTextFormat,colr);
 	return (hr==S_OK);
 }
 
@@ -1019,21 +1019,24 @@ bool SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height
 
 	hr=m_pSkyEffect->EndPass();
 	hr=m_pSkyEffect->End();
-	TCHAR * compass[]={_T("N"),
+	TCHAR * compass[]={	_T("N"),
 						_T("NE"),
 						_T("E"),
 						_T("SE"),
 						_T("S"),
 						_T("SW"),
 						_T("W"),
-						_T("NW")};
+						_T("NW")	};
+	D3DXCOLOR shadow(0.f,0.f,0.f,0.5f);
+	D3DXCOLOR light(1.f,1.f,1.f,1.f);
 	for(int i=0;i<8;i++)
 	{
 		float angle=2.f*pi*(float)i/8.f;
-		D3DXVECTOR4 pos( sin(angle), cos(angle), -0.05f, 1.f)	;
+		D3DXVECTOR4 pos( sin(angle), cos(angle), -0.05f, 1.f);
 		if(y_vertical)
 			std::swap(pos.y,pos.z);
-		PrintAt(pos,compass[i],screen_width,screen_height);
+		PrintAt(pos,compass[i],screen_width,screen_height,shadow,2,2);
+		PrintAt(pos,compass[i],screen_width,screen_height,light);
 	}
 	delete [] lines;
 	delete [] moon_lines;

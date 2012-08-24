@@ -951,6 +951,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GpuCloudGenerator.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SaveTexture.cpp"
 				>
 			</File>
@@ -1014,6 +1018,10 @@
 			</File>
 			<File
 				RelativePath=".\Framebuffer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\GpuCloudGenerator.h"
 				>
 			</File>
 			<File

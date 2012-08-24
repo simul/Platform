@@ -479,6 +479,44 @@ HRESULT CanUse16BitFloats(IDirect3DDevice9 *device)
 		std::cout<<"Cannot create 16-bit float textures"<<std::endl;
 	return hr;
 }
+LPDIRECT3DVERTEXDECLARATION9 RT::m_pBufferVertexDecl=NULL;
+int RT::count=0;
+RT::RT()
+{
+	count++;
+}
+
+void RT::RestoreDeviceObjects(IDirect3DDevice9 *m_pd3dDevice)
+{
+	if(m_pBufferVertexDecl==NULL)
+	{
+		// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
+		D3DVERTEXELEMENT9 decl[] = 
+		{
+	#ifdef XBOX
+			{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+			{ 0, 8, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
+			{ 0, 24, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+	#else
+			{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
+			{ 0, 16, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
+			{ 0, 32, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+	#endif
+			D3DDECL_END()
+		};
+		V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
+	}
+}
+void RT::InvalidateDeviceObjects()
+{
+	SAFE_RELEASE(m_pBufferVertexDecl);
+}
+
+RT::~RT()
+{
+	if(!count)
+		RT::InvalidateDeviceObjects();
+}
 
 HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,
 					  LPDIRECT3DBASETEXTURE9 texture,LPD3DXEFFECT eff,D3DXHANDLE tech)
@@ -488,23 +526,6 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&v);
 	m_pd3dDevice->GetTransform(D3DTS_WORLD,&w);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&p);
-	LPDIRECT3DVERTEXDECLARATION9 m_pBufferVertexDecl=NULL;
-	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
-	D3DVERTEXELEMENT9 decl[] = 
-	{
-#ifdef XBOX
-		{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0, 8, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
-		{ 0, 24, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#else
-		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
-		{ 0, 16, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
-		{ 0, 32, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#endif
-		D3DDECL_END()
-	};
-	SAFE_RELEASE(m_pBufferVertexDecl);
-	V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
 #ifdef XBOX
 	float x=-1.f,y=1.f;
 	float w=2.f;
@@ -533,16 +554,16 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	float width=(float)dx,height=(float)dy;
 	Vertext vertices[4] =
 	{
-		{x,			y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
-		{x+width,	y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
-		{x+width,	y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
-		{x,			y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
+		{x,			y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
+		{x+width,	y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
+		{x+width,	y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
+		{x,			y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
 	};
 #endif
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
 
-	m_pd3dDevice->SetVertexDeclaration(m_pBufferVertexDecl);
+	m_pd3dDevice->SetVertexDeclaration(RT::m_pBufferVertexDecl);
    // m_pd3dDevice->SetVertexShader(NULL);
    // m_pd3dDevice->SetPixelShader(NULL);
 
@@ -579,7 +600,6 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 		eff->EndPass();
 		eff->End();
 	}
-	SAFE_RELEASE(m_pBufferVertexDecl);
 	m_pd3dDevice->SetTransform(D3DTS_VIEW,&v);
 	m_pd3dDevice->SetTransform(D3DTS_WORLD,&w);
 	m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&p);
@@ -920,4 +940,22 @@ void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *
 			view_dir[2]=-view._33;
 		}
 	}
+}
+
+
+std::map<std::string,std::string> MakeDefinesList(simul::clouds::BaseCloudRenderer::FadeMode fade_mode,bool wrap,bool y_vertical)
+{
+	std::map<std::string,std::string> defines;
+	if(fade_mode==simul::clouds::BaseCloudRenderer::FRAGMENT)
+		defines["FADE_MODE"]="1";
+	if(fade_mode==simul::clouds::BaseCloudRenderer::CPU)
+		defines["FADE_MODE"]="0";
+	defines["DETAIL_NOISE"]="1";
+	if(wrap)
+		defines["WRAP_CLOUDS"]="1";
+	if(!y_vertical)
+		defines["Z_VERTICAL"]='1';
+	else
+		defines["Y_VERTICAL"]='1';
+	return defines;
 }

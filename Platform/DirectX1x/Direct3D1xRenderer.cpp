@@ -123,6 +123,19 @@ void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11De
 		simulHDRRenderer->FinishRender();
 	if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->RenderFades(ScreenWidth,ScreenHeight);
+	if(simulWeatherRenderer&&ShowCloudCrossSections)
+	{
+		if(simulWeatherRenderer->IsCloudLayer1Visible())
+		{
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(ScreenWidth,ScreenHeight);
+		//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
+		}
+		if(simulWeatherRenderer->IsCloudLayer2Visible())
+		{
+		//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(ScreenWidth,ScreenHeight);
+		}
+	}
+	
 }
 
 void	Direct3D11Renderer::OnD3D11LostDevice()

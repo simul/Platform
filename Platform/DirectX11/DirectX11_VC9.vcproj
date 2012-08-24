@@ -453,86 +453,50 @@
 			>
 		</Filter>
 		<Filter
-			Name="GLSL"
+			Name="HLSL"
 			>
 			<File
-				RelativePath="..\OpenGL\GLSL\simul_cloud_cross_section.frag"
+				RelativePath=".\HLSL\atmospherics.fx"
 				>
 			</File>
 			<File
-				RelativePath="..\OpenGL\GLSL\simul_cloud_cross_section.vert"
+				RelativePath=".\HLSL\gamma.fx"
 				>
 			</File>
 			<File
-				RelativePath="..\OpenGL\GLSL\simul_clouds.frag"
+				RelativePath=".\HLSL\simul_clouds_2d.fx"
 				>
 			</File>
 			<File
-				RelativePath="..\OpenGL\GLSL\simul_clouds.vert"
+				RelativePath=".\HLSL\simul_clouds_and_lightning_dx11.fx"
 				>
 			</File>
 			<File
-				RelativePath="..\OpenGL\GLSL\simul_clouds_2d.frag"
+				RelativePath=".\HLSL\simul_foliage.fx"
 				>
 			</File>
 			<File
-				RelativePath="..\OpenGL\GLSL\simul_clouds_2d.vert"
+				RelativePath=".\HLSL\simul_gpu_lighting.fx"
 				>
 			</File>
 			<File
-				RelativePath="..\OpenGL\GLSL\simul_fade_3d_to_2d.frag"
+				RelativePath=".\HLSL\simul_lightning.fx"
 				>
 			</File>
 			<File
-				RelativePath="..\OpenGL\GLSL\simul_fade_3d_to_2d.vert"
+				RelativePath=".\HLSL\simul_rain.fx"
 				>
 			</File>
 			<File
-				RelativePath="..\OpenGL\GLSL\simul_flare.frag"
+				RelativePath=".\HLSL\simul_rendernoise.fx"
 				>
 			</File>
 			<File
-				RelativePath="..\OpenGL\GLSL\simul_lightning.frag"
+				RelativePath=".\HLSL\simul_sky.fx"
 				>
 			</File>
 			<File
-				RelativePath="..\OpenGL\GLSL\simul_lightning.vert"
-				>
-			</File>
-			<File
-				RelativePath="..\OpenGL\GLSL\simul_planet.frag"
-				>
-			</File>
-			<File
-				RelativePath="..\OpenGL\GLSL\simul_sky.frag"
-				>
-			</File>
-			<File
-				RelativePath="..\OpenGL\GLSL\simul_sky.vert"
-				>
-			</File>
-			<File
-				RelativePath="..\OpenGL\GLSL\simul_stars.frag"
-				>
-			</File>
-			<File
-				RelativePath="..\OpenGL\GLSL\simul_sun.frag"
-				>
-			</File>
-			<File
-				RelativePath="..\OpenGL\GLSL\simul_sun.vert"
-				>
-			</File>
-			<File
-				RelativePath="..\OpenGL\GLSL\simul_sun_planet_flare.vert"
-				>
-			</File>
-			<File
-				RelativePath="..\OpenGL\GLSL\tonemap.frag"
-				>
-			</File>
-			<File
-				RelativePath="..\OpenGL\GLSL\tonemap.vert"
+				RelativePath=".\HLSL\simul_terrain.fx"
 				>
 			</File>
 		</Filter>

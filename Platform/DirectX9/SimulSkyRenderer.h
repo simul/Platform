@@ -112,7 +112,7 @@ protected:
 	int screen_pixel_height;
 	bool Render2DFades();
 	bool y_vertical;
-	bool PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height);
+	bool PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height,D3DXCOLOR colr,int offsetx=0,int offsety=0);
 	float timing;
 	D3DFORMAT sky_tex_format;
 

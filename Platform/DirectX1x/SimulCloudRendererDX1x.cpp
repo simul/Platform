@@ -110,6 +110,8 @@ ExampleHumidityCallback hm;
 SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cloudKeyframer) :
 	simul::clouds::BaseCloudRenderer(cloudKeyframer),
 	m_hTechniqueLightning(NULL),
+	m_hTechniqueCrossSectionXZ(NULL),
+	m_hTechniqueCrossSectionXY(NULL),
 	m_pd3dDevice(NULL),
 	m_pImmediateContext(NULL),
 	m_pVtxDecl(NULL),
@@ -545,6 +547,9 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	m_hTechniqueCloud					=m_pCloudEffect->GetTechniqueByName("simul_clouds");
 	m_hTechniqueCloudsAndLightning		=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
 
+	m_hTechniqueCrossSectionXY			=m_pCloudEffect->GetTechniqueByName("cross_section_xy");
+	m_hTechniqueCrossSectionXZ			=m_pCloudEffect->GetTechniqueByName("cross_section_xz");
+
 	worldViewProj						=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	eyePosition							=m_pCloudEffect->GetVariableByName("eyePosition")->AsVector();
 	lightResponse						=m_pCloudEffect->GetVariableByName("lightResponse")->AsVector();
@@ -798,6 +803,59 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	else
 		ApplyPass(m_hTechniqueCloud->GetPassByIndex(0));
 	return (hr==S_OK);
+}
+
+void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
+{
+	HRESULT hr=S_OK;
+	static int u=3;
+	int w=(width-8)/u;
+	int h=(w)/GetCloudGridInterface()->GetGridWidth();
+	if(h<1)
+		h=1;
+	h*=GetCloudGridInterface()->GetGridHeight();
+	D3DXVECTOR4 cross_section_offset(
+			(GetCloudInterface()->GetWrap()?0.5f:0.f)+0.5f/(float)cloud_tex_width_x
+			,GetCloudInterface()->GetWrap()?0.5f:0.f+0.5f/(float)cloud_tex_length_y
+			,0.5f/(float)cloud_tex_depth_z
+			,0);
+	Unmap();
+
+	D3DXMATRIX ortho;
+    D3DXMatrixOrthoLH(&ortho,(float)width,(float)height,-100.f,100.f);
+	ortho._14=-1.f;
+	ortho._22=-ortho._22;
+	ortho._24=1.f;
+	ID3D1xEffectMatrixVariable*	worldViewProj=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	worldViewProj->SetMatrix(ortho);
+
+	for(int i=0;i<3;i++)
+	{
+		const simul::clouds::CloudKeyframer::Keyframe *kf=
+				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
+		if(!kf)
+			break;
+		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
+		lightResponse->SetFloatVector((const float*)(&light_response));
+
+		cloudDensity1->SetResource(cloudDensityResource[i%3]);
+		RenderTexture(m_pd3dDevice,i*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
+	}
+	for(int i=0;i<3;i++)
+	{
+		const simul::clouds::CloudKeyframer::Keyframe *kf=
+				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
+		if(!kf)
+			break;
+		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
+		lightResponse->SetFloatVector((const float*)(&light_response));
+		//m_pCloudEffect->SetVector(crossSectionOffset,&cross_section_offset);
+		//GetCloudInterface()->GetWrap()?0.5f:0.f);
+		cloudDensity1->SetResource(cloudDensityResource[i%3]);
+		RenderTexture(m_pd3dDevice,i*(w+1)+4,h+8,w,w,m_hTechniqueCrossSectionXY);
+	}
 }
 
 bool SimulCloudRendererDX1x::RenderLightning()

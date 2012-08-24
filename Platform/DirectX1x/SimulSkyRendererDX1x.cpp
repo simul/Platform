@@ -806,16 +806,16 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 	return (hr==S_OK);
 }
 
-bool SimulSkyRendererDX1x::RenderFades(int w,int h)
+bool SimulSkyRendererDX1x::RenderFades(int width,int h)
 {
 	HRESULT hr=S_OK;
-	int size=w/4;
+	int size=width/4;
 	if(h/(numAltitudes+2)<size)
 		size=h/(numAltitudes+2);
 
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
-    D3DXMatrixOrthoLH(&ident,(float)w,(float)h,-100.f,100.f);
+    D3DXMatrixOrthoLH(&ident,(float)width,(float)h,-100.f,100.f);
 	ID3D1xEffectMatrixVariable*	worldViewProj=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	worldViewProj->SetMatrix(ident);
 
@@ -823,14 +823,11 @@ bool SimulSkyRendererDX1x::RenderFades(int w,int h)
 	ID3D1xEffectShaderResourceVariable*	skyTexture	=m_pSkyEffect->GetVariableByName("skyTexture1")->AsShaderResource();
 
 	skyTexture->SetResource(sky_textures_SRV[0]);
-	hr=ApplyPass(tech->GetPassByIndex(0));
 	RenderTexture(m_pd3dDevice,16+size		,32,8,size,tech);
 	skyTexture->SetResource(sky_textures_SRV[1]);
-	hr=ApplyPass(tech->GetPassByIndex(0));
 	RenderTexture(m_pd3dDevice,32+size		,32,8,size,tech);
 	UnmapSky();
 	skyTexture->SetResource(sky_textures_SRV[2]);
-	hr=ApplyPass(tech->GetPassByIndex(0));
 	RenderTexture(m_pd3dDevice,48+size		,32,8,size,tech);
 /*
 	for(int i=0;i<numAltitudes;i++)
