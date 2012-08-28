@@ -234,7 +234,7 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 {
 	simul::base::Timer timer;
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
-	gpuCloudGenerator.RestoreDeviceObjects(dev);
+	//gpuCloudGenerator.RestoreDeviceObjects(dev);
 	HRESULT hr=S_OK;
 	last_time=0.f;
 	// create the unit-sphere vertex buffer determined by the Cloud Geometry Helper:
@@ -316,7 +316,7 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 
 		<<"\n\tset_callback="<<set_callback<<std::endl;
 
-	cloudKeyframer->SetGpuLightingCallback(&gpuCloudGenerator);
+	//cloudKeyframer->SetGpuLightingCallback(&gpuCloudGenerator);
 	ClearIterators();
 	return (hr==S_OK);
 }
@@ -345,30 +345,7 @@ void SimulCloudRenderer::RecompileShaders()
 {
 	if(!m_pd3dDevice)
 		return;
-	gpuCloudGenerator.RecompileShaders();
-	/*std::map<std::string,std::string> defines;
-	for(int fade_mde=0;fade_mde<2;fade_mde++)
-	{
-		for(int wrap_clouds=0;wrap_clouds<2;wrap_clouds++)
-		{
-			for(int z_vertical=0;z_vertical<2;z_vertical++)
-			{
-				std::string compiled_filename=GetCompiledFilename(fade_mde,wrap_clouds,(bool)z_vertical);
-				if(fade_mde==FRAGMENT)
-					defines["FADE_MODE"]="1";
-				else if(fade_mde==CPU)
-					defines["FADE_MODE"]="0";
-				if(wrap_clouds)
-					defines["WRAP_CLOUDS"]="1";
-				else
-					defines["WRAP_CLOUDS"]="0";
-				if(z_vertical)
-					defines["Z_VERTICAL"]='1';
-				else
-					defines["Y_VERTICAL"]='1';
-			}
-		}
-	}*/
+	//gpuCloudGenerator.RecompileShaders();
 	wrap=GetCloudInterface()->GetWrap();
 	simul::base::Timer timer;
 	std::map<std::string,std::string> defines=MakeDefinesList(fade_mode,GetCloudInterface()->GetWrap(),y_vertical);
@@ -445,7 +422,7 @@ bool SimulCloudRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(raytrace_layer_texture);
 	if(m_pCloudEffect)
         hr=m_pCloudEffect->OnLostDevice();
-	gpuCloudGenerator.InvalidateDeviceObjects();
+//gpuCloudGenerator.InvalidateDeviceObjects();
 
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pHudVertexDecl);
@@ -1398,9 +1375,8 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 	fb.InvalidateDeviceObjects();
 }
 
-void SimulCloudRenderer::RenderCrossSections(int width,int height)
+void SimulCloudRenderer::RenderCrossSections(int width,int )
 {
-	HRESULT hr=S_OK;
 	static int u=3;
 	int w=(width-8)/u;
 	int h=(w)/GetCloudGridInterface()->GetGridWidth();

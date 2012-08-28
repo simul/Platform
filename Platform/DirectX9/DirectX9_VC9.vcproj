@@ -951,10 +951,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\GpuCloudGenerator.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\SaveTexture.cpp"
 				>
 			</File>

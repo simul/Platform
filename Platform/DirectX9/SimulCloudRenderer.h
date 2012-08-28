@@ -20,7 +20,7 @@
 #include "Simul/Graph/Meta/Resource.h"
 #include "Simul/Graph/StandardNodes/ShowProgressInterface.h"
 #include "Simul/Platform/DirectX9/Export.h"
-#include "Simul/Platform/DirectX9/GpuCloudGenerator.h"
+//#include "Simul/Platform/DirectX9/GpuCloudGenerator.h"
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)
@@ -46,7 +46,7 @@ SIMUL_DIRECTX9_EXPORT_CLASS SimulCloudRenderer
 public:
 	SimulCloudRenderer(simul::clouds::CloudKeyframer *ck);
 	virtual ~SimulCloudRenderer();
-	GpuCloudGenerator gpuCloudGenerator;
+	//GpuCloudGenerator gpuCloudGenerator;
 	META_BeginProperties
 		META_ValueRangePropertyWithSetCall(int,NumBuffers,1,2,NumBuffersChanged,"Number of buffers to use in cloud rendering. More = faster.")
 	META_EndProperties
