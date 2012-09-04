@@ -41,11 +41,11 @@ void Framebuffer::SetFormat(D3DFORMAT f)
 	hdr_format=f;
 }
 
-bool Framebuffer::RestoreDeviceObjects(void *dev)
+void Framebuffer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	if(!Width||!Height)
-		return false;
+		return;
 	HRESULT hr=-1;//CanUse16BitFloats(pd3dDevice);
 	SAFE_RELEASE(hdr_buffer_texture);
 	hr=m_pd3dDevice->CreateTexture(	Width,
@@ -115,16 +115,14 @@ bool Framebuffer::RestoreDeviceObjects(void *dev)
 	SAFE_RELEASE(m_pBufferDepthSurface);*/
 	SAFE_RELEASE(m_pHDRRenderTarget);
 	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
-	return true;
 }
 
-bool Framebuffer::InvalidateDeviceObjects()
+void Framebuffer::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(hdr_buffer_texture);
 	SAFE_RELEASE(buffer_depth_texture);
 	SAFE_RELEASE(m_pHDRRenderTarget);
 	SAFE_RELEASE(m_pBufferDepthSurface);
-	return true;
 }
 
 void Framebuffer::Activate()

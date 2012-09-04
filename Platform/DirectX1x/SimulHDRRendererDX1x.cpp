@@ -60,13 +60,15 @@ void SimulHDRRendererDX1x::SetBufferSize(int w,int h)
 	InvalidateDeviceObjects();
 }
 
-bool SimulHDRRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapChain* pSwapChain)
+void SimulHDRRendererDX1x::RestoreDeviceObjects(void *x)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=dev;
-	framebuffer->RestoreDeviceObjects(dev);
+	void **u=(void**)x;
+	m_pd3dDevice=(ID3D1xDevice*)u[0];
+	framebuffer->RestoreDeviceObjects(m_pd3dDevice);
 
 	ID3D1xTexture2D *pBackBuffer=NULL;
+	IDXGISwapChain *pSwapChain=(IDXGISwapChain *)u[1];
 	pSwapChain->GetBuffer(0,__uuidof(ID3D1xTexture2D),(void**)&pBackBuffer);
 	D3D1x_TEXTURE2D_DESC desc;
 	pBackBuffer->GetDesc(&desc);
@@ -79,7 +81,6 @@ bool SimulHDRRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapChain
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
 	RecompileShaders();
-	return (hr==S_OK);
 }
 
 void SimulHDRRendererDX1x::RecompileShaders()
@@ -97,7 +98,7 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 }
 
-bool SimulHDRRendererDX1x::InvalidateDeviceObjects()
+void SimulHDRRendererDX1x::InvalidateDeviceObjects()
 {
 	framebuffer->InvalidateDeviceObjects();
 	HRESULT hr=S_OK;
@@ -108,13 +109,12 @@ bool SimulHDRRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pVertexBuffer);
 
 	SAFE_RELEASE(m_pTonemapEffect);
-
-	return (hr==S_OK);
 }
 
 bool SimulHDRRendererDX1x::Destroy()
 {
-	return InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
+	return true;
 }
 
 SimulHDRRendererDX1x::~SimulHDRRendererDX1x()

@@ -148,7 +148,7 @@ void OpenGLRenderer::initializeGL()
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->RestoreDeviceObjects();
+		simulWeatherRenderer->RestoreDeviceObjects(NULL);
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects();
 	if(simulOpticsRenderer)

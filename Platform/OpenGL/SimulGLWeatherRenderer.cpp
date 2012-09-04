@@ -108,7 +108,7 @@ void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
 	}
 }
 
-bool SimulGLWeatherRenderer::RestoreDeviceObjects()
+void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 {
 	GLenum res=glewInit();
 	
@@ -141,9 +141,8 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 	//simulCloudRenderer->RestoreDeviceObjects(NULL);
 	//simulLightningRenderer->RestoreDeviceObjects();
 	simulAtmosphericsRenderer->RestoreDeviceObjects(NULL);
-	return true;
 }
-bool SimulGLWeatherRenderer::InvalidateDeviceObjects()
+void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 {
 	if(simulSkyRenderer)
 		simulSkyRenderer->InvalidateDeviceObjects();
@@ -155,7 +154,6 @@ bool SimulGLWeatherRenderer::InvalidateDeviceObjects()
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
 	if(scene_buffer)
 		scene_buffer->InvalidateDeviceObjects();
-	return true;
 }
 
 bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)

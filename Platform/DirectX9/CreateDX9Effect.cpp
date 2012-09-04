@@ -60,6 +60,7 @@ static ShaderModel shaderModel=NO_SHADERMODEL;
 static ShaderModel maxShaderModel=USE_SHADER_3;
 static bool shader_path_set=false;
 static bool texture_path_set=false;
+ID3DXFont *m_pFont=NULL;
 namespace simul
 {
 	namespace dx9
@@ -107,13 +108,12 @@ void SetResourceModule(const char *txt)
 #endif
 }
 
-
-
 ShaderModel GetShaderModel()
 {
 	return shaderModel;
 }
 LPDIRECT3DDEVICE9 last_d3dDevice=0;
+LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl=NULL;
 
 static const char *GetPixelShaderString(const D3DCAPS9 &caps)
 {
@@ -506,10 +506,20 @@ void RT::RestoreDeviceObjects(IDirect3DDevice9 *m_pd3dDevice)
 		};
 		V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
 	}
+	D3DVERTEXELEMENT9 decl[] = 
+	{
+		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 12, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
+		D3DDECL_END()
+	};
+	SAFE_RELEASE(m_pHudVertexDecl);
+	V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
 }
 void RT::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_pBufferVertexDecl);
+	SAFE_RELEASE(m_pHudVertexDecl);
+	SAFE_RELEASE(m_pFont);
 }
 
 RT::~RT()
@@ -635,8 +645,6 @@ void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical
 	}
 	proj._43=-zNear*zFar/(zFar-zNear);
 }
-
-LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl=NULL;
 
 HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 {
@@ -958,4 +966,50 @@ std::map<std::string,std::string> MakeDefinesList(simul::clouds::BaseCloudRender
 	else
 		defines["Y_VERTICAL"]='1';
 	return defines;
+}
+
+
+bool PrintAt(LPDIRECT3DDEVICE9 m_pd3dDevice,const float *p,const TCHAR *text,int screen_width,int screen_height,D3DXCOLOR colr,int offsetx,int offsety)
+{
+	if(!m_pFont)
+	{
+		V_CHECK(D3DXCreateFont(m_pd3dDevice,32,0,FW_NORMAL,1,FALSE,DEFAULT_CHARSET,
+								OUT_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_DONTCARE,
+								_T("Arial"),&m_pFont));
+	}
+
+	HRESULT hr=S_OK;
+	D3DXMATRIX tmp1,tmp2,wvp,world,view,proj;
+#ifndef xbox
+	m_pd3dDevice->GetTransform(D3DTS_WORLD,&world);
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+#endif
+	D3DXMatrixMultiply(&tmp1,&world,&view);
+	D3DXMatrixMultiply(&wvp,&tmp1,&proj);
+
+	D3DXVECTOR4 pos(p[0],p[1],p[2],1.f);
+	D3DXVECTOR4 screen_pos;
+	D3DXVec4Transform(&screen_pos,&pos,&wvp);
+	float x=0.5f*(screen_pos.x/screen_pos.w+1.f)*screen_width+offsetx;
+	float y=0.5f*(1.f-screen_pos.y/screen_pos.w)*screen_height+offsety;
+	RECT rcDest;
+	rcDest.left=(long)x-32;
+	rcDest.bottom=(long)y+32;
+	rcDest.right=(long)x+32;
+	rcDest.top=(long)y-32;
+
+	DWORD dwTextFormat = DT_CENTER |  DT_NOCLIP ;//DT_CALCRECT;
+	if(screen_pos.w<0)
+		return (hr==S_OK);
+	hr = m_pFont->DrawText(NULL,text,-1,&rcDest,dwTextFormat,colr);
+	return (hr==S_OK);
+}
+
+void DrawLines(LPDIRECT3DDEVICE9 m_pd3dDevice,Vertext *lines,int count,bool strip)
+{
+
+	m_pd3dDevice->SetVertexDeclaration(m_pHudVertexDecl);
+	m_pd3dDevice->SetTexture(0,NULL);
+	V_CHECK(m_pd3dDevice->DrawPrimitiveUP(strip?D3DPT_LINESTRIP:D3DPT_LINELIST,count,lines,(unsigned)sizeof(Vertext)));
 }

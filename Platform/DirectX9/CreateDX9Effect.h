@@ -59,20 +59,21 @@ extern void SIMUL_DIRECTX9_EXPORT SetBundleShaders(bool b);
 extern void SIMUL_DIRECTX9_EXPORT SetResourceModule(const char *txt);
 extern void SIMUL_DIRECTX9_EXPORT FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical);
 extern void SIMUL_DIRECTX9_EXPORT FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical);
-
 extern void SIMUL_DIRECTX9_EXPORT SetResourceModule(const char *txt);
-
 extern void SIMUL_DIRECTX9_EXPORT MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);
-
 extern HRESULT RenderAngledQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,D3DXVECTOR3 cam_pos,D3DXVECTOR3 dir,bool y_vertical,float half_angle_radians,LPD3DXEFFECT effect);
 extern HRESULT SIMUL_DIRECTX9_EXPORT DrawFullScreenQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT effect);
 extern bool SIMUL_DIRECTX9_EXPORT IsDepthFormatOk(LPDIRECT3DDEVICE9 pd3dDevice,D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
-
-
 extern LPDIRECT3DSURFACE9 SIMUL_DIRECTX9_EXPORT MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture);
-
-
 extern void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir=NULL);
-
-
 extern std::map<std::string,std::string> MakeDefinesList(simul::clouds::BaseCloudRenderer::FadeMode fade_mode,bool wrap,bool y_vertical);
+
+extern bool PrintAt(LPDIRECT3DDEVICE9 m_pd3dDevice,const float *p,const TCHAR *text,int screen_width,int screen_height,D3DXCOLOR colr,int offsetx=0,int offsety=0);
+
+struct Vertext
+{
+	float x,y,z;
+	float r,g,b,a;
+};
+
+extern void DrawLines(LPDIRECT3DDEVICE9 m_pd3dDevice,Vertext *lines,int count,bool strip=false);

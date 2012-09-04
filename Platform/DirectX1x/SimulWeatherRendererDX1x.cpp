@@ -102,10 +102,13 @@ void SimulWeatherRendererDX1x::SetScreenSize(int w,int h)
 	BufferHeight=h/Downscale;
 	
 }
-bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapChain *swapChain)
+
+void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
+//ID3D1xDevice* dev,IDXGISwapChain *swapChain)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=dev;
+	void **u=(void**)x;
+	m_pd3dDevice=(ID3D1xDevice*)u[0];
 	
 #ifdef DX10
 	m_pImmediateContext=dev;
@@ -118,7 +121,7 @@ bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapC
 	framebuffer_cubemap.SetWidthAndHeight(64,64);
 	framebuffer_cubemap.RestoreDeviceObjects(m_pd3dDevice);
 
-	pSwapChain=swapChain;
+	pSwapChain=(IDXGISwapChain *)u[1];
 // Get the back buffer (screen) format so we know how to render the weather buffer to the screen:
 	ID3D1xTexture2D *pBackBuffer=NULL;
 	pSwapChain->GetBuffer(0,__uuidof(ID3D1xTexture2D),(void**)&pBackBuffer);
@@ -131,7 +134,7 @@ bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapC
 
 	if(simulCloudRenderer)
 	{
-		B_RETURN(simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
+		simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice);
 		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 	}
 /*	if(simul2DCloudRenderer)
@@ -140,7 +143,7 @@ bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapC
 	}*/
 	if(simulSkyRenderer)
 	{
-		B_RETURN(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
+		simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice);
 	//	if(simulCloudRenderer)
 //			simulSkyRenderer->SetOvercastFactor(simulCloudRenderer->GetOvercastFactor());
 	}
@@ -157,12 +160,10 @@ bool SimulWeatherRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev,IDXGISwapC
 		simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
 
 	MakeCubeMatrices(view_matrices);
-	return (hr==S_OK);
 }
 
-bool SimulWeatherRendererDX1x::InvalidateDeviceObjects()
+void SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 {
-	HRESULT hr=S_OK;
 	framebuffer.InvalidateDeviceObjects();
 	framebuffer_cubemap.InvalidateDeviceObjects();
 	if(simulSkyRenderer)
@@ -180,7 +181,6 @@ bool SimulWeatherRendererDX1x::InvalidateDeviceObjects()
       
 // Free the cubemap resources. 
 	SAFE_RELEASE(m_pImmediateContext);
-	return (hr==S_OK);
 }
 
 bool SimulWeatherRendererDX1x::Destroy()

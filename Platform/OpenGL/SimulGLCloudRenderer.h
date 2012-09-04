@@ -33,8 +33,8 @@ public:
 	//standard ogl object interface functions
 	bool Create();
 	void RecompileShaders();
-	bool RestoreDeviceObjects(void*);
-	bool InvalidateDeviceObjects();
+	void RestoreDeviceObjects(void*);
+	void InvalidateDeviceObjects();
 	//! Render the clouds.
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
 	//! Show the cross sections on-screen.

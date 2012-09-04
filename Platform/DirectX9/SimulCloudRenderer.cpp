@@ -230,27 +230,26 @@ void SimulCloudRenderer::EnableFilter(bool )
 		cloudNode->GetNoiseInterface()->SetFilter(NULL);*/
 }
 
-bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
+void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 {
 	simul::base::Timer timer;
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	//gpuCloudGenerator.RestoreDeviceObjects(dev);
-	HRESULT hr=S_OK;
 	last_time=0.f;
 	// create the unit-sphere vertex buffer determined by the Cloud Geometry Helper:
 	SAFE_RELEASE(raytrace_layer_texture);
 	
-	B_RETURN(D3DXCreateTexture(m_pd3dDevice,128,1,1,0,D3DFMT_A32B32G32R32F,d3d_memory_pool,&raytrace_layer_texture))
+	V_CHECK(D3DXCreateTexture(m_pd3dDevice,128,1,1,0,D3DFMT_A32B32G32R32F,d3d_memory_pool,&raytrace_layer_texture))
 
 	float create_raytrace_layer=timer.UpdateTime()/1000.f;
 
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	helper->GenerateSphereVertices();
-	B_RETURN(m_pd3dDevice->CreateVertexBuffer((unsigned)(helper->GetVertices().size()*sizeof(PosVert_t)),D3DUSAGE_WRITEONLY,0,
+	V_CHECK(m_pd3dDevice->CreateVertexBuffer((unsigned)(helper->GetVertices().size()*sizeof(PosVert_t)),D3DUSAGE_WRITEONLY,0,
 									  D3DPOOL_DEFAULT, &unitSphereVertexBuffer,
 									  NULL));
 	PosVert_t *unit_sphere_vertices;
-	B_RETURN(unitSphereVertexBuffer->Lock(0,sizeof(PosVert_t),(void**)&unit_sphere_vertices,0 ));
+	V_CHECK(unitSphereVertexBuffer->Lock(0,sizeof(PosVert_t),(void**)&unit_sphere_vertices,0 ));
 	PosVert_t *V=unit_sphere_vertices;
 	for(size_t i=0;i<helper->GetVertices().size();i++)
 	{
@@ -260,19 +259,19 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 		V->position.z=v.z;
 		V++;
 	}
-	B_RETURN(unitSphereVertexBuffer->Unlock());
+	V_CHECK(unitSphereVertexBuffer->Unlock());
 	unsigned num_indices=(unsigned)helper->GetQuadStripIndices().size();
 	SAFE_RELEASE(unitSphereIndexBuffer);
-	B_RETURN(m_pd3dDevice->CreateIndexBuffer(num_indices*sizeof(unsigned),D3DUSAGE_WRITEONLY,D3DFMT_INDEX32,
+	V_CHECK(m_pd3dDevice->CreateIndexBuffer(num_indices*sizeof(unsigned),D3DUSAGE_WRITEONLY,D3DFMT_INDEX32,
 		D3DPOOL_DEFAULT, &unitSphereIndexBuffer, NULL ));
 	unsigned *indexData;
-	B_RETURN(unitSphereIndexBuffer->Lock(0,num_indices, (void**)&indexData, 0 ));
+	V_CHECK(unitSphereIndexBuffer->Lock(0,num_indices, (void**)&indexData, 0 ));
 	unsigned *index=indexData;
 	for(unsigned i=0;i<num_indices;i++)
 	{
 		*(index++)	=helper->GetQuadStripIndices()[i];
 	}
-	B_RETURN(unitSphereIndexBuffer->Unlock());
+	V_CHECK(unitSphereIndexBuffer->Unlock());
 	float create_unit_sphere=timer.UpdateTime()/1000.f;
 
 	D3DVERTEXELEMENT9 decl[]=
@@ -299,11 +298,11 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 	SAFE_RELEASE(m_pHudVertexDecl);
 	if(fade_mode!=CPU)
 	{
-		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
+		V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
 	}
 	else
 	{
-		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
+		V_CHECK(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
 	}
 
 	//B_RETURN(RenderNoiseTexture());
@@ -318,7 +317,6 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 
 	//cloudKeyframer->SetGpuLightingCallback(&gpuCloudGenerator);
 	ClearIterators();
-	return (hr==S_OK);
 }
 
 static std::string GetCompiledFilename(int fade_mde,int wrap_clouds,bool z_vertical)
@@ -416,7 +414,7 @@ void SimulCloudRenderer::RecompileShaders()
 
 }
 
-bool SimulCloudRenderer::InvalidateDeviceObjects()
+void SimulCloudRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(raytrace_layer_texture);
@@ -441,7 +439,6 @@ bool SimulCloudRenderer::InvalidateDeviceObjects()
 	cloud_tex_depth_z=0;
 	ClearIterators();
 	rebuild_shaders=true;
-	return (hr==S_OK);
 }
 
 SimulCloudRenderer::~SimulCloudRenderer()

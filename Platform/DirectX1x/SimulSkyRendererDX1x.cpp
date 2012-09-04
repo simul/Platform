@@ -125,8 +125,7 @@ void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
 	skyKeyframer->SetUniformKeyframes(steps);
 }
 
-
-bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
+void SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 {
 	m_pd3dDevice=dev;
 #ifdef DX10
@@ -196,10 +195,9 @@ bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 		inscatter_2d->RestoreDeviceObjects(dev);
 	}
 	ClearIterators();
-	return (hr==S_OK);
 }
 
-bool SimulSkyRendererDX1x::InvalidateDeviceObjects()
+void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	if(loss_2d)
@@ -235,12 +233,12 @@ bool SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	// Set the stored texture sizes to zero, so the textures will be re-created.
 	fadeTexWidth=fadeTexHeight=numAltitudes=0;
 	SAFE_RELEASE(d3dQuery);
-	return (hr==S_OK);
 }
 
 bool SimulSkyRendererDX1x::Destroy()
 {
-	return InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
+	return true;
 }
 
 SimulSkyRendererDX1x::~SimulSkyRendererDX1x()

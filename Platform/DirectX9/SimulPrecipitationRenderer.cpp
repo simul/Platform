@@ -57,7 +57,8 @@ void SimulPrecipitationRenderer::TextureRepeatChanged()
 	InvalidateDeviceObjects();
 	RestoreDeviceObjects(m_pd3dDevice);
 }
-bool SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
+
+void SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr=S_OK;
@@ -99,7 +100,7 @@ bool SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	};
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
-	B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,"simul_rain.fxo"));
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,"simul_rain.fxo"));
 
 	m_hTechniqueRain	=m_pRainEffect->GetTechniqueByName("simul_rain");
 	worldViewProj		=m_pRainEffect->GetParameterByName(NULL,"worldViewProj");
@@ -113,10 +114,8 @@ bool SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	if(!external_rain_texture)
 	{
 		SAFE_RELEASE(rain_texture);
-		B_RETURN(CreateDX9Texture(m_pd3dDevice,rain_texture,"Rain.jpg"));
+		V_CHECK(CreateDX9Texture(m_pd3dDevice,rain_texture,"Rain.jpg"));
 	}
-
-	return (hr==S_OK);
 }
 
 bool SimulPrecipitationRenderer::SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex)
@@ -130,7 +129,7 @@ bool SimulPrecipitationRenderer::SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex)
 	return true;
 }
 
-bool SimulPrecipitationRenderer::InvalidateDeviceObjects()
+void SimulPrecipitationRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	if(m_pRainEffect)
@@ -139,7 +138,6 @@ bool SimulPrecipitationRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pVtxDecl);
 	if(!external_rain_texture)
 		SAFE_RELEASE(rain_texture);
-	return (hr==S_OK);
 }
 
 SimulPrecipitationRenderer::~SimulPrecipitationRenderer()

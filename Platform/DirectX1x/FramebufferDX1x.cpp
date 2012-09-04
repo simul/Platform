@@ -71,7 +71,7 @@ void FramebufferDX1x::SetTargetWidthAndHeight(int w,int h)
 	screen_height=h;
 }
 
-bool FramebufferDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
+void FramebufferDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=dev;
@@ -88,12 +88,10 @@ bool FramebufferDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
 	Gamma				=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
 	hdrTexture			=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
 	worldViewProj		=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
-	if(!CreateBuffers())
-		return false;
-	return (hr==S_OK);
+	CreateBuffers();
 }
 
-bool FramebufferDX1x::InvalidateDeviceObjects()
+void FramebufferDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 #ifndef DX10
@@ -116,13 +114,12 @@ bool FramebufferDX1x::InvalidateDeviceObjects()
 
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
-
-	return (hr==S_OK);
 }
 
 bool FramebufferDX1x::Destroy()
 {
-	return InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
+	return true;
 }
 
 FramebufferDX1x::~FramebufferDX1x()

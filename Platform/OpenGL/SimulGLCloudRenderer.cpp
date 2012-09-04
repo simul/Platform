@@ -609,7 +609,7 @@ ERROR_CHECK
 	glUseProgram(0);
 }
 
-bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
+void SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 {
 	init=true;
 	CreateNoiseTexture();
@@ -620,10 +620,9 @@ bool SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 		CloudKeyframer::SECONDARY,CloudKeyframer::AMBIENT);
 //	cloudKeyframer->SetRenderCallback(this);
 	glUseProgram(NULL);
-
 	BuildSphereVBO();
-	return true;
 }
+
 struct vertt
 {
 	float x,y,z;
@@ -685,7 +684,7 @@ ERROR_CHECK
 }
 
 
-bool SimulGLCloudRenderer::InvalidateDeviceObjects()
+void SimulGLCloudRenderer::InvalidateDeviceObjects()
 {
 	init=false;
 	glDeleteProgram(cross_section_program);
@@ -721,7 +720,6 @@ bool SimulGLCloudRenderer::InvalidateDeviceObjects()
 	volume_noise_tex=0;
 
 	ClearIterators();
-	return true;
 }
 
 void **SimulGLCloudRenderer::GetCloudTextures()

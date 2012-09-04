@@ -218,7 +218,7 @@ void Simul2DCloudRenderer::RecompileShaders()
 	imageTexture		=m_pCloudEffect->GetParameterByName(NULL,"imageTexture");
 }
 
-bool Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
+void Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr;
@@ -233,16 +233,15 @@ bool Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(m_pVtxDecl);
-	B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	B_RETURN(CreateNoiseTexture());
+	V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
+	V_CHECK(CreateNoiseTexture());
 	hr=CreateImageTexture();
 	RecompileShaders();
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 //	cloudKeyframer->SetRenderCallback(this);
-	return (hr==S_OK);
 }
 
-bool Simul2DCloudRenderer::InvalidateDeviceObjects()
+void Simul2DCloudRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	if(m_pCloudEffect)
@@ -258,7 +257,6 @@ bool Simul2DCloudRenderer::InvalidateDeviceObjects()
 	}
 	else
 		image_texture=NULL;
-	return (hr==S_OK);
 }
 
 Simul2DCloudRenderer::~Simul2DCloudRenderer()

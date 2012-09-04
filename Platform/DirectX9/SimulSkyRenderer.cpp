@@ -39,7 +39,6 @@ SimulSkyRenderer::SimulSkyRenderer(simul::sky::SkyKeyframer *sk)
 	:simul::sky::BaseSkyRenderer(sk)
 	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
-	,m_pHudVertexDecl(NULL)
 	,m_pSkyEffect(NULL)
 	,m_hTechniqueSky(NULL)
 	,m_hTechniquePlainColour(NULL)
@@ -54,7 +53,6 @@ SimulSkyRenderer::SimulSkyRenderer(simul::sky::SkyKeyframer *sk)
 	,stars_texture(NULL)
 	,d3dQuery(NULL)
 	,sky_tex_format(D3DFMT_UNKNOWN)
-	,m_pFont(NULL)
 	,y_vertical(false)
 	,maxPixelsVisible(200)
 	,screen_pixel_height(0)
@@ -203,9 +201,7 @@ bool SimulSkyRenderer::InvalidateDeviceObjects()
         hr=m_pSkyEffect->OnLostDevice();
 	SAFE_RELEASE(max_distance_texture);
 	SAFE_RELEASE(m_pSkyEffect);
-	SAFE_RELEASE(m_pFont);
 	SAFE_RELEASE(m_pVtxDecl);
-	SAFE_RELEASE(m_pHudVertexDecl);
 	
 	SAFE_RELEASE(stars_texture);
 	SAFE_RELEASE((LPDIRECT3DTEXTURE9&)moon_texture);
@@ -823,76 +819,19 @@ bool SimulSkyRenderer::RenderFades(int w,int h)
 	return (hr==S_OK);
 }
 
-bool SimulSkyRenderer::PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height,D3DXCOLOR colr,int offsetx,int offsety)
-{
-	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
-#ifndef xbox
-	m_pd3dDevice->SetTransform(D3DTS_WORLD,&world);
-#endif
-	D3DXMATRIX tmp1,tmp2,wvp;
-	D3DXMatrixMultiply(&tmp1,&world,&view);
-	D3DXMatrixMultiply(&wvp,&tmp1,&proj);
-	HRESULT hr=S_OK;
-
-	D3DXVECTOR4 pos(p[0],p[1],p[2],1.f);
-	D3DXVECTOR4 screen_pos;
-	D3DXVec4Transform(&screen_pos,&pos,&wvp);
-	float x=0.5f*(screen_pos.x/screen_pos.w+1.f)*screen_width+offsetx;
-	float y=0.5f*(1.f-screen_pos.y/screen_pos.w)*screen_height+offsety;
-	RECT rcDest;
-	rcDest.left=(long)x-32;
-	rcDest.bottom=(long)y+32;
-	rcDest.right=(long)x+32;
-	rcDest.top=(long)y-32;
-
-	DWORD dwTextFormat = DT_CENTER |  DT_NOCLIP ;//DT_CALCRECT;
-	if(screen_pos.w<0)
-		return (hr==S_OK);
-	hr = m_pFont->DrawText(NULL,text,-1,&rcDest,dwTextFormat,colr);
-	return (hr==S_OK);
-}
-
-bool SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height)
+void SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height)
 {
 	HRESULT hr=S_OK;
-	D3DVERTEXELEMENT9 decl[] = 
-	{
-		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0, 12, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
-		D3DDECL_END()
-	};
-	if(!m_pHudVertexDecl)
-	{
-		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
-	}
-
-	if(!m_pFont)
-	{
-		B_RETURN(D3DXCreateFont(m_pd3dDevice,32,0,FW_NORMAL,1,FALSE,DEFAULT_CHARSET,
-								OUT_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_DONTCARE,
-								_T("Arial"),&m_pFont));
-	}
 
 	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
 #ifndef xbox
 	m_pd3dDevice->SetTransform(D3DTS_WORLD,&world);
 #endif
-	
 	D3DXMATRIX tmp1,tmp2,wvp;
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&wvp,&tmp2);
 	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&wvp));
-
-	struct Vertext
-	{
-		float x,y,z;
-		float r,g,b,a;
-	};
-	m_pd3dDevice->SetVertexDeclaration(m_pHudVertexDecl);
-
-
-	m_pd3dDevice->SetTexture(0,NULL);
 	Vertext *lines=new Vertext[64*2];
 	static float d=10000.f;
 	float pi=3.1415926f;
@@ -922,13 +861,10 @@ bool SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height
 
 	m_pSkyEffect->SetTechnique(m_hTechniquePlainColour);
 	
-
 	UINT passes=1;
 	hr=m_pSkyEffect->Begin(&passes,0);
 	hr=m_pSkyEffect->BeginPass(0);
-
-
-	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,64,lines,(unsigned)sizeof(Vertext));
+	DrawLines(m_pd3dDevice,lines,64);
 	delete [] lines;
 	lines=new Vertext[65];
 	Vertext *moon_lines=new Vertext[65];
@@ -962,8 +898,10 @@ bool SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height
 	}
 	skyKeyframer->SetTime(old_time);
 	skyKeyframer->SetTime(old_time);
-	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,64,lines,(unsigned)sizeof(Vertext));
-	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,64,moon_lines,(unsigned)sizeof(Vertext));
+	DrawLines(m_pd3dDevice,lines,64,true);
+	DrawLines(m_pd3dDevice,moon_lines,64,true);
+	//hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,64,lines,(unsigned)sizeof(Vertext));
+	//hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,64,moon_lines,(unsigned)sizeof(Vertext));
 
 	
 	simul::sky::float4 sun_dir=d*skyKeyframer->GetDirectionToSun();
@@ -1013,9 +951,8 @@ bool SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height
 		moon_lines[i].b=1.f;
 		moon_lines[i].a=0.1f+0.5f;
 	}
-	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,12,lines,(unsigned)sizeof(Vertext));
-	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,12,moon_lines,(unsigned)sizeof(Vertext));
-
+	DrawLines(m_pd3dDevice,lines,12,true);
+	DrawLines(m_pd3dDevice,moon_lines,12,true);
 
 	hr=m_pSkyEffect->EndPass();
 	hr=m_pSkyEffect->End();
@@ -1035,12 +972,15 @@ bool SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height
 		D3DXVECTOR4 pos( sin(angle), cos(angle), -0.05f, 1.f);
 		if(y_vertical)
 			std::swap(pos.y,pos.z);
-		PrintAt(pos,compass[i],screen_width,screen_height,shadow,2,2);
-		PrintAt(pos,compass[i],screen_width,screen_height,light);
+	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
+#ifndef xbox
+	m_pd3dDevice->SetTransform(D3DTS_WORLD,&world);
+#endif
+		PrintAt(m_pd3dDevice,pos,compass[i],screen_width,screen_height,shadow,2,2);
+		PrintAt(m_pd3dDevice,pos,compass[i],screen_width,screen_height,light);
 	}
 	delete [] lines;
 	delete [] moon_lines;
-	return (hr==S_OK);
 }
 
 bool SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)

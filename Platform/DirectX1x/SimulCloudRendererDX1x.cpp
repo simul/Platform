@@ -219,7 +219,7 @@ void SimulCloudRendererDX1x::RecompileShaders()
 
 }
 
-bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
+void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 {
 	m_pd3dDevice=(ID3D1xDevice*)dev;
 #ifdef DX10
@@ -229,8 +229,8 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
 	HRESULT hr;
-	B_RETURN(CreateNoiseTexture());
-	B_RETURN(CreateLightningTexture());
+	CreateNoiseTexture();
+	CreateLightningTexture();
 	RecompileShaders();
 
 	D3D1x_SHADER_RESOURCE_VIEW_DESC texdesc;
@@ -292,10 +292,9 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	if(lightningIlluminationTextureResource)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 	ClearIterators();
-	return (hr==S_OK);
 }
 
-bool SimulCloudRendererDX1x::InvalidateDeviceObjects()
+void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	Unmap();
@@ -326,14 +325,12 @@ bool SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	
 	SAFE_RELEASE(lightningIlluminationTextureResource);
 	ClearIterators();
-	return (hr==S_OK);
 }
 
 bool SimulCloudRendererDX1x::Destroy()
 {
-	HRESULT hr=S_OK;
-	hr=InvalidateDeviceObjects();
-	return (hr==S_OK);
+	InvalidateDeviceObjects();
+	return (true);
 }
 
 SimulCloudRendererDX1x::~SimulCloudRendererDX1x()

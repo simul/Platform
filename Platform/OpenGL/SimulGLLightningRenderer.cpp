@@ -33,10 +33,10 @@ SimulGLLightningRenderer::~SimulGLLightningRenderer()
 {
 }
 
-bool SimulGLLightningRenderer::RestoreDeviceObjects()
+void SimulGLLightningRenderer::RestoreDeviceObjects()
 {
 	RecompileShaders();
-	return CreateLightningTexture();
+	CreateLightningTexture();
 }
 
 void SimulGLLightningRenderer::RecompileShaders()
@@ -57,9 +57,8 @@ void SimulGLLightningRenderer::RecompileShaders()
 	glUseProgram(NULL);
 }
 
-bool SimulGLLightningRenderer::InvalidateDeviceObjects()
+void SimulGLLightningRenderer::InvalidateDeviceObjects()
 {
-	return true;
 }
 
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)

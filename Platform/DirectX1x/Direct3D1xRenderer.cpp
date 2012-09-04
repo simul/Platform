@@ -77,10 +77,11 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 		simulHDRRenderer->InvalidateDeviceObjects();
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->InvalidateDeviceObjects();
-	if(simulHDRRenderer&&!simulHDRRenderer->RestoreDeviceObjects(pd3dDevice,pSwapChain))
-		return (HRESULT)(-1);
-	if(simulWeatherRenderer&&!simulWeatherRenderer->RestoreDeviceObjects(pd3dDevice,pSwapChain))
-		return (HRESULT)(-1);
+	void *x[2]={pd3dDevice,pSwapChain};
+	if(simulHDRRenderer)
+		simulHDRRenderer->RestoreDeviceObjects(x);
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->RestoreDeviceObjects(x);
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
 	return S_OK;

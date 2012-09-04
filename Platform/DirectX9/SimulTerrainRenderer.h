@@ -48,8 +48,8 @@ public:
 	//standard d3d object interface functions
 	bool Create(LPDIRECT3DDEVICE9 pd3dDevice);
 	bool RecompileShaders();
-	bool RestoreDeviceObjects(void *pd3dDevice);
-	bool InvalidateDeviceObjects();
+	void RestoreDeviceObjects(void *pd3dDevice);
+	void InvalidateDeviceObjects();
 
 	virtual ~SimulTerrainRenderer();
 	bool RenderOnlyDepth();

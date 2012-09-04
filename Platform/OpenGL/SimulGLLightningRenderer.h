@@ -14,9 +14,9 @@ SIMUL_OPENGL_EXPORT_CLASS SimulGLLightningRenderer: public simul::clouds::BaseLi
 public:
 	SimulGLLightningRenderer(simul::clouds::LightningRenderInterface *lri);
 	~SimulGLLightningRenderer();
-	bool RestoreDeviceObjects();
+	void RestoreDeviceObjects();
 	bool Render();
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual void SetYVertical(bool ){}
 	void RecompileShaders();

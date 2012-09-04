@@ -60,9 +60,9 @@ public:
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si);
 	void RecompileShaders();
 	//! Call this when the D3D device has been created or reset
-	bool RestoreDeviceObjects( void* pd3dDevice);
+	void RestoreDeviceObjects( void* pd3dDevice);
 	//! Call this when the 3D device has been lost.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
 	//! Call this to draw the clouds, including any illumination by lightning.

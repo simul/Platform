@@ -485,6 +485,10 @@ ERROR_CHECK
 return true;
 }
 
+void SimulGLSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height)
+{
+}
+
 bool SimulGLSkyRenderer::Render(bool blend)
 {
 	EnsureTexturesAreUpToDate();

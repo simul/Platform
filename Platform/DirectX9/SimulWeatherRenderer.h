@@ -118,9 +118,9 @@ public:
 	//standard d3d object interface functions
 	bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
 	//! Call this when the device has been created
-	bool RestoreDeviceObjects(void *pd3dDevice);
+	void RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the 3D device has been lost.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! Call this to draw the sky and clouds.
 	bool RenderSky(bool buffer,bool is_cubemap);
 	//! Call this to draw the clouds after the main scene.

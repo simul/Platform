@@ -51,9 +51,9 @@ public:
 	bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
 	void RecompileShaders();
 	//! Call this when the D3D device has been created or reset.
-	bool RestoreDeviceObjects(void *pd3dDevice);
+	void RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! Return debugging information.
 	const char *GetDebugText() const;
 	//! Call this to draw the clouds, including any illumination by lightning.

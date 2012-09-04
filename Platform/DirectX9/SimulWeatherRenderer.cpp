@@ -158,12 +158,12 @@ bool SimulWeatherRenderer::Restore3DCloudObjects()
 	{
 		if(simulCloudRenderer)
 		{
-			B_RETURN(simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
+			simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice);
 		}
 		if(simulPrecipitationRenderer)
-			B_RETURN(simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice));
+			simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice);
 		if(simulLightningRenderer)
-			B_RETURN(simulLightningRenderer->RestoreDeviceObjects(m_pd3dDevice));
+			simulLightningRenderer->RestoreDeviceObjects(m_pd3dDevice);
 	}
 	return (hr==S_OK);
 }
@@ -173,12 +173,12 @@ bool SimulWeatherRenderer::Restore2DCloudObjects()
 	if(m_pd3dDevice)
 	{
 		if(simul2DCloudRenderer)
-			B_RETURN(simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
+			simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice);
 	}
 	return (hr==S_OK);
 }
 
-bool SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
+void SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 {
 	simul::base::Timer timer;
 	timer.TimeSum=0;
@@ -186,23 +186,23 @@ bool SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	if(!m_pBufferToScreenEffect)
-		B_RETURN(CreateDX9Effect(m_pd3dDevice,m_pBufferToScreenEffect,"gamma.fx"));
+		V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pBufferToScreenEffect,"gamma.fx"));
 	SkyOverStarsTechnique		=m_pBufferToScreenEffect->GetTechniqueByName("simul_sky_over_stars");
 	CloudBlendTechnique			=m_pBufferToScreenEffect->GetTechniqueByName("simul_cloud_blend");
 	bufferTexture				=m_pBufferToScreenEffect->GetParameterByName(NULL,"hdrTexture");
-	B_RETURN(CreateBuffers());
+	CreateBuffers();
 	
 	timer.UpdateTime();
 	float create_buffers_time=timer.Time/1000.f;
 
 	if(simulSkyRenderer)
-		B_RETURN(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
+		V_CHECK(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
 	timer.UpdateTime();
 	float sky_restore_time=timer.Time/1000.f;
-	B_RETURN(Restore3DCloudObjects());
+	(Restore3DCloudObjects());
 	timer.UpdateTime();
 	float clouds_3d_restore_time=timer.Time/1000.f;
-	B_RETURN(Restore2DCloudObjects());
+	(Restore2DCloudObjects());
 	timer.UpdateTime();
 	float clouds_2d_restore_time=timer.Time/1000.f;
 	if(simulAtmosphericsRenderer)
@@ -214,10 +214,9 @@ bool SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 		<<", atmospherics="<<atmospherics_restore_time<<std::endl;
 
 	UpdateSkyAndCloudHookup();
-	return true;
 }
 
-bool SimulWeatherRenderer::InvalidateDeviceObjects()
+void SimulWeatherRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	if(simulSkyRenderer)
@@ -238,7 +237,6 @@ bool SimulWeatherRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pBufferToScreenEffect);
 	framebuffer.InvalidateDeviceObjects();
 	lowdef_framebuffer.InvalidateDeviceObjects();
-	return (hr==S_OK);
 }
 
 SimulWeatherRenderer::~SimulWeatherRenderer()

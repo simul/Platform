@@ -52,9 +52,9 @@ public:
 	META_EndProperties
 	void RecompileShaders();
 	//! Call this when the device has been created
-	bool RestoreDeviceObjects(void *pd3dDevice);
+	void RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the 3D device has been lost.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! DX9 implementation of cloud rendering. For this platform, depth_testing and default_fog are ignored.
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
 	//! Call this to draw the clouds, including any illumination by lightning.

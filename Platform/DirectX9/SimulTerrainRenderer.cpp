@@ -472,7 +472,7 @@ void SimulTerrainRenderer::TerrainModified()
 	heightmap->Rebuild();
 }
 
-bool SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
+void SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	last_overall_checksum=heightmap->GetChecksum();
@@ -492,10 +492,10 @@ bool SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
 
 	SAFE_RELEASE(terrain_texture);
-	B_RETURN(D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/MudGrass01.dds"),&terrain_texture));
+	V_CHECK(D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/MudGrass01.dds"),&terrain_texture));
 
 	SAFE_RELEASE(detail_texture);
-	B_RETURN(D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/grass01.dds"),&detail_texture));
+	V_CHECK(D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/grass01.dds"),&detail_texture));
 
 	SAFE_RELEASE(road_texture);
 	V_CHECK(D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/road.dds"),&road_texture));
@@ -509,7 +509,6 @@ bool SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
 	RecompileShaders();
 	MakeMapTexture();
 	GPUGenerateHeightmap();
-	return true;
 }
 
 unsigned SimulTerrainRenderer::GetBufferChecksum()
@@ -794,8 +793,7 @@ bool SimulTerrainRenderer::RecompileShaders()
 	return (hr==S_OK);
 }
 
-
-bool SimulTerrainRenderer::InvalidateDeviceObjects()
+void SimulTerrainRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	ClearTiles();
@@ -817,7 +815,6 @@ bool SimulTerrainRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(water_texture);
 	
 	SAFE_RELEASE(flux_texture);
-	return (hr==S_OK);
 }
 
 SimulTerrainRenderer::~SimulTerrainRenderer()

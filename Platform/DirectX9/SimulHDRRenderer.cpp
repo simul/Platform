@@ -86,16 +86,14 @@ void SimulHDRRenderer::RecompileShaders()
 	hdrTexture				=m_pTonemapEffect->GetParameterByName(NULL,"hdrTexture");
 }
 
-bool SimulHDRRenderer::RestoreDeviceObjects(void *dev)
+void SimulHDRRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
-	HRESULT hr=S_OK;
 	RecompileShaders();
-	B_RETURN(CreateBuffers());
-	return (hr==S_OK);
+	CreateBuffers();
 }
 
-bool SimulHDRRenderer::InvalidateDeviceObjects()
+void SimulHDRRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(depth_alpha_texture);
@@ -109,7 +107,6 @@ bool SimulHDRRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(hdr_buffer_texture);
 	SAFE_RELEASE(faded_texture);
 	SAFE_RELEASE(buffer_depth_texture);
-	return (hr==S_OK);
 }
 
 SimulHDRRenderer::~SimulHDRRenderer()

@@ -23,9 +23,9 @@ public:
 	virtual ~SimulPrecipitationRenderer();
 	//standard d3d object interface functions:
 	//! Call this when the D3D device has been created or reset.
-	bool RestoreDeviceObjects(void *pd3dDevice);
+	void RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! Call this to draw the clouds, including any illumination by lightning.
 	bool Render();
 #ifdef XBOX

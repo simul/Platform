@@ -20,9 +20,6 @@
 #include "Simul/Platform/DirectX9/Resources.h"
 #include <iomanip>
 
-//extern unsigned GetResourceIdImplementation(const char *filename);
-extern LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl;
-
 Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h)
 	:simul::graph::meta::Group()
 	,Gamma(0.45f)
@@ -361,7 +358,7 @@ void Direct3D9Renderer::OnDestroyDevice()
 		simulWeatherRenderer->InvalidateDeviceObjects();
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
-	SAFE_RELEASE(m_pHudVertexDecl);
+	RT::InvalidateDeviceObjects();
 }
 
 const TCHAR *Direct3D9Renderer::GetDebugText() const

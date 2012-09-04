@@ -73,7 +73,7 @@ public:
 	//! Draw the fade textures to screen
 	bool						RenderFades(int w,int h);
 	//! Draw sidereal and geographic information to screen
-	bool						RenderCelestialDisplay(int screen_width,int screen_height);
+	void						RenderCelestialDisplay(int screen_width,int screen_height);
 #ifdef XBOX
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
@@ -112,12 +112,10 @@ protected:
 	int screen_pixel_height;
 	bool Render2DFades();
 	bool y_vertical;
-	bool PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height,D3DXCOLOR colr,int offsetx=0,int offsety=0);
 	float timing;
 	D3DFORMAT sky_tex_format;
 
 	LPDIRECT3DDEVICE9			m_pd3dDevice;
-	LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl;
 
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
 	LPD3DXEFFECT				m_pSkyEffect;		// The fx file for the sky
@@ -164,7 +162,6 @@ protected:
 	// Two in-use 2D sky textures. We render a slice of the 3D textures into these, then use them for all fades.
 	Framebuffer					loss_2d;
 	Framebuffer					inscatter_2d;
-    ID3DXFont*					m_pFont;
 	simul::sky::float4			cam_dir;
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DQUERY9			d3dQuery;

@@ -29,12 +29,11 @@ void SimulGLAtmosphericsRenderer::SetBufferSize(int w,int h)
 	}
 }
 
-bool SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
+void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 {
 	initialized=true;
 	framebuffer->InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	RecompileShaders();
-	return true;
 }
 
 void SimulGLAtmosphericsRenderer::RecompileShaders()
@@ -70,9 +69,8 @@ ERROR_CHECK
 	glUseProgram(0);
 }
 
-bool SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
+void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 {
-	return true;
 }
 
 void SimulGLAtmosphericsRenderer::SetMaxFadeDistanceKm(float dist_km)
