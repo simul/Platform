@@ -44,7 +44,6 @@ public:
 	bool						RenderPointStars();
 	//! Draw the 2D fades to screen for debugging.
 	bool						RenderFades(int w,int h);
-	void						RenderCelestialDisplay(int screen_width,int screen_height);
 
 	// Implementing simul::sky::SkyTexturesCallback
 	virtual void SetSkyTextureSize(unsigned ){}
@@ -90,7 +89,6 @@ protected:
 
 	unsigned		cloud_texel_index;
 	unsigned char	*sky_tex_data;
-	GLuint			sky_vertex_shader,sky_fragment_shader;
 	GLuint			sky_program;
 	GLuint			planet_program;
 	GLuint			sun_program;
@@ -122,5 +120,7 @@ protected:
 	{
 		return false;
 	}
+	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
+	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };
 

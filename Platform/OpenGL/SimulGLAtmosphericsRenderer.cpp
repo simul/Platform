@@ -47,8 +47,8 @@ ERROR_CHECK
 ERROR_CHECK
 	cloudmix_program			=glCreateProgram();
 ERROR_CHECK
-	cloudmix_vertex_shader		=LoadProgram(cloudmix_vertex_shader		,"simul_cloudmix.vert");
-    cloudmix_fragment_shader	=LoadProgram(cloudmix_fragment_shader	,"simul_cloudmix.frag");
+	cloudmix_vertex_shader		=LoadShader(cloudmix_vertex_shader		,"simul_cloudmix.vert");
+    cloudmix_fragment_shader	=LoadShader(cloudmix_fragment_shader	,"simul_cloudmix.frag");
 	glAttachShader(cloudmix_program,cloudmix_vertex_shader);
 	glAttachShader(cloudmix_program,cloudmix_fragment_shader);
 	glLinkProgram(cloudmix_program);

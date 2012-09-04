@@ -41,7 +41,6 @@ SimulSkyRenderer::SimulSkyRenderer(simul::sky::SkyKeyframer *sk)
 	,m_pVtxDecl(NULL)
 	,m_pSkyEffect(NULL)
 	,m_hTechniqueSky(NULL)
-	,m_hTechniquePlainColour(NULL)
 	,m_hTechniqueStarrySky(NULL)
 	,m_hTechniquePointStars(NULL)
 	,m_hTechniqueQuery(NULL)
@@ -101,7 +100,6 @@ void SimulSkyRenderer::RecompileShaders()
 	m_hTechniqueShowSkyTexture	=m_pSkyEffect->GetTechniqueByName("simul_show_sky_texture");
 	m_hTechniqueStarrySky		=m_pSkyEffect->GetTechniqueByName("simul_starry_sky");
 	m_hTechniquePointStars		=m_pSkyEffect->GetTechniqueByName("simul_point_stars");
-	m_hTechniquePlainColour		=m_pSkyEffect->GetTechniqueByName("simul_plain_colour");
 
 	worldViewProj				=m_pSkyEffect->GetParameterByName(NULL,"worldViewProj");
 	lightDirection				=m_pSkyEffect->GetParameterByName(NULL,"lightDir");
@@ -185,6 +183,16 @@ int SimulSkyRenderer::CalcScreenPixelHeight()
 	backBuffer->GetDesc(&backBufferDesc);
 	SAFE_RELEASE(backBuffer);
 	return backBufferDesc.Height;
+}
+
+void SimulSkyRenderer::DrawLines(Vertext *lines,int vertex_count,bool strip)
+{
+	RT::DrawLines((RT::VertexXyzRgba*)lines,vertex_count,strip);
+}
+
+void SimulSkyRenderer::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
+{
+	RT::PrintAt3dPos(p,text,colr,offsetx,offsety);
 }
 
 bool SimulSkyRenderer::InvalidateDeviceObjects()
@@ -817,170 +825,6 @@ bool SimulSkyRenderer::RenderFades(int w,int h)
 	}
 
 	return (hr==S_OK);
-}
-
-void SimulSkyRenderer::RenderCelestialDisplay(int screen_width,int screen_height)
-{
-	HRESULT hr=S_OK;
-
-	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
-#ifndef xbox
-	m_pd3dDevice->SetTransform(D3DTS_WORLD,&world);
-#endif
-	D3DXMATRIX tmp1,tmp2,wvp;
-	D3DXMatrixMultiply(&tmp1,&world,&view);
-	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
-	D3DXMatrixTranspose(&wvp,&tmp2);
-	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&wvp));
-	Vertext *lines=new Vertext[64*2];
-	static float d=10000.f;
-	float pi=3.1415926f;
-	for(int i=0;i<64;i++)
-	{
-		bool D=((8*(i/8))==i);
-		float angle=(float)i/64.f*2.f*pi;
-		lines[i*2].x=d*cos(angle); 
-		lines[i*2].z=-d*(D?.025f:0.01f); 
-		lines[i*2].y=d*sin(angle);
-		if(y_vertical)
-			std::swap(lines[i*2].y,lines[i*2].z);
-		lines[i*2].r=0.f;
-		lines[i*2].g=0.f;
-		lines[i*2].b=0.f;
-		lines[i*2].a=0.5f;
-		lines[i*2+1].x=d*cos(angle);
-		lines[i*2+1].z=d*(D?.025f:0.01f); 
-		lines[i*2+1].y=d*sin(angle);
-		if(y_vertical)
-			std::swap(lines[i*2+1].y,lines[i*2+1].z);
-		lines[i*2+1].r=1.f;
-		lines[i*2+1].g=0.5f;
-		lines[i*2+1].b=0.f;
-		lines[i*2+1].a=0.5f;
-	}
-
-	m_pSkyEffect->SetTechnique(m_hTechniquePlainColour);
-	
-	UINT passes=1;
-	hr=m_pSkyEffect->Begin(&passes,0);
-	hr=m_pSkyEffect->BeginPass(0);
-	DrawLines(m_pd3dDevice,lines,64);
-	delete [] lines;
-	lines=new Vertext[65];
-	Vertext *moon_lines=new Vertext[65];
-	float old_time=skyKeyframer->GetTime();
-	for(int i=0;i<65;i++)
-	{
-		float time=(float)i/32.f;
-		float daytime=time-(int)time;
-		//skyKeyframer->SetDaytime(time);
-		skyKeyframer->SetDaytime(time);
-		simul::sky::float4 dir=d*skyKeyframer->GetDirectionToSun();
-		if(y_vertical)
-			std::swap(dir.y,dir.z);
-		lines[i].x=dir.x; 
-		lines[i].y=dir.y;
-		lines[i].z=dir.z;
-		lines[i].r=1.f;
-		lines[i].g=.8f;
-		lines[i].b=0.f;
-		lines[i].a=0.1f+0.5f*daytime;
-		simul::sky::float4 moon_dir=d*skyKeyframer->GetDirectionToMoon();
-		if(y_vertical)
-			std::swap(moon_dir.y,moon_dir.z);
-		moon_lines[i].x=moon_dir.x; 
-		moon_lines[i].y=moon_dir.y;
-		moon_lines[i].z=moon_dir.z;
-		moon_lines[i].r=0.f;
-		moon_lines[i].g=.5f;
-		moon_lines[i].b=1.f;
-		moon_lines[i].a=0.1f+0.5f*daytime;
-	}
-	skyKeyframer->SetTime(old_time);
-	skyKeyframer->SetTime(old_time);
-	DrawLines(m_pd3dDevice,lines,64,true);
-	DrawLines(m_pd3dDevice,moon_lines,64,true);
-	//hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,64,lines,(unsigned)sizeof(Vertext));
-	//hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINESTRIP,64,moon_lines,(unsigned)sizeof(Vertext));
-
-	
-	simul::sky::float4 sun_dir=d*skyKeyframer->GetDirectionToSun();
-	simul::sky::float4 moon_dir=d*skyKeyframer->GetDirectionToMoon();
-	simul::math::Vector3 x,y,up(0,0,1.f);
-	if(y_vertical)
-	{
-		std::swap(sun_dir.y,sun_dir.z);
-		std::swap(moon_dir.y,moon_dir.z);
-		up.Define(0,1.f,0);
-	}
-	simul::math::CrossProduct(x,(const float*)sun_dir,up);
-	x.Normalize();
-	simul::math::CrossProduct(y,(const float*)sun_dir,x);
-	y.Normalize();
-	for(int i=0;i<13;i++)
-	{
-		float angle=2.f*pi*(float)i/12.f;
-		float cosa=cos(angle);
-		float sina=sin(angle);
-		simul::math::Vector3 dir((const float*)sun_dir);
-		dir+=d/20.f*(x*cosa+y*sina);
-		lines[i].x=dir.x; 
-		lines[i].y=dir.y;
-		lines[i].z=dir.z;
-		lines[i].r=1.f;
-		lines[i].g=.8f;
-		lines[i].b=0.f;
-		lines[i].a=0.1f+0.5f;
-	}
-	simul::math::CrossProduct(x,(const float*)moon_dir,up);
-	x.Normalize();
-	simul::math::CrossProduct(y,(const float*)moon_dir,x);
-	y.Normalize();
-	for(int i=0;i<13;i++)
-	{
-		float angle=2.f*pi*(float)i/12.f;
-		float cosa=cos(angle);
-		float sina=sin(angle);
-		simul::math::Vector3 dir((const float*)moon_dir);
-		dir+=d/20.f*(x*cosa+y*sina);
-		moon_lines[i].x=dir.x; 
-		moon_lines[i].y=dir.y;
-		moon_lines[i].z=dir.z;
-		moon_lines[i].r=0.f;
-		moon_lines[i].g=.5f;
-		moon_lines[i].b=1.f;
-		moon_lines[i].a=0.1f+0.5f;
-	}
-	DrawLines(m_pd3dDevice,lines,12,true);
-	DrawLines(m_pd3dDevice,moon_lines,12,true);
-
-	hr=m_pSkyEffect->EndPass();
-	hr=m_pSkyEffect->End();
-	TCHAR * compass[]={	_T("N"),
-						_T("NE"),
-						_T("E"),
-						_T("SE"),
-						_T("S"),
-						_T("SW"),
-						_T("W"),
-						_T("NW")	};
-	D3DXCOLOR shadow(0.f,0.f,0.f,0.5f);
-	D3DXCOLOR light(1.f,1.f,1.f,1.f);
-	for(int i=0;i<8;i++)
-	{
-		float angle=2.f*pi*(float)i/8.f;
-		D3DXVECTOR4 pos( sin(angle), cos(angle), -0.05f, 1.f);
-		if(y_vertical)
-			std::swap(pos.y,pos.z);
-	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
-#ifndef xbox
-	m_pd3dDevice->SetTransform(D3DTS_WORLD,&world);
-#endif
-		PrintAt(m_pd3dDevice,pos,compass[i],screen_width,screen_height,shadow,2,2);
-		PrintAt(m_pd3dDevice,pos,compass[i],screen_width,screen_height,light);
-	}
-	delete [] lines;
-	delete [] moon_lines;
 }
 
 bool SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)

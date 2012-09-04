@@ -83,10 +83,8 @@ protected:
 	void EnsureTextureCycle();
 
 	GLuint clouds_program;
-	GLuint clouds_vertex_shader,clouds_fragment_shader;
 
 	GLuint cross_section_program;
-	GLuint cross_section_vertex_shader,cross_section_fragment_shader;
 
 	GLint eyePosition_param;
 	GLint lightResponse_param;

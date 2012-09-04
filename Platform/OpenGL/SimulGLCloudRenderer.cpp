@@ -557,55 +557,31 @@ void SimulGLCloudRenderer::SetInscatterTextures(void *i)
 void SimulGLCloudRenderer::RecompileShaders()
 {
 ERROR_CHECK
-	clouds_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
-	clouds_fragment_shader		=glCreateShader(GL_FRAGMENT_SHADER);
+	clouds_program			=MakeProgram("simul_clouds","#define DETAIL_NOISE 1\r\n");
+	lightResponse_param		=glGetUniformLocation(clouds_program,"lightResponse");
+	fractalScale_param		=glGetUniformLocation(clouds_program,"fractalScale");
+	interp_param			=glGetUniformLocation(clouds_program,"cloud_interp");
+	eyePosition_param		=glGetUniformLocation(clouds_program,"eyePosition");
+	skylightColour_param	=glGetUniformLocation(clouds_program,"ambientColour");
+	lightDirection_param	=glGetUniformLocation(clouds_program,"lightDir");
+	sunlightColour_param	=glGetUniformLocation(clouds_program,"sunlight");
 
-	clouds_program				=glCreateProgram();
-	clouds_vertex_shader		=LoadProgram(clouds_vertex_shader,"simul_clouds.vert");
-	clouds_fragment_shader		=LoadProgram(clouds_fragment_shader,"simul_clouds.frag","#define DETAIL_NOISE 1\r\n");
-	glAttachShader(clouds_program, clouds_vertex_shader);
-	glAttachShader(clouds_program, clouds_fragment_shader);
-	glLinkProgram(clouds_program);
-	glUseProgram(clouds_program);
+	cloudEccentricity_param		=glGetUniformLocation(clouds_program,"cloudEccentricity");
+	hazeEccentricity_param		=glGetUniformLocation(clouds_program,"hazeEccentricity");
+	mieRayleighRatio_param		=glGetUniformLocation(clouds_program,"mieRayleighRatio");
+	maxFadeDistanceMetres_param	=glGetUniformLocation(clouds_program,"maxFadeDistanceMetres");
+
+	cloudDensity1_param		=glGetUniformLocation(clouds_program,"cloudDensity1");
+	cloudDensity2_param		=glGetUniformLocation(clouds_program,"cloudDensity2");
+	noiseSampler_param		=glGetUniformLocation(clouds_program,"noiseSampler");
+	illumSampler_param		=glGetUniformLocation(clouds_program,"illumSampler");
+	lossSampler_param		=glGetUniformLocation(clouds_program,"lossSampler");
+	inscatterSampler_param	=glGetUniformLocation(clouds_program,"inscatterSampler");
+
+	layerDistance_param		=glGetUniformLocation(clouds_program,"layerDistance");
 	printProgramInfoLog(clouds_program);
 ERROR_CHECK
-	lightResponse_param		= glGetUniformLocation(clouds_program,"lightResponse");
-	fractalScale_param		= glGetUniformLocation(clouds_program,"fractalScale");
-	interp_param			= glGetUniformLocation(clouds_program,"cloud_interp");
-	eyePosition_param		= glGetUniformLocation(clouds_program,"eyePosition");
-	skylightColour_param	= glGetUniformLocation(clouds_program,"ambientColour");
-	lightDirection_param	= glGetUniformLocation(clouds_program,"lightDir");
-	sunlightColour_param	= glGetUniformLocation(clouds_program,"sunlight");
-
-	cloudEccentricity_param	= glGetUniformLocation(clouds_program,"cloudEccentricity");
-	hazeEccentricity_param	= glGetUniformLocation(clouds_program,"hazeEccentricity");
-	mieRayleighRatio_param	= glGetUniformLocation(clouds_program,"mieRayleighRatio");
-	maxFadeDistanceMetres_param	= glGetUniformLocation(clouds_program,"maxFadeDistanceMetres");
-
-	cloudDensity1_param		= glGetUniformLocation(clouds_program,"cloudDensity1");
-	cloudDensity2_param		= glGetUniformLocation(clouds_program,"cloudDensity2");
-	noiseSampler_param		= glGetUniformLocation(clouds_program,"noiseSampler");
-	illumSampler_param		= glGetUniformLocation(clouds_program,"illumSampler");
-	lossSampler_param		= glGetUniformLocation(clouds_program,"lossSampler");
-	inscatterSampler_param	= glGetUniformLocation(clouds_program,"inscatterSampler");
-
-	layerDistance_param		= glGetUniformLocation(clouds_program,"layerDistance");
-	printProgramInfoLog(clouds_program);
-ERROR_CHECK
-	
-	cross_section_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
-	cross_section_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-ERROR_CHECK
-	cross_section_program			=glCreateProgram();
-	cross_section_vertex_shader		=LoadProgram(cross_section_vertex_shader	,"simul_cloud_cross_section.vert");
-	cross_section_fragment_shader	=LoadProgram(cross_section_fragment_shader	,"simul_cloud_cross_section.frag");
-	glAttachShader(cross_section_program,cross_section_vertex_shader);
-	glAttachShader(cross_section_program,cross_section_fragment_shader);
-ERROR_CHECK
-	glLinkProgram(cross_section_program);
-	glUseProgram(cross_section_program);
-	printProgramInfoLog(cross_section_program);
-ERROR_CHECK
+	cross_section_program			=MakeProgram("simul_cloud_cross_section");
 	glUseProgram(0);
 }
 
@@ -687,16 +663,11 @@ ERROR_CHECK
 void SimulGLCloudRenderer::InvalidateDeviceObjects()
 {
 	init=false;
-	glDeleteProgram(cross_section_program);
-	glDeleteShader(cross_section_vertex_shader);
-	glDeleteShader(cross_section_fragment_shader);
+	SAFE_DELETE_PROGRAM(cross_section_program);
 
-	glDeleteProgram(clouds_program);
-	glDeleteShader(clouds_vertex_shader);
-	glDeleteShader(clouds_fragment_shader);
+	SAFE_DELETE_PROGRAM(clouds_program);
+
 	clouds_program				=0;
-	cross_section_vertex_shader	=0;
-	clouds_fragment_shader		=0;
 	lightResponse_param			=0;
 	fractalScale_param			=0;
 	interp_param				=0;

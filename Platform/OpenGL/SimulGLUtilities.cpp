@@ -1,12 +1,55 @@
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
-
+#include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include <windows.h>
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/gl.h>
 #include <iostream>
 #include "Simul/Base/Timer.h"
-int res=6;
+
+int Utilities::instance_count=0;
+int Utilities::screen_width=0;
+int Utilities::screen_height=0;
+GLuint Utilities::linedraw_program;
+
+Utilities::Utilities()
+{
+	instance_count++;
+}
+
+void Utilities::RestoreDeviceObjects(void *)
+{
+	const char *vert="varying vec4 colr;"
+						"void main(void)"
+						"{"
+						"    gl_Position		= ftransform();"
+						"    colr=gl_Color;"
+						"}";
+	const char *frag="varying vec4 colr;"
+						"void main(void)"
+						"{"
+						"	gl_FragColor=colr;"
+						"}";
+	linedraw_program=SetShaders(vert,frag);
+}
+
+void Utilities::SetScreenSize(int w,int h)
+{
+	screen_width=w;
+	screen_height=h;
+}
+
+void Utilities::InvalidateDeviceObjects()
+{
+	SAFE_DELETE_PROGRAM(linedraw_program);
+}
+
+Utilities::~Utilities()
+{
+	if(!instance_count)
+		Utilities::InvalidateDeviceObjects();
+}
+
 static bool IsExtensionSupported(const char *name)
 {
 	GLint n=0;
@@ -237,10 +280,10 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
 	};
 	Vertext vertices[4]=
 	{
-		{ w,d,-w,	 1.f	,0.f},
-		{ w,d, w,	 1.f	,1.f},
-		{-w,d, w,	 0.f	,1.f},
-		{-w,d,-w,	 0.f	,0.f},
+		{ w,d,-w,	 1.f	,1.f},
+		{ w,d, w,	 1.f	,0.f},
+		{-w,d, w,	 0.f	,0.f},
+		{-w,d,-w,	 0.f	,1.f},
 	};
 	glBegin(GL_QUADS);
 	for(int i=0;i<4;i++)
@@ -254,4 +297,47 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
     glPopMatrix();
 		ERROR_CHECK
 	return true;
+}
+
+void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
+{
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDisable(GL_CULL_FACE);
+	glDepthMask(GL_FALSE);
+	glColor4f(colr[0],colr[1],colr[2],colr[3]);
+
+	static float ff=1000.f;
+	//float sz=sqrt(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]);
+	float x=p[0]+(float)offsetx/ff;
+	float y=p[1]-(float)offsety/ff;
+	float z=p[2]-(float)offsety/ff;
+
+	glRasterPos3f(x,y,z);
+	const char *s=text;
+	while(*s)
+	{
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,*s);
+		s++;
+	}
+}
+
+void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
+{
+	glUseProgram(Utilities::linedraw_program);
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDisable(GL_CULL_FACE);
+	glDepthMask(GL_FALSE);
+	glBegin(strip?GL_LINE_STRIP:GL_LINES);
+	for(int i=0;i<vertex_count;i++)
+	{
+		VertexXyzRgba &V=lines[i];
+		glColor4f(V.r,V.g,V.b,V.a);
+		glVertex3f(V.x,V.y,V.z);
+	}
+	glEnd();
+	glUseProgram(0);
 }

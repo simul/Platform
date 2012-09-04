@@ -111,6 +111,7 @@ HRESULT Direct3D9Renderer::OnResetDevice(IDirect3DDevice9* pd3dDevice, const D3D
 HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 {
 	RT::RestoreDeviceObjects(pd3dDevice);
+	RT::SetScreenSize(width,height);
 	float weather_restore_time=0.f,hdr_restore_time=0.f,terrain_restore_time=0.f,optics_restore_time=0.f;
 	simul::base::Timer timer;
 

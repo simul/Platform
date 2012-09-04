@@ -4,6 +4,7 @@
 #include "Simul/Platform/OpenGL/SimulGLHDRRenderer.h"
 #include "Simul/Platform/OpenGL/SimulOpticsRendererGL.h"
 #include "Simul/Platform/OpenGL/Export.h"
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Graph/Meta/Group.h"
 #ifdef _MSC_VER
@@ -38,6 +39,7 @@ public:
 	virtual void resizeGL(int w,int h);
 	virtual void initializeGL();
 	virtual void renderUI();
+	void	SetCelestialDisplay(bool val);
 	SimulGLWeatherRenderer *GetSimulGLWeatherRenderer(){return simulWeatherRenderer.get();}
 	SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer.get();}
 	void SetCamera(simul::camera::Camera *c);
@@ -49,7 +51,9 @@ protected:
 	simul::base::SmartPtr<SimulOpticsRendererGL> simulOpticsRenderer;
 	int width,height;
 	simul::camera::Camera *cam;
+	bool celestial_display;
 	bool y_vertical;
+	Utilities ut;
 };
 
 #ifdef _MSC_VER

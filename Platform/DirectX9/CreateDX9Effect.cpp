@@ -41,10 +41,15 @@
 #endif
 
 unsigned (*GetResourceId)(const char *filename)=NULL;
-
+LPDIRECT3DDEVICE9				last_d3dDevice			=NULL;
+LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl		=NULL;
+LPD3DXEFFECT					m_pDebugEffect			=NULL;
+D3DXHANDLE						m_hTechniquePlainColour	=NULL;
 bool BUNDLE_SHADERS=false;
-
 static tstring module;
+int RT::instance_count=0;
+int RT::screen_width=0;
+int RT::screen_height=0;
 
 void SetBundleShaders(bool b)
 {
@@ -112,8 +117,6 @@ ShaderModel GetShaderModel()
 {
 	return shaderModel;
 }
-LPDIRECT3DDEVICE9 last_d3dDevice=0;
-LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl=NULL;
 
 static const char *GetPixelShaderString(const D3DCAPS9 &caps)
 {
@@ -153,6 +156,7 @@ static const char *GetPixelShaderString(const D3DCAPS9 &caps)
     }
     return NULL;
 }
+
 static void CalcShaderModel(LPDIRECT3DDEVICE9 m_pd3dDevice)
 {
 	if(last_d3dDevice==m_pd3dDevice)
@@ -480,14 +484,15 @@ HRESULT CanUse16BitFloats(IDirect3DDevice9 *device)
 	return hr;
 }
 LPDIRECT3DVERTEXDECLARATION9 RT::m_pBufferVertexDecl=NULL;
-int RT::count=0;
 RT::RT()
 {
-	count++;
+	instance_count++;
 }
 
 void RT::RestoreDeviceObjects(IDirect3DDevice9 *m_pd3dDevice)
 {
+	last_d3dDevice=m_pd3dDevice;
+
 	if(m_pBufferVertexDecl==NULL)
 	{
 		// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
@@ -514,17 +519,29 @@ void RT::RestoreDeviceObjects(IDirect3DDevice9 *m_pd3dDevice)
 	};
 	SAFE_RELEASE(m_pHudVertexDecl);
 	V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
+
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pDebugEffect,"simul_debug.fx"));
+	m_hTechniquePlainColour=m_pDebugEffect->GetTechniqueByName("simul_plain_colour");
 }
+
+void RT::SetScreenSize(int w,int h)
+{
+	screen_width=w;
+	screen_height=h;
+}
+
 void RT::InvalidateDeviceObjects()
 {
+	SAFE_RELEASE(m_pDebugEffect);
 	SAFE_RELEASE(m_pBufferVertexDecl);
 	SAFE_RELEASE(m_pHudVertexDecl);
 	SAFE_RELEASE(m_pFont);
+	last_d3dDevice=NULL;
 }
 
 RT::~RT()
 {
-	if(!count)
+	if(!instance_count)
 		RT::InvalidateDeviceObjects();
 }
 
@@ -969,30 +986,31 @@ std::map<std::string,std::string> MakeDefinesList(simul::clouds::BaseCloudRender
 }
 
 
-bool PrintAt(LPDIRECT3DDEVICE9 m_pd3dDevice,const float *p,const TCHAR *text,int screen_width,int screen_height,D3DXCOLOR colr,int offsetx,int offsety)
+void RT::PrintAt3dPos(const float *p,const char *text,const float *colr,int offsetx,int offsety)
 {
 	if(!m_pFont)
 	{
-		V_CHECK(D3DXCreateFont(m_pd3dDevice,32,0,FW_NORMAL,1,FALSE,DEFAULT_CHARSET,
+		V_CHECK(D3DXCreateFont(last_d3dDevice,32,0,FW_NORMAL,1,FALSE,DEFAULT_CHARSET,
 								OUT_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_DONTCARE,
 								_T("Arial"),&m_pFont));
 	}
-
+	D3DXHANDLE worldViewProj=m_pDebugEffect->GetParameterByName(NULL,"worldViewProj");
 	HRESULT hr=S_OK;
 	D3DXMATRIX tmp1,tmp2,wvp,world,view,proj;
 #ifndef xbox
-	m_pd3dDevice->GetTransform(D3DTS_WORLD,&world);
-	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+	last_d3dDevice->GetTransform(D3DTS_WORLD,&world);
+	last_d3dDevice->GetTransform(D3DTS_VIEW,&view);
+	last_d3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
 #endif
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&wvp,&tmp1,&proj);
+	m_pDebugEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&wvp));
 
 	D3DXVECTOR4 pos(p[0],p[1],p[2],1.f);
 	D3DXVECTOR4 screen_pos;
 	D3DXVec4Transform(&screen_pos,&pos,&wvp);
-	float x=0.5f*(screen_pos.x/screen_pos.w+1.f)*screen_width+offsetx;
-	float y=0.5f*(1.f-screen_pos.y/screen_pos.w)*screen_height+offsety;
+	float x=0.5f*(screen_pos.x/screen_pos.w+1.f)*RT::screen_width+offsetx;
+	float y=0.5f*(1.f-screen_pos.y/screen_pos.w)*RT::screen_height+offsety;
 	RECT rcDest;
 	rcDest.left=(long)x-32;
 	rcDest.bottom=(long)y+32;
@@ -1001,15 +1019,31 @@ bool PrintAt(LPDIRECT3DDEVICE9 m_pd3dDevice,const float *p,const TCHAR *text,int
 
 	DWORD dwTextFormat = DT_CENTER |  DT_NOCLIP ;//DT_CALCRECT;
 	if(screen_pos.w<0)
-		return (hr==S_OK);
-	hr = m_pFont->DrawText(NULL,text,-1,&rcDest,dwTextFormat,colr);
-	return (hr==S_OK);
+		return;
+	
+	wchar_t pwText[50];
+	MultiByteToWideChar (CP_ACP, 0,text, -1, pwText, 48 );
+	hr = m_pFont->DrawText(NULL,pwText,-1,&rcDest,dwTextFormat,(D3DXCOLOR)colr);
 }
 
-void DrawLines(LPDIRECT3DDEVICE9 m_pd3dDevice,Vertext *lines,int count,bool strip)
+void RT::DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 {
-
-	m_pd3dDevice->SetVertexDeclaration(m_pHudVertexDecl);
-	m_pd3dDevice->SetTexture(0,NULL);
-	V_CHECK(m_pd3dDevice->DrawPrimitiveUP(strip?D3DPT_LINESTRIP:D3DPT_LINELIST,count,lines,(unsigned)sizeof(Vertext)));
+	D3DXHANDLE worldViewProj=m_pDebugEffect->GetParameterByName(NULL,"worldViewProj");
+	D3DXMATRIX tmp1,tmp2,wvp,view,proj;
+#ifndef xbox
+	last_d3dDevice->GetTransform(D3DTS_VIEW,&view);
+	last_d3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+#endif
+	D3DXMatrixMultiply(&tmp2,&view,&proj);
+	D3DXMatrixTranspose(&wvp,&tmp2);
+	m_pDebugEffect->SetTechnique(m_hTechniquePlainColour);
+	last_d3dDevice->SetVertexDeclaration(m_pHudVertexDecl);
+	last_d3dDevice->SetTexture(0,NULL);
+	m_pDebugEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&wvp));
+	unsigned passes=1;
+	V_CHECK(m_pDebugEffect->Begin(&passes,0));
+	V_CHECK(m_pDebugEffect->BeginPass(0));
+	V_CHECK(last_d3dDevice->DrawPrimitiveUP(strip?D3DPT_LINESTRIP:D3DPT_LINELIST,strip?(vertex_count-1):(vertex_count/2),lines,(unsigned)sizeof(VertexXyzRgba)));
+	V_CHECK(m_pDebugEffect->EndPass());
+	V_CHECK(m_pDebugEffect->End());
 }

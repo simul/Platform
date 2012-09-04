@@ -923,3 +923,10 @@ void SimulSkyRendererDX1x::SetYVertical(bool y)
 	y_vertical=y;
 	RecompileShaders();
 }
+void SimulSkyRendererDX1x::DrawLines(Vertext *lines,int vertex_count,bool strip)
+{
+}
+
+void SimulSkyRendererDX1x::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
+{
+}

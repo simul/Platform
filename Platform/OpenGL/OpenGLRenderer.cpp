@@ -14,15 +14,15 @@
 #include "Simul/Sky/Float4.h"
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 
-
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	:width(0)
 	,height(0)
 	,cam(NULL)
-	,y_vertical(false)
 	,ShowFlares(true)
 	,ShowFades(false)
 	,ShowCloudCrossSections(false)
+	,celestial_display(false)
+	,y_vertical(false)
 {
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
@@ -72,14 +72,14 @@ void OpenGLRenderer::paintGL()
 			simul::sky::float4 dir,light;
 			dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
 			light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
-
 			simulOpticsRenderer->RenderFlare(
 				(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
 				,dir,light);
 		}
-
 		if(simulHDRRenderer)
 			simulHDRRenderer->FinishRender();
+		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			SetTopDownOrthoProjection(width,height);
@@ -102,6 +102,11 @@ void OpenGLRenderer::renderUI()
 	float y=12.f;
 	static int line_height=16;
 	RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,"OpenGL");
+}
+	
+void OpenGLRenderer::SetCelestialDisplay(bool val)
+{
+	celestial_display=val;
 }
 
 void OpenGLRenderer::resizeGL(int w,int h)
@@ -146,7 +151,7 @@ void OpenGLRenderer::initializeGL()
 
 	if(cam)
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
-
+	Utilities::RestoreDeviceObjects(NULL);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(NULL);
 	if(simulHDRRenderer)

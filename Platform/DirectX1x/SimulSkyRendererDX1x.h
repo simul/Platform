@@ -162,4 +162,6 @@ protected:
 	bool RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	bool RenderSun();
 void DrawCube();
+	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
+	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };

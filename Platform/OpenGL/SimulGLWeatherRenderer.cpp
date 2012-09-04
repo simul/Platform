@@ -136,7 +136,7 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 	scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
 	scene_buffer->SetShader(0);
 	device_initialized=true;
-	EnableCloudLayers(simulCloudRenderer.get()!=NULL,simul2DCloudRenderer.get()!=NULL);
+	EnableCloudLayers(layer1,layer2);
 	///simulSkyRenderer->RestoreDeviceObjects();
 	//simulCloudRenderer->RestoreDeviceObjects(NULL);
 	//simulLightningRenderer->RestoreDeviceObjects();

@@ -560,7 +560,6 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 void Simul2DCloudRenderer::RenderCrossSections(int screen_width,int screen_height)
 {
 	int w=(screen_width-16)/6;
-	HRESULT hr=S_OK;
 	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 

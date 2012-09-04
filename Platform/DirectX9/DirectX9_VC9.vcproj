@@ -1101,6 +1101,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HLSL\simul_debug.fx"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\simul_foliage.fx"
 				>
 			</File>

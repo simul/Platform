@@ -41,16 +41,7 @@ void SimulGLLightningRenderer::RestoreDeviceObjects()
 
 void SimulGLLightningRenderer::RecompileShaders()
 {
-	lightning_program			=glCreateProgram();
-	lightning_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
-	lightning_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-    lightning_vertex_shader		=LoadProgram(lightning_vertex_shader,"simul_lightning.vert");
-    lightning_fragment_shader	=LoadProgram(lightning_fragment_shader,"simul_lightning.frag");
-	glAttachShader(lightning_program,lightning_vertex_shader);
-	glAttachShader(lightning_program,lightning_fragment_shader);
-	glLinkProgram(lightning_program);
-	glUseProgram(lightning_program);
-	printProgramInfoLog(lightning_program);
+	lightning_program			=MakeProgram("simul_lightning");
 	lightningTexture_param		=glGetUniformLocation(lightning_program,"lightningTexture");
 	
 	printProgramInfoLog(lightning_program);
@@ -59,6 +50,7 @@ void SimulGLLightningRenderer::RecompileShaders()
 
 void SimulGLLightningRenderer::InvalidateDeviceObjects()
 {
+	SAFE_DELETE_PROGRAM(lightning_program);
 }
 
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)

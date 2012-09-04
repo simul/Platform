@@ -3,6 +3,22 @@
 
 #include "Simul/Platform/OpenGL/Export.h"
 #include <assert.h>
+#include <GL/glew.h>
+
+SIMUL_OPENGL_EXPORT_CLASS Utilities
+{
+	static int instance_count;
+public:
+	Utilities();
+	~Utilities();
+	static void RestoreDeviceObjects(void *);
+	static void SetScreenSize(int w,int h);
+	static void InvalidateDeviceObjects();
+	static int screen_width;
+	static int screen_height;
+	static GLuint linedraw_program;
+};
+
 //! A wrapper around glewIsSupported() that checks for errors.
 extern void SIMUL_OPENGL_EXPORT CheckExtension(const char *txt);
 //! A wrapper around glOrtho() that also resets the GL matrices, and stores window height for later use.
@@ -23,9 +39,16 @@ extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_numbe
 //! Check the given error code, and halt the program if it is non-zero.
 extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_number,int err);
 #define ERROR_CHECK //CheckGLError(__FILE__,__LINE__);
-#define SAFE_DELETE_PROGRAM(prog)	glDeleteProgram(prog);prog=0;
+#define SAFE_DELETE_PROGRAM(prog)	if(prog){GLuint shaders[2];GLsizei count;glGetAttachedShaders(prog,2,&count,shaders);for(int i=0;i<count;i++) glDeleteShader(shaders[i]); glDeleteProgram(prog);prog=0;}
 #define SAFE_DELETE_TEXTURE(tex)	glDeleteTextures(1,&tex);tex=0;
 extern SIMUL_OPENGL_EXPORT bool RenderAngledQuad(const float *dir,float half_angle_radians);
+extern SIMUL_OPENGL_EXPORT void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 
+struct VertexXyzRgba
+{
+	float x,y,z;
+	float r,g,b,a;
+};
+extern SIMUL_OPENGL_EXPORT void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip);
 extern void CalcCameraPosition(float *cam_pos,float *cam_dir=0);
 #endif
