@@ -488,7 +488,7 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&v);
 	m_pd3dDevice->GetTransform(D3DTS_WORLD,&w);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&p);
-	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;
+	LPDIRECT3DVERTEXDECLARATION9 m_pBufferVertexDecl=NULL;
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 
 	{

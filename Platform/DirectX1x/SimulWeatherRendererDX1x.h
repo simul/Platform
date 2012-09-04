@@ -49,18 +49,6 @@ public:
 	bool RenderSky(bool buffered,bool is_cubemap);
 	bool RenderCubemap();
 	void *GetCubemap();
-	//! Enable or disable the 3d and 2d cloud layers.
-	void Enable(bool sky,bool clouds3d,bool clouds2d,bool rain);
-	//! Enable or disable the sky.
-	void SetShowSky(bool s)
-	{
-		show_sky=s;
-	}
-	//! Enable or disable the clouds.
-	void SetShowClouds(bool s)
-	{
-		show_3d_clouds=s;
-	}
 	//! Perform the once-per-frame time update.
 	void Update(float dt);
 	//! Apply the view and projection matrices, once per frame.
@@ -106,7 +94,6 @@ protected:
 	FramebufferCubemapDX1x			framebuffer_cubemap;
 	float							exposure;
 	float							gamma;
-	bool show_3d_clouds,layer2;
 	bool show_sky;
 	bool show_rain;
 	float timing;

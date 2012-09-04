@@ -87,17 +87,10 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudK
 	}
 	for(int i=0;i<4;i++)
 		seq_illum_texture_iterator[i].texture_index=i;
-
-	//cloudKeyframer->SetFillTexturesAsBlocks(true);
-	//cloudKeyframer->SetOpenGL(true);
-//	cloudNode->SetLicense(license_key);
 }
 
 bool SimulGLCloudRenderer::Create()
 {
-	//GetCloudInterface()->SetHumidity(0.5f);
-	// Must use this next line to prevent the above properties from being overwritten by the keyframes
-	//cloudKeyframer->InitKeyframesFromClouds();
 	return true;
 }
 

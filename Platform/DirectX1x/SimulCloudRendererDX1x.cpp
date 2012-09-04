@@ -167,7 +167,12 @@ void SimulCloudRendererDX1x::SetLossTextures(void *t)
 			skyLossTexture1->SetResource(NULL);
 		SAFE_RELEASE(skyLossTexture1Resource);
 		HRESULT hr;
-		V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_loss_texture_1,NULL,&skyLossTexture1Resource));
+		if(t)
+		{
+			V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_loss_texture_1,NULL,&skyLossTexture1Resource));
+		}
+		else
+			skyLossTexture1Resource=NULL;
 	}
 }
 
@@ -181,7 +186,12 @@ void SimulCloudRendererDX1x::SetInscatterTextures(void *t)
 			skyInscatterTexture1->SetResource(NULL);
 		SAFE_RELEASE(skyInscatterTexture1Resource);
 		HRESULT hr;
+		if(t)
+		{
 		V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_inscatter_texture_1,NULL,&skyInscatterTexture1Resource));
+		}
+		else
+			skyInscatterTexture1Resource=NULL;
 	}
 }
 
@@ -331,6 +341,8 @@ SimulCloudRendererDX1x::~SimulCloudRendererDX1x()
 
 bool SimulCloudRendererDX1x::CreateNoiseTexture(bool override_file)
 {
+	if(!m_pd3dDevice)
+		return false;
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(noise_texture);
 	

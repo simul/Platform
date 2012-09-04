@@ -140,6 +140,7 @@ HRESULT SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
 	HRESULT hr=S_OK;
+return hr;
 	RecompileShaders();
 	if(framebuffer)
 		framebuffer->RestoreDeviceObjects(dev);
@@ -203,7 +204,7 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &w,const D3DXMA
 
 void SimulAtmosphericsRendererDX1x::StartRender()
 {
-	if(!framebuffer)
+	//if(!framebuffer)
 		return;
 	framebuffer->SetExposure(1.f);
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");

@@ -1106,7 +1106,9 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	float tan_half_fov_vertical=1.f/proj._22;
 	float tan_half_fov_horizontal=1.f/proj._11;
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-	//helper->SetNoFrustumLimit(true);
+
+	static bool nofs=false;
+	helper->SetNoFrustumLimit(nofs);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),false);
 
 	if(fade_mode==CPU)

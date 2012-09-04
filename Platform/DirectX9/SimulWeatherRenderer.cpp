@@ -62,6 +62,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	show_rain(rain),
 	renderDepthBufferCallback(NULL)
 {
+	sky=rain=clouds2d=clouds3d=false;
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
 	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer.get();
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer.get();
