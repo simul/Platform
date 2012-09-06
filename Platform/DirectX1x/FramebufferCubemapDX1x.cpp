@@ -30,7 +30,7 @@ void FramebufferCubemapDX1x::SetWidthAndHeight(int w,int h)
 	assert(h==w);
 }
 
-bool FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
+void FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
 {
 	HRESULT hr=S_OK;
 #ifdef DX10
@@ -105,11 +105,9 @@ bool FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
 	SRVDesc.TextureCube.MostDetailedMip = 0;
 	 
 	V_CHECK( pd3dDevice->CreateShaderResourceView(m_pCubeEnvMap, &SRVDesc, &m_pCubeEnvMapSRV ));
-
-	return true;
 }
 
-bool FramebufferCubemapDX1x::InvalidateDeviceObjects()
+void FramebufferCubemapDX1x::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_pCubeEnvDepthMap);
 	SAFE_RELEASE(m_pCubeEnvMap);
@@ -120,7 +118,6 @@ bool FramebufferCubemapDX1x::InvalidateDeviceObjects()
 	}
 	SAFE_RELEASE(m_pCubeEnvMapSRV);
 	SAFE_RELEASE(m_pImmediateContext);
-	return true;
 }
 
 void FramebufferCubemapDX1x::SetCurrentFace(int i)

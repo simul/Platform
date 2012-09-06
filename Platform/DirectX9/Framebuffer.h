@@ -24,8 +24,8 @@ public:
 	Framebuffer();
 	~Framebuffer();
 	void SetWidthAndHeight(int w,int h);
-	bool RestoreDeviceObjects(void *pd3dDevice);
-	bool InvalidateDeviceObjects();
+	void RestoreDeviceObjects(void *pd3dDevice);
+	void InvalidateDeviceObjects();
 	//! The texture the sky and clouds are rendered to.
 	LPDIRECT3DTEXTURE9				hdr_buffer_texture;
 	LPDIRECT3DTEXTURE9				buffer_depth_texture;

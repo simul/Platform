@@ -1,6 +1,7 @@
 
 #ifdef _MSC_VER
 #include <GL/glew.h>
+#include <GL/glut.h>
 #endif
 
 #include "FramebufferGL.h"
@@ -21,14 +22,12 @@
 #include "Simul/Math/Decay.h"
 
 #ifdef _MSC_VER
-// for wglGetProcAddress
-#include <Windows.h>
-GLenum buffer_tex_format=GL_FLOAT;//GL_HALF_FLOAT_NV;
-GLenum internal_buffer_format=GL_RGBA32F_ARB;//GL_RGBA16F_ARB;
-#else
-GLenum buffer_tex_format=GL_FLOAT;
-GLenum internal_buffer_format=GL_RGBA32F_ARB;
+	// for wglGetProcAddress
+	#include <Windows.h>
 #endif
+
+static const GLenum buffer_tex_format		=GL_FLOAT;
+static const GLenum internal_buffer_format	=GL_RGBA32F_ARB;
 
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,bool usebuffer,bool tonemap,int width,
 		int height,bool sky,bool clouds3d,bool clouds2d,bool rain)
@@ -48,7 +47,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	}
 	simulCloudRenderer=new SimulGLCloudRenderer(ck3d);
 	baseCloudRenderer=simulCloudRenderer.get();
-	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d);
+	base2DCloudRenderer=simul2DCloudRenderer=NULL;//new SimulGL2DCloudRenderer(ck2d);
 	
 	simulLightningRenderer=new SimulGLLightningRenderer(environment->lightning.get());
 	baseLightningRenderer=simulLightningRenderer.get();
@@ -109,10 +108,11 @@ void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
 	}
 }
 
-bool SimulGLWeatherRenderer::RestoreDeviceObjects()
+void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 {
-	/*GLenum res=glewInit();
-	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
+	GLenum res=glewInit();
+	
+	/*const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
 // If the GL_GREMEDY_string_marker extension is supported:
 	if(glewIsSupported("GL_GREMEDY_string_marker"))
 	{
@@ -136,14 +136,13 @@ bool SimulGLWeatherRenderer::RestoreDeviceObjects()
 	scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
 	scene_buffer->SetShader(0);
 	device_initialized=true;
-	EnableCloudLayers(simulCloudRenderer.get()!=NULL,simul2DCloudRenderer.get()!=NULL);
+	EnableCloudLayers(layer1,layer2);
 	///simulSkyRenderer->RestoreDeviceObjects();
 	//simulCloudRenderer->RestoreDeviceObjects(NULL);
 	//simulLightningRenderer->RestoreDeviceObjects();
 	simulAtmosphericsRenderer->RestoreDeviceObjects(NULL);
-	return true;
 }
-bool SimulGLWeatherRenderer::InvalidateDeviceObjects()
+void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 {
 	if(simulSkyRenderer)
 		simulSkyRenderer->InvalidateDeviceObjects();
@@ -155,7 +154,6 @@ bool SimulGLWeatherRenderer::InvalidateDeviceObjects()
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
 	if(scene_buffer)
 		scene_buffer->InvalidateDeviceObjects();
-	return true;
 }
 
 bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)

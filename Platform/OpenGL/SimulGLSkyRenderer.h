@@ -43,7 +43,6 @@ public:
 	//! Render the stars, as points.
 	bool						RenderPointStars();
 	//! Draw the 2D fades to screen for debugging.
-	//void						RenderFades(int width);
 	bool						RenderFades(int w,int h);
 
 	// Implementing simul::sky::SkyTexturesCallback
@@ -79,6 +78,8 @@ protected:
 	bool		initialized;
 	bool		Render2DFades();
 	void		CreateFadeTextures();
+	void		CreateSkyTextures();
+
 	GLuint		sky_tex[3];
 	GLuint		loss_textures[3];
 	GLuint		inscatter_textures[3];
@@ -88,7 +89,6 @@ protected:
 
 	unsigned		cloud_texel_index;
 	unsigned char	*sky_tex_data;
-	GLuint			sky_vertex_shader,sky_fragment_shader;
 	GLuint			sky_program;
 	GLuint			planet_program;
 	GLuint			sun_program;
@@ -120,5 +120,7 @@ protected:
 	{
 		return false;
 	}
+	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
+	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };
 

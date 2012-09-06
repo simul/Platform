@@ -33,9 +33,9 @@ class SimulAtmosphericsInterface
 {
 public:
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-	virtual bool RestoreDeviceObjects(void *pd3dDevice)=0;
+	virtual void RestoreDeviceObjects(void *pd3dDevice)=0;
 	//! Call this when the device has been lost.
-	virtual bool InvalidateDeviceObjects()=0;
+	virtual void InvalidateDeviceObjects()=0;
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 	virtual bool Render()=0;
 	virtual void SetInputTextures(LPDIRECT3DTEXTURE9 image,LPDIRECT3DTEXTURE9 depth)=0;
@@ -50,10 +50,10 @@ public:
 	//standard d3d object interface functions
 
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-	bool RestoreDeviceObjects(void *pd3dDevice);
+	void RestoreDeviceObjects(void *pd3dDevice);
 	void RecompileShaders();
 	//! Call this when the device has been lost.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 	bool Render();
 	//! Set properties for rendering cloud godrays.

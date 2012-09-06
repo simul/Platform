@@ -21,8 +21,8 @@ public:
 		META_ValueProperty(float,Exposure,"")
 	META_EndProperties
 	void SetBufferSize(int w,int h);
-	bool RestoreDeviceObjects();
-	bool InvalidateDeviceObjects();
+	void RestoreDeviceObjects();
+	void InvalidateDeviceObjects();
 	bool StartRender();
 	bool FinishRender();
 protected:

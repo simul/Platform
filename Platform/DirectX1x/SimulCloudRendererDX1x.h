@@ -60,13 +60,14 @@ public:
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si);
 	void RecompileShaders();
 	//! Call this when the D3D device has been created or reset
-	bool RestoreDeviceObjects( void* pd3dDevice);
+	void RestoreDeviceObjects( void* pd3dDevice);
 	//! Call this when the 3D device has been lost.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
 	//! Call this to draw the clouds, including any illumination by lightning.
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+	void RenderCrossSections(int width,int height);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 	bool RenderLightning();
 	//! Call this once per frame to set the matrices.
@@ -134,7 +135,10 @@ protected:
 	ID3D1xEffectTechnique*			m_hTechniqueLightning;
 	ID3D1xEffect*					m_pCloudEffect;
 	ID3D1xEffectTechnique*			m_hTechniqueCloud;
-	ID3D1xEffectTechnique*			m_hTechniqueCloudsAndLightning;	
+	ID3D1xEffectTechnique*			m_hTechniqueCloudsAndLightning;
+
+	ID3D1xEffectTechnique*			m_hTechniqueCrossSectionXZ;
+	ID3D1xEffectTechnique*			m_hTechniqueCrossSectionXY;
 
 	ID3D1xEffectMatrixVariable* 	l_worldViewProj;
 	ID3D1xEffectMatrixVariable* 	worldViewProj;

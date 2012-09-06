@@ -151,7 +151,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 //>"fxc.exe" /T fx_2_0 /Fo "..\..\gamma.fx"o "..\..\gamma.fx"
 			command="\""+command;
 			command+="Utilities\\Bin\\x86\\fxc.exe\"";
-			command+=" /Tfx_5_0 /Fo \"";
+			command+=" /nologo /Tfx_5_0 /Fo \"";
 			command+=text_filename+"o\" \"";
 			command+=text_filename+"\"";
 			if(macros)
@@ -163,7 +163,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 					command+=macros->Definition;
 					macros++;
 				}
-			//command+=" > \""+text_filename+".log\"";
+		//	command+=" > \""+text_filename+".log\"";
 #if 0
 			system(command.c_str());
 #else
@@ -186,8 +186,27 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 			strcpy(com,command.c_str());
 			si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 			si.wShowWindow = SW_HIDE;
-			FILE *fp = fopen((text_filename+".log").c_str(), "w");
-			si.hStdOutput = fp;
+			//FILE *fp = fopen((text_filename+".log").c_str(), "w");
+
+			HANDLE hReadOutPipe = NULL;
+			HANDLE hWriteOutPipe = NULL;
+			HANDLE hReadErrorPipe = NULL;
+			HANDLE hWriteErrorPipe = NULL;
+		   SECURITY_ATTRIBUTES saAttr; 
+// Set the bInheritHandle flag so pipe handles are inherited. 
+		 
+		   saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+		   saAttr.bInheritHandle = TRUE; 
+		   saAttr.lpSecurityDescriptor = NULL; 
+			CreatePipe( &hReadOutPipe, &hWriteOutPipe, &saAttr, 100 );
+			CreatePipe( &hReadErrorPipe, &hWriteErrorPipe, &saAttr, 100 );
+
+			//SetHandleInformation(hReadOutPipe, HANDLE_FLAG_INHERIT, 0) ;
+
+			//SetHandleInformation(hReadErrorPipe, HANDLE_FLAG_INHERIT, 0) ;
+
+			si.hStdOutput = hWriteOutPipe;
+			si.hStdError= hWriteErrorPipe;
 			CreateProcessA( NULL,		// No module name (use command line)
 					com,				// Command line
 					NULL,				// Process handle not inheritable
@@ -200,16 +219,56 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 					&pi )				// Pointer to PROCESS_INFORMATION structure
 				;
 			// Wait until child process exits.
-			WaitForSingleObject( pi.hProcess, INFINITE );
+
+
+
+		  HANDLE WaitHandles[] = {
+			pi.hProcess, hReadOutPipe, hReadErrorPipe
+		  };
+
+		  const DWORD BUFSIZE = 4096;
+		  BYTE buff[BUFSIZE];
+			bool has_errors=false;
+		  while (1)
+		  {
+			DWORD dwBytesRead, dwBytesAvailable;
+
+			DWORD dwWaitResult = WaitForMultipleObjects(3, WaitHandles, FALSE, 60000L);
+
+			// Read from the pipes...
+			while( PeekNamedPipe(hReadOutPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
+			{
+			  ReadFile(hReadOutPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
+			  std::cout << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+			}
+			while( PeekNamedPipe(hReadErrorPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
+			{
+			  ReadFile(hReadErrorPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
+			  std::string str((char*)buff, (size_t)dwBytesRead);
+			  std::cerr << str.c_str();
+			  size_t pos=str.find("rror");
+			  if(pos<str.length())
+				has_errors=true;
+			}
+
+			// Process is done, or we timed out:
+			if(dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
+			break;
+		  }     
+
+
+			//WaitForSingleObject( pi.hProcess, INFINITE );
 			CloseHandle( pi.hProcess );
 			CloseHandle( pi.hThread );
 
 			/*"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Utilities\Bin\x86\fxc.exe" /T fx_5_0 /Fo "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fxo" "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fx""	char [200]
 			 */
 
-			fclose(fp);
+			//fclose(fp);
 #endif
 #endif
+			if(has_errors)
+				return S_FALSE;
 		}
 	}
 	HRESULT hr=D3DX11CreateEffectFromBinaryFile(filename,FXFlags,pDevice,ppEffect);
@@ -286,8 +345,6 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 		if(errors)
 			std::cerr<<(char*)errors->GetBufferPointer()<<std::endl;
 #endif
-		//errors->GetBufferSize();
-
 		DebugBreak();
 	}
 	else
@@ -298,7 +355,6 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 	delete [] macros;
 	return hr;
 }
-
 
 HRESULT Map2D(ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp)
 {
@@ -578,6 +634,11 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *cam_pos,const floa
 	SAFE_RELEASE(m_pVtxDecl);
 }
 
+void RenderTexture(ID3D1xDevice *m_pd3dDevice,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech)
+{
+	RenderTexture(m_pd3dDevice,(float)x1,(float)y1,(float)dx,(float)dy,tech);
+}
+
 void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech)
 {
 	struct Vertext
@@ -585,7 +646,6 @@ void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float d
 		D3DXVECTOR4 pos;
 		D3DXVECTOR2 tex;
 	};
-
 	HRESULT hr=S_OK;
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =
 	{
@@ -594,10 +654,8 @@ void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float d
 	};
 	D3D1x_PASS_DESC PassDesc;
 	tech->GetPassByIndex(0)->GetDesc(&PassDesc);
-	ID3D1xInputLayout*					m_pBufferVertexDecl;
-	hr=m_pd3dDevice->CreateInputLayout(decl,2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pBufferVertexDecl);
-
-
+	ID3D1xInputLayout *m_pBufferVertexDecl;
+	hr=m_pd3dDevice->CreateInputLayout(decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pBufferVertexDecl);
 	Vertext vertices[4] =
 	{
 		D3DXVECTOR4(x1		,y1			,0.f,	1.f), D3DXVECTOR2(0.f	,1.f),
@@ -618,10 +676,8 @@ void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float d
     InitData.pSysMem = vertices;
     InitData.SysMemPitch = sizeof(Vertext);
     InitData.SysMemSlicePitch = 0;
-
-	ID3D1xBuffer*						m_pVertexBuffer;
+	ID3D1xBuffer* m_pVertexBuffer;
 	hr=m_pd3dDevice->CreateBuffer(&bdesc,&InitData,&m_pVertexBuffer);
-
 	UINT stride = sizeof(Vertext);
 	UINT offset = 0;
     UINT Strides[1];
@@ -635,10 +691,10 @@ void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float d
 												&offset);			// array of offset values, one for each buffer
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
+	hr=ApplyPass(tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(4,0);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pBufferVertexDecl);
-
 }
 
 // Stored states

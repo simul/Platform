@@ -19,8 +19,8 @@ public:
 	virtual ~SimulGLAtmosphericsRenderer();
 	//standard ogl object interface functions
 	void RecompileShaders();
-	bool RestoreDeviceObjects(void *);
-	bool InvalidateDeviceObjects();
+	void RestoreDeviceObjects(void *);
+	void InvalidateDeviceObjects();
 	// Interface
 	void SetBufferSize(int w,int h);
 	void SetMaxFadeDistanceKm(float dist_km);

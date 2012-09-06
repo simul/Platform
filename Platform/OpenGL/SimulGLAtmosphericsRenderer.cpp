@@ -29,12 +29,11 @@ void SimulGLAtmosphericsRenderer::SetBufferSize(int w,int h)
 	}
 }
 
-bool SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
+void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 {
 	initialized=true;
 	framebuffer->InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	RecompileShaders();
-	return true;
 }
 
 void SimulGLAtmosphericsRenderer::RecompileShaders()
@@ -48,8 +47,8 @@ ERROR_CHECK
 ERROR_CHECK
 	cloudmix_program			=glCreateProgram();
 ERROR_CHECK
-	cloudmix_vertex_shader		=LoadProgram(cloudmix_vertex_shader		,"simul_cloudmix.vert");
-    cloudmix_fragment_shader	=LoadProgram(cloudmix_fragment_shader	,"simul_cloudmix.frag");
+	cloudmix_vertex_shader		=LoadShader(cloudmix_vertex_shader		,"simul_cloudmix.vert");
+    cloudmix_fragment_shader	=LoadShader(cloudmix_fragment_shader	,"simul_cloudmix.frag");
 	glAttachShader(cloudmix_program,cloudmix_vertex_shader);
 	glAttachShader(cloudmix_program,cloudmix_fragment_shader);
 	glLinkProgram(cloudmix_program);
@@ -70,9 +69,8 @@ ERROR_CHECK
 	glUseProgram(0);
 }
 
-bool SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
+void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 {
-	return true;
 }
 
 void SimulGLAtmosphericsRenderer::SetMaxFadeDistanceKm(float dist_km)

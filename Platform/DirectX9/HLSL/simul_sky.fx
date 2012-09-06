@@ -179,7 +179,7 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	return output;
 }
 
-float4 PS_Main( vertexOutput IN): color
+float4 PS_Main( vertexOutput IN): COLOR
 {
 	float3 view=normalize(IN.wDirection.xyz);
 #ifdef Y_VERTICAL
@@ -202,7 +202,7 @@ float4 PS_Main( vertexOutput IN): color
 	return float4(output,1.f);
 }
 
-float4 PS_Stars(vertexOutput IN): color
+float4 PS_Stars(vertexOutput IN): COLOR
 {
 	float3 view=normalize(IN.wDirection.xyz);
 #ifdef Y_VERTICAL
@@ -257,20 +257,41 @@ float4 PS_Flare(svertexOutput IN): color
 	return float4(output,1.f);
 }
 
+float approx_oren_nayar(float roughness,float3 view,float3 normal,float3 lightDir)
+{
+	float roughness2 = roughness * roughness;
+	float2 oren_nayar_fraction = roughness2 / (roughness2 + float2(0.33, 0.09));
+	float2 oren_nayar = float2(1, 0) + float2(-0.5, 0.45) * oren_nayar_fraction;
+	// Theta and phi
+	float2 cos_theta = saturate(float2(dot(normal, lightDir), dot(normal, view)));
+	float2 cos_theta2 = cos_theta * cos_theta;
+	float u=saturate((1-cos_theta2.x) * (1-cos_theta2.y));
+	float sin_theta = sqrt(u);
+	float3 light_plane = normalize(lightDir - cos_theta.x * normal);
+	float3 view_plane = normalize(view - cos_theta.y * normal);
+	float cos_phi = saturate(dot(light_plane, view_plane));
+	// Composition
+	float diffuse_oren_nayar = cos_phi * sin_theta / max(0.00001,max(cos_theta.x, cos_theta.y));
+	float diffuse = cos_theta.x * (oren_nayar.x + oren_nayar.y * diffuse_oren_nayar);
+	return diffuse;
+}
+
 float4 PS_Planet(svertexOutput IN): color
 {
-	float4 output=tex2D(flare_texture,float2(0.5f,0.5f)-0.5f*IN.tex);
+	float4 result=tex2D(flare_texture,float2(0.5f,0.5f)-0.5f*IN.tex);
 	// IN.tex is +- 1.
 	float3 normal;
 	normal.x=IN.tex.x;
 	normal.y=IN.tex.y;
 	float l=length(IN.tex);
+	if(l>1.0)
+		discard;
 	normal.z=-sqrt(1.f-l*l);
-	float light=saturate(dot(normal.xyz,lightDir.xyz));
-	output.rgb*=colour.rgb;
-	output.rgb*=light;
-	output.a*=saturate((1.0-l)/0.01);
-	return output;
+	float light=approx_oren_nayar(0.2,float3(0,0,1.0),normal,lightDir);
+	result.rgb*=colour.rgb;
+	result.rgb*=light;
+	result.a*=saturate((0.99-l)/0.01);
+	return result;
 }
 
 float4 PS_Query(svertexOutput IN): color
@@ -290,31 +311,6 @@ float4 PS_Point_Stars(svertexOutput IN): color
 {
 	float3 colour=float3(1.f,1.f,1.f)*saturate(starBrightness*IN.tex.x);
 	return float4(colour,1.f);
-}
-
-struct colourVertexInput
-{
-    float3 position			: POSITION;
-    float4 colour			: COLOR0;
-};
-
-struct colourVertexOutput
-{
-    float4 hPosition		: POSITION;
-    float4 colour			: COLOR0;
-};
-
-colourVertexOutput VS_Plain_Colour(colourVertexInput IN) 
-{
-    colourVertexOutput OUT;
-    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
-    OUT.colour=IN.colour;
-    return OUT;
-}
-
-float4 PS_Plain_Colour(colourVertexOutput IN): color
-{
-	return IN.colour;
 }
 
 
@@ -450,25 +446,6 @@ technique simul_starry_sky
         AlphaBlendEnable = false;
 // Don't write alpha, as that's depth!
 		ColorWriteEnable=7;
-#ifndef XBOX
-		lighting = false;
-#endif
-    }
-}
-
-technique simul_plain_colour
-{
-    pass p0 
-    {		
-		VertexShader = compile vs_2_0 VS_Plain_Colour();
-		PixelShader  = compile ps_2_b PS_Plain_Colour();
-       
-        CullMode = None;
-		zenable = false;
-		zwriteenable = false;
-        AlphaBlendEnable = false;
-		SrcBlend = SrcAlpha;
-		DestBlend = One;
 #ifndef XBOX
 		lighting = false;
 #endif

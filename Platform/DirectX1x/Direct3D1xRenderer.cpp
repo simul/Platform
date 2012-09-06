@@ -77,10 +77,11 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 		simulHDRRenderer->InvalidateDeviceObjects();
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->InvalidateDeviceObjects();
-	if(simulHDRRenderer&&!simulHDRRenderer->RestoreDeviceObjects(pd3dDevice,pSwapChain))
-		return (HRESULT)(-1);
-	if(simulWeatherRenderer&&!simulWeatherRenderer->RestoreDeviceObjects(pd3dDevice,pSwapChain))
-		return (HRESULT)(-1);
+	void *x[2]={pd3dDevice,pSwapChain};
+	if(simulHDRRenderer)
+		simulHDRRenderer->RestoreDeviceObjects(x);
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->RestoreDeviceObjects(x);
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
 	return S_OK;
@@ -123,6 +124,19 @@ void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11De
 		simulHDRRenderer->FinishRender();
 	if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->RenderFades(ScreenWidth,ScreenHeight);
+	if(simulWeatherRenderer&&ShowCloudCrossSections)
+	{
+		if(simulWeatherRenderer->IsCloudLayer1Visible())
+		{
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(ScreenWidth,ScreenHeight);
+		//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
+		}
+		if(simulWeatherRenderer->IsCloudLayer2Visible())
+		{
+		//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(ScreenWidth,ScreenHeight);
+		}
+	}
+	
 }
 
 void	Direct3D11Renderer::OnD3D11LostDevice()

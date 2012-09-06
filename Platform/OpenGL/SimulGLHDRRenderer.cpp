@@ -35,16 +35,14 @@ void SimulGLHDRRenderer::SetBufferSize(int w,int h)
 	}
 }
 
-bool SimulGLHDRRenderer::RestoreDeviceObjects()
+void SimulGLHDRRenderer::RestoreDeviceObjects()
 {
 	framebuffer->InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	ERROR_CHECK
-	return true;
 }
 
-bool SimulGLHDRRenderer::InvalidateDeviceObjects()
+void SimulGLHDRRenderer::InvalidateDeviceObjects()
 {
-	return true;
 }
 
 bool SimulGLHDRRenderer::StartRender()

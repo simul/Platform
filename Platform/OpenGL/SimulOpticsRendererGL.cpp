@@ -44,7 +44,7 @@ void SimulOpticsRendererGL::RestoreDeviceObjects(void *)
 void SimulOpticsRendererGL::RecompileShaders()
 {
 	SAFE_DELETE_PROGRAM(flare_program);
-	flare_program					=LoadProgram("simul_sun_planet_flare.vert","simul_flare.frag");
+	flare_program					=LoadPrograms("simul_sun_planet_flare.vert","simul_flare.frag");
 	flareColour_param				=glGetUniformLocation(flare_program,"flareColour");
 	flareTexture_param				=glGetUniformLocation(flare_program,"flareTexture");
 	printProgramInfoLog(flare_program);
@@ -58,6 +58,7 @@ void SimulOpticsRendererGL::InvalidateDeviceObjects()
 		SAFE_DELETE_TEXTURE(halo_textures[i]);
 	}
 	halo_textures.clear();
+	SAFE_DELETE_PROGRAM(flare_program);
 }
 
 void SimulOpticsRendererGL::RenderFlare(float exposure,const float *dir,const float *light)

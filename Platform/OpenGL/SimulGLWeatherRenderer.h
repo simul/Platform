@@ -44,9 +44,9 @@ public:
 	virtual ~SimulGLWeatherRenderer();
 	void SetScreenSize(int w,int h);
 	//! Call this when the device has been created
-	bool RestoreDeviceObjects();
+	void RestoreDeviceObjects(void*);
 	//! Call this when the 3D device has been lost.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! Platform-dependent. Call this to draw the sky
 	bool RenderSky(bool buffered,bool is_cubemap);
 	//! Call this to draw the clouds

@@ -16,7 +16,7 @@ public:
 	virtual ~SimulOceanRendererDX1x();
 	void SetOceanParameters(const OceanParameter& ocean_param);
 	// init & cleanup
-	bool RestoreDeviceObjects(ID3D11Device* pd3dDevice);
+	void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
 	void InvalidateDeviceObjects();
 	// Rendering routines
 	//! Call this once per frame to set the matrices.

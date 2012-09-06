@@ -48,8 +48,8 @@ public:
 	//standard d3d object interface functions
 	bool Create(LPDIRECT3DDEVICE9 pd3dDevice);
 	bool RecompileShaders();
-	bool RestoreDeviceObjects(void *pd3dDevice);
-	bool InvalidateDeviceObjects();
+	void RestoreDeviceObjects(void *pd3dDevice);
+	void InvalidateDeviceObjects();
 
 	virtual ~SimulTerrainRenderer();
 	bool RenderOnlyDepth();
@@ -95,10 +95,15 @@ public:
 	}
 	void SetYVertical(bool s)
 	{
-		y_vertical=s;
-		InvalidateDeviceObjects();
-		if(m_pd3dDevice)
-			RestoreDeviceObjects(m_pd3dDevice);
+		if(s!=y_vertical)
+		{
+			y_vertical=s;
+			if(m_pd3dDevice)
+			{
+				InvalidateDeviceObjects();
+				RestoreDeviceObjects(m_pd3dDevice);
+			}
+		}
 	}
 	void SetMaxFadeDistanceKm(float dist_km)
 	{

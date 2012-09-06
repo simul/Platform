@@ -63,7 +63,7 @@ public:
 	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	bool						RenderSun();
 	//! Get the transform that goes from declination/right-ascension to azimuth and elevation.
-	bool						GetSiderealTransform(D3DXMATRIX *world);
+	//bool						GetSiderealTransform(D3DXMATRIX *world);
 	//! Render the stars, as points.
 	bool						RenderPointStars();
 	//! Render the stars, as a background.
@@ -72,8 +72,6 @@ public:
 	bool						Render(bool blend);
 	//! Draw the fade textures to screen
 	bool						RenderFades(int w,int h);
-	//! Draw sidereal and geographic information to screen
-	bool						RenderCelestialDisplay(int screen_width,int screen_height);
 #ifdef XBOX
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
@@ -95,16 +93,6 @@ public:
 	void SetStepsPerDay(int s);
 //! Implement the SkyTexturesCallback
 	void SetSkyTextureSize(unsigned size);
-	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void FillFadeTexturesSequentially(int,int,int,
-						const float *,
-						const float *);
-	void FillFadeTextureBlocks(int,int,int,int,int,int,int,
-						const float *,
-						const float *)
-	{
-	}
-	
 	void FillDistanceTexture(int num_elevs_width,int num_alts_height,const float *dist_array);
 	float CalcSunOcclusion(float cloud_occlusion);
 
@@ -114,20 +102,20 @@ public:
 	void SetYVertical(bool y);
 protected:
 	void FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void FillFadeTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *loss_float4_array,const float *inscatter_float4_array);
+	void FillFadeTexturesSequentially(int alt_index,int texture_index,int texel_index,int num_texels,const float *loss_float4_array,const float *inscatter_float4_array);
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate();
 	void EnsureTextureCycle();
 	int CalcScreenPixelHeight();
+	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
+	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 	int screen_pixel_height;
 	bool Render2DFades();
 	bool y_vertical;
-	bool PrintAt(const float *p,const TCHAR *text,int screen_width,int screen_height);
 	float timing;
 	D3DFORMAT sky_tex_format;
 
 	LPDIRECT3DDEVICE9			m_pd3dDevice;
-	LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl;
 
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;
 	LPD3DXEFFECT				m_pSkyEffect;		// The fx file for the sky
@@ -136,7 +124,6 @@ protected:
 	D3DXHANDLE					m_hTechniqueShowSkyTexture;
 	D3DXHANDLE					m_hTechniqueStarrySky;
 	D3DXHANDLE					m_hTechniquePointStars;
-	D3DXHANDLE					m_hTechniquePlainColour;
 	D3DXHANDLE					m_hTechniqueSun;
 	D3DXHANDLE					m_hTechniqueQuery;	// A technique that uses the z-test for occlusion queries
 	D3DXHANDLE					m_hTechniquePlanet;
@@ -174,7 +161,6 @@ protected:
 	// Two in-use 2D sky textures. We render a slice of the 3D textures into these, then use them for all fades.
 	Framebuffer					loss_2d;
 	Framebuffer					inscatter_2d;
-    ID3DXFont*					m_pFont;
 	simul::sky::float4			cam_dir;
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DQUERY9			d3dQuery;

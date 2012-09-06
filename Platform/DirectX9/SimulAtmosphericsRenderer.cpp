@@ -61,7 +61,7 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
 {
 }
 
-bool SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
+void SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr=S_OK;
@@ -80,7 +80,6 @@ bool SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 	};
 	SAFE_RELEASE(vertexDecl);
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&vertexDecl);
-	return (hr==S_OK);
 }
 
 void SimulAtmosphericsRenderer::RecompileShaders()
@@ -139,14 +138,12 @@ void SimulAtmosphericsRenderer::RecompileShaders()
 	illuminationScales				=effect->GetParameterByName(NULL,"illuminationScales");
 }
 
-bool SimulAtmosphericsRenderer::InvalidateDeviceObjects()
+void SimulAtmosphericsRenderer::InvalidateDeviceObjects()
 {
-	HRESULT hr=S_OK;
 	SAFE_RELEASE(vertexDecl);
 	if(effect)
-        hr=effect->OnLostDevice();
+        V_CHECK(effect->OnLostDevice());
 	SAFE_RELEASE(effect);
-	return (hr==S_OK);
 }
 
 SimulAtmosphericsRenderer::~SimulAtmosphericsRenderer()

@@ -29,6 +29,13 @@ SamplerState cloudSamplerState
 	AddressV = Wrap;
 	AddressW = Clamp;
 };
+SamplerState crossSectionSamplerState
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Clamp;
+};
 
 Texture2D noiseTexture;
 SamplerState noiseSamplerState 
@@ -75,6 +82,7 @@ cbuffer cbUser : register(b2)
 	float fadeInterp			: packoffset(c13);
 	float cloudEccentricity		: packoffset(c14);
 	float alphaSharpness		: packoffset(c15);
+	float3 crossSectionOffset	: packoffset(c16);
 };
 
 struct vertexInput
@@ -258,6 +266,70 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
     return float4(final.rgb,opacity);
 }
 
+struct vertexInputCS
+{
+    float4 position			: POSITION;
+    float2 texCoords		: TEXCOORD0;
+};
+
+struct vertexOutputCS
+{
+    float4 hPosition		: SV_POSITION;
+    float3 texCoords		: TEXCOORD0;
+};
+
+vertexOutputCS VS_CrossSection(vertexInputCS IN)
+{
+    vertexOutputCS OUT;
+    OUT.hPosition = mul(worldViewProj,IN.position);
+
+	OUT.texCoords.xy=IN.texCoords;
+	OUT.texCoords.z=1;
+	//OUT.colour=IN.colour;
+    return OUT;
+}
+
+#define CROSS_SECTION_STEPS 1
+float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
+{
+	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,0,crossSectionOffset.z+IN.texCoords.y);
+	int i=0;
+	float3 accum=float3(0.f,0.5f,1.f);
+	texc.y+=.5f/(float)CROSS_SECTION_STEPS;
+	for(i=0;i<CROSS_SECTION_STEPS;i++)
+	{
+		float4 density=cloudDensity1.Sample(crossSectionSamplerState,texc);
+		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.z);
+		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
+		float opacity=density.x;
+		colour*=opacity;
+		accum*=1.f-opacity;
+		accum+=colour;
+		texc.y+=1.f/(float)CROSS_SECTION_STEPS;
+	}
+    return float4(accum,1);
+}
+
+float4 PS_CrossSectionXY( vertexOutputCS IN): SV_TARGET
+{
+	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,crossSectionOffset.y+IN.texCoords.y,0);
+	int i=0;
+	float3 accum=float3(0.f,0.5f,1.f);
+	texc.z+=.5f/(float)CROSS_SECTION_STEPS;
+	for(i=0;i<CROSS_SECTION_STEPS;i++)
+	{
+		float4 density=cloudDensity1.Sample(crossSectionSamplerState,texc);
+		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.z);
+		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
+		float opacity=density.x;//+.05f;
+		colour*=opacity;
+		accum*=1.f-opacity;
+		accum+=colour;
+		texc.z+=1.f/(float)CROSS_SECTION_STEPS;
+	}
+    return float4(accum,1);
+}
+
 DepthStencilState DisableDepth
 {
 	DepthEnable = FALSE;
@@ -274,6 +346,11 @@ BlendState DoBlend
     DestBlendAlpha = INV_SRC_ALPHA;
     BlendOpAlpha = ADD;
     RenderTargetWriteMask[0] = 0x0F;
+};
+
+BlendState NoBlend
+{
+	BlendEnable[0] = FALSE;
 };
 
 RasterizerState RenderNoCull
@@ -322,3 +399,30 @@ technique11 simul_clouds_and_lightning
     }
 }
 
+technique11 cross_section_xz
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(NoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_CrossSectionXZ()));
+    }
+}
+
+
+
+technique11 cross_section_xy
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(NoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_CrossSectionXY()));
+    }
+}

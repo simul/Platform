@@ -110,6 +110,8 @@ ExampleHumidityCallback hm;
 SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cloudKeyframer) :
 	simul::clouds::BaseCloudRenderer(cloudKeyframer),
 	m_hTechniqueLightning(NULL),
+	m_hTechniqueCrossSectionXZ(NULL),
+	m_hTechniqueCrossSectionXY(NULL),
 	m_pd3dDevice(NULL),
 	m_pImmediateContext(NULL),
 	m_pVtxDecl(NULL),
@@ -217,7 +219,7 @@ void SimulCloudRendererDX1x::RecompileShaders()
 
 }
 
-bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
+void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 {
 	m_pd3dDevice=(ID3D1xDevice*)dev;
 #ifdef DX10
@@ -227,8 +229,8 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
 	HRESULT hr;
-	B_RETURN(CreateNoiseTexture());
-	B_RETURN(CreateLightningTexture());
+	CreateNoiseTexture();
+	CreateLightningTexture();
 	RecompileShaders();
 
 	D3D1x_SHADER_RESOURCE_VIEW_DESC texdesc;
@@ -290,10 +292,9 @@ bool SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	if(lightningIlluminationTextureResource)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 	ClearIterators();
-	return (hr==S_OK);
 }
 
-bool SimulCloudRendererDX1x::InvalidateDeviceObjects()
+void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	Unmap();
@@ -324,14 +325,12 @@ bool SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	
 	SAFE_RELEASE(lightningIlluminationTextureResource);
 	ClearIterators();
-	return (hr==S_OK);
 }
 
 bool SimulCloudRendererDX1x::Destroy()
 {
-	HRESULT hr=S_OK;
-	hr=InvalidateDeviceObjects();
-	return (hr==S_OK);
+	InvalidateDeviceObjects();
+	return (true);
 }
 
 SimulCloudRendererDX1x::~SimulCloudRendererDX1x()
@@ -544,6 +543,9 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	HRESULT hr=CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds_and_lightning_dx11.fx",defines);
 	m_hTechniqueCloud					=m_pCloudEffect->GetTechniqueByName("simul_clouds");
 	m_hTechniqueCloudsAndLightning		=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
+
+	m_hTechniqueCrossSectionXY			=m_pCloudEffect->GetTechniqueByName("cross_section_xy");
+	m_hTechniqueCrossSectionXZ			=m_pCloudEffect->GetTechniqueByName("cross_section_xz");
 
 	worldViewProj						=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	eyePosition							=m_pCloudEffect->GetVariableByName("eyePosition")->AsVector();
@@ -798,6 +800,59 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	else
 		ApplyPass(m_hTechniqueCloud->GetPassByIndex(0));
 	return (hr==S_OK);
+}
+
+void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
+{
+	HRESULT hr=S_OK;
+	static int u=3;
+	int w=(width-8)/u;
+	int h=(w)/GetCloudGridInterface()->GetGridWidth();
+	if(h<1)
+		h=1;
+	h*=GetCloudGridInterface()->GetGridHeight();
+	D3DXVECTOR4 cross_section_offset(
+			(GetCloudInterface()->GetWrap()?0.5f:0.f)+0.5f/(float)cloud_tex_width_x
+			,GetCloudInterface()->GetWrap()?0.5f:0.f+0.5f/(float)cloud_tex_length_y
+			,0.5f/(float)cloud_tex_depth_z
+			,0);
+	Unmap();
+
+	D3DXMATRIX ortho;
+    D3DXMatrixOrthoLH(&ortho,(float)width,(float)height,-100.f,100.f);
+	ortho._14=-1.f;
+	ortho._22=-ortho._22;
+	ortho._24=1.f;
+	ID3D1xEffectMatrixVariable*	worldViewProj=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	worldViewProj->SetMatrix(ortho);
+
+	for(int i=0;i<3;i++)
+	{
+		const simul::clouds::CloudKeyframer::Keyframe *kf=
+				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
+		if(!kf)
+			break;
+		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
+		lightResponse->SetFloatVector((const float*)(&light_response));
+
+		cloudDensity1->SetResource(cloudDensityResource[i%3]);
+		RenderTexture(m_pd3dDevice,i*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
+	}
+	for(int i=0;i<3;i++)
+	{
+		const simul::clouds::CloudKeyframer::Keyframe *kf=
+				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
+		if(!kf)
+			break;
+		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
+		lightResponse->SetFloatVector((const float*)(&light_response));
+		//m_pCloudEffect->SetVector(crossSectionOffset,&cross_section_offset);
+		//GetCloudInterface()->GetWrap()?0.5f:0.f);
+		cloudDensity1->SetResource(cloudDensityResource[i%3]);
+		RenderTexture(m_pd3dDevice,i*(w+1)+4,h+8,w,w,m_hTechniqueCrossSectionXY);
+	}
 }
 
 bool SimulCloudRendererDX1x::RenderLightning()

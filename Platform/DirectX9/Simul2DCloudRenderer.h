@@ -51,15 +51,15 @@ public:
 	bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
 	void RecompileShaders();
 	//! Call this when the D3D device has been created or reset.
-	bool RestoreDeviceObjects(void *pd3dDevice);
+	void RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! Return debugging information.
 	const char *GetDebugText() const;
 	//! Call this to draw the clouds, including any illumination by lightning.
 	//! On DX9, depth_testing and default_fog are ignored for now.
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
-	bool RenderCrossSections(int width);
+	void RenderCrossSections(int width,int height);
 #if defined(XBOX) || defined(DOXYGEN)
 	//! Call this once per frame to set the matrices (X360 only).
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
@@ -69,11 +69,6 @@ public:
 	//! Get an interface to the Simul cloud object.
 	simul::clouds::CloudKeyframer *GetCloudKeyframer();
 	void Enable(bool val);
-	// implementing CloudRenderCallback:
-	void SetCloudTextureSize(unsigned ,unsigned ,unsigned ){}
-	void FillCloudTextureSequentially(int ,int ,int ,const unsigned *){}
-	void FillCloudTextureBlock(int,int,int,int,int,int,int,const unsigned *){}
-	void CycleTexturesForward(){}
 
 	// a texture
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);

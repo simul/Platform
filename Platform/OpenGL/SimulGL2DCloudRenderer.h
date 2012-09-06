@@ -33,10 +33,10 @@ public:
 	//standard ogl object interface functions
 	bool Create();
 	//! OpenGL Implementation of device object creation - needs a GL context to be present.
-	bool RestoreDeviceObjects(void*);
+	void RestoreDeviceObjects(void*);
 	void RecompileShaders();
 	//! OpenGL Implementation of device invalidation - not strictly needed in GL.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! OpenGL Implementation of 2D cloud rendering.
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
 	//! Set the platform-dependent atmospheric loss texture.
@@ -45,7 +45,7 @@ public:
 	void SetInscatterTextures(void *i);
 	void SetWindVelocity(float x,float y);
 	simul::clouds::CloudInterface *GetCloudInterface();
-	// implementing CloudRenderCallback:
+
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	void FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array);
 	void FillCloudTextureSequentially(int,int,int,const unsigned int *){}

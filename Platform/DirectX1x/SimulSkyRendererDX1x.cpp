@@ -125,8 +125,7 @@ void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
 	skyKeyframer->SetUniformKeyframes(steps);
 }
 
-
-bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
+void SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 {
 	m_pd3dDevice=dev;
 #ifdef DX10
@@ -196,10 +195,9 @@ bool SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
 		inscatter_2d->RestoreDeviceObjects(dev);
 	}
 	ClearIterators();
-	return (hr==S_OK);
 }
 
-bool SimulSkyRendererDX1x::InvalidateDeviceObjects()
+void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	if(loss_2d)
@@ -235,13 +233,12 @@ bool SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	// Set the stored texture sizes to zero, so the textures will be re-created.
 	fadeTexWidth=fadeTexHeight=numAltitudes=0;
 	SAFE_RELEASE(d3dQuery);
-	skyKeyframer->SetCallback(NULL);
-	return (hr==S_OK);
 }
 
 bool SimulSkyRendererDX1x::Destroy()
 {
-	return InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
+	return true;
 }
 
 SimulSkyRendererDX1x::~SimulSkyRendererDX1x()
@@ -468,7 +465,7 @@ void SimulSkyRendererDX1x::FillFadeTex(int alt_index,int texture_index,int texel
 		*float_ptr++=(*inscatter_float4_array++);
 }
 
-bool SimulSkyRendererDX1x::CreateSkyTextures()
+void SimulSkyRendererDX1x::CreateSkyTextures()
 {
 	HRESULT hr=S_OK;
 	D3D1x_TEXTURE2D_DESC desc=
@@ -489,7 +486,6 @@ bool SimulSkyRendererDX1x::CreateSkyTextures()
 		V_CHECK(m_pd3dDevice->CreateTexture2D(&desc,NULL, &sky_textures[i]));
 		V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_textures[i],NULL,&sky_textures_SRV[i]));
 	}
-	return (hr==S_OK);
 }
 
 void SimulSkyRendererDX1x::RecompileShaders()
@@ -808,16 +804,16 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 	return (hr==S_OK);
 }
 
-bool SimulSkyRendererDX1x::RenderFades(int w,int h)
+bool SimulSkyRendererDX1x::RenderFades(int width,int h)
 {
 	HRESULT hr=S_OK;
-	int size=w/4;
+	int size=width/4;
 	if(h/(numAltitudes+2)<size)
 		size=h/(numAltitudes+2);
 
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
-    D3DXMatrixOrthoLH(&ident,(float)w,(float)h,-100.f,100.f);
+    D3DXMatrixOrthoLH(&ident,(float)width,(float)h,-100.f,100.f);
 	ID3D1xEffectMatrixVariable*	worldViewProj=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	worldViewProj->SetMatrix(ident);
 
@@ -825,14 +821,11 @@ bool SimulSkyRendererDX1x::RenderFades(int w,int h)
 	ID3D1xEffectShaderResourceVariable*	skyTexture	=m_pSkyEffect->GetVariableByName("skyTexture1")->AsShaderResource();
 
 	skyTexture->SetResource(sky_textures_SRV[0]);
-	hr=ApplyPass(tech->GetPassByIndex(0));
 	RenderTexture(m_pd3dDevice,16+size		,32,8,size,tech);
 	skyTexture->SetResource(sky_textures_SRV[1]);
-	hr=ApplyPass(tech->GetPassByIndex(0));
 	RenderTexture(m_pd3dDevice,32+size		,32,8,size,tech);
 	UnmapSky();
 	skyTexture->SetResource(sky_textures_SRV[2]);
-	hr=ApplyPass(tech->GetPassByIndex(0));
 	RenderTexture(m_pd3dDevice,48+size		,32,8,size,tech);
 /*
 	for(int i=0;i<numAltitudes;i++)
@@ -929,4 +922,11 @@ void SimulSkyRendererDX1x::SetYVertical(bool y)
 {
 	y_vertical=y;
 	RecompileShaders();
+}
+void SimulSkyRendererDX1x::DrawLines(Vertext *lines,int vertex_count,bool strip)
+{
+}
+
+void SimulSkyRendererDX1x::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
+{
 }

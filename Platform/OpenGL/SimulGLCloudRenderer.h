@@ -33,12 +33,12 @@ public:
 	//standard ogl object interface functions
 	bool Create();
 	void RecompileShaders();
-	bool RestoreDeviceObjects(void*);
-	bool InvalidateDeviceObjects();
+	void RestoreDeviceObjects(void*);
+	void InvalidateDeviceObjects();
 	//! Render the clouds.
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
 	//! Show the cross sections on-screen.
-	void RenderCrossSections(int width);
+	void RenderCrossSections(int width,int height);
 	void SetLossTextures(void *);
 	void SetInscatterTextures(void *);
 	//! Get the list of three textures used for cloud rendering.
@@ -55,8 +55,7 @@ public:
 	void SetIlluminationGridSize(unsigned ,unsigned ,unsigned );
 	void FillIlluminationSequentially(int ,int ,int ,const unsigned char *);
 	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *);
-	void GPUTransferDataToTexture(	int which_texture
-									,unsigned char *target_texture
+	void GPUTransferDataToTexture(	unsigned char *target_texture
 									,const unsigned char *direct_grid
 									,const unsigned char *indirect_grid
 									,const unsigned char *ambient_grid);
@@ -84,10 +83,8 @@ protected:
 	void EnsureTextureCycle();
 
 	GLuint clouds_program;
-	GLuint clouds_vertex_shader,clouds_fragment_shader;
 
 	GLuint cross_section_program;
-	GLuint cross_section_vertex_shader,cross_section_fragment_shader;
 
 	GLint eyePosition_param;
 	GLint lightResponse_param;

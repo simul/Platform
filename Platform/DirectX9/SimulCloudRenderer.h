@@ -20,6 +20,7 @@
 #include "Simul/Graph/Meta/Resource.h"
 #include "Simul/Graph/StandardNodes/ShowProgressInterface.h"
 #include "Simul/Platform/DirectX9/Export.h"
+//#include "Simul/Platform/DirectX9/GpuCloudGenerator.h"
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)
@@ -36,26 +37,24 @@ namespace simul
 	}
 }
 typedef long HRESULT;
-
 //! A cloud rendering class. Create an instance of this class within a DirectX program,
 //! or use SimulWeatherRenderer to manage cloud and sky rendering together.
 SIMUL_DIRECTX9_EXPORT_CLASS SimulCloudRenderer
 	: public simul::clouds::BaseCloudRenderer
-	,public simul::clouds::GpuLightingCallback
 	,public simul::graph::meta::ResourceUser<simul::graph::standardnodes::ShowProgressInterface>
 {
 public:
 	SimulCloudRenderer(simul::clouds::CloudKeyframer *ck);
 	virtual ~SimulCloudRenderer();
+	//GpuCloudGenerator gpuCloudGenerator;
 	META_BeginProperties
-		META_ValuePropertyWithSetCall(bool,GPULightingEnabled,ForceRelight,"Whether the GPU will be used for cloud light calculations.")
 		META_ValueRangePropertyWithSetCall(int,NumBuffers,1,2,NumBuffersChanged,"Number of buffers to use in cloud rendering. More = faster.")
 	META_EndProperties
 	void RecompileShaders();
 	//! Call this when the device has been created
-	bool RestoreDeviceObjects(void *pd3dDevice);
+	void RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the 3D device has been lost.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! DX9 implementation of cloud rendering. For this platform, depth_testing and default_fog are ignored.
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
 	//! Call this to draw the clouds, including any illumination by lightning.
@@ -79,31 +78,14 @@ public:
 	{
 		return noise_texture;
 	}
-	bool RenderCrossSections(int width);
+	void RenderCrossSections(int width,int height);
 	bool RenderDistances(int width,int height);
 	bool RenderLightVolume();
 	void EnableFilter(bool f);
 	virtual void SetFadeMode(FadeMode f);
 	void SetYVertical(bool y);
 	bool IsYVertical() const{return y_vertical;}
-	// implementing CloudRenderCallback:
-	void SetCloudTextureSize(unsigned ,unsigned ,unsigned ){}
-	void FillCloudTextureSequentially(int ,int ,int ,const unsigned *){}
-	void FillCloudTextureBlock(int ,int ,int,int,int,int,int,const unsigned *){}
-	void CycleTexturesForward(){}
-	void SetIlluminationGridSize(unsigned ,unsigned ,unsigned ){}
-	void FillIlluminationSequentially(int ,int ,int ,const unsigned char *){}
-	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *){}
 
-	// implementing GpuLightingCallback:
-	bool CanPerformGPULighting() const;			
-	void SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3);
-	void PerformFullGPURelight(int which_texture,float *target_direct_grid,float *target_indirect_grid);
-	void GPUTransferDataToTexture(	int which_texture
-									,unsigned char *target_texture
-									,const unsigned char *direct_grid
-									,const unsigned char *indirect_grid
-									,const unsigned char *ambient_grid);
 protected:
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
@@ -117,7 +99,6 @@ protected:
 	void InternalRenderHorizontal(int buffer_index=0);
 	void InternalRenderRaytrace(int buffer_index=0);
 	void InternalRenderVolumetric(int buffer_index=0);
-	bool InitEffects();
 	bool wrap;
 	struct float2
 	{
@@ -175,7 +156,6 @@ protected:
 	D3DXHANDLE						m_hTechniqueRenderTo2DForSaving;
 	D3DXHANDLE						m_hTechniqueColourLines;	
 	
-	LPD3DXEFFECT					m_pGPULightingEffect;
 
 	D3DXHANDLE					worldViewProj;
 	D3DXHANDLE					eyePosition;
@@ -218,7 +198,6 @@ protected:
 	LPDIRECT3DVOLUMETEXTURE9	cloud_textures[3];
 	LPDIRECT3DVOLUMETEXTURE9	illumination_texture;
 	LPDIRECT3DTEXTURE9			noise_texture;
-	LPDIRECT3DVOLUMETEXTURE9	volume_noise_texture;
 	LPDIRECT3DTEXTURE9			raytrace_layer_texture;
 	LPDIRECT3DBASETEXTURE9		sky_loss_texture;
 	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture;
@@ -228,7 +207,6 @@ protected:
 	LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 	LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;
 	virtual bool CreateNoiseTexture(bool override_file=false);
-	void CreateVolumeNoiseTexture();
 	bool MakeCubemap(); // not ready yet
 	//! Once per frame, fill this 1-D texture with information on the layer distances and noise offsets
 	bool FillRaytraceLayerTexture();

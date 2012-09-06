@@ -335,7 +335,7 @@ void SimulGL2DCloudRenderer::SetInscatterTextures(void *i)
 	inscatter_tex=((GLuint)i);
 }
 
-bool SimulGL2DCloudRenderer::RestoreDeviceObjects(void*)
+void SimulGL2DCloudRenderer::RestoreDeviceObjects(void*)
 {
 	CreateNoiseTexture();
 ERROR_CHECK
@@ -343,7 +343,6 @@ ERROR_CHECK
 ERROR_CHECK
 	RecompileShaders();
 ERROR_CHECK
-	return true;
 }
 
 void SimulGL2DCloudRenderer::RecompileShaders()
@@ -352,8 +351,8 @@ void SimulGL2DCloudRenderer::RecompileShaders()
 	clouds_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
 
 	clouds_program			=glCreateProgram();
-    clouds_vertex_shader=LoadProgram(clouds_vertex_shader,"simul_clouds_2d.vert");
-	clouds_fragment_shader=LoadProgram(clouds_fragment_shader,"simul_clouds_2d.frag");
+    clouds_vertex_shader	=LoadShader(clouds_vertex_shader,"simul_clouds_2d.vert");
+	clouds_fragment_shader	=LoadShader(clouds_fragment_shader,"simul_clouds_2d.frag");
 	glAttachShader(clouds_program, clouds_vertex_shader);
 	glAttachShader(clouds_program, clouds_fragment_shader);
 	glLinkProgram(clouds_program);
@@ -383,7 +382,7 @@ void SimulGL2DCloudRenderer::RecompileShaders()
 	glUseProgram(0);
 }
 
-bool SimulGL2DCloudRenderer::InvalidateDeviceObjects()
+void SimulGL2DCloudRenderer::InvalidateDeviceObjects()
 {
 	clouds_vertex_shader	=0;
 	clouds_fragment_shader	=0;
@@ -402,7 +401,6 @@ bool SimulGL2DCloudRenderer::InvalidateDeviceObjects()
 	lossSampler_param		=0;
 	inscatterSampler_param	=0;
 	image_tex				=0;
-	return true;
 }
 
 bool SimulGL2DCloudRenderer::Create()

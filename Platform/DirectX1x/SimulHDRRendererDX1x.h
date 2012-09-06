@@ -34,9 +34,9 @@ public:
 	void SetBufferSize(int w,int h);
 	// Standard d3d object interface functions
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-	bool RestoreDeviceObjects(ID3D1xDevice* pd3dDevice,IDXGISwapChain* pSwapChain);
+	void RestoreDeviceObjects(void *x);
 	//! Call this when the device has been lost.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 	bool StartRender();
 	//! ApplyFade: call this after rendering the solid stuff, before rendering transparent and background imagery.

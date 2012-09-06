@@ -50,12 +50,11 @@ SimulLightningRenderer::~SimulLightningRenderer()
 {
 }
 
-bool SimulLightningRenderer::RestoreDeviceObjects(void *dev)
+void SimulLightningRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	RecompileShaders();
-	B_RETURN(CreateLightningTexture());
-	return true;
+	V_CHECK(CreateLightningTexture());
 }
 
 void SimulLightningRenderer::RecompileShaders()
@@ -78,7 +77,7 @@ void SimulLightningRenderer::RecompileShaders()
 	lightningColour				=m_pLightningEffect->GetParameterByName(NULL,"lightningColour");
 }
 
-bool SimulLightningRenderer::InvalidateDeviceObjects()
+void SimulLightningRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	if(m_pLightningEffect)
@@ -86,7 +85,6 @@ bool SimulLightningRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pLightningVtxDecl);
 	SAFE_RELEASE(m_pLightningEffect);
 	SAFE_RELEASE(lightning_texture);
-	return true;
 }
 
 static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)

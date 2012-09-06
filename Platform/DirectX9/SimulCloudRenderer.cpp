@@ -182,15 +182,14 @@ ExampleHumidityCallback hum_callback;
 MushroomHumidityCallback mushroom_callback;
 #endif
 
+
 SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	:simul::clouds::BaseCloudRenderer(ck)
 	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pHudVertexDecl(NULL)
 	,m_pCloudEffect(NULL)
-	,m_pGPULightingEffect(NULL)
 	,noise_texture(NULL)
-	,volume_noise_texture(NULL)
 	,raytrace_layer_texture(NULL)
 	,illumination_texture(NULL)
 	,sky_loss_texture(NULL)
@@ -203,7 +202,6 @@ SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	,vertices(NULL)
 	,cpu_fade_vertices(NULL)
 	,last_time(0)
-	,GPULightingEnabled(true)
 	,y_vertical(true)
 	,NumBuffers(1)
 {
@@ -224,7 +222,7 @@ SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	//cloudNode->GetNoiseInterface()->SetFilter(&circle_f);
 }
 
-void SimulCloudRenderer::EnableFilter(bool f)
+void SimulCloudRenderer::EnableFilter(bool )
 {
 /*	if(f)
 		cloudNode->GetNoiseInterface()->SetFilter(&circle_f);
@@ -232,26 +230,26 @@ void SimulCloudRenderer::EnableFilter(bool f)
 		cloudNode->GetNoiseInterface()->SetFilter(NULL);*/
 }
 
-bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
+void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 {
 	simul::base::Timer timer;
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
-	HRESULT hr=S_OK;
+	//gpuCloudGenerator.RestoreDeviceObjects(dev);
 	last_time=0.f;
 	// create the unit-sphere vertex buffer determined by the Cloud Geometry Helper:
 	SAFE_RELEASE(raytrace_layer_texture);
 	
-	B_RETURN(D3DXCreateTexture(m_pd3dDevice,128,1,1,0,D3DFMT_A32B32G32R32F,d3d_memory_pool,&raytrace_layer_texture))
+	V_CHECK(D3DXCreateTexture(m_pd3dDevice,128,1,1,0,D3DFMT_A32B32G32R32F,d3d_memory_pool,&raytrace_layer_texture))
 
 	float create_raytrace_layer=timer.UpdateTime()/1000.f;
 
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	helper->GenerateSphereVertices();
-	B_RETURN(m_pd3dDevice->CreateVertexBuffer((unsigned)(helper->GetVertices().size()*sizeof(PosVert_t)),D3DUSAGE_WRITEONLY,0,
+	V_CHECK(m_pd3dDevice->CreateVertexBuffer((unsigned)(helper->GetVertices().size()*sizeof(PosVert_t)),D3DUSAGE_WRITEONLY,0,
 									  D3DPOOL_DEFAULT, &unitSphereVertexBuffer,
 									  NULL));
 	PosVert_t *unit_sphere_vertices;
-	B_RETURN(unitSphereVertexBuffer->Lock(0,sizeof(PosVert_t),(void**)&unit_sphere_vertices,0 ));
+	V_CHECK(unitSphereVertexBuffer->Lock(0,sizeof(PosVert_t),(void**)&unit_sphere_vertices,0 ));
 	PosVert_t *V=unit_sphere_vertices;
 	for(size_t i=0;i<helper->GetVertices().size();i++)
 	{
@@ -261,32 +259,64 @@ bool SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 		V->position.z=v.z;
 		V++;
 	}
-	B_RETURN(unitSphereVertexBuffer->Unlock());
+	V_CHECK(unitSphereVertexBuffer->Unlock());
 	unsigned num_indices=(unsigned)helper->GetQuadStripIndices().size();
 	SAFE_RELEASE(unitSphereIndexBuffer);
-	B_RETURN(m_pd3dDevice->CreateIndexBuffer(num_indices*sizeof(unsigned),D3DUSAGE_WRITEONLY,D3DFMT_INDEX32,
+	V_CHECK(m_pd3dDevice->CreateIndexBuffer(num_indices*sizeof(unsigned),D3DUSAGE_WRITEONLY,D3DFMT_INDEX32,
 		D3DPOOL_DEFAULT, &unitSphereIndexBuffer, NULL ));
 	unsigned *indexData;
-	B_RETURN(unitSphereIndexBuffer->Lock(0,num_indices, (void**)&indexData, 0 ));
+	V_CHECK(unitSphereIndexBuffer->Lock(0,num_indices, (void**)&indexData, 0 ));
 	unsigned *index=indexData;
 	for(unsigned i=0;i<num_indices;i++)
 	{
 		*(index++)	=helper->GetQuadStripIndices()[i];
 	}
-	B_RETURN(unitSphereIndexBuffer->Unlock());
+	V_CHECK(unitSphereIndexBuffer->Unlock());
 	float create_unit_sphere=timer.UpdateTime()/1000.f;
-	B_RETURN(InitEffects());
-	float init_effects=timer.UpdateTime()/1000.f;
+
+	D3DVERTEXELEMENT9 decl[]=
+	{
+		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
+		{0, 12	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
+		{0,	24	,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
+		{0,	28	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
+		{0,	36	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
+		D3DDECL_END()
+	};
+	D3DVERTEXELEMENT9 cpu_decl[]=
+	{
+		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
+		{0, 12	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
+		{0,	24	,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
+		{0,	28	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
+		{0,	36	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
+		{0,	48	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,4},
+		{0,	60	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,5},
+		D3DDECL_END()
+	};
+	SAFE_RELEASE(m_pVtxDecl);
+	SAFE_RELEASE(m_pHudVertexDecl);
+	if(fade_mode!=CPU)
+	{
+		V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
+	}
+	else
+	{
+		V_CHECK(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
+	}
+
 	//B_RETURN(RenderNoiseTexture());
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 //cloudKeyframer->SetRenderCallback(this);
 	float set_callback=timer.UpdateTime()/1000.f;
-	std::cout<<std::setprecision(4)<<"CLOUDS RESTORE TIMINGS: create_raytrace_layer="<<create_raytrace_layer
-		<<", create_unit_sphere="<<create_unit_sphere<<", init_effects="<<init_effects<<", set_callback="<<set_callback<<std::endl;
+	std::cout<<std::setprecision(4)
+		<<"CLOUDS RESTORE TIMINGS: create_raytrace_layer="<<create_raytrace_layer
+		<<"\n\tcreate_unit_sphere="<<create_unit_sphere
 
-	cloudKeyframer->SetGpuLightingCallback(this);
+		<<"\n\tset_callback="<<set_callback<<std::endl;
+
+	//cloudKeyframer->SetGpuLightingCallback(&gpuCloudGenerator);
 	ClearIterators();
-	return (hr==S_OK);
 }
 
 static std::string GetCompiledFilename(int fade_mde,int wrap_clouds,bool z_vertical)
@@ -308,53 +338,19 @@ static std::string GetCompiledFilename(int fade_mde,int wrap_clouds,bool z_verti
 	return compiled_filename;
 }
 
+
 void SimulCloudRenderer::RecompileShaders()
 {
-	/*std::map<std::string,std::string> defines;
-	for(int fade_mde=0;fade_mde<2;fade_mde++)
-	{
-		for(int wrap_clouds=0;wrap_clouds<2;wrap_clouds++)
-		{
-			for(int z_vertical=0;z_vertical<2;z_vertical++)
-			{
-				std::string compiled_filename=GetCompiledFilename(fade_mde,wrap_clouds,(bool)z_vertical);
-				if(fade_mde==FRAGMENT)
-					defines["FADE_MODE"]="1";
-				else if(fade_mde==CPU)
-					defines["FADE_MODE"]="0";
-				if(wrap_clouds)
-					defines["WRAP_CLOUDS"]="1";
-				else
-					defines["WRAP_CLOUDS"]="0";
-				if(z_vertical)
-					defines["Z_VERTICAL"]='1';
-				else
-					defines["Y_VERTICAL"]='1';
-			}
-		}
-	}*/
+	if(!m_pd3dDevice)
+		return;
+	//gpuCloudGenerator.RecompileShaders();
 	wrap=GetCloudInterface()->GetWrap();
 	simul::base::Timer timer;
-	std::map<std::string,std::string> defines;
-	if(fade_mode==FRAGMENT)
-		defines["FADE_MODE"]="1";
-	if(fade_mode==CPU)
-		defines["FADE_MODE"]="0";
-	defines["DETAIL_NOISE"]="1";
-	if(GetCloudInterface()->GetWrap())
-		defines["WRAP_CLOUDS"]="1";
-	if(!y_vertical)
-		defines["Z_VERTICAL"]='1';
-	else
-		defines["Y_VERTICAL"]='1';
+	std::map<std::string,std::string> defines=MakeDefinesList(fade_mode,GetCloudInterface()->GetWrap(),y_vertical);
 	float defines_time=timer.UpdateTime()/1000.f;
-	SAFE_RELEASE(m_pCloudEffect);
 	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
 	float clouds_effect=timer.UpdateTime()/1000.f;
-	SAFE_RELEASE(m_pGPULightingEffect);
-	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pGPULightingEffect,"simul_gpulighting.fx",defines));
-	float gpulighting_effect=timer.UpdateTime()/1000.f;
-
+	
 	m_hTechniqueCloud					=GetDX9Technique(m_pCloudEffect,"simul_clouds");
 	m_hTechniqueCloudMask				=GetDX9Technique(m_pCloudEffect,"cloud_mask");
 	m_hTechniqueRaytraceWithLightning	=GetDX9Technique(m_pCloudEffect,"raytrace_clouds_and_lightning");
@@ -412,77 +408,37 @@ void SimulCloudRenderer::RecompileShaders()
 	float params=timer.UpdateTime()/1000.f;
 	rebuild_shaders=false;
 	std::cout<<std::setprecision(4)<<"CLOUDS RELOAD SHADERS TIMINGS: defines="<<defines_time
-		<<"clouds_effect="<<clouds_effect
-		<<", gpulighting_effect="<<gpulighting_effect
-		<<", techniques="<<techniques
-		<<", params="<<params<<std::endl;
+		<<"\n\tclouds_effect="<<clouds_effect
+		<<"\n\ttechniques="<<techniques
+		<<"\n\tparams="<<params<<std::endl;
 
 }
 
-bool SimulCloudRenderer::InitEffects()
-{
-	HRESULT hr=S_OK;
-	if(!m_pd3dDevice)
-		return (hr==S_OK);
-	D3DVERTEXELEMENT9 decl[]=
-	{
-		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
-		{0, 12	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
-		{0,	24	,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
-		{0,	28	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
-		{0,	36	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
-		D3DDECL_END()
-	};
-	D3DVERTEXELEMENT9 cpu_decl[]=
-	{
-		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
-		{0, 12	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
-		{0,	24	,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
-		{0,	28	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
-		{0,	36	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
-		{0,	48	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,4},
-		{0,	60	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,5},
-		D3DDECL_END()
-	};
-	SAFE_RELEASE(m_pVtxDecl);
-	SAFE_RELEASE(m_pHudVertexDecl);
-	if(fade_mode!=CPU)
-	{
-		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	}
-	else
-	{
-		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
-	}
-	RecompileShaders();
-	return (hr==S_OK);
-}
-
-bool SimulCloudRenderer::InvalidateDeviceObjects()
+void SimulCloudRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(raytrace_layer_texture);
 	if(m_pCloudEffect)
         hr=m_pCloudEffect->OnLostDevice();
-	if(m_pGPULightingEffect)
-        hr=m_pGPULightingEffect->OnLostDevice();
+//gpuCloudGenerator.InvalidateDeviceObjects();
+
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pHudVertexDecl);
 	SAFE_RELEASE(m_pCloudEffect);
-	SAFE_RELEASE(m_pGPULightingEffect);
 	for(int i=0;i<3;i++)
 		SAFE_RELEASE(cloud_textures[i]);
 	SAFE_RELEASE(noise_texture);
-	SAFE_RELEASE(volume_noise_texture);
 	SAFE_RELEASE(illumination_texture);
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	SAFE_RELEASE(unitSphereIndexBuffer);
+	delete vertices;
+	vertices=NULL;
 	//SAFE_RELEASE(large_scale_cloud_texture);
 	cloud_tex_width_x=0;
 	cloud_tex_length_y=0;
 	cloud_tex_depth_z=0;
 	ClearIterators();
-	return (hr==S_OK);
+	rebuild_shaders=true;
 }
 
 SimulCloudRenderer::~SimulCloudRenderer()
@@ -499,15 +455,13 @@ bool SimulCloudRenderer::RenderNoiseTexture()
 	LPDIRECT3DSURFACE9				pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9				pNoiseRenderTarget=NULL;
 	LPD3DXEFFECT					pRenderNoiseEffect=NULL;
-	D3DXHANDLE						inputTexture=NULL;
-	D3DXHANDLE						octaves=NULL;
-	D3DXHANDLE						persistence=NULL;
 	LPDIRECT3DTEXTURE9				input_texture=NULL;
 
 	B_RETURN(CreateDX9Effect(m_pd3dDevice,pRenderNoiseEffect,"simul_rendernoise.fx"));
-	inputTexture					=pRenderNoiseEffect->GetParameterByName(NULL,"noiseTexture");
-	octaves							=pRenderNoiseEffect->GetParameterByName(NULL,"octaves");
-	persistence						=pRenderNoiseEffect->GetParameterByName(NULL,"persistence");
+	D3DXHANDLE inputTexture		=pRenderNoiseEffect->GetParameterByName(NULL,"noiseTexture");
+	D3DXHANDLE octaves			=pRenderNoiseEffect->GetParameterByName(NULL,"octaves");
+	
+	D3DXHANDLE persistence		=pRenderNoiseEffect->GetParameterByName(NULL,"persistence");
 	//
 	// Make the input texture:
 	{
@@ -563,32 +517,6 @@ D3DXSaveTextureToFile(TEXT("Media/Textures/noise.jpg"),D3DXIFF_JPG,noise_texture
 	SAFE_RELEASE(pNoiseRenderTarget);
 	return (hr==S_OK);
 }
-
-void SimulCloudRenderer::CreateVolumeNoiseTexture()
-{
-	bool result=true;
-	SAFE_RELEASE(volume_noise_texture);
-	HRESULT hr=S_OK;
-	// Otherwise create it:
-#ifndef XBOX
-	D3DFORMAT tex_format=D3DFMT_A32B32G32R32F;
-#else
-	D3DFORMAT tex_format=D3DFMT_LIN_A32B32G32R32F;
-#endif
-	int size=GetCloudInterface()->GetNoiseResolution();
-	if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,size,size,size,1,0,tex_format,default_d3d_pool,&volume_noise_texture)))
-		return;
-	D3DLOCKED_BOX lockedBox={0};
-	if(FAILED(hr=volume_noise_texture->LockBox(0,&lockedBox,NULL,NULL)))
-		return;
-		// Copy the array of floats into the texture.
-	const float *src_ptr=GetCloudGridInterface()->GetNoiseInterface()->GetData();
-	float *float_ptr=(float *)(lockedBox.pBits);
-	for(int i=0;i<size*size*size;i++)
-		*float_ptr++=(*src_ptr++);
-	hr=volume_noise_texture->UnlockBox(0);
-	volume_noise_texture->GenerateMipSubLevels();
-}
 bool SimulCloudRenderer::CreateNoiseTexture(bool override_file)
 {
 	if(!m_pd3dDevice)
@@ -615,272 +543,6 @@ bool SimulCloudRenderer::CreateNoiseTexture(bool override_file)
 	D3DXSaveTextureToFile(TEXT("Media/Textures/noise.png"),D3DXIFF_PNG,noise_texture,NULL);
 	D3DXSaveTextureToFile(TEXT("Media/Textures/noise.dds"),D3DXIFF_DDS,noise_texture,NULL);
 	return true;
-}
-
-bool SimulCloudRenderer::CanPerformGPULighting() const
-{
-	return GPULightingEnabled;
-}
-
-void SimulCloudRenderer::SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords,const unsigned *light_grid,const float *lightspace_extinctions_float3)
-{
-	for(int i=0;i<16;i++)
-		LightToDensityTransform[i]=Matrix4x4LightToDensityTexcoords[i];
-	simul::math::Matrix m1(4,4);
-	m1=Matrix4x4LightToDensityTexcoords;
-	simul::math::Matrix m2(4,4);
-	m1.Inverse(m2);
-	for(int i=0;i<16;i++)
-		DensityToLightTransform[i]=m2.RowPointer(0)[i];
-	for(int i=0;i<3;i++)
-	{
-		light_gridsizes[i]=light_grid[i];
-		light_extinctions[i]=lightspace_extinctions_float3[i];
-	}
-}
-
-void SimulCloudRenderer::PerformFullGPURelight(int which_texture,
-	float *target_direct_grid,float *target_indirect_grid)
-{
-	// To use the GPU to relight clouds:
-
-	// 1. Create two 2D target rendertextures with X and Y sizes given by the light_gridsizes[0] and [1].
-	// 2. Set the transform matrix to LightToDensityTransform.
-	// 3. Initialize the first target to 1.0
-	// 4. Use the first target and the density volume texture as an input to rendering the second target.
-	// 5. Swap targets and repeat for all the positions in the Z grid.
-
-	// 1. Create two 2D target rendertextures:
-	HRESULT hr=S_OK;
-	if(!m_pd3dDevice)
-		return;
-	LPDIRECT3DTEXTURE9				target_textures[]={NULL,NULL};
-	LPDIRECT3DSURFACE9				pOldRenderTarget=NULL;
-	LPDIRECT3DSURFACE9				pLightRenderTarget[]={NULL,NULL};
-	D3DXHANDLE						inputLightTexture=NULL;
-	D3DXHANDLE						cloudDensityTexture=NULL;
-	D3DXHANDLE						volumeNoiseTexture=NULL;
-	D3DXHANDLE						zPosition=NULL;
-	D3DXHANDLE						extinctions;
-	D3DXHANDLE						lightToDensityMatrix;
-	D3DXHANDLE						texCoordOffset;
-	D3DXHANDLE						m_hTechniqueGpuLighting;
-
-	inputLightTexture				=m_pGPULightingEffect->GetParameterByName(NULL,"inputLightTexture");
-	cloudDensityTexture				=m_pGPULightingEffect->GetParameterByName(NULL,"cloudDensityTexture");
-	volumeNoiseTexture				=m_pGPULightingEffect->GetParameterByName(NULL,"volumeNoiseTexture");
-	zPosition						=m_pGPULightingEffect->GetParameterByName(NULL,"zPosition");
-	extinctions						=m_pGPULightingEffect->GetParameterByName(NULL,"extinctions");
-	lightToDensityMatrix			=m_pGPULightingEffect->GetParameterByName(NULL,"transformMatrix");
-	texCoordOffset					=m_pGPULightingEffect->GetParameterByName(NULL,"texCoordOffset");
-	m_hTechniqueGpuLighting			=m_pGPULightingEffect->GetTechniqueByName("simul_gpulighting");
-	m_pGPULightingEffect->SetTechnique(m_hTechniqueGpuLighting);
-	// store the current rendertarget for later:
-	hr=m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget);
-	// Make the input texture:
-	static unsigned colr=0x00FFFF00;
-	for(int i=0;i<2;i++)
-	{
-	// Make a floating point texture.
-		if(FAILED(hr=m_pd3dDevice->CreateTexture(light_gridsizes[0],
-			light_gridsizes[1],0,D3DUSAGE_RENDERTARGET|D3DUSAGE_AUTOGENMIPMAP,
-			D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&(target_textures[i]),NULL)))
-			return;
-		SAFE_RELEASE(pLightRenderTarget[i]);
-		target_textures[i]->GetSurfaceLevel(0,&pLightRenderTarget[i]);
-		hr=m_pd3dDevice->SetRenderTarget(0,pLightRenderTarget[i]);
-		hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,colr,1.f,0L);
-		m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
-	}
-	m_pGPULightingEffect->SetVector(extinctions,(D3DXVECTOR4*)(light_extinctions));
-	float offset[]={0.5f/(float)light_gridsizes[0],0.5f/(float)light_gridsizes[1],0,0};
-	m_pGPULightingEffect->SetVector(texCoordOffset,(D3DXVECTOR4*)(offset));
-	m_pGPULightingEffect->SetMatrix(lightToDensityMatrix,(D3DXMATRIX*)(LightToDensityTransform));
-	m_pGPULightingEffect->SetTexture(cloudDensityTexture,cloud_textures[(which_texture)%3]);
-	m_pGPULightingEffect->SetTexture(volumeNoiseTexture,volume_noise_texture);
-	// 4. Use the first target and the density volume texture as an input to rendering the second target.
-	// 5. Swap targets and repeat for all the positions in the Z grid.#m_pd3dDevice->BeginScene();
-	m_pd3dDevice->BeginScene();
-	IDirect3DSurface9 *pBuf;
-	hr=m_pd3dDevice->CreateOffscreenPlainSurface(light_gridsizes[0],light_gridsizes[1],D3DFMT_A32B32G32R32F,D3DPOOL_SYSTEMMEM,&pBuf,NULL);
-	// For each position along the light direction
-	for(int i=0;i<(int)light_gridsizes[2];i++)
-	{
-		
-		
-		// Copy the texture to an offscreen surface:
-		hr=m_pd3dDevice->GetRenderTargetData(pLightRenderTarget[0],pBuf);
-		D3DLOCKED_RECT rect;
-		pBuf->LockRect(&rect,NULL,0);
-		float *source=(float*)rect.pBits;
-		// Copy the light data to the target 3D grid:
-		for(int j=0;j<(int)(light_gridsizes[0]*light_gridsizes[1]);j++)
-		{
-			if(target_indirect_grid)
-			{
-				*target_direct_grid=source[j*4];
-				*target_indirect_grid=source[j*4+1];
-				target_indirect_grid++;
-			}
-			else
-			{
-				*target_direct_grid=0.5f*(source[j*4]+source[j*4+1]);
-			}
-			target_direct_grid++;
-		}
-		pBuf->UnlockRect();
-		
-		
-		
-// Set up the rendertarget:
-		hr=m_pd3dDevice->SetRenderTarget(0,pLightRenderTarget[1]);
-		m_pGPULightingEffect->SetTexture(inputLightTexture,target_textures[0]);
-		m_pGPULightingEffect->SetFloat(zPosition,((float)i)/(float(light_gridsizes[2])));
-		RenderTexture(m_pd3dDevice,0,0,light_gridsizes[0],light_gridsizes[1],
-					  target_textures[0],m_pGPULightingEffect,NULL);
-		std::swap(target_textures[0],target_textures[1]);
-		std::swap(pLightRenderTarget[0],pLightRenderTarget[1]);
-		
-	}
-	SAFE_RELEASE(pBuf);
-	m_pd3dDevice->EndScene();
-	m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
-
-	SAFE_RELEASE(pOldRenderTarget);
-	for(int i=0;i<2;i++)
-	{
-		SAFE_RELEASE(target_textures[i]);
-		SAFE_RELEASE(pLightRenderTarget[i]);
-	}
-}
-// Use the GPU to transfer the oblique light grid data to the main grid
-void SimulCloudRenderer::GPUTransferDataToTexture(	int which_texture
-													,unsigned char *target_grid
-													,const unsigned char *direct_grid
-													,const unsigned char *indirect_grid
-													,const unsigned char *ambient_grid)
-{
-	HRESULT hr=S_OK;
-	if(!m_pd3dDevice)
-		return;
-	LPDIRECT3DTEXTURE9					target_texture=NULL;
-	LPDIRECT3DVOLUMETEXTURE9			direct_texture=NULL;
-	LPDIRECT3DVOLUMETEXTURE9			indirect_texture=NULL;
-	LPDIRECT3DVOLUMETEXTURE9			ambient_texture=NULL;
-	LPDIRECT3DVOLUMETEXTURE9			density_texture=cloud_textures[(which_texture)%3];
-	LPDIRECT3DSURFACE9					pOldRenderTarget=NULL;
-	LPDIRECT3DSURFACE9					pRenderTarget=NULL;
-	D3DXHANDLE							inputDirectLightTexture		=NULL;
-	D3DXHANDLE							inputIndirectLightTexture	=NULL;
-	D3DXHANDLE							inputAmbientLightTexture	=NULL;
-	D3DXHANDLE							cloudDensityTexture			=NULL;
-	D3DXHANDLE							zPosition=NULL;
-	D3DXHANDLE							densityToLightMatrix;
-	D3DXHANDLE							texCoordOffset;
-	D3DXHANDLE							m_hTechniqueGpuTransformLightgrid;
-
-	inputDirectLightTexture				=m_pGPULightingEffect->GetParameterByName(NULL,"inputDirectLightTexture");
-	inputIndirectLightTexture			=m_pGPULightingEffect->GetParameterByName(NULL,"inputIndirectLightTexture");
-	inputAmbientLightTexture			=m_pGPULightingEffect->GetParameterByName(NULL,"inputAmbientLightTexture");
-	cloudDensityTexture					=m_pGPULightingEffect->GetParameterByName(NULL,"cloudDensityTexture");
-	zPosition							=m_pGPULightingEffect->GetParameterByName(NULL,"zPosition");
-	densityToLightMatrix				=m_pGPULightingEffect->GetParameterByName(NULL,"transformMatrix");
-	texCoordOffset						=m_pGPULightingEffect->GetParameterByName(NULL,"texCoordOffset");
-	m_hTechniqueGpuTransformLightgrid	=m_pGPULightingEffect->GetTechniqueByName("simul_transform_lightgrid");
-	m_pGPULightingEffect->SetTechnique(m_hTechniqueGpuTransformLightgrid);
-	// store the current rendertarget for later:
-	hr=m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget);
-	// Make the input textures:
-	static unsigned colr=0x00FFFF00;
-	
-	// Make a 32-bit target texture.
-	if(FAILED(hr=m_pd3dDevice->CreateTexture(cloud_tex_width_x,
-		cloud_tex_length_y,0,D3DUSAGE_RENDERTARGET|D3DUSAGE_AUTOGENMIPMAP,
-		cloud_tex_format,D3DPOOL_DEFAULT,&target_texture,NULL)))
-		return;
-	SAFE_RELEASE(pRenderTarget);
-	target_texture->GetSurfaceLevel(0,&pRenderTarget);
-	hr=m_pd3dDevice->SetRenderTarget(0,pRenderTarget);
-	hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,colr,1.f,0L);
-	m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
-	
-	D3DLOCKED_RECT rect;
-	D3DLOCKED_BOX lockedBox;
-	unsigned size2d=4*sizeof(unsigned char)*cloud_tex_width_x*cloud_tex_length_y;
-	unsigned size3d=sizeof(unsigned char)*light_gridsizes[0]*light_gridsizes[1]*light_gridsizes[2];
-	// the light textures:
-	if(direct_grid)
-	{
-		if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
-			light_gridsizes[0],light_gridsizes[1],light_gridsizes[2],
-			1,0,D3DFMT_L8,D3DPOOL_MANAGED,&direct_texture)))
-			return;
-		// Copy the light data to the target 3D grid:
-		direct_texture->LockBox(0,&lockedBox,NULL,NULL);
-		unsigned char *target=(unsigned char*)lockedBox.pBits;
-		memcpy(target,direct_grid,size3d);
-		direct_texture->UnlockBox(0);
-	}
-	if(indirect_grid)
-	{
-		if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
-			light_gridsizes[0],light_gridsizes[1],light_gridsizes[2],
-			1,0,D3DFMT_L8,D3DPOOL_MANAGED,&indirect_texture)))
-			return;
-		indirect_texture->LockBox(0,&lockedBox,NULL,NULL);
-		unsigned char *target=(unsigned char*)lockedBox.pBits;
-		memcpy(target,indirect_grid,size3d);
-		indirect_texture->UnlockBox(0);
-	}
-	if(ambient_grid)
-	{
-		if(FAILED(hr=D3DXCreateVolumeTexture(m_pd3dDevice,
-			cloud_tex_width_x,cloud_tex_length_y,cloud_tex_depth_z
-			,1,0,D3DFMT_L8,D3DPOOL_MANAGED,&ambient_texture)))
-			return;
-		ambient_texture->LockBox(0,&lockedBox,NULL,NULL);
-		unsigned char *target=(unsigned char*)lockedBox.pBits;
-		memcpy(target,ambient_grid,size3d);
-		ambient_texture->UnlockBox(0);
-	}
-	float offset[]={0.5f/(float)cloud_tex_width_x,0.5f/(float)cloud_tex_length_y,0,0};
-	m_pGPULightingEffect->SetVector(texCoordOffset,(D3DXVECTOR4*)(offset));
-	m_pGPULightingEffect->SetMatrix(densityToLightMatrix,(D3DXMATRIX*)(DensityToLightTransform));
-	m_pGPULightingEffect->SetTexture(cloudDensityTexture,density_texture);
-	m_pGPULightingEffect->SetTexture(inputDirectLightTexture,direct_texture);
-	m_pGPULightingEffect->SetTexture(inputIndirectLightTexture,indirect_texture);
-	m_pGPULightingEffect->SetTexture(inputAmbientLightTexture,ambient_texture);
-	// 4. Use the first target and the density volume texture as an input to rendering the second target.
-	// 5. Swap targets and repeat for all the positions in the Z grid.#m_pd3dDevice->BeginScene();
-	m_pd3dDevice->BeginScene();
-	IDirect3DSurface9 *pBuf;
-	hr=m_pd3dDevice->CreateOffscreenPlainSurface(cloud_tex_width_x,cloud_tex_length_y,cloud_tex_format,D3DPOOL_SYSTEMMEM,&pBuf,NULL);
-	// For each xy surface
-	for(int i=0;i<(int)cloud_tex_depth_z;i++)
-	{
-// Set up the rendertarget:
-		hr=m_pd3dDevice->SetRenderTarget(0,pRenderTarget);
-		m_pGPULightingEffect->SetFloat(zPosition,((float)i+0.5f)/(float(cloud_tex_depth_z)));
-		RenderTexture(m_pd3dDevice,0,0,cloud_tex_width_x,cloud_tex_length_y,NULL,m_pGPULightingEffect,m_hTechniqueGpuTransformLightgrid);
-		m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
-		// Copy the texture to an offscreen surface:
-		hr=m_pd3dDevice->GetRenderTargetData(pRenderTarget,pBuf);
-		pBuf->LockRect(&rect,NULL,0);
-		unsigned char *source=(unsigned char*)rect.pBits;
-		// Copy the light data to the target 3D grid:
-		memcpy(target_grid,source,size2d);
-		target_grid+=size2d;
-		pBuf->UnlockRect();
-	}
-	SAFE_RELEASE(pBuf);
-	m_pd3dDevice->EndScene();
-
-	SAFE_RELEASE(pOldRenderTarget);
-	SAFE_RELEASE(target_texture);
-	SAFE_RELEASE(direct_texture);
-	SAFE_RELEASE(indirect_texture);
-	SAFE_RELEASE(ambient_texture);
-	SAFE_RELEASE(pRenderTarget);
 }
 void SimulCloudRenderer::EnsureTextureCycle()
 {
@@ -960,10 +622,6 @@ void SimulCloudRenderer::EnsureCorrectTextureSizes()
 
 void SimulCloudRenderer::EnsureTexturesAreUpToDate()
 {
-	if(!volume_noise_texture)
-	{
-		CreateVolumeNoiseTexture();
-	}
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
 	for(int i=0;i<3;i++)
@@ -1015,6 +673,8 @@ void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 
 bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog,int buffer_index)
 {
+	if(rebuild_shaders)
+		RecompileShaders();
 	EnsureTexturesAreUpToDate();
 	depth_testing;
 	default_fog;
@@ -1024,7 +684,7 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 		rebuild_shaders=true;
 	}
 	if(rebuild_shaders)
-		InitEffects();
+		RecompileShaders();
 	HRESULT hr=S_OK;
 	enable_lightning=cloudKeyframer->GetInterpolatedKeyframe().lightning>0;
 	if(!noise_texture)
@@ -1712,11 +1372,19 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 	fb.InvalidateDeviceObjects();
 }
 
-bool SimulCloudRenderer::RenderCrossSections(int width)
+void SimulCloudRenderer::RenderCrossSections(int width,int )
 {
-	HRESULT hr=S_OK;
-	int w=(width-16)/3;
-	int h=(GetCloudGridInterface()->GetGridHeight()*w)/GetCloudGridInterface()->GetGridWidth();
+	static int u=3;
+	int w=(width-8)/u;
+	int h=(w)/GetCloudGridInterface()->GetGridWidth();
+	if(h<1)
+		h=1;
+	h*=GetCloudGridInterface()->GetGridHeight();
+	D3DXVECTOR4 cross_section_offset(
+			(GetCloudInterface()->GetWrap()?0.5f:0.f)+0.5f/(float)cloud_tex_width_x
+			,GetCloudInterface()->GetWrap()?0.5f:0.f+0.5f/(float)cloud_tex_length_y
+			,0.5f/(float)cloud_tex_depth_z
+			,0);
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
@@ -1726,9 +1394,9 @@ bool SimulCloudRenderer::RenderCrossSections(int width)
 			break;
 		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 		m_pCloudEffect->SetVector	(lightResponse		,(D3DXVECTOR4*)(&light_response));
-		m_pCloudEffect->SetFloat(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
+		m_pCloudEffect->SetVector(crossSectionOffset,&cross_section_offset);
 		m_pCloudEffect->SetTexture(cloudDensity1,cloud_textures[(i)%3]);
-		RenderTexture(m_pd3dDevice,i*w+8,4,w-2,h,cloud_textures[(i)%3],m_pCloudEffect,m_hTechniqueCrossSectionXZ);
+		RenderTexture(m_pd3dDevice,i*(w+1)+4,4,w,h,cloud_textures[(i)%3],m_pCloudEffect,m_hTechniqueCrossSectionXZ);
 	}
 	for(int i=0;i<3;i++)
 	{
@@ -1739,13 +1407,13 @@ bool SimulCloudRenderer::RenderCrossSections(int width)
 			break;
 		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 		m_pCloudEffect->SetVector(lightResponse		,(D3DXVECTOR4*)(&light_response));
-		m_pCloudEffect->SetFloat(crossSectionOffset	,GetCloudInterface()->GetWrap()?0.5f:0.f);
+		m_pCloudEffect->SetVector(crossSectionOffset,&cross_section_offset);
+		//GetCloudInterface()->GetWrap()?0.5f:0.f);
 		m_pCloudEffect->SetTexture(cloudDensity1				,cloud_textures[(i)%3]);
-		RenderTexture(m_pd3dDevice,i*130+8,h+8,128,128,
+		RenderTexture(m_pd3dDevice,i*(w+1)+4,h+8,w,w,
 					  cloud_textures[(i)%3],m_pCloudEffect,m_hTechniqueCrossSectionXY);
 		
 	}
-	return (hr==S_OK);
 }
 
 bool SimulCloudRenderer::RenderLightVolume()
@@ -1978,7 +1646,7 @@ void SimulCloudRenderer::SetFadeMode(FadeMode f)
 	{
 		BaseCloudRenderer::SetFadeMode(f);
 		rebuild_shaders=true;
-		InitEffects();
+		RecompileShaders();
 	}
 }
 
@@ -1987,10 +1655,9 @@ void SimulCloudRenderer::SetYVertical(bool y)
 	if(y_vertical!=y)
 	{
 		y_vertical=y;
-		rebuild_shaders=true;
 		helper->SetYVertical(y);
 		rebuild_shaders=true;
-		InitEffects();
+		RecompileShaders();
 	}
 }
 

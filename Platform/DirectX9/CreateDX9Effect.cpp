@@ -41,10 +41,15 @@
 #endif
 
 unsigned (*GetResourceId)(const char *filename)=NULL;
-
+LPDIRECT3DDEVICE9				last_d3dDevice			=NULL;
+LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl		=NULL;
+LPD3DXEFFECT					m_pDebugEffect			=NULL;
+D3DXHANDLE						m_hTechniquePlainColour	=NULL;
 bool BUNDLE_SHADERS=false;
-
 static tstring module;
+int RT::instance_count=0;
+int RT::screen_width=0;
+int RT::screen_height=0;
 
 void SetBundleShaders(bool b)
 {
@@ -60,6 +65,7 @@ static ShaderModel shaderModel=NO_SHADERMODEL;
 static ShaderModel maxShaderModel=USE_SHADER_3;
 static bool shader_path_set=false;
 static bool texture_path_set=false;
+ID3DXFont *m_pFont=NULL;
 namespace simul
 {
 	namespace dx9
@@ -107,13 +113,10 @@ void SetResourceModule(const char *txt)
 #endif
 }
 
-
-
 ShaderModel GetShaderModel()
 {
 	return shaderModel;
 }
-LPDIRECT3DDEVICE9 last_d3dDevice=0;
 
 static const char *GetPixelShaderString(const D3DCAPS9 &caps)
 {
@@ -153,6 +156,7 @@ static const char *GetPixelShaderString(const D3DCAPS9 &caps)
     }
     return NULL;
 }
+
 static void CalcShaderModel(LPDIRECT3DDEVICE9 m_pd3dDevice)
 {
 	if(last_d3dDevice==m_pd3dDevice)
@@ -479,6 +483,67 @@ HRESULT CanUse16BitFloats(IDirect3DDevice9 *device)
 		std::cout<<"Cannot create 16-bit float textures"<<std::endl;
 	return hr;
 }
+LPDIRECT3DVERTEXDECLARATION9 RT::m_pBufferVertexDecl=NULL;
+RT::RT()
+{
+	instance_count++;
+}
+
+void RT::RestoreDeviceObjects(IDirect3DDevice9 *m_pd3dDevice)
+{
+	last_d3dDevice=m_pd3dDevice;
+
+	if(m_pBufferVertexDecl==NULL)
+	{
+		// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
+		D3DVERTEXELEMENT9 decl[] = 
+		{
+	#ifdef XBOX
+			{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+			{ 0, 8, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
+			{ 0, 24, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+	#else
+			{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
+			{ 0, 16, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
+			{ 0, 32, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+	#endif
+			D3DDECL_END()
+		};
+		V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
+	}
+	D3DVERTEXELEMENT9 decl[] = 
+	{
+		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
+		{ 0, 12, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
+		D3DDECL_END()
+	};
+	SAFE_RELEASE(m_pHudVertexDecl);
+	V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
+
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pDebugEffect,"simul_debug.fx"));
+	m_hTechniquePlainColour=m_pDebugEffect->GetTechniqueByName("simul_plain_colour");
+}
+
+void RT::SetScreenSize(int w,int h)
+{
+	screen_width=w;
+	screen_height=h;
+}
+
+void RT::InvalidateDeviceObjects()
+{
+	SAFE_RELEASE(m_pDebugEffect);
+	SAFE_RELEASE(m_pBufferVertexDecl);
+	SAFE_RELEASE(m_pHudVertexDecl);
+	SAFE_RELEASE(m_pFont);
+	last_d3dDevice=NULL;
+}
+
+RT::~RT()
+{
+	if(!instance_count)
+		RT::InvalidateDeviceObjects();
+}
 
 HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,
 					  LPDIRECT3DBASETEXTURE9 texture,LPD3DXEFFECT eff,D3DXHANDLE tech)
@@ -488,23 +553,6 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&v);
 	m_pd3dDevice->GetTransform(D3DTS_WORLD,&w);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&p);
-	LPDIRECT3DVERTEXDECLARATION9 m_pBufferVertexDecl=NULL;
-	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
-	D3DVERTEXELEMENT9 decl[] = 
-	{
-#ifdef XBOX
-		{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0, 8, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
-		{ 0, 24, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#else
-		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
-		{ 0, 16, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
-		{ 0, 32, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#endif
-		D3DDECL_END()
-	};
-	SAFE_RELEASE(m_pBufferVertexDecl);
-	V_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
 #ifdef XBOX
 	float x=-1.f,y=1.f;
 	float w=2.f;
@@ -533,16 +581,16 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	float width=(float)dx,height=(float)dy;
 	Vertext vertices[4] =
 	{
-		{x,			y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
-		{x+width,	y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
-		{x+width,	y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
-		{x,			y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
+		{x,			y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
+		{x+width,	y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
+		{x+width,	y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
+		{x,			y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
 	};
 #endif
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
 
-	m_pd3dDevice->SetVertexDeclaration(m_pBufferVertexDecl);
+	m_pd3dDevice->SetVertexDeclaration(RT::m_pBufferVertexDecl);
    // m_pd3dDevice->SetVertexShader(NULL);
    // m_pd3dDevice->SetPixelShader(NULL);
 
@@ -579,7 +627,6 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 		eff->EndPass();
 		eff->End();
 	}
-	SAFE_RELEASE(m_pBufferVertexDecl);
 	m_pd3dDevice->SetTransform(D3DTS_VIEW,&v);
 	m_pd3dDevice->SetTransform(D3DTS_WORLD,&w);
 	m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&p);
@@ -615,8 +662,6 @@ void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical
 	}
 	proj._43=-zNear*zFar/(zFar-zNear);
 }
-
-LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl=NULL;
 
 HRESULT RenderLines(LPDIRECT3DDEVICE9 m_pd3dDevice,int num,const float *pos)
 {
@@ -920,4 +965,85 @@ void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *
 			view_dir[2]=-view._33;
 		}
 	}
+}
+
+
+std::map<std::string,std::string> MakeDefinesList(simul::clouds::BaseCloudRenderer::FadeMode fade_mode,bool wrap,bool y_vertical)
+{
+	std::map<std::string,std::string> defines;
+	if(fade_mode==simul::clouds::BaseCloudRenderer::FRAGMENT)
+		defines["FADE_MODE"]="1";
+	if(fade_mode==simul::clouds::BaseCloudRenderer::CPU)
+		defines["FADE_MODE"]="0";
+	defines["DETAIL_NOISE"]="1";
+	if(wrap)
+		defines["WRAP_CLOUDS"]="1";
+	if(!y_vertical)
+		defines["Z_VERTICAL"]='1';
+	else
+		defines["Y_VERTICAL"]='1';
+	return defines;
+}
+
+
+void RT::PrintAt3dPos(const float *p,const char *text,const float *colr,int offsetx,int offsety)
+{
+	if(!m_pFont)
+	{
+		V_CHECK(D3DXCreateFont(last_d3dDevice,32,0,FW_NORMAL,1,FALSE,DEFAULT_CHARSET,
+								OUT_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH|FF_DONTCARE,
+								_T("Arial"),&m_pFont));
+	}
+	D3DXHANDLE worldViewProj=m_pDebugEffect->GetParameterByName(NULL,"worldViewProj");
+	HRESULT hr=S_OK;
+	D3DXMATRIX tmp1,tmp2,wvp,world,view,proj;
+#ifndef xbox
+	last_d3dDevice->GetTransform(D3DTS_WORLD,&world);
+	last_d3dDevice->GetTransform(D3DTS_VIEW,&view);
+	last_d3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+#endif
+	D3DXMatrixMultiply(&tmp1,&world,&view);
+	D3DXMatrixMultiply(&wvp,&tmp1,&proj);
+	m_pDebugEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&wvp));
+
+	D3DXVECTOR4 pos(p[0],p[1],p[2],1.f);
+	D3DXVECTOR4 screen_pos;
+	D3DXVec4Transform(&screen_pos,&pos,&wvp);
+	float x=0.5f*(screen_pos.x/screen_pos.w+1.f)*RT::screen_width+offsetx;
+	float y=0.5f*(1.f-screen_pos.y/screen_pos.w)*RT::screen_height+offsety;
+	RECT rcDest;
+	rcDest.left=(long)x-32;
+	rcDest.bottom=(long)y+32;
+	rcDest.right=(long)x+32;
+	rcDest.top=(long)y-32;
+
+	DWORD dwTextFormat = DT_CENTER |  DT_NOCLIP ;//DT_CALCRECT;
+	if(screen_pos.w<0)
+		return;
+	
+	wchar_t pwText[50];
+	MultiByteToWideChar (CP_ACP, 0,text, -1, pwText, 48 );
+	hr = m_pFont->DrawText(NULL,pwText,-1,&rcDest,dwTextFormat,(D3DXCOLOR)colr);
+}
+
+void RT::DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
+{
+	D3DXHANDLE worldViewProj=m_pDebugEffect->GetParameterByName(NULL,"worldViewProj");
+	D3DXMATRIX tmp1,tmp2,wvp,view,proj;
+#ifndef xbox
+	last_d3dDevice->GetTransform(D3DTS_VIEW,&view);
+	last_d3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+#endif
+	D3DXMatrixMultiply(&tmp2,&view,&proj);
+	D3DXMatrixTranspose(&wvp,&tmp2);
+	m_pDebugEffect->SetTechnique(m_hTechniquePlainColour);
+	last_d3dDevice->SetVertexDeclaration(m_pHudVertexDecl);
+	last_d3dDevice->SetTexture(0,NULL);
+	m_pDebugEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&wvp));
+	unsigned passes=1;
+	V_CHECK(m_pDebugEffect->Begin(&passes,0));
+	V_CHECK(m_pDebugEffect->BeginPass(0));
+	V_CHECK(last_d3dDevice->DrawPrimitiveUP(strip?D3DPT_LINESTRIP:D3DPT_LINELIST,strip?(vertex_count-1):(vertex_count/2),lines,(unsigned)sizeof(VertexXyzRgba)));
+	V_CHECK(m_pDebugEffect->EndPass());
+	V_CHECK(m_pDebugEffect->End());
 }

@@ -218,7 +218,7 @@ void Simul2DCloudRenderer::RecompileShaders()
 	imageTexture		=m_pCloudEffect->GetParameterByName(NULL,"imageTexture");
 }
 
-bool Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
+void Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	HRESULT hr;
@@ -233,16 +233,15 @@ bool Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(m_pVtxDecl);
-	B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	B_RETURN(CreateNoiseTexture());
+	V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
+	V_CHECK(CreateNoiseTexture());
 	hr=CreateImageTexture();
 	RecompileShaders();
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
 //	cloudKeyframer->SetRenderCallback(this);
-	return (hr==S_OK);
 }
 
-bool Simul2DCloudRenderer::InvalidateDeviceObjects()
+void Simul2DCloudRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	if(m_pCloudEffect)
@@ -258,7 +257,6 @@ bool Simul2DCloudRenderer::InvalidateDeviceObjects()
 	}
 	else
 		image_texture=NULL;
-	return (hr==S_OK);
 }
 
 Simul2DCloudRenderer::~Simul2DCloudRenderer()
@@ -559,10 +557,9 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 	return debug_text;
 }
 
-bool Simul2DCloudRenderer::RenderCrossSections(int screen_width)
+void Simul2DCloudRenderer::RenderCrossSections(int screen_width,int screen_height)
 {
 	int w=(screen_width-16)/6;
-	HRESULT hr=S_OK;
 	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 
@@ -577,7 +574,7 @@ bool Simul2DCloudRenderer::RenderCrossSections(int screen_width)
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(m_pBufferVertexDecl);
-	B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
+	V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
 #ifdef XBOX
 	float x=-1.f,y=1.f;
 	float w=2.f;
@@ -633,5 +630,4 @@ bool Simul2DCloudRenderer::RenderCrossSections(int screen_width)
 	m_pd3dDevice->SetTexture(0,cloud_textures[2]);
 	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
 	SAFE_RELEASE(m_pBufferVertexDecl);
-	return (hr==S_OK);
 }

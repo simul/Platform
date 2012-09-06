@@ -43,8 +43,8 @@ public:
 	virtual ~SimulWeatherRendererDX1x();
 	void SetScreenSize(int w,int h);
 	//standard d3d object interface functions
-	bool RestoreDeviceObjects(ID3D1xDevice* pd3dDevice,IDXGISwapChain *swapChain);
-	bool InvalidateDeviceObjects();
+	void RestoreDeviceObjects(void*);//ID3D1xDevice* pd3dDevice,IDXGISwapChain *swapChain);
+	void InvalidateDeviceObjects();
 	bool Destroy();
 	bool RenderSky(bool buffered,bool is_cubemap);
 	bool RenderCubemap();

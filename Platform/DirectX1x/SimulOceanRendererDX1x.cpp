@@ -135,7 +135,7 @@ void SimulOceanRendererDX1x::Update(float dt)
 	g_pOceanSimulator->updateDisplacementMap((float)app_time);
 }
 
-bool SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
+void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 {
 	InvalidateDeviceObjects();
 	m_pd3dDevice=dev;
@@ -325,7 +325,6 @@ bool SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 	blend_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	m_pd3dDevice->CreateBlendState(&blend_desc, &g_pBState_Solid);
 	assert(g_pBState_Solid);
-	return true;
 }
 
 void SimulOceanRendererDX1x::SetCubemap(ID3D1xShaderResourceView *c)

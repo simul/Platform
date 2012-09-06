@@ -47,9 +47,9 @@ public:
 	//standard d3d object interface functions
 	void RecompileShaders();
 	//! Call this when the D3D device has been created or reset.
-	bool RestoreDeviceObjects(ID3D1xDevice* pd3dDevice);
+	void RestoreDeviceObjects(ID3D1xDevice* pd3dDevice);
 	//! Call this when the D3D device has been shut down.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
@@ -57,6 +57,7 @@ public:
 	bool RenderPointStars(){return false;}
 	//! Draw the fade textures to screen
 	bool RenderFades(int w,int h);
+	void RenderCelestialDisplay(int screen_width,int screen_height){}
 	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
@@ -157,8 +158,10 @@ protected:
 	void UnmapSky();
 	D3DXMATRIX				world,view,proj;
 	bool UpdateSkyTexture(float proportion);
-	bool CreateSkyTextures();
+	void CreateSkyTextures();
 	bool RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	bool RenderSun();
 void DrawCube();
+	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
+	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };
