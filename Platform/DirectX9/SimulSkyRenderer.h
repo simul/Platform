@@ -63,7 +63,7 @@ public:
 	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	bool						RenderSun();
 	//! Get the transform that goes from declination/right-ascension to azimuth and elevation.
-	bool						GetSiderealTransform(D3DXMATRIX *world);
+	//bool						GetSiderealTransform(D3DXMATRIX *world);
 	//! Render the stars, as points.
 	bool						RenderPointStars();
 	//! Render the stars, as a background.

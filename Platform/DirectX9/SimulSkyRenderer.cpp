@@ -826,7 +826,7 @@ bool SimulSkyRenderer::RenderFades(int w,int h)
 
 	return (hr==S_OK);
 }
-
+/*
 bool SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)
 {
 	HRESULT hr=S_OK;
@@ -850,7 +850,7 @@ bool SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)
 	world->_42=cam_pos.y;
 	world->_43=cam_pos.z;
 	return (hr==S_OK);
-}
+}*/
 
 bool SimulSkyRenderer::RenderPointStars()
 {
@@ -870,7 +870,11 @@ bool SimulSkyRenderer::RenderPointStars()
 	if(!y_vertical)
 		cam_dir*=-1.f;
 
-	GetSiderealTransform(&world);
+	GetSiderealTransform((float*)&world);
+	world._41=cam_pos.x;
+	world._42=cam_pos.y;
+	world._43=cam_pos.z;
+	D3DXMatrixInverse(&tmp2,NULL,&world);
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
@@ -897,8 +901,8 @@ bool SimulSkyRenderer::RenderPointStars()
 				float ra=(float)skyKeyframer->stars.GetStar(i).ascension;
 				float de=(float)skyKeyframer->stars.GetStar(i).declination;
 				star_vertices[i].x= d*cos(de)*sin(ra);
-				star_vertices[i].z=-d*cos(de)*cos(ra);
-				star_vertices[i].y=-d*sin(de);
+				star_vertices[i].y= d*cos(de)*cos(ra);
+				star_vertices[i].z= d*sin(de);
 				star_vertices[i].b=(float)exp(-skyKeyframer->stars.GetStar(i).magnitude);
 				star_vertices[i].c=1.f;
 			}
@@ -937,7 +941,7 @@ bool SimulSkyRenderer::RenderTextureStars()
 	if(!y_vertical)
 		cam_dir*=-1.f;
 
-	GetSiderealTransform(&world);
+	GetSiderealTransform((float*)&world);
 	FixProjectionMatrix(proj,size*4.f,y_vertical);
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);

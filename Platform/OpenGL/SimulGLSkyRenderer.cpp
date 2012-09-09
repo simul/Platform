@@ -529,8 +529,8 @@ bool SimulGLSkyRenderer::RenderPointStars()
 				float ra=(float)skyKeyframer->stars.GetStar(i).ascension;
 				float de=(float)skyKeyframer->stars.GetStar(i).declination;
 				star_vertices[i].x= d*cos(de)*sin(ra);
-				star_vertices[i].z=-d*cos(de)*cos(ra);
-				star_vertices[i].y=-d*sin(de);
+				star_vertices[i].y= d*cos(de)*cos(ra);
+				star_vertices[i].z= d*sin(de);
 				star_vertices[i].b=(float)exp(-skyKeyframer->stars.GetStar(i).magnitude);
 				star_vertices[i].c=1.f;
 			}
