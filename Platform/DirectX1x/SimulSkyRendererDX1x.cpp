@@ -125,9 +125,9 @@ void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
 	skyKeyframer->SetUniformKeyframes(steps);
 }
 
-void SimulSkyRendererDX1x::RestoreDeviceObjects( ID3D1xDevice* dev)
+void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 {
-	m_pd3dDevice=dev;
+	m_pd3dDevice=(ID3D1xDevice*)dev;
 #ifdef DX10
 	m_pImmediateContext=dev;
 #else

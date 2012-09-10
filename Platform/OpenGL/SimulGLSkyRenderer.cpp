@@ -817,7 +817,7 @@ ERROR_CHECK
 	printProgramInfoLog(fade_3d_to_2d_program);
 }
 
-bool SimulGLSkyRenderer::RestoreDeviceObjects()
+void SimulGLSkyRenderer::RestoreDeviceObjects(void*)
 {
 ERROR_CHECK
 	initialized=true;
@@ -835,10 +835,9 @@ ERROR_CHECK
 
 	glUseProgram(NULL);
 	ClearIterators();
-	return true;
 }
 
-bool SimulGLSkyRenderer::InvalidateDeviceObjects()
+void SimulGLSkyRenderer::InvalidateDeviceObjects()
 {
 	initialized=false;
 	SAFE_DELETE_PROGRAM(sky_program);
@@ -846,9 +845,6 @@ bool SimulGLSkyRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(fade_3d_to_2d_program);
 	glDeleteTextures(3,loss_textures);
 	glDeleteTextures(3,inscatter_textures);
-	//loss_2d.InvalidateDeviceObjects();
-	//inscatter_2d.InvalidateDeviceObjects();
-	return true;
 }
 
 SimulGLSkyRenderer::~SimulGLSkyRenderer()

@@ -34,9 +34,9 @@ public:
 
 	//! Create the API-specific objects to be used in rendering. This is usually called from the SimulGLWeatherRenderer that
 	//! owns this object.
-	bool						RestoreDeviceObjects();
+	void						RestoreDeviceObjects(void*);
 	//! Destroy the API-specific objects used in rendering.
-	bool						InvalidateDeviceObjects();
+	void						InvalidateDeviceObjects();
 	void						RecompileShaders();
 	//! GL Implementation of render function.
 	bool						Render(bool blend);
