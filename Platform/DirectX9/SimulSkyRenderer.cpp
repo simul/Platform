@@ -146,7 +146,8 @@ void SimulSkyRenderer::RestoreDeviceObjects(void *dev)
 #else
 		sky_tex_format=D3DFMT_LIN_A32B32G32R32F;
 #endif
-		B_RETURN(CanUseTexFormat(m_pd3dDevice,sky_tex_format));
+		if(!CanUseTexFormat(m_pd3dDevice,sky_tex_format))
+			return;
 	}
     m_pd3dDevice->CreateQuery( D3DQUERYTYPE_OCCLUSION, &d3dQuery );
 	D3DXMatrixIdentity(&world);
@@ -172,7 +173,6 @@ void SimulSkyRenderer::RestoreDeviceObjects(void *dev)
 	SetPlanetImage(moon_index,moon_texture);
 	screen_pixel_height=0;
 	ClearIterators();
-	return (hr==S_OK);
 }
 
 int SimulSkyRenderer::CalcScreenPixelHeight()
@@ -218,13 +218,10 @@ void SimulSkyRenderer::InvalidateDeviceObjects()
 		SAFE_RELEASE(sky_textures[i]);
 		SAFE_RELEASE(loss_textures[i]);
 		SAFE_RELEASE(inscatter_textures[i]);
-	//	SAFE_RELEASE(loss_textures_3d[i]);
-	//	SAFE_RELEASE(inscatter_textures_3d[i]);
 		SAFE_RELEASE(sunlight_textures[i]);
 	}
 	fadeTexWidth=fadeTexHeight=numAltitudes=0;
 	SAFE_RELEASE(d3dQuery);
-	return (hr==S_OK);
 }
 
 SimulSkyRenderer::~SimulSkyRenderer()

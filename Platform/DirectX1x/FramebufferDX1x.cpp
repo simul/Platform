@@ -71,10 +71,10 @@ void FramebufferDX1x::SetTargetWidthAndHeight(int w,int h)
 	screen_height=h;
 }
 
-void FramebufferDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
+void FramebufferDX1x::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=dev;
+	m_pd3dDevice=(ID3D1xDevice*)dev;
 #ifdef DX10
 	m_pImmediateContext=dev;
 #else

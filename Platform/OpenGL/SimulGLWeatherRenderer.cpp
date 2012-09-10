@@ -66,7 +66,7 @@ void SimulGLWeatherRenderer::EnableCloudLayers(bool clouds3d,bool clouds2d)
 	if(simulSkyRenderer)
 	{
 		if(device_initialized)
-			simulSkyRenderer->RestoreDeviceObjects();
+			simulSkyRenderer->RestoreDeviceObjects(NULL);
 	}
 	if(simul2DCloudRenderer)
 	{
