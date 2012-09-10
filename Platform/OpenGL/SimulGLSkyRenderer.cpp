@@ -817,7 +817,7 @@ ERROR_CHECK
 	printProgramInfoLog(fade_3d_to_2d_program);
 }
 
-bool SimulGLSkyRenderer::RestoreDeviceObjects()
+void SimulGLSkyRenderer::RestoreDeviceObjects()
 {
 ERROR_CHECK
 	initialized=true;
@@ -838,7 +838,7 @@ ERROR_CHECK
 	return true;
 }
 
-bool SimulGLSkyRenderer::InvalidateDeviceObjects()
+void SimulGLSkyRenderer::InvalidateDeviceObjects()
 {
 	initialized=false;
 	SAFE_DELETE_PROGRAM(sky_program);

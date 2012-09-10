@@ -57,9 +57,9 @@ public:
 	//standard d3d object interface functions
 	void						RecompileShaders();
 	//! Call this when the D3D device has been created or reset.
-	bool						RestoreDeviceObjects(void *pd3dDevice);
+	void						RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
-	bool						InvalidateDeviceObjects();
+	void						InvalidateDeviceObjects();
 	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	bool						RenderSun();
 	//! Get the transform that goes from declination/right-ascension to azimuth and elevation.

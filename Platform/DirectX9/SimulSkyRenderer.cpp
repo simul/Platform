@@ -128,7 +128,7 @@ void SimulSkyRenderer::RecompileShaders()
 	fadeTexture2D				=m_pSkyEffect->GetParameterByName(NULL,"fadeTexture2D");
 }
 
-bool SimulSkyRenderer::RestoreDeviceObjects(void *dev)
+void SimulSkyRenderer::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
@@ -195,7 +195,7 @@ void SimulSkyRenderer::PrintAt3dPos(const float *p,const char *text,const float*
 	RT::PrintAt3dPos(p,text,colr,offsetx,offsety);
 }
 
-bool SimulSkyRenderer::InvalidateDeviceObjects()
+void SimulSkyRenderer::InvalidateDeviceObjects()
 {
 	screen_pixel_height=0;
 	loss_2d.InvalidateDeviceObjects();
