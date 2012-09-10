@@ -41,13 +41,18 @@ SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h) :
 	m_pImmediateContext(NULL),
 	m_pVertexBuffer(NULL),
 	m_pTonemapEffect(NULL),
-	Exposure(1.f),
+	exposure(1.f),
 	gamma(1.f),			// no need for shader-based gamma-correction with DX10/11
 	Width(w),
 	Height(h),
 	timing(0.f),
 	screen_width(0),
 	screen_height(0)
+	,TonemapTechnique(NULL)
+	,Exposure(NULL)
+	,Gamma(NULL)
+	,hdrTexture(NULL)
+	,worldViewProj(NULL)
 {
 	framebuffer=new FramebufferDX1x(w,h);
 }
@@ -92,7 +97,7 @@ void SimulHDRRendererDX1x::RecompileShaders()
 		V_CHECK(CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx")));
 	}
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
-	Exposure_param			=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
+	Exposure				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
 	Gamma					=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
 	hdrTexture				=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
@@ -107,8 +112,6 @@ void SimulHDRRendererDX1x::InvalidateDeviceObjects()
 #endif
 	SAFE_RELEASE(m_pTonemapEffect);
 	SAFE_RELEASE(m_pVertexBuffer);
-
-	SAFE_RELEASE(m_pTonemapEffect);
 }
 
 bool SimulHDRRendererDX1x::Destroy()
@@ -125,8 +128,9 @@ SimulHDRRendererDX1x::~SimulHDRRendererDX1x()
 
 bool SimulHDRRendererDX1x::StartRender()
 {
-	framebuffer->SetExposure(Exposure);
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
+	if(hdrTexture)
+		hdrTexture->SetResource(NULL);
 	framebuffer->Activate();
 	// Clear the screen to black:
     float clearColor[4]={0.0,0.0,0.0,0.0};
@@ -146,7 +150,18 @@ bool SimulHDRRendererDX1x::ApplyFade()
 bool SimulHDRRendererDX1x::FinishRender()
 {
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
-	framebuffer->DeactivateAndRender(false);
+	framebuffer->Deactivate();
+	HRESULT hr=hdrTexture->SetResource(framebuffer->GetBufferResource());//hdr_buffer_texture_SRV);
+	Gamma->SetFloat(gamma);
+	Exposure->SetFloat(exposure);
+	ApplyPass(TonemapTechnique->GetPassByIndex(0));
+	D3DXMATRIX ident;
+	D3DXMatrixIdentity(&ident);
+    D3DXMatrixOrthoLH(&ident,2.f,2.f,-100.f,100.f);
+	worldViewProj->SetMatrix(ident);
+	framebuffer->RenderBufferToCurrentTarget();
+	hdrTexture->SetResource(NULL);
+	ApplyPass(TonemapTechnique->GetPassByIndex(0));
 	PIXEndNamedEvent();
 	return true;
 }

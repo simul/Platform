@@ -34,7 +34,7 @@ public:
 
 	//! Create the API-specific objects to be used in rendering. This is usually called from the SimulGLWeatherRenderer that
 	//! owns this object.
-	void						RestoreDeviceObjects();
+	void						RestoreDeviceObjects(void*);
 	//! Destroy the API-specific objects used in rendering.
 	void						InvalidateDeviceObjects();
 	void						RecompileShaders();

@@ -143,7 +143,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glut32.lib glew32.lib"
-				ShowProgress="2"
 				OutputFile="$(OutDir)\$(SafeParentName)_MD.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"

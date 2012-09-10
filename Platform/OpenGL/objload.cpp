@@ -601,7 +601,7 @@ void File::ReadPoints(std::istream& ifs)
 	char c;
 	std::vector < std::string > VertInfo;
 
-	c = ifs.get();
+	c = (char) ifs.get();
 	// store all strings
 	do
 	{
@@ -612,7 +612,7 @@ void File::ReadPoints(std::istream& ifs)
 		}
 		while (c == ' ' || c == '\t')
 		{
-			c = ifs.get();
+			c = (char) ifs.get();
 			if (c == '\\')
 			{
 				while (ifs.get() != '\n')
@@ -622,7 +622,7 @@ void File::ReadPoints(std::istream& ifs)
 						goto vinf;
 					}
 				}
-				c = ifs.get();
+				c = (char) ifs.get();
 			}
 			if (ifs.eof())
 			{
@@ -635,7 +635,7 @@ void File::ReadPoints(std::istream& ifs)
 		while (c != ' ' && c != '\t' && c != '\n')
 		{
 			s += c;
-			c = ifs.get();
+			c = (char) ifs.get();
 			if (ifs.eof())
 			{
 				goto vinf;
@@ -678,7 +678,7 @@ void File::ReadLine(std::istream& ifs)
 		}
 		while (c == ' ' || c == '\t')
 		{
-			c = ifs.get();
+			c = (char) ifs.get();
 			if (c == '\\')
 			{
 				while (ifs.get() != '\n')
@@ -688,7 +688,7 @@ void File::ReadLine(std::istream& ifs)
 						goto vinf;
 					}
 				}
-				c = ifs.get();
+				c = (char) ifs.get();
 			}
 			if (ifs.eof())
 			{
@@ -766,7 +766,7 @@ void File::ReadFace(std::istream& ifs)
 	do
 	{
 		// strip white spaces
-		c = ifs.get();
+		c = (char) ifs.get();
 		if (ifs.eof())
 		{
 			goto vinf;
