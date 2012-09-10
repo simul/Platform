@@ -206,7 +206,6 @@ void SimulAtmosphericsRendererDX1x::StartRender()
 {
 	//if(!framebuffer)
 		return;
-	framebuffer->SetExposure(1.f);
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
 	framebuffer->Activate();
 	// Clear the screen to black:

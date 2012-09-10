@@ -67,6 +67,11 @@ public:
 	{
 		return simulWeatherRenderer.get();
 	}
+	class SimulHDRRendererDX1x *GetSimulHDRRenderer()
+	{
+		return simulHDRRenderer.get();
+	}
+
 	void SetCamera(simul::camera::Camera *c)
 	{
 		camera=c;

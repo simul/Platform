@@ -225,29 +225,29 @@ void Direct3D9Renderer::SetCelestialDisplay(bool val)
 
 void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime, float fTimeStep)
 {
+	fTime;fTimeStep;
+	D3DXMATRIX world,view,proj;
 	if(device_reset)
 		RestoreDeviceObjects(pd3dDevice);
+	if(camera)
+	{
+		view=camera->MakeViewMatrix(false);
+		proj=camera->MakeProjectionMatrix(1.f,250000.f,aspect,y_vertical);
+	}
+	D3DXMatrixIdentity(&world);
+    if(!SUCCEEDED(pd3dDevice->BeginScene()))
+		return;
 	static simul::base::Timer timer;
 	timer.TimeSum=0.f;
 	timer.StartTime();
-	fTime;fTimeStep;
-    if(!SUCCEEDED(pd3dDevice->BeginScene()))
-		return;
 	//pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF00FF00,1.0f,0L);
-
-//since our skybox will blend based on alpha we have to clear the backbuffer to this alpha value
-	D3DXCOLOR fogColor( 0.0f , 1.f , 1.f , 0.0f ); 
-
-    pd3dDevice->SetRenderState( D3DRS_ZENABLE,FALSE);
+	//since our skybox will blend based on alpha we have to clear the backbuffer to this alpha value
+	pd3dDevice->SetRenderState( D3DRS_ZENABLE,FALSE);
 	pd3dDevice->SetRenderState( D3DRS_ZWRITEENABLE,FALSE);
 
-	D3DXMATRIX ident;
-	D3DXMatrixIdentity(&ident);
-	pd3dDevice->SetTransform(D3DTS_WORLD,&ident);
-	D3DXMATRIX view(camera->MakeViewMatrix(false));
+	pd3dDevice->SetTransform(D3DTS_WORLD,&world);
 	pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 	// Make left-handed matrix if y is vertical
-	D3DXMATRIX proj(camera->MakeProjectionMatrix(1.f,250000.f,aspect,y_vertical));
 	pd3dDevice->SetTransform(D3DTS_PROJECTION,&proj);
 	if(simulHDRRenderer)
 	{

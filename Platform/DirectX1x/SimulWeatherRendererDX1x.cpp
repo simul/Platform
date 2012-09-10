@@ -104,7 +104,6 @@ void SimulWeatherRendererDX1x::SetScreenSize(int w,int h)
 }
 
 void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
-//ID3D1xDevice* dev,IDXGISwapChain *swapChain)
 {
 	HRESULT hr=S_OK;
 	void **u=(void**)x;

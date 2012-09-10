@@ -64,6 +64,7 @@ public:
 	META_EndProperties
 	SimulWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer.get();}
 	SimulTerrainRenderer *GetSimulTerrainRenderer(){return simulTerrainRenderer.get();}
+	SimulHDRRenderer *GetSimulHDRRenderer(){return simulHDRRenderer.get();}
 	void SetShowOSD(bool s);
 	void SetCamera(simul::camera::Camera *c);
 //D3DCallbackInterface:

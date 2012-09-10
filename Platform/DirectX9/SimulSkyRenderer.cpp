@@ -25,6 +25,7 @@
 
 #include "CreateDX9Effect.h"
 #include "Macros.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/SkyKeyframer.h"
@@ -146,8 +147,8 @@ void SimulSkyRenderer::RestoreDeviceObjects(void *dev)
 #else
 		sky_tex_format=D3DFMT_LIN_A32B32G32R32F;
 #endif
-		if(!CanUseTexFormat(m_pd3dDevice,sky_tex_format))
-			return;
+		if(CanUseTexFormat(m_pd3dDevice,sky_tex_format)!=S_OK)
+			throw simul::base::RuntimeError("Can't use sky texture format.");
 	}
     m_pd3dDevice->CreateQuery( D3DQUERYTYPE_OCCLUSION, &d3dQuery );
 	D3DXMatrixIdentity(&world);

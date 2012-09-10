@@ -23,7 +23,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 {
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,true,false,w,h,true,true,true);
 	AddChild(simulWeatherRenderer.get());
-	//simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
+	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
 	simulOpticsRenderer=new SimulOpticsRendererDX1x();
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->SetYVertical(y_vertical);
@@ -87,7 +87,7 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 	return S_OK;
 }
 
-void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep)
+void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep)
 {
 	D3DXMATRIX world,view,proj;
 	static float nr=0.01f;
@@ -99,8 +99,12 @@ void	Direct3D11Renderer::OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11De
 		view=camera->MakeViewMatrix(!y_vertical);
 		D3DXMatrixIdentity(&world);
 	}
+	D3DXMatrixIdentity(&world);
 	if(simulHDRRenderer)
+	{
+	// Don't need to clear D3DCLEAR_TARGET as we'll be filling every pixel:
 		simulHDRRenderer->StartRender();
+	}
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->SetMatrices(view,proj);

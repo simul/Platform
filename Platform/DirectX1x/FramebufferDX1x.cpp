@@ -43,14 +43,10 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	m_pOldDepthSurface(NULL)
 
 	,TonemapTechnique(NULL)
-	,Exposure(NULL)
-	,Gamma(NULL)
 	,hdrTexture(NULL)
 	,worldViewProj(NULL)
 
-	,exposure(1.f),
-	gamma(1.f),			// no need for shader-based gamma-correction with DX10/11
-	Width(w),
+	,Width(w),
 	Height(h),
 	timing(0.f),
 	screen_width(0),
@@ -83,9 +79,7 @@ void FramebufferDX1x::RestoreDeviceObjects(void *dev)
 #endif
 	SAFE_RELEASE(m_pTonemapEffect);
 	hr=CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx"));
-	TonemapTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
-	Exposure			=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
-	Gamma				=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
+	TonemapTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_direct");
 	hdrTexture			=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
 	worldViewProj		=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	CreateBuffers();
@@ -103,8 +97,6 @@ void FramebufferDX1x::InvalidateDeviceObjects()
 	
 	SAFE_RELEASE(m_pHDRRenderTarget)
 	SAFE_RELEASE(m_pBufferDepthSurface)
-
-	SAFE_RELEASE(m_pTonemapEffect);
 
 	SAFE_RELEASE(hdr_buffer_texture);
 	SAFE_RELEASE(hdr_buffer_texture_SRV);
@@ -228,15 +220,24 @@ bool FramebufferDX1x::CreateBuffers()
 		{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	16,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	SAFE_RELEASE(m_pBufferVertexDecl);
+
+	// Witness the following DX11 silliness.
 	D3D1x_PASS_DESC PassDesc;
-	assert(TonemapTechnique->IsValid());
-	ID3D1xEffectPass *pass=TonemapTechnique->GetPassByIndex(0);
+
+	
+	ID3D1xEffect * effect=NULL;
+	CreateEffect(m_pd3dDevice,&effect,_T("gamma.fx"));
+	ID3D1xEffectTechnique*	tech=effect->GetTechniqueByName("simul_direct");
+
+	assert(tech->IsValid());
+	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
 	assert(pass->IsValid());
 	hr=pass->GetDesc(&PassDesc);
 	V_CHECK(hr);
 	hr=m_pd3dDevice->CreateInputLayout(
 		decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize
 		, &m_pBufferVertexDecl);
+	SAFE_RELEASE(effect);
 
 	static float x=-1.f,y=-1.f;
 	static float width=2.f,height=2.f;
@@ -323,8 +324,6 @@ void FramebufferDX1x::DeactivateAndRender(bool blend)
 	HRESULT hr=S_OK;
 	hr=hdrTexture->SetResource(hdr_buffer_texture_SRV);
 	ApplyPass(TonemapTechnique->GetPassByIndex(0));
-	Exposure->SetFloat(exposure);
-	Gamma->SetFloat(gamma);
 	RenderBufferToCurrentTarget();
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)

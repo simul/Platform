@@ -42,9 +42,12 @@ public:
 	void Deactivate();
 	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
 	void DeactivateAndRender(bool blend);
-	//! Set the exposure - a brightness factor.
-	void SetExposure(float ex){exposure=ex;}
 	bool RenderBufferToCurrentTarget();
+	
+	ID3D1xShaderResourceView *GetBufferResource()
+	{
+		return hdr_buffer_texture_SRV;
+	}
 protected:
 	int screen_width;
 	int screen_height;
@@ -59,8 +62,6 @@ protected:
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	ID3D1xEffect*						m_pTonemapEffect;
 	ID3D1xEffectTechnique*				TonemapTechnique;
-	ID3D1xEffectScalarVariable*			Exposure;
-	ID3D1xEffectScalarVariable*			Gamma;
 	ID3D1xEffectMatrixVariable*			worldViewProj;
 	ID3D1xEffectShaderResourceVariable*	hdrTexture;
 public:
@@ -82,8 +83,6 @@ protected:
 
 	bool IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat);
 	bool CreateBuffers();
-	float							exposure;
-	float							gamma;
 	ID3D1xRenderTargetView* MakeRenderTarget(const ID3D1xTexture2D* pTexture);
 	float timing;
 };
