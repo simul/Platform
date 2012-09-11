@@ -188,7 +188,7 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 	float opacity=density.z;
 	float l=dot(lightningMultipliers,lightning);
 	float3 lightningC=l*lightningColour.xyz;
-	float3 final=(density.x*Beta+lightResponse.w*density.y)*sunlightColour+ambient.rgb+lightningColour.w*lightningC;
+	float3 final=(density.y*Beta+lightResponse.y*density.x)*sunlightColour+ambient.rgb+lightningColour.w*lightningC;
 	
 	final*=loss.xyz;
 	final+=inscatter.xyz;
@@ -257,7 +257,7 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 	float3 ambient=density.w*skylightColour.rgb;
 
 	float opacity=density.z;
-	float3 final=(density.x*Beta+lightResponse.y*density.y)*sunlightColour+ambient.rgb;
+	float3 final=(density.y*Beta+lightResponse.y*density.x)*sunlightColour+ambient.rgb;
 	float3 inscatter=InscatterFunction(insc,cos0);
 
 	final*=loss;

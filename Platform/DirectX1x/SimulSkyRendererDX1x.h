@@ -76,7 +76,7 @@ public:
 
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);
-//! Implement the SkyTexturesCallback
+//! Initialize textures
 	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
 	void FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void FillFadeTex(int alt_index,int texture_index,int texel_index,int num_texels,
@@ -99,12 +99,12 @@ protected:
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate();
 	void EnsureTextureCycle();
-	ID3D1xDevice*							m_pd3dDevice;
-	ID3D1xDeviceContext *					m_pImmediateContext;
-	ID3D1xBuffer*							m_pVertexBuffer;
-	ID3D1xInputLayout*						m_pVtxDecl;
-	ID3D1xEffect*							m_pSkyEffect;
-	ID3D1xQuery*							d3dQuery;
+	ID3D1xDevice*						m_pd3dDevice;
+	ID3D1xDeviceContext *				m_pImmediateContext;
+	ID3D1xBuffer*						m_pVertexBuffer;
+	ID3D1xInputLayout*					m_pVtxDecl;
+	ID3D1xEffect*						m_pSkyEffect;
+	ID3D1xQuery*						d3dQuery;
 
 	ID3D1xEffectMatrixVariable*			worldViewProj;
 	ID3D1xEffectTechnique*				m_hTechniqueSky;
