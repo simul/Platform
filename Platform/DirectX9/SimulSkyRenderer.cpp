@@ -146,6 +146,7 @@ void SimulSkyRenderer::RestoreDeviceObjects(void *dev)
 #else
 		sky_tex_format=D3DFMT_LIN_A32B32G32R32F;
 #endif
+		B_RETURN(CanUseTexFormat(m_pd3dDevice,sky_tex_format));
 		if(CanUseTexFormat(m_pd3dDevice,sky_tex_format)!=S_OK)
 			return;
 	}
