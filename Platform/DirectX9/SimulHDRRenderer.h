@@ -12,6 +12,7 @@
 	#include <d3d9.h>
 	#include <d3dx9.h>
 #endif
+#include "Simul/Base/PropertyMacros.h"
 #include "Simul/Base/Referenced.h"
 #include "Simul/Platform/DirectX9/Export.h"
 #ifdef _MSC_VER
@@ -24,6 +25,10 @@ SIMUL_DIRECTX9_EXPORT_CLASS SimulHDRRenderer: public simul::base::Referenced
 public:
 	SimulHDRRenderer(int width,int height);
 	virtual ~SimulHDRRenderer();
+	META_BeginProperties
+		META_ValueProperty(float,Gamma,"A tone-mapping factor")
+		META_ValueProperty(float,Exposure,"A brightness factor")
+	META_EndProperties
 	//standard d3d object interface functions
 	void RecompileShaders();
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
@@ -37,10 +42,6 @@ public:
 	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
 	bool FinishRender();
 
-	//! Set the exposure - a brightness factor.
-	void SetExposure(float ex);
-	//! Set the gamma - a tone-mapping factor.
-	void SetGamma(float g);
 	//! Get the current debug text as a c-string pointer.
 	const char *GetDebugText() const;
 	//! Get a timing value for debugging.
@@ -58,8 +59,8 @@ protected:
 	LPD3DXEFFECT			m_pTonemapEffect;
 	D3DXHANDLE				ToneMapTechnique;
 	D3DXHANDLE				ToneMapZWriteTechnique;
-	D3DXHANDLE				Exposure;
-	D3DXHANDLE				Gamma;
+	D3DXHANDLE				Exposure_;
+	D3DXHANDLE				Gamma_;
 	D3DXHANDLE				hdrTexture;
 
 	LPDIRECT3DSURFACE9		m_pHDRRenderTarget;
@@ -85,11 +86,8 @@ protected:
 	class SimulCloudRenderer *simulCloudRenderer;
 	class Simul2DCloudRenderer *simul2DCloudRenderer;
 	class SimulPrecipitationRenderer *simulPrecipitationRenderer;
-	float							exposure;
-	float							gamma;
 	LPDIRECT3DSURFACE9 MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture);
 	float timing;
-	float exposure_multiplier;
 	class SimulAtmosphericsInterface *atmospherics;
 };
 #ifdef _MSC_VER

@@ -52,13 +52,12 @@ public:
 	Direct3D9Renderer(simul::clouds::Environment *env,int w,int h);
 	virtual ~Direct3D9Renderer();
 	META_BeginProperties
-		META_ValueProperty(float,Gamma,"")
-		META_ValueProperty(float,Exposure,"")
 		META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")
 
 		META_ValueProperty(bool,ShowCloudCrossSections,"Show cross-sections of the cloud volumes as an overlay.")
 		META_ValueProperty(bool,ShowFades,"Show the fade textures as an overlay.")
 		META_ValueProperty(bool,ShowTerrain,"Whether to draw the terrain.")
+		META_ValueProperty(bool,UseHdrPostprocessor,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
 		META_ValueProperty(bool,ShowMap,"Show the terrain map as an overlay.")
 
 	META_EndProperties

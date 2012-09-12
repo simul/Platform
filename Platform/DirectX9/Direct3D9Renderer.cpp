@@ -22,9 +22,7 @@
 
 Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h)
 	:simul::graph::meta::Group()
-	,Gamma(0.45f)
 	,aspect(1.f)
-	,Exposure(1.f)
 	,simulWeatherRenderer(NULL)
 	,simulHDRRenderer(NULL)
 	,simulTerrainRenderer(NULL)
@@ -39,6 +37,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	,time_mult(0.f)
 	,ShowFlares(true)
 	,device_reset(true)
+	,UseHdrPostprocessor(true)
 {
 	simulWeatherRenderer=new SimulWeatherRenderer(env,true,w,h,true,true,false,false);
 	if(simulWeatherRenderer)
@@ -249,11 +248,9 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 	// Make left-handed matrix if y is vertical
 	pd3dDevice->SetTransform(D3DTS_PROJECTION,&proj);
-	if(simulHDRRenderer)
+	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 	// Don't need to clear D3DCLEAR_TARGET as we'll be filling every pixel:
-		simulHDRRenderer->SetGamma(Gamma);
-		simulHDRRenderer->SetExposure(Exposure);
 		simulHDRRenderer->StartRender();
 	}
 	else
@@ -272,7 +269,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		simulTerrainRenderer->SetMatrices(view,proj);
 		simulTerrainRenderer->Render();
 	}
-	if(simulHDRRenderer)
+	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->CopyDepthAlpha();
 	timer.UpdateTime();
 	if(simulWeatherRenderer)
@@ -288,8 +285,11 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 				dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
 				light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
 				simulOpticsRenderer->SetMatrices(view,proj);
+				float exposure=1.f;
+				if(simulHDRRenderer)
+					exposure=simulHDRRenderer->GetExposure();
 				simulOpticsRenderer->RenderFlare(
-					Exposure*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
+					exposure*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
 					,dir,light);
 			}
 		}
@@ -305,7 +305,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&ShowFades)
 		simulWeatherRenderer->GetSkyRenderer()->RenderFades(width,height);
 
-	if(simulHDRRenderer)
+	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender();
 	timer.UpdateTime();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)

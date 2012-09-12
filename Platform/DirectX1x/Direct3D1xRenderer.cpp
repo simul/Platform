@@ -20,6 +20,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 		camera(NULL)
 		,timeMult(0.f)
 		,y_vertical(true)
+		,UseHdrPostprocessor(true)
 {
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,true,false,w,h,true,true,true);
 	AddChild(simulWeatherRenderer.get());
@@ -100,7 +101,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		D3DXMatrixIdentity(&world);
 	}
 	D3DXMatrixIdentity(&world);
-	if(simulHDRRenderer)
+	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 	// Don't need to clear D3DCLEAR_TARGET as we'll be filling every pixel:
 		simulHDRRenderer->StartRender();
@@ -124,7 +125,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			}
 		}
 	}
-	if(simulHDRRenderer)
+	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender();
 	if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->RenderFades(ScreenWidth,ScreenHeight);

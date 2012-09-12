@@ -8,17 +8,7 @@ sampler2D hdr_texture= sampler_state
     MagFilter = Linear;
 	AddressU = Clamp;
 	AddressV = Clamp;
-};
-
-texture bloomTexture;
-sampler2D bloom_texture= sampler_state 
-{
-    Texture = <bloomTexture>;
-    MipFilter = Linear;
-    MinFilter = Linear;
-    MagFilter = Linear;
-	AddressU = Clamp;
-	AddressV = Clamp;
+	SRGBTexture = 0;
 };
 
 float exposure;
@@ -102,9 +92,8 @@ float4 DirectPS(v2f IN) : COLOR
 float4 TonemapPS(v2f IN) : COLOR
 {
 	float4 c=tex2D(hdr_texture,IN.texcoord);
-    c.rgb*=exposure;
-	//c+=tex2D(bloom_texture,IN.texcoord);
-    c.rgb=pow(c.rgb,gamma);
+c.rgb*=exposure;
+c.rgb=pow(c.rgb,gamma);
     return float4(c.rgb,0.f);
 }
 
