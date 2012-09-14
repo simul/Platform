@@ -54,12 +54,11 @@ SimulHDRRenderer::SimulHDRRenderer(int width,int height) :
 	m_pHDRRenderTarget(NULL),
 	m_pBufferDepthSurface(NULL),
 	m_pFadedRenderTarget(NULL),
-	exposure(1.f),
-	gamma(1.f/2.2f),
+	Exposure(1.f),
+	Gamma(1.f/2.2f),
 	BufferWidth(width),
 	BufferHeight(height),
 	timing(0.f),
-	exposure_multiplier(1.f),
 	atmospherics(NULL)
 {
 }
@@ -81,8 +80,8 @@ void SimulHDRRenderer::RecompileShaders()
 #endif
 	ToneMapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
 	ToneMapZWriteTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_tonemap_zwrite");
-	Exposure				=m_pTonemapEffect->GetParameterByName(NULL,"exposure");
-	Gamma					=m_pTonemapEffect->GetParameterByName(NULL,"gamma");
+	Exposure_				=m_pTonemapEffect->GetParameterByName(NULL,"exposure");
+	Gamma_					=m_pTonemapEffect->GetParameterByName(NULL,"gamma");
 	hdrTexture				=m_pTonemapEffect->GetParameterByName(NULL,"hdrTexture");
 }
 
@@ -348,8 +347,8 @@ bool SimulHDRRenderer::FinishRender()
 
 //	B_RETURN(m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET,0xFF000000,depth_start,0L));
 	m_pTonemapEffect->SetTechnique(ToneMapTechnique);
-	B_RETURN(m_pTonemapEffect->SetFloat(Exposure,exposure*exposure_multiplier));
-	B_RETURN(m_pTonemapEffect->SetFloat(Gamma,gamma));
+	B_RETURN(m_pTonemapEffect->SetFloat(Exposure_,Exposure));
+	B_RETURN(m_pTonemapEffect->SetFloat(Gamma_,Gamma));
 	B_RETURN(m_pTonemapEffect->SetTexture(hdrTexture,last_texture));
 
 	DrawFullScreenQuad(m_pd3dDevice,m_pTonemapEffect);
@@ -358,16 +357,6 @@ bool SimulHDRRenderer::FinishRender()
 	SAFE_RELEASE(m_pOldDepthSurface)
 	PIXEndNamedEvent();
 	return (hr==S_OK);
-}
-
-void SimulHDRRenderer::SetExposure(float ex)
-{
-	exposure=ex;
-}
-
-void SimulHDRRenderer::SetGamma(float g)
-{
-	gamma=g;
 }
 
 const char *SimulHDRRenderer::GetDebugText() const

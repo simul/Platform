@@ -41,16 +41,16 @@ SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h) :
 	m_pImmediateContext(NULL),
 	m_pVertexBuffer(NULL),
 	m_pTonemapEffect(NULL),
-	exposure(1.f),
-	gamma(1.f),			// no need for shader-based gamma-correction with DX10/11
+	Exposure(1.f),
+	Gamma(1.f/2.2f),			// no need for shader-based gamma-correction with DX10/11
 	Width(w),
 	Height(h),
 	timing(0.f),
 	screen_width(0),
 	screen_height(0)
 	,TonemapTechnique(NULL)
-	,Exposure(NULL)
-	,Gamma(NULL)
+	,Exposure_(NULL)
+	,Gamma_(NULL)
 	,hdrTexture(NULL)
 	,worldViewProj(NULL)
 {
@@ -97,8 +97,8 @@ void SimulHDRRendererDX1x::RecompileShaders()
 		V_CHECK(CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx")));
 	}
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
-	Exposure				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
-	Gamma					=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
+	Exposure_				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
+	Gamma_					=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
 	hdrTexture				=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 }
@@ -152,8 +152,8 @@ bool SimulHDRRendererDX1x::FinishRender()
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
 	framebuffer->Deactivate();
 	HRESULT hr=hdrTexture->SetResource(framebuffer->GetBufferResource());//hdr_buffer_texture_SRV);
-	Gamma->SetFloat(gamma);
-	Exposure->SetFloat(exposure);
+	Gamma_->SetFloat(Gamma);
+	Exposure_->SetFloat(Exposure);
 	ApplyPass(TonemapTechnique->GetPassByIndex(0));
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);

@@ -23,6 +23,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,ShowCloudCrossSections(false)
 	,celestial_display(false)
 	,y_vertical(false)
+	,UseHdrPostprocessor(true)
 {
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
@@ -57,7 +58,7 @@ void OpenGLRenderer::paintGL()
 		glFogf(GL_FOG_START,1.0f);						// Fog Start Depth
 		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
 		glEnable(GL_FOG);
-		if(simulHDRRenderer)
+		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->StartRender();
 		simulWeatherRenderer->RenderSky(true,false);
 
@@ -76,7 +77,7 @@ void OpenGLRenderer::paintGL()
 				(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
 				,dir,light);
 		}
-		if(simulHDRRenderer)
+		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender();
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);

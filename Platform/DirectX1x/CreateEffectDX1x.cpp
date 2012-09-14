@@ -145,6 +145,8 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 	std::ifstream ifs(text_filename.c_str(),std::ios_base::binary);
 	if(ifs.good())
 	{
+		std::string output_filename=text_filename+"o";
+		DeleteFileA(output_filename.c_str());
 		std::string command=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("DXSDK_DIR");
 		if(command.length())
 		{
@@ -219,8 +221,6 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 					&pi )				// Pointer to PROCESS_INFORMATION structure
 				;
 			// Wait until child process exits.
-
-
 
 		  HANDLE WaitHandles[] = {
 			pi.hProcess, hReadOutPipe, hReadErrorPipe

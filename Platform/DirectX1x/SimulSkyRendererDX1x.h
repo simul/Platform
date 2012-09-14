@@ -76,7 +76,7 @@ public:
 
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);
-//! Implement the SkyTexturesCallback
+//! Initialize textures
 	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
 	void FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void FillFadeTex(int alt_index,int texture_index,int texel_index,int num_texels,

@@ -331,11 +331,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\objload.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\OpenGLRenderer.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\SimulGL2DCloudRenderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulGLAtmosphericsRenderer.cpp"
 				>
 			</File>
 			<File
@@ -362,6 +370,10 @@
 				RelativePath=".\SimulGLWeatherRenderer.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\SimulOpticsRendererGL.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -385,7 +397,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Macro.h"
+				RelativePath=".\objload.h"
 				>
 			</File>
 			<File
@@ -394,6 +406,10 @@
 			</File>
 			<File
 				RelativePath=".\SimulGL2DCloudRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulGLAtmosphericsRenderer.h"
 				>
 			</File>
 			<File
@@ -418,6 +434,118 @@
 			</File>
 			<File
 				RelativePath=".\SimulGLWeatherRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulOpticsRendererGL.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Shaders"
+			>
+			<File
+				RelativePath=".\GLSL\simul_atmospherics.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_atmospherics.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_cloud_cross_section.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_cloud_cross_section.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_cloudmix.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_cloudmix.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_clouds.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_clouds.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_clouds_2d.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_clouds_2d.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_fade_3d_to_2d.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_fade_3d_to_2d.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_flare.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_lightning.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_lightning.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_planet.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_sky.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_sky.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_stars.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_sun.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_sun.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_sun_planet_flare.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_terrain.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_terrain.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\tonemap.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\tonemap.vert"
 				>
 			</File>
 		</Filter>
