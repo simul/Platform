@@ -363,6 +363,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimulGLTerrainRenderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulGLUnderwaterRenderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SimulGLUtilities.cpp"
 				>
 			</File>
@@ -426,6 +434,14 @@
 			</File>
 			<File
 				RelativePath=".\SimulGLSkyRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulGLTerrainRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulGLUnderwaterRenderer.h"
 				>
 			</File>
 			<File

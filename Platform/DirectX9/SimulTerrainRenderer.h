@@ -47,13 +47,13 @@ public:
 	SimulTerrainRenderer();
 	//standard d3d object interface functions
 	bool Create(LPDIRECT3DDEVICE9 pd3dDevice);
-	bool RecompileShaders();
+	void RecompileShaders();
 	void RestoreDeviceObjects(void *pd3dDevice);
 	void InvalidateDeviceObjects();
 
 	virtual ~SimulTerrainRenderer();
-	bool RenderOnlyDepth();
-	bool Render();
+	void RenderOnlyDepth();
+	void Render();
 	float GetMip(int i,int j) const;
 	bool RenderMap(int w);
 	void Update(float dt);

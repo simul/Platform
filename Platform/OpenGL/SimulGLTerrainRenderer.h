@@ -8,26 +8,26 @@
 #ifndef _SIMULGLTERRAINRENDERER
 #define _SIMULGLTERRAINRENDERER
 #include "Simul/Base/Referenced.h"
+#include "Simul/Terrain/BaseTerrainRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include <GL/glew.h>
 
-SIMUL_OPENGL_EXPORT_CLASS SimulGLTerrainRenderer : public simul::base::Referenced
+SIMUL_OPENGL_EXPORT_CLASS SimulGLTerrainRenderer : public simul::terrain::BaseTerrainRenderer
 {
 public:
 	SimulGLTerrainRenderer();
 	virtual ~SimulGLTerrainRenderer();
 	//standard ogl object interface functions
-	void ReloadShaders();
-	bool RestoreDeviceObjects();
-	bool InvalidateDeviceObjects();
+	void RecompileShaders();
+	void RestoreDeviceObjects(void*);
+	void InvalidateDeviceObjects();
 	// Interface
 	void SetMaxFadeDistanceKm(float dist_km);
 	//! Render the terrain.
-	bool Render();
+	void Render();
 private:
 	float max_fade_distance_metres;
 	GLuint program;
-	GLuint vertex_shader,fragment_shader;
 	GLint eyePosition_param;
 	GLint maxFadeDistanceMetres_param;
 };

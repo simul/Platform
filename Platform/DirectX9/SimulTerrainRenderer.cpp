@@ -724,7 +724,7 @@ void SimulTerrainRenderer::ClearTiles()
 	}
 	tiles.clear();
 }
-bool SimulTerrainRenderer::RecompileShaders()
+void SimulTerrainRenderer::RecompileShaders()
 {
 	HRESULT hr=S_OK;
 	std::map<std::string,std::string> defines;
@@ -790,7 +790,6 @@ bool SimulTerrainRenderer::RecompileShaders()
 		if(strcmp(name,"outline")==0)
 			WIREFRAME_PASS=i;
 	}
-	return (hr==S_OK);
 }
 
 void SimulTerrainRenderer::InvalidateDeviceObjects()
@@ -824,15 +823,14 @@ SimulTerrainRenderer::~SimulTerrainRenderer()
 	static const float radius=50.f;
 	static const float height=150.f;
 
-bool SimulTerrainRenderer::RenderOnlyDepth()
+void SimulTerrainRenderer::RenderOnlyDepth()
 {
 	PIXBeginNamedEvent(0xFF006600,"SimulTerrainRenderer::RenderOnlyDepth");
-	HRESULT hr=InternalRender(true);
+	InternalRender(true);
 	PIXEndNamedEvent();
-	return (hr==S_OK);
 }
 
-bool SimulTerrainRenderer::Render()
+void SimulTerrainRenderer::Render()
 {
 	PIXBeginNamedEvent(0xFF00FF00,"SimulTerrainRenderer::Render");
 	HRESULT hr=InternalRender(false);
@@ -857,7 +855,6 @@ bool SimulTerrainRenderer::Render()
 		}
 		//RenderLines(m_pd3dDevice,12,pos);
 	}
-	return (hr==S_OK);
 }
 
 float SimulTerrainRenderer::GetMip(int i,int j) const

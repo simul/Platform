@@ -138,6 +138,7 @@ private:
 	GLint gamma_param;
 	GLint buffer_tex_param;
 	float exposure, gamma;
+	bool initialized;
 };
 
 #ifdef _MSC_VER

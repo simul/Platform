@@ -5,8 +5,6 @@
 
 SimulGLTerrainRenderer::SimulGLTerrainRenderer()
 	:program(0)
-	,vertex_shader(0)
-	,fragment_shader(0)
 	,max_fade_distance_metres(200000.f)
 {
 }
@@ -15,25 +13,13 @@ SimulGLTerrainRenderer::~SimulGLTerrainRenderer()
 {
 }
 
-void SimulGLTerrainRenderer::ReloadShaders()
+void SimulGLTerrainRenderer::RecompileShaders()
 {
-	ERROR_CHECK
-	vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
-	ERROR_CHECK
-	fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-	ERROR_CHECK
 	SAFE_DELETE_PROGRAM(program);
-	program			=glCreateProgram();
+	program			=MakeProgram("simul_terrain");
 	ERROR_CHECK
-	vertex_shader	=LoadProgram(vertex_shader,"simul_terrain.vert");
-	ERROR_CHECK
-	fragment_shader	=LoadProgram(fragment_shader,"simul_terrain.frag");
-	ERROR_CHECK
-	glAttachShader(program,vertex_shader);
-	glAttachShader(program,fragment_shader);
-	ERROR_CHECK
-	glLinkProgram(program);
 	glUseProgram(program);
+	ERROR_CHECK
 	printProgramInfoLog(program);
 	ERROR_CHECK
 	eyePosition_param				= glGetUniformLocation(program,"eyePosition");
@@ -42,16 +28,14 @@ void SimulGLTerrainRenderer::ReloadShaders()
 	ERROR_CHECK
 }
 
-bool SimulGLTerrainRenderer::RestoreDeviceObjects()
+void SimulGLTerrainRenderer::RestoreDeviceObjects(void*)
 {
-	ReloadShaders();
-	return true;
+	RecompileShaders();
 }
 
-bool SimulGLTerrainRenderer::InvalidateDeviceObjects()
+void SimulGLTerrainRenderer::InvalidateDeviceObjects()
 {
 	SAFE_DELETE_PROGRAM(program);
-	return true;
 }
 
 void SimulGLTerrainRenderer::SetMaxFadeDistanceKm(float dist_km)
@@ -59,7 +43,7 @@ void SimulGLTerrainRenderer::SetMaxFadeDistanceKm(float dist_km)
 	max_fade_distance_metres=dist_km*1000.f;
 }
 
-bool SimulGLTerrainRenderer::Render()
+void SimulGLTerrainRenderer::Render()
 {
 	ERROR_CHECK
 	glUseProgram(program);
@@ -92,5 +76,4 @@ ERROR_CHECK
 ERROR_CHECK
 	glUseProgram(NULL);
 ERROR_CHECK
-	return true;
 }

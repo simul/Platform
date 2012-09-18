@@ -50,6 +50,7 @@ protected:
 	simul::base::SmartPtr<SimulGLWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulGLHDRRenderer> simulHDRRenderer;
 	simul::base::SmartPtr<SimulOpticsRendererGL> simulOpticsRenderer;
+	simul::base::SmartPtr<class SimulGLTerrainRenderer> simulTerrainRenderer;
 	int width,height;
 	simul::camera::Camera *cam;
 	bool celestial_display;

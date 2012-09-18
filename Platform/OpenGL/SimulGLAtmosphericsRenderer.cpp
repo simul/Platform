@@ -41,30 +41,20 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 	if(!initialized)
 		return;
 	framebuffer->RecompileShaders();
-	cloudmix_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
+	distance_fade_program		=MakeProgram("simul_atmospherics");
+	cloudmix_program			=MakeProgram("simul_cloudmix");
 ERROR_CHECK
-	cloudmix_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-ERROR_CHECK
-	cloudmix_program			=glCreateProgram();
-ERROR_CHECK
-	cloudmix_vertex_shader		=LoadShader(cloudmix_vertex_shader		,"simul_cloudmix.vert");
-    cloudmix_fragment_shader	=LoadShader(cloudmix_fragment_shader	,"simul_cloudmix.frag");
-	glAttachShader(cloudmix_program,cloudmix_vertex_shader);
-	glAttachShader(cloudmix_program,cloudmix_fragment_shader);
-	glLinkProgram(cloudmix_program);
-	glUseProgram(cloudmix_program);
-	ERROR_CHECK
-	printProgramInfoLog(cloudmix_program);
+	glUseProgram(distance_fade_program);
 
-	image_texture_param		=glGetUniformLocation(cloudmix_program,"image_texture");
-	loss_texture_param		=glGetUniformLocation(cloudmix_program,"loss_texture");
-	insc_texture_param		=glGetUniformLocation(cloudmix_program,"insc_texture");
-	hazeEccentricity_param	=glGetUniformLocation(cloudmix_program,"hazeEccentricity");
-	lightDir_param			=glGetUniformLocation(cloudmix_program,"lightDir");
-	invViewProj_param		=glGetUniformLocation(cloudmix_program,"invViewProj");
-	mieRayleighRatio_param	=glGetUniformLocation(cloudmix_program,"mieRayleighRatio");
+	image_texture_param		=glGetUniformLocation(distance_fade_program,"image_texture");
+	loss_texture_param		=glGetUniformLocation(distance_fade_program,"loss_texture");
+	insc_texture_param		=glGetUniformLocation(distance_fade_program,"insc_texture");
+	hazeEccentricity_param	=glGetUniformLocation(distance_fade_program,"hazeEccentricity");
+	lightDir_param			=glGetUniformLocation(distance_fade_program,"lightDir");
+	invViewProj_param		=glGetUniformLocation(distance_fade_program,"invViewProj");
+	mieRayleighRatio_param	=glGetUniformLocation(distance_fade_program,"mieRayleighRatio");
 
-	clouds_texture_param	=glGetUniformLocation(cloudmix_program,"clouds_texture");
+	clouds_texture_param	=glGetUniformLocation(distance_fade_program,"clouds_texture");
 	
 	glUseProgram(0);
 }
@@ -81,7 +71,7 @@ void SimulGLAtmosphericsRenderer::SetMaxFadeDistanceKm(float dist_km)
 void SimulGLAtmosphericsRenderer::StartRender()
 {
 	framebuffer->Activate();
-	glClearColor(0.f,0.0f,0.0f,0.0f);
+	glClearColor(0.f,0.0f,0.0f,1.0f);
 	ERROR_CHECK
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	ERROR_CHECK
@@ -97,7 +87,7 @@ ERROR_CHECK
     glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D,inscatter_texture);
 ERROR_CHECK
-	glUseProgram(cloudmix_program);
+	glUseProgram(distance_fade_program);
 	glUniform1i(image_texture_param,1);
 	glUniform1i(loss_texture_param,2);
 	glUniform1i(insc_texture_param,3);
@@ -140,7 +130,7 @@ ERROR_CHECK
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,framebuffer->GetColorTex(0));
 	
-	framebuffer->Render1(cloudmix_program,false);
+	framebuffer->Render1(distance_fade_program,false);
 	glUseProgram(0);
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,0);

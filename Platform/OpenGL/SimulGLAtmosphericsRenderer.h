@@ -50,8 +50,8 @@ public:
 	void FinishRender();
 private:
 	bool initialized;
-	GLuint cloudmix_vertex_shader;
-	GLuint cloudmix_fragment_shader;
+	GLuint distance_fade_program;
+
 	GLuint cloudmix_program;
 
 	GLuint loss_texture,inscatter_texture;

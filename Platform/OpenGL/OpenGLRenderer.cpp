@@ -11,6 +11,8 @@
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/SimulGLSkyRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLCloudRenderer.h"
+#include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
+#include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Sky/Float4.h"
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 
@@ -25,13 +27,20 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,y_vertical(false)
 	,UseHdrPostprocessor(true)
 {
+	simulHDRRenderer=new SimulGLHDRRenderer(width,height);
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
+	simulTerrainRenderer=new SimulGLTerrainRenderer();
+
 	SetYVertical(y_vertical);
 }
 
 OpenGLRenderer::~OpenGLRenderer()
 {
+	if(simulTerrainRenderer)
+		simulTerrainRenderer->InvalidateDeviceObjects();
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->InvalidateDeviceObjects();
 }
 
 void OpenGLRenderer::paintGL()
@@ -61,6 +70,13 @@ void OpenGLRenderer::paintGL()
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->StartRender();
 		simulWeatherRenderer->RenderSky(true,false);
+
+		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer())
+			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender();
+		if(simulTerrainRenderer)
+			simulTerrainRenderer->Render();
+		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer())
+			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender();
 
 		simulWeatherRenderer->RenderLightning();
 
@@ -114,12 +130,10 @@ void OpenGLRenderer::resizeGL(int w,int h)
 {
 	width=w;
 	height=h;
-	if(!simulHDRRenderer.get())
-		simulHDRRenderer=new SimulGLHDRRenderer(width,height);
-	else
-		simulHDRRenderer->SetBufferSize(width,height);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetScreenSize(width,height);
+	if(simulHDRRenderer)
+		simulHDRRenderer->SetBufferSize(width,height);
 }
 
 void OpenGLRenderer::initializeGL()
@@ -159,6 +173,8 @@ void OpenGLRenderer::initializeGL()
 		simulHDRRenderer->RestoreDeviceObjects();
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->RestoreDeviceObjects(NULL);
+	if(simulTerrainRenderer)
+		simulTerrainRenderer->RestoreDeviceObjects(NULL);
 }
 
 void OpenGLRenderer::SetCamera(simul::camera::Camera *c)
@@ -183,4 +199,6 @@ void OpenGLRenderer::RecompileShaders()
 		simulHDRRenderer->RecompileShaders();
 	if(simulWeatherRenderer.get())
 		simulWeatherRenderer->RecompileShaders();
+	if(simulTerrainRenderer.get())
+		simulTerrainRenderer->RecompileShaders();
 }

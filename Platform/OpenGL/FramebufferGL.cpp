@@ -18,6 +18,7 @@ FramebufferGL::FramebufferGL(int w, int h,GLenum target,const char *shader,int s
 	,m_fb(0)
 	,shader_filename(shader)
 	,tonemap_program(0)
+	,initialized(false)
 {
     for(int i = 0; i < num_col_buffers; i++)
 	{
@@ -104,6 +105,7 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 {
 	if(!m_width||!m_height)
 		return;
+	initialized=true;
 	if(!m_fb)
 	{
 		RecompileShaders();
@@ -130,6 +132,7 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 // InitDepth_RB or InitDepth_Tex needs to be called.
 void FramebufferGL::InitDepth_RB(GLenum iformat)
 {
+	initialized=true;
 	if(!m_fb)
 	{
 		RecompileShaders();
@@ -163,6 +166,7 @@ void FramebufferGL::InitDepth_RB(GLenum iformat)
 
 void FramebufferGL::InitDepth_Tex(GLenum iformat)
 {
+	initialized=true;
 	if(!m_fb)
 	{
 		RecompileShaders();
@@ -232,8 +236,8 @@ void FramebufferGL::Render1(GLuint prog,bool blend)
     SetOrthoProjection(main_viewport[2],main_viewport[3]);
 
     // bind textures
-  //  glActiveTexture(GL_TEXTURE0);
-   // Bind();
+    glActiveTexture(GL_TEXTURE0);
+    Bind();
 
 	glUseProgram(prog);
 
