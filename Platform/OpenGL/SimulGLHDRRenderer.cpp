@@ -11,7 +11,9 @@
 #include "SimulGLUtilities.h"
 #include "LoadGLProgram.h"
 
-SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h):Gamma(0.45f),Exposure(1.f)
+SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h)
+	:Gamma(0.45f),Exposure(1.f)
+	,initialized(false)
 {
 	framebuffer=new FramebufferGL(w,h,GL_TEXTURE_2D,"tonemap");
 }
@@ -31,12 +33,14 @@ void SimulGLHDRRenderer::SetBufferSize(int w,int h)
 	if(w!=framebuffer->GetWidth()||h!=framebuffer->GetHeight())
 	{
 		framebuffer->SetWidthAndHeight(w,h);
-		RestoreDeviceObjects();
+		if(initialized)
+			RestoreDeviceObjects();
 	}
 }
 
 void SimulGLHDRRenderer::RestoreDeviceObjects()
 {
+	initialized=true;
 	framebuffer->InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	ERROR_CHECK
 }

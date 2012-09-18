@@ -27,4 +27,5 @@ public:
 	bool FinishRender();
 protected:
 	FramebufferGL *framebuffer;
+	bool initialized;
 };

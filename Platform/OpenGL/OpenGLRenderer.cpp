@@ -25,6 +25,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,y_vertical(false)
 	,UseHdrPostprocessor(true)
 {
+	simulHDRRenderer=new SimulGLHDRRenderer(width,height);
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
 	SetYVertical(y_vertical);
@@ -114,12 +115,10 @@ void OpenGLRenderer::resizeGL(int w,int h)
 {
 	width=w;
 	height=h;
-	if(!simulHDRRenderer.get())
-		simulHDRRenderer=new SimulGLHDRRenderer(width,height);
-	else
-		simulHDRRenderer->SetBufferSize(width,height);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetScreenSize(width,height);
+	if(simulHDRRenderer)
+		simulHDRRenderer->SetBufferSize(width,height);
 }
 
 void OpenGLRenderer::initializeGL()
