@@ -190,9 +190,11 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 //	if (reflect_vec.z < g_BendParam.x)
 //		ramp = lerp(ramp, g_BendParam.z, (g_BendParam.x - reflect_vec.z)/(g_BendParam.x - g_BendParam.y));
 	reflect_vec.z = max(0, reflect_vec.z);
-
+#ifdef Y_VERTICAL
 	float3 reflected_color = g_texReflectCube.Sample(g_samplerCube, reflect_vec.xzy).xyz;
-
+#else
+	float3 reflected_color = g_texReflectCube.Sample(g_samplerCube, reflect_vec.xyz).xyz;
+#endif
 	// Combine waterbody color and reflected color
 	float3 water_color = lerp(g_WaterbodyColor, reflected_color, ramp.x);
 	// --------------- Sun spots

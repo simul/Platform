@@ -12,7 +12,7 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Geometry/Orientation.h"
-
+#include "Simul/Base/RuntimeError.h"
 #include <tchar.h>
 #include <string>
 typedef std::basic_string<TCHAR> tstring;
@@ -39,6 +39,7 @@ static DWORD default_effect_flags=0;
 // winmm.lib comctl32.lib
 static bool shader_path_set	=false;
 static bool texture_path_set=false;
+static bool pipe_compiler_output=false;
 
 ID3D1xDevice		*m_pd3dDevice		=NULL;
 ID3D1xDeviceContext	*m_pImmediateContext=NULL;
@@ -47,6 +48,10 @@ namespace simul
 {
 	namespace dx11
 	{
+		void PipeCompilerOutput(bool p)
+		{
+			pipe_compiler_output=p;
+		}
 		void SetShaderPath(const char *path)
 		{
 		#ifdef UNICODE
@@ -194,15 +199,17 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 			HANDLE hWriteOutPipe = NULL;
 			HANDLE hReadErrorPipe = NULL;
 			HANDLE hWriteErrorPipe = NULL;
-		   SECURITY_ATTRIBUTES saAttr; 
+			SECURITY_ATTRIBUTES saAttr; 
 // Set the bInheritHandle flag so pipe handles are inherited. 
 		 
-		   saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
-		   saAttr.bInheritHandle = TRUE; 
-		   saAttr.lpSecurityDescriptor = NULL; 
-			CreatePipe( &hReadOutPipe, &hWriteOutPipe, &saAttr, 100 );
-			CreatePipe( &hReadErrorPipe, &hWriteErrorPipe, &saAttr, 100 );
-
+			if(pipe_compiler_output)
+			{
+				saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+				saAttr.bInheritHandle = TRUE; 
+				saAttr.lpSecurityDescriptor = NULL; 
+				CreatePipe( &hReadOutPipe, &hWriteOutPipe, &saAttr, 100 );
+				CreatePipe( &hReadErrorPipe, &hWriteErrorPipe, &saAttr, 100 );
+			}
 			//SetHandleInformation(hReadOutPipe, HANDLE_FLAG_INHERIT, 0) ;
 
 			//SetHandleInformation(hReadErrorPipe, HANDLE_FLAG_INHERIT, 0) ;
@@ -233,7 +240,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 		  {
 			DWORD dwBytesRead, dwBytesAvailable;
 
-			DWORD dwWaitResult = WaitForMultipleObjects(3, WaitHandles, FALSE, 60000L);
+			DWORD dwWaitResult = WaitForMultipleObjects(pipe_compiler_output?3:1, WaitHandles, FALSE, 60000L);
 
 			// Read from the pipes...
 			while( PeekNamedPipe(hReadOutPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
@@ -356,6 +363,62 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 	return hr;
 }
 
+#define D3D10_SHADER_ENABLE_STRICTNESS              (1 << 11)
+#ifndef SAFE_RELEASE
+#define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
+#endif
+
+
+HRESULT CompileShaderFromFile( WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut )
+{
+    HRESULT hr = S_OK;
+	tstring fn=shader_path+szFileName;
+
+    // open the file
+    HANDLE hFile = CreateFile( fn.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+        FILE_FLAG_SEQUENTIAL_SCAN, NULL );
+    if( INVALID_HANDLE_VALUE == hFile )
+	{
+		throw simul::base::RuntimeError("Can't find file.");
+        return E_FAIL;
+	}
+
+    // Get the file size
+    LARGE_INTEGER FileSize;
+    GetFileSizeEx( hFile, &FileSize );
+
+    // create enough space for the file data
+    BYTE* pFileData = new BYTE[ FileSize.LowPart ];
+    if( !pFileData )
+        return E_OUTOFMEMORY;
+
+    // read the data in
+    DWORD BytesRead;
+    if( !ReadFile( hFile, pFileData, FileSize.LowPart, &BytesRead, NULL ) )
+        return E_FAIL; 
+
+    CloseHandle( hFile );
+
+    // Compile the shader
+    char pFilePathName[MAX_PATH];        
+    WideCharToMultiByte(CP_ACP, 0, fn.c_str(), -1, pFilePathName, MAX_PATH, NULL, NULL);
+    ID3DBlob* pErrorBlob;
+    hr = D3DCompile( pFileData, FileSize.LowPart, pFilePathName, NULL, NULL, szEntryPoint, szShaderModel, D3D10_SHADER_ENABLE_STRICTNESS, 0, ppBlobOut, &pErrorBlob );
+
+    delete []pFileData;
+
+    if( FAILED(hr) )
+    {
+        OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
+        SAFE_RELEASE( pErrorBlob );
+        return hr;
+    }
+    SAFE_RELEASE( pErrorBlob );
+
+    return S_OK;
+}
+
+
 HRESULT Map2D(ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp)
 {
 #ifdef DX10
@@ -472,31 +535,31 @@ void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical
 }
 
 
-void MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[])
+void MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos)
 {
-    D3DXVECTOR3 vEyePt = D3DXVECTOR3( 0.0f, 0.0f, 0.0f );
+    D3DXVECTOR3 vEyePt = D3DXVECTOR3( cam_pos );
     D3DXVECTOR3 vLookDir;
     D3DXVECTOR3 vUpDir;
     ZeroMemory(g_amCubeMapViewAdjust, 6*sizeof(D3DXMATRIX) );
 
-    vLookDir = D3DXVECTOR3( 1.0f, 0.0f, 0.0f );
-     vUpDir = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
-   D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[0], &vEyePt, &vLookDir, &vUpDir );
-    vLookDir = D3DXVECTOR3( -1.0f, 0.0f, 0.0f );
-    vUpDir = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
-    D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[1], &vEyePt, &vLookDir, &vUpDir );
-   vLookDir = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
-    vUpDir = D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
-   D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[2], &vEyePt, &vLookDir, &vUpDir );
-    vLookDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+    vLookDir =vEyePt+ D3DXVECTOR3( 1.0f, 0.0f, 0.0f );
+     vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+   D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[0], &vEyePt, &vLookDir, &vUpDir );
+    vLookDir =vEyePt+D3DXVECTOR3( -1.0f, 0.0f, 0.0f );
+    vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+    D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[1], &vEyePt, &vLookDir, &vUpDir );
+    vLookDir =vEyePt+D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+    vUpDir = D3DXVECTOR3( 0.0f, 0.0f,-1.0f );
+    D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[2], &vEyePt, &vLookDir, &vUpDir );
+   vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
     vUpDir = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
-    D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[3], &vEyePt, &vLookDir, &vUpDir );
-    vLookDir = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
-    vUpDir = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
-    D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[4], &vEyePt, &vLookDir, &vUpDir );
-  vLookDir = D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
-    vUpDir = D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
-    D3DXMatrixLookAtLH( &g_amCubeMapViewAdjust[5], &vEyePt, &vLookDir, &vUpDir );
+   D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[3], &vEyePt, &vLookDir, &vUpDir );
+    vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
+    vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+    D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[4], &vEyePt, &vLookDir, &vUpDir );
+  vLookDir = vEyePt+D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
+    vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+    D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[5], &vEyePt, &vLookDir, &vUpDir );
 }
 
 void BreakIfDebugging()

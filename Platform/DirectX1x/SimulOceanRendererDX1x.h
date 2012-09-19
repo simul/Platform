@@ -18,19 +18,17 @@ public:
 	// init & cleanup
 	void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
 	void InvalidateDeviceObjects();
+	void RecompileShaders();
 	// Rendering routines
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
-	void RenderShaded(float time);
+	void Render();
 	void RenderWireframe(float time);
 	void Update(float dt);
 	void SetCubemap(ID3D1xShaderResourceView *c);
 protected:
 	OceanParameter ocean_parameters;
 	D3DXMATRIX view,proj;
-	virtual int buildNodeList(QuadNode& quad_node);
-	bool checkNodeVisibility(const QuadNode& quad_node);
-	float estimateGridCoverage(const QuadNode& quad_node, float screen_area);
 	ID3D11Device*						m_pd3dDevice;
 	ID3D1xDeviceContext*				m_pImmediateContext;
 	// HLSL shaders

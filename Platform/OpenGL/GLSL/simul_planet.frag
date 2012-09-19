@@ -21,7 +21,7 @@ float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 	// Theta and phi
 	vec2 cos_theta = saturate(vec2(dot(normal, lightDir), dot(normal, view)));
 	vec2 cos_theta2 = cos_theta * cos_theta;
-	float u=saturate((1-cos_theta2.x) * (1-cos_theta2.y));
+	float u=saturate((1.0-cos_theta2.x) * (1.0-cos_theta2.y));
 	float sin_theta = sqrt(u);
 	vec3 light_plane = normalize(lightDir - cos_theta.x * normal);
 	vec3 view_plane = normalize(view - cos_theta.y * normal);

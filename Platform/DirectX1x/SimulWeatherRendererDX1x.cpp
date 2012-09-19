@@ -134,7 +134,8 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice);
-		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
+		if(simulSkyRenderer)
+			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 	}
 /*	if(simul2DCloudRenderer)
 	{
@@ -157,8 +158,6 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
 	*/
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
-
-	MakeCubeMatrices(view_matrices);
 }
 
 void SimulWeatherRendererDX1x::InvalidateDeviceObjects()
@@ -239,11 +238,23 @@ SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
     return (hr==S_OK);
 }
 */
+static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
+{
+	D3DXMATRIX tmp1;
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	D3DXVECTOR3 cam_pos;
+	cam_pos.x=tmp1._41;
+	cam_pos.y=tmp1._42;
+	cam_pos.z=tmp1._43;
+	return cam_pos;
+}
 
 bool SimulWeatherRendererDX1x::RenderCubemap()
 {
 	D3DXMATRIX ov=view;
 	D3DXMATRIX op=proj;
+	D3DXVECTOR3 cam_pos=GetCameraPosVector(view);
+	MakeCubeMatrices(view_matrices,cam_pos);
 	for(int i=0;i<6;i++)
 	{
 		framebuffer_cubemap.SetCurrentFace(i);
@@ -251,19 +262,17 @@ bool SimulWeatherRendererDX1x::RenderCubemap()
 		if(simulSkyRenderer)
 		{
 			D3DXMATRIX cube_proj;
-			D3DXMatrixPerspectiveFovLH(&cube_proj,
+			D3DXMatrixPerspectiveFovRH(&cube_proj,
 				3.1415926536f/2.f,
 				1.f,
 				1.f,
 				200000.f);
-			view=view_matrices[i];
-			proj=cube_proj;
+			SetMatrices(view_matrices[i],cube_proj);
 			HRESULT hr=RenderSky(false,true);
 		}
 		framebuffer_cubemap.Deactivate();
 	}
-	view=ov;
-	proj=op;
+	SetMatrices(ov,op);
 	return true;
 }
 
@@ -279,16 +288,6 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 	{
 		framebuffer.Activate();
 	}
-	if(simulSkyRenderer)
-		simulSkyRenderer->SetMatrices(view,proj);
-	if(simulCloudRenderer)
-		simulCloudRenderer->SetMatrices(view,proj);
-/*	if(simul2DCloudRenderer)
-		simul2DCloudRenderer->SetMatrices(view,proj);
-	if(simulPrecipitationRenderer)
-		simulPrecipitationRenderer->SetMatrices(view,proj);
-	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->SetMatrices(view,proj);*/
 #if 1
 	if(simulSkyRenderer)
 	{
@@ -315,6 +314,16 @@ void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX 
 {
 	view=v;
 	proj=p;
+	if(simulSkyRenderer)
+		simulSkyRenderer->SetMatrices(view,proj);
+	if(simulCloudRenderer)
+		simulCloudRenderer->SetMatrices(view,proj);
+/*	if(simul2DCloudRenderer)
+		simul2DCloudRenderer->SetMatrices(view,proj);
+	if(simulPrecipitationRenderer)
+		simulPrecipitationRenderer->SetMatrices(view,proj);
+	if(simulAtmosphericsRenderer)
+		simulAtmosphericsRenderer->SetMatrices(view,proj);*/
 }
 
 void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()

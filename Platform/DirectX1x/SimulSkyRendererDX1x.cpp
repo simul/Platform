@@ -25,6 +25,7 @@ extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Sky/TextureGenerator.h"
+#include "Simul/Math/Vector3.h"
 #include "MacrosDX1x.h"
 #include "CreateEffectDX1x.h"
 
@@ -36,11 +37,11 @@ static const float size=5.f;
 static Vertex_t vertices[36] =
 {
 	{-size,		-size,	size},
+	{size,		size,	size},
 	{size,		-size,	size},
 	{size,		size,	size},
-	{size,		size,	size},
-	{-size,		size,	size},
 	{-size,		-size,	size},
+	{-size,		size,	size},
 	
 	{-size,		-size,	-size},
 	{ size,		-size,	-size},
@@ -57,18 +58,18 @@ static Vertex_t vertices[36] =
 	{-size,		size,	-size},
 				
 	{-size,		-size,  -size},
+	{ size,		-size,	 size},
 	{ size,		-size,	-size},
 	{ size,		-size,	 size},
-	{ size,		-size,	 size},
-	{-size,		-size,	 size},
 	{-size,		-size,  -size},
+	{-size,		-size,	 size},
 	
 	{ size,		-size,	-size},
+	{ size,		 size,	 size},
 	{ size,		 size,	-size},
 	{ size,		 size,	 size},
-	{ size,		 size,	 size},
-	{ size,		-size,	 size},
 	{ size,		-size,	-size},
+	{ size,		-size,	 size},
 				
 	{-size,		-size,	-size},
 	{-size,		 size,	-size},
@@ -844,19 +845,33 @@ bool SimulSkyRendererDX1x::RenderFades(int width,int h)
 	}*/
 	return (hr==S_OK);
 }
+#pragma optimize("",off)
 
-void SimulSkyRendererDX1x::DrawCubemap(ID3D1xShaderResourceView*		m_pCubeEnvMapSRV)
+void SimulSkyRendererDX1x::DrawCubemap(ID3D1xShaderResourceView *m_pCubeEnvMapSRV)
 {
 	D3DXMATRIX tmp1,tmp2,wvp;
-	D3DXMatrixTranslation(&world,0.f,495.f,-20.f);
+	D3DXMatrixIdentity(&world);
+	float tan_x=1.0f/proj(0, 0);
+	float tan_y=1.0f/proj(1, 1);
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
+	simul::math::Vector3 pos((const float*)cam_pos);
+	float size_req=tan_x*.4;
+	float d=2.f*size/size_req;
+	simul::math::Vector3 offs0(-.8f*(tan_x-size_req)*d,.8f*(tan_y-size_req)*d,-d);
+	simul::math::Vector3 offs;
+	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)view),offs0);
+	pos+=offs;
+	world._41=pos.x;
+	world._42=pos.y;
+	world._43=pos.z;
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);
-	ID3D1xEffectTechnique*				tech=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
-	ID3D1xEffectShaderResourceVariable*	cubeTexture=m_pSkyEffect->GetVariableByName("cubeTexture")->AsShaderResource();
+	ID3D1xEffectTechnique*				tech		=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
+	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pSkyEffect->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
 	HRESULT hr=ApplyPass(tech->GetPassByIndex(0));
-return;
-	//DrawCube();
+	DrawCube();
 }
 
 void SimulSkyRendererDX1x::DrawCube()
@@ -875,7 +890,7 @@ void SimulSkyRendererDX1x::DrawCube()
 												&offset );			// array of offset values, one for each buffer
 
 	// Set the input layout
-	m_pImmediateContext->IASetInputLayout(m_pVtxDecl );
+	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
 
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 

@@ -145,7 +145,15 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	return colour;
 }
 
-float4 PS_Cubemap( vertexOutput IN): SV_TARGET
+vertexOutput VS_DrawCubemap(vertexInput IN) 
+{
+    vertexOutput OUT;
+    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.wDirection=normalize(IN.position.xyz);
+    return OUT;
+}
+
+float4 PS_DrawCubemap( vertexOutput IN): SV_TARGET
 {
 	float3 view=(IN.wDirection.xyz);
 	float4 colour=cubeTexture.Sample(samplerState,view);
@@ -319,6 +327,7 @@ BlendState PartBlend
 	DestBlend = INV_SRC_ALPHA;
 };
 RasterizerState RenderNoCull { CullMode = none; };
+RasterizerState CullClockwise { CullMode = back; };
 
 technique11 simul_sky
 {
@@ -429,11 +438,11 @@ technique11 draw_cubemap
 {
     pass p0 
     {		
-		SetRasterizerState( RenderNoCull );
+		SetRasterizerState( CullClockwise );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Cubemap()));
+		SetVertexShader(CompileShader(vs_4_0,VS_DrawCubemap()));
+		SetPixelShader(CompileShader(ps_4_0,PS_DrawCubemap()));
 		SetDepthStencilState( EnableDepth, 0 );
-		//SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }

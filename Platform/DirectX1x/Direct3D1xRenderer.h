@@ -95,9 +95,10 @@ protected:
 	bool y_vertical;
 	simul::camera::Camera *camera;
 	float aspect;
-	simul::base::SmartPtr<SimulOpticsRendererDX1x> simulOpticsRenderer;
-	simul::base::SmartPtr<SimulWeatherRendererDX1x> simulWeatherRenderer;
-	simul::base::SmartPtr<SimulHDRRendererDX1x> simulHDRRenderer;
+	simul::base::SmartPtr<SimulOpticsRendererDX1x>	simulOpticsRenderer;
+	simul::base::SmartPtr<SimulWeatherRendererDX1x>	simulWeatherRenderer;
+	simul::base::SmartPtr<SimulHDRRendererDX1x>		simulHDRRenderer;
+	simul::base::SmartPtr<class SimulOceanRendererDX1x>	simulOceanRenderer;
 	float timeMult;
 	unsigned ScreenWidth,ScreenHeight;
 };	

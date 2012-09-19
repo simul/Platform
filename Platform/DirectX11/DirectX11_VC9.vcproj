@@ -316,10 +316,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\DirectX1x\CompileShaderDX1x.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\DirectX1x\CreateEffectDX1x.cpp"
 				>
 			</File>
@@ -377,10 +373,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath="..\DirectX1x\CompileShaderDX1x.h"
-				>
-			</File>
 			<File
 				RelativePath="..\DirectX1x\CreateEffectDX1x.h"
 				>
@@ -460,7 +452,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HLSL\fft_512x512_c2c.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\gamma.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\ocean_shading.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\ocean_simulator_cs.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\ocean_simulator_vs_ps.hlsl"
 				>
 			</File>
 			<File

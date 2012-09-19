@@ -234,6 +234,7 @@ bool FramebufferDX1x::CreateBuffers()
 	assert(pass->IsValid());
 	hr=pass->GetDesc(&PassDesc);
 	V_CHECK(hr);
+
 	hr=m_pd3dDevice->CreateInputLayout(
 		decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize
 		, &m_pBufferVertexDecl);
