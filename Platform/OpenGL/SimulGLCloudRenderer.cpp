@@ -325,6 +325,8 @@ ERROR_CHECK
 	glUniform1i(illumSampler_param,5);
 	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 ERROR_CHECK
+simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
+
 	if(enable_lightning)
 	{
 		static float bb=.1f;

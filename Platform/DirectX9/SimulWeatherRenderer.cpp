@@ -392,9 +392,9 @@ bool SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
 		return true;
 	timer.StartTime();
 	bool result=true;
-	for(int i=0;i<simulCloudRenderer->GetNumBuffers();i++)
+	//for(int i=0;i<simulCloudRenderer->GetNumBuffers();i++)
 	{
-		result &=RenderLateCloudLayer(i,buf);
+		result &=RenderLateCloudLayer(0,buf);
 	}
 	timer.FinishTime();
 	simul::math::FirstOrderDecay(cloud_timing,timer.Time,1.f,0.01f);

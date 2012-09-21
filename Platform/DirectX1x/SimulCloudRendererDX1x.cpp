@@ -676,7 +676,8 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	hazeEccentricity	->SetFloat			(skyInterface->GetMieEccentricity());
 	fadeInterp			->SetFloat			(fade_interp);
 	alphaSharpness		->SetFloat			(GetCloudInterface()->GetAlphaSharpness());
-
+simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
+	
 	if(enable_lightning)
 	{
 		static float bb=.2f;
@@ -884,7 +885,8 @@ bool SimulCloudRendererDX1x::RenderLightning()
 	int vert_start=0;
 	int vert_num=0;
 	ApplyPass(m_hTechniqueLightning->GetPassByIndex(0));
-
+simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
+	
 	l_worldViewProj->SetMatrix(&wvp._11);
 	for(unsigned i=0;i<lightningRenderInterface->GetNumLightSources();i++)
 	{
@@ -959,6 +961,8 @@ void SimulCloudRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p
 
 simul::clouds::LightningRenderInterface *SimulCloudRendererDX1x::GetLightningRenderInterface()
 {
+	simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
+	
 	return lightningRenderInterface;
 }
 
