@@ -109,29 +109,25 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 	if(!m_fb)
 	{
 		RecompileShaders();
-	ERROR_CHECK
 		glGenFramebuffersEXT(1, &m_fb);
-	ERROR_CHECK
 	}
 	glGenTextures(1, &m_tex_col[index]);
-	ERROR_CHECK
 	glBindTexture(m_target, m_tex_col[index]);
-	ERROR_CHECK
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(m_target, 0,iformat, m_width, m_height, 0,GL_RGBA, format, NULL);
-	ERROR_CHECK
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-	ERROR_CHECK
 }
 // In order to use a depth buffer, either
 // InitDepth_RB or InitDepth_Tex needs to be called.
 void FramebufferGL::InitDepth_RB(GLenum iformat)
 {
+	if(!m_width||!m_height)
+		return;
 	initialized=true;
 	if(!m_fb)
 	{
@@ -139,28 +135,28 @@ void FramebufferGL::InitDepth_RB(GLenum iformat)
 		glGenFramebuffersEXT(1, &m_fb);
 	}
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
-	ERROR_CHECK
-    
-        glGenRenderbuffersEXT(1, &m_rb_depth);
-        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rb_depth);
-		if (m_samples > 0) {
-            if ((m_coverageSamples > 0) && glRenderbufferStorageMultisampleCoverageNV)
-			{
-                glRenderbufferStorageMultisampleCoverageNV(GL_RENDERBUFFER_EXT, m_coverageSamples, m_samples, iformat, m_width, m_height);
-            }
-			else
-			{
-			    glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT, m_samples, iformat, m_width, m_height);
-            }
-		}
+    glGenRenderbuffersEXT(1, &m_rb_depth);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rb_depth);
+	if (m_samples > 0) {
+        if ((m_coverageSamples > 0) && glRenderbufferStorageMultisampleCoverageNV)
+		{
+            glRenderbufferStorageMultisampleCoverageNV(GL_RENDERBUFFER_EXT, m_coverageSamples, m_samples, iformat, m_width, m_height);
+        }
 		else
 		{
-			glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, iformat, m_width, m_height);
-		}
-        glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,
-                GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_rb_depth);
-    
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
+		    glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT, m_samples, iformat, m_width, m_height);
+        }
+	}
+	else
+	{
+		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, iformat, m_width, m_height);
+	}
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT,m_rb_depth);
+	//Also attach as a stencil
+	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_rb_depth);
+	CheckFramebufferStatus();
+	ERROR_CHECK
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0); 
 	ERROR_CHECK
 }
 
@@ -178,12 +174,10 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(m_target, 0, iformat, m_width, m_height, 0,
-            GL_DEPTH_COMPONENT, GL_INT, NULL);
+    glTexImage2D(m_target, 0, iformat, m_width, m_height, 0,GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,
-            GL_DEPTH_ATTACHMENT_EXT, m_target, m_tex_depth, 0);
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,m_target,m_tex_depth,0);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 

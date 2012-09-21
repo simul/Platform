@@ -190,7 +190,7 @@ static simul::base::Timer timer;
 	}
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	ERROR_CHECK
-	if(simulSkyRenderer)
+	if(simulSkyRenderer&&ShowSky)
 	{
 		// We call the sky renderer, telling it to blend if we're not buffering the sky,
 		// because otherwise it would overwrite the planets

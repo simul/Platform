@@ -17,7 +17,7 @@ namespace simul
 		}
 	}
 }
-GLuint LoadGLTexture(const char *filename,unsigned wrap)
+unsigned char * LoadBitmap(const char *filename,unsigned &bpp,unsigned &width,unsigned &height)
 {
 	std::string fn=filename;
 	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
@@ -36,44 +36,43 @@ GLuint LoadGLTexture(const char *filename,unsigned wrap)
 		// ok, let's load the file
 	FIBITMAP *dib = FreeImage_Load(fif,fn.c_str());
 	
-	unsigned	width  = FreeImage_GetWidth(dib),
-				height = FreeImage_GetHeight(dib);
+	width  = FreeImage_GetWidth(dib),
+	height = FreeImage_GetHeight(dib);
 
-	unsigned bpp=FreeImage_GetBPP(dib);
+	bpp=FreeImage_GetBPP(dib);
 	//if(bpp!=24)
 	//	return 0;
-
-ERROR_CHECK
-	GLuint image_tex=0;
-    glGenTextures(1,&image_tex);
-ERROR_CHECK
-    glBindTexture(GL_TEXTURE_2D,image_tex);
-ERROR_CHECK
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-ERROR_CHECK
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-ERROR_CHECK
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,wrap);
-ERROR_CHECK
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap);
-ERROR_CHECK
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap);
-ERROR_CHECK
 	BYTE *pixels = (BYTE*)FreeImage_GetBits(dib);
-ERROR_CHECK
-	if(bpp==24)
-		glTexImage2D(GL_TEXTURE_2D,0, GL_RGB8,width,height,0,GL_RGB,GL_UNSIGNED_BYTE,pixels);
-	if(bpp==32)
-		glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
-ERROR_CHECK
-	return image_tex;
+	return pixels;
 }
 
 GLuint LoadGLImage(const char *filename,unsigned wrap)
 {
 	std::string fn=image_path+"/";
 	fn+=filename;
-	return LoadGLTexture(fn.c_str(),wrap);
+	unsigned bpp=0;
+	unsigned width,height;
+	BYTE *pixels=(BYTE*)LoadBitmap(fn.c_str(),bpp,width,height);
+	GLuint image_tex=0;
+    glGenTextures(1,&image_tex);
+    glBindTexture(GL_TEXTURE_2D,image_tex);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,wrap);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap);
+	if(bpp==24)
+		glTexImage2D(GL_TEXTURE_2D,0, GL_RGB8,width,height,0,GL_RGB,GL_UNSIGNED_BYTE,pixels);
+	if(bpp==32)
+		glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
+	return image_tex;
+}
+
+unsigned char *LoadGLBitmap(const char *filename,unsigned &bpp,unsigned &width,unsigned &height)
+{
+	std::string fn=image_path+"/";
+	fn+=filename;
+	return LoadBitmap(fn.c_str(),bpp,width,height);
 }
 
 void SaveGLImage(const char *filename,GLuint tex)

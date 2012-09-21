@@ -43,6 +43,7 @@ public:
 	void	SetCelestialDisplay(bool val);
 	SimulGLWeatherRenderer *GetSimulGLWeatherRenderer(){return simulWeatherRenderer.get();}
 	SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer.get();}
+	class SimulGLTerrainRenderer *GetTerrainRenderer(){return simulTerrainRenderer.get();}
 	void SetCamera(simul::camera::Camera *c);
 	void SetYVertical(bool y);
 	void RecompileShaders();

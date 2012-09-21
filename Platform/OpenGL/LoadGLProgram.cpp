@@ -6,6 +6,8 @@
 #ifndef _MSC_VER
 #include <cstdio>
 #include <cstring>
+#else
+#include <windows.h>
 #endif
 #include "LoadGLProgram.h"
 static std::string shaderPath;
@@ -27,13 +29,13 @@ void printShaderInfoLog(GLuint obj)
         infoLog = (char *)malloc(infologLength);
         glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
 		std::string info_log=infoLog;
-
-		//size_t pos=info_log.find_first_of('(');
-		//info_log=info_log.substr(1,info_log.length()-1);
 		if(info_log.find("No errors")>=info_log.length())
 		{
-			std::cout<<std::endl<<last_filename.c_str()<<": "<<info_log.c_str()<<std::endl;
+			std::cerr<<std::endl<<last_filename.c_str()<<":\n"<<info_log.c_str()<<std::endl;
+			DebugBreak();
 		}
+		else if(info_log.find("WARNING")<info_log.length())
+			std::cout<<last_filename.c_str()<<":\n"<<info_log.c_str()<<std::endl;
 		free(infoLog);
     }
 }
@@ -52,7 +54,12 @@ void printProgramInfoLog(GLuint obj)
         glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
 		std::string info_log=infoLog;
 		if(info_log.find("No errors")>=info_log.length())
-			std::cout<<std::endl<<infoLog<<std::endl;
+		{
+			std::cerr<<last_filename.c_str()<<":\n"<<info_log.c_str()<<std::endl;
+			DebugBreak();
+		}
+		else if(info_log.find("WARNING")<info_log.length())
+			std::cout<<last_filename.c_str()<<":\n"<<infoLog<<std::endl;
         free(infoLog);
     }
 }

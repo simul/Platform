@@ -76,6 +76,7 @@ void GetCameraPosVector(simul::math::Vector3 &cam_pos,simul::math::Vector3 &cam_
 
 bool SimulGLLightningRenderer::Render()
 {
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	if(glStringMarkerGREMEDY)
 		glStringMarkerGREMEDY(0,"SimulGLLightningRenderer::Render");
 	if(!lightning_vertices)
@@ -210,6 +211,7 @@ ERROR_CHECK
 	}
 	glDisable(GL_TEXTURE_1D);
 	ERROR_CHECK
+	glPopAttrib();
 	return true;
 }
 

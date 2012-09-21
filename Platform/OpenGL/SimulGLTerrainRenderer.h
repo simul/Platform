@@ -26,9 +26,12 @@ public:
 	//! Render the terrain.
 	void Render();
 private:
+	void MakeTextures();
 	float max_fade_distance_metres;
+	GLuint texArray;
 	GLuint program;
 	GLint eyePosition_param;
+	GLint textures_param;
 	GLint maxFadeDistanceMetres_param;
 };
 

@@ -17,7 +17,6 @@
 #include "Simul/Math/float3.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Base/SmartPtr.h"
-#include "Simul/Terrain/HeightMapNode.h"
 #include "Simul/Terrain/BaseTerrainRenderer.h"
 #include "Simul/Platform/DirectX9/Export.h"
 #ifdef _MSC_VER
@@ -32,8 +31,6 @@ namespace simul
 	}
 	namespace terrain
 	{
-		class HeightMapInterface;
-		class HeightMapNode;
 		struct Cutout;
 	}
 	namespace clouds
@@ -120,12 +117,10 @@ protected:
 	int LIGHTING_PASS;
 	int LIGHTING_PASS_WITH_SHADOWS;
 	int WIREFRAME_PASS;
-	simul::terrain::HeightMapInterface *heightMapInterface;
 	bool y_vertical;
 	bool enabled;
 	bool wrap_clouds;
 	bool rebuild_effect;
-	simul::base::SmartPtr<simul::terrain::HeightMapNode> heightmap;
 	bool InternalRender(bool depth_only);
 	bool show_wireframe;
 	simul::sky::BaseSkyInterface *skyInterface;

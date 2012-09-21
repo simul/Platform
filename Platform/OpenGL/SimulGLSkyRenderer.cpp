@@ -449,8 +449,11 @@ bool SimulGLSkyRenderer::Render(bool blend)
 	SetCameraPosition(cam_pos.x,cam_pos.y,cam_pos.z);
 	Render2DFades();
 ERROR_CHECK
-	glClearColor(1,1,0,1);
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	//if(!blend)
+	//{
+		glClearColor(0,0,0,1);
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	//}
 	simul::sky::float4 ratio=skyKeyframer->GetMieRayleighRatio();
 	simul::sky::float4 sun_dir=skyKeyframer->GetDirectionToLight();
 	glEnable(GL_TEXTURE_2D);
@@ -641,7 +644,7 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 		ERROR_CHECK
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		ERROR_CHECK
-	glBlendEquationSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 		ERROR_CHECK
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		ERROR_CHECK

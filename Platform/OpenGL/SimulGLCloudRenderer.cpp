@@ -244,12 +244,12 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog)
 {
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	EnsureTexturesAreUpToDate();
 ERROR_CHECK
 	cubemap;
 	if(glStringMarkerGREMEDY)
 		glStringMarkerGREMEDY(38,"SimulGLCloudRenderer::Render");
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	using namespace simul::clouds;
 	simul::math::Vector3 X1,X2;

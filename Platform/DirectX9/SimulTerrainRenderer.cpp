@@ -63,21 +63,6 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	,last_overall_checksum(0)
 	,last_buffer_checksum(0)
 {
-	heightmap=new simul::terrain::HeightMapNode();
-	heightMapInterface=heightmap.get();
-	heightmap->SetFractalFrequency(16);
-	heightmap->SetPersistence(0.85f);
-	heightmap->SetNumMipMapLevels(5);
-	heightmap->SetPageSize(513);
-	heightmap->SetTileSize(65);
-	heightmap->SetMaxHeight(3000.f);
-	heightmap->SetFractalOctaves(5);
-	heightmap->SetFractalScale(270000.f);
-	heightmap->SetPageWorldX(120000.f);
-	heightmap->SetPageWorldY(120000.f);
-	heightmap->SetBaseAltitude(-2000.f);
-	heightmap->SetFlattenBelow(-1000.f);
-	heightmap->Rebuild();
 }
 
 struct TerrainVertex_t

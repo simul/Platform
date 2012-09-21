@@ -41,13 +41,10 @@ void main()
 	if(l>1.0)
 		discard;
 	normal.z=-sqrt(1.0-l*l);
-	float light=//clamp(dot(normal.xyz,lightDir.xyz),0.0,1.0);
-				approx_oren_nayar(0.2,vec3(0,0,1.0),normal,lightDir);
-		//
+	float light=approx_oren_nayar(0.2,vec3(0,0,1.0),normal,lightDir);
 	result.rgb*=colour.rgb;
 	result.rgb*=light;
 	result.a*=saturate((0.99-l)/0.01);
 	result.rgb*=result.a;
     gl_FragColor=result;
 }
-

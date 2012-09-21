@@ -53,7 +53,8 @@ void OpenGLRenderer::paintGL()
     glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(cam->MakeViewMatrix(false));
 	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf(cam->MakeProjectionMatrix(1.f,250000.f,(float)width/(float)height,y_vertical));
+	static float max_dist=250000.f;
+	glLoadMatrixf(cam->MakeProjectionMatrix(1.f,max_dist,(float)width/(float)height,y_vertical));
 	glViewport(0,0,width,height);
 	if(simulWeatherRenderer.get())
 	{
@@ -71,11 +72,11 @@ void OpenGLRenderer::paintGL()
 			simulHDRRenderer->StartRender();
 		simulWeatherRenderer->RenderSky(true,false);
 
-		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer())
+		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender();
 		if(simulTerrainRenderer)
 			simulTerrainRenderer->Render();
-		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer())
+		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender();
 
 		simulWeatherRenderer->RenderLightning();
@@ -163,7 +164,8 @@ void OpenGLRenderer::initializeGL()
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
 	}
 	CheckExtension("GL_VERSION_2_0");
-
+	const GLubyte* pVersion = glGetString(GL_VERSION); 
+	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
 	if(cam)
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 	Utilities::RestoreDeviceObjects(NULL);

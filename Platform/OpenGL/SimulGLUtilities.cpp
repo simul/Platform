@@ -50,7 +50,7 @@ Utilities::~Utilities()
 		Utilities::InvalidateDeviceObjects();
 }
 
-static bool IsExtensionSupported(const char *name)
+bool IsExtensionSupported(const char *name)
 {
 	GLint n=0;
 	glGetIntegerv(GL_NUM_EXTENSIONS, &n);

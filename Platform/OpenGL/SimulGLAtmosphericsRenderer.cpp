@@ -33,6 +33,17 @@ void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 {
 	initialized=true;
 	framebuffer->InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
+	
+  //You can also try GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24 for the internal format.
+  //If GL_DEPTH24_STENCIL8_EXT, go ahead and use it (GL_EXT_packed_depth_stencil)
+	if(glewIsSupported("GL_EXT_packed_depth_stencil")||IsExtensionSupported("GL_EXT_packed_depth_stencil"))
+	{
+		framebuffer->InitDepth_RB(GL_DEPTH24_STENCIL8_EXT);
+	}
+	else
+	{
+		framebuffer->InitDepth_RB(GL_DEPTH_COMPONENT32);
+	}
 	RecompileShaders();
 }
 
