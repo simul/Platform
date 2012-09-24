@@ -778,17 +778,17 @@ ERROR_CHECK
 	altitudeTexCoord_param			=glGetUniformLocation(sky_program,"altitudeTexCoord");
 	printProgramInfoLog(sky_program);
 ERROR_CHECK
-	sun_program						=LoadPrograms("simul_sun_planet_flare.vert","simul_sun.frag");
+	sun_program						=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
 	printProgramInfoLog(sun_program);
-	stars_program					=LoadPrograms("simul_sun_planet_flare.vert","simul_stars.frag");
+	stars_program					=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
 	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
 	printProgramInfoLog(stars_program);
 ERROR_CHECK
-	sun_program						=LoadPrograms("simul_sun_planet_flare.vert","simul_sun.frag");
+	sun_program						=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
 	printProgramInfoLog(sun_program);
-	stars_program					=LoadPrograms("simul_sun_planet_flare.vert","simul_stars.frag");
+	stars_program					=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
 	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
 	printProgramInfoLog(stars_program);
 ERROR_CHECK

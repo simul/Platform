@@ -7,8 +7,7 @@
 #include "Simul/Sky/SkyInterface.h"
 
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
-	:max_fade_distance_metres(200000.f)
-	,clouds_texture(0)
+	:clouds_texture(0)
 	,initialized(false)
 {
 	framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D,"simul_atmospherics");
@@ -74,10 +73,6 @@ void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 {
 }
 
-void SimulGLAtmosphericsRenderer::SetMaxFadeDistanceKm(float dist_km)
-{
-	max_fade_distance_metres=dist_km*1000.f;
-}
 
 void SimulGLAtmosphericsRenderer::StartRender()
 {

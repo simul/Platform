@@ -3,6 +3,7 @@
 #include "Simul/Platform/OpenGL/SimuLGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
 #include "Simul/Math/Vector3.h"
+#include "Simul/Math/Matrix4x4.h"
 
 SimulGLTerrainRenderer::SimulGLTerrainRenderer()
 	:program(0)
@@ -17,7 +18,7 @@ SimulGLTerrainRenderer::~SimulGLTerrainRenderer()
 void SimulGLTerrainRenderer::RecompileShaders()
 {
 	SAFE_DELETE_PROGRAM(program);
-	program							=MakeProgram("simul_terrain");
+	program							=MakeProgram("simul_terrain");//WithGS
 	ERROR_CHECK
 	glUseProgram(program);
 	ERROR_CHECK
@@ -26,6 +27,7 @@ void SimulGLTerrainRenderer::RecompileShaders()
 	eyePosition_param				= glGetUniformLocation(program,"eyePosition");
 	maxFadeDistanceMetres_param		= glGetUniformLocation(program,"maxFadeDistanceMetres");
 	textures_param					= glGetUniformLocation(program,"textures");
+	worldViewProj_param				= glGetUniformLocation(program,"worldViewProj");
 	printProgramInfoLog(program);
 	ERROR_CHECK
 }
@@ -41,9 +43,12 @@ void SimulGLTerrainRenderer::MakeTextures()
     glGenTextures(1, &texArray);
 	if(!IsExtensionSupported("GL_EXT_texture_array"))
 		return;
+	if(!IsExtensionSupported("GL_EXT_gpu_shader4"))
+		return;
+	//GL_TEXTURE_2D_ARRAY_EXT
     glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, texArray);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -56,11 +61,11 @@ void SimulGLTerrainRenderer::MakeTextures()
 	int m=1;
 	for(int i=0;i<num_mips;i++)
 	{
-		glTexImage3D	(GL_TEXTURE_2D_ARRAY_EXT, i,GL_RGBA	,width/m,height/m,num_layers,0	,(bpp==24)?GL_RGB:GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		if(!i)
+		glTexImage3D(GL_TEXTURE_2D_ARRAY_EXT, i,GL_RGBA	,width/m,height/m,num_layers,0,(bpp==24)?GL_RGB:GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		if(i==0)
 		{
-			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,0,0,0,0,width,height,1,(bpp==24)?GL_RGB:GL_RGBA,GL_UNSIGNED_BYTE,data);
-			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,0,0,0,1,width,height,1,(bpp==24)?GL_RGB:GL_RGBA,GL_UNSIGNED_BYTE,moss);
+			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,0,width/m,height/m,1,(bpp==24)?GL_RGB:GL_RGBA,GL_UNSIGNED_BYTE,data);
+			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,1,width/m,height/m,1,(bpp==24)?GL_RGB:GL_RGBA,GL_UNSIGNED_BYTE,moss);
 		}
 		m*=2;
 	}
@@ -106,6 +111,15 @@ void SimulGLTerrainRenderer::Render()
 	ERROR_CHECK
 	simul::math::Vector3 cam_pos;
 	CalcCameraPosition(cam_pos);
+
+
+	simul::math::Matrix4x4 view,proj,viewproj;
+	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
+	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
+	simul::math::Multiply4x4(viewproj,view,proj);
+static bool tr=0;
+	glUniformMatrix4fv(worldViewProj_param,1,tr,viewproj.RowPointer(0));
+
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
 	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 

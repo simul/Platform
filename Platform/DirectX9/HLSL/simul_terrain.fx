@@ -141,7 +141,7 @@ float4 PS_Map(mapVertexOutput IN) : color
 
 struct vertexInput
 {
-    float3 position			: POSITION;
+    float2 position			: POSITION;
     float2 texCoordDiffuse	: TEXCOORD1;
     float2 morph			: TEXCOORD2;
     float2 texCoordH		: TEXCOORD3;
@@ -161,7 +161,11 @@ struct vertexOutput
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-	float3 position=mul(float4(IN.position.xyz,1.f),world);
+#ifdef Y_VERTICAL
+	float3 position=mul(float4(IN.position.x,0,IN.position.y,1.0),world);
+#else
+	float3 position=mul(float4(IN.position.xy,0.0,1.0),world);
+#endif
 	float2 heightmap_texc=IN.texCoordH+texOffsetH;
 	float2 heightmap_texc_1=IN.texCoordH1+texOffsetH;
 	float2 heightmap_texc_2=IN.texCoordH2+texOffsetH;
@@ -174,7 +178,11 @@ vertexOutput VS_Main(vertexInput IN)
 	OUT.test.g=frac(mip);
 	h=lerp(h,0.5*(h1+h2),OUT.test.g);
 	OUT.test.r=h;
+#ifdef Y_VERTICAL
 	position.y=OUT.test.r;
+#else
+	position.z=OUT.test.r;
+#endif
     OUT.hPosition=mul(worldViewProj,float4(position.xyz,1.f));
     OUT.wPosition=float4(position.xyz,1.f);
     OUT.texCoordDiffuse=IN.texCoordDiffuse;

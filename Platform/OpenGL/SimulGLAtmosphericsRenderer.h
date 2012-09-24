@@ -23,7 +23,6 @@ public:
 	void InvalidateDeviceObjects();
 	// Interface
 	void SetBufferSize(int w,int h);
-	void SetMaxFadeDistanceKm(float dist_km);
 	void SetYVertical(bool )
 	{
 	}
@@ -51,7 +50,6 @@ public:
 private:
 	bool initialized;
 	GLuint distance_fade_program;
-
 	GLuint cloudmix_program;
 
 	GLuint loss_texture,inscatter_texture;
@@ -67,7 +65,7 @@ private:
 	GLint lightDir_param;
 	GLint invViewProj_param;
 	GLint mieRayleighRatio_param;
-	float max_fade_distance_metres;
+
 	FramebufferGL *framebuffer;
 };
 
