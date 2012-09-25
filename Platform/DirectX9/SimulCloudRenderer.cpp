@@ -517,6 +517,7 @@ D3DXSaveTextureToFile(TEXT("Media/Textures/noise.jpg"),D3DXIFF_JPG,noise_texture
 	SAFE_RELEASE(pNoiseRenderTarget);
 	return (hr==S_OK);
 }
+
 bool SimulCloudRenderer::CreateNoiseTexture(bool override_file)
 {
 	if(!m_pd3dDevice)
