@@ -78,7 +78,7 @@ void SimulSkyRenderer::SaveTextures(const char *base_filename)
 	{
 		std::string filename=filename_root;
 		char txt[10];
-		sprintf(txt,"_%d",i);
+		sprintf_s(txt,10,"_%d",i);
 		filename+=txt;
 		filename+=ext;
 		SaveTexture(sky_textures[i],filename.c_str());
