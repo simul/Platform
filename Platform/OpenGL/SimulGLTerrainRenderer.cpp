@@ -23,9 +23,9 @@ void SimulGLTerrainRenderer::RecompileShaders()
 	ERROR_CHECK
 	printProgramInfoLog(program);
 	ERROR_CHECK
-	eyePosition_param				= glGetUniformLocation(program,"eyePosition");
-	maxFadeDistanceMetres_param		= glGetUniformLocation(program,"maxFadeDistanceMetres");
-	textures_param					= glGetUniformLocation(program,"textures");
+	eyePosition_param				=glGetUniformLocation(program,"eyePosition");
+	maxFadeDistanceMetres_param		=glGetUniformLocation(program,"maxFadeDistanceMetres");
+	textures_param					=glGetUniformLocation(program,"textures");
 	printProgramInfoLog(program);
 	ERROR_CHECK
 }

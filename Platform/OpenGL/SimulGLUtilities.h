@@ -53,4 +53,5 @@ struct VertexXyzRgba
 };
 extern SIMUL_OPENGL_EXPORT void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip);
 extern void CalcCameraPosition(float *cam_pos,float *cam_dir=0);
+extern SIMUL_OPENGL_EXPORT void FixGlProjectionMatrix(float required_distance);
 #endif

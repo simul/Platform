@@ -39,6 +39,7 @@ public:
 	void InvalidateDeviceObjects();
 	//! OpenGL Implementation of 2D cloud rendering.
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+	void RenderCrossSections(int width,int height);
 	//! Set the platform-dependent atmospheric loss texture.
 	void SetLossTextures(void *l);
 	//! Set the platform-dependent atmospheric inscatter texture.

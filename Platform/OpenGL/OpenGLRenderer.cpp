@@ -14,6 +14,7 @@
 #include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Sky/Float4.h"
+#include "Simul/Base/Timer.h"
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
@@ -22,10 +23,12 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,cam(NULL)
 	,ShowFlares(true)
 	,ShowFades(false)
+	,ShowTerrain(true)
 	,ShowCloudCrossSections(false)
 	,celestial_display(false)
 	,y_vertical(false)
 	,UseHdrPostprocessor(true)
+	,ShowOSD(false)
 {
 	simulHDRRenderer=new SimulGLHDRRenderer(width,height);
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
@@ -74,7 +77,7 @@ void OpenGLRenderer::paintGL()
 
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender();
-		if(simulTerrainRenderer)
+		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render();
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender();
@@ -120,6 +123,19 @@ void OpenGLRenderer::renderUI()
 	float y=12.f;
 	static int line_height=16;
 	RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,"OpenGL");
+	if(ShowOSD)
+	{
+	static simul::base::Timer timer;
+		timer.TimeSum=0;
+		float t=timer.FinishTime();
+		static float framerate=1.f;
+		framerate*=0.99f;
+		framerate+=0.01f*(1000.f/t);
+		static char osd_text[256];
+		sprintf_s(osd_text,256,"%3.3f fps",framerate);
+		RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,osd_text);
+		timer.StartTime();
+	}
 }
 	
 void OpenGLRenderer::SetCelestialDisplay(bool val)

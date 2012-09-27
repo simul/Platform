@@ -391,17 +391,10 @@ ERROR_CHECK
 
 	helper->SetChurn(GetCloudInterface()->GetChurn());
 	helper->Update(view_pos,GetCloudInterface()->GetWindOffset(),eye_dir,up_dir,delta_t,cubemap);
+
+	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
 	simul::math::Matrix4x4 proj;
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
-
-	float zFar=proj(3,2)/(1.f+proj(2,2));
-	float zNear=proj(3,2)/(proj(2,2)-1.f);
-	zFar=helper->GetMaxCloudDistance()*1.1f;
-	proj(2,2)=-(zFar+zNear)/(zFar-zNear);
-	proj(3,2)=-2.f*(zNear*zFar)/(zFar-zNear);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf(proj.RowPointer(0));
 
 	float left	=proj(0,0)+proj(0,3);
 	float right	=proj(0,0)-proj(0,3);
