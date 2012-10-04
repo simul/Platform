@@ -31,7 +31,7 @@ static const GLenum internal_buffer_format	=GL_RGBA32F_ARB;
 
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,bool usebuffer,bool tonemap,int width,
 		int height,bool sky,bool clouds3d,bool clouds2d,bool rain)
-		:BaseWeatherRenderer(env)
+		:BaseWeatherRenderer(env,sky,clouds3d,clouds2d,rain)
 		,BufferWidth(0)
 		,BufferHeight(0)
 		,device_initialized(false)
@@ -40,7 +40,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	simul::sky::SkyKeyframer *sk=environment->skyKeyframer.get();
 	simul::clouds::CloudKeyframer *ck2d=environment->cloud2DKeyframer.get();
 	simul::clouds::CloudKeyframer *ck3d=environment->cloudKeyframer.get();
-	if(sky)
+	if(ShowSky)
 	{
 		simulSkyRenderer=new SimulGLSkyRenderer(sk);
 		baseSkyRenderer=simulSkyRenderer.get();

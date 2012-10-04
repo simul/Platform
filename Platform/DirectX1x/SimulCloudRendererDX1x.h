@@ -56,8 +56,6 @@ SIMUL_DIRECTX1x_EXPORT_CLASS SimulCloudRendererDX1x : public simul::clouds::Base
 public:
 	SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cloudKeyframer);
 	virtual ~SimulCloudRendererDX1x();
-	//! Call this once to set the sky interface that this cloud renderer can use for distance fading.
-	void SetSkyInterface(simul::sky::BaseSkyInterface *si);
 	void RecompileShaders();
 	//! Call this when the D3D device has been created or reset
 	void RestoreDeviceObjects( void* pd3dDevice);
@@ -174,8 +172,8 @@ protected:
 	ID3D1xShaderResourceView*				skyLossTexture1Resource;
 	ID3D1xShaderResourceView*				skyInscatterTexture1Resource;
 
-	ID3D1xTexture3D*	cloud_textures[3];
-	ID3D1xTexture3D*	illumination_texture;
+	ID3D1xTexture3D*			cloud_textures[3];
+	ID3D1xTexture3D*			illumination_texture;
 	
 	D3D1x_MAPPED_TEXTURE3D mapped_illumination;
 

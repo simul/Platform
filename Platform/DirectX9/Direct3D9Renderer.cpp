@@ -45,7 +45,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
 	if(simulHDRRenderer&&simulWeatherRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
-	simulTerrainRenderer=NULL;//new SimulTerrainRenderer();
+	simulTerrainRenderer=new SimulTerrainRenderer();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->EnableMoon(true);
 	SetYVertical(y_vertical);
@@ -264,18 +264,20 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 #endif
 		simulWeatherRenderer->RenderSky(true,false);
 	}
+	if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
+		simulWeatherRenderer->GetAtmosphericsRenderer()->StartRender();
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
 		simulTerrainRenderer->SetMatrices(view,proj);
 		simulTerrainRenderer->Render();
 	}
-	if(simulHDRRenderer&&UseHdrPostprocessor)
-		simulHDRRenderer->CopyDepthAlpha();
+	//if(simulHDRRenderer&&UseHdrPostprocessor)
+	//	simulHDRRenderer->CopyDepthAlpha();
+	if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
+		simulWeatherRenderer->GetAtmosphericsRenderer()->FinishRender();
 	timer.UpdateTime();
 	if(simulWeatherRenderer)
 	{
-		if(simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-			simulWeatherRenderer->GetAtmosphericsRenderer()->Render();
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{

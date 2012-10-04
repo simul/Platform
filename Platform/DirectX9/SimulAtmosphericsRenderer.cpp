@@ -46,12 +46,15 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
 	,hazeEccentricity(NULL)
 	,fadeInterp(NULL)
 	,imageTexture(NULL)
-	,depthTexture(NULL)
 	,lossTexture1(NULL)
 	,inscatterTexture1(NULL)
 	,loss_texture(NULL)
 	,inscatter_texture(NULL)
 	,clouds_texture(NULL)
+	,m_pRenderTarget(NULL)
+	,m_pBufferDepthSurface(NULL)
+	,m_pOldRenderTarget(NULL)
+	,m_pOldDepthSurface(NULL)
 	,fade_interp(0.f)
 	,altitude_tex_coord(0.f)
 	,input_texture(NULL)
@@ -80,6 +83,33 @@ void SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 	};
 	SAFE_RELEASE(vertexDecl);
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&vertexDecl);
+	LPDIRECT3DSURFACE9 g_BackBuffer;
+    m_pd3dDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &g_BackBuffer);
+	D3DSURFACE_DESC desc;
+	g_BackBuffer->GetDesc(&desc);
+	SAFE_RELEASE(g_BackBuffer);
+
+	int BufferWidth=desc.Width;
+	int BufferHeight=desc.Height;
+
+	SAFE_RELEASE(input_texture);
+	D3DFORMAT hdr_format;
+#ifndef XBOX
+		hdr_format=D3DFMT_A32B32G32R32F;
+#else
+		hdr_format=D3DFMT_LIN_A32B32G32R32F;
+#endif
+	m_pd3dDevice->CreateTexture(			BufferWidth,
+											BufferHeight,
+											1,
+											D3DUSAGE_RENDERTARGET,
+											hdr_format,
+											D3DPOOL_DEFAULT,
+											&input_texture,
+											NULL
+										);
+	SAFE_RELEASE(m_pRenderTarget);
+	m_pRenderTarget=MakeRenderTarget(input_texture);
 }
 
 void SimulAtmosphericsRenderer::RecompileShaders()
@@ -113,7 +143,6 @@ void SimulAtmosphericsRenderer::RecompileShaders()
 	hazeEccentricity	=effect->GetParameterByName(NULL,"hazeEccentricity");
 	fadeInterp			=effect->GetParameterByName(NULL,"fadeInterp");
 	imageTexture		=effect->GetParameterByName(NULL,"imageTexture");
-	depthTexture		=effect->GetParameterByName(NULL,"depthTexture");
 	lossTexture1		=effect->GetParameterByName(NULL,"lossTexture1");
 	inscatterTexture1	=effect->GetParameterByName(NULL,"inscatterTexture1");
 
@@ -143,7 +172,12 @@ void SimulAtmosphericsRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(vertexDecl);
 	if(effect)
         V_CHECK(effect->OnLostDevice());
+	SAFE_RELEASE(input_texture);
 	SAFE_RELEASE(effect);
+	SAFE_RELEASE(m_pRenderTarget);
+	SAFE_RELEASE(m_pBufferDepthSurface);
+	SAFE_RELEASE(m_pOldRenderTarget);
+	SAFE_RELEASE(m_pOldDepthSurface);
 }
 
 SimulAtmosphericsRenderer::~SimulAtmosphericsRenderer()
@@ -294,6 +328,46 @@ bool SimulAtmosphericsRenderer::DrawScreenQuad()
 	return (hr==S_OK);
 }
 
+void SimulAtmosphericsRenderer::StartRender()
+{
+	PIXBeginNamedEvent(0xFF88FFFF,"SimulAtmosphericsRenderer::StartRender to FinishRender");
+	HRESULT hr=S_OK;
+	m_pOldRenderTarget		=NULL;
+	m_pOldDepthSurface		=NULL;
+	hr=m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
+	hr=m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
+	hr=m_pd3dDevice->SetRenderTarget(0,m_pRenderTarget);
+	if(m_pBufferDepthSurface)
+		hr=m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
+	hr=m_pd3dDevice->SetRenderState(D3DRS_STENCILENABLE,FALSE);
+	hr=m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
+	hr=m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
+	static float depth_start=1.f;
+	hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
+}
+
+void SimulAtmosphericsRenderer::FinishRender()
+{
+	D3DSURFACE_DESC desc;
+#ifdef XBOX
+	m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
+#endif
+	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
+	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
+	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC,D3DCMP_LESSEQUAL);
+	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC,D3DCMP_LESSEQUAL);
+	// using gamma, render the hdr image to the LDR buffer:
+	m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
+	if(m_pOldDepthSurface)
+		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
+	m_pOldRenderTarget->GetDesc(&desc);
+	Render();
+
+	SAFE_RELEASE(m_pOldRenderTarget)
+	SAFE_RELEASE(m_pOldDepthSurface)
+	PIXEndNamedEvent();
+}
+
 bool SimulAtmosphericsRenderer::Render()
 {
 	HRESULT hr=S_OK;
@@ -303,7 +377,6 @@ bool SimulAtmosphericsRenderer::Render()
 		hr=effect->SetFloat(fadeInterp,fade_interp);
 		hr=effect->SetTexture(imageTexture,input_texture);
 		hr=effect->SetFloat(altitudeTexCoord,altitude_tex_coord);
-
 #ifndef XBOX
 		m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 #endif

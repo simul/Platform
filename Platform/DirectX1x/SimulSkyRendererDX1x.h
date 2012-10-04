@@ -57,7 +57,6 @@ public:
 	bool RenderPointStars(){return false;}
 	//! Draw the fade textures to screen
 	bool RenderFades(int w,int h);
-	void RenderCelestialDisplay(int screen_width,int screen_height){}
 	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);

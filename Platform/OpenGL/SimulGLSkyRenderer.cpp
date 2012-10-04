@@ -746,6 +746,22 @@ void SimulGLSkyRenderer::EnsureTextureCycle()
 	{
 		std::swap(sky_tex[0],sky_tex[1]);
 		std::swap(sky_tex[1],sky_tex[2]);
+		std::swap(loss_textures[0],loss_textures[1]);
+		std::swap(loss_textures[1],loss_textures[2]);
+		std::swap(inscatter_textures[0],inscatter_textures[1]);
+		std::swap(inscatter_textures[1],inscatter_textures[2]);
+		std::swap(sky_texture_iterator[0],sky_texture_iterator[1]);
+		std::swap(sky_texture_iterator[1],sky_texture_iterator[2]);
+		std::swap(fade_texture_iterator[0],fade_texture_iterator[1]);
+		std::swap(fade_texture_iterator[1],fade_texture_iterator[2]);
+		for(int i=0;i<3;i++)
+		{
+			for(int j=0;j<numAltitudes;j++)
+			{
+				fade_texture_iterator[i][j].texture_index=i;
+				sky_texture_iterator[i][j].texture_index=i;
+			}
+		}
 		texture_cycle++;
 		texture_cycle=texture_cycle%3;
 		if(texture_cycle<0)

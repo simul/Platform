@@ -318,8 +318,8 @@ bool SimulHDRRenderer::CopyDepthAlpha()
 	SAFE_RELEASE(depthAlphaRenderTarget);
 	// copy the render surface to the depth surface depth_alpha_texture
 	hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
-	if(atmospherics)
-		atmospherics->SetInputTextures(depth_alpha_texture,buffer_depth_texture);
+	//if(atmospherics)
+	//	atmospherics->SetInputTextures(depth_alpha_texture,buffer_depth_texture);
 #ifndef XBOX
 	m_pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 #endif

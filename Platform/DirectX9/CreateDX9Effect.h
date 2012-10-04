@@ -64,6 +64,7 @@ public:
 	static void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip);
 	static LPDIRECT3DVERTEXDECLARATION9 m_pBufferVertexDecl;
 };
+
 extern HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy,LPDIRECT3DBASETEXTURE9 texture,
 							 LPD3DXEFFECT eff=NULL,D3DXHANDLE tech=NULL);
 

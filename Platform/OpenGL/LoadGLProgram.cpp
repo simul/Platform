@@ -113,9 +113,9 @@ GLuint SetProgram(GLuint prog,const char *shader_source,const char *defines)
 	const int MAX_LINES=512;
 	const int MAX_LINE_LENGTH=256;   // 255 + NULL terminator
 	static char program[MAX_LINES*MAX_LINE_LENGTH];
-	char *ptr=program;
-
-	if(defines)
+	
+	sprintf_s(program,MAX_LINES*MAX_LINE_LENGTH,"%s\n%s",defines?defines:"",shader_source);
+/*	if(defines)
 	{
 		int len=strlen(defines);
 		strcpy_s(ptr,MAX_LINES*MAX_LINE_LENGTH,defines);
@@ -129,7 +129,7 @@ GLuint SetProgram(GLuint prog,const char *shader_source,const char *defines)
 		ptr[len]='\n';
 		ptr+=len+1;
 	}
-	ptr[0]=0;
+	ptr[0]=0;*/
 
 	const char *strings[1];
 	strings[0]=program;

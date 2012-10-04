@@ -175,8 +175,8 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
 	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
 		/(float3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
-	float3 output=BetaTotal*inscatter_factor.rgb;
-	return output;
+	float3 colour=BetaTotal*inscatter_factor.rgb;
+	return colour;
 }
 
 float4 PS_Main( vertexOutput IN): COLOR
@@ -188,7 +188,7 @@ float4 PS_Main( vertexOutput IN): COLOR
 	float sine	=view.z;
 #endif
 #ifdef USE_ALTITUDE_INTERPOLATION
-	float2 texcoord	=float2(0.5f*(1.f-sine),altitudeTexCoord);//float2(0.5f*(1.f-sine),altitudeTexCoord);
+	float2 texcoord	=float2(0.5f*(1.f-sine),altitudeTexCoord);
 	float4 inscatter_factor1=tex2D(texture1,texcoord);
 	float4 inscatter_factor2=tex2D(texture2,texcoord);
 #else
@@ -198,8 +198,8 @@ float4 PS_Main( vertexOutput IN): COLOR
 #endif
 	float4 inscatter_factor=lerp(inscatter_factor1,inscatter_factor2,skyInterp);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float3 output=InscatterFunction(inscatter_factor,cos0);
-	return float4(output,1.f);
+	float3 colour=InscatterFunction(inscatter_factor,cos0);
+	return float4(colour.rgb,1.0);
 }
 
 float4 PS_Stars(vertexOutput IN): COLOR
@@ -242,13 +242,13 @@ float4 PS_Sun(svertexOutput IN): color
 {
 	float r=length(IN.tex);
 	float brightness;
-	if(r<0.99f)
-		brightness=(0.99f-r)/0.4f;
+	if(r<0.99)
+		brightness=saturate((0.99-r)/0.1);
 	else
 		brightness=0.f;
 	brightness=saturate(brightness);
 	float3 output=brightness*colour;
-	return float4(output,1.f);
+	return float4(output,1.0);
 }
 
 float4 PS_Flare(svertexOutput IN): color
@@ -366,8 +366,8 @@ float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 vertexOutput3Dto2D VS_3D_to_2D(vertexInput3Dto2D IN)
 {
     vertexOutput3Dto2D OUT;
-    OUT.hPosition =float4(IN.position,1.f);
-	OUT.texCoords=IN.texCoords;
+    OUT.hPosition	=float4(IN.position,1.f);
+	OUT.texCoords	=IN.texCoords;
     return OUT;
 }
 

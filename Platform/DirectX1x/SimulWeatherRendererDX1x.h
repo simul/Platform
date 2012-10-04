@@ -94,8 +94,6 @@ protected:
 	FramebufferCubemapDX1x			framebuffer_cubemap;
 	float							exposure;
 	float							gamma;
-	bool show_sky;
-	bool show_rain;
 	float timing;
 	float exposure_multiplier;
 	void ConnectInterfaces();

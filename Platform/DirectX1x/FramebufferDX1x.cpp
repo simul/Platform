@@ -28,29 +28,27 @@ typedef std::basic_string<TCHAR> tstring;
 #include "Simul/Math/Pi.h"
 
 FramebufferDX1x::FramebufferDX1x(int w,int h) :
-	m_pd3dDevice(NULL),
-	m_pImmediateContext(NULL),
-	m_pBufferVertexDecl(NULL),
-	m_pVertexBuffer(NULL),
-	m_pTonemapEffect(NULL),
-	hdr_buffer_texture(NULL),
-	buffer_depth_texture(NULL),
-	hdr_buffer_texture_SRV(NULL),
-	buffer_depth_texture_SRV(NULL),
-	m_pHDRRenderTarget(NULL),
-	m_pBufferDepthSurface(NULL),
-	m_pOldRenderTarget(NULL),
-	m_pOldDepthSurface(NULL)
-
+	m_pd3dDevice(NULL)
+	,m_pImmediateContext(NULL)
+	,m_pBufferVertexDecl(NULL)
+	,m_pVertexBuffer(NULL)
+	,m_pTonemapEffect(NULL)
+	,hdr_buffer_texture(NULL)
+	,buffer_depth_texture(NULL)
+	,hdr_buffer_texture_SRV(NULL)
+	,buffer_depth_texture_SRV(NULL)
+	,m_pHDRRenderTarget(NULL)
+	,m_pBufferDepthSurface(NULL)
+	,m_pOldRenderTarget(NULL)
+	,m_pOldDepthSurface(NULL)
 	,TonemapTechnique(NULL)
 	,hdrTexture(NULL)
 	,worldViewProj(NULL)
-
-	,Width(w),
-	Height(h),
-	timing(0.f),
-	screen_width(0),
-	screen_height(0)
+	,Width(w)
+	,Height(h)
+	,timing(0.f)
+	,screen_width(0)
+	,screen_height(0)
 {
 }
 
@@ -234,6 +232,7 @@ bool FramebufferDX1x::CreateBuffers()
 	assert(pass->IsValid());
 	hr=pass->GetDesc(&PassDesc);
 	V_CHECK(hr);
+
 	hr=m_pd3dDevice->CreateInputLayout(
 		decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize
 		, &m_pBufferVertexDecl);

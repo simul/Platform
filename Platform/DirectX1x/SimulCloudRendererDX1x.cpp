@@ -153,12 +153,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 							simul::clouds::CloudKeyframer::AMBIENT);*/
 }
 
-void SimulCloudRendererDX1x::SetSkyInterface(simul::sky::BaseSkyInterface *si)
-{
-	skyInterface=si;
-	cloudKeyframer->SetSkyInterface(si);
-}
-
 void SimulCloudRendererDX1x::SetLossTextures(void *t)
 {
 	ID3D1xResource* t1=((ID3D1xResource*)t);
@@ -643,11 +637,15 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 										indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse(),
 										0,
 										0);
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
+	simul::sky::float4 sun_dir(0.f,0.f,1.f,0.f);
+	if(skyInterface)
+		sun_dir=skyInterface->GetDirectionToLight();
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
-	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
+	simul::sky::float4 sky_light_colour(0,0,0,0);
+	if(skyInterface)
+		sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
 	float tan_half_fov_vertical=1.f/proj._22;
 	float tan_half_fov_horizontal=1.f/proj._11;
 	helper->SetNoFrustumLimit(true);//cubemap);
@@ -661,7 +659,9 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	{
 		ID3D1xEffectVectorVariable *lr=cbUser->GetMemberByName("lightResponse")->AsVector();
 	}
-	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
+	simul::sky::float4 sunlight(1.f,1.f,1.f,1.f);
+	if(skyInterface)
+		sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	float cloud_interp=cloudKeyframer->GetInterpolation();
 	interp				->SetFloat			(cloud_interp);
 	eyePosition			->SetFloatVector	(cam_pos);
@@ -671,9 +671,11 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	sunlightColour		->SetFloatVector	(sunlight);
 	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
 	fractalScale		->SetFloatVector	(fractal_scales);
-	mieRayleighRatio	->SetFloatVector	(skyInterface->GetMieRayleighRatio());
+	if(skyInterface)
+		mieRayleighRatio	->SetFloatVector	(skyInterface->GetMieRayleighRatio());
 	cloudEccentricity	->SetFloat			(GetCloudInterface()->GetMieAsymmetry());
-	hazeEccentricity	->SetFloat			(skyInterface->GetMieEccentricity());
+	if(skyInterface)
+		hazeEccentricity	->SetFloat			(skyInterface->GetMieEccentricity());
 	fadeInterp			->SetFloat			(fade_interp);
 	alphaSharpness		->SetFloat			(GetCloudInterface()->GetAlphaSharpness());
 simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
@@ -827,6 +829,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 	ID3D1xEffectMatrixVariable*	worldViewProj=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	worldViewProj->SetMatrix(ortho);
 
+	if(skyInterface)
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
@@ -840,6 +843,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 		cloudDensity1->SetResource(cloudDensityResource[i%3]);
 		RenderTexture(m_pd3dDevice,i*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
 	}
+	if(skyInterface)
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
@@ -1061,6 +1065,11 @@ void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate()
 		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
 		if(!texture_fill.num_texels)
 			continue;
+		if(i!=mapped&&texture_fill.texel_index>0&&texture_fill.num_texels>0)
+		{
+			seq_texture_iterator[i].texel_index=0;
+			texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
+		}
 		Map(i);
 		unsigned *ptr=(unsigned *)mapped_cloud_texture.pData;
 		if(!ptr)

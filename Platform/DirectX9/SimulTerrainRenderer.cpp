@@ -63,26 +63,11 @@ SimulTerrainRenderer::SimulTerrainRenderer() :
 	,last_overall_checksum(0)
 	,last_buffer_checksum(0)
 {
-	heightmap=new simul::terrain::HeightMapNode();
-	heightMapInterface=heightmap.get();
-	heightmap->SetFractalFrequency(16);
-	heightmap->SetPersistence(0.85f);
-	heightmap->SetNumMipMapLevels(5);
-	heightmap->SetPageSize(513);
-	heightmap->SetTileSize(65);
-	heightmap->SetMaxHeight(3000.f);
-	heightmap->SetFractalOctaves(5);
-	heightmap->SetFractalScale(270000.f);
-	heightmap->SetPageWorldX(120000.f);
-	heightmap->SetPageWorldY(120000.f);
-	heightmap->SetBaseAltitude(-2000.f);
-	heightmap->SetFlattenBelow(-1000.f);
-	heightmap->Rebuild();
 }
 
 struct TerrainVertex_t
 {
-	float x,y,z;
+	float x,y;
 	float tex_x,tex_y;
 	float morph,anymorph;
     float texCoordHx,texCoordHy;
@@ -431,9 +416,9 @@ void SimulTerrainRenderer::GetVertex(int i,int j,TerrainVertex_t *V)
 	
 	V->x=(X)*heightMapInterface->GetPageWorldX();
 	V->y=(Y)*heightMapInterface->GetPageWorldY();
-	V->z=heightMapInterface->GetHeightAt(i,j);
-	if(y_vertical)
-		std::swap(V->y,V->z);
+	//V->z=heightMapInterface->GetHeightAt(i,j);
+	//if(y_vertical)
+	//	std::swap(V->y,V->z);
 	static simul::math::Vector3 n;
 	n.DefineValues(heightMapInterface->GetNormalAt(i,j));
 	if(y_vertical)
@@ -451,9 +436,9 @@ void SimulTerrainRenderer::GetVertex(float x,float y,TerrainVertex_t *V)
 	
 	V->x=x;
 	V->y=y;
-	V->z=heightMapInterface->GetHeightAt(x,y);
-	if(y_vertical)
-		std::swap(V->y,V->z);
+	//V->z=heightMapInterface->GetHeightAt(x,y);
+	//if(y_vertical)
+	//	std::swap(V->y,V->z);
 	simul::math::Vector3 n=heightMapInterface->GetNormalAt(x,y);
 	V->tex_x=130.f*X;
 	V->tex_y=130.f*Y;
@@ -480,12 +465,12 @@ void SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
 	HRESULT hr;
 	D3DVERTEXELEMENT9 decl[]=
 	{
-		{0,0,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
-		{0,12,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
-		{0,20,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
-		{0,28,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
-		{0,36,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,4},
-		{0,44,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,5},
+		{0,0,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
+		{0,8,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
+		{0,16,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
+		{0,24,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
+		{0,32,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,4},
+		{0,40,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,5},
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(m_pVtxDecl);
@@ -508,7 +493,7 @@ void SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
 	RebuildBuffers();
 	RecompileShaders();
 	MakeMapTexture();
-	GPUGenerateHeightmap();
+//	GPUGenerateHeightmap();
 }
 
 unsigned SimulTerrainRenderer::GetBufferChecksum()
@@ -595,8 +580,8 @@ void SimulTerrainRenderer::RebuildBuffers()
 
 				if(edge_x&&edge_y)
 					V->anymorph=0.f;
-				if(y_vertical)
-					std::swap(V->y,V->z);
+				//if(y_vertical)
+				//	std::swap(V->y,V->z);
 				V++;
 			}
 		}
@@ -724,7 +709,8 @@ void SimulTerrainRenderer::ClearTiles()
 	}
 	tiles.clear();
 }
-bool SimulTerrainRenderer::RecompileShaders()
+
+void SimulTerrainRenderer::RecompileShaders()
 {
 	HRESULT hr=S_OK;
 	std::map<std::string,std::string> defines;
@@ -790,7 +776,6 @@ bool SimulTerrainRenderer::RecompileShaders()
 		if(strcmp(name,"outline")==0)
 			WIREFRAME_PASS=i;
 	}
-	return (hr==S_OK);
 }
 
 void SimulTerrainRenderer::InvalidateDeviceObjects()
@@ -824,15 +809,14 @@ SimulTerrainRenderer::~SimulTerrainRenderer()
 	static const float radius=50.f;
 	static const float height=150.f;
 
-bool SimulTerrainRenderer::RenderOnlyDepth()
+void SimulTerrainRenderer::RenderOnlyDepth()
 {
 	PIXBeginNamedEvent(0xFF006600,"SimulTerrainRenderer::RenderOnlyDepth");
-	HRESULT hr=InternalRender(true);
+	InternalRender(true);
 	PIXEndNamedEvent();
-	return (hr==S_OK);
 }
 
-bool SimulTerrainRenderer::Render()
+void SimulTerrainRenderer::Render()
 {
 	PIXBeginNamedEvent(0xFF00FF00,"SimulTerrainRenderer::Render");
 	HRESULT hr=InternalRender(false);
@@ -857,7 +841,6 @@ bool SimulTerrainRenderer::Render()
 		}
 		//RenderLines(m_pd3dDevice,12,pos);
 	}
-	return (hr==S_OK);
 }
 
 float SimulTerrainRenderer::GetMip(int i,int j) const
@@ -1220,7 +1203,7 @@ bool SimulTerrainRenderer::BuildRoad()
 		simul::math::float2 left ((const float*)(x+dx));
 		simul::math::float2 right((const float*)(x-dx));
 		GetVertex(right.x,right.y,V);
-		V->z=x.z;
+		//V->z=x.z;
 		V->tex_x=0.f;
 		V->tex_y=along/tex_repeat_length;
 		V->anymorph=1.f;
@@ -1234,9 +1217,9 @@ bool SimulTerrainRenderer::BuildRoad()
 				V->texCoordH2y=0;
 		V++;
 		GetVertex( left.x, left.y,V);
-		V->z=x.z;
-		if(y_vertical)
-			std::swap(V->y,V->z);
+		//V->z=x.z;
+		//if(y_vertical)
+		//	std::swap(V->y,V->z);
 		V->tex_x=1.f;
 		V->tex_y=along/tex_repeat_length;
 		V->anymorph=1.f;
@@ -1548,7 +1531,7 @@ bool SimulTerrainRenderer::BuildTileMip(TerrainTile *tile,int i,int j,int mip_le
 			for(size_t i=0;i<mip->extra_vertices.size();i++)
 			{
 				GetVertex(mip->extra_vertices[i].x,mip->extra_vertices[i].y,V);
-				V->y=mip->extra_vertices[i].z;
+				//V->y=mip->extra_vertices[i].z;
 				V++;
 			}
 			B_RETURN(mip->extraVertexBuffer->Unlock());

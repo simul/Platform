@@ -71,7 +71,6 @@ void SimulHDRRendererDX1x::RestoreDeviceObjects(void *x)
 	void **u=(void**)x;
 	m_pd3dDevice=(ID3D1xDevice*)u[0];
 	framebuffer->RestoreDeviceObjects(m_pd3dDevice);
-
 	ID3D1xTexture2D *pBackBuffer=NULL;
 	IDXGISwapChain *pSwapChain=(IDXGISwapChain *)u[1];
 	pSwapChain->GetBuffer(0,__uuidof(ID3D1xTexture2D),(void**)&pBackBuffer);

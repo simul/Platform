@@ -557,7 +557,7 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 	return debug_text;
 }
 
-void Simul2DCloudRenderer::RenderCrossSections(int screen_width,int screen_height)
+void Simul2DCloudRenderer::RenderCrossSections(int screen_width,int )
 {
 	int w=(screen_width-16)/6;
 	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;

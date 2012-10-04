@@ -11,7 +11,7 @@ float saturate(float f)
 }
 vec2 saturate(vec2 f)
 {
-	return clamp(f,0.0,1.0);
+	return clamp(f,vec2(0.0,0.0),vec2(1.0,1.0));
 }
 float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 {

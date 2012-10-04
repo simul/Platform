@@ -21,11 +21,12 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 		,timeMult(0.f)
 		,y_vertical(true)
 		,UseHdrPostprocessor(true)
+		,UseSkyBuffer(true)
 {
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,true,false,w,h,true,true,true);
 	AddChild(simulWeatherRenderer.get());
 	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
-	simulOpticsRenderer=new SimulOpticsRendererDX1x();
+	//simulOpticsRenderer=new SimulOpticsRendererDX1x();
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->SetYVertical(y_vertical);
 	SetYVertical(y_vertical);
@@ -76,6 +77,7 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 		simulWeatherRenderer->InvalidateDeviceObjects();
 	if(simulHDRRenderer)
 		simulHDRRenderer->InvalidateDeviceObjects();
+	simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->InvalidateDeviceObjects();
 	void *x[2]={pd3dDevice,pSwapChain};
@@ -96,7 +98,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(camera)
 	{
 		proj=camera->MakeProjectionMatrix(nr,fr,aspect,y_vertical);
-		//D3DXMatrixPerspectiveFovRH(&proj,camera->GetVerticalFieldOfViewDegrees()*3.141f/180.f,aspect,.1f,250000.f);
+//D3DXMatrixPerspectiveFovRH(&proj,camera->GetHorizontalFieldOfViewDegrees()*3.1415926536f/180.f/aspect,aspect,nr,fr);
 		view=camera->MakeViewMatrix(!y_vertical);
 		D3DXMatrixIdentity(&world);
 	}
@@ -109,7 +111,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->SetMatrices(view,proj);
-		simulWeatherRenderer->RenderSky(true,false);
+		simulWeatherRenderer->RenderSky(UseSkyBuffer,false);
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{
@@ -127,7 +129,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender();
-	if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
+	if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->RenderFades(ScreenWidth,ScreenHeight);
 	if(simulWeatherRenderer&&ShowCloudCrossSections)
 	{
