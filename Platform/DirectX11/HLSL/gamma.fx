@@ -71,6 +71,14 @@ BlendState NoBlend
 	BlendEnable[0] = FALSE;
 };
 
+BlendState DoBlend
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = One;
+	DestBlend = One;
+	RenderTargetWriteMask[0]=7;
+};
+
 technique11 simul_direct
 {
     pass p0
@@ -97,3 +105,17 @@ technique11 simul_tonemap
 		SetPixelShader(CompileShader(ps_4_0,TonemapPS()));
     }
 }
+
+technique11 simul_sky_over_stars
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,TonemapVS()));
+		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
+    }
+}
+

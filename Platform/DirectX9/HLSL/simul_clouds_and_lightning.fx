@@ -273,57 +273,7 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	return colour;
 }
 
-float4 PS_WithLightning(vertexOutput IN): color
-{
-	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
-	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
-#if DETAIL_NOISE==1
-	noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
-	noiseval*=IN.texCoords.w;
-#endif
-	noiseval*=IN.texCoords.w;
-	float3 pos=IN.texCoords.xyz+fractalScale.xyz*noiseval;
-	float4 density=tex3D(cloud_density_1,pos);
-	float4 density2=tex3D(cloud_density_2,pos);
-
-	density=lerp(density,density2,interp);
-
-	density.x*=IN.layerFade;
-	density.x=saturate(density.x*1.5f-0.5f);
-
-	if(density.x<=0)
-		discard;
-
-	float3 view=normalize(IN.wPosition);
-	float cos0=dot(lightDir.xyz,view.xyz);
-	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
-#if FADE_MODE==1
-	float3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
-	float4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
-	float3 inscatter=InscatterFunction(insc,cos0);
-#endif
-#if FADE_MODE==0
-	float3 loss=IN.loss;
-	float3 inscatter=IN.inscatter;
-#endif
-	float4 lightning=tex3D(lightning_illumination,IN.texCoordLightning.xyz);
-
-	float3 ambient=density.w*skylightColour.rgb;
-	float opacity=density.x;
-	float l=dot(lightningMultipliers.xyzw,lightning.xyzw);
-	float3 lightningC=l*lightningColour.xyz;
-	float3 final=(lightResponse.x*density.z*Beta+lightResponse.y*density.y)*IN.lightColour+ambient.rgb;
-	final+=lightningColour.w*lightningC;
-
-	final*=loss.xyz;
-	final+=inscatter.xyz;
-	final*=opacity;
-
-	final+=lightningC*(opacity+IN.layerFade);
-    return float4(final.rgb,opacity);
-}
-
-float4 PS_Clouds( vertexOutput IN): color
+float4 CloudColour(vertexOutput IN,float cos0)
 {
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
@@ -343,11 +293,27 @@ float4 PS_Clouds( vertexOutput IN): color
 
 	if(density.x<=0)
 		discard;
-	float3 view=normalize(IN.wPosition);
-	float cos0=dot(lightDir.xyz,view.xyz);
 // cloudEccentricity is multiplied by density.z (i.e. direct light) to avoid interpolation artifacts.
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.y,cos0);
-// Fade mode 1 means using textures for distance fade.
+	float3 ambient=skylightColour.rgb*density.w;
+	float opacity=density.x;
+	float4 final;
+	final.rgb=(density.y*Beta+lightResponse.y*density.z)*IN.lightColour+ambient.rgb;
+	final.a=opacity;
+	return final;
+}
+
+float4 PS_WithLightning(vertexOutput IN): color
+{
+	float3 view=normalize(IN.wPosition);
+	float cos0=dot(lightDir.xyz,view.xyz);
+	float4 final=CloudColour(IN,cos0);
+	float opacity=final.a;
+	float4 lightning=tex3D(lightning_illumination,IN.texCoordLightning.xyz);
+	float l=dot(lightningMultipliers.xyzw,lightning.xyzw);
+	float3 lightningC=l*lightningColour.xyz;
+	final.rgb+=lightningColour.w*lightningC;
+
 #if FADE_MODE==1
 	float4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
 	float3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
@@ -358,13 +324,33 @@ float4 PS_Clouds( vertexOutput IN): color
 	float3 loss=IN.loss;
 	float3 inscatter=IN.inscatter;
 #endif
-	float3 ambient=skylightColour.rgb*density.w;
+	final.rgb*=loss.xyz;
+	final.rgb+=inscatter.xyz;
+	final.rgb*=opacity;
 
-	float opacity=density.x;
-	float3 final=(density.y*Beta+lightResponse.y*density.z)*IN.lightColour+ambient.rgb;
+	final.rgb+=lightningC*(opacity+IN.layerFade);
+    return float4(final.rgb,opacity);
+}
 
-	final*=loss;
-	final+=inscatter;
+float4 PS_Clouds( vertexOutput IN): color
+{
+	float3 view=normalize(IN.wPosition);
+	float cos0=dot(lightDir.xyz,view.xyz);
+// Fade mode 1 means using textures for distance fade.
+	float4 final=CloudColour(IN,cos0);
+	float opacity=final.a;
+#if FADE_MODE==1
+	float4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
+	float3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
+	float3 inscatter=InscatterFunction(insc,cos0);
+#endif
+// Fade mode 0 means passing fade values in through vertex properties.
+#if FADE_MODE==0
+	float3 loss=IN.loss;
+	float3 inscatter=IN.inscatter;
+#endif
+	final.rgb*=loss;
+	final.rgb+=inscatter;
     return float4(final.rgb,opacity);
 }
 

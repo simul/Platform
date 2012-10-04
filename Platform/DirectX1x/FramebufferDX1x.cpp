@@ -79,9 +79,10 @@ void FramebufferDX1x::RestoreDeviceObjects(void *dev)
 #endif
 	SAFE_RELEASE(m_pTonemapEffect);
 	hr=CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx"));
-	TonemapTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_direct");
-	hdrTexture			=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
-	worldViewProj		=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
+	SkyOverStarsTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_over_stars");
+	hdrTexture				=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
+	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	CreateBuffers();
 }
 
@@ -228,7 +229,6 @@ bool FramebufferDX1x::CreateBuffers()
 	ID3D1xEffect * effect=NULL;
 	CreateEffect(m_pd3dDevice,&effect,_T("gamma.fx"));
 	ID3D1xEffectTechnique*	tech=effect->GetTechniqueByName("simul_direct");
-
 	assert(tech->IsValid());
 	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
 	assert(pass->IsValid());
@@ -324,7 +324,8 @@ void FramebufferDX1x::DeactivateAndRender(bool blend)
 	Deactivate();
 	HRESULT hr=S_OK;
 	hr=hdrTexture->SetResource(hdr_buffer_texture_SRV);
-	ApplyPass(TonemapTechnique->GetPassByIndex(0));
+	ID3D1xEffectTechnique *tech=blend?SkyOverStarsTechnique:TonemapTechnique;
+	ApplyPass(tech->GetPassByIndex(0));
 	RenderBufferToCurrentTarget();
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)

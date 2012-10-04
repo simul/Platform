@@ -38,7 +38,7 @@ public:
 	virtual void InvalidateDeviceObjects()=0;
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 	virtual bool Render()=0;
-	virtual void SetInputTextures(LPDIRECT3DTEXTURE9 image,LPDIRECT3DTEXTURE9 depth)=0;
+	//virtual void SetInputTextures(LPDIRECT3DTEXTURE9 image,LPDIRECT3DTEXTURE9 depth)=0;
 };
 
 // A class that takes an image buffer and a z-buffer and applies atmospheric fading.
@@ -54,8 +54,9 @@ public:
 	void RecompileShaders();
 	//! Call this when the device has been lost.
 	void InvalidateDeviceObjects();
-	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-	bool Render();
+	//! StartRender: sets up the rendertarget for atmospherics, and make it the current target. Call at the start of the frame's rendering.
+	void StartRender();
+	void FinishRender();
 	//! Set properties for rendering cloud godrays.
 	void SetCloudProperties(void* c1,void* c2,
 							const float *cloudscales,
@@ -86,11 +87,6 @@ public:
 	{
 		clouds_texture=(LPDIRECT3DBASETEXTURE9)t;
 	}
-	void SetInputTextures(LPDIRECT3DTEXTURE9 image,LPDIRECT3DTEXTURE9 depth)
-	{
-		input_texture=image;
-		depth_texture=depth;
-	}
 	void SetFadeInterpolation(float s)
 	{
 		fade_interp=s;
@@ -105,11 +101,10 @@ public:
 		y_vertical=y;
 	}
 	void SetBufferSize(int,int){}
-	void StartRender(){}
-	void FinishRender(){}
 protected:
-	bool y_vertical;
+	bool Render();
 	bool DrawScreenQuad();
+	bool y_vertical;
 	bool use_3d_fades;
 	float altitude_tex_coord;
 	LPDIRECT3DDEVICE9				m_pd3dDevice;
@@ -127,7 +122,7 @@ protected:
 	D3DXHANDLE						hazeEccentricity;
 	D3DXHANDLE						fadeInterp;
 	D3DXHANDLE						imageTexture;
-	D3DXHANDLE						depthTexture;
+	//D3DXHANDLE						depthTexture;
 	D3DXHANDLE						maxDistanceTexture;
 	D3DXHANDLE						lossTexture1;
 	D3DXHANDLE						inscatterTexture1;
@@ -155,6 +150,11 @@ protected:
 	LPDIRECT3DBASETEXTURE9			loss_texture;
 	LPDIRECT3DBASETEXTURE9			inscatter_texture;
 	LPDIRECT3DBASETEXTURE9			clouds_texture;
+
+	LPDIRECT3DSURFACE9				m_pRenderTarget;
+	LPDIRECT3DSURFACE9				m_pBufferDepthSurface;
+	LPDIRECT3DSURFACE9				m_pOldRenderTarget;
+	LPDIRECT3DSURFACE9				m_pOldDepthSurface;
 
 	// For lightning airglow
 	D3DXHANDLE						airglowTechnique;

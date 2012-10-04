@@ -15,6 +15,7 @@
 #include <d3dx11effect.h>
 #include <D3Dcompiler.h>
 #endif
+#include <d3dx9.h>
 #include <map>
 #include "MacrosDX1x.h"
 #include "Export.h"
@@ -27,10 +28,36 @@ namespace simul
 		extern SIMUL_DIRECTX1x_EXPORT void SetShaderPath(const char *path);
 		extern SIMUL_DIRECTX1x_EXPORT void SetTexturePath(const char *path);
 		extern SIMUL_DIRECTX1x_EXPORT void SetDevice(ID3D1xDevice* dev);
-		extern SIMUL_DIRECTX1x_EXPORT  void UnsetDevice();
+		extern SIMUL_DIRECTX1x_EXPORT void UnsetDevice();
+		extern SIMUL_DIRECTX1x_EXPORT void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);
+		extern ID3D1xShaderResourceView* LoadTexture(const char *filename);
+		extern ID3D1xShaderResourceView* LoadTexture(const TCHAR *filename);
+		class UtilityRenderer
+		{
+			static int instance_count;
+			static int screen_width;
+			static int screen_height;
+			static D3DXMATRIX view;
+			static D3DXMATRIX proj;
+			static ID3D1xEffect *m_pDebugEffect;
+		public:
+			UtilityRenderer();
+			~UtilityRenderer();
+			struct VertexXyzRgba
+			{
+				float x,y,z;
+				float r,g,b,a;
+			};
+			static void SetMatrices(D3DXMATRIX v,D3DXMATRIX p);
+			static void RestoreDeviceObjects(void *m_pd3dDevice);
+			static void RecompileShaders();
+			static void SetScreenSize(int w,int h);
+			static void InvalidateDeviceObjects();
+			static void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
+			static void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip);
+		};
 	}
 }
-extern ID3D1xShaderResourceView* LoadTexture(const TCHAR *filename);
 
 typedef long HRESULT;
 extern SIMUL_DIRECTX1x_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename);

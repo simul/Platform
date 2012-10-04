@@ -47,7 +47,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 											bool usebuffer,int width,
 											int height,bool sky,bool clouds3d,
 											bool clouds2d,bool rain) :
-	BaseWeatherRenderer(env),
+	BaseWeatherRenderer(env,sky,clouds3d,clouds2d,rain),
 	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
 	m_pBufferToScreenEffect(NULL),
@@ -67,15 +67,14 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer.get();
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer.get();
 	D3DXMatrixIdentity(&ident);
-	ShowSky=sky;
 	SetScreenSize(width,height);
-	if(sky)
+	if(ShowSky)
 	{
 		simulSkyRenderer=new SimulSkyRenderer(sk);
 		baseSkyRenderer=simulSkyRenderer.get();
 		AddChild(simulSkyRenderer.get());
 	}
-	if(clouds3d)
+	if(layer1)
 	{
 		simulCloudRenderer=new SimulCloudRenderer(ck3d);
 		baseCloudRenderer=simulCloudRenderer.get();
@@ -84,7 +83,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 		baseLightningRenderer=simulLightningRenderer.get();
 		Restore3DCloudObjects();
 	}
-	if(clouds2d)
+	if(layer2)
 	{
 		simul2DCloudRenderer=new Simul2DCloudRenderer(ck2d);
 		base2DCloudRenderer=simul2DCloudRenderer.get();
@@ -392,9 +391,9 @@ bool SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
 		return true;
 	timer.StartTime();
 	bool result=true;
-	for(int i=0;i<simulCloudRenderer->GetNumBuffers();i++)
+	//for(int i=0;i<simulCloudRenderer->GetNumBuffers();i++)
 	{
-		result &=RenderLateCloudLayer(i,buf);
+		result &=RenderLateCloudLayer(0,buf);
 	}
 	timer.FinishTime();
 	simul::math::FirstOrderDecay(cloud_timing,timer.Time,1.f,0.01f);

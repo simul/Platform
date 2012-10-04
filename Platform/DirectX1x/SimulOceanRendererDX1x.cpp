@@ -18,7 +18,6 @@ struct ocean_vertex
 OceanSimulator* g_pOceanSimulator=NULL;
 // Mesh properties:
 
-
 // Shading properties:
 // Two colors for waterbody and sky color
 D3DXVECTOR3 g_SkyColor= D3DXVECTOR3(0.38f, 0.45f, 0.56f);
@@ -120,12 +119,6 @@ SimulOceanRendererDX1x::~SimulOceanRendererDX1x()
 	InvalidateDeviceObjects();
 }
 
-void SimulOceanRendererDX1x::SetOceanParameters(const OceanParameter& ocean_param)
-{
-	ocean_parameters=ocean_param;
-	ocean_parameters.dmap_dim = ocean_param.dmap_dim;
-	ocean_parameters.wind_dir = ocean_param.wind_dir;
-}
 
 void SimulOceanRendererDX1x::Update(float dt)
 {
@@ -176,7 +169,7 @@ void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 #else
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
-	g_pOceanSimulator = new OceanSimulator(ocean_parameters, m_pd3dDevice);
+	g_pOceanSimulator = new OceanSimulator(&ocean_parameters, m_pd3dDevice);
 	// Update the simulation for the first time.
 	g_pOceanSimulator->updateDisplacementMap(0);
 
@@ -659,7 +652,7 @@ void SimulOceanRendererDX1x::Render()
 		call_consts.g_UVBase = uv_base;
 
 		// Constant g_PerlinSpeed need to be adjusted mannually
-		D3DXVECTOR2 perlin_move = -ocean_parameters.wind_dir * (float)app_time * g_PerlinSpeed;
+		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters.wind_dir)*(-(float)app_time)* g_PerlinSpeed;
 		call_consts.g_PerlinMovement = perlin_move;
 
 		// Eye point
@@ -790,7 +783,7 @@ void SimulOceanRendererDX1x::RenderWireframe(float time)
 		call_consts.g_UVBase = uv_base;
 
 		// Constant g_PerlinSpeed need to be adjusted mannually
-		D3DXVECTOR2 perlin_move = -ocean_parameters.wind_dir * time * g_PerlinSpeed;
+		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters.wind_dir) *-time * g_PerlinSpeed;
 		call_consts.g_PerlinMovement = perlin_move;
 
 		// Eye point

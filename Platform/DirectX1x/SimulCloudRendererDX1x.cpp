@@ -34,8 +34,6 @@ const char *GetErrorText(HRESULT hr)
 
 typedef std::basic_string<TCHAR> tstring;
 static tstring filepath=TEXT("");
-#define PIXBeginNamedEvent(a,b)		// D3DPERF_BeginEvent(a,L##b)
-#define PIXEndNamedEvent()			// D3DPERF_EndEvent()
 DXGI_FORMAT illumination_tex_format=DXGI_FORMAT_R8G8B8A8_UNORM;
 const bool big_endian=false;
 static unsigned default_mip_levels=0;
@@ -578,17 +576,6 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	return (hr==S_OK);
 }
 
-void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
-{
-	D3DXMATRIX tmp1, tmp2;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	//tmp1 = world * view;
-	//D3DXMatrixMultiply(&tmp1, &world,&view);
-	//D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
-	tmp2 = world * view * proj;
-	D3DXMatrixTranspose(wvp,&tmp2);
-}
-
 static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 {
 	D3DXMATRIX tmp1;
@@ -616,7 +603,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 		
 	//set up matrices
 	D3DXMATRIX wvp;
-	MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	cam_pos=GetCameraPosVector(view);
 	simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
@@ -870,7 +857,7 @@ bool SimulCloudRendererDX1x::RenderLightning()
 		
 	//set up matrices
 	D3DXMATRIX wvp;
-	MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	cam_pos=GetCameraPosVector(view);
 
 	simul::math::Vector3 view_dir	(view._13,view._23,view._33);

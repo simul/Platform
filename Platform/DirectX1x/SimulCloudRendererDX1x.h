@@ -82,8 +82,6 @@ public:
 	float GetTiming() const;
 	//! Get the list of three textures used for cloud rendering.
 	void* *GetCloudTextures();
-	//void SetLossTextures(ID3D1xResource *l1,ID3D1xResource *l2);
-	//void SetInscatterTextures(ID3D1xResource *i1,ID3D1xResource *i2);
 	void SetLossTextures(void *t1);
 	void SetInscatterTextures(void *t1);
 

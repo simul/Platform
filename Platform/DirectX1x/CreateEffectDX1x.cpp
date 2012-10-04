@@ -43,41 +43,39 @@ static bool pipe_compiler_output=false;
 
 ID3D1xDevice		*m_pd3dDevice		=NULL;
 ID3D1xDeviceContext	*m_pImmediateContext=NULL;
-
+using namespace simul;
+using namespace dx11;
 namespace simul
 {
-	namespace dx11
+	namespace dx1x_namespace
 	{
+		tstring tstring_of(const char *c)
+		{
+			tstring t;
+		#ifdef UNICODE
+			// tstring and TEXT cater for the confusion between wide and regular strings.
+			t.resize(strlen(c),L' '); // Make room for characters
+			// Copy string to wstring.
+			std::copy(c,c+strlen(c),t.begin());
+		#else
+			t=c;
+		#endif
+			return t;
+		}
 		void PipeCompilerOutput(bool p)
 		{
 			pipe_compiler_output=p;
 		}
 		void SetShaderPath(const char *path)
 		{
-		#ifdef UNICODE
-			// tstring and TEXT cater for the confusion between wide and regular strings.
-			shader_path.resize(strlen(path),L' '); // Make room for characters
-			// Copy string to wstring.
-			std::copy(path,path+strlen(path),shader_path.begin());
-			shader_path+=L"/";
-		#else
-			shader_path=path;
-			shader_path+="/";
-		#endif
+			shader_path=tstring_of(path);
+			shader_path+=_T("/");
 			shader_path_set=true;
 		}
 		void SetTexturePath(const char *path)
 		{
-		#ifdef UNICODE
-			// tstring and TEXT cater for the confusion between wide and regular strings.
-			texture_path.resize(strlen(path),L' '); // Make room for characters
-			// Copy string to wstring.
-			std::copy(path,path+strlen(path),texture_path.begin());
-			texture_path+=L"/";
-		#else
-			texture_path=path;
-			texture_path+="/";
-		#endif
+			texture_path=tstring_of(path);
+			texture_path+=_T("/");
 			texture_path_set=true;
 		}
 		void SetDevice(ID3D1xDevice* dev)
@@ -88,15 +86,139 @@ namespace simul
 		#else
 			m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 		#endif
+			UtilityRenderer::RestoreDeviceObjects(dev);
 		}
 		void UnsetDevice()
 		{
 			SAFE_RELEASE(m_pImmediateContext);
+			UtilityRenderer::InvalidateDeviceObjects();
+		}
+		void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
+		{
+			//set up matrices
+			D3DXMATRIX tmp1, tmp2;
+			D3DXMatrixInverse(&tmp1,NULL,&view);
+			D3DXMatrixMultiply(&tmp1, &world,&view);
+			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
+			D3DXMatrixTranspose(wvp,&tmp2);
 		}
 	}
 }
+int UtilityRenderer::instance_count=0;
+int UtilityRenderer::screen_width=0;
+int UtilityRenderer::screen_height=0;
+D3DXMATRIX UtilityRenderer::view,UtilityRenderer::proj;
+ID3D1xEffect *UtilityRenderer::m_pDebugEffect=NULL;
+UtilityRenderer utilityRenderer;
 
-ID3D1xShaderResourceView* LoadTexture(const TCHAR *filename)
+UtilityRenderer::UtilityRenderer()
+{
+	instance_count++;
+}
+
+UtilityRenderer::~UtilityRenderer()
+{
+	InvalidateDeviceObjects();
+}
+
+void UtilityRenderer::RestoreDeviceObjects(void *m_pd3dDevice)
+{
+	RecompileShaders();
+}
+
+void UtilityRenderer::RecompileShaders()
+{
+	SAFE_RELEASE(m_pDebugEffect);
+	CreateEffect(m_pd3dDevice,&m_pDebugEffect,_T("simul_debug.fx"));
+}
+
+void UtilityRenderer::InvalidateDeviceObjects()
+{
+	SAFE_RELEASE(m_pDebugEffect);
+}
+
+void UtilityRenderer::SetMatrices(D3DXMATRIX v,D3DXMATRIX p)
+{
+	view=v;
+	proj=p;
+}
+
+void UtilityRenderer::SetScreenSize(int w,int h)
+{
+	screen_width=w;
+	screen_height=h;
+}
+
+void UtilityRenderer::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
+{
+}
+
+void UtilityRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip)
+{
+	PIXWrapper(0xFF0000FF,"DrawLines")
+	{
+	HRESULT hr=S_OK;
+	D3DXMATRIX world, tmp1, tmp2;
+	D3DXMatrixIdentity(&world);
+	ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_direct");
+	ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
+
+	D3DXMATRIX wvp;
+	MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	worldViewProj->SetMatrix(&wvp._11);
+	
+	ID3D1xBuffer *					vertexBuffer=NULL;
+#if 1
+	// Create the vertex buffer:
+	D3D1x_BUFFER_DESC desc=
+	{
+        vertex_count*sizeof(VertexXyzRgba),
+        D3D1x_USAGE_DYNAMIC,
+        D3D1x_BIND_VERTEX_BUFFER,
+        D3D1x_CPU_ACCESS_WRITE,
+        0
+	};
+    D3D1x_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    InitData.pSysMem = vertices;
+    InitData.SysMemPitch = sizeof(VertexXyzRgba);
+	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
+
+	const D3D1x_INPUT_ELEMENT_DESC decl[] =
+    {
+        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
+    };
+	D3D1x_PASS_DESC PassDesc;
+	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
+	hr=pass->GetDesc(&PassDesc);
+
+	ID3D1xInputLayout*				m_pVtxDecl=NULL;
+	SAFE_RELEASE(m_pVtxDecl);
+	hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+	m_pImmediateContext->IASetPrimitiveTopology(strip?D3D1x_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D1x_PRIMITIVE_TOPOLOGY_LINELIST);
+	UINT stride = sizeof(VertexXyzRgba);
+	UINT offset = 0;
+    UINT Strides[1];
+    UINT Offsets[1];
+    Strides[0] = stride;
+    Offsets[0] = 0;
+	m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
+												1,				// the number of buffers in the array
+												&vertexBuffer,	// the array of vertex buffers
+												&stride,		// array of stride values, one for each buffer
+												&offset);		// array of 
+	hr=ApplyPass(tech->GetPassByIndex(0));
+	m_pImmediateContext->Draw(vertex_count,0);
+	SAFE_RELEASE(vertexBuffer);
+	SAFE_RELEASE(m_pVtxDecl);
+#endif
+	}
+}
+
+
+ID3D1xShaderResourceView* simul::dx1x_namespace::LoadTexture(const TCHAR *filename)
 {
 	ID3D1xShaderResourceView* tex=NULL;
 	D3DX1x_IMAGE_LOAD_INFO loadInfo;
@@ -112,6 +234,11 @@ ID3D1xShaderResourceView* LoadTexture(const TCHAR *filename)
 										&tex,
 										&hr);
 	return tex;
+}
+
+ID3D1xShaderResourceView* simul::dx1x_namespace::LoadTexture(const char *filename)
+{
+	return LoadTexture(tstring_of(filename).c_str());
 }
 
 struct d3dMacro
@@ -261,8 +388,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 			// Process is done, or we timed out:
 			if(dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
 			break;
-		  }     
-
+		  }
 
 			//WaitForSingleObject( pi.hProcess, INFINITE );
 			CloseHandle( pi.hProcess );

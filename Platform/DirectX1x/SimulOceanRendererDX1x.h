@@ -14,7 +14,6 @@ SIMUL_DIRECTX1x_EXPORT_CLASS SimulOceanRendererDX1x : public simul::terrain::Bas
 public:
 	SimulOceanRendererDX1x();
 	virtual ~SimulOceanRendererDX1x();
-	void SetOceanParameters(const OceanParameter& ocean_param);
 	// init & cleanup
 	void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
 	void InvalidateDeviceObjects();
@@ -27,7 +26,6 @@ public:
 	void Update(float dt);
 	void SetCubemap(ID3D1xShaderResourceView *c);
 protected:
-	OceanParameter ocean_parameters;
 	D3DXMATRIX view,proj;
 	ID3D11Device*						m_pd3dDevice;
 	ID3D1xDeviceContext*				m_pImmediateContext;

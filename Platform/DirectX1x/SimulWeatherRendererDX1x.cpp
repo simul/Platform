@@ -31,11 +31,10 @@ D3DXMATRIX view_matrices[6];
 
 SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *env,
 		bool usebuffer,bool tonemap,int w,int h,bool sky,bool clouds3d,bool clouds2d,bool rain) :
-	BaseWeatherRenderer(env),
+	BaseWeatherRenderer(env,sky,clouds3d,clouds2d,rain),
 	framebuffer(w,h),
 	m_pd3dDevice(NULL),
 	m_pImmediateContext(NULL),
-
 	simulSkyRenderer(NULL),
 	simulCloudRenderer(NULL),
 	BufferWidth(w),
@@ -64,10 +63,10 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
 	*/
-	simulAtmosphericsRenderer=new SimulAtmosphericsRendererDX1x;
-	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new SimulAtmosphericsRendererDX1x;
 	ConnectInterfaces();
 }
+
 void SimulWeatherRendererDX1x::ConnectInterfaces()
 {
 	if(simulCloudRenderer.get()&&simulSkyRenderer.get())
@@ -168,12 +167,12 @@ void SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 		simulSkyRenderer->InvalidateDeviceObjects();
 	if(simulCloudRenderer)
 		simulCloudRenderer->InvalidateDeviceObjects();
-	/*if(simul2DCloudRenderer)
-		simul2DCloudRenderer->InvalidateDeviceObjects();
-	if(simulPrecipitationRenderer)
-		simulPrecipitationRenderer->InvalidateDeviceObjects();
+//if(simul2DCloudRenderer)
+//		simul2DCloudRenderer->InvalidateDeviceObjects();
+//if(simulPrecipitationRenderer)
+//		simulPrecipitationRenderer->InvalidateDeviceObjects();
 	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->InvalidateDeviceObjects();*/
+		simulAtmosphericsRenderer->InvalidateDeviceObjects();
 //	if(m_pTonemapEffect)
 //        hr=m_pTonemapEffect->OnLostDevice();
       
@@ -284,11 +283,19 @@ void *SimulWeatherRendererDX1x::GetCubemap()
 bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 {
 	HRESULT hr=S_OK;
+	if(buffered&&!is_cubemap)
+	{
+		if(simulSkyRenderer&&ShowPlanets)
+		{
+			simulSkyRenderer->RenderPointStars();
+			simulSkyRenderer->RenderSun();
+			simulSkyRenderer->RenderPlanets();
+		}
+	}
 	if(buffered)
 	{
 		framebuffer.Activate();
 	}
-#if 1
 	if(simulSkyRenderer)
 	{
 		float cloud_occlusion=0;
@@ -304,9 +311,8 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 	UpdateSkyAndCloudHookup();
 	if(simulCloudRenderer&&layer1)
 		hr=simulCloudRenderer->Render(is_cubemap,false,UseDefaultFog);
-#endif
 	if(buffered)
-		framebuffer.DeactivateAndRender(false);
+		framebuffer.DeactivateAndRender(!is_cubemap);
 	return (hr==S_OK);
 }
 

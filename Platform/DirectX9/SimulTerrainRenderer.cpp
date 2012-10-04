@@ -709,6 +709,7 @@ void SimulTerrainRenderer::ClearTiles()
 	}
 	tiles.clear();
 }
+
 void SimulTerrainRenderer::RecompileShaders()
 {
 	HRESULT hr=S_OK;

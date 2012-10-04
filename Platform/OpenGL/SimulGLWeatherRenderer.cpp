@@ -31,7 +31,7 @@ static const GLenum internal_buffer_format	=GL_RGBA32F_ARB;
 
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,bool usebuffer,bool tonemap,int width,
 		int height,bool sky,bool clouds3d,bool clouds2d,bool rain)
-		:BaseWeatherRenderer(env)
+		:BaseWeatherRenderer(env,sky,clouds3d,clouds2d,rain)
 		,BufferWidth(0)
 		,BufferHeight(0)
 		,device_initialized(false)
@@ -47,7 +47,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	}
 	simulCloudRenderer=new SimulGLCloudRenderer(ck3d);
 	baseCloudRenderer=simulCloudRenderer.get();
-	base2DCloudRenderer=simul2DCloudRenderer=NULL;//new SimulGL2DCloudRenderer(ck2d);
+	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d);
 	
 	simulLightningRenderer=new SimulGLLightningRenderer(environment->lightning.get());
 	baseLightningRenderer=simulLightningRenderer.get();
@@ -68,14 +68,14 @@ void SimulGLWeatherRenderer::EnableCloudLayers(bool clouds3d,bool clouds2d)
 		if(device_initialized)
 			simulSkyRenderer->RestoreDeviceObjects(NULL);
 	}
-	if(simul2DCloudRenderer)
+	if(simul2DCloudRenderer&&clouds2d)
 	{
 		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetBaseSkyInterface());
 		simul2DCloudRenderer->Create();
 		if(device_initialized)
 			simul2DCloudRenderer->RestoreDeviceObjects(NULL);
 	}
-	if(simulCloudRenderer)
+	if(simulCloudRenderer&&clouds3d)
 	{
 		simulCloudRenderer->Create();
 		if(device_initialized)
@@ -202,7 +202,7 @@ static simul::base::Timer timer;
 	timer.UpdateTime();
 	simul::math::FirstOrderDecay(sky_timing,timer.Time,0.1f,0.01f);
 	ERROR_CHECK
-    if(simul2DCloudRenderer)
+    if(simul2DCloudRenderer&&layer2)
 		simul2DCloudRenderer->Render(false,false,false);
 	ERROR_CHECK
 	// Render the sky to the screen, then set up to render the clouds to the buffer.

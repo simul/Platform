@@ -5,60 +5,16 @@
 #include <D3DX9.h>
 #include <D3D11.h>
 
+#include "Simul/Terrain/BaseSeaRenderer.h"
 #include "CSFFT/fft_512x512.h"
 
 //#define CS_DEBUG_BUFFER
 #define PAD16(n) (((n)+15)/16*16)
 
-struct OceanParameter
-{
-	OceanParameter()
-	{
-	// The size of displacement map. In this sample, it's fixed to 512.
-		dmap_dim			= 512;
-	// The side length (world space) of square patch
-		patch_length		= 2000.0f;
-	// Adjust this parameter to control the simulation speed
-		time_scale			= 0.8f;
-	// A scale to control the amplitude. Not the world space height
-		wave_amplitude		= 1.35f;
-	// 2D wind direction. No need to be normalized
-		wind_dir			= D3DXVECTOR2(0.8f, 0.6f);
-	// The bigger the wind speed, the larger scale of wave crest.
-	// But the wave scale can be no larger than patch_length
-		wind_speed			= 1800.0f;
-	// Damp out the components opposite to wind direction.
-	// The smaller the value, the higher wind dependency
-		wind_dependency		= 0.07f;
-	// Control the scale of horizontal movement. Higher value creates
-	// pointy crests.
-		choppy_scale		= 1.3f;
-	}
-	// Must be power of 2.
-	int dmap_dim;
-	// Typical value is 1000 ~ 2000
-	float patch_length;
-
-	// Adjust the time interval for simulation.
-	float time_scale;
-	// Amplitude for transverse wave. Around 1.0
-	float wave_amplitude;
-	// Wind direction. Normalization not required.
-	D3DXVECTOR2 wind_dir;
-	// Around 100 ~ 1000
-	float wind_speed;
-	// This value damps out the waves against the wind direction.
-	// Smaller value means higher wind dependency.
-	float wind_dependency;
-	// The amplitude for longitudinal wave. Must be positive.
-	float choppy_scale;
-};
-
-
 class OceanSimulator
 {
 public:
-	OceanSimulator(OceanParameter& params, ID3D11Device* pd3dDevice);
+	OceanSimulator(simul::terrain::OceanParameter *params, ID3D11Device* pd3dDevice);
 	~OceanSimulator();
 
 	// -------------------------- Initialization & simulation routines ------------------------
@@ -69,11 +25,11 @@ public:
 	ID3D11ShaderResourceView* getDisplacementMap();
 	ID3D11ShaderResourceView* getGradientMap();
 
-	const OceanParameter& getParameters();
+	const simul::terrain::OceanParameter *getParameters();
 
 
 protected:
-	OceanParameter m_param;
+	simul::terrain::OceanParameter *m_param;
 
 	// ---------------------------------- GPU shading assets -----------------------------------
 	// D3D objects
@@ -93,7 +49,7 @@ protected:
 	ID3D11SamplerState			* m_pPointSamplerState;
 
 	// Initialize the vector field.
-	void initHeightMap(OceanParameter& params, D3DXVECTOR2* out_h0, float* out_omega);
+	void initHeightMap(D3DXVECTOR2* out_h0, float* out_omega);
 
 
 	// ----------------------------------- CS simulation data ---------------------------------

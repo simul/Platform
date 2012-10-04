@@ -22,6 +22,9 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 		,timeMult(0.f)
 		,y_vertical(true)
 		,UseHdrPostprocessor(true)
+		,UseSkyBuffer(true)
+		,ShowLightVolume(false)
+		,CelestialDisplay(false)
 {
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,true,false,w,h,true,true,true);
 	AddChild(simulWeatherRenderer.get());
@@ -108,6 +111,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		view=camera->MakeViewMatrix(!y_vertical);
 		D3DXMatrixIdentity(&world);
 	}
+	simul::dx11::UtilityRenderer::SetMatrices(view,proj);
 	D3DXMatrixIdentity(&world);
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
@@ -117,7 +121,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->SetMatrices(view,proj);
-		simulWeatherRenderer->RenderSky(true,false);
+		simulWeatherRenderer->RenderSky(UseSkyBuffer,false);
 		simulWeatherRenderer->RenderCubemap();
 	}
 	if(simulOceanRenderer)
@@ -153,6 +157,8 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender();
+	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
+		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(ScreenWidth,ScreenHeight);
 	if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->RenderFades(ScreenWidth,ScreenHeight);
 	if(simulWeatherRenderer&&ShowCloudCrossSections)
@@ -178,6 +184,8 @@ void	Direct3D11Renderer::OnD3D11LostDevice()
 		simulHDRRenderer->InvalidateDeviceObjects();
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->InvalidateDeviceObjects();
+	if(simulOceanRenderer)
+		simulOceanRenderer->InvalidateDeviceObjects();
 }
 
 void Direct3D11Renderer::OnD3D11DestroyDevice()
@@ -192,18 +200,12 @@ void Direct3D11Renderer::OnD3D11DestroyDevice()
 
 void Direct3D11Renderer::OnD3D11ReleasingSwapChain()
 {
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->InvalidateDeviceObjects();
-	if(simulHDRRenderer)
-		simulHDRRenderer->InvalidateDeviceObjects();
+	OnD3D11LostDevice();
 }
 
 bool Direct3D11Renderer::OnDeviceRemoved()
 {
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->InvalidateDeviceObjects();
-	if(simulHDRRenderer)
-		simulHDRRenderer->InvalidateDeviceObjects();
+	OnD3D11LostDevice();
 	return true;
 }
 
@@ -224,6 +226,7 @@ void Direct3D11Renderer::SetYVertical(bool y)
 
 void Direct3D11Renderer::RecompileShaders()
 {
+	simul::dx11::UtilityRenderer::RecompileShaders();
 	if(simulWeatherRenderer.get())
 		simulWeatherRenderer->RecompileShaders();
 	if(simulOpticsRenderer.get())

@@ -79,6 +79,12 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	framebuffer=new FramebufferDX1x(256,256);
 }
 
+SimulAtmosphericsRendererDX1x::~SimulAtmosphericsRendererDX1x()
+{
+	Destroy();
+	delete framebuffer;
+}
+
 void SimulAtmosphericsRendererDX1x::SetBufferSize(int w,int h)
 {
 	if(framebuffer)
@@ -132,6 +138,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 
 HRESULT SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
 {
+	HRESULT hr=S_OK;
 	m_pd3dDevice=dev;
 #ifdef DX10
 	m_pImmediateContext=dev;
@@ -139,13 +146,10 @@ HRESULT SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
-	HRESULT hr=S_OK;
-return hr;
 	RecompileShaders();
 	if(framebuffer)
 		framebuffer->RestoreDeviceObjects(dev);
-	/*
-	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
+/*	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 
 	{
 #ifdef XBOX
@@ -180,21 +184,6 @@ HRESULT SimulAtmosphericsRendererDX1x::Destroy()
 	return InvalidateDeviceObjects();
 }
 
-SimulAtmosphericsRendererDX1x::~SimulAtmosphericsRendererDX1x()
-{
-	Destroy();
-	delete framebuffer;
-}
-static void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
-{
-	//set up matrices
-	D3DXMATRIX tmp1, tmp2;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXMatrixMultiply(&tmp1, &world,&view);
-	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
-	D3DXMatrixTranspose(wvp,&tmp2);
-}
-
 void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &w,const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	world=w;
@@ -204,7 +193,7 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &w,const D3DXMA
 
 void SimulAtmosphericsRendererDX1x::StartRender()
 {
-	//if(!framebuffer)
+	if(!framebuffer)
 		return;
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
 	framebuffer->Activate();

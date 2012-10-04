@@ -52,7 +52,6 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	,loss_tex(0)
 	,inscatter_tex(0)
 {
-//cloudKeyframer->SetFillTexturesAsBlocks(true);
 	helper->Initialize(16,400000.f);
 }
 
@@ -72,7 +71,8 @@ bool SimulGL2DCloudRenderer::CreateNoiseTexture(bool override_file)
 	if(!override_file)
 	{
 		ifstream ifs("noise_2d_clouds",ios_base::binary);
-		if(ifs.good()){
+		if(ifs.good())
+		{
 			int size=0,octaves=0,freq=0;
 			float pers=0.f;
 			ifs.read(( char*)&size,sizeof(size));
@@ -113,7 +113,7 @@ bool SimulGL2DCloudRenderer::CreateNoiseTexture(bool override_file)
 
 bool SimulGL2DCloudRenderer::CreateImageTexture()
 {
-	image_tex=LoadGLImage("Cirrus2.jpg",GL_REPEAT);
+	image_tex=LoadGLImage("Cirrocumulus.png",GL_REPEAT);
 
 #if 0 //def WIN32
 	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
@@ -207,11 +207,10 @@ bool SimulGL2DCloudRenderer::Render(bool, bool, bool)
 	simul::math::Vector3 X1,X2;
 	ci->GetExtents(X1,X2);
 	simul::math::Vector3 DX=X2-X1;
-
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_TEXTURE_3D);
     glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -229,7 +228,7 @@ static float ll=0.05f;
 	glUniform1i(imageTexture_param,0);
 	glUniform1i(lossSampler_param,1);
 	glUniform1i(inscatterSampler_param,2);
-	glUniform4f(lightResponse_param,ll*ci->GetLightResponse(),0,0,ll*ci->GetSecondaryLightResponse());
+	glUniform4f(lightResponse_param,ci->GetLightResponse(),0,0,ll*ci->GetSecondaryLightResponse());
 ERROR_CHECK
 	glUniform3f(fractalScale_param,ci->GetFractalOffsetScale()/DX.x,
 									ci->GetFractalOffsetScale()/DX.y,
@@ -249,15 +248,14 @@ ERROR_CHECK
 ERROR_CHECK
 	glUniform1f(layerDensity_param,DX.z*0.001f*ci->GetOpticalDensity());
 
+	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
 	simul::math::Matrix4x4 modelview,proj;
 	glGetMatrix((float*)&modelview,GL_MODELVIEW_MATRIX);
 	glGetMatrix((float*)&proj,GL_PROJECTION_MATRIX);
 
 ERROR_CHECK
 	simul::math::Matrix4x4 viewInv;
-	viewInv.Inverse(modelview);
-	//nv::matrix4f viewInv=inverse(modelview);
-	//nv::vec4f nv_cam_pos(viewInv._41,viewInv._42,viewInv._43)
+	modelview.Inverse(viewInv);
 	simul::math::Vector3 cam_pos(viewInv(3,0),viewInv(3,1),viewInv(3,2));
 
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
@@ -273,23 +271,13 @@ ERROR_CHECK
 	simul::math::Vector3 eye_dir=viewInv.RowPointer(2);
 	eye_dir*=-1.f;
 	simul::math::Vector3 up_dir=viewInv.RowPointer(1);
-	
 	helper->Update(view_pos,ci->GetWindOffset(),eye_dir,up_dir);
-	float tan_half_fov_vertical=1.f/proj(1,1);
-	float tan_half_fov_horizontal=1.f/proj(0,0);
-	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-
-	simul::sky::float4 view_km=view_pos.FloatPointer(0);
-	// convert metres to km:
-	view_km*=0.001f;
-	helper->MakeGeometry(ci);
+	helper->Make2DGeometry(ci);
 	static float noise_angle=0.8f;
 	helper->Set2DNoiseTexturing(noise_angle,2.f,1.f);
-	//helper->CalcInscatterFactors(cloudInterface,skyInterface,0.f);
 	float image_scale=2000.f+texture_scale*20000.f;
 	simul::math::Vector3 wind_offset=cloudKeyframer->GetCloudInterface()->GetWindOffset();
 
-#if 1
 ERROR_CHECK
 	const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 	size_t qs_vert=0;
@@ -301,10 +289,6 @@ ERROR_CHECK
 		{
 			const Cloud2DGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
 			glMultiTexCoord2f(GL_TEXTURE0,V.cloud_tex_x,V.cloud_tex_y);
-			//simul::sky::float4 inscatter=helper->GetInscatter(V);
-			//simul::sky::float4 loss		=helper->GetLoss(V);
-		//	glMultiTexCoord3f(GL_TEXTURE1,loss.x,loss.y,loss.z);
-			//glMultiTexCoord3f(GL_TEXTURE2,inscatter.x,inscatter.y,inscatter.z);
 			glMultiTexCoord2f(GL_TEXTURE3,V.noise_tex_x,V.noise_tex_y);
 			glMultiTexCoord2f(GL_TEXTURE4,(V.x+wind_offset.x)/image_scale,(V.y+wind_offset.y)/image_scale);
 			
@@ -312,7 +296,6 @@ ERROR_CHECK
 		}
 		glEnd();
 	}
-#endif
 ERROR_CHECK
    // glActiveTexture(GL_TEXTURE0);
 	//glBindTexture(GL_TEXTURE_2D,0);
@@ -321,6 +304,10 @@ ERROR_CHECK
 	glUseProgram(0);
 ERROR_CHECK
 	return true;
+}
+
+void SimulGL2DCloudRenderer::RenderCrossSections(int width,int height)
+{
 }
 
 void SimulGL2DCloudRenderer::SetLossTextures(void *l)
