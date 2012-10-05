@@ -159,6 +159,12 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
 }
 
+void SimulWeatherRendererDX1x::RecompileShaders()
+{
+	BaseWeatherRenderer::RecompileShaders();
+	framebuffer.RecompileShaders();
+}
+
 void SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 {
 	framebuffer.InvalidateDeviceObjects();

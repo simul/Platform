@@ -188,7 +188,7 @@ void SimulCloudRendererDX1x::SetInscatterTextures(void *t)
 		HRESULT hr;
 		if(t)
 		{
-		V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_inscatter_texture_1,NULL,&skyInscatterTexture1Resource));
+			V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_inscatter_texture_1,NULL,&skyInscatterTexture1Resource));
 		}
 		else
 			skyInscatterTexture1Resource=NULL;

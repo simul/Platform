@@ -108,7 +108,7 @@ float skyInterp;
 #endif
 #define pi (3.1415926536f)
 
-float3 colour;
+float4 colour;
 float starBrightness=.1f;
 float3 texelOffset;
 float3 texelScale;
@@ -175,8 +175,8 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
 	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
 		/(float3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
-	float3 colour=BetaTotal*inscatter_factor.rgb;
-	return colour;
+	float3 result=BetaTotal*inscatter_factor.rgb;
+	return result;
 }
 
 float4 PS_Main( vertexOutput IN): COLOR
@@ -198,8 +198,8 @@ float4 PS_Main( vertexOutput IN): COLOR
 #endif
 	float4 inscatter_factor=lerp(inscatter_factor1,inscatter_factor2,skyInterp);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float3 colour=InscatterFunction(inscatter_factor,cos0);
-	return float4(colour.rgb,1.0);
+	float3 result=InscatterFunction(inscatter_factor,cos0);
+	return float4(result.rgb,1.0);
 }
 
 float4 PS_Stars(vertexOutput IN): COLOR
@@ -238,22 +238,21 @@ svertexOutput VS_Sun(svertexInput IN)
     return OUT;
 }
 
+// Sun could be overbright. So the colour is in the range [0,1], and a brightness factor is
+// stored in the alpha channel.
 float4 PS_Sun(svertexOutput IN): color
 {
 	float r=length(IN.tex);
-	float brightness;
-	if(r<0.99)
-		brightness=saturate((0.99-r)/0.1);
-	else
-		brightness=0.f;
-	brightness=saturate(brightness);
-	float3 output=brightness*colour;
-	return float4(output,1.0);
+	if(r>1.0)
+		discard;
+	float brightness=saturate((1.0-r)/0.1)+colour.a*saturate((0.9-r)/0.1);
+	float3 result=brightness*colour.rgb;
+	return float4(result,1.f);
 }
 
 float4 PS_Flare(svertexOutput IN): color
 {
-	float3 output=colour*tex2D(flare_texture,float2(0.5f,0.5f)+0.5f*IN.tex).rgb;
+	float3 output=colour.rgb*tex2D(flare_texture,float2(0.5f,0.5f)+0.5f*IN.tex).rgb;
 	return float4(output,1.f);
 }
 
@@ -309,8 +308,8 @@ svertexOutput VS_Point_Stars(svertexInput IN)
 
 float4 PS_Point_Stars(svertexOutput IN): color
 {
-	float3 colour=float3(1.f,1.f,1.f)*saturate(starBrightness*IN.tex.x);
-	return float4(colour,1.f);
+	float3 result=float3(1.f,1.f,1.f)*saturate(starBrightness*IN.tex.x);
+	return float4(result,1.f);
 }
 
 
@@ -327,18 +326,18 @@ vertexOutputCS VS_ShowFade(vertexInputCS IN)
 float4 PS_ShowFade( vertexOutputCS IN): color
 {
 	IN.texCoords.y=1.0-IN.texCoords.y;
-	float4 colour=tex2D(fade_texture_2d,IN.texCoords.xy);
-    return float4(colour.rgb,1);
+	float4 result=tex2D(fade_texture_2d,IN.texCoords.xy);
+    return float4(result.rgb,1);
 }
 
 float4 PS_ShowSkyTexture( vertexOutputCS IN): color
 {
 #ifdef USE_ALTITUDE_INTERPOLATION
-	float4 colour=tex2D(fade_texture_2d,float2(IN.texCoords.y,altitudeTexCoord));
+	float4 result=tex2D(fade_texture_2d,float2(IN.texCoords.y,altitudeTexCoord));
 #else
-	float4 colour=tex2D(fade_texture_2d,float2(IN.texCoords.y,0));
+	float4 result=tex2D(fade_texture_2d,float2(IN.texCoords.y,0));
 #endif
-    return float4(colour.rgb,1);
+    return float4(result.rgb,1);
 }
 
 
@@ -356,11 +355,11 @@ float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 {
 #ifdef USE_ALTITUDE_INTERPOLATION
 	float3 texc=float3(IN.texCoords.x,IN.texCoords.y,altitudeTexCoord);
-	float4 colour=tex3D(fade_texture,texc);
+	float4 result=tex3D(fade_texture,texc);
 #else
-	float4 colour=tex2D(fade_texture,IN.texCoords.xy);
+	float4 result=tex2D(fade_texture,IN.texCoords.xy);
 #endif
-    return float4(colour.rgb,1);
+    return float4(result.rgb,1);
 }
 
 vertexOutput3Dto2D VS_3D_to_2D(vertexInput3Dto2D IN)
@@ -382,8 +381,8 @@ float4 PS_3D_to_2D(vertexOutput3Dto2D IN): color
 	float4 colour1=tex2D(fade_texture,texc);
 	float4 colour2=tex2D(fade_texture_2,texc);
 #endif
-	float4 colour=lerp(colour1,colour2,skyInterp);
-    return colour;
+	float4 result=lerp(colour1,colour2,skyInterp);
+    return result;
 }
 
 struct vertexInputPosTex
@@ -409,8 +408,8 @@ vertexOutputPosTex VS_PointStars(vertexInputPosTex IN)
 
 float4 PS_PointStars(vertexOutputPosTex IN): color
 {
-	float3 colour=starBrightness*float3(1.f,1.f,1.f)*IN.texCoords.x;
-	return float4(colour,1.f);
+	float3 result=starBrightness*float3(1.f,1.f,1.f)*IN.texCoords.x;
+	return float4(result,1.f);
 }
 
 //------------------------------------

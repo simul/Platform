@@ -12,7 +12,7 @@
 SIMUL_DIRECTX1x_EXPORT_CLASS SimulOceanRendererDX1x : public simul::terrain::BaseSeaRenderer
 {
 public:
-	SimulOceanRendererDX1x();
+	SimulOceanRendererDX1x(simul::terrain::SeaKeyframer *s);
 	virtual ~SimulOceanRendererDX1x();
 	// init & cleanup
 	void RestoreDeviceObjects(ID3D11Device* pd3dDevice);

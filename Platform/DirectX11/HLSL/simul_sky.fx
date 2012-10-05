@@ -43,7 +43,7 @@ float hazeEccentricity;
 float skyInterp;
 float altitudeTexCoord;
 #define pi (3.1415926536f)
-float3 colour;
+float4 colour;
 //------------------------------------
 // Structures 
 //------------------------------------
@@ -141,8 +141,8 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
 	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
 		/(float3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
-	float3 colour=BetaTotal*inscatter_factor.rgb;
-	return colour;
+	float3 result=BetaTotal*inscatter_factor.rgb;
+	return result;
 }
 
 vertexOutput VS_DrawCubemap(vertexInput IN) 
@@ -156,8 +156,8 @@ vertexOutput VS_DrawCubemap(vertexInput IN)
 float4 PS_DrawCubemap( vertexOutput IN): SV_TARGET
 {
 	float3 view=(IN.wDirection.xyz);
-	float4 colour=cubeTexture.Sample(samplerState,view);
-	return float4(colour.rgb,1.f);
+	float4 result=cubeTexture.Sample(samplerState,view);
+	return float4(result.rgb,1.f);
 }
 
 float4 PS_Mainc( geomOutput IN): SV_TARGET
@@ -173,9 +173,9 @@ float4 PS_Mainc( geomOutput IN): SV_TARGET
 	float4 insc2=skyTexture2.Sample(samplerState,texcoord);
 	float4 insc=lerp(insc1,insc2,skyInterp);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float3 colour=InscatterFunction(insc,cos0);
+	float3 result=InscatterFunction(insc,cos0);
 
-	return float4(colour.rgb,1.f);
+	return float4(result.rgb,1.f);
 }
 
 float4 PS_Main( vertexOutput IN): SV_TARGET
@@ -191,8 +191,8 @@ float4 PS_Main( vertexOutput IN): SV_TARGET
 	float4 insc2=skyTexture2.Sample(samplerState,texcoord);
 	float4 insc=lerp(insc1,insc2,skyInterp);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float3 colour=InscatterFunction(insc,cos0);
-	return float4(colour.rgb,1.f);
+	float3 result=InscatterFunction(insc,cos0);
+	return float4(result.rgb,1.f);
 }
 
 struct vertexInput3Dto2D
@@ -220,8 +220,8 @@ float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 	float3 texc=float3(IN.texCoords.xy,altitudeTexCoord);
 	float4 colour1=fadeTexture1.Sample(fadeSamplerState,texc);
 	float4 colour2=fadeTexture2.Sample(fadeSamplerState,texc);
-	float4 colour=lerp(colour1,colour2,skyInterp);
-    return colour;
+	float4 result=lerp(colour1,colour2,skyInterp);
+    return result;
 }
 
 vertexOutput3Dto2D VS_ShowSkyTexture(vertexInput3Dto2D IN) 
@@ -235,11 +235,11 @@ vertexOutput3Dto2D VS_ShowSkyTexture(vertexInput3Dto2D IN)
 float4 PS_ShowSkyTexture(vertexOutput3Dto2D IN): SV_TARGET
 {
 #ifdef USE_ALTITUDE_INTERPOLATION
-	float4 colour=skyTexture1.Sample(fadeSamplerState,float2(IN.texCoords.y,altitudeTexCoord));
+	float4 result=skyTexture1.Sample(fadeSamplerState,float2(IN.texCoords.y,altitudeTexCoord));
 #else
-	float4 colour=skyTexture1.Sample(fadeSamplerState,float2(IN.texCoords.y,0));
+	float4 result=skyTexture1.Sample(fadeSamplerState,float2(IN.texCoords.y,0));
 #endif
-    return float4(.05*colour.rgb,1);
+    return float4(.05*result.rgb,1);
 }
 
 struct svertexInput
@@ -262,17 +262,16 @@ svertexOutput VS_Sun(svertexInput IN)
     return OUT;
 }
 
+// Sun could be overbright. So the colour is in the range [0,1], and a brightness factor is
+// stored in the alpha channel.
 float4 PS_Sun( svertexOutput IN): SV_TARGET
 {
 	float r=length(IN.tex);
-	float brightness;
-	if(r<0.99f)
-		brightness=(0.99f-r)/0.4f;
-	else
-		brightness=0.f;
-	brightness=saturate(brightness);
-	float3 output=brightness*colour;
-	return float4(output,1.f);
+	if(r>1.0)
+		discard;
+	float brightness=saturate((1.0-r)/0.1)+colour.a*saturate((0.9-r)/0.1);
+	float3 result=brightness*colour.rgb;
+	return float4(result,1.f);
 }
 
 float4 PS_Flare( svertexOutput IN): SV_TARGET
@@ -281,19 +280,41 @@ float4 PS_Flare( svertexOutput IN): SV_TARGET
 	return float4(output,1.f);
 }
 
+float approx_oren_nayar(float roughness,float3 view,float3 normal,float3 lightDir)
+{
+	float roughness2 = roughness * roughness;
+	float2 oren_nayar_fraction = roughness2 / (roughness2 + float2(0.33, 0.09));
+	float2 oren_nayar = float2(1, 0) + float2(-0.5, 0.45) * oren_nayar_fraction;
+	// Theta and phi
+	float2 cos_theta = saturate(float2(dot(normal, lightDir), dot(normal, view)));
+	float2 cos_theta2 = cos_theta * cos_theta;
+	float u=saturate((1-cos_theta2.x) * (1-cos_theta2.y));
+	float sin_theta = sqrt(u);
+	float3 light_plane = normalize(lightDir - cos_theta.x * normal);
+	float3 view_plane = normalize(view - cos_theta.y * normal);
+	float cos_phi = saturate(dot(light_plane, view_plane));
+	// Composition
+	float diffuse_oren_nayar = cos_phi * sin_theta / max(0.00001,max(cos_theta.x, cos_theta.y));
+	float diffuse = cos_theta.x * (oren_nayar.x + oren_nayar.y * diffuse_oren_nayar);
+	return diffuse;
+}
+
 float4 PS_Planet(svertexOutput IN): SV_TARGET
 {
-	float4 output=flareTexture.Sample(flareSamplerState,float2(.5f,.5f)-0.5f*IN.tex);
+	float4 result=flareTexture.Sample(flareSamplerState,float2(.5f,.5f)-0.5f*IN.tex);
 	// IN.tex is +- 1.
 	float3 normal;
-	normal.x=-IN.tex.x;
+	normal.x=IN.tex.x;
 	normal.y=IN.tex.y;
 	float l=length(IN.tex);
-	normal.z=sqrt(1.f-l*l);
-	float light=saturate(dot(normal.xyz,lightDir.xyz));
-	//output.rgb*=colour.rgb;
-	output.rgb*=light;
-	return output;
+	if(l>1.0)
+		discard;
+	normal.z=-sqrt(1.0-l*l);
+	float light=approx_oren_nayar(0.2,float3(0,0,1.0),normal,lightDir);
+	result.rgb*=colour.rgb;
+	result.rgb*=light;
+	result.a*=saturate((0.99-l)/0.01);
+	return result;
 }
 
 
@@ -320,7 +341,7 @@ BlendState DoBlend
 	SrcBlend = One;
 	DestBlend = One;
 };
-BlendState PartBlend
+BlendState AlphaBlend
 {
 	BlendEnable[0] = TRUE;
 	SrcBlend = SRC_ALPHA;
@@ -431,7 +452,7 @@ technique11 simul_planet
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
 technique11 draw_cubemap

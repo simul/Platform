@@ -24,6 +24,8 @@ namespace simul
 {
 	namespace dx1x_namespace
 	{
+		extern SIMUL_DIRECTX1x_EXPORT void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir);
+		extern SIMUL_DIRECTX1x_EXPORT const float *GetCameraPosVector(D3DXMATRIX &view,bool y_vertical);
 		extern SIMUL_DIRECTX1x_EXPORT void PipeCompilerOutput(bool p);
 		extern SIMUL_DIRECTX1x_EXPORT void SetShaderPath(const char *path);
 		extern SIMUL_DIRECTX1x_EXPORT void SetTexturePath(const char *path);
@@ -82,8 +84,7 @@ extern void SIMUL_DIRECTX1x_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,f
 extern void SIMUL_DIRECTX1x_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical);
 
 extern void SIMUL_DIRECTX1x_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos);
-extern void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir);
-extern void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *cam_pos,const float *dir,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj);
+extern void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dir,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
 
 extern void RenderTexture(ID3D1xDevice *m_pd3dDevice,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech);
 

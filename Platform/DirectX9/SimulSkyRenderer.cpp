@@ -7,7 +7,7 @@
 // agreement.
 
 // SimulSkyRenderer.cpp A renderer for skies.
-
+#define NOMINMAX
 #include "SimulSkyRenderer.h"
 
 #ifdef XBOX
@@ -693,7 +693,6 @@ float sun_angular_size=3.14159f/180.f/2.f;
 bool SimulSkyRenderer::RenderSun()
 {
 	float alt_km=0.001f*y_vertical?cam_pos.y:cam_pos.z;
-
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
@@ -701,6 +700,15 @@ bool SimulSkyRenderer::RenderSun()
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
 	sunlight*=pow(1.f-sun_occlusion,0.25f)*25.f;//2700.f;
+	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
+	// to the range [0,1], and store a brightness multiplier in the alpha channel!
+	sunlight.w=1.f;
+	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
+	if(max_bright>1.f)
+	{
+		sunlight*=1.f/max_bright;
+		sunlight.w=max_bright;
+	}
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
 	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
@@ -770,7 +778,7 @@ void SimulSkyRenderer::EnsureTextureCycle()
 
 bool SimulSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
-	float alt_km=0.001f*cam_pos.y;
+	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	if(do_lighting)
 		m_pSkyEffect->SetTechnique(m_hTechniquePlanet);
 	else

@@ -77,13 +77,18 @@ void FramebufferDX1x::RestoreDeviceObjects(void *dev)
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
+	RecompileShaders();
+	CreateBuffers();
+}
+
+void FramebufferDX1x::RecompileShaders()
+{
 	SAFE_RELEASE(m_pTonemapEffect);
-	hr=CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx"));
+	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx"));
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
 	SkyOverStarsTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_over_stars");
 	hdrTexture				=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
-	CreateBuffers();
 }
 
 void FramebufferDX1x::InvalidateDeviceObjects()

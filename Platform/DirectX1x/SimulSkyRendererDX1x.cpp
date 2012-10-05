@@ -1,5 +1,5 @@
 
-// Copyright (c) 2007-2011 Simul Software Ltd
+// Copyright (c) 2007-2012 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -8,7 +8,7 @@
 // agreement.
 
 // SimulSkyRendererDX1x.cpp A renderer for skies.
-
+#define NOMINMAX
 #include "SimulSkyRendererDX1x.h"
 
 #include <tchar.h>
@@ -584,23 +584,29 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 	proj=tmp;*/
 	return sun_occlusion;
 }
-simul::sky::float4 sunlight;
+
 bool SimulSkyRendererDX1x::RenderSun()
 {
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
-	sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
+	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
-	sunlight*=2700.f;
+	sunlight*=pow(1.f-sun_occlusion,0.25f)*25.f;//2700.f;
+	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
+	// to the range [0,1], and store a brightness multiplier in the alpha channel!
+	sunlight.w=1.f;
+	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
+	if(max_bright>1.f)
+	{
+		sunlight*=1.f/max_bright;
+		sunlight.w=max_bright;
+	}
 	colour->SetFloatVector(sunlight);
-
-//	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
-	float sun_angular_size=3.14159f/180.f/2.f;
-	RenderAngledQuad(m_pd3dDevice,cam_pos,sun_dir,y_vertical,sun_angular_size,m_pSkyEffect,m_hTechniqueSun,view,proj);
+	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
+	RenderAngledQuad(m_pd3dDevice,sun_dir,y_vertical,sun_angular_size,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
 	// Start the query
 /*d3dQuery->Begin();
 	hr=RenderAngledQuad(sun_dir,sun_angular_size);
@@ -631,14 +637,21 @@ bool SimulSkyRendererDX1x::RenderPlanet(void* tex,float rad,const float *dir,con
 	planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 	D3DXVECTOR4 planet_dir(dir);
 	//m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
-	RenderAngledQuad(m_pd3dDevice,cam_pos,planet_dir,y_vertical,rad,m_pSkyEffect,m_hTechniquePlanet,view,proj);
+	ID3D1xEffectVectorVariable*	colour=m_pSkyEffect->GetVariableByName("colour")->AsVector();
+	colour->SetFloatVector((const float *)(&planet_colour));
+	
+	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
+	if(y_vertical)
+		std::swap(sun_dir.y,sun_dir.z);
+	RenderAngledQuad(m_pd3dDevice,planet_dir,y_vertical,rad,m_pSkyEffect,m_hTechniquePlanet,view,proj
+		,sun_dir);
 	return true;
 }
 
 bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 {
-	HRESULT hr=S_OK;
-	if(!m_pSkyEffect)
+HRESULT hr=S_OK;
+/*	if(!m_pSkyEffect)
 		return (hr==S_OK);
 	float magnitude=exposure*(1.f-sun_occlusion);
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
@@ -654,9 +667,9 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 	//m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
 	//flareTexture->SetResource(flare_texture_SRV);
 	float sun_angular_size=3.14159f/180.f/2.f;
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
+	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 //	hr=RenderAngledQuad(sun_dir,sun_angular_size*20.f*magnitude);
-	RenderAngledQuad(m_pd3dDevice,cam_pos,sun_dir,y_vertical,sun_angular_size*20.f*magnitude,m_pSkyEffect,m_hTechniqueFlare,view,proj);
+	RenderAngledQuad(m_pd3dDevice,sun_dir,y_vertical,sun_angular_size*20.f*magnitude,m_pSkyEffect,m_hTechniqueFlare,view,proj,sun_dir);*/
 	return (hr==S_OK);
 }
 

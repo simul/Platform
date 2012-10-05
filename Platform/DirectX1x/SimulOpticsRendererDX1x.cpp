@@ -105,14 +105,14 @@ void SimulOpticsRendererDX1x::RenderFlare(float exposure,const float *dir,const 
 	D3DXVECTOR3 cam_pos,cam_dir;
 	//m_pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 	//m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&proj);
-	GetCameraPosVector(view,y_vertical,(float*)&cam_pos,(float*)&cam_dir);
+	simul::dx1x_namespace::GetCameraPosVector(view,y_vertical,(float*)&cam_pos,(float*)&cam_dir);
 	lensFlare.UpdateCamera(cam_dir,sun_dir);
 	flare_magnitude*=lensFlare.GetStrength();
 	sunlight*=sun_mult*flare_magnitude;
 	colour->SetFloatVector((const float*)(&sunlight));
 	if(flare_magnitude>0.f)
 	{
-		RenderAngledQuad(m_pd3dDevice,cam_pos,sun_dir,y_vertical,flare_angular_size*flare_magnitude,m_pFlareEffect,m_hTechniqueFlare,view,proj);
+		RenderAngledQuad(m_pd3dDevice,sun_dir,y_vertical,flare_angular_size*flare_magnitude,m_pFlareEffect,m_hTechniqueFlare,view,proj,sun_dir);
 		sunlight*=0.25f;
 		for(int i=0;i<lensFlare.GetNumArtifacts();i++)
 		{
@@ -121,7 +121,7 @@ void SimulOpticsRendererDX1x::RenderFlare(float exposure,const float *dir,const 
 			int t=lensFlare.GetArtifactType(i);
 			flareTexture->SetResource(halo_textures[t]);
 			colour->SetFloatVector((const float*)(&sunlight));
-			RenderAngledQuad(m_pd3dDevice,cam_pos,pos,y_vertical,flare_angular_size*sz*flare_magnitude,m_pFlareEffect,m_hTechniqueFlare,view,proj);
+			RenderAngledQuad(m_pd3dDevice,pos,y_vertical,flare_angular_size*sz*flare_magnitude,m_pFlareEffect,m_hTechniqueFlare,view,proj,sun_dir);
 		}
 	}
 	m_pImmediateContext->VSSetShader(NULL, NULL, 0);

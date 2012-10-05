@@ -32,7 +32,8 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 	simulOpticsRenderer=new SimulOpticsRendererDX1x();
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->SetYVertical(y_vertical);
-	simulOceanRenderer=new SimulOceanRendererDX1x();
+	if(env->seaKeyframer)
+		simulOceanRenderer=new SimulOceanRendererDX1x(env->seaKeyframer);
 	if(simulOceanRenderer)
 		simulOceanRenderer->SetYVertical(y_vertical);
 	SetYVertical(y_vertical);

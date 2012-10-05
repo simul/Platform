@@ -79,8 +79,9 @@ struct Const_Shading
 };
 
 
-SimulOceanRendererDX1x::SimulOceanRendererDX1x()
-	:m_pd3dDevice(NULL)
+SimulOceanRendererDX1x::SimulOceanRendererDX1x(simul::terrain::SeaKeyframer *s)
+	:simul::terrain::BaseSeaRenderer(s)
+	,m_pd3dDevice(NULL)
 	,m_pImmediateContext(NULL)
 	,g_pOceanSurfVS(NULL)
 	,g_pOceanSurfPS(NULL)
@@ -169,7 +170,7 @@ void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 #else
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
-	g_pOceanSimulator = new OceanSimulator(&ocean_parameters, m_pd3dDevice);
+	g_pOceanSimulator = new OceanSimulator(ocean_parameters, m_pd3dDevice);
 	// Update the simulation for the first time.
 	g_pOceanSimulator->updateDisplacementMap(0);
 
@@ -193,12 +194,12 @@ void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 
 	Const_Shading shading_data;
 	// Grid side length * 2
-	shading_data.g_TexelLength_x2 = ocean_parameters.patch_length / ocean_parameters.dmap_dim * 2;;
+	shading_data.g_TexelLength_x2 = ocean_parameters->patch_length / ocean_parameters->dmap_dim * 2;;
 	// Color
 	shading_data.g_WaterbodyColor = g_WaterbodyColor;
 	// Texcoord
-	shading_data.g_UVScale = 1.0f / ocean_parameters.patch_length;
-	shading_data.g_UVOffset = 0.5f / ocean_parameters.dmap_dim;
+	shading_data.g_UVScale = 1.0f / ocean_parameters->patch_length;
+	shading_data.g_UVOffset = 0.5f / ocean_parameters->dmap_dim;
 	// Perlin
 	shading_data.g_PerlinSize = g_PerlinSize;
 	shading_data.g_PerlinAmplitude = g_PerlinAmplitude;
@@ -570,9 +571,9 @@ void SimulOceanRendererDX1x::Render()
 
 	// Build rendering list
 	g_render_list.clear();
-	float ocean_extent = ocean_parameters.patch_length * (1 << g_FurthestCover);
+	float ocean_extent = ocean_parameters->patch_length * (1 << g_FurthestCover);
 	QuadNode root_node = {D3DXVECTOR2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
-	buildNodeList(root_node,ocean_parameters.patch_length,view,proj);
+	buildNodeList(root_node,ocean_parameters->patch_length,view,proj);
 
 	// Matrices
 	D3DXMATRIX matView = view;
@@ -626,7 +627,7 @@ void SimulOceanRendererDX1x::Render()
 			continue;
 
 		// Check adjacent patches and select mesh pattern
-		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters.patch_length);
+		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters->patch_length);
 
 		// Find the right LOD to render
 		int level_size = g_MeshDim;
@@ -648,11 +649,11 @@ void SimulOceanRendererDX1x::Render()
 		D3DXMatrixTranspose(&call_consts.g_matWorldViewProj, &matWVP);
 
 		// Texcoord for perlin noise
-		D3DXVECTOR2 uv_base = node.bottom_left / ocean_parameters.patch_length * g_PerlinSize;
+		D3DXVECTOR2 uv_base = node.bottom_left / ocean_parameters->patch_length * g_PerlinSize;
 		call_consts.g_UVBase = uv_base;
 
 		// Constant g_PerlinSpeed need to be adjusted mannually
-		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters.wind_dir)*(-(float)app_time)* g_PerlinSpeed;
+		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters->wind_dir)*(-(float)app_time)* g_PerlinSpeed;
 		call_consts.g_PerlinMovement = perlin_move;
 
 		// Eye point
@@ -706,9 +707,9 @@ void SimulOceanRendererDX1x::RenderWireframe(float time)
 	ID3D11ShaderResourceView* displacement_map = NULL;//g_pOceanSimulator->getD3D11DisplacementMap();
 	// Build rendering list
 	g_render_list.clear();
-	float ocean_extent = ocean_parameters.patch_length * (1 << g_FurthestCover);
+	float ocean_extent = ocean_parameters->patch_length * (1 << g_FurthestCover);
 	QuadNode root_node = {D3DXVECTOR2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
-	buildNodeList(root_node,ocean_parameters.patch_length,view,proj);
+	buildNodeList(root_node,ocean_parameters->patch_length,view,proj);
 
 	// Matrices
 	D3DXMATRIX matView = view;//*camera.GetViewMatrix();
@@ -757,7 +758,7 @@ void SimulOceanRendererDX1x::RenderWireframe(float time)
 			continue;
 
 		// Check adjacent patches and select mesh pattern
-		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters.patch_length);
+		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters->patch_length);
 
 		// Find the right LOD to render
 		int level_size = g_MeshDim;
@@ -779,11 +780,11 @@ void SimulOceanRendererDX1x::RenderWireframe(float time)
 		D3DXMatrixTranspose(&call_consts.g_matWorldViewProj, &matWVP);
 
 		// Texcoord for perlin noise
-		D3DXVECTOR2 uv_base = node.bottom_left / ocean_parameters.patch_length * g_PerlinSize;
+		D3DXVECTOR2 uv_base = node.bottom_left / ocean_parameters->patch_length * g_PerlinSize;
 		call_consts.g_UVBase = uv_base;
 
 		// Constant g_PerlinSpeed need to be adjusted mannually
-		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters.wind_dir) *-time * g_PerlinSpeed;
+		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters->wind_dir) *-time * g_PerlinSpeed;
 		call_consts.g_PerlinMovement = perlin_move;
 
 		// Eye point

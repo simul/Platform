@@ -62,6 +62,37 @@ namespace simul
 		#endif
 			return t;
 		}
+		void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir)
+		{
+			D3DXMATRIX tmp1;
+			D3DXMatrixInverse(&tmp1,NULL,&view);
+			
+			dcam_pos[0]=tmp1._41;
+			dcam_pos[1]=tmp1._42;
+			dcam_pos[2]=tmp1._43;
+			if(view_dir)
+			{
+				if(y_vertical)
+				{
+					view_dir[0]=view._13;
+					view_dir[1]=view._23;
+					view_dir[2]=view._33;
+				}
+				else
+				{
+					view_dir[0]=-view._13;
+					view_dir[1]=-view._23;
+					view_dir[2]=-view._33;
+				}
+			}
+		}
+
+		const float *GetCameraPosVector(D3DXMATRIX &view,bool y_vertical)
+		{
+			static float cam_pos[4],view_dir[4];
+			GetCameraPosVector(view,y_vertical,cam_pos,view_dir);
+			return cam_pos;
+		}
 		void PipeCompilerOutput(bool p)
 		{
 			pipe_compiler_output=p;
@@ -693,37 +724,15 @@ void BreakIfDebugging()
 	DebugBreak();
 }
 
-void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir)
-{
-	D3DXMATRIX tmp1;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	
-	dcam_pos[0]=tmp1._41;
-	dcam_pos[1]=tmp1._42;
-	dcam_pos[2]=tmp1._43;
-	if(view_dir)
-	{
-		if(y_vertical)
-		{
-			view_dir[0]=view._13;
-			view_dir[1]=view._23;
-			view_dir[2]=view._33;
-		}
-		else
-		{
-			view_dir[0]=-view._13;
-			view_dir[1]=-view._23;
-			view_dir[2]=-view._33;
-		}
-	}
-}
 
-void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *cam_pos,const float *cam_dir,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj)
+void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj
+					  ,D3DXVECTOR3 sun_dir)
 {
 	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
 	// But D3DXMatrixRotationYawPitchRoll uses only left-handed, hence the change of sign below.
-	D3DXVECTOR3 pos(cam_pos);
-	D3DXVECTOR3 dir(cam_dir);
+	D3DXVECTOR3 pos;
+	D3DXVECTOR3 dir(dr);
+	pos=GetCameraPosVector(view,y_vertical);
 	float Yaw=atan2(dir.x,y_vertical?dir.z:dir.y);
 	float Pitch=-asin(y_vertical?dir.y:dir.z);
 	HRESULT hr=S_OK;
@@ -750,6 +759,12 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *cam_pos,const floa
 	world._41=pos.x;
 	world._42=pos.y;
 	world._43=pos.z;
+	D3DXVECTOR3 sun2;
+	D3DXMATRIX inv_world;
+	D3DXMatrixInverse(&inv_world,NULL,&world);
+	D3DXVec3TransformNormal(  &sun2,
+						  &sun_dir,
+						  &inv_world);
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
@@ -757,6 +772,8 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *cam_pos,const floa
 	{
 		ID3D1xEffectMatrixVariable*	worldViewProj=effect->GetVariableByName("worldViewProj")->AsMatrix();
 		worldViewProj->SetMatrix((const float *)(&tmp1));
+		ID3D1xEffectVectorVariable*	lightDir=effect->GetVariableByName("lightDir")->AsVector();
+		lightDir->SetFloatVector((const float *)(&sun2));
 	}
 	struct Vertext
 	{
