@@ -35,7 +35,11 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 	if(env->seaKeyframer)
 		simulOceanRenderer=new SimulOceanRendererDX1x(env->seaKeyframer);
 	if(simulOceanRenderer)
+	{
 		simulOceanRenderer->SetYVertical(y_vertical);
+		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseSkyRenderer())
+			simulOceanRenderer->SetSkyInterface(simulWeatherRenderer->GetBaseSkyRenderer()->GetSkyKeyframer());
+	}
 	SetYVertical(y_vertical);
 }
 
@@ -129,6 +133,13 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		simulOceanRenderer->Update(fTimeStep);
 		simulOceanRenderer->SetCubemap((ID3D1xShaderResourceView*	)simulWeatherRenderer->GetCubemap());
+		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
+		{
+			void *l,*i;
+			simulWeatherRenderer->GetSkyRenderer()->Get2DLossAndInscatterTextures(&l,&i);
+			simulOceanRenderer->SetLossTexture(l);
+			simulOceanRenderer->SetInscatterTexture(i);
+		}
 		simulOceanRenderer->SetMatrices(view,proj);
 		simulOceanRenderer->Render();
 		if(simulOceanRenderer->GetShowWireframes())

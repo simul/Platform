@@ -881,11 +881,11 @@ void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,
 		void* *i1)
 {
 	if(loss_2d)
-		*l1=(void*)loss_2d->hdr_buffer_texture;
+		*l1=(void*)loss_2d->hdr_buffer_texture_SRV;
 	else
 		*l1=NULL;
 	if(inscatter_2d)
-		*i1=(void*)inscatter_2d->hdr_buffer_texture;
+		*i1=(void*)inscatter_2d->hdr_buffer_texture_SRV;
 	else
 		*l1=NULL;
 }

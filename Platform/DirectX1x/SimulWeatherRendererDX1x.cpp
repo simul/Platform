@@ -346,8 +346,8 @@ void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()
 	simulSkyRenderer->Get2DLossAndInscatterTextures(&l,&i);
 	if(simulCloudRenderer)
 	{
-		simulCloudRenderer->SetLossTextures(l);
-		simulCloudRenderer->SetInscatterTextures(i);
+		simulCloudRenderer->SetLossTexture(l);
+		simulCloudRenderer->SetInscatterTexture(i);
 	}
 }
 void SimulWeatherRendererDX1x::Update(float dt)

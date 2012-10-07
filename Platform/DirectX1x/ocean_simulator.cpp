@@ -394,8 +394,8 @@ void OceanSimulator::initHeightMap(D3DXVECTOR2* out_h0, float* out_omega)
 
 			float phil = (K.x == 0 && K.y == 0) ? 0 : sqrtf(Phillips(K, wind_dir, v, a, dir_depend));
 
-			out_h0[i * (height_map_dim + 4) + j].x = float(phil * Gauss() * HALF_SQRT_2);
-			out_h0[i * (height_map_dim + 4) + j].y = float(phil * Gauss() * HALF_SQRT_2);
+			out_h0[i * (height_map_dim + 4) + j].x = phil*Gauss()*HALF_SQRT_2;
+			out_h0[i * (height_map_dim + 4) + j].y = phil*Gauss()*HALF_SQRT_2;
 
 			// The angular frequency is following the dispersion relation:
 			//            out_omega^2 = g*k
@@ -450,7 +450,6 @@ void OceanSimulator::updateDisplacementMap(float time)
 	cs0_srvs[0] = NULL;
 	cs0_srvs[1] = NULL;
 	m_pd3dImmediateContext->CSSetShaderResources(0, 2, cs0_srvs);
-
 
 	// Perform Fast (inverse) Fourier Transform from the source Ht to the destination Dxyz.
 	// NOTE: we also provide the SRV of Dxyz so that FFT can use it as a temporary buffer and save space.

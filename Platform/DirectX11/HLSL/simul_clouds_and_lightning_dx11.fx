@@ -55,8 +55,8 @@ SamplerState lightningSamplerState
 	AddressV = Border;
 	AddressW = Border;
 };
-Texture2D skyLossTexture1;
-Texture2D skyInscatterTexture1;
+Texture2D skyLossTexture;
+Texture2D skyInscatterTexture;
 SamplerState fadeSamplerState 
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -162,8 +162,8 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 {
 	float3 view=normalize(IN.wPosition);
-	float3 loss=skyLossTexture1.Sample(fadeSamplerState,IN.fade_texc).rgb;
-	float4 insc=skyInscatterTexture1.Sample(fadeSamplerState,IN.fade_texc);
+	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
+	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	float3 inscatter=InscatterFunction(insc,cos0);
@@ -217,8 +217,8 @@ float4 PS_CloudsLowDef( vertexOutput IN): SV_TARGET
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	
-	float3 loss=skyLossTexture1.Sample(fadeSamplerState,IN.fade_texc).rgb;
-	float4 insc=skyInscatterTexture1.Sample(fadeSamplerState,IN.fade_texc);
+	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
+	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float3 ambient=density.w*skylightColour.rgb;
 
 	float opacity=density.z;
@@ -252,8 +252,8 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	
-	float3 loss=skyLossTexture1.Sample(fadeSamplerState,IN.fade_texc).rgb;
-	float4 insc=skyInscatterTexture1.Sample(fadeSamplerState,IN.fade_texc);
+	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
+	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float3 ambient=density.w*skylightColour.rgb;
 
 	float opacity=density.z;

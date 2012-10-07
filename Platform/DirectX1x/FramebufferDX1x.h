@@ -78,8 +78,8 @@ protected:
 	//! The texture the scene is rendered to.
 public:
 	ID3D1xTexture2D*					hdr_buffer_texture;
-protected:
 	ID3D1xShaderResourceView*			hdr_buffer_texture_SRV;
+protected:
 	//! The depth buffer.
 	ID3D1xTexture2D*					buffer_depth_texture;
 	ID3D1xShaderResourceView*			buffer_depth_texture_SRV;

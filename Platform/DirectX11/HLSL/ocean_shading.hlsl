@@ -51,38 +51,48 @@ cbuffer cbChangePerCall : register(b4)
 	// Transform matrices
 	float4x4	g_matLocal;
 	float4x4	g_matWorldViewProj;
+	float4x4	g_matWorld;
 
 	// Misc per draw call constants
 	float2		g_UVBase;
 	float2		g_PerlinMovement;
 	float3		g_LocalEye;
+
+	// Atmospherics
+	float		hazeEccentricity;
+	float3		lightDir;
+	float4		mieRayleighRatio;
 }
 
 
 //-----------------------------------------------------------------------------------
 // Texture & Samplers
 //-----------------------------------------------------------------------------------
-Texture2D	g_texDisplacement	: register(t0); // FFT wave displacement map in VS
-Texture2D	g_texPerlin			: register(t1); // FFT wave gradient map in PS
-Texture2D	g_texGradient		: register(t2); // Perlin wave displacement & gradient map in both VS & PS
-Texture1D	g_texFresnel		: register(t3); // Fresnel factor lookup table
-TextureCube	g_texReflectCube	: register(t4); // A small skybox cube texture for reflection
+Texture2D	g_texDisplacement		: register(t0);		// FFT wave displacement map in VS
+Texture2D	g_texPerlin				: register(t1);		// FFT wave gradient map in PS
+Texture2D	g_texGradient			: register(t2);		// Perlin wave displacement & gradient map in both VS & PS
+Texture1D	g_texFresnel			: register(t3);		// Fresnel factor lookup table
+TextureCube	g_texReflectCube		: register(t4);		// A small skybox cube texture for reflection
+
+Texture2D	g_skyLossTexture		: register(t5);
+Texture2D	g_skyInscatterTexture	: register(t6);
 
 // FFT wave displacement map in VS, XY for choppy field, Z for height field
 SamplerState g_samplerDisplacement	: register(s0);
 
 // Perlin noise for composing distant waves, W for height field, XY for gradient
-SamplerState g_samplerPerlin	: register(s1);
+SamplerState g_samplerPerlin		: register(s1);
 
 // FFT wave gradient map, converted to normal value in PS
-SamplerState g_samplerGradient	: register(s2);
+SamplerState g_samplerGradient		: register(s2);
 
 // Fresnel factor lookup table
-SamplerState g_samplerFresnel	: register(s3);
+SamplerState g_samplerFresnel		: register(s3);
 
 // A small sky cubemap for reflection
-SamplerState g_samplerCube		: register(s4);
+SamplerState g_samplerCube			: register(s4);
 
+SamplerState g_samplerAtmospherics	: register(s5);
 
 //-----------------------------------------------------------------------------
 // Name: OceanSurfVS
@@ -91,11 +101,14 @@ SamplerState g_samplerCube		: register(s4);
 //-----------------------------------------------------------------------------
 struct VS_OUTPUT
 {
-    float4 Position	 : SV_POSITION;
-    float2 TexCoord	 : TEXCOORD0;
-    float3 LocalPos	 : TEXCOORD1;
+    float4 Position		: SV_POSITION;
+    float2 TexCoord		: TEXCOORD0;
+    float3 LocalPos		: TEXCOORD1;
+    float2 fade_texc	: TEXCOORD2;
 };
-
+#ifndef MAX_FADE_DISTANCE_METRES
+	#define MAX_FADE_DISTANCE_METRES (300000.f)
+#endif
 VS_OUTPUT OceanSurfVS(float2 vPos : POSITION)
 {
 	VS_OUTPUT Output;
@@ -138,9 +151,38 @@ pos_local.z+=500.f*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_Per
 	// Pass thru texture coordinate
 	Output.TexCoord = uv_local;
 
+	float3 wPosition;
+	wPosition= mul(pos_local, g_matWorld).xyz;
+	
+	float3 view=normalize(wPosition.xyz);
+#ifdef Y_VERTICAL
+	float sine=view.y;
+#else
+	float sine=view.z;
+#endif
+	float depth=length(wPosition.xyz)/MAX_FADE_DISTANCE_METRES;
+	//OUT.fade_texc=float2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5f*(1.f-sine));
+	Output.fade_texc=float2(sqrt(depth),0.5f*(1.f-sine));
 	return Output; 
 }
 
+#define pi (3.1415926536f)
+float HenyeyGreenstein(float g,float cos0)
+{
+	float g2=g*g;
+	float u=1.f+g2-2.0*g*cos0;
+	return 0.5*0.079577+0.5*(1.0-g2)/(4.0*pi*sqrt(u*u*u));
+}
+
+float3 InscatterFunction(float4 inscatter_factor,float cos0)
+{
+	float BetaRayleigh=0.0596831*(1.0+cos0*cos0);
+	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
+	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
+		/(float3(1.0,1.0,1.0)+inscatter_factor.a*mieRayleighRatio.xyz);
+	float3 colour=BetaTotal*inscatter_factor.rgb;
+	return colour;
+}
 
 //-----------------------------------------------------------------------------
 // Name: OceanSurfPS
@@ -201,6 +243,8 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 /*	float cos_spec = clamp(dot(reflect_vec, g_SunDir), 0, 1);
 	float sun_spot = pow(cos_spec, g_Shineness);
 	water_color += g_SunColor * sun_spot;*/
+	float3 loss=g_skyLossTexture.Sample(g_samplerAtmospherics,In.fade_texc).rgb;
+	water_color*=loss;
 	return float4(water_color, 1);
 }
 

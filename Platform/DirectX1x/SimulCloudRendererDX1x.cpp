@@ -120,10 +120,8 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 	noise_texture(NULL),
 	lightning_texture(NULL),
 	illumination_texture(NULL),
-	sky_loss_texture_1(NULL),
-	sky_inscatter_texture_1(NULL),
-	skyLossTexture1Resource(NULL),
-	skyInscatterTexture1Resource(NULL),
+	skyLossTexture_SRV(NULL),
+	skyInscatterTexture_SRV(NULL),
 	noiseTextureResource(NULL),
 	lightningIlluminationTextureResource(NULL),
 	y_vertical(true)
@@ -157,42 +155,14 @@ void SimulCloudRendererDX1x::SetSkyInterface(simul::sky::BaseSkyInterface *si)
 	cloudKeyframer->SetSkyInterface(si);
 }
 
-void SimulCloudRendererDX1x::SetLossTextures(void *t)
+void SimulCloudRendererDX1x::SetLossTexture(void *t)
 {
-	ID3D1xResource* t1=((ID3D1xResource*)t);
-	if(sky_loss_texture_1!=t1)
-	{
-		sky_loss_texture_1=static_cast<ID3D1xTexture2D*>(t1);
-		if(skyLossTexture1)
-			skyLossTexture1->SetResource(NULL);
-		SAFE_RELEASE(skyLossTexture1Resource);
-		HRESULT hr;
-		if(t)
-		{
-			V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_loss_texture_1,NULL,&skyLossTexture1Resource));
-		}
-		else
-			skyLossTexture1Resource=NULL;
-	}
+	skyLossTexture_SRV=(ID3D1xShaderResourceView*)t;
 }
 
-void SimulCloudRendererDX1x::SetInscatterTextures(void *t)
+void SimulCloudRendererDX1x::SetInscatterTexture(void *t)
 {
-	ID3D1xResource* t1=((ID3D1xResource*)t);
-	if(sky_inscatter_texture_1!=t1)
-	{
-		sky_inscatter_texture_1=static_cast<ID3D1xTexture2D*>(t1);
-		if(skyInscatterTexture1)
-			skyInscatterTexture1->SetResource(NULL);
-		SAFE_RELEASE(skyInscatterTexture1Resource);
-		HRESULT hr;
-		if(t)
-		{
-			V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_inscatter_texture_1,NULL,&skyInscatterTexture1Resource));
-		}
-		else
-			skyInscatterTexture1Resource=NULL;
-	}
+	skyInscatterTexture_SRV=(ID3D1xShaderResourceView*)t;
 }
 
 void SimulCloudRendererDX1x::SetNoiseTextureProperties(int s,int f,int o,float p)
@@ -316,8 +286,8 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(lightning_texture);
 	SAFE_RELEASE(illumination_texture);
 	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(skyLossTexture1Resource);
-	SAFE_RELEASE(skyInscatterTexture1Resource);
+	SAFE_RELEASE(skyLossTexture_SRV);
+	SAFE_RELEASE(skyInscatterTexture_SRV);
 
 	SAFE_RELEASE(noiseTextureResource);
 	
@@ -571,8 +541,8 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	cloudDensity2						=m_pCloudEffect->GetVariableByName("cloudDensity2")->AsShaderResource();
 	noiseTexture						=m_pCloudEffect->GetVariableByName("noiseTexture")->AsShaderResource();
 	lightningIlluminationTexture		=m_pCloudEffect->GetVariableByName("lightningIlluminationTexture")->AsShaderResource();
-	skyLossTexture1						=m_pCloudEffect->GetVariableByName("skyLossTexture1")->AsShaderResource();
-	skyInscatterTexture1				=m_pCloudEffect->GetVariableByName("skyInscatterTexture1")->AsShaderResource();
+	skyLossTexture						=m_pCloudEffect->GetVariableByName("skyLossTexture")->AsShaderResource();
+	skyInscatterTexture					=m_pCloudEffect->GetVariableByName("skyInscatterTexture")->AsShaderResource();
 	return (hr==S_OK);
 }
 
@@ -595,8 +565,8 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	cloudDensity1->SetResource(cloudDensityResource[0]);
 	cloudDensity2->SetResource(cloudDensityResource[1]);
 	noiseTexture->SetResource(noiseTextureResource);
-	skyLossTexture1->SetResource(skyLossTexture1Resource);
-	skyInscatterTexture1->SetResource(skyInscatterTexture1Resource);
+	skyLossTexture->SetResource(skyLossTexture_SRV);
+	skyInscatterTexture->SetResource(skyInscatterTexture_SRV);
 
 	// Mess with the proj matrix to extend the far clipping plane:
 	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
@@ -779,8 +749,8 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 		m_pImmediateContext->Draw((v-startv)-2,0);
 
 	PIXEndNamedEvent();
-	skyLossTexture1->SetResource(NULL);
-	skyInscatterTexture1->SetResource(NULL);
+	skyLossTexture->SetResource(NULL);
+	skyInscatterTexture->SetResource(NULL);
 // To prevent BIZARRE DX11 warning, we re-apply the bass with the rendertextures unbound:
 	if(enable_lightning)
 		ApplyPass(m_hTechniqueCloudsAndLightning->GetPassByIndex(0));

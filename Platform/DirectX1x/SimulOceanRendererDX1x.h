@@ -25,6 +25,8 @@ public:
 	void RenderWireframe(float time);
 	void Update(float dt);
 	void SetCubemap(ID3D1xShaderResourceView *c);
+	void SetLossTexture(void *t1);
+	void SetInscatterTexture(void *t1);
 protected:
 	D3DXMATRIX view,proj;
 	ID3D11Device*						m_pd3dDevice;
@@ -58,6 +60,9 @@ protected:
 
 	// Environment maps
 	ID3D11ShaderResourceView* g_pSRV_ReflectCube;
+	// Atmospheric scattering
+	ID3D1xShaderResourceView* skyLossTexture_SRV;
+	ID3D1xShaderResourceView* skyInscatterTexture_SRV;
 
 	// Samplers
 	ID3D11SamplerState* g_pHeightSampler;
@@ -65,6 +70,7 @@ protected:
 	ID3D11SamplerState* g_pFresnelSampler;
 	ID3D11SamplerState* g_pPerlinSampler;
 	ID3D11SamplerState* g_pCubeSampler;
+	ID3D11SamplerState* g_pAtmosphericsSampler;
 	// create a triangle strip mesh for ocean surface.
 	void createSurfaceMesh();
 	// create color/fresnel lookup table.

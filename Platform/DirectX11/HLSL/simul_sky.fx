@@ -310,7 +310,7 @@ float4 PS_Planet(svertexOutput IN): SV_TARGET
 	if(l>1.0)
 		discard;
 	normal.z=-sqrt(1.0-l*l);
-	float light=approx_oren_nayar(0.2,float3(0,0,1.0),normal,lightDir);
+	float light=approx_oren_nayar(0.2,float3(0,0,1.0),normal,lightDir.xyz);
 	result.rgb*=colour.rgb;
 	result.rgb*=light;
 	result.a*=saturate((0.99-l)/0.01);

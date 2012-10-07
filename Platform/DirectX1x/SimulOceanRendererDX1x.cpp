@@ -1,5 +1,7 @@
 #include "SimulOceanRendererDX1x.h"
 #include "CreateEffectDX1x.h"
+#include "Simul/Sky/Float4.h"
+#include "Simul/Sky/SkyInterface.h"
 #include <D3DX11tex.h>
 #pragma warning(disable:4995)
 #include <vector>
@@ -45,9 +47,15 @@ struct Const_Per_Call
 {
 	D3DXMATRIX	g_matLocal;
 	D3DXMATRIX	g_matWorldViewProj;
+	D3DXMATRIX	g_matWorld;
 	D3DXVECTOR2 g_UVBase;
 	D3DXVECTOR2 g_PerlinMovement;
 	D3DXVECTOR3	g_LocalEye;
+	
+	// Atmospherics
+	float		hazeEccentricity;
+	D3DXVECTOR3	lightDir;
+	D3DXVECTOR4 mieRayleighRatio;
 };
 
 struct Const_Shading
@@ -106,12 +114,15 @@ SimulOceanRendererDX1x::SimulOceanRendererDX1x(simul::terrain::SeaKeyframer *s)
 	,g_pSRV_Perlin(NULL)
 	// Environment maps
 	,g_pSRV_ReflectCube(NULL)
+	,skyLossTexture_SRV(NULL)
+	,skyInscatterTexture_SRV(NULL)
 	// Samplers
 	,g_pHeightSampler(NULL)
 	,g_pGradientSampler(NULL)
 	,g_pFresnelSampler(NULL)
 	,g_pPerlinSampler(NULL)
 	,g_pCubeSampler(NULL)
+	,g_pAtmosphericsSampler(NULL)
 {
 }
 
@@ -263,6 +274,10 @@ void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 	m_pd3dDevice->CreateSamplerState(&sam_desc, &g_pFresnelSampler);
 	assert(g_pFresnelSampler);
 
+	sam_desc.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR;
+	m_pd3dDevice->CreateSamplerState(&sam_desc, &g_pAtmosphericsSampler);
+	assert(g_pAtmosphericsSampler);
+
 	// State blocks
 	D3D11_RASTERIZER_DESC ras_desc;
 	ras_desc.FillMode = D3D11_FILL_SOLID; 
@@ -328,6 +343,16 @@ void SimulOceanRendererDX1x::SetCubemap(ID3D1xShaderResourceView *c)
 	g_pSRV_ReflectCube=c;
 }
 
+void SimulOceanRendererDX1x::SetLossTexture(void *t)
+{
+	skyLossTexture_SRV=((ID3D1xShaderResourceView*)t);
+}
+
+void SimulOceanRendererDX1x::SetInscatterTexture(void *t)
+{
+	skyInscatterTexture_SRV=((ID3D1xShaderResourceView*)t);
+}
+
 void SimulOceanRendererDX1x::InvalidateDeviceObjects()
 {
     // Ocean object
@@ -349,6 +374,7 @@ void SimulOceanRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(g_pFresnelSampler);
 	SAFE_RELEASE(g_pPerlinSampler);
 	SAFE_RELEASE(g_pCubeSampler);
+	SAFE_RELEASE(g_pAtmosphericsSampler);
 
 	SAFE_RELEASE(g_pPerCallCB);
 	SAFE_RELEASE(g_pPerFrameCB);
@@ -590,12 +616,20 @@ void SimulOceanRendererDX1x::Render()
 	ID3D11ShaderResourceView* ps_srvs[4] = {g_pSRV_Perlin, gradient_map, g_pSRV_Fresnel, g_pSRV_ReflectCube};
     m_pImmediateContext->PSSetShaderResources(1, 4, &ps_srvs[0]);
 
+	// Atmospheric scattering
+	if(skyLossTexture_SRV)
+		m_pImmediateContext->PSSetShaderResources(1, 5,&skyLossTexture_SRV);
+	if(skyInscatterTexture_SRV)
+		m_pImmediateContext->PSSetShaderResources(1, 6,&skyInscatterTexture_SRV);
+
 	// Samplers
 	ID3D11SamplerState* vs_samplers[2] = {g_pHeightSampler, g_pPerlinSampler};
 	m_pImmediateContext->VSSetSamplers(0, 2, &vs_samplers[0]);
 
 	ID3D11SamplerState* ps_samplers[4] = {g_pPerlinSampler, g_pGradientSampler, g_pFresnelSampler, g_pCubeSampler};
 	m_pImmediateContext->PSSetSamplers(1, 4, &ps_samplers[0]);
+
+	m_pImmediateContext->PSSetSamplers(1, 5, &g_pAtmosphericsSampler);
 
 	// IA setup
 	m_pImmediateContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
@@ -645,6 +679,7 @@ void SimulOceanRendererDX1x::Render()
 		// WVP matrix
 		D3DXMATRIX matWorld;
 		D3DXMatrixTranslation(&matWorld, node.bottom_left.x, node.bottom_left.y, 0);
+		D3DXMatrixTranspose(&call_consts.g_matWorld, &matWorld);
 		D3DXMATRIX matWVP = matWorld * matView * matProj;
 		D3DXMatrixTranspose(&call_consts.g_matWorldViewProj, &matWVP);
 
@@ -662,6 +697,20 @@ void SimulOceanRendererDX1x::Render()
 		D3DXVECTOR3 vLocalEye(0, 0, 0);
 		D3DXVec3TransformCoord(&vLocalEye, &vLocalEye, &matInvWV);
 		call_consts.g_LocalEye = vLocalEye;
+
+		// Atmospherics
+		if(skyInterface)
+		{
+			call_consts.hazeEccentricity=skyInterface->GetMieEccentricity();
+			call_consts.lightDir=D3DXVECTOR3((const float *)(skyInterface->GetDirectionToLight()));
+			call_consts.mieRayleighRatio=D3DXVECTOR4((const float *)(skyInterface->GetMieRayleighRatio()));
+		}
+		else
+		{
+			call_consts.hazeEccentricity=0.85f;
+			call_consts.lightDir=D3DXVECTOR3(0,0,1.f);
+			call_consts.mieRayleighRatio=D3DXVECTOR4(0,0,0,0);
+		}
 
 		// Update constant buffer
 		D3D11_MAPPED_SUBRESOURCE mapped_res;            
@@ -776,6 +825,7 @@ void SimulOceanRendererDX1x::RenderWireframe(float time)
 		// WVP matrix
 		D3DXMATRIX matWorld;
 		D3DXMatrixTranslation(&matWorld, node.bottom_left.x, node.bottom_left.y, 0);
+		D3DXMatrixTranspose(&call_consts.g_matWorld, &matWorld);
 		D3DXMATRIX matWVP = matWorld * matView * matProj;
 		D3DXMatrixTranspose(&call_consts.g_matWorldViewProj, &matWVP);
 
