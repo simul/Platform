@@ -283,7 +283,7 @@ float4 PS_Flare( svertexOutput IN): SV_TARGET
 float approx_oren_nayar(float roughness,float3 view,float3 normal,float3 lightDir)
 {
 	float roughness2 = roughness * roughness;
-	float2 oren_nayar_fraction = roughness2 / (roughness2 + float2(0.33, 0.09));
+	float2 oren_nayar_fraction = roughness2 / (float2(roughness2,roughness2)+ float2(0.33, 0.09));
 	float2 oren_nayar = float2(1, 0) + float2(-0.5, 0.45) * oren_nayar_fraction;
 	// Theta and phi
 	float2 cos_theta = saturate(float2(dot(normal, lightDir), dot(normal, view)));

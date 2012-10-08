@@ -574,10 +574,19 @@ bool SimulGLSkyRenderer::RenderSun()
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
-	sunlight*=pow(1.f-sun_occlusion,0.25f)*25.f;//2700.f;
+	sunlight*=pow(1.f-sun_occlusion,0.25f)*2700.f;
+	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
+	// to the range [0,1], and store a brightness multiplier in the alpha channel!
+	sunlight.w=1.f;
+	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
+	if(max_bright>1.f)
+	{
+		sunlight*=1.f/max_bright;
+		sunlight.w=max_bright;
+	}
 	glUseProgram(sun_program);
 		ERROR_CHECK
-	glUniform3f(sunlight_param,sunlight.x,sunlight.y,sunlight.z);
+	glUniform4f(sunlight_param,sunlight.x,sunlight.y,sunlight.z,sunlight.w);
 		ERROR_CHECK
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
 	//if(y_vertical)
@@ -585,7 +594,7 @@ bool SimulGLSkyRenderer::RenderSun()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
-	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE,GL_SRC_ALPHA,GL_ONE);
+	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
 	RenderAngledQuad(sun_dir,sun_angular_size);
 	glUseProgram(0);

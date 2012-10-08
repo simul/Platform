@@ -1,5 +1,5 @@
-#version 140
-#extension GL_EXT_gpu_shader4 : enable
+#version 130
+//#extension GL_EXT_gpu_shader4 : enable
 // simul_terrain.frag - a GLSL fragment shader
 // Copyright 2012 Simul Software Ltd
 uniform vec3 eyePosition;

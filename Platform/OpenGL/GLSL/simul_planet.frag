@@ -1,3 +1,4 @@
+#version 140
 // simul_sky.frag - a GLSL fragment shader
 // Copyright 2008 Simul Software Ltd
 uniform sampler2D planetTexture;
@@ -16,7 +17,8 @@ vec2 saturate(vec2 f)
 float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 {
 	float roughness2 = roughness * roughness;
-	vec2 oren_nayar_fraction = roughness2 / (roughness2 + vec2(0.33, 0.09));
+	vec2 r2=vec2(roughness2,roughness2);
+	vec2 oren_nayar_fraction = r2/(r2+ vec2(0.33, 0.09));
 	vec2 oren_nayar = vec2(1, 0) + vec2(-0.5, 0.45) * oren_nayar_fraction;
 	// Theta and phi
 	vec2 cos_theta = saturate(vec2(dot(normal, lightDir), dot(normal, view)));

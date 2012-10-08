@@ -4,6 +4,7 @@
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
+#include "Simul/Base/RuntimeError.h"
 
 SimulGLTerrainRenderer::SimulGLTerrainRenderer()
 	:program(0)
@@ -42,9 +43,12 @@ void SimulGLTerrainRenderer::MakeTextures()
 {
     glGenTextures(1, &texArray);
 	if(!IsExtensionSupported("GL_EXT_texture_array"))
+	{
+		simul::base::RuntimeError("SimulGLTerrainRenderer needs the GL_EXT_texture_array extension.");
 		return;
-	if(!IsExtensionSupported("GL_EXT_gpu_shader4"))
-		return;
+	}
+	//if(!IsExtensionSupported("GL_EXT_gpu_shader4"))
+	//	return;
 	//GL_TEXTURE_2D_ARRAY_EXT
     glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, texArray);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -96,22 +100,10 @@ void SimulGLTerrainRenderer::Render()
 	glDisable(GL_BLEND);
 	glPolygonMode(GL_FRONT,GL_FILL);
 	glPolygonMode(GL_BACK,GL_LINE);
-/*	glUseProgram(0);
-	ERROR_CHECK
-	glDepthFunc(GL_LESS);
-	ERROR_CHECK
-	glFrontFace(GL_CCW);
-	ERROR_CHECK
-	ERROR_CHECK
-	ERROR_CHECK
-	ERROR_CHECK
-	glCullFace(GL_BACK);
-	ERROR_CHECK*/
 	glUseProgram(program);
 	ERROR_CHECK
 	simul::math::Vector3 cam_pos;
 	CalcCameraPosition(cam_pos);
-
 
 	simul::math::Matrix4x4 view,proj,viewproj;
 	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
