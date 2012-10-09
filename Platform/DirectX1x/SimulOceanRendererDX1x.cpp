@@ -613,23 +613,17 @@ void SimulOceanRendererDX1x::Render()
 	ID3D11ShaderResourceView* vs_srvs[2] = {displacement_map, g_pSRV_Perlin};
 	m_pImmediateContext->VSSetShaderResources(0, 2, &vs_srvs[0]);
 
-	ID3D11ShaderResourceView* ps_srvs[4] = {g_pSRV_Perlin, gradient_map, g_pSRV_Fresnel, g_pSRV_ReflectCube};
-    m_pImmediateContext->PSSetShaderResources(1, 4, &ps_srvs[0]);
-
-	// Atmospheric scattering
-	if(skyLossTexture_SRV)
-		m_pImmediateContext->PSSetShaderResources(1, 5,&skyLossTexture_SRV);
-	if(skyInscatterTexture_SRV)
-		m_pImmediateContext->PSSetShaderResources(1, 6,&skyInscatterTexture_SRV);
+	ID3D11ShaderResourceView* ps_srvs[6] = {g_pSRV_Perlin, gradient_map, g_pSRV_Fresnel, g_pSRV_ReflectCube,skyLossTexture_SRV,skyInscatterTexture_SRV};
+    m_pImmediateContext->PSSetShaderResources(1, 6, &ps_srvs[0]);
 
 	// Samplers
 	ID3D11SamplerState* vs_samplers[2] = {g_pHeightSampler, g_pPerlinSampler};
 	m_pImmediateContext->VSSetSamplers(0, 2, &vs_samplers[0]);
 
-	ID3D11SamplerState* ps_samplers[4] = {g_pPerlinSampler, g_pGradientSampler, g_pFresnelSampler, g_pCubeSampler};
-	m_pImmediateContext->PSSetSamplers(1, 4, &ps_samplers[0]);
+	ID3D11SamplerState* ps_samplers[5] = {g_pPerlinSampler, g_pGradientSampler, g_pFresnelSampler, g_pCubeSampler,g_pAtmosphericsSampler};
+	m_pImmediateContext->PSSetSamplers(1, 5, &ps_samplers[0]);
 
-	m_pImmediateContext->PSSetSamplers(1, 5, &g_pAtmosphericsSampler);
+	//m_pImmediateContext->PSSetSamplers(1, 5, &g_pAtmosphericsSampler);
 
 	// IA setup
 	m_pImmediateContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);

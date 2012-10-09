@@ -79,7 +79,7 @@ void SimulSkyRenderer::SaveTextures(const char *base_filename)
 	{
 		std::string filename=filename_root;
 		char txt[10];
-		sprintf(txt,"_%d",i);
+		sprintf_s(txt,10,"_%d",i);
 		filename+=txt;
 		filename+=ext;
 		SaveTexture(sky_textures[i],filename.c_str());
@@ -692,14 +692,14 @@ float sun_angular_size=3.14159f/180.f/2.f;
 
 bool SimulSkyRenderer::RenderSun()
 {
-	float alt_km=0.001f*y_vertical?cam_pos.y:cam_pos.z;
+	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
-	sunlight*=pow(1.f-sun_occlusion,0.25f)*25.f;//2700.f;
+	sunlight*=pow(1.f-sun_occlusion,0.25f)*2700.f;
 	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
@@ -769,6 +769,18 @@ void SimulSkyRenderer::EnsureTextureCycle()
 		std::swap(inscatter_textures[1],inscatter_textures[2]);
 		std::swap(sunlight_textures[0],sunlight_textures[1]);
 		std::swap(sunlight_textures[1],sunlight_textures[2]);
+		std::swap(sky_texture_iterator[0],sky_texture_iterator[1]);
+		std::swap(sky_texture_iterator[1],sky_texture_iterator[2]);
+		std::swap(fade_texture_iterator[0],fade_texture_iterator[1]);
+		std::swap(fade_texture_iterator[1],fade_texture_iterator[2]);
+		for(int i=0;i<3;i++)
+		{
+			for(int j=0;j<numAltitudes;j++)
+			{
+				fade_texture_iterator[i][j].texture_index=i;
+				sky_texture_iterator[i][j].texture_index=i;
+			}
+		}
 		texture_cycle++;
 		texture_cycle=texture_cycle%3;
 		if(texture_cycle<0)
@@ -1089,13 +1101,13 @@ float SimulSkyRenderer::GetTiming() const
 
 simul::sky::float4 SimulSkyRenderer::GetAmbient() const
 {
-	float alt_km=0.001f*cam_pos.y;
+	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	return GetBaseSkyInterface()->GetAmbientLight(alt_km);
 }
 
 simul::sky::float4 SimulSkyRenderer::GetLightColour() const
 {
-	float alt_km=0.001f*cam_pos.y;
+	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	return GetBaseSkyInterface()->GetLocalIrradiance(alt_km);
 }
 

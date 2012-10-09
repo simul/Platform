@@ -589,11 +589,7 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 #endif
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
-
 	m_pd3dDevice->SetVertexDeclaration(RT::m_pBufferVertexDecl);
-   // m_pd3dDevice->SetVertexShader(NULL);
-   // m_pd3dDevice->SetPixelShader(NULL);
-
 #ifndef XBOX
 	m_pd3dDevice->SetTransform(D3DTS_VIEW,&ident);
 	m_pd3dDevice->SetTransform(D3DTS_WORLD,&ident);
@@ -606,8 +602,6 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 			eff->SetTechnique(tech);
 		eff->Begin(&passes,0);
 		eff->BeginPass(0);
-		//D3DXHANDLE h=eff->GetParameterBySemantic(NULL,"TEXUNIT0");
-		//eff->SetTexture(h,texture);
 	}
 	else
 	{

@@ -594,7 +594,7 @@ bool SimulSkyRendererDX1x::RenderSun()
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
-	sunlight*=pow(1.f-sun_occlusion,0.25f)*25.f;//2700.f;
+	sunlight*=pow(1.f-sun_occlusion,0.25f)*2700.f;
 	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
@@ -869,6 +869,7 @@ void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 	view=v;
 	proj=p;
 }
+
 void SimulSkyRendererDX1x::Get3DLossAndInscatterTextures(void* *l1,void* *l2,
 		void* *i1,void* *i2)
 {
@@ -877,8 +878,8 @@ void SimulSkyRendererDX1x::Get3DLossAndInscatterTextures(void* *l1,void* *l2,
 	*i1=(void*)inscatter_textures[0];
 	*i2=(void*)inscatter_textures[1];
 }
-void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,
-		void* *i1)
+
+void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,void* *i1)
 {
 	if(loss_2d)
 		*l1=(void*)loss_2d->hdr_buffer_texture_SRV;
