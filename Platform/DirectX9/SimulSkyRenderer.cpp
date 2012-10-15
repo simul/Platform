@@ -25,6 +25,7 @@
 
 #include "CreateDX9Effect.h"
 #include "Macros.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/SkyKeyframer.h"
@@ -691,8 +692,7 @@ float sun_angular_size=3.14159f/180.f/2.f;
 
 bool SimulSkyRenderer::RenderSun()
 {
-	float alt_km=0.001f*y_vertical?cam_pos.y:cam_pos.z;
-
+	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
@@ -781,7 +781,7 @@ void SimulSkyRenderer::EnsureTextureCycle()
 
 bool SimulSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
-	float alt_km=0.001f*cam_pos.y;
+	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	if(do_lighting)
 		m_pSkyEffect->SetTechnique(m_hTechniquePlanet);
 	else
@@ -1092,13 +1092,13 @@ float SimulSkyRenderer::GetTiming() const
 
 simul::sky::float4 SimulSkyRenderer::GetAmbient() const
 {
-	float alt_km=0.001f*cam_pos.y;
+	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	return GetBaseSkyInterface()->GetAmbientLight(alt_km);
 }
 
 simul::sky::float4 SimulSkyRenderer::GetLightColour() const
 {
-	float alt_km=0.001f*cam_pos.y;
+	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	return GetBaseSkyInterface()->GetLocalIrradiance(alt_km);
 }
 

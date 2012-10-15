@@ -59,7 +59,8 @@ public:
 		META_ValueProperty(bool,ShowTerrain,"Whether to draw the terrain.")
 		META_ValueProperty(bool,UseHdrPostprocessor,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
 		META_ValueProperty(bool,ShowMap,"Show the terrain map as an overlay.")
-
+		META_ValueProperty(bool,ShowLightVolume,"Show the cloud light volume as a wireframe box.")
+		META_ValueProperty(bool,CelestialDisplay,"Show geographical and sidereal overlay.")
 	META_EndProperties
 	SimulWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer.get();}
 	SimulTerrainRenderer *GetSimulTerrainRenderer(){return simulTerrainRenderer.get();}
@@ -77,9 +78,6 @@ public:
 	void    KeyboardProc(UINT nChar, bool bKeyDown, bool bAltDown);
 	void    OnLostDevice();
 	void    OnDestroyDevice();
-	
-	void	SetShowLightVolume(bool val);
-	void	SetCelestialDisplay(bool val);
 
 	void	SetYVertical(bool y);
 	void	RecompileShaders();
@@ -91,8 +89,6 @@ protected:
 	bool y_vertical;
 	bool show_osd;
 	float framerate;
-	bool celestial_display;
-	bool render_light_volume;
 	simul::base::SmartPtr<SimulOpticsRendererDX9> simulOpticsRenderer;
 	simul::base::SmartPtr<SimulWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulTerrainRenderer> simulTerrainRenderer;

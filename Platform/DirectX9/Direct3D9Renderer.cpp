@@ -28,9 +28,9 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	,simulTerrainRenderer(NULL)
 	,y_vertical(true)
 	,ShowCloudCrossSections(false)
-	,render_light_volume(false)
+	,ShowLightVolume(false)
 	,ShowFades(false)
-	,celestial_display(false)
+	,CelestialDisplay(false)
 	,ShowTerrain(true)
 	,ShowMap(false)
 	,show_osd(false)
@@ -212,16 +212,6 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 	simul::math::FirstOrderDecay(update_timing,timer.TimeSum,1.f,fTimeStep);
 }
 
-void Direct3D9Renderer::SetShowLightVolume(bool val)
-{
-	render_light_volume=val;
-}
-	
-void Direct3D9Renderer::SetCelestialDisplay(bool val)
-{
-	celestial_display=val;
-}
-
 void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime, float fTimeStep)
 {
 	fTime;fTimeStep;
@@ -298,7 +288,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 		simulWeatherRenderer->RenderLateCloudLayer(true);
 		simulWeatherRenderer->RenderLightning();
-		if(render_light_volume&&simulWeatherRenderer->GetCloudRenderer())
+		if(ShowLightVolume&&simulWeatherRenderer->GetCloudRenderer())
 			simulWeatherRenderer->GetCloudRenderer()->RenderLightVolume();
 		simulWeatherRenderer->RenderPrecipitation();
 	}
@@ -310,7 +300,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender();
 	timer.UpdateTime();
-	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
+	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);
 	simul::math::FirstOrderDecay(hdr_timing,timer.Time,1.f,fTimeStep);
 
