@@ -53,7 +53,7 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	,inscatter_tex(0)
 {
 //cloudKeyframer->SetFillTexturesAsBlocks(true);
-	helper->Initialize(16,400000.f);
+	helper.Initialize(16,400000.f);
 }
 
 bool SimulGL2DCloudRenderer::CreateNoiseTexture(bool override_file)
@@ -274,35 +274,35 @@ ERROR_CHECK
 	eye_dir*=-1.f;
 	simul::math::Vector3 up_dir=viewInv.RowPointer(1);
 	
-	helper->Update(view_pos,ci->GetWindOffset(),eye_dir,up_dir);
+	helper.Update(view_pos,ci->GetWindOffset(),eye_dir,up_dir);
 	float tan_half_fov_vertical=1.f/proj(1,1);
 	float tan_half_fov_horizontal=1.f/proj(0,0);
-	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
+	helper.SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 
 	simul::sky::float4 view_km=view_pos.FloatPointer(0);
 	// convert metres to km:
 	view_km*=0.001f;
-	helper->MakeGeometry(ci);
+	helper.MakeGeometry(ci);
 	static float noise_angle=0.8f;
-	helper->Set2DNoiseTexturing(noise_angle,2.f,1.f);
-	//helper->CalcInscatterFactors(cloudInterface,skyInterface,0.f);
+	helper.Set2DNoiseTexturing(noise_angle,2.f,1.f);
+	//helper.CalcInscatterFactors(cloudInterface,skyInterface,0.f);
 	float image_scale=2000.f+texture_scale*20000.f;
 	simul::math::Vector3 wind_offset=cloudKeyframer->GetCloudInterface()->GetWindOffset();
 
 #if 1
 ERROR_CHECK
-	const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
+	const std::vector<int> &quad_strip_vertices=helper.GetQuadStripIndices();
 	size_t qs_vert=0;
-	for(std::vector<Cloud2DGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
-		j!=helper->GetQuadStrips().end();j++)
+	for(std::vector<Cloud2DGeometryHelper::QuadStrip>::const_iterator j=helper.GetQuadStrips().begin();
+		j!=helper.GetQuadStrips().end();j++)
 	{
 		glBegin(GL_QUAD_STRIP);
 		for(size_t k=0;k<(j)->num_vertices;k++,qs_vert++)
 		{
-			const Cloud2DGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
+			const Cloud2DGeometryHelper::Vertex &V=helper.GetVertices()[quad_strip_vertices[qs_vert]];
 			glMultiTexCoord2f(GL_TEXTURE0,V.cloud_tex_x,V.cloud_tex_y);
-			//simul::sky::float4 inscatter=helper->GetInscatter(V);
-			//simul::sky::float4 loss		=helper->GetLoss(V);
+			//simul::sky::float4 inscatter=helper.GetInscatter(V);
+			//simul::sky::float4 loss		=helper.GetLoss(V);
 		//	glMultiTexCoord3f(GL_TEXTURE1,loss.x,loss.y,loss.z);
 			//glMultiTexCoord3f(GL_TEXTURE2,inscatter.x,inscatter.y,inscatter.z);
 			glMultiTexCoord2f(GL_TEXTURE3,V.noise_tex_x,V.noise_tex_y);
