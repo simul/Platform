@@ -36,17 +36,11 @@ public:
 		old_cout_buffer=std::cout.rdbuf(this);
 		old_cerr_buffer=std::cerr.rdbuf(this);
 		
-		logFile << "This is a short text file." << std::endl;
-		logFile << 10 << " " << 123.23 << std::endl;
-writeString("test");
 		time_t rawtime;
 		rawtime = time (&rawtime);
 		struct tm timeinfo;
 		localtime_s(&timeinfo,&rawtime);
 		std::cout <<asctime (&timeinfo) <<std::endl;
-		std::cout << "----------------"<<std::endl;
-		std::cout << "Begin Log output"<<std::endl;
-		std::cout << "----------------"<<std::endl<<std::endl;
 	}
 	virtual ~VisualStudioDebugOutput()
 	{
