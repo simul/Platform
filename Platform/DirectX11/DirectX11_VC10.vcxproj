@@ -91,6 +91,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)_MDd.dll</OutputFile>
+      <Version>$(SIMUL_WEATHER_VERSION)</Version>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/VC10/$(Configuration);$(DXSDK_DIR)/Lib/x86;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -117,6 +118,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)_MD.dll</OutputFile>
+      <Version>$(SIMUL_WEATHER_VERSION)</Version>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/VC10/$(Configuration);$(DXSDK_DIR)/Lib/x86;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
