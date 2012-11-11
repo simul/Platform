@@ -202,6 +202,7 @@
     <ClInclude Include="..\DirectX1x\FramebufferDX1x.h" />
     <ClInclude Include="..\DirectX1x\MacrosDx1x.h" />
     <ClInclude Include="..\DirectX1x\ocean_simulator.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="..\DirectX1x\ResourcesDx1x.h" />
     <ClInclude Include="..\DirectX1x\SimulAtmosphericsRendererDX1x.h" />
     <ClInclude Include="..\DirectX1x\SimulCloudRendererDX1x.h" />
@@ -210,6 +211,9 @@
     <ClInclude Include="..\DirectX1x\SimulOpticsRendererDX1x.h" />
     <ClInclude Include="..\DirectX1x\SimulSkyRendererDX1x.h" />
     <ClInclude Include="..\DirectX1x\SimulWeatherRendererDX1x.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DirectX11.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\atmospherics.fx" />

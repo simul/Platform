@@ -190,6 +190,7 @@
     <ClInclude Include="LoadGLProgram.h" />
     <ClInclude Include="objload.h" />
     <ClInclude Include="OpenGLRenderer.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="SimulGL2DCloudRenderer.h" />
     <ClInclude Include="SimulGLAtmosphericsRenderer.h" />
     <ClInclude Include="SimulGLCloudRenderer.h" />
@@ -227,6 +228,9 @@
     <None Include="GLSL\simul_terrain.vert" />
     <None Include="GLSL\tonemap.frag" />
     <None Include="GLSL\tonemap.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="OpenGL.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
