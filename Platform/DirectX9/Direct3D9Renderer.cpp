@@ -195,7 +195,7 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 		simulTerrainRenderer->Update(dt);
 		if(simulWeatherRenderer)
 		{
-			if(simulWeatherRenderer->IsCloudLayer1Visible()&&simulWeatherRenderer->GetCloudRenderer())
+			if(simulWeatherRenderer->GetCloudRenderer())
 			{
 				simulTerrainRenderer->SetCloudTextures		(simulWeatherRenderer->GetCloudRenderer()->GetCloudTextures(),simulWeatherRenderer->GetCloudRenderer()->GetCloudInterface()->GetWrap());
 				simulTerrainRenderer->SetCloudScales		(simulWeatherRenderer->GetCloudRenderer()->GetCloudScales());
@@ -307,12 +307,12 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 
 	if(simulWeatherRenderer&&ShowCloudCrossSections)
 	{
-		if(simulWeatherRenderer->IsCloudLayer1Visible())
+		if(simulWeatherRenderer->GetCloudRenderer())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width,height);
 		//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
 		}
-		if(simulWeatherRenderer->IsCloudLayer2Visible())
+		if(simulWeatherRenderer->Get2DCloudRenderer())
 		{
 			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
 		}

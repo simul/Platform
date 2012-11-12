@@ -233,7 +233,7 @@ bool SimulPrecipitationRenderer::Render()
 	m_pRainEffect->SetVector(offset2,(D3DXVECTOR4*)(&offs2));
 	m_pRainEffect->SetVector(offset3,(D3DXVECTOR4*)(&offs3));
 
-	m_pRainEffect->SetVector(lightColour,(D3DXVECTOR4*)(light_colour));
+	m_pRainEffect->SetVector(lightColour,(D3DXVECTOR4*)(&light_colour));
 
 	UINT passes=1;
 	hr=m_pRainEffect->Begin( &passes, 0 );

@@ -65,7 +65,6 @@ typedef long HRESULT;
 extern SIMUL_DIRECTX1x_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename);
 extern SIMUL_DIRECTX1x_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,const std::map<std::string,std::string>&defines);
 
-HRESULT CompileShaderFromFile( WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut );
 
 extern SIMUL_DIRECTX1x_EXPORT HRESULT Map2D(ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp);
 extern SIMUL_DIRECTX1x_EXPORT void Unmap2D(ID3D1xTexture2D *tex);

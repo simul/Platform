@@ -585,7 +585,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 	return sun_occlusion;
 }
 
-bool SimulSkyRendererDX1x::RenderSun()
+void SimulSkyRendererDX1x::RenderSun()
 {
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
@@ -617,7 +617,6 @@ bool SimulSkyRendererDX1x::RenderSun()
     UINT64 pixelsVisible = 0;
     
     while (d3dQuery->GetData((void *) &pixelsVisible,sizeof(UINT64),0) == S_FALSE);*/
-	return true;
 }
 
 bool SimulSkyRendererDX1x::RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting)

@@ -12,26 +12,14 @@
 #include <stack>
 #include "LoadGLImage.h"
 #include "Simul/Platform/OpenGL/Export.h"
-
-#ifndef FRAMEBUFFER_INTERFACE
-#define FRAMEBUFFER_INTERFACE
-class FramebufferInterface
-{
-public:
-	virtual void Activate()=0;
-	virtual void Deactivate()=0;
-	
-	virtual void SetWidthAndHeight(int w,int h)=0;
-};
-#endif
+#include "Simul/Clouds/BaseFramebuffer.h"
 
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
 
-
-SIMUL_OPENGL_EXPORT_CLASS FramebufferGL:public FramebufferInterface
+SIMUL_OPENGL_EXPORT_CLASS FramebufferGL:public BaseFramebuffer
 {
 public:
 	FramebufferGL(int w, int h, GLenum target = GL_TEXTURE_RECTANGLE_NV,const char *shader=0,
@@ -61,8 +49,9 @@ public:
 	// The FBO needs to be deactivated when using the associated textures.
 	void Activate();
 	void Deactivate();
+	void Clear(float r,float g,float b,float a);
 	void DeactivateAndRender(bool blend);
-	//void Render();
+	void Render(bool blend);
 	void Render(GLuint prog,bool blend);
 void Render1(GLuint prog,bool blend);
 	void DrawQuad(int w, int h);

@@ -91,10 +91,6 @@ public:
 	{
 		fade_interp=s;
 	}
-	void SetAltitudeTextureCoordinate(float f)
-	{
-		altitude_tex_coord=f;
-	}
 	// implementing BaseAtmosphericsRenderer
 	void SetYVertical(bool y)
 	{

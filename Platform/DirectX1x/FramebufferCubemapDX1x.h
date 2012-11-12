@@ -11,19 +11,10 @@
 #endif
 #include "Simul/Platform/DirectX1x/MacrosDx1x.h"
 #include "Simul/Platform/DirectX1x/Export.h"
-#ifndef FRAMEBUFFER_INTERFACE
-#define FRAMEBUFFER_INTERFACE
-class FramebufferInterface
-{
-public:
-	virtual void Activate()=0;
-	virtual void Deactivate()=0;
-	
-	virtual void SetWidthAndHeight(int w,int h)=0;
-};
-#endif
+#include "Simul/Clouds/BaseFramebuffer.h"
 
-SIMUL_DIRECTX1x_EXPORT_CLASS FramebufferCubemapDX1x:public FramebufferInterface
+
+SIMUL_DIRECTX1x_EXPORT_CLASS FramebufferCubemapDX1x:public BaseFramebuffer
 {
 public:
 	FramebufferCubemapDX1x();
@@ -37,6 +28,8 @@ public:
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 	void Activate();
 	void Deactivate();
+	void Render(bool){}
+	void Clear(float,float,float,float);
 	void *GetTextureResource()
 	{
 		return (void*)m_pCubeEnvMapSRV;

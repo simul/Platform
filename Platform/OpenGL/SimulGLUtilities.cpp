@@ -67,13 +67,14 @@ bool IsExtensionSupported(const char *name)
 }
 
 
-void CheckExtension(const char *txt)
+bool CheckExtension(const char *txt)
 {
 	if(!glewIsSupported(txt)&&!IsExtensionSupported(txt))
 	{
 		std::cerr<<"Error - required OpenGL extension is not supported: "<<txt<<std::endl;
-		exit(-1);
+		return false;
 	}
+	return true;
 }
 
 static int win_h=0;
@@ -225,7 +226,7 @@ void CalcCameraPosition(float *cam_pos,float *cam_dir)
 {
 	simul::math::Matrix4x4 modelview;
 	glGetFloatv(GL_MODELVIEW_MATRIX,modelview.RowPointer(0));
-		ERROR_CHECK
+	ERROR_CHECK
 	simul::math::Matrix4x4 inv;
 	modelview.Inverse(inv);
 	cam_pos[0]=inv(3,0);

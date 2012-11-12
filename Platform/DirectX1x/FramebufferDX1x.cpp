@@ -45,12 +45,11 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	,TonemapTechnique(NULL)
 	,hdrTexture(NULL)
 	,worldViewProj(NULL)
-
-	,Width(w),
-	Height(h),
-	timing(0.f),
-	screen_width(0),
-	screen_height(0)
+	,Width(w)
+	,Height(h)
+	,timing(0.f)
+	,screen_width(0)
+	,screen_height(0)
 {
 }
 
@@ -89,6 +88,7 @@ void FramebufferDX1x::RecompileShaders()
 	SkyOverStarsTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_over_stars");
 	hdrTexture				=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	CreateBuffers();
 }
 
 void FramebufferDX1x::InvalidateDeviceObjects()
@@ -324,9 +324,22 @@ void FramebufferDX1x::Deactivate()
 	m_pImmediateContext->RSSetViewports(1,m_OldViewports);
 }
 
+void FramebufferDX1x::Clear(float r,float g,float b,float a)
+{
+	// Clear the screen to black:
+    float clearColor[4]={r,g,b,a};
+	m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
+	if(m_pBufferDepthSurface)
+		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+}
 void FramebufferDX1x::DeactivateAndRender(bool blend)
 {
 	Deactivate();
+	Render(blend);
+}
+
+void FramebufferDX1x::Render(bool blend)
+{
 	HRESULT hr=S_OK;
 	hr=hdrTexture->SetResource(hdr_buffer_texture_SRV);
 	ID3D1xEffectTechnique *tech=blend?SkyOverStarsTechnique:TonemapTechnique;

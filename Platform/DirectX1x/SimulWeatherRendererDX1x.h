@@ -48,6 +48,7 @@ public:
 	void InvalidateDeviceObjects();
 	bool Destroy();
 	bool RenderSky(bool buffered,bool is_cubemap);
+	void RenderLateCloudLayer(int,bool );
 	bool RenderCubemap();
 	void *GetCubemap();
 	//! Perform the once-per-frame time update.
@@ -95,8 +96,6 @@ protected:
 	FramebufferCubemapDX1x			framebuffer_cubemap;
 	float							exposure;
 	float							gamma;
-	bool show_sky;
-	bool show_rain;
 	float timing;
 	float exposure_multiplier;
 	void ConnectInterfaces();

@@ -413,6 +413,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource.h"
+				>
+			</File>
+			<File
 				RelativePath=".\SimulGL2DCloudRenderer.h"
 				>
 			</File>
@@ -569,6 +573,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\OpenGL.rc"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

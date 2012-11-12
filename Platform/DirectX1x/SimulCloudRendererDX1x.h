@@ -56,8 +56,6 @@ SIMUL_DIRECTX1x_EXPORT_CLASS SimulCloudRendererDX1x : public simul::clouds::Base
 public:
 	SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cloudKeyframer);
 	virtual ~SimulCloudRendererDX1x();
-	//! Call this once to set the sky interface that this cloud renderer can use for distance fading.
-	void SetSkyInterface(simul::sky::BaseSkyInterface *si);
 	void RecompileShaders();
 	//! Call this when the D3D device has been created or reset
 	void RestoreDeviceObjects( void* pd3dDevice);

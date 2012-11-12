@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include "ocean_simulator.h"
+#include "CompileShaderDX1x.h"
 
 // Disable warning "conditional expression is constant"
 #pragma warning(disable:4127)
@@ -204,7 +205,14 @@ OceanSimulator::OceanSimulator(simul::terrain::OceanParameter *params, ID3D11Dev
 
 	// Create the compute shader: UpdateSpectrumCS
     ID3DBlob* pBlobUpdateSpectrumCS = NULL;
-    CompileShaderFromFile(L"ocean_simulator_cs.hlsl", "UpdateSpectrumCS", "cs_4_0", &pBlobUpdateSpectrumCS);
+    try
+    {
+		CompileShaderFromFile(L"ocean_simulator_cs.hlsl", "UpdateSpectrumCS", "cs_4_0", &pBlobUpdateSpectrumCS);
+	}
+	catch(...)
+	{
+		throw;
+	}
     pd3dDevice->CreateComputeShader(pBlobUpdateSpectrumCS->GetBufferPointer(),pBlobUpdateSpectrumCS->GetBufferSize(),NULL,&m_pUpdateSpectrumCS);  
     SAFE_RELEASE(pBlobUpdateSpectrumCS);
 

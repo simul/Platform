@@ -14,10 +14,11 @@
 #include "Simul/Geometry/Orientation.h"
 #include "Simul/Base/RuntimeError.h"
 #include <tchar.h>
+#include "CompileShaderDX1x.h"
 #include <string>
 typedef std::basic_string<TCHAR> tstring;
-static tstring shader_path=TEXT("media/hlsl/dx11");
-static tstring texture_path=TEXT("media/textures");
+tstring shader_path=TEXT("media/hlsl/dx11");
+tstring texture_path=TEXT("media/textures");
 static DWORD default_effect_flags=0;
 
 #include <vector>
@@ -526,56 +527,6 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 #endif
 
 
-HRESULT CompileShaderFromFile( WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut )
-{
-    HRESULT hr = S_OK;
-	tstring fn=shader_path+szFileName;
-
-    // open the file
-    HANDLE hFile = CreateFile( fn.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-        FILE_FLAG_SEQUENTIAL_SCAN, NULL );
-    if( INVALID_HANDLE_VALUE == hFile )
-	{
-		throw simul::base::RuntimeError("Can't find file.");
-        return E_FAIL;
-	}
-
-    // Get the file size
-    LARGE_INTEGER FileSize;
-    GetFileSizeEx( hFile, &FileSize );
-
-    // create enough space for the file data
-    BYTE* pFileData = new BYTE[ FileSize.LowPart ];
-    if( !pFileData )
-        return E_OUTOFMEMORY;
-
-    // read the data in
-    DWORD BytesRead;
-    if( !ReadFile( hFile, pFileData, FileSize.LowPart, &BytesRead, NULL ) )
-        return E_FAIL; 
-
-    CloseHandle( hFile );
-
-    // Compile the shader
-    char pFilePathName[MAX_PATH];        
-    WideCharToMultiByte(CP_ACP, 0, fn.c_str(), -1, pFilePathName, MAX_PATH, NULL, NULL);
-    ID3DBlob* pErrorBlob;
-    hr = D3DCompile( pFileData, FileSize.LowPart, pFilePathName, NULL, NULL, szEntryPoint, szShaderModel, D3D10_SHADER_ENABLE_STRICTNESS, 0, ppBlobOut, &pErrorBlob );
-
-    delete []pFileData;
-
-    if( FAILED(hr) )
-    {
-        OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
-        SAFE_RELEASE( pErrorBlob );
-        return hr;
-    }
-    SAFE_RELEASE( pErrorBlob );
-
-    return S_OK;
-}
-
-
 HRESULT Map2D(ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp)
 {
 #ifdef DX10
@@ -791,7 +742,7 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical
 		{-w,-w,	d, 0.f	,0.f},
 		{-w, w,	d, 0.f	,1.f},
 	};
-	ID3D1xBuffer *					vertexBuffer=NULL;
+	ID3D1xBuffer *vertexBuffer=NULL;
 
 	// Create the vertex buffer:
 	D3D1x_BUFFER_DESC desc=

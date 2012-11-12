@@ -690,7 +690,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 }
 float sun_angular_size=3.14159f/180.f/2.f;
 
-bool SimulSkyRenderer::RenderSun()
+void SimulSkyRenderer::RenderSun()
 {
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
@@ -714,8 +714,7 @@ bool SimulSkyRenderer::RenderSun()
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
-	HRESULT hr=RenderAngledQuad(sun_dir,sun_angular_size);
-	return (hr==S_OK);
+	RenderAngledQuad(sun_dir,sun_angular_size);
 }
 
 void SimulSkyRenderer::SetYVertical(bool y)

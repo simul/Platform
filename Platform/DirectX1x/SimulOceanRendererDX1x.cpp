@@ -3,6 +3,7 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/SkyInterface.h"
 #include <D3DX11tex.h>
+#include "CompileShaderDX1x.h"
 #pragma warning(disable:4995)
 #include <vector>
 #include <assert.h>
@@ -181,7 +182,14 @@ void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 #else
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
-	g_pOceanSimulator = new OceanSimulator(ocean_parameters, m_pd3dDevice);
+	try
+	{
+		g_pOceanSimulator = new OceanSimulator(ocean_parameters, m_pd3dDevice);
+	}
+	catch(...)
+	{
+		throw;
+	}
 	// Update the simulation for the first time.
 	g_pOceanSimulator->updateDisplacementMap(0);
 

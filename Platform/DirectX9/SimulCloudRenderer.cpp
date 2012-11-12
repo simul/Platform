@@ -788,6 +788,7 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	m_pCloudEffect->SetFloat	(cloudEccentricity	,GetCloudInterface()->GetMieAsymmetry());
 	m_pCloudEffect->SetFloat	(fadeInterp			,fade_interp);
 	m_pCloudEffect->SetFloat	(alphaSharpness		,GetCloudInterface()->GetAlphaSharpness());
+simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 
 	if(enable_lightning)
 	{

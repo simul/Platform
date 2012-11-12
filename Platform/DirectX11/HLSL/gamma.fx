@@ -45,7 +45,7 @@ float4 TonemapPS(v2f IN) : SV_TARGET
 float4 DirectPS(v2f IN) : SV_TARGET
 {
 	float4 c=hdrTexture.Sample(samplerState,IN.texcoord);
-    return c;
+    return float4(c.rgb,1.f);
 }
 
 DepthStencilState EnableDepth

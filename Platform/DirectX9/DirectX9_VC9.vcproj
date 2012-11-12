@@ -1025,6 +1025,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Resources.h"
 				>
 			</File>
@@ -1145,6 +1149,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\DirectX9.rc"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

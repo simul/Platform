@@ -128,8 +128,6 @@ void SimulAtmosphericsRenderer::RecompileShaders()
 	airglowTechnique	=effect->GetTechniqueByName("simul_airglow");
 
 	invViewProj			=effect->GetParameterByName(NULL,"invViewProj");
-	altitudeTexCoord	=effect->GetParameterByName(NULL,"altitudeTexCoord");
-
 
 	heightAboveFogLayer	=effect->GetParameterByName(NULL,"heightAboveFogLayer");
 	fogColour			=effect->GetParameterByName(NULL,"fogColour");
@@ -201,6 +199,7 @@ void SimulAtmosphericsRenderer::SetCloudProperties(void* c1,void* c2,
 	cloud_offset=cloudoffset;
 	cloud_interp=interp;
 }
+
 void SimulAtmosphericsRenderer::SetLightningProperties(	void *tex,
 		simul::clouds::LightningRenderInterface *lri)
 {
@@ -246,7 +245,6 @@ bool SimulAtmosphericsRenderer::RenderGodRays(float strength)
 		D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
 		hr=effect->SetFloat(fadeInterp,fade_interp);
 		hr=effect->SetTexture(imageTexture,input_texture);
-		hr=effect->SetFloat(altitudeTexCoord,altitude_tex_coord);
 		if(skyInterface)
 		{
 			hr=effect->SetFloat(hazeEccentricity,skyInterface->GetMieEccentricity());
@@ -376,7 +374,6 @@ bool SimulAtmosphericsRenderer::Render()
 	{
 		hr=effect->SetFloat(fadeInterp,fade_interp);
 		hr=effect->SetTexture(imageTexture,input_texture);
-		hr=effect->SetFloat(altitudeTexCoord,altitude_tex_coord);
 #ifndef XBOX
 		m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 #endif

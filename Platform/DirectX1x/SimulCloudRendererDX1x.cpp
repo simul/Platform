@@ -149,12 +149,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 							simul::clouds::CloudKeyframer::AMBIENT);*/
 }
 
-void SimulCloudRendererDX1x::SetSkyInterface(simul::sky::BaseSkyInterface *si)
-{
-	skyInterface=si;
-	cloudKeyframer->SetSkyInterface(si);
-}
-
 void SimulCloudRendererDX1x::SetLossTexture(void *t)
 {
 	skyLossTexture_SRV=(ID3D1xShaderResourceView*)t;
@@ -633,6 +627,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	hazeEccentricity	->SetFloat			(skyInterface->GetMieEccentricity());
 	fadeInterp			->SetFloat			(fade_interp);
 	alphaSharpness		->SetFloat			(GetCloudInterface()->GetAlphaSharpness());
+simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 
 	if(enable_lightning)
 	{
@@ -783,6 +778,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 	ID3D1xEffectMatrixVariable*	worldViewProj=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	worldViewProj->SetMatrix(ortho);
 
+	if(skyInterface)
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
@@ -796,6 +792,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 		cloudDensity1->SetResource(cloudDensityResource[i%3]);
 		RenderTexture(m_pd3dDevice,i*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
 	}
+	if(skyInterface)
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
@@ -841,6 +838,7 @@ bool SimulCloudRendererDX1x::RenderLightning()
 	int vert_start=0;
 	int vert_num=0;
 	ApplyPass(m_hTechniqueLightning->GetPassByIndex(0));
+simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 
 	l_worldViewProj->SetMatrix(&wvp._11);
 	for(unsigned i=0;i<lightningRenderInterface->GetNumLightSources();i++)
@@ -916,6 +914,8 @@ void SimulCloudRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p
 
 simul::clouds::LightningRenderInterface *SimulCloudRendererDX1x::GetLightningRenderInterface()
 {
+	simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
+	
 	return lightningRenderInterface;
 }
 
@@ -1014,6 +1014,11 @@ void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate()
 		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
 		if(!texture_fill.num_texels)
 			continue;
+		if(i!=mapped&&texture_fill.texel_index>0&&texture_fill.num_texels>0)
+		{
+			seq_texture_iterator[i].texel_index=0;
+			texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
+		}
 		Map(i);
 		unsigned *ptr=(unsigned *)mapped_cloud_texture.pData;
 		if(!ptr)

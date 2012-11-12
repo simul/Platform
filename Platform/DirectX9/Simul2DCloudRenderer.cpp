@@ -324,7 +324,7 @@ static float light_mult=.03f;
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(alt_km);
 
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(alt_km);
-	simul::sky::float4 fractal_scales=(GetCloudInterface()->GetFractalOffsetScale(),GetCloudInterface()->GetFractalOffsetScale(),0,0);
+	simul::sky::float4 fractal_scales(GetCloudInterface()->GetFractalOffsetScale(),GetCloudInterface()->GetFractalOffsetScale(),0,0);
 	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
 
 	static float sc=7.f;

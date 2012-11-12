@@ -4,6 +4,7 @@
 #include "LoadGLImage.h"
 #include "FreeImage.h"
 #include "SimulGLUtilities.h"
+#include "Simul/Base/RuntimeError.h"
 
 static std::string image_path="";
 
@@ -30,11 +31,19 @@ unsigned char * LoadBitmap(const char *filename,unsigned &bpp,unsigned &width,un
 	}
 	// check that the plugin has reading capabilities ...
 	if((fif == FIF_UNKNOWN) ||!FreeImage_FIFSupportsReading(fif))
-		return 0;
+	{
+		throw simul::base::RuntimeError(std::string("Failed to load bitmap ")+std::string(filename));
+	}
 
 	
 		// ok, let's load the file
 	FIBITMAP *dib = FreeImage_Load(fif,fn.c_str());
+	
+	if(!dib)
+	{
+		throw simul::base::RuntimeError(std::string("Failed to load bitmap ")+std::string(filename));
+	}
+
 	
 	width  = FreeImage_GetWidth(dib),
 	height = FreeImage_GetHeight(dib);

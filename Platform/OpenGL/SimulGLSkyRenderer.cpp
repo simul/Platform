@@ -443,6 +443,7 @@ return true;
 
 bool SimulGLSkyRenderer::Render(bool blend)
 {
+    glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	EnsureTexturesAreUpToDate();
 	simul::sky::float4 cam_dir;
 	CalcCameraPosition(cam_pos,cam_dir);
@@ -487,6 +488,19 @@ ERROR_CHECK
 	skyInterp_param=glGetUniformLocation(sky_program,"skyInterp");
 	glUniform1f(skyInterp_param,skyKeyframer->GetInterpolation());
 	glUniform3f(lightDirection_sky_param,sun_dir.x,sun_dir.y,sun_dir.z);
+	
+	simul::sky::float4 earth_shadow_n=skyKeyframer->GetEarthShadowNormal(skyKeyframer->GetAltitudeKM());
+	
+	float R=skyKeyframer->GetSkyInterface()->GetPlanetRadius();
+	float h=skyKeyframer->GetAltitudeKM()/R+1.f;
+	// radius on Earth-shadow cylinder
+	float r=h*earth_shadow_n.z;
+	if(sun_dir.z>0)
+		r=1.f;
+	
+	glUniform1f(radiusOnCylinder_param,r);
+	glUniform3f(earthShadowNormal_param,earth_shadow_n.x,earth_shadow_n.y,earth_shadow_n.z);
+	
 ERROR_CHECK
 	for(int i=0;i<6;i++)
 	{
@@ -565,7 +579,7 @@ bool SimulGLSkyRenderer::RenderPointStars()
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderSun()
+void SimulGLSkyRenderer::RenderSun()
 {
 	float alt_km=0.001f*cam_pos.z;
 	simul::sky::float4 sunlight=skyKeyframer->GetSkyInterface()->GetLocalIrradiance(alt_km);
@@ -598,7 +612,6 @@ bool SimulGLSkyRenderer::RenderSun()
 
 	RenderAngledQuad(sun_dir,sun_angular_size);
 	glUseProgram(0);
-	return true;
 }
 
 bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const float *dir,const float *colr,bool do_lighting)
@@ -681,28 +694,8 @@ void SimulGLSkyRenderer::FillSkyTex(int alt_index,int texture_index,int texel_in
 {
 	if(!initialized)
 		return;
-ERROR_CHECK
-	if(0&&numAltitudes==1)
-	{
-		glBindTexture(GL_TEXTURE_1D,sky_tex[texture_index]);
-
-		if(sky_tex_format==GL_HALF_FLOAT_NV)
-		{
-			// Convert the array of floats into float16 values for the texture.
-			short *sptr=short_ptr;
-			for(int i=0;i<num_texels*4;i++)
-				*sptr++=simul::sky::TextureGenerator::ToFloat16(*float4_array++);
-			glTexSubImage1D(GL_TEXTURE_1D,0,texel_index,num_texels,GL_RGBA,sky_tex_format,short_ptr);
-		}
-		else
-		{
-			glTexSubImage1D(GL_TEXTURE_1D,0,texel_index,num_texels,GL_RGBA,sky_tex_format,float4_array);
-		}
-	}
-	else
 	{
 		glBindTexture(GL_TEXTURE_2D,sky_tex[texture_index]);
-ERROR_CHECK
 		PartialTextureFill(false,skyTexSize,0,texel_index+skyTexSize*alt_index,num_texels,float4_array);
 	}
 }
@@ -711,9 +704,7 @@ void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int
 {
 	if(!initialized)
 		return;
-	GLenum target=GL_TEXTURE_2D;
-	if(1||numAltitudes>1)
-		target=GL_TEXTURE_3D;
+	GLenum target=GL_TEXTURE_3D;
 	glBindTexture(target,loss_textures[texture_index]);
 		ERROR_CHECK
 	glTexSubImage3D(GL_TEXTURE_3D,0,x,y,z,w,l,d,GL_RGBA,sky_tex_format,(void*)loss_float4_array);
@@ -780,6 +771,8 @@ ERROR_CHECK
 	sky_program=MakeProgram("simul_sky");
 	MieRayleighRatio_param			=glGetUniformLocation(sky_program,"mieRayleighRatio");
 	lightDirection_sky_param		=glGetUniformLocation(sky_program,"lightDir");
+	earthShadowNormal_param			=glGetUniformLocation(sky_program,"earthShadowNormal");
+	radiusOnCylinder_param			=glGetUniformLocation(sky_program,"radiusOnCylinder");
 	hazeEccentricity_param			=glGetUniformLocation(sky_program,"hazeEccentricity");
 	skyInterp_param					=glGetUniformLocation(sky_program,"skyInterp");
 	skyTexture1_param				=glGetUniformLocation(sky_program,"skyTexture1");

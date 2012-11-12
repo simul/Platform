@@ -58,8 +58,10 @@ void SimulGLTerrainRenderer::MakeTextures()
     glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_T, GL_REPEAT);
     //glTexParameterfv(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_BORDER_COLOR, borderColor);
 	unsigned bpp,width,height;
+	ERROR_CHECK
 	unsigned char *data=LoadGLBitmap("terrain.png",bpp,width,height);
 	unsigned char *moss=LoadGLBitmap("moss.png",bpp,width,height);
+	ERROR_CHECK
 	int num_layers=2;
 	int num_mips=8;
 	int m=1;
