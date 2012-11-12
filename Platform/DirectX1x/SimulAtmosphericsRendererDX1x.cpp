@@ -184,16 +184,6 @@ HRESULT SimulAtmosphericsRendererDX1x::Destroy()
 	return InvalidateDeviceObjects();
 }
 
-static void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
-{
-	//set up matrices
-	D3DXMATRIX tmp1, tmp2;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXMatrixMultiply(&tmp1, &world,&view);
-	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
-	D3DXMatrixTranspose(wvp,&tmp2);
-}
-
 void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &w,const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	world=w;

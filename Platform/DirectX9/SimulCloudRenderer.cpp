@@ -1632,12 +1632,12 @@ bool SimulCloudRenderer::RenderDistances(int width,int height)
 	delete [] lines;
 	return (hr==S_OK);
 }
-void SimulCloudRenderer::SetLossTextures(void *t1)
+void SimulCloudRenderer::SetLossTexture(void *t1)
 {
 	sky_loss_texture=(LPDIRECT3DBASETEXTURE9)t1;
 }
 
-void SimulCloudRenderer::SetInscatterTextures(void *t1)
+void SimulCloudRenderer::SetInscatterTexture(void *t1)
 {
 	sky_inscatter_texture=(LPDIRECT3DBASETEXTURE9)t1;
 }

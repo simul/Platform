@@ -11,7 +11,10 @@
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/SimulGLSkyRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLCloudRenderer.h"
+#include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
+#include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Sky/Float4.h"
+#include "Simul/Base/Timer.h"
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
@@ -20,19 +23,27 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,cam(NULL)
 	,ShowFlares(true)
 	,ShowFades(false)
+	,ShowTerrain(true)
 	,ShowCloudCrossSections(false)
 	,celestial_display(false)
 	,y_vertical(false)
 	,UseHdrPostprocessor(true)
+	,ShowOSD(false)
 {
 	simulHDRRenderer=new SimulGLHDRRenderer(width,height);
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
+	simulTerrainRenderer=new SimulGLTerrainRenderer();
+
 	SetYVertical(y_vertical);
 }
 
 OpenGLRenderer::~OpenGLRenderer()
 {
+	if(simulTerrainRenderer)
+		simulTerrainRenderer->InvalidateDeviceObjects();
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->InvalidateDeviceObjects();
 }
 
 void OpenGLRenderer::paintGL()
@@ -45,7 +56,8 @@ void OpenGLRenderer::paintGL()
     glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(cam->MakeViewMatrix(false));
 	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf(cam->MakeProjectionMatrix(1.f,250000.f,(float)width/(float)height,y_vertical));
+	static float max_dist=250000.f;
+	glLoadMatrixf(cam->MakeProjectionMatrix(1.f,max_dist,(float)width/(float)height,y_vertical));
 	glViewport(0,0,width,height);
 	if(simulWeatherRenderer.get())
 	{
@@ -63,6 +75,12 @@ void OpenGLRenderer::paintGL()
 			simulHDRRenderer->StartRender();
 		simulWeatherRenderer->RenderSky(true,false);
 
+		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
+			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender();
+		if(simulTerrainRenderer&&ShowTerrain)
+			simulTerrainRenderer->Render();
+		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
+			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender();
 		simulWeatherRenderer->RenderLightning();
 
 		simulWeatherRenderer->DoOcclusionTests();
@@ -104,6 +122,19 @@ void OpenGLRenderer::renderUI()
 	float y=12.f;
 	static int line_height=16;
 	RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,"OpenGL");
+	if(ShowOSD)
+	{
+	static simul::base::Timer timer;
+		timer.TimeSum=0;
+		float t=timer.FinishTime();
+		static float framerate=1.f;
+		framerate*=0.99f;
+		framerate+=0.01f*(1000.f/t);
+		static char osd_text[256];
+		sprintf_s(osd_text,256,"%3.3f fps",framerate);
+		RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,osd_text);
+		timer.StartTime();
+	}
 }
 	
 void OpenGLRenderer::SetCelestialDisplay(bool val)
@@ -148,7 +179,8 @@ void OpenGLRenderer::initializeGL()
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
 	}
 	CheckExtension("GL_VERSION_2_0");
-
+	const GLubyte* pVersion = glGetString(GL_VERSION); 
+	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
 	if(cam)
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 	Utilities::RestoreDeviceObjects(NULL);
@@ -158,6 +190,8 @@ void OpenGLRenderer::initializeGL()
 		simulHDRRenderer->RestoreDeviceObjects();
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->RestoreDeviceObjects(NULL);
+	if(simulTerrainRenderer)
+		simulTerrainRenderer->RestoreDeviceObjects(NULL);
 }
 
 void OpenGLRenderer::SetCamera(simul::camera::Camera *c)
@@ -182,4 +216,6 @@ void OpenGLRenderer::RecompileShaders()
 		simulHDRRenderer->RecompileShaders();
 	if(simulWeatherRenderer.get())
 		simulWeatherRenderer->RecompileShaders();
+	if(simulTerrainRenderer.get())
+		simulTerrainRenderer->RecompileShaders();
 }

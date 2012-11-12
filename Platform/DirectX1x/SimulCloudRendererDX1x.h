@@ -80,10 +80,8 @@ public:
 	float GetTiming() const;
 	//! Get the list of three textures used for cloud rendering.
 	void* *GetCloudTextures();
-	//void SetLossTextures(ID3D1xResource *l1,ID3D1xResource *l2);
-	//void SetInscatterTextures(ID3D1xResource *i1,ID3D1xResource *i2);
-	void SetLossTextures(void *t1);
-	void SetInscatterTextures(void *t1);
+	void SetLossTexture(void *t);
+	void SetInscatterTexture(void *t);
 
 	void SetNoiseTextureProperties(int s,int f,int o,float p);
 	void SetAltitudeTextureCoordinate(float f)
@@ -163,14 +161,14 @@ protected:
 	ID3D1xEffectShaderResourceVariable*		noiseTexture;
 
 	ID3D1xEffectShaderResourceVariable*		lightningIlluminationTexture;
-	ID3D1xEffectShaderResourceVariable*		skyLossTexture1;
-	ID3D1xEffectShaderResourceVariable*		skyInscatterTexture1;
+	ID3D1xEffectShaderResourceVariable*		skyLossTexture;
+	ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;
 
 	ID3D1xShaderResourceView*				cloudDensityResource[3];
 	ID3D1xShaderResourceView*				noiseTextureResource;
 	ID3D1xShaderResourceView*				lightningIlluminationTextureResource;
-	ID3D1xShaderResourceView*				skyLossTexture1Resource;
-	ID3D1xShaderResourceView*				skyInscatterTexture1Resource;
+	ID3D1xShaderResourceView*				skyLossTexture_SRV;
+	ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
 
 	ID3D1xTexture3D*			cloud_textures[3];
 	ID3D1xTexture3D*			illumination_texture;
@@ -179,8 +177,6 @@ protected:
 
 	ID3D1xTexture2D*	noise_texture;
 	ID3D1xTexture1D*	lightning_texture;
-	ID3D1xTexture2D*	sky_loss_texture_1;
-	ID3D1xTexture2D*	sky_inscatter_texture_1;
 	ID3D1xTexture2D*	cloud_cubemap;
 	D3DXVECTOR4			cam_pos;
 	D3DXVECTOR4			lightning_colour;

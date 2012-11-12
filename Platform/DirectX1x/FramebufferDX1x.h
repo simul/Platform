@@ -35,6 +35,8 @@ public:
 
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 	void RestoreDeviceObjects(void* pd3dDevice);
+	//! Call to recompile the shaders - useful for debugging.
+	void RecompileShaders();
 	//! Call this when the device has been lost.
 	void InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
@@ -62,6 +64,7 @@ protected:
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	ID3D1xEffect*						m_pTonemapEffect;
 	ID3D1xEffectTechnique*				TonemapTechnique;
+	ID3D1xEffectTechnique*				SkyOverStarsTechnique;
 	ID3D1xEffectMatrixVariable*			worldViewProj;
 	ID3D1xEffectShaderResourceVariable*	hdrTexture;
 public:
@@ -75,8 +78,8 @@ protected:
 	//! The texture the scene is rendered to.
 public:
 	ID3D1xTexture2D*					hdr_buffer_texture;
-protected:
 	ID3D1xShaderResourceView*			hdr_buffer_texture_SRV;
+protected:
 	//! The depth buffer.
 	ID3D1xTexture2D*					buffer_depth_texture;
 	ID3D1xShaderResourceView*			buffer_depth_texture_SRV;

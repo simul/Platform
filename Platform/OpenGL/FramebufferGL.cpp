@@ -135,22 +135,22 @@ void FramebufferGL::InitDepth_RB(GLenum iformat)
 		glGenFramebuffersEXT(1, &m_fb);
 	}
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
-        glGenRenderbuffersEXT(1, &m_rb_depth);
-        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rb_depth);
-		if (m_samples > 0) {
-            if ((m_coverageSamples > 0) && glRenderbufferStorageMultisampleCoverageNV)
-			{
-                glRenderbufferStorageMultisampleCoverageNV(GL_RENDERBUFFER_EXT, m_coverageSamples, m_samples, iformat, m_width, m_height);
-            }
-			else
-			{
-			    glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT, m_samples, iformat, m_width, m_height);
-            }
-		}
+    glGenRenderbuffersEXT(1, &m_rb_depth);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rb_depth);
+	if (m_samples > 0) {
+        if ((m_coverageSamples > 0) && glRenderbufferStorageMultisampleCoverageNV)
+		{
+            glRenderbufferStorageMultisampleCoverageNV(GL_RENDERBUFFER_EXT, m_coverageSamples, m_samples, iformat, m_width, m_height);
+        }
 		else
 		{
-			glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, iformat, m_width, m_height);
-		}
+		    glRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT, m_samples, iformat, m_width, m_height);
+        }
+	}
+	else
+	{
+		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, iformat, m_width, m_height);
+	}
     glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,GL_RENDERBUFFER_EXT,m_rb_depth);
 	//Also attach as a stencil
 	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_rb_depth);

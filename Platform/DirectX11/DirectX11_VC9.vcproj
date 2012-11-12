@@ -63,7 +63,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(SafeParentName)_MDd.dll"
-				Version="$(SIMUL_WEATHER_VERSION)"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Lib/x86&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
@@ -142,7 +141,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(SafeParentName)_MD.dll"
-				Version="$(SIMUL_WEATHER_VERSION)"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Lib/x86&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
@@ -479,6 +477,10 @@
 			</File>
 			<File
 				RelativePath=".\HLSL\simul_clouds_and_lightning_dx11.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_debug.fx"
 				>
 			</File>
 			<File

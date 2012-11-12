@@ -100,16 +100,16 @@ static void SetBits8()
 	simul::clouds::TextureGenerator::SetBits(bits8[0],bits8[1],bits8[2],bits8[3],(unsigned)4,big_endian);
 }
 
-Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck) :
-	BaseCloudRenderer(ck),
-	m_pd3dDevice(NULL),
-	m_pVtxDecl(NULL),
-	m_pCloudEffect(NULL),
-	noise_texture(NULL),
-	image_texture(NULL),
-	own_image_texture(true),
-	texture_scale(0.25f),
-	enabled(true)
+Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck)
+	:BaseCloudRenderer(ck)
+	,m_pd3dDevice(NULL)
+	,m_pVtxDecl(NULL)
+	,m_pCloudEffect(NULL)
+	,noise_texture(NULL)
+	,image_texture(NULL)
+	,own_image_texture(true)
+	,texture_scale(0.25f)
+	,enabled(true)
 	,y_vertical(true)
 {
 	D3DXMatrixIdentity(&world);
@@ -121,45 +121,6 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck) :
 	simul::base::SmartPtr<simul::base::Referenced> test;
 	test=new simul::base::Referenced;
 	test=NULL;
-/*
-	GetCloudInterface()=cloudNode.get();
-	
-	GetCloudInterface()->SetWrap(true);
-	GetCloudInterface()->SetThinLayer(true);
-
-	GetCloudGridInterface()->SetGridLength(128);
-	GetCloudGridInterface()->SetGridWidth(128);
-	GetCloudGridInterface()->SetGridHeight(2);
-
-	GetCloudInterface()->SetCloudBaseZ(12000.f);
-
-	static float ff=12000.f;
-	GetCloudInterface()->SetCloudWidth(ff);
-	GetCloudInterface()->SetCloudLength(ff);
-	GetCloudInterface()->SetCloudHeight(1200.f);
-
-	GetCloudInterface()->SetFractalAmplitude(2.f);
-	GetCloudInterface()->SetFractalWavelength(100.f);
-
-	GetCloudInterface()->SetOpticalDensity(1.5f);
-	GetCloudInterface()->SetHumidity(.65f);
-
-	GetCloudInterface()->SetExtinction(1.9f);
-	GetCloudInterface()->SetLightResponse(0.5f);
-	GetCloudInterface()->SetSecondaryLightResponse(0.5f);
-	GetCloudInterface()->SetAmbientLightResponse(0.5f);
-
-	GetCloudInterface()->SetNoiseResolution(8);
-	GetCloudInterface()->SetNoiseOctaves(5);
-	GetCloudInterface()->SetNoisePersistence(0.75f);
-	GetCloudInterface()->SetNoisePeriod(1);
-
-	GetCloudInterface()->SetSelfShadowScale(0.1f);
-	
-	GetCloudInterface()->SetDiffusivity(.5f);
-
-*/
-//	cloudKeyframer=new simul::clouds::CloudKeyframer(GetCloudInterface(),true);
 	cloudKeyframer->SetMake2DTextures(true);
 	cloudKeyframer->InitKeyframesFromClouds();
 
@@ -168,7 +129,6 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck) :
 	static float max_distance=500000.f;
 	helper->Initialize(8,max_distance);
 	helper->SetGrid(12,24);
-	helper->SetCurvedEarth(true);
 	
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 }
@@ -183,8 +143,6 @@ struct Vertex2D_t
 {
     float3 position;
     float2 texCoords;
-	simul::sky::float4 loss;
-    simul::sky::float4 inscatter;
     float2 texCoordNoise;
 	float2 imageCoords;
 };
@@ -366,20 +324,13 @@ static float light_mult=.03f;
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(alt_km);
 
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(alt_km);
-	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
+	simul::sky::float4 fractal_scales=(GetCloudInterface()->GetFractalOffsetScale(),GetCloudInterface()->GetFractalOffsetScale(),0,0);
 	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
 
-	float tan_half_fov_vertical=1.f/proj._22;
-	float tan_half_fov_horizontal=1.f/proj._11;
-	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	static float sc=7.f;
 	helper->Set2DNoiseTexturing(-0.8f,1.f,1.f);
-	helper->MakeGeometry(GetCloudInterface());
-	helper->CalcInscatterFactors(GetCloudInterface(),skyInterface,0.f);
+	helper->Make2DGeometry(GetCloudInterface());
 	float image_scale=1.f/texture_scale;
-	// Make the angular inscatter multipliers:
-	unsigned el_start,el_end,az_start,az_end;
-	helper->GetCurrentGrid(el_start,el_end,az_start,az_end);
 	static float image_effect=0.9f;
 	D3DXVECTOR4 interp_vec(cloudKeyframer->GetInterpolation(),1.f-cloudKeyframer->GetInterpolation(),0,0);
 	m_pCloudEffect->SetVector	(interp				,(D3DXVECTOR4*)(&interp_vec));
@@ -435,10 +386,6 @@ static float light_mult=.03f;
 			vertex.position=float3(V.x,V.y,V.z);
 			vertex.texCoords=float2(sc*V.cloud_tex_x,sc*V.cloud_tex_y);
 			vertex.texCoordNoise=float2(V.noise_tex_x,V.noise_tex_y);
-			inscatter=helper->GetInscatter(V);
-			loss=helper->GetLoss(V);
-			vertex.loss=simul::sky::float4(loss.x,loss.y,loss.z,0);
-			vertex.inscatter=simul::sky::float4(inscatter.x,inscatter.y,inscatter.z,0);
 			vertex.imageCoords=float2(vertex.texCoords.x*image_scale,vertex.texCoords.y*image_scale);
 		}
 		if(v>=MAX_VERTICES)
@@ -557,7 +504,7 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 	return debug_text;
 }
 
-void Simul2DCloudRenderer::RenderCrossSections(int screen_width,int )
+void Simul2DCloudRenderer::RenderCrossSections(int screen_width,int screen_height)
 {
 	int w=(screen_width-16)/6;
 	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;

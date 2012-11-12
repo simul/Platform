@@ -55,6 +55,7 @@ public:
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	bool Render(bool blend);
 	bool RenderPointStars(){return false;}
+	bool RenderSun();
 	//! Draw the fade textures to screen
 	bool RenderFades(int w,int h);
 	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
@@ -119,7 +120,7 @@ protected:
 	ID3D1xEffectScalarVariable*			overcastFactor;
 	ID3D1xEffectScalarVariable*			skyInterp;
 	ID3D1xEffectScalarVariable*			altitudeTexCoord;
-	ID3D1xEffectVectorVariable*			sunlightColour;
+	ID3D1xEffectVectorVariable*			colour;
 
 	ID3D1xEffectMatrixVariable*			projMatrix;
 	ID3D1xEffectMatrixVariable*			cubemapViews;
@@ -144,6 +145,7 @@ protected:
 	ID3D1xShaderResourceView*			sky_textures_SRV[3];
 	ID3D1xShaderResourceView*			loss_textures_SRV[3];
 	ID3D1xShaderResourceView*			insc_textures_SRV[3];
+	ID3D1xShaderResourceView*			moon_texture_SRV;
 
 	int mapped_sky;
 	D3D1x_MAPPED_TEXTURE2D sky_texture_mapped;
@@ -158,8 +160,6 @@ protected:
 	D3DXMATRIX				world,view,proj;
 	bool UpdateSkyTexture(float proportion);
 	void CreateSkyTextures();
-	bool RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
-	bool RenderSun();
 void DrawCube();
 	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);

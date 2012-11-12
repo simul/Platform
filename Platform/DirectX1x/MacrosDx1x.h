@@ -4,6 +4,7 @@
 #include <tchar.h>
 #include "Simul/Platform/DirectX1x/Export.h"
 typedef std::basic_string<TCHAR> tstring;
+#define ENABLE_PIX
 #ifdef UNICODE
 	#define stprintf_s swprintf_s
 #else
@@ -124,6 +125,8 @@ typedef std::basic_string<TCHAR> tstring;
 	#define D3D1x_BIND_SHADER_RESOURCE					D3D11_BIND_SHADER_RESOURCE
 	#define D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP
 	#define D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	#define D3D1x_PRIMITIVE_TOPOLOGY_LINESTRIP			D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP
+	#define D3D1x_PRIMITIVE_TOPOLOGY_LINELIST			D3D11_PRIMITIVE_TOPOLOGY_LINELIST
 	#define D3DX1xCreateTextureFromFile					D3DX11CreateTextureFromFile
 	#define D3DX1x_IMAGE_LOAD_INFO						D3DX11_IMAGE_LOAD_INFO
 	#define ID3D1xRenderTargetView						ID3D11RenderTargetView

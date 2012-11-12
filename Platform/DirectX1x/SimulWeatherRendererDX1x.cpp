@@ -158,6 +158,12 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
 }
 
+void SimulWeatherRendererDX1x::RecompileShaders()
+{
+	BaseWeatherRenderer::RecompileShaders();
+	framebuffer.RecompileShaders();
+}
+
 void SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 {
 	framebuffer.InvalidateDeviceObjects();
@@ -283,6 +289,15 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 {
 	simul::clouds::BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
 	HRESULT hr=S_OK;
+	if(buffered&&!is_cubemap)
+	{
+		if(simulSkyRenderer&&ShowPlanets)
+		{
+			simulSkyRenderer->RenderPointStars();
+			simulSkyRenderer->RenderSun();
+			simulSkyRenderer->RenderPlanets();
+		}
+	}
 	if(buffered)
 	{
 		framebuffer.Activate();
@@ -303,7 +318,7 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 	if(simulCloudRenderer&&layer1)
 		hr=simulCloudRenderer->Render(is_cubemap,false,UseDefaultFog);
 	if(buffered)
-		framebuffer.DeactivateAndRender(false);
+		framebuffer.DeactivateAndRender(!is_cubemap);
 	return (hr==S_OK);
 }
 
@@ -331,8 +346,8 @@ void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()
 	simulSkyRenderer->Get2DLossAndInscatterTextures(&l,&i);
 	if(simulCloudRenderer)
 	{
-		simulCloudRenderer->SetLossTextures(l);
-		simulCloudRenderer->SetInscatterTextures(i);
+		simulCloudRenderer->SetLossTexture(l);
+		simulCloudRenderer->SetInscatterTexture(i);
 	}
 }
 void SimulWeatherRendererDX1x::Update(float dt)
@@ -346,9 +361,9 @@ void SimulWeatherRendererDX1x::Update(float dt)
 		{
 			if(simulCloudRenderer)
 			{
-				/*simulCloudRenderer->SetLossTextures(simulSkyRenderer->GetLossTexture1(),
+				/*simulCloudRenderer->SetLossTexture(simulSkyRenderer->GetLossTexture1(),
 					simulSkyRenderer->GetLossTexture2());
-				simulCloudRenderer->SetInscatterTextures(simulSkyRenderer->GetInscatterTexture1(),
+				simulCloudRenderer->SetInscatterTexture(simulSkyRenderer->GetInscatterTexture1(),
 					simulSkyRenderer->GetInscatterTexture2());*/
 				simulCloudRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
 				simulCloudRenderer->SetAltitudeTextureCoordinate(simulSkyRenderer->GetAltitudeTextureCoordinate());
@@ -357,9 +372,9 @@ void SimulWeatherRendererDX1x::Update(float dt)
 			{
 				if(simulCloudRenderer)
 					simulAtmosphericsRenderer->SetOvercastFactor(simulCloudRenderer->GetOvercastFactor());
-				simulAtmosphericsRenderer->SetLossTextures(simulSkyRenderer->GetLossTexture1(),
+				simulAtmosphericsRenderer->SetLossTexture(simulSkyRenderer->GetLossTexture1(),
 					simulSkyRenderer->GetLossTexture2());
-				simulAtmosphericsRenderer->SetInscatterTextures(simulSkyRenderer->GetInscatterTexture1(),
+				simulAtmosphericsRenderer->SetInscatterTexture(simulSkyRenderer->GetInscatterTexture1(),
 					simulSkyRenderer->GetInscatterTexture2());
 				simulAtmosphericsRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
 			}*/

@@ -7,7 +7,7 @@
 // agreement.
 
 // SimulSkyRenderer.cpp A renderer for skies.
-
+#define NOMINMAX
 #include "SimulSkyRenderer.h"
 
 #ifdef XBOX
@@ -148,7 +148,7 @@ void SimulSkyRenderer::RestoreDeviceObjects(void *dev)
 		sky_tex_format=D3DFMT_LIN_A32B32G32R32F;
 #endif
 		if(CanUseTexFormat(m_pd3dDevice,sky_tex_format)!=S_OK)
-			return;
+			throw simul::base::RuntimeError("Can't use sky texture format.");
 	}
     m_pd3dDevice->CreateQuery( D3DQUERYTYPE_OCCLUSION, &d3dQuery );
 	D3DXMatrixIdentity(&world);
@@ -699,7 +699,16 @@ bool SimulSkyRenderer::RenderSun()
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
-	sunlight*=pow(1.f-sun_occlusion,0.25f)*25.f;//2700.f;
+	sunlight*=pow(1.f-sun_occlusion,0.25f)*2700.f;
+	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
+	// to the range [0,1], and store a brightness multiplier in the alpha channel!
+	sunlight.w=1.f;
+	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
+	if(max_bright>1.f)
+	{
+		sunlight*=1.f/max_bright;
+		sunlight.w=max_bright;
+	}
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
 	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());

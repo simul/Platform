@@ -39,8 +39,8 @@ public:
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
 	//! Show the cross sections on-screen.
 	void RenderCrossSections(int width,int height);
-	void SetLossTextures(void *);
-	void SetInscatterTextures(void *);
+	void SetLossTexture(void *);
+	void SetInscatterTexture(void *);
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
 	const char *GetDebugText();

@@ -47,7 +47,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	}
 	simulCloudRenderer=new SimulGLCloudRenderer(ck3d);
 	baseCloudRenderer=simulCloudRenderer.get();
-	base2DCloudRenderer=simul2DCloudRenderer=NULL;//new SimulGL2DCloudRenderer(ck2d);
+	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d);
 	
 	simulLightningRenderer=new SimulGLLightningRenderer(environment->lightning.get());
 	baseLightningRenderer=simulLightningRenderer.get();
@@ -190,7 +190,7 @@ static simul::base::Timer timer;
 	}
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	ERROR_CHECK
-	if(simulSkyRenderer)
+	if(simulSkyRenderer&&ShowSky)
 	{
 		// We call the sky renderer, telling it to blend if we're not buffering the sky,
 		// because otherwise it would overwrite the planets

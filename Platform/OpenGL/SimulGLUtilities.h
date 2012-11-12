@@ -21,6 +21,8 @@ public:
 
 //! A wrapper around glewIsSupported() that checks for errors.
 extern void SIMUL_OPENGL_EXPORT CheckExtension(const char *txt);
+
+extern bool IsExtensionSupported(const char *name);
 //! A wrapper around glOrtho() that also resets the GL matrices, and stores window height for later use.
 extern SIMUL_OPENGL_EXPORT void SetOrthoProjection(int w,int h);
 extern SIMUL_OPENGL_EXPORT void SetTopDownOrthoProjection(int w,int h);
@@ -38,7 +40,7 @@ extern SIMUL_OPENGL_EXPORT float GetFramerate();
 extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_number);
 //! Check the given error code, and halt the program if it is non-zero.
 extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_number,int err);
-#define ERROR_CHECK //CheckGLError(__FILE__,__LINE__);
+#define ERROR_CHECK CheckGLError(__FILE__,__LINE__);
 #define SAFE_DELETE_PROGRAM(prog)	if(prog){GLuint shaders[2];GLsizei count;glGetAttachedShaders(prog,2,&count,shaders);for(int i=0;i<count;i++) glDeleteShader(shaders[i]); glDeleteProgram(prog);prog=0;}
 #define SAFE_DELETE_TEXTURE(tex)	glDeleteTextures(1,&tex);tex=0;
 extern SIMUL_OPENGL_EXPORT bool RenderAngledQuad(const float *dir,float half_angle_radians);
@@ -51,4 +53,5 @@ struct VertexXyzRgba
 };
 extern SIMUL_OPENGL_EXPORT void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip);
 extern void CalcCameraPosition(float *cam_pos,float *cam_dir=0);
+extern SIMUL_OPENGL_EXPORT void FixGlProjectionMatrix(float required_distance);
 #endif

@@ -449,8 +449,11 @@ bool SimulGLSkyRenderer::Render(bool blend)
 	SetCameraPosition(cam_pos.x,cam_pos.y,cam_pos.z);
 	Render2DFades();
 ERROR_CHECK
-	glClearColor(1,1,0,1);
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	//if(!blend)
+	//{
+		glClearColor(0,0,0,1);
+		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	//}
 	simul::sky::float4 ratio=skyKeyframer->GetMieRayleighRatio();
 	simul::sky::float4 sun_dir=skyKeyframer->GetDirectionToLight();
 	glEnable(GL_TEXTURE_2D);
@@ -571,10 +574,19 @@ bool SimulGLSkyRenderer::RenderSun()
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
-	sunlight*=pow(1.f-sun_occlusion,0.25f)*25.f;//2700.f;
+	sunlight*=pow(1.f-sun_occlusion,0.25f)*2700.f;
+	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
+	// to the range [0,1], and store a brightness multiplier in the alpha channel!
+	sunlight.w=1.f;
+	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
+	if(max_bright>1.f)
+	{
+		sunlight*=1.f/max_bright;
+		sunlight.w=max_bright;
+	}
 	glUseProgram(sun_program);
 		ERROR_CHECK
-	glUniform3f(sunlight_param,sunlight.x,sunlight.y,sunlight.z);
+	glUniform4f(sunlight_param,sunlight.x,sunlight.y,sunlight.z,sunlight.w);
 		ERROR_CHECK
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
 	//if(y_vertical)
@@ -582,7 +594,7 @@ bool SimulGLSkyRenderer::RenderSun()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
-	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE,GL_SRC_ALPHA,GL_ONE);
+	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
 	RenderAngledQuad(sun_dir,sun_angular_size);
 	glUseProgram(0);
@@ -641,7 +653,7 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 		ERROR_CHECK
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		ERROR_CHECK
-	glBlendEquationSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 		ERROR_CHECK
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		ERROR_CHECK
@@ -746,22 +758,6 @@ void SimulGLSkyRenderer::EnsureTextureCycle()
 	{
 		std::swap(sky_tex[0],sky_tex[1]);
 		std::swap(sky_tex[1],sky_tex[2]);
-		std::swap(loss_textures[0],loss_textures[1]);
-		std::swap(loss_textures[1],loss_textures[2]);
-		std::swap(inscatter_textures[0],inscatter_textures[1]);
-		std::swap(inscatter_textures[1],inscatter_textures[2]);
-		std::swap(sky_texture_iterator[0],sky_texture_iterator[1]);
-		std::swap(sky_texture_iterator[1],sky_texture_iterator[2]);
-		std::swap(fade_texture_iterator[0],fade_texture_iterator[1]);
-		std::swap(fade_texture_iterator[1],fade_texture_iterator[2]);
-		for(int i=0;i<3;i++)
-		{
-			for(int j=0;j<numAltitudes;j++)
-			{
-				fade_texture_iterator[i][j].texture_index=i;
-				sky_texture_iterator[i][j].texture_index=i;
-			}
-		}
 		texture_cycle++;
 		texture_cycle=texture_cycle%3;
 		if(texture_cycle<0)
@@ -791,17 +787,17 @@ ERROR_CHECK
 	altitudeTexCoord_param			=glGetUniformLocation(sky_program,"altitudeTexCoord");
 	printProgramInfoLog(sky_program);
 ERROR_CHECK
-	sun_program						=LoadPrograms("simul_sun_planet_flare.vert","simul_sun.frag");
+	sun_program						=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
 	printProgramInfoLog(sun_program);
-	stars_program					=LoadPrograms("simul_sun_planet_flare.vert","simul_stars.frag");
+	stars_program					=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
 	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
 	printProgramInfoLog(stars_program);
 ERROR_CHECK
-	sun_program						=LoadPrograms("simul_sun_planet_flare.vert","simul_sun.frag");
+	sun_program						=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
 	printProgramInfoLog(sun_program);
-	stars_program					=LoadPrograms("simul_sun_planet_flare.vert","simul_stars.frag");
+	stars_program					=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
 	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
 	printProgramInfoLog(stars_program);
 ERROR_CHECK

@@ -27,27 +27,29 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 	vec3 colour=BetaTotal*inscatter_factor.rgb;
 	return colour;
 }
-
-void main(void)
+//float water_height=-4000.0/200000.0;
+void main()
 {
     vec4 lookup=texture2D(image_texture,texCoords);
 	vec4 pos=vec4(-1.0,-1.0,1.0,1.0);
 	pos.x+=2.0*texCoords.x;//+texelOffsets.x;
 	pos.y+=2.0*texCoords.y;//+texelOffsets.y;
 	vec3 view=(invViewProj*pos).xyz;
-	view=abs(normalize(view));
+	//float height_above_water=(view.z-water_height)*200000.0;
+		
+	view=normalize(view);
 	float sine=view.z;
 	float depth=lookup.a;
-
-	if(depth>=0.999) 
+	if(depth>=1.0) 
 		discard;
 	vec2 texc2=vec2(pow(depth,0.5),0.5*(1.0-sine));
 	vec3 loss=texture2D(loss_texture,texc2).rgb;
 	vec3 colour=lookup.rgb;
-//	colour*=loss;
+	colour*=loss;
 	vec4 inscatter_factor=texture2D(insc_texture,texc2);
 	float cos0=dot(view,lightDir);
-//	colour+=InscatterFunction(inscatter_factor,cos0);
-
-    gl_FragColor=vec4(colour.rgb,0.5);
+	colour+=InscatterFunction(inscatter_factor,cos0);
+	//if(height_above_water<0)
+	//	colour.b+=saturate(-height_above_water);
+    gl_FragColor=vec4(colour.rgb,1.0);
 }

@@ -1,14 +1,18 @@
+#version 130
+//#extension GL_EXT_geometry_shader4 : enable
 // simul_terrain.vert - an OGLSL vertex shader
 // Copyright 2012 Simul Software Ltd
 
+uniform mat4 worldViewProj;
+in vec3 vertex;
 // varyings are written by vert shader, interpolated, and read by frag shader.
-varying vec2 texcoord;
-varying vec3 wPosition;
+out vec3 wPosition;
+out vec2 texcoord;
 
 void main(void)
 {
-    gl_Position		= ftransform();
-    texcoord		= gl_MultiTexCoord0.xy;
-	wPosition		= gl_Vertex.xyz;
+    gl_Position		= worldViewProj * vec4(vertex, 1.0);
+	wPosition		= vertex;
+	texcoord		= vec2(wPosition.xy/2000.0);
 }
 

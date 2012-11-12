@@ -50,7 +50,7 @@ Utilities::~Utilities()
 		Utilities::InvalidateDeviceObjects();
 }
 
-static bool IsExtensionSupported(const char *name)
+bool IsExtensionSupported(const char *name)
 {
 	GLint n=0;
 	glGetIntegerv(GL_NUM_EXTENSIONS, &n);
@@ -221,13 +221,11 @@ void CheckGLError(const char *filename,int line_number,int err)
 #include "Simul/Math/Matrix4x4.h"
 #include <math.h>
 
-
-
 void CalcCameraPosition(float *cam_pos,float *cam_dir)
 {
 	simul::math::Matrix4x4 modelview;
 	glGetFloatv(GL_MODELVIEW_MATRIX,modelview.RowPointer(0));
-		ERROR_CHECK
+	ERROR_CHECK
 	simul::math::Matrix4x4 inv;
 	modelview.Inverse(inv);
 	cam_pos[0]=inv(3,0);
@@ -340,4 +338,24 @@ void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 	}
 	glEnd();
 	glUseProgram(0);
+}
+
+static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
+{
+	glGetFloatv(src,m);
+}
+
+void FixGlProjectionMatrix(float required_distance)
+{
+	simul::math::Matrix4x4 proj;
+	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
+
+	float zFar=proj(3,2)/(1.f+proj(2,2));
+	float zNear=proj(3,2)/(proj(2,2)-1.f);
+	zFar=required_distance;
+	proj(2,2)=-(zFar+zNear)/(zFar-zNear);
+	proj(3,2)=-2.f*(zNear*zFar)/(zFar-zNear);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadMatrixf(proj.RowPointer(0));
 }

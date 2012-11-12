@@ -65,7 +65,6 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glut32.lib glew32.lib"
 				OutputFile="$(OutDir)\$(SafeParentName)_MDd.dll"
-				Version="$(SIMUL_WEATHER_VERSION)"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				IgnoreDefaultLibraryNames="$(SafeParentName)_MD.lib"
@@ -145,7 +144,6 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glut32.lib glew32.lib"
 				OutputFile="$(OutDir)\$(SafeParentName)_MD.dll"
-				Version="$(SIMUL_WEATHER_VERSION)"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				IgnoreDefaultLibraryNames="$(SafeParentName)_MD.lib"
@@ -365,6 +363,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimulGLTerrainRenderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SimulGLUtilities.cpp"
 				>
 			</File>
@@ -432,6 +434,10 @@
 			</File>
 			<File
 				RelativePath=".\SimulGLSkyRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulGLTerrainRenderer.h"
 				>
 			</File>
 			<File
@@ -540,6 +546,10 @@
 			</File>
 			<File
 				RelativePath=".\GLSL\simul_terrain.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_terrain.geom"
 				>
 			</File>
 			<File

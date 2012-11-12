@@ -44,7 +44,7 @@ void SimulOpticsRendererGL::RestoreDeviceObjects(void *)
 void SimulOpticsRendererGL::RecompileShaders()
 {
 	SAFE_DELETE_PROGRAM(flare_program);
-	flare_program					=LoadPrograms("simul_sun_planet_flare.vert","simul_flare.frag");
+	flare_program					=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_flare.frag");
 	flareColour_param				=glGetUniformLocation(flare_program,"flareColour");
 	flareTexture_param				=glGetUniformLocation(flare_program,"flareTexture");
 	printProgramInfoLog(flare_program);
@@ -63,6 +63,7 @@ void SimulOpticsRendererGL::InvalidateDeviceObjects()
 
 void SimulOpticsRendererGL::RenderFlare(float exposure,const float *dir,const float *light)
 {
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	simul::sky::float4 sun_dir(dir);//skyKeyframer->GetDirectionToLight());
 	float magnitude=exposure;//*(1.f-sun_occlusion);
 	simul::math::FirstOrderDecay(flare_magnitude,magnitude,5.f,0.1f);
@@ -115,4 +116,6 @@ void SimulOpticsRendererGL::RenderFlare(float exposure,const float *dir,const fl
 			RenderAngledQuad(pos,flare_angular_size*sz*flare_magnitude);
 		}
 	}
+	glUseProgram(0);
+	glPopAttrib();
 }
