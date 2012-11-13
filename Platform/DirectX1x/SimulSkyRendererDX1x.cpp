@@ -293,7 +293,7 @@ void SimulSkyRendererDX1x::UnmapSky()
 	mapped_sky=-1;
 }
 
-void SimulSkyRendererDX1x::FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
+void SimulSkyRendererDX1x::FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
 {
 	MapSky(texture_index);
 	if(!sky_texture_mapped.pData)
@@ -361,7 +361,7 @@ void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate()
 			}
 			if(texture_fill.num_texels&&sky_textures[i])
 			{
-				FillSkyTex(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1);
+				FillSkyTexture(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1);
 			}
 			texture_fill=skyKeyframer->GetSequentialFadeTextureFill(j,i,fade_texture_iterator[i][j]);
 			if(texture_fill.num_texels&&sky_textures[i])

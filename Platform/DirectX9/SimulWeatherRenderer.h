@@ -111,7 +111,7 @@ public:
 	SimulWeatherRenderer(simul::clouds::Environment *env
 							,bool usebuffer=true
 							,int width=320,
-		int height=240,bool sky=true,bool clouds3d=true,bool clouds2d=true,
+		int height=240,bool sky=true,
 		bool rain=true);
 	virtual ~SimulWeatherRenderer();
 	void SetScreenSize(int w,int h);

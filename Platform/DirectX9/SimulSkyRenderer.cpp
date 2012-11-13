@@ -230,7 +230,7 @@ SimulSkyRenderer::~SimulSkyRenderer()
 	InvalidateDeviceObjects();
 }
 
-void SimulSkyRenderer::FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
+void SimulSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
 {
 	HRESULT hr;
 	LPDIRECT3DTEXTURE9 tex=NULL;
@@ -744,7 +744,7 @@ void SimulSkyRenderer::EnsureTexturesAreUpToDate()
 			simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSkyTextureFill(j,i,sky_texture_iterator[i][j]);
 			if(texture_fill.num_texels&&sky_textures[i])
 			{
-				FillSkyTex(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1);
+				FillSkyTexture(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1);
 			}
 			texture_fill=skyKeyframer->GetSequentialFadeTextureFill(j,i,fade_texture_iterator[i][j]);
 			if(texture_fill.num_texels&&sky_textures[i])

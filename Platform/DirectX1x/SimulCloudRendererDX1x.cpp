@@ -604,8 +604,6 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	helper->SetNoFrustumLimit(true);//cubemap);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
-	if(fade_mode==CPU)
-		helper->CalcInscatterFactors(skyInterface);
 
 	ID3D1xEffectConstantBuffer* cbUser=m_pCloudEffect->GetConstantBufferByName("cbUser");
 	if(cbUser)

@@ -771,9 +771,6 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	helper->SetNoFrustumLimit(nofs);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),false);
 
-	if(fade_mode==CPU)
-		helper->CalcInscatterFactors(skyInterface);
-
 	float cloud_interp=cloudKeyframer->GetInterpolation();
 	m_pCloudEffect->SetFloat	(interp					,cloud_interp);
 	m_pCloudEffect->SetVector	(eyePosition			,(D3DXVECTOR4*)(&cam_pos));
@@ -924,20 +921,6 @@ void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
 					vertex->sunlightColour.y=sunlight.y;
 					vertex->sunlightColour.z=sunlight.z;
 					float cos0=simul::sky::float4::dot(sun_dir,dir_to_vertex);
-					if(fade_mode==CPU)
-					{
-						simul::sky::float4 loss=skyInterface->GetIsotropicColourLossFactor(view_alt_km,elev,0,scale*dist);
-						simul::sky::float4 inscatter=
-							skyInterface->GetIsotropicInscatterFactor(view_alt_km,elev,0,scale*dist,false,0);
-						inscatter*=skyInterface->GetInscatterAngularMultiplier(cos0,inscatter.w,view_alt_km);
-						CPUFadeVertex_t *cpu_vertex=&cpu_fade_vertices[v];
-						cpu_vertex->loss.x=loss.x;
-						cpu_vertex->loss.y=loss.y;
-						cpu_vertex->loss.z=loss.z;
-						cpu_vertex->inscatter.x=inscatter.x;
-						cpu_vertex->inscatter.y=inscatter.y;
-						cpu_vertex->inscatter.z=inscatter.z;
-					}
 					v++;
 					if(v>=MAX_VERTICES)
 						break;

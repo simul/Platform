@@ -52,7 +52,7 @@ public:
 	{
 		exit(1);
 	}
-	virtual		void FillSkyTexture(int ,int ,int ,int ,const float *){}
+	virtual		void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
 	virtual		void CycleTexturesForward(){}
 	virtual		bool HasFastFadeLookup() const{return true;}
 	virtual		const float *GetFastLossLookup(float distance_texcoord,float elevation_texcoord);
@@ -67,11 +67,14 @@ public:
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual		void SetYVertical(bool ){}
 protected:
+	//! \internal Switch the current program, either sky_program or earthshadow_program.
+	//! Also sets the parameter variables.	
+	void		UseProgram(GLuint);
 	void		SetSkyTexSize(unsigned size);
 	void		SetFadeTexSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_altitudes);
-	void		FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void		FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d,const float *loss_float4_array,const float *inscatter_float4_array);
-	//void		EnsureCorrectTextureSizes();
+	void		FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d
+				,const float *loss_float4_array,const float *inscatter_float4_array,const float *skylight_float4_array);
+
 	void		EnsureTexturesAreUpToDate();
 	void		EnsureTextureCycle();
 
@@ -83,13 +86,20 @@ protected:
 	GLuint		sky_tex[3];
 	GLuint		loss_textures[3];
 	GLuint		inscatter_textures[3];
+	GLuint		skylight_textures[3];
 
 	bool CreateSkyEffect();
 	bool RenderSkyToBuffer();
 
 	unsigned		cloud_texel_index;
 	unsigned char	*sky_tex_data;
+	
+	// Two alternative programs for rendering the sky:
 	GLuint			sky_program;
+	GLuint			earthshadow_program;
+	// Whichever of those two we are currently using:
+	GLuint			current_program;
+	
 	GLuint			planet_program;
 	GLuint			sun_program;
 	GLuint			stars_program;
@@ -105,6 +115,7 @@ protected:
 	GLint			lightDirection_sky_param;
 	GLint			earthShadowNormal_param;
 	GLint			radiusOnCylinder_param;
+	GLint			maxFadeDistance_param;
 	GLint			skyInterp_param;
 	GLint			sunlight_param;
 	
@@ -112,9 +123,13 @@ protected:
 
 	GLint			skyTexture1_param;
 	GLint			skyTexture2_param;
+
+	GLint			lossTexture1_param;
+	GLint			lossTexture2_param;
 	
 	FramebufferGL	loss_2d;
 	FramebufferGL	inscatter_2d;
+	FramebufferGL	skylight_2d;
 
 	bool campos_updated;
 	short *short_ptr;

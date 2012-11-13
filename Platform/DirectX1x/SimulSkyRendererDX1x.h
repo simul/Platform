@@ -78,7 +78,7 @@ public:
 	void SetStepsPerDay(unsigned steps);
 //! Initialize textures
 	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
-	void FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
+	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void FillFadeTex(int alt_index,int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
 						const float *inscatter_float4_array);

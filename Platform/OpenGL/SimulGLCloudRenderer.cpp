@@ -405,13 +405,6 @@ ERROR_CHECK
 	float tan_half_fov_horizontal=std::max(1.f/left,1.f/right);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),god_rays,X1.z,god_rays);
-	// Here we make the helper calculate loss and inscatter due to atmospherics.
-	// This is an approach that calculates per-vertex atmospheric values that are then
-	// passed to the shader.
-	// The alternative is to generate fade textures in the SkyRenderer,
-	// then lookup those textures in the cloud shader.
-	if(!default_fog)
-		helper->CalcInscatterFactors(skyInterface,god_rays);
 #if 1
 	simul::sky::float4 sunlight1=skyInterface->GetLocalIrradiance(X1.z*.001f);
 	simul::sky::float4 sunlight2=skyInterface->GetLocalIrradiance(X2.z*.001f);
@@ -499,11 +492,7 @@ ERROR_CHECK
 			for(unsigned k=0;k<(*j)->num_vertices;k++,qs_vert++)
 			{
 				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
-				if(!default_fog)
-				{
-					loss		=helper->GetLoss(*i,V);
-					inscatter	=helper->GetInscatter(*i,V);
-				}
+		
 				glMultiTexCoord3f(GL_TEXTURE0,V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
 				glMultiTexCoord2f(GL_TEXTURE1,V.noise_tex_x,V.noise_tex_y);
 				glMultiTexCoord1f(GL_TEXTURE2,dens);
@@ -515,8 +504,6 @@ ERROR_CHECK
 				// The per-vertex loss and inscatter is cheap for the pixel shader as it
 				// then doesn't need fade-texture lookups.
 				glMultiTexCoord3f(GL_TEXTURE3,sunlight.x,sunlight.y,sunlight.z);
-				glMultiTexCoord3f(GL_TEXTURE4,loss.x,loss.y,loss.z);
-				glMultiTexCoord3f(GL_TEXTURE5,inscatter.x,inscatter.y,inscatter.z);
 				glVertex3f(V.x,V.y,V.z);
 			}
 		}

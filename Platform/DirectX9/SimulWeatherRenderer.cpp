@@ -42,11 +42,9 @@
 #define WRITE_PERFORMANCE_DATA
 static simul::base::Timer timer;
 
-static D3DXMATRIX ident;
 SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 											bool usebuffer,int width,
-											int height,bool sky,bool clouds3d,
-											bool clouds2d,bool rain) :
+											int height,bool sky,bool rain) :
 	BaseWeatherRenderer(env,sky,rain),
 	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
@@ -66,7 +64,6 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
 	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer.get();
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer.get();
-	D3DXMatrixIdentity(&ident);
 	SetScreenSize(width,height);
 	if(ShowSky)
 	{

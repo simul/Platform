@@ -31,7 +31,7 @@ static const GLenum buffer_tex_format		=GL_FLOAT;
 static const GLenum internal_buffer_format	=GL_RGBA32F_ARB;
 
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,bool usebuffer,bool tonemap,int width,
-		int height,bool sky,bool clouds3d,bool clouds2d,bool rain)
+		int height,bool sky,bool rain)
 		:BaseWeatherRenderer(env,sky,rain)
 		,BufferWidth(0)
 		,BufferHeight(0)
@@ -56,7 +56,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	simulAtmosphericsRenderer=new SimulGLAtmosphericsRenderer;
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
 
-	EnableCloudLayers(clouds3d,clouds2d);
+	EnableCloudLayers(true,true);
 	SetScreenSize(width,height);
 }
 
@@ -134,7 +134,7 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 	CheckExtension("GL_EXT_framebuffer_object");
     if(scene_buffer)
         delete scene_buffer;
-	scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+	baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 	scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
 	scene_buffer->SetShader(0);
 	device_initialized=true;

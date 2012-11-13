@@ -34,7 +34,6 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
 	simulTerrainRenderer=new SimulGLTerrainRenderer();
-
 	SetYVertical(y_vertical);
 }
 

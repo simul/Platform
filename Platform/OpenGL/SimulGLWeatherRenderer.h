@@ -39,7 +39,7 @@ SIMUL_OPENGL_EXPORT_CLASS SimulGLWeatherRenderer:public simul::clouds::BaseWeath
 {
 public:
 	SimulGLWeatherRenderer(simul::clouds::Environment *env,bool usebuffer=true,bool tonemap=false,int width=640,
-		int height=480,bool sky=true,bool clouds3d=true,bool clouds2d=true,
+		int height=480,bool sky=true,
 		bool rain=true);
 	virtual ~SimulGLWeatherRenderer();
 	void SetScreenSize(int w,int h);
