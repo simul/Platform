@@ -1,3 +1,4 @@
+#version 130
 // simul_sky.frag - a GLSL fragment shader
 // Copyright 2008 Simul Software Ltd
 

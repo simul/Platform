@@ -1,4 +1,4 @@
-
+#version 130
 uniform sampler2D image_texture;
 uniform sampler2D loss_texture;
 uniform sampler2D insc_texture;

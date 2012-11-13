@@ -567,6 +567,7 @@ bool SimulGLSkyRenderer::RenderPointStars()
 
 bool SimulGLSkyRenderer::RenderSun()
 {
+	return true;
 	float alt_km=0.001f*cam_pos.z;
 	simul::sky::float4 sunlight=skyKeyframer->GetSkyInterface()->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
@@ -585,9 +586,9 @@ bool SimulGLSkyRenderer::RenderSun()
 		sunlight.w=max_bright;
 	}
 	glUseProgram(sun_program);
-		ERROR_CHECK
+	ERROR_CHECK
 	glUniform4f(sunlight_param,sunlight.x,sunlight.y,sunlight.z,sunlight.w);
-		ERROR_CHECK
+	ERROR_CHECK
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
 	//if(y_vertical)
 	//	std::swap(sun_dir.y,sun_dir.z);
