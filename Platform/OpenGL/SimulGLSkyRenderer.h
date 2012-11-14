@@ -61,8 +61,7 @@ public:
 	bool		RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	void		RenderSun();
 
-	void		Get3DLossAndInscatterTextures(void* *l1,void* *l2,void* *i1,void* *i2);
-	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1);
+	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s);
 
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual		void SetYVertical(bool ){}

@@ -92,6 +92,8 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,loss_texture);
     glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D,inscatter_texture);
+    glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D,skylight_texture);
 ERROR_CHECK
 	glUseProgram(distance_fade_program);
 	glUniform1i(image_texture_param,1);

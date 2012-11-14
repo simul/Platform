@@ -356,9 +356,10 @@ void SimulOceanRendererDX1x::SetLossTexture(void *t)
 	skyLossTexture_SRV=((ID3D1xShaderResourceView*)t);
 }
 
-void SimulOceanRendererDX1x::SetInscatterTexture(void *t)
+void SimulOceanRendererDX1x::SetInscatterTextures(void *t,void *s)
 {
 	skyInscatterTexture_SRV=((ID3D1xShaderResourceView*)t);
+	skylightTexture_SRV=((ID3D1xShaderResourceView*)s);
 }
 
 void SimulOceanRendererDX1x::InvalidateDeviceObjects()

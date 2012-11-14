@@ -79,9 +79,10 @@ public:
 	{
 		loss_texture=(LPDIRECT3DBASETEXTURE9)t;
 	}
-	void SetInscatterTexture(void* t)
+	void SetInscatterTextures(void* t,void *s)
 	{
 		inscatter_texture=(LPDIRECT3DBASETEXTURE9)t;
+		skylight_texture=(LPDIRECT3DBASETEXTURE9)s;
 	}
 	void SetCloudsTexture(void* t)
 	{
@@ -122,7 +123,7 @@ protected:
 	D3DXHANDLE						maxDistanceTexture;
 	D3DXHANDLE						lossTexture1;
 	D3DXHANDLE						inscatterTexture1;
-
+	D3DXHANDLE						skylightTexture;
 
 	D3DXHANDLE						heightAboveFogLayer;
 	D3DXHANDLE						fogColour;
@@ -145,6 +146,7 @@ protected:
 
 	LPDIRECT3DBASETEXTURE9			loss_texture;
 	LPDIRECT3DBASETEXTURE9			inscatter_texture;
+	LPDIRECT3DBASETEXTURE9			skylight_texture;
 	LPDIRECT3DBASETEXTURE9			clouds_texture;
 
 	LPDIRECT3DSURFACE9				m_pRenderTarget;

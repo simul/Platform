@@ -1,14 +1,10 @@
 float4x4 worldViewProj : WorldViewProjection;
 
-texture skyTexture1;
+texture inscTexture;
 
-#ifdef USE_ALTITUDE_INTERPOLATION
-sampler2D texture1 = sampler_state
-#else
-sampler1D texture1 = sampler_state
-#endif
+sampler2D insc_texture = sampler_state
 {
-    Texture = <skyTexture1>;
+    Texture = <inscTexture>;
     MipFilter = LINEAR;
     MinFilter = LINEAR;
     MagFilter = LINEAR;
@@ -16,14 +12,11 @@ sampler1D texture1 = sampler_state
 	AddressV = Clamp;
 };
 
-texture skyTexture2;
-#ifdef USE_ALTITUDE_INTERPOLATION
-sampler2D texture2 = sampler_state
-#else
-sampler1D texture2 = sampler_state
-#endif
+texture skylTexture;
+
+sampler2D skyl_texture = sampler_state
 {
-    Texture = <skyTexture2>;
+    Texture = <skylTexture>;
     MipFilter = LINEAR;
     MinFilter = LINEAR;
     MagFilter = LINEAR;
@@ -187,18 +180,12 @@ float4 PS_Main( vertexOutput IN): COLOR
 #else
 	float sine	=view.z;
 #endif
-#ifdef USE_ALTITUDE_INTERPOLATION
-	float2 texcoord	=float2(0.5f*(1.f-sine),altitudeTexCoord);
-	float4 inscatter_factor1=tex2D(texture1,texcoord);
-	float4 inscatter_factor2=tex2D(texture2,texcoord);
-#else
-	float texcoord	=0.5f*(1.f-sine);
-	float4 inscatter_factor1=tex1D(texture1,texcoord);
-	float4 inscatter_factor2=tex1D(texture2,texcoord);
-#endif
-	float4 inscatter_factor=lerp(inscatter_factor1,inscatter_factor2,skyInterp);
+	float2 texcoord	=float2(1.f,0.5f*(1.f-sine));
+	float4 insc_factor	=tex2D(insc_texture,texcoord);
+	float4 skyl			=tex2D(skyl_texture,texcoord);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float3 result=InscatterFunction(inscatter_factor,cos0);
+	float3 result=InscatterFunction(insc_factor,cos0);
+	result.rgb+=skyl.rgb;
 	return float4(result.rgb,1.0);
 }
 

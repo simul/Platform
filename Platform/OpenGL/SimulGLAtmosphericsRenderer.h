@@ -35,9 +35,10 @@ public:
 	{
 		loss_texture=(GLuint)t;
 	}
-	void SetInscatterTexture(void* t)
+	void SetInscatterTextures(void* t,void *s)
 	{
 		inscatter_texture=(GLuint)t;
+		skylight_texture=(GLuint)s;
 	}
 	void SetInputTextures(void* image,void* depth)
 	{
@@ -52,7 +53,7 @@ private:
 	GLuint distance_fade_program;
 	GLuint cloudmix_program;
 
-	GLuint loss_texture,inscatter_texture;
+	GLuint loss_texture,inscatter_texture,skylight_texture;
 	GLuint input_texture,depth_texture;
 	GLuint clouds_texture;
 	GLint clouds_texture_param;

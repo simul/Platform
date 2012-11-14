@@ -100,6 +100,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 	,moon_texture_SRV(NULL)
 	,loss_2d(NULL)
 	,inscatter_2d(NULL)
+	,skylight_2d(NULL)
 	,sun_occlusion(0.f)
 	,d3dQuery(NULL)
 	,mapped_sky(-1)
@@ -114,12 +115,14 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 		inscatter_textures[i]=NULL;
 		loss_textures_SRV[i]=NULL;
 		insc_textures_SRV[i]=NULL;
+		skyl_textures_SRV[i]=NULL;
 	}
 //EnableColourSky(false);
 	SetCameraPosition(0,0,400.f);
 	skyKeyframer->SetCalculateAllAltitudes(true);
 	loss_2d		=new FramebufferDX1x(0,0);
 	inscatter_2d=new FramebufferDX1x(0,0);
+	skylight_2d	=new FramebufferDX1x(0,0);
 }
 
 void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
@@ -193,6 +196,11 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 		inscatter_2d->SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
 		inscatter_2d->RestoreDeviceObjects(dev);
 	}
+	if(skylight_2d)
+	{
+		skylight_2d->SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+		skylight_2d->RestoreDeviceObjects(dev);
+	}
 	SAFE_RELEASE(moon_texture_SRV);
 	MoonTexture="Moon.png";
 	ID3D1xShaderResourceView* moon_texture_SRV=simul::dx1x_namespace::LoadTexture(MoonTexture.c_str());
@@ -210,6 +218,10 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	if(inscatter_2d)
 	{
 		inscatter_2d->InvalidateDeviceObjects();
+	}
+	if(skylight_2d)
+	{
+		skylight_2d->InvalidateDeviceObjects();
 	}
 	UnmapSky();
 	UnmapFade();
@@ -233,6 +245,7 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 		SAFE_RELEASE(loss_textures_SRV[i]);
 		SAFE_RELEASE(inscatter_textures[i]);
 		SAFE_RELEASE(insc_textures_SRV[i]);
+		SAFE_RELEASE(skyl_textures_SRV[i]);
 	}
 	// Set the stored texture sizes to zero, so the textures will be re-created.
 	fadeTexWidth=fadeTexHeight=numAltitudes=0;
@@ -390,6 +403,9 @@ void SimulSkyRendererDX1x::CycleTexturesForward()
 
 	std::swap(inscatter_textures[0],inscatter_textures[1]);
 	std::swap(inscatter_textures[1],inscatter_textures[2]);
+
+	std::swap(skylight_textures[0],skylight_textures[1]);
+	std::swap(skylight_textures[1],skylight_textures[2]);
 	
 	std::swap(sky_textures_SRV[0],sky_textures_SRV[1]);
 	std::swap(sky_textures_SRV[1],sky_textures_SRV[2]);
@@ -399,6 +415,9 @@ void SimulSkyRendererDX1x::CycleTexturesForward()
 	
 	std::swap(insc_textures_SRV[0],insc_textures_SRV[1]);
 	std::swap(insc_textures_SRV[1],insc_textures_SRV[2]);
+	
+	std::swap(skyl_textures_SRV[0],skyl_textures_SRV[1]);
+	std::swap(skyl_textures_SRV[1],skyl_textures_SRV[2]);
 
 	std::swap(sky_texture_iterator[0],sky_texture_iterator[1]);
 	std::swap(sky_texture_iterator[1],sky_texture_iterator[2]);
@@ -450,11 +469,14 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 		SAFE_RELEASE(loss_textures_SRV[i]);
 		SAFE_RELEASE(inscatter_textures[i]);
 		SAFE_RELEASE(insc_textures_SRV[i]);
+		SAFE_RELEASE(skyl_textures_SRV[i]);
 		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&loss_textures[i]));
 		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&inscatter_textures[i]));
+		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&skylight_textures[i]));
 
 		V_CHECK(m_pd3dDevice->CreateShaderResourceView(loss_textures[i],NULL,&loss_textures_SRV[i]));
 		V_CHECK(m_pd3dDevice->CreateShaderResourceView(inscatter_textures[i],NULL,&insc_textures_SRV[i]));
+		V_CHECK(m_pd3dDevice->CreateShaderResourceView(skylight_textures[i],NULL,&skyl_textures_SRV[i]));
 	}
 	if(loss_2d)
 	{
@@ -465,6 +487,11 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 	{
 		inscatter_2d->SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
 		inscatter_2d->RestoreDeviceObjects(m_pd3dDevice);
+	}
+	if(skylight_2d)
+	{
+		skylight_2d->SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+		skylight_2d->RestoreDeviceObjects(m_pd3dDevice);
 	}
 }
 
@@ -676,38 +703,56 @@ bool SimulSkyRendererDX1x::Render2DFades()
 {
 	if(!m_hTechniqueFade3DTo2D)
 		return false;
-	if(!loss_2d||!inscatter_2d)
+	if(!loss_2d||!inscatter_2d||!skylight_2d)
 		return false;
 	HRESULT hr;
+	// Clear the screen to black:
+	float clearColor[4]={0.0,0.0,0.0,0.0};
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
-
-	V_CHECK(fadeTexture1->SetResource(loss_textures_SRV[0]));
-	V_CHECK(fadeTexture2->SetResource(loss_textures_SRV[1]));
-	V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-	loss_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
-	loss_2d->Activate();
-// Clear the screen to black:
-    float clearColor[4]={0.0,0.0,0.0,0.0};
-	m_pImmediateContext->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
-	if(loss_2d->m_pBufferDepthSurface)
-		m_pImmediateContext->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
-	loss_2d->RenderBufferToCurrentTarget();
-	loss_2d->Deactivate();
-
-	V_CHECK(fadeTexture1->SetResource(insc_textures_SRV[0]));
-	V_CHECK(fadeTexture2->SetResource(insc_textures_SRV[1]));
-	V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-	
-	inscatter_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
-	inscatter_2d->Activate();
+	{
+		V_CHECK(fadeTexture1->SetResource(loss_textures_SRV[0]));
+		V_CHECK(fadeTexture2->SetResource(loss_textures_SRV[1]));
+		V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+		loss_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+		loss_2d->Activate();
 		
-	m_pImmediateContext->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
-	if(inscatter_2d->m_pBufferDepthSurface)
-		m_pImmediateContext->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
-		D3D1x_CLEAR_STENCIL, 1.f, 0);
-	inscatter_2d->RenderBufferToCurrentTarget();
-	inscatter_2d->Deactivate();
+		m_pImmediateContext->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
+		if(loss_2d->m_pBufferDepthSurface)
+			m_pImmediateContext->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+		loss_2d->RenderBufferToCurrentTarget();
+		loss_2d->Deactivate();
+	}
+	{
+		V_CHECK(fadeTexture1->SetResource(insc_textures_SRV[0]));
+		V_CHECK(fadeTexture2->SetResource(insc_textures_SRV[1]));
+		V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+		
+		inscatter_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+		inscatter_2d->Activate();
+			
+		m_pImmediateContext->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
+		if(inscatter_2d->m_pBufferDepthSurface)
+			m_pImmediateContext->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
+			D3D1x_CLEAR_STENCIL, 1.f, 0);
+		inscatter_2d->RenderBufferToCurrentTarget();
+		inscatter_2d->Deactivate();
+	}
+	{
+		V_CHECK(fadeTexture1->SetResource(skyl_textures_SRV[0]));
+		V_CHECK(fadeTexture2->SetResource(skyl_textures_SRV[1]));
+		V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+		
+		skylight_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+		skylight_2d->Activate();
+			
+		m_pImmediateContext->ClearRenderTargetView(skylight_2d->m_pHDRRenderTarget,clearColor);
+		if(inscatter_2d->m_pBufferDepthSurface)
+			m_pImmediateContext->ClearDepthStencilView(skylight_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
+			D3D1x_CLEAR_STENCIL, 1.f, 0);
+		skylight_2d->RenderBufferToCurrentTarget();
+		skylight_2d->Deactivate();
+	}
 	
 	V_CHECK(fadeTexture1->SetResource(NULL));
 	V_CHECK(fadeTexture2->SetResource(NULL));
@@ -869,16 +914,7 @@ void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 	proj=p;
 }
 
-void SimulSkyRendererDX1x::Get3DLossAndInscatterTextures(void* *l1,void* *l2,
-		void* *i1,void* *i2)
-{
-	*l1=(void*)loss_textures[0];
-	*l2=(void*)loss_textures[1];
-	*i1=(void*)inscatter_textures[0];
-	*i2=(void*)inscatter_textures[1];
-}
-
-void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,void* *i1)
+void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s)
 {
 	if(loss_2d)
 		*l1=(void*)loss_2d->hdr_buffer_texture_SRV;
@@ -888,6 +924,10 @@ void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,void* *i1)
 		*i1=(void*)inscatter_2d->hdr_buffer_texture_SRV;
 	else
 		*l1=NULL;
+	if(skylight_2d)
+		*s=(void*)skylight_2d->hdr_buffer_texture_SRV;
+	else
+		*s=NULL;
 }
 
 

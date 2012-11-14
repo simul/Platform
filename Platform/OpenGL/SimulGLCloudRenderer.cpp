@@ -530,10 +530,10 @@ void SimulGLCloudRenderer::SetLossTextures(void *l)
 	loss_tex=((GLuint)l);
 }
 
-void SimulGLCloudRenderer::SetInscatterTextures(void *i)
+void SimulGLCloudRenderer::SetInscatterTextures(void *i,void *s)
 {
-	if(i)
 	inscatter_tex=((GLuint)i);
+	skylight_tex=((GLuint)s);
 }
 
 void SimulGLCloudRenderer::RecompileShaders()

@@ -43,7 +43,7 @@ public:
 	//! Set the platform-dependent atmospheric loss texture.
 	void SetLossTextures(void *l);
 	//! Set the platform-dependent atmospheric inscatter texture.
-	void SetInscatterTextures(void *i);
+	void SetInscatterTextures(void *i,void *s);
 	void SetWindVelocity(float x,float y);
 	simul::clouds::CloudInterface *GetCloudInterface();
 
@@ -84,6 +84,7 @@ protected:
 	GLuint	cloud_tex[3];
 	GLuint		loss_tex;
 	GLuint		inscatter_tex;
+	GLuint		skylight_tex;
 	GLuint	noise_tex;
 	GLuint	image_tex;
 	float	cam_pos[3];

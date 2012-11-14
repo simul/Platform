@@ -71,8 +71,7 @@ public:
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 
-	void Get3DLossAndInscatterTextures(void* *l1,void* *l2,void* *i1,void* *i2);
-	void Get2DLossAndInscatterTextures(void* *l1,void* *i1);
+	void Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s);
 
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);
@@ -136,15 +135,18 @@ protected:
 
 	ID3D1xTexture3D*					loss_textures[3];
 	ID3D1xTexture3D*					inscatter_textures[3];
+	ID3D1xTexture3D*					skylight_textures[3];
 
 	// Small framebuffers we render to once per frame to perform fade interpolation.
 	FramebufferDX1x*					loss_2d;
 	FramebufferDX1x*					inscatter_2d;
+	FramebufferDX1x*					skylight_2d;
 
 	ID3D1xShaderResourceView*			flare_texture_SRV;
 	ID3D1xShaderResourceView*			sky_textures_SRV[3];
 	ID3D1xShaderResourceView*			loss_textures_SRV[3];
 	ID3D1xShaderResourceView*			insc_textures_SRV[3];
+	ID3D1xShaderResourceView*			skyl_textures_SRV[3];
 	ID3D1xShaderResourceView*			moon_texture_SRV;
 
 	int mapped_sky;

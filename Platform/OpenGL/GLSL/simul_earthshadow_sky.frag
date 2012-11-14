@@ -82,9 +82,9 @@ void main()
 	vec4 inscb=texture2D(inscTexture,texcoord_d);
 	// what should the light be at distance d?
 	insc-=inscb;
-	vec4 skylb=texture2D(skylightTexture,texcoord_d);
-	insc+=skylb;
+	vec4 skylb=texture2D(skylightTexture,texcoord);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	vec3 colour=InscatterFunction(insc,cos0);
+	colour+=skylb.rgb;
     gl_FragColor=vec4(colour.rgb,1.0);
 }

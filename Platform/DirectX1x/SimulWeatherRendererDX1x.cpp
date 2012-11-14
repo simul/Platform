@@ -320,12 +320,12 @@ void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()
 {
 	if(!simulSkyRenderer)
 		return;
-	void *l=0,*i=0;
-	simulSkyRenderer->Get2DLossAndInscatterTextures(&l,&i);
+	void *l=0,*i=0,*s=0;
+	simulSkyRenderer->Get2DLossAndInscatterTextures(&l,&i,&s);
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->SetLossTexture(l);
-		simulCloudRenderer->SetInscatterTexture(i);
+		simulCloudRenderer->SetInscatterTextures(i,s);
 	}
 }
 void SimulWeatherRendererDX1x::Update(float dt)

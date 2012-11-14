@@ -26,7 +26,7 @@ public:
 	void Update(float dt);
 	void SetCubemap(ID3D1xShaderResourceView *c);
 	void SetLossTexture(void *t1);
-	void SetInscatterTexture(void *t1);
+	void SetInscatterTextures(void *t1,void *s);
 protected:
 	D3DXMATRIX view,proj;
 	ID3D11Device*						m_pd3dDevice;
@@ -63,6 +63,8 @@ protected:
 	// Atmospheric scattering
 	ID3D1xShaderResourceView* skyLossTexture_SRV;
 	ID3D1xShaderResourceView* skyInscatterTexture_SRV;
+	ID3D1xShaderResourceView* skylightTexture_SRV;
+	
 
 	// Samplers
 	ID3D11SamplerState* g_pHeightSampler;

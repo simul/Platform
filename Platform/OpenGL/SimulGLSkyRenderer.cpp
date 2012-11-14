@@ -514,12 +514,12 @@ ERROR_CHECK
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
+	glUniform1i(skylightTexture_param,1);
+	glEnable(GL_TEXTURE_2D);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D,skylight_2d.GetColorTex());
 	if(current_program==earthshadow_program)
 	{
-		glUniform1i(skylightTexture_param,1);
-		glEnable(GL_TEXTURE_2D);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D,skylight_2d.GetColorTex());
 		simul::sky::float4 earth_shadow_n=skyKeyframer->GetEarthShadowNormal(skyKeyframer->GetAltitudeKM());
 		float R=skyKeyframer->GetSkyInterface()->GetPlanetRadius();
 		float h=skyKeyframer->GetAltitudeKM()/R+1.f;
@@ -716,18 +716,11 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 	return res;
 }
 
-void SimulGLSkyRenderer::Get3DLossAndInscatterTextures(void* *l1,void* *l2,void* *i1,void* *i2)
-{
-	*l1=(void*)loss_textures[0];
-	*l2=(void*)loss_textures[1];
-	*i1=(void*)inscatter_textures[0];
-	*i2=(void*)inscatter_textures[1];
-}
-
-void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1)
+void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s)
 {
 	*l1=(void*)loss_2d.GetColorTex();
 	*i1=(void*)inscatter_2d.GetColorTex();
+	*s=(void*)skylight_2d.GetColorTex();
 }
 
 void SimulGLSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)

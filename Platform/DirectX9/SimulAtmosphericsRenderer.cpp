@@ -50,6 +50,7 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
 	,inscatterTexture1(NULL)
 	,loss_texture(NULL)
 	,inscatter_texture(NULL)
+	,skylight_texture(NULL)
 	,clouds_texture(NULL)
 	,m_pRenderTarget(NULL)
 	,m_pBufferDepthSurface(NULL)
@@ -143,6 +144,7 @@ void SimulAtmosphericsRenderer::RecompileShaders()
 	imageTexture		=effect->GetParameterByName(NULL,"imageTexture");
 	lossTexture1		=effect->GetParameterByName(NULL,"lossTexture1");
 	inscatterTexture1	=effect->GetParameterByName(NULL,"inscatterTexture1");
+	skylightTexture		=effect->GetParameterByName(NULL,"skylightTexture");
 
 	maxDistanceTexture	=effect->GetParameterByName(NULL,"maxDistanceTexture");
 
@@ -398,6 +400,7 @@ bool SimulAtmosphericsRenderer::Render()
 		}
 		hr=effect->SetTexture(lossTexture1,loss_texture);
 		hr=effect->SetTexture(inscatterTexture1,inscatter_texture);
+		hr=effect->SetTexture(skylightTexture,skylight_texture);
 		hr=effect->SetTexture(maxDistanceTexture,max_distance_texture);
 		hr=DrawScreenQuad();
 	}

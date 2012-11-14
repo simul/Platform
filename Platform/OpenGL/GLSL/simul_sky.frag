@@ -1,8 +1,8 @@
 // simul_sky.frag - an OGLSL fragment shader
 // Copyright 2008 Simul Software Ltd
 
-
 uniform sampler2D inscTexture;
+uniform sampler2D skylightTexture;
 // the App updates uniforms "slowly" (eg once per frame) for animation.
 uniform float hazeEccentricity;
 uniform float altitudeTexCoord;
@@ -45,6 +45,8 @@ void main()
 	vec2 texcoord=vec2(1.0,0.5*(1.0-sine));
 	vec4 inscatter_factor=texture2D(inscTexture,texcoord);
 	float cos0=dot(lightDir.xyz,view.xyz);
+	vec4 skylb=texture2D(skylightTexture,texcoord);
 	vec3 colour=InscatterFunction(inscatter_factor,cos0);
+	colour+=skylb.rgb;
     gl_FragColor=vec4(colour.rgb,1.0);
 }

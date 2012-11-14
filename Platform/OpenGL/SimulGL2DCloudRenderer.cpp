@@ -51,6 +51,7 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	,image_tex(0)
 	,loss_tex(0)
 	,inscatter_tex(0)
+	,skylight_tex(0)
 {
 	helper->Initialize(16,400000.f);
 }
@@ -222,6 +223,8 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,loss_tex);
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,inscatter_tex);
+    glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D,skylight_tex);
 	glUseProgram(clouds_program);
 static float ll=0.05f;
 	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
@@ -316,10 +319,10 @@ void SimulGL2DCloudRenderer::SetLossTextures(void *l)
 	loss_tex=((GLuint)l);
 }
 
-void SimulGL2DCloudRenderer::SetInscatterTextures(void *i)
+void SimulGL2DCloudRenderer::SetInscatterTextures(void *i,void *s)
 {
-	if(i)
 	inscatter_tex=((GLuint)i);
+	skylight_tex=((GLuint)s);
 }
 
 void SimulGL2DCloudRenderer::RestoreDeviceObjects(void*)
