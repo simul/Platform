@@ -152,7 +152,7 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 void SimulCloudRendererDX1x::SetLossTexture(void *t)
 {
 	skyLossTexture_SRV=(ID3D1xShaderResourceView*)t;
-	}
+}
 
 void SimulCloudRendererDX1x::SetInscatterTexture(void *t)
 {
@@ -604,8 +604,6 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	helper->SetNoFrustumLimit(true);//cubemap);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
-	if(fade_mode==CPU)
-		helper->CalcInscatterFactors(skyInterface);
 
 	ID3D1xEffectConstantBuffer* cbUser=m_pCloudEffect->GetConstantBufferByName("cbUser");
 	if(cbUser)
@@ -622,13 +620,13 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	sunlightColour		->SetFloatVector	(sunlight);
 	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
 	fractalScale		->SetFloatVector	(fractal_scales);
-		mieRayleighRatio	->SetFloatVector	(skyInterface->GetMieRayleighRatio());
+	mieRayleighRatio	->SetFloatVector	(skyInterface->GetMieRayleighRatio());
 	cloudEccentricity	->SetFloat			(GetCloudInterface()->GetMieAsymmetry());
-		hazeEccentricity	->SetFloat			(skyInterface->GetMieEccentricity());
+	hazeEccentricity	->SetFloat			(skyInterface->GetMieEccentricity());
 	fadeInterp			->SetFloat			(fade_interp);
 	alphaSharpness		->SetFloat			(GetCloudInterface()->GetAlphaSharpness());
 simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
-	
+
 	if(enable_lightning)
 	{
 		static float bb=.2f;
@@ -839,7 +837,7 @@ bool SimulCloudRendererDX1x::RenderLightning()
 	int vert_num=0;
 	ApplyPass(m_hTechniqueLightning->GetPassByIndex(0));
 simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
-	
+
 	l_worldViewProj->SetMatrix(&wvp._11);
 	for(unsigned i=0;i<lightningRenderInterface->GetNumLightSources();i++)
 	{

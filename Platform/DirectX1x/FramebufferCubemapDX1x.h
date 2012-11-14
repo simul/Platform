@@ -37,6 +37,8 @@ public:
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 	void Activate();
 	void Deactivate();
+	void Render(bool){}
+	void Clear(float,float,float,float);
 	void *GetTextureResource()
 	{
 		return (void*)m_pCubeEnvMapSRV;

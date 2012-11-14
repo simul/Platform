@@ -106,18 +106,15 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
 	HRESULT hr=S_OK;
 	void **u=(void**)x;
 	m_pd3dDevice=(ID3D1xDevice*)u[0];
-	
 #ifdef DX10
 	m_pImmediateContext=dev;
 #else
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
-
 	framebuffer.RestoreDeviceObjects(m_pd3dDevice);
 	framebuffer_cubemap.SetWidthAndHeight(64,64);
 	framebuffer_cubemap.RestoreDeviceObjects(m_pd3dDevice);
-
 	pSwapChain=(IDXGISwapChain *)u[1];
 // Get the back buffer (screen) format so we know how to render the weather buffer to the screen:
 	ID3D1xTexture2D *pBackBuffer=NULL;
@@ -128,12 +125,11 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
 	ScreenWidth=desc.Width;
 	ScreenHeight=desc.Height;
 	framebuffer.SetTargetWidthAndHeight(BufferWidth,BufferHeight);
-
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice);
 		if(simulSkyRenderer)
-		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
+			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 	}
 /*	if(simul2DCloudRenderer)
 	{
@@ -240,8 +236,8 @@ SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
                                                     DepthFormat);
 
     return (hr==S_OK);
-}
-*/
+}*/
+
 static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 {
 	D3DXMATRIX tmp1;

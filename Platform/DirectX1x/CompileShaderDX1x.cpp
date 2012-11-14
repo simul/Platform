@@ -1,21 +1,26 @@
 
 #include "CompileShaderDX1x.h"
+#include "Simul/Base/RuntimeError.h"
+#include "Simul/Base/StringToWString.h"
 
 #define D3D10_SHADER_ENABLE_STRICTNESS              (1 << 11)
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
 #endif
 
+typedef std::basic_string<TCHAR> tstring;
+extern tstring shader_path;
 
 HRESULT CompileShaderFromFile( WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut )
 {
+	tstring fn=shader_path+szFileName;
     HRESULT hr = S_OK;
 
     // open the file
-    HANDLE hFile = CreateFile( szFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+    HANDLE hFile = CreateFile( fn.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
         FILE_FLAG_SEQUENTIAL_SCAN, NULL );
     if( INVALID_HANDLE_VALUE == hFile )
-        return E_FAIL;
+        throw simul::base::RuntimeError(std::string("File not found: ")+simul::base::WStringToString(fn.c_str()));
 
     // Get the file size
     LARGE_INTEGER FileSize;
@@ -24,12 +29,12 @@ HRESULT CompileShaderFromFile( WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR sz
     // create enough space for the file data
     BYTE* pFileData = new BYTE[ FileSize.LowPart ];
     if( !pFileData )
-        return E_OUTOFMEMORY;
+        throw simul::base::RuntimeError(std::string("Out of memory loading ")+simul::base::WStringToString(fn.c_str()));
 
     // read the data in
     DWORD BytesRead;
     if( !ReadFile( hFile, pFileData, FileSize.LowPart, &BytesRead, NULL ) )
-        return E_FAIL; 
+        throw simul::base::RuntimeError(std::string("Failed to load: ")+simul::base::WStringToString(fn.c_str()));
 
     CloseHandle( hFile );
 
@@ -45,7 +50,7 @@ HRESULT CompileShaderFromFile( WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR sz
     {
         OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
         SAFE_RELEASE( pErrorBlob );
-        return hr;
+        throw simul::base::RuntimeError(std::string("Failed to load: ")+simul::base::WStringToString(szFileName));
     }
     SAFE_RELEASE( pErrorBlob );
 

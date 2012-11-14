@@ -146,7 +146,6 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
 	RecompileShaders();
-
 	SAFE_RELEASE(flare_texture);
 	D3DX1x_IMAGE_LOAD_INFO loadInfo;
 	ID3D1xResource *res=NULL;
@@ -195,7 +194,8 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	}
 	SAFE_RELEASE(moon_texture_SRV);
 	MoonTexture="Moon.png";
-	ID3D1xShaderResourceView* moon_texture_SRV=simul::dx1x_namespace::LoadTexture(MoonTexture.c_str());
+	moon_texture_SRV=simul::dx1x_namespace::LoadTexture(MoonTexture.c_str());
+
 	SetPlanetImage(moon_index,moon_texture_SRV);
 	ClearIterators();
 }

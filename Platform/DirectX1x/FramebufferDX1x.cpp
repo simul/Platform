@@ -224,12 +224,10 @@ bool FramebufferDX1x::CreateBuffers()
 		{ "POSITION",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	16,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
 	};
-	SAFE_RELEASE(m_pBufferVertexDecl);
 
 	// Witness the following DX11 silliness.
 	D3D1x_PASS_DESC PassDesc;
 
-	
 	ID3D1xEffect * effect=NULL;
 	CreateEffect(m_pd3dDevice,&effect,_T("gamma.fx"));
 	ID3D1xEffectTechnique*	tech=effect->GetTechniqueByName("simul_direct");
@@ -240,6 +238,7 @@ bool FramebufferDX1x::CreateBuffers()
 	hr=pass->GetDesc(&PassDesc);
 	V_CHECK(hr);
 
+	SAFE_RELEASE(m_pBufferVertexDecl);
 	hr=m_pd3dDevice->CreateInputLayout(
 		decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize
 		, &m_pBufferVertexDecl);
@@ -266,6 +265,7 @@ bool FramebufferDX1x::CreateBuffers()
     InitData.pSysMem = vertices;
     InitData.SysMemPitch = sizeof(Vertext);
     InitData.SysMemSlicePitch = 0;
+	SAFE_RELEASE(m_pVertexBuffer);
 	hr=m_pd3dDevice->CreateBuffer(&bdesc,&InitData,&m_pVertexBuffer);
 	return (hr==S_OK);
 }
@@ -324,9 +324,22 @@ void FramebufferDX1x::Deactivate()
 	m_pImmediateContext->RSSetViewports(1,m_OldViewports);
 }
 
+void FramebufferDX1x::Clear(float r,float g,float b,float a)
+{
+	// Clear the screen to black:
+    float clearColor[4]={r,g,b,a};
+	m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
+	if(m_pBufferDepthSurface)
+		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+}
 void FramebufferDX1x::DeactivateAndRender(bool blend)
 {
 	Deactivate();
+	Render(blend);
+}
+
+void FramebufferDX1x::Render(bool blend)
+{
 	HRESULT hr=S_OK;
 	hr=hdrTexture->SetResource(hdr_buffer_texture_SRV);
 	ID3D1xEffectTechnique *tech=blend?SkyOverStarsTechnique:TonemapTechnique;

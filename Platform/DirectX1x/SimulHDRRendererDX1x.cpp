@@ -131,11 +131,8 @@ bool SimulHDRRendererDX1x::StartRender()
 	if(hdrTexture)
 		hdrTexture->SetResource(NULL);
 	framebuffer->Activate();
-	// Clear the screen to black:
-    float clearColor[4]={0.0,0.0,0.0,0.0};
-	m_pImmediateContext->ClearRenderTargetView(framebuffer->m_pHDRRenderTarget,clearColor);
-	if(framebuffer->m_pBufferDepthSurface)
-		m_pImmediateContext->ClearDepthStencilView(framebuffer->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+	framebuffer->Clear(0,0,0,0);
+
 	PIXEndNamedEvent();
 	return true;
 }

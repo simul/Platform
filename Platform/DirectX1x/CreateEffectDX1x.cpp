@@ -14,10 +14,11 @@
 #include "Simul/Geometry/Orientation.h"
 #include "Simul/Base/RuntimeError.h"
 #include <tchar.h>
+#include "CompileShaderDX1x.h"
 #include <string>
 typedef std::basic_string<TCHAR> tstring;
-static tstring shader_path=TEXT("media/hlsl/dx11");
-static tstring texture_path=TEXT("media/textures");
+tstring shader_path=TEXT("media/hlsl/dx11");
+tstring texture_path=TEXT("media/textures");
 static DWORD default_effect_flags=0;
 
 #include <vector>
@@ -52,21 +53,21 @@ namespace simul
 		tstring tstring_of(const char *c)
 		{
 			tstring t;
-#ifdef UNICODE
+		#ifdef UNICODE
 			// tstring and TEXT cater for the confusion between wide and regular strings.
 			t.resize(strlen(c),L' '); // Make room for characters
 			// Copy string to wstring.
 			std::copy(c,c+strlen(c),t.begin());
-#else
+		#else
 			t=c;
-#endif
+		#endif
 			return t;
 		}
 		void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir)
 		{
 			D3DXMATRIX tmp1;
 			D3DXMatrixInverse(&tmp1,NULL,&view);
-
+			
 			dcam_pos[0]=tmp1._41;
 			dcam_pos[1]=tmp1._42;
 			dcam_pos[2]=tmp1._43;
@@ -112,11 +113,11 @@ namespace simul
 		void SetDevice(ID3D1xDevice* dev)
 		{
 			m_pd3dDevice=dev;
-#ifdef DX10
+		#ifdef DX10
 			m_pImmediateContext=dev;
-#else
+		#else
 			m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-#endif
+		#endif
 			UtilityRenderer::RestoreDeviceObjects(dev);
 		}
 		void UnsetDevice()
