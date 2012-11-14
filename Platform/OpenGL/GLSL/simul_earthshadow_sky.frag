@@ -3,7 +3,6 @@
 
 
 uniform sampler2D inscTexture;
-uniform sampler3D inscTexture2;
 uniform sampler2D skylightTexture;
 // the App updates uniforms "slowly" (eg once per frame) for animation.
 uniform float hazeEccentricity;
@@ -79,12 +78,12 @@ void main()
 	vec2 texcoord=vec2(1.0,0.5*(1.0-sine));
 	vec4 insc=texture2D(inscTexture,texcoord);
 	// Inscatter at distance d
-	vec2 texcoord_b=vec2(d,0.5*(1.0-sine));
-	vec4 inscb=texture2D(inscTexture,texcoord_b);
+	vec2 texcoord_d=vec2(d,0.5*(1.0-sine));
+	vec4 inscb=texture2D(inscTexture,texcoord_d);
 	// what should the light be at distance d?
 	insc-=inscb;
-	vec4 skyl=texture2D(skylightTexture,texcoord);
-	insc+=skyl;
+	vec4 skylb=texture2D(skylightTexture,texcoord_d);
+	insc+=skylb;
 	float cos0=dot(lightDir.xyz,view.xyz);
 	vec3 colour=InscatterFunction(insc,cos0);
     gl_FragColor=vec4(colour.rgb,1.0);

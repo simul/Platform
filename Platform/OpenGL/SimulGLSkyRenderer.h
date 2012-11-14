@@ -124,8 +124,7 @@ protected:
 	GLint			skyTexture1_param;
 	GLint			skyTexture2_param;
 
-	GLint			lossTexture1_param;
-	GLint			lossTexture2_param;
+	GLint			skylightTexture_param;
 	
 	FramebufferGL	loss_2d;
 	FramebufferGL	inscatter_2d;

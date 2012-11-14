@@ -151,6 +151,8 @@ void SimulGLSkyRenderer::CreateFadeTextures()
 	loss_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	inscatter_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
 	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
+	skylight_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	skylight_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	ERROR_CHECK
 }
 
@@ -313,7 +315,6 @@ ERROR_CHECK
 		glUniform1f(altitudeTexCoord_fade,skyKeyframer->GetAltitudeTexCoord());
 		glUniform1i(fadeTexture1_fade,0);
 		glUniform1i(fadeTexture2_fade,1);
-
 		glBegin(GL_QUADS);
 		glTexCoord2f(0.f,1.f);
 		glVertex2f(0.f,1.f);
@@ -327,8 +328,10 @@ ERROR_CHECK
 		ERROR_CHECK
 		if(i==0)
 			loss_2d.Deactivate();
-		else
+		else if(i==1)
 			inscatter_2d.Deactivate();
+		else
+			skylight_2d.Deactivate();
 		glUseProgram(NULL);
 	}
 ERROR_CHECK
@@ -452,7 +455,7 @@ void SimulGLSkyRenderer::UseProgram(GLuint p)
 		hazeEccentricity_param			=glGetUniformLocation(current_program,"hazeEccentricity");
 		skyInterp_param					=glGetUniformLocation(current_program,"skyInterp");
 		skyTexture1_param				=glGetUniformLocation(current_program,"inscTexture");
-		skyTexture2_param				=glGetUniformLocation(current_program,"inscTexture2");
+		skylightTexture_param			=glGetUniformLocation(current_program,"skylightTexture");
 			
 		altitudeTexCoord_param			=glGetUniformLocation(current_program,"altitudeTexCoord");
 		earthShadowNormal_param			=glGetUniformLocation(current_program,"earthShadowNormal");
@@ -513,11 +516,9 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
 	if(current_program==earthshadow_program)
 	{
-		glUniform1i(skyTexture2_param,1);
+		glUniform1i(skylightTexture_param,1);
 		glEnable(GL_TEXTURE_2D);
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_3D,inscatter_textures[1]);
-		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D,skylight_2d.GetColorTex());
 		simul::sky::float4 earth_shadow_n=skyKeyframer->GetEarthShadowNormal(skyKeyframer->GetAltitudeKM());
 		float R=skyKeyframer->GetSkyInterface()->GetPlanetRadius();
