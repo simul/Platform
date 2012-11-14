@@ -143,11 +143,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 	helper->SetYVertical(y_vertical);
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 	texel_index[0]=texel_index[1]=texel_index[2]=texel_index[3]=0;
-/*	cloudKeyframer->SetFillTexturesAsBlocks(false);
-	cloudKeyframer->SetBits(simul::clouds::CloudKeyframer::BRIGHTNESS,
-							simul::clouds::CloudKeyframer::SECONDARY,
-							simul::clouds::CloudKeyframer::DENSITY,
-							simul::clouds::CloudKeyframer::AMBIENT);*/
 }
 
 void SimulCloudRendererDX1x::SetLossTexture(void *t)
@@ -196,7 +191,6 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	CreateNoiseTexture();
 	CreateLightningTexture();
 	RecompileShaders();
-
 	D3D1x_SHADER_RESOURCE_VIEW_DESC texdesc;
 
 	texdesc.Format=DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -204,10 +198,8 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	texdesc.Texture3D.MostDetailedMip=0;
 	texdesc.Texture3D.MipLevels=1;
 
-
 	noiseTexture				->SetResource(noiseTextureResource);
 
-	
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =
     {
         { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
@@ -282,9 +274,12 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(lightning_texture);
 	SAFE_RELEASE(illumination_texture);
 	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(skyLossTexture_SRV);
-	SAFE_RELEASE(skyInscatterTexture_SRV);
-	SAFE_RELEASE(skylightTexture_SRV);
+//	SAFE_RELEASE(skyLossTexture_SRV);
+//	SAFE_RELEASE(skyInscatterTexture_SRV);
+//	SAFE_RELEASE(skylightTexture_SRV);
+	skyLossTexture_SRV		=NULL;
+	skyInscatterTexture_SRV	=NULL;
+	skylightTexture_SRV		=NULL;
 
 	SAFE_RELEASE(noiseTextureResource);
 	

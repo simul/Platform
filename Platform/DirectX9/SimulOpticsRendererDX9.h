@@ -11,7 +11,10 @@
 #endif
 #include "Simul/Platform/DirectX9/Export.h"
 #include <vector>
-
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
 SIMUL_DIRECTX9_EXPORT_CLASS SimulOpticsRendererDX9:public simul::camera::BaseOpticsRenderer
 {
 public:
@@ -36,3 +39,7 @@ protected:
 	std::vector<LPDIRECT3DTEXTURE9> halo_textures;
 	std::string						FlareTexture;
 };
+
+#ifdef _MSC_VER
+	#pragma warning(pop)
+#endif

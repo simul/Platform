@@ -172,8 +172,8 @@ protected:
 	ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
 	ID3D1xShaderResourceView*				skylightTexture_SRV;
 
-	ID3D1xTexture3D*	cloud_textures[3];
-	ID3D1xTexture3D*	illumination_texture;
+	ID3D1xTexture3D*			cloud_textures[3];
+	ID3D1xTexture3D*			illumination_texture;
 	
 	D3D1x_MAPPED_TEXTURE3D mapped_illumination;
 

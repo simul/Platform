@@ -84,10 +84,10 @@ void FramebufferDX1x::RecompileShaders()
 {
 	SAFE_RELEASE(m_pTonemapEffect);
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx"));
-	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
+	TonemapTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_direct");
 	SkyOverStarsTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_over_stars");
-	hdrTexture				=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
-	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	hdrTexture			=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
+	worldViewProj		=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	CreateBuffers();
 }
 
@@ -225,12 +225,10 @@ bool FramebufferDX1x::CreateBuffers()
 		{ "POSITION",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	16,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
 	};
-	SAFE_RELEASE(m_pBufferVertexDecl);
 
 	// Witness the following DX11 silliness.
 	D3D1x_PASS_DESC PassDesc;
 
-	
 	ID3D1xEffect * effect=NULL;
 	CreateEffect(m_pd3dDevice,&effect,_T("gamma.fx"));
 	ID3D1xEffectTechnique*	tech=effect->GetTechniqueByName("simul_direct");
@@ -240,6 +238,7 @@ bool FramebufferDX1x::CreateBuffers()
 	hr=pass->GetDesc(&PassDesc);
 	V_CHECK(hr);
 
+	SAFE_RELEASE(m_pBufferVertexDecl);
 	hr=m_pd3dDevice->CreateInputLayout(
 		decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize
 		, &m_pBufferVertexDecl);
@@ -266,6 +265,7 @@ bool FramebufferDX1x::CreateBuffers()
     InitData.pSysMem = vertices;
     InitData.SysMemPitch = sizeof(Vertext);
     InitData.SysMemSlicePitch = 0;
+	SAFE_RELEASE(m_pVertexBuffer);
 	hr=m_pd3dDevice->CreateBuffer(&bdesc,&InitData,&m_pVertexBuffer);
 	return (hr==S_OK);
 }

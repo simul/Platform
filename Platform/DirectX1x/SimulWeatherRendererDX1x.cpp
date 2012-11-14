@@ -253,6 +253,7 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 
 bool SimulWeatherRendererDX1x::RenderCubemap()
 {
+return true;
 	D3DXMATRIX ov=view;
 	D3DXMATRIX op=proj;
 	D3DXVECTOR3 cam_pos=GetCameraPosVector(view);
@@ -287,7 +288,7 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 {
 	simul::clouds::BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
 	HRESULT hr=S_OK;
-	if(buffered)
+	if(buffered&&baseFramebuffer)
 	{
 		baseFramebuffer->Render(!is_cubemap);
 	}

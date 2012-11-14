@@ -113,6 +113,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 		sky_textures_SRV[i]=NULL;
 		loss_textures[i]=NULL;
 		inscatter_textures[i]=NULL;
+		skylight_textures[i]=NULL;
 		loss_textures_SRV[i]=NULL;
 		insc_textures_SRV[i]=NULL;
 		skyl_textures_SRV[i]=NULL;
@@ -203,7 +204,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	}
 	SAFE_RELEASE(moon_texture_SRV);
 	MoonTexture="Moon.png";
-	ID3D1xShaderResourceView* moon_texture_SRV=simul::dx1x_namespace::LoadTexture(MoonTexture.c_str());
+	moon_texture_SRV=simul::dx1x_namespace::LoadTexture(MoonTexture.c_str());
 	SetPlanetImage(moon_index,moon_texture_SRV);
 	ClearIterators();
 }
@@ -245,6 +246,7 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 		SAFE_RELEASE(loss_textures_SRV[i]);
 		SAFE_RELEASE(inscatter_textures[i]);
 		SAFE_RELEASE(insc_textures_SRV[i]);
+		SAFE_RELEASE(skylight_textures[i]);
 		SAFE_RELEASE(skyl_textures_SRV[i]);
 	}
 	// Set the stored texture sizes to zero, so the textures will be re-created.
@@ -469,6 +471,7 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 		SAFE_RELEASE(loss_textures_SRV[i]);
 		SAFE_RELEASE(inscatter_textures[i]);
 		SAFE_RELEASE(insc_textures_SRV[i]);
+		SAFE_RELEASE(skylight_textures[i]);
 		SAFE_RELEASE(skyl_textures_SRV[i]);
 		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&loss_textures[i]));
 		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&inscatter_textures[i]));
