@@ -32,7 +32,7 @@
 #include "SimulGLUtilities.h"
 
 using namespace std;
-void printShaderInfoLog(GLuint obj);
+void printShaderInfoLog(GLuint sh);
 void printProgramInfoLog(GLuint obj);
 
 #ifdef WIN32

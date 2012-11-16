@@ -80,7 +80,7 @@ void main(void)
 	vec3 final=(density.z*Beta+lightResponse.y*density.w)*sunlight+density.x*ambientColour.rgb;
 	vec3 loss_lookup=texture2D(lossSampler,fade_texc).rgb;
 	vec4 insc_lookup=texture2D(inscatterSampler,fade_texc);
-	vec3 skyl_lookup=texture2D(skylightSampler,fade_texc);
+	vec3 skyl_lookup=texture2D(skylightSampler,fade_texc).rgb;
 	//final.rgb+=lightning.rgb;
 	//final.rgb*=texture2D(lossSampler,fade_texc).rgb;
 	//final.rgb+=0.05*texture2D(inscatterSampler,fade_texc).rgb;

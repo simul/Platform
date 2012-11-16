@@ -17,18 +17,18 @@ static std::string last_filename;
 using namespace simul;
 using namespace opengl;
 
-void printShaderInfoLog(GLuint obj)
+void printShaderInfoLog(GLuint sh)
 {
     int infologLength = 0;
     int charsWritten  = 0;
     char *infoLog;
 
-	glGetShaderiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
+	glGetShaderiv(sh, GL_INFO_LOG_LENGTH,&infologLength);
 
     if (infologLength > 1)
     {
         infoLog = (char *)malloc(infologLength);
-        glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
+        glGetShaderInfoLog(sh, infologLength, &charsWritten, infoLog);
 		std::string info_log=infoLog;
 		if(info_log.find("No errors")>=info_log.length())
 		{
@@ -119,7 +119,7 @@ GLuint LoadPrograms(const char *vert_filename,const char *geom_filename,const ch
 		GLuint geometry_shader			=glCreateShader(GL_GEOMETRY_SHADER);
 		geometry_shader					=LoadShader(geometry_shader,geom_filename,defines);
 		glAttachShader(prog,geometry_shader);
-	ERROR_CHECK
+		ERROR_CHECK
 	}
 	GLuint fragment_shader			=glCreateShader(GL_FRAGMENT_SHADER);
     fragment_shader					=LoadShader(fragment_shader,frag_filename,defines);
@@ -131,9 +131,10 @@ GLuint LoadPrograms(const char *vert_filename,const char *geom_filename,const ch
 	return prog;
 }
 
-GLuint SetProgram(GLuint prog,const char *shader_source,const char *defines)
+GLuint SetProgram(GLuint sh,const char *shader_source,const char *defines)
 {
 /*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
+	const int MAX_STRINGS=12;
 	const int MAX_LINES=512;
 	const int MAX_LINE_LENGTH=256;					// 255 + NULL terminator
 	static char program[MAX_LINES*MAX_LINE_LENGTH];
@@ -154,30 +155,30 @@ GLuint SetProgram(GLuint prog,const char *shader_source,const char *defines)
 		ptr+=len+1;
 	}
 	ptr[0]=0;
-	const char *strings[1];
+	const char *strings[MAX_STRINGS];
 	strings[0]=program;
 	int lenOfStrings[1];
 	lenOfStrings[0]=strlen(strings[0]);
-	glShaderSource(prog,1,strings,NULL);
-    if(!prog)
+	glShaderSource(sh,1,strings,NULL);
+    if(!sh)
 		return 0;
 	else
 	{
-		glCompileShader(prog);
+		glCompileShader(sh);
 	}
-	printShaderInfoLog(prog);
+	printShaderInfoLog(sh);
 
 	int result=1;
-	glGetShaderiv(prog,GL_COMPILE_STATUS,&result);
+	glGetShaderiv(sh,GL_COMPILE_STATUS,&result);
 	if(!result)
 	{
 		std::cerr<<"ERROR:\tShader failed to compile\n";
 		DebugBreak();
 	}
-    return prog;
+    return sh;
 }
 
-GLuint LoadShader(GLuint prog,const char *filename,const char *defines)
+GLuint LoadShader(GLuint sh,const char *filename,const char *defines)
 {
     std::string filePath=shaderPath;
 	char last=0;
@@ -194,11 +195,10 @@ GLuint LoadShader(GLuint prog,const char *filename,const char *defines)
 		std::cerr<<"\n\t\tShader path is "<<shaderPath.c_str()<<", is this correct?\n";
 		exit(1);
 	}
-
 /*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
 	const int MAX_LINES=512;
 	const int MAX_LINE_LENGTH=256;   // 255 + NULL terminator
-	static char shader_source[MAX_LINES*MAX_LINE_LENGTH];
+	char shader_source[MAX_LINES*MAX_LINE_LENGTH];
 	char *ptr=shader_source;
 	while(!ifs.eof())
 	{
@@ -209,9 +209,8 @@ GLuint LoadShader(GLuint prog,const char *filename,const char *defines)
 	}
 	ifs.close();
 	ptr[0]=0;
-	prog=SetProgram(prog,shader_source,defines);
-    if(!prog)
+	sh=SetProgram(prog,shader_source,defines);
+    if(!sh)
 		std::cerr<<std::endl<<filePath.c_str()<<"(0): Error creating program "<<std::endl;
-
-    return prog;
+    return sh;
 }

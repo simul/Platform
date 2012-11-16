@@ -52,7 +52,6 @@ public:
 	{
 		exit(1);
 	}
-	virtual		void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
 	virtual		void CycleTexturesForward(){}
 	virtual		bool HasFastFadeLookup() const{return true;}
 	virtual		const float *GetFastLossLookup(float distance_texcoord,float elevation_texcoord);
@@ -82,7 +81,6 @@ protected:
 	void		CreateFadeTextures();
 	void		CreateSkyTextures();
 
-	GLuint		sky_tex[3];
 	GLuint		loss_textures[3];
 	GLuint		inscatter_textures[3];
 	GLuint		skylight_textures[3];

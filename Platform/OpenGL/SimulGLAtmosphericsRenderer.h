@@ -56,16 +56,18 @@ private:
 	GLuint loss_texture,inscatter_texture,skylight_texture;
 	GLuint input_texture,depth_texture;
 	GLuint clouds_texture;
-	GLint clouds_texture_param;
+	
+	GLint cloudsTexture;
+	GLint imageTexture;
+	GLint lossTexture;
+	GLint inscTexture;
+	GLint skylightTexture;
 
-	GLint image_texture_param;
-	GLint loss_texture_param;
-	GLint insc_texture_param;
-
-	GLint hazeEccentricity_param;
-	GLint lightDir_param;
-	GLint invViewProj_param;
-	GLint mieRayleighRatio_param;
+	GLint hazeEccentricity;
+	GLint lightDir;
+	GLint invViewProj;
+	GLint mieRayleighRatio;
+	GLint directLightMultiplier;
 
 	FramebufferGL *framebuffer;
 };

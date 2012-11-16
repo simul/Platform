@@ -759,13 +759,8 @@ void SimulSkyRenderer::EnsureTexturesAreUpToDate()
 	{
 		for(int j=0;j<numAltitudes;j++)
 		{
-			simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSkyTextureFill(j,i,sky_texture_iterator[i][j]);
-			if(texture_fill.num_texels&&sky_textures[i])
-			{
-				FillSkyTexture(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1);
-			}
-			texture_fill=skyKeyframer->GetSequentialFadeTextureFill(j,i,fade_texture_iterator[i][j]);
-			if(texture_fill.num_texels&&sky_textures[i])
+			simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(j,i,fade_texture_iterator[i][j]);
+			if(texture_fill.num_texels)
 			{
 				FillFadeTexturesSequentially(j,i,texture_fill.texel_index,texture_fill.num_texels
 									,(const float*)texture_fill.float_array_1
@@ -791,8 +786,6 @@ void SimulSkyRenderer::EnsureTextureCycle()
 		std::swap(skylight_textures[1],skylight_textures[2]);
 		std::swap(sunlight_textures[0],sunlight_textures[1]);
 		std::swap(sunlight_textures[1],sunlight_textures[2]);
-		std::swap(sky_texture_iterator[0],sky_texture_iterator[1]);
-		std::swap(sky_texture_iterator[1],sky_texture_iterator[2]);
 		std::swap(fade_texture_iterator[0],fade_texture_iterator[1]);
 		std::swap(fade_texture_iterator[1],fade_texture_iterator[2]);
 		for(int i=0;i<3;i++)
@@ -800,7 +793,6 @@ void SimulSkyRenderer::EnsureTextureCycle()
 			for(int j=0;j<numAltitudes;j++)
 			{
 				fade_texture_iterator[i][j].texture_index=i;
-				sky_texture_iterator[i][j].texture_index=i;
 			}
 		}
 		texture_cycle++;
