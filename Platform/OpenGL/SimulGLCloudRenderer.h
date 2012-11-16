@@ -104,7 +104,7 @@ protected:
 	GLint illumSampler_param;
 	GLint lossSampler_param;
 	GLint inscatterSampler_param;
-
+	GLint skylightSampler_param;
 unsigned short *pIndices;
 
 	GLint illuminationOrigin_param;

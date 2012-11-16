@@ -80,7 +80,8 @@ public:
 	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void FillFadeTex(int alt_index,int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
-						const float *inscatter_float4_array);
+						const float *inscatter_float4_array,
+						const float *skylight_float4_array);
 	void CycleTexturesForward();
 	const char *GetDebugText() const;
 	void SetYVertical(bool y);
@@ -125,8 +126,8 @@ protected:
 	ID3D1xEffectMatrixVariable*			cubemapViews;
 
 	ID3D1xEffectShaderResourceVariable*	flareTexture;
-	ID3D1xEffectShaderResourceVariable*	skyTexture1;
-	ID3D1xEffectShaderResourceVariable*	skyTexture2;
+	ID3D1xEffectShaderResourceVariable*	inscTexture;
+	ID3D1xEffectShaderResourceVariable*	skylTexture;
 	ID3D1xEffectShaderResourceVariable*	fadeTexture1;
 	ID3D1xEffectShaderResourceVariable*	fadeTexture2;
 
@@ -154,6 +155,7 @@ protected:
 	int mapped_fade;
 	D3D1x_MAPPED_TEXTURE3D loss_texture_mapped;
 	D3D1x_MAPPED_TEXTURE3D insc_texture_mapped;
+	D3D1x_MAPPED_TEXTURE3D skyl_texture_mapped;
 
 	void MapFade(int s);
 	void UnmapFade();

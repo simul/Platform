@@ -77,6 +77,7 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudK
 	,texture_effect(1.f)
 	,loss_tex(0)
 	,inscatter_tex(0)
+	,skylight_tex(0)
 	,illum_tex(0)
 	,init(false)
 {
@@ -309,10 +310,12 @@ ERROR_CHECK
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D,loss_tex);
 ERROR_CHECK
-     glActiveTexture(GL_TEXTURE4);
+    glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D,inscatter_tex);
-ERROR_CHECK
     glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D,skylight_tex);
+ERROR_CHECK
+    glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_3D,illum_tex);
 ERROR_CHECK
 	glUseProgram(clouds_program);
@@ -322,11 +325,11 @@ ERROR_CHECK
 	glUniform1i(noiseSampler_param,2);
 	glUniform1i(lossSampler_param,3);
 	glUniform1i(inscatterSampler_param,4);
-	glUniform1i(illumSampler_param,5);
+	glUniform1i(skylightSampler_param,5);
+	glUniform1i(illumSampler_param,6);
 	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 ERROR_CHECK
-simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
-
+	simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 	if(enable_lightning)
 	{
 		static float bb=.1f;
@@ -559,6 +562,7 @@ ERROR_CHECK
 	illumSampler_param		=glGetUniformLocation(clouds_program,"illumSampler");
 	lossSampler_param		=glGetUniformLocation(clouds_program,"lossSampler");
 	inscatterSampler_param	=glGetUniformLocation(clouds_program,"inscatterSampler");
+	skylightSampler_param	=glGetUniformLocation(clouds_program,"skylightSampler");
 
 	layerDistance_param		=glGetUniformLocation(clouds_program,"layerDistance");
 	printProgramInfoLog(clouds_program);

@@ -5,8 +5,8 @@ cbuffer cbPerObject : register(b0)
 	matrix cubemapViews[6] : packoffset(c48);
 };
 
-Texture2D skyTexture1;
-Texture2D skyTexture2;
+Texture2D inscTexture;
+Texture2D skylTexture;
 SamplerState samplerState
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -162,19 +162,18 @@ float4 PS_DrawCubemap( vertexOutput IN): SV_TARGET
 
 float4 PS_Mainc( geomOutput IN): SV_TARGET
 {
-	float3 view=(IN.wDirection.xyz);
+	float3 view=normalize(IN.wDirection.xyz);
 #ifdef Z_VERTICAL
 	float sine	=view.z;
 #else
 	float sine	=view.y;
 #endif
-	float2 texcoord	=float2(0.5f*(1.f-sine),altitudeTexCoord);
-	float4 insc1=skyTexture1.Sample(samplerState,texcoord);
-	float4 insc2=skyTexture2.Sample(samplerState,texcoord);
-	float4 insc=lerp(insc1,insc2,skyInterp);
+	float2 texcoord	=float2(1.0,0.5*(1.0-sine));
+	float4 insc=inscTexture.Sample(samplerState,texcoord);
 	float cos0=dot(lightDir.xyz,view.xyz);
+	float4 skyl=skylTexture.Sample(samplerState,texcoord);
 	float3 result=InscatterFunction(insc,cos0);
-
+	result+=skyl.rgb;
 	return float4(result.rgb,1.f);
 }
 
@@ -186,12 +185,12 @@ float4 PS_Main( vertexOutput IN): SV_TARGET
 #else
 	float sine	=view.y;
 #endif
-	float2 texcoord	=float2(0.5f*(1.f-sine),altitudeTexCoord);
-	float4 insc1=skyTexture1.Sample(samplerState,texcoord);
-	float4 insc2=skyTexture2.Sample(samplerState,texcoord);
-	float4 insc=lerp(insc1,insc2,skyInterp);
+	float2 texcoord	=float2(1.0,0.5*(1.0-sine));
+	float4 insc=inscTexture.Sample(samplerState,texcoord);
 	float cos0=dot(lightDir.xyz,view.xyz);
+	float4 skyl=skylTexture.Sample(samplerState,texcoord);
 	float3 result=InscatterFunction(insc,cos0);
+	result+=skyl.rgb;
 	return float4(result.rgb,1.f);
 }
 
@@ -234,11 +233,7 @@ vertexOutput3Dto2D VS_ShowSkyTexture(vertexInput3Dto2D IN)
 
 float4 PS_ShowSkyTexture(vertexOutput3Dto2D IN): SV_TARGET
 {
-#ifdef USE_ALTITUDE_INTERPOLATION
-	float4 result=skyTexture1.Sample(fadeSamplerState,float2(IN.texCoords.y,altitudeTexCoord));
-#else
-	float4 result=skyTexture1.Sample(fadeSamplerState,float2(IN.texCoords.y,0));
-#endif
+	float4 result=inscTexture.Sample(fadeSamplerState,float2(1.0,IN.texCoords.y));
     return float4(.05*result.rgb,1);
 }
 

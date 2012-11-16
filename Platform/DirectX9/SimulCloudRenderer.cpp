@@ -194,6 +194,7 @@ SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	,illumination_texture(NULL)
 	,sky_loss_texture(NULL)
 	,sky_inscatter_texture(NULL)
+	,skylight_texture(NULL)
 	,unitSphereVertexBuffer(NULL)
 	,unitSphereIndexBuffer(NULL)
 	,cloudScales(NULL)
@@ -382,21 +383,20 @@ void SimulCloudRenderer::RecompileShaders()
 	alphaSharpness			=m_pCloudEffect->GetParameterByName(NULL,"alphaSharpness");
 	//if(enable_lightning)
 	{
-		lightningMultipliers=m_pCloudEffect->GetParameterByName(NULL,"lightningMultipliers");
-		lightningColour		=m_pCloudEffect->GetParameterByName(NULL,"lightningColour");
-		illuminationOrigin	=m_pCloudEffect->GetParameterByName(NULL,"illuminationOrigin");
-		illuminationScales	=m_pCloudEffect->GetParameterByName(NULL,"illuminationScales");
+		lightningMultipliers	=m_pCloudEffect->GetParameterByName(NULL,"lightningMultipliers");
+		lightningColour			=m_pCloudEffect->GetParameterByName(NULL,"lightningColour");
+		illuminationOrigin		=m_pCloudEffect->GetParameterByName(NULL,"illuminationOrigin");
+		illuminationScales		=m_pCloudEffect->GetParameterByName(NULL,"illuminationScales");
 	}
 
-	cloudDensity1			=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity1");
-	cloudDensity2			=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity2");
-	noiseTexture			=m_pCloudEffect->GetParameterByName(NULL,"noiseTexture");
+	cloudDensity1				=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity1");
+	cloudDensity2				=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity2");
+	noiseTexture				=m_pCloudEffect->GetParameterByName(NULL,"noiseTexture");
 
 	lightningIlluminationTexture=m_pCloudEffect->GetParameterByName(NULL,"lightningIlluminationTexture");
-	skyLossTexture			=m_pCloudEffect->GetParameterByName(NULL,"skyLossTexture");
-	skyInscatterTexture		=m_pCloudEffect->GetParameterByName(NULL,"skyInscatterTexture");
-	
-	
+	skyLossTexture				=m_pCloudEffect->GetParameterByName(NULL,"skyLossTexture");
+	skyInscatterTexture			=m_pCloudEffect->GetParameterByName(NULL,"skyInscatterTexture");
+	skylightTexture				=m_pCloudEffect->GetParameterByName(NULL,"skylightTexture");
 	
 	invViewProj			=m_pCloudEffect->GetParameterByName(NULL,"invViewProj");
 	noiseMatrix			=m_pCloudEffect->GetParameterByName(NULL,"noiseMatrix");
@@ -719,10 +719,10 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 		m_pCloudEffect->SetTexture(lightningIlluminationTexture	,illumination_texture);
 	}
 
-	if(fade_mode==FRAGMENT)
 	{
 		m_pCloudEffect->SetTexture(skyLossTexture				,sky_loss_texture);
 		m_pCloudEffect->SetTexture(skyInscatterTexture			,sky_inscatter_texture);
+		m_pCloudEffect->SetTexture(skylightTexture				,skylight_texture);
 	}
 
 	// Mess with the proj matrix to extend the far clipping plane? not now
@@ -1108,18 +1108,6 @@ void SimulCloudRenderer::InternalRenderVolumetric(int buffer_index)
 				vertex->sunlightColour.x=sunlight.x;
 				vertex->sunlightColour.y=sunlight.y;
 				vertex->sunlightColour.z=sunlight.z;
-				if(fade_mode==CPU)
-				{
-					simul::sky::float4 loss			=helper->GetLoss(*i,V);
-					simul::sky::float4 inscatter	=helper->GetInscatter(*i,V);
-					CPUFadeVertex_t *cpu_vertex=&cpu_fade_vertices[v];
-					cpu_vertex->loss.x=loss.x;
-					cpu_vertex->loss.y=loss.y;
-					cpu_vertex->loss.z=loss.z;
-					cpu_vertex->inscatter.x=inscatter.x;
-					cpu_vertex->inscatter.y=inscatter.y;
-					cpu_vertex->inscatter.z=inscatter.z;
-				}
 			}
 		}
 		if(v>=MAX_VERTICES)
@@ -1619,9 +1607,10 @@ void SimulCloudRenderer::SetLossTextures(void *t1)
 	sky_loss_texture=(LPDIRECT3DBASETEXTURE9)t1;
 }
 
-void SimulCloudRenderer::SetInscatterTextures(void *t1)
+void SimulCloudRenderer::SetInscatterTextures(void *i,void *s)
 {
-	sky_inscatter_texture=(LPDIRECT3DBASETEXTURE9)t1;
+	sky_inscatter_texture=(LPDIRECT3DBASETEXTURE9)i;
+	skylight_texture=(LPDIRECT3DBASETEXTURE9)s;
 }
 
 void SimulCloudRenderer::SetFadeMode(FadeMode f)

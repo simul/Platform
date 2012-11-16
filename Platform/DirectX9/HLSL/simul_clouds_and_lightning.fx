@@ -121,6 +121,19 @@ sampler2D sky_inscatter_texture= sampler_state
 	AddressW = Clamp;
 	SRGBTexture = 0;
 };
+texture skylightTexture;
+sampler2D skylight_texture= sampler_state 
+{
+    Texture = <skylightTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+	AddressU = Clamp;
+	AddressV = Mirror;
+	AddressW = Clamp;
+	SRGBTexture = 0;
+};
+
 texture raytraceLayerTexture;
 sampler1D raytrace_layer_texture= sampler_state 
 {
@@ -165,10 +178,6 @@ struct vertexInput
     float layerFade			: TEXCOORD1;
     float2 texCoordsNoise	: TEXCOORD2;
     float3 lightColour		: TEXCOORD3;
-#if FADE_MODE==0
-    float3 loss				: TEXCOORD4;
-    float3 inscatter		: TEXCOORD5;
-#endif
 };
 
 struct vertexInputPositionColour
@@ -193,13 +202,7 @@ struct vertexOutput
 	float3 wPosition			: TEXCOORD3;
     float3 texCoordLightning	: TEXCOORD4;
     float3 lightColour			: TEXCOORD5;
-#if FADE_MODE==1
     float2 fade_texc			: TEXCOORD6;
-#endif
-#if FADE_MODE==0
-    float3 loss					: TEXCOORD6;
-    float3 inscatter			: TEXCOORD7;
-#endif
 };
 
 vertexOutputPositionColour VS_PositionColour(vertexInputPositionColour IN)
@@ -240,17 +243,10 @@ vertexOutput VS_Main(vertexInput IN)
 	float sine	=view.y;
 #endif
 	OUT.lightColour=IN.lightColour;
-// Fade mode ZERO - fade values come from the vertex. So we pass them on to the pixel shader:
-#if FADE_MODE==0
-    OUT.loss			=IN.loss;
-    OUT.inscatter		=IN.inscatter;
-#endif
 // Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
-#if FADE_MODE==1
 	float depth=length(OUT.wPosition.xyz)/maxFadeDistanceMetres;
 	//OUT.fade_texc=float2(,0.5f*(1.f-sine));
 	OUT.fade_texc=float2(sqrt(depth),0.5f*(1.f-sine));
-#endif
     return OUT;
 }
 
@@ -314,16 +310,11 @@ float4 PS_WithLightning(vertexOutput IN): color
 	float3 lightningC=l*lightningColour.xyz;
 	final.rgb+=lightningColour.w*lightningC;
 
-#if FADE_MODE==1
 	float4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
 	float3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
-	float3 inscatter=InscatterFunction(insc,cos0);
-#endif
-// Fade mode 0 means passing fade values in through vertex properties.
-#if FADE_MODE==0
-	float3 loss=IN.loss;
-	float3 inscatter=IN.inscatter;
-#endif
+	float3 skyl=tex2D(skylight_texture,IN.fade_texc).rgb;
+	float3 inscatter=skyl+InscatterFunction(insc,cos0);
+
 	final.rgb*=loss.xyz;
 	final.rgb+=inscatter.xyz;
 	final.rgb*=opacity;
@@ -339,16 +330,10 @@ float4 PS_Clouds( vertexOutput IN): color
 // Fade mode 1 means using textures for distance fade.
 	float4 final=CloudColour(IN,cos0);
 	float opacity=final.a;
-#if FADE_MODE==1
 	float4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
 	float3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
-	float3 inscatter=InscatterFunction(insc,cos0);
-#endif
-// Fade mode 0 means passing fade values in through vertex properties.
-#if FADE_MODE==0
-	float3 loss=IN.loss;
-	float3 inscatter=IN.inscatter;
-#endif
+	float3 skyl=tex2D(skylight_texture,IN.fade_texc).rgb;
+	float3 inscatter=skyl+InscatterFunction(insc,cos0);
 	final.rgb*=loss;
 	final.rgb+=inscatter;
     return float4(final.rgb,opacity);

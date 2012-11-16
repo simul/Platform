@@ -253,7 +253,6 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 
 bool SimulWeatherRendererDX1x::RenderCubemap()
 {
-return true;
 	D3DXMATRIX ov=view;
 	D3DXMATRIX op=proj;
 	D3DXVECTOR3 cam_pos=GetCameraPosVector(view);

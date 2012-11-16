@@ -25,6 +25,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 		,UseSkyBuffer(true)
 		,ShowLightVolume(false)
 		,CelestialDisplay(false)
+		,ShowWater(true)
 {
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,true,false,w,h,true,true,true);
 	AddChild(simulWeatherRenderer.get());
@@ -136,7 +137,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		simulWeatherRenderer->RenderSky(UseSkyBuffer,false);
 		simulWeatherRenderer->RenderCubemap();
 	}
-	if(simulOceanRenderer)
+	if(simulOceanRenderer&&ShowWater)
 	{
 		simulOceanRenderer->Update(fTimeStep);
 		simulOceanRenderer->SetCubemap((ID3D1xShaderResourceView*	)simulWeatherRenderer->GetCubemap());

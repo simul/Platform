@@ -29,6 +29,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,y_vertical(false)
 	,UseHdrPostprocessor(true)
 	,ShowOSD(false)
+	,ShowWater(true)
 {
 	simulHDRRenderer=new SimulGLHDRRenderer(width,height);
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);

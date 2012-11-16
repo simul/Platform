@@ -180,7 +180,7 @@ float4 PS_Main( vertexOutput IN): COLOR
 #else
 	float sine	=view.z;
 #endif
-	float2 texcoord	=float2(1.f,0.5f*(1.f-sine));
+	float2 texcoord	=float2(1.0,0.5*(1.0-sine));
 	float4 insc_factor	=tex2D(insc_texture,texcoord);
 	float4 skyl			=tex2D(skyl_texture,texcoord);
 	float cos0=dot(lightDir.xyz,view.xyz);

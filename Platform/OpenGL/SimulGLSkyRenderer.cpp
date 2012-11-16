@@ -497,7 +497,7 @@ ERROR_CHECK
 
 	campos_updated=true;
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
-	if(sun_dir.z>0)
+	if(sun_dir.z>-sin(skyKeyframer->GetHorizonElevation(cam_pos[2]/1000.f)))
 		UseProgram(sky_program);
 	else
 		UseProgram(earthshadow_program);
@@ -525,8 +525,8 @@ ERROR_CHECK
 		float h=skyKeyframer->GetAltitudeKM()/R+1.f;
 		// radius on Earth-shadow cylinder
 		float r=h*earth_shadow_n.z;
-		if(sun_dir.z>0)
-			r=1.f;
+		//if(sun_dir.z>0)
+		//	r=1.f;
 		glUniform1f(radiusOnCylinder_param,r);
 		glUniform3f(earthShadowNormal_param,earth_shadow_n.x,earth_shadow_n.y,earth_shadow_n.z);
 		glUniform1f(maxFadeDistance_param,skyKeyframer->GetMaxDistanceKm()/R);

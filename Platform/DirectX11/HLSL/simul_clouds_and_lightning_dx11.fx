@@ -57,6 +57,7 @@ SamplerState lightningSamplerState
 };
 Texture2D skyLossTexture;
 Texture2D skyInscatterTexture;
+Texture2D skylightTexture;
 SamplerState fadeSamplerState 
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -164,6 +165,7 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 	float3 view=normalize(IN.wPosition);
 	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
 	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
+	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	float3 inscatter=InscatterFunction(insc,cos0);
@@ -191,7 +193,7 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 	float3 final=(density.y*Beta+lightResponse.y*density.x)*sunlightColour+ambient.rgb+lightningColour.w*lightningC;
 	
 	final*=loss.xyz;
-	final+=inscatter.xyz;
+	final+=skyl.rgb+inscatter.xyz;
 
 	final*=opacity;
 
@@ -219,11 +221,12 @@ float4 PS_CloudsLowDef( vertexOutput IN): SV_TARGET
 	
 	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
 	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
+	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float3 ambient=density.w*skylightColour.rgb;
 
 	float opacity=density.z;
 	float3 final=(density.x*Beta+lightResponse.y*density.y)*sunlightColour+ambient.rgb;
-	float3 inscatter=InscatterFunction(insc,cos0);
+	float3 inscatter=skyl.rgb+InscatterFunction(insc,cos0);
 
 	final*=loss;
 	final+=inscatter;
@@ -254,6 +257,7 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 	
 	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
 	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
+	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float3 ambient=density.w*skylightColour.rgb;
 
 	float opacity=density.z;
@@ -261,7 +265,7 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 	float3 inscatter=InscatterFunction(insc,cos0);
 
 	final*=loss;
-	final+=inscatter;
+	final+=skyl.rgb+inscatter;
 
     return float4(final.rgb,opacity);
 }

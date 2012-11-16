@@ -38,6 +38,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	,ShowFlares(true)
 	,device_reset(true)
 	,UseHdrPostprocessor(true)
+	,ShowWater(true)
 {
 	simulWeatherRenderer=new SimulWeatherRenderer(env,true,w,h,true,true);
 	if(simulWeatherRenderer)

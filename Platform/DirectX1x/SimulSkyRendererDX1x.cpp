@@ -276,6 +276,8 @@ void SimulSkyRendererDX1x::MapFade(int s)
 		return;	   
 	if(FAILED(hr=Map3D(inscatter_textures[s],&insc_texture_mapped)))
 		return;
+	if(FAILED(hr=Map3D(skylight_textures[s],&skyl_texture_mapped)))
+		return;
 	mapped_fade=s;
 }
 
@@ -285,6 +287,7 @@ void SimulSkyRendererDX1x::UnmapFade()
 		return;
 	Unmap3D(loss_textures[mapped_fade]);
 	Unmap3D(inscatter_textures[mapped_fade]);
+	Unmap3D(skylight_textures[mapped_fade]);
 	mapped_fade=-1;
 }
 
@@ -381,7 +384,7 @@ void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate()
 			texture_fill=skyKeyframer->GetSequentialFadeTextureFill(j,i,fade_texture_iterator[i][j]);
 			if(texture_fill.num_texels&&sky_textures[i])
 			{
-				FillFadeTex(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1,(const float*)texture_fill.float_array_2);
+				FillFadeTex(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1,(const float*)texture_fill.float_array_2,(const float*)texture_fill.float_array_3);
 			}
 		}
 	}
@@ -500,7 +503,8 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 
 void SimulSkyRendererDX1x::FillFadeTex(int alt_index,int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
-						const float *inscatter_float4_array)
+						const float *inscatter_float4_array,
+						const float *skylight_float4_array)
 {
 	texel_index+=alt_index*fadeTexWidth*fadeTexHeight;
 	unsigned sub=D3D1xCalcSubresource(0,0,1);
@@ -515,6 +519,11 @@ void SimulSkyRendererDX1x::FillFadeTex(int alt_index,int texture_index,int texel
 	float_ptr+=4*texel_index;
 	for(int i=0;i<num_texels*4;i++)
 		*float_ptr++=(*inscatter_float4_array++);
+
+	float_ptr=(float *)(skyl_texture_mapped.pData);
+	float_ptr+=4*texel_index;
+	for(int i=0;i<num_texels*4;i++)
+		*float_ptr++=(*skylight_float4_array++);
 }
 
 void SimulSkyRendererDX1x::CreateSkyTextures()
@@ -573,8 +582,8 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	m_hTechniquePlanet	=m_pSkyEffect->GetTechniqueByName("simul_planet");
 	flareTexture		=m_pSkyEffect->GetVariableByName("flareTexture")->AsShaderResource();
 
-	skyTexture1			=m_pSkyEffect->GetVariableByName("skyTexture1")->AsShaderResource();
-	skyTexture2			=m_pSkyEffect->GetVariableByName("skyTexture2")->AsShaderResource();
+	inscTexture			=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
+	skylTexture			=m_pSkyEffect->GetVariableByName("skylTexture")->AsShaderResource();
 
 	fadeTexture1		=m_pSkyEffect->GetVariableByName("fadeTexture1")->AsShaderResource();
 	fadeTexture2		=m_pSkyEffect->GetVariableByName("fadeTexture2")->AsShaderResource();
@@ -750,7 +759,7 @@ bool SimulSkyRendererDX1x::Render2DFades()
 		skylight_2d->Activate();
 			
 		m_pImmediateContext->ClearRenderTargetView(skylight_2d->m_pHDRRenderTarget,clearColor);
-		if(inscatter_2d->m_pBufferDepthSurface)
+		if(skylight_2d->m_pBufferDepthSurface)
 			m_pImmediateContext->ClearDepthStencilView(skylight_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
 			D3D1x_CLEAR_STENCIL, 1.f, 0);
 		skylight_2d->RenderBufferToCurrentTarget();
@@ -798,8 +807,8 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 	}
 #endif
 	PIXBeginNamedEvent(0,"Render Sky");
-	skyTexture1->SetResource(sky_textures_SRV[0]);
-	skyTexture2->SetResource(sky_textures_SRV[1]);
+	inscTexture->SetResource(inscatter_2d->hdr_buffer_texture_SRV);
+	skylTexture->SetResource(skylight_2d->hdr_buffer_texture_SRV);
 
 	simul::sky::float4 mie_rayleigh_ratio=skyKeyframer->GetMieRayleighRatio();
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
