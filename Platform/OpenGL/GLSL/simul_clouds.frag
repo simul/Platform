@@ -42,7 +42,7 @@ float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
 	float u=1.0+g2-2.0*g*cos0;
-	return 0.5*0.079577+0.5*(1.0-g2)*pow(u,-1.5)/(4.0*pi);
+	return (1.0-g2)*pow(u,-1.5)/(4.0*pi);
 	//return 0.5*0.079577+.5*(1.0-g2)/(4.0*pi*sqrt(u*u*u));
 }
 

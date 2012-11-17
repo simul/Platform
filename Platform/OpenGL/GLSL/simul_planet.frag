@@ -6,14 +6,17 @@ uniform vec3 lightDir;
 uniform vec3 colour;
 // varyings are written by vert shader, interpolated, and read by frag shader.
 varying vec2 texcoord;
+
 float saturate(float f)
 {
 	return clamp(f,0.0,1.0);
 }
+
 vec2 saturate(vec2 f)
 {
 	return clamp(f,0.0,1.0);
 }
+
 float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 {
 	float roughness2 = roughness * roughness;

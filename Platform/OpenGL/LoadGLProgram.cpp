@@ -98,8 +98,8 @@ GLuint SetShaders(const char *vert_src,const char *frag_src)
 	GLuint prog				=glCreateProgram();
 	GLuint vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 	GLuint fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-    vertex_shader			=SetProgram(vertex_shader,vert_src,"");
-    fragment_shader			=SetProgram(fragment_shader,frag_src,"");
+    vertex_shader			=SetShader(vertex_shader,vert_src,"");
+    fragment_shader			=SetShader(fragment_shader,frag_src,"");
 	glAttachShader(prog,vertex_shader);
 	glAttachShader(prog,fragment_shader);
 	glLinkProgram(prog);
@@ -131,7 +131,7 @@ GLuint LoadPrograms(const char *vert_filename,const char *geom_filename,const ch
 	return prog;
 }
 
-GLuint SetProgram(GLuint sh,const char *shader_source,const char *defines)
+GLuint SetShader(GLuint sh,const char *shader_source,const char *defines)
 {
 /*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
 	const int MAX_STRINGS=12;
@@ -209,7 +209,7 @@ GLuint LoadShader(GLuint sh,const char *filename,const char *defines)
 	}
 	ifs.close();
 	ptr[0]=0;
-	sh=SetProgram(prog,shader_source,defines);
+	sh=SetShader(sh,shader_source,defines);
     if(!sh)
 		std::cerr<<std::endl<<filePath.c_str()<<"(0): Error creating program "<<std::endl;
     return sh;

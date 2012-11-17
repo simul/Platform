@@ -132,7 +132,6 @@ protected:
 	ID3D1xEffectShaderResourceVariable*	fadeTexture2;
 
 	ID3D1xTexture2D*					flare_texture;
-	ID3D1xTexture2D*					sky_textures[3];
 
 	ID3D1xTexture3D*					loss_textures[3];
 	ID3D1xTexture3D*					inscatter_textures[3];
@@ -144,14 +143,11 @@ protected:
 	FramebufferDX1x*					skylight_2d;
 
 	ID3D1xShaderResourceView*			flare_texture_SRV;
-	ID3D1xShaderResourceView*			sky_textures_SRV[3];
 	ID3D1xShaderResourceView*			loss_textures_SRV[3];
 	ID3D1xShaderResourceView*			insc_textures_SRV[3];
 	ID3D1xShaderResourceView*			skyl_textures_SRV[3];
 	ID3D1xShaderResourceView*			moon_texture_SRV;
 
-	int mapped_sky;
-	D3D1x_MAPPED_TEXTURE2D sky_texture_mapped;
 	int mapped_fade;
 	D3D1x_MAPPED_TEXTURE3D loss_texture_mapped;
 	D3D1x_MAPPED_TEXTURE3D insc_texture_mapped;
@@ -159,12 +155,8 @@ protected:
 
 	void MapFade(int s);
 	void UnmapFade();
-	void MapSky(int s);
-	void UnmapSky();
 	D3DXMATRIX				world,view,proj;
-	bool UpdateSkyTexture(float proportion);
-	void CreateSkyTextures();
-void DrawCube();
+	void DrawCube();
 	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };
