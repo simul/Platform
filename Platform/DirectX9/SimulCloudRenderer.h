@@ -6,7 +6,7 @@
 // in accordance with the terms of that agreement.
 
 // SimulCloudRenderer.h A DirectX renderer for clouds. Create an instance of this class in a DX program
-//! and use the Render() function once per frame.
+// and use the Render() function once per frame.
 
 #pragma once
 #ifdef XBOX

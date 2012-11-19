@@ -120,8 +120,8 @@ void SimulGLSkyRenderer::CreateFadeTextures()
 			glTexImage3D(GL_TEXTURE_3D,0,internal_format,fadeTexWidth,fadeTexHeight,numAltitudes,0,GL_RGBA,sky_tex_format,fade_tex_data);
 		}
 	}
-	delete [] fade_tex_data;
 	ERROR_CHECK
+	delete [] fade_tex_data;
 	loss_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
 	loss_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	inscatter_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
@@ -318,8 +318,6 @@ ERROR_CHECK
 	for(int i=0;i<numAltitudes;i++)
 	{
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D,inscatter_textures[0]);
 
 		glUseProgram(fade_3d_to_2d_program);
 		GLint			altitudeTexCoord_fade;
@@ -335,10 +333,19 @@ ERROR_CHECK
 		glUniform1f(altitudeTexCoord_fade,atc);
 		glUniform1i(fadeTexture1_fade,0);
 		glUniform1i(fadeTexture2_fade,0);
+		
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_3D,inscatter_textures[0]);
 		RenderTexture(8+2*(size+8)	,i*(size+8)+8, size,size);
 
 		glBindTexture(GL_TEXTURE_3D,inscatter_textures[1]);
 		RenderTexture(8+3*(size+8)	,i*(size+8)+8, size,size);
+		
+		glBindTexture(GL_TEXTURE_3D,loss_textures[0]);
+		RenderTexture(16+4*(size+8)	,i*(size+8)+8, size,size);
+
+		glBindTexture(GL_TEXTURE_3D,loss_textures[1]);
+		RenderTexture(16+5*(size+8)	,i*(size+8)+8, size,size);
 	}
 	glUseProgram(0);
 ERROR_CHECK
@@ -547,9 +554,9 @@ void SimulGLSkyRenderer::RenderSun()
 		sunlight.w=max_bright;
 	}
 	glUseProgram(sun_program);
-		ERROR_CHECK
+	ERROR_CHECK
 	glUniform4f(sunlight_param,sunlight.x,sunlight.y,sunlight.z,sunlight.w);
-		ERROR_CHECK
+	ERROR_CHECK
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
 	//if(y_vertical)
 	//	std::swap(sun_dir.y,sun_dir.z);

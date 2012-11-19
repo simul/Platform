@@ -41,7 +41,7 @@ public:
 /*!
 	\code
 #include "Simul/Platform/Windows/DirectX 9/SimulWeatherRenderer.h"
-	simulWeatherRenderer=new SimulWeatherRenderer(license,env,true,ScreenWidth/2,ScreenHeight/2,true,true,false,true,false);
+	simulWeatherRenderer=new SimulWeatherRenderer(env,true,ScreenWidth/2,ScreenHeight/2,true,true,false,true,false);
 	simulWeatherRenderer->SetDaytime(0.3f);
 	\endcode
 

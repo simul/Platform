@@ -6,7 +6,7 @@
 // in accordance with the terms of that agreement.
 
 // SimulCloudRendererDX1x.h A DirectX 10/11 renderer for clouds. Create an instance of this class in a dx10 program
-//! and use the Render() function once per frame.
+// and use the Render() function once per frame.
 
 #pragma once
 

@@ -97,7 +97,7 @@ void SimulGLTerrainRenderer::Render()
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	ERROR_CHECK
-	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
 	glPolygonMode(GL_FRONT,GL_FILL);
