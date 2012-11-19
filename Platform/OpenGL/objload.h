@@ -1,45 +1,42 @@
-//--------------------------------------------------------------------------------
-///	\file	objload.h
-///	\author	Rob Bateman [mailto:robthebloke@hotmail.com] [http://robthebloke.org]
-///	\date	11-4-05
-///	\brief	A C++ loader for the alias wavefront obj file format. This loader is
-///			intended to be as complete as possible (ie, it handles everything that 
-///			Maya can spit at it, as well as all the parametric curve and surface 
-///			stuff not supported by Maya's objexport plugin). 
-///
-///			If you want to add obj import/export capabilities to your applications,
-///			the best method is probably to derive a class from Obj::File and then
-///			use the data in the arrays provided (or fill the data arrays with the 
-///			correct info, then export).
-/// 
-///			In addition to simply accessing the data arrays, you can also overload
-///			the functions, PreSave,PostSave,PreLoad,PostLoad and HandleUnknown to 
-///			extend the capabilities of the file format (if you really think that 
-///			is wise!). 
-/// 
-///			Generally speaking, the obj file format is actually very very complex.
-///			As a result, not all of the Curve and Surface types are fully supported
-///			in the openGL display parts of this code. Bezier, Bspline & NURBS curves
-///			and surface should be fine. Cardinal, taylor and basis matrix types 
-///			will be displayed as CV's / HULLS only. Trim curves and holes don't get
-///			displayed either. I'll leave that as an excersice for the reader. 
-/// 
-///			The material lib files (*.mtl) are also supported and parsed, this 
-///			includes a user extensible interface to load the image files as textures.
-///			See the texture manager example for more info. 
-/// 
-///			One nice aspect of this code is the ability to calculate normals for 
-///			the polygonal surfaces, and the ability to convert the objfile into 
-///			surfaces and /or vertex arrays. Hopefully it may be useful to someone.
-/// 
-///			If you wish to use this code within a game, I **STRONGLY** RECOMMEND 
-///			converting the data to Vertex Arrays and saving as your own custom 
-///			file format. The code to handle your own objects will be substantially 
-///			more efficient than this code which is designed for completeness, not
-///			speed! See the obj->game converter for a quick example of this. 
-/// \todo	
-///			
-///
+//	author	Rob Bateman [mailto:robthebloke@hotmail.com] [http://robthebloke.org]
+//	date	11-4-05
+//	brief	A C++ loader for the alias wavefront obj file format. This loader is
+//			intended to be as complete as possible (ie, it handles everything that 
+//			Maya can spit at it, as well as all the parametric curve and surface 
+//			stuff not supported by Maya's objexport plugin). 
+//
+//			If you want to add obj import/export capabilities to your applications,
+//			the best method is probably to derive a class from Obj::File and then
+//			use the data in the arrays provided (or fill the data arrays with the 
+//			correct info, then export).
+// 
+//			In addition to simply accessing the data arrays, you can also overload
+//			the functions, PreSave,PostSave,PreLoad,PostLoad and HandleUnknown to 
+//			extend the capabilities of the file format (if you really think that 
+//			is wise!). 
+// 
+//			Generally speaking, the obj file format is actually very very complex.
+//			As a result, not all of the Curve and Surface types are fully supported
+//			in the openGL display parts of this code. Bezier, Bspline & NURBS curves
+//			and surface should be fine. Cardinal, taylor and basis matrix types 
+//			will be displayed as CV's / HULLS only. Trim curves and holes don't get
+//			displayed either. I'll leave that as an excersice for the reader. 
+// 
+//			The material lib files (*.mtl) are also supported and parsed, this 
+//			includes a user extensible interface to load the image files as textures.
+//			See the texture manager example for more info. 
+// 
+//			One nice aspect of this code is the ability to calculate normals for 
+//			the polygonal surfaces, and the ability to convert the objfile into 
+//			surfaces and /or vertex arrays. Hopefully it may be useful to someone.
+// 
+//			If you wish to use this code within a game, I **STRONGLY** RECOMMEND 
+//			converting the data to Vertex Arrays and saving as your own custom 
+//			file format. The code to handle your own objects will be substantially 
+//			more efficient than this code which is designed for completeness, not
+//			speed! See the obj->game converter for a quick example of this. 
+//			
+//
 //--------------------------------------------------------------------------------
 
 #ifndef __OBJ_LOAD__H__

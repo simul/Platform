@@ -6,7 +6,7 @@
 // in accordance with the terms of that agreement.
 
 // SimulCloudRenderer.h A DirectX renderer for clouds. Create an instance of this class in a DX program
-//! and use the Render() function once per frame.
+// and use the Render() function once per frame.
 
 #pragma once
 #ifdef XBOX
@@ -72,8 +72,8 @@ public:
 	const char *GetDebugText() const;
 	float GetTiming() const;
 	void *GetIlluminationTexture();
-	void SetLossTexture(void *t1);
-	void SetInscatterTexture(void *t1);
+	void SetLossTextures(void *t1);
+	void SetInscatterTextures(void *i,void *s);
 	LPDIRECT3DTEXTURE9 GetNoiseTexture()
 	{
 		return noise_texture;
@@ -187,6 +187,7 @@ protected:
 	D3DXHANDLE					lightningIlluminationTexture;
 	D3DXHANDLE					skyLossTexture;
 	D3DXHANDLE					skyInscatterTexture;
+	D3DXHANDLE					skylightTexture;
 	
 	D3DXHANDLE					invViewProj;
 	D3DXHANDLE					noiseMatrix;
@@ -201,6 +202,7 @@ protected:
 	LPDIRECT3DTEXTURE9			raytrace_layer_texture;
 	LPDIRECT3DBASETEXTURE9		sky_loss_texture;
 	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture;
+	LPDIRECT3DBASETEXTURE9		skylight_texture;
 	LPDIRECT3DCUBETEXTURE9		cloud_cubemap;
 	D3DXVECTOR4					lightning_colour;
 	D3DXMATRIX					world,view,proj;

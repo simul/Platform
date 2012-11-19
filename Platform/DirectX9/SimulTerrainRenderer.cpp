@@ -493,7 +493,7 @@ void SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
 	RebuildBuffers();
 	RecompileShaders();
 	MakeMapTexture();
-//	GPUGenerateHeightmap();
+	GPUGenerateHeightmap();
 }
 
 unsigned SimulTerrainRenderer::GetBufferChecksum()
@@ -839,7 +839,7 @@ void SimulTerrainRenderer::Render()
 				std::swap(pos[i*3+1],pos[i*3+2]);
 			}
 		}
-		//RenderLines(m_pd3dDevice,12,pos);
+		RenderLines(m_pd3dDevice,12,pos);
 	}
 }
 

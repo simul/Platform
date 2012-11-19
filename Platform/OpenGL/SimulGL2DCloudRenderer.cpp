@@ -32,7 +32,7 @@
 #include "SimulGLUtilities.h"
 
 using namespace std;
-void printShaderInfoLog(GLuint obj);
+void printShaderInfoLog(GLuint sh);
 void printProgramInfoLog(GLuint obj);
 
 #ifdef WIN32
@@ -51,6 +51,7 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	,image_tex(0)
 	,loss_tex(0)
 	,inscatter_tex(0)
+	,skylight_tex(0)
 {
 	helper->Initialize(16,400000.f);
 }
@@ -207,7 +208,6 @@ bool SimulGL2DCloudRenderer::Render(bool, bool, bool)
 	simul::math::Vector3 X1,X2;
 	ci->GetExtents(X1,X2);
 	simul::math::Vector3 DX=X2-X1;
-
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_TEXTURE_3D);
     glEnable(GL_BLEND);
@@ -223,6 +223,8 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,loss_tex);
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,inscatter_tex);
+    glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D,skylight_tex);
 	glUseProgram(clouds_program);
 static float ll=0.05f;
 	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
@@ -306,20 +308,21 @@ ERROR_CHECK
 ERROR_CHECK
 	return true;
 }
+
 void SimulGL2DCloudRenderer::RenderCrossSections(int width,int height)
 {
 }
 
-void SimulGL2DCloudRenderer::SetLossTexture(void *l)
+void SimulGL2DCloudRenderer::SetLossTextures(void *l)
 {
 	if(l)
 	loss_tex=((GLuint)l);
 }
 
-void SimulGL2DCloudRenderer::SetInscatterTexture(void *i)
+void SimulGL2DCloudRenderer::SetInscatterTextures(void *i,void *s)
 {
-	if(i)
 	inscatter_tex=((GLuint)i);
+	skylight_tex=((GLuint)s);
 }
 
 void SimulGL2DCloudRenderer::RestoreDeviceObjects(void*)

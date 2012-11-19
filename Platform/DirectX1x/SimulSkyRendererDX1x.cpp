@@ -100,26 +100,27 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 	,moon_texture_SRV(NULL)
 	,loss_2d(NULL)
 	,inscatter_2d(NULL)
+	,skylight_2d(NULL)
 	,sun_occlusion(0.f)
 	,d3dQuery(NULL)
-	,mapped_sky(-1)
 	,mapped_fade(-1)
 	,cycle(0)
 {
 	for(int i=0;i<3;i++)
 	{
-		sky_textures[i]=NULL;
-		sky_textures_SRV[i]=NULL;
 		loss_textures[i]=NULL;
 		inscatter_textures[i]=NULL;
+		skylight_textures[i]=NULL;
 		loss_textures_SRV[i]=NULL;
 		insc_textures_SRV[i]=NULL;
+		skyl_textures_SRV[i]=NULL;
 	}
 //EnableColourSky(false);
 	SetCameraPosition(0,0,400.f);
 	skyKeyframer->SetCalculateAllAltitudes(true);
 	loss_2d		=new FramebufferDX1x(0,0);
 	inscatter_2d=new FramebufferDX1x(0,0);
+	skylight_2d	=new FramebufferDX1x(0,0);
 }
 
 void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
@@ -146,6 +147,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
 	RecompileShaders();
+
 	SAFE_RELEASE(flare_texture);
 	D3DX1x_IMAGE_LOAD_INFO loadInfo;
 	ID3D1xResource *res=NULL;
@@ -178,9 +180,9 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
         0
 	};
     D3D1x_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData,sizeof(D3D1x_SUBRESOURCE_DATA));
-    InitData.pSysMem=vertices;
-    InitData.SysMemPitch=sizeof(Vertex_t);
+    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    InitData.pSysMem = vertices;
+    InitData.SysMemPitch = sizeof(Vertex_t);
 	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer);
 	if(loss_2d)
 	{
@@ -192,10 +194,14 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 		inscatter_2d->SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
 		inscatter_2d->RestoreDeviceObjects(dev);
 	}
+	if(skylight_2d)
+	{
+		skylight_2d->SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+		skylight_2d->RestoreDeviceObjects(dev);
+	}
 	SAFE_RELEASE(moon_texture_SRV);
 	MoonTexture="Moon.png";
 	moon_texture_SRV=simul::dx1x_namespace::LoadTexture(MoonTexture.c_str());
-
 	SetPlanetImage(moon_index,moon_texture_SRV);
 	ClearIterators();
 }
@@ -211,7 +217,10 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	{
 		inscatter_2d->InvalidateDeviceObjects();
 	}
-	UnmapSky();
+	if(skylight_2d)
+	{
+		skylight_2d->InvalidateDeviceObjects();
+	}
 	UnmapFade();
 #ifndef DX10
 	SAFE_RELEASE(m_pImmediateContext);
@@ -227,12 +236,12 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 
 	for(int i=0;i<3;i++)
 	{
-		SAFE_RELEASE(sky_textures[i]);
-		SAFE_RELEASE(sky_textures_SRV[i]);
 		SAFE_RELEASE(loss_textures[i]);
 		SAFE_RELEASE(loss_textures_SRV[i]);
 		SAFE_RELEASE(inscatter_textures[i]);
 		SAFE_RELEASE(insc_textures_SRV[i]);
+		SAFE_RELEASE(skylight_textures[i]);
+		SAFE_RELEASE(skyl_textures_SRV[i]);
 	}
 	// Set the stored texture sizes to zero, so the textures will be re-created.
 	fadeTexWidth=fadeTexHeight=numAltitudes=0;
@@ -261,6 +270,8 @@ void SimulSkyRendererDX1x::MapFade(int s)
 		return;	   
 	if(FAILED(hr=Map3D(inscatter_textures[s],&insc_texture_mapped)))
 		return;
+	if(FAILED(hr=Map3D(skylight_textures[s],&skyl_texture_mapped)))
+		return;
 	mapped_fade=s;
 }
 
@@ -270,39 +281,8 @@ void SimulSkyRendererDX1x::UnmapFade()
 		return;
 	Unmap3D(loss_textures[mapped_fade]);
 	Unmap3D(inscatter_textures[mapped_fade]);
+	Unmap3D(skylight_textures[mapped_fade]);
 	mapped_fade=-1;
-}
-
-void SimulSkyRendererDX1x::MapSky(int s)
-{
-	if(mapped_sky==s)
-		return;
-	if(mapped_sky!=-1)
-		UnmapSky();
-	HRESULT hr;
-	if(FAILED(hr=Map2D(sky_textures[s],&sky_texture_mapped)))
-		return;
-	mapped_sky=s;
-}
-
-void SimulSkyRendererDX1x::UnmapSky()
-{
-	if(mapped_sky==-1)
-		return;
-	Unmap2D(sky_textures[mapped_sky]);
-	mapped_sky=-1;
-}
-
-void SimulSkyRendererDX1x::FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
-{
-	MapSky(texture_index);
-	if(!sky_texture_mapped.pData)
-		return;
-	float *float_ptr=(float *)(sky_texture_mapped.pData);
-	texel_index+=alt_index*skyTexSize;
-	float_ptr+=4*texel_index;
-	for(int i=0;i<num_texels*4;i++)
-		*float_ptr++=(*float4_array++);
 }
 
 float SimulSkyRendererDX1x::GetFadeInterp() const
@@ -318,7 +298,7 @@ void SimulSkyRendererDX1x::EnsureCorrectTextureSizes()
 	int num_alt=i.z;
 	if(!num_dist||!num_elev||!num_alt)
 		return;
-	if(fadeTexWidth==num_dist&&fadeTexHeight==num_elev&&numAltitudes==num_alt&&skyTexSize==num_elev&&sky_texture_iterator[0].size()==numAltitudes)
+	if(fadeTexWidth==num_dist&&fadeTexHeight==num_elev&&numAltitudes==num_alt&&skyTexSize==num_elev)
 		return;
 	if(!m_pd3dDevice)
 		return;
@@ -328,17 +308,13 @@ void SimulSkyRendererDX1x::EnsureCorrectTextureSizes()
 	for(int i=0;i<3;i++)
 	{
 		fade_texture_iterator[i].resize(numAltitudes);
-		sky_texture_iterator[i].resize(numAltitudes);
 		for(int j=0;j<numAltitudes;j++)
 		{
 			fade_texture_iterator[i][j].texture_index=i;
-			sky_texture_iterator[i][j].texture_index=i;
 		}
 	}
 	skyTexSize=num_elev;
-	CreateSkyTextures();
 	CreateFadeTextures();
-	//CreateSunlightTextures();
 }
 
 void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate()
@@ -350,28 +326,17 @@ void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate()
 		bool reset=false;
 		for(int j=0;j<numAltitudes;j++)
 		{
-			simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSkyTextureFill(j,i,sky_texture_iterator[i][j]);
-			if(i!=mapped_sky&&texture_fill.texel_index>0&&texture_fill.num_texels>0)
-				reset=true;
+			simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(j,i,fade_texture_iterator[i][j]);
 			if(reset)
 			{
-				sky_texture_iterator[i][j].texel_index=0;
-				texture_fill=skyKeyframer->GetSkyTextureFill(j,i,sky_texture_iterator[i][j]);
 				fade_texture_iterator[i][j].texel_index=0;
 			}
-			if(texture_fill.num_texels&&sky_textures[i])
+			if(texture_fill.num_texels)
 			{
-				FillSkyTex(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1);
-			}
-			texture_fill=skyKeyframer->GetSequentialFadeTextureFill(j,i,fade_texture_iterator[i][j]);
-			if(texture_fill.num_texels&&sky_textures[i])
-			{
-				FillFadeTex(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1,(const float*)texture_fill.float_array_2);
+				FillFadeTex(j,i,texture_fill.texel_index,texture_fill.num_texels,(const float*)texture_fill.float_array_1,(const float*)texture_fill.float_array_2,(const float*)texture_fill.float_array_3);
 			}
 		}
 	}
-	if(mapped_sky!=2)
-		UnmapSky();
 	if(mapped_fade!=2)
 		UnmapFade();
 }
@@ -379,39 +344,31 @@ void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate()
 void SimulSkyRendererDX1x::CycleTexturesForward()
 {
 	cycle++;
-	UnmapSky();
 	UnmapFade();
-
-	std::swap(sky_textures[0],sky_textures[1]);
-	std::swap(sky_textures[1],sky_textures[2]);
 
 	std::swap(loss_textures[0],loss_textures[1]);
 	std::swap(loss_textures[1],loss_textures[2]);
 
 	std::swap(inscatter_textures[0],inscatter_textures[1]);
 	std::swap(inscatter_textures[1],inscatter_textures[2]);
-	
-	std::swap(sky_textures_SRV[0],sky_textures_SRV[1]);
-	std::swap(sky_textures_SRV[1],sky_textures_SRV[2]);
+
+	std::swap(skylight_textures[0],skylight_textures[1]);
+	std::swap(skylight_textures[1],skylight_textures[2]);
 	
 	std::swap(loss_textures_SRV[0],loss_textures_SRV[1]);
 	std::swap(loss_textures_SRV[1],loss_textures_SRV[2]);
 	
 	std::swap(insc_textures_SRV[0],insc_textures_SRV[1]);
 	std::swap(insc_textures_SRV[1],insc_textures_SRV[2]);
+	
+	std::swap(skyl_textures_SRV[0],skyl_textures_SRV[1]);
+	std::swap(skyl_textures_SRV[1],skyl_textures_SRV[2]);
 
-	std::swap(sky_texture_iterator[0],sky_texture_iterator[1]);
-	std::swap(sky_texture_iterator[1],sky_texture_iterator[2]);
 	std::swap(fade_texture_iterator[0],fade_texture_iterator[1]);
 	std::swap(fade_texture_iterator[1],fade_texture_iterator[2]);
 	for(int i=0;i<3;i++)
-	{
 		for(int j=0;j<numAltitudes;j++)
-		{
 			fade_texture_iterator[i][j].texture_index=i;
-			sky_texture_iterator[i][j].texture_index=i;
-		}
-	}
 }
 
 
@@ -450,11 +407,15 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 		SAFE_RELEASE(loss_textures_SRV[i]);
 		SAFE_RELEASE(inscatter_textures[i]);
 		SAFE_RELEASE(insc_textures_SRV[i]);
+		SAFE_RELEASE(skylight_textures[i]);
+		SAFE_RELEASE(skyl_textures_SRV[i]);
 		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&loss_textures[i]));
 		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&inscatter_textures[i]));
+		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&skylight_textures[i]));
 
 		V_CHECK(m_pd3dDevice->CreateShaderResourceView(loss_textures[i],NULL,&loss_textures_SRV[i]));
 		V_CHECK(m_pd3dDevice->CreateShaderResourceView(inscatter_textures[i],NULL,&insc_textures_SRV[i]));
+		V_CHECK(m_pd3dDevice->CreateShaderResourceView(skylight_textures[i],NULL,&skyl_textures_SRV[i]));
 	}
 	if(loss_2d)
 	{
@@ -466,11 +427,17 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 		inscatter_2d->SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
 		inscatter_2d->RestoreDeviceObjects(m_pd3dDevice);
 	}
+	if(skylight_2d)
+	{
+		skylight_2d->SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+		skylight_2d->RestoreDeviceObjects(m_pd3dDevice);
+	}
 }
 
 void SimulSkyRendererDX1x::FillFadeTex(int alt_index,int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
-						const float *inscatter_float4_array)
+						const float *inscatter_float4_array,
+						const float *skylight_float4_array)
 {
 	texel_index+=alt_index*fadeTexWidth*fadeTexHeight;
 	unsigned sub=D3D1xCalcSubresource(0,0,1);
@@ -485,29 +452,11 @@ void SimulSkyRendererDX1x::FillFadeTex(int alt_index,int texture_index,int texel
 	float_ptr+=4*texel_index;
 	for(int i=0;i<num_texels*4;i++)
 		*float_ptr++=(*inscatter_float4_array++);
-}
 
-void SimulSkyRendererDX1x::CreateSkyTextures()
-{
-	HRESULT hr=S_OK;
-	D3D1x_TEXTURE2D_DESC desc=
-	{
-		skyTexSize,numAltitudes,
-		1,1,
-		sky_tex_format,
-		{1,0},
-		D3D1x_USAGE_DYNAMIC,
-		D3D1x_BIND_SHADER_RESOURCE,
-		D3D1x_CPU_ACCESS_WRITE,		//D3D1x_CPU_ACCESS_READ|
-		0
-	};
-	for(int i=0;i<3;i++)
-	{
-		SAFE_RELEASE(sky_textures[i]);
-		SAFE_RELEASE(sky_textures_SRV[i]);
-		V_CHECK(m_pd3dDevice->CreateTexture2D(&desc,NULL, &sky_textures[i]));
-		V_CHECK(m_pd3dDevice->CreateShaderResourceView(sky_textures[i],NULL,&sky_textures_SRV[i]));
-	}
+	float_ptr=(float *)(skyl_texture_mapped.pData);
+	float_ptr+=4*texel_index;
+	for(int i=0;i<num_texels*4;i++)
+		*float_ptr++=(*skylight_float4_array++);
 }
 
 void SimulSkyRendererDX1x::RecompileShaders()
@@ -543,8 +492,8 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	m_hTechniquePlanet	=m_pSkyEffect->GetTechniqueByName("simul_planet");
 	flareTexture		=m_pSkyEffect->GetVariableByName("flareTexture")->AsShaderResource();
 
-	skyTexture1			=m_pSkyEffect->GetVariableByName("skyTexture1")->AsShaderResource();
-	skyTexture2			=m_pSkyEffect->GetVariableByName("skyTexture2")->AsShaderResource();
+	inscTexture			=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
+	skylTexture			=m_pSkyEffect->GetVariableByName("skylTexture")->AsShaderResource();
 
 	fadeTexture1		=m_pSkyEffect->GetVariableByName("fadeTexture1")->AsShaderResource();
 	fadeTexture2		=m_pSkyEffect->GetVariableByName("fadeTexture2")->AsShaderResource();
@@ -585,7 +534,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 	return sun_occlusion;
 }
 
-bool SimulSkyRendererDX1x::RenderSun()
+void SimulSkyRendererDX1x::RenderSun()
 {
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
@@ -617,25 +566,20 @@ bool SimulSkyRendererDX1x::RenderSun()
     UINT64 pixelsVisible = 0;
     
     while (d3dQuery->GetData((void *) &pixelsVisible,sizeof(UINT64),0) == S_FALSE);*/
-	return true;
 }
 
 bool SimulSkyRendererDX1x::RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
-
 	if(do_lighting)
 		ApplyPass(m_hTechniquePlanet->GetPassByIndex(0));
 	else
 		ApplyPass(m_hTechniqueFlare->GetPassByIndex(0));
-
 	//m_pSkyEffect->SetTexture(flareTexture,(LPDIRECT3DTEXTURE9)tex);
 	flareTexture->SetResource((ID3D1xShaderResourceView*)tex);
 	simul::sky::float4 original_irradiance=skyKeyframer->GetSkyInterface()->GetSunIrradiance();
-
 	simul::sky::float4 planet_dir4=dir;
 	planet_dir4/=simul::sky::length(planet_dir4);
-
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(y_vertical?planet_dir4.y:planet_dir4.z);
 	planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
@@ -647,13 +591,14 @@ bool SimulSkyRendererDX1x::RenderPlanet(void* tex,float rad,const float *dir,con
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
-	RenderAngledQuad(m_pd3dDevice,planet_dir,y_vertical,rad,m_pSkyEffect,m_hTechniquePlanet,view,proj,sun_dir);
+	RenderAngledQuad(m_pd3dDevice,planet_dir,y_vertical,rad,m_pSkyEffect,m_hTechniquePlanet,view,proj
+		,sun_dir);
 	return true;
 }
 
 bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 {
-	HRESULT hr=S_OK;
+HRESULT hr=S_OK;
 /*	if(!m_pSkyEffect)
 		return (hr==S_OK);
 	float magnitude=exposure*(1.f-sun_occlusion);
@@ -680,38 +625,56 @@ bool SimulSkyRendererDX1x::Render2DFades()
 {
 	if(!m_hTechniqueFade3DTo2D)
 		return false;
-	if(!loss_2d||!inscatter_2d)
+	if(!loss_2d||!inscatter_2d||!skylight_2d)
 		return false;
 	HRESULT hr;
+	// Clear the screen to black:
+	float clearColor[4]={0.0,0.0,0.0,0.0};
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
-
-	V_CHECK(fadeTexture1->SetResource(loss_textures_SRV[0]));
-	V_CHECK(fadeTexture2->SetResource(loss_textures_SRV[1]));
-	V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-	loss_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
-	loss_2d->Activate();
-// Clear the screen to black:
-    float clearColor[4]={0.0,0.0,0.0,0.0};
-	m_pImmediateContext->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
-	if(loss_2d->m_pBufferDepthSurface)
-		m_pImmediateContext->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
-	loss_2d->RenderBufferToCurrentTarget();
-	loss_2d->Deactivate();
-
-	V_CHECK(fadeTexture1->SetResource(insc_textures_SRV[0]));
-	V_CHECK(fadeTexture2->SetResource(insc_textures_SRV[1]));
-	V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-	
-	inscatter_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
-	inscatter_2d->Activate();
+	{
+		V_CHECK(fadeTexture1->SetResource(loss_textures_SRV[0]));
+		V_CHECK(fadeTexture2->SetResource(loss_textures_SRV[1]));
+		V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+		loss_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+		loss_2d->Activate();
 		
-	m_pImmediateContext->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
-	if(inscatter_2d->m_pBufferDepthSurface)
-		m_pImmediateContext->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
-		D3D1x_CLEAR_STENCIL, 1.f, 0);
-	inscatter_2d->RenderBufferToCurrentTarget();
-	inscatter_2d->Deactivate();
+		m_pImmediateContext->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
+		if(loss_2d->m_pBufferDepthSurface)
+			m_pImmediateContext->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+		loss_2d->RenderBufferToCurrentTarget();
+		loss_2d->Deactivate();
+	}
+	{
+		V_CHECK(fadeTexture1->SetResource(insc_textures_SRV[0]));
+		V_CHECK(fadeTexture2->SetResource(insc_textures_SRV[1]));
+		V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+		
+		inscatter_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+		inscatter_2d->Activate();
+			
+		m_pImmediateContext->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
+		if(inscatter_2d->m_pBufferDepthSurface)
+			m_pImmediateContext->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
+			D3D1x_CLEAR_STENCIL, 1.f, 0);
+		inscatter_2d->RenderBufferToCurrentTarget();
+		inscatter_2d->Deactivate();
+	}
+	{
+		V_CHECK(fadeTexture1->SetResource(skyl_textures_SRV[0]));
+		V_CHECK(fadeTexture2->SetResource(skyl_textures_SRV[1]));
+		V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+		
+		skylight_2d->SetTargetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+		skylight_2d->Activate();
+			
+		m_pImmediateContext->ClearRenderTargetView(skylight_2d->m_pHDRRenderTarget,clearColor);
+		if(skylight_2d->m_pBufferDepthSurface)
+			m_pImmediateContext->ClearDepthStencilView(skylight_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
+			D3D1x_CLEAR_STENCIL, 1.f, 0);
+		skylight_2d->RenderBufferToCurrentTarget();
+		skylight_2d->Deactivate();
+	}
 	
 	V_CHECK(fadeTexture1->SetResource(NULL));
 	V_CHECK(fadeTexture2->SetResource(NULL));
@@ -754,8 +717,8 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 	}
 #endif
 	PIXBeginNamedEvent(0,"Render Sky");
-	skyTexture1->SetResource(sky_textures_SRV[0]);
-	skyTexture2->SetResource(sky_textures_SRV[1]);
+	inscTexture->SetResource(inscatter_2d->hdr_buffer_texture_SRV);
+	skylTexture->SetResource(skylight_2d->hdr_buffer_texture_SRV);
 
 	simul::sky::float4 mie_rayleigh_ratio=skyKeyframer->GetMieRayleighRatio();
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
@@ -790,12 +753,12 @@ bool SimulSkyRendererDX1x::RenderFades(int width,int h)
 	worldViewProj->SetMatrix(ident);
 
 	ID3D1xEffectTechnique*				tech		=m_pSkyEffect->GetTechniqueByName("simul_show_sky_texture");
-	ID3D1xEffectShaderResourceVariable*	skyTexture	=m_pSkyEffect->GetVariableByName("skyTexture1")->AsShaderResource();
+	ID3D1xEffectShaderResourceVariable*	inscTexture	=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
 
-	skyTexture->SetResource(sky_textures_SRV[0]);
-	RenderTexture(m_pd3dDevice,16+size		,32,8,size,tech);
-	skyTexture->SetResource(sky_textures_SRV[1]);
-	RenderTexture(m_pd3dDevice,32+size		,32,8,size,tech);
+	inscTexture->SetResource(insc_textures_SRV[0]);
+	RenderTexture(m_pd3dDevice,16+size		,32,32,size,tech);
+	inscTexture->SetResource(insc_textures_SRV[1]);
+	RenderTexture(m_pd3dDevice,32+size		,32,32,size,tech);
 /*	UnmapSky();
 	skyTexture->SetResource(sky_textures_SRV[2]);
 	RenderTexture(m_pd3dDevice,48+size		,32,8,size,tech);*/
@@ -817,7 +780,7 @@ bool SimulSkyRendererDX1x::RenderFades(int width,int h)
 	return (hr==S_OK);
 }
 
-void SimulSkyRendererDX1x::DrawCubemap(ID3D1xShaderResourceView*		m_pCubeEnvMapSRV)
+void SimulSkyRendererDX1x::DrawCubemap(ID3D1xShaderResourceView *m_pCubeEnvMapSRV)
 {
 	D3DXMATRIX tmp1,tmp2,wvp;
 	D3DXMatrixIdentity(&world);
@@ -837,8 +800,8 @@ void SimulSkyRendererDX1x::DrawCubemap(ID3D1xShaderResourceView*		m_pCubeEnvMapS
 	world._43=pos.z;
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);
-	ID3D1xEffectTechnique*				tech=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
-	ID3D1xEffectShaderResourceVariable*	cubeTexture=m_pSkyEffect->GetVariableByName("cubeTexture")->AsShaderResource();
+	ID3D1xEffectTechnique*				tech		=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
+	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pSkyEffect->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
 	HRESULT hr=ApplyPass(tech->GetPassByIndex(0));
 	DrawCube();
@@ -860,7 +823,7 @@ void SimulSkyRendererDX1x::DrawCube()
 												&offset );			// array of offset values, one for each buffer
 
 	// Set the input layout
-	m_pImmediateContext->IASetInputLayout(m_pVtxDecl );
+	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
 
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -872,16 +835,8 @@ void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 	view=v;
 	proj=p;
 }
-void SimulSkyRendererDX1x::Get3DLossAndInscatterTextures(void* *l1,void* *l2,
-		void* *i1,void* *i2)
-{
-	*l1=(void*)loss_textures[0];
-	*l2=(void*)loss_textures[1];
-	*i1=(void*)inscatter_textures[0];
-	*i2=(void*)inscatter_textures[1];
-}
 
-void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,void* *i1)
+void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s)
 {
 	if(loss_2d)
 		*l1=(void*)loss_2d->hdr_buffer_texture_SRV;
@@ -891,6 +846,10 @@ void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,void* *i1)
 		*i1=(void*)inscatter_2d->hdr_buffer_texture_SRV;
 	else
 		*l1=NULL;
+	if(skylight_2d)
+		*s=(void*)skylight_2d->hdr_buffer_texture_SRV;
+	else
+		*s=NULL;
 }
 
 

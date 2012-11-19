@@ -1,12 +1,5 @@
-//-----------------------------------------------------------------------------------------------------------
-///	\file	objload.cpp
-///	\author	Rob Bateman, mailto:robthebloke@hotmail.com
-///	\date	11-4-05
-///	\brief	A C++ objloader supporting materials, and any face data going, groups 
-///			(ie, different meshes), calculation of normals. All face data will be
-///			triagulated (badly, though should work 99% of the time). 
-///
-//-----------------------------------------------------------------------------------------------------------
+//			objload.cpp
+//	author	Rob Bateman, mailto:robthebloke@hotmail.com
 
 #include <GL/glew.h>
 #include "objload.h"

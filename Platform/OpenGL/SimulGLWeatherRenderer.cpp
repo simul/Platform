@@ -18,6 +18,7 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Decay.h"
 
@@ -30,8 +31,8 @@ static const GLenum buffer_tex_format		=GL_FLOAT;
 static const GLenum internal_buffer_format	=GL_RGBA32F_ARB;
 
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,bool usebuffer,bool tonemap,int width,
-		int height,bool sky,bool clouds3d,bool clouds2d,bool rain)
-		:BaseWeatherRenderer(env,sky,clouds3d,clouds2d,rain)
+		int height,bool sky,bool rain)
+		:BaseWeatherRenderer(env,sky,rain)
 		,BufferWidth(0)
 		,BufferHeight(0)
 		,device_initialized(false)
@@ -55,14 +56,13 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	simulAtmosphericsRenderer=new SimulGLAtmosphericsRenderer;
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
 
-	EnableCloudLayers(clouds3d,clouds2d);
+	EnableCloudLayers(true,true);
 	SetScreenSize(width,height);
 }
 
 
 void SimulGLWeatherRenderer::EnableCloudLayers(bool clouds3d,bool clouds2d)
 {
-	simul::clouds::BaseWeatherRenderer::EnableCloudLayers(clouds3d,clouds2d);
 	if(simulSkyRenderer)
 	{
 		if(device_initialized)
@@ -102,7 +102,8 @@ void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
     if(scene_buffer)
 	{
 		delete scene_buffer;
-		scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+		baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+		
 		scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
 		scene_buffer->SetShader(0);
 	}
@@ -124,7 +125,8 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 	{
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
 	}*/
-//	CheckExtension("GL_VERSION_2_0");
+	if(!CheckExtension("GL_VERSION_2_0"))
+		throw simul::base::RuntimeError("OpenGL version 2.0 is not supported on this hardware");
 	CheckExtension("GL_ARB_fragment_program");
 	CheckExtension("GL_ARB_vertex_program");
 	CheckExtension("GL_ARB_texture_float");
@@ -132,11 +134,11 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 	CheckExtension("GL_EXT_framebuffer_object");
     if(scene_buffer)
         delete scene_buffer;
-	scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+	baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 	scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
 	scene_buffer->SetShader(0);
 	device_initialized=true;
-	EnableCloudLayers(layer1,layer2);
+	EnableCloudLayers(true,true);
 	///simulSkyRenderer->RestoreDeviceObjects();
 	//simulCloudRenderer->RestoreDeviceObjects(NULL);
 	//simulLightningRenderer->RestoreDeviceObjects();
@@ -156,132 +158,45 @@ void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 		scene_buffer->InvalidateDeviceObjects();
 }
 
+
 bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 {
-	ERROR_CHECK
-static simul::base::Timer timer;
-	timer.TimeSum=0;
-	timer.StartTime();
-	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
-
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-	if(simulSkyRenderer)
-	{
-		ERROR_CHECK
-		simulSkyRenderer->RenderPointStars();
-		ERROR_CHECK
-		simulSkyRenderer->RenderPlanets();
-		ERROR_CHECK
-		simulSkyRenderer->RenderSun();
-		ERROR_CHECK
-	}
-	// Everything between Activate() and DeactivateAndRender() is drawn to the buffer object.
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
 	if(buffered)
-	{
-		scene_buffer->Activate();
-		glClearColor(0.f,0.f,0.f,1.f);
-		ERROR_CHECK
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-		ERROR_CHECK
-	}
-    glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-	ERROR_CHECK
-	if(simulSkyRenderer&&ShowSky)
-	{
-		// We call the sky renderer, telling it to blend if we're not buffering the sky,
-		// because otherwise it would overwrite the planets
-		simulSkyRenderer->Render(!buffered);
-	}
-	// Do this AFTER sky render, to catch any changes to texture definitions:
-	UpdateSkyAndCloudHookup();
-	ERROR_CHECK
-	timer.UpdateTime();
-	simul::math::FirstOrderDecay(sky_timing,timer.Time,0.1f,0.01f);
-	ERROR_CHECK
-    if(simul2DCloudRenderer)
-		simul2DCloudRenderer->Render(false,false,false);
-	ERROR_CHECK
-	// Render the sky to the screen, then set up to render the clouds to the buffer.
-	if(buffered)
-	{
-		scene_buffer->DeactivateAndRender(true);
-	}
-	if(buffered)
-	{
-		scene_buffer->Activate();
-		glClearColor(0.f,0.f,0.f,1.f);
-		ERROR_CHECK
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-		ERROR_CHECK
-	}
-    glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-	if(simulCloudRenderer&&layer1)
-		simulCloudRenderer->Render(false,false,UseDefaultFog);
-	timer.UpdateTime();
-	simul::math::FirstOrderDecay(cloud_timing,timer.Time,0.1f,0.01f);
-	if(buffered)
-		scene_buffer->DeactivateAndRender(true);
-	ERROR_CHECK
+		scene_buffer->Render(true);
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-	ERROR_CHECK
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
-	ERROR_CHECK
 	int d=0;
 	glGetIntegerv(GL_ATTRIB_STACK_DEPTH,&d);
 	glPopAttrib();
-	ERROR_CHECK
-	timer.FinishTime();
-	simul::math::FirstOrderDecay(final_timing,timer.Time,0.1f,0.01f);
-	simul::math::FirstOrderDecay(total_timing,timer.TimeSum,0.1f,0.01f);
 	return true;
+}
+
+bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
+{
+	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+	{
+		scene_buffer->Activate();
+		scene_buffer->Clear();
+		simulCloudRenderer->Render(false,false,UseDefaultFog);
+		scene_buffer->Deactivate();
+		scene_buffer->Render(true);
+		return false;
+	}
+	return false;
 }
 
 void SimulGLWeatherRenderer::RenderLightning()
 {
-	if(simulCloudRenderer&&simulLightningRenderer&&layer1)
+	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		simulLightningRenderer->Render();
-}
-
-
-void SimulGLWeatherRenderer::RenderClouds(bool buffered,bool depth_testing,bool default_fog)
-{
-static simul::base::Timer timer;
-	timer.StartTime();
-	ERROR_CHECK
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-	if(buffered)
-	{
-		scene_buffer->Activate();
-		glClearColor(0.f,0.f,0.f,1.f);
-		ERROR_CHECK
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-		ERROR_CHECK
-	}
-    if(simulCloudRenderer)
-		simulCloudRenderer->Render(false,depth_testing,default_fog);
-	ERROR_CHECK
-
-	if(buffered)
-		scene_buffer->DeactivateAndRender(true);
-	ERROR_CHECK
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-	glPopAttrib();
-	ERROR_CHECK
-	timer.FinishTime();
-	simul::math::FirstOrderDecay(cloud_timing,timer.Time,0.1f,0.01f);
 }
 
 

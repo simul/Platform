@@ -6,7 +6,7 @@
 // in accordance with the terms of that agreement.
 
 // SimulCloudRendererDX1x.h A DirectX 10/11 renderer for clouds. Create an instance of this class in a dx10 program
-//! and use the Render() function once per frame.
+// and use the Render() function once per frame.
 
 #pragma once
 
@@ -81,7 +81,7 @@ public:
 	//! Get the list of three textures used for cloud rendering.
 	void* *GetCloudTextures();
 	void SetLossTexture(void *t);
-	void SetInscatterTexture(void *t);
+	void SetInscatterTextures(void *t,void *s);
 
 	void SetNoiseTextureProperties(int s,int f,int o,float p);
 	void SetAltitudeTextureCoordinate(float f)
@@ -163,12 +163,14 @@ protected:
 	ID3D1xEffectShaderResourceVariable*		lightningIlluminationTexture;
 	ID3D1xEffectShaderResourceVariable*		skyLossTexture;
 	ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;
+	ID3D1xEffectShaderResourceVariable*		skylightTexture;
 
 	ID3D1xShaderResourceView*				cloudDensityResource[3];
 	ID3D1xShaderResourceView*				noiseTextureResource;
 	ID3D1xShaderResourceView*				lightningIlluminationTextureResource;
 	ID3D1xShaderResourceView*				skyLossTexture_SRV;
 	ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
+	ID3D1xShaderResourceView*				skylightTexture_SRV;
 
 	ID3D1xTexture3D*			cloud_textures[3];
 	ID3D1xTexture3D*			illumination_texture;

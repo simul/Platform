@@ -29,12 +29,12 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,y_vertical(false)
 	,UseHdrPostprocessor(true)
 	,ShowOSD(false)
+	,ShowWater(true)
 {
 	simulHDRRenderer=new SimulGLHDRRenderer(width,height);
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
 	simulTerrainRenderer=new SimulGLTerrainRenderer();
-
 	SetYVertical(y_vertical);
 }
 
@@ -79,8 +79,10 @@ void OpenGLRenderer::paintGL()
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender();
 		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render();
+		simulWeatherRenderer->RenderLateCloudLayer(true);
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender();
+
 		simulWeatherRenderer->RenderLightning();
 
 		simulWeatherRenderer->DoOcclusionTests();

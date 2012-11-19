@@ -42,43 +42,11 @@ v2f TonemapZWriteVS(a2v IN)
 	OUT.texcoord = IN.texcoord;
     return OUT;
 }
-float brightpassThreshold;
-float2 brightpassOffsets[4];
-#ifndef BLUR_SIZE
-	#define BLUR_SIZE 65
-#endif
-float2 bloomOffsets[BLUR_SIZE];
-float bloomWeights[BLUR_SIZE];
-
-float4 BrightPassPS(v2f IN) : COLOR
-{
-    float4 average={0.0f,0.0f,0.0f,0.0f};
-	for(int i=0;i<4;i++)
-		average+=tex2D(hdr_texture,IN.texcoord+brightpassOffsets[i]);
-	average*=0.25f;
-	float luminance=0.27f*average.r+0.67f*average.g+0.06*average.b;
-	if(luminance<brightpassThreshold)
-		average=float4(0.0f,0.0f,0.0f,1.0f);
-	average*=exposure;
-	average=min(average,float4(1.f,1.f,1.f,1.f));
-	return average;
-}
-
-float4 BlurPS(v2f IN) : COLOR
-{
-    float4 colour={0.0f,0.0f,0.0f,0.0f};
-    for(int i=0;i<BLUR_SIZE;i++)
-	{
-	   colour+=tex2D(hdr_texture,IN.texcoord+bloomOffsets[i])*bloomWeights[i];
-	}
-    return float4(colour.rgb,1.0f);
-}
 
 float4 GammaPS(v2f IN) : COLOR
 {
 	float4 c=tex2D(hdr_texture,IN.texcoord);
     c.rgb*=exposure;
-    // gamma correction - could use texture lookups for this
     c.rgb=pow(c.rgb, gamma);
     return float4(c.rgb,0.f);
 }
@@ -125,34 +93,6 @@ technique simul_cloud_blend
 		COLORWRITEENABLE=15;
 		VertexShader = compile vs_3_0 TonemapVS();
 		PixelShader = compile ps_3_0 CloudBlendPS();
-    }
-}
-
-technique simul_brightpass
-{
-    pass p0
-    {
-		cullmode = none;
-		ZEnable = true;
-		ZWriteEnable = false;
-		AlphaBlendEnable = false;
-		AlphaTestEnable=false;
-		VertexShader = compile vs_3_0 TonemapVS();
-		PixelShader = compile ps_3_0 BrightPassPS();
-    }
-}
-
-technique simul_blur
-{
-    pass p0
-    {
-		cullmode = none;
-		ZEnable = true;
-		ZWriteEnable = false;
-		AlphaBlendEnable = false;
-		AlphaTestEnable=false;
-		VertexShader = compile vs_3_0 TonemapVS();
-		PixelShader = compile ps_3_0 BlurPS();
     }
 }
 

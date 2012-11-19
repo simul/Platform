@@ -41,7 +41,7 @@ public:
 /*!
 	\code
 #include "Simul/Platform/Windows/DirectX 9/SimulWeatherRenderer.h"
-	simulWeatherRenderer=new SimulWeatherRenderer(license,env,true,ScreenWidth/2,ScreenHeight/2,true,true,false,true,false);
+	simulWeatherRenderer=new SimulWeatherRenderer(env,true,ScreenWidth/2,ScreenHeight/2,true,true,false,true,false);
 	simulWeatherRenderer->SetDaytime(0.3f);
 	\endcode
 
@@ -111,7 +111,7 @@ public:
 	SimulWeatherRenderer(simul::clouds::Environment *env
 							,bool usebuffer=true
 							,int width=320,
-		int height=240,bool sky=true,bool clouds3d=true,bool clouds2d=true,
+		int height=240,bool sky=true,
 		bool rain=true);
 	virtual ~SimulWeatherRenderer();
 	void SetScreenSize(int w,int h);
@@ -153,8 +153,6 @@ public:
 	float GetTiming() const;
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
-	//! Enable or disable the 3d and 2d cloud layers.
-	virtual void EnableCloudLayers(bool clouds3d,bool clouds2d);
 	void EnableRain(bool e=true);
 	float GetTotalBrightness() const;
 	// Connect-up sky, clouds - now in base
@@ -162,7 +160,6 @@ public:
 protected:
 	Framebuffer framebuffer;
 	Framebuffer lowdef_framebuffer;
-	bool RenderLateCloudLayer(int buffer_index,bool buf);
 	bool Restore3DCloudObjects();
 	bool Restore2DCloudObjects();
 	//! The size of the 2D buffer the sky is rendered to.

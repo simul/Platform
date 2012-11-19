@@ -55,7 +55,7 @@ public:
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	bool Render(bool blend);
 	bool RenderPointStars(){return false;}
-	bool RenderSun();
+	void RenderSun();
 	//! Draw the fade textures to screen
 	bool RenderFades(int w,int h);
 	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
@@ -71,17 +71,17 @@ public:
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 
-	void Get3DLossAndInscatterTextures(void* *l1,void* *l2,void* *i1,void* *i2);
-	void Get2DLossAndInscatterTextures(void* *l1,void* *i1);
+	void Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s);
 
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);
 //! Initialize textures
 	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
-	void FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
+	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void FillFadeTex(int alt_index,int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
-						const float *inscatter_float4_array);
+						const float *inscatter_float4_array,
+						const float *skylight_float4_array);
 	void CycleTexturesForward();
 	const char *GetDebugText() const;
 	void SetYVertical(bool y);
@@ -126,41 +126,37 @@ protected:
 	ID3D1xEffectMatrixVariable*			cubemapViews;
 
 	ID3D1xEffectShaderResourceVariable*	flareTexture;
-	ID3D1xEffectShaderResourceVariable*	skyTexture1;
-	ID3D1xEffectShaderResourceVariable*	skyTexture2;
+	ID3D1xEffectShaderResourceVariable*	inscTexture;
+	ID3D1xEffectShaderResourceVariable*	skylTexture;
 	ID3D1xEffectShaderResourceVariable*	fadeTexture1;
 	ID3D1xEffectShaderResourceVariable*	fadeTexture2;
 
 	ID3D1xTexture2D*					flare_texture;
-	ID3D1xTexture2D*					sky_textures[3];
 
 	ID3D1xTexture3D*					loss_textures[3];
 	ID3D1xTexture3D*					inscatter_textures[3];
+	ID3D1xTexture3D*					skylight_textures[3];
 
 	// Small framebuffers we render to once per frame to perform fade interpolation.
 	FramebufferDX1x*					loss_2d;
 	FramebufferDX1x*					inscatter_2d;
+	FramebufferDX1x*					skylight_2d;
 
 	ID3D1xShaderResourceView*			flare_texture_SRV;
-	ID3D1xShaderResourceView*			sky_textures_SRV[3];
 	ID3D1xShaderResourceView*			loss_textures_SRV[3];
 	ID3D1xShaderResourceView*			insc_textures_SRV[3];
+	ID3D1xShaderResourceView*			skyl_textures_SRV[3];
 	ID3D1xShaderResourceView*			moon_texture_SRV;
 
-	int mapped_sky;
-	D3D1x_MAPPED_TEXTURE2D sky_texture_mapped;
 	int mapped_fade;
 	D3D1x_MAPPED_TEXTURE3D loss_texture_mapped;
 	D3D1x_MAPPED_TEXTURE3D insc_texture_mapped;
+	D3D1x_MAPPED_TEXTURE3D skyl_texture_mapped;
 
 	void MapFade(int s);
 	void UnmapFade();
-	void MapSky(int s);
-	void UnmapSky();
 	D3DXMATRIX				world,view,proj;
-	bool UpdateSkyTexture(float proportion);
-	void CreateSkyTextures();
-void DrawCube();
+	void DrawCube();
 	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };

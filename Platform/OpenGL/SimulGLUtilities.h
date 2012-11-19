@@ -20,7 +20,7 @@ public:
 };
 
 //! A wrapper around glewIsSupported() that checks for errors.
-extern void SIMUL_OPENGL_EXPORT CheckExtension(const char *txt);
+extern bool SIMUL_OPENGL_EXPORT CheckExtension(const char *txt);
 
 extern bool IsExtensionSupported(const char *name);
 //! A wrapper around glOrtho() that also resets the GL matrices, and stores window height for later use.

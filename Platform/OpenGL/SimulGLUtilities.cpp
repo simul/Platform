@@ -67,13 +67,14 @@ bool IsExtensionSupported(const char *name)
 }
 
 
-void CheckExtension(const char *txt)
+bool CheckExtension(const char *txt)
 {
 	if(!glewIsSupported(txt)&&!IsExtensionSupported(txt))
 	{
 		std::cerr<<"Error - required OpenGL extension is not supported: "<<txt<<std::endl;
-		exit(-1);
+		return false;
 	}
+	return true;
 }
 
 static int win_h=0;

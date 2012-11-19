@@ -1,8 +1,9 @@
 
-#include "CompileShaderDX1x.h"
+#include "CreateEffectDX1x.h"
 
 #include <assert.h>
 #include "ocean_simulator.h"
+#include "CompileShaderDX1x.h"
 
 // Disable warning "conditional expression is constant"
 #pragma warning(disable:4127)
@@ -131,7 +132,7 @@ void createTextureAndViews(ID3D11Device* pd3dDevice, UINT width, UINT height, DX
 	}
 }
 
-OceanSimulator::OceanSimulator(OceanParameter& params, ID3D11Device* pd3dDevice)
+OceanSimulator::OceanSimulator(simul::terrain::OceanParameter *params, ID3D11Device* pd3dDevice):m_param(params)
 {
 	// If the device becomes invalid at some point, delete current instance and generate a new one.
 	assert(pd3dDevice);
@@ -139,13 +140,13 @@ OceanSimulator::OceanSimulator(OceanParameter& params, ID3D11Device* pd3dDevice)
 	assert(m_pd3dImmediateContext);
 
 	// Height map H(0)
-	int height_map_size = (params.dmap_dim + 4) * (params.dmap_dim + 1);
+	int height_map_size = (m_param->dmap_dim + 4) * (m_param->dmap_dim + 1);
 	D3DXVECTOR2* h0_data = new D3DXVECTOR2[height_map_size * sizeof(D3DXVECTOR2)];
 	float* omega_data = new float[height_map_size * sizeof(float)];
-	initHeightMap(params, h0_data, omega_data);
+	initHeightMap(h0_data, omega_data);
 
 	m_param = params;
-	int hmap_dim = params.dmap_dim;
+	int hmap_dim = m_param->dmap_dim;
 	int input_full_size = (hmap_dim + 4) * (hmap_dim + 1);
 	// This value should be (hmap_dim / 2 + 1) * hmap_dim, but we use full sized buffer here for simplicity.
 	int input_half_size = hmap_dim * hmap_dim;
@@ -204,13 +205,20 @@ OceanSimulator::OceanSimulator(OceanParameter& params, ID3D11Device* pd3dDevice)
 
 	// Create the compute shader: UpdateSpectrumCS
     ID3DBlob* pBlobUpdateSpectrumCS = NULL;
-    CompileShaderFromFile(L"../../Platform/DirectX1x/HLSL/ocean_simulator_cs.hlsl", "UpdateSpectrumCS", "cs_4_0", &pBlobUpdateSpectrumCS);
+    try
+    {
+		CompileShaderFromFile(L"ocean_simulator_cs.hlsl", "UpdateSpectrumCS", "cs_4_0", &pBlobUpdateSpectrumCS);
+	}
+	catch(...)
+	{
+		throw;
+	}
     pd3dDevice->CreateComputeShader(pBlobUpdateSpectrumCS->GetBufferPointer(),pBlobUpdateSpectrumCS->GetBufferSize(),NULL,&m_pUpdateSpectrumCS);  
     SAFE_RELEASE(pBlobUpdateSpectrumCS);
 
 	// Create the vertex shader:
     ID3DBlob* pBlobQuadVS = NULL;
-    CompileShaderFromFile(L"../../Platform/DirectX1x/HLSL/ocean_simulator_vs_ps.hlsl", "QuadVS", "vs_4_0", &pBlobQuadVS);
+    CompileShaderFromFile(L"ocean_simulator_vs_ps.hlsl", "QuadVS", "vs_4_0", &pBlobQuadVS);
     pd3dDevice->CreateVertexShader(pBlobQuadVS->GetBufferPointer(), pBlobQuadVS->GetBufferSize(), NULL, &m_pQuadVS);
 	// Create the vertex shader's input layout:
 	D3D11_INPUT_ELEMENT_DESC quad_layout_desc[] =
@@ -222,12 +230,12 @@ OceanSimulator::OceanSimulator(OceanParameter& params, ID3D11Device* pd3dDevice)
 	
 	// Create the pixel shaders:
     ID3DBlob* pBlobUpdateDisplacementPS = NULL;
-	CompileShaderFromFile(L"../../Platform/DirectX1x/HLSL/ocean_simulator_vs_ps.hlsl", "UpdateDisplacementPS", "ps_4_0", &pBlobUpdateDisplacementPS);
+	CompileShaderFromFile(L"ocean_simulator_vs_ps.hlsl", "UpdateDisplacementPS", "ps_4_0", &pBlobUpdateDisplacementPS);
     pd3dDevice->CreatePixelShader(pBlobUpdateDisplacementPS->GetBufferPointer(), pBlobUpdateDisplacementPS->GetBufferSize(), NULL, &m_pUpdateDisplacementPS);
 	SAFE_RELEASE(pBlobUpdateDisplacementPS);
 
 	ID3DBlob* pBlobGenGradientFoldingPS = NULL;
-    CompileShaderFromFile(L"../../Platform/DirectX1x/HLSL/ocean_simulator_vs_ps.hlsl", "GenGradientFoldingPS", "ps_4_0", &pBlobGenGradientFoldingPS);
+    CompileShaderFromFile(L"ocean_simulator_vs_ps.hlsl", "GenGradientFoldingPS", "ps_4_0", &pBlobGenGradientFoldingPS);
     pd3dDevice->CreatePixelShader(pBlobGenGradientFoldingPS->GetBufferPointer(), pBlobGenGradientFoldingPS->GetBufferSize(), NULL, &m_pGenGradientFoldingPS);
 	SAFE_RELEASE(pBlobGenGradientFoldingPS);
 
@@ -253,7 +261,7 @@ OceanSimulator::OceanSimulator(OceanParameter& params, ID3D11Device* pd3dDevice)
 	pd3dDevice->CreateBuffer(&vb_desc, &init_data, &m_pQuadVB);
 
 	// Constant buffers
-	UINT actual_dim = m_param.dmap_dim;
+	UINT actual_dim = m_param->dmap_dim;
 
 	// Compare this to the definition in the shaders.
 	struct cbImmutable
@@ -365,19 +373,20 @@ OceanSimulator::~OceanSimulator()
 // Initialize the vector field.
 // wlen_x: width of wave tile, in meters
 // wlen_y: length of wave tile, in meters
-void OceanSimulator::initHeightMap(OceanParameter& params, D3DXVECTOR2* out_h0, float* out_omega)
+void OceanSimulator::initHeightMap(D3DXVECTOR2* out_h0, float* out_omega)
 {
 	int i, j;
 	D3DXVECTOR2 K, Kn;
 
 	D3DXVECTOR2 wind_dir;
-	D3DXVec2Normalize(&wind_dir, &params.wind_dir);
-	float a = params.wave_amplitude * 1e-7f;	// It is too small. We must scale it for editing.
-	float v = params.wind_speed;
-	float dir_depend = params.wind_dependency;
+	D3DXVECTOR2 pwind_dir(m_param->wind_dir[0],m_param->wind_dir[1]);
+	D3DXVec2Normalize(&wind_dir, &pwind_dir);
+	float a = m_param->wave_amplitude * 1e-7f;	// It is too small. We must scale it for editing.
+	float v = m_param->wind_speed;
+	float dir_depend = m_param->wind_dependency;
 
-	int height_map_dim = params.dmap_dim;
-	float patch_length = params.patch_length;
+	int height_map_dim = m_param->dmap_dim;
+	float patch_length = m_param->patch_length;
 
 	// initialize random generator.
 	srand(0);
@@ -393,8 +402,8 @@ void OceanSimulator::initHeightMap(OceanParameter& params, D3DXVECTOR2* out_h0, 
 
 			float phil = (K.x == 0 && K.y == 0) ? 0 : sqrtf(Phillips(K, wind_dir, v, a, dir_depend));
 
-			out_h0[i * (height_map_dim + 4) + j].x = float(phil * Gauss() * HALF_SQRT_2);
-			out_h0[i * (height_map_dim + 4) + j].y = float(phil * Gauss() * HALF_SQRT_2);
+			out_h0[i * (height_map_dim + 4) + j].x = phil*Gauss()*HALF_SQRT_2;
+			out_h0[i * (height_map_dim + 4) + j].y = phil*Gauss()*HALF_SQRT_2;
 
 			// The angular frequency is following the dispersion relation:
 			//            out_omega^2 = g*k
@@ -428,19 +437,19 @@ void OceanSimulator::updateDisplacementMap(float time)
 	assert(mapped_res.pData);
 	float* per_frame_data = (float*)mapped_res.pData;
 	// g_Time
-	per_frame_data[0] = time * m_param.time_scale;
+	per_frame_data[0] = time * m_param->time_scale;
 	// g_ChoppyScale
-	per_frame_data[1] = m_param.choppy_scale;
+	per_frame_data[1] = m_param->choppy_scale;
 	// g_GridLen
-	per_frame_data[2] = m_param.dmap_dim / m_param.patch_length;
+	per_frame_data[2] = m_param->dmap_dim / m_param->patch_length;
 	m_pd3dImmediateContext->Unmap(m_pPerFrameCB, 0);
 
 	ID3D11Buffer* cs_cbs[2] = {m_pImmutableCB, m_pPerFrameCB};
 	m_pd3dImmediateContext->CSSetConstantBuffers(0, 2, cs_cbs);
 
 	// Run the CS
-	UINT group_count_x = (m_param.dmap_dim + BLOCK_SIZE_X - 1) / BLOCK_SIZE_X;
-	UINT group_count_y = (m_param.dmap_dim + BLOCK_SIZE_Y - 1) / BLOCK_SIZE_Y;
+	UINT group_count_x = (m_param->dmap_dim + BLOCK_SIZE_X - 1) / BLOCK_SIZE_X;
+	UINT group_count_y = (m_param->dmap_dim + BLOCK_SIZE_Y - 1) / BLOCK_SIZE_Y;
 	m_pd3dImmediateContext->Dispatch(group_count_x, group_count_y, 1);
 
 	// Unbind resources for CS
@@ -449,7 +458,6 @@ void OceanSimulator::updateDisplacementMap(float time)
 	cs0_srvs[0] = NULL;
 	cs0_srvs[1] = NULL;
 	m_pd3dImmediateContext->CSSetShaderResources(0, 2, cs0_srvs);
-
 
 	// Perform Fast (inverse) Fourier Transform from the source Ht to the destination Dxyz.
 	// NOTE: we also provide the SRV of Dxyz so that FFT can use it as a temporary buffer and save space.
@@ -466,7 +474,7 @@ void OceanSimulator::updateDisplacementMap(float time)
 	m_pd3dImmediateContext->RSGetViewports(&num_viewport, &old_viewport);
 
 	// Set the new viewport as equal to the size of the displacement texture we're writing to:
-	D3D11_VIEWPORT new_vp = {0, 0, (float)m_param.dmap_dim, (float)m_param.dmap_dim, 0.0f, 1.0f};
+	D3D11_VIEWPORT new_vp = {0, 0, (float)m_param->dmap_dim, (float)m_param->dmap_dim, 0.0f, 1.0f};
 	m_pd3dImmediateContext->RSSetViewports(1, &new_vp);
 
 	// Set the RenderTarget as the displacement map:
@@ -546,8 +554,7 @@ ID3D11ShaderResourceView* OceanSimulator::getGradientMap()
 	return m_pGradientSRV;
 }
 
-
-const OceanParameter& OceanSimulator::getParameters()
+const simul::terrain::OceanParameter *OceanSimulator::getParameters()
 {
 	return m_param;
 }

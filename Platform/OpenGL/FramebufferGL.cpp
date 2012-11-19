@@ -273,6 +273,10 @@ void FramebufferGL::Render1(GLuint prog,bool blend)
 	Release();
 }
 
+void FramebufferGL::Render(bool blend)
+{
+	Render(0,blend);
+}
 
 void FramebufferGL::Render(GLuint prog,bool blend)
 {
@@ -343,6 +347,12 @@ void FramebufferGL::Deactivate()
 	ERROR_CHECK
 	glViewport(0,0,main_viewport[2],main_viewport[3]);
 	ERROR_CHECK
+}
+
+void FramebufferGL::Clear(float r,float g,float b,float a)
+{
+	glClearColor(r,g,b,a);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 }
 
 

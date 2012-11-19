@@ -39,8 +39,8 @@ public:
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
 	//! Show the cross sections on-screen.
 	void RenderCrossSections(int width,int height);
-	void SetLossTexture(void *);
-	void SetInscatterTexture(void *);
+	void SetLossTextures(void *);
+	void SetInscatterTextures(void *,void *);
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
 	const char *GetDebugText();
@@ -104,7 +104,7 @@ protected:
 	GLint illumSampler_param;
 	GLint lossSampler_param;
 	GLint inscatterSampler_param;
-
+	GLint skylightSampler_param;
 unsigned short *pIndices;
 
 	GLint illuminationOrigin_param;
@@ -124,6 +124,7 @@ unsigned short *pIndices;
 	// 2D textures (x=distance, y=elevation) for fades, updated per-frame:
 	GLuint		loss_tex;
 	GLuint		inscatter_tex;
+	GLuint		skylight_tex;
 	// 2D texture
 	GLuint		noise_tex;
 	GLuint		volume_noise_tex;

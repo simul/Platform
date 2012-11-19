@@ -6,19 +6,9 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Platform/DirectX9/Export.h"
-#ifndef FRAMEBUFFER_INTERFACE
-#define FRAMEBUFFER_INTERFACE
-class FramebufferInterface
-{
-public:
-	virtual void Activate()=0;
-	virtual void Deactivate()=0;
-	
-	virtual void SetWidthAndHeight(int w,int h)=0;
-};
-#endif
+#include "Simul/Clouds/BaseFramebuffer.h"
 
-SIMUL_DIRECTX9_EXPORT_CLASS Framebuffer:public FramebufferInterface
+SIMUL_DIRECTX9_EXPORT_CLASS Framebuffer:public BaseFramebuffer
 {
 public:
 	Framebuffer();
@@ -32,6 +22,7 @@ public:
 	LPDIRECT3DSURFACE9	m_pHDRRenderTarget;
 	void Activate();
 	void Deactivate();
+	void Clear(float,float,float,float);
 	void DeactivateAndRender(bool blend);
 	void Render(bool blend);
 	void SetFormat(D3DFORMAT f);

@@ -1,4 +1,3 @@
-#version 130
 // simul_sky.frag - a GLSL fragment shader
 // Copyright 2008 Simul Software Ltd
 
@@ -7,6 +6,7 @@ uniform sampler3D cloudDensity2;
 uniform sampler2D noiseSampler;
 uniform sampler2D lossSampler;
 uniform sampler2D inscatterSampler;
+uniform sampler2D skylightSampler;
 uniform sampler3D illumSampler;
 
 uniform vec3 ambientColour;
@@ -42,7 +42,7 @@ float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
 	float u=1.0+g2-2.0*g*cos0;
-	return 0.5*0.079577+0.5*(1.0-g2)*pow(u,-1.5)/(4.0*pi);
+	return (1.0-g2)*pow(u,-1.5)/(4.0*pi);
 	//return 0.5*0.079577+.5*(1.0-g2)/(4.0*pi*sqrt(u*u*u));
 }
 
@@ -80,11 +80,12 @@ void main(void)
 	vec3 final=(density.z*Beta+lightResponse.y*density.w)*sunlight+density.x*ambientColour.rgb;
 	vec3 loss_lookup=texture2D(lossSampler,fade_texc).rgb;
 	vec4 insc_lookup=texture2D(inscatterSampler,fade_texc);
+	vec3 skyl_lookup=texture2D(skylightSampler,fade_texc).rgb;
 	//final.rgb+=lightning.rgb;
 	//final.rgb*=texture2D(lossSampler,fade_texc).rgb;
 	//final.rgb+=0.05*texture2D(inscatterSampler,fade_texc).rgb;
 	final.rgb*=loss_lookup;
 	final.rgb+=InscatterFunction(insc_lookup,cos0);
-//	final.rgb+=loss_lookup;
+	final.rgb+=skyl_lookup;
     gl_FragColor=vec4(final.rgb*opacity,1.0-opacity);
 }

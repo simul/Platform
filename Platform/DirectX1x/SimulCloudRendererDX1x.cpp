@@ -122,6 +122,7 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 	illumination_texture(NULL),
 	skyLossTexture_SRV(NULL),
 	skyInscatterTexture_SRV(NULL),
+	skylightTexture_SRV(NULL),
 	noiseTextureResource(NULL),
 	lightningIlluminationTextureResource(NULL),
 	y_vertical(true)
@@ -142,11 +143,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 	helper->SetYVertical(y_vertical);
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 	texel_index[0]=texel_index[1]=texel_index[2]=texel_index[3]=0;
-/*	cloudKeyframer->SetFillTexturesAsBlocks(false);
-	cloudKeyframer->SetBits(simul::clouds::CloudKeyframer::BRIGHTNESS,
-							simul::clouds::CloudKeyframer::SECONDARY,
-							simul::clouds::CloudKeyframer::DENSITY,
-							simul::clouds::CloudKeyframer::AMBIENT);*/
 }
 
 void SimulCloudRendererDX1x::SetLossTexture(void *t)
@@ -154,9 +150,10 @@ void SimulCloudRendererDX1x::SetLossTexture(void *t)
 	skyLossTexture_SRV=(ID3D1xShaderResourceView*)t;
 }
 
-void SimulCloudRendererDX1x::SetInscatterTexture(void *t)
+void SimulCloudRendererDX1x::SetInscatterTextures(void *t,void *s)
 {
 	skyInscatterTexture_SRV=(ID3D1xShaderResourceView*)t;
+	skylightTexture_SRV=(ID3D1xShaderResourceView*)s;
 }
 
 void SimulCloudRendererDX1x::SetNoiseTextureProperties(int s,int f,int o,float p)
@@ -194,7 +191,6 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	CreateNoiseTexture();
 	CreateLightningTexture();
 	RecompileShaders();
-
 	D3D1x_SHADER_RESOURCE_VIEW_DESC texdesc;
 
 	texdesc.Format=DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -202,10 +198,8 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	texdesc.Texture3D.MostDetailedMip=0;
 	texdesc.Texture3D.MipLevels=1;
 
-
 	noiseTexture				->SetResource(noiseTextureResource);
 
-	
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =
     {
         { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
@@ -280,8 +274,12 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(lightning_texture);
 	SAFE_RELEASE(illumination_texture);
 	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(skyLossTexture_SRV);
-	SAFE_RELEASE(skyInscatterTexture_SRV);
+//	SAFE_RELEASE(skyLossTexture_SRV);
+//	SAFE_RELEASE(skyInscatterTexture_SRV);
+//	SAFE_RELEASE(skylightTexture_SRV);
+	skyLossTexture_SRV		=NULL;
+	skyInscatterTexture_SRV	=NULL;
+	skylightTexture_SRV		=NULL;
 
 	SAFE_RELEASE(noiseTextureResource);
 	
@@ -537,6 +535,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	lightningIlluminationTexture		=m_pCloudEffect->GetVariableByName("lightningIlluminationTexture")->AsShaderResource();
 	skyLossTexture						=m_pCloudEffect->GetVariableByName("skyLossTexture")->AsShaderResource();
 	skyInscatterTexture					=m_pCloudEffect->GetVariableByName("skyInscatterTexture")->AsShaderResource();
+	skylightTexture						=m_pCloudEffect->GetVariableByName("skylightTexture")->AsShaderResource();
 	return (hr==S_OK);
 }
 
@@ -561,6 +560,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	noiseTexture->SetResource(noiseTextureResource);
 	skyLossTexture->SetResource(skyLossTexture_SRV);
 	skyInscatterTexture->SetResource(skyInscatterTexture_SRV);
+	skylightTexture->SetResource(skylightTexture_SRV);
 
 	// Mess with the proj matrix to extend the far clipping plane:
 	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
@@ -744,6 +744,7 @@ simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer
 	PIXEndNamedEvent();
 	skyLossTexture->SetResource(NULL);
 	skyInscatterTexture->SetResource(NULL);
+	skylightTexture->SetResource(NULL);
 // To prevent BIZARRE DX11 warning, we re-apply the bass with the rendertextures unbound:
 	if(enable_lightning)
 		ApplyPass(m_hTechniqueCloudsAndLightning->GetPassByIndex(0));

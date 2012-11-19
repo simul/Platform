@@ -69,29 +69,36 @@ HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(		ID3D11Device* pd3dDevice,const
 
 HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,IDXGISwapChain* pSwapChain,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
-	simul::dx11::UnsetDevice();
-	//Set a global device pointer for use by various classes.
-	simul::dx11::SetDevice(pd3dDevice);
-	ScreenWidth=pBackBufferSurfaceDesc->Width;
-	ScreenHeight=pBackBufferSurfaceDesc->Height;
-	aspect=(float)ScreenWidth/(float)ScreenHeight;
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->InvalidateDeviceObjects();
-	if(simulHDRRenderer)
+	try
 	{
-	simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
-		simulHDRRenderer->InvalidateDeviceObjects();
+		simul::dx11::UnsetDevice();
+		//Set a global device pointer for use by various classes.
+		simul::dx11::SetDevice(pd3dDevice);
+		ScreenWidth=pBackBufferSurfaceDesc->Width;
+		ScreenHeight=pBackBufferSurfaceDesc->Height;
+		aspect=(float)ScreenWidth/(float)ScreenHeight;
+		if(simulWeatherRenderer)
+			simulWeatherRenderer->InvalidateDeviceObjects();
+		if(simulHDRRenderer)
+		{
+			simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
+			simulHDRRenderer->InvalidateDeviceObjects();
+		}
+		if(simulOpticsRenderer)
+			simulOpticsRenderer->InvalidateDeviceObjects();
+		void *x[2]={pd3dDevice,pSwapChain};
+		if(simulHDRRenderer)
+			simulHDRRenderer->RestoreDeviceObjects(x);
+		if(simulWeatherRenderer)
+			simulWeatherRenderer->RestoreDeviceObjects(x);
+		if(simulOpticsRenderer)
+			simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
+		return S_OK;
 	}
-	if(simulOpticsRenderer)
-		simulOpticsRenderer->InvalidateDeviceObjects();
-	void *x[2]={pd3dDevice,pSwapChain};
-	if(simulHDRRenderer)
-		simulHDRRenderer->RestoreDeviceObjects(x);
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->RestoreDeviceObjects(x);
-	if(simulOpticsRenderer)
-		simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
-	return S_OK;
+	catch(...)
+	{
+		return S_FALSE;
+	}
 }
 
 void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep)
@@ -149,12 +156,12 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		simulWeatherRenderer->GetSkyRenderer()->RenderFades(ScreenWidth,ScreenHeight);
 	if(simulWeatherRenderer&&ShowCloudCrossSections)
 	{
-		if(simulWeatherRenderer->IsCloudLayer1Visible())
+		if(simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(ScreenWidth,ScreenHeight);
 		//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
 		}
-		if(simulWeatherRenderer->IsCloudLayer2Visible())
+//		if(simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{
 		//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(ScreenWidth,ScreenHeight);
 		}
@@ -172,7 +179,7 @@ void	Direct3D11Renderer::OnD3D11LostDevice()
 		simulOpticsRenderer->InvalidateDeviceObjects();
 }
 
-void	Direct3D11Renderer::OnD3D11DestroyDevice()
+void Direct3D11Renderer::OnD3D11DestroyDevice()
 {
 	OnD3D11LostDevice();
 	// We don't clear the renderers because InvalidateDeviceObjects has already handled DX-specific destruction
@@ -182,7 +189,7 @@ void	Direct3D11Renderer::OnD3D11DestroyDevice()
 	simul::dx11::UnsetDevice();
 }
 
-void	Direct3D11Renderer::OnD3D11ReleasingSwapChain()
+void Direct3D11Renderer::OnD3D11ReleasingSwapChain()
 {
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
@@ -191,7 +198,7 @@ void	Direct3D11Renderer::OnD3D11ReleasingSwapChain()
 	OnD3D11LostDevice();
 }
 
-bool	Direct3D11Renderer::OnDeviceRemoved()
+bool Direct3D11Renderer::OnDeviceRemoved()
 {
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();

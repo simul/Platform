@@ -340,10 +340,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\ocean_simulator.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\DirectX1x\SimulAtmosphericsRendererDX1x.cpp"
 				>
 			</File>
@@ -353,10 +349,6 @@
 			</File>
 			<File
 				RelativePath="..\DirectX1x\SimulHDRRendererDX1x.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\DirectX1x\SimulOceanRendererDX1x.cpp"
 				>
 			</File>
 			<File
@@ -410,10 +402,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\ocean_simulator.h"
-				>
-			</File>
-			<File
 				RelativePath=".\resource.h"
 				>
 			</File>
@@ -431,10 +419,6 @@
 			</File>
 			<File
 				RelativePath="..\DirectX1x\SimulHDRRendererDX1x.h"
-				>
-			</File>
-			<File
-				RelativePath="..\DirectX1x\SimulOceanRendererDX1x.h"
 				>
 			</File>
 			<File

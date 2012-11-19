@@ -61,7 +61,7 @@ public:
 	//! Call this when the D3D device has been shut down.
 	void						InvalidateDeviceObjects();
 	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	bool						RenderSun();
+	void						RenderSun();
 	//! Get the transform that goes from declination/right-ascension to azimuth and elevation.
 	//bool						GetSiderealTransform(D3DXMATRIX *world);
 	//! Render the stars, as points.
@@ -81,9 +81,7 @@ public:
 	float GetTiming() const;
 	simul::sky::float4 GetAmbient() const;
 	simul::sky::float4 GetLightColour() const;
-	void Get3DLossAndInscatterTextures(void **l1,void **l2,void **i1,void **i2);
-	void Get2DLossAndInscatterTextures(void **l1,void **i1);
-	void GetSkyTextures(void * *s1,void * *s2);
+	void Get2DLossAndInscatterTextures(void **l1,void **i1,void **s1);
 	void * GetDistanceTexture()
 	{
 		return (void *)max_distance_texture;
@@ -101,8 +99,11 @@ public:
 	const char *GetDebugText() const;
 	void SetYVertical(bool y);
 protected:
-	void FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void FillFadeTexturesSequentially(int alt_index,int texture_index,int texel_index,int num_texels,const float *loss_float4_array,const float *inscatter_float4_array);
+	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
+	void FillFadeTexturesSequentially(int alt_index,int texture_index,int texel_index
+						,int num_texels,const float *loss_float4_array
+						,const float *inscatter_float4_array
+						,const float *skyl_float4_array);
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate();
 	void EnsureTextureCycle();
@@ -140,8 +141,8 @@ protected:
 	D3DXHANDLE					fadeTexture;
 	D3DXHANDLE					fadeTexture2;
 	D3DXHANDLE					texelOffset,texelScale;
-	D3DXHANDLE					skyTexture1;
-	D3DXHANDLE					skyTexture2;
+	D3DXHANDLE					inscTexture;
+	D3DXHANDLE					skylTexture;
 	D3DXHANDLE					fadeTexture2D;
 	D3DXHANDLE					starsTexture;
 	D3DXHANDLE					starBrightness;
@@ -155,12 +156,14 @@ protected:
 	// If using 1D sky textures and 2D fade textures:
 	LPDIRECT3DBASETEXTURE9		loss_textures[3];
 	LPDIRECT3DBASETEXTURE9		inscatter_textures[3];
+	LPDIRECT3DBASETEXTURE9		skylight_textures[3];
 	// Max fade distance, constant, except towards the ground
 	LPDIRECT3DTEXTURE9			max_distance_texture;
 
 	// Two in-use 2D sky textures. We render a slice of the 3D textures into these, then use them for all fades.
 	Framebuffer					loss_2d;
 	Framebuffer					inscatter_2d;
+	Framebuffer					skylight_2d;
 	simul::sky::float4			cam_dir;
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DQUERY9			d3dQuery;

@@ -43,7 +43,7 @@ public:
 	void SetYVertical(bool y);
 	void SetDistanceTexture(void* t);
 	void SetLossTexture(void* t);
-	void SetInscatterTexture(void* t);
+	void SetInscatterTextures(void* t,void *s);
 	void SetCloudsTexture(void* t);
 	void RecompileShaders();
 
@@ -93,6 +93,7 @@ protected:
 
 	ID3D1xTexture2D*					loss_texture;
 	ID3D1xTexture2D*					inscatter_texture;
+	ID3D1xTexture2D*					skylight_texture;
 	ID3D1xTexture2D*					clouds_texture;
 
 	//! The depth buffer.

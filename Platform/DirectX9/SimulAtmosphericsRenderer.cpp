@@ -50,6 +50,7 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
 	,inscatterTexture1(NULL)
 	,loss_texture(NULL)
 	,inscatter_texture(NULL)
+	,skylight_texture(NULL)
 	,clouds_texture(NULL)
 	,m_pRenderTarget(NULL)
 	,m_pBufferDepthSurface(NULL)
@@ -128,8 +129,6 @@ void SimulAtmosphericsRenderer::RecompileShaders()
 	airglowTechnique	=effect->GetTechniqueByName("simul_airglow");
 
 	invViewProj			=effect->GetParameterByName(NULL,"invViewProj");
-	altitudeTexCoord	=effect->GetParameterByName(NULL,"altitudeTexCoord");
-
 
 	heightAboveFogLayer	=effect->GetParameterByName(NULL,"heightAboveFogLayer");
 	fogColour			=effect->GetParameterByName(NULL,"fogColour");
@@ -145,6 +144,7 @@ void SimulAtmosphericsRenderer::RecompileShaders()
 	imageTexture		=effect->GetParameterByName(NULL,"imageTexture");
 	lossTexture1		=effect->GetParameterByName(NULL,"lossTexture1");
 	inscatterTexture1	=effect->GetParameterByName(NULL,"inscatterTexture1");
+	skylightTexture		=effect->GetParameterByName(NULL,"skylightTexture");
 
 	maxDistanceTexture	=effect->GetParameterByName(NULL,"maxDistanceTexture");
 
@@ -201,6 +201,7 @@ void SimulAtmosphericsRenderer::SetCloudProperties(void* c1,void* c2,
 	cloud_offset=cloudoffset;
 	cloud_interp=interp;
 }
+
 void SimulAtmosphericsRenderer::SetLightningProperties(	void *tex,
 		simul::clouds::LightningRenderInterface *lri)
 {
@@ -246,7 +247,6 @@ bool SimulAtmosphericsRenderer::RenderGodRays(float strength)
 		D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
 		hr=effect->SetFloat(fadeInterp,fade_interp);
 		hr=effect->SetTexture(imageTexture,input_texture);
-		hr=effect->SetFloat(altitudeTexCoord,altitude_tex_coord);
 		if(skyInterface)
 		{
 			hr=effect->SetFloat(hazeEccentricity,skyInterface->GetMieEccentricity());
@@ -376,7 +376,6 @@ bool SimulAtmosphericsRenderer::Render()
 	{
 		hr=effect->SetFloat(fadeInterp,fade_interp);
 		hr=effect->SetTexture(imageTexture,input_texture);
-		hr=effect->SetFloat(altitudeTexCoord,altitude_tex_coord);
 #ifndef XBOX
 		m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 #endif
@@ -401,6 +400,7 @@ bool SimulAtmosphericsRenderer::Render()
 		}
 		hr=effect->SetTexture(lossTexture1,loss_texture);
 		hr=effect->SetTexture(inscatterTexture1,inscatter_texture);
+		hr=effect->SetTexture(skylightTexture,skylight_texture);
 		hr=effect->SetTexture(maxDistanceTexture,max_distance_texture);
 		hr=DrawScreenQuad();
 	}

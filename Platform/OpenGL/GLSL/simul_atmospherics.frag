@@ -1,21 +1,22 @@
-#version 130
-uniform sampler2D image_texture;
-uniform sampler2D loss_texture;
-uniform sampler2D insc_texture;
+
+uniform sampler2D imageTexture;
+uniform sampler2D lossTexture;
+uniform sampler2D inscTexture;
+uniform sampler2D skylightTexture;
 
 uniform float hazeEccentricity;
 uniform vec3 lightDir;
 uniform mat4 invViewProj;
 uniform vec3 mieRayleighRatio;
-
 varying vec2 texCoords;
+uniform float directLightMultiplier;
 const float pi=3.1415926536;
 
 float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
 	float u=1.0+g2-2.0*g*cos0;
-	return 0.5*0.079577+0.5*(1.0-g2)/(4.0*pi*sqrt(u*u*u));
+	return (1.0-g2)/(4.0*pi*sqrt(u*u*u));
 }
 
 vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
@@ -27,29 +28,27 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 	vec3 colour=BetaTotal*inscatter_factor.rgb;
 	return colour;
 }
-//float water_height=-4000.0/200000.0;
+
 void main()
 {
-    vec4 lookup=texture2D(image_texture,texCoords);
+    vec4 lookup=texture2D(imageTexture,texCoords);
 	vec4 pos=vec4(-1.0,-1.0,1.0,1.0);
 	pos.x+=2.0*texCoords.x;//+texelOffsets.x;
 	pos.y+=2.0*texCoords.y;//+texelOffsets.y;
 	vec3 view=(invViewProj*pos).xyz;
-	//float height_above_water=(view.z-water_height)*200000.0;
-		
 	view=normalize(view);
 	float sine=view.z;
 	float depth=lookup.a;
 	if(depth>=1.0) 
 		discard;
 	vec2 texc2=vec2(pow(depth,0.5),0.5*(1.0-sine));
-	vec3 loss=texture2D(loss_texture,texc2).rgb;
+	vec3 loss=texture2D(lossTexture,texc2).rgb;
 	vec3 colour=lookup.rgb;
 	colour*=loss;
-	vec4 inscatter_factor=texture2D(insc_texture,texc2);
+	vec4 inscatter_factor=texture2D(inscTexture,texc2);
 	float cos0=dot(view,lightDir);
-	colour+=InscatterFunction(inscatter_factor,cos0);
-	//if(height_above_water<0)
-	//	colour.b+=saturate(-height_above_water);
+	colour+=directLightMultiplier*InscatterFunction(inscatter_factor,cos0);
+	vec4 skyl=texture2D(skylightTexture,texc2);
+	colour.rgb+=skyl.rgb;
     gl_FragColor=vec4(colour.rgb,1.0);
 }

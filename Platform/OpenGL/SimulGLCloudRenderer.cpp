@@ -77,6 +77,7 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudK
 	,texture_effect(1.f)
 	,loss_tex(0)
 	,inscatter_tex(0)
+	,skylight_tex(0)
 	,illum_tex(0)
 	,init(false)
 {
@@ -309,10 +310,12 @@ ERROR_CHECK
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D,loss_tex);
 ERROR_CHECK
-     glActiveTexture(GL_TEXTURE4);
+    glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D,inscatter_tex);
-ERROR_CHECK
     glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D,skylight_tex);
+ERROR_CHECK
+    glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_3D,illum_tex);
 ERROR_CHECK
 	glUseProgram(clouds_program);
@@ -322,10 +325,11 @@ ERROR_CHECK
 	glUniform1i(noiseSampler_param,2);
 	glUniform1i(lossSampler_param,3);
 	glUniform1i(inscatterSampler_param,4);
-	glUniform1i(illumSampler_param,5);
+	glUniform1i(skylightSampler_param,5);
+	glUniform1i(illumSampler_param,6);
 	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 ERROR_CHECK
-simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
+	simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 
 	if(enable_lightning)
 	{
@@ -405,13 +409,6 @@ ERROR_CHECK
 	float tan_half_fov_horizontal=std::max(1.f/left,1.f/right);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),god_rays,X1.z,god_rays);
-	// Here we make the helper calculate loss and inscatter due to atmospherics.
-	// This is an approach that calculates per-vertex atmospheric values that are then
-	// passed to the shader.
-	// The alternative is to generate fade textures in the SkyRenderer,
-	// then lookup those textures in the cloud shader.
-	if(!default_fog)
-		helper->CalcInscatterFactors(skyInterface,god_rays);
 #if 1
 	simul::sky::float4 sunlight1=skyInterface->GetLocalIrradiance(X1.z*.001f);
 	simul::sky::float4 sunlight2=skyInterface->GetLocalIrradiance(X2.z*.001f);
@@ -499,11 +496,7 @@ ERROR_CHECK
 			for(unsigned k=0;k<(*j)->num_vertices;k++,qs_vert++)
 			{
 				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
-				if(!default_fog)
-				{
-					loss		=helper->GetLoss(*i,V);
-					inscatter	=helper->GetInscatter(*i,V);
-				}
+		
 				glMultiTexCoord3f(GL_TEXTURE0,V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
 				glMultiTexCoord2f(GL_TEXTURE1,V.noise_tex_x,V.noise_tex_y);
 				glMultiTexCoord1f(GL_TEXTURE2,dens);
@@ -515,8 +508,6 @@ ERROR_CHECK
 				// The per-vertex loss and inscatter is cheap for the pixel shader as it
 				// then doesn't need fade-texture lookups.
 				glMultiTexCoord3f(GL_TEXTURE3,sunlight.x,sunlight.y,sunlight.z);
-				glMultiTexCoord3f(GL_TEXTURE4,loss.x,loss.y,loss.z);
-				glMultiTexCoord3f(GL_TEXTURE5,inscatter.x,inscatter.y,inscatter.z);
 				glVertex3f(V.x,V.y,V.z);
 			}
 		}
@@ -537,16 +528,16 @@ ERROR_CHECK
 	return true;
 }
 
-void SimulGLCloudRenderer::SetLossTexture(void *l)
+void SimulGLCloudRenderer::SetLossTextures(void *l)
 {
 	if(l)
 	loss_tex=((GLuint)l);
 }
 
-void SimulGLCloudRenderer::SetInscatterTexture(void *i)
+void SimulGLCloudRenderer::SetInscatterTextures(void *i,void *s)
 {
-	if(i)
 	inscatter_tex=((GLuint)i);
+	skylight_tex=((GLuint)s);
 }
 
 void SimulGLCloudRenderer::RecompileShaders()
@@ -572,6 +563,7 @@ ERROR_CHECK
 	illumSampler_param		=glGetUniformLocation(clouds_program,"illumSampler");
 	lossSampler_param		=glGetUniformLocation(clouds_program,"lossSampler");
 	inscatterSampler_param	=glGetUniformLocation(clouds_program,"inscatterSampler");
+	skylightSampler_param	=glGetUniformLocation(clouds_program,"skylightSampler");
 
 	layerDistance_param		=glGetUniformLocation(clouds_program,"layerDistance");
 	printProgramInfoLog(clouds_program);

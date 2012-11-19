@@ -189,62 +189,62 @@ void UtilityRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool st
 {
 	PIXWrapper(0xFF0000FF,"DrawLines")
 	{
-		HRESULT hr=S_OK;
-		D3DXMATRIX world, tmp1, tmp2;
-		D3DXMatrixIdentity(&world);
-		ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_direct");
-		ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	HRESULT hr=S_OK;
+	D3DXMATRIX world, tmp1, tmp2;
+	D3DXMatrixIdentity(&world);
+	ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_direct");
+	ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
 
-		D3DXMATRIX wvp;
-		MakeWorldViewProjMatrix(&wvp,world,view,proj);
-		worldViewProj->SetMatrix(&wvp._11);
-
-		ID3D1xBuffer *					vertexBuffer=NULL;
+	D3DXMATRIX wvp;
+	MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	worldViewProj->SetMatrix(&wvp._11);
+	
+	ID3D1xBuffer *					vertexBuffer=NULL;
 #if 1
-		// Create the vertex buffer:
-		D3D1x_BUFFER_DESC desc=
-		{
-			vertex_count*sizeof(VertexXyzRgba),
-			D3D1x_USAGE_DYNAMIC,
-			D3D1x_BIND_VERTEX_BUFFER,
-			D3D1x_CPU_ACCESS_WRITE,
-			0
-		};
-		D3D1x_SUBRESOURCE_DATA InitData;
-		ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-		InitData.pSysMem = vertices;
-		InitData.SysMemPitch = sizeof(VertexXyzRgba);
-		hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
+	// Create the vertex buffer:
+	D3D1x_BUFFER_DESC desc=
+	{
+        vertex_count*sizeof(VertexXyzRgba),
+        D3D1x_USAGE_DYNAMIC,
+        D3D1x_BIND_VERTEX_BUFFER,
+        D3D1x_CPU_ACCESS_WRITE,
+        0
+	};
+    D3D1x_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    InitData.pSysMem = vertices;
+    InitData.SysMemPitch = sizeof(VertexXyzRgba);
+	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
 
-		const D3D1x_INPUT_ELEMENT_DESC decl[] =
-		{
-			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
-		};
-		D3D1x_PASS_DESC PassDesc;
-		ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
-		hr=pass->GetDesc(&PassDesc);
+	const D3D1x_INPUT_ELEMENT_DESC decl[] =
+    {
+        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
+    };
+	D3D1x_PASS_DESC PassDesc;
+	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
+	hr=pass->GetDesc(&PassDesc);
 
-		ID3D1xInputLayout*				m_pVtxDecl=NULL;
-		SAFE_RELEASE(m_pVtxDecl);
-		hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
-		m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
-		m_pImmediateContext->IASetPrimitiveTopology(strip?D3D1x_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D1x_PRIMITIVE_TOPOLOGY_LINELIST);
-		UINT stride = sizeof(VertexXyzRgba);
-		UINT offset = 0;
-		UINT Strides[1];
-		UINT Offsets[1];
-		Strides[0] = stride;
-		Offsets[0] = 0;
-		m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
-			1,				// the number of buffers in the array
-			&vertexBuffer,	// the array of vertex buffers
-			&stride,		// array of stride values, one for each buffer
-			&offset);		// array of 
-		hr=ApplyPass(tech->GetPassByIndex(0));
-		m_pImmediateContext->Draw(vertex_count,0);
-		SAFE_RELEASE(vertexBuffer);
-		SAFE_RELEASE(m_pVtxDecl);
+	ID3D1xInputLayout*				m_pVtxDecl=NULL;
+	SAFE_RELEASE(m_pVtxDecl);
+	hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+	m_pImmediateContext->IASetPrimitiveTopology(strip?D3D1x_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D1x_PRIMITIVE_TOPOLOGY_LINELIST);
+	UINT stride = sizeof(VertexXyzRgba);
+	UINT offset = 0;
+    UINT Strides[1];
+    UINT Offsets[1];
+    Strides[0] = stride;
+    Offsets[0] = 0;
+	m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
+												1,				// the number of buffers in the array
+												&vertexBuffer,	// the array of vertex buffers
+												&stride,		// array of stride values, one for each buffer
+												&offset);		// array of 
+	hr=ApplyPass(tech->GetPassByIndex(0));
+	m_pImmediateContext->Draw(vertex_count,0);
+	SAFE_RELEASE(vertexBuffer);
+	SAFE_RELEASE(m_pVtxDecl);
 #endif
 	}
 }
@@ -259,12 +259,12 @@ ID3D1xShaderResourceView* simul::dx1x_namespace::LoadTexture(const TCHAR *filena
 	loadInfo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	loadInfo.MipLevels=0;
 	HRESULT hr=D3DX11CreateShaderResourceViewFromFile(
-		m_pd3dDevice,
-		(texture_path+filename).c_str(),
-		&loadInfo,
-		NULL,
-		&tex,
-		&hr);
+										m_pd3dDevice,
+										(texture_path+filename).c_str(),
+										&loadInfo,
+										NULL,
+										&tex,
+										&hr);
 	return tex;
 }
 
@@ -278,7 +278,6 @@ struct d3dMacro
 	std::string name;
 	std::string define;
 };
-
 #ifdef DX11
 HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
@@ -315,7 +314,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 		std::string command=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("DXSDK_DIR");
 		if(command.length())
 		{
-			//>"fxc.exe" /T fx_2_0 /Fo "..\..\gamma.fx"o "..\..\gamma.fx"
+//>"fxc.exe" /T fx_2_0 /Fo "..\..\gamma.fx"o "..\..\gamma.fx"
 			command="\""+command;
 			command+="Utilities\\Bin\\x86\\fxc.exe\"";
 			command+=" /nologo /Tfx_5_0 /Fo \"";
@@ -330,53 +329,53 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 					command+=macros->Definition;
 					macros++;
 				}
-				//	command+=" > \""+text_filename+".log\"";
+		//	command+=" > \""+text_filename+".log\"";
 #if 0
-				system(command.c_str());
+			system(command.c_str());
 #else
 #if 0
-				HINSTANCE hi=ShellExecuteA(NULL,
-					LPCTSTR lpOperation,
-					LPCTSTR lpFile,
-					LPCTSTR lpParameters,
-					LPCTSTR lpDirectory,
-					INT nShowCmd
-					);
+			HINSTANCE hi=ShellExecuteA(NULL,
+				LPCTSTR lpOperation,
+				LPCTSTR lpFile,
+				LPCTSTR lpParameters,
+				LPCTSTR lpDirectory,
+				INT nShowCmd
+			);
 #else
-				STARTUPINFOA si;
-				PROCESS_INFORMATION pi;
-				ZeroMemory( &si, sizeof(si) );
-				si.cb = sizeof(si);
-				ZeroMemory( &pi, sizeof(pi) );
-				si.wShowWindow=false;
-				char com[500];
-				strcpy(com,command.c_str());
-				si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-				si.wShowWindow = SW_HIDE;
-				//FILE *fp = fopen((text_filename+".log").c_str(), "w");
+			STARTUPINFOA si;
+			PROCESS_INFORMATION pi;
+			ZeroMemory( &si, sizeof(si) );
+			si.cb = sizeof(si);
+			ZeroMemory( &pi, sizeof(pi) );
+			si.wShowWindow=false;
+			char com[500];
+			strcpy(com,command.c_str());
+			si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+			si.wShowWindow = SW_HIDE;
+			//FILE *fp = fopen((text_filename+".log").c_str(), "w");
 
-				HANDLE hReadOutPipe = NULL;
-				HANDLE hWriteOutPipe = NULL;
-				HANDLE hReadErrorPipe = NULL;
-				HANDLE hWriteErrorPipe = NULL;
-				SECURITY_ATTRIBUTES saAttr; 
-				// Set the bInheritHandle flag so pipe handles are inherited. 
+			HANDLE hReadOutPipe = NULL;
+			HANDLE hWriteOutPipe = NULL;
+			HANDLE hReadErrorPipe = NULL;
+			HANDLE hWriteErrorPipe = NULL;
+			SECURITY_ATTRIBUTES saAttr; 
+// Set the bInheritHandle flag so pipe handles are inherited. 
+		 
+			if(pipe_compiler_output)
+			{
+				saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+				saAttr.bInheritHandle = TRUE; 
+				saAttr.lpSecurityDescriptor = NULL; 
+				CreatePipe( &hReadOutPipe, &hWriteOutPipe, &saAttr, 100 );
+				CreatePipe( &hReadErrorPipe, &hWriteErrorPipe, &saAttr, 100 );
+			}
+			//SetHandleInformation(hReadOutPipe, HANDLE_FLAG_INHERIT, 0) ;
 
-				if(pipe_compiler_output)
-				{
-					saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
-					saAttr.bInheritHandle = TRUE; 
-					saAttr.lpSecurityDescriptor = NULL; 
-					CreatePipe( &hReadOutPipe, &hWriteOutPipe, &saAttr, 100 );
-					CreatePipe( &hReadErrorPipe, &hWriteErrorPipe, &saAttr, 100 );
-				}
-				//SetHandleInformation(hReadOutPipe, HANDLE_FLAG_INHERIT, 0) ;
+			//SetHandleInformation(hReadErrorPipe, HANDLE_FLAG_INHERIT, 0) ;
 
-				//SetHandleInformation(hReadErrorPipe, HANDLE_FLAG_INHERIT, 0) ;
-
-				si.hStdOutput = hWriteOutPipe;
-				si.hStdError= hWriteErrorPipe;
-				CreateProcessA( NULL,		// No module name (use command line)
+			si.hStdOutput = hWriteOutPipe;
+			si.hStdError= hWriteErrorPipe;
+			CreateProcessA( NULL,		// No module name (use command line)
 					com,				// Command line
 					NULL,				// Process handle not inheritable
 					NULL,				// Thread handle not inheritable
@@ -386,57 +385,55 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 					NULL,				// Use parent's starting directory 
 					&si,				// Pointer to STARTUPINFO structure
 					&pi )				// Pointer to PROCESS_INFORMATION structure
-					;
-				// Wait until child process exits.
+				;
+			// Wait until child process exits.
 
-				HANDLE WaitHandles[] = {
-					pi.hProcess, hReadOutPipe, hReadErrorPipe
-				};
+		  HANDLE WaitHandles[] = {
+			pi.hProcess, hReadOutPipe, hReadErrorPipe
+		  };
 
-				const DWORD BUFSIZE = 4096;
-				BYTE buff[BUFSIZE];
-				bool has_errors=false;
-				while (1)
-				{
-					DWORD dwBytesRead, dwBytesAvailable;
+		  const DWORD BUFSIZE = 4096;
+		  BYTE buff[BUFSIZE];
+			bool has_errors=false;
+		  while (1)
+		  {
+			DWORD dwBytesRead, dwBytesAvailable;
 
-					DWORD dwWaitResult = WaitForMultipleObjects(pipe_compiler_output?3:1, WaitHandles, FALSE, 60000L);
+			DWORD dwWaitResult = WaitForMultipleObjects(pipe_compiler_output?3:1, WaitHandles, FALSE, 60000L);
 
-					// Read from the pipes...
-					if(hReadOutPipe)
-					while( PeekNamedPipe(hReadOutPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
-					{
-						ReadFile(hReadOutPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
-						std::cout << std::string((char*)buff, (size_t)dwBytesRead).c_str();
-					}
-					if(hReadErrorPipe)
-					while( PeekNamedPipe(hReadErrorPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
-					{
-						ReadFile(hReadErrorPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
-						std::string str((char*)buff, (size_t)dwBytesRead);
-						std::cerr << str.c_str();
-						size_t pos=str.find("rror");
-						if(pos<str.length())
-							has_errors=true;
-					}
+			// Read from the pipes...
+			while( PeekNamedPipe(hReadOutPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
+			{
+			  ReadFile(hReadOutPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
+			  std::cout << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+			}
+			while( PeekNamedPipe(hReadErrorPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
+			{
+			  ReadFile(hReadErrorPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
+			  std::string str((char*)buff, (size_t)dwBytesRead);
+			  std::cerr << str.c_str();
+			  size_t pos=str.find("rror");
+			  if(pos<str.length())
+				has_errors=true;
+			}
 
-					// Process is done, or we timed out:
-					if(dwWaitResult==WAIT_OBJECT_0||dwWaitResult==WAIT_TIMEOUT||dwWaitResult==WAIT_ABANDONED||dwWaitResult==WAIT_FAILED)
-						break;
-				}
+			// Process is done, or we timed out:
+			if(dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
+			break;
+		  }
 
-				//WaitForSingleObject( pi.hProcess, INFINITE );
-				CloseHandle( pi.hProcess );
-				CloseHandle( pi.hThread );
+			//WaitForSingleObject( pi.hProcess, INFINITE );
+			CloseHandle( pi.hProcess );
+			CloseHandle( pi.hThread );
 
-				/*"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Utilities\Bin\x86\fxc.exe" /T fx_5_0 /Fo "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fxo" "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fx""	char [200]
+			/*"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Utilities\Bin\x86\fxc.exe" /T fx_5_0 /Fo "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fxo" "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fx""	char [200]
 			 */
 
-				//fclose(fp);
+			//fclose(fp);
 #endif
 #endif
-				if(has_errors)
-					return S_FALSE;
+			if(has_errors)
+				return S_FALSE;
 		}
 	}
 	HRESULT hr=D3DX11CreateEffectFromBinaryFile(filename,FXFlags,pDevice,ppEffect);
@@ -456,7 +453,7 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 	std::cout<<_T("Create effect: ")<<filename<<std::endl;
 	//tstring fn=filename;
 	tstring fn=shader_path+filename;
-
+	
 	D3D10_SHADER_MACRO *macros=NULL;
 	std::vector<std::string> d3dmacros;
 	{
@@ -482,32 +479,32 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 	ID3D10Blob *errors;
 	if(FAILED(
 		hr=D3DX10CreateEffectFromFile(
-		fn.c_str(),
-		macros,
-		NULL,
-		"fx_4_0",
-		flags,
-		flags,
-		d3dDevice,
-		NULL,
-		NULL,
-		effect,
-		&errors,
-		0
-		)))
+				  fn.c_str(),
+				  macros,
+				  NULL,
+				  "fx_4_0",
+				  flags,
+				  flags,
+				  d3dDevice,
+				  NULL,
+				  NULL,
+				  effect,
+				  &errors,
+				  0
+				)))
 #else
 	if(FAILED(
 		hr=D3DX11CreateEffectFromFile(
-		fn.c_str(),
-		macros,
-		flags,
-		d3dDevice,
-		effect)))
+				fn.c_str(),
+				macros,
+				flags,
+				d3dDevice,
+				effect)))
 #endif
 	{
 		std::string err="";
 #ifdef DXTRACE_ERR
-		hr=DXTRACE_ERR( L"CreateEffect", hr );
+        hr=DXTRACE_ERR( L"CreateEffect", hr );
 #endif
 #ifdef DX10
 		if(errors)
@@ -523,6 +520,12 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 	delete [] macros;
 	return hr;
 }
+
+#define D3D10_SHADER_ENABLE_STRICTNESS              (1 << 11)
+#ifndef SAFE_RELEASE
+#define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
+#endif
+
 
 HRESULT Map2D(ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp)
 {
@@ -642,29 +645,29 @@ void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical
 
 void MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos)
 {
-	D3DXVECTOR3 vEyePt = D3DXVECTOR3( cam_pos );
-	D3DXVECTOR3 vLookDir;
-	D3DXVECTOR3 vUpDir;
-	ZeroMemory(g_amCubeMapViewAdjust, 6*sizeof(D3DXMATRIX) );
+    D3DXVECTOR3 vEyePt = D3DXVECTOR3( cam_pos );
+    D3DXVECTOR3 vLookDir;
+    D3DXVECTOR3 vUpDir;
+    ZeroMemory(g_amCubeMapViewAdjust, 6*sizeof(D3DXMATRIX) );
 
-	vLookDir =vEyePt+ D3DXVECTOR3( 1.0f, 0.0f, 0.0f );
-	vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
-	D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[0], &vEyePt, &vLookDir, &vUpDir );
-	vLookDir =vEyePt+D3DXVECTOR3( -1.0f, 0.0f, 0.0f );
-	vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
-	D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[1], &vEyePt, &vLookDir, &vUpDir );
-	vLookDir =vEyePt+D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
-	vUpDir = D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
-	D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[2], &vEyePt, &vLookDir, &vUpDir );
-	vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
-	vUpDir = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
-	D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[3], &vEyePt, &vLookDir, &vUpDir );
-	vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
-	vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
-	D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[4], &vEyePt, &vLookDir, &vUpDir );
-	vLookDir = vEyePt+D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
-	vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
-	D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[5], &vEyePt, &vLookDir, &vUpDir );
+    vLookDir =vEyePt+ D3DXVECTOR3( 1.0f, 0.0f, 0.0f );
+     vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+   D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[0], &vEyePt, &vLookDir, &vUpDir );
+    vLookDir =vEyePt+D3DXVECTOR3( -1.0f, 0.0f, 0.0f );
+    vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+    D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[1], &vEyePt, &vLookDir, &vUpDir );
+    vLookDir =vEyePt+D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+    vUpDir = D3DXVECTOR3( 0.0f, 0.0f,-1.0f );
+    D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[2], &vEyePt, &vLookDir, &vUpDir );
+   vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+    vUpDir = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
+   D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[3], &vEyePt, &vLookDir, &vUpDir );
+    vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
+    vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+    D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[4], &vEyePt, &vLookDir, &vUpDir );
+  vLookDir = vEyePt+D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
+    vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+    D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[5], &vEyePt, &vLookDir, &vUpDir );
 }
 
 void BreakIfDebugging()
@@ -672,30 +675,6 @@ void BreakIfDebugging()
 	DebugBreak();
 }
 
-void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir)
-{
-	D3DXMATRIX tmp1;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-
-	dcam_pos[0]=tmp1._41;
-	dcam_pos[1]=tmp1._42;
-	dcam_pos[2]=tmp1._43;
-	if(view_dir)
-	{
-		if(y_vertical)
-		{
-			view_dir[0]=view._13;
-			view_dir[1]=view._23;
-			view_dir[2]=view._33;
-		}
-		else
-		{
-			view_dir[0]=-view._13;
-			view_dir[1]=-view._23;
-			view_dir[2]=-view._33;
-		}
-	}
-}
 
 void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj
 					  ,D3DXVECTOR3 sun_dir)
@@ -714,10 +693,10 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical
 	if(y_vertical)
 	{
 		D3DXMatrixRotationYawPitchRoll(
-			&world,
-			Yaw,
-			Pitch,
-			0
+			  &world,
+			  Yaw,
+			  Pitch,
+			  0
 			);
 	}
 	else
@@ -735,8 +714,8 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical
 	D3DXMATRIX inv_world;
 	D3DXMatrixInverse(&inv_world,NULL,&world);
 	D3DXVec3TransformNormal(  &sun2,
-		&sun_dir,
-		&inv_world);
+						  &sun_dir,
+						  &inv_world);
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
@@ -768,23 +747,23 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical
 	// Create the vertex buffer:
 	D3D1x_BUFFER_DESC desc=
 	{
-		4*sizeof(Vertext),
-		D3D1x_USAGE_DYNAMIC,
-		D3D1x_BIND_VERTEX_BUFFER,
-		D3D1x_CPU_ACCESS_WRITE,
-		0
+        4*sizeof(Vertext),
+        D3D1x_USAGE_DYNAMIC,
+        D3D1x_BIND_VERTEX_BUFFER,
+        D3D1x_CPU_ACCESS_WRITE,
+        0
 	};
-	D3D1x_SUBRESOURCE_DATA InitData;
-	ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-	InitData.pSysMem = vertices;
-	InitData.SysMemPitch = sizeof(Vertext);
+    D3D1x_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    InitData.pSysMem = vertices;
+    InitData.SysMemPitch = sizeof(Vertext);
 	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
 
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =
-	{
-		{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
-	};
+    {
+        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
+    };
 	D3D1x_PASS_DESC PassDesc;
 	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
 	hr=pass->GetDesc(&PassDesc);
@@ -796,15 +775,15 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	UINT stride = sizeof(Vertext);
 	UINT offset = 0;
-	UINT Strides[1];
-	UINT Offsets[1];
-	Strides[0] = 0;
-	Offsets[0] = 0;
+    UINT Strides[1];
+    UINT Offsets[1];
+    Strides[0] = 0;
+    Offsets[0] = 0;
 	m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
-		1,				// the number of buffers in the array
-		&vertexBuffer,	// the array of vertex buffers
-		&stride,		// array of stride values, one for each buffer
-		&offset);		// array of 
+												1,				// the number of buffers in the array
+												&vertexBuffer,	// the array of vertex buffers
+												&stride,		// array of stride values, one for each buffer
+												&offset);		// array of 
 	hr=ApplyPass(tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(4,0);
 	//hr=ApplyPass(tech->GetPassByIndex(0));
@@ -843,30 +822,30 @@ void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float d
 	};
 	D3D1x_BUFFER_DESC bdesc=
 	{
-		4*sizeof(Vertext),
-		D3D1x_USAGE_DYNAMIC,
-		D3D1x_BIND_VERTEX_BUFFER,
-		D3D1x_CPU_ACCESS_WRITE,
-		0
+        4*sizeof(Vertext),
+        D3D1x_USAGE_DYNAMIC,
+        D3D1x_BIND_VERTEX_BUFFER,
+        D3D1x_CPU_ACCESS_WRITE,
+        0
 	};
-	D3D1x_SUBRESOURCE_DATA InitData;
-	ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-	InitData.pSysMem = vertices;
-	InitData.SysMemPitch = sizeof(Vertext);
-	InitData.SysMemSlicePitch = 0;
+    D3D1x_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    InitData.pSysMem = vertices;
+    InitData.SysMemPitch = sizeof(Vertext);
+    InitData.SysMemSlicePitch = 0;
 	ID3D1xBuffer* m_pVertexBuffer;
 	hr=m_pd3dDevice->CreateBuffer(&bdesc,&InitData,&m_pVertexBuffer);
 	UINT stride = sizeof(Vertext);
 	UINT offset = 0;
-	UINT Strides[1];
-	UINT Offsets[1];
-	Strides[0] = 0;
-	Offsets[0] = 0;
+    UINT Strides[1];
+    UINT Offsets[1];
+    Strides[0] = 0;
+    Offsets[0] = 0;
 	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
-		1,					// the number of buffers in the array
-		&m_pVertexBuffer,	// the array of vertex buffers
-		&stride,			// array of stride values, one for each buffer
-		&offset);			// array of offset values, one for each buffer
+												1,					// the number of buffers in the array
+												&m_pVertexBuffer,	// the array of vertex buffers
+												&stride,			// array of stride values, one for each buffer
+												&offset);			// array of offset values, one for each buffer
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
 	hr=ApplyPass(tech->GetPassByIndex(0));
@@ -886,21 +865,21 @@ static ID3D11SamplerState* m_pSamplerStateStored11=NULL;
 
 void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
 {
-	pd3dImmediateContext->OMGetDepthStencilState( &m_pDepthStencilStateStored11, &m_StencilRefStored11 );
-	pd3dImmediateContext->RSGetState( &m_pRasterizerStateStored11 );
-	pd3dImmediateContext->OMGetBlendState( &m_pBlendStateStored11, m_BlendFactorStored11, &m_SampleMaskStored11 );
-	pd3dImmediateContext->PSGetSamplers( 0, 1, &m_pSamplerStateStored11 );
+    pd3dImmediateContext->OMGetDepthStencilState( &m_pDepthStencilStateStored11, &m_StencilRefStored11 );
+    pd3dImmediateContext->RSGetState( &m_pRasterizerStateStored11 );
+    pd3dImmediateContext->OMGetBlendState( &m_pBlendStateStored11, m_BlendFactorStored11, &m_SampleMaskStored11 );
+    pd3dImmediateContext->PSGetSamplers( 0, 1, &m_pSamplerStateStored11 );
 }
 
 void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
 {
-	pd3dImmediateContext->OMSetDepthStencilState( m_pDepthStencilStateStored11, m_StencilRefStored11 );
-	pd3dImmediateContext->RSSetState( m_pRasterizerStateStored11 );
-	pd3dImmediateContext->OMSetBlendState( m_pBlendStateStored11, m_BlendFactorStored11, m_SampleMaskStored11 );
-	pd3dImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerStateStored11 );
+    pd3dImmediateContext->OMSetDepthStencilState( m_pDepthStencilStateStored11, m_StencilRefStored11 );
+    pd3dImmediateContext->RSSetState( m_pRasterizerStateStored11 );
+    pd3dImmediateContext->OMSetBlendState( m_pBlendStateStored11, m_BlendFactorStored11, m_SampleMaskStored11 );
+    pd3dImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerStateStored11 );
 
-	SAFE_RELEASE( m_pDepthStencilStateStored11 );
-	SAFE_RELEASE( m_pRasterizerStateStored11 );
-	SAFE_RELEASE( m_pBlendStateStored11 );
-	SAFE_RELEASE( m_pSamplerStateStored11 );
+    SAFE_RELEASE( m_pDepthStencilStateStored11 );
+    SAFE_RELEASE( m_pRasterizerStateStored11 );
+    SAFE_RELEASE( m_pBlendStateStored11 );
+    SAFE_RELEASE( m_pSamplerStateStored11 );
 }

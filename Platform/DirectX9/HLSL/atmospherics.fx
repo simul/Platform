@@ -190,7 +190,6 @@ float4 PS_Atmos(atmosVertexOutput IN) : color
 	float depth=lookup.a;
 	if(depth>=1.f)
 		discard;
-
 #ifdef Y_VERTICAL
 	float sine=view.y;
 #else
@@ -199,16 +198,16 @@ float4 PS_Atmos(atmosVertexOutput IN) : color
 	float dh=-(depth*sine);
 	
 	float3 f=max(1.f-fogDensity,exp(min(0,-(dh-heightAboveFogLayer)*fogExtinction)));
-	float2 texc2=float2(pow(depth,0.5f),0.5f*(1.f-sine));
+	float maxd=1.0;//tex2D(distance_texture,texc2).x;
+	float2 texc2=float2(pow(depth/maxd,0.5f),0.5f*(1.f-sine));
 	float3 loss=tex2D(sky_loss_texture_1,texc2).rgb;
 	colour*=f;
 	float cos0=dot(view,lightDir);
 	colour+=InscatterFunction(fogColour,cos0)*(1-f);
 	colour*=loss;
 	float4 inscatter_factor=tex2D(sky_inscatter_texture_1,texc2);
-
 	colour+=InscatterFunction(inscatter_factor,cos0);
-    return float4(colour.rgb,1.f);
+    return float4(colour,1.f);
 }
 
 float4 PS_Godrays(atmosVertexOutput IN) : color

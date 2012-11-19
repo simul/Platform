@@ -61,6 +61,7 @@ public:
 		META_ValueProperty(bool,ShowMap,"Show the terrain map as an overlay.")
 		META_ValueProperty(bool,ShowLightVolume,"Show the cloud light volume as a wireframe box.")
 		META_ValueProperty(bool,CelestialDisplay,"Show geographical and sidereal overlay.")
+		META_ValueProperty(bool,ShowWater,"Show water surfaces.")
 	META_EndProperties
 	SimulWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer.get();}
 	SimulTerrainRenderer *GetSimulTerrainRenderer(){return simulTerrainRenderer.get();}

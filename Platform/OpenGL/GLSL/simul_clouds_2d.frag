@@ -5,18 +5,21 @@ uniform sampler2D inscatterSampler;
 uniform float hazeEccentricity;
 uniform float cloudEccentricity;
 uniform vec3 mieRayleighRatio;
+uniform vec4 lightResponse;
 uniform vec3 lightDir;
+uniform vec3 eyePosition;
+uniform vec3 sunlight;
+uniform float maxFadeDistanceMetres;
 
 varying vec2 texc;
-varying vec2 fade_texc;
-varying vec3 view;
+varying vec3 wPosition;
 
 #define pi (3.1415926536)
 float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
 	float u=1.0+g2-2.0*g*cos0;
-	return 0.5*0.079577+.5*(1.0-g2)/(4.0*pi*sqrt(u*u*u));
+	return (1.0-g2)/(4.0*pi*sqrt(u*u*u));
 }
 
 vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
@@ -29,16 +32,22 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 	return colour;
 }
 
-void main(void)
+void main()
 {
-	float cos0=dot(lightDir,view);
+	vec3 difference		=wPosition-eyePosition;
+	vec3 view			=normalize(difference);
+	float sine			=view.z;
+	vec2 fade_texc		=vec2(length(difference)/maxFadeDistanceMetres,0.5*(1.0-sine));
+
+	float cos0			=dot(normalize(lightDir),(view));
     // original image
-    vec4 c = texture2D(imageTexture,texc);
-	float opacity=c.r;
-	vec3 final=c.rgb;
-	vec3 loss_lookup=texture2D(lossSampler,fade_texc).rgb;
-	vec4 insc_lookup=texture2D(inscatterSampler,fade_texc);
-	final*=loss_lookup;
-	final+=InscatterFunction(insc_lookup,cos0);
-    gl_FragColor=vec4(final.rgb*opacity,opacity);
+    vec4 c				=texture2D(imageTexture,texc);
+	float opacity		=c.r;
+	float light			=HenyeyGreenstein(cloudEccentricity,cos0);
+	vec3 final			=c.rgb*sunlight*(lightResponse.w+lightResponse.x*light);
+	vec3 loss_lookup	=texture2D(lossSampler,fade_texc).rgb;
+	vec4 insc_lookup	=texture2D(inscatterSampler,fade_texc);
+	final				*=loss_lookup;
+	final				+=InscatterFunction(insc_lookup,cos0);
+    gl_FragColor		=vec4(final.rgb,opacity);
 }
