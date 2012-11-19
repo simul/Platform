@@ -184,7 +184,7 @@ bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{
 		scene_buffer->Activate();
-		scene_buffer->Clear();
+		scene_buffer->Clear(0,0,0,1.f);
 		simulCloudRenderer->Render(false,false,UseDefaultFog);
 		scene_buffer->Deactivate();
 		scene_buffer->Render(true);
