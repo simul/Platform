@@ -39,7 +39,7 @@ public:
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
 	//! Show the cross sections on-screen.
 	void RenderCrossSections(int width,int height);
-	void SetLossTextures(void *);
+	void SetLossTexture(void *);
 	void SetInscatterTextures(void *,void *);
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
@@ -132,7 +132,7 @@ unsigned short *pIndices;
 	GLuint		sphere_vbo;
 	GLuint		sphere_ibo;
 
-	float		cam_pos[3];
+	//float		cam_pos[3];
 
 	void CreateVolumeNoise();
 	virtual bool CreateNoiseTexture(bool override_file=false);

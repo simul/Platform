@@ -1,50 +1,62 @@
-// simul_sky.frag - an OGLSL fragment shader
-// Copyright 2008 Simul Software Ltd
 
+uniform sampler2D imageTexture;
+uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D skylightTexture;
-// the App updates uniforms "slowly" (eg once per frame) for animation.
+
 uniform float hazeEccentricity;
-uniform float altitudeTexCoord;
-uniform vec3 mieRayleighRatio;
 uniform vec3 lightDir;
+uniform mat4 invViewProj;
+uniform vec3 mieRayleighRatio;
+uniform float directLightMultiplier;
 uniform vec3 earthShadowNormal;
 uniform float radiusOnCylinder;
 uniform float maxFadeDistance;
 
-// varyings are written by vert shader, interpolated, and read by frag shader.
-varying vec3 dir;
-#define pi (3.1415926536)
-float HenyeyGreenstein(float g,float cos0)
-{
-	float g2=g*g;
-	float u=1.0+g2-2.0*g*cos0;
-	return (1.0-g2)/(4.0*pi*pow(u,1.5));
-}
+varying vec2 texCoords;
 
-vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
-{
-	float BetaRayleigh=0.0596831*(1.0+cos0*cos0);
-	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
-	vec3 BetaTotal=(vec3(BetaRayleigh,BetaRayleigh,BetaRayleigh)+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
-		/(vec3(1.0,1.0,1.0)+inscatter_factor.a*mieRayleighRatio.xyz);
-	vec3 insc=BetaTotal*inscatter_factor.rgb;
-	return insc;
-}
+const float pi=3.1415926536;
 
 float saturate(float x)
 {
 	return clamp(x,0.0,1.0);
 }
 
+float HenyeyGreenstein(float g,float cos0)
+{
+	float g2=g*g;
+	float u=1.0+g2-2.0*g*cos0;
+	return (1.0-g2)/(4.0*pi*sqrt(u*u*u));
+}
+
+vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
+{
+	float BetaRayleigh=0.0596831*(1.0+cos0*cos0);
+	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
+	vec3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
+		/(vec3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
+	vec3 colour=BetaTotal*inscatter_factor.rgb;
+	return colour;
+}
+
 void main()
 {
-	vec3 view=normalize(dir);
+    vec4 lookup=texture2D(imageTexture,texCoords);
+	vec4 pos=vec4(-1.0,-1.0,1.0,1.0);
+	pos.x+=2.0*texCoords.x;//+texelOffsets.x;
+	pos.y+=2.0*texCoords.y;//+texelOffsets.y;
+	vec3 view=(invViewProj*pos).xyz;
+	view=normalize(view);
 	float sine=view.z;
-	// Full brightness:
-	vec2 texcoord=vec2(1.0,0.5*(1.0-sine));
-	vec4 insc=texture2D(inscTexture,texcoord);
-	vec4 skyl=texture2D(skylightTexture,texcoord);
+	float depth=lookup.a;
+	if(depth>=1.0) 
+		discard;
+	vec2 texc2=vec2(pow(depth,0.5),0.5*(1.0-sine));
+	vec3 loss=texture2D(lossTexture,texc2).rgb;
+	vec3 colour=lookup.rgb;
+	colour*=loss;
+	vec4 insc=texture2D(inscTexture,texc2);
+	
 	
 	// The Earth's shadow: let shadowNormal be the direction normal to the sunlight direction
 	//						but in the plane of the sunlight and the vertical.
@@ -58,7 +70,7 @@ void main()
 	float sine_phi=on_radius/length(on_cross_section);
 	// We avoid positive phi because the cosine discards sign information leading to
 	// confusion between negative and positive angles.
-	float s=sine_phi;//clamp(sine_phi,-1.0,0.0);
+	float s=sine_phi;
 	float cos2=1.0-s*s;
 	// Normalized so that Earth radius is 1.0..
 	float u=1.0-radiusOnCylinder*radiusOnCylinder*cos2;
@@ -77,19 +89,25 @@ void main()
 		// Renormalize it to the fade distance.
 		d=L/maxFadeDistance;
 	}
+	d=min(d,depth);
 	// Inscatter at distance d
 	vec2 texcoord_d=vec2(pow(d,0.5),0.5*(1.0-sine));
 	vec4 inscb=texture2D(inscTexture,texcoord_d);
 	// what should the light be at distance d?
 	// We subtract the inscatter to d if we're looking OUT FROM the cylinder,
-	// but we just use the inscatter to d if we're looking INTO the cylinder.
 	if(radiusOnCylinder<1.0||d==0.0)
+	{
 		insc-=inscb;
+	}
 	else
+	// but we just use the inscatter to d if we're looking INTO the cylinder.
+	{
 		insc=mix(insc,inscb,saturate(-along));
-	float cos0=dot(lightDir.xyz,view.xyz);
-	vec3 colour=InscatterFunction(insc,cos0);
-	colour+=skyl.rgb;
-	
+	}
+
+	float cos0=dot(view,lightDir);
+	colour+=directLightMultiplier*InscatterFunction(insc,cos0);
+	vec4 skyl=texture2D(skylightTexture,texc2);
+	colour.rgb+=skyl.rgb;
     gl_FragColor=vec4(colour.rgb,1.0);
 }

@@ -313,7 +313,7 @@ void SimulGL2DCloudRenderer::RenderCrossSections(int width,int height)
 {
 }
 
-void SimulGL2DCloudRenderer::SetLossTextures(void *l)
+void SimulGL2DCloudRenderer::SetLossTexture(void *l)
 {
 	if(l)
 	loss_tex=((GLuint)l);

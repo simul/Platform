@@ -343,7 +343,7 @@ void SimulWeatherRendererDX1x::Update(float dt)
 		{
 			if(simulCloudRenderer)
 			{
-				/*simulCloudRenderer->SetLossTextures(simulSkyRenderer->GetLossTexture1(),
+				/*simulCloudRenderer->SetLossTexture(simulSkyRenderer->GetLossTexture1(),
 					simulSkyRenderer->GetLossTexture2());
 				simulCloudRenderer->SetInscatterTextures(simulSkyRenderer->GetInscatterTexture1(),
 					simulSkyRenderer->GetInscatterTexture2());*/
@@ -354,7 +354,7 @@ void SimulWeatherRendererDX1x::Update(float dt)
 			{
 				if(simulCloudRenderer)
 					simulAtmosphericsRenderer->SetOvercastFactor(simulCloudRenderer->GetOvercastFactor());
-				simulAtmosphericsRenderer->SetLossTextures(simulSkyRenderer->GetLossTexture1(),
+				simulAtmosphericsRenderer->SetLossTexture(simulSkyRenderer->GetLossTexture1(),
 					simulSkyRenderer->GetLossTexture2());
 				simulAtmosphericsRenderer->SetInscatterTextures(simulSkyRenderer->GetInscatterTexture1(),
 					simulSkyRenderer->GetInscatterTexture2());

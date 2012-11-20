@@ -105,7 +105,6 @@ void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
 		baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 		
 		scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
-		scene_buffer->SetShader(0);
 	}
 }
 
@@ -136,7 +135,6 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
         delete scene_buffer;
 	baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 	scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
-	scene_buffer->SetShader(0);
 	device_initialized=true;
 	EnableCloudLayers(true,true);
 	///simulSkyRenderer->RestoreDeviceObjects();
@@ -168,7 +166,10 @@ bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	glPushMatrix();
 	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
 	if(buffered)
+	{
+		glUseProgram(Utilities::simple_program);
 		scene_buffer->Render(true);
+	}
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -181,7 +182,7 @@ bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 
 bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 {
-	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+	if(RenderCloudsLate&&simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{
 		scene_buffer->Activate();
 		scene_buffer->Clear(0,0,0,1.f);

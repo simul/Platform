@@ -273,12 +273,12 @@ void FramebufferGL::Render1(GLuint prog,bool blend)
 	Release();
 }
 
-void FramebufferGL::Render(bool blend)
+void FramebufferGL::Render(GLuint prog,bool blend)
 {
-	Render(0,blend);
+	Render(blend);
 }
 
-void FramebufferGL::Render(GLuint prog,bool blend)
+void FramebufferGL::Render(bool blend)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
@@ -291,9 +291,9 @@ void FramebufferGL::Render(GLuint prog,bool blend)
     glActiveTexture(GL_TEXTURE0);
     Bind();
 
-	glUseProgram(prog);
+	//glUseProgram(prog);
 
-	if(prog)
+	/*if(prog)
 	{
 		glUniform1f(exposure_param,exposure);
 		glUniform1f(gamma_param,gamma);
@@ -304,7 +304,7 @@ void FramebufferGL::Render(GLuint prog,bool blend)
 		glDisable(GL_TEXTURE_1D);
 		glEnable(GL_TEXTURE_2D);
 		glDisable(GL_TEXTURE_3D);
-	}
+	}*/
     glDisable(GL_ALPHA_TEST);
 	if(!blend)
 	{
@@ -321,7 +321,7 @@ void FramebufferGL::Render(GLuint prog,bool blend)
 	ERROR_CHECK
     DrawQuad(main_viewport[2],main_viewport[3]);
 
-    glUseProgram(NULL);
+  //  glUseProgram(NULL);
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);

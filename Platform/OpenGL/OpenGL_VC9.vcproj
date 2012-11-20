@@ -465,6 +465,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLSL\simul_atmospherics_earthshadow.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_cloud_cross_section.frag"
 				>
 			</File>

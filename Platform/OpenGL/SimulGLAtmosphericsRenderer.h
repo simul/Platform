@@ -49,8 +49,13 @@ public:
 	void StartRender();
 	void FinishRender();
 private:
+	//! \internal Switch the current program, either sky_program or earthshadow_program.
+	//! Also sets the parameter variables.	
+	void UseProgram(GLuint);
 	bool initialized;
 	GLuint distance_fade_program;
+	GLuint earthshadow_fade_program;
+	GLuint current_program;
 	GLuint cloudmix_program;
 
 	GLuint loss_texture,inscatter_texture,skylight_texture;
@@ -68,6 +73,10 @@ private:
 	GLint invViewProj;
 	GLint mieRayleighRatio;
 	GLint directLightMultiplier;
+	
+	GLint earthShadowNormal;
+	GLint radiusOnCylinder;
+	GLint maxFadeDistance;
 
 	FramebufferGL *framebuffer;
 };

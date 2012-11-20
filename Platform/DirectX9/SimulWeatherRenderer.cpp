@@ -370,6 +370,7 @@ bool SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
 	}
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
+	return true;
 }
 
 bool SimulWeatherRenderer::RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture)

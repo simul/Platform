@@ -45,9 +45,10 @@ void main()
 	vec3 loss=texture2D(lossTexture,texc2).rgb;
 	vec3 colour=lookup.rgb;
 	colour*=loss;
-	vec4 inscatter_factor=texture2D(inscTexture,texc2);
+	vec4 insc=texture2D(inscTexture,texc2);
+
 	float cos0=dot(view,lightDir);
-	colour+=directLightMultiplier*InscatterFunction(inscatter_factor,cos0);
+	colour+=directLightMultiplier*InscatterFunction(insc,cos0);
 	vec4 skyl=texture2D(skylightTexture,texc2);
 	colour.rgb+=skyl.rgb;
     gl_FragColor=vec4(colour.rgb,1.0);

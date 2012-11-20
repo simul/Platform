@@ -9,6 +9,7 @@
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
 	:clouds_texture(0)
 	,initialized(false)
+	,current_program(0)
 {
 	framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D,"simul_atmospherics");
 }
@@ -50,23 +51,10 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 {
 	if(!initialized)
 		return;
-	framebuffer->RecompileShaders();
 	distance_fade_program		=MakeProgram("simul_atmospherics");
+	earthshadow_fade_program	=LoadPrograms("simul_atmospherics.vert",NULL,"simul_atmospherics_earthshadow.frag");
 	cloudmix_program			=MakeProgram("simul_cloudmix");
-ERROR_CHECK
-	glUseProgram(distance_fade_program);
-
-	imageTexture			=glGetUniformLocation(distance_fade_program,"imageTexture");
-	lossTexture				=glGetUniformLocation(distance_fade_program,"lossTexture");
-	inscTexture				=glGetUniformLocation(distance_fade_program,"inscTexture");
-	skylightTexture			=glGetUniformLocation(distance_fade_program,"skylightTexture");
-	hazeEccentricity		=glGetUniformLocation(distance_fade_program,"hazeEccentricity");
-	lightDir				=glGetUniformLocation(distance_fade_program,"lightDir");
-	invViewProj				=glGetUniformLocation(distance_fade_program,"invViewProj");
-	mieRayleighRatio		=glGetUniformLocation(distance_fade_program,"mieRayleighRatio");
-
-	cloudsTexture			=glGetUniformLocation(distance_fade_program,"cloudsTexture");
-	directLightMultiplier	=glGetUniformLocation(distance_fade_program,"directLightMultiplier");
+	current_program				=0;
 	glUseProgram(0);
 }
 
@@ -74,6 +62,31 @@ void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 {
 }
 
+void SimulGLAtmosphericsRenderer::UseProgram(GLuint p)
+{
+	if(p&&p!=current_program)
+	{
+		current_program=p;
+ERROR_CHECK
+		glUseProgram(current_program);
+		imageTexture			=glGetUniformLocation(current_program,"imageTexture");
+		lossTexture				=glGetUniformLocation(current_program,"lossTexture");
+		inscTexture				=glGetUniformLocation(current_program,"inscTexture");
+		skylightTexture			=glGetUniformLocation(current_program,"skylightTexture");
+		hazeEccentricity		=glGetUniformLocation(current_program,"hazeEccentricity");
+		lightDir				=glGetUniformLocation(current_program,"lightDir");
+		invViewProj				=glGetUniformLocation(current_program,"invViewProj");
+		mieRayleighRatio		=glGetUniformLocation(current_program,"mieRayleighRatio");
+		cloudsTexture			=glGetUniformLocation(current_program,"cloudsTexture");
+		directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
+		earthShadowNormal		=glGetUniformLocation(current_program,"earthShadowNormal");
+		maxFadeDistance			=glGetUniformLocation(current_program,"maxFadeDistance");
+		radiusOnCylinder		=glGetUniformLocation(current_program,"radiusOnCylinder");
+		printProgramInfoLog(current_program);
+ERROR_CHECK
+	}
+	glUseProgram(p);
+}
 
 void SimulGLAtmosphericsRenderer::StartRender()
 {
@@ -95,15 +108,18 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,inscatter_texture);
     glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D,skylight_texture);
+	simul::sky::float4 sun_dir		=skyInterface->GetDirectionToLight();
 ERROR_CHECK
-	glUseProgram(distance_fade_program);
+	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,sun_dir);
+	if(e.enable)
+		UseProgram(earthshadow_fade_program);
+	else
+		UseProgram(distance_fade_program);
 	glUniform1i(cloudsTexture,0);
 	glUniform1i(imageTexture,1);
 	glUniform1i(lossTexture,2);
 	glUniform1i(inscTexture,3);
 	glUniform1i(skylightTexture,4);
-	glUniform1f(hazeEccentricity,.5f);
-	glUniform3f(lightDir,.5f,0.5f,0.5f);
 ERROR_CHECK
 	simul::math::Matrix4x4 view,proj;
 	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
@@ -118,7 +134,6 @@ ERROR_CHECK
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
 	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
-	simul::sky::float4 sun_dir		=skyInterface->GetDirectionToLight();
 ERROR_CHECK
 static bool tr=true;
 	glUniformMatrix4fv(invViewProj,1,tr,ivp.RowPointer(0));
@@ -128,8 +143,13 @@ ERROR_CHECK
 	glUniform3f(lightDir,sun_dir.x,sun_dir.y,sun_dir.z);
 	glUniform1f(hazeEccentricity,skyInterface->GetMieEccentricity());
 
-	simul::sky::EarthShadow E=skyInterface->GetEarthShadow(cam_pos.z/1000.f,sun_dir);
-	glUniform1f(directLightMultiplier,E.illumination);
+	if(current_program==earthshadow_fade_program)
+	{
+		glUniform1f(radiusOnCylinder,e.radius_on_cylinder);
+		glUniform3f(earthShadowNormal,e.normal.x,e.normal.y,e.normal.z);
+		glUniform1f(maxFadeDistance,fade_distance_km/e.planet_radius);
+	}
+	glUniform1f(directLightMultiplier,e.illumination);
 	
 	glEnable(GL_BLEND);
 	// retain background based on alpha in overlay
@@ -142,7 +162,7 @@ ERROR_CHECK
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,framebuffer->GetColorTex(0));
 	
-	framebuffer->Render1(distance_fade_program,false);
+	framebuffer->Render(false);
 	glUseProgram(0);
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,0);
