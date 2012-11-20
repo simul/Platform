@@ -44,6 +44,7 @@ OpenGLRenderer::~OpenGLRenderer()
 		simulTerrainRenderer->InvalidateDeviceObjects();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
+	gpuCloudGenerator.InvalidateDeviceObjects();
 }
 
 void OpenGLRenderer::paintGL()
@@ -185,6 +186,7 @@ void OpenGLRenderer::initializeGL()
 	if(cam)
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 	Utilities::RestoreDeviceObjects(NULL);
+	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(NULL);
 	if(simulHDRRenderer)
@@ -219,4 +221,5 @@ void OpenGLRenderer::RecompileShaders()
 		simulWeatherRenderer->RecompileShaders();
 	if(simulTerrainRenderer.get())
 		simulTerrainRenderer->RecompileShaders();
+	gpuCloudGenerator.RecompileShaders();
 }

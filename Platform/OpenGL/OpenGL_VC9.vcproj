@@ -323,6 +323,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GpuCloudGenerator.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\LoadGLImage.cpp"
 				>
 			</File>
@@ -394,6 +398,10 @@
 			</File>
 			<File
 				RelativePath=".\FramebufferGL.h"
+				>
+			</File>
+			<File
+				RelativePath=".\GpuCloudGenerator.h"
 				>
 			</File>
 			<File

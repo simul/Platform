@@ -5,6 +5,7 @@
 #include "Simul/Platform/OpenGL/SimulOpticsRendererGL.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
+#include "Simul/Platform/OpenGL/GpuCloudGenerator.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Graph/Meta/Group.h"
 #ifdef _MSC_VER
@@ -50,11 +51,13 @@ public:
 	void SetCamera(simul::camera::Camera *c);
 	void SetYVertical(bool y);
 	void RecompileShaders();
+	simul::opengl::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
 protected:
 	simul::base::SmartPtr<SimulGLWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulGLHDRRenderer> simulHDRRenderer;
 	simul::base::SmartPtr<SimulOpticsRendererGL> simulOpticsRenderer;
 	simul::base::SmartPtr<class SimulGLTerrainRenderer> simulTerrainRenderer;
+	simul::opengl::GpuCloudGenerator gpuCloudGenerator;
 	int width,height;
 	simul::camera::Camera *cam;
 	bool celestial_display;
