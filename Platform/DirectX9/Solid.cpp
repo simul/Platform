@@ -1,4 +1,4 @@
-#include "Plane.h"
+#include "Solid.h"
 #include <map>
 #include "Simul/Platform/DirectX9/CreateDX9Effect.h"
 Plane::Plane()

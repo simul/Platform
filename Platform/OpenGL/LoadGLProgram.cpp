@@ -140,21 +140,7 @@ GLuint SetShader(GLuint sh,const char *shader_source,const char *defines)
 	static char program[MAX_LINES*MAX_LINE_LENGTH];
 	char *ptr=program;
 
-	if(defines)
-	{
-		int len=strlen(defines);
-		strcpy_s(ptr,MAX_LINES*MAX_LINE_LENGTH,defines);
-		ptr[len]='\n';
-		ptr+=len+1;
-	}
-	if(shader_source)
-	{
-		int len=strlen(shader_source);
-		strcpy_s(ptr,MAX_LINES*MAX_LINE_LENGTH,shader_source);
-		ptr[len]='\n';
-		ptr+=len+1;
-	}
-	ptr[0]=0;
+	sprintf_s(ptr,MAX_LINES*MAX_LINE_LENGTH,"%s\n%s",defines?defines:"",shader_source?shader_source:"");
 	const char *strings[MAX_STRINGS];
 	strings[0]=program;
 	int lenOfStrings[1];

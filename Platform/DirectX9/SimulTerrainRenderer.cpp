@@ -154,7 +154,7 @@ bool SimulTerrainRenderer::MakeMapTexture()
 void SimulTerrainRenderer::GPUGenerateHeightmap()
 {
 	HRESULT hr=S_OK;
-	if(!m_pd3dDevice)
+	//if(!m_pd3dDevice)
 		return;
 	LPDIRECT3DTEXTURE9				temp_noise_texture=NULL;
 	int noise_size=heightmap->GetFractalFrequency();
@@ -203,7 +203,7 @@ void SimulTerrainRenderer::GPUGenerateHeightmap()
 	{
 		rock_height_texture->GetSurfaceLevel(0,&pRenderTarget);
 		hr=m_pd3dDevice->SetRenderTarget(0,pRenderTarget);
-		RenderTexture(m_pd3dDevice,0,0,terrain_size,terrain_size,temp_noise_texture,pRenderHeightmapEffect,fractalHeightTechnique);
+		RenderTexture(m_pd3dDevice,0,0,terrain_size,terrain_size,temp_noise_texture);//pRenderHeightmapEffect,fractalHeightTechnique);
 		rock_height_texture->GenerateMipSubLevels();
 	}
 	D3DXHANDLE heightTexture				=pRenderHeightmapEffect->GetParameterByName(NULL,"heightTexture");

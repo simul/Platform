@@ -234,7 +234,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/boost;$(DXSDK_DIR)/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_LIB;VISUAL_CPP;UNIT_TEST;NDEBUG;INTEL_COMPATIBLE;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX9_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -249,7 +249,7 @@
       <ForcedUsingFiles>%(ForcedUsingFiles)</ForcedUsingFiles>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/lib/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(ProjectName).lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName).lib</ImportLibrary>
@@ -281,7 +281,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/boost;$(DXSDK_DIR)/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_LIB;VISUAL_CPP;UNIT_TEST;INTEL_COMPATIBLE;SIMUL_EXCEPTIONS;CHECK_LIST_BOUNDS;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX9_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -298,7 +298,7 @@
       <ForcedIncludeFiles>Simul/UseDLLs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/lib/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(ProjectName).lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName).lib</ImportLibrary>
@@ -328,7 +328,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/boost;$(DXSDK_DIR)/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_LIB;VISUAL_CPP;UNIT_TEST;INTEL_COMPATIBLE;SIMUL_EXCEPTIONS;CHECK_LIST_BOUNDS;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX9_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -372,7 +372,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/boost;$(DXSDK_DIR)/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_LIB;VISUAL_CPP;UNIT_TEST;NDEBUG;INTEL_COMPATIBLE;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX9_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -543,12 +543,14 @@
     <ClCompile Include="CreateDX9Effect.cpp" />
     <ClCompile Include="Direct3D9Renderer.cpp" />
     <ClCompile Include="Framebuffer.cpp" />
+    <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="SaveTexture.cpp" />
     <ClCompile Include="Simul2DCloudRenderer.cpp" />
     <ClCompile Include="SimulAtmosphericsRenderer.cpp" />
     <ClCompile Include="SimulCloudRenderer.cpp" />
     <ClCompile Include="SimulHDRRenderer.cpp" />
     <ClCompile Include="SimulLightningRenderer.cpp" />
+    <ClCompile Include="SimulOpticsRendererDX9.cpp" />
     <ClCompile Include="SimulPrecipitationRenderer.cpp" />
     <ClCompile Include="SimulSkyRenderer.cpp" />
     <ClCompile Include="SimulTerrainRenderer.cpp" />
@@ -559,7 +561,9 @@
     <ClInclude Include="Direct3D9Renderer.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="Framebuffer.h" />
+    <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="Macros.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Resources.h" />
     <ClInclude Include="SaveTexture.h" />
     <ClInclude Include="Simul2DCloudRenderer.h" />
@@ -567,10 +571,14 @@
     <ClInclude Include="SimulCloudRenderer.h" />
     <ClInclude Include="SimulHDRRenderer.h" />
     <ClInclude Include="SimulLightningRenderer.h" />
+    <ClInclude Include="simulopticsrendererdx9.h" />
     <ClInclude Include="SimulPrecipitationRenderer.h" />
     <ClInclude Include="SimulSkyRenderer.h" />
     <ClInclude Include="SimulTerrainRenderer.h" />
     <ClInclude Include="SimulWeatherRenderer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DirectX9.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

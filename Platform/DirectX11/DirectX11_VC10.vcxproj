@@ -181,11 +181,9 @@
     <ClCompile Include="..\DirectX1x\CSFFT\fft_512x512.cpp" />
     <ClCompile Include="..\DirectX1x\FramebufferCubemapDX1x.cpp" />
     <ClCompile Include="..\DirectX1x\FramebufferDX1x.cpp" />
-    <ClCompile Include="..\DirectX1x\ocean_simulator.cpp" />
     <ClCompile Include="..\DirectX1x\SimulAtmosphericsRendererDX1x.cpp" />
     <ClCompile Include="..\DirectX1x\SimulCloudRendererDX1x.cpp" />
     <ClCompile Include="..\DirectX1x\SimulHDRRendererDX1x.cpp" />
-    <ClCompile Include="..\DirectX1x\SimulOceanRendererDX1x.cpp" />
     <ClCompile Include="..\DirectX1x\SimulOpticsRendererDX1x.cpp" />
     <ClCompile Include="..\DirectX1x\SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="..\DirectX1x\SimulWeatherRendererDX1x.cpp" />
@@ -199,13 +197,11 @@
     <ClInclude Include="..\DirectX1x\FramebufferCubemapDX1x.h" />
     <ClInclude Include="..\DirectX1x\FramebufferDX1x.h" />
     <ClInclude Include="..\DirectX1x\MacrosDx1x.h" />
-    <ClInclude Include="..\DirectX1x\ocean_simulator.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="..\DirectX1x\ResourcesDx1x.h" />
     <ClInclude Include="..\DirectX1x\SimulAtmosphericsRendererDX1x.h" />
     <ClInclude Include="..\DirectX1x\SimulCloudRendererDX1x.h" />
     <ClInclude Include="..\DirectX1x\SimulHDRRendererDX1x.h" />
-    <ClInclude Include="..\DirectX1x\SimulOceanRendererDX1x.h" />
     <ClInclude Include="..\DirectX1x\SimulOpticsRendererDX1x.h" />
     <ClInclude Include="..\DirectX1x\SimulSkyRendererDX1x.h" />
     <ClInclude Include="..\DirectX1x\SimulWeatherRendererDX1x.h" />
