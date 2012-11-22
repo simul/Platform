@@ -77,6 +77,7 @@ private:
 	GLint earthShadowNormal;
 	GLint radiusOnCylinder;
 	GLint maxFadeDistance;
+	GLint terminatorCosine;
 
 	FramebufferGL *framebuffer;
 };

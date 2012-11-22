@@ -12,6 +12,7 @@ uniform float directLightMultiplier;
 uniform vec3 earthShadowNormal;
 uniform float radiusOnCylinder;
 uniform float maxFadeDistance;
+uniform float terminatorCosine;
 
 varying vec2 texCoords;
 
@@ -62,6 +63,7 @@ void main()
 	//						but in the plane of the sunlight and the vertical.
 	// First get the part of view that is along the light direction
 	float along=dot(lightDir,view);
+	float in_shadow=saturate(-along-terminatorCosine);
 	// subtract it to get the direction on the shadow-cylinder cross section.
 	vec3 on_cross_section=view-along*lightDir;
 	// Now get the part that's on the cylinder radius:
@@ -97,14 +99,13 @@ void main()
 	// We subtract the inscatter to d if we're looking OUT FROM the cylinder,
 	if(radiusOnCylinder<1.0||d==0.0)
 	{
-		insc-=inscb;
+		insc-=inscb*saturate(in_shadow);
 	}
 	else
 	// but we just use the inscatter to d if we're looking INTO the cylinder.
 	{
-		insc=mix(insc,inscb,saturate(-along));
+		insc=lerp(insc,inscb,in_shadow);
 	}
-
 	float cos0=dot(view,lightDir);
 	colour+=directLightMultiplier*InscatterFunction(insc,cos0);
 	vec4 skyl=texture2D(skylightTexture,texc2);

@@ -226,11 +226,12 @@ ERROR_CHECK
     glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D,skylight_tex);
 	glUseProgram(clouds_program);
-static float ll=0.05f;
 	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 	glUniform1i(imageTexture_param,0);
 	glUniform1i(lossSampler_param,1);
 	glUniform1i(inscatterSampler_param,2);
+	glUniform1i(skylightSampler_param,3);
+static float ll=0.05f;
 	glUniform4f(lightResponse_param,ci->GetLightResponse(),0,0,ll*ci->GetSecondaryLightResponse());
 ERROR_CHECK
 	glUniform3f(fractalScale_param,ci->GetFractalOffsetScale()/DX.x,
@@ -361,7 +362,7 @@ void SimulGL2DCloudRenderer::RecompileShaders()
 	layerDensity_param		= glGetUniformLocation(clouds_program,"layerDensity");
 	lossSampler_param		= glGetUniformLocation(clouds_program,"lossSampler");
 	inscatterSampler_param	= glGetUniformLocation(clouds_program,"inscatterSampler");
-	
+	skylightSampler_param	= glGetUniformLocation(clouds_program,"skylightSampler");
 
 	cloudEccentricity_param	= glGetUniformLocation(clouds_program,"cloudEccentricity");
 	hazeEccentricity_param	= glGetUniformLocation(clouds_program,"hazeEccentricity");

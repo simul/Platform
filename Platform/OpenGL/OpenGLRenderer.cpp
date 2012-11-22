@@ -71,7 +71,7 @@ void OpenGLRenderer::paintGL()
 		glFogf(GL_FOG_DENSITY,0.35f);					// How Dense Will The Fog Be
 		glFogf(GL_FOG_START,1.0f);						// Fog Start Depth
 		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
-		glEnable(GL_FOG);
+	/*	glEnable(GL_FOG);*/
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->StartRender();
 		simulWeatherRenderer->RenderSky(true,false);
