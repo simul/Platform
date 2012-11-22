@@ -339,6 +339,7 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
 
 void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
@@ -359,10 +360,12 @@ void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,
 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,*s);
 		s++;
 	}
+	glPopAttrib();
 }
 
 void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 {
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glUseProgram(Utilities::linedraw_program);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
@@ -378,6 +381,7 @@ void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 	}
 	glEnd();
 	glUseProgram(0);
+	glPopAttrib();
 }
 
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)

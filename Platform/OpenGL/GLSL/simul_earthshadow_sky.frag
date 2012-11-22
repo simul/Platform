@@ -11,6 +11,7 @@ uniform vec3 lightDir;
 uniform vec3 earthShadowNormal;
 uniform float radiusOnCylinder;
 uniform float maxFadeDistance;
+uniform float terminatorCosine;
 
 // varyings are written by vert shader, interpolated, and read by frag shader.
 varying vec3 dir;
@@ -50,6 +51,7 @@ void main()
 	//						but in the plane of the sunlight and the vertical.
 	// First get the part of view that is along the light direction
 	float along=dot(lightDir,view);
+	float in_shadow=saturate(-along-terminatorCosine);
 	// subtract it to get the direction on the shadow-cylinder cross section.
 	vec3 on_cross_section=view-along*lightDir;
 	// Now get the part that's on the cylinder radius:
@@ -58,7 +60,7 @@ void main()
 	float sine_phi=on_radius/length(on_cross_section);
 	// We avoid positive phi because the cosine discards sign information leading to
 	// confusion between negative and positive angles.
-	float s=sine_phi;//clamp(sine_phi,-1.0,0.0);
+	float s=sine_phi;
 	float cos2=1.0-s*s;
 	// Normalized so that Earth radius is 1.0..
 	float u=1.0-radiusOnCylinder*radiusOnCylinder*cos2;
@@ -84,9 +86,13 @@ void main()
 	// We subtract the inscatter to d if we're looking OUT FROM the cylinder,
 	// but we just use the inscatter to d if we're looking INTO the cylinder.
 	if(radiusOnCylinder<1.0||d==0.0)
-		insc-=inscb;
+    {
+		insc-=inscb*saturate(in_shadow);
+    }
 	else
-		insc=mix(insc,inscb,saturate(-along));
+    {
+		insc=lerp(insc,inscb,in_shadow);
+    }
 	float cos0=dot(lightDir.xyz,view.xyz);
 	vec3 colour=InscatterFunction(insc,cos0);
 	colour+=skyl.rgb;

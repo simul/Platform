@@ -112,6 +112,7 @@ protected:
 	GLint			lightDirection_sky_param;
 	GLint			earthShadowNormal_param;
 	GLint			radiusOnCylinder_param;
+	GLint			terminatorCosine_param;
 	GLint			maxFadeDistance_param;
 	GLint			skyInterp_param;
 	GLint			sunlight_param;

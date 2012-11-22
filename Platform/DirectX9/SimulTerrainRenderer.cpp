@@ -154,8 +154,9 @@ bool SimulTerrainRenderer::MakeMapTexture()
 void SimulTerrainRenderer::GPUGenerateHeightmap()
 {
 	HRESULT hr=S_OK;
-	//if(!m_pd3dDevice)
+	if(!m_pd3dDevice)
 		return;
+#if 0
 	LPDIRECT3DTEXTURE9				temp_noise_texture=NULL;
 	int noise_size=heightmap->GetFractalFrequency();
 	// Make the input texture:
@@ -266,6 +267,7 @@ void SimulTerrainRenderer::GPUGenerateHeightmap()
 	SAFE_RELEASE(pOldRenderTarget);
 	SAFE_RELEASE(temp_noise_texture);
 	SAFE_RELEASE(pRenderTarget);
+#endif
 }
 
 void SimulTerrainRenderer::GpuMakeNormals()

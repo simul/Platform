@@ -367,6 +367,7 @@ void SimulGLSkyRenderer::UseProgram(GLuint p)
 		earthShadowNormal_param			=glGetUniformLocation(current_program,"earthShadowNormal");
 		maxFadeDistance_param			=glGetUniformLocation(current_program,"maxFadeDistance");
 		radiusOnCylinder_param			=glGetUniformLocation(current_program,"radiusOnCylinder");
+		terminatorCosine_param			=glGetUniformLocation(current_program,"terminatorCosine");
 		printProgramInfoLog(current_program);
 	}
 	glUseProgram(p);
@@ -432,6 +433,7 @@ ERROR_CHECK
 		glUniform1f(radiusOnCylinder_param,e.radius_on_cylinder);
 		glUniform3f(earthShadowNormal_param,e.normal.x,e.normal.y,e.normal.z);
 		glUniform1f(maxFadeDistance_param,skyKeyframer->GetMaxDistanceKm()/skyKeyframer->GetSkyInterface()->GetPlanetRadius());
+		glUniform1f(terminatorCosine_param,e.terminator_cosine);
 	}
 ERROR_CHECK
 	for(int i=0;i<6;i++)

@@ -76,6 +76,7 @@ protected:
 	GLint imageTexture_param;
 	GLint lossSampler_param;
 	GLint inscatterSampler_param;
+	GLint skylightSampler_param;
 	GLint cloudEccentricity_param;
 	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;

@@ -82,6 +82,7 @@ ERROR_CHECK
 		earthShadowNormal		=glGetUniformLocation(current_program,"earthShadowNormal");
 		maxFadeDistance			=glGetUniformLocation(current_program,"maxFadeDistance");
 		radiusOnCylinder		=glGetUniformLocation(current_program,"radiusOnCylinder");
+		terminatorCosine		=glGetUniformLocation(current_program,"terminatorCosine");
 		printProgramInfoLog(current_program);
 ERROR_CHECK
 	}
@@ -148,6 +149,7 @@ ERROR_CHECK
 		glUniform1f(radiusOnCylinder,e.radius_on_cylinder);
 		glUniform3f(earthShadowNormal,e.normal.x,e.normal.y,e.normal.z);
 		glUniform1f(maxFadeDistance,fade_distance_km/e.planet_radius);
+		glUniform1f(terminatorCosine,e.terminator_cosine);
 	}
 	glUniform1f(directLightMultiplier,e.illumination);
 	
