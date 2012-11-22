@@ -72,7 +72,7 @@ void GpuCloudGenerator::PerformFullGPURelight(float *target_direct_grid)
 			ERROR_CHECK
 	F[0]->Activate();;
 			ERROR_CHECK
-	F[0]->Clear(1.f,1.f,1.f,0.f);;
+	F[0]->Clear(1.f,1.f,1.f,0.f);
 			ERROR_CHECK
 	F[0]->Deactivate();;
 			ERROR_CHECK
