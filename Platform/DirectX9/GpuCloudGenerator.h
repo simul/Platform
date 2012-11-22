@@ -18,19 +18,18 @@ public:
 	void InvalidateDeviceObjects();
 	void RecompileShaders();
 	// implementing GpuLightingCallback:
-	bool CanPerformGPULighting() const;			
-	void SetGPULightingParameters(const float *Matrix4x4LightToDensityTexcoords
-									,const unsigned *light_grid
-									,const float *lightspace_extinctions_float3
-									,int num_octaves
-									,float persistence_val
-									,float humidity_val
-									,float time_val,int w,int l,int d
-									,int size,const float *src_ptr);
-	void PerformFullGPURelight(float *target_direct_grid);
-	void GPUTransferDataToTexture(	unsigned char *target_texture
-									,const float *light_grid
-									,const float *ambient_grid);
+	bool CanPerformGPULighting() const;	
+	void FillDensityGrid(float *target,const int *grid
+											,float humidity
+											,float time_val
+											,int noise_size,int octaves,float persistence
+											,const float  *noise_src_ptr);
+	void PerformFullGPURelight(float *target,const int *,const float *dens,const int *density_grid,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
+	void GPUTransferDataToTexture(	unsigned char *target
+											,const float *DensityToLightTransform
+											,const float *light,const int *light_grid
+											,const float *ambient
+											,const float *density,const int *density_grid);
 protected:
 	// Things to store for GPU-based lighting
 	LPD3DXEFFECT					m_pGPULightingEffect;

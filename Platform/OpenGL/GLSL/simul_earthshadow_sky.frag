@@ -11,7 +11,6 @@ uniform vec3 mieRayleighRatio;
 uniform vec3 lightDir;
 uniform vec3 earthShadowNormal;
 uniform float radiusOnCylinder;
-uniform float skyInterp;
 uniform float maxFadeDistance;
 
 // varyings are written by vert shader, interpolated, and read by frag shader.
@@ -50,7 +49,6 @@ void main()
 	
 	// The Earth's shadow: let shadowNormal be the direction normal to the sunlight direction
 	//						but in the plane of the sunlight and the vertical.
-	
 	// First get the part of view that is along the light direction
 	float along=dot(lightDir,view);
 	// subtract it to get the direction on the shadow-cylinder cross section.
@@ -81,7 +79,7 @@ void main()
 		d=L/maxFadeDistance;
 	}
 	// Inscatter at distance d
-	vec2 texcoord_d=vec2(d,0.5*(1.0-sine));
+	vec2 texcoord_d=vec2(pow(d,0.5),0.5*(1.0-sine));
 	vec4 inscb=texture2D(inscTexture,texcoord_d);
 	// what should the light be at distance d?
 	// We subtract the inscatter to d if we're looking OUT FROM the cylinder,
@@ -93,5 +91,6 @@ void main()
 	float cos0=dot(lightDir.xyz,view.xyz);
 	vec3 colour=InscatterFunction(insc,cos0);
 	colour+=skyl.rgb;
+	
     gl_FragColor=vec4(colour.rgb,1.0);
 }

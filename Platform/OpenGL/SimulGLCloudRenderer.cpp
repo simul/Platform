@@ -213,13 +213,6 @@ void SimulGLCloudRenderer::FillIlluminationBlock(int source_index,int x,int y,in
 						uchar8_array);
 }
 
-void SimulGLCloudRenderer::GPUTransferDataToTexture(	unsigned char *target_texture
-									,const unsigned char *direct_grid
-									,const unsigned char *indirect_grid
-									,const unsigned char *ambient_grid)
-{
-}
-
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 {
 	glGetFloatv(src,m);
@@ -831,7 +824,8 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 
 void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
 {
-	int w=(width-16)/3;
+	int w=(width-16)/6;
+	//int w_min=(width-16)/6;
 	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
 	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
 	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
