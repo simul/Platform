@@ -50,6 +50,6 @@ void main()
 	vec4 insc_lookup	=texture2D(inscatterSampler,fade_texc);
 	final				*=loss_lookup;
 	final				+=InscatterFunction(insc_lookup,cos0);
-	final				+=texture2D(skylightSampler,fade_texc);
+	final				+=texture2D(skylightSampler,fade_texc).rgb;
     gl_FragColor		=vec4(final.rgb,opacity);
 }

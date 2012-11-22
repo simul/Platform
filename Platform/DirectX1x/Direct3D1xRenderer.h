@@ -95,6 +95,7 @@ public:
 	virtual void    OnFrameMove(double fTime,float fTimeStep);
 	virtual const	char *GetDebugText() const;
 protected:
+	bool enabled;
 	bool y_vertical;
 	simul::camera::Camera *camera;
 	float aspect;

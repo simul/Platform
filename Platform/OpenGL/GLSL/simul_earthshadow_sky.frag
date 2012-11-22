@@ -65,7 +65,7 @@ void main()
 	// Normalized so that Earth radius is 1.0..
 	float u=1.0-radiusOnCylinder*radiusOnCylinder*cos2;
 	float d=0.0;
-	if(u>=0)
+	if(u>=0.0)
 	{
 		float L=-radiusOnCylinder*sine_phi;
 		if(radiusOnCylinder<1.0)
@@ -91,7 +91,7 @@ void main()
     }
 	else
     {
-		insc=lerp(insc,inscb,in_shadow);
+		insc=mix(insc,inscb,in_shadow);
     }
 	float cos0=dot(lightDir.xyz,view.xyz);
 	vec3 colour=InscatterFunction(insc,cos0);

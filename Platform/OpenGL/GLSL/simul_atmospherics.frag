@@ -1,4 +1,4 @@
-
+#version 140
 uniform sampler2D imageTexture;
 uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
@@ -31,7 +31,7 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 
 void main()
 {
-    vec4 lookup=texture2D(imageTexture,texCoords);
+    vec4 lookup=texture(imageTexture,texCoords);
 	vec4 pos=vec4(-1.0,-1.0,1.0,1.0);
 	pos.x+=2.0*texCoords.x;//+texelOffsets.x;
 	pos.y+=2.0*texCoords.y;//+texelOffsets.y;
@@ -42,14 +42,14 @@ void main()
 	if(depth>=1.0) 
 		discard;
 	vec2 texc2=vec2(pow(depth,0.5),0.5*(1.0-sine));
-	vec3 loss=texture2D(lossTexture,texc2).rgb;
+	vec3 loss=texture(lossTexture,texc2).rgb;
 	vec3 colour=lookup.rgb;
 	colour*=loss;
-	vec4 insc=texture2D(inscTexture,texc2);
+	vec4 insc=texture(inscTexture,texc2);
 
 	float cos0=dot(view,lightDir);
 	colour+=directLightMultiplier*InscatterFunction(insc,cos0);
-	vec4 skyl=texture2D(skylightTexture,texc2);
+	vec4 skyl=texture(skylightTexture,texc2);
 	colour.rgb+=skyl.rgb;
     gl_FragColor=vec4(colour.rgb,1.0);
 }
