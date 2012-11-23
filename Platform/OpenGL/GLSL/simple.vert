@@ -1,4 +1,3 @@
-
 varying vec2 texc;
 
 void main(void)

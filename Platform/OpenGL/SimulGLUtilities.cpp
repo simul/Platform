@@ -10,7 +10,8 @@
 int Utilities::instance_count=0;
 int Utilities::screen_width=0;
 int Utilities::screen_height=0;
-GLuint Utilities::linedraw_program;
+GLuint Utilities::linedraw_program=0;
+GLuint Utilities::simple_program=0;
 
 Utilities::Utilities()
 {
@@ -31,6 +32,20 @@ void Utilities::RestoreDeviceObjects(void *)
 						"	gl_FragColor=colr;"
 						"}";
 	linedraw_program=SetShaders(vert,frag);
+	const char *simple_vert="varying vec2 texc;"
+						"void main(void)"
+						"{"
+						"    gl_Position		= ftransform();"
+						"    texc=gl_MultiTexCoord0.xy;"
+						"}";
+	const char *simple_frag="uniform sampler2D image_texture;"
+						"varying vec2 texc;"
+						"void main(void)"
+						"{"
+						"	vec4 c = texture2D(image_texture,texc);"
+						"	gl_FragColor=c;"
+						"}";
+	simple_program=SetShaders(simple_vert,simple_frag);
 }
 
 void Utilities::SetScreenSize(int w,int h)
@@ -42,12 +57,36 @@ void Utilities::SetScreenSize(int w,int h)
 void Utilities::InvalidateDeviceObjects()
 {
 	SAFE_DELETE_PROGRAM(linedraw_program);
+	SAFE_DELETE_PROGRAM(simple_program);
 }
 
 Utilities::~Utilities()
 {
 	if(!instance_count)
 		Utilities::InvalidateDeviceObjects();
+}
+
+void RenderTexture(int x,int y,int w,int h)
+{
+	ERROR_CHECK		
+	int prog=0;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
+	if(prog==0)
+		glUseProgram(Utilities::simple_program);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.f,1.f);
+	glVertex2f((float)x,(float)(y+h));
+	glTexCoord2f(1.f,1.f);
+	glVertex2f((float)(x+w),(float)(y+h));
+	glTexCoord2f(1.f,0.f);
+	glVertex2f((float)(x+w),(float)y);
+	glTexCoord2f(0.f,0.f);
+	glVertex2f((float)x,(float)y);
+	glEnd();
+	ERROR_CHECK
 }
 
 bool IsExtensionSupported(const char *name)
@@ -300,6 +339,7 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
 
 void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
@@ -320,10 +360,12 @@ void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,
 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,*s);
 		s++;
 	}
+	glPopAttrib();
 }
 
 void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 {
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glUseProgram(Utilities::linedraw_program);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
@@ -339,6 +381,7 @@ void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 	}
 	glEnd();
 	glUseProgram(0);
+	glPopAttrib();
 }
 
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)

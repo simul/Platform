@@ -56,12 +56,12 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	simulAtmosphericsRenderer=new SimulGLAtmosphericsRenderer;
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
 
-	EnableCloudLayers(true,true);
+	EnableCloudLayers();
 	SetScreenSize(width,height);
 }
 
 
-void SimulGLWeatherRenderer::EnableCloudLayers(bool clouds3d,bool clouds2d)
+void SimulGLWeatherRenderer::EnableCloudLayers()
 {
 	if(simulSkyRenderer)
 	{
@@ -105,7 +105,6 @@ void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
 		baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 		
 		scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
-		scene_buffer->SetShader(0);
 	}
 }
 
@@ -136,9 +135,8 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
         delete scene_buffer;
 	baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 	scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
-	scene_buffer->SetShader(0);
 	device_initialized=true;
-	EnableCloudLayers(true,true);
+	EnableCloudLayers();
 	///simulSkyRenderer->RestoreDeviceObjects();
 	//simulCloudRenderer->RestoreDeviceObjects(NULL);
 	//simulLightningRenderer->RestoreDeviceObjects();
@@ -168,7 +166,13 @@ bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	glPushMatrix();
 	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
 	if(buffered)
+	{
+		glUseProgram(Utilities::simple_program);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 		scene_buffer->Render(true);
+		glUseProgram(0);
+	}
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -179,10 +183,26 @@ bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	return true;
 }
 
-void SimulGLWeatherRenderer::RenderLateCloudLayer(int buffernumber,bool buvfer)
+bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 {
-	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+	if(RenderCloudsLate&&simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+	{
+		scene_buffer->Activate();
+		scene_buffer->Clear(0,0,0,1.f);
 		simulCloudRenderer->Render(false,false,UseDefaultFog);
+		scene_buffer->Deactivate();
+	//	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);//GL_SRC_ALPHA GL_DST_ALPHA
+	//	glBlendFuncSeparate(GL_ONE,GL_ZERO,GL_ZERO,GL_ONE);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+	//	glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_ALPHA);
+		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
+		glUseProgram(Utilities::simple_program);
+		scene_buffer->Render(true);
+		glUseProgram(0);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		return false;
+	}
+	return false;
 }
 
 void SimulGLWeatherRenderer::RenderLightning()

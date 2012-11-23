@@ -17,8 +17,10 @@ public:
 	static int screen_width;
 	static int screen_height;
 	static GLuint linedraw_program;
+	static GLuint simple_program;
 };
 
+extern void RenderTexture(int x,int y,int w,int h);
 //! A wrapper around glewIsSupported() that checks for errors.
 extern bool SIMUL_OPENGL_EXPORT CheckExtension(const char *txt);
 

@@ -255,9 +255,9 @@ ERROR_CHECK
 	glGetMatrix(modelview.RowPointer(0),GL_MODELVIEW_MATRIX);
 	simul::math::Matrix4x4 viewInv;
 	Inverse(modelview,viewInv);
-	cam_pos[0]=viewInv(3,0);
-	cam_pos[1]=viewInv(3,1);
-	cam_pos[2]=viewInv(3,2);
+	cam_pos.x=viewInv(3,0);
+	cam_pos.y=viewInv(3,1);
+	cam_pos.z=viewInv(3,2);
 ERROR_CHECK
     glEnable(GL_BLEND);
 	if(god_rays)
@@ -363,11 +363,14 @@ ERROR_CHECK
 	glUniform3f(fractalScale_param,fractal_scales.x,fractal_scales.y,fractal_scales.z);
 	glUniform1f(interp_param,cloudKeyframer->GetInterpolation());
 
-	glUniform3f(eyePosition_param,cam_pos[0],cam_pos[1],cam_pos[2]);
+	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 	glUniform3f(lightDirection_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	simul::sky::float4 amb=GetCloudInterface()->GetAmbientLightResponse()*skyInterface->GetAmbientLight(X1.z*.001f);
-
+	
+	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(X1.z/1000.f,skyInterface->GetDirectionToSun());
+	glUniform1f(distanceToIllumination_param,e.distance_to_illumination*e.planet_radius*1000.f/max_fade_distance_metres);
+	
 	glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
 
 	glUniform1f(cloudEccentricity_param,GetCloudInterface()->GetMieAsymmetry());
@@ -375,7 +378,7 @@ ERROR_CHECK
 	simul::sky::float4 mieRayleighRatio=skyInterface->GetMieRayleighRatio();
 	glUniform3f(mieRayleighRatio_param,mieRayleighRatio.x,mieRayleighRatio.y,mieRayleighRatio.z);
 
-	simul::math::Vector3 view_pos(cam_pos[0],cam_pos[1],cam_pos[2]);
+	simul::math::Vector3 view_pos(cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::math::Vector3 eye_dir(-viewInv(2,0),-viewInv(2,1),-viewInv(2,2));
 	simul::math::Vector3 up_dir	(viewInv(1,0),viewInv(1,1),viewInv(1,2));
 
@@ -520,7 +523,7 @@ ERROR_CHECK
 	return true;
 }
 
-void SimulGLCloudRenderer::SetLossTextures(void *l)
+void SimulGLCloudRenderer::SetLossTexture(void *l)
 {
 	if(l)
 	loss_tex=((GLuint)l);
@@ -547,6 +550,7 @@ ERROR_CHECK
 	cloudEccentricity_param		=glGetUniformLocation(clouds_program,"cloudEccentricity");
 	hazeEccentricity_param		=glGetUniformLocation(clouds_program,"hazeEccentricity");
 	mieRayleighRatio_param		=glGetUniformLocation(clouds_program,"mieRayleighRatio");
+	distanceToIllumination_param=glGetUniformLocation(clouds_program,"distanceToIllumination");
 	maxFadeDistanceMetres_param	=glGetUniformLocation(clouds_program,"maxFadeDistanceMetres");
 
 	cloudDensity1_param		=glGetUniformLocation(clouds_program,"cloudDensity1");
@@ -657,6 +661,8 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	cloudEccentricity_param		=0;
 	hazeEccentricity_param		=0;
 	mieRayleighRatio_param		=0;
+	distanceToIllumination_param=0;
+	
 	cloudDensity1_param			=0;
 	cloudDensity2_param			=0;
 	noiseSampler_param			=0;
@@ -825,7 +831,6 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
 {
 	int w=(width-16)/6;
-	//int w_min=(width-16)/6;
 	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
 	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
 	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");

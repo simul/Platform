@@ -39,7 +39,7 @@ float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 
 void main()
 {
-	vec4 result=texture2D(planetTexture,texcoord);
+	vec4 result=texture(planetTexture,texcoord);
 	vec3 normal;
 	normal.xy=-2.0*(texcoord-vec2(0.5,0.5));
 	float l=length(normal.xy);
