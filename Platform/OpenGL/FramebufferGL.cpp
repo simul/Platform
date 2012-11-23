@@ -19,6 +19,8 @@ FramebufferGL::FramebufferGL(int w, int h,GLenum target,const char *shader,int s
 	,shader_filename(shader)
 	,tonemap_program(0)
 	,initialized(false)
+	,depth_iformat(0)
+	,colour_iformat(0)
 {
     for(int i = 0; i < num_col_buffers; i++)
 	{
@@ -101,26 +103,36 @@ void FramebufferGL::SetWidthAndHeight(int w,int h)
 	m_height=h;
 }
 
-void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
+bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 {
 	if(!m_width||!m_height)
-		return;
+		return true;
 	initialized=true;
 	if(!m_fb)
 	{
 		RecompileShaders();
 		glGenFramebuffersEXT(1, &m_fb);
 	}
-	glGenTextures(1, &m_tex_col[index]);
-	glBindTexture(m_target, m_tex_col[index]);
-	glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(m_target, 0,iformat, m_width, m_height, 0,GL_RGBA, format, NULL);
+	if(!m_tex_col[index]||iformat!=colour_iformat)
+	{
+		colour_iformat=iformat;
+		glGenTextures(1, &m_tex_col[index]);
+		glBindTexture(m_target, m_tex_col[index]);
+		glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(m_target, 0, colour_iformat, m_width, m_height, 0,GL_RGBA, format, NULL);
+	}
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
+	bool ok=true;
+	GLenum status = (GLenum) glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+	if(status!=GL_FRAMEBUFFER_COMPLETE_EXT)
+		ok=false;
+    
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	return ok;
 }
 // In order to use a depth buffer, either
 // InitDepth_RB or InitDepth_Tex needs to be called.
@@ -134,6 +146,7 @@ void FramebufferGL::InitDepth_RB(GLenum iformat)
 		RecompileShaders();
 		glGenFramebuffersEXT(1, &m_fb);
 	}
+	depth_iformat=iformat;
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
     glGenRenderbuffersEXT(1, &m_rb_depth);
     glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_rb_depth);
@@ -190,9 +203,7 @@ void FramebufferGL::Activate()
 	CheckFramebufferStatus();
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
 	ERROR_CHECK
-#ifdef _DEBUG
 	CheckFramebufferStatus();
-#endif
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	ERROR_CHECK
 	glViewport(0,0,m_width,m_height);
@@ -334,10 +345,13 @@ void FramebufferGL::Deactivate()
 	ERROR_CHECK
 }
 
-void FramebufferGL::Clear(float r,float g,float b,float a)
+void FramebufferGL::Clear(float r,float g,float b,float a,int mask)
 {
+	if(!mask)
+		mask=GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT;
 	glClearColor(r,g,b,a);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	
+	glClear(mask);
 }
 
 
@@ -345,7 +359,8 @@ void FramebufferGL::CheckFramebufferStatus()
 {
     GLenum status;
     status = (GLenum) glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-    switch(status) {
+    switch(status)
+    {
         case GL_FRAMEBUFFER_COMPLETE_EXT:
             break;
         case GL_FRAMEBUFFER_UNSUPPORTED_EXT:

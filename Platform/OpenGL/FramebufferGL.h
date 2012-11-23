@@ -40,7 +40,7 @@ public:
 	// In order to use a color buffer, either
 	// InitColor_RB or InitColor_Tex needs to be called.
 	//void InitColor_RB(int index, GLenum internal_format);
-	void InitColor_Tex(int index, GLenum internal_format,GLenum format);
+	bool InitColor_Tex(int index, GLenum internal_format,GLenum format);
 	// In order to use a depth buffer, either
 	// InitDepth_RB or InitDepth_Tex needs to be called.
 	void InitDepth_RB(GLenum iformat = GL_DEPTH_COMPONENT24);
@@ -49,7 +49,7 @@ public:
 	// The FBO needs to be deactivated when using the associated textures.
 	void Activate();
 	void Deactivate();
-	void Clear(float r,float g,float b,float a);
+	void Clear(float r,float g,float b,float a,int mask=0);
 	void DeactivateAndRender(bool blend);
 	void Render(bool blend);
 	void Render(GLuint prog,bool blend);
@@ -126,6 +126,7 @@ private:
 	GLint exposure_param;
 	GLint gamma_param;
 	GLint buffer_tex_param;
+	GLenum colour_iformat,depth_iformat;
 	float exposure, gamma;
 	bool initialized;
 };

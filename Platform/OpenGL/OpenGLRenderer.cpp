@@ -46,6 +46,7 @@ OpenGLRenderer::~OpenGLRenderer()
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
 	gpuCloudGenerator.InvalidateDeviceObjects();
+	gpuSkyGenerator.InvalidateDeviceObjects();
 }
 
 void OpenGLRenderer::paintGL()
@@ -170,7 +171,7 @@ void OpenGLRenderer::initializeGL()
         std::cerr<<"OpenGL 2.1 not supported!\n" ;
         return;
     }
-	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
+//	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
 // If the GL_GREMEDY_string_marker extension is supported:
 	if(glewIsSupported("GL_GREMEDY_string_marker"))
 	{
@@ -189,6 +190,7 @@ void OpenGLRenderer::initializeGL()
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 	Utilities::RestoreDeviceObjects(NULL);
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
+	gpuSkyGenerator.RestoreDeviceObjects(NULL);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(NULL);
 	if(simulHDRRenderer)
@@ -224,4 +226,5 @@ void OpenGLRenderer::RecompileShaders()
 	if(simulTerrainRenderer.get())
 		simulTerrainRenderer->RecompileShaders();
 	gpuCloudGenerator.RecompileShaders();
+	gpuSkyGenerator.RecompileShaders();
 }

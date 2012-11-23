@@ -37,7 +37,7 @@ float NoiseFunction(vec3 pos)
 	{
 		if(i>=octaves)
 			break;
-		int kmax=max(1,floor(this_grid_height+0.5));
+		//float kmax=max(1.0,(float)floor(this_grid_height+0.5));
 		float lookup=texture3D(volumeNoiseTexture,pos).x;
 		float val=lookup;//0.5+0.5*sin(2.0*pi*(lookup+t));//
 		//val*=saturate(pos.z*8.0+.5f);

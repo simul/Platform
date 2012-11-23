@@ -73,8 +73,6 @@ public:
 	bool IsYVertical() const{return false;}
 protected:
 	bool init;
-	simul::clouds::CloudKeyframer::seq_texture_iterator seq_texture_iterator[3];
-	simul::clouds::CloudKeyframer::seq_texture_iterator seq_illum_texture_iterator[4];
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate();

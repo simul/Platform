@@ -19,6 +19,7 @@ namespace simul
 			{
 				return true;
 			}
+			int GetDensityGridsize(const int *grid);
 			void FillDensityGrid(float *target,const int *grid
 											,float humidity
 											,float time

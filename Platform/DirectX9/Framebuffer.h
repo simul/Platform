@@ -22,7 +22,7 @@ public:
 	LPDIRECT3DSURFACE9	m_pHDRRenderTarget;
 	void Activate();
 	void Deactivate();
-	void Clear(float,float,float,float);
+	void Clear(float,float,float,float,int mask=0);
 	void DeactivateAndRender(bool blend);
 	void Render(bool blend);
 	void SetFormat(D3DFORMAT f);

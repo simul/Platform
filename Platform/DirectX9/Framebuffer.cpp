@@ -148,9 +148,11 @@ void Framebuffer::Deactivate()
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
-void Framebuffer::Clear(float r,float g,float b,float a)
+void Framebuffer::Clear(float r,float g,float b,float a,int mask)
 {
-	m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,D3DCOLOR_COLORVALUE(r,g,b,a),1.f,0L);
+	if(!mask)
+		mask=D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER;
+	m_pd3dDevice->Clear(0L,NULL,mask,D3DCOLOR_COLORVALUE(r,g,b,a),1.f,0L);
 }
 
 void Framebuffer::DeactivateAndRender(bool blend)

@@ -95,6 +95,21 @@ static GLuint make3DTexture(int w,int l,int d,int stride,bool wrap_z,const float
 	return tex;
 }
 
+int GpuCloudGenerator::GetDensityGridsize(const int *grid)
+{
+	dens_fb.SetWidthAndHeight(grid[0],grid[1]);
+	GLenum iformat=GL_LUMINANCE32F_ARB;
+	if(!dens_fb.InitColor_Tex(0,iformat,GL_FLOAT))
+	{
+		if(!dens_fb.InitColor_Tex(0,iformat=GL_INTENSITY32F_ARB,GL_FLOAT))
+			dens_fb.InitColor_Tex(0,iformat=GL_RGBA32F_ARB,GL_FLOAT);
+	}
+	int size=1;
+	if(iformat==GL_RGBA32F_ARB)
+		size=4;
+	return grid[0]*grid[1]*grid[2]*size;
+}
+
 void GpuCloudGenerator::FillDensityGrid(float *target,const int *grid
 											,float humidity
 											,float time
@@ -103,7 +118,12 @@ void GpuCloudGenerator::FillDensityGrid(float *target,const int *grid
 {
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	dens_fb.SetWidthAndHeight(grid[0],grid[1]);
-	dens_fb.InitColor_Tex(0,GL_LUMINANCE32F_ARB,GL_FLOAT);
+	GLenum iformat=GL_LUMINANCE32F_ARB;
+	if(!dens_fb.InitColor_Tex(0,iformat,GL_FLOAT))
+	{
+		if(!dens_fb.InitColor_Tex(0,iformat=GL_INTENSITY32F_ARB,GL_FLOAT))
+			dens_fb.InitColor_Tex(0,iformat=GL_RGBA32F_ARB,GL_FLOAT);
+	}
 	GLuint program=MakeProgram("simul_gpu_cloud_density");
 	
 	simul::math::Vector3 noiseScale(1.f,1.f,(float)grid[2]/(float)grid[0]);
@@ -132,18 +152,19 @@ void GpuCloudGenerator::FillDensityGrid(float *target,const int *grid
 		setParameter(program,"zPosition",zPosition);
 			ERROR_CHECK
 		dens_fb.Activate();
-		dens_fb.Clear(0.f,0.f,0.f,0.f);
+	ERROR_CHECK
+		dens_fb.Clear(0.f,0.f,0.f,0.f,GL_COLOR_BUFFER_BIT);
+	ERROR_CHECK
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
 			glOrtho(0,1.0,0,1.0,-1.0,1.0);
 			glMatrixMode(GL_MODELVIEW);
 			glLoadIdentity();
-			// input light values:
-			glActiveTexture(GL_TEXTURE0);
+	ERROR_CHECK
 			DrawQuad(0,0,1,1);
-			ERROR_CHECK
-		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-			ERROR_CHECK
+	ERROR_CHECK
+			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+	ERROR_CHECK
 		glReadPixels(0,0,grid[0],grid[1],GL_LUMINANCE,GL_FLOAT,(GLvoid*)target);
 			ERROR_CHECK
 		dens_fb.Deactivate();
