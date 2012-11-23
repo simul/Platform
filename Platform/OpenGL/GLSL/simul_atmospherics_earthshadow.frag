@@ -72,8 +72,7 @@ void main()
 	float sine_phi=on_radius/length(on_cross_section);
 	// We avoid positive phi because the cosine discards sign information leading to
 	// confusion between negative and positive angles.
-	float s=sine_phi;
-	float cos2=1.0-s*s;
+	float cos2=1.0-sine_phi*sine_phi;
 	// Normalized so that Earth radius is 1.0..
 	float u=1.0-radiusOnCylinder*radiusOnCylinder*cos2;
 	float d=0.0;
@@ -98,16 +97,12 @@ void main()
 	// what should the light be at distance d?
 	// We subtract the inscatter to d if we're looking OUT FROM the cylinder,
 	if(radiusOnCylinder<1.0||d==0.0)
-	{
 		insc-=inscb*saturate(in_shadow);
-	}
 	else
 	// but we just use the inscatter to d if we're looking INTO the cylinder.
-	{
 		insc=mix(insc,inscb,in_shadow);
-	}
 	float cos0=dot(view,lightDir);
-	colour+=directLightMultiplier*InscatterFunction(insc,cos0);
+	colour+=InscatterFunction(insc,cos0);//directLightMultiplier*
 	vec4 skyl=texture(skylightTexture,texc2);
 	colour.rgb+=skyl.rgb;
     gl_FragColor=vec4(colour.rgb,1.0);

@@ -18,7 +18,6 @@ uniform vec3 lightDir;
 // the App updates uniforms "slowly" (eg once per frame) for animation.
 uniform float hazeEccentricity;
 uniform float cloudEccentricity;
-uniform float fadeInterp;
 uniform vec3 mieRayleighRatio;
 uniform vec4 lightningMultipliers;
 uniform vec4 lightningColour;
@@ -36,6 +35,7 @@ varying vec3 loss;
 varying vec4 insc;
 varying vec3 texCoordLightning;
 varying vec2 fade_texc;
+varying vec2 fade_texc_b;
 varying vec3 view;
 #define pi (3.1415926536)
 float HenyeyGreenstein(float g,float cos0)
@@ -43,7 +43,6 @@ float HenyeyGreenstein(float g,float cos0)
 	float g2=g*g;
 	float u=1.0+g2-2.0*g*cos0;
 	return (1.0-g2)*pow(u,-1.5)/(4.0*pi);
-	//return 0.5*0.079577+.5*(1.0-g2)/(4.0*pi*sqrt(u*u*u));
 }
 
 vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
@@ -79,7 +78,7 @@ void main(void)
 	float opacity=layerDensity*density.y;
 	vec3 final=(density.z*Beta+lightResponse.y*density.w)*sunlight+density.x*ambientColour.rgb;
 	vec3 loss_lookup=texture2D(lossSampler,fade_texc).rgb;
-	vec4 insc_lookup=texture2D(inscatterSampler,fade_texc);
+	vec4 insc_lookup=texture2D(inscatterSampler,fade_texc)-texture2D(inscatterSampler,fade_texc_b);
 	vec3 skyl_lookup=texture2D(skylightSampler,fade_texc).rgb;
 	//final.rgb+=lightning.rgb;
 	//final.rgb*=texture2D(lossSampler,fade_texc).rgb;

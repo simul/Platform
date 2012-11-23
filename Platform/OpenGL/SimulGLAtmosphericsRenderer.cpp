@@ -111,7 +111,7 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,skylight_texture);
 	simul::sky::float4 sun_dir		=skyInterface->GetDirectionToLight();
 ERROR_CHECK
-	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,sun_dir);
+	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,skyInterface->GetDirectionToSun());
 	if(e.enable)
 		UseProgram(earthshadow_fade_program);
 	else
@@ -151,7 +151,7 @@ ERROR_CHECK
 		glUniform1f(maxFadeDistance,fade_distance_km/e.planet_radius);
 		glUniform1f(terminatorCosine,e.terminator_cosine);
 	}
-	glUniform1f(directLightMultiplier,e.illumination);
+	//glUniform1f(directLightMultiplier,e.illumination);
 	
 	glEnable(GL_BLEND);
 	// retain background based on alpha in overlay

@@ -375,7 +375,10 @@ ERROR_CHECK
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 	glUniform3f(lightDirection_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	simul::sky::float4 amb=GetCloudInterface()->GetAmbientLightResponse()*skyInterface->GetAmbientLight(X1.z*.001f);
-
+	
+	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(X1.z/1000.f,skyInterface->GetDirectionToSun());
+	glUniform1f(distanceToIllumination_param,e.distance_to_illumination*e.planet_radius*1000.f/max_fade_distance_metres);
+	
 	glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
 
 	glUniform1f(cloudEccentricity_param,GetCloudInterface()->GetMieAsymmetry());
@@ -555,6 +558,7 @@ ERROR_CHECK
 	cloudEccentricity_param		=glGetUniformLocation(clouds_program,"cloudEccentricity");
 	hazeEccentricity_param		=glGetUniformLocation(clouds_program,"hazeEccentricity");
 	mieRayleighRatio_param		=glGetUniformLocation(clouds_program,"mieRayleighRatio");
+	distanceToIllumination_param=glGetUniformLocation(clouds_program,"distanceToIllumination");
 	maxFadeDistanceMetres_param	=glGetUniformLocation(clouds_program,"maxFadeDistanceMetres");
 
 	cloudDensity1_param		=glGetUniformLocation(clouds_program,"cloudDensity1");
@@ -665,6 +669,8 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	cloudEccentricity_param		=0;
 	hazeEccentricity_param		=0;
 	mieRayleighRatio_param		=0;
+	distanceToIllumination_param=0;
+	
 	cloudDensity1_param			=0;
 	cloudDensity2_param			=0;
 	noiseSampler_param			=0;
@@ -832,7 +838,7 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 
 void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
 {
-	int w=(width-16)/3;
+	int w=(width-16)/6;
 	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
 	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
 	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");

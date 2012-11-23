@@ -290,21 +290,6 @@ void FramebufferGL::Render(bool blend)
     // bind textures
     glActiveTexture(GL_TEXTURE0);
     Bind();
-
-	//glUseProgram(prog);
-
-	/*if(prog)
-	{
-		glUniform1f(exposure_param,exposure);
-		glUniform1f(gamma_param,gamma);
-		glUniform1i(buffer_tex_param,0);
-	}
-	else
-	{
-		glDisable(GL_TEXTURE_1D);
-		glEnable(GL_TEXTURE_2D);
-		glDisable(GL_TEXTURE_3D);
-	}*/
     glDisable(GL_ALPHA_TEST);
 	if(!blend)
 	{
@@ -315,7 +300,7 @@ void FramebufferGL::Render(bool blend)
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		// retain background based on alpha in overlay
-		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
+		//glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	}
 	glDepthMask(GL_FALSE);
 	ERROR_CHECK

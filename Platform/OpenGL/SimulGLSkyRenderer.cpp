@@ -183,71 +183,38 @@ bool SimulGLSkyRenderer::Render2DFades()
 ERROR_CHECK
 	glDisable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
+	FramebufferGL *fb[3];
+	fb[0]=&loss_2d;
+	fb[1]=&inscatter_2d;
+	fb[2]=&skylight_2d;
+	GLuint *input_textures[3];
+	input_textures[0]=loss_textures;
+	input_textures[1]=inscatter_textures;
+	input_textures[2]=skylight_textures;
 	for(int i=0;i<3;i++)
 	{
-		if(i==0)
-			loss_2d.Activate();
-		else if(i==1)
-			inscatter_2d.Activate();
-		else
-			skylight_2d.Activate();
-		glClearColor(0.f,0.f,0.f,0.f);
-		ERROR_CHECK
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-		ERROR_CHECK
+		fb[i]->Activate();
+		fb[i]->Clear(0.f,0.f,0.f,0.f);
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
 		glOrtho(0,1.0,0,1.0,-1.0,1.0);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-
-		//2147482496
 		glActiveTexture(GL_TEXTURE0);
-		if(i==0)
-			glBindTexture(GL_TEXTURE_3D,loss_textures[0]);
-		else if(i==1)
-			glBindTexture(GL_TEXTURE_3D,inscatter_textures[0]);
-		else 
-			glBindTexture(GL_TEXTURE_3D,skylight_textures[0]);
-		ERROR_CHECK
+		glBindTexture(GL_TEXTURE_3D,input_textures[i][0]);
 		glActiveTexture(GL_TEXTURE1);
-		if(i==0)
-			glBindTexture(GL_TEXTURE_3D,loss_textures[1]);
-		else if(i==1)
-			glBindTexture(GL_TEXTURE_3D,inscatter_textures[1]);
-		else
-			glBindTexture(GL_TEXTURE_3D,skylight_textures[1]);
-		ERROR_CHECK
+		glBindTexture(GL_TEXTURE_3D,input_textures[i][1]);
 		glUseProgram(fade_3d_to_2d_program);
-		GLint			altitudeTexCoord_fade;
-		GLint			skyInterp_fade;
-		GLint			fadeTexture1_fade;
-		GLint			fadeTexture2_fade;
-		altitudeTexCoord_fade	=glGetUniformLocation(fade_3d_to_2d_program,"altitudeTexCoord");
-		skyInterp_fade			=glGetUniformLocation(fade_3d_to_2d_program,"skyInterp");
-		fadeTexture1_fade		=glGetUniformLocation(fade_3d_to_2d_program,"fadeTexture1");
-		fadeTexture2_fade		=glGetUniformLocation(fade_3d_to_2d_program,"fadeTexture2");
+		GLint altitudeTexCoord_fade	=glGetUniformLocation(fade_3d_to_2d_program,"altitudeTexCoord");
+		GLint skyInterp_fade		=glGetUniformLocation(fade_3d_to_2d_program,"skyInterp");
+		GLint fadeTexture1_fade		=glGetUniformLocation(fade_3d_to_2d_program,"fadeTexture1");
+		GLint fadeTexture2_fade		=glGetUniformLocation(fade_3d_to_2d_program,"fadeTexture2");
 		glUniform1f(skyInterp_fade,skyKeyframer->GetInterpolation());
 		glUniform1f(altitudeTexCoord_fade,skyKeyframer->GetAltitudeTexCoord());
 		glUniform1i(fadeTexture1_fade,0);
 		glUniform1i(fadeTexture2_fade,1);
-		glBegin(GL_QUADS);
-		glTexCoord2f(0.f,1.f);
-		glVertex2f(0.f,1.f);
-		glTexCoord2f(1.f,1.f);
-		glVertex2f(1.f,1.f);
-		glTexCoord2f(1.0,0.f);
-		glVertex2f(1.f,0.f);
-		glTexCoord2f(0.f,0.f);
-		glVertex2f(0.f,0.f);
-		glEnd();
-		ERROR_CHECK
-		if(i==0)
-			loss_2d.Deactivate();
-		else if(i==1)
-			inscatter_2d.Deactivate();
-		else
-			skylight_2d.Deactivate();
+		DrawQuad(0,0,1,1);
+		fb[i]->Deactivate();
 		glUseProgram(NULL);
 	}
 ERROR_CHECK
@@ -406,7 +373,7 @@ ERROR_CHECK
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
 	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
 								skyKeyframer->GetAltitudeKM()
-								,skyKeyframer->GetDirectionToLight());
+								,skyKeyframer->GetDirectionToSun());
 	if(e.enable)
 		UseProgram(earthshadow_program);
 	else

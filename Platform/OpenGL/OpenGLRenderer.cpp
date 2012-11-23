@@ -80,9 +80,9 @@ void OpenGLRenderer::paintGL()
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender();
 		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render();
-		simulWeatherRenderer->RenderLateCloudLayer(true);
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender();
+		simulWeatherRenderer->RenderLateCloudLayer(true);
 
 		simulWeatherRenderer->RenderLightning();
 

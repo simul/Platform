@@ -22,7 +22,7 @@
 SIMUL_OPENGL_EXPORT_CLASS FramebufferGL:public BaseFramebuffer
 {
 public:
-	FramebufferGL(int w, int h, GLenum target = GL_TEXTURE_RECTANGLE_NV,const char *shader=0,
+	FramebufferGL(int w=0, int h=0, GLenum target = GL_TEXTURE_2D,const char *shader=0,
 			int samples = 0, int coverageSamples = 0);
 
 	~FramebufferGL();

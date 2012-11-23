@@ -168,7 +168,10 @@ bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	if(buffered)
 	{
 		glUseProgram(Utilities::simple_program);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 		scene_buffer->Render(true);
+		glUseProgram(0);
 	}
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
@@ -188,7 +191,15 @@ bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 		scene_buffer->Clear(0,0,0,1.f);
 		simulCloudRenderer->Render(false,false,UseDefaultFog);
 		scene_buffer->Deactivate();
+	//	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);//GL_SRC_ALPHA GL_DST_ALPHA
+	//	glBlendFuncSeparate(GL_ONE,GL_ZERO,GL_ZERO,GL_ONE);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+	//	glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_ALPHA);
+		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
+		glUseProgram(Utilities::simple_program);
 		scene_buffer->Render(true);
+		glUseProgram(0);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		return false;
 	}
 	return false;

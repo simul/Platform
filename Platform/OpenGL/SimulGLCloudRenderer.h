@@ -116,7 +116,8 @@ unsigned short *pIndices;
 	GLint cloudEccentricity_param;
 	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;
-
+	GLint distanceToIllumination_param;
+	
 	GLint		maxFadeDistanceMetres_param;
 	GLuint		illum_tex;
 

@@ -119,9 +119,9 @@ void SimulGLTerrainRenderer::Render()
 
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::math::Vector3 irr=baseSkyInterface->GetLocalIrradiance(cam_pos.z/1000.f);
+	irr*=0.05f;
 	glUniform3f(sunlight_param,irr.x,irr.y,irr.z);
 	simul::math::Vector3 sun_dir=baseSkyInterface->GetDirectionToLight();
-	sun_dir*=0.05f;
 	glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 

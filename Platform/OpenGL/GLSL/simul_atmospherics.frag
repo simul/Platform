@@ -9,7 +9,6 @@ uniform vec3 lightDir;
 uniform mat4 invViewProj;
 uniform vec3 mieRayleighRatio;
 varying vec2 texCoords;
-uniform float directLightMultiplier;
 const float pi=3.1415926536;
 
 float HenyeyGreenstein(float g,float cos0)
@@ -48,7 +47,7 @@ void main()
 	vec4 insc=texture(inscTexture,texc2);
 
 	float cos0=dot(view,lightDir);
-	colour+=directLightMultiplier*InscatterFunction(insc,cos0);
+	colour+=InscatterFunction(insc,cos0);
 	vec4 skyl=texture(skylightTexture,texc2);
 	colour.rgb+=skyl.rgb;
     gl_FragColor=vec4(colour.rgb,1.0);
