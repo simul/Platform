@@ -1,6 +1,7 @@
 uniform sampler2D imageTexture;
 uniform sampler2D lossSampler;
 uniform sampler2D inscatterSampler;
+uniform sampler2D skylightSampler;
 
 uniform float hazeEccentricity;
 uniform float cloudEccentricity;
@@ -37,17 +38,18 @@ void main()
 	vec3 difference		=wPosition-eyePosition;
 	vec3 view			=normalize(difference);
 	float sine			=view.z;
-	vec2 fade_texc		=vec2(length(difference)/maxFadeDistanceMetres,0.5*(1.0-sine));
+	vec2 fade_texc		=vec2(sqrt(length(difference)/maxFadeDistanceMetres),0.5*(1.0-sine));
 
 	float cos0			=dot(normalize(lightDir),(view));
     // original image
     vec4 c				=texture2D(imageTexture,texc);
-	float opacity		=c.r;
+	float opacity		=.2*c.r;
 	float light			=HenyeyGreenstein(cloudEccentricity,cos0);
 	vec3 final			=c.rgb*sunlight*(lightResponse.w+lightResponse.x*light);
 	vec3 loss_lookup	=texture2D(lossSampler,fade_texc).rgb;
 	vec4 insc_lookup	=texture2D(inscatterSampler,fade_texc);
 	final				*=loss_lookup;
 	final				+=InscatterFunction(insc_lookup,cos0);
+	final				+=texture2D(skylightSampler,fade_texc).rgb;
     gl_FragColor		=vec4(final.rgb,opacity);
 }

@@ -14,6 +14,7 @@
 SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h)
 	:Gamma(0.45f),Exposure(1.f)
 	,initialized(false)
+	,tonemap_program(0)
 {
 	framebuffer=new FramebufferGL(w,h,GL_TEXTURE_2D,"tonemap");
 }
@@ -21,11 +22,6 @@ SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h)
 SimulGLHDRRenderer::~SimulGLHDRRenderer()
 {
 	delete framebuffer;
-}
-
-void SimulGLHDRRenderer::RecompileShaders()
-{
-	framebuffer->RecompileShaders();
 }
 
 void SimulGLHDRRenderer::SetBufferSize(int w,int h)
@@ -51,6 +47,17 @@ void SimulGLHDRRenderer::RestoreDeviceObjects()
 		framebuffer->InitDepth_RB(GL_DEPTH_COMPONENT32);
 	}
 	ERROR_CHECK
+	RecompileShaders();
+}
+
+
+void SimulGLHDRRenderer::RecompileShaders()
+{
+	tonemap_program		=LoadPrograms("simple.vert",NULL,"tonemap.frag");
+    exposure_param		=glGetUniformLocation(tonemap_program,"exposure");
+    gamma_param			=glGetUniformLocation(tonemap_program,"gamma");
+    buffer_tex_param	=glGetUniformLocation(tonemap_program,"image_texture");
+	ERROR_CHECK
 }
 
 void SimulGLHDRRenderer::InvalidateDeviceObjects()
@@ -69,9 +76,16 @@ bool SimulGLHDRRenderer::StartRender()
 
 bool SimulGLHDRRenderer::FinishRender()
 {
-	framebuffer->SetGamma(Gamma);
-	framebuffer->SetExposure(Exposure);
-	framebuffer->DeactivateAndRender(false);
+	framebuffer->Deactivate();
+	
+	glUseProgram(tonemap_program);
+
+	glUniform1f(exposure_param,Exposure);
+	glUniform1f(gamma_param,Gamma);
+	glUniform1i(buffer_tex_param,0);
+	
+	framebuffer->Render(false);
 	ERROR_CHECK
+	glUseProgram(0);
 	return true;
 }

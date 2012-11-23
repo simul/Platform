@@ -28,4 +28,10 @@ public:
 protected:
 	FramebufferGL *framebuffer;
 	bool initialized;
+	// shaders
+	GLuint tonemap_program;
+	GLint exposure_param;
+	GLint gamma_param;
+	GLint buffer_tex_param;
+	float exposure, gamma;
 };

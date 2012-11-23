@@ -72,7 +72,7 @@ public:
 	const char *GetDebugText() const;
 	float GetTiming() const;
 	void *GetIlluminationTexture();
-	void SetLossTextures(void *t1);
+	void SetLossTexture(void *t1);
 	void SetInscatterTextures(void *i,void *s);
 	LPDIRECT3DTEXTURE9 GetNoiseTexture()
 	{

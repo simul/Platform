@@ -5,6 +5,7 @@
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Sky/SkyInterface.h"
 
 SimulGLTerrainRenderer::SimulGLTerrainRenderer()
 	:program(0)
@@ -29,6 +30,8 @@ void SimulGLTerrainRenderer::RecompileShaders()
 	maxFadeDistanceMetres_param		= glGetUniformLocation(program,"maxFadeDistanceMetres");
 	textures_param					= glGetUniformLocation(program,"textures");
 	worldViewProj_param				= glGetUniformLocation(program,"worldViewProj");
+	lightDir_param					= glGetUniformLocation(program,"lightDir");
+	sunlight_param					= glGetUniformLocation(program,"sunlight");
 	printProgramInfoLog(program);
 	ERROR_CHECK
 }
@@ -97,7 +100,7 @@ void SimulGLTerrainRenderer::Render()
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	ERROR_CHECK
-	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
 	glPolygonMode(GL_FRONT,GL_FILL);
@@ -111,10 +114,18 @@ void SimulGLTerrainRenderer::Render()
 	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
 	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
 	simul::math::Multiply4x4(viewproj,view,proj);
-static bool tr=0;
-	glUniformMatrix4fv(worldViewProj_param,1,tr,viewproj.RowPointer(0));
+
+	glUniformMatrix4fv(worldViewProj_param,1,false,viewproj.RowPointer(0));
 
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
+	if(baseSkyInterface)
+	{
+		simul::math::Vector3 irr=baseSkyInterface->GetLocalIrradiance(cam_pos.z/1000.f);
+		irr*=0.05f;
+		glUniform3f(sunlight_param,irr.x,irr.y,irr.z);
+		simul::math::Vector3 sun_dir=baseSkyInterface->GetDirectionToLight();
+		glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
+	}
 	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -140,12 +151,16 @@ static bool tr=0;
 			simul::math::Vector3 X2(x2,y,z2);
 			if(i%2)
 			{
+				glTexCoord3f(0,0,1.f);
 				glVertex3f(X2.x,X2.y,X2.z);
+				glTexCoord3f(0,0,1.f);
 				glVertex3f(X1.x,X1.y,X1.z);
 			}
 			else
 			{
+				glTexCoord3f(0,0,1.f);
 				glVertex3f(X1.x,X1.y,X1.z);
+				glTexCoord3f(0,0,1.f);
 				glVertex3f(X2.x,X2.y,X2.z);
 			}
 		}

@@ -41,7 +41,7 @@ public:
 	bool Render(bool cubemap,bool depth_testing,bool default_fog);
 	void RenderCrossSections(int width,int height);
 	//! Set the platform-dependent atmospheric loss texture.
-	void SetLossTextures(void *l);
+	void SetLossTexture(void *l);
 	//! Set the platform-dependent atmospheric inscatter texture.
 	void SetInscatterTextures(void *i,void *s);
 	void SetWindVelocity(float x,float y);
@@ -76,6 +76,7 @@ protected:
 	GLint imageTexture_param;
 	GLint lossSampler_param;
 	GLint inscatterSampler_param;
+	GLint skylightSampler_param;
 	GLint cloudEccentricity_param;
 	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;

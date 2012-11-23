@@ -43,7 +43,6 @@ float HenyeyGreenstein(float g,float cos0)
 	float g2=g*g;
 	float u=1.0+g2-2.0*g*cos0;
 	return (1.0-g2)*pow(u,-1.5)/(4.0*pi);
-	//return 0.5*0.079577+.5*(1.0-g2)/(4.0*pi*sqrt(u*u*u));
 }
 
 vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
@@ -65,9 +64,6 @@ void main(void)
 	noiseval+=(texture2D(noiseSampler,noiseCoord*8.0).xyz-0.5)/2.0;
 #endif
 	noiseval*=texCoordDiffuse.w;
-	// Would use InscatterFunction if we passed in an isotropic inscatter factors. But otherwise the angular dependence is
-	// built into the vertex value.
-	//vec3 inscatter=InscatterFunction(insc,cos0);
 	vec3 pos=texCoordDiffuse.xyz+fractalScale*texCoordDiffuse.w*noiseval;
 	vec4 density=texture3D(cloudDensity1,pos);
 	vec4 density2=texture3D(cloudDensity2,pos);

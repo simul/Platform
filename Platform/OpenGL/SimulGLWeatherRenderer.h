@@ -50,7 +50,7 @@ public:
 	//! Platform-dependent. Call this to draw the sky
 	bool RenderSky(bool buffered,bool is_cubemap);
 	//! Call this to draw the clouds
-	void RenderLateCloudLayer(int buffer_index,bool buf);
+	bool RenderLateCloudLayer(bool buf);
 	//! Call this to draw lightning.
 	void RenderLightning();
 	//! Call this to draw rain etc.
@@ -68,7 +68,7 @@ public:
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 	void EnableRain(bool e=true);
-	void EnableCloudLayers(bool,bool);
+	void EnableCloudLayers();
 	void SetPrecipitation(float strength,float speed);
 	const char *GetDebugText() const;
 	GLuint GetFramebufferTexture();
@@ -77,8 +77,6 @@ protected:
 	//! This is set once the GL device has been initialized - then we can create textures and so forth.
 	bool device_initialized;
 	class FramebufferGL *scene_buffer;
-	bool AlwaysRenderCloudsLate;
-	bool RenderCloudsLate;
 	bool externally_defined_buffers;
 	bool auto_exposure;
 	//! The size of the 2D buffer the sky is rendered to.

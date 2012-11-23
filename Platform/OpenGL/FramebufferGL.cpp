@@ -117,9 +117,9 @@ void FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(m_target, 0, iformat, m_width, m_height, 0, GL_RGBA, format, NULL);
+    glTexImage2D(m_target, 0,iformat, m_width, m_height, 0,GL_RGBA, format, NULL);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 // In order to use a depth buffer, either
@@ -273,12 +273,12 @@ void FramebufferGL::Render1(GLuint prog,bool blend)
 	Release();
 }
 
-void FramebufferGL::Render(bool blend)
+void FramebufferGL::Render(GLuint prog,bool blend)
 {
-	Render(0,blend);
+	Render(blend);
 }
 
-void FramebufferGL::Render(GLuint prog,bool blend)
+void FramebufferGL::Render(bool blend)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
@@ -290,21 +290,6 @@ void FramebufferGL::Render(GLuint prog,bool blend)
     // bind textures
     glActiveTexture(GL_TEXTURE0);
     Bind();
-
-	glUseProgram(prog);
-
-	if(prog)
-	{
-		glUniform1f(exposure_param,exposure);
-		glUniform1f(gamma_param,gamma);
-		glUniform1i(buffer_tex_param,0);
-	}
-	else
-	{
-		glDisable(GL_TEXTURE_1D);
-		glEnable(GL_TEXTURE_2D);
-		glDisable(GL_TEXTURE_3D);
-	}
     glDisable(GL_ALPHA_TEST);
 	if(!blend)
 	{
@@ -315,13 +300,13 @@ void FramebufferGL::Render(GLuint prog,bool blend)
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		// retain background based on alpha in overlay
-		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
+		//glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	}
 	glDepthMask(GL_FALSE);
 	ERROR_CHECK
     DrawQuad(main_viewport[2],main_viewport[3]);
 
-    glUseProgram(NULL);
+  //  glUseProgram(NULL);
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
