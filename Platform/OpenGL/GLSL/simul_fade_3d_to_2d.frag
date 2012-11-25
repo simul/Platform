@@ -11,7 +11,7 @@ varying vec2 texc;
 
 void main()
 {
-	vec3 texcoord=vec3(texc,altitudeTexCoord);
+	vec3 texcoord=vec3(altitudeTexCoord,texc.yx);
 	vec4 texel1=texture3D(fadeTexture1,texcoord);
 	vec4 texel2=texture3D(fadeTexture2,texcoord);
 	vec4 texel=mix(texel1,texel2,skyInterp);

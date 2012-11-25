@@ -338,9 +338,9 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 	if(errors)
 	{
 		if(FAILED(hr))
-			std::cerr<<"Errors building "<<fn.c_str()<<std::endl;
+			std::cerr<<"Errors building "<<filename<<std::endl;
 		else
-			std::cerr<<"Warnings building "<<fn.c_str()<<std::endl;
+			std::cerr<<"Warnings building "<<filename<<std::endl;
 		err=static_cast<const char*>(errors->GetBufferPointer());
 		std::cerr<<err<<std::endl;
 	}
@@ -581,10 +581,10 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	float width=(float)dx,height=(float)dy;
 	Vertext vertices[4] =
 	{
-		{x,			y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
-		{x+width,	y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
-		{x+width,	y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
-		{x,			y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
+		{x,			y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
+		{x+width,	y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
+		{x+width,	y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
+		{x,			y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
 	};
 #endif
 	D3DXMATRIX ident;

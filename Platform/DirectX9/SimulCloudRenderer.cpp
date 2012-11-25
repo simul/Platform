@@ -1344,14 +1344,17 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 	fb.InvalidateDeviceObjects();
 }
 
-void SimulCloudRenderer::RenderCrossSections(int width,int )
+void SimulCloudRenderer::RenderCrossSections(int width,int height)
 {
 	static int u=3;
 	int w=(width-8)/u;
-	int h=(w)/GetCloudGridInterface()->GetGridWidth();
+	if(w>height/2)
+		w=height/2;
+	simul::clouds::CloudGridInterface *gi=GetCloudGridInterface();
+	int h=w/gi->GetGridWidth();
 	if(h<1)
 		h=1;
-	h*=GetCloudGridInterface()->GetGridHeight();
+	h*=gi->GetGridHeight();
 	D3DXVECTOR4 cross_section_offset(
 			(GetCloudInterface()->GetWrap()?0.5f:0.f)+0.5f/(float)cloud_tex_width_x
 			,GetCloudInterface()->GetWrap()?0.5f:0.f+0.5f/(float)cloud_tex_length_y

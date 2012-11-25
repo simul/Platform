@@ -48,11 +48,7 @@ sampler flare_texture = sampler_state
 
 
 texture fadeTexture;
-#ifdef USE_ALTITUDE_INTERPOLATION
-	sampler3D fade_texture = sampler_state
-#else
-	sampler2D fade_texture= sampler_state
-#endif
+sampler3D fade_texture = sampler_state
 {
     Texture = <fadeTexture>;
     MipFilter = LINEAR;
@@ -63,11 +59,7 @@ texture fadeTexture;
 	AddressW = Clamp;
 };
 texture fadeTexture2;
-#ifdef USE_ALTITUDE_INTERPOLATION
-	sampler3D fade_texture_2 = sampler_state
-#else
-	sampler2D fade_texture_2= sampler_state
-#endif
+sampler3D fade_texture_2 = sampler_state
 {
     Texture = <fadeTexture2>;
     MipFilter = LINEAR;
@@ -96,9 +88,7 @@ float4 lightDir : Direction;
 float4 mieRayleighRatio;
 float hazeEccentricity;
 float skyInterp;
-#ifdef USE_ALTITUDE_INTERPOLATION
-	float altitudeTexCoord;
-#endif
+float altitudeTexCoord;
 #define pi (3.1415926536f)
 
 float4 colour;
@@ -319,11 +309,7 @@ float4 PS_ShowFade( vertexOutputCS IN): color
 
 float4 PS_ShowSkyTexture( vertexOutputCS IN): color
 {
-#ifdef USE_ALTITUDE_INTERPOLATION
 	float4 result=tex2D(fade_texture_2d,float2(IN.texCoords.y,altitudeTexCoord));
-#else
-	float4 result=tex2D(fade_texture_2d,float2(IN.texCoords.y,0));
-#endif
     return float4(result.rgb,1);
 }
 
@@ -332,20 +318,16 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
 {
     vertexOutputCS OUT;
     OUT.hPosition = mul(worldViewProj,float4(IN.position.xyz,1.0));
-	OUT.texCoords.xy=IN.texCoords.xy;
-	OUT.texCoords.z=1;
+	OUT.texCoords.yz=IN.texCoords.yx;
+	OUT.texCoords.x=altitudeTexCoord;
 	OUT.colour=IN.colour;
     return OUT;
 }
 
 float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 {
-#ifdef USE_ALTITUDE_INTERPOLATION
-	float3 texc=float3(IN.texCoords.x,IN.texCoords.y,altitudeTexCoord);
+	float3 texc=float3(altitudeTexCoord,IN.texCoords.yx);
 	float4 result=tex3D(fade_texture,texc);
-#else
-	float4 result=tex2D(fade_texture,IN.texCoords.xy);
-#endif
     return float4(result.rgb,1);
 }
 
@@ -359,15 +341,9 @@ vertexOutput3Dto2D VS_3D_to_2D(vertexInput3Dto2D IN)
 
 float4 PS_3D_to_2D(vertexOutput3Dto2D IN): color
 {
-#ifdef USE_ALTITUDE_INTERPOLATION
-	float3 texc=float3(IN.texCoords.x,IN.texCoords.y,altitudeTexCoord)*texelScale+texelOffset;
+	float3 texc=float3(altitudeTexCoord,IN.texCoords.yx)*texelScale+texelOffset;
 	float4 colour1=tex3D(fade_texture,texc);
 	float4 colour2=tex3D(fade_texture_2,texc);
-#else
-	float2 texc=float2(IN.texCoords.x,IN.texCoords.y)*texelScale.xy+texelOffset.xy;
-	float4 colour1=tex2D(fade_texture,texc);
-	float4 colour2=tex2D(fade_texture_2,texc);
-#endif
 	float4 result=lerp(colour1,colour2,skyInterp);
     return result;
 }

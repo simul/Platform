@@ -150,6 +150,7 @@ protected:
 	ID3D1xEffectScalarVariable* 	hazeEccentricity;
 	ID3D1xEffectScalarVariable* 	fadeInterp;
 	ID3D1xEffectScalarVariable* 	alphaSharpness;
+	ID3D1xEffectScalarVariable* 	maxFadeDistanceMetres;
 
 	ID3D1xEffectVectorVariable* 	lightningMultipliers;
 	ID3D1xEffectVectorVariable* 	lightningColour;

@@ -88,7 +88,6 @@ protected:
 	GLuint		skylight_tex;
 	GLuint	noise_tex;
 	GLuint	image_tex;
-	float	cam_pos[3];
 
 	bool CreateNoiseTexture(bool override_file=false);
 	bool CreateImageTexture();

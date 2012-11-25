@@ -99,8 +99,14 @@ void FramebufferGL::InvalidateDeviceObjects()
 
 void FramebufferGL::SetWidthAndHeight(int w,int h)
 {
-	m_width=w;
-	m_height=h;
+	if(w!=m_width||h!=m_height)
+	{
+		m_width=w;
+		m_height=h;
+		SAFE_DELETE_TEXTURE(m_tex_col[0]);
+		SAFE_DELETE_RENDERBUFFER(m_rb_depth);
+		SAFE_DELETE_FRAMEBUFFER(m_fb);
+	}
 }
 
 bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
@@ -181,6 +187,7 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 		RecompileShaders();
 		glGenFramebuffersEXT(1, &m_fb);
 	}
+	depth_iformat=iformat;
 	glGenTextures(1, &m_tex_depth);
 	glBindTexture(m_target, m_tex_depth);
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -191,6 +198,7 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT,m_target,m_tex_depth,0);
+	CheckFramebufferStatus();
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
@@ -284,7 +292,7 @@ void FramebufferGL::Render1(GLuint prog,bool blend)
 	Release();
 }
 
-void FramebufferGL::Render(GLuint prog,bool blend)
+void FramebufferGL::Render(GLuint ,bool blend)
 {
 	Render(blend);
 }

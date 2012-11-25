@@ -47,6 +47,12 @@ void SimulGLHDRRenderer::RestoreDeviceObjects()
 		framebuffer->InitDepth_RB(GL_DEPTH_COMPONENT32);
 	}
 	ERROR_CHECK
+	framebuffer->Activate();
+	ERROR_CHECK
+	framebuffer->Clear(0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT);
+	ERROR_CHECK
+	framebuffer->Deactivate();
+	ERROR_CHECK
 	RecompileShaders();
 }
 
@@ -67,9 +73,10 @@ void SimulGLHDRRenderer::InvalidateDeviceObjects()
 bool SimulGLHDRRenderer::StartRender()
 {
 	framebuffer->Activate();
-	glClearColor(0.f,0.f,0.f,1.f);
+	framebuffer->Clear(0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	/*glClearColor(0.f,0.f,0.f,1.f);
 	ERROR_CHECK
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);*/
 	ERROR_CHECK
 	return true;
 }

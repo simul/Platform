@@ -74,17 +74,17 @@ void SimulGLSkyRenderer::SetFadeTexSize(unsigned width_num_distances,unsigned he
 	// If not initialized we might not have a valid GL context:
 	if(!initialized)
 		return;
-	if(fadeTexWidth==width_num_distances&&fadeTexHeight==height_num_elevations&&numAltitudes==num_alts)
+	if(numFadeDistances==width_num_distances&&numFadeElevations==height_num_elevations&&numAltitudes==num_alts)
 		return;
-	fadeTexWidth=width_num_distances;
-	fadeTexHeight=height_num_elevations;
+	numFadeDistances=width_num_distances;
+	numFadeElevations=height_num_elevations;
 	numAltitudes=num_alts;
 	CreateFadeTextures();
 }
 
 void SimulGLSkyRenderer::CreateFadeTextures()
 {
-	unsigned *fade_tex_data=new unsigned[fadeTexWidth*fadeTexHeight*numAltitudes*sizeof(float)];
+	unsigned *fade_tex_data=new unsigned[numFadeDistances*numFadeElevations*numAltitudes*sizeof(float)];
 	glGenTextures(3,loss_textures);
 	ERROR_CHECK
 	glGenTextures(3,inscatter_textures);
@@ -101,7 +101,7 @@ void SimulGLSkyRenderer::CreateFadeTextures()
 			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
-			glTexImage3D(GL_TEXTURE_3D,0,internal_format,fadeTexWidth,fadeTexHeight,numAltitudes,0,GL_RGBA,sky_tex_format,fade_tex_data);
+			glTexImage3D(GL_TEXTURE_3D,0,internal_format,numAltitudes,numFadeElevations,numFadeDistances,0,GL_RGBA,sky_tex_format,fade_tex_data);
 			glBindTexture(GL_TEXTURE_3D,inscatter_textures[i]);
 	ERROR_CHECK
 			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -109,7 +109,7 @@ void SimulGLSkyRenderer::CreateFadeTextures()
 			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
-			glTexImage3D(GL_TEXTURE_3D,0,internal_format,fadeTexWidth,fadeTexHeight,numAltitudes,0,GL_RGBA,sky_tex_format,fade_tex_data);
+			glTexImage3D(GL_TEXTURE_3D,0,internal_format,numAltitudes,numFadeElevations,numFadeDistances,0,GL_RGBA,sky_tex_format,fade_tex_data);
 			glBindTexture(GL_TEXTURE_3D,skylight_textures[i]);
 	ERROR_CHECK
 			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -117,16 +117,16 @@ void SimulGLSkyRenderer::CreateFadeTextures()
 			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
-			glTexImage3D(GL_TEXTURE_3D,0,internal_format,fadeTexWidth,fadeTexHeight,numAltitudes,0,GL_RGBA,sky_tex_format,fade_tex_data);
+			glTexImage3D(GL_TEXTURE_3D,0,internal_format,numAltitudes,numFadeElevations,numFadeDistances,0,GL_RGBA,sky_tex_format,fade_tex_data);
 		}
 	}
 	ERROR_CHECK
 	delete [] fade_tex_data;
-	loss_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	loss_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	loss_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
-	inscatter_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	inscatter_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
-	skylight_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	skylight_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	skylight_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	ERROR_CHECK
 }
@@ -622,14 +622,11 @@ void SimulGLSkyRenderer::EnsureTexturesAreUpToDate()
 	EnsureTextureCycle();
 	for(int i=0;i<3;i++)
 	{
-		for(int j=0;j<numAltitudes;j++)
+		simul::sky::BaseKeyframer::seq_texture_iterator &ft=fade_texture_iterator[i];
+		simul::sky::BaseKeyframer::block_texture_fill t;
+		while((t=skyKeyframer->GetBlockFadeTextureFill(i,ft)).w!=0)
 		{
-			simul::sky::BaseKeyframer::seq_texture_iterator &ft=fade_texture_iterator[i][j];
-			simul::sky::BaseKeyframer::block_texture_fill t;
-			while((t=skyKeyframer->GetBlockFadeTextureFill(j,i,ft)).w!=0)
-			{
-				FillFadeTextureBlocks(i,t.x,t.y,t.z,t.w,t.l,t.d,(const float*)t.float_array_1,(const float*)t.float_array_2,(const float*)t.float_array_3);
-			}
+			FillFadeTextureBlocks(i,t.x,t.y,t.z,t.w,t.l,t.d,(const float*)t.float_array_1,(const float*)t.float_array_2,(const float*)t.float_array_3);
 		}
 	}
 }
@@ -652,16 +649,15 @@ void SimulGLSkyRenderer::EnsureTextureCycle()
 		if(texture_cycle<0)
 			texture_cycle+=3;
 		for(int i=0;i<3;i++)
-			for(int j=0;j<numAltitudes;j++)
-				fade_texture_iterator[i][j].texture_index=i;
+			fade_texture_iterator[i].texture_index=i;
 	}
 }
 
 void SimulGLSkyRenderer::RecompileShaders()
 {
 	current_program=0;
-	loss_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
-	inscatter_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	loss_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
+	inscatter_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	loss_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	SAFE_DELETE_PROGRAM(sky_program);
@@ -722,9 +718,9 @@ void SimulGLSkyRenderer::RestoreDeviceObjects(void*)
 {
 ERROR_CHECK
 	initialized=true;
-	loss_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	loss_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 ERROR_CHECK
-	inscatter_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	inscatter_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 ERROR_CHECK
 	loss_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);

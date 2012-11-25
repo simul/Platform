@@ -99,8 +99,8 @@ public:
 	const char *GetDebugText() const;
 	void SetYVertical(bool y);
 protected:
-	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void FillFadeTexturesSequentially(int alt_index,int texture_index,int texel_index
+	void FillSkyTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
+	void FillFadeTexturesSequentially(int texture_index,int texel_index
 						,int num_texels,const float *loss_float4_array
 						,const float *inscatter_float4_array
 						,const float *skyl_float4_array);
@@ -149,8 +149,6 @@ protected:
 	D3DXHANDLE					flareTexture;
 	LPDIRECT3DTEXTURE9			stars_texture;
 	std::map<int,LPDIRECT3DTEXTURE9> planet_textures;
-	// Three sky textures - 2 to interpolate and one to fill
-	LPDIRECT3DTEXTURE9			sky_textures[3];
 	// Three sunlight textures.
 	LPDIRECT3DTEXTURE9			sunlight_textures[3];
 	// If using 1D sky textures and 2D fade textures:
@@ -169,7 +167,6 @@ protected:
 	LPDIRECT3DQUERY9			d3dQuery;
 	bool						UpdateSkyTexture(float proportion);
 	void						CreateFadeTextures();
-	void						CreateSkyTextures();
 	void						CreateSunlightTextures();
 	bool						RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	virtual bool IsYVertical()

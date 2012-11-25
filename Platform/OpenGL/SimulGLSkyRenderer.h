@@ -48,7 +48,7 @@ public:
 	// Implementing simul::sky::SkyTexturesCallback
 	virtual void SetSkyTextureSize(unsigned ){}
 	virtual void SetFadeTextureSize(unsigned ,unsigned ,unsigned ){}
-	virtual void FillFadeTexturesSequentially(int ,int ,int ,const float *,const float *)
+	virtual void FillFadeTexturesSequentially(int ,int ,const float *,const float *)
 	{
 		exit(1);
 	}

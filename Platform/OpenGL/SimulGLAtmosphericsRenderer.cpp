@@ -109,11 +109,28 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,inscatter_texture);
     glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D,skylight_texture);
-	simul::sky::float4 sun_dir		=skyInterface->GetDirectionToLight();
+	if(skyInterface)
+	{
+		simul::sky::float4 sun_dir		=skyInterface->GetDirectionToLight();
 ERROR_CHECK
-	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,skyInterface->GetDirectionToSun());
-	if(e.enable)
-		UseProgram(earthshadow_fade_program);
+		simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,skyInterface->GetDirectionToSun());
+		if(e.enable)
+			UseProgram(earthshadow_fade_program);
+		else
+			UseProgram(distance_fade_program);
+	ERROR_CHECK
+		simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
+		glUniform3f(mieRayleighRatio,ratio.x,ratio.y,ratio.z);
+		glUniform3f(lightDir,sun_dir.x,sun_dir.y,sun_dir.z);
+		glUniform1f(hazeEccentricity,skyInterface->GetMieEccentricity());
+		if(current_program==earthshadow_fade_program)
+		{
+			glUniform1f(radiusOnCylinder,e.radius_on_cylinder);
+			glUniform3f(earthShadowNormal,e.normal.x,e.normal.y,e.normal.z);
+			glUniform1f(maxFadeDistance,fade_distance_km/e.planet_radius);
+			glUniform1f(terminatorCosine,e.terminator_cosine);
+		}
+	}
 	else
 		UseProgram(distance_fade_program);
 	glUniform1i(cloudsTexture,0);
@@ -134,23 +151,11 @@ ERROR_CHECK
 	viewproj.Transpose(vpt);
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
-	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
 ERROR_CHECK
 static bool tr=true;
 	glUniformMatrix4fv(invViewProj,1,tr,ivp.RowPointer(0));
 ERROR_CHECK
-	glUniform3f(mieRayleighRatio,ratio.x,ratio.y,ratio.z);
-ERROR_CHECK
-	glUniform3f(lightDir,sun_dir.x,sun_dir.y,sun_dir.z);
-	glUniform1f(hazeEccentricity,skyInterface->GetMieEccentricity());
 
-	if(current_program==earthshadow_fade_program)
-	{
-		glUniform1f(radiusOnCylinder,e.radius_on_cylinder);
-		glUniform3f(earthShadowNormal,e.normal.x,e.normal.y,e.normal.z);
-		glUniform1f(maxFadeDistance,fade_distance_km/e.planet_radius);
-		glUniform1f(terminatorCosine,e.terminator_cosine);
-	}
 	//glUniform1f(directLightMultiplier,e.illumination);
 	
 	glEnable(GL_BLEND);

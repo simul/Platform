@@ -364,19 +364,25 @@ ERROR_CHECK
 	glUniform1f(interp_param,cloudKeyframer->GetInterpolation());
 
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
-	glUniform3f(lightDirection_param,sun_dir.x,sun_dir.y,sun_dir.z);
-	simul::sky::float4 amb=GetCloudInterface()->GetAmbientLightResponse()*skyInterface->GetAmbientLight(X1.z*.001f);
+	float t=0.f;
+	if(skyInterface)
+	{
+		simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
+		glUniform3f(lightDirection_param,sun_dir.x,sun_dir.y,sun_dir.z);
+		
+		simul::sky::float4 amb=skyInterface->GetAmbientLight(X1.z*.001f);
+		amb*=GetCloudInterface()->GetAmbientLightResponse();
+		simul::sky::EarthShadow e=skyInterface->GetEarthShadow(X1.z/1000.f,skyInterface->GetDirectionToSun());
+		glUniform1f(distanceToIllumination_param,e.distance_to_illumination*e.planet_radius*1000.f/max_fade_distance_metres);
+		glUniform1f(hazeEccentricity_param,skyInterface->GetMieEccentricity());
+		simul::sky::float4 mieRayleighRatio=skyInterface->GetMieRayleighRatio();
+		glUniform3f(mieRayleighRatio_param,mieRayleighRatio.x,mieRayleighRatio.y,mieRayleighRatio.z);
+		glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
+		t=skyInterface->GetTime();
+	}
 	
-	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(X1.z/1000.f,skyInterface->GetDirectionToSun());
-	glUniform1f(distanceToIllumination_param,e.distance_to_illumination*e.planet_radius*1000.f/max_fade_distance_metres);
-	
-	glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
 
 	glUniform1f(cloudEccentricity_param,GetCloudInterface()->GetMieAsymmetry());
-	glUniform1f(hazeEccentricity_param,skyInterface->GetMieEccentricity());
-	simul::sky::float4 mieRayleighRatio=skyInterface->GetMieRayleighRatio();
-	glUniform3f(mieRayleighRatio_param,mieRayleighRatio.x,mieRayleighRatio.y,mieRayleighRatio.z);
 
 	simul::math::Vector3 view_pos(cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::math::Vector3 eye_dir(-viewInv(2,0),-viewInv(2,1),-viewInv(2,2));
@@ -384,7 +390,6 @@ ERROR_CHECK
 
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
-	float t=skyInterface->GetTime();
 	float delta_t=(t-last_time)*cloudKeyframer->GetTimeFactor();
 	if(!last_time)
 		delta_t=0;
@@ -405,8 +410,12 @@ ERROR_CHECK
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),god_rays,X1.z,god_rays);
 #if 1
-	simul::sky::float4 sunlight1=skyInterface->GetLocalIrradiance(X1.z*.001f);
-	simul::sky::float4 sunlight2=skyInterface->GetLocalIrradiance(X2.z*.001f);
+	simul::sky::float4 sunlight1,sunlight2;
+	if(skyInterface)
+	{
+		sunlight1=skyInterface->GetLocalIrradiance(X1.z*.001f);
+		sunlight2=skyInterface->GetLocalIrradiance(X2.z*.001f);
+	}
 
 	// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,
 	// which is drawn as a latitude-longitude sphere. But we only draw the parts that:
@@ -830,12 +839,19 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 
 void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
 {
-	int w=(width-16)/6;
+	static int u=3;
+	int w=(width-8)/u;
+	if(w>height/2)
+		w=height/2;
+	simul::clouds::CloudGridInterface *gi=GetCloudGridInterface();
+	int h=w/gi->GetGridWidth();
+	if(h<1)
+		h=1;
+	h*=gi->GetGridHeight();
 	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
 	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
 	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
 	GLint crossSectionOffset	= glGetUniformLocation(cross_section_program,"crossSectionOffset");
-
     glDisable(GL_BLEND);
 (GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -846,7 +862,8 @@ ERROR_CHECK
 ERROR_CHECK
 static float mult=1.f;
 	glUniform1i(cloudDensity1_param,0);
-	for(int i=0;i<3;i++)
+	// Dx11 can't draw the 3rd texture without trashing it. Progress!
+	for(int i=0;i<2;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
 				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
@@ -858,8 +875,6 @@ static float mult=1.f;
 	ERROR_CHECK
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
-		simul::clouds::CloudGridInterface *gi=cloudKeyframer->GetCloudGridInterface();
-		int h=gi->GetGridHeight()*w/gi->GetGridWidth();
 		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
 		glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
 		glUniform1f(yz_param,0.f);

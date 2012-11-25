@@ -493,9 +493,6 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	defines["DETAIL_NOISE"]='1';
 	if(GetCloudInterface()->GetWrap())
 		defines["WRAP_CLOUDS"]="1";
-	char max_fade_distance_str[25];
-	sprintf_s(max_fade_distance_str,25,"%3.1f",max_fade_distance_metres);
-	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
 	if(y_vertical)
 		defines["Y_VERTICAL"]="1";
 	else
@@ -520,6 +517,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	fadeInterp							=m_pCloudEffect->GetVariableByName("fadeInterp")->AsScalar();
 	cloudEccentricity					=m_pCloudEffect->GetVariableByName("cloudEccentricity")->AsScalar();
 	alphaSharpness						=m_pCloudEffect->GetVariableByName("alphaSharpness")->AsScalar();
+	maxFadeDistanceMetres				=m_pCloudEffect->GetVariableByName("maxFadeDistanceMetres")->AsScalar();
 
 	//if(enable_lightning)
 	{
@@ -625,6 +623,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	hazeEccentricity	->SetFloat			(skyInterface->GetMieEccentricity());
 	fadeInterp			->SetFloat			(fade_interp);
 	alphaSharpness		->SetFloat			(GetCloudInterface()->GetAlphaSharpness());
+	maxFadeDistanceMetres->SetFloat			(max_fade_distance_metres);
 simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 
 	if(enable_lightning)
