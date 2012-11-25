@@ -10,7 +10,8 @@ Texture2D skylTexture;
 SamplerState samplerState
 {
 	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Mirror;
+	AddressU = Clamp;
+	AddressV = Mirror;
 };
 
 Texture2D flareTexture;
@@ -25,7 +26,7 @@ Texture3D fadeTexture1;
 Texture3D fadeTexture2;
 SamplerState fadeSamplerState
 {
-	Filter = MIN_MAG_MIP_LINEAR;
+	Filter = MIN_MAG_MIP_POINT;
 	AddressU = Clamp;
 	AddressV = Mirror;
 	AddressW = Clamp;
@@ -233,8 +234,14 @@ vertexOutput3Dto2D VS_ShowSkyTexture(vertexInput3Dto2D IN)
 
 float4 PS_ShowSkyTexture(vertexOutput3Dto2D IN): SV_TARGET
 {
-	float4 result=inscTexture.Sample(fadeSamplerState,float2(1.0,IN.texCoords.y));
-    return float4(.05*result.rgb,1);
+	float4 result=inscTexture.Sample(fadeSamplerState,IN.texCoords.xy);
+    return float4(result.rgb,1);
+}
+
+float4 PS_ShowFadeTexture(vertexOutput3Dto2D IN): SV_TARGET
+{
+	float4 result=fadeTexture1.Sample(fadeSamplerState,float3(IN.texCoords.xy,altitudeTexCoord));
+    return float4(result.rgb,1);
 }
 
 struct svertexInput
@@ -381,6 +388,19 @@ technique11 simul_show_sky_texture
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowSkyTexture()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowSkyTexture()));
+    }
+}
+
+technique11 simul_show_fade_texture
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowSkyTexture()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeTexture()));
     }
 }
 
