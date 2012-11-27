@@ -98,8 +98,12 @@ GLuint SetShaders(const char *vert_src,const char *frag_src)
 	GLuint prog				=glCreateProgram();
 	GLuint vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 	GLuint fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-    vertex_shader			=SetShader(vertex_shader,vert_src,"");
-    fragment_shader			=SetShader(fragment_shader,frag_src,"");
+	std::vector<std::string> v;
+	v.push_back(vert_src);
+	std::vector<std::string> f;
+	f.push_back(frag_src);
+    vertex_shader			=SetShader(vertex_shader	,v);
+    fragment_shader			=SetShader(fragment_shader	,f);
 	glAttachShader(prog,vertex_shader);
 	glAttachShader(prog,fragment_shader);
 	glLinkProgram(prog);
@@ -122,30 +126,42 @@ GLuint LoadPrograms(const char *vert_filename,const char *geom_filename,const ch
 		ERROR_CHECK
 	}
 	GLuint fragment_shader			=glCreateShader(GL_FRAGMENT_SHADER);
+	ERROR_CHECK
     fragment_shader					=LoadShader(fragment_shader,frag_filename,defines);
+	ERROR_CHECK
 	glAttachShader(prog,fragment_shader);
+	ERROR_CHECK
 	glLinkProgram(prog);
+	ERROR_CHECK
 	glUseProgram(prog);
+	ERROR_CHECK
 	printProgramInfoLog(prog);
 	ERROR_CHECK
 	return prog;
 }
 
-GLuint SetShader(GLuint sh,const char *shader_source,const char *defines)
+GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const char *defines)
 {
 /*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
 	const int MAX_STRINGS=12;
 	const int MAX_LINES=512;
 	const int MAX_LINE_LENGTH=256;					// 255 + NULL terminator
-	static char program[MAX_LINES*MAX_LINE_LENGTH];
-	char *ptr=program;
-
-	sprintf_s(ptr,MAX_LINES*MAX_LINE_LENGTH,"%s\n%s",defines?defines:"",shader_source?shader_source:"");
 	const char *strings[MAX_STRINGS];
-	strings[0]=program;
-	int lenOfStrings[1];
-	lenOfStrings[0]=strlen(strings[0]);
-	glShaderSource(sh,1,strings,NULL);
+	int s=0;
+	if(defines&&strlen(defines))
+	{
+		static char program[MAX_LINES*MAX_LINE_LENGTH];
+		char *ptr=program;
+		sprintf_s(ptr,MAX_LINES*MAX_LINE_LENGTH,"%s\n",defines?defines:"");
+		strings[s++]=program;
+	}
+	int lenOfStrings[MAX_STRINGS];
+	for(int i=0;i<sources.size()&&i<MAX_STRINGS-1;i++,s++)
+	{
+		strings[s]		=sources[i].c_str();
+		lenOfStrings[s]	=strlen(strings[s]);
+	}
+	glShaderSource(sh,s,strings,NULL);
     if(!sh)
 		return 0;
 	else
@@ -159,13 +175,15 @@ GLuint SetShader(GLuint sh,const char *shader_source,const char *defines)
 	if(!result)
 	{
 		std::cerr<<"ERROR:\tShader failed to compile\n";
-		DebugBreak();
 	}
     return sh;
 }
-
-GLuint LoadShader(GLuint sh,const char *filename,const char *defines)
+std::string loadShaderSource(const char *filename)
 {
+/*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
+	const int MAX_LINES=512;
+	const int MAX_LINE_LENGTH=256;   // 255 + NULL terminator
+	char shader_source[MAX_LINES*MAX_LINE_LENGTH];
     std::string filePath=shaderPath;
 	char last=0;
 	if(filePath.length())
@@ -181,10 +199,6 @@ GLuint LoadShader(GLuint sh,const char *filename,const char *defines)
 		std::cerr<<"\n\t\tShader path is "<<shaderPath.c_str()<<", is this correct?\n";
 		exit(1);
 	}
-/*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
-	const int MAX_LINES=512;
-	const int MAX_LINE_LENGTH=256;   // 255 + NULL terminator
-	char shader_source[MAX_LINES*MAX_LINE_LENGTH];
 	char *ptr=shader_source;
 	while(!ifs.eof())
 	{
@@ -195,8 +209,35 @@ GLuint LoadShader(GLuint sh,const char *filename,const char *defines)
 	}
 	ifs.close();
 	ptr[0]=0;
-	sh=SetShader(sh,shader_source,defines);
-    if(!sh)
-		std::cerr<<std::endl<<filePath.c_str()<<"(0): Error creating program "<<std::endl;
+	std::string str(shader_source);
+	return str;
+}
+
+GLuint LoadShader(GLuint sh,const char *filename,const char *defines)
+{
+	std::string src=loadShaderSource(filename);
+	// process #includes.
+	std::vector<std::string> include_files;
+	size_t pos=0;
+	while((pos=src.find("#include",pos))<src.length())
+	{
+		int start_of_line=pos;
+		pos+=9;
+		int eol=src.find("\n",pos+1);
+		std::string include_file=src.substr(pos,eol-pos);
+		include_file=include_file.substr(1,include_file.length()-2);
+		include_files.push_back(include_file);
+		src=src.insert(start_of_line,"//");
+		eol+=2;
+		src=src.insert(eol,"\n");
+		src=src.insert(eol+1,loadShaderSource(include_file.c_str()));
+	}
+	std::vector<std::string> srcs;
+	for(int i=0;i<include_files.size();i++)
+	{
+		//srcs.push_back();
+	}
+	srcs.push_back(src);
+	sh=SetShader(sh,srcs,defines);
     return sh;
 }

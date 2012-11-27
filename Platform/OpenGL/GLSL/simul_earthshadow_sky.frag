@@ -9,6 +9,7 @@ uniform float hazeEccentricity;
 uniform float altitudeTexCoord;
 uniform vec3 mieRayleighRatio;
 uniform vec3 lightDir;
+uniform vec3 sunDir;
 uniform vec3 earthShadowNormal;
 uniform float radiusOnCylinder;
 uniform float maxFadeDistance;
@@ -51,10 +52,10 @@ void main()
 	// The Earth's shadow: let shadowNormal be the direction normal to the sunlight direction
 	//						but in the plane of the sunlight and the vertical.
 	// First get the part of view that is along the light direction
-	float along=dot(lightDir,view);
+	float along=dot(sunDir,view);
 	float in_shadow=saturate(-along-terminatorCosine);
 	// subtract it to get the direction on the shadow-cylinder cross section.
-	vec3 on_cross_section=view-along*lightDir;
+	vec3 on_cross_section=view-along*sunDir;
 	// Now get the part that's on the cylinder radius:
 	float on_radius=dot(on_cross_section,earthShadowNormal);
 	vec3 on_x=on_cross_section-on_radius*earthShadowNormal;
@@ -81,7 +82,7 @@ void main()
 		d=L/maxFadeDistance;
 	}
 	// Inscatter at distance d
-	vec2 texcoord_d=vec2(pow(d,0.5),0.5*(1.0-sine));
+	vec2 texcoord_d=vec2(sqrt(d),0.5*(1.0-sine));
 	vec4 inscb=texture2D(inscTexture,texcoord_d);
 	// what should the light be at distance d?
 	// We subtract the inscatter to d if we're looking OUT FROM the cylinder,
@@ -97,6 +98,5 @@ void main()
 	float cos0=dot(lightDir.xyz,view.xyz);
 	vec3 colour=InscatterFunction(insc,cos0);
 	colour+=skyl.rgb;
-	
     gl_FragColor=vec4(colour.rgb,1.0);
 }

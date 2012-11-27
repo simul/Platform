@@ -110,6 +110,7 @@ protected:
 	GLint			MieRayleighRatio_param;
 	GLint			hazeEccentricity_param;
 	GLint			lightDirection_sky_param;
+	GLint			sunDir_param;
 	GLint			earthShadowNormal_param;
 	GLint			radiusOnCylinder_param;
 	GLint			terminatorCosine_param;

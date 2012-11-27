@@ -777,7 +777,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 	worldViewProj->SetMatrix(ortho);
 
 	if(skyInterface)
-	for(int i=0;i<3;i++)
+	for(int i=0;i<2;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
 				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(

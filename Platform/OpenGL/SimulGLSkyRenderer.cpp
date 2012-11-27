@@ -264,14 +264,13 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
 	RenderTexture(8,16+size,size,size);
 	glBindTexture(GL_TEXTURE_2D,skylight_2d.GetColorTex());
-	RenderTexture(8,32+4*size,size,size);
+	RenderTexture(8,24+2*size,size,size);
 	int x=16+size;
 	if(h/(numAltitudes+2)<size)
 		size=h/(numAltitudes+2);
 	for(int i=0;i<numAltitudes;i++)
 	{
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
-
 		glUseProgram(fade_3d_to_2d_program);
 		GLint			altitudeTexCoord_fade;
 		GLint			skyInterp_fade;
@@ -299,6 +298,12 @@ ERROR_CHECK
 
 		glBindTexture(GL_TEXTURE_3D,loss_textures[1]);
 		RenderTexture(x+16+3*(size+8)	,i*(size+8)+8, size,size);
+		
+		glBindTexture(GL_TEXTURE_3D,skylight_textures[0]);
+		RenderTexture(x+16+4*(size+8)	,i*(size+8)+8, size,size);
+
+		glBindTexture(GL_TEXTURE_3D,skylight_textures[1]);
+		RenderTexture(x+16+5*(size+8)	,i*(size+8)+8, size,size);
 	}
 	glUseProgram(0);
 ERROR_CHECK
@@ -324,6 +329,7 @@ void SimulGLSkyRenderer::UseProgram(GLuint p)
 		current_program=p;
 		MieRayleighRatio_param			=glGetUniformLocation(current_program,"mieRayleighRatio");
 		lightDirection_sky_param		=glGetUniformLocation(current_program,"lightDir");
+		sunDir_param					=glGetUniformLocation(current_program,"sunDir");
 		hazeEccentricity_param			=glGetUniformLocation(current_program,"hazeEccentricity");
 		skyInterp_param					=glGetUniformLocation(current_program,"skyInterp");
 		skyTexture1_param				=glGetUniformLocation(current_program,"inscTexture");
@@ -354,7 +360,8 @@ ERROR_CHECK
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	//}
 	simul::sky::float4 ratio=skyKeyframer->GetMieRayleighRatio();
-	simul::sky::float4 sun_dir=skyKeyframer->GetDirectionToLight();
+	simul::sky::float4 light_dir=skyKeyframer->GetDirectionToLight();
+	simul::sky::float4 sun_dir=skyKeyframer->GetDirectionToSun();
 ERROR_CHECK
     glDisable(GL_DEPTH_TEST);
 // We normally BLEND the sky because there may be hi-res things behind it like planets.
@@ -385,7 +392,8 @@ ERROR_CHECK
 	glUniform3f(MieRayleighRatio_param,ratio.x,ratio.y,ratio.z);
 	glUniform1f(hazeEccentricity_param,skyKeyframer->GetMieEccentricity());
 	glUniform1f(skyInterp_param,skyKeyframer->GetInterpolation());
-	glUniform3f(lightDirection_sky_param,sun_dir.x,sun_dir.y,sun_dir.z);
+	glUniform3f(lightDirection_sky_param,light_dir.x,light_dir.y,light_dir.z);
+	glUniform3f(sunDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);
@@ -727,7 +735,7 @@ ERROR_CHECK
 ERROR_CHECK
 	RecompileShaders();
 ERROR_CHECK
-	moon_texture=(void*)LoadGLImage("Moon.png",GL_CLAMP);
+	moon_texture=(void*)LoadGLImage("Moon.png",GL_CLAMP_TO_EDGE);
 	SetPlanetImage(moon_index,moon_texture);
 
 	glUseProgram(NULL);

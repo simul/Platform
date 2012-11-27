@@ -5,6 +5,14 @@
 #include <assert.h>
 #include <GL/glew.h>
 
+namespace simul
+{
+	namespace sky
+	{
+		struct float4;
+	}
+}
+
 SIMUL_OPENGL_EXPORT_CLASS Utilities
 {
 	static int instance_count;
@@ -56,6 +64,15 @@ struct VertexXyzRgba
 	float r,g,b,a;
 };
 extern SIMUL_OPENGL_EXPORT void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip);
-extern void CalcCameraPosition(float *cam_pos,float *cam_dir=0);
+extern SIMUL_OPENGL_EXPORT void CalcCameraPosition(float *cam_pos,float *cam_dir=0);
 extern SIMUL_OPENGL_EXPORT void FixGlProjectionMatrix(float required_distance);
+extern SIMUL_OPENGL_EXPORT void OrthoMatrices();
+
+extern void setParameter(GLuint program,const char *name,float value);
+extern void setParameter(GLuint program,const char *name,float value1,float value2);
+extern void setParameter(GLuint program,const char *name,float value1,float value2,float value3);
+extern void setParameter(GLuint program,const char *name,int value);
+extern void setParameter(GLuint program,const char *name,const simul::sky::float4 &value);
+extern void setParameter3(GLuint program,const char *name,const simul::sky::float4 &value);
+extern void setMatrix(GLuint program,const char *name,const float *value);
 #endif

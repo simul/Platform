@@ -33,5 +33,5 @@ void main(void)
 	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
 	float density				=saturate(texture3D(density_texture,densityspace_texcoord).x);
 
-    gl_FragColor=vec4(light_lookup.y,density,light_lookup.x,ambient_lookup);
+    gl_FragColor=vec4(ambient_lookup,density,light_lookup.x,light_lookup.y);
 }

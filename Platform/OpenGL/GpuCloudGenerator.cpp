@@ -36,47 +36,6 @@ void GpuCloudGenerator::RecompileShaders()
 {
 }
 
-/*
-	float LightToDensityTransform[16];
-	float DensityToLightTransform[16];
-	int light_gridsizes[3];
-	float light_extinctions[4];
-	int num_octaves;
-	float persistence_val;
-	float humidity_val;
-	float time_val;
-			int cloud_tex_width_x,cloud_tex_length_y,cloud_tex_depth_z;
-*/
-
-static void setParameter(GLuint program,const char *name,float value)
-{
-	GLint loc=glGetUniformLocation(program,name);
-	glUniform1f(loc,value);
-}
-
-static void setParameter(GLuint program,const char *name,float value1,float value2)
-{
-	GLint loc=glGetUniformLocation(program,name);
-	glUniform2f(loc,value1,value2);
-}
-
-static void setParameter(GLuint program,const char *name,float value1,float value2,float value3)
-{
-	GLint loc=glGetUniformLocation(program,name);
-	glUniform3f(loc,value1,value2,value3);
-}
-
-static void setParameter(GLuint program,const char *name,int value)
-{
-	GLint loc=glGetUniformLocation(program,name);
-	glUniform1i(loc,value);
-}
-static void setMatrix(GLuint program,const char *name,const float *value)
-{
-	GLint loc=glGetUniformLocation(program,name);
-	static bool tr=1;
-	glUniformMatrix4fv(loc,1,tr,value);
-}
 static GLuint make3DTexture(int w,int l,int d,int stride,bool wrap_z,const float *src)
 {
 	GLuint tex=0;
@@ -87,10 +46,7 @@ static GLuint make3DTexture(int w,int l,int d,int stride,bool wrap_z,const float
 	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-	if(wrap_z)
-		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_REPEAT);
-	else
-		glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,wrap_z?GL_REPEAT:GL_CLAMP_TO_EDGE);
 	glBindTexture(GL_TEXTURE_3D,0);
 	return tex;
 }
@@ -249,7 +205,7 @@ void GpuCloudGenerator::PerformFullGPURelight(float *target,const int *light_gri
 	SAFE_DELETE_PROGRAM(program);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_3D);
-	glDeleteTextures(1,&density_texture);
+	SAFE_DELETE_TEXTURE(density_texture);
 }
 
 // Transform light data into a world-oriented cloud texture.
