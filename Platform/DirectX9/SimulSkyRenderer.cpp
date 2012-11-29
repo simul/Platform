@@ -581,7 +581,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	if(!m_hTechniqueQuery)
 		return sun_occlusion;
 	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight(cam_pos.z*.001f));
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	// fix the projection matrix so this quad is far away:
@@ -648,7 +648,7 @@ void SimulSkyRenderer::RenderSun()
 	}
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
 	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight(cam_pos.z*0.001f));
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	RenderAngledQuad(sun_dir,sun_angular_size);
@@ -992,7 +992,7 @@ bool SimulSkyRenderer::Render(bool blend)
 	}
 	simul::sky::float4 mie_rayleigh_ratio=skyKeyframer->GetMieRayleighRatio();
 	D3DXVECTOR4 ratio(mie_rayleigh_ratio);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight(cam_pos.z*0.001f));
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 

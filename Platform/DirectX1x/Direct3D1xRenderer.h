@@ -37,6 +37,7 @@ class SimulOpticsRendererDX1x;
 class D3D11CallbackInterface
 {
 public:
+	virtual bool	IsEnabled() const=0;
 	virtual bool	IsD3D11DeviceAcceptable(	const CD3D11EnumAdapterInfo *AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo *DeviceInfo,DXGI_FORMAT BackBufferFormat,bool bWindowed)=0;
 	virtual bool	ModifyDeviceSettings(		DXUTDeviceSettings* pDeviceSettings)=0;
 	virtual HRESULT	OnD3D11CreateDevice(		ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)=0;
@@ -68,6 +69,7 @@ public:
 		META_ValueProperty(bool,CelestialDisplay,"Show geographical and sidereal overlay.")
 		META_ValueProperty(bool,ShowWater,"Show water surfaces.")
 	META_EndProperties
+	bool IsEnabled()const{return enabled;}
 	class SimulWeatherRendererDX1x *GetSimulWeatherRenderer()
 	{
 		return simulWeatherRenderer.get();
@@ -96,6 +98,7 @@ public:
 	virtual void    OnFrameMove(double fTime,float fTimeStep);
 	virtual const	char *GetDebugText() const;
 protected:
+	bool enabled;
 	bool y_vertical;
 	simul::camera::Camera *camera;
 	float aspect;

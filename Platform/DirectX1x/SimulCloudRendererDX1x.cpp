@@ -592,10 +592,10 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 										indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse(),
 										0,
 										0);
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
+	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
+	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(base_alt_km);
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
-	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
 	float tan_half_fov_vertical=1.f/proj._22;
 	float tan_half_fov_horizontal=1.f/proj._11;

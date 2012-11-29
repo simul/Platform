@@ -83,9 +83,9 @@ vec4 getSunlightFactor(float alt_km,vec3 DirectionToLight)
 	float vis=lookup.y;
 	float ozone_length=lookup.w;
 	float haze_opt_len=getHazeOpticalLength(sine,alt_km);
-	vec4 output=vec4(vis,vis,vis,vis);
-	output.rgb*=exp(-rayleigh*illuminated_length-hazeMie*haze_opt_len-ozone*ozone_length);
-	return output;
+	vec4 factor=vec4(vis,vis,vis,vis);
+	factor.rgb*=exp(-rayleigh*illuminated_length-hazeMie*haze_opt_len-ozone*ozone_length);
+	return factor;
 }
 
 float getShortestDistanceToAltitude(float sine_elevation,float start_h_km,float finish_h_km)

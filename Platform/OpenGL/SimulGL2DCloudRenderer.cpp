@@ -248,9 +248,9 @@ ERROR_CHECK
 		glUniform1f(hazeEccentricity_param,skyInterface->GetMieEccentricity());
 		simul::sky::float4 mieRayleighRatio=skyInterface->GetMieRayleighRatio();
 		glUniform3f(mieRayleighRatio_param,mieRayleighRatio.x,mieRayleighRatio.y,mieRayleighRatio.z);
-		simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
+		simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(X1.z*0.001f);
 		glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
-		simul::sky::float4 amb=skyInterface->GetAmbientLight(cam_pos.z*.001f);
+		simul::sky::float4 amb=skyInterface->GetAmbientLight(X1.z*.001f);
 		glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
 	}
 

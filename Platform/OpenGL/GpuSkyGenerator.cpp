@@ -10,6 +10,9 @@ using namespace simul;
 using namespace opengl;
 
 GpuSkyGenerator::GpuSkyGenerator()
+:loss_program(0)
+,insc_program(0)
+,skyl_program(0)
 {
 }
 
@@ -19,14 +22,23 @@ GpuSkyGenerator::~GpuSkyGenerator()
 
 void GpuSkyGenerator::RestoreDeviceObjects(void *)
 {
+	RecompileShaders();
 }
 
 void GpuSkyGenerator::InvalidateDeviceObjects()
 {
+	SAFE_DELETE_PROGRAM(loss_program);
+	SAFE_DELETE_PROGRAM(insc_program);
+	SAFE_DELETE_PROGRAM(skyl_program);
 }
 
 void GpuSkyGenerator::RecompileShaders()
 {
+	SAFE_DELETE_PROGRAM(loss_program);
+	SAFE_DELETE_PROGRAM(insc_program);
+	SAFE_DELETE_PROGRAM(skyl_program);
+	loss_program=LoadPrograms("simple.vert",NULL,"simul_gpu_loss.frag");
+	insc_program=LoadPrograms("simple.vert",NULL,"simul_gpu_insc.frag");
 }
 
 //! Return true if the derived class can make sky tables using the GPU.
@@ -82,12 +94,18 @@ static GLuint make2DTexture(int w,int l,const float *src)
 	return tex;
 }
 
-void GpuSkyGenerator::Make2DLossAndInscatterTextures(simul::sky::SkyInterface *skyInterface
+void GpuSkyGenerator::Make2DLossAndInscatterTextures(simul::sky::AtmosphericScatteringInterface *skyInterface
 				,int numElevations,int numDistances
 				,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl
-				,const std::vector<float> &altitudes_km,float max_distance_km,int index
-				,int end_index,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table,int table_size,float maxDensityAltKm,bool InfraRed)
+				,const std::vector<float> &altitudes_km
+				,float max_distance_km
+				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon
+				,int index,int end_index
+				,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table,int table_size,float maxDensityAltKm
+				,bool InfraRed)
 {
+	if(loss_program<=0)
+		RecompileShaders();
 	float maxOutputAltKm=altitudes_km[altitudes_km.size()-1];
 // we will render to these three textures, one distance at a time.
 // The rendertextures are altitudes x elevations
@@ -103,10 +121,9 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(simul::sky::SkyInterface *s
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
 	GLuint dens_tex=make1DTexture(table_size,(const float *)density_table);
-
-	GLuint program=LoadPrograms("simple.vert",NULL,"simul_gpu_loss.frag");
-	setParameter(program,"input_loss_texture",0);
-	setParameter(program,"density_texture",1);
+	glUseProgram(loss_program);
+	setParameter(loss_program,"input_loss_texture",0);
+	setParameter(loss_program,"density_texture",1);
 	simul::sky::float4 *target=loss;
 ERROR_CHECK
 	F[0]->Activate();
@@ -125,18 +142,18 @@ ERROR_CHECK
 		float distKm=zPosition*max_distance_km;
 		if(i==numDistances-1)
 			distKm=1000.f;
-		setParameter(program,"texSize"			,altitudes_km.size(),numElevations);
-		setParameter(program,"tableSize"		,table_size,table_size);
-		setParameter(program,"distKm"			,distKm);
-		setParameter(program,"prevDistKm"		,prevDistKm);
-		setParameter(program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
-		setParameter(program,"maxOutputAltKm"	,maxOutputAltKm);
-		setParameter(program,"maxDensityAltKm"	,maxDensityAltKm);  
-		setParameter(program,"hazeBaseHeightKm"	,skyInterface->GetHazeBaseHeightKm());
-		setParameter(program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
-		setParameter3(program,"rayleigh"		,skyInterface->GetRayleigh());
-		setParameter3(program,"hazeMie"			,skyInterface->GetHaze()*skyInterface->GetMie());
-		setParameter3(program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
+		setParameter(loss_program,"texSize"			,altitudes_km.size(),numElevations);
+		setParameter(loss_program,"tableSize"		,table_size,table_size);
+		setParameter(loss_program,"distKm"			,distKm);
+		setParameter(loss_program,"prevDistKm"		,prevDistKm);
+		setParameter(loss_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
+		setParameter(loss_program,"maxOutputAltKm"	,maxOutputAltKm);
+		setParameter(loss_program,"maxDensityAltKm"	,maxDensityAltKm);  
+		setParameter(loss_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
+		setParameter(loss_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
+		setParameter3(loss_program,"rayleigh"		,skyInterface->GetRayleigh());
+		setParameter3(loss_program,"hazeMie"		,skyInterface->GetHaze()*skyInterface->GetMie());
+		setParameter3(loss_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
 	ERROR_CHECK
 		F[1]->Activate();
 	ERROR_CHECK
@@ -158,19 +175,17 @@ ERROR_CHECK
 		prevDistKm=distKm;
 	}
 	glUseProgram(0);
-	SAFE_DELETE_PROGRAM(program);
-	
 	
 	// Now we will generate the inscatter texture.
 	// First we make the loss into a 3D texture.
 	GLuint loss_tex=make3DTexture(altitudes_km.size(),numElevations,numDistances,(const float *)loss);
 	GLuint optd_tex=make2DTexture(table_size,table_size,(const float *)optical_table);
 	// Now render out the inscatter.
-	program=LoadPrograms("simple.vert",NULL,"simul_gpu_insc.frag");
-	setParameter(program,"input_insc_texture",0);
-	setParameter(program,"density_texture",1);
-	setParameter(program,"loss_texture",2);
-	setParameter(program,"optical_depth_texture",3);
+	glUseProgram(insc_program);
+	setParameter(insc_program,"input_insc_texture",0);
+	setParameter(insc_program,"density_texture",1);
+	setParameter(insc_program,"loss_texture",2);
+	setParameter(insc_program,"optical_depth_texture",3);
 ERROR_CHECK
 	target=insc;
 	F[0]->Activate();
@@ -188,21 +203,21 @@ ERROR_CHECK
 		float distKm=zPosition*max_distance_km;
 		if(i==numDistances-1)
 			distKm=1000.f;
-		setParameter(program,"texSize"			,altitudes_km.size(),numElevations);
-		setParameter(program,"tableSize"		,table_size,table_size);
-		setParameter(program,"distKm"			,distKm);
-		setParameter(program,"prevDistKm"		,prevDistKm);
-		setParameter(program,"maxDistanceKm"	,max_distance_km);
-		setParameter(program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
-		setParameter(program,"maxOutputAltKm"	,maxOutputAltKm);
-		setParameter(program,"maxDensityAltKm"	,maxDensityAltKm);
-		setParameter(program,"hazeBaseHeightKm"	,skyInterface->GetHazeBaseHeightKm());
-		setParameter(program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
-		setParameter3(program,"rayleigh"		,skyInterface->GetRayleigh());
-		setParameter3(program,"hazeMie"			,skyInterface->GetHaze()*skyInterface->GetMie());
-		setParameter3(program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
-		setParameter3(program,"sunIrradiance"	,skyInterface->GetSunIrradiance());
-		setParameter3(program,"lightDir"		,skyInterface->GetDirectionToSun());
+		setParameter(insc_program,"texSize"			,altitudes_km.size(),numElevations);
+		setParameter(insc_program,"tableSize"		,table_size,table_size);
+		setParameter(insc_program,"distKm"			,distKm);
+		setParameter(insc_program,"prevDistKm"		,prevDistKm);
+		setParameter(insc_program,"maxDistanceKm"	,max_distance_km);
+		setParameter(insc_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
+		setParameter(insc_program,"maxOutputAltKm"	,maxOutputAltKm);
+		setParameter(insc_program,"maxDensityAltKm"	,maxDensityAltKm);
+		setParameter(insc_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
+		setParameter(insc_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
+		setParameter3(insc_program,"rayleigh"		,skyInterface->GetRayleigh());
+		setParameter3(insc_program,"hazeMie"		,skyInterface->GetHaze()*skyInterface->GetMie());
+		setParameter3(insc_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
+		setParameter3(insc_program,"sunIrradiance"	,skyInterface->GetSunIrradiance());
+		setParameter3(insc_program,"lightDir"		,dir_to_sun);
 		F[1]->Activate();
 			F[1]->Clear(0.f,0.f,0.f,0.f);
 			OrthoMatrices();
@@ -240,4 +255,5 @@ ERROR_CHECK
 	glDisable(GL_TEXTURE_1D);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_3D);
+// InvalidateDeviceObjects();
 }

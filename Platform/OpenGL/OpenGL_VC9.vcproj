@@ -561,6 +561,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLSL\simul_gpu_insc.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_loss.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_lightning.frag"
 				>
 			</File>

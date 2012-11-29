@@ -36,7 +36,7 @@ namespace simul
 	}
 	namespace sky
 	{
-		class SkyInterface;
+		class AtmosphericScatteringInterface;
 	}
 }
 typedef long HRESULT;

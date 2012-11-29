@@ -755,11 +755,11 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 										,indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse()
 										,0
 										,0);
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
+	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());//+.5f*GetCloudInterface()->GetCloudHeight());
+	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(base_alt_km);
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	// Get the overall ambient light at this altitude, and multiply it by the cloud's ambient response.
-	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());//+.5f*GetCloudInterface()->GetCloudHeight());
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
 
 
@@ -863,7 +863,7 @@ void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
 	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
 	float view_alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
+	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(base_alt_km);
 	// Convert metres to km:
 	float scale=0.001f;
 	static int num_layers=4;
@@ -920,7 +920,6 @@ void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
 					vertex->sunlightColour.x=sunlight.x;
 					vertex->sunlightColour.y=sunlight.y;
 					vertex->sunlightColour.z=sunlight.z;
-					float cos0=simul::sky::float4::dot(sun_dir,dir_to_vertex);
 					v++;
 					if(v>=MAX_VERTICES)
 						break;
@@ -1000,14 +999,14 @@ void SimulCloudRenderer::InternalRenderRaytrace(int buffer_index)
 		m_pCloudEffect->SetVector	(cloudOffset	,(const D3DXVECTOR4*)&cloud_offset);
 		D3DXVECTOR3 d3dcam_pos;
 		GetCameraPosVector(view,y_vertical,(float*)&d3dcam_pos);
-		float altitude=y_vertical?d3dcam_pos.y:d3dcam_pos.z;
+		float altitude_km=0.001f*(y_vertical?d3dcam_pos.y:d3dcam_pos.z);
 		hr=m_pCloudEffect->SetFloat(fadeInterp,fade_interp);
 		if(skyInterface)
 		{
 //		hr=m_pCloudEffect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
 			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
-			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
-			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(altitude));
+			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight(altitude_km));
+			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(altitude_km));
 			
 			//light_colour*=strength;
 			if(y_vertical)

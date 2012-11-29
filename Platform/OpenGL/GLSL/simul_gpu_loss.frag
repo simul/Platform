@@ -9,7 +9,7 @@ out vec4 outColor;
 
 void main(void)
 {
-	vec4 previous_loss	=texture2D(input_loss_texture,texc.xy);
+	vec4 previous_loss	=texture(input_loss_texture,texc.xy);
 	float sin_e			=1.0-2.0*(texc.y*texSize.y-0.5)/(texSize.y-1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texc.x*texSize.x-0.5)/(texSize.x-1.0);
@@ -35,7 +35,7 @@ void main(void)
 	loss.a				=(loss.r+loss.g+loss.b)/3.0;
 //loss.rgb	*=0.5;//=vec3(alt_km/maxDensityAltKm,stepLengthKm/512.0,stepLengthKm/512.0);
 	loss				*=previous_loss;
-//float u=abs(stepLengthKm/100.0);
-	//loss.rgb=vec3(u,u,u);
+//outColor.r=1.0;
+//outColor.a=1.0;
     outColor			=loss;
 }

@@ -50,7 +50,6 @@ void main(void)
 	insc.rgb			+=previous_insc.rgb;
 	float lossw=1.0;
 	insc.w				=(lossw)*(1.0-previous_insc.w)*insc.w+previous_insc.w;
-//float u=abs(haze_factor);
-//insc.rgb=light.rgb;
+
     outColor			=insc;
 }

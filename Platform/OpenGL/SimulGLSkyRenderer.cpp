@@ -360,7 +360,7 @@ ERROR_CHECK
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	//}
 	simul::sky::float4 ratio=skyKeyframer->GetMieRayleighRatio();
-	simul::sky::float4 light_dir=skyKeyframer->GetDirectionToLight();
+	simul::sky::float4 light_dir=skyKeyframer->GetDirectionToLight(skyKeyframer->GetAltitudeKM());
 	simul::sky::float4 sun_dir=skyKeyframer->GetDirectionToSun();
 ERROR_CHECK
     glDisable(GL_DEPTH_TEST);
@@ -500,7 +500,8 @@ bool SimulGLSkyRenderer::RenderPointStars()
 void SimulGLSkyRenderer::RenderSun()
 {
 	float alt_km=0.001f*cam_pos.z;
-	simul::sky::float4 sunlight=skyKeyframer->GetSkyInterface()->GetLocalIrradiance(alt_km);
+	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
+	simul::sky::float4 sunlight=skyKeyframer->GetSkyInterface()->GetLocalIrradiance(alt_km,sun_dir);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
@@ -520,7 +521,6 @@ void SimulGLSkyRenderer::RenderSun()
 	ERROR_CHECK
 	glUniform4f(sunlight_param,sunlight.x,sunlight.y,sunlight.z,sunlight.w);
 	ERROR_CHECK
-	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
 	//if(y_vertical)
 	//	std::swap(sun_dir.y,sun_dir.z);
 	glEnable(GL_BLEND);

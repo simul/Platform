@@ -705,7 +705,7 @@ void SimulOceanRendererDX1x::Render()
 		if(skyInterface)
 		{
 			call_consts.hazeEccentricity=skyInterface->GetMieEccentricity();
-			call_consts.lightDir=D3DXVECTOR3((const float *)(skyInterface->GetDirectionToLight()));
+			call_consts.lightDir=D3DXVECTOR3((const float *)(skyInterface->GetDirectionToLight(0.f)));
 			call_consts.mieRayleighRatio=D3DXVECTOR4((const float *)(skyInterface->GetMieRayleighRatio()));
 		}
 		else

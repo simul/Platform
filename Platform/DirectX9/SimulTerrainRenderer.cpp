@@ -891,11 +891,11 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 	simul::sky::float4 light_colour(1.f,1.f,1.f,1.f);
 	if(skyInterface)
 	{
-		D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
+		float alt_km=cam_pos.z*0.001f;
+		D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight(alt_km));
 		if(y_vertical)
 			std::swap(sun_dir.y,sun_dir.z);
 		m_pTerrainEffect->SetVector	(lightDirection		,&sun_dir);
-		float alt_km=cam_pos.z*0.001f;
 		if(y_vertical)
 			alt_km=cam_pos.y*0.001f;
 		static float light_mult=0.08f;

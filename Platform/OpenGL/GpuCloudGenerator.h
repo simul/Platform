@@ -17,7 +17,7 @@ namespace simul
 			void RecompileShaders();
 			bool CanPerformGPULighting() const
 			{
-				return true;
+				return Enabled;
 			}
 			int GetDensityGridsize(const int *grid);
 			void FillDensityGrid(float *target,const int *grid
@@ -35,6 +35,9 @@ namespace simul
 			FramebufferGL	fb[2];
 			FramebufferGL	world_fb;
 			FramebufferGL	dens_fb;
+			GLuint			density_program;
+			GLuint			clouds_program;
+			GLuint			transform_program;
 		};
 	}
 }

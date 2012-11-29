@@ -26,7 +26,7 @@ namespace simul
 {
 	namespace sky
 	{
-		class SkyInterface;
+		class AtmosphericScatteringInterface;
 	}
 }
 
@@ -70,7 +70,7 @@ public:
 	void FinishRender();
 protected:
 	FramebufferDX1x								*framebuffer;
-	simul::sky::SkyInterface *					skyInterface;
+	simul::sky::AtmosphericScatteringInterface *					skyInterface;
 	HRESULT Destroy();
 	ID3D1xDevice*								m_pd3dDevice;
 	ID3D1xDeviceContext*						m_pImmediateContext;

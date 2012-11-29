@@ -25,6 +25,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 		,UseSkyBuffer(true)
 		,ShowLightVolume(false)
 		,CelestialDisplay(false)
+		,enabled(true)
 		,ShowWater(true)
 		,ShowCloudCrossSections(false)
 {
@@ -60,6 +61,9 @@ bool	Direct3D11Renderer::IsD3D11DeviceAcceptable(	const CD3D11EnumAdapterInfo *A
 bool	Direct3D11Renderer::ModifyDeviceSettings(		DXUTDeviceSettings* pDeviceSettings)
 {
 	pDeviceSettings->d3d11.CreateFlags|=D3D11_CREATE_DEVICE_DEBUG;
+	enabled=true;
+	if(pDeviceSettings->d3d11.DriverType!=D3D_DRIVER_TYPE_HARDWARE)
+		enabled=false;
     return true;
 }
 
@@ -80,6 +84,8 @@ HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(		ID3D11Device* pd3dDevice,const
 
 HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,IDXGISwapChain* pSwapChain,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
+	if(!enabled)
+		return S_OK;
 	try
 	{
 		simul::dx11::UnsetDevice();
@@ -116,6 +122,8 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 
 void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep)
 {
+	if(!enabled)
+		return;
 	D3DXMATRIX world,view,proj;
 	static float nr=0.01f;
 	static float fr=250000.f;

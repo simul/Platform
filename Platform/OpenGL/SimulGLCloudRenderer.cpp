@@ -367,7 +367,7 @@ ERROR_CHECK
 	float t=0.f;
 	if(skyInterface)
 	{
-		simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
+		simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(X1.z*.001f);
 		glUniform3f(lightDirection_param,sun_dir.x,sun_dir.y,sun_dir.z);
 		
 		simul::sky::float4 amb=skyInterface->GetAmbientLight(X1.z*.001f);

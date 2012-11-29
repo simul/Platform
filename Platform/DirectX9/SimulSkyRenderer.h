@@ -35,7 +35,7 @@ namespace simul
 	}
 	namespace sky
 	{
-		class SkyInterface;
+		class AtmosphericScatteringInterface;
 		class SiderealSkyInterface;
 		class Sky;
 		class SkyKeyframer;
