@@ -69,7 +69,7 @@ SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk)
 	SetCameraPosition(0,0,skyKeyframer->GetAltitudeKM()*1000.f);
 }
 
-void SimulGLSkyRenderer::SetFadeTexSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_alts)
+void SimulGLSkyRenderer::SetFadeTexSize(int width_num_distances,int height_num_elevations,int num_alts)
 {
 	// If not initialized we might not have a valid GL context:
 	if(!initialized)
@@ -501,7 +501,7 @@ void SimulGLSkyRenderer::RenderSun()
 {
 	float alt_km=0.001f*cam_pos.z;
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
-	simul::sky::float4 sunlight=skyKeyframer->GetSkyInterface()->GetLocalIrradiance(alt_km,sun_dir);
+	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.

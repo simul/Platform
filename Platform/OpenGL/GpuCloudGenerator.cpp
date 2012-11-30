@@ -42,6 +42,8 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 void GpuCloudGenerator::RecompileShaders()
 {
 	SAFE_DELETE_PROGRAM(density_program);
+	SAFE_DELETE_PROGRAM(transform_program);
+	SAFE_DELETE_PROGRAM(clouds_program);
 	density_program=MakeProgram("simul_gpu_cloud_density");
 	clouds_program=MakeProgram("simul_gpu_clouds");
 	transform_program=MakeProgram("simul_gpu_cloud_transform");
@@ -155,6 +157,8 @@ void GpuCloudGenerator::PerformFullGPURelight(float *target,const int *light_gri
 		fb[i].SetWidthAndHeight(light_grid[0],light_grid[1]);
 		fb[i].InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	}
+	GLuint density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,1,false,density);
+	glUseProgram(clouds_program);
 	setParameter(clouds_program,"input_light_texture",0);
 	setParameter(clouds_program,"density_texture",1);
 	setMatrix(clouds_program,"lightToDensityMatrix",Matrix4x4LightToDensityTexcoords);
@@ -163,7 +167,6 @@ void GpuCloudGenerator::PerformFullGPURelight(float *target,const int *light_gri
 	FramebufferGL *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
-	GLuint density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,1,false,density);
 	
 	glDisable(GL_TEXTURE_1D);
 	glDisable(GL_TEXTURE_3D);
@@ -181,7 +184,6 @@ void GpuCloudGenerator::PerformFullGPURelight(float *target,const int *light_gri
 			ERROR_CHECK
 	F[0]->Deactivate();
 			ERROR_CHECK
-	glUseProgram(clouds_program);
 	for(int i=0;i<light_grid[2];i++)
 	{
 		float zPosition=((float)i+0.5f)/(float)light_grid[2];
@@ -232,6 +234,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 	GLuint density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,1,false,density);
 	GLuint light_texture	=make3DTexture(light_grid[0]	,light_grid[1],light_grid[2]	,4,false,light);
 	GLuint ambient_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,4,false,ambient);
+			glUseProgram(transform_program);
 	setParameter(transform_program,"density_texture",0);
 	setParameter(transform_program,"light_texture",1);
 	setParameter(transform_program,"ambient_texture",2);
@@ -257,7 +260,6 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 			glMatrixMode(GL_MODELVIEW);
 			glLoadIdentity();
 			// input light values:
-			glUseProgram(transform_program);
 			DrawQuad(0,0,1,1);
 			ERROR_CHECK
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);

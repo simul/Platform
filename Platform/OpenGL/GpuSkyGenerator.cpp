@@ -99,7 +99,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(simul::sky::AtmosphericScat
 				,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl
 				,const std::vector<float> &altitudes_km
 				,float max_distance_km
-				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon
+				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon,float haze
 				,int index,int end_index
 				,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table,int table_size,float maxDensityAltKm
 				,bool InfraRed)
@@ -142,8 +142,8 @@ ERROR_CHECK
 		float distKm=zPosition*max_distance_km;
 		if(i==numDistances-1)
 			distKm=1000.f;
-		setParameter(loss_program,"texSize"			,altitudes_km.size(),numElevations);
-		setParameter(loss_program,"tableSize"		,table_size,table_size);
+		setParameter(loss_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
+		setParameter(loss_program,"tableSize"		,(float)table_size,(float)table_size);
 		setParameter(loss_program,"distKm"			,distKm);
 		setParameter(loss_program,"prevDistKm"		,prevDistKm);
 		setParameter(loss_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
@@ -152,7 +152,7 @@ ERROR_CHECK
 		setParameter(loss_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
 		setParameter(loss_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
 		setParameter3(loss_program,"rayleigh"		,skyInterface->GetRayleigh());
-		setParameter3(loss_program,"hazeMie"		,skyInterface->GetHaze()*skyInterface->GetMie());
+		setParameter3(loss_program,"hazeMie"		,haze*skyInterface->GetMie());
 		setParameter3(loss_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
 	ERROR_CHECK
 		F[1]->Activate();
@@ -203,8 +203,8 @@ ERROR_CHECK
 		float distKm=zPosition*max_distance_km;
 		if(i==numDistances-1)
 			distKm=1000.f;
-		setParameter(insc_program,"texSize"			,altitudes_km.size(),numElevations);
-		setParameter(insc_program,"tableSize"		,table_size,table_size);
+		setParameter(insc_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
+		setParameter(insc_program,"tableSize"		,(float)table_size,(float)table_size);
 		setParameter(insc_program,"distKm"			,distKm);
 		setParameter(insc_program,"prevDistKm"		,prevDistKm);
 		setParameter(insc_program,"maxDistanceKm"	,max_distance_km);
@@ -214,7 +214,7 @@ ERROR_CHECK
 		setParameter(insc_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
 		setParameter(insc_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
 		setParameter3(insc_program,"rayleigh"		,skyInterface->GetRayleigh());
-		setParameter3(insc_program,"hazeMie"		,skyInterface->GetHaze()*skyInterface->GetMie());
+		setParameter3(insc_program,"hazeMie"		,haze*skyInterface->GetMie());
 		setParameter3(insc_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
 		setParameter3(insc_program,"sunIrradiance"	,skyInterface->GetSunIrradiance());
 		setParameter3(insc_program,"lightDir"		,dir_to_sun);

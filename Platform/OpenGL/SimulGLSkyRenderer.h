@@ -68,8 +68,7 @@ protected:
 	//! \internal Switch the current program, either sky_program or earthshadow_program.
 	//! Also sets the parameter variables.	
 	void		UseProgram(GLuint);
-	void		SetSkyTexSize(unsigned size);
-	void		SetFadeTexSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_altitudes);
+	void		SetFadeTexSize(int width_num_distances,int height_num_elevations,int num_altitudes);
 	void		FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d
 				,const float *loss_float4_array,const float *inscatter_float4_array,const float *skylight_float4_array);
 
