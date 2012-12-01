@@ -708,16 +708,6 @@ const char *SimulGLCloudRenderer::GetDebugText()
 	return txt;
 }
 
-// Save and load a sky sequence
-std::ostream &SimulGLCloudRenderer::Save(std::ostream &os) const
-{
-	return cloudKeyframer->Save(os);
-}
-
-std::istream &SimulGLCloudRenderer::Load(std::istream &is) const
-{
-	return cloudKeyframer->Load(is);
-}
 
 void SimulGLCloudRenderer::New()
 {
