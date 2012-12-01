@@ -1,6 +1,7 @@
 // simul_sky.vert - an OGLSL vertex shader
 // Copyright 2008 Simul Software Ltd
 
+uniform float distanceToIllumination;
 
 // varyings are written by vert shader, interpolated, and read by frag shader.
 
@@ -21,6 +22,7 @@ uniform vec3 eyePosition;
 uniform float layerDistance;
 uniform float maxFadeDistanceMetres;
 varying vec2 fade_texc;
+varying vec2 fade_texc_b;
 
 varying vec3 view;
 void main(void)
@@ -44,4 +46,6 @@ void main(void)
 	float sine=view.z;
 	float depth=length(wPosition)/maxFadeDistanceMetres;
 	fade_texc=vec2(sqrt(depth),0.5*(1.0-sine));
+	float depth_b=min(distanceToIllumination/(abs(sine)+0.001),depth);
+	fade_texc_b=vec2(sqrt(depth_b),fade_texc.y);//vec2(min(sqrt(depth_b),fade_texc.x),fade_texc.y);
 }

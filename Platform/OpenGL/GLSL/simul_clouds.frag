@@ -1,5 +1,6 @@
 // simul_sky.frag - a GLSL fragment shader
 // Copyright 2008 Simul Software Ltd
+#include "simul_inscatter_fns.glsl"
 
 uniform sampler3D cloudDensity1;
 uniform sampler3D cloudDensity2;
@@ -16,10 +17,8 @@ uniform float cloud_interp;
 uniform vec3 lightDir;
 
 // the App updates uniforms "slowly" (eg once per frame) for animation.
-uniform float hazeEccentricity;
 uniform float cloudEccentricity;
 uniform float fadeInterp;
-uniform vec3 mieRayleighRatio;
 uniform vec4 lightningMultipliers;
 uniform vec4 lightningColour;
 
@@ -37,23 +36,6 @@ varying vec4 insc;
 varying vec3 texCoordLightning;
 varying vec2 fade_texc;
 varying vec3 view;
-#define pi (3.1415926536)
-float HenyeyGreenstein(float g,float cos0)
-{
-	float g2=g*g;
-	float u=1.0+g2-2.0*g*cos0;
-	return (1.0-g2)*pow(u,-1.5)/(4.0*pi);
-}
-
-vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
-{
-	float BetaRayleigh=0.0596831*(1.0+cos0*cos0);
-	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
-	vec3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
-		/(vec3(1.0,1.0,1.0)+inscatter_factor.a*mieRayleighRatio.xyz);
-	vec3 colour=BetaTotal*inscatter_factor.rgb;
-	return colour;
-}
 
 void main(void)
 {

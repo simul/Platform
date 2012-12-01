@@ -97,10 +97,15 @@ void main()
 	// what should the light be at distance d?
 	// We subtract the inscatter to d if we're looking OUT FROM the cylinder,
 	if(radiusOnCylinder<1.0||d==0.0)
+	{
 		insc-=inscb*saturate(in_shadow);
+	}
 	else
+	{
 	// but we just use the inscatter to d if we're looking INTO the cylinder.
 		insc=mix(insc,inscb,in_shadow);
+		//insc.r=20.0*in_shadow;
+	}
 	float cos0=dot(view,lightDir);
 	colour+=InscatterFunction(insc,cos0);//directLightMultiplier*
 	vec4 skyl=texture(skylightTexture,texc2);

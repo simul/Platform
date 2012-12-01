@@ -1,6 +1,7 @@
 // simul_sky.frag - an OGLSL fragment shader
 // Copyright 2008 Simul Software Ltd
 
+
 uniform sampler2D inscTexture;
 uniform sampler2D skylightTexture;
 // the App updates uniforms "slowly" (eg once per frame) for animation.

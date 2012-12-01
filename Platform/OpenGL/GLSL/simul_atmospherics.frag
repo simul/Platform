@@ -49,5 +49,5 @@ void main()
 	colour+=InscatterFunction(insc,cos0);
 	vec3 skyl=texture(skylightTexture,texc2).rgb;
 	colour+=skyl;
-    gl_FragColor=vec4(colour.rgb,1.0);
+    gl_FragColor=vec4(colour,1.0);
 }
