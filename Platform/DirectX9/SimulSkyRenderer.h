@@ -90,7 +90,6 @@ public:
 	float GetFadeInterp() const;
 	void SetStepsPerDay(int s);
 //! Implement the SkyTexturesCallback
-	void SetSkyTextureSize(unsigned size);
 	void FillDistanceTexture(int num_elevs_width,int num_alts_height,const float *dist_array);
 	float CalcSunOcclusion(float cloud_occlusion);
 
@@ -99,7 +98,6 @@ public:
 	const char *GetDebugText() const;
 	void SetYVertical(bool y);
 protected:
-	void FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void FillFadeTexturesSequentially(int alt_index,int texture_index,int texel_index
 						,int num_texels,const float *loss_float4_array
 						,const float *inscatter_float4_array
@@ -169,7 +167,6 @@ protected:
 	LPDIRECT3DQUERY9			d3dQuery;
 	bool						UpdateSkyTexture(float proportion);
 	void						CreateFadeTextures();
-	void						CreateSkyTextures();
 	void						CreateSunlightTextures();
 	bool						RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
 	virtual bool IsYVertical()

@@ -233,45 +233,6 @@ SimulSkyRenderer::~SimulSkyRenderer()
 	InvalidateDeviceObjects();
 }
 
-void SimulSkyRenderer::FillSkyTexture(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array)
-{
-	HRESULT hr;
-	LPDIRECT3DTEXTURE9 tex=NULL;
-	tex=sky_textures[texture_index];
-	if(!tex)
-		return;
-	texel_index+=alt_index*skyTexSize;
-	if(texel_index<0)
-		return;
-	if(num_texels<=0)
-		return;
-	if(texel_index+num_texels>(int)(skyTexSize*numAltitudes))
-		return;
-	D3DLOCKED_RECT lockedRect={0};
-	if(FAILED(hr=tex->LockRect(0,&lockedRect,NULL,NULL)))
-		return;
-	if(sky_tex_format==D3DFMT_A16B16G16R16F)
-	{
-		// Convert the array of floats into float16 values for the texture.
-		short *short_ptr=(short *)(lockedRect.pBits);
-		short_ptr+=4*texel_index;
-		for(int i=0;i<num_texels*4;i++)
-		{
-			*short_ptr++=simul::sky::TextureGenerator::ToFloat16(*float4_array++);
-		}
-	}
-	else
-	{
-		// Convert the array of floats into float16 values for the texture.
-		float *float_ptr=(float *)(lockedRect.pBits);
-		float_ptr+=4*texel_index;
-		//memcpy(float_ptr,float4_array,sizeof(float)*4*num_texels);
-		for(int i=0;i<num_texels*4;i++)
-			*float_ptr++=(*float4_array++);
-	}
-	hr=tex->UnlockRect(0);
-}
-
 void SimulSkyRenderer::FillDistanceTexture(int num_elevs_width,int num_alts_height,const float *dist_array)
 {
 	if(!m_pd3dDevice)
@@ -333,11 +294,6 @@ void SimulSkyRenderer::SetStepsPerDay(int s)
 	skyKeyframer->SetUniformKeyframes(s);
 }
 
-void SimulSkyRenderer::SetSkyTextureSize(unsigned size)
-{
-	skyTexSize=size;
-	CreateSkyTextures();
-}
 
 void SimulSkyRenderer::CreateFadeTextures()
 {
@@ -469,43 +425,6 @@ void SimulSkyRenderer::CycleTexturesForward()
 	std::swap(sunlight_textures[1],sunlight_textures[2]);*/
 }
 
-
-void SimulSkyRenderer::CreateSkyTextures()
-{
-	HRESULT hr=S_OK;
-	for(int i=0;i<3;i++)
-	{
-		SAFE_RELEASE(sky_textures[i]);
-	}
-	for(int i=0;i<3;i++)
-	{
-		{
-			if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,skyTexSize,numAltitudes,1,0,sky_tex_format,d3d_memory_pool,&sky_textures[i])))
-				return;
-		}
-		LPDIRECT3DTEXTURE9 tex=sky_textures[i];
-		D3DLOCKED_RECT lockedRect={0};
-		if(FAILED(hr=tex->LockRect(0,&lockedRect,NULL,NULL)))
-			return;
-		if(sky_tex_format==D3DFMT_A16B16G16R16F)
-		{
-			// Convert the array of floats into float16 values for the texture.
-			short *short_ptr=(short *)(lockedRect.pBits);
-			for(int i=0;i<(int)skyTexSize*4;i++)
-			{
-				*short_ptr++=simul::sky::TextureGenerator::ToFloat16(0.f);
-			}
-		}
-		else
-		{
-			// Convert the array of floats into float16 values for the texture.
-			float *float_ptr=(float *)(lockedRect.pBits);
-			for(int i=0;i<skyTexSize*4;i++)
-				*float_ptr++=0.f;
-		}
-		hr=tex->UnlockRect(0);
-	}
-}
 
 void SimulSkyRenderer::CreateSunlightTextures()
 {
