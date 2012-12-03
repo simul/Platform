@@ -69,7 +69,7 @@ SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk)
 	SetCameraPosition(0,0,skyKeyframer->GetAltitudeKM()*1000.f);
 }
 
-void SimulGLSkyRenderer::SetFadeTexSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_alts)
+void SimulGLSkyRenderer::SetFadeTexSize(int width_num_distances,int height_num_elevations,int num_alts)
 {
 	// If not initialized we might not have a valid GL context:
 	if(!initialized)

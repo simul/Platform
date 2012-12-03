@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -121,7 +121,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -200,7 +200,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -267,7 +267,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -375,6 +375,10 @@
 			</File>
 			<File
 				RelativePath="..\DirectX1x\CreateEffectDX1x.h"
+				>
+			</File>
+			<File
+				RelativePath="..\DirectX1x\Direct3D11CallbackInterface.h"
 				>
 			</File>
 			<File

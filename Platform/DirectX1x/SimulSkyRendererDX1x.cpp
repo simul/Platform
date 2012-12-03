@@ -748,12 +748,12 @@ bool SimulSkyRendererDX1x::RenderFades(int width,int h)
 
 	D3DXMATRIX ident,trans;
 	D3DXMatrixIdentity(&ident);
-    D3DXMatrixOrthoLH(&ident,(float)width,(float)h,-100.f,100.f);
+    D3DXMatrixOrthoLH(&ident,(float)width,-(float)h,-100.f,100.f);
 //	D3DXVECTOR3 center = D3DXVECTOR3(width/2, h/2, 0);
-	static float x=1,y=1;
+	//static float x=1,y=1;
 	//x=2.f/(float)width;
 	//y=2.f/(float)h;
-	D3DXMatrixTranslation(&trans,-x,-y,0);
+	D3DXMatrixTranslation(&trans,-1.f,1.f,0);
 	D3DXMatrixTranspose(&trans,&trans);
 	D3DXMatrixMultiply(&ident,&trans,&ident);
 	ID3D1xEffectMatrixVariable*	worldViewProj=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
@@ -768,14 +768,19 @@ bool SimulSkyRendererDX1x::RenderFades(int width,int h)
 	RenderTexture(m_pd3dDevice,8,8,size,size,techniqueShowSky);
 	inscTexture->SetResource(loss_2d->hdr_buffer_texture_SRV);
 	RenderTexture(m_pd3dDevice,8,16+size,size,size,techniqueShowSky);
+	int x=16+size;
 	for(int i=0;i<numAltitudes;i++)
 	{
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
 		altitudeTexCoord->SetFloat(atc);
 		fadeTexture1->SetResource(insc_textures_SRV[0]);
-		RenderTexture(m_pd3dDevice,8+2*(size+8)	,(i)*(size+8)+8,size,size,techniqueShowFade);
+		RenderTexture(m_pd3dDevice,x+16+0*(size+8)	,(i)*(size+8)+8,size,size,techniqueShowFade);
 		fadeTexture1->SetResource(insc_textures_SRV[1]);
-		RenderTexture(m_pd3dDevice,8+3*(size+8)	,(i)*(size+8)+8,size,size,techniqueShowFade);
+		RenderTexture(m_pd3dDevice,x+16+1*(size+8)	,(i)*(size+8)+8,size,size,techniqueShowFade);
+		fadeTexture1->SetResource(loss_textures_SRV[0]);
+		RenderTexture(m_pd3dDevice,x+16+2*(size+8)	,(i)*(size+8)+8,size,size,techniqueShowFade);
+		fadeTexture1->SetResource(loss_textures_SRV[1]);
+		RenderTexture(m_pd3dDevice,x+16+3*(size+8)	,(i)*(size+8)+8,size,size,techniqueShowFade);
 	}
 	
 	return (hr==S_OK);

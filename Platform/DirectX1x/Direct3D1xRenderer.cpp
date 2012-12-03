@@ -25,6 +25,8 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 		,ShowLightVolume(false)
 		,CelestialDisplay(false)
 		,enabled(true)
+		,ShowWater(true)
+		,ShowCloudCrossSections(false)
 {
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,true,false,w,h,true,true,true);
 	AddChild(simulWeatherRenderer.get());
@@ -156,10 +158,6 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			}
 		}
 	}
-	if(simulHDRRenderer&&UseHdrPostprocessor)
-		simulHDRRenderer->FinishRender();
-	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(ScreenWidth,ScreenHeight);
 	if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->RenderFades(ScreenWidth,ScreenHeight);
 	if(simulWeatherRenderer&&ShowCloudCrossSections)
@@ -174,6 +172,10 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(ScreenWidth,ScreenHeight);
 		}
 	}
+	if(simulHDRRenderer&&UseHdrPostprocessor)
+		simulHDRRenderer->FinishRender();
+	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
+		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(ScreenWidth,ScreenHeight);
 	
 }
 
