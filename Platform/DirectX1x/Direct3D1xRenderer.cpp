@@ -286,7 +286,7 @@ void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
 		simulOceanRenderer->Update(game_timestep);
 }
 
-const char *	Direct3D11Renderer::GetDebugText() const
+const char *Direct3D11Renderer::GetDebugText() const
 {
 	return "";
 }
