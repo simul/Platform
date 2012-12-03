@@ -69,7 +69,7 @@ SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk)
 	SetCameraPosition(0,0,skyKeyframer->GetAltitudeKM()*1000.f);
 }
 
-void SimulGLSkyRenderer::SetFadeTexSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_alts)
+void SimulGLSkyRenderer::SetFadeTexSize(int width_num_distances,int height_num_elevations,int num_alts)
 {
 	// If not initialized we might not have a valid GL context:
 	if(!initialized)
@@ -264,7 +264,7 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
 	RenderTexture(8,16+size,size,size);
 	glBindTexture(GL_TEXTURE_2D,skylight_2d.GetColorTex());
-	RenderTexture(8,32+4*size,size,size);
+	RenderTexture(8,24+2*size,size,size);
 	int x=16+size;
 	if(h/(numAltitudes+2)<size)
 		size=h/(numAltitudes+2);
@@ -299,6 +299,12 @@ ERROR_CHECK
 
 		glBindTexture(GL_TEXTURE_3D,loss_textures[1]);
 		RenderTexture(x+16+3*(size+8)	,i*(size+8)+8, size,size);
+		
+		glBindTexture(GL_TEXTURE_3D,skylight_textures[0]);
+		RenderTexture(x+16+4*(size+8)	,i*(size+8)+8, size,size);
+
+		glBindTexture(GL_TEXTURE_3D,skylight_textures[1]);
+		RenderTexture(x+16+5*(size+8)	,i*(size+8)+8, size,size);
 	}
 
 	glUseProgram(0);
@@ -732,7 +738,7 @@ ERROR_CHECK
 ERROR_CHECK
 	RecompileShaders();
 ERROR_CHECK
-	moon_texture=(void*)LoadGLImage("Moon.png",GL_CLAMP);
+	moon_texture=(void*)LoadGLImage("Moon.png",GL_CLAMP_TO_EDGE);
 	SetPlanetImage(moon_index,moon_texture);
 
 	glUseProgram(NULL);
