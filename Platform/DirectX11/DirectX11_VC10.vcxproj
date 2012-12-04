@@ -79,7 +79,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;$(DXSDK_DIR)\Samples\C++;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -106,7 +106,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;$(DXSDK_DIR)\Samples\C++;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -133,7 +133,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;$(DXSDK_DIR)\Samples\C++;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -156,7 +156,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;$(DXSDK_DIR)\Samples\C++;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
