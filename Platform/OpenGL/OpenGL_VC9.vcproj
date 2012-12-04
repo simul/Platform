@@ -489,6 +489,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLSL\simul_atmospherics_godrays.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_cloud_cross_section.frag"
 				>
 			</File>
@@ -554,6 +558,10 @@
 			</File>
 			<File
 				RelativePath=".\GLSL\simul_gpu_clouds.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_clouds.glsl"
 				>
 			</File>
 			<File

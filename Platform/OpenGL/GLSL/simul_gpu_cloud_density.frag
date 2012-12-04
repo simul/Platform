@@ -1,19 +1,14 @@
+#include "simul_gpu_clouds.glsl"
 //uniform vec2 texCoordOffset;
 uniform sampler3D volumeNoiseTexture;
-uniform float zPosition;
+//uniform float zPosition;
 uniform int octaves;
 uniform float persistence;
 uniform float humidity;
 uniform float time;
-uniform float zPixel;
 uniform vec3 noiseScale;
 
 varying vec2 in_texcoord;
-
-float saturate(float x)
-{
-	return clamp(x,0.0,1.0);
-}
 
 float GetHumidityMultiplier(float z)
 {
@@ -55,7 +50,7 @@ float NoiseFunction(vec3 pos)
 
 void main()
 {
-	vec3 densityspace_texcoord=vec3(in_texcoord,zPosition);
+	vec3 densityspace_texcoord	=assemble3dTexcoord(in_texcoord.xy);
 	vec3 noisespace_texcoord=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
 	float noise_val=NoiseFunction(noisespace_texcoord);
 	float hm=humidity*GetHumidityMultiplier(densityspace_texcoord.z);

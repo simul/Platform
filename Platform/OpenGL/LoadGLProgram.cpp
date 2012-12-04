@@ -191,7 +191,8 @@ std::string loadShaderSource(const char *filename)
 	if(last!='/'&&last!='\\')
 		filePath+="/";
 	filePath+=filename;
-	last_filename=filePath;
+	if(filePath.find(".glsl")>=filePath.length())
+		last_filename=filePath;
 	std::ifstream ifs(filePath.c_str());
 	if(!ifs.good())
 	{

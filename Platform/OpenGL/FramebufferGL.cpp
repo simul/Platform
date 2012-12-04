@@ -113,6 +113,7 @@ bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 {
 	if(!m_width||!m_height)
 		return true;
+	bool ok=true;
 	initialized=true;
 	if(!m_fb)
 	{
@@ -129,15 +130,14 @@ bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 		glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexImage2D(m_target, 0, colour_iformat, m_width, m_height, 0,GL_RGBA, format, NULL);
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
+		GLenum status = (GLenum) glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+		if(status!=GL_FRAMEBUFFER_COMPLETE_EXT)
+			ok=false;
+	    
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	}
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
-    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
-	bool ok=true;
-	GLenum status = (GLenum) glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-	if(status!=GL_FRAMEBUFFER_COMPLETE_EXT)
-		ok=false;
-    
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	return ok;
 }
 // In order to use a depth buffer, either

@@ -20,17 +20,17 @@ namespace simul
 				return Enabled;
 			}
 			int GetDensityGridsize(const int *grid);
-			void FillDensityGrid(float *target,const int *grid
+			void *FillDensityGrid(const int *grid
 											,float humidity
 											,float time
 											,int noise_size,int octaves,float persistence
 											,const float  *noise_src_ptr);
-			void PerformFullGPURelight(float *target,const int *,const float *dens,const int *density_grid,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
+			void PerformFullGPURelight(float *target,const int *,const int *density_grid,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
 			void GPUTransferDataToTexture(unsigned char *target
 											,const float *DensityToLightTransform
 											,const float *light,const int *light_grid
 											,const float *ambient
-											,const float *density,const int *density_grid);
+											,const int *density_grid);
 		protected:
 			FramebufferGL	fb[2];
 			FramebufferGL	world_fb;
@@ -38,6 +38,13 @@ namespace simul
 			GLuint			density_program;
 			GLuint			clouds_program;
 			GLuint			transform_program;
+			GLenum			iformat;
+			GLenum			itype;
+			GLuint			density_texture;
+			
+			bool			readback_to_cpu;
+			float			*density;	// used if we are using CPU to read back the density texture.
+			int				density_gridsize;
 		};
 	}
 }

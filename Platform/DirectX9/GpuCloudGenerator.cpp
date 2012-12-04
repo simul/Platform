@@ -307,9 +307,10 @@ double t2=timer.UpdateTime();
 std::cout<<"\tEnd "<<t2<<std::endl;
 }
 // Use the GPU to transfer the oblique light grid data to the main grid
-void GpuCloudGenerator::GPUTransferDataToTexture(	unsigned char *target_grid
-													,const float *direct_grid
-													,const float *ambient_grid)
+void GpuCloudGenerator::GPUTransferDataToTexture(	unsigned char *target
+											,const float *DensityToLightTransform
+											,const float *light,const int *light_grid
+											,const float *ambient,const int *density_grid)
 {
 	HRESULT hr=S_OK;
 	if(!m_pd3dDevice)

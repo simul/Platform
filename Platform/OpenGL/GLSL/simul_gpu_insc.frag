@@ -29,6 +29,15 @@ void main(void)
 	float x				=dist*cos_e;
 	float r				=sqrt(x*x+y*y);
 	float alt_km		=r-planetRadiusKm;
+	
+	float x1			=mind*cos_e;
+	float r1			=sqrt(x1*x1+y*y);
+	float alt_1_km		=r1-planetRadiusKm;
+	
+	float x2			=maxd*cos_e;
+	float r2			=sqrt(x2*x2+y*y);
+	float alt_2_km		=r2-planetRadiusKm;
+	
 	// lookups is: dens_factor,ozone_factor,haze_factor;
 	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+0.5)/tableSize.x;
 	vec4 lookups		=texture(density_texture,dens_texc);
@@ -37,6 +46,9 @@ void main(void)
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
 	vec4 light			=getSunlightFactor(alt_km,lightDir)*vec4(sunIrradiance,1.0);
 	vec4 insc			=light;
+#ifdef OVERCAST
+	insc*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
+#endif
 	vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie;
 	vec3 total_ext		=extinction+ozone*ozone_factor;
 	vec3 loss			=exp(-extinction*stepLengthKm);

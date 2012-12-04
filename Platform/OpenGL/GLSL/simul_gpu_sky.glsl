@@ -7,6 +7,11 @@ uniform float planetRadiusKm;
 uniform float maxDensityAltKm;
 uniform float hazeBaseHeightKm;
 uniform float hazeScaleHeightKm;
+
+uniform float overcastBaseKm;
+uniform float overcastRangeKm;
+uniform float overcast;
+
 uniform vec3 rayleigh;
 uniform vec3 hazeMie;
 uniform vec3 ozone;
@@ -110,4 +115,59 @@ float getShortestDistanceToAltitude(float sine_elevation,float start_h_km,float 
 float getDistanceToSpace(float sine_elevation,float h_km)
 {
 	return getShortestDistanceToAltitude(sine_elevation,h_km,maxDensityAltKm);
+}
+
+
+float getOvercastAtAltitude(float h_km)
+{
+	if(h_km<overcastBaseKm)
+		return overcast;
+	if(h_km>overcastBaseKm+overcastRangeKm)
+		return 0.f;
+	return overcast*(h_km-overcastBaseKm)/overcastRangeKm;
+}
+
+float getOvercastAtAltitudeRange(float alt1_km,float alt2_km)
+{
+	if(alt1_km>=overcastBaseKm+overcastRangeKm)
+		return 0.0;
+	if(alt2_km<=alt1_km)
+	{
+		float temp=alt1_km;
+		alt1_km=alt2_km;
+		alt2_km=temp;
+	}
+	if(alt2_km<=overcastBaseKm)
+		return overcast;
+	if(alt1_km==alt2_km)
+		return getOvercastAtAltitude(alt1_km);
+	float diff_km=alt2_km-alt1_km;
+	// 4 cases:
+	if(alt1_km<overcastBaseKm)
+	{
+	//		1 - alt1<base, alt2 in between:
+		if(alt2_km<overcastBaseKm+overcastRangeKm)
+		{
+			float proportion=(overcastBaseKm-alt1_km)/diff_km;
+			return proportion*overcast+(1.0-proportion)*getOvercastAtAltitude(0.5*(overcastBaseKm+alt2_km));
+		}
+	//		1 - alt1<base, alt2>highest:
+		else
+		{
+			float proportion1=(overcastBaseKm-alt1_km)/diff_km;
+			float proportion2=overcastRangeKm/diff_km;
+			return proportion1*overcast+proportion2*getOvercastAtAltitude(overcastBaseKm+0.5*overcastRangeKm);
+		}
+	}
+	//		3 - alt1 in between, alt2 in between
+	else if(alt2_km<overcastBaseKm+overcastRangeKm)
+	{
+		return getOvercastAtAltitude(0.5*(alt1_km+alt2_km));
+	}
+	//		4 - alt1 in between, alt2 above.
+	else
+	{
+		float proportion=(alt2_km-(overcastBaseKm+overcastRangeKm))/diff_km;
+		return (1.0-proportion)*getOvercastAtAltitude(0.5*(alt1_km+overcastBaseKm+overcastRangeKm));
+	}
 }

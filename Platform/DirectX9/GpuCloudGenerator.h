@@ -24,12 +24,11 @@ public:
 											,float time_val
 											,int noise_size,int octaves,float persistence
 											,const float  *noise_src_ptr);
-	void PerformFullGPURelight(float *target,const int *,const float *dens,const int *density_grid,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
+	void PerformFullGPURelight(float *target,const int *,const int *density_grid,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
 	void GPUTransferDataToTexture(	unsigned char *target
 											,const float *DensityToLightTransform
 											,const float *light,const int *light_grid
-											,const float *ambient
-											,const float *density,const int *density_grid);
+											,const float *ambient,const int *density_grid);
 protected:
 	// Things to store for GPU-based lighting
 	LPD3DXEFFECT					m_pGPULightingEffect;

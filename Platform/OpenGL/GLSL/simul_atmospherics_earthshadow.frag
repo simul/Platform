@@ -1,13 +1,12 @@
 #version 140
+#include "simul_inscatter_fns.glsl"
 uniform sampler2D imageTexture;
 uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D skylightTexture;
 
-uniform float hazeEccentricity;
 uniform vec3 lightDir;
 uniform mat4 invViewProj;
-uniform vec3 mieRayleighRatio;
 uniform float directLightMultiplier;
 uniform vec3 earthShadowNormal;
 uniform float radiusOnCylinder;
@@ -16,28 +15,9 @@ uniform float terminatorCosine;
 
 varying vec2 texCoords;
 
-const float pi=3.1415926536;
-
 float saturate(float x)
 {
 	return clamp(x,0.0,1.0);
-}
-
-float HenyeyGreenstein(float g,float cos0)
-{
-	float g2=g*g;
-	float u=1.0+g2-2.0*g*cos0;
-	return (1.0-g2)/(4.0*pi*sqrt(u*u*u));
-}
-
-vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
-{
-	float BetaRayleigh=0.0596831*(1.0+cos0*cos0);
-	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
-	vec3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
-		/(vec3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
-	vec3 colour=BetaTotal*inscatter_factor.rgb;
-	return colour;
 }
 
 void main()
