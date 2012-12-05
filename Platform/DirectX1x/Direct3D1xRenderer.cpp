@@ -31,7 +31,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,true,false,w,h,true,true,true);
 	AddChild(simulWeatherRenderer.get());
 	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
-	//simulOpticsRenderer=new SimulOpticsRendererDX1x();
+	simulOpticsRenderer=new SimulOpticsRendererDX1x();
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->SetYVertical(y_vertical);
 	SetYVertical(y_vertical);

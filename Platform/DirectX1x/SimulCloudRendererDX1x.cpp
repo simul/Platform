@@ -554,7 +554,6 @@ static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 
 bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default_fog)
 {
-return false;
 	EnsureTexturesAreUpToDate();
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
