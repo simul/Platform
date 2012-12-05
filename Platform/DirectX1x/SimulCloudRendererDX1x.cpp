@@ -281,15 +281,11 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	skyInscatterTexture_SRV	=NULL;
 	skylightTexture_SRV		=NULL;
 
-	noiseTextureResource=NULL;
-	lightningIlluminationTextureResource=NULL;
+	SAFE_RELEASE(noiseTextureResource);
+	SAFE_RELEASE(lightningIlluminationTextureResource);
 	skyLossTexture_SRV=NULL;
 	skyInscatterTexture_SRV=NULL;
 	skylightTexture_SRV=NULL;
-
-	SAFE_RELEASE(noiseTextureResource);
-	
-	SAFE_RELEASE(lightningIlluminationTextureResource);
 	ClearIterators();
 }
 
@@ -558,6 +554,7 @@ static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 
 bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default_fog)
 {
+return false;
 	EnsureTexturesAreUpToDate();
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
