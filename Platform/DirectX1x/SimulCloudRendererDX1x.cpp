@@ -352,7 +352,7 @@ loadInfo.MipLevels=0;
 		D3D1x_USAGE_DYNAMIC,
 		D3D1x_BIND_SHADER_RESOURCE,
 		D3D1x_CPU_ACCESS_WRITE,
-		0
+		D3D11_RESOURCE_MISC_GENERATE_MIPS	// was 0
 	};
 	hr=m_pd3dDevice->CreateTexture2D(&desc,NULL,&noise_texture);
 	V_CHECK(hr);
@@ -360,7 +360,8 @@ loadInfo.MipLevels=0;
 	if(FAILED(hr=Map2D(noise_texture,&mapped)))
 		return false;
 	simul::clouds::TextureGenerator::SetBits(0x000000FF,0x0000FF00,0x00FF0000,0xFF000000,(unsigned)4,big_endian);
-	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)(mapped.pData),noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
+	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)(mapped.pData)
+		,noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
 	Unmap2D(noise_texture);
 	V_CHECK(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
 	m_pImmediateContext->GenerateMips(noiseTextureResource);
