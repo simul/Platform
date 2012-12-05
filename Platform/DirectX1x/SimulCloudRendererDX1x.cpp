@@ -281,6 +281,12 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	skyInscatterTexture_SRV	=NULL;
 	skylightTexture_SRV		=NULL;
 
+	noiseTextureResource=NULL;
+	lightningIlluminationTextureResource=NULL;
+	skyLossTexture_SRV=NULL;
+	skyInscatterTexture_SRV=NULL;
+	skylightTexture_SRV=NULL;
+
 	SAFE_RELEASE(noiseTextureResource);
 	
 	SAFE_RELEASE(lightningIlluminationTextureResource);
