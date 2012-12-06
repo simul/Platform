@@ -56,9 +56,9 @@ public:
 	//! Call this when the 3D device has been lost.
 	void InvalidateDeviceObjects();
 	//! DX9 implementation of cloud rendering. For this platform, depth_testing and default_fog are ignored.
-	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
 	//! Call this to draw the clouds, including any illumination by lightning.
-	bool Render(bool cubemap,bool depth_testing,bool default_fog,int buffer_index);
+	bool Render(bool cubemap,bool depth_testing,bool default_fog,int buffer_index,bool write_alpha);
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
 	void *GetCloudShadowTexture();

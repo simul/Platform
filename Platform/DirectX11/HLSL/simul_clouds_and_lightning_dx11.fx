@@ -346,7 +346,7 @@ BlendState DoBlend
     SrcBlendAlpha = ZERO;
     DestBlendAlpha = INV_SRC_ALPHA;
     BlendOpAlpha = ADD;
-    RenderTargetWriteMask[0] = 0x0F;
+    //RenderTargetWriteMask[0] = 0x0F;
 };
 
 BlendState NoBlend
@@ -365,7 +365,7 @@ technique11 simul_clouds_lowdef
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+	//	SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
@@ -379,7 +379,7 @@ technique11 simul_clouds
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		//SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
@@ -393,7 +393,7 @@ technique11 simul_clouds_and_lightning
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		//SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
 		SetPixelShader(CompileShader(ps_4_0,PS_WithLightning()));
@@ -412,8 +412,6 @@ technique11 cross_section_xz
 		SetPixelShader(CompileShader(ps_4_0,PS_CrossSectionXZ()));
     }
 }
-
-
 
 technique11 cross_section_xy
 {

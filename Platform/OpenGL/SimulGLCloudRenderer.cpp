@@ -247,6 +247,7 @@ ERROR_CHECK
 	cubemap;
 	
 //cloud buffer alpha to screen = ?
+	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,write_alpha?GL_TRUE:GL_FALSE);
 	if(glStringMarkerGREMEDY)
 		glStringMarkerGREMEDY(38,"SimulGLCloudRenderer::Render");
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -386,7 +387,6 @@ ERROR_CHECK
 		t=skyInterface->GetTime();
 	}
 	
-
 	glUniform1f(cloudEccentricity_param,GetCloudInterface()->GetMieAsymmetry());
 
 	simul::math::Vector3 view_pos(cam_pos.x,cam_pos.y,cam_pos.z);
@@ -532,6 +532,7 @@ ERROR_CHECK
     glUseProgram(NULL);
 	glDisable(GL_TEXTURE_3D);
 	glDisable(GL_TEXTURE_2D);
+	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
 	glPopAttrib();
 ERROR_CHECK
 	return true;

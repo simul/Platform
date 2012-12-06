@@ -15,11 +15,6 @@ uniform float terminatorCosine;
 
 varying vec2 texCoords;
 
-float saturate(float x)
-{
-	return clamp(x,0.0,1.0);
-}
-
 void main()
 {
     vec4 lookup=texture(imageTexture,texCoords);

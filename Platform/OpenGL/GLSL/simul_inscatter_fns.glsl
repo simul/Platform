@@ -2,6 +2,15 @@ uniform float hazeEccentricity;
 uniform vec3 mieRayleighRatio;
 #define pi (3.1415926536)
 
+float saturate(float x)
+{
+	return clamp(x,0.0,1.0);
+}
+vec3 saturate(vec3 x)
+{
+	return clamp(x,vec3(0.0,0.0,0.0),vec3(1.0,1.0,1.0));
+}
+
 float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;

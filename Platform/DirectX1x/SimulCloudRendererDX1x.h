@@ -64,7 +64,7 @@ public:
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
 	void RenderCrossSections(int width,int height);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 	bool RenderLightning();
@@ -182,6 +182,10 @@ protected:
 	ID3D1xTexture2D*	noise_texture;
 	ID3D1xTexture1D*	lightning_texture;
 	ID3D1xTexture2D*	cloud_cubemap;
+	
+	ID3D1xBlendState*	blendAndWriteAlpha;
+	ID3D1xBlendState*	blendAndDontWriteAlpha;
+	
 	D3DXVECTOR4			cam_pos;
 	D3DXVECTOR4			lightning_colour;
 	D3DXMATRIX			world,view,proj;

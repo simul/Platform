@@ -124,8 +124,10 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 	skyInscatterTexture_SRV(NULL),
 	skylightTexture_SRV(NULL),
 	noiseTextureResource(NULL),
-	lightningIlluminationTextureResource(NULL),
-	y_vertical(true)
+	lightningIlluminationTextureResource(NULL)
+	,blendAndWriteAlpha(NULL)
+	,blendAndDontWriteAlpha(NULL)
+	,y_vertical(true)
 	,enable_lightning(false)
 	,lightning_active(false)
 	,timing(0.f)
@@ -248,6 +250,23 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	if(lightningIlluminationTextureResource)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 	ClearIterators();
+	
+	// two possible blend states for clouds - with alpha written, and without.
+	D3D11_BLEND_DESC omDesc;
+	ZeroMemory( &omDesc, sizeof( D3D11_BLEND_DESC ) );
+	omDesc.RenderTarget[0].BlendEnable = true;
+	omDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	omDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	omDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	omDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
+	omDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+	omDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndWriteAlpha );
+	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED
+										| D3D11_COLOR_WRITE_ENABLE_GREEN
+										| D3D11_COLOR_WRITE_ENABLE_BLUE;
+	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndDontWriteAlpha );
 }
 
 void SimulCloudRendererDX1x::InvalidateDeviceObjects()
@@ -280,6 +299,8 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	skyLossTexture_SRV		=NULL;
 	skyInscatterTexture_SRV	=NULL;
 	skylightTexture_SRV		=NULL;
+	SAFE_RELEASE(blendAndWriteAlpha);
+	SAFE_RELEASE(blendAndDontWriteAlpha);
 
 	SAFE_RELEASE(noiseTextureResource);
 	
@@ -548,9 +569,17 @@ static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default_fog)
+bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha)
 {
 	EnsureTexturesAreUpToDate();
+ 
+	float blendFactor[] = {0, 0, 0, 0};
+	UINT sampleMask   = 0xffffffff;
+	if(write_alpha)
+		m_pImmediateContext->OMSetBlendState(blendAndWriteAlpha, blendFactor, sampleMask);
+	else
+		m_pImmediateContext->OMSetBlendState(blendAndDontWriteAlpha, blendFactor, sampleMask);
+
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
 	cloudDensity1->SetResource(cloudDensityResource[0]);
@@ -749,6 +778,7 @@ simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer
 		ApplyPass(m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
 	else
 		ApplyPass(m_hTechniqueCloud->GetPassByIndex(0));
+	m_pImmediateContext->OMSetBlendState(NULL, blendFactor, sampleMask);
 	return (hr==S_OK);
 }
 

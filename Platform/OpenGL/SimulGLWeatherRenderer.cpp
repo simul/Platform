@@ -190,7 +190,7 @@ bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 	{
 		scene_buffer->Activate();
 		scene_buffer->Clear(0,0,0,1.f);
-		simulCloudRenderer->Render(false,false,UseDefaultFog);
+		simulCloudRenderer->Render(false,false,UseDefaultFog,true);
 		scene_buffer->Deactivate();
 	//	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);//GL_SRC_ALPHA GL_DST_ALPHA
 	//	glBlendFuncSeparate(GL_ONE,GL_ZERO,GL_ZERO,GL_ONE);

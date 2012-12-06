@@ -20,15 +20,6 @@ uniform vec2 tableSize;
 
 #define pi (3.1415926536)
 
-float saturate(float x)
-{
-	return clamp(x,0.0,1.0);
-}
-vec3 saturate(vec3 x)
-{
-	return clamp(x,vec3(0.0,0.0,0.0),vec3(1.0,1.0,1.0));
-}
-
 float getHazeFactorAtAltitude(float alt_km)
 {
 	if(alt_km<hazeBaseHeightKm)

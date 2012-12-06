@@ -198,7 +198,7 @@ static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 	glGetFloatv(src,m);
 }
 
-bool SimulGL2DCloudRenderer::Render(bool, bool, bool)
+bool SimulGL2DCloudRenderer::Render(bool, bool, bool, bool)
 {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,image_tex);

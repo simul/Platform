@@ -53,6 +53,8 @@ float GetIlluminationAt(vec3 vd)
 	vec3 cloud_texc=(pos-cloudOrigin)*cloudScale;
 	vec4 cloud_texel=texture(cloudShadowTexture,cloud_texc.xy);
 	float illumination=cloud_texel.z;
+	float above=saturate(cloud_texc.z);
+	illumination=saturate(illumination-above);
 	return illumination;
 }
 	
@@ -71,6 +73,7 @@ vec4 godrays()
 	vec3 colour=lookup.rgb;
 	colour*=loss;
 	vec4 insc=texture(inscTexture,texc2);
+	vec3 skyl=texture(skylightTexture,texc2).rgb;
 	// trace the distance from 1.0 to zero
 	
 	// insc is the cumulative inscatter from 0 to dist.
@@ -93,14 +96,13 @@ vec4 godrays()
 		insc=texture(inscTexture,texc2);
 			vec4 insc_diff=prev_insc-insc;
 			float ill=prev_illumination;//0.5*(illumination+prev_illumination);
-			total_insc.rgb+=10.0*insc_diff.rgb*ill;
+			total_insc.rgb+=insc_diff.rgb*ill;
 			total_insc.a*=retain;
 			total_insc.a+=insc_diff.a*ill;
 		}
 	}	
 	float cos0=dot(view,lightDir);
 	colour+=InscatterFunction(total_insc,cos0);
-	vec3 skyl=texture(skylightTexture,texc2).rgb;
 	colour+=skyl;
     return vec4(colour,1.0);
 }
