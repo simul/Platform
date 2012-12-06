@@ -73,6 +73,13 @@ extern void setParameter(GLuint program,const char *name,float value1,float valu
 extern void setParameter(GLuint program,const char *name,float value1,float value2,float value3);
 extern void setParameter(GLuint program,const char *name,int value);
 extern void setParameter(GLuint program,const char *name,const simul::sky::float4 &value);
+extern void setParameter2(GLuint program,const char *name,const simul::sky::float4 &value);
 extern void setParameter3(GLuint program,const char *name,const simul::sky::float4 &value);
 extern void setMatrix(GLuint program,const char *name,const float *value);
+
+extern void setParameter(GLuint program,GLint,int value);
+extern void setParameter(GLuint program,GLint,float value);
+extern void setParameter2(GLuint program,GLint,const simul::sky::float4 &value);
+extern void setParameter3(GLuint program,GLint,const simul::sky::float4 &value);
+
 #endif

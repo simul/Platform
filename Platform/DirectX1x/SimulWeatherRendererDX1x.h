@@ -48,7 +48,7 @@ public:
 	void InvalidateDeviceObjects();
 	bool Destroy();
 	bool RenderSky(bool buffered,bool is_cubemap);
-	void RenderLateCloudLayer(int,bool );
+	bool RenderLateCloudLayer(bool );
 	bool RenderCubemap();
 	void *GetCubemap();
 	//! Perform the once-per-frame time update.

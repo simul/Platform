@@ -40,7 +40,7 @@ public:
 	// In order to use a color buffer, either
 	// InitColor_RB or InitColor_Tex needs to be called.
 	//void InitColor_RB(int index, GLenum internal_format);
-	bool InitColor_Tex(int index, GLenum internal_format,GLenum format);
+	bool InitColor_Tex(int index, GLenum internal_format,GLenum format,GLint wrap_clamp=GL_CLAMP_TO_EDGE);
 	// In order to use a depth buffer, either
 	// InitDepth_RB or InitDepth_Tex needs to be called.
 	void InitDepth_RB(GLenum iformat = GL_DEPTH_COMPONENT24);

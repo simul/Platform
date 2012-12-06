@@ -9,6 +9,7 @@
 #include <GL/glew.h>
 #include "Simul/Clouds/BaseCloudRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
+#include "Simul/Platform/OpenGL/FramebufferGL.h"
 namespace simul
 {
 	namespace clouds
@@ -36,13 +37,15 @@ public:
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
 	//! Render the clouds.
-	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
 	//! Show the cross sections on-screen.
 	void RenderCrossSections(int width,int height);
 	void SetLossTexture(void *);
 	void SetInscatterTextures(void *,void *);
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
+	
+	void *GetCloudShadowTexture();
 	const char *GetDebugText();
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
@@ -81,8 +84,9 @@ protected:
 	void EnsureTextureCycle();
 
 	GLuint clouds_program;
-
 	GLuint cross_section_program;
+	
+	GLuint cloud_shadow_program;
 
 	GLint eyePosition_param;
 	GLint lightResponse_param;
@@ -144,5 +148,6 @@ unsigned short *pIndices;
 
 	unsigned max_octave;
 	bool BuildSphereVBO();
+	FramebufferGL	cloud_shadow;
 };
 

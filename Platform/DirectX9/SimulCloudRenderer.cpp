@@ -1303,6 +1303,12 @@ void **SimulCloudRenderer::GetCloudTextures()
 {
 	return (void **)cloud_textures;
 }
+
+void *SimulCloudRenderer::GetCloudShadowTexture()
+{
+	return NULL;
+}
+
 void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 {
 	std::wstring fn=simul::base::StringToWString(filename);

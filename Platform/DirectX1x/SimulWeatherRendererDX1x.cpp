@@ -294,10 +294,14 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 	return (hr==S_OK);
 }
 
-void SimulWeatherRendererDX1x::RenderLateCloudLayer(int,bool )
+bool SimulWeatherRendererDX1x::RenderLateCloudLayer(bool )
 {
 	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+	{
 		simulCloudRenderer->Render(false,false,UseDefaultFog);
+		return true;
+	}
+	return false;
 }
 
 void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

@@ -460,6 +460,15 @@ void setParameter(GLuint program,const char *name,const simul::sky::float4 &valu
 	ERROR_CHECK
 }
 
+void setParameter2(GLuint program,const char *name,const simul::sky::float4 &value)
+{
+	GLint loc=glGetUniformLocation(program,name);
+	if(loc<0)
+		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	glUniform2f(loc,value.x,value.y);
+	ERROR_CHECK
+}
+
 void setParameter3(GLuint program,const char *name,const simul::sky::float4 &value)
 {
 	GLint loc=glGetUniformLocation(program,name);
@@ -476,5 +485,29 @@ void setMatrix(GLuint program,const char *name,const float *value)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	static bool tr=1;
 	glUniformMatrix4fv(loc,1,tr,value);
+	ERROR_CHECK
+}
+
+
+void setParameter(GLuint program,GLint loc,int value)
+{
+	glUniform1i(loc,value);
+	ERROR_CHECK
+}
+
+void setParameter(GLuint program,GLint loc,float value)
+{
+	glUniform1f(loc,value);
+	ERROR_CHECK
+}
+
+void setParameter2(GLuint program,GLint loc,const simul::sky::float4 &value)
+{
+	glUniform2f(loc,value.x,value.y);
+	ERROR_CHECK
+}
+void setParameter3(GLuint program,GLint loc,const simul::sky::float4 &value)
+{
+	glUniform3f(loc,value.x,value.y,value.z);
 	ERROR_CHECK
 }

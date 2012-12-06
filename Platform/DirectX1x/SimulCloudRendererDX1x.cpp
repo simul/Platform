@@ -352,7 +352,7 @@ loadInfo.MipLevels=0;
 		D3D1x_USAGE_DYNAMIC,
 		D3D1x_BIND_SHADER_RESOURCE,
 		D3D1x_CPU_ACCESS_WRITE,
-		0
+		D3D11_RESOURCE_MISC_GENERATE_MIPS	// was 0
 	};
 	hr=m_pd3dDevice->CreateTexture2D(&desc,NULL,&noise_texture);
 	V_CHECK(hr);
@@ -950,6 +950,11 @@ float SimulCloudRendererDX1x::GetTiming() const
 void **SimulCloudRendererDX1x::GetCloudTextures()
 {
 	return (void **)cloud_textures;
+}
+
+void *SimulCloudRendererDX1x::GetCloudShadowTexture()
+{
+	return NULL;
 }
 
 void SimulCloudRendererDX1x::SetYVertical(bool y)

@@ -55,6 +55,7 @@ public:
 	bool IsYVertical() const{return false;}
 	//CloudShadowCallback
 	void **GetCloudTextures(){return 0;}
+	void *GetCloudShadowTexture() {return NULL;}
 protected:
 	void EnsureCorrectTextureSizes(){}
 	void EnsureTexturesAreUpToDate(){}

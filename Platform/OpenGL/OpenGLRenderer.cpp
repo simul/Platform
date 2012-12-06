@@ -76,10 +76,10 @@ void OpenGLRenderer::paintGL()
 	/*	glEnable(GL_FOG);*/
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->StartRender();
-		simulWeatherRenderer->RenderSky(true,false);
 
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender();
+		simulWeatherRenderer->RenderSky(true,false);
 		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render();
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())

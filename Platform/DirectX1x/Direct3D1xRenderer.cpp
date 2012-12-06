@@ -215,6 +215,7 @@ void	Direct3D11Renderer::OnD3D11LostDevice()
 		simulOpticsRenderer->InvalidateDeviceObjects();
 	if(simulOceanRenderer)
 		simulOceanRenderer->InvalidateDeviceObjects();
+	simul::dx11::UnsetDevice();
 }
 
 void Direct3D11Renderer::OnD3D11DestroyDevice()
@@ -224,7 +225,6 @@ void Direct3D11Renderer::OnD3D11DestroyDevice()
 	// And after OnD3D11DestroyDevice we might go back to startup without destroying the renderer.
 	simulWeatherRenderer=NULL;
 	simulHDRRenderer=NULL;
-	simul::dx11::UnsetDevice();
 }
 
 void Direct3D11Renderer::OnD3D11ReleasingSwapChain()
@@ -245,6 +245,7 @@ bool Direct3D11Renderer::OnDeviceRemoved()
 	OnD3D11LostDevice();
 	return true;
 }
+
 
 void Direct3D11Renderer::SetYVertical(bool y)
 {

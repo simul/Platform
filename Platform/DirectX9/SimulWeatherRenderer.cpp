@@ -362,7 +362,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(int buffer_index,bool buf)
 		if(str>1.f)
 			str=1.f;
 		str*=gr_strength;
-		if(str>0&&Godrays)
+		if(str>0&&simulAtmosphericsRenderer->GetShowGodrays())
 			simulAtmosphericsRenderer->RenderGodRays(str);
 		simulAtmosphericsRenderer->RenderAirglow();
 	}

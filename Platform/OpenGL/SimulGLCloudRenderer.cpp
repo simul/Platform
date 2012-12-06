@@ -80,6 +80,9 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudK
 	,skylight_tex(0)
 	,illum_tex(0)
 	,init(false)
+	,clouds_program(0)
+	,cross_section_program(0)
+	,cloud_shadow_program(0)
 {
 	for(int i=0;i<3;i++)
 	{
@@ -236,12 +239,14 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog)
+bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	EnsureTexturesAreUpToDate();
 ERROR_CHECK
 	cubemap;
+	
+//cloud buffer alpha to screen = ?
 	if(glStringMarkerGREMEDY)
 		glStringMarkerGREMEDY(38,"SimulGLCloudRenderer::Render");
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -574,6 +579,9 @@ ERROR_CHECK
 	printProgramInfoLog(clouds_program);
 ERROR_CHECK
 	cross_section_program			=MakeProgram("simul_cloud_cross_section");
+	
+	SAFE_DELETE_PROGRAM(cloud_shadow_program);
+	cloud_shadow_program=LoadPrograms("simple.vert",NULL,"simul_cloud_shadow.frag");
 	glUseProgram(0);
 }
 
@@ -656,8 +664,8 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 {
 	init=false;
 	SAFE_DELETE_PROGRAM(cross_section_program);
-
 	SAFE_DELETE_PROGRAM(clouds_program);
+	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 
 	clouds_program				=0;
 	lightResponse_param			=0;
@@ -690,6 +698,50 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 void **SimulGLCloudRenderer::GetCloudTextures()
 {
 	return (void**)cloud_tex;
+}
+
+void *SimulGLCloudRenderer::GetCloudShadowTexture()
+{
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+	cloud_shadow.SetWidthAndHeight(cloud_tex_width_x,cloud_tex_length_y);
+	cloud_shadow.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
+	
+	glUseProgram(cloud_shadow_program);
+	glEnable(GL_TEXTURE_3D);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D,cloud_tex[0]);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_3D,cloud_tex[1]);
+	setParameter(cloud_shadow_program,"cloudTexture1"	,0);
+	setParameter(cloud_shadow_program,"cloudTexture2"	,1);
+	setParameter(cloud_shadow_program,"interp"			,this->GetInterpolation());
+	
+	cloud_shadow.Activate();
+		//cloud_shadow.Clear(0.f,0.f,0.f,0.f);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0,1.0,0,1.0,-1.0,1.0);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		DrawQuad(0,0,1,1);
+		ERROR_CHECK;
+	cloud_shadow.Deactivate();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D,0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_3D,0);
+	glDisable(GL_TEXTURE_3D);
+	glUseProgram(0);
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+	glPopAttrib();
+	return (void*)cloud_shadow.GetColorTex(0);
 }
 
 simul::sky::OvercastCallback *SimulGLCloudRenderer::GetOvercastCallback()

@@ -109,7 +109,7 @@ void FramebufferGL::SetWidthAndHeight(int w,int h)
 	}
 }
 
-bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
+bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format,GLint wrap_clamp)
 {
 	if(!m_width||!m_height)
 		return true;
@@ -125,8 +125,8 @@ bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format)
 		colour_iformat=iformat;
 		glGenTextures(1, &m_tex_col[index]);
 		glBindTexture(m_target, m_tex_col[index]);
-		glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(m_target, GL_TEXTURE_WRAP_S, wrap_clamp);
+		glTexParameteri(m_target, GL_TEXTURE_WRAP_T, wrap_clamp);
 		glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexImage2D(m_target, 0, colour_iformat, m_width, m_height, 0,GL_RGBA, format, NULL);

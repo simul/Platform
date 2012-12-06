@@ -61,6 +61,7 @@ public:
 	bool Render(bool cubemap,bool depth_testing,bool default_fog,int buffer_index);
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
+	void *GetCloudShadowTexture();
 	//! Save the first keyframe texture into a 2D image file by stacking X-Z slices vertically.
 	void SaveCloudTexture(const char *filename);
 	//! Draw clouds as horizontal layers
