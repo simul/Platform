@@ -124,8 +124,10 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 	skyInscatterTexture_SRV(NULL),
 	skylightTexture_SRV(NULL),
 	noiseTextureResource(NULL),
-	lightningIlluminationTextureResource(NULL),
-	y_vertical(true)
+	lightningIlluminationTextureResource(NULL)
+	,blendAndWriteAlpha(NULL)
+	,blendAndDontWriteAlpha(NULL)
+	,y_vertical(true)
 	,enable_lightning(false)
 	,lightning_active(false)
 	,timing(0.f)
@@ -248,6 +250,23 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	if(lightningIlluminationTextureResource)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 	ClearIterators();
+	
+	// two possible blend states for clouds - with alpha written, and without.
+	D3D11_BLEND_DESC omDesc;
+	ZeroMemory( &omDesc, sizeof( D3D11_BLEND_DESC ) );
+	omDesc.RenderTarget[0].BlendEnable = true;
+	omDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	omDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	omDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	omDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
+	omDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+	omDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndWriteAlpha );
+	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED
+										| D3D11_COLOR_WRITE_ENABLE_GREEN
+										| D3D11_COLOR_WRITE_ENABLE_BLUE;
+	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndDontWriteAlpha );
 }
 
 void SimulCloudRendererDX1x::InvalidateDeviceObjects()
@@ -280,6 +299,8 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	skyLossTexture_SRV		=NULL;
 	skyInscatterTexture_SRV	=NULL;
 	skylightTexture_SRV		=NULL;
+	SAFE_RELEASE(blendAndWriteAlpha);
+	SAFE_RELEASE(blendAndDontWriteAlpha);
 
 	SAFE_RELEASE(noiseTextureResource);
 	SAFE_RELEASE(lightningIlluminationTextureResource);
@@ -596,10 +617,10 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 										indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse(),
 										0,
 										0);
+	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
-	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
 	float tan_half_fov_vertical=1.f/proj._22;
 	float tan_half_fov_horizontal=1.f/proj._11;
@@ -780,7 +801,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 	worldViewProj->SetMatrix(ortho);
 
 	if(skyInterface)
-	for(int i=0;i<3;i++)
+	for(int i=0;i<2;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
 				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
@@ -953,6 +974,11 @@ float SimulCloudRendererDX1x::GetTiming() const
 void **SimulCloudRendererDX1x::GetCloudTextures()
 {
 	return (void **)cloud_textures;
+}
+
+void *SimulCloudRendererDX1x::GetCloudShadowTexture()
+{
+	return NULL;
 }
 
 void SimulCloudRendererDX1x::SetYVertical(bool y)

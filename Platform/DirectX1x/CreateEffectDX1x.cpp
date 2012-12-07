@@ -816,10 +816,10 @@ void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float d
 	hr=m_pd3dDevice->CreateInputLayout(decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pBufferVertexDecl);
 	Vertext vertices[4] =
 	{
-		D3DXVECTOR4(x1		,y1			,0.f,	1.f), D3DXVECTOR2(0.f	,1.f),
-		D3DXVECTOR4(x1+dx	,y1			,0.f,	1.f), D3DXVECTOR2(1.f	,1.f),
-		D3DXVECTOR4(x1		,y1+dy		,0.f,	1.f), D3DXVECTOR2(0.f	,0.f),
-		D3DXVECTOR4(x1+dx	,y1+dy		,0.f,	1.f), D3DXVECTOR2(1.f	,0.f),
+		D3DXVECTOR4(x1		,y1			,0.f,	1.f), D3DXVECTOR2(0.f	,0.f),
+		D3DXVECTOR4(x1+dx	,y1			,0.f,	1.f), D3DXVECTOR2(1.f	,0.f),
+		D3DXVECTOR4(x1		,y1+dy		,0.f,	1.f), D3DXVECTOR2(0.f	,1.f),
+		D3DXVECTOR4(x1+dx	,y1+dy		,0.f,	1.f), D3DXVECTOR2(1.f	,1.f),
 	};
 	D3D1x_BUFFER_DESC bdesc=
 	{

@@ -80,6 +80,7 @@ public:
 	float GetTiming() const;
 	//! Get the list of three textures used for cloud rendering.
 	void* *GetCloudTextures();
+	void *GetCloudShadowTexture();
 	void SetLossTexture(void *t);
 	void SetInscatterTextures(void *t,void *s);
 
@@ -180,6 +181,10 @@ protected:
 	ID3D1xTexture2D*	noise_texture;
 	ID3D1xTexture1D*	lightning_texture;
 	ID3D1xTexture2D*	cloud_cubemap;
+	
+	ID3D1xBlendState*	blendAndWriteAlpha;
+	ID3D1xBlendState*	blendAndDontWriteAlpha;
+	
 	D3DXVECTOR4			cam_pos;
 	D3DXVECTOR4			lightning_colour;
 	D3DXMATRIX			world,view,proj;
