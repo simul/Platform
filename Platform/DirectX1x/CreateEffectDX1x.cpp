@@ -122,8 +122,9 @@ namespace simul
 		}
 		void UnsetDevice()
 		{
-			SAFE_RELEASE(m_pImmediateContext);
 			UtilityRenderer::InvalidateDeviceObjects();
+			SAFE_RELEASE(m_pImmediateContext);
+			m_pd3dDevice=NULL;
 		}
 		void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
 		{

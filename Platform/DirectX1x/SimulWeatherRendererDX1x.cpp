@@ -53,13 +53,13 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 	}
 	simulCloudRenderer=new SimulCloudRendererDX1x(ck3d);
 	baseCloudRenderer=simulCloudRenderer.get();
-	Group::AddChild(simulCloudRenderer.get());
+	//Group::AddChild(simulCloudRenderer.get());
 /*	if(clouds2d)
 		simul2DCloudRenderer=new Simul2DCloudRenderer(ck2d);
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
 	*/
-	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new SimulAtmosphericsRendererDX1x;
+	//baseAtmosphericsRenderer=simulAtmosphericsRenderer=new SimulAtmosphericsRendererDX1x;
 	baseFramebuffer=&framebuffer;
 	ConnectInterfaces();
 }

@@ -3,7 +3,7 @@ class Direct3D11CallbackInterface
 {
 public:
 	virtual bool	IsEnabled() const=0;
-	virtual bool	IsD3D11DeviceAcceptable(	const struct CD3D11EnumAdapterInfo *AdapterInfo, UINT Output, const struct CD3D11EnumDeviceInfo *DeviceInfo,enum DXGI_FORMAT BackBufferFormat,bool bWindowed)=0;
+	virtual bool	IsD3D11DeviceAcceptable(	const class CD3D11EnumAdapterInfo *AdapterInfo, UINT Output, const class CD3D11EnumDeviceInfo *DeviceInfo,enum DXGI_FORMAT BackBufferFormat,bool bWindowed)=0;
 	virtual bool	ModifyDeviceSettings(		struct DXUTDeviceSettings* pDeviceSettings)=0;
 	virtual HRESULT	OnD3D11CreateDevice(		struct ID3D11Device* pd3dDevice,const struct DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)=0;
 	virtual HRESULT	OnD3D11ResizedSwapChain(	struct ID3D11Device* pd3dDevice,IDXGISwapChain* pSwapChain,const struct DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)=0;
