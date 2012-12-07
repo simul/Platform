@@ -124,6 +124,12 @@ protected:
 
 	GLint			skylightTexture_param;
 	
+	GLint			cloudOrigin;
+	GLint			cloudScale;
+	GLint			maxDistance;
+	GLint			viewPosition;
+	GLint			overcast_param;
+	
 	FramebufferGL	loss_2d;
 	FramebufferGL	inscatter_2d;
 	FramebufferGL	skylight_2d;

@@ -93,6 +93,7 @@ ERROR_CHECK
 		cloudScale				=glGetUniformLocation(current_program,"cloudScale");
 		maxDistance				=glGetUniformLocation(current_program,"maxDistance");
 		viewPosition			=glGetUniformLocation(current_program,"viewPosition");
+		overcast_param			=glGetUniformLocation(current_program,"overcast");
 
 		printProgramInfoLog(current_program);
 ERROR_CHECK
@@ -154,10 +155,11 @@ ERROR_CHECK
 	glUniform1i(skylightTexture,4);
 	glUniform1i(cloudShadowTexture,5);
 // X, Y and Z for the bottom-left corner of the cloud shadow texture.
-	setParameter3(current_program,cloudOrigin,cloud_origin);
-	setParameter3(current_program,cloudScale,cloud_scale);
-	setParameter(current_program,maxDistance,fade_distance_km*1000.f);
-	setParameter3(current_program,viewPosition,cam_pos);
+	setParameter3(cloudOrigin,cloud_origin);
+	setParameter3(cloudScale,cloud_scale);
+	setParameter(maxDistance,fade_distance_km*1000.f);
+	setParameter3(viewPosition,cam_pos);
+	setParameter(overcast_param,overcast);
 ERROR_CHECK
 	simul::math::Matrix4x4 view,proj;
 	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));

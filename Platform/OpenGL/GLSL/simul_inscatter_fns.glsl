@@ -1,3 +1,6 @@
+#ifndef SIMUL_INSCATTER_FNS_GLSL
+#define SIMUL_INSCATTER_FNS_GLSL
+
 uniform float hazeEccentricity;
 uniform vec3 mieRayleighRatio;
 #define pi (3.1415926536)
@@ -27,3 +30,4 @@ vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
 	vec3 colour=BetaTotal*inscatter_factor.rgb;
 	return colour;
 }
+#endif

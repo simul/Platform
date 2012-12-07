@@ -8,6 +8,10 @@
 	#include <d3dx9.h>
 #endif
 //! A DX9 class to generate clouds on the GPU
+namespace simul
+{
+namespace dx9
+{
 SIMUL_DIRECTX9_EXPORT_CLASS GpuCloudGenerator:public simul::clouds::BaseGpuCloudGenerator
 {
 public:
@@ -19,12 +23,13 @@ public:
 	void RecompileShaders();
 	// implementing GpuLightingCallback:
 	bool CanPerformGPULighting() const;	
-	void FillDensityGrid(float *target,const int *grid
-											,float humidity
-											,float time_val
-											,int noise_size,int octaves,float persistence
-											,const float  *noise_src_ptr);
-	void PerformFullGPURelight(float *target,const int *,const int *density_grid,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
+	int GetDensityGridsize(const int *grid);
+	void* FillDensityGrid(const int *grid
+						,float humidity
+						,float time_val
+						,int noise_size,int octaves,float persistence
+						,const float  *noise_src_ptr);
+	void PerformFullGPURelight(float *target,const int *light_gridsizes,const int *density_grid,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
 	void GPUTransferDataToTexture(	unsigned char *target
 											,const float *DensityToLightTransform
 											,const float *light,const int *light_grid
@@ -65,3 +70,5 @@ protected:
 	Target				yz_target;
 	Target				zx_target;
 };
+}
+}

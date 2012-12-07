@@ -489,25 +489,32 @@ void setMatrix(GLuint program,const char *name,const float *value)
 }
 
 
-void setParameter(GLuint program,GLint loc,int value)
+void setParameter(GLint loc,int value)
 {
 	glUniform1i(loc,value);
 	ERROR_CHECK
 }
 
-void setParameter(GLuint program,GLint loc,float value)
+void setParameter(GLint loc,float value)
 {
 	glUniform1f(loc,value);
 	ERROR_CHECK
 }
 
-void setParameter2(GLuint program,GLint loc,const simul::sky::float4 &value)
+void setParameter2(GLint loc,const simul::sky::float4 &value)
 {
 	glUniform2f(loc,value.x,value.y);
 	ERROR_CHECK
 }
-void setParameter3(GLuint program,GLint loc,const simul::sky::float4 &value)
+void setParameter3(GLint loc,const simul::sky::float4 &value)
 {
 	glUniform3f(loc,value.x,value.y,value.z);
+	ERROR_CHECK
+}
+
+void setMatrix(GLint loc,const float *value)
+{
+	static bool tr=1;
+	glUniformMatrix4fv(loc,1,tr,value);
 	ERROR_CHECK
 }

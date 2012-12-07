@@ -1,12 +1,5 @@
-// Simple render to texture class
-//
-// Author: Simon Green
-// Email: sdkfeedback@nvidia.com
-//
-// Copyright (c) NVIDIA Corporation. All rights reserved.
-
-#ifndef RENDER_TEXTURE_FBO__H
-#define RENDER_TEXTURE_FBO__H
+#ifndef FRAMEBUFFERGL_H
+#define FRAMEBUFFERGL_H
 
 #include <GL/glew.h>
 #include <stack>

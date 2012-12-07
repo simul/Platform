@@ -89,6 +89,7 @@ private:
 	GLint cloudScale;
 	GLint maxDistance;
 	GLint viewPosition;
+	GLint overcast_param;
 
 	FramebufferGL *framebuffer;
 };

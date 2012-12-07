@@ -337,7 +337,16 @@ void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate()
 void SimulSkyRendererDX1x::CycleTexturesForward()
 {
 	cycle++;
-	UnmapFade();
+
+	// DON'T unmap, because DX11 can't cope with this.
+	//UnmapFade();
+	// Instead, whatever was the mapped texture is cycled too.
+	if(mapped_fade!=-1)
+	{
+		mapped_fade--;
+		if(mapped_fade<0)
+			mapped_fade+=3;
+	}
 
 	std::swap(loss_textures[0],loss_textures[1]);
 	std::swap(loss_textures[1],loss_textures[2]);

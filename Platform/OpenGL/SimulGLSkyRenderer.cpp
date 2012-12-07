@@ -327,19 +327,26 @@ void SimulGLSkyRenderer::UseProgram(GLuint p)
 	if(p&&p!=current_program)
 	{
 		current_program=p;
-		MieRayleighRatio_param			=glGetUniformLocation(current_program,"mieRayleighRatio");
-		lightDirection_sky_param		=glGetUniformLocation(current_program,"lightDir");
-		sunDir_param					=glGetUniformLocation(current_program,"sunDir");
-		hazeEccentricity_param			=glGetUniformLocation(current_program,"hazeEccentricity");
-		skyInterp_param					=glGetUniformLocation(current_program,"skyInterp");
-		skyTexture1_param				=glGetUniformLocation(current_program,"inscTexture");
-		skylightTexture_param			=glGetUniformLocation(current_program,"skylightTexture");
+		MieRayleighRatio_param		=glGetUniformLocation(current_program,"mieRayleighRatio");
+		lightDirection_sky_param	=glGetUniformLocation(current_program,"lightDir");
+		sunDir_param				=glGetUniformLocation(current_program,"sunDir");
+		hazeEccentricity_param		=glGetUniformLocation(current_program,"hazeEccentricity");
+		skyInterp_param				=glGetUniformLocation(current_program,"skyInterp");
+		skyTexture1_param			=glGetUniformLocation(current_program,"inscTexture");
+		skylightTexture_param		=glGetUniformLocation(current_program,"skylightTexture");
 			
-		altitudeTexCoord_param			=glGetUniformLocation(current_program,"altitudeTexCoord");
-		earthShadowNormal_param			=glGetUniformLocation(current_program,"earthShadowNormal");
-		maxFadeDistance_param			=glGetUniformLocation(current_program,"maxFadeDistance");
-		radiusOnCylinder_param			=glGetUniformLocation(current_program,"radiusOnCylinder");
-		terminatorCosine_param			=glGetUniformLocation(current_program,"terminatorCosine");
+		altitudeTexCoord_param		=glGetUniformLocation(current_program,"altitudeTexCoord");
+		earthShadowNormal_param		=glGetUniformLocation(current_program,"earthShadowNormal");
+		maxFadeDistance_param		=glGetUniformLocation(current_program,"maxFadeDistance");
+		radiusOnCylinder_param		=glGetUniformLocation(current_program,"radiusOnCylinder");
+		terminatorCosine_param		=glGetUniformLocation(current_program,"terminatorCosine");
+		
+		
+		cloudOrigin					=glGetUniformLocation(current_program,"cloudOrigin");
+		cloudScale					=glGetUniformLocation(current_program,"cloudScale");
+		maxDistance					=glGetUniformLocation(current_program,"maxDistance");
+		viewPosition				=glGetUniformLocation(current_program,"viewPosition");
+		overcast_param				=glGetUniformLocation(current_program,"overcast");
 		printProgramInfoLog(current_program);
 	}
 	glUseProgram(p);
@@ -409,6 +416,11 @@ ERROR_CHECK
 		glUniform1f(maxFadeDistance_param,skyKeyframer->GetMaxDistanceKm()/skyKeyframer->GetSkyInterface()->GetPlanetRadius());
 		glUniform1f(terminatorCosine_param,e.terminator_cosine);
 	}
+	setParameter3(cloudOrigin,cloud_origin);
+	setParameter3(cloudScale,cloud_scale);
+	setParameter(maxDistance,skyKeyframer->GetMaxDistanceKm()*1000.f);
+	setParameter(overcast_param,overcast);
+	setParameter3(viewPosition,cam_pos);
 ERROR_CHECK
 	for(int i=0;i<6;i++)
 	{

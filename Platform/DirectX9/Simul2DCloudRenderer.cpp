@@ -266,6 +266,7 @@ bool Simul2DCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_f
 	cubemap;
 	depth_testing;
 	default_fog;
+	write_alpha;
 	HRESULT hr=S_OK;
 	if(!enabled)
 		return (hr==S_OK);

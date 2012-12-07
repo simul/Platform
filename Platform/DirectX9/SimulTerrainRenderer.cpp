@@ -819,7 +819,7 @@ void SimulTerrainRenderer::RenderOnlyDepth()
 void SimulTerrainRenderer::Render()
 {
 	PIXBeginNamedEvent(0xFF00FF00,"SimulTerrainRenderer::Render");
-	HRESULT hr=InternalRender(false);
+	InternalRender(false);
 	PIXEndNamedEvent();
 
 	if(highlight_pos.x+highlight_pos.y+highlight_pos.z!=0)
