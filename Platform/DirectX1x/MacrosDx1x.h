@@ -29,6 +29,7 @@ typedef std::basic_string<TCHAR> tstring;
 	#define ID3D1xEffectVectorVariable					ID3D10EffectVectorVariable
 	#define ID3D1xEffectScalarVariable					ID3D10EffectScalarVariable
 	#define ID3D1xShaderResourceView					ID3D10ShaderResourceView
+	#define ID3D1xBlendState							ID3D10BlendState
 	#define ID3D1xEffectShaderResourceVariable			ID3D10EffectShaderResourceVariable
 	#define ID3D1xEffectConstantBuffer					ID3D10EffectConstantBuffer
 	#define D3D1xCalcSubresource						D3D10CalcSubresource
@@ -94,6 +95,8 @@ typedef std::basic_string<TCHAR> tstring;
 	#define ID3D1xEffectConstantBuffer					ID3DX11EffectConstantBuffer
 	#define D3D1xCalcSubresource						D3D11CalcSubresource
 	#define ID3D1xShaderResourceView					ID3D11ShaderResourceView
+	#define ID3D1xBlendState							ID3D11BlendState
+	
 	#define D3D1x_USAGE_DEFAULT							D3D11_USAGE_DEFAULT
 	#define D3D1x_MAPPED_TEXTURE3D						D3D11_MAPPED_SUBRESOURCE
 	#define D3D1x_SHADER_RESOURCE_VIEW_DESC				D3D11_SHADER_RESOURCE_VIEW_DESC

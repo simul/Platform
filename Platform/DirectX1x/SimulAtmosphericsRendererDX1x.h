@@ -57,6 +57,7 @@ public:
 		input_texture=image;
 		depth_texture=depth;
 	}
+	void SetCloudShadowTexture(void *c){}
 	void SetOvercastFactor(float of)
 	{
 		overcast_factor=of;

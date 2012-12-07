@@ -583,7 +583,6 @@ bool SimulSkyRendererDX1x::RenderPlanet(void* tex,float rad,const float *dir,con
 		ApplyPass(m_hTechniquePlanet->GetPassByIndex(0));
 	else
 		ApplyPass(m_hTechniqueFlare->GetPassByIndex(0));
-	//m_pSkyEffect->SetTexture(flareTexture,(LPDIRECT3DTEXTURE9)tex);
 	flareTexture->SetResource((ID3D1xShaderResourceView*)tex);
 	simul::sky::float4 original_irradiance=skyKeyframer->GetSkyInterface()->GetSunIrradiance();
 	simul::sky::float4 planet_dir4=dir;
