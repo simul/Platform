@@ -151,7 +151,7 @@ protected:
 	std::map<int,LPDIRECT3DTEXTURE9> planet_textures;
 	// Three sunlight textures.
 	LPDIRECT3DTEXTURE9			sunlight_textures[3];
-	// If using 1D sky textures and 2D fade textures:
+	// These are generated as necessary:
 	LPDIRECT3DBASETEXTURE9		loss_textures[3];
 	LPDIRECT3DBASETEXTURE9		inscatter_textures[3];
 	LPDIRECT3DBASETEXTURE9		skylight_textures[3];

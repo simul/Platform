@@ -278,9 +278,9 @@ void SimulSkyRenderer::FillSunlightTexture(int texture_index,int texel_index,int
 
 void SimulSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s1)
 {
-	*l1=(void*)loss_2d.hdr_buffer_texture;
-	*i1=(void*)inscatter_2d.hdr_buffer_texture;
-	*s1=(void*)skylight_2d.hdr_buffer_texture;
+	*l1=(void*)loss_2d.GetColorTex();
+	*i1=(void*)inscatter_2d.GetColorTex();
+	*s1=(void*)skylight_2d.GetColorTex();
 }
 
 float SimulSkyRenderer::GetFadeInterp() const
@@ -744,12 +744,12 @@ bool SimulSkyRenderer::RenderFades(int w,int h)
 	if(h/(numAltitudes+2)<size)
 		size=h/(numAltitudes+2);
 
-	m_pSkyEffect->SetTexture(fadeTexture2D,inscatter_2d.hdr_buffer_texture);
-	RenderTexture(m_pd3dDevice,8	,8		,size,size,inscatter_2d.hdr_buffer_texture,m_pSkyEffect,m_hTechniqueShowFade);
-	m_pSkyEffect->SetTexture(fadeTexture2D,loss_2d.hdr_buffer_texture);
-	RenderTexture(m_pd3dDevice,8	,16+size,size,size,inscatter_2d.hdr_buffer_texture,m_pSkyEffect,m_hTechniqueShowFade);
-	m_pSkyEffect->SetTexture(fadeTexture2D,skylight_2d.hdr_buffer_texture);
-	RenderTexture(m_pd3dDevice,8	,24+2*size,size,size,inscatter_2d.hdr_buffer_texture,m_pSkyEffect,m_hTechniqueShowFade);
+	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex());
+	RenderTexture(m_pd3dDevice,8	,8		,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
+	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)loss_2d.GetColorTex());
+	RenderTexture(m_pd3dDevice,8	,16+size,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
+	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)skylight_2d.GetColorTex());
+	RenderTexture(m_pd3dDevice,8	,24+2*size,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
 
 	for(int i=0;i<numAltitudes;i++)
 	{
@@ -974,8 +974,8 @@ bool SimulSkyRenderer::Render(bool blend)
 	D3DXMatrixTranspose(&tmp1,&tmp2);
 	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
 
-	m_pSkyEffect->SetTexture(inscTexture,inscatter_2d.hdr_buffer_texture);
-	m_pSkyEffect->SetTexture(skylTexture,skylight_2d.hdr_buffer_texture);
+	m_pSkyEffect->SetTexture(inscTexture,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex());
+	m_pSkyEffect->SetTexture(skylTexture,(LPDIRECT3DBASETEXTURE9)skylight_2d.GetColorTex());
 
 	hr=m_pd3dDevice->SetVertexDeclaration( m_pVtxDecl );
 

@@ -95,6 +95,7 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 }
 
 void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
+											,int texels
 											,float humidity
 											,float time
 											,int noise_size,int octaves,float persistence
@@ -105,8 +106,6 @@ timer.StartTime();
 	int new_density_gridsize=GetDensityGridsize(density_grid);
 	if(!density_program)
 		RecompileShaders();
-//FillDensityGrid was 34.5385
-// now FillDensityGrid 54.7947
 	// We render out a 2D texture with each XY layer laid end-to-end, and copy it to the target.
 	dens_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
 	if(!dens_fb.InitColor_Tex(0,iformat,GL_FLOAT))
@@ -119,7 +118,7 @@ timer.StartTime();
 		}
 	}
 	
-	simul::math::Vector3 noiseScale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0]);
+	simul::math::Vector3 noise_scale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0]);
 	
 	//using noise_size and noise_src_ptr, make a 3d texture:
 	GLuint volume_noise_tex=make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
@@ -137,7 +136,7 @@ timer.StartTime();
 	setParameter(density_program,"time"					,time);
 	setParameter(density_program,"zPixel"				,1.f/(float)density_grid[2]);
 	setParameter(density_program,"zSize"				,(float)density_grid[2]);
-	setParameter(density_program,"noiseScale"			,noiseScale.x,noiseScale.y,noiseScale.z);
+	setParameter(density_program,"noiseScale"			,noise_scale.x,noise_scale.y,noise_scale.z);
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -206,9 +205,10 @@ std::cout<<"\tGpu clouds: glReadPixels "<<timer.UpdateTime()<<std::endl;
 }
 
 // The target is a grid of size given by light_gridsizes, arranged as d w-by-l textures.
-void GpuCloudGenerator::PerformFullGPURelight(float *target,const int *light_grid
-								,const int *density_grid
-								,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3)
+void GpuCloudGenerator::PerformGPURelight(float *target,const int *light_grid
+										,int texels
+										,const int *density_grid
+										,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3)
 {
 simul::base::Timer timer;
 timer.StartTime();
@@ -289,7 +289,8 @@ std::cout<<"\tGpu clouds: SAFE_DELETE_TEXTURE "<<timer.UpdateTime()<<std::endl;
 void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 											,const float *DensityToLightTransform
 											,const float *light,const int *light_grid
-											,const float *ambient,const int *density_grid)
+											,const float *ambient,const int *density_grid
+											,int texels)
 {
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	world_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);

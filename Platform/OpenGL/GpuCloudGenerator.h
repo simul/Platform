@@ -21,16 +21,22 @@ namespace simul
 			}
 			int GetDensityGridsize(const int *grid);
 			void *FillDensityGrid(const int *grid
-											,float humidity
-											,float time
-											,int noise_size,int octaves,float persistence
-											,const float  *noise_src_ptr);
-			void PerformFullGPURelight(float *target,const int *,const int *density_grid,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
+									,int texels
+									,float humidity
+									,float time
+									,int noise_size,int octaves,float persistence
+									,const float  *noise_src_ptr);
+			void PerformGPURelight(float *target
+									,const int *light_grid
+									,int texels
+									,const int *density_grid
+									,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
 			void GPUTransferDataToTexture(unsigned char *target
 											,const float *DensityToLightTransform
 											,const float *light,const int *light_grid
 											,const float *ambient
-											,const int *density_grid);
+											,const int *density_grid
+											,int texels);
 		protected:
 			FramebufferGL	fb[2];
 			FramebufferGL	world_fb;
@@ -41,7 +47,6 @@ namespace simul
 			GLenum			iformat;
 			GLenum			itype;
 			GLuint			density_texture;
-			
 			bool			readback_to_cpu;
 			float			*density;	// used if we are using CPU to read back the density texture.
 			int				density_gridsize;

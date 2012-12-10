@@ -114,6 +114,9 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 	RT::SetScreenSize(width,height);
 	float weather_restore_time=0.f,hdr_restore_time=0.f,terrain_restore_time=0.f,optics_restore_time=0.f;
 	simul::base::Timer timer;
+	
+	
+	gpuCloudGenerator.RestoreDeviceObjects(pd3dDevice);
 
 	if(simulWeatherRenderer)
 	{
@@ -315,7 +318,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		}
 		if(simulWeatherRenderer->Get2DCloudRenderer())
 		{
-			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
+		//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
 		}
 	}
 	
@@ -335,6 +338,7 @@ LRESULT Direct3D9Renderer::MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 void Direct3D9Renderer::OnLostDevice()
 {
+	gpuCloudGenerator.InvalidateDeviceObjects();
 	RT::InvalidateDeviceObjects();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
@@ -349,11 +353,6 @@ void Direct3D9Renderer::OnLostDevice()
 void Direct3D9Renderer::OnDestroyDevice()
 {
 	OnLostDevice();
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->InvalidateDeviceObjects();
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->InvalidateDeviceObjects();
-	RT::InvalidateDeviceObjects();
 }
 
 const TCHAR *Direct3D9Renderer::GetDebugText() const
@@ -376,6 +375,7 @@ const TCHAR *Direct3D9Renderer::GetDebugText() const
 
 void Direct3D9Renderer::RecompileShaders()
 {
+	gpuCloudGenerator.RecompileShaders();
 	if(simulWeatherRenderer.get())
 		simulWeatherRenderer->RecompileShaders();
 	if(simulOpticsRenderer.get())

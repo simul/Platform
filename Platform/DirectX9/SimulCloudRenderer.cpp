@@ -1349,7 +1349,7 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 	fb.Deactivate();
 	fn+=ext;
 	//hr=D3DXSaveSurfaceToFile((std::wstring(fn)+L".bmp").c_str(),D3DXIFF_BMP,fb.m_pHDRRenderTarget,NULL,NULL);
-	SaveTexture(fb.hdr_buffer_texture,(std::string(filename)+".png").c_str());
+	SaveTexture((LPDIRECT3DTEXTURE9)fb.GetColorTex(),(std::string(filename)+".png").c_str());
 	fb.InvalidateDeviceObjects();
 }
 

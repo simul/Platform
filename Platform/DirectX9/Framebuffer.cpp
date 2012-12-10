@@ -7,22 +7,22 @@ Framebuffer::Framebuffer()
 	,Width(0)
 	,Height(0)
 	,buffer_depth_texture(NULL)
-	,hdr_buffer_texture(NULL)
+	,buffer_texture(NULL)
 	,m_pHDRRenderTarget(NULL)
 	,m_pBufferDepthSurface(NULL)
 	,m_pOldRenderTarget(NULL)
 	,m_pOldDepthSurface(NULL)
 {
 #ifndef XBOX
-	hdr_format=D3DFMT_A16B16G16R16F;
+	texture_format=D3DFMT_A16B16G16R16F;
 #else
-	hdr_format=D3DFMT_LIN_A16B16G16R16F;
+	texture_format=D3DFMT_LIN_A16B16G16R16F;
 #endif
 	//if(hr!=S_OK)
 #ifndef XBOX
-		hdr_format=D3DFMT_A32B32G32R32F;
+		texture_format=D3DFMT_A32B32G32R32F;
 #else
-		hdr_format=D3DFMT_LIN_A32B32G32R32F;
+		texture_format=D3DFMT_LIN_A32B32G32R32F;
 #endif
 }
 
@@ -32,94 +32,53 @@ Framebuffer::~Framebuffer()
 
 void Framebuffer::SetWidthAndHeight(int w,int h)
 {
+	if(buffer_texture!=NULL&&w==Width&&h==Height)
+		return;
 	Width=w;
 	Height=h;
+	MakeTexture();
+}
+void Framebuffer::MakeTexture()
+{
+	if(!m_pd3dDevice)
+		return;
+	SAFE_RELEASE(buffer_texture);
+	SAFE_RELEASE(m_pHDRRenderTarget);
+	if(!Width||!Height)
+		return;
+	HRESULT hr=m_pd3dDevice->CreateTexture(	Width,
+									Height,
+									1,
+									D3DUSAGE_RENDERTARGET,
+									texture_format,
+									D3DPOOL_DEFAULT,
+									&buffer_texture,
+									NULL);
+	m_pHDRRenderTarget=MakeRenderTarget(buffer_texture);
 }
 
-void Framebuffer::SetFormat(D3DFORMAT f)
+bool Framebuffer::SetFormat(D3DFORMAT f)
 {
-	hdr_format=f;
+	bool ok=CanUseTexFormat(m_pd3dDevice,f)==S_OK;
+	if(ok)
+	{
+		if(texture_format==f)
+			return true;
+		texture_format=f;
+		MakeTexture();
+	}
+	return ok;
 }
 
 void Framebuffer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
-	if(!Width||!Height)
-		return;
-	HRESULT hr=-1;//CanUse16BitFloats(pd3dDevice);
-	SAFE_RELEASE(hdr_buffer_texture);
-	hr=m_pd3dDevice->CreateTexture(	Width,
-									Height,
-									1,
-									D3DUSAGE_RENDERTARGET,
-									hdr_format,
-									D3DPOOL_DEFAULT,
-									&hdr_buffer_texture,
-									NULL
-								);
-/*	D3DFORMAT fmtDepthTex = D3DFMT_UNKNOWN;
-	D3DFORMAT possibles[]={D3DFMT_D24S8,D3DFMT_D24FS8,D3DFMT_D32,D3DFMT_D24X8,D3DFMT_D16,D3DFMT_UNKNOWN};
-
-	LPDIRECT3DSURFACE9 g_BackBuffer;
-	pd3dDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &g_BackBuffer);
-	D3DSURFACE_DESC desc;
-	g_BackBuffer->GetDesc(&desc);
-	SAFE_RELEASE(g_BackBuffer);
-	D3DDISPLAYMODE d3ddm;
-#ifdef XBOX
-	if(FAILED(hr=pd3dDevice->GetDisplayMode( D3DADAPTER_DEFAULT, &d3ddm )))
-	{
-		return (hr==S_OK);
-	}
-#else
-	LPDIRECT3D9 d3d;
-	pd3dDevice->GetDirect3D(&d3d);
-	if(FAILED(hr=d3d->GetAdapterDisplayMode( D3DADAPTER_DEFAULT, &d3ddm )))
-	{
-		return (hr==S_OK);
-	}
-#endif
-	for(int i=0;i<100;i++)
-	{
-		D3DFORMAT possible=possibles[i];
-		if(possible==D3DFMT_UNKNOWN)
-			break;
-		hr=IsDepthFormatOk(pd3dDevice,possible,d3ddm.Format,desc.Format);
-		if(SUCCEEDED(hr))
-		{
-			fmtDepthTex = possible;
-		}
-	}
-	
-	SAFE_RELEASE(buffer_depth_texture);
-	LPDIRECT3DSURFACE9	m_pOldDepthSurface;
-	hr=pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
-	if(m_pOldDepthSurface)
-		hr=m_pOldDepthSurface->GetDesc(&desc);
-	SAFE_RELEASE(m_pOldDepthSurface);
-	// Try creating a depth texture
-	if(fmtDepthTex!=D3DFMT_UNKNOWN)
-		hr=pd3dDevice->CreateTexture(	Width,
-										Height,
-										1,
-										D3DUSAGE_DEPTHSTENCIL,
-										desc.Format,
-										D3DPOOL_DEFAULT,
-										&buffer_depth_texture,
-										NULL
-									);
-	SAFE_RELEASE(m_pBufferDepthSurface);
-	if(buffer_depth_texture)
-		buffer_depth_texture->GetSurfaceLevel(0,&m_pBufferDepthSurface);
-	
-	SAFE_RELEASE(m_pBufferDepthSurface);*/
-	SAFE_RELEASE(m_pHDRRenderTarget);
-	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
+	MakeTexture();
 }
 
 void Framebuffer::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(hdr_buffer_texture);
+	SAFE_RELEASE(buffer_texture);
 	SAFE_RELEASE(buffer_depth_texture);
 	SAFE_RELEASE(m_pHDRRenderTarget);
 	SAFE_RELEASE(m_pBufferDepthSurface);
@@ -130,7 +89,7 @@ void Framebuffer::Activate()
 	m_pOldRenderTarget=NULL;
 	m_pOldDepthSurface=NULL;
 	D3DSURFACE_DESC desc;
-	hdr_buffer_texture->GetLevelDesc(0,&desc);
+	buffer_texture->GetLevelDesc(0,&desc);
 	HRESULT hr=m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
 	m_pOldRenderTarget->GetDesc(&desc);
 	hr=m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
