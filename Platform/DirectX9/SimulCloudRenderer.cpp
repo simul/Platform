@@ -704,6 +704,15 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
 #endif
+#if 1
+	D3DXMATRIX gsm_InvertZ;
+	D3DXMatrixIdentity(&gsm_InvertZ);
+	gsm_InvertZ.m[0][0] = -1.0f;
+	gsm_InvertZ.m[1][1] = -1.0f;
+	gsm_InvertZ.m[2][2] = -1.0f;
+	gsm_InvertZ.m[2][3] = 1.0f;
+	D3DXMatrixMultiply(&proj,&proj,&gsm_InvertZ);
+#endif
 	if(!vertices&&fade_mode!=CPU)
 		vertices=new Vertex_t[MAX_VERTICES];
 	if(!cpu_fade_vertices&&fade_mode==CPU)
