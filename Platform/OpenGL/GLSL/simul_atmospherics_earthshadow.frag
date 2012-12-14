@@ -6,24 +6,22 @@ uniform sampler2D inscTexture;
 uniform sampler2D skylightTexture;
 
 uniform vec3 lightDir;
-uniform mat4 invViewProj;
-uniform float directLightMultiplier;
-uniform vec3 earthShadowNormal;
-uniform float radiusOnCylinder;
-uniform float maxFadeDistance;
-uniform float terminatorCosine;
+
+layout(std140) uniform earthShadowUniforms
+{
+	uniform vec3 earthShadowNormal;
+	uniform float radiusOnCylinder;
+	uniform float maxFadeDistance;
+	uniform float terminatorCosine;
+};
 
 varying vec2 texCoords;
 
 void main()
 {
-    vec4 lookup=texture(imageTexture,texCoords);
-	vec4 pos=vec4(-1.0,-1.0,1.0,1.0);
-	pos.x+=2.0*texCoords.x;//+texelOffsets.x;
-	pos.y+=2.0*texCoords.y;//+texelOffsets.y;
-	vec3 view=(invViewProj*pos).xyz;
-	view=normalize(view);
+	vec3 view=texCoordToViewDirection(texCoords);
 	float sine=view.z;
+    vec4 lookup=texture(imageTexture,texCoords);
 	float depth=lookup.a;
 	if(depth>=1.0) 
 		discard;
@@ -79,10 +77,9 @@ void main()
 	{
 	// but we just use the inscatter to d if we're looking INTO the cylinder.
 		insc=mix(insc,inscb,in_shadow);
-		//insc.r=20.0*in_shadow;
 	}
 	float cos0=dot(view,lightDir);
-	colour+=InscatterFunction(insc,cos0);//directLightMultiplier*
+	colour+=InscatterFunction(insc,cos0);
 	vec4 skyl=texture(skylightTexture,texc2);
 	colour.rgb+=skyl.rgb;
     gl_FragColor=vec4(colour.rgb,1.0);

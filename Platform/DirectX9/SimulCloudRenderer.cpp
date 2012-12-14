@@ -704,7 +704,7 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
 #endif
-#if 1
+#if 0
 	D3DXMATRIX gsm_InvertZ;
 	D3DXMatrixIdentity(&gsm_InvertZ);
 	gsm_InvertZ.m[0][0] = -1.0f;

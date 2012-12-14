@@ -15,7 +15,6 @@ uniform vec3 viewPosition;
 uniform float overcast;
 
 uniform vec3 lightDir;
-uniform mat4 invViewProj;
 varying vec2 texCoords;
 
 vec3 makeViewVector()

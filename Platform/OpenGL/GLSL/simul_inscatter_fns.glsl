@@ -3,6 +3,7 @@
 
 uniform float hazeEccentricity;
 uniform vec3 mieRayleighRatio;
+uniform mat4 invViewProj;
 #define pi (3.1415926536)
 
 float saturate(float x)
@@ -12,6 +13,16 @@ float saturate(float x)
 vec3 saturate(vec3 x)
 {
 	return clamp(x,vec3(0.0,0.0,0.0),vec3(1.0,1.0,1.0));
+}
+
+vec3 texCoordToViewDirection(vec2 texCoords)
+{
+	vec4 pos=vec4(-1.0,-1.0,1.0,1.0);
+	pos.x+=2.0*texCoords.x;//+texelOffsets.x;
+	pos.y+=2.0*texCoords.y;//+texelOffsets.y;
+	vec3 view=(invViewProj*pos).xyz;
+	view=normalize(view);
+	return view;
 }
 
 float HenyeyGreenstein(float g,float cos0)

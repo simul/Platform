@@ -59,6 +59,7 @@ private:
 	bool initialized;
 	GLuint distance_fade_program;
 	GLuint earthshadow_fade_program;
+	GLuint godrays_program;
 	GLuint current_program;
 	GLuint cloudmix_program;
 
@@ -79,6 +80,9 @@ private:
 	GLint invViewProj;
 	GLint mieRayleighRatio;
 	GLint directLightMultiplier;
+	
+	GLint earthShadowUniforms;
+	GLuint earthShadowUniformsUBO;
 	
 	GLint earthShadowNormal;
 	GLint radiusOnCylinder;

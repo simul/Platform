@@ -29,6 +29,13 @@ void SimulGLAtmosphericsRenderer::SetBufferSize(int w,int h)
 			RestoreDeviceObjects(NULL);
 	}
 }
+struct EarthShadowUniforms
+{
+	float earthShadowNormal[3];
+	float radiusOnCylinder;
+	float maxFadeDistance;
+	float terminatorCosine;
+};
 
 void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 {
@@ -45,6 +52,7 @@ void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 	{
 		framebuffer->InitDepth_RB(GL_DEPTH_COMPONENT32);
 	}
+	
 	RecompileShaders();
 }
 
@@ -53,17 +61,22 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 	if(!initialized)
 		return;
 	std::string defs="";
-	if(ShowGodrays)
-		defs="#define GODRAYS 1";
 	distance_fade_program		=MakeProgram("simul_atmospherics",defs.c_str());
 	earthshadow_fade_program	=LoadPrograms("simul_atmospherics.vert",NULL,"simul_atmospherics_earthshadow.frag",defs.c_str());
 	cloudmix_program			=MakeProgram("simul_cloudmix");
+	godrays_program				=LoadPrograms("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defs.c_str());
 	current_program				=0;
 	glUseProgram(0);
+	
+	glGenBuffers(1, &earthShadowUniformsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, earthShadowUniformsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(EarthShadowUniforms), NULL, GL_STREAM_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 {
+	SAFE_DELETE_PROGRAM(godrays_program);
 }
 
 void SimulGLAtmosphericsRenderer::UseProgram(GLuint p)
@@ -83,7 +96,11 @@ ERROR_CHECK
 		invViewProj				=glGetUniformLocation(current_program,"invViewProj");
 		mieRayleighRatio		=glGetUniformLocation(current_program,"mieRayleighRatio");
 		cloudsTexture			=glGetUniformLocation(current_program,"cloudsTexture");
-		directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
+		//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
+		
+		
+		earthShadowUniforms		=glGetUniformBlockIndex(current_program, "earthShadowUniforms");
+		
 		earthShadowNormal		=glGetUniformLocation(current_program,"earthShadowNormal");
 		maxFadeDistance			=glGetUniformLocation(current_program,"maxFadeDistance");
 		radiusOnCylinder		=glGetUniformLocation(current_program,"radiusOnCylinder");
@@ -144,6 +161,17 @@ ERROR_CHECK
 			glUniform3f(earthShadowNormal,e.normal.x,e.normal.y,e.normal.z);
 			glUniform1f(maxFadeDistance,fade_distance_km/e.planet_radius);
 			glUniform1f(terminatorCosine,e.terminator_cosine);
+			
+			EarthShadowUniforms u;
+			u.earthShadowNormal[0]=e.normal.x;
+			u.earthShadowNormal[1]=e.normal.y;
+			u.earthShadowNormal[2]=e.normal.z;
+			u.radiusOnCylinder=e.radius_on_cylinder;
+			u.maxFadeDistance=fade_distance_km/e.planet_radius;
+			u.terminatorCosine=e.terminator_cosine;
+			glBindBuffer(GL_UNIFORM_BUFFER, earthShadowUniformsUBO);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(EarthShadowUniforms), &u);
+			glBindBuffer(GL_UNIFORM_BUFFER, 0);
 		}
 	}
 	else
@@ -173,9 +201,7 @@ ERROR_CHECK
 	viewproj.Transpose(vpt);
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
-ERROR_CHECK
-static bool tr=true;
-	glUniformMatrix4fv(invViewProj,1,tr,ivp.RowPointer(0));
+	glUniformMatrix4fv(invViewProj,1,true,ivp.RowPointer(0));
 ERROR_CHECK
 
 	//glUniform1f(directLightMultiplier,e.illumination);
@@ -192,6 +218,13 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,framebuffer->GetColorTex(0));
 	
 	framebuffer->Render(false);
+	
+	if(ShowGodrays)
+	{
+	// Draw the godrays over the entire scene - or to be more accurate, subtract the cloud shadows from the scene.
+		glUseProgram(godrays_program);
+	}
+	
 	glUseProgram(0);
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,0);
