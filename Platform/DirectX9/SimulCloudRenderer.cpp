@@ -1161,7 +1161,7 @@ bool SimulCloudRenderer::MakeCubemap()
 	cloud_cubemap->GetLevelDesc(0,&desc);
 	//HANDLE *handle=NULL;
 	//calc proj matrix
-	D3DXMATRIX faceViewMatrix, faceProjMatrix;
+	D3DXMATRIX faceViewMatrix;
 	float w,h;
 	//vertical only specified
 	h = 1 / tanf((3.14159f * 0.5f) * 0.5f);
@@ -1169,14 +1169,6 @@ bool SimulCloudRenderer::MakeCubemap()
 	float zFar=helper->GetMaxCloudDistance();
 	float zNear=1.f;
 	float Q = zFar / (zFar - zNear);
-
-	// build projection matrix
-	memset(&faceProjMatrix, 0, sizeof(D3DXMATRIX));
-	faceProjMatrix.m[0][0] = w;
-	faceProjMatrix.m[1][1] = h;
-	faceProjMatrix.m[2][2] = Q;
-	faceProjMatrix.m[2][3] = 1;
-	faceProjMatrix.m[3][2] = -Q * zNear;
 
 	LPDIRECT3DSURFACE9	pRenderTarget;
 	LPDIRECT3DSURFACE9	pOldRenderTarget;

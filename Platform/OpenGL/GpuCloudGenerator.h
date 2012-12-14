@@ -21,21 +21,23 @@ namespace simul
 			}
 			int GetDensityGridsize(const int *grid);
 			void *FillDensityGrid(const int *grid
+									,int start_texel
 									,int texels
 									,float humidity
 									,float time
 									,int noise_size,int octaves,float persistence
 									,const float  *noise_src_ptr);
-			void PerformGPURelight(float *target
+			virtual void PerformGPURelight(float *target
 									,const int *light_grid
+									,int start_texel
 									,int texels
 									,const int *density_grid
 									,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
 			void GPUTransferDataToTexture(unsigned char *target
 											,const float *DensityToLightTransform
 											,const float *light,const int *light_grid
-											,const float *ambient
-											,const int *density_grid
+											,const float *ambient,const int *density_grid
+											,int start_texel
 											,int texels);
 		protected:
 			FramebufferGL	fb[2];

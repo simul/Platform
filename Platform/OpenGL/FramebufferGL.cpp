@@ -207,6 +207,11 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 // The FBO needs to be deactivated when using the associated textures.
 void FramebufferGL::Activate()
 {
+	Activate(0,0,m_width,m_height);
+}
+
+void FramebufferGL::Activate(int x,int y,int w,int h)
+{
 	glFlush(); 
 	CheckFramebufferStatus();
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb); 
@@ -214,7 +219,7 @@ void FramebufferGL::Activate()
 	CheckFramebufferStatus();
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	ERROR_CHECK
-	glViewport(0,0,m_width,m_height);
+	glViewport(x,y,w,h);
 	ERROR_CHECK
 	fb_stack.push(m_fb);
 }

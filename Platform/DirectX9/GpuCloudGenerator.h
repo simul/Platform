@@ -26,13 +26,16 @@ public:
 	bool CanPerformGPULighting() const;	
 	int GetDensityGridsize(const int *grid);
 	void* FillDensityGrid(const int *grid
+							,int start_texel
 							,int texels
 							,float humidity
 							,float time_val
 							,int noise_size,int octaves,float persistence
 							,const float  *noise_src_ptr);
+	
 	void PerformGPURelight(float *target
 							,const int *light_gridsizes
+							,int start_texel
 							,int texels
 							,const int *density_grid
 							,const float *Matrix4x4LightToDensityTexcoords
@@ -41,6 +44,7 @@ public:
 									,const float *DensityToLightTransform
 									,const float *light,const int *light_grid
 									,const float *ambient,const int *density_grid
+									,int start_texel
 									,int texels);
 protected:
 	Framebuffer	fb[2];

@@ -590,8 +590,17 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	skylightTexture->SetResource(skylightTexture_SRV);
 
 	// Mess with the proj matrix to extend the far clipping plane:
-	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
-		
+	static bool reverse_z=true;
+	if(reverse_z)
+	{
+		D3DXMATRIX invertz;
+		D3DXMatrixIdentity(&invertz);
+		invertz.m[2][2] = -1.0f;
+		invertz.m[3][2]	= 1.0f;
+		D3DXMatrixMultiply(&proj,&proj,&invertz);
+	}
+	else
+		FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
 	//set up matrices
 	D3DXMATRIX wvp;
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
@@ -821,7 +830,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 		RenderTexture(m_pd3dDevice,i*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
 	}
 	if(skyInterface)
-	for(int i=0;i<3;i++)
+	for(int i=0;i<2;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
 				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(

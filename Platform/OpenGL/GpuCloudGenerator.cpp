@@ -94,13 +94,20 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 	return grid[0]*grid[1]*grid[2]*size;
 }
 
+// Fill the stated number of texels of the density texture
 void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
+											,int start_texel
 											,int texels
 											,float humidity
 											,float time
 											,int noise_size,int octaves,float persistence
 											,const float *noise_src_ptr)
 {
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 simul::base::Timer timer;
 timer.StartTime();
 	int new_density_gridsize=GetDensityGridsize(density_grid);
@@ -201,15 +208,28 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 	glUseProgram(0);
 std::cout<<"\tGpu clouds: glReadPixels "<<timer.UpdateTime()<<std::endl;
 	glDeleteTextures(1,&volume_noise_tex);
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glPopAttrib();
 	return (void*)dens_fb.GetColorTex(0);
 }
 
 // The target is a grid of size given by light_gridsizes, arranged as d w-by-l textures.
-void GpuCloudGenerator::PerformGPURelight(float *target,const int *light_grid
-										,int texels
-										,const int *density_grid
-										,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3)
+void GpuCloudGenerator::PerformGPURelight(float *target
+								,const int *light_grid
+								,int start_texel
+								,int texels
+								,const int *density_grid
+								,const float *Matrix4x4LightToDensityTexcoords
+								,const float *lightspace_extinctions_float3)
 {
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 simul::base::Timer timer;
 timer.StartTime();
 	for(int i=0;i<2;i++)
@@ -230,7 +250,6 @@ timer.StartTime();
 	FramebufferGL *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
-	
 	glDisable(GL_TEXTURE_1D);
 	glDisable(GL_TEXTURE_3D);
 	glEnable(GL_TEXTURE_3D);
@@ -282,6 +301,11 @@ ERROR_CHECK
 std::cout<<"\tGpu clouds: DrawQuad "<<draw_time<<std::endl;
 std::cout<<"\tGpu clouds: glReadPixels "<<read_time<<std::endl;
 std::cout<<"\tGpu clouds: SAFE_DELETE_TEXTURE "<<timer.UpdateTime()<<std::endl;
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glPopAttrib();
 }
 
 // Transform light data into a world-oriented cloud texture.
@@ -290,8 +314,14 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 											,const float *DensityToLightTransform
 											,const float *light,const int *light_grid
 											,const float *ambient,const int *density_grid
+											,int start_texel
 											,int texels)
 {
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	world_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
 	world_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8);
@@ -341,4 +371,9 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 	glDeleteTextures(1,&ambient_texture);
 	//glDeleteTextures(1,&density_texture);
 	glDeleteTextures(1,&light_texture);
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glPopAttrib();
 }
