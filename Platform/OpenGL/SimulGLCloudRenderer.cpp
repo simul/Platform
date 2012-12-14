@@ -892,7 +892,7 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 
 void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
 {
-	static int u=3;
+	static int u=4;
 	int w=(width-8)/u;
 	if(w>height/2)
 		w=height/2;
@@ -915,8 +915,8 @@ ERROR_CHECK
 ERROR_CHECK
 static float mult=1.f;
 	glUniform1i(cloudDensity1_param,0);
-	// Dx11 can't draw the 3rd texture without trashing it. Progress!
-	for(int i=0;i<2;i++)
+
+	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
 				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(

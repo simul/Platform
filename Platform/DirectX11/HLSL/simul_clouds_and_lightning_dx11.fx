@@ -102,12 +102,14 @@ struct vertexOutput
     float3 texCoordLightning	: TEXCOORD4;
     float2 fade_texc			: TEXCOORD5;
     float2 texCoordsNoise2		: TEXCOORD6;
+    float4 dupehPosition		: TEXCOORD7;
 };
 
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-    OUT.hPosition = mul( worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.hPosition = mul(worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.dupehPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
 	OUT.texCoords.xyz=IN.texCoords;
 	OUT.texCoords.w=0.5f+0.5f*saturate(IN.texCoords.z);
 	const float c=fractalScale.w;
@@ -132,7 +134,6 @@ vertexOutput VS_Main(vertexInput IN)
 // Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
 #if FADE_MODE==1
 	float depth=length(OUT.wPosition.xyz)/maxFadeDistanceMetres;
-	//OUT.fade_texc=float2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5f*(1.f-sine));
 	OUT.fade_texc=float2(sqrt(depth),0.5f*(1.f-sine));
 #endif
     return OUT;

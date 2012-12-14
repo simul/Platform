@@ -38,9 +38,11 @@ public:
 	// InitDepth_RB or InitDepth_Tex needs to be called.
 	void InitDepth_RB(GLenum iformat = GL_DEPTH_COMPONENT24);
 	void InitDepth_Tex(GLenum iformat = GL_DEPTH_COMPONENT24);
-	// Activate / deactivate the FBO as a render target
-	// The FBO needs to be deactivated when using the associated textures.
+	/// Activate / deactivate the FBO as a render target
+	/// The FBO needs to be deactivated when using the associated textures.
 	void Activate();
+	/// Activate rendering to a viewport
+	void Activate(int x,int y,int w,int h);
 	void Deactivate();
 	void Clear(float r,float g,float b,float a,int mask=0);
 	void DeactivateAndRender(bool blend);

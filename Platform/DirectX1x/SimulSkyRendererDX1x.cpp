@@ -723,7 +723,17 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
 // Fix projection
-	FixProjectionMatrix(proj,1000.f,IsYVertical());
+	static bool reverse_z=true;
+	if(reverse_z)
+	{
+		D3DXMATRIX invertz;
+		D3DXMatrixIdentity(&invertz);
+		invertz.m[2][2] = -1.0f;
+		invertz.m[3][2]	= 1.0f;
+		D3DXMatrixMultiply(&proj,&proj,&invertz);
+	}
+	else
+		FixProjectionMatrix(proj,1000.f,IsYVertical());
 
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);

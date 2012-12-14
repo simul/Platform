@@ -175,6 +175,7 @@ void GpuCloudGenerator::MakeShader()
 
 	
 void* GpuCloudGenerator::FillDensityGrid(const int *density_grid
+							,int start_texel
 							,int texels
 						,float hum
 						,float time_val
@@ -236,9 +237,11 @@ void* GpuCloudGenerator::FillDensityGrid(const int *density_grid
 	return dens_fb.GetColorTex();
 }
 
-void GpuCloudGenerator::PerformGPURelight(float *targ,const int *light_gridsizes,int texels,const int *density_grid
-			,const float *Matrix4x4LightToDensityTexcoords
-			,const float *lightspace_extinctions_float3)
+void GpuCloudGenerator::PerformGPURelight(float *dest,const int *light_gridsizes
+							,int start_texel,int texels
+							,const int *density_grid
+							,const float *Matrix4x4LightToDensityTexcoords
+							,const float *lightspace_extinctions_float3)
 {
 	if(!m_pGPULightingEffect)
 		MakeShader();
@@ -253,7 +256,7 @@ void GpuCloudGenerator::PerformGPURelight(float *targ,const int *light_gridsizes
 	// 1. Create two 2D target rendertextures:
 	HRESULT hr=S_OK;
 	if(!m_pd3dDevice)
-		return;
+		return ;
 	LPDIRECT3DSURFACE9				pOldRenderTarget	=NULL;
 	D3DXHANDLE m_hTechniqueGpuLighting	=m_pGPULightingEffect->GetTechniqueByName("simul_gpulighting");
 	m_pGPULightingEffect->SetTechnique(m_hTechniqueGpuLighting);
@@ -283,14 +286,14 @@ void GpuCloudGenerator::PerformGPURelight(float *targ,const int *light_gridsizes
 	SAFE_RELEASE(target->pBuf);
 	m_pd3dDevice->CreateOffscreenPlainSurface(light_gridsizes[0],light_gridsizes[1],D3DFMT_G32R32F,D3DPOOL_SYSTEMMEM,&target->pBuf,NULL);
 
-	unsigned char *dest=(unsigned char*)targ;
 	static unsigned colr=0x00FFFF00;
 	
 	// Make a floating point texture.
 	hr=m_pd3dDevice->SetRenderTarget(0,target->pLightRenderTarget[0]);
 	hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,colr,1.f,0L);
 	m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
-	dest+=target->Copy(0,dest);
+	unsigned char *d=(unsigned char *)dest;
+	d+=target->Copy(0,d);
 
 	m_pGPULightingEffect->SetVector((D3DXHANDLE)extinctions,(D3DXVECTOR4*)(lightspace_extinctions_float3));
 	float offset[]={0.5f/(float)light_gridsizes[0],0.5f/(float)light_gridsizes[1],0,0};
@@ -319,8 +322,7 @@ void GpuCloudGenerator::PerformGPURelight(float *targ,const int *light_gridsizes
 	m_pd3dDevice->EndScene();
 		target->Swap();
 		hr=m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
-		dest+=target->Copy(0,dest);
-		//dest+=size;
+		d+=target->Copy(0,d);
 	}
 	m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
 	SAFE_RELEASE(pOldRenderTarget);
@@ -352,7 +354,8 @@ void GpuCloudGenerator::GPUTransferDataToTexture(	unsigned char *target
 											,const float *DensityToLightTransform
 											,const float *light,const int *light_gridsizes
 											,const float *ambient,const int *density_grid
-							,int texels)
+											,int texels
+											,int start_texel)
 {
 	HRESULT hr=S_OK;
 	if(!m_pd3dDevice)
@@ -369,15 +372,10 @@ std::cout<<"\tCreateTextures "<<timer.UpdateTime()<<std::endl;
 	
 	D3DLOCKED_RECT rect;
 	// the light textures:
-	EnsureVolumeTexture(direct_texture,light_gridsizes,light);
-	EnsureVolumeTexture(ambient_texture,density_grid,ambient);
-/*	if(ambient)
-	{
-		ambient_texture->LockBox(0,&lockedBox,NULL,NULL);
-		unsigned char *target=(unsigned char*)lockedBox.pBits;
-		memcpy(target,ambient,sizeof(float)*2*size3d);
-		ambient_texture->UnlockBox(0);
-	}*/
+	direct_texture=(LPDIRECT3DVOLUMETEXTURE9)light;
+	ambient_texture=(LPDIRECT3DVOLUMETEXTURE9)ambient;
+	//EnsureVolumeTexture(direct_texture,light_gridsizes,light);
+	//EnsureVolumeTexture(ambient_texture,density_grid,ambient);
 	float offset[]={0.5f/(float)density_grid[0],0.5f/(float)(density_grid[1]*density_grid[2]),0,0};
 	m_pGPULightingEffect->SetVector((D3DXHANDLE)texCoordOffset,(D3DXVECTOR4*)(offset));
 	m_pGPULightingEffect->SetMatrix((D3DXHANDLE)densityToLightMatrix,(D3DXMATRIX*)(DensityToLightTransform));
