@@ -83,6 +83,7 @@ private:
 	
 	GLint earthShadowUniforms;
 	GLuint earthShadowUniformsUBO;
+	GLint earthShadowUniformsBindingIndex;
 	
 	GLint earthShadowNormal;
 	GLint radiusOnCylinder;

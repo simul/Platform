@@ -11,6 +11,7 @@ SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
 	,cloud_shadow_texture(0)
 	,initialized(false)
 	,current_program(0)
+	,earthShadowUniformsBindingIndex(0)
 {
 	framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D,"simul_atmospherics");
 }
@@ -100,6 +101,11 @@ ERROR_CHECK
 		
 		
 		earthShadowUniforms		=glGetUniformBlockIndex(current_program, "earthShadowUniforms");
+ERROR_CHECK
+		glUniformBlockBinding(current_program,earthShadowUniforms,earthShadowUniformsBindingIndex);
+ERROR_CHECK
+		glBindBufferRange(GL_UNIFORM_BUFFER, earthShadowUniformsBindingIndex,earthShadowUniformsUBO, 0, sizeof(EarthShadowUniforms));
+ERROR_CHECK
 		
 		earthShadowNormal		=glGetUniformLocation(current_program,"earthShadowNormal");
 		maxFadeDistance			=glGetUniformLocation(current_program,"maxFadeDistance");
