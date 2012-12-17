@@ -160,11 +160,13 @@ void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 
 bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 {
+ERROR_CHECK
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
+ERROR_CHECK
 	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
 	if(buffered)
 	{

@@ -559,7 +559,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 	return sun_occlusion;
 }
 
-void SimulSkyRendererDX1x::RenderSun()
+void SimulSkyRendererDX1x::RenderSun(float exposure_hint)
 {
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
@@ -573,9 +573,14 @@ void SimulSkyRendererDX1x::RenderSun()
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
 	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
-	if(max_bright>1.f)
+	float maxout_brightness=2.f/exposure_hint;
+	if(maxout_brightness>1e6f)
+		maxout_brightness=1e6f;
+	if(maxout_brightness<1e-6f)
+		maxout_brightness=1e-6f;
+	if(max_bright>maxout_brightness)
 	{
-		sunlight*=1.f/max_bright;
+		sunlight*=maxout_brightness/max_bright;
 		sunlight.w=max_bright;
 	}
 	colour->SetFloatVector(sunlight);

@@ -85,11 +85,6 @@ private:
 	GLuint earthShadowUniformsUBO;
 	GLint earthShadowUniformsBindingIndex;
 	
-	GLint earthShadowNormal;
-	GLint radiusOnCylinder;
-	GLint maxFadeDistance;
-	GLint terminatorCosine;
-	
 	GLint cloudOrigin;
 	GLint cloudScale;
 	GLint maxDistance;

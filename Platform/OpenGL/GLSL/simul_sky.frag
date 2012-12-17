@@ -4,7 +4,6 @@
 
 uniform sampler2D inscTexture;
 uniform sampler2D skylightTexture;
-// the App updates uniforms "slowly" (eg once per frame) for animation.
 uniform vec3 lightDir;
 uniform vec3 earthShadowNormal;
 uniform float radiusOnCylinder;

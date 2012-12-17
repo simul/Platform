@@ -58,7 +58,7 @@ public:
 	virtual		const float *GetFastInscatterLookup(float distance_texcoord,float elevation_texcoord);
 
 	bool		RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void		RenderSun();
+	void		RenderSun(float exposure_hint);
 
 	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s);
 
@@ -109,11 +109,10 @@ protected:
 	GLint			MieRayleighRatio_param;
 	GLint			hazeEccentricity_param;
 	GLint			lightDirection_sky_param;
-	GLint			sunDir_param;
-	GLint			earthShadowNormal_param;
-	GLint			radiusOnCylinder_param;
-	GLint			terminatorCosine_param;
-	GLint			maxFadeDistance_param;
+	
+	GLint			earthShadowUniforms;
+	GLuint			earthShadowUniformsUBO;
+	
 	GLint			skyInterp_param;
 	GLint			sunlight_param;
 	

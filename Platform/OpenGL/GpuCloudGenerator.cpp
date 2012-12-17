@@ -103,7 +103,6 @@ void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
 											,int noise_size,int octaves,float persistence
 											,const float *noise_src_ptr)
 {
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -206,13 +205,16 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 	}
 	glDisable(GL_TEXTURE_3D);
 	glUseProgram(0);
+ERROR_CHECK
 std::cout<<"\tGpu clouds: glReadPixels "<<timer.UpdateTime()<<std::endl;
 	glDeleteTextures(1,&volume_noise_tex);
+ERROR_CHECK
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
+ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
-	glPopAttrib();
+ERROR_CHECK
 	return (void*)dens_fb.GetColorTex(0);
 }
 
@@ -225,7 +227,7 @@ void GpuCloudGenerator::PerformGPURelight(float *target
 								,const float *Matrix4x4LightToDensityTexcoords
 								,const float *lightspace_extinctions_float3)
 {
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
+ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -305,7 +307,6 @@ std::cout<<"\tGpu clouds: SAFE_DELETE_TEXTURE "<<timer.UpdateTime()<<std::endl;
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
-	glPopAttrib();
 }
 
 // Transform light data into a world-oriented cloud texture.
@@ -317,7 +318,6 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 											,int start_texel
 											,int texels)
 {
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -375,5 +375,4 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
-	glPopAttrib();
 }

@@ -11,6 +11,7 @@
 #endif
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
+#include "Simul/Base/RuntimeError.h"
 static std::string shaderPath;
 static std::string last_filename;
 
@@ -115,19 +116,31 @@ GLuint SetShaders(const char *vert_src,const char *frag_src)
 GLuint LoadPrograms(const char *vert_filename,const char *geom_filename,const char *frag_filename,const char *defines)
 {
 	GLuint prog						=glCreateProgram();
-	GLuint vertex_shader			=glCreateShader(GL_VERTEX_SHADER);
-    vertex_shader					=LoadShader(vertex_shader,vert_filename,defines);
+	GLuint vertex_shader			=LoadShader(vert_filename,defines);
+    if(!vertex_shader)
+    {
+		std::cerr<<"ERROR:\tShader failed to compile\n";
+		DebugBreak();
+	}
 	glAttachShader(prog,vertex_shader);
 	if(geom_filename)
 	{
-		GLuint geometry_shader			=glCreateShader(GL_GEOMETRY_SHADER);
-		geometry_shader					=LoadShader(geometry_shader,geom_filename,defines);
+		GLuint geometry_shader					=LoadShader(geom_filename,defines);
+		if(!geometry_shader)
+		{
+			std::cerr<<"ERROR:\tShader failed to compile\n";
+			DebugBreak();
+		}
 		glAttachShader(prog,geometry_shader);
 		ERROR_CHECK
 	}
-	GLuint fragment_shader			=glCreateShader(GL_FRAGMENT_SHADER);
 	ERROR_CHECK
-    fragment_shader					=LoadShader(fragment_shader,frag_filename,defines);
+    GLuint fragment_shader					=LoadShader(frag_filename,defines);
+    if(!fragment_shader)
+    {
+		std::cerr<<"ERROR:\tShader failed to compile\n";
+		DebugBreak();
+	}
 	ERROR_CHECK
 	glAttachShader(prog,fragment_shader);
 	ERROR_CHECK
@@ -156,7 +169,7 @@ GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const char *d
 		strings[s++]=program;
 	}
 	int lenOfStrings[MAX_STRINGS];
-	for(int i=0;i<sources.size()&&i<MAX_STRINGS-1;i++,s++)
+	for(int i=0;i<(int)sources.size()&&i<MAX_STRINGS-1;i++,s++)
 	{
 		strings[s]		=sources[i].c_str();
 		lenOfStrings[s]	=strlen(strings[s]);
@@ -174,7 +187,7 @@ GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const char *d
 	glGetShaderiv(sh,GL_COMPILE_STATUS,&result);
 	if(!result)
 	{
-		std::cerr<<"ERROR:\tShader failed to compile\n";
+		return 0;
 	}
     return sh;
 }
@@ -214,8 +227,18 @@ std::string loadShaderSource(const char *filename)
 	return str;
 }
 
-GLuint LoadShader(GLuint sh,const char *filename,const char *defines)
+GLuint LoadShader(const char *filename,const char *defines)
 {
+	GLenum shader_type=0;
+	std::string filename_str=filename;
+	if(filename_str.find(".vert")<filename_str.length())
+		shader_type=GL_VERTEX_SHADER;
+	else if(filename_str.find(".frag")<filename_str.length())
+		shader_type=GL_FRAGMENT_SHADER;
+	else if(filename_str.find(".geom")<filename_str.length())
+		shader_type=GL_GEOMETRY_SHADER;
+	else throw simul::base::RuntimeError((std::string("Shader type not known for file ")+filename_str).c_str());
+	
 	std::string src=loadShaderSource(filename);
 	// process #includes.
 	std::vector<std::string> include_files;
@@ -234,11 +257,12 @@ GLuint LoadShader(GLuint sh,const char *filename,const char *defines)
 		src=src.insert(eol+1,loadShaderSource(include_file.c_str()));
 	}
 	std::vector<std::string> srcs;
-	for(int i=0;i<include_files.size();i++)
+	for(int i=0;i<(int)include_files.size();i++)
 	{
 		//srcs.push_back();
 	}
 	srcs.push_back(src);
+	GLuint sh=glCreateShader(shader_type);
 	sh=SetShader(sh,srcs,defines);
     return sh;
 }

@@ -405,6 +405,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Glsl.h"
+				>
+			</File>
+			<File
 				RelativePath=".\GpuCloudGenerator.h"
 				>
 			</File>

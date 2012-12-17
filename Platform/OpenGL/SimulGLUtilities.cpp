@@ -258,7 +258,7 @@ void CheckGLError(const char *filename,int line_number,int err)
 		if(!c&&!d)
 			std::cerr<<std::endl<<"unknown error: "<<err<<std::endl;
 		DebugBreak();
-		assert(0);
+		//assert(0);
 	}
 }
 

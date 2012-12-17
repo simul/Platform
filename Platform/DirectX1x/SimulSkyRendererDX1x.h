@@ -55,7 +55,7 @@ public:
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	bool Render(bool blend);
 	bool RenderPointStars(){return false;}
-	void RenderSun();
+	void RenderSun(float exposure_hint);
 	//! Draw the fade textures to screen
 	bool RenderFades(int w,int h);
 	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);

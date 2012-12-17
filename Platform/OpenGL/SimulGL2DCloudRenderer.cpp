@@ -341,12 +341,9 @@ ERROR_CHECK
 
 void SimulGL2DCloudRenderer::RecompileShaders()
 {
-	clouds_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
-	clouds_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-
 	clouds_program			=glCreateProgram();
-    clouds_vertex_shader	=LoadShader(clouds_vertex_shader,"simul_clouds_2d.vert");
-	clouds_fragment_shader	=LoadShader(clouds_fragment_shader,"simul_clouds_2d.frag");
+    clouds_vertex_shader	=LoadShader("simul_clouds_2d.vert");
+	clouds_fragment_shader	=LoadShader("simul_clouds_2d.frag");
 	glAttachShader(clouds_program, clouds_vertex_shader);
 	glAttachShader(clouds_program, clouds_fragment_shader);
 	glLinkProgram(clouds_program);

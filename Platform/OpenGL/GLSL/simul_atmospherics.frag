@@ -27,6 +27,17 @@ vec3 makeViewVector()
 	return view;
 }
 
+float GetIlluminationAt(vec3 vd)
+{
+	vec3 pos=vd+viewPosition;
+	vec3 cloud_texc=(pos-cloudOrigin)*cloudScale;
+	vec4 cloud_texel=texture(cloudShadowTexture,cloud_texc.xy);
+	float illumination=cloud_texel.z;
+	float above=saturate(cloud_texc.z);
+	illumination=saturate(illumination-above);
+	return illumination;
+}
+
 vec4 simple()
 {
 	vec3 view=makeViewVector();
@@ -55,17 +66,6 @@ vec4 simple()
 	vec3 skyl=texture(skylightTexture,texc).rgb;
 	colour+=skyl;
     return vec4(colour,1.0);
-}
-
-float GetIlluminationAt(vec3 vd)
-{
-	vec3 pos=vd+viewPosition;
-	vec3 cloud_texc=(pos-cloudOrigin)*cloudScale;
-	vec4 cloud_texel=texture(cloudShadowTexture,cloud_texc.xy);
-	float illumination=cloud_texel.z;
-	float above=saturate(cloud_texc.z);
-	illumination=saturate(illumination-above);
-	return illumination;
 }
 	
 vec4 godrays()

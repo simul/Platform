@@ -5,13 +5,15 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/SkyInterface.h"
+#include "Simul/Platform/OpenGL/Glsl.h"
+#include "Simul/Platform/OpenGL/GLSL/simul_earthshadow_uniforms.glsl"
 
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
 	:clouds_texture(0)
 	,cloud_shadow_texture(0)
 	,initialized(false)
 	,current_program(0)
-	,earthShadowUniformsBindingIndex(0)
+	,earthShadowUniformsBindingIndex(1)
 {
 	framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D,"simul_atmospherics");
 }
@@ -30,13 +32,6 @@ void SimulGLAtmosphericsRenderer::SetBufferSize(int w,int h)
 			RestoreDeviceObjects(NULL);
 	}
 }
-struct EarthShadowUniforms
-{
-	float earthShadowNormal[3];
-	float radiusOnCylinder;
-	float maxFadeDistance;
-	float terminatorCosine;
-};
 
 void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 {
@@ -98,19 +93,15 @@ ERROR_CHECK
 		mieRayleighRatio		=glGetUniformLocation(current_program,"mieRayleighRatio");
 		cloudsTexture			=glGetUniformLocation(current_program,"cloudsTexture");
 		//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
-		
-		
-		earthShadowUniforms		=glGetUniformBlockIndex(current_program, "earthShadowUniforms");
 ERROR_CHECK
-		glUniformBlockBinding(current_program,earthShadowUniforms,earthShadowUniformsBindingIndex);
+		// If that block IS in the shader program, then BIND it to the relevant UBO.
+		if(earthShadowUniforms>=0)
+		{
+			glUniformBlockBinding(current_program,earthShadowUniforms,earthShadowUniformsBindingIndex);
 ERROR_CHECK
-		glBindBufferRange(GL_UNIFORM_BUFFER, earthShadowUniformsBindingIndex,earthShadowUniformsUBO, 0, sizeof(EarthShadowUniforms));
+			glBindBufferRange(GL_UNIFORM_BUFFER, earthShadowUniformsBindingIndex,earthShadowUniformsUBO, 0, sizeof(EarthShadowUniforms));	
+		}
 ERROR_CHECK
-		
-		earthShadowNormal		=glGetUniformLocation(current_program,"earthShadowNormal");
-		maxFadeDistance			=glGetUniformLocation(current_program,"maxFadeDistance");
-		radiusOnCylinder		=glGetUniformLocation(current_program,"radiusOnCylinder");
-		terminatorCosine		=glGetUniformLocation(current_program,"terminatorCosine");
 		
 		cloudOrigin				=glGetUniformLocation(current_program,"cloudOrigin");
 		cloudScale				=glGetUniformLocation(current_program,"cloudScale");
@@ -138,56 +129,46 @@ void SimulGLAtmosphericsRenderer::FinishRender()
 	framebuffer->Deactivate();
 ERROR_CHECK
     glEnable(GL_TEXTURE_2D);
-    glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D,loss_texture);
-    glActiveTexture(GL_TEXTURE3);
+    glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,inscatter_texture);
+    glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D,cloud_shadow_texture);
+    glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D,loss_texture);
     glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D,skylight_texture);
-    glActiveTexture(GL_TEXTURE5);
-	glBindTexture(GL_TEXTURE_2D,cloud_shadow_texture);
-	if(skyInterface)
-	{
-		simul::sky::float4 sun_dir		=skyInterface->GetDirectionToLight(cam_pos.z/1000.f);
+	
+	simul::sky::float4 light_dir	=skyInterface->GetDirectionToLight(cam_pos.z/1000.f);
+	simul::sky::float4 sun_dir		=skyInterface->GetDirectionToSun();
 ERROR_CHECK
-		simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,skyInterface->GetDirectionToSun());
-		if(e.enable)
-			UseProgram(earthshadow_fade_program);
-		else
-			UseProgram(distance_fade_program);
-	ERROR_CHECK
-		simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
-		glUniform3f(mieRayleighRatio,ratio.x,ratio.y,ratio.z);
-		glUniform3f(lightDir,sun_dir.x,sun_dir.y,sun_dir.z);
-		glUniform1f(hazeEccentricity,skyInterface->GetMieEccentricity());
-		
-		if(current_program==earthshadow_fade_program)
-		{
-			glUniform1f(radiusOnCylinder,e.radius_on_cylinder);
-			glUniform3f(earthShadowNormal,e.normal.x,e.normal.y,e.normal.z);
-			glUniform1f(maxFadeDistance,fade_distance_km/e.planet_radius);
-			glUniform1f(terminatorCosine,e.terminator_cosine);
-			
-			EarthShadowUniforms u;
-			u.earthShadowNormal[0]=e.normal.x;
-			u.earthShadowNormal[1]=e.normal.y;
-			u.earthShadowNormal[2]=e.normal.z;
-			u.radiusOnCylinder=e.radius_on_cylinder;
-			u.maxFadeDistance=fade_distance_km/e.planet_radius;
-			u.terminatorCosine=e.terminator_cosine;
-			glBindBuffer(GL_UNIFORM_BUFFER, earthShadowUniformsUBO);
-			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(EarthShadowUniforms), &u);
-			glBindBuffer(GL_UNIFORM_BUFFER, 0);
-		}
+	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,skyInterface->GetDirectionToSun());
+	if(e.enable)
+	{
+		EarthShadowUniforms u;
+		u.earthShadowNormal	=e.normal;
+		u.radiusOnCylinder	=e.radius_on_cylinder;
+		u.maxFadeDistance	=fade_distance_km/e.planet_radius;
+		u.terminatorCosine	=e.terminator_cosine;
+		u.sunDir			=sun_dir;
+		glBindBuffer(GL_UNIFORM_BUFFER, earthShadowUniformsUBO);
+		glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(EarthShadowUniforms), &u);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
+	if(e.enable)
+		UseProgram(earthshadow_fade_program);
 	else
 		UseProgram(distance_fade_program);
-	glUniform1i(cloudsTexture,0);
-	glUniform1i(imageTexture,1);
-	glUniform1i(lossTexture,2);
-	glUniform1i(inscTexture,3);
+	ERROR_CHECK
+	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
+	glUniform3f(mieRayleighRatio,ratio.x,ratio.y,ratio.z);
+	glUniform3f(lightDir,light_dir.x,light_dir.y,light_dir.z);
+	glUniform1f(hazeEccentricity,skyInterface->GetMieEccentricity());
+	
+	glUniform1i(imageTexture,0);
+	glUniform1i(inscTexture,1);
+	glUniform1i(cloudShadowTexture,2);
+	glUniform1i(lossTexture,3);
 	glUniform1i(skylightTexture,4);
-	glUniform1i(cloudShadowTexture,5);
 // X, Y and Z for the bottom-left corner of the cloud shadow texture.
 	setParameter3(cloudOrigin,cloud_origin);
 	setParameter3(cloudScale,cloud_scale);
@@ -219,8 +200,6 @@ ERROR_CHECK
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
     glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,clouds_texture);
-	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,framebuffer->GetColorTex(0));
 	
 	framebuffer->Render(false);
@@ -229,6 +208,22 @@ ERROR_CHECK
 	{
 	// Draw the godrays over the entire scene - or to be more accurate, subtract the cloud shadows from the scene.
 		glUseProgram(godrays_program);
+		setParameter(godrays_program	,"imageTexture"		,0);
+		setParameter(godrays_program	,"inscTexture"		,1);
+		setParameter(godrays_program	,"cloudShadowTexture",2);
+		setParameter3(godrays_program	,"mieRayleighRatio",ratio);
+		setParameter3(godrays_program	,"lightDir"			,light_dir);
+		setParameter(godrays_program	,"hazeEccentricity"	,skyInterface->GetMieEccentricity());
+		setMatrix(godrays_program		,"invViewProj"		,ivp.RowPointer(0));
+		setParameter3(godrays_program	,"cloudOrigin"		,cloud_origin);
+		setParameter3(godrays_program	,"cloudScale"		,cloud_scale);
+		setParameter(godrays_program	,"maxDistance"		,fade_distance_km*1000.f);
+		setParameter3(godrays_program	,"viewPosition"		,cam_pos);
+		glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);//GL_FUNC_SUBTRACT);
+		glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ONE,GL_ONE);
+		framebuffer->Render(false);
+		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		glBlendEquation(GL_FUNC_ADD);
 	}
 	
 	glUseProgram(0);
@@ -243,5 +238,5 @@ ERROR_CHECK
     glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D,0);
     glDisable(GL_TEXTURE_2D);
-	return;
+ERROR_CHECK
 }

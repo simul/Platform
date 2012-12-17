@@ -61,7 +61,7 @@ public:
 	//! Call this when the D3D device has been shut down.
 	void						InvalidateDeviceObjects();
 	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void						RenderSun();
+	void						RenderSun(float exposure_hint);
 	//! Get the transform that goes from declination/right-ascension to azimuth and elevation.
 	//bool						GetSiderealTransform(D3DXMATRIX *world);
 	//! Render the stars, as points.

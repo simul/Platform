@@ -244,12 +244,13 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	pd3dDevice->SetTransform(D3DTS_PROJECTION,&proj);
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
-	// Don't need to clear D3DCLEAR_TARGET as we'll be filling every pixel:
 		simulHDRRenderer->StartRender();
+		simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 	}
 	else
 	{
 		pd3dDevice->Clear(0L,NULL,D3DCLEAR_ZBUFFER|D3DCLEAR_TARGET,0xFF000000,1.0f,0L);
+		simulWeatherRenderer->SetExposureHint(1.0f);
 	}
 	if(simulWeatherRenderer)
 	{

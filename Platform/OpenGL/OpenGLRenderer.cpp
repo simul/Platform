@@ -74,8 +74,16 @@ void OpenGLRenderer::paintGL()
 		glFogf(GL_FOG_START,1.0f);						// Fog Start Depth
 		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
 	/*	glEnable(GL_FOG);*/
+ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
+		{
 			simulHDRRenderer->StartRender();
+			simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
+		}
+		else
+			simulWeatherRenderer->SetExposureHint(1.0f);
+ERROR_CHECK
+	
 		simulWeatherRenderer->RenderSky(true,false);
 
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
@@ -103,6 +111,7 @@ void OpenGLRenderer::paintGL()
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender();
+ERROR_CHECK
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())

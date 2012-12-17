@@ -41,15 +41,12 @@ void FramebufferGL::RecompileShaders()
 {
 	if(!shader_filename)
 		return;
-	tonemap_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
-ERROR_CHECK
-	tonemap_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
 ERROR_CHECK
 	tonemap_program			=glCreateProgram();
 ERROR_CHECK
 	std::string str1=std::string(shader_filename)+".vert";
-	tonemap_vertex_shader	=LoadShader(tonemap_vertex_shader,str1.c_str());
-    tonemap_fragment_shader	=LoadShader(tonemap_fragment_shader,(std::string(shader_filename)+std::string(".frag")).c_str());
+	tonemap_vertex_shader	=LoadShader(str1.c_str());
+    tonemap_fragment_shader	=LoadShader((std::string(shader_filename)+std::string(".frag")).c_str());
 	glAttachShader(tonemap_program, tonemap_vertex_shader);
 	glAttachShader(tonemap_program, tonemap_fragment_shader);
 	glLinkProgram(tonemap_program);
@@ -223,6 +220,23 @@ void FramebufferGL::Activate(int x,int y,int w,int h)
 	ERROR_CHECK
 	fb_stack.push(m_fb);
 }
+void FramebufferGL::Deactivate() 
+{
+	ERROR_CHECK
+	glFlush(); 
+	ERROR_CHECK
+	CheckFramebufferStatus();
+	ERROR_CHECK
+	// remove m_fb from the stack and...
+	fb_stack.pop();
+	// .. restore the next one down.
+	GLuint last_fb=fb_stack.top();
+	ERROR_CHECK
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,last_fb);
+	ERROR_CHECK
+	glViewport(0,0,main_viewport[2],main_viewport[3]);
+	ERROR_CHECK
+}
 
 void FramebufferGL::DrawQuad(int w,int h)
 {
@@ -242,59 +256,6 @@ void FramebufferGL::DeactivateAndRender(bool blend)
 	ERROR_CHECK
 	Deactivate();
 	Render(tonemap_program,blend);
-}
-
-void FramebufferGL::Render1(GLuint prog,bool blend)
-{
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-    SetOrthoProjection(main_viewport[2],main_viewport[3]);
-
-    // bind textures
-    glActiveTexture(GL_TEXTURE0);
-    Bind();
-
-	glUseProgram(prog);
-
-	if(prog)
-	{
-		glUniform1f(exposure_param,exposure);
-		glUniform1f(gamma_param,gamma);
-		glUniform1i(buffer_tex_param,0);
-	}
-	else
-	{
-		glDisable(GL_TEXTURE_1D);
-		glEnable(GL_TEXTURE_2D);
-		glDisable(GL_TEXTURE_3D);
-	}
-    glDisable(GL_ALPHA_TEST);
-	if(!blend)
-	{
-		glDisable(GL_DEPTH_TEST);
-	}
-	else
-	{
-		glDisable(GL_DEPTH_TEST);
-		glEnable(GL_BLEND);
-		// retain background based on alpha in overlay
-		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
-	}
-	glDepthMask(GL_FALSE);
-	ERROR_CHECK
-    DrawQuad(main_viewport[2],main_viewport[3]);
-
-    glUseProgram(NULL);
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glPopAttrib();
-	ERROR_CHECK
-	Release();
 }
 
 void FramebufferGL::Render(GLuint ,bool blend)
@@ -336,27 +297,10 @@ void FramebufferGL::Render(bool blend)
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glPopAttrib();
-	ERROR_CHECK
+ERROR_CHECK
 	Release();
 }
 
-void FramebufferGL::Deactivate() 
-{
-	ERROR_CHECK
-	glFlush(); 
-	ERROR_CHECK
-	CheckFramebufferStatus();
-	ERROR_CHECK
-	// remove m_fb from the stack and...
-	fb_stack.pop();
-	// .. restore the next one down.
-	GLuint last_fb=fb_stack.top();
-	ERROR_CHECK
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,last_fb);
-	ERROR_CHECK
-	glViewport(0,0,main_viewport[2],main_viewport[3]);
-	ERROR_CHECK
-}
 
 void FramebufferGL::Clear(float r,float g,float b,float a,int mask)
 {
