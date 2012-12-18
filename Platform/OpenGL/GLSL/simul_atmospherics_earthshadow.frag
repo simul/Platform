@@ -6,6 +6,7 @@ uniform sampler2D skylightTexture;
 
 uniform float hazeEccentricity;
 uniform vec3 lightDir;
+uniform vec3 sunDir;
 uniform mat4 invViewProj;
 uniform vec3 mieRayleighRatio;
 uniform float directLightMultiplier;
@@ -62,10 +63,10 @@ void main()
 	// The Earth's shadow: let shadowNormal be the direction normal to the sunlight direction
 	//						but in the plane of the sunlight and the vertical.
 	// First get the part of view that is along the light direction
-	float along=dot(lightDir,view);
+	float along=dot(sunDir,view);
 	float in_shadow=saturate(-along-terminatorCosine);
 	// subtract it to get the direction on the shadow-cylinder cross section.
-	vec3 on_cross_section=view-along*lightDir;
+	vec3 on_cross_section=view-along*sunDir;
 	// Now get the part that's on the cylinder radius:
 	float on_radius=dot(on_cross_section,earthShadowNormal);
 	vec3 on_x=on_cross_section-on_radius*earthShadowNormal;

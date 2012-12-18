@@ -70,6 +70,7 @@ private:
 
 	GLint hazeEccentricity;
 	GLint lightDir;
+	GLint sunDir;
 	GLint invViewProj;
 	GLint mieRayleighRatio;
 	GLint directLightMultiplier;
