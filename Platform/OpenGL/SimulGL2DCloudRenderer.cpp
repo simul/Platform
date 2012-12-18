@@ -263,10 +263,11 @@ ERROR_CHECK
 	simul::math::Vector3 cam_pos(viewInv(3,0),viewInv(3,1),viewInv(3,2));
 
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
+	float alt_km=cam_pos.z*.001f;
+	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(alt_km);
 	glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
 
-	simul::sky::float4 amb=skyInterface->GetAmbientLight(cam_pos.z*.001f);
+	simul::sky::float4 amb=skyInterface->GetAmbientLight(alt_km);
 	glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
 
 	simul::math::Vector3 view_pos(cam_pos.x,cam_pos.y,cam_pos.z);

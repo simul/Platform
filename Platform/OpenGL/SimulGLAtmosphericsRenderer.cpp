@@ -109,7 +109,7 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,inscatter_texture);
     glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D,skylight_texture);
-	simul::sky::float4 sun_dir		=skyInterface->GetDirectionToLight();
+	simul::sky::float4 sun_dir		=skyInterface->GetDirectionToLight(cam_pos.z/1000.f);
 ERROR_CHECK
 	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,skyInterface->GetDirectionToSun());
 	if(e.enable)
