@@ -191,6 +191,7 @@ GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const char *d
 	}
     return sh;
 }
+
 std::string loadShaderSource(const char *filename)
 {
 /*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
