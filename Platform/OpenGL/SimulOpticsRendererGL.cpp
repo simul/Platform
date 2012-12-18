@@ -19,7 +19,7 @@ SimulOpticsRendererGL::~SimulOpticsRendererGL()
 void SimulOpticsRendererGL::RestoreDeviceObjects(void *)
 {
 	RecompileShaders();
-	flare_texture=LoadGLImage("SunFlare.png",GL_CLAMP);
+	flare_texture=LoadGLImage("SunFlare.png",GL_CLAMP_TO_EDGE);
 
 	for(size_t i=0;i<halo_textures.size();i++)
 	{
@@ -37,7 +37,7 @@ void SimulOpticsRendererGL::RestoreDeviceObjects(void *)
 	for(int i=0;i<num_halo_textures;i++)
 	{
 		std::string tn=lensFlare.GetTypeName(i);
-		halo_textures[i]=LoadGLImage((tn+".png").c_str(),GL_CLAMP);
+		halo_textures[i]=LoadGLImage((tn+".png").c_str(),GL_CLAMP_TO_EDGE);
 	}
 }
 

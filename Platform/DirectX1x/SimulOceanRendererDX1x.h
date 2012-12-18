@@ -12,25 +12,23 @@
 SIMUL_DIRECTX1x_EXPORT_CLASS SimulOceanRendererDX1x : public simul::terrain::BaseSeaRenderer
 {
 public:
-	SimulOceanRendererDX1x();
+	SimulOceanRendererDX1x(simul::terrain::SeaKeyframer *s);
 	virtual ~SimulOceanRendererDX1x();
-	void SetOceanParameters(const OceanParameter& ocean_param);
 	// init & cleanup
 	void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
 	void InvalidateDeviceObjects();
+	void RecompileShaders();
 	// Rendering routines
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
-	void RenderShaded(float time);
+	void Render();
 	void RenderWireframe(float time);
 	void Update(float dt);
 	void SetCubemap(ID3D1xShaderResourceView *c);
+	void SetLossTexture(void *t1);
+	void SetInscatterTextures(void *t1,void *s);
 protected:
-	OceanParameter ocean_parameters;
 	D3DXMATRIX view,proj;
-	virtual int buildNodeList(QuadNode& quad_node);
-	bool checkNodeVisibility(const QuadNode& quad_node);
-	float estimateGridCoverage(const QuadNode& quad_node, float screen_area);
 	ID3D11Device*						m_pd3dDevice;
 	ID3D1xDeviceContext*				m_pImmediateContext;
 	// HLSL shaders
@@ -62,6 +60,11 @@ protected:
 
 	// Environment maps
 	ID3D11ShaderResourceView* g_pSRV_ReflectCube;
+	// Atmospheric scattering
+	ID3D1xShaderResourceView* skyLossTexture_SRV;
+	ID3D1xShaderResourceView* skyInscatterTexture_SRV;
+	ID3D1xShaderResourceView* skylightTexture_SRV;
+	
 
 	// Samplers
 	ID3D11SamplerState* g_pHeightSampler;
@@ -69,6 +72,7 @@ protected:
 	ID3D11SamplerState* g_pFresnelSampler;
 	ID3D11SamplerState* g_pPerlinSampler;
 	ID3D11SamplerState* g_pCubeSampler;
+	ID3D11SamplerState* g_pAtmosphericsSampler;
 	// create a triangle strip mesh for ocean surface.
 	void createSurfaceMesh();
 	// create color/fresnel lookup table.

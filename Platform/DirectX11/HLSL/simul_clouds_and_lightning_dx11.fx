@@ -1,6 +1,3 @@
-#ifndef MAX_FADE_DISTANCE_METRES
-	#define MAX_FADE_DISTANCE_METRES (300000.f)
-#endif
 #ifndef Z_VERTICAL
 	#define Y_VERTICAL 1
 #endif
@@ -84,6 +81,7 @@ cbuffer cbUser : register(b2)
 	float cloudEccentricity		: packoffset(c14);
 	float alphaSharpness		: packoffset(c15);
 	float3 crossSectionOffset	: packoffset(c16);
+	float maxFadeDistanceMetres : packoffset(c17);
 };
 
 struct vertexInput
@@ -104,12 +102,14 @@ struct vertexOutput
     float3 texCoordLightning	: TEXCOORD4;
     float2 fade_texc			: TEXCOORD5;
     float2 texCoordsNoise2		: TEXCOORD6;
+    float4 dupehPosition		: TEXCOORD7;
 };
 
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-    OUT.hPosition = mul( worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.hPosition = mul(worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.dupehPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
 	OUT.texCoords.xyz=IN.texCoords;
 	OUT.texCoords.w=0.5f+0.5f*saturate(IN.texCoords.z);
 	const float c=fractalScale.w;
@@ -133,10 +133,8 @@ vertexOutput VS_Main(vertexInput IN)
 #endif
 // Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
 #if FADE_MODE==1
-	float maxd=1.f;
-	float depth=length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES;
-	//OUT.fade_texc=float2(length(OUT.wPosition.xyz)/MAX_FADE_DISTANCE_METRES,0.5f*(1.f-sine));
-	OUT.fade_texc=float2(sqrt(depth/maxd),0.5f*(1.f-sine));
+	float depth=length(OUT.wPosition.xyz)/maxFadeDistanceMetres;
+	OUT.fade_texc=float2(sqrt(depth),0.5f*(1.f-sine));
 #endif
     return OUT;
 }
@@ -146,7 +144,7 @@ float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
 	float u=1.f+g2-2.0*g*cos0;
-	return 0.5*0.079577+0.5*(1.0-g2)/(4.0*pi*sqrt(u*u*u));
+	return (1.0-g2)/(4.0*pi*sqrt(u*u*u));
 }
 
 float3 InscatterFunction(float4 inscatter_factor,float cos0)
@@ -167,7 +165,7 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
+	float Beta=HenyeyGreenstein(.7,cos0);//lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	float3 inscatter=InscatterFunction(insc,cos0);
 	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.texCoordsNoise.xy).xyz-noise_offset).xyz;
 #ifdef DETAIL_NOISE
@@ -210,7 +208,7 @@ float4 PS_CloudsLowDef( vertexOutput IN): SV_TARGET
 	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
 
 	density=lerp(density,density2,interp);
-	density.z*=IN.layerFade;
+	//density.z*=IN.layerFade;
 	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
 	if(density.z<=0)
 		discard;
@@ -253,7 +251,7 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 
 	float3 view=normalize(IN.wPosition);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
+	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.y,cos0);
 	
 	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
 	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
@@ -349,7 +347,7 @@ BlendState DoBlend
     SrcBlendAlpha = ZERO;
     DestBlendAlpha = INV_SRC_ALPHA;
     BlendOpAlpha = ADD;
-    RenderTargetWriteMask[0] = 0x0F;
+    //RenderTargetWriteMask[0] = 0x0F;
 };
 
 BlendState NoBlend
@@ -368,7 +366,7 @@ technique11 simul_clouds_lowdef
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+	//	SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
@@ -382,7 +380,7 @@ technique11 simul_clouds
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		//SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
@@ -396,7 +394,7 @@ technique11 simul_clouds_and_lightning
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		//SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
 		SetPixelShader(CompileShader(ps_4_0,PS_WithLightning()));
@@ -415,8 +413,6 @@ technique11 cross_section_xz
 		SetPixelShader(CompileShader(ps_4_0,PS_CrossSectionXZ()));
     }
 }
-
-
 
 technique11 cross_section_xy
 {

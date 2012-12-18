@@ -295,7 +295,7 @@ bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 		// have this set aside for depth!
 		static int u=7;
 		m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,u);
-		RenderBufferToScreen(framebuffer.hdr_buffer_texture);
+		RenderBufferToScreen((LPDIRECT3DTEXTURE9)framebuffer.GetColorTex());
 		m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,15);
 	}
 	return true;
@@ -318,11 +318,20 @@ bool SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
 {
 	if(!RenderCloudsLate||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return true;
+	RenderLateCloudLayer(0,buf);
+	return true;
+}
+
+void SimulWeatherRenderer::RenderLateCloudLayer(int buffer_index,bool buf)
+{
 	HRESULT hr=S_OK;
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface=NULL;
 	if(buf)
 	{
+		if(buffer_index==1)
+			lowdef_framebuffer.Activate();
+		else
 		framebuffer.Activate();
 		static float depth_start=1.f;
 		hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
@@ -335,7 +344,7 @@ bool SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
 		{	
 			PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
 			{
-				hr=simulCloudRenderer->Render(false,false,false);
+				simulCloudRenderer->Render(false,false,false,true);
 			}
 		}
 	}
@@ -353,24 +362,32 @@ bool SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
 		if(str>1.f)
 			str=1.f;
 		str*=gr_strength;
-		if(str>0&&Godrays)
+		if(str>0&&simulAtmosphericsRenderer->GetShowGodrays())
 			simulAtmosphericsRenderer->RenderGodRays(str);
 		simulAtmosphericsRenderer->RenderAirglow();
 	}
 	if(buf)
 	{
 		m_pBufferToScreenEffect->SetTechnique(CloudBlendTechnique);
+		if(buffer_index==1)
+		{
+			lowdef_framebuffer.Deactivate();
+	#ifdef XBOX
+			m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL,lowdef_framebuffer.hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
+	#endif
+			RenderBufferToScreen((LPDIRECT3DTEXTURE9)framebuffer.GetColorTex());
+		}
+		else
 		{
 			framebuffer.Deactivate();
 	#ifdef XBOX
 			m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, framebuffer.hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
 	#endif
-			RenderBufferToScreen(framebuffer.hdr_buffer_texture);
+			RenderBufferToScreen((LPDIRECT3DTEXTURE9)framebuffer.GetColorTex());
 		}
 	}
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
-	return true;
 }
 
 bool SimulWeatherRenderer::RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture)

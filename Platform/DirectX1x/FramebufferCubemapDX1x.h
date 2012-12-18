@@ -29,7 +29,7 @@ public:
 	void Activate();
 	void Deactivate();
 	void Render(bool){}
-	void Clear(float,float,float,float);
+	void Clear(float,float,float,float,int mask=0);
 	void *GetTextureResource()
 	{
 		return (void*)m_pCubeEnvMapSRV;

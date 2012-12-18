@@ -175,14 +175,16 @@ void FramebufferCubemapDX1x::Deactivate()
 	m_pImmediateContext->RSSetViewports(1,m_OldViewports);
 }
 
-void FramebufferCubemapDX1x::Clear(float r,float g,float b,float a)
+void FramebufferCubemapDX1x::Clear(float r,float g,float b,float a,int mask)
 {
+	if(!mask)
+		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
 	// Clear the screen to black:
     float clearColor[4]={r,g,b,a};
     for(int i=0;i<6;i++)
     {
 		m_pImmediateContext->ClearRenderTargetView(m_pCubeEnvMapRTV[i],clearColor);
 		if(m_pCubeEnvDepthMapDSV[i])
-			m_pImmediateContext->ClearDepthStencilView(m_pCubeEnvDepthMapDSV[i],D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+			m_pImmediateContext->ClearDepthStencilView(m_pCubeEnvDepthMapDSV[i],mask, 1.f, 0);
 		}
 }

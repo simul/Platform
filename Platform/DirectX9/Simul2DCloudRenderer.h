@@ -36,7 +36,7 @@ namespace simul
 	}
 	namespace sky
 	{
-		class SkyInterface;
+		class AtmosphericScatteringInterface;
 	}
 }
 typedef long HRESULT;
@@ -58,7 +58,7 @@ public:
 	const char *GetDebugText() const;
 	//! Call this to draw the clouds, including any illumination by lightning.
 	//! On DX9, depth_testing and default_fog are ignored for now.
-	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
 	void RenderCrossSections(int width,int height);
 #if defined(XBOX) || defined(DOXYGEN)
 	//! Call this once per frame to set the matrices (X360 only).
@@ -74,6 +74,11 @@ public:
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
 	
 	virtual void **GetCloudTextures(){return NULL;}
+	virtual void *GetCloudShadowTexture()
+	{
+		return NULL;
+	}
+
 	void SetYVertical(bool y)
 	{
 		y_vertical=y;

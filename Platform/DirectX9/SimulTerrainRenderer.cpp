@@ -156,7 +156,6 @@ void SimulTerrainRenderer::GPUGenerateHeightmap()
 	HRESULT hr=S_OK;
 	if(!m_pd3dDevice)
 		return;
-#if 0
 	LPDIRECT3DTEXTURE9				temp_noise_texture=NULL;
 	int noise_size=heightmap->GetFractalFrequency();
 	// Make the input texture:
@@ -204,7 +203,7 @@ void SimulTerrainRenderer::GPUGenerateHeightmap()
 	{
 		rock_height_texture->GetSurfaceLevel(0,&pRenderTarget);
 		hr=m_pd3dDevice->SetRenderTarget(0,pRenderTarget);
-		RenderTexture(m_pd3dDevice,0,0,terrain_size,terrain_size,temp_noise_texture);//pRenderHeightmapEffect,fractalHeightTechnique);
+		RenderTexture(m_pd3dDevice,0,0,terrain_size,terrain_size,temp_noise_texture,pRenderHeightmapEffect,fractalHeightTechnique);
 		rock_height_texture->GenerateMipSubLevels();
 	}
 	D3DXHANDLE heightTexture				=pRenderHeightmapEffect->GetParameterByName(NULL,"heightTexture");
@@ -267,7 +266,6 @@ void SimulTerrainRenderer::GPUGenerateHeightmap()
 	SAFE_RELEASE(pOldRenderTarget);
 	SAFE_RELEASE(temp_noise_texture);
 	SAFE_RELEASE(pRenderTarget);
-#endif
 }
 
 void SimulTerrainRenderer::GpuMakeNormals()
@@ -821,7 +819,7 @@ void SimulTerrainRenderer::RenderOnlyDepth()
 void SimulTerrainRenderer::Render()
 {
 	PIXBeginNamedEvent(0xFF00FF00,"SimulTerrainRenderer::Render");
-	HRESULT hr=InternalRender(false);
+	InternalRender(false);
 	PIXEndNamedEvent();
 
 	if(highlight_pos.x+highlight_pos.y+highlight_pos.z!=0)
@@ -893,11 +891,11 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 	simul::sky::float4 light_colour(1.f,1.f,1.f,1.f);
 	if(skyInterface)
 	{
-		D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
+		float alt_km=cam_pos.z*0.001f;
+		D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight(alt_km));
 		if(y_vertical)
 			std::swap(sun_dir.y,sun_dir.z);
 		m_pTerrainEffect->SetVector	(lightDirection		,&sun_dir);
-		float alt_km=cam_pos.z*0.001f;
 		if(y_vertical)
 			alt_km=cam_pos.y*0.001f;
 		static float light_mult=0.08f;

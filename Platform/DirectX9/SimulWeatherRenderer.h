@@ -160,6 +160,7 @@ public:
 protected:
 	Framebuffer framebuffer;
 	Framebuffer lowdef_framebuffer;
+	void RenderLateCloudLayer(int buffer_index,bool buf);
 	bool Restore3DCloudObjects();
 	bool Restore2DCloudObjects();
 	//! The size of the 2D buffer the sky is rendered to.

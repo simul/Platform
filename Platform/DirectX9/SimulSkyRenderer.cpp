@@ -60,7 +60,6 @@ SimulSkyRenderer::SimulSkyRenderer(simul::sky::SkyKeyframer *sk)
 	MoonTexture="Moon.png";
 	for(int i=0;i<3;i++)
 	{
-		sky_textures[i]=NULL;
 		loss_textures[i]=NULL;
 		inscatter_textures[i]=NULL;
 		skylight_textures[i]=NULL;
@@ -83,7 +82,7 @@ void SimulSkyRenderer::SaveTextures(const char *base_filename)
 		sprintf_s(txt,10,"_%d",i);
 		filename+=txt;
 		filename+=ext;
-		SaveTexture(sky_textures[i],filename.c_str());
+		//SaveTexture(sky_textures[i],filename.c_str());
 	}
 }
 
@@ -218,13 +217,12 @@ void SimulSkyRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE((LPDIRECT3DTEXTURE9&)moon_texture);
 	for(int i=0;i<3;i++)
 	{
-		SAFE_RELEASE(sky_textures[i]);
 		SAFE_RELEASE(loss_textures[i]);
 		SAFE_RELEASE(inscatter_textures[i]);
 		SAFE_RELEASE(skylight_textures[i]);
 		SAFE_RELEASE(sunlight_textures[i]);
 	}
-	fadeTexWidth=fadeTexHeight=numAltitudes=0;
+	numFadeDistances=numFadeElevations=numAltitudes=0;
 	SAFE_RELEASE(d3dQuery);
 }
 
@@ -280,9 +278,9 @@ void SimulSkyRenderer::FillSunlightTexture(int texture_index,int texel_index,int
 
 void SimulSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s1)
 {
-	*l1=(void*)loss_2d.hdr_buffer_texture;
-	*i1=(void*)inscatter_2d.hdr_buffer_texture;
-	*s1=(void*)skylight_2d.hdr_buffer_texture;
+	*l1=(void*)loss_2d.GetColorTex();
+	*i1=(void*)inscatter_2d.GetColorTex();
+	*s1=(void*)skylight_2d.GetColorTex();
 }
 
 float SimulSkyRenderer::GetFadeInterp() const
@@ -294,6 +292,10 @@ void SimulSkyRenderer::SetStepsPerDay(int s)
 	skyKeyframer->SetUniformKeyframes(s);
 }
 
+void SimulSkyRenderer::SetSkyTextureSize(unsigned size)
+{
+	skyTexSize=size;
+}
 
 void SimulSkyRenderer::CreateFadeTextures()
 {
@@ -307,9 +309,9 @@ void SimulSkyRenderer::CreateFadeTextures()
 	for(int i=0;i<3;i++)
 	{
 		LPDIRECT3DVOLUMETEXTURE9 tex1,tex2,tex3;
-		hr=D3DXCreateVolumeTexture(m_pd3dDevice,fadeTexWidth,fadeTexHeight,numAltitudes,1,0,sky_tex_format,d3d_memory_pool,&tex1);
-		hr=D3DXCreateVolumeTexture(m_pd3dDevice,fadeTexWidth,fadeTexHeight,numAltitudes,1,0,sky_tex_format,d3d_memory_pool,&tex2);
-		hr=D3DXCreateVolumeTexture(m_pd3dDevice,fadeTexWidth,fadeTexHeight,numAltitudes,1,0,sky_tex_format,d3d_memory_pool,&tex3);
+		hr=D3DXCreateVolumeTexture(m_pd3dDevice,numAltitudes,numFadeElevations,numFadeDistances,1,0,sky_tex_format,d3d_memory_pool,&tex1);
+		hr=D3DXCreateVolumeTexture(m_pd3dDevice,numAltitudes,numFadeElevations,numFadeDistances,1,0,sky_tex_format,d3d_memory_pool,&tex2);
+		hr=D3DXCreateVolumeTexture(m_pd3dDevice,numAltitudes,numFadeElevations,numFadeDistances,1,0,sky_tex_format,d3d_memory_pool,&tex3);
 		loss_textures[i]=tex1;
 		inscatter_textures[i]=tex2;
 		skylight_textures[i]=tex3;
@@ -317,21 +319,20 @@ void SimulSkyRenderer::CreateFadeTextures()
 	loss_2d.InvalidateDeviceObjects();
 	inscatter_2d.InvalidateDeviceObjects();
 	skylight_2d.InvalidateDeviceObjects();
-	loss_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	loss_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	loss_2d.RestoreDeviceObjects(m_pd3dDevice);
-	inscatter_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	inscatter_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	inscatter_2d.RestoreDeviceObjects(m_pd3dDevice);
-	skylight_2d.SetWidthAndHeight(fadeTexWidth,fadeTexHeight);
+	skylight_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	skylight_2d.RestoreDeviceObjects(m_pd3dDevice);
 }
 
-void SimulSkyRenderer::FillFadeTexturesSequentially(int alt_index,int texture_index,int texel_index,int num_texels,
+void SimulSkyRenderer::FillFadeTexturesSequentially(int texture_index,int texel_index,int num_texels,
 						const float *loss_float4_array,
 						const float *inscatter_float4_array,
 						const float *skyl_float4_array
 						)
 {
-	texel_index+=alt_index*fadeTexWidth*fadeTexHeight;
 	HRESULT hr=S_OK;
 	D3DLOCKED_BOX lockedBox={0};
 	D3DVOLUME_DESC desc3d;
@@ -581,7 +582,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	if(!m_hTechniqueQuery)
 		return sun_occlusion;
 	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight(cam_pos.z*.001f));
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	// fix the projection matrix so this quad is far away:
@@ -627,7 +628,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 }
 float sun_angular_size=3.14159f/180.f/2.f;
 
-void SimulSkyRenderer::RenderSun()
+void SimulSkyRenderer::RenderSun(float exposure_hint)
 {
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
@@ -641,14 +642,19 @@ void SimulSkyRenderer::RenderSun()
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
 	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
-	if(max_bright>1.f)
+	float maxout_brightness=2.f/exposure_hint;
+	if(maxout_brightness>1e6f)
+		maxout_brightness=1e6f;
+	if(maxout_brightness<1e-6f)
+		maxout_brightness=1e-6f;
+	if(max_bright>maxout_brightness)
 	{
-		sunlight*=1.f/max_bright;
+		sunlight*=maxout_brightness/max_bright;
 		sunlight.w=max_bright;
 	}
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&sunlight));
 	m_pSkyEffect->SetTechnique(m_hTechniqueSun);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight(cam_pos.z*0.001f));
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	RenderAngledQuad(sun_dir,sun_angular_size);
@@ -676,18 +682,15 @@ void SimulSkyRenderer::EnsureTexturesAreUpToDate()
 	EnsureTextureCycle();
 	for(int i=0;i<3;i++)
 	{
-		for(int j=0;j<numAltitudes;j++)
-		{
-			simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(j,i,fade_texture_iterator[i][j]);
+		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(i,fade_texture_iterator[i]);
 			if(texture_fill.num_texels)
 			{
-				FillFadeTexturesSequentially(j,i,texture_fill.texel_index,texture_fill.num_texels
+			FillFadeTexturesSequentially(i,texture_fill.texel_index,texture_fill.num_texels
 									,(const float*)texture_fill.float_array_1
 									,(const float*)texture_fill.float_array_2
 									,(const float*)texture_fill.float_array_3);
 			}
 		}
-	}
 }
 
 void SimulSkyRenderer::EnsureTextureCycle()
@@ -695,8 +698,6 @@ void SimulSkyRenderer::EnsureTextureCycle()
 	int cyc=(skyKeyframer->GetTextureCycle())%3;
 	while(texture_cycle!=cyc)
 	{
-		std::swap(sky_textures[0],sky_textures[1]);
-		std::swap(sky_textures[1],sky_textures[2]);
 		std::swap(loss_textures[0],loss_textures[1]);
 		std::swap(loss_textures[1],loss_textures[2]);
 		std::swap(inscatter_textures[0],inscatter_textures[1]);
@@ -709,10 +710,7 @@ void SimulSkyRenderer::EnsureTextureCycle()
 		std::swap(fade_texture_iterator[1],fade_texture_iterator[2]);
 		for(int i=0;i<3;i++)
 		{
-			for(int j=0;j<numAltitudes;j++)
-			{
-				fade_texture_iterator[i][j].texture_index=i;
-			}
+			fade_texture_iterator[i].texture_index=i;
 		}
 		texture_cycle++;
 		texture_cycle=texture_cycle%3;
@@ -752,12 +750,12 @@ bool SimulSkyRenderer::RenderFades(int w,int h)
 	if(h/(numAltitudes+2)<size)
 		size=h/(numAltitudes+2);
 
-	m_pSkyEffect->SetTexture(fadeTexture2D,inscatter_2d.hdr_buffer_texture);
-	RenderTexture(m_pd3dDevice,8			,32,size,size,inscatter_2d.hdr_buffer_texture,m_pSkyEffect,m_hTechniqueShowFade);
-	m_pSkyEffect->SetTexture(fadeTexture2D,sky_textures[0]);
-	RenderTexture(m_pd3dDevice,16+size		,32,8,size,sky_textures[0],m_pSkyEffect,m_hTechniqueShowSkyTexture);
-	m_pSkyEffect->SetTexture(fadeTexture2D,sky_textures[1]);
-	RenderTexture(m_pd3dDevice,32+size		,32,8,size,sky_textures[1],m_pSkyEffect,m_hTechniqueShowSkyTexture);
+	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex());
+	RenderTexture(m_pd3dDevice,8	,8		,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
+	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)loss_2d.GetColorTex());
+	RenderTexture(m_pd3dDevice,8	,16+size,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
+	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)skylight_2d.GetColorTex());
+	RenderTexture(m_pd3dDevice,8	,24+2*size,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
 
 	for(int i=0;i<numAltitudes;i++)
 	{
@@ -767,11 +765,10 @@ bool SimulSkyRenderer::RenderFades(int w,int h)
 		RenderTexture(m_pd3dDevice,8+2*(size+8)	,(i)*(size+8)+8,size,size,inscatter_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 		m_pSkyEffect->SetTexture(fadeTexture, inscatter_textures[1]);
 		RenderTexture(m_pd3dDevice,8+3*(size+8)	,(i)*(size+8)+8,size,size,inscatter_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
-	
-		m_pSkyEffect->SetTexture(fadeTexture2D, sky_textures[0]);
-		RenderTexture(m_pd3dDevice,8+4*(size+8)		,(i)*(size+8)+8,8,size,sky_textures[0],m_pSkyEffect,m_hTechniqueShowSkyTexture);
-		m_pSkyEffect->SetTexture(fadeTexture2D, sky_textures[1]);
-		RenderTexture(m_pd3dDevice,8+4*(size+8)+16	,(i)*(size+8)+8,8,size,sky_textures[1],m_pSkyEffect,m_hTechniqueShowSkyTexture);
+		m_pSkyEffect->SetTexture(fadeTexture, skylight_textures[0]);
+		RenderTexture(m_pd3dDevice,8+4*(size+8)	,(i)*(size+8)+8,size,size,inscatter_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
+		m_pSkyEffect->SetTexture(fadeTexture, skylight_textures[1]);
+		RenderTexture(m_pd3dDevice,8+5*(size+8)	,(i)*(size+8)+8,size,size,inscatter_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 
 	}
 
@@ -929,10 +926,10 @@ bool SimulSkyRenderer::Render2DFades()
 	m_pSkyEffect->SetTexture(fadeTexture,loss_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,loss_textures[1]);
 	static float ff=0.5f;
-	D3DXVECTOR4 offs(ff/(float)fadeTexWidth,ff/(float)fadeTexHeight,0.f,1.f);
+	D3DXVECTOR4 offs(ff/(float)numFadeDistances,ff/(float)numFadeElevations,0.f,1.f);
 	m_pSkyEffect->SetVector(texelOffset,&offs);
 	static float uu=0.f;
-	D3DXVECTOR4 sc(1.f-uu/(float)fadeTexWidth,1.f-uu/(float)fadeTexHeight,1.f,1.f);
+	D3DXVECTOR4 sc(1.f-uu/(float)numFadeDistances,1.f-uu/(float)numFadeElevations,1.f,1.f);
 	m_pSkyEffect->SetVector(texelScale,&sc);
 	float atc=GetAltitudeTextureCoordinate();
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
@@ -984,8 +981,8 @@ bool SimulSkyRenderer::Render(bool blend)
 	D3DXMatrixTranspose(&tmp1,&tmp2);
 	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
 
-	m_pSkyEffect->SetTexture(inscTexture,inscatter_2d.hdr_buffer_texture);
-	m_pSkyEffect->SetTexture(skylTexture,skylight_2d.hdr_buffer_texture);
+	m_pSkyEffect->SetTexture(inscTexture,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex());
+	m_pSkyEffect->SetTexture(skylTexture,(LPDIRECT3DBASETEXTURE9)skylight_2d.GetColorTex());
 
 	hr=m_pd3dDevice->SetVertexDeclaration( m_pVtxDecl );
 
@@ -1002,7 +999,7 @@ bool SimulSkyRenderer::Render(bool blend)
 	}
 	simul::sky::float4 mie_rayleigh_ratio=skyKeyframer->GetMieRayleighRatio();
 	D3DXVECTOR4 ratio(mie_rayleigh_ratio);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight());
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight(cam_pos.z*0.001f));
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 

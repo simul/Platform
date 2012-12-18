@@ -303,10 +303,8 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(blendAndDontWriteAlpha);
 
 	SAFE_RELEASE(noiseTextureResource);
+	
 	SAFE_RELEASE(lightningIlluminationTextureResource);
-	skyLossTexture_SRV=NULL;
-	skyInscatterTexture_SRV=NULL;
-	skylightTexture_SRV=NULL;
 	ClearIterators();
 }
 
@@ -383,8 +381,7 @@ loadInfo.MipLevels=0;
 	if(FAILED(hr=Map2D(noise_texture,&mapped)))
 		return false;
 	simul::clouds::TextureGenerator::SetBits(0x000000FF,0x0000FF00,0x00FF0000,0xFF000000,(unsigned)4,big_endian);
-	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)(mapped.pData)
-		,noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
+	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)(mapped.pData),noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
 	Unmap2D(noise_texture);
 	V_CHECK(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
 	m_pImmediateContext->GenerateMips(noiseTextureResource);
@@ -517,9 +514,6 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	defines["DETAIL_NOISE"]='1';
 	if(GetCloudInterface()->GetWrap())
 		defines["WRAP_CLOUDS"]="1";
-	char max_fade_distance_str[25];
-	sprintf_s(max_fade_distance_str,25,"%3.1f",max_fade_distance_metres);
-	defines["MAX_FADE_DISTANCE_METRES"]=max_fade_distance_str;
 	if(y_vertical)
 		defines["Y_VERTICAL"]="1";
 	else
@@ -544,6 +538,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	fadeInterp							=m_pCloudEffect->GetVariableByName("fadeInterp")->AsScalar();
 	cloudEccentricity					=m_pCloudEffect->GetVariableByName("cloudEccentricity")->AsScalar();
 	alphaSharpness						=m_pCloudEffect->GetVariableByName("alphaSharpness")->AsScalar();
+	maxFadeDistanceMetres				=m_pCloudEffect->GetVariableByName("maxFadeDistanceMetres")->AsScalar();
 
 	//if(enable_lightning)
 	{
@@ -574,9 +569,17 @@ static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default_fog)
+bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha)
 {
 	EnsureTexturesAreUpToDate();
+ 
+	float blendFactor[] = {0, 0, 0, 0};
+	UINT sampleMask   = 0xffffffff;
+	if(write_alpha)
+		m_pImmediateContext->OMSetBlendState(blendAndWriteAlpha, blendFactor, sampleMask);
+	else
+		m_pImmediateContext->OMSetBlendState(blendAndDontWriteAlpha, blendFactor, sampleMask);
+
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
 	cloudDensity1->SetResource(cloudDensityResource[0]);
@@ -587,8 +590,17 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	skylightTexture->SetResource(skylightTexture_SRV);
 
 	// Mess with the proj matrix to extend the far clipping plane:
+	static bool reverse_z=true;
+	if(reverse_z)
+	{
+		D3DXMATRIX invertz;
+		D3DXMatrixIdentity(&invertz);
+		invertz.m[2][2] = -1.0f;
+		invertz.m[3][2]	= 1.0f;
+		D3DXMatrixMultiply(&proj,&proj,&invertz);
+	}
+	else
 	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
-		
 	//set up matrices
 	D3DXMATRIX wvp;
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
@@ -619,7 +631,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 										0,
 										0);
 	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
+	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(base_alt_km);
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
@@ -649,6 +661,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	hazeEccentricity	->SetFloat			(skyInterface->GetMieEccentricity());
 	fadeInterp			->SetFloat			(fade_interp);
 	alphaSharpness		->SetFloat			(GetCloudInterface()->GetAlphaSharpness());
+	maxFadeDistanceMetres->SetFloat			(max_fade_distance_metres);
 simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 
 	if(enable_lightning)
@@ -774,6 +787,7 @@ simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer
 		ApplyPass(m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
 	else
 		ApplyPass(m_hTechniqueCloud->GetPassByIndex(0));
+	m_pImmediateContext->OMSetBlendState(NULL, blendFactor, sampleMask);
 	return (hr==S_OK);
 }
 
@@ -816,7 +830,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 		RenderTexture(m_pd3dDevice,i*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
 	}
 	if(skyInterface)
-	for(int i=0;i<3;i++)
+	for(int i=0;i<2;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
 				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(

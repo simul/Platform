@@ -1,12 +1,5 @@
-// Simple render to texture class
-//
-// Author: Simon Green
-// Email: sdkfeedback@nvidia.com
-//
-// Copyright (c) NVIDIA Corporation. All rights reserved.
-
-#ifndef RENDER_TEXTURE_FBO__H
-#define RENDER_TEXTURE_FBO__H
+#ifndef FRAMEBUFFERGL_H
+#define FRAMEBUFFERGL_H
 
 #include <GL/glew.h>
 #include <stack>
@@ -40,20 +33,21 @@ public:
 	// In order to use a color buffer, either
 	// InitColor_RB or InitColor_Tex needs to be called.
 	//void InitColor_RB(int index, GLenum internal_format);
-	void InitColor_Tex(int index, GLenum internal_format,GLenum format);
+	bool InitColor_Tex(int index, GLenum internal_format,GLenum format,GLint wrap_clamp=GL_CLAMP_TO_EDGE);
 	// In order to use a depth buffer, either
 	// InitDepth_RB or InitDepth_Tex needs to be called.
 	void InitDepth_RB(GLenum iformat = GL_DEPTH_COMPONENT24);
 	void InitDepth_Tex(GLenum iformat = GL_DEPTH_COMPONENT24);
-	// Activate / deactivate the FBO as a render target
-	// The FBO needs to be deactivated when using the associated textures.
+	/// Activate / deactivate the FBO as a render target
+	/// The FBO needs to be deactivated when using the associated textures.
 	void Activate();
+	/// Activate rendering to a viewport
+	void Activate(int x,int y,int w,int h);
 	void Deactivate();
-	void Clear(float r,float g,float b,float a);
+	void Clear(float r,float g,float b,float a,int mask=0);
 	void DeactivateAndRender(bool blend);
 	void Render(bool blend);
 	void Render(GLuint prog,bool blend);
-void Render1(GLuint prog,bool blend);
 	void DrawQuad(int w, int h);
 	// Get the dimension of the surface
 	inline int GetWidth()
@@ -126,6 +120,7 @@ private:
 	GLint exposure_param;
 	GLint gamma_param;
 	GLint buffer_tex_param;
+	GLenum colour_iformat,depth_iformat;
 	float exposure, gamma;
 	bool initialized;
 };

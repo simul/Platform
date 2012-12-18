@@ -6,7 +6,7 @@
 #include <d3d9.h>
 #include <d3dx9.h>
 #include <dxerr.h>
-class D3DCallbackInterface
+class Direct3D9CallbackInterface
 {
 public:
 	virtual bool	IsDeviceAcceptable(D3DCAPS9* pCaps,D3DFORMAT AdapterFormat,D3DFORMAT BackBufferFormat,bool bWindowed)=0;
@@ -26,10 +26,15 @@ public:
 #include "Simul/Graph/StandardNodes/ShowProgressInterface.h"
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Platform/DirectX9/Export.h"
+#include "Simul/Platform/DirectX9/GpuCloudGenerator.h"
 #pragma warning(push)
 #pragma warning(disable:4251)
 namespace simul
 {
+	namespace sky
+	{
+		class BaseGpuSkyGenerator;
+	}
 	namespace clouds
 	{
 		class Environment;
@@ -45,7 +50,7 @@ class SimulTerrainRenderer;
 class SimulOpticsRendererDX9;
 
 class SIMUL_DIRECTX9_EXPORT Direct3D9Renderer
-	:public D3DCallbackInterface
+	:public Direct3D9CallbackInterface
 	,public simul::graph::meta::Group
 {
 public:
@@ -68,7 +73,7 @@ public:
 	SimulHDRRenderer *GetSimulHDRRenderer(){return simulHDRRenderer.get();}
 	void SetShowOSD(bool s);
 	void SetCamera(simul::camera::Camera *c);
-//D3DCallbackInterface:
+//Direct3D9CallbackInterface:
 	bool	IsDeviceAcceptable(D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,D3DFORMAT BackBufferFormat, bool bWindowed);
 	bool    ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings);
 	HRESULT OnCreateDevice(IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc);
@@ -82,6 +87,8 @@ public:
 
 	void	SetYVertical(bool y);
 	void	RecompileShaders();
+	simul::dx9::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
+	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return NULL;}
 protected:
 	HRESULT RestoreDeviceObjects(IDirect3DDevice9* pDevice);
 	simul::camera::Camera *camera;
@@ -97,6 +104,7 @@ protected:
 	const TCHAR *GetDebugText() const;
 	int width,height;
 	float time_mult;
+	simul::dx9::GpuCloudGenerator gpuCloudGenerator;
 };
 
 #pragma warning(pop)

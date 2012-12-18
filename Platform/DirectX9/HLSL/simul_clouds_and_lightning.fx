@@ -256,7 +256,7 @@ float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
 	float u=1.f+g2-2.f*g*cos0;
-	return 0.5*0.079577+0.5*(1.f-g2)/(4.f*pi*sqrt(u*u*u));
+	return (1.f-g2)/(4.f*pi*sqrt(u*u*u));
 }
 
 float3 InscatterFunction(float4 inscatter_factor,float cos0)
@@ -284,7 +284,7 @@ float4 CloudColour(vertexOutput IN,float cos0)
 
 	density=lerp(density,density2,interp);
 
-	density.x*=IN.layerFade;
+	//density.x*=IN.layerFade;
 	density.x=saturate(density.x*(1.f+alphaSharpness)-alphaSharpness);
 
 	if(density.x<=0)
@@ -363,25 +363,21 @@ float4 PS_CloudsPS2( vertexOutput IN): color
 	float3 view=normalize(IN.wPosition);
 	float cos0=dot(lightDir.xyz,view.xyz);
 // cloudEccentricity is multiplied by density.z (i.e. direct light) to avoid interpolation artifacts.
-	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
+	float Beta=HenyeyGreenstein(.7,cos0);//lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
 // Fade mode 1 means using textures for distance fade.
-#if FADE_MODE==1
-	float4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
-	float3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
-	float3 inscatter=InscatterFunction(insc,cos0);
-#endif
-// Fade mode 0 means passing fade values in through vertex properties.
-#if FADE_MODE==0
-	float3 loss=IN.loss;
-	float3 inscatter=IN.inscatter;
-#endif
+
+	float4 insc_lookup=tex2D(sky_inscatter_texture,IN.fade_texc);
+	float3 loss_lookup=tex2D(sky_loss_texture,IN.fade_texc).rgb;
+	float3 skyl_lookup=tex2D(skylight_texture,IN.fade_texc).rgb;
+
 	float3 ambient=skylightColour.rgb*density.w;
 
 	float opacity=density.x;
 	float3 final=(density.z*Beta+lightResponse.y*density.y)*IN.lightColour+ambient.rgb;
 
-	final*=loss;
-	final+=inscatter;
+	final*=loss_lookup;
+	final+=InscatterFunction(insc_lookup,cos0);
+	final.rgb+=skyl_lookup;
 
     return float4(final,opacity);
 }
@@ -405,13 +401,12 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
 
 	OUT.texCoords.xy=IN.texCoords;
 	OUT.texCoords.z=1;
-	//OUT.colour=IN.colour;
     return OUT;
 }
-#define CROSS_SECTION_STEPS 1
+#define CROSS_SECTION_STEPS 32
 float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 {
-	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,0,crossSectionOffset.z+IN.texCoords.y);
+	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,0,crossSectionOffset.z+(1.0-IN.texCoords.y));
 	int i=0;
 	float3 accum=float3(0.f,0.5f,1.f);
 	texc.y+=.5f/(float)CROSS_SECTION_STEPS;
@@ -440,7 +435,7 @@ float4 PS_CrossSectionXY( vertexOutputCS IN): color
 		float4 density=tex3D(cloud_density_1a,texc);
 		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.z);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
-		float opacity=density.x;//+.05f;
+		float opacity=density.x;
 		colour*=opacity;
 		accum*=1.f-opacity;
 		accum+=colour;

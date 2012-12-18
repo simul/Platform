@@ -68,9 +68,6 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	depthTexture(NULL),
 	lossTexture1(NULL),
 	inscatterTexture1(NULL),
-	skyInterface(NULL),
-	
-
 	loss_texture(NULL),
 	inscatter_texture(NULL),
 	skylight_texture(NULL),

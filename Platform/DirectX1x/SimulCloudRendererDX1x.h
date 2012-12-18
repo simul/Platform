@@ -64,7 +64,7 @@ public:
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
 	void RenderCrossSections(int width,int height);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 	bool RenderLightning();
@@ -151,6 +151,7 @@ protected:
 	ID3D1xEffectScalarVariable* 	hazeEccentricity;
 	ID3D1xEffectScalarVariable* 	fadeInterp;
 	ID3D1xEffectScalarVariable* 	alphaSharpness;
+	ID3D1xEffectScalarVariable* 	maxFadeDistanceMetres;
 
 	ID3D1xEffectVectorVariable* 	lightningMultipliers;
 	ID3D1xEffectVectorVariable* 	lightningColour;

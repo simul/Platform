@@ -65,7 +65,7 @@ vertexOutput VS_Main(vertexInput IN)
 float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
-	return 0.5*0.079577+0.5*(1.f-g2)/(4.f*pi*pow(1.f+g2-2.f*g*cos0,1.5f));
+	return (1.f-g2)/(4.f*pi*pow(1.f+g2-2.f*g*cos0,1.5f));
 }
 
 

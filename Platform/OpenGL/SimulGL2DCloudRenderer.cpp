@@ -198,11 +198,12 @@ static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 	glGetFloatv(src,m);
 }
 
-bool SimulGL2DCloudRenderer::Render(bool, bool, bool)
+bool SimulGL2DCloudRenderer::Render(bool, bool, bool, bool)
 {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,image_tex);
 	using namespace simul::clouds;
+	if(skyInterface)
 	cloudKeyframer->Update(skyInterface->GetTime());
 	CloudInterface *ci=cloudKeyframer->GetCloudInterface();
 	simul::math::Vector3 X1,X2;
@@ -240,13 +241,20 @@ ERROR_CHECK
 ERROR_CHECK
 	glUniform1f(interp_param,cloudKeyframer->GetInterpolation());
 ERROR_CHECK
+	if(skyInterface)
+	{
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(X1.z*0.001f);
 	glUniform3f(sunlightColour_param,sunlight.x,sunlight.y,sunlight.z);
-
-	glUniform1f(cloudEccentricity_param,cloudKeyframer->GetInterpolatedKeyframe().light_asymmetry);
 	glUniform1f(hazeEccentricity_param,skyInterface->GetMieEccentricity());
 	simul::sky::float4 mieRayleighRatio=skyInterface->GetMieRayleighRatio();
 	glUniform3f(mieRayleighRatio_param,mieRayleighRatio.x,mieRayleighRatio.y,mieRayleighRatio.z);
+		simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(X1.z*0.001f);
+		glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
+		simul::sky::float4 amb=skyInterface->GetAmbientLight(X1.z*.001f);
+		glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
+	}
+
+	glUniform1f(cloudEccentricity_param,cloudKeyframer->GetInterpolatedKeyframe().light_asymmetry);
 ERROR_CHECK
 	glUniform1f(textureEffect_param,texture_effect);
 ERROR_CHECK
@@ -263,12 +271,6 @@ ERROR_CHECK
 	simul::math::Vector3 cam_pos(viewInv(3,0),viewInv(3,1),viewInv(3,2));
 
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
-	float alt_km=cam_pos.z*.001f;
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(alt_km);
-	glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
-
-	simul::sky::float4 amb=skyInterface->GetAmbientLight(alt_km);
-	glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
 
 	simul::math::Vector3 view_pos(cam_pos.x,cam_pos.y,cam_pos.z);
 
@@ -339,12 +341,9 @@ ERROR_CHECK
 
 void SimulGL2DCloudRenderer::RecompileShaders()
 {
-	clouds_vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
-	clouds_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-
 	clouds_program			=glCreateProgram();
-    clouds_vertex_shader	=LoadShader(clouds_vertex_shader,"simul_clouds_2d.vert");
-	clouds_fragment_shader	=LoadShader(clouds_fragment_shader,"simul_clouds_2d.frag");
+    clouds_vertex_shader	=LoadShader("simul_clouds_2d.vert");
+	clouds_fragment_shader	=LoadShader("simul_clouds_2d.frag");
 	glAttachShader(clouds_program, clouds_vertex_shader);
 	glAttachShader(clouds_program, clouds_fragment_shader);
 	glLinkProgram(clouds_program);

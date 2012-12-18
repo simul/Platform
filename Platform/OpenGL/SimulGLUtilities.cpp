@@ -1,11 +1,16 @@
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
+#include "Simul/Sky/Float4.h"
 #include <windows.h>
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/gl.h>
 #include <iostream>
 #include "Simul/Base/Timer.h"
+#include "Simul/Math/Pi.h"
+#include "Simul/Math/Vector3.h"
+#include "Simul/Math/Matrix4x4.h"
+#include <math.h>
 
 int Utilities::instance_count=0;
 int Utilities::screen_width=0;
@@ -253,13 +258,9 @@ void CheckGLError(const char *filename,int line_number,int err)
 		if(!c&&!d)
 			std::cerr<<std::endl<<"unknown error: "<<err<<std::endl;
 		DebugBreak();
-		assert(0);
+		//assert(0);
 	}
 }
-#include "Simul/Math/Pi.h"
-#include "Simul/Math/Vector3.h"
-#include "Simul/Math/Matrix4x4.h"
-#include <math.h>
 
 void CalcCameraPosition(float *cam_pos,float *cam_dir)
 {
@@ -402,4 +403,118 @@ void FixGlProjectionMatrix(float required_distance)
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(proj.RowPointer(0));
+}
+
+void OrthoMatrices()
+{
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0,1.0,0,1.0,-1.0,1.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+}
+
+
+void setParameter(GLuint program,const char *name,float value)
+{
+	GLint loc=glGetUniformLocation(program,name);
+	if(loc<0)
+		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	glUniform1f(loc,value);
+	ERROR_CHECK
+}
+
+void setParameter(GLuint program,const char *name,float value1,float value2)
+{
+	GLint loc=glGetUniformLocation(program,name);
+	if(loc<0)
+		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	glUniform2f(loc,value1,value2);
+	ERROR_CHECK
+}
+
+void setParameter(GLuint program,const char *name,float value1,float value2,float value3)
+{
+	GLint loc=glGetUniformLocation(program,name);
+	if(loc<0)
+		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	glUniform3f(loc,value1,value2,value3);
+	ERROR_CHECK
+}
+
+void setParameter(GLuint program,const char *name,int value)
+{
+	GLint loc=glGetUniformLocation(program,name);
+	if(loc<0)
+		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	glUniform1i(loc,value);
+	ERROR_CHECK
+}
+
+void setParameter(GLuint program,const char *name,const simul::sky::float4 &value)
+{
+	GLint loc=glGetUniformLocation(program,name);
+	if(loc<0)
+		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	glUniform4f(loc,value.x,value.y,value.z,value.w);
+	ERROR_CHECK
+}
+
+void setParameter2(GLuint program,const char *name,const simul::sky::float4 &value)
+{
+	GLint loc=glGetUniformLocation(program,name);
+	if(loc<0)
+		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	glUniform2f(loc,value.x,value.y);
+	ERROR_CHECK
+}
+
+void setParameter3(GLuint program,const char *name,const simul::sky::float4 &value)
+{
+	GLint loc=glGetUniformLocation(program,name);
+	if(loc<0)
+		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	glUniform3f(loc,value.x,value.y,value.z);
+	ERROR_CHECK
+}
+
+void setMatrix(GLuint program,const char *name,const float *value)
+{
+	GLint loc=glGetUniformLocation(program,name);
+	if(loc<0)
+		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	static bool tr=1;
+	glUniformMatrix4fv(loc,1,tr,value);
+	ERROR_CHECK
+}
+
+
+void setParameter(GLint loc,int value)
+{
+	glUniform1i(loc,value);
+	ERROR_CHECK
+}
+
+void setParameter(GLint loc,float value)
+{
+	glUniform1f(loc,value);
+	ERROR_CHECK
+}
+
+void setParameter2(GLint loc,const simul::sky::float4 &value)
+{
+	glUniform2f(loc,value.x,value.y);
+	ERROR_CHECK
+}
+void setParameter3(GLint loc,const simul::sky::float4 &value)
+{
+	glUniform3f(loc,value.x,value.y,value.z);
+	ERROR_CHECK
+}
+
+void setMatrix(GLint loc,const float *value)
+{
+	static bool tr=1;
+	glUniformMatrix4fv(loc,1,tr,value);
+	ERROR_CHECK
 }

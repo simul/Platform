@@ -88,6 +88,10 @@ public:
 	{
 		clouds_texture=(LPDIRECT3DBASETEXTURE9)t;
 	}
+	void SetCloudShadowTexture(void *c)
+	{
+		cloud_shadow_texture=(LPDIRECT3DBASETEXTURE9)c;
+	}
 	void SetFadeInterpolation(float s)
 	{
 		fade_interp=s;
@@ -148,6 +152,7 @@ protected:
 	LPDIRECT3DBASETEXTURE9			inscatter_texture;
 	LPDIRECT3DBASETEXTURE9			skylight_texture;
 	LPDIRECT3DBASETEXTURE9			clouds_texture;
+	LPDIRECT3DBASETEXTURE9			cloud_shadow_texture;
 
 	LPDIRECT3DSURFACE9				m_pRenderTarget;
 	LPDIRECT3DSURFACE9				m_pBufferDepthSurface;

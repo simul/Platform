@@ -28,19 +28,20 @@ typedef std::basic_string<TCHAR> tstring;
 #include "Simul/Math/Pi.h"
 
 FramebufferDX1x::FramebufferDX1x(int w,int h) :
-	m_pd3dDevice(NULL)
-	,m_pImmediateContext(NULL)
-	,m_pBufferVertexDecl(NULL)
-	,m_pVertexBuffer(NULL)
-	,m_pTonemapEffect(NULL)
-	,hdr_buffer_texture(NULL)
-	,buffer_depth_texture(NULL)
-	,hdr_buffer_texture_SRV(NULL)
-	,buffer_depth_texture_SRV(NULL)
-	,m_pHDRRenderTarget(NULL)
-	,m_pBufferDepthSurface(NULL)
-	,m_pOldRenderTarget(NULL)
-	,m_pOldDepthSurface(NULL)
+	m_pd3dDevice(NULL),
+	m_pImmediateContext(NULL),
+	m_pBufferVertexDecl(NULL),
+	m_pVertexBuffer(NULL),
+	m_pTonemapEffect(NULL),
+	hdr_buffer_texture(NULL),
+	buffer_depth_texture(NULL),
+	hdr_buffer_texture_SRV(NULL),
+	buffer_depth_texture_SRV(NULL),
+	m_pHDRRenderTarget(NULL),
+	m_pBufferDepthSurface(NULL),
+	m_pOldRenderTarget(NULL),
+	m_pOldDepthSurface(NULL)
+
 	,TonemapTechnique(NULL)
 	,hdrTexture(NULL)
 	,worldViewProj(NULL)
@@ -231,7 +232,6 @@ bool FramebufferDX1x::CreateBuffers()
 	ID3D1xEffect * effect=NULL;
 	CreateEffect(m_pd3dDevice,&effect,_T("gamma.fx"));
 	ID3D1xEffectTechnique*	tech=effect->GetTechniqueByName("simul_direct");
-
 	assert(tech->IsValid());
 	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
 	assert(pass->IsValid());
@@ -324,13 +324,15 @@ void FramebufferDX1x::Deactivate()
 	m_pImmediateContext->RSSetViewports(1,m_OldViewports);
 }
 
-void FramebufferDX1x::Clear(float r,float g,float b,float a)
+void FramebufferDX1x::Clear(float r,float g,float b,float a,int mask)
 {
 	// Clear the screen to black:
     float clearColor[4]={r,g,b,a};
+    if(!mask)
+		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
 	m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
 	if(m_pBufferDepthSurface)
-		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,mask, 1.f, 0);
 }
 void FramebufferDX1x::DeactivateAndRender(bool blend)
 {

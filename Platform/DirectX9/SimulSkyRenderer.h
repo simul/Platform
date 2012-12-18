@@ -35,7 +35,7 @@ namespace simul
 	}
 	namespace sky
 	{
-		class SkyInterface;
+		class AtmosphericScatteringInterface;
 		class SiderealSkyInterface;
 		class Sky;
 		class SkyKeyframer;
@@ -61,7 +61,7 @@ public:
 	//! Call this when the D3D device has been shut down.
 	void						InvalidateDeviceObjects();
 	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void						RenderSun();
+	void						RenderSun(float exposure_hint);
 	//! Get the transform that goes from declination/right-ascension to azimuth and elevation.
 	//bool						GetSiderealTransform(D3DXMATRIX *world);
 	//! Render the stars, as points.
@@ -90,6 +90,7 @@ public:
 	float GetFadeInterp() const;
 	void SetStepsPerDay(int s);
 //! Implement the SkyTexturesCallback
+	void SetSkyTextureSize(unsigned size);
 	void FillDistanceTexture(int num_elevs_width,int num_alts_height,const float *dist_array);
 	float CalcSunOcclusion(float cloud_occlusion);
 
@@ -98,7 +99,8 @@ public:
 	const char *GetDebugText() const;
 	void SetYVertical(bool y);
 protected:
-	void FillFadeTexturesSequentially(int alt_index,int texture_index,int texel_index
+	void FillSkyTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
+	void FillFadeTexturesSequentially(int texture_index,int texel_index
 						,int num_texels,const float *loss_float4_array
 						,const float *inscatter_float4_array
 						,const float *skyl_float4_array);
@@ -147,11 +149,9 @@ protected:
 	D3DXHANDLE					flareTexture;
 	LPDIRECT3DTEXTURE9			stars_texture;
 	std::map<int,LPDIRECT3DTEXTURE9> planet_textures;
-	// Three sky textures - 2 to interpolate and one to fill
-	LPDIRECT3DTEXTURE9			sky_textures[3];
 	// Three sunlight textures.
 	LPDIRECT3DTEXTURE9			sunlight_textures[3];
-	// If using 1D sky textures and 2D fade textures:
+	// These are generated as necessary:
 	LPDIRECT3DBASETEXTURE9		loss_textures[3];
 	LPDIRECT3DBASETEXTURE9		inscatter_textures[3];
 	LPDIRECT3DBASETEXTURE9		skylight_textures[3];

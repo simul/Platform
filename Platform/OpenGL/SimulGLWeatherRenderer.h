@@ -68,7 +68,7 @@ public:
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 	void EnableRain(bool e=true);
-	void EnableCloudLayers(bool,bool);
+	void EnableCloudLayers();
 	void SetPrecipitation(float strength,float speed);
 	const char *GetDebugText() const;
 	GLuint GetFramebufferTexture();

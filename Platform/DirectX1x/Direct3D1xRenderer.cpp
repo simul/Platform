@@ -128,7 +128,10 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 	// Don't need to clear D3DCLEAR_TARGET as we'll be filling every pixel:
 		simulHDRRenderer->StartRender();
+		simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 	}
+	else
+		simulWeatherRenderer->SetExposureHint(1.0f);
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->SetMatrices(view,proj);

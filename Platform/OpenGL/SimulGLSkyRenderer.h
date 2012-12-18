@@ -16,7 +16,7 @@ namespace simul
 	namespace sky
 	{
 		class SiderealSkyInterface;
-		class SkyInterface;
+		class AtmosphericScatteringInterface;
 		class Sky;
 		class FadeTableInterface;
 		class SkyKeyframer;
@@ -48,7 +48,7 @@ public:
 	// Implementing simul::sky::SkyTexturesCallback
 	virtual void SetSkyTextureSize(unsigned ){}
 	virtual void SetFadeTextureSize(unsigned ,unsigned ,unsigned ){}
-	virtual void FillFadeTexturesSequentially(int ,int ,int ,const float *,const float *)
+	virtual void FillFadeTexturesSequentially(int ,int ,const float *,const float *)
 	{
 		exit(1);
 	}
@@ -58,7 +58,7 @@ public:
 	virtual		const float *GetFastInscatterLookup(float distance_texcoord,float elevation_texcoord);
 
 	bool		RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void		RenderSun();
+	void		RenderSun(float exposure_hint);
 
 	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s);
 
@@ -68,7 +68,6 @@ protected:
 	//! \internal Switch the current program, either sky_program or earthshadow_program.
 	//! Also sets the parameter variables.	
 	void		UseProgram(GLuint);
-	void		SetSkyTexSize(unsigned size);
 	void		SetFadeTexSize(int width_num_distances,int height_num_elevations,int num_altitudes);
 	void		FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d
 				,const float *loss_float4_array,const float *inscatter_float4_array,const float *skylight_float4_array);
@@ -110,10 +109,10 @@ protected:
 	GLint			MieRayleighRatio_param;
 	GLint			hazeEccentricity_param;
 	GLint			lightDirection_sky_param;
-	GLint			earthShadowNormal_param;
-	GLint			radiusOnCylinder_param;
-	GLint			terminatorCosine_param;
-	GLint			maxFadeDistance_param;
+	GLint			sunDir;
+	GLint			earthShadowUniforms;
+	GLuint			earthShadowUniformsUBO;
+	
 	GLint			skyInterp_param;
 	GLint			sunlight_param;
 	
@@ -123,6 +122,12 @@ protected:
 	GLint			skyTexture2_param;
 
 	GLint			skylightTexture_param;
+	
+	GLint			cloudOrigin;
+	GLint			cloudScale;
+	GLint			maxDistance;
+	GLint			viewPosition;
+	GLint			overcast_param;
 	
 	FramebufferGL	loss_2d;
 	FramebufferGL	inscatter_2d;

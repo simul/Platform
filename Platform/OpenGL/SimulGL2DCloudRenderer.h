@@ -21,7 +21,7 @@ namespace simul
 	}
 	namespace sky
 	{
-		class SkyInterface;
+		class AtmosphericScatteringInterface;
 	}
 }
 
@@ -38,7 +38,7 @@ public:
 	//! OpenGL Implementation of device invalidation - not strictly needed in GL.
 	void InvalidateDeviceObjects();
 	//! OpenGL Implementation of 2D cloud rendering.
-	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
 	void RenderCrossSections(int width,int height);
 	//! Set the platform-dependent atmospheric loss texture.
 	void SetLossTexture(void *l);
@@ -55,6 +55,7 @@ public:
 	bool IsYVertical() const{return false;}
 	//CloudShadowCallback
 	void **GetCloudTextures(){return 0;}
+	void *GetCloudShadowTexture() {return NULL;}
 protected:
 	void EnsureCorrectTextureSizes(){}
 	void EnsureTexturesAreUpToDate(){}
@@ -88,7 +89,6 @@ protected:
 	GLuint		skylight_tex;
 	GLuint	noise_tex;
 	GLuint	image_tex;
-	float	cam_pos[3];
 
 	bool CreateNoiseTexture(bool override_file=false);
 	bool CreateImageTexture();

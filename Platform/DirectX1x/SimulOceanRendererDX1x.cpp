@@ -1,6 +1,9 @@
 #include "SimulOceanRendererDX1x.h"
-#include "CompileShaderDX1x.h"
+#include "CreateEffectDX1x.h"
+#include "Simul/Sky/Float4.h"
+#include "Simul/Sky/SkyInterface.h"
 #include <D3DX11tex.h>
+#include "CompileShaderDX1x.h"
 #pragma warning(disable:4995)
 #include <vector>
 #include <assert.h>
@@ -17,7 +20,6 @@ struct ocean_vertex
 
 OceanSimulator* g_pOceanSimulator=NULL;
 // Mesh properties:
-
 
 // Shading properties:
 // Two colors for waterbody and sky color
@@ -46,9 +48,15 @@ struct Const_Per_Call
 {
 	D3DXMATRIX	g_matLocal;
 	D3DXMATRIX	g_matWorldViewProj;
+	D3DXMATRIX	g_matWorld;
 	D3DXVECTOR2 g_UVBase;
 	D3DXVECTOR2 g_PerlinMovement;
 	D3DXVECTOR3	g_LocalEye;
+	
+	// Atmospherics
+	float		hazeEccentricity;
+	D3DXVECTOR3	lightDir;
+	D3DXVECTOR4 mieRayleighRatio;
 };
 
 struct Const_Shading
@@ -80,8 +88,9 @@ struct Const_Shading
 };
 
 
-SimulOceanRendererDX1x::SimulOceanRendererDX1x()
-	:m_pd3dDevice(NULL)
+SimulOceanRendererDX1x::SimulOceanRendererDX1x(simul::terrain::SeaKeyframer *s)
+	:simul::terrain::BaseSeaRenderer(s)
+	,m_pd3dDevice(NULL)
 	,m_pImmediateContext(NULL)
 	,g_pOceanSurfVS(NULL)
 	,g_pOceanSurfPS(NULL)
@@ -106,12 +115,15 @@ SimulOceanRendererDX1x::SimulOceanRendererDX1x()
 	,g_pSRV_Perlin(NULL)
 	// Environment maps
 	,g_pSRV_ReflectCube(NULL)
+	,skyLossTexture_SRV(NULL)
+	,skyInscatterTexture_SRV(NULL)
 	// Samplers
 	,g_pHeightSampler(NULL)
 	,g_pGradientSampler(NULL)
 	,g_pFresnelSampler(NULL)
 	,g_pPerlinSampler(NULL)
 	,g_pCubeSampler(NULL)
+	,g_pAtmosphericsSampler(NULL)
 {
 }
 
@@ -120,19 +132,45 @@ SimulOceanRendererDX1x::~SimulOceanRendererDX1x()
 	InvalidateDeviceObjects();
 }
 
-void SimulOceanRendererDX1x::SetOceanParameters(const OceanParameter& ocean_param)
-{
-	ocean_parameters=ocean_param;
-	ocean_parameters.dmap_dim = ocean_param.dmap_dim;
-	ocean_parameters.wind_dir = ocean_param.wind_dir;
-}
 
 void SimulOceanRendererDX1x::Update(float dt)
 {
 	// Update simulation
-	static double app_time = 0;
 	app_time += (double)dt;
 	g_pOceanSimulator->updateDisplacementMap((float)app_time);
+}
+
+void SimulOceanRendererDX1x::RecompileShaders()
+{
+	SAFE_RELEASE(g_pOceanSurfVS);
+	SAFE_RELEASE(g_pOceanSurfPS);
+	SAFE_RELEASE(g_pWireframePS);
+
+	ID3DBlob* pBlobOceanSurfVS = NULL;
+	ID3DBlob* pBlobOceanSurfPS = NULL;
+	ID3DBlob* pBlobWireframePS = NULL;
+
+	CompileShaderFromFile(L"ocean_shading.hlsl", "OceanSurfVS", "vs_4_0", &pBlobOceanSurfVS);
+	CompileShaderFromFile(L"ocean_shading.hlsl", "OceanSurfPS", "ps_4_0", &pBlobOceanSurfPS);
+	CompileShaderFromFile(L"ocean_shading.hlsl", "WireframePS", "ps_4_0", &pBlobWireframePS);
+
+	m_pd3dDevice->CreateVertexShader(pBlobOceanSurfVS->GetBufferPointer(), pBlobOceanSurfVS->GetBufferSize(), NULL, &g_pOceanSurfVS);
+	m_pd3dDevice->CreatePixelShader(pBlobOceanSurfPS->GetBufferPointer(), pBlobOceanSurfPS->GetBufferSize(), NULL, &g_pOceanSurfPS);
+	m_pd3dDevice->CreatePixelShader(pBlobWireframePS->GetBufferPointer(), pBlobWireframePS->GetBufferSize(), NULL, &g_pWireframePS);
+
+
+	// Input layout
+	D3D11_INPUT_ELEMENT_DESC mesh_layout_desc[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+	};
+
+	m_pd3dDevice->CreateInputLayout(mesh_layout_desc, 1, pBlobOceanSurfVS->GetBufferPointer(), pBlobOceanSurfVS->GetBufferSize(), &g_pMeshLayout);
+	assert(g_pMeshLayout);
+
+	SAFE_RELEASE(pBlobOceanSurfVS);
+	SAFE_RELEASE(pBlobOceanSurfPS);
+	SAFE_RELEASE(pBlobWireframePS);
 }
 
 void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
@@ -144,7 +182,14 @@ void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 #else
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 #endif
-	g_pOceanSimulator = new OceanSimulator(ocean_parameters, m_pd3dDevice);
+	try
+	{
+		g_pOceanSimulator = new OceanSimulator(ocean_parameters, m_pd3dDevice);
+	}
+	catch(...)
+	{
+		throw;
+	}
 	// Update the simulation for the first time.
 	g_pOceanSimulator->updateDisplacementMap(0);
 
@@ -153,37 +198,7 @@ void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 	createFresnelMap();
 	loadTextures();
 
-	// HLSL
-	// Vertex & pixel shaders
-	ID3DBlob* pBlobOceanSurfVS = NULL;
-	ID3DBlob* pBlobOceanSurfPS = NULL;
-	ID3DBlob* pBlobWireframePS = NULL;
-
-	CompileShaderFromFile(L"../../Platform/DirectX1x/HLSL/ocean_shading.hlsl", "OceanSurfVS", "vs_4_0", &pBlobOceanSurfVS);
-	CompileShaderFromFile(L"../../Platform/DirectX1x/HLSL/ocean_shading.hlsl", "OceanSurfPS", "ps_4_0", &pBlobOceanSurfPS);
-	CompileShaderFromFile(L"../../Platform/DirectX1x/HLSL/ocean_shading.hlsl", "WireframePS", "ps_4_0", &pBlobWireframePS);
-	assert(pBlobOceanSurfVS);
-	assert(pBlobOceanSurfPS);
-	assert(pBlobWireframePS);
-
-	m_pd3dDevice->CreateVertexShader(pBlobOceanSurfVS->GetBufferPointer(), pBlobOceanSurfVS->GetBufferSize(), NULL, &g_pOceanSurfVS);
-	m_pd3dDevice->CreatePixelShader(pBlobOceanSurfPS->GetBufferPointer(), pBlobOceanSurfPS->GetBufferSize(), NULL, &g_pOceanSurfPS);
-	m_pd3dDevice->CreatePixelShader(pBlobWireframePS->GetBufferPointer(), pBlobWireframePS->GetBufferSize(), NULL, &g_pWireframePS);
-	assert(g_pOceanSurfVS);
-	assert(g_pOceanSurfPS);
-	assert(g_pWireframePS);
-	SAFE_RELEASE(pBlobOceanSurfPS);
-	SAFE_RELEASE(pBlobWireframePS);
-
-	// Input layout
-	D3D11_INPUT_ELEMENT_DESC mesh_layout_desc[] =
-	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-	};
-	m_pd3dDevice->CreateInputLayout(mesh_layout_desc, 1, pBlobOceanSurfVS->GetBufferPointer(), pBlobOceanSurfVS->GetBufferSize(), &g_pMeshLayout);
-	assert(g_pMeshLayout);
-
-	SAFE_RELEASE(pBlobOceanSurfVS);
+	RecompileShaders();
 
 	// Constants
 	D3D11_BUFFER_DESC cb_desc;
@@ -198,12 +213,12 @@ void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 
 	Const_Shading shading_data;
 	// Grid side length * 2
-	shading_data.g_TexelLength_x2 = ocean_parameters.patch_length / ocean_parameters.dmap_dim * 2;;
+	shading_data.g_TexelLength_x2 = ocean_parameters->patch_length / ocean_parameters->dmap_dim * 2;;
 	// Color
 	shading_data.g_WaterbodyColor = g_WaterbodyColor;
 	// Texcoord
-	shading_data.g_UVScale = 1.0f / ocean_parameters.patch_length;
-	shading_data.g_UVOffset = 0.5f / ocean_parameters.dmap_dim;
+	shading_data.g_UVScale = 1.0f / ocean_parameters->patch_length;
+	shading_data.g_UVOffset = 0.5f / ocean_parameters->dmap_dim;
 	// Perlin
 	shading_data.g_PerlinSize = g_PerlinSize;
 	shading_data.g_PerlinAmplitude = g_PerlinAmplitude;
@@ -266,6 +281,10 @@ void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 	sam_desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	m_pd3dDevice->CreateSamplerState(&sam_desc, &g_pFresnelSampler);
 	assert(g_pFresnelSampler);
+
+	sam_desc.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR;
+	m_pd3dDevice->CreateSamplerState(&sam_desc, &g_pAtmosphericsSampler);
+	assert(g_pAtmosphericsSampler);
 
 	// State blocks
 	D3D11_RASTERIZER_DESC ras_desc;
@@ -332,6 +351,17 @@ void SimulOceanRendererDX1x::SetCubemap(ID3D1xShaderResourceView *c)
 	g_pSRV_ReflectCube=c;
 }
 
+void SimulOceanRendererDX1x::SetLossTexture(void *t)
+{
+	skyLossTexture_SRV=((ID3D1xShaderResourceView*)t);
+}
+
+void SimulOceanRendererDX1x::SetInscatterTextures(void *t,void *s)
+{
+	skyInscatterTexture_SRV=((ID3D1xShaderResourceView*)t);
+	skylightTexture_SRV=((ID3D1xShaderResourceView*)s);
+}
+
 void SimulOceanRendererDX1x::InvalidateDeviceObjects()
 {
     // Ocean object
@@ -353,6 +383,7 @@ void SimulOceanRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(g_pFresnelSampler);
 	SAFE_RELEASE(g_pPerlinSampler);
 	SAFE_RELEASE(g_pCubeSampler);
+	SAFE_RELEASE(g_pAtmosphericsSampler);
 
 	SAFE_RELEASE(g_pPerCallCB);
 	SAFE_RELEASE(g_pPerFrameCB);
@@ -548,73 +579,6 @@ void SimulOceanRendererDX1x::loadTextures()
 	assert(g_pSRV_Perlin);
 }
 
-bool SimulOceanRendererDX1x::checkNodeVisibility(const QuadNode& quad_node)
-{
-	// Plane equation setup
-	D3DXMATRIX matProj = proj;//*camera.GetProjMatrix();
-	// Left plane
-	float fov_x = atan(1.0f / matProj(0, 0));
-	D3DXVECTOR4 plane_left(cos(fov_x), 0, sin(fov_x), 0);
-	// Right plane
-	D3DXVECTOR4 plane_right(-cos(fov_x), 0, sin(fov_x), 0);
-
-	// Bottom plane
-	float fov_y = atan(1.0f / matProj(1, 1));
-	D3DXVECTOR4 plane_bottom(0, cos(fov_y), sin(fov_y), 0);
-	// Top plane
-	D3DXVECTOR4 plane_top(0, -cos(fov_y), sin(fov_y), 0);
-
-	// Test quad corners against view frustum in view space
-	D3DXVECTOR4 corner_verts[4];
-	corner_verts[0] = D3DXVECTOR4(quad_node.bottom_left.x, quad_node.bottom_left.y, 0, 1);
-	corner_verts[1] = corner_verts[0] + D3DXVECTOR4(quad_node.length, 0, 0, 0);
-	corner_verts[2] = corner_verts[0] + D3DXVECTOR4(quad_node.length, quad_node.length, 0, 0);
-	corner_verts[3] = corner_verts[0] + D3DXVECTOR4(0, quad_node.length, 0, 0);
-
-	D3DXMATRIX matView = D3DXMATRIX(1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1) * view;//*camera.GetViewMatrix();
-	D3DXVec4Transform(&corner_verts[0], &corner_verts[0], &matView);
-	D3DXVec4Transform(&corner_verts[1], &corner_verts[1], &matView);
-	D3DXVec4Transform(&corner_verts[2], &corner_verts[2], &matView);
-	D3DXVec4Transform(&corner_verts[3], &corner_verts[3], &matView);
-
-	// Test against eye plane
-	if (corner_verts[0].z < 0 && corner_verts[1].z < 0 && corner_verts[2].z < 0 && corner_verts[3].z < 0)
-		return false;
-
-	// Test against left plane
-	float dist_0 = D3DXVec4Dot(&corner_verts[0], &plane_left);
-	float dist_1 = D3DXVec4Dot(&corner_verts[1], &plane_left);
-	float dist_2 = D3DXVec4Dot(&corner_verts[2], &plane_left);
-	float dist_3 = D3DXVec4Dot(&corner_verts[3], &plane_left);
-	if (dist_0 < 0 && dist_1 < 0 && dist_2 < 0 && dist_3 < 0)
-		return false;
-
-	// Test against right plane
-	dist_0 = D3DXVec4Dot(&corner_verts[0], &plane_right);
-	dist_1 = D3DXVec4Dot(&corner_verts[1], &plane_right);
-	dist_2 = D3DXVec4Dot(&corner_verts[2], &plane_right);
-	dist_3 = D3DXVec4Dot(&corner_verts[3], &plane_right);
-	if (dist_0 < 0 && dist_1 < 0 && dist_2 < 0 && dist_3 < 0)
-		return false;
-
-	// Test against bottom plane
-	dist_0 = D3DXVec4Dot(&corner_verts[0], &plane_bottom);
-	dist_1 = D3DXVec4Dot(&corner_verts[1], &plane_bottom);
-	dist_2 = D3DXVec4Dot(&corner_verts[2], &plane_bottom);
-	dist_3 = D3DXVec4Dot(&corner_verts[3], &plane_bottom);
-	if (dist_0 < 0 && dist_1 < 0 && dist_2 < 0 && dist_3 < 0)
-		return false;
-
-	// Test against top plane
-	dist_0 = D3DXVec4Dot(&corner_verts[0], &plane_top);
-	dist_1 = D3DXVec4Dot(&corner_verts[1], &plane_top);
-	dist_2 = D3DXVec4Dot(&corner_verts[2], &plane_top);
-	dist_3 = D3DXVec4Dot(&corner_verts[3], &plane_top);
-	if (dist_0 < 0 && dist_1 < 0 && dist_2 < 0 && dist_3 < 0)
-		return false;
-
-	return true;
-}
 
 static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 {
@@ -627,104 +591,28 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-float SimulOceanRendererDX1x::estimateGridCoverage(const QuadNode& quad_node, float screen_area)
-{
-	// Estimate projected area
-
-	// Test 16 points on the quad and find out the biggest one.
-	const static float sample_pos[16][2] =
-	{
-		{0, 0},
-		{0, 1},
-		{1, 0},
-		{1, 1},
-		{0.5f, 0.333f},
-		{0.25f, 0.667f},
-		{0.75f, 0.111f},
-		{0.125f, 0.444f},
-		{0.625f, 0.778f},
-		{0.375f, 0.222f},
-		{0.875f, 0.556f},
-		{0.0625f, 0.889f},
-		{0.5625f, 0.037f},
-		{0.3125f, 0.37f},
-		{0.8125f, 0.704f},
-		{0.1875f, 0.148f},
-	};
-
-	D3DXMATRIX matProj = proj;//*camera.GetProjMatrix();
-	D3DXVECTOR3 eye_point = GetCameraPosVector(view);
-	//eye_point = D3DXVECTOR3(eye_point.x, eye_point.z, eye_point.y);
-	float grid_len_world = quad_node.length / g_MeshDim;
-
-	float max_area_proj = 0;
-	for (int i = 0; i < 16; i++)
-	{
-		D3DXVECTOR3 test_point(quad_node.bottom_left.x + quad_node.length * sample_pos[i][0], quad_node.bottom_left.y + quad_node.length * sample_pos[i][1], 0);
-		D3DXVECTOR3 eye_vec = test_point - eye_point;
-		float dist = D3DXVec3Length(&eye_vec);
-
-		float area_world = grid_len_world * grid_len_world;// * abs(eye_point.z) / sqrt(nearest_sqr_dist);
-		float area_proj = area_world * matProj(0, 0) * matProj(1, 1) / (dist * dist);
-
-		if (max_area_proj < area_proj)
-			max_area_proj = area_proj;
-	}
-
-	float pixel_coverage = max_area_proj * screen_area * 0.25f;
-
-	return pixel_coverage;
-}
-
-
-
-// Return value: if successful pushed into the list, return the position. If failed, return -1.
-int SimulOceanRendererDX1x::buildNodeList(simul::terrain::BaseSeaRenderer::QuadNode& quad_node)
-{
-	// Check against view frustum
-	if (!checkNodeVisibility(quad_node))
-		return -1;
-
-	// Estimate the min grid coverage
-	UINT num_vps = 1;
-	D3D11_VIEWPORT vp;
-	m_pImmediateContext->RSGetViewports(&num_vps, &vp);
-	float min_coverage = estimateGridCoverage(quad_node, (float)vp.Width * vp.Height);
-
-	if(AttachSubNodes(quad_node,min_coverage,ocean_parameters.patch_length)==-1)
-		return -1;
-
-	// Insert into the list
-	int position = (int)g_render_list.size();
-	g_render_list.push_back(quad_node);
-
-	return position;
-}
-bool isLeaf(const simul::terrain::BaseSeaRenderer::QuadNode& quad_node)
-{
-	return (quad_node.sub_node[0] == -1 && quad_node.sub_node[1] == -1 && quad_node.sub_node[2] == -1 && quad_node.sub_node[3] == -1);
-}
-
 void SimulOceanRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
+	if(IsYVertical())
+		view=D3DXMATRIX(1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1) * v;
 	proj=p;
 }
 
-void SimulOceanRendererDX1x::RenderShaded(float time)
+void SimulOceanRendererDX1x::Render()
 {
 	ID3D11ShaderResourceView* displacement_map = g_pOceanSimulator->getDisplacementMap();
 	ID3D11ShaderResourceView* gradient_map = g_pOceanSimulator->getGradientMap();
 
 	// Build rendering list
 	g_render_list.clear();
-	float ocean_extent = ocean_parameters.patch_length * (1 << g_FurthestCover);
+	float ocean_extent = ocean_parameters->patch_length * (1 << g_FurthestCover);
 	QuadNode root_node = {D3DXVECTOR2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
-	buildNodeList(root_node);
+	buildNodeList(root_node,ocean_parameters->patch_length,view,proj);
 
 	// Matrices
-	D3DXMATRIX matView = D3DXMATRIX(1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1) * view;//*camera.GetViewMatrix();
-	D3DXMATRIX matProj = proj;//*camera.GetProjMatrix();
+	D3DXMATRIX matView = view;
+	D3DXMATRIX matProj = proj;
 
 	// VS & PS
 	m_pImmediateContext->VSSetShader(g_pOceanSurfVS, NULL, 0);
@@ -734,15 +622,17 @@ void SimulOceanRendererDX1x::RenderShaded(float time)
 	ID3D11ShaderResourceView* vs_srvs[2] = {displacement_map, g_pSRV_Perlin};
 	m_pImmediateContext->VSSetShaderResources(0, 2, &vs_srvs[0]);
 
-	ID3D11ShaderResourceView* ps_srvs[4] = {g_pSRV_Perlin, gradient_map, g_pSRV_Fresnel, g_pSRV_ReflectCube};
-    m_pImmediateContext->PSSetShaderResources(1, 4, &ps_srvs[0]);
+	ID3D11ShaderResourceView* ps_srvs[6] = {g_pSRV_Perlin, gradient_map, g_pSRV_Fresnel, g_pSRV_ReflectCube,skyLossTexture_SRV,skyInscatterTexture_SRV};
+    m_pImmediateContext->PSSetShaderResources(1, 6, &ps_srvs[0]);
 
 	// Samplers
 	ID3D11SamplerState* vs_samplers[2] = {g_pHeightSampler, g_pPerlinSampler};
 	m_pImmediateContext->VSSetSamplers(0, 2, &vs_samplers[0]);
 
-	ID3D11SamplerState* ps_samplers[4] = {g_pPerlinSampler, g_pGradientSampler, g_pFresnelSampler, g_pCubeSampler};
-	m_pImmediateContext->PSSetSamplers(1, 4, &ps_samplers[0]);
+	ID3D11SamplerState* ps_samplers[5] = {g_pPerlinSampler, g_pGradientSampler, g_pFresnelSampler, g_pCubeSampler,g_pAtmosphericsSampler};
+	m_pImmediateContext->PSSetSamplers(1, 5, &ps_samplers[0]);
+
+	//m_pImmediateContext->PSSetSamplers(1, 5, &g_pAtmosphericsSampler);
 
 	// IA setup
 	m_pImmediateContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
@@ -770,11 +660,11 @@ void SimulOceanRendererDX1x::RenderShaded(float time)
 	{
 		QuadNode& node = g_render_list[i];
 		
-		if (!isLeaf(node))
+		if (!node.isLeaf())
 			continue;
 
 		// Check adjacent patches and select mesh pattern
-		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters.patch_length);
+		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters->patch_length);
 
 		// Find the right LOD to render
 		int level_size = g_MeshDim;
@@ -792,15 +682,16 @@ void SimulOceanRendererDX1x::RenderShaded(float time)
 		// WVP matrix
 		D3DXMATRIX matWorld;
 		D3DXMatrixTranslation(&matWorld, node.bottom_left.x, node.bottom_left.y, 0);
+		D3DXMatrixTranspose(&call_consts.g_matWorld, &matWorld);
 		D3DXMATRIX matWVP = matWorld * matView * matProj;
 		D3DXMatrixTranspose(&call_consts.g_matWorldViewProj, &matWVP);
 
 		// Texcoord for perlin noise
-		D3DXVECTOR2 uv_base = node.bottom_left / ocean_parameters.patch_length * g_PerlinSize;
+		D3DXVECTOR2 uv_base = node.bottom_left / ocean_parameters->patch_length * g_PerlinSize;
 		call_consts.g_UVBase = uv_base;
 
 		// Constant g_PerlinSpeed need to be adjusted mannually
-		D3DXVECTOR2 perlin_move = -ocean_parameters.wind_dir * time * g_PerlinSpeed;
+		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters->wind_dir)*(-(float)app_time)* g_PerlinSpeed;
 		call_consts.g_PerlinMovement = perlin_move;
 
 		// Eye point
@@ -809,6 +700,20 @@ void SimulOceanRendererDX1x::RenderShaded(float time)
 		D3DXVECTOR3 vLocalEye(0, 0, 0);
 		D3DXVec3TransformCoord(&vLocalEye, &vLocalEye, &matInvWV);
 		call_consts.g_LocalEye = vLocalEye;
+
+		// Atmospherics
+		if(skyInterface)
+		{
+			call_consts.hazeEccentricity=skyInterface->GetMieEccentricity();
+			call_consts.lightDir=D3DXVECTOR3((const float *)(skyInterface->GetDirectionToLight(0.f)));
+			call_consts.mieRayleighRatio=D3DXVECTOR4((const float *)(skyInterface->GetMieRayleighRatio()));
+		}
+		else
+		{
+			call_consts.hazeEccentricity=0.85f;
+			call_consts.lightDir=D3DXVECTOR3(0,0,1.f);
+			call_consts.mieRayleighRatio=D3DXVECTOR4(0,0,0,0);
+		}
 
 		// Update constant buffer
 		D3D11_MAPPED_SUBRESOURCE mapped_res;            
@@ -854,12 +759,12 @@ void SimulOceanRendererDX1x::RenderWireframe(float time)
 	ID3D11ShaderResourceView* displacement_map = NULL;//g_pOceanSimulator->getD3D11DisplacementMap();
 	// Build rendering list
 	g_render_list.clear();
-	float ocean_extent = ocean_parameters.patch_length * (1 << g_FurthestCover);
+	float ocean_extent = ocean_parameters->patch_length * (1 << g_FurthestCover);
 	QuadNode root_node = {D3DXVECTOR2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
-	buildNodeList(root_node);
+	buildNodeList(root_node,ocean_parameters->patch_length,view,proj);
 
 	// Matrices
-	D3DXMATRIX matView = D3DXMATRIX(1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1) * view;//*camera.GetViewMatrix();
+	D3DXMATRIX matView = view;//*camera.GetViewMatrix();
 	//D3DXMatrixInverse(&matView,NULL,&view);
 	D3DXMATRIX matProj = proj;//*camera.GetProjMatrix();
 
@@ -901,11 +806,11 @@ void SimulOceanRendererDX1x::RenderWireframe(float time)
 	{
 		QuadNode& node = g_render_list[i];
 		
-		if (!isLeaf(node))
+		if (!node.isLeaf())
 			continue;
 
 		// Check adjacent patches and select mesh pattern
-		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters.patch_length);
+		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters->patch_length);
 
 		// Find the right LOD to render
 		int level_size = g_MeshDim;
@@ -923,15 +828,16 @@ void SimulOceanRendererDX1x::RenderWireframe(float time)
 		// WVP matrix
 		D3DXMATRIX matWorld;
 		D3DXMatrixTranslation(&matWorld, node.bottom_left.x, node.bottom_left.y, 0);
+		D3DXMatrixTranspose(&call_consts.g_matWorld, &matWorld);
 		D3DXMATRIX matWVP = matWorld * matView * matProj;
 		D3DXMatrixTranspose(&call_consts.g_matWorldViewProj, &matWVP);
 
 		// Texcoord for perlin noise
-		D3DXVECTOR2 uv_base = node.bottom_left / ocean_parameters.patch_length * g_PerlinSize;
+		D3DXVECTOR2 uv_base = node.bottom_left / ocean_parameters->patch_length * g_PerlinSize;
 		call_consts.g_UVBase = uv_base;
 
 		// Constant g_PerlinSpeed need to be adjusted mannually
-		D3DXVECTOR2 perlin_move = -ocean_parameters.wind_dir * time * g_PerlinSpeed;
+		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters->wind_dir) *-time * g_PerlinSpeed;
 		call_consts.g_PerlinMovement = perlin_move;
 
 		// Eye point

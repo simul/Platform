@@ -56,12 +56,12 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	simulAtmosphericsRenderer=new SimulGLAtmosphericsRenderer;
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
 
-	EnableCloudLayers(true,true);
+	EnableCloudLayers();
 	SetScreenSize(width,height);
 }
 
 
-void SimulGLWeatherRenderer::EnableCloudLayers(bool clouds3d,bool clouds2d)
+void SimulGLWeatherRenderer::EnableCloudLayers()
 {
 	if(simulSkyRenderer)
 	{
@@ -70,6 +70,7 @@ void SimulGLWeatherRenderer::EnableCloudLayers(bool clouds3d,bool clouds2d)
 	}
 	if(simul2DCloudRenderer)
 	{
+		if(simulSkyRenderer.get())
 		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetBaseSkyInterface());
 		simul2DCloudRenderer->Create();
 		if(device_initialized)
@@ -136,7 +137,7 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 	baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 	scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
 	device_initialized=true;
-	EnableCloudLayers(true,true);
+	EnableCloudLayers();
 	///simulSkyRenderer->RestoreDeviceObjects();
 	//simulCloudRenderer->RestoreDeviceObjects(NULL);
 	//simulLightningRenderer->RestoreDeviceObjects();
@@ -159,11 +160,13 @@ void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 
 bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 {
+ERROR_CHECK
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
+ERROR_CHECK
 	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
 	if(buffered)
 	{
@@ -189,7 +192,7 @@ bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 	{
 		scene_buffer->Activate();
 		scene_buffer->Clear(0,0,0,1.f);
-		simulCloudRenderer->Render(false,false,UseDefaultFog);
+		simulCloudRenderer->Render(false,false,UseDefaultFog,true);
 		scene_buffer->Deactivate();
 	//	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);//GL_SRC_ALPHA GL_DST_ALPHA
 	//	glBlendFuncSeparate(GL_ONE,GL_ZERO,GL_ZERO,GL_ONE);

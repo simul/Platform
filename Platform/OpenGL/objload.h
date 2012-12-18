@@ -56,6 +56,10 @@
 #include <vector>
 #include <iostream>
 #include "Simul/Platform/OpenGL/Export.h"
+#ifdef _MSC_VER
+	#pragma warning(push)
+	#pragma warning(disable:4251)
+#endif
 //#include <Debug.h>
 
 #define FCOMPARE(x,y) (((x)-0.0001f)<(y) && ((x)+0.00001f)>(y))

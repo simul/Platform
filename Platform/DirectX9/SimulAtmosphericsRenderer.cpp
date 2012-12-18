@@ -52,6 +52,7 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
 	,inscatter_texture(NULL)
 	,skylight_texture(NULL)
 	,clouds_texture(NULL)
+	,cloud_shadow_texture(NULL)
 	,m_pRenderTarget(NULL)
 	,m_pBufferDepthSurface(NULL)
 	,m_pOldRenderTarget(NULL)
@@ -245,14 +246,15 @@ bool SimulAtmosphericsRenderer::RenderGodRays(float strength)
 		m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
 #endif
 		D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
+		float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 		hr=effect->SetFloat(fadeInterp,fade_interp);
 		hr=effect->SetTexture(imageTexture,input_texture);
 		if(skyInterface)
 		{
 			hr=effect->SetFloat(hazeEccentricity,skyInterface->GetMieEccentricity());
 			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
-			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
-			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(cam_pos.y));
+			D3DXVECTOR4 light_dir(skyInterface->GetDirectionToLight(alt_km));
+			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(alt_km));
 			
 			light_colour*=strength;
 			if(y_vertical)
@@ -380,8 +382,8 @@ bool SimulAtmosphericsRenderer::Render()
 		m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 #endif
 		D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
-		float h=y_vertical?cam_pos.y:cam_pos.z;
-		hr=effect->SetFloat(heightAboveFogLayer,(h/1000.f-fog_height_km)/(fade_distance_km));
+		float altitude_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
+		hr=effect->SetFloat(heightAboveFogLayer,(altitude_km-fog_height_km)/(fade_distance_km));
 		static float cc=10.f;
 		simul::sky::float4 e=cc*skyInterface->GetMie()*fade_distance_km/fog_scale_height_km;
 		D3DXVECTOR4 ext(e.x,e.y,e.z,e.w);
@@ -392,7 +394,7 @@ bool SimulAtmosphericsRenderer::Render()
 		{
 			hr=effect->SetFloat(hazeEccentricity,skyInterface->GetMieEccentricity());
 			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
-			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight());
+			D3DXVECTOR4 light_dir(skyInterface->GetDirectionToLight(altitude_km));
 			if(y_vertical)
 				std::swap(sun_dir.y,sun_dir.z);
 			effect->SetVector	(lightDir			,&sun_dir);

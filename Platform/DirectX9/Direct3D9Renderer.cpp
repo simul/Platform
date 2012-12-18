@@ -115,6 +115,9 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 	float weather_restore_time=0.f,hdr_restore_time=0.f,terrain_restore_time=0.f,optics_restore_time=0.f;
 	simul::base::Timer timer;
 
+	
+	gpuCloudGenerator.RestoreDeviceObjects(pd3dDevice);
+
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->SetScreenSize(width,height);
@@ -241,12 +244,13 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	pd3dDevice->SetTransform(D3DTS_PROJECTION,&proj);
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
-	// Don't need to clear D3DCLEAR_TARGET as we'll be filling every pixel:
 		simulHDRRenderer->StartRender();
+		simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 	}
 	else
 	{
 		pd3dDevice->Clear(0L,NULL,D3DCLEAR_ZBUFFER|D3DCLEAR_TARGET,0xFF000000,1.0f,0L);
+		simulWeatherRenderer->SetExposureHint(1.0f);
 	}
 	if(simulWeatherRenderer)
 	{
@@ -315,7 +319,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		}
 		if(simulWeatherRenderer->Get2DCloudRenderer())
 		{
-			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
+		//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
 		}
 	}
 	
@@ -335,6 +339,7 @@ LRESULT Direct3D9Renderer::MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 void Direct3D9Renderer::OnLostDevice()
 {
+	gpuCloudGenerator.InvalidateDeviceObjects();
 	RT::InvalidateDeviceObjects();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
@@ -349,11 +354,6 @@ void Direct3D9Renderer::OnLostDevice()
 void Direct3D9Renderer::OnDestroyDevice()
 {
 	OnLostDevice();
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->InvalidateDeviceObjects();
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->InvalidateDeviceObjects();
-	RT::InvalidateDeviceObjects();
 }
 
 const TCHAR *Direct3D9Renderer::GetDebugText() const
@@ -376,6 +376,7 @@ const TCHAR *Direct3D9Renderer::GetDebugText() const
 
 void Direct3D9Renderer::RecompileShaders()
 {
+	gpuCloudGenerator.RecompileShaders();
 	if(simulWeatherRenderer.get())
 		simulWeatherRenderer->RecompileShaders();
 	if(simulOpticsRenderer.get())

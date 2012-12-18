@@ -45,6 +45,10 @@ public:
 		input_texture=(GLuint)image;
 		depth_texture=(GLuint)depth;
 	}
+	void SetCloudShadowTexture(void *c)
+	{
+		cloud_shadow_texture=(GLuint)c;
+	}
 	//! Render the Atmospherics.
 	void StartRender();
 	void FinishRender();
@@ -55,30 +59,37 @@ private:
 	bool initialized;
 	GLuint distance_fade_program;
 	GLuint earthshadow_fade_program;
+	GLuint godrays_program;
 	GLuint current_program;
 	GLuint cloudmix_program;
 
 	GLuint loss_texture,inscatter_texture,skylight_texture;
 	GLuint input_texture,depth_texture;
 	GLuint clouds_texture;
+	GLuint cloud_shadow_texture;
 	
 	GLint cloudsTexture;
 	GLint imageTexture;
 	GLint lossTexture;
 	GLint inscTexture;
 	GLint skylightTexture;
+	GLint cloudShadowTexture;
 
 	GLint hazeEccentricity;
 	GLint lightDir;
-	GLint sunDir;
 	GLint invViewProj;
 	GLint mieRayleighRatio;
 	GLint directLightMultiplier;
 	
-	GLint earthShadowNormal;
-	GLint radiusOnCylinder;
-	GLint maxFadeDistance;
-	GLint terminatorCosine;
+	GLint earthShadowUniforms;
+	GLuint earthShadowUniformsUBO;
+	GLint earthShadowUniformsBindingIndex;
+	
+	GLint cloudOrigin;
+	GLint cloudScale;
+	GLint maxDistance;
+	GLint viewPosition;
+	GLint overcast_param;
 
 	FramebufferGL *framebuffer;
 };
