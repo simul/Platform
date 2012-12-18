@@ -984,7 +984,6 @@ void SimulCloudRenderer::InternalRenderRaytrace(int buffer_index)
 		D3DXMatrixTranspose(&vpt,&viewproj);
 		D3DXMatrixInverse(&ivp,NULL,&vpt);
 
-
 		hr=m_pCloudEffect->SetMatrix(invViewProj,&ivp);
 
 		// The NOISE matrix is for 2D noise texcoords:
