@@ -75,6 +75,7 @@ ERROR_CHECK
 		skylightTexture			=glGetUniformLocation(current_program,"skylightTexture");
 		hazeEccentricity		=glGetUniformLocation(current_program,"hazeEccentricity");
 		lightDir				=glGetUniformLocation(current_program,"lightDir");
+		sunDir					=glGetUniformLocation(current_program,"sunDir");
 		invViewProj				=glGetUniformLocation(current_program,"invViewProj");
 		mieRayleighRatio		=glGetUniformLocation(current_program,"mieRayleighRatio");
 		cloudsTexture			=glGetUniformLocation(current_program,"cloudsTexture");
@@ -109,9 +110,10 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,inscatter_texture);
     glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D,skylight_texture);
-	simul::sky::float4 sun_dir		=skyInterface->GetDirectionToLight(cam_pos.z/1000.f);
+	simul::sky::float4 sun_dir		=skyInterface->GetDirectionToSun();
+	simul::sky::float4 light_dir	=skyInterface->GetDirectionToLight();
 ERROR_CHECK
-	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,skyInterface->GetDirectionToSun());
+	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,sun_dir);
 	if(e.enable)
 		UseProgram(earthshadow_fade_program);
 	else
@@ -141,7 +143,8 @@ static bool tr=true;
 ERROR_CHECK
 	glUniform3f(mieRayleighRatio,ratio.x,ratio.y,ratio.z);
 ERROR_CHECK
-	glUniform3f(lightDir,sun_dir.x,sun_dir.y,sun_dir.z);
+	glUniform3f(lightDir,light_dir.x,light_dir.y,light_dir.z);
+	glUniform3f(sunDir,sun_dir.x,sun_dir.y,sun_dir.z);
 	glUniform1f(hazeEccentricity,skyInterface->GetMieEccentricity());
 
 	if(current_program==earthshadow_fade_program)
