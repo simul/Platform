@@ -237,7 +237,7 @@ const char *SimulGLWeatherRenderer::GetDebugText() const
 		"UPDATE %3.3g ms (clouds %3.3g ms, sky %3.3g ms)",
 			total_timing,cloud_timing,sky_timing,final_timing,
 			total_update_timing,cloud_update_timing,sky_update_timing);
-	return debug_text;
+	return simulSkyRenderer->GetDebugText();
 }
 
 GLuint SimulGLWeatherRenderer::GetFramebufferTexture()

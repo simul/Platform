@@ -39,6 +39,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	,device_reset(true)
 	,UseHdrPostprocessor(true)
 	,ShowWater(true)
+	,ReverseDepth(false)
 {
 	simulWeatherRenderer=new SimulWeatherRenderer(env,true,w,h,true,true);
 	if(simulWeatherRenderer)
@@ -46,7 +47,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
 	if(simulHDRRenderer&&simulWeatherRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
-	simulTerrainRenderer=new SimulTerrainRenderer();
+	simulTerrainRenderer=NULL;//new SimulTerrainRenderer();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->EnableMoon(true);
 	SetYVertical(y_vertical);
@@ -218,6 +219,8 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 
 void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime, float fTimeStep)
 {
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	fTime;fTimeStep;
 	D3DXMATRIX world,view,proj;
 	if(device_reset)

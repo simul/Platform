@@ -287,7 +287,7 @@ void GpuCloudGenerator::PerformGPURelight(float *dest,const int *light_gridsizes
 	SAFE_RELEASE(target->pBuf);
 	m_pd3dDevice->CreateOffscreenPlainSurface(light_gridsizes[0],light_gridsizes[1],D3DFMT_G32R32F,D3DPOOL_SYSTEMMEM,&target->pBuf,NULL);
 
-	static unsigned colr=0x00FFFF00;
+	static unsigned colr=0x00000000;
 	
 	// Make a floating point texture.
 	hr=m_pd3dDevice->SetRenderTarget(0,target->pLightRenderTarget[0]);

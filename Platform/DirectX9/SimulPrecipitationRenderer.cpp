@@ -34,6 +34,9 @@
 
 typedef std::basic_string<TCHAR> tstring;
 
+#define CONE_SIDES 36
+#define NUM_VERT ((CONE_SIDES+1)*8)
+
 SimulPrecipitationRenderer::SimulPrecipitationRenderer() :
 	m_pVtxDecl(NULL),
 	m_pRainEffect(NULL),
@@ -41,16 +44,6 @@ SimulPrecipitationRenderer::SimulPrecipitationRenderer() :
 	external_rain_texture(false)
 {
 }
-
-struct Vertex_t
-{
-	float x,y,z;
-	float tex_x,tex_y,fade;
-};
-
-#define CONE_SIDES 36
-#define NUM_VERT ((CONE_SIDES+1)*8)
-static Vertex_t vertices[NUM_VERT];
 
 void SimulPrecipitationRenderer::TextureRepeatChanged()
 {
@@ -156,11 +149,11 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-bool SimulPrecipitationRenderer::Render()
+void SimulPrecipitationRenderer::Render()
 {
 	HRESULT hr=S_OK;
 	if(rain_intensity<=0)
-		return (hr==S_OK);
+		return;
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
@@ -245,7 +238,6 @@ bool SimulPrecipitationRenderer::Render()
 	}
 	hr=m_pRainEffect->End();
 	D3DXMatrixIdentity(&world);
-	return (hr==S_OK);
 }
 
 #ifdef XBOX

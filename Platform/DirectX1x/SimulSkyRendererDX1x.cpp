@@ -26,8 +26,9 @@ extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Math/Vector3.h"
-#include "MacrosDX1x.h"
-#include "CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX1x/MacrosDX1x.h"
+#include "Simul/Platform/DirectX1x/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/HLSL/simul_earthshadow.hlsl"
 
 struct Vertex_t
 {
@@ -89,6 +90,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 	,m_pVertexBuffer(NULL)
 	,m_pSkyEffect(NULL)
 	,m_hTechniqueSky(NULL)
+	,m_hTechniqueEarthShadow(NULL)
 	,m_hTechniqueSky_CUBEMAP(NULL)
 	,m_hTechniqueFade3DTo2D(NULL)
 	,m_hTechniqueSun(NULL)
@@ -98,6 +100,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 	,flare_texture(NULL)
 	,flare_texture_SRV(NULL)
 	,moon_texture_SRV(NULL)
+	,earthShadowBuffer(NULL)
 	,loss_2d(NULL)
 	,inscatter_2d(NULL)
 	,skylight_2d(NULL)
@@ -204,6 +207,16 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	moon_texture_SRV=simul::dx1x_namespace::LoadTexture(MoonTexture.c_str());
 	SetPlanetImage(moon_index,moon_texture_SRV);
 	ClearIterators();
+	
+	// constant buffer:
+	D3D11_BUFFER_DESC cb_desc;
+	cb_desc.Usage = D3D11_USAGE_DYNAMIC;
+	cb_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cb_desc.MiscFlags = 0;    
+	cb_desc.ByteWidth = PAD16(sizeof(EarthShadowUniforms));
+	cb_desc.StructureByteStride = 0;
+	m_pd3dDevice->CreateBuffer(&cb_desc, NULL, &earthShadowBuffer);
 }
 
 void SimulSkyRendererDX1x::InvalidateDeviceObjects()
@@ -233,6 +246,7 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 
 	SAFE_RELEASE(flare_texture_SRV);
 	SAFE_RELEASE(moon_texture_SRV);
+	SAFE_RELEASE(earthShadowBuffer);
 
 	for(int i=0;i<3;i++)
 	{
@@ -496,6 +510,7 @@ void SimulSkyRendererDX1x::RecompileShaders()
 		defines["Z_VERTICAL"]="1";
 	V_CHECK(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"simul_sky.fx",defines));
 	m_hTechniqueSky				=m_pSkyEffect->GetTechniqueByName("simul_sky");
+	m_hTechniqueEarthShadow		=m_pSkyEffect->GetTechniqueByName("simul_sky_earthshadow");
 	m_hTechniqueSky_CUBEMAP		=m_pSkyEffect->GetTechniqueByName("simul_sky_CUBEMAP");
 	worldViewProj				=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
 
@@ -508,21 +523,21 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	skyInterp					=m_pSkyEffect->GetVariableByName("skyInterp")->AsScalar();
 	altitudeTexCoord			=m_pSkyEffect->GetVariableByName("altitudeTexCoord")->AsScalar();
 	
-	m_hTechniqueFade3DTo2D=m_pSkyEffect->GetTechniqueByName("simul_fade_3d_to_2d");
+	m_hTechniqueFade3DTo2D	=m_pSkyEffect->GetTechniqueByName("simul_fade_3d_to_2d");
 
-	colour				=m_pSkyEffect->GetVariableByName("colour")->AsVector();
-	m_hTechniqueSun		=m_pSkyEffect->GetTechniqueByName("simul_sun");
-	m_hTechniqueFlare	=m_pSkyEffect->GetTechniqueByName("simul_flare");
-	m_hTechniquePlanet	=m_pSkyEffect->GetTechniqueByName("simul_planet");
-	flareTexture		=m_pSkyEffect->GetVariableByName("flareTexture")->AsShaderResource();
+	colour					=m_pSkyEffect->GetVariableByName("colour")->AsVector();
+	m_hTechniqueSun			=m_pSkyEffect->GetTechniqueByName("simul_sun");
+	m_hTechniqueFlare		=m_pSkyEffect->GetTechniqueByName("simul_flare");
+	m_hTechniquePlanet		=m_pSkyEffect->GetTechniqueByName("simul_planet");
+	flareTexture			=m_pSkyEffect->GetVariableByName("flareTexture")->AsShaderResource();
 
-	inscTexture			=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
-	skylTexture			=m_pSkyEffect->GetVariableByName("skylTexture")->AsShaderResource();
+	inscTexture				=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
+	skylTexture				=m_pSkyEffect->GetVariableByName("skylTexture")->AsShaderResource();
 
-	fadeTexture1		=m_pSkyEffect->GetVariableByName("fadeTexture1")->AsShaderResource();
-	fadeTexture2		=m_pSkyEffect->GetVariableByName("fadeTexture2")->AsShaderResource();
-
-	m_hTechniqueQuery	=m_pSkyEffect->GetTechniqueByName("simul_query");
+	fadeTexture1			=m_pSkyEffect->GetVariableByName("fadeTexture1")->AsShaderResource();
+	fadeTexture2			=m_pSkyEffect->GetVariableByName("fadeTexture2")->AsShaderResource();
+	earthShadowUniforms		=m_pSkyEffect->GetConstantBufferByName("EarthShadowUniforms");
+	m_hTechniqueQuery		=m_pSkyEffect->GetTechniqueByName("simul_query");
 
 }
 
@@ -726,9 +741,7 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 	world._41=cam_pos.x;
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
-// Fix projection
-	static bool reverse_z=true;
-	if(reverse_z)
+	if(ReverseDepth)
 	{
 		D3DXMATRIX invertz;
 		D3DXMatrixIdentity(&invertz);
@@ -737,7 +750,8 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 		D3DXMatrixMultiply(&proj,&proj,&invertz);
 	}
 	else
-	FixProjectionMatrix(proj,1000.f,IsYVertical());
+// Fix projection
+		FixProjectionMatrix(proj,1000.f,IsYVertical());
 
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);
@@ -766,11 +780,32 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 	lightDirection->SetFloatVector(sun_dir);
 	mieRayleighRatio->SetFloatVector(mie_rayleigh_ratio);
 	hazeEccentricity->SetFloat	(skyKeyframer->GetMieEccentricity());
-/*if(cubemap)
-		hr=ApplyPass(m_hTechniqueSky_CUBEMAP->GetPassByIndex(0));
-	else*/
-		hr=ApplyPass(m_hTechniqueSky->GetPassByIndex(0));
+	
+	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
+								skyKeyframer->GetAltitudeKM()
+								,skyKeyframer->GetDirectionToSun());
+	if(e.enable)
+	{
+		hr=ApplyPass(m_hTechniqueEarthShadow->GetPassByIndex(0));
+		// Update constant buffer
+		D3D11_MAPPED_SUBRESOURCE mapped_res;            
+		m_pImmediateContext->Map(earthShadowBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
+		EarthShadowUniforms &u=*(EarthShadowUniforms*)mapped_res.pData;
+		u.earthShadowNormal	=e.normal;
+		u.radiusOnCylinder	=e.radius_on_cylinder;
+		u.maxFadeDistance	=skyKeyframer->GetMaxDistanceKm()/skyKeyframer->GetSkyInterface()->GetPlanetRadius();
+		u.terminatorCosine	=e.terminator_cosine;
+		u.sunDir			=sun_dir;
+		m_pImmediateContext->Unmap(earthShadowBuffer, 0);
 
+		earthShadowUniforms->SetConstantBuffer(earthShadowBuffer);
+	}
+	else
+	{
+		hr=ApplyPass(m_hTechniqueSky->GetPassByIndex(0));
+	}
+
+		
 	DrawCube();
 
 	PIXEndNamedEvent();

@@ -292,11 +292,6 @@ void SimulSkyRenderer::SetStepsPerDay(int s)
 	skyKeyframer->SetUniformKeyframes(s);
 }
 
-void SimulSkyRenderer::SetSkyTextureSize(unsigned size)
-{
-	skyTexSize=size;
-}
-
 void SimulSkyRenderer::CreateFadeTextures()
 {
 	HRESULT hr;

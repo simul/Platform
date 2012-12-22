@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2011 Simul Software Ltd
+// Copyright (c) 2007-2012 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -7,7 +7,7 @@
 // agreement.
 
 // SimulCloudRendererDX1x.cpp A renderer for 3d clouds.
-
+#define NOMINMAX
 #include "SimulCloudRendererDX1x.h"
 #include "Simul/Base/Timer.h"
 #include <fstream>
@@ -254,14 +254,16 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	// two possible blend states for clouds - with alpha written, and without.
 	D3D11_BLEND_DESC omDesc;
 	ZeroMemory( &omDesc, sizeof( D3D11_BLEND_DESC ) );
-	omDesc.RenderTarget[0].BlendEnable = true;
-	omDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	omDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	omDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	omDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
-	omDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_SRC_ALPHA;
-	omDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	omDesc.RenderTarget[0].BlendEnable		= true;
+	omDesc.RenderTarget[0].BlendOp			= D3D11_BLEND_OP_ADD;
+	omDesc.RenderTarget[0].BlendOpAlpha		= D3D11_BLEND_OP_ADD;
+	omDesc.RenderTarget[0].SrcBlend			= D3D11_BLEND_SRC_ALPHA;
+	omDesc.RenderTarget[0].DestBlend		= D3D11_BLEND_INV_SRC_ALPHA;
+	omDesc.RenderTarget[0].SrcBlendAlpha	= D3D11_BLEND_ZERO;
+	omDesc.RenderTarget[0].DestBlendAlpha	= D3D11_BLEND_INV_SRC_ALPHA;
 	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	omDesc.IndependentBlendEnable=true;
+	omDesc.AlphaToCoverageEnable=false;
 	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndWriteAlpha );
 	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED
 										| D3D11_COLOR_WRITE_ENABLE_GREEN
@@ -373,7 +375,7 @@ loadInfo.MipLevels=0;
 		D3D1x_USAGE_DYNAMIC,
 		D3D1x_BIND_SHADER_RESOURCE,
 		D3D1x_CPU_ACCESS_WRITE,
-		D3D11_RESOURCE_MISC_GENERATE_MIPS	// was 0
+		0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
 	};
 	hr=m_pd3dDevice->CreateTexture2D(&desc,NULL,&noise_texture);
 	V_CHECK(hr);
@@ -530,7 +532,9 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	lightResponse						=m_pCloudEffect->GetVariableByName("lightResponse")->AsVector();
 	lightDir							=m_pCloudEffect->GetVariableByName("lightDir")->AsVector();
 	skylightColour						=m_pCloudEffect->GetVariableByName("skylightColour")->AsVector();
-	sunlightColour						=m_pCloudEffect->GetVariableByName("sunlightColour")->AsVector();
+	sunlightColour1						=m_pCloudEffect->GetVariableByName("sunlightColour1")->AsVector();
+	sunlightColour2						=m_pCloudEffect->GetVariableByName("sunlightColour2")->AsVector();
+	earthshadowMultiplier				=m_pCloudEffect->GetVariableByName("earthshadowMultiplier")->AsScalar();
 	fractalScale						=m_pCloudEffect->GetVariableByName("fractalScale")->AsVector();
 	interp								=m_pCloudEffect->GetVariableByName("interp")->AsScalar();
 	mieRayleighRatio					=m_pCloudEffect->GetVariableByName("mieRayleighRatio")->AsVector();
@@ -569,6 +573,11 @@ static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
+static float saturate(float c)
+{
+	return std::max(std::min(1.f,c),0.f);
+}
+
 bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha)
 {
 	EnsureTexturesAreUpToDate();
@@ -589,9 +598,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	skyInscatterTexture->SetResource(skyInscatterTexture_SRV);
 	skylightTexture->SetResource(skylightTexture_SRV);
 
-	// Mess with the proj matrix to extend the far clipping plane:
-	static bool reverse_z=true;
-	if(reverse_z)
+	if(ReverseDepth)
 	{
 		D3DXMATRIX invertz;
 		D3DXMatrixIdentity(&invertz);
@@ -600,7 +607,8 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 		D3DXMatrixMultiply(&proj,&proj,&invertz);
 	}
 	else
-	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
+	// Mess with the proj matrix to extend the far clipping plane:
+		FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
 	//set up matrices
 	D3DXMATRIX wvp;
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
@@ -631,9 +639,9 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 										0,
 										0);
 	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(base_alt_km);
-	if(y_vertical)
-		std::swap(sun_dir.y,sun_dir.z);
+	float top_alt_km=base_alt_km+GetCloudInterface()->GetCloudHeight()*0.001f;
+	simul::sky::float4 sun_dir=skyInterface->GetDirectionToSun();
+	simul::sky::float4 light_dir=skyInterface->GetDirectionToLight(base_alt_km);
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
 	float tan_half_fov_vertical=1.f/proj._22;
 	float tan_half_fov_horizontal=1.f/proj._11;
@@ -646,14 +654,27 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	{
 		ID3D1xEffectVectorVariable *lr=cbUser->GetMemberByName("lightResponse")->AsVector();
 	}
-	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
+	simul::sky::float4 sunlight1,sunlight2;
+	if(skyInterface)
+	{
+		simul::sky::EarthShadow e=skyInterface->GetEarthShadow(base_alt_km,sun_dir);
+		sunlight1=skyInterface->GetLocalIrradiance(base_alt_km)*saturate(base_alt_km-e.illumination_altitude);
+		sunlight2=skyInterface->GetLocalIrradiance(top_alt_km)*saturate(top_alt_km-e.illumination_altitude);
+		earthshadowMultiplier->SetFloat	(saturate(base_alt_km-e.illumination_altitude));
+	}
 	float cloud_interp=cloudKeyframer->GetInterpolation();
 	interp				->SetFloat			(cloud_interp);
 	eyePosition			->SetFloatVector	(cam_pos);
 	lightResponse		->SetFloatVector	(light_response);
-	lightDir			->SetFloatVector	(sun_dir);
+	if(y_vertical)
+	{
+		std::swap(sun_dir.y,sun_dir.z);
+		std::swap(light_dir.y,light_dir.z);
+	}
+	lightDir			->SetFloatVector	(light_dir);
 	skylightColour		->SetFloatVector	(sky_light_colour);
-	sunlightColour		->SetFloatVector	(sunlight);
+	sunlightColour1		->SetFloatVector	(sunlight1);
+	sunlightColour2		->SetFloatVector	(sunlight2);
 	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
 	fractalScale		->SetFloatVector	(fractal_scales);
 	mieRayleighRatio	->SetFloatVector	(skyInterface->GetMieRayleighRatio());
@@ -706,7 +727,6 @@ simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer
 	D3D11_MAPPED_SUBRESOURCE mapped_vertices;
 #endif
 	MapBuffer(vertexBuffer,&mapped_vertices);
-	//hr=Map3D(cloud_textures[2],&mapped_cloud_texture);
 #ifdef DX10
 	vertices=(CloudVertex_t*)mapped_vertices;
 #else
@@ -782,7 +802,7 @@ simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer
 	skyLossTexture->SetResource(NULL);
 	skyInscatterTexture->SetResource(NULL);
 	skylightTexture->SetResource(NULL);
-// To prevent BIZARRE DX11 warning, we re-apply the bass with the rendertextures unbound:
+// To prevent BIZARRE DX11 warning, we re-apply the pass with the rendertextures unbound:
 	if(enable_lightning)
 		ApplyPass(m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
 	else

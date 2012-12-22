@@ -17,10 +17,10 @@ void main(void)
 	float r=length(rad);
 	if(r>1.0)
 		discard;
-	float u=(1.0-r)/0.1;
+	float u=saturate((1.0-r)/0.1);
 	float brightness=sunlight.a*pow(u,6.0);
 	result.rgb=sunlight.rgb;
-	result.a=brightness;
+	result.a=u;
     gl_FragColor=result;
 }
 

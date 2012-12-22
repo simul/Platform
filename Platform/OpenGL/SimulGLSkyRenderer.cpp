@@ -333,7 +333,6 @@ void SimulGLSkyRenderer::UseProgram(GLuint p)
 		current_program=p;
 		MieRayleighRatio_param			=glGetUniformLocation(current_program,"mieRayleighRatio");
 		lightDirection_sky_param		=glGetUniformLocation(current_program,"lightDir");
-		sunDir							=glGetUniformLocation(current_program,"sunDir");
 		hazeEccentricity_param			=glGetUniformLocation(current_program,"hazeEccentricity");
 		skyInterp_param					=glGetUniformLocation(current_program,"skyInterp");
 		skyTexture1_param				=glGetUniformLocation(current_program,"inscTexture");
@@ -799,4 +798,14 @@ void SimulGLSkyRenderer::DrawLines(Vertext *lines,int vertex_count,bool strip)
 void SimulGLSkyRenderer::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
 	::PrintAt3dPos(p,text,colr,offsetx,offsety);
+}
+
+const char *SimulGLSkyRenderer::GetDebugText()
+{
+	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
+								skyKeyframer->GetAltitudeKM()
+								,skyKeyframer->GetDirectionToSun());
+	static char txt[400];
+	sprintf_s(txt,400,"(%4.4g, %4.4g, %4.4g) %4.4g, %4.4g, %4.4g",e.normal.x,e.normal.y,e.normal.z,e.radius_on_cylinder-1.f,e.terminator_cosine,e.illumination_altitude);
+	return txt;
 }

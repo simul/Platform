@@ -236,7 +236,10 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 	Inv(3,2)=-((xe)*(*ZZ));
 	Inv(3,3)=1.f;
 }
-
+static float saturate(float c)
+{
+	return std::max(std::min(1.f,c),0.f);
+}
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha)
@@ -245,7 +248,6 @@ bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_f
 	EnsureTexturesAreUpToDate();
 ERROR_CHECK
 	cubemap;
-	
 //cloud buffer alpha to screen = ?
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,write_alpha?GL_TRUE:GL_FALSE);
 	if(glStringMarkerGREMEDY)
@@ -371,21 +373,27 @@ ERROR_CHECK
 	glUniform1f(interp_param,cloudKeyframer->GetInterpolation());
 
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
-	float alt_km=X1.z*.001f;
+	float base_alt_km=X1.z*.001f;
 	float t=0.f;
+	simul::sky::float4 sunlight1,sunlight2;
 	if(skyInterface)
 	{
-		simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(alt_km);
+		simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(base_alt_km);
 		glUniform3f(lightDirection_param,sun_dir.x,sun_dir.y,sun_dir.z);
 		simul::sky::float4 amb=skyInterface->GetAmbientLight(X1.z*.001f);
 		amb*=GetCloudInterface()->GetAmbientLightResponse();
-	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(X1.z/1000.f,skyInterface->GetDirectionToSun());
-	glUniform1f(distanceToIllumination_param,e.distance_to_illumination*e.planet_radius*1000.f/max_fade_distance_metres);
-	glUniform1f(hazeEccentricity_param,skyInterface->GetMieEccentricity());
-	simul::sky::float4 mieRayleighRatio=skyInterface->GetMieRayleighRatio();
-	glUniform3f(mieRayleighRatio_param,mieRayleighRatio.x,mieRayleighRatio.y,mieRayleighRatio.z);
+		simul::sky::EarthShadow e=skyInterface->GetEarthShadow(X1.z/1000.f,skyInterface->GetDirectionToSun());
+	//	glUniform1f(distanceToIllumination_param,e.illumination_altitude*e.planet_radius*1000.f/max_fade_distance_metres);
+		glUniform1f(hazeEccentricity_param,skyInterface->GetMieEccentricity());
+		simul::sky::float4 mieRayleighRatio=skyInterface->GetMieRayleighRatio();
+		glUniform3f(mieRayleighRatio_param,mieRayleighRatio.x,mieRayleighRatio.y,mieRayleighRatio.z);
 		glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
+		glUniform1f(earthshadowMultiplier,saturate(base_alt_km-e.illumination_altitude));
 		t=skyInterface->GetTime();
+
+		sunlight1=skyInterface->GetLocalIrradiance(base_alt_km)*saturate(base_alt_km-e.illumination_altitude);
+		float top_alt_km=X2.z*.001f;
+		sunlight2=skyInterface->GetLocalIrradiance(top_alt_km)*saturate(top_alt_km-e.illumination_altitude);
 	}
 	
 	glUniform1f(cloudEccentricity_param,GetCloudInterface()->GetMieAsymmetry());
@@ -416,13 +424,6 @@ ERROR_CHECK
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),god_rays,X1.z,god_rays);
 #if 1
-	simul::sky::float4 sunlight1,sunlight2;
-	if(skyInterface)
-	{
-		sunlight1=skyInterface->GetLocalIrradiance(X1.z*.001f);
-		sunlight2=skyInterface->GetLocalIrradiance(X2.z*.001f);
-	}
-
 	// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,
 	// which is drawn as a latitude-longitude sphere. But we only draw the parts that:
 	// a) are in the view frustum
@@ -566,7 +567,8 @@ ERROR_CHECK
 	cloudEccentricity_param		=glGetUniformLocation(clouds_program,"cloudEccentricity");
 	hazeEccentricity_param		=glGetUniformLocation(clouds_program,"hazeEccentricity");
 	mieRayleighRatio_param		=glGetUniformLocation(clouds_program,"mieRayleighRatio");
-	distanceToIllumination_param=glGetUniformLocation(clouds_program,"distanceToIllumination");
+	earthshadowMultiplier		=glGetUniformLocation(clouds_program,"earthshadowMultiplier");
+	//distanceToIllumination_param=glGetUniformLocation(clouds_program,"distanceToIllumination");
 	maxFadeDistanceMetres_param	=glGetUniformLocation(clouds_program,"maxFadeDistanceMetres");
 
 	cloudDensity1_param		=glGetUniformLocation(clouds_program,"cloudDensity1");
@@ -681,7 +683,8 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	cloudEccentricity_param		=0;
 	hazeEccentricity_param		=0;
 	mieRayleighRatio_param		=0;
-	distanceToIllumination_param=0;
+	earthshadowMultiplier		=0;
+	//distanceToIllumination_param=0;
 	
 	cloudDensity1_param			=0;
 	cloudDensity2_param			=0;

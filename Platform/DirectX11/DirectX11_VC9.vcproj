@@ -356,7 +356,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimulPrecipitationRendererDX1x.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\DirectX1x\SimulSkyRendererDX1x.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulTerrainRendererDX1x.cpp"
 				>
 			</File>
 			<File
@@ -430,7 +438,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimulPrecipitationRendererDX1x.h"
+				>
+			</File>
+			<File
 				RelativePath="..\DirectX1x\SimulSkyRendererDX1x.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulTerrainRendererDX1x.h"
 				>
 			</File>
 			<File
@@ -459,6 +475,10 @@
 			</File>
 			<File
 				RelativePath=".\HLSL\simul_debug.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_earthshadow.hlsl"
 				>
 			</File>
 			<File

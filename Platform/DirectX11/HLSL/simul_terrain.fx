@@ -46,7 +46,7 @@ float cloudInterp;
 struct vertexInput
 {
     float3 position			: POSITION;
-    float4 normal			: TEXCOORD0;
+    float3 normal			: TEXCOORD0;
     float2 texCoordDiffuse	: TEXCOORD1;
     float offset			: TEXCOORD2;
 };

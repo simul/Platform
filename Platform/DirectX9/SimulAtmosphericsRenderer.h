@@ -119,6 +119,7 @@ protected:
 	D3DXHANDLE						invViewProj;
 	D3DXHANDLE						altitudeTexCoord;
 	D3DXHANDLE						lightDir;
+	D3DXHANDLE						sunDir;
 	D3DXHANDLE						mieRayleighRatio;
 	D3DXHANDLE						hazeEccentricity;
 	D3DXHANDLE						fadeInterp;

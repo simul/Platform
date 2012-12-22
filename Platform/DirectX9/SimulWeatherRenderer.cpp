@@ -311,7 +311,7 @@ bool SimulWeatherRenderer::RenderLightning()
 bool SimulWeatherRenderer::RenderPrecipitation()
 {
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		return simulPrecipitationRenderer->Render();
+		simulPrecipitationRenderer->Render();
 	return true;
 }
 bool SimulWeatherRenderer::RenderLateCloudLayer(bool buf)

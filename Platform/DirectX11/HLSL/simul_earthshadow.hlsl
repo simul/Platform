@@ -1,25 +1,51 @@
-layout(std140) uniform EarthShadowUniforms
+#ifndef SIMUL_EARTHSHADOW
+#define SIMUL_EARTHSHADOW
+#ifdef __cplusplus
+	#define cbuffer struct
+	struct float3
+	{
+		float x,y,z;
+		void operator=(const float *v)
+		{
+			x=v[0];
+			y=v[1];
+			z=v[2];
+		}
+	};
+#define ALIGN __declspec( align( 16 ) )
+#else
+#define ALIGN
+#endif
+ALIGN cbuffer EarthShadowUniforms
 {
-	uniform vec3 sunDir;
-	uniform float radiusOnCylinder;
-	uniform vec3 earthShadowNormal;
-	uniform float maxFadeDistance;
-	uniform float terminatorCosine;
+	float3 sunDir			;
+	float radiusOnCylinder	;
+	float3 earthShadowNormal;
+	float maxFadeDistance	;
+	float terminatorCosine	;
 };
 
 #ifndef __cplusplus
-vec4 EarthShadowFunction(vec2 texc2,vec3 view)
+SamplerState inscSamplerState
 {
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Clamp;
+	AddressV = Mirror;
+};
+
+float4 EarthShadowFunction(float2 texc2,float3 view)
+{
+	
 	// The Earth's shadow: let shadowNormal be the direction normal to the sunlight direction
 	//						but in the plane of the sunlight and the vertical.
 	// First get the part of view that is along the light direction
 	float along=dot(sunDir,view);
 	float in_shadow=saturate(-along-terminatorCosine);
 	// subtract it to get the direction on the shadow-cylinder cross section.
-	vec3 on_cross_section=view-along*sunDir;
+	float3 on_cross_section=view-along*sunDir;
 	// Now get the part that's on the cylinder radius:
 	float on_radius=dot(on_cross_section,earthShadowNormal);
-	vec3 on_x=on_cross_section-on_radius*earthShadowNormal;
+	float3 on_x=on_cross_section-on_radius*earthShadowNormal;
 	float sine_phi=on_radius/length(on_cross_section);
 	// We avoid positive phi because the cosine discards sign information leading to
 	// confusion between negative and positive angles.
@@ -47,12 +73,12 @@ vec4 EarthShadowFunction(vec2 texc2,vec3 view)
 	float a=sqrt(d);
 	a=min(a,texc2.x);
 	// Inscatter at distance d
-	vec2 texcoord_d=vec2(a,texc2.y);
-	vec4 insc=texture2D(inscTexture,texc2);
-	vec4 inscb=texture(inscTexture,texcoord_d);
+	float2 texcoord_d=float2(a,texc2.y);
+	float4 inscb=inscTexture.Sample(inscSamplerState,texcoord_d);
 	// what should the light be at distance d?
 	// We subtract the inscatter to d if we're looking OUT FROM the cylinder,
 	// but we just use the inscatter to d if we're looking INTO the cylinder.
+	float4 insc=inscTexture.Sample(inscSamplerState,texc2);
 	if(r<=1.0||a==0.0)
 	{
 		insc-=inscb*saturate(in_shadow);
@@ -60,8 +86,9 @@ vec4 EarthShadowFunction(vec2 texc2,vec3 view)
 	else
 	{
 	// but we just use the inscatter to d if we're looking INTO the cylinder.
-		insc=mix(insc,inscb,in_shadow);
+		insc=lerp(insc,inscb,in_shadow);
     }
    return insc;
 }
+#endif
 #endif

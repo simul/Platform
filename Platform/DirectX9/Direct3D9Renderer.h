@@ -67,6 +67,7 @@ public:
 		META_ValueProperty(bool,ShowLightVolume,"Show the cloud light volume as a wireframe box.")
 		META_ValueProperty(bool,CelestialDisplay,"Show geographical and sidereal overlay.")
 		META_ValueProperty(bool,ShowWater,"Show water surfaces.")
+		META_ValueProperty(bool,ReverseDepth,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 	META_EndProperties
 	SimulWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer.get();}
 	SimulTerrainRenderer *GetSimulTerrainRenderer(){return simulTerrainRenderer.get();}

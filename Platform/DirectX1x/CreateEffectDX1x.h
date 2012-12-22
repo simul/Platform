@@ -26,6 +26,7 @@ namespace simul
 	{
 		extern SIMUL_DIRECTX1x_EXPORT void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir);
 		extern SIMUL_DIRECTX1x_EXPORT const float *GetCameraPosVector(D3DXMATRIX &view,bool y_vertical);
+		//! Call this to make the FX compiler put its warnings and errors to the standard output when used.
 		extern SIMUL_DIRECTX1x_EXPORT void PipeCompilerOutput(bool p);
 		extern SIMUL_DIRECTX1x_EXPORT void SetShaderPath(const char *path);
 		extern SIMUL_DIRECTX1x_EXPORT void SetTexturePath(const char *path);
@@ -92,3 +93,5 @@ extern void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,
 
 void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
 void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
+
+#define PAD16(n) (((n)+15)/16*16)

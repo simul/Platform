@@ -1,3 +1,5 @@
+
+
 cbuffer cbPerObject : register(b0)
 {
 	matrix worldViewProj : packoffset(c0);
@@ -6,6 +8,7 @@ cbuffer cbPerObject : register(b0)
 };
 
 Texture2D inscTexture;
+#include "simul_earthshadow.hlsl"
 Texture2D skylTexture;
 SamplerState samplerState
 {
@@ -186,10 +189,27 @@ float4 PS_Main( vertexOutput IN): SV_TARGET
 #else
 	float sine	=view.y;
 #endif
-	float2 texcoord	=float2(1.0,0.5*(1.0-sine));
-	float4 insc=inscTexture.Sample(samplerState,texcoord);
+	float2 texc2	=float2(1.0,0.5*(1.0-sine));
+	float4 insc=inscTexture.Sample(samplerState,texc2);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float4 skyl=skylTexture.Sample(samplerState,texcoord);
+	float4 skyl=skylTexture.Sample(samplerState,texc2);
+	float3 result=InscatterFunction(insc,cos0);
+	result+=skyl.rgb;
+	return float4(result.rgb,1.f);
+}
+
+float4 PS_EarthShadow( vertexOutput IN): SV_TARGET
+{
+	float3 view=normalize(IN.wDirection.xyz);
+#ifdef Z_VERTICAL
+	float sine	=view.z;
+#else
+	float sine	=view.y;
+#endif
+	float2 texc2	=float2(1.0,0.5*(1.0-sine));
+	float4 insc		=EarthShadowFunction(texc2,view);
+	float cos0=dot(lightDir.xyz,view.xyz);
+	float4 skyl=skylTexture.Sample(samplerState,texc2);
 	float3 result=InscatterFunction(insc,cos0);
 	result+=skyl.rgb;
 	return float4(result.rgb,1.f);
@@ -362,6 +382,19 @@ technique11 simul_sky
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Main()));
+    }
+}
+
+technique11 simul_sky_earthshadow
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+	//	SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_EarthShadow()));
     }
 }
 

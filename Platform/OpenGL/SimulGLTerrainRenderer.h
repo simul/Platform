@@ -21,13 +21,9 @@ public:
 	void RecompileShaders();
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
-	// Interface
-	void SetMaxFadeDistanceKm(float dist_km);
-	//! Render the terrain.
 	void Render();
 private:
 	void MakeTextures();
-	float max_fade_distance_metres;
 	GLuint texArray;
 	GLuint program;
 	GLint eyePosition_param;

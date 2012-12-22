@@ -63,25 +63,27 @@ SamplerState fadeSamplerState
 };
 cbuffer cbUser : register(b2)
 {
-	float4 eyePosition			: packoffset(c0);
-	float4 lightResponse		: packoffset(c1);
-	float3 lightDir				: packoffset(c2);
-	float3 skylightColour		: packoffset(c3);
-	float3 sunlightColour		: packoffset(c4);
-	float4 fractalScale			: packoffset(c5);
-	float interp				: packoffset(c6);
+	float4 eyePosition			;
+	float4 lightResponse		;
+	float3 lightDir				;
+	float3 skylightColour		;
+	float3 sunlightColour1		;
+	float3 sunlightColour2		;
+	float4 fractalScale			;
+	float interp				;
 
-	float4 lightningMultipliers	: packoffset(c7);
-	float4 lightningColour		: packoffset(c8);
-	float3 illuminationOrigin	: packoffset(c9);
-	float3 illuminationScales	: packoffset(c10);
-	float hazeEccentricity		: packoffset(c11);
-	float3 mieRayleighRatio		: packoffset(c12);
-	float fadeInterp			: packoffset(c13);
-	float cloudEccentricity		: packoffset(c14);
-	float alphaSharpness		: packoffset(c15);
-	float3 crossSectionOffset	: packoffset(c16);
-	float maxFadeDistanceMetres : packoffset(c17);
+	float4 lightningMultipliers	;
+	float4 lightningColour		;
+	float3 illuminationOrigin	;
+	float3 illuminationScales	;
+	float hazeEccentricity		;
+	float3 mieRayleighRatio		;
+	float fadeInterp			;
+	float cloudEccentricity		;
+	float alphaSharpness		;
+	float3 crossSectionOffset	;
+	float maxFadeDistanceMetres ;
+	float earthshadowMultiplier;
 };
 
 struct vertexInput
@@ -165,8 +167,8 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float Beta=HenyeyGreenstein(.7,cos0);//lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-	float3 inscatter=InscatterFunction(insc,cos0);
+	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
+	float3 inscatter=earthshadowMultiplier*InscatterFunction(insc,cos0);
 	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.texCoordsNoise.xy).xyz-noise_offset).xyz;
 #ifdef DETAIL_NOISE
 	noiseval+=(noiseTexture.Sample(noiseSamplerState,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
@@ -188,6 +190,7 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 	float opacity=density.z;
 	float l=dot(lightningMultipliers,lightning);
 	float3 lightningC=l*lightningColour.xyz;
+	float3 sunlightColour=lerp(sunlightColour1,sunlightColour2,saturate(IN.texCoords.z));
 	float3 final=(density.y*Beta+lightResponse.y*density.x)*sunlightColour+ambient.rgb+lightningColour.w*lightningC;
 	
 	final*=loss.xyz;
@@ -223,8 +226,9 @@ float4 PS_CloudsLowDef( vertexOutput IN): SV_TARGET
 	float3 ambient=density.w*skylightColour.rgb;
 
 	float opacity=density.z;
+	float3 sunlightColour=lerp(sunlightColour1,sunlightColour2,saturate(IN.texCoords.z));
 	float3 final=(density.x*Beta+lightResponse.y*density.y)*sunlightColour+ambient.rgb;
-	float3 inscatter=skyl.rgb+InscatterFunction(insc,cos0);
+	float3 inscatter=skyl.rgb+earthshadowMultiplier*InscatterFunction(insc,cos0);
 
 	final*=loss;
 	final+=inscatter;
@@ -259,8 +263,9 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 	float3 ambient=density.w*skylightColour.rgb;
 
 	float opacity=density.z;
+	float3 sunlightColour=lerp(sunlightColour1,sunlightColour2,saturate(IN.texCoords.z));
 	float3 final=(density.y*Beta+lightResponse.y*density.x)*sunlightColour+ambient.rgb;
-	float3 inscatter=InscatterFunction(insc,cos0);
+	float3 inscatter=earthshadowMultiplier*InscatterFunction(insc,cos0);
 
 	final*=loss;
 	final+=skyl.rgb+inscatter;
@@ -381,7 +386,6 @@ technique11 simul_clouds
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
 		//SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Clouds()));

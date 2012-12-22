@@ -451,8 +451,9 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,const std::map<std::string,std::string>&defines)
 {
 	HRESULT hr=S_OK;
-	std::cout<<_T("Create effect: ")<<filename<<std::endl;
-	//tstring fn=filename;
+	std::string text_filename=simul::base::WStringToString(filename);
+	std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
+
 	tstring fn=shader_path+filename;
 	
 	D3D10_SHADER_MACRO *macros=NULL;

@@ -261,7 +261,7 @@ void SetTexture()
 {
 }
 
-bool Simul2DCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog)
+bool Simul2DCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha)
 {
 	cubemap;
 	depth_testing;
@@ -318,7 +318,7 @@ static float light_mult=.03f;
 										light_mult*GetCloudInterface()->GetSecondaryLightResponse(),
 										0,
 										0);
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight();
+	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(alt_km);
 	if(IsYVertical())
 		std::swap(sun_dir.y,sun_dir.z);
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(alt_km);

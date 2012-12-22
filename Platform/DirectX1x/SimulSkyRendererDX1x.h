@@ -107,6 +107,7 @@ protected:
 
 	ID3D1xEffectMatrixVariable*			worldViewProj;
 	ID3D1xEffectTechnique*				m_hTechniqueSky;
+	ID3D1xEffectTechnique*				m_hTechniqueEarthShadow;
 	ID3D1xEffectTechnique*				m_hTechniqueSky_CUBEMAP;
 	ID3D1xEffectTechnique*				m_hTechniqueFade3DTo2D;
 	ID3D1xEffectTechnique*				m_hTechniqueSun;
@@ -129,6 +130,8 @@ protected:
 	ID3D1xEffectShaderResourceVariable*	skylTexture;
 	ID3D1xEffectShaderResourceVariable*	fadeTexture1;
 	ID3D1xEffectShaderResourceVariable*	fadeTexture2;
+	
+	ID3DX11EffectConstantBuffer*		earthShadowUniforms;
 
 	ID3D1xTexture2D*					flare_texture;
 
@@ -146,6 +149,9 @@ protected:
 	ID3D1xShaderResourceView*			insc_textures_SRV[3];
 	ID3D1xShaderResourceView*			skyl_textures_SRV[3];
 	ID3D1xShaderResourceView*			moon_texture_SRV;
+	
+	// Shader constant buffers
+	ID3D11Buffer*						earthShadowBuffer;
 
 	int mapped_fade;
 	D3D1x_MAPPED_TEXTURE3D loss_texture_mapped;

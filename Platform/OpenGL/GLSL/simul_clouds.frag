@@ -1,5 +1,6 @@
 // simul_sky.frag - a GLSL fragment shader
 // Copyright 2008 Simul Software Ltd
+#include "simul_inscatter_fns.glsl"
 
 uniform sampler3D cloudDensity1;
 uniform sampler3D cloudDensity2;
@@ -15,13 +16,11 @@ uniform vec4 lightResponse;
 uniform float cloud_interp;
 uniform vec3 lightDir;
 
-// the App updates uniforms "slowly" (eg once per frame) for animation.
-uniform float hazeEccentricity;
 uniform float cloudEccentricity;
-uniform vec3 mieRayleighRatio;
+uniform float fadeInterp;
 uniform vec4 lightningMultipliers;
 uniform vec4 lightningColour;
-
+uniform float earthshadowMultiplier;
 
 // varyings are written by vert shader, interpolated, and read by frag shader.
 varying vec2 noiseCoord;
@@ -35,25 +34,7 @@ varying vec3 loss;
 varying vec4 insc;
 varying vec3 texCoordLightning;
 varying vec2 fade_texc;
-varying vec2 fade_texc_b;
 varying vec3 view;
-#define pi (3.1415926536)
-float HenyeyGreenstein(float g,float cos0)
-{
-	float g2=g*g;
-	float u=1.0+g2-2.0*g*cos0;
-	return (1.0-g2)*pow(u,-1.5)/(4.0*pi);
-}
-
-vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
-{
-	float BetaRayleigh=0.0596831*(1.0+cos0*cos0);
-	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
-	vec3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
-		/(vec3(1.0,1.0,1.0)+inscatter_factor.a*mieRayleighRatio.xyz);
-	vec3 colour=BetaTotal*inscatter_factor.rgb;
-	return colour;
-}
 
 void main(void)
 {
@@ -64,9 +45,6 @@ void main(void)
 	noiseval+=(texture2D(noiseSampler,noiseCoord*8.0).xyz-0.5)/2.0;
 #endif
 	noiseval*=texCoordDiffuse.w;
-	// Would use InscatterFunction if we passed in an isotropic inscatter factors. But otherwise the angular dependence is
-	// built into the vertex value.
-	//vec3 inscatter=InscatterFunction(insc,cos0);
 	vec3 pos=texCoordDiffuse.xyz+fractalScale*texCoordDiffuse.w*noiseval;
 	vec4 density=texture3D(cloudDensity1,pos);
 	vec4 density2=texture3D(cloudDensity2,pos);
@@ -78,11 +56,9 @@ void main(void)
 	float opacity=layerDensity*density.y;
 	vec3 final=(density.z*Beta+lightResponse.y*density.w)*sunlight+density.x*ambientColour.rgb;
 	vec3 loss_lookup=texture2D(lossSampler,fade_texc).rgb;
-	vec4 insc_lookup=texture2D(inscatterSampler,fade_texc)-texture2D(inscatterSampler,fade_texc_b);
+	vec4 insc_lookup=earthshadowMultiplier*texture2D(inscatterSampler,fade_texc);
 	vec3 skyl_lookup=texture2D(skylightSampler,fade_texc).rgb;
-	//final.rgb+=lightning.rgb;
-	//final.rgb*=texture2D(lossSampler,fade_texc).rgb;
-	//final.rgb+=0.05*texture2D(inscatterSampler,fade_texc).rgb;
+
 	final.rgb*=loss_lookup;
 	final.rgb+=InscatterFunction(insc_lookup,cos0);
 	final.rgb+=skyl_lookup;

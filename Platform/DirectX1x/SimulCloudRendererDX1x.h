@@ -143,7 +143,9 @@ protected:
 	ID3D1xEffectVectorVariable* 	lightResponse;
 	ID3D1xEffectVectorVariable* 	lightDir;
 	ID3D1xEffectVectorVariable* 	skylightColour;
-	ID3D1xEffectVectorVariable* 	sunlightColour;
+	ID3D1xEffectVectorVariable* 	sunlightColour1;
+	ID3D1xEffectVectorVariable* 	sunlightColour2;
+	ID3D1xEffectScalarVariable* 	earthshadowMultiplier;
 	ID3D1xEffectVectorVariable* 	fractalScale;
 	ID3D1xEffectScalarVariable* 	interp;
 	ID3D1xEffectVectorVariable* 	mieRayleighRatio;

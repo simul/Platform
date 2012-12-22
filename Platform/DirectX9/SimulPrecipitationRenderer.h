@@ -15,6 +15,7 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Platform/DirectX9/Export.h"
+
 typedef long HRESULT;
 class SimulPrecipitationRenderer: public simul::clouds::BasePrecipitationRenderer
 {
@@ -27,7 +28,7 @@ public:
 	//! Call this when the D3D device has been shut down.
 	void InvalidateDeviceObjects();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	bool Render();
+	void Render();
 #ifdef XBOX
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 #endif
@@ -38,7 +39,6 @@ public:
 		y_vertical=y;
 	}
 protected:
-	bool y_vertical;
 	virtual void TextureRepeatChanged();
 	LPDIRECT3DDEVICE9		m_pd3dDevice;
 	LPDIRECT3DVERTEXDECLARATION9 m_pVtxDecl;

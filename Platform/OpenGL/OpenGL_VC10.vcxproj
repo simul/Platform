@@ -167,6 +167,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="FramebufferGL.cpp" />
+    <ClCompile Include="GpuCloudGenerator.cpp" />
+    <ClCompile Include="GpuSkyGenerator.cpp" />
     <ClCompile Include="LoadGLImage.cpp" />
     <ClCompile Include="LoadGLProgram.cpp" />
     <ClCompile Include="objload.cpp" />
@@ -185,6 +187,9 @@
   <ItemGroup>
     <ClInclude Include="Export.h" />
     <ClInclude Include="FramebufferGL.h" />
+    <ClInclude Include="Glsl.h" />
+    <ClInclude Include="GpuCloudGenerator.h" />
+    <ClInclude Include="GpuSkyGenerator.h" />
     <ClInclude Include="LoadGLImage.h" />
     <ClInclude Include="LoadGLProgram.h" />
     <ClInclude Include="objload.h" />
