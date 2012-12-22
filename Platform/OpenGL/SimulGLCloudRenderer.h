@@ -66,9 +66,6 @@ public:
 	// a callback function that translates from daytime values to overcast settings. Used for
 	// clouds to tell sky when it is overcast.
 	simul::sky::OvercastCallback *GetOvercastCallback();
-	// Save and load a sky sequence
-	std::ostream &Save(std::ostream &os) const;
-	std::istream &Load(std::istream &is) const;
 	//! Clear the sequence()
 	void New();
 	//! This function does nothing as Y is never the vertical in this implementation

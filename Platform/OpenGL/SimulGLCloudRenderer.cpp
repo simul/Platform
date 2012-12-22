@@ -370,12 +370,12 @@ ERROR_CHECK
 	glUniform1f(interp_param,cloudKeyframer->GetInterpolation());
 
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
+	float alt_km=X1.z*.001f;
 	float t=0.f;
 	if(skyInterface)
 	{
-		simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(X1.z*.001f);
+	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(alt_km);
 		glUniform3f(lightDirection_param,sun_dir.x,sun_dir.y,sun_dir.z);
-		
 		simul::sky::float4 amb=skyInterface->GetAmbientLight(X1.z*.001f);
 		amb*=GetCloudInterface()->GetAmbientLightResponse();
 		simul::sky::EarthShadow e=skyInterface->GetEarthShadow(X1.z/1000.f,skyInterface->GetDirectionToSun());
@@ -762,16 +762,6 @@ const char *SimulGLCloudRenderer::GetDebugText()
 	return txt;
 }
 
-// Save and load a sky sequence
-std::ostream &SimulGLCloudRenderer::Save(std::ostream &os) const
-{
-	return cloudKeyframer->Save(os);
-}
-
-std::istream &SimulGLCloudRenderer::Load(std::istream &is) const
-{
-	return cloudKeyframer->Load(is);
-}
 
 void SimulGLCloudRenderer::New()
 {

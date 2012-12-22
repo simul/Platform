@@ -85,7 +85,6 @@ public:
 	void EnableFilter(bool f);
 	virtual void SetFadeMode(FadeMode f);
 	void SetYVertical(bool y);
-	bool IsYVertical() const{return y_vertical;}
 
 protected:
 	// Make up to date with respect to keyframer:
@@ -96,7 +95,6 @@ protected:
 	void EnsureTextureCycle();
 
 	void NumBuffersChanged();
-	bool y_vertical;
 	void InternalRenderHorizontal(int buffer_index=0);
 	void InternalRenderRaytrace(int buffer_index=0);
 	void InternalRenderVolumetric(int buffer_index=0);

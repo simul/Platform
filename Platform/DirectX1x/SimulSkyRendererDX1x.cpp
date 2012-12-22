@@ -298,7 +298,7 @@ void SimulSkyRendererDX1x::EnsureCorrectTextureSizes()
 	int num_alt=i.z;
 	if(!num_dist||!num_elev||!num_alt)
 		return;
-	if(numFadeDistances==num_dist&&numFadeElevations==num_elev&&numAltitudes==num_alt&&skyTexSize==num_elev)
+	if(numFadeDistances==num_dist&&numFadeElevations==num_elev&&numAltitudes==num_alt)
 		return;
 	if(!m_pd3dDevice)
 		return;
@@ -309,7 +309,6 @@ void SimulSkyRendererDX1x::EnsureCorrectTextureSizes()
 	{
 		fade_texture_iterator[i].texture_index=i;
 	}
-	skyTexSize=num_elev;
 	CreateFadeTextures();
 }
 

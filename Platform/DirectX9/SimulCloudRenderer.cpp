@@ -203,7 +203,6 @@ SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	,vertices(NULL)
 	,cpu_fade_vertices(NULL)
 	,last_time(0)
-	,y_vertical(true)
 	,NumBuffers(1)
 {
 	for(int i=0;i<3;i++)
@@ -1631,17 +1630,6 @@ void SimulCloudRenderer::SetFadeMode(FadeMode f)
 	if(fade_mode!=f)
 	{
 		BaseCloudRenderer::SetFadeMode(f);
-		rebuild_shaders=true;
-		RecompileShaders();
-	}
-}
-
-void SimulCloudRenderer::SetYVertical(bool y)
-{
-	if(y_vertical!=y)
-	{
-		y_vertical=y;
-		helper->SetYVertical(y);
 		rebuild_shaders=true;
 		RecompileShaders();
 	}

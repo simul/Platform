@@ -109,7 +109,7 @@ protected:
 	GLint			MieRayleighRatio_param;
 	GLint			hazeEccentricity_param;
 	GLint			lightDirection_sky_param;
-	
+	GLint			sunDir;
 	GLint			earthShadowUniforms;
 	GLuint			earthShadowUniformsUBO;
 	

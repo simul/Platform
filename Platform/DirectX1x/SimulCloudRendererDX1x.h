@@ -114,7 +114,6 @@ protected:
 	void EnsureIlluminationTexturesAreUpToDate();
 	void EnsureTextureCycle();
 
-	bool y_vertical;
 	int mapped;
 	void Unmap();
 	void Map(int texture_index);

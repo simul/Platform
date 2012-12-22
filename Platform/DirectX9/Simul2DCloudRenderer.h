@@ -92,7 +92,6 @@ protected:
 	void EnsureIlluminationTexturesAreUpToDate(){}
 	void EnsureTextureCycle();
 
-	bool y_vertical;
 	bool enabled;
 	simul::base::SmartPtr<simul::clouds::Cloud2DGeometryHelper> helper;
 

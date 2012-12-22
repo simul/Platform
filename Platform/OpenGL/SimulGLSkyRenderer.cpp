@@ -331,6 +331,7 @@ void SimulGLSkyRenderer::UseProgram(GLuint p)
 		current_program=p;
 		MieRayleighRatio_param		=glGetUniformLocation(current_program,"mieRayleighRatio");
 		lightDirection_sky_param	=glGetUniformLocation(current_program,"lightDir");
+		sunDir							=glGetUniformLocation(current_program,"sunDir");
 		hazeEccentricity_param		=glGetUniformLocation(current_program,"hazeEccentricity");
 		skyInterp_param				=glGetUniformLocation(current_program,"skyInterp");
 		skyTexture1_param			=glGetUniformLocation(current_program,"inscTexture");

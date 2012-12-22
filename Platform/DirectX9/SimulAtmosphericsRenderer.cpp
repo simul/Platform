@@ -35,6 +35,7 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
 	,vertexDecl(NULL)
 	,effect(NULL)
 	,lightDir(NULL)
+	,sunDir(NULL)
 	,cloudScales(NULL)
 	,cloudOffset(NULL)
 	,lightColour(NULL)
@@ -139,6 +140,7 @@ void SimulAtmosphericsRenderer::RecompileShaders()
 
 
 	lightDir			=effect->GetParameterByName(NULL,"lightDir");
+	sunDir				=effect->GetParameterByName(NULL,"sunDir");
 	mieRayleighRatio	=effect->GetParameterByName(NULL,"mieRayleighRatio");
 	hazeEccentricity	=effect->GetParameterByName(NULL,"hazeEccentricity");
 	fadeInterp			=effect->GetParameterByName(NULL,"fadeInterp");
@@ -253,14 +255,15 @@ bool SimulAtmosphericsRenderer::RenderGodRays(float strength)
 		{
 			hr=effect->SetFloat(hazeEccentricity,skyInterface->GetMieEccentricity());
 			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
-			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight(alt_km));
+			D3DXVECTOR4 sundir(skyInterface->GetDirectionToSun());
+			D3DXVECTOR4 light_dir(skyInterface->GetDirectionToLight(alt_km));
 			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(alt_km));
 			
 			light_colour*=strength;
 			if(y_vertical)
-				std::swap(sun_dir.y,sun_dir.z);
+				std::swap(light_dir.y,light_dir.z);
 
-			effect->SetVector	(lightDir			,&sun_dir);
+			effect->SetVector	(lightDir			,&light_dir);
 			effect->SetVector	(lightColour	,(const D3DXVECTOR4*)&light_colour);
 		}
 		hr=effect->SetTexture(maxDistanceTexture,max_distance_texture);
@@ -394,10 +397,15 @@ bool SimulAtmosphericsRenderer::Render()
 		{
 			hr=effect->SetFloat(hazeEccentricity,skyInterface->GetMieEccentricity());
 			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
-			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToLight(altitude_km));
+			D3DXVECTOR4 light_dir(skyInterface->GetDirectionToLight(altitude_km));
+			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
 			if(y_vertical)
+			{
+				std::swap(light_dir.y,light_dir.z);
 				std::swap(sun_dir.y,sun_dir.z);
-			effect->SetVector	(lightDir			,&sun_dir);
+			}
+			effect->SetVector	(lightDir			,&light_dir);
+			effect->SetVector	(sunDir			,&sun_dir);
 			effect->SetVector	(mieRayleighRatio	,&mie_rayleigh_ratio);
 		}
 		hr=effect->SetTexture(lossTexture1,loss_texture);

@@ -127,7 +127,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 	lightningIlluminationTextureResource(NULL)
 	,blendAndWriteAlpha(NULL)
 	,blendAndDontWriteAlpha(NULL)
-	,y_vertical(true)
 	,enable_lightning(false)
 	,lightning_active(false)
 	,timing(0.f)
