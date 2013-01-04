@@ -6,7 +6,6 @@
 // in accordance with the terms of that agreement.
 
 #pragma once
-#include <GL/glew.h>
 #include "Simul/Clouds/BaseCloudRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
@@ -81,10 +80,10 @@ protected:
 	void EnsureTextureCycle();
 
 	GLuint clouds_program;
-	GLuint cross_section_program;
-	
-	GLuint cloud_shadow_program;
 
+	GLuint cross_section_program;
+
+	GLuint cloud_shadow_program;
 	GLint eyePosition_param;
 	GLint lightResponse_param;
 	GLint lightDir_param;
@@ -115,7 +114,7 @@ unsigned short *pIndices;
 	GLint cloudEccentricity_param;
 	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;
-	GLint distanceToIllumination_param;
+	GLint earthshadowMultiplier;
 	
 	GLint		maxFadeDistanceMetres_param;
 	GLuint		illum_tex;

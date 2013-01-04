@@ -1,5 +1,4 @@
 #pragma once
-#include <GL/glew.h>
 #include "Simul/Terrain/BaseUnderwaterRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
 namespace simul

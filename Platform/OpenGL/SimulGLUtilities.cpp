@@ -1,8 +1,8 @@
+#include <GL/glew.h>
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Sky/Float4.h"
 #include <windows.h>
-#include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/gl.h>
 #include <iostream>
@@ -125,14 +125,23 @@ static int win_h=0;
 void SetOrthoProjection(int w,int h)
 {
 	win_h=h;
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glOrtho(0,w,0,h,-1.0,1.0);
-		glMatrixMode(GL_TEXTURE);
-		glLoadIdentity();
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-		glViewport(0,0,w,h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0,w,0,h,-1.0,1.0);
+	glMatrixMode(GL_TEXTURE);
+	glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glViewport(0,0,w,h);
+}
+
+void Ortho()
+{
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0,1.0,0,1.0,-1.0,1.0);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 }
 
 void SetTopDownOrthoProjection(int w,int h)

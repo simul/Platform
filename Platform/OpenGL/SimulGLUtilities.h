@@ -3,7 +3,6 @@
 
 #include "Simul/Platform/OpenGL/Export.h"
 #include <assert.h>
-#include <GL/glew.h>
 
 namespace simul
 {
@@ -33,6 +32,7 @@ extern void RenderTexture(int x,int y,int w,int h);
 extern bool SIMUL_OPENGL_EXPORT CheckExtension(const char *txt);
 
 extern bool IsExtensionSupported(const char *name);
+extern SIMUL_OPENGL_EXPORT void Ortho();
 //! A wrapper around glOrtho() that also resets the GL matrices, and stores window height for later use.
 extern SIMUL_OPENGL_EXPORT void SetOrthoProjection(int w,int h);
 extern SIMUL_OPENGL_EXPORT void SetTopDownOrthoProjection(int w,int h);

@@ -64,6 +64,7 @@ public:
 
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual		void SetYVertical(bool ){}
+	const		char *GetDebugText();
 protected:
 	//! \internal Switch the current program, either sky_program or earthshadow_program.
 	//! Also sets the parameter variables.	
@@ -109,7 +110,6 @@ protected:
 	GLint			MieRayleighRatio_param;
 	GLint			hazeEccentricity_param;
 	GLint			lightDirection_sky_param;
-	GLint			sunDir;
 	GLint			earthShadowUniforms;
 	GLuint			earthShadowUniformsUBO;
 	

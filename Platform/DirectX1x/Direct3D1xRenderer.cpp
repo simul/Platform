@@ -27,7 +27,9 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 		,CelestialDisplay(false)
 		,enabled(true)
 		,ShowWater(true)
+		,MakeCubemap(true)
 		,ShowCloudCrossSections(false)
+		,ReverseDepth(false)
 {
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,true,false,w,h,true,true,true);
 	AddChild(simulWeatherRenderer.get());
@@ -124,6 +126,8 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 {
 	if(!enabled)
 		return;
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	D3DXMATRIX world,view,proj;
 	static float nr=0.01f;
 	static float fr=250000.f;
@@ -146,7 +150,8 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		simulWeatherRenderer->SetMatrices(view,proj);
 		simulWeatherRenderer->RenderSky(UseSkyBuffer,false);
-		simulWeatherRenderer->RenderCubemap();
+		if(MakeCubemap)
+			simulWeatherRenderer->RenderCubemap();
 	}
 	if(simulOceanRenderer&&ShowWater)
 	{

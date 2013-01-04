@@ -10,7 +10,6 @@
 #include "Simul/Base/Referenced.h"
 #include "Simul/Terrain/BaseTerrainRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
-#include <GL/glew.h>
 
 SIMUL_OPENGL_EXPORT_CLASS SimulGLTerrainRenderer : public simul::terrain::BaseTerrainRenderer
 {
@@ -21,13 +20,9 @@ public:
 	void RecompileShaders();
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
-	// Interface
-	void SetMaxFadeDistanceKm(float dist_km);
-	//! Render the terrain.
 	void Render();
 private:
 	void MakeTextures();
-	float max_fade_distance_metres;
 	GLuint texArray;
 	GLuint program;
 	GLint eyePosition_param;

@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/SimuLGLUtilities.h"
@@ -9,7 +10,6 @@
 
 SimulGLTerrainRenderer::SimulGLTerrainRenderer()
 	:program(0)
-	,max_fade_distance_metres(200000.f)
 {
 }
 
@@ -91,11 +91,6 @@ void SimulGLTerrainRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_TEXTURE(texArray);
 }
 
-void SimulGLTerrainRenderer::SetMaxFadeDistanceKm(float dist_km)
-{
-	max_fade_distance_metres=dist_km*1000.f;
-}
-
 void SimulGLTerrainRenderer::Render()
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -121,11 +116,12 @@ void SimulGLTerrainRenderer::Render()
 	if(baseSkyInterface)
 	{
 		simul::math::Vector3 irr=baseSkyInterface->GetLocalIrradiance(0.f);
-		irr*=0.05f;
-		glUniform3f(sunlight_param,irr.x,irr.y,irr.z);
+	irr*=0.05f;
+	glUniform3f(sunlight_param,irr.x,irr.y,irr.z);
 		simul::math::Vector3 sun_dir=baseSkyInterface->GetDirectionToLight(0.f);
-		glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
+	glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	}
+	float max_fade_distance_metres=MaxFadeDistanceKm*1000.f;
 	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 
 	glActiveTexture(GL_TEXTURE0);

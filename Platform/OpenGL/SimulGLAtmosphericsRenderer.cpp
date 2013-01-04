@@ -1,3 +1,4 @@
+#include <gl/glew.h>
 #include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/SimuLGLUtilities.h"
@@ -14,6 +15,8 @@ SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
 	,initialized(false)
 	,current_program(0)
 	,earthShadowUniformsBindingIndex(1)
+	,earthShadowUniforms(0)
+	,earthShadowUniformsUBO(0)
 {
 	framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D,"simul_atmospherics");
 }
@@ -73,6 +76,9 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 {
 	SAFE_DELETE_PROGRAM(godrays_program);
+	
+	earthShadowUniforms=-1;
+	earthShadowUniformsUBO=-1;
 }
 
 void SimulGLAtmosphericsRenderer::UseProgram(GLuint p)
@@ -92,6 +98,7 @@ ERROR_CHECK
 		invViewProj				=glGetUniformLocation(current_program,"invViewProj");
 		mieRayleighRatio		=glGetUniformLocation(current_program,"mieRayleighRatio");
 		cloudsTexture			=glGetUniformLocation(current_program,"cloudsTexture");
+		earthShadowUniforms		=glGetUniformBlockIndex(current_program, "EarthShadowUniforms");
 		//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
 ERROR_CHECK
 		// If that block IS in the shader program, then BIND it to the relevant UBO.

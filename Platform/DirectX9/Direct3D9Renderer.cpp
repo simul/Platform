@@ -39,6 +39,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	,device_reset(true)
 	,UseHdrPostprocessor(true)
 	,ShowWater(true)
+	,ReverseDepth(false)
 {
 	simulWeatherRenderer=new SimulWeatherRenderer(env,true,w,h,true,true);
 	if(simulWeatherRenderer)
@@ -114,7 +115,7 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 	RT::SetScreenSize(width,height);
 	float weather_restore_time=0.f,hdr_restore_time=0.f,terrain_restore_time=0.f,optics_restore_time=0.f;
 	simul::base::Timer timer;
-	
+
 	
 	gpuCloudGenerator.RestoreDeviceObjects(pd3dDevice);
 
@@ -218,6 +219,8 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 
 void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime, float fTimeStep)
 {
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	fTime;fTimeStep;
 	D3DXMATRIX world,view,proj;
 	if(device_reset)

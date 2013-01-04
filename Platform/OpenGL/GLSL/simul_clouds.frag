@@ -16,12 +16,11 @@ uniform vec4 lightResponse;
 uniform float cloud_interp;
 uniform vec3 lightDir;
 
-// the App updates uniforms "slowly" (eg once per frame) for animation.
 uniform float cloudEccentricity;
 uniform float fadeInterp;
 uniform vec4 lightningMultipliers;
 uniform vec4 lightningColour;
-
+uniform float earthshadowMultiplier;
 
 // varyings are written by vert shader, interpolated, and read by frag shader.
 varying vec2 noiseCoord;
@@ -57,7 +56,7 @@ void main(void)
 	float opacity=layerDensity*density.y;
 	vec3 final=(density.z*Beta+lightResponse.y*density.w)*sunlight+density.x*ambientColour.rgb;
 	vec3 loss_lookup=texture2D(lossSampler,fade_texc).rgb;
-	vec4 insc_lookup=texture2D(inscatterSampler,fade_texc);
+	vec4 insc_lookup=earthshadowMultiplier*texture2D(inscatterSampler,fade_texc);
 	vec3 skyl_lookup=texture2D(skylightSampler,fade_texc).rgb;
 
 	final.rgb*=loss_lookup;

@@ -273,6 +273,7 @@ ERROR_CHECK
 	for(int i=0;i<numAltitudes;i++)
 	{
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
+
 		glUseProgram(fade_3d_to_2d_program);
 		GLint			altitudeTexCoord_fade;
 		GLint			skyInterp_fade;
@@ -307,6 +308,7 @@ ERROR_CHECK
 		glBindTexture(GL_TEXTURE_3D,skylight_textures[1]);
 		RenderTexture(x+16+5*(size+8)	,i*(size+8)+8, size,size);
 	}
+
 	glUseProgram(0);
 ERROR_CHECK
 	glActiveTexture(GL_TEXTURE0);
@@ -329,13 +331,12 @@ void SimulGLSkyRenderer::UseProgram(GLuint p)
 	if(p&&p!=current_program)
 	{
 		current_program=p;
-		MieRayleighRatio_param		=glGetUniformLocation(current_program,"mieRayleighRatio");
-		lightDirection_sky_param	=glGetUniformLocation(current_program,"lightDir");
-		sunDir							=glGetUniformLocation(current_program,"sunDir");
-		hazeEccentricity_param		=glGetUniformLocation(current_program,"hazeEccentricity");
-		skyInterp_param				=glGetUniformLocation(current_program,"skyInterp");
-		skyTexture1_param			=glGetUniformLocation(current_program,"inscTexture");
-		skylightTexture_param		=glGetUniformLocation(current_program,"skylightTexture");
+		MieRayleighRatio_param			=glGetUniformLocation(current_program,"mieRayleighRatio");
+		lightDirection_sky_param		=glGetUniformLocation(current_program,"lightDir");
+		hazeEccentricity_param			=glGetUniformLocation(current_program,"hazeEccentricity");
+		skyInterp_param					=glGetUniformLocation(current_program,"skyInterp");
+		skyTexture1_param				=glGetUniformLocation(current_program,"inscTexture");
+		skylightTexture_param			=glGetUniformLocation(current_program,"skylightTexture");
 			
 		altitudeTexCoord_param		=glGetUniformLocation(current_program,"altitudeTexCoord");
 		
@@ -797,4 +798,14 @@ void SimulGLSkyRenderer::DrawLines(Vertext *lines,int vertex_count,bool strip)
 void SimulGLSkyRenderer::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
 	::PrintAt3dPos(p,text,colr,offsetx,offsety);
+}
+
+const char *SimulGLSkyRenderer::GetDebugText()
+{
+	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
+								skyKeyframer->GetAltitudeKM()
+								,skyKeyframer->GetDirectionToSun());
+	static char txt[400];
+	sprintf_s(txt,400,"(%4.4g, %4.4g, %4.4g) %4.4g, %4.4g, %4.4g",e.normal.x,e.normal.y,e.normal.z,e.radius_on_cylinder-1.f,e.terminator_cosine,e.illumination_altitude);
+	return txt;
 }

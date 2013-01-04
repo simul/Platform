@@ -23,7 +23,7 @@ void main()
 	vec3 colour=lookup.rgb;
 	colour*=loss;
 	
-	vec4 insc=EarthShadowFunction(texc2,view,depth);
+	vec4 insc=EarthShadowFunction(texc2,view);
 	vec4 skyl=texture2D(skylightTexture,texc2);
 	
 	float cos0=dot(view,lightDir);

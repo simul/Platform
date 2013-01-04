@@ -1,4 +1,8 @@
 uniform sampler2D imageTexture;
+
+uniform sampler2D coverageTexture1;
+uniform sampler2D coverageTexture2;
+
 uniform sampler2D lossSampler;
 uniform sampler2D inscatterSampler;
 uniform sampler2D skylightSampler;
@@ -11,6 +15,7 @@ uniform vec3 lightDir;
 uniform vec3 eyePosition;
 uniform vec3 sunlight;
 uniform float maxFadeDistanceMetres;
+uniform float cloudInterp;
 
 varying vec2 texc;
 varying vec3 wPosition;
@@ -41,11 +46,16 @@ void main()
 	vec2 fade_texc		=vec2(sqrt(length(difference)/maxFadeDistanceMetres),0.5*(1.0-sine));
 
 	float cos0			=dot(normalize(lightDir),(view));
+	
+	// Global coverage. 
+    vec4 coverage		=mix(texture(coverageTexture1,texc),texture(coverageTexture2,texc),cloudInterp);
     // original image
-    vec4 c				=texture2D(imageTexture,texc);
-	float opacity		=.2*c.r;
+    
+    vec4 c				=texture2D(imageTexture,texc*40.0);
+    float opacity		=clamp(coverage.y+c.a-0.5,0,1.0);
 	float light			=HenyeyGreenstein(cloudEccentricity,cos0);
-	vec3 final			=c.rgb*sunlight*(lightResponse.w+lightResponse.x*light);
+	// In the detail texture, lightng is present
+	vec3 final			=sunlight*(lightResponse.w*c.y+lightResponse.x*light*c.x);
 	vec3 loss_lookup	=texture2D(lossSampler,fade_texc).rgb;
 	vec4 insc_lookup	=texture2D(inscatterSampler,fade_texc);
 	final				*=loss_lookup;

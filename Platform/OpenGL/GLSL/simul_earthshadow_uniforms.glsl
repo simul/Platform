@@ -1,17 +1,15 @@
 layout(std140) uniform EarthShadowUniforms
 {
-	uniform vec3 earthShadowNormal;
+	uniform vec3 sunDir;
 	uniform float radiusOnCylinder;
+	uniform vec3 earthShadowNormal;
 	uniform float maxFadeDistance;
 	uniform float terminatorCosine;
-	uniform vec3 sunDir;
 };
 
 #ifndef __cplusplus
-vec4 EarthShadowFunction(vec2 texc2,vec3 view,float depth)
+vec4 EarthShadowFunction(vec2 texc2,vec3 view)
 {
-	vec4 insc=texture2D(inscTexture,texc2);
-	
 	// The Earth's shadow: let shadowNormal be the direction normal to the sunlight direction
 	//						but in the plane of the sunlight and the vertical.
 	// First get the part of view that is along the light direction
@@ -30,28 +28,32 @@ vec4 EarthShadowFunction(vec2 texc2,vec3 view,float depth)
 	// Normalized so that Earth radius is 1.0..
 	float u=1.0-r*r*cos2;
 	float d=0.0;
+	float L=0.0;
+	float sine_gamma=0.0;
 	if(u>=0.0)
 	{
-		float L=-r*sine_phi;
+		L=-r*sine_phi;
 		if(r<=1.0)
 			L+=sqrt(u);
 		else
 			L-=sqrt(u);
 		L=max(0.0,L);
-		float sine_gamma=length(on_cross_section);
+		sine_gamma=length(on_cross_section);
 		L=L/sine_gamma;
 		// L is the distance to the outside of the Earth's shadow in this direction, normalized to the Earth's radius.
 		// Renormalize it to the fade distance.
 		d=L/maxFadeDistance;
 	}
-	d=min(d,depth);
+	float a=sqrt(d);
+	a=min(a,texc2.x);
 	// Inscatter at distance d
-	vec2 texcoord_d=vec2(sqrt(d),texc2.y);
+	vec2 texcoord_d=vec2(a,texc2.y);
+	vec4 insc=texture2D(inscTexture,texc2);
 	vec4 inscb=texture(inscTexture,texcoord_d);
 	// what should the light be at distance d?
 	// We subtract the inscatter to d if we're looking OUT FROM the cylinder,
 	// but we just use the inscatter to d if we're looking INTO the cylinder.
-	if(r<=1.0||d==0.0)
+	if(r<=1.0||a==0.0)
 	{
 		insc-=inscb*saturate(in_shadow);
     }

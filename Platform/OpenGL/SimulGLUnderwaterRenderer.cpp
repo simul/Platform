@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include "SimulGLUnderwaterRenderer.h"
 using namespace simul;
 using namespace opengl;
