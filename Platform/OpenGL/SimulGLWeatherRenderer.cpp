@@ -71,7 +71,7 @@ void SimulGLWeatherRenderer::EnableCloudLayers()
 	if(simul2DCloudRenderer)
 	{
 		if(simulSkyRenderer.get())
-		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetBaseSkyInterface());
+			simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetBaseSkyInterface());
 		simul2DCloudRenderer->Create();
 		if(device_initialized)
 			simul2DCloudRenderer->RestoreDeviceObjects(NULL);

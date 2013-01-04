@@ -1,3 +1,5 @@
+
+#include <GL/glew.h>
 #include "FramebufferGL.h"
 #include <iostream>
 #include <string>
@@ -98,8 +100,8 @@ void FramebufferGL::SetWidthAndHeight(int w,int h)
 {
 	if(w!=m_width||h!=m_height)
 	{
-	m_width=w;
-	m_height=h;
+		m_width=w;
+		m_height=h;
 		SAFE_DELETE_TEXTURE(m_tex_col[0]);
 		SAFE_DELETE_RENDERBUFFER(m_rb_depth);
 		SAFE_DELETE_FRAMEBUFFER(m_fb);
@@ -120,8 +122,8 @@ bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format,GLint 
 	if(!m_tex_col[index]||iformat!=colour_iformat)
 	{
 		colour_iformat=iformat;
-	glGenTextures(1, &m_tex_col[index]);
-	glBindTexture(m_target, m_tex_col[index]);
+		glGenTextures(1, &m_tex_col[index]);
+		glBindTexture(m_target, m_tex_col[index]);
 		glTexParameteri(m_target, GL_TEXTURE_WRAP_S, wrap_clamp);
 		glTexParameteri(m_target, GL_TEXTURE_WRAP_T, wrap_clamp);
 	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

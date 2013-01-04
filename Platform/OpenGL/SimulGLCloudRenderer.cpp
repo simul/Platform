@@ -8,6 +8,7 @@
 
 // SimulGLCloudRenderer.cpp A renderer for 3d clouds.
 
+#include <GL/glew.h>
 #include "Simul/Base/Timer.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -785,7 +786,6 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
-	int *tex=new int[3*depth_z];
 
 	for(int i=0;i<3;i++)
 	{
@@ -816,7 +816,6 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 	unsigned cloud_mem=cloudKeyframer->GetMemoryUsage();
 	std::cout<<"Cloud memory usage: "<<cloud_mem/1024<<"k"<<std::endl;
 
-	delete [] tex;
 }
 
 void SimulGLCloudRenderer::EnsureTexturesAreUpToDate()
@@ -914,7 +913,7 @@ static float mult=1.f;
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;

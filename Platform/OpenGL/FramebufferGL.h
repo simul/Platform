@@ -1,7 +1,6 @@
 #ifndef FRAMEBUFFERGL_H
 #define FRAMEBUFFERGL_H
 
-#include <GL/glew.h>
 #include <stack>
 #include "LoadGLImage.h"
 #include "Simul/Platform/OpenGL/Export.h"
@@ -10,6 +9,9 @@
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)
+#endif
+#ifndef GL_DEPTH_COMPONENT24
+#define GL_DEPTH_COMPONENT24 0x81A6
 #endif
 
 SIMUL_OPENGL_EXPORT_CLASS FramebufferGL:public BaseFramebuffer

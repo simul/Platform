@@ -11,6 +11,7 @@
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/SimulGLSkyRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLCloudRenderer.h"
+#include "Simul/Platform/OpenGL/SimulGL2DCloudRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Sky/Float4.h"
@@ -119,11 +120,18 @@ ERROR_CHECK
 ERROR_CHECK
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);
-		if(simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())
+		if(ShowCloudCrossSections)
 		{
-			SetTopDownOrthoProjection(width,height);
-			if(ShowCloudCrossSections)
+			if(simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
+			{
+				SetTopDownOrthoProjection(width,height);
 				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width,height);
+			}
+			if(simulWeatherRenderer->Get2DCloudRenderer()&&simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
+			{
+				SetTopDownOrthoProjection(width,height);
+				simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
+			}
 		}
 	}
 	renderUI();

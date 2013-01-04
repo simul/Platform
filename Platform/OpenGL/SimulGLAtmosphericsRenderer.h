@@ -10,7 +10,6 @@
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Platform/OpenGL/Export.h"
-#include <GL/glew.h>
 
 SIMUL_OPENGL_EXPORT_CLASS SimulGLAtmosphericsRenderer : public simul::sky::BaseAtmosphericsRenderer
 {

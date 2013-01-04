@@ -6,30 +6,9 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
-#include "SimulPrecipitationRendererdx1x.h"
-
-#ifdef XBOX
-	#include <dxerr.h>
-	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("game:\\");
-	static DWORD default_effect_flags=0;
-	static D3DPOOL d3d_memory_pool=D3DUSAGE_CPU_CACHED_MEMORY;
-#else
-	#include <tchar.h>
-	#include <d3d10.h>
-	#include <d3dx10.h>
-	#include <dxerr.h>
-	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("");
-	#define PIXBeginNamedEvent(a,b) D3DPERF_BeginEvent(a,L##b)
-	#define PIXEndNamedEvent D3DPERF_EndEvent
-//	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
-//	static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
-#endif
-
+#include "SimulPrecipitationRendererDX1x.h"
 #include "Simul/Base/SmartPtr.h"
+#include "CreateEffectDX1x.h"
 
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
@@ -40,13 +19,14 @@
 
 typedef std::basic_string<TCHAR> tstring;
 
-SimulPrecipitationRenderer::SimulPrecipitationRenderer() :
-	m_pVtxDecl(NULL),
-	m_pRainEffect(NULL),
-	rain_texture(NULL),
-	radius(10.f),
-	height(100.f),
-	rain_intensity(0.f)
+SimulPrecipitationRendererDX1x::SimulPrecipitationRendererDX1x() :
+	m_pVtxDecl(NULL)
+	,m_pVertexBuffer(NULL)
+	,m_pRainEffect(NULL)
+	,rain_texture(NULL)
+	,radius(10.f)
+	,height(100.f)
+	,rain_intensity(0.f)
 {
 }
 
@@ -59,9 +39,15 @@ struct Vertex_t
 #define NUM_VERT ((CONE_SIDES+1)*4)
 static Vertex_t vertices[NUM_VERT];
 
-HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( ID3D10Device* dev)
+HRESULT SimulPrecipitationRendererDX1x::RestoreDeviceObjects( void* dev)
 {
-	m_pd3dDevice=dev;
+	m_pd3dDevice=(ID3D1xDevice*)dev;
+#ifdef DX10
+	m_pImmediateContext=dev;
+#else
+	SAFE_RELEASE(m_pImmediateContext);
+	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+#endif
 	HRESULT hr=S_OK;
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
 	D3DXMatrixIdentity(&world);
@@ -88,50 +74,55 @@ HRESULT SimulPrecipitationRenderer::RestoreDeviceObjects( ID3D10Device* dev)
 		vertices[index].fade=0.f;
 		index++;
 	}
-	D3D10_INPUT_ELEMENT_DESC decl[] = {
-		{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D10_INPUT_PER_VERTEX_DATA,0},
-		{"TEXCOORD",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,12,D3D10_INPUT_PER_VERTEX_DATA,0}
+    LPD3DXBUFFER errors=0;
+	CreateEffect(m_pd3dDevice,&m_pRainEffect,L"simul_rain.fx");
+
+	SAFE_RELEASE(rain_texture);
+	rain_texture		=simul::dx11::LoadTexture("Rain.jpg");
+	m_hTechniqueRain	=m_pRainEffect->GetTechniqueByName("simul_rain");
+	worldViewProj		=m_pRainEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	offset				=m_pRainEffect->GetVariableByName("offset")->AsScalar();
+	intensity			=m_pRainEffect->GetVariableByName("intensity")->AsScalar();
+	lightColour			=m_pRainEffect->GetVariableByName("lightColour")->AsVector();
+	
+	D3D1x_INPUT_ELEMENT_DESC decl[] = {
+		{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D1x_INPUT_PER_VERTEX_DATA,0},
+		{"TEXCOORD",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,12,D3D1x_INPUT_PER_VERTEX_DATA,0}
 	};
 	SAFE_RELEASE(m_pVtxDecl);
-	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
+    D3D1x_PASS_DESC PassDesc;
+	m_hTechniqueRain->GetPassByIndex(0)->GetDesc(&PassDesc);
+	hr=m_pd3dDevice->CreateInputLayout(decl,1, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pVtxDecl);
+    D3D1x_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    InitData.pSysMem = vertices;
+    InitData.SysMemPitch = sizeof(Vertex_t);
+    m_pd3dDevice->CreateInputLayout(decl,1, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pVtxDecl);
 
-    LPD3DXBUFFER errors=0;
-	if(!m_pRainEffect)
-		V_RETURN(D3DXCreateEffectFromFile(
-				m_pd3dDevice,
-				TEXT("media\\HLSL\\simul_rain.fx"),
-				NULL,
-				NULL,
-				default_effect_flags,
-				NULL,
-				&m_pRainEffect,
-				&errors));
-
-	SAFE_RELEASE(rain_texture);
-	V_RETURN(hr=D3DXCreateTextureFromFile(m_pd3dDevice,L"Media/Textures/Rain.jpg",&rain_texture));
-
-	m_hTechniqueRain	=m_pRainEffect->GetTechniqueByName("simul_rain");
-	worldViewProj		=m_pRainEffect->GetVariableByName("worldViewProj");
-	offset				=m_pRainEffect->GetVariableByName("offset");
-	intensity			=m_pRainEffect->GetVariableByName("intensity");
-	lightColour			=m_pRainEffect->GetVariableByName("lightColour");
-	
+	D3D1x_BUFFER_DESC desc=
+	{
+        36*sizeof(Vertex_t),
+        D3D1x_USAGE_DEFAULT,
+        D3D1x_BIND_VERTEX_BUFFER,
+        0,
+        0
+	};
+	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer);
 	return hr;
 }
 
 
-HRESULT SimulPrecipitationRenderer::InvalidateDeviceObjects()
+HRESULT SimulPrecipitationRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-	if(m_pRainEffect)
-        hr=m_pRainEffect->OnLostDevice();
 	SAFE_RELEASE(m_pRainEffect);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(rain_texture);
+	SAFE_RELEASE(m_pVertexBuffer);
 	return hr;
 }
 
-HRESULT SimulPrecipitationRenderer::Destroy()
+HRESULT SimulPrecipitationRendererDX1x::Destroy()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pVtxDecl);
@@ -140,33 +131,31 @@ HRESULT SimulPrecipitationRenderer::Destroy()
 	return hr;
 }
 
-SimulPrecipitationRenderer::~SimulPrecipitationRenderer()
+SimulPrecipitationRendererDX1x::~SimulPrecipitationRendererDX1x()
 {
 	Destroy();
 }
 	static const float radius=50.f;
 	static const float height=150.f;
 
-HRESULT SimulPrecipitationRenderer::Render()
+HRESULT SimulPrecipitationRendererDX1x::Render()
 {
 	PIXBeginNamedEvent(0,"Render Precipitation");
-	m_pd3dDevice->SetTexture(0,rain_texture);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU,D3DTADDRESS_WRAP);
+	rainTexture->SetResource(rain_texture);
+/*	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU,D3DTADDRESS_WRAP);
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSV,D3DTADDRESS_WRAP);
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER,D3DTEXF_LINEAR);
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER,D3DTEXF_LINEAR);
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MIPFILTER,D3DTEXF_LINEAR);
+*/
+	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 
-	HRESULT hr=m_pd3dDevice->IASetInputLayout( m_pVtxDecl );
-
-	m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+/*	m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 	m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
     hr=m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
 	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
     m_pd3dDevice->SetRenderState(D3DRS_FILLMODE,D3DFILL_SOLID);
-
-	m_pRainEffect->SetTechnique( m_hTechniqueRain );
-
+*/
 	D3DXMatrixIdentity(&world);
 	world._41=cam_pos.x;
 	world._42=cam_pos.y;
@@ -180,29 +169,45 @@ HRESULT SimulPrecipitationRenderer::Render()
 	D3DXMatrixMultiply(&tmp1, &world,&view);
 	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
-	m_pRainEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
-	m_pRainEffect->AsScalar()->SetFloat(offset,offs);
-	m_pRainEffect->AsScalar()->SetFloat(intensity,rain_intensity);
+	worldViewProj->SetMatrix((const float *)(&tmp1));
+	offset->SetFloat(offs);
+	intensity->SetFloat(rain_intensity);
 
-	m_pRainEffect->SetVector(lightColour,(D3DXVECTOR4*)(light_colour));
+	lightColour->SetFloatVector((const float*)(light_colour));
 
 	UINT passes=1;
-	hr=m_pRainEffect->Begin( &passes, 0 );
 	for(unsigned i = 0 ; i < passes ; ++i )
 	{
-		hr=m_pRainEffect->BeginPass(i);
-		hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,NUM_VERT-2,vertices,sizeof(Vertex_t));
-		hr=m_pRainEffect->EndPass();
+		ApplyPass(m_hTechniqueRain->GetPassByIndex(i));
+		
+		m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
+		UINT stride = sizeof(Vertex_t);
+		UINT offset = 0;
+		UINT Strides[1];
+		UINT Offsets[1];
+		Strides[0] = 0;
+		Offsets[0] = 0;
+		m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
+													1,					// the number of buffers in the array
+													&m_pVertexBuffer,	// the array of vertex buffers
+													&stride,			// array of stride values, one for each buffer
+													&offset );
+
+		m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+
+		m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		m_pImmediateContext->Draw(NUM_VERT-2,0);
 	}
-	hr=m_pRainEffect->End();
-	m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-    hr=m_pd3dDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
+	//hr=m_pRainEffect->End();
+	//m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+  //  hr=m_pd3dDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
 	D3DXMatrixIdentity(&world);
 	PIXEndNamedEvent();
-	return hr;
+	return S_OK;
 }
 
-void SimulPrecipitationRenderer::SetLightColour(const float c[4])
+void SimulPrecipitationRendererDX1x::SetLightColour(const float c[4])
 {
 	static float cc=0.05f;
 	light_colour[0]=cc*c[0];
@@ -211,14 +216,14 @@ void SimulPrecipitationRenderer::SetLightColour(const float c[4])
 	light_colour[3]=1.f;
 }
 
-void SimulPrecipitationRenderer::SetMatrices(const D3DXMATRIX &w,const D3DXMATRIX &v,const D3DXMATRIX &p)
+void SimulPrecipitationRendererDX1x::SetMatrices(const D3DXMATRIX &w,const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	world=w;
 	view=v;
 	proj=p;
 }
 
-void SimulPrecipitationRenderer::Update(float dt)
+void SimulPrecipitationRendererDX1x::Update(float dt)
 {
 	static bool pause=false;
 		static float cc=1.6f;

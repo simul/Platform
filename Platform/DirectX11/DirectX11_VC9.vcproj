@@ -356,7 +356,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SimulPrecipitationRendererDX1x.cpp"
+				RelativePath="..\DirectX1x\SimulPrecipitationRendererDX1x.cpp"
 				>
 			</File>
 			<File
@@ -364,7 +364,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SimulTerrainRendererDX1x.cpp"
+				RelativePath="..\DirectX1x\SimulTerrainRendererDX1x.cpp"
 				>
 			</File>
 			<File
@@ -438,7 +438,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SimulPrecipitationRendererDX1x.h"
+				RelativePath="..\DirectX1x\SimulPrecipitationRendererDX1x.h"
 				>
 			</File>
 			<File
@@ -446,7 +446,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SimulTerrainRendererDX1x.h"
+				RelativePath="..\DirectX1x\SimulTerrainRendererDX1x.h"
 				>
 			</File>
 			<File

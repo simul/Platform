@@ -3,7 +3,6 @@
 
 #include "Simul/Platform/OpenGL/Export.h"
 #include <assert.h>
-#include <GL/glew.h>
 
 namespace simul
 {
@@ -33,6 +32,7 @@ extern void RenderTexture(int x,int y,int w,int h);
 extern bool SIMUL_OPENGL_EXPORT CheckExtension(const char *txt);
 
 extern bool IsExtensionSupported(const char *name);
+extern SIMUL_OPENGL_EXPORT void Ortho();
 //! A wrapper around glOrtho() that also resets the GL matrices, and stores window height for later use.
 extern SIMUL_OPENGL_EXPORT void SetOrthoProjection(int w,int h);
 extern SIMUL_OPENGL_EXPORT void SetTopDownOrthoProjection(int w,int h);
@@ -51,7 +51,7 @@ extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_numbe
 //! Check the given error code, and halt the program if it is non-zero.
 extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_number,int err);
 #define ERROR_CHECK CheckGLError(__FILE__,__LINE__);
-#define SAFE_DELETE_PROGRAM(prog)	if(prog){GLuint shaders[2];GLsizei count;glGetAttachedShaders(prog,2,&count,shaders);for(int i=0;i<count;i++) glDeleteShader(shaders[i]); glDeleteProgram(prog);prog=0;}
+#define SAFE_DELETE_PROGRAM(prog)		if(prog){GLuint shaders[2];GLsizei count;glGetAttachedShaders(prog,2,&count,shaders);for(int i=0;i<count;i++) glDeleteShader(shaders[i]); glDeleteProgram(prog);prog=0;}
 #define SAFE_DELETE_TEXTURE(tex)		if(tex) glDeleteTextures(1,&tex);tex=0;
 #define SAFE_DELETE_FRAMEBUFFER(fb)		if(fb) glDeleteFramebuffers(1,&fb);fb=0;
 #define SAFE_DELETE_RENDERBUFFER(rb)	if(rb) glDeleteRenderbuffers(1,&rb);rb=0;

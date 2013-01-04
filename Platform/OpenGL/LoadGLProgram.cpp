@@ -163,8 +163,8 @@ GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const char *d
 	int s=0;
 	if(defines&&strlen(defines))
 	{
-	static char program[MAX_LINES*MAX_LINE_LENGTH];
-	char *ptr=program;
+		static char program[MAX_LINES*MAX_LINE_LENGTH];
+		char *ptr=program;
 		sprintf_s(ptr,MAX_LINES*MAX_LINE_LENGTH,"%s\n",defines?defines:"");
 		strings[s++]=program;
 	}
@@ -206,7 +206,7 @@ std::string loadShaderSource(const char *filename)
 		filePath+="/";
 	filePath+=filename;
 	if(filePath.find(".glsl")>=filePath.length())
-	last_filename=filePath;
+		last_filename=filePath;
 	std::ifstream ifs(filePath.c_str());
 	if(!ifs.good())
 	{

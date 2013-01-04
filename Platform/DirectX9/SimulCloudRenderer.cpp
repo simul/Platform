@@ -1372,7 +1372,7 @@ void SimulCloudRenderer::RenderCrossSections(int width,int height)
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;
@@ -1385,7 +1385,7 @@ void SimulCloudRenderer::RenderCrossSections(int width,int height)
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;

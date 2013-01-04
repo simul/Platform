@@ -1,3 +1,4 @@
+#include <gl/glew.h>
 #include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/SimuLGLUtilities.h"

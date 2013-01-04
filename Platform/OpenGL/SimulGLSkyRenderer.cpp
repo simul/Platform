@@ -338,7 +338,7 @@ void SimulGLSkyRenderer::UseProgram(GLuint p)
 		skyTexture1_param				=glGetUniformLocation(current_program,"inscTexture");
 		skylightTexture_param			=glGetUniformLocation(current_program,"skylightTexture");
 			
-		altitudeTexCoord_param			=glGetUniformLocation(current_program,"altitudeTexCoord");
+		altitudeTexCoord_param		=glGetUniformLocation(current_program,"altitudeTexCoord");
 		
 		earthShadowUniforms			=glGetUniformBlockIndex(current_program, "EarthShadowUniforms");
 ERROR_CHECK

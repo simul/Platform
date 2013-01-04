@@ -10,7 +10,6 @@
 #include "Simul/Base/Referenced.h"
 #include "Simul/Terrain/BaseTerrainRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
-#include <GL/glew.h>
 
 SIMUL_OPENGL_EXPORT_CLASS SimulGLTerrainRenderer : public simul::terrain::BaseTerrainRenderer
 {
