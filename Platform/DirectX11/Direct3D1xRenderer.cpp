@@ -10,6 +10,7 @@
 #include "Simul/Platform/DirectX1x/SimulAtmosphericsRendererDX1x.h"
 #include "Simul/Platform/DirectX1x/SimulOpticsRendererDX1x.h"
 #include "Simul/Platform/DirectX1x/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/Profiler.h"
 #include "Simul/Platform/DirectX1x/MacrosDX1x.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Clouds/CloudInterface.h"
@@ -81,6 +82,10 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 		return S_OK;
 	try
 	{
+		ID3D11DeviceContext *pImmediateContext=NULL;
+		pd3dDevice->GetImmediateContext(&pImmediateContext);
+		Profiler::GetGlobalProfiler().Initialize(pd3dDevice,pImmediateContext);
+		SAFE_RELEASE(pImmediateContext);
 		simul::dx11::UnsetDevice();
 		//Set a global device pointer for use by various classes.
 		simul::dx11::SetDevice(pd3dDevice);
@@ -212,6 +217,7 @@ void Direct3D11Renderer::OnD3D11DestroyDevice()
 
 void Direct3D11Renderer::OnD3D11ReleasingSwapChain()
 {
+    Profiler::GetGlobalProfiler().Uninitialize();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
 	if(simulHDRRenderer)
@@ -266,5 +272,8 @@ void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
 
 const char *Direct3D11Renderer::GetDebugText() const
 {
-	return "";
+	const char *wstr=simulWeatherRenderer->GetDebugText();
+	static char str[200];
+	sprintf_s(str,200,"DirectX 11\n%s",wstr?wstr:"");
+	return str;
 }

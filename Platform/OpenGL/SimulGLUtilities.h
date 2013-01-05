@@ -15,16 +15,19 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS Utilities
 {
 	static int instance_count;
-public:
-	Utilities();
-	~Utilities();
-	static void RestoreDeviceObjects(void *);
-	static void SetScreenSize(int w,int h);
-	static void InvalidateDeviceObjects();
+	static Utilities *ut;
 	static int screen_width;
 	static int screen_height;
-	static GLuint linedraw_program;
-	static GLuint simple_program;
+	Utilities();
+	~Utilities();
+public:
+	static Utilities &GetSingleton();
+	void RestoreDeviceObjects(void *);
+	void SetScreenSize(int w,int h);
+	void InvalidateDeviceObjects();
+	static void Kill();
+	GLuint linedraw_program;
+	GLuint simple_program;
 };
 
 extern void RenderTexture(int x,int y,int w,int h);

@@ -217,7 +217,6 @@ void OpenGLRenderer::initializeGL()
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
 	if(cam)
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
-	Utilities::RestoreDeviceObjects(NULL);
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	gpuSkyGenerator.RestoreDeviceObjects(NULL);
 	if(simulWeatherRenderer)

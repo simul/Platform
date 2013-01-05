@@ -76,7 +76,7 @@ public:
 	void SetCamera(simul::camera::Camera *c);
 //Direct3D9CallbackInterface:
 	bool	IsDeviceAcceptable(D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,D3DFORMAT BackBufferFormat, bool bWindowed);
-	bool    ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings);
+	bool    ModifyDeviceSettings(struct DXUTDeviceSettings* pDeviceSettings);
 	HRESULT OnCreateDevice(IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc);
 	HRESULT OnResetDevice(IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc);
 	void    OnFrameMove(double fTime, float fTimeStep);

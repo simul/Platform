@@ -15,12 +15,36 @@
 int Utilities::instance_count=0;
 int Utilities::screen_width=0;
 int Utilities::screen_height=0;
-GLuint Utilities::linedraw_program=0;
-GLuint Utilities::simple_program=0;
+Utilities *Utilities::ut=NULL;
+
+struct UtKiller
+{
+	~UtKiller()
+	{
+		Utilities::Kill();
+	}
+};
+UtKiller utk;
+
+Utilities &Utilities::GetSingleton()
+{
+	if(!ut)
+		ut=new Utilities();
+	return *ut;
+}
+void Utilities::Kill()
+{
+	delete ut;
+	ut=NULL;
+}
 
 Utilities::Utilities()
+	:linedraw_program(0)
+	,simple_program(0)
 {
 	instance_count++;
+	if(instance_count==1)
+		RestoreDeviceObjects(NULL);
 }
 
 void Utilities::RestoreDeviceObjects(void *)
@@ -77,7 +101,7 @@ void RenderTexture(int x,int y,int w,int h)
 	int prog=0;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
 	if(prog==0)
-		glUseProgram(Utilities::simple_program);
+		glUseProgram(Utilities::GetSingleton().simple_program);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
@@ -376,7 +400,7 @@ void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,
 void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glUseProgram(Utilities::linedraw_program);
+	glUseProgram(Utilities::GetSingleton().linedraw_program);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);

@@ -53,12 +53,6 @@ protected:
 	ID3D1xInputLayout*					m_pBufferVertexDecl;
 	ID3D1xBuffer*						m_pVertexBuffer;
 
-	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-	ID3D1xEffect*						m_pTonemapEffect;
-	ID3D1xEffectTechnique*				TonemapTechnique;
-	ID3D1xEffectTechnique*				SkyOverStarsTechnique;
-	ID3D1xEffectMatrixVariable*			worldViewProj;
-	ID3D1xEffectShaderResourceVariable*	hdrTexture;
 public:
 	ID3D1xRenderTargetView*				m_pHDRRenderTarget;
 	ID3D1xDepthStencilView*				m_pBufferDepthSurface;

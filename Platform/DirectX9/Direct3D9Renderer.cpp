@@ -69,7 +69,7 @@ bool Direct3D9Renderer::IsDeviceAcceptable(D3DCAPS9* pCaps, D3DFORMAT AdapterFor
 	return true;
 }
 
-bool Direct3D9Renderer::ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings)
+bool Direct3D9Renderer::ModifyDeviceSettings(struct DXUTDeviceSettings* pDeviceSettings)
 {
 	pDeviceSettings;
 	return true;
