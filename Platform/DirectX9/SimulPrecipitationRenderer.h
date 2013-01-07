@@ -25,6 +25,7 @@ public:
 	//standard d3d object interface functions:
 	//! Call this when the D3D device has been created or reset.
 	void RestoreDeviceObjects(void *pd3dDevice);
+	void RecompileShaders();
 	//! Call this when the D3D device has been shut down.
 	void InvalidateDeviceObjects();
 	//! Call this to draw the clouds, including any illumination by lightning.

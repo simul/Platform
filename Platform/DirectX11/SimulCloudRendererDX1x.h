@@ -26,8 +26,8 @@
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/CloudRenderCallback.h"
 #include "Simul/Clouds/BaseCloudRenderer.h"
-#include "Simul/Platform/DirectX1x/MacrosDx1x.h"
-#include "Simul/Platform/DirectX1x/Export.h"
+#include "Simul/Platform/DirectX11/MacrosDx1x.h"
+#include "Simul/Platform/DirectX11/Export.h"
 
 namespace simul
 {
@@ -74,7 +74,6 @@ public:
 
 	//! Return true if the camera is above the cloudbase altitude.
 	bool IsCameraAboveCloudBase() const;
-	float GetSunOcclusion() const;
 	const TCHAR *GetDebugText() const;
 	void SetEnableStorms(bool s);
 	float GetTiming() const;
@@ -188,7 +187,6 @@ protected:
 	ID3D1xBlendState*	blendAndWriteAlpha;
 	ID3D1xBlendState*	blendAndDontWriteAlpha;
 	
-	D3DXVECTOR4			cam_pos;
 	D3DXVECTOR4			lightning_colour;
 	D3DXMATRIX			world,view,proj;
 

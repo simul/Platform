@@ -574,7 +574,7 @@ void SimulOceanRendererDX1x::createFresnelMap()
 void SimulOceanRendererDX1x::loadTextures()
 {
     WCHAR strPath[MAX_PATH];
-    swprintf_s(strPath, MAX_PATH, L"../../Platform/DirectX1x/Textures/perlin_noise.dds");
+    swprintf_s(strPath, MAX_PATH, L"../../Platform/DirectX11/Textures/perlin_noise.dds");
 	D3DX11CreateShaderResourceViewFromFile(m_pd3dDevice, strPath, NULL, NULL, &g_pSRV_Perlin, NULL);
 	assert(g_pSRV_Perlin);
 }

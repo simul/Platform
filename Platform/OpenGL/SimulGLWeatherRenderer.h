@@ -69,7 +69,6 @@ public:
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 	void EnableRain(bool e=true);
 	void EnableCloudLayers();
-	void SetPrecipitation(float strength,float speed);
 	const char *GetDebugText() const;
 	GLuint GetFramebufferTexture();
 protected:
@@ -88,7 +87,7 @@ protected:
 	simul::base::SmartPtr<class SimulGLCloudRenderer> simulCloudRenderer;
 	simul::base::SmartPtr<class SimulGL2DCloudRenderer> simul2DCloudRenderer;
 	simul::base::SmartPtr<class SimulGLLightningRenderer> simulLightningRenderer;
-	//simul::base::SmartPtr<class SimulGLPrecipitationRenderer> simulPrecipitationRenderer;
+	simul::base::SmartPtr<class SimulGLPrecipitationRenderer> simulPrecipitationRenderer;
 	simul::base::SmartPtr<class SimulGLAtmosphericsRenderer> simulAtmosphericsRenderer;
 	float							exposure;
 	float							gamma;

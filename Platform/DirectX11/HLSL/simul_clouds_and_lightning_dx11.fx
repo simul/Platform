@@ -7,9 +7,6 @@
 #ifndef DETAIL_NOISE
 	#define DETAIL_NOISE 1
 #endif
-#ifndef FADE_MODE
-	#define FADE_MODE 1
-#endif
 
 cbuffer cbPerObject : register( b0 )
 {
@@ -128,16 +125,8 @@ vertexOutput VS_Main(vertexInput IN)
 #else
 	float sine=view.z;
 #endif
-// Fade mode ZERO - fade values come from the vertex. So we pass them on to the pixel shader:
-#if FADE_MODE==0
-    OUT.loss			=IN.loss;
-    OUT.inscatter		=IN.inscatter;
-#endif
-// Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
-#if FADE_MODE==1
 	float depth=length(OUT.wPosition.xyz)/maxFadeDistanceMetres;
 	OUT.fade_texc=float2(sqrt(depth),0.5f*(1.f-sine));
-#endif
     return OUT;
 }
 

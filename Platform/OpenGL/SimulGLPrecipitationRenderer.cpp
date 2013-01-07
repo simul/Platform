@@ -21,19 +21,21 @@ void SimulGLPrecipitationRenderer::TextureRepeatChanged()
 {
 }
 
-bool SimulGLPrecipitationRenderer::RestoreDeviceObjects(void *dev)
+void SimulGLPrecipitationRenderer::RestoreDeviceObjects(void *)
 {
-	return  true;
 }
 
-bool SimulGLPrecipitationRenderer::SetExternalRainTexture(void* tex)
+bool SimulGLPrecipitationRenderer::SetExternalRainTexture(void* )
 {
 	return true;
 }
 
-bool SimulGLPrecipitationRenderer::InvalidateDeviceObjects()
+void SimulGLPrecipitationRenderer::InvalidateDeviceObjects()
 {
-	return true;
+}
+
+void SimulGLPrecipitationRenderer::RecompileShaders()
+{
 }
 
 SimulGLPrecipitationRenderer::~SimulGLPrecipitationRenderer()
@@ -41,7 +43,6 @@ SimulGLPrecipitationRenderer::~SimulGLPrecipitationRenderer()
 	InvalidateDeviceObjects();
 }
 
-bool SimulGLPrecipitationRenderer::Render()
+void SimulGLPrecipitationRenderer::Render()
 {
-	return  true;
 }

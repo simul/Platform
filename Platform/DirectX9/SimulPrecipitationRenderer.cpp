@@ -51,6 +51,26 @@ void SimulPrecipitationRenderer::TextureRepeatChanged()
 	RestoreDeviceObjects(m_pd3dDevice);
 }
 
+void SimulPrecipitationRenderer::RecompileShaders()
+{
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,"simul_rain.fx"));
+
+	m_hTechniqueRain	=m_pRainEffect->GetTechniqueByName("simul_rain");
+	worldViewProj		=m_pRainEffect->GetParameterByName(NULL,"worldViewProj");
+	offset				=m_pRainEffect->GetParameterByName(NULL,"offset");
+	intensity			=m_pRainEffect->GetParameterByName(NULL,"intensity");
+	lightColour			=m_pRainEffect->GetParameterByName(NULL,"lightColour");
+	offset1				=m_pRainEffect->GetParameterByName(NULL,"offset1");
+	offset2				=m_pRainEffect->GetParameterByName(NULL,"offset2");
+	offset3				=m_pRainEffect->GetParameterByName(NULL,"offset3");
+
+	if(!external_rain_texture)
+	{
+		SAFE_RELEASE(rain_texture);
+		V_CHECK(CreateDX9Texture(m_pd3dDevice,rain_texture,"Rain.jpg"));
+	}
+}
+
 void SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
@@ -93,22 +113,7 @@ void SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	};
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
-	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,"simul_rain.fx"));
-
-	m_hTechniqueRain	=m_pRainEffect->GetTechniqueByName("simul_rain");
-	worldViewProj		=m_pRainEffect->GetParameterByName(NULL,"worldViewProj");
-	offset				=m_pRainEffect->GetParameterByName(NULL,"offset");
-	intensity			=m_pRainEffect->GetParameterByName(NULL,"intensity");
-	lightColour			=m_pRainEffect->GetParameterByName(NULL,"lightColour");
-	offset1				=m_pRainEffect->GetParameterByName(NULL,"offset1");
-	offset2				=m_pRainEffect->GetParameterByName(NULL,"offset2");
-	offset3				=m_pRainEffect->GetParameterByName(NULL,"offset3");
-
-	if(!external_rain_texture)
-	{
-		SAFE_RELEASE(rain_texture);
-		V_CHECK(CreateDX9Texture(m_pd3dDevice,rain_texture,"Rain.jpg"));
-	}
+	RecompileShaders();
 }
 
 bool SimulPrecipitationRenderer::SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex)

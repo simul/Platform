@@ -326,10 +326,10 @@ void FramebufferDX1x::DeactivateAndRender(bool blend)
 
 void FramebufferDX1x::Render(bool blend)
 {
-	RenderBufferToCurrentTarget();
+	DrawQuad();
 }
 
-bool FramebufferDX1x::RenderBufferToCurrentTarget()
+bool FramebufferDX1x::DrawQuad()
 {
 	HRESULT hr=S_OK;
 	UINT stride = sizeof(Vertext);

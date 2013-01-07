@@ -6,7 +6,7 @@
 #include "Simul/Base/StringToWString.h"
 simul::base::IniFile ini("atmospherics.ini");
 #include <string>
-#include <d3dx10.h>
+#include <d3dx11.h>
 #include <dxerr.h>
 extern void RenderScene(ID3D10Device* pd3dDevice);
 
@@ -17,8 +17,8 @@ static bool FileExists(const std::string& strFilename)
     if (pFile)
         fclose(pFile);
     return bExists;
-}
-void SaveTexture(ID3D10Texture *ldr_buffer_texture,const char *txt,bool as_dds)
+}/*
+void SaveTexture(ID3D11Texture *ldr_buffer_texture,const char *txt,bool as_dds)
 {
 	std::string path=ini.GetValue("Options","ScreenshotPath");
 	if(path=="")
@@ -91,3 +91,4 @@ void Screenshot(ID3D10Device* pd3dDevice,const char *txt)
 	SAFE_RELEASE(pRenderTarget);
 	SAFE_RELEASE(m_pOldRenderTarget);
 }
+*/

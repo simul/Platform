@@ -308,11 +308,10 @@ bool SimulWeatherRenderer::RenderLightning()
 	return true;
 }
 
-bool SimulWeatherRenderer::RenderPrecipitation()
+void SimulWeatherRenderer::RenderPrecipitation()
 {
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
 		simulPrecipitationRenderer->Render();
-	return true;
 }
 bool SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
 {
@@ -430,7 +429,13 @@ void SimulWeatherRenderer::Update(float dt)
 		if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		{
 			simulPrecipitationRenderer->SetWind(simulCloudRenderer->GetWindSpeed(),simulCloudRenderer->GetWindHeadingDegrees());
-			simulPrecipitationRenderer->SetIntensity(simulCloudRenderer->GetPrecipitationIntensity());
+		#ifndef XBOX
+			float cam_pos[3];
+			D3DXMATRIX view;
+			m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+		#endif
+			GetCameraPosVector(view,simulCloudRenderer->IsYVertical(),cam_pos);
+			simulPrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
 			float rts=simulCloudRenderer->GetRainToSnow();
 			if(rts<0.5f)
 				simulPrecipitationRenderer->ApplyDefaultRainSettings();

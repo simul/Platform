@@ -17,9 +17,9 @@
 #include <d3dx11.h>
 #include <D3dx11effect.h>
 #endif
-#include "Simul/Platform/DirectX1x/MacrosDX1x.h"
-#include "Simul/Platform/DirectX1x/FramebufferDX1x.h"
-#include "Simul/Platform/DirectX1x/Export.h"
+#include "Simul/Platform/DirectX11/MacrosDX1x.h"
+#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
+#include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 typedef long HRESULT;
 namespace simul

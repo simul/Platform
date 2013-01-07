@@ -106,14 +106,15 @@ ERROR_CHECK
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(width,height);
 		simulWeatherRenderer->DoOcclusionTests();
+		simulWeatherRenderer->RenderPrecipitation();
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light;
 			dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
 			light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
-			simulOpticsRenderer->RenderFlare(
-				(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
-				,dir,light);
+			float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
+			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
+			simulOpticsRenderer->RenderFlare(exp,dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender();

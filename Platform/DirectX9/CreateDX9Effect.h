@@ -79,4 +79,4 @@ extern HRESULT SIMUL_DIRECTX9_EXPORT DrawFullScreenQuad(LPDIRECT3DDEVICE9 m_pd3d
 extern bool SIMUL_DIRECTX9_EXPORT IsDepthFormatOk(LPDIRECT3DDEVICE9 pd3dDevice,D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
 extern LPDIRECT3DSURFACE9 SIMUL_DIRECTX9_EXPORT MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture);
 extern void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir=NULL);
-extern std::map<std::string,std::string> MakeDefinesList(simul::clouds::BaseCloudRenderer::FadeMode fade_mode,bool wrap,bool y_vertical);
+extern std::map<std::string,std::string> MakeDefinesList(bool wrap,bool y_vertical);

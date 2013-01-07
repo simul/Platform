@@ -13,7 +13,7 @@
 // Please direct any bugs or questions to SDKFeedback@nvidia.com
 
 #include <d3d11.h>
-#include "Simul/Platform/DirectX1x/MacrosDX1x.h"
+#include "Simul/Platform/DirectX11/MacrosDX1x.h"
 
 
 //Memory access coherency (in threads)

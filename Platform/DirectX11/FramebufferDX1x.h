@@ -10,8 +10,8 @@
 #include <d3dx11.h>
 #include <D3dx11effect.h>
 #endif
-#include "Simul/Platform/DirectX1x/MacrosDx1x.h"
-#include "Simul/Platform/DirectX1x/Export.h"
+#include "Simul/Platform/DirectX11/MacrosDx1x.h"
+#include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Clouds/BaseFramebuffer.h"
 
 SIMUL_DIRECTX1x_EXPORT_CLASS FramebufferDX1x:public BaseFramebuffer
@@ -36,7 +36,7 @@ public:
 	void Clear(float,float,float,float,int mask=0);
 	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
 	void DeactivateAndRender(bool blend);
-	bool RenderBufferToCurrentTarget();
+	bool DrawQuad();
 	
 	ID3D1xShaderResourceView *GetBufferResource()
 	{

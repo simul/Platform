@@ -147,7 +147,7 @@ void GpuCloudGenerator::MakeShader()
 {
 	bool wrap=true;
 	bool y_vertical=false;
-	std::map<std::string,std::string> defines=MakeDefinesList(simul::clouds::BaseCloudRenderer::FRAGMENT,wrap,y_vertical);
+	std::map<std::string,std::string> defines=MakeDefinesList(wrap,y_vertical);
 	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pGPULightingEffect,"simul_gpulighting.fx",defines));
 
 	inputLightTexture			=(void*)m_pGPULightingEffect->GetParameterByName(NULL,"inputLightTexture");

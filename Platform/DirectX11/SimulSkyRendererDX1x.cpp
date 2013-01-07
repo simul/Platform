@@ -26,8 +26,8 @@ extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Math/Vector3.h"
-#include "Simul/Platform/DirectX1x/MacrosDX1x.h"
-#include "Simul/Platform/DirectX1x/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/MacrosDX1x.h"
+#include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/HLSL/simul_earthshadow.hlsl"
 
 struct Vertex_t
@@ -104,7 +104,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 	,loss_2d(NULL)
 	,inscatter_2d(NULL)
 	,skylight_2d(NULL)
-	,sun_occlusion(0.f)
 	,d3dQuery(NULL)
 	,mapped_fade(-1)
 	,cycle(0)
@@ -522,22 +521,22 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	hazeEccentricity			=m_pSkyEffect->GetVariableByName("hazeEccentricity")->AsScalar();
 	skyInterp					=m_pSkyEffect->GetVariableByName("skyInterp")->AsScalar();
 	altitudeTexCoord			=m_pSkyEffect->GetVariableByName("altitudeTexCoord")->AsScalar();
-	
-	m_hTechniqueFade3DTo2D	=m_pSkyEffect->GetTechniqueByName("simul_fade_3d_to_2d");
 
-	colour					=m_pSkyEffect->GetVariableByName("colour")->AsVector();
-	m_hTechniqueSun			=m_pSkyEffect->GetTechniqueByName("simul_sun");
-	m_hTechniqueFlare		=m_pSkyEffect->GetTechniqueByName("simul_flare");
-	m_hTechniquePlanet		=m_pSkyEffect->GetTechniqueByName("simul_planet");
-	flareTexture			=m_pSkyEffect->GetVariableByName("flareTexture")->AsShaderResource();
+	m_hTechniqueFade3DTo2D		=m_pSkyEffect->GetTechniqueByName("simul_fade_3d_to_2d");
 
-	inscTexture				=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
-	skylTexture				=m_pSkyEffect->GetVariableByName("skylTexture")->AsShaderResource();
+	colour						=m_pSkyEffect->GetVariableByName("colour")->AsVector();
+	m_hTechniqueSun				=m_pSkyEffect->GetTechniqueByName("simul_sun");
+	m_hTechniqueFlare			=m_pSkyEffect->GetTechniqueByName("simul_flare");
+	m_hTechniquePlanet			=m_pSkyEffect->GetTechniqueByName("simul_planet");
+	flareTexture				=m_pSkyEffect->GetVariableByName("flareTexture")->AsShaderResource();
 
-	fadeTexture1			=m_pSkyEffect->GetVariableByName("fadeTexture1")->AsShaderResource();
-	fadeTexture2			=m_pSkyEffect->GetVariableByName("fadeTexture2")->AsShaderResource();
-	earthShadowUniforms		=m_pSkyEffect->GetConstantBufferByName("EarthShadowUniforms");
-	m_hTechniqueQuery		=m_pSkyEffect->GetTechniqueByName("simul_query");
+	inscTexture					=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
+	skylTexture					=m_pSkyEffect->GetVariableByName("skylTexture")->AsShaderResource();
+
+	fadeTexture1				=m_pSkyEffect->GetVariableByName("fadeTexture1")->AsShaderResource();
+	fadeTexture2				=m_pSkyEffect->GetVariableByName("fadeTexture2")->AsShaderResource();
+	earthShadowUniforms			=m_pSkyEffect->GetConstantBufferByName("EarthShadowUniforms");
+	m_hTechniqueQuery			=m_pSkyEffect->GetTechniqueByName("simul_query");
 
 }
 
@@ -582,7 +581,7 @@ void SimulSkyRendererDX1x::RenderSun(float exposure_hint)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
-	sunlight*=pow(1.f-sun_occlusion,0.25f)*2700.f;
+	sunlight*=2700.f;
 	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
@@ -597,6 +596,7 @@ void SimulSkyRendererDX1x::RenderSun(float exposure_hint)
 		sunlight*=maxout_brightness/max_bright;
 		sunlight.w=max_bright;
 	}
+	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
 	colour->SetFloatVector(sunlight);
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 	RenderAngledQuad(m_pd3dDevice,sun_dir,y_vertical,sun_angular_size,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
@@ -685,7 +685,7 @@ bool SimulSkyRendererDX1x::Render2DFades()
 		m_pImmediateContext->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
 		if(loss_2d->m_pBufferDepthSurface)
 			m_pImmediateContext->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
-		loss_2d->RenderBufferToCurrentTarget();
+		loss_2d->DrawQuad();
 		loss_2d->Deactivate();
 	}
 	{
@@ -700,7 +700,7 @@ bool SimulSkyRendererDX1x::Render2DFades()
 		if(inscatter_2d->m_pBufferDepthSurface)
 			m_pImmediateContext->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
 			D3D1x_CLEAR_STENCIL, 1.f, 0);
-		inscatter_2d->RenderBufferToCurrentTarget();
+		inscatter_2d->DrawQuad();
 		inscatter_2d->Deactivate();
 	}
 	{
@@ -715,7 +715,7 @@ bool SimulSkyRendererDX1x::Render2DFades()
 		if(skylight_2d->m_pBufferDepthSurface)
 			m_pImmediateContext->ClearDepthStencilView(skylight_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
 			D3D1x_CLEAR_STENCIL, 1.f, 0);
-		skylight_2d->RenderBufferToCurrentTarget();
+		skylight_2d->DrawQuad();
 		skylight_2d->Deactivate();
 	}
 	

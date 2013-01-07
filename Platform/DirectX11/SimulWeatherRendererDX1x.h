@@ -7,10 +7,10 @@
 
 #pragma once
 #include <tchar.h>
-#include "Simul/Platform/DirectX1x/MacrosDX1x.h"
-#include "Simul/Platform/DirectX1x/Export.h"
-#include "Simul/Platform/DirectX1x/FramebufferDX1x.h"
-#include "Simul/Platform/DirectX1x/FramebufferCubemapDX1x.h"
+#include "Simul/Platform/DirectX11/MacrosDX1x.h"
+#include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
+#include "Simul/Platform/DirectX11/FramebufferCubemapDX1x.h"
 #include <d3dx9.h>
 #ifdef DX10
 	#include <D3D10.h>
@@ -49,6 +49,7 @@ public:
 	bool Destroy();
 	bool RenderSky(bool buffered,bool is_cubemap);
 	bool RenderLateCloudLayer(bool );
+	void RenderPrecipitation();
 	bool RenderCubemap();
 	void *GetCubemap();
 	//! Perform the once-per-frame time update.
@@ -94,15 +95,15 @@ protected:
 	simul::base::SmartPtr<class SimulSkyRendererDX1x> simulSkyRenderer;
 	simul::base::SmartPtr<class SimulCloudRendererDX1x> simulCloudRenderer;
 	simul::base::SmartPtr<class SimulAtmosphericsRendererDX1x> simulAtmosphericsRenderer;
-	//simul::base::SmartPtr<class Simul2DCloudRenderer> *simul2DCloudRenderer;
-	//simul::base::SmartPtr<class SimulPrecipitationRenderer> *simulPrecipitationRenderer;
-	//simul::base::SmartPtr<class SimulAtmosphericsRenderer> *simulAtmosphericsRenderer;
+	simul::base::SmartPtr<class Simul2DCloudRendererDX1x> simul2DCloudRenderer;
+	simul::base::SmartPtr<class SimulPrecipitationRendererDX1x> simulPrecipitationRenderer;
 	FramebufferDX1x					framebuffer;
 	FramebufferCubemapDX1x			framebuffer_cubemap;
 	float							exposure;
 	float							gamma;
 	float exposure_multiplier;
 	void ConnectInterfaces();
+	D3DXVECTOR3 cam_pos;
 };
 #ifdef _MSC_VER
 #pragma warning(pop)

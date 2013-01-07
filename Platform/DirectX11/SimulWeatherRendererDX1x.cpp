@@ -21,6 +21,7 @@
 #include "Simul/Base/StringToWString.h"
 #include "SimulSkyRendererDX1x.h"
 #include "SimulAtmosphericsRendererDX1x.h"
+#include "SimulPrecipitationRendererDX1x.h"
 
 #include "SimulCloudRendererDX1x.h"
 #include "Simul2DCloudRendererDX1x.h"
@@ -60,9 +61,8 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 	Group::AddChild(simulCloudRenderer.get());
 	if(clouds2d)
 		simul2DCloudRenderer=new Simul2DCloudRendererDX1x(ck2d);
-/*	if(rain)
-		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
-	*/
+	if(rain)
+		basePrecipitationRenderer=simulPrecipitationRenderer=new SimulPrecipitationRendererDX1x();
 
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new SimulAtmosphericsRendererDX1x;
 	baseFramebuffer=&framebuffer;
@@ -153,11 +153,11 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
 	//	simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
 	//V_RETURN(CreateBuffers());
 
-	/*if(simul2DCloudRenderer)
-		V_RETURN(simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
+	if(simul2DCloudRenderer)
+		simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice);
 	if(simulPrecipitationRenderer)
-		V_RETURN(simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice));
-	*/
+		simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice);
+
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
 	RecompileShaders();
@@ -184,10 +184,10 @@ void SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 		simulSkyRenderer->InvalidateDeviceObjects();
 	if(simulCloudRenderer)
 		simulCloudRenderer->InvalidateDeviceObjects();
-//if(simul2DCloudRenderer)
-//		simul2DCloudRenderer->InvalidateDeviceObjects();
-//if(simulPrecipitationRenderer)
-//		simulPrecipitationRenderer->InvalidateDeviceObjects();
+	if(simul2DCloudRenderer)
+		simul2DCloudRenderer->InvalidateDeviceObjects();
+	if(simulPrecipitationRenderer)
+		simulPrecipitationRenderer->InvalidateDeviceObjects();
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
 //	if(m_pTonemapEffect)
@@ -225,6 +225,7 @@ bool SimulWeatherRendererDX1x::Destroy()
 
 SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
 {
+	InvalidateDeviceObjects();
 	Destroy();
 /*	SAFE_DELETE(simul2DCloudRenderer);
 	SAFE_DELETE(simulPrecipitationRenderer);
@@ -269,7 +270,7 @@ bool SimulWeatherRendererDX1x::RenderCubemap()
 {
 	D3DXMATRIX ov=view;
 	D3DXMATRIX op=proj;
-	D3DXVECTOR3 cam_pos=GetCameraPosVector(view);
+	cam_pos=GetCameraPosVector(view);
 	MakeCubeMatrices(view_matrices,cam_pos);
 	for(int i=0;i<6;i++)
 	{
@@ -314,7 +315,7 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 		D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
 		worldViewProj->SetMatrix(ortho);
 		
-		framebuffer.RenderBufferToCurrentTarget();
+		framebuffer.DrawQuad();
 		hdrTexture->SetResource(NULL);
 	}
 	return (hr==S_OK);
@@ -330,6 +331,12 @@ bool SimulWeatherRendererDX1x::RenderLateCloudLayer(bool )
 	return false;
 }
 
+void SimulWeatherRendererDX1x::RenderPrecipitation()
+{
+	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
+		simulPrecipitationRenderer->Render();
+}
+
 void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
@@ -338,10 +345,10 @@ void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX 
 		simulSkyRenderer->SetMatrices(view,proj);
 	if(simulCloudRenderer)
 		simulCloudRenderer->SetMatrices(view,proj);
-/*	if(simul2DCloudRenderer)
-		simul2DCloudRenderer->SetMatrices(view,proj);
 	if(simulPrecipitationRenderer)
 		simulPrecipitationRenderer->SetMatrices(view,proj);
+/*	if(simul2DCloudRenderer)
+		simul2DCloudRenderer->SetMatrices(view,proj);
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->SetMatrices(view,proj);*/
 }
@@ -392,18 +399,7 @@ void SimulWeatherRendererDX1x::Update(float dt)
 			simulCloudRenderer->Update(dt);
 		}
 /*		if(simul2DCloudRenderer)
-			simul2DCloudRenderer->Update(dt);
-		if(simulPrecipitationRenderer)
-		{
-			simulPrecipitationRenderer->Update(dt);
-			if(simulCloudRenderer)
-				simulPrecipitationRenderer->SetIntensity(simulCloudRenderer->GetPrecipitationIntensity());
-			if(simulSkyRenderer)
-			{
-				simul::sky::float4 l=simulSkyRenderer->GetSkyInterface()->GetSunlightColour(0);
-				simulPrecipitationRenderer->SetLightColour((const float*)(l));
-			}
-		}*/
+			simul2DCloudRenderer->Update(dt);*/
 	}
 }
 

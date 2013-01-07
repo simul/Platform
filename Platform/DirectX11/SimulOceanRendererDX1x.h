@@ -2,8 +2,8 @@
 #define SIMUL_OCEAN_RENDERER_DX1X_H
 
 #include "ocean_simulator.h"
-#include "Simul/Platform/DirectX1x/MacrosDX1x.h"
-#include "Simul/Platform/DirectX1x/Export.h"
+#include "Simul/Platform/DirectX11/MacrosDX1x.h"
+#include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Terrain/BaseSeaRenderer.h"
 
 #pragma warning(push)

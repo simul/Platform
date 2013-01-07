@@ -29,7 +29,6 @@
 #endif
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
-#define STRICT							// Use strict declarations for Windows types
 
 // Windows Header Files:
 #include <windows.h>
@@ -76,7 +75,7 @@ _COM_SMARTPTR_TYPEDEF(ID3D11Device, __uuidof(ID3D11Device));
 _COM_SMARTPTR_TYPEDEF(ID3D11DeviceContext, __uuidof(ID3D11DeviceContext));
 
 
-#include "Simul/Platform/DirectX1x/Export.h"
+#include "Simul/Platform/DirectX11/Export.h"
 SIMUL_DIRECTX1x_EXPORT_CLASS Profiler
 {
 

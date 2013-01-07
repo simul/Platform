@@ -297,13 +297,8 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 	};
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pHudVertexDecl);
-	if(fade_mode!=CPU)
 	{
 		V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	}
-	else
-	{
-		V_CHECK(m_pd3dDevice->CreateVertexDeclaration(cpu_decl,&m_pVtxDecl))
 	}
 
 	//B_RETURN(RenderNoiseTexture());
@@ -323,10 +318,6 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 static std::string GetCompiledFilename(int fade_mde,int wrap_clouds,bool z_vertical)
 {
 	std::string compiled_filename="simul_clouds_and_lightning_";
-	if(fade_mde==SimulCloudRenderer::FRAGMENT)
-		compiled_filename+="f1_";
-	else if(fade_mde==SimulCloudRenderer::CPU)
-		compiled_filename+="f0_";
 	if(wrap_clouds)
 		compiled_filename+="w1_";
 	else
@@ -347,7 +338,7 @@ void SimulCloudRenderer::RecompileShaders()
 	//gpuCloudGenerator.RecompileShaders();
 	wrap=GetCloudInterface()->GetWrap();
 	simul::base::Timer timer;
-	std::map<std::string,std::string> defines=MakeDefinesList(fade_mode,GetCloudInterface()->GetWrap(),y_vertical);
+	std::map<std::string,std::string> defines=MakeDefinesList(GetCloudInterface()->GetWrap(),y_vertical);
 	float defines_time=timer.UpdateTime()/1000.f;
 	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
 	float clouds_effect=timer.UpdateTime()/1000.f;
@@ -713,10 +704,7 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	gsm_InvertZ.m[2][3] = 1.0f;
 	D3DXMatrixMultiply(&proj,&proj,&gsm_InvertZ);
 #endif
-	if(!vertices&&fade_mode!=CPU)
-		vertices=new Vertex_t[MAX_VERTICES];
-	if(!cpu_fade_vertices&&fade_mode==CPU)
-		cpu_fade_vertices=new CPUFadeVertex_t[MAX_VERTICES];
+	vertices=new Vertex_t[MAX_VERTICES];
 	static D3DTEXTUREADDRESS wrap_u=D3DTADDRESS_WRAP,wrap_v=D3DTADDRESS_WRAP,wrap_w=D3DTADDRESS_CLAMP;
 
 	m_pCloudEffect->SetTexture(cloudDensity1				,cloud_textures[0]);
@@ -921,10 +909,7 @@ void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
 					if(v>=MAX_VERTICES)
 						break;
 					Vertex_t *vertex=NULL;
-					if(fade_mode!=CPU)
-						vertex=&vertices[v];
-					else
-						vertex=&cpu_fade_vertices[v];
+					vertex=&vertices[v];
 					vertex->position=pos;
 					vertex->texCoords=tex_pos;
 					vertex->texCoordsNoise.x=0;
@@ -941,10 +926,7 @@ void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
 		}
 		if(v>2)
 		{
-			if(fade_mode!=CPU)
-				hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,v-2,&(vertices[0]),sizeof(Vertex_t));
-			else
-				hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,v-2,&(cpu_fade_vertices[0]),sizeof(CPUFadeVertex_t));
+			hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,v-2,&(vertices[0]),sizeof(Vertex_t));
 		}
 	}
 
@@ -1098,19 +1080,13 @@ void SimulCloudRenderer::InternalRenderVolumetric(int buffer_index)
 				if(start)
 				{
 					Vertex_t *startvertex=NULL;
-					if(fade_mode!=CPU)
-						startvertex=&vertices[v];
-					if(fade_mode==CPU)
-						startvertex=&cpu_fade_vertices[v];
+					startvertex=&vertices[v];
 					startvertex->position=pos;
 					v++;
 					start=false;
 				}
 				Vertex_t *vertex=NULL;
-				if(fade_mode!=CPU)
-					vertex=&vertices[v];
-				else
-					vertex=&cpu_fade_vertices[v];
+				vertex=&vertices[v];
 				vertex->position=pos;
 				vertex->texCoords=tex_pos;
 				vertex->texCoordsNoise.x=V.noise_tex_x;
@@ -1126,19 +1102,13 @@ void SimulCloudRenderer::InternalRenderVolumetric(int buffer_index)
 			break;
 		}
 		Vertex_t *vertex=NULL;
-		if(fade_mode!=CPU)
-			vertex=&vertices[v];
-		else
-			vertex=&cpu_fade_vertices[v];
+		vertex=&vertices[v];
 		vertex->position=pos;
 		v++;
 	}
 	if(v>2)
 	{
-		if(fade_mode!=CPU)
 			hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,v-2,&(vertices[0]),sizeof(Vertex_t));
-		else
-			hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,v-2,&(cpu_fade_vertices[0]),sizeof(CPUFadeVertex_t));
 	}
 
 	hr=m_pCloudEffect->EndPass();
@@ -1623,16 +1593,6 @@ void SimulCloudRenderer::SetInscatterTextures(void *i,void *s)
 {
 	sky_inscatter_texture=(LPDIRECT3DBASETEXTURE9)i;
 	skylight_texture=(LPDIRECT3DBASETEXTURE9)s;
-}
-
-void SimulCloudRenderer::SetFadeMode(FadeMode f)
-{
-	if(fade_mode!=f)
-	{
-		BaseCloudRenderer::SetFadeMode(f);
-		rebuild_shaders=true;
-		RecompileShaders();
-	}
 }
 
 void SimulCloudRenderer::SetYVertical(bool y)

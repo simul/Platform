@@ -962,13 +962,9 @@ void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *
 }
 
 
-std::map<std::string,std::string> MakeDefinesList(simul::clouds::BaseCloudRenderer::FadeMode fade_mode,bool wrap,bool y_vertical)
+std::map<std::string,std::string> MakeDefinesList(bool wrap,bool y_vertical)
 {
 	std::map<std::string,std::string> defines;
-	if(fade_mode==simul::clouds::BaseCloudRenderer::FRAGMENT)
-		defines["FADE_MODE"]="1";
-	if(fade_mode==simul::clouds::BaseCloudRenderer::CPU)
-		defines["FADE_MODE"]="0";
 	defines["DETAIL_NOISE"]="1";
 	if(wrap)
 		defines["WRAP_CLOUDS"]="1";

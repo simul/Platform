@@ -9,8 +9,8 @@
 #include <d3dx11.h>
 #include <D3dx11effect.h>
 #endif
-#include "Simul/Platform/DirectX1x/MacrosDx1x.h"
-#include "Simul/Platform/DirectX1x/Export.h"
+#include "Simul/Platform/DirectX11/MacrosDx1x.h"
+#include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Clouds/BaseFramebuffer.h"
 
 

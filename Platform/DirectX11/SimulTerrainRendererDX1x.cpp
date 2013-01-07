@@ -11,8 +11,8 @@
 #include <dxerr.h>
 #include <string>
 #include "Simul/Math/Vector3.h"
-#include "Simul/Platform/DirectX1x/MacrosDX1x.h"
-#include "Simul/Platform/DirectX1x/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/MacrosDX1x.h"
+#include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 	struct TerrainVertex_t
 	{
 		float pos[3];

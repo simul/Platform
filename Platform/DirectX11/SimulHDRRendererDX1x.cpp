@@ -155,7 +155,7 @@ bool SimulHDRRendererDX1x::FinishRender()
 	D3DXMatrixIdentity(&ident);
     D3DXMatrixOrthoLH(&ident,2.f,2.f,-100.f,100.f);
 	worldViewProj->SetMatrix(ident);
-	framebuffer->RenderBufferToCurrentTarget();
+	framebuffer->DrawQuad();
 	hdrTexture->SetResource(NULL);
 	ApplyPass(TonemapTechnique->GetPassByIndex(0));
 	PIXEndNamedEvent();

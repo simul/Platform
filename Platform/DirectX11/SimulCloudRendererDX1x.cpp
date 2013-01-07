@@ -510,10 +510,6 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	if(!m_pd3dDevice)
 		return S_OK;
 	std::map<std::string,std::string> defines;
-	if(fade_mode==FRAGMENT)
-		defines["FADE_MODE"]="1";
-	if(fade_mode==CPU)
-		defines["FADE_MODE"]="0";
 	defines["DETAIL_NOISE"]='1';
 	if(GetCloudInterface()->GetWrap())
 		defines["WRAP_CLOUDS"]="1";
@@ -978,11 +974,6 @@ simul::clouds::LightningRenderInterface *SimulCloudRendererDX1x::GetLightningRen
 	simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 	
 	return lightningRenderInterface;
-}
-
-float SimulCloudRendererDX1x::GetSunOcclusion() const
-{
-	return sun_occlusion;
 }
 
 bool SimulCloudRendererDX1x::MakeCubemap()

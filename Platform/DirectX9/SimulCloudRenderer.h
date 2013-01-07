@@ -83,7 +83,6 @@ public:
 	bool RenderDistances(int width,int height);
 	bool RenderLightVolume();
 	void EnableFilter(bool f);
-	virtual void SetFadeMode(FadeMode f);
 	void SetYVertical(bool y);
 	bool IsYVertical() const{return y_vertical;}
 

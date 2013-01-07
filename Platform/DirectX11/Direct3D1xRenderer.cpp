@@ -1,17 +1,17 @@
 #include "Direct3D1xRenderer.h"
 
 // Simul Weather:
-#include "Simul/Platform/DirectX1x/SimulWeatherRendererDX1x.h"
+#include "Simul/Platform/DirectX11/SimulWeatherRendererDX1x.h"
 //#include "Simul/Platform/Windows/DirectX 11/SimulTerrainRenderer.h"
-#include "Simul/Platform/DirectX1x/SimulCloudRendererDX1x.h"
-#include "Simul/Platform/DirectX1x/SimulHDRRendererDX1x.h"
+#include "Simul/Platform/DirectX11/SimulCloudRendererDX1x.h"
+#include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
 //#include "Simul/Platform/Windows/DirectX 11/Simul2DCloudRendererDX1x.h"
-#include "Simul/Platform/DirectX1x/SimulSkyRendererDX1x.h"
-#include "Simul/Platform/DirectX1x/SimulAtmosphericsRendererDX1x.h"
-#include "Simul/Platform/DirectX1x/SimulOpticsRendererDX1x.h"
-#include "Simul/Platform/DirectX1x/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/SimulSkyRendererDX1x.h"
+#include "Simul/Platform/DirectX11/SimulAtmosphericsRendererDX1x.h"
+#include "Simul/Platform/DirectX11/SimulOpticsRendererDX1x.h"
+#include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Profiler.h"
-#include "Simul/Platform/DirectX1x/MacrosDX1x.h"
+#include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Sky/SkyInterface.h"
@@ -19,7 +19,6 @@
 
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int h):
 		camera(NULL)
-		,timeMult(0.f)
 		,y_vertical(true)
 		,UseHdrPostprocessor(true)
 		,UseSkyBuffer(true)
@@ -160,6 +159,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	if(simulWeatherRenderer)
 	{
+		simulWeatherRenderer->RenderPrecipitation();
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light;
@@ -265,7 +265,7 @@ void Direct3D11Renderer::RecompileShaders()
 void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
 {
 	// The weather renderer works in days, not seconds
-	float game_timestep=timeMult*fTimeStep/(24.f*60.f*60.f);
+	float game_timestep=fTimeStep/(24.f*60.f*60.f);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->Update(game_timestep);
 }

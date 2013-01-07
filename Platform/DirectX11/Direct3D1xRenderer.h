@@ -11,11 +11,11 @@
 #include <dxutdevice11.h>
 #include <dxerr.h>
 
-#include "Simul/Platform/DirectX1x/Direct3D11CallbackInterface.h"
+#include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Graph/StandardNodes/ShowProgressInterface.h"
 #include "Simul/Graph/Meta/Group.h"
-#include "Simul/Platform/DirectX1x/Export.h"
+#include "Simul/Platform/DirectX11/Export.h"
 #pragma warning(push)
 #pragma warning(disable:4251)
 namespace simul
@@ -89,7 +89,6 @@ protected:
 	simul::base::SmartPtr<SimulOpticsRendererDX1x>	simulOpticsRenderer;
 	simul::base::SmartPtr<SimulWeatherRendererDX1x>	simulWeatherRenderer;
 	simul::base::SmartPtr<SimulHDRRendererDX1x>		simulHDRRenderer;
-	float timeMult;
 	unsigned ScreenWidth,ScreenHeight;
 };	
 

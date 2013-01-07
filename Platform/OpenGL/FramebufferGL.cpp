@@ -128,6 +128,7 @@ bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format,GLint 
 		glTexParameteri(m_target, GL_TEXTURE_WRAP_T, wrap_clamp);
 	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		//glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexImage2D(m_target, 0, colour_iformat, m_width, m_height, 0,GL_RGBA, format, NULL);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT,GL_COLOR_ATTACHMENT0_EXT + index, m_target, m_tex_col[index], 0);
@@ -193,6 +194,8 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 	glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexImage2D(m_target, 0, iformat, m_width, m_height, 0,GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fb);

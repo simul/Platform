@@ -20,9 +20,9 @@
 	#include <d3dx11.h>
 	#include <d3dx11effect.h>
 #endif
-#include "Simul/Platform/DirectX1x/MacrosDX1x.h"
-#include "Simul/Platform/DirectX1x/Export.h"
-#include "Simul/Platform/DirectX1x/FramebufferDX1x.h"
+#include "Simul/Platform/DirectX11/MacrosDX1x.h"
+#include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 
 namespace simul
 {
@@ -92,7 +92,6 @@ protected:
 	bool y_vertical;
 	int cycle;
 	bool IsYVertical(){return y_vertical;}
-	float sun_occlusion;
 
 	void CreateFadeTextures();
 	void EnsureCorrectTextureSizes();

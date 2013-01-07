@@ -367,6 +367,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimulGLPrecipitationRenderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SimulGLSkyRenderer.cpp"
 				>
 			</File>
@@ -450,6 +454,10 @@
 			</File>
 			<File
 				RelativePath=".\SimulGLLightningRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulGLPrecipitationRenderer.h"
 				>
 			</File>
 			<File

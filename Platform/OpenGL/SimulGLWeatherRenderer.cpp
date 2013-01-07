@@ -12,6 +12,7 @@
 #include "SimulGL2DCloudRenderer.h"
 #include "SimulGLLightningRenderer.h"
 #include "SimulGLAtmosphericsRenderer.h"
+#include "SimulGLPrecipitationRenderer.h"
 #include "SimulGLUtilities.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Sky/SkyKeyframer.h"
@@ -55,6 +56,8 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 
 	simulAtmosphericsRenderer=new SimulGLAtmosphericsRenderer;
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
+	if(rain)
+		basePrecipitationRenderer=simulPrecipitationRenderer=new SimulGLPrecipitationRenderer();
 
 	EnableCloudLayers();
 	SetScreenSize(width,height);
@@ -68,6 +71,8 @@ void SimulGLWeatherRenderer::EnableCloudLayers()
 		if(device_initialized)
 			simulSkyRenderer->RestoreDeviceObjects(NULL);
 	}
+	if(simulPrecipitationRenderer)
+		simulPrecipitationRenderer->RestoreDeviceObjects(NULL);
 	if(simul2DCloudRenderer)
 	{
 		if(simulSkyRenderer.get())
@@ -153,6 +158,8 @@ void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 		simulLightningRenderer->InvalidateDeviceObjects();
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
+	if(simulPrecipitationRenderer)
+		simulPrecipitationRenderer->InvalidateDeviceObjects();
 	if(scene_buffer)
 		scene_buffer->InvalidateDeviceObjects();
 }
@@ -213,6 +220,12 @@ void SimulGLWeatherRenderer::RenderLightning()
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		simulLightningRenderer->Render();
+}
+
+void SimulGLWeatherRenderer::RenderPrecipitation()
+{
+	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
+		simulPrecipitationRenderer->Render();
 }
 
 
