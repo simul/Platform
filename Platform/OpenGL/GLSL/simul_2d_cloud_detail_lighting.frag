@@ -1,3 +1,4 @@
+#version 140
 uniform sampler2D dens_texture;
 uniform vec3 lightDir;
 varying vec2 texc;

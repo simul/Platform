@@ -64,6 +64,7 @@ public:
 	//! Clear the sequence()
 	void New();
 protected:
+	void SwitchShaders(GLuint program);
 	void DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip);
 	bool init;
 	// Make up to date with respect to keyframer:
@@ -74,43 +75,31 @@ protected:
 	void EnsureTextureCycle();
 
 	GLuint clouds_program;
+	GLuint clouds_foreground_program;
 
 	GLuint cross_section_program;
 
 	GLuint cloud_shadow_program;
 	GLint eyePosition_param;
-	GLint lightResponse_param;
-	GLint lightDir_param;
-	GLint skylightColour_param;
-	GLint sunlightColour_param;
-	GLint fractalScale_param;
-	GLint interp_param;
-	GLint layerDensity_param;
-	GLint textureEffect_param;
-	GLint lightDirection_param;
-	GLint layerDistance_param;
 
 	GLint cloudDensity1_param;
 	GLint cloudDensity2_param;
 	GLint noiseSampler_param;
-	GLint illumSampler_param;
 	GLint lossSampler_param;
 	GLint inscatterSampler_param;
+	GLint illumSampler_param;
 	GLint skylightSampler_param;
 	GLint depthAlphaTexture;
+	GLint layerDistance_param;
 unsigned short *pIndices;
 
-	GLint illuminationOrigin_param;
-	GLint illuminationScales_param;
-	GLint lightningMultipliers_param;
-	GLint lightningColour_param;
-						 
+	
+	GLint cloudConstants;
+	GLuint cloudConstantsUBO;
+	GLint cloudConstantsBindingIndex;
 
-	GLint cloudEccentricity_param;
 	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;
-	GLint screenCoordOffset;
-	GLint earthshadowMultiplier;
 	
 	GLint		maxFadeDistanceMetres_param;
 	GLuint		illum_tex;

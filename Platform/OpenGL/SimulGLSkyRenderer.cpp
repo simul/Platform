@@ -345,9 +345,11 @@ ERROR_CHECK
 		// If that block IS in the shader program, then BIND it to the relevant UBO.
 		if(earthShadowUniforms>=0)
 		{
-			glUniformBlockBinding(current_program,earthShadowUniforms,0);
+		GLint earthShadowUniformsBindingIndex=0;
+			glUniformBlockBinding(current_program,earthShadowUniforms,earthShadowUniformsBindingIndex);
 ERROR_CHECK
-			glBindBufferRange(GL_UNIFORM_BUFFER, 0,earthShadowUniformsUBO, 0, sizeof(EarthShadowUniforms));	
+			glBindBufferRange(GL_UNIFORM_BUFFER, earthShadowUniformsBindingIndex,earthShadowUniformsUBO, 0, sizeof(EarthShadowUniforms));	
+ERROR_CHECK
 			//glBindBufferBase(GL_UNIFORM_BUFFER,0,earthShadowUniformsUBO);
 		}
 		cloudOrigin					=glGetUniformLocation(current_program,"cloudOrigin");

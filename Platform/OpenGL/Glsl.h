@@ -1,5 +1,7 @@
 #pragma once
-
+typedef int sampler1D;
+typedef int sampler2D;
+typedef int sampler3D;
 #define layout(std140) struct
 #define uniform
 

@@ -10,10 +10,16 @@ uniform float maxDistanceKm;
 uniform float3 sunIrradiance;
 uniform float3 lightDir;
 
+struct vertexInput
 {
-	float2 pos;
-	float2 texc;
+    float3 position		: POSITION;
+    float4 texCoords	: TEXCOORD0;
 };
+
+struct vertexOutput
+{
+    float4 hPosition	: SV_POSITION;
+	float2 texc			: TEXCOORD0;		
 
 float4 PS_Loss(void)
 {
