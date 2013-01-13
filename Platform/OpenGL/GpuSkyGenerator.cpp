@@ -35,8 +35,7 @@ void GpuSkyGenerator::InvalidateDeviceObjects()
 }
 
 void GpuSkyGenerator::RecompileShaders()
-{
-	SAFE_DELETE_PROGRAM(loss_program);
+{																																			SAFE_DELETE_PROGRAM(loss_program);
 	SAFE_DELETE_PROGRAM(insc_program);
 	SAFE_DELETE_PROGRAM(skyl_program);
 	loss_program=LoadPrograms("simple.vert",NULL,"simul_gpu_loss.frag");

@@ -313,7 +313,7 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 
 		<<"\n\tset_callback="<<set_callback<<std::endl;
 
-	//cloudKeyframer->SetGpuLightingCallback(&gpuCloudGenerator);
+	//cloudKeyframer->SetGpuCloudGenerator(&gpuCloudGenerator);
 	ClearIterators();
 }
 

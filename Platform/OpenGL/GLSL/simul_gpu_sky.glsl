@@ -112,7 +112,6 @@ float getDistanceToSpace(float sine_elevation,float h_km)
 	return getShortestDistanceToAltitude(sine_elevation,h_km,maxDensityAltKm);
 }
 
-
 float getOvercastAtAltitude(float h_km)
 {
 	return overcast*saturate((h_km-overcastBaseKm)/overcastRangeKm);
@@ -135,6 +134,6 @@ float getOvercastAtAltitudeRange(float alt1_km,float alt2_km)
 	float oc2	=(x2-x1)+(x1*x1-x2*x2)/(2.0*overcastRangeKm);
 	float oc	=(oc1+oc2)/diff_km;
 	oc			*=overcast;
-	return oc;
+	return 1.0*oc;
 }
 #endif

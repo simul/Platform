@@ -16,7 +16,7 @@ out  vec4 outColor;
 void main(void)
 {
 	vec4 previous_insc	=texture(input_insc_texture,texc.xy);
-	vec3 previous_loss	=texture(loss_texture,vec3(texc.xy,distKm/maxDistanceKm)).rgb;// should adjust texc - we want the PREVIOUS loss!
+	vec3 previous_loss	=texture(loss_texture,vec3(texc.xy,pow(distKm/maxDistanceKm,0.5))).rgb;// should adjust texc - we want the PREVIOUS loss!
 	float sin_e			=1.0-2.0*(texc.y*texSize.y-0.5)/(texSize.y-1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texc.x*texSize.x-0.5)/(texSize.x-1.0);
@@ -48,7 +48,7 @@ void main(void)
 	vec4 light			=getSunlightFactor(alt_km,lightDir)*vec4(sunIrradiance,1.0);
 	vec4 insc			=light;
 #ifdef OVERCAST
-	//insc*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
+	insc*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
 #endif
 	vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie;
 	vec3 total_ext		=extinction+ozone*ozone_factor;

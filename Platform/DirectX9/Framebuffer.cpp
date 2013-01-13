@@ -46,7 +46,7 @@ void Framebuffer::MakeTexture()
 	SAFE_RELEASE(m_pHDRRenderTarget);
 	if(!Width||!Height)
 		return;
-	HRESULT hr=m_pd3dDevice->CreateTexture(	Width,
+	m_pd3dDevice->CreateTexture(	Width,
 									Height,
 									1,
 									D3DUSAGE_RENDERTARGET,
