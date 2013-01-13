@@ -53,7 +53,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 
 
 	SAFE_RELEASE(pShadingCB);
-	D3D11_SUBRESOURCE_DATA cb_init_data;
+/*	D3D11_SUBRESOURCE_DATA cb_init_data;
 	cb_init_data.pSysMem = &rainConstantBuffer;
 	cb_init_data.SysMemPitch = 0;
 	cb_init_data.SysMemSlicePitch = 0;
@@ -66,9 +66,9 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	cb_desc.MiscFlags			= 0;    
 	cb_desc.ByteWidth			= PAD16(sizeof(RainConstantBuffer));
 	cb_desc.StructureByteStride = 0;
-	m_pd3dDevice->CreateBuffer(&cb_desc, &cb_init_data, &pShadingCB);
+	m_pd3dDevice->CreateBuffer(&cb_desc, &cb_init_data, &pShadingCB);*/
+	MAKE_CONSTANT_BUFFER(pShadingCB,RainConstantBuffer);
 
-	
 	ID3D1xEffectTechnique*			tech	=m_pRainEffect->GetTechniqueByName("create_rain_texture");
 	ApplyPass(tech->GetPassByIndex(0));
 	FramebufferDX1x make_rain_fb(512,512);
@@ -77,7 +77,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	make_rain_fb.Activate();
 	make_rain_fb.DrawQuad();
 	make_rain_fb.Deactivate();
-	rain_texture=make_rain_fb.hdr_buffer_texture_SRV;
+	rain_texture=make_rain_fb.buffer_texture_SRV;
 	// Make sure it isn't destroyed when the fb goes out of scope:
 	rain_texture->AddRef();
 }
@@ -85,19 +85,14 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D1xDevice*)dev;
-#ifdef DX10
-	m_pImmediateContext=dev;
-#else
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-#endif
 	HRESULT hr=S_OK;
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
 	MakeMesh();
     RecompileShaders();
-	
 	D3D1x_INPUT_ELEMENT_DESC decl[] = {
 		{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT	,0,0	,D3D1x_INPUT_PER_VERTEX_DATA,0},
 		{"TEXCOORD",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,12	,D3D1x_INPUT_PER_VERTEX_DATA,0},
@@ -126,6 +121,7 @@ void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
 void SimulPrecipitationRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
+	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(m_pRainEffect);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(rain_texture);
@@ -153,6 +149,7 @@ those pixels.
 */
 void SimulPrecipitationRendererDX1x::Render()
 {
+return;
 	if(rain_intensity<=0)
 		return;
 	PIXBeginNamedEvent(0,"Render Precipitation");

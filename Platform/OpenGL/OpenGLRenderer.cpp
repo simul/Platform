@@ -1,8 +1,7 @@
 #ifdef _MSC_VER
+#include <stdlib.h>
 #include <GL/glew.h>
 #include <GL/glut.h>
-// for wglGetProcAddress
-#include <Windows.h>
 #endif
 #include "OpenGLRenderer.h"
 // For font definition define:
@@ -16,6 +15,9 @@
 #include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
+#ifdef _MSC_VER
+#include <Windows.h>
+#endif
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
@@ -32,6 +34,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,ShowOSD(false)
 	,ShowWater(true)
 	,ReverseDepth(false)
+	,MixCloudsAndTerrain(false)
 {
 	simulHDRRenderer=new SimulGLHDRRenderer(width,height);
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
@@ -89,7 +92,10 @@ ERROR_CHECK
 		else
 			simulWeatherRenderer->SetExposureHint(1.0f);
 ERROR_CHECK
-	
+		
+		simulWeatherRenderer->GetCloudRenderer()->SetDepthTexture(0);
+		if(MixCloudsAndTerrain)
+			simulWeatherRenderer->SetAlwaysRenderCloudsLate(MixCloudsAndTerrain);
 		simulWeatherRenderer->RenderSky(true,false);
 
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
@@ -98,6 +104,8 @@ ERROR_CHECK
 			simulTerrainRenderer->Render();
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender();
+			
+		simulWeatherRenderer->GetCloudRenderer()->SetDepthTexture(simulWeatherRenderer->GetBaseAtmosphericsRenderer()->GetDepthAlphaTexture());
 		simulWeatherRenderer->RenderLateCloudLayer(true);
 
 		simulWeatherRenderer->RenderLightning();
@@ -121,19 +129,22 @@ ERROR_CHECK
 ERROR_CHECK
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);
+		
+		
+		SetTopDownOrthoProjection(width,height);
 		if(ShowCloudCrossSections)
 		{
 			if(simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 			{
-				SetTopDownOrthoProjection(width,height);
 				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width,height);
 			}
 			if(simulWeatherRenderer->Get2DCloudRenderer()&&simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
 			{
-				SetTopDownOrthoProjection(width,height);
 				simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
 			}
 		}
+		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
+			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(width,height);
 	}
 	renderUI();
 	glPopAttrib();

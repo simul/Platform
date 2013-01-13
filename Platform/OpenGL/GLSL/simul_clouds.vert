@@ -21,17 +21,20 @@ uniform vec3 illuminationScales;
 uniform vec3 eyePosition;
 uniform float layerDistance;
 uniform float maxFadeDistanceMetres;
+
 varying vec2 fade_texc;
 varying vec2 fade_texc_b;
 
 varying vec3 view;
+varying vec4 transformed_pos;
 void main(void)
 {
 	vec4 pos			=gl_Vertex;
 	//pos.xyz			*=layerDistance;
     wPosition			=pos.xyz-eyePosition.xyz;
-    gl_Position			=gl_ModelViewProjectionMatrix*pos;
+    transformed_pos		=gl_ModelViewProjectionMatrix*pos;
     eyespacePosition	=(gl_ModelViewMatrix*pos).xyz;
+    gl_Position			=transformed_pos;
 	texCoordDiffuse.xyz	=gl_MultiTexCoord0.xyz;
 	texCoordDiffuse.w	=0.5+0.5*clamp(gl_MultiTexCoord0.z,0.0,1.0);// clamp?
 	noiseCoord			=gl_MultiTexCoord1.xy;

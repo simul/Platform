@@ -165,7 +165,7 @@ extern const char *GetErrorText(HRESULT hr);
 		#define SAFE_RELEASE(p)		{ if(p) { (p)->Release(); (p)=NULL; } }
 	#endif
 
-extern void SIMUL_DIRECTX1x_EXPORT BreakIfDebugging();
+extern void SIMUL_DIRECTX11_EXPORT BreakIfDebugging();
 #ifdef UNICODE
 
 	#define WIDEN2(x) L ## x
@@ -217,4 +217,22 @@ extern void SIMUL_DIRECTX1x_EXPORT BreakIfDebugging();
 	#ifndef SAFE_DELETE_ARRAY
 	#define SAFE_DELETE_ARRAY(p) { if (p) { delete[] (p);   (p)=NULL; } }
 	#endif
+	
+#define MAKE_CONSTANT_BUFFER(cb,type)	\
+	{\
+	D3D11_SUBRESOURCE_DATA cb_init_data;\
+	type x;\
+	cb_init_data.pSysMem = &x;\
+	cb_init_data.SysMemPitch = 0;\
+	cb_init_data.SysMemSlicePitch = 0;\
+	D3D11_BUFFER_DESC cb_desc;\
+	cb_desc.Usage				= D3D11_USAGE_DYNAMIC;\
+	cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;\
+	cb_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;\
+	cb_desc.MiscFlags			= 0;\
+	cb_desc.ByteWidth			= PAD16(sizeof(type));\
+	cb_desc.StructureByteStride = 0;\
+	m_pd3dDevice->CreateBuffer(&cb_desc, &cb_init_data, &cb);\
+	}
+	
 #endif

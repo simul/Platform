@@ -1,6 +1,7 @@
 #ifdef _MSC_VER
 	#include <windows.h>
 #endif
+#include <GL/glew.h>
 #ifdef WIN64
 #pragma message("WIN64")
 #undef WIN32
@@ -466,7 +467,7 @@ static float mult=1.f;
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;

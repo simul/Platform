@@ -41,6 +41,7 @@ public:
 	void RenderCrossSections(int width,int height);
 	void SetLossTexture(void *);
 	void SetInscatterTextures(void *,void *);
+	void SetDepthTexture(void*);
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
 	
@@ -48,11 +49,6 @@ public:
 	const char *GetDebugText();
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
-	//! Stub for sequential fill because we implement block fill instead.
-	void FillCloudTextureSequentially(int ,int ,int ,const unsigned *){exit(1);}
-	//! Callback implementation for filling cloud texture.
-	void FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array);
-	void CycleTexturesForward();
 	
 	void SetIlluminationGridSize(unsigned ,unsigned ,unsigned );
 	void FillIlluminationSequentially(int ,int ,int ,const unsigned char *);
@@ -67,10 +63,8 @@ public:
 	simul::sky::OvercastCallback *GetOvercastCallback();
 	//! Clear the sequence()
 	void New();
-	//! This function does nothing as Y is never the vertical in this implementation
-	virtual void SetYVertical(bool ){}
-	bool IsYVertical() const{return false;}
 protected:
+	void DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip);
 	bool init;
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
@@ -103,6 +97,7 @@ protected:
 	GLint lossSampler_param;
 	GLint inscatterSampler_param;
 	GLint skylightSampler_param;
+	GLint depthAlphaTexture;
 unsigned short *pIndices;
 
 	GLint illuminationOrigin_param;
@@ -114,6 +109,7 @@ unsigned short *pIndices;
 	GLint cloudEccentricity_param;
 	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;
+	GLint screenCoordOffset;
 	GLint earthshadowMultiplier;
 	
 	GLint		maxFadeDistanceMetres_param;
@@ -124,6 +120,9 @@ unsigned short *pIndices;
 	GLuint		loss_tex;
 	GLuint		inscatter_tex;
 	GLuint		skylight_tex;
+	
+	// For depth data:
+	GLuint		depth_alpha_tex;
 	// 2D texture
 	GLuint		noise_tex;
 	GLuint		volume_noise_tex;

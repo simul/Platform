@@ -69,6 +69,10 @@ public:
 	//! Render the Atmospherics.
 	void StartRender();
 	void FinishRender();
+	void *GetDepthAlphaTexture()
+	{
+		return (void*)framebuffer->buffer_texture_SRV;
+	}
 protected:
 	FramebufferDX1x								*framebuffer;
 	HRESULT Destroy();
@@ -91,11 +95,12 @@ protected:
 	ID3D1xEffectShaderResourceVariable*			lossTexture1;
 	ID3D1xEffectShaderResourceVariable*			inscatterTexture1;
 
-	ID3D1xTexture2D*					loss_texture;
-	ID3D1xTexture2D*					inscatter_texture;
-	ID3D1xTexture2D*					skylight_texture;
-	ID3D1xTexture2D*					clouds_texture;
+	ID3D1xShaderResourceView*					skyLossTexture_SRV;
+	ID3D1xShaderResourceView*					skyInscatterTexture_SRV;
+	ID3D1xShaderResourceView*					skylightTexture_SRV;
+	ID3D1xShaderResourceView*					clouds_texture;
 
+	ID3D11Buffer*						constantBuffer;
 	//! The depth buffer.
 	ID3D1xTexture2D*				depth_texture;
 	//! The un-faded image buffer.

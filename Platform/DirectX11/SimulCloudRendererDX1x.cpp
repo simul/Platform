@@ -72,16 +72,12 @@ struct float3
 struct CloudVertex_t
 {
     float3 position;
-    float3 texCoords;
-    float layerFade;
-    float2 texCoordsNoise;
 };
 struct PosTexVert_t
 {
     float3 position;	
     float2 texCoords;
 };
-CloudVertex_t *vertices=NULL;
 PosTexVert_t *lightning_vertices=NULL;
 #define MAX_VERTICES (12000)
 
@@ -117,6 +113,7 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 	m_pLightningVtxDecl(NULL),
 	m_pCloudEffect(NULL),
 	vertexBuffer(NULL),
+	indexBuffer(NULL),
 	m_pLightningEffect(NULL),
 	noise_texture(NULL),
 	lightning_texture(NULL),
@@ -128,14 +125,11 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 	lightningIlluminationTextureResource(NULL)
 	,blendAndWriteAlpha(NULL)
 	,blendAndDontWriteAlpha(NULL)
-	,y_vertical(true)
 	,enable_lightning(false)
 	,lightning_active(false)
-	,timing(0.f)
 	,mapped(-1)
 {
 	mapped_cloud_texture.pData=NULL;
-	D3DXMatrixIdentity(&world);
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
 	for(int i=0;i<3;i++)
@@ -150,13 +144,13 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cl
 
 void SimulCloudRendererDX1x::SetLossTexture(void *t)
 {
-	skyLossTexture_SRV=(ID3D1xShaderResourceView*)t;
+	skyLossTexture_SRV=(ID3D11ShaderResourceView*)t;
 }
 
 void SimulCloudRendererDX1x::SetInscatterTextures(void *t,void *s)
 {
-	skyInscatterTexture_SRV=(ID3D1xShaderResourceView*)t;
-	skylightTexture_SRV=(ID3D1xShaderResourceView*)s;
+	skyInscatterTexture_SRV=(ID3D11ShaderResourceView*)t;
+	skylightTexture_SRV=(ID3D11ShaderResourceView*)s;
 }
 
 void SimulCloudRendererDX1x::SetNoiseTextureProperties(int s,int f,int o,float p)
@@ -183,7 +177,7 @@ void SimulCloudRendererDX1x::RecompileShaders()
 
 void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 {
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 #ifdef DX10
 	m_pImmediateContext=dev;
 #else
@@ -194,51 +188,33 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	CreateNoiseTexture();
 	CreateLightningTexture();
 	RecompileShaders();
-	D3D1x_SHADER_RESOURCE_VIEW_DESC texdesc;
+	D3D11_SHADER_RESOURCE_VIEW_DESC texdesc;
 
 	texdesc.Format=DXGI_FORMAT_R32G32B32A32_FLOAT;
-	texdesc.ViewDimension=D3D1x_SRV_DIMENSION_TEXTURE3D;
+	texdesc.ViewDimension=D3D11_SRV_DIMENSION_TEXTURE3D;
 	texdesc.Texture3D.MostDetailedMip=0;
 	texdesc.Texture3D.MipLevels=1;
 
 	noiseTexture				->SetResource(noiseTextureResource);
 
-	const D3D1x_INPUT_ELEMENT_DESC decl[] =
+	const D3D11_INPUT_ELEMENT_DESC decl[] =
     {
-        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	1, DXGI_FORMAT_R32_FLOAT,			0,	24,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	2, DXGI_FORMAT_R32G32_FLOAT,		0,	28,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
+        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
-	const D3D1x_INPUT_ELEMENT_DESC std_decl[] =
+	const D3D11_INPUT_ELEMENT_DESC std_decl[] =
     {
-        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
+        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
-	D3D1x_PASS_DESC PassDesc;
-	ID3D1xEffectPass *pass=m_hTechniqueCloud->GetPassByIndex(0);
+	D3DX11_PASS_DESC PassDesc;
+	ID3DX11EffectPass *pass=m_hTechniqueCloud->GetPassByIndex(0);
 	hr=pass->GetDesc(&PassDesc);
 //return true;
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pLightningVtxDecl);
-	hr=m_pd3dDevice->CreateInputLayout( decl,4,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+	hr=m_pd3dDevice->CreateInputLayout( decl,1,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+	CreateMeshBuffers();
 	
-	// Create the main vertex buffer:
-	D3D1x_BUFFER_DESC desc=
-	{
-        MAX_VERTICES*sizeof(CloudVertex_t),
-        D3D1x_USAGE_DYNAMIC,
-        D3D1x_BIND_VERTEX_BUFFER,
-        D3D1x_CPU_ACCESS_WRITE,
-        0
-	};
-	if(!vertices)
-		vertices=new CloudVertex_t[MAX_VERTICES];
-    D3D1x_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-    InitData.pSysMem = vertices;
-    InitData.SysMemPitch = sizeof(CloudVertex_t);
-	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
 //return true;
 	if(m_hTechniqueLightning)
 	{
@@ -271,6 +247,64 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 										| D3D11_COLOR_WRITE_ENABLE_BLUE;
 	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndDontWriteAlpha );
 }
+	
+void SimulCloudRendererDX1x::CreateMeshBuffers()
+{
+	helper->GenerateSphereVertices();
+	int num_vertices=helper->GetVertices().size();	 
+	int num_indices=helper->GetQuadStripIndices().size();
+	// Create the main vertex buffer:
+	D3D11_BUFFER_DESC vertexBufferDesc=
+	{
+        num_vertices*sizeof(CloudVertex_t),
+        D3D11_USAGE_DYNAMIC,
+        D3D11_BIND_VERTEX_BUFFER,
+        D3D11_CPU_ACCESS_WRITE,
+        0
+	};
+	// index buffer
+	D3D11_BUFFER_DESC indexBufferDesc=
+	{
+        num_indices*sizeof(unsigned short),
+        D3D11_USAGE_DYNAMIC,
+        D3D11_BIND_INDEX_BUFFER,
+        D3D11_CPU_ACCESS_WRITE,
+        0
+	};
+	CloudVertex_t *vertices=new CloudVertex_t[num_vertices];
+	unsigned short *indices=new unsigned short[num_indices];
+    D3D11_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D11_SUBRESOURCE_DATA) );
+    
+	// Temporary: should not need this after 1.5.1-
+	if(helper)
+	{
+		CloudVertex_t *dest=vertices;
+		for(size_t i=0;i<helper->GetVertices().size();i++,dest++)
+		{
+			dest->position.x = helper->GetVertices()[i].x;
+			dest->position.y = helper->GetVertices()[i].y;
+			dest->position.z = helper->GetVertices()[i].z;
+		}
+		for(int i=0;i<num_indices;i++)
+		{
+			unsigned short s=helper->GetQuadStripIndices()[i];
+			indices[i]=s;
+		}
+	}
+    
+    InitData.pSysMem = vertices;
+    InitData.SysMemPitch = sizeof(CloudVertex_t);
+	HRESULT hr=m_pd3dDevice->CreateBuffer(&vertexBufferDesc,&InitData,&vertexBuffer);
+	
+    ZeroMemory( &InitData, sizeof(D3D11_SUBRESOURCE_DATA) );
+    InitData.pSysMem = indices;
+    InitData.SysMemPitch = sizeof(unsigned short);
+	hr=m_pd3dDevice->CreateBuffer(&indexBufferDesc,&InitData,&indexBuffer);
+    
+    delete [] vertices;
+    delete [] indices;
+}
 
 void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 {
@@ -296,6 +330,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(lightning_texture);
 	SAFE_RELEASE(illumination_texture);
 	SAFE_RELEASE(vertexBuffer);
+	SAFE_RELEASE(indexBuffer);
 //	SAFE_RELEASE(skyLossTexture_SRV);
 //	SAFE_RELEASE(skyInscatterTexture_SRV);
 //	SAFE_RELEASE(skylightTexture_SRV);
@@ -331,7 +366,7 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(bool override_file)
 	
 	D3DX1x_IMAGE_LOAD_INFO loadInfo;
 	ZeroMemory( &loadInfo, sizeof(D3DX11_IMAGE_LOAD_INFO) );
-	loadInfo.BindFlags = D3D1x_BIND_SHADER_RESOURCE;
+	loadInfo.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	loadInfo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 loadInfo.MipLevels=0;
 	if(!override_file)
@@ -352,7 +387,7 @@ loadInfo.MipLevels=0;
 	}
 	//if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,size,default_mip_levels,default_texture_usage,DXGI_FORMAT_R8G8B8A8_UINT,D3DPOOL_MANAGED,&noise_texture)))
 	//	return (hr==S_OK);
-	D3D1x_TEXTURE2D_DESC tex_desc;
+	D3D11_TEXTURE2D_DESC tex_desc;
 	tex_desc.Width			=noise_texture_size;
 	tex_desc.Height			=noise_texture_size;
 	tex_desc.MipLevels = 0;
@@ -360,12 +395,12 @@ loadInfo.MipLevels=0;
 	tex_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	tex_desc.SampleDesc.Count = 1;
 	tex_desc.SampleDesc.Quality = 0;
-	tex_desc.Usage = D3D1x_USAGE_DYNAMIC;
-	tex_desc.BindFlags = D3D1x_BIND_SHADER_RESOURCE;
-	tex_desc.CPUAccessFlags = 0;//D3D1x_CPU_ACCESS_WRITE;
-	tex_desc.MiscFlags = 0;//D3D1x_RESOURCE_MISC_GENERATE_MIPS only works with a rendertarget;
+	tex_desc.Usage = D3D11_USAGE_DYNAMIC;
+	tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	tex_desc.CPUAccessFlags = 0;//D3D11_CPU_ACCESS_WRITE;
+	tex_desc.MiscFlags = 0;//D3D11_RESOURCE_MISC_GENERATE_MIPS only works with a rendertarget;
  
-	D3D1x_TEXTURE2D_DESC desc=
+	D3D11_TEXTURE2D_DESC textureDesc=
 	{
 		noise_texture_size,
 		noise_texture_size,
@@ -373,12 +408,12 @@ loadInfo.MipLevels=0;
 		1,
 		DXGI_FORMAT_R8G8B8A8_UNORM,
 		{1,0},
-		D3D1x_USAGE_DYNAMIC,
-		D3D1x_BIND_SHADER_RESOURCE,
-		D3D1x_CPU_ACCESS_WRITE,
+		D3D11_USAGE_DYNAMIC,
+		D3D11_BIND_SHADER_RESOURCE,
+		D3D11_CPU_ACCESS_WRITE,
 		0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
 	};
-	hr=m_pd3dDevice->CreateTexture2D(&desc,NULL,&noise_texture);
+	hr=m_pd3dDevice->CreateTexture2D(&textureDesc,NULL,&noise_texture);
 	V_CHECK(hr);
 	D3D1x_MAPPED_TEXTURE2D mapped;
 	if(FAILED(hr=Map2D(noise_texture,&mapped)))
@@ -396,18 +431,18 @@ bool SimulCloudRendererDX1x::CreateLightningTexture()
 	HRESULT hr=S_OK;
 	unsigned size=64;
 	SAFE_RELEASE(lightning_texture);
-	D3D1x_TEXTURE1D_DESC desc=
+	D3D11_TEXTURE1D_DESC textureDesc=
 	{
 		size,
 		1,
 		1,
 		DXGI_FORMAT_R8G8B8A8_UNORM,
-		D3D1x_USAGE_DYNAMIC,
-		D3D1x_BIND_SHADER_RESOURCE,
-		D3D1x_CPU_ACCESS_WRITE,
+		D3D11_USAGE_DYNAMIC,
+		D3D11_BIND_SHADER_RESOURCE,
+		D3D11_CPU_ACCESS_WRITE,
 		0
 	};
-	if(FAILED(hr=m_pd3dDevice->CreateTexture1D(&desc,NULL,&lightning_texture)))
+	if(FAILED(hr=m_pd3dDevice->CreateTexture1D(&textureDesc,NULL,&lightning_texture)))
 		return (hr==S_OK);
 	D3D1x_MAPPED_TEXTURE2D resource;
 	if(FAILED(hr=Map1D(lightning_texture,&resource)))
@@ -438,17 +473,17 @@ bool SimulCloudRendererDX1x::CreateLightningTexture()
 void SimulCloudRendererDX1x::SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z)
 {
 	SAFE_RELEASE(illumination_texture);
-	D3D1x_TEXTURE3D_DESC desc=
+	D3D11_TEXTURE3D_DESC textureDesc=
 	{
 		width_x,length_y,depth_z,
 		1,
 		DXGI_FORMAT_R8G8B8A8_UNORM,
-		D3D1x_USAGE_DYNAMIC,
-		D3D1x_BIND_SHADER_RESOURCE,
-		D3D1x_CPU_ACCESS_WRITE,
+		D3D11_USAGE_DYNAMIC,
+		D3D11_BIND_SHADER_RESOURCE,
+		D3D11_CPU_ACCESS_WRITE,
 		0
 	};
-	HRESULT hr=m_pd3dDevice->CreateTexture3D(&desc,0,&illumination_texture);
+	HRESULT hr=m_pd3dDevice->CreateTexture3D(&textureDesc,0,&illumination_texture);
 	D3D1x_MAPPED_TEXTURE3D mapped;
 	if(FAILED(hr=Map3D(illumination_texture,&mapped)))
 		return;
@@ -518,45 +553,54 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	else
 		defines["Z_VERTICAL"]="1";
 	HRESULT hr=CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds_and_lightning_dx11.fx",defines);
-	m_hTechniqueCloud					=m_pCloudEffect->GetTechniqueByName("simul_clouds");
-	m_hTechniqueCloudsAndLightning		=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
+	m_hTechniqueCloud				=m_pCloudEffect->GetTechniqueByName("simul_clouds");
+	m_hTechniqueCloudsAndLightning	=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
 
-	m_hTechniqueCrossSectionXY			=m_pCloudEffect->GetTechniqueByName("cross_section_xy");
-	m_hTechniqueCrossSectionXZ			=m_pCloudEffect->GetTechniqueByName("cross_section_xz");
+	m_hTechniqueCrossSectionXY		=m_pCloudEffect->GetTechniqueByName("cross_section_xy");
+	m_hTechniqueCrossSectionXZ		=m_pCloudEffect->GetTechniqueByName("cross_section_xz");
 
-	worldViewProj						=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
-	eyePosition							=m_pCloudEffect->GetVariableByName("eyePosition")->AsVector();
-	lightResponse						=m_pCloudEffect->GetVariableByName("lightResponse")->AsVector();
-	lightDir							=m_pCloudEffect->GetVariableByName("lightDir")->AsVector();
-	skylightColour						=m_pCloudEffect->GetVariableByName("skylightColour")->AsVector();
-	sunlightColour1						=m_pCloudEffect->GetVariableByName("sunlightColour1")->AsVector();
-	sunlightColour2						=m_pCloudEffect->GetVariableByName("sunlightColour2")->AsVector();
-	earthshadowMultiplier				=m_pCloudEffect->GetVariableByName("earthshadowMultiplier")->AsScalar();
-	fractalScale						=m_pCloudEffect->GetVariableByName("fractalScale")->AsVector();
-	interp								=m_pCloudEffect->GetVariableByName("interp")->AsScalar();
-	mieRayleighRatio					=m_pCloudEffect->GetVariableByName("mieRayleighRatio")->AsVector();
-	hazeEccentricity					=m_pCloudEffect->GetVariableByName("hazeEccentricity")->AsScalar();
-	fadeInterp							=m_pCloudEffect->GetVariableByName("fadeInterp")->AsScalar();
-	cloudEccentricity					=m_pCloudEffect->GetVariableByName("cloudEccentricity")->AsScalar();
-	alphaSharpness						=m_pCloudEffect->GetVariableByName("alphaSharpness")->AsScalar();
-	maxFadeDistanceMetres				=m_pCloudEffect->GetVariableByName("maxFadeDistanceMetres")->AsScalar();
+	worldViewProj					=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	wrld							=m_pCloudEffect->GetVariableByName("wrld")->AsMatrix();
+	eyePosition						=m_pCloudEffect->GetVariableByName("eyePosition")->AsVector();
+	lightResponse					=m_pCloudEffect->GetVariableByName("lightResponse")->AsVector();
+	lightDir						=m_pCloudEffect->GetVariableByName("lightDir")->AsVector();
+	skylightColour					=m_pCloudEffect->GetVariableByName("skylightColour")->AsVector();
+	sunlightColour1					=m_pCloudEffect->GetVariableByName("sunlightColour1")->AsVector();
+	sunlightColour2					=m_pCloudEffect->GetVariableByName("sunlightColour2")->AsVector();
+	earthshadowMultiplier			=m_pCloudEffect->GetVariableByName("earthshadowMultiplier")->AsScalar();
+	fractalScale					=m_pCloudEffect->GetVariableByName("fractalScale")->AsVector();
+	interp							=m_pCloudEffect->GetVariableByName("interp")->AsScalar();
+	mieRayleighRatio				=m_pCloudEffect->GetVariableByName("mieRayleighRatio")->AsVector();
+	hazeEccentricity				=m_pCloudEffect->GetVariableByName("hazeEccentricity")->AsScalar();
+	fadeInterp						=m_pCloudEffect->GetVariableByName("fadeInterp")->AsScalar();
+	cloudEccentricity				=m_pCloudEffect->GetVariableByName("cloudEccentricity")->AsScalar();
+	alphaSharpness					=m_pCloudEffect->GetVariableByName("alphaSharpness")->AsScalar();
+	maxFadeDistanceMetres			=m_pCloudEffect->GetVariableByName("maxFadeDistanceMetres")->AsScalar();
 
 	//if(enable_lightning)
 	{
-		lightningMultipliers			=m_pCloudEffect->GetVariableByName("lightningMultipliers")->AsVector();
-		lightningColour					=m_pCloudEffect->GetVariableByName("lightningColour")->AsVector();
-		illuminationOrigin				=m_pCloudEffect->GetVariableByName("illuminationOrigin")->AsVector();
-		illuminationScales				=m_pCloudEffect->GetVariableByName("illuminationScales")->AsVector();
+		lightningMultipliers		=m_pCloudEffect->GetVariableByName("lightningMultipliers")->AsVector();
+		lightningColour				=m_pCloudEffect->GetVariableByName("lightningColour")->AsVector();
+		illuminationOrigin			=m_pCloudEffect->GetVariableByName("illuminationOrigin")->AsVector();
+		illuminationScales			=m_pCloudEffect->GetVariableByName("illuminationScales")->AsVector();
 	}
 
-	cloudDensity1						=m_pCloudEffect->GetVariableByName("cloudDensity1")->AsShaderResource();
-	cloudDensity2						=m_pCloudEffect->GetVariableByName("cloudDensity2")->AsShaderResource();
-	noiseTexture						=m_pCloudEffect->GetVariableByName("noiseTexture")->AsShaderResource();
-	lightningIlluminationTexture		=m_pCloudEffect->GetVariableByName("lightningIlluminationTexture")->AsShaderResource();
-	skyLossTexture						=m_pCloudEffect->GetVariableByName("skyLossTexture")->AsShaderResource();
-	skyInscatterTexture					=m_pCloudEffect->GetVariableByName("skyInscatterTexture")->AsShaderResource();
-	skylightTexture						=m_pCloudEffect->GetVariableByName("skylightTexture")->AsShaderResource();
-	return (hr==S_OK);
+	cloudDensity1					=m_pCloudEffect->GetVariableByName("cloudDensity1")->AsShaderResource();
+	cloudDensity2					=m_pCloudEffect->GetVariableByName("cloudDensity2")->AsShaderResource();
+	noiseTexture					=m_pCloudEffect->GetVariableByName("noiseTexture")->AsShaderResource();
+	lightningIlluminationTexture	=m_pCloudEffect->GetVariableByName("lightningIlluminationTexture")->AsShaderResource();
+	skyLossTexture					=m_pCloudEffect->GetVariableByName("skyLossTexture")->AsShaderResource();
+	skyInscatterTexture				=m_pCloudEffect->GetVariableByName("skyInscatterTexture")->AsShaderResource();
+	skylightTexture					=m_pCloudEffect->GetVariableByName("skylightTexture")->AsShaderResource();
+	
+	layerFade						=m_pCloudEffect->GetVariableByName("layerFade")->AsScalar();
+	layerDistance					=m_pCloudEffect->GetVariableByName("layerDistance")->AsScalar();
+	cornerPos						=m_pCloudEffect->GetVariableByName("cornerPos")->AsVector();
+	inverseScales					=m_pCloudEffect->GetVariableByName("inverseScales")->AsVector();
+	noiseMatrix						=m_pCloudEffect->GetVariableByName("noiseMatrix")->AsMatrix();
+	noiseScale						=m_pCloudEffect->GetVariableByName("noiseScale")->AsScalar();
+	noiseOffset						=m_pCloudEffect->GetVariableByName("noiseOffset")->AsVector();
+	return true;
 }
 
 static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
@@ -596,6 +640,8 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	skyInscatterTexture->SetResource(skyInscatterTexture_SRV);
 	skylightTexture->SetResource(skylightTexture_SRV);
 
+		simul::math::Vector3 X1=cloudKeyframer->GetCloudInterface()->GetOrigin();
+		simul::math::Vector3 InverseDX=cloudKeyframer->GetCloudInterface()->GetInverseScales();
 	if(ReverseDepth)
 	{
 		D3DXMATRIX invertz;
@@ -608,9 +654,10 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	// Mess with the proj matrix to extend the far clipping plane:
 		FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
 	//set up matrices
-	D3DXMATRIX wvp;
+	D3DXMATRIX wvp,world;
+	D3DXMatrixIdentity(&world);
+	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
-	cam_pos=GetCameraPosVector(view);
 	simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
 	if(y_vertical)
@@ -618,6 +665,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	X+=wind_offset;
 
 	worldViewProj->AsMatrix()->SetMatrix(&wvp._11);
+	wrld->AsMatrix()->SetMatrixTranspose(&world._11);
 
 	simul::math::Vector3 view_dir	(view._13,view._23,view._33);
 	if(!y_vertical)
@@ -650,7 +698,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	ID3D1xEffectConstantBuffer* cbUser=m_pCloudEffect->GetConstantBufferByName("cbUser");
 	if(cbUser)
 	{
-		ID3D1xEffectVectorVariable *lr=cbUser->GetMemberByName("lightResponse")->AsVector();
+		ID3DX11EffectVectorVariable *lr=cbUser->GetMemberByName("lightResponse")->AsVector();
 	}
 	simul::sky::float4 sunlight1,sunlight2;
 	if(skyInterface)
@@ -681,6 +729,15 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default
 	fadeInterp			->SetFloat			(fade_interp);
 	alphaSharpness		->SetFloat			(GetCloudInterface()->GetAlphaSharpness());
 	maxFadeDistanceMetres->SetFloat			(max_fade_distance_metres);
+	
+	{
+		cornerPos		->SetFloatVector(X1);
+		inverseScales	->SetFloatVector(InverseDX);
+	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
+		noiseMatrix		->SetMatrix(noise_orient.GetInverseMatrix());
+	}
+	
+	
 simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 
 	if(enable_lightning)
@@ -717,85 +774,62 @@ simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer
 	int startv=0;
 	int v=0;
 
-	startv=v;
-	simul::math::Vector3 pos;
-#ifdef DX10
-	void* mapped_vertices;
-#else
-	D3D11_MAPPED_SUBRESOURCE mapped_vertices;
-#endif
-	MapBuffer(vertexBuffer,&mapped_vertices);
-#ifdef DX10
-	vertices=(CloudVertex_t*)mapped_vertices;
-#else
-	vertices=(CloudVertex_t*)mapped_vertices.pData;
-#endif
-	for(std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
-		i!=helper->GetSlices().end();i++)
-	{
-		helper->MakeLayerGeometry(GetCloudInterface(),*i);
-		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
-		size_t qs_vert=0;
-		float fade=(*i)->fadeIn;
-		bool start=true;
-		for(std::vector<const simul::clouds::CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
-			j!=(*i)->quad_strips.end();j++)
-		{
-			bool l=0;
-			for(size_t k=0;k<(*j)->num_vertices;k++,qs_vert++,l++,v++)
-			{
-				const simul::clouds::CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
-				pos.Define(V.x,V.y,V.z);
-				simul::math::Vector3 tex_pos(V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
-				if(v>=MAX_VERTICES)
-					break;
-				if(start)
-				{
-					CloudVertex_t &startvertex=vertices[v];
-					startvertex.position=pos;
-					startvertex.texCoords=tex_pos;
-					startvertex.texCoordsNoise.x=V.noise_tex_x;
-					startvertex.texCoordsNoise.y=V.noise_tex_y;
-					startvertex.layerFade=fade;
-					v++;
-					start=false;
-				}
-				CloudVertex_t &vertex=vertices[v];
-				vertex.position=pos;
-				vertex.texCoords=tex_pos;
-				vertex.texCoordsNoise.x=V.noise_tex_x;
-				vertex.texCoordsNoise.y=V.noise_tex_y;
-				vertex.layerFade=fade;
-			}
-		}
-		if(v>=MAX_VERTICES)
-			break;
-		CloudVertex_t &vertex=vertices[v];
-		vertex.position=pos;
-		v++;
-	}
-	UnmapBuffer(vertexBuffer);
-	UINT stride = sizeof(CloudVertex_t);
-	UINT offset = 0;
-    UINT Strides[1];
-    UINT Offsets[1];
-    Strides[0] = 0;
-    Offsets[0] = 0;
+	// Set the input layout
+		UINT stride = sizeof(CloudVertex_t);
+		UINT offset = 0;
+	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
 												1,				// the number of buffers in the array
 												&vertexBuffer,	// the array of vertex buffers
 												&stride,		// array of stride values, one for each buffer
 												&offset);		// array of offset values, one for each buffer
-	if(enable_lightning)
-		ApplyPass(m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
-	else
-		ApplyPass(m_hTechniqueCloud->GetPassByIndex(0));
-	// Set the input layout
-	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
-	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	if((v-startv)>2)
-		m_pImmediateContext->Draw((v-startv)-2,0);
 
+				
+		UINT Strides[1];
+		UINT Offsets[1];
+		Strides[0] = 0;
+		Offsets[0] = 0;
+		
+		m_pImmediateContext->IASetIndexBuffer(		indexBuffer,
+													DXGI_FORMAT_R16_UINT,		// unsigned short
+													0);		// array of offset values, one for each buffer
+	static int select_slice=-1;
+	int ii=0;
+	for(std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
+		i!=helper->GetSlices().end();i++,ii++)
+	{
+		if(select_slice>=0&&select_slice!=ii)
+			continue;
+		if(*i==NULL)
+			continue;
+		InstanceType &inst=instances[ii];
+		float noise_offset[]={(*i)->noise_tex_x/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength()
+				,(*i)->noise_tex_y/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength(),0,0};
+		inst.layerFade		=(*i)->fadeIn;
+		inst.layerDistance	=(*i)->distance;
+		inst.noiseScale		=(*i)->distance/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
+		inst.noiseOffset.x	=noise_offset[0];
+		inst.noiseOffset.y	=noise_offset[1];
+		
+		layerFade		->SetFloat(inst.layerFade);
+		layerDistance	->SetFloat(inst.layerDistance);
+		noiseScale		->SetFloat(inst.noiseScale);
+		noiseOffset		->SetFloatVector(noise_offset);
+		
+		if(enable_lightning)
+			ApplyPass(m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
+		else
+			ApplyPass(m_hTechniqueCloud->GetPassByIndex(0));
+		float distance_tex_coord=(*i)->distance/max_fade_distance_metres;
+
+		int first_primitive=((*i)->index_start);
+		int num_primitives=((*i)->index_end-(*i)->index_start);
+		static int cc=1;
+		if((num_primitives-cc)>0)
+		//	m_pImmediateContext->DrawIndexed(num_primitives-cc,first_primitive,0);
+			m_pImmediateContext->DrawIndexed(helper->GetQuadStripIndices().size(),0,0);
+	}
 	PIXEndNamedEvent();
 	skyLossTexture->SetResource(NULL);
 	skyInscatterTexture->SetResource(NULL);
@@ -809,6 +843,25 @@ simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer
 	// This actually returns the PREVIOUS FRAME's time value:
 	render_time=profileBlock.GetTime();
 	return (hr==S_OK);
+}
+
+
+void SimulCloudRendererDX1x::RenderDebugInfo(int width,int height)
+{
+	D3DXMATRIX ortho;
+	D3DXMATRIX ident;
+	D3DXMatrixIdentity(&ident);
+    D3DXMatrixOrthoLH(&ortho,(float)width,(float)height,-100.f,100.f);
+	ortho._41=-1.f;
+	ortho._22=-ortho._22;
+	ortho._42=1.f;
+	simul::dx11::UtilityRenderer::SetMatrices(ident,ortho);
+	simul::clouds::BaseCloudRenderer::RenderDebugInfo(width,height);
+}
+
+void SimulCloudRendererDX1x::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip)
+{
+	simul::dx11::UtilityRenderer::DrawLines(vertices,vertex_count,strip);
 }
 
 void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
@@ -832,14 +885,14 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 	ortho._14=-1.f;
 	ortho._22=-ortho._22;
 	ortho._24=1.f;
-	ID3D1xEffectMatrixVariable*	worldViewProj=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	ID3DX11EffectMatrixVariable*	worldViewProj=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	worldViewProj->SetMatrix(ortho);
 
 	if(skyInterface)
 	for(int i=0;i<2;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;
@@ -853,7 +906,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 	for(int i=0;i<2;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;
@@ -881,6 +934,8 @@ bool SimulCloudRendererDX1x::RenderLightning()
 		
 	//set up matrices
 	D3DXMATRIX wvp;
+	D3DXMATRIX world;
+	D3DXMatrixIdentity(&world);
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	cam_pos=GetCameraPosVector(view);
 
@@ -966,6 +1021,7 @@ void SimulCloudRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p
 {
 	view=v;
 	proj=p;
+	cam_pos=GetCameraPosVector(view);
 }
 
 
@@ -994,11 +1050,6 @@ const TCHAR *SimulCloudRendererDX1x::GetDebugText() const
 void SimulCloudRendererDX1x::SetEnableStorms(bool s)
 {
 	enable_lightning=s;
-}
-
-float SimulCloudRendererDX1x::GetTiming() const
-{
-	return timing;
 }
 
 void **SimulCloudRendererDX1x::GetCloudTextures()
@@ -1038,20 +1089,20 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	cloud_tex_depth_z=depth_z;
 	HRESULT hr=S_OK;
 	static DXGI_FORMAT cloud_tex_format=DXGI_FORMAT_R8G8B8A8_UNORM;
-	D3D1x_TEXTURE3D_DESC desc=
+	D3D11_TEXTURE3D_DESC textureDesc=
 	{
 		width_x,length_y,depth_z,
 		1,
 		cloud_tex_format,
-		D3D1x_USAGE_DYNAMIC,
-		D3D1x_BIND_SHADER_RESOURCE,
-		D3D1x_CPU_ACCESS_WRITE,
+		D3D11_USAGE_DYNAMIC,
+		D3D11_BIND_SHADER_RESOURCE,
+		D3D11_CPU_ACCESS_WRITE,
 		0
 	};
 	for(int i=0;i<3;i++)
 	{
 		SAFE_RELEASE(cloud_textures[i]);
-		if(FAILED(hr=m_pd3dDevice->CreateTexture3D(&desc,0,&cloud_textures[i])))
+		if(FAILED(hr=m_pd3dDevice->CreateTexture3D(&textureDesc,0,&cloud_textures[i])))
 			return;
 	}
 	for(int i=0;i<3;i++)

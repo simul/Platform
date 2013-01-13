@@ -14,7 +14,7 @@
 #include "Simul/Clouds/BaseFramebuffer.h"
 
 
-SIMUL_DIRECTX1x_EXPORT_CLASS FramebufferCubemapDX1x:public BaseFramebuffer
+SIMUL_DIRECTX11_EXPORT_CLASS FramebufferCubemapDX1x:public BaseFramebuffer
 {
 public:
 	FramebufferCubemapDX1x();

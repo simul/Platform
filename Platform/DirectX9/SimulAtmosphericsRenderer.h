@@ -57,6 +57,10 @@ public:
 	//! StartRender: sets up the rendertarget for atmospherics, and make it the current target. Call at the start of the frame's rendering.
 	void StartRender();
 	void FinishRender();
+	void *GetDepthAlphaTexture()
+	{
+		return (void*)input_texture;
+	}
 	//! Set properties for rendering cloud godrays.
 	void SetCloudProperties(void* c1,void* c2,
 							const float *cloudscales,

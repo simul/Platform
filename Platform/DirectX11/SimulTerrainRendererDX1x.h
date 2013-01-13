@@ -23,7 +23,7 @@ typedef long HRESULT;
 #include "Simul/Base/Referenced.h"
 #include "Simul/Base/PropertyMacros.h"
 
-SIMUL_DIRECTX1x_EXPORT_CLASS SimulTerrainRendererDX1x : public simul::terrain::BaseTerrainRenderer
+SIMUL_DIRECTX11_EXPORT_CLASS SimulTerrainRendererDX1x : public simul::terrain::BaseTerrainRenderer
 {
 public:
 	SimulTerrainRendererDX1x();

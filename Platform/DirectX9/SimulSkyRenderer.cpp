@@ -188,7 +188,7 @@ int SimulSkyRenderer::CalcScreenPixelHeight()
 
 void SimulSkyRenderer::DrawLines(Vertext *lines,int vertex_count,bool strip)
 {
-	RT::DrawLines((RT::VertexXyzRgba*)lines,vertex_count,strip);
+	RT::DrawLines((VertexXyzRgba*)lines,vertex_count,strip);
 }
 
 void SimulSkyRenderer::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)

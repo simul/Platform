@@ -14,7 +14,7 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Clouds/BaseFramebuffer.h"
 
-SIMUL_DIRECTX1x_EXPORT_CLASS FramebufferDX1x:public BaseFramebuffer
+SIMUL_DIRECTX11_EXPORT_CLASS FramebufferDX1x:public BaseFramebuffer
 {
 public:
 	FramebufferDX1x(int w=0,int h=0);
@@ -40,7 +40,7 @@ public:
 	
 	ID3D1xShaderResourceView *GetBufferResource()
 	{
-		return hdr_buffer_texture_SRV;
+		return buffer_texture_SRV;
 	}
 protected:
 	int screen_width;
@@ -64,7 +64,7 @@ protected:
 	//! The texture the scene is rendered to.
 public:
 	ID3D1xTexture2D*					hdr_buffer_texture;
-	ID3D1xShaderResourceView*			hdr_buffer_texture_SRV;
+	ID3D1xShaderResourceView*			buffer_texture_SRV;
 protected:
 	//! The depth buffer.
 	ID3D1xTexture2D*					buffer_depth_texture;

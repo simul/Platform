@@ -235,6 +235,8 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 {
 	simul::base::Timer timer;
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	delete [] vertices;
+	vertices=new Vertex_t[MAX_VERTICES];
 	//gpuCloudGenerator.RestoreDeviceObjects(dev);
 	last_time=0.f;
 	// create the unit-sphere vertex buffer determined by the Cloud Geometry Helper:
@@ -430,6 +432,8 @@ void SimulCloudRenderer::InvalidateDeviceObjects()
 	cloud_tex_depth_z=0;
 	ClearIterators();
 	rebuild_shaders=true;
+	delete [] vertices;
+	vertices=NULL;
 }
 
 SimulCloudRenderer::~SimulCloudRenderer()
@@ -704,7 +708,6 @@ bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog
 	gsm_InvertZ.m[2][3] = 1.0f;
 	D3DXMatrixMultiply(&proj,&proj,&gsm_InvertZ);
 #endif
-	vertices=new Vertex_t[MAX_VERTICES];
 	static D3DTEXTUREADDRESS wrap_u=D3DTADDRESS_WRAP,wrap_v=D3DTADDRESS_WRAP,wrap_w=D3DTADDRESS_CLAMP;
 
 	m_pCloudEffect->SetTexture(cloudDensity1				,cloud_textures[0]);

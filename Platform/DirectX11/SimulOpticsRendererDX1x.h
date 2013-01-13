@@ -22,7 +22,7 @@
 #endif
 
 
-SIMUL_DIRECTX1x_EXPORT_CLASS SimulOpticsRendererDX1x:public simul::camera::BaseOpticsRenderer
+SIMUL_DIRECTX11_EXPORT_CLASS SimulOpticsRendererDX1x:public simul::camera::BaseOpticsRenderer
 {
 public:
 	SimulOpticsRendererDX1x();

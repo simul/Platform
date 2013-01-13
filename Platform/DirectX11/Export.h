@@ -1,5 +1,5 @@
-#ifndef SIMUL_DIRECTX1x_EXPORT_H
-#define SIMUL_DIRECTX1x_EXPORT_H
+#ifndef SIMUL_DIRECTX11_EXPORT_H
+#define SIMUL_DIRECTX11_EXPORT_H
 #if defined(SIMUL_DIRECTX11_DLL)  || defined(SIMUL_DIRECTX10_DLL)
 	#define SIMUL_DIRECTX1x_DLL
 #endif
@@ -20,25 +20,25 @@
 #endif
 
 #if defined(DOXYGEN) || defined(SN_TARGET_PS3) || defined(__GNUC__)
-	#define SIMUL_DIRECTX1x_EXPORT
+	#define SIMUL_DIRECTX11_EXPORT
 #else
 // In this lib:
 	#if !defined(SIMUL_DIRECTX1x_DLL) && defined(SIMUL_DLL)
 	// If we're building dll libraries but not in this library IMPORT the classes
-		#define SIMUL_DIRECTX1x_EXPORT __declspec(dllimport)
+		#define SIMUL_DIRECTX11_EXPORT __declspec(dllimport)
 	#else
 	// In ALL OTHER CASES we EXPORT the classes!
-		#define SIMUL_DIRECTX1x_EXPORT __declspec(dllexport)
+		#define SIMUL_DIRECTX11_EXPORT __declspec(dllexport)
 	#endif
 #endif
 
 #ifdef _MSC_VER
-	#define SIMUL_DIRECTX1x_EXPORT_FN SIMUL_DIRECTX1x_EXPORT __cdecl
+	#define SIMUL_DIRECTX11_EXPORT_FN SIMUL_DIRECTX11_EXPORT __cdecl
 #else
-	#define SIMUL_DIRECTX1x_EXPORT_FN SIMUL_DIRECTX1x_EXPORT
+	#define SIMUL_DIRECTX11_EXPORT_FN SIMUL_DIRECTX11_EXPORT
 #endif
 
-#define SIMUL_DIRECTX1x_EXPORT_CLASS class SIMUL_DIRECTX1x_EXPORT
-#define SIMUL_DIRECTX1x_EXPORT_STRUCT struct SIMUL_DIRECTX1x_EXPORT
+#define SIMUL_DIRECTX11_EXPORT_CLASS class SIMUL_DIRECTX11_EXPORT
+#define SIMUL_DIRECTX11_EXPORT_STRUCT struct SIMUL_DIRECTX11_EXPORT
 
 #endif

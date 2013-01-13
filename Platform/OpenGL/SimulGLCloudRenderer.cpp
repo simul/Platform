@@ -178,18 +178,6 @@ ERROR_CHECK
 	return true;
 }
 
-void SimulGLCloudRenderer::FillCloudTextureBlock(int ,int,int ,int ,int ,int ,int ,const unsigned *)
-{
-}
-
-
-void SimulGLCloudRenderer::SetCloudTextureSize(unsigned ,unsigned ,unsigned )
-{
-}
-
-void SimulGLCloudRenderer::CycleTexturesForward()
-{
-}
 	
 void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z)
 {
@@ -319,6 +307,9 @@ ERROR_CHECK
 ERROR_CHECK
     glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_3D,illum_tex);
+	
+    glActiveTexture(GL_TEXTURE7);
+	glBindTexture(GL_TEXTURE_2D,depth_alpha_tex);
 ERROR_CHECK
 	glUseProgram(clouds_program);
 ERROR_CHECK
@@ -329,7 +320,12 @@ ERROR_CHECK
 	glUniform1i(inscatterSampler_param,4);
 	glUniform1i(skylightSampler_param,5);
 	glUniform1i(illumSampler_param,6);
+	glUniform1i(depthAlphaTexture,7);
 	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
+	
+	static simul::sky::float4 scr_offset(0,0,0,0);
+	glUniform2f(screenCoordOffset,scr_offset.x,scr_offset.y);
+	
 ERROR_CHECK
 	simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 
@@ -553,6 +549,11 @@ void SimulGLCloudRenderer::SetInscatterTextures(void *i,void *s)
 	skylight_tex=((GLuint)s);
 }
 
+void SimulGLCloudRenderer::SetDepthTexture(void *d)
+{
+	depth_alpha_tex=((GLuint)d);
+}
+
 void SimulGLCloudRenderer::RecompileShaders()
 {
 ERROR_CHECK
@@ -579,8 +580,12 @@ ERROR_CHECK
 	lossSampler_param		=glGetUniformLocation(clouds_program,"lossSampler");
 	inscatterSampler_param	=glGetUniformLocation(clouds_program,"inscatterSampler");
 	skylightSampler_param	=glGetUniformLocation(clouds_program,"skylightSampler");
+	depthAlphaTexture		=glGetUniformLocation(clouds_program,"depthAlphaTexture");
 
 	layerDistance_param		=glGetUniformLocation(clouds_program,"layerDistance");
+	
+	screenCoordOffset		=glGetUniformLocation(clouds_program,"screenCoordOffset");
+	
 	printProgramInfoLog(clouds_program);
 ERROR_CHECK
 	cross_section_program			=MakeProgram("simul_cloud_cross_section");
@@ -883,7 +888,10 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 			texture_cycle+=3;
 	}
 }
-
+void SimulGLCloudRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip)
+{
+	::DrawLines(vertices,vertex_count,strip);
+}
 void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
 {
 	static int u=4;
@@ -913,7 +921,7 @@ static float mult=1.f;
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;

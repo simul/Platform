@@ -50,13 +50,6 @@ SIMUL_DIRECTX9_EXPORT_CLASS RT
 public:
 	RT();
 	~RT();
-	
-	struct VertexXyzRgba
-	{
-		float x,y,z;
-		float r,g,b,a;
-	};
-
 	static void RestoreDeviceObjects(IDirect3DDevice9 *m_pd3dDevice);
 	static void SetScreenSize(int w,int h);
 	static void InvalidateDeviceObjects();

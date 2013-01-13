@@ -9,7 +9,7 @@
 // SimulAtmosphericsRendererDX1x.cpp A renderer for skies, clouds and weather effects.
 
 #include "SimulAtmosphericsRendererDX1x.h"
-
+#include "Simul/Platform/DirectX11/HLSL/AtmosphericsUniforms.hlsl"
 #ifdef XBOX
 	#include <xgraphics.h>
 	#include <fstream>
@@ -37,7 +37,7 @@
 #include "Simul/Math/RandomNumberGenerator.h"
 #include "CreateEffectDX1x.h"
 
-
+/*
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)		{ if(p) { (p)->Release(); (p)=NULL; } }
 #endif
@@ -46,7 +46,7 @@
 #endif
 #ifndef SAFE_DELETE
 #define SAFE_DELETE(p)		{ if(p) { delete (p);     (p)=NULL; } }
-#endif    
+#endif    */
 #define BLUR_SIZE 9
 #define MONTE_CARLO_BLUR
 
@@ -61,6 +61,7 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	effect(NULL),
 	lightDir(NULL),
 	m_pImmediateContext(NULL),
+	constantBuffer(NULL),
 	MieRayleighRatio(NULL),
 	HazeEccentricity(NULL),
 	fadeInterp(NULL),
@@ -68,9 +69,9 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	depthTexture(NULL),
 	lossTexture1(NULL),
 	inscatterTexture1(NULL),
-	loss_texture(NULL),
-	inscatter_texture(NULL),
-	skylight_texture(NULL),
+	skyLossTexture_SRV(NULL),
+	skyInscatterTexture_SRV(NULL),
+	skylightTexture_SRV(NULL),
 	clouds_texture(NULL),
 	fade_interp(0.f)
 {
@@ -96,24 +97,23 @@ void SimulAtmosphericsRendererDX1x::SetYVertical(bool y)
 
 void SimulAtmosphericsRendererDX1x::SetDistanceTexture(void* t)
 {
-	depth_texture=(ID3D1xTexture2D*)t;
 }
 
 void SimulAtmosphericsRendererDX1x::SetLossTexture(void* t)
 {
-	loss_texture=(ID3D1xTexture2D*)t;
+	skyLossTexture_SRV=(ID3D1xShaderResourceView*)t;
 }
 
 void SimulAtmosphericsRendererDX1x::SetInscatterTextures(void* t,void *s)
 {
-	inscatter_texture=(ID3D1xTexture2D*)t;
-	skylight_texture=(ID3D1xTexture2D*)s;
+	skyInscatterTexture_SRV=(ID3D1xShaderResourceView*)t;
+	skylightTexture_SRV=(ID3D1xShaderResourceView*)s;
 }
 
 
 void SimulAtmosphericsRendererDX1x::SetCloudsTexture(void* t)
 {
-	clouds_texture=(ID3D1xTexture2D*)t;
+	clouds_texture=(ID3D1xShaderResourceView*)t;
 }
 
 void SimulAtmosphericsRendererDX1x::RecompileShaders()
@@ -121,9 +121,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	SAFE_RELEASE(effect);
 	HRESULT hr=S_OK;
 	V_CHECK(CreateEffect(m_pd3dDevice,&effect,L"atmospherics.fx"));
-
 	technique			=effect->GetTechniqueByName("simul_atmospherics");
-	
 	invViewProj			=effect->GetVariableByName("invViewProj")->AsMatrix();
 	lightDir			=effect->GetVariableByName("lightDir")->AsVector();
 	MieRayleighRatio	=effect->GetVariableByName("MieRayleighRatio")->AsVector();
@@ -133,6 +131,19 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	depthTexture		=effect->GetVariableByName("depthTexture")->AsShaderResource();
 	lossTexture1		=effect->GetVariableByName("lossTexture1")->AsShaderResource();
 	inscatterTexture1	=effect->GetVariableByName("inscatterTexture1")->AsShaderResource();
+	
+	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
+	D3D11_BUFFER_DESC bufferDesc;
+	bufferDesc.Usage				= D3D11_USAGE_DYNAMIC;
+	bufferDesc.ByteWidth			= PAD16(sizeof(AtmosphericsUniforms));
+	bufferDesc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
+	bufferDesc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
+	bufferDesc.MiscFlags			= 0;
+	bufferDesc.StructureByteStride	= 0;
+
+	// Create the constant buffer pointer so we can access the shader constant buffer from within this class.
+	SAFE_RELEASE(constantBuffer);
+	m_pd3dDevice->CreateBuffer(&bufferDesc, NULL, &constantBuffer);
 }
 
 HRESULT SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
@@ -175,6 +186,7 @@ HRESULT SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
 #endif
 	SAFE_RELEASE(vertexDecl);
 	SAFE_RELEASE(effect);
+	SAFE_RELEASE(constantBuffer);
 	return hr;
 }
 
@@ -196,11 +208,9 @@ void SimulAtmosphericsRendererDX1x::StartRender()
 		return;
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
 	framebuffer->Activate();
-	// Clear the screen to black:
-    float clearColor[4]={0.0,0.0,0.0,0.0};
-	m_pImmediateContext->ClearRenderTargetView(framebuffer->m_pHDRRenderTarget,clearColor);
-	if(framebuffer->m_pBufferDepthSurface)
-		m_pImmediateContext->ClearDepthStencilView(framebuffer->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+	// Clear the screen to black, with alpha=1, representing far depth
+	framebuffer->Clear(0.0,1.0,1.0,1.0);
+
 	PIXEndNamedEvent();
 }
 
@@ -208,7 +218,33 @@ void SimulAtmosphericsRendererDX1x::FinishRender()
 {
 	if(!framebuffer)
 		return;
+	framebuffer->Deactivate();
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
-	framebuffer->DeactivateAndRender(false);
+	HRESULT hr=S_OK;
+	hr=imageTexture->SetResource(framebuffer->buffer_texture_SRV);
+	lossTexture1->SetResource(skyLossTexture_SRV);
+	//skylightTexture_SRV=(ID3D1xTexture2D*)s;
+	inscatterTexture1->SetResource(skyInscatterTexture_SRV);
+	{
+		// Lock the constant buffer so it can be written to.
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		 m_pImmediateContext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		// Get a pointer to the data in the constant buffer.
+		AtmosphericsUniforms *constb = (AtmosphericsUniforms*)mappedResource.pData;
+		float alt_km=cam_pos.z/1000.f;
+		constb->lightDir		=(const float*)skyInterface->GetDirectionToLight(alt_km);
+		constb->mieRayleighRatio=(const float*)skyInterface->GetMieRayleighRatio();
+		constb->texelOffsets	=D3DXVECTOR2(0,0);
+		constb->hazeEccentricity=skyInterface->GetMieEccentricity();
+		// Unlock the constant buffer.
+		m_pImmediateContext->Unmap(constantBuffer, 0);
+	}
+	m_pImmediateContext->VSSetConstantBuffers(0,1,&constantBuffer);
+	m_pImmediateContext->PSSetConstantBuffers(0,1,&constantBuffer);
+	ApplyPass(technique->GetPassByIndex(0));
+	framebuffer->Render(false);
+	imageTexture->SetResource(NULL);
+	lossTexture1->SetResource(NULL);
+	inscatterTexture1->SetResource(NULL);
 	PIXEndNamedEvent();
 }

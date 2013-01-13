@@ -125,9 +125,7 @@ ERROR_CHECK
 void SimulGLAtmosphericsRenderer::StartRender()
 {
 	framebuffer->Activate();
-	glClearColor(0.f,0.0f,0.0f,1.0f);
-	ERROR_CHECK
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	framebuffer->Clear(0.f,0.0f,1.0f,1.0f);
 	ERROR_CHECK
 }
 

@@ -34,7 +34,7 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	m_pVertexBuffer(NULL),
 	hdr_buffer_texture(NULL),
 	buffer_depth_texture(NULL),
-	hdr_buffer_texture_SRV(NULL),
+	buffer_texture_SRV(NULL),
 	buffer_depth_texture_SRV(NULL),
 	m_pHDRRenderTarget(NULL),
 	m_pBufferDepthSurface(NULL),
@@ -93,7 +93,7 @@ void FramebufferDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pBufferDepthSurface)
 
 	SAFE_RELEASE(hdr_buffer_texture);
-	SAFE_RELEASE(hdr_buffer_texture_SRV);
+	SAFE_RELEASE(buffer_texture_SRV);
 
 	SAFE_RELEASE(buffer_depth_texture);
 	SAFE_RELEASE(buffer_depth_texture_SRV);
@@ -166,18 +166,18 @@ bool FramebufferDX1x::CreateBuffers()
 	};
 	SAFE_RELEASE(hdr_buffer_texture);
 	V_CHECK(m_pd3dDevice->CreateTexture2D(	&desc,
-										NULL,
-										&hdr_buffer_texture
-									))
+											NULL,
+											&hdr_buffer_texture
+										))
 	SAFE_RELEASE(m_pHDRRenderTarget)
 	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
 	//hdr_buffer_texture->GetDesc(&desc);
-	SAFE_RELEASE(hdr_buffer_texture_SRV);
-    V_CHECK(m_pd3dDevice->CreateShaderResourceView(hdr_buffer_texture, NULL, &hdr_buffer_texture_SRV ));
+	SAFE_RELEASE(buffer_texture_SRV);
+    V_CHECK(m_pd3dDevice->CreateShaderResourceView(hdr_buffer_texture, NULL, &buffer_texture_SRV ));
 
  	//desc.Width=Width/4;
 	//desc.Height=Height/4;
-	DXGI_FORMAT fmtDepthTex = DXGI_FORMAT_UNKNOWN;
+	DXGI_FORMAT fmtDepthTex = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;//DXGI_FORMAT_UNKNOWN;
 	
 	DXGI_FORMAT possibles[]={
 		DXGI_FORMAT_D24_UNORM_S8_UINT,
@@ -206,7 +206,8 @@ bool FramebufferDX1x::CreateBuffers()
 												&buffer_depth_texture))
 	}
 	SAFE_RELEASE(m_pBufferDepthSurface)
-	//hr=m_pd3dDevice->CreateDepthStencilView((ID3D1xResource*)buffer_depth_texture, NULL, &m_pBufferDepthSurface);
+	if(buffer_depth_texture)
+		hr=m_pd3dDevice->CreateDepthStencilView((ID3D1xResource*)buffer_depth_texture, NULL, &m_pBufferDepthSurface);
 
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =
 	{

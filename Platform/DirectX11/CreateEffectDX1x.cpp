@@ -13,6 +13,7 @@
 #include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Geometry/Orientation.h"
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Sky/Float4.h"
 #include <tchar.h>
 #include "CompileShaderDX1x.h"
 #include <string>

@@ -51,7 +51,7 @@ typedef long HRESULT;
 #endif
 
 //! A cloud rendering class. Create an instance of this class within a DirectX program.
-SIMUL_DIRECTX1x_EXPORT_CLASS SimulCloudRendererDX1x : public simul::clouds::BaseCloudRenderer
+SIMUL_DIRECTX11_EXPORT_CLASS SimulCloudRendererDX1x : public simul::clouds::BaseCloudRenderer
 {
 public:
 	SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cloudKeyframer);
@@ -65,6 +65,7 @@ public:
 	bool Destroy();
 	//! Call this to draw the clouds, including any illumination by lightning.
 	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
+	void RenderDebugInfo(int width,int height);
 	void RenderCrossSections(int width,int height);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 	bool RenderLightning();
@@ -106,6 +107,7 @@ public:
 	void SetYVertical(bool y);
 	bool IsYVertical() const;
 protected:
+	void DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip);
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate();
@@ -113,17 +115,26 @@ protected:
 	void EnsureIlluminationTexturesAreUpToDate();
 	void EnsureTextureCycle();
 
-	bool y_vertical;
+	void CreateMeshBuffers();
 	int mapped;
 	void Unmap();
 	void Map(int texture_index);
 	unsigned texel_index[4];
 	bool lightning_active;
-	float timing;
 
+	struct InstanceType
+	{
+		float layerFade;
+		float layerDistance;
+		float noiseScale;
+		D3DXVECTOR2 noiseOffset;
+	};
+	InstanceType instances[200];
 	ID3D1xDevice*					m_pd3dDevice;
 	ID3D1xDeviceContext*			m_pImmediateContext;
 	ID3D1xBuffer *					vertexBuffer;
+	ID3D1xBuffer *					indexBuffer;
+	ID3D1xBuffer *					instanceBuffer;
 	ID3D1xInputLayout*				m_pVtxDecl;
 	ID3D1xInputLayout*				m_pLightningVtxDecl;
 
@@ -138,6 +149,7 @@ protected:
 
 	ID3D1xEffectMatrixVariable* 	l_worldViewProj;
 	ID3D1xEffectMatrixVariable* 	worldViewProj;
+	ID3D1xEffectMatrixVariable* 	wrld;
 	ID3D1xEffectVectorVariable* 	eyePosition;
 	ID3D1xEffectVectorVariable* 	lightResponse;
 	ID3D1xEffectVectorVariable* 	lightDir;
@@ -158,6 +170,15 @@ protected:
 	ID3D1xEffectVectorVariable* 	lightningColour;
 	ID3D1xEffectVectorVariable* 	illuminationOrigin;
 	ID3D1xEffectVectorVariable* 	illuminationScales;
+
+ID3D1xEffectScalarVariable* 	layerFade		;
+ID3D1xEffectScalarVariable* 	layerDistance	;
+ID3D1xEffectVectorVariable* 	cornerPos		;
+ID3D1xEffectVectorVariable* 	inverseScales	;
+ID3D1xEffectMatrixVariable* 	noiseMatrix		;
+ID3D1xEffectScalarVariable* 	noiseScale		;	
+ID3D1xEffectVectorVariable* 	noiseOffset		;	
+	
 
 	ID3D1xEffectShaderResourceVariable*		cloudDensity1;
 	ID3D1xEffectShaderResourceVariable*		cloudDensity2;
@@ -188,7 +209,7 @@ protected:
 	ID3D1xBlendState*	blendAndDontWriteAlpha;
 	
 	D3DXVECTOR4			lightning_colour;
-	D3DXMATRIX			world,view,proj;
+	D3DXMATRIX			view,proj;
 
 	D3D1x_MAPPED_TEXTURE3D mapped_cloud_texture;
 	bool UpdateIlluminationTexture(float dt);

@@ -76,7 +76,7 @@ _COM_SMARTPTR_TYPEDEF(ID3D11DeviceContext, __uuidof(ID3D11DeviceContext));
 
 
 #include "Simul/Platform/DirectX11/Export.h"
-SIMUL_DIRECTX1x_EXPORT_CLASS Profiler
+SIMUL_DIRECTX11_EXPORT_CLASS Profiler
 {
 
 public:

@@ -16,6 +16,8 @@
 #include "Simul/Graph/StandardNodes/ShowProgressInterface.h"
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/GpuCloudGenerator.h"
+#include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 #pragma warning(push)
 #pragma warning(disable:4251)
 namespace simul
@@ -34,7 +36,7 @@ class SimulHDRRendererDX1x;
 class SimulTerrainRendererDX1x;
 class SimulOpticsRendererDX1x;
 
-class SIMUL_DIRECTX1x_EXPORT Direct3D11Renderer
+class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 	:public Direct3D11CallbackInterface
 	,public simul::graph::meta::Group
 {
@@ -52,6 +54,7 @@ public:
 		META_ValueProperty(bool,ShowWater,"Show water surfaces.")
 		META_ValueProperty(bool,MakeCubemap,"Render a cubemap each frame.")
 		META_ValueProperty(bool,ReverseDepth,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
+		META_ValueProperty(bool,ShowOSD,"Show debug display.")
 	META_EndProperties
 	bool IsEnabled()const{return enabled;}
 	class SimulWeatherRendererDX1x *GetSimulWeatherRenderer()
@@ -81,6 +84,8 @@ public:
 	virtual bool	OnDeviceRemoved();
 	virtual void    OnFrameMove(double fTime,float fTimeStep);
 	virtual const	char *GetDebugText() const;
+	simul::clouds::BaseGpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
+	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
 	bool enabled;
 	bool y_vertical;
@@ -89,6 +94,8 @@ protected:
 	simul::base::SmartPtr<SimulOpticsRendererDX1x>	simulOpticsRenderer;
 	simul::base::SmartPtr<SimulWeatherRendererDX1x>	simulWeatherRenderer;
 	simul::base::SmartPtr<SimulHDRRendererDX1x>		simulHDRRenderer;
+	simul::dx11::GpuCloudGenerator gpuCloudGenerator;
+	simul::dx11::GpuSkyGenerator gpuSkyGenerator;
 	unsigned ScreenWidth,ScreenHeight;
 };	
 

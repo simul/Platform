@@ -25,6 +25,10 @@ public:
 	void SetYVertical(bool )
 	{
 	}
+	void *GetDepthAlphaTexture()
+	{
+		return (void*) framebuffer->GetColorTex(0);
+	}
 	// Assign the clouds framebuffer texture
 	void SetCloudsTexture(void* t)
 	{

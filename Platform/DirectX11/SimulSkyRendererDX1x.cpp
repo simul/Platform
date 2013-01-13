@@ -769,8 +769,8 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 	}
 #endif
 	PIXBeginNamedEvent(0,"Render Sky");
-	inscTexture->SetResource(inscatter_2d->hdr_buffer_texture_SRV);
-	skylTexture->SetResource(skylight_2d->hdr_buffer_texture_SRV);
+	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
+	skylTexture->SetResource(skylight_2d->buffer_texture_SRV);
 
 	simul::sky::float4 mie_rayleigh_ratio=skyKeyframer->GetMieRayleighRatio();
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
@@ -837,9 +837,9 @@ bool SimulSkyRendererDX1x::RenderFades(int width,int h)
 	ID3D1xEffectTechnique*	techniqueShowFade	=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");
 	ID3D1xEffectShaderResourceVariable*	inscTexture	=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
 
-	inscTexture->SetResource(inscatter_2d->hdr_buffer_texture_SRV);
+	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
 	RenderTexture(m_pd3dDevice,8,8,size,size,techniqueShowSky);
-	inscTexture->SetResource(loss_2d->hdr_buffer_texture_SRV);
+	inscTexture->SetResource(loss_2d->buffer_texture_SRV);
 	RenderTexture(m_pd3dDevice,8,16+size,size,size,techniqueShowSky);
 	int x=16+size;
 	for(int i=0;i<numAltitudes;i++)
@@ -918,15 +918,15 @@ void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s)
 {
 	if(loss_2d)
-		*l1=(void*)loss_2d->hdr_buffer_texture_SRV;
+		*l1=(void*)loss_2d->buffer_texture_SRV;
 	else
 		*l1=NULL;
 	if(inscatter_2d)
-		*i1=(void*)inscatter_2d->hdr_buffer_texture_SRV;
+		*i1=(void*)inscatter_2d->buffer_texture_SRV;
 	else
 		*l1=NULL;
 	if(skylight_2d)
-		*s=(void*)skylight_2d->hdr_buffer_texture_SRV;
+		*s=(void*)skylight_2d->buffer_texture_SRV;
 	else
 		*s=NULL;
 }
@@ -949,7 +949,7 @@ void SimulSkyRendererDX1x::SetYVertical(bool y)
 
 void SimulSkyRendererDX1x::DrawLines(Vertext *lines,int vertex_count,bool strip)
 {
-	simul::dx11::UtilityRenderer::DrawLines((simul::dx11::UtilityRenderer::VertexXyzRgba*)lines,vertex_count,strip);
+	simul::dx11::UtilityRenderer::DrawLines((VertexXyzRgba*)lines,vertex_count,strip);
 }
 
 void SimulSkyRendererDX1x::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)

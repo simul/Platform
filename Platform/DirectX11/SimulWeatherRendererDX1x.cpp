@@ -69,34 +69,6 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 	ConnectInterfaces();
 }
 
-void SimulWeatherRendererDX1x::ConnectInterfaces()
-{
-	if(simulCloudRenderer.get()&&simulSkyRenderer.get())
-	{
-		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
-		simulSkyRenderer->SetOvercastCallback(simulCloudRenderer->GetOvercastCallback());
-	}
-/*	if(simul2DCloudRenderer)
-	{
-		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-	}*/
-	if(simulSkyRenderer)
-	{
-	//	if(simulCloudRenderer)
-//			simulSkyRenderer->SetOvercastFactor(simulCloudRenderer->GetOvercastFactor());
-	}
-	//if(simulAtmosphericsRenderer&&simulSkyRenderer)
-	//	simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
-	/*if(simul2DCloudRenderer)
-		V_RETURN(simul2DCloudRenderer->RestoreDeviceObjects(m_pd3dDevice));
-	if(simulPrecipitationRenderer)
-		V_RETURN(simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice));
-	*/
-	//if(simulAtmosphericsRenderer)
-	//	simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
-}
-
-
 void SimulWeatherRendererDX1x::SetScreenSize(int w,int h)
 {
 	BufferWidth=w/Downscale;
@@ -192,7 +164,6 @@ void SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
 //	if(m_pTonemapEffect)
 //        hr=m_pTonemapEffect->OnLostDevice();
-      
 // Free the cubemap resources. 
 	SAFE_RELEASE(m_pImmediateContext);
 }
@@ -306,7 +277,7 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 	{
 		bool blend=!is_cubemap;
 		HRESULT hr=S_OK;
-		hr=hdrTexture->SetResource(framebuffer.hdr_buffer_texture_SRV);
+		hr=hdrTexture->SetResource(framebuffer.buffer_texture_SRV);
 		ID3D1xEffectTechnique *tech=blend?SkyOverStarsTechnique:TonemapTechnique;
 		ApplyPass(tech->GetPassByIndex(0));
 		
@@ -355,6 +326,7 @@ void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX 
 
 void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()
 {
+	simul::clouds::BaseWeatherRenderer::UpdateSkyAndCloudHookup();
 	if(!simulSkyRenderer)
 		return;
 	void *l=0,*i=0,*s=0;
@@ -364,6 +336,7 @@ void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()
 		simulCloudRenderer->SetLossTexture(l);
 		simulCloudRenderer->SetInscatterTextures(i,s);
 	}
+	
 }
 void SimulWeatherRendererDX1x::Update(float dt)
 {

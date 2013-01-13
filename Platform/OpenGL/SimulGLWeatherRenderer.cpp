@@ -1,5 +1,6 @@
 
 #ifdef _MSC_VER
+#include <stdlib.h>
 #include <GL/glew.h>
 #include <GL/glut.h>
 #endif
@@ -196,7 +197,7 @@ ERROR_CHECK
 
 bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 {
-	if(RenderCloudsLate&&simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+	if((AlwaysRenderCloudsLate||RenderCloudsLate)&&simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{
 		scene_buffer->Activate();
 		scene_buffer->Clear(0,0,0,1.f);

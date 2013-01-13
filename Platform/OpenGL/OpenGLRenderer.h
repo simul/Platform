@@ -41,6 +41,7 @@ public:
 		META_ValueProperty(bool,ShowOSD,"Show diagnostice onscren.")
 		META_ValueProperty(bool,ShowWater,"Show water surfaces.")
 		META_ValueProperty(bool,ReverseDepth,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
+		META_ValueProperty(bool,MixCloudsAndTerrain,"If true, clouds are drawn twice: once behind the terrain, and once in front.")
 	META_EndProperties
 	virtual void paintGL();
 	virtual void resizeGL(int w,int h);

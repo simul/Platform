@@ -36,7 +36,7 @@ public:
 #endif
 //! An implementation of \link simul::clouds::BaseWeatherRenderer BaseWeatherRenderer\endlink for DirectX 10 and 11
 //! The DX10 switch is used
-SIMUL_DIRECTX1x_EXPORT_CLASS SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer
+SIMUL_DIRECTX11_EXPORT_CLASS SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer
 {
 public:
 	SimulWeatherRendererDX1x(simul::clouds::Environment *env,bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
@@ -102,7 +102,6 @@ protected:
 	float							exposure;
 	float							gamma;
 	float exposure_multiplier;
-	void ConnectInterfaces();
 	D3DXVECTOR3 cam_pos;
 };
 #ifdef _MSC_VER

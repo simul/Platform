@@ -38,7 +38,7 @@ typedef long HRESULT;
 
 //! A renderer for skies, this class will manage an instance of simul::sky::SkyNode and use it to calculate sky colours
 //! in real time for the simul_sky.fx shader.
-SIMUL_DIRECTX1x_EXPORT_CLASS SimulSkyRendererDX1x:public simul::sky::BaseSkyRenderer
+SIMUL_DIRECTX11_EXPORT_CLASS SimulSkyRendererDX1x:public simul::sky::BaseSkyRenderer
 {
 public:
 	SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk);

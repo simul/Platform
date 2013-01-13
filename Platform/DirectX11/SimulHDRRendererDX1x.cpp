@@ -147,7 +147,7 @@ bool SimulHDRRendererDX1x::FinishRender()
 {
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
 	framebuffer->Deactivate();
-	HRESULT hr=hdrTexture->SetResource(framebuffer->GetBufferResource());//hdr_buffer_texture_SRV);
+	HRESULT hr=hdrTexture->SetResource(framebuffer->GetBufferResource());//buffer_texture_SRV);
 	Gamma_->SetFloat(Gamma);
 	Exposure_->SetFloat(Exposure);
 	ApplyPass(TonemapTechnique->GetPassByIndex(0));

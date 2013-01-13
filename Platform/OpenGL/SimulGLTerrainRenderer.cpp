@@ -130,17 +130,21 @@ void SimulGLTerrainRenderer::Render()
 
 	ERROR_CHECK
 	int h=heightMapInterface->GetPageSize();
+	simul::math::Vector3 origin=heightMapInterface->GetOrigin();
+	float PageWorldX=heightMapInterface->GetPageWorldX();
+	float PageWorldY=heightMapInterface->GetPageWorldY();
+	float PageSize=(float)heightMapInterface->GetPageSize();
 	glBegin(GL_TRIANGLE_STRIP);
 	for(int i=0;i<h-1;i++)
 	{
-		float x1=(i-h/2)*1000.f;
-		float x2=(i-h/2+1)*1000.f;
+		float x1=(i  )*PageWorldX/(float)PageSize+origin.x;
+		float x2=(i+1)*PageWorldX/(float)PageSize+origin.x;
 		for(int j=0;j<h-1;j++)
 		{
 			int J=j;
 			if(i%2)
 				J=(h-2-j);
-			float y=(J-h/2)*1000.f;
+			float y=(J)*PageWorldX/(float)PageSize+origin.x;
 			float z1=heightMapInterface->GetHeightAt(i,J);
 			float z2=heightMapInterface->GetHeightAt(i+1,J);
 			simul::math::Vector3 X1(x1,y,z1);

@@ -1,3 +1,4 @@
+#include "AtmosphericsUniforms.hlsl"
 float4x4 invViewProj;
 
 Texture2D depthTexture;
@@ -12,13 +13,6 @@ SamplerState samplerState
 	AddressV = Clamp;
 };
 
-// For distance-fade:
-float3 lightDir;
-float4 mieRayleighRatio;
-float2 texelOffsets;
-float hazeEccentricity;
-float fadeInterp;
-float altitudeTexCoord;
 #define pi (3.1415926536)
 
 struct atmosVertexInput
@@ -73,7 +67,7 @@ float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 	float3 colour=lookup.rgb;
 	float depth=lookup.a;
 	if(depth>=1.f)
-		discard;
+		discard;/*
 #ifdef Y_VERTICAL
 	float sine=view.y;
 #else
@@ -85,7 +79,8 @@ float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 	colour*=loss;
 	float4 inscatter_factor=inscatterTexture1.Sample(samplerState,texc2);
 	float cos0=dot(view,lightDir);
-	colour+=InscatterFunction(inscatter_factor,cos0);
+	colour+=InscatterFunction(inscatter_factor,cos0);*/
+colour.r=depth;
 
     return float4(colour,1.f);
 }

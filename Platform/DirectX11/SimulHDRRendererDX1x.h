@@ -23,7 +23,7 @@
 #include "Simul/Base/PropertyMacros.h"
 
 //! A class that provides gamma-correction of an HDR render to the screen.
-SIMUL_DIRECTX1x_EXPORT_CLASS SimulHDRRendererDX1x: public simul::base::Referenced
+SIMUL_DIRECTX11_EXPORT_CLASS SimulHDRRendererDX1x: public simul::base::Referenced
 {
 public:
 	SimulHDRRendererDX1x(int w,int h);
