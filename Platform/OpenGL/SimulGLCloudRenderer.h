@@ -36,12 +36,11 @@ public:
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
 	//! Render the clouds.
-	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
+	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
 	//! Show the cross sections on-screen.
 	void RenderCrossSections(int width,int height);
 	void SetLossTexture(void *);
 	void SetInscatterTextures(void *,void *);
-	void SetDepthTexture(void*);
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
 	
@@ -74,8 +73,10 @@ protected:
 	void EnsureIlluminationTexturesAreUpToDate();
 	void EnsureTextureCycle();
 
-	GLuint clouds_program;
+	GLuint clouds_background_program;
 	GLuint clouds_foreground_program;
+	GLuint current_program;
+void UseShader(GLuint program);
 
 	GLuint cross_section_program;
 
@@ -110,16 +111,12 @@ unsigned short *pIndices;
 	GLuint		inscatter_tex;
 	GLuint		skylight_tex;
 	
-	// For depth data:
-	GLuint		depth_alpha_tex;
 	// 2D texture
 	GLuint		noise_tex;
 	GLuint		volume_noise_tex;
 
 	GLuint		sphere_vbo;
 	GLuint		sphere_ibo;
-
-	//float		cam_pos[3];
 
 	void CreateVolumeNoise();
 	virtual bool CreateNoiseTexture(bool override_file=false);

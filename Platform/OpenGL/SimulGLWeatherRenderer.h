@@ -45,6 +45,7 @@ public:
 	void SetScreenSize(int w,int h);
 	//! Call this when the device has been created
 	void RestoreDeviceObjects(void*);
+	void RecompileShaders();
 	//! Call this when the 3D device has been lost.
 	void InvalidateDeviceObjects();
 	//! Platform-dependent. Call this to draw the sky
@@ -74,14 +75,16 @@ public:
 protected:
 	std::string shader;
 	//! This is set once the GL device has been initialized - then we can create textures and so forth.
-	bool device_initialized;
-	class FramebufferGL *scene_buffer;
-	bool externally_defined_buffers;
-	bool auto_exposure;
-	//! The size of the 2D buffer the sky is rendered to.
-	int BufferWidth,BufferHeight;
-	void CreateBuffers();
-	void RenderBufferToScreen(GLuint texture,int w,int h,bool use_shader,bool blend=false);
+	bool					device_initialized;
+	class	FramebufferGL	*scene_buffer;
+	bool					externally_defined_buffers;
+	bool					auto_exposure;
+	int						BufferWidth,BufferHeight;	//< The size of the 2D buffer the sky is rendered to.
+	float					exposure;
+	float					gamma;
+	bool					use_buffer;
+	bool					tone_map;
+	GLuint					cloud_overlay_program;
 	RenderDepthBufferCallback *renderDepthBufferCallback;
 	simul::base::SmartPtr<class SimulGLSkyRenderer> simulSkyRenderer;
 	simul::base::SmartPtr<class SimulGLCloudRenderer> simulCloudRenderer;
@@ -89,10 +92,8 @@ protected:
 	simul::base::SmartPtr<class SimulGLLightningRenderer> simulLightningRenderer;
 	simul::base::SmartPtr<class SimulGLPrecipitationRenderer> simulPrecipitationRenderer;
 	simul::base::SmartPtr<class SimulGLAtmosphericsRenderer> simulAtmosphericsRenderer;
-	float							exposure;
-	float							gamma;
-	bool							use_buffer;
-	bool							tone_map;
+	void CreateBuffers();
+	void RenderBufferToScreen(GLuint texture,int w,int h,bool use_shader,bool blend=false);
 };
 #ifdef _MSC_VER
 	#pragma warning(pop)

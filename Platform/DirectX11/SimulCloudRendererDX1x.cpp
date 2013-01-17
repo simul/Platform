@@ -619,7 +619,7 @@ static float saturate(float c)
 	return std::max(std::min(1.f,c),0.f);
 }
 
-bool SimulCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha)
+bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
 {
     ProfileBlock profileBlock("SimulCloudRendererDX1x::Render");
 	EnsureTexturesAreUpToDate();

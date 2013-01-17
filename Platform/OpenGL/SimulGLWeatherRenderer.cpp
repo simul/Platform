@@ -39,6 +39,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 		,BufferHeight(0)
 		,device_initialized(false)
 		,scene_buffer(NULL)
+		,cloud_overlay_program(0)
 {
 	simul::sky::SkyKeyframer *sk=environment->skyKeyframer.get();
 	simul::clouds::CloudKeyframer *ck2d=environment->cloud2DKeyframer.get();
@@ -148,6 +149,8 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 	//simulCloudRenderer->RestoreDeviceObjects(NULL);
 	//simulLightningRenderer->RestoreDeviceObjects();
 	simulAtmosphericsRenderer->RestoreDeviceObjects(NULL);
+	SAFE_DELETE_PROGRAM(cloud_overlay_program);
+	cloud_overlay_program=LoadPrograms("simple.vert",NULL,"simul_cloud_overlay.frag");
 }
 void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 {
@@ -163,8 +166,15 @@ void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 		simulPrecipitationRenderer->InvalidateDeviceObjects();
 	if(scene_buffer)
 		scene_buffer->InvalidateDeviceObjects();
+	SAFE_DELETE_PROGRAM(cloud_overlay_program);
 }
 
+void SimulGLWeatherRenderer::RecompileShaders()
+{
+	BaseWeatherRenderer::RecompileShaders();
+	SAFE_DELETE_PROGRAM(cloud_overlay_program);
+	cloud_overlay_program=LoadPrograms("simple.vert",NULL,"simul_cloud_overlay.frag");
+}
 
 bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 {
@@ -201,14 +211,24 @@ bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 	{
 		scene_buffer->Activate();
 		scene_buffer->Clear(0,0,0,1.f);
-		simulCloudRenderer->Render(false,false,UseDefaultFog,true);
+		simulCloudRenderer->Render(false,depth_alpha_tex,UseDefaultFog,true);
 		scene_buffer->Deactivate();
 	//	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);//GL_SRC_ALPHA GL_DST_ALPHA
 	//	glBlendFuncSeparate(GL_ONE,GL_ZERO,GL_ZERO,GL_ONE);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	//	glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_ALPHA);
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
-		glUseProgram(Utilities::GetSingleton().simple_program);
+		GLuint prog=AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;
+	    glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D,scene_buffer->GetColorTex(0));
+	    glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
+		glUseProgram(prog);
+
+		GLint image_texture		=glGetUniformLocation(prog,"image_texture");
+		GLint depthAlphaTexture	=glGetUniformLocation(prog,"depthAlphaTexture");
+		glUniform1i(image_texture,0);
+		glUniform1i(depthAlphaTexture,1);
 		scene_buffer->Render(true);
 		glUseProgram(0);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);

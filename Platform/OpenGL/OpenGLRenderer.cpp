@@ -92,8 +92,6 @@ ERROR_CHECK
 		else
 			simulWeatherRenderer->SetExposureHint(1.0f);
 ERROR_CHECK
-		
-		simulWeatherRenderer->GetCloudRenderer()->SetDepthTexture(0);
 		if(MixCloudsAndTerrain)
 			simulWeatherRenderer->SetAlwaysRenderCloudsLate(MixCloudsAndTerrain);
 		simulWeatherRenderer->RenderSky(true,false);
@@ -105,7 +103,7 @@ ERROR_CHECK
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender();
 			
-		simulWeatherRenderer->GetCloudRenderer()->SetDepthTexture(simulWeatherRenderer->GetBaseAtmosphericsRenderer()->GetDepthAlphaTexture());
+		simulWeatherRenderer->SetDepthTexture(simulWeatherRenderer->GetBaseAtmosphericsRenderer()->GetDepthAlphaTexture());
 		simulWeatherRenderer->RenderLateCloudLayer(true);
 
 		simulWeatherRenderer->RenderLightning();

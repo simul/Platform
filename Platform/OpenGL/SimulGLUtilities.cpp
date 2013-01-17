@@ -405,7 +405,8 @@ void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 	glUseProgram(Utilities::GetSingleton().linedraw_program);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_CULL_FACE);
 	glDepthMask(GL_FALSE);
 	glBegin(strip?GL_LINE_STRIP:GL_LINES);

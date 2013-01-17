@@ -83,7 +83,9 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudK
 	,skylight_tex(0)
 	,illum_tex(0)
 	,init(false)
-	,clouds_program(0)
+	,clouds_background_program(0)
+	,clouds_foreground_program(0)
+	,current_program(0)
 	,cross_section_program(0)
 	,cloud_shadow_program(0)
 	,cloudConstants(0)
@@ -236,7 +238,7 @@ static float saturate(float c)
 }
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha)
+bool SimulGLCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	EnsureTexturesAreUpToDate();
@@ -282,7 +284,7 @@ ERROR_CHECK
 	// disable alpha testing - if we enable this, the usual reference alpha is reversed because
 	// the shaders return transparency, not opacity, in the alpha channel.
     glDisable(GL_ALPHA_TEST);
-	if(depth_testing)
+	if(depth_alpha_tex)
 		glEnable(GL_DEPTH_TEST);
 	else
 		glDisable(GL_DEPTH_TEST);
@@ -314,7 +316,10 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_3D,illum_tex);
 ERROR_CHECK
     glActiveTexture(GL_TEXTURE7);
-	glBindTexture(GL_TEXTURE_2D,depth_alpha_tex);
+	glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
+	GLuint program=depth_alpha_tex>0?clouds_foreground_program:clouds_background_program;
+	UseShader(program);
+	glUseProgram(program);
 ERROR_CHECK
 	glUniform1i(cloudDensity1_param,0);
 ERROR_CHECK
@@ -447,9 +452,8 @@ ERROR_CHECK
 ERROR_CHECK
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 ERROR_CHECK
-		
-		
-	glUseProgram(clouds_program);
+	glBindBufferBase(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO);
+	
 ERROR_CHECK
 	// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,
 	// which is drawn as a latitude-longitude sphere. But we only draw the parts that:
@@ -557,52 +561,53 @@ void SimulGLCloudRenderer::SetInscatterTextures(void *i,void *s)
 	skylight_tex=((GLuint)s);
 }
 
-void SimulGLCloudRenderer::SetDepthTexture(void *d)
+void SimulGLCloudRenderer::UseShader(GLuint program)
 {
-	depth_alpha_tex=((GLuint)d);
+	if(current_program==program)
+		return;
+	current_program=program;
+	hazeEccentricity_param		=glGetUniformLocation(program,"hazeEccentricity");
+	mieRayleighRatio_param		=glGetUniformLocation(program,"mieRayleighRatio");
+	maxFadeDistanceMetres_param	=glGetUniformLocation(program,"maxFadeDistanceMetres");
+
+	cloudDensity1_param			=glGetUniformLocation(program,"cloudDensity1");
+	cloudDensity2_param			=glGetUniformLocation(program,"cloudDensity2");
+	noiseSampler_param			=glGetUniformLocation(program,"noiseSampler");
+	illumSampler_param			=glGetUniformLocation(program,"illumSampler");
+	lossSampler_param			=glGetUniformLocation(program,"lossSampler");
+	inscatterSampler_param		=glGetUniformLocation(program,"inscatterSampler");
+	skylightSampler_param		=glGetUniformLocation(program,"skylightSampler");
+	depthAlphaTexture			=glGetUniformLocation(program,"depthAlphaTexture");
+
+	layerDistance_param			=glGetUniformLocation(program,"layerDistance");
+
+	cloudConstants				=glGetUniformBlockIndex(program,"CloudConstants");
+	//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
+ERROR_CHECK
+	// If that block IS in the shader program, then BIND it to the relevant UBO.
+	if(cloudConstants>=0)
+	{
+		glUniformBlockBinding(program,cloudConstants,cloudConstantsBindingIndex);
+ERROR_CHECK
+	}
 }
 
 void SimulGLCloudRenderer::RecompileShaders()
 {
+current_program=0;
 ERROR_CHECK
-	clouds_program			=MakeProgram("simul_clouds","#define DETAIL_NOISE 1\r\n");
+	clouds_background_program	=MakeProgram("simul_clouds","#define DETAIL_NOISE 1\r\n");
+	clouds_foreground_program	=MakeProgram("simul_clouds","#define DETAIL_NOISE 1\r\n#define USE_DEPTH_TEXTURE 1\r\n");
 
-	hazeEccentricity_param		=glGetUniformLocation(clouds_program,"hazeEccentricity");
-	mieRayleighRatio_param		=glGetUniformLocation(clouds_program,"mieRayleighRatio");
-	//distanceToIllumination_param=glGetUniformLocation(clouds_program,"distanceToIllumination");
-	maxFadeDistanceMetres_param	=glGetUniformLocation(clouds_program,"maxFadeDistanceMetres");
-
-	cloudDensity1_param		=glGetUniformLocation(clouds_program,"cloudDensity1");
-	cloudDensity2_param		=glGetUniformLocation(clouds_program,"cloudDensity2");
-	noiseSampler_param		=glGetUniformLocation(clouds_program,"noiseSampler");
-	illumSampler_param		=glGetUniformLocation(clouds_program,"illumSampler");
-	lossSampler_param		=glGetUniformLocation(clouds_program,"lossSampler");
-	inscatterSampler_param	=glGetUniformLocation(clouds_program,"inscatterSampler");
-	skylightSampler_param	=glGetUniformLocation(clouds_program,"skylightSampler");
-	depthAlphaTexture		=glGetUniformLocation(clouds_program,"depthAlphaTexture");
-
-	layerDistance_param		=glGetUniformLocation(clouds_program,"layerDistance");
 	
-	printProgramInfoLog(clouds_program);
 ERROR_CHECK
 	cross_section_program	=MakeProgram("simul_cloud_cross_section");
 	
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=LoadPrograms("simple.vert",NULL,"simul_cloud_shadow.frag");
+	glBindBufferRange(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO,0, sizeof(CloudConstants));
+ERROR_CHECK
 	glUseProgram(0);
-	
-	
-	cloudConstants		=glGetUniformBlockIndex(clouds_program, "CloudConstants");
-		//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
-ERROR_CHECK
-		// If that block IS in the shader program, then BIND it to the relevant UBO.
-	if(cloudConstants>=0)
-	{
-		glUniformBlockBinding(clouds_program,cloudConstants,cloudConstantsBindingIndex);
-ERROR_CHECK
-		glBindBufferRange(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO,0, sizeof(CloudConstants));
-ERROR_CHECK
-	}
 }
 
 void SimulGLCloudRenderer::RestoreDeviceObjects(void*)
@@ -691,10 +696,10 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	init=false;
 	SAFE_DELETE_PROGRAM(cross_section_program);
 
-	SAFE_DELETE_PROGRAM(clouds_program);
+	SAFE_DELETE_PROGRAM(clouds_background_program);
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 
-	clouds_program				=0;
+	clouds_background_program				=0;
 	eyePosition_param			=0;
 	hazeEccentricity_param		=0;
 	mieRayleighRatio_param		=0;

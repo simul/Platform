@@ -13,6 +13,5 @@ layout(std140) uniform CloudConstants
 	uniform vec4 lightningColour;
 	uniform vec2 screenCoordOffset;
 	uniform float earthshadowMultiplier;
-	uniform float xxxx;
 };
 #endif

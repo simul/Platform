@@ -296,7 +296,7 @@ bool SimulWeatherRendererDX1x::RenderLateCloudLayer(bool )
 {
 	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{
-		simulCloudRenderer->Render(false,false,UseDefaultFog,true);
+		simulCloudRenderer->Render(false,depth_alpha_tex,UseDefaultFog,true);
 		return true;
 	}
 	return false;

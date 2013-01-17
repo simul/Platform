@@ -565,9 +565,9 @@ static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 	return &x;
 }
 
-bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha)
+bool SimulCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
-	return Render(cubemap,depth_testing,default_fog,0,write_alpha);
+	return Render(cubemap,depth_alpha_tex,default_fog,0,write_alpha);
 }
 
 void SimulCloudRenderer::EnsureCorrectIlluminationTextureSizes()
@@ -666,12 +666,12 @@ void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 	}
 }
 
-bool SimulCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog,int buffer_index,bool write_alpha)
+bool SimulCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,int buffer_index,bool write_alpha)
 {
 	if(rebuild_shaders)
 		RecompileShaders();
 	EnsureTexturesAreUpToDate();
-	depth_testing;
+	depth_alpha_tex;
 	default_fog;
 	if(!write_alpha)
 		m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,7);

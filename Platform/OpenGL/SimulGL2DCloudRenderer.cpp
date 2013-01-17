@@ -314,7 +314,7 @@ static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 	glGetFloatv(src,m);
 }
 
-bool SimulGL2DCloudRenderer::Render(bool, bool, bool, bool)
+bool SimulGL2DCloudRenderer::Render(bool, void *, bool, bool)
 {
 	EnsureTexturesAreUpToDate();
 	glActiveTexture(GL_TEXTURE0);

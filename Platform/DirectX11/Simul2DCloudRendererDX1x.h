@@ -28,7 +28,7 @@ public:
 	void RestoreDeviceObjects(void*);
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
-	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
+	bool Render(bool cubemap,void *depth_tex,bool default_fog,bool write_alpha);
 	void RenderCrossSections(int width,int height);
 	void SetLossTexture(void *l);
 	void SetInscatterTextures(void *i,void *s);

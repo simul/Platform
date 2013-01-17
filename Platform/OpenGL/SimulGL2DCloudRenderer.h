@@ -39,7 +39,7 @@ public:
 	//! OpenGL Implementation of device invalidation - not strictly needed in GL.
 	void InvalidateDeviceObjects();
 	//! OpenGL Implementation of 2D cloud rendering.
-	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
+	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
 	void RenderCrossSections(int width,int height);
 	//! Set the platform-dependent atmospheric loss texture.
 	void SetLossTexture(void *l);

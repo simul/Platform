@@ -55,7 +55,7 @@ void Simul2DCloudRendererDX1x::EnsureTextureCycle()
 {
 }
 
-bool Simul2DCloudRendererDX1x::Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha)
+bool Simul2DCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
 {
 return true;
 }

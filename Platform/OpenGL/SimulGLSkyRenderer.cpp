@@ -325,6 +325,7 @@ ERROR_CHECK
 ERROR_CHECK
 return true;
 }
+static GLint earthShadowUniformsBindingIndex=3;
 
 void SimulGLSkyRenderer::UseProgram(GLuint p)
 {
@@ -345,12 +346,10 @@ ERROR_CHECK
 		// If that block IS in the shader program, then BIND it to the relevant UBO.
 		if(earthShadowUniforms>=0)
 		{
-		GLint earthShadowUniformsBindingIndex=0;
 			glUniformBlockBinding(current_program,earthShadowUniforms,earthShadowUniformsBindingIndex);
 ERROR_CHECK
 			glBindBufferRange(GL_UNIFORM_BUFFER, earthShadowUniformsBindingIndex,earthShadowUniformsUBO, 0, sizeof(EarthShadowUniforms));	
 ERROR_CHECK
-			//glBindBufferBase(GL_UNIFORM_BUFFER,0,earthShadowUniformsUBO);
 		}
 		cloudOrigin					=glGetUniformLocation(current_program,"cloudOrigin");
 		cloudScale					=glGetUniformLocation(current_program,"cloudScale");
@@ -397,6 +396,7 @@ ERROR_CHECK
 	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
 								skyKeyframer->GetAltitudeKM()
 								,skyKeyframer->GetDirectionToSun());
+
 	if(e.enable)
 	{
 		EarthShadowUniforms u;
@@ -413,6 +413,10 @@ ERROR_CHECK
 		UseProgram(earthshadow_program);
 	else
 		UseProgram(sky_program);
+ERROR_CHECK
+	if(e.enable)
+		glBindBufferBase(GL_UNIFORM_BUFFER,earthShadowUniformsBindingIndex,earthShadowUniformsUBO);
+ERROR_CHECK
 
 	glUniform1i(skyTexture1_param,0);
 	
@@ -740,8 +744,8 @@ ERROR_CHECK
 	planetLightDir_param	=glGetUniformLocation(planet_program,"lightDir");
 	printProgramInfoLog(planet_program);
 ERROR_CHECK
-	fade_3d_to_2d_program			=glCreateProgram();
-	GLuint fade_vertex_shader				=LoadShader("simul_fade_3d_to_2d.vert");
+	fade_3d_to_2d_program				=glCreateProgram();
+	GLuint fade_vertex_shader			=LoadShader("simul_fade_3d_to_2d.vert");
     GLuint fade_fragment_shader			=LoadShader("simul_fade_3d_to_2d.frag");
 	glAttachShader(fade_3d_to_2d_program,fade_vertex_shader);
 	glAttachShader(fade_3d_to_2d_program,fade_fragment_shader);

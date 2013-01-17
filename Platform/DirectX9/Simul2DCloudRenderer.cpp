@@ -261,10 +261,10 @@ void SetTexture()
 {
 }
 
-bool Simul2DCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha)
+bool Simul2DCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	cubemap;
-	depth_testing;
+	depth_alpha_tex;
 	default_fog;
 	HRESULT hr=S_OK;
 	if(!enabled)

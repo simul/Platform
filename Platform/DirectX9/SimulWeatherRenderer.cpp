@@ -343,7 +343,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(int buffer_index,bool buf)
 		{	
 			PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
 			{
-				simulCloudRenderer->Render(false,false,false,true);
+				simulCloudRenderer->Render(false,depth_alpha_tex,false,true);
 			}
 		}
 	}

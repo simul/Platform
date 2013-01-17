@@ -36,13 +36,17 @@ void main(void)
 	float depth			=texture(depthAlphaTexture,screenCoord).a;
 	float cloud_depth	=pow(fade_texc.x,2.0);
 #endif
-	
+	vec4 texc=texCoordDiffuse;
+#ifdef TILING_OFFSET
+	vec2 tiling_offset=texture(noiseSampler,texc.xy/64.0).xy;
+	texc.xy+=2.0*(tiling_offset.xy-noise_offset.xy);
+#endif
 	vec3 noiseval=texture(noiseSampler,noiseCoord).xyz-noise_offset;
 #if DETAIL_NOISE==1
 	noiseval+=(texture(noiseSampler,noiseCoord*8.0).xyz-0.5)/2.0;
 #endif
-	noiseval*=texCoordDiffuse.w;
-	vec3 pos=texCoordDiffuse.xyz+fractalScale*texCoordDiffuse.w*noiseval;
+	noiseval*=texc.w;
+	vec3 pos=texc.xyz+fractalScale*texc.w*noiseval;
 	vec4 density=texture(cloudDensity1,pos);
 	vec4 density2=texture(cloudDensity2,pos);
 	//vec4 lightning=texture(illumSampler,texCoordLightning.xyz);
@@ -53,7 +57,7 @@ void main(void)
 #ifdef USE_DEPTH_TEXTURE
 	float depth_offset=depth-cloud_depth;
 	opacity*=saturate(depth_offset/0.01);
-	if(depth>0&&depth<cloud_depth)
+	if(depth>0&&depth<cloud_depth||depth>=1.0)
 		discard;
 #endif
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
