@@ -501,6 +501,14 @@
 			Name="Shaders"
 			>
 			<File
+				RelativePath=".\GLSL\simul_2d_cloud_detail.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_2d_cloud_detail_lighting.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_atmospherics.frag"
 				>
 			</File>

@@ -239,8 +239,8 @@ bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 
 void SimulGLWeatherRenderer::RenderLightning()
 {
-	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		simulLightningRenderer->Render();
+//	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+//		simulLightningRenderer->Render();
 }
 
 void SimulGLWeatherRenderer::RenderPrecipitation()

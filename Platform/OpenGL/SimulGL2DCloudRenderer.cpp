@@ -168,7 +168,9 @@ ERROR_CHECK
 		glBindTexture(GL_TEXTURE_2D,dens_fb.GetColorTex());
 		GLuint lighting_prog=LoadPrograms("simple.vert",NULL,"simul_2d_cloud_detail_lighting.frag");
 		glUseProgram(lighting_prog);
+		GLint densTexture	=glGetUniformLocation(lighting_prog,"dens_texture");
 		GLint lightDir		=glGetUniformLocation(lighting_prog,"lightDir");
+		glUniform1i(densTexture,0);
 		glUniform3f(lightDir,1.f,0.f,0.f);
 		DrawQuad(0,0,1,1);
 		SAFE_DELETE_PROGRAM(lighting_prog);
@@ -333,7 +335,6 @@ bool SimulGL2DCloudRenderer::Render(bool, void *, bool, bool)
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,detail_fb.GetColorTex());
 ERROR_CHECK
@@ -359,9 +360,18 @@ ERROR_CHECK
 static float ll=0.05f;
 	glUniform4f(lightResponse_param,ci->GetLightResponse(),0,0,ll*ci->GetSecondaryLightResponse());
 ERROR_CHECK
-	glUniform3f(fractalScale_param,ci->GetFractalOffsetScale()/DX.x,
+	glUniform3f(fractalScale_param,	ci->GetFractalOffsetScale()/DX.x,
 									ci->GetFractalOffsetScale()/DX.y,
 									ci->GetFractalOffsetScale()/DX.z);
+	simul::math::Vector3 wind_offset=cloudKeyframer->GetCloudInterface()->GetWindOffset();
+	
+	glUniform1f(globalScale	,ci->GetCloudWidth());
+	static float ff=100.f;
+	glUniform1f(detailScale	,ff*ci->GetFractalWavelength());
+	glUniform2f(origin		,wind_offset.x,wind_offset.y);
+			
+				
+									
 ERROR_CHECK
 	glUniform1f(interp_param,cloudKeyframer->GetInterpolation());
 ERROR_CHECK
@@ -377,7 +387,6 @@ ERROR_CHECK
 		simul::sky::float4 amb=skyInterface->GetAmbientLight(X1.z*.001f);
 		glUniform3f(skylightColour_param,amb.x,amb.y,amb.z);
 	}
-
 	glUniform1f(cloudEccentricity_param,cloudKeyframer->GetInterpolatedKeyframe().light_asymmetry);
 ERROR_CHECK
 	glUniform1f(textureEffect_param,texture_effect);
@@ -407,7 +416,6 @@ ERROR_CHECK
 	static float noise_angle=0.8f;
 	helper->Set2DNoiseTexturing(noise_angle,2.f,1.f);
 	float image_scale=2000.f+texture_scale*20000.f;
-	simul::math::Vector3 wind_offset=cloudKeyframer->GetCloudInterface()->GetWindOffset();
 
 ERROR_CHECK
 	const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
@@ -451,14 +459,13 @@ void SimulGL2DCloudRenderer::RenderCrossSections(int width,int height)
 	
 	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
 	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
-	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
+//GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
 	GLint crossSectionOffset	= glGetUniformLocation(cross_section_program,"crossSectionOffset");
 
     glDisable(GL_BLEND);
 (GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 ERROR_CHECK
-	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_2D);
 	glUseProgram(cross_section_program);
 ERROR_CHECK
@@ -480,6 +487,11 @@ static float mult=1.f;
 		glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
 		DrawQuad(i*(w+8)+8,h+16,w,w);
 	}
+	
+	glBindTexture(GL_TEXTURE_2D,detail_fb.GetColorTex());
+	glUseProgram(Utilities::GetSingleton().simple_program);
+	DrawQuad(8,8,512,512);
+	
 	glUseProgram(0);	
 }
 
@@ -533,6 +545,9 @@ void SimulGL2DCloudRenderer::RecompileShaders()
 	mieRayleighRatio_param	= glGetUniformLocation(clouds_program,"mieRayleighRatio");
 	maxFadeDistanceMetres_param	= glGetUniformLocation(clouds_program,"maxFadeDistanceMetres");
 
+	globalScale				= glGetUniformLocation(clouds_program,"globalScale");
+	detailScale				= glGetUniformLocation(clouds_program,"detailScale");
+	origin					= glGetUniformLocation(clouds_program,"origin");
 //cloudKeyframer->SetRenderCallback(this);
 	glUseProgram(0);
 	

@@ -64,6 +64,10 @@ protected:
 	
 	GLuint cross_section_program;
 
+	GLint globalScale;
+	GLint detailScale;
+	GLint origin;
+
 	GLint eyePosition_param;
 	GLint lightResponse_param;
 	GLint lightDir_param;
