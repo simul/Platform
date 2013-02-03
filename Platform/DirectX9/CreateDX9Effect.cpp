@@ -1011,9 +1011,9 @@ void RT::PrintAt3dPos(const float *p,const char *text,const float *colr,int offs
 	if(screen_pos.w<0)
 		return;
 	
-	wchar_t pwText[50];
-	MultiByteToWideChar (CP_ACP, 0,text, -1, pwText, 48 );
-	hr = m_pFont->DrawText(NULL,pwText,-1,&rcDest,dwTextFormat,(D3DXCOLOR)colr);
+//	wchar_t pwText[50];
+	//MultiByteToWideChar (CP_ACP, 0,text, -1, pwText, 48 );
+	hr = m_pFont->DrawTextA(NULL,text,-1,&rcDest,dwTextFormat,(D3DXCOLOR)colr);
 }
 
 void RT::DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)

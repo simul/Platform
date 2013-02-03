@@ -11,6 +11,7 @@ uniform vec3 lightDir;
 uniform vec3 eyePosition;
 uniform vec3 sunlight;
 uniform float maxFadeDistanceMetres;
+uniform float layerDensity;
 
 varying vec2 texc;
 varying vec3 wPosition;
@@ -43,9 +44,9 @@ void main()
 	float cos0			=dot(normalize(lightDir),(view));
     // original image
     vec4 c				=texture2D(imageTexture,texc);
-	float opacity		=.2*c.r;
+	float opacity		=clamp(layerDensity+c.r-0.5,0,1.0);
 	float light			=HenyeyGreenstein(cloudEccentricity,cos0);
-	vec3 final			=c.rgb*sunlight*(lightResponse.w+lightResponse.x*light);
+	vec3 final			=c.rrr*sunlight*(lightResponse.w+lightResponse.x*light);
 	vec3 loss_lookup	=texture2D(lossSampler,fade_texc).rgb;
 	vec4 insc_lookup	=texture2D(inscatterSampler,fade_texc);
 	final				*=loss_lookup;

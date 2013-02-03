@@ -382,7 +382,7 @@ ERROR_CHECK
 ERROR_CHECK
 	glUniform1f(textureEffect_param,texture_effect);
 ERROR_CHECK
-	glUniform1f(layerDensity_param,DX.z*0.001f*ci->GetOpticalDensity());
+	glUniform1f(layerDensity_param,ci->GetHumidity());//DX.z*0.001f*ci->GetOpticalDensity());
 
 	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
 	simul::math::Matrix4x4 modelview,proj;
