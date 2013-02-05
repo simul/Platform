@@ -45,6 +45,8 @@ namespace simul
 			ID3D1xEffectTechnique*			skylTechnique;
 			
 			ID3D1xBuffer*					constantBuffer;
+	
+			ID3DX11EffectConstantBuffer		*gpuSkyConstants;
 		};
 	}
 }

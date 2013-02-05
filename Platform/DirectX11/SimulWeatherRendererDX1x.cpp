@@ -266,7 +266,7 @@ bool SimulWeatherRendererDX1x::RenderCubemap()
 
 void *SimulWeatherRendererDX1x::GetCubemap()
 {
-	return framebuffer_cubemap.GetTextureResource();// m_pCubeEnvMapSRV;
+	return framebuffer_cubemap.GetColorTex();// m_pCubeEnvMapSRV;
 }
 
 bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)

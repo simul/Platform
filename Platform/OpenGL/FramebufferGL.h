@@ -61,9 +61,13 @@ public:
 		return m_height;
 	}
 	// Get the internal texture object IDs.
-	inline GLuint GetColorTex(int index = 0)
+	void* GetColorTex()
 	{
-		return m_tex_col[index];
+		return (void*) m_tex_col[0];
+	}
+	void* GetColorTex(int index)
+	{
+		return (void*) m_tex_col[index];
 	}
 	inline GLenum GetDepthTex()
 	{

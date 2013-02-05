@@ -6,10 +6,6 @@ uniform sampler2D input_insc_texture;
 uniform sampler1D density_texture;
 uniform sampler3D loss_texture;
 
-uniform float maxDistanceKm;
-uniform vec3 sunIrradiance;
-uniform vec3 lightDir;
-
 in vec2 texc;
 out  vec4 outColor;
 
@@ -48,7 +44,7 @@ void main(void)
 	vec4 light			=getSunlightFactor(alt_km,lightDir)*vec4(sunIrradiance,1.0);
 	vec4 insc			=light;
 #ifdef OVERCAST
-	insc*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
+	//insc*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
 #endif
 	vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie;
 	vec3 total_ext		=extinction+ozone*ozone_factor;

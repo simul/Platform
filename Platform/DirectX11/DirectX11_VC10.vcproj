@@ -310,6 +310,20 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{BA686093-89A1-438D-948A-34ECF718D106}"
+			CopyLocal="false"
+			CopyLocalDependencies="false"
+			CopyLocalSatelliteAssemblies="false"
+			RelativePathToProject=".\Clouds\Clouds_VC10.vcproj"
+		/>
+		<ProjectReference
+			ReferencedProjectIdentifier="{CC71B070-12C2-45C9-894A-A9CDDC1F3FA4}"
+			CopyLocal="false"
+			CopyLocalDependencies="false"
+			CopyLocalSatelliteAssemblies="false"
+			RelativePathToProject=".\Terrain\Terrain_VC10.vcproj"
+		/>
 	</References>
 	<Files>
 		<Filter
@@ -339,6 +353,14 @@
 			</File>
 			<File
 				RelativePath=".\FramebufferDX1x.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GpuCloudGenerator.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GpuSkyGenerator.cpp"
 				>
 			</File>
 			<File
@@ -421,6 +443,14 @@
 			</File>
 			<File
 				RelativePath=".\FramebufferDX1x.h"
+				>
+			</File>
+			<File
+				RelativePath=".\GpuCloudGenerator.h"
+				>
+			</File>
+			<File
+				RelativePath=".\GpuSkyGenerator.h"
 				>
 			</File>
 			<File

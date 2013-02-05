@@ -7,10 +7,6 @@ uniform sampler1D density_texture;
 uniform sampler3D loss_texture;
 uniform sampler3D insc_texture;
 
-uniform float maxDistanceKm;
-uniform vec3 starlight;
-uniform vec3 lightDir;
-
 in vec2 texc;
 out  vec4 outColor;
 
@@ -24,7 +20,7 @@ vec3 getSkylight(float alt_km)
 {
 // The inscatter factor, at this altitude looking straight up, is given by:
 	vec4 insc		=texture(insc_texture,vec3(sqrt(alt_km/maxOutputAltKm),0.0,1.0));
-	vec3 skylight	=InscatterFunction(insc,0.0);
+	vec3 skylight	=InscatterFunction(insc,hazeEccentricity,0.0,mieRayleighRatio);
 	return skylight;
 //	return vec3(.05,.1,.2);
 }

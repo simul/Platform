@@ -146,7 +146,7 @@ ERROR_CHECK
 		dens_fb.Clear(0.f,0.f,0.f,0.f);
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,noise_fb.GetColorTex());
+		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
 		GLuint dens_prog=LoadPrograms("simple.vert",NULL,"simul_2d_cloud_detail.frag");
 		glUseProgram(dens_prog);
 		//GLint fadeTexture2_fade		=glGetUniformLocation(fade_3d_to_2d_program,"fadeTexture2");
@@ -165,7 +165,7 @@ ERROR_CHECK
 		detail_fb.Clear(0.f,0.f,0.f,0.f);
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,dens_fb.GetColorTex());
+		glBindTexture(GL_TEXTURE_2D,(GLuint)dens_fb.GetColorTex());
 		GLuint lighting_prog=LoadPrograms("simple.vert",NULL,"simul_2d_cloud_detail_lighting.frag");
 		glUseProgram(lighting_prog);
 		GLint densTexture	=glGetUniformLocation(lighting_prog,"dens_texture");
@@ -336,7 +336,7 @@ bool SimulGL2DCloudRenderer::Render(bool, void *, bool, bool)
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,detail_fb.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)detail_fb.GetColorTex());
 ERROR_CHECK
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,coverage_tex[0]);
@@ -488,7 +488,7 @@ static float mult=1.f;
 		DrawQuad(i*(w+8)+8,h+16,w,w);
 	}
 	
-	glBindTexture(GL_TEXTURE_2D,detail_fb.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)detail_fb.GetColorTex());
 	glUseProgram(Utilities::GetSingleton().simple_program);
 	DrawQuad(8,8,512,512);
 	

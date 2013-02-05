@@ -52,21 +52,6 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	rainTexture			=m_pRainEffect->GetVariableByName("rainTexture")->AsShaderResource();
 
 
-	SAFE_RELEASE(pShadingCB);
-/*	D3D11_SUBRESOURCE_DATA cb_init_data;
-	cb_init_data.pSysMem = &rainConstantBuffer;
-	cb_init_data.SysMemPitch = 0;
-	cb_init_data.SysMemSlicePitch = 0;
-
-	// Constants
-	D3D11_BUFFER_DESC cb_desc;
-	cb_desc.Usage				= D3D11_USAGE_DYNAMIC;
-	cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
-	cb_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
-	cb_desc.MiscFlags			= 0;    
-	cb_desc.ByteWidth			= PAD16(sizeof(RainConstantBuffer));
-	cb_desc.StructureByteStride = 0;
-	m_pd3dDevice->CreateBuffer(&cb_desc, &cb_init_data, &pShadingCB);*/
 	MAKE_CONSTANT_BUFFER(pShadingCB,RainConstantBuffer);
 
 	ID3D1xEffectTechnique*			tech	=m_pRainEffect->GetTechniqueByName("create_rain_texture");
@@ -192,14 +177,8 @@ return;
 	rainConstantBuffer.lightDir			=(const float*)light_dir;
 	rainConstantBuffer.offset			=offs;
 	rainConstantBuffer.worldViewProj	=wvp;
-	// Update constant buffer
-	D3D11_MAPPED_SUBRESOURCE mapped_res;            
-	m_pImmediateContext->Map(pShadingCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
-	*(RainConstantBuffer*)mapped_res.pData = rainConstantBuffer;
-	m_pImmediateContext->Unmap(pShadingCB, 0);
 
-	m_pImmediateContext->PSSetConstantBuffers(0, 1, &pShadingCB);
-	//m_pImmediateContext->PSSetConstantBuffers( 3, 1, bufferPS);
+	UPDATE_CONSTANT_BUFFER(pShadingCB,RainConstantBuffer,rainConstantBuffer);
 
 	UINT passes=1;
 	for(unsigned i = 0 ; i < passes ; ++i )

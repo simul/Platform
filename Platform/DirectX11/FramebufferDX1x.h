@@ -37,11 +37,19 @@ public:
 	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
 	void DeactivateAndRender(bool blend);
 	bool DrawQuad();
-	
 	ID3D1xShaderResourceView *GetBufferResource()
 	{
 		return buffer_texture_SRV;
 	}
+	void* GetColorTex()
+	{
+		return (void*)buffer_texture_SRV;
+	}
+	ID3D1xTexture2D* GetColorTexResource()
+	{
+		return hdr_buffer_texture;
+	}
+	void CopyToMemory(void *target);
 protected:
 	int screen_width;
 	int screen_height;
@@ -57,6 +65,8 @@ public:
 	ID3D1xRenderTargetView*				m_pHDRRenderTarget;
 	ID3D1xDepthStencilView*				m_pBufferDepthSurface;
 protected:
+	ID3D11Texture2D *stagingTexture;	// Only initialized if CopyToMemory is invoked.
+	
 	ID3D1xRenderTargetView*				m_pOldRenderTarget;
 	ID3D1xDepthStencilView*				m_pOldDepthSurface;
 	D3D1x_VIEWPORT						m_OldViewports[4];

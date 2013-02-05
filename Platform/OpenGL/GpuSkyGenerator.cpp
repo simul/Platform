@@ -6,6 +6,8 @@
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix.h"
 #include "Simul/Sky/Float4.h"
+#include "Simul/Platform/OpenGL/Glsl.h"
+#include "Simul/Platform/CrossPlatform/simul_gpu_sky.sl"
 #include "Simul/Base/Timer.h"
 #include <math.h>
 using namespace simul;
@@ -15,6 +17,7 @@ GpuSkyGenerator::GpuSkyGenerator()
 	:loss_program(0)
 	,insc_program(0)
 	,skyl_program(0)
+	,gpuSkyConstantsBindingIndex(5)
 {
 }
 
@@ -32,15 +35,28 @@ void GpuSkyGenerator::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(loss_program);
 	SAFE_DELETE_PROGRAM(insc_program);
 	SAFE_DELETE_PROGRAM(skyl_program);
+	glDeleteBuffersARB(1,&gpuSkyConstantsUBO);
 }
 
 void GpuSkyGenerator::RecompileShaders()
-{																																			SAFE_DELETE_PROGRAM(loss_program);
+{																												SAFE_DELETE_PROGRAM(loss_program);
 	SAFE_DELETE_PROGRAM(insc_program);
 	SAFE_DELETE_PROGRAM(skyl_program);
 	loss_program=LoadPrograms("simple.vert",NULL,"simul_gpu_loss.frag");
+ERROR_CHECK
 	insc_program=LoadPrograms("simple.vert",NULL,"simul_gpu_insc.frag","#define OVERCAST 1\r\n");
+ERROR_CHECK
 	skyl_program=LoadPrograms("simple.vert",NULL,"simul_gpu_skyl.frag");
+ERROR_CHECK
+	
+	glGenBuffers(1, &gpuSkyConstantsUBO);
+ERROR_CHECK
+	glBindBuffer(GL_UNIFORM_BUFFER, gpuSkyConstantsUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(GpuSkyConstants), NULL, GL_STREAM_DRAW);
+ERROR_CHECK
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBufferRange(GL_UNIFORM_BUFFER,gpuSkyConstantsBindingIndex,gpuSkyConstantsUBO,0, sizeof(GpuSkyConstants));
+ERROR_CHECK
 }
 
 //! Return true if the derived class can make sky tables using the GPU.
@@ -108,6 +124,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(simul::sky::AtmosphericScat
 				,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table,int table_size,float maxDensityAltKm
 				,bool InfraRed)
 {
+	GLint gpuSkyConstants;
 simul::base::Timer timer;
 timer.StartTime();
 	if(loss_program<=0)
@@ -122,7 +139,7 @@ std::cout<<"\tGpu sky: recompile "<<timer.UpdateTime()<<std::endl;
 		fb[i].InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	}
 std::cout<<"\tGpu sky: fb "<<timer.UpdateTime()<<std::endl;
-	FramebufferGL *F[2];
+	BaseFramebuffer *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
 	glEnable(GL_TEXTURE_1D);
@@ -130,9 +147,57 @@ std::cout<<"\tGpu sky: fb "<<timer.UpdateTime()<<std::endl;
 	glEnable(GL_TEXTURE_3D);
 	GLuint dens_tex=make1DTexture(table_size,(const float *)density_table);
 std::cout<<"\tGpu sky: dens_tex "<<timer.UpdateTime()<<std::endl;
+
 	glUseProgram(loss_program);
+
+	{
+		GpuSkyConstants constants;
+	
+		constants.texSize				=vec2((float)altitudes_km.size(),(float)numElevations);
+		constants.tableSize			=vec2((float)table_size,(float)table_size);
+		
+		constants.maxDistanceKm		=max_distance_km;
+		
+		constants.planetRadiusKm		=skyInterface->GetPlanetRadius();
+		constants.maxOutputAltKm		=maxOutputAltKm;
+		constants.maxDensityAltKm		=maxDensityAltKm;
+		constants.hazeBaseHeightKm	=skyInterface->GetHazeBaseHeightKm();
+		constants.hazeScaleHeightKm	=skyInterface->GetHazeScaleHeightKm();
+
+		constants.overcastBaseKm	=overcast_base_km;
+		constants.overcastRangeKm	=overcast_range_km;
+		constants.overcast			=overcast;
+
+		constants.rayleigh			=(const float*)skyInterface->GetRayleigh();
+		constants.hazeMie				=(const float*)(haze*skyInterface->GetMie());
+		constants.ozone				=(const float*)(skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
+
+		constants.sunIrradiance		=(const float*)sun_irradiance;
+		constants.lightDir			=(const float*)dir_to_sun;
+
+		constants.starlight			=(const float*)(skyInterface->GetStarlight());
+		
+		constants.hazeEccentricity=1.0;
+		constants.mieRayleighRatio=(const float*)(skyInterface->GetMieRayleighRatio());
+	
+		glBindBuffer(GL_UNIFORM_BUFFER, gpuSkyConstantsUBO);
+ERROR_CHECK
+		glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(GpuSkyConstants), &constants);
+ERROR_CHECK
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+ERROR_CHECK
+		glBindBufferBase(GL_UNIFORM_BUFFER,gpuSkyConstantsBindingIndex,gpuSkyConstantsUBO);
+ERROR_CHECK
+	}
+
+
 	setParameter(loss_program,"input_loss_texture",0);
 	setParameter(loss_program,"density_texture",1);
+	gpuSkyConstants		=glGetUniformBlockIndex(loss_program,"GpuSkyConstants");
+	if(gpuSkyConstants>=0)
+		glUniformBlockBinding(loss_program,gpuSkyConstants,gpuSkyConstantsBindingIndex);
+
+
 	simul::sky::float4 *target=loss;
 ERROR_CHECK
 	F[0]->Activate();
@@ -170,7 +235,7 @@ ERROR_CHECK
 			OrthoMatrices();
 			// input light values:
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,F[0]->GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_1D,dens_tex);
 			DrawQuad(0,0,1,1);
@@ -195,28 +260,32 @@ std::cout<<"\tGpu sky: loss "<<timer.UpdateTime()<<std::endl;
 std::cout<<"\tGpu sky: loss_tex,optd_tex "<<timer.UpdateTime()<<std::endl;
 	// Now render out the inscatter.
 	glUseProgram(insc_program);
+	gpuSkyConstants		=glGetUniformBlockIndex(insc_program,"GpuSkyConstants");
+	if(gpuSkyConstants>=0)
+		glUniformBlockBinding(insc_program,gpuSkyConstants,gpuSkyConstantsBindingIndex);
 	setParameter(insc_program,"input_insc_texture",0);
 	setParameter(insc_program,"density_texture",1);
 	setParameter(insc_program,"loss_texture",2);
 	setParameter(insc_program,"optical_depth_texture",3);
-		setParameter3(insc_program,"rayleigh"		,skyInterface->GetRayleigh());
-		setParameter(insc_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
-		setParameter(insc_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
+
+	setParameter3(insc_program,"rayleigh"		,skyInterface->GetRayleigh());
+	setParameter(insc_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
+	setParameter(insc_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
 		
-		setParameter(insc_program,"overcast",overcast);
-		setParameter(insc_program,"overcastBaseKm",overcast_base_km);
-		setParameter(insc_program,"overcastRangeKm",overcast_range_km);
-		
-		setParameter3(insc_program,"hazeMie"		,haze*skyInterface->GetMie());
-		setParameter3(insc_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
-		setParameter(insc_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
-		setParameter(insc_program,"tableSize"		,(float)table_size,(float)table_size);
-		setParameter(insc_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
-		setParameter(insc_program,"maxOutputAltKm"	,maxOutputAltKm);
-		setParameter(insc_program,"maxDensityAltKm"	,maxDensityAltKm);
-		setParameter3(insc_program,"sunIrradiance"	,sun_irradiance);
-		setParameter3(insc_program,"lightDir"		,dir_to_sun);
-		setParameter(insc_program,"maxDistanceKm"	,max_distance_km);
+	setParameter(insc_program,"overcast",overcast);
+	setParameter(insc_program,"overcastBaseKm",overcast_base_km);
+	setParameter(insc_program,"overcastRangeKm",overcast_range_km);
+	
+	setParameter3(insc_program,"hazeMie"		,haze*skyInterface->GetMie());
+	setParameter3(insc_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
+	setParameter(insc_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
+	setParameter(insc_program,"tableSize"		,(float)table_size,(float)table_size);
+	setParameter(insc_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
+	setParameter(insc_program,"maxOutputAltKm"	,maxOutputAltKm);
+	setParameter(insc_program,"maxDensityAltKm"	,maxDensityAltKm);
+	setParameter3(insc_program,"sunIrradiance"	,sun_irradiance);
+	setParameter3(insc_program,"lightDir"		,dir_to_sun);
+	setParameter(insc_program,"maxDistanceKm"	,max_distance_km);
 ERROR_CHECK
 	target=insc;
 	F[0]->Activate();
@@ -241,7 +310,7 @@ ERROR_CHECK
 			OrthoMatrices();
 			// input inscatter values:
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,F[0]->GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_1D,dens_tex);
 			glActiveTexture(GL_TEXTURE2);
@@ -268,6 +337,9 @@ std::cout<<"\tGpu sky: insc_tex "<<timer.UpdateTime()<<std::endl;
 	glBindTexture(GL_TEXTURE_3D,insc_tex);
 	// Now render out the skylight.
 	glUseProgram(skyl_program);
+	gpuSkyConstants		=glGetUniformBlockIndex(skyl_program,"GpuSkyConstants");
+	if(gpuSkyConstants>=0)
+		glUniformBlockBinding(skyl_program,gpuSkyConstants,gpuSkyConstantsBindingIndex);
 	setParameter(skyl_program,"input_skyl_texture",0);
 	setParameter(skyl_program,"density_texture",1);
 	setParameter(skyl_program,"loss_texture",2);
@@ -290,16 +362,20 @@ ERROR_CHECK
 		float distKm=zPosition*max_distance_km;
 		if(i==numDistances-1)
 			distKm=1000.f;
-		setParameter(skyl_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
-		setParameter(skyl_program,"tableSize"		,(float)table_size,(float)table_size);
 		setParameter(skyl_program,"distKm"			,distKm);
 		setParameter(skyl_program,"prevDistKm"		,prevDistKm);
+		
+		setParameter(skyl_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
+		setParameter(skyl_program,"tableSize"		,(float)table_size,(float)table_size);
+		
 		setParameter(skyl_program,"maxDistanceKm"	,max_distance_km);
 		setParameter(skyl_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
 		setParameter(skyl_program,"maxOutputAltKm"	,maxOutputAltKm);
 		setParameter(skyl_program,"maxDensityAltKm"	,maxDensityAltKm);
+		
 		setParameter(skyl_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
 		setParameter(skyl_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
+		
 		setParameter3(skyl_program,"rayleigh"		,skyInterface->GetRayleigh());
 		setParameter3(skyl_program,"hazeMie"		,haze*skyInterface->GetMie());
 		setParameter3(skyl_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
@@ -311,7 +387,7 @@ ERROR_CHECK
 			OrthoMatrices();
 			// input inscatter values:
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,F[0]->GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_1D,dens_tex);
 			glActiveTexture(GL_TEXTURE2);

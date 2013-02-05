@@ -21,7 +21,7 @@ void main()
 	vec4 insc=EarthShadowFunction(texc2,view);
 	vec4 skyl=texture2D(skylightTexture,texc2);
 	float cos0=dot(view,lightDir);
-	vec3 colour=InscatterFunction(insc,cos0);
+	vec3 colour=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour+=skyl.rgb;
     gl_FragColor=vec4(colour,1.0);
 }

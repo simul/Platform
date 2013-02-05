@@ -8,6 +8,8 @@ uniform vec3 lightDir;
 uniform vec3 earthShadowNormal;
 uniform float radiusOnCylinder;
 uniform float skyInterp;
+uniform float hazeEccentricity;
+uniform vec3 mieRayleighRatio;
 
 uniform float maxDistance;
 // X, Y and Z for the bottom-left corner of the cloud shadow texture.
@@ -27,7 +29,7 @@ void main()
 	vec4 insc=texture2D(inscTexture,texc);
 	vec4 skyl=texture2D(skylightTexture,texc);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	vec3 colour=InscatterFunction(insc,cos0);
+	vec3 colour=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour+=skyl.rgb;
     gl_FragColor=vec4(colour.rgb,1.0);
 }

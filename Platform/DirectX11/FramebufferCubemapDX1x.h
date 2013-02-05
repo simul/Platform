@@ -30,7 +30,7 @@ public:
 	void Deactivate();
 	void Render(bool){}
 	void Clear(float,float,float,float,int mask=0);
-	void *GetTextureResource()
+	virtual void* GetColorTex()
 	{
 		return (void*)m_pCubeEnvMapSRV;
 	}

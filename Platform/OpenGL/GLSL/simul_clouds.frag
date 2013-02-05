@@ -12,6 +12,8 @@ uniform sampler2D inscatterSampler;
 uniform sampler2D skylightSampler;
 uniform sampler3D illumSampler;
 uniform sampler2D depthAlphaTexture;
+uniform float hazeEccentricity;
+uniform vec3 mieRayleighRatio;
 
 // varyings are written by vert shader, interpolated, and read by frag shader.
 varying vec2 noiseCoord;
@@ -67,7 +69,7 @@ void main(void)
 	vec3 skyl_lookup=texture(skylightSampler,fade_texc).rgb;
 
 	final.rgb*=loss_lookup;
-	final.rgb+=InscatterFunction(insc_lookup,cos0);
+	final.rgb+=InscatterFunction(insc_lookup,hazeEccentricity,cos0,mieRayleighRatio);
 	final.rgb+=skyl_lookup;
     gl_FragColor=vec4(final.rgb*opacity,1.0-opacity);
 }

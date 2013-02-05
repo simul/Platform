@@ -112,6 +112,7 @@ bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format,GLint 
 {
 	if(!m_width||!m_height)
 		return true;
+ERROR_CHECK
 	bool ok=true;
 	initialized=true;
 	if(!m_fb)
@@ -119,6 +120,7 @@ bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format,GLint 
 		RecompileShaders();
 		glGenFramebuffersEXT(1, &m_fb);
 	}
+ERROR_CHECK
 	if(!m_tex_col[index]||iformat!=colour_iformat)
 	{
 		colour_iformat=iformat;
@@ -138,6 +140,7 @@ bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format,GLint 
 	    
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	}
+ERROR_CHECK
 	return ok;
 }
 // In order to use a depth buffer, either

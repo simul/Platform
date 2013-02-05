@@ -546,6 +546,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HLSL\simul_gpu_sky.fx"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\simul_lightning.fx"
 				>
 			</File>

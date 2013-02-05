@@ -40,6 +40,7 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	m_pBufferDepthSurface(NULL),
 	m_pOldRenderTarget(NULL),
 	m_pOldDepthSurface(NULL)
+	,stagingTexture(NULL)
 	,Width(w)
 	,Height(h)
 	,timing(0.f)
@@ -50,9 +51,12 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 
 void FramebufferDX1x::SetWidthAndHeight(int w,int h)
 {
-	Width=w;
-	Height=h;
-	InvalidateDeviceObjects();
+	if(Width!=w||Height!=h)
+	{
+		Width=w;
+		Height=h;
+		InvalidateDeviceObjects();
+	}
 }
 
 void FramebufferDX1x::SetTargetWidthAndHeight(int w,int h)
@@ -100,6 +104,7 @@ void FramebufferDX1x::InvalidateDeviceObjects()
 
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
+	SAFE_RELEASE(stagingTexture);
 }
 
 bool FramebufferDX1x::Destroy()
@@ -273,8 +278,63 @@ ID3D1xRenderTargetView* FramebufferDX1x::MakeRenderTarget(const ID3D1xTexture2D*
 	return pRenderTargetView;
 }
 
+ID3D11Texture2D* makeStagingTexture(ID3D1xDevice			*m_pd3dDevice
+							,ID3D1xDeviceContext	*m_pImmediateContext,int w,int h)
+{
+	ID3D11Texture2D*	tex;
+	D3D11_TEXTURE2D_DESC textureDesc=
+	{
+		w,h,
+		1,
+		1,
+		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		{1,0}
+		,D3D11_USAGE_STAGING,
+		0,
+		D3D11_CPU_ACCESS_READ| D3D11_CPU_ACCESS_WRITE,
+		0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
+	};
+	m_pd3dDevice->CreateTexture2D(&textureDesc,NULL,&tex);
+	return tex;
+}
+
+void FramebufferDX1x::CopyToMemory(void *target)
+{
+	if(!stagingTexture)
+		stagingTexture		=makeStagingTexture(m_pd3dDevice,m_pImmediateContext,Width,Height);
+	D3D11_BOX sourceRegion;
+	sourceRegion.left = 0;
+	sourceRegion.right = Width;
+	sourceRegion.top = 0;
+	sourceRegion.bottom = Height;
+	sourceRegion.front = 0;
+	sourceRegion.back = 1;
+			m_pImmediateContext->CopySubresourceRegion(stagingTexture, 0, 0, 0, 0, GetColorTexResource(), 0, &sourceRegion);
+HRESULT hr=S_OK;
+	D3D11_MAPPED_SUBRESOURCE msr;
+	V_CHECK(m_pImmediateContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &msr));
+	int required_pitch=Width*4*sizeof(float);
+	if(msr.RowPitch==required_pitch)
+		memcpy(target,msr.pData,Width*Height*4*sizeof(float));
+	else
+	{
+		char *src=(char*)msr.pData;
+		char *dst=(char*)target;
+		for(int i=0;i<Height;i++)
+		{
+			memcpy(dst,src,required_pitch);
+			dst+=required_pitch;
+			src+=msr.RowPitch;
+		}
+	}
+	// copy data
+	m_pImmediateContext->Unmap(stagingTexture, 0);
+}
+
 void FramebufferDX1x::Activate()
 {
+	if(!m_pImmediateContext)
+		RestoreDeviceObjects(m_pd3dDevice);
 	HRESULT hr=S_OK;
 	unsigned int num_v=0;
 	m_pImmediateContext->RSGetViewports(&num_v,NULL);

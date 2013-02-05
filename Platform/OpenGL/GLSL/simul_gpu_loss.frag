@@ -33,9 +33,7 @@ void main(void)
 	vec4 loss;
 	loss.rgb			=exp(-extinction*stepLengthKm);
 	loss.a				=(loss.r+loss.g+loss.b)/3.0;
-//loss.rgb	*=0.5;//=vec3(alt_km/maxDensityAltKm,stepLengthKm/512.0,stepLengthKm/512.0);
 	loss				*=previous_loss;
-//outColor.r=1.0;
-//outColor.a=1.0;
+	
     outColor			=loss;
 }

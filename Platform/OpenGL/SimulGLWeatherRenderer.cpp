@@ -141,8 +141,11 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 	CheckExtension("GL_EXT_framebuffer_object");
     if(scene_buffer)
         delete scene_buffer;
+ERROR_CHECK
 	baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+ERROR_CHECK
 	scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
+ERROR_CHECK
 	device_initialized=true;
 	EnableCloudLayers();
 	///simulSkyRenderer->RestoreDeviceObjects();
@@ -220,7 +223,7 @@ bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 		GLuint prog=AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;
 	    glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,scene_buffer->GetColorTex(0));
+		glBindTexture(GL_TEXTURE_2D,(GLuint)scene_buffer->GetColorTex(0));
 	    glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
 		glUseProgram(prog);
@@ -277,5 +280,5 @@ const char *SimulGLWeatherRenderer::GetDebugText() const
 
 GLuint SimulGLWeatherRenderer::GetFramebufferTexture()
 {
-	return scene_buffer->GetColorTex(0);
+	return (GLuint)scene_buffer->GetColorTex(0);
 }

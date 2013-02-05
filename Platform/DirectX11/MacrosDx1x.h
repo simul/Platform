@@ -220,6 +220,7 @@ extern void SIMUL_DIRECTX11_EXPORT BreakIfDebugging();
 	
 #define MAKE_CONSTANT_BUFFER(cb,type)	\
 	{\
+	SAFE_RELEASE(cb);	\
 	D3D11_SUBRESOURCE_DATA cb_init_data;\
 	type x;\
 	cb_init_data.pSysMem = &x;\
@@ -234,5 +235,14 @@ extern void SIMUL_DIRECTX11_EXPORT BreakIfDebugging();
 	cb_desc.StructureByteStride = 0;\
 	m_pd3dDevice->CreateBuffer(&cb_desc, &cb_init_data, &cb);\
 	}
-	
+
+#define UPDATE_CONSTANT_BUFFER(cb,DataStructType,dataStruct)	\
+	{	\
+	D3D11_MAPPED_SUBRESOURCE mapped_res;	\
+	m_pImmediateContext->Map(cb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);	\
+	*(DataStructType*)mapped_res.pData = dataStruct;	\
+	m_pImmediateContext->Unmap(cb, 0);	\
+	m_pImmediateContext->PSSetConstantBuffers(0, 1, &cb);	\
+	}
+
 #endif

@@ -29,6 +29,8 @@ namespace simul
 			GLuint			loss_program;
 			GLuint			insc_program;
 			GLuint			skyl_program;
+			GLuint gpuSkyConstantsUBO;
+			GLint gpuSkyConstantsBindingIndex;
 		};
 	}
 }

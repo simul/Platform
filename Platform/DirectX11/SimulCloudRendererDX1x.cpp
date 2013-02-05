@@ -385,21 +385,6 @@ loadInfo.MipLevels=0;
 		const TCHAR *err=DXGetErrorString(hr);
 		std::cerr<<err<<std::endl;
 	}
-	//if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,size,default_mip_levels,default_texture_usage,DXGI_FORMAT_R8G8B8A8_UINT,D3DPOOL_MANAGED,&noise_texture)))
-	//	return (hr==S_OK);
-	D3D11_TEXTURE2D_DESC tex_desc;
-	tex_desc.Width			=noise_texture_size;
-	tex_desc.Height			=noise_texture_size;
-	tex_desc.MipLevels = 0;
-	tex_desc.ArraySize = 1;
-	tex_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	tex_desc.SampleDesc.Count = 1;
-	tex_desc.SampleDesc.Quality = 0;
-	tex_desc.Usage = D3D11_USAGE_DYNAMIC;
-	tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	tex_desc.CPUAccessFlags = 0;//D3D11_CPU_ACCESS_WRITE;
-	tex_desc.MiscFlags = 0;//D3D11_RESOURCE_MISC_GENERATE_MIPS only works with a rendertarget;
- 
 	D3D11_TEXTURE2D_DESC textureDesc=
 	{
 		noise_texture_size,

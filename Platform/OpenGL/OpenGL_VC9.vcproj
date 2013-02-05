@@ -573,6 +573,50 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLSL\simul_gpu_cloud_density.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_cloud_density.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_cloud_transform.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_cloud_transform.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_clouds.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_clouds.glsl"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_clouds.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_insc.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_loss.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_sky.glsl"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_skyl.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_lightning.frag"
 				>
 			</File>

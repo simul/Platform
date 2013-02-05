@@ -133,7 +133,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	inscatterTexture1	=effect->GetVariableByName("inscatterTexture1")->AsShaderResource();
 	
 	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
-	D3D11_BUFFER_DESC bufferDesc;
+	/*D3D11_BUFFER_DESC bufferDesc;
 	bufferDesc.Usage				= D3D11_USAGE_DYNAMIC;
 	bufferDesc.ByteWidth			= PAD16(sizeof(AtmosphericsUniforms));
 	bufferDesc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
@@ -143,7 +143,8 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 
 	// Create the constant buffer pointer so we can access the shader constant buffer from within this class.
 	SAFE_RELEASE(constantBuffer);
-	m_pd3dDevice->CreateBuffer(&bufferDesc, NULL, &constantBuffer);
+	m_pd3dDevice->CreateBuffer(&bufferDesc, NULL, &constantBuffer);*/
+	MAKE_CONSTANT_BUFFER(constantBuffer,AtmosphericsUniforms);
 }
 
 HRESULT SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
@@ -228,10 +229,10 @@ void SimulAtmosphericsRendererDX1x::FinishRender()
 	{
 		// Lock the constant buffer so it can be written to.
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		 m_pImmediateContext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		m_pImmediateContext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 		// Get a pointer to the data in the constant buffer.
-		AtmosphericsUniforms *constb = (AtmosphericsUniforms*)mappedResource.pData;
-		float alt_km=cam_pos.z/1000.f;
+		AtmosphericsUniforms *constb=(AtmosphericsUniforms*)mappedResource.pData;
+		float alt_km			=cam_pos.z/1000.f;
 		constb->lightDir		=(const float*)skyInterface->GetDirectionToLight(alt_km);
 		constb->mieRayleighRatio=(const float*)skyInterface->GetMieRayleighRatio();
 		constb->texelOffsets	=D3DXVECTOR2(0,0);

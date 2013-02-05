@@ -259,7 +259,7 @@ timer.StartTime();
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,density_texture);
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,F[0]->GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
 			ERROR_CHECK
 			glBindTexture(GL_TEXTURE_2D,0);
 			ERROR_CHECK
@@ -284,7 +284,7 @@ ERROR_CHECK
 			glLoadIdentity();
 			// input light values:
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,F[0]->GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
 			DrawQuad(0,0,1,1);
 			draw_time+=timer.UpdateTime();
 			ERROR_CHECK

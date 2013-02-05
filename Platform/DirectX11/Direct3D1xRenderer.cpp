@@ -111,6 +111,8 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 			simulWeatherRenderer->RestoreDeviceObjects(x);
 		if(simulOpticsRenderer)
 			simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
+		gpuCloudGenerator.RestoreDeviceObjects(pd3dDevice);
+		gpuSkyGenerator.RestoreDeviceObjects(pd3dDevice);
 		return S_OK;
 	}
 	catch(...)
@@ -215,6 +217,8 @@ void	Direct3D11Renderer::OnD3D11LostDevice()
 		simulHDRRenderer->InvalidateDeviceObjects();
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->InvalidateDeviceObjects();
+	gpuCloudGenerator.InvalidateDeviceObjects();
+	gpuSkyGenerator.InvalidateDeviceObjects();
 	simul::dx11::UnsetDevice();
 }
 
@@ -270,6 +274,8 @@ void Direct3D11Renderer::RecompileShaders()
 		simulOpticsRenderer->RecompileShaders();
 	if(simulHDRRenderer.get())
 		simulHDRRenderer->RecompileShaders();
+	gpuCloudGenerator.RecompileShaders();
+	gpuSkyGenerator.RecompileShaders();
 //	if(simulTerrainRenderer.get())
 //		simulTerrainRenderer->RecompileShaders();
 }

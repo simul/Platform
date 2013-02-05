@@ -261,11 +261,11 @@ ERROR_CHECK
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,0);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,loss_2d.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)loss_2d.GetColorTex());
 	RenderTexture(8,8,size,size);
-	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)inscatter_2d.GetColorTex());
 	RenderTexture(8,16+size,size,size);
-	glBindTexture(GL_TEXTURE_2D,skylight_2d.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)skylight_2d.GetColorTex());
 	RenderTexture(8,24+2*size,size,size);
 	int x=16+size;
 	if(h/(numAltitudes+2)<size)
@@ -429,11 +429,11 @@ ERROR_CHECK
 	
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)inscatter_2d.GetColorTex());
 	glUniform1i(skylightTexture_param,1);
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D,skylight_2d.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)skylight_2d.GetColorTex());
 	setParameter3(cloudOrigin,cloud_origin);
 	setParameter3(cloudScale,cloud_scale);
 	setParameter(maxDistance,skyKeyframer->GetMaxDistanceKm()*1000.f);

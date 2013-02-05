@@ -94,7 +94,6 @@ void UseShader(GLuint program);
 	GLint layerDistance_param;
 unsigned short *pIndices;
 
-	
 	GLint cloudConstants;
 	GLuint cloudConstantsUBO;
 	GLint cloudConstantsBindingIndex;
