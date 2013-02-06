@@ -160,6 +160,7 @@ void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 
 bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 {
+	buffered&=(Utilities::GetSingleton().simple_program>0);
 ERROR_CHECK
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
@@ -170,7 +171,7 @@ ERROR_CHECK
 	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
 	if(buffered)
 	{
-		glUseProgram(Utilities::simple_program);
+		glUseProgram(Utilities::GetSingleton().simple_program);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 		scene_buffer->Render(true);
@@ -199,7 +200,7 @@ bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	//	glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_ALPHA);
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
-		glUseProgram(Utilities::simple_program);
+		glUseProgram(Utilities::GetSingleton().simple_program);
 		scene_buffer->Render(true);
 		glUseProgram(0);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -235,8 +236,8 @@ const char *SimulGLWeatherRenderer::GetDebugText() const
 	static char debug_text[256];
 	sprintf_s(debug_text,256,"RENDER %3.3g ms (clouds %3.3g ms, sky %3.3g ms, final %3.3g)\r\n"
 		"UPDATE %3.3g ms (clouds %3.3g ms, sky %3.3g ms)",
-			total_timing,cloud_timing,sky_timing,final_timing,
-			total_update_timing,cloud_update_timing,sky_update_timing);
+			total_timing,baseCloudRenderer?baseCloudRenderer->GetRenderTime():0.f,sky_timing,final_timing,
+			environment->total_update_timing,environment->cloud_update_timing,environment->sky_update_timing);
 	return simulSkyRenderer->GetDebugText();
 }
 

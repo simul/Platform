@@ -3,7 +3,6 @@
 #include "Simul/Camera/BaseOpticsRenderer.h"
 #include "Simul/Camera/LensFlare.h"
 #include "Simul/Sky/Float4.h"
-#include <GL/glew.h>
 #include "Simul/Platform/OpenGL/Export.h"
 #include <vector>
 

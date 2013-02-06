@@ -66,7 +66,6 @@ protected:
 	simul::camera::Camera *cam;
 	bool celestial_display;
 	bool y_vertical;
-	Utilities ut;
 };
 
 #ifdef _MSC_VER
