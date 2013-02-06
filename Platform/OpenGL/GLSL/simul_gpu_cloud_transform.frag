@@ -1,4 +1,4 @@
-#include "simul_gpu_clouds.glsl"
+#include "../../CrossPlatform/simul_gpu_clouds.sl"
 uniform sampler3D density_texture;
 uniform sampler3D light_texture;
 uniform sampler3D ambient_texture;

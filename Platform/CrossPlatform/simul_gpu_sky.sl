@@ -7,7 +7,7 @@
 ALIGN cbuffer GpuSkyConstants R0
 {
 	uniform vec2 texSize;
-	uniform float a;
+	uniform float texelOffset;
 	uniform float b;
 	uniform vec2 tableSize;
 	uniform float c;
@@ -98,10 +98,10 @@ float getHazeOpticalLength(float sine_elevation,float h_km)
 
 vec4 getSunlightFactor(float alt_km,vec3 DirectionToLight)
 {
-	float sine=DirectionToLight.z;
+	float sine=clamp(DirectionToLight.z,-1.0,1.0);
 	vec2 table_texc=vec2(tableSize.x*(0.5+0.5*sine),tableSize.y*(alt_km/maxDensityAltKm));
 	//table_texc*=tableSize;//vec2(tableSize.x-1.0,tableSize.y-1.0);
-	table_texc+=vec2(0.5,0.5);
+	table_texc+=vec2(texelOffset,texelOffset);
 	table_texc=vec2(table_texc.x/tableSize.x,table_texc.y/tableSize.y);
 	//return vec4(table_texc,sine,1.0);
 	vec4 lookup=texture(optical_depth_texture,table_texc);

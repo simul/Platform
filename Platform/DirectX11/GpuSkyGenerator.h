@@ -35,7 +35,6 @@ namespace simul
 				,float overcast,float overcast_base_km,float overcast_range_km
 				,int index,int end_index,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table,int table_size,float maxDensityAltKm,bool InfraRed);
 		protected:
-		// framebuffer to render out by distance.
 			FramebufferDX1x	fb[2];
 			ID3D1xDevice*					m_pd3dDevice;
 			ID3D1xDeviceContext*			m_pImmediateContext;

@@ -153,14 +153,16 @@ std::cout<<"\tGpu sky: dens_tex "<<timer.UpdateTime()<<std::endl;
 	{
 		GpuSkyConstants constants;
 	
-		constants.texSize				=vec2((float)altitudes_km.size(),(float)numElevations);
+		constants.texSize			=vec2((float)altitudes_km.size(),(float)numElevations);
+		static float tto=0.5f;
+		constants.texelOffset		=tto;
 		constants.tableSize			=vec2((float)table_size,(float)table_size);
 		
 		constants.maxDistanceKm		=max_distance_km;
 		
-		constants.planetRadiusKm		=skyInterface->GetPlanetRadius();
-		constants.maxOutputAltKm		=maxOutputAltKm;
-		constants.maxDensityAltKm		=maxDensityAltKm;
+		constants.planetRadiusKm	=skyInterface->GetPlanetRadius();
+		constants.maxOutputAltKm	=maxOutputAltKm;
+		constants.maxDensityAltKm	=maxDensityAltKm;
 		constants.hazeBaseHeightKm	=skyInterface->GetHazeBaseHeightKm();
 		constants.hazeScaleHeightKm	=skyInterface->GetHazeScaleHeightKm();
 
@@ -169,7 +171,7 @@ std::cout<<"\tGpu sky: dens_tex "<<timer.UpdateTime()<<std::endl;
 		constants.overcast			=overcast;
 
 		constants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-		constants.hazeMie				=(const float*)(haze*skyInterface->GetMie());
+		constants.hazeMie			=(const float*)(haze*skyInterface->GetMie());
 		constants.ozone				=(const float*)(skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
 
 		constants.sunIrradiance		=(const float*)sun_irradiance;

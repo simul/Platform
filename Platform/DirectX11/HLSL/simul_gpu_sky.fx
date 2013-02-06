@@ -48,9 +48,9 @@ vertexOutput VS_Main(vertexInput IN)
 float4 PS_Loss(vertexOutput IN) : SV_TARGET
 {
 	vec4 previous_loss	=texture(input_texture,IN.texc.xy);
-	float sin_e			=1.0-2.0*(IN.texc.y*texSize.y-0.5)/(texSize.y-1.0);
+	float sin_e			=clamp(1.0-2.0*(IN.texc.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(IN.texc.x*texSize.x-0.5)/(texSize.x-1.0);
+	float altTexc		=(IN.texc.x*texSize.x-texelOffset)/(texSize.x-1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float maxd			=min(spaceDistKm,distKm);
@@ -62,7 +62,7 @@ float4 PS_Loss(vertexOutput IN) : SV_TARGET
 	float r				=sqrt(x*x+y*y);
 	float alt_km		=r-planetRadiusKm;
 	// lookups is: dens_factor,ozone_factor,haze_factor;
-	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+0.5)/tableSize.x;
+	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
 	vec4 lookups		=texture(density_texture,dens_texc);
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
@@ -73,8 +73,6 @@ float4 PS_Loss(vertexOutput IN) : SV_TARGET
 	loss.a				=(loss.r+loss.g+loss.b)/3.0;
 //loss.rgb	*=0.5;//=vec3(alt_km/maxDensityAltKm,stepLengthKm/512.0,stepLengthKm/512.0);
 	loss				*=previous_loss;
-	
-//outColor.r=1.0;
     return			loss;
 }
 
@@ -83,9 +81,9 @@ float4 PS_Insc(vertexOutput IN) : SV_TARGET
 {
 	float4 previous_insc	=texture(input_texture,IN.texc.xy);
 	float3 previous_loss	=texture(loss_texture,float3(IN.texc.xy,distKm/maxDistanceKm)).rgb;// should adjust texc - we want the PREVIOUS loss!
-	float sin_e			=1.0-2.0*(IN.texc.y*texSize.y-0.5)/(texSize.y-1.0);
+	float sin_e			=clamp(1.0-2.0*(IN.texc.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(IN.texc.x*texSize.x-0.5)/(texSize.x-1.0);
+	float altTexc		=(IN.texc.x*texSize.x-texelOffset)/(texSize.x-1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float maxd			=min(spaceDistKm,distKm);
@@ -106,7 +104,7 @@ float4 PS_Insc(vertexOutput IN) : SV_TARGET
 	float alt_2_km		=r2-planetRadiusKm;
 	
 	// lookups is: dens_factor,ozone_factor,haze_factor;
-	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+0.5)/tableSize.x;
+	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
 	float4 lookups		=texture(density_texture,dens_texc);
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
@@ -152,9 +150,9 @@ float4 PS_Skyl(vertexOutput IN) : SV_TARGET
 	vec4 previous_skyl	=texture(input_texture,IN.texc.xy);
 	vec3 previous_loss	=texture(loss_texture,vec3(IN.texc.xy,pow(distKm/maxDistanceKm,0.5))).rgb;
 	// should adjust texc - we want the PREVIOUS loss!
-	float sin_e			=1.0-2.0*(IN.texc.y*texSize.y-0.5)/(texSize.y-1.0);
+	float sin_e			=clamp(1.0-2.0*(IN.texc.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(IN.texc.x*texSize.x-0.5)/(texSize.x-1.0);
+	float altTexc		=(IN.texc.x*texSize.x-texelOffset)/(texSize.x-1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float maxd			=min(spaceDistKm,distKm);
@@ -166,7 +164,7 @@ float4 PS_Skyl(vertexOutput IN) : SV_TARGET
 	float r				=sqrt(x*x+y*y);
 	float alt_km		=r-planetRadiusKm;
 	// lookups is: dens_factor,ozone_factor,haze_factor;
-	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+0.5)/tableSize.x;
+	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
 	vec4 lookups		=texture(density_texture,dens_texc);
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;

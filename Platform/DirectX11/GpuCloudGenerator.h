@@ -50,6 +50,15 @@ namespace simul
 											,const float *ambient,const int *density_grid
 											,int start_texel
 											,int texels){}
+		protected:
+			FramebufferDX1x	fb[2];
+			ID3D1xDevice*					m_pd3dDevice;
+			ID3D1xDeviceContext*			m_pImmediateContext;
+			ID3D1xEffect*					effect;
+			ID3D1xEffectTechnique*			densityTechnique;
+			ID3D1xEffectTechnique*			lightingTechnique;
+			ID3D1xEffectTechnique*			transformTechnique;
+			DXGI_FORMAT iformat;
 		};
 	}
 }

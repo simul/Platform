@@ -390,35 +390,36 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 				;
 			// Wait until child process exits.
 
-		  HANDLE WaitHandles[] = {
-			pi.hProcess, hReadOutPipe, hReadErrorPipe
-		  };
+		HANDLE WaitHandles[] = {
+				pi.hProcess, hReadOutPipe, hReadErrorPipe
+			};
 
-		  const DWORD BUFSIZE = 4096;
-		  BYTE buff[BUFSIZE];
-			bool has_errors=false;
-		  while (1)
-		  {
+		const DWORD BUFSIZE = 4096;
+		BYTE buff[BUFSIZE];
+		bool has_errors=false;
+		while (1)
+		{
 			DWORD dwBytesRead, dwBytesAvailable;
-
 			DWORD dwWaitResult = WaitForMultipleObjects(pipe_compiler_output?3:1, WaitHandles, FALSE, 60000L);
 
 			// Read from the pipes...
-			while( PeekNamedPipe(hReadOutPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
+			if(pipe_compiler_output)
 			{
-			  ReadFile(hReadOutPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
-			  std::cout << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+				while( PeekNamedPipe(hReadOutPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
+				{
+				  ReadFile(hReadOutPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
+				  std::cout << std::string((char*)buff, (size_t)dwBytesRead).c_str();
+				}
+				while( PeekNamedPipe(hReadErrorPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
+				{
+				  ReadFile(hReadErrorPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
+				  std::string str((char*)buff, (size_t)dwBytesRead);
+				  std::cerr << str.c_str();
+				  size_t pos=str.find("rror");
+				  if(pos<str.length())
+					has_errors=true;
+				}
 			}
-			while( PeekNamedPipe(hReadErrorPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
-			{
-			  ReadFile(hReadErrorPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
-			  std::string str((char*)buff, (size_t)dwBytesRead);
-			  std::cerr << str.c_str();
-			  size_t pos=str.find("rror");
-			  if(pos<str.length())
-				has_errors=true;
-			}
-
 			// Process is done, or we timed out:
 			if(dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
 			break;

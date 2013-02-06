@@ -20,6 +20,7 @@ GpuSkyGenerator::GpuSkyGenerator()
 
 GpuSkyGenerator::~GpuSkyGenerator()
 {
+	InvalidateDeviceObjects();
 }
 
 void GpuSkyGenerator::RestoreDeviceObjects(void *dev)
@@ -203,23 +204,25 @@ HRESULT hr=S_OK;
 	//*(GpuSkyConstants*)mapped_res.pData = gpuSkyConstants;	
 		GpuSkyConstants &constants	=*((GpuSkyConstants*)mapped_res.pData);
 	
-		constants.texSize				=float2((float)altitudes_km.size(),(float)numElevations);
+		constants.texSize			=float2((float)altitudes_km.size(),(float)numElevations);
+		static float tto=0.5f;
+		constants.texelOffset		=tto;
 		constants.tableSize			=float2((float)table_size,(float)table_size);
 		
 		constants.maxDistanceKm		=max_distance_km;
 		
-		constants.planetRadiusKm		=skyInterface->GetPlanetRadius();
-		constants.maxOutputAltKm		=maxOutputAltKm;
-		constants.maxDensityAltKm		=maxDensityAltKm;
+		constants.planetRadiusKm	=skyInterface->GetPlanetRadius();
+		constants.maxOutputAltKm	=maxOutputAltKm;
+		constants.maxDensityAltKm	=maxDensityAltKm;
 		constants.hazeBaseHeightKm	=skyInterface->GetHazeBaseHeightKm();
 		constants.hazeScaleHeightKm	=skyInterface->GetHazeScaleHeightKm();
 
-		constants.overcastBaseKm			=overcast_base_km;
-		constants.overcastRangeKm			=overcast_range_km;
-		constants.overcast					=overcast;
+		constants.overcastBaseKm	=overcast_base_km;
+		constants.overcastRangeKm	=overcast_range_km;
+		constants.overcast			=overcast;
 
 		constants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-		constants.hazeMie				=(const float*)(haze*skyInterface->GetMie());
+		constants.hazeMie			=(const float*)(haze*skyInterface->GetMie());
 		constants.ozone				=(const float*)(skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
 
 		constants.sunIrradiance		=(const float*)sun_irradiance;
