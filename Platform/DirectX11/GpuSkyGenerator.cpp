@@ -62,95 +62,6 @@ bool GpuSkyGenerator::CanPerformGPUGeneration() const
 {
 	return Enabled;
 }
-// make a 1D texture.
-static ID3D1xTexture1D* make1DTexture(
-							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext
-							,int w
-							,const float *src)
-{
-	ID3D1xTexture1D*	tex;
-	D3D11_TEXTURE1D_DESC textureDesc=
-	{
-		w,
-		1,
-		1,
-		DXGI_FORMAT_R32G32B32A32_FLOAT,
-		D3D11_USAGE_DYNAMIC,
-		D3D11_BIND_SHADER_RESOURCE,
-		D3D11_CPU_ACCESS_WRITE,
-		0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
-	};
-	D3D11_SUBRESOURCE_DATA init=
-	{
-		src,
-		w*sizeof(float4),
-		w*sizeof(float4)
-	};
-
-	m_pd3dDevice->CreateTexture1D(&textureDesc,&init,&tex);
-/*	ID3D11ShaderResourceView* r;
-	m_pd3dDevice->CreateShaderResourceView(tex,NULL,&r);
-	m_pImmediateContext->GenerateMips(r);*/
-	return tex;
-}
-
-static ID3D11Texture2D* make2DTexture(
-							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext
-							,int w,int h
-							,const float *src)
-{
-	ID3D1xTexture2D*	tex;
-	D3D11_TEXTURE2D_DESC textureDesc=
-	{
-		w,h,
-		1,
-		1,
-		DXGI_FORMAT_R32G32B32A32_FLOAT,
-		{1,0}
-		,D3D11_USAGE_DYNAMIC,
-		D3D11_BIND_SHADER_RESOURCE,
-		D3D11_CPU_ACCESS_WRITE,
-		0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
-	};
-	D3D11_SUBRESOURCE_DATA init=
-	{
-		src,
-		4*w*sizeof(float),
-		4*w*h*sizeof(float)
-	};
-	m_pd3dDevice->CreateTexture2D(&textureDesc,&init,&tex);
-	return tex;
-}
-
-
-static ID3D1xTexture3D* make3DTexture(
-							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext
-							,int w,int l,int d
-							,const float *src)
-{
-	ID3D1xTexture3D*	tex;
-	D3D11_TEXTURE3D_DESC textureDesc=
-	{
-		w,l,d,
-		1,
-		DXGI_FORMAT_R32G32B32A32_FLOAT
-		,D3D11_USAGE_DYNAMIC
-		,D3D11_BIND_SHADER_RESOURCE
-		,D3D11_CPU_ACCESS_WRITE
-		,0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
-	};
-	D3D11_SUBRESOURCE_DATA init=
-	{
-		src,
-		4*w*sizeof(float),
-		4*w*l*sizeof(float)
-	};
-	m_pd3dDevice->CreateTexture3D(&textureDesc,&init,&tex);
-	return tex;
-}
 void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				simul::sky::AtmosphericScatteringInterface *skyInterface
 				,int numElevations
@@ -185,7 +96,7 @@ HRESULT hr=S_OK;
 	FramebufferDX1x *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
-	ID3D11Texture1D *dens_tex1					=make1DTexture(m_pd3dDevice,m_pImmediateContext,table_size,(const float *)density_table);
+	ID3D11Texture1D *dens_tex1					=make1DTexture(m_pd3dDevice,m_pImmediateContext,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)density_table);
 	ID3D11ShaderResourceView* dens_tex;
 	m_pd3dDevice->CreateShaderResourceView(dens_tex1,NULL,&dens_tex);
 	m_pImmediateContext->GenerateMips(dens_tex);
@@ -269,12 +180,12 @@ HRESULT hr=S_OK;
 	}
 	
 	
-	ID3D11Texture3D *loss_tex1=make3DTexture(m_pd3dDevice,m_pImmediateContext,altitudes_km.size(),numElevations,numDistances,(const float *)loss);
+	ID3D11Texture3D *loss_tex1=make3DTexture(m_pd3dDevice,m_pImmediateContext,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)loss);
 	ID3D11ShaderResourceView* loss_tex;
 	m_pd3dDevice->CreateShaderResourceView(loss_tex1,NULL,&loss_tex);
 	m_pImmediateContext->GenerateMips(loss_tex);
 	
-	ID3D11Texture2D *optd_tex1=make2DTexture(m_pd3dDevice,m_pImmediateContext,table_size,table_size,(const float *)optical_table);
+	ID3D11Texture2D *optd_tex1=make2DTexture(m_pd3dDevice,m_pImmediateContext,table_size,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)optical_table);
 	ID3D11ShaderResourceView* optd_tex;
 	m_pd3dDevice->CreateShaderResourceView(optd_tex1,NULL,&optd_tex);
 	m_pImmediateContext->GenerateMips(optd_tex);
@@ -310,7 +221,7 @@ HRESULT hr=S_OK;
 		prevDist_km=dist_km;
 	}
 	
-	ID3D11Texture3D *insc_tex1=make3DTexture(m_pd3dDevice,m_pImmediateContext,altitudes_km.size(),numElevations,numDistances,(const float *)insc);
+	ID3D11Texture3D *insc_tex1=make3DTexture(m_pd3dDevice,m_pImmediateContext,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)insc);
 	ID3D11ShaderResourceView* insc_tex;
 	m_pd3dDevice->CreateShaderResourceView(insc_tex1,NULL,&insc_tex);
 	m_pImmediateContext->GenerateMips(insc_tex);

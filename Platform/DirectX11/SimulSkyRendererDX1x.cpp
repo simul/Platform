@@ -203,7 +203,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	}
 	SAFE_RELEASE(moon_texture_SRV);
 	MoonTexture="Moon.png";
-	moon_texture_SRV=simul::dx1x_namespace::LoadTexture(MoonTexture.c_str());
+	moon_texture_SRV=simul::dx11::LoadTexture(MoonTexture.c_str());
 	SetPlanetImage(moon_index,moon_texture_SRV);
 	ClearIterators();
 	

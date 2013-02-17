@@ -246,18 +246,9 @@ void FramebufferGL::Deactivate()
 	ERROR_CHECK
 }
 
-void FramebufferGL::DrawQuad(int w,int h)
+void FramebufferGL::DrawQuad()
 {
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.f,1.f);
-	glVertex2f(0.f,(float)h);
-	glTexCoord2f(1.f,1.f);
-	glVertex2f((float)w,(float)h);
-	glTexCoord2f(1.0,0.f);
-	glVertex2f((float)w,0.f);
-	glTexCoord2f(0.f,0.f);
-	glVertex2f(0.f,0.f);
-	glEnd();
+	::DrawQuad(0,0,1,1);
 }
 void FramebufferGL::DeactivateAndRender(bool blend)
 {
@@ -297,7 +288,7 @@ void FramebufferGL::Render(bool blend)
 	}
 	glDepthMask(GL_FALSE);
 	ERROR_CHECK
-    DrawQuad(main_viewport[2],main_viewport[3]);
+	::DrawQuad(0,0,main_viewport[2],main_viewport[3]);
 
   //  glUseProgram(NULL);
 	glMatrixMode(GL_MODELVIEW);

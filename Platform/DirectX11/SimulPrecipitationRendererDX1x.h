@@ -69,8 +69,7 @@ protected:
 	ID3D11Buffer*					pShadingCB;
 	
 	ID3D1xEffectTechnique*			m_hTechniqueRain;	// Handle to technique in the effect 
-	D3DXMATRIX				view,proj;
-	D3DXVECTOR3				cam_pos;
+	D3DXMATRIX						view,proj;
 	
 	RainConstantBuffer				rainConstantBuffer;
 };

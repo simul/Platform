@@ -46,6 +46,7 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	,timing(0.f)
 	,screen_width(0)
 	,screen_height(0)
+	,target_format(DXGI_FORMAT_R32G32B32A32_FLOAT)
 {
 }
 
@@ -63,6 +64,14 @@ void FramebufferDX1x::SetTargetWidthAndHeight(int w,int h)
 {
 	screen_width=w;
 	screen_height=h;
+}
+
+void FramebufferDX1x::SetTargetFormat(DXGI_FORMAT f)
+{
+	if(f==target_format)
+		return;
+	target_format=f;
+	CreateBuffers();
 }
 
 void FramebufferDX1x::RestoreDeviceObjects(void *dev)
@@ -162,7 +171,7 @@ bool FramebufferDX1x::CreateBuffers()
 		Height,
 		1,
 		1,
-		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		target_format,
 		{1,0},
 		D3D1x_USAGE_DEFAULT,
 		D3D1x_BIND_RENDER_TARGET|D3D1x_BIND_SHADER_RESOURCE,
@@ -270,7 +279,7 @@ ID3D1xRenderTargetView* FramebufferDX1x::MakeRenderTarget(const ID3D1xTexture2D*
 	HRESULT hr;
 	// Setup the description of the render target view.
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-	renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	renderTargetViewDesc.Format = target_format;
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 	// Create the render target in DX11:
@@ -279,7 +288,7 @@ ID3D1xRenderTargetView* FramebufferDX1x::MakeRenderTarget(const ID3D1xTexture2D*
 }
 
 ID3D11Texture2D* makeStagingTexture(ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext,int w,int h)
+							,ID3D1xDeviceContext	*m_pImmediateContext,int w,int h,DXGI_FORMAT target_format)
 {
 	ID3D11Texture2D*	tex;
 	D3D11_TEXTURE2D_DESC textureDesc=
@@ -287,7 +296,7 @@ ID3D11Texture2D* makeStagingTexture(ID3D1xDevice			*m_pd3dDevice
 		w,h,
 		1,
 		1,
-		DXGI_FORMAT_R32G32B32A32_FLOAT,
+		target_format,
 		{1,0}
 		,D3D11_USAGE_STAGING,
 		0,
@@ -301,7 +310,7 @@ ID3D11Texture2D* makeStagingTexture(ID3D1xDevice			*m_pd3dDevice
 void FramebufferDX1x::CopyToMemory(void *target)
 {
 	if(!stagingTexture)
-		stagingTexture		=makeStagingTexture(m_pd3dDevice,m_pImmediateContext,Width,Height);
+		stagingTexture		=makeStagingTexture(m_pd3dDevice,m_pImmediateContext,Width,Height,target_format);
 	D3D11_BOX sourceRegion;
 	sourceRegion.left = 0;
 	sourceRegion.right = Width;
@@ -313,9 +322,9 @@ void FramebufferDX1x::CopyToMemory(void *target)
 HRESULT hr=S_OK;
 	D3D11_MAPPED_SUBRESOURCE msr;
 	V_CHECK(m_pImmediateContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &msr));
-	int required_pitch=Width*4*sizeof(float);
+	int required_pitch=Width*simul::dx11::ByteSizeOfFormatElement(target_format);
 	if(msr.RowPitch==required_pitch)
-		memcpy(target,msr.pData,Width*Height*4*sizeof(float));
+		memcpy(target,msr.pData,Height*required_pitch);
 	else
 	{
 		char *src=(char*)msr.pData;

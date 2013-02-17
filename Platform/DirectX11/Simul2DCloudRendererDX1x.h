@@ -5,29 +5,26 @@
 // agreement with Simul Software Ltd and may not be copied or disclosed except
 // in accordance with the terms of that agreement.
 
-// Simul2DCloudRendererDX1x.h A renderer for 2D cloud layers.
+// Simul2DCloudRendererDX11.h A renderer for 2D cloud layers.
 
 #pragma once
 #include <d3dx9.h>
-#ifdef DX10
-	#include <D3D10.h>
-	#include <d3dx10.h>
-#else
-	#include <d3d11.h>
-	#include <d3dx11.h>
-#endif
+#include <d3d11.h>
+#include <d3dx11.h>
+#include <D3dx11effect.h>
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 
 //! A renderer for 2D cloud layers, e.g. cirrus clouds.
-class Simul2DCloudRendererDX1x: public simul::clouds::Base2DCloudRenderer
+class Simul2DCloudRendererDX11: public simul::clouds::Base2DCloudRenderer
 {
 public:
-	Simul2DCloudRendererDX1x(simul::clouds::CloudKeyframer *ck2d);
-	virtual ~Simul2DCloudRendererDX1x();
+	Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer *ck2d);
+	virtual ~Simul2DCloudRendererDX11();
 	void RestoreDeviceObjects(void*);
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
+	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	bool Render(bool cubemap,void *depth_tex,bool default_fog,bool write_alpha);
 	void RenderCrossSections(int width,int height);
 	void SetLossTexture(void *l);
@@ -43,4 +40,9 @@ protected:
 	void EnsureCorrectIlluminationTextureSizes(){}
 	void EnsureIlluminationTexturesAreUpToDate(){}
 	virtual bool CreateNoiseTexture(bool override_file=false){return true;}
+	D3DXMATRIX						view,proj;
+	ID3D11Device*					m_pd3dDevice;
+	ID3D11DeviceContext *			m_pImmediateContext;
+	ID3DX11Effect*					effect;
+	ID3DX11EffectTechnique*			tech;
 };

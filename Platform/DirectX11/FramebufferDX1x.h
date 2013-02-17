@@ -21,6 +21,7 @@ public:
 	virtual ~FramebufferDX1x();
 	void SetWidthAndHeight(int w,int h);
 	void SetTargetWidthAndHeight(int w,int h);
+	void SetTargetFormat(DXGI_FORMAT f);
 	//standard d3d object interface functions
 
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
@@ -53,6 +54,7 @@ public:
 protected:
 	int screen_width;
 	int screen_height;
+	DXGI_FORMAT target_format;
 	bool Destroy();
 	//! The size of the 2D buffer the sky is rendered to.
 	int Width,Height;

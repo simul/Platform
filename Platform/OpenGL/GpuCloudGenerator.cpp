@@ -150,20 +150,13 @@ timer.StartTime();
 	glOrtho(0,1.0,0,1.0,-1.0,1.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	// going vertically UP in the volume:
-//	for(int i=0;i<grid[2];i++)
 	{
-		//float zPosition=((float)i+0.5f)/(float)grid[2];
-		//setParameter(density_program,"zPosition",zPosition);
-			ERROR_CHECK
+ERROR_CHECK
 		dens_fb.Activate();
-	ERROR_CHECK
-		//dens_fb.Clear(0.f,0.f,0.f,0.f,GL_COLOR_BUFFER_BIT);
-	ERROR_CHECK
+ERROR_CHECK
 			DrawQuad(0,0,1,1);
 std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-
 			if(!density_texture||new_density_gridsize>density_gridsize)
 			{
 				if(readback_to_cpu&&new_density_gridsize>density_gridsize)
@@ -201,8 +194,6 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
  				}
 			}
 		dens_fb.Deactivate();
-		//glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-		//target+=grid[0]*grid[1];
 	}
 	glDisable(GL_TEXTURE_3D);
 	glUseProgram(0);

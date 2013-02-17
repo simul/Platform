@@ -68,40 +68,27 @@ protected:
 	GLint detailScale;
 	GLint origin;
 
-	GLint eyePosition_param;
-	GLint lightResponse_param;
-	GLint lightDir_param;
-	GLint skylightColour_param;
-	GLint sunlightColour_param;
-	GLint fractalScale_param;
-	GLint interp_param;
-	GLint layerDensity_param;
-	GLint textureEffect_param;
 	GLint imageTexture_param;
 	GLint lossSampler_param;
 	GLint inscatterSampler_param;
 	GLint skylightSampler_param;
-	GLint cloudEccentricity_param;
-	GLint hazeEccentricity_param;
-	GLint mieRayleighRatio_param;
-	GLint maxFadeDistanceMetres_param;
+	
+	GLint cloud2DConstants;
+	GLuint cloud2DConstantsUBO;
+	GLint cloud2DConstantsBindingIndex;
 
 	GLint coverageTexture1;
 	GLint coverageTexture2;
-	GLint cloudInterp;
-	
 	
 	GLuint	coverage_tex[3];
 	
 	GLuint	loss_tex;
 	GLuint	inscatter_tex;
 	GLuint	skylight_tex;
-	GLuint	noise_tex;
-	GLuint	image_tex;
 
 	FramebufferGL	detail_fb;
 	bool CreateNoiseTexture(bool override_file=false);
-	void CreateImageTexture();
+	//void CreateImageTexture();
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();
 	simul::base::SmartPtr<simul::clouds::FastCloudNode> cloudNode;

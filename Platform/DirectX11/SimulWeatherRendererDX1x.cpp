@@ -60,7 +60,7 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 	baseCloudRenderer=simulCloudRenderer.get();
 	Group::AddChild(simulCloudRenderer.get());
 	if(clouds2d)
-		simul2DCloudRenderer=new Simul2DCloudRendererDX1x(ck2d);
+		base2DCloudRenderer=simul2DCloudRenderer=new Simul2DCloudRendererDX11(ck2d);
 	if(rain)
 		basePrecipitationRenderer=simulPrecipitationRenderer=new SimulPrecipitationRendererDX1x();
 
@@ -386,9 +386,9 @@ SimulCloudRendererDX1x *SimulWeatherRendererDX1x::GetCloudRenderer()
 	return simulCloudRenderer.get();
 }
 
-Simul2DCloudRenderer *SimulWeatherRendererDX1x::Get2DCloudRenderer()
+Simul2DCloudRendererDX11 *SimulWeatherRendererDX1x::Get2DCloudRenderer()
 {
-	return NULL;
+	return simul2DCloudRenderer.get();
 }
 
 const char *SimulWeatherRendererDX1x::GetDebugText() const

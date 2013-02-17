@@ -22,7 +22,7 @@
 struct VertexXyzRgba;
 namespace simul
 {
-	namespace dx1x_namespace
+	namespace dx11
 	{
 		extern SIMUL_DIRECTX11_EXPORT void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir);
 		extern SIMUL_DIRECTX11_EXPORT const float *GetCameraPosVector(D3DXMATRIX &view,bool y_vertical);
@@ -35,6 +35,40 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);
 		extern ID3D1xShaderResourceView* LoadTexture(const char *filename);
 		extern ID3D1xShaderResourceView* LoadTexture(const TCHAR *filename);
+		ID3D1xTexture1D* make1DTexture(
+							ID3D1xDevice			*m_pd3dDevice
+							,ID3D1xDeviceContext	*m_pImmediateContext
+							,int w
+							,DXGI_FORMAT format
+							,const float *src);
+		ID3D11Texture2D* make2DTexture(
+							ID3D1xDevice			*m_pd3dDevice
+							,ID3D1xDeviceContext	*m_pImmediateContext
+							,int w,int h
+							,DXGI_FORMAT format
+							,const float *src);
+		ID3D1xTexture3D* make3DTexture(
+							ID3D1xDevice			*m_pd3dDevice
+							,ID3D1xDeviceContext	*m_pImmediateContext
+							,int w,int l,int d
+							,DXGI_FORMAT format
+							,const float *src);
+							
+		void Ensure3DTextureSizeAndFormat(
+							ID3D1xDevice			*m_pd3dDevice
+							,ID3D1xDeviceContext	*m_pImmediateContext
+							,ID3D1xTexture3D* &tex
+							,int w,int l,int d
+							,DXGI_FORMAT format);
+							
+	
+		void setParameter(ID3D1xEffect *effect,const char *name	,ID3D11ShaderResourceView * value);
+		void setParameter(ID3D1xEffect *effect,const char *name	,float value);
+		void setParameter(ID3D1xEffect *effect,const char *name	,int value);
+		void setParameter(ID3D1xEffect *effect,const char *name	,float *vec);
+							
+		size_t ByteSizeOfFormatElement( DXGI_FORMAT format );
+							
 		class UtilityRenderer
 		{
 			static int instance_count;
@@ -54,6 +88,7 @@ namespace simul
 			static void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 			static void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip);
 		};
+		
 	}
 }
 
@@ -80,11 +115,8 @@ extern void SIMUL_DIRECTX11_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,f
 
 extern void SIMUL_DIRECTX11_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos);
 extern void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dir,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
-
 extern void RenderTexture(ID3D1xDevice *m_pd3dDevice,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech);
-
 extern void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech);
-
 
 void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
 void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );

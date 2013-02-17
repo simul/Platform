@@ -49,7 +49,7 @@ using namespace simul;
 using namespace dx11;
 namespace simul
 {
-	namespace dx1x_namespace
+	namespace dx11
 	{
 		tstring tstring_of(const char *c)
 		{
@@ -252,7 +252,7 @@ void UtilityRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool st
 }
 
 
-ID3D1xShaderResourceView* simul::dx1x_namespace::LoadTexture(const TCHAR *filename)
+ID3D1xShaderResourceView* simul::dx11::LoadTexture(const TCHAR *filename)
 {
 	ID3D1xShaderResourceView* tex=NULL;
 	D3DX1x_IMAGE_LOAD_INFO loadInfo;
@@ -270,7 +270,150 @@ ID3D1xShaderResourceView* simul::dx1x_namespace::LoadTexture(const TCHAR *filena
 	return tex;
 }
 
-ID3D1xShaderResourceView* simul::dx1x_namespace::LoadTexture(const char *filename)
+
+
+ID3D1xTexture1D* simul::dx11::make1DTexture(
+							ID3D1xDevice			*m_pd3dDevice
+							,ID3D1xDeviceContext	*m_pImmediateContext
+							,int w
+							,DXGI_FORMAT format
+							,const float *src)
+{
+	ID3D1xTexture1D*	tex;
+	D3D11_TEXTURE1D_DESC textureDesc=
+	{
+		w,
+		1,
+		1,
+		format,
+		D3D11_USAGE_DYNAMIC,
+		D3D11_BIND_SHADER_RESOURCE,
+		D3D11_CPU_ACCESS_WRITE,
+		0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
+	};
+	D3D11_SUBRESOURCE_DATA init=
+	{
+		src,
+		w*ByteSizeOfFormatElement(format),
+		w*ByteSizeOfFormatElement(format)
+	};
+
+	m_pd3dDevice->CreateTexture1D(&textureDesc,&init,&tex);
+	return tex;
+}
+
+ID3D11Texture2D* simul::dx11::make2DTexture(
+							ID3D1xDevice			*m_pd3dDevice
+							,ID3D1xDeviceContext	*m_pImmediateContext
+							,int w,int h
+							,DXGI_FORMAT format
+							,const float *src)
+{
+	ID3D1xTexture2D*	tex;
+	D3D11_TEXTURE2D_DESC textureDesc=
+	{
+		w,h,
+		1,
+		1,
+		format,
+		{1,0}
+		,D3D11_USAGE_DYNAMIC,
+		D3D11_BIND_SHADER_RESOURCE,
+		D3D11_CPU_ACCESS_WRITE,
+		0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
+	};
+	D3D11_SUBRESOURCE_DATA init=
+	{
+		src,
+		w*ByteSizeOfFormatElement(format),
+		w*h*ByteSizeOfFormatElement(format)
+	};
+	m_pd3dDevice->CreateTexture2D(&textureDesc,&init,&tex);
+	return tex;
+}
+
+
+ID3D1xTexture3D* simul::dx11::make3DTexture(
+							ID3D1xDevice			*m_pd3dDevice
+							,ID3D1xDeviceContext	*m_pImmediateContext
+							,int w,int l,int d
+							,DXGI_FORMAT format
+							,const float *src)
+{
+	ID3D1xTexture3D*	tex;
+	D3D11_TEXTURE3D_DESC textureDesc=
+	{
+		w,l,d
+		,1
+		,format
+		,D3D11_USAGE_DYNAMIC
+		,D3D11_BIND_SHADER_RESOURCE
+		,D3D11_CPU_ACCESS_WRITE
+		,0	// was D3D11_RESOURCE_MISC_GENERATE_MIPS
+	};
+	D3D11_SUBRESOURCE_DATA init=
+	{
+		src,
+		w*ByteSizeOfFormatElement(format),
+		w*l*ByteSizeOfFormatElement(format)
+	};
+	m_pd3dDevice->CreateTexture3D(&textureDesc,src?&init:NULL,&tex);
+	return tex;
+}
+							
+void simul::dx11::Ensure3DTextureSizeAndFormat(
+							ID3D1xDevice			*m_pd3dDevice
+							,ID3D1xDeviceContext	*m_pImmediateContext
+							,ID3D1xTexture3D* &tex
+							,int w,int l,int d
+							,DXGI_FORMAT format)
+{
+	if(tex)
+	{
+		D3D11_TEXTURE3D_DESC desc;
+		tex->GetDesc(&desc);
+		if(desc.Width!=w||desc.Height!=l||desc.Depth!=d||desc.Format!=format)
+		{
+			SAFE_RELEASE(tex);
+		}
+	}
+
+	if(!tex)
+	{
+		tex=make3DTexture(	m_pd3dDevice,m_pImmediateContext,w,l,d,format,NULL);
+		return;
+	}
+}
+
+void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,ID3D11ShaderResourceView * value)
+{
+	ID3D1xEffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	var->SetResource(value);
+}
+
+void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,float value)
+{
+	ID3D1xEffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
+	var->SetFloat(value);
+}
+
+void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,int value)
+{
+	ID3D1xEffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
+	var->SetInt(value);
+}
+
+void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,float *value)
+{
+	ID3D1xEffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
+	var->SetFloatVector(value);
+}
+
+
+
+
+
+ID3D1xShaderResourceView* simul::dx11::LoadTexture(const char *filename)
 {
 	return LoadTexture(tstring_of(filename).c_str());
 }
@@ -478,41 +621,17 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 	}
 	DWORD flags=default_effect_flags;
 	SAFE_RELEASE(*effect);
-
-#ifdef DX10
-	ID3D10Blob *errors;
-	if(FAILED(
-		hr=D3DX10CreateEffectFromFile(
-				  fn.c_str(),
-				  macros,
-				  NULL,
-				  "fx_4_0",
-				  flags,
-				  flags,
-				  d3dDevice,
-				  NULL,
-				  NULL,
-				  effect,
-				  &errors,
-				  0
-				)))
-#else
-	if(FAILED(
-		hr=D3DX11CreateEffectFromFile(
+	hr=D3DX11CreateEffectFromFile(
 				fn.c_str(),
 				macros,
 				flags,
 				d3dDevice,
-				effect)))
-#endif
+				effect);
+	if(hr!=S_OK)
 	{
 		std::string err="";
 #ifdef DXTRACE_ERR
         hr=DXTRACE_ERR( L"CreateEffect", hr );
-#endif
-#ifdef DX10
-		if(errors)
-			std::cerr<<(char*)errors->GetBufferPointer()<<std::endl;
 #endif
 		DebugBreak();
 	}
@@ -886,4 +1005,128 @@ void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
     SAFE_RELEASE( m_pRasterizerStateStored11 );
     SAFE_RELEASE( m_pBlendStateStored11 );
     SAFE_RELEASE( m_pSamplerStateStored11 );
+}
+
+
+
+size_t simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
+{
+    switch( format )
+    {
+        case DXGI_FORMAT_R32G32B32A32_TYPELESS:
+        case DXGI_FORMAT_R32G32B32A32_FLOAT:
+        case DXGI_FORMAT_R32G32B32A32_UINT:
+        case DXGI_FORMAT_R32G32B32A32_SINT:
+            return 16;
+               
+        case DXGI_FORMAT_R32G32B32_TYPELESS:
+        case DXGI_FORMAT_R32G32B32_FLOAT:
+        case DXGI_FORMAT_R32G32B32_UINT:
+        case DXGI_FORMAT_R32G32B32_SINT:
+            return 12;
+               
+        case DXGI_FORMAT_R16G16B16A16_TYPELESS:
+        case DXGI_FORMAT_R16G16B16A16_FLOAT:
+        case DXGI_FORMAT_R16G16B16A16_UNORM:
+        case DXGI_FORMAT_R16G16B16A16_UINT:
+        case DXGI_FORMAT_R16G16B16A16_SNORM:
+        case DXGI_FORMAT_R16G16B16A16_SINT:
+        case DXGI_FORMAT_R32G32_TYPELESS:
+        case DXGI_FORMAT_R32G32_FLOAT:
+        case DXGI_FORMAT_R32G32_UINT:
+        case DXGI_FORMAT_R32G32_SINT:
+        case DXGI_FORMAT_R32G8X24_TYPELESS:
+        case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+        case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:
+        case DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:
+            return 8;
+       
+        case DXGI_FORMAT_R10G10B10A2_TYPELESS:
+        case DXGI_FORMAT_R10G10B10A2_UNORM:
+        case DXGI_FORMAT_R10G10B10A2_UINT:
+        case DXGI_FORMAT_R11G11B10_FLOAT:
+        case DXGI_FORMAT_R8G8B8A8_TYPELESS:
+        case DXGI_FORMAT_R8G8B8A8_UNORM:
+        case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+        case DXGI_FORMAT_R8G8B8A8_UINT:
+        case DXGI_FORMAT_R8G8B8A8_SNORM:
+        case DXGI_FORMAT_R8G8B8A8_SINT:
+        case DXGI_FORMAT_R16G16_TYPELESS:
+        case DXGI_FORMAT_R16G16_FLOAT:
+        case DXGI_FORMAT_R16G16_UNORM:
+        case DXGI_FORMAT_R16G16_UINT:
+        case DXGI_FORMAT_R16G16_SNORM:
+        case DXGI_FORMAT_R16G16_SINT:
+        case DXGI_FORMAT_R32_TYPELESS:
+        case DXGI_FORMAT_D32_FLOAT:
+        case DXGI_FORMAT_R32_FLOAT:
+        case DXGI_FORMAT_R32_UINT:
+        case DXGI_FORMAT_R32_SINT:
+        case DXGI_FORMAT_R24G8_TYPELESS:
+        case DXGI_FORMAT_D24_UNORM_S8_UINT:
+        case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+        case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+        case DXGI_FORMAT_B8G8R8A8_UNORM:
+        case DXGI_FORMAT_B8G8R8X8_UNORM:
+            return 4;
+               
+        case DXGI_FORMAT_R8G8_TYPELESS:
+        case DXGI_FORMAT_R8G8_UNORM:
+        case DXGI_FORMAT_R8G8_UINT:
+        case DXGI_FORMAT_R8G8_SNORM:
+        case DXGI_FORMAT_R8G8_SINT:
+        case DXGI_FORMAT_R16_TYPELESS:
+        case DXGI_FORMAT_R16_FLOAT:
+        case DXGI_FORMAT_D16_UNORM:
+        case DXGI_FORMAT_R16_UNORM:
+        case DXGI_FORMAT_R16_UINT:
+        case DXGI_FORMAT_R16_SNORM:
+        case DXGI_FORMAT_R16_SINT:
+        case DXGI_FORMAT_B5G6R5_UNORM:
+        case DXGI_FORMAT_B5G5R5A1_UNORM:
+            return 2;
+               
+        case DXGI_FORMAT_R8_TYPELESS:
+        case DXGI_FORMAT_R8_UNORM:
+        case DXGI_FORMAT_R8_UINT:
+        case DXGI_FORMAT_R8_SNORM:
+        case DXGI_FORMAT_R8_SINT:
+        case DXGI_FORMAT_A8_UNORM:
+            return 1;
+       
+        // Compressed format; http://msdn2.microso.../bb694531(VS.85).aspx
+        case DXGI_FORMAT_BC2_TYPELESS:
+        case DXGI_FORMAT_BC2_UNORM:
+        case DXGI_FORMAT_BC2_UNORM_SRGB:
+        case DXGI_FORMAT_BC3_TYPELESS:
+        case DXGI_FORMAT_BC3_UNORM:
+        case DXGI_FORMAT_BC3_UNORM_SRGB:
+        case DXGI_FORMAT_BC5_TYPELESS:
+        case DXGI_FORMAT_BC5_UNORM:
+        case DXGI_FORMAT_BC5_SNORM:
+            return 16;
+               
+        // Compressed format; http://msdn2.microso.../bb694531(VS.85).aspx
+        case DXGI_FORMAT_R1_UNORM:
+        case DXGI_FORMAT_BC1_TYPELESS:
+        case DXGI_FORMAT_BC1_UNORM:
+        case DXGI_FORMAT_BC1_UNORM_SRGB:
+        case DXGI_FORMAT_BC4_TYPELESS:
+        case DXGI_FORMAT_BC4_UNORM:
+        case DXGI_FORMAT_BC4_SNORM:
+            return 8;
+       
+        // Compressed format; http://msdn2.microso.../bb694531(VS.85).aspx
+        case DXGI_FORMAT_R9G9B9E5_SHAREDEXP:
+            return 4;
+       
+        // These are compressed, but bit-size information is unclear.
+        case DXGI_FORMAT_R8G8_B8G8_UNORM:
+        case DXGI_FORMAT_G8R8_G8B8_UNORM:
+            return 4;
+
+        case DXGI_FORMAT_UNKNOWN:
+        default:
+            return 0;
+    }
 }

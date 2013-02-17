@@ -64,7 +64,7 @@ public:
 	//! Get a pointer to the 3d cloud renderer owned by this class instance.
 	class SimulCloudRendererDX1x *GetCloudRenderer();
 	//! Get a pointer to the 2d cloud renderer owned by this class instance.
-	class Simul2DCloudRenderer *Get2DCloudRenderer();
+	class Simul2DCloudRendererDX11 *Get2DCloudRenderer();
 	//! Get the current debug text as a c-string pointer.
 	const char *GetDebugText() const;
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
@@ -95,7 +95,7 @@ protected:
 	simul::base::SmartPtr<class SimulSkyRendererDX1x> simulSkyRenderer;
 	simul::base::SmartPtr<class SimulCloudRendererDX1x> simulCloudRenderer;
 	simul::base::SmartPtr<class SimulAtmosphericsRendererDX1x> simulAtmosphericsRenderer;
-	simul::base::SmartPtr<class Simul2DCloudRendererDX1x> simul2DCloudRenderer;
+	simul::base::SmartPtr<class Simul2DCloudRendererDX11> simul2DCloudRenderer;
 	simul::base::SmartPtr<class SimulPrecipitationRendererDX1x> simulPrecipitationRenderer;
 	FramebufferDX1x					framebuffer;
 	FramebufferCubemapDX1x			framebuffer_cubemap;

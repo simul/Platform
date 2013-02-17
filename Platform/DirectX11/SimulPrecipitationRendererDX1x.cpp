@@ -54,7 +54,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 
 	MAKE_CONSTANT_BUFFER(pShadingCB,RainConstantBuffer);
 
-	ID3D1xEffectTechnique*			tech	=m_pRainEffect->GetTechniqueByName("create_rain_texture");
+	ID3DX11EffectTechnique*			tech=m_pRainEffect->GetTechniqueByName("create_rain_texture");
 	ApplyPass(tech->GetPassByIndex(0));
 	FramebufferDX1x make_rain_fb(512,512);
 	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
@@ -69,7 +69,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 
 void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
 {
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	HRESULT hr=S_OK;
@@ -184,7 +184,6 @@ return;
 	for(unsigned i = 0 ; i < passes ; ++i )
 	{
 		ApplyPass(m_hTechniqueRain->GetPassByIndex(i));
-
 		m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 		UINT stride = sizeof(Vertex_t);
 		UINT offset = 0;
@@ -197,16 +196,10 @@ return;
 													&m_pVertexBuffer,	// the array of vertex buffers
 													&stride,			// array of stride values, one for each buffer
 													&offset );
-
 		m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
-
 		m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
 		m_pImmediateContext->Draw(NUM_VERT-2,0);
 	}
-	//hr=m_pRainEffect->End();
-	//m_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-  //  hr=m_pd3dDevice->SetRenderState( D3DRS_ZENABLE, TRUE );
 	D3DXMatrixIdentity(&world);
 	PIXEndNamedEvent();
 }

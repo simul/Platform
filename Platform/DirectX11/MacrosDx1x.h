@@ -74,7 +74,7 @@ typedef std::basic_string<TCHAR> tstring;
 	#define D3D1x_CLEAR_DEPTH							D3D10_CLEAR_DEPTH
 	#define D3D1x_CLEAR_STENCIL							D3D10_CLEAR_STENCIL
 	#define D3D1x_VIEWPORT								D3D10_VIEWPORT
-	#define dx1x_namespace								dx10
+	#define dx11								dx10
 #else
 	#define ID3D1xDevice								ID3D11Device
 	#define ID3D1xDeviceContext							ID3D11DeviceContext	
@@ -141,7 +141,7 @@ typedef std::basic_string<TCHAR> tstring;
 	#define D3D1x_CLEAR_DEPTH							D3D11_CLEAR_DEPTH
 	#define D3D1x_CLEAR_STENCIL							D3D11_CLEAR_STENCIL
 	#define D3D1x_VIEWPORT								D3D11_VIEWPORT
-	#define dx1x_namespace								dx11
+	#define dx11								dx11
 #endif
 
 typedef long HRESULT;

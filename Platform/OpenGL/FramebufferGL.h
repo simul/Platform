@@ -50,7 +50,8 @@ public:
 	void DeactivateAndRender(bool blend);
 	void Render(bool blend);
 	void Render(GLuint prog,bool blend);
-	void DrawQuad(int w, int h);
+	//void DrawQuad(int w, int h);
+	void DrawQuad();
 	// Get the dimension of the surface
 	inline int GetWidth()
 	{

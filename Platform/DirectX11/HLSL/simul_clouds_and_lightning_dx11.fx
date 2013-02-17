@@ -308,19 +308,19 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
     return OUT;
 }
 
-#define CROSS_SECTION_STEPS 1
+#define CROSS_SECTION_STEPS 32
 float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
 {
-	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,0,crossSectionOffset.z+IN.texCoords.y);
+	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,0,crossSectionOffset.z+1.0-IN.texCoords.y);
 	int i=0;
 	float3 accum=float3(0.f,0.5f,1.f);
 	texc.y+=.5f/(float)CROSS_SECTION_STEPS;
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
 		float4 density=cloudDensity1.Sample(crossSectionSamplerState,texc);
-		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.z);
+		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
-		float opacity=density.x;
+		float opacity=density.z;
 		colour*=opacity;
 		accum*=1.f-opacity;
 		accum+=colour;
@@ -338,9 +338,9 @@ float4 PS_CrossSectionXY( vertexOutputCS IN): SV_TARGET
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
 		float4 density=cloudDensity1.Sample(crossSectionSamplerState,texc);
-		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.z);
+		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
-		float opacity=density.x;//+.05f;
+		float opacity=density.z;//+.05f;
 		colour*=opacity;
 		accum*=1.f-opacity;
 		accum+=colour;
