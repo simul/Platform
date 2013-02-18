@@ -25,7 +25,7 @@ void main()
 	vec2 fade_texc		=vec2(sqrt(length(difference)/maxFadeDistanceMetres),0.5*(1.0-sine));
 	float cos0			=dot(normalize(lightDir),(view));
 
-    vec4 detail			=vec4(1,1,1,1);//texture2D(imageTexture,texc_detail);
+    vec4 detail			=texture2D(imageTexture,texc_detail);//vec4(1,1,1,1);//
     vec4 coverage		=mix(texture2D(coverageTexture1,texc_global),texture2D(coverageTexture2,texc_global),cloudInterp);
 	float opacity		=clamp(detail.a*coverage.y,0.0,1.0);
 	if(opacity<=0)

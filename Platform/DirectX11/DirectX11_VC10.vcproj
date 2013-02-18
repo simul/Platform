@@ -542,7 +542,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HLSL\simul_gpu_clouds.fx"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\simul_gpu_lighting.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_gpu_sky.fx"
 				>
 			</File>
 			<File

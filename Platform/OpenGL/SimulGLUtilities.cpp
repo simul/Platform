@@ -4,7 +4,6 @@
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Sky/Float4.h"
-#include <windows.h>
 #include <stdlib.h>
 #include <GL/gl.h>
 #include <iostream>
@@ -204,8 +203,10 @@ void RenderString(float x, float y, void *font, const char* string)
 			y+=12;
 			glRasterPos2f(x,win_h-y);
 		}
+#ifndef WIN64
 		else
 			glutBitmapCharacter(font,*s);
+#endif
 		s++;
 	}
 }
@@ -290,24 +291,6 @@ void CheckGLError(const char *filename,int line_number)
 	if(err!=0)
 	{
 		CheckGLError(filename,line_number,err);
-	}
-}
-
-void CheckGLError(const char *filename,int line_number,int err)
-{
-	if(err)
-	{
-		std::cerr<<filename<<" ("<<line_number<<"): ";
-		const char *c=(const char*)gluErrorString(err);
-		if(c)
-			std::cerr<<std::endl<<c<<std::endl;
-		const char *d=(const char*)glewGetErrorString(err);
-		if(d)
-			std::cerr<<std::endl<<d<<std::endl;
-		if(!c&&!d)
-			std::cerr<<std::endl<<"unknown error: "<<err<<std::endl;
-		DebugBreak();
-		//assert(0);
 	}
 }
 
@@ -407,7 +390,9 @@ void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,
 	const char *s=text;
 	while(*s)
 	{
+#ifndef WIN64
 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,*s);
+#endif
 		s++;
 	}
 	glPopAttrib();
@@ -567,4 +552,23 @@ void setMatrix(GLint loc,const float *value)
 	static bool tr=1;
 	glUniformMatrix4fv(loc,1,tr,value);
 	ERROR_CHECK
+}
+#undef pi
+#include <windows.h>
+void CheckGLError(const char *filename,int line_number,int err)
+{
+	if(err)
+	{
+		std::cerr<<filename<<" ("<<line_number<<"): ";
+		const char *c=(const char*)gluErrorString(err);
+		if(c)
+			std::cerr<<std::endl<<c<<std::endl;
+		const char *d=(const char*)glewGetErrorString(err);
+		if(d)
+			std::cerr<<std::endl<<d<<std::endl;
+		if(!c&&!d)
+			std::cerr<<std::endl<<"unknown error: "<<err<<std::endl;
+		DebugBreak();
+		//assert(0);
+	}
 }

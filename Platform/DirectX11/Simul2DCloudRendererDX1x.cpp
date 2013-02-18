@@ -45,6 +45,8 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 void Simul2DCloudRendererDX11::RecompileShaders()
 {
 	SAFE_RELEASE(effect);
+	if(!m_pd3dDevice)
+		return;
 	CreateEffect(m_pd3dDevice,&effect,L"simul_clouds_2d.fx");
 	tech=effect->GetTechniqueByName("simul_clouds_2d");
 }
