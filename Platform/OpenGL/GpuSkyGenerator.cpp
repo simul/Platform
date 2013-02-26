@@ -179,8 +179,8 @@ std::cout<<"\tGpu sky: dens_tex "<<timer.UpdateTime()<<std::endl;
 
 		constants.starlight			=(const float*)(skyInterface->GetStarlight());
 		
-		constants.hazeEccentricity=1.0;
-		constants.mieRayleighRatio=(const float*)(skyInterface->GetMieRayleighRatio());
+		constants.hazeEccentricity	=1.0;
+		constants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
 	
 		glBindBuffer(GL_UNIFORM_BUFFER, gpuSkyConstantsUBO);
 ERROR_CHECK
@@ -191,7 +191,6 @@ ERROR_CHECK
 		glBindBufferBase(GL_UNIFORM_BUFFER,gpuSkyConstantsBindingIndex,gpuSkyConstantsUBO);
 ERROR_CHECK
 	}
-
 
 	setParameter(loss_program,"input_loss_texture",0);
 	setParameter(loss_program,"density_texture",1);
@@ -270,24 +269,6 @@ std::cout<<"\tGpu sky: loss_tex,optd_tex "<<timer.UpdateTime()<<std::endl;
 	setParameter(insc_program,"loss_texture",2);
 	setParameter(insc_program,"optical_depth_texture",3);
 
-	setParameter3(insc_program,"rayleigh"		,skyInterface->GetRayleigh());
-	setParameter(insc_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
-	setParameter(insc_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
-		
-	setParameter(insc_program,"overcast",overcast);
-	setParameter(insc_program,"overcastBaseKm",overcast_base_km);
-	setParameter(insc_program,"overcastRangeKm",overcast_range_km);
-	
-	setParameter3(insc_program,"hazeMie"		,haze*skyInterface->GetMie());
-	setParameter3(insc_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
-	setParameter(insc_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
-	setParameter(insc_program,"tableSize"		,(float)table_size,(float)table_size);
-	setParameter(insc_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
-	setParameter(insc_program,"maxOutputAltKm"	,maxOutputAltKm);
-	setParameter(insc_program,"maxDensityAltKm"	,maxDensityAltKm);
-	setParameter3(insc_program,"sunIrradiance"	,sun_irradiance);
-	setParameter3(insc_program,"lightDir"		,dir_to_sun);
-	setParameter(insc_program,"maxDistanceKm"	,max_distance_km);
 ERROR_CHECK
 	target=insc;
 	F[0]->Activate();

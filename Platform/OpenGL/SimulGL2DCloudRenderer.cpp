@@ -304,8 +304,8 @@ bool SimulGL2DCloudRenderer::Render(bool, void *, bool, bool)
 
 static float ll=0.05f;
 static float ff=100.f;
-setMatrix(clouds_program,"projection_matrix",proj);
-setMatrix(clouds_program,"modelview_matrix"	,modelview);
+setMatrixTranspose(clouds_program,"projection_matrix",proj);
+setMatrixTranspose(clouds_program,"modelview_matrix"	,modelview);
 	Cloud2DConstants cloud2DConstants;
 	cloud2DConstants.origin				=wind_offset;
 	cloud2DConstants.globalScale		=ci->GetCloudWidth();

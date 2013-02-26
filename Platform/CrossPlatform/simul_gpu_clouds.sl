@@ -1,6 +1,7 @@
 uniform float zPixel;
 uniform float zSize;
 uniform sampler3D volumeNoiseTexture;
+uniform mat4 transformMatrix;
 
 float saturate(float x)
 {

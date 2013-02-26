@@ -49,7 +49,7 @@ void GpuSkyGenerator::RecompileShaders()
 	if(effect)
 	{
 		lossTechnique	=effect->GetTechniqueByName("simul_gpu_loss");
-		inscTechnique	=effect->GetTechniqueByName("simul_gpu_insc");//"#define OVERCAST 1\r\n");
+		inscTechnique	=effect->GetTechniqueByName("simul_gpu_insc");
 		skylTechnique	=effect->GetTechniqueByName("simul_gpu_skyl");
 		gpuSkyConstants	=effect->GetConstantBufferByName("GpuSkyConstants");
 	}

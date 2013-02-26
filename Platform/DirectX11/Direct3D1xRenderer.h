@@ -94,6 +94,7 @@ protected:
 	simul::base::SmartPtr<SimulOpticsRendererDX1x>	simulOpticsRenderer;
 	simul::base::SmartPtr<SimulWeatherRendererDX1x>	simulWeatherRenderer;
 	simul::base::SmartPtr<SimulHDRRendererDX1x>		simulHDRRenderer;
+	simul::base::SmartPtr<SimulTerrainRendererDX1x>	simulTerrainRenderer;
 	simul::dx11::GpuCloudGenerator gpuCloudGenerator;
 	simul::dx11::GpuSkyGenerator gpuSkyGenerator;
 	unsigned ScreenWidth,ScreenHeight;

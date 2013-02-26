@@ -9,5 +9,6 @@
 #ifndef __cplusplus
 uniform sampler2D optical_depth_texture;
 #endif
+#define texture_clamp texture
 #include "../../CrossPlatform/simul_gpu_sky.sl"
 #endif

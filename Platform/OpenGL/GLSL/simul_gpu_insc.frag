@@ -41,10 +41,10 @@ void main(void)
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
-	vec4 light			=getSunlightFactor(alt_km,lightDir)*vec4(sunIrradiance,1.0);
+	vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor(alt_km,lightDir);
 	vec4 insc			=light;
 #ifdef OVERCAST
-	//insc*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
+	insc*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
 #endif
 	vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie;
 	vec3 total_ext		=extinction+ozone*ozone_factor;
@@ -52,8 +52,6 @@ void main(void)
 	insc.rgb			*=vec3(1.0,1.0,1.0)-loss;
 	float mie_factor	=exp(-insc.w*stepLengthKm*haze_factor*hazeMie.x);
 	insc.w				=saturate((1.f-mie_factor)/(1.f-total_ext.x+0.0001f));
-	
-	//insc.w				=(loss.w)*(1.f-previous_insc.w)*insc.w+previous_insc.w;
 	
 	insc.rgb			*=previous_loss.rgb;
 	insc.rgb			+=previous_insc.rgb;

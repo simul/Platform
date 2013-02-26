@@ -365,6 +365,7 @@ void simul::dx11::Ensure3DTextureSizeAndFormat(
 							ID3D1xDevice			*m_pd3dDevice
 							,ID3D1xDeviceContext	*m_pImmediateContext
 							,ID3D1xTexture3D* &tex
+							,ID3D11ShaderResourceView* &srv
 							,int w,int l,int d
 							,DXGI_FORMAT format)
 {
@@ -375,12 +376,14 @@ void simul::dx11::Ensure3DTextureSizeAndFormat(
 		if(desc.Width!=w||desc.Height!=l||desc.Depth!=d||desc.Format!=format)
 		{
 			SAFE_RELEASE(tex);
+			SAFE_RELEASE(srv);
 		}
 	}
 
 	if(!tex)
 	{
 		tex=make3DTexture(	m_pd3dDevice,m_pImmediateContext,w,l,d,format,NULL);
+		m_pd3dDevice->CreateShaderResourceView(tex,NULL,&srv);
 		return;
 	}
 }
@@ -409,6 +412,11 @@ void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,float *val
 	var->SetFloatVector(value);
 }
 
+void simul::dx11::setMatrix(ID3D1xEffect *effect,const char *name	,const float *value)
+{
+	ID3D1xEffectMatrixVariable*	var	=effect->GetVariableByName(name)->AsMatrix();
+	var->SetMatrix(value);
+}
 
 
 

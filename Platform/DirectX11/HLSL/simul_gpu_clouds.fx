@@ -38,9 +38,9 @@ uniform float persistence;
 uniform float humidity;
 uniform float time;
 uniform vec3 noiseScale;
-uniform mat4 transformMatrix;
 uniform float zPosition;
 uniform vec2 extinctions;
+uniform mat4 vertexMatrix;
 
 uniform sampler2D input_light_texture;
 uniform sampler3D density_texture;
@@ -64,7 +64,7 @@ struct vertexOutput
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-    OUT.hPosition = float4(IN.position.xy,1.0,1.0);
+    OUT.hPosition = mul(float4(IN.position.xy,1.0,1.0),vertexMatrix);
 	OUT.texc=IN.texc;
     return OUT;
 }
@@ -90,7 +90,6 @@ float4 PS_Lighting(vertexOutput IN) : SV_TARGET
 	float density				=texture3D2(density_texture,densityspace_texcoord).x;
 	float direct_light			=previous_light.x*exp(-extinctions.x*density);
 	float indirect_light		=previous_light.y*exp(-extinctions.y*density);
-	//indirect_light=saturate(indirect_light);
     return						vec4(direct_light,indirect_light,0,0);
 }
 
@@ -98,17 +97,13 @@ float4 PS_Transform(vertexOutput IN) : SV_TARGET
 {
 	vec3 densityspace_texcoord	=assemble3dTexcoord(IN.texc.xy);
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
-
 	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord,1.0)).xyz;
 	vec2 light_lookup			=saturate(texture3D2(light_texture,lightspace_texcoord).xy);
 	vec2 amb_texel				=texture3D2(ambient_texture,ambient_texcoord).xy;
 	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
 	float density				=saturate(texture3D2(density_texture,densityspace_texcoord).x);
-
-    // return						vec4(ambient_lookup,density,light_lookup.x,light_lookup.y);
-   return						vec4(light_lookup.y,light_lookup.x,density,ambient_lookup);
+	return						vec4(light_lookup.y,light_lookup.x,density,ambient_lookup);
 }
-
 
 //------------------------------------
 // Technique

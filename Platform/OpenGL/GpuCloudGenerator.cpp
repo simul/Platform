@@ -216,7 +216,7 @@ void GpuCloudGenerator::PerformGPURelight(float *target
 								,int start_texel
 								,int texels
 								,const int *density_grid
-								,const float *Matrix4x4LightToDensityTexcoords
+								,const float *transformMatrix
 								,const float *lightspace_extinctions_float3)
 {
 ERROR_CHECK
@@ -238,7 +238,7 @@ timer.StartTime();
 	glUseProgram(clouds_program);
 	setParameter(clouds_program,"input_light_texture",0);
 	setParameter(clouds_program,"density_texture",1);
-	setMatrix(clouds_program,"lightToDensityMatrix",Matrix4x4LightToDensityTexcoords);
+	setMatrix(clouds_program,"transformMatrix",transformMatrix);
 	setParameter(clouds_program,"extinctions",lightspace_extinctions_float3[0],lightspace_extinctions_float3[1]);
 	// initialize the first input texture.
 	FramebufferGL *F[2];
@@ -304,7 +304,7 @@ std::cout<<"\tGpu clouds: SAFE_DELETE_TEXTURE "<<timer.UpdateTime()<<std::endl;
 // Transform light data into a world-oriented cloud texture.
 // The inputs are in RGBA float32 format, with the light values in the RG slots.
 void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
-											,const float *DensityToLightTransform
+											,const float *transformMatrix
 											,const float *light,const int *light_grid
 											,const float *ambient,const int *density_grid
 											,int start_texel
@@ -324,7 +324,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 	setParameter(transform_program,"density_texture",0);
 	setParameter(transform_program,"light_texture",1);
 	setParameter(transform_program,"ambient_texture",2);
-	setMatrix(transform_program,"transformMatrix",DensityToLightTransform);
+	setMatrix(transform_program,"transformMatrix",transformMatrix);
 	setParameter(transform_program,"zSize",(float)density_grid[2]);
 	setParameter(transform_program,"zPixel",1.f/(float)density_grid[2]);
 	glEnable(GL_TEXTURE_3D);

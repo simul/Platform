@@ -30,7 +30,6 @@ ALIGN cbuffer GpuSkyConstants R0
 	uniform vec3 ozone;
 	uniform float overcast;
 
-
 	uniform vec3 sunIrradiance;
 	uniform float maxDistanceKm;
 	uniform vec3 lightDir;
@@ -104,7 +103,7 @@ vec4 getSunlightFactor(float alt_km,vec3 DirectionToLight)
 	table_texc+=vec2(texelOffset,texelOffset);
 	table_texc=vec2(table_texc.x/tableSize.x,table_texc.y/tableSize.y);
 	//return vec4(table_texc,sine,1.0);
-	vec4 lookup=texture(optical_depth_texture,table_texc);
+	vec4 lookup=texture_clamp(optical_depth_texture,table_texc);
 	float illuminated_length=lookup.x;
 	float vis=lookup.y;
 	float ozone_length=lookup.w;
@@ -140,26 +139,26 @@ float getDistanceToSpace(float sine_elevation,float h_km)
 
 float getOvercastAtAltitude(float h_km)
 {
-	return overcast*saturate((h_km-overcastBaseKm)/overcastRangeKm);
+	return overcast*saturate((overcastBaseKm+overcastRangeKm-h_km)/overcastRangeKm);
 }
 
 float getOvercastAtAltitudeRange(float alt1_km,float alt2_km)
 {
 	// So now alt1 is Definitely lower than alt2.
-	if(alt1_km==alt2_km)
-		return getOvercastAtAltitude(alt1_km);
-	float alt1=min(alt1_km,alt2_km);
-	float alt2=max(alt1_km,alt2_km);
-	float diff_km			=alt2-alt1;
+	float alt1				=min(alt1_km,alt2_km);
+	float alt2				=max(alt1_km,alt2_km);
+	//if(alt1==alt2)
+		return getOvercastAtAltitude(alt1);
+	/*float diff_km			=alt2-alt1;
 	float const_start_km	=min(alt1,overcastBaseKm);
 	float const_end_km		=min(alt2,overcastBaseKm);
-	float x1	=min(max(alt1-overcastBaseKm,0.0),overcastRangeKm);
-	float x2	=min(max(alt2-overcastBaseKm,0.0),overcastRangeKm);
-	float oc1	=const_end_km-const_start_km;
+	float x1				=min(max(alt1-overcastBaseKm,0.0),overcastRangeKm);
+	float x2				=min(max(alt2-overcastBaseKm,0.0),overcastRangeKm);
+	float oc1_km			=const_end_km-const_start_km;
 	// In the varying part, we integrate o=1-x/overcastRangeKm wrt x
-	float oc2	=(x2-x1)+(x1*x1-x2*x2)/(2.0*overcastRangeKm);
-	float oc	=(oc1+oc2)/diff_km;
-	oc			*=overcast;
-	return 1.0*oc;
+	float oc2_km			=(x2-x1)+(x1*x1-x2*x2)/(2.0*overcastRangeKm);
+	float oc				=(oc1_km+oc2_km)/diff_km;
+	oc						*=overcast;
+	return 1.0*oc;*/
 }
 #endif

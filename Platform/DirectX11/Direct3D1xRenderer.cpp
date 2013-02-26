@@ -2,7 +2,7 @@
 
 // Simul Weather:
 #include "Simul/Platform/DirectX11/SimulWeatherRendererDX1x.h"
-//#include "Simul/Platform/Windows/DirectX 11/SimulTerrainRenderer.h"
+#include "Simul/Platform/DirectX11/SimulTerrainRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulCloudRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
 //#include "Simul/Platform/Windows/DirectX 11/Simul2DCloudRendererDX1x.h"
@@ -37,6 +37,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 	simulOpticsRenderer=new SimulOpticsRendererDX1x();
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->SetYVertical(y_vertical);
+	simulTerrainRenderer=new SimulTerrainRendererDX1x();
 	SetYVertical(y_vertical);
 }
 

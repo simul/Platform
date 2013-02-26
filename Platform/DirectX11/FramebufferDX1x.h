@@ -51,6 +51,7 @@ public:
 		return hdr_buffer_texture;
 	}
 	void CopyToMemory(void *target);
+	void CopyToMemory(void *target,int start_texel,int texels);
 protected:
 	int screen_width;
 	int screen_height;

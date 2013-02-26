@@ -3,12 +3,25 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix.h"
+#include "Simul/Math/Matrix4x4.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include <math.h>
 using namespace simul;
 using namespace dx11;
+
+static simul::math::Matrix4x4 MakeVertexMatrix(const int *grid,int start_texel,int texels)
+{
+	simul::math::Matrix4x4 mat;
+	mat.Unit();
+	int gridsize=grid[0]*grid[1]*grid[2];
+	float y_start=(float)start_texel/(float)gridsize;
+	float y_end=(float)(start_texel+texels)/(float)gridsize;
+	mat(1,1)=y_end-y_start;
+	mat(1,3)=y_start;
+	return mat;
+}
 
 GpuCloudGenerator::GpuCloudGenerator()
 			:m_pd3dDevice(NULL)
@@ -18,6 +31,7 @@ GpuCloudGenerator::GpuCloudGenerator()
 			,lightingTechnique(NULL)
 			,transformTechnique(NULL)
 			,density_texture(NULL)
+			,density_texture_srv(NULL)
 {
 }
 
@@ -50,7 +64,9 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	world_fb.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(effect);
+	SAFE_RELEASE(density_texture_srv);
 	SAFE_RELEASE(density_texture);
+	m_pd3dDevice=NULL;
 }
 
 void GpuCloudGenerator::RecompileShaders()
@@ -106,7 +122,8 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	m_pd3dDevice->CreateShaderResourceView(volume_noise_tex,NULL,&volume_noise_tex_srv);
 	m_pImmediateContext->GenerateMips(volume_noise_tex_srv);
 	
-	
+	simul::math::Matrix4x4 vertexMatrix=MakeVertexMatrix(density_grid,start_texel,texels);
+
 	setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 	setParameter(effect,"octaves"				,octaves);
 	setParameter(effect,"persistence"			,persistence);
@@ -115,6 +132,7 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	setParameter(effect,"zPixel"				,1.f/(float)density_grid[2]);
 	setParameter(effect,"zSize"					,(float)density_grid[2]);
 	setParameter(effect,"noiseScale"			,noise_scale);
+	setMatrix(effect,"vertexMatrix"				,vertexMatrix);
 	
 	dens_fb.Activate();
 		ApplyPass(densityTechnique->GetPassByIndex(0));
@@ -123,10 +141,10 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	float *density=NULL;
 	delete [] density;
 	density=new float[new_density_gridsize];
-	dens_fb.CopyToMemory(density);
+	dens_fb.CopyToMemory(density,start_texel,texels);
 	density_gridsize=new_density_gridsize;
 std::cout<<"\tDraw "<<timer.UpdateTime()<<"ms"<<std::endl;
-	Ensure3DTextureSizeAndFormat(m_pd3dDevice,m_pImmediateContext,density_texture,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
+	Ensure3DTextureSizeAndFormat(m_pd3dDevice,m_pImmediateContext,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
 std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 	D3D1x_MAPPED_TEXTURE3D dens_texture_mapped;
 	Map3D(density_texture,&dens_texture_mapped);
@@ -146,13 +164,13 @@ std::cout<<"\tfill 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 	return NULL;
 }
 
-void GpuCloudGenerator::PerformGPURelight(float *target
-									,const int *light_grid
-									,int start_texel
-									,int texels
-									,const int *density_grid
-									,const float *Matrix4x4LightToDensityTexcoords
-									,const float *lightspace_extinctions_float3)
+void GpuCloudGenerator::PerformGPURelight(	float *target
+											,const int *light_grid
+											,int start_texel
+											,int texels
+											,const int *density_grid
+											,const float *Matrix4x4LightToDensityTexcoords
+											,const float *lightspace_extinctions_float3)
 {
 try{
 	for(int i=0;i<2;i++)
@@ -166,24 +184,31 @@ try{
 	ID3D1xEffectMatrixVariable*	lightToDensityMatrix		=effect->GetVariableByName("transformMatrix")->AsMatrix();
 	ID3D1xEffectVectorVariable*	extinctions					=effect->GetVariableByName("extinctions")->AsVector();
 	ID3D1xEffectScalarVariable *zPosition					=effect->GetVariableByName("zPosition")->AsScalar();
+	
+	simul::math::Matrix4x4 vertexMatrix;
+	vertexMatrix.Unit();
+	setMatrix(effect,"vertexMatrix"				,vertexMatrix);
+
 	lightToDensityMatrix->SetMatrix(Matrix4x4LightToDensityTexcoords);
 	extinctions->SetFloatVector(lightspace_extinctions_float3);
-	ID3D11ShaderResourceView* density_texture_srv;
-	m_pd3dDevice->CreateShaderResourceView(density_texture,NULL,&density_texture_srv);
-	m_pImmediateContext->GenerateMips(density_texture_srv);
 	// initialize the first input texture.
 	FramebufferDX1x *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
 	densityTexture->SetResource(density_texture_srv);
-			
-	F[0]->Activate();
-		input_light_texture->SetResource(F[1]->GetBufferResource());
-		F[0]->Clear(1.f,1.f,1.f,0.f);
-	F[0]->Deactivate();
-	F[0]->CopyToMemory(target);
-	target+=light_grid[0]*light_grid[1]*4;
-	for(int i=0;i<light_grid[2]-1;i++)
+	
+	if(start_texel==0)
+	{
+		F[0]->Activate();
+			input_light_texture->SetResource(F[1]->GetBufferResource());
+			F[0]->Clear(1.f,1.f,1.f,0.f);
+		F[0]->Deactivate();
+		F[0]->CopyToMemory(target);
+	}
+	int i0=start_texel/(light_grid[0]*light_grid[1]);
+	int i1=(start_texel+texels)/(light_grid[0]*light_grid[1])-1;
+	target+=i0*light_grid[0]*light_grid[1]*4;
+	for(int i=i0;i<i1;i++)//light_grid[2]-1;i++)
 	{
 		float zPos=((float)i+0.5f)/(float)light_grid[2];
 		zPosition->SetFloat(zPos);
@@ -197,13 +222,11 @@ try{
 		std::swap(F[0],F[1]);
 		target+=light_grid[0]*light_grid[1]*4;
 	}
-	SAFE_RELEASE(density_texture_srv);
 	}
 	catch(...)
 	{
 	}
 }
-
 
 void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 											,const float *DensityToLightTransform
@@ -216,17 +239,11 @@ try{
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	world_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
 	world_fb.SetTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
-	ID3D11ShaderResourceView* density_texture_srv;
-	m_pd3dDevice->CreateShaderResourceView(density_texture,NULL,&density_texture_srv);
-	m_pImmediateContext->GenerateMips(density_texture_srv);
-
-	//world_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8);
-	//GLuint density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,1,false,density);
-	ID3D11Texture3D* light_texture1		=make3DTexture(m_pd3dDevice,m_pImmediateContext,light_grid[0]	,light_grid[1],light_grid[2]	,DXGI_FORMAT_R32G32B32A32_FLOAT,light);
+	ID3D11Texture3D* light_texture1		=make3DTexture(m_pd3dDevice,m_pImmediateContext	,light_grid[0]	,light_grid[1]	,light_grid[2]	,DXGI_FORMAT_R32G32B32A32_FLOAT,light);
 	ID3D11ShaderResourceView* light_texture;
 	m_pd3dDevice->CreateShaderResourceView(light_texture1,NULL,&light_texture);
 	m_pImmediateContext->GenerateMips(light_texture);
-	ID3D11Texture3D * ambient_texture1	=make3DTexture(m_pd3dDevice,m_pImmediateContext,density_grid[0],density_grid[1],density_grid[2]	,DXGI_FORMAT_R32G32B32A32_FLOAT,ambient);
+	ID3D11Texture3D *ambient_texture1	=make3DTexture(m_pd3dDevice,m_pImmediateContext	,density_grid[0],density_grid[1],density_grid[2]	,DXGI_FORMAT_R32G32B32A32_FLOAT,ambient);
 	ID3D11ShaderResourceView* ambient_texture;
 	m_pd3dDevice->CreateShaderResourceView(ambient_texture1,NULL,&ambient_texture);
 	m_pImmediateContext->GenerateMips(ambient_texture);
@@ -234,32 +251,33 @@ try{
 	ID3D1xEffectShaderResourceVariable*	densityTexture	=effect->GetVariableByName("density_texture")->AsShaderResource();
 	ID3D1xEffectShaderResourceVariable*	lightTexture	=effect->GetVariableByName("light_texture")->AsShaderResource();
 	ID3D1xEffectShaderResourceVariable*	ambientTexture	=effect->GetVariableByName("ambient_texture")->AsShaderResource();
-	ID3D1xEffectMatrixVariable *transformMatrix			=effect->GetVariableByName("DensityToLightTransform")->AsMatrix();
+	ID3D1xEffectMatrixVariable *transformMatrix			=effect->GetVariableByName("transformMatrix")->AsMatrix();
 	transformMatrix->SetMatrix(DensityToLightTransform);
 	ID3D1xEffectScalarVariable *zSize					=effect->GetVariableByName("zSize")->AsScalar();
 	ID3D1xEffectScalarVariable *zPixel					=effect->GetVariableByName("zPixel")->AsScalar();
+
+	simul::math::Matrix4x4 vertexMatrix;
+	vertexMatrix=MakeVertexMatrix(density_grid,start_texel,texels);
+	setMatrix(effect,"vertexMatrix"				,vertexMatrix);
+
 	zSize->SetFloat((float)density_grid[2]);
 	zPixel->SetFloat(1.f/(float)density_grid[2]);
-	
-	
-	
+
 	densityTexture->SetResource(density_texture_srv);
 	lightTexture->SetResource(light_texture);
 	ambientTexture->SetResource(ambient_texture);
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
-	
+
 	world_fb.Activate();
-	//world_fb.Clear(0.f,0.f,0.f,0.f);
 		ApplyPass(transformTechnique->GetPassByIndex(0));
 		world_fb.DrawQuad();
 	world_fb.Deactivate();
-	world_fb.CopyToMemory(target);
-	
-	SAFE_RELEASE(ambient_texture1);
-	SAFE_RELEASE(light_texture1);
+	world_fb.CopyToMemory(target,start_texel,texels);
+
 	SAFE_RELEASE(ambient_texture);
+	SAFE_RELEASE(ambient_texture1);
 	SAFE_RELEASE(light_texture);
-	SAFE_RELEASE(density_texture_srv);
+	SAFE_RELEASE(light_texture1);
 	}
 	catch(...)
 	{

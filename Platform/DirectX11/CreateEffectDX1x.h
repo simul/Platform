@@ -58,6 +58,7 @@ namespace simul
 							ID3D1xDevice			*m_pd3dDevice
 							,ID3D1xDeviceContext	*m_pImmediateContext
 							,ID3D1xTexture3D* &tex
+							,ID3D11ShaderResourceView* &srv
 							,int w,int l,int d
 							,DXGI_FORMAT format);
 							
@@ -66,6 +67,7 @@ namespace simul
 		void setParameter(ID3D1xEffect *effect,const char *name	,float value);
 		void setParameter(ID3D1xEffect *effect,const char *name	,int value);
 		void setParameter(ID3D1xEffect *effect,const char *name	,float *vec);
+		void setMatrix(ID3D1xEffect *effect	,const char *name	,const float *value);
 							
 		size_t ByteSizeOfFormatElement( DXGI_FORMAT format );
 							

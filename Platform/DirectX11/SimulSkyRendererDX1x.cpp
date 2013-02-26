@@ -741,6 +741,7 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 	world._41=cam_pos.x;
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
+	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	if(ReverseDepth)
 	{
 		D3DXMATRIX invertz;
@@ -774,12 +775,15 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 
 	simul::sky::float4 mie_rayleigh_ratio=skyKeyframer->GetMieRayleighRatio();
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
+	simul::sky::float4 light_dir(skyKeyframer->GetDirectionToLight(alt_km));
 	if(y_vertical)
+	{
+		std::swap(light_dir.y,light_dir.z);
 		std::swap(sun_dir.y,sun_dir.z);
-
-	lightDirection->SetFloatVector(sun_dir);
+	}
+	lightDirection->SetFloatVector(light_dir);
 	mieRayleighRatio->SetFloatVector(mie_rayleigh_ratio);
-	hazeEccentricity->SetFloat	(skyKeyframer->GetMieEccentricity());
+	hazeEccentricity->SetFloat(skyKeyframer->GetMieEccentricity());
 	
 	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
 								skyKeyframer->GetAltitudeKM()

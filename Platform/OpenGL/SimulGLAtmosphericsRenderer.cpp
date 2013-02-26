@@ -219,7 +219,7 @@ ERROR_CHECK
 		setParameter3(godrays_program	,"mieRayleighRatio",ratio);
 		setParameter3(godrays_program	,"lightDir"			,light_dir);
 		setParameter(godrays_program	,"hazeEccentricity"	,skyInterface->GetMieEccentricity());
-		setMatrix(godrays_program		,"invViewProj"		,ivp.RowPointer(0));
+		setMatrixTranspose(godrays_program		,"invViewProj"		,ivp.RowPointer(0));
 		setParameter3(godrays_program	,"cloudOrigin"		,cloud_origin);
 		setParameter3(godrays_program	,"cloudScale"		,cloud_scale);
 		setParameter(godrays_program	,"maxDistance"		,fade_distance_km*1000.f);

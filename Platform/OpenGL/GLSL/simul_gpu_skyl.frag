@@ -25,7 +25,7 @@ vec3 getSkylight(float alt_km)
 //	return vec3(.05,.1,.2);
 }
 
-void main(void)
+void main()
 {
 	vec4 previous_skyl	=texture(input_skyl_texture,texc.xy);
 	vec3 previous_loss	=texture(loss_texture,vec3(texc.xy,pow(distKm/maxDistanceKm,0.5))).rgb;
@@ -58,7 +58,7 @@ void main(void)
 	float mie_factor	=exp(-skyl.w*stepLengthKm*haze_factor*hazeMie.x);
 	skyl.w				=saturate((1.f-mie_factor)/(1.f-total_ext.x+0.0001f));
 	
-	//skyl.w				=(loss.w)*(1.f-previous_skyl.w)*skyl.w+previous_skyl.w;
+	//skyl.w			=(loss.w)*(1.f-previous_skyl.w)*skyl.w+previous_skyl.w;
 	skyl.rgb			*=previous_loss.rgb;
 	skyl.rgb			+=previous_skyl.rgb;
 	float lossw=1.0;

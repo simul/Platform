@@ -28,7 +28,7 @@ namespace simul
 			void RecompileShaders();
 			bool CanPerformGPULighting() const
 			{
-				return Enabled;
+				return Enabled&&m_pd3dDevice!=NULL;
 			}
 			int GetDensityGridsize(const int *grid);
 			void *FillDensityGrid(const int *grid
@@ -62,6 +62,7 @@ namespace simul
 			ID3D1xEffectTechnique*			transformTechnique;
 			int								density_gridsize;
 			ID3D11Texture3D					*density_texture;
+			ID3D11ShaderResourceView		*density_texture_srv;
 		};
 	}
 }

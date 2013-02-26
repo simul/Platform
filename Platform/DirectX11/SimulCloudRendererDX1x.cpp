@@ -689,9 +689,18 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 	if(skyInterface)
 	{
 		simul::sky::EarthShadow e=skyInterface->GetEarthShadow(base_alt_km,sun_dir);
-		sunlight1=skyInterface->GetLocalIrradiance(base_alt_km)*saturate(base_alt_km-e.illumination_altitude);
-		sunlight2=skyInterface->GetLocalIrradiance(top_alt_km)*saturate(top_alt_km-e.illumination_altitude);
-		earthshadowMultiplier->SetFloat	(saturate(base_alt_km-e.illumination_altitude));
+		if(e.enable)
+		{
+			sunlight1=skyInterface->GetLocalIrradiance(base_alt_km)*saturate(base_alt_km-e.illumination_altitude);
+			sunlight2=skyInterface->GetLocalIrradiance(top_alt_km)*saturate(top_alt_km-e.illumination_altitude);
+			earthshadowMultiplier->SetFloat(saturate(base_alt_km-e.illumination_altitude));
+		}
+		else
+		{
+			sunlight1=skyInterface->GetLocalIrradiance(base_alt_km);
+			sunlight2=skyInterface->GetLocalIrradiance(top_alt_km);
+			earthshadowMultiplier->SetFloat(1.f);
+		}
 	}
 	float cloud_interp=cloudKeyframer->GetInterpolation();
 	interp				->SetFloat			(cloud_interp);
@@ -708,7 +717,8 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 	sunlightColour2		->SetFloatVector	(sunlight2);
 	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
 	fractalScale		->SetFloatVector	(fractal_scales);
-	mieRayleighRatio	->SetFloatVector	(skyInterface->GetMieRayleighRatio());
+	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
+	mieRayleighRatio	->SetFloatVector	(mie_rayleigh_ratio);
 	cloudEccentricity	->SetFloat			(GetCloudInterface()->GetMieAsymmetry());
 	hazeEccentricity	->SetFloat			(skyInterface->GetMieEccentricity());
 	fadeInterp			->SetFloat			(fade_interp);
@@ -723,7 +733,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 	}
 	
 	
-simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
+	simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 
 	if(enable_lightning)
 	{

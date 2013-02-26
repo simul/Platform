@@ -309,6 +309,11 @@ ID3D11Texture2D* makeStagingTexture(ID3D1xDevice			*m_pd3dDevice
 
 void FramebufferDX1x::CopyToMemory(void *target)
 {
+	CopyToMemory(target,0,Width*Height);
+}
+
+void FramebufferDX1x::CopyToMemory(void *target,int start_texel,int texels)
+{
 	if(!stagingTexture)
 		stagingTexture		=makeStagingTexture(m_pd3dDevice,m_pImmediateContext,Width,Height,target_format);
 	D3D11_BOX sourceRegion;
@@ -318,18 +323,28 @@ void FramebufferDX1x::CopyToMemory(void *target)
 	sourceRegion.bottom = Height;
 	sourceRegion.front = 0;
 	sourceRegion.back = 1;
-			m_pImmediateContext->CopySubresourceRegion(stagingTexture, 0, 0, 0, 0, GetColorTexResource(), 0, &sourceRegion);
+	m_pImmediateContext->CopySubresourceRegion(stagingTexture, 0, 0, 0, 0, GetColorTexResource(), 0, &sourceRegion);
 HRESULT hr=S_OK;
 	D3D11_MAPPED_SUBRESOURCE msr;
 	V_CHECK(m_pImmediateContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &msr));
-	int required_pitch=Width*simul::dx11::ByteSizeOfFormatElement(target_format);
+	int byteSize=simul::dx11::ByteSizeOfFormatElement(target_format);
+	int required_pitch=Width*byteSize;
+	char *dst=(char*)target;
 	if(msr.RowPitch==required_pitch)
-		memcpy(target,msr.pData,Height*required_pitch);
+	{
+		const char *dat=(const char *)msr.pData;
+		dat+=start_texel*byteSize;
+		dst+=start_texel*byteSize;
+		memcpy(dst,dat,texels*byteSize);
+	}
 	else
 	{
 		char *src=(char*)msr.pData;
-		char *dst=(char*)target;
-		for(int i=0;i<Height;i++)
+		int h0=start_texel/Width;
+		int h1=h0+texels/Width;
+		src+=msr.RowPitch*h0;
+		dst+=byteSize*Width*h0;
+		for(int i=h0;i<h1;i++)
 		{
 			memcpy(dst,src,required_pitch);
 			dst+=required_pitch;

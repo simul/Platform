@@ -6,7 +6,8 @@
 #define sampler2D texture2D
 #define sampler3D texture3D
 #define texture(tex,texc) tex.Sample(samplerState,texc)
-
+#define texture_clamp(tex,texc) tex.Sample(samplerStateClamp,texc)
+#define texture_nearest(tex,texc) tex.Sample(samplerStateNearest,texc)
 uniform sampler2D input_texture;
 uniform sampler1D density_texture;
 uniform sampler3D loss_texture;
@@ -21,6 +22,21 @@ SamplerState samplerState
 	AddressV = Mirror;
 	AddressW = Clamp;
 };
+SamplerState samplerStateClamp 
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Clamp;
+	AddressV = Clamp;
+	AddressW = Clamp;
+};
+SamplerState samplerStateNearest 
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Clamp;
+	AddressV = Clamp;
+	AddressW = Clamp;
+};
+
 
 #include "simul_inscatter_fns.hlsl"
 #include "simul_gpu_sky.hlsl"
@@ -79,8 +95,8 @@ float4 PS_Loss(vertexOutput IN) : SV_TARGET
 
 float4 PS_Insc(vertexOutput IN) : SV_TARGET
 {
-	float4 previous_insc	=texture(input_texture,IN.texc.xy);
-	float3 previous_loss	=texture(loss_texture,float3(IN.texc.xy,distKm/maxDistanceKm)).rgb;// should adjust texc - we want the PREVIOUS loss!
+	float4 previous_insc	=texture_nearest(input_texture,IN.texc.xy);
+	float3 previous_loss	=texture_nearest(loss_texture,float3(IN.texc.xy,pow(distKm/maxDistanceKm,0.5))).rgb;// should adjust texc - we want the PREVIOUS loss!
 	float sin_e			=clamp(1.0-2.0*(IN.texc.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(IN.texc.x*texSize.x-texelOffset)/(texSize.x-1.0);
@@ -109,11 +125,9 @@ float4 PS_Insc(vertexOutput IN) : SV_TARGET
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
-	float4 light		=getSunlightFactor(alt_km,lightDir)*float4(sunIrradiance,1.0);
+	float4 light		=float4(sunIrradiance,1.0)*getSunlightFactor(alt_km,lightDir);
 	float4 insc			=light;
-#ifdef OVERCAST
-	//insc*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
-#endif
+	insc				*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
 	float3 extinction	=dens_factor*rayleigh+haze_factor*hazeMie;
 	float3 total_ext	=extinction+ozone*ozone_factor;
 	float3 loss			=exp(-extinction*stepLengthKm);
@@ -121,7 +135,6 @@ float4 PS_Insc(vertexOutput IN) : SV_TARGET
 	float mie_factor	=exp(-insc.w*stepLengthKm*haze_factor*hazeMie.x);
 	insc.w				=saturate((1.f-mie_factor)/(1.f-total_ext.x+0.0001f));
 	
-	//insc.w			=(loss.w)*(1.f-previous_insc.w)*insc.w+previous_insc.w;
 	insc.rgb			*=previous_loss.rgb;
 	insc.rgb			+=previous_insc.rgb;
 	float lossw=1.0;

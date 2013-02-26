@@ -12,6 +12,7 @@
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
 #include <math.h>
+#include <windows.h>
 
 int Utilities::instance_count=0;
 int Utilities::screen_width=0;
@@ -518,11 +519,20 @@ void setMatrix(GLuint program,const char *name,const float *value)
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<0)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
-	static bool tr=1;
+	static bool tr=0;
 	glUniformMatrix4fv(loc,1,tr,value);
 	ERROR_CHECK
 }
 
+void setMatrixTranspose(GLuint program,const char *name,const float *value)
+{
+	GLint loc=glGetUniformLocation(program,name);
+	if(loc<0)
+		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	static bool tr=1;
+	glUniformMatrix4fv(loc,1,tr,value);
+	ERROR_CHECK
+}
 
 void setParameter(GLint loc,int value)
 {
@@ -546,13 +556,13 @@ void setParameter3(GLint loc,const simul::sky::float4 &value)
 	glUniform3f(loc,value.x,value.y,value.z);
 	ERROR_CHECK
 }
-
+/*
 void setMatrix(GLint loc,const float *value)
 {
 	static bool tr=1;
 	glUniformMatrix4fv(loc,1,tr,value);
 	ERROR_CHECK
-}
+}*/
 #undef pi
 #include <windows.h>
 void CheckGLError(const char *filename,int line_number,int err)
