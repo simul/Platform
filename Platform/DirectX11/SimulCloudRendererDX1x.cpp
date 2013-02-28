@@ -937,7 +937,7 @@ bool SimulCloudRendererDX1x::RenderLightning()
 	simul::math::Vector3 view_dir	(view._13,view._23,view._33);
 	simul::math::Vector3 up			(view._12,view._22,view._32);
 
-	m_pImmediateContext->IASetInputLayout( m_pLightningVtxDecl );
+	m_pImmediateContext->IASetInputLayout(m_pLightningVtxDecl);
 	simul::math::Vector3 pos;
 
 	static float lm=10.f;
