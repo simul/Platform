@@ -97,6 +97,8 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 		{
 			simulWeatherRenderer->SetScreenSize(ScreenWidth,ScreenHeight);
 			simulWeatherRenderer->InvalidateDeviceObjects();
+			if(simulWeatherRenderer->GetBaseAtmosphericsRenderer())
+				simulWeatherRenderer->GetBaseAtmosphericsRenderer()->SetBufferSize(ScreenWidth,ScreenHeight);
 		}
 		if(simulHDRRenderer)
 		{
@@ -105,6 +107,8 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 		}
 		if(simulOpticsRenderer)
 			simulOpticsRenderer->InvalidateDeviceObjects();
+		if(simulTerrainRenderer)
+			simulTerrainRenderer->InvalidateDeviceObjects();
 		void *x[2]={pd3dDevice,pSwapChain};
 		if(simulHDRRenderer)
 			simulHDRRenderer->RestoreDeviceObjects(x);
@@ -112,6 +116,8 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 			simulWeatherRenderer->RestoreDeviceObjects(x);
 		if(simulOpticsRenderer)
 			simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
+		if(simulTerrainRenderer)
+			simulTerrainRenderer->RestoreDeviceObjects(x);
 		gpuCloudGenerator.RestoreDeviceObjects(pd3dDevice);
 		gpuSkyGenerator.RestoreDeviceObjects(pd3dDevice);
 		return S_OK;
@@ -157,6 +163,13 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender();
 	}
 	// Render solid things here.
+	if(simulTerrainRenderer)
+	{
+		if(simulWeatherRenderer)
+			simulTerrainRenderer->SetMaxFadeDistanceKm(simulWeatherRenderer->GetBaseSkyRenderer()->GetSkyKeyframer()->GetMaxDistanceKm());
+		simulTerrainRenderer->SetMatrices(view,proj);
+		simulTerrainRenderer->Render();	
+	}
 	if(simulWeatherRenderer)
 	{
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
@@ -218,6 +231,8 @@ void	Direct3D11Renderer::OnD3D11LostDevice()
 		simulHDRRenderer->InvalidateDeviceObjects();
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->InvalidateDeviceObjects();
+	if(simulTerrainRenderer)
+		simulTerrainRenderer->InvalidateDeviceObjects();
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
 	simul::dx11::UnsetDevice();
@@ -273,6 +288,8 @@ void Direct3D11Renderer::RecompileShaders()
 		simulWeatherRenderer->RecompileShaders();
 	if(simulOpticsRenderer.get())
 		simulOpticsRenderer->RecompileShaders();
+	if(simulTerrainRenderer.get())
+		simulTerrainRenderer->RecompileShaders();
 	if(simulHDRRenderer.get())
 		simulHDRRenderer->RecompileShaders();
 	gpuCloudGenerator.RecompileShaders();

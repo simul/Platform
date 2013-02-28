@@ -81,13 +81,8 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
 	HRESULT hr=S_OK;
 	void **u=(void**)x;
 	m_pd3dDevice=(ID3D1xDevice*)u[0];
-	
-#ifdef DX10
-	m_pImmediateContext=dev;
-#else
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-#endif
 
 	framebuffer_cubemap.SetWidthAndHeight(64,64);
 	framebuffer_cubemap.RestoreDeviceObjects(m_pd3dDevice);
@@ -318,10 +313,10 @@ void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX 
 		simulCloudRenderer->SetMatrices(view,proj);
 	if(simulPrecipitationRenderer)
 		simulPrecipitationRenderer->SetMatrices(view,proj);
-/*	if(simul2DCloudRenderer)
+	if(simul2DCloudRenderer)
 		simul2DCloudRenderer->SetMatrices(view,proj);
 	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->SetMatrices(view,proj);*/
+		simulAtmosphericsRenderer->SetMatrices(view,proj);
 }
 
 void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()

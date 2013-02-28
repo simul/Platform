@@ -191,7 +191,7 @@ bool FramebufferDX1x::CreateBuffers()
 
  	//desc.Width=Width/4;
 	//desc.Height=Height/4;
-	DXGI_FORMAT fmtDepthTex = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;//DXGI_FORMAT_UNKNOWN;
+	DXGI_FORMAT fmtDepthTex = DXGI_FORMAT_D32_FLOAT;//DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 	
 	DXGI_FORMAT possibles[]={
 		DXGI_FORMAT_D24_UNORM_S8_UINT,

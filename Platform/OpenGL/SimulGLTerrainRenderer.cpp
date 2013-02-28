@@ -144,25 +144,17 @@ void SimulGLTerrainRenderer::Render()
 			int J=j;
 			if(i%2)
 				J=(h-2-j);
-			float y=(J)*PageWorldX/(float)PageSize+origin.x;
+			float y=(J)*PageWorldX/(float)PageSize+origin.y;
 			float z1=heightMapInterface->GetHeightAt(i,J);
 			float z2=heightMapInterface->GetHeightAt(i+1,J);
 			simul::math::Vector3 X1(x1,y,z1);
 			simul::math::Vector3 X2(x2,y,z2);
-			if(i%2)
-			{
-				glTexCoord3f(0,0,1.f);
-				glVertex3f(X2.x,X2.y,X2.z);
-				glTexCoord3f(0,0,1.f);
-				glVertex3f(X1.x,X1.y,X1.z);
-			}
-			else
-			{
-				glTexCoord3f(0,0,1.f);
-				glVertex3f(X1.x,X1.y,X1.z);
-				glTexCoord3f(0,0,1.f);
-				glVertex3f(X2.x,X2.y,X2.z);
-			}
+			if(i%2==1)
+				std::swap(X1,X2);
+			glTexCoord3f(0,0,1.f);
+			glVertex3f(X1.x,X1.y,X1.z);
+			glTexCoord3f(0,0,1.f);
+			glVertex3f(X2.x,X2.y,X2.z);
 		}
 	}
 	glEnd();

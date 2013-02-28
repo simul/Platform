@@ -637,7 +637,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 	}
 	else
 	// Mess with the proj matrix to extend the far clipping plane:
-		FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
+		simul::dx11::FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
 	//set up matrices
 	D3DXMATRIX wvp,world;
 	D3DXMatrixIdentity(&world);

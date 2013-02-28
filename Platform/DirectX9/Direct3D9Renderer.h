@@ -18,7 +18,7 @@ public:
 	virtual LRESULT MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing)=0;
 	virtual void    OnLostDevice()=0;
 	virtual void    OnDestroyDevice()=0;
-	virtual const TCHAR *GetDebugText() const=0;
+	virtual const char *GetDebugText() const=0;
 };
 #endif
 
@@ -102,7 +102,7 @@ protected:
 	simul::base::SmartPtr<SimulWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulTerrainRenderer> simulTerrainRenderer;
 	simul::base::SmartPtr<SimulHDRRenderer> simulHDRRenderer;
-	const TCHAR *GetDebugText() const;
+	const char *GetDebugText() const;
 	int width,height;
 	float time_mult;
 	simul::dx9::GpuCloudGenerator gpuCloudGenerator;

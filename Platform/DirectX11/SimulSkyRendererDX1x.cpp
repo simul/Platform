@@ -554,7 +554,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 	float zNear=-proj._43/proj._33;
 	static float ff=0.0001f;
 	float zFar=(1.f+ff)/tan(sun_angular_size);
-	FixProjectionMatrix(proj,zFar*ff,zFar,IsYVertical());
+	simul::dx11::FixProjectionMatrix(proj,zFar*ff,zFar,IsYVertical());
 /*
 	// Start the query
 	d3dQuery->Begin();
@@ -752,7 +752,7 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 	}
 	else
 // Fix projection
-		FixProjectionMatrix(proj,1000.f,IsYVertical());
+		simul::dx11::FixProjectionMatrix(proj,1000.f,IsYVertical());
 
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);

@@ -292,7 +292,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/boost&quot;;&quot;$(DXSDK_DIR)/include&quot;"
-				PreprocessorDefinitions="WIN32;_LIB;VISUAL_CPP;UNIT_TEST;NDEBUG;INTEL_COMPATIBLE;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX9_DLL"
+				PreprocessorDefinitions="WIN32;_LIB;VISUAL_CPP;UNIT_TEST;NDEBUG;INTEL_COMPATIBLE;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="false"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"

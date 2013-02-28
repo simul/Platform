@@ -136,6 +136,35 @@ namespace simul
 			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 			D3DXMatrixTranspose(wvp,&tmp2);
 		}
+		void FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical)
+		{
+			float zNear;
+			if(y_vertical)
+			{
+				zNear=-proj._43/proj._33;
+				proj._33=zFar/(zFar-zNear);
+			}
+			else
+			{
+				zNear=proj._43/proj._33;
+				proj._33=-zFar/(zFar-zNear);
+			}
+			proj._43=-zNear*zFar/(zFar-zNear);
+		}
+
+		void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical)
+		{
+			if(y_vertical)
+			{
+				proj._33=zFar/(zFar-zNear);
+			}
+			else
+			{
+				proj._33=-zFar/(zFar-zNear);
+			}
+			proj._43=-zNear*zFar/(zFar-zNear);
+		}
+
 	}
 }
 int UtilityRenderer::instance_count=0;
@@ -742,35 +771,6 @@ HRESULT ApplyPass(ID3D1xEffectPass *pass)
 #else
 	return pass->Apply(0,m_pImmediateContext);
 #endif
-}
-
-void FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical)
-{
-	float zNear;
-	if(y_vertical)
-	{
-		zNear=-proj._43/proj._33;
-		proj._33=zFar/(zFar-zNear);
-	}
-	else
-	{
-		zNear=proj._43/proj._33;
-		proj._33=-zFar/(zFar-zNear);
-	}
-	proj._43=-zNear*zFar/(zFar-zNear);
-}
-
-void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical)
-{
-	if(y_vertical)
-	{
-		proj._33=zFar/(zFar-zNear);
-	}
-	else
-	{
-		proj._33=-zFar/(zFar-zNear);
-	}
-	proj._43=-zNear*zFar/(zFar-zNear);
 }
 
 
