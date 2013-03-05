@@ -323,8 +323,8 @@ ID3D1xTexture1D* simul::dx11::make1DTexture(
 	D3D11_SUBRESOURCE_DATA init=
 	{
 		src,
-		w*ByteSizeOfFormatElement(format),
-		w*ByteSizeOfFormatElement(format)
+		(UINT)(w*ByteSizeOfFormatElement(format)),
+		(UINT)(w*ByteSizeOfFormatElement(format))
 	};
 
 	m_pd3dDevice->CreateTexture1D(&textureDesc,&init,&tex);
@@ -354,8 +354,8 @@ ID3D11Texture2D* simul::dx11::make2DTexture(
 	D3D11_SUBRESOURCE_DATA init=
 	{
 		src,
-		w*ByteSizeOfFormatElement(format),
-		w*h*ByteSizeOfFormatElement(format)
+		(UINT)w*ByteSizeOfFormatElement(format),
+		(UINT)w*h*ByteSizeOfFormatElement(format)
 	};
 	m_pd3dDevice->CreateTexture2D(&textureDesc,&init,&tex);
 	return tex;
@@ -1017,7 +1017,7 @@ void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
 
 
 
-size_t simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
+int simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
 {
     switch( format )
     {

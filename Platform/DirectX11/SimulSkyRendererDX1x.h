@@ -54,7 +54,7 @@ public:
 	bool Destroy();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	bool Render(bool blend);
-	bool RenderPointStars(){return false;}
+	bool RenderPointStars();
 	void RenderSun(float exposure_hint);
 	//! Draw the fade textures to screen
 	bool RenderFades(int w,int h);
@@ -97,10 +97,15 @@ protected:
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate();
 	void EnsureTextureCycle();
+	
+	void BuildStarsBuffer();
+	
 	ID3D1xDevice*						m_pd3dDevice;
 	ID3D1xDeviceContext *				m_pImmediateContext;
 	ID3D1xBuffer*						m_pVertexBuffer;
 	ID3D1xInputLayout*					m_pVtxDecl;
+	ID3D1xInputLayout*					m_pStarsVtxDecl;
+	ID3D1xBuffer*						m_pStarsVertexBuffer;
 	ID3D1xEffect*						m_pSkyEffect;
 	ID3D1xQuery*						d3dQuery;
 
@@ -113,6 +118,7 @@ protected:
 	ID3D1xEffectTechnique*				m_hTechniqueQuery;
 	ID3D1xEffectTechnique*				m_hTechniqueFlare;
 	ID3D1xEffectTechnique*				m_hTechniquePlanet;
+	ID3D1xEffectTechnique*				m_hTechniquePointStars;
 	ID3D1xEffectVectorVariable*			lightDirection;
 	ID3D1xEffectVectorVariable*			mieRayleighRatio;
 	ID3D1xEffectScalarVariable*			hazeEccentricity;

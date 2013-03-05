@@ -284,7 +284,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 			simul::sky::float4 dir(0,0,1.f,0),light(0,0,0,0);
 			if(simulWeatherRenderer->GetSkyRenderer())
 			{
-				dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
+				dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToSun();
 				light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
 				simulOpticsRenderer->SetMatrices(view,proj);
 				float exposure=1.f;

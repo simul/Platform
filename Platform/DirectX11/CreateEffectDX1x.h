@@ -71,7 +71,7 @@ namespace simul
 		void setParameter(ID3D1xEffect *effect,const char *name	,float *vec);
 		void setMatrix(ID3D1xEffect *effect	,const char *name	,const float *value);
 							
-		size_t ByteSizeOfFormatElement( DXGI_FORMAT format );
+		int ByteSizeOfFormatElement( DXGI_FORMAT format );
 							
 		class UtilityRenderer
 		{

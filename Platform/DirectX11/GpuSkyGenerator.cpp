@@ -91,7 +91,7 @@ HRESULT hr=S_OK;
 	float maxOutputAltKm=altitudes_km[altitudes_km.size()-1];
 	for(int i=0;i<2;i++)
 	{
-		fb[i].SetWidthAndHeight(altitudes_km.size(),numElevations);
+		fb[i].SetWidthAndHeight((int)altitudes_km.size(),numElevations);
 	}
 	FramebufferDX1x *F[2];
 	F[0]=&fb[0];
@@ -180,7 +180,7 @@ HRESULT hr=S_OK;
 	}
 	
 	
-	ID3D11Texture3D *loss_tex1=make3DTexture(m_pd3dDevice,m_pImmediateContext,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)loss);
+	ID3D11Texture3D *loss_tex1=make3DTexture(m_pd3dDevice,m_pImmediateContext,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)loss);
 	ID3D11ShaderResourceView* loss_tex;
 	m_pd3dDevice->CreateShaderResourceView(loss_tex1,NULL,&loss_tex);
 	m_pImmediateContext->GenerateMips(loss_tex);
@@ -221,7 +221,7 @@ HRESULT hr=S_OK;
 		prevDist_km=dist_km;
 	}
 	
-	ID3D11Texture3D *insc_tex1=make3DTexture(m_pd3dDevice,m_pImmediateContext,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)insc);
+	ID3D11Texture3D *insc_tex1=make3DTexture(m_pd3dDevice,m_pImmediateContext,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)insc);
 	ID3D11ShaderResourceView* insc_tex;
 	m_pd3dDevice->CreateShaderResourceView(insc_tex1,NULL,&insc_tex);
 	m_pImmediateContext->GenerateMips(insc_tex);

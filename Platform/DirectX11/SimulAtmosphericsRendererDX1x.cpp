@@ -69,6 +69,7 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	depthTexture(NULL),
 	lossTexture1(NULL),
 	inscatterTexture1(NULL),
+	skylightTexture(NULL),
 	skyLossTexture_SRV(NULL),
 	skyInscatterTexture_SRV(NULL),
 	skylightTexture_SRV(NULL),
@@ -131,6 +132,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	depthTexture		=effect->GetVariableByName("depthTexture")->AsShaderResource();
 	lossTexture1		=effect->GetVariableByName("lossTexture1")->AsShaderResource();
 	inscatterTexture1	=effect->GetVariableByName("inscatterTexture1")->AsShaderResource();
+	skylightTexture		=effect->GetVariableByName("skylightTexture")->AsShaderResource();
 	
 	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
 	/*D3D11_BUFFER_DESC bufferDesc;
@@ -223,7 +225,7 @@ void SimulAtmosphericsRendererDX1x::FinishRender()
 	lossTexture1->SetResource(skyLossTexture_SRV);
 	//skylightTexture_SRV=(ID3D1xTexture2D*)s;
 	inscatterTexture1->SetResource(skyInscatterTexture_SRV);
-
+skylightTexture->SetResource(skylightTexture_SRV);
 	simul::math::Matrix4x4 vpt;
 	simul::math::Matrix4x4 viewproj;
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
@@ -260,5 +262,6 @@ void SimulAtmosphericsRendererDX1x::FinishRender()
 	imageTexture->SetResource(NULL);
 	lossTexture1->SetResource(NULL);
 	inscatterTexture1->SetResource(NULL);
+	skylightTexture->SetResource(NULL);
 	PIXEndNamedEvent();
 }

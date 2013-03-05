@@ -94,6 +94,7 @@ protected:
 	ID3D1xEffectShaderResourceVariable*			depthTexture;
 	ID3D1xEffectShaderResourceVariable*			lossTexture1;
 	ID3D1xEffectShaderResourceVariable*			inscatterTexture1;
+	ID3D1xEffectShaderResourceVariable*			skylightTexture;
 
 	ID3D1xShaderResourceView*					skyLossTexture_SRV;
 	ID3D1xShaderResourceView*					skyInscatterTexture_SRV;

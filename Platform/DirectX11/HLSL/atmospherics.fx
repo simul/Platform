@@ -5,6 +5,7 @@ Texture2D depthTexture;
 Texture2D imageTexture;
 Texture2D lossTexture1;
 Texture2D inscatterTexture1;
+Texture2D skylightTexture;
 
 SamplerState samplerState 
 {
@@ -80,6 +81,7 @@ float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 	float4 inscatter_factor=inscatterTexture1.Sample(samplerState,texc2);
 	float cos0=dot(view,lightDir);
 	colour+=InscatterFunction(inscatter_factor,cos0);
+	colour+=skylightTexture.Sample(samplerState,texc2);
 
     return float4(colour,1.f);
 }
