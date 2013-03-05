@@ -251,8 +251,8 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 void SimulCloudRendererDX1x::CreateMeshBuffers()
 {
 	helper->GenerateSphereVertices();
-	int num_vertices=helper->GetVertices().size();	 
-	int num_indices=helper->GetQuadStripIndices().size();
+	int num_vertices=(int)helper->GetVertices().size();	 
+	int num_indices=(int)helper->GetQuadStripIndices().size();
 	// Create the main vertex buffer:
 	D3D11_BUFFER_DESC vertexBufferDesc=
 	{
@@ -637,7 +637,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 	}
 	else
 	// Mess with the proj matrix to extend the far clipping plane:
-		FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
+		simul::dx11::FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
 	//set up matrices
 	D3DXMATRIX wvp,world;
 	D3DXMatrixIdentity(&world);
@@ -823,7 +823,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 		static int cc=1;
 		if((num_primitives-cc)>0)
 		//	m_pImmediateContext->DrawIndexed(num_primitives-cc,first_primitive,0);
-			m_pImmediateContext->DrawIndexed(helper->GetQuadStripIndices().size(),0,0);
+			m_pImmediateContext->DrawIndexed((int)helper->GetQuadStripIndices().size(),0,0);
 	}
 	PIXEndNamedEvent();
 	skyLossTexture->SetResource(NULL);

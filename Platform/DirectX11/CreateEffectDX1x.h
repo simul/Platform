@@ -62,6 +62,8 @@ namespace simul
 							,int w,int l,int d
 							,DXGI_FORMAT format);
 							
+		void SIMUL_DIRECTX11_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zFar,bool y_vertical);
+		void SIMUL_DIRECTX11_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical);
 	
 		void setParameter(ID3D1xEffect *effect,const char *name	,ID3D11ShaderResourceView * value);
 		void setParameter(ID3D1xEffect *effect,const char *name	,float value);
@@ -69,7 +71,7 @@ namespace simul
 		void setParameter(ID3D1xEffect *effect,const char *name	,float *vec);
 		void setMatrix(ID3D1xEffect *effect	,const char *name	,const float *value);
 							
-		size_t ByteSizeOfFormatElement( DXGI_FORMAT format );
+		int ByteSizeOfFormatElement( DXGI_FORMAT format );
 							
 		class UtilityRenderer
 		{
@@ -112,8 +114,6 @@ extern SIMUL_DIRECTX11_EXPORT HRESULT MapBuffer(ID3D1xBuffer *vertexBuffer,D3D11
 #endif
 extern SIMUL_DIRECTX11_EXPORT void UnmapBuffer(ID3D1xBuffer *vertexBuffer);
 extern SIMUL_DIRECTX11_EXPORT HRESULT ApplyPass(ID3D1xEffectPass *pass);
-extern void SIMUL_DIRECTX11_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zFar,bool y_vertical);
-extern void SIMUL_DIRECTX11_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical);
 
 extern void SIMUL_DIRECTX11_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos);
 extern void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dir,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);

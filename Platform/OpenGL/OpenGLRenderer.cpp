@@ -116,7 +116,7 @@ ERROR_CHECK
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light;
-			dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToLight();
+			dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToSun();
 			light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
 			float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);

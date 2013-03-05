@@ -98,6 +98,7 @@ float4 PS_Transform(vertexOutput IN) : SV_TARGET
 	vec3 densityspace_texcoord	=assemble3dTexcoord(IN.texc.xy);
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord,1.0)).xyz;
+	lightspace_texcoord.z		-=zPixel;
 	vec2 light_lookup			=saturate(texture3D2(light_texture,lightspace_texcoord).xy);
 	vec2 amb_texel				=texture3D2(ambient_texture,ambient_texcoord).xy;
 	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));

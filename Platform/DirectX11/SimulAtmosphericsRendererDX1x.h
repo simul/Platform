@@ -51,7 +51,7 @@ public:
 	HRESULT RestoreDeviceObjects(ID3D1xDevice* pd3dDevice);
 	//! Call this when the device has been lost.
 	HRESULT InvalidateDeviceObjects();
-	void SetMatrices(const D3DXMATRIX &w,const D3DXMATRIX &v,const D3DXMATRIX &p);
+	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	void SetInputTextures(ID3D1xTexture2D* image,ID3D1xTexture2D* depth)
 	{
 		input_texture=image;
@@ -79,7 +79,7 @@ protected:
 	ID3D1xDevice*								m_pd3dDevice;
 	ID3D1xDeviceContext*						m_pImmediateContext;
 	ID3D1xInputLayout*							vertexDecl;
-	D3DXMATRIX									world,view,proj;
+	D3DXMATRIX									view,proj;
 
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	ID3D1xEffect*								effect;
@@ -94,6 +94,7 @@ protected:
 	ID3D1xEffectShaderResourceVariable*			depthTexture;
 	ID3D1xEffectShaderResourceVariable*			lossTexture1;
 	ID3D1xEffectShaderResourceVariable*			inscatterTexture1;
+	ID3D1xEffectShaderResourceVariable*			skylightTexture;
 
 	ID3D1xShaderResourceView*					skyLossTexture_SRV;
 	ID3D1xShaderResourceView*					skyInscatterTexture_SRV;

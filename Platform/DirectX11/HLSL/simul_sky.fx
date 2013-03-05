@@ -48,6 +48,7 @@ float skyInterp;
 float altitudeTexCoord;
 #define pi (3.1415926536f)
 float4 colour;
+float starBrightness;
 //------------------------------------
 // Structures 
 //------------------------------------
@@ -302,6 +303,20 @@ float4 PS_Flare( svertexOutput IN): SV_TARGET
 	return float4(output,1.f);
 }
 
+svertexOutput VS_Stars(svertexInput IN) 
+{
+    svertexOutput OUT;
+    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.tex=IN.tex;
+    return OUT;
+}
+
+float4 PS_Stars( svertexOutput IN): SV_TARGET
+{
+	float3 colour=float3(1.0,1.0,1.0)*clamp(starBrightness*IN.tex.x,0.0,1.0);
+	return float4(colour,1.0);
+}
+
 float approx_oren_nayar(float roughness,float3 view,float3 normal,float3 lightDir)
 {
 	float roughness2 = roughness * roughness;
@@ -449,6 +464,20 @@ technique11 simul_fade_3d_to_2d
 		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
     }
 }
+
+technique11 simul_stars
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Stars()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Stars()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+    }
+}
+
 
 technique11 simul_sun
 {

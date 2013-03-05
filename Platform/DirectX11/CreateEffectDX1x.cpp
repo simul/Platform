@@ -136,6 +136,35 @@ namespace simul
 			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 			D3DXMatrixTranspose(wvp,&tmp2);
 		}
+		void FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical)
+		{
+			float zNear;
+			if(y_vertical)
+			{
+				zNear=-proj._43/proj._33;
+				proj._33=zFar/(zFar-zNear);
+			}
+			else
+			{
+				zNear=proj._43/proj._33;
+				proj._33=-zFar/(zFar-zNear);
+			}
+			proj._43=-zNear*zFar/(zFar-zNear);
+		}
+
+		void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical)
+		{
+			if(y_vertical)
+			{
+				proj._33=zFar/(zFar-zNear);
+			}
+			else
+			{
+				proj._33=-zFar/(zFar-zNear);
+			}
+			proj._43=-zNear*zFar/(zFar-zNear);
+		}
+
 	}
 }
 int UtilityRenderer::instance_count=0;
@@ -294,8 +323,8 @@ ID3D1xTexture1D* simul::dx11::make1DTexture(
 	D3D11_SUBRESOURCE_DATA init=
 	{
 		src,
-		w*ByteSizeOfFormatElement(format),
-		w*ByteSizeOfFormatElement(format)
+		(UINT)(w*ByteSizeOfFormatElement(format)),
+		(UINT)(w*ByteSizeOfFormatElement(format))
 	};
 
 	m_pd3dDevice->CreateTexture1D(&textureDesc,&init,&tex);
@@ -325,8 +354,8 @@ ID3D11Texture2D* simul::dx11::make2DTexture(
 	D3D11_SUBRESOURCE_DATA init=
 	{
 		src,
-		w*ByteSizeOfFormatElement(format),
-		w*h*ByteSizeOfFormatElement(format)
+		(UINT)w*ByteSizeOfFormatElement(format),
+		(UINT)w*h*ByteSizeOfFormatElement(format)
 	};
 	m_pd3dDevice->CreateTexture2D(&textureDesc,&init,&tex);
 	return tex;
@@ -744,35 +773,6 @@ HRESULT ApplyPass(ID3D1xEffectPass *pass)
 #endif
 }
 
-void FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical)
-{
-	float zNear;
-	if(y_vertical)
-	{
-		zNear=-proj._43/proj._33;
-		proj._33=zFar/(zFar-zNear);
-	}
-	else
-	{
-		zNear=proj._43/proj._33;
-		proj._33=-zFar/(zFar-zNear);
-	}
-	proj._43=-zNear*zFar/(zFar-zNear);
-}
-
-void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical)
-{
-	if(y_vertical)
-	{
-		proj._33=zFar/(zFar-zNear);
-	}
-	else
-	{
-		proj._33=-zFar/(zFar-zNear);
-	}
-	proj._43=-zNear*zFar/(zFar-zNear);
-}
-
 
 void MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos)
 {
@@ -1017,7 +1017,7 @@ void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
 
 
 
-size_t simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
+int simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
 {
     switch( format )
     {

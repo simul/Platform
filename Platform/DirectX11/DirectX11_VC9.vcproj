@@ -66,7 +66,7 @@
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Lib/x86&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(TargetDir)$(TargetName)_MDd.pdb"
+				ProgramDatabaseFile="$(OutDir)\$(SafeParentName)_MDd.pdb"
 				SubSystem="2"
 				ImportLibrary="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)/$(SafeParentName)_MDd.lib"
 				TargetMachine="1"
@@ -145,7 +145,7 @@
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Lib/x86&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(TargetDir)$(TargetName)_MD.pdb"
+				ProgramDatabaseFile="$(OutDir)\$(SafeParentName)_MD.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -203,7 +203,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;DX11"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -270,7 +270,7 @@
 				Optimization="0"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX11_DLL;DX11"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -315,14 +315,12 @@
 			CopyLocal="false"
 			CopyLocalDependencies="false"
 			CopyLocalSatelliteAssemblies="false"
-			RelativePathToProject=".\Clouds\Clouds_VC9.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{CC71B070-12C2-45C9-894A-A9CDDC1F3FA4}"
 			CopyLocal="false"
 			CopyLocalDependencies="false"
 			CopyLocalSatelliteAssemblies="false"
-			RelativePathToProject=".\Terrain\Terrain_VC9.vcproj"
 		/>
 	</References>
 	<Files>

@@ -69,6 +69,7 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	depthTexture(NULL),
 	lossTexture1(NULL),
 	inscatterTexture1(NULL),
+	skylightTexture(NULL),
 	skyLossTexture_SRV(NULL),
 	skyInscatterTexture_SRV(NULL),
 	skylightTexture_SRV(NULL),
@@ -131,6 +132,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	depthTexture		=effect->GetVariableByName("depthTexture")->AsShaderResource();
 	lossTexture1		=effect->GetVariableByName("lossTexture1")->AsShaderResource();
 	inscatterTexture1	=effect->GetVariableByName("inscatterTexture1")->AsShaderResource();
+	skylightTexture		=effect->GetVariableByName("skylightTexture")->AsShaderResource();
 	
 	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
 	/*D3D11_BUFFER_DESC bufferDesc;
@@ -182,9 +184,7 @@ HRESULT SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
 	HRESULT hr=S_OK;
 	if(framebuffer)
 		framebuffer->InvalidateDeviceObjects();
-#ifndef DX10
 	SAFE_RELEASE(m_pImmediateContext);
-#endif
 	SAFE_RELEASE(vertexDecl);
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(constantBuffer);
@@ -196,9 +196,8 @@ HRESULT SimulAtmosphericsRendererDX1x::Destroy()
 	return InvalidateDeviceObjects();
 }
 
-void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &w,const D3DXMATRIX &v,const D3DXMATRIX &p)
+void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
-	world=w;
 	view=v;
 	proj=p;
 }
@@ -226,6 +225,22 @@ void SimulAtmosphericsRendererDX1x::FinishRender()
 	lossTexture1->SetResource(skyLossTexture_SRV);
 	//skylightTexture_SRV=(ID3D1xTexture2D*)s;
 	inscatterTexture1->SetResource(skyInscatterTexture_SRV);
+skylightTexture->SetResource(skylightTexture_SRV);
+	simul::math::Matrix4x4 vpt;
+	simul::math::Matrix4x4 viewproj;
+	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
+	view(3,0)=view(3,1)=view(3,2)=0;
+	simul::math::Matrix4x4 v((const float *)view),p((const float*)proj);
+	simul::math::Multiply4x4(viewproj,v,p);
+	viewproj.Transpose(vpt);
+	simul::math::Matrix4x4 ivp;
+	vpt.Inverse(ivp);
+	simul::dx11::setMatrix(effect,"invViewProj",ivp.RowPointer(0));
+	simul::sky::float4 light_dir	=skyInterface->GetDirectionToLight(cam_pos.z/1000.f);
+	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
+	simul::dx11::setParameter(effect,"mieRayleighRatio",ratio);
+	simul::dx11::setParameter(effect,"lightDir",light_dir);
+	simul::dx11::setParameter(effect,"hazeEccentricity",skyInterface->GetMieEccentricity());
 	{
 		// Lock the constant buffer so it can be written to.
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -247,5 +262,6 @@ void SimulAtmosphericsRendererDX1x::FinishRender()
 	imageTexture->SetResource(NULL);
 	lossTexture1->SetResource(NULL);
 	inscatterTexture1->SetResource(NULL);
+	skylightTexture->SetResource(NULL);
 	PIXEndNamedEvent();
 }

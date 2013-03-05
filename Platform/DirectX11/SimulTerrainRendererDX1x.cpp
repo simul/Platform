@@ -20,7 +20,7 @@
 		float t[2];
 		float u;
 	};
-static const int MAX_VERTICES=1000;
+static const int MAX_VERTICES=1000000;
 
 SimulTerrainRendererDX1x::SimulTerrainRendererDX1x()
 	:m_pd3dDevice(NULL)
@@ -35,6 +35,7 @@ SimulTerrainRendererDX1x::SimulTerrainRendererDX1x()
 
 SimulTerrainRendererDX1x::~SimulTerrainRendererDX1x()
 {
+	InvalidateDeviceObjects();
 }
 
 void SimulTerrainRendererDX1x::RecompileShaders()
@@ -52,17 +53,10 @@ void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *x)
 	HRESULT hr=S_OK;
 	void **u=(void**)x;
 	m_pd3dDevice=(ID3D1xDevice*)u[0];
-#ifdef DX10
-	m_pImmediateContext=dev;
-#else
+	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-#endif
 	RecompileShaders();
-
 //	ID3D1xBuffer*						m_pVertexBuffer;
-
-
-
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =
     {
         { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
@@ -75,7 +69,7 @@ void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *x)
 	hr=pass->GetDesc(&PassDesc);
 //return true;
 	SAFE_RELEASE(m_pVtxDecl);
-	hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+	hr=m_pd3dDevice->CreateInputLayout(decl,4,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
 	// Create the main vertex buffer:
 	D3D1x_BUFFER_DESC desc=
@@ -97,12 +91,10 @@ void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *x)
 
 void SimulTerrainRendererDX1x::InvalidateDeviceObjects()
 {
-	HRESULT hr=S_OK;
-#ifndef DX10
-	SAFE_RELEASE(m_pImmediateContext);
-#endif
-	SAFE_RELEASE(m_pTerrainEffect);
 	SAFE_RELEASE(m_pVertexBuffer);
+	SAFE_RELEASE(m_pImmediateContext);
+	SAFE_RELEASE(m_pTerrainEffect);
+	SAFE_RELEASE(m_pVtxDecl);
 }
 
 void SimulTerrainRendererDX1x::Render()
@@ -111,6 +103,10 @@ void SimulTerrainRendererDX1x::Render()
 	D3DXMatrixIdentity(&world);
 	D3DXMATRIX wvp;
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	worldViewProj->SetMatrix(&wvp._11);
+	simul::dx11::setParameter(m_pTerrainEffect,"maxFadeDistanceMetres",MaxFadeDistanceKm*1000.f);
+	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
+	simul::dx11::setParameter(m_pTerrainEffect,"eyePosition",cam_pos);
 	
 	TerrainVertex_t *vertices;
 	D3D11_MAPPED_SUBRESOURCE mapped_vertices;
@@ -118,40 +114,49 @@ void SimulTerrainRendererDX1x::Render()
 	vertices=(TerrainVertex_t*)mapped_vertices.pData;
 	
 	int h=heightMapInterface->GetPageSize();
+	simul::math::Vector3 origin=heightMapInterface->GetOrigin();
+	float PageWorldX=heightMapInterface->GetPageWorldX();
+	float PageWorldY=heightMapInterface->GetPageWorldY();
+	float PageSize=(float)heightMapInterface->GetPageSize();
 	
 	int v=0;
 	for(int i=0;i<h-1;i++)
 	{
-		float x1=(i-h/2)*1000.f;
-		float x2=(i-h/2+1)*1000.f;
+		float x1=(i  )*PageWorldX/(float)PageSize+origin.x;
+		float x2=(i+1)*PageWorldX/(float)PageSize+origin.x;
 		for(int j=0;j<h-1;j++)
 		{
 			int J=j;
 			if(i%2)
 				J=(h-2-j);
-			float y=(J-h/2)*1000.f;
+			float y=(J)*PageWorldX/(float)PageSize+origin.y;
 			float z1=heightMapInterface->GetHeightAt(i,J);
 			float z2=heightMapInterface->GetHeightAt(i+1,J);
 			simul::math::Vector3 X1(x1,y,z1);
 			simul::math::Vector3 X2(x2,y,z2);
-			if(v>=1000)
+			if(v>=MAX_VERTICES)
 				break;
-			TerrainVertex_t &vertex=vertices[v];
 			if(i%2==1)
 				std::swap(X1,X2);
-			vertex.pos[0]=X1.x;
-			vertex.pos[1]=X1.y;
-			vertex.pos[2]=X1.z;
-			vertex.n[0]=0.f;
-			vertex.n[1]=0.f;
-			vertex.n[2]=1.f;
+			{
+				TerrainVertex_t &vertex=vertices[v];
+				vertex.pos[0]=X1.x;
+				vertex.pos[1]=X1.y;
+				vertex.pos[2]=X1.z;
+				vertex.n[0]=0.f;
+				vertex.n[1]=0.f;
+				vertex.n[2]=1.f;
+			}
 			v++;
-			vertex.pos[0]=X2.x;
-			vertex.pos[1]=X2.y;
-			vertex.pos[2]=X2.z;
-			vertex.n[0]=0.f;
-			vertex.n[1]=0.f;
-			vertex.n[2]=1.f;
+			{
+				TerrainVertex_t &vertex=vertices[v];
+				vertex.pos[0]=X2.x;
+				vertex.pos[1]=X2.y;
+				vertex.pos[2]=X2.z;
+				vertex.n[0]=0.f;
+				vertex.n[1]=0.f;
+				vertex.n[2]=1.f;
+			}
 			v++;
 		}
 	}

@@ -8,11 +8,11 @@
 #include <GL/gl.h>
 #include <iostream>
 #include "Simul/Base/Timer.h"
-#include "Simul/Math/Pi.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
 #include <math.h>
 #include <windows.h>
+#include "Simul/Math/Pi.h"
 
 int Utilities::instance_count=0;
 int Utilities::screen_width=0;

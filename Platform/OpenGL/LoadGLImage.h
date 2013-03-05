@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LOADGLIMAGE_H
+#define LOADGLIMAGE_H
 
 #include "Simul/Platform/OpenGL/Export.h"
 
@@ -16,3 +17,4 @@ namespace simul
 extern SIMUL_OPENGL_EXPORT GLuint LoadGLImage(const char *filename,unsigned wrap=GL_CLAMP_TO_EDGE);
 extern SIMUL_OPENGL_EXPORT void SaveGLImage(const char *filename,GLuint tex);
 extern SIMUL_OPENGL_EXPORT unsigned char *LoadGLBitmap(const char *filename,unsigned &bpp,unsigned &width,unsigned &height);
+#endif
