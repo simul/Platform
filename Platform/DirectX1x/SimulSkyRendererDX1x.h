@@ -47,7 +47,11 @@ public:
 	//standard d3d object interface functions
 	void RecompileShaders();
 	//! Call this when the D3D device has been created or reset.
+<<<<<<< HEAD
 	void RestoreDeviceObjects(void* pd3dDevice);
+=======
+	void RestoreDeviceObjects(ID3D1xDevice* pd3dDevice);
+>>>>>>> master
 	//! Call this when the D3D device has been shut down.
 	void InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
@@ -58,6 +62,7 @@ public:
 	void RenderSun(float exposure_hint);
 	//! Draw the fade textures to screen
 	bool RenderFades(int w,int h);
+	void RenderCelestialDisplay(int screen_width,int screen_height){}
 	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
@@ -155,7 +160,15 @@ protected:
 	void MapFade(int s);
 	void UnmapFade();
 	D3DXMATRIX				world,view,proj;
+<<<<<<< HEAD
 	void DrawCube();
+=======
+	bool UpdateSkyTexture(float proportion);
+	void CreateSkyTextures();
+	bool RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
+	bool RenderSun();
+void DrawCube();
+>>>>>>> master
 	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };

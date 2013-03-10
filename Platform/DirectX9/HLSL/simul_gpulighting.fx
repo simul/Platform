@@ -111,6 +111,7 @@ v2f GPULightVS(a2v IN)
     return OUT;
 }
 
+<<<<<<< HEAD
 float3 assemble3dTexcoord(float2 texcoord2)
 {
 	float2 texcoord	=texcoord2.xy;
@@ -121,6 +122,8 @@ float3 assemble3dTexcoord(float2 texcoord2)
 	return texcoord3;
 }
 
+=======
+>>>>>>> master
 float NoiseFunction(float3 pos)
 {
 	float dens=0;
@@ -191,7 +194,11 @@ float4 GPULightPS(v2f IN) : COLOR
 	float3 lightspace_texcoord=float3(texcoord.xy,zPosition);
 	float3 densityspace_texcoord=mul(transformMatrix,float4(lightspace_texcoord,1.0)).xyz;
 //densityspace_texcoord.z+=zPixel/2.f;
+<<<<<<< HEAD
 	float density=tex3D(cloud_density_texture,densityspace_texcoord).x;
+=======
+	float density=GetDensity(densityspace_texcoord);
+>>>>>>> master
 	float direct_light=previous_light.x*exp(-extinctions.x*density);
 	float indirect_light=previous_light.y*exp(-extinctions.y*density);
 	indirect_light=saturate(indirect_light);
@@ -201,14 +208,29 @@ float4 GPULightPS(v2f IN) : COLOR
 
 float4 GPUTransformPS(v2f IN): COLOR
 {
+<<<<<<< HEAD
 	float3 densityspace_texcoord=assemble3dTexcoord(IN.texcoord.xy);
 	float3 ambient_texcoord=float3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
+=======
+	float2 texcoord=IN.texcoord.xy;
+	texcoord+=texCoordOffset;
+	texcoord.y*=zSize;
+	float zPos=(floor(texcoord.y))/(float)zSize+0.5*zPixel;
+	texcoord.y=frac(texcoord.y);
+	float3 densityspace_texcoord=float3(texcoord.xy,zPos);
+	float3 ambient_texcoord=float3(texcoord.xy,1.0-zPixel/2.0-zPos);
+>>>>>>> master
 
 	float3 lightspace_texcoord=mul(transformMatrix,float4(densityspace_texcoord,1.0)).xyz;
 	float2 light_lookup=tex3D(direct_light_texture,lightspace_texcoord).xy;
 	float2 amb_texel=tex3D(ambient_light_texture,ambient_texcoord).xy;
 	float ambient_lookup=0.5*(amb_texel.x+amb_texel.y);
+<<<<<<< HEAD
 	float density=tex3D(cloud_density_texture,densityspace_texcoord).x;
+=======
+	float density=GetDensity(densityspace_texcoord);
+	//float density=tex3D(cloud_density,densityspace_texcoord).x;
+>>>>>>> master
 	float4 result=float4(density,light_lookup.xy,ambient_lookup);
 	return result;
 }

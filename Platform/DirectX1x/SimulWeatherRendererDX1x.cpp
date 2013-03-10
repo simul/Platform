@@ -100,6 +100,10 @@ void SimulWeatherRendererDX1x::SetScreenSize(int w,int h)
 }
 
 void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
+<<<<<<< HEAD
+=======
+//ID3D1xDevice* dev,IDXGISwapChain *swapChain)
+>>>>>>> master
 {
 	HRESULT hr=S_OK;
 	void **u=(void**)x;
@@ -130,8 +134,12 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice);
+<<<<<<< HEAD
 		if(simulSkyRenderer)
 			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
+=======
+		simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
+>>>>>>> master
 	}
 /*	if(simul2DCloudRenderer)
 	{
@@ -156,10 +164,14 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(m_pd3dDevice);
 }
 
+<<<<<<< HEAD
 void SimulWeatherRendererDX1x::RecompileShaders()
 {
 	BaseWeatherRenderer::RecompileShaders();
 	framebuffer.RecompileShaders();
+=======
+	MakeCubeMatrices(view_matrices);
+>>>>>>> master
 }
 
 void SimulWeatherRendererDX1x::InvalidateDeviceObjects()

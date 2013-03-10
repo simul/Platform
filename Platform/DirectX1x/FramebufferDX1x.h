@@ -24,9 +24,13 @@ public:
 	//standard d3d object interface functions
 
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
+<<<<<<< HEAD
 	void RestoreDeviceObjects(void* pd3dDevice);
 	//! Call to recompile the shaders - useful for debugging.
 	void RecompileShaders();
+=======
+	void RestoreDeviceObjects(ID3D1xDevice* pd3dDevice);
+>>>>>>> master
 	//! Call this when the device has been lost.
 	void InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.

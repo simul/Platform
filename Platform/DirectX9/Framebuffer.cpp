@@ -38,7 +38,17 @@ void Framebuffer::SetWidthAndHeight(int w,int h)
 	Height=h;
 	MakeTexture();
 }
+<<<<<<< HEAD
 void Framebuffer::MakeTexture()
+=======
+
+void Framebuffer::SetFormat(D3DFORMAT f)
+{
+	hdr_format=f;
+}
+
+void Framebuffer::RestoreDeviceObjects(void *dev)
+>>>>>>> master
 {
 	if(!m_pd3dDevice)
 		return;
@@ -46,7 +56,13 @@ void Framebuffer::MakeTexture()
 	SAFE_RELEASE(m_pHDRRenderTarget);
 	if(!Width||!Height)
 		return;
+<<<<<<< HEAD
 	HRESULT hr=m_pd3dDevice->CreateTexture(	Width,
+=======
+	HRESULT hr=-1;//CanUse16BitFloats(pd3dDevice);
+	SAFE_RELEASE(hdr_buffer_texture);
+	hr=m_pd3dDevice->CreateTexture(	Width,
+>>>>>>> master
 									Height,
 									1,
 									D3DUSAGE_RENDERTARGET,
@@ -67,10 +83,41 @@ bool Framebuffer::SetFormat(D3DFORMAT f)
 		texture_format=f;
 		MakeTexture();
 	}
+<<<<<<< HEAD
 	return ok;
 }
 
 void Framebuffer::RestoreDeviceObjects(void *dev)
+=======
+	
+	SAFE_RELEASE(buffer_depth_texture);
+	LPDIRECT3DSURFACE9	m_pOldDepthSurface;
+	hr=pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
+	if(m_pOldDepthSurface)
+		hr=m_pOldDepthSurface->GetDesc(&desc);
+	SAFE_RELEASE(m_pOldDepthSurface);
+	// Try creating a depth texture
+	if(fmtDepthTex!=D3DFMT_UNKNOWN)
+		hr=pd3dDevice->CreateTexture(	Width,
+										Height,
+										1,
+										D3DUSAGE_DEPTHSTENCIL,
+										desc.Format,
+										D3DPOOL_DEFAULT,
+										&buffer_depth_texture,
+										NULL
+									);
+	SAFE_RELEASE(m_pBufferDepthSurface);
+	if(buffer_depth_texture)
+		buffer_depth_texture->GetSurfaceLevel(0,&m_pBufferDepthSurface);
+	
+	SAFE_RELEASE(m_pBufferDepthSurface);*/
+	SAFE_RELEASE(m_pHDRRenderTarget);
+	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
+}
+
+void Framebuffer::InvalidateDeviceObjects()
+>>>>>>> master
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	MakeTexture();

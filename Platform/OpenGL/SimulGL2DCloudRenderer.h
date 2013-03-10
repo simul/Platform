@@ -46,9 +46,16 @@ public:
 	//! Set the platform-dependent atmospheric inscatter texture.
 	void SetInscatterTextures(void *i,void *s);
 	void SetWindVelocity(float x,float y);
+<<<<<<< HEAD
 
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y);
 	void FillCloudTextureBlock(int texture_index,int x,int y,int w,int l,const unsigned *uint32_array);
+=======
+	simul::clouds::CloudInterface *GetCloudInterface();
+
+	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
+	void FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array);
+>>>>>>> master
 	void FillCloudTextureSequentially(int,int,int,const unsigned int *){}
 	//CloudShadowCallback
 	void **GetCloudTextures(){return 0;}

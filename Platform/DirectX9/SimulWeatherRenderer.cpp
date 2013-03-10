@@ -187,7 +187,11 @@ void SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 	float create_buffers_time=timer.Time/1000.f;
 
 	if(simulSkyRenderer)
+<<<<<<< HEAD
 		simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice);
+=======
+		V_CHECK(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
+>>>>>>> master
 	timer.UpdateTime();
 	float sky_restore_time=timer.Time/1000.f;
 	(Restore3DCloudObjects());

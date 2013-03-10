@@ -112,6 +112,11 @@ void SimulHDRRendererDX1x::InvalidateDeviceObjects()
 #endif
 	SAFE_RELEASE(m_pTonemapEffect);
 	SAFE_RELEASE(m_pVertexBuffer);
+<<<<<<< HEAD
+=======
+
+	SAFE_RELEASE(m_pTonemapEffect);
+>>>>>>> master
 }
 
 bool SimulHDRRendererDX1x::Destroy()

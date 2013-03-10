@@ -45,7 +45,11 @@ void SimulOpticsRendererGL::RestoreDeviceObjects(void *)
 void SimulOpticsRendererGL::RecompileShaders()
 {
 	SAFE_DELETE_PROGRAM(flare_program);
+<<<<<<< HEAD
 	flare_program					=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_flare.frag");
+=======
+	flare_program					=LoadPrograms("simul_sun_planet_flare.vert","simul_flare.frag");
+>>>>>>> master
 	flareColour_param				=glGetUniformLocation(flare_program,"flareColour");
 	flareTexture_param				=glGetUniformLocation(flare_program,"flareTexture");
 	printProgramInfoLog(flare_program);

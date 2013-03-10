@@ -1,20 +1,27 @@
 #include <GL/glew.h>
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
+<<<<<<< HEAD
 #include "Simul/Sky/Float4.h"
+=======
+>>>>>>> master
 #include <windows.h>
 #include <GL/glut.h>
 #include <GL/gl.h>
 #include <iostream>
 #include "Simul/Base/Timer.h"
+<<<<<<< HEAD
 #include "Simul/Math/Pi.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
 #include <math.h>
+=======
+>>>>>>> master
 
 int Utilities::instance_count=0;
 int Utilities::screen_width=0;
 int Utilities::screen_height=0;
+<<<<<<< HEAD
 Utilities *Utilities::ut=NULL;
 
 struct UtKiller
@@ -45,6 +52,13 @@ Utilities::Utilities()
 	instance_count++;
 	if(instance_count==1)
 		RestoreDeviceObjects(NULL);
+=======
+GLuint Utilities::linedraw_program;
+
+Utilities::Utilities()
+{
+	instance_count++;
+>>>>>>> master
 }
 
 void Utilities::RestoreDeviceObjects(void *)
@@ -61,6 +75,7 @@ void Utilities::RestoreDeviceObjects(void *)
 						"	gl_FragColor=colr;"
 						"}";
 	linedraw_program=SetShaders(vert,frag);
+<<<<<<< HEAD
 	const char *simple_vert="varying vec2 texc;"
 						"void main(void)"
 						"{"
@@ -75,6 +90,8 @@ void Utilities::RestoreDeviceObjects(void *)
 						"	gl_FragColor=c;"
 						"}";
 	simple_program=SetShaders(simple_vert,simple_frag);
+=======
+>>>>>>> master
 }
 
 void Utilities::SetScreenSize(int w,int h)
@@ -86,7 +103,10 @@ void Utilities::SetScreenSize(int w,int h)
 void Utilities::InvalidateDeviceObjects()
 {
 	SAFE_DELETE_PROGRAM(linedraw_program);
+<<<<<<< HEAD
 	SAFE_DELETE_PROGRAM(simple_program);
+=======
+>>>>>>> master
 }
 
 Utilities::~Utilities()
@@ -95,6 +115,7 @@ Utilities::~Utilities()
 		Utilities::InvalidateDeviceObjects();
 }
 
+<<<<<<< HEAD
 void RenderTexture(int x,int y,int w,int h)
 {
 	ERROR_CHECK		
@@ -119,6 +140,9 @@ void RenderTexture(int x,int y,int w,int h)
 }
 
 bool IsExtensionSupported(const char *name)
+=======
+static bool IsExtensionSupported(const char *name)
+>>>>>>> master
 {
 	GLint n=0;
 	glGetIntegerv(GL_NUM_EXTENSIONS, &n);
@@ -373,7 +397,10 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
 
 void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
+<<<<<<< HEAD
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
+=======
+>>>>>>> master
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
@@ -394,13 +421,20 @@ void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,
 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,*s);
 		s++;
 	}
+<<<<<<< HEAD
 	glPopAttrib();
+=======
+>>>>>>> master
 }
 
 void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 {
+<<<<<<< HEAD
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glUseProgram(Utilities::GetSingleton().linedraw_program);
+=======
+	glUseProgram(Utilities::linedraw_program);
+>>>>>>> master
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
@@ -415,6 +449,7 @@ void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 	}
 	glEnd();
 	glUseProgram(0);
+<<<<<<< HEAD
 	glPopAttrib();
 }
 
@@ -550,4 +585,6 @@ void setMatrix(GLint loc,const float *value)
 	static bool tr=1;
 	glUniformMatrix4fv(loc,1,tr,value);
 	ERROR_CHECK
+=======
+>>>>>>> master
 }

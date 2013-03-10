@@ -140,7 +140,11 @@ void SimulOceanRendererDX1x::Update(float dt)
 	g_pOceanSimulator->updateDisplacementMap((float)app_time);
 }
 
+<<<<<<< HEAD
 void SimulOceanRendererDX1x::RecompileShaders()
+=======
+void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
+>>>>>>> master
 {
 	SAFE_RELEASE(g_pOceanSurfVS);
 	SAFE_RELEASE(g_pOceanSurfPS);

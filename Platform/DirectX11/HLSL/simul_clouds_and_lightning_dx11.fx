@@ -81,7 +81,10 @@ cbuffer cbUser : register(b2)
 	float cloudEccentricity		: packoffset(c14);
 	float alphaSharpness		: packoffset(c15);
 	float3 crossSectionOffset	: packoffset(c16);
+<<<<<<< HEAD
 	float maxFadeDistanceMetres : packoffset(c17);
+=======
+>>>>>>> master
 };
 
 struct vertexInput
@@ -355,6 +358,11 @@ BlendState NoBlend
 	BlendEnable[0] = FALSE;
 };
 
+BlendState NoBlend
+{
+	BlendEnable[0] = FALSE;
+};
+
 RasterizerState RenderNoCull
 {
 	CullMode = none;
@@ -414,6 +422,11 @@ technique11 cross_section_xz
     }
 }
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> master
 technique11 cross_section_xy
 {
     pass p0 

@@ -5,8 +5,11 @@
 #include "Simul/Platform/OpenGL/SimulOpticsRendererGL.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
+<<<<<<< HEAD
 #include "Simul/Platform/OpenGL/GpuCloudGenerator.h"
 #include "Simul/Platform/OpenGL/GpuSkyGenerator.h"
+=======
+>>>>>>> master
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Graph/Meta/Group.h"
 #ifdef _MSC_VER
@@ -66,6 +69,7 @@ protected:
 	simul::camera::Camera *cam;
 	bool celestial_display;
 	bool y_vertical;
+	Utilities ut;
 };
 
 #ifdef _MSC_VER

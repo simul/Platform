@@ -44,7 +44,10 @@ public:
 	void SetScreenSize(int w,int h);
 	//standard d3d object interface functions
 	void RestoreDeviceObjects(void*);//ID3D1xDevice* pd3dDevice,IDXGISwapChain *swapChain);
+<<<<<<< HEAD
 	void RecompileShaders();
+=======
+>>>>>>> master
 	void InvalidateDeviceObjects();
 	bool Destroy();
 	bool RenderSky(bool buffered,bool is_cubemap);

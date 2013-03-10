@@ -47,7 +47,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
 	if(simulHDRRenderer&&simulWeatherRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
-	simulTerrainRenderer=new SimulTerrainRenderer();
+	simulTerrainRenderer=NULL;//new SimulTerrainRenderer();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->EnableMoon(true);
 	SetYVertical(y_vertical);
@@ -309,7 +309,11 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender();
 	timer.UpdateTime();
+<<<<<<< HEAD
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
+=======
+	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
+>>>>>>> master
 		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);
 	simul::math::FirstOrderDecay(hdr_timing,timer.Time,1.f,fTimeStep);
 
@@ -322,7 +326,11 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		}
 		if(simulWeatherRenderer->Get2DCloudRenderer())
 		{
+<<<<<<< HEAD
 		//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
+=======
+			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
+>>>>>>> master
 		}
 	}
 	
@@ -342,7 +350,10 @@ LRESULT Direct3D9Renderer::MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 void Direct3D9Renderer::OnLostDevice()
 {
+<<<<<<< HEAD
 	gpuCloudGenerator.InvalidateDeviceObjects();
+=======
+>>>>>>> master
 	RT::InvalidateDeviceObjects();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
@@ -357,6 +368,14 @@ void Direct3D9Renderer::OnLostDevice()
 void Direct3D9Renderer::OnDestroyDevice()
 {
 	OnLostDevice();
+<<<<<<< HEAD
+=======
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->InvalidateDeviceObjects();
+	if(simulTerrainRenderer)
+		simulTerrainRenderer->InvalidateDeviceObjects();
+	RT::InvalidateDeviceObjects();
+>>>>>>> master
 }
 
 const TCHAR *Direct3D9Renderer::GetDebugText() const

@@ -48,7 +48,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	}
 	simulCloudRenderer=new SimulGLCloudRenderer(ck3d);
 	baseCloudRenderer=simulCloudRenderer.get();
-	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d);
+	base2DCloudRenderer=simul2DCloudRenderer=NULL;//new SimulGL2DCloudRenderer(ck2d);
 	
 	simulLightningRenderer=new SimulGLLightningRenderer(environment->lightning.get());
 	baseLightningRenderer=simulLightningRenderer.get();
@@ -137,7 +137,11 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 	baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 	scene_buffer->InitColor_Tex(0,internal_buffer_format,buffer_tex_format);
 	device_initialized=true;
+<<<<<<< HEAD
 	EnableCloudLayers();
+=======
+	EnableCloudLayers(layer1,layer2);
+>>>>>>> master
 	///simulSkyRenderer->RestoreDeviceObjects();
 	//simulCloudRenderer->RestoreDeviceObjects(NULL);
 	//simulLightningRenderer->RestoreDeviceObjects();

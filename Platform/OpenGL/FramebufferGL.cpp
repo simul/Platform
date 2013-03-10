@@ -47,8 +47,13 @@ ERROR_CHECK
 	tonemap_program			=glCreateProgram();
 ERROR_CHECK
 	std::string str1=std::string(shader_filename)+".vert";
+<<<<<<< HEAD
 	tonemap_vertex_shader	=LoadShader(str1.c_str());
     tonemap_fragment_shader	=LoadShader((std::string(shader_filename)+std::string(".frag")).c_str());
+=======
+	tonemap_vertex_shader	=LoadShader(tonemap_vertex_shader,str1.c_str());
+    tonemap_fragment_shader	=LoadShader(tonemap_fragment_shader,(std::string(shader_filename)+std::string(".frag")).c_str());
+>>>>>>> master
 	glAttachShader(tonemap_program, tonemap_vertex_shader);
 	glAttachShader(tonemap_program, tonemap_fragment_shader);
 	glLinkProgram(tonemap_program);

@@ -86,6 +86,7 @@ HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(		ID3D11Device* pd3dDevice,const
 
 HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,IDXGISwapChain* pSwapChain,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
+<<<<<<< HEAD
 	if(!enabled)
 		return S_OK;
 	try
@@ -123,6 +124,28 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 	{
 		return S_FALSE;
 	}
+=======
+	simul::dx11::UnsetDevice();
+	//Set a global device pointer for use by various classes.
+	simul::dx11::SetDevice(pd3dDevice);
+	ScreenWidth=pBackBufferSurfaceDesc->Width;
+	ScreenHeight=pBackBufferSurfaceDesc->Height;
+	aspect=(float)ScreenWidth/(float)ScreenHeight;
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->InvalidateDeviceObjects();
+	if(simulHDRRenderer)
+		simulHDRRenderer->InvalidateDeviceObjects();
+	if(simulOpticsRenderer)
+		simulOpticsRenderer->InvalidateDeviceObjects();
+	void *x[2]={pd3dDevice,pSwapChain};
+	if(simulHDRRenderer)
+		simulHDRRenderer->RestoreDeviceObjects(x);
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->RestoreDeviceObjects(x);
+	if(simulOpticsRenderer)
+		simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
+	return S_OK;
+>>>>>>> master
 }
 
 void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep)
@@ -198,20 +221,31 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		simulWeatherRenderer->GetSkyRenderer()->RenderFades(ScreenWidth,ScreenHeight);
 	if(simulWeatherRenderer&&ShowCloudCrossSections)
 	{
+<<<<<<< HEAD
 		if(simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
+=======
+		if(simulWeatherRenderer->IsCloudLayer1Visible())
+>>>>>>> master
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(ScreenWidth,ScreenHeight);
 		//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
 		}
+<<<<<<< HEAD
 //		if(simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
+=======
+		if(simulWeatherRenderer->IsCloudLayer2Visible())
+>>>>>>> master
 		{
 		//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(ScreenWidth,ScreenHeight);
 		}
 	}
+<<<<<<< HEAD
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(ScreenWidth,ScreenHeight);
+=======
+>>>>>>> master
 	
 }
 

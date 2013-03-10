@@ -87,6 +87,8 @@ extern void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dir,bool y_
 
 extern void RenderTexture(ID3D1xDevice *m_pd3dDevice,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech);
 
+extern void RenderTexture(ID3D1xDevice *m_pd3dDevice,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech);
+
 extern void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech);
 
 

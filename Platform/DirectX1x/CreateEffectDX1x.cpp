@@ -359,6 +359,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 			HANDLE hWriteOutPipe = NULL;
 			HANDLE hReadErrorPipe = NULL;
 			HANDLE hWriteErrorPipe = NULL;
+<<<<<<< HEAD
 			SECURITY_ATTRIBUTES saAttr; 
 // Set the bInheritHandle flag so pipe handles are inherited. 
 		 
@@ -370,6 +371,17 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 				CreatePipe( &hReadOutPipe, &hWriteOutPipe, &saAttr, 100 );
 				CreatePipe( &hReadErrorPipe, &hWriteErrorPipe, &saAttr, 100 );
 			}
+=======
+		   SECURITY_ATTRIBUTES saAttr; 
+// Set the bInheritHandle flag so pipe handles are inherited. 
+		 
+		   saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+		   saAttr.bInheritHandle = TRUE; 
+		   saAttr.lpSecurityDescriptor = NULL; 
+			CreatePipe( &hReadOutPipe, &hWriteOutPipe, &saAttr, 100 );
+			CreatePipe( &hReadErrorPipe, &hWriteErrorPipe, &saAttr, 100 );
+
+>>>>>>> master
 			//SetHandleInformation(hReadOutPipe, HANDLE_FLAG_INHERIT, 0) ;
 
 			//SetHandleInformation(hReadErrorPipe, HANDLE_FLAG_INHERIT, 0) ;
@@ -389,6 +401,11 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 				;
 			// Wait until child process exits.
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> master
 		  HANDLE WaitHandles[] = {
 			pi.hProcess, hReadOutPipe, hReadErrorPipe
 		  };
@@ -400,7 +417,11 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 		  {
 			DWORD dwBytesRead, dwBytesAvailable;
 
+<<<<<<< HEAD
 			DWORD dwWaitResult = WaitForMultipleObjects(pipe_compiler_output?3:1, WaitHandles, FALSE, 60000L);
+=======
+			DWORD dwWaitResult = WaitForMultipleObjects(3, WaitHandles, FALSE, 60000L);
+>>>>>>> master
 
 			// Read from the pipes...
 			while( PeekNamedPipe(hReadOutPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
@@ -421,7 +442,12 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 			// Process is done, or we timed out:
 			if(dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
 			break;
+<<<<<<< HEAD
 		  }
+=======
+		  }     
+
+>>>>>>> master
 
 			//WaitForSingleObject( pi.hProcess, INFINITE );
 			CloseHandle( pi.hProcess );
@@ -522,12 +548,15 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 	return hr;
 }
 
+<<<<<<< HEAD
 #define D3D10_SHADER_ENABLE_STRICTNESS              (1 << 11)
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
 #endif
 
 
+=======
+>>>>>>> master
 HRESULT Map2D(ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp)
 {
 #ifdef DX10

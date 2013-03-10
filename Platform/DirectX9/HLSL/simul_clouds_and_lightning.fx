@@ -403,10 +403,17 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
 	OUT.texCoords.z=1;
     return OUT;
 }
+<<<<<<< HEAD
 #define CROSS_SECTION_STEPS 32
 float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 {
 	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,0,crossSectionOffset.z+(1.0-IN.texCoords.y));
+=======
+#define CROSS_SECTION_STEPS 1
+float4 PS_CrossSectionXZ( vertexOutputCS IN): color
+{
+	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,0,crossSectionOffset.z+IN.texCoords.y);
+>>>>>>> master
 	int i=0;
 	float3 accum=float3(0.f,0.5f,1.f);
 	texc.y+=.5f/(float)CROSS_SECTION_STEPS;
@@ -435,7 +442,11 @@ float4 PS_CrossSectionXY( vertexOutputCS IN): color
 		float4 density=tex3D(cloud_density_1a,texc);
 		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.z);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
+<<<<<<< HEAD
 		float opacity=density.x;
+=======
+		float opacity=density.x;//+.05f;
+>>>>>>> master
 		colour*=opacity;
 		accum*=1.f-opacity;
 		accum+=colour;

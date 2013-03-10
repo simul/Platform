@@ -203,6 +203,10 @@ SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	,vertices(NULL)
 	,cpu_fade_vertices(NULL)
 	,last_time(0)
+<<<<<<< HEAD
+=======
+	,y_vertical(true)
+>>>>>>> master
 	,NumBuffers(1)
 {
 	for(int i=0;i<3;i++)
@@ -1353,6 +1357,7 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 	fb.InvalidateDeviceObjects();
 }
 
+<<<<<<< HEAD
 void SimulCloudRenderer::RenderCrossSections(int width,int height)
 {
 	static int u=3;
@@ -1364,6 +1369,16 @@ void SimulCloudRenderer::RenderCrossSections(int width,int height)
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
+=======
+void SimulCloudRenderer::RenderCrossSections(int width,int )
+{
+	static int u=3;
+	int w=(width-8)/u;
+	int h=(w)/GetCloudGridInterface()->GetGridWidth();
+	if(h<1)
+		h=1;
+	h*=GetCloudGridInterface()->GetGridHeight();
+>>>>>>> master
 	D3DXVECTOR4 cross_section_offset(
 			(GetCloudInterface()->GetWrap()?0.5f:0.f)+0.5f/(float)cloud_tex_width_x
 			,GetCloudInterface()->GetWrap()?0.5f:0.f+0.5f/(float)cloud_tex_length_y
@@ -1632,6 +1647,20 @@ void SimulCloudRenderer::SetFadeMode(FadeMode f)
 		BaseCloudRenderer::SetFadeMode(f);
 		rebuild_shaders=true;
 		RecompileShaders();
+<<<<<<< HEAD
+=======
+	}
+}
+
+void SimulCloudRenderer::SetYVertical(bool y)
+{
+	if(y_vertical!=y)
+	{
+		y_vertical=y;
+		helper->SetYVertical(y);
+		rebuild_shaders=true;
+		RecompileShaders();
+>>>>>>> master
 	}
 }
 

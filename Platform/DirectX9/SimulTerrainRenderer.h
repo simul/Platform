@@ -44,7 +44,11 @@ public:
 	SimulTerrainRenderer();
 	//standard d3d object interface functions
 	bool Create(LPDIRECT3DDEVICE9 pd3dDevice);
+<<<<<<< HEAD
 	void RecompileShaders();
+=======
+	bool RecompileShaders();
+>>>>>>> master
 	void RestoreDeviceObjects(void *pd3dDevice);
 	void InvalidateDeviceObjects();
 

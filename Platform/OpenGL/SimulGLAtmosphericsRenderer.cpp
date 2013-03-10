@@ -59,12 +59,41 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 {
 	if(!initialized)
 		return;
+<<<<<<< HEAD
 	std::string defs="";
 	distance_fade_program		=MakeProgram("simul_atmospherics",defs.c_str());
 	earthshadow_fade_program	=LoadPrograms("simul_atmospherics.vert",NULL,"simul_atmospherics_earthshadow.frag",defs.c_str());
 	cloudmix_program			=MakeProgram("simul_cloudmix");
 	godrays_program				=LoadPrograms("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defs.c_str());
 	current_program				=0;
+=======
+	framebuffer->RecompileShaders();
+	cloudmix_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
+ERROR_CHECK
+	cloudmix_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
+ERROR_CHECK
+	cloudmix_program			=glCreateProgram();
+ERROR_CHECK
+	cloudmix_vertex_shader		=LoadShader(cloudmix_vertex_shader		,"simul_cloudmix.vert");
+    cloudmix_fragment_shader	=LoadShader(cloudmix_fragment_shader	,"simul_cloudmix.frag");
+	glAttachShader(cloudmix_program,cloudmix_vertex_shader);
+	glAttachShader(cloudmix_program,cloudmix_fragment_shader);
+	glLinkProgram(cloudmix_program);
+	glUseProgram(cloudmix_program);
+	ERROR_CHECK
+	printProgramInfoLog(cloudmix_program);
+
+	image_texture_param		=glGetUniformLocation(cloudmix_program,"image_texture");
+	loss_texture_param		=glGetUniformLocation(cloudmix_program,"loss_texture");
+	insc_texture_param		=glGetUniformLocation(cloudmix_program,"insc_texture");
+	hazeEccentricity_param	=glGetUniformLocation(cloudmix_program,"hazeEccentricity");
+	lightDir_param			=glGetUniformLocation(cloudmix_program,"lightDir");
+	invViewProj_param		=glGetUniformLocation(cloudmix_program,"invViewProj");
+	mieRayleighRatio_param	=glGetUniformLocation(cloudmix_program,"mieRayleighRatio");
+
+	clouds_texture_param	=glGetUniformLocation(cloudmix_program,"clouds_texture");
+	
+>>>>>>> master
 	glUseProgram(0);
 	
 	glGenBuffers(1, &earthShadowUniformsUBO);
@@ -75,10 +104,13 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 
 void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 {
+<<<<<<< HEAD
 	SAFE_DELETE_PROGRAM(godrays_program);
 	
 	earthShadowUniforms=-1;
 	earthShadowUniformsUBO=-1;
+=======
+>>>>>>> master
 }
 
 void SimulGLAtmosphericsRenderer::UseProgram(GLuint p)

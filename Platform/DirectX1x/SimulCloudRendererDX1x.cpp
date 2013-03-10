@@ -249,6 +249,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	if(lightningIlluminationTextureResource)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 	ClearIterators();
+<<<<<<< HEAD
 	
 	// two possible blend states for clouds - with alpha written, and without.
 	D3D11_BLEND_DESC omDesc;
@@ -266,6 +267,8 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 										| D3D11_COLOR_WRITE_ENABLE_GREEN
 										| D3D11_COLOR_WRITE_ENABLE_BLUE;
 	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndDontWriteAlpha );
+=======
+>>>>>>> master
 }
 
 void SimulCloudRendererDX1x::InvalidateDeviceObjects()
@@ -814,8 +817,12 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 	ID3D1xEffectMatrixVariable*	worldViewProj=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	worldViewProj->SetMatrix(ortho);
 
+<<<<<<< HEAD
 	if(skyInterface)
 	for(int i=0;i<2;i++)
+=======
+	for(int i=0;i<3;i++)
+>>>>>>> master
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
 				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
@@ -828,8 +835,12 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 		cloudDensity1->SetResource(cloudDensityResource[i%3]);
 		RenderTexture(m_pd3dDevice,i*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
 	}
+<<<<<<< HEAD
 	if(skyInterface)
 	for(int i=0;i<2;i++)
+=======
+	for(int i=0;i<3;i++)
+>>>>>>> master
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
 				dynamic_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(

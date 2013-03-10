@@ -28,12 +28,16 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,ShowCloudCrossSections(false)
 	,celestial_display(false)
 	,y_vertical(false)
+<<<<<<< HEAD
 	,UseHdrPostprocessor(true)
 	,ShowOSD(false)
 	,ShowWater(true)
 	,ReverseDepth(false)
 {
 	simulHDRRenderer=new SimulGLHDRRenderer(width,height);
+=======
+{
+>>>>>>> master
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
 	simulTerrainRenderer=new SimulGLTerrainRenderer();
@@ -115,6 +119,7 @@ ERROR_CHECK
 				(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
 				,dir,light);
 		}
+<<<<<<< HEAD
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender();
 ERROR_CHECK
@@ -132,6 +137,17 @@ ERROR_CHECK
 				SetTopDownOrthoProjection(width,height);
 				simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
 			}
+=======
+		if(simulHDRRenderer)
+			simulHDRRenderer->FinishRender();
+		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);
+		if(simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())
+		{
+			SetTopDownOrthoProjection(width,height);
+			if(ShowCloudCrossSections)
+				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width,height);
+>>>>>>> master
 		}
 	}
 	renderUI();
@@ -175,6 +191,11 @@ void OpenGLRenderer::SetCelestialDisplay(bool val)
 {
 	celestial_display=val;
 }
+	
+void OpenGLRenderer::SetCelestialDisplay(bool val)
+{
+	celestial_display=val;
+}
 
 void OpenGLRenderer::resizeGL(int w,int h)
 {
@@ -200,7 +221,11 @@ void OpenGLRenderer::initializeGL()
         std::cerr<<"OpenGL 2.1 not supported!\n" ;
         return;
     }
+<<<<<<< HEAD
 //	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
+=======
+	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
+>>>>>>> master
 // If the GL_GREMEDY_string_marker extension is supported:
 	if(glewIsSupported("GL_GREMEDY_string_marker"))
 	{
@@ -213,12 +238,19 @@ void OpenGLRenderer::initializeGL()
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
 	}
 	CheckExtension("GL_VERSION_2_0");
+<<<<<<< HEAD
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
 	if(cam)
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	gpuSkyGenerator.RestoreDeviceObjects(NULL);
+=======
+
+	if(cam)
+		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
+	Utilities::RestoreDeviceObjects(NULL);
+>>>>>>> master
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(NULL);
 	if(simulHDRRenderer)

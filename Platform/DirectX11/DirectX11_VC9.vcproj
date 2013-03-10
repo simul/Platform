@@ -459,8 +459,29 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+<<<<<<< HEAD
 			<File
 				RelativePath=".\DirectX11.rc"
+=======
+		</Filter>
+		<Filter
+			Name="HLSL"
+			>
+			<File
+				RelativePath=".\HLSL\atmospherics.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\gamma.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_clouds_2d.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_clouds_and_lightning_dx11.fx"
+>>>>>>> master
 				>
 			</File>
 		</Filter>
@@ -468,6 +489,7 @@
 			Name="HLSL"
 			>
 			<File
+<<<<<<< HEAD
 				RelativePath=".\HLSL\atmospherics.fx"
 				>
 			</File>
@@ -528,6 +550,32 @@
 				>
 			</File>
 			<File
+=======
+				RelativePath=".\HLSL\simul_foliage.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_gpu_lighting.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_lightning.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_rain.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_rendernoise.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_sky.fx"
+				>
+			</File>
+			<File
+>>>>>>> master
 				RelativePath=".\HLSL\simul_terrain.fx"
 				>
 			</File>

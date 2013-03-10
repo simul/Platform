@@ -84,6 +84,12 @@ public:
 	bool RenderLightVolume();
 	void EnableFilter(bool f);
 	virtual void SetFadeMode(FadeMode f);
+<<<<<<< HEAD
+=======
+	void SetYVertical(bool y);
+	bool IsYVertical() const{return y_vertical;}
+
+>>>>>>> master
 protected:
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();

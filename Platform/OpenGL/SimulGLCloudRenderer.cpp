@@ -217,6 +217,16 @@ void SimulGLCloudRenderer::FillIlluminationBlock(int source_index,int x,int y,in
 						uchar8_array);
 }
 
+<<<<<<< HEAD
+=======
+void SimulGLCloudRenderer::GPUTransferDataToTexture(	unsigned char *target_texture
+									,const unsigned char *direct_grid
+									,const unsigned char *indirect_grid
+									,const unsigned char *ambient_grid)
+{
+}
+
+>>>>>>> master
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
 {
 	glGetFloatv(src,m);
@@ -568,8 +578,11 @@ ERROR_CHECK
 	cloudEccentricity_param		=glGetUniformLocation(clouds_program,"cloudEccentricity");
 	hazeEccentricity_param		=glGetUniformLocation(clouds_program,"hazeEccentricity");
 	mieRayleighRatio_param		=glGetUniformLocation(clouds_program,"mieRayleighRatio");
+<<<<<<< HEAD
 	earthshadowMultiplier		=glGetUniformLocation(clouds_program,"earthshadowMultiplier");
 	//distanceToIllumination_param=glGetUniformLocation(clouds_program,"distanceToIllumination");
+=======
+>>>>>>> master
 	maxFadeDistanceMetres_param	=glGetUniformLocation(clouds_program,"maxFadeDistanceMetres");
 
 	cloudDensity1_param		=glGetUniformLocation(clouds_program,"cloudDensity1");
@@ -578,15 +591,21 @@ ERROR_CHECK
 	illumSampler_param		=glGetUniformLocation(clouds_program,"illumSampler");
 	lossSampler_param		=glGetUniformLocation(clouds_program,"lossSampler");
 	inscatterSampler_param	=glGetUniformLocation(clouds_program,"inscatterSampler");
+<<<<<<< HEAD
 	skylightSampler_param	=glGetUniformLocation(clouds_program,"skylightSampler");
+=======
+>>>>>>> master
 
 	layerDistance_param		=glGetUniformLocation(clouds_program,"layerDistance");
 	printProgramInfoLog(clouds_program);
 ERROR_CHECK
 	cross_section_program			=MakeProgram("simul_cloud_cross_section");
+<<<<<<< HEAD
 	
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=LoadPrograms("simple.vert",NULL,"simul_cloud_shadow.frag");
+=======
+>>>>>>> master
 	glUseProgram(0);
 }
 
@@ -671,7 +690,10 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(cross_section_program);
 
 	SAFE_DELETE_PROGRAM(clouds_program);
+<<<<<<< HEAD
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
+=======
+>>>>>>> master
 
 	clouds_program				=0;
 	lightResponse_param			=0;
@@ -786,6 +808,10 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
+<<<<<<< HEAD
+=======
+	int *tex=new int[3*depth_z];
+>>>>>>> master
 
 	for(int i=0;i<3;i++)
 	{
@@ -886,6 +912,7 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 
 void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
 {
+<<<<<<< HEAD
 	static int u=4;
 	int w=(width-8)/u;
 	if(w>height/2)
@@ -895,6 +922,9 @@ void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
+=======
+	int w=(width-16)/3;
+>>>>>>> master
 	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
 	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
 	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
@@ -922,6 +952,11 @@ static float mult=1.f;
 	ERROR_CHECK
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
+<<<<<<< HEAD
+=======
+		simul::clouds::CloudGridInterface *gi=cloudKeyframer->GetCloudGridInterface();
+		int h=gi->GetGridHeight()*w/gi->GetGridWidth();
+>>>>>>> master
 		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
 		glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
 		glUniform1f(yz_param,0.f);

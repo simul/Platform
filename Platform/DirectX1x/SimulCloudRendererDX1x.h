@@ -64,7 +64,11 @@ public:
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
 	//! Call this to draw the clouds, including any illumination by lightning.
+<<<<<<< HEAD
 	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
+=======
+	bool Render(bool cubemap,bool depth_testing,bool default_fog);
+>>>>>>> master
 	void RenderCrossSections(int width,int height);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 	bool RenderLightning();
