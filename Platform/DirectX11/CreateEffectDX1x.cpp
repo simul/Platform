@@ -447,9 +447,6 @@ void simul::dx11::setMatrix(ID3D1xEffect *effect,const char *name	,const float *
 	var->SetMatrix(value);
 }
 
-
-
-
 ID3D1xShaderResourceView* simul::dx11::LoadTexture(const char *filename)
 {
 	return LoadTexture(tstring_of(filename).c_str());
