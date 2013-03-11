@@ -16,10 +16,16 @@ static simul::math::Matrix4x4 MakeVertexMatrix(const int *grid,int start_texel,i
 	simul::math::Matrix4x4 mat;
 	mat.Unit();
 	int gridsize=grid[0]*grid[1]*grid[2];
-	float y_start=(float)start_texel/(float)gridsize;
-	float y_end=(float)(start_texel+texels)/(float)gridsize;
-	mat(1,1)=y_end-y_start;
-	mat(1,3)=y_start;
+	//start_texel-=grid[0]*grid[1];
+	if(start_texel<0)
+		start_texel=0;
+	//texels+=grid[0]*grid[1];
+	if(start_texel+texels>gridsize)
+		texels=start_texel-gridsize;
+	float y_start=2.f*(float)start_texel/(float)gridsize-1.f;
+	float y_end=2.f*(float)(start_texel+texels)/(float)gridsize-1.f;
+	mat(1,1)=(y_end-y_start)/2.f;
+	mat(1,3)=(y_end+y_start)/2.f;
 	return mat;
 }
 
@@ -138,25 +144,30 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 		ApplyPass(densityTechnique->GetPassByIndex(0));
 		dens_fb.DrawQuad();
 	dens_fb.Deactivate();
-	float *density=NULL;
-	delete [] density;
-	density=new float[new_density_gridsize];
-	dens_fb.CopyToMemory(density,start_texel,texels);
+	////float *density=NULL;
+//	delete [] density;
+//	density=new float[new_density_gridsize];
+	//dens_fb.CopyToMemory(density,start_texel,texels);
 	density_gridsize=new_density_gridsize;
 std::cout<<"\tDraw "<<timer.UpdateTime()<<"ms"<<std::endl;
 	Ensure3DTextureSizeAndFormat(m_pd3dDevice,m_pImmediateContext,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
 std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
-	D3D1x_MAPPED_TEXTURE3D dens_texture_mapped;
-	Map3D(density_texture,&dens_texture_mapped);
-	simul::sky::float4 *tex_data=(simul::sky::float4 *)(dens_texture_mapped.pData);
-	memcpy(tex_data,density,new_density_gridsize*sizeof(float));
-	Unmap3D(density_texture);
-	//density_texture	=make3DTexture(m_pd3dDevice,m_pImmediateContext,density_grid[0],density_grid[1],density_grid[2]	,DXGI_FORMAT_R32G32B32A32_FLOAT,density);
-	
+	if(start_texel+texels>=density_grid[0]*density_grid[1]*density_grid[2])
+	{
+		D3D1x_MAPPED_TEXTURE3D dens_texture_mapped;
+		Map3D(density_texture,&dens_texture_mapped);
+		simul::sky::float4 *tex_data=(simul::sky::float4 *)(dens_texture_mapped.pData);
+		float *density=new float[new_density_gridsize];
+		dens_fb.CopyToMemory(density);
+		memcpy(tex_data,density,new_density_gridsize*sizeof(float));
+		Unmap3D(density_texture);
+		density_texture	=make3DTexture(m_pd3dDevice,m_pImmediateContext,density_grid[0],density_grid[1],density_grid[2]	,DXGI_FORMAT_R32G32B32A32_FLOAT,density);
+		delete [] density;
+	}
 	SAFE_RELEASE(volume_noise_tex);
 	SAFE_RELEASE(volume_noise_tex_srv);
 std::cout<<"\tfill 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
-	return density;
+
 	}
 	catch(...)
 	{
@@ -206,8 +217,10 @@ try{
 		F[0]->CopyToMemory(target);
 	}
 	int i0=start_texel/(light_grid[0]*light_grid[1]);
-	int i1=(start_texel+texels)/(light_grid[0]*light_grid[1])-1;
+	int i1=(start_texel+texels)/(light_grid[0]*light_grid[1]);
 	target+=i0*light_grid[0]*light_grid[1]*4;
+	if(i0%2)
+		std::swap(F[0],F[1]);
 	for(int i=i0;i<i1;i++)//light_grid[2]-1;i++)
 	{
 		float zPos=((float)i+0.5f)/(float)light_grid[2];

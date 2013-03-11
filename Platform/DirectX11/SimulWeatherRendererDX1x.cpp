@@ -25,6 +25,7 @@
 
 #include "SimulCloudRendererDX1x.h"
 #include "Simul2DCloudRendererDX1x.h"
+#include "SimulLightningRendererDX11.h"
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
@@ -57,6 +58,7 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 		Group::AddChild(simulSkyRenderer.get());
 	}
 	simulCloudRenderer=new SimulCloudRendererDX1x(ck3d);
+	simulLightningRenderer=new SimulLightningRendererDX11();
 	baseCloudRenderer=simulCloudRenderer.get();
 	Group::AddChild(simulCloudRenderer.get());
 	if(clouds2d)
@@ -106,6 +108,8 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
 		if(simulSkyRenderer)
 			simulCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 	}
+	if(simulLightningRenderer)
+		simulLightningRenderer->RestoreDeviceObjects(m_pd3dDevice);
 /*	if(simul2DCloudRenderer)
 	{
 		simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetSkyInterface());
@@ -157,6 +161,8 @@ void SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 		simulPrecipitationRenderer->InvalidateDeviceObjects();
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
+	if(simulLightningRenderer)
+		simulLightningRenderer->InvalidateDeviceObjects();
 //	if(m_pTonemapEffect)
 //        hr=m_pTonemapEffect->OnLostDevice();
 // Free the cubemap resources. 
@@ -303,6 +309,12 @@ void SimulWeatherRendererDX1x::RenderPrecipitation()
 		simulPrecipitationRenderer->Render();
 }
 
+void SimulWeatherRendererDX1x::RenderLightning()
+{
+	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+		simulLightningRenderer->Render();
+}
+
 void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
@@ -317,6 +329,8 @@ void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX 
 		simul2DCloudRenderer->SetMatrices(view,proj);
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->SetMatrices(view,proj);
+	if(simulLightningRenderer)
+		simulLightningRenderer->SetMatrices(view,proj);
 }
 
 void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()

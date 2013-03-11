@@ -392,6 +392,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimulLightningRendererDX11.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SimulOpticsRendererDX1x.cpp"
 				>
 			</File>
@@ -491,6 +495,10 @@
 			</File>
 			<File
 				RelativePath=".\SimulHDRRendererDX1x.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulLightningRendererDX11.h"
 				>
 			</File>
 			<File
