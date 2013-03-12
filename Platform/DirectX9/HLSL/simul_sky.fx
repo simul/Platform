@@ -285,13 +285,8 @@ svertexOutput VS_Point_Stars(svertexInput IN)
 
 float4 PS_Point_Stars(svertexOutput IN): color
 {
-<<<<<<< HEAD
 	float3 result=float3(1.f,1.f,1.f)*saturate(starBrightness*IN.tex.x);
 	return float4(result,1.f);
-=======
-	float3 colour=float3(1.f,1.f,1.f)*saturate(starBrightness*IN.tex.x);
-	return float4(colour,1.f);
->>>>>>> master
 }
 
 

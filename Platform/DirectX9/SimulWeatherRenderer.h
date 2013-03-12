@@ -36,67 +36,6 @@ public:
 //! You can take this entire class and use it as source in your project, and 
 //! make appropriate modifications where required.
 
-//!
-
-/*!
-	\code
-#include "Simul/Platform/Windows/DirectX 9/SimulWeatherRenderer.h"
-	simulWeatherRenderer=new SimulWeatherRenderer(env,true,ScreenWidth/2,ScreenHeight/2,true,true,false,true,false);
-	simulWeatherRenderer->SetDaytime(0.3f);
-	\endcode
-
-	We can load a sequence file containing keyframes and weather setup:
-	\code
-	std::ifstream ifs("default.seq",std::ios_base::binary);
-	if(ifs.good())
-	{
-		simulWeatherRenderer->Load(ifs);
-		ifs.close();
-	}
-	\endcode
-
-	We can apply global modifications to all the keyframes, by iterating them in turn:
-	\code
-	simul::clouds::CloudKeyframer *ck=simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer();
-	for(int i=0;i<ck->GetNumKeyframes();i++)
-	{
-		simul::clouds::CloudKeyframer::Keyframe *k=(simul::clouds::CloudKeyframer::Keyframe *)ck->GetKeyframe(i);
-		k->cloudiness=.6f;
-		k->precipitation=0.f;
-		k->lightning=0.f;
-	}
-	\endcode
-	
-	Create() initializes the renderers with the D3D device pointer.
-	\code
-	simulWeatherRenderer->Create(pd3dDevice);
-	\endcode
-
-\section devc Handling device changes
-	When a new device has been set up:
-\code
-	simulWeatherRenderer->SetBufferSize(pBackBufferSurfaceDesc->Width/2,pBackBufferSurfaceDesc->Height/2);
-	hr=simulWeatherRenderer->RestoreDeviceObjects(pd3dDevice);
-\endcode
-	When the device has been lost (e.g. the screen resolution was changed):
-\code
-	simulWeatherRenderer->InvalidateDeviceObjects();
-\endcode
-	\section updr Update and rendering
-Usually once per frame, the weather update should be called, this will update the weather renderer's sub-renderers,
-e.g. clouds, sky:
-\code
-	simulWeatherRenderer->Update(timestep_seconds);
-\endcode
-	To render, the following code is used:
-\code
-	simulWeatherRenderer->SetMatrices(view,proj);
-	simulWeatherRenderer->Render();
-	simulWeatherRenderer->RenderLateCloudLayer();
-	simulWeatherRenderer->RenderLightning();
-	simulWeatherRenderer->RenderPrecipitation();
-\endcode
-*/
 namespace simul
 {
 	namespace clouds
@@ -128,7 +67,7 @@ public:
 	//! Call this to draw lightning.
 	bool RenderLightning();
 	//! Call this to draw rain etc.
-	bool RenderPrecipitation();
+	void RenderPrecipitation();
 	//! Perform the once-per-frame time update.
 	void Update(float dt);
 #if defined(XBOX) || defined(DOXYGEN)

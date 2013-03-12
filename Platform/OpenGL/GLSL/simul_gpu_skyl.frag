@@ -7,10 +7,6 @@ uniform sampler1D density_texture;
 uniform sampler3D loss_texture;
 uniform sampler3D insc_texture;
 
-uniform float maxDistanceKm;
-uniform vec3 starlight;
-uniform vec3 lightDir;
-
 in vec2 texc;
 out  vec4 outColor;
 
@@ -24,17 +20,19 @@ vec3 getSkylight(float alt_km)
 {
 // The inscatter factor, at this altitude looking straight up, is given by:
 	vec4 insc		=texture(insc_texture,vec3(sqrt(alt_km/maxOutputAltKm),0.0,1.0));
-	vec3 skylight	=InscatterFunction(insc,0.0);
+	vec3 skylight	=InscatterFunction(insc,hazeEccentricity,0.0,mieRayleighRatio);
 	return skylight;
+//	return vec3(.05,.1,.2);
 }
 
-void main(void)
+void main()
 {
 	vec4 previous_skyl	=texture(input_skyl_texture,texc.xy);
-	vec3 previous_loss	=texture(loss_texture,vec3(texc.xy,distKm/maxDistanceKm)).rgb;// should adjust texc - we want the PREVIOUS loss!
-	float sin_e			=1.0-2.0*(texc.y*texSize.y-0.5)/(texSize.y-1.0);
+	vec3 previous_loss	=texture(loss_texture,vec3(texc.xy,pow(distKm/maxDistanceKm,0.5))).rgb;
+	// should adjust texc - we want the PREVIOUS loss!
+	float sin_e			=1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(texc.x*texSize.x-0.5)/(texSize.x-1.0);
+	float altTexc		=(texc.x*texSize.x-texelOffset)/(texSize.x-1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float maxd			=min(spaceDistKm,distKm);
@@ -46,7 +44,7 @@ void main(void)
 	float r				=sqrt(x*x+y*y);
 	float alt_km		=r-planetRadiusKm;
 	// lookups is: dens_factor,ozone_factor,haze_factor;
-	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+0.5)/tableSize.x;
+	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
 	vec4 lookups		=texture(density_texture,dens_texc);
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
@@ -60,7 +58,7 @@ void main(void)
 	float mie_factor	=exp(-skyl.w*stepLengthKm*haze_factor*hazeMie.x);
 	skyl.w				=saturate((1.f-mie_factor)/(1.f-total_ext.x+0.0001f));
 	
-	//skyl.w				=(loss.w)*(1.f-previous_skyl.w)*skyl.w+previous_skyl.w;
+	//skyl.w			=(loss.w)*(1.f-previous_skyl.w)*skyl.w+previous_skyl.w;
 	skyl.rgb			*=previous_loss.rgb;
 	skyl.rgb			+=previous_skyl.rgb;
 	float lossw=1.0;

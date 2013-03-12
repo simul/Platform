@@ -5,11 +5,8 @@
 #include "Simul/Platform/OpenGL/SimulOpticsRendererGL.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
-<<<<<<< HEAD
 #include "Simul/Platform/OpenGL/GpuCloudGenerator.h"
 #include "Simul/Platform/OpenGL/GpuSkyGenerator.h"
-=======
->>>>>>> master
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Graph/Meta/Group.h"
 #ifdef _MSC_VER
@@ -44,6 +41,7 @@ public:
 		META_ValueProperty(bool,ShowOSD,"Show diagnostice onscren.")
 		META_ValueProperty(bool,ShowWater,"Show water surfaces.")
 		META_ValueProperty(bool,ReverseDepth,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
+		META_ValueProperty(bool,MixCloudsAndTerrain,"If true, clouds are drawn twice: once behind the terrain, and once in front.")
 	META_EndProperties
 	virtual void paintGL();
 	virtual void resizeGL(int w,int h);
@@ -69,7 +67,6 @@ protected:
 	simul::camera::Camera *cam;
 	bool celestial_display;
 	bool y_vertical;
-	Utilities ut;
 };
 
 #ifdef _MSC_VER

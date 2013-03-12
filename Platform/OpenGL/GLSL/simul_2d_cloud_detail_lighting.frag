@@ -1,3 +1,4 @@
+#version 140
 uniform sampler2D dens_texture;
 uniform vec3 lightDir;
 varying vec2 texc;
@@ -10,13 +11,14 @@ void main(void)
 	float mul=0.5;
 	vec2 offset=lightDir.xy/512.0;
 	float dens_dist=0.0;
-    for(int i=0;i<5;i++)
+    for(int i=0;i<16;i++)
     {
 		texcoords+=offset;
 		vec4 v=texture(dens_texture,texcoords);
 		dens_dist+=v.a;
+		//if(v.a==0)
+			//dens_dist*=0.9;
     }
-    float light=exp(-dens_dist);//=saturate(result*1.5);
-    float sec=exp(-dens_dist/12.0);
-    gl_FragColor=vec4(light,sec,1.0,c.a);
+    float l=c.a*exp(-dens_dist/2.0);
+    gl_FragColor=vec4(dens_dist/32.0,dens_dist/32.0,dens_dist/32.0,c.a);
 }

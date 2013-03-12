@@ -48,6 +48,12 @@ float4 DirectPS(v2f IN) : SV_TARGET
     return float4(c.rgb,1.f);
 }
 
+float4 SkyOverStarsPS(v2f IN) : SV_TARGET
+{
+	float4 c=hdrTexture.Sample(samplerState,IN.texcoord);
+    return float4(c.rgba);
+}
+
 DepthStencilState EnableDepth
 {
 	DepthEnable = TRUE;
@@ -113,9 +119,10 @@ technique11 simul_sky_over_stars
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
+		//SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,TonemapVS()));
-		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
+		SetPixelShader(CompileShader(ps_4_0,SkyOverStarsPS()));
     }
 }
 

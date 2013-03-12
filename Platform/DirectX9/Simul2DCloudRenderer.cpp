@@ -110,6 +110,7 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	,own_image_texture(true)
 	,texture_scale(0.25f)
 	,enabled(true)
+	,y_vertical(true)
 {
 	D3DXMatrixIdentity(&world);
 	D3DXMatrixIdentity(&view);
@@ -260,12 +261,11 @@ void SetTexture()
 {
 }
 
-bool Simul2DCloudRenderer::Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha)
+bool Simul2DCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	cubemap;
-	depth_testing;
+	depth_alpha_tex;
 	default_fog;
-	write_alpha;
 	HRESULT hr=S_OK;
 	if(!enabled)
 		return (hr==S_OK);

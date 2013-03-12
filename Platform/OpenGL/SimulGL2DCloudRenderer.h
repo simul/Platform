@@ -39,23 +39,16 @@ public:
 	//! OpenGL Implementation of device invalidation - not strictly needed in GL.
 	void InvalidateDeviceObjects();
 	//! OpenGL Implementation of 2D cloud rendering.
-	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
+	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
 	void RenderCrossSections(int width,int height);
 	//! Set the platform-dependent atmospheric loss texture.
 	void SetLossTexture(void *l);
 	//! Set the platform-dependent atmospheric inscatter texture.
 	void SetInscatterTextures(void *i,void *s);
 	void SetWindVelocity(float x,float y);
-<<<<<<< HEAD
 
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y);
 	void FillCloudTextureBlock(int texture_index,int x,int y,int w,int l,const unsigned *uint32_array);
-=======
-	simul::clouds::CloudInterface *GetCloudInterface();
-
-	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
-	void FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array);
->>>>>>> master
 	void FillCloudTextureSequentially(int,int,int,const unsigned int *){}
 	//CloudShadowCallback
 	void **GetCloudTextures(){return 0;}
@@ -71,40 +64,31 @@ protected:
 	
 	GLuint cross_section_program;
 
-	GLint eyePosition_param;
-	GLint lightResponse_param;
-	GLint lightDir_param;
-	GLint skylightColour_param;
-	GLint sunlightColour_param;
-	GLint fractalScale_param;
-	GLint interp_param;
-	GLint layerDensity_param;
-	GLint textureEffect_param;
+	GLint globalScale;
+	GLint detailScale;
+	GLint origin;
+
 	GLint imageTexture_param;
 	GLint lossSampler_param;
 	GLint inscatterSampler_param;
 	GLint skylightSampler_param;
-	GLint cloudEccentricity_param;
-	GLint hazeEccentricity_param;
-	GLint mieRayleighRatio_param;
-	GLint maxFadeDistanceMetres_param;
+	
+	GLint cloud2DConstants;
+	GLuint cloud2DConstantsUBO;
+	GLint cloud2DConstantsBindingIndex;
 
 	GLint coverageTexture1;
 	GLint coverageTexture2;
-	GLint cloudInterp;
-	
 	
 	GLuint	coverage_tex[3];
 	
 	GLuint	loss_tex;
 	GLuint	inscatter_tex;
 	GLuint	skylight_tex;
-	GLuint	noise_tex;
-	GLuint	image_tex;
 
 	FramebufferGL	detail_fb;
 	bool CreateNoiseTexture(bool override_file=false);
-	void CreateImageTexture();
+	//void CreateImageTexture();
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();
 	simul::base::SmartPtr<simul::clouds::FastCloudNode> cloudNode;

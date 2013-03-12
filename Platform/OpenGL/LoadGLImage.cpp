@@ -20,6 +20,7 @@ namespace simul
 }
 unsigned char * LoadBitmap(const char *filename,unsigned &bpp,unsigned &width,unsigned &height)
 {
+#ifdef WIN32
 	std::string fn=filename;
 	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
 	fif = FreeImage_GetFileType(fn.c_str(), 0);
@@ -53,10 +54,14 @@ unsigned char * LoadBitmap(const char *filename,unsigned &bpp,unsigned &width,un
 	//	return 0;
 	BYTE *pixels = (BYTE*)FreeImage_GetBits(dib);
 	return pixels;
+#else
+	return NULL;
+#endif
 }
 
 GLuint LoadGLImage(const char *filename,unsigned wrap)
 {
+#ifdef WIN32
 	std::string fn=image_path+"/";
 	fn+=filename;
 	unsigned bpp=0;
@@ -75,6 +80,9 @@ GLuint LoadGLImage(const char *filename,unsigned wrap)
 	if(bpp==32)
 		glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
 	return image_tex;
+#else
+	return 0;
+#endif
 }
 
 unsigned char *LoadGLBitmap(const char *filename,unsigned &bpp,unsigned &width,unsigned &height)

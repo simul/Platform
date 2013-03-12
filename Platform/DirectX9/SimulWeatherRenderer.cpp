@@ -187,11 +187,7 @@ void SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 	float create_buffers_time=timer.Time/1000.f;
 
 	if(simulSkyRenderer)
-<<<<<<< HEAD
 		simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice);
-=======
-		V_CHECK(simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice));
->>>>>>> master
 	timer.UpdateTime();
 	float sky_restore_time=timer.Time/1000.f;
 	(Restore3DCloudObjects());
@@ -312,11 +308,10 @@ bool SimulWeatherRenderer::RenderLightning()
 	return true;
 }
 
-bool SimulWeatherRenderer::RenderPrecipitation()
+void SimulWeatherRenderer::RenderPrecipitation()
 {
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		return simulPrecipitationRenderer->Render();
-	return true;
+		simulPrecipitationRenderer->Render();
 }
 bool SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
 {
@@ -336,7 +331,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(int buffer_index,bool buf)
 		if(buffer_index==1)
 			lowdef_framebuffer.Activate();
 		else
-			framebuffer.Activate();
+		framebuffer.Activate();
 		static float depth_start=1.f;
 		hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 	}
@@ -348,7 +343,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(int buffer_index,bool buf)
 		{	
 			PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
 			{
-				simulCloudRenderer->Render(false,false,false,true);
+				simulCloudRenderer->Render(false,depth_alpha_tex,false,true);
 			}
 		}
 	}
@@ -434,7 +429,13 @@ void SimulWeatherRenderer::Update(float dt)
 		if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		{
 			simulPrecipitationRenderer->SetWind(simulCloudRenderer->GetWindSpeed(),simulCloudRenderer->GetWindHeadingDegrees());
-			simulPrecipitationRenderer->SetIntensity(simulCloudRenderer->GetPrecipitationIntensity());
+		#ifndef XBOX
+			float cam_pos[3];
+			D3DXMATRIX view;
+			m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+		#endif
+			GetCameraPosVector(view,simulCloudRenderer->IsYVertical(),cam_pos);
+			simulPrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
 			float rts=simulCloudRenderer->GetRainToSnow();
 			if(rts<0.5f)
 				simulPrecipitationRenderer->ApplyDefaultRainSettings();

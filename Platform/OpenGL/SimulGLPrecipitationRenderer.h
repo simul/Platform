@@ -16,11 +16,12 @@ public:
 	SimulGLPrecipitationRenderer();
 	virtual ~SimulGLPrecipitationRenderer();
 	//! Call this when the device has been created or reset.
-	bool RestoreDeviceObjects(void *pd3dDevice);
+	void RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
-	bool InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
+	void RecompileShaders();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	bool Render();
+	void Render();
 	// Set a texture not created by this class to be used:
 	bool SetExternalRainTexture(void* tex);
 	void SetYVertical(bool y)

@@ -48,6 +48,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				DebugInformationFormat="4"
@@ -66,9 +67,10 @@
 				AdditionalDependencies="opengl32.lib glut32.lib glew32.lib"
 				OutputFile="$(OutDir)\$(SafeParentName)_MDd.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
+				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib/Win32&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				IgnoreDefaultLibraryNames="$(SafeParentName)_MD.lib"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\$(SafeParentName)_MDd.pdb"
 				SubSystem="2"
 				ImportLibrary="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)/$(SafeParentName)_MDd.lib"
 				TargetMachine="1"
@@ -127,6 +129,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
+				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				DebugInformationFormat="3"
@@ -143,12 +146,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glut32.lib glew32.lib"
-				ShowProgress="2"
 				OutputFile="$(OutDir)\$(SafeParentName)_MD.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
+				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib/Win32&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				IgnoreDefaultLibraryNames="$(SafeParentName)_MD.lib"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\$(SafeParentName)_MD.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -206,10 +209,11 @@
 				Optimization="0"
 				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				DebugInformationFormat="4"
@@ -273,9 +277,10 @@
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
+				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				DebugInformationFormat="3"
@@ -312,6 +317,20 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{BA686093-89A1-438D-948A-34ECF718D106}"
+			CopyLocal="false"
+			CopyLocalDependencies="false"
+			CopyLocalSatelliteAssemblies="false"
+			RelativePathToProject=".\Clouds\Clouds_VC9.vcproj"
+		/>
+		<ProjectReference
+			ReferencedProjectIdentifier="{CC71B070-12C2-45C9-894A-A9CDDC1F3FA4}"
+			CopyLocal="false"
+			CopyLocalDependencies="false"
+			CopyLocalSatelliteAssemblies="false"
+			RelativePathToProject=".\Terrain\Terrain_VC9.vcproj"
+		/>
 	</References>
 	<Files>
 		<Filter
@@ -368,15 +387,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimulGLPrecipitationRenderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SimulGLSkyRenderer.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\SimulGLTerrainRenderer.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\SimulGLUnderwaterRenderer.cpp"
 				>
 			</File>
 			<File
@@ -458,15 +477,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimulGLPrecipitationRenderer.h"
+				>
+			</File>
+			<File
 				RelativePath=".\SimulGLSkyRenderer.h"
 				>
 			</File>
 			<File
 				RelativePath=".\SimulGLTerrainRenderer.h"
-				>
-			</File>
-			<File
-				RelativePath=".\SimulGLUnderwaterRenderer.h"
 				>
 			</File>
 			<File
@@ -486,6 +505,14 @@
 			Name="Shaders"
 			>
 			<File
+				RelativePath=".\GLSL\simul_2d_cloud_detail.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_2d_cloud_detail_lighting.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_atmospherics.frag"
 				>
 			</File>
@@ -494,13 +521,10 @@
 				>
 			</File>
 			<File
-<<<<<<< HEAD
-				RelativePath=".\GLSL\simul_atmospherics_godrays.frag"
+				RelativePath=".\GLSL\simul_atmospherics_earthshadow.frag"
 				>
 			</File>
 			<File
-=======
->>>>>>> master
 				RelativePath=".\GLSL\simul_cloud_cross_section.frag"
 				>
 			</File>
@@ -509,13 +533,6 @@
 				>
 			</File>
 			<File
-<<<<<<< HEAD
-				RelativePath=".\GLSL\simul_cloud_shadow.frag"
-				>
-			</File>
-			<File
-=======
->>>>>>> master
 				RelativePath=".\GLSL\simul_cloudmix.frag"
 				>
 			</File>
@@ -540,13 +557,14 @@
 				>
 			</File>
 			<File
-<<<<<<< HEAD
 				RelativePath=".\GLSL\simul_earthshadow_sky.frag"
 				>
 			</File>
 			<File
-=======
->>>>>>> master
+				RelativePath=".\GLSL\simul_earthshadow_uniforms.glsl"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_fade_3d_to_2d.frag"
 				>
 			</File>
@@ -559,7 +577,6 @@
 				>
 			</File>
 			<File
-<<<<<<< HEAD
 				RelativePath=".\GLSL\simul_gpu_cloud_density.frag"
 				>
 			</File>
@@ -596,8 +613,14 @@
 				>
 			</File>
 			<File
-=======
->>>>>>> master
+				RelativePath=".\GLSL\simul_gpu_sky.glsl"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_skyl.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_lightning.frag"
 				>
 			</File>
@@ -638,13 +661,10 @@
 				>
 			</File>
 			<File
-<<<<<<< HEAD
 				RelativePath=".\GLSL\simul_terrain.geom"
 				>
 			</File>
 			<File
-=======
->>>>>>> master
 				RelativePath=".\GLSL\simul_terrain.vert"
 				>
 			</File>
@@ -657,13 +677,10 @@
 				>
 			</File>
 		</Filter>
-<<<<<<< HEAD
 		<File
 			RelativePath=".\OpenGL.rc"
 			>
 		</File>
-=======
->>>>>>> master
 	</Files>
 	<Globals>
 	</Globals>

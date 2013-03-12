@@ -17,7 +17,7 @@ public:
 	void RestoreDeviceObjects(void *pd3dDevice);
 	void InvalidateDeviceObjects();
 	//! The texture the sky and clouds are rendered to.
-	LPDIRECT3DTEXTURE9	buffer_depth_texture;
+	LPDIRECT3DTEXTURE9				buffer_depth_texture;
 	LPDIRECT3DSURFACE9	m_pHDRRenderTarget;
 	void Activate();
 	void Deactivate();

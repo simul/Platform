@@ -15,6 +15,9 @@ uniform vec3 viewPosition;
 uniform float overcast;
 
 uniform vec3 lightDir;
+uniform float hazeEccentricity;
+uniform vec3 mieRayleighRatio;
+
 varying vec2 texCoords;
 
 vec3 makeViewVector()
@@ -62,7 +65,7 @@ vec4 simple()
 	//		(b) The top of the clouds?
 	*/
 	float cos0=dot(view,lightDir);
-	colour+=InscatterFunction(insc,cos0);
+	colour+=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	vec3 skyl=texture(skylightTexture,texc).rgb;
 	colour+=skyl;
     return vec4(colour,1.0);
@@ -112,7 +115,7 @@ vec4 godrays()
 		}
 	}	
 	float cos0=dot(view,lightDir);
-	colour+=InscatterFunction(total_insc,cos0);
+	colour+=InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour+=skyl;
     return vec4(colour,1.0);
 }

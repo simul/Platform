@@ -71,35 +71,7 @@ SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk)
 	SetCameraPosition(0,0,skyKeyframer->GetAltitudeKM()*1000.f);
 }
 
-<<<<<<< HEAD
 void SimulGLSkyRenderer::SetFadeTexSize(int width_num_distances,int height_num_elevations,int num_alts)
-=======
-void SimulGLSkyRenderer::SetSkyTexSize(unsigned size)
-{
-	// If not initialized we might not have a valid GL context:
-	if(!initialized)
-		return;
-	skyTexSize=size;
-	CreateSkyTextures();
-}
-
-void SimulGLSkyRenderer::CreateSkyTextures()
-{
-	for(int i=0;i<3;i++)
-	{
-		glGenTextures(1,&(sky_tex[i]));
-		glBindTexture(GL_TEXTURE_2D,sky_tex[i]);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D,0,internal_format,skyTexSize,numAltitudes,0,GL_RGBA,sky_tex_format,0);
-	}
-	
-}
-
-void SimulGLSkyRenderer::SetFadeTexSize(unsigned width_num_distances,unsigned height_num_elevations,unsigned num_alts)
->>>>>>> master
 {
 	// If not initialized we might not have a valid GL context:
 	if(!initialized)
@@ -263,40 +235,6 @@ ERROR_CHECK
 	return true;
 }
 
-<<<<<<< HEAD
-=======
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.f,1.f);
-	glVertex2f((float)x,(float)(y+h));
-	glTexCoord2f(1.f,1.f);
-	glVertex2f((float)(x+w),(float)(y+h));
-	glTexCoord2f(1.f,0.f);
-	glVertex2f((float)(x+w),(float)y);
-	glTexCoord2f(0.f,0.f);
-	glVertex2f((float)x,(float)y);
-	glEnd();
-	ERROR_CHECK
-}
-/*
-void SimulGLSkyRenderer::RenderFades(int width)
-{
-	int w=width/3-8;
-    glDisable(GL_BLEND);
-	glDisable(GL_CULL_FACE);
-	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-ERROR_CHECK
-	glEnable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_3D);
-	glUseProgram(0);
-ERROR_CHECK
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,loss_2d.GetColorTex());
-	DrawQuad(8,8,w,w);
-	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
-	DrawQuad(16+w,8,w,w);
-}
-*/
->>>>>>> master
 bool SimulGLSkyRenderer::RenderFades(int w,int h)
 {
 	int size=w/4;
@@ -323,11 +261,11 @@ ERROR_CHECK
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,0);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,loss_2d.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)loss_2d.GetColorTex());
 	RenderTexture(8,8,size,size);
-	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)inscatter_2d.GetColorTex());
 	RenderTexture(8,16+size,size,size);
-	glBindTexture(GL_TEXTURE_2D,skylight_2d.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)skylight_2d.GetColorTex());
 	RenderTexture(8,24+2*size,size,size);
 	int x=16+size;
 	if(h/(numAltitudes+2)<size)
@@ -387,6 +325,7 @@ ERROR_CHECK
 ERROR_CHECK
 return true;
 }
+static GLint earthShadowUniformsBindingIndex=3;
 
 void SimulGLSkyRenderer::UseProgram(GLuint p)
 {
@@ -407,10 +346,10 @@ ERROR_CHECK
 		// If that block IS in the shader program, then BIND it to the relevant UBO.
 		if(earthShadowUniforms>=0)
 		{
-			glUniformBlockBinding(current_program,earthShadowUniforms,0);
+			glUniformBlockBinding(current_program,earthShadowUniforms,earthShadowUniformsBindingIndex);
 ERROR_CHECK
-			glBindBufferRange(GL_UNIFORM_BUFFER, 0,earthShadowUniformsUBO, 0, sizeof(EarthShadowUniforms));	
-			//glBindBufferBase(GL_UNIFORM_BUFFER,0,earthShadowUniformsUBO);
+			glBindBufferRange(GL_UNIFORM_BUFFER, earthShadowUniformsBindingIndex,earthShadowUniformsUBO, 0, sizeof(EarthShadowUniforms));	
+ERROR_CHECK
 		}
 		cloudOrigin					=glGetUniformLocation(current_program,"cloudOrigin");
 		cloudScale					=glGetUniformLocation(current_program,"cloudScale");
@@ -457,6 +396,7 @@ ERROR_CHECK
 	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
 								skyKeyframer->GetAltitudeKM()
 								,skyKeyframer->GetDirectionToSun());
+
 	if(e.enable)
 	{
 		EarthShadowUniforms u;
@@ -473,6 +413,10 @@ ERROR_CHECK
 		UseProgram(earthshadow_program);
 	else
 		UseProgram(sky_program);
+ERROR_CHECK
+	if(e.enable)
+		glBindBufferBase(GL_UNIFORM_BUFFER,earthShadowUniformsBindingIndex,earthShadowUniformsUBO);
+ERROR_CHECK
 
 	glUniform1i(skyTexture1_param,0);
 	
@@ -485,11 +429,11 @@ ERROR_CHECK
 	
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,inscatter_2d.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)inscatter_2d.GetColorTex());
 	glUniform1i(skylightTexture_param,1);
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D,skylight_2d.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)skylight_2d.GetColorTex());
 	setParameter3(cloudOrigin,cloud_origin);
 	setParameter3(cloudScale,cloud_scale);
 	setParameter(maxDistance,skyKeyframer->GetMaxDistanceKm()*1000.f);
@@ -676,7 +620,7 @@ bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const 
 		ERROR_CHECK
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		ERROR_CHECK
-	glBlendEquationSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 		ERROR_CHECK
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		ERROR_CHECK
@@ -767,23 +711,11 @@ void SimulGLSkyRenderer::RecompileShaders()
 	SAFE_DELETE_PROGRAM(sun_program);
 	SAFE_DELETE_PROGRAM(stars_program);
 ERROR_CHECK
-<<<<<<< HEAD
 	sky_program						=MakeProgram("simul_sky");
-=======
-	sky_program=MakeProgram("simul_sky");
-	MieRayleighRatio_param			=glGetUniformLocation(sky_program,"mieRayleighRatio");
-	lightDirection_sky_param		=glGetUniformLocation(sky_program,"lightDir");
-	hazeEccentricity_param			=glGetUniformLocation(sky_program,"hazeEccentricity");
-	skyInterp_param					=glGetUniformLocation(sky_program,"skyInterp");
-	skyTexture1_param				=glGetUniformLocation(sky_program,"skyTexture1");
-	skyTexture2_param				=glGetUniformLocation(sky_program,"skyTexture2");
-	altitudeTexCoord_param			=glGetUniformLocation(sky_program,"altitudeTexCoord");
->>>>>>> master
 	printProgramInfoLog(sky_program);
 	earthshadow_program				=LoadPrograms("simul_sky.vert",NULL,"simul_earthshadow_sky.frag");
 	printProgramInfoLog(earthshadow_program);
 ERROR_CHECK
-<<<<<<< HEAD
 	sun_program						=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
 	printProgramInfoLog(sun_program);
@@ -795,32 +727,12 @@ ERROR_CHECK
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
 	printProgramInfoLog(sun_program);
 	stars_program					=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
-=======
-	sun_program						=LoadPrograms("simul_sun_planet_flare.vert","simul_sun.frag");
-	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
-	printProgramInfoLog(sun_program);
-	stars_program					=LoadPrograms("simul_sun_planet_flare.vert","simul_stars.frag");
-	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
-	printProgramInfoLog(stars_program);
-ERROR_CHECK
-	sun_program						=LoadPrograms("simul_sun_planet_flare.vert","simul_sun.frag");
-	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
-	printProgramInfoLog(sun_program);
-	stars_program					=LoadPrograms("simul_sun_planet_flare.vert","simul_stars.frag");
->>>>>>> master
 	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
 	printProgramInfoLog(stars_program);
 ERROR_CHECK
 	planet_program					=glCreateProgram();
-<<<<<<< HEAD
     GLuint planet_vertex_shader		=LoadShader("simul_sun_planet_flare.vert");
     GLuint planet_fragment_shader	=LoadShader("simul_planet.frag");
-=======
-	GLuint planet_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
-	GLuint planet_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-    planet_vertex_shader			=LoadShader(planet_vertex_shader,"simul_sun_planet_flare.vert");
-    planet_fragment_shader			=LoadShader(planet_fragment_shader,"simul_planet.frag");
->>>>>>> master
 	glAttachShader(planet_program,planet_vertex_shader);
 	glAttachShader(planet_program,planet_fragment_shader);
 	glLinkProgram(planet_program);
@@ -832,16 +744,9 @@ ERROR_CHECK
 	planetLightDir_param	=glGetUniformLocation(planet_program,"lightDir");
 	printProgramInfoLog(planet_program);
 ERROR_CHECK
-	fade_3d_to_2d_program			=glCreateProgram();
-<<<<<<< HEAD
-	GLuint fade_vertex_shader				=LoadShader("simul_fade_3d_to_2d.vert");
+	fade_3d_to_2d_program				=glCreateProgram();
+	GLuint fade_vertex_shader			=LoadShader("simul_fade_3d_to_2d.vert");
     GLuint fade_fragment_shader			=LoadShader("simul_fade_3d_to_2d.frag");
-=======
-	GLuint fade_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
-	GLuint fade_fragment_shader		=glCreateShader(GL_FRAGMENT_SHADER);
-    fade_vertex_shader				=LoadShader(fade_vertex_shader,"simul_fade_3d_to_2d.vert");
-    fade_fragment_shader			=LoadShader(fade_fragment_shader,"simul_fade_3d_to_2d.frag");
->>>>>>> master
 	glAttachShader(fade_3d_to_2d_program,fade_vertex_shader);
 	glAttachShader(fade_3d_to_2d_program,fade_fragment_shader);
 	glLinkProgram(fade_3d_to_2d_program);
@@ -894,14 +799,6 @@ SimulGLSkyRenderer::~SimulGLSkyRenderer()
 void SimulGLSkyRenderer::DrawLines(Vertext *lines,int vertex_count,bool strip)
 {
 	::DrawLines((VertexXyzRgba*)lines,vertex_count,strip);
-<<<<<<< HEAD
-=======
-}
-
-void SimulGLSkyRenderer::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
-{
-	::PrintAt3dPos(p,text,colr,offsetx,offsety);
->>>>>>> master
 }
 
 void SimulGLSkyRenderer::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)

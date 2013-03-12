@@ -12,6 +12,8 @@ uniform vec3 cloudOrigin;
 uniform vec3 cloudScale;
 uniform vec3 viewPosition;
 uniform float maxDistance;
+uniform float hazeEccentricity;
+uniform vec3 mieRayleighRatio;
 
 varying vec2 texCoords;
 
@@ -68,7 +70,7 @@ void main()
 		}
 	}
 //	total_insc.a=insc.a;
-	vec3 gr=-InscatterFunction(total_insc,cos0).rgb;
+	vec3 gr=-InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
 	gr=min(gr,vec3(0.0,0.0,0.0));
 	
     gl_FragColor=vec4(gr,0.0);

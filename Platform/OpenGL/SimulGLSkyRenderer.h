@@ -81,10 +81,6 @@ protected:
 	void		CreateFadeTextures();
 	void		CreateSkyTextures();
 
-<<<<<<< HEAD
-=======
-	GLuint		sky_tex[3];
->>>>>>> master
 	GLuint		loss_textures[3];
 	GLuint		inscatter_textures[3];
 	GLuint		skylight_textures[3];
@@ -94,11 +90,8 @@ protected:
 
 	unsigned		cloud_texel_index;
 	unsigned char	*sky_tex_data;
-<<<<<<< HEAD
 	
 	// Two alternative programs for rendering the sky:
-=======
->>>>>>> master
 	GLuint			sky_program;
 	GLuint			earthshadow_program;
 	// Whichever of those two we are currently using:

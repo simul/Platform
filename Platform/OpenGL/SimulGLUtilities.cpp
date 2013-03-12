@@ -1,27 +1,22 @@
+#include <stdlib.h>
 #include <GL/glew.h>
+#include <GL/glut.h>
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
-<<<<<<< HEAD
 #include "Simul/Sky/Float4.h"
-=======
->>>>>>> master
-#include <windows.h>
-#include <GL/glut.h>
+#include <stdlib.h>
 #include <GL/gl.h>
 #include <iostream>
 #include "Simul/Base/Timer.h"
-<<<<<<< HEAD
-#include "Simul/Math/Pi.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
 #include <math.h>
-=======
->>>>>>> master
+#include <windows.h>
+#include "Simul/Math/Pi.h"
 
 int Utilities::instance_count=0;
 int Utilities::screen_width=0;
 int Utilities::screen_height=0;
-<<<<<<< HEAD
 Utilities *Utilities::ut=NULL;
 
 struct UtKiller
@@ -52,13 +47,6 @@ Utilities::Utilities()
 	instance_count++;
 	if(instance_count==1)
 		RestoreDeviceObjects(NULL);
-=======
-GLuint Utilities::linedraw_program;
-
-Utilities::Utilities()
-{
-	instance_count++;
->>>>>>> master
 }
 
 void Utilities::RestoreDeviceObjects(void *)
@@ -75,7 +63,6 @@ void Utilities::RestoreDeviceObjects(void *)
 						"	gl_FragColor=colr;"
 						"}";
 	linedraw_program=SetShaders(vert,frag);
-<<<<<<< HEAD
 	const char *simple_vert="varying vec2 texc;"
 						"void main(void)"
 						"{"
@@ -90,8 +77,6 @@ void Utilities::RestoreDeviceObjects(void *)
 						"	gl_FragColor=c;"
 						"}";
 	simple_program=SetShaders(simple_vert,simple_frag);
-=======
->>>>>>> master
 }
 
 void Utilities::SetScreenSize(int w,int h)
@@ -103,10 +88,7 @@ void Utilities::SetScreenSize(int w,int h)
 void Utilities::InvalidateDeviceObjects()
 {
 	SAFE_DELETE_PROGRAM(linedraw_program);
-<<<<<<< HEAD
 	SAFE_DELETE_PROGRAM(simple_program);
-=======
->>>>>>> master
 }
 
 Utilities::~Utilities()
@@ -115,7 +97,6 @@ Utilities::~Utilities()
 		Utilities::InvalidateDeviceObjects();
 }
 
-<<<<<<< HEAD
 void RenderTexture(int x,int y,int w,int h)
 {
 	ERROR_CHECK		
@@ -140,9 +121,6 @@ void RenderTexture(int x,int y,int w,int h)
 }
 
 bool IsExtensionSupported(const char *name)
-=======
-static bool IsExtensionSupported(const char *name)
->>>>>>> master
 {
 	GLint n=0;
 	glGetIntegerv(GL_NUM_EXTENSIONS, &n);
@@ -226,8 +204,10 @@ void RenderString(float x, float y, void *font, const char* string)
 			y+=12;
 			glRasterPos2f(x,win_h-y);
 		}
+#ifndef WIN64
 		else
 			glutBitmapCharacter(font,*s);
+#endif
 		s++;
 	}
 }
@@ -256,7 +236,21 @@ void DrawQuad(int x,int y,int w,int h)
 	glTexCoord2f(0.0,0.0);
 	glVertex2f(x,y);
 	glEnd();
-}
+}/*
+
+void FramebufferGL::DrawQuad(int w,int h)
+{
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.f,1.f);
+	glVertex2f(0.f,(float)h);
+	glTexCoord2f(1.f,1.f);
+	glVertex2f((float)w,(float)h);
+	glTexCoord2f(1.0,0.f);
+	glVertex2f((float)w,0.f);
+	glTexCoord2f(0.f,0.f);
+	glVertex2f(0.f,0.f);
+	glEnd();
+}*/
 
 
 float GetFramerate()
@@ -298,24 +292,6 @@ void CheckGLError(const char *filename,int line_number)
 	if(err!=0)
 	{
 		CheckGLError(filename,line_number,err);
-	}
-}
-
-void CheckGLError(const char *filename,int line_number,int err)
-{
-	if(err)
-	{
-		std::cerr<<filename<<" ("<<line_number<<"): ";
-		const char *c=(const char*)gluErrorString(err);
-		if(c)
-			std::cerr<<std::endl<<c<<std::endl;
-		const char *d=(const char*)glewGetErrorString(err);
-		if(d)
-			std::cerr<<std::endl<<d<<std::endl;
-		if(!c&&!d)
-			std::cerr<<std::endl<<"unknown error: "<<err<<std::endl;
-		DebugBreak();
-		//assert(0);
 	}
 }
 
@@ -397,10 +373,7 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
 
 void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
-<<<<<<< HEAD
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
-=======
->>>>>>> master
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
@@ -418,26 +391,22 @@ void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,
 	const char *s=text;
 	while(*s)
 	{
+#ifndef WIN64
 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,*s);
+#endif
 		s++;
 	}
-<<<<<<< HEAD
 	glPopAttrib();
-=======
->>>>>>> master
 }
 
 void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 {
-<<<<<<< HEAD
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glUseProgram(Utilities::GetSingleton().linedraw_program);
-=======
-	glUseProgram(Utilities::linedraw_program);
->>>>>>> master
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_CULL_FACE);
 	glDepthMask(GL_FALSE);
 	glBegin(strip?GL_LINE_STRIP:GL_LINES);
@@ -449,7 +418,6 @@ void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 	}
 	glEnd();
 	glUseProgram(0);
-<<<<<<< HEAD
 	glPopAttrib();
 }
 
@@ -551,11 +519,20 @@ void setMatrix(GLuint program,const char *name,const float *value)
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<0)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
-	static bool tr=1;
+	static bool tr=0;
 	glUniformMatrix4fv(loc,1,tr,value);
 	ERROR_CHECK
 }
 
+void setMatrixTranspose(GLuint program,const char *name,const float *value)
+{
+	GLint loc=glGetUniformLocation(program,name);
+	if(loc<0)
+		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	static bool tr=1;
+	glUniformMatrix4fv(loc,1,tr,value);
+	ERROR_CHECK
+}
 
 void setParameter(GLint loc,int value)
 {
@@ -579,12 +556,29 @@ void setParameter3(GLint loc,const simul::sky::float4 &value)
 	glUniform3f(loc,value.x,value.y,value.z);
 	ERROR_CHECK
 }
-
+/*
 void setMatrix(GLint loc,const float *value)
 {
 	static bool tr=1;
 	glUniformMatrix4fv(loc,1,tr,value);
 	ERROR_CHECK
-=======
->>>>>>> master
+}*/
+#undef pi
+#include <windows.h>
+void CheckGLError(const char *filename,int line_number,int err)
+{
+	if(err)
+	{
+		std::cerr<<filename<<" ("<<line_number<<"): ";
+		const char *c=(const char*)gluErrorString(err);
+		if(c)
+			std::cerr<<std::endl<<c<<std::endl;
+		const char *d=(const char*)glewGetErrorString(err);
+		if(d)
+			std::cerr<<std::endl<<d<<std::endl;
+		if(!c&&!d)
+			std::cerr<<std::endl<<"unknown error: "<<err<<std::endl;
+		DebugBreak();
+		//assert(0);
+	}
 }

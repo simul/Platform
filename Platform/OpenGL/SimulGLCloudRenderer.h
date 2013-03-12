@@ -36,16 +36,11 @@ public:
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
 	//! Render the clouds.
-	bool Render(bool cubemap,bool depth_testing,bool default_fog,bool write_alpha);
+	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
 	//! Show the cross sections on-screen.
 	void RenderCrossSections(int width,int height);
-<<<<<<< HEAD
 	void SetLossTexture(void *);
 	void SetInscatterTextures(void *,void *);
-=======
-	void SetLossTextures(void *);
-	void SetInscatterTextures(void *);
->>>>>>> master
 	//! Get the list of three textures used for cloud rendering.
 	void **GetCloudTextures();
 	
@@ -53,11 +48,6 @@ public:
 	const char *GetDebugText();
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
-	//! Stub for sequential fill because we implement block fill instead.
-	void FillCloudTextureSequentially(int ,int ,int ,const unsigned *){exit(1);}
-	//! Callback implementation for filling cloud texture.
-	void FillCloudTextureBlock(int texture_index,int x,int y,int z,int w,int l,int d,const unsigned *uint32_array);
-	void CycleTexturesForward();
 	
 	void SetIlluminationGridSize(unsigned ,unsigned ,unsigned );
 	void FillIlluminationSequentially(int ,int ,int ,const unsigned char *);
@@ -72,10 +62,9 @@ public:
 	simul::sky::OvercastCallback *GetOvercastCallback();
 	//! Clear the sequence()
 	void New();
-	//! This function does nothing as Y is never the vertical in this implementation
-	virtual void SetYVertical(bool ){}
-	bool IsYVertical() const{return false;}
 protected:
+	void SwitchShaders(GLuint program);
+	void DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip);
 	bool init;
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
@@ -84,42 +73,33 @@ protected:
 	void EnsureIlluminationTexturesAreUpToDate();
 	void EnsureTextureCycle();
 
-	GLuint clouds_program;
+	GLuint clouds_background_program;
+	GLuint clouds_foreground_program;
+	GLuint current_program;
+void UseShader(GLuint program);
 
 	GLuint cross_section_program;
 
 	GLuint cloud_shadow_program;
 	GLint eyePosition_param;
-	GLint lightResponse_param;
-	GLint lightDir_param;
-	GLint skylightColour_param;
-	GLint sunlightColour_param;
-	GLint fractalScale_param;
-	GLint interp_param;
-	GLint layerDensity_param;
-	GLint textureEffect_param;
-	GLint lightDirection_param;
-	GLint layerDistance_param;
 
 	GLint cloudDensity1_param;
 	GLint cloudDensity2_param;
 	GLint noiseSampler_param;
-	GLint illumSampler_param;
 	GLint lossSampler_param;
 	GLint inscatterSampler_param;
+	GLint illumSampler_param;
 	GLint skylightSampler_param;
+	GLint depthAlphaTexture;
+	GLint layerDistance_param;
 unsigned short *pIndices;
 
-	GLint illuminationOrigin_param;
-	GLint illuminationScales_param;
-	GLint lightningMultipliers_param;
-	GLint lightningColour_param;
-						 
+	GLint cloudConstants;
+	GLuint cloudConstantsUBO;
+	GLint cloudConstantsBindingIndex;
 
-	GLint cloudEccentricity_param;
 	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;
-	GLint earthshadowMultiplier;
 	
 	GLint		maxFadeDistanceMetres_param;
 	GLuint		illum_tex;
@@ -129,14 +109,13 @@ unsigned short *pIndices;
 	GLuint		loss_tex;
 	GLuint		inscatter_tex;
 	GLuint		skylight_tex;
+	
 	// 2D texture
 	GLuint		noise_tex;
 	GLuint		volume_noise_tex;
 
 	GLuint		sphere_vbo;
 	GLuint		sphere_ibo;
-
-	//float		cam_pos[3];
 
 	void CreateVolumeNoise();
 	virtual bool CreateNoiseTexture(bool override_file=false);

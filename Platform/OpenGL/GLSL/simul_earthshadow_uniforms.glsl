@@ -8,6 +8,10 @@ layout(std140) uniform EarthShadowUniforms
 };
 
 #ifndef __cplusplus
+
+uniform float hazeEccentricity;
+uniform vec3 mieRayleighRatio;
+
 vec4 EarthShadowFunction(vec2 texc2,vec3 view)
 {
 	// The Earth's shadow: let shadowNormal be the direction normal to the sunlight direction

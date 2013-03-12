@@ -42,11 +42,6 @@
 #ifndef __OBJ_LOAD__H__
 #define __OBJ_LOAD__H__
 
-#ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#define _CRT_SECURE_NO_WARNINGS
-#include <windows.h>
-#endif
 #include <GL/gl.h>
 #include <fstream>
 #include <string>
@@ -743,9 +738,5 @@ namespace Obj
 		void DrawRange(unsigned int start_face,unsigned int end_face) const;
 	};
 }
-
-#ifdef _MSC_VER
-	#pragma warning(pop)
-#endif
 
 #endif

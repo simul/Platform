@@ -581,23 +581,15 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	float width=(float)dx,height=(float)dy;
 	Vertext vertices[4] =
 	{
-		{x,			y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
-		{x+width,	y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
-		{x+width,	y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
-		{x,			y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
+		{x,			y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,0.0f},
+		{x+width,	y,			0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,0.0f},
+		{x+width,	y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
+		{x,			y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
 	};
 #endif
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
-<<<<<<< HEAD
 	m_pd3dDevice->SetVertexDeclaration(RT::m_pBufferVertexDecl);
-=======
-
-	m_pd3dDevice->SetVertexDeclaration(RT::m_pBufferVertexDecl);
-   // m_pd3dDevice->SetVertexShader(NULL);
-   // m_pd3dDevice->SetPixelShader(NULL);
-
->>>>>>> master
 #ifndef XBOX
 	m_pd3dDevice->SetTransform(D3DTS_VIEW,&ident);
 	m_pd3dDevice->SetTransform(D3DTS_WORLD,&ident);
@@ -970,13 +962,9 @@ void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *
 }
 
 
-std::map<std::string,std::string> MakeDefinesList(simul::clouds::BaseCloudRenderer::FadeMode fade_mode,bool wrap,bool y_vertical)
+std::map<std::string,std::string> MakeDefinesList(bool wrap,bool y_vertical)
 {
 	std::map<std::string,std::string> defines;
-	if(fade_mode==simul::clouds::BaseCloudRenderer::FRAGMENT)
-		defines["FADE_MODE"]="1";
-	if(fade_mode==simul::clouds::BaseCloudRenderer::CPU)
-		defines["FADE_MODE"]="0";
 	defines["DETAIL_NOISE"]="1";
 	if(wrap)
 		defines["WRAP_CLOUDS"]="1";
@@ -1023,9 +1011,9 @@ void RT::PrintAt3dPos(const float *p,const char *text,const float *colr,int offs
 	if(screen_pos.w<0)
 		return;
 	
-	wchar_t pwText[50];
-	MultiByteToWideChar (CP_ACP, 0,text, -1, pwText, 48 );
-	hr = m_pFont->DrawText(NULL,pwText,-1,&rcDest,dwTextFormat,(D3DXCOLOR)colr);
+//	wchar_t pwText[50];
+	//MultiByteToWideChar (CP_ACP, 0,text, -1, pwText, 48 );
+	hr = m_pFont->DrawTextA(NULL,text,-1,&rcDest,dwTextFormat,(D3DXCOLOR)colr);
 }
 
 void RT::DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)

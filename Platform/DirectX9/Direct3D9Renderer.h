@@ -18,7 +18,7 @@ public:
 	virtual LRESULT MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing)=0;
 	virtual void    OnLostDevice()=0;
 	virtual void    OnDestroyDevice()=0;
-	virtual const TCHAR *GetDebugText() const=0;
+	virtual const char *GetDebugText() const=0;
 };
 #endif
 
@@ -76,7 +76,7 @@ public:
 	void SetCamera(simul::camera::Camera *c);
 //Direct3D9CallbackInterface:
 	bool	IsDeviceAcceptable(D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,D3DFORMAT BackBufferFormat, bool bWindowed);
-	bool    ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings);
+	bool    ModifyDeviceSettings(struct DXUTDeviceSettings* pDeviceSettings);
 	HRESULT OnCreateDevice(IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc);
 	HRESULT OnResetDevice(IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc);
 	void    OnFrameMove(double fTime, float fTimeStep);
@@ -102,7 +102,7 @@ protected:
 	simul::base::SmartPtr<SimulWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulTerrainRenderer> simulTerrainRenderer;
 	simul::base::SmartPtr<SimulHDRRenderer> simulHDRRenderer;
-	const TCHAR *GetDebugText() const;
+	const char *GetDebugText() const;
 	int width,height;
 	float time_mult;
 	simul::dx9::GpuCloudGenerator gpuCloudGenerator;

@@ -47,7 +47,6 @@ void SimulGLHDRRenderer::RestoreDeviceObjects()
 		framebuffer->InitDepth_RB(GL_DEPTH_COMPONENT32);
 	}
 	ERROR_CHECK
-<<<<<<< HEAD
 	framebuffer->Activate();
 	ERROR_CHECK
 	framebuffer->Clear(0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT);
@@ -67,10 +66,6 @@ void SimulGLHDRRenderer::RecompileShaders()
 	ERROR_CHECK
 }
 
-=======
-}
-
->>>>>>> master
 void SimulGLHDRRenderer::InvalidateDeviceObjects()
 {
 }

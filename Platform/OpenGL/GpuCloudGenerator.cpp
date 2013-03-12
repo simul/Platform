@@ -150,20 +150,13 @@ timer.StartTime();
 	glOrtho(0,1.0,0,1.0,-1.0,1.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	// going vertically UP in the volume:
-//	for(int i=0;i<grid[2];i++)
 	{
-		//float zPosition=((float)i+0.5f)/(float)grid[2];
-		//setParameter(density_program,"zPosition",zPosition);
-			ERROR_CHECK
+ERROR_CHECK
 		dens_fb.Activate();
-	ERROR_CHECK
-		//dens_fb.Clear(0.f,0.f,0.f,0.f,GL_COLOR_BUFFER_BIT);
-	ERROR_CHECK
+ERROR_CHECK
 			DrawQuad(0,0,1,1);
 std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-
 			if(!density_texture||new_density_gridsize>density_gridsize)
 			{
 				if(readback_to_cpu&&new_density_gridsize>density_gridsize)
@@ -201,8 +194,6 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
  				}
 			}
 		dens_fb.Deactivate();
-		//glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-		//target+=grid[0]*grid[1];
 	}
 	glDisable(GL_TEXTURE_3D);
 	glUseProgram(0);
@@ -225,7 +216,7 @@ void GpuCloudGenerator::PerformGPURelight(float *target
 								,int start_texel
 								,int texels
 								,const int *density_grid
-								,const float *Matrix4x4LightToDensityTexcoords
+								,const float *transformMatrix
 								,const float *lightspace_extinctions_float3)
 {
 ERROR_CHECK
@@ -247,7 +238,7 @@ timer.StartTime();
 	glUseProgram(clouds_program);
 	setParameter(clouds_program,"input_light_texture",0);
 	setParameter(clouds_program,"density_texture",1);
-	setMatrix(clouds_program,"lightToDensityMatrix",Matrix4x4LightToDensityTexcoords);
+	setMatrix(clouds_program,"transformMatrix",transformMatrix);
 	setParameter(clouds_program,"extinctions",lightspace_extinctions_float3[0],lightspace_extinctions_float3[1]);
 	// initialize the first input texture.
 	FramebufferGL *F[2];
@@ -259,7 +250,7 @@ timer.StartTime();
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,density_texture);
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,F[0]->GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
 			ERROR_CHECK
 			glBindTexture(GL_TEXTURE_2D,0);
 			ERROR_CHECK
@@ -284,7 +275,7 @@ ERROR_CHECK
 			glLoadIdentity();
 			// input light values:
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,F[0]->GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
 			DrawQuad(0,0,1,1);
 			draw_time+=timer.UpdateTime();
 			ERROR_CHECK
@@ -313,7 +304,7 @@ std::cout<<"\tGpu clouds: SAFE_DELETE_TEXTURE "<<timer.UpdateTime()<<std::endl;
 // Transform light data into a world-oriented cloud texture.
 // The inputs are in RGBA float32 format, with the light values in the RG slots.
 void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
-											,const float *DensityToLightTransform
+											,const float *transformMatrix
 											,const float *light,const int *light_grid
 											,const float *ambient,const int *density_grid
 											,int start_texel
@@ -333,7 +324,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 	setParameter(transform_program,"density_texture",0);
 	setParameter(transform_program,"light_texture",1);
 	setParameter(transform_program,"ambient_texture",2);
-	setMatrix(transform_program,"transformMatrix",DensityToLightTransform);
+	setMatrix(transform_program,"transformMatrix",transformMatrix);
 	setParameter(transform_program,"zSize",(float)density_grid[2]);
 	setParameter(transform_program,"zPixel",1.f/(float)density_grid[2]);
 	glEnable(GL_TEXTURE_3D);

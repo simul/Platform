@@ -493,7 +493,7 @@ void SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
 	RebuildBuffers();
 	RecompileShaders();
 	MakeMapTexture();
-	GPUGenerateHeightmap();
+	//GPUGenerateHeightmap();
 }
 
 unsigned SimulTerrainRenderer::GetBufferChecksum()

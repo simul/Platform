@@ -560,7 +560,7 @@ int File::GetIndex(const char *name)
 {
 	for(int i=0;i<vertex_buffers.size();i++)
 	{
-		if(lstrcmpiA(name,vertex_buffers[i].name.c_str())==0)
+		if(strcmp(name,vertex_buffers[i].name.c_str())==0)
 		{
 			return i;
 		}

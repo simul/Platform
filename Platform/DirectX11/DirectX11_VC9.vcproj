@@ -47,6 +47,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
@@ -66,6 +67,7 @@
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Lib/x86&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\$(SafeParentName)_MDd.pdb"
 				SubSystem="2"
 				ImportLibrary="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)/$(SafeParentName)_MDd.lib"
 				TargetMachine="1"
@@ -125,6 +127,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
+				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -144,6 +147,7 @@
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Lib/x86&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\$(SafeParentName)_MD.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -201,10 +205,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;DX11"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
@@ -268,9 +273,10 @@
 				Optimization="0"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="&quot;$(SIMUL)\..\&quot;;&quot;$(DXSDK_DIR)\Samples\C++&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\core&quot;;&quot;$(DXSDK_DIR)\Samples\C++\DXUT11\optional&quot;;&quot;$(DXSDK_DIR)\Include&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11&quot;;&quot;$(DXSDK_DIR)\Samples\C++\Effects11\Inc&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX11_DLL;DX11"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
+				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -308,6 +314,20 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{BA686093-89A1-438D-948A-34ECF718D106}"
+			CopyLocal="false"
+			CopyLocalDependencies="false"
+			CopyLocalSatelliteAssemblies="false"
+			RelativePathToProject=".\Clouds\Clouds_VC9.vcproj"
+		/>
+		<ProjectReference
+			ReferencedProjectIdentifier="{CC71B070-12C2-45C9-894A-A9CDDC1F3FA4}"
+			CopyLocal="false"
+			CopyLocalDependencies="false"
+			CopyLocalSatelliteAssemblies="false"
+			RelativePathToProject=".\Terrain\Terrain_VC9.vcproj"
+		/>
 	</References>
 	<Files>
 		<Filter
@@ -316,59 +336,79 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\DirectX1x\CompileShaderDX1x.cpp"
+				RelativePath=".\CompileShaderDX1x.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\CreateEffectDX1x.cpp"
+				RelativePath=".\CreateEffectDX1x.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\Direct3D1xRenderer.cpp"
+				RelativePath=".\Direct3D1xRenderer.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\CSFFT\fft_512x512.cpp"
+				RelativePath=".\DX11Exception.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\FramebufferCubemapDX1x.cpp"
+				RelativePath=".\FramebufferCubemapDX1x.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\FramebufferDX1x.cpp"
+				RelativePath=".\FramebufferDX1x.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\ocean_simulator.cpp"
+				RelativePath=".\GpuCloudGenerator.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulAtmosphericsRendererDX1x.cpp"
+				RelativePath=".\GpuSkyGenerator.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulCloudRendererDX1x.cpp"
+				RelativePath=".\Profiler.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulHDRRendererDX1x.cpp"
+				RelativePath=".\SaveTextureDX1x.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulOceanRendererDX1x.cpp"
+				RelativePath=".\Simul2DCloudRendererDX1x.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulOpticsRendererDX1x.cpp"
+				RelativePath=".\SimulAtmosphericsRendererDX1x.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulSkyRendererDX1x.cpp"
+				RelativePath=".\SimulCloudRendererDX1x.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulWeatherRendererDX1x.cpp"
+				RelativePath=".\SimulHDRRendererDX1x.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulOpticsRendererDX1x.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulPrecipitationRendererDX1x.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulSkyRendererDX1x.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulTerrainRendererDX1x.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulWeatherRendererDX1x.cpp"
 				>
 			</File>
 		</Filter>
@@ -378,43 +418,51 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\DirectX1x\CompileShaderDX1x.h"
+				RelativePath=".\CompileShaderDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\CreateEffectDX1x.h"
+				RelativePath=".\CreateEffectDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\Direct3D11CallbackInterface.h"
+				RelativePath=".\Direct3D11CallbackInterface.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\Direct3D1xRenderer.h"
+				RelativePath=".\Direct3D1xRenderer.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\Export.h"
+				RelativePath=".\DX11Exception.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\CSFFT\fft_512x512.h"
+				RelativePath=".\Export.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\FramebufferCubemapDX1x.h"
+				RelativePath=".\FramebufferCubemapDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\FramebufferDX1x.h"
+				RelativePath=".\FramebufferDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\MacrosDx1x.h"
+				RelativePath=".\GpuCloudGenerator.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\ocean_simulator.h"
+				RelativePath=".\GpuSkyGenerator.h"
+				>
+			</File>
+			<File
+				RelativePath=".\MacrosDx1x.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Profiler.h"
 				>
 			</File>
 			<File
@@ -422,47 +470,49 @@
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\ResourcesDx1x.h"
+				RelativePath=".\ResourcesDx1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulAtmosphericsRendererDX1x.h"
+				RelativePath=".\SaveTextureDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulCloudRendererDX1x.h"
+				RelativePath=".\Simul2DCloudRendererDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulHDRRendererDX1x.h"
+				RelativePath=".\SimulAtmosphericsRendererDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulOceanRendererDX1x.h"
+				RelativePath=".\SimulCloudRendererDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulOpticsRendererDX1x.h"
+				RelativePath=".\SimulHDRRendererDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulSkyRendererDX1x.h"
+				RelativePath=".\SimulOpticsRendererDX1x.h"
 				>
 			</File>
 			<File
-				RelativePath="..\DirectX1x\SimulWeatherRendererDX1x.h"
+				RelativePath=".\SimulPrecipitationRendererDX1x.h"
 				>
 			</File>
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
-			>
-<<<<<<< HEAD
 			<File
-				RelativePath=".\DirectX11.rc"
-=======
+				RelativePath=".\SimulSkyRendererDX1x.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulTerrainRendererDX1x.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulWeatherRendererDX1x.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="HLSL"
@@ -473,44 +523,6 @@
 			</File>
 			<File
 				RelativePath=".\HLSL\gamma.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_clouds_2d.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_clouds_and_lightning_dx11.fx"
->>>>>>> master
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="HLSL"
-			>
-			<File
-<<<<<<< HEAD
-				RelativePath=".\HLSL\atmospherics.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\fft_512x512_c2c.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\gamma.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\ocean_shading.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\ocean_simulator_cs.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\ocean_simulator_vs_ps.hlsl"
 				>
 			</File>
 			<File
@@ -526,11 +538,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HLSL\simul_earthshadow.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\simul_foliage.fx"
 				>
 			</File>
 			<File
+				RelativePath=".\HLSL\simul_gpu_clouds.fx"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\simul_gpu_lighting.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_gpu_sky.fx"
 				>
 			</File>
 			<File
@@ -550,33 +574,17 @@
 				>
 			</File>
 			<File
-=======
-				RelativePath=".\HLSL\simul_foliage.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_gpu_lighting.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_lightning.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_rain.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_rendernoise.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_sky.fx"
-				>
-			</File>
-			<File
->>>>>>> master
 				RelativePath=".\HLSL\simul_terrain.fx"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+			>
+			<File
+				RelativePath=".\DirectX11.rc"
 				>
 			</File>
 		</Filter>

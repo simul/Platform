@@ -1,9 +1,11 @@
+#include "AtmosphericsUniforms.hlsl"
 float4x4 invViewProj;
 
 Texture2D depthTexture;
 Texture2D imageTexture;
 Texture2D lossTexture1;
 Texture2D inscatterTexture1;
+Texture2D skylightTexture;
 
 SamplerState samplerState 
 {
@@ -12,13 +14,6 @@ SamplerState samplerState
 	AddressV = Clamp;
 };
 
-// For distance-fade:
-float3 lightDir;
-float4 mieRayleighRatio;
-float2 texelOffsets;
-float hazeEccentricity;
-float fadeInterp;
-float altitudeTexCoord;
 #define pi (3.1415926536)
 
 struct atmosVertexInput
@@ -86,6 +81,7 @@ float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 	float4 inscatter_factor=inscatterTexture1.Sample(samplerState,texc2);
 	float cos0=dot(view,lightDir);
 	colour+=InscatterFunction(inscatter_factor,cos0);
+	colour+=skylightTexture.Sample(samplerState,texc2);
 
     return float4(colour,1.f);
 }

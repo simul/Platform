@@ -34,6 +34,9 @@
 
 typedef std::basic_string<TCHAR> tstring;
 
+#define CONE_SIDES 36
+#define NUM_VERT ((CONE_SIDES+1)*8)
+
 SimulPrecipitationRenderer::SimulPrecipitationRenderer() :
 	m_pVtxDecl(NULL),
 	m_pRainEffect(NULL),
@@ -42,20 +45,30 @@ SimulPrecipitationRenderer::SimulPrecipitationRenderer() :
 {
 }
 
-struct Vertex_t
-{
-	float x,y,z;
-	float tex_x,tex_y,fade;
-};
-
-#define CONE_SIDES 36
-#define NUM_VERT ((CONE_SIDES+1)*8)
-static Vertex_t vertices[NUM_VERT];
-
 void SimulPrecipitationRenderer::TextureRepeatChanged()
 {
 	InvalidateDeviceObjects();
 	RestoreDeviceObjects(m_pd3dDevice);
+}
+
+void SimulPrecipitationRenderer::RecompileShaders()
+{
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,"simul_rain.fx"));
+
+	m_hTechniqueRain	=m_pRainEffect->GetTechniqueByName("simul_rain");
+	worldViewProj		=m_pRainEffect->GetParameterByName(NULL,"worldViewProj");
+	offset				=m_pRainEffect->GetParameterByName(NULL,"offset");
+	intensity			=m_pRainEffect->GetParameterByName(NULL,"intensity");
+	lightColour			=m_pRainEffect->GetParameterByName(NULL,"lightColour");
+	offset1				=m_pRainEffect->GetParameterByName(NULL,"offset1");
+	offset2				=m_pRainEffect->GetParameterByName(NULL,"offset2");
+	offset3				=m_pRainEffect->GetParameterByName(NULL,"offset3");
+
+	if(!external_rain_texture)
+	{
+		SAFE_RELEASE(rain_texture);
+		V_CHECK(CreateDX9Texture(m_pd3dDevice,rain_texture,"Rain.jpg"));
+	}
 }
 
 void SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
@@ -100,26 +113,7 @@ void SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	};
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
-<<<<<<< HEAD
-	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,"simul_rain.fx"));
-=======
-	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pRainEffect,"simul_rain.fxo"));
->>>>>>> master
-
-	m_hTechniqueRain	=m_pRainEffect->GetTechniqueByName("simul_rain");
-	worldViewProj		=m_pRainEffect->GetParameterByName(NULL,"worldViewProj");
-	offset				=m_pRainEffect->GetParameterByName(NULL,"offset");
-	intensity			=m_pRainEffect->GetParameterByName(NULL,"intensity");
-	lightColour			=m_pRainEffect->GetParameterByName(NULL,"lightColour");
-	offset1				=m_pRainEffect->GetParameterByName(NULL,"offset1");
-	offset2				=m_pRainEffect->GetParameterByName(NULL,"offset2");
-	offset3				=m_pRainEffect->GetParameterByName(NULL,"offset3");
-
-	if(!external_rain_texture)
-	{
-		SAFE_RELEASE(rain_texture);
-		V_CHECK(CreateDX9Texture(m_pd3dDevice,rain_texture,"Rain.jpg"));
-	}
+	RecompileShaders();
 }
 
 bool SimulPrecipitationRenderer::SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex)
@@ -160,11 +154,11 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-bool SimulPrecipitationRenderer::Render()
+void SimulPrecipitationRenderer::Render()
 {
 	HRESULT hr=S_OK;
 	if(rain_intensity<=0)
-		return (hr==S_OK);
+		return;
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
@@ -249,7 +243,6 @@ bool SimulPrecipitationRenderer::Render()
 	}
 	hr=m_pRainEffect->End();
 	D3DXMatrixIdentity(&world);
-	return (hr==S_OK);
 }
 
 #ifdef XBOX

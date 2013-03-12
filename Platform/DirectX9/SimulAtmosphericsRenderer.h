@@ -54,14 +54,13 @@ public:
 	void RecompileShaders();
 	//! Call this when the device has been lost.
 	void InvalidateDeviceObjects();
-<<<<<<< HEAD
 	//! StartRender: sets up the rendertarget for atmospherics, and make it the current target. Call at the start of the frame's rendering.
 	void StartRender();
 	void FinishRender();
-=======
-	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-	bool Render();
->>>>>>> master
+	void *GetDepthAlphaTexture()
+	{
+		return (void*)input_texture;
+	}
 	//! Set properties for rendering cloud godrays.
 	void SetCloudProperties(void* c1,void* c2,
 							const float *cloudscales,

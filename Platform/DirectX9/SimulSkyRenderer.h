@@ -99,16 +99,11 @@ public:
 	const char *GetDebugText() const;
 	void SetYVertical(bool y);
 protected:
-<<<<<<< HEAD
 	void FillSkyTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void FillFadeTexturesSequentially(int texture_index,int texel_index
 						,int num_texels,const float *loss_float4_array
 						,const float *inscatter_float4_array
 						,const float *skyl_float4_array);
-=======
-	void FillSkyTex(int alt_index,int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void FillFadeTexturesSequentially(int alt_index,int texture_index,int texel_index,int num_texels,const float *loss_float4_array,const float *inscatter_float4_array);
->>>>>>> master
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate();
 	void EnsureTextureCycle();
@@ -166,10 +161,7 @@ protected:
 	// Two in-use 2D sky textures. We render a slice of the 3D textures into these, then use them for all fades.
 	Framebuffer					loss_2d;
 	Framebuffer					inscatter_2d;
-<<<<<<< HEAD
 	Framebuffer					skylight_2d;
-=======
->>>>>>> master
 	simul::sky::float4			cam_dir;
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DQUERY9			d3dQuery;

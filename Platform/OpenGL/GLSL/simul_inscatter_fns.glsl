@@ -1,8 +1,6 @@
 #ifndef SIMUL_INSCATTER_FNS_GLSL
 #define SIMUL_INSCATTER_FNS_GLSL
 
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
 uniform mat4 invViewProj;
 #define pi (3.1415926536)
 
@@ -32,7 +30,7 @@ float HenyeyGreenstein(float g,float cos0)
 	return (1.0-g2)*pow(u,-1.5)/(4.0*pi);
 }
 
-vec3 InscatterFunction(vec4 inscatter_factor,float cos0)
+vec3 InscatterFunction(vec4 inscatter_factor,float hazeEccentricity,float cos0,vec3 mieRayleighRatio)
 {
 	float BetaRayleigh=0.0596831*(1.0+cos0*cos0);
 	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function

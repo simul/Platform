@@ -86,7 +86,6 @@ void SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 	};
 	SAFE_RELEASE(vertexDecl);
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&vertexDecl);
-<<<<<<< HEAD
 	LPDIRECT3DSURFACE9 g_BackBuffer;
     m_pd3dDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &g_BackBuffer);
 	D3DSURFACE_DESC desc;
@@ -114,8 +113,6 @@ void SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 										);
 	SAFE_RELEASE(m_pRenderTarget);
 	m_pRenderTarget=MakeRenderTarget(input_texture);
-=======
->>>>>>> master
 }
 
 void SimulAtmosphericsRenderer::RecompileShaders()
@@ -178,16 +175,12 @@ void SimulAtmosphericsRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(vertexDecl);
 	if(effect)
         V_CHECK(effect->OnLostDevice());
-<<<<<<< HEAD
 	SAFE_RELEASE(input_texture);
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(m_pRenderTarget);
 	SAFE_RELEASE(m_pBufferDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
-=======
-	SAFE_RELEASE(effect);
->>>>>>> master
 }
 
 SimulAtmosphericsRenderer::~SimulAtmosphericsRenderer()
@@ -262,15 +255,19 @@ bool SimulAtmosphericsRenderer::RenderGodRays(float strength)
 		{
 			hr=effect->SetFloat(hazeEccentricity,skyInterface->GetMieEccentricity());
 			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
-			D3DXVECTOR4 sundir(skyInterface->GetDirectionToSun());
 			D3DXVECTOR4 light_dir(skyInterface->GetDirectionToLight(alt_km));
+			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
 			D3DXVECTOR4 light_colour(skyInterface->GetLocalIrradiance(alt_km));
 			
 			light_colour*=strength;
 			if(y_vertical)
+			{
 				std::swap(light_dir.y,light_dir.z);
+				std::swap(sun_dir.y,sun_dir.z);
+			}
 
-			effect->SetVector	(lightDir			,&light_dir);
+			effect->SetVector	(lightDir		,&light_dir);
+			effect->SetVector	(sunDir			,&sun_dir);
 			effect->SetVector	(lightColour	,(const D3DXVECTOR4*)&light_colour);
 		}
 		hr=effect->SetTexture(maxDistanceTexture,max_distance_texture);
@@ -412,7 +409,7 @@ bool SimulAtmosphericsRenderer::Render()
 				std::swap(sun_dir.y,sun_dir.z);
 			}
 			effect->SetVector	(lightDir			,&light_dir);
-			effect->SetVector	(sunDir			,&sun_dir);
+			effect->SetVector	(sunDir				,&sun_dir);
 			effect->SetVector	(mieRayleighRatio	,&mie_rayleigh_ratio);
 		}
 		hr=effect->SetTexture(lossTexture1,loss_texture);

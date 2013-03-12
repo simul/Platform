@@ -59,41 +59,12 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 {
 	if(!initialized)
 		return;
-<<<<<<< HEAD
 	std::string defs="";
 	distance_fade_program		=MakeProgram("simul_atmospherics",defs.c_str());
 	earthshadow_fade_program	=LoadPrograms("simul_atmospherics.vert",NULL,"simul_atmospherics_earthshadow.frag",defs.c_str());
 	cloudmix_program			=MakeProgram("simul_cloudmix");
 	godrays_program				=LoadPrograms("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defs.c_str());
 	current_program				=0;
-=======
-	framebuffer->RecompileShaders();
-	cloudmix_vertex_shader		=glCreateShader(GL_VERTEX_SHADER);
-ERROR_CHECK
-	cloudmix_fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-ERROR_CHECK
-	cloudmix_program			=glCreateProgram();
-ERROR_CHECK
-	cloudmix_vertex_shader		=LoadShader(cloudmix_vertex_shader		,"simul_cloudmix.vert");
-    cloudmix_fragment_shader	=LoadShader(cloudmix_fragment_shader	,"simul_cloudmix.frag");
-	glAttachShader(cloudmix_program,cloudmix_vertex_shader);
-	glAttachShader(cloudmix_program,cloudmix_fragment_shader);
-	glLinkProgram(cloudmix_program);
-	glUseProgram(cloudmix_program);
-	ERROR_CHECK
-	printProgramInfoLog(cloudmix_program);
-
-	image_texture_param		=glGetUniformLocation(cloudmix_program,"image_texture");
-	loss_texture_param		=glGetUniformLocation(cloudmix_program,"loss_texture");
-	insc_texture_param		=glGetUniformLocation(cloudmix_program,"insc_texture");
-	hazeEccentricity_param	=glGetUniformLocation(cloudmix_program,"hazeEccentricity");
-	lightDir_param			=glGetUniformLocation(cloudmix_program,"lightDir");
-	invViewProj_param		=glGetUniformLocation(cloudmix_program,"invViewProj");
-	mieRayleighRatio_param	=glGetUniformLocation(cloudmix_program,"mieRayleighRatio");
-
-	clouds_texture_param	=glGetUniformLocation(cloudmix_program,"clouds_texture");
-	
->>>>>>> master
 	glUseProgram(0);
 	
 	glGenBuffers(1, &earthShadowUniformsUBO);
@@ -104,13 +75,10 @@ ERROR_CHECK
 
 void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 {
-<<<<<<< HEAD
 	SAFE_DELETE_PROGRAM(godrays_program);
 	
 	earthShadowUniforms=-1;
 	earthShadowUniformsUBO=-1;
-=======
->>>>>>> master
 }
 
 void SimulGLAtmosphericsRenderer::UseProgram(GLuint p)
@@ -157,9 +125,7 @@ ERROR_CHECK
 void SimulGLAtmosphericsRenderer::StartRender()
 {
 	framebuffer->Activate();
-	glClearColor(0.f,0.0f,0.0f,1.0f);
-	ERROR_CHECK
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	framebuffer->Clear(0.f,0.0f,1.0f,1.0f);
 	ERROR_CHECK
 }
 
@@ -239,7 +205,7 @@ ERROR_CHECK
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
     glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,framebuffer->GetColorTex(0));
+	glBindTexture(GL_TEXTURE_2D,(GLuint)framebuffer->GetColorTex(0));
 	
 	framebuffer->Render(false);
 	
@@ -253,7 +219,7 @@ ERROR_CHECK
 		setParameter3(godrays_program	,"mieRayleighRatio",ratio);
 		setParameter3(godrays_program	,"lightDir"			,light_dir);
 		setParameter(godrays_program	,"hazeEccentricity"	,skyInterface->GetMieEccentricity());
-		setMatrix(godrays_program		,"invViewProj"		,ivp.RowPointer(0));
+		setMatrixTranspose(godrays_program		,"invViewProj"		,ivp.RowPointer(0));
 		setParameter3(godrays_program	,"cloudOrigin"		,cloud_origin);
 		setParameter3(godrays_program	,"cloudScale"		,cloud_scale);
 		setParameter(godrays_program	,"maxDistance"		,fade_distance_km*1000.f);
