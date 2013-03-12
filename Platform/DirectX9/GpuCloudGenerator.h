@@ -29,6 +29,8 @@ public:
 							,int start_texel
 							,int texels
 							,float humidity
+									,float baseLayer
+									,float transition
 							,float time_val
 							,int noise_size,int octaves,float persistence
 							,const float  *noise_src_ptr);

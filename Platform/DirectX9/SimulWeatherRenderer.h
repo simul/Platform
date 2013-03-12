@@ -65,7 +65,7 @@ public:
 	//! Call this to draw the clouds after the main scene.
 	bool RenderLateCloudLayer(bool buf);
 	//! Call this to draw lightning.
-	bool RenderLightning();
+	void RenderLightning();
 	//! Call this to draw rain etc.
 	void RenderPrecipitation();
 	//! Perform the once-per-frame time update.

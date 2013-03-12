@@ -24,6 +24,8 @@ namespace simul
 									,int start_texel
 									,int texels
 									,float humidity
+									,float baseLayer
+									,float transition
 									,float time
 									,int noise_size,int octaves,float persistence
 									,const float  *noise_src_ptr);

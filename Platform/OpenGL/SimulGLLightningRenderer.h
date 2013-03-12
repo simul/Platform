@@ -15,7 +15,7 @@ public:
 	SimulGLLightningRenderer(simul::clouds::LightningRenderInterface *lri);
 	~SimulGLLightningRenderer();
 	void RestoreDeviceObjects();
-	bool Render();
+	void Render();
 	void InvalidateDeviceObjects();
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual void SetYVertical(bool ){}

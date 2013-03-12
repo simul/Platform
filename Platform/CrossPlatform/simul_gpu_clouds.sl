@@ -1,5 +1,7 @@
 uniform float zPixel;
 uniform float zSize;
+uniform float baseLayer;
+uniform float transition;
 uniform sampler3D volumeNoiseTexture;
 uniform mat4 transformMatrix;
 
@@ -25,11 +27,9 @@ vec3 assemble3dTexcoord(vec2 texcoord2)
 
 float GetHumidityMultiplier(float z)
 {
-	const float base_layer=0.46;
-	const float transition=0.2;
 	const float mul=0.7;
 	const float default_=1.0;
-	float i=saturate((z-base_layer)/transition);
+	float i=saturate((z-baseLayer)/transition);
 	return default_*(1.0-i)+mul*i;
 }
 

@@ -99,6 +99,8 @@ void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
 									,int start_texel
 									,int texels
 									,float humidity
+									,float baseLayer
+									,float transition
 									,float time
 									,int noise_size,int octaves,float persistence
 									,const float  *noise_src_ptr)
@@ -138,7 +140,8 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	setParameter(effect,"zPixel"				,1.f/(float)density_grid[2]);
 	setParameter(effect,"zSize"					,(float)density_grid[2]);
 	setParameter(effect,"noiseScale"			,noise_scale);
-	setMatrix(effect,"vertexMatrix"				,vertexMatrix);
+	setParameter(effect,"baseLayer"				,baseLayer);
+	setParameter(effect,"transition"			,transition);
 	
 	dens_fb.Activate();
 		ApplyPass(densityTechnique->GetPassByIndex(0));
@@ -161,7 +164,7 @@ std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 		dens_fb.CopyToMemory(density);
 		memcpy(tex_data,density,new_density_gridsize*sizeof(float));
 		Unmap3D(density_texture);
-		density_texture	=make3DTexture(m_pd3dDevice,m_pImmediateContext,density_grid[0],density_grid[1],density_grid[2]	,DXGI_FORMAT_R32G32B32A32_FLOAT,density);
+		//density_texture	=make3DTexture(m_pd3dDevice,m_pImmediateContext,density_grid[0],density_grid[1],density_grid[2]	,DXGI_FORMAT_R32G32B32A32_FLOAT,density);
 		delete [] density;
 	}
 	SAFE_RELEASE(volume_noise_tex);

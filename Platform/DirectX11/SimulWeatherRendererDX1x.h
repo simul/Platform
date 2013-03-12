@@ -12,13 +12,8 @@
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/FramebufferCubemapDX1x.h"
 #include <d3dx9.h>
-#ifdef DX10
-	#include <D3D10.h>
-	#include <d3dx10.h>
-#else
-	#include <d3d11.h>
-	#include <d3dx11.h>
-#endif
+#include <d3d11.h>
+#include <d3dx11.h>
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
 
