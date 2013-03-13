@@ -24,7 +24,7 @@ extern void printProgramInfoLog(GLuint obj);
 
 SimulGLLightningRenderer::SimulGLLightningRenderer(simul::clouds::LightningRenderInterface *lightningRenderInterface) :
 	simul::clouds::BaseLightningRenderer(lightningRenderInterface)
-	,lightning_vertices(NULL)
+	
 	,lightning_texture(0)
 {
 }
@@ -41,7 +41,7 @@ void SimulGLLightningRenderer::RestoreDeviceObjects()
 
 void SimulGLLightningRenderer::RecompileShaders()
 {
-	lightning_program			=MakeProgram("simul_lightning");
+	lightning_program			=MakeProgram("simul_lightning");//WithGS
 	lightningTexture_param		=glGetUniformLocation(lightning_program,"lightningTexture");
 	
 	printProgramInfoLog(lightning_program);
@@ -79,8 +79,6 @@ void SimulGLLightningRenderer::Render()
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	if(glStringMarkerGREMEDY)
 		glStringMarkerGREMEDY(0,"SimulGLLightningRenderer::Render");
-	if(!lightning_vertices)
-		lightning_vertices=new PosTexVert_t[4500];
 ERROR_CHECK
 /*	m_pd3dDevice->SetTexture(0,lightning_texture);
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
@@ -169,42 +167,21 @@ ERROR_CHECK
 					simul::math::Vector3 t=transverse;
 					if(k)
 						t=0.5f*(last_transverse+transverse);
-					simul::math::Vector3 x1a=x1;//-t;
+					simul::math::Vector3 x1a=x1;
 					if(quads)
 						x1a=x1-t;
-					simul::math::Vector3 x1b=x1+t;
-					//if(!k)
-					//	bright1=0;
-					//if(k==lightningRenderInterface->GetNumSegments(i,jj)-1)
-					//	bright1=0;
-					PosTexVert_t &v1=lightning_vertices[vert_num++];
-
-					v1.position.x=x1a.x;
-					v1.position.y=x1a.y;
-					v1.position.z=x1a.z+vertical_shift;
-					v1.texCoords.x=0;
-					v1.texCoords.y=brightness;
-					if(!quads)
-						v1.texCoords.x=0.5f;
-						
-					glMultiTexCoord2f(GL_TEXTURE0,v1.texCoords.x,v1.texCoords.y);
-					glVertex3f(v1.position.x,v1.position.y,v1.position.z);
-						
-
+					glMultiTexCoord2f(GL_TEXTURE0,quads?0:0.5f,brightness);
+					glVertex3f(x1a.x,x1a.y,x1a.z+vertical_shift);
 					if(quads)
 					{
-						PosTexVert_t &v2=lightning_vertices[vert_num++];
-						v2.position.x=x1b.x;
-						v2.position.y=x1b.y;
-						v2.position.z=x1b.z+vertical_shift;
-						v2.texCoords.x=1.f;
-						v2.texCoords.y=brightness;
-						glMultiTexCoord2f(GL_TEXTURE0,v2.texCoords.x,v2.texCoords.y);
-						glVertex3f(v2.position.x,v2.position.y,v2.position.z);
+						simul::math::Vector3 x1b=x1+t;
+						glMultiTexCoord2f(GL_TEXTURE0,1.f,brightness);
+						glVertex3f(x1b.x,x1b.y,x1b.z+vertical_shift);
 					}
 					last_transverse=transverse;
 				}
 				glEnd();
+				vert_num=0;
 				ERROR_CHECK
 			}
 		}

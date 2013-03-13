@@ -40,12 +40,6 @@ protected:
 			z=f[2];
 		}
 	};
-	struct PosTexVert_t
-	{
-		float3 position;	
-		float2 texCoords;
-	};
-	PosTexVert_t *lightning_vertices;
 
 	GLuint				lightning_program;	
 	GLuint				lightning_vertex_shader;
