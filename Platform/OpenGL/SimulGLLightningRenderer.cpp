@@ -143,12 +143,17 @@ ERROR_CHECK
 				}
 				else
 					glBegin(GL_LINE_STRIP);
-				for(int k=0;k<branch.numVertices-1;k++)
+				for(int k=0;k<branch.numVertices;k++)
 				{
 					x1=(const float *)branch.vertices[k];
-					x2=(const float *)branch.vertices[k+1];
+					if(k+1<branch.numVertices)
+						x2=(const float *)branch.vertices[k+1];
+					else
+					{
+						x2=2.f*x1-simul::math::Vector3((const float *)branch.vertices[k-1]);
+					}
 					bool start=(k==0);
-					bool end=(k==branch.numVertices-2);
+					bool end=(k==branch.numVertices-1);
 					simul::math::Vector3 dir=x2-x1;
 					dir.Normalize();
 
@@ -162,7 +167,7 @@ ERROR_CHECK
 					transverse.Unit();
 					transverse*=width;
 					float brightness=branch.brightness;
-					if(start||end)
+					if(end)
 						brightness=0.f;
 					simul::math::Vector3 t=transverse;
 					if(k)
@@ -209,7 +214,7 @@ bool SimulGLLightningRenderer::CreateLightningTexture()
 	for(unsigned i=0;i<size;i++)
 	{
 		float linear=1.f-fabs((float)(i+.5f)*2.f/(float)size-1.f);
-		float level=.5f*linear*linear+5.f*(linear>.97f);
+		float level=.5f*linear*linear+5.f*(linear>.9f);
 		float r=lightning_colour[0]*level;
 		float g=lightning_colour[1]*level;
 		float b=lightning_colour[2]*level;
