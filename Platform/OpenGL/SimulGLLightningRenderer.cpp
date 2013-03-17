@@ -24,7 +24,6 @@ extern void printProgramInfoLog(GLuint obj);
 
 SimulGLLightningRenderer::SimulGLLightningRenderer(simul::clouds::LightningRenderInterface *lightningRenderInterface) :
 	simul::clouds::BaseLightningRenderer(lightningRenderInterface)
-	
 	,lightning_texture(0)
 {
 }
@@ -41,7 +40,7 @@ void SimulGLLightningRenderer::RestoreDeviceObjects()
 
 void SimulGLLightningRenderer::RecompileShaders()
 {
-	lightning_program			=MakeProgram("simul_lightning");//WithGS
+	lightning_program			=MakeProgramWithGS("simul_lightning");//
 	lightningTexture_param		=glGetUniformLocation(lightning_program,"lightningTexture");
 	
 	printProgramInfoLog(lightning_program);
@@ -108,10 +107,19 @@ ERROR_CHECK
     glBindTexture(GL_TEXTURE_1D,lightning_texture);
 	glUseProgram(lightning_program);
 	glUniform1i(lightningTexture_param,0);
-
+	simul::math::Matrix4x4 view,proj,viewproj;
+	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
+	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
+	simul::math::Multiply4x4(viewproj,view,proj);
+setMatrix(lightning_program,"worldViewProj",viewproj.RowPointer(0));
+	int main_viewport[4];
+	glGetIntegerv(GL_VIEWPORT,main_viewport);
+	float vpx=main_viewport[2];
+	float vpy=main_viewport[3];
+	setParameter(lightning_program,"viewportPixels",vpx,vpy);
+	int texcoord_index=glGetAttribLocation(lightning_program,"in_coord");
 ERROR_CHECK
 	simul::math::Vector3 pos;
-
 	static float lm=10.f;
 	static float main_bright=1.f;
 	int vert_start=0;
@@ -121,7 +129,7 @@ ERROR_CHECK
 	{
 		if(!lightningRenderInterface->IsSourceStarted(i))
 			continue;
-		bool quads=true;
+		bool quads=false;
 		simul::math::Vector3 x1,x2;
 		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
 		for(int j=0;j<lightningRenderInterface->GetNumLevels(i);j++)
@@ -137,12 +145,12 @@ ERROR_CHECK
 				vert_start=vert_num;
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_ONE,GL_ONE);
-				if(quads)
+				/*if(quads)
 				{
-					glBegin(GL_QUAD_STRIP);
+					glBegin(GL_TRIANGLE_STRIP);
 				}
-				else
-					glBegin(GL_LINE_STRIP);
+				else*/
+					glBegin(GL_LINE_STRIP_ADJACENCY);
 				for(int k=0;k<branch.numVertices;k++)
 				{
 					x1=(const float *)branch.vertices[k];
@@ -169,25 +177,19 @@ ERROR_CHECK
 					float brightness=branch.brightness;
 					if(end)
 						brightness=0.f;
-					simul::math::Vector3 t=transverse;
-					if(k)
-						t=0.5f*(last_transverse+transverse);
-					simul::math::Vector3 x1a=x1;
-					if(quads)
-						x1a=x1-t;
-					glMultiTexCoord2f(GL_TEXTURE0,quads?0:0.5f,brightness);
-					glVertex3f(x1a.x,x1a.y,x1a.z+vertical_shift);
-					if(quads)
-					{
-						simul::math::Vector3 x1b=x1+t;
-						glMultiTexCoord2f(GL_TEXTURE0,1.f,brightness);
-						glVertex3f(x1b.x,x1b.y,x1b.z+vertical_shift);
-					}
+					glVertexAttrib2f(texcoord_index,width,brightness);
+					glVertex3f(x1.x,x1.y,x1.z+vertical_shift);
 					last_transverse=transverse;
 				}
 				glEnd();
 				vert_num=0;
-				ERROR_CHECK
+				int err=glGetError();
+				if(err!=0)
+				{
+					glDisable(GL_TEXTURE_1D);
+					glPopAttrib();
+					return;
+				}
 			}
 		}
 	}

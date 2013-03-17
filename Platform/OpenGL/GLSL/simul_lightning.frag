@@ -1,9 +1,11 @@
-
+#version 130
 uniform sampler1D lightningTexture;
-varying vec2 texc;
+in vec2 texcoord;
 
+out vec4 fragmentColour;
 void main(void)
 {
-    vec4 c=texc.y*texture1D(lightningTexture,texc.x);
-    gl_FragColor=c;
+    vec4 c=texcoord.y*texture1D(lightningTexture,texcoord.x);
+    c.r=texcoord.x;
+    fragmentColour=c;
 }
