@@ -6,6 +6,5 @@ out vec4 fragmentColour;
 void main(void)
 {
     vec4 c=texcoord.y*texture1D(lightningTexture,texcoord.x);
-    c.r=texcoord.x;
     fragmentColour=c;
 }

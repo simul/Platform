@@ -67,7 +67,7 @@ void main(void)
 	float length_b = widthPixels2/gl_in[2].gl_Position.w*viewportPixels.x/dot(miter_b, n1);
 	const float	MITER_LIMIT=1.0;//0.75;
   // prevent excessively long miters at sharp corners
-	/*if( dot(v0,v1) < -MITER_LIMIT )
+	if( dot(v0,v1) < -MITER_LIMIT )
 	{
 		miter_a = n1;
 		length_a = widthPixels1;
@@ -105,7 +105,7 @@ void main(void)
   {
 	miter_b = n1;
 	length_b = widthPixels2;
-  }*/
+  }
   // generate the triangle strip
 	texcoord = vec2(0.0,texc[1].z);
 	gl_Position = vec4( (p1 + length_a * miter_a) / viewportPixels, 0.0, 1.0 );

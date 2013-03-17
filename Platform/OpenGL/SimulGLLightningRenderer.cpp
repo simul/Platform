@@ -164,11 +164,9 @@ ERROR_CHECK
 					bool end=(k==branch.numVertices-1);
 					simul::math::Vector3 dir=x2-x1;
 					dir.Normalize();
-
 					static float ww=100.f;
 					float width=branch.brightness*branch.width;
-					if(quads)
-						width*=ww;
+					width*=ww;
 					simul::math::Vector3 transverse;
 					view_dir=x1-cam_pos;
 					CrossProduct(transverse,view_dir,dir);
@@ -216,7 +214,13 @@ bool SimulGLLightningRenderer::CreateLightningTexture()
 	for(unsigned i=0;i<size;i++)
 	{
 		float linear=1.f-fabs((float)(i+.5f)*2.f/(float)size-1.f);
-		float level=.5f*linear*linear+5.f*(linear>.9f);
+		float s=linear*2.f;
+		if(s>1.f)
+			s=2.f-s;
+		float u=s/0.2f;
+		if(u>1.f)
+			u=1.f;
+		float level=u;
 		float r=lightning_colour[0]*level;
 		float g=lightning_colour[1]*level;
 		float b=lightning_colour[2]*level;
