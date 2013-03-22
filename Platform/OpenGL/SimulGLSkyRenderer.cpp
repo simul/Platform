@@ -238,8 +238,11 @@ ERROR_CHECK
 bool SimulGLSkyRenderer::RenderFades(int w,int h)
 {
 	int size=w/4;
-	if(h/(numAltitudes+2)<size)
-		size=h/(numAltitudes+2);
+	if(h/3<size)
+		size=h/3;
+	size-=8;
+	if(size<2)
+		return false;
 	if(glStringMarkerGREMEDY)
 		glStringMarkerGREMEDY(11,"RenderFades");
 	static int main_viewport[]={0,0,1,1};
@@ -268,17 +271,16 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,(GLuint)skylight_2d.GetColorTex());
 	RenderTexture(8,24+2*size,size,size);
 	int x=16+size;
-	if(h/(numAltitudes+2)<size)
-		size=h/(numAltitudes+2);
+	int s=size/numAltitudes-8;
 	for(int i=0;i<numAltitudes;i++)
 	{
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
 
 		glUseProgram(fade_3d_to_2d_program);
-		GLint			altitudeTexCoord_fade;
-		GLint			skyInterp_fade;
-		GLint			fadeTexture1_fade;
-		GLint			fadeTexture2_fade;
+		GLint					altitudeTexCoord_fade;
+		GLint					skyInterp_fade;
+		GLint					fadeTexture1_fade;
+		GLint					fadeTexture2_fade;
 		altitudeTexCoord_fade	=glGetUniformLocation(fade_3d_to_2d_program,"altitudeTexCoord");
 		skyInterp_fade			=glGetUniformLocation(fade_3d_to_2d_program,"skyInterp");
 		fadeTexture1_fade		=glGetUniformLocation(fade_3d_to_2d_program,"fadeTexture1");
@@ -290,23 +292,24 @@ ERROR_CHECK
 		glUniform1i(fadeTexture2_fade,0);
 		
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D,inscatter_textures[0]);
-		RenderTexture(x+16+0*(size+8)	,i*(size+8)+8, size,size);
-
-		glBindTexture(GL_TEXTURE_3D,inscatter_textures[1]);
-		RenderTexture(x+16+1*(size+8)	,i*(size+8)+8, size,size);
 		
 		glBindTexture(GL_TEXTURE_3D,loss_textures[0]);
-		RenderTexture(x+16+2*(size+8)	,i*(size+8)+8, size,size);
+		RenderTexture(x+16+0*(size+8)	,i*(s+8)+8, s,s);
 
 		glBindTexture(GL_TEXTURE_3D,loss_textures[1]);
-		RenderTexture(x+16+3*(size+8)	,i*(size+8)+8, size,size);
+		RenderTexture(x+16+1*(size+8)	,i*(s+8)+8, s,s);
+
+		glBindTexture(GL_TEXTURE_3D,inscatter_textures[0]);
+		RenderTexture(x+16+0*(size+8)	,i*(s+8)+16+size, s,s);
+
+		glBindTexture(GL_TEXTURE_3D,inscatter_textures[1]);
+		RenderTexture(x+16+1*(size+8)	,i*(s+8)+16+size, s,s);
 		
 		glBindTexture(GL_TEXTURE_3D,skylight_textures[0]);
-		RenderTexture(x+16+4*(size+8)	,i*(size+8)+8, size,size);
+		RenderTexture(x+16+0*(size+8)	,i*(s+8)+24+2*size, s,s);
 
 		glBindTexture(GL_TEXTURE_3D,skylight_textures[1]);
-		RenderTexture(x+16+5*(size+8)	,i*(size+8)+8, size,size);
+		RenderTexture(x+16+1*(size+8)	,i*(s+8)+24+2*size, s,s);
 	}
 
 	glUseProgram(0);
