@@ -81,7 +81,7 @@ GLuint MakeProgram(const char *filename,const char *defines)
 	char f[100];
 	sprintf_s(v,98,"%s.vert",filename);
 	sprintf_s(f,98,"%s.frag",filename);
-	return LoadPrograms(v,NULL,f,defines);
+	return MakeProgram(v,NULL,f,defines);
 }
 GLuint MakeProgramWithGS(const char *filename,const char *defines)
 {
@@ -91,7 +91,7 @@ GLuint MakeProgramWithGS(const char *filename,const char *defines)
 	sprintf_s(v,98,"%s.vert",filename);
 	sprintf_s(f,98,"%s.frag",filename);
 	sprintf_s(g,98,"%s.geom",filename);
-	return LoadPrograms(v,g,f,defines);
+	return MakeProgram(v,g,f,defines);
 }
 
 GLuint SetShaders(const char *vert_src,const char *frag_src)
@@ -113,7 +113,7 @@ GLuint SetShaders(const char *vert_src,const char *frag_src)
 	return prog;
 }
 
-GLuint LoadPrograms(const char *vert_filename,const char *geom_filename,const char *frag_filename,const char *defines)
+GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename,const char *defines)
 {
 	GLuint prog						=glCreateProgram();
 	GLuint vertex_shader			=LoadShader(vert_filename,defines);
@@ -145,9 +145,7 @@ GLuint LoadPrograms(const char *vert_filename,const char *geom_filename,const ch
 	glAttachShader(prog,fragment_shader);
 	ERROR_CHECK
 	glLinkProgram(prog);
-	ERROR_CHECK
 	glUseProgram(prog);
-	ERROR_CHECK
 	printProgramInfoLog(prog);
 	ERROR_CHECK
 	return prog;

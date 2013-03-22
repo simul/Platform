@@ -320,13 +320,10 @@ ERROR_CHECK
 	GLuint program=depth_alpha_tex>0?clouds_foreground_program:clouds_background_program;
 	UseShader(program);
 	glUseProgram(program);
-ERROR_CHECK
+
 	glUniform1i(cloudDensity1_param,0);
-ERROR_CHECK
 	glUniform1i(cloudDensity2_param,1);
-ERROR_CHECK
 	glUniform1i(noiseSampler_param,2);
-ERROR_CHECK
 	glUniform1i(lossSampler_param,3);
 ERROR_CHECK
 	glUniform1i(inscatterSampler_param,4);
@@ -345,7 +342,7 @@ ERROR_CHECK
 	simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 
 	CloudConstants cloudConstants;
-	if(enable_lightning)
+	if(lightningRenderInterface)
 	{
 		static float bb=.1f;
 		simul::sky::float4 lightning_multipliers;
@@ -358,18 +355,10 @@ ERROR_CHECK
 		}
 		static float lightning_effect_on_cloud=20.f;
 		lightning_colour.w=lightning_effect_on_cloud;
-	
-//GLint lightningMultipliers;
-//GLint lightningColour;
-//		m_pCloudEffect->SetVector	(lightningMultipliers_param	,(const float*)(&lightning_multipliers));
-//		m_pCloudEffect->SetVector	(lightningColour_param		,(const float*)(&lightning_colour));
-
-		simul::math::Vector3 light_X1,light_X2,light_DX;
-		light_X1=lightningRenderInterface->GetIlluminationOrigin();
-		light_DX=lightningRenderInterface->GetIlluminationScales();
-
-//	cloudConstants.illuminationOrigin_param=light_X1;
-//		cloudConstants.illuminationScales_param=light_DX;
+		lightning_colour*=lightningRenderInterface->GetLightSourceBrightness(0);
+		simul::sky::float4 source_pos=lightningRenderInterface->GetSourcePosition(0);
+		cloudConstants.lightningSourcePos=source_pos;
+		cloudConstants.lightningColour=lightning_colour;
 	}
 ERROR_CHECK
 
@@ -604,7 +593,7 @@ ERROR_CHECK
 	cross_section_program	=MakeProgram("simul_cloud_cross_section");
 	
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
-	cloud_shadow_program=LoadPrograms("simple.vert",NULL,"simul_cloud_shadow.frag");
+	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
 	glBindBufferRange(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO,0, sizeof(CloudConstants));
 ERROR_CHECK
 	glUseProgram(0);
@@ -906,10 +895,12 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 			texture_cycle+=3;
 	}
 }
+
 void SimulGLCloudRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip)
 {
 	::DrawLines(vertices,vertex_count,strip);
 }
+
 void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
 {
 	static int u=4;

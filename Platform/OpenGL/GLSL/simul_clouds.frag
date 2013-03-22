@@ -65,11 +65,11 @@ void main(void)
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
 	vec3 final=(density.z*Beta+lightResponse.y*density.w)*sunlight+density.x*ambientColour.rgb;
 	
-	vec3 diff=wPosition.xyz-vec3(0,0,4000.f);
-float dist_from_lightning=length(diff.xyz);
-float cc=dist_from_lightning/2000.f;
-float pwr=exp(-cc*cc);
-final+=vec3(10.0,10.0,10.0)*pwr;
+	vec3 diff=wPosition.xyz-lightningSourcePos;
+	float dist_from_lightning=length(diff.xyz);
+	float cc=dist_from_lightning/2000.f;
+	float pwr=exp(-cc*cc);
+	final.rgb+=lightningColour*pwr;
 
 	vec3 loss_lookup=texture(lossSampler,fade_texc).rgb;
 	vec4 insc_lookup=earthshadowMultiplier*texture(inscatterSampler,fade_texc);

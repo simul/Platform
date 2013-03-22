@@ -27,11 +27,15 @@ public:
 	bool FinishRender();
 protected:
 	FramebufferGL *framebuffer;
+	FramebufferGL glow_fb;
+	FramebufferGL alt_fb;
 	bool initialized;
 	// shaders
 	GLuint tonemap_program;
 	GLint exposure_param;
 	GLint gamma_param;
 	GLint buffer_tex_param;
+	GLuint glow_program;
+	GLuint blur_program;
 	float exposure, gamma;
 };

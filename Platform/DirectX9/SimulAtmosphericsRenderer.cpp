@@ -208,6 +208,8 @@ void SimulAtmosphericsRenderer::SetCloudProperties(void* c1,void* c2,
 void SimulAtmosphericsRenderer::SetLightningProperties(	void *tex,
 		simul::clouds::LightningRenderInterface *lri)
 {
+	if(!lri)
+		return;
 	lightning_illumination_texture=(LPDIRECT3DBASETEXTURE9)tex;
 	for(int i=0;i<4;i++)
 	{

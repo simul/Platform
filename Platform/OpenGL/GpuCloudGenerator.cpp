@@ -7,6 +7,22 @@
 #include "Simul/Base/Timer.h"
 using namespace simul::opengl;
 
+static void MakeVertexMatrix(const int *grid,int start_texel,int texels)
+{
+	int gridsize=grid[0]*grid[1]*grid[2];
+	//start_texel-=grid[0]*grid[1];
+	if(start_texel<0)
+		start_texel=0;
+	//texels+=grid[0]*grid[1];
+	if(start_texel+texels>gridsize)
+		texels=start_texel-gridsize;
+	float y_start=(float)start_texel/(float)gridsize;
+	float y_end=(float)(start_texel+texels)/(float)gridsize;
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0,1.0,y_start,y_end,-1.0,1.0);
+}
+
 GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
 			,density_program(0)
 			,clouds_program(0)
@@ -54,9 +70,9 @@ void GpuCloudGenerator::RecompileShaders()
 	SAFE_DELETE_PROGRAM(density_program);
 	SAFE_DELETE_PROGRAM(transform_program);
 	SAFE_DELETE_PROGRAM(clouds_program);
-	density_program=MakeProgram("simul_gpu_cloud_density");
-	clouds_program=MakeProgram("simul_gpu_clouds");
-	transform_program=MakeProgram("simul_gpu_cloud_transform");
+	density_program=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_density.frag");
+	clouds_program=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_clouds.frag");
+	transform_program=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_transform.frag");
 }
 
 static GLuint make3DTexture(int w,int l,int d,int stride,bool wrap_z,const float *src)
@@ -78,7 +94,7 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 {
 	if(iformat==GL_LUMINANCE32F_ARB)
 	{
-		dens_fb.SetWidthAndHeight(grid[0],grid[1]);
+		dens_fb.SetWidthAndHeight(grid[0],grid[1]*grid[2]);
 		if(!dens_fb.InitColor_Tex(0,iformat,GL_FLOAT))
 		{
 			itype=GL_INTENSITY;
@@ -148,55 +164,79 @@ timer.StartTime();
 	setParameter(density_program,"noiseScale"			,noise_scale.x,noise_scale.y,noise_scale.z);
 	setParameter(density_program,"baseLayer"			,baseLayer);
 	setParameter(density_program,"transition"			,transition);
-	
+
+	//MakeVertexMatrix(density_grid,start_texel,texels);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0,1.0,0,1.0,-1.0,1.0);
+	glOrtho(0,1.0,0.0,1.0,-1.0,1.0);
+	float y_start=(float)start_texel/(float)new_density_gridsize;
+	float y_end=(float)(start_texel+texels)/(float)new_density_gridsize;
+
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	{
 ERROR_CHECK
 		dens_fb.Activate();
+//dens_fb.Clear(0,0,0,0);
 ERROR_CHECK
-			DrawQuad(0,0,1,1);
+		DrawQuad(0.f,y_start,1.f,y_end-y_start);
 std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
-			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-			if(!density_texture||new_density_gridsize>density_gridsize)
+		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+		if(!density_texture||new_density_gridsize>density_gridsize)
+		{
+			if(readback_to_cpu&&new_density_gridsize>density_gridsize)
 			{
-				if(readback_to_cpu&&new_density_gridsize>density_gridsize)
-				{
-					delete [] density;
-					density=new float[new_density_gridsize];
-					density_gridsize=new_density_gridsize;
-				}
-				density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,1,false,NULL);
+				delete [] density;
+				density=new float[new_density_gridsize];
+				density_gridsize=new_density_gridsize;
 			}
-			glEnable(GL_TEXTURE_3D);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_3D,density_texture);
+			density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,1,false,NULL);
+		}
+		glEnable(GL_TEXTURE_3D);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_3D,density_texture);
 	ERROR_CHECK
-			if(readback_to_cpu)
+		//if(readback_to_cpu)
+		{
+		//	glReadPixels(0,0,density_grid[0],density_grid[1]*density_grid[2],itype,GL_FLOAT,(GLvoid*)density);
+		//	glTexImage3D(GL_TEXTURE_3D,0,iformat,density_grid[0],density_grid[1],density_grid[2],0,itype,GL_FLOAT,density);
+		}
+		//else
+		{
+			//start_texel=0;
+			//texels=new_density_gridsize;
+			// Now instead of reading the pixels back to memory, we will copy them layer-by-layer into the volume texture.
+			int Y=start_texel/density_grid[0];
+			int H=texels/density_grid[0];
+			int z0=Y/density_grid[1];
+			int dz=H/density_grid[1];
+			int z1=z0+dz;
+			int y0=Y-z0*density_grid[1];
+			int y1=Y+H-(z1-1)*density_grid[1];
+			for(int i=z0;i<z1;i++)
 			{
-				glReadPixels(0,0,density_grid[0],density_grid[1]*density_grid[2],itype,GL_FLOAT,(GLvoid*)density);
-				glTexImage3D(GL_TEXTURE_3D,0,iformat,density_grid[0],density_grid[1],density_grid[2],0,itype,GL_FLOAT,density);
-			}
-			else
-			{
-				// Now instead of reading the pixels back to memory, we will copy them layer-by-layer into the volume texture.
-				for(int i=0;i<density_grid[2];i++)
+				int y=0,dy=density_grid[1];
+				if(i==z0)
 				{
-					glCopyTexSubImage3D(GL_TEXTURE_3D,
- 						0,
- 						0,
- 						0,
- 						i,
- 						0,
- 						i*density_grid[1],
- 						density_grid[0],
- 						density_grid[1]);
+					y=y0;
+					dy=density_grid[1]-y0;
+				}
+				if(i==z1-1)
+				{
+					dy=y1-y;
+				}
+				glCopyTexSubImage3D(GL_TEXTURE_3D,
+ 					0,
+ 					0,
+ 					y,
+ 					i,
+ 					0,
+ 					i*density_grid[1]+y,
+ 					density_grid[0],
+ 					dy);
 		ERROR_CHECK
- 				}
-			}
+ 			}
+		}
 		dens_fb.Deactivate();
 	}
 	glDisable(GL_TEXTURE_3D);

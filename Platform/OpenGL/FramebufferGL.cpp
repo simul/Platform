@@ -7,7 +7,7 @@
 #include "SimulGLUtilities.h"
 std::stack<GLuint> FramebufferGL::fb_stack;
 
-FramebufferGL::FramebufferGL(int w, int h,GLenum target,const char *shader,int samples, int coverageSamples):
+FramebufferGL::FramebufferGL(int w, int h,GLenum target,int samples, int coverageSamples):
     m_width(w)
 	,m_height(h)
 	,m_target(target)
@@ -15,11 +15,7 @@ FramebufferGL::FramebufferGL(int w, int h,GLenum target,const char *shader,int s
 	,m_coverageSamples(coverageSamples)
 	,m_tex_depth(0)
 	,m_rb_depth(0)
-	,exposure(1.f)
-	,gamma(0.45f)
 	,m_fb(0)
-	,shader_filename(shader)
-	,tonemap_program(0)
 	,initialized(false)
 	,depth_iformat(0)
 	,colour_iformat(0)
@@ -31,34 +27,6 @@ FramebufferGL::FramebufferGL(int w, int h,GLenum target,const char *shader,int s
     }
 	if(fb_stack.size()==0)
 		fb_stack.push((GLuint)0);
-}
-
-void FramebufferGL::SetShader(int i)
-{
-	if(i==0)
-		tonemap_program=0;
-}
-
-void FramebufferGL::RecompileShaders()
-{
-	if(!shader_filename)
-		return;
-ERROR_CHECK
-	tonemap_program			=glCreateProgram();
-ERROR_CHECK
-	std::string str1=std::string(shader_filename)+".vert";
-	tonemap_vertex_shader	=LoadShader(str1.c_str());
-    tonemap_fragment_shader	=LoadShader((std::string(shader_filename)+std::string(".frag")).c_str());
-	glAttachShader(tonemap_program, tonemap_vertex_shader);
-	glAttachShader(tonemap_program, tonemap_fragment_shader);
-	glLinkProgram(tonemap_program);
-	glUseProgram(tonemap_program);
-	ERROR_CHECK
-	printProgramInfoLog(tonemap_program);
-    exposure_param=glGetUniformLocation(tonemap_program,"exposure");
-    gamma_param=glGetUniformLocation(tonemap_program,"gamma");
-    buffer_tex_param=glGetUniformLocation(tonemap_program,"image_texture");
-	ERROR_CHECK
 }
 
 FramebufferGL::~FramebufferGL()
@@ -117,7 +85,6 @@ ERROR_CHECK
 	initialized=true;
 	if(!m_fb)
 	{
-		RecompileShaders();
 		glGenFramebuffersEXT(1, &m_fb);
 	}
 ERROR_CHECK
@@ -152,7 +119,6 @@ void FramebufferGL::InitDepth_RB(GLenum iformat)
 	initialized=true;
 	if(!m_fb)
 	{
-		RecompileShaders();
 		glGenFramebuffersEXT(1, &m_fb);
 	}
 	depth_iformat=iformat;
@@ -187,7 +153,6 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 	initialized=true;
 	if(!m_fb)
 	{
-		RecompileShaders();
 		glGenFramebuffersEXT(1, &m_fb);
 	}
 	depth_iformat=iformat;
@@ -254,11 +219,6 @@ void FramebufferGL::DeactivateAndRender(bool blend)
 {
 	ERROR_CHECK
 	Deactivate();
-	Render(tonemap_program,blend);
-}
-
-void FramebufferGL::Render(GLuint ,bool blend)
-{
 	Render(blend);
 }
 
@@ -283,14 +243,11 @@ void FramebufferGL::Render(bool blend)
 	{
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
-		// retain background based on alpha in overlay
-		//glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	}
 	glDepthMask(GL_FALSE);
 	ERROR_CHECK
 	::DrawQuad(0,0,main_viewport[2],main_viewport[3]);
 
-  //  glUseProgram(NULL);
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);

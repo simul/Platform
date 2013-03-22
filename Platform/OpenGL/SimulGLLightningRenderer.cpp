@@ -19,7 +19,10 @@
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
 
-using namespace simul::clouds;
+using namespace simul;
+using namespace clouds;
+using namespace math;
+using namespace sky;
 extern void printProgramInfoLog(GLuint obj);
 
 SimulGLLightningRenderer::SimulGLLightningRenderer(simul::clouds::LightningRenderInterface *lightningRenderInterface) :
@@ -40,7 +43,8 @@ void SimulGLLightningRenderer::RestoreDeviceObjects()
 
 void SimulGLLightningRenderer::RecompileShaders()
 {
-	lightning_program			=MakeProgramWithGS("simul_lightning");//
+	lightning_program			=MakeProgramWithGS("simul_lightning");
+	glow_program				=MakeProgram("simul_lightning.vert","simul_lightning.geom","simul_lightning_glow.frag");
 	lightningTexture_param		=glGetUniformLocation(lightning_program,"lightningTexture");
 	
 	printProgramInfoLog(lightning_program);
@@ -72,6 +76,8 @@ void GetCameraPosVector(simul::math::Vector3 &cam_pos,simul::math::Vector3 &cam_
 	cam_dir.y=inv(2,1);
 	cam_dir.z=inv(2,2);
 }
+					static float ww=50.f;
+					static float uu=9.f;
 
 void SimulGLLightningRenderer::Render()
 {
@@ -111,76 +117,78 @@ ERROR_CHECK
 	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
 	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
 	simul::math::Multiply4x4(viewproj,view,proj);
-setMatrix(lightning_program,"worldViewProj",viewproj.RowPointer(0));
 	int main_viewport[4];
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
-	float vpx=main_viewport[2];
-	float vpy=main_viewport[3];
-	setParameter(lightning_program,"viewportPixels",vpx,vpy);
+	float vpx=(float)main_viewport[2];
+	float vpy=(float)main_viewport[3];
+	
+	setMatrix(lightning_program		,"worldViewProj"	,viewproj.RowPointer(0));
+	setParameter(lightning_program	,"viewportPixels"	,vpx,vpy);
+	float4 colour=lightningRenderInterface->GetLightningColour();
+	setParameter(lightning_program,"lightningColour",colour.x,colour.y,colour.z);
 	int texcoord_index=glGetAttribLocation(lightning_program,"in_coord");
+	
 ERROR_CHECK
 	simul::math::Vector3 pos;
 	static float lm=10.f;
 	static float main_bright=1.f;
-	int vert_start=0;
-	int vert_num=0;
+	static int cc=8;
 
 	for(int i=0;i<lightningRenderInterface->GetNumLightSources();i++)
 	{
 		if(!lightningRenderInterface->IsSourceStarted(i))
 			continue;
-		bool quads=false;
-		simul::math::Vector3 x1,x2;
+		simul::sky::float4 x1,x2;
 		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
 		for(int j=0;j<lightningRenderInterface->GetNumLevels(i);j++)
 		{
 			for(int jj=0;jj<lightningRenderInterface->GetNumBranches(i,j);jj++)
 			{
 				const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(i,j,jj);
-				if(branch.width<.1f)
-				{
-					quads=false;
-				}
-				simul::math::Vector3 last_transverse;
-				vert_start=vert_num;
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_ONE,GL_ONE);
-				/*if(quads)
+	/*glUseProgram(glow_program);
+
+				glBegin(GL_LINE_STRIP_ADJACENCY);
+				for(int k=0;k<branch.numVertices;k+=cc)
 				{
-					glBegin(GL_TRIANGLE_STRIP);
-				}
-				else*/
-					glBegin(GL_LINE_STRIP_ADJACENCY);
-				for(int k=0;k<branch.numVertices;k++)
-				{
+					bool start=(k<0);
 					x1=(const float *)branch.vertices[k];
+					float width=branch.brightness*branch.width;
+					width*=ww*uu;
+					glVertexAttrib3f(glow_texcoord_index,width,x1.w,branch.brightness);
+					glVertex4f(x1.x,x1.y,x1.z+vertical_shift,x1.w);
+				}
+				glEnd();*/
+	//glUseProgram(lightning_program);
+
+				glBegin(GL_LINE_STRIP_ADJACENCY);
+				for(int k=-1;k<branch.numVertices;k++)
+				{
+					bool start=(k<0);
+					if(start)
+						x1=(const float *)branch.vertices[k+2];
+					else
+						x1=(const float *)branch.vertices[k];
 					if(k+1<branch.numVertices)
 						x2=(const float *)branch.vertices[k+1];
 					else
-					{
-						x2=2.f*x1-simul::math::Vector3((const float *)branch.vertices[k-1]);
-					}
-					bool start=(k==0);
+						x2=2.f*x1-simul::sky::float4((const float *)branch.vertices[k-1]);
 					bool end=(k==branch.numVertices-1);
-					simul::math::Vector3 dir=x2-x1;
-					dir.Normalize();
-					static float ww=100.f;
+					if(k<0)
+					{
+						simul::sky::float4 dir=x2-x1;
+						x1=x2+dir;
+					}
 					float width=branch.brightness*branch.width;
 					width*=ww;
-					simul::math::Vector3 transverse;
-					view_dir=x1-cam_pos;
-					CrossProduct(transverse,view_dir,dir);
-					transverse.Unit();
-					transverse*=width;
 					float brightness=branch.brightness;
 					if(end)
 						brightness=0.f;
-					glVertexAttrib2f(texcoord_index,width,brightness);
-					glVertex3f(x1.x,x1.y,x1.z+vertical_shift);
-					last_transverse=transverse;
+					glVertexAttrib3f(texcoord_index,width,x1.w,brightness);
+					glVertex4f(x1.x,x1.y,x1.z+vertical_shift,x1.w);
 				}
 				glEnd();
-				vert_num=0;
 				int err=glGetError();
 				if(err!=0)
 				{

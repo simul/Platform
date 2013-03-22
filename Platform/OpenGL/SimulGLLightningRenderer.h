@@ -41,9 +41,8 @@ protected:
 		}
 	};
 
-	GLuint				lightning_program;	
-	GLuint				lightning_vertex_shader;
-	GLuint				lightning_fragment_shader;
+	GLuint				lightning_program;
+	GLuint				glow_program;
 	GLuint				lightning_texture;
 	GLuint				lightningTexture_param;
 

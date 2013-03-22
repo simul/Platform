@@ -577,6 +577,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLSL\simul_glow.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_gpu_cloud_density.frag"
 				>
 			</File>
@@ -618,6 +622,10 @@
 			</File>
 			<File
 				RelativePath=".\GLSL\simul_gpu_skyl.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_hdr_blur.frag"
 				>
 			</File>
 			<File
