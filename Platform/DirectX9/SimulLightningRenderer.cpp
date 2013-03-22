@@ -248,7 +248,7 @@ HRESULT SimulLightningRenderer::CreateLightningTexture()
 	if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,1,0,D3DUSAGE_AUTOGENMIPMAP,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&lightning_texture)))
 		return hr;
 	D3DLOCKED_RECT lockedRect={0};
-	if(FAILED(hr=lightning_texture->LockRect(0,&lockedRect,NULL,NULL)))
+	//if(FAILED(hr=lightning_texture->LockRect(0,&lockedRect,NULL,NULL)))
 		return hr;
 	const float *lightning_colour=lightningRenderInterface->GetLightningColour();
 	unsigned char *lightning_tex_data=(unsigned char *)(lockedRect.pBits);

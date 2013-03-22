@@ -38,6 +38,7 @@ public:
 		META_ValueProperty(bool,ShowFades,"Show the fade textures as an overlay.")
 		META_ValueProperty(bool,ShowTerrain,"Whether to draw the terrain.")
 		META_ValueProperty(bool,UseHdrPostprocessor,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
+		META_ValueProperty(bool,UseSkyBuffer,"Render the sky to a low-res buffer to increase performance.")
 		META_ValueProperty(bool,ShowOSD,"Show diagnostice onscren.")
 		META_ValueProperty(bool,ShowWater,"Show water surfaces.")
 		META_ValueProperty(bool,ReverseDepth,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")

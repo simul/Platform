@@ -94,7 +94,7 @@ ERROR_CHECK
 ERROR_CHECK
 		if(MixCloudsAndTerrain)
 			simulWeatherRenderer->SetAlwaysRenderCloudsLate(MixCloudsAndTerrain);
-		simulWeatherRenderer->RenderSky(true,false);
+		simulWeatherRenderer->RenderSky(UseSkyBuffer,false);
 
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender();

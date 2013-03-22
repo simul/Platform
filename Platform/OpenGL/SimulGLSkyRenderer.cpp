@@ -716,20 +716,20 @@ void SimulGLSkyRenderer::RecompileShaders()
 ERROR_CHECK
 	sky_program						=MakeProgram("simul_sky");
 	printProgramInfoLog(sky_program);
-	earthshadow_program				=LoadPrograms("simul_sky.vert",NULL,"simul_earthshadow_sky.frag");
+	earthshadow_program				=MakeProgram("simul_sky.vert",NULL,"simul_earthshadow_sky.frag");
 	printProgramInfoLog(earthshadow_program);
 ERROR_CHECK
-	sun_program						=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
+	sun_program						=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
 	printProgramInfoLog(sun_program);
-	stars_program					=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
+	stars_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
 	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
 	printProgramInfoLog(stars_program);
 ERROR_CHECK
-	sun_program						=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
+	sun_program						=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
 	printProgramInfoLog(sun_program);
-	stars_program					=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
+	stars_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
 	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
 	printProgramInfoLog(stars_program);
 ERROR_CHECK

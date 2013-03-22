@@ -11,11 +11,11 @@ namespace simul
 	}
 }
 
-extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *filename,const char *defines=0);
+extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *root_filename,const char *defines=0);
 extern SIMUL_OPENGL_EXPORT GLuint MakeProgramWithGS(const char *filename,const char *defines=0);
 
 extern SIMUL_OPENGL_EXPORT GLuint SetShaders(const char *vert_src,const char *frag_src);
-extern SIMUL_OPENGL_EXPORT GLuint LoadPrograms(const char *vert_filename,const char *geom_filename,const char *frag_filename,const char *defines=0);
+extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename,const char *defines=0);
 
 extern SIMUL_OPENGL_EXPORT GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const char *defines=NULL);
 extern SIMUL_OPENGL_EXPORT GLuint LoadShader(const char *filename,const char *defines=0);

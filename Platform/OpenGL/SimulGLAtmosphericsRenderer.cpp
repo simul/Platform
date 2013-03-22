@@ -18,7 +18,7 @@ SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
 	,earthShadowUniforms(0)
 	,earthShadowUniformsUBO(0)
 {
-	framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D,"simul_atmospherics");
+	framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D);
 }
 
 SimulGLAtmosphericsRenderer::~SimulGLAtmosphericsRenderer()
@@ -61,9 +61,9 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 		return;
 	std::string defs="";
 	distance_fade_program		=MakeProgram("simul_atmospherics",defs.c_str());
-	earthshadow_fade_program	=LoadPrograms("simul_atmospherics.vert",NULL,"simul_atmospherics_earthshadow.frag",defs.c_str());
+	earthshadow_fade_program	=MakeProgram("simul_atmospherics.vert",NULL,"simul_atmospherics_earthshadow.frag",defs.c_str());
 	cloudmix_program			=MakeProgram("simul_cloudmix");
-	godrays_program				=LoadPrograms("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defs.c_str());
+	godrays_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defs.c_str());
 	current_program				=0;
 	glUseProgram(0);
 	

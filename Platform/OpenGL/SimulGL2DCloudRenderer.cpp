@@ -76,7 +76,7 @@ bool SimulGL2DCloudRenderer::CreateNoiseTexture(bool override_file)
 		glOrtho(0,1.0,0,1.0,-1.0,1.0);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		GLuint noise_prog=LoadPrograms("simple.vert",NULL,"simul_noise.frag");
+		GLuint noise_prog=MakeProgram("simple.vert",NULL,"simul_noise.frag");
 		glUseProgram(noise_prog);
 		DrawQuad(0,0,1,1);
 		SAFE_DELETE_PROGRAM(noise_prog);
@@ -95,7 +95,7 @@ ERROR_CHECK
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
-		GLuint dens_prog=LoadPrograms("simple.vert",NULL,"simul_2d_cloud_detail.frag");
+		GLuint dens_prog=MakeProgram("simple.vert",NULL,"simul_2d_cloud_detail.frag");
 		glUseProgram(dens_prog);
 		dens_fb.DrawQuad();
 		SAFE_DELETE_PROGRAM(dens_prog);
@@ -111,7 +111,7 @@ ERROR_CHECK
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)dens_fb.GetColorTex());
-		GLuint lighting_prog=LoadPrograms("simple.vert",NULL,"simul_2d_cloud_detail_lighting.frag");
+		GLuint lighting_prog=MakeProgram("simple.vert",NULL,"simul_2d_cloud_detail_lighting.frag");
 		glUseProgram(lighting_prog);
 		GLint densTexture	=glGetUniformLocation(lighting_prog,"dens_texture");
 		GLint lightDir		=glGetUniformLocation(lighting_prog,"lightDir");
@@ -383,7 +383,7 @@ ERROR_CHECK
 
 void SimulGL2DCloudRenderer::RenderCrossSections(int width,int height)
 {
-	static int u=4;
+	static int u=8;
 	int w=(width-8)/u;
 	if(w>height/2)
 		w=height/2;
@@ -421,12 +421,12 @@ static float mult=1.f;
 		glBindTexture(GL_TEXTURE_2D,coverage_tex[i]);
 		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
 		glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
-		DrawQuad(i*(w+8)+8,h+16,w,w);
+		DrawQuad((i+1)*(w+8)+8,height-w-8,w,w);
 	}
 	
 	glBindTexture(GL_TEXTURE_2D,(GLuint)detail_fb.GetColorTex());
 	glUseProgram(Utilities::GetSingleton().simple_program);
-	DrawQuad(8,8+w,w,w);
+	DrawQuad(8,height-8-w,w,w);
 	
 	glUseProgram(0);	
 }

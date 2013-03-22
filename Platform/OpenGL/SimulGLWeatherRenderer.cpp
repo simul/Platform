@@ -153,7 +153,7 @@ ERROR_CHECK
 	//simulLightningRenderer->RestoreDeviceObjects();
 	simulAtmosphericsRenderer->RestoreDeviceObjects(NULL);
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
-	cloud_overlay_program=LoadPrograms("simple.vert",NULL,"simul_cloud_overlay.frag");
+	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag");
 }
 void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 {
@@ -176,7 +176,7 @@ void SimulGLWeatherRenderer::RecompileShaders()
 {
 	BaseWeatherRenderer::RecompileShaders();
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
-	cloud_overlay_program=LoadPrograms("simple.vert",NULL,"simul_cloud_overlay.frag");
+	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag");
 }
 
 bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)

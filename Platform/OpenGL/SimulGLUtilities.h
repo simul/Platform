@@ -46,7 +46,7 @@ extern SIMUL_OPENGL_EXPORT void RenderString(float x, float y, void *font, const
 //! Controls vertical syncing - 0 means do not sync, 1 means sync with the monitor, 2 means sync at half speed, etc.
 extern SIMUL_OPENGL_EXPORT void SetVSync(int vsync);
 //! Draw a simple onscreen quad from 0,0 to w,h.
-extern SIMUL_OPENGL_EXPORT void DrawQuad(int x,int y,int w,int h);
+extern SIMUL_OPENGL_EXPORT void DrawQuad(float x,float y,float w,float h);
 //! Get the current framerate - must be called once every frame to work correctly.
 extern SIMUL_OPENGL_EXPORT float GetFramerate();
 //! Check for a GL error, and halt the program if found.
@@ -75,6 +75,7 @@ extern void setParameter2(GLuint program,const char *name,const simul::sky::floa
 extern void setParameter3(GLuint program,const char *name,const simul::sky::float4 &value);
 extern void setMatrix(GLuint program,const char *name,const float *value);
 extern void setMatrixTranspose(GLuint program,const char *name,const float *value);
+extern void setTexture(GLuint program,const char *name,int texture_number,GLuint texture);
 
 extern void setParameter(GLint,int value);
 extern void setParameter(GLint,float value);

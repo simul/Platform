@@ -224,7 +224,7 @@ void SetVSync(int vsync)
 }
 
 // draw a quad with texture coordinate for texture rectangle
-void DrawQuad(int x,int y,int w,int h)
+void DrawQuad(float x,float y,float w,float h)
 {
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0,1.0);
@@ -489,7 +489,9 @@ void setParameter(GLuint program,const char *name,int value)
 
 void setParameter(GLuint program,const char *name,const simul::sky::float4 &value)
 {
+	ERROR_CHECK
 	GLint loc=glGetUniformLocation(program,name);
+	ERROR_CHECK
 	if(loc<0)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	glUniform4f(loc,value.x,value.y,value.z,value.w);
@@ -534,6 +536,18 @@ void setMatrixTranspose(GLuint program,const char *name,const float *value)
 	ERROR_CHECK
 }
 
+extern void setTexture(GLuint program,const char *name,int texture_number,GLuint texture)
+{
+    glActiveTexture(GL_TEXTURE0+texture_number);
+	glBindTexture(GL_TEXTURE_2D,texture);
+	GLint loc=glGetUniformLocation(program,name);
+	if(loc<0)
+		std::cout<<"Warning: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	else
+	{
+		glUniform1i(loc,texture_number);
+	}
+}
 void setParameter(GLint loc,int value)
 {
 	glUniform1i(loc,value);

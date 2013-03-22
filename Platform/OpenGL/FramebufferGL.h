@@ -17,19 +17,11 @@
 SIMUL_OPENGL_EXPORT_CLASS FramebufferGL:public BaseFramebuffer
 {
 public:
-	FramebufferGL(int w=0, int h=0, GLenum target = GL_TEXTURE_2D,const char *shader=0,
+	FramebufferGL(int w=0, int h=0, GLenum target = GL_TEXTURE_2D,
 			int samples = 0, int coverageSamples = 0);
 
 	~FramebufferGL();
 	void InvalidateDeviceObjects();
-	void SetExposure(float e)
-	{
-		exposure = e;
-	}
-	void SetGamma(float g)
-	{
-		gamma = g;
-	}
 	void SetShader(int i);
 	void SetWidthAndHeight(int w,int h);
 	// In order to use a color buffer, either
@@ -49,7 +41,6 @@ public:
 	void Clear(float r,float g,float b,float a,int mask=0);
 	void DeactivateAndRender(bool blend);
 	void Render(bool blend);
-	void Render(GLuint prog,bool blend);
 	//void DrawQuad(int w, int h);
 	void DrawQuad();
 	// Get the dimension of the surface
@@ -83,13 +74,7 @@ public:
 	{
 		return m_fb;
 	}
-	void RecompileShaders();
-	GLuint GetProgram() const 
-	{
-		return tonemap_program;
-	}
 private:
-	const char *shader_filename;
 	static std::stack<GLuint> fb_stack;
 	void CheckFramebufferStatus();
 	// Bind the internal textures
@@ -120,15 +105,7 @@ private:
 	GLuint m_fb;
 	GLuint m_tex_col[num_col_buffers], m_rb_col[num_col_buffers];
 	GLuint m_tex_depth, m_rb_depth;
-	// shaders
-	GLuint tonemap_vertex_shader;
-	GLuint tonemap_fragment_shader;
-	GLuint tonemap_program;
-	GLint exposure_param;
-	GLint gamma_param;
-	GLint buffer_tex_param;
 	GLenum colour_iformat,depth_iformat;
-	float exposure, gamma;
 	bool initialized;
 };
 

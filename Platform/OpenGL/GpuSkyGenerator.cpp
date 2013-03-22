@@ -42,11 +42,11 @@ void GpuSkyGenerator::RecompileShaders()
 {																												SAFE_DELETE_PROGRAM(loss_program);
 	SAFE_DELETE_PROGRAM(insc_program);
 	SAFE_DELETE_PROGRAM(skyl_program);
-	loss_program=LoadPrograms("simple.vert",NULL,"simul_gpu_loss.frag");
+	loss_program=MakeProgram("simple.vert",NULL,"simul_gpu_loss.frag");
 ERROR_CHECK
-	insc_program=LoadPrograms("simple.vert",NULL,"simul_gpu_insc.frag","#define OVERCAST 1\r\n");
+	insc_program=MakeProgram("simple.vert",NULL,"simul_gpu_insc.frag","#define OVERCAST 1\r\n");
 ERROR_CHECK
-	skyl_program=LoadPrograms("simple.vert",NULL,"simul_gpu_skyl.frag");
+	skyl_program=MakeProgram("simple.vert",NULL,"simul_gpu_skyl.frag");
 ERROR_CHECK
 	
 	glGenBuffers(1, &gpuSkyConstantsUBO);
