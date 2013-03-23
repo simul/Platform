@@ -1,0 +1,276 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Static Debug|Win32">
+      <Configuration>Static Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Static Release|Win32">
+      <Configuration>Static Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>SimulOpenGL</ProjectName>
+    <ProjectGuid>{A4E417F3-4C5F-42AB-B1B1-BDAECE53ABC5}</ProjectGuid>
+    <RootNamespace>OpenGL</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SIMUL)/exe/$(Platform)/VC10/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Platform)/VC10/$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SIMUL)/exe/$(Platform)/VC10/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Platform)/VC10/$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">$(Platform)/VC10/$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">$(Platform)/VC10/$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>opengl32.lib;glut32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)_MDd.dll</OutputFile>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/OpenGL/lib;$(SIMUL)/External/FreeImage/Dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>$(TargetName)_MD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName)_MDd.lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>opengl32.lib;glut32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)_MD.dll</OutputFile>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/OpenGL/lib;$(SIMUL)/External/FreeImage/Dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>$(TargetName)_MD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName)_MD.lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(TargetName)_MDd.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(TargetName)_MD.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Clouds\Clouds_VC10.vcproj">
+      <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Terrain\Terrain_VC10.vcproj">
+      <Project>{cc71b070-12c2-45c9-894a-a9cddc1f3fa4}</Project>
+    </ProjectReference>
+    <ProjectReference Include="OpenGL_VC10.vcxproj">
+      <Project>{a4e417f3-4c5f-42ab-b1b1-bdaece53abc5}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="FramebufferGL.cpp" />
+    <ClCompile Include="GpuCloudGenerator.cpp" />
+    <ClCompile Include="GpuSkyGenerator.cpp" />
+    <ClCompile Include="LoadGLImage.cpp" />
+    <ClCompile Include="LoadGLProgram.cpp" />
+    <ClCompile Include="objload.cpp" />
+    <ClCompile Include="OpenGLRenderer.cpp" />
+    <ClCompile Include="SimulGL2DCloudRenderer.cpp" />
+    <ClCompile Include="SimulGLAtmosphericsRenderer.cpp" />
+    <ClCompile Include="SimulGLCloudRenderer.cpp" />
+    <ClCompile Include="SimulGLHDRRenderer.cpp" />
+    <ClCompile Include="SimulGLLightningRenderer.cpp" />
+    <ClCompile Include="SimulGLPrecipitationRenderer.cpp" />
+    <ClCompile Include="SimulGLSkyRenderer.cpp" />
+    <ClCompile Include="SimulGLTerrainRenderer.cpp" />
+    <ClCompile Include="SimulGLUtilities.cpp" />
+    <ClCompile Include="SimulGLWeatherRenderer.cpp" />
+    <ClCompile Include="SimulOpticsRendererGL.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Export.h" />
+    <ClInclude Include="FramebufferGL.h" />
+    <ClInclude Include="Glsl.h" />
+    <ClInclude Include="GpuCloudGenerator.h" />
+    <ClInclude Include="GpuSkyGenerator.h" />
+    <ClInclude Include="LoadGLImage.h" />
+    <ClInclude Include="LoadGLProgram.h" />
+    <ClInclude Include="objload.h" />
+    <ClInclude Include="OpenGLRenderer.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="SimulGL2DCloudRenderer.h" />
+    <ClInclude Include="SimulGLAtmosphericsRenderer.h" />
+    <ClInclude Include="SimulGLCloudRenderer.h" />
+    <ClInclude Include="SimulGLHDRRenderer.h" />
+    <ClInclude Include="SimulGLLightningRenderer.h" />
+    <ClInclude Include="SimulGLPrecipitationRenderer.h" />
+    <ClInclude Include="SimulGLSkyRenderer.h" />
+    <ClInclude Include="SimulGLTerrainRenderer.h" />
+    <ClInclude Include="SimulGLUtilities.h" />
+    <ClInclude Include="SimulGLWeatherRenderer.h" />
+    <ClInclude Include="SimulOpticsRendererGL.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GLSL\simul_2d_cloud_detail.frag" />
+    <None Include="GLSL\simul_2d_cloud_detail_lighting.frag" />
+    <None Include="GLSL\simul_atmospherics.frag" />
+    <None Include="GLSL\simul_atmospherics.vert" />
+    <None Include="GLSL\simul_atmospherics_earthshadow.frag" />
+    <None Include="GLSL\simul_cloud_cross_section.frag" />
+    <None Include="GLSL\simul_cloud_cross_section.vert" />
+    <None Include="GLSL\simul_cloudmix.frag" />
+    <None Include="GLSL\simul_cloudmix.vert" />
+    <None Include="GLSL\simul_clouds.frag" />
+    <None Include="GLSL\simul_clouds.vert" />
+    <None Include="GLSL\simul_clouds_2d.frag" />
+    <None Include="GLSL\simul_clouds_2d.vert" />
+    <None Include="GLSL\simul_earthshadow_sky.frag" />
+    <None Include="GLSL\simul_earthshadow_uniforms.glsl" />
+    <None Include="GLSL\simul_fade_3d_to_2d.frag" />
+    <None Include="GLSL\simul_fade_3d_to_2d.vert" />
+    <None Include="GLSL\simul_flare.frag" />
+    <None Include="GLSL\simul_gpu_cloud_density.frag" />
+    <None Include="GLSL\simul_gpu_cloud_density.vert" />
+    <None Include="GLSL\simul_gpu_cloud_transform.frag" />
+    <None Include="GLSL\simul_gpu_cloud_transform.vert" />
+    <None Include="GLSL\simul_gpu_clouds.frag" />
+    <None Include="GLSL\simul_gpu_clouds.glsl" />
+    <None Include="GLSL\simul_gpu_clouds.vert" />
+    <None Include="GLSL\simul_gpu_insc.frag" />
+    <None Include="GLSL\simul_gpu_loss.frag" />
+    <None Include="GLSL\simul_gpu_sky.glsl" />
+    <None Include="GLSL\simul_gpu_skyl.frag" />
+    <None Include="GLSL\simul_lightning.frag" />
+    <None Include="GLSL\simul_lightning.vert" />
+    <None Include="GLSL\simul_planet.frag" />
+    <None Include="GLSL\simul_sky.frag" />
+    <None Include="GLSL\simul_sky.vert" />
+    <None Include="GLSL\simul_stars.frag" />
+    <None Include="GLSL\simul_sun.frag" />
+    <None Include="GLSL\simul_sun.vert" />
+    <None Include="GLSL\simul_sun_planet_flare.vert" />
+    <None Include="GLSL\simul_terrain.frag" />
+    <None Include="GLSL\simul_terrain.geom" />
+    <None Include="GLSL\simul_terrain.vert" />
+    <None Include="GLSL\tonemap.frag" />
+    <None Include="GLSL\tonemap.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="OpenGL.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

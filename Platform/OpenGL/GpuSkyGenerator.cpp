@@ -149,7 +149,6 @@ std::cout<<"\tGpu sky: fb "<<timer.UpdateTime()<<std::endl;
 std::cout<<"\tGpu sky: dens_tex "<<timer.UpdateTime()<<std::endl;
 
 	glUseProgram(loss_program);
-
 	{
 		GpuSkyConstants constants;
 	

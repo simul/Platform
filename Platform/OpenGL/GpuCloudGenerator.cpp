@@ -6,7 +6,7 @@
 #include "Simul/Math/Matrix.h"
 #include "Simul/Base/Timer.h"
 using namespace simul::opengl;
-
+/*
 static void MakeVertexMatrix(const int *grid,int start_texel,int texels)
 {
 	int gridsize=grid[0]*grid[1]*grid[2];
@@ -21,7 +21,7 @@ static void MakeVertexMatrix(const int *grid,int start_texel,int texels)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(0,1.0,y_start,y_end,-1.0,1.0);
-}
+}*/
 
 GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
 			,density_program(0)
@@ -46,9 +46,9 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 {
 	iformat=GL_LUMINANCE32F_ARB;
 	itype=GL_LUMINANCE;
-	for(int i=0;i<2;i++)
-	{
-	}
+	
+	
+	
 	RecompileShaders();
 	density_texture=0;
 }
@@ -98,17 +98,16 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 		if(!dens_fb.InitColor_Tex(0,iformat,GL_FLOAT))
 		{
 			itype=GL_INTENSITY;
-			if(!dens_fb.InitColor_Tex(0,iformat=GL_INTENSITY32F_ARB,GL_FLOAT))
+			iformat=GL_INTENSITY32F_ARB;
+			if(!dens_fb.InitColor_Tex(0,iformat,GL_FLOAT))
 			{
 				itype=GL_RGBA;
-				dens_fb.InitColor_Tex(0,iformat=GL_RGBA32F_ARB,GL_FLOAT);
+				iformat=GL_RGBA32F_ARB;
+				dens_fb.InitColor_Tex(0,iformat,GL_FLOAT);
 			}
 		}
 	}
-	int size=1;
-	if(iformat==GL_RGBA32F_ARB)
-		size=4;
-	return grid[0]*grid[1]*grid[2]*size;
+	return grid[0]*grid[1]*grid[2];
 }
 
 // Fill the stated number of texels of the density texture
@@ -128,7 +127,7 @@ void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
 	glPushMatrix();
 simul::base::Timer timer;
 timer.StartTime();
-	int new_density_gridsize=GetDensityGridsize(density_grid);
+	int total_texels=GetDensityGridsize(density_grid);
 	if(!density_program)
 		RecompileShaders();
 	// We render out a 2D texture with each XY layer laid end-to-end, and copy it to the target.
@@ -136,15 +135,18 @@ timer.StartTime();
 	if(!dens_fb.InitColor_Tex(0,iformat,GL_FLOAT))
 	{
 		itype=GL_INTENSITY;
-		if(!dens_fb.InitColor_Tex(0,iformat=GL_INTENSITY32F_ARB,GL_FLOAT))
+		iformat=GL_INTENSITY32F_ARB;
+		if(!dens_fb.InitColor_Tex(0,iformat,GL_FLOAT))
 		{
 			itype=GL_RGBA;
-			dens_fb.InitColor_Tex(0,iformat=GL_RGBA32F_ARB,GL_FLOAT);
+			iformat=GL_RGBA32F_ARB;
+			dens_fb.InitColor_Tex(0,iformat,GL_FLOAT);
 		}
 	}
-	
+	int stride=(iformat==GL_RGBA32F_ARB)?4:1;
+
 	simul::math::Vector3 noise_scale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0]);
-	
+
 	//using noise_size and noise_src_ptr, make a 3d texture:
 	GLuint volume_noise_tex=make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
 	
@@ -169,8 +171,8 @@ timer.StartTime();
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(0,1.0,0.0,1.0,-1.0,1.0);
-	float y_start=(float)start_texel/(float)new_density_gridsize;
-	float y_end=(float)(start_texel+texels)/(float)new_density_gridsize;
+	float y_start=(float)start_texel/(float)total_texels;
+	float y_end=(float)(start_texel+texels)/(float)total_texels;
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -182,26 +184,26 @@ ERROR_CHECK
 		DrawQuad(0.f,y_start,1.f,y_end-y_start);
 std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-		if(!density_texture||new_density_gridsize>density_gridsize)
+		if(!density_texture||density_gridsize!=total_texels*stride)
 		{
-			if(readback_to_cpu&&new_density_gridsize>density_gridsize)
+			if(readback_to_cpu&&total_texels*stride>density_gridsize)
 			{
 				delete [] density;
-				density=new float[new_density_gridsize];
-				density_gridsize=new_density_gridsize;
+				density_gridsize=total_texels*stride;
+				density=new float[density_gridsize];
 			}
-			density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,1,false,NULL);
+			density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2],iformat==GL_RGBA32F_ARB?4:1,false,NULL);
 		}
 		glEnable(GL_TEXTURE_3D);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,density_texture);
 	ERROR_CHECK
-		//if(readback_to_cpu)
+		/*if(readback_to_cpu)
 		{
-		//	glReadPixels(0,0,density_grid[0],density_grid[1]*density_grid[2],itype,GL_FLOAT,(GLvoid*)density);
-		//	glTexImage3D(GL_TEXTURE_3D,0,iformat,density_grid[0],density_grid[1],density_grid[2],0,itype,GL_FLOAT,density);
+			glReadPixels(0,0,density_grid[0],density_grid[1]*density_grid[2],itype,GL_FLOAT,(GLvoid*)density);
+			glTexImage3D(GL_TEXTURE_3D,0,iformat,density_grid[0],density_grid[1],density_grid[2],0,itype,GL_FLOAT,density);
 		}
-		//else
+		else*/
 		{
 			//start_texel=0;
 			//texels=new_density_gridsize;
@@ -298,18 +300,31 @@ timer.StartTime();
 			ERROR_CHECK
 			glBindTexture(GL_TEXTURE_2D,0);
 			ERROR_CHECK
-	F[0]->Activate();
-		F[0]->Clear(1.f,1.f,1.f,0.f);
-		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-		glReadPixels(0,0,light_grid[0],light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
-ERROR_CHECK
-		target+=light_grid[0]*light_grid[1]*4;
-	F[0]->Deactivate();
+
+	int light_gridsize=light_grid[0]*light_grid[1]*light_grid[2];
+	int z0=(start_texel*light_grid[2])/light_gridsize;
+	int z1=((start_texel+texels)*light_grid[2])/light_gridsize;
+	if(z0%2)
+	{
+		std::swap(F[0],F[1]);
+	}
+	if(z0==0)
+	{
+		F[0]->Activate();
+			F[0]->Clear(1.f,1.f,1.f,0.f);
+			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+			glReadPixels(0,0,light_grid[0],light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
+		F[0]->Deactivate();
+		z0++;
+	}
+	
+	target+=z0*light_grid[0]*light_grid[1]*4;
+	
 ERROR_CHECK
 	float draw_time=0.f,read_time=0.f;
-	for(int i=0;i<light_grid[2]-1;i++)
+	for(int i=z0;i<z1;i++)
 	{
-		float zPosition=((float)i+0.5f)/(float)light_grid[2];
+		float zPosition=((float)i-0.5f)/(float)light_grid[2];
 		setParameter(clouds_program,"zPosition",zPosition);
 		F[1]->Activate();
 			glMatrixMode(GL_PROJECTION);
@@ -358,6 +373,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
+	int total_texels=density_grid[0]*density_grid[1]*density_grid[2];
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	world_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
 	world_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8);
@@ -379,22 +395,26 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 	glBindTexture(GL_TEXTURE_3D,light_texture);
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_3D,ambient_texture);
-	//for(int i=0;i<density_grid[2];i++)
+	float y_start=(float)start_texel/(float)total_texels;
+	float y_end=(float)(start_texel+texels)/(float)total_texels;
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 	{
 		world_fb.Activate();
-		world_fb.Clear(0.f,0.f,0.f,0.f);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
 			glOrtho(0,1.0,0,1.0,-1.0,1.0);
 			glMatrixMode(GL_MODELVIEW);
 			glLoadIdentity();
 			// input light values:
-			DrawQuad(0,0,1,1);
+			DrawQuad(0,y_start,1,y_end-y_start);
 			ERROR_CHECK
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			ERROR_CHECK
-		glReadPixels(0,0,density_grid[0],density_grid[1]*density_grid[2],GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
+			int YMAX=density_grid[1]*density_grid[2];
+			int Y0=(int)(y_start*(float)YMAX);
+			int Y1=(int)(y_end*(float)YMAX);
+			target+=Y0*density_grid[0]*4;
+		glReadPixels(0,Y0,density_grid[0],Y1-Y0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
 			ERROR_CHECK
 		world_fb.Deactivate();
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
