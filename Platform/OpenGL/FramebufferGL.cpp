@@ -263,7 +263,7 @@ void FramebufferGL::Render(bool blend)
 	}
 	glDepthMask(GL_FALSE);
 	ERROR_CHECK
-	::DrawQuad(0,0,(float)main_viewport[2],(float)main_viewport[3]);
+	::DrawQuad(0,0,main_viewport[2],main_viewport[3]);
 
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();

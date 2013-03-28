@@ -85,6 +85,8 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudK
 	,init(false)
 	,clouds_background_program(0)
 	,clouds_foreground_program(0)
+	,noise_prog(0)
+	,edge_noise_prog(0)
 	,current_program(0)
 	,cross_section_program(0)
 	,cloud_shadow_program(0)
@@ -130,6 +132,7 @@ bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
 {
 	if(!init)
 		return false;
+	SAFE_DELETE_TEXTURE(noise_tex);
     glGenTextures(1,&noise_tex);
     glBindTexture(GL_TEXTURE_2D,noise_tex);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -192,10 +195,8 @@ ERROR_CHECK
 		glOrtho(0,1.0,0,1.0,-1.0,1.0);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		GLuint noise_prog=MakeProgram("simple.vert",NULL,"simul_noise.frag");
 		glUseProgram(noise_prog);
 		DrawQuad(0,0,1,1);
-		SAFE_DELETE_PROGRAM(noise_prog);
 	}
 	noise_fb.Deactivate();
 	glUseProgram(0);
@@ -212,12 +213,10 @@ ERROR_CHECK
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
-		GLuint n_prog=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
-		glUseProgram(n_prog);
-		setParameter(n_prog,"persistence",texture_persistence);
-		setParameter(n_prog,"octaves",texture_octaves);
+		glUseProgram(edge_noise_prog);
+		setParameter(edge_noise_prog,"persistence",texture_persistence);
+		setParameter(edge_noise_prog,"octaves",texture_octaves);
 		n_fb.DrawQuad();
-		SAFE_DELETE_PROGRAM(n_prog);
 	}
 ERROR_CHECK	
 	glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
@@ -645,10 +644,14 @@ void SimulGLCloudRenderer::RecompileShaders()
 {
 current_program=0;
 ERROR_CHECK
+	SAFE_DELETE_PROGRAM(clouds_background_program);
+	SAFE_DELETE_PROGRAM(clouds_foreground_program);
+	SAFE_DELETE_PROGRAM(noise_prog);
+	SAFE_DELETE_PROGRAM(edge_noise_prog);
 	clouds_background_program	=MakeProgram("simul_clouds","#define DETAIL_NOISE 1\r\n");
 	clouds_foreground_program	=MakeProgram("simul_clouds","#define DETAIL_NOISE 1\r\n#define USE_DEPTH_TEXTURE 1\r\n");
-
-	
+	noise_prog=MakeProgram("simple.vert",NULL,"simul_noise.frag");
+	edge_noise_prog=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
 ERROR_CHECK
 	cross_section_program	=MakeProgram("simul_cloud_cross_section");
 	
@@ -662,8 +665,6 @@ ERROR_CHECK
 void SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 {
 	init=true;
-	CreateNoiseTexture();
-	CreateVolumeNoise();
 	
 	glGenBuffers(1, &cloudConstantsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, cloudConstantsUBO);
@@ -671,6 +672,8 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	
 	RecompileShaders();
+	CreateNoiseTexture();
+	CreateVolumeNoise();
 	using namespace simul::clouds;
 	cloudKeyframer->SetBits(CloudKeyframer::DENSITY,CloudKeyframer::BRIGHTNESS,
 		CloudKeyframer::SECONDARY,CloudKeyframer::AMBIENT);
@@ -743,16 +746,19 @@ ERROR_CHECK
 void SimulGLCloudRenderer::InvalidateDeviceObjects()
 {
 	init=false;
+	SAFE_DELETE_TEXTURE(noise_tex);
 	SAFE_DELETE_PROGRAM(cross_section_program);
 
 	SAFE_DELETE_PROGRAM(clouds_background_program);
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
+	SAFE_DELETE_PROGRAM(clouds_foreground_program);
+	SAFE_DELETE_PROGRAM(noise_prog);
+	SAFE_DELETE_PROGRAM(edge_noise_prog);
 
 	clouds_background_program				=0;
 	eyePosition_param			=0;
 	hazeEccentricity_param		=0;
 	mieRayleighRatio_param		=0;
-	//distanceToIllumination_param=0;
 	
 	cloudDensity1_param			=0;
 	cloudDensity2_param			=0;

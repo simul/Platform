@@ -328,7 +328,7 @@ ERROR_CHECK
 ERROR_CHECK
 return true;
 }
-static GLint earthShadowUniformsBindingIndex=3;
+GLint earthShadowUniformsBindingIndex=3;
 
 void SimulGLSkyRenderer::UseProgram(GLuint p)
 {
@@ -415,7 +415,7 @@ ERROR_CHECK
 	else
 		UseProgram(sky_program);
 ERROR_CHECK
-	if(e.enable)
+	//if(e.enable)
 		glBindBufferBase(GL_UNIFORM_BUFFER,earthShadowUniformsBindingIndex,earthShadowUniformsUBO);
 ERROR_CHECK
 

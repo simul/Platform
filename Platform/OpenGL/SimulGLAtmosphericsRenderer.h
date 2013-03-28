@@ -85,8 +85,6 @@ private:
 	GLint directLightMultiplier;
 	
 	GLint earthShadowUniforms;
-	GLuint earthShadowUniformsUBO;
-	GLint earthShadowUniformsBindingIndex;
 	
 	GLint cloudOrigin;
 	GLint cloudScale;

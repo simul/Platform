@@ -8,8 +8,6 @@ uniform vec3 lightDir;
 uniform vec3 earthShadowNormal;
 uniform float radiusOnCylinder;
 uniform float skyInterp;
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
 
 uniform float maxDistance;
 // X, Y and Z for the bottom-left corner of the cloud shadow texture.

@@ -19,8 +19,6 @@ ALIGN cbuffer Cloud2DConstants R0
 	uniform float maxFadeDistanceMetres;
 	uniform vec3 sunlight;
 	uniform float cloudInterp;
-	uniform vec3 mieRayleighRatio;
-	uniform float hazeEccentricity;
 };
 
 #ifndef __cplusplus

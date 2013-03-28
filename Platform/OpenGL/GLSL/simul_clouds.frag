@@ -1,8 +1,11 @@
 // simul_clouds.frag - a GLSL fragment shader
 // Copyright 2008-2013 Simul Software Ltd
 #version 140
+
+
 #include "simul_inscatter_fns.glsl"
 #include "CloudConstants.glsl"
+#include "saturate.glsl"
 
 uniform sampler3D cloudDensity1;
 uniform sampler3D cloudDensity2;
@@ -12,8 +15,6 @@ uniform sampler2D inscatterSampler;
 uniform sampler2D skylightSampler;
 uniform sampler3D illumSampler;
 uniform sampler2D depthAlphaTexture;
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
 
 // varyings are written by vert shader, interpolated, and read by frag shader.
 varying vec2 noiseCoord;

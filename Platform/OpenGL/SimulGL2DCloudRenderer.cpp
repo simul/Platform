@@ -58,7 +58,7 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	,cross_section_program(0)
 	,cloud2DConstants(0)
 	,cloud2DConstantsUBO(0)
-	,cloud2DConstantsBindingIndex(2)
+	,cloud2DConstantsBindingIndex(12)
 	,detail_fb(0,0,GL_TEXTURE_2D)
 {
 	helper->Initialize(16,400000.f);
@@ -283,6 +283,7 @@ bool SimulGL2DCloudRenderer::Render(bool, void *, bool, bool)
     glDisable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	//glBlendFunc(GL_ONE,GL_ONE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -326,14 +327,16 @@ ERROR_CHECK
 		simul::sky::float4 sun_dir			=skyInterface->GetDirectionToLight(X1.z*0.001f);
 		simul::sky::float4 amb				=skyInterface->GetAmbientLight(X1.z*.001f);
 	
-		cloud2DConstants.hazeEccentricity		=skyInterface->GetMieEccentricity();
 		cloud2DConstants.lightDir				=sun_dir;
 		cloud2DConstants.lightResponse			=simul::sky::float4(ci->GetLightResponse(),0,0,ll*ci->GetSecondaryLightResponse());
 		cloud2DConstants.maxFadeDistanceMetres	=max_fade_distance_metres;
-		cloud2DConstants.mieRayleighRatio		=mieRayleighRatio;
 		cloud2DConstants.sunlight				=sunlight;
+
+		setParameter(clouds_program,"hazeEccentricity",skyInterface->GetMieEccentricity());
+		setParameter3(clouds_program,"mieRayleighRatio",mieRayleighRatio);
 	}
 	glBindBuffer(GL_UNIFORM_BUFFER, cloud2DConstantsUBO);
+	glBindBufferBase(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(Cloud2DConstants), &cloud2DConstants);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 ERROR_CHECK
@@ -444,11 +447,6 @@ void SimulGL2DCloudRenderer::RestoreDeviceObjects(void*)
 {
 	CreateNoiseTexture();
 	
-	glGenBuffers(1, &cloud2DConstantsUBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, cloud2DConstantsUBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(Cloud2DConstants), NULL, GL_STREAM_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	
 ERROR_CHECK
 	RecompileShaders();
 ERROR_CHECK
@@ -474,13 +472,14 @@ void SimulGL2DCloudRenderer::RecompileShaders()
 	cloud2DConstants		=glGetUniformBlockIndex(clouds_program,"Cloud2DConstants");
 	// If that block IS in the shader program, then BIND it to the relevant UBO.
 	if(cloud2DConstants>=0)
+	{
 		glUniformBlockBinding(clouds_program,cloud2DConstants,cloud2DConstantsBindingIndex);
-	glBindBufferRange(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO,0, sizeof(Cloud2DConstants));
-	
+	}
 	earthShadowUniforms		=glGetUniformBlockIndex(clouds_program, "EarthShadowUniforms");
 	if(earthShadowUniforms>=0)
 	{
 		glUniformBlockBinding(clouds_program,earthShadowUniforms,earthShadowUniformsBindingIndex);
+//	glBindBufferRange(GL_UNIFORM_BUFFER,earthShadowUniformsBindingIndex,earthShadowUniformsUBO,0, sizeof(EarthShadowUniforms));
 	}
 //cloudKeyframer->SetRenderCallback(this);
 	glUseProgram(0);
@@ -489,6 +488,12 @@ void SimulGL2DCloudRenderer::RecompileShaders()
 	cross_section_program=MakeProgram("simple");
 
 //	CreateImageTexture();
+	glGenBuffers(1, &cloud2DConstantsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER,cloud2DConstantsUBO);
+	glBufferData(GL_UNIFORM_BUFFER,sizeof(Cloud2DConstants),NULL,GL_STREAM_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER,0);
+	//glBindBufferRange(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO,0,sizeof(Cloud2DConstants));
+	glBindBufferBase(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO);
 ERROR_CHECK
 }
 
@@ -497,7 +502,7 @@ void SimulGL2DCloudRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(clouds_program);
 	SAFE_DELETE_PROGRAM(cross_section_program);
 	clouds_program			=0;
-	lossTexture		=0;
+	lossTexture				=0;
 	inscatterSampler_param	=0;
 	
 	glDeleteBuffersARB(1,&cloud2DConstantsUBO);

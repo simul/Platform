@@ -1,4 +1,6 @@
 #version 140
+#include "saturate.glsl"
+#include "view_dir.glsl"
 #include "simul_inscatter_fns.glsl"
 uniform sampler2D imageTexture;
 uniform sampler2D lossTexture;
@@ -12,8 +14,6 @@ uniform vec3 cloudOrigin;
 uniform vec3 cloudScale;
 uniform vec3 viewPosition;
 uniform float maxDistance;
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
 
 varying vec2 texCoords;
 

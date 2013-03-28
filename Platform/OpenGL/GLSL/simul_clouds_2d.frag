@@ -1,4 +1,5 @@
 #version 140
+#include "saturate.glsl"
 #include "simul_inscatter_fns.glsl"
 
 #define ALIGN

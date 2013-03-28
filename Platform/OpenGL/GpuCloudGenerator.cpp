@@ -398,7 +398,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 			glMatrixMode(GL_MODELVIEW);
 			glLoadIdentity();
 			// input light values:
-			DrawQuad(0,y_start,1,y_end-y_start);
+			DrawQuad(0.f,y_start,1.f,y_end-y_start);
 			ERROR_CHECK
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			ERROR_CHECK

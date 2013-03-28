@@ -1,17 +1,19 @@
+#ifndef DEF_ES
+#define DEF_ES
 layout(std140) uniform EarthShadowUniforms
 {
 	uniform vec3 sunDir;
-	uniform float radiusOnCylinder;
+	uniform float unused;
 	uniform vec3 earthShadowNormal;
+	uniform float radiusOnCylinder;
 	uniform float maxFadeDistance;
 	uniform float terminatorCosine;
+	uniform float unused2;
+	uniform float unused3;
 };
-
+#endif
 #ifndef __cplusplus
 float transitionDistance=0.001;
-
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
 
 //texc2 is (dist, .5(1+sine)).
 // This function is to determine whether the given position is in sunlight or not.
@@ -21,9 +23,9 @@ vec3 EarthShadowLight(vec2 texc2,vec3 view)
 	// true distance normalized to fade max.
 	float d=texc2.x*texc2.x*maxFadeDistance;
 	// Now resolve this distance on the normal to the sun direction.
-	float along=dot(sunDir,view);
+	float along=dot(sunDir.xyz,view);
 	float in_shadow=saturate(-along-terminatorCosine);
-	vec3 on_cross_section=view-along*sunDir;
+	vec3 on_cross_section=view-along*sunDir.xyz;
 	on_cross_section*=d;
 	vec3 viewer_pos=vec3(0.0,0.0,radiusOnCylinder);
 	vec3 target_pos=viewer_pos+on_cross_section;
@@ -40,13 +42,13 @@ vec4 EarthShadowFunction(vec2 texc2,vec3 view)
 	// The Earth's shadow: let shadowNormal be the direction normal to the sunlight direction
 	//						but in the plane of the sunlight and the vertical.
 	// First get the part of view that is along the light direction
-	float along=dot(sunDir,view);
+	float along=dot(sunDir.xyz,view);
 	float in_shadow=saturate(-along-terminatorCosine);
 	// subtract it to get the direction on the shadow-cylinder cross section.
-	vec3 on_cross_section=view-along*sunDir;
+	vec3 on_cross_section=view-along*sunDir.xyz;
 	// Now get the part that's on the cylinder radius:
-	float on_radius=dot(on_cross_section,earthShadowNormal);
-	vec3 on_x=on_cross_section-on_radius*earthShadowNormal;
+	float on_radius=dot(on_cross_section,earthShadowNormal.xyz);
+	vec3 on_x=on_cross_section-on_radius*earthShadowNormal.xyz;
 	float sine_phi=on_radius/length(on_cross_section);
 	// We avoid positive phi because the cosine discards sign information leading to
 	// confusion between negative and positive angles.
@@ -75,7 +77,7 @@ vec4 EarthShadowFunction(vec2 texc2,vec3 view)
 	a=min(a,texc2.x);
 	// Inscatter at distance d
 	vec2 texcoord_d=vec2(a,texc2.y);
-	vec4 insc=texture2D(inscTexture,texc2);
+	vec4 insc=texture(inscTexture,texc2);
 	vec4 inscb=texture(inscTexture,texcoord_d);
 	// what should the light be at distance d?
 	// We subtract the inscatter to d if we're looking OUT FROM the cylinder,

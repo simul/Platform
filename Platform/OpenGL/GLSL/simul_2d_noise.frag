@@ -21,7 +21,7 @@ void main(void)
 	vec4 hal=vec4(0.5,0.5,0.5,0.5);
     for(int i=0;i<octaves;i++)
     {
-		vec4 c=texture(noise_texture,texcoords)-hal;
+		vec4 c=texture2D(noise_texture,texcoords)-hal;
 		texcoords*=2.0;
 		result+=mul*c;
 		mul*=persistence;

@@ -14,9 +14,7 @@ SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
 	,cloud_shadow_texture(0)
 	,initialized(false)
 	,current_program(0)
-	,earthShadowUniformsBindingIndex(1)
 	,earthShadowUniforms(0)
-	,earthShadowUniformsUBO(0)
 {
 	framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D);
 }
@@ -66,11 +64,6 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 	godrays_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defs.c_str());
 	current_program				=0;
 	glUseProgram(0);
-	
-	glGenBuffers(1, &earthShadowUniformsUBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, earthShadowUniformsUBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(EarthShadowUniforms), NULL, GL_STREAM_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
@@ -78,9 +71,8 @@ void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(godrays_program);
 	
 	earthShadowUniforms=-1;
-	earthShadowUniformsUBO=-1;
 }
-
+static GLint earthShadowUniformsBindingIndex=3;
 void SimulGLAtmosphericsRenderer::UseProgram(GLuint p)
 {
 	if(p&&p!=current_program)
@@ -106,7 +98,7 @@ ERROR_CHECK
 		{
 			glUniformBlockBinding(current_program,earthShadowUniforms,earthShadowUniformsBindingIndex);
 ERROR_CHECK
-			glBindBufferRange(GL_UNIFORM_BUFFER, earthShadowUniformsBindingIndex,earthShadowUniformsUBO, 0, sizeof(EarthShadowUniforms));	
+//			glBindBufferRange(GL_UNIFORM_BUFFER, earthShadowUniformsBindingIndex,earthShadowUniformsUBO, 0, sizeof(EarthShadowUniforms));	
 		}
 ERROR_CHECK
 		
@@ -120,6 +112,8 @@ ERROR_CHECK
 ERROR_CHECK
 	}
 	glUseProgram(p);
+	if(earthShadowUniforms>=0)
+		glUniformBlockBinding(p,earthShadowUniforms,earthShadowUniformsBindingIndex);
 }
 
 void SimulGLAtmosphericsRenderer::StartRender()
@@ -150,6 +144,10 @@ ERROR_CHECK
 ERROR_CHECK
 	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,skyInterface->GetDirectionToSun());
 	if(e.enable)
+		UseProgram(earthshadow_fade_program);
+	else
+		UseProgram(distance_fade_program);
+	if(e.enable)
 	{
 		EarthShadowUniforms u;
 		u.earthShadowNormal	=e.normal;
@@ -157,14 +155,16 @@ ERROR_CHECK
 		u.maxFadeDistance	=fade_distance_km/e.planet_radius;
 		u.terminatorCosine	=e.terminator_cosine;
 		u.sunDir			=sun_dir;
-		glBindBuffer(GL_UNIFORM_BUFFER, earthShadowUniformsUBO);
+		/*glBindBuffer(GL_UNIFORM_BUFFER, earthShadowUniformsUBO);
 		glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(EarthShadowUniforms), &u);
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);*/
+ERROR_CHECK
+		setParameter3(earthshadow_fade_program,"sunDir",sun_dir);
+		setParameter3(earthshadow_fade_program,"earthShadowNormal",e.normal);
+		setParameter(earthshadow_fade_program,"radiusOnCylinder",u.radiusOnCylinder);
+		setParameter(earthshadow_fade_program,"maxFadeDistance",u.maxFadeDistance);
+		setParameter(earthshadow_fade_program,"terminatorCosine",u.terminatorCosine);
 	}
-	if(e.enable)
-		UseProgram(earthshadow_fade_program);
-	else
-		UseProgram(distance_fade_program);
 	ERROR_CHECK
 	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
 	glUniform3f(mieRayleighRatio,ratio.x,ratio.y,ratio.z);

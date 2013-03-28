@@ -1,4 +1,5 @@
 #version 140
+#include "saturate.glsl"
 #include "simul_inscatter_fns.glsl"
 uniform sampler2D imageTexture;
 uniform sampler2D lossTexture;
@@ -15,20 +16,10 @@ uniform vec3 viewPosition;
 uniform float overcast;
 
 uniform vec3 lightDir;
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
 
 varying vec2 texCoords;
 
-vec3 makeViewVector()
-{
-	vec4 pos=vec4(-1.0,-1.0,1.0,1.0);
-	pos.x+=2.0*texCoords.x;//+texelOffsets.x;
-	pos.y+=2.0*texCoords.y;//+texelOffsets.y;
-	vec3 view=(invViewProj*pos).xyz;
-	view=normalize(view);
-	return view;
-}
+#include "view_dir.glsl"
 
 float GetIlluminationAt(vec3 vd)
 {
@@ -43,7 +34,7 @@ float GetIlluminationAt(vec3 vd)
 
 vec4 simple()
 {
-	vec3 view=makeViewVector();
+	vec3 view=texCoordToViewDirection(texCoords);
 	float sine=view.z;
     vec4 lookup=texture(imageTexture,texCoords);
 	float depth=lookup.a;
@@ -73,7 +64,7 @@ vec4 simple()
 	
 vec4 godrays()
 {
-	vec3 view=makeViewVector();
+	vec3 view=texCoordToViewDirection(texCoords);
 	float sine=view.z;
     vec4 lookup=texture(imageTexture,texCoords);
 	float depth=lookup.a;
