@@ -36,8 +36,8 @@
 typedef std::basic_string<TCHAR> tstring;
 using namespace simul::clouds;
 
-SimulLightningRenderer::SimulLightningRenderer(simul::clouds::LightningRenderInterface *lightningRenderInterface) :
-	simul::clouds::BaseLightningRenderer(lightningRenderInterface)
+SimulLightningRenderer::SimulLightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk) :
+	simul::clouds::BaseLightningRenderer(ck,sk)
 	,m_pLightningVtxDecl(NULL)
 	,m_pLightningEffect(NULL)
 	,lightning_vertices(NULL)
@@ -243,22 +243,22 @@ bool y_vertical=true;
 HRESULT SimulLightningRenderer::CreateLightningTexture()
 {
 	HRESULT hr=S_OK;
+#if 0
 	unsigned size=64;
 	SAFE_RELEASE(lightning_texture);
 	if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,1,0,D3DUSAGE_AUTOGENMIPMAP,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&lightning_texture)))
 		return hr;
 	D3DLOCKED_RECT lockedRect={0};
-	//if(FAILED(hr=lightning_texture->LockRect(0,&lockedRect,NULL,NULL)))
+	if(FAILED(hr=lightning_texture->LockRect(0,&lockedRect,NULL,NULL)))
 		return hr;
-	const float *lightning_colour=lightningRenderInterface->GetLightningColour();
 	unsigned char *lightning_tex_data=(unsigned char *)(lockedRect.pBits);
 	for(unsigned i=0;i<size;i++)
 	{
 		float linear=1.f-fabs((float)(i+.5f)*2.f/(float)size-1.f);
 		float level=.5f*linear*linear+5.f*(linear>.97f);
-		float r=lightning_colour[0]	*level;
-		float g=lightning_colour[1]	*level;
-		float b=lightning_colour[2]	*level;
+		float r=level;
+		float g=level;
+		float b=level;
 		if(r>1.f)
 			r=1.f;
 		if(g>1.f)
@@ -271,5 +271,6 @@ HRESULT SimulLightningRenderer::CreateLightningTexture()
 		lightning_tex_data[4*i+3]=(unsigned char)(255.f*r);
 	}
 	hr=lightning_texture->UnlockRect(0);
+#endif
 	return hr;
 }

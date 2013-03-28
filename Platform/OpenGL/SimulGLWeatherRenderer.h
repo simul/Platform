@@ -45,6 +45,7 @@ public:
 	void SetScreenSize(int w,int h);
 	//! Call this when the device has been created
 	void RestoreDeviceObjects(void*);
+	void ReloadTextures();
 	void RecompileShaders();
 	//! Call this when the 3D device has been lost.
 	void InvalidateDeviceObjects();

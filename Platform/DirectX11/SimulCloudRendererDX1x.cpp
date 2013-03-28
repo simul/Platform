@@ -731,9 +731,8 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
 		noiseMatrix		->SetMatrix(noise_orient.GetInverseMatrix());
 	}
-	
-	
-	simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
+	float time=skyInterface->GetTime();
+	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
 	if(enable_lightning)
 	{
@@ -743,7 +742,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 		for(int i=0;i<4;i++)
 		{
 			if(i<lightningRenderInterface->GetNumLightSources())
-				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(i);
+				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(time);
 			else lightning_multipliers[i]=0;
 		}
 		static float effect_on_cloud=20.f;
@@ -756,10 +755,10 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 						lightningRenderInterface->GetLightningZoneSize(),
 						GetCloudInterface()->GetCloudBaseZ()+GetCloudInterface()->GetCloudHeight());
 
-		light_X1=lightningRenderInterface->GetLightningCentreX();
+//		light_X1=lightningRenderInterface->GetLightningCentreX();
 		light_X1-=0.5f*light_DX;
 		light_X1.z=0;
-		light_X2=lightningRenderInterface->GetLightningCentreX();
+		//light_X2=lightningRenderInterface->GetLightningCentreX();
 		light_X2+=0.5f*light_DX;
 		light_X2.z=light_DX.z;
 
@@ -945,21 +944,22 @@ bool SimulCloudRendererDX1x::RenderLightning()
 	int vert_start=0;
 	int vert_num=0;
 	ApplyPass(m_hTechniqueLightning->GetPassByIndex(0));
-simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
+	float time=skyInterface->GetTime();
+	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
 	l_worldViewProj->SetMatrix(&wvp._11);
 	for(int i=0;i<lightningRenderInterface->GetNumLightSources();i++)
 	{
-		if(!lightningRenderInterface->IsSourceStarted(i))
+		if(!lightningRenderInterface->IsSourceStarted(time))
 			continue;
 		simul::math::Vector3 x1,x2;
 		float bright1=0.f,bright2=0.f;
 		simul::math::Vector3 camPos(cam_pos);
-		for(int jj=0;jj<lightningRenderInterface->GetNumBranches(i,0);jj++)
+		for(int jj=0;jj<lightningRenderInterface->GetNumBranches(0);jj++)
 		{
 			simul::math::Vector3 last_transverse;
 			vert_start=vert_num;
-			const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(i,0,jj);
+			const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(time,0,jj);
 			x1=(const float*)branch.vertices[0];
 			float dist=(x1-camPos).Magnitude();
 			float vertical_shift=helper->GetVerticalShiftDueToCurvature(dist,x1.z);
@@ -1022,13 +1022,6 @@ void SimulCloudRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p
 	cam_pos=GetCameraPosVector(view);
 }
 
-
-simul::clouds::LightningRenderInterface *SimulCloudRendererDX1x::GetLightningRenderInterface()
-{
-	simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
-	
-	return lightningRenderInterface;
-}
 
 bool SimulCloudRendererDX1x::MakeCubemap()
 {

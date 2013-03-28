@@ -214,7 +214,7 @@ void SimulAtmosphericsRenderer::SetLightningProperties(	void *tex,
 	for(int i=0;i<4;i++)
 	{
 		if(i<(int)lri->GetNumLightSources())
-			(lightning_multipliers.operator float *())[i]=lri->GetLightSourceBrightness(i);
+			(lightning_multipliers.operator float *())[i]=lri->GetLightSourceBrightness(0.f);
 		else
 			(lightning_multipliers.operator float *())[i]=0;
 	}

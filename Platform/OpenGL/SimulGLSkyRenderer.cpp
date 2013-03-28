@@ -342,17 +342,15 @@ void SimulGLSkyRenderer::UseProgram(GLuint p)
 		skyTexture1_param				=glGetUniformLocation(current_program,"inscTexture");
 		skylightTexture_param			=glGetUniformLocation(current_program,"skylightTexture");
 			
-		altitudeTexCoord_param		=glGetUniformLocation(current_program,"altitudeTexCoord");
+		altitudeTexCoord_param			=glGetUniformLocation(current_program,"altitudeTexCoord");
 		
-		earthShadowUniforms			=glGetUniformBlockIndex(current_program, "EarthShadowUniforms");
+		earthShadowUniforms				=glGetUniformBlockIndex(current_program, "EarthShadowUniforms");
 ERROR_CHECK
 		// If that block IS in the shader program, then BIND it to the relevant UBO.
 		if(earthShadowUniforms>=0)
 		{
 			glUniformBlockBinding(current_program,earthShadowUniforms,earthShadowUniformsBindingIndex);
-ERROR_CHECK
-			glBindBufferRange(GL_UNIFORM_BUFFER, earthShadowUniformsBindingIndex,earthShadowUniformsUBO, 0, sizeof(EarthShadowUniforms));	
-ERROR_CHECK
+			glBindBufferRange(GL_UNIFORM_BUFFER,earthShadowUniformsBindingIndex,earthShadowUniformsUBO, 0, sizeof(EarthShadowUniforms));	
 		}
 		cloudOrigin					=glGetUniformLocation(current_program,"cloudOrigin");
 		cloudScale					=glGetUniformLocation(current_program,"cloudScale");
@@ -400,7 +398,7 @@ ERROR_CHECK
 								skyKeyframer->GetAltitudeKM()
 								,skyKeyframer->GetDirectionToSun());
 
-	if(e.enable)
+	//if(e.enable)
 	{
 		EarthShadowUniforms u;
 		u.earthShadowNormal	=e.normal;
@@ -481,6 +479,7 @@ bool SimulGLSkyRenderer::RenderPointStars()
 	CalcCameraPosition(cam_pos);
 	GetSiderealTransform(sid);
 	glEnable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE,GL_SRC_ALPHA,GL_ONE);
@@ -700,6 +699,12 @@ void SimulGLSkyRenderer::EnsureTextureCycle()
 	}
 }
 
+void SimulGLSkyRenderer::ReloadTextures()
+{
+	moon_texture=(void*)LoadGLImage(skyKeyframer->GetMoonTexture().c_str(),GL_CLAMP_TO_EDGE);
+	SetPlanetImage(moon_index,moon_texture);
+}
+
 void SimulGLSkyRenderer::RecompileShaders()
 {
 	current_program=0;
@@ -774,11 +779,9 @@ ERROR_CHECK
 	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 ERROR_CHECK
 	RecompileShaders();
-ERROR_CHECK
-	moon_texture=(void*)LoadGLImage("Moon.png",GL_CLAMP_TO_EDGE);
-	SetPlanetImage(moon_index,moon_texture);
-
 	glUseProgram(NULL);
+ERROR_CHECK
+	ReloadTextures();
 	ClearIterators();
 }
 

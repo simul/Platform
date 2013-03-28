@@ -9,9 +9,10 @@
 uniform sampler2D imageTexture;
 uniform sampler2D coverageTexture1;
 uniform sampler2D coverageTexture2;
-uniform sampler2D lossSampler;
-uniform sampler2D inscatterSampler;
-uniform sampler2D skylightSampler;
+uniform sampler2D lossTexture;
+uniform sampler2D inscTexture;
+uniform sampler2D skylTexture;
+#include "simul_earthshadow_uniforms.glsl"
 
 in vec2 texc_global;
 in vec2 texc_detail;
@@ -30,12 +31,13 @@ void main()
 	float opacity		=clamp(detail.a*coverage.y,0.0,1.0);
 	if(opacity<=0)
 		discard;
-	float light			=HenyeyGreenstein(cloudEccentricity,cos0);
-	vec3 final			=sunlight*(lightResponse.w+lightResponse.x*light*exp(-detail.r*coverage.y*32.0));
-	vec3 loss_lookup	=texture2D(lossSampler,fade_texc).rgb;
-	vec4 insc_lookup	=texture2D(inscatterSampler,fade_texc);
+	float hg			=HenyeyGreenstein(cloudEccentricity,cos0);
+	vec3 light			=EarthShadowLight(fade_texc,view);
+	vec3 final			=sunlight*light*(lightResponse.w+lightResponse.x*hg*detail.a*exp(-detail.r*coverage.y*32.0));
+	vec3 loss_lookup	=texture2D(lossTexture,fade_texc).rgb;
+	vec4 insc_lookup	=texture2D(inscTexture,fade_texc);
 	final				*=loss_lookup;
-	final				+=InscatterFunction(insc_lookup,hazeEccentricity,cos0,mieRayleighRatio);
-	final				+=texture2D(skylightSampler,fade_texc).rgb;
-    gl_FragColor		=vec4(final.rgb,opacity);
+	final				+=light*InscatterFunction(insc_lookup,hazeEccentricity,cos0,mieRayleighRatio);
+	final				+=texture2D(skylTexture,fade_texc).rgb;
+    gl_FragColor		=vec4(final,opacity);
 }

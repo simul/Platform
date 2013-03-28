@@ -11,7 +11,7 @@ void main(void)
 	{
 		vec2 d=offs*i;
 		vec2 t=texc+d;
-		float str=.02*exp(-i*i/125.0);
+		float str=.04*exp(-i*i/125.0);
 		vec4 c=str*texture2D(image_texture,t);
 		colour+=c;
 	}

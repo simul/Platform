@@ -25,8 +25,8 @@ void main(void)
 {
 	vec4 pos			=gl_Vertex;
 	//pos.xyz			*=layerDistance;
-    wPosition			=pos.xyz-eyePosition.xyz;
-    transformed_pos		=gl_ModelViewProjectionMatrix*pos;
+    wPosition			=pos.xyz;
+    transformed_pos		=gl_ModelViewProjectionMatrix*gl_Vertex;
     gl_Position			=transformed_pos;
 	texCoordDiffuse.xyz	=gl_MultiTexCoord0.xyz;
 	texCoordDiffuse.w	=0.5+0.5*clamp(gl_MultiTexCoord0.z,0.0,1.0);// clamp?
@@ -36,10 +36,11 @@ void main(void)
 	loss				=gl_MultiTexCoord4.xyz;
 	insc				=gl_MultiTexCoord5.xyzw;
 	
-	texCoordLightning	=(wPosition.xzy-illuminationOrigin.xyz)/illuminationScales.xyz;
-	view=normalize(wPosition);
+	texCoordLightning	=(wPosition.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
 
+	view=(wPosition-eyePosition.xyz);
+	float depth=length(view)/maxFadeDistanceMetres;
+	view=normalize(view);
 	float sine=view.z;
-	float depth=length(wPosition)/maxFadeDistanceMetres;
 	fade_texc=vec2(sqrt(depth),0.5*(1.0-sine));
 }

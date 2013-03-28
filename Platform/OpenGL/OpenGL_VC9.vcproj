@@ -505,6 +505,14 @@
 			Name="Shaders"
 			>
 			<File
+				RelativePath=".\GLSL\simple.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simple.vert"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_2d_cloud_detail.frag"
 				>
 			</File>
@@ -641,7 +649,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLSL\simul_noise.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_planet.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_simple_lightning.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_simple_lightning.vert"
 				>
 			</File>
 			<File

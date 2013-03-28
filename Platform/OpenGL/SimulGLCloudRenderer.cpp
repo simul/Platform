@@ -130,7 +130,6 @@ bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
 {
 	if(!init)
 		return false;
-ERROR_CHECK
     glGenTextures(1,&noise_tex);
     glBindTexture(GL_TEXTURE_2D,noise_tex);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -138,7 +137,10 @@ ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,noise_texture_size,noise_texture_size,0,GL_RGBA,GL_UNSIGNED_INT,0);
+	glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,noise_texture_size,noise_texture_size,0,GL_RGBA,GL_UNSIGNED_INT,0);
+
+#if 0
+ERROR_CHECK
 	unsigned char *data=new unsigned char[4*noise_texture_size*noise_texture_size];
 	bool got_data=false;
 	if(!override_file)
@@ -161,7 +163,8 @@ ERROR_CHECK
 	if(!got_data)
 	{
 		simul::clouds::TextureGenerator::SetBits((unsigned)255<<24,(unsigned)255<<8,(unsigned)255<<16,(unsigned)255<<0,4,false);
-		simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)data,noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
+		simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)data,noise_texture_size
+			,noise_texture_frequency,texture_octaves,texture_persistence);
 	}
 	glTexSubImage2D(
 		GL_TEXTURE_2D,0,
@@ -169,8 +172,6 @@ ERROR_CHECK
 		noise_texture_size,noise_texture_size,
 		GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
 		data);
-ERROR_CHECK
-	glGenerateMipmap(GL_TEXTURE_2D);
 	if(!got_data)
 	{
 		ofstream ofs("noise_3d_clouds",ios_base::binary);
@@ -181,6 +182,61 @@ ERROR_CHECK
 		ofs.write((const char*)data,noise_texture_size*noise_texture_size*sizeof(unsigned));
 	}
 	delete [] data;
+#else
+	FramebufferGL	noise_fb(noise_texture_frequency,noise_texture_frequency,GL_TEXTURE_2D);
+	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT,GL_REPEAT);
+	noise_fb.Activate();
+	{
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0,1.0,0,1.0,-1.0,1.0);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		GLuint noise_prog=MakeProgram("simple.vert",NULL,"simul_noise.frag");
+		glUseProgram(noise_prog);
+		DrawQuad(0,0,1,1);
+		SAFE_DELETE_PROGRAM(noise_prog);
+	}
+	noise_fb.Deactivate();
+	glUseProgram(0);
+ERROR_CHECK	
+
+	FramebufferGL n_fb(noise_texture_size,noise_texture_size,GL_TEXTURE_2D);
+
+ERROR_CHECK	
+	n_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
+	n_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
+	n_fb.Activate();
+	{
+		n_fb.Clear(0.f,0.f,0.f,0.f);
+		Ortho();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
+		GLuint n_prog=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
+		glUseProgram(n_prog);
+		setParameter(n_prog,"persistence",texture_persistence);
+		setParameter(n_prog,"octaves",texture_octaves);
+		n_fb.DrawQuad();
+		SAFE_DELETE_PROGRAM(n_prog);
+	}
+ERROR_CHECK	
+	glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,noise_tex);
+	glCopyTexSubImage2D(GL_TEXTURE_2D,
+ 		0,
+ 		0,
+ 		0,
+ 		0,
+ 		0,
+ 		noise_texture_size,
+ 		noise_texture_size);
+ERROR_CHECK	
+	n_fb.Deactivate();
+	glUseProgram(0);
+#endif
+ERROR_CHECK
+	glGenerateMipmap(GL_TEXTURE_2D);
 ERROR_CHECK
 	return true;
 }
@@ -236,6 +292,7 @@ static float saturate(float c)
 {
 	return std::max(std::min(1.f,c),0.f);
 }
+static float transitionDistance=0.01;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
@@ -339,24 +396,25 @@ ERROR_CHECK
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	
 ERROR_CHECK
-	simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
+float time=skyInterface->GetTime();
+const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
 	CloudConstants cloudConstants;
 	if(lightningRenderInterface)
 	{
 		static float bb=.1f;
 		simul::sky::float4 lightning_multipliers;
+		static float lightning_effect_on_cloud=0.2f;
 		simul::sky::float4 lightning_colour=lightningRenderInterface->GetLightningColour();
 		for(unsigned i=0;i<4;i++)
 		{
 			if(i<lightningRenderInterface->GetNumLightSources())
-				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(i);
+				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(time);
 			else lightning_multipliers[i]=0;
 		}
-		static float lightning_effect_on_cloud=20.f;
 		lightning_colour.w=lightning_effect_on_cloud;
-		lightning_colour*=lightningRenderInterface->GetLightSourceBrightness(0);
-		simul::sky::float4 source_pos=lightningRenderInterface->GetSourcePosition(0);
+		lightning_colour*=lightning_effect_on_cloud*lightningRenderInterface->GetLightSourceBrightness(time);
+		simul::sky::float4 source_pos=lightningRenderInterface->GetSourcePosition();
 		cloudConstants.lightningSourcePos=source_pos;
 		cloudConstants.lightningColour=lightning_colour;
 	}
@@ -371,7 +429,7 @@ ERROR_CHECK
 	
 	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
 
-	//glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
+	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
 	float base_alt_km=X1.z*.001f;
 	float t=0.f;
 	simul::sky::float4 sunlight1,sunlight2;
@@ -388,7 +446,8 @@ ERROR_CHECK
 		simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
 		glUniform3f(mieRayleighRatio_param,mie_rayleigh_ratio.x,mie_rayleigh_ratio.y,mie_rayleigh_ratio.z);
 		cloudConstants.ambientColour=amb;
-		cloudConstants.earthshadowMultiplier=saturate(base_alt_km-e.illumination_altitude);
+		float above=(base_alt_km-e.illumination_altitude)/e.planet_radius+transitionDistance;
+		cloudConstants.earthshadowMultiplier=saturate(above/transitionDistance);
 		t=skyInterface->GetTime();
 
 		sunlight1=skyInterface->GetLocalIrradiance(base_alt_km)*saturate(base_alt_km-e.illumination_altitude);
@@ -555,6 +614,7 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 	if(current_program==program)
 		return;
 	current_program=program;
+	eyePosition_param			=glGetUniformLocation(program,"eyePosition");
 	hazeEccentricity_param		=glGetUniformLocation(program,"hazeEccentricity");
 	mieRayleighRatio_param		=glGetUniformLocation(program,"mieRayleighRatio");
 	maxFadeDistanceMetres_param	=glGetUniformLocation(program,"maxFadeDistanceMetres");
@@ -946,7 +1006,10 @@ static float mult=1.f;
 		glUniform1f(yz_param,1.f);
 		DrawQuad(i*(w+8)+8,h+16,w,w);
 	}
-
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,noise_tex);
+glUseProgram(Utilities::GetSingleton().simple_program);
+	DrawQuad(width-(w+8)+8,16,w,w);
 	glUseProgram(0);
 ERROR_CHECK
 }

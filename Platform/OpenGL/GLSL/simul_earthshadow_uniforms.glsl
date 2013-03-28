@@ -8,9 +8,32 @@ layout(std140) uniform EarthShadowUniforms
 };
 
 #ifndef __cplusplus
+float transitionDistance=0.001;
 
 uniform float hazeEccentricity;
 uniform vec3 mieRayleighRatio;
+
+//texc2 is (dist, .5(1+sine)).
+// This function is to determine whether the given position is in sunlight or not.
+vec3 EarthShadowLight(vec2 texc2,vec3 view)
+{
+	// Project to the world position this represents, then compare it to the shadow radius.
+	// true distance normalized to fade max.
+	float d=texc2.x*texc2.x*maxFadeDistance;
+	// Now resolve this distance on the normal to the sun direction.
+	float along=dot(sunDir,view);
+	float in_shadow=saturate(-along-terminatorCosine);
+	vec3 on_cross_section=view-along*sunDir;
+	on_cross_section*=d;
+	vec3 viewer_pos=vec3(0.0,0.0,radiusOnCylinder);
+	vec3 target_pos=viewer_pos+on_cross_section;
+	float target_radius=length(target_pos);
+
+	// Now, if target_radius<1.0, it's zero.
+	float result=clamp((target_radius-1.0+transitionDistance)/transitionDistance,0,1.0);
+	result=1.0-in_shadow*(1.0-result);
+	return vec3(result,result,result);
+}
 
 vec4 EarthShadowFunction(vec2 texc2,vec3 view)
 {

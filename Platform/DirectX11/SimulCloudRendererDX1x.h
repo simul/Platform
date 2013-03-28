@@ -71,7 +71,6 @@ public:
 	bool RenderLightning();
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
-	simul::clouds::LightningRenderInterface *GetLightningRenderInterface();
 
 	//! Return true if the camera is above the cloudbase altitude.
 	bool IsCameraAboveCloudBase() const;

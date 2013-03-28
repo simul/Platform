@@ -188,9 +188,9 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 		{
 			if(readback_to_cpu&&total_texels*stride>density_gridsize)
 			{
-				delete [] density;
+				//delete [] density;
 				density_gridsize=total_texels*stride;
-				density=new float[density_gridsize];
+				//density=new float[density_gridsize];
 			}
 			density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2],iformat==GL_RGBA32F_ARB?4:1,false,NULL);
 		}
@@ -198,15 +198,7 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,density_texture);
 	ERROR_CHECK
-		/*if(readback_to_cpu)
 		{
-			glReadPixels(0,0,density_grid[0],density_grid[1]*density_grid[2],itype,GL_FLOAT,(GLvoid*)density);
-			glTexImage3D(GL_TEXTURE_3D,0,iformat,density_grid[0],density_grid[1],density_grid[2],0,itype,GL_FLOAT,density);
-		}
-		else*/
-		{
-			//start_texel=0;
-			//texels=new_density_gridsize;
 			// Now instead of reading the pixels back to memory, we will copy them layer-by-layer into the volume texture.
 			int Y=start_texel/density_grid[0];
 			int H=texels/density_grid[0];

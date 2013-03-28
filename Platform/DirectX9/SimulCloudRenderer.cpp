@@ -788,7 +788,8 @@ bool SimulCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_
 	m_pCloudEffect->SetFloat	(cloudEccentricity	,GetCloudInterface()->GetMieAsymmetry());
 	m_pCloudEffect->SetFloat	(fadeInterp			,fade_interp);
 	m_pCloudEffect->SetFloat	(alphaSharpness		,GetCloudInterface()->GetAlphaSharpness());
-simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
+	float time=skyInterface->GetTime();
+	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
 	if(enable_lightning)
 	{
@@ -798,7 +799,7 @@ simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer
 		for(unsigned i=0;i<4;i++)
 		{
 			if(i<lightningRenderInterface->GetNumLightSources())
-				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(i);
+				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(time);
 			else lightning_multipliers[i]=0;
 		}
 		static float lightning_effect_on_cloud=20.f;

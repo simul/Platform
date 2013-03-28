@@ -216,18 +216,18 @@ ERROR_CHECK
 		float distKm=zPosition*max_distance_km;
 		if(i==numDistances-1)
 			distKm=1000.f;
-		setParameter(loss_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
-		setParameter(loss_program,"tableSize"		,(float)table_size,(float)table_size);
+		//setParameter(loss_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
+		//setParameter(loss_program,"tableSize"		,(float)table_size,(float)table_size);
 		setParameter(loss_program,"distKm"			,distKm);
 		setParameter(loss_program,"prevDistKm"		,prevDistKm);
-		setParameter(loss_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
-		setParameter(loss_program,"maxOutputAltKm"	,maxOutputAltKm);
-		setParameter(loss_program,"maxDensityAltKm"	,maxDensityAltKm);  
-		setParameter(loss_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
-		setParameter(loss_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
-		setParameter3(loss_program,"rayleigh"		,skyInterface->GetRayleigh());
-		setParameter3(loss_program,"hazeMie"		,haze*skyInterface->GetMie());
-		setParameter3(loss_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
+		//setParameter(loss_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
+		//setParameter(loss_program,"maxOutputAltKm"	,maxOutputAltKm);
+		//setParameter(loss_program,"maxDensityAltKm"	,maxDensityAltKm);  
+		//setParameter(loss_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
+		//setParameter(loss_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
+		//setParameter3(loss_program,"rayleigh"		,skyInterface->GetRayleigh());
+		//setParameter3(loss_program,"hazeMie"		,haze*skyInterface->GetMie());
+		//setParameter3(loss_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
 	ERROR_CHECK
 		F[1]->Activate();
 	ERROR_CHECK
@@ -347,23 +347,23 @@ ERROR_CHECK
 		setParameter(skyl_program,"distKm"			,distKm);
 		setParameter(skyl_program,"prevDistKm"		,prevDistKm);
 		
-		setParameter(skyl_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
-		setParameter(skyl_program,"tableSize"		,(float)table_size,(float)table_size);
+		//setParameter(skyl_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
+		//setParameter(skyl_program,"tableSize"		,(float)table_size,(float)table_size);
 		
-		setParameter(skyl_program,"maxDistanceKm"	,max_distance_km);
-		setParameter(skyl_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
-		setParameter(skyl_program,"maxOutputAltKm"	,maxOutputAltKm);
-		setParameter(skyl_program,"maxDensityAltKm"	,maxDensityAltKm);
+		//setParameter(skyl_program,"maxDistanceKm"	,max_distance_km);
+		//setParameter(skyl_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
+		//setParameter(skyl_program,"maxOutputAltKm"	,maxOutputAltKm);
+		//setParameter(skyl_program,"maxDensityAltKm"	,maxDensityAltKm);
 		
-		setParameter(skyl_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
-		setParameter(skyl_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
+		//setParameter(skyl_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
+		//setParameter(skyl_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
 		
-		setParameter3(skyl_program,"rayleigh"		,skyInterface->GetRayleigh());
-		setParameter3(skyl_program,"hazeMie"		,haze*skyInterface->GetMie());
-		setParameter3(skyl_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
+		//setParameter3(skyl_program,"rayleigh"		,skyInterface->GetRayleigh());
+		//setParameter3(skyl_program,"hazeMie"		,haze*skyInterface->GetMie());
+		//setParameter3(skyl_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
 //		setParameter3(skyl_program,"sunIrradiance"	,skyInterface->GetSunIrradiance());
 //		setParameter3(skyl_program,"lightDir"		,dir_to_sun);
-		setParameter3(skyl_program,"starlight"		,skyInterface->GetStarlight());
+		//setParameter3(skyl_program,"starlight"		,skyInterface->GetStarlight());
 		F[1]->Activate();
 			F[1]->Clear(0.f,0.f,0.f,0.f);
 			OrthoMatrices();

@@ -53,7 +53,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 	baseCloudRenderer=simulCloudRenderer.get();
 	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d);
 	
-	simulLightningRenderer=new SimulGLLightningRenderer(environment->lightning.get());
+	simulLightningRenderer=new SimulGLLightningRenderer(ck3d,sk);
 	baseLightningRenderer=simulLightningRenderer.get();
 
 	simulAtmosphericsRenderer=new SimulGLAtmosphericsRenderer;
@@ -170,6 +170,11 @@ void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 	if(scene_buffer)
 		scene_buffer->InvalidateDeviceObjects();
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
+}
+
+void SimulGLWeatherRenderer::ReloadTextures()
+{
+	BaseWeatherRenderer::ReloadTextures();
 }
 
 void SimulGLWeatherRenderer::RecompileShaders()

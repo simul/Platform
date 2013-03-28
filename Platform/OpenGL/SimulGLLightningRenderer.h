@@ -12,7 +12,7 @@
 SIMUL_OPENGL_EXPORT_CLASS SimulGLLightningRenderer: public simul::clouds::BaseLightningRenderer
 {
 public:
-	SimulGLLightningRenderer(simul::clouds::LightningRenderInterface *lri);
+	SimulGLLightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk);
 	~SimulGLLightningRenderer();
 	void RestoreDeviceObjects();
 	void Render();
@@ -47,4 +47,5 @@ protected:
 	GLuint				lightningTexture_param;
 
 	bool CreateLightningTexture();
+	bool enable_geometry_shaders;
 };

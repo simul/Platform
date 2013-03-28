@@ -58,7 +58,7 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 		Group::AddChild(simulSkyRenderer.get());
 	}
 	simulCloudRenderer=new SimulCloudRendererDX1x(ck3d);
-	simulLightningRenderer=new SimulLightningRendererDX11();
+	simulLightningRenderer=new SimulLightningRendererDX11(ck3d,sk);
 	baseCloudRenderer=simulCloudRenderer.get();
 	Group::AddChild(simulCloudRenderer.get());
 	if(clouds2d)

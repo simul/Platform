@@ -37,6 +37,7 @@ public:
 	void						RestoreDeviceObjects(void*);
 	//! Destroy the API-specific objects used in rendering.
 	void						InvalidateDeviceObjects();
+	void						ReloadTextures();
 	void						RecompileShaders();
 	//! GL Implementation of render function.
 	bool						Render(bool blend);
@@ -110,6 +111,7 @@ protected:
 	GLint			MieRayleighRatio_param;
 	GLint			hazeEccentricity_param;
 	GLint			lightDirection_sky_param;
+
 	GLint			earthShadowUniforms;
 	GLuint			earthShadowUniformsUBO;
 	

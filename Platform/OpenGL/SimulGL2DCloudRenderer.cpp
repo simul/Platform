@@ -291,7 +291,7 @@ bool SimulGL2DCloudRenderer::Render(bool, void *, bool, bool)
 	Set2DTexture(imageTexture_param,(GLuint)detail_fb.GetColorTex(),0);
 	Set2DTexture(coverageTexture1,coverage_tex[0],1);
 	Set2DTexture(coverageTexture2,coverage_tex[1],2);
-	Set2DTexture(lossSampler_param,loss_tex,3);
+	Set2DTexture(lossTexture,loss_tex,3);
 	Set2DTexture(inscatterSampler_param,inscatter_tex,4);
 	Set2DTexture(skylightSampler_param,skylight_tex,5);
 	
@@ -301,7 +301,9 @@ bool SimulGL2DCloudRenderer::Render(bool, void *, bool, bool)
 	simul::math::Matrix4x4 modelview,proj;
 	glGetMatrix((float*)&modelview,GL_MODELVIEW_MATRIX);
 	glGetMatrix((float*)&proj,GL_PROJECTION_MATRIX);
-
+	simul::math::Matrix4x4 viewInv;
+	modelview.Inverse(viewInv);
+	cam_pos.Set(viewInv(3,0),viewInv(3,1),viewInv(3,2),0.f);
 static float ll=0.05f;
 static float ff=100.f;
 setMatrixTranspose(clouds_program,"projection_matrix",proj);
@@ -319,30 +321,25 @@ ERROR_CHECK
 	cloud2DConstants.eyePosition		=cam_pos;
 	if(skyInterface)
 	{
-		simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(X1.z*0.001f);
-		simul::sky::float4 mieRayleighRatio=skyInterface->GetMieRayleighRatio();
-		simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(X1.z*0.001f);
-		simul::sky::float4 amb=skyInterface->GetAmbientLight(X1.z*.001f);
+		simul::sky::float4 sunlight			=skyInterface->GetLocalIrradiance(X1.z*0.001f);
+		simul::sky::float4 mieRayleighRatio	=skyInterface->GetMieRayleighRatio();
+		simul::sky::float4 sun_dir			=skyInterface->GetDirectionToLight(X1.z*0.001f);
+		simul::sky::float4 amb				=skyInterface->GetAmbientLight(X1.z*.001f);
 	
-		cloud2DConstants.hazeEccentricity	=skyInterface->GetMieEccentricity();
-		cloud2DConstants.lightDir			=sun_dir;
-		cloud2DConstants.lightResponse		=simul::sky::float4(ci->GetLightResponse(),0,0,ll*ci->GetSecondaryLightResponse());
-		cloud2DConstants.maxFadeDistanceMetres=max_fade_distance_metres;
-		cloud2DConstants.mieRayleighRatio	=mieRayleighRatio;
-		cloud2DConstants.sunlight			=sunlight;
+		cloud2DConstants.hazeEccentricity		=skyInterface->GetMieEccentricity();
+		cloud2DConstants.lightDir				=sun_dir;
+		cloud2DConstants.lightResponse			=simul::sky::float4(ci->GetLightResponse(),0,0,ll*ci->GetSecondaryLightResponse());
+		cloud2DConstants.maxFadeDistanceMetres	=max_fade_distance_metres;
+		cloud2DConstants.mieRayleighRatio		=mieRayleighRatio;
+		cloud2DConstants.sunlight				=sunlight;
 	}
 	glBindBuffer(GL_UNIFORM_BUFFER, cloud2DConstantsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(Cloud2DConstants), &cloud2DConstants);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 ERROR_CHECK
 	glBindBufferBase(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO);
-
 ERROR_CHECK
-	simul::math::Matrix4x4 viewInv;
-	modelview.Inverse(viewInv);
-	simul::math::Vector3 cam_pos(viewInv(3,0),viewInv(3,1),viewInv(3,2));
 	simul::math::Vector3 view_pos(cam_pos.x,cam_pos.y,cam_pos.z);
-
 ERROR_CHECK
 	simul::math::Vector3 eye_dir=viewInv.RowPointer(2);
 	eye_dir*=-1.f;
@@ -352,7 +349,6 @@ ERROR_CHECK
 	static float noise_angle=0.8f;
 	helper->Set2DNoiseTexturing(noise_angle,2.f,1.f);
 	float image_scale=2000.f+texture_scale*20000.f;
-
 ERROR_CHECK
 	const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 	size_t qs_vert=0;
@@ -436,6 +432,7 @@ void SimulGL2DCloudRenderer::SetLossTexture(void *l)
 	if(l)
 	loss_tex=((GLuint)l);
 }
+static GLint earthShadowUniformsBindingIndex=3;
 
 void SimulGL2DCloudRenderer::SetInscatterTextures(void *i,void *s)
 {
@@ -466,29 +463,31 @@ void SimulGL2DCloudRenderer::RecompileShaders()
 	coverageTexture1		= glGetUniformLocation(clouds_program,"coverageTexture1");
 	coverageTexture2		= glGetUniformLocation(clouds_program,"coverageTexture2");
 	imageTexture_param		= glGetUniformLocation(clouds_program,"imageTexture");
-	lossSampler_param		= glGetUniformLocation(clouds_program,"lossSampler");
-	inscatterSampler_param	= glGetUniformLocation(clouds_program,"inscatterSampler");
-	skylightSampler_param	= glGetUniformLocation(clouds_program,"skylightSampler");
+	lossTexture				= glGetUniformLocation(clouds_program,"lossTexture");
+	inscatterSampler_param	= glGetUniformLocation(clouds_program,"inscTexture");
+	skylightSampler_param	= glGetUniformLocation(clouds_program,"skylTexture");
 
 	globalScale				= glGetUniformLocation(clouds_program,"globalScale");
 	detailScale				= glGetUniformLocation(clouds_program,"detailScale");
 	origin					= glGetUniformLocation(clouds_program,"origin");
 	
 	cloud2DConstants		=glGetUniformBlockIndex(clouds_program,"Cloud2DConstants");
-ERROR_CHECK
 	// If that block IS in the shader program, then BIND it to the relevant UBO.
 	if(cloud2DConstants>=0)
-	{
 		glUniformBlockBinding(clouds_program,cloud2DConstants,cloud2DConstantsBindingIndex);
-ERROR_CHECK
-	}
 	glBindBufferRange(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO,0, sizeof(Cloud2DConstants));
 	
+	earthShadowUniforms		=glGetUniformBlockIndex(clouds_program, "EarthShadowUniforms");
+	if(earthShadowUniforms>=0)
+	{
+		glUniformBlockBinding(clouds_program,earthShadowUniforms,earthShadowUniformsBindingIndex);
+	}
 //cloudKeyframer->SetRenderCallback(this);
 	glUseProgram(0);
 	
 	SAFE_DELETE_PROGRAM(cross_section_program);
 	cross_section_program=MakeProgram("simple");
+
 //	CreateImageTexture();
 ERROR_CHECK
 }
@@ -498,7 +497,7 @@ void SimulGL2DCloudRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(clouds_program);
 	SAFE_DELETE_PROGRAM(cross_section_program);
 	clouds_program			=0;
-	lossSampler_param		=0;
+	lossTexture		=0;
 	inscatterSampler_param	=0;
 	
 	glDeleteBuffersARB(1,&cloud2DConstantsUBO);

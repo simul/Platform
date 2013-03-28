@@ -54,6 +54,7 @@ public:
 	class SimulGLTerrainRenderer *GetTerrainRenderer(){return simulTerrainRenderer.get();}
 	void SetCamera(simul::camera::Camera *c);
 	void SetYVertical(bool y);
+	void ReloadTextures();
 	void RecompileShaders();
 	simul::opengl::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}

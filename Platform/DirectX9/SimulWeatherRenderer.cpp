@@ -76,7 +76,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 		simulCloudRenderer=new SimulCloudRenderer(ck3d);
 		baseCloudRenderer=simulCloudRenderer.get();
 		AddChild(simulCloudRenderer.get());
-		simulLightningRenderer=new SimulLightningRenderer(simulCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
+		simulLightningRenderer=new SimulLightningRenderer(ck3d,sk);
 		baseLightningRenderer=simulLightningRenderer.get();
 		Restore3DCloudObjects();
 	}
@@ -282,8 +282,8 @@ bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
 	if(baseCloudRenderer&&simulAtmosphericsRenderer)
 	{
-		simulAtmosphericsRenderer->SetLightningProperties(baseCloudRenderer->GetIlluminationTexture(),
-								baseCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
+		//simulAtmosphericsRenderer->SetLightningProperties(baseCloudRenderer->GetIlluminationTexture(),
+		//						baseCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
 	}
 	if(buffered&&!is_cubemap)
 	{

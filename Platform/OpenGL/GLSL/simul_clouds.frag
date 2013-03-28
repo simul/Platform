@@ -63,7 +63,7 @@ void main(void)
 		discard;
 #endif
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
-	vec3 final=(density.z*Beta+lightResponse.y*density.w)*sunlight+density.x*ambientColour.rgb;
+	vec3 final=(density.z*Beta+lightResponse.y*density.w)*sunlight*earthshadowMultiplier+density.x*ambientColour.rgb;
 	
 	vec3 diff=wPosition.xyz-lightningSourcePos;
 	float dist_from_lightning=length(diff.xyz);

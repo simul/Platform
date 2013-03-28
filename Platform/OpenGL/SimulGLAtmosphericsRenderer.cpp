@@ -51,7 +51,7 @@ void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 	{
 		framebuffer->InitDepth_RB(GL_DEPTH_COMPONENT32);
 	}
-	
+	framebuffer->NoDepth();
 	RecompileShaders();
 }
 
@@ -132,6 +132,8 @@ void SimulGLAtmosphericsRenderer::StartRender()
 void SimulGLAtmosphericsRenderer::FinishRender()
 {
 	framebuffer->Deactivate();
+	framebuffer->CopyDepthFromFramebuffer();
+
 ERROR_CHECK
     glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE1);

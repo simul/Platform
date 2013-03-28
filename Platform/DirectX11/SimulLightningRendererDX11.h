@@ -14,7 +14,7 @@
 class SimulLightningRendererDX11: public simul::clouds::BaseLightningRenderer
 {
 public:
-	SimulLightningRendererDX11();
+	SimulLightningRendererDX11(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk);
 	~SimulLightningRendererDX11();
 	void RestoreDeviceObjects(void* dev);
 	void RecompileShaders();

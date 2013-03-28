@@ -102,11 +102,10 @@ ERROR_CHECK
 			simulTerrainRenderer->Render();
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender();
+		simulWeatherRenderer->RenderLightning();
 			
 		simulWeatherRenderer->SetDepthTexture(simulWeatherRenderer->GetBaseAtmosphericsRenderer()->GetDepthAlphaTexture());
 		simulWeatherRenderer->RenderLateCloudLayer(true);
-
-		simulWeatherRenderer->RenderLightning();
 
 		simulWeatherRenderer->DoOcclusionTests();
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
@@ -253,6 +252,12 @@ void OpenGLRenderer::SetYVertical(bool y)
 	//	simulTerrainRenderer->SetYVertical(y_vertical);
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->SetYVertical(y_vertical);
+}
+
+void OpenGLRenderer::ReloadTextures()
+{
+	if(simulWeatherRenderer.get())
+		simulWeatherRenderer->ReloadTextures();
 }
 
 void OpenGLRenderer::RecompileShaders()

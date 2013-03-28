@@ -1,7 +1,8 @@
 
 #include "SimulLightningRendererDX11.h"
 
-SimulLightningRendererDX11::SimulLightningRendererDX11()
+SimulLightningRendererDX11::SimulLightningRendererDX11(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk)
+	:BaseLightningRenderer(ck,sk)
 {
 }
 

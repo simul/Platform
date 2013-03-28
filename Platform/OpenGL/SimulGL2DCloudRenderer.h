@@ -69,13 +69,15 @@ protected:
 	GLint origin;
 
 	GLint imageTexture_param;
-	GLint lossSampler_param;
+	GLint lossTexture;
 	GLint inscatterSampler_param;
 	GLint skylightSampler_param;
 	
 	GLint cloud2DConstants;
 	GLuint cloud2DConstantsUBO;
 	GLint cloud2DConstantsBindingIndex;
+	
+	GLint earthShadowUniforms;
 
 	GLint coverageTexture1;
 	GLint coverageTexture2;
