@@ -1,5 +1,7 @@
 // simul_sky.frag - a GLSL fragment shader
 // Copyright 2008-2012 Simul Software Ltd
+uniform float hazeEccentricity;
+uniform vec3 mieRayleighRatio;
 #include "simul_inscatter_fns.glsl"
 
 uniform sampler2D inscTexture;

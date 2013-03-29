@@ -1,5 +1,7 @@
 #version 140
 #include "saturate.glsl"
+uniform float hazeEccentricity;
+uniform vec3 mieRayleighRatio;
 #include "simul_inscatter_fns.glsl"
 
 #define ALIGN

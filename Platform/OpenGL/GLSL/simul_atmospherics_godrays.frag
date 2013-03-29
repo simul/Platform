@@ -1,6 +1,8 @@
 #version 140
 #include "saturate.glsl"
 #include "view_dir.glsl"
+uniform float hazeEccentricity;
+uniform vec3 mieRayleighRatio;
 #include "simul_inscatter_fns.glsl"
 uniform sampler2D imageTexture;
 uniform sampler2D lossTexture;

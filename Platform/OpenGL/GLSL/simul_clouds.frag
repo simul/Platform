@@ -2,7 +2,8 @@
 // Copyright 2008-2013 Simul Software Ltd
 #version 140
 
-
+uniform float hazeEccentricity;
+uniform vec3 mieRayleighRatio;
 #include "simul_inscatter_fns.glsl"
 #include "CloudConstants.glsl"
 #include "saturate.glsl"

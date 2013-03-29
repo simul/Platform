@@ -11,8 +11,8 @@ out vec2 texcoord;
 
 void main(void)
 {
-    gl_Position		= worldViewProj * vec4(vertex, 1.0);
-	wPosition		= vertex;
-	texcoord		= vec2(wPosition.xy/2000.0);
+    gl_Position		=worldViewProj*vec4(vertex,1.0);
+	wPosition		=vertex;
+	texcoord		=vec2(wPosition.xy/2000.0);
 }
 

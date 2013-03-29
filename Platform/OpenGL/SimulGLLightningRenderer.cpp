@@ -49,8 +49,12 @@ void SimulGLLightningRenderer::RecompileShaders()
 	double vers=atof(version);
 	enable_geometry_shaders=(vers>=3.2);
 	enable_geometry_shaders=glewIsSupported("GL_EXT_geometry_shader4")!=0;
+enable_geometry_shaders=false;
 	if(enable_geometry_shaders)
+	{
+		std::cout<<"Enabled geometry shaders for lightning."<<std::endl;
 		lightning_program		=MakeProgramWithGS("simul_lightning");
+	}
 	else
 		lightning_program		=MakeProgram("simul_simple_lightning");
 	glow_program				=MakeProgram("simul_lightning.vert","simul_lightning.geom","simul_lightning_glow.frag");

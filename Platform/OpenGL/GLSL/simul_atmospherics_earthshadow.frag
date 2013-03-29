@@ -1,6 +1,8 @@
 #version 140
 uniform vec3 sunDir;
 #include "saturate.glsl"
+uniform float hazeEccentricity;
+uniform vec3 mieRayleighRatio;
 #include "simul_inscatter_fns.glsl"
 uniform sampler2D inscTexture;
 #define DEF_ES

@@ -68,30 +68,25 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,b
 
 void SimulGLWeatherRenderer::EnableCloudLayers()
 {
-	if(simulSkyRenderer)
-	{
-		if(device_initialized)
-			simulSkyRenderer->RestoreDeviceObjects(NULL);
-	}
-	if(simulPrecipitationRenderer)
-		simulPrecipitationRenderer->RestoreDeviceObjects(NULL);
+	if(simulCloudRenderer)
+		simulCloudRenderer->Create();
 	if(simul2DCloudRenderer)
 	{
+		simul2DCloudRenderer->Create();
 		if(simulSkyRenderer.get())
 			simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetBaseSkyInterface());
-		simul2DCloudRenderer->Create();
-		if(device_initialized)
+	}
+	if(device_initialized)
+	{
+		if(simulSkyRenderer)
+			simulSkyRenderer->RestoreDeviceObjects(NULL);
+		if(simulPrecipitationRenderer)
+			simulPrecipitationRenderer->RestoreDeviceObjects(NULL);
+		if(simul2DCloudRenderer)
 			simul2DCloudRenderer->RestoreDeviceObjects(NULL);
-	}
-	if(simulCloudRenderer)
-	{
-		simulCloudRenderer->Create();
-		if(device_initialized)
+		if(simulCloudRenderer)
 			simulCloudRenderer->RestoreDeviceObjects(NULL);
-	}
-	if(simulLightningRenderer)
-	{
-		if(device_initialized)
+		if(simulLightningRenderer)
 			simulLightningRenderer->RestoreDeviceObjects();
 	}
 	ConnectInterfaces();

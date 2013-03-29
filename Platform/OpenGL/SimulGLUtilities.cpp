@@ -555,14 +555,18 @@ void setMatrixTranspose(GLuint program,const char *name,const float *value)
 extern void setTexture(GLuint program,const char *name,int texture_number,GLuint texture)
 {
     glActiveTexture(GL_TEXTURE0+texture_number);
+ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,texture);
+ERROR_CHECK
 	GLint loc=glGetUniformLocation(program,name);
+ERROR_CHECK
 	if(loc<0)
 		std::cout<<"Warning: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 	{
 		glUniform1i(loc,texture_number);
 	}
+ERROR_CHECK
 }
 void setParameter(GLint loc,int value)
 {

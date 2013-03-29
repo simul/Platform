@@ -1,7 +1,5 @@
 #ifndef SIMUL_INSCATTER_FNS_GLSL
 #define SIMUL_INSCATTER_FNS_GLSL
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
 #define pi (3.1415926536)
 
 float HenyeyGreenstein(float g,float cos0)

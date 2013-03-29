@@ -13,7 +13,7 @@ void main(void)
 	c.rgb*=exposure;
 
 	vec4 glow=texture(glowTexture,texc);
-	c.rgb+=glow.rgb;
+	//c.rgb+=glow.rgb;
 
     // gamma correction
 	c.rgb = pow(c.rgb,vec3(gamma,gamma,gamma));
