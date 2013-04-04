@@ -30,6 +30,7 @@ varying vec3 texCoordLightning;
 varying vec2 fade_texc;
 varying vec3 view;
 varying vec4 transformed_pos;
+varying float rainFade;
 
 void main(void)
 {
@@ -56,12 +57,16 @@ void main(void)
 	//vec4 lightning=texture(illumSampler,texCoordLightning.xyz);
 	density=mix(density,density2,cloud_interp);
 	float opacity=layerDensity*density.y;
-	if(opacity<=0.0)
-		discard;
+	opacity+=rain*rainFade*saturate((0.25-pos.z)*50.0)*(1.0-density.x);
 #ifdef USE_DEPTH_TEXTURE
 	float depth_offset=depth-cloud_depth;
 	opacity*=saturate(depth_offset/0.01);
+	if(opacity<=0.0)
+		discard;
 	if(depth>0&&depth<cloud_depth||depth>=1.0)
+		discard;
+#else
+	if(opacity<=0.0)
 		discard;
 #endif
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
@@ -80,5 +85,6 @@ void main(void)
 	final.rgb*=loss_lookup;
 	final.rgb+=InscatterFunction(insc_lookup,hazeEccentricity,cos0,mieRayleighRatio);
 	final.rgb+=skyl_lookup;
+	
     gl_FragColor=vec4(final.rgb*opacity,1.0-opacity);
 }

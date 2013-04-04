@@ -417,6 +417,7 @@ const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKey
 		cloudConstants.lightningSourcePos=source_pos;
 		cloudConstants.lightningColour=lightning_colour;
 	}
+	cloudConstants.rain=cloudKeyframer->GetPrecipitation();
 ERROR_CHECK
 
 	static float direct_light_mult=0.25f;

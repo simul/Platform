@@ -8,5 +8,10 @@ vec3 saturate(vec3 x)
 {
 	return clamp(x,vec3(0.0,0.0,0.0),vec3(1.0,1.0,1.0));
 }
+vec4 saturate(vec4 x)
+{
+	return clamp(x,vec4(0.0,0.0,0.0,0.0),vec4(1.0,1.0,1.0,1.0));
+}
+
 
 #endif

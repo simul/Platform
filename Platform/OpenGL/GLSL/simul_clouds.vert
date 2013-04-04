@@ -10,6 +10,7 @@ uniform float layerDistance;
 uniform float maxFadeDistanceMetres;
 
 varying float layerDensity;
+varying float rainFade;
 varying vec4 texCoordDiffuse;
 varying vec2 noiseCoord;
 varying vec3 wPosition;
@@ -43,4 +44,5 @@ void main(void)
 	view=normalize(view);
 	float sine=view.z;
 	fade_texc=vec2(sqrt(depth),0.5*(1.0-sine));
+	rainFade=1.0-exp(-layerDistance/10000.0);
 }
