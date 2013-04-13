@@ -530,6 +530,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HLSL\CppHLSL.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\gamma.fx"
 				>
 			</File>

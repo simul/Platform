@@ -1,13 +1,22 @@
-#pragma once
+#ifndef GLSL_H
+#define GLSL_H
+// These definitions translate the HLSL terms ALIGN, cbuffer and R0 for GLSL or C++
+#define ALIGN
+#define uniform_buffer layout(std140) uniform
+#define R0
+#define R1
+#define R2
+
 #ifdef __cplusplus
+
+// To C++, samplers are just GLint's.
 typedef int sampler1D;
 typedef int sampler2D;
 typedef int sampler3D;
+
+// C++ sees a layout as a struct, and doesn't care about uniforms
 #define layout(std140) struct
 #define uniform
-#define ALIGN
-#define cbuffer layout(std140) uniform
-#define R0
 
 struct vec2
 {
@@ -71,4 +80,20 @@ struct vec4
 		w=v[3];
 	}
 };
+
+struct mat4
+{
+	float m[16];
+	operator const float *()
+	{
+		return m;
+	}
+	void operator=(const float *v)
+	{
+		for(int i=0;i<16;i++)
+			m[i]=v[i];
+	}
+};
+
+#endif
 #endif

@@ -23,11 +23,8 @@ typedef long HRESULT;
 #include "Simul/Math/Vector3.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
+#include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
 typedef long HRESULT;
-
-typedef D3DXMATRIX float4x4;
-typedef D3DXVECTOR4 float4;
-typedef D3DXVECTOR3 float3;
 
 struct RainConstantBuffer
 {

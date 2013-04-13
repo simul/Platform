@@ -33,7 +33,7 @@
 #include "Simul/Base/SmartPtr.h"
 #include "LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/Glsl.h"
-#include "Simul/Platform/OpenGL/GLSL/CloudConstants.glsl"
+#include "Simul/Platform/CrossPlatform/simul_cloud_constants.sl"
 
 #include <algorithm>
 
@@ -291,7 +291,7 @@ static float saturate(float c)
 {
 	return std::max(std::min(1.f,c),0.f);
 }
-static float transitionDistance=0.01;
+static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
@@ -390,7 +390,6 @@ ERROR_CHECK
 ERROR_CHECK
 	glUniform1i(depthAlphaTexture,7);
 ERROR_CHECK
-	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	
@@ -405,7 +404,7 @@ const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKey
 		simul::sky::float4 lightning_multipliers;
 		static float lightning_effect_on_cloud=0.2f;
 		simul::sky::float4 lightning_colour=lightningRenderInterface->GetLightningColour();
-		for(unsigned i=0;i<4;i++)
+		for(int i=0;i<4;i++)
 		{
 			if(i<lightningRenderInterface->GetNumLightSources())
 				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(time);
@@ -417,6 +416,7 @@ const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKey
 		cloudConstants.lightningSourcePos=source_pos;
 		cloudConstants.lightningColour=lightning_colour;
 	}
+	cloudConstants.maxFadeDistanceMetres=max_fade_distance_metres;
 	cloudConstants.rain=cloudKeyframer->GetPrecipitation();
 ERROR_CHECK
 
@@ -442,9 +442,9 @@ ERROR_CHECK
 		amb*=GetCloudInterface()->GetAmbientLightResponse();
 		simul::sky::EarthShadow e=skyInterface->GetEarthShadow(X1.z/1000.f,skyInterface->GetDirectionToSun());
 	//	glUniform1f(distanceToIllumination_param,e.illumination_altitude*e.planet_radius*1000.f/max_fade_distance_metres);
-		glUniform1f(hazeEccentricity_param,skyInterface->GetMieEccentricity());
+		cloudConstants.hazeEccentricity=skyInterface->GetMieEccentricity();
 		simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
-		glUniform3f(mieRayleighRatio_param,mie_rayleigh_ratio.x,mie_rayleigh_ratio.y,mie_rayleigh_ratio.z);
+		cloudConstants.mieRayleighRatio=mie_rayleigh_ratio;
 		cloudConstants.ambientColour=amb;
 		float above=(base_alt_km-e.illumination_altitude)/e.planet_radius+transitionDistance;
 		cloudConstants.earthshadowMultiplier=saturate(above/transitionDistance);
@@ -454,7 +454,6 @@ ERROR_CHECK
 		float top_alt_km=X2.z*.001f;
 		sunlight2=skyInterface->GetLocalIrradiance(top_alt_km)*saturate(top_alt_km-e.illumination_altitude);
 	}
-
 	simul::math::Vector3 view_pos(cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::math::Vector3 eye_dir(-viewInv(2,0),-viewInv(2,1),-viewInv(2,2));
 	simul::math::Vector3 up_dir	(viewInv(1,0),viewInv(1,1),viewInv(1,2));
@@ -472,6 +471,9 @@ ERROR_CHECK
 	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
 	simul::math::Matrix4x4 proj;
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
+	simul::math::Matrix4x4 worldViewProj;
+	simul::math::Multiply4x4(worldViewProj,modelview,proj);
+	setMatrixTranspose(program,"worldViewProj",worldViewProj.RowPointer(0));
 
 	float left	=proj(0,0)+proj(0,3);
 	float right	=proj(0,0)-proj(0,3);
@@ -486,13 +488,13 @@ ERROR_CHECK
 	cloudConstants.cloud_interp			=cloudKeyframer->GetInterpolation();
 
 	cloudConstants.cloudEccentricity	=GetCloudInterface()->GetMieAsymmetry();
-	cloudConstants.fadeInterp			=0.f;
+
 	cloudConstants.lightningMultipliers;
 	cloudConstants.lightningColour;
 	cloudConstants.screenCoordOffset=scr_offset;
-		
-		
-		
+	cloudConstants.sunlightColour1	=sunlight1;
+	cloudConstants.sunlightColour2	=sunlight2;
+
 ERROR_CHECK
 		glBindBuffer(GL_UNIFORM_BUFFER, cloudConstantsUBO);
 ERROR_CHECK
@@ -501,13 +503,15 @@ ERROR_CHECK
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 ERROR_CHECK
 	glBindBufferBase(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO);
-	
 ERROR_CHECK
 	// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,
 	// which is drawn as a latitude-longitude sphere. But we only draw the parts that:
 	// a) are in the view frustum
 	//  ...and...
 	// b) are in the cloud volume
+	int multiTexCoord0=glGetAttribLocation(program,"multiTexCoord0");
+	int multiTexCoord1=glGetAttribLocation(program,"multiTexCoord1");
+	int multiTexCoord2=glGetAttribLocation(program,"multiTexCoord2");
 ERROR_CHECK
 	int layers_drawn=0;
 	for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
@@ -566,18 +570,14 @@ ERROR_CHECK
 			for(unsigned k=0;k<(*j)->num_vertices;k++,qs_vert++)
 			{
 				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
-		
-				glMultiTexCoord3f(GL_TEXTURE0,V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
-				glMultiTexCoord2f(GL_TEXTURE1,V.noise_tex_x,V.noise_tex_y);
-				glMultiTexCoord1f(GL_TEXTURE2,dens);
-				float h=max(0.f,min((V.z-X1.z)/DX.z,1.f));
-				simul::sky::float4 sunlight=lerp(h,sunlight1,sunlight2);
+				glVertexAttrib3f(multiTexCoord0,V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
+				glVertexAttrib2f(multiTexCoord1,V.noise_tex_x,V.noise_tex_y);
+				glVertexAttrib1f(multiTexCoord2,dens);
 				// Here we're passing sunlight values per-vertex, loss and inscatter
 				// The per-vertex sunlight allows different altitudes of cloud to have different
 				// sunlight colour - good for dawn/sunset.
 				// The per-vertex loss and inscatter is cheap for the pixel shader as it
 				// then doesn't need fade-texture lookups.
-				glMultiTexCoord3f(GL_TEXTURE3,sunlight.x,sunlight.y,sunlight.z);
 				glVertex3f(V.x,V.y,V.z);
 			}
 		}
@@ -615,8 +615,8 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 		return;
 	current_program=program;
 	eyePosition_param			=glGetUniformLocation(program,"eyePosition");
-	hazeEccentricity_param		=glGetUniformLocation(program,"hazeEccentricity");
-	mieRayleighRatio_param		=glGetUniformLocation(program,"mieRayleighRatio");
+	//hazeEccentricity_param		=glGetUniformLocation(program,"hazeEccentricity");
+	//mieRayleighRatio_param		=glGetUniformLocation(program,"mieRayleighRatio");
 	maxFadeDistanceMetres_param	=glGetUniformLocation(program,"maxFadeDistanceMetres");
 
 	cloudDensity1_param			=glGetUniformLocation(program,"cloudDensity1");
@@ -758,8 +758,8 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 
 	clouds_background_program				=0;
 	eyePosition_param			=0;
-	hazeEccentricity_param		=0;
-	mieRayleighRatio_param		=0;
+	//hazeEccentricity_param		=0;
+	//mieRayleighRatio_param		=0;
 	
 	cloudDensity1_param			=0;
 	cloudDensity2_param			=0;
@@ -776,7 +776,7 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	
 	glDeleteBuffersARB(1,&cloudConstantsUBO);
 	cloudConstants=-1;
-	cloudConstantsUBO=-1;
+	cloudConstantsUBO=0;
 	
 	ClearIterators();
 }

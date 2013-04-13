@@ -1,11 +1,11 @@
 
-cbuffer cbPerObject : register(b0)
+cbuffer RainConstants : register(b0)
 {
 	float4x4 worldViewProj;
-	float offset;
-	float intensity;
 	float4 lightColour;
 	float3 lightDir;
+	float offset;
+	float intensity;
 };
 
 texture2D rainTexture;

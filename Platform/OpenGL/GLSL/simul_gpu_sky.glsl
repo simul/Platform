@@ -3,9 +3,7 @@
 #ifndef __cplusplus
 #include "simul_inscatter_fns.glsl"
 #endif
-#define ALIGN
-#define cbuffer layout(std140) uniform
-#define R0
+#include "../Glsl.h"
 #ifndef __cplusplus
 uniform sampler2D optical_depth_texture;
 #endif

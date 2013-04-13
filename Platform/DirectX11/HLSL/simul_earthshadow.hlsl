@@ -1,22 +1,7 @@
 #ifndef SIMUL_EARTHSHADOW
 #define SIMUL_EARTHSHADOW
-#ifdef __cplusplus
-	#define cbuffer struct
-	struct float3
-	{
-		float x,y,z;
-		void operator=(const float *v)
-		{
-			x=v[0];
-			y=v[1];
-			z=v[2];
-		}
-	};
-#define ALIGN __declspec( align( 16 ) )
-#else
-#define ALIGN
-#endif
-ALIGN cbuffer EarthShadowUniforms
+
+uniform_buffer EarthShadowUniforms
 {
 	float3 sunDir			;
 	float radiusOnCylinder	;

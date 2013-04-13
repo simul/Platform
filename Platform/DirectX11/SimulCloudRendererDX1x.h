@@ -28,6 +28,8 @@
 #include "Simul/Clouds/BaseCloudRenderer.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
+#include "Simul/Platform/CrossPlatform/simul_cloud_constants.sl"
 
 namespace simul
 {
@@ -123,10 +125,10 @@ protected:
 
 	struct InstanceType
 	{
+		D3DXVECTOR2 noiseOffset;
+		float noiseScale;
 		float layerFade;
 		float layerDistance;
-		float noiseScale;
-		D3DXVECTOR2 noiseOffset;
 	};
 	InstanceType instances[200];
 	ID3D1xDevice*					m_pd3dDevice;
@@ -146,18 +148,19 @@ protected:
 	ID3D1xEffectTechnique*			m_hTechniqueCrossSectionXZ;
 	ID3D1xEffectTechnique*			m_hTechniqueCrossSectionXY;
 
+	ID3D11Buffer*					cloudConstantsBuffer;
 	ID3D1xEffectMatrixVariable* 	l_worldViewProj;
 	ID3D1xEffectMatrixVariable* 	worldViewProj;
 	ID3D1xEffectMatrixVariable* 	wrld;
 	ID3D1xEffectVectorVariable* 	eyePosition;
 	ID3D1xEffectVectorVariable* 	lightResponse;
 	ID3D1xEffectVectorVariable* 	lightDir;
-	ID3D1xEffectVectorVariable* 	skylightColour;
+	ID3D1xEffectVectorVariable* 	ambientColour;
 	ID3D1xEffectVectorVariable* 	sunlightColour1;
 	ID3D1xEffectVectorVariable* 	sunlightColour2;
 	ID3D1xEffectScalarVariable* 	earthshadowMultiplier;
 	ID3D1xEffectVectorVariable* 	fractalScale;
-	ID3D1xEffectScalarVariable* 	interp;
+	ID3D1xEffectScalarVariable* 	cloud_interp;
 	ID3D1xEffectVectorVariable* 	mieRayleighRatio;
 	ID3D1xEffectScalarVariable* 	cloudEccentricity;
 	ID3D1xEffectScalarVariable* 	hazeEccentricity;
@@ -173,7 +176,7 @@ protected:
 ID3D1xEffectScalarVariable* 	layerFade		;
 ID3D1xEffectScalarVariable* 	layerDistance	;
 ID3D1xEffectVectorVariable* 	cornerPos		;
-ID3D1xEffectVectorVariable* 	inverseScales	;
+//ID3D1xEffectVectorVariable* 	inverseScales	;
 ID3D1xEffectMatrixVariable* 	noiseMatrix		;
 ID3D1xEffectScalarVariable* 	noiseScale		;	
 ID3D1xEffectVectorVariable* 	noiseOffset		;	

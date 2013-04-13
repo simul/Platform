@@ -4,7 +4,7 @@
 #define uniform
 #endif
 
-ALIGN cbuffer GpuSkyConstants R0
+uniform_buffer GpuSkyConstants R0
 {
 	uniform vec2 texSize;
 	uniform float texelOffset;

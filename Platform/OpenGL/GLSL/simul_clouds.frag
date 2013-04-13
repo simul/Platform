@@ -2,10 +2,9 @@
 // Copyright 2008-2013 Simul Software Ltd
 #version 140
 
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
 #include "simul_inscatter_fns.glsl"
-#include "CloudConstants.glsl"
+#include "../Glsl.h"
+#include "../../CrossPlatform/simul_cloud_constants.sl"
 #include "saturate.glsl"
 
 uniform sampler3D cloudDensity1;
@@ -18,19 +17,15 @@ uniform sampler3D illumSampler;
 uniform sampler2D depthAlphaTexture;
 
 // varyings are written by vert shader, interpolated, and read by frag shader.
-varying vec2 noiseCoord;
-varying float layerDensity;
-varying vec4 texCoordDiffuse;
-varying vec3 wPosition;
-varying vec3 sunlight;
-
-varying vec3 loss;
-varying vec4 insc;
-varying vec3 texCoordLightning;
-varying vec2 fade_texc;
-varying vec3 view;
-varying vec4 transformed_pos;
-varying float rainFade;
+in float layerDensity;
+in float rainFade;
+in vec4 texCoordDiffuse;
+in vec2 noiseCoord;
+in vec3 wPosition;
+in vec3 texCoordLightning;
+in vec2 fade_texc;
+in vec3 view;
+in vec4 transformed_pos;
 
 void main(void)
 {
@@ -58,6 +53,7 @@ void main(void)
 	density=mix(density,density2,cloud_interp);
 	float opacity=layerDensity*density.y;
 	opacity+=rain*rainFade*saturate((0.25-pos.z)*50.0)*(1.0-density.x);
+
 #ifdef USE_DEPTH_TEXTURE
 	float depth_offset=depth-cloud_depth;
 	opacity*=saturate(depth_offset/0.01);
@@ -70,13 +66,14 @@ void main(void)
 		discard;
 #endif
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
-	vec3 final=(density.z*Beta+lightResponse.y*density.w)*sunlight*earthshadowMultiplier+density.x*ambientColour.rgb;
+	vec3 sunlightColour=mix(sunlightColour1,sunlightColour2,saturate(texCoordDiffuse.z));
+	vec3 final=(density.z*Beta+lightResponse.y*density.w)*sunlightColour*earthshadowMultiplier+density.x*ambientColour.rgb;
 	
 	vec3 diff=wPosition.xyz-lightningSourcePos;
 	float dist_from_lightning=length(diff.xyz);
 	float cc=dist_from_lightning/2000.f;
 	float pwr=exp(-cc*cc);
-	final.rgb+=lightningColour*pwr;
+	final.rgb+=lightningColour.rgb*pwr;
 
 	vec3 loss_lookup=texture(lossSampler,fade_texc).rgb;
 	vec4 insc_lookup=earthshadowMultiplier*texture(inscatterSampler,fade_texc);

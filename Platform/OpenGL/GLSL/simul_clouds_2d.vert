@@ -1,7 +1,5 @@
 #version 140
-#define ALIGN
-#define cbuffer layout(std140) uniform
-#define R0
+#include "../Glsl.h"
 #include "../../CrossPlatform/simul_2d_clouds.sl"
 
 //uniform Transformation

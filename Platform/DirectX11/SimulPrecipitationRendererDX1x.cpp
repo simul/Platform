@@ -179,6 +179,9 @@ return;
 	rainConstantBuffer.worldViewProj	=wvp;
 
 	UPDATE_CONSTANT_BUFFER(pShadingCB,RainConstantBuffer,rainConstantBuffer);
+	ID3D1xEffectConstantBuffer* cbRainConstants=m_pRainEffect->GetConstantBufferByName("RainConstants");
+	if(cbRainConstants)
+		cbRainConstants->SetConstantBuffer(pShadingCB);
 
 	UINT passes=1;
 	for(unsigned i = 0 ; i < passes ; ++i )

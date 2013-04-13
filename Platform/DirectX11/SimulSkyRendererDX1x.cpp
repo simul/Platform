@@ -28,6 +28,7 @@ extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Math/Vector3.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
 #include "Simul/Platform/DirectX11/HLSL/simul_earthshadow.hlsl"
 
 struct Vertex_t

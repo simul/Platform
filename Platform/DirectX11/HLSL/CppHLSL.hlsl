@@ -1,23 +1,76 @@
-#ifdef __cplusplus
-#define cbuffer struct
-#define uniform
+#ifndef CPP_HLSL
+#define CPP_HLSL
 
+#define uniform
 #define vec2 float2
 #define vec3 float3
 #define vec4 float4
-#define sampler1D texture1D
-#define sampler2D texture2D
-#define sampler3D texture3D
-#define texture(tex,texc) tex.Sample(samplerState,texc)
+#define mat4 float4x4
+#define uniform_buffer ALIGN cbuffer
 
-#define R0
-typedef D3DXMATRIX float4x4;
-typedef D3DXVECTOR4 float4;
-typedef D3DXVECTOR3 float3;
-typedef D3DXVECTOR2 float2;
+#ifdef __cplusplus
+	#define ALIGN __declspec( align( 16 ) )
+	#define cbuffer struct
+	#define sampler1D texture1D
+	#define sampler2D texture2D
+	#define sampler3D texture3D
+	#define texture(tex,texc) tex.Sample(samplerState,texc)
 
-#define ALIGN __declspec( align( 16 ) )
+	#define R0
+	#define R1
+	#define R2
+	struct float4x4
+	{
+		float m[16];
+		operator const float *()
+		{
+			return m;
+		}
+		void operator=(const float *v)
+		{
+			for(int i=0;i<16;i++)
+				m[i]=v[i];
+		}
+	};
+	struct float2
+	{
+		float x,y;
+		float2(float X=0.f,float Y=0.f)
+			:x(X),y(Y)
+		{
+		}
+		void operator=(const float*f)
+		{
+			x=f[0];
+			y=f[1];
+		}
+	};
+	struct float3
+	{
+		float x,y,z;
+		void operator=(const float*f)
+		{
+			x=f[0];
+			y=f[1];
+			z=f[2];
+		}
+	};
+	struct float4
+	{
+		float x,y,z,w;
+		void operator=(const float*f)
+		{
+			x=f[0];
+			y=f[1];
+			z=f[2];
+			w=f[3];
+		}
+	};
 #else
-#define R0 : register(b0)
-#define ALIGN
+	#define R0 : register(b0)
+	#define R1 : register(b1)
+	#define R2 : register(b2)
+	#define ALIGN
+#endif
+
 #endif

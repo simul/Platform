@@ -8,6 +8,7 @@ cbuffer cbPerObject : register(b0)
 };
 
 Texture2D inscTexture;
+#include "CppHLSL.hlsl"
 #include "simul_earthshadow.hlsl"
 Texture2D skylTexture;
 SamplerState samplerState

@@ -305,21 +305,21 @@ bool SimulGL2DCloudRenderer::Render(bool, void *, bool, bool)
 	simul::math::Matrix4x4 viewInv;
 	modelview.Inverse(viewInv);
 	cam_pos.Set(viewInv(3,0),viewInv(3,1),viewInv(3,2),0.f);
-static float ll=0.05f;
-static float ff=100.f;
-setMatrixTranspose(clouds_program,"projection_matrix",proj);
-setMatrixTranspose(clouds_program,"modelview_matrix"	,modelview);
+	static float ll=0.05f;
+	static float ff=100.f;
+	setMatrixTranspose(clouds_program,"projection_matrix"	,proj);
+	setMatrixTranspose(clouds_program,"modelview_matrix"	,modelview);
 	Cloud2DConstants cloud2DConstants;
-	cloud2DConstants.origin				=wind_offset;
-	cloud2DConstants.globalScale		=ci->GetCloudWidth();
-	cloud2DConstants.detailScale		=ff*ci->GetFractalWavelength();
-	glUniform1f(globalScale				,ci->GetCloudWidth());
-	glUniform1f(detailScale				,ff*ci->GetFractalWavelength());
-	glUniform2f(origin					,wind_offset.x,wind_offset.y);
-ERROR_CHECK
-	cloud2DConstants.cloudEccentricity	=cloudKeyframer->GetInterpolatedKeyframe().light_asymmetry;
-	cloud2DConstants.cloudInterp		=cloudKeyframer->GetInterpolation();
-	cloud2DConstants.eyePosition		=cam_pos;
+	cloud2DConstants.origin					=wind_offset;
+	cloud2DConstants.globalScale			=ci->GetCloudWidth();
+	cloud2DConstants.detailScale			=ff*ci->GetFractalWavelength();
+	glUniform1f(globalScale					,ci->GetCloudWidth());
+	glUniform1f(detailScale					,ff*ci->GetFractalWavelength());
+	glUniform2f(origin						,wind_offset.x,wind_offset.y);
+	ERROR_CHECK
+	cloud2DConstants.cloudEccentricity		=cloudKeyframer->GetInterpolatedKeyframe().light_asymmetry;
+	cloud2DConstants.cloudInterp			=cloudKeyframer->GetInterpolation();
+	cloud2DConstants.eyePosition			=cam_pos;
 	if(skyInterface)
 	{
 		simul::sky::float4 sunlight			=skyInterface->GetLocalIrradiance(X1.z*0.001f);

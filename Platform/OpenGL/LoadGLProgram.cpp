@@ -83,6 +83,7 @@ GLuint MakeProgram(const char *filename,const char *defines)
 	sprintf_s(f,98,"%s.frag",filename);
 	return MakeProgram(v,NULL,f,defines);
 }
+
 GLuint MakeProgramWithGS(const char *filename,const char *defines)
 {
 	char v[100];

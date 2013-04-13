@@ -1,6 +1,6 @@
-#ifndef Z_VERTICAL
-	#define Y_VERTICAL 1
-#endif
+#include "CppHLSL.hlsl"
+#include "../../CrossPlatform/simul_cloud_constants.sl"
+#define Z_VERTICAL 1
 #ifndef WRAP_CLOUDS
 	#define WRAP_CLOUDS 1
 #endif
@@ -8,11 +8,18 @@
 	#define DETAIL_NOISE 1
 #endif
 
-cbuffer cbPerObject : register( b0 )
+cbuffer cbPerObject : register( b1 )
 {
 	matrix		worldViewProj		: packoffset( c0 );
 	matrix		wrld				: packoffset( c4 );
 };
+//cbuffer PerSliceConstants : register( b2 )
+//{
+	uniform vec2 noiseOffset;
+	uniform float noiseScale;
+	uniform float layerFade;
+	uniform float layerDistance;
+//};
 
 Texture3D cloudDensity1;
 Texture3D cloudDensity2;
@@ -58,42 +65,10 @@ SamplerState fadeSamplerState
 	AddressU = Clamp;
 	AddressV = Mirror;
 };
-cbuffer PerLayerData : register(b2)
-{
-	float4 lightResponse		;
-	float layerDistance			;
-	float3 cornerPos			;
-	float3 inverseScales		;
-	float3 lightDir				;
-	float3 skylightColour		;
-	float3 sunlightColour1		;
-	float3 sunlightColour2		;
-	float4 fractalScale			;
-	float interp				;
-	float4x4 noiseMatrix		;
-	float noiseScale			;
-	float2 noiseOffset			;
-	float4 lightningMultipliers	;
-	float4 lightningColour		;
-	float3 illuminationOrigin	;
-	float3 illuminationScales	;
-	float hazeEccentricity		;
-	float3 mieRayleighRatio		;
-	float fadeInterp			;
-	float cloudEccentricity		;
-	float alphaSharpness		;
-	float3 crossSectionOffset	;
-	float maxFadeDistanceMetres ;
-	float earthshadowMultiplier;
-	float layerFade;
-};
 
 struct vertexInput
 {
     float3 position			: POSITION;
-/*    float3 texCoords		: TEXCOORD0;
-    float layerFade			: TEXCOORD1;
-    float2 noise_texc	: TEXCOORD2;*/
 };
 
 struct vertexOutput
@@ -127,9 +102,8 @@ vertexOutput VS_Main(vertexInput IN)
 	float3 t1=IN.position.xyz*layerDistance;
     OUT.hPosition = mul(worldViewProj,float4(t1.xyz,1.0));
     OUT.dupehPosition=mul(worldViewProj,float4(t1.xyz,1.0));
-	const float c=fractalScale.w;
 	
-	float3 noise_pos=mul(float4(IN.position,1.0f),noiseMatrix).xyz;
+	float3 noise_pos=mul(noiseMatrix,float4(IN.position,1.0f)).xyz;
 	OUT.noise_texc=float2(atan2(noise_pos.x,noise_pos.z),atan2(noise_pos.y,noise_pos.z));
 	OUT.noise_texc*=noiseScale;
 	OUT.noise_texc+=noiseOffset;
@@ -139,17 +113,13 @@ vertexOutput VS_Main(vertexInput IN)
 	OUT.texCoords.xyz=OUT.wPosition-cornerPos;
 	OUT.texCoords.xyz*=inverseScales;
 	OUT.texCoords.w=0.5f+0.5f*saturate(OUT.texCoords.z);
-	// Note position.xzy is used!
-	float3 texCoordLightning=(IN.position.xzy-illuminationOrigin.xyz)/illuminationScales.xyz;
+	float3 texCoordLightning=(IN.position.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
 	OUT.texCoordLightning=texCoordLightning;
 	float3 view=normalize(IN.position.xyz);
-#ifdef Y_VERTICAL
-	float sine=view.y;
-#else
 	float sine=view.z;
-#endif
 	float depth=layerDistance/maxFadeDistanceMetres;
 	OUT.fade_texc=float2(sqrt(depth),0.5f*(1.f-sine));
+
     return OUT;
 }
 
@@ -192,12 +162,12 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 
 	float4 lightning=lightningIlluminationTexture.Sample(lightningSamplerState,IN.texCoordLightning.xyz);
 
-	density=lerp(density,density2,interp);
+	density=lerp(density,density2,cloud_interp);
 	density.z*=layerFade;
 	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
 	if(density.z<=0)
 		discard;
-	float3 ambient=density.w*skylightColour.rgb;
+	float3 ambient=density.w*ambientColour.rgb;
 
 	float opacity=density.z;
 	float l=dot(lightningMultipliers,lightning);
@@ -222,7 +192,7 @@ float4 PS_CloudsLowDef( vertexOutput IN): SV_TARGET
 	float4 density=cloudDensity1.Sample(cloudSamplerState,pos);
 	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
 
-	density=lerp(density,density2,interp);
+	density=lerp(density,density2,cloud_interp);
 	//density.z*=IN.layerFade;
 	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
 	if(density.z<=0)
@@ -235,7 +205,7 @@ float4 PS_CloudsLowDef( vertexOutput IN): SV_TARGET
 	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
 	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
-	float3 ambient=density.w*skylightColour.rgb;
+	float3 ambient=density.w*ambientColour.rgb;
 
 	float opacity=density.z;
 	float3 sunlightColour=lerp(sunlightColour1,sunlightColour2,saturate(IN.texCoords.z));
@@ -250,7 +220,6 @@ float4 PS_CloudsLowDef( vertexOutput IN): SV_TARGET
 
 float4 PS_Clouds( vertexOutput IN): SV_TARGET
 {
-		//discard;
 	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc).xyz-noise_offset).xyz;
 #ifdef DETAIL_NOISE
 	noiseval+=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc2).xyz-noise_offset)/2.0;
@@ -260,7 +229,7 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 	float4 density=cloudDensity1.Sample(cloudSamplerState,pos);
 	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
 
-	density=lerp(density,density2,interp);
+	density=lerp(density,density2,cloud_interp);
 	density.z*=layerFade;
 	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
 	if(density.z<=0)
@@ -272,7 +241,7 @@ float4 PS_Clouds( vertexOutput IN): SV_TARGET
 	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
 	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
-	float3 ambient=density.w*skylightColour.rgb;
+	float3 ambient=density.w*ambientColour.rgb;
 
 	float opacity=density.z;
 	float3 sunlightColour=lerp(sunlightColour1,sunlightColour2,saturate(IN.texCoords.z));
