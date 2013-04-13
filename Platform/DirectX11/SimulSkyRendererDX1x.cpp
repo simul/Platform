@@ -356,12 +356,12 @@ void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate()
 	{
 		bool reset=false;
 		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(i,fade_texture_iterator[i]);
-			if(reset)
-			{
+		if(reset)
+		{
 			fade_texture_iterator[i].texel_index=0;
-			}
-			if(texture_fill.num_texels)
-			{
+		}
+		if(texture_fill.num_texels)
+		{
 			FillFadeTex(i,texture_fill.texel_index,texture_fill.num_texels,(const simul::sky::float4*)texture_fill.float_array_1,(const simul::sky::float4*)texture_fill.float_array_2,(const simul::sky::float4*)texture_fill.float_array_3);
 		}
 	}
