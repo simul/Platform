@@ -91,10 +91,7 @@ void SimulHDRRendererDX1x::RecompileShaders()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pTonemapEffect);
-	if(!m_pTonemapEffect)
-	{
-		V_CHECK(CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx")));
-	}
+	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx"));
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
 	Exposure_				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
 	Gamma_					=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();

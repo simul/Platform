@@ -73,8 +73,8 @@ public:
 };
 CumulonimbusHumidityCallback cb;
 
-SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudKeyframer)
-	:BaseCloudRenderer(cloudKeyframer)
+SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck)
+	:BaseCloudRenderer(ck)
 	,texture_scale(1.f)
 	,scale(2.f)
 	,texture_effect(1.f)

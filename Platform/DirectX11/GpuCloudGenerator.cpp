@@ -132,6 +132,7 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	
 	simul::math::Matrix4x4 vertexMatrix=MakeVertexMatrix(density_grid,start_texel,texels);
 
+	setMatrix(effect,"vertexMatrix"				,vertexMatrix);
 	setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 	setParameter(effect,"octaves"				,octaves);
 	setParameter(effect,"persistence"			,persistence);
