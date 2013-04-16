@@ -28,7 +28,8 @@ typedef std::basic_string<TCHAR> tstring;
 #include "Simul/Math/Pi.h"
 
 FramebufferDX1x::FramebufferDX1x(int w,int h) :
-	m_pd3dDevice(NULL),
+	BaseFramebuffer(w,h)
+	,m_pd3dDevice(NULL),
 	m_pImmediateContext(NULL),
 	m_pBufferVertexDecl(NULL),
 	m_pVertexBuffer(NULL),
@@ -41,8 +42,6 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	m_pOldRenderTarget(NULL),
 	m_pOldDepthSurface(NULL)
 	,stagingTexture(NULL)
-	,Width(w)
-	,Height(h)
 	,timing(0.f)
 	,screen_width(0)
 	,screen_height(0)

@@ -62,6 +62,7 @@ bool GpuSkyGenerator::CanPerformGPUGeneration() const
 {
 	return Enabled;
 }
+
 void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				simul::sky::AtmosphericScatteringInterface *skyInterface
 				,int numElevations

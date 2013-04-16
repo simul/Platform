@@ -27,7 +27,7 @@ public:
 	}
 	void *GetDepthAlphaTexture()
 	{
-		return (void*) framebuffer->GetColorTex(0);
+		return (void*) framebuffer->GetColorTex();
 	}
 	// Assign the clouds framebuffer texture
 	void SetCloudsTexture(void* t)

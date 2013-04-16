@@ -207,7 +207,7 @@ ERROR_CHECK
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
     glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,(GLuint)framebuffer->GetColorTex(0));
+	glBindTexture(GL_TEXTURE_2D,(GLuint)framebuffer->GetColorTex());
 	
 	framebuffer->Render(false);
 	

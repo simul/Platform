@@ -223,7 +223,7 @@ bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 		GLuint prog=AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;
 	    glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,(GLuint)scene_buffer->GetColorTex(0));
+		glBindTexture(GL_TEXTURE_2D,(GLuint)scene_buffer->GetColorTex());
 	    glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
 		glUseProgram(prog);
@@ -280,5 +280,5 @@ const char *SimulGLWeatherRenderer::GetDebugText() const
 
 GLuint SimulGLWeatherRenderer::GetFramebufferTexture()
 {
-	return (GLuint)scene_buffer->GetColorTex(0);
+	return (GLuint)scene_buffer->GetColorTex();
 }

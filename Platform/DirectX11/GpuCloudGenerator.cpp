@@ -110,7 +110,6 @@ try{
 simul::base::Timer timer;
 timer.StartTime();
 std::cout<<"Gpu clouds: FillDensityGrid\n";
-
 	int new_density_gridsize=GetDensityGridsize(density_grid);
 	dens_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
 	/*if(!dens_fb.SetTargetFormat(0,iformat,GL_FLOAT))

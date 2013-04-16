@@ -155,7 +155,6 @@ vec3 getSkylight(float alt_km)
 	vec4 insc		=texture(insc_texture,vec3(sqrt(alt_km/maxOutputAltKm),0.0,1.0));
 	vec3 skylight	=InscatterFunction(insc,hazeEccentricity,0.0,mieRayleighRatio);
 	return skylight;
-//	return vec3(.05,.1,.2);
 }
 
 float4 PS_Skyl(vertexOutput IN) : SV_TARGET

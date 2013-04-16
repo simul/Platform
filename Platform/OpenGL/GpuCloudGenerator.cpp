@@ -245,7 +245,7 @@ ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 ERROR_CHECK
-	return (void*)dens_fb.GetColorTex(0);
+	return (void*)dens_fb.GetColorTex();
 }
 
 // The target is a grid of size given by light_gridsizes, arranged as d w-by-l textures.
@@ -271,7 +271,7 @@ timer.StartTime();
 	}
 	// We use the density framebuffer texture as our density texture. This works well
 	// because we don't need to do any filtering.
-	//GLuint density_texture	=dens_fb.GetColorTex(0);
+	//GLuint density_texture	=dens_fb.GetColorTex();
 	// blit from dens_fb...
 	glUseProgram(clouds_program);
 	setParameter(clouds_program,"input_light_texture",0);

@@ -4,8 +4,6 @@
 
 Framebuffer::Framebuffer()
 	:m_pd3dDevice(NULL)
-	,Width(0)
-	,Height(0)
 	,buffer_depth_texture(NULL)
 	,buffer_texture(NULL)
 	,m_pHDRRenderTarget(NULL)

@@ -827,7 +827,7 @@ void *SimulGLCloudRenderer::GetCloudShadowTexture()
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 	glPopAttrib();
-	return (void*)cloud_shadow.GetColorTex(0);
+	return (void*)cloud_shadow.GetColorTex();
 }
 
 simul::sky::OvercastCallback *SimulGLCloudRenderer::GetOvercastCallback()

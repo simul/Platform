@@ -2,6 +2,7 @@
 #define CPP_HLSL
 
 #define uniform
+#define vec1 float1
 #define vec2 float2
 #define vec3 float3
 #define vec4 float4
@@ -32,6 +33,7 @@
 				m[i]=v[i];
 		}
 	};
+	typedef float FLOAT;
 	struct float2
 	{
 		float x,y;
@@ -71,6 +73,7 @@
 	#define R1 : register(b1)
 	#define R2 : register(b2)
 	#define ALIGN
+	#define FLOAT float
 #endif
 
 #endif

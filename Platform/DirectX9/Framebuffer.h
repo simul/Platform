@@ -35,7 +35,6 @@ protected:
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface;
 	D3DFORMAT			texture_format;
-	int					Width,Height;
 	LPDIRECT3DTEXTURE9	buffer_texture;
 	void MakeTexture();
 };

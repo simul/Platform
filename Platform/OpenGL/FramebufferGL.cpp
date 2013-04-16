@@ -7,9 +7,8 @@
 #include "SimulGLUtilities.h"
 std::stack<GLuint> FramebufferGL::fb_stack;
 
-FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageSamples):
-    m_width(w)
-	,m_height(h)
+FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageSamples)
+	:BaseFramebuffer(w,h)
 	,m_target(target)
 	,m_samples(samples)
 	,m_coverageSamples(coverageSamples)
@@ -21,10 +20,7 @@ FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageS
 	,colour_iformat(0)
 {
     for(int i = 0; i < num_col_buffers; i++)
-	{
-        m_rb_col[i] = 0;
         m_tex_col[i] = 0;
-    }
 	if(fb_stack.size()==0)
 		fb_stack.push((GLuint)0);
 }
@@ -40,15 +36,8 @@ void FramebufferGL::InvalidateDeviceObjects()
     for(i = 0; i < num_col_buffers; i++)
 	{
         if(m_tex_col[i])
-		{
 			glDeleteTextures(1,&m_tex_col[i]);
-		}
 		m_tex_col[i]=0;
-        if(m_rb_col[i])
-		{
-			glDeleteRenderbuffers(1,&m_rb_col[i]);
-		}
-		m_rb_col[i]=0;
     }
     if(m_tex_depth)
 	{
@@ -66,19 +55,21 @@ void FramebufferGL::InvalidateDeviceObjects()
 
 void FramebufferGL::SetWidthAndHeight(int w,int h)
 {
-	if(w!=m_width||h!=m_height)
+	if(w!=Width||h!=Height)
 	{
-		m_width=w;
-		m_height=h;
+		Width=w;
+		Height=h;
 		SAFE_DELETE_TEXTURE(m_tex_col[0]);
 		SAFE_DELETE_RENDERBUFFER(m_rb_depth);
 		SAFE_DELETE_FRAMEBUFFER(m_fb);
+		if(initialized)
+			InitColor_Tex(0,colour_iformat,format,wrap_clamp);
 	}
 }
 
-bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum format,GLint wrap_clamp)
+bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum f,GLint wc)
 {
-	if(!m_width||!m_height)
+	if(!Width||!Height)
 		return true;
 ERROR_CHECK
 	bool ok=true;
@@ -87,7 +78,9 @@ ERROR_CHECK
 	{
 		glGenFramebuffers(1, &m_fb);
 	}
-ERROR_CHECK
+	format=f;
+	wrap_clamp=wc;
+	SAFE_DELETE_TEXTURE(m_tex_col[index]);
 	if(!m_tex_col[index]||iformat!=colour_iformat)
 	{
 		colour_iformat=iformat;
@@ -98,14 +91,14 @@ ERROR_CHECK
 		glTexParameteri(m_target,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 		glTexParameteri(m_target,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 		//glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexImage2D(m_target, 0, colour_iformat, m_width, m_height, 0,GL_RGBA, format, NULL);
+		glTexImage2D(m_target, 0, colour_iformat, Width, Height, 0,GL_RGBA, format, NULL);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0 + index, m_target, m_tex_col[index], 0);
 		GLenum status = (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if(status!=GL_FRAMEBUFFER_COMPLETE)
 			ok=false;
 	    
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 ERROR_CHECK
 	return ok;
@@ -114,7 +107,7 @@ ERROR_CHECK
 // InitDepth_RB or InitDepth_Tex needs to be called.
 void FramebufferGL::InitDepth_RB(GLenum iformat)
 {
-	if(!m_width||!m_height)
+	if(!Width||!Height)
 		return;
 	initialized=true;
 	if(!m_fb)
@@ -128,16 +121,16 @@ void FramebufferGL::InitDepth_RB(GLenum iformat)
 	if (m_samples > 0) {
         if ((m_coverageSamples > 0) && glRenderbufferStorageMultisampleCoverageNV)
 		{
-            glRenderbufferStorageMultisampleCoverageNV(GL_RENDERBUFFER, m_coverageSamples, m_samples, iformat, m_width, m_height);
+            glRenderbufferStorageMultisampleCoverageNV(GL_RENDERBUFFER, m_coverageSamples, m_samples, iformat, Width, Height);
         }
 		else
 		{
-		    glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_samples, iformat, m_width, m_height);
+		    glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_samples, iformat, Width, Height);
         }
 	}
 	else
 	{
-		glRenderbufferStorage(GL_RENDERBUFFER, iformat, m_width, m_height);
+		glRenderbufferStorage(GL_RENDERBUFFER, iformat, Width, Height);
 	}
     glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,m_rb_depth);
 	//Also attach as a stencil
@@ -168,7 +161,7 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	//glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexImage2D(m_target, 0, iformat, m_width, m_height, 0,GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
+    glTexImage2D(m_target, 0, iformat, Width, Height, 0,GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
     glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,m_target,m_tex_depth,0);
@@ -181,7 +174,7 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 // The FBO needs to be deactivated when using the associated Textures.
 void FramebufferGL::Activate()
 {
-	Activate(0,0,m_width,m_height);
+	Activate(0,0,Width,Height);
 }
 
 void FramebufferGL::Activate(int x,int y,int w,int h)
@@ -221,7 +214,7 @@ void FramebufferGL::CopyDepthFromFramebuffer()
 	ERROR_CHECK
 	glBindFramebuffer (GL_DRAW_FRAMEBUFFER, fb_stack.top());
 	ERROR_CHECK
-	glBlitFramebuffer (0, 0, m_width, m_height, 0, 0, m_width, m_height,
+	glBlitFramebuffer (0, 0, Width, Height, 0, 0, Width, Height,
 			   GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	ERROR_CHECK
 	glBindFramebuffer (GL_FRAMEBUFFER, fb_stack.top());
@@ -247,8 +240,6 @@ void FramebufferGL::Render(bool blend)
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
     SetOrthoProjection(main_viewport[2],main_viewport[3]);
-
-    // bind Textures
     glActiveTexture(GL_TEXTURE0);
     Bind();
     glDisable(GL_ALPHA_TEST);
@@ -262,9 +253,8 @@ void FramebufferGL::Render(bool blend)
 		glEnable(GL_BLEND);
 	}
 	glDepthMask(GL_FALSE);
-	ERROR_CHECK
+ERROR_CHECK
 	::DrawQuad(0,0,main_viewport[2],main_viewport[3]);
-
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);

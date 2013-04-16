@@ -57,8 +57,6 @@ protected:
 	int screen_height;
 	DXGI_FORMAT target_format;
 	bool Destroy();
-	//! The size of the 2D buffer the sky is rendered to.
-	int Width,Height;
 	ID3D1xDevice*						m_pd3dDevice;
 	ID3D1xDeviceContext *				m_pImmediateContext;
 	ID3D1xInputLayout*					m_pBufferVertexDecl;

@@ -4,13 +4,13 @@
 #define uniform
 #endif
 
-uniform_buffer GpuSkyConstants R0
+uniform_buffer GpuSkyConstants R2
 {
 	uniform vec2 texSize;
 	uniform float texelOffset;
-	uniform float b;
+uniform float distanceKm;
 	uniform vec2 tableSize;
-	uniform float c;
+uniform float prevDistanceKm;
 	uniform float d;
 
 	uniform float maxOutputAltKm;

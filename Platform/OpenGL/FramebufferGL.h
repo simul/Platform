@@ -49,20 +49,16 @@ public:
 	// Get the dimension of the surface
 	inline int GetWidth()
 	{
-		return m_width;
+		return Width;
 	}
 	inline int GetHeight()
 	{
-		return m_height;
+		return Height;
 	}
 	// Get the internal texture object IDs.
 	void* GetColorTex()
 	{
 		return (void*) m_tex_col[0];
-	}
-	void* GetColorTex(int index)
-	{
-		return (void*) m_tex_col[index];
 	}
 	inline GLenum GetDepthTex()
 	{
@@ -81,13 +77,13 @@ private:
 	static std::stack<GLuint> fb_stack;
 	void CheckFramebufferStatus();
 	// Bind the internal textures
-	void BindColor(int index = 0)
+	void BindColor()
 	{
-		glBindTexture(m_target, m_tex_col[index]);
+		glBindTexture(m_target, m_tex_col[0]);
 	}
-	inline void Bind(int index = 0)
+	inline void Bind()
 	{
-		BindColor(index);
+		BindColor();
 	}
 	// aliased to BindColor.  this reduces app code changes while migrating
 	// from the pbuffer implementation.
@@ -99,17 +95,18 @@ private:
 	{
 		glBindTexture(m_target, 0);
 	}
-	const static int num_col_buffers = 16;
+	const static int num_col_buffers = 1;
 	int main_viewport[4];
-	int m_width, m_height;
 	GLenum m_target;
 	int m_samples; // 0 if not multisampled
 	int m_coverageSamples; // for CSAA
 	GLuint m_fb;
-	GLuint m_tex_col[num_col_buffers], m_rb_col[num_col_buffers];
+	GLuint m_tex_col[num_col_buffers];//, m_rb_col[num_col_buffers];
 	GLuint m_tex_depth, m_rb_depth;
 	GLenum colour_iformat,depth_iformat;
+	GLenum format;
 	bool initialized;
+	GLint wrap_clamp;
 };
 
 #ifdef _MSC_VER

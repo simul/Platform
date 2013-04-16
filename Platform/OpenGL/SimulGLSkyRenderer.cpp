@@ -57,12 +57,12 @@ SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk)
 {
 
 /* Setup cube vertex data. */
-	v[0][0] = v[1][0] = v[2][0] = v[3][0] = -1000.f;
-	v[4][0] = v[5][0] = v[6][0] = v[7][0] =  1000.f;
-	v[0][1] = v[1][1] = v[4][1] = v[5][1] = -1000.f;
-	v[2][1] = v[3][1] = v[6][1] = v[7][1] =  1000.f;
-	v[0][2] = v[3][2] = v[4][2] = v[7][2] =  1000.f;
-	v[1][2] = v[2][2] = v[5][2] = v[6][2] = -1000.f;
+	v[0][0] = v[1][0] = v[2][0] = v[3][0] = -100.f;
+	v[4][0] = v[5][0] = v[6][0] = v[7][0] =  100.f;
+	v[0][1] = v[1][1] = v[4][1] = v[5][1] = -100.f;
+	v[2][1] = v[3][1] = v[6][1] = v[7][1] =  100.f;
+	v[0][2] = v[3][2] = v[4][2] = v[7][2] =  100.f;
+	v[1][2] = v[2][2] = v[5][2] = v[6][2] = -100.f;
 	for(int i=0;i<3;i++)
 	{
 		loss_textures[i]=inscatter_textures[i]=skylight_textures[i]=0;
@@ -373,7 +373,7 @@ bool SimulGLSkyRenderer::Render(bool blend)
 ERROR_CHECK
 	//if(!blend)
 	//{
-		glClearColor(0,0,0,1);
+		glClearColor(0,0.0,0,1);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	//}
 	simul::sky::float4 ratio=skyKeyframer->GetMieRayleighRatio();
@@ -422,10 +422,10 @@ ERROR_CHECK
 	glUniform1i(skyTexture1_param,0);
 	
 ERROR_CHECK
-	glUniform1f(altitudeTexCoord_param,skyKeyframer->GetAltitudeTexCoord());
+	//glUniform1f(altitudeTexCoord_param,skyKeyframer->GetAltitudeTexCoord());
 	glUniform3f(MieRayleighRatio_param,ratio.x,ratio.y,ratio.z);
 	glUniform1f(hazeEccentricity_param,skyKeyframer->GetMieEccentricity());
-	glUniform1f(skyInterp_param,skyKeyframer->GetInterpolation());
+	//glUniform1f(skyInterp_param,skyKeyframer->GetInterpolation());
 	glUniform3f(lightDirection_sky_param,light_dir.x,light_dir.y,light_dir.z);
 	
 	glEnable(GL_TEXTURE_2D);
@@ -435,11 +435,11 @@ ERROR_CHECK
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)skylight_2d.GetColorTex());
-	setParameter3(cloudOrigin,cloud_origin);
-	setParameter3(cloudScale,cloud_scale);
-	setParameter(maxDistance,skyKeyframer->GetMaxDistanceKm()*1000.f);
-	setParameter(overcast_param,overcast);
-	setParameter3(viewPosition,cam_pos);
+	//setParameter3(cloudOrigin,cloud_origin);
+	//setParameter3(cloudScale,cloud_scale);
+	//setParameter(maxDistance,skyKeyframer->GetMaxDistanceKm()*1000.f);
+	//setParameter(overcast_param,overcast);
+	//setParameter3(viewPosition,cam_pos);
 ERROR_CHECK
 	for(int i=0;i<6;i++)
 	{
