@@ -505,6 +505,10 @@
 			Name="Shaders"
 			>
 			<File
+				RelativePath=".\GLSL\saturate.glsl"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simple.frag"
 				>
 			</File>

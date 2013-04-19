@@ -1,15 +1,9 @@
 #pragma once
 
 #include <d3dx9.h>
-#ifdef DX10
-#include <d3d10.h>
-#include <d3dx10.h>
-#include <d3d10effect.h>
-#else
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <D3dx11effect.h>
-#endif
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Clouds/BaseFramebuffer.h"
@@ -21,9 +15,7 @@ public:
 	virtual ~FramebufferDX1x();
 	void SetWidthAndHeight(int w,int h);
 	void SetTargetWidthAndHeight(int w,int h);
-	void SetTargetFormat(DXGI_FORMAT f);
-	//standard d3d object interface functions
-
+	void SetFormat(int f);
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 	void RestoreDeviceObjects(void* pd3dDevice);
 	//! Call to recompile the shaders - useful for debugging.

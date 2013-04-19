@@ -44,8 +44,8 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 	,worldViewProj(NULL)
 	,simulSkyRenderer(NULL),
 	simulCloudRenderer(NULL),
-	BufferWidth(w),
-	BufferHeight(h),
+	BufferWidth(w/Downscale),
+	BufferHeight(h/Downscale),
 	exposure_multiplier(1.f)
 {
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();

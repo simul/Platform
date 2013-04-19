@@ -1,10 +1,6 @@
+#version 140
+#include "../Glsl.h"
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
-uniform int octaves;
-uniform float persistence;
-uniform float humidity;
-uniform float time;
-uniform vec3 noiseScale;
-
 varying vec2 in_texcoord;
 
 void main()

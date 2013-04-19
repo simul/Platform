@@ -65,6 +65,7 @@ namespace simul
 			int								density_gridsize;
 			ID3D11Texture3D					*density_texture;
 			ID3D11ShaderResourceView		*density_texture_srv;
+			ID3D11Buffer					*gpuCloudConstantsBuffer;
 		};
 	}
 }

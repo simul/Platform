@@ -7,19 +7,32 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
+#include "HLSL/CppHLSL.hlsl"
 #include <math.h>
 using namespace simul;
 using namespace dx11;
+uniform_buffer GpuCloudConstants R2
+{
+	uniform int octaves;
+	uniform float persistence;
+	uniform float humidity;
+	uniform float time;
+	uniform vec3 noiseScale;
+
+	uniform float zPosition;
+	uniform vec2 extinctions;
+	uniform mat4 vertexMatrix;
+};
 
 static simul::math::Matrix4x4 MakeVertexMatrix(const int *grid,int start_texel,int texels)
 {
 	simul::math::Matrix4x4 mat;
 	mat.Unit();
 	int gridsize=grid[0]*grid[1]*grid[2];
-	//start_texel-=grid[0]*grid[1];
+
 	if(start_texel<0)
 		start_texel=0;
-	//texels+=grid[0]*grid[1];
+
 	if(start_texel+texels>gridsize)
 		texels=start_texel-gridsize;
 	float y_start=2.f*(float)start_texel/(float)gridsize-1.f;
@@ -38,6 +51,7 @@ GpuCloudGenerator::GpuCloudGenerator()
 			,transformTechnique(NULL)
 			,density_texture(NULL)
 			,density_texture_srv(NULL)
+			,gpuCloudConstantsBuffer(NULL)
 {
 }
 
@@ -72,6 +86,7 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(density_texture_srv);
 	SAFE_RELEASE(density_texture);
+	SAFE_RELEASE(gpuCloudConstantsBuffer);
 	m_pd3dDevice=NULL;
 }
 
@@ -85,6 +100,7 @@ void GpuCloudGenerator::RecompileShaders()
 		lightingTechnique	=effect->GetTechniqueByName("simul_gpu_lighting");
 		transformTechnique	=effect->GetTechniqueByName("simul_gpu_transform");
 	}
+	MAKE_CONSTANT_BUFFER(gpuCloudConstantsBuffer,GpuCloudConstants);
 }
 
 int GpuCloudGenerator::GetDensityGridsize(const int *grid)
@@ -131,18 +147,26 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	
 	simul::math::Matrix4x4 vertexMatrix=MakeVertexMatrix(density_grid,start_texel,texels);
 
-	setMatrix(effect,"vertexMatrix"				,vertexMatrix);
-	setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 	setParameter(effect,"octaves"				,octaves);
 	setParameter(effect,"persistence"			,persistence);
 	setParameter(effect,"humidity"				,humidity);
 	setParameter(effect,"time"					,time);
+	setParameter(effect,"noiseScale"			,noise_scale);
+	setMatrix	(effect,"vertexMatrix"			,vertexMatrix);
+
 	setParameter(effect,"zPixel"				,1.f/(float)density_grid[2]);
 	setParameter(effect,"zSize"					,(float)density_grid[2]);
-	setParameter(effect,"noiseScale"			,noise_scale);
 	setParameter(effect,"baseLayer"				,baseLayer);
 	setParameter(effect,"transition"			,transition);
-	
+
+	setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
+	GpuCloudConstants gpuCloudConstants;
+
+	UPDATE_CONSTANT_BUFFER(gpuCloudConstantsBuffer,GpuCloudConstants,gpuCloudConstants);
+	ID3D1xEffectConstantBuffer* cbConstants=effect->GetConstantBufferByName("CloudConstants");
+	if(cbConstants)
+		cbConstants->SetConstantBuffer(gpuCloudConstantsBuffer);
+
 	dens_fb.Activate();
 		ApplyPass(densityTechnique->GetPassByIndex(0));
 		dens_fb.DrawQuad();
@@ -250,7 +274,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 try{
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	world_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
-	world_fb.SetTargetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
+	world_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
 	ID3D11Texture3D* light_texture1		=make3DTexture(m_pd3dDevice,m_pImmediateContext	,light_grid[0]	,light_grid[1]	,light_grid[2]	,DXGI_FORMAT_R32G32B32A32_FLOAT,light);
 	ID3D11ShaderResourceView* light_texture;
 	m_pd3dDevice->CreateShaderResourceView(light_texture1,NULL,&light_texture);

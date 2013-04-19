@@ -30,6 +30,10 @@ FramebufferGL::~FramebufferGL()
 	InvalidateDeviceObjects();
 }
 
+void FramebufferGL::RestoreDeviceObjects(void*)
+{
+}
+
 void FramebufferGL::InvalidateDeviceObjects()
 {
     int i;
@@ -67,6 +71,12 @@ void FramebufferGL::SetWidthAndHeight(int w,int h)
 	}
 }
 
+void FramebufferGL::SetFormat(int f)
+{
+	colour_iformat=f;
+}
+
+
 bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum f,GLint wc)
 {
 	if(!Width||!Height)
@@ -80,10 +90,10 @@ ERROR_CHECK
 	}
 	format=f;
 	wrap_clamp=wc;
-	SAFE_DELETE_TEXTURE(m_tex_col[index]);
 	if(!m_tex_col[index]||iformat!=colour_iformat)
 	{
 		colour_iformat=iformat;
+		SAFE_DELETE_TEXTURE(m_tex_col[index]);
 		glGenTextures(1, &m_tex_col[index]);
 		glBindTexture(m_target, m_tex_col[index]);
 		glTexParameteri(m_target,GL_TEXTURE_WRAP_S,wrap_clamp);
@@ -239,7 +249,8 @@ void FramebufferGL::Render(bool blend)
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-    SetOrthoProjection(main_viewport[2],main_viewport[3]);
+	Ortho();
+   // SetOrthoProjection(main_viewport[2],main_viewport[3]);
     glActiveTexture(GL_TEXTURE0);
     Bind();
     glDisable(GL_ALPHA_TEST);
@@ -254,7 +265,7 @@ void FramebufferGL::Render(bool blend)
 	}
 	glDepthMask(GL_FALSE);
 ERROR_CHECK
-	::DrawQuad(0,0,main_viewport[2],main_viewport[3]);
+	::DrawQuad(0,0,1,1);//main_viewport[2],main_viewport[3]);
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);

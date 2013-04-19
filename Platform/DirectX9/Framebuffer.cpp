@@ -55,17 +55,17 @@ void Framebuffer::MakeTexture()
 	m_pHDRRenderTarget=MakeRenderTarget(buffer_texture);
 }
 
-bool Framebuffer::SetFormat(D3DFORMAT f)
+void Framebuffer::SetFormat(int f)
 {
-	bool ok=CanUseTexFormat(m_pd3dDevice,f)==S_OK;
+	D3DFORMAT F=(D3DFORMAT)f;
+	bool ok=CanUseTexFormat(m_pd3dDevice,F)==S_OK;
 	if(ok)
 	{
-		if(texture_format==f)
-			return true;
-		texture_format=f;
+		if(texture_format==F)
+			return;
+		texture_format=F;
 		MakeTexture();
 	}
-	return ok;
 }
 	
 void Framebuffer::RestoreDeviceObjects(void *dev)

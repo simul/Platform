@@ -5,12 +5,6 @@
 #define sampler1D texture1D
 #define sampler2D texture2D
 #define sampler3D texture3D
-#define fract frac
-#define texture(tex,texc) tex.Sample(samplerState,texc)
-#define texture2D(tex,texc) tex.Sample(samplerState,texc)
-#define texture3D(tex,texc) tex.Sample(samplerState3d,texc)
-#define texture3D2(tex,texc) tex.Sample(samplerState3d2,texc)
-#define mat4 float4x4
 
 SamplerState samplerState 
 {
@@ -33,15 +27,7 @@ SamplerState samplerState3d2
 	AddressW = Clamp;
 };
 
-uniform int octaves;
-uniform float persistence;
-uniform float humidity;
-uniform float time;
-uniform vec3 noiseScale;
-uniform float zPosition;
-uniform vec2 extinctions;
-uniform mat4 vertexMatrix;
-
+#include "CppHLSL.hlsl"
 uniform sampler2D input_light_texture;
 uniform sampler3D density_texture;
 uniform sampler3D light_texture;

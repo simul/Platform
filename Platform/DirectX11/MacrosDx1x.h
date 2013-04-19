@@ -244,4 +244,12 @@ extern void SIMUL_DIRECTX11_EXPORT BreakIfDebugging();
 		m_pImmediateContext->Unmap(cb, 0);	\
 	}
 
+#define UPDATE_CONSTANT_BUFFERS(cb,DataStructType,dataStructList,num)	\
+	{	\
+		D3D11_MAPPED_SUBRESOURCE mapped_res;	\
+		m_pImmediateContext->Map(cb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);	\
+		for(int i=0;i<num;i++)\
+		{	((DataStructType*)(mapped_res.pData))[i]=dataStructList[i];	}\
+		m_pImmediateContext->Unmap(cb, 0);	\
+	}
 #endif

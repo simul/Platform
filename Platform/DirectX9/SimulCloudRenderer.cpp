@@ -531,7 +531,7 @@ bool SimulCloudRenderer::CreateNoiseTexture(bool override_file)
 	SetBits8();
 
 	simul::graph::standardnodes::ShowProgressInterface *progress=GetResourceInterface();
-	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)(lockedRect.pBits),
+	simul::clouds::TextureGenerator::Make2DNoiseTexture(( char *)(lockedRect.pBits),
 		noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence,progress,this);
 	hr=noise_texture->UnlockRect(0);
 	noise_texture->GenerateMipSubLevels();

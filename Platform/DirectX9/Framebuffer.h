@@ -24,7 +24,7 @@ public:
 	void Clear(float,float,float,float,int mask=0);
 	void DeactivateAndRender(bool blend);
 	void Render(bool blend);
-	bool SetFormat(D3DFORMAT f);
+	void SetFormat(int f);
 	void* GetColorTex()
 	{
 		return (void*)buffer_texture;

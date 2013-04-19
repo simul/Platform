@@ -21,9 +21,11 @@ public:
 			int samples = 0, int coverageSamples = 0);
 
 	~FramebufferGL();
+	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
 	void SetShader(int i);
 	void SetWidthAndHeight(int w,int h);
+	void SetFormat(int);
 	// In order to use a color buffer, either
 	// InitColor_RB or InitColor_Tex needs to be called.
 	//void InitColor_RB(int index, GLenum internal_format);

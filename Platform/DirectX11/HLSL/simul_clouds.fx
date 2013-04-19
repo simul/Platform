@@ -13,13 +13,6 @@ cbuffer cbPerObject : register( b1 )
 	matrix		worldViewProj		: packoffset( c0 );
 	matrix		wrld				: packoffset( c4 );
 };
-//cbuffer PerSliceConstants : register( b2 )
-//{
-	uniform vec2 noiseOffset;
-	uniform float noiseScale;
-	uniform float layerFade;
-	uniform float layerDistance;
-//};
 
 Texture3D cloudDensity1;
 Texture3D cloudDensity2;
@@ -68,59 +61,113 @@ SamplerState fadeSamplerState
 
 struct vertexInput
 {
-    float3 position			: POSITION;
+    float3 position		: POSITION;
+	// Per-instance data:
+	vec2 noiseOffset	: TEXCOORD0;
+	float noiseScale	: TEXCOORD1;
+	float layerFade		: TEXCOORD2;
+	float layerDistance	: TEXCOORD3;
 };
 
 struct vertexOutput
 {
-    float4 hPosition			: SV_POSITION;
-    float2 noise_texc			: TEXCOORD0;
-    float4 dupehPosition		: TEXCOORD1;
-    float4 texCoords			: TEXCOORD2;
-	float3 wPosition			: TEXCOORD3;
-    float3 texCoordLightning	: TEXCOORD4;
-    float2 fade_texc			: TEXCOORD5;
-    float2 noise_texc2			: TEXCOORD6;
+    float3 position			: POSITION;
+	// Per-instance data:
+	vec2 noiseOffset	: TEXCOORD0;
+	float noiseScale	: TEXCOORD1;
+	float layerFade		: TEXCOORD2;
+	float layerDistance	: TEXCOORD3;
 };
 
-[maxvertexcount(3)]
-void GS_Main(triangle vertexOutput input[3], inout TriangleStream<vertexOutput> OutputStream)
+struct geomOutput
 {
-	if(input[0].texCoords.z>1.0&&input[1].texCoords.z>1.0&&input[2].texCoords.z>1.0)
-		return;
-	if(input[0].texCoords.z<0.0&&input[1].texCoords.z<0.0&&input[2].texCoords.z<0.0)
-		return;
-	for(int i = 0; i < 3; i++)
-	{
-    	OutputStream.Append(input[i]);
-    }
-}
+    float4 hPosition			: SV_POSITION;
+    float2 noise_texc			: TEXCOORD0;
+    float4 texCoords			: TEXCOORD1;
+	float3 wPosition			: TEXCOORD2;
+    float3 texCoordLightning	: TEXCOORD3;
+    float2 fade_texc			: TEXCOORD4;
+	float layerFade				: TEXCOORD5;
+};
 
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-	float3 t1=IN.position.xyz*layerDistance;
-    OUT.hPosition = mul(worldViewProj,float4(t1.xyz,1.0));
-    OUT.dupehPosition=mul(worldViewProj,float4(t1.xyz,1.0));
-	
-	float3 noise_pos=mul(noiseMatrix,float4(IN.position,1.0f)).xyz;
-	OUT.noise_texc=float2(atan2(noise_pos.x,noise_pos.z),atan2(noise_pos.y,noise_pos.z));
-	OUT.noise_texc*=noiseScale;
-	OUT.noise_texc+=noiseOffset;
-	
-	OUT.noise_texc2=OUT.noise_texc*8;
-	OUT.wPosition=mul(wrld,float4(t1,1.0f)).xyz;
-	OUT.texCoords.xyz=OUT.wPosition-cornerPos;
-	OUT.texCoords.xyz*=inverseScales;
-	OUT.texCoords.w=0.5f+0.5f*saturate(OUT.texCoords.z);
-	float3 texCoordLightning=(IN.position.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
-	OUT.texCoordLightning=texCoordLightning;
-	float3 view=normalize(IN.position.xyz);
-	float sine=view.z;
-	float depth=layerDistance/maxFadeDistanceMetres;
-	OUT.fade_texc=float2(sqrt(depth),0.5f*(1.f-sine));
-
+	OUT.position=IN.position;
+	// Per-instance data:
+	OUT.noiseOffset		=IN.noiseOffset;
+	OUT.noiseScale		=IN.noiseScale;
+	OUT.layerFade		=IN.layerFade;
+	OUT.layerDistance	=IN.layerDistance;
     return OUT;
+}
+static const float pi=3.1415926536;
+
+#define ELEV_STEPS 20
+
+[maxvertexcount(53)]
+void GS_Main(line vertexOutput input[2], inout TriangleStream<geomOutput> OutputStream)
+{
+	/*if(input[0].texCoords.z>1.0&&input[1].texCoords.z>1.0&&input[2].texCoords.z>1.0)
+		return;
+	if(input[0].texCoords.z<0.0&&input[1].texCoords.z<0.0&&input[2].texCoords.z<0.0)
+		return;*/
+	// work out the start and end angles.
+	float dh1=cornerPos.z-wrld._34;
+	float dh2=dh1+1.0/inverseScales.z;
+	float a1=atan(dh1/input[0].layerDistance)*2.0/pi;
+	float a2=atan(dh2/input[0].layerDistance)*2.0/pi;
+	int e1=max((int)(a1*ELEV_STEPS/2+ELEV_STEPS/2)-1,0);
+	int e2=min((int)(a2*ELEV_STEPS/2+ELEV_STEPS/2)+2,ELEV_STEPS);
+
+	for(int i=e1;i<e2+1;i++)
+	{
+		float angle=pi*(float)(i-ELEV_STEPS/2)/(float)ELEV_STEPS;
+		float cosine=cos(angle);
+		float sine=sin(angle);
+		float3 pos[2];
+		float3 t1[2];
+		float4 hpos[2];
+		for(int j = 0; j < 2; j++)
+		{
+			vertexOutput IN=input[j];
+			pos[j]=cosine*IN.position;
+			pos[j].z=sine;
+			t1[j]=pos[j].xyz*IN.layerDistance;
+			hpos[j]=mul(worldViewProj,float4(t1[j].xyz,1.0));
+		}
+	/*	if(hpos[0].x/hpos[0].w<-1.0&&hpos[1].x/hpos[0].w<-1.0)
+			continue;
+		if(hpos[0].x/hpos[0].w>1.0&&hpos[1].x/hpos[0].w>1.0)
+			continue;
+		if(hpos[0].y/hpos[0].w<-1.0&&hpos[1].y/hpos[0].w<-1.0)
+			continue;
+		if(hpos[0].y/hpos[0].w>1.0&&hpos[1].y/hpos[0].w>1.0)
+			continue;*/
+		for(int j = 0; j < 2; j++)
+		{
+			vertexOutput IN=input[j];
+			geomOutput OUT;
+			OUT.hPosition=hpos[j];
+			float3 noise_pos=mul(noiseMatrix,float4(pos[j].xyz,1.0f)).xyz;
+			OUT.noise_texc=float2(atan2(noise_pos.x,noise_pos.z),atan2(noise_pos.y,noise_pos.z));
+			OUT.noise_texc*=IN.noiseScale;
+			OUT.noise_texc+=IN.noiseOffset;
+			
+			OUT.wPosition=mul(wrld,float4(t1[j],1.0f)).xyz;
+			OUT.texCoords.xyz=OUT.wPosition-cornerPos;
+			OUT.texCoords.xyz*=inverseScales;
+			OUT.texCoords.w=0.5f+0.5f*saturate(OUT.texCoords.z);
+			float3 texCoordLightning=(pos[j].xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
+			OUT.texCoordLightning=texCoordLightning;
+			float3 view=normalize(pos[j].xyz);
+			float sine=view.z;
+			float depth=IN.layerDistance/maxFadeDistanceMetres;
+			OUT.fade_texc=float2(sqrt(depth),0.5f*(1.f-sine));
+			OUT.layerFade=IN.layerFade;
+    		OutputStream.Append(OUT);
+		}
+	}
 }
 
 #define pi (3.1415926536f)
@@ -140,9 +187,46 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	float3 colour=BetaTotal*inscatter_factor.rgb;
 	return colour;
 }
-	static const float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 
-float4 PS_WithLightning(vertexOutput IN): SV_TARGET
+
+float4 PS_Clouds( geomOutput IN): SV_TARGET
+{
+	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc).xyz).xyz;
+#ifdef DETAIL_NOISE
+	noiseval+=(noiseTexture.Sample(noiseSamplerState,8.0*IN.noise_texc).xyz)/2.0;
+#endif
+	noiseval*=IN.texCoords.w;
+	float3 pos=IN.texCoords.xyz+fractalScale.xyz*noiseval;
+	float4 density=cloudDensity1.Sample(cloudSamplerState,pos);
+	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
+
+	density=lerp(density,density2,cloud_interp);
+	density.z*=IN.layerFade;
+	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
+
+	if(density.z<=0)
+		discard;
+   // return float4(1.0,1.0,1.0,density.z);
+	float3 view=normalize(IN.wPosition);
+	float cos0=dot(lightDir.xyz,view.xyz);
+	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.y,cos0);
+	
+	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
+	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
+	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
+	float3 ambient=density.w*ambientColour.rgb;
+
+	float opacity=density.z;
+	float3 sunlightColour=lerp(sunlightColour1,sunlightColour2,saturate(IN.texCoords.z));
+	float3 final=(density.y*Beta+lightResponse.y*density.x)*sunlightColour+ambient.rgb;
+	float3 inscatter=earthshadowMultiplier*InscatterFunction(insc,cos0);
+
+	final*=loss;
+	final+=skyl.rgb+inscatter;
+    return float4(final.rgb,opacity);
+}
+
+float4 PS_WithLightning(geomOutput IN): SV_TARGET
 {
 	float3 view=normalize(IN.wPosition);
 	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
@@ -151,9 +235,9 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
 	float3 inscatter=earthshadowMultiplier*InscatterFunction(insc,cos0);
-	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc.xy).xyz-noise_offset).xyz;
+	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc.xy).xyz).xyz;
 #ifdef DETAIL_NOISE
-	noiseval+=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc2.xy).xyz-noise_offset)/2.0;
+	noiseval+=(noiseTexture.Sample(noiseSamplerState,8.0*IN.noise_texc.xy).xyz)/2.0;
 #endif
 	noiseval*=IN.texCoords.w;
 	float3 pos=IN.texCoords.xyz+fractalScale.xyz*noiseval;
@@ -163,7 +247,7 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 	float4 lightning=lightningIlluminationTexture.Sample(lightningSamplerState,IN.texCoordLightning.xyz);
 
 	density=lerp(density,density2,cloud_interp);
-	density.z*=layerFade;
+	density.z*=IN.layerFade;
 	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
 	if(density.z<=0)
 		discard;
@@ -180,20 +264,20 @@ float4 PS_WithLightning(vertexOutput IN): SV_TARGET
 
 	final*=opacity;
 
-	final+=lightningC*(opacity+layerFade);
+	final+=lightningC*(opacity+IN.layerFade);
     return float4(final.rgb,opacity);
 }
 
-float4 PS_CloudsLowDef( vertexOutput IN): SV_TARGET
+float4 PS_CloudsLowDef( geomOutput IN): SV_TARGET
 {
-	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc).xyz-noise_offset).xyz;
+	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc).xyz).xyz;
 
 	float3 pos=IN.texCoords.xyz+fractalScale.xyz*noiseval;
 	float4 density=cloudDensity1.Sample(cloudSamplerState,pos);
 	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
 
 	density=lerp(density,density2,cloud_interp);
-	//density.z*=IN.layerFade;
+	density.z*=IN.layerFade;
 	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
 	if(density.z<=0)
 		discard;
@@ -214,42 +298,6 @@ float4 PS_CloudsLowDef( vertexOutput IN): SV_TARGET
 
 	final*=loss;
 	final+=inscatter;
-
-    return float4(final.rgb,opacity);
-}
-
-float4 PS_Clouds( vertexOutput IN): SV_TARGET
-{
-	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc).xyz-noise_offset).xyz;
-#ifdef DETAIL_NOISE
-	noiseval+=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc2).xyz-noise_offset)/2.0;
-	noiseval*=IN.texCoords.w;
-#endif
-	float3 pos=IN.texCoords.xyz+fractalScale.xyz*noiseval;
-	float4 density=cloudDensity1.Sample(cloudSamplerState,pos);
-	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
-
-	density=lerp(density,density2,cloud_interp);
-	density.z*=layerFade;
-	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
-	if(density.z<=0)
-		discard;
-	float3 view=normalize(IN.wPosition);
-	float cos0=dot(lightDir.xyz,view.xyz);
-	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.y,cos0);
-	
-	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
-	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
-	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
-	float3 ambient=density.w*ambientColour.rgb;
-
-	float opacity=density.z;
-	float3 sunlightColour=lerp(sunlightColour1,sunlightColour2,saturate(IN.texCoords.z));
-	float3 final=(density.y*Beta+lightResponse.y*density.x)*sunlightColour+ambient.rgb;
-	float3 inscatter=earthshadowMultiplier*InscatterFunction(insc,cos0);
-
-	final*=loss;
-	final+=skyl.rgb+inscatter;
 
     return float4(final.rgb,opacity);
 }
@@ -354,7 +402,7 @@ technique11 simul_clouds_lowdef
         SetRasterizerState( RenderNoCull );
 	//	SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 
-        SetGeometryShader(NULL);
+        SetGeometryShader(CompileShader(gs_4_0,GS_Main()));
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
 		SetPixelShader(CompileShader(ps_4_0,PS_CloudsLowDef()));
     }
@@ -367,9 +415,9 @@ technique11 simul_clouds
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
 		//SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(CompileShader(gs_4_0,GS_Main()));
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Clouds()));
+        SetGeometryShader(CompileShader(gs_5_0,GS_Main()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Clouds()));
     }
 }
 
@@ -380,9 +428,9 @@ technique11 simul_clouds_and_lightning
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
 		//SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-		SetPixelShader(CompileShader(ps_4_0,PS_WithLightning()));
+        SetGeometryShader(CompileShader(gs_5_0,GS_Main()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
+		SetPixelShader(CompileShader(ps_5_0,PS_WithLightning()));
     }
 }
 

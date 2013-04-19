@@ -240,7 +240,7 @@ bool Simul2DCloudRenderer::CreateNoiseTexture(bool override_file)
 	if(FAILED(hr=noise_texture->LockRect(0,&lockedRect,NULL,NULL)))
 		return false;
 	SetBits8();
-	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)(lockedRect.pBits),size,16,8,0.8f);
+	simul::clouds::TextureGenerator::Make2DNoiseTexture(( char *)(lockedRect.pBits),size,16,8,0.8f);
 	hr=noise_texture->UnlockRect(0);
 	//noise_texture->GenerateMipSubLevels();
 	return true;

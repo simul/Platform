@@ -126,7 +126,7 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 	glAttachShader(prog,vertex_shader);
 	if(geom_filename)
 	{
-		GLuint geometry_shader					=LoadShader(geom_filename,defines);
+		GLuint geometry_shader	=LoadShader(geom_filename,defines);
 		if(!geometry_shader)
 		{
 			std::cerr<<"ERROR:\tShader failed to compile\n";
@@ -136,7 +136,7 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 		ERROR_CHECK
 	}
 	ERROR_CHECK
-    GLuint fragment_shader					=LoadShader(frag_filename,defines);
+    GLuint fragment_shader		=LoadShader(frag_filename,defines);
     if(!fragment_shader)
     {
 		std::cerr<<"ERROR:\tShader failed to compile\n";

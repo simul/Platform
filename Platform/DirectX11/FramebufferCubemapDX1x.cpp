@@ -10,6 +10,7 @@ FramebufferCubemapDX1x::FramebufferCubemapDX1x()
 	,Width(0)
 	,Height(0)
 	,current_face(0)
+	,format(DXGI_FORMAT_R8G8B8A8_UNORM)
 {
 	for(int i=0;i<6;i++)
 	{
@@ -30,15 +31,21 @@ void FramebufferCubemapDX1x::SetWidthAndHeight(int w,int h)
 	assert(h==w);
 }
 
-void FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
+void FramebufferCubemapDX1x::SetFormat(int f)
+{
+	DXGI_FORMAT F=(DXGI_FORMAT)f;
+	if(F==format)
+		return;
+	format=F;
+	//CreateBuffers();
+}
+
+void FramebufferCubemapDX1x::RestoreDeviceObjects(void* dev)
 {
 	HRESULT hr=S_OK;
-#ifdef DX10
-	m_pImmediateContext=pd3dDevice;
-#else
+	pd3dDevice=(ID3D1xDevice*)dev;
 	SAFE_RELEASE(m_pImmediateContext);
 	pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-#endif
 	// Create cubic depth stencil texture
 	D3D1x_TEXTURE2D_DESC dstex;
 	dstex.Width = Width;
@@ -74,7 +81,7 @@ void FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
 	 
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	// Create the cube map for env map render target
-	dstex.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	dstex.Format = format;
 	dstex.BindFlags = D3D1x_BIND_RENDER_TARGET | D3D1x_BIND_SHADER_RESOURCE;
 	dstex.MiscFlags = D3D1x_RESOURCE_MISC_GENERATE_MIPS | D3D1x_RESOURCE_MISC_TEXTURECUBE;
 	dstex.MipLevels = MIPLEVELS;

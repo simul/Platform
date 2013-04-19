@@ -5,6 +5,8 @@
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix.h"
 #include "Simul/Base/Timer.h"
+#include "Simul/Platform/OpenGL/GLSL.h"
+#include "Simul/Platform/CrossPlatform/simul_gpu_clouds.sl"
 using namespace simul::opengl;
 /*
 static void MakeVertexMatrix(const int *grid,int start_texel,int texels)
@@ -30,6 +32,8 @@ GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
 			,density(NULL)
 			,density_gridsize(0)
 			,readback_to_cpu(true)
+			,gpuCloudConstantsUBO(0)
+			,gpuCloudConstantsBindingIndex(2)
 {
 }
 
@@ -46,11 +50,9 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 {
 	iformat=GL_LUMINANCE32F_ARB;
 	itype=GL_LUMINANCE;
-	
-	
-	
 	RecompileShaders();
 	density_texture=0;
+	MAKE_CONSTANT_BUFFER(gpuCloudConstantsUBO,GpuCloudConstants,gpuCloudConstantsBindingIndex);
 }
 
 void GpuCloudGenerator::InvalidateDeviceObjects()
@@ -63,6 +65,7 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(transform_program);
 	SAFE_DELETE_PROGRAM(clouds_program);
 	SAFE_DELETE_TEXTURE(density_texture);
+	SAFE_DELETE_BUFFER(gpuCloudConstantsUBO);
 }
 
 void GpuCloudGenerator::RecompileShaders()
@@ -167,6 +170,25 @@ timer.StartTime();
 	setParameter(density_program,"baseLayer"			,baseLayer);
 	setParameter(density_program,"transition"			,transition);
 
+	GpuCloudConstants constants;
+	constants.octaves		=octaves;
+	constants.persistence	=persistence;
+	constants.humidity		=humidity;
+	constants.time			=time;
+	constants.noiseScale	=noise_scale;
+
+	constants.zPosition		=0.f;
+	//constants.vertexMatrix	=vertexMatrix;
+	constants.extinctions	;
+	constants.zPixel			=1.f/(float)density_grid[2];
+	constants.zSize				=(float)density_grid[2];
+	constants.baseLayer			=baseLayer;
+	constants.transition		=transition;
+
+	UPDATE_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
+	GLint gpuCloudConstants		=glGetUniformBlockIndex(density_program,"GpuCloudConstants");
+	if(gpuCloudConstants>=0)
+		glUniformBlockBinding(density_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
 	//MakeVertexMatrix(density_grid,start_texel,texels);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -250,12 +272,12 @@ ERROR_CHECK
 
 // The target is a grid of size given by light_gridsizes, arranged as d w-by-l textures.
 void GpuCloudGenerator::PerformGPURelight(float *target
-								,const int *light_grid
-								,int start_texel
-								,int texels
-								,const int *density_grid
-								,const float *transformMatrix
-								,const float *lightspace_extinctions_float3)
+										,const int *light_grid
+										,int start_texel
+										,int texels
+										,const int *density_grid
+										,const float *transformMatrix
+										,const float *lightspace_extinctions_float3)
 {
 ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
@@ -278,6 +300,14 @@ timer.StartTime();
 	setParameter(clouds_program,"density_texture",1);
 	setMatrix(clouds_program,"transformMatrix",transformMatrix);
 	setParameter(clouds_program,"extinctions",lightspace_extinctions_float3[0],lightspace_extinctions_float3[1]);
+	
+	GpuCloudConstants constants;
+	constants.extinctions=lightspace_extinctions_float3;
+	constants.transformMatrix=transformMatrix;
+	UPDATE_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
+	GLint gpuCloudConstants		=glGetUniformBlockIndex(clouds_program,"GpuCloudConstants");
+	if(gpuCloudConstants>=0)
+		glUniformBlockBinding(clouds_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
 	// initialize the first input texture.
 	FramebufferGL *F[2];
 	F[0]=&fb[0];
@@ -287,11 +317,11 @@ timer.StartTime();
 	glEnable(GL_TEXTURE_3D);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,density_texture);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
-			ERROR_CHECK
-			glBindTexture(GL_TEXTURE_2D,0);
-			ERROR_CHECK
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
+	ERROR_CHECK
+	glBindTexture(GL_TEXTURE_2D,0);
+	ERROR_CHECK
 
 	int light_gridsize=light_grid[0]*light_grid[1]*light_grid[2];
 	int z0=(start_texel*light_grid[2])/light_gridsize;
@@ -318,6 +348,11 @@ ERROR_CHECK
 	{
 		float zPosition=((float)i-0.5f)/(float)light_grid[2];
 		setParameter(clouds_program,"zPosition",zPosition);
+		constants.zPosition=zPosition;
+		UPDATE_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
+		GLint gpuCloudConstants		=glGetUniformBlockIndex(clouds_program,"GpuCloudConstants");
+		if(gpuCloudConstants>=0)
+			glUniformBlockBinding(clouds_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
 		F[1]->Activate();
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
@@ -379,6 +414,16 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 	setMatrix(transform_program,"transformMatrix",transformMatrix);
 	setParameter(transform_program,"zSize",(float)density_grid[2]);
 	setParameter(transform_program,"zPixel",1.f/(float)density_grid[2]);
+
+	GpuCloudConstants constants;
+	constants.transformMatrix	=transformMatrix;
+	constants.zPixel			=1.f/(float)density_grid[2];
+	constants.zSize				=(float)density_grid[2];
+	//constants.zs
+	UPDATE_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
+	GLint gpuCloudConstants		=glGetUniformBlockIndex(transform_program,"GpuCloudConstants");
+	if(gpuCloudConstants>=0)
+		glUniformBlockBinding(transform_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
 	glEnable(GL_TEXTURE_3D);
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);

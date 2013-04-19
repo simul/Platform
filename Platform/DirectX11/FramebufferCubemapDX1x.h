@@ -20,8 +20,9 @@ public:
 	FramebufferCubemapDX1x();
 	virtual ~FramebufferCubemapDX1x();
 	void SetWidthAndHeight(int w,int h);
+	void SetFormat(int i);
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-	void RestoreDeviceObjects(ID3D1xDevice* pd3dDevice);
+	void RestoreDeviceObjects(void* );
 	//! Call this when the device has been lost.
 	void InvalidateDeviceObjects();
 	void SetCurrentFace(int i);
@@ -38,6 +39,7 @@ protected:
 	//! The size of the 2D buffer the sky is rendered to.
 	int Width,Height;
 protected:
+	ID3D1xDevice*					pd3dDevice;
 	ID3D1xDeviceContext *			m_pImmediateContext;
 	ID3D1xRenderTargetView*			m_pOldRenderTarget;
 	ID3D1xDepthStencilView*			m_pOldDepthSurface;
@@ -49,4 +51,5 @@ protected:
 	ID3D1xDepthStencilView*			m_pCubeEnvDepthMapDSV[6];
 	ID3D1xShaderResourceView*		m_pCubeEnvMapSRV;
 	int								current_face;
+	DXGI_FORMAT						format;
 };

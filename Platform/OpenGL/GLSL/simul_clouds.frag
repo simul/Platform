@@ -46,7 +46,7 @@ void main(void)
 	noiseval+=(texture(noiseSampler,noiseCoord*8.0).xyz-0.5)/2.0;
 #endif
 	noiseval*=texc.w;
-	vec3 pos=texc.xyz+fractalScale*texc.w*noiseval;
+	vec3 pos=texc.xyz+fractalScale*noiseval;
 	vec4 density=texture(cloudDensity1,pos);
 	vec4 density2=texture(cloudDensity2,pos);
 	//vec4 lightning=texture(illumSampler,texCoordLightning.xyz);

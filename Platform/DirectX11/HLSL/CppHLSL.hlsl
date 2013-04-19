@@ -1,6 +1,11 @@
 #ifndef CPP_HLSL
 #define CPP_HLSL
 
+#define fract frac
+#define texture(tex,texc) tex.Sample(samplerState,texc)
+#define texture2D(tex,texc) tex.Sample(samplerState,texc)
+#define texture3D(tex,texc) tex.Sample(samplerState3d,texc)
+#define texture3D2(tex,texc) tex.Sample(samplerState3d2,texc)
 #define uniform
 #define vec1 float1
 #define vec2 float2
@@ -8,14 +13,14 @@
 #define vec4 float4
 #define mat4 float4x4
 #define uniform_buffer ALIGN cbuffer
+#define texture(tex,texc) tex.Sample(samplerState,texc)
+#define sampler1D texture1D
+#define sampler2D texture2D
+#define sampler3D texture3D
 
 #ifdef __cplusplus
 	#define ALIGN __declspec( align( 16 ) )
 	#define cbuffer struct
-	#define sampler1D texture1D
-	#define sampler2D texture2D
-	#define sampler3D texture3D
-	#define texture(tex,texc) tex.Sample(samplerState,texc)
 
 	#define R0
 	#define R1

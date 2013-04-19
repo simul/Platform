@@ -142,50 +142,6 @@ bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 	glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,noise_texture_size,noise_texture_size,0,GL_RGBA,GL_UNSIGNED_INT,0);
 
-#if 0
-ERROR_CHECK
-	unsigned char *data=new unsigned char[4*noise_texture_size*noise_texture_size];
-	bool got_data=false;
-	if(!override_file)
-	{
-		ifstream ifs("noise_3d_clouds",ios_base::binary);
-		if(ifs.good()){
-			int size=0,octaves=0,freq=0;
-			float pers=0.f;
-			ifs.read(( char*)&size,sizeof(size));
-			ifs.read(( char*)&freq,sizeof(freq));
-			ifs.read(( char*)&octaves,sizeof(octaves));
-			ifs.read(( char*)&pers,sizeof(pers));
-			if(size==noise_texture_size&&freq==noise_texture_frequency&&octaves==texture_octaves&&pers==texture_persistence)
-			{
-				ifs.read(( char*)data,noise_texture_size*noise_texture_size*sizeof(unsigned));
-				got_data=true;
-			}
-		}
-	}
-	if(!got_data)
-	{
-		simul::clouds::TextureGenerator::SetBits((unsigned)255<<24,(unsigned)255<<8,(unsigned)255<<16,(unsigned)255<<0,4,false);
-		simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)data,noise_texture_size
-			,noise_texture_frequency,texture_octaves,texture_persistence);
-	}
-	glTexSubImage2D(
-		GL_TEXTURE_2D,0,
-		0,0,
-		noise_texture_size,noise_texture_size,
-		GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
-		data);
-	if(!got_data)
-	{
-		ofstream ofs("noise_3d_clouds",ios_base::binary);
-		ofs.write((const char*)&noise_texture_size,sizeof(noise_texture_size));
-		ofs.write((const char*)&noise_texture_frequency,sizeof(noise_texture_frequency));
-		ofs.write((const char*)&texture_octaves,sizeof(texture_octaves));
-		ofs.write((const char*)&texture_persistence,sizeof(texture_persistence));
-		ofs.write((const char*)data,noise_texture_size*noise_texture_size*sizeof(unsigned));
-	}
-	delete [] data;
-#else
 	FramebufferGL	noise_fb(noise_texture_frequency,noise_texture_frequency,GL_TEXTURE_2D);
 	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT,GL_REPEAT);
 	noise_fb.Activate();
@@ -233,7 +189,6 @@ ERROR_CHECK
 ERROR_CHECK	
 	n_fb.Deactivate();
 	glUseProgram(0);
-#endif
 ERROR_CHECK
 	glGenerateMipmap(GL_TEXTURE_2D);
 ERROR_CHECK

@@ -76,6 +76,8 @@ GpuCloudGenerator::~GpuCloudGenerator()
 void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	if(CanUseTexFormat(m_pd3dDevice,iformat)!=S_OK)
+		iformat=D3DFMT_A32B32G32R32F;
 	fb[0].RestoreDeviceObjects(dev);
 	fb[1].RestoreDeviceObjects(dev);
 	world_fb.RestoreDeviceObjects(dev);
@@ -189,10 +191,7 @@ void* GpuCloudGenerator::FillDensityGrid(const int *density_grid
 	CreateVolumeNoiseTexture(noise_size,noise_src_ptr);
 	// We render out a 2D texture with each XY layer laid end-to-end, and copy it to the target.
 	dens_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
-	if(!dens_fb.SetFormat(iformat))
-	{
-		dens_fb.SetFormat(iformat=D3DFMT_A32B32G32R32F);
-	}
+	dens_fb.SetFormat(iformat);
 	D3DXVECTOR4 noise_scale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0],0);
 	m_pGPULightingEffect->SetTexture((D3DXHANDLE)volumeNoiseTexture,volume_noise_texture);
 	

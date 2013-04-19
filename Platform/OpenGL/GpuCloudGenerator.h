@@ -54,6 +54,8 @@ namespace simul
 			bool			readback_to_cpu;
 			float			*density;	// used if we are using CPU to read back the density texture.
 			int				density_gridsize;
+			GLuint			gpuCloudConstantsUBO;
+			GLint			gpuCloudConstantsBindingIndex;
 		};
 	}
 }

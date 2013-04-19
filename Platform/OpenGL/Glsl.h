@@ -6,8 +6,9 @@
 #define R0
 #define R1
 #define R2
-
-#ifdef __cplusplus
+#ifndef __cplusplus
+#include "saturate.glsl"
+#else
 
 // To C++, samplers are just GLint's.
 typedef int sampler1D;

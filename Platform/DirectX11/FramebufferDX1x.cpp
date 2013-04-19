@@ -65,11 +65,12 @@ void FramebufferDX1x::SetTargetWidthAndHeight(int w,int h)
 	screen_height=h;
 }
 
-void FramebufferDX1x::SetTargetFormat(DXGI_FORMAT f)
+void FramebufferDX1x::SetFormat(int f)
 {
-	if(f==target_format)
+	DXGI_FORMAT F=(DXGI_FORMAT)f;
+	if(F==target_format)
 		return;
-	target_format=f;
+	target_format=F;
 	CreateBuffers();
 }
 

@@ -1,19 +1,22 @@
-uniform float zPixel;
-uniform float zSize;
-uniform float baseLayer;
-uniform float transition;
+uniform_buffer GpuCloudConstants R2
+{
+	uniform mat4 transformMatrix;
+	uniform mat4 vertexMatrix;
+	uniform int octaves;
+	uniform float persistence;
+	uniform float humidity;
+	uniform float time;
+	uniform vec3 noiseScale;
+	uniform float zPosition;
+	uniform vec2 extinctions;
+	uniform float zPixel;
+	uniform float zSize;
+	uniform float baseLayer;
+	uniform float transition;
+};
+
+#ifndef __cplusplus
 uniform sampler3D volumeNoiseTexture;
-uniform mat4 transformMatrix;
-
-float saturate(float x)
-{
-	return clamp(x,0.0,1.0);
-}
-
-vec2 saturate(vec2 v)
-{
-	return clamp(v,vec2(0.0,0.0),vec2(1.0,1.0));
-}
 
 vec3 assemble3dTexcoord(vec2 texcoord2)
 {
@@ -44,7 +47,7 @@ float NoiseFunction(vec3 pos,int octaves,float persistence,float time)
 	{
 		if(i>=octaves)
 			break;
-		float lookup=texture3D(volumeNoiseTexture,pos).x;
+		float lookup=texture(volumeNoiseTexture,pos).x;
 		float val=lookup;
 		dens+=mul*val;
 		sum+=mul;
@@ -56,3 +59,4 @@ float NoiseFunction(vec3 pos,int octaves,float persistence,float time)
 	dens/=sum;
 	return dens;
 }
+#endif

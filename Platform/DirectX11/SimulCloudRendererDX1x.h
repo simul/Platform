@@ -130,7 +130,7 @@ protected:
 		float layerFade;
 		float layerDistance;
 	};
-	InstanceType instances[200];
+	InstanceType instances[400];
 	ID3D1xDevice*					m_pd3dDevice;
 	ID3D1xDeviceContext*			m_pImmediateContext;
 	ID3D1xBuffer *					vertexBuffer;

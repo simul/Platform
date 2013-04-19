@@ -241,22 +241,7 @@ void DrawQuad(float x,float y,float w,float h)
 	glTexCoord2f(0.0,0.0);
 	glVertex2f(x,y);
 	glEnd();
-}/*
-
-void FramebufferGL::DrawQuad(int w,int h)
-{
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.f,1.f);
-	glVertex2f(0.f,(float)h);
-	glTexCoord2f(1.f,1.f);
-	glVertex2f((float)w,(float)h);
-	glTexCoord2f(1.0,0.f);
-	glVertex2f((float)w,0.f);
-	glTexCoord2f(0.f,0.f);
-	glVertex2f(0.f,0.f);
-	glEnd();
-}*/
-
+}
 
 float GetFramerate()
 {

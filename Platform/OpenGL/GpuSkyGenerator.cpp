@@ -35,7 +35,7 @@ void GpuSkyGenerator::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(loss_program);
 	SAFE_DELETE_PROGRAM(insc_program);
 	SAFE_DELETE_PROGRAM(skyl_program);
-	glDeleteBuffersARB(1,&gpuSkyConstantsUBO);
+	SAFE_DELETE_BUFFER(gpuSkyConstantsUBO);
 }
 
 void GpuSkyGenerator::RecompileShaders()
@@ -49,14 +49,7 @@ ERROR_CHECK
 	skyl_program=MakeProgram("simple.vert",NULL,"simul_gpu_skyl.frag");
 ERROR_CHECK
 	
-	glGenBuffers(1, &gpuSkyConstantsUBO);
-ERROR_CHECK
-	glBindBuffer(GL_UNIFORM_BUFFER, gpuSkyConstantsUBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(GpuSkyConstants), NULL, GL_STREAM_DRAW);
-ERROR_CHECK
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	glBindBufferRange(GL_UNIFORM_BUFFER,gpuSkyConstantsBindingIndex,gpuSkyConstantsUBO,0, sizeof(GpuSkyConstants));
-ERROR_CHECK
+	MAKE_CONSTANT_BUFFER(gpuSkyConstantsUBO,GpuSkyConstants,gpuSkyConstantsBindingIndex);
 }
 
 //! Return true if the derived class can make sky tables using the GPU.
@@ -181,14 +174,7 @@ std::cout<<"\tGpu sky: dens_tex "<<timer.UpdateTime()<<std::endl;
 		constants.hazeEccentricity	=1.0;
 		constants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
 	
-		glBindBuffer(GL_UNIFORM_BUFFER, gpuSkyConstantsUBO);
-ERROR_CHECK
-		glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(GpuSkyConstants), &constants);
-ERROR_CHECK
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-ERROR_CHECK
-		glBindBufferBase(GL_UNIFORM_BUFFER,gpuSkyConstantsBindingIndex,gpuSkyConstantsUBO);
-ERROR_CHECK
+		UPDATE_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
 	}
 
 	setParameter(loss_program,"input_loss_texture",0);
