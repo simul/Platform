@@ -65,12 +65,18 @@ PosTexVert_t *lightning_vertices=NULL;
 class ExampleHumidityCallback:public simul::clouds::HumidityCallbackInterface
 {
 public:
+	ExampleHumidityCallback()
+		:base_layer(0.28f)
+		,transition(0.2f)
+		,mul(0.86f)
+		,default_(1.f)
+	{}
+	float base_layer;
+	float transition;
+	float mul;
+	float default_;
 	virtual float GetHumidityMultiplier(float ,float ,float z) const
 	{
-		static float base_layer=0.28f;
-		static float transition=0.2f;
-		static float mul=0.86f;
-		static float default_=1.f;
 		if(z>base_layer)
 		{
 			if(z>base_layer+transition)

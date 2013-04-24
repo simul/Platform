@@ -13,6 +13,7 @@ uniform_buffer GpuCloudConstants R2
 	uniform float zSize;
 	uniform float baseLayer;
 	uniform float transition;
+	uniform float upperDensity;
 };
 
 #ifndef __cplusplus
@@ -30,10 +31,9 @@ vec3 assemble3dTexcoord(vec2 texcoord2)
 
 float GetHumidityMultiplier(float z)
 {
-	const float mul=0.7;
 	const float default_=1.0;
 	float i=saturate((z-baseLayer)/transition);
-	return default_*(1.0-i)+mul*i;
+	return default_*(1.0-i)+upperDensity*i;
 }
 
 float NoiseFunction(vec3 pos,int octaves,float persistence,float time)

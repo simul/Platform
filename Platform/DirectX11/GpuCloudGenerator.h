@@ -37,6 +37,7 @@ namespace simul
 									,float humidity
 									,float baseLayer
 									,float transition
+									,float upperDensity
 									,float time
 									,int noise_size,int octaves,float persistence
 									,const float  *noise_src_ptr);

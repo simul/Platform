@@ -120,6 +120,7 @@ void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
 											,float humidity
 											,float baseLayer
 											,float transition
+											,float upperDensity
 											,float time
 											,int noise_size,int octaves,float persistence
 											,const float *noise_src_ptr)
@@ -169,6 +170,7 @@ timer.StartTime();
 	setParameter(density_program,"noiseScale"			,noise_scale.x,noise_scale.y,noise_scale.z);
 	setParameter(density_program,"baseLayer"			,baseLayer);
 	setParameter(density_program,"transition"			,transition);
+	setParameter(density_program,"upperDensity"			,upperDensity);
 
 	GpuCloudConstants constants;
 	constants.octaves		=octaves;

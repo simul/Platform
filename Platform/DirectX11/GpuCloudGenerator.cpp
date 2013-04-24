@@ -117,6 +117,7 @@ void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
 									,float humidity
 									,float baseLayer
 									,float transition
+									,float upperDensity
 									,float time
 									,int noise_size,int octaves,float persistence
 									,const float  *noise_src_ptr)
@@ -158,6 +159,7 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	setParameter(effect,"zSize"					,(float)density_grid[2]);
 	setParameter(effect,"baseLayer"				,baseLayer);
 	setParameter(effect,"transition"			,transition);
+	setParameter(effect,"upperDensity"			,upperDensity);
 
 	setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 	GpuCloudConstants gpuCloudConstants;

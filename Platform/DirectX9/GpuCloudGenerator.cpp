@@ -182,6 +182,7 @@ void* GpuCloudGenerator::FillDensityGrid(const int *density_grid
 						,float hum
 									,float baseLayer
 									,float transition
+									,float upperDensity
 						,float time_val
 						,int noise_size,int oct,float pers
 						,const float *noise_src_ptr)
