@@ -37,6 +37,17 @@
 			for(int i=0;i<16;i++)
 				m[i]=v[i];
 		}
+		void transpose()
+		{
+			for(int i=0;i<4;i++)
+				for(int j=0;j<4;j++)
+					if(i<j)
+					{
+						float temp=m[i*4+j];
+						m[i*4+j]=m[j*4+i];
+						m[j*4+i]=temp;
+					}
+		}
 	};
 	typedef float FLOAT;
 	struct float2

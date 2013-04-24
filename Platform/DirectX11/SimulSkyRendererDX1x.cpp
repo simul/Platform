@@ -610,7 +610,8 @@ void SimulSkyRendererDX1x::RenderSun(float exposure_hint)
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
 	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
-	float maxout_brightness=2.f/exposure_hint;
+	static float maxout=20.f;
+	float maxout_brightness=maxout/exposure_hint;
 	if(maxout_brightness>1e6f)
 		maxout_brightness=1e6f;
 	if(maxout_brightness<1e-6f)

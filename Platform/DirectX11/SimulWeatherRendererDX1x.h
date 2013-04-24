@@ -84,7 +84,7 @@ protected:
 	ID3D1xEffectTechnique*				TonemapTechnique;
 	ID3D1xEffectTechnique*				SkyOverStarsTechnique;
 	ID3D1xEffectMatrixVariable*			worldViewProj;
-	ID3D1xEffectShaderResourceVariable*	hdrTexture;
+	ID3D1xEffectShaderResourceVariable*	imageTexture;
 
 	bool CreateBuffers();
 	bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);

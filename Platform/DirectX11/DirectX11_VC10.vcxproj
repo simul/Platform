@@ -238,8 +238,8 @@
   <ItemGroup>
     <None Include="HLSL\atmospherics.fx" />
     <None Include="HLSL\gamma.fx" />
+    <None Include="HLSL\simul_clouds.fx" />
     <None Include="HLSL\simul_clouds_2d.fx" />
-    <None Include="HLSL\simul_clouds_and_lightning_dx11.fx" />
     <None Include="HLSL\simul_debug.fx" />
     <None Include="HLSL\simul_earthshadow.hlsl" />
     <None Include="HLSL\simul_foliage.fx" />

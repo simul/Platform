@@ -78,12 +78,10 @@ void FramebufferDX1x::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D1xDevice*)dev;
-#ifdef DX10
-	m_pImmediateContext=dev;
-#else
 	SAFE_RELEASE(m_pImmediateContext);
+	if(!m_pd3dDevice)
+		return;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-#endif
 	RecompileShaders();
 	CreateBuffers();
 }
@@ -96,9 +94,8 @@ void FramebufferDX1x::RecompileShaders()
 void FramebufferDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-#ifndef DX10
 	SAFE_RELEASE(m_pImmediateContext);
-#endif
+
 	SAFE_RELEASE(m_pBufferVertexDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
 	
@@ -233,7 +230,7 @@ bool FramebufferDX1x::CreateBuffers()
 	D3D1x_PASS_DESC PassDesc;
 
 	ID3D1xEffect * effect=NULL;
-	CreateEffect(m_pd3dDevice,&effect,_T("gamma.fx"));
+	CreateEffect(m_pd3dDevice,&effect,_T("simul_hdr.fx"));
 	ID3D1xEffectTechnique*	tech=effect->GetTechniqueByName("simul_direct");
 	assert(tech->IsValid());
 	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
@@ -359,6 +356,8 @@ void FramebufferDX1x::Activate()
 {
 	if(!m_pImmediateContext)
 		RestoreDeviceObjects(m_pd3dDevice);
+	if(!m_pImmediateContext)
+		return;
 	HRESULT hr=S_OK;
 	unsigned int num_v=0;
 	m_pImmediateContext->RSGetViewports(&num_v,NULL);

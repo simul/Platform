@@ -40,7 +40,7 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 	m_pImmediateContext(NULL),
 	m_pTonemapEffect(NULL)
 	,TonemapTechnique(NULL)
-	,hdrTexture(NULL)
+	,imageTexture(NULL)
 	,worldViewProj(NULL)
 	,simulSkyRenderer(NULL),
 	simulCloudRenderer(NULL),
@@ -139,10 +139,10 @@ void SimulWeatherRendererDX1x::RecompileShaders()
 	BaseWeatherRenderer::RecompileShaders();
 	framebuffer.RecompileShaders();
 	SAFE_RELEASE(m_pTonemapEffect);
-	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("gamma.fx"));
+	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("simul_hdr.fx"));
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
 	SkyOverStarsTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_over_stars");
-	hdrTexture				=m_pTonemapEffect->GetVariableByName("hdrTexture")->AsShaderResource();
+	imageTexture				=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 }
 
@@ -278,7 +278,7 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 	{
 		bool blend=!is_cubemap;
 		HRESULT hr=S_OK;
-		hr=hdrTexture->SetResource(framebuffer.buffer_texture_SRV);
+		hr=imageTexture->SetResource(framebuffer.buffer_texture_SRV);
 		ID3D1xEffectTechnique *tech=blend?SkyOverStarsTechnique:TonemapTechnique;
 		ApplyPass(tech->GetPassByIndex(0));
 		
@@ -288,7 +288,7 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 		worldViewProj->SetMatrix(ortho);
 		
 		framebuffer.DrawQuad();
-		hdrTexture->SetResource(NULL);
+		imageTexture->SetResource(NULL);
 	}
 	return (hr==S_OK);
 }

@@ -415,6 +415,10 @@
 				RelativePath=".\SimulWeatherRendererDX1x.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\Utilities.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -521,6 +525,10 @@
 				RelativePath=".\SimulWeatherRendererDX1x.h"
 				>
 			</File>
+			<File
+				RelativePath=".\Utilities.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="HLSL"
@@ -535,6 +543,10 @@
 			</File>
 			<File
 				RelativePath=".\HLSL\gamma.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_clouds.fx"
 				>
 			</File>
 			<File
@@ -558,6 +570,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HLSL\simul_gaussian.fx"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\simul_gpu_clouds.fx"
 				>
 			</File>
@@ -567,6 +583,10 @@
 			</File>
 			<File
 				RelativePath=".\HLSL\simul_gpu_sky.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_hdr.fx"
 				>
 			</File>
 			<File

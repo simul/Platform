@@ -263,23 +263,21 @@ void SimulCloudRendererDX1x::CreateMeshBuffers()
 	unsigned short *indices=new unsigned short[num_indices];
     D3D11_SUBRESOURCE_DATA InitData;
     ZeroMemory(&InitData,sizeof(D3D11_SUBRESOURCE_DATA));
-	// Temporary: should not need this after 1.5.1-
-	if(helper)
+
+	CloudVertex_t *dest=vertices;
+	for(int i=0;i<num_vertices;i++,dest++)
 	{
-		CloudVertex_t *dest=vertices;
-		for(int i=0;i<num_vertices;i++,dest++)
-		{
-			float angle=2.f*pi*(float)i/(float)num_vertices;
-			dest->position.x = sin(angle);	//helper->GetVertices()[i].x;
-			dest->position.y = cos(angle);	//helper->GetVertices()[i].y;
-			dest->position.z = 0.f;			//helper->GetVertices()[i].z;
-		}
-		for(int i=0;i<num_indices;i++)
-		{
-		//	unsigned short s=helper->GetQuadStripIndices()[i];
-			indices[i]=i%num_vertices;
-		}
+		float angle=2.f*pi*(float)i/(float)num_vertices;
+		dest->position.x = sin(angle);	//helper->GetVertices()[i].x;
+		dest->position.y = cos(angle);	//helper->GetVertices()[i].y;
+		dest->position.z = 0.f;			//helper->GetVertices()[i].z;
 	}
+	for(int i=0;i<num_indices;i++)
+	{
+	//	unsigned short s=helper->GetQuadStripIndices()[i];
+		indices[i]=i%num_vertices;
+	}
+	
     InitData.pSysMem = vertices;
     InitData.SysMemPitch = sizeof(CloudVertex_t);
 	HRESULT hr=m_pd3dDevice->CreateBuffer(&vertexBufferDesc,&InitData,&vertexBuffer);
@@ -297,12 +295,12 @@ void SimulCloudRendererDX1x::CreateMeshBuffers()
 	D3D11_BUFFER_DESC instanceBufferDesc;
 	D3D11_SUBRESOURCE_DATA instanceData;
 		// Set up the description of the instance buffer.
-	instanceBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	instanceBufferDesc.ByteWidth = sizeof(InstanceType) * 200;
-	instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	instanceBufferDesc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
-	instanceBufferDesc.MiscFlags			= 0;
-	instanceBufferDesc.StructureByteStride	= 0;
+	instanceBufferDesc.Usage				=D3D11_USAGE_DYNAMIC;
+	instanceBufferDesc.ByteWidth			=sizeof(InstanceType)*200;
+	instanceBufferDesc.BindFlags			=D3D11_BIND_VERTEX_BUFFER;
+	instanceBufferDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
+	instanceBufferDesc.MiscFlags			=0;
+	instanceBufferDesc.StructureByteStride	=0;
 	// Give the subresource structure a pointer to the instance data.
 	instanceData.pSysMem = instances;
 	instanceData.SysMemPitch = 0;
@@ -671,8 +669,8 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 		std::swap(wind_offset.y,wind_offset.z);
 	X+=wind_offset;
 
-	worldViewProj->SetMatrix(&wvp._11);
-	wrld->SetMatrixTranspose(&world._11);
+	//worldViewProj->SetMatrix(&wvp._11);
+	//wrld->SetMatrixTranspose(&world._11);
 
 	simul::math::Vector3 view_dir	(view._13,view._23,view._33);
 	if(!y_vertical)
@@ -710,6 +708,11 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 	simul::sky::float4 sunlight1,sunlight2;
 	CloudConstants cloudConstants;
 	memset(&cloudConstants,0,sizeof(cloudConstants));
+	
+	cloudConstants.worldViewProj=wvp;
+	cloudConstants.worldViewProj.transpose();
+	cloudConstants.wrld=world;
+	cloudConstants.wrld.transpose();
 	if(skyInterface)
 	{
 		simul::sky::EarthShadow e=skyInterface->GetEarthShadow(base_alt_km,sun_dir);
@@ -812,9 +815,11 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 	//UPDATE_CONSTANT_BUFFERS(instanceBuffer,InstanceType,instances,numInstances)
 	{
 		D3D11_MAPPED_SUBRESOURCE mapped_res;
-		m_pImmediateContext->Map(instanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
-		for(int i=0;i<numInstances;i++)
-			((InstanceType*)(mapped_res.pData))[i]=instances[i];
+		m_pImmediateContext->Map(instanceBuffer,0,D3D11_MAP_WRITE_DISCARD,0, &mapped_res);
+		memset(mapped_res.pData,0,numInstances*sizeof(InstanceType));
+		memcpy(mapped_res.pData,instances,numInstances*sizeof(InstanceType));
+		//for(int i=0;i<numInstances;i++)
+		//	((InstanceType*)(mapped_res.pData))[i]=instances[i];
 		m_pImmediateContext->Unmap(instanceBuffer, 0);
 	}
 	// Update the instance buffer:
@@ -824,11 +829,11 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 	ID3D11Buffer *buffers[]={vertexBuffer,instanceBuffer};
 	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
-	m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
-												2,				// the number of buffers in the array
+	m_pImmediateContext->IASetVertexBuffers(	0,			// the first input slot for binding
+												2,			// the number of buffers in the array
 												buffers,	// the array of vertex buffers
-												strides,		// array of stride values, one for each buffer
-												offsets);		// array of offset values, one for each buffer
+												strides,	// array of stride values, one for each buffer
+												offsets);	// array of offset values, one for each buffer
 
 				
 	UINT Strides[1];
@@ -844,10 +849,10 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 	for(int i=0;i<(int)helper->GetSlices().size();i++)
 	{
 		InstanceType &inst=instances[i];
-		layerFade		->SetFloat(inst.layerFade);
-		layerDistance	->SetFloat(inst.layerDistance);
-		noiseScale		->SetFloat(inst.noiseScale);
-		noiseOffset		->SetFloatVector(inst.noiseOffset);
+		//layerFade		->SetFloat(inst.layerFade);
+		//layerDistance	->SetFloat(inst.layerDistance);
+		//noiseScale		->SetFloat(inst.noiseScale);
+		//noiseOffset		->SetFloatVector(inst.noiseOffset);
 		float distance_tex_coord=inst.layerDistance/max_fade_distance_metres;
 
 		static int cc=1;
@@ -874,8 +879,8 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 		ApplyPass(m_hTechniqueCloud->GetPassByIndex(0));
 	m_pImmediateContext->OMSetBlendState(NULL, blendFactor, sampleMask);
 	// This actually returns the PREVIOUS FRAME's time value:
-	render_time*=0.99;
-	render_time+=0.01*profileBlock.GetTime();//profileBlock.GetTime();
+	render_time*=0.99f;
+	render_time+=0.01f*profileBlock.GetTime();//profileBlock.GetTime();
 	return (hr==S_OK);
 }
 
@@ -918,7 +923,14 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 	ortho._22=-ortho._22;
 	ortho._24=1.f;
 	ID3DX11EffectMatrixVariable*	worldViewProj=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
-	worldViewProj->SetMatrix(ortho);
+	//worldViewProj->SetMatrix(ortho);
+
+	CloudConstants cloudConstants;
+	memset(&cloudConstants,0,sizeof(cloudConstants));
+	cloudConstants.worldViewProj=ortho;
+	cloudConstants.worldViewProj.transpose();
+	ID3D1xEffectConstantBuffer* cbCloudConstants=m_pCloudEffect->GetConstantBufferByName("CloudConstants");
+
 
 	if(skyInterface)
 	for(int i=0;i<2;i++)
@@ -929,21 +941,16 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 		if(!kf)
 			break;
 		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
-		lightResponse->SetFloatVector((const float*)(&light_response));
-
+		//lightResponse->SetFloatVector((const float*)(&light_response));
+		if(cbCloudConstants)
+		{
+			cloudConstants.lightResponse=light_response;
+			UPDATE_CONSTANT_BUFFER(cloudConstantsBuffer,CloudConstants,cloudConstants);
+			cbCloudConstants->SetConstantBuffer(cloudConstantsBuffer);
+		}
 		cloudDensity1->SetResource(cloudDensityResource[i%3]);
 		RenderTexture(m_pd3dDevice,i*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
-	}
-	if(skyInterface)
-	for(int i=0;i<2;i++)
-	{
-		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
-				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
-		if(!kf)
-			break;
-		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
-		lightResponse->SetFloatVector((const float*)(&light_response));
+
 		//m_pCloudEffect->SetVector(crossSectionOffset,&cross_section_offset);
 		//GetCloudInterface()->GetWrap()?0.5f:0.f);
 		cloudDensity1->SetResource(cloudDensityResource[i%3]);
