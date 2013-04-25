@@ -20,6 +20,7 @@ namespace simul
 				return Enabled;
 			}
 			int GetDensityGridsize(const int *grid);
+			void* Make3DNoiseTexture(int noise_size,const float *noise_src_ptr);
 			void *FillDensityGrid(const int *grid
 									,int start_texel
 									,int texels
@@ -28,8 +29,7 @@ namespace simul
 									,float transition
 									,float upperDensity
 									,float time
-									,int noise_size,int octaves,float persistence
-									,const float  *noise_src_ptr);
+									,void*  noise_tex,int octaves,float persistence);
 			virtual void PerformGPURelight(float *target
 									,const int *light_grid
 									,int start_texel

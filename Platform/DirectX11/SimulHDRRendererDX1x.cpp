@@ -146,7 +146,7 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	defs["NUM_IMAGE_COLS"]	=string_format("%d",W);
 	defs["NUM_IMAGE_ROWS"]	=string_format("%d",H);
 	
-	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,_T("simul_gaussian.fx"),defs);
+//	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,_T("simul_gaussian.fx"),defs);
 }
 
 void SimulHDRRendererDX1x::InvalidateDeviceObjects()
@@ -222,6 +222,8 @@ static float CalculateBoxFilterWidth(float radius, int pass)
 
 void SimulHDRRendererDX1x::RenderGlowTexture()
 {
+	if(!m_pGaussianEffect)
+		return;
 static int g_NumApproxPasses=3;
 static int	g_MaxApproxPasses = 8;
 static float g_FilterRadius = 30;
