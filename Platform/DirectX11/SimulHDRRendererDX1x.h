@@ -8,17 +8,13 @@
 #pragma once
 
 #include <d3dx9.h>
-#ifdef DX10
-	#include <d3d10.h>
-	#include <d3dx10.h>
-#else
-	#include <d3d11.h>
-	#include <d3dx11.h>
-	#include <d3dx11effect.h>
-#endif
+#include <d3d11.h>
+#include <d3dx11.h>
+#include <d3dx11effect.h>
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Base/Referenced.h"
 #include "Simul/Base/PropertyMacros.h"
 
@@ -44,6 +40,8 @@ public:
 	bool ApplyFade();
 	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
 	bool FinishRender();
+	//! Create the glow texture that will be overlaid due to strong lights.
+	void RenderGlowTexture();
 	//! Get the current debug text as a c-string pointer.
 	const char *GetDebugText() const;
 	//! Get a timing value for debugging.
@@ -52,10 +50,8 @@ public:
 	void RecompileShaders();
 protected:
 	bool Destroy();
-	int screen_width;
-	int screen_height;
-	FramebufferDX1x *framebuffer;
-	//! The size of the 2D buffer the sky is rendered to.
+	FramebufferDX1x framebuffer;
+	FramebufferDX1x glow_fb;
 	int Width,Height;
 	ID3D1xDevice*						m_pd3dDevice;
 	ID3D1xDeviceContext*				m_pImmediateContext;
@@ -64,10 +60,17 @@ protected:
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	ID3D1xEffect*						m_pTonemapEffect;
 	ID3D1xEffectTechnique*				TonemapTechnique;
+	ID3D1xEffectTechnique*				glowTechnique;
 	ID3D1xEffectScalarVariable*			Exposure_;
 	ID3D1xEffectScalarVariable*			Gamma_;
 	ID3D1xEffectMatrixVariable*			worldViewProj;
-	ID3D1xEffectShaderResourceVariable*	hdrTexture;
+	ID3D1xEffectShaderResourceVariable*	imageTexture;
+
+	ComputableTexture					glowTexture;
+
+	ID3D1xEffect*						m_pGaussianEffect;
+	ID3D1xEffectTechnique*				gaussianRowTechnique;
+	ID3D1xEffectTechnique*				gaussianColTechnique;
 
 	float timing;
 };

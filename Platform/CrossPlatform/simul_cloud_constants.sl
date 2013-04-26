@@ -3,6 +3,9 @@
 
 uniform_buffer CloudConstants R0
 {
+	uniform mat4 worldViewProj;
+	uniform mat4 wrld;
+
 	uniform mat4 noiseMatrix;
 	uniform vec3 inverseScales;
 	uniform float x2;

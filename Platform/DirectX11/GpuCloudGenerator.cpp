@@ -49,6 +49,8 @@ GpuCloudGenerator::GpuCloudGenerator()
 			,densityTechnique(NULL)
 			,lightingTechnique(NULL)
 			,transformTechnique(NULL)
+			,volume_noise_tex(NULL)
+			,volume_noise_tex_srv(NULL)
 			,density_texture(NULL)
 			,density_texture_srv(NULL)
 			,gpuCloudConstantsBuffer(NULL)
@@ -82,6 +84,8 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	fb[1].InvalidateDeviceObjects();
 	dens_fb.InvalidateDeviceObjects();
 	world_fb.InvalidateDeviceObjects();
+	SAFE_RELEASE(volume_noise_tex);
+	SAFE_RELEASE(volume_noise_tex_srv);
 	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(density_texture_srv);
@@ -110,6 +114,17 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 	//	size=4;
 	return grid[0]*grid[1]*grid[2]*size;
 }
+void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr)
+{
+	//using noise_size and noise_src_ptr, make a 3d texture:
+	SAFE_RELEASE(volume_noise_tex);
+	SAFE_RELEASE(volume_noise_tex_srv);
+	volume_noise_tex=make3DTexture(m_pd3dDevice,m_pImmediateContext,noise_size,noise_size,noise_size,DXGI_FORMAT_R32_FLOAT,noise_src_ptr);
+
+	m_pd3dDevice->CreateShaderResourceView(volume_noise_tex,NULL,&volume_noise_tex_srv);
+	m_pImmediateContext->GenerateMips(volume_noise_tex_srv);
+	return volume_noise_tex_srv;
+}
 
 void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
 									,int start_texel
@@ -117,10 +132,10 @@ void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
 									,float humidity
 									,float baseLayer
 									,float transition
+									,float upperDensity
 									,float time
-									,int noise_size,int octaves,float persistence
-									,const float  *noise_src_ptr)
-									//,float amount_complete)
+									,void* noise_tex,int octaves,float persistence)
+
 {
 try{
 simul::base::Timer timer;
@@ -139,11 +154,6 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	}*/
 	simul::math::Vector3 noise_scale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0]);
 	
-	//using noise_size and noise_src_ptr, make a 3d texture:
-	ID3D11Texture3D *volume_noise_tex=make3DTexture(m_pd3dDevice,m_pImmediateContext,noise_size,noise_size,noise_size,DXGI_FORMAT_R32_FLOAT,noise_src_ptr);
-	ID3D11ShaderResourceView* volume_noise_tex_srv;
-	m_pd3dDevice->CreateShaderResourceView(volume_noise_tex,NULL,&volume_noise_tex_srv);
-	m_pImmediateContext->GenerateMips(volume_noise_tex_srv);
 	
 	simul::math::Matrix4x4 vertexMatrix=MakeVertexMatrix(density_grid,start_texel,texels);
 
@@ -158,6 +168,7 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	setParameter(effect,"zSize"					,(float)density_grid[2]);
 	setParameter(effect,"baseLayer"				,baseLayer);
 	setParameter(effect,"transition"			,transition);
+	setParameter(effect,"upperDensity"			,upperDensity);
 
 	setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 	GpuCloudConstants gpuCloudConstants;
@@ -187,8 +198,6 @@ std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 		//density_texture	=make3DTexture(m_pd3dDevice,m_pImmediateContext,density_grid[0],density_grid[1],density_grid[2]	,DXGI_FORMAT_R32G32B32A32_FLOAT,density);
 		delete [] density;
 	}
-	SAFE_RELEASE(volume_noise_tex);
-	SAFE_RELEASE(volume_noise_tex_srv);
 std::cout<<"\tfill 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 
 	}
@@ -235,7 +244,7 @@ try{
 	{
 		F[0]->Activate();
 			input_light_texture->SetResource(F[1]->GetBufferResource());
-			F[0]->Clear(1.f,1.f,1.f,0.f);
+			F[0]->Clear(1.f,1.f,1.f,1.f);
 		F[0]->Deactivate();
 		F[0]->CopyToMemory(target);
 	}

@@ -428,7 +428,7 @@ ERROR_CHECK
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
 	simul::math::Matrix4x4 worldViewProj;
 	simul::math::Multiply4x4(worldViewProj,modelview,proj);
-	setMatrixTranspose(program,"worldViewProj",worldViewProj.RowPointer(0));
+	//setMatrixTranspose(program,"worldViewProj",worldViewProj.RowPointer(0));
 
 	float left	=proj(0,0)+proj(0,3);
 	float right	=proj(0,0)-proj(0,3);
@@ -438,6 +438,8 @@ ERROR_CHECK
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),god_rays,X1.z,god_rays);
 
+	cloudConstants.worldViewProj		=worldViewProj;
+	cloudConstants.worldViewProj.transpose();
 	cloudConstants.fractalScale			=fractal_scales;
 	cloudConstants.lightResponse		=light_response;
 	cloudConstants.cloud_interp			=cloudKeyframer->GetInterpolation();

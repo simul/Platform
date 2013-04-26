@@ -88,7 +88,7 @@ public:
 
 	void	SetYVertical(bool y);
 	void	RecompileShaders();
-	simul::dx9::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
+	simul::clouds::BaseGpuCloudGenerator *GetGpuCloudGenerator(){return NULL;}
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return NULL;}
 protected:
 	HRESULT RestoreDeviceObjects(IDirect3DDevice9* pDevice);
@@ -105,7 +105,6 @@ protected:
 	const char *GetDebugText() const;
 	int width,height;
 	float time_mult;
-	simul::dx9::GpuCloudGenerator gpuCloudGenerator;
 };
 
 #pragma warning(pop)

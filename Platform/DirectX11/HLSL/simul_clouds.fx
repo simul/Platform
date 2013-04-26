@@ -8,12 +8,6 @@
 	#define DETAIL_NOISE 1
 #endif
 
-cbuffer cbPerObject : register( b1 )
-{
-	matrix		worldViewProj		: packoffset( c0 );
-	matrix		wrld				: packoffset( c4 );
-};
-
 Texture3D cloudDensity1;
 Texture3D cloudDensity2;
 SamplerState cloudSamplerState
@@ -84,7 +78,7 @@ struct geomOutput
     float4 hPosition			: SV_POSITION;
     float2 noise_texc			: TEXCOORD0;
     float4 texCoords			: TEXCOORD1;
-	float3 wPosition			: TEXCOORD2;
+	float3 view					: TEXCOORD2;
     float3 texCoordLightning	: TEXCOORD3;
     float2 fade_texc			: TEXCOORD4;
 	float layerFade				: TEXCOORD5;
@@ -113,7 +107,7 @@ void GS_Main(line vertexOutput input[2], inout TriangleStream<geomOutput> Output
 	if(input[0].texCoords.z<0.0&&input[1].texCoords.z<0.0&&input[2].texCoords.z<0.0)
 		return;*/
 	// work out the start and end angles.
-	float dh1=cornerPos.z-wrld._34;
+	float dh1=cornerPos.z-wrld._43;
 	float dh2=dh1+1.0/inverseScales.z;
 	float a1=atan(dh1/input[0].layerDistance)*2.0/pi;
 	float a2=atan(dh2/input[0].layerDistance)*2.0/pi;
@@ -131,40 +125,30 @@ void GS_Main(line vertexOutput input[2], inout TriangleStream<geomOutput> Output
 		for(int j = 0; j < 2; j++)
 		{
 			vertexOutput IN=input[j];
-			pos[j]=cosine*IN.position;
-			pos[j].z=sine;
-			t1[j]=pos[j].xyz*IN.layerDistance;
-			hpos[j]=mul(worldViewProj,float4(t1[j].xyz,1.0));
-		}
-	/*	if(hpos[0].x/hpos[0].w<-1.0&&hpos[1].x/hpos[0].w<-1.0)
-			continue;
-		if(hpos[0].x/hpos[0].w>1.0&&hpos[1].x/hpos[0].w>1.0)
-			continue;
-		if(hpos[0].y/hpos[0].w<-1.0&&hpos[1].y/hpos[0].w<-1.0)
-			continue;
-		if(hpos[0].y/hpos[0].w>1.0&&hpos[1].y/hpos[0].w>1.0)
-			continue;*/
-		for(int j = 0; j < 2; j++)
-		{
-			vertexOutput IN=input[j];
+			float3 pos=cosine*IN.position;
+			pos.z=sine;
+			float3 t1=pos.xyz*IN.layerDistance;
+			float4 hpos=mul(worldViewProj,float4(t1.xyz,1.0));
+
 			geomOutput OUT;
-			OUT.hPosition=hpos[j];
-			float3 noise_pos=mul(noiseMatrix,float4(pos[j].xyz,1.0f)).xyz;
-			OUT.noise_texc=float2(atan2(noise_pos.x,noise_pos.z),atan2(noise_pos.y,noise_pos.z));
-			OUT.noise_texc*=IN.noiseScale;
-			OUT.noise_texc+=IN.noiseOffset;
+			OUT.hPosition			=hpos;
+			float3 noise_pos		=mul(noiseMatrix,float4(pos.xyz,1.0f)).xyz;
+			OUT.noise_texc			=float2(atan2(noise_pos.x,noise_pos.z),atan2(noise_pos.y,noise_pos.z));
+			OUT.noise_texc			*=IN.noiseScale;
+			OUT.noise_texc			+=IN.noiseOffset;
 			
-			OUT.wPosition=mul(wrld,float4(t1[j],1.0f)).xyz;
-			OUT.texCoords.xyz=OUT.wPosition-cornerPos;
-			OUT.texCoords.xyz*=inverseScales;
-			OUT.texCoords.w=0.5f+0.5f*saturate(OUT.texCoords.z);
-			float3 texCoordLightning=(pos[j].xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
-			OUT.texCoordLightning=texCoordLightning;
-			float3 view=normalize(pos[j].xyz);
-			float sine=view.z;
-			float depth=IN.layerDistance/maxFadeDistanceMetres;
-			OUT.fade_texc=float2(sqrt(depth),0.5f*(1.f-sine));
-			OUT.layerFade=IN.layerFade;
+			OUT.view				=pos.xyz;
+			float3 wPos				=mul(float4(t1,1.0f),wrld).xyz;
+			OUT.texCoords.xyz		=wPos-cornerPos;
+			OUT.texCoords.xyz		*=inverseScales;
+			OUT.texCoords.w			=0.5f+0.5f*saturate(OUT.texCoords.z);
+			float3 texCoordLightning=(pos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
+			OUT.texCoordLightning	=texCoordLightning;
+			float3 view				=normalize(pos.xyz);
+			
+			float depth				=IN.layerDistance/maxFadeDistanceMetres;
+			OUT.fade_texc			=float2(sqrt(depth),0.5f*(1.f-sine));
+			OUT.layerFade			=IN.layerFade;
     		OutputStream.Append(OUT);
 		}
 	}
@@ -207,9 +191,9 @@ float4 PS_Clouds( geomOutput IN): SV_TARGET
 	if(density.z<=0)
 		discard;
    // return float4(1.0,1.0,1.0,density.z);
-	float3 view=normalize(IN.wPosition);
+	float3 view=normalize(IN.view);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.y,cos0);
+	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	
 	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
 	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
@@ -228,7 +212,7 @@ float4 PS_Clouds( geomOutput IN): SV_TARGET
 
 float4 PS_WithLightning(geomOutput IN): SV_TARGET
 {
-	float3 view=normalize(IN.wPosition);
+	float3 view=normalize(IN.view);
 	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
 	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
@@ -282,7 +266,7 @@ float4 PS_CloudsLowDef( geomOutput IN): SV_TARGET
 	if(density.z<=0)
 		discard;
 
-	float3 view=normalize(IN.wPosition);
+	float3 view=normalize(IN.view);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	

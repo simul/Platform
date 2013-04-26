@@ -116,9 +116,6 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 	float weather_restore_time=0.f,hdr_restore_time=0.f,terrain_restore_time=0.f,optics_restore_time=0.f;
 	simul::base::Timer timer;
 
-	
-	gpuCloudGenerator.RestoreDeviceObjects(pd3dDevice);
-
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->SetScreenSize(width,height);
@@ -342,7 +339,6 @@ LRESULT Direct3D9Renderer::MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 void Direct3D9Renderer::OnLostDevice()
 {
-	gpuCloudGenerator.InvalidateDeviceObjects();
 	RT::InvalidateDeviceObjects();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
@@ -379,7 +375,6 @@ const char *Direct3D9Renderer::GetDebugText() const
 
 void Direct3D9Renderer::RecompileShaders()
 {
-	gpuCloudGenerator.RecompileShaders();
 	if(simulWeatherRenderer.get())
 		simulWeatherRenderer->RecompileShaders();
 	if(simulOpticsRenderer.get())

@@ -131,7 +131,7 @@ namespace simul
 		{
 			//set up matrices
 			D3DXMATRIX tmp1, tmp2;
-			D3DXMatrixInverse(&tmp1,NULL,&view);
+			//D3DXMatrixInverse(&tmp1,NULL,&view);
 			D3DXMatrixMultiply(&tmp1, &world,&view);
 			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 			D3DXMatrixTranspose(wvp,&tmp2);
@@ -423,10 +423,23 @@ void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,ID3D11Shad
 	var->SetResource(value);
 }
 
+void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,ID3D11UnorderedAccessView * value)
+{
+	ID3DX11EffectUnorderedAccessViewVariable*	var	=effect->GetVariableByName(name)->AsUnorderedAccessView();
+	var->SetUnorderedAccessView(value);
+}
+
 void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,float value)
 {
 	ID3D1xEffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
 	var->SetFloat(value);
+}
+
+void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,float x,float y)
+{
+	ID3D1xEffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
+	float V[]={x,y,0.f,0.f};
+	var->SetFloatVector(V);
 }
 
 void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,int value)

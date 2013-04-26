@@ -12,16 +12,9 @@
 
 #include <tchar.h>
 #include <d3dx9.h>
-#ifdef DX10
-#include <d3d10.h>
-#include <d3dx10.h>
-#include <d3d10effect.h>
-#else
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <D3dx11effect.h>
-#endif
-
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/CloudRenderCallback.h"
@@ -130,7 +123,8 @@ protected:
 		float layerFade;
 		float layerDistance;
 	};
-	InstanceType instances[400];
+	static const int MAX_INSTANCES=400;
+	InstanceType instances[MAX_INSTANCES];
 	ID3D1xDevice*					m_pd3dDevice;
 	ID3D1xDeviceContext*			m_pImmediateContext;
 	ID3D1xBuffer *					vertexBuffer;
@@ -188,8 +182,7 @@ ID3D1xEffectVectorVariable* 	noiseOffset		;
 
 	ID3D1xEffectShaderResourceVariable*		lightningIlluminationTexture;
 	ID3D1xEffectShaderResourceVariable*		skyLossTexture;
-	ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;
-	ID3D1xEffectShaderResourceVariable*		skylightTexture;
+	ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;	ID3D1xEffectShaderResourceVariable*		skylightTexture;
 
 	ID3D1xShaderResourceView*				cloudDensityResource[3];
 	ID3D1xShaderResourceView*				noiseTextureResource;
@@ -198,10 +191,10 @@ ID3D1xEffectVectorVariable* 	noiseOffset		;
 	ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
 	ID3D1xShaderResourceView*				skylightTexture_SRV;
 
-	ID3D1xTexture3D*			cloud_textures[3];
-	ID3D1xTexture3D*			illumination_texture;
+	ID3D1xTexture3D*						cloud_textures[3];
+	ID3D1xTexture3D*						illumination_texture;
 	
-	D3D1x_MAPPED_TEXTURE3D mapped_illumination;
+	D3D1x_MAPPED_TEXTURE3D					mapped_illumination;
 
 	ID3D1xTexture2D*	noise_texture;
 	ID3D1xTexture1D*	lightning_texture;

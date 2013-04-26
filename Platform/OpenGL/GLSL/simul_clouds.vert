@@ -2,7 +2,6 @@
 #include "../Glsl.h"
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 
-uniform mat4 worldViewProj;
 uniform vec3 eyePosition;
 uniform float layerDistance;
 in vec4 vertex;

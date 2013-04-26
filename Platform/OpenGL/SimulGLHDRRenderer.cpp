@@ -101,6 +101,24 @@ bool SimulGLHDRRenderer::StartRender()
 bool SimulGLHDRRenderer::FinishRender()
 {
 	framebuffer->Deactivate();
+	RenderGlowTexture();
+
+	glUseProgram(tonemap_program);
+	setTexture(tonemap_program,"image_texture",0,(GLuint)framebuffer->GetColorTex());
+	ERROR_CHECK
+	glUniform1f(exposure_param,Exposure);
+	glUniform1f(gamma_param,Gamma);
+	glUniform1i(buffer_tex_param,0);
+	setTexture(tonemap_program,"glowTexture",1,(GLuint)glow_fb.GetColorTex());
+
+	framebuffer->Render(false);
+	ERROR_CHECK
+	glUseProgram(0);
+	return true;
+}
+
+void SimulGLHDRRenderer::RenderGlowTexture()
+{
 	int main_viewport[4];
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	// Render to the low-res glow.
@@ -140,17 +158,4 @@ bool SimulGLHDRRenderer::FinishRender()
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
 	glow_fb.Deactivate();
-
-	glUseProgram(tonemap_program);
-	setTexture(tonemap_program,"image_texture",0,(GLuint)framebuffer->GetColorTex());
-	ERROR_CHECK
-	glUniform1f(exposure_param,Exposure);
-	glUniform1f(gamma_param,Gamma);
-	glUniform1i(buffer_tex_param,0);
-	setTexture(tonemap_program,"glowTexture",1,(GLuint)glow_fb.GetColorTex());
-
-	framebuffer->Render(false);
-	ERROR_CHECK
-	glUseProgram(0);
-	return true;
 }

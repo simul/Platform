@@ -25,6 +25,7 @@ public:
 	void InvalidateDeviceObjects();
 	bool StartRender();
 	bool FinishRender();
+	void RenderGlowTexture();
 protected:
 	FramebufferGL *framebuffer;
 	FramebufferGL glow_fb;

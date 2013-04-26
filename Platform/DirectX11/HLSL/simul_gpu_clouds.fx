@@ -67,7 +67,7 @@ float4 PS_Density(vertexOutput IN) : SV_TARGET
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
     return vec4(dens,0,0,1.0);
 }
-
+static const float glow=0.01;
 float4 PS_Lighting(vertexOutput IN) : SV_TARGET
 {
 	vec2 texcoord				=IN.texc.xy;//+texCoordOffset;
@@ -77,6 +77,7 @@ float4 PS_Lighting(vertexOutput IN) : SV_TARGET
 	float density				=texture3D2(density_texture,densityspace_texcoord).x;
 	float direct_light			=previous_light.x*exp(-extinctions.x*density);
 	float indirect_light		=previous_light.y*exp(-extinctions.y*density);
+	indirect_light				+=(direct_light+indirect_light)*glow*density;//
     return						vec4(direct_light,indirect_light,0,0);
 }
 

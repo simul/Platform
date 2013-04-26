@@ -113,6 +113,11 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 	return grid[0]*grid[1]*grid[2];
 }
 
+void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr)
+{
+	return (void*)make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
+}
+
 // Fill the stated number of texels of the density texture
 void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
 											,int start_texel
@@ -120,9 +125,9 @@ void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
 											,float humidity
 											,float baseLayer
 											,float transition
+											,float upperDensity
 											,float time
-											,int noise_size,int octaves,float persistence
-											,const float *noise_src_ptr)
+											,void* noise_tex,int octaves,float persistence)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -151,7 +156,7 @@ timer.StartTime();
 	simul::math::Vector3 noise_scale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0]);
 
 	//using noise_size and noise_src_ptr, make a 3d texture:
-	GLuint volume_noise_tex=make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
+	GLuint volume_noise_tex=(GLuint)noise_tex;
 	
 	glEnable(GL_TEXTURE_3D);
 	glActiveTexture(GL_TEXTURE0);
@@ -169,6 +174,7 @@ timer.StartTime();
 	setParameter(density_program,"noiseScale"			,noise_scale.x,noise_scale.y,noise_scale.z);
 	setParameter(density_program,"baseLayer"			,baseLayer);
 	setParameter(density_program,"transition"			,transition);
+	setParameter(density_program,"upperDensity"			,upperDensity);
 
 	GpuCloudConstants constants;
 	constants.octaves		=octaves;
@@ -333,7 +339,7 @@ timer.StartTime();
 	if(z0==0)
 	{
 		F[0]->Activate();
-			F[0]->Clear(1.f,1.f,1.f,0.f);
+			F[0]->Clear(1.f,0.f,0.f,0.f);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			glReadPixels(0,0,light_grid[0],light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 		F[0]->Deactivate();
