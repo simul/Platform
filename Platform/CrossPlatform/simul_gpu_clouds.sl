@@ -34,7 +34,7 @@ float GetHumidityMultiplier(float z)
 	const float default_=1.0;
 	float i=saturate((z-baseLayer)/transition);
 	float res1=default_*(1.0-i)+upperDensity*i;
-	float res2=res1*saturate((1.0-z)/transition);
+	float res2=res1*lerp(0.75,1.0,saturate((1.0-z)/transition));
 	return res2;
 }
 

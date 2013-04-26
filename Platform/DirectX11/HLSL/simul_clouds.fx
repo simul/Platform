@@ -193,7 +193,7 @@ float4 PS_Clouds( geomOutput IN): SV_TARGET
    // return float4(1.0,1.0,1.0,density.z);
 	float3 view=normalize(IN.view);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
+	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.y,cos0);
 	
 	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
 	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
