@@ -99,7 +99,6 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* x)
 	ScreenWidth=desc.Width;
 	ScreenHeight=desc.Height;
 	framebuffer.SetWidthAndHeight(BufferWidth,BufferHeight);
-	framebuffer.SetTargetWidthAndHeight(ScreenWidth,ScreenHeight);
 	framebuffer.RestoreDeviceObjects(m_pd3dDevice);
 
 	if(simulCloudRenderer)

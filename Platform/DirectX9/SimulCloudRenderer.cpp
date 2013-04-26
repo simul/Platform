@@ -1040,8 +1040,6 @@ void SimulCloudRenderer::InternalRenderVolumetric(int buffer_index)
 	unsigned grid_x,el_grid;
 	helper->GetGrid(el_grid,grid_x);
 	simul::sky::float4 view_km=(const float*)cam_pos;
-	static std::vector<simul::sky::float4> light_colours;
-	light_colours.resize(el_grid+1);
 	view_km*=0.001f;
 	typedef std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator iter;
 	static float cutoff=100000.f;	// Get the sunlight at this altitude:
@@ -1067,7 +1065,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int buffer_index)
 			float j_interp=(float)j/(float)el_grid;
 			float sine=(2.f*j_interp-1.f);
 			float alt_km=min(max(0.f,view_km.z+sine*0.001f*distance),0.001f*(GetCloudInterface()->GetCloudBaseZ()+GetCloudInterface()->GetCloudHeight()));
-			light_colours[j]=skyInterface->GetLocalIrradiance(alt_km);
+
 		}
 		for(std::vector<const simul::clouds::CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
 			j!=(*i)->quad_strips.end();j++)

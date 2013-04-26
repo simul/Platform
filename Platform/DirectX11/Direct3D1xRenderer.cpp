@@ -197,6 +197,11 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				simulOpticsRenderer->RenderFlare(exp,dir,light);
 			}
 		}
+	}
+	if(simulHDRRenderer&&UseHdrPostprocessor)
+		simulHDRRenderer->FinishRender();
+	if(simulWeatherRenderer)
+	{
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(ScreenWidth,ScreenHeight);
 		if(ShowCloudCrossSections)
@@ -216,8 +221,6 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(ScreenWidth,ScreenHeight);
 		}
 	}
-	if(simulHDRRenderer&&UseHdrPostprocessor)
-		simulHDRRenderer->FinishRender();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(ScreenWidth,ScreenHeight);
 	

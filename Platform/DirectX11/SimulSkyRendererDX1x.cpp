@@ -704,7 +704,6 @@ bool SimulSkyRendererDX1x::Render2DFades()
 		V_CHECK(fadeTexture1->SetResource(loss_textures_SRV[0]));
 		V_CHECK(fadeTexture2->SetResource(loss_textures_SRV[1]));
 		V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		loss_2d->SetTargetWidthAndHeight(numFadeDistances,numFadeElevations);
 		loss_2d->Activate();
 		
 		m_pImmediateContext->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
@@ -718,7 +717,6 @@ bool SimulSkyRendererDX1x::Render2DFades()
 		V_CHECK(fadeTexture2->SetResource(insc_textures_SRV[1]));
 		V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		
-		inscatter_2d->SetTargetWidthAndHeight(numFadeDistances,numFadeElevations);
 		inscatter_2d->Activate();
 			
 		m_pImmediateContext->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
@@ -733,7 +731,6 @@ bool SimulSkyRendererDX1x::Render2DFades()
 		V_CHECK(fadeTexture2->SetResource(skyl_textures_SRV[1]));
 		V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		
-		skylight_2d->SetTargetWidthAndHeight(numFadeDistances,numFadeElevations);
 		skylight_2d->Activate();
 			
 		m_pImmediateContext->ClearRenderTargetView(skylight_2d->m_pHDRRenderTarget,clearColor);
@@ -950,12 +947,10 @@ bool SimulSkyRendererDX1x::RenderFades(int width,int h)
 	D3DXMatrixTranslation(&trans,-1.f,1.f,0);
 	D3DXMatrixTranspose(&trans,&trans);
 	D3DXMatrixMultiply(&ident,&trans,&ident);
-	ID3D1xEffectMatrixVariable*	worldViewProj=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	ID3D1xEffectMatrixVariable*	worldViewProj		=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	worldViewProj->SetMatrix(ident);
-
-	ID3D1xEffectTechnique*	techniqueShowSky	=m_pSkyEffect->GetTechniqueByName("simul_show_sky_texture");
-
-	ID3D1xEffectTechnique*	techniqueShowFade	=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");
+	ID3D1xEffectTechnique*	techniqueShowSky		=m_pSkyEffect->GetTechniqueByName("simul_show_sky_texture");
+	ID3D1xEffectTechnique*	techniqueShowFade		=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");
 	ID3D1xEffectShaderResourceVariable*	inscTexture	=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
 
 	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);

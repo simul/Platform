@@ -77,7 +77,6 @@ void SimulHDRRendererDX1x::RestoreDeviceObjects(void *x)
 	pBackBuffer->GetDesc(&desc);
 	SAFE_RELEASE(pBackBuffer);
 
-	framebuffer.SetTargetWidthAndHeight(desc.Width,desc.Height);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	glowTexture.release();
 	glowTexture.init(m_pd3dDevice,Width/2,Height/2);

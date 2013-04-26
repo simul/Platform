@@ -43,8 +43,6 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	m_pOldDepthSurface(NULL)
 	,stagingTexture(NULL)
 	,timing(0.f)
-	,screen_width(0)
-	,screen_height(0)
 	,target_format(DXGI_FORMAT_R32G32B32A32_FLOAT)
 {
 }
@@ -57,12 +55,6 @@ void FramebufferDX1x::SetWidthAndHeight(int w,int h)
 		Height=h;
 		InvalidateDeviceObjects();
 	}
-}
-
-void FramebufferDX1x::SetTargetWidthAndHeight(int w,int h)
-{
-	screen_width=w;
-	screen_height=h;
 }
 
 void FramebufferDX1x::SetFormat(int f)

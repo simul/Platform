@@ -58,7 +58,6 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	ApplyPass(tech->GetPassByIndex(0));
 	FramebufferDX1x make_rain_fb(512,512);
 	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
-	make_rain_fb.SetTargetWidthAndHeight(512,512);
 	make_rain_fb.Activate();
 	make_rain_fb.DrawQuad();
 	make_rain_fb.Deactivate();

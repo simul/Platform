@@ -927,7 +927,7 @@ void SimulGLCloudRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bo
 
 void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
 {
-	static int u=4;
+	static int u=3;
 	int w=(width-8)/u;
 	if(w>height/2)
 		w=height/2;
@@ -973,7 +973,7 @@ static float mult=1.f;
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
 glUseProgram(Utilities::GetSingleton().simple_program);
-	DrawQuad(width-(w+8)+8,16,w,w);
+	DrawQuad(width-(w+8),height-(w+8),w,w);
 	glUseProgram(0);
 ERROR_CHECK
 }

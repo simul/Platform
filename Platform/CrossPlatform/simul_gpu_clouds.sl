@@ -33,7 +33,9 @@ float GetHumidityMultiplier(float z)
 {
 	const float default_=1.0;
 	float i=saturate((z-baseLayer)/transition);
-	return default_*(1.0-i)+upperDensity*i;
+	float res1=default_*(1.0-i)+upperDensity*i;
+	float res2=res1*saturate((1.0-z)/transition);
+	return res2;
 }
 
 float NoiseFunction(vec3 pos,int octaves,float persistence,float time)

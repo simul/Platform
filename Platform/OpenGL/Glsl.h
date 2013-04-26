@@ -8,6 +8,7 @@
 #define R2
 #ifndef __cplusplus
 #include "saturate.glsl"
+#define lerp mix
 #else
 
 // To C++, samplers are just GLint's.

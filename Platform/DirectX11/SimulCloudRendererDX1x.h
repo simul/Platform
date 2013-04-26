@@ -214,6 +214,7 @@ ID3D1xEffectVectorVariable* 	noiseOffset		;
 	virtual bool CreateNoiseTexture(bool override_file=false);
 	bool CreateCloudEffect();
 	bool MakeCubemap(); // not ready yet
+	void RenderNoise();
 	
 	bool enable_lightning;
 };

@@ -14,7 +14,6 @@ public:
 	FramebufferDX1x(int w=0,int h=0);
 	virtual ~FramebufferDX1x();
 	void SetWidthAndHeight(int w,int h);
-	void SetTargetWidthAndHeight(int w,int h);
 	void SetFormat(int f);
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 	void RestoreDeviceObjects(void* pd3dDevice);
@@ -45,8 +44,6 @@ public:
 	void CopyToMemory(void *target);
 	void CopyToMemory(void *target,int start_texel,int texels);
 protected:
-	int screen_width;
-	int screen_height;
 	DXGI_FORMAT target_format;
 	bool Destroy();
 	ID3D1xDevice*						m_pd3dDevice;

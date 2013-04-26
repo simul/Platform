@@ -380,11 +380,76 @@ static int PowerOfTwo(int unum)
 	Exp/=log(2.f);
 	return (int)Exp;
 }
+#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
+void SimulCloudRendererDX1x::RenderNoise()
+{
+	ID3D1xEffect*					effect=NULL;
+	ID3D1xEffectTechnique*			randomTechnique;
+	ID3D1xEffectTechnique*			noiseTechnique;
+	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,L"simul_rendernoise.fx");
+	randomTechnique					=effect->GetTechniqueByName("simul_random");
+	noiseTechnique					=effect->GetTechniqueByName("simul_noise_2d");
+
+	FramebufferDX1x	random_fb;
+	random_fb.RestoreDeviceObjects(m_pd3dDevice);
+	random_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency);
+	random_fb.SetFormat((int)DXGI_FORMAT_R32G32B32A32_FLOAT);
+	ApplyPass(randomTechnique->GetPassByIndex(0));
+	random_fb.Activate();
+		random_fb.DrawQuad();
+	random_fb.Deactivate();
+
+	FramebufferDX1x n_fb;
+	n_fb.RestoreDeviceObjects(m_pd3dDevice);
+	n_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
+	n_fb.SetFormat((int)DXGI_FORMAT_R8G8B8A8_SNORM);
+	n_fb.Activate();
+	{
+		simul::dx11::setParameter(effect,"noise_texture"	,(ID3D11ShaderResourceView*)random_fb.GetColorTex());
+		ID3D1xEffectShaderResourceVariable*	noiseTexture	=effect->GetVariableByName("noise_texture")->AsShaderResource();
+		noiseTexture->SetResource((ID3D11ShaderResourceView*)random_fb.GetColorTex());
+		simul::dx11::setParameter(effect,"octaves"		,texture_octaves);
+		simul::dx11::setParameter(effect,"persistence"	,texture_persistence);
+		ApplyPass(noiseTechnique->GetPassByIndex(0));
+		n_fb.DrawQuad();
+	}
+	n_fb.Deactivate();
+	// Now copy to a texture.
+	int mips=1;//PowerOfTwo(noise_texture_size/2);
+	D3D11_TEXTURE2D_DESC textureDesc=
+	{
+		noise_texture_size,
+		noise_texture_size,
+		mips,
+		1,
+		DXGI_FORMAT_R8G8B8A8_SNORM,
+		{1,0},
+		D3D11_USAGE_DYNAMIC,
+		D3D11_BIND_SHADER_RESOURCE,
+		D3D11_CPU_ACCESS_WRITE,
+		0//D3D11_RESOURCE_MISC_GENERATE_MIPS only works with an RT that is also a Shader resource.
+	};
+	SAFE_RELEASE(noise_texture);
+	hr=m_pd3dDevice->CreateTexture2D(&textureDesc,NULL,&noise_texture);
+	V_CHECK(hr);
+	D3D1x_MAPPED_TEXTURE2D mapped;
+	if(!noise_texture)
+		return ;
+	if(FAILED(hr=m_pImmediateContext->Map(noise_texture,0,D3D1x_MAP_WRITE_DISCARD,0,&mapped)))
+		return ;
+	n_fb.CopyToMemory(mapped.pData);
+	Unmap2D(noise_texture);
+	V_CHECK(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
+
+	SAFE_RELEASE(effect);
+}
 
 bool SimulCloudRendererDX1x::CreateNoiseTexture(bool override_file)
 {
 	if(!m_pd3dDevice)
 		return false;
+	RenderNoise();
+	return true;
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(noise_texture);
 	
@@ -409,7 +474,7 @@ loadInfo.MipLevels=0;
 		const TCHAR *err=DXGetErrorString(hr);
 		std::cerr<<err<<std::endl;
 	}
-	int mips=PowerOfTwo(noise_texture_size);
+	int mips=PowerOfTwo(noise_texture_size/2);
 	D3D11_TEXTURE2D_DESC textureDesc=
 	{
 		noise_texture_size,
@@ -426,7 +491,8 @@ loadInfo.MipLevels=0;
 	hr=m_pd3dDevice->CreateTexture2D(&textureDesc,NULL,&noise_texture);
 	V_CHECK(hr);
 	D3D1x_MAPPED_TEXTURE2D mapped;
-	//if(FAILED(hr=Map2D(noise_texture,&mapped)))
+	if(!noise_texture)
+		return false;
 	if(FAILED(hr=m_pImmediateContext->Map(noise_texture,0,D3D1x_MAP_WRITE_DISCARD,0,&mapped)))
 		return false;
 	simul::clouds::TextureGenerator::SetBits(0x000000FF,0x0000FF00,0x00FF0000,0xFF000000,(unsigned)4,big_endian);
@@ -914,10 +980,13 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 	HRESULT hr=S_OK;
 	static int u=3;
 	int w=(width-8)/u;
-	int h=(w)/GetCloudGridInterface()->GetGridWidth();
+	if(w>height/2)
+		w=height/2;
+	simul::clouds::CloudGridInterface *gi=GetCloudGridInterface();
+	int h=w/gi->GetGridWidth();
 	if(h<1)
 		h=1;
-	h*=GetCloudGridInterface()->GetGridHeight();
+	h*=gi->GetGridHeight();
 	D3DXVECTOR4 cross_section_offset(
 			(GetCloudInterface()->GetWrap()?0.5f:0.f)+0.5f/(float)cloud_tex_width_x
 			,GetCloudInterface()->GetWrap()?0.5f:0.f+0.5f/(float)cloud_tex_length_y
@@ -929,7 +998,6 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 	ortho._22=-ortho._22;
 	ortho._24=1.f;
 	ID3DX11EffectMatrixVariable*	worldViewProj=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
-	//worldViewProj->SetMatrix(ortho);
 
 	CloudConstants cloudConstants;
 	memset(&cloudConstants,0,sizeof(cloudConstants));
@@ -947,7 +1015,6 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 		if(!kf)
 			break;
 		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
-		//lightResponse->SetFloatVector((const float*)(&light_response));
 		if(cbCloudConstants)
 		{
 			cloudConstants.lightResponse=light_response;
@@ -956,12 +1023,11 @@ void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
 		}
 		cloudDensity1->SetResource(cloudDensityResource[i%3]);
 		RenderTexture(m_pd3dDevice,i*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
-
-		//m_pCloudEffect->SetVector(crossSectionOffset,&cross_section_offset);
-		//GetCloudInterface()->GetWrap()?0.5f:0.f);
 		cloudDensity1->SetResource(cloudDensityResource[i%3]);
 		RenderTexture(m_pd3dDevice,i*(w+1)+4,h+8,w,w,m_hTechniqueCrossSectionXY);
 	}
+	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",noiseTextureResource);
+	RenderTexture(m_pd3dDevice,width-(w+8),height-(w+8),w,w,m_pCloudEffect->GetTechniqueByName("simple"));
 }
 
 bool SimulCloudRendererDX1x::RenderLightning()

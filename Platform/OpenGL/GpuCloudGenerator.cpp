@@ -161,16 +161,6 @@ timer.StartTime();
 	glUseProgram(density_program);
 	
 	setParameter(density_program,"volumeNoiseTexture"	,0);
-	setParameter(density_program,"octaves"				,octaves);
-	setParameter(density_program,"persistence"			,persistence);
-	setParameter(density_program,"humidity"				,humidity);
-	setParameter(density_program,"time"					,time);
-	setParameter(density_program,"zPixel"				,1.f/(float)density_grid[2]);
-	setParameter(density_program,"zSize"				,(float)density_grid[2]);
-	setParameter(density_program,"noiseScale"			,noise_scale.x,noise_scale.y,noise_scale.z);
-	setParameter(density_program,"baseLayer"			,baseLayer);
-	setParameter(density_program,"transition"			,transition);
-	setParameter(density_program,"upperDensity"			,upperDensity);
 
 	GpuCloudConstants constants;
 	constants.octaves		=octaves;
@@ -186,6 +176,7 @@ timer.StartTime();
 	constants.zSize				=(float)density_grid[2];
 	constants.baseLayer			=baseLayer;
 	constants.transition		=transition;
+	constants.upperDensity		=upperDensity;
 
 	UPDATE_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
 	GLint gpuCloudConstants		=glGetUniformBlockIndex(density_program,"GpuCloudConstants");

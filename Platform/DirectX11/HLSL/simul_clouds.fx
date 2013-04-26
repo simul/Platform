@@ -305,10 +305,12 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
 
 	OUT.texCoords.xy=IN.texCoords;
 	OUT.texCoords.z=1;
-	//OUT.colour=IN.colour;
     return OUT;
 }
-
+float4 PS_Simple( vertexOutputCS IN):SV_TARGET
+{
+    return noiseTexture.Sample(crossSectionSamplerState,IN.texCoords.xy);
+}
 #define CROSS_SECTION_STEPS 32
 float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
 {
@@ -443,3 +445,16 @@ technique11 cross_section_xy
 		SetPixelShader(CompileShader(ps_4_0,PS_CrossSectionXY()));
     }
 }
+technique11 simple
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(NoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_Simple()));
+    }
+}
+
