@@ -507,7 +507,7 @@ void SimulGL2DCloudRenderer::InvalidateDeviceObjects()
 	
 	glDeleteBuffersARB(1,&cloud2DConstantsUBO);
 	cloud2DConstants=-1;
-	cloud2DConstantsUBO=-1;
+	cloud2DConstantsUBO=0;
 	
 }
 

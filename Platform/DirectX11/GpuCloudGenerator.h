@@ -22,7 +22,6 @@ namespace simul
 		public:
 			GpuCloudGenerator();
 			~GpuCloudGenerator();
-			void CreateVolumeNoiseTexture(int size,const float *src_ptr);
 			void RestoreDeviceObjects(void *dev);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
@@ -31,15 +30,16 @@ namespace simul
 				return Enabled&&m_pd3dDevice!=NULL;
 			}
 			int GetDensityGridsize(const int *grid);
+			void* Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr);
 			void *FillDensityGrid(const int *grid
 									,int start_texel
 									,int texels
 									,float humidity
 									,float baseLayer
 									,float transition
+									,float upperDensity
 									,float time
-									,int noise_size,int octaves,float persistence
-									,const float  *noise_src_ptr);
+									,void* noise_tex,int octaves,float persistence);
 			virtual void PerformGPURelight(float *target
 									,const int *light_grid
 									,int start_texel
@@ -63,6 +63,8 @@ namespace simul
 			ID3D1xEffectTechnique*			lightingTechnique;
 			ID3D1xEffectTechnique*			transformTechnique;
 			int								density_gridsize;
+			ID3D11Texture3D					*volume_noise_tex;
+			ID3D11ShaderResourceView		*volume_noise_tex_srv;
 			ID3D11Texture3D					*density_texture;
 			ID3D11ShaderResourceView		*density_texture_srv;
 			ID3D11Buffer					*gpuCloudConstantsBuffer;

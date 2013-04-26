@@ -287,7 +287,7 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 		{0,	36	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
 		D3DDECL_END()
 	};
-	D3DVERTEXELEMENT9 cpu_decl[]=
+/*D3DVERTEXELEMENT9 cpu_decl[]=
 	{
 		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
 		{0, 12	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
@@ -297,7 +297,7 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 		{0,	48	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,4},
 		{0,	60	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,5},
 		D3DDECL_END()
-	};
+	};*/
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pHudVertexDecl);
 	{
@@ -905,7 +905,7 @@ void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
 					float x=cam_pos.x+dist*cs;
 					float y=(y_vertical?cam_pos.z:cam_pos.y)+dist*sn;
 					float z=z0+helper->GetVerticalShiftDueToCurvature(dist,z0);
-					float elev=atan2(z,dist);
+//				float elev=atan2(z,dist);
 					pos.Define(x,y,z);
 					simul::sky::float4 dir_to_vertex(x-cam_pos.x,y-cam_pos.y,z-cam_pos.z,0);
 					dir_to_vertex/=simul::sky::length(dir_to_vertex);

@@ -108,9 +108,6 @@ ERROR_CHECK
 		simulWeatherRenderer->RenderLateCloudLayer(true);
 
 		simulWeatherRenderer->DoOcclusionTests();
-		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(width,height);
-		simulWeatherRenderer->DoOcclusionTests();
 		simulWeatherRenderer->RenderPrecipitation();
 		if(simulOpticsRenderer&&ShowFlares)
 		{
@@ -127,8 +124,9 @@ ERROR_CHECK
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);
 		
-		
 		SetTopDownOrthoProjection(width,height);
+		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(width,height);
 		if(ShowCloudCrossSections)
 		{
 			if(simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
