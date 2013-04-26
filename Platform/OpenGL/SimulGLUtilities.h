@@ -85,17 +85,17 @@ extern void setParameter2(GLint,const simul::sky::float4 &value);
 extern void setParameter3(GLint,const simul::sky::float4 &value);
 extern void setParameter(GLint loc,const float *value);
 
-#define MAKE_CONSTANT_BUFFER(ubo,Struct,bindingIndex)\
-	glGenBuffers(1, &ubo);\
-	glBindBuffer(GL_UNIFORM_BUFFER, ubo);\
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(Struct), NULL, GL_STREAM_DRAW);\
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);\
+#define MAKE_CONSTANT_BUFFER(ubo,Struct,bindingIndex)	\
+	glGenBuffers(1, &ubo);	\
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo);	\
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(Struct), NULL, GL_STREAM_DRAW);	\
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);		\
 	glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0, sizeof(Struct));
 
 
-#define UPDATE_CONSTANT_BUFFER(ubo,constants,bindingIndex)\
-	glBindBuffer(GL_UNIFORM_BUFFER, ubo);\
-	glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(constants), &constants);\
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);\
+#define UPDATE_CONSTANT_BUFFER(ubo,constants,bindingIndex)	\
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo);	\
+	glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(constants), &constants);	\
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);		\
 	glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 #endif
