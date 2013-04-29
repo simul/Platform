@@ -66,11 +66,11 @@ protected:
 	ID3D1xEffectMatrixVariable*			worldViewProj;
 	ID3D1xEffectShaderResourceVariable*	imageTexture;
 
-	ComputableTexture					glowTexture;
-
 	ID3D1xEffect*						m_pGaussianEffect;
 	ID3D1xEffectTechnique*				gaussianRowTechnique;
 	ID3D1xEffectTechnique*				gaussianColTechnique;
 
 	float timing;
+private:
+	ComputableTexture					glowTexture;
 };

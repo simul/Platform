@@ -367,6 +367,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Profiler.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SimulGL2DCloudRenderer.cpp"
 				>
 			</File>
@@ -450,6 +454,10 @@
 			</File>
 			<File
 				RelativePath=".\OpenGLRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Profiler.h"
 				>
 			</File>
 			<File

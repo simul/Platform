@@ -101,13 +101,12 @@ ERROR_CHECK
 		glTexParameteri(m_target,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 		glTexParameteri(m_target,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 		//glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexImage2D(m_target, 0, colour_iformat, Width, Height, 0,GL_RGBA, format, NULL);
+		glTexImage2D(m_target,0, colour_iformat, Width, Height,0,GL_RGBA, format, NULL);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0 + index, m_target, m_tex_col[index], 0);
 		GLenum status = (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if(status!=GL_FRAMEBUFFER_COMPLETE)
 			ok=false;
-	    
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 ERROR_CHECK
@@ -189,7 +188,7 @@ void FramebufferGL::Activate()
 
 void FramebufferGL::Activate(int x,int y,int w,int h)
 {
-	glFlush(); 
+	//glFlush(); 
 	CheckFramebufferStatus();
     glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
 	ERROR_CHECK
@@ -204,7 +203,7 @@ void FramebufferGL::Activate(int x,int y,int w,int h)
 void FramebufferGL::Deactivate() 
 {
 	ERROR_CHECK
-	glFlush(); 
+	//glFlush(); 
 	ERROR_CHECK
 	CheckFramebufferStatus();
 	ERROR_CHECK

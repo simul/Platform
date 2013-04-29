@@ -292,14 +292,12 @@ bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
 	return (hr==S_OK);
 }
 
-bool SimulWeatherRendererDX1x::RenderLateCloudLayer(bool )
+void SimulWeatherRendererDX1x::RenderLateCloudLayer(bool )
 {
 	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{
 		simulCloudRenderer->Render(false,depth_alpha_tex,UseDefaultFog,true);
-		return true;
 	}
-	return false;
 }
 
 void SimulWeatherRendererDX1x::RenderPrecipitation()
@@ -346,9 +344,9 @@ void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()
 	}
 	
 }
-void SimulWeatherRendererDX1x::Update(float dt)
+void SimulWeatherRendererDX1x::Update()
 {
-	BaseWeatherRenderer::Update(dt);
+	BaseWeatherRenderer::Update();
 	static bool pause=false;
     if(!pause)
 	{
@@ -375,11 +373,11 @@ void SimulWeatherRendererDX1x::Update(float dt)
 				simulAtmosphericsRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
 			}*/
 		}
-		if(simulCloudRenderer)
+/*		if(simulCloudRenderer)
 		{
 			simulCloudRenderer->Update(dt);
 		}
-/*		if(simul2DCloudRenderer)
+		if(simul2DCloudRenderer)
 			simul2DCloudRenderer->Update(dt);*/
 	}
 }

@@ -208,36 +208,37 @@ ERROR_CHECK
 	return true;
 }
 
-bool SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
+void SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 {
-	if((AlwaysRenderCloudsLate||RenderCloudsLate)&&simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-	{
-		scene_buffer->Activate();
-		scene_buffer->Clear(0,0,0,1.f);
-		simulCloudRenderer->Render(false,depth_alpha_tex,UseDefaultFog,true);
-		scene_buffer->Deactivate();
-	//	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);//GL_SRC_ALPHA GL_DST_ALPHA
-	//	glBlendFuncSeparate(GL_ONE,GL_ZERO,GL_ZERO,GL_ONE);
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
-	//	glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_ALPHA);
-		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
-		GLuint prog=AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;
-	    glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,(GLuint)scene_buffer->GetColorTex());
-	    glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
-		glUseProgram(prog);
+	if(!(AlwaysRenderCloudsLate||RenderCloudsLate)||!simulCloudRenderer||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+		return;
+	static simul::base::Timer timer;
+	timer.TimeSum=0;
+	timer.StartTime();
+	
+	scene_buffer->Activate();
+	scene_buffer->Clear(0,0,0,1.f);
+	simulCloudRenderer->Render(false,depth_alpha_tex,UseDefaultFog,true);
+	scene_buffer->Deactivate();
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+	glBlendFunc(GL_ONE,GL_SRC_ALPHA);
+	GLuint prog=AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,(GLuint)scene_buffer->GetColorTex());
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
+	glUseProgram(prog);
 
-		GLint image_texture		=glGetUniformLocation(prog,"image_texture");
-		GLint depthAlphaTexture	=glGetUniformLocation(prog,"depthAlphaTexture");
-		glUniform1i(image_texture,0);
-		glUniform1i(depthAlphaTexture,1);
-		scene_buffer->Render(true);
-		glUseProgram(0);
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		return false;
-	}
-	return false;
+	GLint image_texture		=glGetUniformLocation(prog,"image_texture");
+	GLint depthAlphaTexture	=glGetUniformLocation(prog,"depthAlphaTexture");
+	glUniform1i(image_texture,0);
+	glUniform1i(depthAlphaTexture,1);
+	scene_buffer->Render(true);
+	glUseProgram(0);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	
+	timer.FinishTime();
+	render_time+=timer.Time;
 }
 
 void SimulGLWeatherRenderer::RenderLightning()
@@ -272,10 +273,18 @@ const char *SimulGLWeatherRenderer::GetDebugText() const
 {
 	static char debug_text[256];
 	sprintf_s(debug_text,256,"RENDER %3.3g ms (clouds %3.3g ms, sky %3.3g ms, final %3.3g)\r\n"
+		"TEXTURE UPDATE %3.3g ms (sky %3.3g ms)\r\n"
 		"UPDATE %3.3g ms (clouds %3.3g ms, sky %3.3g ms)",
-			total_timing,baseCloudRenderer?baseCloudRenderer->GetRenderTime():0.f,sky_timing,final_timing,
-			environment->total_update_timing,environment->cloud_update_timing,environment->sky_update_timing);
-	return simulSkyRenderer->GetDebugText();
+			total_timing
+			,baseCloudRenderer?baseCloudRenderer->GetRenderTime():0.f
+			,baseSkyRenderer?baseSkyRenderer->GetRenderTime():0.f
+			,render_time
+			,baseSkyRenderer?baseSkyRenderer->GetTextureUpdateTime():0.f
+			,baseSkyRenderer?baseSkyRenderer->GetTextureUpdateTime():0.f
+			,environment->total_update_timing
+			,environment->cloud_update_timing
+			,environment->sky_update_timing);
+	return debug_text;
 }
 
 GLuint SimulGLWeatherRenderer::GetFramebufferTexture()

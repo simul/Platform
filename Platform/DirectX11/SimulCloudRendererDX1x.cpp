@@ -1271,3 +1271,5 @@ void SimulCloudRendererDX1x::EnsureTextureCycle()
 	}
 	Map(2);
 }
+
+

@@ -63,7 +63,7 @@ public:
 	//! Call this to draw the sky and clouds.
 	bool RenderSky(bool buffer,bool is_cubemap);
 	//! Call this to draw the clouds after the main scene.
-	bool RenderLateCloudLayer(bool buf);
+	void RenderLateCloudLayer(bool buf);
 	//! Call this to draw lightning.
 	void RenderLightning();
 	//! Call this to draw rain etc.

@@ -13,6 +13,7 @@
 #include "Simul/Platform/OpenGL/SimulGL2DCloudRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
+#include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #ifdef _MSC_VER
@@ -42,6 +43,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	simulTerrainRenderer=new SimulGLTerrainRenderer();
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	SetYVertical(y_vertical);
+	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 }
 
 OpenGLRenderer::~OpenGLRenderer()
@@ -52,6 +54,7 @@ OpenGLRenderer::~OpenGLRenderer()
 		simulWeatherRenderer->InvalidateDeviceObjects();
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
+	simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
 }
 
 void OpenGLRenderer::paintGL()
@@ -73,7 +76,7 @@ void OpenGLRenderer::paintGL()
 	glViewport(0,0,width,height);
 	if(simulWeatherRenderer.get())
 	{
-		simulWeatherRenderer->Update(0.0);
+		simulWeatherRenderer->Update();
 		GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
 		GLuint fogfilter=0;								// Which Fog To Use
 		simul::sky::float4 fogColor=simulWeatherRenderer->GetHorizonColour(0.001f*cam->GetPosition()[2]);
@@ -143,12 +146,15 @@ ERROR_CHECK
 	}
 	renderUI();
 	glPopAttrib();
+	simul::opengl::Profiler::GetGlobalProfiler().EndFrame();
 }
 
 void OpenGLRenderer::renderUI()
 {
-	glUseProgram(NULL);
+	glUseProgram(0);
 	glDisable(GL_TEXTURE_3D);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D,0);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_1D);
 	SetOrthoProjection(width,height);
@@ -161,20 +167,19 @@ void OpenGLRenderer::renderUI()
 	static simul::base::Timer timer;
 		timer.TimeSum=0;
 		float t=timer.FinishTime();
+		if(t<1.f)
+			t=1.f;
+		if(t>1000.f)
+			t=1000.f;
 		static float framerate=1.f;
-		framerate*=0.99f;
-		framerate+=0.01f*(1000.f/t);
+		framerate*=0.95f;
+		framerate+=0.05f*(1000.f/t);
 		static char osd_text[256];
 		sprintf_s(osd_text,256,"%3.3f fps",framerate);
 		RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,osd_text);
-
 		if(simulWeatherRenderer)
 			RenderString(12.f,y+=line_height,GLUT_BITMAP_HELVETICA_12,simulWeatherRenderer->GetDebugText());
-		
-		
 		timer.StartTime();
-		
-		
 	}
 }
 	

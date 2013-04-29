@@ -193,9 +193,10 @@ void SetPerspectiveProjection(int w,int h,float field_of_view)
 }
 void RenderString(float x, float y, void *font, const char* string)
 {
-	glColor4f(1.f,1.f,1.f,1.f); 
+	glColor4f(1.f,1.f,1.f,1.f);
 	glRasterPos2f(x,win_h-y);
-
+	glDisable(GL_LIGHTING);
+	glBindTexture(GL_TEXTURE_2D,0);
 	const char *s=string;
 	while(*s)
 	{
@@ -574,6 +575,20 @@ void setParameter3(GLint loc,const simul::sky::float4 &value)
 {
 	glUniform3f(loc,value.x,value.y,value.z);
 	ERROR_CHECK
+}
+
+GLuint make2DTexture(int w,int l,const float *src)
+{
+	GLuint tex=0;
+	glGenTextures(1,&tex);
+	glBindTexture(GL_TEXTURE_2D,tex);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w,l,0,GL_RGBA,GL_FLOAT,src);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_2D,0);
+	return tex;
 }
 /*
 void setMatrix(GLint loc,const float *value)

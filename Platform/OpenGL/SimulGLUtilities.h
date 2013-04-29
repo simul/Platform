@@ -85,6 +85,10 @@ extern void setParameter2(GLint,const simul::sky::float4 &value);
 extern void setParameter3(GLint,const simul::sky::float4 &value);
 extern void setParameter(GLint loc,const float *value);
 
+
+// make a 2D texture.
+extern GLuint make2DTexture(int w,int l,const float *src=NULL);
+
 #define MAKE_CONSTANT_BUFFER(ubo,Struct,bindingIndex)	\
 	glGenBuffers(1, &ubo);	\
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo);	\

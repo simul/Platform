@@ -78,7 +78,6 @@ _COM_SMARTPTR_TYPEDEF(ID3D11DeviceContext, __uuidof(ID3D11DeviceContext));
 #include "Simul/Platform/DirectX11/Export.h"
 SIMUL_DIRECTX11_EXPORT_CLASS Profiler
 {
-
 public:
 	static Profiler &GetGlobalProfiler();
     void Initialize(ID3D11Device* device, ID3D11DeviceContext* immContext);
@@ -104,8 +103,18 @@ protected:
         BOOL QueryStarted;
         BOOL QueryFinished;
         float time;
-
-        ProfileData() : QueryStarted(FALSE), QueryFinished(FALSE), time(0.f) {}
+		ProfileData()
+			:QueryStarted(false)
+			,QueryFinished(false)
+			, time(0.f)
+		{
+			for(int i=0;i<QueryLatency;i++)
+			{
+				DisjointQuery[i]		=0;
+				TimestampStartQuery[i]	=0;
+				TimestampEndQuery[i]	=0;
+			}
+		}
     };
 
     typedef std::map<std::string, ProfileData> ProfileMap;

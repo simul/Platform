@@ -26,6 +26,7 @@
 #include "Simul/Clouds/TextureGenerator.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/CloudKeyframer.h"
+#include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/TextureGenerator.h"
@@ -124,7 +125,7 @@ ERROR_CHECK
     glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 	const float *data=GetCloudGridInterface()->GetNoiseInterface()->GetData();
     glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA32F_ARB,size,size,size,0,GL_RGBA,GL_FLOAT,data);
-	glGenerateMipmap(GL_TEXTURE_3D);
+	//glGenerateMipmap(GL_TEXTURE_3D);
 ERROR_CHECK
 }
 
@@ -140,8 +141,8 @@ bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-	glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,noise_texture_size,noise_texture_size,0,GL_RGBA,GL_UNSIGNED_INT,0);
-
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,noise_texture_size,noise_texture_size,0,GL_RGBA,GL_UNSIGNED_INT,0);
+glGenerateMipmap(GL_TEXTURE_2D);
 	FramebufferGL	noise_fb(noise_texture_frequency,noise_texture_frequency,GL_TEXTURE_2D);
 	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT,GL_REPEAT);
 	noise_fb.Activate();
@@ -179,22 +180,16 @@ ERROR_CHECK
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
 	glCopyTexSubImage2D(GL_TEXTURE_2D,
- 		0,
- 		0,
- 		0,
- 		0,
- 		0,
- 		noise_texture_size,
- 		noise_texture_size);
+ 						0,0,0,0,0,
+ 						noise_texture_size,
+ 						noise_texture_size);
+	glGenerateMipmap(GL_TEXTURE_2D);
 ERROR_CHECK	
 	n_fb.Deactivate();
 	glUseProgram(0);
 ERROR_CHECK
-	glGenerateMipmap(GL_TEXTURE_2D);
-ERROR_CHECK
 	return true;
 }
-
 	
 void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z)
 {
@@ -253,6 +248,9 @@ bool SimulGLCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool defaul
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	EnsureTexturesAreUpToDate();
+	simul::opengl::ProfileBlock profileBlock("SimulCloudRendererDX1x::Render");
+	simul::base::Timer timer;
+	timer.StartTime();
 ERROR_CHECK
 	cubemap;
 //cloud buffer alpha to screen = ?
@@ -551,6 +549,8 @@ ERROR_CHECK
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
 	glPopAttrib();
 ERROR_CHECK
+	timer.FinishTime();
+	render_time=profileBlock.GetTime();
 	return true;
 }
 

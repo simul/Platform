@@ -130,10 +130,20 @@ protected:
 	GLint			maxDistance;
 	GLint			viewPosition;
 	GLint			overcast_param;
+
+	
+	GLint			altitudeTexCoord_fade	;
+	GLint			skyInterp_fade		;
+	GLint			fadeTexture1_fade		;
+	GLint			fadeTexture2_fade		;
 	
 	FramebufferGL	loss_2d;
 	FramebufferGL	inscatter_2d;
 	FramebufferGL	skylight_2d;
+
+	GLuint			loss_texture;
+	GLuint			insc_texture;
+	GLuint			skyl_texture;
 
 	bool campos_updated;
 	short *short_ptr;
