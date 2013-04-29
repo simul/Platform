@@ -307,7 +307,7 @@ void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
 	// The weather renderer works in days, not seconds
 	float game_timestep=fTimeStep/(24.f*60.f*60.f);
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->Update(game_timestep);
+		simulWeatherRenderer->Update();
 }
 
 const char *Direct3D11Renderer::GetDebugText() const

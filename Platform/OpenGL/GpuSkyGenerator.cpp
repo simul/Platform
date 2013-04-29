@@ -48,7 +48,6 @@ ERROR_CHECK
 ERROR_CHECK
 	skyl_program=MakeProgram("simple.vert",NULL,"simul_gpu_skyl.frag");
 ERROR_CHECK
-	
 	MAKE_CONSTANT_BUFFER(gpuSkyConstantsUBO,GpuSkyConstants,gpuSkyConstantsBindingIndex);
 }
 
@@ -90,20 +89,6 @@ static GLuint make1DTexture(int w,const float *src)
 	return tex;
 }
 
-// make a 1D texture. X=altitude (clamp)
-static GLuint make2DTexture(int w,int l,const float *src)
-{
-	GLuint tex=0;
-	glGenTextures(1,&tex);
-	glBindTexture(GL_TEXTURE_2D,tex);
-	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w,l,0,GL_RGBA,GL_FLOAT,src);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-	glBindTexture(GL_TEXTURE_2D,0);
-	return tex;
-}
 
 void GpuSkyGenerator::Make2DLossAndInscatterTextures(simul::sky::AtmosphericScatteringInterface *skyInterface
 				,int numElevations,int numDistances

@@ -28,7 +28,7 @@ void main()
 	vec4 lookup3=0.5*fade*texture(rainTexture,texcoord.xy);
 
 	vec4 lookup	=lookup1+lookup2+lookup3;
-	float u		=1.f-intensity;
+	float u		=1.0-intensity;
     lookup		=saturate(lookup);
 	vec3 v		=normalize(view);
 	float cos0	=dot(v,lightDir);

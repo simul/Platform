@@ -14,6 +14,7 @@ uniform_buffer GpuCloudConstants R2
 	uniform float baseLayer;
 	uniform float transition;
 	uniform float upperDensity;
+	uniform float diffusivity;
 };
 
 #ifndef __cplusplus

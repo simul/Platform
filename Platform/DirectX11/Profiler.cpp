@@ -47,6 +47,7 @@ void Profiler::Initialize(ID3D11Device* device, ID3D11DeviceContext* immContext)
     this->context = immContext;
     enabled=true;
 }
+
 void Profiler::StartProfile(const std::string& name)
 {
     if(!enabled||!device)

@@ -43,13 +43,13 @@ public:
 	void InvalidateDeviceObjects();
 	bool Destroy();
 	bool RenderSky(bool buffered,bool is_cubemap);
-	bool RenderLateCloudLayer(bool );
+	void RenderLateCloudLayer(bool );
 	void RenderPrecipitation();
 	void RenderLightning();
 	bool RenderCubemap();
 	void *GetCubemap();
 	//! Perform the once-per-frame time update.
-	void Update(float dt);
+	void Update();
 	//! Apply the view and projection matrices, once per frame.
 	void SetMatrices(const D3DXMATRIX &viewmat,const D3DXMATRIX &projmat);
 	//! Set the exposure, if we're using an hdr shader to render the sky buffer.

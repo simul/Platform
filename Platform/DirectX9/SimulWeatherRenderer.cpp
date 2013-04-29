@@ -312,12 +312,11 @@ void SimulWeatherRenderer::RenderPrecipitation()
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
 		simulPrecipitationRenderer->Render();
 }
-bool SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
+void SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
 {
 	if(!RenderCloudsLate||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		return true;
+		return ;
 	RenderLateCloudLayer(0,buf);
-	return true;
 }
 
 void SimulWeatherRenderer::RenderLateCloudLayer(int buffer_index,bool buf)
@@ -413,14 +412,14 @@ void SimulWeatherRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 
 void SimulWeatherRenderer::Update(float dt)
 {
-	BaseWeatherRenderer::Update(dt);
-	if(simulCloudRenderer&&simulAtmosphericsRenderer)
+	BaseWeatherRenderer::Update();
+	//if(baseCloudRenderer&&baseAtmosphericsRenderer)
 	{
-		LPDIRECT3DBASETEXTURE9 *c=(LPDIRECT3DBASETEXTURE9*)simulCloudRenderer->GetCloudTextures();
-		simulAtmosphericsRenderer->SetCloudProperties(c[0],c[1],
-			simulCloudRenderer->GetCloudScales(),
-			simulCloudRenderer->GetCloudOffset(),
-			simulCloudRenderer->GetInterpolation());
+		//void **c=baseCloudRenderer->GetCloudTextures();
+	/*	baseAtmosphericsRenderer->SetCloudProperties(c[0],c[1],
+			baseCloudRenderer->GetCloudScales(),
+			baseCloudRenderer->GetCloudOffset(),
+			baseCloudRenderer->GetInterpolation());*/
 	}
 	if(simulPrecipitationRenderer)
 	{

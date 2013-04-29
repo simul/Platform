@@ -52,7 +52,7 @@ public:
 	//! Platform-dependent. Call this to draw the sky
 	bool RenderSky(bool buffered,bool is_cubemap);
 	//! Call this to draw the clouds
-	bool RenderLateCloudLayer(bool buf);
+	void RenderLateCloudLayer(bool buf);
 	//! Call this to draw lightning.
 	void RenderLightning();
 	//! Call this to draw rain etc.
