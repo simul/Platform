@@ -11,17 +11,15 @@ uniform_buffer GpuSkyConstants R2
 uniform float distanceKm;
 	uniform vec2 tableSize;
 uniform float prevDistanceKm;
-	uniform float d;
+	uniform float emissivity;
 
 	uniform float maxOutputAltKm;
 	uniform float planetRadiusKm;
 	uniform float maxDensityAltKm;
 	uniform float hazeBaseHeightKm;
 
+	uniform vec3 ColourWavelengthsNm;
 	uniform float hazeScaleHeightKm;
-	uniform float e;
-	uniform float f;
-	uniform float g;
 
 	uniform vec3 rayleigh;
 	uniform float overcastBaseKm;
@@ -161,4 +159,5 @@ float getOvercastAtAltitudeRange(float alt1_km,float alt2_km)
 	oc						*=overcast;
 	return 1.0*oc;*/
 }
+
 #endif

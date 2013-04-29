@@ -22,7 +22,8 @@ namespace simul
 				,simul::sky::float4 sun_irradiance
 				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon,float haze
 				,float overcast,float overcast_base_km,float overcast_range_km
-				,int index,int end_index,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table,int table_size,float maxDensityAltKm,bool InfraRed);
+				,int index,int end_index,const simul::sky::float4 *density_table
+		,const simul::sky::float4 *blackbody_table,const simul::sky::float4 *optical_table,int table_size,float maxDensityAltKm,bool InfraRed);
 		protected:
 		// framebuffer to render out by distance.
 			FramebufferGL	fb[2];
