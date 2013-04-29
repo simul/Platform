@@ -140,43 +140,32 @@ std::cout<<"\tGpu sky: fb "<<timer.UpdateTime()<<std::endl;
 	glEnable(GL_TEXTURE_3D);
 	GLuint dens_tex=make1DTexture(table_size,(const float *)density_table);
 std::cout<<"\tGpu sky: dens_tex "<<timer.UpdateTime()<<std::endl;
-
 	glUseProgram(loss_program);
 	{
 		GpuSkyConstants constants;
-	
 		constants.texSize			=vec2((float)altitudes_km.size(),(float)numElevations);
 		static float tto=0.5f;
 		constants.texelOffset		=tto;
 		constants.tableSize			=vec2((float)table_size,(float)table_size);
-		
 		constants.maxDistanceKm		=max_distance_km;
-		
 		constants.planetRadiusKm	=skyInterface->GetPlanetRadius();
 		constants.maxOutputAltKm	=maxOutputAltKm;
 		constants.maxDensityAltKm	=maxDensityAltKm;
 		constants.hazeBaseHeightKm	=skyInterface->GetHazeBaseHeightKm();
 		constants.hazeScaleHeightKm	=skyInterface->GetHazeScaleHeightKm();
-
 		constants.overcastBaseKm	=overcast_base_km;
 		constants.overcastRangeKm	=overcast_range_km;
 		constants.overcast			=overcast;
-
 		constants.rayleigh			=(const float*)skyInterface->GetRayleigh();
 		constants.hazeMie			=(const float*)(haze*skyInterface->GetMie());
 		constants.ozone				=(const float*)(skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
-
 		constants.sunIrradiance		=(const float*)sun_irradiance;
 		constants.lightDir			=(const float*)dir_to_sun;
-
 		constants.starlight			=(const float*)(skyInterface->GetStarlight());
-		
 		constants.hazeEccentricity	=1.0;
 		constants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
-	
 		UPDATE_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
 	}
-
 	setParameter(loss_program,"input_loss_texture",0);
 	setParameter(loss_program,"density_texture",1);
 	gpuSkyConstants		=glGetUniformBlockIndex(loss_program,"GpuSkyConstants");
@@ -202,18 +191,8 @@ ERROR_CHECK
 		float distKm=zPosition*max_distance_km;
 		if(i==numDistances-1)
 			distKm=1000.f;
-		//setParameter(loss_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
-		//setParameter(loss_program,"tableSize"		,(float)table_size,(float)table_size);
 		setParameter(loss_program,"distKm"			,distKm);
 		setParameter(loss_program,"prevDistKm"		,prevDistKm);
-		//setParameter(loss_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
-		//setParameter(loss_program,"maxOutputAltKm"	,maxOutputAltKm);
-		//setParameter(loss_program,"maxDensityAltKm"	,maxDensityAltKm);  
-		//setParameter(loss_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
-		//setParameter(loss_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
-		//setParameter3(loss_program,"rayleigh"		,skyInterface->GetRayleigh());
-		//setParameter3(loss_program,"hazeMie"		,haze*skyInterface->GetMie());
-		//setParameter3(loss_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
 	ERROR_CHECK
 		F[1]->Activate();
 	ERROR_CHECK
@@ -253,7 +232,6 @@ std::cout<<"\tGpu sky: loss_tex,optd_tex "<<timer.UpdateTime()<<std::endl;
 	setParameter(insc_program,"density_texture",1);
 	setParameter(insc_program,"loss_texture",2);
 	setParameter(insc_program,"optical_depth_texture",3);
-
 ERROR_CHECK
 	target=insc;
 	F[0]->Activate();
@@ -296,7 +274,6 @@ ERROR_CHECK
 	}
 	glUseProgram(0);
 std::cout<<"\tGpu sky: insc "<<timer.UpdateTime()<<std::endl;
-	
 	// Finally we will generate the skylight texture.
 	// First we make the inscatter into a 3D texture.
 	GLuint insc_tex=make3DTexture(altitudes_km.size(),numElevations,numDistances,(const float *)insc);
@@ -332,24 +309,6 @@ ERROR_CHECK
 			distKm=1000.f;
 		setParameter(skyl_program,"distKm"			,distKm);
 		setParameter(skyl_program,"prevDistKm"		,prevDistKm);
-		
-		//setParameter(skyl_program,"texSize"			,(float)altitudes_km.size(),(float)numElevations);
-		//setParameter(skyl_program,"tableSize"		,(float)table_size,(float)table_size);
-		
-		//setParameter(skyl_program,"maxDistanceKm"	,max_distance_km);
-		//setParameter(skyl_program,"planetRadiusKm"	,skyInterface->GetPlanetRadius());
-		//setParameter(skyl_program,"maxOutputAltKm"	,maxOutputAltKm);
-		//setParameter(skyl_program,"maxDensityAltKm"	,maxDensityAltKm);
-		
-		//setParameter(skyl_program,"hazeBaseHeightKm",skyInterface->GetHazeBaseHeightKm());
-		//setParameter(skyl_program,"hazeScaleHeightKm",skyInterface->GetHazeScaleHeightKm());
-		
-		//setParameter3(skyl_program,"rayleigh"		,skyInterface->GetRayleigh());
-		//setParameter3(skyl_program,"hazeMie"		,haze*skyInterface->GetMie());
-		//setParameter3(skyl_program,"ozone"			,skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
-//		setParameter3(skyl_program,"sunIrradiance"	,skyInterface->GetSunIrradiance());
-//		setParameter3(skyl_program,"lightDir"		,dir_to_sun);
-		//setParameter3(skyl_program,"starlight"		,skyInterface->GetStarlight());
 		F[1]->Activate();
 			F[1]->Clear(0.f,0.f,0.f,0.f);
 			OrthoMatrices();
