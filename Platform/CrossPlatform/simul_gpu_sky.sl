@@ -18,8 +18,10 @@ uniform float prevDistanceKm;
 	uniform float maxDensityAltKm;
 	uniform float hazeBaseHeightKm;
 
-	uniform vec3 ColourWavelengthsNm;
 	uniform float hazeScaleHeightKm;
+	uniform float seaLevelTemperatureK;
+	uniform float f;
+	uniform float g;
 
 	uniform vec3 rayleigh;
 	uniform float overcastBaseKm;
@@ -159,5 +161,4 @@ float getOvercastAtAltitudeRange(float alt1_km,float alt2_km)
 	oc						*=overcast;
 	return 1.0*oc;*/
 }
-
 #endif

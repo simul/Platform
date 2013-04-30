@@ -50,7 +50,7 @@ float NoiseFunction(vec3 pos,int octaves,float persistence,float time)
 	{
 		if(i>=octaves)
 			break;
-		float lookup=texture(volumeNoiseTexture,pos).x;
+		float lookup=texture3D(volumeNoiseTexture,pos).x;
 		float val=lookup;
 		dens+=mul*val;
 		sum+=mul;
