@@ -59,8 +59,6 @@ public:
 	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,int buffer_index,bool write_alpha);
-	//! Get the list of three textures used for cloud rendering.
-	void **GetCloudTextures();
 	void *GetCloudShadowTexture();
 	//! Save the first keyframe texture into a 2D image file by stacking X-Z slices vertically.
 	void SaveCloudTexture(const char *filename);

@@ -73,7 +73,6 @@ public:
 	void SetEnableStorms(bool s);
 	float GetTiming() const;
 	//! Get the list of three textures used for cloud rendering.
-	void* *GetCloudTextures();
 	void *GetCloudShadowTexture();
 	void SetLossTexture(void *t);
 	void SetInscatterTextures(void *t,void *s);

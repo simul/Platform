@@ -1276,11 +1276,6 @@ void *SimulCloudRenderer::GetIlluminationTexture()
 	return (void *)illumination_texture;
 }
 
-void **SimulCloudRenderer::GetCloudTextures()
-{
-	return (void **)cloud_textures;
-}
-
 void *SimulCloudRenderer::GetCloudShadowTexture()
 {
 	return NULL;

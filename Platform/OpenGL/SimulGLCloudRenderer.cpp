@@ -738,11 +738,6 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	ClearIterators();
 }
 
-void **SimulGLCloudRenderer::GetCloudTextures()
-{
-	return (void**)cloud_tex;
-}
-
 void *SimulGLCloudRenderer::GetCloudShadowTexture()
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);

@@ -199,7 +199,7 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 		{
 			if(simulWeatherRenderer->GetCloudRenderer())
 			{
-				simulTerrainRenderer->SetCloudTextures		(simulWeatherRenderer->GetCloudRenderer()->GetCloudTextures(),simulWeatherRenderer->GetCloudRenderer()->GetCloudInterface()->GetWrap());
+			//	simulTerrainRenderer->SetCloudTexture		(simulWeatherRenderer->GetCloudRenderer()->GetCloudTexture(),simulWeatherRenderer->GetCloudRenderer()->GetCloudInterface()->GetWrap());
 				simulTerrainRenderer->SetCloudScales		(simulWeatherRenderer->GetCloudRenderer()->GetCloudScales());
 				simulTerrainRenderer->SetCloudOffset		(simulWeatherRenderer->GetCloudRenderer()->GetCloudOffset());
 				simulTerrainRenderer->setCloudInterpolation	(simulWeatherRenderer->GetCloudRenderer()->GetInterpolation());

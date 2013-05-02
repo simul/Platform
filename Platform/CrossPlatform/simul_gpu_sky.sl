@@ -1,5 +1,5 @@
 #ifdef __cplusplus
-#define R0
+#define R3
 #define cbuffer struct
 #define uniform
 #endif
@@ -7,10 +7,11 @@
 uniform_buffer GpuSkyConstants R2
 {
 	uniform vec2 texSize;
-	uniform float texelOffset;
-uniform float distanceKm;
 	uniform vec2 tableSize;
-uniform float prevDistanceKm;
+
+	uniform float texelOffset;
+	uniform float distanceKm;
+	uniform float prevDistanceKm;
 	uniform float emissivity;
 
 	uniform float maxOutputAltKm;

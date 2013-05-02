@@ -30,9 +30,8 @@ public:
 	void SetLossTexture(void *l);
 	void SetInscatterTextures(void *i,void *s);
 	void SetWindVelocity(float x,float y);
-	//CloudShadowCallback
-	void **GetCloudTextures(){return 0;}
-	void *GetCloudShadowTexture() {return NULL;}
+	//
+	void *GetCloudShadowTexture(){return NULL;}
 protected:
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate();

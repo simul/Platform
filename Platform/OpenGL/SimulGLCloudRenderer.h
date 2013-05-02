@@ -41,8 +41,6 @@ public:
 	void RenderCrossSections(int width,int height);
 	void SetLossTexture(void *);
 	void SetInscatterTextures(void *,void *);
-	//! Get the list of three textures used for cloud rendering.
-	void **GetCloudTextures();
 	
 	void *GetCloudShadowTexture();
 	const char *GetDebugText();
