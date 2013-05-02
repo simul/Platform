@@ -88,6 +88,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				,float maxDensityAltKm
 				,bool InfraRed
 				,float emissivity
+				,float seaLevelTemperatureK
 				)
 {
 HRESULT hr=S_OK;

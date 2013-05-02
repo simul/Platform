@@ -102,7 +102,8 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(simul::sky::AtmosphericScat
 				,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table
 		,const simul::sky::float4 *blackbody_table,int table_size,float maxDensityAltKm
 				,bool InfraRed
-				,float emissivity)
+				,float emissivity
+				,float seaLevelTemperatureK)
 {
 	GLint gpuSkyConstants;
 simul::base::Timer timer;
