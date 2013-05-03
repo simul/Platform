@@ -45,7 +45,7 @@ uniform_buffer GpuSkyConstants R2
 	uniform float hazeEccentricity;
 
 	uniform vec3 starlight;
-	uniform float h;
+	uniform float previousZCoord;
 	uniform vec3 mieRayleighRatio;
 	uniform float i;
 };
