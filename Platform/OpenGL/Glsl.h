@@ -9,6 +9,8 @@
 #ifndef __cplusplus
 #include "saturate.glsl"
 #define lerp mix
+#define texture3D texture
+#define texture2D texture
 #else
 
 // To C++, samplers are just GLint's.
