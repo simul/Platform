@@ -940,10 +940,6 @@ bool SimulSkyRendererDX1x::RenderFades(int width,int h)
 	D3DXMATRIX ident,trans;
 	D3DXMatrixIdentity(&ident);
     D3DXMatrixOrthoLH(&ident,(float)width,-(float)h,-100.f,100.f);
-//	D3DXVECTOR3 center = D3DXVECTOR3(width/2, h/2, 0);
-	//static float x=1,y=1;
-	//x=2.f/(float)width;
-	//y=2.f/(float)h;
 	D3DXMatrixTranslation(&trans,-1.f,1.f,0);
 	D3DXMatrixTranspose(&trans,&trans);
 	D3DXMatrixMultiply(&ident,&trans,&ident);
