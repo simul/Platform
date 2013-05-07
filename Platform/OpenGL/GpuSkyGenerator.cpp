@@ -99,8 +99,11 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(simul::sky::AtmosphericScat
 				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon,float haze
 				,float overcast,float overcast_base_km,float overcast_range_km
 				,int index,int end_index
-				,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table,int table_size,float maxDensityAltKm
-				,bool InfraRed)
+				,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table
+		,const simul::sky::float4 *blackbody_table,int table_size,float maxDensityAltKm
+				,bool InfraRed
+				,float emissivity
+				,float seaLevelTemperatureK)
 {
 	GLint gpuSkyConstants;
 simul::base::Timer timer;
@@ -149,6 +152,7 @@ std::cout<<"\tGpu sky: dens_tex "<<timer.UpdateTime()<<std::endl;
 		constants.starlight			=(const float*)(skyInterface->GetStarlight());
 		constants.hazeEccentricity	=1.0;
 		constants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
+		constants.emissivity		=emissivity;
 		UPDATE_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
 	}
 	setParameter(loss_program,"input_loss_texture",0);

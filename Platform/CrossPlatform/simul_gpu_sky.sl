@@ -1,5 +1,5 @@
 #ifdef __cplusplus
-#define R0
+#define R3
 #define cbuffer struct
 #define uniform
 #endif
@@ -7,21 +7,30 @@
 uniform_buffer GpuSkyConstants R2
 {
 	uniform vec2 texSize;
-	uniform float texelOffset;
-uniform float distanceKm;
 	uniform vec2 tableSize;
-uniform float prevDistanceKm;
-	uniform float d;
+
+	uniform float emissivity;
+	uniform vec3 abc;
+	uniform float texelOffset;
+	uniform vec3 def;
+	uniform float distanceKm;
+	uniform vec3 ghi;
+	uniform float prevDistanceKm;
+	uniform vec3 jkl;
 
 	uniform float maxOutputAltKm;
+	uniform vec3 mno;
 	uniform float planetRadiusKm;
+	uniform vec3 pqr;
 	uniform float maxDensityAltKm;
+	uniform vec3 stu;
 	uniform float hazeBaseHeightKm;
+	uniform vec3 vwx;
 
 	uniform float hazeScaleHeightKm;
-	uniform float e;
-	uniform float f;
-	uniform float g;
+	uniform vec3 yza;
+	uniform float seaLevelTemperatureK;
+	uniform vec3 bcd;
 
 	uniform vec3 rayleigh;
 	uniform float overcastBaseKm;
@@ -36,7 +45,7 @@ uniform float prevDistanceKm;
 	uniform float hazeEccentricity;
 
 	uniform vec3 starlight;
-	uniform float h;
+	uniform float previousZCoord;
 	uniform vec3 mieRayleighRatio;
 	uniform float i;
 };

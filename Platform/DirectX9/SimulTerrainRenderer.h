@@ -58,7 +58,7 @@ public:
 	void GpuThermalErosion(float time_step);
 	void GpuWaterErosion(float time_step);
 	// Set a callback that will return cloud shadow data and textures:
-	void SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb);
+	//void SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb);
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	void SetCloudTextures(void **t,bool wrap);
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si){skyInterface=si;}

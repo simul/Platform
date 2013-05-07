@@ -50,9 +50,9 @@ public:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y);
 	void FillCloudTextureBlock(int texture_index,int x,int y,int w,int l,const unsigned *uint32_array);
 	void FillCloudTextureSequentially(int,int,int,const unsigned int *){}
-	//CloudShadowCallback
-	void **GetCloudTextures(){return 0;}
-	void *GetCloudShadowTexture() {return NULL;}
+
+	//
+	void *GetCloudShadowTexture(){return NULL;}
 protected:
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate();

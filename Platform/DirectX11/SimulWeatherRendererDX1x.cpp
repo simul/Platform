@@ -350,7 +350,6 @@ void SimulWeatherRendererDX1x::Update()
 	static bool pause=false;
     if(!pause)
 	{
-		UpdateSkyAndCloudHookup();
 		if(simulSkyRenderer)
 		{
 			if(simulCloudRenderer)

@@ -82,6 +82,7 @@
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
@@ -93,6 +94,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)_MD.dll</OutputFile>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/lib/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName)_MD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -112,6 +114,7 @@
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
@@ -122,6 +125,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)_MDd.dll</OutputFile>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/lib/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName)_MDd.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -141,6 +145,7 @@
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
@@ -164,6 +169,7 @@
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
@@ -177,18 +183,6 @@
       <OutputFile>$(OutDir)$(TargetName)_MD.lib</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Clouds\Clouds_VC10.vcproj">
-      <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Terrain\Terrain_VC10.vcproj">
-      <Project>{cc71b070-12c2-45c9-894a-a9cddc1f3fa4}</Project>
-    </ProjectReference>
-    <ProjectReference Include="DirectX9_VC10.vcxproj">
-      <Project>{4901edea-8669-48ab-abe5-848038773779}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CreateDX9Effect.cpp" />
     <ClCompile Include="Direct3D9Renderer.cpp" />

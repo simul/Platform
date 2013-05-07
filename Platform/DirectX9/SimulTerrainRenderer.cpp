@@ -1137,17 +1137,17 @@ void SimulTerrainRenderer::Update(float dt)
 	if(WaterErosion)
 		GpuWaterErosion(dt);
 }
-
+/*
 void SimulTerrainRenderer::SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb)
 {
 	if(cb)
 	{
-		SetCloudTextures	(cb->GetCloudTextures(),cb->GetWrap());
+	//	SetCloudTexture	(cb->GetCloudTexture(),cb->GetWrap());
 		SetCloudScales		(cb->GetCloudScales());
 		SetCloudOffset		(cb->GetCloudOffset());
 		setCloudInterpolation(cb->GetInterpolation());
 	}
-}
+}*/
 
 void SimulTerrainRenderer::ReleaseIndexBuffers()
 {

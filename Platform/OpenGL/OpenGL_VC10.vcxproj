@@ -85,6 +85,7 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
@@ -93,7 +94,8 @@
     <Link>
       <AdditionalDependencies>opengl32.lib;glut32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)_MDd.dll</OutputFile>
-      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/OpenGL/lib;$(SIMUL)/External/FreeImage/Dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/OpenGL/lib/Win32;$(SIMUL)/External/FreeImage/Dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName)_MD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
@@ -110,6 +112,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
@@ -118,7 +121,8 @@
     <Link>
       <AdditionalDependencies>opengl32.lib;glut32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)_MD.dll</OutputFile>
-      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/OpenGL/lib;$(SIMUL)/External/FreeImage/Dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/OpenGL/lib/Win32;$(SIMUL)/External/FreeImage/Dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName)_MD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
@@ -138,6 +142,7 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
@@ -157,6 +162,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
@@ -168,18 +174,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Clouds\Clouds_VC10.vcproj">
-      <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Terrain\Terrain_VC10.vcproj">
-      <Project>{cc71b070-12c2-45c9-894a-a9cddc1f3fa4}</Project>
-    </ProjectReference>
-    <ProjectReference Include="OpenGL_VC10.vcxproj">
-      <Project>{a4e417f3-4c5f-42ab-b1b1-bdaece53abc5}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="FramebufferGL.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
@@ -187,6 +181,7 @@
     <ClCompile Include="LoadGLProgram.cpp" />
     <ClCompile Include="objload.cpp" />
     <ClCompile Include="OpenGLRenderer.cpp" />
+    <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="SimulGL2DCloudRenderer.cpp" />
     <ClCompile Include="SimulGLAtmosphericsRenderer.cpp" />
     <ClCompile Include="SimulGLCloudRenderer.cpp" />
@@ -209,6 +204,7 @@
     <ClInclude Include="LoadGLProgram.h" />
     <ClInclude Include="objload.h" />
     <ClInclude Include="OpenGLRenderer.h" />
+    <ClInclude Include="Profiler.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SimulGL2DCloudRenderer.h" />
     <ClInclude Include="SimulGLAtmosphericsRenderer.h" />
@@ -223,6 +219,9 @@
     <ClInclude Include="SimulOpticsRendererGL.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="GLSL\saturate.glsl" />
+    <None Include="GLSL\simple.frag" />
+    <None Include="GLSL\simple.vert" />
     <None Include="GLSL\simul_2d_cloud_detail.frag" />
     <None Include="GLSL\simul_2d_cloud_detail_lighting.frag" />
     <None Include="GLSL\simul_atmospherics.frag" />
@@ -241,6 +240,7 @@
     <None Include="GLSL\simul_fade_3d_to_2d.frag" />
     <None Include="GLSL\simul_fade_3d_to_2d.vert" />
     <None Include="GLSL\simul_flare.frag" />
+    <None Include="GLSL\simul_glow.frag" />
     <None Include="GLSL\simul_gpu_cloud_density.frag" />
     <None Include="GLSL\simul_gpu_cloud_density.vert" />
     <None Include="GLSL\simul_gpu_cloud_transform.frag" />
@@ -252,9 +252,16 @@
     <None Include="GLSL\simul_gpu_loss.frag" />
     <None Include="GLSL\simul_gpu_sky.glsl" />
     <None Include="GLSL\simul_gpu_skyl.frag" />
+    <None Include="GLSL\simul_hdr_blur.frag" />
     <None Include="GLSL\simul_lightning.frag" />
+    <None Include="GLSL\simul_lightning.geom" />
     <None Include="GLSL\simul_lightning.vert" />
+    <None Include="GLSL\simul_noise.frag" />
     <None Include="GLSL\simul_planet.frag" />
+    <None Include="GLSL\simul_rain.frag" />
+    <None Include="GLSL\simul_rain.vert" />
+    <None Include="GLSL\simul_simple_lightning.frag" />
+    <None Include="GLSL\simul_simple_lightning.vert" />
     <None Include="GLSL\simul_sky.frag" />
     <None Include="GLSL\simul_sky.vert" />
     <None Include="GLSL\simul_stars.frag" />

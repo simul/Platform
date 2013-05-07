@@ -72,8 +72,6 @@ public:
 
 	// a texture
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
-	
-	virtual void **GetCloudTextures(){return NULL;}
 	virtual void *GetCloudShadowTexture()
 	{
 		return NULL;

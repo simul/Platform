@@ -83,9 +83,12 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				,int end_index
 				,const simul::sky::float4 *density_table
 				,const simul::sky::float4 *optical_table
+				,const simul::sky::float4 *blackbody_table
 				,int table_size
 				,float maxDensityAltKm
 				,bool InfraRed
+				,float emissivity
+				,float seaLevelTemperatureK
 				)
 {
 HRESULT hr=S_OK;
@@ -142,8 +145,9 @@ HRESULT hr=S_OK;
 
 		constants.starlight			=(const float*)(skyInterface->GetStarlight());
 		
-		constants.hazeEccentricity=1.0;
-		constants.mieRayleighRatio=(const float*)(skyInterface->GetMieRayleighRatio());
+		constants.hazeEccentricity	=1.0;
+		constants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
+		constants.emissivity		=emissivity;
 	//UPDATE_CONSTANT_BUFFER(constantBuffer,GpuSkyConstants,gpuSkyConstants);
 	
 		m_pImmediateContext->Unmap(constantBuffer, 0);	

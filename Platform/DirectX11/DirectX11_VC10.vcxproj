@@ -84,6 +84,7 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -91,6 +92,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)_MDd.dll</OutputFile>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/VC10/$(Configuration);$(DXSDK_DIR)/Lib/x86;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
@@ -111,6 +113,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -118,6 +121,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)_MD.dll</OutputFile>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/VC10/$(Configuration);$(DXSDK_DIR)/Lib/x86;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
@@ -140,6 +144,7 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -162,6 +167,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -177,18 +183,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Clouds\Clouds_VC10.vcproj">
-      <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Terrain\Terrain_VC10.vcproj">
-      <Project>{cc71b070-12c2-45c9-894a-a9cddc1f3fa4}</Project>
-    </ProjectReference>
-    <ProjectReference Include="DirectX11_VC10.vcxproj">
-      <Project>{60b0d668-5bfa-46ca-945d-062e2014efa6}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="CompileShaderDX1x.cpp" />
     <ClCompile Include="CreateEffectDX1x.cpp" />
     <ClCompile Include="Direct3D1xRenderer.cpp" />
@@ -203,11 +197,13 @@
     <ClCompile Include="SimulAtmosphericsRendererDX1x.cpp" />
     <ClCompile Include="SimulCloudRendererDX1x.cpp" />
     <ClCompile Include="SimulHDRRendererDX1x.cpp" />
+    <ClCompile Include="SimulLightningRendererDX11.cpp" />
     <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
     <ClCompile Include="SimulPrecipitationRendererDX1x.cpp" />
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="SimulTerrainRendererDX1x.cpp" />
     <ClCompile Include="SimulWeatherRendererDX1x.cpp" />
+    <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompileShaderDX1x.h" />
@@ -229,23 +225,29 @@
     <ClInclude Include="SimulAtmosphericsRendererDX1x.h" />
     <ClInclude Include="SimulCloudRendererDX1x.h" />
     <ClInclude Include="SimulHDRRendererDX1x.h" />
+    <ClInclude Include="SimulLightningRendererDX11.h" />
     <ClInclude Include="SimulOpticsRendererDX1x.h" />
     <ClInclude Include="SimulPrecipitationRendererDX1x.h" />
     <ClInclude Include="SimulSkyRendererDX1x.h" />
     <ClInclude Include="SimulTerrainRendererDX1x.h" />
     <ClInclude Include="SimulWeatherRendererDX1x.h" />
+    <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\atmospherics.fx" />
+    <None Include="HLSL\CppHLSL.hlsl" />
     <None Include="HLSL\gamma.fx" />
     <None Include="HLSL\simul_clouds.fx" />
     <None Include="HLSL\simul_clouds_2d.fx" />
+    <None Include="HLSL\simul_clouds_and_lightning_dx11.fx" />
     <None Include="HLSL\simul_debug.fx" />
     <None Include="HLSL\simul_earthshadow.hlsl" />
     <None Include="HLSL\simul_foliage.fx" />
+    <None Include="HLSL\simul_gaussian.fx" />
     <None Include="HLSL\simul_gpu_clouds.fx" />
     <None Include="HLSL\simul_gpu_lighting.fx" />
     <None Include="HLSL\simul_gpu_sky.fx" />
+    <None Include="HLSL\simul_hdr.fx" />
     <None Include="HLSL\simul_lightning.fx" />
     <None Include="HLSL\simul_rain.fx" />
     <None Include="HLSL\simul_rendernoise.fx" />

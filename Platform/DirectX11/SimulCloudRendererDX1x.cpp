@@ -1160,11 +1160,6 @@ void SimulCloudRendererDX1x::SetEnableStorms(bool s)
 	enable_lightning=s;
 }
 
-void **SimulCloudRendererDX1x::GetCloudTextures()
-{
-	return (void **)cloud_textures;
-}
-
 void *SimulCloudRendererDX1x::GetCloudShadowTexture()
 {
 	return NULL;
