@@ -148,7 +148,7 @@ void SimulCloudRendererDX1x::SetNoiseTextureProperties(int s,int f,int o,float p
 	noise_texture_frequency=f;
 	texture_octaves=o;
 	texture_persistence=p;
-	CreateNoiseTexture();
+	CreateNoiseTexture(m_pImmediateContext);
 }
 
 void SimulCloudRendererDX1x::RecompileShaders()
@@ -170,7 +170,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	HRESULT hr;
-	CreateNoiseTexture();
+	CreateNoiseTexture(m_pImmediateContext);
 	CreateLightningTexture();
 	RecompileShaders();
 	D3D11_SHADER_RESOURCE_VIEW_DESC texdesc;
@@ -444,7 +444,7 @@ void SimulCloudRendererDX1x::RenderNoise()
 	SAFE_RELEASE(effect);
 }
 
-bool SimulCloudRendererDX1x::CreateNoiseTexture(bool override_file)
+bool SimulCloudRendererDX1x::CreateNoiseTexture(void*,bool override_file)
 {
 	if(!m_pd3dDevice)
 		return false;
@@ -696,7 +696,7 @@ static float saturate(float c)
 	return std::max(std::min(1.f,c),0.f);
 }
 
-bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
+bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
 {
     ProfileBlock profileBlock("SimulCloudRendererDX1x::Render");
 	EnsureTexturesAreUpToDate();
@@ -975,7 +975,7 @@ void SimulCloudRendererDX1x::DrawLines(VertexXyzRgba *vertices,int vertex_count,
 	simul::dx11::UtilityRenderer::DrawLines(vertices,vertex_count,strip);
 }
 
-void SimulCloudRendererDX1x::RenderCrossSections(int width,int height)
+void SimulCloudRendererDX1x::RenderCrossSections(void*,int width,int height)
 {
 	HRESULT hr=S_OK;
 	static int u=3;

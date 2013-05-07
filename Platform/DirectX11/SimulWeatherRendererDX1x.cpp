@@ -256,7 +256,7 @@ bool SimulWeatherRendererDX1x::RenderCubemap()
 				1.f,
 				200000.f);
 			SetMatrices(view_matrices[i],cube_proj);
-			HRESULT hr=RenderSky(false,true);
+			HRESULT hr=RenderSky(m_pImmediateContext,false,true);
 		}
 		framebuffer_cubemap.Deactivate();
 	}
@@ -269,9 +269,9 @@ void *SimulWeatherRendererDX1x::GetCubemap()
 	return framebuffer_cubemap.GetColorTex();// m_pCubeEnvMapSRV;
 }
 
-bool SimulWeatherRendererDX1x::RenderSky(bool buffered,bool is_cubemap)
+bool SimulWeatherRendererDX1x::RenderSky(void*,bool buffered,bool is_cubemap)
 {
-	simul::clouds::BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
+	simul::clouds::BaseWeatherRenderer::RenderSky(m_pImmediateContext,buffered,is_cubemap);
 	HRESULT hr=S_OK;
 	if(buffered&&baseFramebuffer)
 	{
@@ -296,7 +296,7 @@ void SimulWeatherRendererDX1x::RenderLateCloudLayer(bool )
 {
 	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{
-		simulCloudRenderer->Render(false,depth_alpha_tex,UseDefaultFog,true);
+		simulCloudRenderer->Render(m_pImmediateContext,false,depth_alpha_tex,UseDefaultFog,true);
 	}
 }
 

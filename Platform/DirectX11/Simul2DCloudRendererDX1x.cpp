@@ -75,7 +75,7 @@ void Simul2DCloudRendererDX11::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX 
 	proj=p;
 }
 
-bool Simul2DCloudRendererDX11::Render(bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
+bool Simul2DCloudRendererDX11::Render(void*,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
 {
 	D3DXMATRIX wvp;
 	D3DXMATRIX world;
@@ -102,7 +102,7 @@ bool Simul2DCloudRendererDX11::Render(bool cubemap,void *depth_tex,bool default_
 return true;
 }
 
-void Simul2DCloudRendererDX11::RenderCrossSections(int width,int height)
+void Simul2DCloudRendererDX11::RenderCrossSections(void*,int width,int height)
 {
 }
 

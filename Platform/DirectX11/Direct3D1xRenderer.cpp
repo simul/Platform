@@ -156,7 +156,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->SetMatrices(view,proj);
-		simulWeatherRenderer->RenderSky(UseSkyBuffer,false);
+		simulWeatherRenderer->RenderSky(pd3dImmediateContext,UseSkyBuffer,false);
 		if(MakeCubemap)
 			simulWeatherRenderer->RenderCubemap();
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
@@ -203,12 +203,12 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 		if(ShowCloudCrossSections)
 		{
 			if(simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 			{
-				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(ScreenWidth,ScreenHeight);
+				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 			//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
 			}
 	//		if(simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
