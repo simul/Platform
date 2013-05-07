@@ -47,6 +47,7 @@ public:
 	void RenderPrecipitation();
 	void RenderLightning();
 	bool RenderCubemap();
+	void SaveCubemapToFile(const char *filename);
 	void *GetCubemap();
 	//! Perform the once-per-frame time update.
 	void Update();

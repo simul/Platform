@@ -237,6 +237,16 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
+void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
+{
+	std::wstring wstr=simul::base::StringToWString(filename);
+	HRESULT hr=D3DX11SaveTextureToFile( m_pImmediateContext,
+		(ID3D11Resource*)framebuffer_cubemap.GetColorTex(),
+								D3DX11_IFF_DDS,
+								wstr.c_str()
+									);
+}
+
 bool SimulWeatherRendererDX1x::RenderCubemap()
 {
 	D3DXMATRIX ov=view;
