@@ -59,9 +59,9 @@ public:
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	bool Render(bool cubemap,void *depth_tex,bool default_fog,bool write_alpha);
+	bool Render(void *context,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha);
 	void RenderDebugInfo(int width,int height);
-	void RenderCrossSections(int width,int height);
+	void RenderCrossSections(void *context,int width,int height);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 	bool RenderLightning();
 	//! Call this once per frame to set the matrices.
@@ -210,7 +210,7 @@ ID3D1xEffectVectorVariable* 	noiseOffset		;
 	float LookupLargeScaleTexture(float x,float y);
 
 	bool CreateLightningTexture();
-	virtual bool CreateNoiseTexture(bool override_file=false);
+	virtual bool CreateNoiseTexture(void *context,bool override_file=false);
 	bool CreateCloudEffect();
 	bool MakeCubemap(); // not ready yet
 	void RenderNoise();

@@ -689,7 +689,7 @@ HRESULT hr=S_OK;
 	return (hr==S_OK);
 }
 
-bool SimulSkyRendererDX1x::Render2DFades()
+bool SimulSkyRendererDX1x::Render2DFades(void*)
 {
 	if(!m_hTechniqueFade3DTo2D)
 		return false;
@@ -839,14 +839,14 @@ bool SimulSkyRendererDX1x::RenderPointStars()
 }
 
 
-bool SimulSkyRendererDX1x::Render(bool blend)
+bool SimulSkyRendererDX1x::Render(void*,bool blend)
 {
 	HRESULT hr=S_OK;
 	EnsureTexturesAreUpToDate();
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
 	//if(!cubemap)
-		Render2DFades();
+		Render2DFades(m_pImmediateContext);
 	D3DXMATRIX tmp1,tmp2,wvp;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
 	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
@@ -930,7 +930,7 @@ bool SimulSkyRendererDX1x::Render(bool blend)
 	return (hr==S_OK);
 }
 
-bool SimulSkyRendererDX1x::RenderFades(int width,int h)
+bool SimulSkyRendererDX1x::RenderFades(void*,int width,int h)
 {
 	HRESULT hr=S_OK;
 	int size=width/4;

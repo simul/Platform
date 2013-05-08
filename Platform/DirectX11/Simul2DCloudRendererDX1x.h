@@ -25,8 +25,8 @@ public:
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-	bool Render(bool cubemap,void *depth_tex,bool default_fog,bool write_alpha);
-	void RenderCrossSections(int width,int height);
+	bool Render(void *context,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha);
+	void RenderCrossSections(void *context,int width,int height);
 	void SetLossTexture(void *l);
 	void SetInscatterTextures(void *i,void *s);
 	void SetWindVelocity(float x,float y);
@@ -38,7 +38,7 @@ protected:
 	void EnsureTextureCycle();
 	void EnsureCorrectIlluminationTextureSizes(){}
 	void EnsureIlluminationTexturesAreUpToDate(){}
-	virtual bool CreateNoiseTexture(bool override_file=false){return true;}
+	virtual bool CreateNoiseTexture(void *context,bool override_file=false){return true;}
 	D3DXMATRIX						view,proj;
 	ID3D11Device*					m_pd3dDevice;
 	ID3D11DeviceContext *			m_pImmediateContext;

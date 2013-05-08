@@ -42,7 +42,7 @@ public:
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
 	bool Destroy();
-	bool RenderSky(bool buffered,bool is_cubemap);
+	bool RenderSky(void*,bool buffered,bool is_cubemap);
 	void RenderLateCloudLayer(bool );
 	void RenderPrecipitation();
 	void RenderLightning();
