@@ -112,7 +112,7 @@ void GS_Main(line vertexOutput input[2], inout TriangleStream<geomOutput> Output
 	float a1=atan(dh1/input[0].layerDistance)*2.0/pi;
 	float a2=atan(dh2/input[0].layerDistance)*2.0/pi;
 	int e1=max((int)(a1*ELEV_STEPS/2+ELEV_STEPS/2)-1,0);
-	int e2=min((int)(a2*ELEV_STEPS/2+ELEV_STEPS/2)+2,ELEV_STEPS);
+	int e2=min((int)(a2*ELEV_STEPS/2+ELEV_STEPS/2)+3,ELEV_STEPS);
 
 	for(int i=e1;i<e2+1;i++)
 	{

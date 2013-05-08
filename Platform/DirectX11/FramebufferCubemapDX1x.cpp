@@ -11,6 +11,7 @@ FramebufferCubemapDX1x::FramebufferCubemapDX1x()
 	,Height(0)
 	,current_face(0)
 	,format(DXGI_FORMAT_R8G8B8A8_UNORM)
+	,stagingTexture(NULL)
 {
 	for(int i=0;i<6;i++)
 	{
@@ -113,6 +114,24 @@ void FramebufferCubemapDX1x::RestoreDeviceObjects(void* dev)
 	 
 	V_CHECK( pd3dDevice->CreateShaderResourceView(m_pCubeEnvMap, &SRVDesc, &m_pCubeEnvMapSRV ));
 }
+ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *pd3dDevice,int w,DXGI_FORMAT target_format)
+{
+	D3D11_TEXTURE2D_DESC dstex;
+	dstex.Width					= w;
+	dstex.Height				= w;
+	dstex.MipLevels				= 1;
+	dstex.ArraySize				= 6;
+	dstex.SampleDesc.Count		= 1;
+	dstex.SampleDesc.Quality	= 0;
+	dstex.Format				= target_format;
+	dstex.Usage					= D3D11_USAGE_STAGING;
+	dstex.BindFlags				= 0;
+	dstex.CPUAccessFlags		=D3D11_CPU_ACCESS_READ| D3D11_CPU_ACCESS_WRITE;
+	dstex.MiscFlags				=D3D11_RESOURCE_MISC_TEXTURECUBE;
+	ID3D11Texture2D* tex		=NULL;
+	pd3dDevice->CreateTexture2D(&dstex,NULL,&tex);
+	return tex;
+}
 
 void FramebufferCubemapDX1x::InvalidateDeviceObjects()
 {
@@ -131,6 +150,23 @@ void FramebufferCubemapDX1x::SetCurrentFace(int i)
 {
 	current_face=i;
 }
+
+ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy()
+{
+	if(!stagingTexture)
+		stagingTexture		=makeStagingTexture(pd3dDevice,Width,format);
+	D3D11_BOX sourceRegion;
+	sourceRegion.left = 0;
+	sourceRegion.right = Width;
+	sourceRegion.top = 0;
+	sourceRegion.bottom = Height;
+	sourceRegion.front = 0;
+	sourceRegion.back = 1;
+	for(int i=0;i<6;i++)
+		m_pImmediateContext->CopySubresourceRegion(stagingTexture,i, 0, 0, 0, m_pCubeEnvMap,i, &sourceRegion);
+	return stagingTexture;
+}
+
 void FramebufferCubemapDX1x::Activate()
 {
 #if 0

@@ -35,18 +35,19 @@ public:
 	{
 		return (void*)m_pCubeEnvMapSRV;
 	}
+	ID3D11Texture2D					*GetCopy();
 protected:
 	//! The size of the 2D buffer the sky is rendered to.
 	int Width,Height;
-protected:
+	ID3D11Texture2D					*stagingTexture;	// Only initialized if CopyToMemory or GetCopy invoked.
 	ID3D1xDevice*					pd3dDevice;
 	ID3D1xDeviceContext *			m_pImmediateContext;
 	ID3D1xRenderTargetView*			m_pOldRenderTarget;
 	ID3D1xDepthStencilView*			m_pOldDepthSurface;
 	D3D1x_VIEWPORT					m_OldViewports[4];
 	
-	ID3D1xTexture2D*				m_pCubeEnvDepthMap;
-	ID3D1xTexture2D*				m_pCubeEnvMap;
+	ID3D11Texture2D*				m_pCubeEnvDepthMap;
+	ID3D11Texture2D*				m_pCubeEnvMap;
 	ID3D1xRenderTargetView*			m_pCubeEnvMapRTV[6];
 	ID3D1xDepthStencilView*			m_pCubeEnvDepthMapDSV[6];
 	ID3D1xShaderResourceView*		m_pCubeEnvMapSRV;
