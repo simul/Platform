@@ -257,7 +257,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 #ifdef XBOX
 		simulWeatherRenderer->SetMatrices(view,proj);
 #endif
-		simulWeatherRenderer->RenderSky(true,false);
+		simulWeatherRenderer->RenderSky(pd3dDevice,true,false);
 	}
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 		simulWeatherRenderer->GetAtmosphericsRenderer()->StartRender();
@@ -269,12 +269,12 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	//if(simulHDRRenderer&&UseHdrPostprocessor)
 	//	simulHDRRenderer->CopyDepthAlpha();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-		simulWeatherRenderer->GetAtmosphericsRenderer()->FinishRender();
+		simulWeatherRenderer->GetAtmosphericsRenderer()->FinishRender(pd3dDevice);
 	timer.UpdateTime();
 	if(simulWeatherRenderer)
 	{
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
-		simulWeatherRenderer->RenderLateCloudLayer(true);
+		simulWeatherRenderer->RenderLateCloudLayer(pd3dDevice,true);
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{
@@ -301,10 +301,10 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	timer.UpdateTime();
 	simul::math::FirstOrderDecay(weather_timing,timer.Time,1.f,fTimeStep);
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&ShowFades)
-		simulWeatherRenderer->GetSkyRenderer()->RenderFades(width,height);
+		simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dDevice,width,height);
 
 	if(simulHDRRenderer&&UseHdrPostprocessor)
-		simulHDRRenderer->FinishRender();
+		simulHDRRenderer->FinishRender(pd3dDevice);
 	timer.UpdateTime();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);
@@ -314,7 +314,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	{
 		if(simulWeatherRenderer->GetCloudRenderer())
 		{
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width,height);
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dDevice,width,height);
 		//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
 		}
 		if(simulWeatherRenderer->Get2DCloudRenderer())

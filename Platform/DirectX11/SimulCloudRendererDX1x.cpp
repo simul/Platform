@@ -460,7 +460,7 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(void*,bool override_file)
 loadInfo.MipLevels=0;
 	if(!override_file)
 	{
-		hr=D3DX11CreateShaderResourceViewFromFile(
+		/*hr=D3DX11CreateShaderResourceViewFromFile(
 										m_pd3dDevice,
 										TEXT("./Media/Textures/noise.dds"),
 										&loadInfo,
@@ -470,7 +470,7 @@ loadInfo.MipLevels=0;
 		if(hr==S_OK)
 		{
 			return true;
-		}
+		}*/
 		const TCHAR *err=DXGetErrorString(hr);
 		std::cerr<<err<<std::endl;
 	}

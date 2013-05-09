@@ -13,3 +13,5 @@ struct ComputableTexture
 	void release();
 	void init(ID3D11Device *pd3dDevice,int w,int h);
 };
+
+//extern ID3D11Texture2D *CreateTextureFromFile(ID3D11Device *pd3dDevice,const char *);

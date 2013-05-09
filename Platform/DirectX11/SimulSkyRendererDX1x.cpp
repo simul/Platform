@@ -28,6 +28,7 @@ extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Math/Vector3.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
 #include "Simul/Platform/DirectX11/HLSL/simul_earthshadow.hlsl"
 
@@ -101,7 +102,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 	,m_hTechniqueFlare(NULL)
 	,m_hTechniquePlanet(NULL)
 	,m_hTechniquePointStars(NULL)
-	,flare_texture(NULL)
 	,flare_texture_SRV(NULL)
 	,moon_texture_SRV(NULL)
 	,earthShadowBuffer(NULL)
@@ -154,19 +154,8 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	D3DXMatrixIdentity(&proj);
 	RecompileShaders();
 
-	SAFE_RELEASE(flare_texture);
-	D3DX1x_IMAGE_LOAD_INFO loadInfo;
-	ID3D1xResource *res=NULL;
-	hr=D3DX1xCreateTextureFromFile(  m_pd3dDevice,
-									L"Media/Textures/Sunburst.dds",
-									&loadInfo,
-									NULL,
-									&res,
-									NULL
-									);
+	flare_texture_SRV=simul::dx11::LoadTexture("Sunburst.dds");
 
-	flare_texture=static_cast<ID3D1xTexture2D*>(res);
-    V_CHECK(m_pd3dDevice->CreateShaderResourceView( flare_texture,NULL,&flare_texture_SRV));
 	// Vertex declaration
 	{
 		D3D1x_PASS_DESC PassDesc;
@@ -261,8 +250,6 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pSkyEffect);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pVtxDecl);
-
-	SAFE_RELEASE(flare_texture);
 
 	SAFE_RELEASE(flare_texture_SRV);
 	SAFE_RELEASE(moon_texture_SRV);

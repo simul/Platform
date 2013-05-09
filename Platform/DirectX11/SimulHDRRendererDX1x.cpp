@@ -188,7 +188,7 @@ bool SimulHDRRendererDX1x::ApplyFade()
 	return (hr==S_OK);
 }
 
-bool SimulHDRRendererDX1x::FinishRender()
+bool SimulHDRRendererDX1x::FinishRender(void *context)
 {
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
 	framebuffer.Deactivate();

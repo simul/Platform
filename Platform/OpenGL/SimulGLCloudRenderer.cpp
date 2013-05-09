@@ -129,7 +129,7 @@ ERROR_CHECK
 ERROR_CHECK
 }
 
-bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
+bool SimulGLCloudRenderer::CreateNoiseTexture(void *,bool override_file)
 {
 	if(!init)
 		return false;
@@ -244,7 +244,7 @@ static float saturate(float c)
 static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
+bool SimulGLCloudRenderer::Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	EnsureTexturesAreUpToDate();
@@ -620,7 +620,7 @@ ERROR_CHECK
 	glUseProgram(0);
 }
 
-void SimulGLCloudRenderer::RestoreDeviceObjects(void*)
+void SimulGLCloudRenderer::RestoreDeviceObjects(void *context)
 {
 	init=true;
 	
@@ -630,7 +630,7 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void*)
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	
 	RecompileShaders();
-	CreateNoiseTexture();
+	CreateNoiseTexture(context);
 	CreateVolumeNoise();
 	using namespace simul::clouds;
 	cloudKeyframer->SetBits(CloudKeyframer::DENSITY,CloudKeyframer::BRIGHTNESS,
@@ -920,7 +920,7 @@ void SimulGLCloudRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bo
 	::DrawLines(vertices,vertex_count,strip);
 }
 
-void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
+void SimulGLCloudRenderer::RenderCrossSections(void *,int width,int height)
 {
 	static int u=3;
 	int w=(width-8)/u;

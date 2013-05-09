@@ -1,7 +1,7 @@
 #ifndef SIMUL_2D_CLOUDS_SL
 #define SIMUL_2D_CLOUDS_SL
 
-uniform_buffer Cloud2DConstants R0
+uniform_buffer Cloud2DConstants R9
 {
 	uniform vec2 origin;
 	uniform float globalScale;

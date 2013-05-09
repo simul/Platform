@@ -1,7 +1,8 @@
 
 #include "Utilities.h"
 #include "MacrosDX1x.h"
-
+#include "Simul\Base\StringToWString.h"
+#include <d3dx11.h>
 ComputableTexture::ComputableTexture()
 	:g_pTex_Output(NULL)
 	,g_pUAV_Output(NULL)
@@ -50,3 +51,21 @@ void ComputableTexture::init(ID3D11Device *pd3dDevice,int w,int h)
     srv_desc.Texture2D.MostDetailedMip	= 0;
     pd3dDevice->CreateShaderResourceView(g_pTex_Output, &srv_desc, &g_pSRV_Output);
 }
+/*
+extern std::string texture_path;
+ID3D11Texture2D *CreateTextureFromFile(ID3D11Device *pd3dDevice,const char *filename)
+{
+	std::string fn=texture_path+filename;
+	D3DX11_IMAGE_LOAD_INFO loadInfo;
+	ID3D11Resource *res;
+	HRESULT hr=D3DX11CreateTextureFromFileA(pd3dDevice,
+									fn.c_str(),
+									&loadInfo,
+									NULL,
+									&res,
+									NULL
+									);
+	
+	ID3D11Texture2D *tex=static_cast<ID3D11Texture2D*>(res);
+	return tex;
+}*/

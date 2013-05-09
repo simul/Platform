@@ -31,30 +31,30 @@
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 
 // Windows Header Files:
-#include <windows.h>
-#include <commctrl.h>
-#include <psapi.h>
+//#include <windows.h>
+//#include <commctrl.h>
+//#include <psapi.h>
 
 // C RunTime Header Files
-#include <stdlib.h>
-#include <malloc.h>
-#include <memory.h>
-#include <tchar.h>
+//#include <stdlib.h>
+//#include <malloc.h>
+//#include <memory.h>
+//#include <tchar.h>
 
 // C++ Standard Library Header Files
-#include <functional>
+//#include <functional>
 #include <string>
 #include <vector>
-#include <memory>
-#include <map>
-#include <cmath>
-#include <sstream>
-#include <fstream>
-#include <algorithm>
+//#include <memory>
+ #include <map>
+// #include <cmath>
+ #include <sstream>
+// #include <fstream>
+// #include <algorithm>
 
 // MSVC COM Support
-#include <comip.h>
-#include <comdef.h>
+// #include <comip.h>
+// #include <comdef.h>
 
 
 #ifdef _DEBUG
@@ -70,10 +70,10 @@
 
 #include <string>
 #include "simul/base/Timer.h"
-_COM_SMARTPTR_TYPEDEF(ID3D11Query, __uuidof(ID3D11Query));
-_COM_SMARTPTR_TYPEDEF(ID3D11Device, __uuidof(ID3D11Device));
-_COM_SMARTPTR_TYPEDEF(ID3D11DeviceContext, __uuidof(ID3D11DeviceContext));
-
+// _COM_SMARTPTR_TYPEDEF(ID3D11Query, __uuidof(ID3D11Query));
+// _COM_SMARTPTR_TYPEDEF(ID3D11Device, __uuidof(ID3D11Device));
+// _COM_SMARTPTR_TYPEDEF(ID3D11DeviceContext, __uuidof(ID3D11DeviceContext));
+#include "MacrosDX1x.h"
 
 #include "Simul/Platform/DirectX11/Export.h"
 SIMUL_DIRECTX11_EXPORT_CLASS Profiler
@@ -97,9 +97,9 @@ protected:
 
     struct ProfileData
     {
-        ID3D11QueryPtr DisjointQuery[QueryLatency];
-        ID3D11QueryPtr TimestampStartQuery[QueryLatency];
-        ID3D11QueryPtr TimestampEndQuery[QueryLatency];
+        ID3D11Query *DisjointQuery[QueryLatency];
+        ID3D11Query *TimestampStartQuery[QueryLatency];
+        ID3D11Query *TimestampEndQuery[QueryLatency];
         BOOL QueryStarted;
         BOOL QueryFinished;
         float time;
@@ -115,6 +115,15 @@ protected:
 				TimestampEndQuery[i]	=0;
 			}
 		}
+		~ProfileData()
+		{
+			for(int i=0;i<QueryLatency;i++)
+			{
+				SAFE_RELEASE(DisjointQuery[i]);
+				SAFE_RELEASE(TimestampStartQuery[i]);
+				SAFE_RELEASE(TimestampEndQuery[i]);
+			}
+		}
     };
 
     typedef std::map<std::string, ProfileData> ProfileMap;
@@ -122,8 +131,8 @@ protected:
     ProfileMap profiles;
     UINT64 currFrame;
 
-    ID3D11DevicePtr device;
-    ID3D11DeviceContextPtr context;
+    ID3D11Device* device;
+    ID3D11DeviceContext* context;
 
     simul::base::Timer timer;
     std::string output;

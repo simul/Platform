@@ -4,7 +4,7 @@
 #define uniform
 #endif
 
-uniform_buffer GpuSkyConstants R2
+uniform_buffer GpuSkyConstants R8
 {
 	uniform vec2 texSize;
 	uniform vec2 tableSize;

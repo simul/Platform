@@ -43,10 +43,11 @@ public:
 	void InvalidateDeviceObjects();
 	bool Destroy();
 	bool RenderSky(void*,bool buffered,bool is_cubemap);
-	void RenderLateCloudLayer(bool );
+	void RenderLateCloudLayer(void *context,bool );
 	void RenderPrecipitation();
 	void RenderLightning();
 	bool RenderCubemap();
+	void SaveCubemapToFile(const char *filename);
 	void *GetCubemap();
 	//! Perform the once-per-frame time update.
 	void Update();

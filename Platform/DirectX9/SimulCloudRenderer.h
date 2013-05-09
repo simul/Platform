@@ -56,9 +56,9 @@ public:
 	//! Call this when the 3D device has been lost.
 	void InvalidateDeviceObjects();
 	//! DX9 implementation of cloud rendering. For this platform, depth_testing and default_fog are ignored.
-	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
+	bool Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
 	//! Call this to draw the clouds, including any illumination by lightning.
-	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,int buffer_index,bool write_alpha);
+	bool Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,int buffer_index,bool write_alpha);
 	void *GetCloudShadowTexture();
 	//! Save the first keyframe texture into a 2D image file by stacking X-Z slices vertically.
 	void SaveCloudTexture(const char *filename);
@@ -77,7 +77,7 @@ public:
 	{
 		return noise_texture;
 	}
-	void RenderCrossSections(int width,int height);
+	void RenderCrossSections(void *,int width,int height);
 	bool RenderDistances(int width,int height);
 	bool RenderLightVolume();
 	void EnableFilter(bool f);
@@ -85,6 +85,7 @@ public:
 	bool IsYVertical() const{return y_vertical;}
 
 protected:
+	virtual void DrawLines(VertexXyzRgba *,int ,bool ){}
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate();
@@ -206,8 +207,8 @@ protected:
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 	LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;
-	virtual bool CreateNoiseTexture(bool override_file=false);
-	bool MakeCubemap(); // not ready yet
+	virtual bool CreateNoiseTexture(void *,bool override_file=false);
+	bool MakeCubemap(void *context); // not ready yet
 	//! Once per frame, fill this 1-D texture with information on the layer distances and noise offsets
 	bool FillRaytraceLayerTexture();
 	float last_time;

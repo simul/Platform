@@ -24,10 +24,10 @@ public:
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 	void Activate();
 	void Deactivate();
-	void Render(bool blend);
+	void Render(void *context,bool blend);
 	void Clear(float,float,float,float,int mask=0);
 	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
-	void DeactivateAndRender(bool blend);
+	void DeactivateAndRender(void *,bool blend);
 	bool DrawQuad();
 	ID3D1xShaderResourceView *GetBufferResource()
 	{

@@ -36,9 +36,9 @@ public:
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
 	//! Render the clouds.
-	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
+	bool Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
 	//! Show the cross sections on-screen.
-	void RenderCrossSections(int width,int height);
+	void RenderCrossSections(void *,int width,int height);
 	void SetLossTexture(void *);
 	void SetInscatterTextures(void *,void *);
 	
@@ -118,7 +118,7 @@ unsigned short *pIndices;
 	GLuint		sphere_ibo;
 
 	void CreateVolumeNoise();
-	virtual bool CreateNoiseTexture(bool override_file=false);
+	virtual bool CreateNoiseTexture(void *,bool override_file=false);
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();
 

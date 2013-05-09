@@ -22,8 +22,8 @@ public:
 	void Activate();
 	void Deactivate();
 	void Clear(float,float,float,float,int mask=0);
-	void DeactivateAndRender(bool blend);
-	void Render(bool blend);
+	void DeactivateAndRender(void *,bool blend);
+	void Render(void *,bool blend);
 	void SetFormat(int f);
 	void* GetColorTex()
 	{

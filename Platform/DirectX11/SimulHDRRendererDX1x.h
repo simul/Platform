@@ -39,7 +39,7 @@ public:
 	//! ApplyFade: call this after rendering the solid stuff, before rendering transparent and background imagery.
 	bool ApplyFade();
 	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
-	bool FinishRender();
+	bool FinishRender(void *context);
 	//! Create the glow texture that will be overlaid due to strong lights.
 	void RenderGlowTexture();
 	//! Get the current debug text as a c-string pointer.

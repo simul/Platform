@@ -1,7 +1,7 @@
 #ifndef CLOUD_CONSTANTS_SL
 #define CLOUD_CONSTANTS_SL
 
-uniform_buffer CloudConstants R0
+uniform_buffer CloudConstants R9
 {
 	uniform mat4 worldViewProj;
 	uniform mat4 wrld;

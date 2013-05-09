@@ -395,13 +395,13 @@ void FramebufferDX1x::Clear(float r,float g,float b,float a,int mask)
 	if(m_pBufferDepthSurface)
 		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,mask, 1.f, 0);
 }
-void FramebufferDX1x::DeactivateAndRender(bool blend)
+void FramebufferDX1x::DeactivateAndRender(void *context,bool blend)
 {
 	Deactivate();
-	Render(blend);
+	Render(context,blend);
 }
 
-void FramebufferDX1x::Render(bool blend)
+void FramebufferDX1x::Render(void *,bool blend)
 {
 	DrawQuad();
 }

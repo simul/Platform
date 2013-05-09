@@ -98,7 +98,7 @@ bool SimulGLHDRRenderer::StartRender()
 	return true;
 }
 
-bool SimulGLHDRRenderer::FinishRender()
+bool SimulGLHDRRenderer::FinishRender(void *context)
 {
 	framebuffer->Deactivate();
 	RenderGlowTexture();
@@ -111,7 +111,7 @@ bool SimulGLHDRRenderer::FinishRender()
 	glUniform1i(buffer_tex_param,0);
 	setTexture(tonemap_program,"glowTexture",1,(GLuint)glow_fb.GetColorTex());
 
-	framebuffer->Render(false);
+	framebuffer->Render(context,false);
 	ERROR_CHECK
 	glUseProgram(0);
 	return true;

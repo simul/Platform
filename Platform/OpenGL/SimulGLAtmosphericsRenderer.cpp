@@ -123,7 +123,7 @@ void SimulGLAtmosphericsRenderer::StartRender()
 	ERROR_CHECK
 }
 
-void SimulGLAtmosphericsRenderer::FinishRender()
+void SimulGLAtmosphericsRenderer::FinishRender(void *context)
 {
 	framebuffer->Deactivate();
 	framebuffer->CopyDepthFromFramebuffer();
@@ -209,7 +209,7 @@ ERROR_CHECK
     glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)framebuffer->GetColorTex());
 	
-	framebuffer->Render(false);
+	framebuffer->Render(context,false);
 	
 	if(ShowGodrays)
 	{
@@ -228,7 +228,7 @@ ERROR_CHECK
 		setParameter3(godrays_program	,"viewPosition"		,cam_pos);
 		glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);//GL_FUNC_SUBTRACT);
 		glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ONE,GL_ONE);
-		framebuffer->Render(false);
+		framebuffer->Render(context,false);
 		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		glBlendEquation(GL_FUNC_ADD);
 	}

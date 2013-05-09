@@ -237,6 +237,36 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
+void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
+{
+	FramebufferCubemapDX1x	fb_cubemap;
+	fb_cubemap.SetWidthAndHeight(1024,1024);
+	fb_cubemap.RestoreDeviceObjects(m_pd3dDevice);
+
+	cam_pos=GetCameraPosVector(view);
+	MakeCubeMatrices(view_matrices,cam_pos);
+	for(int i=0;i<6;i++)
+	{
+		fb_cubemap.SetCurrentFace(i);
+		fb_cubemap.Activate();
+		if(simulSkyRenderer)
+		{
+			D3DXMATRIX cube_proj;
+			D3DXMatrixPerspectiveFovRH(&cube_proj,
+				3.1415926536f/2.f,
+				1.f,
+				1.f,
+				600000.f);
+			SetMatrices(view_matrices[i],cube_proj);
+			HRESULT hr=RenderSky(m_pImmediateContext,false,true);
+		}
+		fb_cubemap.Deactivate();
+	}
+	std::wstring wstr=simul::base::StringToWString(filename);
+	ID3D11Texture2D *tex=fb_cubemap.GetCopy();
+	HRESULT hr=D3DX11SaveTextureToFile(m_pImmediateContext,tex,D3DX11_IFF_DDS,wstr.c_str());
+}
+
 bool SimulWeatherRendererDX1x::RenderCubemap()
 {
 	D3DXMATRIX ov=view;
@@ -292,7 +322,7 @@ bool SimulWeatherRendererDX1x::RenderSky(void*,bool buffered,bool is_cubemap)
 	return (hr==S_OK);
 }
 
-void SimulWeatherRendererDX1x::RenderLateCloudLayer(bool )
+void SimulWeatherRendererDX1x::RenderLateCloudLayer(void *context,bool )
 {
 	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{

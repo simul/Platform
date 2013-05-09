@@ -24,7 +24,7 @@ public:
 	void RestoreDeviceObjects();
 	void InvalidateDeviceObjects();
 	bool StartRender();
-	bool FinishRender();
+	bool FinishRender(void *context);
 	void RenderGlowTexture();
 protected:
 	FramebufferGL *framebuffer;
