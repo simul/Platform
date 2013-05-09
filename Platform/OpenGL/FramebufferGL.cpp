@@ -234,14 +234,14 @@ void FramebufferGL::DrawQuad()
 {
 	::DrawQuad(0,0,1,1);
 }
-void FramebufferGL::DeactivateAndRender(bool blend)
+void FramebufferGL::DeactivateAndRender(void *context,bool blend)
 {
 	ERROR_CHECK
 	Deactivate();
-	Render(blend);
+	Render(context,blend);
 }
 
-void FramebufferGL::Render(bool blend)
+void FramebufferGL::Render(void *,bool blend)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);

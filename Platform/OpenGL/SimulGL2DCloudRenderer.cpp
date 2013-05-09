@@ -64,7 +64,7 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	helper->Initialize(16,400000.f);
 }
 
-bool SimulGL2DCloudRenderer::CreateNoiseTexture(bool override_file)
+bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *,bool override_file)
 {
 	//image_tex=LoadGLImage("Cirrocumulus.png",GL_REPEAT);
 	FramebufferGL	noise_fb(16,16,GL_TEXTURE_2D);
@@ -268,7 +268,7 @@ void Set2DTexture(GLint shader_param,GLuint gl_texture,int channel)
 ERROR_CHECK
 }
 
-bool SimulGL2DCloudRenderer::Render(bool, void *, bool, bool)
+bool SimulGL2DCloudRenderer::Render(void *context,bool, void *, bool, bool)
 {
 	EnsureTexturesAreUpToDate();
 
@@ -380,7 +380,7 @@ ERROR_CHECK
 	return true;
 }
 
-void SimulGL2DCloudRenderer::RenderCrossSections(int width,int height)
+void SimulGL2DCloudRenderer::RenderCrossSections(void *,int width,int height)
 {
 	static int u=8;
 	int w=(width-8)/u;
@@ -443,9 +443,9 @@ void SimulGL2DCloudRenderer::SetInscatterTextures(void *i,void *s)
 	skylight_tex=((GLuint)s);
 }
 
-void SimulGL2DCloudRenderer::RestoreDeviceObjects(void*)
+void SimulGL2DCloudRenderer::RestoreDeviceObjects(void *context)
 {
-	CreateNoiseTexture();
+	CreateNoiseTexture(context);
 	
 ERROR_CHECK
 	RecompileShaders();

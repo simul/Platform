@@ -173,9 +173,9 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender();
+			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender(pd3dImmediateContext);
 			
-		simulWeatherRenderer->RenderLateCloudLayer(true);
+		simulWeatherRenderer->RenderLateCloudLayer(pd3dImmediateContext,true);
 		simulWeatherRenderer->RenderLightning();
 		if(simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->DrawCubemap((ID3D1xShaderResourceView*	)simulWeatherRenderer->GetCubemap());
@@ -199,7 +199,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
-		simulHDRRenderer->FinishRender();
+		simulHDRRenderer->FinishRender(pd3dImmediateContext);
 	if(simulWeatherRenderer)
 	{
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())

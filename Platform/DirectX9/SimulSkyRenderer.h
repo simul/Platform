@@ -69,9 +69,9 @@ public:
 	//! Render the stars, as a background.
 	bool						RenderTextureStars();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
-	bool						Render(bool blend);
+	bool						Render(void *,bool blend);
 	//! Draw the fade textures to screen
-	bool						RenderFades(int w,int h);
+	bool						RenderFades(void *,int w,int h);
 #ifdef XBOX
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
@@ -111,7 +111,7 @@ protected:
 	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 	int screen_pixel_height;
-	bool Render2DFades();
+	bool Render2DFades(void *context);
 	bool y_vertical;
 	float timing;
 	D3DFORMAT sky_tex_format;

@@ -40,11 +40,11 @@ public:
 	void						ReloadTextures();
 	void						RecompileShaders();
 	//! GL Implementation of render function.
-	bool						Render(bool blend);
+	bool						Render(void *,bool blend);
 	//! Render the stars, as points.
 	bool						RenderPointStars();
 	//! Draw the 2D fades to screen for debugging.
-	bool						RenderFades(int w,int h);
+	bool						RenderFades(void *,int w,int h);
 
 	// Implementing simul::sky::SkyTexturesCallback
 	virtual void SetSkyTextureSize(unsigned ){}
@@ -78,7 +78,7 @@ protected:
 	void		EnsureTextureCycle();
 
 	bool		initialized;
-	bool		Render2DFades();
+	bool		Render2DFades(void *context);
 	void		CreateFadeTextures();
 	void		CreateSkyTextures();
 

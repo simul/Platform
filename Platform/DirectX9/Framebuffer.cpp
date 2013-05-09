@@ -112,12 +112,12 @@ void Framebuffer::Clear(float r,float g,float b,float a,int mask)
 	m_pd3dDevice->Clear(0L,NULL,mask,D3DCOLOR_COLORVALUE(r,g,b,a),1.f,0L);
 }
 
-void Framebuffer::DeactivateAndRender(bool blend)
+void Framebuffer::DeactivateAndRender(void *context,bool blend)
 {
 	Deactivate();
-	Render(blend);
+	Render(context,blend);
 }
-void Framebuffer::Render(bool blend)
+void Framebuffer::Render(void *,bool blend)
 {
 	blend;
 }

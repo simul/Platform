@@ -258,7 +258,7 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 				1.f,
 				600000.f);
 			SetMatrices(view_matrices[i],cube_proj);
-			HRESULT hr=RenderSky(false,true);
+			HRESULT hr=RenderSky(m_pImmediateContext,false,true);
 		}
 		fb_cubemap.Deactivate();
 	}
@@ -322,7 +322,7 @@ bool SimulWeatherRendererDX1x::RenderSky(void*,bool buffered,bool is_cubemap)
 	return (hr==S_OK);
 }
 
-void SimulWeatherRendererDX1x::RenderLateCloudLayer(bool )
+void SimulWeatherRendererDX1x::RenderLateCloudLayer(void *context,bool )
 {
 	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{

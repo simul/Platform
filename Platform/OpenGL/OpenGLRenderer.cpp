@@ -59,6 +59,7 @@ OpenGLRenderer::~OpenGLRenderer()
 
 void OpenGLRenderer::paintGL()
 {
+	void *context=NULL;
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	if(simulTerrainRenderer)
@@ -97,18 +98,18 @@ ERROR_CHECK
 ERROR_CHECK
 		if(MixCloudsAndTerrain)
 			simulWeatherRenderer->SetAlwaysRenderCloudsLate(MixCloudsAndTerrain);
-		simulWeatherRenderer->RenderSky(UseSkyBuffer,false);
+		simulWeatherRenderer->RenderSky(context,UseSkyBuffer,false);
 
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender();
 		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render();
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender();
+			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender(context);
 		simulWeatherRenderer->RenderLightning();
 			
 		simulWeatherRenderer->SetDepthTexture(simulWeatherRenderer->GetBaseAtmosphericsRenderer()->GetDepthAlphaTexture());
-		simulWeatherRenderer->RenderLateCloudLayer(true);
+		simulWeatherRenderer->RenderLateCloudLayer(context,true);
 
 		simulWeatherRenderer->DoOcclusionTests();
 		simulWeatherRenderer->RenderPrecipitation();
@@ -122,23 +123,23 @@ ERROR_CHECK
 			simulOpticsRenderer->RenderFlare(exp,dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
-			simulHDRRenderer->FinishRender();
+			simulHDRRenderer->FinishRender(context);
 ERROR_CHECK
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);
 		
 		SetTopDownOrthoProjection(width,height);
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(width,height);
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(context,width,height);
 		if(ShowCloudCrossSections)
 		{
 			if(simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 			{
-				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(width,height);
+				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(context,width,height);
 			}
 			if(simulWeatherRenderer->Get2DCloudRenderer()&&simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
 			{
-				simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
+				simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(context,width,height);
 			}
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())

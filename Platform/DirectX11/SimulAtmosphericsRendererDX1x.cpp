@@ -214,7 +214,7 @@ void SimulAtmosphericsRendererDX1x::StartRender()
 	PIXEndNamedEvent();
 }
 
-void SimulAtmosphericsRendererDX1x::FinishRender()
+void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
 {
 	if(!framebuffer)
 		return;
@@ -258,7 +258,7 @@ skylightTexture->SetResource(skylightTexture_SRV);
 	m_pImmediateContext->VSSetConstantBuffers(0,1,&constantBuffer);
 	m_pImmediateContext->PSSetConstantBuffers(0,1,&constantBuffer);
 	ApplyPass(technique->GetPassByIndex(0));
-	framebuffer->Render(false);
+	framebuffer->Render(context,false);
 	imageTexture->SetResource(NULL);
 	lossTexture1->SetResource(NULL);
 	inscatterTexture1->SetResource(NULL);

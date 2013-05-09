@@ -738,7 +738,7 @@ bool SimulSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const f
 	HRESULT hr=RenderAngledQuad(planet_dir,planet_angular_size);
 	return hr==S_OK;
 }
-bool SimulSkyRenderer::RenderFades(int w,int h)
+bool SimulSkyRenderer::RenderFades(void *,int w,int h)
 {
 	HRESULT hr=S_OK;
 	int size=w/4;
@@ -912,7 +912,7 @@ bool SimulSkyRenderer::RenderTextureStars()
 	return (hr==S_OK);
 }
 
-bool SimulSkyRenderer::Render2DFades()
+bool SimulSkyRenderer::Render2DFades(void *context)
 {
 	// Not needed if called from Render():
 	//m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
@@ -945,13 +945,13 @@ bool SimulSkyRenderer::Render2DFades()
 	return true;
 }
 
-bool SimulSkyRenderer::Render(bool blend)
+bool SimulSkyRenderer::Render(void *context,bool blend)
 {
 	interp_at_last_render=skyKeyframer->GetInterpolation();
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
 	m_pSkyEffect->SetFloat	(skyInterp			,skyKeyframer->GetInterpolation());
 	EnsureTexturesAreUpToDate();
-	Render2DFades();
+	Render2DFades(context);
 	PIXBeginNamedEvent(0xFF00FFFF,"SimulSkyRenderer::Render");
 	HRESULT hr=S_OK;
 #ifndef XBOX

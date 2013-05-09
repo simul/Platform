@@ -68,7 +68,7 @@ public:
 	}
 	//! Render the Atmospherics.
 	void StartRender();
-	void FinishRender();
+	void FinishRender(void *context);
 	void *GetDepthAlphaTexture()
 	{
 		return (void*)framebuffer->buffer_texture_SRV;

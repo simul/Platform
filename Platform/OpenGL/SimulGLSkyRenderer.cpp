@@ -185,7 +185,7 @@ const float *SimulGLSkyRenderer::GetFastInscatterLookup(float distance_texcoord,
 
 // Here we blend the four 3D fade textures (distance x elevation x altitude at two keyframes, for loss and inscatter)
 // into pair of 2D textures (distance x elevation), eliminating the viewing altitude and time factor.
-bool SimulGLSkyRenderer::Render2DFades()
+bool SimulGLSkyRenderer::Render2DFades(void *context)
 {
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -247,7 +247,7 @@ bool SimulGLSkyRenderer::Render2DFades()
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderFades(int w,int h)
+bool SimulGLSkyRenderer::RenderFades(void *,int w,int h)
 {
 	int size=w/4;
 	if(h/3<size)
@@ -374,7 +374,7 @@ ERROR_CHECK
 	glUseProgram(p);
 }
 
-bool SimulGLSkyRenderer::Render(bool blend)
+bool SimulGLSkyRenderer::Render(void *context,bool blend)
 {
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	EnsureTexturesAreUpToDate();
@@ -383,7 +383,7 @@ bool SimulGLSkyRenderer::Render(bool blend)
 	SetCameraPosition(cam_pos.x,cam_pos.y,cam_pos.z);
 	static simul::base::Timer timer;
 	timer.StartTime();
-	Render2DFades();
+	Render2DFades(context);
 	timer.FinishTime();
 	texture_update_time=timer.Time;
 	timer.StartTime();

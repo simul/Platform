@@ -50,9 +50,9 @@ public:
 	//! Call this when the 3D device has been lost.
 	void InvalidateDeviceObjects();
 	//! Platform-dependent. Call this to draw the sky
-	bool RenderSky(bool buffered,bool is_cubemap);
+	bool RenderSky(void *,bool buffered,bool is_cubemap);
 	//! Call this to draw the clouds
-	void RenderLateCloudLayer(bool buf);
+	void RenderLateCloudLayer(void *context,bool buf);
 	//! Call this to draw lightning.
 	void RenderLightning();
 	//! Call this to draw rain etc.
@@ -95,6 +95,7 @@ protected:
 	simul::base::SmartPtr<class SimulGLAtmosphericsRenderer> simulAtmosphericsRenderer;
 	void CreateBuffers();
 	void RenderBufferToScreen(GLuint texture,int w,int h,bool use_shader,bool blend=false);
+	virtual void DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip){}
 };
 #ifdef _MSC_VER
 	#pragma warning(pop)

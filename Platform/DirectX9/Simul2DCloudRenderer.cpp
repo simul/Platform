@@ -192,7 +192,7 @@ void Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
 	};
 	SAFE_RELEASE(m_pVtxDecl);
 	V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	V_CHECK(CreateNoiseTexture());
+	V_CHECK(CreateNoiseTexture(m_pd3dDevice));
 	hr=CreateImageTexture();
 	RecompileShaders();
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
@@ -222,7 +222,7 @@ Simul2DCloudRenderer::~Simul2DCloudRenderer()
 	InvalidateDeviceObjects();
 }
 
-bool Simul2DCloudRenderer::CreateNoiseTexture(bool override_file)
+bool Simul2DCloudRenderer::CreateNoiseTexture(void *,bool override_file)
 {
 	SAFE_RELEASE(noise_texture);
 	// Can we load it from disk?
@@ -261,7 +261,7 @@ void SetTexture()
 {
 }
 
-bool Simul2DCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
+bool Simul2DCloudRenderer::Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	cubemap;
 	depth_alpha_tex;
@@ -504,7 +504,7 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 	return debug_text;
 }
 
-void Simul2DCloudRenderer::RenderCrossSections(int screen_width,int screen_height)
+void Simul2DCloudRenderer::RenderCrossSections(void *,int screen_width,int screen_height)
 {
 	int w=(screen_width-16)/6;
 	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;

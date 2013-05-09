@@ -326,7 +326,7 @@ bool SimulHDRRenderer::CopyDepthAlpha()
 	return (hr==S_OK);
 }
 
-bool SimulHDRRenderer::FinishRender()
+bool SimulHDRRenderer::FinishRender(void *)
 {
 	HRESULT hr=S_OK;
 	D3DSURFACE_DESC desc;

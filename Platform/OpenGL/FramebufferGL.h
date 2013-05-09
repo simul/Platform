@@ -44,8 +44,8 @@ public:
 	void Deactivate();
 	void CopyDepthFromFramebuffer();
 	void Clear(float r,float g,float b,float a,int mask=0);
-	void DeactivateAndRender(bool blend);
-	void Render(bool blend);
+	void DeactivateAndRender(void *,bool blend);
+	void Render(void *,bool blend);
 	//void DrawQuad(int w, int h);
 	void DrawQuad();
 	// Get the dimension of the surface
