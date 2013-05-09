@@ -25,6 +25,8 @@
 	#define R0
 	#define R1
 	#define R2
+	#define R8
+	#define R9
 	struct float4x4
 	{
 		float m[16];
@@ -86,8 +88,10 @@
 	};
 #else
 	#define R0 : register(b0)
-	#define R1 : register(b1)
+	#define R1 : register(b10)
 	#define R2 : register(b2)
+	#define R8 : register(b8)
+	#define R9 : register(b9)
 	#define ALIGN
 	#define FLOAT float
 #endif

@@ -74,4 +74,5 @@ protected:
 	bool CreateBuffers();
 	ID3D1xRenderTargetView* MakeRenderTarget(const ID3D1xTexture2D* pTexture);
 	float timing;
+	unsigned int num_v;
 };
