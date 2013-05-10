@@ -95,7 +95,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,m_hTechniqueCrossSectionXZ(NULL)
 	,m_hTechniqueCrossSectionXY(NULL)
 	,m_pd3dDevice(NULL)
-	,m_pImmediateContext(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pLightningVtxDecl(NULL)
 	,m_pCloudEffect(NULL)
@@ -148,7 +147,7 @@ void SimulCloudRendererDX1x::SetNoiseTextureProperties(int s,int f,int o,float p
 	noise_texture_frequency=f;
 	texture_octaves=o;
 	texture_persistence=p;
-	CreateNoiseTexture(m_pImmediateContext);
+	SAFE_RELEASE(noiseTextureResource);
 }
 
 void SimulCloudRendererDX1x::RecompileShaders()
@@ -164,10 +163,10 @@ void SimulCloudRendererDX1x::RecompileShaders()
 	MAKE_CONSTANT_BUFFER(cloudConstantsBuffer,CloudConstants);
 }
 
-void SimulCloudRendererDX1x::RestoreDeviceObjects( void* dev)
+void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 {
 	m_pd3dDevice=(ID3D11Device*)dev;
-	SAFE_RELEASE(m_pImmediateContext);
+	ID3D1xDeviceContext* m_pImmediateContext;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	HRESULT hr;
 	CreateNoiseTexture(m_pImmediateContext);
@@ -315,6 +314,8 @@ void SimulCloudRendererDX1x::CreateMeshBuffers()
 	// Create the instance buffer.
 	m_pd3dDevice->CreateBuffer(&instanceBufferDesc, &instanceData, &instanceBuffer);
 	{
+		ID3D1xDeviceContext* m_pImmediateContext;
+		m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 		D3D11_MAPPED_SUBRESOURCE mapped_res;
 		m_pImmediateContext->Map(instanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
 		for(int i=0;i<200;i++)
@@ -329,7 +330,6 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	Unmap();
 	if(illumination_texture)
 		Unmap3D(illumination_texture);
-	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(cloudConstantsBuffer);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pLightningVtxDecl);
@@ -381,8 +381,9 @@ static int PowerOfTwo(int unum)
 	return (int)Exp;
 }
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
-void SimulCloudRendererDX1x::RenderNoise()
+void SimulCloudRendererDX1x::RenderNoise(void *context)
 {
+	ID3D1xDeviceContext* m_pImmediateContext=(ID3D1xDeviceContext*)context;
 	ID3D1xEffect*					effect=NULL;
 	ID3D1xEffectTechnique*			randomTechnique;
 	ID3D1xEffectTechnique*			noiseTechnique;
@@ -444,11 +445,12 @@ void SimulCloudRendererDX1x::RenderNoise()
 	SAFE_RELEASE(effect);
 }
 
-bool SimulCloudRendererDX1x::CreateNoiseTexture(void*,bool override_file)
+bool SimulCloudRendererDX1x::CreateNoiseTexture(void* context,bool override_file)
 {
 	if(!m_pd3dDevice)
 		return false;
-	RenderNoise();
+	RenderNoise(context);
+	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext*)context;
 	return true;
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(noise_texture);
@@ -696,8 +698,9 @@ static float saturate(float c)
 	return std::max(std::min(1.f,c),0.f);
 }
 
-bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
+bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
 {
+	ID3D1xDeviceContext* m_pImmediateContext=(ID3D1xDeviceContext*)context;
     ProfileBlock profileBlock("SimulCloudRendererDX1x::Render");
 	EnsureTexturesAreUpToDate();
  
@@ -975,8 +978,9 @@ void SimulCloudRendererDX1x::DrawLines(VertexXyzRgba *vertices,int vertex_count,
 	simul::dx11::UtilityRenderer::DrawLines(vertices,vertex_count,strip);
 }
 
-void SimulCloudRendererDX1x::RenderCrossSections(void*,int width,int height)
+void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int height)
 {
+	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext*)context;
 	HRESULT hr=S_OK;
 	static int u=3;
 	int w=(width-8)/u;
@@ -1030,10 +1034,11 @@ void SimulCloudRendererDX1x::RenderCrossSections(void*,int width,int height)
 	RenderTexture(m_pd3dDevice,width-(w+8),height-(w+8),w,w,m_pCloudEffect->GetTechniqueByName("simple"));
 }
 
-bool SimulCloudRendererDX1x::RenderLightning()
+bool SimulCloudRendererDX1x::RenderLightning(void *context)
 {
 	if(!enable_lightning)
 		return S_OK;
+	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext*)context;
 	using namespace simul::clouds;
 
 	if(!lightning_vertices)

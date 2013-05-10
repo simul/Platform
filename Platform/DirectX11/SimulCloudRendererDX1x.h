@@ -63,7 +63,7 @@ public:
 	void RenderDebugInfo(int width,int height);
 	void RenderCrossSections(void *context,int width,int height);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
-	bool RenderLightning();
+	bool RenderLightning(void *context);
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 
@@ -125,7 +125,6 @@ protected:
 	static const int MAX_INSTANCES=400;
 	InstanceType instances[MAX_INSTANCES];
 	ID3D1xDevice*					m_pd3dDevice;
-	ID3D1xDeviceContext*			m_pImmediateContext;
 	ID3D1xBuffer *					vertexBuffer;
 	ID3D1xBuffer *					indexBuffer;
 	ID3D1xBuffer *					instanceBuffer;
@@ -213,7 +212,7 @@ ID3D1xEffectVectorVariable* 	noiseOffset		;
 	virtual bool CreateNoiseTexture(void *context,bool override_file=false);
 	bool CreateCloudEffect();
 	bool MakeCubemap(); // not ready yet
-	void RenderNoise();
+	void RenderNoise(void *context);
 	
 	bool enable_lightning;
 };

@@ -320,9 +320,6 @@ bool SimulHDRRenderer::CopyDepthAlpha()
 	hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
 	//if(atmospherics)
 	//	atmospherics->SetInputTextures(depth_alpha_texture,buffer_depth_texture);
-#ifndef XBOX
-	m_pd3dDevice->SetTransform(D3DTS_VIEW,&view);
-#endif
 	return (hr==S_OK);
 }
 
@@ -330,14 +327,10 @@ bool SimulHDRRenderer::FinishRender(void *)
 {
 	HRESULT hr=S_OK;
 	D3DSURFACE_DESC desc;
-#ifdef XBOX
-	m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
-#endif
 	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
 	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
 	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC,D3DCMP_LESSEQUAL);
 	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC,D3DCMP_LESSEQUAL);
-
 
 	// using gamma, render the hdr image to the LDR buffer:
 	m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);

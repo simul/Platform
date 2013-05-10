@@ -43,6 +43,7 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	m_pOldDepthSurface(NULL)
 	,stagingTexture(NULL)
 	,timing(0.f)
+	,num_v(0)
 	,target_format(DXGI_FORMAT_R32G32B32A32_FLOAT)
 {
 }
@@ -351,9 +352,8 @@ void FramebufferDX1x::Activate()
 	if(!m_pImmediateContext)
 		return;
 	HRESULT hr=S_OK;
-	unsigned int num_v=0;
 	m_pImmediateContext->RSGetViewports(&num_v,NULL);
-	if(num_v<=4)
+	if(num_v>0)
 		m_pImmediateContext->RSGetViewports(&num_v,m_OldViewports);
 
 	m_pOldRenderTarget	=NULL;
@@ -381,7 +381,8 @@ void FramebufferDX1x::Deactivate()
 	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
-	m_pImmediateContext->RSSetViewports(1,m_OldViewports);
+	if(num_v>0)
+		m_pImmediateContext->RSSetViewports(num_v,m_OldViewports);
 }
 
 void FramebufferDX1x::Clear(float r,float g,float b,float a,int mask)
@@ -394,6 +395,7 @@ void FramebufferDX1x::Clear(float r,float g,float b,float a,int mask)
 	if(m_pBufferDepthSurface)
 		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,mask, 1.f, 0);
 }
+
 void FramebufferDX1x::DeactivateAndRender(void *context,bool blend)
 {
 	Deactivate();

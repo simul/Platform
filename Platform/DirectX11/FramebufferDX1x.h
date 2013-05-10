@@ -44,6 +44,7 @@ public:
 	void CopyToMemory(void *target);
 	void CopyToMemory(void *target,int start_texel,int texels);
 protected:
+	unsigned int num_v;
 	DXGI_FORMAT target_format;
 	bool Destroy();
 	ID3D1xDevice*						m_pd3dDevice;
@@ -59,7 +60,7 @@ protected:
 	
 	ID3D1xRenderTargetView*				m_pOldRenderTarget;
 	ID3D1xDepthStencilView*				m_pOldDepthSurface;
-	D3D1x_VIEWPORT						m_OldViewports[4];
+	D3D1x_VIEWPORT						m_OldViewports[16];
 
 	//! The texture the scene is rendered to.
 public:

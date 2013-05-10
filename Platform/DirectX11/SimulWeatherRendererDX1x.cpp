@@ -388,7 +388,6 @@ void SimulWeatherRendererDX1x::Update()
 					simulSkyRenderer->GetLossTexture2());
 				simulCloudRenderer->SetInscatterTextures(simulSkyRenderer->GetInscatterTexture1(),
 					simulSkyRenderer->GetInscatterTexture2());*/
-				simulCloudRenderer->SetFadeInterpolation(simulSkyRenderer->GetFadeInterp());
 				simulCloudRenderer->SetAltitudeTextureCoordinate(simulSkyRenderer->GetAltitudeTextureCoordinate());
 			}
 		/*	if(simulAtmosphericsRenderer)

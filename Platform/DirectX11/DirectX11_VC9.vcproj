@@ -51,6 +51,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
+				ForcedIncludeFiles="Simul/UseDlls.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -131,6 +132,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
+				ForcedIncludeFiles="Simul/UseDlls.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

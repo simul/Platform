@@ -786,7 +786,6 @@ bool SimulCloudRenderer::Render(void *context,bool cubemap,void *depth_alpha_tex
 	m_pCloudEffect->SetVector	(mieRayleighRatio	,MakeD3DVector(skyInterface->GetMieRayleighRatio()));
 	m_pCloudEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 	m_pCloudEffect->SetFloat	(cloudEccentricity	,GetCloudInterface()->GetMieAsymmetry());
-	m_pCloudEffect->SetFloat	(fadeInterp			,fade_interp);
 	m_pCloudEffect->SetFloat	(alphaSharpness		,GetCloudInterface()->GetAlphaSharpness());
 	float time=skyInterface->GetTime();
 	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
@@ -999,7 +998,6 @@ void SimulCloudRenderer::InternalRenderRaytrace(int buffer_index)
 		D3DXVECTOR3 d3dcam_pos;
 		GetCameraPosVector(view,y_vertical,(float*)&d3dcam_pos);
 		float altitude_km=0.001f*(y_vertical?d3dcam_pos.y:d3dcam_pos.z);
-		hr=m_pCloudEffect->SetFloat(fadeInterp,fade_interp);
 		if(skyInterface)
 		{
 //		hr=m_pCloudEffect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
