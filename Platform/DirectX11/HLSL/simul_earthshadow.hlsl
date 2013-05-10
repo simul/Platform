@@ -1,7 +1,7 @@
 #ifndef SIMUL_EARTHSHADOW
 #define SIMUL_EARTHSHADOW
 
-uniform_buffer EarthShadowUniforms
+uniform_buffer EarthShadowUniforms R9
 {
 	float3 sunDir			;
 	float radiusOnCylinder	;

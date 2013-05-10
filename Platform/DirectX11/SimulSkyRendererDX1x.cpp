@@ -771,6 +771,8 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pStarsVertexBuffer);
 }
 
+static int test = 0;
+
 bool SimulSkyRendererDX1x::RenderPointStars()
 {
 	HRESULT hr=S_OK;
@@ -786,21 +788,30 @@ bool SimulSkyRendererDX1x::RenderPointStars()
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
+
 	simul::dx11::setMatrix(m_pSkyEffect,"worldViewProj",(const float *)(&tmp1));
 	//hr=m_pd3dDevice->SetVertexDeclaration(NULL);
 //	hr=m_pd3dDevice->SetFVF(D3DFVF_XYZ|D3DFVF_TEX0);
 
 	hr=ApplyPass(m_hTechniquePointStars->GetPassByIndex(0));
 
+	if (test < 5)
+	{
+		return true;
+	}
+
 	float sb=skyKeyframer->GetSkyInterface()->GetStarlight().x;
 	float star_brightness=sb*skyKeyframer->GetStarBrightness();
 	simul::dx11::setParameter(m_pSkyEffect,"starBrightness",star_brightness);
-	
+
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
 	if(!star_vertices||current_num_stars!=num_stars)
 	{
 		BuildStarsBuffer();
 	}
+
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
 
 	m_pImmediateContext->IASetInputLayout( m_pStarsVtxDecl );
 	UINT stride = sizeof(StarVertext);
@@ -809,22 +820,26 @@ bool SimulSkyRendererDX1x::RenderPointStars()
     UINT Offsets[1];
     Strides[0] = 0;
     Offsets[0] = 0;
+
 	m_pImmediateContext->IASetVertexBuffers(	0,						// the first input slot for binding
 												1,						// the number of buffers in the array
 												&m_pStarsVertexBuffer,	// the array of vertex buffers
 												&stride,				// array of stride values, one for each buffer
 												&offset );				// array of offset values, one for each buffer
 
-	// Set the input layout
-	m_pImmediateContext->IASetInputLayout(m_pStarsVtxDecl);
-
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 	m_pImmediateContext->Draw(num_stars,0);
-	
+
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+
 	return true;
 }
 
+//static int test =0;
 
 bool SimulSkyRendererDX1x::Render(void*,bool blend)
 {
@@ -832,17 +847,21 @@ bool SimulSkyRendererDX1x::Render(void*,bool blend)
 	EnsureTexturesAreUpToDate();
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
+
 	//if(!cubemap)
 		Render2DFades(m_pImmediateContext);
 	D3DXMATRIX tmp1,tmp2,wvp;
+	//view._41=view._42=view._43=0.0f;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
 	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 	D3DXMatrixIdentity(&world);
+
 	//set up matrices
 	world._41=cam_pos.x;
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
+#if 1
 	if(ReverseDepth)
 	{
 		D3DXMATRIX invertz;
@@ -854,7 +873,7 @@ bool SimulSkyRendererDX1x::Render(void*,bool blend)
 	else
 // Fix projection
 		simul::dx11::FixProjectionMatrix(proj,1000.f,IsYVertical());
-
+#endif
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);
 #if 0 // Code for single-pass cubemap. This DX11 feature is not so hot.
@@ -882,13 +901,15 @@ bool SimulSkyRendererDX1x::Render(void*,bool blend)
 		std::swap(light_dir.y,light_dir.z);
 		std::swap(sun_dir.y,sun_dir.z);
 	}
+
 	lightDirection->SetFloatVector(light_dir);
 	mieRayleighRatio->SetFloatVector(mie_rayleigh_ratio);
 	hazeEccentricity->SetFloat(skyKeyframer->GetMieEccentricity());
-	
+
 	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
 								skyKeyframer->GetAltitudeKM()
 								,skyKeyframer->GetDirectionToSun());
+	
 	if(e.enable)
 	{
 		hr=ApplyPass(m_hTechniqueEarthShadow->GetPassByIndex(0));
@@ -909,7 +930,6 @@ bool SimulSkyRendererDX1x::Render(void*,bool blend)
 	{
 		hr=ApplyPass(m_hTechniqueSky->GetPassByIndex(0));
 	}
-
 		
 	DrawCube();
 
@@ -989,13 +1009,16 @@ void SimulSkyRendererDX1x::DrawCubemap(ID3D1xShaderResourceView *m_pCubeEnvMapSR
 
 void SimulSkyRendererDX1x::DrawCube()
 {
-	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 	UINT stride = sizeof(Vertex_t);
 	UINT offset = 0;
     UINT Strides[1];
     UINT Offsets[1];
     Strides[0] = 0;
     Offsets[0] = 0;
+
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+
 	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
 												1,					// the number of buffers in the array
 												&m_pVertexBuffer,	// the array of vertex buffers
@@ -1005,9 +1028,15 @@ void SimulSkyRendererDX1x::DrawCube()
 	// Set the input layout
 	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
 
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
+
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	m_pImmediateContext->Draw(36,0);
+
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pImmediateContext->IASetInputLayout( previousInputLayout );
 }
 
 void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

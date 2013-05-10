@@ -175,9 +175,13 @@ void SimulTerrainRendererDX1x::Render()
 	ApplyPass(m_pTechnique->GetPassByIndex(0));
 	// Set the input layout
 	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	if((v)>2)
 		m_pImmediateContext->Draw((v)-2,0);
+
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 }
 
 void SimulTerrainRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

@@ -1,10 +1,19 @@
 
-
-cbuffer cbPerObject : register(b0)
+#define pi (3.1415926536f)
+	
+cbuffer cbPerObject : register(b10)
 {
-	matrix worldViewProj : packoffset(c0);
-	matrix proj : packoffset(c32);
-	matrix cubemapViews[6] : packoffset(c48);
+	matrix worldViewProj;
+	matrix proj;
+	matrix cubemapViews[6];
+	float4 eyePosition;
+	float4 lightDir;
+	float4 mieRayleighRatio;
+	float hazeEccentricity;
+	float skyInterp;
+	float altitudeTexCoord;
+	float4 colour;
+	float starBrightness;
 };
 
 Texture2D inscTexture;
@@ -38,18 +47,7 @@ SamplerState fadeSamplerState
 
 TextureCube cubeTexture;
 
-//------------------------------------
-// Parameters 
-//------------------------------------
-float4 eyePosition : EYEPOSITION_WORLDSPACE;
-float4 lightDir : Direction;
-float4 mieRayleighRatio;
-float hazeEccentricity;
-float skyInterp;
-float altitudeTexCoord;
-#define pi (3.1415926536f)
-float4 colour;
-float starBrightness;
+
 //------------------------------------
 // Structures 
 //------------------------------------
@@ -197,6 +195,7 @@ float4 PS_Main( vertexOutput IN): SV_TARGET
 	float4 skyl=skylTexture.Sample(samplerState,texc2);
 	float3 result=InscatterFunction(insc,cos0);
 	result+=skyl.rgb;
+	result.r=1.0;
 	return float4(result.rgb,1.f);
 }
 
@@ -394,6 +393,7 @@ technique11 simul_sky
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 	//	SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);

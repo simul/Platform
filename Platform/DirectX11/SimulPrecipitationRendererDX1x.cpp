@@ -199,8 +199,11 @@ return;
 													&stride,			// array of stride values, one for each buffer
 													&offset );
 		m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+		D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+		m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 		m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		m_pImmediateContext->Draw(NUM_VERT-2,0);
+		m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 	}
 	D3DXMatrixIdentity(&world);
 	PIXEndNamedEvent();

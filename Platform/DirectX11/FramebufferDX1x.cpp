@@ -415,13 +415,21 @@ bool FramebufferDX1x::DrawQuad()
     UINT Offsets[1];
     Strides[0] = 0;
     Offsets[0] = 0;
+
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+
 	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
 												1,					// the number of buffers in the array
 												&m_pVertexBuffer,	// the array of vertex buffers
 												&stride,			// array of stride values, one for each buffer
 												&offset);			// array of offset values, one for each buffer
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
 	m_pImmediateContext->Draw(4,0);
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pImmediateContext->IASetInputLayout( previousInputLayout );
 	return (hr==S_OK);
 }

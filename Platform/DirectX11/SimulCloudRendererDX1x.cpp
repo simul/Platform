@@ -696,17 +696,29 @@ static float saturate(float c)
 	return std::max(std::min(1.f,c),0.f);
 }
 
+static int test = 0;
+
 bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
 {
     ProfileBlock profileBlock("SimulCloudRendererDX1x::Render");
 	EnsureTexturesAreUpToDate();
  
+	if (test < 1)
+	{
+		return true;
+	}
+
 	float blendFactor[] = {0, 0, 0, 0};
 	UINT sampleMask   = 0xffffffff;
 	if(write_alpha)
 		m_pImmediateContext->OMSetBlendState(blendAndWriteAlpha, blendFactor, sampleMask);
 	else
 		m_pImmediateContext->OMSetBlendState(blendAndDontWriteAlpha, blendFactor, sampleMask);
+
+	if (test < 2)
+	{
+		return true;
+	}
 
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
@@ -716,6 +728,11 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 	skyLossTexture->SetResource(skyLossTexture_SRV);
 	skyInscatterTexture->SetResource(skyInscatterTexture_SRV);
 	skylightTexture->SetResource(skylightTexture_SRV);
+
+	if (test < 3)
+	{
+		return true;
+	}
 
 		simul::math::Vector3 X1=cloudKeyframer->GetCloudInterface()->GetOrigin();
 		simul::math::Vector3 InverseDX=cloudKeyframer->GetCloudInterface()->GetInverseScales();
@@ -730,6 +747,12 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 	else
 	// Mess with the proj matrix to extend the far clipping plane:
 		simul::dx11::FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
+	
+	if (test < 4)
+	{
+		return true;
+	}
+
 	//set up matrices
 	D3DXMATRIX wvp,world;
 	D3DXMatrixIdentity(&world);
@@ -737,6 +760,12 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
+
+	if (test < 4)
+	{
+		return true;
+	}
+
 	if(y_vertical)
 		std::swap(wind_offset.y,wind_offset.z);
 	X+=wind_offset;
@@ -749,11 +778,22 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 		view_dir.Define(-view._13,-view._23,-view._33);
 	simul::math::Vector3 up			(view._12,view._22,view._32);
 
+	if (test < 5)
+	{
+		return true;
+	}
+
 	simul::sky::float4 view_km=(const float*)cam_pos;
 	if(!cubemap)
 	{
 		helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
 	}
+
+	if (test < 6)
+	{
+		return true;
+	}
+
 	view_km*=0.001f;
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;
@@ -772,6 +812,11 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
 
+	if (test < 7)
+	{
+		return true;
+	}
+
 	ID3D1xEffectConstantBuffer* cbUser=m_pCloudEffect->GetConstantBufferByName("cbUser");
 	if(cbUser)
 	{
@@ -781,6 +826,11 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 	CloudConstants cloudConstants;
 	memset(&cloudConstants,0,sizeof(cloudConstants));
 	
+	if (test < 8)
+	{
+		return true;
+	}
+
 	cloudConstants.worldViewProj=wvp;
 	cloudConstants.worldViewProj.transpose();
 	cloudConstants.wrld=world;
@@ -801,6 +851,12 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 			cloudConstants.earthshadowMultiplier=1.f;
 		}
 	}
+
+	if (test < 9)
+	{
+		return true;
+	}
+
 	cloudConstants.cloud_interp		=cloudKeyframer->GetInterpolation();
 	//eyePosition			->SetFloatVector	(cam_pos);
 	cloudConstants.lightResponse	=light_response;
@@ -818,6 +874,11 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 	cloudConstants.alphaSharpness		=(GetCloudInterface()->GetAlphaSharpness());
 	cloudConstants.maxFadeDistanceMetres=(max_fade_distance_metres);
 	
+	if (test < 10)
+	{
+		return true;
+	}
+
 	cloudConstants.cornerPos		=X1;
 	cloudConstants.inverseScales	=InverseDX;
 	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
@@ -842,6 +903,11 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 		cloudConstants.lightningMultipliers=	(lightning_multipliers);
 		cloudConstants.lightningColour=	(lightning_colour);
 
+	if (test < 11)
+	{
+		return true;
+	}
+
 		simul::math::Vector3 light_X1,light_X2,light_DX;
 		light_DX.Define(lightningRenderInterface->GetLightningZoneSize(),
 						lightningRenderInterface->GetLightningZoneSize(),
@@ -864,6 +930,11 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 	int startv=0;
 	int v=0;
 
+	if (test < 12)
+	{
+		return true;
+	}
+
 	static int select_slice=-1;
 	int ii=0;
 	for(std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
@@ -883,6 +954,12 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 		inst.noiseOffset.x	=noise_offset[0];
 		inst.noiseOffset.y	=noise_offset[1];
 	}
+
+	if (test < 13)
+	{
+		return true;
+	}
+
 	int numInstances=(int)helper->GetSlices().size();
 	//UPDATE_CONSTANT_BUFFERS(instanceBuffer,InstanceType,instances,numInstances)
 	{
@@ -894,12 +971,24 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 		//	((InstanceType*)(mapped_res.pData))[i]=instances[i];
 		m_pImmediateContext->Unmap(instanceBuffer, 0);
 	}
+
+	if (test < 14)
+	{
+		return true;
+	}
+
 	// Update the instance buffer:
 	// Set the input layout
 	UINT strides[]={sizeof(CloudVertex_t),sizeof(InstanceType)};
 	UINT offsets[]={0,0};
 	ID3D11Buffer *buffers[]={vertexBuffer,instanceBuffer};
+
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+
 	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
 	m_pImmediateContext->IASetVertexBuffers(	0,			// the first input slot for binding
 												2,			// the number of buffers in the array
@@ -939,6 +1028,15 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 		ApplyPass(m_hTechniqueCloud->GetPassByIndex(0));
 	m_pImmediateContext->//DrawInstanced(num_primitives,numInstances, 0, 0);
 						DrawIndexedInstanced(num_primitives,numInstances,0,0,0);
+
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+
+	if (test < 15)
+	{
+		return true;
+	}
+
 	PIXEndNamedEvent();
 	skyLossTexture->SetResource(NULL);
 	skyInscatterTexture->SetResource(NULL);
@@ -951,8 +1049,15 @@ bool SimulCloudRendererDX1x::Render(void*,bool cubemap,void *depth_tex,bool defa
 		ApplyPass(m_hTechniqueCloud->GetPassByIndex(0));
 	m_pImmediateContext->OMSetBlendState(NULL, blendFactor, sampleMask);
 	// This actually returns the PREVIOUS FRAME's time value:
+
+	if (test < 16)
+	{
+		return true;
+	}
+
 	render_time*=0.99f;
 	render_time+=0.01f*profileBlock.GetTime();//profileBlock.GetTime();
+
 	return (hr==S_OK);
 }
 
