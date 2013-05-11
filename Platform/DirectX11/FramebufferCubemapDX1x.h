@@ -27,21 +27,20 @@ public:
 	void InvalidateDeviceObjects();
 	void SetCurrentFace(int i);
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-	void Activate();
-	void Deactivate();
+	void Activate(void *context);
+	void Deactivate(void *context);
 	void Render(bool){}
-	void Clear(float,float,float,float,int mask=0);
+	void Clear(void *context,float,float,float,float,int mask=0);
 	virtual void* GetColorTex()
 	{
 		return (void*)m_pCubeEnvMapSRV;
 	}
-	ID3D11Texture2D					*GetCopy();
+	ID3D11Texture2D					*GetCopy(void *context);
 protected:
 	//! The size of the 2D buffer the sky is rendered to.
 	int Width,Height;
 	ID3D11Texture2D					*stagingTexture;	// Only initialized if CopyToMemory or GetCopy invoked.
 	ID3D1xDevice*					pd3dDevice;
-	ID3D1xDeviceContext *			m_pImmediateContext;
 	ID3D1xRenderTargetView*			m_pOldRenderTarget;
 	ID3D1xDepthStencilView*			m_pOldDepthSurface;
 	D3D1x_VIEWPORT					m_OldViewports[4];

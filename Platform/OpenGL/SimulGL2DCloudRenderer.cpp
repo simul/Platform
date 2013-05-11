@@ -64,12 +64,12 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	helper->Initialize(16,400000.f);
 }
 
-bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *,bool override_file)
+bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *context,bool override_file)
 {
 	//image_tex=LoadGLImage("Cirrocumulus.png",GL_REPEAT);
 	FramebufferGL	noise_fb(16,16,GL_TEXTURE_2D);
 	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT,GL_REPEAT);
-	noise_fb.Activate();
+	noise_fb.Activate(context);
 	{
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
@@ -81,7 +81,7 @@ bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *,bool override_file)
 		DrawQuad(0,0,1,1);
 		SAFE_DELETE_PROGRAM(noise_prog);
 	}
-	noise_fb.Deactivate();
+	noise_fb.Deactivate(context);
 	glUseProgram(0);
 ERROR_CHECK	
 
@@ -89,25 +89,25 @@ ERROR_CHECK
 
 	dens_fb.SetWidthAndHeight(512,512);
 	dens_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
-	dens_fb.Activate();
+	dens_fb.Activate(context);
 	{
-		dens_fb.Clear(0.f,0.f,0.f,0.f);
+		dens_fb.Clear(context,0.f,0.f,0.f,0.f);
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
 		GLuint dens_prog=MakeProgram("simple.vert",NULL,"simul_2d_cloud_detail.frag");
 		glUseProgram(dens_prog);
-		dens_fb.DrawQuad();
+		dens_fb.DrawQuad(context);
 		SAFE_DELETE_PROGRAM(dens_prog);
 	}
-	dens_fb.Deactivate();
+	dens_fb.Deactivate(context);
 	glUseProgram(0);
 
 	detail_fb.SetWidthAndHeight(512,512);
 	detail_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
-	detail_fb.Activate();
+	detail_fb.Activate(context);
 	{
-		detail_fb.Clear(0.f,0.f,0.f,0.f);
+		detail_fb.Clear(context,0.f,0.f,0.f,0.f);
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)dens_fb.GetColorTex());
@@ -120,7 +120,7 @@ ERROR_CHECK
 		DrawQuad(0,0,1,1);
 		SAFE_DELETE_PROGRAM(lighting_prog);
 	}
-	detail_fb.Deactivate();
+	detail_fb.Deactivate(context);
 	glUseProgram(0);
 	return true;
 }

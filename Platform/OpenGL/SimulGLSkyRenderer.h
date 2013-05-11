@@ -55,8 +55,8 @@ public:
 	}
 	virtual		void CycleTexturesForward(){}
 	virtual		bool HasFastFadeLookup() const{return true;}
-	virtual		const float *GetFastLossLookup(float distance_texcoord,float elevation_texcoord);
-	virtual		const float *GetFastInscatterLookup(float distance_texcoord,float elevation_texcoord);
+	virtual		const float *GetFastLossLookup(void* context,float distance_texcoord,float elevation_texcoord);
+	virtual		const float *GetFastInscatterLookup(void* context,float distance_texcoord,float elevation_texcoord);
 
 	bool		RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	void		RenderSun(float exposure_hint);

@@ -22,7 +22,7 @@ public:
 	void InvalidateDeviceObjects();
 	void RecompileShaders();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	void Render();
+	void Render(void*);
 	// Set a texture not created by this class to be used:
 	bool SetExternalRainTexture(void* tex);
 	void SetYVertical(bool )

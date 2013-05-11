@@ -54,9 +54,9 @@ public:
 	//! Call this to draw the clouds
 	void RenderLateCloudLayer(void *context,bool buf);
 	//! Call this to draw lightning.
-	void RenderLightning();
+	void RenderLightning(void *context);
 	//! Call this to draw rain etc.
-	void RenderPrecipitation();
+	void RenderPrecipitation(void *context);
 	//! Get a pointer to the sky renderer owned by this class instance.
 	class SimulGLSkyRenderer *GetSkyRenderer();
 	//! Get a pointer to the 3d cloud renderer owned by this class instance.

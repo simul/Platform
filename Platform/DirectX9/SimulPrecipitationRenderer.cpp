@@ -154,7 +154,7 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-void SimulPrecipitationRenderer::Render()
+void SimulPrecipitationRenderer::Render(void *)
 {
 	HRESULT hr=S_OK;
 	if(rain_intensity<=0)

@@ -58,7 +58,7 @@ SimulGLPrecipitationRenderer::~SimulGLPrecipitationRenderer()
 	InvalidateDeviceObjects();
 }
 
-void SimulGLPrecipitationRenderer::Render()
+void SimulGLPrecipitationRenderer::Render(void*)
 {
 	if(!baseSkyInterface)
 		return;
@@ -67,7 +67,6 @@ void SimulGLPrecipitationRenderer::Render()
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	simul::sky::float4 cam_dir;
 	CalcCameraPosition(cam_pos,cam_dir);
-	int k=0;
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 		ERROR_CHECK

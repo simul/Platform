@@ -157,6 +157,7 @@ void SimulHDRRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pGaussianEffect);
 	glowTexture.release();
+	m_pd3dDevice=NULL;
 }
 
 bool SimulHDRRendererDX1x::Destroy()
@@ -170,13 +171,13 @@ SimulHDRRendererDX1x::~SimulHDRRendererDX1x()
 	Destroy();
 }
 
-bool SimulHDRRendererDX1x::StartRender()
+bool SimulHDRRendererDX1x::StartRender(void *context)
 {
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
 	if(imageTexture)
 		imageTexture->SetResource(NULL);
-	framebuffer.Activate();
-	framebuffer.Clear(0,0,0,0);
+	framebuffer.Activate(context);
+	framebuffer.Clear(context,0,0,0,0);
 
 	PIXEndNamedEvent();
 	return true;
@@ -191,7 +192,7 @@ bool SimulHDRRendererDX1x::ApplyFade()
 bool SimulHDRRendererDX1x::FinishRender(void *context)
 {
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
-	framebuffer.Deactivate();
+	framebuffer.Deactivate(context);
 	imageTexture->SetResource(framebuffer.GetBufferResource());//buffer_texture_SRV);
 	Gamma_->SetFloat(Gamma);
 	Exposure_->SetFloat(Exposure);
@@ -199,10 +200,10 @@ bool SimulHDRRendererDX1x::FinishRender(void *context)
 	D3DXMatrixIdentity(&ortho);
     D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
 	worldViewProj->SetMatrix(ortho);
-RenderGlowTexture();
+RenderGlowTexture(context);
 simul::dx11::setParameter(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
 	ApplyPass(TonemapTechnique->GetPassByIndex(0));
-	framebuffer.DrawQuad();
+	framebuffer.DrawQuad(context);
 	imageTexture->SetResource(NULL);
 	ApplyPass(TonemapTechnique->GetPassByIndex(0));
 	PIXEndNamedEvent();
@@ -219,7 +220,7 @@ static float CalculateBoxFilterWidth(float radius, int pass)
 	return box_width;
 }
 
-void SimulHDRRendererDX1x::RenderGlowTexture()
+void SimulHDRRendererDX1x::RenderGlowTexture(void *context)
 {
 	if(!m_pGaussianEffect)
 		return;
@@ -232,9 +233,9 @@ static float g_FilterRadius = 30;
 		imageTexture->SetResource(framebuffer.GetBufferResource());
 		simul::dx11::setParameter(m_pTonemapEffect,"offset",1.f/Width,1.f/Height);
 		ApplyPass(glowTechnique->GetPassByIndex(0));
-		glow_fb.Activate();
-		glow_fb.DrawQuad();
-		glow_fb.Deactivate();
+		glow_fb.Activate(context);
+		glow_fb.DrawQuad(context);
+		glow_fb.Deactivate(context);
 	}
     D3D11_TEXTURE2D_DESC tex_desc;
 	ID3D1xTexture2D *texture=glow_fb.GetColorTexResource();

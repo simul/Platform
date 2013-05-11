@@ -82,7 +82,7 @@ void Framebuffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pBufferDepthSurface);
 }
 
-void Framebuffer::Activate()
+void Framebuffer::Activate(void *)
 {
 	m_pOldRenderTarget=NULL;
 	m_pOldDepthSurface=NULL;
@@ -96,7 +96,7 @@ void Framebuffer::Activate()
 		m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
 }
 
-void Framebuffer::Deactivate()
+void Framebuffer::Deactivate(void *)
 {
 	//m_pOldRenderTarget->GetDesc(&desc);
 	m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
@@ -105,7 +105,7 @@ void Framebuffer::Deactivate()
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
-void Framebuffer::Clear(float r,float g,float b,float a,int mask)
+void Framebuffer::Clear(void *,float r,float g,float b,float a,int mask)
 {
 	if(!mask)
 		mask=D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER;
@@ -114,7 +114,7 @@ void Framebuffer::Clear(float r,float g,float b,float a,int mask)
 
 void Framebuffer::DeactivateAndRender(void *context,bool blend)
 {
-	Deactivate();
+	Deactivate(NULL);
 	Render(context,blend);
 }
 void Framebuffer::Render(void *,bool blend)

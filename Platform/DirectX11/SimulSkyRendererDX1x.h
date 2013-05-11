@@ -138,8 +138,6 @@ protected:
 	
 	ID3DX11EffectConstantBuffer*		earthShadowUniforms;
 
-	ID3D1xTexture2D*					flare_texture;
-
 	ID3D1xTexture3D*					loss_textures[3];
 	ID3D1xTexture3D*					inscatter_textures[3];
 	ID3D1xTexture3D*					skylight_textures[3];

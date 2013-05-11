@@ -20,6 +20,6 @@ public:
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-	void Render();
+	void Render(void *context);
 protected:
 };

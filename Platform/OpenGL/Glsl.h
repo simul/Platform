@@ -6,6 +6,14 @@
 #define R0
 #define R1
 #define R2
+#define R3
+#define R4
+#define R5
+#define R6
+#define R7
+#define R8
+#define R9
+#define R10
 #ifndef __cplusplus
 #include "saturate.glsl"
 #define lerp mix

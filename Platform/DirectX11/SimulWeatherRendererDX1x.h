@@ -44,9 +44,9 @@ public:
 	bool Destroy();
 	bool RenderSky(void*,bool buffered,bool is_cubemap);
 	void RenderLateCloudLayer(void *context,bool );
-	void RenderPrecipitation();
-	void RenderLightning();
-	bool RenderCubemap();
+	void RenderPrecipitation(void *context);
+	void RenderLightning(void *context);
+	bool RenderCubemap(void *context);
 	void SaveCubemapToFile(const char *filename);
 	void *GetCubemap();
 	//! Perform the once-per-frame time update.

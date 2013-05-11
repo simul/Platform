@@ -19,9 +19,9 @@ public:
 	//! The texture the sky and clouds are rendered to.
 	LPDIRECT3DTEXTURE9				buffer_depth_texture;
 	LPDIRECT3DSURFACE9	m_pHDRRenderTarget;
-	void Activate();
-	void Deactivate();
-	void Clear(float,float,float,float,int mask=0);
+	void Activate(void *);
+	void Deactivate(void *);
+	void Clear(void *,float,float,float,float,int mask=0);
 	void DeactivateAndRender(void *,bool blend);
 	void Render(void *,bool blend);
 	void SetFormat(int f);

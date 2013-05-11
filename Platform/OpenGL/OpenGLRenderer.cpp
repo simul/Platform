@@ -90,7 +90,7 @@ void OpenGLRenderer::paintGL()
 ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
-			simulHDRRenderer->StartRender();
+			simulHDRRenderer->StartRender(context);
 			simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 		}
 		else
@@ -101,18 +101,18 @@ ERROR_CHECK
 		simulWeatherRenderer->RenderSky(context,UseSkyBuffer,false);
 
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender();
+			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender(context);
 		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render();
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender(context);
-		simulWeatherRenderer->RenderLightning();
+		simulWeatherRenderer->RenderLightning(context);
 			
 		simulWeatherRenderer->SetDepthTexture(simulWeatherRenderer->GetBaseAtmosphericsRenderer()->GetDepthAlphaTexture());
 		simulWeatherRenderer->RenderLateCloudLayer(context,true);
 
 		simulWeatherRenderer->DoOcclusionTests();
-		simulWeatherRenderer->RenderPrecipitation();
+		simulWeatherRenderer->RenderPrecipitation(context);
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light;

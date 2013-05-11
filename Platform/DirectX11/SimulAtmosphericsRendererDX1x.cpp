@@ -60,7 +60,6 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	framebuffer(NULL),
 	effect(NULL),
 	lightDir(NULL),
-	m_pImmediateContext(NULL),
 	constantBuffer(NULL),
 	MieRayleighRatio(NULL),
 	HazeEccentricity(NULL),
@@ -153,12 +152,6 @@ HRESULT SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=dev;
-#ifdef DX10
-	m_pImmediateContext=dev;
-#else
-	SAFE_RELEASE(m_pImmediateContext);
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-#endif
 	RecompileShaders();
 	if(framebuffer)
 		framebuffer->RestoreDeviceObjects(dev);
@@ -184,7 +177,6 @@ HRESULT SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
 	HRESULT hr=S_OK;
 	if(framebuffer)
 		framebuffer->InvalidateDeviceObjects();
-	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(vertexDecl);
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(constantBuffer);
@@ -202,14 +194,15 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMA
 	proj=p;
 }
 
-void SimulAtmosphericsRendererDX1x::StartRender()
+void SimulAtmosphericsRendererDX1x::StartRender(void *context)
 {
 	if(!framebuffer)
 		return;
+	ID3D1xDeviceContext* m_pImmediateContext=(ID3D1xDeviceContext*)context;
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
-	framebuffer->Activate();
+	framebuffer->Activate(m_pImmediateContext);
 	// Clear the screen to black, with alpha=1, representing far depth
-	framebuffer->Clear(0.0,1.0,1.0,1.0);
+	framebuffer->Clear(context,0.0,1.0,1.0,1.0);
 
 	PIXEndNamedEvent();
 }
@@ -218,7 +211,8 @@ void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
 {
 	if(!framebuffer)
 		return;
-	framebuffer->Deactivate();
+	ID3D1xDeviceContext* m_pImmediateContext=(ID3D1xDeviceContext*)context;
+	framebuffer->Deactivate(m_pImmediateContext);
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
 	HRESULT hr=S_OK;
 	hr=imageTexture->SetResource(framebuffer->buffer_texture_SRV);

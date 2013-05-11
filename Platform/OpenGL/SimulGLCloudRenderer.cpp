@@ -129,7 +129,7 @@ ERROR_CHECK
 ERROR_CHECK
 }
 
-bool SimulGLCloudRenderer::CreateNoiseTexture(void *,bool override_file)
+bool SimulGLCloudRenderer::CreateNoiseTexture(void *context,bool override_file)
 {
 	if(!init)
 		return false;
@@ -145,7 +145,7 @@ bool SimulGLCloudRenderer::CreateNoiseTexture(void *,bool override_file)
 glGenerateMipmap(GL_TEXTURE_2D);
 	FramebufferGL	noise_fb(noise_texture_frequency,noise_texture_frequency,GL_TEXTURE_2D);
 	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT,GL_REPEAT);
-	noise_fb.Activate();
+	noise_fb.Activate(context);
 	{
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
@@ -155,7 +155,7 @@ glGenerateMipmap(GL_TEXTURE_2D);
 		glUseProgram(noise_prog);
 		DrawQuad(0,0,1,1);
 	}
-	noise_fb.Deactivate();
+	noise_fb.Deactivate(context);
 	glUseProgram(0);
 ERROR_CHECK	
 
@@ -164,16 +164,16 @@ ERROR_CHECK
 ERROR_CHECK	
 	n_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
 	n_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
-	n_fb.Activate();
+	n_fb.Activate(context);
 	{
-		n_fb.Clear(0.f,0.f,0.f,0.f);
+		n_fb.Clear(context,0.f,0.f,0.f,0.f);
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
 		glUseProgram(edge_noise_prog);
 		setParameter(edge_noise_prog,"persistence",texture_persistence);
 		setParameter(edge_noise_prog,"octaves",texture_octaves);
-		n_fb.DrawQuad();
+		n_fb.DrawQuad(context);
 	}
 ERROR_CHECK	
 	glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
@@ -185,7 +185,7 @@ ERROR_CHECK
  						noise_texture_size);
 	glGenerateMipmap(GL_TEXTURE_2D);
 ERROR_CHECK	
-	n_fb.Deactivate();
+	n_fb.Deactivate(context);
 	glUseProgram(0);
 ERROR_CHECK
 	return true;
@@ -758,7 +758,7 @@ void *SimulGLCloudRenderer::GetCloudShadowTexture()
 	setParameter(cloud_shadow_program,"cloudTexture2"	,1);
 	setParameter(cloud_shadow_program,"interp"			,this->GetInterpolation());
 	
-	cloud_shadow.Activate();
+	cloud_shadow.Activate(NULL);
 		//cloud_shadow.Clear(0.f,0.f,0.f,0.f);
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
@@ -767,7 +767,7 @@ void *SimulGLCloudRenderer::GetCloudShadowTexture()
 		glLoadIdentity();
 		DrawQuad(0,0,1,1);
 		ERROR_CHECK;
-	cloud_shadow.Deactivate();
+	cloud_shadow.Deactivate(NULL);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,0);
 	glActiveTexture(GL_TEXTURE1);

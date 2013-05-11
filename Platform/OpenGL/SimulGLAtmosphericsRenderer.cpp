@@ -116,16 +116,16 @@ ERROR_CHECK
 		glUniformBlockBinding(p,earthShadowUniforms,earthShadowUniformsBindingIndex);
 }
 
-void SimulGLAtmosphericsRenderer::StartRender()
+void SimulGLAtmosphericsRenderer::StartRender(void *context)
 {
-	framebuffer->Activate();
-	framebuffer->Clear(0.f,0.0f,1.0f,1.0f);
+	framebuffer->Activate(context);
+	framebuffer->Clear(context,0.f,0.0f,1.0f,1.0f);
 	ERROR_CHECK
 }
 
 void SimulGLAtmosphericsRenderer::FinishRender(void *context)
 {
-	framebuffer->Deactivate();
+	framebuffer->Deactivate(context);
 	framebuffer->CopyDepthFromFramebuffer();
 
 ERROR_CHECK

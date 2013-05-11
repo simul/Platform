@@ -98,7 +98,7 @@ static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-void SimulLightningRenderer::Render()
+void SimulLightningRenderer::Render(void *)
 {
 	if(!lightning_vertices)
 		lightning_vertices=new PosTexVert_t[4500];

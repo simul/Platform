@@ -164,11 +164,11 @@ std::cout<<"\tGpu sky: dens_tex "<<timer.UpdateTime()<<std::endl;
 
 	simul::sky::float4 *target=loss;
 ERROR_CHECK
-	F[0]->Activate();
-		F[0]->Clear(1.f,1.f,1.f,1.f);
+	F[0]->Activate(NULL);
+		F[0]->Clear(NULL,1.f,1.f,1.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 		glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
-	F[0]->Deactivate();
+	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	target+=altitudes_km.size()*numElevations;
 ERROR_CHECK
@@ -183,9 +183,9 @@ ERROR_CHECK
 		setParameter(loss_program,"distKm"			,distKm);
 		setParameter(loss_program,"prevDistKm"		,prevDistKm);
 	ERROR_CHECK
-		F[1]->Activate();
+		F[1]->Activate(NULL);
 	ERROR_CHECK
-			F[1]->Clear(0.f,0.f,0.f,0.f);
+			F[1]->Clear(NULL,0.f,0.f,0.f,0.f);
 			OrthoMatrices();
 			// input light values:
 			glActiveTexture(GL_TEXTURE0);
@@ -198,7 +198,7 @@ ERROR_CHECK
 	ERROR_CHECK
 			glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 //std::cout<<"\tGpu sky: loss read"<<i<<" "<<timer.UpdateTime()<<std::endl;
-		F[1]->Deactivate();
+		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
 		target+=altitudes_km.size()*numElevations;
@@ -223,11 +223,11 @@ std::cout<<"\tGpu sky: loss_tex,optd_tex "<<timer.UpdateTime()<<std::endl;
 	setParameter(insc_program,"optical_depth_texture",3);
 ERROR_CHECK
 	target=insc;
-	F[0]->Activate();
-		F[0]->Clear(0.f,0.f,0.f,0.f);
+	F[0]->Activate(NULL);
+		F[0]->Clear(NULL,0.f,0.f,0.f,0.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 		glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
-	F[0]->Deactivate();
+	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	target+=altitudes_km.size()*numElevations;
 	prevDistKm=0.f;
@@ -240,8 +240,8 @@ ERROR_CHECK
 			distKm=1000.f;
 		setParameter(insc_program,"distKm"			,distKm);
 		setParameter(insc_program,"prevDistKm"		,prevDistKm);
-		F[1]->Activate();
-			F[1]->Clear(0.f,0.f,0.f,0.f);
+		F[1]->Activate(NULL);
+			F[1]->Clear(NULL,0.f,0.f,0.f,0.f);
 			OrthoMatrices();
 			// input inscatter values:
 			glActiveTexture(GL_TEXTURE0);
@@ -255,7 +255,7 @@ ERROR_CHECK
 			DrawQuad(0,0,1,1);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
-		F[1]->Deactivate();
+		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
 		target+=altitudes_km.size()*numElevations;
@@ -281,11 +281,11 @@ std::cout<<"\tGpu sky: insc_tex "<<timer.UpdateTime()<<std::endl;
 	setParameter(skyl_program,"insc_texture",4);
 ERROR_CHECK
 	target=skyl;
-	F[0]->Activate();
-		F[0]->Clear(0.f,0.f,0.f,0.f);
+	F[0]->Activate(NULL);
+		F[0]->Clear(NULL,0.f,0.f,0.f,0.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 		glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
-	F[0]->Deactivate();
+	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	target+=altitudes_km.size()*numElevations;
 	prevDistKm=0.f;
@@ -298,8 +298,8 @@ ERROR_CHECK
 			distKm=1000.f;
 		setParameter(skyl_program,"distKm"			,distKm);
 		setParameter(skyl_program,"prevDistKm"		,prevDistKm);
-		F[1]->Activate();
-			F[1]->Clear(0.f,0.f,0.f,0.f);
+		F[1]->Activate(NULL);
+			F[1]->Clear(NULL,0.f,0.f,0.f,0.f);
 			OrthoMatrices();
 			// input inscatter values:
 			glActiveTexture(GL_TEXTURE0);
@@ -314,7 +314,7 @@ ERROR_CHECK
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 	ERROR_CHECK
 			glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
-		F[1]->Deactivate();
+		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
 		target+=altitudes_km.size()*numElevations;

@@ -58,9 +58,9 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 		Group::AddChild(simulSkyRenderer.get());
 	}
 	simulCloudRenderer=new SimulCloudRendererDX1x(ck3d);
-	simulLightningRenderer=new SimulLightningRendererDX11(ck3d,sk);
 	baseCloudRenderer=simulCloudRenderer.get();
 	Group::AddChild(simulCloudRenderer.get());
+	simulLightningRenderer=new SimulLightningRendererDX11(ck3d,sk);
 	if(clouds2d)
 		base2DCloudRenderer=simul2DCloudRenderer=new Simul2DCloudRendererDX11(ck2d);
 	if(rain)
@@ -239,6 +239,8 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 
 void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 {
+	ID3D1xDeviceContext* m_pImmediateContext=NULL;;
+	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	FramebufferCubemapDX1x	fb_cubemap;
 	fb_cubemap.SetWidthAndHeight(1024,1024);
 	fb_cubemap.RestoreDeviceObjects(m_pd3dDevice);
@@ -248,7 +250,7 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 	for(int i=0;i<6;i++)
 	{
 		fb_cubemap.SetCurrentFace(i);
-		fb_cubemap.Activate();
+		fb_cubemap.Activate(m_pImmediateContext);
 		if(simulSkyRenderer)
 		{
 			D3DXMATRIX cube_proj;
@@ -260,14 +262,15 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 			SetMatrices(view_matrices[i],cube_proj);
 			HRESULT hr=RenderSky(m_pImmediateContext,false,true);
 		}
-		fb_cubemap.Deactivate();
+		fb_cubemap.Deactivate(m_pImmediateContext);
 	}
 	std::wstring wstr=simul::base::StringToWString(filename);
-	ID3D11Texture2D *tex=fb_cubemap.GetCopy();
+	ID3D11Texture2D *tex=fb_cubemap.GetCopy(m_pImmediateContext);
 	HRESULT hr=D3DX11SaveTextureToFile(m_pImmediateContext,tex,D3DX11_IFF_DDS,wstr.c_str());
+	SAFE_RELEASE(m_pImmediateContext);
 }
 
-bool SimulWeatherRendererDX1x::RenderCubemap()
+bool SimulWeatherRendererDX1x::RenderCubemap(void *context)
 {
 	D3DXMATRIX ov=view;
 	D3DXMATRIX op=proj;
@@ -276,7 +279,7 @@ bool SimulWeatherRendererDX1x::RenderCubemap()
 	for(int i=0;i<6;i++)
 	{
 		framebuffer_cubemap.SetCurrentFace(i);
-		framebuffer_cubemap.Activate();
+		framebuffer_cubemap.Activate(m_pImmediateContext);
 		if(simulSkyRenderer)
 		{
 			D3DXMATRIX cube_proj;
@@ -288,7 +291,7 @@ bool SimulWeatherRendererDX1x::RenderCubemap()
 			SetMatrices(view_matrices[i],cube_proj);
 			HRESULT hr=RenderSky(m_pImmediateContext,false,true);
 		}
-		framebuffer_cubemap.Deactivate();
+		framebuffer_cubemap.Deactivate(m_pImmediateContext);
 	}
 	SetMatrices(ov,op);
 	return true;
@@ -299,9 +302,60 @@ void *SimulWeatherRendererDX1x::GetCubemap()
 	return framebuffer_cubemap.GetColorTex();// m_pCubeEnvMapSRV;
 }
 
-bool SimulWeatherRendererDX1x::RenderSky(void*,bool buffered,bool is_cubemap)
+bool SimulWeatherRendererDX1x::RenderSky(void *context,bool buffered,bool is_cubemap)
 {
-	simul::clouds::BaseWeatherRenderer::RenderSky(m_pImmediateContext,buffered,is_cubemap);
+	if(environment)
+		environment->Update(0.f);
+	
+	RenderCloudsLate=false;
+	if(baseSkyRenderer)
+		baseSkyRenderer->SetReverseDepth(ReverseDepth);
+	if(baseCloudRenderer)
+	{
+		RenderCloudsLate=baseCloudRenderer->IsCameraAboveCloudBase();
+		baseCloudRenderer->SetReverseDepth(ReverseDepth);
+	}
+
+	if(!is_cubemap&&baseSkyRenderer&&ShowPlanets)
+	{
+		baseSkyRenderer->RenderPointStars();
+		baseSkyRenderer->RenderPlanets();
+		baseSkyRenderer->RenderSun(exposure_hint);
+	}
+
+	if(buffered&&baseFramebuffer&&!is_cubemap)
+	{
+		baseFramebuffer->Activate(context);
+		baseFramebuffer->Clear(context,0.f,0.2f,0.f,1.f);
+	}
+	if(baseSkyRenderer)
+	{
+		float cloud_occlusion=0;
+		if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
+			cloud_occlusion=baseCloudRenderer->GetSunOcclusion();
+		baseSkyRenderer->CalcSunOcclusion(cloud_occlusion);
+	}
+	
+	if(baseSkyRenderer&&ShowSky)
+		baseSkyRenderer->Render(context,!buffered);
+
+#if 1	
+	// Do this AFTER sky render, to catch any changes to texture definitions:
+	UpdateSkyAndCloudHookup();
+	if(baseSkyRenderer)
+	{
+		// Do these updates now because sky renderer will have calculated the view height.
+		if(baseCloudRenderer)
+		{
+			baseCloudRenderer->SetAltitudeTextureCoordinate(baseSkyRenderer->GetAltitudeTextureCoordinate());
+		}
+	}
+	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
+		base2DCloudRenderer->Render(context,false,0,UseDefaultFog,false);
+	if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible()&&(AlwaysRenderCloudsLate||!RenderCloudsLate||is_cubemap))
+		baseCloudRenderer->Render(context,is_cubemap,0,UseDefaultFog,true);
+	if(buffered&&baseFramebuffer&&!is_cubemap)
+		baseFramebuffer->Deactivate(context);
 	HRESULT hr=S_OK;
 	if(buffered&&baseFramebuffer)
 	{
@@ -316,10 +370,11 @@ bool SimulWeatherRendererDX1x::RenderSky(void*,bool buffered,bool is_cubemap)
 		D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
 		worldViewProj->SetMatrix(ortho);
 		
-		framebuffer.DrawQuad();
+		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
 	}
-	return (hr==S_OK);
+#endif
+	return true;
 }
 
 void SimulWeatherRendererDX1x::RenderLateCloudLayer(void *context,bool )
@@ -330,16 +385,16 @@ void SimulWeatherRendererDX1x::RenderLateCloudLayer(void *context,bool )
 	}
 }
 
-void SimulWeatherRendererDX1x::RenderPrecipitation()
+void SimulWeatherRendererDX1x::RenderPrecipitation(void *context)
 {
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		simulPrecipitationRenderer->Render();
+		simulPrecipitationRenderer->Render(context);
 }
 
-void SimulWeatherRendererDX1x::RenderLightning()
+void SimulWeatherRendererDX1x::RenderLightning(void *context)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		simulLightningRenderer->Render();
+		simulLightningRenderer->Render(context);
 }
 
 void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

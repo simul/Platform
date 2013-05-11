@@ -193,7 +193,7 @@ timer.StartTime();
 	glLoadIdentity();
 	{
 ERROR_CHECK
-		dens_fb.Activate();
+		dens_fb.Activate(NULL);
 //dens_fb.Clear(0,0,0,0);
 ERROR_CHECK
 		DrawQuad(0.f,y_start,1.f,y_end-y_start);
@@ -246,7 +246,7 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 		ERROR_CHECK
  			}
 		}
-		dens_fb.Deactivate();
+		dens_fb.Deactivate(NULL);
 	}
 	glDisable(GL_TEXTURE_3D);
 	glUseProgram(0);
@@ -325,11 +325,11 @@ timer.StartTime();
 	}
 	if(z0==0)
 	{
-		F[0]->Activate();
-			F[0]->Clear(1.f,1.f,1.f,1.f);
+		F[0]->Activate(NULL);
+			F[0]->Clear(NULL,1.f,1.f,1.f,1.f);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			glReadPixels(0,0,light_grid[0],light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
-		F[0]->Deactivate();
+		F[0]->Deactivate(NULL);
 		z0++;
 	}
 	
@@ -346,7 +346,7 @@ ERROR_CHECK
 		GLint gpuCloudConstants		=glGetUniformBlockIndex(clouds_program,"GpuCloudConstants");
 		if(gpuCloudConstants>=0)
 			glUniformBlockBinding(clouds_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
-		F[1]->Activate();
+		F[1]->Activate(NULL);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
 			glOrtho(0,1.0,0,1.0,-1.0,1.0);
@@ -363,7 +363,7 @@ ERROR_CHECK
 			glReadPixels(0,0,light_grid[0],light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 			read_time+=timer.UpdateTime();
 			ERROR_CHECK
-		F[1]->Deactivate();
+		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
 		target+=light_grid[0]*light_grid[1]*4;
@@ -429,7 +429,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 	float y_end=(float)(start_texel+texels)/(float)total_texels;
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 	{
-		world_fb.Activate();
+		world_fb.Activate(NULL);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
 			glOrtho(0,1.0,0,1.0,-1.0,1.0);
@@ -446,7 +446,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 			target+=Y0*density_grid[0]*4;
 		glReadPixels(0,Y0,density_grid[0],Y1-Y0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
 			ERROR_CHECK
-		world_fb.Deactivate();
+		world_fb.Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 			ERROR_CHECK
 		//target+=density_grid[0]*density_grid[1]*4;

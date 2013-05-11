@@ -260,7 +260,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		simulWeatherRenderer->RenderSky(pd3dDevice,true,false);
 	}
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-		simulWeatherRenderer->GetAtmosphericsRenderer()->StartRender();
+		simulWeatherRenderer->GetAtmosphericsRenderer()->StartRender(NULL);
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
 		simulTerrainRenderer->SetMatrices(view,proj);
@@ -293,10 +293,10 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 			}
 		}
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
-		simulWeatherRenderer->RenderLightning();
+		simulWeatherRenderer->RenderLightning(NULL);
 		if(ShowLightVolume&&simulWeatherRenderer->GetCloudRenderer())
 			simulWeatherRenderer->GetCloudRenderer()->RenderLightVolume();
-		simulWeatherRenderer->RenderPrecipitation();
+		simulWeatherRenderer->RenderPrecipitation(NULL);
 	}
 	timer.UpdateTime();
 	simul::math::FirstOrderDecay(weather_timing,timer.Time,1.f,fTimeStep);

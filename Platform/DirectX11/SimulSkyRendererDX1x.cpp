@@ -28,6 +28,7 @@ extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Math/Vector3.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
 #include "Simul/Platform/DirectX11/HLSL/simul_earthshadow.hlsl"
 
@@ -101,7 +102,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 	,m_hTechniqueFlare(NULL)
 	,m_hTechniquePlanet(NULL)
 	,m_hTechniquePointStars(NULL)
-	,flare_texture(NULL)
 	,flare_texture_SRV(NULL)
 	,moon_texture_SRV(NULL)
 	,earthShadowBuffer(NULL)
@@ -154,19 +154,8 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	D3DXMatrixIdentity(&proj);
 	RecompileShaders();
 
-	SAFE_RELEASE(flare_texture);
-	D3DX1x_IMAGE_LOAD_INFO loadInfo;
-	ID3D1xResource *res=NULL;
-	hr=D3DX1xCreateTextureFromFile(  m_pd3dDevice,
-									L"Media/Textures/Sunburst.dds",
-									&loadInfo,
-									NULL,
-									&res,
-									NULL
-									);
+	flare_texture_SRV=simul::dx11::LoadTexture("Sunburst.dds");
 
-	flare_texture=static_cast<ID3D1xTexture2D*>(res);
-    V_CHECK(m_pd3dDevice->CreateShaderResourceView( flare_texture,NULL,&flare_texture_SRV));
 	// Vertex declaration
 	{
 		D3D1x_PASS_DESC PassDesc;
@@ -261,8 +250,6 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pSkyEffect);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pVtxDecl);
-
-	SAFE_RELEASE(flare_texture);
 
 	SAFE_RELEASE(flare_texture_SRV);
 	SAFE_RELEASE(moon_texture_SRV);
@@ -689,7 +676,7 @@ HRESULT hr=S_OK;
 	return (hr==S_OK);
 }
 
-bool SimulSkyRendererDX1x::Render2DFades(void*)
+bool SimulSkyRendererDX1x::Render2DFades(void *context)
 {
 	if(!m_hTechniqueFade3DTo2D)
 		return false;
@@ -704,41 +691,40 @@ bool SimulSkyRendererDX1x::Render2DFades(void*)
 		V_CHECK(fadeTexture1->SetResource(loss_textures_SRV[0]));
 		V_CHECK(fadeTexture2->SetResource(loss_textures_SRV[1]));
 		V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		loss_2d->Activate();
+		loss_2d->Activate(context);
 		
 		m_pImmediateContext->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
 		if(loss_2d->m_pBufferDepthSurface)
 			m_pImmediateContext->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
-		loss_2d->DrawQuad();
-		loss_2d->Deactivate();
+		loss_2d->DrawQuad(context);
+		loss_2d->Deactivate(context);
 	}
 	{
 		V_CHECK(fadeTexture1->SetResource(insc_textures_SRV[0]));
 		V_CHECK(fadeTexture2->SetResource(insc_textures_SRV[1]));
 		V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		
-		inscatter_2d->Activate();
+		inscatter_2d->Activate(context);
 			
 		m_pImmediateContext->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
 		if(inscatter_2d->m_pBufferDepthSurface)
 			m_pImmediateContext->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
 			D3D1x_CLEAR_STENCIL, 1.f, 0);
-		inscatter_2d->DrawQuad();
-		inscatter_2d->Deactivate();
+		inscatter_2d->DrawQuad(context);
+		inscatter_2d->Deactivate(context);
 	}
 	{
 		V_CHECK(fadeTexture1->SetResource(skyl_textures_SRV[0]));
 		V_CHECK(fadeTexture2->SetResource(skyl_textures_SRV[1]));
 		V_CHECK(ApplyPass(m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		
-		skylight_2d->Activate();
-			
+		skylight_2d->Activate(context);
 		m_pImmediateContext->ClearRenderTargetView(skylight_2d->m_pHDRRenderTarget,clearColor);
 		if(skylight_2d->m_pBufferDepthSurface)
 			m_pImmediateContext->ClearDepthStencilView(skylight_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
 			D3D1x_CLEAR_STENCIL, 1.f, 0);
-		skylight_2d->DrawQuad();
-		skylight_2d->Deactivate();
+		skylight_2d->DrawQuad(context);
+		skylight_2d->Deactivate(context);
 	}
 	
 	V_CHECK(fadeTexture1->SetResource(NULL));
@@ -784,6 +770,8 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pStarsVertexBuffer);
 }
 
+static int test = 0;
+
 bool SimulSkyRendererDX1x::RenderPointStars()
 {
 	HRESULT hr=S_OK;
@@ -799,21 +787,30 @@ bool SimulSkyRendererDX1x::RenderPointStars()
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&tmp1,&tmp2);
+
 	simul::dx11::setMatrix(m_pSkyEffect,"worldViewProj",(const float *)(&tmp1));
 	//hr=m_pd3dDevice->SetVertexDeclaration(NULL);
 //	hr=m_pd3dDevice->SetFVF(D3DFVF_XYZ|D3DFVF_TEX0);
 
 	hr=ApplyPass(m_hTechniquePointStars->GetPassByIndex(0));
 
+	if (test < 5)
+	{
+		return true;
+	}
+
 	float sb=skyKeyframer->GetSkyInterface()->GetStarlight().x;
 	float star_brightness=sb*skyKeyframer->GetStarBrightness();
 	simul::dx11::setParameter(m_pSkyEffect,"starBrightness",star_brightness);
-	
+
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
 	if(!star_vertices||current_num_stars!=num_stars)
 	{
 		BuildStarsBuffer();
 	}
+
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
 
 	m_pImmediateContext->IASetInputLayout( m_pStarsVtxDecl );
 	UINT stride = sizeof(StarVertext);
@@ -822,22 +819,26 @@ bool SimulSkyRendererDX1x::RenderPointStars()
     UINT Offsets[1];
     Strides[0] = 0;
     Offsets[0] = 0;
+
 	m_pImmediateContext->IASetVertexBuffers(	0,						// the first input slot for binding
 												1,						// the number of buffers in the array
 												&m_pStarsVertexBuffer,	// the array of vertex buffers
 												&stride,				// array of stride values, one for each buffer
 												&offset );				// array of offset values, one for each buffer
 
-	// Set the input layout
-	m_pImmediateContext->IASetInputLayout(m_pStarsVtxDecl);
-
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 	m_pImmediateContext->Draw(num_stars,0);
-	
+
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+	SAFE_RELEASE(previousInputLayout);
 	return true;
 }
 
+//static int test =0;
 
 bool SimulSkyRendererDX1x::Render(void*,bool blend)
 {
@@ -845,17 +846,21 @@ bool SimulSkyRendererDX1x::Render(void*,bool blend)
 	EnsureTexturesAreUpToDate();
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
+
 	//if(!cubemap)
 		Render2DFades(m_pImmediateContext);
 	D3DXMATRIX tmp1,tmp2,wvp;
+	//view._41=view._42=view._43=0.0f;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
 	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 	D3DXMatrixIdentity(&world);
+
 	//set up matrices
 	world._41=cam_pos.x;
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
+#if 1
 	if(ReverseDepth)
 	{
 		D3DXMATRIX invertz;
@@ -867,7 +872,7 @@ bool SimulSkyRendererDX1x::Render(void*,bool blend)
 	else
 // Fix projection
 		simul::dx11::FixProjectionMatrix(proj,1000.f,IsYVertical());
-
+#endif
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);
 #if 0 // Code for single-pass cubemap. This DX11 feature is not so hot.
@@ -895,13 +900,15 @@ bool SimulSkyRendererDX1x::Render(void*,bool blend)
 		std::swap(light_dir.y,light_dir.z);
 		std::swap(sun_dir.y,sun_dir.z);
 	}
+
 	lightDirection->SetFloatVector(light_dir);
 	mieRayleighRatio->SetFloatVector(mie_rayleigh_ratio);
 	hazeEccentricity->SetFloat(skyKeyframer->GetMieEccentricity());
-	
+
 	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
 								skyKeyframer->GetAltitudeKM()
 								,skyKeyframer->GetDirectionToSun());
+	
 	if(e.enable)
 	{
 		hr=ApplyPass(m_hTechniqueEarthShadow->GetPassByIndex(0));
@@ -922,7 +929,6 @@ bool SimulSkyRendererDX1x::Render(void*,bool blend)
 	{
 		hr=ApplyPass(m_hTechniqueSky->GetPassByIndex(0));
 	}
-
 		
 	DrawCube();
 
@@ -1002,13 +1008,16 @@ void SimulSkyRendererDX1x::DrawCubemap(ID3D1xShaderResourceView *m_pCubeEnvMapSR
 
 void SimulSkyRendererDX1x::DrawCube()
 {
-	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 	UINT stride = sizeof(Vertex_t);
 	UINT offset = 0;
     UINT Strides[1];
     UINT Offsets[1];
     Strides[0] = 0;
     Offsets[0] = 0;
+
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+
 	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
 												1,					// the number of buffers in the array
 												&m_pVertexBuffer,	// the array of vertex buffers
@@ -1018,9 +1027,16 @@ void SimulSkyRendererDX1x::DrawCube()
 	// Set the input layout
 	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
 
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
+
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	m_pImmediateContext->Draw(36,0);
+
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+	SAFE_RELEASE(previousInputLayout);
 }
 
 void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

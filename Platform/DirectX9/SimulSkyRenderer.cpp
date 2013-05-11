@@ -928,20 +928,20 @@ bool SimulSkyRenderer::Render2DFades(void *context)
 	m_pSkyEffect->SetVector(texelScale,&sc);
 	float atc=GetAltitudeTextureCoordinate();
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
-	loss_2d.Activate();
+	loss_2d.Activate(NULL);
 	DrawFullScreenQuad(m_pd3dDevice,m_pSkyEffect);
-	loss_2d.Deactivate();
+	loss_2d.Deactivate(NULL);
 	m_pSkyEffect->SetTexture(fadeTexture,inscatter_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,inscatter_textures[1]);
-	inscatter_2d.Activate();
+	inscatter_2d.Activate(NULL);
 	DrawFullScreenQuad(m_pd3dDevice,m_pSkyEffect);
-	inscatter_2d.Deactivate();
+	inscatter_2d.Deactivate(NULL);
 	
 	m_pSkyEffect->SetTexture(fadeTexture,skylight_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,skylight_textures[1]);
-	skylight_2d.Activate();
+	skylight_2d.Activate(NULL);
 	DrawFullScreenQuad(m_pd3dDevice,m_pSkyEffect);
-	skylight_2d.Deactivate();
+	skylight_2d.Deactivate(NULL);
 	return true;
 }
 

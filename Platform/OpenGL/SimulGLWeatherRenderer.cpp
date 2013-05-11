@@ -216,10 +216,10 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,bool buffer)
 	timer.TimeSum=0;
 	timer.StartTime();
 	
-	scene_buffer->Activate();
-	scene_buffer->Clear(0,0,0,1.f);
+	scene_buffer->Activate(context);
+	scene_buffer->Clear(context,0,0,0,1.f);
 	simulCloudRenderer->Render(context,false,depth_alpha_tex,UseDefaultFog,true);
-	scene_buffer->Deactivate();
+	scene_buffer->Deactivate(context);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	GLuint prog=AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;
@@ -241,16 +241,16 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,bool buffer)
 	render_time+=timer.Time;
 }
 
-void SimulGLWeatherRenderer::RenderLightning()
+void SimulGLWeatherRenderer::RenderLightning(void *context)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		simulLightningRenderer->Render();
+		simulLightningRenderer->Render(context);
 }
 
-void SimulGLWeatherRenderer::RenderPrecipitation()
+void SimulGLWeatherRenderer::RenderPrecipitation(void *context)
 {
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		simulPrecipitationRenderer->Render();
+		simulPrecipitationRenderer->Render(context);
 }
 
 

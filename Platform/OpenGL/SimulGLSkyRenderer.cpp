@@ -147,7 +147,7 @@ void SimulGLSkyRenderer::CreateFadeTextures()
 	ERROR_CHECK
 }
 
-static simul::sky::float4 Lookup(FramebufferGL fb,float distance_texcoord,float elevation_texcoord)
+static simul::sky::float4 Lookup(void *context,FramebufferGL fb,float distance_texcoord,float elevation_texcoord)
 {
 	distance_texcoord*=(float)fb.GetWidth();
 	int x=(int)(distance_texcoord);
@@ -165,22 +165,22 @@ static simul::sky::float4 Lookup(FramebufferGL fb,float distance_texcoord,float 
 	float y_interp=elevation_texcoord-y;
 	// four floats per texel, four texels.
 	simul::sky::float4 data[4];
-	fb.Activate();
+	fb.Activate(context);
 	glReadPixels(x,y,2,2,GL_RGBA,GL_FLOAT,(GLvoid*)data);
-	fb.Deactivate();
+	fb.Deactivate(context);
 	simul::sky::float4 bottom	=simul::sky::lerp(x_interp,data[0],data[1]);
 	simul::sky::float4 top		=simul::sky::lerp(x_interp,data[2],data[3]);
 	simul::sky::float4 ret		=simul::sky::lerp(y_interp,bottom,top);
 	return ret;
 }
 
-const float *SimulGLSkyRenderer::GetFastLossLookup(float distance_texcoord,float elevation_texcoord)
+const float *SimulGLSkyRenderer::GetFastLossLookup(void *context,float distance_texcoord,float elevation_texcoord)
 {
-	return Lookup(loss_2d,distance_texcoord,elevation_texcoord);
+	return Lookup(context,loss_2d,distance_texcoord,elevation_texcoord);
 }
-const float *SimulGLSkyRenderer::GetFastInscatterLookup(float distance_texcoord,float elevation_texcoord)
+const float *SimulGLSkyRenderer::GetFastInscatterLookup(void *context,float distance_texcoord,float elevation_texcoord)
 {
-	return Lookup(inscatter_2d,distance_texcoord,elevation_texcoord);
+	return Lookup(context,inscatter_2d,distance_texcoord,elevation_texcoord);
 }
 
 // Here we blend the four 3D fade textures (distance x elevation x altitude at two keyframes, for loss and inscatter)
@@ -211,7 +211,7 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 	glOrtho(0,1.0,0,1.0,-1.0,1.0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	fb[0]->Activate();
+	fb[0]->Activate(context);
 	for(int i=0;i<3;i++)
 	{
 		glActiveTexture(GL_TEXTURE0);
@@ -233,7 +233,7 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 			 glDisable(GL_TEXTURE_2D);
 		}
 	}
-	fb[0]->Deactivate();
+	fb[0]->Deactivate(context);
 	glUseProgram(NULL);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,NULL);

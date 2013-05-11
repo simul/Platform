@@ -339,7 +339,7 @@ bool SimulAtmosphericsRenderer::DrawScreenQuad()
 	return (hr==S_OK);
 }
 
-void SimulAtmosphericsRenderer::StartRender()
+void SimulAtmosphericsRenderer::StartRender(void *)
 {
 	PIXBeginNamedEvent(0xFF88FFFF,"SimulAtmosphericsRenderer::StartRender to FinishRender");
 	HRESULT hr=S_OK;

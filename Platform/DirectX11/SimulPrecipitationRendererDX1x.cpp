@@ -58,9 +58,9 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	ApplyPass(tech->GetPassByIndex(0));
 	FramebufferDX1x make_rain_fb(512,512);
 	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
-	make_rain_fb.Activate();
-	make_rain_fb.DrawQuad();
-	make_rain_fb.Deactivate();
+	make_rain_fb.Activate(m_pImmediateContext);
+	make_rain_fb.DrawQuad(m_pImmediateContext);
+	make_rain_fb.Deactivate(m_pImmediateContext);
 	rain_texture=make_rain_fb.buffer_texture_SRV;
 	// Make sure it isn't destroyed when the fb goes out of scope:
 	rain_texture->AddRef();
@@ -69,7 +69,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D11Device*)dev;
-	SAFE_RELEASE(m_pImmediateContext);
+	SAFE_RELEASE(m_pImmediateContext)
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	HRESULT hr=S_OK;
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
@@ -105,12 +105,12 @@ void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
 void SimulPrecipitationRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(m_pRainEffect);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(rain_texture);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(pShadingCB);
+	SAFE_RELEASE(m_pImmediateContext)
 }
 
 
@@ -131,7 +131,7 @@ depth map of the scene to find the pixels for which the rain
 streak is not occluded by the scene. The streak is rendered only over
 those pixels.
 */
-void SimulPrecipitationRendererDX1x::Render()
+void SimulPrecipitationRendererDX1x::Render(void *context)
 {
 return;
 	if(rain_intensity<=0)
@@ -199,8 +199,11 @@ return;
 													&stride,			// array of stride values, one for each buffer
 													&offset );
 		m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+		D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+		m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 		m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		m_pImmediateContext->Draw(NUM_VERT-2,0);
+		m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 	}
 	D3DXMatrixIdentity(&world);
 	PIXEndNamedEvent();

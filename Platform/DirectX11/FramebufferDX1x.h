@@ -22,13 +22,11 @@ public:
 	//! Call this when the device has been lost.
 	void InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-	void Activate();
-	void Deactivate();
+	void Activate(void *context);
+	void Deactivate(void *context);
 	void Render(void *context,bool blend);
-	void Clear(float,float,float,float,int mask=0);
-	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
-	void DeactivateAndRender(void *,bool blend);
-	bool DrawQuad();
+	void Clear(void *context,float,float,float,float,int mask=0);
+	bool DrawQuad(void *context);
 	ID3D1xShaderResourceView *GetBufferResource()
 	{
 		return buffer_texture_SRV;
@@ -44,11 +42,9 @@ public:
 	void CopyToMemory(void *target);
 	void CopyToMemory(void *target,int start_texel,int texels);
 protected:
-	unsigned int num_v;
 	DXGI_FORMAT target_format;
 	bool Destroy();
 	ID3D1xDevice*						m_pd3dDevice;
-	ID3D1xDeviceContext *				m_pImmediateContext;
 	ID3D1xInputLayout*					m_pBufferVertexDecl;
 	ID3D1xBuffer*						m_pVertexBuffer;
 
@@ -75,4 +71,5 @@ protected:
 	bool CreateBuffers();
 	ID3D1xRenderTargetView* MakeRenderTarget(const ID3D1xTexture2D* pTexture);
 	float timing;
+	unsigned int num_v;
 };

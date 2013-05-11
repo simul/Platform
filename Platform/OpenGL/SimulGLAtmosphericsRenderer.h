@@ -53,7 +53,7 @@ public:
 		cloud_shadow_texture=(GLuint)c;
 	}
 	//! Render the Atmospherics.
-	void StartRender();
+	void StartRender(void *context);
 	void FinishRender(void *context);
 private:
 	//! \internal Switch the current program, either sky_program or earthshadow_program.

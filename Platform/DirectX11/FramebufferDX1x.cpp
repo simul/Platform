@@ -30,7 +30,6 @@ typedef std::basic_string<TCHAR> tstring;
 FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	BaseFramebuffer(w,h)
 	,m_pd3dDevice(NULL),
-	m_pImmediateContext(NULL),
 	m_pBufferVertexDecl(NULL),
 	m_pVertexBuffer(NULL),
 	hdr_buffer_texture(NULL),
@@ -43,8 +42,8 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	m_pOldDepthSurface(NULL)
 	,stagingTexture(NULL)
 	,timing(0.f)
-	,num_v(0)
 	,target_format(DXGI_FORMAT_R32G32B32A32_FLOAT)
+	,num_v(0)
 {
 }
 
@@ -71,10 +70,8 @@ void FramebufferDX1x::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D1xDevice*)dev;
-	SAFE_RELEASE(m_pImmediateContext);
 	if(!m_pd3dDevice)
 		return;
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	RecompileShaders();
 	CreateBuffers();
 }
@@ -87,7 +84,6 @@ void FramebufferDX1x::RecompileShaders()
 void FramebufferDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-	SAFE_RELEASE(m_pImmediateContext);
 
 	SAFE_RELEASE(m_pBufferVertexDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
@@ -277,8 +273,8 @@ ID3D1xRenderTargetView* FramebufferDX1x::MakeRenderTarget(const ID3D1xTexture2D*
 	return pRenderTargetView;
 }
 
-ID3D11Texture2D* makeStagingTexture(ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext,int w,int h,DXGI_FORMAT target_format)
+ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *m_pd3dDevice
+							,int w,int h,DXGI_FORMAT target_format)
 {
 	ID3D11Texture2D*	tex;
 	D3D11_TEXTURE2D_DESC textureDesc=
@@ -304,8 +300,10 @@ void FramebufferDX1x::CopyToMemory(void *target)
 
 void FramebufferDX1x::CopyToMemory(void *target,int start_texel,int texels)
 {
+	ID3D1xDeviceContext *m_pImmediateContext=NULL;
+m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	if(!stagingTexture)
-		stagingTexture		=makeStagingTexture(m_pd3dDevice,m_pImmediateContext,Width,Height,target_format);
+		stagingTexture=makeStagingTexture(m_pd3dDevice,Width,Height,target_format);
 	D3D11_BOX sourceRegion;
 	sourceRegion.left = 0;
 	sourceRegion.right = Width;
@@ -343,12 +341,12 @@ HRESULT hr=S_OK;
 	}
 	// copy data
 	m_pImmediateContext->Unmap(stagingTexture, 0);
+	SAFE_RELEASE(m_pImmediateContext)
 }
 
-void FramebufferDX1x::Activate()
+void FramebufferDX1x::Activate(void *context)
 {
-	if(!m_pImmediateContext)
-		RestoreDeviceObjects(m_pd3dDevice);
+	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
 	if(!m_pImmediateContext)
 		return;
 	HRESULT hr=S_OK;
@@ -376,17 +374,20 @@ void FramebufferDX1x::Activate()
 	m_pImmediateContext->RSSetViewports(1, &viewport);
 }
 
-void FramebufferDX1x::Deactivate()
+void FramebufferDX1x::Deactivate(void *context)
 {
+	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
 	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
 	if(num_v>0)
 		m_pImmediateContext->RSSetViewports(num_v,m_OldViewports);
+	m_pImmediateContext=NULL;
 }
 
-void FramebufferDX1x::Clear(float r,float g,float b,float a,int mask)
+void FramebufferDX1x::Clear(void *context,float r,float g,float b,float a,int mask)
 {
+	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
 	// Clear the screen to black:
     float clearColor[4]={r,g,b,a};
     if(!mask)
@@ -396,19 +397,14 @@ void FramebufferDX1x::Clear(float r,float g,float b,float a,int mask)
 		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,mask, 1.f, 0);
 }
 
-void FramebufferDX1x::DeactivateAndRender(void *context,bool blend)
+void FramebufferDX1x::Render(void *context,bool blend)
 {
-	Deactivate();
-	Render(context,blend);
+	DrawQuad(context);
 }
 
-void FramebufferDX1x::Render(void *,bool blend)
+bool FramebufferDX1x::DrawQuad(void *context)
 {
-	DrawQuad();
-}
-
-bool FramebufferDX1x::DrawQuad()
-{
+	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
 	HRESULT hr=S_OK;
 	UINT stride = sizeof(Vertext);
 	UINT offset = 0;
@@ -416,13 +412,22 @@ bool FramebufferDX1x::DrawQuad()
     UINT Offsets[1];
     Strides[0] = 0;
     Offsets[0] = 0;
+
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+
 	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
 												1,					// the number of buffers in the array
 												&m_pVertexBuffer,	// the array of vertex buffers
 												&stride,			// array of stride values, one for each buffer
 												&offset);			// array of offset values, one for each buffer
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
 	m_pImmediateContext->Draw(4,0);
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+	SAFE_RELEASE(previousInputLayout);
 	return (hr==S_OK);
 }

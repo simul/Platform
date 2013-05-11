@@ -148,7 +148,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 	// Don't need to clear D3DCLEAR_TARGET as we'll be filling every pixel:
-		simulHDRRenderer->StartRender();
+		simulHDRRenderer->StartRender(pd3dImmediateContext);
 		simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 	}
 	else
@@ -158,9 +158,9 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		simulWeatherRenderer->SetMatrices(view,proj);
 		simulWeatherRenderer->RenderSky(pd3dImmediateContext,UseSkyBuffer,false);
 		if(MakeCubemap)
-			simulWeatherRenderer->RenderCubemap();
+			simulWeatherRenderer->RenderCubemap(pd3dImmediateContext);
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender();
+			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender(pd3dImmediateContext);
 	}
 	// Render solid things here.
 	if(simulTerrainRenderer)
@@ -176,14 +176,14 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender(pd3dImmediateContext);
 			
 		simulWeatherRenderer->RenderLateCloudLayer(pd3dImmediateContext,true);
-		simulWeatherRenderer->RenderLightning();
+		simulWeatherRenderer->RenderLightning(pd3dImmediateContext);
 		if(simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->DrawCubemap((ID3D1xShaderResourceView*	)simulWeatherRenderer->GetCubemap());
 		simulWeatherRenderer->DoOcclusionTests();
 	}
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->RenderPrecipitation();
+		simulWeatherRenderer->RenderPrecipitation(pd3dImmediateContext);
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light;

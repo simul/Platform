@@ -1288,7 +1288,7 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 	fb.SetFormat(f);
 	fb.SetWidthAndHeight(cloud_tex_width_x*2,cloud_tex_length_y*cloud_tex_depth_z);
 	fb.RestoreDeviceObjects(m_pd3dDevice);
-	fb.Activate();
+	fb.Activate(NULL);
 	static unsigned b=0x00000000;
 	HRESULT hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,b,1.f,0L);
 	m_pCloudEffect->SetTechnique(m_hTechniqueRenderTo2DForSaving);
@@ -1312,7 +1312,7 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 
 	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
 
-	fb.Deactivate();
+	fb.Deactivate(NULL);
 	fn+=ext;
 	//hr=D3DXSaveSurfaceToFile((std::wstring(fn)+L".bmp").c_str(),D3DXIFF_BMP,fb.m_pHDRRenderTarget,NULL,NULL);
 	SaveTexture((LPDIRECT3DTEXTURE9)fb.GetColorTex(),(std::string(filename)+".png").c_str());

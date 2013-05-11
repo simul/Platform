@@ -47,7 +47,7 @@ public:
 	void InvalidateDeviceObjects();
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	//! Call this to draw the clouds, including any illumination by lightning.
-	void Render();
+	void Render(void *context);
 protected:
 	ID3D1xDevice*					m_pd3dDevice;
 	ID3D1xDeviceContext *			m_pImmediateContext;

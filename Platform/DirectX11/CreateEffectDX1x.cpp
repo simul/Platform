@@ -259,7 +259,12 @@ void UtilityRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool st
 	ID3D1xInputLayout*				m_pVtxDecl=NULL;
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+	
 	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(strip?D3D1x_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D1x_PRIMITIVE_TOPOLOGY_LINELIST);
 	UINT stride = sizeof(VertexXyzRgba);
 	UINT offset = 0;
@@ -274,6 +279,9 @@ void UtilityRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool st
 												&offset);		// array of 
 	hr=ApplyPass(tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(vertex_count,0);
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+	SAFE_RELEASE(previousInputLayout);
 	SAFE_RELEASE(vertexBuffer);
 	SAFE_RELEASE(m_pVtxDecl);
 #endif
@@ -479,6 +487,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFl
 	for(int i=0;i<10000&&!ifs.good();i++);
 	if(ifs.good())
 	{
+		std::cerr<<"D3DX11CreateEffectFromBinaryFile found file "<<compiled_filename.c_str()<<std::endl;
 		ifs.seekg(0,std::ios_base::end);
 		size_t sz=(size_t)ifs.tellg();
 		ifs.seekg(0,std::ios_base::beg);
@@ -488,14 +497,19 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFl
 			ifs.read(pData,sz);
 
 			hr=D3DX11CreateEffectFromMemory(pData,sz,FXFlags,pDevice,ppEffect);
+			if(hr!=S_OK)
+				std::cerr<<"D3DX11CreateEffectFromBinaryFile error "<<(int)hr<<std::endl;
 			delete [] pData;
 		}
 	}
+	else
+		std::cerr<<"D3DX11CreateEffectFromBinaryFile cannot find file "<<compiled_filename.c_str()<<std::endl;
 	return hr;
 }
 
 HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
+#if 1
 	// first try to find an existing text source with this filename, and compile it.
 	std::string text_filename=simul::base::WStringToString(filename);
 	std::ifstream ifs(text_filename.c_str(),std::ios_base::binary);
@@ -629,6 +643,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 				return S_FALSE;
 		}
 	}
+#endif
 	HRESULT hr=D3DX11CreateEffectFromBinaryFile(filename,FXFlags,pDevice,ppEffect);
 	return hr;
 }
@@ -912,7 +927,13 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical
 	ID3D1xInputLayout*				m_pVtxDecl=NULL;
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+
 	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	UINT stride = sizeof(Vertext);
 	UINT offset = 0;
@@ -928,6 +949,10 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical
 	hr=ApplyPass(tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(4,0);
 	//hr=ApplyPass(tech->GetPassByIndex(0));
+
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+	SAFE_RELEASE(previousInputLayout);
 	SAFE_RELEASE(vertexBuffer);
 	SAFE_RELEASE(m_pVtxDecl);
 }
@@ -987,10 +1012,17 @@ void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float d
 												&m_pVertexBuffer,	// the array of vertex buffers
 												&stride,			// array of stride values, one for each buffer
 												&offset);			// array of offset values, one for each buffer
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
 	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
 	hr=ApplyPass(tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(4,0);
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+	SAFE_RELEASE(previousInputLayout);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pBufferVertexDecl);
 }

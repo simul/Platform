@@ -174,10 +174,10 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	if(cbConstants)
 		cbConstants->SetConstantBuffer(gpuCloudConstantsBuffer);
 
-	dens_fb.Activate();
+	dens_fb.Activate(m_pImmediateContext);
 		ApplyPass(densityTechnique->GetPassByIndex(0));
-		dens_fb.DrawQuad();
-	dens_fb.Deactivate();
+		dens_fb.DrawQuad(m_pImmediateContext);
+	dens_fb.Deactivate(m_pImmediateContext);
 	density_gridsize=new_density_gridsize;
 std::cout<<"\tDraw "<<timer.UpdateTime()<<"ms"<<std::endl;
 	Ensure3DTextureSizeAndFormat(m_pd3dDevice,m_pImmediateContext,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
@@ -238,10 +238,10 @@ try{
 	
 	if(start_texel==0)
 	{
-		F[0]->Activate();
+		F[0]->Activate(m_pImmediateContext);
 			input_light_texture->SetResource(F[1]->GetBufferResource());
-			F[0]->Clear(1.f,1.f,1.f,1.f);
-		F[0]->Deactivate();
+			F[0]->Clear(m_pImmediateContext,1.f,1.f,1.f,1.f);
+		F[0]->Deactivate(m_pImmediateContext);
 		F[0]->CopyToMemory(target);
 	}
 	int i0=start_texel/(light_grid[0]*light_grid[1]);
@@ -253,11 +253,11 @@ try{
 	{
 		float zPos=((float)i+0.5f)/(float)light_grid[2];
 		zPosition->SetFloat(zPos);
-		F[1]->Activate();
+		F[1]->Activate(m_pImmediateContext);
 			input_light_texture->SetResource(F[0]->GetBufferResource());
 		ApplyPass(lightingTechnique->GetPassByIndex(0));
-			F[1]->DrawQuad();
-		F[1]->Deactivate();
+			F[1]->DrawQuad(m_pImmediateContext);
+		F[1]->Deactivate(m_pImmediateContext);
 		// Copy F[1] contents to the target
 		F[1]->CopyToMemory(target);
 		std::swap(F[0],F[1]);
@@ -309,10 +309,10 @@ try{
 	ambientTexture->SetResource(ambient_texture);
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 
-	world_fb.Activate();
+	world_fb.Activate(m_pImmediateContext);
 		ApplyPass(transformTechnique->GetPassByIndex(0));
-		world_fb.DrawQuad();
-	world_fb.Deactivate();
+		world_fb.DrawQuad(m_pImmediateContext);
+	world_fb.Deactivate(m_pImmediateContext);
 	world_fb.CopyToMemory(target,start_texel,texels);
 
 	SAFE_RELEASE(ambient_texture);

@@ -3,8 +3,7 @@
 const int MIPLEVELS=1;
 
 FramebufferCubemapDX1x::FramebufferCubemapDX1x()
-	:m_pImmediateContext(NULL)
-	,m_pCubeEnvDepthMap(NULL)
+	:m_pCubeEnvDepthMap(NULL)
 	,m_pCubeEnvMap(NULL)
 	,m_pCubeEnvMapSRV(NULL)
 	,Width(0)
@@ -45,8 +44,6 @@ void FramebufferCubemapDX1x::RestoreDeviceObjects(void* dev)
 {
 	HRESULT hr=S_OK;
 	pd3dDevice=(ID3D1xDevice*)dev;
-	SAFE_RELEASE(m_pImmediateContext);
-	pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	// Create cubic depth stencil texture
 	D3D1x_TEXTURE2D_DESC dstex;
 	dstex.Width = Width;
@@ -143,7 +140,6 @@ void FramebufferCubemapDX1x::InvalidateDeviceObjects()
 		SAFE_RELEASE(m_pCubeEnvDepthMapDSV[i]);
 	}
 	SAFE_RELEASE(m_pCubeEnvMapSRV);
-	SAFE_RELEASE(m_pImmediateContext);
 }
 
 void FramebufferCubemapDX1x::SetCurrentFace(int i)
@@ -151,8 +147,9 @@ void FramebufferCubemapDX1x::SetCurrentFace(int i)
 	current_face=i;
 }
 
-ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy()
+ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy(void *context)
 {
+	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext*)context;
 	if(!stagingTexture)
 		stagingTexture		=makeStagingTexture(pd3dDevice,Width,format);
 	D3D11_BOX sourceRegion;
@@ -167,18 +164,19 @@ ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy()
 	return stagingTexture;
 }
 
-void FramebufferCubemapDX1x::Activate()
+void FramebufferCubemapDX1x::Activate(void *context)
 {
+	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
 #if 0
 	for(int i=0;i<6;i++)
 	{
-		cubemap_framebuffers[i].Activate();
+		cubemap_framebuffers[i].Activate(context);
 		if(simulSkyRenderer)
 		{
 			simulSkyRenderer->SetMatrices(view_matrices[i],proj);
 			hr=simulSkyRenderer->Render(true);
 		}
-		cubemap_framebuffers[i].Deactivate();
+		cubemap_framebuffers[i].Deactivate(context);
 	}
 #else
 	HRESULT hr=S_OK;
@@ -208,9 +206,9 @@ void FramebufferCubemapDX1x::Activate()
 #endif
 }
 
-void FramebufferCubemapDX1x::Deactivate()
+void FramebufferCubemapDX1x::Deactivate(void *context)
 {
-	//ID3D11RenderTargetView* rTargets[2] = { m_pOldRenderTarget, NULL };
+	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
 	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
@@ -218,8 +216,9 @@ void FramebufferCubemapDX1x::Deactivate()
 	m_pImmediateContext->RSSetViewports(1,m_OldViewports);
 }
 
-void FramebufferCubemapDX1x::Clear(float r,float g,float b,float a,int mask)
+void FramebufferCubemapDX1x::Clear(void *context,float r,float g,float b,float a,int mask)
 {
+	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
 	if(!mask)
 		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
 	// Clear the screen to black:

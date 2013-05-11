@@ -56,16 +56,16 @@ void SimulGLHDRRenderer::RestoreDeviceObjects()
 		glow_fb.InitDepth_RB(GL_DEPTH_COMPONENT32);
 		alt_fb.InitDepth_RB(GL_DEPTH_COMPONENT32);
 	}
-	framebuffer->Activate();
+/*framebuffer->Activate(context);
 	framebuffer->Clear(0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT);
-	framebuffer->Deactivate();
+	framebuffer->Deactivate(context);
 	ERROR_CHECK
-	glow_fb.Activate();
+	glow_fb.Activate(context);
 	glow_fb.Clear(0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT);
-	glow_fb.Deactivate();
-	alt_fb.Activate();
+	glow_fb.Deactivate(context);
+	alt_fb.Activate(context);
 	alt_fb.Clear(0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT);
-	alt_fb.Deactivate();
+	alt_fb.Deactivate(context);*/
 	ERROR_CHECK
 	RecompileShaders();
 }
@@ -87,21 +87,18 @@ void SimulGLHDRRenderer::InvalidateDeviceObjects()
 {
 }
 
-bool SimulGLHDRRenderer::StartRender()
+bool SimulGLHDRRenderer::StartRender(void *context)
 {
-	framebuffer->Activate();
-	framebuffer->Clear(0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-	/*glClearColor(0.f,0.f,0.f,1.f);
-	ERROR_CHECK
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);*/
+	framebuffer->Activate(context);
+	framebuffer->Clear(context,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	ERROR_CHECK
 	return true;
 }
 
 bool SimulGLHDRRenderer::FinishRender(void *context)
 {
-	framebuffer->Deactivate();
-	RenderGlowTexture();
+	framebuffer->Deactivate(context);
+	RenderGlowTexture(context);
 
 	glUseProgram(tonemap_program);
 	setTexture(tonemap_program,"image_texture",0,(GLuint)framebuffer->GetColorTex());
@@ -117,13 +114,13 @@ bool SimulGLHDRRenderer::FinishRender(void *context)
 	return true;
 }
 
-void SimulGLHDRRenderer::RenderGlowTexture()
+void SimulGLHDRRenderer::RenderGlowTexture(void *context)
 {
 	int main_viewport[4];
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	// Render to the low-res glow.
 	glUseProgram(glow_program);
-	glow_fb.Activate();
+	glow_fb.Activate(context);
 	{
 		setTexture(glow_program,"image_texture",0,(GLuint)framebuffer->GetColorTex());
 		int glow_viewport[4];
@@ -133,11 +130,11 @@ void SimulGLHDRRenderer::RenderGlowTexture()
 		setParameter(glow_program,"exposure",Exposure);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
-	glow_fb.Deactivate();
+	glow_fb.Deactivate(context);
 
 	// blur horizontally:
 	glUseProgram(blur_program);
-	alt_fb.Activate();
+	alt_fb.Activate(context);
 	{
 		int glow_viewport[4];
 		glGetIntegerv(GL_VIEWPORT,glow_viewport);
@@ -146,9 +143,9 @@ void SimulGLHDRRenderer::RenderGlowTexture()
 		setParameter(blur_program,"offset",1.f/(float)glow_viewport[2],0.f);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
-	alt_fb.Deactivate();
+	alt_fb.Deactivate(context);
 
-	glow_fb.Activate();
+	glow_fb.Activate(context);
 	{
 		int glow_viewport[4];
 		glGetIntegerv(GL_VIEWPORT,glow_viewport);
@@ -157,5 +154,5 @@ void SimulGLHDRRenderer::RenderGlowTexture()
 		setParameter(blur_program,"offset",0.f,0.5f/(float)glow_viewport[3]);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
-	glow_fb.Deactivate();
+	glow_fb.Deactivate(context);
 }

@@ -35,13 +35,13 @@ public:
 	//! Call this when the device has been lost.
 	void InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-	bool StartRender();
+	bool StartRender(void *context);
 	//! ApplyFade: call this after rendering the solid stuff, before rendering transparent and background imagery.
 	bool ApplyFade();
 	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
 	bool FinishRender(void *context);
 	//! Create the glow texture that will be overlaid due to strong lights.
-	void RenderGlowTexture();
+	void RenderGlowTexture(void *context);
 	//! Get the current debug text as a c-string pointer.
 	const char *GetDebugText() const;
 	//! Get a timing value for debugging.

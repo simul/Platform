@@ -301,16 +301,16 @@ bool SimulWeatherRenderer::RenderSky(void *context,bool buffered,bool is_cubemap
 	return true;
 }
 
-void SimulWeatherRenderer::RenderLightning()
+void SimulWeatherRenderer::RenderLightning(void *context)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		return simulLightningRenderer->Render();
+		return simulLightningRenderer->Render(context);
 }
 
-void SimulWeatherRenderer::RenderPrecipitation()
+void SimulWeatherRenderer::RenderPrecipitation(void *context)
 {
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		simulPrecipitationRenderer->Render();
+		simulPrecipitationRenderer->Render(context);
 }
 
 void SimulWeatherRenderer::RenderLateCloudLayer(void *context,bool buf)
@@ -322,7 +322,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(void *context,bool buf)
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface=NULL;
 	if(buf)
 	{
-		framebuffer.Activate();
+		framebuffer.Activate(NULL);
 		static float depth_start=1.f;
 		hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 	}
@@ -360,7 +360,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(void *context,bool buf)
 	{
 		m_pBufferToScreenEffect->SetTechnique(CloudBlendTechnique);
 		{
-			framebuffer.Deactivate();
+			framebuffer.Deactivate(NULL);
 	#ifdef XBOX
 			m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, framebuffer.hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
 	#endif
