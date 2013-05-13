@@ -51,6 +51,7 @@ namespace simul
 {
 	namespace dx11
 	{
+		ShaderBuildMode shaderBuildMode=BUILD_IF_NO_BINARY;
 		tstring tstring_of(const char *c)
 		{
 			tstring t;
@@ -98,6 +99,10 @@ namespace simul
 		void PipeCompilerOutput(bool p)
 		{
 			pipe_compiler_output=p;
+		}
+		void SetShaderBuildMode(ShaderBuildMode s)
+		{
+			shaderBuildMode=s;
 		}
 		void SetShaderPath(const char *path)
 		{
@@ -499,9 +504,11 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 	// first try to find an existing text source with this filename, and compile it.
 	std::string text_filename=simul::base::WStringToString(filename);
 	std::ifstream ifs(text_filename.c_str(),std::ios_base::binary);
-	if(ifs.good())
+	std::string output_filename=text_filename+"o";
+	std::ifstream bifs(output_filename.c_str(),std::ios_base::binary);
+	if(((shaderBuildMode==BUILD_IF_NO_BINARY&&!bifs.good())||shaderBuildMode==ALWAYS_BUILD)&&ifs.good())
 	{
-		std::string output_filename=text_filename+"o";
+		bifs.close();
 		DeleteFileA(output_filename.c_str());
 		std::string command=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("DXSDK_DIR");
 		if(command.length())
@@ -522,18 +529,6 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 					macros++;
 				}
 		//	command+=" > \""+text_filename+".log\"";
-#if 0
-			system(command.c_str());
-#else
-#if 0
-			HINSTANCE hi=ShellExecuteA(NULL,
-				LPCTSTR lpOperation,
-				LPCTSTR lpFile,
-				LPCTSTR lpParameters,
-				LPCTSTR lpDirectory,
-				INT nShowCmd
-			);
-#else
 			STARTUPINFOA si;
 			PROCESS_INFORMATION pi;
 			ZeroMemory( &si, sizeof(si) );
@@ -621,10 +616,6 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 
 			/*"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Utilities\Bin\x86\fxc.exe" /T fx_5_0 /Fo "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fxo" "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fx""	char [200]
 			 */
-
-			//fclose(fp);
-#endif
-#endif
 			if(has_errors)
 				return S_FALSE;
 		}
@@ -668,12 +659,11 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 	}
 	DWORD flags=default_effect_flags;
 	SAFE_RELEASE(*effect);
-	hr=D3DX11CreateEffectFromFile(
-				fn.c_str(),
-				macros,
-				flags,
-				d3dDevice,
-				effect);
+	hr=D3DX11CreateEffectFromFile(	fn.c_str(),
+									macros,
+									flags,
+									d3dDevice,
+									effect);
 	if(hr!=S_OK)
 	{
 		std::string err="";

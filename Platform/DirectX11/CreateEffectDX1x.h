@@ -7,14 +7,9 @@
 // agreement.
 
 // CreateEffect.h Create a DirectX .fx effect and report errors.
-#ifdef DX10
-#include <d3dx10.h>
-#include <d3d10effect.h>
-#else
 #include <d3dx11.h>
 #include <d3dx11effect.h>
 #include <D3Dcompiler.h>
-#endif
 #include <d3dx9.h>
 #include <map>
 #include "MacrosDX1x.h"
@@ -24,10 +19,15 @@ namespace simul
 {
 	namespace dx11
 	{
+		enum ShaderBuildMode
+		{
+			ALWAYS_BUILD=1,BUILD_IF_NO_BINARY,NEVER_BUILD
+		};
 		extern SIMUL_DIRECTX11_EXPORT void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir);
 		extern SIMUL_DIRECTX11_EXPORT const float *GetCameraPosVector(D3DXMATRIX &view,bool y_vertical);
 		//! Call this to make the FX compiler put its warnings and errors to the standard output when used.
 		extern SIMUL_DIRECTX11_EXPORT void PipeCompilerOutput(bool p);
+		extern SIMUL_DIRECTX11_EXPORT void SetShaderBuildMode(ShaderBuildMode s);
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderPath(const char *path);
 		extern SIMUL_DIRECTX11_EXPORT void SetTexturePath(const char *path);
 		extern SIMUL_DIRECTX11_EXPORT void SetDevice(ID3D1xDevice* dev);
