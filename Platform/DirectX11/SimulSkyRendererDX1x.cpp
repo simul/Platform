@@ -857,7 +857,7 @@ bool SimulSkyRendererDX1x::Render(void *context,bool blend)
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
-#if 1
+#if 0
 	if(ReverseDepth)
 	{
 		D3DXMATRIX invertz;
