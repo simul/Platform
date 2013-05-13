@@ -93,14 +93,10 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 		simul::dx11::SetDevice(pd3dDevice);
 		ScreenWidth=pBackBufferSurfaceDesc->Width;
 		ScreenHeight=pBackBufferSurfaceDesc->Height;
-		aspect=(float)ScreenWidth/(float)ScreenHeight;
 		if(simulWeatherRenderer)
-		{
 			simulWeatherRenderer->SetScreenSize(ScreenWidth,ScreenHeight);
-		}
 		if(simulHDRRenderer)
 			simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
-		void *x[2]={pd3dDevice,pSwapChain};
 		return S_OK;
 	}
 	catch(...)
