@@ -33,16 +33,15 @@ public:
 	//
 	void *GetCloudShadowTexture(){return NULL;}
 protected:
-	virtual void DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip){}
+	virtual void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip){}
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	virtual void EnsureTexturesAreUpToDate(void *context);
 	void EnsureTextureCycle();
 	void EnsureCorrectIlluminationTextureSizes(){}
 	void EnsureIlluminationTexturesAreUpToDate(){}
 	virtual bool CreateNoiseTexture(void *context,bool override_file=false){return true;}
 	D3DXMATRIX						view,proj;
 	ID3D11Device*					m_pd3dDevice;
-	ID3D11DeviceContext *			m_pImmediateContext;
 	ID3DX11Effect*					effect;
 	ID3DX11EffectTechnique*			tech;
 };

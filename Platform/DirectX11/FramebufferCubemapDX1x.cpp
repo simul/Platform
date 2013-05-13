@@ -149,7 +149,7 @@ void FramebufferCubemapDX1x::SetCurrentFace(int i)
 
 ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy(void *context)
 {
-	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext*)context;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext*)context;
 	if(!stagingTexture)
 		stagingTexture		=makeStagingTexture(pd3dDevice,Width,format);
 	D3D11_BOX sourceRegion;
@@ -166,7 +166,7 @@ ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy(void *context)
 
 void FramebufferCubemapDX1x::Activate(void *context)
 {
-	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 #if 0
 	for(int i=0;i<6;i++)
 	{
@@ -208,7 +208,7 @@ void FramebufferCubemapDX1x::Activate(void *context)
 
 void FramebufferCubemapDX1x::Deactivate(void *context)
 {
-	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
@@ -218,7 +218,7 @@ void FramebufferCubemapDX1x::Deactivate(void *context)
 
 void FramebufferCubemapDX1x::Clear(void *context,float r,float g,float b,float a,int mask)
 {
-	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	if(!mask)
 		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
 	// Clear the screen to black:

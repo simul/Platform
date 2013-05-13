@@ -247,7 +247,7 @@ static float transitionDistance=0.01f;
 bool SimulGLCloudRenderer::Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	EnsureTexturesAreUpToDate();
+	EnsureTexturesAreUpToDate(context);
 	simul::opengl::ProfileBlock profileBlock("SimulCloudRendererDX1x::Render");
 	simul::base::Timer timer;
 	timer.StartTime();
@@ -756,7 +756,7 @@ void *SimulGLCloudRenderer::GetCloudShadowTexture()
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[1]);
 	setParameter(cloud_shadow_program,"cloudTexture1"	,0);
 	setParameter(cloud_shadow_program,"cloudTexture2"	,1);
-	setParameter(cloud_shadow_program,"interp"			,this->GetInterpolation());
+	setParameter(cloud_shadow_program,"interp"			,cloudKeyframer->GetInterpolation());
 	
 	cloud_shadow.Activate(NULL);
 		//cloud_shadow.Clear(0.f,0.f,0.f,0.f);
@@ -849,7 +849,7 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 
 }
 
-void SimulGLCloudRenderer::EnsureTexturesAreUpToDate()
+void SimulGLCloudRenderer::EnsureTexturesAreUpToDate(void *)
 {
 	EnsureCorrectTextureSizes();
 ERROR_CHECK
@@ -915,7 +915,7 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 	}
 }
 
-void SimulGLCloudRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip)
+void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_count,bool strip)
 {
 	::DrawLines(vertices,vertex_count,strip);
 }

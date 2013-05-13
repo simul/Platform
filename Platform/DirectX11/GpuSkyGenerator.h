@@ -40,7 +40,7 @@ namespace simul
 		protected:
 			FramebufferDX1x	fb[2];
 			ID3D1xDevice*					m_pd3dDevice;
-			ID3D1xDeviceContext*			m_pImmediateContext;
+			ID3D11DeviceContext*			m_pImmediateContext;
 			ID3D1xEffect*					effect;
 			ID3D1xEffectTechnique*			lossTechnique;
 			ID3D1xEffectTechnique*			inscTechnique;

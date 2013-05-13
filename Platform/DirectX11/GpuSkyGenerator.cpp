@@ -100,7 +100,7 @@ HRESULT hr=S_OK;
 	FramebufferDX1x *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
-	ID3D11Texture1D *dens_tex1					=make1DTexture(m_pd3dDevice,m_pImmediateContext,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)density_table);
+	ID3D11Texture1D *dens_tex1					=make1DTexture(m_pd3dDevice,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)density_table);
 	ID3D11ShaderResourceView* dens_tex;
 	m_pd3dDevice->CreateShaderResourceView(dens_tex1,NULL,&dens_tex);
 	m_pImmediateContext->GenerateMips(dens_tex);
@@ -175,7 +175,7 @@ HRESULT hr=S_OK;
 		F[1]->Activate(m_pImmediateContext);
 			F[1]->Clear(m_pImmediateContext,0.f,0.f,0.f,0.f);
 			input_texture->SetResource((ID3D11ShaderResourceView*)F[0]->GetColorTex());
-			ApplyPass(lossTechnique->GetPassByIndex(0));
+			ApplyPass(m_pImmediateContext,lossTechnique->GetPassByIndex(0));
 			F[1]->DrawQuad(m_pImmediateContext);
 		F[1]->Deactivate(m_pImmediateContext);
 		F[1]->CopyToMemory(target);
@@ -185,12 +185,12 @@ HRESULT hr=S_OK;
 	}
 	
 	
-	ID3D11Texture3D *loss_tex1=make3DTexture(m_pd3dDevice,m_pImmediateContext,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)loss);
+	ID3D11Texture3D *loss_tex1=make3DTexture(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)loss);
 	ID3D11ShaderResourceView* loss_tex;
 	m_pd3dDevice->CreateShaderResourceView(loss_tex1,NULL,&loss_tex);
 	m_pImmediateContext->GenerateMips(loss_tex);
 	
-	ID3D11Texture2D *optd_tex1=make2DTexture(m_pd3dDevice,m_pImmediateContext,table_size,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)optical_table);
+	ID3D11Texture2D *optd_tex1=make2DTexture(m_pd3dDevice,table_size,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)optical_table);
 	ID3D11ShaderResourceView* optd_tex;
 	m_pd3dDevice->CreateShaderResourceView(optd_tex1,NULL,&optd_tex);
 	m_pImmediateContext->GenerateMips(optd_tex);
@@ -217,7 +217,7 @@ HRESULT hr=S_OK;
 		F[1]->Activate(m_pImmediateContext);
 			F[1]->Clear(m_pImmediateContext,0.f,0.f,0.f,0.f);
 			input_texture->SetResource((ID3D11ShaderResourceView*)F[0]->GetColorTex());
-			ApplyPass(inscTechnique->GetPassByIndex(0));
+			ApplyPass(m_pImmediateContext,inscTechnique->GetPassByIndex(0));
 			F[1]->DrawQuad(m_pImmediateContext);
 		F[1]->Deactivate(m_pImmediateContext);
 		F[1]->CopyToMemory(target);
@@ -226,7 +226,7 @@ HRESULT hr=S_OK;
 		prevDist_km=dist_km;
 	}
 	
-	ID3D11Texture3D *insc_tex1=make3DTexture(m_pd3dDevice,m_pImmediateContext,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)insc);
+	ID3D11Texture3D *insc_tex1=make3DTexture(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)insc);
 	ID3D11ShaderResourceView* insc_tex;
 	m_pd3dDevice->CreateShaderResourceView(insc_tex1,NULL,&insc_tex);
 	m_pImmediateContext->GenerateMips(insc_tex);
@@ -250,7 +250,7 @@ HRESULT hr=S_OK;
 		F[1]->Activate(m_pImmediateContext);
 			F[1]->Clear(m_pImmediateContext,0.f,0.f,0.f,0.f);
 			input_texture->SetResource((ID3D11ShaderResourceView*)F[0]->GetColorTex());
-			ApplyPass(skylTechnique->GetPassByIndex(0));
+			ApplyPass(m_pImmediateContext,skylTechnique->GetPassByIndex(0));
 			F[1]->DrawQuad(m_pImmediateContext);
 		F[1]->Deactivate(m_pImmediateContext);
 		F[1]->CopyToMemory(target);

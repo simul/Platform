@@ -167,7 +167,7 @@ void SimulGL2DCloudRenderer::EnsureCorrectTextureSizes()
 	std::cout<<"Cloud memory usage: "<<cloud_mem/1024<<"k"<<std::endl;
 
 }
-void SimulGL2DCloudRenderer::EnsureTexturesAreUpToDate()
+void SimulGL2DCloudRenderer::EnsureTexturesAreUpToDate(void *)
 {
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
@@ -270,7 +270,7 @@ ERROR_CHECK
 
 bool SimulGL2DCloudRenderer::Render(void *context,bool, void *, bool, bool)
 {
-	EnsureTexturesAreUpToDate();
+	EnsureTexturesAreUpToDate(context);
 
 	using namespace simul::clouds;
 	if(skyInterface)

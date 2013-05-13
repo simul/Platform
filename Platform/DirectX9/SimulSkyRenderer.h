@@ -60,12 +60,12 @@ public:
 	void						RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
 	void						InvalidateDeviceObjects();
-	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void						RenderSun(float exposure_hint);
+	bool						RenderPlanet(void*,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	void						RenderSun(void *context,float exposure_hint);
 	//! Get the transform that goes from declination/right-ascension to azimuth and elevation.
 	//bool						GetSiderealTransform(D3DXMATRIX *world);
 	//! Render the stars, as points.
-	bool						RenderPointStars();
+	bool						RenderPointStars(void *);
 	//! Render the stars, as a background.
 	bool						RenderTextureStars();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
@@ -108,8 +108,8 @@ protected:
 	void EnsureTexturesAreUpToDate();
 	void EnsureTextureCycle();
 	int CalcScreenPixelHeight();
-	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
-	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
+	void DrawLines(void*,Vertext *lines,int vertex_count,bool strip=false);
+	void PrintAt3dPos(void*,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 	int screen_pixel_height;
 	bool Render2DFades(void *context);
 	bool y_vertical;

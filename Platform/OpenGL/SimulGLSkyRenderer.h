@@ -42,7 +42,7 @@ public:
 	//! GL Implementation of render function.
 	bool						Render(void *,bool blend);
 	//! Render the stars, as points.
-	bool						RenderPointStars();
+	bool						RenderPointStars(void *);
 	//! Draw the 2D fades to screen for debugging.
 	bool						RenderFades(void *,int w,int h);
 
@@ -58,8 +58,8 @@ public:
 	virtual		const float *GetFastLossLookup(void* context,float distance_texcoord,float elevation_texcoord);
 	virtual		const float *GetFastInscatterLookup(void* context,float distance_texcoord,float elevation_texcoord);
 
-	bool		RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void		RenderSun(float exposure_hint);
+	bool		RenderPlanet(void *,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	void		RenderSun(void *context,float exposure_hint);
 
 	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s);
 
@@ -151,7 +151,7 @@ protected:
 	{
 		return false;
 	}
-	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
-	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
+	void DrawLines(void *,Vertext *lines,int vertex_count,bool strip=false);
+	void PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };
 

@@ -166,7 +166,7 @@ void SimulCloudRendererDX1x::RecompileShaders()
 void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 {
 	m_pd3dDevice=(ID3D11Device*)dev;
-	ID3D1xDeviceContext* m_pImmediateContext;
+	ID3D11DeviceContext* m_pImmediateContext;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	HRESULT hr;
 	CreateNoiseTexture(m_pImmediateContext);
@@ -315,7 +315,7 @@ void SimulCloudRendererDX1x::CreateMeshBuffers()
 	// Create the instance buffer.
 	m_pd3dDevice->CreateBuffer(&instanceBufferDesc, &instanceData, &instanceBuffer);
 	{
-		ID3D1xDeviceContext* m_pImmediateContext;
+		ID3D11DeviceContext* m_pImmediateContext;
 		m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 		D3D11_MAPPED_SUBRESOURCE mapped_res;
 		m_pImmediateContext->Map(instanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
@@ -331,7 +331,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	HRESULT hr=S_OK;
 	Unmap();
 	if(illumination_texture)
-		Unmap3D(illumination_texture);
+		Unmap3D(mapped_context,illumination_texture);
 	SAFE_RELEASE(cloudConstantsBuffer);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pLightningVtxDecl);
@@ -385,7 +385,7 @@ static int PowerOfTwo(int unum)
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 void SimulCloudRendererDX1x::RenderNoise(void *context)
 {
-	ID3D1xDeviceContext* m_pImmediateContext=(ID3D1xDeviceContext*)context;
+	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
 	ID3D1xEffect*					effect=NULL;
 	ID3D1xEffectTechnique*			randomTechnique;
 	ID3D1xEffectTechnique*			noiseTechnique;
@@ -397,7 +397,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	random_fb.RestoreDeviceObjects(m_pd3dDevice);
 	random_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency);
 	random_fb.SetFormat((int)DXGI_FORMAT_R32G32B32A32_FLOAT);
-	ApplyPass(randomTechnique->GetPassByIndex(0));
+	ApplyPass(m_pImmediateContext,randomTechnique->GetPassByIndex(0));
 	random_fb.Activate(context);
 		random_fb.DrawQuad(context);
 	random_fb.Deactivate(context);
@@ -413,7 +413,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 		noiseTexture->SetResource((ID3D11ShaderResourceView*)random_fb.GetColorTex());
 		simul::dx11::setParameter(effect,"octaves"		,texture_octaves);
 		simul::dx11::setParameter(effect,"persistence"	,texture_persistence);
-		ApplyPass(noiseTechnique->GetPassByIndex(0));
+		ApplyPass(m_pImmediateContext,noiseTechnique->GetPassByIndex(0));
 		n_fb.DrawQuad(context);
 	}
 	n_fb.Deactivate(context);
@@ -437,11 +437,11 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	V_CHECK(hr);
 	D3D1x_MAPPED_TEXTURE2D mapped;
 	if(!noise_texture)
-		return ;
+		return;
 	if(FAILED(hr=m_pImmediateContext->Map(noise_texture,0,D3D1x_MAP_WRITE_DISCARD,0,&mapped)))
-		return ;
+		return;
 	n_fb.CopyToMemory(mapped.pData);
-	Unmap2D(noise_texture);
+	m_pImmediateContext->Unmap(noise_texture,0);
 	V_CHECK(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
 
 	SAFE_RELEASE(effect);
@@ -452,7 +452,7 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(void* context,bool override_file
 	if(!m_pd3dDevice)
 		return false;
 	RenderNoise(context);
-	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext*)context;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext*)context;
 	return true;
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(noise_texture);
@@ -501,7 +501,7 @@ loadInfo.MipLevels=0;
 		return false;
 	simul::clouds::TextureGenerator::SetBits(0x000000FF,0x0000FF00,0x00FF0000,0xFF000000,(unsigned)4,big_endian);
 	simul::clouds::TextureGenerator::Make2DNoiseTexture(( char *)(mapped.pData),noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
-	Unmap2D(noise_texture);
+	m_pImmediateContext->Unmap(noise_texture,0);
 	V_CHECK(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
 	//m_pImmediateContext->GenerateMips(noiseTextureResource);
 	return true;
@@ -526,7 +526,10 @@ bool SimulCloudRendererDX1x::CreateLightningTexture()
 	if(FAILED(hr=m_pd3dDevice->CreateTexture1D(&textureDesc,NULL,&lightning_texture)))
 		return (hr==S_OK);
 	D3D1x_MAPPED_TEXTURE2D resource;
-	if(FAILED(hr=Map1D(lightning_texture,&resource)))
+	ID3D11DeviceContext* m_pImmediateContext;
+	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+	hr=m_pImmediateContext->Map(lightning_texture,0,D3D1x_MAP_WRITE_DISCARD,0,&resource);
+	if(FAILED(hr))
 		return (hr==S_OK);
 	unsigned char *lightning_tex_data=(unsigned char *)(resource.pData);
 	for(unsigned i=0;i<size;i++)
@@ -547,7 +550,8 @@ bool SimulCloudRendererDX1x::CreateLightningTexture()
 		lightning_tex_data[4*i+2]=(unsigned char)(255.f*g);
 		lightning_tex_data[4*i+3]=(unsigned char)(255.f*r);
 	}
-	Unmap1D(lightning_texture);
+	m_pImmediateContext->Unmap(lightning_texture,0);
+	SAFE_RELEASE(m_pImmediateContext)
 	return (hr==S_OK);
 }
 
@@ -565,7 +569,7 @@ void SimulCloudRendererDX1x::SetIlluminationGridSize(unsigned width_x,unsigned l
 		0
 	};
 	HRESULT hr=m_pd3dDevice->CreateTexture3D(&textureDesc,0,&illumination_texture);
-	D3D1x_MAPPED_TEXTURE3D mapped;
+/*	D3D1x_MAPPED_TEXTURE3D mapped;
 	if(FAILED(hr=Map3D(illumination_texture,&mapped)))
 		return;
 	memset(mapped.pData,0,4*width_x*length_y*depth_z);
@@ -573,7 +577,7 @@ void SimulCloudRendererDX1x::SetIlluminationGridSize(unsigned width_x,unsigned l
 	
 	SAFE_RELEASE(lightningIlluminationTextureResource);
     FAILED(m_pd3dDevice->CreateShaderResourceView(illumination_texture,NULL,&lightningIlluminationTextureResource ));
-	FAILED(hr=Map3D(illumination_texture,&mapped_illumination));
+	FAILED(hr=Map3D(illumination_texture,&mapped_illumination));*/
 }
 
 void SimulCloudRendererDX1x::FillIlluminationSequentially(int source_index,int texel_index,int num_texels,const unsigned char *uchar8_array)
@@ -602,21 +606,22 @@ void SimulCloudRendererDX1x::Unmap()
 	{
 		if(mapped>=0)
 		{
-			Unmap3D(cloud_textures[mapped]);
+			Unmap3D(mapped_context,cloud_textures[mapped]);
 		}
 		mapped=-1;
 		mapped_cloud_texture.pData=NULL;
 	}
 }
 
-void SimulCloudRendererDX1x::Map(int texture_index)
+void SimulCloudRendererDX1x::Map(ID3D11DeviceContext *context,int texture_index)
 {
 	HRESULT hr=S_OK;
 	if(mapped!=texture_index)
 	{
 		Unmap();
-		hr=Map3D(cloud_textures[texture_index],&mapped_cloud_texture);
+		hr=Map3D(context,cloud_textures[texture_index],&mapped_cloud_texture);
 		mapped=texture_index;
+		mapped_context=context;
 	}
 }
 
@@ -702,9 +707,9 @@ static float saturate(float c)
 static int test=1000;
 bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
 {
-	ID3D1xDeviceContext* m_pImmediateContext=(ID3D1xDeviceContext*)context;
-    ProfileBlock profileBlock("SimulCloudRendererDX1x::Render");
-	EnsureTexturesAreUpToDate();
+	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
+    ProfileBlock profileBlock(m_pImmediateContext,"SimulCloudRendererDX1x::Render");
+	EnsureTexturesAreUpToDate(m_pImmediateContext);
  
 	if (test < 1)
 	{
@@ -926,7 +931,7 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 		cloudConstants.illuminationOrigin=light_X1;
 		cloudConstants.illuminationScales=light_DX;
 	}
-	UPDATE_CONSTANT_BUFFER(cloudConstantsBuffer,CloudConstants,cloudConstants);
+	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,cloudConstantsBuffer,CloudConstants,cloudConstants);
 	ID3D1xEffectConstantBuffer* cbCloudConstants=m_pCloudEffect->GetConstantBufferByName("CloudConstants");
 	if(cbCloudConstants)
 		cbCloudConstants->SetConstantBuffer(cloudConstantsBuffer);
@@ -1026,9 +1031,9 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 	}
    //ProfileBlock renderProfileBlock("rendering");
 	if(enable_lightning)
-		ApplyPass(m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
+		ApplyPass(m_pImmediateContext,m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
 	else
-		ApplyPass(m_hTechniqueCloud->GetPassByIndex(0));
+		ApplyPass(m_pImmediateContext,m_hTechniqueCloud->GetPassByIndex(0));
 	m_pImmediateContext->//DrawInstanced(num_primitives,numInstances, 0, 0);
 						DrawIndexedInstanced(num_primitives,numInstances,0,0,0);
 
@@ -1048,9 +1053,9 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 // To prevent BIZARRE DX11 warning, we re-apply the pass with the rendertextures unbound:
 	
 	if(enable_lightning)
-		ApplyPass(m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
+		ApplyPass(m_pImmediateContext,m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
 	else
-		ApplyPass(m_hTechniqueCloud->GetPassByIndex(0));
+		ApplyPass(m_pImmediateContext,m_hTechniqueCloud->GetPassByIndex(0));
 	m_pImmediateContext->OMSetBlendState(NULL, blendFactor, sampleMask);
 	// This actually returns the PREVIOUS FRAME's time value:
 
@@ -1066,8 +1071,9 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 }
 
 
-void SimulCloudRendererDX1x::RenderDebugInfo(int width,int height)
+void SimulCloudRendererDX1x::RenderDebugInfo(void *context,int width,int height)
 {
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext*)context;
 	D3DXMATRIX ortho;
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
@@ -1076,17 +1082,18 @@ void SimulCloudRendererDX1x::RenderDebugInfo(int width,int height)
 	ortho._22=-ortho._22;
 	ortho._42=1.f;
 	simul::dx11::UtilityRenderer::SetMatrices(ident,ortho);
-	simul::clouds::BaseCloudRenderer::RenderDebugInfo(width,height);
+	simul::clouds::BaseCloudRenderer::RenderDebugInfo(m_pImmediateContext,width,height);
 }
 
-void SimulCloudRendererDX1x::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip)
+void SimulCloudRendererDX1x::DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip)
 {
-	simul::dx11::UtilityRenderer::DrawLines(vertices,vertex_count,strip);
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext*)context;
+	simul::dx11::UtilityRenderer::DrawLines(m_pImmediateContext,vertices,vertex_count,strip);
 }
 
 void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int height)
 {
-	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext*)context;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext*)context;
 	HRESULT hr=S_OK;
 	static int u=3;
 	int w=(width-8)/u;
@@ -1128,23 +1135,23 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 		if(cbCloudConstants)
 		{
 			cloudConstants.lightResponse=light_response;
-			UPDATE_CONSTANT_BUFFER(cloudConstantsBuffer,CloudConstants,cloudConstants);
+			UPDATE_CONSTANT_BUFFER(m_pImmediateContext,cloudConstantsBuffer,CloudConstants,cloudConstants);
 			cbCloudConstants->SetConstantBuffer(cloudConstantsBuffer);
 		}
 		cloudDensity1->SetResource(cloudDensityResource[i%3]);
-		RenderTexture(m_pd3dDevice,i*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
+		RenderTexture(m_pd3dDevice,m_pImmediateContext,i*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
 		cloudDensity1->SetResource(cloudDensityResource[i%3]);
-		RenderTexture(m_pd3dDevice,i*(w+1)+4,h+8,w,w,m_hTechniqueCrossSectionXY);
+		RenderTexture(m_pd3dDevice,m_pImmediateContext,i*(w+1)+4,h+8,w,w,m_hTechniqueCrossSectionXY);
 	}
 	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",noiseTextureResource);
-	RenderTexture(m_pd3dDevice,width-(w+8),height-(w+8),w,w,m_pCloudEffect->GetTechniqueByName("simple"));
+	RenderTexture(m_pd3dDevice,m_pImmediateContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect->GetTechniqueByName("simple"));
 }
 
 bool SimulCloudRendererDX1x::RenderLightning(void *context)
 {
 	if(!enable_lightning)
 		return S_OK;
-	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext*)context;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext*)context;
 	using namespace simul::clouds;
 
 	if(!lightning_vertices)
@@ -1171,7 +1178,7 @@ bool SimulCloudRendererDX1x::RenderLightning(void *context)
 	static float main_bright=1.f;
 	int vert_start=0;
 	int vert_num=0;
-	ApplyPass(m_hTechniqueLightning->GetPassByIndex(0));
+	ApplyPass(m_pImmediateContext,m_hTechniqueLightning->GetPassByIndex(0));
 	float time=skyInterface->GetTime();
 	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
@@ -1324,12 +1331,13 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 		SAFE_RELEASE(cloudDensityResource[i]);
 	    FAIL_RETURN(m_pd3dDevice->CreateShaderResourceView(cloud_textures[i],NULL,&cloudDensityResource[i]));
 	}
-	Map(2);
 }
 
-void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate()
+void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(void *context)
 {
 	EnsureCorrectTextureSizes();
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext*)context;
+	Map(m_pImmediateContext,2);
 	EnsureTextureCycle();
 	for(int i=0;i<3;i++)
 	{
@@ -1341,7 +1349,7 @@ void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate()
 			seq_texture_iterator[i].texel_index=0;
 			texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
 		}
-		Map(i);
+		Map(m_pImmediateContext,i);
 		unsigned *ptr=(unsigned *)mapped_cloud_texture.pData;
 		if(!ptr)
 			continue;
@@ -1375,7 +1383,7 @@ void SimulCloudRendererDX1x::EnsureTextureCycle()
 		if(texture_cycle<0)
 			texture_cycle+=3;
 	}
-	Map(2);
+	Map(mapped_context,2);
 }
 
 

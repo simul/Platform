@@ -78,7 +78,6 @@ protected:
 	//! The size of the screen:
 	int ScreenWidth,ScreenHeight;
 	ID3D1xDevice*					m_pd3dDevice;
-	ID3D1xDeviceContext *			m_pImmediateContext;
 	
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	ID3D1xEffect*						m_pTonemapEffect;

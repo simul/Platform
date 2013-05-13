@@ -44,7 +44,6 @@ static bool texture_path_set=false;
 static bool pipe_compiler_output=false;
 
 ID3D1xDevice		*m_pd3dDevice		=NULL;
-ID3D1xDeviceContext	*m_pImmediateContext=NULL;
 using namespace simul;
 using namespace dx11;
 namespace simul
@@ -114,17 +113,11 @@ namespace simul
 		void SetDevice(ID3D1xDevice* dev)
 		{
 			m_pd3dDevice=dev;
-		#ifdef DX10
-			m_pImmediateContext=dev;
-		#else
-			m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-		#endif
 			UtilityRenderer::RestoreDeviceObjects(dev);
 		}
 		void UnsetDevice()
 		{
 			UtilityRenderer::InvalidateDeviceObjects();
-			SAFE_RELEASE(m_pImmediateContext);
 			m_pd3dDevice=NULL;
 		}
 		void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
@@ -212,11 +205,11 @@ void UtilityRenderer::SetScreenSize(int w,int h)
 	screen_height=h;
 }
 
-void UtilityRenderer::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
+void UtilityRenderer::PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
 }
 
-void UtilityRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip)
+void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexXyzRgba *vertices,int vertex_count,bool strip)
 {
 	PIXWrapper(0xFF0000FF,"DrawLines")
 	{
@@ -277,7 +270,7 @@ void UtilityRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool st
 												&vertexBuffer,	// the array of vertex buffers
 												&stride,		// array of stride values, one for each buffer
 												&offset);		// array of 
-	hr=ApplyPass(tech->GetPassByIndex(0));
+	hr=ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(vertex_count,0);
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 	m_pImmediateContext->IASetInputLayout( previousInputLayout );
@@ -311,7 +304,6 @@ ID3D1xShaderResourceView* simul::dx11::LoadTexture(const TCHAR *filename)
 
 ID3D1xTexture1D* simul::dx11::make1DTexture(
 							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext
 							,int w
 							,DXGI_FORMAT format
 							,const float *src)
@@ -341,7 +333,6 @@ ID3D1xTexture1D* simul::dx11::make1DTexture(
 
 ID3D11Texture2D* simul::dx11::make2DTexture(
 							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext
 							,int w,int h
 							,DXGI_FORMAT format
 							,const float *src)
@@ -372,7 +363,6 @@ ID3D11Texture2D* simul::dx11::make2DTexture(
 
 ID3D1xTexture3D* simul::dx11::make3DTexture(
 							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext
 							,int w,int l,int d
 							,DXGI_FORMAT format
 							,const float *src)
@@ -400,7 +390,6 @@ ID3D1xTexture3D* simul::dx11::make3DTexture(
 							
 void simul::dx11::Ensure3DTextureSizeAndFormat(
 							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext
 							,ID3D1xTexture3D* &tex
 							,ID3D11ShaderResourceView* &srv
 							,int w,int l,int d
@@ -419,7 +408,7 @@ void simul::dx11::Ensure3DTextureSizeAndFormat(
 
 	if(!tex)
 	{
-		tex=make3DTexture(	m_pd3dDevice,m_pImmediateContext,w,l,d,format,NULL);
+		tex=make3DTexture(	m_pd3dDevice,w,l,d,format,NULL);
 		m_pd3dDevice->CreateShaderResourceView(tex,NULL,&srv);
 		return;
 	}
@@ -712,92 +701,50 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 #endif
 
 
-HRESULT Map2D(ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp)
+HRESULT Map2D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp)
 {
-#ifdef DX10
-	return tex->Map(0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-#else
 	return m_pImmediateContext->Map(tex,0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-#endif
 }
 
-HRESULT Map3D(ID3D1xTexture3D *tex,D3D1x_MAPPED_TEXTURE3D *mp)
+HRESULT Map3D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture3D *tex,D3D1x_MAPPED_TEXTURE3D *mp)
 {
-#ifdef DX10
-	return tex->Map(0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-#else
 	return m_pImmediateContext->Map(tex,0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-#endif
 }
 
-HRESULT Map1D(ID3D1xTexture1D *tex,D3D1x_MAPPED_TEXTURE1D *mp)
+HRESULT Map1D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture1D *tex,D3D1x_MAPPED_TEXTURE1D *mp)
 {
-#ifdef DX10
-	return tex->Map(0,D3D1x_MAP_WRITE_DISCARD,0,&(mp->pData));
-#else
 	return m_pImmediateContext->Map(tex,0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-#endif
 }
 
-void Unmap2D(ID3D1xTexture2D *tex)
+void Unmap2D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture2D *tex)
 {
-#ifdef DX10
-	tex->Unmap(0);
-#else
 	m_pImmediateContext->Unmap(tex,0);
-#endif
 }
 
-void Unmap3D(ID3D1xTexture3D *tex)
+void Unmap3D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture3D *tex)
 {
-#ifdef DX10
-	tex->Unmap(0);
-#else
 	m_pImmediateContext->Unmap(tex,0);
-#endif
 }
 
-void Unmap1D(ID3D1xTexture1D *tex)
+void Unmap1D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture1D *tex)
 {
-#ifdef DX10
-	tex->Unmap(0);
-#else
 	m_pImmediateContext->Unmap(tex,0);
-#endif
 }
 
-#ifdef DX10
-HRESULT MapBuffer(ID3D1xBuffer *vertexBuffer,void **vert)
-#else
-HRESULT MapBuffer(ID3D1xBuffer *vertexBuffer,D3D11_MAPPED_SUBRESOURCE*vert)
-#endif
+HRESULT MapBuffer(ID3D11DeviceContext *m_pImmediateContext,ID3D1xBuffer *vertexBuffer,D3D11_MAPPED_SUBRESOURCE*vert)
 {
-#ifdef DX10
-	return vertexBuffer->Map(D3D1x_MAP_WRITE_DISCARD,0,vert);
-#else
 	return m_pImmediateContext->Map(vertexBuffer,0,D3D1x_MAP_WRITE_DISCARD,0,vert);
-#endif
 }
 
-void UnmapBuffer(ID3D1xBuffer *vertexBuffer)
+void UnmapBuffer(ID3D11DeviceContext *m_pImmediateContext,ID3D1xBuffer *vertexBuffer)
 {
-#ifdef DX10
-	vertexBuffer->Unmap();
-#else
 	m_pImmediateContext->Unmap(vertexBuffer,0);
-#endif
 }
 
-
-HRESULT ApplyPass(ID3D1xEffectPass *pass)
+HRESULT ApplyPass(ID3D11DeviceContext *m_pImmediateContext,ID3D1xEffectPass *pass)
 {
-#ifdef DX10
-	return pass->Apply(0);
-#else
 	return pass->Apply(0,m_pImmediateContext);
-#endif
 }
-
 
 void MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos)
 {
@@ -806,22 +753,22 @@ void MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos)
     D3DXVECTOR3 vUpDir;
     ZeroMemory(g_amCubeMapViewAdjust, 6*sizeof(D3DXMATRIX) );
 
-    vLookDir =vEyePt+ D3DXVECTOR3( 1.0f, 0.0f, 0.0f );
-     vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
-   D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[0], &vEyePt, &vLookDir, &vUpDir );
+	vLookDir =vEyePt+ D3DXVECTOR3( 1.0f, 0.0f, 0.0f );
+	vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+	D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[0], &vEyePt, &vLookDir, &vUpDir );
     vLookDir =vEyePt+D3DXVECTOR3( -1.0f, 0.0f, 0.0f );
     vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
     D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[1], &vEyePt, &vLookDir, &vUpDir );
     vLookDir =vEyePt+D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
     vUpDir = D3DXVECTOR3( 0.0f, 0.0f,-1.0f );
     D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[2], &vEyePt, &vLookDir, &vUpDir );
-   vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+	vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
     vUpDir = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
-   D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[3], &vEyePt, &vLookDir, &vUpDir );
+	D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[3], &vEyePt, &vLookDir, &vUpDir );
     vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
     vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
     D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[4], &vEyePt, &vLookDir, &vUpDir );
-  vLookDir = vEyePt+D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
+	vLookDir = vEyePt+D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
     vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
     D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[5], &vEyePt, &vLookDir, &vUpDir );
 }
@@ -832,7 +779,7 @@ void BreakIfDebugging()
 }
 
 
-void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj
+void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *m_pImmediateContext,const float *dr,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj
 					  ,D3DXVECTOR3 sun_dir)
 {
 	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
@@ -930,7 +877,6 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical
 
 	ID3D11InputLayout* previousInputLayout;
 	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
-
 	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
@@ -946,7 +892,7 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical
 												&vertexBuffer,	// the array of vertex buffers
 												&stride,		// array of stride values, one for each buffer
 												&offset);		// array of 
-	hr=ApplyPass(tech->GetPassByIndex(0));
+	hr=ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(4,0);
 	//hr=ApplyPass(tech->GetPassByIndex(0));
 
@@ -957,12 +903,12 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical
 	SAFE_RELEASE(m_pVtxDecl);
 }
 
-void RenderTexture(ID3D1xDevice *m_pd3dDevice,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech)
+void RenderTexture(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech)
 {
-	RenderTexture(m_pd3dDevice,(float)x1,(float)y1,(float)dx,(float)dy,tech);
+	RenderTexture(m_pd3dDevice,m_pImmediateContext,(float)x1,(float)y1,(float)dx,(float)dy,tech);
 }
 
-void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech)
+void RenderTexture(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech)
 {
 	struct Vertext
 	{
@@ -1018,7 +964,7 @@ void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float d
 	ID3D11InputLayout* previousInputLayout;
 	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
 	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
-	hr=ApplyPass(tech->GetPassByIndex(0));
+	hr=ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(4,0);
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 	m_pImmediateContext->IASetInputLayout( previousInputLayout );

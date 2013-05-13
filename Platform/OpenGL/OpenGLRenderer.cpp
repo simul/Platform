@@ -103,7 +103,7 @@ ERROR_CHECK
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender(context);
 		if(simulTerrainRenderer&&ShowTerrain)
-			simulTerrainRenderer->Render();
+			simulTerrainRenderer->Render(context);
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender(context);
 		simulWeatherRenderer->RenderLightning(context);
@@ -120,13 +120,13 @@ ERROR_CHECK
 			light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
 			float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-			simulOpticsRenderer->RenderFlare(exp,dir,light);
+			simulOpticsRenderer->RenderFlare(context,exp,dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(context);
 ERROR_CHECK
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
-			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(width,height);
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(context,width,height);
 		
 		SetTopDownOrthoProjection(width,height);
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
@@ -143,7 +143,7 @@ ERROR_CHECK
 			}
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(width,height);
+			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(NULL,width,height);
 	}
 	renderUI();
 	glPopAttrib();
@@ -254,8 +254,6 @@ void OpenGLRenderer::SetYVertical(bool y)
 		simulWeatherRenderer->SetYVertical(y);
 	//if(simulTerrainRenderer.get())
 	//	simulTerrainRenderer->SetYVertical(y_vertical);
-	if(simulOpticsRenderer)
-		simulOpticsRenderer->SetYVertical(y_vertical);
 }
 
 void OpenGLRenderer::ReloadTextures()

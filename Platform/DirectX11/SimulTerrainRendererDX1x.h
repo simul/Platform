@@ -31,12 +31,11 @@ public:
 	void RecompileShaders();
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
-	void Render();
+	void Render(void *context);
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 private:
 	ID3D1xDevice*						m_pd3dDevice;
-	ID3D1xDeviceContext*				m_pImmediateContext;
 	ID3D1xBuffer*						m_pVertexBuffer;
 	ID3D1xInputLayout*					m_pVtxDecl;
 	ID3D1xEffect*						m_pTerrainEffect;

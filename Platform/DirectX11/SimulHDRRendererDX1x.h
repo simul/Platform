@@ -17,7 +17,8 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Base/Referenced.h"
 #include "Simul/Base/PropertyMacros.h"
-
+#pragma warning(push)
+#pragma warning(disable:4251)
 //! A class that provides gamma-correction of an HDR render to the screen.
 SIMUL_DIRECTX11_EXPORT_CLASS SimulHDRRendererDX1x: public simul::base::Referenced
 {
@@ -54,7 +55,6 @@ protected:
 	FramebufferDX1x glow_fb;
 	int Width,Height;
 	ID3D1xDevice*						m_pd3dDevice;
-	ID3D1xDeviceContext*				m_pImmediateContext;
 	ID3D1xBuffer*						m_pVertexBuffer;
 
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
@@ -74,3 +74,4 @@ protected:
 private:
 	ComputableTexture					glowTexture;
 };
+#pragma warning(pop)

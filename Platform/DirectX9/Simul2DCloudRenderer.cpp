@@ -453,7 +453,7 @@ void Simul2DCloudRenderer::EnsureCorrectTextureSizes()
 	}
 }
 
-void Simul2DCloudRenderer::EnsureTexturesAreUpToDate()
+void Simul2DCloudRenderer::EnsureTexturesAreUpToDate(void*)
 {
 	EnsureTextureCycle();
 	for(int i=0;i<3;i++)

@@ -616,7 +616,7 @@ void SimulCloudRenderer::EnsureCorrectTextureSizes()
 	}
 }
 
-void SimulCloudRenderer::EnsureTexturesAreUpToDate()
+void SimulCloudRenderer::EnsureTexturesAreUpToDate(void*)
 {
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
@@ -671,7 +671,7 @@ bool SimulCloudRenderer::Render(void *context,bool cubemap,void *depth_alpha_tex
 {
 	if(rebuild_shaders)
 		RecompileShaders();
-	EnsureTexturesAreUpToDate();
+	EnsureTexturesAreUpToDate(context);
 	depth_alpha_tex;
 	default_fog;
 	if(!write_alpha)

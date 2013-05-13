@@ -88,7 +88,6 @@ void SimulAtmosphericsRendererDX1x::SetBufferSize(int w,int h)
 {
 	if(framebuffer)
 		framebuffer->SetWidthAndHeight(w,h);
-	InvalidateDeviceObjects();
 }
 
 void SimulAtmosphericsRendererDX1x::SetYVertical(bool y)
@@ -198,7 +197,7 @@ void SimulAtmosphericsRendererDX1x::StartRender(void *context)
 {
 	if(!framebuffer)
 		return;
-	ID3D1xDeviceContext* m_pImmediateContext=(ID3D1xDeviceContext*)context;
+	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
 	framebuffer->Activate(m_pImmediateContext);
 	// Clear the screen to black, with alpha=1, representing far depth
@@ -211,7 +210,7 @@ void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
 {
 	if(!framebuffer)
 		return;
-	ID3D1xDeviceContext* m_pImmediateContext=(ID3D1xDeviceContext*)context;
+	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
 	framebuffer->Deactivate(m_pImmediateContext);
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
 	HRESULT hr=S_OK;
@@ -251,7 +250,7 @@ skylightTexture->SetResource(skylightTexture_SRV);
 	}
 	m_pImmediateContext->VSSetConstantBuffers(0,1,&constantBuffer);
 	m_pImmediateContext->PSSetConstantBuffers(0,1,&constantBuffer);
-	ApplyPass(technique->GetPassByIndex(0));
+	ApplyPass(m_pImmediateContext,technique->GetPassByIndex(0));
 	framebuffer->Render(context,false);
 	imageTexture->SetResource(NULL);
 	lossTexture1->SetResource(NULL);

@@ -22,7 +22,6 @@ typedef std::basic_string<TCHAR> tstring;
 
 SimulPrecipitationRendererDX1x::SimulPrecipitationRendererDX1x() :
 	m_pd3dDevice(NULL)
-	,m_pImmediateContext(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pVertexBuffer(NULL)
 	,m_pRainEffect(NULL)
@@ -53,9 +52,11 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 
 
 	MAKE_CONSTANT_BUFFER(pShadingCB,RainConstantBuffer);
+	ID3D11DeviceContext *m_pImmediateContext=NULL;
+	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 
 	ID3DX11EffectTechnique*			tech=m_pRainEffect->GetTechniqueByName("create_rain_texture");
-	ApplyPass(tech->GetPassByIndex(0));
+	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	FramebufferDX1x make_rain_fb(512,512);
 	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
 	make_rain_fb.Activate(m_pImmediateContext);
@@ -64,13 +65,12 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	rain_texture=make_rain_fb.buffer_texture_SRV;
 	// Make sure it isn't destroyed when the fb goes out of scope:
 	rain_texture->AddRef();
+	SAFE_RELEASE(m_pImmediateContext);
 }
 
 void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D11Device*)dev;
-	SAFE_RELEASE(m_pImmediateContext)
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	HRESULT hr=S_OK;
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
 	D3DXMatrixIdentity(&view);
@@ -110,7 +110,6 @@ void SimulPrecipitationRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(rain_texture);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(pShadingCB);
-	SAFE_RELEASE(m_pImmediateContext)
 }
 
 
@@ -133,6 +132,7 @@ those pixels.
 */
 void SimulPrecipitationRendererDX1x::Render(void *context)
 {
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 return;
 	if(rain_intensity<=0)
 		return;
@@ -177,7 +177,7 @@ return;
 	rainConstantBuffer.offset			=offs;
 	rainConstantBuffer.worldViewProj	=wvp;
 
-	UPDATE_CONSTANT_BUFFER(pShadingCB,RainConstantBuffer,rainConstantBuffer);
+	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,pShadingCB,RainConstantBuffer,rainConstantBuffer);
 	ID3D1xEffectConstantBuffer* cbRainConstants=m_pRainEffect->GetConstantBufferByName("RainConstants");
 	if(cbRainConstants)
 		cbRainConstants->SetConstantBuffer(pShadingCB);
@@ -185,7 +185,7 @@ return;
 	UINT passes=1;
 	for(unsigned i = 0 ; i < passes ; ++i )
 	{
-		ApplyPass(m_hTechniqueRain->GetPassByIndex(i));
+		ApplyPass(m_pImmediateContext,m_hTechniqueRain->GetPassByIndex(i));
 		m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 		UINT stride = sizeof(Vertex_t);
 		UINT offset = 0;

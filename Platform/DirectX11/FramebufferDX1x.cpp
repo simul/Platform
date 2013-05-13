@@ -53,7 +53,8 @@ void FramebufferDX1x::SetWidthAndHeight(int w,int h)
 	{
 		Width=w;
 		Height=h;
-		InvalidateDeviceObjects();
+		if(m_pd3dDevice)
+			CreateBuffers();
 	}
 }
 
@@ -110,7 +111,7 @@ bool FramebufferDX1x::Destroy()
 
 FramebufferDX1x::~FramebufferDX1x()
 {
-	Destroy();
+	InvalidateDeviceObjects();
 }
 
 
@@ -300,7 +301,7 @@ void FramebufferDX1x::CopyToMemory(void *target)
 
 void FramebufferDX1x::CopyToMemory(void *target,int start_texel,int texels)
 {
-	ID3D1xDeviceContext *m_pImmediateContext=NULL;
+	ID3D11DeviceContext *m_pImmediateContext=NULL;
 m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	if(!stagingTexture)
 		stagingTexture=makeStagingTexture(m_pd3dDevice,Width,Height,target_format);
@@ -346,7 +347,7 @@ HRESULT hr=S_OK;
 
 void FramebufferDX1x::Activate(void *context)
 {
-	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	if(!m_pImmediateContext)
 		return;
 	HRESULT hr=S_OK;
@@ -376,7 +377,7 @@ void FramebufferDX1x::Activate(void *context)
 
 void FramebufferDX1x::Deactivate(void *context)
 {
-	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
@@ -387,7 +388,7 @@ void FramebufferDX1x::Deactivate(void *context)
 
 void FramebufferDX1x::Clear(void *context,float r,float g,float b,float a,int mask)
 {
-	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	// Clear the screen to black:
     float clearColor[4]={r,g,b,a};
     if(!mask)
@@ -404,7 +405,7 @@ void FramebufferDX1x::Render(void *context,bool blend)
 
 bool FramebufferDX1x::DrawQuad(void *context)
 {
-	ID3D1xDeviceContext *m_pImmediateContext=(ID3D1xDeviceContext *)context;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	HRESULT hr=S_OK;
 	UINT stride = sizeof(Vertext);
 	UINT offset = 0;

@@ -50,7 +50,6 @@ public:
 	void Render(void *context);
 protected:
 	ID3D1xDevice*					m_pd3dDevice;
-	ID3D1xDeviceContext *			m_pImmediateContext;
 	ID3D1xInputLayout*				m_pVtxDecl;
 	ID3D1xBuffer					*m_pVertexBuffer;
 	ID3D1xEffect*					m_pRainEffect;		// The fx file for the sky

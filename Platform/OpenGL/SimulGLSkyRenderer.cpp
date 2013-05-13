@@ -490,7 +490,7 @@ ERROR_CHECK
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderPointStars()
+bool SimulGLSkyRenderer::RenderPointStars(void *context)
 {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -548,7 +548,7 @@ bool SimulGLSkyRenderer::RenderPointStars()
 	return true;
 }
 
-void SimulGLSkyRenderer::RenderSun(float exposure_hint)
+void SimulGLSkyRenderer::RenderSun(void *context,float exposure_hint)
 {
 	float alt_km=0.001f*cam_pos.z;
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
@@ -589,7 +589,7 @@ void SimulGLSkyRenderer::RenderSun(float exposure_hint)
 	glUseProgram(0);
 }
 
-bool SimulGLSkyRenderer::RenderPlanet(void* tex,float planet_angular_size,const float *dir,const float *colr,bool do_lighting)
+bool SimulGLSkyRenderer::RenderPlanet(void *,void* tex,float planet_angular_size,const float *dir,const float *colr,bool do_lighting)
 {
 		ERROR_CHECK
 	CalcCameraPosition(cam_pos);
@@ -823,12 +823,12 @@ SimulGLSkyRenderer::~SimulGLSkyRenderer()
 	InvalidateDeviceObjects();
 }
 
-void SimulGLSkyRenderer::DrawLines(Vertext *lines,int vertex_count,bool strip)
+void SimulGLSkyRenderer::DrawLines(void *,Vertext *lines,int vertex_count,bool strip)
 {
 	::DrawLines((VertexXyzRgba*)lines,vertex_count,strip);
 }
 
-void SimulGLSkyRenderer::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
+void SimulGLSkyRenderer::PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
 	::PrintAt3dPos(p,text,colr,offsetx,offsety);
 }

@@ -62,11 +62,11 @@ public:
 	void New();
 protected:
 	void SwitchShaders(GLuint program);
-	void DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip);
+	void DrawLines(void *,VertexXyzRgba *vertices,int vertex_count,bool strip);
 	bool init;
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void *);
 	void EnsureCorrectIlluminationTextureSizes();
 	void EnsureIlluminationTexturesAreUpToDate();
 	void EnsureTextureCycle();

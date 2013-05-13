@@ -24,7 +24,6 @@
 Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer *ck) :
 	simul::clouds::Base2DCloudRenderer(ck)
 	,m_pd3dDevice(NULL)
-	,m_pImmediateContext(NULL)
 	,effect(NULL)
 {
 }
@@ -37,8 +36,6 @@ Simul2DCloudRendererDX11::~Simul2DCloudRendererDX11()
 void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 {
 	m_pd3dDevice=(ID3D11Device*)dev;
-	SAFE_RELEASE(m_pImmediateContext);
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
     RecompileShaders();
 }
 
@@ -53,15 +50,15 @@ void Simul2DCloudRendererDX11::RecompileShaders()
 
 void Simul2DCloudRendererDX11::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(effect);
+	m_pd3dDevice=NULL;
 }
 
 void Simul2DCloudRendererDX11::EnsureCorrectTextureSizes()
 {
 }
 
-void Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate()
+void Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate(void*)
 {
 }
 

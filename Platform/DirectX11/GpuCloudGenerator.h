@@ -57,7 +57,7 @@ namespace simul
 			FramebufferDX1x	world_fb;
 			FramebufferDX1x	dens_fb;
 			ID3D1xDevice*					m_pd3dDevice;
-			ID3D1xDeviceContext*			m_pImmediateContext;
+			ID3D11DeviceContext*			m_pImmediateContext;
 			ID3D1xEffect*					effect;
 			ID3D1xEffectTechnique*			densityTechnique;
 			ID3D1xEffectTechnique*			lightingTechnique;

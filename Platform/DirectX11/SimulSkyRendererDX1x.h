@@ -54,11 +54,11 @@ public:
 	bool Destroy();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	bool Render(void *context,bool blend);
-	bool RenderPointStars();
-	void RenderSun(float exposure_hint);
+	bool RenderPointStars(void *context);
+	void RenderSun(void *context,float exposure_hint);
 	//! Draw the fade textures to screen
 	bool RenderFades(void *context,int w,int h);
-	virtual bool RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	virtual bool RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
 	bool Render2DFades(void *context);
@@ -77,7 +77,7 @@ public:
 	void SetStepsPerDay(unsigned steps);
 //! Initialize textures
 	void SetFadeTextureSize(unsigned width,unsigned height,unsigned num_altitudes);
-	void FillFadeTex(int texture_index,int texel_index,int num_texels,
+	void FillFadeTex(ID3D11DeviceContext *context,int texture_index,int texel_index,int num_texels,
 						const simul::sky::float4 *loss_float4_array,
 						const simul::sky::float4 *inscatter_float4_array,
 						const simul::sky::float4 *skylight_float4_array);
@@ -86,7 +86,7 @@ public:
 	void SetYVertical(bool y);
 
 	// for testing:
-	void DrawCubemap(ID3D1xShaderResourceView*		m_pCubeEnvMapSRV);
+	void DrawCubemap(void *context,ID3D1xShaderResourceView*		m_pCubeEnvMapSRV);
 protected:
 
 	bool y_vertical;
@@ -95,13 +95,12 @@ protected:
 
 	void CreateFadeTextures();
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void *c);
 	void EnsureTextureCycle();
 	
 	void BuildStarsBuffer();
 	
 	ID3D1xDevice*						m_pd3dDevice;
-	ID3D1xDeviceContext *				m_pImmediateContext;
 	ID3D1xBuffer*						m_pVertexBuffer;
 	ID3D1xInputLayout*					m_pVtxDecl;
 	ID3D1xInputLayout*					m_pStarsVtxDecl;
@@ -157,14 +156,15 @@ protected:
 	ID3D11Buffer*						earthShadowBuffer;
 
 	int mapped_fade;
+	ID3D11DeviceContext *mapped_context;
 	D3D1x_MAPPED_TEXTURE3D loss_texture_mapped;
 	D3D1x_MAPPED_TEXTURE3D insc_texture_mapped;
 	D3D1x_MAPPED_TEXTURE3D skyl_texture_mapped;
 
-	void MapFade(int s);
+	void MapFade(ID3D11DeviceContext *context,int s);
 	void UnmapFade();
 	D3DXMATRIX				world,view,proj;
-	void DrawCube();
-	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
-	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
+	void DrawCube(void *context);
+	void DrawLines(void *context,Vertext *lines,int vertex_count,bool strip=false);
+	void PrintAt3dPos(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };

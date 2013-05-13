@@ -408,9 +408,9 @@ void SimulWeatherRenderer::Update(float dt)
 	if(simulPrecipitationRenderer)
 	{
 		simulPrecipitationRenderer->Update(dt);
-		if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+		if(simulCloudRenderer&&environment->cloudKeyframer->GetVisible())
 		{
-			simulPrecipitationRenderer->SetWind(simulCloudRenderer->GetWindSpeed(),simulCloudRenderer->GetWindHeadingDegrees());
+			simulPrecipitationRenderer->SetWind(environment->cloudKeyframer->GetWindSpeed(),environment->cloudKeyframer->GetWindHeadingDegrees());
 		#ifndef XBOX
 			float cam_pos[3];
 			D3DXMATRIX view;
@@ -418,7 +418,7 @@ void SimulWeatherRenderer::Update(float dt)
 		#endif
 			GetCameraPosVector(view,simulCloudRenderer->IsYVertical(),cam_pos);
 			simulPrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
-			float rts=simulCloudRenderer->GetRainToSnow();
+			float rts=environment->cloudKeyframer->GetInterpolatedKeyframe().rain_to_snow;
 			if(rts<0.5f)
 				simulPrecipitationRenderer->ApplyDefaultRainSettings();
 			else

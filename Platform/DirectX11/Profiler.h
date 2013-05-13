@@ -77,12 +77,12 @@ SIMUL_DIRECTX11_EXPORT_CLASS Profiler
 {
 public:
 	static Profiler &GetGlobalProfiler();
-    void Initialize(ID3D11Device* device, ID3D11DeviceContext* immContext);
+    void Initialize(ID3D11Device* device);
     void Uninitialize();
-    void StartProfile(const std::string& name);
-    void EndProfile(const std::string& name);
+    void StartProfile(ID3D11DeviceContext* context,const std::string& name);
+    void EndProfile(ID3D11DeviceContext* context,const std::string& name);
 
-    void EndFrame();
+    void EndFrame(ID3D11DeviceContext* context);
 	
 	float GetTime(const std::string &name) const;
 protected:
@@ -129,7 +129,6 @@ protected:
     UINT64 currFrame;
 
     ID3D11Device* device;
-    ID3D11DeviceContext* context;
 
     simul::base::Timer timer;
     std::string output;
@@ -139,12 +138,12 @@ class ProfileBlock
 {
 public:
 
-    ProfileBlock(const std::string& name);
+    ProfileBlock(ID3D11DeviceContext* c,const std::string& name);
     ~ProfileBlock();
 
 	/// Get the previous frame's timing value.
 	float GetTime() const;
 protected:
-
+	ID3D11DeviceContext* context;
     std::string name;
 };

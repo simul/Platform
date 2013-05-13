@@ -60,7 +60,7 @@ public:
 	bool Destroy();
 	//! Call this to draw the clouds, including any illumination by lightning.
 	bool Render(void *context,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha);
-	void RenderDebugInfo(int width,int height);
+	void RenderDebugInfo(void *context,int width,int height);
 	void RenderCrossSections(void *context,int width,int height);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 	bool RenderLightning(void *context);
@@ -100,10 +100,10 @@ public:
 	void SetYVertical(bool y);
 	bool IsYVertical() const;
 protected:
-	void DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip);
+	void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip);
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void *context);
 	void EnsureCorrectIlluminationTextureSizes();
 	void EnsureIlluminationTexturesAreUpToDate();
 	void EnsureTextureCycle();
@@ -111,7 +111,7 @@ protected:
 	void CreateMeshBuffers();
 	int mapped;
 	void Unmap();
-	void Map(int texture_index);
+	void Map(ID3D11DeviceContext *context,int texture_index);
 	unsigned texel_index[4];
 	bool lightning_active;
 
@@ -124,6 +124,7 @@ protected:
 	};
 	static const int MAX_INSTANCES=400;
 	InstanceType instances[MAX_INSTANCES];
+ID3D11DeviceContext *mapped_context;
 	ID3D1xDevice*					m_pd3dDevice;
 	ID3D1xBuffer *					vertexBuffer;
 	ID3D1xBuffer *					indexBuffer;

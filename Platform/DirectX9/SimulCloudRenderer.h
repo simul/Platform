@@ -85,10 +85,10 @@ public:
 	bool IsYVertical() const{return y_vertical;}
 
 protected:
-	virtual void DrawLines(VertexXyzRgba *,int ,bool ){}
+	virtual void DrawLines(void*,VertexXyzRgba *,int ,bool ){}
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void*);
 	void EnsureCorrectIlluminationTextureSizes();
 	void EnsureIlluminationTexturesAreUpToDate();
 	void EnsureTextureCycle();

@@ -35,7 +35,6 @@ typedef std::basic_string<TCHAR> tstring;
 
 SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h)
 	:m_pd3dDevice(NULL)
-	,m_pImmediateContext(NULL)
 	,m_pVertexBuffer(NULL)
 	,m_pTonemapEffect(NULL)
 	,m_pGaussianEffect(NULL)
@@ -57,30 +56,32 @@ SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h)
 
 void SimulHDRRendererDX1x::SetBufferSize(int w,int h)
 {
+	if(Width==w&&Height==h)
+		return;
 	Width=w;
 	Height=h;
-	framebuffer.SetWidthAndHeight(w,h);
-	InvalidateDeviceObjects();
+	if(Width>0&&Height>0)
+	{
+		framebuffer.SetWidthAndHeight(w,h);
+		if(m_pd3dDevice)
+			glowTexture.init(m_pd3dDevice,Width/2,Height/2);
+		glow_fb.SetWidthAndHeight(Width/2,Height/2);
+	}
 }
 
-void SimulHDRRendererDX1x::RestoreDeviceObjects(void *x)
+void SimulHDRRendererDX1x::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
-	void **u=(void**)x;
-	m_pd3dDevice=(ID3D1xDevice*)u[0];
+	m_pd3dDevice=(ID3D1xDevice*)dev;
 	framebuffer.RestoreDeviceObjects(m_pd3dDevice);
 	glow_fb.RestoreDeviceObjects(m_pd3dDevice);
-	ID3D1xTexture2D *pBackBuffer=NULL;
-	IDXGISwapChain *pSwapChain=(IDXGISwapChain *)u[1];
-	pSwapChain->GetBuffer(0,__uuidof(ID3D1xTexture2D),(void**)&pBackBuffer);
-	D3D1x_TEXTURE2D_DESC desc;
-	pBackBuffer->GetDesc(&desc);
-	SAFE_RELEASE(pBackBuffer);
 
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	glowTexture.release();
-	glowTexture.init(m_pd3dDevice,Width/2,Height/2);
-	glow_fb.SetWidthAndHeight(Width/2,Height/2);
+	if(m_pd3dDevice&&Width>0&&Height>0)
+	{
+		glowTexture.init(m_pd3dDevice,Width/2,Height/2);
+		glow_fb.SetWidthAndHeight(Width/2,Height/2);
+	}
 	RecompileShaders();
 }
 
@@ -152,7 +153,6 @@ void SimulHDRRendererDX1x::InvalidateDeviceObjects()
 {
 	framebuffer.InvalidateDeviceObjects();
 	glow_fb.InvalidateDeviceObjects();
-	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(m_pTonemapEffect);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pGaussianEffect);
@@ -191,6 +191,7 @@ bool SimulHDRRendererDX1x::ApplyFade()
 
 bool SimulHDRRendererDX1x::FinishRender(void *context)
 {
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
 	framebuffer.Deactivate(context);
 	imageTexture->SetResource(framebuffer.GetBufferResource());//buffer_texture_SRV);
@@ -202,10 +203,10 @@ bool SimulHDRRendererDX1x::FinishRender(void *context)
 	worldViewProj->SetMatrix(ortho);
 RenderGlowTexture(context);
 simul::dx11::setParameter(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
-	ApplyPass(TonemapTechnique->GetPassByIndex(0));
+	ApplyPass(m_pImmediateContext,TonemapTechnique->GetPassByIndex(0));
 	framebuffer.DrawQuad(context);
 	imageTexture->SetResource(NULL);
-	ApplyPass(TonemapTechnique->GetPassByIndex(0));
+	ApplyPass(m_pImmediateContext,TonemapTechnique->GetPassByIndex(0));
 	PIXEndNamedEvent();
 	return true;
 }
@@ -224,6 +225,7 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context)
 {
 	if(!m_pGaussianEffect)
 		return;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 static int g_NumApproxPasses=3;
 static int	g_MaxApproxPasses = 8;
 static float g_FilterRadius = 30;
@@ -232,7 +234,7 @@ static float g_FilterRadius = 30;
 	{
 		imageTexture->SetResource(framebuffer.GetBufferResource());
 		simul::dx11::setParameter(m_pTonemapEffect,"offset",1.f/Width,1.f/Height);
-		ApplyPass(glowTechnique->GetPassByIndex(0));
+		ApplyPass(m_pImmediateContext,glowTechnique->GetPassByIndex(0));
 		glow_fb.Activate(context);
 		glow_fb.DrawQuad(context);
 		glow_fb.Deactivate(context);
