@@ -33,6 +33,11 @@ Profiler &Profiler::GetGlobalProfiler()
 	return GlobalProfiler;
 }
 
+Profiler::~Profiler()
+{
+	Uninitialize();
+}
+
 void Profiler::Uninitialize()
 {
 	profiles.clear();

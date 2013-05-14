@@ -61,6 +61,7 @@ bool Direct3D11Renderer::ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSetting
 
 HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
+	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects(pd3dDevice);
 	if(simulWeatherRenderer)
@@ -82,7 +83,6 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 	{
 		ScreenWidth=pBackBufferSurfaceDesc->Width;
 		ScreenHeight=pBackBufferSurfaceDesc->Height;
-		Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
 		simul::dx11::UnsetDevice();
 		//Set a global device pointer for use by various classes.
 		simul::dx11::SetDevice(pd3dDevice);
@@ -118,15 +118,13 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	simul::dx11::UtilityRenderer::SetMatrices(view,proj);
 	D3DXMatrixIdentity(&world);
 	if(simulHDRRenderer&&UseHdrPostprocessor)
-	{
-	// Don't need to clear D3DCLEAR_TARGET as we'll be filling every pixel:
 		simulHDRRenderer->StartRender(pd3dImmediateContext);
-		simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
-	}
-	else
-		simulWeatherRenderer->SetExposureHint(1.0f);
 	if(simulWeatherRenderer)
 	{
+		if(simulHDRRenderer&&UseHdrPostprocessor)
+			simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
+		else
+			simulWeatherRenderer->SetExposureHint(1.0f);
 		simulWeatherRenderer->SetMatrices(view,proj);
 		simulWeatherRenderer->RenderSky(pd3dImmediateContext,UseSkyBuffer,false);
 		if(MakeCubemap)
@@ -201,6 +199,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 
 void Direct3D11Renderer::OnD3D11LostDevice()
 {
+	Profiler::GetGlobalProfiler().Uninitialize();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
 	if(simulHDRRenderer)
@@ -278,8 +277,10 @@ void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
 
 const char *Direct3D11Renderer::GetDebugText() const
 {
-	const char *wstr=simulWeatherRenderer->GetDebugText();
+	const char *s=NULL;
+	if(simulWeatherRenderer)
+		s=simulWeatherRenderer->GetDebugText();
 	static char str[200];
-	sprintf_s(str,200,"DirectX 11\n%s",wstr?wstr:"");
+	sprintf_s(str,200,"DirectX 11\n%s",s?s:"");
 	return str;
 }

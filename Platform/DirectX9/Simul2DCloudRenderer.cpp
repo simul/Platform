@@ -328,7 +328,6 @@ static float light_mult=.03f;
 	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
 
 	static float sc=7.f;
-	helper->Set2DNoiseTexturing(-0.8f,1.f,1.f);
 	helper->Make2DGeometry(GetCloudInterface());
 	float image_scale=1.f/texture_scale;
 	static float image_effect=0.9f;
@@ -362,7 +361,6 @@ static float light_mult=.03f;
 	simul::math::Vector3 pos;
 	simul::sky::float4 loss2,inscatter2;
 	int i=0;
-	const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 	size_t qs_vert=0;
 	for(std::vector<simul::clouds::Cloud2DGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
 		j!=helper->GetQuadStrips().end();j++,i++)
@@ -374,19 +372,16 @@ static float light_mult=.03f;
 		
 		bool bit=false;
 
-		for(size_t k=0;k<(j)->num_vertices;k++,qs_vert++,v++,bit=!bit)
+		for(size_t k=0;k<(j)->indices.size();k++,qs_vert++,v++,bit=!bit)
 		{
 			Vertex2D_t &vertex=vertices[v];
-			const simul::clouds::Cloud2DGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
+			const simul::clouds::Cloud2DGeometryHelper::Vertex &V=helper->GetVertices()[(j)->indices[k]];
 			
 			simul::sky::float4 inscatter;
 			pos.Define(V.x,V.y,V.z);
 			if(v>=MAX_VERTICES)
 				break;
 			vertex.position=float3(V.x,V.y,V.z);
-			vertex.texCoords=float2(sc*V.cloud_tex_x,sc*V.cloud_tex_y);
-			vertex.texCoordNoise=float2(V.noise_tex_x,V.noise_tex_y);
-			vertex.imageCoords=float2(vertex.texCoords.x*image_scale,vertex.texCoords.y*image_scale);
 		}
 		if(v>=MAX_VERTICES)
 			break;

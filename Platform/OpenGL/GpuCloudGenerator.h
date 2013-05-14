@@ -46,7 +46,7 @@ namespace simul
 			FramebufferGL	world_fb;
 			FramebufferGL	dens_fb;
 			GLuint			density_program;
-			GLuint			clouds_program;
+			GLuint			lighting_program;
 			GLuint			transform_program;
 			GLenum			iformat;
 			GLenum			itype;

@@ -19,7 +19,8 @@
 #include "Simul/Math/Pi.h"
 #include "Simul/LicenseKey.h"
 #include "CreateEffectDX1x.h"
-
+#include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
+#include "Simul/Platform/CrossPlatform/simul_2d_clouds.sl"
 
 Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer *ck) :
 	simul::clouds::Base2DCloudRenderer(ck)
@@ -81,14 +82,12 @@ bool Simul2DCloudRendererDX11::Render(void*,bool cubemap,void *depth_tex,bool de
 	//worldViewProj->SetMatrix(&wvp._11);
 	simul::dx11::setParameter(effect,"worldViewProj",&wvp._11);
 	
-	const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
-	size_t qs_vert=0;
 	for(std::vector<simul::clouds::Cloud2DGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
 		j!=helper->GetQuadStrips().end();j++)
 	{
-		for(size_t k=0;k<(j)->num_vertices;k++,qs_vert++)
+		for(size_t k=0;k<(j)->indices.size();k++)
 		{
-			const simul::clouds::Cloud2DGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
+			const simul::clouds::Cloud2DGeometryHelper::Vertex &V=helper->GetVertices()[j->indices[k]];
 		/*	glMultiTexCoord2f(GL_TEXTURE0,V.cloud_tex_x,V.cloud_tex_y);
 			glMultiTexCoord2f(GL_TEXTURE3,V.noise_tex_x,V.noise_tex_y);
 			glMultiTexCoord2f(GL_TEXTURE4,(V.x+wind_offset.x)/image_scale,(V.y+wind_offset.y)/image_scale);

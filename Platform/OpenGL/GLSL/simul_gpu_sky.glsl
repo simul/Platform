@@ -3,7 +3,7 @@
 #ifndef __cplusplus
 #include "simul_inscatter_fns.glsl"
 #endif
-#include "../Glsl.h"
+#include "CppGlsl.hs"
 #ifndef __cplusplus
 uniform sampler2D optical_depth_texture;
 #endif

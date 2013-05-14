@@ -1,14 +1,11 @@
 #version 140
 #include "saturate.glsl"
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
-#include "simul_inscatter_fns.glsl"
 
-#define ALIGN
 #define cbuffer layout(std140) uniform
 #define R0
-#include "../Glsl.h"
+#include "CppGlsl.hs"
 #include "../../CrossPlatform/simul_2d_clouds.sl"
+#include "simul_inscatter_fns.glsl"
 
 uniform sampler2D imageTexture;
 uniform sampler2D coverageTexture1;

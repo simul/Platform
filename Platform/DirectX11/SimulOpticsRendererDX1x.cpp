@@ -5,6 +5,8 @@
 #include "Simul/Math/Decay.h"
 
 #include "Simul/Base/StringToWString.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
+using namespace simul::dx11;
 
 SimulOpticsRendererDX1x::SimulOpticsRendererDX1x()
 	:m_pd3dDevice(NULL)
@@ -105,7 +107,7 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,const flo
 	colour->SetFloatVector((const float*)(&sunlight));
 	if(flare_magnitude>0.f)
 	{
-		RenderAngledQuad(m_pd3dDevice,m_pImmediateContext,sun_dir,false,flare_angular_size*flare_magnitude,m_pFlareEffect,m_hTechniqueFlare,view,proj,sun_dir);
+		UtilityRenderer::RenderAngledQuad(m_pd3dDevice,m_pImmediateContext,sun_dir,false,flare_angular_size*flare_magnitude,m_pFlareEffect,m_hTechniqueFlare,view,proj,sun_dir);
 		sunlight*=0.25f;
 		for(int i=0;i<lensFlare.GetNumArtifacts();i++)
 		{
@@ -114,7 +116,7 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,const flo
 			int t=lensFlare.GetArtifactType(i);
 			flareTexture->SetResource(halo_textures[t]);
 			colour->SetFloatVector((const float*)(&sunlight));
-			RenderAngledQuad(m_pd3dDevice,m_pImmediateContext,pos,false,flare_angular_size*sz*flare_magnitude,m_pFlareEffect,m_hTechniqueFlare,view,proj,sun_dir);
+			UtilityRenderer::RenderAngledQuad(m_pd3dDevice,m_pImmediateContext,pos,false,flare_angular_size*sz*flare_magnitude,m_pFlareEffect,m_hTechniqueFlare,view,proj,sun_dir);
 		}
 	}
 	m_pImmediateContext->VSSetShader(NULL, NULL, 0);

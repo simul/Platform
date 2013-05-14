@@ -28,11 +28,11 @@ typedef long HRESULT;
 
 struct RainConstantBuffer
 {
-	float4x4 worldViewProj;
+	mat4 worldViewProj;
 	float offset;
 	float intensity;
-	float4 lightColour;
-	float3 lightDir;
+	vec4 lightColour;
+	vec3 lightDir;
 };
 class SimulPrecipitationRendererDX1x:public simul::clouds::BasePrecipitationRenderer
 {

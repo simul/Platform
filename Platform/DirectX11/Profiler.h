@@ -77,6 +77,7 @@ SIMUL_DIRECTX11_EXPORT_CLASS Profiler
 {
 public:
 	static Profiler &GetGlobalProfiler();
+	~Profiler();
     void Initialize(ID3D11Device* device);
     void Uninitialize();
     void StartProfile(ID3D11DeviceContext* context,const std::string& name);

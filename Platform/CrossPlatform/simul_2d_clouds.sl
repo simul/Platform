@@ -3,6 +3,8 @@
 
 uniform_buffer Cloud2DConstants R9
 {
+uniform mat4 projection_matrix;
+uniform mat4 modelview_matrix;
 	uniform vec2 origin;
 	uniform float globalScale;
 	uniform float detailScale;
@@ -14,6 +16,8 @@ uniform_buffer Cloud2DConstants R9
 	uniform float maxFadeDistanceMetres;
 	uniform vec3 sunlight;
 	uniform float cloudInterp;
+	uniform vec3 mieRayleighRatio;
+	uniform float hazeEccentricity;
 };
 
 #ifndef __cplusplus

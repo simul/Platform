@@ -501,6 +501,10 @@
 			Name="Shaders"
 			>
 			<File
+				RelativePath=".\GLSL\CppGlsl.hs"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\saturate.glsl"
 				>
 			</File>

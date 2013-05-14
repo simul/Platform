@@ -5,7 +5,7 @@
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix.h"
 #include "Simul/Base/Timer.h"
-#include "Simul/Platform/OpenGL/GLSL.h"
+#include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/simul_gpu_clouds.sl"
 using namespace simul::opengl;
 /*
@@ -27,7 +27,7 @@ static void MakeVertexMatrix(const int *grid,int start_texel,int texels)
 
 GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
 			,density_program(0)
-			,clouds_program(0)
+			,lighting_program(0)
 			,transform_program(0)
 			,density(NULL)
 			,density_gridsize(0)
@@ -59,7 +59,7 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	}
 	SAFE_DELETE_PROGRAM(density_program);
 	SAFE_DELETE_PROGRAM(transform_program);
-	SAFE_DELETE_PROGRAM(clouds_program);
+	SAFE_DELETE_PROGRAM(lighting_program);
 	SAFE_DELETE_TEXTURE(density_texture);
 	SAFE_DELETE_BUFFER(gpuCloudConstantsUBO);
 }
@@ -68,10 +68,10 @@ void GpuCloudGenerator::RecompileShaders()
 {
 	SAFE_DELETE_PROGRAM(density_program);
 	SAFE_DELETE_PROGRAM(transform_program);
-	SAFE_DELETE_PROGRAM(clouds_program);
-	density_program=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_density.frag");
-	clouds_program=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_clouds.frag");
-	transform_program=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_transform.frag");
+	SAFE_DELETE_PROGRAM(lighting_program);
+	density_program		=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_density.frag");
+	lighting_program	=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_clouds.frag");
+	transform_program	=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_transform.frag");
 }
 
 static GLuint make3DTexture(int w,int l,int d,int stride,bool wrap_z,const float *src)
@@ -288,19 +288,18 @@ timer.StartTime();
 	// because we don't need to do any filtering.
 	//GLuint density_texture	=dens_fb.GetColorTex();
 	// blit from dens_fb...
-	glUseProgram(clouds_program);
-	setParameter(clouds_program,"input_light_texture",0);
-	setParameter(clouds_program,"density_texture",1);
-	setMatrix(clouds_program,"transformMatrix",transformMatrix);
-	setParameter(clouds_program,"extinctions",lightspace_extinctions_float3[0],lightspace_extinctions_float3[1]);
-	
+	glUseProgram(lighting_program);
+	setParameter(lighting_program,"input_light_texture",0);
+	setParameter(lighting_program,"density_texture",1);
+	//setMatrix(lighting_program,"transformMatrix",transformMatrix);
+	//setParameter(lighting_program,"extinctions",lightspace_extinctions_float3[0],lightspace_extinctions_float3[1]);
 	GpuCloudConstants constants;
 	constants.extinctions=lightspace_extinctions_float3;
 	constants.transformMatrix=transformMatrix;
 	UPDATE_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
-	GLint gpuCloudConstants		=glGetUniformBlockIndex(clouds_program,"GpuCloudConstants");
+	GLint gpuCloudConstants		=glGetUniformBlockIndex(lighting_program,"GpuCloudConstants");
 	if(gpuCloudConstants>=0)
-		glUniformBlockBinding(clouds_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
+		glUniformBlockBinding(lighting_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
 	// initialize the first input texture.
 	FramebufferGL *F[2];
 	F[0]=&fb[0];
@@ -340,12 +339,12 @@ ERROR_CHECK
 	for(int i=z0;i<z1;i++)
 	{
 		float zPosition=((float)i-0.5f)/(float)light_grid[2];
-		setParameter(clouds_program,"zPosition",zPosition);
+		//setParameter(lighting_program,"zPosition",zPosition);
 		constants.zPosition=zPosition;
 		UPDATE_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
-		GLint gpuCloudConstants		=glGetUniformBlockIndex(clouds_program,"GpuCloudConstants");
+		GLint gpuCloudConstants		=glGetUniformBlockIndex(lighting_program,"GpuCloudConstants");
 		if(gpuCloudConstants>=0)
-			glUniformBlockBinding(clouds_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
+			glUniformBlockBinding(lighting_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
 		F[1]->Activate(NULL);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
@@ -404,9 +403,9 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 	setParameter(transform_program,"density_texture",0);
 	setParameter(transform_program,"light_texture",1);
 	setParameter(transform_program,"ambient_texture",2);
-	setMatrix(transform_program,"transformMatrix",transformMatrix);
-	setParameter(transform_program,"zSize",(float)density_grid[2]);
-	setParameter(transform_program,"zPixel",1.f/(float)density_grid[2]);
+	//setMatrix(transform_program,"transformMatrix",transformMatrix);
+//	setParameter(transform_program,"zSize",(float)density_grid[2]);
+	//setParameter(transform_program,"zPixel",1.f/(float)density_grid[2]);
 
 	GpuCloudConstants constants;
 	constants.transformMatrix	=transformMatrix;

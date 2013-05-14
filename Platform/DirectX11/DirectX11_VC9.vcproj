@@ -608,6 +608,14 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="CrossPlatform"
+			>
+			<File
+				RelativePath="..\CrossPlatform\CppSl.hs"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

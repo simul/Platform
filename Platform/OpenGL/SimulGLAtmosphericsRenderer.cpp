@@ -6,7 +6,7 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/SkyInterface.h"
-#include "Simul/Platform/OpenGL/Glsl.h"
+#include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/OpenGL/GLSL/simul_earthshadow_uniforms.glsl"
 
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()

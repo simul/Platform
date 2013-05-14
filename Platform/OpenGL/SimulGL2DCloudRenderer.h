@@ -54,7 +54,7 @@ public:
 	//
 	void *GetCloudShadowTexture(){return NULL;}
 protected:
-	virtual void DrawLines(void *,VertexXyzRgba *vertices,int vertex_count,bool strip){}
+	virtual void DrawLines(void *,VertexXyzRgba *,int ,bool ){}
 
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate(void *);

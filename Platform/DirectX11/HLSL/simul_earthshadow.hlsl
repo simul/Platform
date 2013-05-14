@@ -3,9 +3,9 @@
 
 uniform_buffer EarthShadowUniforms R9
 {
-	float3 sunDir			;
+	vec3 sunDir			;
 	float radiusOnCylinder	;
-	float3 earthShadowNormal;
+	vec3 earthShadowNormal;
 	float maxFadeDistance	;
 	float terminatorCosine	;
 };

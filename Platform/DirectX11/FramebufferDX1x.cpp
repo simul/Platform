@@ -413,10 +413,8 @@ bool FramebufferDX1x::DrawQuad(void *context)
     UINT Offsets[1];
     Strides[0] = 0;
     Offsets[0] = 0;
-
 	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
-
+	m_pImmediateContext->IAGetInputLayout(&previousInputLayout);
 	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
 												1,					// the number of buffers in the array
 												&m_pVertexBuffer,	// the array of vertex buffers

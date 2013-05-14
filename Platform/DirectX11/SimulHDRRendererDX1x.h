@@ -72,6 +72,6 @@ protected:
 
 	float timing;
 private:
-	ComputableTexture					glowTexture;
+	simul::dx11::ComputableTexture					glowTexture;
 };
 #pragma warning(pop)
