@@ -53,7 +53,7 @@ vertexOutput VS_Main(vertexInput IN)
 float4 PS_Main( vertexOutput IN) : SV_TARGET
 {
 	float depth=length(IN.wPosition-eyePosition)/maxFadeDistanceMetres;
-	float3 final=float3(.1,.1,.1);//mainTexture.Sample(samplerState,IN.texCoordDiffuse.xy).rgb;
+	float3 final=mainTexture.Sample(samplerState,IN.texCoordDiffuse.xy).rgb;
     return float4(final,depth);
 }
 

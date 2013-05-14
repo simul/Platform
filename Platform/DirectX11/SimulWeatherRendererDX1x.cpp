@@ -288,64 +288,12 @@ bool SimulWeatherRendererDX1x::RenderCubemap(void *context)
 
 void *SimulWeatherRendererDX1x::GetCubemap()
 {
-	return framebuffer_cubemap.GetColorTex();// m_pCubeEnvMapSRV;
+	return framebuffer_cubemap.GetColorTex();
 }
 
 bool SimulWeatherRendererDX1x::RenderSky(void *context,bool buffered,bool is_cubemap)
 {
-	if(environment)
-		environment->Update(0.f);
-	
-	RenderCloudsLate=false;
-	if(baseSkyRenderer)
-		baseSkyRenderer->SetReverseDepth(ReverseDepth);
-	if(baseCloudRenderer)
-	{
-		RenderCloudsLate=baseCloudRenderer->IsCameraAboveCloudBase();
-		baseCloudRenderer->SetReverseDepth(ReverseDepth);
-	}
-
-	if(!is_cubemap&&baseSkyRenderer&&ShowPlanets)
-	{
-		baseSkyRenderer->RenderPointStars(context);
-		baseSkyRenderer->RenderPlanets(context);
-		baseSkyRenderer->RenderSun(context,exposure_hint);
-	}
-
-	if(buffered&&baseFramebuffer&&!is_cubemap)
-	{
-		baseFramebuffer->Activate(context);
-		baseFramebuffer->Clear(context,0.f,0.2f,0.f,1.f);
-	}
-	if(baseSkyRenderer)
-	{
-		float cloud_occlusion=0;
-		if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
-			cloud_occlusion=baseCloudRenderer->GetSunOcclusion();
-		baseSkyRenderer->CalcSunOcclusion(cloud_occlusion);
-	}
-	
-	if(baseSkyRenderer&&ShowSky)
-		baseSkyRenderer->Render(context,!buffered);
-
-#if 1	
-	// Do this AFTER sky render, to catch any changes to texture definitions:
-	UpdateSkyAndCloudHookup();
-	if(baseSkyRenderer)
-	{
-		// Do these updates now because sky renderer will have calculated the view height.
-		if(baseCloudRenderer)
-		{
-			baseCloudRenderer->SetAltitudeTextureCoordinate(baseSkyRenderer->GetAltitudeTextureCoordinate());
-		}
-	}
-	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-		base2DCloudRenderer->Render(context,false,0,UseDefaultFog,false);
-	if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible()&&(AlwaysRenderCloudsLate||!RenderCloudsLate||is_cubemap))
-		baseCloudRenderer->Render(context,is_cubemap,0,UseDefaultFog,true);
-	if(buffered&&baseFramebuffer&&!is_cubemap)
-		baseFramebuffer->Deactivate(context);
-	HRESULT hr=S_OK;
+	BaseWeatherRenderer::RenderSky(context,buffered,is_cubemap);
 	if(buffered&&baseFramebuffer)
 	{
 		bool blend=!is_cubemap;
@@ -362,7 +310,6 @@ bool SimulWeatherRendererDX1x::RenderSky(void *context,bool buffered,bool is_cub
 		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
 	}
-#endif
 	return true;
 }
 

@@ -61,13 +61,6 @@ bool Direct3D11Renderer::ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSetting
 
 HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
-	ScreenWidth=pBackBufferSurfaceDesc->Width;
-	ScreenHeight=pBackBufferSurfaceDesc->Height;
-	aspect=(float)ScreenWidth/(float)ScreenHeight;
-	// Create the HDR renderer to perform brightness and gamma-correction (optional component)
-	if(simulHDRRenderer)
-		simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
-	
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects(pd3dDevice);
 	if(simulWeatherRenderer)
@@ -87,6 +80,8 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 		return S_OK;
 	try
 	{
+		ScreenWidth=pBackBufferSurfaceDesc->Width;
+		ScreenHeight=pBackBufferSurfaceDesc->Height;
 		Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
 		simul::dx11::UnsetDevice();
 		//Set a global device pointer for use by various classes.
@@ -112,11 +107,11 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	D3DXMATRIX world,view,proj;
-	static float nr=0.01f;
-	static float fr=250000.f;
+	static float nearPlane=0.01f;
+	static float farPlane=250000.f;
 	if(camera)
 	{
-		proj=camera->MakeProjectionMatrix(nr,fr,aspect,y_vertical);
+		proj=camera->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight,false);
 		view=camera->MakeViewMatrix(!y_vertical);
 		D3DXMatrixIdentity(&world);
 	}
