@@ -1,5 +1,5 @@
 #version 140
-#include "../Glsl.h"
+#include "CppGlsl.hs"
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 
 uniform vec3 eyePosition;

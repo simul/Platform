@@ -181,12 +181,12 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 
 // Activate / deactivate the FBO as a render target
 // The FBO needs to be deactivated when using the associated Textures.
-void FramebufferGL::Activate()
+void FramebufferGL::Activate(void *context)
 {
-	Activate(0,0,Width,Height);
+	Activate(context,0,0,Width,Height);
 }
 
-void FramebufferGL::Activate(int x,int y,int w,int h)
+void FramebufferGL::Activate(void *context,int x,int y,int w,int h)
 {
 	//glFlush(); 
 	CheckFramebufferStatus();
@@ -200,7 +200,7 @@ void FramebufferGL::Activate(int x,int y,int w,int h)
 	fb_stack.push(m_fb);
 }
 
-void FramebufferGL::Deactivate() 
+void FramebufferGL::Deactivate(void *context) 
 {
 	ERROR_CHECK
 	//glFlush(); 
@@ -230,18 +230,18 @@ void FramebufferGL::CopyDepthFromFramebuffer()
 	ERROR_CHECK
 }
 
-void FramebufferGL::DrawQuad()
+void FramebufferGL::DrawQuad(void *context)
 {
 	::DrawQuad(0,0,1,1);
 }
-void FramebufferGL::DeactivateAndRender(bool blend)
+void FramebufferGL::DeactivateAndRender(void *context,bool blend)
 {
 	ERROR_CHECK
-	Deactivate();
-	Render(blend);
+	Deactivate(context);
+	Render(context,blend);
 }
 
-void FramebufferGL::Render(bool blend)
+void FramebufferGL::Render(void *,bool blend)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
@@ -275,7 +275,7 @@ ERROR_CHECK
 }
 
 
-void FramebufferGL::Clear(float r,float g,float b,float a,int mask)
+void FramebufferGL::Clear(void*,float r,float g,float b,float a,int mask)
 {
 	if(!mask)
 		mask=GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT;

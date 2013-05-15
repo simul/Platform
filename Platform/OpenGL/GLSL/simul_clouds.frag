@@ -3,7 +3,7 @@
 #version 140
 
 #include "simul_inscatter_fns.glsl"
-#include "../Glsl.h"
+#include "CppGlsl.hs"
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 #include "saturate.glsl"
 

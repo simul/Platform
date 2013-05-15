@@ -1,10 +1,18 @@
+#define pi (3.1415926536f)
 
-
-cbuffer cbPerObject : register(b0)
+cbuffer cbPerObject : register(b10)
 {
-	matrix worldViewProj : packoffset(c0);
-	matrix proj : packoffset(c32);
-	matrix cubemapViews[6] : packoffset(c48);
+	matrix worldViewProj	;
+	matrix proj				;
+	matrix cubemapViews[6]	;
+	float4 eyePosition		;
+	float4 lightDir			;
+	float4 mieRayleighRatio;
+	float hazeEccentricity;
+	float skyInterp;
+	float altitudeTexCoord;
+	float4 colour;
+	float starBrightness;
 };
 
 Texture2D inscTexture;
@@ -38,18 +46,6 @@ SamplerState fadeSamplerState
 
 TextureCube cubeTexture;
 
-//------------------------------------
-// Parameters 
-//------------------------------------
-float4 eyePosition : EYEPOSITION_WORLDSPACE;
-float4 lightDir : Direction;
-float4 mieRayleighRatio;
-float hazeEccentricity;
-float skyInterp;
-float altitudeTexCoord;
-#define pi (3.1415926536f)
-float4 colour;
-float starBrightness;
 //------------------------------------
 // Structures 
 //------------------------------------

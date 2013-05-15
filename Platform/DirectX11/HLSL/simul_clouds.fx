@@ -55,33 +55,33 @@ SamplerState fadeSamplerState
 
 struct vertexInput
 {
-    float3 position		: POSITION;
+    float3 position			: POSITION;
 	// Per-instance data:
-	vec2 noiseOffset	: TEXCOORD0;
-	float noiseScale	: TEXCOORD1;
-	float layerFade		: TEXCOORD2;
-	float layerDistance	: TEXCOORD3;
+	vec2 noiseOffset		: TEXCOORD0;
+	float noiseScale		: TEXCOORD1;
+	float layerFade			: TEXCOORD2;
+	float layerDistance		: TEXCOORD3;
 };
 
 struct vertexOutput
 {
     float3 position			: POSITION;
 	// Per-instance data:
-	vec2 noiseOffset	: TEXCOORD0;
-	float noiseScale	: TEXCOORD1;
-	float layerFade		: TEXCOORD2;
-	float layerDistance	: TEXCOORD3;
+	vec2 noiseOffset		: TEXCOORD0;
+	float noiseScale		: TEXCOORD1;
+	float layerFade			: TEXCOORD2;
+	float layerDistance		: TEXCOORD3;
 };
 
 struct geomOutput
 {
-    float4 hPosition			: SV_POSITION;
-    float2 noise_texc			: TEXCOORD0;
-    float4 texCoords			: TEXCOORD1;
-	float3 view					: TEXCOORD2;
-    float3 texCoordLightning	: TEXCOORD3;
-    float2 fade_texc			: TEXCOORD4;
-	float layerFade				: TEXCOORD5;
+    float4 hPosition		: SV_POSITION;
+    float2 noise_texc		: TEXCOORD0;
+    float4 texCoords		: TEXCOORD1;
+	float3 view				: TEXCOORD2;
+    float3 texCoordLightning: TEXCOORD3;
+    float2 fade_texc		: TEXCOORD4;
+	float layerFade			: TEXCOORD5;
 };
 
 vertexOutput VS_Main(vertexInput IN)
@@ -112,7 +112,7 @@ void GS_Main(line vertexOutput input[2], inout TriangleStream<geomOutput> Output
 	float a1=atan(dh1/input[0].layerDistance)*2.0/pi;
 	float a2=atan(dh2/input[0].layerDistance)*2.0/pi;
 	int e1=max((int)(a1*ELEV_STEPS/2+ELEV_STEPS/2)-1,0);
-	int e2=min((int)(a2*ELEV_STEPS/2+ELEV_STEPS/2)+2,ELEV_STEPS);
+	int e2=min((int)(a2*ELEV_STEPS/2+ELEV_STEPS/2)+3,ELEV_STEPS);
 
 	for(int i=e1;i<e2+1;i++)
 	{

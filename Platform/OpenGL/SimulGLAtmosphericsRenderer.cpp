@@ -6,7 +6,7 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/SkyInterface.h"
-#include "Simul/Platform/OpenGL/Glsl.h"
+#include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/OpenGL/GLSL/simul_earthshadow_uniforms.glsl"
 
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
@@ -116,16 +116,16 @@ ERROR_CHECK
 		glUniformBlockBinding(p,earthShadowUniforms,earthShadowUniformsBindingIndex);
 }
 
-void SimulGLAtmosphericsRenderer::StartRender()
+void SimulGLAtmosphericsRenderer::StartRender(void *context)
 {
-	framebuffer->Activate();
-	framebuffer->Clear(0.f,0.0f,1.0f,1.0f);
+	framebuffer->Activate(context);
+	framebuffer->Clear(context,0.f,0.0f,1.0f,1.0f);
 	ERROR_CHECK
 }
 
-void SimulGLAtmosphericsRenderer::FinishRender()
+void SimulGLAtmosphericsRenderer::FinishRender(void *context)
 {
-	framebuffer->Deactivate();
+	framebuffer->Deactivate(context);
 	framebuffer->CopyDepthFromFramebuffer();
 
 ERROR_CHECK
@@ -209,7 +209,7 @@ ERROR_CHECK
     glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)framebuffer->GetColorTex());
 	
-	framebuffer->Render(false);
+	framebuffer->Render(context,false);
 	
 	if(ShowGodrays)
 	{
@@ -228,7 +228,7 @@ ERROR_CHECK
 		setParameter3(godrays_program	,"viewPosition"		,cam_pos);
 		glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);//GL_FUNC_SUBTRACT);
 		glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ONE,GL_ONE);
-		framebuffer->Render(false);
+		framebuffer->Render(context,false);
 		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		glBlendEquation(GL_FUNC_ADD);
 	}

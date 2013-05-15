@@ -1,5 +1,5 @@
 #version 140
-#include "../Glsl.h"
+#include "CppGlsl.hs"
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
 uniform sampler2D input_light_texture;
 uniform sampler3D density_texture;
@@ -15,6 +15,5 @@ void main(void)
 	float density				=texture(density_texture,densityspace_texcoord).x;
 	float direct_light			=previous_light.x*exp(-extinctions.x*density);
 	float indirect_light		=previous_light.y*exp(-extinctions.y*density);
-
     gl_FragColor				=vec4(direct_light,indirect_light,0.0,0.0);
 }

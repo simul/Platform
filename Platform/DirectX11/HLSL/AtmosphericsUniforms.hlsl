@@ -2,8 +2,8 @@
 #include "CppHlsl.hlsl"
 cbuffer AtmosphericsUniforms R0
 {
-	float3 lightDir;
-	float4 mieRayleighRatio;
-	float2 texelOffsets;
+	vec3 lightDir;
+	vec4 mieRayleighRatio;
+	vec2 texelOffsets;
 	float hazeEccentricity;
 };

@@ -39,8 +39,8 @@ public:
 	//! OpenGL Implementation of device invalidation - not strictly needed in GL.
 	void InvalidateDeviceObjects();
 	//! OpenGL Implementation of 2D cloud rendering.
-	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
-	void RenderCrossSections(int width,int height);
+	bool Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
+	void RenderCrossSections(void *,int width,int height);
 	//! Set the platform-dependent atmospheric loss texture.
 	void SetLossTexture(void *l);
 	//! Set the platform-dependent atmospheric inscatter texture.
@@ -54,8 +54,10 @@ public:
 	//
 	void *GetCloudShadowTexture(){return NULL;}
 protected:
+	virtual void DrawLines(void *,VertexXyzRgba *,int ,bool ){}
+
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void *);
 	void EnsureTextureCycle();
 	void EnsureCorrectIlluminationTextureSizes(){}
 	void EnsureIlluminationTexturesAreUpToDate(){}
@@ -89,7 +91,7 @@ protected:
 	GLuint	skylight_tex;
 
 	FramebufferGL	detail_fb;
-	bool CreateNoiseTexture(bool override_file=false);
+	bool CreateNoiseTexture(void *,bool override_file=false);
 	//void CreateImageTexture();
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();

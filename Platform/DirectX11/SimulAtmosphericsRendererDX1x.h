@@ -67,8 +67,8 @@ public:
 		fade_interp=s;
 	}
 	//! Render the Atmospherics.
-	void StartRender();
-	void FinishRender();
+	void StartRender(void *context);
+	void FinishRender(void *context);
 	void *GetDepthAlphaTexture()
 	{
 		return (void*)framebuffer->buffer_texture_SRV;
@@ -77,7 +77,6 @@ protected:
 	FramebufferDX1x								*framebuffer;
 	HRESULT Destroy();
 	ID3D1xDevice*								m_pd3dDevice;
-	ID3D1xDeviceContext*						m_pImmediateContext;
 	ID3D1xInputLayout*							vertexDecl;
 	D3DXMATRIX									view,proj;
 

@@ -59,11 +59,11 @@ public:
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	bool Render(bool cubemap,void *depth_tex,bool default_fog,bool write_alpha);
-	void RenderDebugInfo(int width,int height);
-	void RenderCrossSections(int width,int height);
+	bool Render(void *context,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha);
+	void RenderDebugInfo(void *context,int width,int height);
+	void RenderCrossSections(void *context,int width,int height);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
-	bool RenderLightning();
+	bool RenderLightning(void *context);
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 
@@ -100,10 +100,10 @@ public:
 	void SetYVertical(bool y);
 	bool IsYVertical() const;
 protected:
-	void DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip);
+	void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip);
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void *context);
 	void EnsureCorrectIlluminationTextureSizes();
 	void EnsureIlluminationTexturesAreUpToDate();
 	void EnsureTextureCycle();
@@ -111,7 +111,7 @@ protected:
 	void CreateMeshBuffers();
 	int mapped;
 	void Unmap();
-	void Map(int texture_index);
+	void Map(ID3D11DeviceContext *context,int texture_index);
 	unsigned texel_index[4];
 	bool lightning_active;
 
@@ -124,8 +124,8 @@ protected:
 	};
 	static const int MAX_INSTANCES=400;
 	InstanceType instances[MAX_INSTANCES];
+ID3D11DeviceContext *mapped_context;
 	ID3D1xDevice*					m_pd3dDevice;
-	ID3D1xDeviceContext*			m_pImmediateContext;
 	ID3D1xBuffer *					vertexBuffer;
 	ID3D1xBuffer *					indexBuffer;
 	ID3D1xBuffer *					instanceBuffer;
@@ -174,14 +174,14 @@ ID3D1xEffectMatrixVariable* 	noiseMatrix		;
 ID3D1xEffectScalarVariable* 	noiseScale		;	
 ID3D1xEffectVectorVariable* 	noiseOffset		;	
 	
-
 	ID3D1xEffectShaderResourceVariable*		cloudDensity1;
 	ID3D1xEffectShaderResourceVariable*		cloudDensity2;
 	ID3D1xEffectShaderResourceVariable*		noiseTexture;
 
 	ID3D1xEffectShaderResourceVariable*		lightningIlluminationTexture;
 	ID3D1xEffectShaderResourceVariable*		skyLossTexture;
-	ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;	ID3D1xEffectShaderResourceVariable*		skylightTexture;
+	ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;
+	ID3D1xEffectShaderResourceVariable*		skylightTexture;
 
 	ID3D1xShaderResourceView*				cloudDensityResource[3];
 	ID3D1xShaderResourceView*				noiseTextureResource;
@@ -210,10 +210,10 @@ ID3D1xEffectVectorVariable* 	noiseOffset		;
 	float LookupLargeScaleTexture(float x,float y);
 
 	bool CreateLightningTexture();
-	virtual bool CreateNoiseTexture(bool override_file=false);
+	virtual bool CreateNoiseTexture(void *context,bool override_file=false);
 	bool CreateCloudEffect();
 	bool MakeCubemap(); // not ready yet
-	void RenderNoise();
+	void RenderNoise(void *context);
 	
 	bool enable_lightning;
 };

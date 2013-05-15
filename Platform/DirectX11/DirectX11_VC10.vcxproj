@@ -62,7 +62,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SIMUL)/exe/$(Platform)/VC10/$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Platform)/VC10/$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
@@ -92,6 +92,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)_MDd.dll</OutputFile>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/VC10/$(Configuration);$(DXSDK_DIR)/Lib/x86;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
@@ -120,6 +121,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)_MD.dll</OutputFile>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/VC10/$(Configuration);$(DXSDK_DIR)/Lib/x86;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
@@ -180,24 +182,6 @@
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Clouds\Clouds_VC10.vcxproj">
-      <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Terrain\Terrain_VC10.vcxproj">
-      <Project>{cc71b070-12c2-45c9-894a-a9cddc1f3fa4}</Project>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="DirectX11_VC10.vcxproj">
-      <Project>{60b0d668-5bfa-46ca-945d-062e2014efa6}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CompileShaderDX1x.cpp" />
     <ClCompile Include="CreateEffectDX1x.cpp" />

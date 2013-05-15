@@ -22,6 +22,6 @@ void SimulLightningRendererDX11::InvalidateDeviceObjects()
 void SimulLightningRendererDX11::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 }
-void SimulLightningRendererDX11::Render()
+void SimulLightningRendererDX11::Render(void *context)
 {
 }

@@ -276,10 +276,10 @@ bool SimulWeatherRenderer::CreateBuffers()
 	return (hr==S_OK);
 }
 
-bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
+bool SimulWeatherRenderer::RenderSky(void *context,bool buffered,bool is_cubemap)
 {
 	PIXBeginNamedEvent(0xFF888888,"SimulWeatherRenderer::Render");
-	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
+	BaseWeatherRenderer::RenderSky(context,buffered,is_cubemap);
 	if(baseCloudRenderer&&simulAtmosphericsRenderer)
 	{
 		//simulAtmosphericsRenderer->SetLightningProperties(baseCloudRenderer->GetIlluminationTexture(),
@@ -301,35 +301,28 @@ bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	return true;
 }
 
-void SimulWeatherRenderer::RenderLightning()
+void SimulWeatherRenderer::RenderLightning(void *context)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		return simulLightningRenderer->Render();
+		return simulLightningRenderer->Render(context);
 }
 
-void SimulWeatherRenderer::RenderPrecipitation()
+void SimulWeatherRenderer::RenderPrecipitation(void *context)
 {
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		simulPrecipitationRenderer->Render();
+		simulPrecipitationRenderer->Render(context);
 }
-void SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
+
+void SimulWeatherRenderer::RenderLateCloudLayer(void *context,bool buf)
 {
 	if(!RenderCloudsLate||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return ;
-	RenderLateCloudLayer(0,buf);
-}
-
-void SimulWeatherRenderer::RenderLateCloudLayer(int buffer_index,bool buf)
-{
 	HRESULT hr=S_OK;
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface=NULL;
 	if(buf)
 	{
-		if(buffer_index==1)
-			lowdef_framebuffer.Activate();
-		else
-		framebuffer.Activate();
+		framebuffer.Activate(NULL);
 		static float depth_start=1.f;
 		hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 	}
@@ -341,7 +334,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(int buffer_index,bool buf)
 		{	
 			PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
 			{
-				simulCloudRenderer->Render(false,depth_alpha_tex,false,true);
+				simulCloudRenderer->Render(context,false,depth_alpha_tex,false,true);
 			}
 		}
 	}
@@ -366,17 +359,8 @@ void SimulWeatherRenderer::RenderLateCloudLayer(int buffer_index,bool buf)
 	if(buf)
 	{
 		m_pBufferToScreenEffect->SetTechnique(CloudBlendTechnique);
-		if(buffer_index==1)
 		{
-			lowdef_framebuffer.Deactivate();
-	#ifdef XBOX
-			m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL,lowdef_framebuffer.hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
-	#endif
-			RenderBufferToScreen((LPDIRECT3DTEXTURE9)framebuffer.GetColorTex());
-		}
-		else
-		{
-			framebuffer.Deactivate();
+			framebuffer.Deactivate(NULL);
 	#ifdef XBOX
 			m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, framebuffer.hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
 	#endif
@@ -424,9 +408,9 @@ void SimulWeatherRenderer::Update(float dt)
 	if(simulPrecipitationRenderer)
 	{
 		simulPrecipitationRenderer->Update(dt);
-		if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+		if(simulCloudRenderer&&environment->cloudKeyframer->GetVisible())
 		{
-			simulPrecipitationRenderer->SetWind(simulCloudRenderer->GetWindSpeed(),simulCloudRenderer->GetWindHeadingDegrees());
+			simulPrecipitationRenderer->SetWind(environment->cloudKeyframer->GetWindSpeed(),environment->cloudKeyframer->GetWindHeadingDegrees());
 		#ifndef XBOX
 			float cam_pos[3];
 			D3DXMATRIX view;
@@ -434,7 +418,7 @@ void SimulWeatherRenderer::Update(float dt)
 		#endif
 			GetCameraPosVector(view,simulCloudRenderer->IsYVertical(),cam_pos);
 			simulPrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
-			float rts=simulCloudRenderer->GetRainToSnow();
+			float rts=environment->cloudKeyframer->GetInterpolatedKeyframe().rain_to_snow;
 			if(rts<0.5f)
 				simulPrecipitationRenderer->ApplyDefaultRainSettings();
 			else

@@ -22,7 +22,6 @@ typedef std::basic_string<TCHAR> tstring;
 
 SimulPrecipitationRendererDX1x::SimulPrecipitationRendererDX1x() :
 	m_pd3dDevice(NULL)
-	,m_pImmediateContext(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pVertexBuffer(NULL)
 	,m_pRainEffect(NULL)
@@ -53,30 +52,32 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 
 
 	MAKE_CONSTANT_BUFFER(pShadingCB,RainConstantBuffer);
+	ID3D11DeviceContext *m_pImmediateContext=NULL;
+	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 
 	ID3DX11EffectTechnique*			tech=m_pRainEffect->GetTechniqueByName("create_rain_texture");
-	ApplyPass(tech->GetPassByIndex(0));
+	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	FramebufferDX1x make_rain_fb(512,512);
 	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
-	make_rain_fb.Activate();
-	make_rain_fb.DrawQuad();
-	make_rain_fb.Deactivate();
+	make_rain_fb.Activate(m_pImmediateContext);
+	make_rain_fb.DrawQuad(m_pImmediateContext);
+	make_rain_fb.Deactivate(m_pImmediateContext);
 	rain_texture=make_rain_fb.buffer_texture_SRV;
 	// Make sure it isn't destroyed when the fb goes out of scope:
 	rain_texture->AddRef();
+	SAFE_RELEASE(m_pImmediateContext);
 }
 
 void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D11Device*)dev;
-	SAFE_RELEASE(m_pImmediateContext);
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	HRESULT hr=S_OK;
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
 	MakeMesh();
     RecompileShaders();
+
 	D3D1x_INPUT_ELEMENT_DESC decl[] = {
 		{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT	,0,0	,D3D1x_INPUT_PER_VERTEX_DATA,0},
 		{"TEXCOORD",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,12	,D3D1x_INPUT_PER_VERTEX_DATA,0},
@@ -98,6 +99,7 @@ void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
         0,
         0
 	};
+	SAFE_RELEASE(m_pVertexBuffer);
 	m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer);
 }
 
@@ -105,7 +107,6 @@ void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
 void SimulPrecipitationRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(m_pRainEffect);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(rain_texture);
@@ -131,8 +132,9 @@ depth map of the scene to find the pixels for which the rain
 streak is not occluded by the scene. The streak is rendered only over
 those pixels.
 */
-void SimulPrecipitationRendererDX1x::Render()
+void SimulPrecipitationRendererDX1x::Render(void *context)
 {
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 return;
 	if(rain_intensity<=0)
 		return;
@@ -177,16 +179,17 @@ return;
 	rainConstantBuffer.offset			=offs;
 	rainConstantBuffer.worldViewProj	=wvp;
 
-	UPDATE_CONSTANT_BUFFER(pShadingCB,RainConstantBuffer,rainConstantBuffer);
+	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,pShadingCB,RainConstantBuffer,rainConstantBuffer);
 	ID3D1xEffectConstantBuffer* cbRainConstants=m_pRainEffect->GetConstantBufferByName("RainConstants");
 	if(cbRainConstants)
 		cbRainConstants->SetConstantBuffer(pShadingCB);
 
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
 	UINT passes=1;
 	for(unsigned i = 0 ; i < passes ; ++i )
 	{
-		ApplyPass(m_hTechniqueRain->GetPassByIndex(i));
-		m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
+		ApplyPass(m_pImmediateContext,m_hTechniqueRain->GetPassByIndex(i));
 		UINT stride = sizeof(Vertex_t);
 		UINT offset = 0;
 		UINT Strides[1];
@@ -197,13 +200,18 @@ return;
 													1,					// the number of buffers in the array
 													&m_pVertexBuffer,	// the array of vertex buffers
 													&stride,			// array of stride values, one for each buffer
-													&offset );
+													&offset);
 		m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+		D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+		m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 		m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		m_pImmediateContext->Draw(NUM_VERT-2,0);
+		m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 	}
 	D3DXMatrixIdentity(&world);
 	PIXEndNamedEvent();
+	m_pImmediateContext->IASetInputLayout(previousInputLayout);
+	SAFE_RELEASE(previousInputLayout)
 }
 
 void SimulPrecipitationRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

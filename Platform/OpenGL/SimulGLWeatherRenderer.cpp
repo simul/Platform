@@ -179,7 +179,7 @@ void SimulGLWeatherRenderer::RecompileShaders()
 	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag");
 }
 
-bool SimulGLWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
+bool SimulGLWeatherRenderer::RenderSky(void *context,bool buffered,bool is_cubemap)
 {
 	buffered&=(Utilities::GetSingleton().simple_program>0);
 ERROR_CHECK
@@ -189,13 +189,13 @@ ERROR_CHECK
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 ERROR_CHECK
-	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
+	BaseWeatherRenderer::RenderSky(context,buffered,is_cubemap);
 	if(buffered)
 	{
 		glUseProgram(Utilities::GetSingleton().simple_program);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
-		scene_buffer->Render(true);
+		scene_buffer->Render(context,true);
 		glUseProgram(0);
 	}
     glMatrixMode(GL_MODELVIEW);
@@ -208,7 +208,7 @@ ERROR_CHECK
 	return true;
 }
 
-void SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
+void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,bool buffer)
 {
 	if(!(AlwaysRenderCloudsLate||RenderCloudsLate)||!simulCloudRenderer||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return;
@@ -216,10 +216,10 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 	timer.TimeSum=0;
 	timer.StartTime();
 	
-	scene_buffer->Activate();
-	scene_buffer->Clear(0,0,0,1.f);
-	simulCloudRenderer->Render(false,depth_alpha_tex,UseDefaultFog,true);
-	scene_buffer->Deactivate();
+	scene_buffer->Activate(context);
+	scene_buffer->Clear(context,0,0,0,1.f);
+	simulCloudRenderer->Render(context,false,depth_alpha_tex,UseDefaultFog,true);
+	scene_buffer->Deactivate(context);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	GLuint prog=AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;
@@ -233,7 +233,7 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 	GLint depthAlphaTexture	=glGetUniformLocation(prog,"depthAlphaTexture");
 	glUniform1i(image_texture,0);
 	glUniform1i(depthAlphaTexture,1);
-	scene_buffer->Render(true);
+	scene_buffer->Render(context,true);
 	glUseProgram(0);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	
@@ -241,16 +241,16 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(bool buffer)
 	render_time+=timer.Time;
 }
 
-void SimulGLWeatherRenderer::RenderLightning()
+void SimulGLWeatherRenderer::RenderLightning(void *context)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		simulLightningRenderer->Render();
+		simulLightningRenderer->Render(context);
 }
 
-void SimulGLWeatherRenderer::RenderPrecipitation()
+void SimulGLWeatherRenderer::RenderPrecipitation(void *context)
 {
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		simulPrecipitationRenderer->Render();
+		simulPrecipitationRenderer->Render(context);
 }
 
 

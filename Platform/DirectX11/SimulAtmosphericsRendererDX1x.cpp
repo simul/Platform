@@ -60,7 +60,6 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	framebuffer(NULL),
 	effect(NULL),
 	lightDir(NULL),
-	m_pImmediateContext(NULL),
 	constantBuffer(NULL),
 	MieRayleighRatio(NULL),
 	HazeEccentricity(NULL),
@@ -89,7 +88,6 @@ void SimulAtmosphericsRendererDX1x::SetBufferSize(int w,int h)
 {
 	if(framebuffer)
 		framebuffer->SetWidthAndHeight(w,h);
-	InvalidateDeviceObjects();
 }
 
 void SimulAtmosphericsRendererDX1x::SetYVertical(bool y)
@@ -134,18 +132,6 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	inscatterTexture1	=effect->GetVariableByName("inscatterTexture1")->AsShaderResource();
 	skylightTexture		=effect->GetVariableByName("skylightTexture")->AsShaderResource();
 	
-	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
-	/*D3D11_BUFFER_DESC bufferDesc;
-	bufferDesc.Usage				= D3D11_USAGE_DYNAMIC;
-	bufferDesc.ByteWidth			= PAD16(sizeof(AtmosphericsUniforms));
-	bufferDesc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
-	bufferDesc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
-	bufferDesc.MiscFlags			= 0;
-	bufferDesc.StructureByteStride	= 0;
-
-	// Create the constant buffer pointer so we can access the shader constant buffer from within this class.
-	SAFE_RELEASE(constantBuffer);
-	m_pd3dDevice->CreateBuffer(&bufferDesc, NULL, &constantBuffer);*/
 	MAKE_CONSTANT_BUFFER(constantBuffer,AtmosphericsUniforms);
 }
 
@@ -153,29 +139,9 @@ HRESULT SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=dev;
-#ifdef DX10
-	m_pImmediateContext=dev;
-#else
-	SAFE_RELEASE(m_pImmediateContext);
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-#endif
 	RecompileShaders();
 	if(framebuffer)
 		framebuffer->RestoreDeviceObjects(dev);
-/*	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
-	D3DVERTEXELEMENT9 decl[] = 
-	{
-#ifdef XBOX
-		{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0,  8, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#else
-		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
-		{ 0, 16, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#endif
-		D3DDECL_END()
-	};
-	SAFE_RELEASE(vertexDecl);
-	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&vertexDecl);*/
 	return hr;
 }
 
@@ -184,7 +150,6 @@ HRESULT SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
 	HRESULT hr=S_OK;
 	if(framebuffer)
 		framebuffer->InvalidateDeviceObjects();
-	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(vertexDecl);
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(constantBuffer);
@@ -202,30 +167,31 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMA
 	proj=p;
 }
 
-void SimulAtmosphericsRendererDX1x::StartRender()
+void SimulAtmosphericsRendererDX1x::StartRender(void *context)
 {
 	if(!framebuffer)
 		return;
+	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
-	framebuffer->Activate();
+	framebuffer->Activate(m_pImmediateContext);
 	// Clear the screen to black, with alpha=1, representing far depth
-	framebuffer->Clear(0.0,1.0,1.0,1.0);
+	framebuffer->Clear(context,0.0,1.0,1.0,1.0);
 
 	PIXEndNamedEvent();
 }
 
-void SimulAtmosphericsRendererDX1x::FinishRender()
+void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
 {
 	if(!framebuffer)
 		return;
-	framebuffer->Deactivate();
+	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
+	framebuffer->Deactivate(m_pImmediateContext);
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
 	HRESULT hr=S_OK;
 	hr=imageTexture->SetResource(framebuffer->buffer_texture_SRV);
 	lossTexture1->SetResource(skyLossTexture_SRV);
-	//skylightTexture_SRV=(ID3D1xTexture2D*)s;
 	inscatterTexture1->SetResource(skyInscatterTexture_SRV);
-skylightTexture->SetResource(skylightTexture_SRV);
+	skylightTexture->SetResource(skylightTexture_SRV);
 	simul::math::Matrix4x4 vpt;
 	simul::math::Matrix4x4 viewproj;
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
@@ -257,8 +223,8 @@ skylightTexture->SetResource(skylightTexture_SRV);
 	}
 	m_pImmediateContext->VSSetConstantBuffers(0,1,&constantBuffer);
 	m_pImmediateContext->PSSetConstantBuffers(0,1,&constantBuffer);
-	ApplyPass(technique->GetPassByIndex(0));
-	framebuffer->Render(false);
+	ApplyPass(m_pImmediateContext,technique->GetPassByIndex(0));
+	framebuffer->Render(context,false);
 	imageTexture->SetResource(NULL);
 	lossTexture1->SetResource(NULL);
 	inscatterTexture1->SetResource(NULL);

@@ -24,7 +24,6 @@ static const int MAX_VERTICES=1000000;
 
 SimulTerrainRendererDX1x::SimulTerrainRendererDX1x()
 	:m_pd3dDevice(NULL)
-	,m_pImmediateContext(NULL)
 	,m_pVertexBuffer(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pTerrainEffect(NULL)
@@ -48,13 +47,10 @@ void SimulTerrainRendererDX1x::RecompileShaders()
 	worldViewProj			=m_pTerrainEffect->GetVariableByName("worldViewProj")->AsMatrix();
 }
 
-void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *x)
+void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
-	void **u=(void**)x;
-	m_pd3dDevice=(ID3D1xDevice*)u[0];
-	SAFE_RELEASE(m_pImmediateContext);
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+	m_pd3dDevice=(ID3D1xDevice*)dev;
 	RecompileShaders();
 //	ID3D1xBuffer*						m_pVertexBuffer;
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =
@@ -92,13 +88,13 @@ void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *x)
 void SimulTerrainRendererDX1x::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_pVertexBuffer);
-	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(m_pTerrainEffect);
 	SAFE_RELEASE(m_pVtxDecl);
 }
 
-void SimulTerrainRendererDX1x::Render()
+void SimulTerrainRendererDX1x::Render(void *context)
 {
+	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
 	D3DXMATRIX world;
 	D3DXMatrixIdentity(&world);
 	D3DXMATRIX wvp;
@@ -110,7 +106,7 @@ void SimulTerrainRendererDX1x::Render()
 	
 	TerrainVertex_t *vertices;
 	D3D11_MAPPED_SUBRESOURCE mapped_vertices;
-	MapBuffer(m_pVertexBuffer,&mapped_vertices);
+	MapBuffer(m_pImmediateContext,m_pVertexBuffer,&mapped_vertices);
 	vertices=(TerrainVertex_t*)mapped_vertices.pData;
 	
 	int h=heightMapInterface->GetPageSize();
@@ -160,7 +156,7 @@ void SimulTerrainRendererDX1x::Render()
 			v++;
 		}
 	}
-	UnmapBuffer(m_pVertexBuffer);
+	UnmapBuffer(m_pImmediateContext,m_pVertexBuffer);
 	UINT stride = sizeof(TerrainVertex_t);
 	UINT offset = 0;
     UINT Strides[1];
@@ -172,12 +168,16 @@ void SimulTerrainRendererDX1x::Render()
 												&m_pVertexBuffer,	// the array of vertex buffers
 												&stride,		// array of stride values, one for each buffer
 												&offset);		// array of offset values, one for each buffer
-	ApplyPass(m_pTechnique->GetPassByIndex(0));
+	ApplyPass(m_pImmediateContext,m_pTechnique->GetPassByIndex(0));
 	// Set the input layout
 	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	if((v)>2)
 		m_pImmediateContext->Draw((v)-2,0);
+
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 }
 
 void SimulTerrainRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

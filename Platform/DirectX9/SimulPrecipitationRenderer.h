@@ -29,7 +29,7 @@ public:
 	//! Call this when the D3D device has been shut down.
 	void InvalidateDeviceObjects();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	void Render();
+	void Render(void *context);
 #ifdef XBOX
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 #endif

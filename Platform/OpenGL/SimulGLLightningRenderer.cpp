@@ -92,7 +92,7 @@ void GetCameraPosVector(simul::math::Vector3 &cam_pos,simul::math::Vector3 &cam_
 					static float ww=50.f;
 					static float uu=9.f;
 
-void SimulGLLightningRenderer::Render()
+void SimulGLLightningRenderer::Render(void*)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	if(glStringMarkerGREMEDY)

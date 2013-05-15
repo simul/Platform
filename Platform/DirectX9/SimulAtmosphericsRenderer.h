@@ -55,8 +55,8 @@ public:
 	//! Call this when the device has been lost.
 	void InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for atmospherics, and make it the current target. Call at the start of the frame's rendering.
-	void StartRender();
-	void FinishRender();
+	void StartRender(void *context);
+	void FinishRender(void *context);
 	void *GetDepthAlphaTexture()
 	{
 		return (void*)input_texture;

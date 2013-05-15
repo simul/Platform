@@ -29,13 +29,12 @@ public:
 	virtual ~SimulOpticsRendererDX1x();
 	virtual void RestoreDeviceObjects(void *device);
 	virtual void InvalidateDeviceObjects();
-	virtual void RenderFlare(float exposure,const float *dir,const float *light);
+	virtual void RenderFlare(void *context,float exposure,const float *dir,const float *light);
 	virtual void RecompileShaders();
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 protected:
 	D3DXMATRIX								view,proj;
 	ID3D1xDevice *							m_pd3dDevice;
-	ID3D1xDeviceContext *					m_pImmediateContext;
 	ID3D1xEffect*							m_pFlareEffect;
 	ID3D1xEffectTechnique*					m_hTechniqueFlare;
 	ID3D1xEffectMatrixVariable*				worldViewProj;

@@ -513,7 +513,7 @@ D3DXSaveTextureToFile(TEXT("Media/Textures/noise.jpg"),D3DXIFF_JPG,noise_texture
 	SAFE_RELEASE(pNoiseRenderTarget);
 	return (hr==S_OK);
 }
-bool SimulCloudRenderer::CreateNoiseTexture(bool override_file)
+bool SimulCloudRenderer::CreateNoiseTexture(void *,bool override_file)
 {
 	if(!m_pd3dDevice)
 		return false;
@@ -566,9 +566,9 @@ static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 	return &x;
 }
 
-bool SimulCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
+bool SimulCloudRenderer::Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
-	return Render(cubemap,depth_alpha_tex,default_fog,0,write_alpha);
+	return Render(context,cubemap,depth_alpha_tex,default_fog,0,write_alpha);
 }
 
 void SimulCloudRenderer::EnsureCorrectIlluminationTextureSizes()
@@ -616,7 +616,7 @@ void SimulCloudRenderer::EnsureCorrectTextureSizes()
 	}
 }
 
-void SimulCloudRenderer::EnsureTexturesAreUpToDate()
+void SimulCloudRenderer::EnsureTexturesAreUpToDate(void*)
 {
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
@@ -667,11 +667,11 @@ void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 	}
 }
 
-bool SimulCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,int buffer_index,bool write_alpha)
+bool SimulCloudRenderer::Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,int buffer_index,bool write_alpha)
 {
 	if(rebuild_shaders)
 		RecompileShaders();
-	EnsureTexturesAreUpToDate();
+	EnsureTexturesAreUpToDate(context);
 	depth_alpha_tex;
 	default_fog;
 	if(!write_alpha)
@@ -687,7 +687,7 @@ bool SimulCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_
 	enable_lightning=cloudKeyframer->GetInterpolatedKeyframe().lightning>0;
 	if(!noise_texture)
 	{
-		B_RETURN(CreateNoiseTexture());
+		B_RETURN(CreateNoiseTexture(context));
 	}
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
 	/*m_pd3dDevice->SetSamplerState(0,D3DSAMP_SRGBTEXTURE,0);
@@ -786,7 +786,6 @@ bool SimulCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_
 	m_pCloudEffect->SetVector	(mieRayleighRatio	,MakeD3DVector(skyInterface->GetMieRayleighRatio()));
 	m_pCloudEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 	m_pCloudEffect->SetFloat	(cloudEccentricity	,GetCloudInterface()->GetMieAsymmetry());
-	m_pCloudEffect->SetFloat	(fadeInterp			,fade_interp);
 	m_pCloudEffect->SetFloat	(alphaSharpness		,GetCloudInterface()->GetAlphaSharpness());
 	float time=skyInterface->GetTime();
 	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
@@ -999,7 +998,6 @@ void SimulCloudRenderer::InternalRenderRaytrace(int buffer_index)
 		D3DXVECTOR3 d3dcam_pos;
 		GetCameraPosVector(view,y_vertical,(float*)&d3dcam_pos);
 		float altitude_km=0.001f*(y_vertical?d3dcam_pos.y:d3dcam_pos.z);
-		hr=m_pCloudEffect->SetFloat(fadeInterp,fade_interp);
 		if(skyInterface)
 		{
 //		hr=m_pCloudEffect->SetFloat(HazeEccentricity,skyInterface->GetMieEccentricity());
@@ -1126,7 +1124,7 @@ void SimulCloudRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 }
 #endif
 
-bool SimulCloudRenderer::MakeCubemap()
+bool SimulCloudRenderer::MakeCubemap(void *context)
 {
 	HRESULT hr=S_OK;
 	D3DSURFACE_DESC desc;
@@ -1248,7 +1246,7 @@ bool SimulCloudRenderer::MakeCubemap()
 		faceViewMatrix.m[2][3]=0;
 		faceViewMatrix.m[3][3]=1;
 
-		Render(true,false,false,0);
+		Render(context,true,false,false,0);
 #ifdef XBOX
 		m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, cloud_cubemap, NULL, 0, face, NULL, 0.0f, 0, NULL);
 #endif
@@ -1290,7 +1288,7 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 	fb.SetFormat(f);
 	fb.SetWidthAndHeight(cloud_tex_width_x*2,cloud_tex_length_y*cloud_tex_depth_z);
 	fb.RestoreDeviceObjects(m_pd3dDevice);
-	fb.Activate();
+	fb.Activate(NULL);
 	static unsigned b=0x00000000;
 	HRESULT hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,b,1.f,0L);
 	m_pCloudEffect->SetTechnique(m_hTechniqueRenderTo2DForSaving);
@@ -1314,14 +1312,14 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 
 	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
 
-	fb.Deactivate();
+	fb.Deactivate(NULL);
 	fn+=ext;
 	//hr=D3DXSaveSurfaceToFile((std::wstring(fn)+L".bmp").c_str(),D3DXIFF_BMP,fb.m_pHDRRenderTarget,NULL,NULL);
 	SaveTexture((LPDIRECT3DTEXTURE9)fb.GetColorTex(),(std::string(filename)+".png").c_str());
 	fb.InvalidateDeviceObjects();
 }
 
-void SimulCloudRenderer::RenderCrossSections(int width,int height)
+void SimulCloudRenderer::RenderCrossSections(void *,int width,int height)
 {
 	static int u=3;
 	int w=(width-8)/u;

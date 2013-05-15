@@ -16,6 +16,7 @@
 #include "Simul/Sky/Float4.h"
 #include <tchar.h>
 #include "CompileShaderDX1x.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 #include <string>
 typedef std::basic_string<TCHAR> tstring;
 tstring shader_path=TEXT("media/hlsl/dx11");
@@ -43,8 +44,7 @@ static bool shader_path_set	=false;
 static bool texture_path_set=false;
 static bool pipe_compiler_output=false;
 
-ID3D1xDevice		*m_pd3dDevice		=NULL;
-ID3D1xDeviceContext	*m_pImmediateContext=NULL;
+static ID3D1xDevice		*m_pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
 namespace simul
@@ -119,17 +119,11 @@ namespace simul
 		void SetDevice(ID3D1xDevice* dev)
 		{
 			m_pd3dDevice=dev;
-		#ifdef DX10
-			m_pImmediateContext=dev;
-		#else
-			m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-		#endif
 			UtilityRenderer::RestoreDeviceObjects(dev);
 		}
 		void UnsetDevice()
 		{
 			UtilityRenderer::InvalidateDeviceObjects();
-			SAFE_RELEASE(m_pImmediateContext);
 			m_pd3dDevice=NULL;
 		}
 		void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
@@ -172,119 +166,6 @@ namespace simul
 
 	}
 }
-int UtilityRenderer::instance_count=0;
-int UtilityRenderer::screen_width=0;
-int UtilityRenderer::screen_height=0;
-D3DXMATRIX UtilityRenderer::view,UtilityRenderer::proj;
-ID3D1xEffect *UtilityRenderer::m_pDebugEffect=NULL;
-UtilityRenderer utilityRenderer;
-
-UtilityRenderer::UtilityRenderer()
-{
-	instance_count++;
-}
-
-UtilityRenderer::~UtilityRenderer()
-{
-	InvalidateDeviceObjects();
-}
-
-void UtilityRenderer::RestoreDeviceObjects(void *m_pd3dDevice)
-{
-	RecompileShaders();
-}
-
-void UtilityRenderer::RecompileShaders()
-{
-	SAFE_RELEASE(m_pDebugEffect);
-	CreateEffect(m_pd3dDevice,&m_pDebugEffect,_T("simul_debug.fx"));
-}
-
-void UtilityRenderer::InvalidateDeviceObjects()
-{
-	SAFE_RELEASE(m_pDebugEffect);
-}
-
-void UtilityRenderer::SetMatrices(D3DXMATRIX v,D3DXMATRIX p)
-{
-	view=v;
-	proj=p;
-}
-
-void UtilityRenderer::SetScreenSize(int w,int h)
-{
-	screen_width=w;
-	screen_height=h;
-}
-
-void UtilityRenderer::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
-{
-}
-
-void UtilityRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip)
-{
-	PIXWrapper(0xFF0000FF,"DrawLines")
-	{
-	HRESULT hr=S_OK;
-	D3DXMATRIX world, tmp1, tmp2;
-	D3DXMatrixIdentity(&world);
-	ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_direct");
-	ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
-
-	D3DXMATRIX wvp;
-	MakeWorldViewProjMatrix(&wvp,world,view,proj);
-	worldViewProj->SetMatrix(&wvp._11);
-	
-	ID3D1xBuffer *					vertexBuffer=NULL;
-#if 1
-	// Create the vertex buffer:
-	D3D1x_BUFFER_DESC desc=
-	{
-        vertex_count*sizeof(VertexXyzRgba),
-        D3D1x_USAGE_DYNAMIC,
-        D3D1x_BIND_VERTEX_BUFFER,
-        D3D1x_CPU_ACCESS_WRITE,
-        0
-	};
-    D3D1x_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-    InitData.pSysMem = vertices;
-    InitData.SysMemPitch = sizeof(VertexXyzRgba);
-	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
-
-	const D3D1x_INPUT_ELEMENT_DESC decl[] =
-    {
-        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
-    };
-	D3D1x_PASS_DESC PassDesc;
-	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
-	hr=pass->GetDesc(&PassDesc);
-
-	ID3D1xInputLayout*				m_pVtxDecl=NULL;
-	SAFE_RELEASE(m_pVtxDecl);
-	hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
-	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
-	m_pImmediateContext->IASetPrimitiveTopology(strip?D3D1x_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D1x_PRIMITIVE_TOPOLOGY_LINELIST);
-	UINT stride = sizeof(VertexXyzRgba);
-	UINT offset = 0;
-    UINT Strides[1];
-    UINT Offsets[1];
-    Strides[0] = stride;
-    Offsets[0] = 0;
-	m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
-												1,				// the number of buffers in the array
-												&vertexBuffer,	// the array of vertex buffers
-												&stride,		// array of stride values, one for each buffer
-												&offset);		// array of 
-	hr=ApplyPass(tech->GetPassByIndex(0));
-	m_pImmediateContext->Draw(vertex_count,0);
-	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(m_pVtxDecl);
-#endif
-	}
-}
-
 
 ID3D1xShaderResourceView* simul::dx11::LoadTexture(const TCHAR *filename)
 {
@@ -308,7 +189,6 @@ ID3D1xShaderResourceView* simul::dx11::LoadTexture(const TCHAR *filename)
 
 ID3D1xTexture1D* simul::dx11::make1DTexture(
 							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext
 							,int w
 							,DXGI_FORMAT format
 							,const float *src)
@@ -338,7 +218,6 @@ ID3D1xTexture1D* simul::dx11::make1DTexture(
 
 ID3D11Texture2D* simul::dx11::make2DTexture(
 							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext
 							,int w,int h
 							,DXGI_FORMAT format
 							,const float *src)
@@ -369,7 +248,6 @@ ID3D11Texture2D* simul::dx11::make2DTexture(
 
 ID3D1xTexture3D* simul::dx11::make3DTexture(
 							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext
 							,int w,int l,int d
 							,DXGI_FORMAT format
 							,const float *src)
@@ -397,7 +275,6 @@ ID3D1xTexture3D* simul::dx11::make3DTexture(
 							
 void simul::dx11::Ensure3DTextureSizeAndFormat(
 							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext
 							,ID3D1xTexture3D* &tex
 							,ID3D11ShaderResourceView* &srv
 							,int w,int l,int d
@@ -416,7 +293,7 @@ void simul::dx11::Ensure3DTextureSizeAndFormat(
 
 	if(!tex)
 	{
-		tex=make3DTexture(	m_pd3dDevice,m_pImmediateContext,w,l,d,format,NULL);
+		tex=make3DTexture(	m_pd3dDevice,w,l,d,format,NULL);
 		m_pd3dDevice->CreateShaderResourceView(tex,NULL,&srv);
 		return;
 	}
@@ -484,6 +361,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFl
 	for(int i=0;i<10000&&!ifs.good();i++);
 	if(ifs.good())
 	{
+		//std::cerr<<"D3DX11CreateEffectFromBinaryFile found file "<<compiled_filename.c_str()<<std::endl;
 		ifs.seekg(0,std::ios_base::end);
 		size_t sz=(size_t)ifs.tellg();
 		ifs.seekg(0,std::ios_base::beg);
@@ -493,14 +371,19 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFl
 			ifs.read(pData,sz);
 
 			hr=D3DX11CreateEffectFromMemory(pData,sz,FXFlags,pDevice,ppEffect);
+			if(hr!=S_OK)
+				std::cerr<<"D3DX11CreateEffectFromBinaryFile error "<<(int)hr<<std::endl;
 			delete [] pData;
 		}
 	}
+	else
+		std::cerr<<"D3DX11CreateEffectFromBinaryFile cannot find file "<<compiled_filename.c_str()<<std::endl;
 	return hr;
 }
 
 HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
+#if 1
 	// first try to find an existing text source with this filename, and compile it.
 	std::string text_filename=simul::base::WStringToString(filename);
 	std::ifstream ifs(text_filename.c_str(),std::ios_base::binary);
@@ -620,6 +503,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 				return S_FALSE;
 		}
 	}
+#endif
 	HRESULT hr=D3DX11CreateEffectFromBinaryFile(filename,FXFlags,pDevice,ppEffect);
 	return hr;
 }
@@ -687,92 +571,50 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 #endif
 
 
-HRESULT Map2D(ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp)
+HRESULT Map2D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp)
 {
-#ifdef DX10
-	return tex->Map(0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-#else
 	return m_pImmediateContext->Map(tex,0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-#endif
 }
 
-HRESULT Map3D(ID3D1xTexture3D *tex,D3D1x_MAPPED_TEXTURE3D *mp)
+HRESULT Map3D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture3D *tex,D3D1x_MAPPED_TEXTURE3D *mp)
 {
-#ifdef DX10
-	return tex->Map(0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-#else
 	return m_pImmediateContext->Map(tex,0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-#endif
 }
 
-HRESULT Map1D(ID3D1xTexture1D *tex,D3D1x_MAPPED_TEXTURE1D *mp)
+HRESULT Map1D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture1D *tex,D3D1x_MAPPED_TEXTURE1D *mp)
 {
-#ifdef DX10
-	return tex->Map(0,D3D1x_MAP_WRITE_DISCARD,0,&(mp->pData));
-#else
 	return m_pImmediateContext->Map(tex,0,D3D1x_MAP_WRITE_DISCARD,0,mp);
-#endif
 }
 
-void Unmap2D(ID3D1xTexture2D *tex)
+void Unmap2D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture2D *tex)
 {
-#ifdef DX10
-	tex->Unmap(0);
-#else
 	m_pImmediateContext->Unmap(tex,0);
-#endif
 }
 
-void Unmap3D(ID3D1xTexture3D *tex)
+void Unmap3D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture3D *tex)
 {
-#ifdef DX10
-	tex->Unmap(0);
-#else
 	m_pImmediateContext->Unmap(tex,0);
-#endif
 }
 
-void Unmap1D(ID3D1xTexture1D *tex)
+void Unmap1D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture1D *tex)
 {
-#ifdef DX10
-	tex->Unmap(0);
-#else
 	m_pImmediateContext->Unmap(tex,0);
-#endif
 }
 
-#ifdef DX10
-HRESULT MapBuffer(ID3D1xBuffer *vertexBuffer,void **vert)
-#else
-HRESULT MapBuffer(ID3D1xBuffer *vertexBuffer,D3D11_MAPPED_SUBRESOURCE*vert)
-#endif
+HRESULT MapBuffer(ID3D11DeviceContext *m_pImmediateContext,ID3D1xBuffer *vertexBuffer,D3D11_MAPPED_SUBRESOURCE*vert)
 {
-#ifdef DX10
-	return vertexBuffer->Map(D3D1x_MAP_WRITE_DISCARD,0,vert);
-#else
 	return m_pImmediateContext->Map(vertexBuffer,0,D3D1x_MAP_WRITE_DISCARD,0,vert);
-#endif
 }
 
-void UnmapBuffer(ID3D1xBuffer *vertexBuffer)
+void UnmapBuffer(ID3D11DeviceContext *m_pImmediateContext,ID3D1xBuffer *vertexBuffer)
 {
-#ifdef DX10
-	vertexBuffer->Unmap();
-#else
 	m_pImmediateContext->Unmap(vertexBuffer,0);
-#endif
 }
 
-
-HRESULT ApplyPass(ID3D1xEffectPass *pass)
+HRESULT ApplyPass(ID3D11DeviceContext *m_pImmediateContext,ID3D1xEffectPass *pass)
 {
-#ifdef DX10
-	return pass->Apply(0);
-#else
 	return pass->Apply(0,m_pImmediateContext);
-#endif
 }
-
 
 void MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos)
 {
@@ -781,22 +623,22 @@ void MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos)
     D3DXVECTOR3 vUpDir;
     ZeroMemory(g_amCubeMapViewAdjust, 6*sizeof(D3DXMATRIX) );
 
-    vLookDir =vEyePt+ D3DXVECTOR3( 1.0f, 0.0f, 0.0f );
-     vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
-   D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[0], &vEyePt, &vLookDir, &vUpDir );
+	vLookDir =vEyePt+ D3DXVECTOR3( 1.0f, 0.0f, 0.0f );
+	vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
+	D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[0], &vEyePt, &vLookDir, &vUpDir );
     vLookDir =vEyePt+D3DXVECTOR3( -1.0f, 0.0f, 0.0f );
     vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
     D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[1], &vEyePt, &vLookDir, &vUpDir );
     vLookDir =vEyePt+D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
     vUpDir = D3DXVECTOR3( 0.0f, 0.0f,-1.0f );
     D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[2], &vEyePt, &vLookDir, &vUpDir );
-   vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
+	vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
     vUpDir = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
-   D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[3], &vEyePt, &vLookDir, &vUpDir );
+	D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[3], &vEyePt, &vLookDir, &vUpDir );
     vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
     vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
     D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[4], &vEyePt, &vLookDir, &vUpDir );
-  vLookDir = vEyePt+D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
+	vLookDir = vEyePt+D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
     vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
     D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[5], &vEyePt, &vLookDir, &vUpDir );
 }
@@ -807,7 +649,7 @@ void BreakIfDebugging()
 }
 
 
-void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj
+void UtilityRenderer::RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *m_pImmediateContext,const float *dr,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj
 					  ,D3DXVECTOR3 sun_dir)
 {
 	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
@@ -902,7 +744,12 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical
 	ID3D1xInputLayout*				m_pVtxDecl=NULL;
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
 	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	UINT stride = sizeof(Vertext);
 	UINT offset = 0;
@@ -915,75 +762,17 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,const float *dr,bool y_vertical
 												&vertexBuffer,	// the array of vertex buffers
 												&stride,		// array of stride values, one for each buffer
 												&offset);		// array of 
-	hr=ApplyPass(tech->GetPassByIndex(0));
+	hr=ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(4,0);
 	//hr=ApplyPass(tech->GetPassByIndex(0));
+
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+	SAFE_RELEASE(previousInputLayout);
 	SAFE_RELEASE(vertexBuffer);
 	SAFE_RELEASE(m_pVtxDecl);
 }
 
-void RenderTexture(ID3D1xDevice *m_pd3dDevice,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech)
-{
-	RenderTexture(m_pd3dDevice,(float)x1,(float)y1,(float)dx,(float)dy,tech);
-}
-
-void RenderTexture(ID3D1xDevice *m_pd3dDevice,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech)
-{
-	struct Vertext
-	{
-		D3DXVECTOR4 pos;
-		D3DXVECTOR2 tex;
-	};
-	HRESULT hr=S_OK;
-	const D3D1x_INPUT_ELEMENT_DESC decl[] =
-	{
-		{ "POSITION",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	16,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-	};
-	D3D1x_PASS_DESC PassDesc;
-	tech->GetPassByIndex(0)->GetDesc(&PassDesc);
-	ID3D1xInputLayout *m_pBufferVertexDecl;
-	hr=m_pd3dDevice->CreateInputLayout(decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pBufferVertexDecl);
-	Vertext vertices[4] =
-	{
-		D3DXVECTOR4(x1		,y1			,0.f,	1.f), D3DXVECTOR2(0.f	,0.f),
-		D3DXVECTOR4(x1+dx	,y1			,0.f,	1.f), D3DXVECTOR2(1.f	,0.f),
-		D3DXVECTOR4(x1		,y1+dy		,0.f,	1.f), D3DXVECTOR2(0.f	,1.f),
-		D3DXVECTOR4(x1+dx	,y1+dy		,0.f,	1.f), D3DXVECTOR2(1.f	,1.f),
-	};
-	D3D1x_BUFFER_DESC bdesc=
-	{
-        4*sizeof(Vertext),
-        D3D1x_USAGE_DYNAMIC,
-        D3D1x_BIND_VERTEX_BUFFER,
-        D3D1x_CPU_ACCESS_WRITE,
-        0
-	};
-    D3D1x_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-    InitData.pSysMem = vertices;
-    InitData.SysMemPitch = sizeof(Vertext);
-    InitData.SysMemSlicePitch = 0;
-	ID3D1xBuffer* m_pVertexBuffer;
-	hr=m_pd3dDevice->CreateBuffer(&bdesc,&InitData,&m_pVertexBuffer);
-	UINT stride = sizeof(Vertext);
-	UINT offset = 0;
-    UINT Strides[1];
-    UINT Offsets[1];
-    Strides[0] = 0;
-    Offsets[0] = 0;
-	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
-												1,					// the number of buffers in the array
-												&m_pVertexBuffer,	// the array of vertex buffers
-												&stride,			// array of stride values, one for each buffer
-												&offset);			// array of offset values, one for each buffer
-	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
-	hr=ApplyPass(tech->GetPassByIndex(0));
-	m_pImmediateContext->Draw(4,0);
-	SAFE_RELEASE(m_pVertexBuffer);
-	SAFE_RELEASE(m_pBufferVertexDecl);
-}
 
 // Stored states
 static ID3D11DepthStencilState* m_pDepthStencilStateStored11=NULL;
@@ -1014,8 +803,6 @@ void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
     SAFE_RELEASE( m_pBlendStateStored11 );
     SAFE_RELEASE( m_pSamplerStateStored11 );
 }
-
-
 
 int simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
 {

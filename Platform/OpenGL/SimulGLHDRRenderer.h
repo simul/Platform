@@ -23,9 +23,9 @@ public:
 	void SetBufferSize(int w,int h);
 	void RestoreDeviceObjects();
 	void InvalidateDeviceObjects();
-	bool StartRender();
-	bool FinishRender();
-	void RenderGlowTexture();
+	bool StartRender(void *context);
+	bool FinishRender(void *context);
+	void RenderGlowTexture(void *context);
 protected:
 	FramebufferGL *framebuffer;
 	FramebufferGL glow_fb;

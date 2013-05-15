@@ -38,16 +38,16 @@ public:
 	void NoDepth();
 	/// Activate / deactivate the FBO as a render target
 	/// The FBO needs to be deactivated when using the associated textures.
-	void Activate();
+	void Activate(void *context);
 	/// Activate rendering to a viewport
-	void Activate(int x,int y,int w,int h);
-	void Deactivate();
+	void Activate(void *context,int x,int y,int w,int h);
+	void Deactivate(void *context);
 	void CopyDepthFromFramebuffer();
-	void Clear(float r,float g,float b,float a,int mask=0);
-	void DeactivateAndRender(bool blend);
-	void Render(bool blend);
+	void Clear(void*,float r,float g,float b,float a,int mask=0);
+	void DeactivateAndRender(void *,bool blend);
+	void Render(void *,bool blend);
 	//void DrawQuad(int w, int h);
-	void DrawQuad();
+	void DrawQuad(void *context);
 	// Get the dimension of the surface
 	inline int GetWidth()
 	{

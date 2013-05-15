@@ -42,11 +42,12 @@ public:
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
 	bool Destroy();
-	bool RenderSky(bool buffered,bool is_cubemap);
-	void RenderLateCloudLayer(bool );
-	void RenderPrecipitation();
-	void RenderLightning();
-	bool RenderCubemap();
+	bool RenderSky(void*,bool buffered,bool is_cubemap);
+	void RenderLateCloudLayer(void *context,bool );
+	void RenderPrecipitation(void *context);
+	void RenderLightning(void *context);
+	bool RenderCubemap(void *context);
+	void SaveCubemapToFile(const char *filename);
 	void *GetCubemap();
 	//! Perform the once-per-frame time update.
 	void Update();
@@ -77,7 +78,6 @@ protected:
 	//! The size of the screen:
 	int ScreenWidth,ScreenHeight;
 	ID3D1xDevice*					m_pd3dDevice;
-	ID3D1xDeviceContext *			m_pImmediateContext;
 	
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	ID3D1xEffect*						m_pTonemapEffect;

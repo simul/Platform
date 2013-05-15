@@ -20,7 +20,7 @@ public:
 	void RecompileShaders();
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
-	void Render();
+	void Render(void*);
 private:
 	void MakeTextures();
 	GLuint texArray;

@@ -69,8 +69,8 @@ float4 PS_Loss(vertexOutput IN) : SV_TARGET
 	float altTexc		=(IN.texc.x*texSize.x-texelOffset)/(texSize.x-1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
-	float maxd			=min(spaceDistKm,distKm);
-	float mind			=min(spaceDistKm,prevDistKm);
+	float maxd			=min(spaceDistKm,distanceKm);
+	float mind			=min(spaceDistKm,prevDistanceKm);
 	float dist			=0.5*(mind+maxd);
 	float stepLengthKm	=max(0.0,maxd-mind);
 	float y				=planetRadiusKm+viewAltKm+dist*sin_e;
@@ -96,14 +96,14 @@ float4 PS_Loss(vertexOutput IN) : SV_TARGET
 float4 PS_Insc(vertexOutput IN) : SV_TARGET
 {
 	float4 previous_insc	=texture_nearest(input_texture,IN.texc.xy);
-	float3 previous_loss	=texture_nearest(loss_texture,float3(IN.texc.xy,pow(distKm/maxDistanceKm,0.5))).rgb;// should adjust texc - we want the PREVIOUS loss!
+	float3 previous_loss	=texture_nearest(loss_texture,float3(IN.texc.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;// should adjust texc - we want the PREVIOUS loss!
 	float sin_e			=clamp(1.0-2.0*(IN.texc.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(IN.texc.x*texSize.x-texelOffset)/(texSize.x-1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
-	float maxd			=min(spaceDistKm,distKm);
-	float mind			=min(spaceDistKm,prevDistKm);
+	float maxd			=min(spaceDistKm,distanceKm);
+	float mind			=min(spaceDistKm,prevDistanceKm);
 	float dist			=0.5*(mind+maxd);
 	float stepLengthKm	=max(0.0,maxd-mind);
 	float y				=planetRadiusKm+viewAltKm+dist*sin_e;
@@ -160,15 +160,15 @@ vec3 getSkylight(float alt_km)
 float4 PS_Skyl(vertexOutput IN) : SV_TARGET
 {
 	vec4 previous_skyl	=texture(input_texture,IN.texc.xy);
-	vec3 previous_loss	=texture(loss_texture,vec3(IN.texc.xy,pow(distKm/maxDistanceKm,0.5))).rgb;
+	vec3 previous_loss	=texture(loss_texture,vec3(IN.texc.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;
 	// should adjust texc - we want the PREVIOUS loss!
 	float sin_e			=clamp(1.0-2.0*(IN.texc.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(IN.texc.x*texSize.x-texelOffset)/(texSize.x-1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
-	float maxd			=min(spaceDistKm,distKm);
-	float mind			=min(spaceDistKm,prevDistKm);
+	float maxd			=min(spaceDistKm,distanceKm);
+	float mind			=min(spaceDistKm,prevDistanceKm);
 	float dist			=0.5*(mind+maxd);
 	float stepLengthKm	=max(0.0,maxd-mind);
 	float y				=planetRadiusKm+viewAltKm+dist*sin_e;

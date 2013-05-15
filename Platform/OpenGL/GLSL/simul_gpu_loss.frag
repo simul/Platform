@@ -15,8 +15,8 @@ void main(void)
 	float altTexc		=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
-	float maxd			=min(spaceDistKm,distKm);
-	float mind			=min(spaceDistKm,prevDistKm);
+	float maxd			=min(spaceDistKm,distanceKm);
+	float mind			=min(spaceDistKm,prevDistanceKm);
 	float dist			=0.5*(mind+maxd);
 	float stepLengthKm	=max(0.0,maxd-mind);
 	float y				=planetRadiusKm+viewAltKm+dist*sin_e;
@@ -34,6 +34,5 @@ void main(void)
 	loss.rgb			=exp(-extinction*stepLengthKm);
 	loss.a				=(loss.r+loss.g+loss.b)/3.0;
 	loss				*=previous_loss;
-	
     outColor			=loss;
 }

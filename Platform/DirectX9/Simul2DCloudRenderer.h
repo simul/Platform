@@ -58,8 +58,8 @@ public:
 	const char *GetDebugText() const;
 	//! Call this to draw the clouds, including any illumination by lightning.
 	//! On DX9, depth_testing and default_fog are ignored for now.
-	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
-	void RenderCrossSections(int width,int height);
+	bool Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
+	void RenderCrossSections(void *,int width,int height);
 #if defined(XBOX) || defined(DOXYGEN)
 	//! Call this once per frame to set the matrices (X360 only).
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
@@ -83,9 +83,10 @@ public:
 	}
 	bool IsYVertical() const{return y_vertical;}
 protected:
+	virtual void DrawLines(void*,VertexXyzRgba *,int ,bool ){}
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void*);
 	void EnsureCorrectIlluminationTextureSizes(){}
 	void EnsureIlluminationTexturesAreUpToDate(){}
 	void EnsureTextureCycle();
@@ -125,7 +126,7 @@ protected:
 	D3DXVECTOR4					cam_pos;
 	D3DXMATRIX					world,view,proj;
 
-	virtual bool CreateNoiseTexture(bool override_file=false);
+	virtual bool CreateNoiseTexture(void *,bool override_file=false);
 	bool CreateImageTexture();
 	bool MakeCubemap(); // not ready yet
 	float texture_scale;

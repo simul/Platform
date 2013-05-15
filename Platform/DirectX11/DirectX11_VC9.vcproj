@@ -51,6 +51,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
+				ForcedIncludeFiles="Simul/UseDlls.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -131,6 +132,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
+				ForcedIncludeFiles="Simul/UseDlls.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -314,20 +316,6 @@
 		</Configuration>
 	</Configurations>
 	<References>
-		<ProjectReference
-			ReferencedProjectIdentifier="{BA686093-89A1-438D-948A-34ECF718D106}"
-			CopyLocal="false"
-			CopyLocalDependencies="false"
-			CopyLocalSatelliteAssemblies="false"
-			RelativePathToProject=".\Clouds\Clouds_VC9.vcproj"
-		/>
-		<ProjectReference
-			ReferencedProjectIdentifier="{CC71B070-12C2-45C9-894A-A9CDDC1F3FA4}"
-			CopyLocal="false"
-			CopyLocalDependencies="false"
-			CopyLocalSatelliteAssemblies="false"
-			RelativePathToProject=".\Terrain\Terrain_VC9.vcproj"
-		/>
 	</References>
 	<Files>
 		<Filter
@@ -546,6 +534,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\CrossPlatform\simul_2d_clouds.hs"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\simul_clouds.fx"
 				>
 			</File>
@@ -617,6 +609,14 @@
 			>
 			<File
 				RelativePath=".\DirectX11.rc"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="CrossPlatform"
+			>
+			<File
+				RelativePath="..\CrossPlatform\CppSl.hs"
 				>
 			</File>
 		</Filter>

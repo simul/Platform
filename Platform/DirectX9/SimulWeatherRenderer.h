@@ -61,13 +61,13 @@ public:
 	//! Call this when the 3D device has been lost.
 	void InvalidateDeviceObjects();
 	//! Call this to draw the sky and clouds.
-	bool RenderSky(bool buffer,bool is_cubemap);
+	bool RenderSky(void *,bool buffer,bool is_cubemap);
 	//! Call this to draw the clouds after the main scene.
-	void RenderLateCloudLayer(bool buf);
+	void RenderLateCloudLayer(void *context,bool buf);
 	//! Call this to draw lightning.
-	void RenderLightning();
+	void RenderLightning(void *context);
 	//! Call this to draw rain etc.
-	void RenderPrecipitation();
+	void RenderPrecipitation(void *context);
 	//! Perform the once-per-frame time update.
 	void Update(float dt);
 #if defined(XBOX) || defined(DOXYGEN)
@@ -99,7 +99,6 @@ public:
 protected:
 	Framebuffer framebuffer;
 	Framebuffer lowdef_framebuffer;
-	void RenderLateCloudLayer(int buffer_index,bool buf);
 	bool Restore3DCloudObjects();
 	bool Restore2DCloudObjects();
 	//! The size of the 2D buffer the sky is rendered to.

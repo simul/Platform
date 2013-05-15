@@ -186,12 +186,12 @@ int SimulSkyRenderer::CalcScreenPixelHeight()
 	return backBufferDesc.Height;
 }
 
-void SimulSkyRenderer::DrawLines(Vertext *lines,int vertex_count,bool strip)
+void SimulSkyRenderer::DrawLines(void*,Vertext *lines,int vertex_count,bool strip)
 {
 	RT::DrawLines((VertexXyzRgba*)lines,vertex_count,strip);
 }
 
-void SimulSkyRenderer::PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx,int offsety)
+void SimulSkyRenderer::PrintAt3dPos(void*,const float *p,const char *text,const float* colr,int offsetx,int offsety)
 {
 	RT::PrintAt3dPos(p,text,colr,offsetx,offsety);
 }
@@ -623,7 +623,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 }
 float sun_angular_size=3.14159f/180.f/2.f;
 
-void SimulSkyRenderer::RenderSun(float exposure_hint)
+void SimulSkyRenderer::RenderSun(void *,float exposure_hint)
 {
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
@@ -714,7 +714,7 @@ void SimulSkyRenderer::EnsureTextureCycle()
 	}
 }
 
-bool SimulSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
+bool SimulSkyRenderer::RenderPlanet(void* ,void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	if(do_lighting)
@@ -738,7 +738,7 @@ bool SimulSkyRenderer::RenderPlanet(void* tex,float rad,const float *dir,const f
 	HRESULT hr=RenderAngledQuad(planet_dir,planet_angular_size);
 	return hr==S_OK;
 }
-bool SimulSkyRenderer::RenderFades(int w,int h)
+bool SimulSkyRenderer::RenderFades(void *,int w,int h)
 {
 	HRESULT hr=S_OK;
 	int size=w/4;
@@ -795,7 +795,7 @@ bool SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)
 	return (hr==S_OK);
 }*/
 
-bool SimulSkyRenderer::RenderPointStars()
+bool SimulSkyRenderer::RenderPointStars(void *)
 {
 	PIXBeginNamedEvent(0xFF000FFF,"SimulSkyRenderer::RenderPointStars");
 	HRESULT hr=S_OK;
@@ -912,7 +912,7 @@ bool SimulSkyRenderer::RenderTextureStars()
 	return (hr==S_OK);
 }
 
-bool SimulSkyRenderer::Render2DFades()
+bool SimulSkyRenderer::Render2DFades(void *)
 {
 	// Not needed if called from Render():
 	//m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
@@ -928,30 +928,30 @@ bool SimulSkyRenderer::Render2DFades()
 	m_pSkyEffect->SetVector(texelScale,&sc);
 	float atc=GetAltitudeTextureCoordinate();
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
-	loss_2d.Activate();
+	loss_2d.Activate(NULL);
 	DrawFullScreenQuad(m_pd3dDevice,m_pSkyEffect);
-	loss_2d.Deactivate();
+	loss_2d.Deactivate(NULL);
 	m_pSkyEffect->SetTexture(fadeTexture,inscatter_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,inscatter_textures[1]);
-	inscatter_2d.Activate();
+	inscatter_2d.Activate(NULL);
 	DrawFullScreenQuad(m_pd3dDevice,m_pSkyEffect);
-	inscatter_2d.Deactivate();
+	inscatter_2d.Deactivate(NULL);
 	
 	m_pSkyEffect->SetTexture(fadeTexture,skylight_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,skylight_textures[1]);
-	skylight_2d.Activate();
+	skylight_2d.Activate(NULL);
 	DrawFullScreenQuad(m_pd3dDevice,m_pSkyEffect);
-	skylight_2d.Deactivate();
+	skylight_2d.Deactivate(NULL);
 	return true;
 }
 
-bool SimulSkyRenderer::Render(bool blend)
+bool SimulSkyRenderer::Render(void *context,bool blend)
 {
 	interp_at_last_render=skyKeyframer->GetInterpolation();
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
 	m_pSkyEffect->SetFloat	(skyInterp			,skyKeyframer->GetInterpolation());
 	EnsureTexturesAreUpToDate();
-	Render2DFades();
+	Render2DFades(context);
 	PIXBeginNamedEvent(0xFF00FFFF,"SimulSkyRenderer::Render");
 	HRESULT hr=S_OK;
 #ifndef XBOX

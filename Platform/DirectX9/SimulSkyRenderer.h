@@ -60,18 +60,18 @@ public:
 	void						RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
 	void						InvalidateDeviceObjects();
-	bool						RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void						RenderSun(float exposure_hint);
+	bool						RenderPlanet(void*,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	void						RenderSun(void *context,float exposure_hint);
 	//! Get the transform that goes from declination/right-ascension to azimuth and elevation.
 	//bool						GetSiderealTransform(D3DXMATRIX *world);
 	//! Render the stars, as points.
-	bool						RenderPointStars();
+	bool						RenderPointStars(void *);
 	//! Render the stars, as a background.
 	bool						RenderTextureStars();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
-	bool						Render(bool blend);
+	bool						Render(void *,bool blend);
 	//! Draw the fade textures to screen
-	bool						RenderFades(int w,int h);
+	bool						RenderFades(void *,int w,int h);
 #ifdef XBOX
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
@@ -108,10 +108,10 @@ protected:
 	void EnsureTexturesAreUpToDate();
 	void EnsureTextureCycle();
 	int CalcScreenPixelHeight();
-	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
-	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
+	void DrawLines(void*,Vertext *lines,int vertex_count,bool strip=false);
+	void PrintAt3dPos(void*,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 	int screen_pixel_height;
-	bool Render2DFades();
+	bool Render2DFades(void *context);
 	bool y_vertical;
 	float timing;
 	D3DFORMAT sky_tex_format;

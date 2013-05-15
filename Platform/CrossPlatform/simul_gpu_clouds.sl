@@ -1,4 +1,4 @@
-uniform_buffer GpuCloudConstants R2
+uniform_buffer GpuCloudConstants R8
 {
 	uniform mat4 transformMatrix;
 	uniform mat4 vertexMatrix;

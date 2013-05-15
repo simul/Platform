@@ -9,9 +9,9 @@
 #include <d3dx11.h>
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/BaseLightningRenderer.h"
-#include "Simul/Platform/OpenGL/Export.h"
+#include "Simul/Platform/DirectX11/Export.h"
 
-class SimulLightningRendererDX11: public simul::clouds::BaseLightningRenderer
+SIMUL_DIRECTX11_EXPORT_CLASS SimulLightningRendererDX11: public simul::clouds::BaseLightningRenderer
 {
 public:
 	SimulLightningRendererDX11(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk);
@@ -20,6 +20,6 @@ public:
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-	void Render();
+	void Render(void *context);
 protected:
 };

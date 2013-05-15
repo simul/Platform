@@ -33,22 +33,25 @@ Profiler &Profiler::GetGlobalProfiler()
 	return GlobalProfiler;
 }
 
+Profiler::~Profiler()
+{
+	Uninitialize();
+}
+
 void Profiler::Uninitialize()
 {
 	profiles.clear();
     this->device = NULL;
-    this->context = NULL;
     enabled=true;
 }
 
-void Profiler::Initialize(ID3D11Device* device, ID3D11DeviceContext* immContext)
+void Profiler::Initialize(ID3D11Device* device)
 {
     this->device = device;
-    this->context = immContext;
     enabled=true;
 }
 
-void Profiler::StartProfile(const std::string& name)
+void Profiler::StartProfile(ID3D11DeviceContext* context,const std::string& name)
 {
     if(!enabled||!device)
         return;
@@ -79,7 +82,7 @@ void Profiler::StartProfile(const std::string& name)
     profileData.QueryStarted = TRUE;
 }
 
-void Profiler::EndProfile(const std::string& name)
+void Profiler::EndProfile(ID3D11DeviceContext* context,const std::string& name)
 {
     if(!enabled||!device)
         return;
@@ -106,7 +109,7 @@ template<typename T> inline std::string ToString(const T& val)
     return stream.str();
 }
 
-void Profiler::EndFrame()
+void Profiler::EndFrame(ID3D11DeviceContext* context)
 {
     if(!enabled)
         return;
@@ -168,14 +171,16 @@ float Profiler::GetTime(const std::string &name) const
 
 // == ProfileBlock ================================================================================
 
-ProfileBlock::ProfileBlock(const std::string& name) : name(name)
+ProfileBlock::ProfileBlock(ID3D11DeviceContext* c,const std::string& name)
+	:name(name)
+	,context(c)
 {
-    Profiler::GetGlobalProfiler().StartProfile(name);
+    Profiler::GetGlobalProfiler().StartProfile(context,name);
 }
 
 ProfileBlock::~ProfileBlock()
 {
-    Profiler::GetGlobalProfiler().EndProfile(name);
+    Profiler::GetGlobalProfiler().EndProfile(context,name);
 }
 
 float ProfileBlock::GetTime() const

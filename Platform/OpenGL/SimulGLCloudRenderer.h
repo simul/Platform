@@ -36,9 +36,9 @@ public:
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
 	//! Render the clouds.
-	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
+	bool Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
 	//! Show the cross sections on-screen.
-	void RenderCrossSections(int width,int height);
+	void RenderCrossSections(void *,int width,int height);
 	void SetLossTexture(void *);
 	void SetInscatterTextures(void *,void *);
 	
@@ -62,11 +62,11 @@ public:
 	void New();
 protected:
 	void SwitchShaders(GLuint program);
-	void DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip);
+	void DrawLines(void *,VertexXyzRgba *vertices,int vertex_count,bool strip);
 	bool init;
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void *);
 	void EnsureCorrectIlluminationTextureSizes();
 	void EnsureIlluminationTexturesAreUpToDate();
 	void EnsureTextureCycle();
@@ -118,7 +118,7 @@ unsigned short *pIndices;
 	GLuint		sphere_ibo;
 
 	void CreateVolumeNoise();
-	virtual bool CreateNoiseTexture(bool override_file=false);
+	virtual bool CreateNoiseTexture(void *,bool override_file=false);
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();
 
