@@ -372,7 +372,11 @@ DepthStencilState EnableDepth
 {
 	DepthEnable = TRUE;
 	DepthWriteMask = ALL;
+#ifdef REVERSE_DEPTH
 	DepthFunc = GREATER_EQUAL;
+#else
+	DepthFunc = LESS_EQUAL;
+#endif
 }; 
 BlendState DontBlend
 {
@@ -479,8 +483,8 @@ technique11 simul_stars
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Stars()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Stars()));
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetDepthStencilState( EnableDepth, 0 );
+		SetBlendState(DoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
     }
 }
 
@@ -492,13 +496,8 @@ technique11 simul_sun
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
-
 		SetDepthStencilState( EnableDepth, 0 );
 		SetBlendState(DoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
-
-//		SetDepthStencilState( DisableDepth, 0 );
-//		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
 

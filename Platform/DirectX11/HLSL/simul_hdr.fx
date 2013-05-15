@@ -100,9 +100,11 @@ DepthStencilState EnableDepth
 {
 	DepthEnable = TRUE;
 	DepthWriteMask = ALL;
+#ifdef REVERSE_DEPTH
+	DepthFunc = GREATER_EQUAL;
+#else
 	DepthFunc = LESS_EQUAL;
-	// Need to swap if depth buffer is reversed
-//	DepthFunc = GREATER_EQUAL;
+#endif
 };
 
 DepthStencilState DisableDepth
@@ -161,12 +163,9 @@ technique11 simul_sky_over_stars
     pass p0
     {
 		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		
-		// Optimisation
-//		SetDepthStencilState( EnableDepth, 0 );
-//		SetBlendState(DoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
-
+//		SetDepthStencilState( DisableDepth, 0 );
+		SetDepthStencilState( EnableDepth, 0 );
+		SetBlendState(DoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
 		//SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,TonemapVS()));
