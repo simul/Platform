@@ -278,6 +278,10 @@ svertexOutput VS_Sun(svertexInput IN)
 {
     svertexOutput OUT;
     OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
+
+	// Set to far plane so can use depth test as want this geometry effectively at infinity
+	OUT.hPosition.z = 0.0f; 
+
     OUT.tex=IN.position.xy;
     return OUT;
 }
@@ -304,6 +308,10 @@ svertexOutput VS_Stars(svertexInput IN)
 {
     svertexOutput OUT;
     OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
+
+	// Set to far plane so can use depth test as want this geometry effectively at infinity
+	OUT.hPosition.z = 0.0f; 
+
     OUT.tex=IN.tex;
     return OUT;
 }
@@ -364,6 +372,7 @@ DepthStencilState EnableDepth
 {
 	DepthEnable = TRUE;
 	DepthWriteMask = ALL;
+	DepthFunc = GREATER_EQUAL;
 }; 
 BlendState DontBlend
 {
@@ -390,7 +399,7 @@ technique11 simul_sky
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-	//	SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
+		SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Main()));
@@ -484,8 +493,12 @@ technique11 simul_sun
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+
+		SetDepthStencilState( EnableDepth, 0 );
+		SetBlendState(DoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
+
+//		SetDepthStencilState( DisableDepth, 0 );
+//		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
 

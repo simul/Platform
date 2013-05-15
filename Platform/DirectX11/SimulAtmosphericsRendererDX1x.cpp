@@ -169,6 +169,7 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMA
 
 void SimulAtmosphericsRendererDX1x::StartRender(void *context)
 {
+
 	if(!framebuffer)
 		return;
 	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
@@ -207,6 +208,7 @@ void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
 	simul::dx11::setParameter(effect,"mieRayleighRatio",ratio);
 	simul::dx11::setParameter(effect,"lightDir",light_dir);
 	simul::dx11::setParameter(effect,"hazeEccentricity",skyInterface->GetMieEccentricity());
+
 	{
 		// Lock the constant buffer so it can be written to.
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -221,8 +223,10 @@ void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
 		// Unlock the constant buffer.
 		m_pImmediateContext->Unmap(constantBuffer, 0);
 	}
-	m_pImmediateContext->VSSetConstantBuffers(0,1,&constantBuffer);
-	m_pImmediateContext->PSSetConstantBuffers(0,1,&constantBuffer);
+	
+	m_pImmediateContext->VSSetConstantBuffers(9,1,&constantBuffer);
+	m_pImmediateContext->PSSetConstantBuffers(9,1,&constantBuffer);
+	
 	ApplyPass(m_pImmediateContext,technique->GetPassByIndex(0));
 	framebuffer->Render(context,false);
 	imageTexture->SetResource(NULL);

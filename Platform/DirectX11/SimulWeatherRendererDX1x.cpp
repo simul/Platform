@@ -315,7 +315,7 @@ bool SimulWeatherRendererDX1x::RenderSky(void *context,bool buffered,bool is_cub
 	if(buffered&&baseFramebuffer&&!is_cubemap)
 	{
 		baseFramebuffer->Activate(context);
-		baseFramebuffer->Clear(context,0.f,0.2f,0.f,1.f);
+		baseFramebuffer->Clear(context,0.f,0.0f,0.f,1.f);
 	}
 	if(baseSkyRenderer)
 	{

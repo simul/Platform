@@ -87,8 +87,8 @@
 		}
 	};
 #else
-	#define R0 : register(b0)
-	#define R1 : register(b10)
+	#define R0 : register(b10)
+	#define R1 : register(b11)
 	#define R2 : register(b2)
 	#define R8 : register(b8)
 	#define R9 : register(b9)

@@ -1,6 +1,6 @@
 
 #include "CppHlsl.hlsl"
-cbuffer AtmosphericsUniforms R0
+cbuffer AtmosphericsUniforms R9
 {
 	float3 lightDir;
 	float4 mieRayleighRatio;
