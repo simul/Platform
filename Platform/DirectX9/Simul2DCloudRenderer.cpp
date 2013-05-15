@@ -125,9 +125,7 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	cloudKeyframer->InitKeyframesFromClouds();
 
 	helper=new simul::clouds::Cloud2DGeometryHelper();
-	helper->SetYVertical(true);
-	static float max_distance=500000.f;
-	helper->Initialize(8,max_distance);
+	helper->Initialize(8);
 	helper->SetGrid(12,24);
 	
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
@@ -290,8 +288,9 @@ bool Simul2DCloudRenderer::Render(void *context,bool cubemap,void *depth_alpha_t
 	m_pCloudEffect->SetTexture(noiseTexture					,noise_texture);
 	m_pCloudEffect->SetTexture(imageTexture					,image_texture);
 
+	float max_cloud_distance=400000.f;
 	// Mess with the proj matrix to extend the far clipping plane:
-	 FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
+	 FixProjectionMatrix(proj,max_cloud_distance*1.1f,false);
 		
 	//set up matrices
 	D3DXMATRIX tmp1, tmp2;
@@ -328,8 +327,7 @@ static float light_mult=.03f;
 	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
 
 	static float sc=7.f;
-	helper->Set2DNoiseTexturing(-0.8f,1.f,1.f);
-	helper->Make2DGeometry(GetCloudInterface());
+	helper->Make2DGeometry(GetCloudInterface(),true,false,max_cloud_distance);
 	float image_scale=1.f/texture_scale;
 	static float image_effect=0.9f;
 	D3DXVECTOR4 interp_vec(cloudKeyframer->GetInterpolation(),1.f-cloudKeyframer->GetInterpolation(),0,0);
@@ -362,7 +360,6 @@ static float light_mult=.03f;
 	simul::math::Vector3 pos;
 	simul::sky::float4 loss2,inscatter2;
 	int i=0;
-	const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 	size_t qs_vert=0;
 	for(std::vector<simul::clouds::Cloud2DGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
 		j!=helper->GetQuadStrips().end();j++,i++)
@@ -374,19 +371,16 @@ static float light_mult=.03f;
 		
 		bool bit=false;
 
-		for(size_t k=0;k<(j)->num_vertices;k++,qs_vert++,v++,bit=!bit)
+		for(size_t k=0;k<(j)->indices.size();k++,qs_vert++,v++,bit=!bit)
 		{
 			Vertex2D_t &vertex=vertices[v];
-			const simul::clouds::Cloud2DGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
+			const simul::clouds::Cloud2DGeometryHelper::Vertex &V=helper->GetVertices()[(j)->indices[k]];
 			
 			simul::sky::float4 inscatter;
 			pos.Define(V.x,V.y,V.z);
 			if(v>=MAX_VERTICES)
 				break;
 			vertex.position=float3(V.x,V.y,V.z);
-			vertex.texCoords=float2(sc*V.cloud_tex_x,sc*V.cloud_tex_y);
-			vertex.texCoordNoise=float2(V.noise_tex_x,V.noise_tex_y);
-			vertex.imageCoords=float2(vertex.texCoords.x*image_scale,vertex.texCoords.y*image_scale);
 		}
 		if(v>=MAX_VERTICES)
 			break;

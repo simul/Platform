@@ -55,33 +55,33 @@ SamplerState fadeSamplerState
 
 struct vertexInput
 {
-    float3 position		: POSITION;
+    float3 position			: POSITION;
 	// Per-instance data:
-	vec2 noiseOffset	: TEXCOORD0;
-	float noiseScale	: TEXCOORD1;
-	float layerFade		: TEXCOORD2;
-	float layerDistance	: TEXCOORD3;
+	vec2 noiseOffset		: TEXCOORD0;
+	float noiseScale		: TEXCOORD1;
+	float layerFade			: TEXCOORD2;
+	float layerDistance		: TEXCOORD3;
 };
 
 struct vertexOutput
 {
     float3 position			: POSITION;
 	// Per-instance data:
-	vec2 noiseOffset	: TEXCOORD0;
-	float noiseScale	: TEXCOORD1;
-	float layerFade		: TEXCOORD2;
-	float layerDistance	: TEXCOORD3;
+	vec2 noiseOffset		: TEXCOORD0;
+	float noiseScale		: TEXCOORD1;
+	float layerFade			: TEXCOORD2;
+	float layerDistance		: TEXCOORD3;
 };
 
 struct geomOutput
 {
-    float4 hPosition			: SV_POSITION;
-    float2 noise_texc			: TEXCOORD0;
-    float4 texCoords			: TEXCOORD1;
-	float3 view					: TEXCOORD2;
-    float3 texCoordLightning	: TEXCOORD3;
-    float2 fade_texc			: TEXCOORD4;
-	float layerFade				: TEXCOORD5;
+    float4 hPosition		: SV_POSITION;
+    float2 noise_texc		: TEXCOORD0;
+    float4 texCoords		: TEXCOORD1;
+	float3 view				: TEXCOORD2;
+    float3 texCoordLightning: TEXCOORD3;
+    float2 fade_texc		: TEXCOORD4;
+	float layerFade			: TEXCOORD5;
 };
 
 vertexOutput VS_Main(vertexInput IN)

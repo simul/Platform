@@ -534,6 +534,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\CrossPlatform\simul_2d_clouds.hs"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\simul_clouds.fx"
 				>
 			</File>
@@ -605,6 +609,14 @@
 			>
 			<File
 				RelativePath=".\DirectX11.rc"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="CrossPlatform"
+			>
+			<File
+				RelativePath="..\CrossPlatform\CppSl.hs"
 				>
 			</File>
 		</Filter>

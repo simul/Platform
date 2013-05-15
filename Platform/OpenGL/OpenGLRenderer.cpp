@@ -22,27 +22,25 @@
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
-	:width(0)
-	,height(0)
+	:ScreenWidth(0)
+	,ScreenHeight(0)
 	,cam(NULL)
 	,ShowFlares(true)
 	,ShowFades(false)
 	,ShowTerrain(true)
 	,ShowCloudCrossSections(false)
-	,celestial_display(false)
-	,y_vertical(false)
+	,CelestialDisplay(false)
 	,UseHdrPostprocessor(true)
 	,ShowOSD(false)
 	,ShowWater(true)
 	,ReverseDepth(false)
 	,MixCloudsAndTerrain(false)
 {
-	simulHDRRenderer=new SimulGLHDRRenderer(width,height);
-	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,width,height);
+	simulHDRRenderer=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
+	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,ScreenWidth,ScreenHeight);
 	simulOpticsRenderer=new SimulOpticsRendererGL();
 	simulTerrainRenderer=new SimulGLTerrainRenderer();
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
-	SetYVertical(y_vertical);
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 }
 
@@ -72,9 +70,10 @@ void OpenGLRenderer::paintGL()
     glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixf(cam->MakeViewMatrix(false));
 	glMatrixMode(GL_PROJECTION);
-	static float max_dist=250000.f;
-	glLoadMatrixf(cam->MakeProjectionMatrix(1.f,max_dist,(float)width/(float)height,y_vertical));
-	glViewport(0,0,width,height);
+	static float nearPlane=0.01f;
+	static float farPlane=250000.f;
+	glLoadMatrixf(cam->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight,false));
+	glViewport(0,0,ScreenWidth,ScreenHeight);
 	if(simulWeatherRenderer.get())
 	{
 		simulWeatherRenderer->Update();
@@ -125,25 +124,25 @@ ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(context);
 ERROR_CHECK
-		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&celestial_display)
-			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(context,width,height);
+		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(context,ScreenWidth,ScreenHeight);
 		
-		SetTopDownOrthoProjection(width,height);
+		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(context,width,height);
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(context,ScreenWidth,ScreenHeight);
 		if(ShowCloudCrossSections)
 		{
 			if(simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 			{
-				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(context,width,height);
+				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(context,ScreenWidth,ScreenHeight);
 			}
 			if(simulWeatherRenderer->Get2DCloudRenderer()&&simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
 			{
-				simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(context,width,height);
+				simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(context,ScreenWidth,ScreenHeight);
 			}
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(NULL,width,height);
+			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(NULL,ScreenWidth,ScreenHeight);
 	}
 	renderUI();
 	glPopAttrib();
@@ -158,7 +157,7 @@ void OpenGLRenderer::renderUI()
 	glBindTexture(GL_TEXTURE_2D,0);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_1D);
-	SetOrthoProjection(width,height);
+	SetOrthoProjection(ScreenWidth,ScreenHeight);
 	static char text[500];
 	float y=12.f;
 	static int line_height=16;
@@ -183,20 +182,15 @@ void OpenGLRenderer::renderUI()
 		timer.StartTime();
 	}
 }
-	
-void OpenGLRenderer::SetCelestialDisplay(bool val)
-{
-	celestial_display=val;
-}
 
 void OpenGLRenderer::resizeGL(int w,int h)
 {
-	width=w;
-	height=h;
+	ScreenWidth=w;
+	ScreenHeight=h;
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->SetScreenSize(width,height);
+		simulWeatherRenderer->SetScreenSize(ScreenWidth,ScreenHeight);
 	if(simulHDRRenderer)
-		simulHDRRenderer->SetBufferSize(width,height);
+		simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
 }
 
 void OpenGLRenderer::initializeGL()
@@ -245,15 +239,6 @@ void OpenGLRenderer::initializeGL()
 void OpenGLRenderer::SetCamera(simul::camera::Camera *c)
 {
 	cam=c;
-}
-
-void OpenGLRenderer::SetYVertical(bool y)
-{
-	y_vertical=y;
-	if(simulWeatherRenderer.get())
-		simulWeatherRenderer->SetYVertical(y);
-	//if(simulTerrainRenderer.get())
-	//	simulTerrainRenderer->SetYVertical(y_vertical);
 }
 
 void OpenGLRenderer::ReloadTextures()

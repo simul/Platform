@@ -1,4 +1,5 @@
 #include "CppHlsl.hlsl"
+#include "states.hlsl"
 cbuffer RainConstants R0
 {
 	float4x4 worldViewProj;
@@ -99,23 +100,6 @@ float4 PS_Main(vertexOutput IN): SV_TARGET
     colour*=lightColour*(0.1+HenyeyGreenstein(0.8,cos0));
     return colour;
 }
-
-DepthStencilState DisableDepth
-{
-	DepthEnable = FALSE;
-	DepthWriteMask = ZERO;
-}; 
-BlendState DoBlend
-{
-	BlendEnable[0] = TRUE;
-	SrcBlend = One;
-	DestBlend = INV_SRC_ALPHA;
-};
-BlendState DontBlend
-{
-	BlendEnable[0] = FALSE;
-};
-RasterizerState RenderNoCull { CullMode = none; };
 
 technique11 simul_rain
 {

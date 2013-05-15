@@ -77,6 +77,7 @@ void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
 	D3DXMatrixIdentity(&proj);
 	MakeMesh();
     RecompileShaders();
+
 	D3D1x_INPUT_ELEMENT_DESC decl[] = {
 		{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT	,0,0	,D3D1x_INPUT_PER_VERTEX_DATA,0},
 		{"TEXCOORD",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,12	,D3D1x_INPUT_PER_VERTEX_DATA,0},
@@ -98,6 +99,7 @@ void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
         0,
         0
 	};
+	SAFE_RELEASE(m_pVertexBuffer);
 	m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer);
 }
 
@@ -182,11 +184,12 @@ return;
 	if(cbRainConstants)
 		cbRainConstants->SetConstantBuffer(pShadingCB);
 
+	ID3D11InputLayout* previousInputLayout;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
 	UINT passes=1;
 	for(unsigned i = 0 ; i < passes ; ++i )
 	{
 		ApplyPass(m_pImmediateContext,m_hTechniqueRain->GetPassByIndex(i));
-		m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 		UINT stride = sizeof(Vertex_t);
 		UINT offset = 0;
 		UINT Strides[1];
@@ -197,7 +200,7 @@ return;
 													1,					// the number of buffers in the array
 													&m_pVertexBuffer,	// the array of vertex buffers
 													&stride,			// array of stride values, one for each buffer
-													&offset );
+													&offset);
 		m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
 		D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 		m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
@@ -207,6 +210,8 @@ return;
 	}
 	D3DXMatrixIdentity(&world);
 	PIXEndNamedEvent();
+	m_pImmediateContext->IASetInputLayout(previousInputLayout);
+	SAFE_RELEASE(previousInputLayout)
 }
 
 void SimulPrecipitationRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

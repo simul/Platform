@@ -3,11 +3,11 @@
 
 uniform_buffer EarthShadowUniforms R9
 {
-	float3 sunDir			;
-	float radiusOnCylinder	;
-	float3 earthShadowNormal;
-	float maxFadeDistance	;
-	float terminatorCosine	;
+	vec3 sunDir;
+	float radiusOnCylinder;
+	vec3 earthShadowNormal;
+	float maxFadeDistance;
+	float terminatorCosine;
 };
 
 #ifndef __cplusplus
@@ -17,6 +17,28 @@ SamplerState inscSamplerState
 	AddressU = Clamp;
 	AddressV = Mirror;
 };
+static const float transitionDistance=0.001;
+
+// This function is to determine whether the given position is in sunlight or not.
+vec3 EarthShadowLight(vec2 texc2,vec3 view)
+{
+	// Project to the world position this represents, then compare it to the shadow radius.
+	// true distance normalized to fade max.
+	float d=texc2.x*texc2.x*maxFadeDistance;
+	// Now resolve this distance on the normal to the sun direction.
+	float along=dot(sunDir.xyz,view);
+	float in_shadow=saturate(-along-terminatorCosine);
+	vec3 on_cross_section=view-along*sunDir.xyz;
+	on_cross_section*=d;
+	vec3 viewer_pos=vec3(0.0,0.0,radiusOnCylinder);
+	vec3 target_pos=viewer_pos+on_cross_section;
+	float target_radius=length(target_pos);
+
+	// Now, if target_radius<1.0, it's zero.
+	float result=clamp((target_radius-1.0+transitionDistance)/transitionDistance,0,1.0);
+	result=1.0-in_shadow*(1.0-result);
+	return vec3(result,result,result);
+}
 
 float4 EarthShadowFunction(float2 texc2,float3 view)
 {

@@ -16,6 +16,7 @@
 #include "Simul/Sky/Float4.h"
 #include <tchar.h>
 #include "CompileShaderDX1x.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 #include <string>
 typedef std::basic_string<TCHAR> tstring;
 tstring shader_path=TEXT("media/hlsl/dx11");
@@ -43,7 +44,7 @@ static bool shader_path_set	=false;
 static bool texture_path_set=false;
 static bool pipe_compiler_output=false;
 
-ID3D1xDevice		*m_pd3dDevice		=NULL;
+static ID3D1xDevice		*m_pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
 namespace simul
@@ -160,127 +161,6 @@ namespace simul
 
 	}
 }
-int UtilityRenderer::instance_count=0;
-int UtilityRenderer::screen_width=0;
-int UtilityRenderer::screen_height=0;
-D3DXMATRIX UtilityRenderer::view,UtilityRenderer::proj;
-ID3D1xEffect *UtilityRenderer::m_pDebugEffect=NULL;
-UtilityRenderer utilityRenderer;
-
-UtilityRenderer::UtilityRenderer()
-{
-	instance_count++;
-}
-
-UtilityRenderer::~UtilityRenderer()
-{
-	InvalidateDeviceObjects();
-}
-
-void UtilityRenderer::RestoreDeviceObjects(void *m_pd3dDevice)
-{
-	RecompileShaders();
-}
-
-void UtilityRenderer::RecompileShaders()
-{
-	SAFE_RELEASE(m_pDebugEffect);
-	CreateEffect(m_pd3dDevice,&m_pDebugEffect,_T("simul_debug.fx"));
-}
-
-void UtilityRenderer::InvalidateDeviceObjects()
-{
-	SAFE_RELEASE(m_pDebugEffect);
-}
-
-void UtilityRenderer::SetMatrices(D3DXMATRIX v,D3DXMATRIX p)
-{
-	view=v;
-	proj=p;
-}
-
-void UtilityRenderer::SetScreenSize(int w,int h)
-{
-	screen_width=w;
-	screen_height=h;
-}
-
-void UtilityRenderer::PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
-{
-}
-
-void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexXyzRgba *vertices,int vertex_count,bool strip)
-{
-	PIXWrapper(0xFF0000FF,"DrawLines")
-	{
-	HRESULT hr=S_OK;
-	D3DXMATRIX world, tmp1, tmp2;
-	D3DXMatrixIdentity(&world);
-	ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_direct");
-	ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
-
-	D3DXMATRIX wvp;
-	MakeWorldViewProjMatrix(&wvp,world,view,proj);
-	worldViewProj->SetMatrix(&wvp._11);
-	
-	ID3D1xBuffer *					vertexBuffer=NULL;
-#if 1
-	// Create the vertex buffer:
-	D3D1x_BUFFER_DESC desc=
-	{
-        vertex_count*sizeof(VertexXyzRgba),
-        D3D1x_USAGE_DYNAMIC,
-        D3D1x_BIND_VERTEX_BUFFER,
-        D3D1x_CPU_ACCESS_WRITE,
-        0
-	};
-    D3D1x_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-    InitData.pSysMem = vertices;
-    InitData.SysMemPitch = sizeof(VertexXyzRgba);
-	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
-
-	const D3D1x_INPUT_ELEMENT_DESC decl[] =
-    {
-        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
-    };
-	D3D1x_PASS_DESC PassDesc;
-	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
-	hr=pass->GetDesc(&PassDesc);
-
-	ID3D1xInputLayout*				m_pVtxDecl=NULL;
-	SAFE_RELEASE(m_pVtxDecl);
-	hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
-	
-	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
-	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pImmediateContext->IASetPrimitiveTopology(strip?D3D1x_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D1x_PRIMITIVE_TOPOLOGY_LINELIST);
-	UINT stride = sizeof(VertexXyzRgba);
-	UINT offset = 0;
-    UINT Strides[1];
-    UINT Offsets[1];
-    Strides[0] = stride;
-    Offsets[0] = 0;
-	m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
-												1,				// the number of buffers in the array
-												&vertexBuffer,	// the array of vertex buffers
-												&stride,		// array of stride values, one for each buffer
-												&offset);		// array of 
-	hr=ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
-	m_pImmediateContext->Draw(vertex_count,0);
-	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-	m_pImmediateContext->IASetInputLayout( previousInputLayout );
-	SAFE_RELEASE(previousInputLayout);
-	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(m_pVtxDecl);
-#endif
-	}
-}
-
 
 ID3D1xShaderResourceView* simul::dx11::LoadTexture(const TCHAR *filename)
 {
@@ -476,7 +356,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFl
 	for(int i=0;i<10000&&!ifs.good();i++);
 	if(ifs.good())
 	{
-		std::cerr<<"D3DX11CreateEffectFromBinaryFile found file "<<compiled_filename.c_str()<<std::endl;
+		//std::cerr<<"D3DX11CreateEffectFromBinaryFile found file "<<compiled_filename.c_str()<<std::endl;
 		ifs.seekg(0,std::ios_base::end);
 		size_t sz=(size_t)ifs.tellg();
 		ifs.seekg(0,std::ios_base::beg);
@@ -779,7 +659,7 @@ void BreakIfDebugging()
 }
 
 
-void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *m_pImmediateContext,const float *dr,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj
+void UtilityRenderer::RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *m_pImmediateContext,const float *dr,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj
 					  ,D3DXVECTOR3 sun_dir)
 {
 	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
@@ -903,75 +783,6 @@ void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *m_pImmedia
 	SAFE_RELEASE(m_pVtxDecl);
 }
 
-void RenderTexture(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech)
-{
-	RenderTexture(m_pd3dDevice,m_pImmediateContext,(float)x1,(float)y1,(float)dx,(float)dy,tech);
-}
-
-void RenderTexture(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech)
-{
-	struct Vertext
-	{
-		D3DXVECTOR4 pos;
-		D3DXVECTOR2 tex;
-	};
-	HRESULT hr=S_OK;
-	const D3D1x_INPUT_ELEMENT_DESC decl[] =
-	{
-		{ "POSITION",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	16,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-	};
-	D3D1x_PASS_DESC PassDesc;
-	tech->GetPassByIndex(0)->GetDesc(&PassDesc);
-	ID3D1xInputLayout *m_pBufferVertexDecl;
-	hr=m_pd3dDevice->CreateInputLayout(decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pBufferVertexDecl);
-	Vertext vertices[4] =
-	{
-		D3DXVECTOR4(x1		,y1			,0.f,	1.f), D3DXVECTOR2(0.f	,0.f),
-		D3DXVECTOR4(x1+dx	,y1			,0.f,	1.f), D3DXVECTOR2(1.f	,0.f),
-		D3DXVECTOR4(x1		,y1+dy		,0.f,	1.f), D3DXVECTOR2(0.f	,1.f),
-		D3DXVECTOR4(x1+dx	,y1+dy		,0.f,	1.f), D3DXVECTOR2(1.f	,1.f),
-	};
-	D3D1x_BUFFER_DESC bdesc=
-	{
-        4*sizeof(Vertext),
-        D3D1x_USAGE_DYNAMIC,
-        D3D1x_BIND_VERTEX_BUFFER,
-        D3D1x_CPU_ACCESS_WRITE,
-        0
-	};
-    D3D1x_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-    InitData.pSysMem = vertices;
-    InitData.SysMemPitch = sizeof(Vertext);
-    InitData.SysMemSlicePitch = 0;
-	ID3D1xBuffer* m_pVertexBuffer;
-	hr=m_pd3dDevice->CreateBuffer(&bdesc,&InitData,&m_pVertexBuffer);
-	UINT stride = sizeof(Vertext);
-	UINT offset = 0;
-    UINT Strides[1];
-    UINT Offsets[1];
-    Strides[0] = 0;
-    Offsets[0] = 0;
-	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
-												1,					// the number of buffers in the array
-												&m_pVertexBuffer,	// the array of vertex buffers
-												&stride,			// array of stride values, one for each buffer
-												&offset);			// array of offset values, one for each buffer
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
-	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
-	hr=ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
-	m_pImmediateContext->Draw(4,0);
-	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-	m_pImmediateContext->IASetInputLayout( previousInputLayout );
-	SAFE_RELEASE(previousInputLayout);
-	SAFE_RELEASE(m_pVertexBuffer);
-	SAFE_RELEASE(m_pBufferVertexDecl);
-}
 
 // Stored states
 static ID3D11DepthStencilState* m_pDepthStencilStateStored11=NULL;
@@ -1002,8 +813,6 @@ void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
     SAFE_RELEASE( m_pBlendStateStored11 );
     SAFE_RELEASE( m_pSamplerStateStored11 );
 }
-
-
 
 int simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )
 {

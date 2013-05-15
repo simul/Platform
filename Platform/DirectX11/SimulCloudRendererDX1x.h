@@ -174,14 +174,14 @@ ID3D1xEffectMatrixVariable* 	noiseMatrix		;
 ID3D1xEffectScalarVariable* 	noiseScale		;	
 ID3D1xEffectVectorVariable* 	noiseOffset		;	
 	
-
 	ID3D1xEffectShaderResourceVariable*		cloudDensity1;
 	ID3D1xEffectShaderResourceVariable*		cloudDensity2;
 	ID3D1xEffectShaderResourceVariable*		noiseTexture;
 
 	ID3D1xEffectShaderResourceVariable*		lightningIlluminationTexture;
 	ID3D1xEffectShaderResourceVariable*		skyLossTexture;
-	ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;	ID3D1xEffectShaderResourceVariable*		skylightTexture;
+	ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;
+	ID3D1xEffectShaderResourceVariable*		skylightTexture;
 
 	ID3D1xShaderResourceView*				cloudDensityResource[3];
 	ID3D1xShaderResourceView*				noiseTextureResource;

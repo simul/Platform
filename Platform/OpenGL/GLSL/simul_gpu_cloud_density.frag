@@ -1,5 +1,5 @@
 #version 140
-#include "../Glsl.h"
+#include "CppGlsl.hs"
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
 varying vec2 in_texcoord;
 

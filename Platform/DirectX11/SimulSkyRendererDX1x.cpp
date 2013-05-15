@@ -31,7 +31,7 @@ extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
 #include "Simul/Platform/DirectX11/HLSL/simul_earthshadow.hlsl"
-
+using namespace simul::dx11;
 struct Vertex_t
 {
 	float x,y,z;
@@ -604,7 +604,7 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
 	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
 	colour->SetFloatVector(sunlight);
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
-	RenderAngledQuad(m_pd3dDevice,context,sun_dir,y_vertical,sun_angular_size,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
+	UtilityRenderer::RenderAngledQuad(m_pd3dDevice,context,sun_dir,y_vertical,sun_angular_size,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
 	// Start the query
 /*d3dQuery->Begin();
 	hr=RenderAngledQuad(sun_dir,sun_angular_size);
@@ -640,7 +640,7 @@ bool SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float 
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
-	RenderAngledQuad(m_pd3dDevice,context,planet_dir,y_vertical,rad,m_pSkyEffect,m_hTechniquePlanet,view,proj
+	UtilityRenderer::RenderAngledQuad(m_pd3dDevice,context,planet_dir,y_vertical,rad,m_pSkyEffect,m_hTechniquePlanet,view,proj
 		,sun_dir);
 	return true;
 }
@@ -935,12 +935,12 @@ bool SimulSkyRendererDX1x::Render(void *context,bool blend)
 
 bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int h)
 {
-	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
-	HRESULT hr=S_OK;
 	int size=width/4;
-	if(h/(numAltitudes+2)<size)
-		size=h/(numAltitudes+2);
-
+	if(h/3<size)
+		size=h/3;
+	if(size<2)
+		return false;
+	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
 	D3DXMATRIX ident,trans;
 	D3DXMatrixIdentity(&ident);
     D3DXMatrixOrthoLH(&ident,(float)width,-(float)h,-100.f,100.f);
@@ -953,28 +953,33 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int h)
 	ID3D1xEffectTechnique*	techniqueShowFade		=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");
 	ID3D1xEffectShaderResourceVariable*	inscTexture	=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
 
-	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
-	RenderTexture(m_pd3dDevice,context,8,8,size,size,techniqueShowSky);
 	inscTexture->SetResource(loss_2d->buffer_texture_SRV);
-	RenderTexture(m_pd3dDevice,context,8,16+size,size,size,techniqueShowSky);
+	UtilityRenderer::RenderTexture(context,8,8,size,size,techniqueShowSky);
+	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
+	UtilityRenderer::RenderTexture(context,8,16+size,size,size,techniqueShowSky);
 	inscTexture->SetResource(skylight_2d->buffer_texture_SRV);
-	RenderTexture(m_pd3dDevice,context,8,24+2*size,size,size,techniqueShowSky);
+	UtilityRenderer::RenderTexture(context,8,24+2*size,size,size,techniqueShowSky);
 	int x=16+size;
+	int s=size/numAltitudes-4;
 	for(int i=0;i<numAltitudes;i++)
 	{
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
 		altitudeTexCoord->SetFloat(atc);
-		fadeTexture1->SetResource(insc_textures_SRV[0]);
-		RenderTexture(m_pd3dDevice,context,x+16+0*(size+8)	,(i)*(size+8)+8,size,size,techniqueShowFade);
-		fadeTexture1->SetResource(insc_textures_SRV[1]);
-		RenderTexture(m_pd3dDevice,context,x+16+1*(size+8)	,(i)*(size+8)+8,size,size,techniqueShowFade);
-		fadeTexture1->SetResource(loss_textures_SRV[0]);
-		RenderTexture(m_pd3dDevice,context,x+16+2*(size+8)	,(i)*(size+8)+8,size,size,techniqueShowFade);
+		fadeTexture1->SetResource(loss_textures_SRV[0]);;
+		UtilityRenderer::RenderTexture(context,x+16+0*(s+8)	,i*(s+4)+8			,s,s	,techniqueShowFade);
 		fadeTexture1->SetResource(loss_textures_SRV[1]);
-		RenderTexture(m_pd3dDevice,context,x+16+3*(size+8)	,(i)*(size+8)+8,size,size,techniqueShowFade);
+		UtilityRenderer::RenderTexture(context,x+16+1*(s+8)	,i*(s+4)+8			,s,s	,techniqueShowFade);
+		fadeTexture1->SetResource(insc_textures_SRV[0]);
+		UtilityRenderer::RenderTexture(context,x+16+0*(s+8)	,i*(s+4)+16+size	,s,s	,techniqueShowFade);
+		fadeTexture1->SetResource(insc_textures_SRV[1]);
+		UtilityRenderer::RenderTexture(context,x+16+1*(s+8)	,i*(s+4)+16+size	,s,s	,techniqueShowFade);
+		fadeTexture1->SetResource(skyl_textures_SRV[0]);
+		UtilityRenderer::RenderTexture(context,x+16+0*(s+8)	,i*(s+4)+16+2*size	,s,s	,techniqueShowFade);
+		fadeTexture1->SetResource(skyl_textures_SRV[1]);
+		UtilityRenderer::RenderTexture(context,x+16+1*(s+8)	,i*(s+4)+16+2*size	,s,s	,techniqueShowFade);
 	}
 	
-	return (hr==S_OK);
+	return true;
 }
 
 void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV)

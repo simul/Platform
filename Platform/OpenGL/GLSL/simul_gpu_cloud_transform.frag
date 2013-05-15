@@ -1,5 +1,5 @@
 #version 140
-#include "../Glsl.h"
+#include "CppGlsl.hs"
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
 uniform sampler3D density_texture;
 uniform sampler3D light_texture;

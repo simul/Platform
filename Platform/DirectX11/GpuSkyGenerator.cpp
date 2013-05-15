@@ -112,17 +112,17 @@ HRESULT hr=S_OK;
 	ID3D1xEffectShaderResourceVariable*	density_texture			=effect->GetVariableByName("density_texture")->AsShaderResource();
 	ID3D1xEffectShaderResourceVariable*	loss_texture			=effect->GetVariableByName("loss_texture")->AsShaderResource();
 	ID3D1xEffectShaderResourceVariable*	insc_texture			=effect->GetVariableByName("insc_texture")->AsShaderResource();
-	
+	GpuSkyConstants gConstants;
 	{
 		D3D11_MAPPED_SUBRESOURCE mapped_res;	
 		hr=m_pImmediateContext->Map(constantBuffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped_res);	
-	//*(GpuSkyConstants*)mapped_res.pData = gpuSkyConstants;	
+	
 		GpuSkyConstants &constants	=*((GpuSkyConstants*)mapped_res.pData);
 	
-		constants.texSize			=float2((float)altitudes_km.size(),(float)numElevations);
+		constants.texSize			=vec2((float)altitudes_km.size(),(float)numElevations);
 		static float tto=0.5f;
 		constants.texelOffset		=tto;
-		constants.tableSize			=float2((float)table_size,(float)table_size);
+		constants.tableSize			=vec2((float)table_size,(float)table_size);
 		
 		constants.maxDistanceKm		=max_distance_km;
 		
@@ -149,10 +149,9 @@ HRESULT hr=S_OK;
 		constants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
 		constants.emissivity		=emissivity;
 	//UPDATE_CONSTANT_BUFFER(constantBuffer,GpuSkyConstants,gpuSkyConstants);
-	
+		gConstants=constants;
 		m_pImmediateContext->Unmap(constantBuffer, 0);	
 	}
-	gpuSkyConstants->SetConstantBuffer(constantBuffer);
 	
 	density_texture->SetResource(dens_tex);
 	// DX11 needs a whole extra Staging texture just to read the rendertarget output. Progress!
@@ -170,8 +169,10 @@ HRESULT hr=S_OK;
 		float dist_km=zPosition*max_distance_km;
 		if(i==numDistances-1)
 			dist_km=1000.f;
-		distKm->SetFloat(dist_km);
-		prevDistKm->SetFloat(prevDist_km);
+		gConstants.distanceKm	=dist_km;
+		gConstants.prevDistanceKm=prevDist_km;
+		UPDATE_CONSTANT_BUFFER(m_pImmediateContext,constantBuffer,GpuSkyConstants,gConstants);
+		gpuSkyConstants->SetConstantBuffer(constantBuffer);
 		F[1]->Activate(m_pImmediateContext);
 			F[1]->Clear(m_pImmediateContext,0.f,0.f,0.f,0.f);
 			input_texture->SetResource((ID3D11ShaderResourceView*)F[0]->GetColorTex());
@@ -212,8 +213,10 @@ HRESULT hr=S_OK;
 		float dist_km=zPosition*max_distance_km;
 		if(i==numDistances-1)
 			dist_km=1000.f;
-		distKm->SetFloat(dist_km);
-		prevDistKm->SetFloat(prevDist_km);
+		gConstants.distanceKm	=dist_km;
+		gConstants.prevDistanceKm=prevDist_km;
+		UPDATE_CONSTANT_BUFFER(m_pImmediateContext,constantBuffer,GpuSkyConstants,gConstants);
+		gpuSkyConstants->SetConstantBuffer(constantBuffer);
 		F[1]->Activate(m_pImmediateContext);
 			F[1]->Clear(m_pImmediateContext,0.f,0.f,0.f,0.f);
 			input_texture->SetResource((ID3D11ShaderResourceView*)F[0]->GetColorTex());
@@ -245,8 +248,10 @@ HRESULT hr=S_OK;
 		float dist_km=zPosition*max_distance_km;
 		if(i==numDistances-1)
 			dist_km=1000.f;
-		distKm->SetFloat(dist_km);
-		prevDistKm->SetFloat(prevDist_km);
+		gConstants.distanceKm	=dist_km;
+		gConstants.prevDistanceKm=prevDist_km;
+		UPDATE_CONSTANT_BUFFER(m_pImmediateContext,constantBuffer,GpuSkyConstants,gConstants);
+		gpuSkyConstants->SetConstantBuffer(constantBuffer);
 		F[1]->Activate(m_pImmediateContext);
 			F[1]->Clear(m_pImmediateContext,0.f,0.f,0.f,0.f);
 			input_texture->SetResource((ID3D11ShaderResourceView*)F[0]->GetColorTex());

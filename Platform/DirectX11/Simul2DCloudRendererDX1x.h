@@ -14,6 +14,8 @@
 #include <D3dx11effect.h>
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 
 //! A renderer for 2D cloud layers, e.g. cirrus clouds.
 class Simul2DCloudRendererDX11: public simul::clouds::Base2DCloudRenderer
@@ -40,8 +42,21 @@ protected:
 	void EnsureCorrectIlluminationTextureSizes(){}
 	void EnsureIlluminationTexturesAreUpToDate(){}
 	virtual bool CreateNoiseTexture(void *context,bool override_file=false){return true;}
-	D3DXMATRIX						view,proj;
-	ID3D11Device*					m_pd3dDevice;
-	ID3DX11Effect*					effect;
-	ID3DX11EffectTechnique*			tech;
+	D3DXMATRIX				view,proj;
+	ID3D11Device*			m_pd3dDevice;
+	ID3DX11Effect*			effect;
+	ID3DX11EffectTechnique*	tech;
+	ID3D11Buffer*			vertexBuffer;
+	ID3D11Buffer*			indexBuffer;
+	ID3D11InputLayout*		inputLayout;
+	
+	ID3D11Buffer*			constantBuffer;
+	int num_indices;
+	
+	ID3D1xShaderResourceView*				skyLossTexture_SRV;
+	ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
+	ID3D1xShaderResourceView*				skylightTexture_SRV;
+
+	simul::dx11::TextureStruct	coverage_tex[3];
+	FramebufferDX1x			detail_fb;
 };

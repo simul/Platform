@@ -28,11 +28,11 @@ typedef long HRESULT;
 
 struct RainConstantBuffer
 {
-	float4x4 worldViewProj;
+	mat4 worldViewProj;
 	float offset;
 	float intensity;
-	float4 lightColour;
-	float3 lightDir;
+	vec4 lightColour;
+	vec3 lightDir;
 };
 class SimulPrecipitationRendererDX1x:public simul::clouds::BasePrecipitationRenderer
 {
@@ -51,7 +51,7 @@ public:
 protected:
 	ID3D1xDevice*					m_pd3dDevice;
 	ID3D1xInputLayout*				m_pVtxDecl;
-	ID3D1xBuffer					*m_pVertexBuffer;
+	ID3D1xBuffer*					m_pVertexBuffer;
 	ID3D1xEffect*					m_pRainEffect;		// The fx file for the sky
 	ID3D1xShaderResourceView*		rain_texture;
 	ID3D1xEffectShaderResourceVariable*	rainTexture;
