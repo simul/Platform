@@ -1,4 +1,5 @@
 uniform sampler2D noise_texture;
+uniform float persistence;
 varying vec2 texc;
 
 float saturate(float x)
@@ -22,7 +23,7 @@ void main(void)
 		texcoords*=2.0;
 		texcoords+=mul*vec2(0.2,0.2)*c.xy;
 		result+=mul*c;
-		mul*=0.5;
+		mul*=persistence;
     }
     result.rgb=vec3(1.0,1.0,1.0);//=saturate(result*1.5);
 	result.a=saturate(result.a-0.4)/0.4;

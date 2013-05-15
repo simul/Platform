@@ -46,6 +46,7 @@ public:
 	META_BeginProperties
 		META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")
 		META_ValueProperty(bool,ShowCloudCrossSections,"Show the cloud textures as an overlay.")
+		META_ValueProperty(bool,Show2DCloudTextures,"Show the 2D cloud textures as an overlay.")
 		META_ValueProperty(bool,ShowFades,"Show the fade textures as an overlay.")
 		META_ValueProperty(bool,UseHdrPostprocessor,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
 		META_ValueProperty(bool,UseSkyBuffer,"Render the sky to a low-res buffer to increase performance.")

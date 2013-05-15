@@ -7,6 +7,8 @@
 // agreement.
 
 // CreateEffect.h Create a DirectX .fx effect and report errors.
+#ifndef CREATEEFFECTDX1X_H
+#define CREATEEFFECTDX1X_H
 #include <d3dx11.h>
 #include <d3dx11effect.h>
 #include <D3Dcompiler.h>
@@ -94,3 +96,4 @@ void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
 void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
 
 #define PAD16(n) (((n)+15)/16*16)
+#endif
