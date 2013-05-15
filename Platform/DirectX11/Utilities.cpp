@@ -1,4 +1,3 @@
-
 #include "Utilities.h"
 #include "MacrosDX1x.h"
 #include "Simul\Base\StringToWString.h"
@@ -7,6 +6,92 @@
 using namespace simul;
 using namespace dx11;
 static ID3D1xDevice		*m_pd3dDevice		=NULL;
+
+TextureStruct::TextureStruct()
+	:texture(NULL)
+	,shaderResourceView(NULL)
+	,width(0)
+	,length(0)
+{
+}
+
+TextureStruct::~TextureStruct()
+{
+	release();
+}
+
+void TextureStruct::release()
+{
+	SAFE_RELEASE(texture);
+	SAFE_RELEASE(shaderResourceView);
+}
+
+void TextureStruct::setTexels(ID3D11DeviceContext *context,const float *float4_array,int texel_index,int num_texels)
+{
+	D3D11_MAPPED_SUBRESOURCE mapped;
+	context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+	float *ptr=(float *)mapped.pData;
+	ptr+=texel_index*4;
+	memcpy(ptr,float4_array,num_texels*sizeof(float)*4);
+	context->Unmap(texture,0);
+}
+
+void TextureStruct::setTexels(ID3D11DeviceContext *context,const unsigned *uint_array,int texel_index,int num_texels)
+{
+	D3D11_MAPPED_SUBRESOURCE mapped;
+	context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+	unsigned *target=(unsigned *)mapped.pData;
+	int expected_pitch=sizeof(unsigned)*width;
+	if(mapped.RowPitch==expected_pitch)
+	{
+		target+=texel_index;
+		memcpy(target,uint_array,num_texels*sizeof(unsigned));
+	}
+	else
+	{
+		int block	=mapped.RowPitch/sizeof(unsigned);
+		int row		=texel_index/width;
+		int last_row=(texel_index+num_texels)/width;
+		int col		=texel_index-row*width;
+		target		+=row*block;
+		uint_array	+=col;
+		int columns=min(num_texels,width-col);
+		memcpy(target,uint_array,columns*sizeof(unsigned));
+		uint_array	+=columns;
+		target		+=block;
+		for(int r=row+1;r<last_row;r++)
+		{
+			memcpy(target,uint_array,width*sizeof(unsigned));
+			target		+=block;
+			uint_array	+=width;
+		}
+		int end_columns=texel_index+num_texels-last_row*width;
+		if(end_columns>0)
+			memcpy(target,uint_array,end_columns*sizeof(unsigned));
+	}
+	context->Unmap(texture,0);
+}
+
+void TextureStruct::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format)
+{
+	D3D11_TEXTURE2D_DESC textureDesc=
+	{
+		w,l,
+		1,1,
+		format,
+		{1,0}
+		,D3D11_USAGE_DYNAMIC,
+		D3D11_BIND_SHADER_RESOURCE,
+		D3D11_CPU_ACCESS_WRITE,
+		0
+	};
+	width=w;
+	length=l;
+	SAFE_RELEASE(texture);
+	pd3dDevice->CreateTexture2D(&textureDesc,0,&texture);
+	SAFE_RELEASE(shaderResourceView);
+	pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView);
+}
 
 ComputableTexture::ComputableTexture()
 	:g_pTex_Output(NULL)
@@ -150,7 +235,6 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 	worldViewProj->SetMatrix(&wvp._11);
 	
 	ID3D1xBuffer *					vertexBuffer=NULL;
-#if 1
 	// Create the vertex buffer:
 	D3D1x_BUFFER_DESC desc=
 	{
@@ -203,13 +287,16 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 	SAFE_RELEASE(previousInputLayout);
 	SAFE_RELEASE(vertexBuffer);
 	SAFE_RELEASE(m_pVtxDecl);
-#endif
 	}
 }
 
 void UtilityRenderer::RenderTexture(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech)
 {
-	RenderTexture(m_pImmediateContext,(float)x1,(float)y1,(float)dx,(float)dy,tech);
+	RenderTexture(m_pImmediateContext
+		,2.f*(float)x1/(float)screen_width
+		,1.f-2.f*(float)(y1+dy)/(float)screen_height
+		,2.f*(float)dx/(float)screen_width
+		,2.f*(float)dy/(float)screen_height,tech);
 }
 
 void UtilityRenderer::RenderTexture(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech)

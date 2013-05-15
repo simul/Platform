@@ -534,6 +534,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\CrossPlatform\simul_2d_clouds.hs"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\simul_clouds.fx"
 				>
 			</File>

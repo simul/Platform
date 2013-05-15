@@ -5,7 +5,7 @@
 #include "Simul/Platform/DirectX11/SimulTerrainRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulCloudRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
-//#include "Simul/Platform/Windows/DirectX 11/Simul2DCloudRendererDX1x.h"
+#include "Simul/Platform/DirectX11/Simul2DCloudRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulSkyRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulAtmosphericsRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulOpticsRendererDX1x.h"
@@ -181,9 +181,9 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 			//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
 			}
-	//		if(simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
+			if(simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
 			{
-			//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(ScreenWidth,ScreenHeight);
+				simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 			}
 		}
 		if(ShowOSD)

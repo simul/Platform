@@ -51,7 +51,7 @@ public:
 protected:
 	ID3D1xDevice*					m_pd3dDevice;
 	ID3D1xInputLayout*				m_pVtxDecl;
-	ID3D1xBuffer					*m_pVertexBuffer;
+	ID3D1xBuffer*					m_pVertexBuffer;
 	ID3D1xEffect*					m_pRainEffect;		// The fx file for the sky
 	ID3D1xShaderResourceView*		rain_texture;
 	ID3D1xEffectShaderResourceVariable*	rainTexture;

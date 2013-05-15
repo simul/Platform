@@ -953,9 +953,9 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int h)
 	ID3D1xEffectTechnique*	techniqueShowFade		=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");
 	ID3D1xEffectShaderResourceVariable*	inscTexture	=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
 
-	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
-	UtilityRenderer::RenderTexture(context,8,8,size,size,techniqueShowSky);
 	inscTexture->SetResource(loss_2d->buffer_texture_SRV);
+	UtilityRenderer::RenderTexture(context,8,8,size,size,techniqueShowSky);
+	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
 	UtilityRenderer::RenderTexture(context,8,16+size,size,size,techniqueShowSky);
 	inscTexture->SetResource(skylight_2d->buffer_texture_SRV);
 	UtilityRenderer::RenderTexture(context,8,24+2*size,size,size,techniqueShowSky);
@@ -966,17 +966,17 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int h)
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
 		altitudeTexCoord->SetFloat(atc);
 		fadeTexture1->SetResource(loss_textures_SRV[0]);;
-		UtilityRenderer::RenderTexture(context,x+16+0*(s+8)	,i*(s+4)+8, s,s			,techniqueShowFade);
+		UtilityRenderer::RenderTexture(context,x+16+0*(s+8)	,i*(s+4)+8			,s,s	,techniqueShowFade);
 		fadeTexture1->SetResource(loss_textures_SRV[1]);
-		UtilityRenderer::RenderTexture(context,x+16+1*(s+8)	,i*(s+4)+8, s,s			,techniqueShowFade);
+		UtilityRenderer::RenderTexture(context,x+16+1*(s+8)	,i*(s+4)+8			,s,s	,techniqueShowFade);
 		fadeTexture1->SetResource(insc_textures_SRV[0]);
-		UtilityRenderer::RenderTexture(context,x+16+0*(s+8)	,i*(s+4)+16+size, s,s	,techniqueShowFade);
+		UtilityRenderer::RenderTexture(context,x+16+0*(s+8)	,i*(s+4)+16+size	,s,s	,techniqueShowFade);
 		fadeTexture1->SetResource(insc_textures_SRV[1]);
-		UtilityRenderer::RenderTexture(context,x+16+1*(s+8)	,i*(s+4)+16+size, s,s	,techniqueShowFade);
+		UtilityRenderer::RenderTexture(context,x+16+1*(s+8)	,i*(s+4)+16+size	,s,s	,techniqueShowFade);
 		fadeTexture1->SetResource(skyl_textures_SRV[0]);
-		UtilityRenderer::RenderTexture(context,x+16+0*(s+8)	,i*(s+4)+16+2*size, s,s	,techniqueShowFade);
+		UtilityRenderer::RenderTexture(context,x+16+0*(s+8)	,i*(s+4)+16+2*size	,s,s	,techniqueShowFade);
 		fadeTexture1->SetResource(skyl_textures_SRV[1]);
-		UtilityRenderer::RenderTexture(context,x+16+1*(s+8)	,i*(s+4)+16+2*size, s,s	,techniqueShowFade);
+		UtilityRenderer::RenderTexture(context,x+16+1*(s+8)	,i*(s+4)+16+2*size	,s,s	,techniqueShowFade);
 	}
 	
 	return true;

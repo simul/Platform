@@ -125,9 +125,7 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	cloudKeyframer->InitKeyframesFromClouds();
 
 	helper=new simul::clouds::Cloud2DGeometryHelper();
-	helper->SetYVertical(true);
-	static float max_distance=500000.f;
-	helper->Initialize(8,max_distance);
+	helper->Initialize(8);
 	helper->SetGrid(12,24);
 	
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
@@ -290,8 +288,9 @@ bool Simul2DCloudRenderer::Render(void *context,bool cubemap,void *depth_alpha_t
 	m_pCloudEffect->SetTexture(noiseTexture					,noise_texture);
 	m_pCloudEffect->SetTexture(imageTexture					,image_texture);
 
+	float max_cloud_distance=400000.f;
 	// Mess with the proj matrix to extend the far clipping plane:
-	 FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
+	 FixProjectionMatrix(proj,max_cloud_distance*1.1f,false);
 		
 	//set up matrices
 	D3DXMATRIX tmp1, tmp2;
@@ -328,7 +327,7 @@ static float light_mult=.03f;
 	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
 
 	static float sc=7.f;
-	helper->Make2DGeometry(GetCloudInterface());
+	helper->Make2DGeometry(GetCloudInterface(),true,false,max_cloud_distance);
 	float image_scale=1.f/texture_scale;
 	static float image_effect=0.9f;
 	D3DXVECTOR4 interp_vec(cloudKeyframer->GetInterpolation(),1.f-cloudKeyframer->GetInterpolation(),0,0);

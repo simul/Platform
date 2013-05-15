@@ -32,7 +32,7 @@
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/CrossPlatform/simul_2d_clouds.sl"
+#include "Simul/Platform/CrossPlatform/simul_2d_clouds.hs"
 
 using namespace std;
 void printShaderInfoLog(GLuint sh);
@@ -61,7 +61,7 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	,cloud2DConstantsBindingIndex(12)
 	,detail_fb(0,0,GL_TEXTURE_2D)
 {
-	helper->Initialize(16,400000.f);
+	helper->Initialize(16);
 }
 
 bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *context,bool override_file)
@@ -83,10 +83,8 @@ bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *context,bool override_file
 	}
 	noise_fb.Deactivate(context);
 	glUseProgram(0);
-ERROR_CHECK	
-
+ERROR_CHECK
 	FramebufferGL dens_fb(512,512,GL_TEXTURE_2D);
-
 	dens_fb.SetWidthAndHeight(512,512);
 	dens_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
 	dens_fb.Activate(context);
@@ -232,9 +230,9 @@ void SimulGL2DCloudRenderer::SetCloudTextureSize(unsigned width_x,unsigned lengt
 	{
 		glGenTextures(1,&(coverage_tex[i]));
 		glBindTexture(GL_TEXTURE_2D,coverage_tex[i]);
-		glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA4,width_x,length_y,0,GL_RGBA,GL_UNSIGNED_SHORT,0);
+		glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,width_x,length_y,0,GL_RGBA,GL_UNSIGNED_INT,0);
 
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 
 		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
@@ -270,8 +268,8 @@ ERROR_CHECK
 
 bool SimulGL2DCloudRenderer::Render(void *context,bool, void *, bool, bool)
 {
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	EnsureTexturesAreUpToDate(context);
-
 	using namespace simul::clouds;
 	if(skyInterface)
 		cloudKeyframer->Update(skyInterface->GetTime());
@@ -279,11 +277,12 @@ bool SimulGL2DCloudRenderer::Render(void *context,bool, void *, bool, bool)
 	simul::math::Vector3 X1,X2;
 	ci->GetExtents(X1,X2);
 	simul::math::Vector3 DX=X2-X1;
+    glDisable(GL_TEXTURE_1D);
     glEnable(GL_TEXTURE_2D);
-    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_TEXTURE_3D);
     glEnable(GL_BLEND);
+	glBlendEquation(GL_FUNC_ADD);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-	//glBlendFunc(GL_ONE,GL_ONE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -298,7 +297,8 @@ bool SimulGL2DCloudRenderer::Render(void *context,bool, void *, bool, bool)
 	
 	simul::math::Vector3 wind_offset=cloudKeyframer->GetCloudInterface()->GetWindOffset();
 
-	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
+	float max_cloud_distance=400000.f;
+	FixGlProjectionMatrix(max_cloud_distance*1.1f);
 	simul::math::Matrix4x4 modelview,proj;
 	glGetMatrix((float*)&modelview,GL_MODELVIEW_MATRIX);
 	glGetMatrix((float*)&proj,GL_PROJECTION_MATRIX);
@@ -306,12 +306,14 @@ bool SimulGL2DCloudRenderer::Render(void *context,bool, void *, bool, bool)
 	modelview.Inverse(viewInv);
 	cam_pos.Set(viewInv(3,0),viewInv(3,1),viewInv(3,2),0.f);
 
+	simul::math::Matrix4x4 worldViewProj;
+	simul::math::Multiply4x4(worldViewProj,modelview,proj);
+
 	static float ll=0.05f;
 	static float ff=100.f;
 	Cloud2DConstants cloud2DConstants;
-	cloud2DConstants.projection_matrix		=proj;
-	cloud2DConstants.modelview_matrix		=modelview;
-	cloud2DConstants.origin					=wind_offset;
+	cloud2DConstants.worldViewProj			=worldViewProj;
+	cloud2DConstants.origin					=X1+cloudKeyframer->GetCloudInterface()->GetWindOffset();
 	cloud2DConstants.globalScale			=ci->GetCloudWidth();
 	cloud2DConstants.detailScale			=ff*ci->GetFractalWavelength();
 	cloud2DConstants.cloudEccentricity		=cloudKeyframer->GetInterpolatedKeyframe().light_asymmetry;
@@ -326,6 +328,7 @@ bool SimulGL2DCloudRenderer::Render(void *context,bool, void *, bool, bool)
 		cloud2DConstants.sunlight				=skyInterface->GetLocalIrradiance(X1.z*0.001f);
 		cloud2DConstants.hazeEccentricity		=skyInterface->GetMieEccentricity();
 		cloud2DConstants.mieRayleighRatio		=skyInterface->GetMieRayleighRatio();
+		cloud2DConstants.planetRadius			=6378000.f;
 	}
 	glBindBuffer(GL_UNIFORM_BUFFER, cloud2DConstantsUBO);
 	glBindBufferBase(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO);
@@ -340,7 +343,7 @@ ERROR_CHECK
 	eye_dir*=-1.f;
 	simul::math::Vector3 up_dir=viewInv.RowPointer(1);
 	helper->Update(view_pos,ci->GetWindOffset(),eye_dir,up_dir);
-	helper->Make2DGeometry(ci);
+	helper->Make2DGeometry(ci,true,false,max_cloud_distance);
 ERROR_CHECK
 	
 	for(std::vector<Cloud2DGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
@@ -355,11 +358,16 @@ ERROR_CHECK
 		glEnd();
 	}
 ERROR_CHECK
-   // glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D,0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D,0);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D,0);
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
 	glUseProgram(0);
+	glPopAttrib();
 ERROR_CHECK
 	return true;
 }
@@ -378,11 +386,10 @@ void SimulGL2DCloudRenderer::RenderCrossSections(void *,int width,int height)
 	
 	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
 	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
-//GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
 	GLint crossSectionOffset	= glGetUniformLocation(cross_section_program,"crossSectionOffset");
 
     glDisable(GL_BLEND);
-(GL_CULL_FACE);
+	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 ERROR_CHECK
 	glEnable(GL_TEXTURE_2D);

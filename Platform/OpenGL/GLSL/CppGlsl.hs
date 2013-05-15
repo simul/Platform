@@ -16,12 +16,17 @@
 #define R8
 #define R9
 #define R10
+#define R11
+#define R12
+#define R13
 
 #ifndef __cplusplus
 	#include "saturate.glsl"
 	#define lerp mix
+	#define texture_clamp_mirror(tex,texc) texture(tex,texc)
 	#define texture3D texture
 	#define texture2D texture
+	#define Y(texel) texel.y
 #endif
 
 #ifdef __cplusplus

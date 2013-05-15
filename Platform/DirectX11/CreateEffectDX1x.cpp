@@ -356,7 +356,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFl
 	for(int i=0;i<10000&&!ifs.good();i++);
 	if(ifs.good())
 	{
-		std::cerr<<"D3DX11CreateEffectFromBinaryFile found file "<<compiled_filename.c_str()<<std::endl;
+		//std::cerr<<"D3DX11CreateEffectFromBinaryFile found file "<<compiled_filename.c_str()<<std::endl;
 		ifs.seekg(0,std::ios_base::end);
 		size_t sz=(size_t)ifs.tellg();
 		ifs.seekg(0,std::ios_base::beg);

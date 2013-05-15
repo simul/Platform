@@ -1,11 +1,24 @@
 #pragma once
 #include <d3d11.h>
+#include <utility>
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 
 namespace simul
 {
 	namespace dx11
 	{
+		struct TextureStruct
+		{
+			TextureStruct();
+			~TextureStruct();
+			void release();
+			ID3D11Texture2D*			texture;
+			ID3D11ShaderResourceView*   shaderResourceView;
+			int width,length;
+			void setTexels(ID3D11DeviceContext *context,const float *float4_array,int texel_index,int num_texels);
+			void setTexels(ID3D11DeviceContext *context,const unsigned *uint_array,int texel_index,int num_texels);
+			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
+		};
 		struct ComputableTexture
 		{
 			ComputableTexture();
@@ -44,3 +57,26 @@ namespace simul
 		};
 	}
 }
+namespace std
+{
+	template<> inline void swap(simul::dx11::TextureStruct& _Left, simul::dx11::TextureStruct& _Right)
+	{
+		ID3D11Texture2D*			texture				=_Left.texture;
+		ID3D11ShaderResourceView*   shaderResourceView	=_Right.shaderResourceView;
+		_Left.texture			=_Right.texture;
+		_Left.shaderResourceView=_Right.shaderResourceView;
+		_Right.texture			=texture;
+		_Right.shaderResourceView=shaderResourceView;
+		std::swap(_Left.width,_Right.width);
+		std::swap(_Left.length,_Right.length);
+	}
+}
+
+#define SET_VERTEX_BUFFER(context,vertexBuffer,VertexType)\
+	UINT stride = sizeof(VertexType);\
+	UINT offset = 0;\
+	context->IASetVertexBuffers(	0,				\
+									1,				\
+									&vertexBuffer,	\
+									&stride,		\
+									&offset);

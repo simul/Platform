@@ -258,15 +258,6 @@ void SimulCloudRendererDX1x::CreateMeshBuffers()
         D3D11_CPU_ACCESS_WRITE,
         0
 	};
-	// index buffer
-	D3D11_BUFFER_DESC indexBufferDesc=
-	{
-        num_indices*sizeof(unsigned short),
-        D3D11_USAGE_DYNAMIC,
-        D3D11_BIND_INDEX_BUFFER,
-        D3D11_CPU_ACCESS_WRITE,
-        0
-	};
 	CloudVertex_t *vertices=new CloudVertex_t[num_vertices];
 	unsigned short *indices=new unsigned short[num_indices];
     D3D11_SUBRESOURCE_DATA InitData;
@@ -290,6 +281,15 @@ void SimulCloudRendererDX1x::CreateMeshBuffers()
     InitData.SysMemPitch = sizeof(CloudVertex_t);
 	HRESULT hr=m_pd3dDevice->CreateBuffer(&vertexBufferDesc,&InitData,&vertexBuffer);
 	
+	// index buffer
+	D3D11_BUFFER_DESC indexBufferDesc=
+	{
+        num_indices*sizeof(unsigned short),
+        D3D11_USAGE_DYNAMIC,
+        D3D11_BIND_INDEX_BUFFER,
+        D3D11_CPU_ACCESS_WRITE,
+        0
+	};
     ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
     InitData.pSysMem = indices;
     InitData.SysMemPitch = sizeof(unsigned short);
@@ -1127,7 +1127,6 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	cloudConstants.worldViewProj=ortho;
 	cloudConstants.worldViewProj.transpose();
 	ID3D1xEffectConstantBuffer* cbCloudConstants=m_pCloudEffect->GetConstantBufferByName("CloudConstants");
-
 
 	if(skyInterface)
 	for(int i=0;i<2;i++)

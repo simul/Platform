@@ -2,7 +2,7 @@
 #define CPP_HLSL
 #include "../../CrossPlatform/CppSl.hs"
 
-#define fract frac
+#define texture_clamp_mirror(tex,texc) tex.Sample(samplerStateClampMirror,texc)
 #define texture(tex,texc) tex.Sample(samplerState,texc)
 #define texture2D(tex,texc) tex.Sample(samplerState,texc)
 #define texture3D(tex,texc) tex.Sample(samplerState3d,texc)
@@ -33,6 +33,17 @@
 	#define vec3 float3
 	#define vec4 float4
 	#define mat4 float4x4
+	#define mix lerp
+	#define fract frac
+
+	#define Y(texel) texel.z
+	
+	SamplerState samplerStateClampMirror 
+	{
+		Filter = MIN_MAG_MIP_LINEAR;
+		AddressU = Clamp;
+		AddressV = Mirror;
+	};
 #endif
 
 #ifdef __cplusplus
@@ -47,6 +58,10 @@
 	#define R7
 	#define R8
 	#define R9
+	#define R10
+	#define R11
+	#define R12
+	#define R13
 #endif
 
 #endif
