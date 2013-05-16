@@ -216,7 +216,7 @@ void FramebufferCubemapDX1x::Deactivate(void *context)
 	m_pImmediateContext->RSSetViewports(1,m_OldViewports);
 }
 
-void FramebufferCubemapDX1x::Clear(void *context,float r,float g,float b,float a,int mask)
+void FramebufferCubemapDX1x::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	if(!mask)
@@ -227,6 +227,6 @@ void FramebufferCubemapDX1x::Clear(void *context,float r,float g,float b,float a
     {
 		m_pImmediateContext->ClearRenderTargetView(m_pCubeEnvMapRTV[i],clearColor);
 		if(m_pCubeEnvDepthMapDSV[i])
-			m_pImmediateContext->ClearDepthStencilView(m_pCubeEnvDepthMapDSV[i],mask, 1.f, 0);
+			m_pImmediateContext->ClearDepthStencilView(m_pCubeEnvDepthMapDSV[i],mask,depth, 0);
 		}
 }

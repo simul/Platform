@@ -129,7 +129,7 @@ ERROR_CHECK
 ERROR_CHECK
 }
 
-bool SimulGLCloudRenderer::CreateNoiseTexture(void *context,bool override_file)
+bool SimulGLCloudRenderer::CreateNoiseTexture(void *context)
 {
 	if(!init)
 		return false;
@@ -166,7 +166,7 @@ ERROR_CHECK
 	n_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
 	n_fb.Activate(context);
 	{
-		n_fb.Clear(context,0.f,0.f,0.f,0.f);
+		n_fb.Clear(context,0.f,0.f,0.f,0.f,1.f);
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
@@ -550,7 +550,7 @@ ERROR_CHECK
 	glPopAttrib();
 ERROR_CHECK
 	timer.FinishTime();
-	render_time=profileBlock.GetTime();
+	gpu_time=profileBlock.GetTime();
 	return true;
 }
 

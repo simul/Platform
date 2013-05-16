@@ -326,13 +326,13 @@ void SimulWeatherRendererDX1x::RenderLateCloudLayer(void *context,bool )
 
 void SimulWeatherRendererDX1x::RenderPrecipitation(void *context)
 {
-	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
+	if(simulPrecipitationRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible()) 
 		simulPrecipitationRenderer->Render(context);
 }
 
 void SimulWeatherRendererDX1x::RenderLightning(void *context)
 {
-	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+	if(simulCloudRenderer&&simulLightningRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
 		simulLightningRenderer->Render(context);
 }
 
@@ -417,19 +417,6 @@ SimulCloudRendererDX1x *SimulWeatherRendererDX1x::GetCloudRenderer()
 Simul2DCloudRendererDX11 *SimulWeatherRendererDX1x::Get2DCloudRenderer()
 {
 	return simul2DCloudRenderer.get();
-}
-
-const char *SimulWeatherRendererDX1x::GetDebugText() const
-{
-	static char debug_text[256];
-	if(simulSkyRenderer)
-		sprintf_s(debug_text,256,"%3.3g",simulSkyRenderer->GetSkyKeyframer()->GetInterpolation());
-//		sprintf_s(debug_text,256,"%s",simulCloudRenderer->GetDebugText());
-//	if(simulCloudRenderer)
-	sprintf_s(debug_text,256,"TIME %2.2g ms\nClouds %2.2g update %2.2g\nSky %2.2g update %2.2g",total_timing,
-			baseCloudRenderer?baseCloudRenderer->GetRenderTime():0.f,environment->cloud_update_timing,sky_timing,environment->sky_update_timing);
-//		sprintf_s(debug_text,256,"%s",simulCloudRenderer->GetDebugText());
-	return debug_text;
 }
 //! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 void SimulWeatherRendererDX1x::SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb)

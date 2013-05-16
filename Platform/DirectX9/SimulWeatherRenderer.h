@@ -88,8 +88,6 @@ public:
 	class SimulAtmosphericsRenderer *GetAtmosphericsRenderer();
 	//! Get the current debug text as a c-string pointer. We don't use TCHAR here because Qt does not support using wchar_t as a built-in type.
 	const char *GetDebugText() const;
-	//! Get a timing value - useful for performance evaluation.
-	float GetTiming() const;
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 	void EnableRain(bool e=true);

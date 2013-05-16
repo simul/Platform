@@ -41,7 +41,7 @@ protected:
 	void EnsureTextureCycle();
 	void EnsureCorrectIlluminationTextureSizes(){}
 	void EnsureIlluminationTexturesAreUpToDate(){}
-	virtual bool CreateNoiseTexture(void *context,bool override_file=false){return true;}
+	virtual bool CreateNoiseTexture(void *context){return true;}
 	D3DXMATRIX				view,proj;
 	ID3D11Device*			m_pd3dDevice;
 	ID3DX11Effect*			effect;

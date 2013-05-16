@@ -314,7 +314,6 @@ timer.StartTime();
 	ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,0);
 	ERROR_CHECK
-
 	int light_gridsize=light_grid[0]*light_grid[1]*light_grid[2];
 	int z0=(start_texel*light_grid[2])/light_gridsize;
 	int z1=((start_texel+texels)*light_grid[2])/light_gridsize;
@@ -325,15 +324,13 @@ timer.StartTime();
 	if(z0==0)
 	{
 		F[0]->Activate(NULL);
-			F[0]->Clear(NULL,1.f,1.f,1.f,1.f);
+			F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			glReadPixels(0,0,light_grid[0],light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 		F[0]->Deactivate(NULL);
 		z0++;
 	}
-	
 	target+=z0*light_grid[0]*light_grid[1]*4;
-	
 ERROR_CHECK
 	float draw_time=0.f,read_time=0.f;
 	for(int i=z0;i<z1;i++)

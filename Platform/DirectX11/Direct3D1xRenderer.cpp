@@ -106,12 +106,17 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		return;
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
+	if(simulHDRRenderer)
+		simulHDRRenderer->SetReverseDepth(ReverseDepth);
 	D3DXMATRIX world,view,proj;
 	static float nearPlane=0.01f;
 	static float farPlane=250000.f;
 	if(camera)
 	{
-		proj=camera->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight,false);
+		if(ReverseDepth)
+			proj=camera->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight);
+		else
+			proj=camera->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight,false);
 		view=camera->MakeViewMatrix(!y_vertical);
 		D3DXMatrixIdentity(&world);
 	}
@@ -136,7 +141,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulTerrainRenderer)
 	{
 		if(simulWeatherRenderer)
-			simulTerrainRenderer->SetMaxFadeDistanceKm(simulWeatherRenderer->GetBaseSkyRenderer()->GetSkyKeyframer()->GetMaxDistanceKm());
+			simulTerrainRenderer->SetMaxFadeDistanceKm(simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetMaxDistanceKm());
 		simulTerrainRenderer->SetMatrices(view,proj);
 		simulTerrainRenderer->Render(pd3dImmediateContext);	
 	}
@@ -277,10 +282,9 @@ void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
 
 const char *Direct3D11Renderer::GetDebugText() const
 {
-	const char *s=NULL;
+	static std::string str;
+	str="DirectX 11\n";
 	if(simulWeatherRenderer)
-		s=simulWeatherRenderer->GetDebugText();
-	static char str[200];
-	sprintf_s(str,200,"DirectX 11\n%s",s?s:"");
-	return str;
+		str+=simulWeatherRenderer->GetDebugText();
+	return str.c_str();
 }

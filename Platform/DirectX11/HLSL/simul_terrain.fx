@@ -1,4 +1,5 @@
 #include "CppHlsl.hlsl"
+#include "states.hlsl"
 cbuffer cbPerObject R0
 {
 	matrix worldViewProj : packoffset(c0);
@@ -57,19 +58,6 @@ float4 PS_Main( vertexOutput IN) : SV_TARGET
 	float3 final=mainTexture.Sample(samplerState,IN.texCoordDiffuse.xy).rgb;
     return float4(final,depth);
 }
-
-DepthStencilState EnableDepth
-{
-	DepthEnable = TRUE;
-	DepthWriteMask = ALL;
-}; 
-
-BlendState DontBlend
-{
-	BlendEnable[0] = FALSE;
-};
-
-RasterizerState RenderNoCull { CullMode = none; };//back front
 
 technique11 simul_terrain
 {

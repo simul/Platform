@@ -58,8 +58,8 @@ namespace simul
 							,int w,int l,int d
 							,DXGI_FORMAT format);
 							
-		void SIMUL_DIRECTX11_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zFar,bool y_vertical);
-		void SIMUL_DIRECTX11_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical);
+		void SIMUL_DIRECTX11_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zFar);
+		void SIMUL_DIRECTX11_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zNear,float zFar);
 	
 		void setParameter(ID3D1xEffect *effect,const char *name	,ID3D11ShaderResourceView * value);
 		void setParameter(ID3D1xEffect *effect,const char *name	,ID3D11UnorderedAccessView * value);

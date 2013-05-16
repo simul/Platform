@@ -386,7 +386,7 @@ void FramebufferDX1x::Deactivate(void *context)
 	m_pImmediateContext=NULL;
 }
 
-void FramebufferDX1x::Clear(void *context,float r,float g,float b,float a,int mask)
+void FramebufferDX1x::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	// Clear the screen to black:
@@ -395,7 +395,7 @@ void FramebufferDX1x::Clear(void *context,float r,float g,float b,float a,int ma
 		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
 	m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
 	if(m_pBufferDepthSurface)
-		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,mask, 1.f, 0);
+		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,mask,depth,0);
 }
 
 void FramebufferDX1x::Render(void *context,bool blend)

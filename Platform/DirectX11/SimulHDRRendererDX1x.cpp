@@ -177,7 +177,7 @@ bool SimulHDRRendererDX1x::StartRender(void *context)
 	if(imageTexture)
 		imageTexture->SetResource(NULL);
 	framebuffer.Activate(context);
-	framebuffer.Clear(context,0,0,0,0);
+	framebuffer.Clear(context,0.f,0.f,0.5f,0.f,ReverseDepth?0.f:1.f);
 
 	PIXEndNamedEvent();
 	return true;

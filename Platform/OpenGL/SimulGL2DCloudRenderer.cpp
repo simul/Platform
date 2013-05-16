@@ -64,7 +64,7 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	helper->Initialize(16);
 }
 
-bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *context,bool override_file)
+bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)
 {
 	//image_tex=LoadGLImage("Cirrocumulus.png",GL_REPEAT);
 	FramebufferGL	noise_fb(16,16,GL_TEXTURE_2D);
@@ -89,7 +89,7 @@ ERROR_CHECK
 	dens_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
 	dens_fb.Activate(context);
 	{
-		dens_fb.Clear(context,0.f,0.f,0.f,0.f);
+		dens_fb.Clear(context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
@@ -105,7 +105,7 @@ ERROR_CHECK
 	detail_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
 	detail_fb.Activate(context);
 	{
-		detail_fb.Clear(context,0.f,0.f,0.f,0.f);
+		detail_fb.Clear(context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)dens_fb.GetColorTex());

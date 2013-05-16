@@ -130,32 +130,32 @@ namespace simul
 			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 			D3DXMatrixTranspose(wvp,&tmp2);
 		}
-		void FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical)
+		void FixProjectionMatrix(D3DXMATRIX &proj,float zFar)
 		{
-			float zNear;
-			if(y_vertical)
+			float curNear=proj._43/proj._33;
+			float curFar=proj._43*curNear/(curNear+proj._43);
+			float zNear=curNear;
+			if(curNear<0&&curFar<0)
 			{
-				zNear=-proj._43/proj._33;
-				proj._33=zFar/(zFar-zNear);
+				std::swap(zNear,zFar);
+				zNear*=-1.f;
+				zFar*=-1.f;
 			}
-			else
-			{
-				zNear=proj._43/proj._33;
-				proj._33=-zFar/(zFar-zNear);
-			}
+			proj._33=-zFar/(zFar-zNear);
 			proj._43=-zNear*zFar/(zFar-zNear);
 		}
-
-		void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical)
+		void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar)
 		{
-			if(y_vertical)
+			float curNear=proj._43/proj._33;
+			float curFar=proj._43*curNear/(curNear+proj._43);
+			//Reversed matrix??
+			if(curNear<0&&curFar<0)
 			{
-				proj._33=zFar/(zFar-zNear);
+				std::swap(zNear,zFar);
+				zNear*=-1.f;
+				zFar*=-1.f;
 			}
-			else
-			{
-				proj._33=-zFar/(zFar-zNear);
-			}
+			proj._33=-zFar/(zFar-zNear);
 			proj._43=-zNear*zFar/(zFar-zNear);
 		}
 
@@ -356,7 +356,6 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFl
 	for(int i=0;i<10000&&!ifs.good();i++);
 	if(ifs.good())
 	{
-		//std::cerr<<"D3DX11CreateEffectFromBinaryFile found file "<<compiled_filename.c_str()<<std::endl;
 		ifs.seekg(0,std::ios_base::end);
 		size_t sz=(size_t)ifs.tellg();
 		ifs.seekg(0,std::ios_base::beg);
@@ -385,9 +384,15 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 	if(ifs.good())
 	{
 		std::string output_filename=text_filename+"o";
-		DeleteFileA(output_filename.c_str());
+		std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
+		//DeleteFileA(output_filename.c_str());
 		std::string command=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("DXSDK_DIR");
-		if(command.length())
+		if(!command.length())
+		{
+			std::string progfiles=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("ProgramFiles");
+			command=progfiles+"/Microsoft DirectX SDK (June 2010)/";
+			std::cerr<<"Missing DXSDK_DIR environment variable, defaulting to: "<<command.c_str()<<std::endl;
+		}
 		{
 //>"fxc.exe" /T fx_2_0 /Fo "..\..\gamma.fx"o "..\..\gamma.fx"
 			command="\""+command;
@@ -485,12 +490,14 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 				}
 				while( PeekNamedPipe(hReadErrorPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
 				{
-				  ReadFile(hReadErrorPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
-				  std::string str((char*)buff, (size_t)dwBytesRead);
-				  std::cerr << str.c_str();
-				  size_t pos=str.find("rror");
-				  if(pos<str.length())
-					has_errors=true;
+					ReadFile(hReadErrorPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
+					std::string str((char*)buff, (size_t)dwBytesRead);
+					std::cerr << str.c_str();
+					size_t pos=str.find("rror");
+					if(pos<str.length())
+						has_errors=true;
+					if(str.find("failed")<str.length())
+						has_errors=true;
 				}
 			}
 			// Process is done, or we timed out:
@@ -528,7 +535,6 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 {
 	HRESULT hr=S_OK;
 	std::string text_filename=simul::base::WStringToString(filename);
-	std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
 
 	tstring fn=shader_path+filename;
 	

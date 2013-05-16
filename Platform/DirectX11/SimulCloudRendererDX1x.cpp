@@ -28,6 +28,7 @@
 #include "Simul/Platform/DirectX11/Profiler.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
+
 using namespace simul::dx11;
 const char *GetErrorText(HRESULT hr)
 {
@@ -449,7 +450,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	SAFE_RELEASE(effect);
 }
 
-bool SimulCloudRendererDX1x::CreateNoiseTexture(void* context,bool override_file)
+bool SimulCloudRendererDX1x::CreateNoiseTexture(void* context)
 {
 	if(!m_pd3dDevice)
 		return false;
@@ -464,7 +465,7 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(void* context,bool override_file
 	loadInfo.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	loadInfo.Format = DXGI_FORMAT_R8G8B8A8_SNORM;
 loadInfo.MipLevels=0;
-	if(!override_file)
+//	if(!override_file)
 	{
 		/*hr=D3DX11CreateShaderResourceViewFromFile(
 										m_pd3dDevice,
@@ -750,19 +751,11 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 		return true;
 	}
 
-		simul::math::Vector3 X1=cloudKeyframer->GetCloudInterface()->GetOrigin();
-		simul::math::Vector3 InverseDX=cloudKeyframer->GetCloudInterface()->GetInverseScales();
-	if(ReverseDepth)
-	{
-		D3DXMATRIX invertz;
-		D3DXMatrixIdentity(&invertz);
-		invertz.m[2][2] = -1.0f;
-		invertz.m[3][2]	= 1.0f;
-		D3DXMatrixMultiply(&proj,&proj,&invertz);
-	}
-	else
+	simul::math::Vector3 X1=cloudKeyframer->GetCloudInterface()->GetOrigin();
+	simul::math::Vector3 InverseDX=cloudKeyframer->GetCloudInterface()->GetInverseScales();
+
 	// Mess with the proj matrix to extend the far clipping plane:
-		simul::dx11::FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
+	simul::dx11::FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f);
 	
 	if (test < 5)
 	{
@@ -1072,8 +1065,8 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 		return true;
 	}
 
-	render_time*=0.99f;
-	render_time+=0.01f*profileBlock.GetTime();//profileBlock.GetTime();
+	gpu_time*=0.99f;
+	gpu_time+=0.01f*profileBlock.GetTime();//profileBlock.GetTime();
 
 	return (hr==S_OK);
 }
@@ -1270,15 +1263,6 @@ bool SimulCloudRendererDX1x::MakeCubemap()
 	HRESULT hr=S_OK;
 	return (hr==S_OK);
 }
-
-const TCHAR *SimulCloudRendererDX1x::GetDebugText() const
-{
-	static TCHAR debug_text[256];
-	simul::math::Vector3 wo=GetCloudInterface()->GetWindOffset();
-	_stprintf_s(debug_text,256,_T("cloud_interp %4.4g"),cloudKeyframer->GetInterpolation());
-	return debug_text;
-}
-
 
 void SimulCloudRendererDX1x::SetEnableStorms(bool s)
 {

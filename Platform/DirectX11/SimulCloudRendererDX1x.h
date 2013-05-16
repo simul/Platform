@@ -69,7 +69,6 @@ public:
 
 	//! Return true if the camera is above the cloudbase altitude.
 	bool IsCameraAboveCloudBase() const;
-	const TCHAR *GetDebugText() const;
 	void SetEnableStorms(bool s);
 	float GetTiming() const;
 	//! Get the list of three textures used for cloud rendering.
@@ -124,7 +123,7 @@ protected:
 	};
 	static const int MAX_INSTANCES=400;
 	InstanceType instances[MAX_INSTANCES];
-ID3D11DeviceContext *mapped_context;
+	ID3D11DeviceContext *mapped_context;
 	ID3D1xDevice*					m_pd3dDevice;
 	ID3D1xBuffer *					vertexBuffer;
 	ID3D1xBuffer *					indexBuffer;
@@ -210,7 +209,7 @@ ID3D1xEffectVectorVariable* 	noiseOffset		;
 	float LookupLargeScaleTexture(float x,float y);
 
 	bool CreateLightningTexture();
-	virtual bool CreateNoiseTexture(void *context,bool override_file=false);
+	virtual bool CreateNoiseTexture(void *context);
 	bool CreateCloudEffect();
 	bool MakeCubemap(); // not ready yet
 	void RenderNoise(void *context);

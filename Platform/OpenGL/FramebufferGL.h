@@ -43,7 +43,7 @@ public:
 	void Activate(void *context,int x,int y,int w,int h);
 	void Deactivate(void *context);
 	void CopyDepthFromFramebuffer();
-	void Clear(void*,float r,float g,float b,float a,int mask=0);
+	void Clear(void*,float r,float g,float b,float a,float depth,int mask=0);
 	void DeactivateAndRender(void *,bool blend);
 	void Render(void *,bool blend);
 	//void DrawQuad(int w, int h);

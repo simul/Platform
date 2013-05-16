@@ -119,7 +119,10 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 {
 	SAFE_RELEASE(effect);
 	HRESULT hr=S_OK;
-	V_CHECK(CreateEffect(m_pd3dDevice,&effect,L"atmospherics.fx"));
+	std::map<std::string,std::string> defines;
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
+	V_CHECK(CreateEffect(m_pd3dDevice,&effect,L"atmospherics.fx",defines));
 	technique			=effect->GetTechniqueByName("simul_atmospherics");
 	invViewProj			=effect->GetVariableByName("invViewProj")->AsMatrix();
 	lightDir			=effect->GetVariableByName("lightDir")->AsVector();
@@ -176,7 +179,7 @@ void SimulAtmosphericsRendererDX1x::StartRender(void *context)
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
 	framebuffer->Activate(m_pImmediateContext);
 	// Clear the screen to black, with alpha=1, representing far depth
-	framebuffer->Clear(context,0.0,1.0,1.0,1.0);
+	framebuffer->Clear(context,0.f,1.f,1.f,1.f,ReverseDepth?0.f:1.f);
 
 	PIXEndNamedEvent();
 }
