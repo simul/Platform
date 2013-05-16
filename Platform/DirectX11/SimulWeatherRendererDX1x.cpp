@@ -127,7 +127,10 @@ void SimulWeatherRendererDX1x::RecompileShaders()
 	BaseWeatherRenderer::RecompileShaders();
 	framebuffer.RecompileShaders();
 	SAFE_RELEASE(m_pTonemapEffect);
-	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("simul_hdr.fx"));
+	std::map<std::string,std::string> defines;
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
+	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("simul_hdr.fx"), defines);
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
 	SkyOverStarsTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_over_stars");
 	imageTexture			=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();

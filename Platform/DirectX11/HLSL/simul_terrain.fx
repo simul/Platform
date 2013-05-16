@@ -1,4 +1,5 @@
-cbuffer cbPerObject : register(b0)
+#include "CppHlsl.hlsl"
+cbuffer cbPerObject R0
 {
 	matrix worldViewProj : packoffset(c0);
 };

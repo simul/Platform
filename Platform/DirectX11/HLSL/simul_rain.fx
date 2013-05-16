@@ -1,5 +1,6 @@
+#include "CppHlsl.hlsl"
 #include "states.hlsl"
-cbuffer RainConstants : register(b0)
+cbuffer RainConstants R0
 {
 	float4x4 worldViewProj;
 	float4 lightColour;

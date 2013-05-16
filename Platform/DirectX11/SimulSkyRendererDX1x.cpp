@@ -31,6 +31,7 @@ extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
 #include "Simul/Platform/DirectX11/HLSL/simul_earthshadow.hlsl"
+#include "Simul/Platform/DirectX11/Utilities.h"
 using namespace simul::dx11;
 struct Vertex_t
 {
@@ -509,6 +510,8 @@ void SimulSkyRendererDX1x::RecompileShaders()
 		defines["Y_VERTICAL"]="1";
 	else
 		defines["Z_VERTICAL"]="1";
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
 	V_CHECK(CreateEffect(m_pd3dDevice,&m_pSkyEffect,L"simul_sky.fx",defines));
 	m_hTechniqueSky				=m_pSkyEffect->GetTechniqueByName("simul_sky");
 	m_hTechniqueEarthShadow		=m_pSkyEffect->GetTechniqueByName("simul_sky_earthshadow");

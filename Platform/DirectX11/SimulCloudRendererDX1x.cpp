@@ -640,6 +640,8 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 		defines["Y_VERTICAL"]="1";
 	else
 		defines["Z_VERTICAL"]="1";
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
 	HRESULT hr=CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds.fx",defines);
 	m_hTechniqueCloud				=m_pCloudEffect->GetTechniqueByName("simul_clouds");
 	m_hTechniqueCloudsAndLightning	=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
@@ -1127,7 +1129,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	cloudConstants.worldViewProj=ortho;
 	cloudConstants.worldViewProj.transpose();
 	ID3D1xEffectConstantBuffer* cbCloudConstants=m_pCloudEffect->GetConstantBufferByName("CloudConstants");
-
+	UtilityRenderer::SetScreenSize(width,height);
 	if(skyInterface)
 	for(int i=0;i<2;i++)
 	{
