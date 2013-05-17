@@ -133,7 +133,7 @@ void SimulWeatherRendererDX1x::RecompileShaders()
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("simul_hdr.fx"), defines);
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
 	SkyOverStarsTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_over_stars");
-	imageTexture				=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
+	imageTexture			=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 }
 

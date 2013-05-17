@@ -144,15 +144,6 @@ void SimulCloudRendererDX1x::SetInscatterTextures(void *t,void *s)
 	skylightTexture_SRV=(ID3D11ShaderResourceView*)s;
 }
 
-void SimulCloudRendererDX1x::SetNoiseTextureProperties(int s,int f,int o,float p)
-{
-	noise_texture_size=s;
-	noise_texture_frequency=f;
-	texture_octaves=o;
-	texture_persistence=p;
-	SAFE_RELEASE(noiseTextureResource);
-}
-
 void SimulCloudRendererDX1x::RecompileShaders()
 {
 	CreateCloudEffect();
@@ -169,11 +160,6 @@ void SimulCloudRendererDX1x::RecompileShaders()
 void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 {
 	m_pd3dDevice=(ID3D11Device*)dev;
-	ID3D11DeviceContext* m_pImmediateContext;
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-	HRESULT hr;
-	CreateNoiseTexture(m_pImmediateContext);
-		SAFE_RELEASE(m_pImmediateContext)
 	CreateLightningTexture();
 	RecompileShaders();
 	D3D11_SHADER_RESOURCE_VIEW_DESC texdesc;
@@ -201,7 +187,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
     };
 	D3DX11_PASS_DESC PassDesc;
 	ID3DX11EffectPass *pass=m_hTechniqueCloud->GetPassByIndex(0);
-	hr=pass->GetDesc(&PassDesc);
+	HRESULT hr=pass->GetDesc(&PassDesc);
 //return true;
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pLightningVtxDecl);
@@ -388,6 +374,11 @@ static int PowerOfTwo(int unum)
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 void SimulCloudRendererDX1x::RenderNoise(void *context)
 {
+	int noise_texture_size		=cloudKeyframer->GetEdgeNoiseTextureSize();
+	int noise_texture_frequency	=cloudKeyframer->GetEdgeNoiseFrequency();
+	int texture_octaves			=cloudKeyframer->GetEdgeNoiseOctaves();
+	float texture_persistence	=cloudKeyframer->GetEdgeNoisePersistence();
+
 	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
 	ID3D1xEffect*					effect=NULL;
 	ID3D1xEffectTechnique*			randomTechnique;
@@ -455,58 +446,6 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(void* context)
 	if(!m_pd3dDevice)
 		return false;
 	RenderNoise(context);
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext*)context;
-	return true;
-	HRESULT hr=S_OK;
-	SAFE_RELEASE(noise_texture);
-	
-	D3DX1x_IMAGE_LOAD_INFO loadInfo;
-	ZeroMemory( &loadInfo, sizeof(D3DX11_IMAGE_LOAD_INFO) );
-	loadInfo.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	loadInfo.Format = DXGI_FORMAT_R8G8B8A8_SNORM;
-loadInfo.MipLevels=0;
-//	if(!override_file)
-	{
-		/*hr=D3DX11CreateShaderResourceViewFromFile(
-										m_pd3dDevice,
-										TEXT("./Media/Textures/noise.dds"),
-										&loadInfo,
-										NULL,
-										&noiseTextureResource,
-										&hr);
-		if(hr==S_OK)
-		{
-			return true;
-		}*/
-		const TCHAR *err=DXGetErrorString(hr);
-		std::cerr<<err<<std::endl;
-	}
-	int mips=PowerOfTwo(noise_texture_size/2);
-	D3D11_TEXTURE2D_DESC textureDesc=
-	{
-		noise_texture_size,
-		noise_texture_size,
-		mips,
-		1,
-		DXGI_FORMAT_R8G8B8A8_SNORM,
-		{1,0},
-		D3D11_USAGE_DYNAMIC,
-		D3D11_BIND_SHADER_RESOURCE,
-		D3D11_CPU_ACCESS_WRITE,
-		0//D3D11_RESOURCE_MISC_GENERATE_MIPS only works with an RT that is also a Shader resource.
-	};
-	hr=m_pd3dDevice->CreateTexture2D(&textureDesc,NULL,&noise_texture);
-	V_CHECK(hr);
-	D3D1x_MAPPED_TEXTURE2D mapped;
-	if(!noise_texture)
-		return false;
-	if(FAILED(hr=m_pImmediateContext->Map(noise_texture,0,D3D1x_MAP_WRITE_DISCARD,0,&mapped)))
-		return false;
-	simul::clouds::TextureGenerator::SetBits(0x000000FF,0x0000FF00,0x00FF0000,0xFF000000,(unsigned)4,big_endian);
-	simul::clouds::TextureGenerator::Make2DNoiseTexture(( char *)(mapped.pData),noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
-	m_pImmediateContext->Unmap(noise_texture,0);
-	V_CHECK(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
-	//m_pImmediateContext->GenerateMips(noiseTextureResource);
 	return true;
 }
 
@@ -1330,6 +1269,18 @@ void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(void *context)
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext*)context;
 	Map(m_pImmediateContext,2);
 	EnsureTextureCycle();
+	int a	=cloudKeyframer->GetEdgeNoiseTextureSize();
+	int b	=cloudKeyframer->GetEdgeNoiseFrequency();
+	int c	=cloudKeyframer->GetEdgeNoiseOctaves();
+	float d	=cloudKeyframer->GetEdgeNoisePersistence();
+	unsigned check=a+b+c+(*(unsigned*)(&d));
+	if(check!=noise_checksum)
+	{
+		SAFE_RELEASE(noise_texture);
+		noise_checksum=check;
+	}
+	if(!noise_texture)
+		CreateNoiseTexture(m_pImmediateContext);
 	for(int i=0;i<3;i++)
 	{
 		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);

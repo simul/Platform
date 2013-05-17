@@ -133,6 +133,10 @@ bool SimulGLCloudRenderer::CreateNoiseTexture(void *context)
 {
 	if(!init)
 		return false;
+	int noise_texture_size		=cloudKeyframer->GetEdgeNoiseTextureSize();
+	int noise_texture_frequency	=cloudKeyframer->GetEdgeNoiseFrequency();
+	int texture_octaves			=cloudKeyframer->GetEdgeNoiseOctaves();
+	float texture_persistence	=cloudKeyframer->GetEdgeNoisePersistence();
 	SAFE_DELETE_TEXTURE(noise_tex);
     glGenTextures(1,&noise_tex);
     glBindTexture(GL_TEXTURE_2D,noise_tex);

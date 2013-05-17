@@ -95,6 +95,8 @@ ERROR_CHECK
 		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
 		GLuint dens_prog=MakeProgram("simple.vert",NULL,"simul_2d_cloud_detail.frag");
 		glUseProgram(dens_prog);
+		GLint persistence		=glGetUniformLocation(dens_prog,"persistence");
+		glUniform1f(persistence,cloudKeyframer->GetEdgeNoisePersistence());
 		dens_fb.DrawQuad(context);
 		SAFE_DELETE_PROGRAM(dens_prog);
 	}

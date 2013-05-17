@@ -99,6 +99,11 @@ namespace simul
 		{
 			pipe_compiler_output=p;
 		}
+		ShaderBuildMode shaderBuildMode;
+		void SetShaderBuildMode( ShaderBuildMode b)
+		{
+			shaderBuildMode=b;
+		}
 		void SetShaderPath(const char *path)
 		{
 			shader_path=tstring_of(path);
@@ -401,9 +406,13 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 	// first try to find an existing text source with this filename, and compile it.
 	std::string text_filename=simul::base::WStringToString(filename);
 	std::ifstream ifs(text_filename.c_str(),std::ios_base::binary);
-	if(ifs.good())
+	std::string output_filename=text_filename+"o";
+	std::ifstream oifs(output_filename.c_str(),std::ios_base::binary);
+	
+	//ALWAYS_BUILD=1,BUILD_IF_NO_BINARY,NEVER_BUILD
+	if(ifs.good()&&(shaderBuildMode==ALWAYS_BUILD||(shaderBuildMode==BUILD_IF_NO_BINARY&&!oifs.good())))
 	{
-		std::string output_filename=text_filename+"o";
+		oifs.close();
 		std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
 		//DeleteFileA(output_filename.c_str());
 		std::string command=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("DXSDK_DIR");

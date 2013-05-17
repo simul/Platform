@@ -76,7 +76,6 @@ public:
 	void SetLossTexture(void *t);
 	void SetInscatterTextures(void *t,void *s);
 
-	void SetNoiseTextureProperties(int s,int f,int o,float p);
 	void SetAltitudeTextureCoordinate(float f)
 	{
 		altitude_tex_coord=f;
@@ -215,6 +214,7 @@ ID3D1xEffectVectorVariable* 	noiseOffset		;
 	void RenderNoise(void *context);
 	
 	bool enable_lightning;
+	unsigned noise_checksum;
 };
 #ifdef _MSC_VER
 #pragma warning(pop)
