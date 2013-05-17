@@ -117,6 +117,8 @@ template<typename t> t max3(t a,t b,t c)
 void SimulHDRRendererDX1x::RecompileShaders()
 {
 	SAFE_RELEASE(m_pTonemapEffect);
+	if(!m_pd3dDevice)
+		return;
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("simul_hdr.fx"));
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
 	glowTechnique			=m_pTonemapEffect->GetTechniqueByName("simul_glow");

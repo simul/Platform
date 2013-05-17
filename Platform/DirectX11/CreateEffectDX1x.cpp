@@ -47,6 +47,7 @@ static bool pipe_compiler_output=false;
 static ID3D1xDevice		*m_pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
+ShaderBuildMode shaderBuildMode=ALWAYS_BUILD;
 namespace simul
 {
 	namespace dx11
@@ -99,7 +100,6 @@ namespace simul
 		{
 			pipe_compiler_output=p;
 		}
-		ShaderBuildMode shaderBuildMode;
 		void SetShaderBuildMode( ShaderBuildMode b)
 		{
 			shaderBuildMode=b;
@@ -414,7 +414,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 	{
 		oifs.close();
 		std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
-		//DeleteFileA(output_filename.c_str());
+		DeleteFileA(output_filename.c_str());
 		std::string command=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("DXSDK_DIR");
 		if(!command.length())
 		{

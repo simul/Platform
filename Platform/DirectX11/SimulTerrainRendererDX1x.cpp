@@ -41,6 +41,8 @@ void SimulTerrainRendererDX1x::RecompileShaders()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pTerrainEffect);
+	if(!m_pd3dDevice)
+		return;
 	std::map<std::string,std::string> defines;
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
