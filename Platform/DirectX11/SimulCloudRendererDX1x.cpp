@@ -1115,7 +1115,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	ortho._14=-1.f;
 	ortho._22=-ortho._22;
 	ortho._24=1.f;
-	ID3DX11EffectMatrixVariable*	worldViewProj=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	//ID3DX11EffectMatrixVariable*	worldViewProj=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
 
 	CloudConstants cloudConstants;
 	memset(&cloudConstants,0,sizeof(cloudConstants));

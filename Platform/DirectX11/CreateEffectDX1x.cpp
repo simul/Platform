@@ -132,31 +132,44 @@ namespace simul
 		}
 		void FixProjectionMatrix(D3DXMATRIX &proj,float zFar)
 		{
-			float curNear=proj._43/proj._33;
-			float curFar=proj._43*curNear/(curNear+proj._43);
-			float zNear=curNear;
-			if(curNear<0&&curFar<0)
+			// If right-handed:
+			if(proj._34<0)
 			{
-				std::swap(zNear,zFar);
-				zNear*=-1.f;
-				zFar*=-1.f;
+				if(proj._43>0)
+				{
+					float zF=proj._43/proj._33;
+					float zN=proj._43*zF/(zF+proj._43);
+					proj._33=-zFar/(zFar-zN);
+					proj._43=-zN*zFar/(zFar-zN);
+				}
+				else
+				{
+					float zN=proj._43/proj._33;
+					float zF=proj._43*zN/(zN+proj._43);
+					proj._33=-zFar/(zFar-zN);
+					proj._43=-zN*zFar/(zFar-zN);
+				}
 			}
-			proj._33=-zFar/(zFar-zNear);
-			proj._43=-zNear*zFar/(zFar-zNear);
 		}
 		void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar)
 		{
-			float curNear=proj._43/proj._33;
-			float curFar=proj._43*curNear/(curNear+proj._43);
-			//Reversed matrix??
-			if(curNear<0&&curFar<0)
+			if(proj._34<0)
 			{
-				std::swap(zNear,zFar);
-				zNear*=-1.f;
-				zFar*=-1.f;
+				if(proj._43>0)
+				{
+					float zF=proj._43/proj._33;
+					float zN=proj._43*zF/(zF+proj._43);
+					proj._33=-zFar/(zFar-zNear);
+					proj._43=-zNear*zFar/(zFar-zNear);
+				}
+				else
+				{
+					float zN=proj._43/proj._33;
+					float zF=proj._43*zN/(zN+proj._43);
+					proj._33=-zFar/(zFar-zNear);
+					proj._43=-zNear*zFar/(zFar-zNear);
+				}
 			}
-			proj._33=-zFar/(zFar-zNear);
-			proj._43=-zNear*zFar/(zFar-zNear);
 		}
 
 	}
