@@ -28,7 +28,7 @@ public:
 	META_BeginProperties
 		META_ValueProperty(float,Gamma,"")
 		META_ValueProperty(float,Exposure,"")
-		META_ValueProperty(bool,ReverseDepth,"")
+		META_ValuePropertyWithSetCall(bool,ReverseDepth,RecompileShaders,"")
 	META_EndProperties
 	void SetBufferSize(int w,int h);
 	// Standard d3d object interface functions

@@ -104,10 +104,6 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 {
 	if(!enabled)
 		return;
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
-	if(simulHDRRenderer)
-		simulHDRRenderer->SetReverseDepth(ReverseDepth);
 	D3DXMATRIX world,view,proj;
 	static float nearPlane=0.01f;
 	static float farPlane=250000.f;
@@ -287,4 +283,14 @@ const char *Direct3D11Renderer::GetDebugText() const
 	if(simulWeatherRenderer)
 		str+=simulWeatherRenderer->GetDebugText();
 	return str.c_str();
+}
+
+void Direct3D11Renderer::ReverseDepthChanged()
+{
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
+	if(simulHDRRenderer)
+		simulHDRRenderer->SetReverseDepth(ReverseDepth);
+	if(simulTerrainRenderer)
+		simulTerrainRenderer->SetReverseDepth(ReverseDepth);
 }
