@@ -171,6 +171,13 @@ namespace simul
 				}
 			}
 		}
+		void ConvertReversedToRegularProjectionMatrix(D3DXMATRIX &proj)
+		{
+			float zF=proj._43/proj._33;
+			float zN=proj._43*zF/(zF+proj._43);
+			proj._33=-zF/(zF-zN);
+			proj._43=-zN*zF/(zF-zN);
+		}
 
 	}
 }

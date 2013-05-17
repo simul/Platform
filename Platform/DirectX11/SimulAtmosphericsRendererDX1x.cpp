@@ -200,6 +200,11 @@ void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
 	simul::math::Matrix4x4 viewproj;
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	view(3,0)=view(3,1)=view(3,2)=0;
+	if(ReverseDepth)
+	{
+		// Convert the proj matrix into a normal non-reversed matrix.
+		simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
+	}
 	simul::math::Matrix4x4 v((const float *)view),p((const float*)proj);
 	simul::math::Multiply4x4(viewproj,v,p);
 	viewproj.Transpose(vpt);
