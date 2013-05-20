@@ -1,4 +1,5 @@
 #include "CppHLSL.hlsl"
+#include "states.hlsl"
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 #define Z_VERTICAL 1
 #ifndef WRAP_CLOUDS
@@ -301,16 +302,17 @@ struct vertexOutputCS
 vertexOutputCS VS_CrossSection(vertexInputCS IN)
 {
     vertexOutputCS OUT;
-    OUT.hPosition = mul(worldViewProj,IN.position);
-
+    OUT.hPosition	=float4(IN.position.xy,1.0,1.0);
 	OUT.texCoords.xy=IN.texCoords;
 	OUT.texCoords.z=1;
     return OUT;
 }
+
 float4 PS_Simple( vertexOutputCS IN):SV_TARGET
 {
     return noiseTexture.Sample(crossSectionSamplerState,IN.texCoords.xy);
 }
+
 #define CROSS_SECTION_STEPS 32
 float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
 {
@@ -352,13 +354,7 @@ float4 PS_CrossSectionXY( vertexOutputCS IN): SV_TARGET
     return float4(accum,1);
 }
 
-DepthStencilState DisableDepth
-{
-	DepthEnable = FALSE;
-	DepthWriteMask = ZERO;
-}; 
-
-BlendState DoBlend
+BlendState CloudBlend
 {
 	BlendEnable[0] = TRUE;
 	SrcBlend = SRC_ALPHA;
@@ -370,23 +366,13 @@ BlendState DoBlend
     //RenderTargetWriteMask[0] = 0x0F;
 };
 
-BlendState NoBlend
-{
-	BlendEnable[0] = FALSE;
-};
-
-RasterizerState RenderNoCull
-{
-	CullMode = none;
-};
-
 technique11 simul_clouds_lowdef
 {
     pass p0 
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-	//	SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+	//	SetBlendState(CloudBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 
         SetGeometryShader(CompileShader(gs_4_0,GS_Main()));
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
@@ -400,7 +386,7 @@ technique11 simul_clouds
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		//SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		//SetBlendState(CloudBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(CompileShader(gs_5_0,GS_Main()));
 		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Clouds()));
@@ -413,7 +399,7 @@ technique11 simul_clouds_and_lightning
     {
 		SetDepthStencilState(DisableDepth,0);
         SetRasterizerState( RenderNoCull );
-		//SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		//SetBlendState(CloudBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(CompileShader(gs_5_0,GS_Main()));
 		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
 		SetPixelShader(CompileShader(ps_5_0,PS_WithLightning()));
@@ -445,16 +431,16 @@ technique11 cross_section_xy
 		SetPixelShader(CompileShader(ps_4_0,PS_CrossSectionXY()));
     }
 }
+
 technique11 simple
 {
-    pass p0 
+    pass p0
     {
-		SetDepthStencilState(DisableDepth,0);
-        SetRasterizerState( RenderNoCull );
-		SetBlendState(NoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Simple()));
     }
 }
-

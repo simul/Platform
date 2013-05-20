@@ -17,6 +17,7 @@ cbuffer cbPerObject : register(b10)
 
 Texture2D inscTexture;
 #include "CppHLSL.hlsl"
+#include "states.hlsl"
 #include "simul_earthshadow.hlsl"
 Texture2D skylTexture;
 SamplerState samplerState
@@ -165,11 +166,7 @@ float4 PS_DrawCubemap( vertexOutput IN): SV_TARGET
 float4 PS_Mainc( geomOutput IN): SV_TARGET
 {
 	float3 view=normalize(IN.wDirection.xyz);
-#ifdef Z_VERTICAL
 	float sine	=view.z;
-#else
-	float sine	=view.y;
-#endif
 	float2 texcoord	=float2(1.0,0.5*(1.0-sine));
 	float4 insc=inscTexture.Sample(samplerState,texcoord);
 	float cos0=dot(lightDir.xyz,view.xyz);
@@ -182,11 +179,7 @@ float4 PS_Mainc( geomOutput IN): SV_TARGET
 float4 PS_Main( vertexOutput IN): SV_TARGET
 {
 	float3 view=normalize(IN.wDirection.xyz);
-#ifdef Z_VERTICAL
 	float sine	=view.z;
-#else
-	float sine	=view.y;
-#endif
 	float2 texc2	=float2(1.0,0.5*(1.0-sine));
 	float4 insc=inscTexture.Sample(samplerState,texc2);
 	float cos0=dot(lightDir.xyz,view.xyz);
@@ -199,11 +192,7 @@ float4 PS_Main( vertexOutput IN): SV_TARGET
 float4 PS_EarthShadow( vertexOutput IN): SV_TARGET
 {
 	float3 view=normalize(IN.wDirection.xyz);
-#ifdef Z_VERTICAL
 	float sine	=view.z;
-#else
-	float sine	=view.y;
-#endif
 	float2 texc2	=float2(1.0,0.5*(1.0-sine));
 	float4 insc		=EarthShadowFunction(texc2,view);
 	float cos0=dot(lightDir.xyz,view.xyz);
@@ -359,7 +348,7 @@ float4 PS_Planet(svertexOutput IN): SV_TARGET
 	return result;
 }
 
-
+/*
 //------------------------------------
 // Technique
 //------------------------------------
@@ -382,7 +371,7 @@ BlendState DontBlend
 {
 	BlendEnable[0] = FALSE;
 };
-BlendState DoBlend
+BlendState AddBlend
 {
 	BlendEnable[0] = TRUE;
 	SrcBlend = One;
@@ -396,14 +385,14 @@ BlendState AlphaBlend
 };
 RasterizerState RenderNoCull { CullMode = none; };
 RasterizerState CullClockwise { CullMode = back; };
-
+*/
 technique11 simul_sky
 {
     pass p0 
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Main()));
@@ -416,7 +405,7 @@ technique11 simul_sky_earthshadow
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-	//	SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
+	//	SetBlendState(AddBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_EarthShadow()));
@@ -429,7 +418,7 @@ technique11 simul_sky_CUBEMAP
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-	//	SetBlendState(DoBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
+	//	SetBlendState(AddBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Cubemap()));
         SetGeometryShader(CompileShader(gs_4_0,GS_Cubemap()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Mainc()));
@@ -484,7 +473,7 @@ technique11 simul_stars
 		SetVertexShader(CompileShader(vs_4_0,VS_Stars()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Stars()));
 		SetDepthStencilState( EnableDepth, 0 );
-		SetBlendState(DoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
     }
 }
 
@@ -497,7 +486,7 @@ technique11 simul_sun
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetDepthStencilState( EnableDepth, 0 );
-		SetBlendState(DoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
     }
 }
 
@@ -511,7 +500,7 @@ technique11 simul_flare
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Flare()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
 
@@ -525,7 +514,7 @@ technique11 simul_query
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
 
@@ -545,7 +534,7 @@ technique11 draw_cubemap
 {
     pass p0 
     {		
-		SetRasterizerState( CullClockwise );
+		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_DrawCubemap()));
 		SetPixelShader(CompileShader(ps_4_0,PS_DrawCubemap()));

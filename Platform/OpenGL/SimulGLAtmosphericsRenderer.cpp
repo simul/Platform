@@ -119,7 +119,7 @@ ERROR_CHECK
 void SimulGLAtmosphericsRenderer::StartRender(void *context)
 {
 	framebuffer->Activate(context);
-	framebuffer->Clear(context,0.f,0.0f,1.0f,1.0f);
+	framebuffer->Clear(context,0.f,0.0f,1.0f,1.0f,ReverseDepth?0.f:1.f);
 	ERROR_CHECK
 }
 

@@ -126,7 +126,7 @@ protected:
 	D3DXVECTOR4					cam_pos;
 	D3DXMATRIX					world,view,proj;
 
-	virtual bool CreateNoiseTexture(void *,bool override_file=false);
+	virtual bool CreateNoiseTexture(void *);
 	bool CreateImageTexture();
 	bool MakeCubemap(); // not ready yet
 	float texture_scale;

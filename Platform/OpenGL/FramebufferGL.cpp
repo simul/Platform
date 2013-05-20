@@ -275,12 +275,12 @@ ERROR_CHECK
 }
 
 
-void FramebufferGL::Clear(void*,float r,float g,float b,float a,int mask)
+void FramebufferGL::Clear(void*,float r,float g,float b,float a,float depth,int mask)
 {
 	if(!mask)
 		mask=GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT;
 	glClearColor(r,g,b,a);
-	
+	glClearDepth(depth);
 	glClear(mask);
 }
 

@@ -48,9 +48,9 @@ public:
 	void RecompileShaders();
 
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-	HRESULT RestoreDeviceObjects(ID3D1xDevice* pd3dDevice);
+	void RestoreDeviceObjects(void* pd3dDevice);
 	//! Call this when the device has been lost.
-	HRESULT InvalidateDeviceObjects();
+	void InvalidateDeviceObjects();
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	void SetInputTextures(ID3D1xTexture2D* image,ID3D1xTexture2D* depth)
 	{

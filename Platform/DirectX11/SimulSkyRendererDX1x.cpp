@@ -504,7 +504,7 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pSkyEffect);
 	if(!m_pd3dDevice)
-		return ;
+		return;
 	std::map<std::string,std::string> defines;
 	if(y_vertical)
 		defines["Y_VERTICAL"]="1";
@@ -557,10 +557,9 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 
 	// fix the projection matrix so this quad is far away:
 	D3DXMATRIX tmp=proj;
-	float zNear=-proj._43/proj._33;
 	static float ff=0.0001f;
 	float zFar=(1.f+ff)/tan(sun_angular_size);
-	simul::dx11::FixProjectionMatrix(proj,zFar*ff,zFar,IsYVertical());
+	simul::dx11::FixProjectionMatrix(proj,zFar*ff,zFar);
 /*
 	// Start the query
 	d3dQuery->Begin();
@@ -837,42 +836,25 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context)
 	return true;
 }
 
-//static int test =0;
-
 bool SimulSkyRendererDX1x::Render(void *context,bool blend)
 {
 	HRESULT hr=S_OK;
 	EnsureTexturesAreUpToDate(context);
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
-
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	//if(!cubemap)
 		Render2DFades(m_pImmediateContext);
 	D3DXMATRIX tmp1,tmp2,wvp;
-	//view._41=view._42=view._43=0.0f;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
 	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 	D3DXMatrixIdentity(&world);
-
 	//set up matrices
 	world._41=cam_pos.x;
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
-#if 0
-	if(ReverseDepth)
-	{
-		D3DXMATRIX invertz;
-		D3DXMatrixIdentity(&invertz);
-		invertz.m[2][2] = -1.0f;
-		invertz.m[3][2]	= 1.0f;
-		D3DXMatrixMultiply(&proj,&proj,&invertz);
-	}
-	else
-// Fix projection
-		simul::dx11::FixProjectionMatrix(proj,1000.f,IsYVertical());
-#endif
+	//simul::dx11::FixProjectionMatrix(proj,1000.f);
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);
 #if 0 // Code for single-pass cubemap. This DX11 feature is not so hot.
@@ -900,15 +882,12 @@ bool SimulSkyRendererDX1x::Render(void *context,bool blend)
 		std::swap(light_dir.y,light_dir.z);
 		std::swap(sun_dir.y,sun_dir.z);
 	}
-
 	lightDirection->SetFloatVector(light_dir);
 	mieRayleighRatio->SetFloatVector(mie_rayleigh_ratio);
 	hazeEccentricity->SetFloat(skyKeyframer->GetMieEccentricity());
-
 	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
-								skyKeyframer->GetAltitudeKM()
-								,skyKeyframer->GetDirectionToSun());
-	
+									skyKeyframer->GetAltitudeKM()
+									,skyKeyframer->GetDirectionToSun());
 	if(e.enable)
 	{
 		hr=ApplyPass(m_pImmediateContext,m_hTechniqueEarthShadow->GetPassByIndex(0));
@@ -1066,16 +1045,6 @@ void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,void* *i1,voi
 		*s=(void*)skylight_2d->buffer_texture_SRV;
 	else
 		*s=NULL;
-}
-
-
-const char *SimulSkyRendererDX1x::GetDebugText() const
-{
-	static char txt[200];
-	int hours=(int)(skyKeyframer->GetDaytime()*24.f);
-	int minutes=(int)(60.f*(skyKeyframer->GetDaytime()*24.f-(float)hours));
-	sprintf_s(txt,200,"Time: %02d:%02d\ncycle %d interp %3.3g",hours,minutes,cycle,skyKeyframer->GetInterpolation());
-	return txt;
 }
 
 void SimulSkyRendererDX1x::SetYVertical(bool y)

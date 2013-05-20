@@ -220,14 +220,14 @@ Simul2DCloudRenderer::~Simul2DCloudRenderer()
 	InvalidateDeviceObjects();
 }
 
-bool Simul2DCloudRenderer::CreateNoiseTexture(void *,bool override_file)
+bool Simul2DCloudRenderer::CreateNoiseTexture(void *)
 {
 	SAFE_RELEASE(noise_texture);
 	// Can we load it from disk?
 	HRESULT hr=S_OK;
-	if(!override_file)
-		if((hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/noise.dds"),&noise_texture))==S_OK)
-			return false;
+//	if(!override_file)
+//		if((hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/noise.dds"),&noise_texture))==S_OK)
+//			return false;
 	// Otherwise create it:
 	int size=512;
 	// NOTE: We specify ONE mipmap for this texture, NOT ZERO. If we use zero, that means

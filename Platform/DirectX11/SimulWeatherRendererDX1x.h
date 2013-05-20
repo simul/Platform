@@ -62,8 +62,6 @@ public:
 	class SimulCloudRendererDX1x *GetCloudRenderer();
 	//! Get a pointer to the 2d cloud renderer owned by this class instance.
 	class Simul2DCloudRendererDX11 *Get2DCloudRenderer();
-	//! Get the current debug text as a c-string pointer.
-	const char *GetDebugText() const;
 	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 

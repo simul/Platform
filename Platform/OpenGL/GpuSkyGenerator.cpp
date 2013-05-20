@@ -165,7 +165,7 @@ std::cout<<"\tGpu sky: dens_tex "<<timer.UpdateTime()<<std::endl;
 	simul::sky::float4 *target=loss;
 ERROR_CHECK
 	F[0]->Activate(NULL);
-		F[0]->Clear(NULL,1.f,1.f,1.f,1.f);
+		F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 		glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 	F[0]->Deactivate(NULL);
@@ -188,7 +188,7 @@ ERROR_CHECK
 	ERROR_CHECK
 		F[1]->Activate(NULL);
 	ERROR_CHECK
-			F[1]->Clear(NULL,0.f,0.f,0.f,0.f);
+			F[1]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 			OrthoMatrices();
 			// input light values:
 			glActiveTexture(GL_TEXTURE0);
@@ -227,7 +227,7 @@ std::cout<<"\tGpu sky: loss_tex,optd_tex "<<timer.UpdateTime()<<std::endl;
 ERROR_CHECK
 	target=insc;
 	F[0]->Activate(NULL);
-		F[0]->Clear(NULL,0.f,0.f,0.f,0.f);
+		F[0]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 		glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 	F[0]->Deactivate(NULL);
@@ -245,7 +245,7 @@ ERROR_CHECK
 		constants.prevDistanceKm	=prevDistKm;
 		UPDATE_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
 		F[1]->Activate(NULL);
-			F[1]->Clear(NULL,0.f,0.f,0.f,0.f);
+			F[1]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 			OrthoMatrices();
 			// input inscatter values:
 			glActiveTexture(GL_TEXTURE0);
@@ -286,7 +286,7 @@ std::cout<<"\tGpu sky: insc_tex "<<timer.UpdateTime()<<std::endl;
 ERROR_CHECK
 	target=skyl;
 	F[0]->Activate(NULL);
-		F[0]->Clear(NULL,0.f,0.f,0.f,0.f);
+		F[0]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 		glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 	F[0]->Deactivate(NULL);
@@ -304,7 +304,7 @@ ERROR_CHECK
 		constants.prevDistanceKm	=prevDistKm;
 		UPDATE_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
 		F[1]->Activate(NULL);
-			F[1]->Clear(NULL,0.f,0.f,0.f,0.f);
+			F[1]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 			OrthoMatrices();
 			// input inscatter values:
 			glActiveTexture(GL_TEXTURE0);

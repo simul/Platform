@@ -54,7 +54,7 @@ public:
 		META_ValueProperty(bool,CelestialDisplay,"Show geographical and sidereal overlay.")
 		META_ValueProperty(bool,ShowWater,"Show water surfaces.")
 		META_ValueProperty(bool,MakeCubemap,"Render a cubemap each frame.")
-		META_ValueProperty(bool,ReverseDepth,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
+		META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 		META_ValueProperty(bool,ShowOSD,"Show debug display.")
 	META_EndProperties
 	bool IsEnabled()const{return enabled;}
@@ -88,6 +88,7 @@ public:
 	simul::clouds::BaseGpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
+	void ReverseDepthChanged();
 	bool enabled;
 	bool y_vertical;
 	simul::camera::Camera *camera;

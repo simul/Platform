@@ -82,7 +82,6 @@ public:
 						const simul::sky::float4 *inscatter_float4_array,
 						const simul::sky::float4 *skylight_float4_array);
 	void CycleTexturesForward();
-	const char *GetDebugText() const;
 	void SetYVertical(bool y);
 
 	// for testing:

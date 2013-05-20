@@ -41,7 +41,12 @@ void SimulTerrainRendererDX1x::RecompileShaders()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pTerrainEffect);
-	V_CHECK(CreateEffect(m_pd3dDevice,&m_pTerrainEffect,_T("simul_terrain.fx")));
+	if(!m_pd3dDevice)
+		return;
+	std::map<std::string,std::string> defines;
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
+	V_CHECK(CreateEffect(m_pd3dDevice,&m_pTerrainEffect,_T("simul_terrain.fx"),defines));
 	
 	m_pTechnique			=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
 	worldViewProj			=m_pTerrainEffect->GetVariableByName("worldViewProj")->AsMatrix();

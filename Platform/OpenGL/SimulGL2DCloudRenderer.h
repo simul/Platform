@@ -91,7 +91,7 @@ protected:
 	GLuint	skylight_tex;
 
 	FramebufferGL	detail_fb;
-	bool CreateNoiseTexture(void *,bool override_file=false);
+	bool CreateNoiseTexture(void *);
 	//void CreateImageTexture();
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();
