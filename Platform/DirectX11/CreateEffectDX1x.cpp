@@ -47,6 +47,7 @@ static bool pipe_compiler_output=false;
 static ID3D1xDevice		*m_pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
+ShaderBuildMode shaderBuildMode=ALWAYS_BUILD;
 namespace simul
 {
 	namespace dx11
@@ -99,6 +100,10 @@ namespace simul
 		{
 			pipe_compiler_output=p;
 		}
+		void SetShaderBuildMode( ShaderBuildMode b)
+		{
+			shaderBuildMode=b;
+		}
 		void SetShaderPath(const char *path)
 		{
 			shader_path=tstring_of(path);
@@ -130,33 +135,53 @@ namespace simul
 			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 			D3DXMatrixTranspose(wvp,&tmp2);
 		}
-		void FixProjectionMatrix(D3DXMATRIX &proj,float zFar,bool y_vertical)
+		void FixProjectionMatrix(D3DXMATRIX &proj,float zFar)
 		{
-			float zNear;
-			if(y_vertical)
+			// If right-handed:
+			if(proj._34<0)
 			{
-				zNear=-proj._43/proj._33;
-				proj._33=zFar/(zFar-zNear);
+				if(proj._43>0)
+				{
+					float zF=proj._43/proj._33;
+					float zN=proj._43*zF/(zF+proj._43);
+					proj._33=-zFar/(zFar-zN);
+					proj._43=-zN*zFar/(zFar-zN);
+				}
+				else
+				{
+					float zN=proj._43/proj._33;
+					float zF=proj._43*zN/(zN+proj._43);
+					proj._33=-zFar/(zFar-zN);
+					proj._43=-zN*zFar/(zFar-zN);
+				}
 			}
-			else
-			{
-				zNear=proj._43/proj._33;
-				proj._33=-zFar/(zFar-zNear);
-			}
-			proj._43=-zNear*zFar/(zFar-zNear);
 		}
-
-		void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical)
+		void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar)
 		{
-			if(y_vertical)
+			if(proj._34<0)
 			{
-				proj._33=zFar/(zFar-zNear);
+				if(proj._43>0)
+				{
+					float zF=proj._43/proj._33;
+					float zN=proj._43*zF/(zF+proj._43);
+					proj._33=-zFar/(zFar-zNear);
+					proj._43=-zNear*zFar/(zFar-zNear);
+				}
+				else
+				{
+					float zN=proj._43/proj._33;
+					float zF=proj._43*zN/(zN+proj._43);
+					proj._33=-zFar/(zFar-zNear);
+					proj._43=-zNear*zFar/(zFar-zNear);
+				}
 			}
-			else
-			{
-				proj._33=-zFar/(zFar-zNear);
-			}
-			proj._43=-zNear*zFar/(zFar-zNear);
+		}
+		void ConvertReversedToRegularProjectionMatrix(D3DXMATRIX &proj)
+		{
+			float zF=proj._43/proj._33;
+			float zN=proj._43*zF/(zF+proj._43);
+			proj._33=-zF/(zF-zN);
+			proj._43=-zN*zF/(zF-zN);
 		}
 
 	}
@@ -356,7 +381,6 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFl
 	for(int i=0;i<10000&&!ifs.good();i++);
 	if(ifs.good())
 	{
-		//std::cerr<<"D3DX11CreateEffectFromBinaryFile found file "<<compiled_filename.c_str()<<std::endl;
 		ifs.seekg(0,std::ios_base::end);
 		size_t sz=(size_t)ifs.tellg();
 		ifs.seekg(0,std::ios_base::beg);
@@ -382,12 +406,22 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 	// first try to find an existing text source with this filename, and compile it.
 	std::string text_filename=simul::base::WStringToString(filename);
 	std::ifstream ifs(text_filename.c_str(),std::ios_base::binary);
-	if(ifs.good())
+	std::string output_filename=text_filename+"o";
+	std::ifstream oifs(output_filename.c_str(),std::ios_base::binary);
+	
+	//ALWAYS_BUILD=1,BUILD_IF_NO_BINARY,NEVER_BUILD
+	if(ifs.good()&&(shaderBuildMode==ALWAYS_BUILD||(shaderBuildMode==BUILD_IF_NO_BINARY&&!oifs.good())))
 	{
-		std::string output_filename=text_filename+"o";
+		oifs.close();
+		std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
 		DeleteFileA(output_filename.c_str());
 		std::string command=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("DXSDK_DIR");
-		if(command.length())
+		if(!command.length())
+		{
+			std::string progfiles=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("ProgramFiles");
+			command=progfiles+"/Microsoft DirectX SDK (June 2010)/";
+			std::cerr<<"Missing DXSDK_DIR environment variable, defaulting to: "<<command.c_str()<<std::endl;
+		}
 		{
 //>"fxc.exe" /T fx_2_0 /Fo "..\..\gamma.fx"o "..\..\gamma.fx"
 			command="\""+command;
@@ -485,12 +519,14 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 				}
 				while( PeekNamedPipe(hReadErrorPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
 				{
-				  ReadFile(hReadErrorPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
-				  std::string str((char*)buff, (size_t)dwBytesRead);
-				  std::cerr << str.c_str();
-				  size_t pos=str.find("rror");
-				  if(pos<str.length())
-					has_errors=true;
+					ReadFile(hReadErrorPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
+					std::string str((char*)buff, (size_t)dwBytesRead);
+					std::cerr << str.c_str();
+					size_t pos=str.find("rror");
+					if(pos<str.length())
+						has_errors=true;
+					if(str.find("failed")<str.length())
+						has_errors=true;
 				}
 			}
 			// Process is done, or we timed out:
@@ -528,7 +564,6 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 {
 	HRESULT hr=S_OK;
 	std::string text_filename=simul::base::WStringToString(filename);
-	std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
 
 	tstring fn=shader_path+filename;
 	

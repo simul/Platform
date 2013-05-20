@@ -240,7 +240,7 @@ try{
 	{
 		F[0]->Activate(m_pImmediateContext);
 			input_light_texture->SetResource(F[1]->GetBufferResource());
-			F[0]->Clear(m_pImmediateContext,1.f,1.f,1.f,1.f);
+			F[0]->Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
 		F[0]->Deactivate(m_pImmediateContext);
 		F[0]->CopyToMemory(target);
 	}

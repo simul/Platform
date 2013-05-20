@@ -28,6 +28,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	,simulTerrainRenderer(NULL)
 	,y_vertical(true)
 	,ShowCloudCrossSections(false)
+	,Show2DCloudTextures(false)
 	,ShowLightVolume(false)
 	,ShowFades(false)
 	,CelestialDisplay(false)
@@ -260,7 +261,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
 		simulTerrainRenderer->SetMatrices(view,proj);
-		simulTerrainRenderer->Render();
+		simulTerrainRenderer->Render(NULL);
 	}
 	//if(simulHDRRenderer&&UseHdrPostprocessor)
 	//	simulHDRRenderer->CopyDepthAlpha();
@@ -306,17 +307,14 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(NULL,width,height);
 	simul::math::FirstOrderDecay(hdr_timing,timer.Time,1.f,fTimeStep);
 
-	if(simulWeatherRenderer&&ShowCloudCrossSections)
+	if(ShowCloudCrossSections&&simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())
 	{
-		if(simulWeatherRenderer->GetCloudRenderer())
-		{
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dDevice,width,height);
-		//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
-		}
-		if(simulWeatherRenderer->Get2DCloudRenderer())
-		{
-		//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
-		}
+		simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dDevice,width,height);
+	//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
+	}
+	if(Show2DCloudTextures&&simulWeatherRenderer&&simulWeatherRenderer->Get2DCloudRenderer())
+	{
+	//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
 	}
 	
 	if(simulTerrainRenderer&&ShowMap)

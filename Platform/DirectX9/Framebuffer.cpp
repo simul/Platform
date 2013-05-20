@@ -105,11 +105,11 @@ void Framebuffer::Deactivate(void *)
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
-void Framebuffer::Clear(void *,float r,float g,float b,float a,int mask)
+void Framebuffer::Clear(void *,float r,float g,float b,float a,float depth,int mask)
 {
 	if(!mask)
 		mask=D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER;
-	m_pd3dDevice->Clear(0L,NULL,mask,D3DCOLOR_COLORVALUE(r,g,b,a),1.f,0L);
+	m_pd3dDevice->Clear(0L,NULL,mask,D3DCOLOR_COLORVALUE(r,g,b,a),depth,0L);
 }
 
 void Framebuffer::DeactivateAndRender(void *context,bool blend)

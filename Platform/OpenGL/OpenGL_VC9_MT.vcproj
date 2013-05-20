@@ -52,6 +52,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				DebugInformationFormat="4"
+				ForcedIncludeFiles="Simul/UseDlls.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -133,6 +134,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				DebugInformationFormat="3"
+				ForcedIncludeFiles="Simul/UseDlls.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -498,6 +500,10 @@
 		<Filter
 			Name="Shaders"
 			>
+			<File
+				RelativePath=".\GLSL\CppGlsl.hs"
+				>
+			</File>
 			<File
 				RelativePath=".\GLSL\saturate.glsl"
 				>

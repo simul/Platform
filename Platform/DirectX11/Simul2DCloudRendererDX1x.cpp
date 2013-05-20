@@ -32,6 +32,9 @@ Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer
 	,indexBuffer(NULL)
 	,inputLayout(NULL)
 	,constantBuffer(NULL)
+	,skyLossTexture_SRV(NULL)
+	,skyInscatterTexture_SRV(NULL)
+	,skylightTexture_SRV(NULL)
 {
 }
 
@@ -201,7 +204,7 @@ bool Simul2DCloudRendererDX11::Render(void*context,bool cubemap,void *depth_tex,
 	D3DXMATRIX invw;
 	D3DXMatrixInverse(&invw,NULL,&worldViewProj);
 	static float ll=0.05f;
-	static float ff=100.f;
+	static float ff=100.f; 
 	Cloud2DConstants cloud2DConstants;
 	simul::clouds::CloudInterface *ci=cloudKeyframer->GetCloudInterface();
 	simul::math::Vector3 X1,X2;
@@ -226,10 +229,8 @@ bool Simul2DCloudRendererDX11::Render(void*context,bool cubemap,void *depth_tex,
 		cloud2DConstants.mieRayleighRatio		=skyInterface->GetMieRayleighRatio();
 		cloud2DConstants.planetRadius			=6378000.f;
 	}
-
-	//worldViewProj->SetMatrix(&wvp._11);
 	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+	m_pImmediateContext->IAGetInputLayout(&previousInputLayout);
 
 	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	m_pImmediateContext->IASetInputLayout(inputLayout);

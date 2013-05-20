@@ -11,7 +11,11 @@ DepthStencilState EnableDepth
 {
 	DepthEnable = TRUE;
 	DepthWriteMask = ALL;
+#ifdef REVERSE_DEPTH
+	DepthFunc = GREATER_EQUAL;
+#else
 	DepthFunc = LESS_EQUAL;
+#endif
 };
 
 BlendState DoBlend
@@ -28,6 +32,19 @@ BlendState AlphaBlend
 	DestBlend = INV_SRC_ALPHA;
 };
 
+BlendState MultiplyBlend
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = ZERO;
+	DestBlend = SRC_COLOR;
+};
+
+BlendState AddBlend
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = ONE;
+	DestBlend = ONE;
+};
 
 BlendState DontBlend
 {
@@ -38,5 +55,11 @@ RasterizerState RenderNoCull
 {
 	CullMode = none;
 };
+
+BlendState NoBlend
+{
+	BlendEnable[0] = FALSE;
+};
+
 
 #endif

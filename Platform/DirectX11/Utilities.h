@@ -14,10 +14,13 @@ namespace simul
 			void release();
 			ID3D11Texture2D*			texture;
 			ID3D11ShaderResourceView*   shaderResourceView;
+			D3D11_MAPPED_SUBRESOURCE mapped;
 			int width,length;
 			void setTexels(ID3D11DeviceContext *context,const float *float4_array,int texel_index,int num_texels);
 			void setTexels(ID3D11DeviceContext *context,const unsigned *uint_array,int texel_index,int num_texels);
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
+		private:
+			ID3D11DeviceContext *last_context;
 		};
 		struct ComputableTexture
 		{
@@ -61,14 +64,11 @@ namespace std
 {
 	template<> inline void swap(simul::dx11::TextureStruct& _Left, simul::dx11::TextureStruct& _Right)
 	{
-		ID3D11Texture2D*			texture				=_Left.texture;
-		ID3D11ShaderResourceView*   shaderResourceView	=_Right.shaderResourceView;
-		_Left.texture			=_Right.texture;
-		_Left.shaderResourceView=_Right.shaderResourceView;
-		_Right.texture			=texture;
-		_Right.shaderResourceView=shaderResourceView;
-		std::swap(_Left.width,_Right.width);
-		std::swap(_Left.length,_Right.length);
+		std::swap(_Left.shaderResourceView	,_Right.shaderResourceView);
+		std::swap(_Left.texture				,_Right.texture);
+		std::swap(_Left.width				,_Right.width);
+		std::swap(_Left.length				,_Right.length);
+		std::swap(_Left.mapped				,_Right.mapped);
 	}
 }
 

@@ -25,7 +25,7 @@ public:
 	void Activate(void *context);
 	void Deactivate(void *context);
 	void Render(void *context,bool blend);
-	void Clear(void *context,float,float,float,float,int mask=0);
+	void Clear(void *context,float,float,float,float,float,int mask=0);
 	bool DrawQuad(void *context);
 	ID3D1xShaderResourceView *GetBufferResource()
 	{

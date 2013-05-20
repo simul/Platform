@@ -34,6 +34,7 @@ public:
 	virtual ~OpenGLRenderer();
 	META_BeginProperties
 		META_ValueProperty(bool,ShowCloudCrossSections,"Show cross-sections of the cloud volumes as an overlay.")
+		META_ValueProperty(bool,Show2DCloudTextures,"Show the 2D cloud textures as an overlay.")
 		META_ValueProperty(bool,ShowFlares,"Whether to draw light flares around the sun and moon.")
 		META_ValueProperty(bool,ShowFades,"Show the fade textures as an overlay.")
 		META_ValueProperty(bool,ShowTerrain,"Whether to draw the terrain.")

@@ -1,3 +1,4 @@
+
 // Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
@@ -207,7 +208,7 @@ protected:
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 	LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;
-	virtual bool CreateNoiseTexture(void *,bool override_file=false);
+	virtual bool CreateNoiseTexture(void *);
 	bool MakeCubemap(void *context); // not ready yet
 	//! Once per frame, fill this 1-D texture with information on the layer distances and noise offsets
 	bool FillRaytraceLayerTexture();

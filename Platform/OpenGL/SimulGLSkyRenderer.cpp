@@ -475,7 +475,7 @@ ERROR_CHECK
 	glUseProgram(NULL);
 	ERROR_CHECK
 	timer.FinishTime();
-	render_time=timer.Time;
+//	render_time=timer.Time;
 	return true;
 }
 

@@ -117,6 +117,8 @@ template<typename t> t max3(t a,t b,t c)
 void SimulHDRRendererDX1x::RecompileShaders()
 {
 	SAFE_RELEASE(m_pTonemapEffect);
+	if(!m_pd3dDevice)
+		return;
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("simul_hdr.fx"));
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
 	glowTechnique			=m_pTonemapEffect->GetTechniqueByName("simul_glow");
@@ -177,7 +179,7 @@ bool SimulHDRRendererDX1x::StartRender(void *context)
 	if(imageTexture)
 		imageTexture->SetResource(NULL);
 	framebuffer.Activate(context);
-	framebuffer.Clear(context,0,0,0,0);
+	framebuffer.Clear(context,0.f,0.f,0.0f,0.f,ReverseDepth?0.f:1.f);
 
 	PIXEndNamedEvent();
 	return true;

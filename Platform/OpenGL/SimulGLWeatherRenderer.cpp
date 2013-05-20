@@ -217,7 +217,7 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,bool buffer)
 	timer.StartTime();
 	
 	scene_buffer->Activate(context);
-	scene_buffer->Clear(context,0,0,0,1.f);
+	scene_buffer->Clear(context,0,0,0,1.f,ReverseDepth?0.f:1.f);
 	simulCloudRenderer->Render(context,false,depth_alpha_tex,UseDefaultFog,true);
 	scene_buffer->Deactivate(context);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
@@ -238,7 +238,7 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,bool buffer)
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	
 	timer.FinishTime();
-	render_time+=timer.Time;
+	gpu_time+=timer.Time;
 }
 
 void SimulGLWeatherRenderer::RenderLightning(void *context)
@@ -268,7 +268,7 @@ class SimulGL2DCloudRenderer *SimulGLWeatherRenderer::Get2DCloudRenderer()
 {
 	return simul2DCloudRenderer.get();
 }
-
+/*
 const char *SimulGLWeatherRenderer::GetDebugText() const
 {
 	static char debug_text[256];
@@ -286,7 +286,7 @@ const char *SimulGLWeatherRenderer::GetDebugText() const
 			,environment->sky_update_timing);
 	return debug_text;
 }
-
+*/
 GLuint SimulGLWeatherRenderer::GetFramebufferTexture()
 {
 	return (GLuint)scene_buffer->GetColorTex();

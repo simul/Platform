@@ -71,7 +71,7 @@ public:
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 	void EnableRain(bool e=true);
 	void EnableCloudLayers();
-	const char *GetDebugText() const;
+//	const char *GetDebugText() const;
 	GLuint GetFramebufferTexture();
 protected:
 	std::string shader;

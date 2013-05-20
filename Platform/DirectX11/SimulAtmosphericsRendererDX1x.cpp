@@ -122,7 +122,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	std::map<std::string,std::string> defines;
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
-	V_CHECK(CreateEffect(m_pd3dDevice,&effect,L"atmospherics.fx"), defines);
+	V_CHECK(CreateEffect(m_pd3dDevice,&effect,L"atmospherics.fx",defines));
 	technique			=effect->GetTechniqueByName("simul_atmospherics");
 	invViewProj			=effect->GetVariableByName("invViewProj")->AsMatrix();
 	lightDir			=effect->GetVariableByName("lightDir")->AsVector();
@@ -138,17 +138,16 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	MAKE_CONSTANT_BUFFER(constantBuffer,AtmosphericsUniforms);
 }
 
-HRESULT SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
+void SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(void* dev)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=dev;
+	m_pd3dDevice=(ID3D1xDevice*)dev;
 	RecompileShaders();
 	if(framebuffer)
 		framebuffer->RestoreDeviceObjects(dev);
-	return hr;
 }
 
-HRESULT SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
+void SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	if(framebuffer)
@@ -156,12 +155,12 @@ HRESULT SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(vertexDecl);
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(constantBuffer);
-	return hr;
 }
 
 HRESULT SimulAtmosphericsRendererDX1x::Destroy()
 {
-	return InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
+	return S_OK;
 }
 
 void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
@@ -179,7 +178,7 @@ void SimulAtmosphericsRendererDX1x::StartRender(void *context)
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
 	framebuffer->Activate(m_pImmediateContext);
 	// Clear the screen to black, with alpha=1, representing far depth
-	framebuffer->Clear(context,0.0,1.0,1.0,1.0);
+	framebuffer->Clear(context,0.f,1.f,1.f,1.f,ReverseDepth?0.f:1.f);
 
 	PIXEndNamedEvent();
 }
@@ -200,6 +199,11 @@ void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
 	simul::math::Matrix4x4 viewproj;
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	view(3,0)=view(3,1)=view(3,2)=0;
+	if(ReverseDepth)
+	{
+		// Convert the proj matrix into a normal non-reversed matrix.
+		simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
+	}
 	simul::math::Matrix4x4 v((const float *)view),p((const float*)proj);
 	simul::math::Multiply4x4(viewproj,v,p);
 	viewproj.Transpose(vpt);

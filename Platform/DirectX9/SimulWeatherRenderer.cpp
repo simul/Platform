@@ -461,12 +461,6 @@ SimulAtmosphericsRenderer *SimulWeatherRenderer::GetAtmosphericsRenderer()
 {
 	return simulAtmosphericsRenderer.get();
 }
-
-float SimulWeatherRenderer::GetTiming() const
-{
-	return total_timing;
-}
-
 float SimulWeatherRenderer::GetTotalBrightness() const
 {
 	return exposure*exposure_multiplier;

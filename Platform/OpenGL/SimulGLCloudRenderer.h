@@ -118,7 +118,7 @@ unsigned short *pIndices;
 	GLuint		sphere_ibo;
 
 	void CreateVolumeNoise();
-	virtual bool CreateNoiseTexture(void *,bool override_file=false);
+	virtual bool CreateNoiseTexture(void *);
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();
 
