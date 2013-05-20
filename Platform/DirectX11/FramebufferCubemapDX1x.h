@@ -35,6 +35,11 @@ public:
 	{
 		return (void*)m_pCubeEnvMapSRV;
 	}
+	bool IsValid()
+	{
+		return (m_pCubeEnvMapSRV != NULL);
+	}
+
 	ID3D11Texture2D					*GetCopy(void *context);
 protected:
 	//! The size of the 2D buffer the sky is rendered to.

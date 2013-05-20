@@ -1,5 +1,9 @@
 #include "AtmosphericsUniforms.hlsl"
-float4x4 invViewProj;
+
+cbuffer AtmosphericsMatrices R10
+{
+	float4x4 invViewProj;
+}
 
 Texture2D depthTexture;
 Texture2D imageTexture;

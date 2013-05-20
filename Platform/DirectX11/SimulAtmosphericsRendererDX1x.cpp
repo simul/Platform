@@ -119,7 +119,10 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 {
 	SAFE_RELEASE(effect);
 	HRESULT hr=S_OK;
-	V_CHECK(CreateEffect(m_pd3dDevice,&effect,L"atmospherics.fx"));
+	std::map<std::string,std::string> defines;
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
+	V_CHECK(CreateEffect(m_pd3dDevice,&effect,L"atmospherics.fx"), defines);
 	technique			=effect->GetTechniqueByName("simul_atmospherics");
 	invViewProj			=effect->GetVariableByName("invViewProj")->AsMatrix();
 	lightDir			=effect->GetVariableByName("lightDir")->AsVector();

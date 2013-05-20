@@ -39,6 +39,10 @@ public:
 	{
 		return hdr_buffer_texture;
 	}
+	bool IsValid()
+	{
+		return (buffer_texture_SRV != NULL);
+	}
 	void CopyToMemory(void *target);
 	void CopyToMemory(void *target,int start_texel,int texels);
 protected:

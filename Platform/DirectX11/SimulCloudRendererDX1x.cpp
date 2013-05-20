@@ -1018,9 +1018,24 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 	Strides[0] = 0;
 	Offsets[0] = 0;
 	
+	UINT prevOffset;
+	DXGI_FORMAT prevFormat;
+	ID3D11Buffer* pPrevBuffer;
+	m_pImmediateContext->IAGetIndexBuffer(&pPrevBuffer, &prevFormat, &prevOffset);
+
+	if (test < 17)
+	{
+		return true;
+	}
+
 	m_pImmediateContext->IASetIndexBuffer(	indexBuffer,
 											DXGI_FORMAT_R16_UINT,	// unsigned short
 											0);						// array of offset values, one for each buffer
+
+	if (test < 18)
+	{
+		return true;
+	}
 
 	static int num_primitives=33;//helper->GetQuadStripIndices().size();//s->index_end-s->index_start;
 	for(int i=0;i<(int)helper->GetSlices().size();i++)
@@ -1047,12 +1062,16 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+	m_pImmediateContext->IASetIndexBuffer(pPrevBuffer, prevFormat, prevOffset);
 	SAFE_RELEASE(previousInputLayout);
-
-	if (test < 17)
+	SAFE_RELEASE(pPrevBuffer);
+	
+	if (test < 19)
 	{
 		return true;
 	}
+
+	
 
 	PIXEndNamedEvent();
 	skyLossTexture->SetResource(NULL);
@@ -1067,7 +1086,7 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 	m_pImmediateContext->OMSetBlendState(NULL, blendFactor, sampleMask);
 	// This actually returns the PREVIOUS FRAME's time value:
 
-	if (test < 18)
+	if (test < 20)
 	{
 		return true;
 	}

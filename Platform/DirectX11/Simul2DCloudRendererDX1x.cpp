@@ -235,6 +235,11 @@ bool Simul2DCloudRendererDX11::Render(void*context,bool cubemap,void *depth_tex,
 	m_pImmediateContext->IASetInputLayout(inputLayout);
 	SET_VERTEX_BUFFER(m_pImmediateContext,vertexBuffer,simul::clouds::Cloud2DGeometryHelper::Vertex);
 
+	UINT prevOffset;
+	DXGI_FORMAT prevFormat;
+	ID3D11Buffer* pPrevBuffer;
+	m_pImmediateContext->IAGetIndexBuffer(&pPrevBuffer, &prevFormat, &prevOffset);
+
 	m_pImmediateContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R16_UINT,0);					
 
 	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,constantBuffer,Cloud2DConstants,cloud2DConstants);
@@ -248,7 +253,9 @@ bool Simul2DCloudRendererDX11::Render(void*context,bool cubemap,void *depth_tex,
 	m_pImmediateContext->DrawIndexed(num_indices-2,0,0);
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 	m_pImmediateContext->IASetInputLayout(previousInputLayout);
+	m_pImmediateContext->IASetIndexBuffer(pPrevBuffer, prevFormat, prevOffset);
 	SAFE_RELEASE(previousInputLayout)
+	SAFE_RELEASE(pPrevBuffer);
 	
 	return true;
 }
