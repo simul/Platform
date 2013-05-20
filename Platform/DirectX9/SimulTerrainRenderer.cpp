@@ -809,14 +809,14 @@ SimulTerrainRenderer::~SimulTerrainRenderer()
 	static const float radius=50.f;
 	static const float height=150.f;
 
-void SimulTerrainRenderer::RenderOnlyDepth()
+void SimulTerrainRenderer::RenderOnlyDepth(void *context)
 {
 	PIXBeginNamedEvent(0xFF006600,"SimulTerrainRenderer::RenderOnlyDepth");
 	InternalRender(true);
 	PIXEndNamedEvent();
 }
 
-void SimulTerrainRenderer::Render()
+void SimulTerrainRenderer::Render(void *context)
 {
 	PIXBeginNamedEvent(0xFF00FF00,"SimulTerrainRenderer::Render");
 	InternalRender(false);

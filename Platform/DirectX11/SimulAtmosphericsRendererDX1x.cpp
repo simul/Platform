@@ -138,17 +138,16 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	MAKE_CONSTANT_BUFFER(constantBuffer,AtmosphericsUniforms);
 }
 
-HRESULT SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(ID3D1xDevice* dev)
+void SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(void* dev)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=dev;
+	m_pd3dDevice=(ID3D1xDevice*)dev;
 	RecompileShaders();
 	if(framebuffer)
 		framebuffer->RestoreDeviceObjects(dev);
-	return hr;
 }
 
-HRESULT SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
+void SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	if(framebuffer)
@@ -156,12 +155,12 @@ HRESULT SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(vertexDecl);
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(constantBuffer);
-	return hr;
 }
 
 HRESULT SimulAtmosphericsRendererDX1x::Destroy()
 {
-	return InvalidateDeviceObjects();
+	InvalidateDeviceObjects();
+	return S_OK;
 }
 
 void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

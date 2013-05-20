@@ -261,7 +261,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
 		simulTerrainRenderer->SetMatrices(view,proj);
-		simulTerrainRenderer->Render();
+		simulTerrainRenderer->Render(NULL);
 	}
 	//if(simulHDRRenderer&&UseHdrPostprocessor)
 	//	simulHDRRenderer->CopyDepthAlpha();
