@@ -270,7 +270,7 @@ ID3D1xTexture3D* simul::dx11::make3DTexture(
 							ID3D1xDevice			*m_pd3dDevice
 							,int w,int l,int d
 							,DXGI_FORMAT format
-							,const float *src)
+							,const void *src)
 {
 	ID3D1xTexture3D*	tex;
 	D3D11_TEXTURE3D_DESC textureDesc=

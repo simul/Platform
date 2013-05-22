@@ -233,15 +233,33 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 	ID3D11DeviceContext* m_pImmediateContext=NULL;;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	FramebufferCubemapDX1x	fb_cubemap;
-	fb_cubemap.SetWidthAndHeight(1024,1024);
+	fb_cubemap.SetWidthAndHeight(2048,2048);
 	fb_cubemap.RestoreDeviceObjects(m_pd3dDevice);
+	FramebufferDX1x	gamma_correct;
+	gamma_correct.SetWidthAndHeight(2048,2048);
+	gamma_correct.RestoreDeviceObjects(m_pd3dDevice);
+
+	ID3D1xEffect*						m_pTonemapEffect=NULL;
+	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("simul_hdr.fx"));
+	ID3D1xEffectTechnique*	tech=m_pTonemapEffect->GetTechniqueByName("simul_gamma");
 
 	cam_pos=GetCameraPosVector(view);
 	MakeCubeMatrices(view_matrices,cam_pos);
+	bool noise3d=environment->cloudKeyframer->GetUse3DNoise();
+	environment->cloudKeyframer->SetUse3DNoise(true);
+	int l=100;
+	if(baseCloudRenderer)
+	{
+		baseCloudRenderer->RecompileShaders();
+		l=baseCloudRenderer->GetCloudGeometryHelper()->GetMaxLayers();
+		baseCloudRenderer->GetCloudGeometryHelper()->SetMaxLayers(250);
+	}
 	for(int i=0;i<6;i++)
 	{
 		fb_cubemap.SetCurrentFace(i);
 		fb_cubemap.Activate(m_pImmediateContext);
+		gamma_correct.Activate(m_pImmediateContext);
+		gamma_correct.Clear(m_pImmediateContext,0.f,0.f,0.f,0.f,0.f);
 		if(simulSkyRenderer)
 		{
 			D3DXMATRIX cube_proj;
@@ -253,12 +271,26 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 			SetMatrices(view_matrices[i],cube_proj);
 			HRESULT hr=RenderSky(m_pImmediateContext,false,true);
 		}
+		gamma_correct.Deactivate(m_pImmediateContext);
+		{
+			simul::dx11::setParameter(m_pTonemapEffect,"imageTexture",gamma_correct.GetBufferResource());
+			simul::dx11::setParameter(m_pTonemapEffect,"gamma",.45f);
+			simul::dx11::setParameter(m_pTonemapEffect,"exposure",1.f);
+			ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
+			gamma_correct.DrawQuad(m_pImmediateContext);
+		}
 		fb_cubemap.Deactivate(m_pImmediateContext);
 	}
 	std::wstring wstr=simul::base::StringToWString(filename);
 	ID3D11Texture2D *tex=fb_cubemap.GetCopy(m_pImmediateContext);
 	HRESULT hr=D3DX11SaveTextureToFile(m_pImmediateContext,tex,D3DX11_IFF_DDS,wstr.c_str());
 	SAFE_RELEASE(m_pImmediateContext);
+	SAFE_RELEASE(m_pTonemapEffect);
+	environment->cloudKeyframer->SetUse3DNoise(noise3d);
+	if(baseCloudRenderer)
+	{
+		baseCloudRenderer->GetCloudGeometryHelper()->SetMaxLayers(l);
+	}
 }
 
 bool SimulWeatherRendererDX1x::RenderCubemap(void *context)

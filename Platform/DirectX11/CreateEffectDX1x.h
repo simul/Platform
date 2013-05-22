@@ -51,7 +51,7 @@ namespace simul
 							ID3D1xDevice			*m_pd3dDevice
 							,int w,int l,int d
 							,DXGI_FORMAT format
-							,const float *src);
+							,const void *src);
 							
 		void Ensure3DTextureSizeAndFormat(
 							ID3D1xDevice			*m_pd3dDevice

@@ -69,6 +69,7 @@ public:
 	//! Render the Atmospherics.
 	void StartRender(void *context);
 	void FinishRender(void *context);
+	void RenderAsOverlay(void *context,const void *depthTexture,float frustumNear,float frustumFar);
 	void *GetDepthAlphaTexture()
 	{
 		return (void*)framebuffer->buffer_texture_SRV;
@@ -91,8 +92,8 @@ protected:
 	ID3D1xEffectScalarVariable*					fadeInterp;
 	ID3D1xEffectShaderResourceVariable*			imageTexture;
 	ID3D1xEffectShaderResourceVariable*			depthTexture;
-	ID3D1xEffectShaderResourceVariable*			lossTexture1;
-	ID3D1xEffectShaderResourceVariable*			inscatterTexture1;
+	ID3D1xEffectShaderResourceVariable*			lossTexture;
+	ID3D1xEffectShaderResourceVariable*			inscatterTexture;
 	ID3D1xEffectShaderResourceVariable*			skylightTexture;
 
 	ID3D1xShaderResourceView*					skyLossTexture_SRV;

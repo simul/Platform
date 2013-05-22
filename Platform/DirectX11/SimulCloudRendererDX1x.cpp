@@ -107,12 +107,14 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,m_pLightningEffect(NULL)
 	,cloudConstantsBuffer(NULL)
 	,noise_texture(NULL)
+	,noise_texture_3D(NULL)
 	,lightning_texture(NULL)
 	,illumination_texture(NULL)
 	,skyLossTexture_SRV(NULL)
 	,skyInscatterTexture_SRV(NULL)
 	,skylightTexture_SRV(NULL)
 	,noiseTextureResource(NULL)
+	,noiseTexture3DResource(NULL)
 	,lightningIlluminationTextureResource(NULL)
 	,blendAndWriteAlpha(NULL)
 	,blendAndDontWriteAlpha(NULL)
@@ -170,7 +172,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 	texdesc.Texture3D.MipLevels=1;
 
 	noiseTexture				->SetResource(noiseTextureResource);
-
+	
 	const D3D11_INPUT_ELEMENT_DESC decl[] =
     {
         { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -346,6 +348,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(blendAndDontWriteAlpha);
 
 	SAFE_RELEASE(noiseTextureResource);
+	SAFE_RELEASE(noiseTexture3DResource);
 	
 	SAFE_RELEASE(lightningIlluminationTextureResource);
 	ClearIterators();
@@ -437,7 +440,6 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	n_fb.CopyToMemory(mapped.pData);
 	m_pImmediateContext->Unmap(noise_texture,0);
 	V_CHECK(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
-
 	SAFE_RELEASE(effect);
 }
 
@@ -446,7 +448,39 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(void* context)
 	if(!m_pd3dDevice)
 		return false;
 	RenderNoise(context);
+	Create3DNoiseTexture(context);
 	return true;
+}
+#include "Simul/Math/Noise3D.h"
+void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
+{
+	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
+	//using noise_size and noise_src_ptr, make a 3d texture:
+	SAFE_RELEASE(noise_texture_3D);
+	SAFE_RELEASE(noiseTexture3DResource);
+
+	int noise_texture_frequency	=cloudKeyframer->GetEdgeNoiseFrequency();
+	ID3D1xEffect*					effect=NULL;
+	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,L"simul_rendernoise.fx");
+	ID3D1xEffectTechnique*			randomTechnique=effect->GetTechniqueByName("simul_random");
+
+	FramebufferDX1x	random_fb;
+	random_fb.RestoreDeviceObjects(m_pd3dDevice);
+	random_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency*noise_texture_frequency);
+	random_fb.SetFormat((int)DXGI_FORMAT_R8G8B8A8_SNORM);
+	ApplyPass(m_pImmediateContext,randomTechnique->GetPassByIndex(0));
+	random_fb.Activate(context);
+		random_fb.DrawQuad(context);
+	random_fb.Deactivate(context);
+
+	char *data=new char[4*noise_texture_frequency*noise_texture_frequency*noise_texture_frequency];
+	random_fb.CopyToMemory(data);
+	noise_texture_3D=make3DTexture(m_pd3dDevice,noise_texture_frequency,noise_texture_frequency,noise_texture_frequency,DXGI_FORMAT_R8G8B8A8_SNORM,(const float*)data);
+
+	m_pd3dDevice->CreateShaderResourceView(noise_texture_3D,NULL,&noiseTexture3DResource);
+	m_pImmediateContext->GenerateMips(noiseTexture3DResource);
+	delete [] data;
+	SAFE_RELEASE(effect);
 }
 
 bool SimulCloudRendererDX1x::CreateLightningTexture()
@@ -583,7 +617,10 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	HRESULT hr=CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds.fx",defines);
-	m_hTechniqueCloud				=m_pCloudEffect->GetTechniqueByName("simul_clouds");
+	if(cloudKeyframer->GetUse3DNoise())
+		m_hTechniqueCloud			=m_pCloudEffect->GetTechniqueByName("simul_clouds_3d_noise");
+	else
+		m_hTechniqueCloud			=m_pCloudEffect->GetTechniqueByName("simul_clouds");
 	m_hTechniqueCloudsAndLightning	=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
 
 	m_hTechniqueCrossSectionXY		=m_pCloudEffect->GetTechniqueByName("cross_section_xy");
@@ -618,6 +655,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	cloudDensity1					=m_pCloudEffect->GetVariableByName("cloudDensity1")->AsShaderResource();
 	cloudDensity2					=m_pCloudEffect->GetVariableByName("cloudDensity2")->AsShaderResource();
 	noiseTexture					=m_pCloudEffect->GetVariableByName("noiseTexture")->AsShaderResource();
+	noiseTexture3D					=m_pCloudEffect->GetVariableByName("noiseTexture3D")->AsShaderResource();
 	lightningIlluminationTexture	=m_pCloudEffect->GetVariableByName("lightningIlluminationTexture")->AsShaderResource();
 	skyLossTexture					=m_pCloudEffect->GetVariableByName("skyLossTexture")->AsShaderResource();
 	skyInscatterTexture				=m_pCloudEffect->GetVariableByName("skyInscatterTexture")->AsShaderResource();
@@ -681,6 +719,7 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 	cloudDensity1->SetResource(cloudDensityResource[0]);
 	cloudDensity2->SetResource(cloudDensityResource[1]);
 	noiseTexture->SetResource(noiseTextureResource);
+	noiseTexture3D->SetResource(noiseTexture3DResource);
 	skyLossTexture->SetResource(skyLossTexture_SRV);
 	skyInscatterTexture->SetResource(skyInscatterTexture_SRV);
 	skylightTexture->SetResource(skylightTexture_SRV);
@@ -690,8 +729,8 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 		return true;
 	}
 
-	simul::math::Vector3 X1=cloudKeyframer->GetCloudInterface()->GetOrigin();
-	simul::math::Vector3 InverseDX=cloudKeyframer->GetCloudInterface()->GetInverseScales();
+	simul::math::Vector3 X1			=cloudKeyframer->GetCloudInterface()->GetOrigin();
+	simul::math::Vector3 InverseDX	=cloudKeyframer->GetCloudInterface()->GetInverseScales();
 
 	// Mess with the proj matrix to extend the far clipping plane:
 	simul::dx11::FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f);
@@ -827,8 +866,15 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 		return true;
 	}
 
-	cloudConstants.cornerPos		=X1;
-	cloudConstants.inverseScales	=InverseDX;
+	cloudConstants.cornerPos			=X1;
+	cloudConstants.inverseScales		=InverseDX;
+
+	static float uu=1.f;
+	float sc=uu/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
+	cloudConstants.noise3DTexcoordScale	=vec3(sc/InverseDX.x,sc/InverseDX.y,sc/InverseDX.z);
+	cloudConstants.noise3DPersistence	=cloudKeyframer->GetEdgeNoisePersistence();
+	cloudConstants.noise3DOctaves		=cloudKeyframer->GetEdgeNoiseOctaves();
+
 	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
 	cloudConstants.noiseMatrix		=noise_orient.GetInverseMatrix();
 	

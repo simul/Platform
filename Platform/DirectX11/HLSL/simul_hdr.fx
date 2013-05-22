@@ -32,7 +32,7 @@ v2f TonemapVS(a2v IN)
     OUT.hPosition.xy=IN.position.xy;
 	OUT.hPosition.z=0.05*IN.position.z;
 	OUT.hPosition.w=0.5*IN.position.z+IN.position.w;
-    OUT.hPosition = mul(worldViewProj, float4(IN.position.xyz,1.0));
+   // OUT.hPosition = mul(worldViewProj, float4(IN.position.xyz,1.0));
 	OUT.texcoord = IN.texcoord;
     return OUT;
 }
@@ -55,13 +55,19 @@ float4 convertInt(float2 texCoord)
 	return color;
 }
 
-
-
 float4 TonemapPS(v2f IN) : SV_TARGET
 {
 	float4 c=imageTexture.Sample(samplerState,IN.texcoord);
 	float4 glow=convertInt(IN.texcoord);
 	c.rgb+=glow.rgb;
+	c.rgb*=exposure;
+	c.rgb=pow(c.rgb,gamma);
+    return float4(c.rgb,1.f);
+}
+
+float4 GammaPS(v2f IN) : SV_TARGET
+{
+	float4 c=imageTexture.Sample(samplerState,IN.texcoord);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
     return float4(c.rgb,1.f);
@@ -94,7 +100,6 @@ float4 GlowPS(v2f IN) : SV_TARGET
 	c=clamp(c,vec4(0.0,0.0,0.0,0.0),vec4(10.0,10.0,10.0,10.0));
     return c;
 }
-
 
 DepthStencilState EnableDepth
 {
@@ -144,6 +149,19 @@ technique11 simul_direct
     }
 }
 
+
+technique11 simul_gamma
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,TonemapVS()));
+		SetPixelShader(CompileShader(ps_4_0,GammaPS()));
+    }
+}
 
 technique11 simul_tonemap
 {

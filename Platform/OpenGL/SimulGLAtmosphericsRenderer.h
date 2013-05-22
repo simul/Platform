@@ -55,6 +55,7 @@ public:
 	//! Render the Atmospherics.
 	void StartRender(void *context);
 	void FinishRender(void *context);
+	void RenderAsOverlay(void *context,const void *depthTexture,float frustumNear,float frustumFar){}
 private:
 	//! \internal Switch the current program, either sky_program or earthshadow_program.
 	//! Also sets the parameter variables.	

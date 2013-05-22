@@ -29,7 +29,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 		,MakeCubemap(true)
 		,ShowCloudCrossSections(false)
 		,Show2DCloudTextures(false)
-		,ReverseDepth(false)
+		,ReverseDepth(true)
 		,ShowOSD(false)
 {
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,true,false,w,h,true,true,true);
@@ -37,6 +37,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
 	simulOpticsRenderer=new SimulOpticsRendererDX1x();
 	simulTerrainRenderer=new SimulTerrainRendererDX1x();
+	ReverseDepthChanged();
 }
 
 Direct3D11Renderer::~Direct3D11Renderer()

@@ -678,6 +678,8 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		return false;
 	if(!loss_2d||!inscatter_2d||!skylight_2d)
 		return false;
+	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
+	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
 	HRESULT hr;
 	// Clear the screen to black:
@@ -839,12 +841,9 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context)
 bool SimulSkyRendererDX1x::Render(void *context,bool blend)
 {
 	HRESULT hr=S_OK;
-	EnsureTexturesAreUpToDate(context);
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	//if(!cubemap)
-		Render2DFades(m_pImmediateContext);
 	D3DXMATRIX tmp1,tmp2,wvp;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
 	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);

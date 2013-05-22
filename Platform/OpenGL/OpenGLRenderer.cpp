@@ -34,7 +34,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,UseHdrPostprocessor(true)
 	,ShowOSD(false)
 	,ShowWater(true)
-	,ReverseDepth(false)
+	,ReverseDepth(true)
 	,MixCloudsAndTerrain(false)
 {
 	simulHDRRenderer=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);

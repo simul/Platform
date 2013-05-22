@@ -33,8 +33,9 @@ uniform_buffer CloudConstants R9
 	uniform vec3 illuminationOrigin;
 	uniform float maxFadeDistanceMetres;
 	uniform vec3 illuminationScales	;
-	uniform float x5;
+	uniform float noise3DPersistence;
 	uniform vec3 crossSectionOffset	;
-	uniform float x6;
+	uniform int noise3DOctaves;
+	uniform vec3 noise3DTexcoordScale;
 };
 #endif

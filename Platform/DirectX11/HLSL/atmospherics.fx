@@ -7,8 +7,8 @@ cbuffer AtmosphericsUniforms2 R10
 
 Texture2D depthTexture;
 Texture2D imageTexture;
-Texture2D lossTexture1;
-Texture2D inscatterTexture1;
+Texture2D lossTexture;
+Texture2D inscatterTexture;
 Texture2D skylightTexture;
 
 SamplerState samplerState 
@@ -76,16 +76,14 @@ float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 	float sine=view.z;
 	float maxd=1.0;//tex2D(distance_texture,texc2).x;
 	float2 texc2=float2(pow(depth/maxd,0.5f),0.5f*(1.f-sine));
-	float3 loss=lossTexture1.Sample(samplerState,texc2).rgb;
+	float3 loss=lossTexture.Sample(samplerState,texc2).rgb;
 	colour*=loss;
-	float4 inscatter_factor=inscatterTexture1.Sample(samplerState,texc2);
+	float4 inscatter_factor=inscatterTexture.Sample(samplerState,texc2);
 	float cos0=dot(view,lightDir);
 	colour+=InscatterFunction(inscatter_factor,cos0);
 	colour+=skylightTexture.Sample(samplerState,texc2);
-
     return float4(colour,1.f);
 }
-
 
 float4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
 {
@@ -99,7 +97,7 @@ float4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
 		discard;
 	float sine=view.z;
 	float2 texc2=float2(pow(depth,0.5f),0.5f*(1.f-sine));
-	float3 loss=lossTexture1.Sample(samplerState,texc2).rgb;
+	float3 loss=lossTexture.Sample(samplerState,texc2).rgb;
     return float4(loss,1.f);
 }
 
@@ -115,7 +113,7 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 		discard;
 	float sine=view.z;
 	float2 texc2=float2(pow(depth,0.5f),0.5f*(1.f-sine));
-	float4 inscatter_factor=inscatterTexture1.Sample(samplerState,texc2);
+	float4 inscatter_factor=inscatterTexture.Sample(samplerState,texc2);
 	float cos0=dot(view,lightDir);
 	float3 colour=InscatterFunction(inscatter_factor,cos0);
 	colour+=skylightTexture.Sample(samplerState,texc2);

@@ -175,6 +175,7 @@ ID3D1xEffectVectorVariable* 	noiseOffset		;
 	ID3D1xEffectShaderResourceVariable*		cloudDensity1;
 	ID3D1xEffectShaderResourceVariable*		cloudDensity2;
 	ID3D1xEffectShaderResourceVariable*		noiseTexture;
+	ID3D1xEffectShaderResourceVariable*		noiseTexture3D;
 
 	ID3D1xEffectShaderResourceVariable*		lightningIlluminationTexture;
 	ID3D1xEffectShaderResourceVariable*		skyLossTexture;
@@ -183,6 +184,7 @@ ID3D1xEffectVectorVariable* 	noiseOffset		;
 
 	ID3D1xShaderResourceView*				cloudDensityResource[3];
 	ID3D1xShaderResourceView*				noiseTextureResource;
+	ID3D1xShaderResourceView*				noiseTexture3DResource;
 	ID3D1xShaderResourceView*				lightningIlluminationTextureResource;
 	ID3D1xShaderResourceView*				skyLossTexture_SRV;
 	ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
@@ -193,7 +195,8 @@ ID3D1xEffectVectorVariable* 	noiseOffset		;
 	
 	D3D1x_MAPPED_TEXTURE3D					mapped_illumination;
 
-	ID3D1xTexture2D*	noise_texture;
+	ID3D11Texture2D*	noise_texture;
+	ID3D11Texture3D*	noise_texture_3D;
 	ID3D1xTexture1D*	lightning_texture;
 	ID3D1xTexture2D*	cloud_cubemap;
 	
@@ -209,6 +212,7 @@ ID3D1xEffectVectorVariable* 	noiseOffset		;
 
 	bool CreateLightningTexture();
 	virtual bool CreateNoiseTexture(void *context);
+	void Create3DNoiseTexture(void *context);
 	bool CreateCloudEffect();
 	bool MakeCubemap(); // not ready yet
 	void RenderNoise(void *context);

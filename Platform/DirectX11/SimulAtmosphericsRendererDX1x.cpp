@@ -66,8 +66,8 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	fadeInterp(NULL),
 	imageTexture(NULL),
 	depthTexture(NULL),
-	lossTexture1(NULL),
-	inscatterTexture1(NULL),
+	lossTexture(NULL),
+	inscatterTexture(NULL),
 	skylightTexture(NULL),
 	skyLossTexture_SRV(NULL),
 	skyInscatterTexture_SRV(NULL),
@@ -131,8 +131,8 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	fadeInterp			=effect->GetVariableByName("fadeInterp")->AsScalar();
 	imageTexture		=effect->GetVariableByName("imageTexture")->AsShaderResource();
 	depthTexture		=effect->GetVariableByName("depthTexture")->AsShaderResource();
-	lossTexture1		=effect->GetVariableByName("lossTexture1")->AsShaderResource();
-	inscatterTexture1	=effect->GetVariableByName("inscatterTexture1")->AsShaderResource();
+	lossTexture		=effect->GetVariableByName("lossTexture")->AsShaderResource();
+	inscatterTexture	=effect->GetVariableByName("inscatterTexture")->AsShaderResource();
 	skylightTexture		=effect->GetVariableByName("skylightTexture")->AsShaderResource();
 	
 	MAKE_CONSTANT_BUFFER(constantBuffer,AtmosphericsUniforms);
@@ -171,7 +171,6 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMA
 
 void SimulAtmosphericsRendererDX1x::StartRender(void *context)
 {
-
 	if(!framebuffer)
 		return;
 	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
@@ -192,8 +191,8 @@ void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
 	HRESULT hr=S_OK;
 	hr=imageTexture->SetResource(framebuffer->buffer_texture_SRV);
-	lossTexture1->SetResource(skyLossTexture_SRV);
-	inscatterTexture1->SetResource(skyInscatterTexture_SRV);
+	lossTexture->SetResource(skyLossTexture_SRV);
+	inscatterTexture->SetResource(skyInscatterTexture_SRV);
 	skylightTexture->SetResource(skylightTexture_SRV);
 	simul::math::Matrix4x4 vpt;
 	simul::math::Matrix4x4 viewproj;
@@ -237,8 +236,18 @@ void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
 	ApplyPass(m_pImmediateContext,technique->GetPassByIndex(0));
 	framebuffer->Render(context,false);
 	imageTexture->SetResource(NULL);
-	lossTexture1->SetResource(NULL);
-	inscatterTexture1->SetResource(NULL);
+	lossTexture->SetResource(NULL);
+	inscatterTexture->SetResource(NULL);
 	skylightTexture->SetResource(NULL);
 	PIXEndNamedEvent();
+}
+
+void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float frustumNear,float frustumFar)
+{
+	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
+	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
+	imageTexture->SetResource(NULL);
+	lossTexture->SetResource(NULL);
+	inscatterTexture->SetResource(NULL);
+	skylightTexture->SetResource(NULL);
 }

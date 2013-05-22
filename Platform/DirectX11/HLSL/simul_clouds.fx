@@ -27,6 +27,7 @@ SamplerState crossSectionSamplerState
 };
 
 Texture2D noiseTexture;
+Texture3D noiseTexture3D;
 SamplerState noiseSamplerState 
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -173,14 +174,8 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	return colour;
 }
 
-
-float4 PS_Clouds( geomOutput IN): SV_TARGET
+float4 calcUnfadedColour(geomOutput IN,float3 noiseval,float cos0)
 {
-	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc).xyz).xyz;
-#ifdef DETAIL_NOISE
-	noiseval+=(noiseTexture.Sample(noiseSamplerState,8.0*IN.noise_texc).xyz)/2.0;
-#endif
-	noiseval*=IN.texCoords.w;
 	float3 pos=IN.texCoords.xyz+fractalScale.xyz*noiseval;
 	float4 density=cloudDensity1.Sample(cloudSamplerState,pos);
 	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
@@ -188,103 +183,84 @@ float4 PS_Clouds( geomOutput IN): SV_TARGET
 	density=lerp(density,density2,cloud_interp);
 	density.z*=IN.layerFade;
 	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
-
 	if(density.z<=0)
 		discard;
-   // return float4(1.0,1.0,1.0,density.z);
-	float3 view=normalize(IN.view);
-	float cos0=dot(lightDir.xyz,view.xyz);
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.y,cos0);
-	
-	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
-	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
-	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
 	float3 ambient=density.w*ambientColour.rgb;
 
 	float opacity=density.z;
 	float3 sunlightColour=lerp(sunlightColour1,sunlightColour2,saturate(IN.texCoords.z));
-	float3 final=(density.y*Beta+lightResponse.y*density.x)*sunlightColour+ambient.rgb;
+	float4 final;
+	final.rgb=(density.y*Beta+lightResponse.y*density.x)*sunlightColour+ambient.rgb;
+	final.a=opacity;
+	return final;
+}
+float3 applyFades(float3 final,float2 fade_texc,float cos0,float earthshadowMultiplier)
+{
+	float3 loss=skyLossTexture.Sample		(fadeSamplerState,fade_texc).rgb;
+	float4 insc=skyInscatterTexture.Sample	(fadeSamplerState,fade_texc);
+	float3 skyl=skylightTexture.Sample		(fadeSamplerState,fade_texc).rgb;
 	float3 inscatter=earthshadowMultiplier*InscatterFunction(insc,cos0);
-
 	final*=loss;
-	final+=skyl.rgb+inscatter;
-    return float4(final.rgb,opacity);
+	final+=skyl+inscatter;
+    return final;
 }
 
-float4 PS_WithLightning(geomOutput IN): SV_TARGET
+float4 PS_Clouds( geomOutput IN): SV_TARGET
 {
-	float3 view=normalize(IN.view);
-	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
-	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
-	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
-	float cos0=dot(lightDir.xyz,view.xyz);
-	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
-	float3 inscatter=earthshadowMultiplier*InscatterFunction(insc,cos0);
 	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc.xy).xyz).xyz;
 #ifdef DETAIL_NOISE
 	noiseval+=(noiseTexture.Sample(noiseSamplerState,8.0*IN.noise_texc.xy).xyz)/2.0;
 #endif
 	noiseval*=IN.texCoords.w;
-	float3 pos=IN.texCoords.xyz+fractalScale.xyz*noiseval;
-	float4 density=cloudDensity1.Sample(cloudSamplerState,pos);
-	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
+	float3 view=normalize(IN.view);
+	float cos0=dot(lightDir.xyz,view.xyz);
+	float4 final=calcUnfadedColour(IN,noiseval,cos0);
+	final.rgb=applyFades(final.rgb,IN.fade_texc,cos0,earthshadowMultiplier);
+    return final;
+}
+
+float4 PS_Clouds3DNoise( geomOutput IN): SV_TARGET
+{
+	float3 noise_texc	=IN.texCoords.xyz*noise3DTexcoordScale;
+	float3 noiseval		=float3(0.0,0.0,0.0);
+	float mul=0.5;
+	for(int i=0;i<noise3DOctaves;i++)
+	{
+		noiseval		+=(noiseTexture3D.Sample(noiseSamplerState,noise_texc).xyz)*mul;
+		noise_texc*=2.0;
+		mul*=noise3DPersistence;
+	}
+	noiseval*=IN.texCoords.w;
+	float3 view=normalize(IN.view);
+	float cos0=dot(lightDir.xyz,view.xyz);
+	float4 final=calcUnfadedColour(IN,noiseval,cos0);
+	final.rgb=applyFades(final.rgb,IN.fade_texc,cos0,earthshadowMultiplier);
+    return final;
+}
+
+float4 PS_WithLightning(geomOutput IN): SV_TARGET
+{
+	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc.xy).xyz).xyz;
+#ifdef DETAIL_NOISE
+	noiseval+=(noiseTexture.Sample(noiseSamplerState,8.0*IN.noise_texc.xy).xyz)/2.0;
+#endif
+	noiseval*=IN.texCoords.w;
+	float3 view=normalize(IN.view);
+	float cos0=dot(lightDir.xyz,view.xyz);
+	float4 final=calcUnfadedColour(IN,noiseval,cos0);
 
 	float4 lightning=lightningIlluminationTexture.Sample(lightningSamplerState,IN.texCoordLightning.xyz);
 
-	density=lerp(density,density2,cloud_interp);
-	density.z*=IN.layerFade;
-	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
-	if(density.z<=0)
-		discard;
-	float3 ambient=density.w*ambientColour.rgb;
-
-	float opacity=density.z;
 	float l=dot(lightningMultipliers,lightning);
 	float3 lightningC=l*lightningColour.xyz;
-	float3 sunlightColour=lerp(sunlightColour1,sunlightColour2,saturate(IN.texCoords.z));
-	float3 final=(density.y*Beta+lightResponse.y*density.x)*sunlightColour+ambient.rgb+lightningColour.w*lightningC;
+	final.rgb+=lightningColour.w*lightningC;
 	
-	final*=loss.xyz;
-	final+=skyl.rgb+inscatter.xyz;
+	final.rgb=applyFades(final.rgb,IN.fade_texc,cos0,earthshadowMultiplier);
+	final.rgb*=final.a;
 
-	final*=opacity;
-
-	final+=lightningC*(opacity+IN.layerFade);
-    return float4(final.rgb,opacity);
-}
-
-float4 PS_CloudsLowDef( geomOutput IN): SV_TARGET
-{
-	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc).xyz).xyz;
-
-	float3 pos=IN.texCoords.xyz+fractalScale.xyz*noiseval;
-	float4 density=cloudDensity1.Sample(cloudSamplerState,pos);
-	float4 density2=cloudDensity2.Sample(cloudSamplerState,pos);
-
-	density=lerp(density,density2,cloud_interp);
-	density.z*=IN.layerFade;
-	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
-	if(density.z<=0)
-		discard;
-
-	float3 view=normalize(IN.view);
-	float cos0=dot(lightDir.xyz,view.xyz);
-	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-	
-	float3 loss=skyLossTexture.Sample(fadeSamplerState,IN.fade_texc).rgb;
-	float4 insc=skyInscatterTexture.Sample(fadeSamplerState,IN.fade_texc);
-	float4 skyl=skylightTexture.Sample(fadeSamplerState,IN.fade_texc);
-	float3 ambient=density.w*ambientColour.rgb;
-
-	float opacity=density.z;
-	float3 sunlightColour=lerp(sunlightColour1,sunlightColour2,saturate(IN.texCoords.z));
-	float3 final=(density.x*Beta+lightResponse.y*density.y)*sunlightColour+ambient.rgb;
-	float3 inscatter=skyl.rgb+earthshadowMultiplier*InscatterFunction(insc,cos0);
-
-	final*=loss;
-	final+=inscatter;
-
-    return float4(final.rgb,opacity);
+	final.rgb+=lightningC*(final.a+IN.layerFade);
+    return final;
 }
 
 struct vertexInputCS
@@ -366,20 +342,6 @@ BlendState CloudBlend
     //RenderTargetWriteMask[0] = 0x0F;
 };
 
-technique11 simul_clouds_lowdef
-{
-    pass p0 
-    {
-		SetDepthStencilState(DisableDepth,0);
-        SetRasterizerState( RenderNoCull );
-	//	SetBlendState(CloudBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-
-        SetGeometryShader(CompileShader(gs_4_0,GS_Main()));
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-		SetPixelShader(CompileShader(ps_4_0,PS_CloudsLowDef()));
-    }
-}
-
 technique11 simul_clouds
 {
     pass p0 
@@ -390,6 +352,19 @@ technique11 simul_clouds
         SetGeometryShader(CompileShader(gs_5_0,GS_Main()));
 		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Clouds()));
+    }
+}
+
+technique11 simul_clouds_3d_noise
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		//SetBlendState(CloudBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(CompileShader(gs_5_0,GS_Main()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Main()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Clouds3DNoise()));
     }
 }
 
