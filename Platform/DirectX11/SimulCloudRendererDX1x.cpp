@@ -53,10 +53,6 @@ static unsigned bits[4]={	(unsigned)0x0F00,
 
 typedef std::basic_string<TCHAR> tstring;
 
-struct CloudVertex_t
-{
-    vec3 position;
-};
 struct PosTexVert_t
 {
     vec3 position;	
@@ -101,8 +97,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,m_pVtxDecl(NULL)
 	,m_pLightningVtxDecl(NULL)
 	,m_pCloudEffect(NULL)
-	,vertexBuffer(NULL)
-	,indexBuffer(NULL)
 	,instanceBuffer(NULL)
 	,m_pLightningEffect(NULL)
 	,cloudConstantsBuffer(NULL)
@@ -181,6 +175,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
         { "TEXCOORD",	1, DXGI_FORMAT_R32_FLOAT,			1,	8,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	// noiseScale	
         { "TEXCOORD",	2, DXGI_FORMAT_R32_FLOAT,			1,	12,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	//  layerFade		
         { "TEXCOORD",	3, DXGI_FORMAT_R32_FLOAT,			1,	16,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	//  layerDistance	
+        { "TEXCOORD",	4, DXGI_FORMAT_R32G32_FLOAT,		1,	20,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	//  elevationRange	
     };
 	const D3D11_INPUT_ELEMENT_DESC std_decl[] =
     {
@@ -235,55 +230,36 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 	
 void SimulCloudRendererDX1x::CreateMeshBuffers()
 {
+	unsigned el,az;
+	helper->GetGrid(el,az);
 	helper->GenerateSphereVertices();
-	int num_vertices=32;//(int)helper->GetVertices().size();	 
-	int num_indices=33;//(int)helper->GetQuadStripIndices().size();
-	// Create the main vertex buffer:
-	D3D11_BUFFER_DESC vertexBufferDesc=
-	{
-        num_vertices*sizeof(CloudVertex_t),
-        D3D11_USAGE_DYNAMIC,
-        D3D11_BIND_VERTEX_BUFFER,
-        D3D11_CPU_ACCESS_WRITE,
-        0
-	};
-	CloudVertex_t *vertices=new CloudVertex_t[num_vertices];
-	unsigned short *indices=new unsigned short[num_indices];
-    D3D11_SUBRESOURCE_DATA InitData;
-    ZeroMemory(&InitData,sizeof(D3D11_SUBRESOURCE_DATA));
+	std::vector<vec3> v;
+	std::vector<unsigned short> ind;
+	simul::clouds::CloudGeometryHelper::GenerateSphereVertices(
+				v
+				,ind
+				,el,az);
+	sphere.init(m_pd3dDevice,v,ind);
 
-	CloudVertex_t *dest=vertices;
+	int num_vertices=32;
+	int num_indices=33;
+	// Create the main vertex buffer:
+	vec3 *vertices=new vec3[num_vertices];
+	unsigned short *indices=new unsigned short[num_indices];
+	vec3 *dest=vertices;
 	for(int i=0;i<num_vertices;i++,dest++)
 	{
 		float angle=2.f*pi*(float)i/(float)num_vertices;
-		dest->position.x = sin(angle);	//helper->GetVertices()[i].x;
-		dest->position.y = cos(angle);	//helper->GetVertices()[i].y;
-		dest->position.z = 0.f;			//helper->GetVertices()[i].z;
+		dest->x = sin(angle);	//helper->GetVertices()[i].x;
+		dest->y = cos(angle);	//helper->GetVertices()[i].y;
+		dest->z = 0.f;			//helper->GetVertices()[i].z;
 	}
 	for(int i=0;i<num_indices;i++)
 	{
 	//	unsigned short s=helper->GetQuadStripIndices()[i];
 		indices[i]=i%num_vertices;
 	}
-	
-    InitData.pSysMem = vertices;
-    InitData.SysMemPitch = sizeof(CloudVertex_t);
-	HRESULT hr=m_pd3dDevice->CreateBuffer(&vertexBufferDesc,&InitData,&vertexBuffer);
-	
-	// index buffer
-	D3D11_BUFFER_DESC indexBufferDesc=
-	{
-        num_indices*sizeof(unsigned short),
-        D3D11_USAGE_DYNAMIC,
-        D3D11_BIND_INDEX_BUFFER,
-        D3D11_CPU_ACCESS_WRITE,
-        0
-	};
-    ZeroMemory(&InitData, sizeof(D3D11_SUBRESOURCE_DATA));
-    InitData.pSysMem = indices;
-    InitData.SysMemPitch = sizeof(unsigned short);
-	hr=m_pd3dDevice->CreateBuffer(&indexBufferDesc,&InitData,&indexBuffer);
-    
+	circle.init(m_pd3dDevice,num_vertices,num_indices,vertices,indices);
     delete [] vertices;
     delete [] indices;
 
@@ -338,8 +314,8 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(noise_texture);
 	SAFE_RELEASE(lightning_texture);
 	SAFE_RELEASE(illumination_texture);
-	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(indexBuffer);
+	circle.release();
+	sphere.release();
 	SAFE_RELEASE(instanceBuffer);
 	skyLossTexture_SRV		=NULL;
 	skyInscatterTexture_SRV	=NULL;
@@ -931,6 +907,8 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 
 	static int select_slice=-1;
 	int ii=0;
+	unsigned el,az;
+	helper->GetGrid(el,az);
 	for(std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
 		i!=helper->GetSlices().end();i++,ii++)
 	{
@@ -947,14 +925,17 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 		inst.noiseScale		=s->distance/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
 		inst.noiseOffset.x	=noise_offset[0];
 		inst.noiseOffset.y	=noise_offset[1];
+		inst.elevationRange.x	=2.f*(float)s->elev_start/(float)el-1.f;
+		inst.elevationRange.y	=2.f*(float)s->elev_end/(float)el-1.f;
 	}
 
 	if (test < 15)
 	{
 		return true;
 	}
-
 	int numInstances=(int)helper->GetSlices().size();
+	if(select_slice>=0)
+		numInstances=1;
 	//UPDATE_CONSTANT_BUFFERS(instanceBuffer,InstanceType,instances,numInstances)
 	{
 		D3D11_MAPPED_SUBRESOURCE mapped_res;
@@ -971,72 +952,44 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 		return true;
 	}
 
-	// Update the instance buffer:
-	// Set the input layout
-	UINT strides[]={sizeof(CloudVertex_t),sizeof(InstanceType)};
-	UINT offsets[]={0,0};
-	ID3D11Buffer *buffers[]={vertexBuffer,instanceBuffer};
-
 	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
-
-	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
-	m_pImmediateContext->IASetVertexBuffers(	0,			// the first input slot for binding
-												2,			// the number of buffers in the array
-												buffers,	// the array of vertex buffers
-												strides,	// array of stride values, one for each buffer
-												offsets);	// array of offset values, one for each buffer
-
-				
-	UINT Strides[1];
-	UINT Offsets[1];
-	Strides[0] = 0;
-	Offsets[0] = 0;
-	
 	UINT prevOffset;
 	DXGI_FORMAT prevFormat;
 	ID3D11Buffer* pPrevBuffer;
+	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IAGetIndexBuffer(&pPrevBuffer, &prevFormat, &prevOffset);
 
-	if (test < 17)
-	{
-		return true;
-	}
-
-	m_pImmediateContext->IASetIndexBuffer(	indexBuffer,
-											DXGI_FORMAT_R16_UINT,	// unsigned short
-											0);						// array of offset values, one for each buffer
-
-	if (test < 18)
-	{
-		return true;
-	}
-
-	static int num_primitives=33;//helper->GetQuadStripIndices().size();//s->index_end-s->index_start;
-	for(int i=0;i<(int)helper->GetSlices().size();i++)
+	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+/*	for(int i=0;i<(int)helper->GetSlices().size();i++)
 	{
 		InstanceType &inst=instances[i];
-		//layerFade		->SetFloat(inst.layerFade);
-		//layerDistance	->SetFloat(inst.layerDistance);
-		//noiseScale		->SetFloat(inst.noiseScale);
-		//noiseOffset		->SetFloatVector(inst.noiseOffset);
+		layerFade		->SetFloat(inst.layerFade);
+		layerDistance	->SetFloat(inst.layerDistance);
+		noiseScale		->SetFloat(inst.noiseScale);
+		noiseOffset		->SetFloatVector(inst.noiseOffset);
 		float distance_tex_coord=inst.layerDistance/max_fade_distance_metres;
 
 		static int cc=1;
-		//if((num_primitives-cc)>0)
-		//	m_pImmediateContext->DrawIndexed(num_primitives-cc,first_primitive,0);
-		//	m_pImmediateContext->DrawIndexed((int)num_primitives-cc,0,0);
-	}
-   //ProfileBlock renderProfileBlock("rendering");
+		if((num_primitives-cc)>0)
+			m_pImmediateContext->DrawIndexed(num_primitives-cc,first_primitive,0);
+			m_pImmediateContext->DrawIndexed((int)num_primitives-cc,0,0);
+	}*/
 	if(enable_lightning)
 		ApplyPass(m_pImmediateContext,m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
 	else
 		ApplyPass(m_pImmediateContext,m_hTechniqueCloud->GetPassByIndex(0));
+#if 1
+	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	sphere.apply(m_pImmediateContext,sizeof(InstanceType),instanceBuffer);
 	m_pImmediateContext->//DrawInstanced(num_primitives,numInstances, 0, 0);
-						DrawIndexedInstanced(num_primitives,numInstances,0,0,0);
+						DrawIndexedInstanced(sphere.numIndices,numInstances,0,0,0);
+#else
+	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+	circle.apply(m_pImmediateContext,sizeof(InstanceType),instanceBuffer);
+	m_pImmediateContext->DrawIndexedInstanced(circle.numIndices,numInstances,0,0,0);
+#endif
 
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 	m_pImmediateContext->IASetInputLayout( previousInputLayout );

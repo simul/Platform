@@ -299,8 +299,11 @@ svertexOutput VS_Stars(svertexInput IN)
     OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
 
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
+#ifdef REVERSE_DEPTH
 	OUT.hPosition.z = 0.0f; 
-
+#else
+	OUT.hPosition.z = 1.0f; 
+#endif
     OUT.tex=IN.tex;
     return OUT;
 }

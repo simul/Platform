@@ -239,9 +239,9 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 	gamma_correct.SetWidthAndHeight(2048,2048);
 	gamma_correct.RestoreDeviceObjects(m_pd3dDevice);
 
-	ID3D1xEffect*						m_pTonemapEffect=NULL;
+	ID3D1xEffect* m_pTonemapEffect=NULL;
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("simul_hdr.fx"));
-	ID3D1xEffectTechnique*	tech=m_pTonemapEffect->GetTechniqueByName("simul_gamma");
+	ID3D1xEffectTechnique *tech=m_pTonemapEffect->GetTechniqueByName("simul_gamma");
 
 	cam_pos=GetCameraPosVector(view);
 	MakeCubeMatrices(view_matrices,cam_pos);

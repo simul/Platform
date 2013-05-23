@@ -20,6 +20,7 @@
 #include "Simul/Clouds/CloudRenderCallback.h"
 #include "Simul/Clouds/BaseCloudRenderer.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
 #include "Simul/Platform/CrossPlatform/simul_cloud_constants.sl"
@@ -119,13 +120,14 @@ protected:
 		float noiseScale;
 		float layerFade;
 		float layerDistance;
+		D3DXVECTOR2 elevationRange;
 	};
 	static const int MAX_INSTANCES=400;
 	InstanceType instances[MAX_INSTANCES];
 	ID3D11DeviceContext *mapped_context;
 	ID3D1xDevice*					m_pd3dDevice;
-	ID3D1xBuffer *					vertexBuffer;
-	ID3D1xBuffer *					indexBuffer;
+	simul::dx11::Mesh				circle;
+	simul::dx11::Mesh				sphere;
 	ID3D1xBuffer *					instanceBuffer;
 	ID3D1xInputLayout*				m_pVtxDecl;
 	ID3D1xInputLayout*				m_pLightningVtxDecl;

@@ -775,7 +775,7 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	HRESULT hr=S_OK;
-	D3DXMATRIX tmp1, tmp2;
+	D3DXMATRIX tmp1, tmp2,wvp;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
 	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 
@@ -786,19 +786,13 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context)
 	D3DXMatrixInverse(&tmp2,NULL,&world);
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
-	D3DXMatrixTranspose(&tmp1,&tmp2);
-
-	simul::dx11::setMatrix(m_pSkyEffect,"worldViewProj",(const float *)(&tmp1));
-	//hr=m_pd3dDevice->SetVertexDeclaration(NULL);
-//	hr=m_pd3dDevice->SetFVF(D3DFVF_XYZ|D3DFVF_TEX0);
-
+	D3DXMatrixTranspose(&wvp,&tmp2);
+	simul::dx11::setMatrix(m_pSkyEffect,"worldViewProj",(const float *)(&wvp));
 	hr=ApplyPass(m_pImmediateContext,m_hTechniquePointStars->GetPassByIndex(0));
-
 	if (test < 5)
 	{
 		return true;
 	}
-
 	float sb=skyKeyframer->GetSkyInterface()->GetStarlight().x;
 	float star_brightness=sb*skyKeyframer->GetStarBrightness();
 	simul::dx11::setParameter(m_pSkyEffect,"starBrightness",star_brightness);
