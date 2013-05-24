@@ -1,5 +1,6 @@
 #include "CppHlsl.hlsl"
 Texture2D imageTexture;
+Texture2D depthTexture;
 Texture2D<uint> glowTexture;
 float4x4 worldViewProj	: WorldViewProjection;
 
@@ -58,10 +59,12 @@ float4 convertInt(float2 texCoord)
 float4 TonemapPS(v2f IN) : SV_TARGET
 {
 	float4 c=imageTexture.Sample(samplerState,IN.texcoord);
+	
 	float4 glow=convertInt(IN.texcoord);
 	c.rgb+=glow.rgb;
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
+	c.rgb+=depthTexture.Sample(samplerState,IN.texcoord).rgb;
     return float4(c.rgb,1.f);
 }
 

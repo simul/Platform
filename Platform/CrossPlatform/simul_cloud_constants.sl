@@ -1,14 +1,30 @@
 #ifndef CLOUD_CONSTANTS_SL
 #define CLOUD_CONSTANTS_SL
+static const int MAX_INSTANCES=400;
+
+struct LayerData
+{
+	vec2 noiseOffset;
+	vec2 elevationRange;// unused
+	float noiseScale;
+	float layerFade;
+	float layerDistance;
+	float pad3;
+};
+
+uniform_buffer LayerConstants R8
+{
+	LayerData layers[MAX_INSTANCES];
+};
 
 uniform_buffer CloudConstants R9
 {
 	uniform mat4 worldViewProj;
 	uniform mat4 wrld;
-
+	uniform mat4 invViewProj;
 	uniform mat4 noiseMatrix;
 	uniform vec3 inverseScales;
-	uniform float x2;
+	uniform int layerCount;
 	uniform vec3 ambientColour;
 	uniform float cloud_interp;
 	uniform vec3 fractalScale;

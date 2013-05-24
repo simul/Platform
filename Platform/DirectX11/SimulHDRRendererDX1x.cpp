@@ -203,8 +203,10 @@ bool SimulHDRRendererDX1x::FinishRender(void *context)
 	D3DXMatrixIdentity(&ortho);
     D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
 	worldViewProj->SetMatrix(ortho);
-RenderGlowTexture(context);
-simul::dx11::setParameter(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
+	RenderGlowTexture(context);
+	simul::dx11::setParameter(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
+	simul::dx11::setParameter(m_pTonemapEffect,"depthTexture",(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
+
 	ApplyPass(m_pImmediateContext,TonemapTechnique->GetPassByIndex(0));
 	framebuffer.DrawQuad(context);
 	imageTexture->SetResource(NULL);
@@ -242,7 +244,7 @@ static float g_FilterRadius = 30;
 		glow_fb.Deactivate(context);
 	}
     D3D11_TEXTURE2D_DESC tex_desc;
-	ID3D1xTexture2D *texture=glow_fb.GetColorTexResource();
+	ID3D1xTexture2D *texture=glow_fb.GetColorTexture();
 	texture->GetDesc(&tex_desc);
 
 	float box_width = CalculateBoxFilterWidth(g_FilterRadius, g_NumApproxPasses);

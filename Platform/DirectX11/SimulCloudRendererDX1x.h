@@ -99,6 +99,7 @@ public:
 	void SetYVertical(bool y);
 	bool IsYVertical() const;
 protected:
+	void SetCloudConstants(CloudConstants &cloudConstants);
 	void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip);
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
@@ -114,16 +115,16 @@ protected:
 	unsigned texel_index[4];
 	bool lightning_active;
 
-	struct InstanceType
+/*	struct InstanceType
 	{
 		D3DXVECTOR2 noiseOffset;
+		D3DXVECTOR2 elevationRange;
 		float noiseScale;
 		float layerFade;
 		float layerDistance;
-		D3DXVECTOR2 elevationRange;
-	};
-	static const int MAX_INSTANCES=400;
-	InstanceType instances[MAX_INSTANCES];
+		float pad3;
+	};*/
+	LayerConstants layerConstants;
 	ID3D11DeviceContext *mapped_context;
 	ID3D1xDevice*					m_pd3dDevice;
 	simul::dx11::Mesh				circle;
@@ -136,43 +137,15 @@ protected:
 	ID3D1xEffectTechnique*			m_hTechniqueLightning;
 	ID3D1xEffect*					m_pCloudEffect;
 	ID3D1xEffectTechnique*			m_hTechniqueCloud;
+	ID3D1xEffectTechnique*			m_hTechniqueRaytrace;
 	ID3D1xEffectTechnique*			m_hTechniqueCloudsAndLightning;
 
 	ID3D1xEffectTechnique*			m_hTechniqueCrossSectionXZ;
 	ID3D1xEffectTechnique*			m_hTechniqueCrossSectionXY;
 
 	ID3D11Buffer*					cloudConstantsBuffer;
+	ID3D11Buffer*					layerConstantsBuffer;
 	ID3D1xEffectMatrixVariable* 	l_worldViewProj;
-	ID3D1xEffectMatrixVariable* 	worldViewProj;
-	ID3D1xEffectMatrixVariable* 	wrld;
-	ID3D1xEffectVectorVariable* 	eyePosition;
-	ID3D1xEffectVectorVariable* 	lightResponse;
-	ID3D1xEffectVectorVariable* 	lightDir;
-	ID3D1xEffectVectorVariable* 	ambientColour;
-	ID3D1xEffectVectorVariable* 	sunlightColour1;
-	ID3D1xEffectVectorVariable* 	sunlightColour2;
-	ID3D1xEffectScalarVariable* 	earthshadowMultiplier;
-	ID3D1xEffectVectorVariable* 	fractalScale;
-	ID3D1xEffectScalarVariable* 	cloud_interp;
-	ID3D1xEffectVectorVariable* 	mieRayleighRatio;
-	ID3D1xEffectScalarVariable* 	cloudEccentricity;
-	ID3D1xEffectScalarVariable* 	hazeEccentricity;
-	ID3D1xEffectScalarVariable* 	fadeInterp;
-	ID3D1xEffectScalarVariable* 	alphaSharpness;
-	ID3D1xEffectScalarVariable* 	maxFadeDistanceMetres;
-
-	ID3D1xEffectVectorVariable* 	lightningMultipliers;
-	ID3D1xEffectVectorVariable* 	lightningColour;
-	ID3D1xEffectVectorVariable* 	illuminationOrigin;
-	ID3D1xEffectVectorVariable* 	illuminationScales;
-
-ID3D1xEffectScalarVariable* 	layerFade		;
-ID3D1xEffectScalarVariable* 	layerDistance	;
-ID3D1xEffectVectorVariable* 	cornerPos		;
-//ID3D1xEffectVectorVariable* 	inverseScales	;
-ID3D1xEffectMatrixVariable* 	noiseMatrix		;
-ID3D1xEffectScalarVariable* 	noiseScale		;	
-ID3D1xEffectVectorVariable* 	noiseOffset		;	
 	
 	ID3D1xEffectShaderResourceVariable*		cloudDensity1;
 	ID3D1xEffectShaderResourceVariable*		cloudDensity2;

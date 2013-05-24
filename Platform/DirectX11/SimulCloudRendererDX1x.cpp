@@ -100,6 +100,7 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,instanceBuffer(NULL)
 	,m_pLightningEffect(NULL)
 	,cloudConstantsBuffer(NULL)
+	,layerConstantsBuffer(NULL)
 	,noise_texture(NULL)
 	,noise_texture_3D(NULL)
 	,lightning_texture(NULL)
@@ -151,6 +152,28 @@ void SimulCloudRendererDX1x::RecompileShaders()
 		l_worldViewProj			=m_pLightningEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	}
 	MAKE_CONSTANT_BUFFER(cloudConstantsBuffer,CloudConstants);
+	MAKE_CONSTANT_BUFFER(layerConstantsBuffer,LayerConstants);
+	
+	SAFE_RELEASE(blendAndWriteAlpha);
+	SAFE_RELEASE(blendAndDontWriteAlpha);
+	// two possible blend states for clouds - with alpha written, and without.
+	D3D11_BLEND_DESC omDesc;
+	ZeroMemory( &omDesc, sizeof( D3D11_BLEND_DESC ) );
+	omDesc.RenderTarget[0].BlendEnable		= true;
+	omDesc.RenderTarget[0].BlendOp			= D3D11_BLEND_OP_ADD;
+	omDesc.RenderTarget[0].BlendOpAlpha		= D3D11_BLEND_OP_ADD;
+	omDesc.RenderTarget[0].SrcBlend			= Raytrace?D3D11_BLEND_ONE:D3D11_BLEND_SRC_ALPHA;
+	omDesc.RenderTarget[0].DestBlend		= D3D11_BLEND_INV_SRC_ALPHA;
+	omDesc.RenderTarget[0].SrcBlendAlpha	= D3D11_BLEND_ZERO;
+	omDesc.RenderTarget[0].DestBlendAlpha	= D3D11_BLEND_INV_SRC_ALPHA;
+	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	omDesc.IndependentBlendEnable=true;
+	omDesc.AlphaToCoverageEnable=false;
+	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndWriteAlpha );
+	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED
+										| D3D11_COLOR_WRITE_ENABLE_GREEN
+										| D3D11_COLOR_WRITE_ENABLE_BLUE;
+	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndDontWriteAlpha );
 }
 
 void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
@@ -172,10 +195,10 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
         { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		
         { "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		1,	0,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },//noiseOffset	
-        { "TEXCOORD",	1, DXGI_FORMAT_R32_FLOAT,			1,	8,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	// noiseScale	
-        { "TEXCOORD",	2, DXGI_FORMAT_R32_FLOAT,			1,	12,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	//  layerFade		
-        { "TEXCOORD",	3, DXGI_FORMAT_R32_FLOAT,			1,	16,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	//  layerDistance	
-        { "TEXCOORD",	4, DXGI_FORMAT_R32G32_FLOAT,		1,	20,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	//  elevationRange	
+        { "TEXCOORD",	1, DXGI_FORMAT_R32G32_FLOAT,		1,	8,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	//  elevationRange	
+        { "TEXCOORD",	2, DXGI_FORMAT_R32_FLOAT,			1,	16,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	// noiseScale	
+        { "TEXCOORD",	3, DXGI_FORMAT_R32_FLOAT,			1,	20,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	//  layerFade		
+        { "TEXCOORD",	4, DXGI_FORMAT_R32_FLOAT,			1,	24,	D3D11_INPUT_PER_INSTANCE_DATA, 1 },	//  layerDistance	
     };
 	const D3D11_INPUT_ELEMENT_DESC std_decl[] =
     {
@@ -207,25 +230,6 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 	if(lightningIlluminationTextureResource)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 	ClearIterators();
-	
-	// two possible blend states for clouds - with alpha written, and without.
-	D3D11_BLEND_DESC omDesc;
-	ZeroMemory( &omDesc, sizeof( D3D11_BLEND_DESC ) );
-	omDesc.RenderTarget[0].BlendEnable		= true;
-	omDesc.RenderTarget[0].BlendOp			= D3D11_BLEND_OP_ADD;
-	omDesc.RenderTarget[0].BlendOpAlpha		= D3D11_BLEND_OP_ADD;
-	omDesc.RenderTarget[0].SrcBlend			= D3D11_BLEND_SRC_ALPHA;
-	omDesc.RenderTarget[0].DestBlend		= D3D11_BLEND_INV_SRC_ALPHA;
-	omDesc.RenderTarget[0].SrcBlendAlpha	= D3D11_BLEND_ZERO;
-	omDesc.RenderTarget[0].DestBlendAlpha	= D3D11_BLEND_INV_SRC_ALPHA;
-	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	omDesc.IndependentBlendEnable=true;
-	omDesc.AlphaToCoverageEnable=false;
-	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndWriteAlpha );
-	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED
-										| D3D11_COLOR_WRITE_ENABLE_GREEN
-										| D3D11_COLOR_WRITE_ENABLE_BLUE;
-	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndDontWriteAlpha );
 }
 	
 void SimulCloudRendererDX1x::CreateMeshBuffers()
@@ -269,13 +273,13 @@ void SimulCloudRendererDX1x::CreateMeshBuffers()
 	D3D11_SUBRESOURCE_DATA instanceData;
 		// Set up the description of the instance buffer.
 	instanceBufferDesc.Usage				=D3D11_USAGE_DYNAMIC;
-	instanceBufferDesc.ByteWidth			=sizeof(InstanceType)*200;
+	instanceBufferDesc.ByteWidth			=sizeof(LayerData)*MAX_INSTANCES;
 	instanceBufferDesc.BindFlags			=D3D11_BIND_VERTEX_BUFFER;
 	instanceBufferDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
 	instanceBufferDesc.MiscFlags			=0;
 	instanceBufferDesc.StructureByteStride	=0;
 	// Give the subresource structure a pointer to the instance data.
-	instanceData.pSysMem = instances;
+	instanceData.pSysMem = layerConstants.layers;
 	instanceData.SysMemPitch = 0;
 	instanceData.SysMemSlicePitch = 0;
 
@@ -286,8 +290,8 @@ void SimulCloudRendererDX1x::CreateMeshBuffers()
 		m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 		D3D11_MAPPED_SUBRESOURCE mapped_res;
 		m_pImmediateContext->Map(instanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
-		for(int i=0;i<200;i++)
-			((InstanceType*)(mapped_res.pData))[i]=instances[i];
+		for(int i=0;i<MAX_INSTANCES;i++)
+			((LayerData*)(mapped_res.pData))[i]=layerConstants.layers[i];
 		m_pImmediateContext->Unmap(instanceBuffer, 0);
 		SAFE_RELEASE(m_pImmediateContext)
 	}
@@ -300,6 +304,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	if(illumination_texture)
 		Unmap3D(mapped_context,illumination_texture);
 	SAFE_RELEASE(cloudConstantsBuffer);
+	SAFE_RELEASE(layerConstantsBuffer);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pLightningVtxDecl);
 	SAFE_RELEASE(m_pCloudEffect);
@@ -597,36 +602,11 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 		m_hTechniqueCloud			=m_pCloudEffect->GetTechniqueByName("simul_clouds_3d_noise");
 	else
 		m_hTechniqueCloud			=m_pCloudEffect->GetTechniqueByName("simul_clouds");
+	m_hTechniqueRaytrace			=m_pCloudEffect->GetTechniqueByName("simul_raytrace");
 	m_hTechniqueCloudsAndLightning	=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
 
 	m_hTechniqueCrossSectionXY		=m_pCloudEffect->GetTechniqueByName("cross_section_xy");
 	m_hTechniqueCrossSectionXZ		=m_pCloudEffect->GetTechniqueByName("cross_section_xz");
-
-	worldViewProj					=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
-	wrld							=m_pCloudEffect->GetVariableByName("wrld")->AsMatrix();
-	eyePosition						=m_pCloudEffect->GetVariableByName("eyePosition")->AsVector();
-	lightResponse					=m_pCloudEffect->GetVariableByName("lightResponse")->AsVector();
-	lightDir						=m_pCloudEffect->GetVariableByName("lightDir")->AsVector();
-	ambientColour					=m_pCloudEffect->GetVariableByName("ambientColour")->AsVector();
-	sunlightColour1					=m_pCloudEffect->GetVariableByName("sunlightColour1")->AsVector();
-	sunlightColour2					=m_pCloudEffect->GetVariableByName("sunlightColour2")->AsVector();
-	earthshadowMultiplier			=m_pCloudEffect->GetVariableByName("earthshadowMultiplier")->AsScalar();
-	fractalScale					=m_pCloudEffect->GetVariableByName("fractalScale")->AsVector();
-	cloud_interp					=m_pCloudEffect->GetVariableByName("cloud_interp")->AsScalar();
-	mieRayleighRatio				=m_pCloudEffect->GetVariableByName("mieRayleighRatio")->AsVector();
-	hazeEccentricity				=m_pCloudEffect->GetVariableByName("hazeEccentricity")->AsScalar();
-	fadeInterp						=m_pCloudEffect->GetVariableByName("fadeInterp")->AsScalar();
-	cloudEccentricity				=m_pCloudEffect->GetVariableByName("cloudEccentricity")->AsScalar();
-	alphaSharpness					=m_pCloudEffect->GetVariableByName("alphaSharpness")->AsScalar();
-	maxFadeDistanceMetres			=m_pCloudEffect->GetVariableByName("maxFadeDistanceMetres")->AsScalar();
-
-	//if(enable_lightning)
-	{
-		lightningMultipliers		=m_pCloudEffect->GetVariableByName("lightningMultipliers")->AsVector();
-		lightningColour				=m_pCloudEffect->GetVariableByName("lightningColour")->AsVector();
-		illuminationOrigin			=m_pCloudEffect->GetVariableByName("illuminationOrigin")->AsVector();
-		illuminationScales			=m_pCloudEffect->GetVariableByName("illuminationScales")->AsVector();
-	}
 
 	cloudDensity1					=m_pCloudEffect->GetVariableByName("cloudDensity1")->AsShaderResource();
 	cloudDensity2					=m_pCloudEffect->GetVariableByName("cloudDensity2")->AsShaderResource();
@@ -636,14 +616,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	skyLossTexture					=m_pCloudEffect->GetVariableByName("skyLossTexture")->AsShaderResource();
 	skyInscatterTexture				=m_pCloudEffect->GetVariableByName("skyInscatterTexture")->AsShaderResource();
 	skylightTexture					=m_pCloudEffect->GetVariableByName("skylightTexture")->AsShaderResource();
-	
-	layerFade						=m_pCloudEffect->GetVariableByName("layerFade")->AsScalar();
-	layerDistance					=m_pCloudEffect->GetVariableByName("layerDistance")->AsScalar();
-	cornerPos						=m_pCloudEffect->GetVariableByName("cornerPos")->AsVector();
-	//inverseScales					=m_pCloudEffect->GetVariableByName("inverseScales")->AsVector();
-	noiseMatrix						=m_pCloudEffect->GetVariableByName("noiseMatrix")->AsMatrix();
-	noiseScale						=m_pCloudEffect->GetVariableByName("noiseScale")->AsScalar();
-	noiseOffset						=m_pCloudEffect->GetVariableByName("noiseOffset")->AsVector();
+
 	return true;
 }
 
@@ -662,102 +635,35 @@ static float saturate(float c)
 {
 	return std::max(std::min(1.f,c),0.f);
 }
-static int test=29999;
-bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
+
+void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 {
-	if (test < 1)
-	{
-		return true;
-	}
-	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
-	EnsureTexturesAreUpToDate(m_pImmediateContext);
- 
-	if (test < 2)
-	{
-		return true;
-	}
-    ProfileBlock profileBlock(m_pImmediateContext,"SimulCloudRendererDX1x::Render");
-
-	float blendFactor[] = {0, 0, 0, 0};
-	UINT sampleMask   = 0xffffffff;
-	if(write_alpha)
-		m_pImmediateContext->OMSetBlendState(blendAndWriteAlpha, blendFactor, sampleMask);
-	else
-		m_pImmediateContext->OMSetBlendState(blendAndDontWriteAlpha, blendFactor, sampleMask);
-
-	if (test < 3)
-	{
-		return true;
-	}
-
-	HRESULT hr=S_OK;
-	PIXBeginNamedEvent(1,"Render Clouds Layers");
-	cloudDensity1->SetResource(cloudDensityResource[0]);
-	cloudDensity2->SetResource(cloudDensityResource[1]);
-	noiseTexture->SetResource(noiseTextureResource);
-	noiseTexture3D->SetResource(noiseTexture3DResource);
-	skyLossTexture->SetResource(skyLossTexture_SRV);
-	skyInscatterTexture->SetResource(skyInscatterTexture_SRV);
-	skylightTexture->SetResource(skylightTexture_SRV);
-
-	if (test < 4)
-	{
-		return true;
-	}
-
-	simul::math::Vector3 X1			=cloudKeyframer->GetCloudInterface()->GetOrigin();
-	simul::math::Vector3 InverseDX	=cloudKeyframer->GetCloudInterface()->GetInverseScales();
-
-	// Mess with the proj matrix to extend the far clipping plane:
-	simul::dx11::FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f);
-	
-	if (test < 5)
-	{
-		return true;
-	}
-
-	//set up matrices
+	memset(&cloudConstants,0,sizeof(cloudConstants));
 	D3DXMATRIX wvp,world;
 	D3DXMatrixIdentity(&world);
 	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
-	simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
-	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
+	cloudConstants.worldViewProj=wvp;
+	cloudConstants.worldViewProj.transpose();
 
-	if (test < 6)
+	simul::math::Matrix4x4 vpt;
+	simul::math::Matrix4x4 viewproj;
+	view(3,0)=view(3,1)=view(3,2)=0;
+	D3DXMATRIX p1=proj;
+	if(ReverseDepth)
 	{
-		return true;
+		p1=simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
 	}
+	simul::math::Matrix4x4 v((const float *)view),p((const float*)p1);
+	simul::math::Multiply4x4(viewproj,v,p);
+	viewproj.Transpose(vpt);
+	simul::math::Matrix4x4 ivp;
+	vpt.Inverse(ivp);
+	cloudConstants.invViewProj=ivp;
+	cloudConstants.invViewProj.transpose();
 
-	if(y_vertical)
-		std::swap(wind_offset.y,wind_offset.z);
-	X+=wind_offset;
-
-	//worldViewProj->SetMatrix(&wvp._11);
-	//wrld->SetMatrixTranspose(&world._11);
-
-	simul::math::Vector3 view_dir	(view._13,view._23,view._33);
-	if(!y_vertical)
-		view_dir.Define(-view._13,-view._23,-view._33);
-	simul::math::Vector3 up			(view._12,view._22,view._32);
-
-	if (test < 7)
-	{
-		return true;
-	}
-
-	simul::sky::float4 view_km=(const float*)cam_pos;
-	if(!cubemap)
-	{
-		helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
-	}
-
-	if (test < 8)
-	{
-		return true;
-	}
-
-	view_km*=0.001f;
+	cloudConstants.wrld=world;
+	cloudConstants.wrld.transpose();
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;
 	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse(),
@@ -769,35 +675,7 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToSun();
 	simul::sky::float4 light_dir=skyInterface->GetDirectionToLight(base_alt_km);
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
-	float tan_half_fov_vertical=1.f/proj._22;
-	float tan_half_fov_horizontal=1.f/proj._11;
-	helper->SetNoFrustumLimit(true);//cubemap);
-	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
-
-	if (test < 9)
-	{
-		return true;
-	}
-
-	ID3D1xEffectConstantBuffer* cbUser=m_pCloudEffect->GetConstantBufferByName("cbUser");
-	if(cbUser)
-	{
-		ID3DX11EffectVectorVariable *lr=cbUser->GetMemberByName("lightResponse")->AsVector();
-	}
 	simul::sky::float4 sunlight1,sunlight2;
-	CloudConstants cloudConstants;
-	memset(&cloudConstants,0,sizeof(cloudConstants));
-	
-	if (test < 10)
-	{
-		return true;
-	}
-
-	cloudConstants.worldViewProj=wvp;
-	cloudConstants.worldViewProj.transpose();
-	cloudConstants.wrld=world;
-	cloudConstants.wrld.transpose();
 	if(skyInterface)
 	{
 		simul::sky::EarthShadow e=skyInterface->GetEarthShadow(base_alt_km,sun_dir);
@@ -814,20 +692,12 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 			cloudConstants.earthshadowMultiplier=1.f;
 		}
 	}
-
-	if (test < 11)
-	{
-		return true;
-	}
-
 	cloudConstants.cloud_interp		=cloudKeyframer->GetInterpolation();
-	//eyePosition			->SetFloatVector	(cam_pos);
 	cloudConstants.lightResponse	=light_response;
-
 	cloudConstants.lightDir			=light_dir;
 	cloudConstants.ambientColour	=sky_light_colour;
 	cloudConstants.sunlightColour1	=sunlight1;
-	cloudConstants.sunlightColour2=sunlight2;
+	cloudConstants.sunlightColour2	=sunlight2;
 	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
 	cloudConstants.fractalScale			=	(fractal_scales);
 	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
@@ -836,21 +706,18 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 	cloudConstants.hazeEccentricity		=(skyInterface->GetMieEccentricity());
 	cloudConstants.alphaSharpness		=(GetCloudInterface()->GetAlphaSharpness());
 	cloudConstants.maxFadeDistanceMetres=(max_fade_distance_metres);
-	
-	if (test < 12)
-	{
-		return true;
-	}
+
+	simul::math::Vector3 X1			=cloudKeyframer->GetCloudInterface()->GetOrigin();
+	simul::math::Vector3 InverseDX	=cloudKeyframer->GetCloudInterface()->GetInverseScales();
 
 	cloudConstants.cornerPos			=X1;
 	cloudConstants.inverseScales		=InverseDX;
-
+	cloudConstants.layerCount			=helper->GetSlices().size();
 	static float uu=1.f;
 	float sc=uu/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
 	cloudConstants.noise3DTexcoordScale	=vec3(sc/InverseDX.x,sc/InverseDX.y,sc/InverseDX.z);
 	cloudConstants.noise3DPersistence	=cloudKeyframer->GetEdgeNoisePersistence();
 	cloudConstants.noise3DOctaves		=cloudKeyframer->GetEdgeNoiseOctaves();
-
 	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
 	cloudConstants.noiseMatrix		=noise_orient.GetInverseMatrix();
 	
@@ -872,39 +739,69 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 		lightning_colour.w=effect_on_cloud;
 		cloudConstants.lightningMultipliers=	(lightning_multipliers);
 		cloudConstants.lightningColour=	(lightning_colour);
-
-	if (test < 13)
-	{
-		return true;
-	}
-
 		simul::math::Vector3 light_X1,light_X2,light_DX;
 		light_DX.Define(lightningRenderInterface->GetLightningZoneSize(),
 						lightningRenderInterface->GetLightningZoneSize(),
 						GetCloudInterface()->GetCloudBaseZ()+GetCloudInterface()->GetCloudHeight());
 
-//		light_X1=lightningRenderInterface->GetLightningCentreX();
 		light_X1-=0.5f*light_DX;
 		light_X1.z=0;
-		//light_X2=lightningRenderInterface->GetLightningCentreX();
 		light_X2+=0.5f*light_DX;
 		light_X2.z=light_DX.z;
 
 		cloudConstants.illuminationOrigin=light_X1;
 		cloudConstants.illuminationScales=light_DX;
 	}
+}
+static int test=29999;
+bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
+{
+	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
+	EnsureTexturesAreUpToDate(m_pImmediateContext);
+    ProfileBlock profileBlock(m_pImmediateContext,"SimulCloudRendererDX1x::Render");
+
+	float blendFactor[] = {0, 0, 0, 0};
+	UINT sampleMask   = 0xffffffff;
+	if(write_alpha)
+		m_pImmediateContext->OMSetBlendState(blendAndWriteAlpha, blendFactor, sampleMask);
+	else
+		m_pImmediateContext->OMSetBlendState(blendAndDontWriteAlpha, blendFactor, sampleMask);
+
+	HRESULT hr=S_OK;
+	PIXBeginNamedEvent(1,"Render Clouds Layers");
+	cloudDensity1->SetResource(cloudDensityResource[0]);
+	cloudDensity2->SetResource(cloudDensityResource[1]);
+	noiseTexture->SetResource(noiseTextureResource);
+	noiseTexture3D->SetResource(noiseTexture3DResource);
+	skyLossTexture->SetResource(skyLossTexture_SRV);
+	skyInscatterTexture->SetResource(skyInscatterTexture_SRV);
+	skylightTexture->SetResource(skylightTexture_SRV);
+	// Mess with the proj matrix to extend the far clipping plane:
+	simul::dx11::FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f);
+
+	//set up matrices
+	simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
+	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
+	if(y_vertical)
+		std::swap(wind_offset.y,wind_offset.z);
+	X+=wind_offset;
+	simul::math::Vector3 view_dir	(view._13,view._23,view._33);
+	if(!y_vertical)
+		view_dir.Define(-view._13,-view._23,-view._33);
+	simul::math::Vector3 up(view._12,view._22,view._32);
+	if(!cubemap)
+		helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
+	float tan_half_fov_vertical=1.f/proj._22;
+	float tan_half_fov_horizontal=1.f/proj._11;
+	helper->SetNoFrustumLimit(true);//cubemap);
+	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
+	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
+	CloudConstants cloudConstants;
+	SetCloudConstants(cloudConstants);
 	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,cloudConstantsBuffer,CloudConstants,cloudConstants);
-	ID3D1xEffectConstantBuffer* cbCloudConstants=m_pCloudEffect->GetConstantBufferByName("CloudConstants");
+	ID3DX11EffectConstantBuffer* cbCloudConstants=m_pCloudEffect->GetConstantBufferByName("CloudConstants");
 	if(cbCloudConstants)
 		cbCloudConstants->SetConstantBuffer(cloudConstantsBuffer);
-	int startv=0;
-	int v=0;
-
-	if (test < 14)
-	{
-		return true;
-	}
-
 	static int select_slice=-1;
 	int ii=0;
 	unsigned el,az;
@@ -917,7 +814,7 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 		simul::clouds::CloudGeometryHelper::Slice *s=*i;
 		if(s==NULL)
 			continue;
-		InstanceType &inst=instances[ii];
+		LayerData &inst=layerConstants.layers[ii];
 		float noise_offset[]={s->noise_tex_x/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength()
 				,s->noise_tex_y/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength(),0,0};
 		inst.layerFade		=s->fadeIn;
@@ -928,29 +825,10 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 		inst.elevationRange.x	=2.f*(float)s->elev_start/(float)el-1.f;
 		inst.elevationRange.y	=2.f*(float)s->elev_end/(float)el-1.f;
 	}
-
-	if (test < 15)
-	{
-		return true;
-	}
 	int numInstances=(int)helper->GetSlices().size();
 	if(select_slice>=0)
 		numInstances=1;
-	//UPDATE_CONSTANT_BUFFERS(instanceBuffer,InstanceType,instances,numInstances)
-	{
-		D3D11_MAPPED_SUBRESOURCE mapped_res;
-		m_pImmediateContext->Map(instanceBuffer,0,D3D11_MAP_WRITE_DISCARD,0, &mapped_res);
-		memset(mapped_res.pData,0,numInstances*sizeof(InstanceType));
-		memcpy(mapped_res.pData,instances,numInstances*sizeof(InstanceType));
-		//for(int i=0;i<numInstances;i++)
-		//	((InstanceType*)(mapped_res.pData))[i]=instances[i];
-		m_pImmediateContext->Unmap(instanceBuffer, 0);
-	}
-
-	if (test < 16)
-	{
-		return true;
-	}
+	UPDATE_CONSTANT_BUFFERS(m_pImmediateContext,instanceBuffer,LayerData,layerConstants.layers,numInstances)
 
 	ID3D11InputLayout* previousInputLayout;
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
@@ -960,71 +838,57 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
 	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IAGetIndexBuffer(&pPrevBuffer, &prevFormat, &prevOffset);
-
-	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
-/*	for(int i=0;i<(int)helper->GetSlices().size();i++)
+	if(Raytrace)
 	{
-		InstanceType &inst=instances[i];
-		layerFade		->SetFloat(inst.layerFade);
-		layerDistance	->SetFloat(inst.layerDistance);
-		noiseScale		->SetFloat(inst.noiseScale);
-		noiseOffset		->SetFloatVector(inst.noiseOffset);
-		float distance_tex_coord=inst.layerDistance/max_fade_distance_metres;
-
-		static int cc=1;
-		if((num_primitives-cc)>0)
-			m_pImmediateContext->DrawIndexed(num_primitives-cc,first_primitive,0);
-			m_pImmediateContext->DrawIndexed((int)num_primitives-cc,0,0);
-	}*/
-	if(enable_lightning)
-		ApplyPass(m_pImmediateContext,m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
+		UPDATE_CONSTANT_BUFFER(m_pImmediateContext,layerConstantsBuffer,LayerConstants,layerConstants)
+		ID3DX11EffectConstantBuffer* cbLayerConstants=m_pCloudEffect->GetConstantBufferByName("LayerConstants");
+		if(cbLayerConstants)
+			cbLayerConstants->SetConstantBuffer(layerConstantsBuffer);
+		ApplyPass(m_pImmediateContext,m_hTechniqueRaytrace->GetPassByIndex(0));
+		UtilityRenderer::DrawQuad(m_pImmediateContext,-1.f,-1.f,2.f,2.f,m_hTechniqueRaytrace);
+	}
 	else
-		ApplyPass(m_pImmediateContext,m_hTechniqueCloud->GetPassByIndex(0));
+	{
+		m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+		if(enable_lightning)
+			ApplyPass(m_pImmediateContext,m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
+		else
+			ApplyPass(m_pImmediateContext,m_hTechniqueCloud->GetPassByIndex(0));
 #if 1
-	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	sphere.apply(m_pImmediateContext,sizeof(InstanceType),instanceBuffer);
-	m_pImmediateContext->//DrawInstanced(num_primitives,numInstances, 0, 0);
-						DrawIndexedInstanced(sphere.numIndices,numInstances,0,0,0);
+		m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		sphere.apply(m_pImmediateContext,sizeof(LayerData),instanceBuffer);
+		m_pImmediateContext->DrawIndexedInstanced(sphere.numIndices,numInstances,0,0,0);
 #else
-	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
-	circle.apply(m_pImmediateContext,sizeof(InstanceType),instanceBuffer);
-	m_pImmediateContext->DrawIndexedInstanced(circle.numIndices,numInstances,0,0,0);
+		m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+		circle.apply(m_pImmediateContext,sizeof(InstanceType),instanceBuffer);
+		m_pImmediateContext->DrawIndexedInstanced(circle.numIndices,numInstances,0,0,0);
 #endif
-
+	}
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 	m_pImmediateContext->IASetInputLayout( previousInputLayout );
 	m_pImmediateContext->IASetIndexBuffer(pPrevBuffer, prevFormat, prevOffset);
 	SAFE_RELEASE(previousInputLayout);
 	SAFE_RELEASE(pPrevBuffer);
-	
-	if (test < 19)
-	{
-		return true;
-	}
-
-	
-
 	PIXEndNamedEvent();
 	skyLossTexture->SetResource(NULL);
 	skyInscatterTexture->SetResource(NULL);
 	skylightTexture->SetResource(NULL);
 // To prevent BIZARRE DX11 warning, we re-apply the pass with the UtilityRenderer::RenderTextures unbound:
-	
-	if(enable_lightning)
-		ApplyPass(m_pImmediateContext,m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
+	if(Raytrace)
+	{
+		ApplyPass(m_pImmediateContext,m_hTechniqueRaytrace->GetPassByIndex(0));
+	}
 	else
-		ApplyPass(m_pImmediateContext,m_hTechniqueCloud->GetPassByIndex(0));
+	{
+		if(enable_lightning)
+			ApplyPass(m_pImmediateContext,m_hTechniqueCloudsAndLightning->GetPassByIndex(0));
+		else
+			ApplyPass(m_pImmediateContext,m_hTechniqueCloud->GetPassByIndex(0));
+	}
 	m_pImmediateContext->OMSetBlendState(NULL, blendFactor, sampleMask);
 	// This actually returns the PREVIOUS FRAME's time value:
-
-	if (test < 20)
-	{
-		return true;
-	}
-
 	gpu_time*=0.99f;
-	gpu_time+=0.01f*profileBlock.GetTime();//profileBlock.GetTime();
-
+	gpu_time+=0.01f*profileBlock.GetTime();
 	return (hr==S_OK);
 }
 
@@ -1072,7 +936,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	ortho._14=-1.f;
 	ortho._22=-ortho._22;
 	ortho._24=1.f;
-	//ID3DX11EffectMatrixVariable*	worldViewProj=m_pCloudEffect->GetVariableByName("worldViewProj")->AsMatrix();
+
 
 	CloudConstants cloudConstants;
 	memset(&cloudConstants,0,sizeof(cloudConstants));

@@ -69,6 +69,8 @@ float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 	float3 view=mul(invViewProj,pos).xyz;
 	view=normalize(view);
 	float4 lookup=imageTexture.Sample(samplerState,IN.texCoords.xy);
+	float4 dlookup=depthTexture.Sample(samplerState,IN.texCoords.xy);
+	
 	float3 colour=lookup.rgb;
 	float depth=lookup.a;
 	if(depth>=1.f)
@@ -82,6 +84,7 @@ float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 	float cos0=dot(view,lightDir);
 	colour+=InscatterFunction(inscatter_factor,cos0);
 	colour+=skylightTexture.Sample(samplerState,texc2);
+	colour.rgb=1000.0*dlookup.rgb;
     return float4(colour,1.f);
 }
 

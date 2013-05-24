@@ -35,7 +35,11 @@ public:
 	{
 		return (void*)buffer_texture_SRV;
 	}
-	ID3D1xTexture2D* GetColorTexResource()
+	void* GetDepthTex()
+	{
+		return (void*)buffer_depth_texture_SRV;
+	}
+	ID3D11Texture2D* GetColorTexture()
 	{
 		return hdr_buffer_texture;
 	}

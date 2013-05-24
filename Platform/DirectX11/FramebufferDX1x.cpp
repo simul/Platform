@@ -161,7 +161,7 @@ bool FramebufferDX1x::CreateBuffers()
 		target_format,
 		{1,0},
 		D3D1x_USAGE_DEFAULT,
-		D3D1x_BIND_RENDER_TARGET|D3D1x_BIND_SHADER_RESOURCE,
+		D3D1x_BIND_RENDER_TARGET|D3D11_BIND_SHADER_RESOURCE,
 		0,
 		0
 	};
@@ -193,11 +193,11 @@ bool FramebufferDX1x::CreateBuffers()
 	desc.Height = Height;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = fmtDepthTex;
+	desc.Format = DXGI_FORMAT_R32_TYPELESS;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.Usage = D3D1x_USAGE_DEFAULT;
-	desc.BindFlags = D3D1x_BIND_DEPTH_STENCIL;
+	desc.BindFlags = D3D1x_BIND_DEPTH_STENCIL|D3D11_BIND_SHADER_RESOURCE;
 	desc.CPUAccessFlags = 0;
 	desc.MiscFlags = 0;
 	if(fmtDepthTex!=DXGI_FORMAT_UNKNOWN)
@@ -207,8 +207,25 @@ bool FramebufferDX1x::CreateBuffers()
 												&buffer_depth_texture))
 	}
 	SAFE_RELEASE(m_pBufferDepthSurface)
+	SAFE_RELEASE(buffer_depth_texture_SRV);
 	if(buffer_depth_texture)
-		hr=m_pd3dDevice->CreateDepthStencilView((ID3D1xResource*)buffer_depth_texture, NULL, &m_pBufferDepthSurface);
+	{
+		D3D11_TEX2D_DSV dsv;
+		dsv.MipSlice=0;
+		D3D11_DEPTH_STENCIL_VIEW_DESC depthDesc;
+		depthDesc.ViewDimension		=D3D11_DSV_DIMENSION_TEXTURE2D;
+		depthDesc.Format			=DXGI_FORMAT_D32_FLOAT;
+		depthDesc.Flags				=0;
+		depthDesc.Texture2D			=dsv;
+		hr=m_pd3dDevice->CreateDepthStencilView((ID3D1xResource*)buffer_depth_texture,&depthDesc, &m_pBufferDepthSurface);
+		D3D11_SHADER_RESOURCE_VIEW_DESC depthSrvDesc;
+		depthSrvDesc.Format			=DXGI_FORMAT_R32_FLOAT;
+		depthSrvDesc.ViewDimension	=D3D_SRV_DIMENSION_TEXTURE2D;
+		depthSrvDesc.Texture2D.MipLevels=1;
+		depthSrvDesc.Texture2D.MostDetailedMip=0;
+
+		V_CHECK(m_pd3dDevice->CreateShaderResourceView(buffer_depth_texture,&depthSrvDesc, &buffer_depth_texture_SRV ));
+	}
 
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =
 	{
@@ -312,7 +329,7 @@ m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	sourceRegion.bottom = Height;
 	sourceRegion.front = 0;
 	sourceRegion.back = 1;
-	m_pImmediateContext->CopySubresourceRegion(stagingTexture, 0, 0, 0, 0, GetColorTexResource(), 0, &sourceRegion);
+	m_pImmediateContext->CopySubresourceRegion(stagingTexture, 0, 0, 0, 0, GetColorTexture(), 0, &sourceRegion);
 HRESULT hr=S_OK;
 	D3D11_MAPPED_SUBRESOURCE msr;
 	V_CHECK(m_pImmediateContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &msr));

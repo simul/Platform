@@ -847,7 +847,6 @@ bool SimulSkyRenderer::RenderPointStars(void *)
 				star_vertices[i].y= d*cos(de)*cos(ra);
 				star_vertices[i].z= d*sin(de);
 				star_vertices[i].b=(float)exp(-skyKeyframer->stars.GetStar(i).magnitude);
-				star_vertices[i].c=1.f;
 			}
 		}
 	}

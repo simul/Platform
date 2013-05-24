@@ -142,17 +142,17 @@ namespace simul
 			{
 				if(proj._43>0)
 				{
-					float zF=proj._43/proj._33;
-					float zN=proj._43*zF/(zF+proj._43);
-					proj._33=-zFar/(zFar-zN);
-					proj._43=-zN*zFar/(zFar-zN);
+					float zF	=proj._43/proj._33;
+					float zN	=proj._43*zF/(zF+proj._43);
+					proj._33	=zN/(zFar-zN);
+					proj._43	=zFar*zN/(zFar-zN);
 				}
 				else
 				{
-					float zN=proj._43/proj._33;
-					float zF=proj._43*zN/(zN+proj._43);
-					proj._33=-zFar/(zFar-zN);
-					proj._43=-zN*zFar/(zFar-zN);
+					float zN	=proj._43/proj._33;
+					float zF	=proj._43*zN/(zN+proj._43);
+					proj._33	=-zFar/(zFar-zN);
+					proj._43	=-zN*zFar/(zFar-zN);
 				}
 			}
 		}
@@ -176,12 +176,17 @@ namespace simul
 				}
 			}
 		}
-		void ConvertReversedToRegularProjectionMatrix(D3DXMATRIX &proj)
+		D3DXMATRIX ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj)
 		{
-			float zF=proj._43/proj._33;
-			float zN=proj._43*zF/(zF+proj._43);
-			proj._33=-zF/(zF-zN);
-			proj._43=-zN*zF/(zF-zN);
+			D3DXMATRIX p=proj;
+			if(proj._43>0)
+			{
+				float zF=proj._43/proj._33;
+				float zN=proj._43*zF/(zF+proj._43);
+				p._33=-zF/(zF-zN);
+				p._43=-zN*zF/(zF-zN);
+			}
+			return p;
 		}
 
 	}

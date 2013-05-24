@@ -194,6 +194,7 @@ void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
 	lossTexture->SetResource(skyLossTexture_SRV);
 	inscatterTexture->SetResource(skyInscatterTexture_SRV);
 	skylightTexture->SetResource(skylightTexture_SRV);
+	simul::dx11::setParameter(effect,"depthTexture",(ID3D1xShaderResourceView*)framebuffer->GetDepthTex());
 	simul::math::Matrix4x4 vpt;
 	simul::math::Matrix4x4 viewproj;
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);

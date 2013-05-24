@@ -735,9 +735,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 void SimulSkyRendererDX1x::BuildStarsBuffer()
 {
 	SAFE_RELEASE(m_pStarsVertexBuffer);
-	
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
-	
 	num_stars=current_num_stars;
 	delete [] star_vertices;
 	star_vertices=new StarVertext[num_stars];
@@ -746,26 +744,19 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	{
 		float ra=(float)skyKeyframer->stars.GetStar(i).ascension;
 		float de=(float)skyKeyframer->stars.GetStar(i).declination;
-		star_vertices[i].x= d*cos(de)*sin(ra);
-		star_vertices[i].y= d*cos(de)*cos(ra);
-		star_vertices[i].z= d*sin(de);
+		star_vertices[i].x=d*cos(de)*sin(ra);
+		star_vertices[i].y=d*cos(de)*cos(ra);
+		star_vertices[i].z=d*sin(de);
 		star_vertices[i].b=(float)exp(-skyKeyframer->stars.GetStar(i).magnitude);
-		star_vertices[i].c=1.f;
 	}
-	
     D3D1x_SUBRESOURCE_DATA InitData;
     ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
     InitData.pSysMem = star_vertices;
     InitData.SysMemPitch = sizeof(StarVertext);
-	D3D1x_BUFFER_DESC desc=
+	D3D11_BUFFER_DESC desc=
 	{
-        num_stars*sizeof(StarVertext),
-        D3D1x_USAGE_DEFAULT,
-        D3D1x_BIND_VERTEX_BUFFER,
-        0,
-        0
+        num_stars*sizeof(StarVertext),D3D11_USAGE_DEFAULT,D3D11_BIND_VERTEX_BUFFER,0,0
 	};
-	
 	m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pStarsVertexBuffer);
 }
 

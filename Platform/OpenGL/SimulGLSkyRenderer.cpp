@@ -507,7 +507,6 @@ bool SimulGLSkyRenderer::RenderPointStars(void *)
 				star_vertices[i].y= d*cos(de)*cos(ra);
 				star_vertices[i].z= d*sin(de);
 				star_vertices[i].b=(float)exp(-skyKeyframer->stars.GetStar(i).magnitude);
-				star_vertices[i].c=1.f;
 			}
 		}
 	}
@@ -528,7 +527,7 @@ bool SimulGLSkyRenderer::RenderPointStars(void *)
 	for(int i=0;i<num_stars;i++)
 	{
 		StarVertext &V=star_vertices[i];
-		glMultiTexCoord2f(GL_TEXTURE0,V.b,V.c);
+		glMultiTexCoord1f(GL_TEXTURE0,V.b);
 		glVertex3f(V.x,V.y,V.z);
 	}
 	glEnd();
