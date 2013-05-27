@@ -574,7 +574,7 @@ static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 	return &x;
 }
 
-bool SimulCloudRenderer::Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
+bool SimulCloudRenderer::Render(void *context,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	return Render(context,cubemap,depth_alpha_tex,default_fog,0,write_alpha);
 }
@@ -675,7 +675,7 @@ void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 	}
 }
 
-bool SimulCloudRenderer::Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,int buffer_index,bool write_alpha)
+bool SimulCloudRenderer::Render(void *context,bool cubemap,const void *depth_alpha_tex,bool default_fog,int buffer_index,bool write_alpha)
 {
 	if(rebuild_shaders)
 		RecompileShaders();

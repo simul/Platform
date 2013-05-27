@@ -1,5 +1,5 @@
 #version 330
-#include "simul_inscatter_fns.glsl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "simul_gpu_sky.glsl"
 
 uniform sampler2D input_insc_texture;

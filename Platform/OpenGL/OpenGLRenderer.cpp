@@ -73,7 +73,10 @@ void OpenGLRenderer::paintGL()
 	glMatrixMode(GL_PROJECTION);
 	static float nearPlane=0.01f;
 	static float farPlane=250000.f;
-	glLoadMatrixf(cam->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight,false));
+	if(ReverseDepth)
+		glLoadMatrixf(cam->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight));
+	else
+		glLoadMatrixf(cam->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight,false));
 	glViewport(0,0,ScreenWidth,ScreenHeight);
 	if(simulWeatherRenderer.get())
 	{

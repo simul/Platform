@@ -184,7 +184,7 @@ void Simul2DCloudRendererDX11::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX 
 	proj=p;
 }
 
-bool Simul2DCloudRendererDX11::Render(void*context,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
+bool Simul2DCloudRendererDX11::Render(void*context,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha)
 {
 	EnsureTexturesAreUpToDate(context);
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;

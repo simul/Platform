@@ -58,7 +58,7 @@ public:
 	void StartRender(void *context);
 	void FinishRender(void *context);
 	//! Not implemented for DirectX 9.
-	void RenderAsOverlay(void *context,const void *depthTexture,float frustumNear,float frustumFar){}
+	void RenderAsOverlay(void *context,const void *depthTexture){}
 	void *GetDepthAlphaTexture()
 	{
 		return (void*)input_texture;

@@ -248,7 +248,7 @@ static float saturate(float c)
 static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
+bool SimulGLCloudRenderer::Render(void *context,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	EnsureTexturesAreUpToDate(context);

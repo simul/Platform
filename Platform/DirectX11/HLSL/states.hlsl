@@ -1,5 +1,6 @@
 #ifndef STATES_HLSL
 #define STATES_HLSL
+#include "../../CrossPlatform/states.sl"
 
 DepthStencilState DisableDepth
 {

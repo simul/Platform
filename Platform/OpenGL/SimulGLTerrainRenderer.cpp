@@ -97,6 +97,7 @@ void SimulGLTerrainRenderer::Render(void *context)
 	ERROR_CHECK
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
+	glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
 	glDisable(GL_BLEND);
 	glPolygonMode(GL_FRONT,GL_FILL);
 	glPolygonMode(GL_BACK,GL_LINE);

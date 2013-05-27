@@ -41,7 +41,6 @@ public:
 
 	// BaseAtmosphericsRenderer.
 	void SetYVertical(bool y);
-	void SetDistanceTexture(void* t);
 	void SetLossTexture(void* t);
 	void SetInscatterTextures(void* t,void *s);
 	void SetCloudsTexture(void* t);
@@ -52,30 +51,17 @@ public:
 	//! Call this when the device has been lost.
 	void InvalidateDeviceObjects();
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-	void SetInputTextures(ID3D1xTexture2D* image,ID3D1xTexture2D* depth)
-	{
-		input_texture=image;
-		depth_texture=depth;
-	}
 	void SetCloudShadowTexture(void *c){}
-	void SetOvercastFactor(float of)
-	{
-		overcast_factor=of;
-	}
-	void SetFadeInterpolation(float s)
-	{
-		fade_interp=s;
-	}
 	//! Render the Atmospherics.
 	void StartRender(void *context);
 	void FinishRender(void *context);
-	void RenderAsOverlay(void *context,const void *depthTexture,float frustumNear,float frustumFar);
+	void RenderAsOverlay(void *context,const void *depthTexture);
 	void *GetDepthAlphaTexture()
 	{
 		return (void*)framebuffer->buffer_texture_SRV;
 	}
-protected:
 	FramebufferDX1x								*framebuffer;
+protected:
 	HRESULT Destroy();
 	ID3D1xDevice*								m_pd3dDevice;
 	ID3D1xInputLayout*							vertexDecl;
@@ -101,12 +87,6 @@ protected:
 	ID3D1xShaderResourceView*					skylightTexture_SRV;
 	ID3D1xShaderResourceView*					clouds_texture;
 
-	ID3D11Buffer*						constantBuffer;
-	//! The depth buffer.
-	ID3D1xTexture2D*				depth_texture;
-	//! The un-faded image buffer.
-	ID3D1xTexture2D*				input_texture;
-
-	float fade_interp,overcast_factor;
-
+	ID3D11Buffer*								constantBuffer;
+	ID3D11Buffer*								atmosphericsUniforms2ConstantsBuffer;
 };

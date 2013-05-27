@@ -1,7 +1,7 @@
 #ifndef SIMUL_GPU_SKY_GLSL
 #define SIMUL_GPU_SKY_GLSL
 #ifndef __cplusplus
-#include "simul_inscatter_fns.glsl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
 #endif
 #include "CppGlsl.hs"
 #ifndef __cplusplus

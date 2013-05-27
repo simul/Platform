@@ -60,7 +60,7 @@ public:
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	bool Render(void *context,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha);
+	bool Render(void *context,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha);
 	void RenderDebugInfo(void *context,int width,int height);
 	void RenderCrossSections(void *context,int width,int height);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
@@ -76,11 +76,6 @@ public:
 	void *GetCloudShadowTexture();
 	void SetLossTexture(void *t);
 	void SetInscatterTextures(void *t,void *s);
-
-	void SetAltitudeTextureCoordinate(float f)
-	{
-		altitude_tex_coord=f;
-	}
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
 	void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array){}
@@ -156,6 +151,7 @@ protected:
 	ID3D1xEffectShaderResourceVariable*		skyLossTexture;
 	ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;
 	ID3D1xEffectShaderResourceVariable*		skylightTexture;
+	ID3D1xEffectShaderResourceVariable*		depthTexture;
 
 	ID3D1xShaderResourceView*				cloudDensityResource[3];
 	ID3D1xShaderResourceView*				noiseTextureResource;

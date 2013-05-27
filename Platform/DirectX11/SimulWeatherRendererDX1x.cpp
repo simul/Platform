@@ -124,6 +124,8 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* dev)
 
 void SimulWeatherRendererDX1x::RecompileShaders()
 {
+	if(!m_pd3dDevice)
+		return;
 	BaseWeatherRenderer::RecompileShaders();
 	framebuffer.RecompileShaders();
 	SAFE_RELEASE(m_pTonemapEffect);
@@ -326,6 +328,27 @@ void *SimulWeatherRendererDX1x::GetCubemap()
 	return framebuffer_cubemap.GetColorTex();
 }
 
+void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,bool buffered,bool is_cubemap,const void* depthTexture)
+{
+	BaseWeatherRenderer::RenderSkyAsOverlay(context,buffered,is_cubemap,depthTexture);
+	if(buffered&&baseFramebuffer)
+	{
+		bool blend=!is_cubemap;
+		HRESULT hr=S_OK;
+		hr=imageTexture->SetResource(framebuffer.buffer_texture_SRV);
+		ID3D1xEffectTechnique *tech=blend?SkyOverStarsTechnique:TonemapTechnique;
+		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
+		
+		D3DXMATRIX ortho;
+		D3DXMatrixIdentity(&ortho);
+		D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
+		worldViewProj->SetMatrix(ortho);
+		
+		framebuffer.DrawQuad(context);
+		imageTexture->SetResource(NULL);
+	}
+}
+
 bool SimulWeatherRendererDX1x::RenderSky(void *context,bool buffered,bool is_cubemap)
 {
 	BaseWeatherRenderer::RenderSky(context,buffered,is_cubemap);
@@ -414,7 +437,6 @@ void SimulWeatherRendererDX1x::Update()
 					simulSkyRenderer->GetLossTexture2());
 				simulCloudRenderer->SetInscatterTextures(simulSkyRenderer->GetInscatterTexture1(),
 					simulSkyRenderer->GetInscatterTexture2());*/
-				simulCloudRenderer->SetAltitudeTextureCoordinate(simulSkyRenderer->GetAltitudeTextureCoordinate());
 			}
 		/*	if(simulAtmosphericsRenderer)
 			{

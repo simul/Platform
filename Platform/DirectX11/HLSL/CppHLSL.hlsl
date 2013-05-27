@@ -2,19 +2,24 @@
 #define CPP_HLSL
 #include "../../CrossPlatform/CppSl.hs"
 
+#ifndef __cplusplus
 #define texture_clamp_mirror(tex,texc) tex.Sample(samplerStateClampMirror,texc)
+#define sampleLod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
 #define texture(tex,texc) tex.Sample(samplerState,texc)
 #define texture2D(tex,texc) tex.Sample(samplerState,texc)
 #define texture3D(tex,texc) tex.Sample(samplerState3d,texc)
 #define texture3D2(tex,texc) tex.Sample(samplerState3d2,texc)
 #define texture3Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
 #define texture2Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
+#endif
+
 #define uniform
 #define uniform_buffer ALIGN_16 cbuffer
 #define texture(tex,texc) tex.Sample(samplerState,texc)
 #define sampler1D texture1D
 #define sampler2D texture2D
 #define sampler3D texture3D
+#define STATIC static
 
 #ifndef __cplusplus
 	#define R0 : register(b0)

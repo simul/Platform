@@ -422,11 +422,15 @@ void FixGlProjectionMatrix(float required_distance)
 	simul::math::Matrix4x4 proj;
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
 
-	float zFar=proj(3,2)/(1.f+proj(2,2));
-	float zNear=proj(3,2)/(proj(2,2)-1.f);
-	zFar=required_distance;
-	proj(2,2)=-(zFar+zNear)/(zFar-zNear);
-	proj(3,2)=-2.f*(zNear*zFar)/(zFar-zNear);
+	float F=proj(3,2)/(1.f+proj(2,2));
+	float N=proj(3,2)/(proj(2,2)-1.f);
+	F=required_distance;
+	proj(2,2)=-(F+N)/(F-N);
+	proj(3,2)=-2.f*(N*F)/(F-N);
+	
+	// Make it a DirectX-style matrix with depth reversed.
+	proj(2,2)	=N/(F-N);
+	proj(3,2)	=F*N/(F-N);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(proj.RowPointer(0));

@@ -16,7 +16,7 @@ in vec2 texc_global;
 in vec2 texc_detail;
 in vec3 wPosition;
 
-#include "simul_inscatter_fns.glsl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "simul_earthshadow_uniforms.glsl"
 
 #include "../../CrossPlatform/simul_2d_clouds.hs"

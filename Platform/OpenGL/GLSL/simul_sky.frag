@@ -2,7 +2,7 @@
 // Copyright 2008-2012 Simul Software Ltd
 uniform float hazeEccentricity;
 uniform vec3 mieRayleighRatio;
-#include "simul_inscatter_fns.glsl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
 
 uniform sampler2D inscTexture;
 uniform sampler2D skylightTexture;

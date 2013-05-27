@@ -26,7 +26,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 		,CelestialDisplay(false)
 		,enabled(true)
 		,ShowWater(true)
-		,MakeCubemap(true)
+		,MakeCubemap(false)
 		,ShowCloudCrossSections(false)
 		,Show2DCloudTextures(false)
 		,ReverseDepth(true)
@@ -54,7 +54,7 @@ bool Direct3D11Renderer::IsD3D11DeviceAcceptable(const CD3D11EnumAdapterInfo *Ad
 
 bool Direct3D11Renderer::ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings)
 {
-	pDeviceSettings->d3d11.CreateFlags|=D3D11_CREATE_DEVICE_DEBUG;
+	//pDeviceSettings->d3d11.CreateFlags|=D3D11_CREATE_DEVICE_DEBUG;
 	enabled=true;
 	if(pDeviceSettings->d3d11.DriverType!=D3D_DRIVER_TYPE_HARDWARE)
 		enabled=false;
@@ -107,7 +107,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(!enabled)
 		return;
 	D3DXMATRIX world,view,proj;
-	static float nearPlane=0.01f;
+	static float nearPlane=1.f;
 	static float farPlane=250000.f;
 	if(camera)
 	{
@@ -124,14 +124,6 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		simulHDRRenderer->StartRender(pd3dImmediateContext);
 	if(simulWeatherRenderer)
 	{
-		if(simulHDRRenderer&&UseHdrPostprocessor)
-			simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
-		else
-			simulWeatherRenderer->SetExposureHint(1.0f);
-		simulWeatherRenderer->SetMatrices(view,proj);
-		simulWeatherRenderer->RenderSky(pd3dImmediateContext,UseSkyBuffer,false);
-		if(MakeCubemap)
-			simulWeatherRenderer->RenderCubemap(pd3dImmediateContext);
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender(pd3dImmediateContext);
 	}
@@ -147,8 +139,24 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender(pd3dImmediateContext);
-			
-		simulWeatherRenderer->RenderLateCloudLayer(pd3dImmediateContext,true);
+	}
+	if(simulWeatherRenderer)
+	{
+		if(simulHDRRenderer&&UseHdrPostprocessor)
+			simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
+		else
+			simulWeatherRenderer->SetExposureHint(1.0f);
+		simulWeatherRenderer->SetMatrices(view,proj);
+		void *depthTexture=NULL;
+		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer())
+			depthTexture=((SimulAtmosphericsRendererDX1x*)simulWeatherRenderer->GetBaseAtmosphericsRenderer())->framebuffer->GetDepthTex();
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,UseSkyBuffer,false,depthTexture);
+		if(MakeCubemap)
+			simulWeatherRenderer->RenderCubemap(pd3dImmediateContext);
+	}
+	if(simulWeatherRenderer)
+	{
+		//simulWeatherRenderer->RenderLateCloudLayer(pd3dImmediateContext,true);
 		simulWeatherRenderer->RenderLightning(pd3dImmediateContext);
 		if(simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*	)simulWeatherRenderer->GetCubemap());

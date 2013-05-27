@@ -721,6 +721,46 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="CrossPlatform"
+			>
+			<File
+				RelativePath="..\CrossPlatform\CppSl.hs"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\depth.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_2d_clouds.hs"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_2d_clouds.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_cloud_constants.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_clouds.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_gpu_clouds.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_gpu_sky.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_inscatter_fns.sl"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\OpenGL.rc"
 			>

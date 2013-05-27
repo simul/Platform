@@ -38,6 +38,8 @@ struct Vertex_t
 
 void SimulPrecipitationRendererDX1x::RecompileShaders()
 {
+	if(!m_pd3dDevice)
+		return;
 	CreateEffect(m_pd3dDevice,&m_pRainEffect,L"simul_rain.fx");
 
 	SAFE_RELEASE(rain_texture);

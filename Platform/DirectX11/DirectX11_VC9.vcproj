@@ -526,11 +526,31 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HLSL\AtmosphericsUniforms.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\CppHLSL.hlsl"
 				>
 			</File>
 			<File
+				RelativePath=".\HLSL\fft_512x512_c2c.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\gamma.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\ocean_shading.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\ocean_simulator_cs.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\ocean_simulator_vs_ps.hlsl"
 				>
 			</File>
 			<File
@@ -578,7 +598,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HLSL\simul_gpu_sky.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\simul_hdr.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_inscatter_fns.hlsl"
 				>
 			</File>
 			<File
@@ -601,6 +629,10 @@
 				RelativePath=".\HLSL\simul_terrain.fx"
 				>
 			</File>
+			<File
+				RelativePath=".\HLSL\states.hlsl"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -617,6 +649,30 @@
 			>
 			<File
 				RelativePath="..\CrossPlatform\CppSl.hs"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\depth.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_2d_clouds.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_cloud_constants.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_gpu_clouds.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_gpu_sky.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_inscatter_fns.sl"
 				>
 			</File>
 		</Filter>

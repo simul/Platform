@@ -1,15 +1,19 @@
 #ifndef CLOUD_CONSTANTS_SL
 #define CLOUD_CONSTANTS_SL
-static const int MAX_INSTANCES=400;
+STATIC const int MAX_INSTANCES=400;
 
 struct LayerData
 {
 	vec2 noiseOffset;
+	float pad1;
+	float pad2;
 	vec2 elevationRange;// unused
+	float pad3;
+	float pad4;
 	float noiseScale;
 	float layerFade;
 	float layerDistance;
-	float pad3;
+	float verticalShift;
 };
 
 uniform_buffer LayerConstants R8
@@ -53,5 +57,10 @@ uniform_buffer CloudConstants R9
 	uniform vec3 crossSectionOffset	;
 	uniform int noise3DOctaves;
 	uniform vec3 noise3DTexcoordScale;
+	uniform float z1;
+	uniform vec2 tanHalfFov;
+	uniform float fill1,fill2;
+	uniform float nearZ;
+	uniform float farZ;
 };
 #endif

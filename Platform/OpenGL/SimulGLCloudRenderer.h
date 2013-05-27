@@ -36,7 +36,7 @@ public:
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
 	//! Render the clouds.
-	bool Render(void *context,bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
+	bool Render(void *context,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha);
 	//! Show the cross sections on-screen.
 	void RenderCrossSections(void *,int width,int height);
 	void SetLossTexture(void *);

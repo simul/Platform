@@ -28,7 +28,7 @@
 #include "Simul/Platform/DirectX11/Profiler.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
-
+#include "Simul/Camera/Camera.h"// for simul::camera::Frustum 
 using namespace simul::dx11;
 const char *GetErrorText(HRESULT hr)
 {
@@ -144,6 +144,8 @@ void SimulCloudRendererDX1x::SetInscatterTextures(void *t,void *s)
 void SimulCloudRendererDX1x::RecompileShaders()
 {
 	CreateCloudEffect();
+	if(!m_pd3dDevice)
+		return;
 	HRESULT hr;
 	V_CHECK(CreateEffect(m_pd3dDevice,&m_pLightningEffect,L"simul_lightning.fx"));
 	if(m_pLightningEffect)
@@ -167,8 +169,8 @@ void SimulCloudRendererDX1x::RecompileShaders()
 	omDesc.RenderTarget[0].SrcBlendAlpha	= D3D11_BLEND_ZERO;
 	omDesc.RenderTarget[0].DestBlendAlpha	= D3D11_BLEND_INV_SRC_ALPHA;
 	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	omDesc.IndependentBlendEnable=true;
-	omDesc.AlphaToCoverageEnable=false;
+	omDesc.IndependentBlendEnable			=true;
+	omDesc.AlphaToCoverageEnable			=false;
 	m_pd3dDevice->CreateBlendState( &omDesc, &blendAndWriteAlpha );
 	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED
 										| D3D11_COLOR_WRITE_ENABLE_GREEN
@@ -329,6 +331,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(blendAndDontWriteAlpha);
 
 	SAFE_RELEASE(noiseTextureResource);
+	SAFE_RELEASE(noise_texture_3D);
 	SAFE_RELEASE(noiseTexture3DResource);
 	
 	SAFE_RELEASE(lightningIlluminationTextureResource);
@@ -613,10 +616,10 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	noiseTexture					=m_pCloudEffect->GetVariableByName("noiseTexture")->AsShaderResource();
 	noiseTexture3D					=m_pCloudEffect->GetVariableByName("noiseTexture3D")->AsShaderResource();
 	lightningIlluminationTexture	=m_pCloudEffect->GetVariableByName("lightningIlluminationTexture")->AsShaderResource();
-	skyLossTexture					=m_pCloudEffect->GetVariableByName("skyLossTexture")->AsShaderResource();
-	skyInscatterTexture				=m_pCloudEffect->GetVariableByName("skyInscatterTexture")->AsShaderResource();
-	skylightTexture					=m_pCloudEffect->GetVariableByName("skylightTexture")->AsShaderResource();
-
+	skyLossTexture					=m_pCloudEffect->GetVariableByName("lossTexture")->AsShaderResource();
+	skyInscatterTexture				=m_pCloudEffect->GetVariableByName("inscTexture")->AsShaderResource();
+	skylightTexture					=m_pCloudEffect->GetVariableByName("skylTexture")->AsShaderResource();
+	depthTexture					=m_pCloudEffect->GetVariableByName("depthTexture")->AsShaderResource();
 	return true;
 }
 
@@ -638,10 +641,13 @@ static float saturate(float c)
 
 void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 {
+	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 	memset(&cloudConstants,0,sizeof(cloudConstants));
 	D3DXMATRIX wvp,world;
 	D3DXMatrixIdentity(&world);
 	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
+	// Mess with the proj matrix to extend the far clipping plane:
+	simul::dx11::FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f);
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	cloudConstants.worldViewProj=wvp;
 	cloudConstants.worldViewProj.transpose();
@@ -664,16 +670,14 @@ void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 
 	cloudConstants.wrld=world;
 	cloudConstants.wrld.transpose();
-	static float direct_light_mult=0.25f;
+	static float direct_light_mult	=0.25f;
 	static float indirect_light_mult=0.03f;
 	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse(),
-										indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse(),
-										0,
-										0);
+										indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse(),0,0);
 	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
 	float top_alt_km=base_alt_km+GetCloudInterface()->GetCloudHeight()*0.001f;
-	simul::sky::float4 sun_dir=skyInterface->GetDirectionToSun();
-	simul::sky::float4 light_dir=skyInterface->GetDirectionToLight(base_alt_km);
+	simul::sky::float4 sun_dir			=skyInterface->GetDirectionToSun();
+	simul::sky::float4 light_dir		=skyInterface->GetDirectionToLight(base_alt_km);
 	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
 	simul::sky::float4 sunlight1,sunlight2;
 	if(skyInterface)
@@ -719,7 +723,11 @@ void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 	cloudConstants.noise3DPersistence	=cloudKeyframer->GetEdgeNoisePersistence();
 	cloudConstants.noise3DOctaves		=cloudKeyframer->GetEdgeNoiseOctaves();
 	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
-	cloudConstants.noiseMatrix		=noise_orient.GetInverseMatrix();
+	cloudConstants.noiseMatrix			=noise_orient.GetInverseMatrix();
+
+	cloudConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	cloudConstants.nearZ	=frustum.nearZ/max_fade_distance_metres;
+	cloudConstants.farZ		=frustum.farZ/max_fade_distance_metres;
 	
 	float time=skyInterface->GetTime();
 	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
@@ -754,9 +762,10 @@ void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 	}
 }
 static int test=29999;
-bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,bool default_fog,bool write_alpha)
+bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha)
 {
-	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext* m_pImmediateContext	=(ID3D11DeviceContext*)context;
+	ID3D1xShaderResourceView *depthTexture_SRV	=(ID3D1xShaderResourceView *)depth_tex;
 	EnsureTexturesAreUpToDate(m_pImmediateContext);
     ProfileBlock profileBlock(m_pImmediateContext,"SimulCloudRendererDX1x::Render");
 
@@ -776,8 +785,8 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 	skyLossTexture->SetResource(skyLossTexture_SRV);
 	skyInscatterTexture->SetResource(skyInscatterTexture_SRV);
 	skylightTexture->SetResource(skylightTexture_SRV);
-	// Mess with the proj matrix to extend the far clipping plane:
-	simul::dx11::FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f);
+	depthTexture->SetResource(depthTexture_SRV);
+	simul::dx11::setParameter(m_pCloudEffect,"depthTexture",depthTexture_SRV);
 
 	//set up matrices
 	simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
@@ -806,6 +815,7 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 	int ii=0;
 	unsigned el,az;
 	helper->GetGrid(el,az);
+	float base_alt=GetCloudInterface()->GetCloudBaseZ();
 	for(std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
 		i!=helper->GetSlices().end();i++,ii++)
 	{
@@ -820,6 +830,7 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 		inst.layerFade		=s->fadeIn;
 		inst.layerDistance	=s->distance;
 		inst.noiseScale		=s->distance/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
+		inst.verticalShift	=helper->GetVerticalShiftDueToCurvature(s->distance,base_alt);
 		inst.noiseOffset.x	=noise_offset[0];
 		inst.noiseOffset.y	=noise_offset[1];
 		inst.elevationRange.x	=2.f*(float)s->elev_start/(float)el-1.f;
@@ -873,6 +884,7 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,void *depth_tex,b
 	skyLossTexture->SetResource(NULL);
 	skyInscatterTexture->SetResource(NULL);
 	skylightTexture->SetResource(NULL);
+	depthTexture->SetResource(NULL);
 // To prevent BIZARRE DX11 warning, we re-apply the pass with the UtilityRenderer::RenderTextures unbound:
 	if(Raytrace)
 	{

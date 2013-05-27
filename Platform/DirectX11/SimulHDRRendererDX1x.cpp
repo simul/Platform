@@ -205,7 +205,7 @@ bool SimulHDRRendererDX1x::FinishRender(void *context)
 	worldViewProj->SetMatrix(ortho);
 	RenderGlowTexture(context);
 	simul::dx11::setParameter(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
-	simul::dx11::setParameter(m_pTonemapEffect,"depthTexture",(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
+	simul::dx11::setParameter(m_pTonemapEffect,"depthTexture",(ID3D11ShaderResourceView*)framebuffer.GetDepthTex());
 
 	ApplyPass(m_pImmediateContext,TonemapTechnique->GetPassByIndex(0));
 	framebuffer.DrawQuad(context);

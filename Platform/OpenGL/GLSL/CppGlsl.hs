@@ -24,9 +24,13 @@
 	#include "saturate.glsl"
 	#define lerp mix
 	#define texture_clamp_mirror(tex,texc) texture(tex,texc)
+	#define sampleLod(tex,sampler,texc,lod) textureLod(tex,texc,lod);
 	#define texture3D texture
 	#define texture2D texture
 	#define Y(texel) texel.y
+	#define STATIC
+#else
+	#define STATIC static
 #endif
 
 #ifdef __cplusplus

@@ -2,7 +2,7 @@
 #include "saturate.glsl"
 uniform float hazeEccentricity;
 uniform vec3 mieRayleighRatio;
-#include "simul_inscatter_fns.glsl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
 uniform sampler2D inscTexture;
 #include "simul_earthshadow_uniforms.glsl"
 

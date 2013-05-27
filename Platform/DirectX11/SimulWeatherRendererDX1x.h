@@ -38,10 +38,11 @@ public:
 	virtual ~SimulWeatherRendererDX1x();
 	void SetScreenSize(int w,int h);
 	//standard d3d object interface functions
-	void RestoreDeviceObjects(void*);//ID3D1xDevice* pd3dDevice,IDXGISwapChain *swapChain);
+	void RestoreDeviceObjects(void*);
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
 	bool Destroy();
+	void RenderSkyAsOverlay(void *context,bool buffered,bool is_cubemap,const void* depthTexture);
 	bool RenderSky(void*,bool buffered,bool is_cubemap);
 	void RenderLateCloudLayer(void *context,bool );
 	void RenderPrecipitation(void *context);

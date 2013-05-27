@@ -2,7 +2,7 @@
 // Copyright 2008-2013 Simul Software Ltd
 #version 140
 
-#include "simul_inscatter_fns.glsl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "CppGlsl.hs"
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 #include "saturate.glsl"
