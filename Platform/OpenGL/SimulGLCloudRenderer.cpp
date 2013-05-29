@@ -86,6 +86,7 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	,init(false)
 	,clouds_background_program(0)
 	,clouds_foreground_program(0)
+	,raytrace_program(0)
 	,noise_prog(0)
 	,edge_noise_prog(0)
 	,current_program(0)
@@ -177,7 +178,7 @@ ERROR_CHECK
 		glUseProgram(edge_noise_prog);
 		setParameter(edge_noise_prog,"persistence",texture_persistence);
 		setParameter(edge_noise_prog,"octaves",texture_octaves);
-		n_fb.DrawQuad(context);
+		DrawFullScreenQuad();
 	}
 ERROR_CHECK	
 	glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
@@ -276,11 +277,16 @@ ERROR_CHECK
 	cam_pos.y=viewInv(3,1);
 	cam_pos.z=viewInv(3,2);
 ERROR_CHECK
-    glEnable(GL_BLEND);
-	if(god_rays)
-		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
+	if(Raytrace)
+		glDisable(GL_BLEND);
 	else
-		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	{
+		glEnable(GL_BLEND);
+		if(god_rays)
+			glBlendFunc(GL_ONE,GL_SRC_ALPHA);
+		else
+			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	}
 	simul::sky::float4 gl_fog;
 	if(default_fog)
 	{
@@ -334,6 +340,9 @@ ERROR_CHECK
     glActiveTexture(GL_TEXTURE7);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
 	GLuint program=depth_alpha_tex>0?clouds_foreground_program:clouds_background_program;
+
+	if(Raytrace)
+		program=raytrace_program;
 	UseShader(program);
 	glUseProgram(program);
 
@@ -433,7 +442,6 @@ ERROR_CHECK
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
 	simul::math::Matrix4x4 worldViewProj;
 	simul::math::Multiply4x4(worldViewProj,modelview,proj);
-	//setMatrixTranspose(program,"worldViewProj",worldViewProj.RowPointer(0));
 
 	float left	=proj(0,0)+proj(0,3);
 	float right	=proj(0,0)-proj(0,3);
@@ -466,85 +474,93 @@ ERROR_CHECK
 ERROR_CHECK
 	glBindBufferBase(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO);
 ERROR_CHECK
-	// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,
-	// which is drawn as a latitude-longitude sphere. But we only draw the parts that:
-	// a) are in the view frustum
-	//  ...and...
-	// b) are in the cloud volume
-	int multiTexCoord0=glGetAttribLocation(program,"multiTexCoord0");
-	int multiTexCoord1=glGetAttribLocation(program,"multiTexCoord1");
-	int multiTexCoord2=glGetAttribLocation(program,"multiTexCoord2");
-ERROR_CHECK
-	int layers_drawn=0;
-	for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
-		i!=helper->GetSlices().end();i++)
+	if(Raytrace)
 	{
-		// How thick is this layer, optically speaking?
-		float dens=(*i)->fadeIn;
-		if(!dens)
-			continue;
-		glUniform1f(layerDistance_param,(*i)->distance);
-		simul::sky::float4 loss			;
-		simul::sky::float4 inscatter	;
-		if(default_fog)
+
+	DrawFullScreenQuad();
+	}
+	else
+	{
+		// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,
+		// which is drawn as a latitude-longitude sphere. But we only draw the parts that:
+		// a) are in the view frustum
+		//  ...and...
+		// b) are in the cloud volume
+		int multiTexCoord0=glGetAttribLocation(program,"multiTexCoord0");
+		int multiTexCoord1=glGetAttribLocation(program,"multiTexCoord1");
+		int multiTexCoord2=glGetAttribLocation(program,"multiTexCoord2");
+	ERROR_CHECK
+		int layers_drawn=0;
+		for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
+			i!=helper->GetSlices().end();i++)
 		{
-			float mix_fog;
-			GLint fogMode;
-			GLfloat fogDens;
-			glGetIntegerv(GL_FOG_MODE,&fogMode);
-			glGetFloatv(GL_FOG_DENSITY,&fogDens);
-			switch(fogMode)
+			// How thick is this layer, optically speaking?
+			float dens=(*i)->fadeIn;
+			if(!dens)
+				continue;
+			glUniform1f(layerDistance_param,(*i)->distance);
+			simul::sky::float4 loss			;
+			simul::sky::float4 inscatter	;
+			if(default_fog)
 			{
-			case GL_EXP:
-				mix_fog=1.f-exp(-fogDens*(*i)->distance);
-				break;
-			case GL_EXP2:
-				mix_fog=1.f-exp(-fogDens*(*i)->distance*(*i)->distance);
-				mix_fog=mix_fog*mix_fog;
-				break;
-			default:
+				float mix_fog;
+				GLint fogMode;
+				GLfloat fogDens;
+				glGetIntegerv(GL_FOG_MODE,&fogMode);
+				glGetFloatv(GL_FOG_DENSITY,&fogDens);
+				switch(fogMode)
 				{
-					GLfloat fogStart,fogEnd;
-					glGetFloatv(GL_FOG_START,&fogStart);
-					glGetFloatv(GL_FOG_END,&fogEnd);
-					float distance=(*i)->distance>fogEnd?fogEnd:(*i)->distance;
-					mix_fog=(distance-fogStart)/(fogEnd-fogStart);
-					mix_fog=std::min(1.f,mix_fog);
-					mix_fog=std::max(0.f,mix_fog);
-				}
-				break;
-			};
+				case GL_EXP:
+					mix_fog=1.f-exp(-fogDens*(*i)->distance);
+					break;
+				case GL_EXP2:
+					mix_fog=1.f-exp(-fogDens*(*i)->distance*(*i)->distance);
+					mix_fog=mix_fog*mix_fog;
+					break;
+				default:
+					{
+						GLfloat fogStart,fogEnd;
+						glGetFloatv(GL_FOG_START,&fogStart);
+						glGetFloatv(GL_FOG_END,&fogEnd);
+						float distance=(*i)->distance>fogEnd?fogEnd:(*i)->distance;
+						mix_fog=(distance-fogStart)/(fogEnd-fogStart);
+						mix_fog=std::min(1.f,mix_fog);
+						mix_fog=std::max(0.f,mix_fog);
+					}
+					break;
+				};
 
-			loss=simul::sky::float4(1,1,1,1)*(1.f-mix_fog);
-			inscatter=gl_fog*mix_fog;
-		}
-		layers_drawn++;
-		helper->MakeLayerGeometry(GetCloudInterface(),*i);
-
-ERROR_CHECK
-		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
-		size_t qs_vert=0;
-		glBegin(GL_QUAD_STRIP);
-		for(std::vector<const CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
-			j!=(*i)->quad_strips.end();j++)
-		{
-			// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?
-			for(unsigned k=0;k<(*j)->num_vertices;k++,qs_vert++)
-			{
-				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
-				glVertexAttrib3f(multiTexCoord0,V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
-				glVertexAttrib2f(multiTexCoord1,V.noise_tex_x,V.noise_tex_y);
-				glVertexAttrib1f(multiTexCoord2,dens);
-				// Here we're passing sunlight values per-vertex, loss and inscatter
-				// The per-vertex sunlight allows different altitudes of cloud to have different
-				// sunlight colour - good for dawn/sunset.
-				// The per-vertex loss and inscatter is cheap for the pixel shader as it
-				// then doesn't need fade-texture lookups.
-				glVertex3f(V.x,V.y,V.z);
+				loss=simul::sky::float4(1,1,1,1)*(1.f-mix_fog);
+				inscatter=gl_fog*mix_fog;
 			}
+			layers_drawn++;
+			helper->MakeLayerGeometry(GetCloudInterface(),*i);
+
+	ERROR_CHECK
+			const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
+			size_t qs_vert=0;
+			glBegin(GL_QUAD_STRIP);
+			for(std::vector<const CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
+				j!=(*i)->quad_strips.end();j++)
+			{
+				// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?
+				for(unsigned k=0;k<(*j)->num_vertices;k++,qs_vert++)
+				{
+					const CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
+					glVertexAttrib3f(multiTexCoord0,V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
+					glVertexAttrib2f(multiTexCoord1,V.noise_tex_x,V.noise_tex_y);
+					glVertexAttrib1f(multiTexCoord2,dens);
+					// Here we're passing sunlight values per-vertex, loss and inscatter
+					// The per-vertex sunlight allows different altitudes of cloud to have different
+					// sunlight colour - good for dawn/sunset.
+					// The per-vertex loss and inscatter is cheap for the pixel shader as it
+					// then doesn't need fade-texture lookups.
+					glVertex3f(V.x,V.y,V.z);
+				}
+			}
+			glEnd();
+	ERROR_CHECK
 		}
-		glEnd();
-ERROR_CHECK
 	}
 ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
@@ -611,6 +627,8 @@ current_program=0;
 ERROR_CHECK
 	SAFE_DELETE_PROGRAM(clouds_background_program);
 	SAFE_DELETE_PROGRAM(clouds_foreground_program);
+	SAFE_DELETE_PROGRAM(raytrace_program);
+	
 	SAFE_DELETE_PROGRAM(noise_prog);
 	SAFE_DELETE_PROGRAM(edge_noise_prog);
 	std::map<std::string,std::string> defines;
@@ -620,6 +638,7 @@ ERROR_CHECK
 	clouds_background_program	=MakeProgram("simul_clouds",defines);
 	defines["USE_DEPTH_TEXTURE"]="1";
 	clouds_foreground_program	=MakeProgram("simul_clouds",defines);
+	raytrace_program			=MakeProgram("simple.vert",NULL,"simul_raytrace_clouds.frag",defines);
 	noise_prog=MakeProgram("simple.vert",NULL,"simul_noise.frag");
 	edge_noise_prog=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
 ERROR_CHECK

@@ -97,7 +97,7 @@ ERROR_CHECK
 		glUseProgram(dens_prog);
 		GLint persistence		=glGetUniformLocation(dens_prog,"persistence");
 		glUniform1f(persistence,cloudKeyframer->GetEdgeNoisePersistence());
-		dens_fb.DrawQuad(context);
+		DrawFullScreenQuad();
 		SAFE_DELETE_PROGRAM(dens_prog);
 	}
 	dens_fb.Deactivate(context);

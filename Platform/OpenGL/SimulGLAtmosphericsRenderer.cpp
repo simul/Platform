@@ -129,7 +129,7 @@ void SimulGLAtmosphericsRenderer::FinishRender(void *context)
 {
 	framebuffer->Deactivate(context);
 	framebuffer->CopyDepthFromFramebuffer();
-
+//return;
 ERROR_CHECK
     glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE1);
@@ -199,9 +199,7 @@ ERROR_CHECK
 	vpt.Inverse(ivp);
 	glUniformMatrix4fv(invViewProj,1,true,ivp.RowPointer(0));
 ERROR_CHECK
-
 	//glUniform1f(directLightMultiplier,e.illumination);
-	
 	glEnable(GL_BLEND);
 	// retain background based on alpha in overlay
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
@@ -217,17 +215,17 @@ ERROR_CHECK
 	{
 	// Draw the godrays over the entire scene - or to be more accurate, subtract the cloud shadows from the scene.
 		glUseProgram(godrays_program);
-		setParameter(godrays_program	,"imageTexture"		,0);
-		setParameter(godrays_program	,"inscTexture"		,1);
-		setParameter(godrays_program	,"cloudShadowTexture",2);
-		setParameter3(godrays_program	,"mieRayleighRatio",ratio);
-		setParameter3(godrays_program	,"lightDir"			,light_dir);
-		setParameter(godrays_program	,"hazeEccentricity"	,skyInterface->GetMieEccentricity());
-		setMatrixTranspose(godrays_program		,"invViewProj"		,ivp.RowPointer(0));
-		setParameter3(godrays_program	,"cloudOrigin"		,cloud_origin);
-		setParameter3(godrays_program	,"cloudScale"		,cloud_scale);
-		setParameter(godrays_program	,"maxDistance"		,fade_distance_km*1000.f);
-		setParameter3(godrays_program	,"viewPosition"		,cam_pos);
+		setParameter(godrays_program		,"imageTexture"		,0);
+		setParameter(godrays_program		,"inscTexture"		,1);
+		setParameter(godrays_program		,"cloudShadowTexture",2);
+		setParameter3(godrays_program		,"mieRayleighRatio",ratio);
+		setParameter3(godrays_program		,"lightDir"			,light_dir);
+		setParameter(godrays_program		,"hazeEccentricity"	,skyInterface->GetMieEccentricity());
+		setMatrixTranspose(godrays_program	,"invViewProj"		,ivp.RowPointer(0));
+		setParameter3(godrays_program		,"cloudOrigin"		,cloud_origin);
+		setParameter3(godrays_program		,"cloudScale"		,cloud_scale);
+		setParameter(godrays_program		,"maxDistance"		,fade_distance_km*1000.f);
+		setParameter3(godrays_program		,"viewPosition"		,cam_pos);
 		glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);//GL_FUNC_SUBTRACT);
 		glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ONE,GL_ONE);
 		framebuffer->Render(context,false);

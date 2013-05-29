@@ -46,8 +46,6 @@ public:
 	void Clear(void*,float r,float g,float b,float a,float depth,int mask=0);
 	void DeactivateAndRender(void *,bool blend);
 	void Render(void *,bool blend);
-	//void DrawQuad(int w, int h);
-	void DrawQuad(void *context);
 	// Get the dimension of the surface
 	inline int GetWidth()
 	{
