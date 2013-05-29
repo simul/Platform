@@ -46,8 +46,9 @@ extern SIMUL_OPENGL_EXPORT void RenderString(float x, float y, void *font, const
 //! Controls vertical syncing - 0 means do not sync, 1 means sync with the monitor, 2 means sync at half speed, etc.
 extern SIMUL_OPENGL_EXPORT void SetVSync(int vsync);
 extern SIMUL_OPENGL_EXPORT void DrawQuad(int x,int y,int w,int h);
-//! Draw a simple onscreen quad from 0,0 to w,h.
+//! Draw a simple onscreen quad from 0,0 to w,h
 extern SIMUL_OPENGL_EXPORT void DrawQuad(float x,float y,float w,float h);
+extern SIMUL_OPENGL_EXPORT void DrawFullScreenQuad();
 //! Get the current framerate - must be called once every frame to work correctly.
 extern SIMUL_OPENGL_EXPORT float GetFramerate();
 //! Check for a GL error, and halt the program if found.

@@ -243,6 +243,10 @@ void DrawQuad(float x,float y,float w,float h)
 	glVertex2f(x,y);
 	glEnd();
 }
+void DrawFullScreenQuad()
+{
+	DrawQuad(0.f,0.f,1.f,1.f);
+}
 
 float GetFramerate()
 {

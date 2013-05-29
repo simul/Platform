@@ -186,7 +186,7 @@ void FramebufferGL::Activate(void *context)
 	Activate(context,0,0,Width,Height);
 }
 
-void FramebufferGL::Activate(void *context,int x,int y,int w,int h)
+void FramebufferGL::Activate(void *,int x,int y,int w,int h)
 {
 	//glFlush(); 
 	CheckFramebufferStatus();
@@ -230,10 +230,6 @@ void FramebufferGL::CopyDepthFromFramebuffer()
 	ERROR_CHECK
 }
 
-void FramebufferGL::DrawQuad(void *context)
-{
-	::DrawQuad(0,0,1,1);
-}
 void FramebufferGL::DeactivateAndRender(void *context,bool blend)
 {
 	ERROR_CHECK

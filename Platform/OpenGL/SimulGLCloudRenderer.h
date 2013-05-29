@@ -73,6 +73,7 @@ protected:
 
 	GLuint clouds_background_program;
 	GLuint clouds_foreground_program;
+	GLuint raytrace_program;
 	GLuint noise_prog;
 	GLuint edge_noise_prog;
 	GLuint current_program;
