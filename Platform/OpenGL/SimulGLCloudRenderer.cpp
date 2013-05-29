@@ -278,7 +278,11 @@ ERROR_CHECK
 	cam_pos.z=viewInv(3,2);
 ERROR_CHECK
 	if(Raytrace)
+	{
 		glDisable(GL_BLEND);
+		glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	}
 	else
 	{
 		glEnable(GL_BLEND);
@@ -386,6 +390,8 @@ const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKey
 		cloudConstants.lightningColour=lightning_colour;
 	}
 	cloudConstants.maxFadeDistanceMetres=max_fade_distance_metres;
+	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
+	cloudConstants.noiseMatrix			=noise_orient.GetInverseMatrix();
 	cloudConstants.rain=cloudKeyframer->GetPrecipitation();
 ERROR_CHECK
 
@@ -476,8 +482,13 @@ ERROR_CHECK
 ERROR_CHECK
 	if(Raytrace)
 	{
-
-	DrawFullScreenQuad();
+		glDisable(GL_BLEND);
+		glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0,1.0,0,1.0,-1.0,1.0);
+		DrawFullScreenQuad();
 	}
 	else
 	{
@@ -488,7 +499,6 @@ ERROR_CHECK
 		// b) are in the cloud volume
 		int multiTexCoord0=glGetAttribLocation(program,"multiTexCoord0");
 		int multiTexCoord1=glGetAttribLocation(program,"multiTexCoord1");
-		int multiTexCoord2=glGetAttribLocation(program,"multiTexCoord2");
 	ERROR_CHECK
 		int layers_drawn=0;
 		for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
@@ -548,8 +558,7 @@ ERROR_CHECK
 				{
 					const CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
 					glVertexAttrib3f(multiTexCoord0,V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
-					glVertexAttrib2f(multiTexCoord1,V.noise_tex_x,V.noise_tex_y);
-					glVertexAttrib1f(multiTexCoord2,dens);
+					glVertexAttrib1f(multiTexCoord1,dens);
 					// Here we're passing sunlight values per-vertex, loss and inscatter
 					// The per-vertex sunlight allows different altitudes of cloud to have different
 					// sunlight colour - good for dawn/sunset.
@@ -847,11 +856,9 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
-
 	for(int i=0;i<3;i++)
 	{
 		glGenTextures(1,&(cloud_tex[i]));
-
 		glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
 		if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLushort))
 			glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA4,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_SHORT,0);
