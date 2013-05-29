@@ -24,11 +24,12 @@ uniform_buffer LayerConstants R8
 uniform_buffer CloudInvViewProj R10
 {
 	uniform mat4 invViewProj;
-}
+};
 
 uniform_buffer CloudConstants R9
 {
 	uniform mat4 worldViewProj;
+	uniform mat4 invViewProjtest;
 	uniform mat4 wrld;
 	uniform mat4 noiseMatrix;
 	uniform vec3 inverseScales;
