@@ -189,7 +189,6 @@ protected:
 	void RenderNoise(void *context);
 	
 	bool enable_lightning;
-	unsigned noise_checksum;
 };
 #ifdef _MSC_VER
 #pragma warning(pop)

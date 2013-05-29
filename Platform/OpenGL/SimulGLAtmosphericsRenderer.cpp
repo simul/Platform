@@ -57,11 +57,13 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 {
 	if(!initialized)
 		return;
-	std::string defs="";
-	distance_fade_program		=MakeProgram("simul_atmospherics",defs.c_str());
-	earthshadow_fade_program	=MakeProgram("simul_atmospherics.vert",NULL,"simul_atmospherics_earthshadow.frag",defs.c_str());
+	std::map<std::string,std::string> defines;
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
+	distance_fade_program		=MakeProgram("simul_atmospherics",defines);
+	earthshadow_fade_program	=MakeProgram("simul_atmospherics.vert",NULL,"simul_atmospherics_earthshadow.frag",defines);
 	cloudmix_program			=MakeProgram("simul_cloudmix");
-	godrays_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defs.c_str());
+	godrays_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defines);
 	current_program				=0;
 	glUseProgram(0);
 }

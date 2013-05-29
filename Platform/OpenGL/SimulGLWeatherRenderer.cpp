@@ -176,7 +176,10 @@ void SimulGLWeatherRenderer::RecompileShaders()
 {
 	BaseWeatherRenderer::RecompileShaders();
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
-	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag");
+	std::map<std::string,std::string> defines;
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
+	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag",defines);
 }
 
 bool SimulGLWeatherRenderer::RenderSky(void *context,bool buffered,bool is_cubemap)
@@ -222,7 +225,7 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,bool buffer)
 	scene_buffer->Deactivate(context);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	glBlendFunc(GL_ONE,GL_SRC_ALPHA);
-	GLuint prog=AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;
+	GLuint prog=cloud_overlay_program;//AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)scene_buffer->GetColorTex());
 	glActiveTexture(GL_TEXTURE1);

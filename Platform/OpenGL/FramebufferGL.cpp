@@ -249,7 +249,7 @@ void FramebufferGL::Render(void *,bool blend)
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	Ortho();
-   // SetOrthoProjection(main_viewport[2],main_viewport[3]);
+  
     glActiveTexture(GL_TEXTURE0);
     Bind();
     glDisable(GL_ALPHA_TEST);
@@ -264,7 +264,7 @@ void FramebufferGL::Render(void *,bool blend)
 	}
 	glDepthMask(GL_FALSE);
 ERROR_CHECK
-	::DrawQuad(0,0,1,1);//main_viewport[2],main_viewport[3]);
+	::DrawQuad(0,0,1,1);
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);

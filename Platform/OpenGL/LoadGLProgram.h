@@ -1,7 +1,8 @@
 #pragma once
 #include "Simul/Platform/OpenGL/Export.h"
 #include <vector>
-
+#include <map>
+#include <string>
 
 namespace simul
 {
@@ -11,14 +12,18 @@ namespace simul
 	}
 }
 
-extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *root_filename,const char *defines=0);
-extern SIMUL_OPENGL_EXPORT GLuint MakeProgramWithGS(const char *filename,const char *defines=0);
+extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *root_filename);
+extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *root_filename,const std::map<std::string,std::string> &defines);
+extern SIMUL_OPENGL_EXPORT GLuint MakeProgramWithGS(const char *filename);
+extern SIMUL_OPENGL_EXPORT GLuint MakeProgramWithGS(const char *filename,const std::map<std::string,std::string> &defines);
 
 extern SIMUL_OPENGL_EXPORT GLuint SetShaders(const char *vert_src,const char *frag_src);
-extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename,const char *defines=0);
+extern SIMUL_OPENGL_EXPORT GLuint SetShaders(const char *vert_src,const char *frag_src,const std::map<std::string,std::string> &defines);
+extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename);
+extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename,const std::map<std::string,std::string> &defines);
 
-extern SIMUL_OPENGL_EXPORT GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const char *defines=NULL);
-extern SIMUL_OPENGL_EXPORT GLuint LoadShader(const char *filename,const char *defines=0);
+extern SIMUL_OPENGL_EXPORT GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const std::map<std::string,std::string> &defines);
+extern SIMUL_OPENGL_EXPORT GLuint LoadShader(const char *filename,const std::map<std::string,std::string> &defines);
 
 extern SIMUL_OPENGL_EXPORT void printProgramInfoLog(GLuint obj);
 #ifdef SIMULWEATHER_X_PLANE

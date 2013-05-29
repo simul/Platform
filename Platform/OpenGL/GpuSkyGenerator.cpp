@@ -44,7 +44,9 @@ void GpuSkyGenerator::RecompileShaders()
 	SAFE_DELETE_PROGRAM(skyl_program);
 	loss_program=MakeProgram("simple.vert",NULL,"simul_gpu_loss.frag");
 ERROR_CHECK
-	insc_program=MakeProgram("simple.vert",NULL,"simul_gpu_insc.frag","#define OVERCAST 1\r\n");
+	std::map<std::string,std::string> defines;
+	defines["OVERCAST"]="1";
+	insc_program=MakeProgram("simple.vert",NULL,"simul_gpu_insc.frag",defines);
 ERROR_CHECK
 	skyl_program=MakeProgram("simple.vert",NULL,"simul_gpu_skyl.frag");
 ERROR_CHECK

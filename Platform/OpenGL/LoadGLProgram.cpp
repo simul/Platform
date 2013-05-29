@@ -17,6 +17,7 @@ static std::string last_filename;
 
 using namespace simul;
 using namespace opengl;
+using namespace std;
 
 void printShaderInfoLog(GLuint sh)
 {
@@ -75,7 +76,13 @@ namespace simul
 	}
 }
 
-GLuint MakeProgram(const char *filename,const char *defines)
+GLuint MakeProgram(const char *filename)
+{
+	 map<string,string> defines;
+	 return MakeProgram(filename,defines);
+}
+
+GLuint MakeProgram(const char *filename,const map<string,string> &defines)
 {
 	char v[100];
 	char f[100];
@@ -84,7 +91,13 @@ GLuint MakeProgram(const char *filename,const char *defines)
 	return MakeProgram(v,NULL,f,defines);
 }
 
-GLuint MakeProgramWithGS(const char *filename,const char *defines)
+
+GLuint MakeProgramWithGS(const char *filename)
+{
+	 map<string,string> defines;
+	 return MakeProgramWithGS(filename,defines);
+}
+GLuint MakeProgramWithGS(const char *filename,const map<string,string> &defines)
 {
 	char v[100];
 	char f[100];
@@ -97,6 +110,11 @@ GLuint MakeProgramWithGS(const char *filename,const char *defines)
 
 GLuint SetShaders(const char *vert_src,const char *frag_src)
 {
+	map<string,string> defines;
+	return SetShaders(vert_src,frag_src,defines);
+}
+GLuint SetShaders(const char *vert_src,const char *frag_src,const map<string,string> &defines)
+{
 	GLuint prog				=glCreateProgram();
 	GLuint vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 	GLuint fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
@@ -104,8 +122,8 @@ GLuint SetShaders(const char *vert_src,const char *frag_src)
 	v.push_back(vert_src);
 	std::vector<std::string> f;
 	f.push_back(frag_src);
-    vertex_shader			=SetShader(vertex_shader	,v);
-    fragment_shader			=SetShader(fragment_shader	,f);
+    vertex_shader			=SetShader(vertex_shader	,v,defines);
+    fragment_shader			=SetShader(fragment_shader	,f,defines);
 	glAttachShader(prog,vertex_shader);
 	glAttachShader(prog,fragment_shader);
 	glLinkProgram(prog);
@@ -114,7 +132,13 @@ GLuint SetShaders(const char *vert_src,const char *frag_src)
 	return prog;
 }
 
-GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename,const char *defines)
+GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename)
+{
+	map<string,string> defines;
+	return MakeProgram(vert_filename,geom_filename,frag_filename,defines);
+}
+
+GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename,const map<string,string> &defines)
 {
 	GLuint prog						=glCreateProgram();
 	GLuint vertex_shader			=LoadShader(vert_filename,defines);
@@ -152,7 +176,7 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 	return prog;
 }
 
-GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const char *defines)
+GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const map<string,string> &defines)
 {
 /*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
 	const int MAX_STRINGS=12;
@@ -160,11 +184,19 @@ GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const char *d
 	const int MAX_LINE_LENGTH=256;					// 255 + NULL terminator
 	const char *strings[MAX_STRINGS];
 	int s=0;
-	if(defines&&strlen(defines))
+	if(defines.size())
 	{
 		static char program[MAX_LINES*MAX_LINE_LENGTH];
 		char *ptr=program;
-		sprintf_s(ptr,MAX_LINES*MAX_LINE_LENGTH,"%s\n",defines?defines:"");
+		std::string def;
+		for(map<string,string>::const_iterator i=defines.begin();i!=defines.end();i++)
+		{
+			def+=i->first;
+			def+="=";
+			def+=i->second;
+			def+="\n";
+		}
+		sprintf_s(ptr,MAX_LINES*MAX_LINE_LENGTH,"%s\n",def.c_str());
 		strings[s++]=program;
 	}
 	int lenOfStrings[MAX_STRINGS];
@@ -227,7 +259,7 @@ std::string loadShaderSource(const char *filename)
 	return str;
 }
 
-GLuint LoadShader(const char *filename,const char *defines)
+GLuint LoadShader(const char *filename,const map<string,string> &defines)
 {
 	GLenum shader_type=0;
 	std::string filename_str=filename;

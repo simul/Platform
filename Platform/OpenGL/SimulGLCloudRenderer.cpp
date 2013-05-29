@@ -298,7 +298,10 @@ ERROR_CHECK
 	// the shaders return transparency, not opacity, in the alpha channel.
     glDisable(GL_ALPHA_TEST);
 	if(depth_alpha_tex)
+	{
 		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
+	}
 	else
 		glDisable(GL_DEPTH_TEST);
 ERROR_CHECK
@@ -610,8 +613,13 @@ ERROR_CHECK
 	SAFE_DELETE_PROGRAM(clouds_foreground_program);
 	SAFE_DELETE_PROGRAM(noise_prog);
 	SAFE_DELETE_PROGRAM(edge_noise_prog);
-	clouds_background_program	=MakeProgram("simul_clouds","#define DETAIL_NOISE 1\r\n");
-	clouds_foreground_program	=MakeProgram("simul_clouds","#define DETAIL_NOISE 1\r\n#define USE_DEPTH_TEXTURE 1\r\n");
+	std::map<std::string,std::string> defines;
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
+	defines["DETAIL_NOISE"]="1";
+	clouds_background_program	=MakeProgram("simul_clouds",defines);
+	defines["USE_DEPTH_TEXTURE"]="1";
+	clouds_foreground_program	=MakeProgram("simul_clouds",defines);
 	noise_prog=MakeProgram("simple.vert",NULL,"simul_noise.frag");
 	edge_noise_prog=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
 ERROR_CHECK
@@ -634,7 +642,6 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void *context)
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	
 	RecompileShaders();
-	CreateNoiseTexture(context);
 	CreateVolumeNoise();
 	using namespace simul::clouds;
 	cloudKeyframer->SetBits(CloudKeyframer::DENSITY,CloudKeyframer::BRIGHTNESS,
@@ -853,8 +860,20 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 
 }
 
-void SimulGLCloudRenderer::EnsureTexturesAreUpToDate(void *)
+void SimulGLCloudRenderer::EnsureTexturesAreUpToDate(void *context)
 {
+	int a	=cloudKeyframer->GetEdgeNoiseTextureSize();
+	int b	=cloudKeyframer->GetEdgeNoiseFrequency();
+	int c	=cloudKeyframer->GetEdgeNoiseOctaves();
+	float d	=cloudKeyframer->GetEdgeNoisePersistence();
+	unsigned check=a+b+c+(*(unsigned*)(&d));
+	if(check!=noise_checksum)
+	{
+		SAFE_DELETE_TEXTURE(noise_tex);
+		noise_checksum=check;
+	}
+	if(!noise_tex)
+		CreateNoiseTexture(context);
 	EnsureCorrectTextureSizes();
 ERROR_CHECK
 	EnsureTextureCycle();
