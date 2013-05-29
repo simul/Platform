@@ -63,6 +63,8 @@ bool Direct3D11Renderer::ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSetting
 
 HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
+	//Set a global device pointer for use by various classes.
+	simul::dx11::SetDevice(pd3dDevice);
 	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects(pd3dDevice);
@@ -85,9 +87,6 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 	{
 		ScreenWidth=pBackBufferSurfaceDesc->Width;
 		ScreenHeight=pBackBufferSurfaceDesc->Height;
-		simul::dx11::UnsetDevice();
-		//Set a global device pointer for use by various classes.
-		simul::dx11::SetDevice(pd3dDevice);
 		ScreenWidth=pBackBufferSurfaceDesc->Width;
 		ScreenHeight=pBackBufferSurfaceDesc->Height;
 		if(simulWeatherRenderer)

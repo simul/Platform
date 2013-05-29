@@ -191,10 +191,11 @@ GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const map<str
 		std::string def;
 		for(map<string,string>::const_iterator i=defines.begin();i!=defines.end();i++)
 		{
+			def+="#define ";
 			def+=i->first;
-			def+="=";
+			def+=" ";
 			def+=i->second;
-			def+="\n";
+			def+="\r\n";
 		}
 		sprintf_s(ptr,MAX_LINES*MAX_LINE_LENGTH,"%s\n",def.c_str());
 		strings[s++]=program;
