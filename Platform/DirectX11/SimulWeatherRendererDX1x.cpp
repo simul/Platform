@@ -423,9 +423,9 @@ void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()
 	}
 	
 }
-void SimulWeatherRendererDX1x::Update()
+void SimulWeatherRendererDX1x::Update(void *context)
 {
-	BaseWeatherRenderer::Update();
+	BaseWeatherRenderer::Update(context);
 	static bool pause=false;
     if(!pause)
 	{

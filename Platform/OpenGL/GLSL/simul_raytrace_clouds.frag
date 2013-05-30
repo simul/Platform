@@ -9,6 +9,6 @@ varying vec2 texc;
 
 void main()
 {
-	vec4 colour=vec4(1.0,0.0,0.0,0.001);
+	vec4 colour=vec4(1.0,0.0,0.0,0.5);
 	gl_FragColor=colour;
 }

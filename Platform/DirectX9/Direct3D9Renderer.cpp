@@ -182,7 +182,7 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 	if(constant_timestep)
 		dt=constant_timestep;
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->Update(dt);
+		simulWeatherRenderer->Update(NULL,dt);
 	
 	if(simulTerrainRenderer)
 	{

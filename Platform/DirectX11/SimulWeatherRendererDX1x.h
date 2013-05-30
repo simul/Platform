@@ -51,7 +51,7 @@ public:
 	void SaveCubemapToFile(const char *filename);
 	void *GetCubemap();
 	//! Perform the once-per-frame time update.
-	void Update();
+	void Update(void *context);
 	//! Apply the view and projection matrices, once per frame.
 	void SetMatrices(const D3DXMATRIX &viewmat,const D3DXMATRIX &projmat);
 	//! Set the exposure, if we're using an hdr shader to render the sky buffer.

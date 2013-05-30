@@ -2,6 +2,7 @@ varying vec2 texc;
 
 void main(void)
 {
-    gl_Position		=ftransform();
-    texc			=gl_MultiTexCoord0.xy;
+    vec2 pos		=vec2(-1.0,-1.0)+gl_Vertex.xy*2.0;
+	gl_Position		=vec4(pos.xy,1.0,1.0);
+    texc			=gl_Vertex.xy;
 }

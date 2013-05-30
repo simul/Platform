@@ -69,7 +69,7 @@ public:
 	//! Call this to draw rain etc.
 	void RenderPrecipitation(void *context);
 	//! Perform the once-per-frame time update.
-	void Update(float dt);
+	void Update(void *context,float dt);
 #if defined(XBOX) || defined(DOXYGEN)
 	//! Call this once per frame to set the matrices (X360 only).
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);

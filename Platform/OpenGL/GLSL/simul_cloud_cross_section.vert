@@ -1,4 +1,3 @@
-
 varying vec2 texCoords;
 
 void main(void)

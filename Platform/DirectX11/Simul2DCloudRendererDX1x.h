@@ -27,6 +27,7 @@ public:
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
+	void Update(void *context);
 	bool Render(void *context,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha);
 	void RenderCrossSections(void *context,int width,int height);
 	void SetLossTexture(void *l);

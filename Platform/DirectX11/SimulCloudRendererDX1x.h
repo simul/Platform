@@ -59,6 +59,7 @@ public:
 	void InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
+	void Update(void *context);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	bool Render(void *context,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha);
 	void RenderDebugInfo(void *context,int width,int height);

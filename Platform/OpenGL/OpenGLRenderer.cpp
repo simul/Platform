@@ -80,7 +80,7 @@ void OpenGLRenderer::paintGL()
 	glViewport(0,0,ScreenWidth,ScreenHeight);
 	if(simulWeatherRenderer.get())
 	{
-		simulWeatherRenderer->Update();
+		simulWeatherRenderer->Update(context);
 		GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
 		GLuint fogfilter=0;								// Which Fog To Use
 		simul::sky::float4 fogColor=simulWeatherRenderer->GetHorizonColour(0.001f*cam->GetPosition()[2]);

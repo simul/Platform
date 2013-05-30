@@ -16,6 +16,20 @@ struct LayerData
 	float verticalShift;
 };
 
+uniform_buffer SingleLayerConstants R11
+{
+	vec2 noiseOffset;
+	float pad1;
+	float pad2;
+	vec2 elevationRange;// unused
+	float pad3;
+	float pad4;
+	float noiseScale;
+	float layerFade;
+	float layerDistance;
+	float verticalShift;
+};
+
 uniform_buffer LayerConstants R8
 {
 	LayerData layers[MAX_INSTANCES];

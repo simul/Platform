@@ -38,7 +38,7 @@ vec4 calcDensity(vec3 texCoords,float layerFade,vec3 noiseval)
 
 vec4 calcColour(vec4 density,float cos0,float texz)
 {
-	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.y,cos0);
+	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	vec3 ambient=density.w*ambientColour.rgb;
 	float opacity=density.z;
 	vec3 sunlightColour=lerp(sunlightColour1,sunlightColour2,saturate(texz));

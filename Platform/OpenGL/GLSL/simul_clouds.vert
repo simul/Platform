@@ -3,7 +3,6 @@
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 
 uniform vec3 eyePosition;
-uniform float layerDistance;
 in vec4 vertex;
 in vec3 multiTexCoord0;
 in float multiTexCoord1;
@@ -37,6 +36,7 @@ void main(void)
 	
 	vec4 noise_pos		=noiseMatrix*vec4(view.xyz,1.0);
 	noiseCoord			=vec2(atan(noise_pos.x,noise_pos.z),atan(noise_pos.y,noise_pos.z));
+	noiseCoord			=noiseCoord*noiseScale+noiseOffset;
 	float sine			=view.z;
 	fade_texc			=vec2(sqrt(depth),0.5*(1.0-sine));
 	rainFade			=1.0-exp(-layerDistance/10000.0);

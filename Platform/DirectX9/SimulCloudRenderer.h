@@ -56,6 +56,7 @@ public:
 	void RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the 3D device has been lost.
 	void InvalidateDeviceObjects();
+	void Update(void *context);
 	//! DX9 implementation of cloud rendering. For this platform, depth_testing and default_fog are ignored.
 	bool Render(void *context,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha);
 	//! Call this to draw the clouds, including any illumination by lightning.

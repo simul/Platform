@@ -56,6 +56,7 @@ public:
 	void InvalidateDeviceObjects();
 	//! Return debugging information.
 	const char *GetDebugText() const;
+	void Update(void *context);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	//! On DX9, depth_testing and default_fog are ignored for now.
 	bool Render(void *context,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha);

@@ -95,6 +95,7 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	,cloudConstants(0)
 	,cloudConstantsUBO(0)
 	,cloudConstantsBindingIndex(2)
+	,layerDataConstantsBindingIndex(4)
 {
 	for(int i=0;i<3;i++)
 	{
@@ -246,13 +247,20 @@ static float saturate(float c)
 {
 	return std::max(std::min(1.f,c),0.f);
 }
+
+void SimulGLCloudRenderer::Update(void *context)
+{
+	EnsureTexturesAreUpToDate(context);
+}
+
 static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
 bool SimulGLCloudRenderer::Render(void *context,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	EnsureTexturesAreUpToDate(context);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
 	simul::opengl::ProfileBlock profileBlock("SimulCloudRendererDX1x::Render");
 	simul::base::Timer timer;
 	timer.StartTime();
@@ -433,8 +441,6 @@ ERROR_CHECK
 	simul::math::Vector3 eye_dir(-viewInv(2,0),-viewInv(2,1),-viewInv(2,2));
 	simul::math::Vector3 up_dir	(viewInv(1,0),viewInv(1,1),viewInv(1,2));
 
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
 	float delta_t=(t-last_time)*cloudKeyframer->GetTimeFactor();
 	if(!last_time)
 		delta_t=0;
@@ -467,19 +473,19 @@ ERROR_CHECK
 
 	cloudConstants.lightningMultipliers;
 	cloudConstants.lightningColour;
-	cloudConstants.screenCoordOffset=scr_offset;
-	cloudConstants.sunlightColour1	=sunlight1;
-	cloudConstants.sunlightColour2	=sunlight2;
+	cloudConstants.screenCoordOffset	=scr_offset;
+	cloudConstants.sunlightColour1		=sunlight1;
+	cloudConstants.sunlightColour2		=sunlight2;
 
-ERROR_CHECK
-		glBindBuffer(GL_UNIFORM_BUFFER, cloudConstantsUBO);
-ERROR_CHECK
-		glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(CloudConstants), &cloudConstants);
-ERROR_CHECK
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-ERROR_CHECK
+	glBindBuffer(GL_UNIFORM_BUFFER,cloudConstantsUBO);
+	glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(CloudConstants),&cloudConstants);
+	glBindBuffer(GL_UNIFORM_BUFFER,0);
 	glBindBufferBase(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO);
-ERROR_CHECK
+	if(Raytrace)
+	{
+		UseShader(raytrace_program);
+		glUseProgram(raytrace_program);
+	}
 	if(Raytrace)
 	{
 		glDisable(GL_BLEND);
@@ -489,6 +495,15 @@ ERROR_CHECK
 		glLoadIdentity();
 		glOrtho(0,1.0,0,1.0,-1.0,1.0);
 		DrawFullScreenQuad();
+glMatrixMode(GL_PROJECTION);
+glPopMatrix();
+glDisable(GL_BLEND);
+glUseProgram(NULL);
+glDisable(GL_TEXTURE_3D);
+glDisable(GL_TEXTURE_2D);
+glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
+glPopAttrib();
+		return true;
 	}
 	else
 	{
@@ -505,9 +520,29 @@ ERROR_CHECK
 			i!=helper->GetSlices().end();i++)
 		{
 			// How thick is this layer, optically speaking?
-			float dens=(*i)->fadeIn;
+			simul::clouds::CloudGeometryHelper::Slice *s=*i;
+			float dens=s->fadeIn;
 			if(!dens)
 				continue;
+			SingleLayerConstants layerData;
+			layerData.layerDistance=(*i)->distance;
+			layerData.layerFade=(*i)->fadeIn;
+			
+			float noise_offset[]={s->noise_tex_x/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength()
+					,s->noise_tex_y/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength(),0,0};
+			layerData.layerFade		=s->fadeIn;
+			layerData.layerDistance	=s->distance;
+			layerData.noiseScale		=s->distance/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
+			//layerData.verticalShift	=helper->GetVerticalShiftDueToCurvature(s->distance,base_alt);
+			layerData.noiseOffset.x	=noise_offset[0];
+			layerData.noiseOffset.y	=noise_offset[1];
+//		layerData.elevationRange.x	=2.f*(float)s->elev_start/(float)el-1.f;
+	//		layerData.elevationRange.y	=2.f*(float)s->elev_end/(float)el-1.f;
+
+			UPDATE_CONSTANT_BUFFER(layerDataConstantsUBO,layerData,layerDataConstantsBindingIndex)
+			GLint layerDataConstants		=glGetUniformBlockIndex(program,"SingleLayerConstants");
+			if(layerDataConstants>=0)
+				glUniformBlockBinding(program,layerDataConstants,layerDataConstantsBindingIndex);
 			glUniform1f(layerDistance_param,(*i)->distance);
 			simul::sky::float4 loss			;
 			simul::sky::float4 inscatter	;
@@ -656,6 +691,7 @@ ERROR_CHECK
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
 	glBindBufferRange(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO,0, sizeof(CloudConstants));
+	glBindBufferRange(GL_UNIFORM_BUFFER,layerDataConstantsBindingIndex,layerDataConstantsUBO,0, sizeof(SingleLayerConstants));
 ERROR_CHECK
 	glUseProgram(0);
 }
@@ -669,6 +705,8 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void *context)
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(CloudConstants), NULL, GL_STREAM_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	
+	MAKE_CONSTANT_BUFFER(layerDataConstantsUBO,SingleLayerConstants,layerDataConstantsBindingIndex);
+
 	RecompileShaders();
 	CreateVolumeNoise();
 	using namespace simul::clouds;

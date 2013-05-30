@@ -268,6 +268,10 @@ void Set2DTexture(GLint shader_param,GLuint gl_texture,int channel)
 ERROR_CHECK
 }
 
+void SimulGL2DCloudRenderer::Update(void *context)
+{
+}
+
 bool SimulGL2DCloudRenderer::Render(void *context,bool,const void *, bool, bool)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);

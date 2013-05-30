@@ -761,6 +761,9 @@ void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 		cloudConstants.illuminationScales=light_DX;
 	}
 }
+void SimulCloudRendererDX1x::Update(void *context)
+{
+}
 static int test=29999;
 bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha)
 {

@@ -184,6 +184,10 @@ void Simul2DCloudRendererDX11::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX 
 	proj=p;
 }
 
+void Simul2DCloudRendererDX11::Update(void *context)
+{
+}
+
 bool Simul2DCloudRendererDX11::Render(void*context,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha)
 {
 	EnsureTexturesAreUpToDate(context);

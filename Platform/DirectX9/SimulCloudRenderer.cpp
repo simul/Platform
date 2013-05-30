@@ -574,6 +574,9 @@ static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 	return &x;
 }
 
+void SimulCloudRenderer::Update(void *context)
+{
+}
 bool SimulCloudRenderer::Render(void *context,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	return Render(context,cubemap,depth_alpha_tex,default_fog,0,write_alpha);

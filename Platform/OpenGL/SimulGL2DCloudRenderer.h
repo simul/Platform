@@ -38,6 +38,7 @@ public:
 	void RecompileShaders();
 	//! OpenGL Implementation of device invalidation - not strictly needed in GL.
 	void InvalidateDeviceObjects();
+	void Update(void *context);
 	//! OpenGL Implementation of 2D cloud rendering.
 	bool Render(void *context,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha);
 	void RenderCrossSections(void *,int width,int height);

@@ -394,9 +394,9 @@ void SimulWeatherRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 }
 #endif
 
-void SimulWeatherRenderer::Update(float dt)
+void SimulWeatherRenderer::Update(void *context,float dt)
 {
-	BaseWeatherRenderer::Update();
+	BaseWeatherRenderer::Update(context);
 	//if(baseCloudRenderer&&baseAtmosphericsRenderer)
 	{
 		//void **c=baseCloudRenderer->GetCloudTextures();

@@ -35,6 +35,7 @@ public:
 	void RecompileShaders();
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
+	void Update(void *context);
 	//! Render the clouds.
 	bool Render(void *context,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha);
 	//! Show the cross sections on-screen.
@@ -98,6 +99,9 @@ unsigned short *pIndices;
 	GLint cloudConstants;
 	GLuint cloudConstantsUBO;
 	GLint cloudConstantsBindingIndex;
+	
+	GLuint	layerDataConstantsUBO;
+	GLint	layerDataConstantsBindingIndex;
 
 	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;

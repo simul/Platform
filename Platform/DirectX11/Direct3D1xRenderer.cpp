@@ -123,6 +123,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		simulHDRRenderer->StartRender(pd3dImmediateContext);
 	if(simulWeatherRenderer)
 	{
+		simulWeatherRenderer->Update(pd3dImmediateContext);
 		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender(pd3dImmediateContext);
 	}
@@ -275,10 +276,6 @@ void Direct3D11Renderer::RecompileShaders()
 
 void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
 {
-	// The weather renderer works in days, not seconds
-	float game_timestep=fTimeStep/(24.f*60.f*60.f);
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->Update();
 }
 
 const char *Direct3D11Renderer::GetDebugText() const
