@@ -6,6 +6,7 @@ uniform vec3 eyePosition;
 in vec4 vertex;
 in vec3 multiTexCoord0;
 in float multiTexCoord1;
+in vec2 multiTexCoord2;
 
 out float layerDensity;
 out float rainFade;
@@ -26,7 +27,6 @@ void main(void)
     gl_Position			=transformed_pos;
 	texCoordDiffuse.xyz	=multiTexCoord0.xyz;
 	texCoordDiffuse.w	=0.5+0.5*clamp(multiTexCoord0.z,0.0,1.0);	// clamp?
-	//noiseCoord		=multiTexCoord1.xy;
 
 	layerDensity		=multiTexCoord1;
 	texCoordLightning	=(wPosition.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
@@ -34,9 +34,10 @@ void main(void)
 	float depth			=length(view)/maxFadeDistanceMetres;
 	view				=normalize(view);
 	
-	vec4 noise_pos		=noiseMatrix*vec4(view.xyz,1.0);
+	vec4 noise_pos		=noiseMatrix*vec4(view.xyz,0.0);
 	noiseCoord			=vec2(atan(noise_pos.x,noise_pos.z),atan(noise_pos.y,noise_pos.z));
-	noiseCoord			=noiseCoord*noiseScale+noiseOffset;
+	//noiseCoord		=noiseCoord*noiseScale+noiseOffset;
+	//noiseCoord		=multiTexCoord2.xy;
 	float sine			=view.z;
 	fade_texc			=vec2(sqrt(depth),0.5*(1.0-sine));
 	rainFade			=1.0-exp(-layerDistance/10000.0);

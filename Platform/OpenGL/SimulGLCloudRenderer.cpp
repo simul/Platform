@@ -463,6 +463,7 @@ ERROR_CHECK
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),god_rays,X1.z,god_rays);
 
+helper->Update2DNoiseCoords();
 	cloudConstants.worldViewProj		=worldViewProj;
 	cloudConstants.worldViewProj.transpose();
 	cloudConstants.fractalScale			=fractal_scales;
@@ -519,6 +520,7 @@ glPopAttrib();
 		// b) are in the cloud volume
 		int multiTexCoord0=glGetAttribLocation(program,"multiTexCoord0");
 		int multiTexCoord1=glGetAttribLocation(program,"multiTexCoord1");
+		int multiTexCoord2=glGetAttribLocation(program,"multiTexCoord2");
 	ERROR_CHECK
 		int layers_drawn=0;
 		for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
@@ -599,6 +601,7 @@ glPopAttrib();
 					const CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
 					glVertexAttrib3f(multiTexCoord0,V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
 					glVertexAttrib1f(multiTexCoord1,dens);
+					glVertexAttrib2f(multiTexCoord2,V.noise_tex_x,V.noise_tex_y);
 					// Here we're passing sunlight values per-vertex, loss and inscatter
 					// The per-vertex sunlight allows different altitudes of cloud to have different
 					// sunlight colour - good for dawn/sunset.
@@ -672,6 +675,8 @@ ERROR_CHECK
 
 void SimulGLCloudRenderer::RecompileShaders()
 {
+	if(!init)
+		return;
 current_program=0;
 ERROR_CHECK
 	SAFE_DELETE_PROGRAM(clouds_background_program);
