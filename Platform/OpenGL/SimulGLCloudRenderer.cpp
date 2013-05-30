@@ -476,6 +476,11 @@ ERROR_CHECK
 	cloudConstants.screenCoordOffset	=scr_offset;
 	cloudConstants.sunlightColour1		=sunlight1;
 	cloudConstants.sunlightColour2		=sunlight2;
+	simul::math::Vector3 InverseDX	=cloudKeyframer->GetCloudInterface()->GetInverseScales();
+
+	cloudConstants.cornerPos			=X1;
+	cloudConstants.inverseScales		=InverseDX;
+	cloudConstants.layerCount			=helper->GetSlices().size();
 
 	glBindBuffer(GL_UNIFORM_BUFFER,cloudConstantsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(CloudConstants),&cloudConstants);

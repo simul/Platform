@@ -14,10 +14,18 @@ uniform sampler3D lightningIlluminationTexture;
 #include "CppGlsl.hs"
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 #include "../../CrossPlatform/simul_clouds.sl"
+#include "../../CrossPlatform/depth.sl"
 #include "saturate.glsl"
 
 varying vec2 texc;
 
+
+vec4 calcDensity2(vec3 texCoords,float layerFade,vec3 noiseval)
+{
+	vec3 pos=texCoords.xyz;//+fractalScale.xyz*noiseval;
+	vec4 density=texture(cloudDensity1,pos);
+	return density;
+}
 void main()
 {
 	vec4 colour=vec4(0.0,0.0,0.0,1.0);
@@ -39,29 +47,29 @@ void main()
 	float max_texc_z=1.0-min_texc_z;
 
 	float depth=dlookup.r;
-	float d=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	float d=1.0;//depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
 	//[unroll(12)]
 	for(int i=0;i<layerCount;i++)
 	{
-		const LayerData layer=layers[i];
+		//LayerData layer=layers[i];
 		float dist=1000.0*(layerCount-i);//layer.layerDistance;
 		float z=dist/300000.0;
-		if(z>d)
-			continue;
+		//if(z>d)
+		//	continue;
 		vec3 pos=viewPos+dist*view;
 		//pos.z-=layer.verticalShift;
 		vec3 texCoords=(pos-cornerPos)*inverseScales;
-		if(texCoords.z<min_texc_z||texCoords.z>max_texc_z)
-			continue;
+		//if(texCoords.z<min_texc_z||texCoords.z>max_texc_z)
+		//	continue;
 		/*vec2 noise_texc		=noise_texc_0*layer.noiseScale+layer.noiseOffset;
 		vec3 noiseval=(noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,3).xyz).xyz;
 #ifdef DETAIL_NOISE
 		//noiseval+=(noiseTexture.SampleLevel(noiseSamplerState,8.0*noise_texc.xy,0).xyz)/2.0;
 #endif*/
 		vec3 noiseval=vec3(0,0,0);
-		vec4 density=calcDensity(texCoords,1.0,noiseval);
-		if(density.z<=0)
-			continue;
+		vec4 density=calcDensity2(texCoords,1.0,noiseval);
+		//if(density.z<=0)
+		//	continue;
 		vec4 c=calcColour(density,cos0,texCoords.z);
 		vec2 fade_texc=vec2(sqrt(z),0.5f*(1.f-sine));
 		c.rgb=applyFades(c.rgb,fade_texc,cos0,earthshadowMultiplier);
