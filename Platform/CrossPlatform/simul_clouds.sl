@@ -1,6 +1,6 @@
 #ifndef CLOUDS_SL
 #define CLOUDS_SL
-
+#ifndef GLSL
 Texture3D cloudDensity1: register(t0);
 Texture3D cloudDensity2: register(t1);
 Texture2D noiseTexture: register(t2);
@@ -10,7 +10,6 @@ Texture2D skylTexture: register(t5);
 Texture2D depthTexture: register(t6);
 Texture3D noiseTexture3D: register(t7);
 Texture3D lightningIlluminationTexture: register(t8);
-
 SamplerState cloudSamplerState: register( s0)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -24,6 +23,7 @@ SamplerState fadeSamplerState
 	AddressU = Clamp;
 	AddressV = Mirror;
 };
+#endif
 
 vec4 calcDensity(vec3 texCoords,float layerFade,vec3 noiseval)
 {
@@ -57,9 +57,10 @@ vec4 calcUnfadedColour(vec3 texCoords,float layerFade,vec3 noiseval,float cos0)
 	return final;
 }
 
-vec3 applyFades(vec3 final,float2 fade_texc,float cos0,float earthshadowMultiplier)
+vec3 applyFades(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier)
 {
-	vec3 loss=sampleLod(lossTexture		,fadeSamplerState,fade_texc,0).rgb;
+	vec4 l=sampleLod(lossTexture		,fadeSamplerState,fade_texc,0);
+	vec3 loss=l.rgb;
 	vec4 insc=sampleLod(inscTexture		,fadeSamplerState,fade_texc,0);
 	vec3 skyl=sampleLod(skylTexture		,fadeSamplerState,fade_texc,0).rgb;
 	vec3 inscatter=earthshadowMultiplier*InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
