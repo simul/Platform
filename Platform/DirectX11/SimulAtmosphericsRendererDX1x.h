@@ -55,7 +55,7 @@ public:
 	//! Render the Atmospherics.
 	void StartRender(void *context);
 	void FinishRender(void *context);
-	void RenderAsOverlay(void *context,const void *depthTexture);
+	void RenderAsOverlay(void *context,const void *depthTexture,float exposure_hint);
 	void *GetDepthAlphaTexture()
 	{
 		return (void*)framebuffer->buffer_texture_SRV;

@@ -95,6 +95,8 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	,cloudConstants(0)
 	,cloudConstantsUBO(0)
 	,cloudConstantsBindingIndex(2)
+	,layerDataConstants(0)
+	,layerDataConstantsUBO(0)
 	,layerDataConstantsBindingIndex(4)
 {
 	for(int i=0;i<3;i++)
@@ -398,8 +400,6 @@ const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKey
 		cloudConstants.lightningColour=lightning_colour;
 	}
 	cloudConstants.maxFadeDistanceMetres=max_fade_distance_metres;
-	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
-	cloudConstants.noiseMatrix			=noise_orient.GetInverseMatrix();
 	cloudConstants.rain=cloudKeyframer->GetPrecipitation();
 ERROR_CHECK
 
@@ -464,6 +464,8 @@ ERROR_CHECK
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),god_rays,X1.z,god_rays);
 
 helper->Update2DNoiseCoords();
+	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
+	cloudConstants.noiseMatrix			=noise_orient.T4;//GetInverseMatrix();
 	cloudConstants.worldViewProj		=worldViewProj;
 	cloudConstants.worldViewProj.transpose();
 	cloudConstants.fractalScale			=fractal_scales;
@@ -528,29 +530,24 @@ glPopAttrib();
 		{
 			// How thick is this layer, optically speaking?
 			simul::clouds::CloudGeometryHelper::Slice *s=*i;
+			helper->MakeLayerGeometry(GetCloudInterface(),s);
 			float dens=s->fadeIn;
 			if(!dens)
 				continue;
-			SingleLayerConstants layerData;
-			layerData.layerDistance=(*i)->distance;
-			layerData.layerFade=(*i)->fadeIn;
-			
+			SingleLayerConstants singleLayerConstants;
 			float noise_offset[]={s->noise_tex_x/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength()
 					,s->noise_tex_y/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength(),0,0};
-			layerData.layerFade		=s->fadeIn;
-			layerData.layerDistance	=s->distance;
-			layerData.noiseScale		=s->distance/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
+			singleLayerConstants.layerData.layerFade		=s->fadeIn;
+			singleLayerConstants.layerData.layerDistance	=s->distance;
+			singleLayerConstants.layerData.noiseScale		=s->distance/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
 			//layerData.verticalShift	=helper->GetVerticalShiftDueToCurvature(s->distance,base_alt);
-			layerData.noiseOffset.x	=noise_offset[0];
-			layerData.noiseOffset.y	=noise_offset[1];
+			singleLayerConstants.layerData.noiseOffset.x	=noise_offset[0];
+			singleLayerConstants.layerData.noiseOffset.y	=noise_offset[1];
 //		layerData.elevationRange.x	=2.f*(float)s->elev_start/(float)el-1.f;
 	//		layerData.elevationRange.y	=2.f*(float)s->elev_end/(float)el-1.f;
 
-			UPDATE_CONSTANT_BUFFER(layerDataConstantsUBO,layerData,layerDataConstantsBindingIndex)
-			GLint layerDataConstants		=glGetUniformBlockIndex(program,"SingleLayerConstants");
-			if(layerDataConstants>=0)
-				glUniformBlockBinding(program,layerDataConstants,layerDataConstantsBindingIndex);
-			glUniform1f(layerDistance_param,(*i)->distance);
+			UPDATE_CONSTANT_BUFFER(layerDataConstantsUBO,singleLayerConstants,layerDataConstantsBindingIndex)
+			//glUniform1f(layerDistance_param,(*i)->distance);
 			simul::sky::float4 loss			;
 			simul::sky::float4 inscatter	;
 			if(default_fog)
@@ -586,7 +583,6 @@ glPopAttrib();
 				inscatter=gl_fog*mix_fog;
 			}
 			layers_drawn++;
-			helper->MakeLayerGeometry(GetCloudInterface(),*i);
 
 	ERROR_CHECK
 			const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
@@ -660,17 +656,17 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 	skylightSampler_param		=glGetUniformLocation(program,"skylightSampler");
 	depthAlphaTexture			=glGetUniformLocation(program,"depthAlphaTexture");
 
-	layerDistance_param			=glGetUniformLocation(program,"layerDistance");
-
 	cloudConstants				=glGetUniformBlockIndex(program,"CloudConstants");
 	//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
 ERROR_CHECK
 	// If that block IS in the shader program, then BIND it to the relevant UBO.
 	if(cloudConstants>=0)
-	{
 		glUniformBlockBinding(program,cloudConstants,cloudConstantsBindingIndex);
 ERROR_CHECK
-	}
+	layerDataConstants			=glGetUniformBlockIndex(program,"SingleLayerConstants");
+	if(layerDataConstants>=0)
+		glUniformBlockBinding(program,layerDataConstants,layerDataConstantsBindingIndex);
+ERROR_CHECK
 }
 
 void SimulGLCloudRenderer::RecompileShaders()
@@ -822,6 +818,7 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	cloudConstants=-1;
 	cloudConstantsUBO=0;
 	
+	layerDataConstants=-1;
 	ClearIterators();
 }
 

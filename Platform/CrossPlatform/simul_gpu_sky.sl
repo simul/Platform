@@ -10,7 +10,7 @@ uniform_buffer GpuSkyConstants R8
 	uniform vec2 tableSize;
 
 	uniform float emissivity;
-	uniform float a,b,c;
+	uniform float aa,bb,cc;
 	uniform float distanceKm;
 	uniform float g,h,i;
 	uniform float texelOffset;

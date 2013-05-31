@@ -183,7 +183,7 @@ void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
 	//RenderAsOverlay(context,NULL);
 }
 
-void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture)
+void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure_hint)
 {
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::RenderAsOverlay");
 	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;

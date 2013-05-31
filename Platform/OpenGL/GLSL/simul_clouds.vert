@@ -21,7 +21,7 @@ out vec4 transformed_pos;
 void main(void)
 {
 	vec3 pos			=vertex.xyz;
-	//pos.xyz			*=layerDistance;
+	//pos.xyz				*=layerData.layerDistance;
     wPosition			=pos.xyz;
     transformed_pos		=vec4(vertex.xyz,1.0)*worldViewProj;
     gl_Position			=transformed_pos;
@@ -34,11 +34,12 @@ void main(void)
 	float depth			=length(view)/maxFadeDistanceMetres;
 	view				=normalize(view);
 	
-	vec4 noise_pos		=noiseMatrix*vec4(view.xyz,0.0);
-	noiseCoord			=vec2(atan(noise_pos.x,noise_pos.z),atan(noise_pos.y,noise_pos.z));
-	//noiseCoord		=noiseCoord*noiseScale+noiseOffset;
-	//noiseCoord		=multiTexCoord2.xy;
+	vec4 noise_pos		=vec4(view.xyz,1.0)*noiseMatrix;
+	vec2 noisetex		=vec2(atan(noise_pos.x,noise_pos.z),atan(noise_pos.y,noise_pos.z));
+	noiseCoord			=noisetex*layerData.noiseScale+layerData.noiseOffset;
+	noiseCoord			+=multiTexCoord2.xy*0.000000001;
+	//noiseCoord			=multiTexCoord2.xy;
 	float sine			=view.z;
 	fade_texc			=vec2(sqrt(depth),0.5*(1.0-sine));
-	rainFade			=1.0-exp(-layerDistance/10000.0);
+	rainFade			=1.0-exp(-layerData.layerDistance/10000.0);
 }

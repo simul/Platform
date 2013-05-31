@@ -11,23 +11,20 @@ struct LayerData
 	float pad3;
 	float pad4;
 	float noiseScale;
+	float pad5;
+	float pad6;
+	float pad7;
 	float layerFade;
+	float pad8;
+	float pad9;
+	float pad10;
 	float layerDistance;
 	float verticalShift;
 };
 
 uniform_buffer SingleLayerConstants R11
 {
-	vec2 noiseOffset;
-	float pad1;
-	float pad2;
-	vec2 elevationRange;// unused
-	float pad3;
-	float pad4;
-	float noiseScale;
-	float layerFade;
-	float layerDistance;
-	float verticalShift;
+	LayerData layerData;
 };
 
 uniform_buffer LayerConstants R8
@@ -42,10 +39,10 @@ uniform_buffer CloudInvViewProj R10
 
 uniform_buffer CloudConstants R9
 {
+	uniform mat4 noiseMatrix;
 	uniform mat4 worldViewProj;
 	uniform mat4 invViewProj;
 	uniform mat4 wrld;
-	uniform mat4 noiseMatrix;
 	uniform vec3 inverseScales;
 	uniform int layerCount;
 	uniform vec3 ambientColour;

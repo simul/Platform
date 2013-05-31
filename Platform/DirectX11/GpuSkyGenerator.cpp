@@ -73,6 +73,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				,const std::vector<float> &altitudes_km
 				,float max_distance_km
 				,simul::sky::float4 sun_irradiance
+				,simul::sky::float4 starlight
 				,simul::sky::float4 dir_to_sun
 				,simul::sky::float4 dir_to_moon
 				,float haze
@@ -143,7 +144,7 @@ HRESULT hr=S_OK;
 		constants.sunIrradiance		=(const float*)sun_irradiance;
 		constants.lightDir			=(const float*)dir_to_sun;
 
-		constants.starlight			=(const float*)(skyInterface->GetStarlight());
+		constants.starlight			=(const float*)(starlight);
 		
 		constants.hazeEccentricity	=1.0;
 		constants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());

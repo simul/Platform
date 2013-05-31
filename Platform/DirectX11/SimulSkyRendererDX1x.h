@@ -54,7 +54,7 @@ public:
 	bool Destroy();
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	bool Render(void *context,bool blend);
-	bool RenderPointStars(void *context);
+	bool RenderPointStars(void *context,float exposure_hint);
 	void RenderSun(void *context,float exposure_hint);
 	//! Draw the fade textures to screen
 	bool RenderFades(void *context,int w,int h);

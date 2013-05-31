@@ -762,7 +762,7 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 
 static int test = 0;
 
-bool SimulSkyRendererDX1x::RenderPointStars(void *context)
+bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	HRESULT hr=S_OK;
@@ -784,7 +784,7 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context)
 	{
 		return true;
 	}
-	float sb=skyKeyframer->GetSkyInterface()->GetStarlight().x;
+	float sb=skyKeyframer->GetStarlight().x;
 	float star_brightness=sb*skyKeyframer->GetStarBrightness();
 	simul::dx11::setParameter(m_pSkyEffect,"starBrightness",star_brightness);
 

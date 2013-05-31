@@ -479,7 +479,7 @@ ERROR_CHECK
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderPointStars(void *)
+bool SimulGLSkyRenderer::RenderPointStars(void *,float exposure)
 {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -511,7 +511,7 @@ bool SimulGLSkyRenderer::RenderPointStars(void *)
 		}
 	}
 	glUseProgram(stars_program);
-	float sb=skyKeyframer->GetSkyInterface()->GetStarlight().x;
+	float sb=skyKeyframer->GetStarlight().x;
 	float star_brightness=sb*skyKeyframer->GetStarBrightness();
 	glUniform1f(starBrightness_param,star_brightness);
 	float mat1[16],mat2[16];
