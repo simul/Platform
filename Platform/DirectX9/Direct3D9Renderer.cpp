@@ -278,8 +278,11 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 			simul::sky::float4 dir(0,0,1.f,0),light(0,0,0,0);
 			if(simulWeatherRenderer->GetSkyRenderer())
 			{
-				dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToSun();
-				light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
+				simul::sky::float4 dir,light,cam_pos;
+				dir=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
+			//CalcCameraPosition(cam_pos);
+				GetCameraPosVector(view,y_vertical,cam_pos);
+				light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 				simulOpticsRenderer->SetMatrices(view,proj);
 				float exposure=1.f;
 				if(simulHDRRenderer)

@@ -170,7 +170,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			simul::sky::float4 dir,light;
 			if(simulWeatherRenderer->GetSkyRenderer())
 			{
-				dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToSun();
+				dir=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
 				light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
 				simulOpticsRenderer->SetMatrices(view,proj);
 				float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();

@@ -65,9 +65,7 @@ public:
 	//! Get the transform that goes from declination/right-ascension to azimuth and elevation.
 	//bool						GetSiderealTransform(D3DXMATRIX *world);
 	//! Render the stars, as points.
-	bool						RenderPointStars(void *);
-	//! Render the stars, as a background.
-	bool						RenderTextureStars();
+	bool						RenderPointStars(void *,float exposure_hint);
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	bool						Render(void *,bool blend);
 	//! Draw the fade textures to screen

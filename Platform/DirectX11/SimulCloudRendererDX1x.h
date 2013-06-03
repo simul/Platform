@@ -24,6 +24,7 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
 #include "Simul/Platform/CrossPlatform/simul_cloud_constants.sl"
+#include "Simul/Platform/DirectX11/Framebuffer3D.h"
 
 namespace simul
 {
@@ -95,6 +96,7 @@ public:
 	void SetYVertical(bool y);
 	bool IsYVertical() const;
 protected:
+	void RenderCombinedCloudTexture(void *context);
 	void SetCloudConstants(CloudConstants &cloudConstants);
 	void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip);
 	// Make up to date with respect to keyframer:
@@ -163,6 +165,9 @@ protected:
 	ID3D1xShaderResourceView*				skylightTexture_SRV;
 
 	ID3D1xTexture3D*						cloud_textures[3];
+
+	simul::dx11::Framebuffer3D				cloud_fb;
+
 	ID3D1xTexture3D*						illumination_texture;
 	
 	D3D1x_MAPPED_TEXTURE3D					mapped_illumination;

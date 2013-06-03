@@ -118,9 +118,10 @@ ERROR_CHECK
 		simulWeatherRenderer->RenderPrecipitation(context);
 		if(simulOpticsRenderer&&ShowFlares)
 		{
-			simul::sky::float4 dir,light;
-			dir=simulWeatherRenderer->GetSkyRenderer()->GetDirectionToSun();
-			light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
+			simul::sky::float4 dir,light,cam_pos;
+			dir=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
+			CalcCameraPosition(cam_pos);
+			light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 			float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
 			simulOpticsRenderer->RenderFlare(context,exp,dir,light);

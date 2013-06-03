@@ -93,13 +93,14 @@ void UseShader(GLuint program);
 	GLint illumSampler_param;
 	GLint skylightSampler_param;
 	GLint depthAlphaTexture;
-	GLint layerDistance_param;
+	//GLint layerDistance_param;
 unsigned short *pIndices;
 
 	GLint cloudConstants;
 	GLuint cloudConstantsUBO;
 	GLint cloudConstantsBindingIndex;
 	
+	GLint layerDataConstants;
 	GLuint	layerDataConstantsUBO;
 	GLint	layerDataConstantsBindingIndex;
 

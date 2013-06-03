@@ -795,7 +795,7 @@ bool SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)
 	return (hr==S_OK);
 }*/
 
-bool SimulSkyRenderer::RenderPointStars(void *)
+bool SimulSkyRenderer::RenderPointStars(void *,float exposure)
 {
 	PIXBeginNamedEvent(0xFF000FFF,"SimulSkyRenderer::RenderPointStars");
 	HRESULT hr=S_OK;
@@ -827,7 +827,7 @@ bool SimulSkyRenderer::RenderPointStars(void *)
 
 	m_pSkyEffect->SetTechnique(m_hTechniquePointStars);
 
-	float sb=skyKeyframer->GetSkyInterface()->GetStarlight().x;
+	float sb=skyKeyframer->GetStarlight().x;
 	float star_brightness=sb*skyKeyframer->GetStarBrightness();
 	m_pSkyEffect->SetFloat(starBrightness,star_brightness);
 	
@@ -863,51 +863,6 @@ bool SimulSkyRenderer::RenderPointStars(void *)
 	hr=m_pSkyEffect->End();
 	D3DXMatrixIdentity(&world);
 	PIXEndNamedEvent();
-	return (hr==S_OK);
-}
-
-bool SimulSkyRenderer::RenderTextureStars()
-{
-	HRESULT hr=S_OK;
-#ifndef XBOX
-	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
-#endif
-	D3DXMATRIX tmp1, tmp2;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
-
-	cam_dir.x=tmp1._31;
-	cam_dir.y=tmp1._32;
-	cam_dir.z=tmp1._33;
-	if(!y_vertical)
-		cam_dir*=-1.f;
-
-	GetSiderealTransform((float*)&world);
-	FixProjectionMatrix(proj,size*4.f,y_vertical);
-	D3DXMatrixMultiply(&tmp1,&world,&view);
-	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
-	D3DXMatrixTranspose(&tmp1,&tmp2);
-	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
-
-	hr=m_pd3dDevice->SetVertexDeclaration(m_pVtxDecl);
-
-	m_pSkyEffect->SetTechnique(m_hTechniqueStarrySky);
-	m_pSkyEffect->SetTexture(starsTexture,stars_texture);
-
-	float sb=skyKeyframer->GetSkyInterface()->GetStarlight().x;
-	m_pSkyEffect->SetFloat(starBrightness,sb*skyKeyframer->GetStarBrightness());
-	
-	UINT passes=1;
-	hr=m_pSkyEffect->Begin(&passes,0);
-	for(unsigned i=0;i<passes;i++)
-	{
-		hr=m_pSkyEffect->BeginPass(i);
-		hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLELIST,12,vertices,sizeof(Vertex_t));
-		hr=m_pSkyEffect->EndPass();
-	}
-	hr=m_pSkyEffect->End();
-	D3DXMatrixIdentity(&world);
 	return (hr==S_OK);
 }
 

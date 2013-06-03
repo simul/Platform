@@ -42,7 +42,7 @@ public:
 	//! GL Implementation of render function.
 	bool						Render(void *,bool blend);
 	//! Render the stars, as points.
-	bool						RenderPointStars(void *);
+	bool						RenderPointStars(void *,float exposure);
 	//! Draw the 2D fades to screen for debugging.
 	bool						RenderFades(void *,int w,int h);
 

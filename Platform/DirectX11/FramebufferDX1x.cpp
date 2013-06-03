@@ -274,6 +274,7 @@ bool FramebufferDX1x::CreateBuffers()
     InitData.SysMemSlicePitch = 0;
 	SAFE_RELEASE(m_pVertexBuffer);
 	hr=m_pd3dDevice->CreateBuffer(&bdesc,&InitData,&m_pVertexBuffer);
+	SAFE_RELEASE(stagingTexture);
 	return (hr==S_OK);
 }
 
@@ -320,6 +321,7 @@ void FramebufferDX1x::CopyToMemory(void *target,int start_texel,int texels)
 {
 	ID3D11DeviceContext *m_pImmediateContext=NULL;
 m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+
 	if(!stagingTexture)
 		stagingTexture=makeStagingTexture(m_pd3dDevice,Width,Height,target_format);
 	D3D11_BOX sourceRegion;
