@@ -340,6 +340,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Framebuffer3D.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\FramebufferCubemapDX1x.cpp"
 				>
 			</File>
@@ -435,6 +439,10 @@
 			</File>
 			<File
 				RelativePath=".\Export.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Framebuffer3D.h"
 				>
 			</File>
 			<File

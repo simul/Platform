@@ -61,44 +61,51 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	float3 viewPos=float3(wrld[3][0],wrld[3][1],wrld[3][2]);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float sine=view.z;
-	float3 noise_pos	=mul(noiseMatrix,float4(view.xyz,1.0f)).xyz;
-	float2 noise_texc_0	=float2(atan2(noise_pos.x,noise_pos.z),atan2(noise_pos.y,noise_pos.z));
+	float3 n			=float3(pos.xy*tanHalfFov,1.0);
+	n					=normalize(n);
+	float2 noise_texc_0	=mul(noiseMatrix,n.xy);
 
-	float min_texc_z=-fractalScale.z*1.5;
-	float max_texc_z=1.0-min_texc_z;
+	float min_texc_z	=-fractalScale.z*1.5;
+	float max_texc_z	=1.0-min_texc_z;
 
 	float depth=dlookup.r;
 	float d=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
 	float4 colour=float4(0.0,0.0,0.0,1.0);
-	//[unroll(12)]
+	
 	for(int i=0;i<layerCount;i++)
+	//int i=40;
 	{
 		const LayerData layer=layers[i];
 		float dist=layer.layerDistance;
 		float z=dist/300000.0;
-		if(z>d)
-			continue;
-		float3 pos=viewPos+dist*view;
-		pos.z-=layer.verticalShift;
-		float3 texCoords=(pos-cornerPos)*inverseScales;
-		if(texCoords.z<min_texc_z||texCoords.z>max_texc_z)
-			continue;
-		float2 noise_texc		=noise_texc_0*layer.noiseScale+layer.noiseOffset;
-		float3 noiseval=(noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,3).xyz).xyz;
-#ifdef DETAIL_NOISE
-		//noiseval+=(noiseTexture.SampleLevel(noiseSamplerState,8.0*noise_texc.xy,0).xyz)/2.0;
-#endif
-		float4 density=calcDensity(texCoords,1.0,noiseval);
-		if(density.z<=0)
-			continue;
-		float4 c=calcColour(density,cos0,texCoords.z);
-		float2 fade_texc=float2(sqrt(z),0.5f*(1.f-sine));
-		c.rgb=applyFades(c.rgb,fade_texc,cos0,earthshadowMultiplier);
-		colour*=(1.0-c.a);
-		colour.rgb+=c.rgb*c.a;
+		if(z<d)
+		if(i==12)
+		{
+			float3 pos=viewPos+dist*view;
+			pos.z-=layer.verticalShift;
+			float3 texCoords=(pos-cornerPos)*inverseScales;
+			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
+			{
+				float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
+				float3 noiseval		=noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
+		#ifdef DETAIL_NOISE
+			//	noiseval			+=(noiseTexture.SampleLevel(noiseSamplerState,16.0*noise_texc.xy,0).xyz)/2.0;
+		#endif
+				float4 density		=calcDensity(texCoords,1.0,noiseval);
+				if(density.z>0)
+				{
+					float4 c=calcColour(density,cos0,texCoords.z);
+					float2 fade_texc=float2(sqrt(z),0.5*(1.0-sine));
+					c.rgb=applyFades(c.rgb,fade_texc,cos0,earthshadowMultiplier);
+					colour*=(1.0-c.a);
+					//colour.rgb+=c.rgb*c.a;
+					colour.rgb+=frac(noise_texc.xyy)*c.a;
+				}
+			}
+		}
 	}
 	if(colour.a>=1.0)
-		discard;
+	   discard;
     return float4(colour.rgb,1.0-colour.a);
 }
 
@@ -156,8 +163,8 @@ toPS VS_Main(vertexInput IN)
 	float sine				=OUT.view.z;
 	float3 t1				=pos.xyz*IN.layerDistance;
 	OUT.hPosition			=mul(worldViewProj,float4(t1.xyz,1.0));
-	float3 noise_pos		=mul(noiseMatrix,float4(pos.xyz,1.0f)).xyz;
-	OUT.noise_texc			=float2(atan2(noise_pos.x,noise_pos.z),atan2(noise_pos.y,noise_pos.z));
+	float2 noise_pos		=mul(noiseMatrix,pos.xy);
+	OUT.noise_texc			=float2(atan2(noise_pos.x,1.0),atan2(noise_pos.y,1.0));
 	OUT.noise_texc			*=IN.noiseScale;
 	OUT.noise_texc			+=IN.noiseOffset;
 	
@@ -209,7 +216,7 @@ void GS_Main(line VStoGS input[2], inout TriangleStream<toPS> OutputStream)
 
 			toPS OUT;
 			OUT.hPosition			=hpos;
-			float3 noise_pos		=mul(noiseMatrix,float4(pos.xyz,1.0f)).xyz;
+			float3 noise_pos		=(mul(noiseMatrix,pos.xy),1.0f);
 			OUT.noise_texc			=float2(atan2(noise_pos.x,noise_pos.z),atan2(noise_pos.y,noise_pos.z));
 			OUT.noise_texc			*=IN.noiseScale;
 			OUT.noise_texc			+=IN.noiseOffset;
@@ -312,6 +319,12 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
 float4 PS_Simple( vertexOutputCS IN):SV_TARGET
 {
     return noiseTexture.Sample(crossSectionSamplerState,IN.texCoords.xy);
+}
+
+float4 PS_ShowNoise( vertexOutputCS IN):SV_TARGET
+{
+    float4 lookup=noiseTexture.Sample(crossSectionSamplerState,IN.texCoords.xy);
+	return float4(0.5*(lookup.rgb+1.0),1.0);
 }
 
 #define CROSS_SECTION_STEPS 32
@@ -464,5 +477,18 @@ technique11 simple
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Simple()));
+    }
+}
+
+technique11 show_noise
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowNoise()));
     }
 }

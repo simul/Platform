@@ -1,5 +1,6 @@
 #version 140
 #include "CppGlsl.hs"
+uniform sampler3D volumeNoiseTexture;
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
 varying vec2 in_texcoord;
 

@@ -18,7 +18,6 @@ uniform_buffer GpuCloudConstants R8
 };
 
 #ifndef __cplusplus
-uniform sampler3D volumeNoiseTexture;
 
 vec3 assemble3dTexcoord(vec2 texcoord2)
 {
@@ -42,7 +41,7 @@ float GetHumidityMultiplier(float z)
 float NoiseFunction(vec3 pos,int octaves,float persistence,float time)
 {
 	float dens=0.0;
-	float mul=0.5;
+	float mult=0.5;
 	float this_grid_height=1.0;
 	float sum=0.0;
 	float t=time;
@@ -52,9 +51,9 @@ float NoiseFunction(vec3 pos,int octaves,float persistence,float time)
 			break;
 		float lookup=texture3D(volumeNoiseTexture,pos).x;
 		float val=lookup;
-		dens+=mul*val;
-		sum+=mul;
-		mul*=persistence;
+		dens+=mult*val;
+		sum+=mult;
+		mult*=persistence;
 		pos*=2.0;
 		this_grid_height*=2.0;
 		t*=2.0;

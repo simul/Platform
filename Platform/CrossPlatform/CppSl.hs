@@ -10,6 +10,30 @@
 #ifdef __cplusplus
 	#define ALIGN_16 __declspec(align(16))
 
+	struct mat2
+	{
+		float m[4];
+		operator const float *()
+		{
+			return m;
+		}
+		void operator=(const float *v)
+		{
+			for(int i=0;i<4;i++)
+				m[i]=v[i];
+		}
+		void transpose()
+		{
+			for(int i=0;i<2;i++)
+				for(int j=0;j<2;j++)
+					if(i<j)
+					{
+						float temp=m[i*2+j];
+						m[i*2+j]=m[j*2+i];
+						m[j*2+i]=temp;
+					}
+		}
+	};
 	struct mat4
 	{
 		float m[16];

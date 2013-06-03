@@ -723,12 +723,15 @@ void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 	cloudConstants.noise3DPersistence	=cloudKeyframer->GetEdgeNoisePersistence();
 	cloudConstants.noise3DOctaves		=cloudKeyframer->GetEdgeNoiseOctaves();
 	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
-	cloudConstants.noiseMatrix			=noise_orient.GetInverseMatrix();
+	float noise_rotation=helper->GetNoiseRotation();
+	float f[]={cos(noise_rotation),-sin(noise_rotation),0,0,sin(noise_rotation),cos(noise_rotation),0,0,0,0,1.f,0};
+	cloudConstants.noiseMatrix			=f;
+		//noise_orient.GetInverseMatrix();
 
 	cloudConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	cloudConstants.nearZ	=frustum.nearZ/max_fade_distance_metres;
 	cloudConstants.farZ		=frustum.farZ/max_fade_distance_metres;
-	
+	cloudConstants.noise_offset=helper->GetNoiseOffset();
 	float time=skyInterface->GetTime();
 	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
@@ -761,8 +764,47 @@ void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 		cloudConstants.illuminationScales=light_DX;
 	}
 }
+void SimulCloudRendererDX1x::RenderCombinedCloudTexture(void *context)
+{
+	/*cloud_fb.Activate(context);
+	for (unsigned int layer = 0; layer < RES_DEPTH; ++layer) 
+	{
+		shader->setInt("g_layer", layer);
+		shader->activate("RenderSomethingTo3DTexture");
+		m_fullScreenQuad->render();		
+	}
+	cloud_fb.Deactivate();
+	then the geometry shader chooses the specific layer
+
+struct GS_OUT_LAYER
+{
+	float4 posH   	: SV_POSITION;
+	float2 texC		: TEXCOORD;
+	uint   layer 		: SV_RenderTargetArrayIndex;
+};
+
+[maxvertexcount(3)]
+void GS_SetLayer(triangle VS_OUT input[3],
+		inout TriangleStream<GS_OUT_LAYER> triOutputStream)
+{
+	GS_OUT_LAYER output;
+	
+	for(int i=0; i < 3; ++i)
+	{
+		output.posH  = input[i].posH;
+		output.texC  = input[i].texC;
+		output.layer = g_layer; 
+		
+		triOutputStream.Append(output);
+	}
+}
+
+	*/
+}
+
 void SimulCloudRendererDX1x::Update(void *context)
 {
+	RenderCombinedCloudTexture(context);
 }
 static int test=29999;
 bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha)
@@ -819,6 +861,7 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,const void *depth
 	unsigned el,az;
 	helper->GetGrid(el,az);
 	float base_alt=GetCloudInterface()->GetCloudBaseZ();
+	float wavelength=cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
 	for(std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
 		i!=helper->GetSlices().end();i++,ii++)
 	{
@@ -828,14 +871,12 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,const void *depth
 		if(s==NULL)
 			continue;
 		LayerData &inst=layerConstants.layers[ii];
-		float noise_offset[]={s->noise_tex_x/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength()
-				,s->noise_tex_y/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength(),0,0};
 		inst.layerFade		=s->fadeIn;
 		inst.layerDistance	=s->distance;
-		inst.noiseScale		=s->distance/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
 		inst.verticalShift	=helper->GetVerticalShiftDueToCurvature(s->distance,base_alt);
-		inst.noiseOffset.x	=noise_offset[0];
-		inst.noiseOffset.y	=noise_offset[1];
+		inst.noiseScale		=s->distance/wavelength;
+		inst.noiseOffset.x	=s->noise_tex_x/wavelength;
+		inst.noiseOffset.y	=s->noise_tex_y/wavelength;
 		inst.elevationRange.x	=2.f*(float)s->elev_start/(float)el-1.f;
 		inst.elevationRange.y	=2.f*(float)s->elev_end/(float)el-1.f;
 	}
@@ -980,7 +1021,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 		UtilityRenderer::RenderTexture(m_pImmediateContext,i*(w+1)+4,h+8,w,w,m_hTechniqueCrossSectionXY);
 	}
 	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",noiseTextureResource);
-	UtilityRenderer::RenderTexture(m_pImmediateContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect->GetTechniqueByName("simple"));
+	UtilityRenderer::RenderTexture(m_pImmediateContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect->GetTechniqueByName("show_noise"));
 }
 
 bool SimulCloudRendererDX1x::RenderLightning(void *context)

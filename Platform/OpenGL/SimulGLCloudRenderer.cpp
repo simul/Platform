@@ -287,6 +287,7 @@ ERROR_CHECK
 	cam_pos.y=viewInv(3,1);
 	cam_pos.z=viewInv(3,2);
 ERROR_CHECK
+Raytrace=false;
 	if(Raytrace)
 	{
 		glDisable(GL_BLEND);

@@ -721,7 +721,7 @@ void BreakIfDebugging()
 {
 	DebugBreak();
 }
-
+ 
 
 void UtilityRenderer::RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *m_pImmediateContext,const float *dr,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj
 					  ,D3DXVECTOR3 sun_dir)

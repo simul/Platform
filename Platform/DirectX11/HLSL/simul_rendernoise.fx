@@ -37,7 +37,8 @@ v2f MainVS(a2v IN)
 
 float4 RandomPS(v2f IN) : SV_TARGET
 {
-    vec4 c=vec4(rand(IN.texcoord),rand(1.7*IN.texcoord),rand(0.11*IN.texcoord),rand(513.1*IN.texcoord));
+	// Range from -1 to 1.
+    vec4 c=2.0*vec4(rand(IN.texcoord),rand(1.7*IN.texcoord),rand(0.11*IN.texcoord),rand(513.1*IN.texcoord))-1.0;
     return c;
 }
 
@@ -46,17 +47,17 @@ float4 MainPS(v2f IN) : SV_TARGET
 	vec4 result=vec4(0,0,0,0);
 	vec2 texcoords=IN.texcoord;
 	float mul=.5;
-	vec4 hal=vec4(0.5,0.5,0.5,0.5);
+	float total=0.0;
     for(int i=0;i<octaves;i++)
     {
-		vec4 c=texture2D(noise_texture,texcoords)-hal;
+		vec4 c=texture2D(noise_texture,texcoords);
 		texcoords*=2.0;
+		total+=mul;
 		result+=mul*c;
 		mul*=persistence;
     }
-	result*=0.5;
-	result+=hal;
-    result=saturate(result);
+	// divide by total to get the range -1,1.
+	result*=1.0/total;
     return result;
 }
 
