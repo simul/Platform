@@ -17,12 +17,6 @@ SamplerState cloudSamplerState: register( s0)
 	AddressV = Wrap;
 	AddressW = Clamp;
 };
-SamplerState fadeSamplerState 
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Clamp;
-	AddressV = Mirror;
-};
 #endif
 
 vec4 calcDensity(vec3 texCoords,float layerFade,vec3 noiseval)

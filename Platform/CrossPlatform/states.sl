@@ -16,8 +16,14 @@ SamplerState samplerState3d
 	AddressW = Wrap;
 };
 
+SamplerState fadeSamplerState : register(s5)
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
 
-SamplerState noiseSamplerState : register( s2)
+SamplerState noiseSamplerState
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
