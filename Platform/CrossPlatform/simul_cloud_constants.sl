@@ -7,9 +7,6 @@ struct LayerData
 	vec2 noiseOffset;
 	float pad1;
 	float pad2;
-	vec2 elevationRange;// unused
-	float pad3;
-	float pad4;
 	float noiseScale;
 	float pad5;
 	float pad6;
@@ -38,17 +35,22 @@ uniform_buffer LayerConstants R8
 
 uniform_buffer CloudPerViewConstants R10
 {
-	uniform mat4 invViewProjtest;
+	uniform mat4 wrld;
+	uniform mat4 invViewProj;
 	uniform mat4 noiseMatrix;
 	uniform vec2 noise_offset;
 	uniform float eee,fff;
+	uniform float nearZ;
+	uniform float farZ;
+	uniform float ccc,ddd;
+	uniform vec2 tanHalfFov;
+	uniform float aaa,bbb;
+	uniform float exposure;
+	uniform float ggg,hhh,iii;
 };
 
 uniform_buffer CloudConstants R9
 {
-	uniform mat4 worldViewProj;
-	uniform mat4 invViewProj;
-	uniform mat4 wrld;
 	uniform vec3 inverseScales;
 	uniform int abcde;
 	uniform vec3 ambientColour;
@@ -80,10 +82,5 @@ uniform_buffer CloudConstants R9
 	uniform int noise3DOctaves;
 	uniform vec3 noise3DTexcoordScale;
 	uniform float z1;
-	uniform vec2 tanHalfFov;
-	uniform float aaa,bbb;
-	uniform float nearZ;
-	uniform float farZ;
-	uniform float ccc,ddd;
 };
 #endif
