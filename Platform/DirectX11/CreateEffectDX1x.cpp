@@ -20,6 +20,7 @@
 #include <string>
 typedef std::basic_string<TCHAR> tstring;
 tstring shader_path=TEXT("media/hlsl/dx11");
+std::string shader_pathA="media/hlsl/dx11";
 tstring texture_path=TEXT("media/textures");
 static DWORD default_effect_flags=0;
 
@@ -108,6 +109,7 @@ namespace simul
 		{
 			shader_path=tstring_of(path);
 			shader_path+=_T("/");
+			shader_pathA=simul::base::WStringToString(shader_path);
 			shader_path_set=true;
 		}
 		void SetTexturePath(const char *path)
@@ -350,7 +352,7 @@ void simul::dx11::Ensure3DTextureSizeAndFormat(
 
 void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,ID3D11ShaderResourceView * value)
 {
-	ID3D1xEffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
 	var->SetResource(value);
 }
 
@@ -587,6 +589,43 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *
 {
 	std::map<std::string,std::string> defines;
 	return CreateEffect(d3dDevice,effect,filename,defines);
+}
+
+ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *d3dDevice,const char *filename)
+{
+	std::string fn=(shader_pathA+"/")+filename;
+	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+#if defined( _DEBUG )
+	dwShaderFlags |= D3DCOMPILE_DEBUG;
+#endif
+
+	LPCSTR pProfile = ( m_pd3dDevice->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ) ? "cs_5_0" : "cs_4_0";
+
+	ID3DBlob* pErrorBlob = NULL;
+	ID3DBlob* pBlob = NULL;
+	HRESULT hr = D3DX11CompileFromFileA( fn.c_str(), NULL, NULL, "main", pProfile, dwShaderFlags, NULL, NULL, &pBlob, &pErrorBlob, NULL );
+	if ( FAILED(hr) )
+	{
+		if ( pErrorBlob )
+			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
+		if(pErrorBlob)
+			pErrorBlob->Release();
+		if(pBlob)
+			pBlob->Release();
+
+		return NULL;
+	}
+	else
+	{
+		ID3D11ComputeShader *computeShader;
+		hr = m_pd3dDevice->CreateComputeShader( pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL,&computeShader );
+		if(pErrorBlob)
+			pErrorBlob->Release();
+		if(pBlob)
+			pBlob->Release();
+
+		return computeShader;
+	}
 }
 
 HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,const std::map<std::string,std::string>&defines)

@@ -79,7 +79,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 		float dist=layer.layerDistance;
 		float z=dist/300000.0;
 		if(z<d)
-		if(i==12)
+		//if(i==12)
 		{
 			float3 pos=viewPos+dist*view;
 			pos.z-=layer.verticalShift;
@@ -98,8 +98,8 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 					float2 fade_texc=float2(sqrt(z),0.5*(1.0-sine));
 					c.rgb=applyFades(c.rgb,fade_texc,cos0,earthshadowMultiplier);
 					colour*=(1.0-c.a);
-					//colour.rgb+=c.rgb*c.a;
-					colour.rgb+=frac(noise_texc.xyy)*c.a;
+					colour.rgb+=c.rgb*c.a;
+					//colour.rgb+=frac(noise_texc.xyy)*c.a;
 				}
 			}
 		}
