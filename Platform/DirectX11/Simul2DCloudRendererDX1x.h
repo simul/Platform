@@ -36,6 +36,7 @@ public:
 	//
 	void *GetCloudShadowTexture(){return NULL;}
 protected:
+	void RenderDetailTexture(void *context);
 	virtual void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip){}
 	void EnsureCorrectTextureSizes();
 	virtual void EnsureTexturesAreUpToDate(void *context);
@@ -43,21 +44,23 @@ protected:
 	void EnsureCorrectIlluminationTextureSizes(){}
 	void EnsureIlluminationTexturesAreUpToDate(){}
 	virtual bool CreateNoiseTexture(void *context){return true;}
-	D3DXMATRIX				view,proj;
-	ID3D11Device*			m_pd3dDevice;
-	ID3DX11Effect*			effect;
-	ID3DX11EffectTechnique*	tech;
-	ID3D11Buffer*			vertexBuffer;
-	ID3D11Buffer*			indexBuffer;
-	ID3D11InputLayout*		inputLayout;
+	D3DXMATRIX					view,proj;
+	ID3D11Device*				m_pd3dDevice;
+	ID3DX11Effect*				effect;
+	ID3DX11EffectTechnique*		tech;
+	ID3D11Buffer*				vertexBuffer;
+	ID3D11Buffer*				indexBuffer;
+	ID3D11InputLayout*			inputLayout;
 	
-	ID3D11Buffer*			constantBuffer;
+	ID3D11Buffer*				constantBuffer;
 	int num_indices;
 	
-	ID3D1xShaderResourceView*				skyLossTexture_SRV;
-	ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
-	ID3D1xShaderResourceView*				skylightTexture_SRV;
+	ID3D1xShaderResourceView*	skyLossTexture_SRV;
+	ID3D1xShaderResourceView*	skyInscatterTexture_SRV;
+	ID3D1xShaderResourceView*	skylightTexture_SRV;
 
 	simul::dx11::TextureStruct	coverage_tex[3];
-	FramebufferDX1x			detail_fb;
+	FramebufferDX1x				detail_fb;
+	FramebufferDX1x				noise_fb;
+	FramebufferDX1x				dens_fb;
 };

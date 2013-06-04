@@ -109,6 +109,70 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
     return float4(colour.rgb,1.0-colour.a);
 }
 
+float4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
+{
+	float2 texCoords=IN.texCoords.xy;
+	texCoords.y=1.0-texCoords.y;
+	float4 dlookup=sampleLod(depthTexture,clampSamplerState,texCoords.xy,0);
+	float4 pos=float4(-1.f,-1.f,1.f,1.f);
+	pos.x+=2.f*IN.texCoords.x;
+	pos.y+=2.f*IN.texCoords.y;
+	float3 view=normalize(mul(invViewProj,pos).xyz);
+	float3 viewPos=float3(wrld[3][0],wrld[3][1],wrld[3][2]);
+	float cos0=dot(lightDir.xyz,view.xyz);
+	float sine=view.z;
+	float3 n			=float3(pos.xy*tanHalfFov,1.0);
+	n					=normalize(n);
+	float2 noise_texc_0	=mul(noiseMatrix,n.xy);
+
+	float min_texc_z	=-fractalScale.z*1.5;
+	float max_texc_z	=1.0-min_texc_z;
+
+	float depth=dlookup.r;
+	float d=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	float4 colour=float4(0.0,0.0,0.0,1.0);
+	
+	for(int i=0;i<layerCount;i++)
+	//int i=40;
+	{
+		const LayerData layer=layers[i];
+		float dist=layer.layerDistance;
+		float z=dist/300000.0;
+		if(z<d)
+		//if(i==12)
+		{
+			float3 pos=viewPos+dist*view;
+			pos.z-=layer.verticalShift;
+			float3 texCoords=(pos-cornerPos)*inverseScales;
+			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
+			{
+				float3 noise_texc	=texCoords.xyz*noise3DTexcoordScale;
+				float3 noiseval		=float3(0.0,0.0,0.0);
+				float mul=0.5;
+				for(int j=0;j<noise3DOctaves;j++)
+				{
+					noiseval		+=(noiseTexture3D.SampleLevel(noiseSamplerState,noise_texc,0).xyz)*mul;
+					noise_texc*=2.0;
+					mul*=noise3DPersistence;
+				}
+				float4 density		=calcDensity(texCoords,1.0,noiseval);
+				if(density.z>0)
+				{
+					float4 c=calcColour(density,cos0,texCoords.z);
+					float2 fade_texc=float2(sqrt(z),0.5*(1.0-sine));
+					c.rgb=applyFades(c.rgb,fade_texc,cos0,earthshadowMultiplier);
+					colour*=(1.0-c.a);
+					colour.rgb+=c.rgb*c.a;
+					//colour.rgb+=frac(noise_texc.xyy)*c.a;
+				}
+			}
+		}
+	}
+	if(colour.a>=1.0)
+	   discard;
+    return float4(colour.rgb,1.0-colour.a);
+}
+
 struct vertexInput
 {
     float3 position			: POSITION;
@@ -399,6 +463,17 @@ technique11 simul_raytrace
         SetRasterizerState( RenderNoCull );
 		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Raytrace()));
+    }
+}
+
+technique11 simul_raytrace_3d_noise
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoise()));
     }
 }
 

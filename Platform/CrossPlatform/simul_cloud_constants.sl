@@ -32,21 +32,25 @@ uniform_buffer SingleLayerConstants R11
 uniform_buffer LayerConstants R8
 {
 	LayerData layers[MAX_INSTANCES];
+	uniform int layerCount;
+	uniform int A,B,C;
 };
 
-uniform_buffer CloudInvViewProj R10
+uniform_buffer CloudPerViewConstants R10
 {
 	uniform mat4 invViewProjtest;
+	uniform mat4 noiseMatrix;
+	uniform vec2 noise_offset;
+	uniform float eee,fff;
 };
 
 uniform_buffer CloudConstants R9
 {
-	uniform mat4 noiseMatrix;
 	uniform mat4 worldViewProj;
 	uniform mat4 invViewProj;
 	uniform mat4 wrld;
 	uniform vec3 inverseScales;
-	uniform int layerCount;
+	uniform int abcde;
 	uniform vec3 ambientColour;
 	uniform float cloud_interp;
 	uniform vec3 fractalScale;
@@ -81,7 +85,5 @@ uniform_buffer CloudConstants R9
 	uniform float nearZ;
 	uniform float farZ;
 	uniform float ccc,ddd;
-	uniform vec2 noise_offset;
-	uniform float eee,fff;
 };
 #endif

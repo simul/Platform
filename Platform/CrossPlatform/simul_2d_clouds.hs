@@ -20,5 +20,14 @@ uniform_buffer Cloud2DConstants R11
 	uniform float planetRadius,b,c;
 };
 
+uniform_buffer Detail2DConstants R12
+{
+	uniform float persistence;
+	uniform float aa;
+	uniform float bb;
+	uniform float cc;
+	uniform vec3 lightDir2d;
+	uniform float dd;
+};
 
 #endif

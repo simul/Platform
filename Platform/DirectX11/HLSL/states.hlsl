@@ -8,6 +8,17 @@ DepthStencilState DisableDepth
 	DepthWriteMask = ZERO;
 }; 
 
+DepthStencilState TestDepth
+{
+	DepthEnable = TRUE;
+	DepthWriteMask = ZERO;
+#ifdef REVERSE_DEPTH
+	DepthFunc = GREATER_EQUAL;
+#else
+	DepthFunc = LESS_EQUAL;
+#endif
+};
+
 DepthStencilState EnableDepth
 {
 	DepthEnable = TRUE;

@@ -37,13 +37,6 @@ SamplerState flareSamplerState
 
 Texture3D fadeTexture1;
 Texture3D fadeTexture2;
-SamplerState fadeSamplerState
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Clamp;
-	AddressV = Mirror;
-	AddressW = Clamp;
-};
 
 TextureCube cubeTexture;
 
