@@ -158,6 +158,57 @@ void ComputableTexture::init(ID3D11Device *pd3dDevice,int w,int h)
     pd3dDevice->CreateShaderResourceView(g_pTex_Output, &srv_desc, &g_pSRV_Output);
 }
 
+ComputableTexture3D::ComputableTexture3D()
+	:texture(NULL)
+	,uav(NULL)
+	,srv(NULL)
+{
+}
+
+ComputableTexture3D::~ComputableTexture3D()
+{
+}
+
+void ComputableTexture3D::release()
+{
+	SAFE_RELEASE(texture);
+	SAFE_RELEASE(uav);
+	SAFE_RELEASE(srv);
+}
+
+void ComputableTexture3D::init(ID3D11Device *pd3dDevice,int w,int h,int d)
+{
+	release();
+    D3D11_TEXTURE3D_DESC tex_desc;
+	ZeroMemory(&tex_desc, sizeof(D3D11_TEXTURE3D_DESC));
+    tex_desc.BindFlags			= D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+    tex_desc.Usage				= D3D11_USAGE_DEFAULT;
+    tex_desc.Width				= w;
+    tex_desc.Height				= h;
+	tex_desc.Depth				= d;
+    tex_desc.MipLevels			= 1;
+	tex_desc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;
+    HRESULT hr;
+	hr=pd3dDevice->CreateTexture3D(&tex_desc, NULL, &texture);
+
+	D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+	ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+	uav_desc.Format				= tex_desc.Format;
+	uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE3D;
+	uav_desc.Texture3D.MipSlice	= 0;
+	uav_desc.Texture3D.WSize	= d;
+	uav_desc.Texture3D.FirstWSlice=0;
+	hr=pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &uav);
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+	ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+    srv_desc.Format						= tex_desc.Format;
+    srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
+    srv_desc.Texture3D.MipLevels		= 1;
+    srv_desc.Texture3D.MostDetailedMip	= 0;
+    hr=pd3dDevice->CreateShaderResourceView(texture, &srv_desc, &srv);
+}
+
 
 Mesh::Mesh()
 	:vertexBuffer(NULL)

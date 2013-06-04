@@ -77,6 +77,7 @@ namespace simul
 }
 
 typedef long HRESULT;
+extern SIMUL_DIRECTX11_EXPORT ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *d3dDevice,const char *filename);
 extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename);
 extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,const std::map<std::string,std::string>&defines);
 

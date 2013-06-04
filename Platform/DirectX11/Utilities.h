@@ -36,6 +36,18 @@ namespace simul
 			void release();
 			void init(ID3D11Device *pd3dDevice,int w,int h);
 		};
+		struct ComputableTexture3D
+		{
+			ComputableTexture3D();
+			~ComputableTexture3D();
+
+			ID3D11Texture3D*            texture;
+			ID3D11UnorderedAccessView*  uav;
+			ID3D11ShaderResourceView*   srv;
+
+			void release();
+			void init(ID3D11Device *pd3dDevice,int w,int l,int d);
+		};
 		struct Mesh
 		{
 			Mesh();

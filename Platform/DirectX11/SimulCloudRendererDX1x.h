@@ -166,7 +166,10 @@ protected:
 
 	ID3D1xTexture3D*						cloud_textures[3];
 
-	simul::dx11::Framebuffer3D				cloud_fb;
+	simul::dx11::ComputableTexture3D						cloud_texture;
+	
+	ID3D1xBuffer*							computeConstantBuffer;
+	ID3D11ComputeShader*					m_pComputeShader;
 
 	ID3D1xTexture3D*						illumination_texture;
 	
