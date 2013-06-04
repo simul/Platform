@@ -39,14 +39,10 @@ uniform_buffer CloudPerViewConstants R10
 	uniform mat4 invViewProj;
 	uniform mat4 noiseMatrix;
 	uniform vec2 noise_offset;
-	uniform float eee,fff;
 	uniform float nearZ;
 	uniform float farZ;
-	uniform float ccc,ddd;
 	uniform vec2 tanHalfFov;
-	uniform float aaa,bbb;
 	uniform float exposure;
-	uniform float ggg,hhh,iii;
 };
 
 uniform_buffer CloudConstants R9
