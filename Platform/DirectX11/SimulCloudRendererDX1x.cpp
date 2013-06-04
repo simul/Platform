@@ -621,6 +621,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	else
 		m_hTechniqueCloud			=m_pCloudEffect->GetTechniqueByName("simul_clouds");
 	m_hTechniqueRaytrace			=m_pCloudEffect->GetTechniqueByName("simul_raytrace");
+	m_hTechniqueRaytrace3DNoise		=m_pCloudEffect->GetTechniqueByName("simul_raytrace_3d_noise");
 	m_hTechniqueCloudsAndLightning	=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
 
 	m_hTechniqueCrossSectionXY		=m_pCloudEffect->GetTechniqueByName("cross_section_xy");
@@ -901,8 +902,15 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,const void *depth
 		ID3DX11EffectConstantBuffer* cbLayerConstants=m_pCloudEffect->GetConstantBufferByName("LayerConstants");
 		if(cbLayerConstants)
 			cbLayerConstants->SetConstantBuffer(layerConstantsBuffer);
-		ApplyPass(m_pImmediateContext,m_hTechniqueRaytrace->GetPassByIndex(0));
-		UtilityRenderer::DrawQuad(m_pImmediateContext,-1.f,-1.f,2.f,2.f,m_hTechniqueRaytrace);
+		if(cloudKeyframer->GetUse3DNoise())
+		{	
+			ApplyPass(m_pImmediateContext,m_hTechniqueRaytrace3DNoise->GetPassByIndex(0));
+			UtilityRenderer::DrawQuad(m_pImmediateContext,-1.f,-1.f,2.f,2.f,m_hTechniqueRaytrace3DNoise);
+		}
+		else
+		{	ApplyPass(m_pImmediateContext,m_hTechniqueRaytrace->GetPassByIndex(0));
+			UtilityRenderer::DrawQuad(m_pImmediateContext,-1.f,-1.f,2.f,2.f,m_hTechniqueRaytrace);
+		}
 	}
 	else
 	{

@@ -6,6 +6,7 @@ uniform sampler2D coverageTexture2;
 uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D skylTexture;
+uniform sampler2D depthTexture;
 SamplerState samplerState 
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -42,7 +43,7 @@ v2f MainVS(a2v IN)
 	float Rh=planetRadius+origin.z;
 	float dist=length(pos.xy);
 	float vertical_shift=sqrt(Rh*Rh-dist*dist)-Rh;
-	pos.z+=vertical_shift;
+	//pos.z+=vertical_shift;
 	pos.xy			+=eyePosition.xy;
 	OUT.hPosition	=mul(worldViewProj,vec4(pos.xyz,1.0));
     OUT.wPosition	=pos.xyz;
@@ -53,7 +54,8 @@ v2f MainVS(a2v IN)
 
 float4 MainPS(v2f IN) : SV_TARGET
 {
-	return Clouds2DPS(IN.texc_global,IN.texc_detail,IN.wPosition);
+	float4 result=Clouds2DPS(IN.texc_global,IN.texc_detail,IN.wPosition);
+	return result;
 }
 
 technique11 simul_clouds_2d
@@ -94,6 +96,55 @@ float4 SimplePS(v2f2 IN) : SV_TARGET
 	return texture2D(imageTexture,IN.texc);
 }
 
+float rand(vec2 co)
+{
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+float4 RandomPS(v2f2 IN) : SV_TARGET
+{
+    vec4 c=vec4(rand(IN.texc),rand(1.7*IN.texc),rand(0.11*IN.texc),rand(513.1*IN.texc));
+    return c;
+}
+
+float4 DetailPS(v2f2 IN) : SV_TARGET
+{
+	vec4 result=vec4(0,0,0,0);
+	vec2 texcoords=IN.texc;
+	float mul=.5;
+    for(int i=0;i<24;i++)
+    {
+		vec4 c=texture(imageTexture,texcoords);
+		texcoords*=2.0;
+		texcoords+=mul*vec2(0.2,0.2)*c.xy;
+		result+=mul*c;
+		mul*=persistence;
+    }
+    result.rgb=vec3(1.0,1.0,1.0);//=saturate(result*1.5);
+	result.a=saturate(result.a-0.4)/0.4;
+    return result;
+}
+
+float4 DetailLightingPS(v2f2 IN) : SV_TARGET
+{
+	vec4 c=texture(imageTexture,IN.texc);
+	vec4 result=c;
+	vec2 texcoords=IN.texc;
+	float mul=0.5;
+	vec2 offset=lightDir2d.xy/512.0;
+	float dens_dist=0.0;
+    for(int i=0;i<16;i++)
+    {
+		texcoords+=offset;
+		vec4 v=texture(imageTexture,texcoords);
+		dens_dist+=v.a;
+		//if(v.a==0)
+			//dens_dist*=0.9;
+    }
+    float l=c.a*exp(-dens_dist/2.0);
+    return vec4(dens_dist/32.0,dens_dist/32.0,dens_dist/32.0,c.a);
+}
+
 technique11 simple
 {
     pass p0
@@ -106,5 +157,46 @@ technique11 simple
 		SetPixelShader(CompileShader(ps_4_0,SimplePS()));
     }
 }
+
+technique11 simul_random
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
+		SetPixelShader(CompileShader(ps_4_0,RandomPS()));
+    }
+}
+
+technique11 simul_2d_cloud_detail
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
+		SetPixelShader(CompileShader(ps_4_0,DetailPS()));
+    }
+}
+
+
+technique11 simul_2d_cloud_detail_lighting
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
+		SetPixelShader(CompileShader(ps_4_0,DetailLightingPS()));
+    }
+}
+
 
 

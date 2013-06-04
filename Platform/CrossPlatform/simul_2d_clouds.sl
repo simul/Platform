@@ -11,8 +11,8 @@ vec4 Clouds2DPS(vec2 texc_global,vec2 texc_detail,vec3 wPosition)
     vec4 detail			=texture2D(imageTexture,texc_detail);
     vec4 coverage		=mix(texture2D(coverageTexture1,texc_global),texture2D(coverageTexture2,texc_global),cloudInterp);
 	float opacity		=clamp(detail.a*Y(coverage),0.0,1.0);
-	if(opacity<=0)
-		discard;
+	//if(opacity<=0)
+	//	discard;
 	float hg				=HenyeyGreenstein(cloudEccentricity,cos0);
 	vec3 light				=EarthShadowLight(fade_texc,view);
 	float scattered_light	=detail.a*exp(-detail.r*coverage.y*32.0);

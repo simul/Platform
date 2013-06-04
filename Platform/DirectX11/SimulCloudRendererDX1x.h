@@ -136,6 +136,7 @@ protected:
 	ID3D1xEffect*					m_pCloudEffect;
 	ID3D1xEffectTechnique*			m_hTechniqueCloud;
 	ID3D1xEffectTechnique*			m_hTechniqueRaytrace;
+	ID3D1xEffectTechnique*			m_hTechniqueRaytrace3DNoise;
 	ID3D1xEffectTechnique*			m_hTechniqueCloudsAndLightning;
 
 	ID3D1xEffectTechnique*			m_hTechniqueCrossSectionXZ;
