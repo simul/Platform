@@ -35,7 +35,8 @@ uniform_buffer LayerConstants R8
 
 uniform_buffer CloudPerViewConstants R13
 {
-	uniform mat4 wrld;
+	uniform vec3 viewPos;
+	uniform float uuuu;
 	uniform mat4 invViewProj;
 	uniform mat4 noiseMatrix;
 	uniform vec2 noise_offset;
