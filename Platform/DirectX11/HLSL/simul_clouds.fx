@@ -59,7 +59,6 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	pos.x+=2.f*IN.texCoords.x;
 	pos.y+=2.f*IN.texCoords.y;
 	float3 view=normalize(mul(invViewProj,pos).xyz);
-	float3 viewPos=float3(wrld[3][0],wrld[3][1],wrld[3][2]);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float sine=view.z;
 	float3 n			=float3(pos.xy*tanHalfFov,1.0);
@@ -121,7 +120,6 @@ float4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 	pos.x+=2.f*IN.texCoords.x;
 	pos.y+=2.f*IN.texCoords.y;
 	float3 view=normalize(mul(invViewProj,pos).xyz);
-	float3 viewPos=float3(wrld[3][0],wrld[3][1],wrld[3][2]);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float sine=view.z;
 	float3 n			=float3(pos.xy*tanHalfFov,1.0);
@@ -236,7 +234,7 @@ toPS VS_Main(vertexInput IN)
 	OUT.noise_texc			*=IN.noiseScale;
 	OUT.noise_texc			+=IN.noiseOffset;
 	
-	float3 wPos				=mul(float4(t1,1.0f),wrld).xyz;
+	float3 wPos				=t1+viewPos;
 	OUT.texCoords.xyz		=wPos-cornerPos;
 	OUT.texCoords.xyz		*=inverseScales;
 	OUT.texCoords.w			=0.5f+0.5f*saturate(OUT.texCoords.z);
@@ -259,7 +257,7 @@ void GS_Main(line VStoGS input[2], inout TriangleStream<toPS> OutputStream)
 	if(input[0].texCoords.z<0.0&&input[1].texCoords.z<0.0&&input[2].texCoords.z<0.0)
 		return;*/
 	// work out the start and end angles.
-	float dh1=cornerPos.z-wrld._43;
+	float dh1=cornerPos.z-viewPos.z;
 	float dh2=dh1+1.0/inverseScales.z;
 	float a1=atan(dh1/input[0].layerDistance)*2.0/pi;
 	float a2=atan(dh2/input[0].layerDistance)*2.0/pi;
@@ -291,7 +289,7 @@ void GS_Main(line VStoGS input[2], inout TriangleStream<toPS> OutputStream)
 			OUT.noise_texc			+=IN.noiseOffset;
 			
 			OUT.view				=pos.xyz;
-			float3 wPos				=mul(float4(t1,1.0f),wrld).xyz;
+			float3 wPos				=viewPos+t1;
 			OUT.texCoords.xyz		=wPos-cornerPos;
 			OUT.texCoords.xyz		*=inverseScales;
 			OUT.texCoords.w			=0.5f+0.5f*saturate(OUT.texCoords.z);

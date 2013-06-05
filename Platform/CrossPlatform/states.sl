@@ -1,7 +1,7 @@
 #ifndef STATES_SL
 #define STATES_SL
 
-SamplerState clampSamplerState
+SamplerState clampSamplerState: register(s9)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
