@@ -466,9 +466,9 @@ ERROR_CHECK
 
 helper->Update2DNoiseCoords();
 	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
-	cloudConstants.noiseMatrix			=noise_orient.T4;//GetInverseMatrix();
-	cloudConstants.worldViewProj		=worldViewProj;
-	cloudConstants.worldViewProj.transpose();
+//cloudConstants.noiseMatrix			=noise_orient.T4;//GetInverseMatrix();
+//cloudConstants.worldViewProj		=worldViewProj;
+//cloudConstants.worldViewProj.transpose();
 	cloudConstants.fractalScale			=fractal_scales;
 	cloudConstants.lightResponse		=light_response;
 	cloudConstants.cloud_interp			=cloudKeyframer->GetInterpolation();
@@ -484,7 +484,7 @@ helper->Update2DNoiseCoords();
 
 	cloudConstants.cornerPos			=X1;
 	cloudConstants.inverseScales		=InverseDX;
-	cloudConstants.layerCount			=helper->GetSlices().size();
+//cloudConstants.layerCount			=helper->GetSlices().size();
 
 	glBindBuffer(GL_UNIFORM_BUFFER,cloudConstantsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(CloudConstants),&cloudConstants);
@@ -658,6 +658,7 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 	depthAlphaTexture			=glGetUniformLocation(program,"depthAlphaTexture");
 
 	cloudConstants				=glGetUniformBlockIndex(program,"CloudConstants");
+	cloudPerViewConstants		=glGetUniformBlockIndex(program,"CloudPerViewConstants");
 	//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
 ERROR_CHECK
 	// If that block IS in the shader program, then BIND it to the relevant UBO.

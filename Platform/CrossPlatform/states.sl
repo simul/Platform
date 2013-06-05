@@ -32,4 +32,12 @@ SamplerState samplerState3d
 	AddressW = Wrap;
 };
 
+SamplerState crossSectionSamplerState
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Clamp;
+};
+
 #endif
