@@ -42,7 +42,6 @@ float NoiseFunction(vec3 pos,int octaves,float persistence,float time)
 {
 	float dens=0.0;
 	float mult=0.5;
-	float this_grid_height=1.0;
 	float sum=0.0;
 	float t=time;
 	for(int i=0;i<5;i++)
@@ -55,7 +54,6 @@ float NoiseFunction(vec3 pos,int octaves,float persistence,float time)
 		sum+=mult;
 		mult*=persistence;
 		pos*=2.0;
-		this_grid_height*=2.0;
 		t*=2.0;
 	}
 	dens/=sum;
