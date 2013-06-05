@@ -39,7 +39,8 @@ SamplerState samplerStateNearest
 
 
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
-#include "simul_gpu_sky.hlsl"
+#include "CppHlsl.hlsl"
+#include "../../CrossPlatform/simul_gpu_sky.sl"
 
 struct vertexInput
 {

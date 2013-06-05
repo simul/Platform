@@ -100,6 +100,7 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,instanceBuffer(NULL)
 	,m_pLightningEffect(NULL)
 	,cloudConstantsBuffer(NULL)
+	,cloudPerViewConstantBuffer(NULL)
 	,layerConstantsBuffer(NULL)
 	,noise_texture(NULL)
 	,noise_texture_3D(NULL)
@@ -166,6 +167,7 @@ void SimulCloudRendererDX1x::RecompileShaders()
 		l_worldViewProj			=m_pLightningEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	}
 	MAKE_CONSTANT_BUFFER(cloudConstantsBuffer,CloudConstants);
+	MAKE_CONSTANT_BUFFER(cloudPerViewConstantBuffer,CloudPerViewConstants);
 	MAKE_CONSTANT_BUFFER(layerConstantsBuffer,LayerConstants);
 	
 	SAFE_RELEASE(blendAndWriteAlpha);
@@ -320,6 +322,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pComputeShader);
 	SAFE_RELEASE(computeConstantBuffer);
 	SAFE_RELEASE(cloudConstantsBuffer);
+	SAFE_RELEASE(cloudPerViewConstantBuffer);
 	SAFE_RELEASE(layerConstantsBuffer);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pLightningVtxDecl);
@@ -627,6 +630,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	m_hTechniqueCrossSectionXY		=m_pCloudEffect->GetTechniqueByName("cross_section_xy");
 	m_hTechniqueCrossSectionXZ		=m_pCloudEffect->GetTechniqueByName("cross_section_xz");
 
+	cloudDensity					=m_pCloudEffect->GetVariableByName("cloudDensity")->AsShaderResource();
 	cloudDensity1					=m_pCloudEffect->GetVariableByName("cloudDensity1")->AsShaderResource();
 	cloudDensity2					=m_pCloudEffect->GetVariableByName("cloudDensity2")->AsShaderResource();
 	noiseTexture					=m_pCloudEffect->GetVariableByName("noiseTexture")->AsShaderResource();
@@ -655,7 +659,7 @@ static float saturate(float c)
 	return std::max(std::min(1.f,c),0.f);
 }
 
-void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
+void SimulCloudRendererDX1x::SetCloudPerViewConstants(CloudPerViewConstants &cloudConstants)
 {
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 	memset(&cloudConstants,0,sizeof(cloudConstants));
@@ -665,8 +669,6 @@ void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 	// Mess with the proj matrix to extend the far clipping plane:
 	simul::dx11::FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f);
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
-	cloudConstants.worldViewProj=wvp;
-	cloudConstants.worldViewProj.transpose();
 
 	simul::math::Matrix4x4 vpt;
 	simul::math::Matrix4x4 viewproj;
@@ -686,6 +688,51 @@ void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 
 	cloudConstants.wrld=world;
 	cloudConstants.wrld.transpose();
+	static float direct_light_mult	=0.25f;
+	static float indirect_light_mult=0.03f;
+	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse(),
+										indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse(),0,0);
+	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
+	float top_alt_km=base_alt_km+GetCloudInterface()->GetCloudHeight()*0.001f;
+
+	static float uu=1.f;
+	float sc=uu/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
+	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
+	float noise_rotation=helper->GetNoiseRotation();
+	float f[]={cos(noise_rotation),-sin(noise_rotation),0,0,sin(noise_rotation),cos(noise_rotation),0,0,0,0,1.f,0};
+	cloudConstants.noiseMatrix			=f;
+
+	cloudConstants.tanHalfFov	=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	cloudConstants.nearZ		=frustum.nearZ/max_fade_distance_metres;
+	cloudConstants.farZ			=frustum.farZ/max_fade_distance_metres;
+	cloudConstants.noise_offset=helper->GetNoiseOffset();
+}
+
+void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
+{
+	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
+	memset(&cloudConstants,0,sizeof(cloudConstants));
+	D3DXMATRIX wvp,world;
+	D3DXMatrixIdentity(&world);
+	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
+	// Mess with the proj matrix to extend the far clipping plane:
+	simul::dx11::FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f);
+	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
+
+	simul::math::Matrix4x4 vpt;
+	simul::math::Matrix4x4 viewproj;
+	view(3,0)=view(3,1)=view(3,2)=0;
+	D3DXMATRIX p1=proj;
+	if(ReverseDepth)
+	{
+		p1=simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
+	}
+	simul::math::Matrix4x4 v((const float *)view),p((const float*)p1);
+	simul::math::Multiply4x4(viewproj,v,p);
+	viewproj.Transpose(vpt);
+	simul::math::Matrix4x4 ivp;
+	vpt.Inverse(ivp);
+
 	static float direct_light_mult	=0.25f;
 	static float indirect_light_mult=0.03f;
 	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse(),
@@ -732,7 +779,6 @@ void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 
 	cloudConstants.cornerPos			=X1;
 	cloudConstants.inverseScales		=InverseDX;
-	cloudConstants.layerCount			=helper->GetSlices().size();
 	static float uu=1.f;
 	float sc=uu/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
 	cloudConstants.noise3DTexcoordScale	=vec3(sc/InverseDX.x,sc/InverseDX.y,sc/InverseDX.z);
@@ -741,13 +787,7 @@ void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
 	float noise_rotation=helper->GetNoiseRotation();
 	float f[]={cos(noise_rotation),-sin(noise_rotation),0,0,sin(noise_rotation),cos(noise_rotation),0,0,0,0,1.f,0};
-	cloudConstants.noiseMatrix			=f;
-		//noise_orient.GetInverseMatrix();
 
-	cloudConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	cloudConstants.nearZ	=frustum.nearZ/max_fade_distance_metres;
-	cloudConstants.farZ		=frustum.farZ/max_fade_distance_metres;
-	cloudConstants.noise_offset=helper->GetNoiseOffset();
 	float time=skyInterface->GetTime();
 	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
@@ -784,6 +824,7 @@ void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 void SimulCloudRendererDX1x::RenderCombinedCloudTexture(void *context)
 {
 	ID3D11DeviceContext* m_pImmediateContext	=(ID3D11DeviceContext*)context;
+    ProfileBlock profileBlock(m_pImmediateContext,"RenderCombinedCloudTexture");
 
 	MixCloudsConstants mixCloudsConstants;
 	mixCloudsConstants.interpolation=cloudKeyframer->GetInterpolation();
@@ -795,19 +836,22 @@ void SimulCloudRendererDX1x::RenderCombinedCloudTexture(void *context)
     m_pImmediateContext->CSSetShaderResources( 0, 2, cloudDensityResource );
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1,&cloud_texture.uav,  NULL );
 
-	m_pImmediateContext->Dispatch(cloud_tex_width_x,cloud_tex_length_y,cloud_tex_depth_z);
+	//m_pImmediateContext->Dispatch(cloud_tex_width_x/16,cloud_tex_length_y/16,cloud_tex_depth_z/1);
 
     m_pImmediateContext->CSSetShader( NULL, NULL, 0 );
 	ID3D11UnorderedAccessView *u[]={NULL,NULL};
     m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, u, NULL );
 	ID3D11ShaderResourceView *n[]={NULL,NULL};
 	m_pImmediateContext->CSSetShaderResources( 0, 2, n);
+	gpu_combine_time*=0.99f;
+	gpu_combine_time+=0.01f*profileBlock.GetTime();
 }
 
 void SimulCloudRendererDX1x::Update(void *context)
 {
 	ID3D11DeviceContext* m_pImmediateContext	=(ID3D11DeviceContext*)context;
 	EnsureTexturesAreUpToDate(m_pImmediateContext);
+	
 	RenderCombinedCloudTexture(context);
 }
 static int test=29999;
@@ -826,6 +870,7 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,const void *depth
 
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
+	cloudDensity->SetResource(cloud_texture.srv);
 	cloudDensity1->SetResource(cloudDensityResource[0]);
 	cloudDensity2->SetResource(cloudDensityResource[1]);
 	noiseTexture->SetResource(noiseTextureResource);
@@ -853,12 +898,23 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,const void *depth
 	helper->SetNoFrustumLimit(true);//cubemap);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
+
 	CloudConstants cloudConstants;
+	CloudPerViewConstants cloudPerViewConstants;
 	SetCloudConstants(cloudConstants);
+	SetCloudPerViewConstants(cloudPerViewConstants);
+
+
 	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,cloudConstantsBuffer,CloudConstants,cloudConstants);
 	ID3DX11EffectConstantBuffer* cbCloudConstants=m_pCloudEffect->GetConstantBufferByName("CloudConstants");
 	if(cbCloudConstants)
 		cbCloudConstants->SetConstantBuffer(cloudConstantsBuffer);
+
+	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
+	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=m_pCloudEffect->GetConstantBufferByName("CloudPerViewConstants");
+	if(cbCloudPerViewConstants)
+		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
+
 	static int select_slice=-1;
 	int ii=0;
 	unsigned el,az;
@@ -880,9 +936,8 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,const void *depth
 		inst.noiseScale		=s->distance/wavelength;
 		inst.noiseOffset.x	=s->noise_tex_x/wavelength;
 		inst.noiseOffset.y	=s->noise_tex_y/wavelength;
-		inst.elevationRange.x	=2.f*(float)s->elev_start/(float)el-1.f;
-		inst.elevationRange.y	=2.f*(float)s->elev_end/(float)el-1.f;
 	}
+	layerConstants.layerCount			=helper->GetSlices().size();
 	int numInstances=(int)helper->GetSlices().size();
 	if(select_slice>=0)
 		numInstances=1;
@@ -1006,8 +1061,6 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 
 	CloudConstants cloudConstants;
 	memset(&cloudConstants,0,sizeof(cloudConstants));
-	cloudConstants.worldViewProj=ortho;
-	cloudConstants.worldViewProj.transpose();
 	ID3D1xEffectConstantBuffer* cbCloudConstants=m_pCloudEffect->GetConstantBufferByName("CloudConstants");
 	UtilityRenderer::SetScreenSize(width,height);
 	if(skyInterface)

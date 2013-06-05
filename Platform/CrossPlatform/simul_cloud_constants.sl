@@ -33,7 +33,7 @@ uniform_buffer LayerConstants R8
 	uniform int A,B,C;
 };
 
-uniform_buffer CloudPerViewConstants R10
+uniform_buffer CloudPerViewConstants R13
 {
 	uniform mat4 wrld;
 	uniform mat4 invViewProj;

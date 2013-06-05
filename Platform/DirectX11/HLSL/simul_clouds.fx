@@ -12,13 +12,6 @@
 	#define DETAIL_NOISE 1
 #endif
 
-SamplerState crossSectionSamplerState
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-	AddressW = Clamp;
-};
 
 SamplerState lightningSamplerState
 {
@@ -48,6 +41,14 @@ RaytraceVertexOutput VS_Raytrace(RaytraceVertexInput IN)
 	OUT.texCoords=IN.texCoords;
 	return OUT;
 }
+vec4 calcDensity1(vec3 texCoords,float layerFade,vec3 noiseval)
+{
+	vec3 pos=texCoords.xyz+fractalScale.xyz*noiseval;
+	vec4 density=sampleLod(cloudDensity,cloudSamplerState,pos,0);
+	density.z*=layerFade;
+	//density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
+	return density;
+}
 
 float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
@@ -71,13 +72,14 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	float depth=dlookup.r;
 	float d=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
 	float4 colour=float4(0.0,0.0,0.0,1.0);
-	
+	float Z=0.f;
+	float2 fade_texc=float2(0.0,0.5*(1.0-sine));
 	for(int i=0;i<layerCount;i++)
 	//int i=40;
 	{
 		const LayerData layer=layers[i];
 		float dist=layer.layerDistance;
-		float z=dist/300000.0;
+		float z=saturate(dist/300000.0);
 		if(z<d)
 		//if(i==12)
 		{
@@ -88,17 +90,16 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 			{
 				float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
 				float3 noiseval		=noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
-		#ifdef DETAIL_NOISE
-			//	noiseval			+=(noiseTexture.SampleLevel(noiseSamplerState,16.0*noise_texc.xy,0).xyz)/2.0;
-		#endif
 				float4 density		=calcDensity(texCoords,1.0,noiseval);
 				if(density.z>0)
 				{
 					float4 c=calcColour(density,cos0,texCoords.z);
-					float2 fade_texc=float2(sqrt(z),0.5*(1.0-sine));
+					fade_texc.x=sqrt(z);
 					c.rgb=applyFades(c.rgb,fade_texc,cos0,earthshadowMultiplier);
 					colour*=(1.0-c.a);
 					colour.rgb+=c.rgb*c.a;
+					Z*=(1.0-c.a);
+					Z+=z*c.a;
 					//colour.rgb+=frac(noise_texc.xyy)*c.a;
 				}
 			}
@@ -106,6 +107,8 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	}
 	if(colour.a>=1.0)
 	   discard;
+					fade_texc.x=sqrt(Z);
+	//colour.rgb=(1.0-colour.a)*applyFades(colour.rgb,fade_texc,cos0,earthshadowMultiplier);
     return float4(colour.rgb,1.0-colour.a);
 }
 
@@ -226,7 +229,8 @@ toPS VS_Main(vertexInput IN)
 	OUT.view				=normalize(pos.xyz);
 	float sine				=OUT.view.z;
 	float3 t1				=pos.xyz*IN.layerDistance;
-	OUT.hPosition			=mul(worldViewProj,float4(t1.xyz,1.0));
+	OUT.hPosition			=float4(t1.xyz,1.0);
+	//OUT.hPosition			=mul(worldViewProj,float4(t1.xyz,1.0));
 	float2 noise_pos		=mul(noiseMatrix,pos.xy);
 	OUT.noise_texc			=float2(atan2(noise_pos.x,1.0),atan2(noise_pos.y,1.0));
 	OUT.noise_texc			*=IN.noiseScale;
@@ -276,7 +280,8 @@ void GS_Main(line VStoGS input[2], inout TriangleStream<toPS> OutputStream)
 			float3 pos=cosine*IN.position;
 			pos.z=sine;
 			float3 t1=pos.xyz*IN.layerDistance;
-			float4 hpos=mul(worldViewProj,float4(t1.xyz,1.0));
+			float4 hpos=(float4(t1.xyz,1.0));
+			//float4 hpos=mul(worldViewProj,float4(t1.xyz,1.0));
 
 			toPS OUT;
 			OUT.hPosition			=hpos;
@@ -394,7 +399,7 @@ float4 PS_ShowNoise( vertexOutputCS IN):SV_TARGET
 #define CROSS_SECTION_STEPS 32
 float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
 {
-	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,0,crossSectionOffset.z+1.0-IN.texCoords.y);
+	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,0,crossSectionOffset.z+IN.texCoords.y);
 	int i=0;
 	float3 accum=float3(0.f,0.5f,1.f);
 	texc.y+=.5f/(float)CROSS_SECTION_STEPS;

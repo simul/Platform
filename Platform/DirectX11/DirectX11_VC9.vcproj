@@ -550,6 +550,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HLSL\MixClouds_c.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\HLSL\ocean_shading.hlsl"
 				>
 			</File>

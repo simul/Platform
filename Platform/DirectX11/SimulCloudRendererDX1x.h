@@ -98,6 +98,7 @@ public:
 protected:
 	void RenderCombinedCloudTexture(void *context);
 	void SetCloudConstants(CloudConstants &cloudConstants);
+	void SetCloudPerViewConstants(CloudPerViewConstants &cloudPerViewConstants);
 	void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip);
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
@@ -143,9 +144,11 @@ protected:
 	ID3D1xEffectTechnique*			m_hTechniqueCrossSectionXY;
 
 	ID3D11Buffer*					cloudConstantsBuffer;
+	ID3D11Buffer*					cloudPerViewConstantBuffer;
 	ID3D11Buffer*					layerConstantsBuffer;
 	ID3D1xEffectMatrixVariable* 	l_worldViewProj;
 	
+	ID3D1xEffectShaderResourceVariable*		cloudDensity;
 	ID3D1xEffectShaderResourceVariable*		cloudDensity1;
 	ID3D1xEffectShaderResourceVariable*		cloudDensity2;
 	ID3D1xEffectShaderResourceVariable*		noiseTexture;
