@@ -1,3 +1,5 @@
+#ifndef GPU_SKY_CONSTANTS_SL
+#define GPU_SKY_CONSTANTS_SL
 #ifdef __cplusplus
 #define R8
 #define cbuffer struct
@@ -159,4 +161,6 @@ float getOvercastAtAltitudeRange(float alt1_km,float alt2_km)
 	oc						*=overcast;
 	return 1.0*oc;*/
 }
+#endif
+
 #endif

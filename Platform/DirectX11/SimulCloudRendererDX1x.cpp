@@ -439,7 +439,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 		return;
 	if(FAILED(hr=m_pImmediateContext->Map(noise_texture,0,D3D1x_MAP_WRITE_DISCARD,0,&mapped)))
 		return;
-	n_fb.CopyToMemory(mapped.pData);
+	n_fb.CopyToMemory(m_pImmediateContext,mapped.pData);
 	m_pImmediateContext->Unmap(noise_texture,0);
 	V_CHECK(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
 	SAFE_RELEASE(effect);
@@ -476,7 +476,7 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 	random_fb.Deactivate(context);
 
 	char *data=new char[4*noise_texture_frequency*noise_texture_frequency*noise_texture_frequency];
-	random_fb.CopyToMemory(data);
+	random_fb.CopyToMemory(m_pImmediateContext,data);
 	noise_texture_3D=make3DTexture(m_pd3dDevice,noise_texture_frequency,noise_texture_frequency,noise_texture_frequency,DXGI_FORMAT_R8G8B8A8_SNORM,(const float*)data);
 
 	m_pd3dDevice->CreateShaderResourceView(noise_texture_3D,NULL,&noiseTexture3DResource);

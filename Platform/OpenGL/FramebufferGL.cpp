@@ -270,6 +270,9 @@ ERROR_CHECK
 	Release();
 }
 
+void FramebufferGL::CopyToMemory(void *context,void *target,int start_texel,int num_texels)
+{
+}
 
 void FramebufferGL::Clear(void*,float r,float g,float b,float a,float depth,int mask)
 {

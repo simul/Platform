@@ -73,6 +73,7 @@ public:
 	{
 		return m_fb;
 	}
+	void CopyToMemory(void *context,void *target,int start_texel,int num_texels);
 private:
 	static std::stack<GLuint> fb_stack;
 	void CheckFramebufferStatus();

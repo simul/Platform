@@ -47,8 +47,7 @@ public:
 	{
 		return (buffer_texture_SRV != NULL);
 	}
-	void CopyToMemory(void *target);
-	void CopyToMemory(void *target,int start_texel,int texels);
+	void CopyToMemory(void *context,void *target,int start_texel=0,int texels=0);
 protected:
 	DXGI_FORMAT target_format;
 	bool Destroy();

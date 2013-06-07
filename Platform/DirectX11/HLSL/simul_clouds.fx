@@ -4,6 +4,7 @@
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 #include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/simul_clouds.sl"
+#include "../../CrossPlatform/states.sl"
 #define Z_VERTICAL 1
 #ifndef WRAP_CLOUDS
 	#define WRAP_CLOUDS 1
@@ -385,12 +386,12 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
 
 float4 PS_Simple( vertexOutputCS IN):SV_TARGET
 {
-    return noiseTexture.Sample(crossSectionSamplerState,IN.texCoords.xy);
+    return noiseTexture.Sample(samplerStateWrap,IN.texCoords.xy);
 }
 
 float4 PS_ShowNoise( vertexOutputCS IN):SV_TARGET
 {
-    float4 lookup=noiseTexture.Sample(crossSectionSamplerState,IN.texCoords.xy);
+    float4 lookup=noiseTexture.Sample(samplerStateWrap,IN.texCoords.xy);
 	return float4(0.5*(lookup.rgb+1.0),1.0);
 }
 
@@ -403,7 +404,7 @@ float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
 	texc.y+=.5f/(float)CROSS_SECTION_STEPS;
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		float4 density=cloudDensity1.Sample(crossSectionSamplerState,texc);
+		float4 density=cloudDensity1.Sample(wwcSamplerState,texc);
 		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.z;
@@ -423,7 +424,7 @@ float4 PS_CrossSectionXY( vertexOutputCS IN): SV_TARGET
 	texc.z+=.5f/(float)CROSS_SECTION_STEPS;
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		float4 density=cloudDensity1.Sample(crossSectionSamplerState,texc);
+		float4 density=cloudDensity1.Sample(wwcSamplerState,texc);
 		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.z;//+.05f;
