@@ -3,6 +3,7 @@
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 
 uniform vec3 eyePosition;
+uniform mat4 worldViewProj;
 in vec4 vertex;
 in vec3 multiTexCoord0;
 in float multiTexCoord1;

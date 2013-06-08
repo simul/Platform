@@ -24,7 +24,9 @@
 #ifndef __cplusplus
 	#include "saturate.glsl"
 	#define lerp mix
-	#define atan2 atan
+	#define atan2 atan 
+	#define texture_clamp(tex,texc) texture(tex,texc)
+	#define texture_wrap(tex,texc) texture(tex,texc)
 	#define texture_clamp_mirror(tex,texc) texture(tex,texc)
 	#define sampleLod(tex,sampler,texc,lod) textureLod(tex,texc,lod)
 	#define texture3D texture
