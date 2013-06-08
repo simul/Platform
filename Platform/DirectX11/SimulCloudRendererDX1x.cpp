@@ -439,7 +439,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 		return;
 	if(FAILED(hr=m_pImmediateContext->Map(noise_texture,0,D3D1x_MAP_WRITE_DISCARD,0,&mapped)))
 		return;
-	n_fb.CopyToMemory(mapped.pData);
+	n_fb.CopyToMemory(m_pImmediateContext,mapped.pData);
 	m_pImmediateContext->Unmap(noise_texture,0);
 	V_CHECK(m_pd3dDevice->CreateShaderResourceView(noise_texture,NULL,&noiseTextureResource));
 	SAFE_RELEASE(effect);
@@ -476,7 +476,7 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 	random_fb.Deactivate(context);
 
 	char *data=new char[4*noise_texture_frequency*noise_texture_frequency*noise_texture_frequency];
-	random_fb.CopyToMemory(data);
+	random_fb.CopyToMemory(m_pImmediateContext,data);
 	noise_texture_3D=make3DTexture(m_pd3dDevice,noise_texture_frequency,noise_texture_frequency,noise_texture_frequency,DXGI_FORMAT_R8G8B8A8_SNORM,(const float*)data);
 
 	m_pd3dDevice->CreateShaderResourceView(noise_texture_3D,NULL,&noiseTexture3DResource);
@@ -686,8 +686,7 @@ void SimulCloudRendererDX1x::SetCloudPerViewConstants(CloudPerViewConstants &clo
 	cloudConstants.invViewProj=ivp;
 	cloudConstants.invViewProj.transpose();
 
-	cloudConstants.wrld=world;
-	cloudConstants.wrld.transpose();
+	cloudConstants.viewPos=cam_pos;
 	static float direct_light_mult	=0.25f;
 	static float indirect_light_mult=0.03f;
 	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse(),
@@ -1047,11 +1046,12 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
-	D3DXVECTOR4 cross_section_offset(
+/*	D3DXVECTOR4 cross_section_offset(
 			(GetCloudInterface()->GetWrap()?0.5f:0.f)+0.5f/(float)cloud_tex_width_x
 			,GetCloudInterface()->GetWrap()?0.5f:0.f+0.5f/(float)cloud_tex_length_y
 			,0.5f/(float)cloud_tex_depth_z
-			,0);
+			,0);*/
+	D3DXVECTOR4 cross_section_offset(0,0,0,0);
 	D3DXMATRIX ortho;
     D3DXMatrixOrthoLH(&ortho,(float)width,(float)height,-100.f,100.f);
 	ortho._14=-1.f;

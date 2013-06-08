@@ -1,3 +1,5 @@
+#ifndef GPU_SKY_CONSTANTS_SL
+#define GPU_SKY_CONSTANTS_SL
 #ifdef __cplusplus
 #define R8
 #define cbuffer struct
@@ -144,7 +146,7 @@ float getOvercastAtAltitudeRange(float alt1_km,float alt2_km)
 {
 	// So now alt1 is Definitely lower than alt2.
 	float alt1				=min(alt1_km,alt2_km);
-	float alt2				=max(alt1_km,alt2_km);
+	//float alt2				=max(alt1_km,alt2_km);
 	//if(alt1==alt2)
 		return getOvercastAtAltitude(alt1);
 	/*float diff_km			=alt2-alt1;
@@ -159,4 +161,6 @@ float getOvercastAtAltitudeRange(float alt1_km,float alt2_km)
 	oc						*=overcast;
 	return 1.0*oc;*/
 }
+#endif
+
 #endif

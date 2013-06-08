@@ -227,8 +227,8 @@ float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 vertexOutput3Dto2D VS_ShowSkyTexture(vertexInput3Dto2D IN) 
 {
     vertexOutput3Dto2D OUT;
-    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
-    OUT.texCoords=IN.texCoords;
+    OUT.hPosition	=float4(IN.position.xy,1.0,1.0);
+	OUT.texCoords.xy=IN.texCoords;
     return OUT;
 }
 

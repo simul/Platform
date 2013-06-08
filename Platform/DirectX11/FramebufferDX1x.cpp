@@ -312,14 +312,11 @@ ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *m_pd3dDevice
 	return tex;
 }
 
-void FramebufferDX1x::CopyToMemory(void *target)
-{
-	CopyToMemory(target,0,Width*Height);
-}
-
-void FramebufferDX1x::CopyToMemory(void *target,int start_texel,int texels)
+void FramebufferDX1x::CopyToMemory(void *context,void *target,int start_texel,int texels)
 {
 	ID3D11DeviceContext *m_pImmediateContext=NULL;
+	if(texels==0)
+		texels=Width*Height;
 m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 
 	if(!stagingTexture)

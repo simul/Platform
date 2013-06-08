@@ -1,3 +1,6 @@
+#ifndef SIMUL_GPU_CLOUDS_SL
+#define SIMUL_GPU_CLOUDS_SL
+
 uniform_buffer GpuCloudConstants R8
 {
 	uniform mat4 transformMatrix;
@@ -15,6 +18,7 @@ uniform_buffer GpuCloudConstants R8
 	uniform float transition;
 	uniform float upperDensity;
 	uniform float diffusivity;
+	uniform float invFractalSum;
 };
 
 #ifndef __cplusplus
@@ -48,7 +52,7 @@ float NoiseFunction(vec3 pos,int octaves,float persistence,float time)
 	{
 		if(i>=octaves)
 			break;
-		float lookup=texture3D(volumeNoiseTexture,pos).x;
+		float lookup=texture_wrap(volumeNoiseTexture,pos).x;
 		float val=lookup;
 		dens+=mult*val;
 		sum+=mult;
@@ -59,4 +63,5 @@ float NoiseFunction(vec3 pos,int octaves,float persistence,float time)
 	dens/=sum;
 	return dens;
 }
+#endif
 #endif

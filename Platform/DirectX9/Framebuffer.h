@@ -29,6 +29,7 @@ public:
 	{
 		return (void*)buffer_texture;
 	}
+	void CopyToMemory(void*,void*,int,int){}
 protected:
 	LPDIRECT3DDEVICE9	m_pd3dDevice;
 	LPDIRECT3DSURFACE9	m_pBufferDepthSurface;

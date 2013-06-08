@@ -7,8 +7,8 @@
 #define sampleLod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
 #define texture(tex,texc) tex.Sample(samplerState,texc)
 #define texture2D(tex,texc) tex.Sample(samplerState,texc)
-#define texture3D(tex,texc) tex.Sample(samplerState3d,texc)
-#define texture3D2(tex,texc) tex.Sample(samplerState3d2,texc)
+#define texture_wrap(tex,texc) tex.Sample(samplerStateWrap,texc)
+#define texture_wwc(tex,texc) tex.Sample(wwcSamplerState,texc)
 #define texture3Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
 #define texture2Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
 #endif

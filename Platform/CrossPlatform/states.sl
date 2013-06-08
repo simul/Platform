@@ -1,13 +1,6 @@
 #ifndef STATES_SL
 #define STATES_SL
 
-SamplerState clampSamplerState
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Clamp;
-	AddressV = Clamp;
-};
-
 SamplerState noiseSamplerState : register( s2)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -24,7 +17,7 @@ SamplerState fadeSamplerState:register(s5)
 	AddressW = Clamp;
 };
 
-SamplerState samplerState3d
+SamplerState samplerStateWrap:register(s6)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
@@ -32,12 +25,19 @@ SamplerState samplerState3d
 	AddressW = Wrap;
 };
 
-SamplerState crossSectionSamplerState
+SamplerState wwcSamplerState:register(s7)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Wrap;
 	AddressW = Clamp;
+};
+
+SamplerState clampSamplerState: register(s9)
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Clamp;
+	AddressV = Clamp;
 };
 
 #endif

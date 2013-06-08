@@ -4,6 +4,7 @@
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 #include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/simul_clouds.sl"
+#include "../../CrossPlatform/states.sl"
 #define Z_VERTICAL 1
 #ifndef WRAP_CLOUDS
 	#define WRAP_CLOUDS 1
@@ -59,7 +60,6 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	pos.x+=2.f*IN.texCoords.x;
 	pos.y+=2.f*IN.texCoords.y;
 	float3 view=normalize(mul(invViewProj,pos).xyz);
-	float3 viewPos=float3(wrld[3][0],wrld[3][1],wrld[3][2]);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float sine=view.z;
 	float3 n			=float3(pos.xy*tanHalfFov,1.0);
@@ -121,7 +121,6 @@ float4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 	pos.x+=2.f*IN.texCoords.x;
 	pos.y+=2.f*IN.texCoords.y;
 	float3 view=normalize(mul(invViewProj,pos).xyz);
-	float3 viewPos=float3(wrld[3][0],wrld[3][1],wrld[3][2]);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	float sine=view.z;
 	float3 n			=float3(pos.xy*tanHalfFov,1.0);
@@ -236,7 +235,7 @@ toPS VS_Main(vertexInput IN)
 	OUT.noise_texc			*=IN.noiseScale;
 	OUT.noise_texc			+=IN.noiseOffset;
 	
-	float3 wPos				=mul(float4(t1,1.0f),wrld).xyz;
+	float3 wPos				=t1+viewPos;
 	OUT.texCoords.xyz		=wPos-cornerPos;
 	OUT.texCoords.xyz		*=inverseScales;
 	OUT.texCoords.w			=0.5f+0.5f*saturate(OUT.texCoords.z);
@@ -259,7 +258,7 @@ void GS_Main(line VStoGS input[2], inout TriangleStream<toPS> OutputStream)
 	if(input[0].texCoords.z<0.0&&input[1].texCoords.z<0.0&&input[2].texCoords.z<0.0)
 		return;*/
 	// work out the start and end angles.
-	float dh1=cornerPos.z-wrld._43;
+	float dh1=cornerPos.z-viewPos.z;
 	float dh2=dh1+1.0/inverseScales.z;
 	float a1=atan(dh1/input[0].layerDistance)*2.0/pi;
 	float a2=atan(dh2/input[0].layerDistance)*2.0/pi;
@@ -291,7 +290,7 @@ void GS_Main(line VStoGS input[2], inout TriangleStream<toPS> OutputStream)
 			OUT.noise_texc			+=IN.noiseOffset;
 			
 			OUT.view				=pos.xyz;
-			float3 wPos				=mul(float4(t1,1.0f),wrld).xyz;
+			float3 wPos				=viewPos+t1;
 			OUT.texCoords.xyz		=wPos-cornerPos;
 			OUT.texCoords.xyz		*=inverseScales;
 			OUT.texCoords.w			=0.5f+0.5f*saturate(OUT.texCoords.z);
@@ -387,12 +386,12 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
 
 float4 PS_Simple( vertexOutputCS IN):SV_TARGET
 {
-    return noiseTexture.Sample(crossSectionSamplerState,IN.texCoords.xy);
+    return noiseTexture.Sample(samplerStateWrap,IN.texCoords.xy);
 }
 
 float4 PS_ShowNoise( vertexOutputCS IN):SV_TARGET
 {
-    float4 lookup=noiseTexture.Sample(crossSectionSamplerState,IN.texCoords.xy);
+    float4 lookup=noiseTexture.Sample(samplerStateWrap,IN.texCoords.xy);
 	return float4(0.5*(lookup.rgb+1.0),1.0);
 }
 
@@ -405,7 +404,7 @@ float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
 	texc.y+=.5f/(float)CROSS_SECTION_STEPS;
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		float4 density=cloudDensity1.Sample(crossSectionSamplerState,texc);
+		float4 density=cloudDensity1.Sample(wwcSamplerState,texc);
 		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.z;
@@ -425,7 +424,7 @@ float4 PS_CrossSectionXY( vertexOutputCS IN): SV_TARGET
 	texc.z+=.5f/(float)CROSS_SECTION_STEPS;
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		float4 density=cloudDensity1.Sample(crossSectionSamplerState,texc);
+		float4 density=cloudDensity1.Sample(wwcSamplerState,texc);
 		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.z;//+.05f;

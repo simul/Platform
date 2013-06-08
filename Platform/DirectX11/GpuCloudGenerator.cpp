@@ -1,4 +1,3 @@
-
 #include "GpuCloudGenerator.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Math/Vector3.h"
@@ -8,21 +7,11 @@
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "HLSL/CppHLSL.hlsl"
+#include "Simul/Platform/CrossPlatform/simul_gpu_clouds.sl"
 #include <math.h>
+
 using namespace simul;
 using namespace dx11;
-uniform_buffer GpuCloudConstants R2
-{
-	uniform int octaves;
-	uniform float persistence;
-	uniform float humidity;
-	uniform float time;
-	uniform vec3 noiseScale;
-
-	uniform float zPosition;
-	uniform vec2 extinctions;
-	uniform mat4 vertexMatrix;
-};
 
 static simul::math::Matrix4x4 MakeVertexMatrix(const int *grid,int start_texel,int texels)
 {
@@ -188,7 +177,7 @@ std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 		Map3D(m_pImmediateContext,density_texture,&dens_texture_mapped);
 		simul::sky::float4 *tex_data=(simul::sky::float4 *)(dens_texture_mapped.pData);
 		float *density=new float[new_density_gridsize];
-		dens_fb.CopyToMemory(density);
+		dens_fb.CopyToMemory(m_pImmediateContext,density);
 		memcpy(tex_data,density,new_density_gridsize*sizeof(float));
 		Unmap3D(m_pImmediateContext,density_texture);
 		//density_texture	=make3DTexture(m_pd3dDevice,m_pImmediateContext,density_grid[0],density_grid[1],density_grid[2]	,DXGI_FORMAT_R32G32B32A32_FLOAT,density);
@@ -242,7 +231,7 @@ try{
 			input_light_texture->SetResource(F[1]->GetBufferResource());
 			F[0]->Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
 		F[0]->Deactivate(m_pImmediateContext);
-		F[0]->CopyToMemory(target);
+		F[0]->CopyToMemory(m_pImmediateContext,target);
 	}
 	int i0=start_texel/(light_grid[0]*light_grid[1]);
 	int i1=(start_texel+texels)/(light_grid[0]*light_grid[1]);
@@ -259,7 +248,7 @@ try{
 			F[1]->DrawQuad(m_pImmediateContext);
 		F[1]->Deactivate(m_pImmediateContext);
 		// Copy F[1] contents to the target
-		F[1]->CopyToMemory(target);
+		F[1]->CopyToMemory(m_pImmediateContext,target);
 		std::swap(F[0],F[1]);
 		target+=light_grid[0]*light_grid[1]*4;
 	}
@@ -313,7 +302,7 @@ try{
 		ApplyPass(m_pImmediateContext,transformTechnique->GetPassByIndex(0));
 		world_fb.DrawQuad(m_pImmediateContext);
 	world_fb.Deactivate(m_pImmediateContext);
-	world_fb.CopyToMemory(target,start_texel,texels);
+	world_fb.CopyToMemory(m_pImmediateContext,target,start_texel,texels);
 
 	SAFE_RELEASE(ambient_texture);
 	SAFE_RELEASE(ambient_texture1);
