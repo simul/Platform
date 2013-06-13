@@ -105,7 +105,6 @@ void SimulTerrainRendererDX1x::Render(void *context)
 	D3DXMATRIX wvp;
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);
-	simul::dx11::setParameter(m_pTerrainEffect,"maxFadeDistanceMetres",MaxFadeDistanceKm*1000.f);
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	simul::dx11::setParameter(m_pTerrainEffect,"eyePosition",cam_pos);
 	

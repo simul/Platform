@@ -59,7 +59,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 
 	ID3DX11EffectTechnique*			tech=m_pRainEffect->GetTechniqueByName("create_rain_texture");
 	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
-	FramebufferDX1x make_rain_fb(512,512);
+	simul::dx11::Framebuffer make_rain_fb(512,512);
 	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
 	make_rain_fb.Activate(m_pImmediateContext);
 	make_rain_fb.DrawQuad(m_pImmediateContext);

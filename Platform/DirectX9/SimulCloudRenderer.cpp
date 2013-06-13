@@ -996,8 +996,7 @@ void SimulCloudRenderer::InternalRenderRaytrace(int buffer_index)
 		hr=m_pCloudEffect->SetMatrix(invViewProj,&ivp);
 
 		// The NOISE matrix is for 2D noise texcoords:
-		const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
-		hr=m_pCloudEffect->SetMatrix(noiseMatrix,(const D3DXMATRIX*)noise_orient.GetInverseMatrix().RowPointer(0));
+		//hr=m_pCloudEffect->SetMatrix(noiseMatrix,(const D3DXMATRIX*)noise_orient.GetInverseMatrix().RowPointer(0));
 		hr=m_pCloudEffect->SetFloat(fractalRepeatLength,GetCloudInterface()->GetFractalRepeatLength());
 
 		hr=m_pCloudEffect->SetTexture(raytraceLayerTexture,raytrace_layer_texture);

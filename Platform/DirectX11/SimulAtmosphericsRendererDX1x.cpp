@@ -49,7 +49,6 @@ using namespace dx11;
 SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	m_pd3dDevice(NULL)
 	,vertexDecl(NULL)
-	,framebuffer(NULL)
 	,effect(NULL)
 	,lightDir(NULL)
 	,constantBuffer(NULL)
@@ -57,7 +56,6 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	,MieRayleighRatio(NULL)
 	,HazeEccentricity(NULL)
 	,fadeInterp(NULL)
-	,imageTexture(NULL)
 	,depthTexture(NULL)
 	,lossTexture(NULL)
 	,inscatterTexture(NULL)
@@ -67,23 +65,11 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	,skylightTexture_SRV(NULL)
 	,clouds_texture(NULL)
 {
-	framebuffer=new FramebufferDX1x(256,256);
 }
 
 SimulAtmosphericsRendererDX1x::~SimulAtmosphericsRendererDX1x()
 {
 	Destroy();
-	delete framebuffer;
-}
-
-void SimulAtmosphericsRendererDX1x::SetBufferSize(int w,int h)
-{
-	if(framebuffer)
-		framebuffer->SetWidthAndHeight(w,h);
-}
-
-void SimulAtmosphericsRendererDX1x::SetYVertical(bool y)
-{
 }
 
 void SimulAtmosphericsRendererDX1x::SetLossTexture(void* t)
@@ -113,13 +99,14 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	V_CHECK(CreateEffect(m_pd3dDevice,&effect,L"atmospherics.fx",defines));
-	technique			=effect->GetTechniqueByName("simul_atmospherics");
+	singlePassTechnique		=effect->GetTechniqueByName("simul_atmospherics");
+	twoPassOverlayTechnique	=effect->GetTechniqueByName("simul_atmospherics_overlay");
+	
 	invViewProj			=effect->GetVariableByName("invViewProj")->AsMatrix();
 	lightDir			=effect->GetVariableByName("lightDir")->AsVector();
 	MieRayleighRatio	=effect->GetVariableByName("MieRayleighRatio")->AsVector();
 	HazeEccentricity	=effect->GetVariableByName("HazeEccentricity")->AsScalar();
 	fadeInterp			=effect->GetVariableByName("fadeInterp")->AsScalar();
-	imageTexture		=effect->GetVariableByName("imageTexture")->AsShaderResource();
 	depthTexture		=effect->GetVariableByName("depthTexture")->AsShaderResource();
 	lossTexture			=effect->GetVariableByName("lossTexture")->AsShaderResource();
 	inscatterTexture	=effect->GetVariableByName("inscatterTexture")->AsShaderResource();
@@ -134,15 +121,11 @@ void SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(void* dev)
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D1xDevice*)dev;
 	RecompileShaders();
-	if(framebuffer)
-		framebuffer->RestoreDeviceObjects(dev);
 }
 
 void SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-	if(framebuffer)
-		framebuffer->InvalidateDeviceObjects();
 	SAFE_RELEASE(vertexDecl);
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(constantBuffer);
@@ -161,27 +144,7 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMA
 	proj=p;
 }
 
-void SimulAtmosphericsRendererDX1x::StartRender(void *context)
-{
-	if(!framebuffer)
-		return;
-	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
-	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
-	framebuffer->Activate(m_pImmediateContext);
-	// Clear the screen to black, with alpha=1, representing far depth
-	framebuffer->Clear(context,0.f,0.f,0.f,1.f,ReverseDepth?0.f:1.f);
-
-	PIXEndNamedEvent();
-}
 #include "Simul/Camera/Camera.h"
-void SimulAtmosphericsRendererDX1x::FinishRender(void *context)
-{
-	if(!framebuffer)
-		return;
-	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
-	framebuffer->Deactivate(m_pImmediateContext);
-	//RenderAsOverlay(context,NULL);
-}
 
 void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure_hint)
 {
@@ -190,7 +153,6 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
 	
 	HRESULT hr=S_OK;
-	hr=imageTexture->SetResource(framebuffer->buffer_texture_SRV);
 	lossTexture->SetResource(skyLossTexture_SRV);
 	inscatterTexture->SetResource(skyInscatterTexture_SRV);
 	skylightTexture->SetResource(skylightTexture_SRV);
@@ -242,10 +204,12 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 			cbAtmosphericsUniforms->SetConstantBuffer(constantBuffer);
 	}
 	
-	ApplyPass(m_pImmediateContext,technique->GetPassByIndex(0));
-	framebuffer->Render(context,false);
+	ApplyPass(m_pImmediateContext,twoPassOverlayTechnique->GetPassByIndex(0));
+	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
+	ApplyPass(m_pImmediateContext,twoPassOverlayTechnique->GetPassByIndex(1));
+	//framebuffer->Render(context,false);
+	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
 	//UtilityRenderer::DrawQuad(m_pImmediateContext,-1.f,-1.f,2.f,2.f,technique);
-	imageTexture->SetResource(NULL);
 	lossTexture->SetResource(NULL);
 	inscatterTexture->SetResource(NULL);
 	skylightTexture->SetResource(NULL);

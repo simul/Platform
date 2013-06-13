@@ -60,7 +60,7 @@ protected:
 	ID3D1xShaderResourceView*	skylightTexture_SRV;
 
 	simul::dx11::TextureStruct	coverage_tex[3];
-	FramebufferDX1x				detail_fb;
-	FramebufferDX1x				noise_fb;
-	FramebufferDX1x				dens_fb;
+	simul::dx11::Framebuffer	detail_fb;
+	simul::dx11::Framebuffer	noise_fb;
+	simul::dx11::Framebuffer	dens_fb;
 };

@@ -39,7 +39,7 @@ namespace simul
 				,float emissivity
 				,float seaLevelTemperatureK);
 		protected:
-			FramebufferDX1x	fb[2];
+			simul::dx11::Framebuffer	fb[2];
 			ID3D1xDevice*					m_pd3dDevice;
 			ID3D11DeviceContext*			m_pImmediateContext;
 			ID3D1xEffect*					effect;

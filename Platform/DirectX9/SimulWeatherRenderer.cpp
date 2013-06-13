@@ -57,8 +57,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	simul2DCloudRenderer(NULL),
 	simulPrecipitationRenderer(NULL),
 	exposure_multiplier(1.f),
-	show_rain(rain),
-	renderDepthBufferCallback(NULL)
+	show_rain(rain)
 {
 	//sky=rain=clouds2d=false;
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
@@ -246,12 +245,6 @@ void SimulWeatherRenderer::EnableRain(bool e)
 	show_rain=e;
 }
 
-void SimulWeatherRenderer::SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb)
-{
-	renderDepthBufferCallback=cb;
-	//AlwaysRenderCloudsLate=(cb!=NULL);
-}
-
 bool SimulWeatherRenderer::CreateBuffers()
 {
 	HRESULT hr=S_OK;
@@ -280,11 +273,6 @@ bool SimulWeatherRenderer::RenderSky(void *context,bool buffered,bool is_cubemap
 {
 	PIXBeginNamedEvent(0xFF888888,"SimulWeatherRenderer::Render");
 	BaseWeatherRenderer::RenderSky(context,buffered,is_cubemap);
-	if(baseCloudRenderer&&simulAtmosphericsRenderer)
-	{
-		//simulAtmosphericsRenderer->SetLightningProperties(baseCloudRenderer->GetIlluminationTexture(),
-		//						baseCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
-	}
 	if(buffered&&!is_cubemap)
 	{
 #ifdef XBOX
@@ -326,18 +314,15 @@ void SimulWeatherRenderer::RenderLateCloudLayer(void *context,bool buf)
 		static float depth_start=1.f;
 		hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 	}
-	//if(1)
-	{
-		//if(renderDepthBufferCallback)
-		//	renderDepthBufferCallback->Render();
-		if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		{	
-			PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
-			{
-				simulCloudRenderer->Render(context,false,depth_alpha_tex,false,true);
-			}
+	
+	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+	{	
+		PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
+		{
+			simulCloudRenderer->Render(context,false,0,false,true);
 		}
 	}
+	
 	static bool do_fx=true;
 	if(do_fx)
 	if(simulAtmosphericsRenderer&&simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
@@ -394,9 +379,9 @@ void SimulWeatherRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 }
 #endif
 
-void SimulWeatherRenderer::Update(void *context,float dt)
+void SimulWeatherRenderer::PreRenderUpdate(void *context,float dt)
 {
-	BaseWeatherRenderer::Update(context);
+	BaseWeatherRenderer::PreRenderUpdate(context);
 	//if(baseCloudRenderer&&baseAtmosphericsRenderer)
 	{
 		//void **c=baseCloudRenderer->GetCloudTextures();

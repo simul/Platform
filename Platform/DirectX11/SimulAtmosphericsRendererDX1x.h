@@ -40,7 +40,6 @@ public:
 	void SetBufferSize(int w,int h);
 
 	// BaseAtmosphericsRenderer.
-	void SetYVertical(bool y);
 	void SetLossTexture(void* t);
 	void SetInscatterTextures(void* t,void *s);
 	void SetCloudsTexture(void* t);
@@ -53,14 +52,7 @@ public:
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	void SetCloudShadowTexture(void *c){}
 	//! Render the Atmospherics.
-	void StartRender(void *context);
-	void FinishRender(void *context);
 	void RenderAsOverlay(void *context,const void *depthTexture,float exposure_hint);
-	void *GetDepthAlphaTexture()
-	{
-		return (void*)framebuffer->buffer_texture_SRV;
-	}
-	FramebufferDX1x								*framebuffer;
 protected:
 	HRESULT Destroy();
 	ID3D1xDevice*								m_pd3dDevice;
@@ -69,14 +61,14 @@ protected:
 
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	ID3D1xEffect*								effect;
-	ID3D1xEffectTechnique*						technique;
+	ID3D1xEffectTechnique*						singlePassTechnique;
+	ID3D1xEffectTechnique*						twoPassOverlayTechnique;
 	// Variables for this effect:
 	ID3D1xEffectMatrixVariable*					invViewProj;
 	ID3D1xEffectVectorVariable*					lightDir;
 	ID3D1xEffectVectorVariable*					MieRayleighRatio;
 	ID3D1xEffectScalarVariable*					HazeEccentricity;
 	ID3D1xEffectScalarVariable*					fadeInterp;
-	ID3D1xEffectShaderResourceVariable*			imageTexture;
 	ID3D1xEffectShaderResourceVariable*			depthTexture;
 	ID3D1xEffectShaderResourceVariable*			lossTexture;
 	ID3D1xEffectShaderResourceVariable*			inscatterTexture;

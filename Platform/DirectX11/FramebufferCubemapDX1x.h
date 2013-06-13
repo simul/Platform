@@ -21,6 +21,7 @@ public:
 	virtual ~FramebufferCubemapDX1x();
 	void SetWidthAndHeight(int w,int h);
 	void SetFormat(int i);
+	void SetDepthFormat(int){}
 	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 	void RestoreDeviceObjects(void* );
 	//! Call this when the device has been lost.

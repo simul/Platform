@@ -43,7 +43,7 @@ public:
 		META_ValueProperty(bool,ShowOSD,"Show diagnostice onscren.")
 		META_ValueProperty(bool,CelestialDisplay,"Show geographical and sidereal overlay.")
 		META_ValueProperty(bool,ShowWater,"Show water surfaces.")
-		META_ValueProperty(bool,ReverseDepth,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
+		META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane. We do not yet support ReverseDepth on OpenGL, because GL matrices do not take advantage of this.")
 		META_ValueProperty(bool,MixCloudsAndTerrain,"If true, clouds are drawn twice: once behind the terrain, and once in front.")
 	META_EndProperties
 	virtual void paintGL();
@@ -59,14 +59,17 @@ public:
 	simul::opengl::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
+	void ReverseDepthChanged();
 	simul::base::SmartPtr<SimulGLWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulGLHDRRenderer> simulHDRRenderer;
 	simul::base::SmartPtr<SimulOpticsRendererGL> simulOpticsRenderer;
 	simul::base::SmartPtr<class SimulGLTerrainRenderer> simulTerrainRenderer;
+	FramebufferGL depthFramebuffer;
 	simul::opengl::GpuCloudGenerator gpuCloudGenerator;
 	simul::opengl::GpuSkyGenerator gpuSkyGenerator;
 	simul::camera::Camera *cam;
 	int ScreenWidth,ScreenHeight;
+	GLuint simple_program;
 };
 
 #ifdef _MSC_VER

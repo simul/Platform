@@ -12,25 +12,36 @@ Texture2D skylightTexture;
 
 struct atmosVertexInput
 {
-    float2 position			: POSITION;
-    float2 texCoords		: TEXCOORD0;
+	uint vertex_id			: SV_VertexID;
 };
 
 struct atmosVertexOutput
 {
     float4 position			: SV_POSITION;
-    float4 hpos_duplicate	: TEXCOORD0;
-    float2 texCoords		: TEXCOORD1;
+    float2 texCoords		: TEXCOORD0;
+    float2 pos				: TEXCOORD1;
 };
 
 atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 {
 	atmosVertexOutput OUT;
-	OUT.position=float4(IN.position.xy,0,1);
-	OUT.hpos_duplicate=float4(IN.position.xy,0,1);
-	OUT.texCoords=IN.texCoords;
-	//OUT.texCoords*=(float2(1.0,1.0)+texelOffsets);
-	OUT.texCoords+=0.5*texelOffsets;
+	float2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	OUT.pos			=poss[IN.vertex_id];
+	OUT.position	=float4(OUT.pos,0.0,1.0);
+	// Set to far plane so can use depth test as want this geometry effectively at infinity
+#ifdef REVERSE_DEPTH
+	OUT.position.z	=0.0; 
+#else
+	OUT.position.z	=OUT.position.w; 
+#endif
+    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(OUT.pos.x,-OUT.pos.y));
+	OUT.texCoords	+=0.5*texelOffsets;
 	return OUT;
 }
 
@@ -53,16 +64,13 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 
 float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 {
-	float4 pos=float4(-1.f,1.f,1.f,1.f);
-	pos.x+=2.f*IN.texCoords.x+texelOffsets.x;
-	pos.y-=2.f*IN.texCoords.y+texelOffsets.y;
-	float3 view=normalize(mul(invViewProj,pos).xyz);
+	float3 view=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
 	float4 lookup=imageTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	float4 dlookup=depthTexture.Sample(clampSamplerState,IN.texCoords.xy);
 	
 	float3 colour=lookup.rgb;
 	float depth=dlookup.r;
-	float dist=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	float dist=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
 #ifdef REVERSE_DEPTH
 	if(depth<=0.0)
 		dist=1.0;
@@ -78,43 +86,48 @@ float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 	float cos0=dot(view.xyz,lightDir.xyz);
 	colour+=InscatterFunction(inscatter_factor,cos0);
 	colour+=skylightTexture.Sample(clampSamplerState,texc2);
-
     return float4(colour.rgb,1.f);
 }
 
 float4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
 {
-	float4 pos=float4(-1.f,1.f,1.f,1.f);
-	pos.x+=2.f*IN.texCoords.x+texelOffsets.x;
-	pos.y-=2.f*IN.texCoords.y+texelOffsets.y;
-	float3 view=mul(invViewProj,pos).xyz;
+	float3 view=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
 	view=normalize(view);
 	float depth=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-	if(depth>=1.f)
-		discard;
+	float dist=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
+#ifdef REVERSE_DEPTH
+	if(depth<=0.0)
+		dist=1.0;
+#else
+	if(depth>=1.0)
+		dist=1.0;
+#endif
 	float sine=view.z;
-	float2 texc2=float2(pow(depth,0.5f),0.5f*(1.f-sine));
+	float2 texc2=float2(pow(dist,0.5f),0.5f*(1.f-sine));
 	float3 loss=lossTexture.Sample(clampSamplerState,texc2).rgb;
-    return float4(loss,1.f);
+    return float4(loss.rgb,1.f);
 }
 
 float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 {
-	float4 pos=float4(-1.f,1.f,1.f,1.f);
-	pos.x+=2.f*IN.texCoords.x+texelOffsets.x;
-	pos.y-=2.f*IN.texCoords.y+texelOffsets.y;
-	float3 view=mul(invViewProj,pos).xyz;
+	float3 view=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
 	view=normalize(view);
 	float depth=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-	if(depth>=1.f)
-		discard;
+	float dist=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
+#ifdef REVERSE_DEPTH
+	if(depth<=0.0)
+		dist=1.0;
+#else
+	if(depth>=1.0)
+		dist=1.0;
+#endif
 	float sine=view.z;
-	float2 texc2=float2(pow(depth,0.5f),0.5f*(1.f-sine));
+	float2 texc2=float2(pow(dist,0.5f),0.5f*(1.f-sine));
 	float4 inscatter_factor=inscatterTexture.Sample(clampSamplerState,texc2);
 	float cos0=dot(view,lightDir);
 	float3 colour=InscatterFunction(inscatter_factor,cos0);
 	colour+=skylightTexture.Sample(clampSamplerState,texc2);
-    return float4(colour,1.f);
+    return float4(colour.rgb,1.f);
 }
 
 technique11 simul_atmospherics
@@ -130,13 +143,14 @@ technique11 simul_atmospherics
     }
 }
 
-technique11 simul_atmospherics_depthtexture
+technique11 simul_atmospherics_overlay
 {
     pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		//SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_AtmosOverlayLossPass()));

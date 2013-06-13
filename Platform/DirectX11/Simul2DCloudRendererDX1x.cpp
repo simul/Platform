@@ -108,6 +108,7 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 	SAFE_RELEASE(indexBuffer);
 	m_pd3dDevice->CreateBuffer(&indexBufferDesc,&InitData,&indexBuffer);
 	delete [] indices;
+	SAFE_RELEASE(constantBuffer);
 	MAKE_CONSTANT_BUFFER(constantBuffer,Cloud2DConstants);
 
 	detail_fb.SetWidthAndHeight(256,256);
@@ -129,6 +130,7 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 	dens_fb.RestoreDeviceObjects(m_pd3dDevice);
 	dens_fb.SetWidthAndHeight(512,512);
 	dens_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
+SAFE_RELEASE(pImmediateContext);
 }
 
 void Simul2DCloudRendererDX11::RecompileShaders()

@@ -34,15 +34,18 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,UseHdrPostprocessor(true)
 	,ShowOSD(false)
 	,ShowWater(true)
-	,ReverseDepth(true)
+	,ReverseDepth(false)
 	,MixCloudsAndTerrain(false)
+	,simple_program(0)
 {
-	simulHDRRenderer=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
+	simulHDRRenderer	=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,ScreenWidth,ScreenHeight);
-	simulOpticsRenderer=new SimulOpticsRendererGL();
+	simulOpticsRenderer	=new SimulOpticsRendererGL();
 	simulTerrainRenderer=new SimulGLTerrainRenderer();
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
+	depthFramebuffer.SetFormat(GL_RGBA32F_ARB);
+	depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32);
 }
 
 OpenGLRenderer::~OpenGLRenderer()
@@ -54,6 +57,8 @@ OpenGLRenderer::~OpenGLRenderer()
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
 	simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
+	depthFramebuffer.InvalidateDeviceObjects();
+	SAFE_DELETE_PROGRAM(simple_program);
 }
 
 void OpenGLRenderer::paintGL()
@@ -80,7 +85,7 @@ void OpenGLRenderer::paintGL()
 	glViewport(0,0,ScreenWidth,ScreenHeight);
 	if(simulWeatherRenderer.get())
 	{
-		simulWeatherRenderer->Update(context);
+		simulWeatherRenderer->PreRenderUpdate(context);
 		GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
 		GLuint fogfilter=0;								// Which Fog To Use
 		simul::sky::float4 fogColor=simulWeatherRenderer->GetHorizonColour(0.001f*cam->GetPosition()[2]);
@@ -99,20 +104,25 @@ ERROR_CHECK
 		else
 			simulWeatherRenderer->SetExposureHint(1.0f);
 ERROR_CHECK
-		if(MixCloudsAndTerrain)
-			simulWeatherRenderer->SetAlwaysRenderCloudsLate(MixCloudsAndTerrain);
-		simulWeatherRenderer->RenderSky(context,UseSkyBuffer,false);
-
-		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender(context);
+		depthFramebuffer.Activate(context);
+		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f);
 		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render(context);
-		if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender(context);
+		depthFramebuffer.Deactivate(context);
+		
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D,(GLuint)depthFramebuffer.GetColorTex());
+			glUseProgram(simple_program);
+			GLint image_texture		=glGetUniformLocation(simple_program,"image_texture");
+//			setTexture(simple_program,"image_texture",(GLuint)depthFramebuffer.GetColorTex());
+			glUniform1i(image_texture,0);
+			depthFramebuffer.Render(context,false);
+		}
+
 		simulWeatherRenderer->RenderLightning(context);
 			
-		simulWeatherRenderer->SetDepthTexture(simulWeatherRenderer->GetBaseAtmosphericsRenderer()->GetDepthAlphaTexture());
-		simulWeatherRenderer->RenderLateCloudLayer(context,true);
+		simulWeatherRenderer->RenderSkyAsOverlay(context,UseSkyBuffer,false,depthFramebuffer.GetDepthTex());
 
 		simulWeatherRenderer->DoOcclusionTests();
 		simulWeatherRenderer->RenderPrecipitation(context);
@@ -189,6 +199,7 @@ void OpenGLRenderer::resizeGL(int w,int h)
 		simulWeatherRenderer->SetScreenSize(ScreenWidth,ScreenHeight);
 	if(simulHDRRenderer)
 		simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
+	depthFramebuffer.SetWidthAndHeight(ScreenWidth,ScreenHeight);
 }
 
 void OpenGLRenderer::initializeGL()
@@ -232,6 +243,10 @@ void OpenGLRenderer::initializeGL()
 		simulOpticsRenderer->RestoreDeviceObjects(NULL);
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->RestoreDeviceObjects(NULL);
+	depthFramebuffer.RestoreDeviceObjects(NULL);
+	depthFramebuffer.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
+	//depthFramebuffer.InitDepth_Tex(GL_DEPTH_COMPONENT32);
+	RecompileShaders();
 }
 
 void OpenGLRenderer::SetCamera(simul::camera::Camera *c)
@@ -255,4 +270,12 @@ void OpenGLRenderer::RecompileShaders()
 		simulTerrainRenderer->RecompileShaders();
 	gpuCloudGenerator.RecompileShaders();
 	gpuSkyGenerator.RecompileShaders();
+	SAFE_DELETE_PROGRAM(simple_program);
+	simple_program=MakeProgram("simple.vert",NULL,"simple.frag");
+}
+
+void OpenGLRenderer::ReverseDepthChanged()
+{
+	// We do not yet support ReverseDepth on OpenGL, because GL matrices do not take advantage of this.
+	ReverseDepth=false;
 }

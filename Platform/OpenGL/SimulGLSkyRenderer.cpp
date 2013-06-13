@@ -147,7 +147,7 @@ void SimulGLSkyRenderer::CreateFadeTextures()
 	ERROR_CHECK
 }
 
-static simul::sky::float4 Lookup(void *context,FramebufferGL fb,float distance_texcoord,float elevation_texcoord)
+static simul::sky::float4 Lookup(void *context,FramebufferGL &fb,float distance_texcoord,float elevation_texcoord)
 {
 	distance_texcoord*=(float)fb.GetWidth();
 	int x=(int)(distance_texcoord);
@@ -221,7 +221,7 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 		DrawQuad(0,0,1,1);
 		// copy to target:
 		{
-			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+			//glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			glEnable(GL_TEXTURE_2D);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D,target_textures[i]);
@@ -230,7 +230,7 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 					,0,0,
  					numFadeDistances,numFadeElevations
 					);
-			 glDisable(GL_TEXTURE_2D);
+			glDisable(GL_TEXTURE_2D);
 		}
 	}
 	fb[0]->Deactivate(context);
@@ -366,15 +366,11 @@ ERROR_CHECK
 bool SimulGLSkyRenderer::Render(void *context,bool blend)
 {
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-	EnsureTexturesAreUpToDate();
 	simul::sky::float4 cam_dir;
 	CalcCameraPosition(cam_pos,cam_dir);
 	SetCameraPosition(cam_pos.x,cam_pos.y,cam_pos.z);
 	static simul::base::Timer timer;
-	timer.StartTime();
-	Render2DFades(context);
-	timer.FinishTime();
-	texture_update_time=timer.Time;
+	//texture_update_time=timer.Time;
 	timer.StartTime();
 ERROR_CHECK
 	//if(!blend)

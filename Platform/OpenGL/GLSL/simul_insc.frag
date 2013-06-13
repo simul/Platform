@@ -4,7 +4,6 @@ uniform float hazeEccentricity;
 uniform vec3 mieRayleighRatio;
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 uniform sampler2D imageTexture;
-uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D skylightTexture;
 uniform float maxDistance;
@@ -38,27 +37,12 @@ vec4 simple()
 {
 	vec3 view=texCoordToViewDirection(texCoords);
 	float sine=view.z;
-    vec4 lookup=texture(imageTexture,texCoords);
-	float depth=lookup.a;
-	if(depth>=1.0) 
-		discard;
+    vec4 lookup=texture(depthTexture,texCoords);
+	float depth=lookup.x;
 	vec2 texc=vec2(pow(depth,0.5),0.5*(1.0-sine));
-	vec3 loss=texture(lossTexture,texc).rgb;
-	vec3 colour=lookup.rgb;
-	colour*=loss;
 	vec4 insc=texture(inscTexture,texc);
-	/*
-	// What is the intersection of this ray with:
-	//		(a) The cloudbase altitude
-	float dh1=(cloudOrigin.z-viewPosition.z)/maxDistance;
-	float depth1=saturate(dh1/saturate(sine));
-	vec2 texc1=vec2(pow(depth1,0.5),texc.y);
-	vec4 insc1=texture(inscTexture,texc);
-	insc-=overcast*insc1;
-	//		(b) The top of the clouds?
-	*/
 	float cos0=dot(view,lightDir);
-	colour+=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
+	vec3 colour=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	vec3 skyl=texture(skylightTexture,texc).rgb;
 	colour+=skyl;
     return vec4(colour,1.0);
@@ -68,16 +52,9 @@ vec4 godrays()
 {
 	vec3 view=texCoordToViewDirection(texCoords);
 	float sine=view.z;
-    vec4 lookup=texture(imageTexture,texCoords);
-	float depth=lookup.a;
-	if(depth>=1.0) 
-		depth=1.0;
-	//if(depth>=1.0) 
-	//	discard;
+    vec4 lookup=texture(depthTexture,texCoords);
+	float depth=lookup.x;
 	vec2 texc2=vec2(pow(depth,0.5),0.5*(1.0-sine));
-	vec3 loss=texture(lossTexture,texc2).rgb;
-	vec3 colour=lookup.rgb;
-	colour*=loss;
 	vec4 insc=texture(inscTexture,texc2);
 	vec3 skyl=texture(skylightTexture,texc2).rgb;
 	// trace the distance from 1.0 to zero
@@ -108,7 +85,7 @@ vec4 godrays()
 		}
 	}	
 	float cos0=dot(view,lightDir);
-	colour+=InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
+	vec3 colour=InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour+=skyl;
     return vec4(colour,1.0);
 }

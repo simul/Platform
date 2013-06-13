@@ -221,15 +221,13 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,bool buffer)
 	
 	scene_buffer->Activate(context);
 	scene_buffer->Clear(context,0,0,0,1.f,ReverseDepth?0.f:1.f);
-	simulCloudRenderer->Render(context,false,depth_alpha_tex,UseDefaultFog,true);
+	simulCloudRenderer->Render(context,false,NULL,UseDefaultFog,true);
 	scene_buffer->Deactivate(context);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	GLuint prog=cloud_overlay_program;//AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)scene_buffer->GetColorTex());
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
 	glUseProgram(prog);
 
 	GLint image_texture		=glGetUniformLocation(prog,"image_texture");

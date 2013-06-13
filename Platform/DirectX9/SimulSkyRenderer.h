@@ -103,7 +103,7 @@ protected:
 						,const float *inscatter_float4_array
 						,const float *skyl_float4_array);
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void*);
 	void EnsureTextureCycle();
 	int CalcScreenPixelHeight();
 	void DrawLines(void*,Vertext *lines,int vertex_count,bool strip=false);

@@ -18,6 +18,8 @@ FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageS
 	,initialized(false)
 	,depth_iformat(0)
 	,colour_iformat(0)
+	,wrap_clamp(GL_CLAMP_TO_EDGE)
+	,format(GL_FLOAT)
 {
     for(int i = 0; i < num_col_buffers; i++)
         m_tex_col[i] = 0;
@@ -76,6 +78,10 @@ void FramebufferGL::SetFormat(int f)
 	colour_iformat=f;
 }
 
+void FramebufferGL::SetDepthFormat(int f)
+{
+	depth_iformat=f;
+}
 
 bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum f,GLint wc)
 {
@@ -170,7 +176,10 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	//glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexImage2D(m_target, 0, iformat, Width, Height, 0,GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
+	GLenum depth_format=GL_UNSIGNED_INT;
+	if(depth_iformat==GL_DEPTH_COMPONENT32)
+		depth_format=GL_FLOAT;
+    glTexImage2D(m_target, 0, iformat, Width, Height, 0,GL_DEPTH_COMPONENT,depth_format, NULL);
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
     glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,m_target,m_tex_depth,0);
@@ -239,6 +248,7 @@ void FramebufferGL::DeactivateAndRender(void *context,bool blend)
 
 void FramebufferGL::Render(void *,bool blend)
 {
+ERROR_CHECK
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -270,9 +280,6 @@ ERROR_CHECK
 	Release();
 }
 
-void FramebufferGL::CopyToMemory(void *context,void *target,int start_texel,int num_texels)
-{
-}
 
 void FramebufferGL::Clear(void*,float r,float g,float b,float a,float depth,int mask)
 {
@@ -283,6 +290,10 @@ void FramebufferGL::Clear(void*,float r,float g,float b,float a,float depth,int 
 	glClear(mask);
 }
 
+void FramebufferGL::CopyToMemory(void *context,void *target,int start_texel,int num_texels)
+{
+
+}
 
 void FramebufferGL::CheckFramebufferStatus()
 {

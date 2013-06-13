@@ -13,6 +13,7 @@ cbuffer cbPerObject : register(b10)
 	float altitudeTexCoord;
 	float4 colour;
 	float starBrightness;
+	float radiusRadians;
 };
 
 Texture2D inscTexture;
@@ -244,10 +245,9 @@ float4 PS_ShowFadeTexture(vertexOutput3Dto2D IN): SV_TARGET
     return float4(result.rgb,1);
 }
 
-struct svertexInput
+struct indexVertexInput
 {
-    float3 position			: POSITION;
-    float2 tex				: TEXCOORD0;
+	uint vertex_id			: SV_VertexID;
 };
 
 struct svertexOutput
@@ -256,15 +256,25 @@ struct svertexOutput
     float2 tex				: TEXCOORD0;
 };
 
-svertexOutput VS_Sun(svertexInput IN) 
+svertexOutput VS_Sun(indexVertexInput IN) 
 {
     svertexOutput OUT;
-    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
-
+	float2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	vec3 pos=vec3(poss[IN.vertex_id],1.0/tan(radiusRadians));
+    OUT.hPosition=mul(worldViewProj,float4(pos,1.0));
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
+#ifdef REVERSE_DEPTH
 	OUT.hPosition.z = 0.0f; 
-
-    OUT.tex=IN.position.xy;
+#else
+	OUT.hPosition.z = OUT.hPosition.w; 
+#endif
+    OUT.tex=pos.xy;
     return OUT;
 }
 
@@ -272,10 +282,13 @@ svertexOutput VS_Sun(svertexInput IN)
 // stored in the alpha channel.
 float4 PS_Sun( svertexOutput IN): SV_TARGET
 {
-	float r=length(IN.tex);
-	if(r>1.0)
+	float r=2.0*length(IN.tex);
+	if(r>2.0)
 		discard;
-	float brightness=saturate((1.0-r)/0.1)+colour.a*saturate((0.9-r)/0.1);
+	float brightness=1.0;
+	if(r>1.0)
+	//	discard;
+		brightness=colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
 	float3 result=brightness*colour.rgb;
 	return float4(result,1.f);
 }
@@ -286,7 +299,14 @@ float4 PS_Flare( svertexOutput IN): SV_TARGET
 	return float4(output,1.f);
 }
 
-svertexOutput VS_Stars(svertexInput IN) 
+struct starsVertexInput
+{
+	uint vertex_id			: SV_VertexID;
+    float3 position			: POSITION;
+    float2 tex				: TEXCOORD0;
+};
+
+svertexOutput VS_Stars(starsVertexInput IN) 
 {
     svertexOutput OUT;
     OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
@@ -329,6 +349,7 @@ float approx_oren_nayar(float roughness,float3 view,float3 normal,float3 lightDi
 float4 PS_Planet(svertexOutput IN): SV_TARGET
 {
 	float4 result=flareTexture.Sample(flareSamplerState,float2(.5f,.5f)-0.5f*IN.tex);
+	return float4(result.rgb,1.0);
 	// IN.tex is +- 1.
 	float3 normal;
 	normal.x=IN.tex.x;
@@ -481,8 +502,9 @@ technique11 simul_sun
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
-		SetDepthStencilState( EnableDepth, 0 );
-		SetBlendState(AddBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
+		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
+		SetDepthStencilState(EnableDepth,0);
+		SetBlendState(AddBlend,float4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
     }
 }
 

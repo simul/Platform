@@ -492,7 +492,6 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 			strcpy(com,command.c_str());
 			si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 			si.wShowWindow = SW_HIDE;
-			//FILE *fp = fopen((text_filename+".log").c_str(), "w");
 
 			HANDLE hReadOutPipe = NULL;
 			HANDLE hWriteOutPipe = NULL;
@@ -762,8 +761,10 @@ void BreakIfDebugging()
 }
  
 
-void UtilityRenderer::RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *m_pImmediateContext,const float *dr,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj
-					  ,D3DXVECTOR3 sun_dir)
+void UtilityRenderer::RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *m_pImmediateContext,const float *dr,bool y_vertical,float half_angle_radians
+										,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech
+										,D3DXMATRIX view,D3DXMATRIX proj
+										,D3DXVECTOR3 sun_dir)
 {
 	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
 	// But D3DXMatrixRotationYawPitchRoll uses only left-handed, hence the change of sign below.
@@ -775,27 +776,14 @@ void UtilityRenderer::RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceCo
 	HRESULT hr=S_OK;
 	D3DXMATRIX world, tmp1, tmp2;
 	D3DXMatrixIdentity(&world);
-	static D3DXMATRIX flip(1.f,0,0,0,0,0,1.f,0,0,1.f,0,0,0,0,0,1.f);
-	if(y_vertical)
-	{
-		D3DXMatrixRotationYawPitchRoll(
-			  &world,
-			  Yaw,
-			  Pitch,
-			  0
-			);
-	}
-	else
-	{
-		simul::geometry::SimulOrientation or;
-		or.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
-		or.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
-		world=*((const D3DXMATRIX*)(or.T4.RowPointer(0)));
-	}
+	simul::geometry::SimulOrientation or;
+	or.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
+	or.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
+	world=*((const D3DXMATRIX*)(or.T4.RowPointer(0)));
 	//set up matrices
-	world._41=pos.x;
-	world._42=pos.y;
-	world._43=pos.z;
+	view._41=0.f;
+	view._42=0.f;
+	view._43=0.f;
 	D3DXVECTOR3 sun2;
 	D3DXMATRIX inv_world;
 	D3DXMatrixInverse(&inv_world,NULL,&world);
@@ -807,10 +795,9 @@ void UtilityRenderer::RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceCo
 	D3DXMatrixTranspose(&tmp1,&tmp2);
 	if(effect)
 	{
-		ID3D1xEffectMatrixVariable*	worldViewProj=effect->GetVariableByName("worldViewProj")->AsMatrix();
-		worldViewProj->SetMatrix((const float *)(&tmp1));
-		ID3D1xEffectVectorVariable*	lightDir=effect->GetVariableByName("lightDir")->AsVector();
-		lightDir->SetFloatVector((const float *)(&sun2));
+		setMatrix(effect,"worldViewProj",tmp1);
+		setParameter(effect,"lightDir",sun2);
+		setParameter(effect,"radiusRadians",half_angle_radians);
 	}
 	struct Vertext
 	{
@@ -854,7 +841,7 @@ void UtilityRenderer::RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceCo
 	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
 	hr=pass->GetDesc(&PassDesc);
 
-	ID3D1xInputLayout*				m_pVtxDecl=NULL;
+	ID3D1xInputLayout *m_pVtxDecl=NULL;
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 

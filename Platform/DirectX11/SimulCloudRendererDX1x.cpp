@@ -392,7 +392,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	randomTechnique					=effect->GetTechniqueByName("simul_random");
 	noiseTechnique					=effect->GetTechniqueByName("simul_noise_2d");
 
-	FramebufferDX1x	random_fb;
+	simul::dx11::Framebuffer	random_fb;
 	random_fb.RestoreDeviceObjects(m_pd3dDevice);
 	random_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency);
 	random_fb.SetFormat((int)DXGI_FORMAT_R32G32B32A32_FLOAT);
@@ -401,7 +401,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 		random_fb.DrawQuad(context);
 	random_fb.Deactivate(context);
 
-	FramebufferDX1x n_fb;
+	simul::dx11::Framebuffer n_fb;
 	n_fb.RestoreDeviceObjects(m_pd3dDevice);
 	n_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
 	n_fb.SetFormat((int)DXGI_FORMAT_R8G8B8A8_SNORM);
@@ -466,7 +466,7 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,L"simul_rendernoise.fx");
 	ID3D1xEffectTechnique*			randomTechnique=effect->GetTechniqueByName("simul_random");
 
-	FramebufferDX1x	random_fb;
+	simul::dx11::Framebuffer	random_fb;
 	random_fb.RestoreDeviceObjects(m_pd3dDevice);
 	random_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency*noise_texture_frequency);
 	random_fb.SetFormat((int)DXGI_FORMAT_R8G8B8A8_SNORM);
@@ -659,10 +659,10 @@ static float saturate(float c)
 	return std::max(std::min(1.f,c),0.f);
 }
 
-void SimulCloudRendererDX1x::SetCloudPerViewConstants(CloudPerViewConstants &cloudConstants)
+void SimulCloudRendererDX1x::SetCloudPerViewConstants(CloudPerViewConstants &cloudPerViewConstants)
 {
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
-	memset(&cloudConstants,0,sizeof(cloudConstants));
+	memset(&cloudPerViewConstants,0,sizeof(cloudPerViewConstants));
 	D3DXMATRIX wvp,world;
 	D3DXMatrixIdentity(&world);
 	D3DXMatrixTranslation(&world,cam_pos.x,cam_pos.y,cam_pos.z);
@@ -683,10 +683,10 @@ void SimulCloudRendererDX1x::SetCloudPerViewConstants(CloudPerViewConstants &clo
 	viewproj.Transpose(vpt);
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
-	cloudConstants.invViewProj=ivp;
-	cloudConstants.invViewProj.transpose();
+	cloudPerViewConstants.invViewProj=ivp;
+	cloudPerViewConstants.invViewProj.transpose();
 
-	cloudConstants.viewPos=cam_pos;
+	cloudPerViewConstants.viewPos=cam_pos;
 	static float direct_light_mult	=0.25f;
 	static float indirect_light_mult=0.03f;
 	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse(),
@@ -696,15 +696,14 @@ void SimulCloudRendererDX1x::SetCloudPerViewConstants(CloudPerViewConstants &clo
 
 	static float uu=1.f;
 	float sc=uu/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
-	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
 	float noise_rotation=helper->GetNoiseRotation();
 	float f[]={cos(noise_rotation),-sin(noise_rotation),0,0,sin(noise_rotation),cos(noise_rotation),0,0,0,0,1.f,0};
-	cloudConstants.noiseMatrix			=f;
+	cloudPerViewConstants.noiseMatrix			=f;
 
-	cloudConstants.tanHalfFov	=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	cloudConstants.nearZ		=frustum.nearZ/max_fade_distance_metres;
-	cloudConstants.farZ			=frustum.farZ/max_fade_distance_metres;
-	cloudConstants.noise_offset=helper->GetNoiseOffset();
+	cloudPerViewConstants.tanHalfFov	=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	cloudPerViewConstants.nearZ		=frustum.nearZ/max_fade_distance_metres;
+	cloudPerViewConstants.farZ			=frustum.farZ/max_fade_distance_metres;
+	cloudPerViewConstants.noise_offset=helper->GetNoiseOffset();
 }
 
 void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
@@ -758,33 +757,32 @@ void SimulCloudRendererDX1x::SetCloudConstants(CloudConstants &cloudConstants)
 			cloudConstants.earthshadowMultiplier=1.f;
 		}
 	}
-	cloudConstants.cloud_interp		=cloudKeyframer->GetInterpolation();
-	cloudConstants.lightResponse	=light_response;
-	cloudConstants.lightDir			=light_dir;
-	cloudConstants.ambientColour	=sky_light_colour;
-	cloudConstants.sunlightColour1	=sunlight1;
-	cloudConstants.sunlightColour2	=sunlight2;
-	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
-	cloudConstants.fractalScale			=	(fractal_scales);
-	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
-	cloudConstants.mieRayleighRatio		=	(mie_rayleigh_ratio);
-	cloudConstants.cloudEccentricity	=(GetCloudInterface()->GetMieAsymmetry());
-	cloudConstants.hazeEccentricity		=(skyInterface->GetMieEccentricity());
-	cloudConstants.alphaSharpness		=(GetCloudInterface()->GetAlphaSharpness());
-	cloudConstants.maxFadeDistanceMetres=(max_fade_distance_metres);
+	cloudConstants.cloud_interp				=cloudKeyframer->GetInterpolation();
+	cloudConstants.lightResponse			=light_response;
+	cloudConstants.lightDir					=light_dir;
+	cloudConstants.ambientColour			=sky_light_colour;
+	cloudConstants.sunlightColour1			=sunlight1;
+	cloudConstants.sunlightColour2			=sunlight2;
+	simul::sky::float4 fractal_scales		=helper->GetFractalScales(GetCloudInterface());
+	cloudConstants.fractalScale				=fractal_scales;
+	simul::sky::float4 mie_rayleigh_ratio	=skyInterface->GetMieRayleighRatio();
+	cloudConstants.mieRayleighRatio			=mie_rayleigh_ratio;
+	cloudConstants.cloudEccentricity		=GetCloudInterface()->GetMieAsymmetry();
+	cloudConstants.hazeEccentricity			=skyInterface->GetMieEccentricity();
+	cloudConstants.alphaSharpness			=GetCloudInterface()->GetAlphaSharpness();
+	cloudConstants.maxFadeDistanceMetres	=max_fade_distance_metres;
 
-	simul::math::Vector3 X1			=cloudKeyframer->GetCloudInterface()->GetOrigin();
-	simul::math::Vector3 InverseDX	=cloudKeyframer->GetCloudInterface()->GetInverseScales();
+	simul::math::Vector3 X1					=cloudKeyframer->GetCloudInterface()->GetOrigin();
+	simul::math::Vector3 InverseDX			=cloudKeyframer->GetCloudInterface()->GetInverseScales();
 
-	cloudConstants.cornerPos			=X1;
-	cloudConstants.inverseScales		=InverseDX;
+	cloudConstants.cornerPos				=X1;
+	cloudConstants.inverseScales			=InverseDX;
 	static float uu=1.f;
-	float sc=uu/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
-	cloudConstants.noise3DTexcoordScale	=vec3(sc/InverseDX.x,sc/InverseDX.y,sc/InverseDX.z);
-	cloudConstants.noise3DPersistence	=cloudKeyframer->GetEdgeNoisePersistence();
-	cloudConstants.noise3DOctaves		=cloudKeyframer->GetEdgeNoiseOctaves();
-	const simul::geometry::SimulOrientation &noise_orient=helper->GetNoiseOrientation();
-	float noise_rotation=helper->GetNoiseRotation();
+	float sc								=uu/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
+	cloudConstants.noise3DTexcoordScale		=vec3(sc/InverseDX.x,sc/InverseDX.y,sc/InverseDX.z);
+	cloudConstants.noise3DPersistence		=cloudKeyframer->GetEdgeNoisePersistence();
+	cloudConstants.noise3DOctaves			=cloudKeyframer->GetEdgeNoiseOctaves();
+	float noise_rotation					=helper->GetNoiseRotation();
 	float f[]={cos(noise_rotation),-sin(noise_rotation),0,0,sin(noise_rotation),cos(noise_rotation),0,0,0,0,1.f,0};
 
 	float time=skyInterface->GetTime();

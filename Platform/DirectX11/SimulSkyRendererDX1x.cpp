@@ -124,9 +124,9 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 //EnableColourSky(false);
 	SetCameraPosition(0,0,400.f);
 	skyKeyframer->SetCalculateAllAltitudes(true);
-	loss_2d		=new FramebufferDX1x(0,0);
-	inscatter_2d=new FramebufferDX1x(0,0);
-	skylight_2d	=new FramebufferDX1x(0,0);
+	loss_2d		=new simul::dx11::Framebuffer(0,0);
+	inscatter_2d=new simul::dx11::Framebuffer(0,0);
+	skylight_2d	=new simul::dx11::Framebuffer(0,0);
 }
 
 void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
@@ -592,7 +592,13 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
 	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
-	static float maxout=20.f;
+
+	// exposure_hint is the value that the colours will finally be multiplied BY.
+	// So if we render at sunlight.xyz, that will become sunlight.xyz*exposure_hint.
+	// This means that to get a final onscreen colour of 1.0, we must render at a value of
+	// 1.0/exposure_hint.
+	// To convert from the max_bright value to get 1.0, we must use 1.0/(max_bright*exposure_hint)
+	/*static float maxout=20.f;
 	float maxout_brightness=maxout/exposure_hint;
 	if(maxout_brightness>1e6f)
 		maxout_brightness=1e6f;
@@ -600,13 +606,12 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
 		maxout_brightness=1e-6f;
 	if(max_bright>maxout_brightness)
 	{
-		sunlight*=maxout_brightness/max_bright;
-		sunlight.w=max_bright;
-	}
+		sunlight*=maxout_brightness/max_bright;*/
+	sunlight.w=1.0f/(max_bright*exposure_hint);
 	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
 	colour->SetFloatVector(sunlight);
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
-	UtilityRenderer::RenderAngledQuad(m_pd3dDevice,context,sun_dir,y_vertical,sun_angular_size,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
+	UtilityRenderer::RenderAngledQuad(m_pd3dDevice,context,sun_dir,y_vertical,sun_angular_size*2.f,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
 	// Start the query
 /*d3dQuery->Begin();
 	hr=RenderAngledQuad(sun_dir,sun_angular_size);
