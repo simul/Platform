@@ -23,7 +23,6 @@ public:
 	~FramebufferGL();
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
-	void SetShader(int i);
 	void SetWidthAndHeight(int w,int h);
 	void SetFormat(int);
 	void SetDepthFormat(int);
