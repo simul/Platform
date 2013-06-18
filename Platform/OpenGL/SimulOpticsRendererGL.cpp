@@ -82,6 +82,8 @@ void SimulOpticsRendererGL::RenderFlare(void *context,float exposure,const float
 	sunlight*=sun_mult*flare_magnitude;
 	
 	glEnable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
 	
 	glBlendFunc(GL_ONE,GL_ONE);
 	

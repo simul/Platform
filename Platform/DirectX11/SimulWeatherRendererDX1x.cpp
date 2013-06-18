@@ -38,7 +38,7 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 	framebuffer(w/Downscale,h/Downscale),
 	m_pd3dDevice(NULL),
 	m_pTonemapEffect(NULL)
-	,TonemapTechnique(NULL)
+	,directTechnique(NULL)
 	,imageTexture(NULL)
 	,worldViewProj(NULL)
 	,simulSkyRenderer(NULL),
@@ -131,7 +131,7 @@ void SimulWeatherRendererDX1x::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("simul_hdr.fx"), defines);
-	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
+	directTechnique			=m_pTonemapEffect->GetTechniqueByName("simul_direct");
 	SkyOverStarsTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_over_stars");
 	imageTexture			=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
@@ -332,16 +332,9 @@ void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,bool buffered,bo
 	if(buffered&&baseFramebuffer)
 	{
 		bool blend=!is_cubemap;
-		HRESULT hr=S_OK;
-		hr=imageTexture->SetResource(framebuffer.buffer_texture_SRV);
-		ID3D1xEffectTechnique *tech=blend?SkyOverStarsTechnique:TonemapTechnique;
+		imageTexture->SetResource(framebuffer.buffer_texture_SRV);
+		ID3D1xEffectTechnique *tech=blend?SkyOverStarsTechnique:directTechnique;
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
-		
-		D3DXMATRIX ortho;
-		D3DXMatrixIdentity(&ortho);
-		D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
-		worldViewProj->SetMatrix(ortho);
-		
 		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
 	}
@@ -355,7 +348,7 @@ bool SimulWeatherRendererDX1x::RenderSky(void *context,bool buffered,bool is_cub
 		bool blend=!is_cubemap;
 		HRESULT hr=S_OK;
 		hr=imageTexture->SetResource(framebuffer.buffer_texture_SRV);
-		ID3D1xEffectTechnique *tech=blend?SkyOverStarsTechnique:TonemapTechnique;
+		ID3D1xEffectTechnique *tech=blend?SkyOverStarsTechnique:directTechnique;
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
 		
 		D3DXMATRIX ortho;

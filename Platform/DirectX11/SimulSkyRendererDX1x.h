@@ -58,7 +58,7 @@ public:
 	void RenderSun(void *context,float exposure_hint);
 	//! Draw the fade textures to screen
 	bool RenderFades(void *context,int w,int h);
-	virtual bool RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	virtual void RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
 	bool Render2DFades(void *context);
@@ -141,9 +141,9 @@ protected:
 	ID3D1xTexture3D*					skylight_textures[3];
 
 	// Small framebuffers we render to once per frame to perform fade interpolation.
-	simul::dx11::Framebuffer*					loss_2d;
-	simul::dx11::Framebuffer*					inscatter_2d;
-	simul::dx11::Framebuffer*					skylight_2d;
+	simul::dx11::Framebuffer*			loss_2d;
+	simul::dx11::Framebuffer*			inscatter_2d;
+	simul::dx11::Framebuffer*			skylight_2d;
 
 	ID3D1xShaderResourceView*			flare_texture_SRV;
 	ID3D1xShaderResourceView*			loss_textures_SRV[3];

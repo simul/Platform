@@ -23,12 +23,12 @@ struct LayerData
 
 uniform_buffer SingleLayerConstants R11
 {
-	LayerData layerData;
+	uniform LayerData layerData;
 };
 
 uniform_buffer LayerConstants R8
 {
-	LayerData layers[MAX_INSTANCES];
+	uniform LayerData layers[MAX_INSTANCES];
 	uniform int layerCount;
 	uniform int A,B,C;
 };

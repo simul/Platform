@@ -68,7 +68,8 @@ bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)
 {
 	//image_tex=LoadGLImage("Cirrocumulus.png",GL_REPEAT);
 	FramebufferGL	noise_fb(16,16,GL_TEXTURE_2D);
-	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT,GL_REPEAT);
+	noise_fb.SetWrapClampMode(GL_REPEAT);
+	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB);
 	noise_fb.Activate(context);
 	{
 		glMatrixMode(GL_PROJECTION);
@@ -86,7 +87,8 @@ bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)
 ERROR_CHECK
 	FramebufferGL dens_fb(512,512,GL_TEXTURE_2D);
 	dens_fb.SetWidthAndHeight(512,512);
-	dens_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
+	dens_fb.SetWrapClampMode(GL_REPEAT);
+	dens_fb.InitColor_Tex(0,GL_RGBA);
 	dens_fb.Activate(context);
 	{
 		dens_fb.Clear(context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
@@ -104,7 +106,8 @@ ERROR_CHECK
 	glUseProgram(0);
 
 	detail_fb.SetWidthAndHeight(512,512);
-	detail_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
+	detail_fb.SetWrapClampMode(GL_REPEAT);
+	detail_fb.InitColor_Tex(0,GL_RGBA);
 	detail_fb.Activate(context);
 	{
 		detail_fb.Clear(context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
@@ -272,9 +275,10 @@ void SimulGL2DCloudRenderer::Update(void *context)
 {
 }
 
-bool SimulGL2DCloudRenderer::Render(void *context,bool,const void *, bool, bool)
+bool SimulGL2DCloudRenderer::Render(void *context,bool,const void *depthTexture, bool, bool)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	GLuint depth_texture=(GLuint)depthTexture;
 	EnsureTexturesAreUpToDate(context);
 	using namespace simul::clouds;
 	if(skyInterface)
@@ -300,7 +304,8 @@ bool SimulGL2DCloudRenderer::Render(void *context,bool,const void *, bool, bool)
 	Set2DTexture(lossTexture,loss_tex,3);
 	Set2DTexture(inscatterSampler_param,inscatter_tex,4);
 	Set2DTexture(skylightSampler_param,skylight_tex,5);
-	
+	setTexture(clouds_program,"depthTexture",6,depth_texture);
+
 	simul::math::Vector3 wind_offset=cloudKeyframer->GetCloudInterface()->GetWindOffset();
 
 	float max_cloud_distance=400000.f;

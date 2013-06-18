@@ -51,6 +51,7 @@ public:
 	void InvalidateDeviceObjects();
 	//! Platform-dependent. Call this to draw the sky
 	bool RenderSky(void *,bool buffered,bool is_cubemap);
+	void RenderSkyAsOverlay(void *context,bool buffered,bool is_cubemap,const void* depthTexture);
 	//! Call this to draw the clouds
 	void RenderLateCloudLayer(void *context,bool buf);
 	//! Call this to draw lightning.

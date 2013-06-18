@@ -58,7 +58,7 @@ public:
 	virtual		const float *GetFastLossLookup(void* context,float distance_texcoord,float elevation_texcoord);
 	virtual		const float *GetFastInscatterLookup(void* context,float distance_texcoord,float elevation_texcoord);
 
-	bool		RenderPlanet(void *,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	void		RenderPlanet(void *,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	void		RenderSun(void *context,float exposure_hint);
 
 	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s);

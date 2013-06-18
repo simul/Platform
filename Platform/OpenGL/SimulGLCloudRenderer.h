@@ -96,7 +96,7 @@ protected:
 	GLint inscatterSampler_param;
 	GLint illumSampler_param;
 	GLint skylightSampler_param;
-	GLint depthAlphaTexture;
+	GLint depthTexture;
 	//GLint layerDistance_param;
 unsigned short *pIndices;
 

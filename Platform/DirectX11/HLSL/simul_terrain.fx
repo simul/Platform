@@ -1,6 +1,6 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-cbuffer cbPerObject R0
+cbuffer cbPerObject R10
 {
 	matrix worldViewProj : packoffset(c0);
 };

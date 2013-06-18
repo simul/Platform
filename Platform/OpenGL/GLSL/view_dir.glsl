@@ -1,8 +1,6 @@
 #ifndef SIMUL_VIEWDIR_GLSL
 #define SIMUL_VIEWDIR_GLSL
 
-uniform mat4 invViewProj;
-
 vec3 texCoordToViewDirection(vec2 texCoords)
 {
 	vec4 pos=vec4(-1.0,-1.0,1.0,1.0);

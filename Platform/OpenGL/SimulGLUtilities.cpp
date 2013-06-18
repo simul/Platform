@@ -330,6 +330,7 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
+#if 1
 	glDepthMask(GL_FALSE);
 	// coverage is 2*atan(1/5)=11 degrees.
 	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
@@ -360,6 +361,7 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
 		glVertex3f(V.x,V.y,V.z);
 	}
 	glEnd();
+#endif
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 		ERROR_CHECK

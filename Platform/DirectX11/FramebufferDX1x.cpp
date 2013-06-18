@@ -21,6 +21,7 @@ typedef std::basic_string<TCHAR> tstring;
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
+#include "Utilities.h"
 #include "Simul/Math/Pi.h"
 using namespace simul;
 using namespace dx11;
@@ -424,35 +425,9 @@ void Framebuffer::Clear(void *context,float r,float g,float b,float a,float dept
 		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,mask,depth,0);
 }
 
-void Framebuffer::Render(void *context,bool blend)
-{
-	DrawQuad(context);
-}
-
 bool Framebuffer::DrawQuad(void *context)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	HRESULT hr=S_OK;
-	UINT stride = sizeof(Vertext);
-	UINT offset = 0;
-    UINT Strides[1];
-    UINT Offsets[1];
-    Strides[0] = 0;
-    Offsets[0] = 0;
-	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout(&previousInputLayout);
-	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
-												1,					// the number of buffers in the array
-												&m_pVertexBuffer,	// the array of vertex buffers
-												&stride,			// array of stride values, one for each buffer
-												&offset);			// array of offset values, one for each buffer
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
-	m_pImmediateContext->Draw(4,0);
-	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-	m_pImmediateContext->IASetInputLayout( previousInputLayout );
-	SAFE_RELEASE(previousInputLayout);
-	return (hr==S_OK);
+	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
+	return true;
 }

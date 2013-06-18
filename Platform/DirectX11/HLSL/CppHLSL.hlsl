@@ -52,6 +52,11 @@
 		AddressU = Clamp;
 		AddressV = Mirror;
 	};
+
+	struct idOnly
+	{
+		uint vertex_id			: SV_VertexID;
+	};
 #endif
 
 #ifdef __cplusplus

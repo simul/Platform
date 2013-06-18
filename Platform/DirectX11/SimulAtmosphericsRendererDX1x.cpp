@@ -9,7 +9,8 @@
 // SimulAtmosphericsRendererDX1x.cpp A renderer for skies, clouds and weather effects.
 
 #include "SimulAtmosphericsRendererDX1x.h"
-#include "Simul/Platform/DirectX11/HLSL/AtmosphericsUniforms.hlsl"
+#include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
+#include "Simul/Platform/CrossPlatform/atmospherics_constants.sl"
 #ifdef XBOX
 	#include <xgraphics.h>
 	#include <fstream>

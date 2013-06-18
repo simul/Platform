@@ -62,7 +62,6 @@ namespace simul
 			ID3D1xEffectTechnique*			densityTechnique;
 			ID3D1xEffectTechnique*			lightingTechnique;
 			ID3D1xEffectTechnique*			transformTechnique;
-			int								density_gridsize;
 			ID3D11Texture3D					*volume_noise_tex;
 			ID3D11ShaderResourceView		*volume_noise_tex_srv;
 			ID3D11Texture3D					*density_texture;

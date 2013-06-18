@@ -68,6 +68,7 @@ namespace simul
 		void setParameter(ID3D1xEffect *effect,const char *name	,ID3D11UnorderedAccessView * value);
 		void setParameter(ID3D1xEffect *effect,const char *name	,float value);
 		void setParameter(ID3D1xEffect *effect,const char *name	,float x,float y);
+		void setParameter(ID3D1xEffect *effect,const char *name	,float x,float y,float z,float w);
 		void setParameter(ID3D1xEffect *effect,const char *name	,int value);
 		void setParameter(ID3D1xEffect *effect,const char *name	,float *vec);
 		void setMatrix(ID3D1xEffect *effect	,const char *name	,const float *value);
@@ -82,16 +83,16 @@ extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1
 extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,const std::map<std::string,std::string>&defines);
 
 
-extern SIMUL_DIRECTX11_EXPORT HRESULT Map2D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp);
-extern SIMUL_DIRECTX11_EXPORT void Unmap2D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture2D *tex);
-extern SIMUL_DIRECTX11_EXPORT HRESULT Map3D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture3D *tex,D3D1x_MAPPED_TEXTURE3D *mp);
-extern SIMUL_DIRECTX11_EXPORT void Unmap3D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture3D *tex);
-extern SIMUL_DIRECTX11_EXPORT HRESULT Map1D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture1D *tex,D3D1x_MAPPED_TEXTURE1D *mp);
-extern SIMUL_DIRECTX11_EXPORT void Unmap1D(ID3D11DeviceContext *m_pImmediateContext,ID3D1xTexture1D *tex);
+extern SIMUL_DIRECTX11_EXPORT HRESULT Map2D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp);
+extern SIMUL_DIRECTX11_EXPORT void Unmap2D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture2D *tex);
+extern SIMUL_DIRECTX11_EXPORT HRESULT Map3D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture3D *tex,D3D1x_MAPPED_TEXTURE3D *mp);
+extern SIMUL_DIRECTX11_EXPORT void Unmap3D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture3D *tex);
+extern SIMUL_DIRECTX11_EXPORT HRESULT Map1D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture1D *tex,D3D1x_MAPPED_TEXTURE1D *mp);
+extern SIMUL_DIRECTX11_EXPORT void Unmap1D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture1D *tex);
 
-extern SIMUL_DIRECTX11_EXPORT HRESULT MapBuffer(ID3D11DeviceContext *m_pImmediateContext,ID3D1xBuffer *vertexBuffer,D3D11_MAPPED_SUBRESOURCE *vert);
-extern SIMUL_DIRECTX11_EXPORT void UnmapBuffer(ID3D11DeviceContext *m_pImmediateContext,ID3D1xBuffer *vertexBuffer);
-extern SIMUL_DIRECTX11_EXPORT HRESULT ApplyPass(ID3D11DeviceContext *m_pImmediateContext,ID3D1xEffectPass *pass);
+extern SIMUL_DIRECTX11_EXPORT HRESULT MapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuffer,D3D11_MAPPED_SUBRESOURCE *vert);
+extern SIMUL_DIRECTX11_EXPORT void UnmapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuffer);
+extern SIMUL_DIRECTX11_EXPORT HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3D1xEffectPass *pass);
 
 extern void SIMUL_DIRECTX11_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos);
 void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );

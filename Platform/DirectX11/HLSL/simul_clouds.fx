@@ -13,7 +13,6 @@
 	#define DETAIL_NOISE 1
 #endif
 
-
 SamplerState lightningSamplerState
 {
     Texture = <lightningIlluminationTexture>;
@@ -23,25 +22,39 @@ SamplerState lightningSamplerState
 	AddressW = Border;
 };
 
-struct RaytraceVertexInput
-{
-    float3 position			: POSITION;
-	float2 texCoords		: TEXCOORD0;
-};
-
 struct RaytraceVertexOutput
 {
     float4 hPosition		: SV_POSITION;
 	float2 texCoords		: TEXCOORD0;
 };
 
-RaytraceVertexOutput VS_Raytrace(RaytraceVertexInput IN)
+RaytraceVertexOutput VS_Raytrace(idOnly IN)
 {
     RaytraceVertexOutput OUT;
+#if 1
+	float2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(pos,0.0,1.0);
+	// Set to far plane so can use depth test as we want this geometry effectively at infinity
+#ifdef REVERSE_DEPTH
+	OUT.hPosition.z	=0.0; 
+#else
+	OUT.hPosition.z	=OUT.hPosition.w; 
+#endif
+    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(pos.x,pos.y));
+#else
 	OUT.hPosition =float4(IN.position.xy,0.0,1.0);
 	OUT.texCoords=IN.texCoords;
+#endif
 	return OUT;
 }
+
 vec4 calcDensity1(vec3 texCoords,float layerFade,vec3 noiseval)
 {
 	vec3 pos=texCoords.xyz+fractalScale.xyz*noiseval;
@@ -125,7 +138,6 @@ float4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 	float sine=view.z;
 	float3 n			=float3(pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
-	float2 noise_texc_0	=mul(noiseMatrix,n.xy);
 
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;
@@ -229,8 +241,7 @@ toPS VS_Main(vertexInput IN)
 	float sine				=OUT.view.z;
 	float3 t1				=pos.xyz*IN.layerDistance;
 	OUT.hPosition			=float4(t1.xyz,1.0);
-	//OUT.hPosition			=mul(worldViewProj,float4(t1.xyz,1.0));
-	float2 noise_pos		=mul(noiseMatrix,pos.xy);
+	float2 noise_pos		=mul((float2x2)noiseMatrix,pos.xy);
 	OUT.noise_texc			=float2(atan2(noise_pos.x,1.0),atan2(noise_pos.y,1.0));
 	OUT.noise_texc			*=IN.noiseScale;
 	OUT.noise_texc			+=IN.noiseOffset;
@@ -314,7 +325,6 @@ float4 PS_Clouds( toPS IN): SV_TARGET
 	noiseval*=IN.texCoords.w;
 	float3 view=normalize(IN.view);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	//float4 final=float4(0.5,0.5,0.5,0.05);
 	float4 final=calcUnfadedColour(IN.texCoords.xyz,IN.layerFade,noiseval,cos0);
 	final.rgb=applyFades(final.rgb,IN.fade_texc,cos0,earthshadowMultiplier);
     return final;
@@ -372,15 +382,34 @@ struct vertexInputCS
 struct vertexOutputCS
 {
     float4 hPosition		: SV_POSITION;
-    float3 texCoords		: TEXCOORD0;
+    float2 texCoords		: TEXCOORD0;
 };
 
-vertexOutputCS VS_CrossSection(vertexInputCS IN)
+//uniform_buffer SingleLayerConstants R12
+//{
+	uniform vec4 rect;
+//};
+
+vertexOutputCS VS_CrossSection(idOnly IN)
 {
     vertexOutputCS OUT;
-    OUT.hPosition	=float4(IN.position.xy,1.0,1.0);
-	OUT.texCoords.xy=IN.texCoords;
-	OUT.texCoords.z=1;
+	float2 poss[4]=
+	{
+		{ 1.0, 0.0},
+		{ 1.0, 1.0},
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
+	//OUT.hPosition	=float4(pos,0.0,1.0);
+	// Set to far plane so can use depth test as we want this geometry effectively at infinity
+#ifdef REVERSE_DEPTH
+	OUT.hPosition.z	=0.0; 
+#else
+	OUT.hPosition.z	=OUT.hPosition.w; 
+#endif
+    OUT.texCoords	=pos;
     return OUT;
 }
 

@@ -1077,14 +1077,14 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 			cbCloudConstants->SetConstantBuffer(cloudConstantsBuffer);
 		}
 		cloudDensity1->SetResource(cloudDensityResource[i%3]);
-		UtilityRenderer::RenderTexture(m_pImmediateContext,i*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
-		UtilityRenderer::RenderTexture(m_pImmediateContext,i*(w+1)+4,h+8,w,w,m_hTechniqueCrossSectionXY);
+		UtilityRenderer::DrawQuad2(m_pImmediateContext,i*(w+1)+4,4,w,h,m_pCloudEffect,m_hTechniqueCrossSectionXZ);
+		UtilityRenderer::DrawQuad2(m_pImmediateContext,i*(w+1)+4,h+8,w,w,m_pCloudEffect,m_hTechniqueCrossSectionXY);
 	}
 	cloudDensity1->SetResource(cloud_texture.srv);
-	UtilityRenderer::RenderTexture(m_pImmediateContext,2*(w+1)+4,4,w,h,m_hTechniqueCrossSectionXZ);
-	UtilityRenderer::RenderTexture(m_pImmediateContext,2*(w+1)+4,h+8,w,w,m_hTechniqueCrossSectionXY);
+	UtilityRenderer::DrawQuad2(m_pImmediateContext,2*(w+1)+4,4,w,h,m_pCloudEffect,m_hTechniqueCrossSectionXZ);
+	UtilityRenderer::DrawQuad2(m_pImmediateContext,2*(w+1)+4,h+8,w,w,m_pCloudEffect,m_hTechniqueCrossSectionXY);
 	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",noiseTextureResource);
-	UtilityRenderer::RenderTexture(m_pImmediateContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect->GetTechniqueByName("show_noise"));
+	UtilityRenderer::DrawQuad2(m_pImmediateContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 }
 
 bool SimulCloudRendererDX1x::RenderLightning(void *context)

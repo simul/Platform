@@ -14,6 +14,7 @@
 
 #pragma warning(disable:3557)
 #pragma warning(disable:3574)
+#include "CppHLSL.hlsl"
 
 //-----------------------------------------------------------------------------
 // Macros and constant values
@@ -43,7 +44,7 @@ groupshared float3 gs_ScanData[SCAN_SMEM_SIZE];
 // Shader constant buffers
 //-----------------------------------------------------------------------------
 
-cbuffer cbParams
+cbuffer cbParams: register(b13)
 {
 	uint  g_NumApproxPasses;
 	float g_HalfBoxFilterWidth;			// w/2

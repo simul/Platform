@@ -95,11 +95,12 @@ void SimulGLTerrainRenderer::Render(void *context)
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	ERROR_CHECK
 	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_STENCIL_TEST);
 	glDepthMask(GL_TRUE);
 	glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
 	glDisable(GL_BLEND);
-	glPolygonMode(GL_FRONT,GL_FILL);
-	glPolygonMode(GL_BACK,GL_LINE);
+glEnable(GL_CULL_FACE);
+	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	glUseProgram(program);
 	ERROR_CHECK
 	simul::math::Vector3 cam_pos;
@@ -149,9 +150,7 @@ void SimulGLTerrainRenderer::Render(void *context)
 			simul::math::Vector3 X2(x2,y,z2);
 			if(i%2==1)
 				std::swap(X1,X2);
-			glTexCoord3f(0,0,1.f);
 			glVertex3f(X1.x,X1.y,X1.z);
-			glTexCoord3f(0,0,1.f);
 			glVertex3f(X2.x,X2.y,X2.z);
 		}
 	}

@@ -29,6 +29,7 @@ struct a2v
 struct v2f
 {
     float4 hPosition	: SV_POSITION;
+    float4 clip_pos	: TEXCOORD3;
 	vec2 texc_global	: TEXCOORD0;
 	vec2 texc_detail	: TEXCOORD1;
 	vec3 wPosition		: TEXCOORD2;
@@ -45,7 +46,8 @@ v2f MainVS(a2v IN)
 	float vertical_shift=sqrt(Rh*Rh-dist*dist)-Rh;
 	//pos.z+=vertical_shift;
 	pos.xy			+=eyePosition.xy;
-	OUT.hPosition	=mul(worldViewProj,vec4(pos.xyz,1.0));
+	OUT.clip_pos	=mul(worldViewProj,vec4(pos.xyz,1.0));
+	OUT.hPosition	=OUT.clip_pos;
     OUT.wPosition	=pos.xyz;
     OUT.texc_global	=(pos.xy-origin.xy)/globalScale;
     OUT.texc_detail	=(pos.xy-origin.xy)/detailScale;
@@ -54,7 +56,10 @@ v2f MainVS(a2v IN)
 
 float4 MainPS(v2f IN) : SV_TARGET
 {
-	float4 result=Clouds2DPS(IN.texc_global,IN.texc_detail,IN.wPosition);
+	vec3 depth_pos	=IN.clip_pos.xyz/IN.clip_pos.w;
+	//depth_pos.z	=clip_pos.z;
+	vec3 depth_texc	=0.5*(depth_pos+vec3(1.0,1.0,1.0));
+	float4 result=Clouds2DPS(IN.texc_global,IN.texc_detail,IN.wPosition,depth_texc);
 	return result;
 }
 

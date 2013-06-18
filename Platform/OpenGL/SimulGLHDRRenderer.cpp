@@ -18,19 +18,17 @@ SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h)
 	,glow_fb(w/2,h/2,GL_TEXTURE_2D)
 	,alt_fb(w/2,h/2,GL_TEXTURE_2D)
 {
-	framebuffer=new FramebufferGL(w,h,GL_TEXTURE_2D);
 }
 
 SimulGLHDRRenderer::~SimulGLHDRRenderer()
 {
-	delete framebuffer;
 }
 
 void SimulGLHDRRenderer::SetBufferSize(int w,int h)
 {
-	if(w!=framebuffer->GetWidth()||h!=framebuffer->GetHeight())
+	if(w!=framebuffer.GetWidth()||h!=framebuffer.GetHeight())
 	{
-		framebuffer->SetWidthAndHeight(w,h);
+		framebuffer.SetWidthAndHeight(w,h);
 		glow_fb.SetWidthAndHeight(w/2,h/2);
 		alt_fb.SetWidthAndHeight(w/2,h/2);
 		if(initialized)
@@ -41,31 +39,21 @@ void SimulGLHDRRenderer::SetBufferSize(int w,int h)
 void SimulGLHDRRenderer::RestoreDeviceObjects()
 {
 	initialized=true;
-	framebuffer->InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
-	glow_fb.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
-	alt_fb.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
+	framebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
+	glow_fb.InitColor_Tex(0,GL_RGBA32F_ARB);
+	alt_fb.InitColor_Tex(0,GL_RGBA32F_ARB);
 	if(glewIsSupported("GL_EXT_packed_depth_stencil")||IsExtensionSupported("GL_EXT_packed_depth_stencil"))
 	{
-		framebuffer->InitDepth_RB(GL_DEPTH24_STENCIL8_EXT);
+		framebuffer.InitDepth_RB(GL_DEPTH24_STENCIL8_EXT);
 		glow_fb.InitDepth_RB(GL_DEPTH24_STENCIL8_EXT);
 		alt_fb.InitDepth_RB(GL_DEPTH24_STENCIL8_EXT);
 	}
 	else
 	{
-		framebuffer->InitDepth_RB(GL_DEPTH_COMPONENT32);
+		framebuffer.InitDepth_RB(GL_DEPTH_COMPONENT32);
 		glow_fb.InitDepth_RB(GL_DEPTH_COMPONENT32);
 		alt_fb.InitDepth_RB(GL_DEPTH_COMPONENT32);
 	}
-/*framebuffer->Activate(context);
-	framebuffer->Clear(0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT);
-	framebuffer->Deactivate(context);
-	ERROR_CHECK
-	glow_fb.Activate(context);
-	glow_fb.Clear(0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT);
-	glow_fb.Deactivate(context);
-	alt_fb.Activate(context);
-	alt_fb.Clear(0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT);
-	alt_fb.Deactivate(context);*/
 	ERROR_CHECK
 	RecompileShaders();
 }
@@ -89,26 +77,26 @@ void SimulGLHDRRenderer::InvalidateDeviceObjects()
 
 bool SimulGLHDRRenderer::StartRender(void *context)
 {
-	framebuffer->Activate(context);
-	framebuffer->Clear(context,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	framebuffer.Activate(context);
+	framebuffer.Clear(context,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 	ERROR_CHECK
 	return true;
 }
 
 bool SimulGLHDRRenderer::FinishRender(void *context)
 {
-	framebuffer->Deactivate(context);
+	framebuffer.Deactivate(context);
 	RenderGlowTexture(context);
 
 	glUseProgram(tonemap_program);
-	setTexture(tonemap_program,"image_texture",0,(GLuint)framebuffer->GetColorTex());
+	setTexture(tonemap_program,"image_texture",0,(GLuint)framebuffer.GetColorTex());
 	ERROR_CHECK
 	glUniform1f(exposure_param,Exposure);
 	glUniform1f(gamma_param,Gamma);
 	glUniform1i(buffer_tex_param,0);
 	setTexture(tonemap_program,"glowTexture",1,(GLuint)glow_fb.GetColorTex());
 
-	framebuffer->Render(context,false);
+	framebuffer.Render(context,false);
 	ERROR_CHECK
 	glUseProgram(0);
 	return true;
@@ -119,10 +107,11 @@ void SimulGLHDRRenderer::RenderGlowTexture(void *context)
 	int main_viewport[4];
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	// Render to the low-res glow.
+	glDisable(GL_BLEND);
 	glUseProgram(glow_program);
 	glow_fb.Activate(context);
 	{
-		setTexture(glow_program,"image_texture",0,(GLuint)framebuffer->GetColorTex());
+		setTexture(glow_program,"image_texture",0,(GLuint)framebuffer.GetColorTex());
 		int glow_viewport[4];
 		glGetIntegerv(GL_VIEWPORT,glow_viewport);
 		SetOrthoProjection(glow_viewport[2],glow_viewport[3]);

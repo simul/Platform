@@ -8,6 +8,7 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/OpenGL/GLSL/simul_earthshadow_uniforms.glsl"
+#include "Simul/Platform/CrossPlatform/atmospherics_constants.sl"
 
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
 	:clouds_texture(0)
@@ -19,7 +20,9 @@ SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
 	,godrays_program(0)
 	,current_insc_program(0)
 	,cloudmix_program(0)
-	,earthShadowUniforms(0)
+	,earthShadowUniformsUBO(0)
+	,atmosphericsUniformsUBO(0)
+	,atmosphericsUniforms2UBO(0)
 {
 	framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D);
 }
@@ -42,7 +45,7 @@ void SimulGLAtmosphericsRenderer::SetBufferSize(int w,int h)
 void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 {
 	initialized=true;
-	framebuffer->InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
+	framebuffer->InitColor_Tex(0,GL_RGBA32F_ARB);
 	
   //You can also try GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24 for the internal format.
   //If GL_DEPTH24_STENCIL8_EXT, go ahead and use it (GL_EXT_packed_depth_stencil)
@@ -58,6 +61,10 @@ void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 	RecompileShaders();
 }
 
+static GLint earthShadowUniformsBindingIndex=3;
+static GLint atmosphericsUniformsBindingIndex=11;
+static GLint atmosphericsUniforms2BindingIndex=12;
+
 void SimulGLAtmosphericsRenderer::RecompileShaders()
 {
 	if(!initialized)
@@ -72,7 +79,9 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 	godrays_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defines);
 	current_insc_program		=0;
 	glUseProgram(0);
-	//MAKE_CONSTANT_BUFFER(ubo,Struct,bindingIndex)
+	MAKE_CONSTANT_BUFFER(earthShadowUniformsUBO,EarthShadowUniforms,earthShadowUniformsBindingIndex);
+	MAKE_CONSTANT_BUFFER(atmosphericsUniformsUBO,AtmosphericsUniforms,atmosphericsUniformsBindingIndex);
+	MAKE_CONSTANT_BUFFER(atmosphericsUniforms2UBO,AtmosphericsUniforms2,atmosphericsUniforms2BindingIndex);
 }
 
 void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
@@ -84,10 +93,8 @@ void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(earthshadow_insc_program);
 	SAFE_DELETE_PROGRAM(cloudmix_program);
 
-	earthShadowUniforms=-1;
 }
 
-static GLint earthShadowUniformsBindingIndex=3;
 void SimulGLAtmosphericsRenderer::UseProgram(GLuint p)
 {
 	if(p&&p!=current_insc_program)
@@ -105,14 +112,19 @@ ERROR_CHECK
 		invViewProj				=glGetUniformLocation(p,"invViewProj");
 		mieRayleighRatio		=glGetUniformLocation(p,"mieRayleighRatio");
 		cloudsTexture			=glGetUniformLocation(p,"cloudsTexture");
-		earthShadowUniforms		=glGetUniformBlockIndex(p,"EarthShadowUniforms");
+	
+		GLint earthShadowUniforms	=glGetUniformBlockIndex(p,"EarthShadowUniforms");
+		GLint atmosphericsUniforms	=glGetUniformBlockIndex(p,"AtmosphericsUniforms");
+		GLint atmosphericsUniforms2	=glGetUniformBlockIndex(p,"AtmosphericsUniforms2");
 ERROR_CHECK
 		// If that block IS in the shader program, then BIND it to the relevant UBO.
 		if(earthShadowUniforms>=0)
-		{
 			glUniformBlockBinding(p,earthShadowUniforms,earthShadowUniformsBindingIndex);
+		if(atmosphericsUniforms>=0)
+			glUniformBlockBinding(p,atmosphericsUniforms,atmosphericsUniformsBindingIndex);
+		if(atmosphericsUniforms2>=0)
+			glUniformBlockBinding(p,atmosphericsUniforms2,atmosphericsUniforms2BindingIndex);
 ERROR_CHECK
-		}
 ERROR_CHECK
 		
 		cloudOrigin				=glGetUniformLocation(current_insc_program,"cloudOrigin");
@@ -124,15 +136,15 @@ ERROR_CHECK
 ERROR_CHECK
 	}
 	glUseProgram(p);
-	if(earthShadowUniforms>=0)
-		glUniformBlockBinding(p,earthShadowUniforms,earthShadowUniformsBindingIndex);
+	//if(earthShadowUniforms>=0)
+	//	glUniformBlockBinding(p,earthShadowUniforms,earthShadowUniformsBindingIndex);
 }
 
+#include "Simul/Camera/Camera.h"
 
 void SimulGLAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depthTexture,float exposure)
 {
-	framebuffer->Deactivate(context);
-	framebuffer->CopyDepthFromFramebuffer();
+	GLuint depth_texture=(GLuint)depthTexture;
 ERROR_CHECK
     glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE1);
@@ -143,6 +155,12 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,loss_texture);
     glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D,skylight_texture);
+ERROR_CHECK
+	simul::math::Matrix4x4 view,proj;
+	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
+	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
+	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
+
 	
 	simul::sky::float4 light_dir	=skyInterface->GetDirectionToLight(cam_pos.z/1000.f);
 	simul::sky::float4 sun_dir		=skyInterface->GetDirectionToSun();
@@ -179,18 +197,15 @@ ERROR_CHECK
 	glUniform1i(imageTexture,0);
 	glUniform1i(inscTexture,1);
 	glUniform1i(cloudShadowTexture,2);
-	glUniform1i(lossTexture,3);
-	glUniform1i(skylightTexture,4);
+	//setTexture(current_insc_program,"lossTexture",3,loss_texture);
+	setTexture(current_insc_program,"skylightTexture",4,skylight_texture);
+	setTexture(current_insc_program,"depthTexture",5,depth_texture);
 // X, Y and Z for the bottom-left corner of the cloud shadow texture.
 	setParameter3(cloudOrigin,cloud_origin);
 	setParameter3(cloudScale,cloud_scale);
 	setParameter(maxDistance,fade_distance_km*1000.f);
 	setParameter3(viewPosition,cam_pos);
 	setParameter(overcast_param,overcast);
-ERROR_CHECK
-	simul::math::Matrix4x4 view,proj;
-	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
-	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
 ERROR_CHECK
 	simul::math::Matrix4x4 vpt;
 	simul::math::Matrix4x4 viewproj;
@@ -201,6 +216,25 @@ ERROR_CHECK
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
 	glUniformMatrix4fv(invViewProj,1,true,ivp.RowPointer(0));
+	
+	AtmosphericsUniforms2 atmosphericsUniforms2;
+	atmosphericsUniforms2.invViewProj=ivp;
+	atmosphericsUniforms2.invViewProj.transpose();
+	atmosphericsUniforms2.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	atmosphericsUniforms2.nearZ=frustum.nearZ*0.001f/fade_distance_km;
+	atmosphericsUniforms2.farZ=frustum.farZ*0.001f/fade_distance_km;
+
+	UPDATE_CONSTANT_BUFFER(atmosphericsUniforms2UBO,atmosphericsUniforms2,atmosphericsUniforms2BindingIndex)
+
+	{
+		AtmosphericsUniforms atmosphericsUniforms;
+		float alt_km			=cam_pos.z/1000.f;
+		atmosphericsUniforms.lightDir			=(const float*)skyInterface->GetDirectionToLight(alt_km);
+		atmosphericsUniforms.mieRayleighRatio	=(const float*)skyInterface->GetMieRayleighRatio();
+		atmosphericsUniforms.texelOffsets		=vec2(0,0);
+		atmosphericsUniforms.hazeEccentricity	=skyInterface->GetMieEccentricity();
+		UPDATE_CONSTANT_BUFFER(atmosphericsUniformsUBO,atmosphericsUniforms,atmosphericsUniformsBindingIndex)
+	}
 ERROR_CHECK
 	//glUniform1f(directLightMultiplier,e.illumination);
 	glEnable(GL_BLEND);
@@ -209,10 +243,10 @@ ERROR_CHECK
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ZERO,GL_ONE);
 
-    glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,(GLuint)framebuffer->GetColorTex());
+    //glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D,(GLuint)framebuffer->GetColorTex());
 	
-	framebuffer->Render(context,false);
+	DrawQuad(0.f,0.f,1.f,1.f);
 	
 	if(ShowGodrays)
 	{
@@ -246,6 +280,10 @@ ERROR_CHECK
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,0);
     glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D,0);
+    glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D,0);
+    glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D,0);
     glDisable(GL_TEXTURE_2D);
 ERROR_CHECK

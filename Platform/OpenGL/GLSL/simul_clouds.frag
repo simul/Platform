@@ -5,6 +5,7 @@
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "CppGlsl.hs"
 #include "../../CrossPlatform/simul_cloud_constants.sl"
+#include "../../CrossPlatform/depth.sl"
 #include "saturate.glsl"
 
 uniform sampler3D cloudDensity1;
@@ -14,7 +15,7 @@ uniform sampler2D lossSampler;
 uniform sampler2D inscatterSampler;
 uniform sampler2D skylightSampler;
 uniform sampler3D illumSampler;
-uniform sampler2D depthAlphaTexture;
+uniform sampler2D depthTexture;
 
 // varyings are written by vert shader, interpolated, and read by frag shader.
 in float layerDensity;
@@ -29,12 +30,14 @@ in vec4 transformed_pos;
 
 void main(void)
 {
-	vec3 half_vec	=vec3(0.5,0.5,0.5);//0.49803921568627452,0.49803921568627452,0.49803921568627452);
+	vec3 half_vec		=vec3(0.5,0.5,0.5);//0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float cos0			=dot(lightDir.xyz,normalize(view.xyz));
 #ifdef USE_DEPTH_TEXTURE
-	vec2 screenCoord	=screenCoordOffset+0.5*(transformed_pos.xy/transformed_pos.w)+vec2(0.5,0.5);
-	float depth			=texture(depthAlphaTexture,screenCoord).a;
-	float cloud_depth	=pow(fade_texc.x,2.0);
+	vec2 clip_pos		=transformed_pos.xy/transformed_pos.w;
+	vec2 screenCoord	=screenCoordOffset+0.5*(clip_pos.xy)+vec2(0.5,0.5);
+	float depth			=texture(depthTexture,screenCoord).x;
+	float dist			=depthToDistance(depth,clip_pos.xy,nearZ,farZ,tanHalfFov);
+	float cloud_dist	=pow(fade_texc.x,2.0);
 #endif
 	vec4 texc=texCoordDiffuse;
 #ifdef TILING_OFFSET
@@ -55,11 +58,11 @@ void main(void)
 	opacity+=rain*rainFade*saturate((0.25-pos.z)*50.0)*(1.0-density.x);
 
 #ifdef USE_DEPTH_TEXTURE
-	float depth_offset=depth-cloud_depth;
-	opacity*=saturate(depth_offset/0.01);
+	//float depth_offset=dist-cloud_dist;
+	//opacity*=saturate(depth_offset/0.01);
 	if(opacity<=0.0)
 		discard;
-	if(depth>0&&depth<cloud_depth||depth>=1.0)
+	if(dist<cloud_dist)
 		discard;
 #else
 	if(opacity<=0.0)

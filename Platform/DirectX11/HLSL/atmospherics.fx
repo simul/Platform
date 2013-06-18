@@ -1,4 +1,5 @@
-#include "AtmosphericsUniforms.hlsl"
+#include "CppHlsl.hlsl"
+#include "../../CrossPlatform/atmospherics_constants.sl"
 #include "states.hlsl"
 #include "../../CrossPlatform/depth.sl"
 
@@ -85,7 +86,7 @@ float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 	float4 inscatter_factor=inscatterTexture.Sample(clampSamplerState,texc2);
 	float cos0=dot(view.xyz,lightDir.xyz);
 	colour+=InscatterFunction(inscatter_factor,cos0);
-	colour+=skylightTexture.Sample(clampSamplerState,texc2);
+	colour+=skylightTexture.Sample(clampSamplerState,texc2).rgb;
     return float4(colour.rgb,1.f);
 }
 
@@ -126,7 +127,7 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	float4 inscatter_factor=inscatterTexture.Sample(clampSamplerState,texc2);
 	float cos0=dot(view,lightDir);
 	float3 colour=InscatterFunction(inscatter_factor,cos0);
-	colour+=skylightTexture.Sample(clampSamplerState,texc2);
+	colour+=skylightTexture.Sample(clampSamplerState,texc2).rgb;
     return float4(colour.rgb,1.f);
 }
 

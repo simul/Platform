@@ -4,7 +4,7 @@
 uniform_buffer GpuCloudConstants R8
 {
 	uniform mat4 transformMatrix;
-	uniform mat4 vertexMatrix;
+	uniform vec4 yRange;
 	uniform int octaves;
 	uniform float persistence;
 	uniform float humidity;

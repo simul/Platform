@@ -1,6 +1,6 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-cbuffer RainConstants R0
+uniform_buffer RainConstants R10
 {
 	float4x4 worldViewProj;
 	float4 lightColour;

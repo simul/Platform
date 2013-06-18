@@ -5,9 +5,9 @@
 #define sampler1D texture1D
 #define sampler2D texture2D
 #define sampler3D texture3D
-#define texture(tex,texc) tex.Sample(samplerState,texc)
-#define texture_clamp(tex,texc) tex.Sample(samplerStateClamp,texc)
-#define texture_nearest(tex,texc) tex.Sample(samplerStateNearest,texc)
+#define texture(tex,texCoords) tex.Sample(samplerState,texCoords)
+#define texture_clamp(tex,texCoords) tex.Sample(samplerStateClamp,texCoords)
+#define texture_nearest(tex,texCoords) tex.Sample(samplerStateNearest,texCoords)
 uniform sampler2D input_texture;
 uniform sampler1D density_texture;
 uniform sampler3D loss_texture;
@@ -45,29 +45,37 @@ SamplerState samplerStateNearest
 struct vertexInput
 {
     float3 position		: POSITION;
-    float2 texc			: TEXCOORD0;
+    float2 texCoords	: TEXCOORD0;
 };
 
 struct vertexOutput
 {
     float4 hPosition	: SV_POSITION;
-	float2 texc			: TEXCOORD0;		
+	float2 texCoords	: TEXCOORD0;		
 };
 
-vertexOutput VS_Main(vertexInput IN)
+vertexOutput VS_Main(idOnly IN)
 {
     vertexOutput OUT;
-    OUT.hPosition = float4(IN.position.xy,1.0,1.0);
-	OUT.texc=IN.texc;
-    return OUT;
+	float2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(pos,0.0,1.0);
+    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(pos.x,pos.y));
+	return OUT;
 }
 
 float4 PS_Loss(vertexOutput IN) : SV_TARGET
 {
-	vec4 previous_loss	=texture(input_texture,IN.texc.xy);
-	float sin_e			=clamp(1.0-2.0*(IN.texc.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
+	vec4 previous_loss	=texture(input_texture,IN.texCoords.xy);
+	float sin_e			=clamp(1.0-2.0*(IN.texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(IN.texc.x*texSize.x-texelOffset)/(texSize.x-1.0);
+	float altTexc		=(IN.texCoords.x*texSize.x-texelOffset)/(texSize.x-1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float maxd			=min(spaceDistKm,distanceKm);
@@ -90,17 +98,18 @@ float4 PS_Loss(vertexOutput IN) : SV_TARGET
 	loss.a				=(loss.r+loss.g+loss.b)/3.0;
 //loss.rgb	*=0.5;//=vec3(alt_km/maxDensityAltKm,stepLengthKm/512.0,stepLengthKm/512.0);
 	loss				*=previous_loss;
+
     return			loss;
 }
 
 
 float4 PS_Insc(vertexOutput IN) : SV_TARGET
 {
-	float4 previous_insc	=texture_nearest(input_texture,IN.texc.xy);
-	float3 previous_loss	=texture_nearest(loss_texture,float3(IN.texc.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;// should adjust texc - we want the PREVIOUS loss!
-	float sin_e			=clamp(1.0-2.0*(IN.texc.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
+	float4 previous_insc	=texture_nearest(input_texture,IN.texCoords.xy);
+	float3 previous_loss	=texture_nearest(loss_texture,float3(IN.texCoords.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;// should adjust texCoords - we want the PREVIOUS loss!
+	float sin_e			=clamp(1.0-2.0*(IN.texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(IN.texc.x*texSize.x-texelOffset)/(texSize.x-1.0);
+	float altTexc		=(IN.texCoords.x*texSize.x-texelOffset)/(texSize.x-1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float maxd			=min(spaceDistKm,distanceKm);
@@ -160,12 +169,12 @@ vec3 getSkylight(float alt_km)
 
 float4 PS_Skyl(vertexOutput IN) : SV_TARGET
 {
-	vec4 previous_skyl	=texture(input_texture,IN.texc.xy);
-	vec3 previous_loss	=texture(loss_texture,vec3(IN.texc.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;
-	// should adjust texc - we want the PREVIOUS loss!
-	float sin_e			=clamp(1.0-2.0*(IN.texc.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
+	vec4 previous_skyl	=texture(input_texture,IN.texCoords.xy);
+	vec3 previous_loss	=texture(loss_texture,vec3(IN.texCoords.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;
+	// should adjust texCoords - we want the PREVIOUS loss!
+	float sin_e			=clamp(1.0-2.0*(IN.texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(IN.texc.x*texSize.x-texelOffset)/(texSize.x-1.0);
+	float altTexc		=(IN.texCoords.x*texSize.x-texelOffset)/(texSize.x-1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float maxd			=min(spaceDistKm,distanceKm);

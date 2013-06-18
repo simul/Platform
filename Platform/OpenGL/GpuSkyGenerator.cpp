@@ -120,7 +120,7 @@ std::cout<<"\tGpu sky: recompile "<<timer.UpdateTime()<<std::endl;
 	for(int i=0;i<2;i++)
 	{
 		fb[i].SetWidthAndHeight(altitudes_km.size(),numElevations);
-		fb[i].InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
+		fb[i].InitColor_Tex(0,GL_RGBA32F_ARB);
 	}
 std::cout<<"\tGpu sky: fb "<<timer.UpdateTime()<<std::endl;
 	BaseFramebuffer *F[2];

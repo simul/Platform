@@ -17,6 +17,7 @@ float2 offset;
 
 struct a2v
 {
+	uint vertex_id	: SV_VertexID;
     float4 position	: POSITION;
     float2 texcoord	: TEXCOORD0;
 };
@@ -24,17 +25,37 @@ struct a2v
 struct v2f
 {
     float4 hPosition	: SV_POSITION;
-    float2 texcoord		: TEXCOORD0;
+    float2 texCoords	: TEXCOORD0;
 };
 
-v2f TonemapVS(a2v IN)
+v2f MainVS(a2v IN)
 {
 	v2f OUT;
+#if 1
+	float2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(pos,0.0,1.0);
+	// Set to far plane so can use depth test as we want this geometry effectively at infinity
+#ifdef REVERSE_DEPTH
+	OUT.hPosition.z	=0.0; 
+#else
+	OUT.hPosition.z	=OUT.hPosition.w; 
+#endif
+    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(pos.x,-pos.y));
+
+#else
     OUT.hPosition.xy=IN.position.xy;
 	OUT.hPosition.z=0.05*IN.position.z;
 	OUT.hPosition.w=0.5*IN.position.z+IN.position.w;
    // OUT.hPosition = mul(worldViewProj, float4(IN.position.xyz,1.0));
-	OUT.texcoord = IN.texcoord;
+	OUT.texCoords = IN.texcoord;
+#endif
     return OUT;
 }
 
@@ -58,19 +79,19 @@ float4 convertInt(float2 texCoord)
 
 float4 TonemapPS(v2f IN) : SV_TARGET
 {
-	float4 c=imageTexture.Sample(samplerState,IN.texcoord);
+	float4 c=imageTexture.Sample(samplerState,IN.texCoords);
 	
-	float4 glow=convertInt(IN.texcoord);
+	float4 glow=convertInt(IN.texCoords);
 	c.rgb+=glow.rgb;
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
-	c.rgb+=depthTexture.Sample(samplerState,IN.texcoord).rgb;
+	c.rgb+=depthTexture.Sample(samplerState,IN.texCoords).rgb;
     return float4(c.rgb,1.f);
 }
 
 float4 GammaPS(v2f IN) : SV_TARGET
 {
-	float4 c=imageTexture.Sample(samplerState,IN.texcoord);
+	float4 c=imageTexture.Sample(samplerState,IN.texCoords);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
     return float4(c.rgb,1.f);
@@ -78,13 +99,13 @@ float4 GammaPS(v2f IN) : SV_TARGET
 
 float4 DirectPS(v2f IN) : SV_TARGET
 {
-	float4 c=imageTexture.Sample(samplerState,IN.texcoord);
+	float4 c=imageTexture.Sample(samplerState,IN.texCoords);
     return float4(c.rgb,1.f);
 }
 
 float4 SkyOverStarsPS(v2f IN) : SV_TARGET
 {
-	float4 c=imageTexture.Sample(samplerState,IN.texcoord);
+	float4 c=imageTexture.Sample(samplerState,IN.texCoords);
     return float4(c.rgba);
 }
 
@@ -92,12 +113,12 @@ float4 GlowPS(v2f IN) : SV_TARGET
 {
     // original image has double the resulution, so we sample 2x2
     vec4 c=vec4(0,0,0,0);
-	c+=texture2D(imageTexture,IN.texcoord+offset/2.0);
-	c+=texture2D(imageTexture,IN.texcoord-offset/2.0);
+	c+=texture2D(imageTexture,IN.texCoords+offset/2.0);
+	c+=texture2D(imageTexture,IN.texCoords-offset/2.0);
 	vec2 offset2=offset;
 	offset2.x=offset.x*-1.0;
-	c+=texture2D(imageTexture,IN.texcoord+offset2/2.0);
-	c+=texture2D(imageTexture,IN.texcoord-offset2/2.0);
+	c+=texture2D(imageTexture,IN.texCoords+offset2/2.0);
+	c+=texture2D(imageTexture,IN.texCoords-offset2/2.0);
 	c=c*exposure/4.0;
 	c-=1.0*vec4(1.0,1.0,1.0,1.0);
 	c=clamp(c,vec4(0.0,0.0,0.0,0.0),vec4(10.0,10.0,10.0,10.0));
@@ -147,7 +168,7 @@ technique11 simul_direct
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,TonemapVS()));
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
     }
 }
@@ -161,7 +182,7 @@ technique11 simul_gamma
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,TonemapVS()));
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,GammaPS()));
     }
 }
@@ -174,7 +195,7 @@ technique11 simul_tonemap
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,TonemapVS()));
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,TonemapPS()));
     }
 }
@@ -184,12 +205,12 @@ technique11 simul_sky_over_stars
     pass p0
     {
 		SetRasterizerState( RenderNoCull );
-//		SetDepthStencilState( DisableDepth, 0 );
-		SetDepthStencilState( EnableDepth, 0 );
+		SetDepthStencilState( DisableDepth, 0 );
+//		SetDepthStencilState( EnableDepth, 0 );
 		SetBlendState(DoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
 		//SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,TonemapVS()));
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,SkyOverStarsPS()));
     }
 }
@@ -203,7 +224,7 @@ technique11 simul_glow
 		SetBlendState(DoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
 		//SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,TonemapVS()));
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,GlowPS()));
     }
 }
