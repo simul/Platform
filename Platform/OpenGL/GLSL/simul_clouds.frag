@@ -29,7 +29,7 @@ in vec4 transformed_pos;
 
 void main(void)
 {
-	vec3 noise_offset	=vec3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
+	vec3 half_vec	=vec3(0.5,0.5,0.5);//0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float cos0			=dot(lightDir.xyz,normalize(view.xyz));
 #ifdef USE_DEPTH_TEXTURE
 	vec2 screenCoord	=screenCoordOffset+0.5*(transformed_pos.xy/transformed_pos.w)+vec2(0.5,0.5);
@@ -41,8 +41,8 @@ void main(void)
 	vec2 tiling_offset=texture(noiseSampler,texc.xy/64.0).xy;
 	texc.xy+=2.0*(tiling_offset.xy-noise_offset.xy);
 #endif
-	vec3 noiseval=textureLod(noiseSampler,noiseCoord,0).xyz-noise_offset;
-#if DETAIL_NOISE==1
+	vec3 noiseval=2.0*(textureLod(noiseSampler,noiseCoord.xy,0).xyz-half_vec);
+#ifdef DETAIL_NOISE
 	noiseval+=(textureLod(noiseSampler,noiseCoord*8.0,0).xyz-0.5)/2.0;
 #endif
 	noiseval*=texc.w;

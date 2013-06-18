@@ -53,9 +53,9 @@ namespace simul
 											,int start_texel
 											,int texels);
 		protected:
-			FramebufferDX1x	fb[2];
-			FramebufferDX1x	world_fb;
-			FramebufferDX1x	dens_fb;
+			simul::dx11::Framebuffer		fb[2];
+			simul::dx11::Framebuffer		world_fb;
+			simul::dx11::Framebuffer		dens_fb;
 			ID3D1xDevice*					m_pd3dDevice;
 			ID3D11DeviceContext*			m_pImmediateContext;
 			ID3D1xEffect*					effect;

@@ -220,7 +220,7 @@ try{
 	lightToDensityMatrix->SetMatrix(Matrix4x4LightToDensityTexcoords);
 	extinctions->SetFloatVector(lightspace_extinctions_float3);
 	// initialize the first input texture.
-	FramebufferDX1x *F[2];
+	simul::dx11::Framebuffer *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
 	densityTexture->SetResource(density_texture_srv);

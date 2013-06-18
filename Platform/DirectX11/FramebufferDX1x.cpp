@@ -6,7 +6,7 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
-// FramebufferDX1x.cpp A renderer for skies, clouds and weather effects.
+// Framebuffer.cpp A renderer for skies, clouds and weather effects.
 
 #include "FramebufferDX1x.h"
 
@@ -21,13 +21,12 @@ typedef std::basic_string<TCHAR> tstring;
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
-
-
-#define BLUR_SIZE 9
-
 #include "Simul/Math/Pi.h"
+using namespace simul;
+using namespace dx11;
 
-FramebufferDX1x::FramebufferDX1x(int w,int h) :
+
+Framebuffer::Framebuffer(int w,int h) :
 	BaseFramebuffer(w,h)
 	,m_pd3dDevice(NULL),
 	m_pBufferVertexDecl(NULL),
@@ -43,11 +42,12 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	,stagingTexture(NULL)
 	,timing(0.f)
 	,target_format(DXGI_FORMAT_R32G32B32A32_FLOAT)
+	,depth_format(DXGI_FORMAT_D32_FLOAT) //DXGI_FORMAT_D32_FLOAT_S8X24_UINT)
 	,num_v(0)
 {
 }
 
-void FramebufferDX1x::SetWidthAndHeight(int w,int h)
+void Framebuffer::SetWidthAndHeight(int w,int h)
 {
 	if(Width!=w||Height!=h)
 	{
@@ -58,7 +58,7 @@ void FramebufferDX1x::SetWidthAndHeight(int w,int h)
 	}
 }
 
-void FramebufferDX1x::SetFormat(int f)
+void Framebuffer::SetFormat(int f)
 {
 	DXGI_FORMAT F=(DXGI_FORMAT)f;
 	if(F==target_format)
@@ -67,7 +67,16 @@ void FramebufferDX1x::SetFormat(int f)
 	CreateBuffers();
 }
 
-void FramebufferDX1x::RestoreDeviceObjects(void *dev)
+void Framebuffer::SetDepthFormat(int f)
+{
+	DXGI_FORMAT F=(DXGI_FORMAT)f;
+	if(F==depth_format)
+		return;
+	depth_format=F;
+	CreateBuffers();
+}
+
+void Framebuffer::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D1xDevice*)dev;
@@ -77,12 +86,12 @@ void FramebufferDX1x::RestoreDeviceObjects(void *dev)
 	CreateBuffers();
 }
 
-void FramebufferDX1x::RecompileShaders()
+void Framebuffer::RecompileShaders()
 {
 	CreateBuffers();
 }
 
-void FramebufferDX1x::InvalidateDeviceObjects()
+void Framebuffer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 
@@ -103,19 +112,19 @@ void FramebufferDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(stagingTexture);
 }
 
-bool FramebufferDX1x::Destroy()
+bool Framebuffer::Destroy()
 {
 	InvalidateDeviceObjects();
 	return true;
 }
 
-FramebufferDX1x::~FramebufferDX1x()
+Framebuffer::~Framebuffer()
 {
 	InvalidateDeviceObjects();
 }
 
 
-bool FramebufferDX1x::IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat)
+bool Framebuffer::IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat)
 {
 	DepthFormat;
 	AdapterFormat;
@@ -147,11 +156,16 @@ struct Vertext
 	D3DXVECTOR2 tex;
 };
 
-bool FramebufferDX1x::CreateBuffers()
+bool Framebuffer::CreateBuffers()
 {
 	if(!Width||!Height)
 		return false;
+	if(!m_pd3dDevice)
+		return false;
 	HRESULT hr=S_OK;
+	SAFE_RELEASE(hdr_buffer_texture);
+	SAFE_RELEASE(m_pHDRRenderTarget)
+	SAFE_RELEASE(buffer_texture_SRV);
 	D3D1x_TEXTURE2D_DESC desc=
 	{
 		Width,
@@ -165,28 +179,21 @@ bool FramebufferDX1x::CreateBuffers()
 		0,
 		0
 	};
-	SAFE_RELEASE(hdr_buffer_texture);
-	V_CHECK(m_pd3dDevice->CreateTexture2D(	&desc,
-											NULL,
-											&hdr_buffer_texture
-										))
-	SAFE_RELEASE(m_pHDRRenderTarget)
-	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
-	//hdr_buffer_texture->GetDesc(&desc);
-	SAFE_RELEASE(buffer_texture_SRV);
-    V_CHECK(m_pd3dDevice->CreateShaderResourceView(hdr_buffer_texture, NULL, &buffer_texture_SRV ));
-
- 	//desc.Width=Width/4;
-	//desc.Height=Height/4;
-	DXGI_FORMAT fmtDepthTex = DXGI_FORMAT_D32_FLOAT;//DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-	
+	if(target_format!=0)
+	{
+		V_CHECK(m_pd3dDevice->CreateTexture2D(	&desc,
+												NULL,
+												&hdr_buffer_texture	))
+		m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
+		V_CHECK(m_pd3dDevice->CreateShaderResourceView(hdr_buffer_texture, NULL, &buffer_texture_SRV ));
+	}
+	DXGI_FORMAT fmtDepthTex = depth_format ;
 	DXGI_FORMAT possibles[]={
 		DXGI_FORMAT_D24_UNORM_S8_UINT,
 		DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
 		DXGI_FORMAT_D32_FLOAT,
 		DXGI_FORMAT_D16_UNORM,
 		DXGI_FORMAT_UNKNOWN};
-
 	SAFE_RELEASE(buffer_depth_texture);
 	// Try creating a depth texture
 	desc.Width = Width;
@@ -278,7 +285,7 @@ bool FramebufferDX1x::CreateBuffers()
 	return (hr==S_OK);
 }
 
-ID3D1xRenderTargetView* FramebufferDX1x::MakeRenderTarget(const ID3D1xTexture2D* pTexture)
+ID3D1xRenderTargetView* Framebuffer::MakeRenderTarget(const ID3D1xTexture2D* pTexture)
 {
 	ID3D1xRenderTargetView* pRenderTargetView;
 	HRESULT hr;
@@ -312,7 +319,7 @@ ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *m_pd3dDevice
 	return tex;
 }
 
-void FramebufferDX1x::CopyToMemory(void *context,void *target,int start_texel,int texels)
+void Framebuffer::CopyToMemory(void *context,void *target,int start_texel,int texels)
 {
 	ID3D11DeviceContext *m_pImmediateContext=NULL;
 	if(texels==0)
@@ -361,7 +368,7 @@ HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pImmediateContext)
 }
 
-void FramebufferDX1x::Activate(void *context)
+void Framebuffer::Activate(void *context)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	if(!m_pImmediateContext)
@@ -377,7 +384,10 @@ void FramebufferDX1x::Activate(void *context)
 												&m_pOldRenderTarget,
 												&m_pOldDepthSurface
 												);
-	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
+	if(m_pHDRRenderTarget)
+		m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
+	else 
+		m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
 	D3D11_VIEWPORT viewport;
 		// Setup the viewport for rendering.
 	viewport.Width = (float)Width;
@@ -391,7 +401,7 @@ void FramebufferDX1x::Activate(void *context)
 	m_pImmediateContext->RSSetViewports(1, &viewport);
 }
 
-void FramebufferDX1x::Deactivate(void *context)
+void Framebuffer::Deactivate(void *context)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
@@ -402,7 +412,7 @@ void FramebufferDX1x::Deactivate(void *context)
 	m_pImmediateContext=NULL;
 }
 
-void FramebufferDX1x::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
+void Framebuffer::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	// Clear the screen to black:
@@ -414,12 +424,12 @@ void FramebufferDX1x::Clear(void *context,float r,float g,float b,float a,float 
 		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,mask,depth,0);
 }
 
-void FramebufferDX1x::Render(void *context,bool blend)
+void Framebuffer::Render(void *context,bool blend)
 {
 	DrawQuad(context);
 }
 
-bool FramebufferDX1x::DrawQuad(void *context)
+bool Framebuffer::DrawQuad(void *context)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	HRESULT hr=S_OK;

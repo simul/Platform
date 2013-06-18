@@ -525,15 +525,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\GLSL\simul_atmospherics.frag"
+				RelativePath=".\GLSL\simul_2d_noise.frag"
 				>
 			</File>
 			<File
 				RelativePath=".\GLSL\simul_atmospherics.vert"
-				>
-			</File>
-			<File
-				RelativePath=".\GLSL\simul_atmospherics_earthshadow.frag"
 				>
 			</File>
 			<File
@@ -645,6 +641,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLSL\simul_insc.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_insc_earthshadow.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_lightning.frag"
 				>
 			</File>
@@ -654,6 +658,10 @@
 			</File>
 			<File
 				RelativePath=".\GLSL\simul_lightning.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_loss.frag"
 				>
 			</File>
 			<File

@@ -671,7 +671,7 @@ void SimulSkyRenderer::EnsureCorrectTextureSizes()
 	simul::sky::BaseSkyRenderer::EnsureCorrectTextureSizes();
 }
 
-void SimulSkyRenderer::EnsureTexturesAreUpToDate()
+void SimulSkyRenderer::EnsureTexturesAreUpToDate(void*)
 {
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
@@ -904,7 +904,7 @@ bool SimulSkyRenderer::Render(void *context,bool blend)
 	interp_at_last_render=skyKeyframer->GetInterpolation();
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
 	m_pSkyEffect->SetFloat	(skyInterp			,skyKeyframer->GetInterpolation());
-	EnsureTexturesAreUpToDate();
+	EnsureTexturesAreUpToDate(context);
 	Render2DFades(context);
 	PIXBeginNamedEvent(0xFF00FFFF,"SimulSkyRenderer::Render");
 	HRESULT hr=S_OK;

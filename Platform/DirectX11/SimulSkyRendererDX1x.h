@@ -141,9 +141,9 @@ protected:
 	ID3D1xTexture3D*					skylight_textures[3];
 
 	// Small framebuffers we render to once per frame to perform fade interpolation.
-	FramebufferDX1x*					loss_2d;
-	FramebufferDX1x*					inscatter_2d;
-	FramebufferDX1x*					skylight_2d;
+	simul::dx11::Framebuffer*					loss_2d;
+	simul::dx11::Framebuffer*					inscatter_2d;
+	simul::dx11::Framebuffer*					skylight_2d;
 
 	ID3D1xShaderResourceView*			flare_texture_SRV;
 	ID3D1xShaderResourceView*			loss_textures_SRV[3];

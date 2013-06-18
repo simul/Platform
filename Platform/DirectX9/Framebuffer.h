@@ -25,6 +25,7 @@ public:
 	void DeactivateAndRender(void *,bool blend);
 	void Render(void *,bool blend);
 	void SetFormat(int f);
+	void SetDepthFormat(int f);
 	void* GetColorTex()
 	{
 		return (void*)buffer_texture;
@@ -36,6 +37,7 @@ protected:
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface;
 	D3DFORMAT			texture_format;
+	D3DFORMAT			depth_format;
 	LPDIRECT3DTEXTURE9	buffer_texture;
 	void MakeTexture();
 };

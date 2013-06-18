@@ -27,7 +27,6 @@ void SimulGLTerrainRenderer::RecompileShaders()
 	printProgramInfoLog(program);
 	ERROR_CHECK
 	eyePosition_param				= glGetUniformLocation(program,"eyePosition");
-	maxFadeDistanceMetres_param		= glGetUniformLocation(program,"maxFadeDistanceMetres");
 	textures_param					= glGetUniformLocation(program,"textures");
 	worldViewProj_param				= glGetUniformLocation(program,"worldViewProj");
 	lightDir_param					= glGetUniformLocation(program,"lightDir");
@@ -122,8 +121,6 @@ void SimulGLTerrainRenderer::Render(void *context)
 		simul::math::Vector3 sun_dir=baseSkyInterface->GetDirectionToLight(0.f);
 	glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	}
-	float max_fade_distance_metres=MaxFadeDistanceKm*1000.f;
-	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, texArray);

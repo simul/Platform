@@ -34,12 +34,13 @@ void main(void)
 	view				=wPosition-eyePosition.xyz;
 	float depth			=length(view)/maxFadeDistanceMetres;
 	view				=normalize(view);
-	
-	vec4 noise_pos		=vec4(view.xyz,1.0)*noiseMatrix;
-	vec2 noisetex		=vec2(atan(noise_pos.x,noise_pos.z),atan(noise_pos.y,noise_pos.z));
-	noiseCoord			=noisetex*layerData.noiseScale+layerData.noiseOffset;
-	noiseCoord			+=multiTexCoord2.xy*0.000000001;
-	//noiseCoord			=multiTexCoord2.xy;
+	vec2 screen_pos		=transformed_pos.xy/transformed_pos.w;
+	vec3 n				=vec3(screen_pos.xy*tanHalfFov,1.0);
+	n					=normalize(n);
+	vec2 noise_texc_0	=(noiseMatrix*vec4(n.xy,0.0,0.0)).xy;
+
+	noiseCoord			=noise_texc_0.xy*layerData.noiseScale+layerData.noiseOffset;
+
 	float sine			=view.z;
 	fade_texc			=vec2(sqrt(depth),0.5*(1.0-sine));
 	rainFade			=1.0-exp(-layerData.layerDistance/10000.0);

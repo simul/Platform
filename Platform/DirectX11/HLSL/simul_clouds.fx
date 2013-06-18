@@ -64,7 +64,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	float sine=view.z;
 	float3 n			=float3(pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
-	float2 noise_texc_0	=mul(noiseMatrix,n.xy);
+	float2 noise_texc_0	=mul((float2x2)noiseMatrix,n.xy);
 
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;
@@ -81,7 +81,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 		float dist=layer.layerDistance;
 		float z=saturate(dist/300000.0);
 		if(z<d)
-		//if(i==12)
+		//if(i==32)
 		{
 			float3 pos=viewPos+dist*view;
 			pos.z-=layer.verticalShift;
@@ -284,7 +284,7 @@ void GS_Main(line VStoGS input[2], inout TriangleStream<toPS> OutputStream)
 
 			toPS OUT;
 			OUT.hPosition			=hpos;
-			float3 noise_pos		=(mul(noiseMatrix,pos.xy),1.0f);
+			float3 noise_pos		=float3(mul((float2x2)noiseMatrix,pos.xy).xy,1.0);
 			OUT.noise_texc			=float2(atan2(noise_pos.x,noise_pos.z),atan2(noise_pos.y,noise_pos.z));
 			OUT.noise_texc			*=IN.noiseScale;
 			OUT.noise_texc			+=IN.noiseOffset;

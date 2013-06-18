@@ -52,8 +52,8 @@ public:
 	void RecompileShaders();
 protected:
 	bool Destroy();
-	FramebufferDX1x framebuffer;
-	FramebufferDX1x glow_fb;
+	simul::dx11::Framebuffer framebuffer;
+	simul::dx11::Framebuffer glow_fb;
 	int Width,Height;
 	ID3D1xDevice*						m_pd3dDevice;
 	ID3D1xBuffer*						m_pVertexBuffer;

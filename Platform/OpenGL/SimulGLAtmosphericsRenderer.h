@@ -22,13 +22,6 @@ public:
 	void InvalidateDeviceObjects();
 	// Interface
 	void SetBufferSize(int w,int h);
-	void SetYVertical(bool )
-	{
-	}
-	void *GetDepthAlphaTexture()
-	{
-		return (void*) framebuffer->GetColorTex();
-	}
 	// Assign the clouds framebuffer texture
 	void SetCloudsTexture(void* t)
 	{
@@ -53,18 +46,18 @@ public:
 		cloud_shadow_texture=(GLuint)c;
 	}
 	//! Render the Atmospherics.
-	void StartRender(void *context);
-	void FinishRender(void *context);
-	void RenderAsOverlay(void *context,const void *depthTexture,float exposure){}
+	void RenderAsOverlay(void *context,const void *depthTexture,float exposure);
 private:
 	//! \internal Switch the current program, either sky_program or earthshadow_program.
 	//! Also sets the parameter variables.	
 	void UseProgram(GLuint);
 	bool initialized;
-	GLuint distance_fade_program;
-	GLuint earthshadow_fade_program;
+	GLuint loss_program;
+	GLuint insc_program;
+	GLuint earthshadow_insc_program;
+
 	GLuint godrays_program;
-	GLuint current_program;
+	GLuint current_insc_program;
 	GLuint cloudmix_program;
 
 	GLuint loss_texture,inscatter_texture,skylight_texture;

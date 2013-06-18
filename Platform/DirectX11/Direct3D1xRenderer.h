@@ -48,6 +48,8 @@ public:
 		META_ValueProperty(bool,ShowCloudCrossSections,"Show the cloud textures as an overlay.")
 		META_ValueProperty(bool,Show2DCloudTextures,"Show the 2D cloud textures as an overlay.")
 		META_ValueProperty(bool,ShowFades,"Show the fade textures as an overlay.")
+		META_ValueProperty(bool,ShowTerrain,"Whether to draw the terrain.")
+		META_ValueProperty(bool,ShowMap,"Show the terrain map as an overlay.")
 		META_ValueProperty(bool,UseHdrPostprocessor,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
 		META_ValueProperty(bool,UseSkyBuffer,"Render the sky to a low-res buffer to increase performance.")
 		META_ValueProperty(bool,ShowLightVolume,"Show the cloud light volume as a wireframe box.")
@@ -78,7 +80,7 @@ public:
 	virtual bool	ModifyDeviceSettings(		DXUTDeviceSettings* pDeviceSettings);
 	virtual HRESULT	OnD3D11CreateDevice(		ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
 	virtual HRESULT	OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,IDXGISwapChain* pSwapChain,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
-	virtual void	OnD3D11FrameRender(		ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep);
+	virtual void	OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep);
 	virtual void	OnD3D11LostDevice();
 	virtual void	OnD3D11DestroyDevice();
 	virtual void	OnD3D11ReleasingSwapChain();
@@ -99,6 +101,8 @@ protected:
 	simul::dx11::GpuCloudGenerator gpuCloudGenerator;
 	simul::dx11::GpuSkyGenerator gpuSkyGenerator;
 	int ScreenWidth,ScreenHeight;
+	// A depth-only FB to make sure we have a readable depth texture.
+	simul::dx11::Framebuffer depthFramebuffer;
 };	
 
 #pragma warning(pop)

@@ -24,14 +24,6 @@
 	#pragma warning(disable:4251)
 #endif
 
-#ifndef RENDERDEPTHBUFFERCALLBACK
-#define RENDERDEPTHBUFFERCALLBACK
-class RenderDepthBufferCallback
-{
-public:
-	virtual void Render()=0;
-};
-#endif
 //! A rendering class that encapsulates Simul skies and clouds. Create an instance of this class within a DirectX 9 program.
 //! You can take this entire class and use it as source in your project, and 
 //! make appropriate modifications where required.
@@ -69,7 +61,7 @@ public:
 	//! Call this to draw rain etc.
 	void RenderPrecipitation(void *context);
 	//! Perform the once-per-frame time update.
-	void Update(void *context,float dt);
+	void PreRenderUpdate(void *context,float dt);
 #if defined(XBOX) || defined(DOXYGEN)
 	//! Call this once per frame to set the matrices (X360 only).
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
@@ -88,13 +80,15 @@ public:
 	class SimulAtmosphericsRenderer *GetAtmosphericsRenderer();
 	//! Get the current debug text as a c-string pointer. We don't use TCHAR here because Qt does not support using wchar_t as a built-in type.
 	const char *GetDebugText() const;
-	//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
-	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 	void EnableRain(bool e=true);
 	float GetTotalBrightness() const;
 	// Connect-up sky, clouds - now in base
 	//void ConnectInterfaces();
 protected:
+	 void ReverseDepthChanged()
+	 {
+		 ReverseDepth=false;
+	 }
 	Framebuffer framebuffer;
 	Framebuffer lowdef_framebuffer;
 	bool Restore3DCloudObjects();
@@ -113,7 +107,6 @@ protected:
 
 	bool CreateBuffers();
 	bool RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture);
-	RenderDepthBufferCallback *renderDepthBufferCallback;
 	simul::base::SmartPtr<class SimulSkyRenderer> simulSkyRenderer;
 	simul::base::SmartPtr<class SimulCloudRenderer> simulCloudRenderer;
 	simul::base::SmartPtr<class SimulLightningRenderer> simulLightningRenderer;

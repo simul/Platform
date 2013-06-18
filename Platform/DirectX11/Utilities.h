@@ -4,11 +4,13 @@
 #include <vector>
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/CrossPlatform/CppSl.hs"
+#include "Simul/Base/FileInterface.h"
 
 namespace simul
 {
 	namespace dx11
 	{
+		extern void SetFileLoader(simul::base::FileLoader *l);
 		struct TextureStruct
 		{
 			TextureStruct();
@@ -131,6 +133,7 @@ namespace simul
 			static void RenderAngledQuad(ID3D1xDevice *m_pd3dDevice,ID3D11DeviceContext *context,const float *dir,bool y_vertical,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
 			static void RenderTexture(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech);
 			static void DrawQuad(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech);
+			static void DrawQuad(ID3D11DeviceContext *m_pImmediateContext);
 		};
 	}
 }

@@ -60,7 +60,7 @@ void GpuSkyGenerator::RecompileShaders()
 //! Return true if the derived class can make sky tables using the GPU.
 bool GpuSkyGenerator::CanPerformGPUGeneration() const
 {
-	return Enabled;
+	return Enabled&&m_pd3dDevice!=NULL;
 }
 
 void GpuSkyGenerator::Make2DLossAndInscatterTextures(
@@ -98,7 +98,7 @@ HRESULT hr=S_OK;
 	{
 		fb[i].SetWidthAndHeight((int)altitudes_km.size(),numElevations);
 	}
-	FramebufferDX1x *F[2];
+	simul::dx11::Framebuffer *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
 	ID3D11Texture1D *dens_tex1					=make1DTexture(m_pd3dDevice,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)density_table);

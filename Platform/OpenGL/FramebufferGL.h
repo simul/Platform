@@ -23,9 +23,9 @@ public:
 	~FramebufferGL();
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
-	void SetShader(int i);
 	void SetWidthAndHeight(int w,int h);
 	void SetFormat(int);
+	void SetDepthFormat(int);
 	// In order to use a color buffer, either
 	// InitColor_RB or InitColor_Tex needs to be called.
 	//void InitColor_RB(int index, GLenum internal_format);
@@ -60,9 +60,9 @@ public:
 	{
 		return (void*) m_tex_col[0];
 	}
-	inline GLenum GetDepthTex()
+	void* GetDepthTex()
 	{
-		return m_tex_depth;
+		return (void*)m_tex_depth;
 	}
 	// Get the target texture format (texture2d or texture_rectangle)
 	inline GLenum GetTarget()

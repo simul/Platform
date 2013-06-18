@@ -27,7 +27,6 @@ private:
 	GLuint program;
 	GLint eyePosition_param;
 	GLint textures_param;
-	GLint maxFadeDistanceMetres_param;
 	GLint worldViewProj_param;
 	GLint lightDir_param;
 	GLint sunlight_param;

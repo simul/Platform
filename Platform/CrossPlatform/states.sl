@@ -1,7 +1,7 @@
 #ifndef STATES_SL
 #define STATES_SL
 
-SamplerState noiseSamplerState : register( s2)
+SamplerState noiseSamplerState : register(s2)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;

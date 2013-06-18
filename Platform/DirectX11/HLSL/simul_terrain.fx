@@ -6,14 +6,6 @@ cbuffer cbPerObject R0
 };
 
 Texture2D mainTexture;
-SamplerState samplerState
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-float maxFadeDistanceMetres ;
 
 float morphFactor;
 float4 eyePosition;
@@ -54,10 +46,9 @@ vertexOutput VS_Main(vertexInput IN)
 
 float4 PS_Main( vertexOutput IN) : SV_TARGET
 {
-	float depth=length(IN.wPosition-eyePosition)/maxFadeDistanceMetres;
-
-	float3 final=mainTexture.Sample(samplerState,IN.texCoordDiffuse.xy).rgb;
-    return float4(final,depth);
+	float3 final=mainTexture.Sample(samplerStateWrap,IN.texCoordDiffuse.xy).rgb;
+	final.rgb+=0.1;
+    return float4(final.rgb,1.0);
 }
 
 technique11 simul_terrain
