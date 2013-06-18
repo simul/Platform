@@ -94,15 +94,15 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 	if(iformat==GL_LUMINANCE32F_ARB)
 	{
 		dens_fb.SetWidthAndHeight(grid[0],grid[1]*grid[2]);
-		if(!dens_fb.InitColor_Tex(0,iformat,GL_FLOAT))
+		if(!dens_fb.InitColor_Tex(0,iformat))
 		{
 			itype=GL_INTENSITY;
 			iformat=GL_INTENSITY32F_ARB;
-			if(!dens_fb.InitColor_Tex(0,iformat,GL_FLOAT))
+			if(!dens_fb.InitColor_Tex(0,iformat))
 			{
 				itype=GL_RGBA;
 				iformat=GL_RGBA32F_ARB;
-				dens_fb.InitColor_Tex(0,iformat,GL_FLOAT);
+				dens_fb.InitColor_Tex(0,iformat);
 			}
 		}
 	}
@@ -136,15 +136,15 @@ timer.StartTime();
 		RecompileShaders();
 	// We render out a 2D texture with each XY layer laid end-to-end, and copy it to the target.
 	dens_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
-	if(!dens_fb.InitColor_Tex(0,iformat,GL_FLOAT))
+	if(!dens_fb.InitColor_Tex(0,iformat))
 	{
 		itype=GL_INTENSITY;
 		iformat=GL_INTENSITY32F_ARB;
-		if(!dens_fb.InitColor_Tex(0,iformat,GL_FLOAT))
+		if(!dens_fb.InitColor_Tex(0,iformat))
 		{
 			itype=GL_RGBA;
 			iformat=GL_RGBA32F_ARB;
-			dens_fb.InitColor_Tex(0,iformat,GL_FLOAT);
+			dens_fb.InitColor_Tex(0,iformat);
 		}
 	}
 	int stride=(iformat==GL_RGBA32F_ARB)?4:1;
@@ -234,6 +234,7 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 				{
 					dy=y1-y;
 				}
+		ERROR_CHECK
 				glCopyTexSubImage3D(GL_TEXTURE_3D,
  					0,
  					0,
@@ -282,7 +283,7 @@ timer.StartTime();
 	for(int i=0;i<2;i++)
 	{
 		fb[i].SetWidthAndHeight(light_grid[0],light_grid[1]);
-		fb[i].InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
+		fb[i].InitColor_Tex(0,GL_RGBA32F_ARB);
 	}
 	// We use the density framebuffer texture as our density texture. This works well
 	// because we don't need to do any filtering.
@@ -392,7 +393,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 	int total_texels=density_grid[0]*density_grid[1]*density_grid[2];
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	world_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
-	world_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8);
+	world_fb.InitColor_Tex(0,GL_RGBA);
 	//GLuint density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,1,false,density);
 	GLuint light_texture	=make3DTexture(light_grid[0]	,light_grid[1],light_grid[2]	,4,false,light);
 	GLuint ambient_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,4,false,ambient);

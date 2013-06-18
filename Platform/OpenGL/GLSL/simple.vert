@@ -1,4 +1,7 @@
-varying vec2 texc;
+#version 140
+in int gl_VertexID;
+in vec4 gl_Vertex;
+out vec2 texc;
 
 void main(void)
 {

@@ -127,6 +127,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 	loss_2d		=new simul::dx11::Framebuffer(0,0);
 	inscatter_2d=new simul::dx11::Framebuffer(0,0);
 	skylight_2d	=new simul::dx11::Framebuffer(0,0);
+	loss_2d->SetDepthFormat(0);
 }
 
 void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
@@ -592,26 +593,11 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
 	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
-
-	// exposure_hint is the value that the colours will finally be multiplied BY.
-	// So if we render at sunlight.xyz, that will become sunlight.xyz*exposure_hint.
-	// This means that to get a final onscreen colour of 1.0, we must render at a value of
-	// 1.0/exposure_hint.
-	// To convert from the max_bright value to get 1.0, we must use 1.0/(max_bright*exposure_hint)
-	/*static float maxout=20.f;
-	float maxout_brightness=maxout/exposure_hint;
-	if(maxout_brightness>1e6f)
-		maxout_brightness=1e6f;
-	if(maxout_brightness<1e-6f)
-		maxout_brightness=1e-6f;
-	if(max_bright>maxout_brightness)
-	{
-		sunlight*=maxout_brightness/max_bright;*/
 	sunlight.w=1.0f/(max_bright*exposure_hint);
 	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
 	colour->SetFloatVector(sunlight);
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
-	UtilityRenderer::RenderAngledQuad(m_pd3dDevice,context,sun_dir,y_vertical,sun_angular_size*2.f,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
+	UtilityRenderer::RenderAngledQuad(context,sun_dir,sun_angular_size*2.f,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
 	// Start the query
 /*d3dQuery->Begin();
 	hr=RenderAngledQuad(sun_dir,sun_angular_size);
@@ -624,14 +610,10 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
     while (d3dQuery->GetData((void *) &pixelsVisible,sizeof(UINT64),0) == S_FALSE);*/
 }
 
-bool SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
+void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
-	if(do_lighting)
-		ApplyPass(context,m_hTechniquePlanet->GetPassByIndex(0));
-	else
-		ApplyPass(context,m_hTechniqueFlare->GetPassByIndex(0));
 	flareTexture->SetResource((ID3D1xShaderResourceView*)tex);
 	simul::sky::float4 original_irradiance=skyKeyframer->GetSkyInterface()->GetSunIrradiance();
 	simul::sky::float4 planet_dir4=dir;
@@ -647,9 +629,9 @@ bool SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float 
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
-	UtilityRenderer::RenderAngledQuad(m_pd3dDevice,context,planet_dir,y_vertical,rad,m_pSkyEffect,m_hTechniquePlanet,view,proj
-		,sun_dir);
-	return true;
+	UtilityRenderer::RenderAngledQuad(context,planet_dir,rad,m_pSkyEffect
+		,do_lighting?m_hTechniquePlanet:m_hTechniqueFlare
+		,view,proj,sun_dir);
 }
 
 bool SimulSkyRendererDX1x::RenderFlare(float exposure)
@@ -688,7 +670,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
 	HRESULT hr;
 	// Clear the screen to black:
-	float clearColor[4]={0.0,0.0,0.0,0.0};
+	static float clearColor[4]={0.0,0.0,0.0,0.0};
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
 	{
@@ -700,7 +682,8 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		context->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
 		if(loss_2d->m_pBufferDepthSurface)
 			context->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
-		loss_2d->DrawQuad(context);
+		simul::dx11::UtilityRenderer::DrawQuad(context);
+		//loss_2d->DrawQuad(context);
 		loss_2d->Deactivate(context);
 	}
 	{
@@ -714,7 +697,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		if(inscatter_2d->m_pBufferDepthSurface)
 			context->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
 			D3D1x_CLEAR_STENCIL, 1.f, 0);
-		inscatter_2d->DrawQuad(context);
+		simul::dx11::UtilityRenderer::DrawQuad(context);
 		inscatter_2d->Deactivate(context);
 	}
 	{
@@ -727,7 +710,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		if(skylight_2d->m_pBufferDepthSurface)
 			context->ClearDepthStencilView(skylight_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
 			D3D1x_CLEAR_STENCIL, 1.f, 0);
-		skylight_2d->DrawQuad(context);
+		simul::dx11::UtilityRenderer::DrawQuad(context);
 		skylight_2d->Deactivate(context);
 	}
 	
@@ -911,6 +894,8 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int h)
 		size=h/3;
 	if(size<2)
 		return false;
+	int y0=width/2;
+	simul::dx11::UtilityRenderer::SetScreenSize(width,h);
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
 	D3DXMATRIX ident,trans;
 	D3DXMatrixIdentity(&ident);
@@ -925,11 +910,11 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int h)
 	ID3D1xEffectShaderResourceVariable*	inscTexture	=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
 
 	inscTexture->SetResource(loss_2d->buffer_texture_SRV);
-	UtilityRenderer::RenderTexture(context,8,8,size,size,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,8,y0+8,size,size,m_pSkyEffect,techniqueShowSky);
 	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
-	UtilityRenderer::RenderTexture(context,8,16+size,size,size,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,8,y0+16+size,size,size,m_pSkyEffect,techniqueShowSky);
 	inscTexture->SetResource(skylight_2d->buffer_texture_SRV);
-	UtilityRenderer::RenderTexture(context,8,24+2*size,size,size,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,8,y0+24+2*size,size,size,m_pSkyEffect,techniqueShowSky);
 	int x=16+size;
 	int s=size/numAltitudes-4;
 	for(int i=0;i<numAltitudes;i++)
@@ -937,17 +922,17 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int h)
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
 		altitudeTexCoord->SetFloat(atc);
 		fadeTexture1->SetResource(loss_textures_SRV[0]);;
-		UtilityRenderer::RenderTexture(context,x+16+0*(s+8)	,i*(s+4)+8			,s,s	,techniqueShowFade);
+		UtilityRenderer::DrawQuad2(context,x+16+0*(s+8)	,y0+i*(s+4)+8		,s,s	,m_pSkyEffect,techniqueShowFade);
 		fadeTexture1->SetResource(loss_textures_SRV[1]);
-		UtilityRenderer::RenderTexture(context,x+16+1*(s+8)	,i*(s+4)+8			,s,s	,techniqueShowFade);
+		UtilityRenderer::DrawQuad2(context,x+16+1*(s+8)	,y0+i*(s+4)+8		,s,s	,m_pSkyEffect,techniqueShowFade);
 		fadeTexture1->SetResource(insc_textures_SRV[0]);
-		UtilityRenderer::RenderTexture(context,x+16+0*(s+8)	,i*(s+4)+16+size	,s,s	,techniqueShowFade);
+		UtilityRenderer::DrawQuad2(context,x+16+0*(s+8)	,y0+i*(s+4)+16+size	,s,s	,m_pSkyEffect,techniqueShowFade);
 		fadeTexture1->SetResource(insc_textures_SRV[1]);
-		UtilityRenderer::RenderTexture(context,x+16+1*(s+8)	,i*(s+4)+16+size	,s,s	,techniqueShowFade);
+		UtilityRenderer::DrawQuad2(context,x+16+1*(s+8)	,y0+i*(s+4)+16+size	,s,s	,m_pSkyEffect,techniqueShowFade);
 		fadeTexture1->SetResource(skyl_textures_SRV[0]);
-		UtilityRenderer::RenderTexture(context,x+16+0*(s+8)	,i*(s+4)+16+2*size	,s,s	,techniqueShowFade);
+		UtilityRenderer::DrawQuad2(context,x+16+0*(s+8)	,y0+i*(s+4)+16+2*size,s,s	,m_pSkyEffect,techniqueShowFade);
 		fadeTexture1->SetResource(skyl_textures_SRV[1]);
-		UtilityRenderer::RenderTexture(context,x+16+1*(s+8)	,i*(s+4)+16+2*size	,s,s	,techniqueShowFade);
+		UtilityRenderer::DrawQuad2(context,x+16+1*(s+8)	,y0+i*(s+4)+16+2*size,s,s	,m_pSkyEffect,techniqueShowFade);
 	}
 	
 	return true;

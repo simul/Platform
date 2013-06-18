@@ -6,12 +6,13 @@ in vec4 vertex;
 
 out vec2 texc_global;
 out vec2 texc_detail;
+out vec4 clip_pos;
 out vec3 wPosition;
 
 void main()
 {
-	//gl_Position				=projection_matrix*modelview_matrix*vec4(vertex.xyz,1.0);
-gl_Position				=worldViewProj*vec4(vertex.xyz,1.0);
+	clip_pos				=worldViewProj*vec4(vertex.xyz,1.0);
+	gl_Position				=clip_pos;
 	vec4 pos				=vertex;
     wPosition				=pos.xyz;
     texc_global				=(pos.xy-origin.xy)/globalScale;

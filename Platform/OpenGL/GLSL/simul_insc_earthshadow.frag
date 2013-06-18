@@ -1,8 +1,8 @@
 #version 140
+#include "CppGlsl.hs"
 uniform vec3 sunDir;
 #include "saturate.glsl"
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
+#include "../../CrossPlatform/atmospherics_constants.sl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 uniform sampler2D inscTexture;
 #define DEF_ES
@@ -13,7 +13,6 @@ uniform float terminatorCosine;
 
 #include "simul_earthshadow_uniforms.glsl"
 uniform sampler2D skylightTexture;
-uniform vec3 lightDir;
 uniform sampler2D imageTexture;
 uniform sampler2D lossTexture;
 #include "view_dir.glsl"

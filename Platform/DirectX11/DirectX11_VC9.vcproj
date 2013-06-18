@@ -530,23 +530,11 @@
 			Name="HLSL"
 			>
 			<File
-				RelativePath=".\HLSL\atmospherics.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\AtmosphericsUniforms.hlsl"
-				>
-			</File>
-			<File
 				RelativePath=".\HLSL\CppHLSL.hlsl"
 				>
 			</File>
 			<File
 				RelativePath=".\HLSL\fft_512x512_c2c.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\gamma.fx"
 				>
 			</File>
 			<File
@@ -570,43 +558,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\HLSL\simul_clouds.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_clouds_2d.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_clouds_and_lightning_dx11.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_debug.fx"
-				>
-			</File>
-			<File
 				RelativePath=".\HLSL\simul_earthshadow.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_foliage.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_gaussian.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_gpu_clouds.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_gpu_lighting.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_gpu_sky.fx"
 				>
 			</File>
 			<File
@@ -614,31 +566,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\HLSL\simul_hdr.fx"
-				>
-			</File>
-			<File
 				RelativePath=".\HLSL\simul_inscatter_fns.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_lightning.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_rain.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_rendernoise.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_sky.fx"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_terrain.fx"
 				>
 			</File>
 			<File
@@ -659,6 +587,10 @@
 		<Filter
 			Name="CrossPlatform"
 			>
+			<File
+				RelativePath="..\CrossPlatform\atmospherics_constants.sl"
+				>
+			</File>
 			<File
 				RelativePath="..\CrossPlatform\CppSl.hs"
 				>
@@ -685,6 +617,66 @@
 			</File>
 			<File
 				RelativePath="..\CrossPlatform\simul_inscatter_fns.sl"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="FX"
+			>
+			<File
+				RelativePath=".\HLSL\atmospherics.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_clouds.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_clouds_2d.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_debug.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_foliage.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_gaussian.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_gpu_clouds.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_gpu_sky.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_hdr.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_lightning.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_rain.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_rendernoise.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_sky.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_terrain.fx"
 				>
 			</File>
 		</Filter>

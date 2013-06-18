@@ -1,21 +1,14 @@
 #version 140
+#include "CppGlsl.hs"
 #include "saturate.glsl"
+#include "../../CrossPlatform/atmospherics_constants.sl"
 #include "view_dir.glsl"
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 uniform sampler2D imageTexture;
 uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
-uniform vec3 lightDir;
-
 // Godrays are cloud-dependent. So we require the cloud texture.
 uniform sampler2D cloudShadowTexture;
-// X, Y and Z for the bottom-left corner of the cloud shadow texture.
-uniform vec3 cloudOrigin;
-uniform vec3 cloudScale;
-uniform vec3 viewPosition;
-uniform float maxDistance;
 
 varying vec2 texCoords;
 

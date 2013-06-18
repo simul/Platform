@@ -26,8 +26,8 @@ public:
 	bool StartRender(void *context);
 	bool FinishRender(void *context);
 	void RenderGlowTexture(void *context);
+	FramebufferGL framebuffer;
 protected:
-	FramebufferGL *framebuffer;
 	FramebufferGL glow_fb;
 	FramebufferGL alt_fb;
 	bool initialized;

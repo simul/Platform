@@ -157,7 +157,8 @@ bool SimulGLCloudRenderer::CreateNoiseTexture(void *context)
 ERROR_CHECK
 glGenerateMipmap(GL_TEXTURE_2D);
 	FramebufferGL noise_fb(noise_texture_frequency,noise_texture_frequency,GL_TEXTURE_2D);
-	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT,GL_REPEAT);
+	noise_fb.SetWrapClampMode(GL_REPEAT);
+	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB);
 ERROR_CHECK
 	noise_fb.Activate(context);
 	{
@@ -175,7 +176,8 @@ ERROR_CHECK
 	FramebufferGL n_fb(noise_texture_size,noise_texture_size,GL_TEXTURE_2D);
 ERROR_CHECK	
 	n_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
-	n_fb.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
+	n_fb.SetWrapClampMode(GL_REPEAT);
+	n_fb.InitColor_Tex(0,GL_RGBA);
 ERROR_CHECK	
 	n_fb.Activate(context);
 	{
@@ -319,7 +321,7 @@ void SimulGLCloudRenderer::SetCloudPerViewConstants(CloudPerViewConstants &cloud
 	cloudPerViewConstants.noiseMatrix			=f;
 
 	cloudPerViewConstants.tanHalfFov	=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	cloudPerViewConstants.nearZ		=frustum.nearZ/max_fade_distance_metres;
+	cloudPerViewConstants.nearZ			=frustum.nearZ/max_fade_distance_metres;
 	cloudPerViewConstants.farZ			=frustum.farZ/max_fade_distance_metres;
 	cloudPerViewConstants.noise_offset=helper->GetNoiseOffset();
 }
@@ -386,13 +388,7 @@ ERROR_CHECK
 	// disable alpha testing - if we enable this, the usual reference alpha is reversed because
 	// the shaders return transparency, not opacity, in the alpha channel.
     glDisable(GL_ALPHA_TEST);
-	if(depth_alpha_tex)
-	{
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
-	}
-	else
-		glDisable(GL_DEPTH_TEST);
+	glDisable(GL_DEPTH_TEST);
 ERROR_CHECK
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -440,7 +436,7 @@ ERROR_CHECK
 ERROR_CHECK
 	glUniform1i(illumSampler_param,6);
 ERROR_CHECK
-	glUniform1i(depthAlphaTexture,7);
+	glUniform1i(depthTexture,7);
 ERROR_CHECK
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
@@ -726,7 +722,7 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 	lossSampler_param			=glGetUniformLocation(program,"lossSampler");
 	inscatterSampler_param		=glGetUniformLocation(program,"inscatterSampler");
 	skylightSampler_param		=glGetUniformLocation(program,"skylightSampler");
-	depthAlphaTexture			=glGetUniformLocation(program,"depthAlphaTexture");
+	depthTexture			=glGetUniformLocation(program,"depthTexture");
 
 	cloudConstants				=glGetUniformBlockIndex(program,"CloudConstants");
 	cloudPerViewConstants		=glGetUniformBlockIndex(program,"CloudPerViewConstants");
@@ -908,7 +904,8 @@ void *SimulGLCloudRenderer::GetCloudShadowTexture()
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
 	cloud_shadow.SetWidthAndHeight(cloud_tex_width_x,cloud_tex_length_y);
-	cloud_shadow.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
+	cloud_shadow.SetWrapClampMode(GL_REPEAT);
+	cloud_shadow.InitColor_Tex(0,GL_RGBA);
 	
 	glUseProgram(cloud_shadow_program);
 	glEnable(GL_TEXTURE_3D);

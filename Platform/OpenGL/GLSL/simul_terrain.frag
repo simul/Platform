@@ -54,7 +54,6 @@ void main()
 	vec4 texel=mix(layer1,layer2,clamp(wPosition.z/100.0,0.0,1.0));
 	result.rgb=texel.rgb*lightDir.z*sunlight;
 	// Distance
-	result.a=length(wPosition-eyePosition)/maxFadeDistanceMetres;
-	result.rgb=result.rgb;
+	result.a=1.0;
     fragmentColour=result;
 }

@@ -1,24 +1,16 @@
 #version 140
+#include "CppGlsl.hs"
 #include "saturate.glsl"
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
+#include "../../CrossPlatform/atmospherics_constants.sl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
-uniform sampler2D imageTexture;
+#include "../../CrossPlatform/depth.sl"
+uniform sampler2D depthTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D skylightTexture;
-uniform float maxDistance;
-
-// Godrays are cloud-dependent. So we require the cloud texture.
 uniform sampler2D cloudShadowTexture;
-// X, Y and Z for the bottom-left corner of the cloud shadow texture.
-uniform vec3 cloudOrigin;
-uniform vec3 cloudScale;
-uniform vec3 viewPosition;
-uniform float overcast;
 
-uniform vec3 lightDir;
-
-varying vec2 texCoords;
+in vec2 pos;
+in vec2 texc;
 
 #include "view_dir.glsl"
 
@@ -35,28 +27,29 @@ float GetIlluminationAt(vec3 vd)
 
 vec4 simple()
 {
-	vec3 view=texCoordToViewDirection(texCoords);
+	vec3 view=texCoordToViewDirection(texc);
 	float sine=view.z;
-    vec4 lookup=texture(depthTexture,texCoords);
+    vec4 lookup=texture(depthTexture,texc);
 	float depth=lookup.x;
-	vec2 texc=vec2(pow(depth,0.5),0.5*(1.0-sine));
-	vec4 insc=texture(inscTexture,texc);
+	float dist=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	vec2 fade_texc=vec2(pow(dist,0.5),0.5*(1.0-sine));
+	vec4 insc=texture(inscTexture,fade_texc);
 	float cos0=dot(view,lightDir);
-	vec3 colour=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
-	vec3 skyl=texture(skylightTexture,texc).rgb;
+	vec3 colour=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
+	vec3 skyl=texture(skylightTexture,fade_texc).rgb;
 	colour+=skyl;
     return vec4(colour,1.0);
 }
-	
+
 vec4 godrays()
 {
-	vec3 view=texCoordToViewDirection(texCoords);
+	vec3 view=texCoordToViewDirection(texc);
 	float sine=view.z;
-    vec4 lookup=texture(depthTexture,texCoords);
+    vec4 lookup=texture(depthTexture,texc);
 	float depth=lookup.x;
-	vec2 texc2=vec2(pow(depth,0.5),0.5*(1.0-sine));
-	vec4 insc=texture(inscTexture,texc2);
-	vec3 skyl=texture(skylightTexture,texc2).rgb;
+	vec2 fade_texc=vec2(pow(depth,0.5),0.5*(1.0-sine));
+	vec4 insc=texture(inscTexture,fade_texc);
+	vec3 skyl=texture(skylightTexture,fade_texc).rgb;
 	// trace the distance from 1.0 to zero
 	
 	// insc is the cumulative inscatter from 0 to dist.
@@ -71,12 +64,12 @@ vec4 godrays()
 		float u=(float(C)-float(i))/float(C);
 		if(u<depth)
 		{
-			texc2.x=u;
+			fade_texc.x=u;
 			float prev_illumination=illumination;
 			float d=u*u*maxDistance;
 			illumination=GetIlluminationAt(view*d);
 			vec4 prev_insc=insc;
-		insc=texture(inscTexture,texc2);
+		insc=texture(inscTexture,fade_texc);
 			vec4 insc_diff=prev_insc-insc;
 			float ill=prev_illumination;//0.5*(illumination+prev_illumination);
 			total_insc.rgb+=insc_diff.rgb*ill;

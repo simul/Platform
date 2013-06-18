@@ -77,8 +77,10 @@ private:
 	GLint invViewProj;
 	GLint mieRayleighRatio;
 	GLint directLightMultiplier;
-	
-	GLint earthShadowUniforms;
+
+	GLuint		earthShadowUniformsUBO;
+	GLuint		atmosphericsUniformsUBO;
+	GLuint		atmosphericsUniforms2UBO;
 	
 	GLint cloudOrigin;
 	GLint cloudScale;

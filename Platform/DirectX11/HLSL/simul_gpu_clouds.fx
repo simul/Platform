@@ -15,30 +15,33 @@ uniform sampler3D volumeNoiseTexture;
 #include "../../CrossPlatform/states.sl"
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
 
-struct vertexInput
-{
-    float3 position		: POSITION;
-    float2 texc			: TEXCOORD0;
-};
-
 struct vertexOutput
 {
     float4 hPosition	: SV_POSITION;
-	float2 texc			: TEXCOORD0;		
+	float2 texCoords	: TEXCOORD0;		
 };
 
-vertexOutput VS_Main(vertexInput IN)
+vertexOutput VS_Main(idOnly IN)
 {
     vertexOutput OUT;
-    float4 outpos=mul(vertexMatrix,float4(IN.position.xy,1.0,1.0));
-    OUT.hPosition=outpos;
-	OUT.texc=0.5*float2(1.0+outpos.x,1.0-outpos.y);
+	float2 poss[4]=
+	{
+		{ 1.0, 0.0},
+		{ 1.0, 1.0},
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	pos.y			=yRange.x+pos.y*yRange.y;
+	float4 vert_pos	=float4(float2(-1.0,1.0)+2.0*vec2(pos.x,-pos.y),1.0,1.0);
+    OUT.hPosition	=vert_pos;
+    OUT.texCoords	=pos;
     return OUT;
 }
 
 float4 PS_Density(vertexOutput IN) : SV_TARGET
 {
-	vec3 densityspace_texcoord	=assemble3dTexcoord(IN.texc.xy);
+	vec3 densityspace_texcoord	=assemble3dTexcoord(IN.texCoords.xy);
 	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
 	float noise_val				=NoiseFunction(noisespace_texcoord,octaves,persistence,time);
 	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z);
@@ -50,7 +53,7 @@ float4 PS_Density(vertexOutput IN) : SV_TARGET
 static const float glow=0.01;
 float4 PS_Lighting(vertexOutput IN) : SV_TARGET
 {
-	vec2 texcoord				=IN.texc.xy;//+texCoordOffset;
+	vec2 texcoord				=IN.texCoords.xy;//+texCoordOffset;
 	vec4 previous_light			=texture_wrap(input_light_texture,texcoord.xy);
 	vec3 lightspace_texcoord	=vec3(texcoord.xy,zPosition);
 	vec3 densityspace_texcoord	=mul(transformMatrix,vec4(lightspace_texcoord,1.0)).xyz;
@@ -63,7 +66,7 @@ float4 PS_Lighting(vertexOutput IN) : SV_TARGET
 
 float4 PS_Transform(vertexOutput IN) : SV_TARGET
 {
-	vec3 densityspace_texcoord	=assemble3dTexcoord(IN.texc.xy);
+	vec3 densityspace_texcoord	=assemble3dTexcoord(IN.texCoords.xy);
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord,1.0)).xyz;
 	lightspace_texcoord.z		-=zPixel;

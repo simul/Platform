@@ -130,6 +130,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		simulHDRRenderer->StartRender(pd3dImmediateContext);
 	if(simulWeatherRenderer)
 	{
+		simulWeatherRenderer->SetMatrices(view,proj);
 		simulWeatherRenderer->PreRenderUpdate(pd3dImmediateContext);
 		//if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 		//	simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender(pd3dImmediateContext);
@@ -142,6 +143,8 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		simulTerrainRenderer->SetMatrices(view,proj);
 		simulTerrainRenderer->Render(pd3dImmediateContext);	
 	}
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->RenderCelestialBackground(pd3dImmediateContext);
 	depthFramebuffer.Deactivate(pd3dImmediateContext);
 	void *depthTexture=depthFramebuffer.GetDepthTex();
 	if(simulWeatherRenderer)
@@ -152,7 +155,6 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 		else
 			simulWeatherRenderer->SetExposureHint(1.0f);
-		simulWeatherRenderer->SetMatrices(view,proj);
 		//((SimulAtmosphericsRendererDX1x*)simulWeatherRenderer->GetBaseAtmosphericsRenderer())->framebuffer->GetDepthTex();
 		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,UseSkyBuffer,false,depthTexture);
 		if(MakeCubemap)

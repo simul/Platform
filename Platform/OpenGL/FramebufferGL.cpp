@@ -4,6 +4,7 @@
 #include <string>
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
+#include <windows.h>
 std::stack<GLuint> FramebufferGL::fb_stack;
 
 FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageSamples)
@@ -18,7 +19,6 @@ FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageS
 	,depth_iformat(0)
 	,colour_iformat(0)
 	,wrap_clamp(GL_CLAMP_TO_EDGE)
-	,format(GL_FLOAT)
 {
     for(int i = 0; i < num_col_buffers; i++)
         m_tex_col[i] = 0;
@@ -37,25 +37,10 @@ void FramebufferGL::RestoreDeviceObjects(void*)
 
 void FramebufferGL::InvalidateDeviceObjects()
 {
-    int i;
-    for(i = 0; i < num_col_buffers; i++)
-	{
-        if(m_tex_col[i])
-			glDeleteTextures(1,&m_tex_col[i]);
-		m_tex_col[i]=0;
-    }
-    if(m_tex_depth)
-	{
-		glDeleteTextures(1,&m_tex_depth);
-		m_tex_depth=0;
-	}
-	if(m_rb_depth)
-	{
-		glDeleteRenderbuffers(1,&m_rb_depth);
-		m_rb_depth=0;
-	}
-	glDeleteFramebuffers(1,&m_fb);
-	m_fb=0;
+	SAFE_DELETE_TEXTURE(m_tex_col[0]);
+	SAFE_DELETE_TEXTURE(m_tex_depth);
+	SAFE_DELETE_RENDERBUFFER(m_rb_depth);
+	SAFE_DELETE_FRAMEBUFFER(m_fb);
 }
 
 void FramebufferGL::SetWidthAndHeight(int w,int h)
@@ -64,95 +49,94 @@ void FramebufferGL::SetWidthAndHeight(int w,int h)
 	{
 		Width=w;
 		Height=h;
-		SAFE_DELETE_TEXTURE(m_tex_col[0]);
-		SAFE_DELETE_RENDERBUFFER(m_rb_depth);
-		SAFE_DELETE_FRAMEBUFFER(m_fb);
+		InvalidateDeviceObjects();
 		if(initialized)
-			InitColor_Tex(0,colour_iformat,format,wrap_clamp);
+		{
+			InitColor_Tex(0,colour_iformat);
+			if(depth_iformat)
+				InitDepth_RB(depth_iformat);
+		}
 	}
 }
 
 void FramebufferGL::SetFormat(int f)
 {
+	if(f!=colour_iformat)
+		InvalidateDeviceObjects();
 	colour_iformat=f;
 }
 
 void FramebufferGL::SetDepthFormat(int f)
 {
+	if(f!=depth_iformat)
+		InvalidateDeviceObjects();
 	depth_iformat=f;
 }
 
-bool FramebufferGL::InitColor_Tex(int index, GLenum iformat,GLenum f,GLint wc)
+void FramebufferGL::SetWrapClampMode(GLint wr)
+{
+	wrap_clamp=wr;
+}
+
+bool FramebufferGL::InitColor_Tex(int index, GLenum iformat)
+{
+	SetFormat(iformat);
+	Init();
+	return true;
+}
+
+void FramebufferGL::Init()
 {
 	if(!Width||!Height)
-		return true;
+		return;
 ERROR_CHECK
-	bool ok=true;
 	initialized=true;
 	if(!m_fb)
 	{
 		glGenFramebuffers(1, &m_fb);
 	}
-	format=f;
-	wrap_clamp=wc;
-	if(!m_tex_col[index]||iformat!=colour_iformat)
+	SAFE_DELETE_TEXTURE(m_tex_col[0]);
+	SAFE_DELETE_TEXTURE(m_tex_depth);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
+	if(colour_iformat)
 	{
-		colour_iformat=iformat;
-		SAFE_DELETE_TEXTURE(m_tex_col[index]);
-		glGenTextures(1, &m_tex_col[index]);
-		glBindTexture(m_target, m_tex_col[index]);
-		glTexParameteri(m_target,GL_TEXTURE_WRAP_S,wrap_clamp);
-		glTexParameteri(m_target,GL_TEXTURE_WRAP_T,wrap_clamp);
-		glTexParameteri(m_target,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-		glTexParameteri(m_target,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-		//glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexImage2D(m_target,0, colour_iformat, Width, Height,0,GL_RGBA, format, NULL);
-		glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
-		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0 + index, m_target, m_tex_col[index], 0);
-		GLenum status = (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		if(status!=GL_FRAMEBUFFER_COMPLETE)
-			ok=false;
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glGenTextures(1, &m_tex_col[0]);
+		glBindTexture(GL_TEXTURE_2D, m_tex_col[0]);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,wrap_clamp);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,wrap_clamp);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D,0, colour_iformat, Width, Height,0,GL_RGBA, GL_UNSIGNED_INT, NULL);
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_tex_col[0], 0);
+		CheckFramebufferStatus();
 	}
+	if(depth_iformat)
+	{
+		glGenTextures(1, &m_tex_depth);
+		glBindTexture(GL_TEXTURE_2D, m_tex_depth);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_clamp);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_clamp);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		//glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		glTexImage2D(GL_TEXTURE_2D, 0, depth_iformat, Width, Height, 0,GL_DEPTH_COMPONENT,GL_UNSIGNED_INT, NULL);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,m_tex_depth,0);
+		CheckFramebufferStatus();
+	}
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 ERROR_CHECK
-	return ok;
 }
 // In order to use a depth buffer, either
 // InitDepth_RB or InitDepth_Tex needs to be called.
 void FramebufferGL::InitDepth_RB(GLenum iformat)
 {
-	if(!Width||!Height)
-		return;
-	initialized=true;
-	if(!m_fb)
-	{
-		glGenFramebuffers(1, &m_fb);
-	}
-	depth_iformat=iformat;
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
-    glGenRenderbuffers(1, &m_rb_depth);
-    glBindRenderbuffer(GL_RENDERBUFFER, m_rb_depth);
-	if (m_samples > 0) {
-        if ((m_coverageSamples > 0) && glRenderbufferStorageMultisampleCoverageNV)
-		{
-            glRenderbufferStorageMultisampleCoverageNV(GL_RENDERBUFFER, m_coverageSamples, m_samples, iformat, Width, Height);
-        }
-		else
-		{
-		    glRenderbufferStorageMultisample(GL_RENDERBUFFER, m_samples, iformat, Width, Height);
-        }
-	}
-	else
-	{
-		glRenderbufferStorage(GL_RENDERBUFFER, iformat, Width, Height);
-	}
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,m_rb_depth);
-	//Also attach as a stencil
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rb_depth);
-	CheckFramebufferStatus();
-	ERROR_CHECK
-    glBindFramebuffer(GL_FRAMEBUFFER, 0); 
-	ERROR_CHECK
+	SetDepthFormat(iformat);
 }
 
 void FramebufferGL::NoDepth()
@@ -161,29 +145,7 @@ void FramebufferGL::NoDepth()
 
 void FramebufferGL::InitDepth_Tex(GLenum iformat)
 {
-	initialized=true;
-	if(!m_fb)
-	{
-		glGenFramebuffers(1, &m_fb);
-	}
-	depth_iformat=iformat;
-	glGenTextures(1, &m_tex_depth);
-	glBindTexture(m_target, m_tex_depth);
-	glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	GLenum depth_format=GL_UNSIGNED_INT;
-	if(depth_iformat==GL_DEPTH_COMPONENT32)
-		depth_format=GL_FLOAT;
-    glTexImage2D(m_target, 0, iformat, Width, Height, 0,GL_DEPTH_COMPONENT,depth_format, NULL);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
-    glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,m_target,m_tex_depth,0);
-	CheckFramebufferStatus();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	SetDepthFormat(iformat);
 }
 
 
@@ -196,7 +158,8 @@ void FramebufferGL::Activate(void *context)
 
 void FramebufferGL::Activate(void *,int x,int y,int w,int h)
 {
-	//glFlush(); 
+	if(!m_fb)
+		Init();
 	CheckFramebufferStatus();
     glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
 	ERROR_CHECK
@@ -285,6 +248,11 @@ void FramebufferGL::Clear(void*,float r,float g,float b,float a,float depth,int 
 	if(!mask)
 		mask=GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT;
 	glClearColor(r,g,b,a);
+	if(mask&GL_COLOR_BUFFER_BIT)
+		 glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
+	// AMAZINGLY, OpenGL requires depth mask to be set to clear the depth buffer.
+	if(mask&GL_DEPTH_BUFFER_BIT)
+		glDepthMask(GL_TRUE);
 	glClearDepth(depth);
 	glClear(mask);
 }
@@ -304,12 +272,15 @@ void FramebufferGL::CheckFramebufferStatus()
             break;
         case GL_FRAMEBUFFER_UNSUPPORTED:
 			std::cerr<<("Unsupported framebuffer format\n");
+			DebugBreak();
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
             std::cerr<<("Framebuffer incomplete attachment\n");
+			DebugBreak();
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
             std::cerr<<("Framebuffer incomplete, missing attachment\n");
+			DebugBreak();
             break;
     /*    case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS:
             std::cerr<<("Framebuffer incomplete, attached images must have same dimensions\n");
@@ -319,9 +290,11 @@ void FramebufferGL::CheckFramebufferStatus()
             break;*/
         case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
             std::cerr<<("Framebuffer incomplete, missing draw buffer\n");
+			DebugBreak();
             break;
         case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
             std::cerr<<("Framebuffer incomplete, missing read buffer\n");
+			DebugBreak();
             break;
         default:
 			std::cerr<<"Unknown error "<<(int)status<<std::endl;

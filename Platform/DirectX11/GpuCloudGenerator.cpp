@@ -94,10 +94,9 @@ void GpuCloudGenerator::RecompileShaders()
 
 int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 {
-	int size=4;
 	//if(iformat==DXGI_FORMAT_R32G32B32A32_FLOAT)
 	//	size=4;
-	return grid[0]*grid[1]*grid[2]*size;
+	return grid[0]*grid[1]*grid[2];
 }
 void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr)
 {
@@ -122,11 +121,10 @@ void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
 									,void* noise_tex,int octaves,float persistence)
 
 {
-try{
 simul::base::Timer timer;
 timer.StartTime();
 std::cout<<"Gpu clouds: FillDensityGrid\n";
-	int new_density_gridsize=GetDensityGridsize(density_grid);
+	int new_density_gridsize=density_grid[0]*density_grid[1]*density_grid[2];
 	dens_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
 	/*if(!dens_fb.SetTargetFormat(0,iformat,GL_FLOAT))
 	{
@@ -138,16 +136,18 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 		}
 	}*/
 	simul::math::Vector3 noise_scale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0]);
-	
-	
-	simul::math::Matrix4x4 vertexMatrix=MakeVertexMatrix(density_grid,start_texel,texels);
+	//simul::math::Matrix4x4 vertexMatrix=MakeVertexMatrix(density_grid,start_texel,texels);
+	//setMatrix	(effect,"vertexMatrix"			,vertexMatrix);
+
+	float y_start=(float)start_texel/(float)new_density_gridsize;
+	float y_range=(float)(texels)/(float)new_density_gridsize;
+	setParameter(effect,"yRange"				,y_start,y_range);
 
 	setParameter(effect,"octaves"				,octaves);
 	setParameter(effect,"persistence"			,persistence);
 	setParameter(effect,"humidity"				,humidity);
 	setParameter(effect,"time"					,time);
 	setParameter(effect,"noiseScale"			,noise_scale);
-	setMatrix	(effect,"vertexMatrix"			,vertexMatrix);
 
 	setParameter(effect,"zPixel"				,1.f/(float)density_grid[2]);
 	setParameter(effect,"zSize"					,(float)density_grid[2]);
@@ -167,28 +167,23 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 		ApplyPass(m_pImmediateContext,densityTechnique->GetPassByIndex(0));
 		dens_fb.DrawQuad(m_pImmediateContext);
 	dens_fb.Deactivate(m_pImmediateContext);
-	density_gridsize=new_density_gridsize;
 std::cout<<"\tDraw "<<timer.UpdateTime()<<"ms"<<std::endl;
 	Ensure3DTextureSizeAndFormat(m_pd3dDevice,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
 std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
-	if(start_texel+texels>=density_grid[0]*density_grid[1]*density_grid[2])
+	if(start_texel+texels>=new_density_gridsize)
 	{
 		D3D1x_MAPPED_TEXTURE3D dens_texture_mapped;
 		Map3D(m_pImmediateContext,density_texture,&dens_texture_mapped);
 		simul::sky::float4 *tex_data=(simul::sky::float4 *)(dens_texture_mapped.pData);
-		float *density=new float[new_density_gridsize];
+		float *density=new float[4*new_density_gridsize];
 		dens_fb.CopyToMemory(m_pImmediateContext,density);
-		memcpy(tex_data,density,new_density_gridsize*sizeof(float));
+		memcpy(tex_data,density,4*new_density_gridsize*sizeof(float));
 		Unmap3D(m_pImmediateContext,density_texture);
 		//density_texture	=make3DTexture(m_pd3dDevice,m_pImmediateContext,density_grid[0],density_grid[1],density_grid[2]	,DXGI_FORMAT_R32G32B32A32_FLOAT,density);
 		delete [] density;
 	}
 std::cout<<"\tfill 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 
-	}
-	catch(...)
-	{
-	}
 	return NULL;
 }
 
@@ -200,7 +195,6 @@ void GpuCloudGenerator::PerformGPURelight(	float *target
 											,const float *Matrix4x4LightToDensityTexcoords
 											,const float *lightspace_extinctions_float3)
 {
-try{
 	for(int i=0;i<2;i++)
 	{
 		fb[i].SetWidthAndHeight(light_grid[0],light_grid[1]);
@@ -252,10 +246,6 @@ try{
 		std::swap(F[0],F[1]);
 		target+=light_grid[0]*light_grid[1]*4;
 	}
-	}
-	catch(...)
-	{
-	}
 }
 
 void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
@@ -265,7 +255,6 @@ void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
 											,int start_texel
 											,int texels)
 {
-try{
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	world_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
 	world_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
@@ -287,8 +276,12 @@ try{
 	ID3D1xEffectScalarVariable *zPixel					=effect->GetVariableByName("zPixel")->AsScalar();
 
 	simul::math::Matrix4x4 vertexMatrix;
-	vertexMatrix=MakeVertexMatrix(density_grid,start_texel,texels);
-	setMatrix(effect,"vertexMatrix"				,vertexMatrix);
+	//vertexMatrix=MakeVertexMatrix(density_grid,start_texel,texels);
+	//setMatrix(effect,"vertexMatrix"				,vertexMatrix);
+	int new_density_gridsize=density_grid[0]*density_grid[1]*density_grid[2];
+	float y_start=(float)start_texel/(float)new_density_gridsize;
+	float y_range=(float)(texels)/(float)new_density_gridsize;
+	setParameter(effect,"yRange"				,y_start,y_range,0,0);
 
 	zSize->SetFloat((float)density_grid[2]);
 	zPixel->SetFloat(1.f/(float)density_grid[2]);
@@ -308,8 +301,4 @@ try{
 	SAFE_RELEASE(ambient_texture1);
 	SAFE_RELEASE(light_texture);
 	SAFE_RELEASE(light_texture1);
-	}
-	catch(...)
-	{
-	}
 }

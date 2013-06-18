@@ -714,7 +714,7 @@ void SimulSkyRenderer::EnsureTextureCycle()
 	}
 }
 
-bool SimulSkyRenderer::RenderPlanet(void* ,void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
+void SimulSkyRenderer::RenderPlanet(void* ,void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	if(do_lighting)
@@ -736,64 +736,43 @@ bool SimulSkyRenderer::RenderPlanet(void* ,void* tex,float rad,const float *dir,
 	// Start the query
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
 	HRESULT hr=RenderAngledQuad(planet_dir,planet_angular_size);
-	return hr==S_OK;
 }
+
 bool SimulSkyRenderer::RenderFades(void *,int w,int h)
 {
 	HRESULT hr=S_OK;
 	int size=w/4;
 	if(h/(numAltitudes+2)<size)
 		size=h/(numAltitudes+2);
-
+	int y0=w/2;
 	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex());
-	RenderTexture(m_pd3dDevice,8	,8		,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
+	RenderTexture(m_pd3dDevice,8	,y0+8		,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
 	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)loss_2d.GetColorTex());
-	RenderTexture(m_pd3dDevice,8	,16+size,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
+	RenderTexture(m_pd3dDevice,8	,y0+16+size,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
 	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)skylight_2d.GetColorTex());
-	RenderTexture(m_pd3dDevice,8	,24+2*size,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
-
+	RenderTexture(m_pd3dDevice,8	,y0+24+2*size,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
+	int x=16+size;
+	int s=size/numAltitudes-4;
 	for(int i=0;i<numAltitudes;i++)
 	{
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
 		m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
+		m_pSkyEffect->SetTexture(fadeTexture, loss_textures[0]);
+		RenderTexture(m_pd3dDevice,x+16+0*(s+8)	,y0+i*(s+4)+8		,s,s,inscatter_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
+		m_pSkyEffect->SetTexture(fadeTexture, loss_textures[1]);
+		RenderTexture(m_pd3dDevice,x+16+1*(s+8)	,y0+i*(s+4)+8		,s,s,inscatter_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 		m_pSkyEffect->SetTexture(fadeTexture, inscatter_textures[0]);
-		RenderTexture(m_pd3dDevice,8+2*(size+8)	,(i)*(size+8)+8,size,size,inscatter_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
+		RenderTexture(m_pd3dDevice,x+16+0*(s+8)	,y0+i*(s+4)+16+size	,s,s,inscatter_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 		m_pSkyEffect->SetTexture(fadeTexture, inscatter_textures[1]);
-		RenderTexture(m_pd3dDevice,8+3*(size+8)	,(i)*(size+8)+8,size,size,inscatter_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
+		RenderTexture(m_pd3dDevice,x+16+1*(s+8)	,y0+i*(s+4)+16+size	,s,s,inscatter_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 		m_pSkyEffect->SetTexture(fadeTexture, skylight_textures[0]);
-		RenderTexture(m_pd3dDevice,8+4*(size+8)	,(i)*(size+8)+8,size,size,inscatter_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
+		RenderTexture(m_pd3dDevice,x+16+0*(s+8)	,y0+i*(s+4)+16+2*size,s,s,inscatter_textures[0],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 		m_pSkyEffect->SetTexture(fadeTexture, skylight_textures[1]);
-		RenderTexture(m_pd3dDevice,8+5*(size+8)	,(i)*(size+8)+8,size,size,inscatter_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
+		RenderTexture(m_pd3dDevice,x+16+1*(s+8)	,y0+i*(s+4)+16+2*size,s,s,inscatter_textures[1],m_pSkyEffect,m_hTechniqueFadeCrossSection);
 
 	}
-
 	return (hr==S_OK);
 }
-/*
-bool SimulSkyRenderer::GetSiderealTransform(D3DXMATRIX *world)
-{
-	HRESULT hr=S_OK;
-	if(!GetSiderealSkyInterface())
-	{
-		D3DXMatrixIdentity(world);
-		//D3DXMatrixRotationX(world,3.14159f*2.f*skyKeyframer->GetTime());
-	}
-	else
-	{
-		D3DXMATRIX tra(GetSiderealSkyInterface()->SiderealToEarthMatrix());
-		D3DXMATRIX flip_y_z;
-		static float rr=3.1415926536f/2.f;
-		D3DXMatrixRotationX(&flip_y_z,rr);
-		D3DXMATRIX tmp1, tmp2;
-		D3DXMatrixMultiply(&tmp1,&flip_y_z,&tra);
-		D3DXMatrixMultiply(&tmp2,&tmp1,&flip_y_z);
-		D3DXMatrixTranspose(world,&tmp2);
-	}
-	world->_41=cam_pos.x;
-	world->_42=cam_pos.y;
-	world->_43=cam_pos.z;
-	return (hr==S_OK);
-}*/
 
 bool SimulSkyRenderer::RenderPointStars(void *,float exposure)
 {

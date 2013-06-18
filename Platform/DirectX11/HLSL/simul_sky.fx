@@ -14,6 +14,7 @@ cbuffer cbPerObject : register(b10)
 	float4 colour;
 	float starBrightness;
 	float radiusRadians;
+	float4 rect;
 };
 
 Texture2D inscTexture;
@@ -55,14 +56,6 @@ struct vertexOutput
     float3 wDirection		: TEXCOORD0;
 };
 
-struct geomOutput
-{
-    float4 hPosition		: SV_POSITION;
-    float3 wDirection		: TEXCOORD0;
-    uint RTIndex			: SV_RenderTargetArrayIndex;
-};
-
-
 //------------------------------------
 // Vertex Shader 
 //------------------------------------
@@ -81,48 +74,6 @@ vertexOutput VS_Cubemap(vertexInput IN)
     OUT.hPosition=float4(IN.position.xyz,1.0);
     OUT.wDirection=normalize(IN.position.xyz);
     return OUT;
-}
-
-[maxvertexcount(3)]
-void GS_Main( triangle vertexOutput input[3], inout TriangleStream<geomOutput> CubeMapStream, uint PrimitiveId : SV_PrimitiveID )
-{
-	geomOutput output;
-	output.RTIndex = 0;
-	for( int v = 0; v < 3; v++ )
-	{
-		output.hPosition = input[v].hPosition;
-		output.wDirection = input[v].wDirection;
-		CubeMapStream.Append( output );
-	}
-	CubeMapStream.RestartStrip();
-}
-
-[maxvertexcount(18)]
-void GS_Cubemap( triangle vertexOutput input[3], inout TriangleStream<geomOutput> CubeMapStream, uint PrimitiveId : SV_PrimitiveID )
-{
-	for( int f = 0; f < 6; ++f )
-	{
-		// Compute screen coordinates
-		geomOutput output;
-	 
-		output.RTIndex = f;
-	 
-		for( int v = 0; v < 3; v++ )
-		{
-			output.hPosition = mul(input[v].hPosition,cubemapViews[f]);
-			output.hPosition = mul(output.hPosition,proj);
-			output.wDirection = input[v].wDirection;
-	 
-			CubeMapStream.Append( output );
-		}
-	 
-		CubeMapStream.RestartStrip();
-	}
-}
-
-float4 PS_Test( geomOutput IN): SV_TARGET
-{
-	return float4(1.f,0,0,1.f);
 }
 
 float HenyeyGreenstein(float g,float cos0)
@@ -157,19 +108,6 @@ float4 PS_DrawCubemap( vertexOutput IN): SV_TARGET
 	return float4(result.rgb,1.f);
 }
 
-float4 PS_Mainc( geomOutput IN): SV_TARGET
-{
-	float3 view=normalize(IN.wDirection.xyz);
-	float sine	=view.z;
-	float2 texcoord	=float2(1.0,0.5*(1.0-sine));
-	float4 insc=inscTexture.Sample(samplerState,texcoord);
-	float cos0=dot(lightDir.xyz,view.xyz);
-	float4 skyl=skylTexture.Sample(samplerState,texcoord);
-	float3 result=InscatterFunction(insc,cos0);
-	result+=skyl.rgb;
-	return float4(result.rgb,1.f);
-}
-
 float4 PS_Main( vertexOutput IN): SV_TARGET
 {
 	float3 view=normalize(IN.wDirection.xyz);
@@ -198,7 +136,7 @@ float4 PS_EarthShadow( vertexOutput IN): SV_TARGET
 
 struct vertexInput3Dto2D
 {
-    float4 position			: POSITION;
+    float3 position			: POSITION;
     float2 texCoords		: TEXCOORD0;
 };
 
@@ -208,11 +146,25 @@ struct vertexOutput3Dto2D
     float2 texCoords		: TEXCOORD0;
 };
 
-vertexOutput3Dto2D VS_Fade3DTo2D(vertexInput3Dto2D IN) 
+vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 
 {
     vertexOutput3Dto2D OUT;
-    OUT.hPosition=float4(IN.position.xy,1.0,1.0);
-    OUT.texCoords=IN.texCoords;
+	float2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(float2(-1.0,-1.0)+2.0*pos,0.0,1.0);
+	// Set to far plane so can use depth test as we want this geometry effectively at infinity
+#ifdef REVERSE_DEPTH
+	OUT.hPosition.z	=0.0; 
+#else
+	OUT.hPosition.z	=OUT.hPosition.w; 
+#endif
+    OUT.texCoords	=vec2(pos.x,1.0-pos.y);
     return OUT;
 }
 
@@ -225,11 +177,25 @@ float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
     return result;
 }
 
-vertexOutput3Dto2D VS_ShowSkyTexture(vertexInput3Dto2D IN) 
+vertexOutput3Dto2D VS_ShowSkyTexture(idOnly IN) 
 {
     vertexOutput3Dto2D OUT;
-    OUT.hPosition	=float4(IN.position.xy,1.0,1.0);
-	OUT.texCoords.xy=IN.texCoords;
+	float2 poss[4]=
+	{
+		{ 1.0, 0.0},
+		{ 1.0, 1.0},
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
+	// Set to far plane so can use depth test as we want this geometry effectively at infinity
+#ifdef REVERSE_DEPTH
+	OUT.hPosition.z	=0.0; 
+#else
+	OUT.hPosition.z	=OUT.hPosition.w; 
+#endif
+    OUT.texCoords	=vec2(pos.x,1.0-pos.y);
     return OUT;
 }
 
@@ -296,6 +262,7 @@ float4 PS_Sun( svertexOutput IN): SV_TARGET
 float4 PS_Flare( svertexOutput IN): SV_TARGET
 {
 	float3 output=colour.rgb*flareTexture.Sample(flareSamplerState,float2(.5f,.5f)+0.5f*IN.tex).rgb;
+
 	return float4(output,1.f);
 }
 
@@ -349,7 +316,6 @@ float approx_oren_nayar(float roughness,float3 view,float3 normal,float3 lightDi
 float4 PS_Planet(svertexOutput IN): SV_TARGET
 {
 	float4 result=flareTexture.Sample(flareSamplerState,float2(.5f,.5f)-0.5f*IN.tex);
-	return float4(result.rgb,1.0);
 	// IN.tex is +- 1.
 	float3 normal;
 	normal.x=IN.tex.x;
@@ -429,19 +395,6 @@ technique11 simul_sky_earthshadow
     }
 }
 
-technique11 simul_sky_CUBEMAP
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-	//	SetBlendState(AddBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Cubemap()));
-        SetGeometryShader(CompileShader(gs_4_0,GS_Cubemap()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Mainc()));
-    }
-}
-
 technique11 simul_show_sky_texture
 {
     pass p0 
@@ -473,7 +426,7 @@ technique11 simul_fade_3d_to_2d
     pass p0 
     {
 		SetRasterizerState( RenderNoCull );
-		//SetDepthStencilState( DisableDepth, 0 );
+		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);

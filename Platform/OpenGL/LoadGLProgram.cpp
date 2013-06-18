@@ -28,8 +28,7 @@ static int LineCount(const std::string &str)
 	while(pos>=0)
 	{
 		pos=str.find('\n',pos+1);
-		if(pos>=0)
-			count++;
+		count++;
 	}
 	return count;
 }
@@ -40,8 +39,9 @@ static int GetLineNumber(const std::string &str,int line_pos)
 	int count=0;
 	while(pos>=0&&pos<=line_pos)
 	{
-		count++;
 		pos=str.find('\n',pos+1);
+		if(pos>=0&&pos<=line_pos)
+			count++;
 	}
 	return count;
 }
@@ -88,7 +88,7 @@ struct FilenameChart
 		if(parent_i>=0)
 		{
 			const TiePoint &p		=tiePoints[parent_i];
-			int next_line_in_parent	=global_line-p.global+1;
+			int next_line_in_parent	=p.local+global_line-p.global;
 			int next_line_global	=global_line+newlen;
 			tiePoints.push_back(TiePoint(p.filename.c_str(),next_line_in_parent,next_line_global));
 		}
@@ -138,20 +138,40 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 		{
 			//std::cerr<<std::endl<<last_filename.c_str()<<":\n"<<info_log.c_str()<<std::endl;
 			int pos=0;
-			int next=info_log.find('\n',pos);
+			int next=info_log.find('\n',pos+1);
 			while(next>=0)
 			{
-				std::string line=info_log.substr(pos,next);
-				if(line.find("ERROR")<line.length())
+				std::string line=info_log.substr(pos+1,next-pos-1);
+				int errpos=line.find("ERROR");
+				if(errpos<0)
+					errpos=line.find("error");
+				if(errpos<0)
+					errpos=line.find("warning");
+				if(errpos>=0)
 				{
 					int first_colon=line.find(":");
 					int second_colon=line.find(":",first_colon+1);
 					int third_colon=line.find(":",second_colon+1);
-					std::string linestr=line.substr(second_colon+1,third_colon-second_colon-1);
-					std::string err_msg=line.substr(third_colon+1,line.length()-third_colon-1);
+					int first_bracket=line.find("(");
+					int second_bracket=line.find(")",first_bracket+1);
+					int numberstart,numberlen;
+					if(third_colon>=0)
+					{
+						numberstart	=second_colon+1;
+						numberlen	=third_colon-second_colon-1;
+					}
+					if((third_colon<0||numberlen>6)&&second_bracket>=0)
+					{
+						numberstart	=first_bracket+1;
+						numberlen	=second_bracket-first_bracket-1;
+					}
+					else
+						continue;
+					std::string linestr=line.substr(numberstart,numberlen);
+					std::string err_msg=line.substr(numberstart+numberlen+1,line.length()-numberstart-numberlen-1);
 					int number=atoi(linestr.c_str());
 					NameLine n=filenameChart.find(number);
-					std::cout<<n.filename.c_str()<<"("<<n.line<<"): Error: "<<err_msg.c_str()<<std::endl;
+					std::cout<<shaderPath.c_str()<<"/"<<n.filename.c_str()<<"("<<n.line<<") "<<err_msg.c_str()<<std::endl;
 				}
 				pos=next;
 				next=info_log.find('\n',pos+1);
@@ -266,12 +286,12 @@ GLuint MakeProgram(const char *filename,const map<string,string> &defines)
 	return MakeProgram(v,NULL,f,defines);
 }
 
-
 GLuint MakeProgramWithGS(const char *filename)
 {
 	 map<string,string> defines;
 	 return MakeProgramWithGS(filename,defines);
 }
+
 GLuint MakeProgramWithGS(const char *filename,const map<string,string> &defines)
 {
 	char v[100];
@@ -316,11 +336,21 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename,const map<string,string> &defines)
 {
 	GLuint prog						=glCreateProgram();
-	GLuint vertex_shader			=LoadShader(vert_filename,defines);
-    if(!vertex_shader)
-    {
-		std::cerr<<"ERROR:\tShader failed to compile\n";
-		DebugBreak();
+	int result=IDRETRY;
+	GLuint vertex_shader=0;
+	while(result==IDRETRY)
+	{
+		vertex_shader			=LoadShader(vert_filename,defines);
+		if(!vertex_shader)
+		{
+			std::cerr<<vert_filename<<"(0): ERROR C1000: Shader failed to compile\n";
+			std::string msg_text=vert_filename;
+			msg_text+=" failed to compile. Edit shader and try again?";
+			int result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
+			if(result!=IDRETRY)
+				DebugBreak();
+		}
+		else break;
 	}
 	glAttachShader(prog,vertex_shader);
 	if(geom_filename)
@@ -335,11 +365,21 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 		ERROR_CHECK
 	}
 	ERROR_CHECK
-    GLuint fragment_shader		=LoadShader(frag_filename,defines);
-    if(!fragment_shader)
-    {
-		std::cerr<<"ERROR:\tShader failed to compile\n";
-		DebugBreak();
+	GLuint fragment_shader=0;
+	result=IDRETRY;
+	while(result==IDRETRY)
+	{
+		fragment_shader		=LoadShader(frag_filename,defines);
+		if(!fragment_shader)
+		{
+			std::cerr<<frag_filename<<"(0): ERROR C1000: Shader failed to compile\n";
+			std::string msg_text=frag_filename;
+			msg_text+=" failed to compile. Edit shader and try again?";
+			int result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
+			if(result!=IDRETRY)
+				DebugBreak();
+		}
+		else break;
 	}
 	ERROR_CHECK
 	glAttachShader(prog,fragment_shader);
@@ -361,7 +401,7 @@ std::string loadShaderSource(const char *filename)
     std::string filePath=shaderPath;
 	char last=0;
 	if(filePath.length())
-		filePath[filePath.length()-1];
+		last=filePath[filePath.length()-1];
 	if(last!='/'&&last!='\\')
 		filePath+="/";
 	filePath+=filename;
@@ -372,6 +412,7 @@ std::string loadShaderSource(const char *filename)
 	{
 		std::cerr<<"\nERROR:\tShader file "<<filename<<" not found, exiting.\n";
 		std::cerr<<"\n\t\tShader path is "<<shaderPath.c_str()<<", is this correct?\n";
+		DebugBreak();
 		exit(1);
 	}
 	char *ptr=shader_source;
@@ -405,7 +446,7 @@ GLuint LoadShader(const char *filename,const map<string,string> &defines)
 	std::string src=loadShaderSource(filename);
 
 	FilenameChart filenameChart;
-	filenameChart.add(((shaderPath+"/")+filename).c_str(),0,src);
+	filenameChart.add(filename,0,src);
 	// process #includes.
 	std::vector<std::string> include_files;
 	size_t pos=0;
@@ -414,16 +455,20 @@ GLuint LoadShader(const char *filename,const map<string,string> &defines)
 		int start_of_line=pos;
 		int start_line=GetLineNumber(src,pos);
 		pos+=9;
-		int eol=src.find("\n",pos+1);
+		int n=src.find("\n",pos+1);
+		int r=src.find("\r",pos+1);
+		int eol=n;
+		if(r>=0&&r<n)
+			eol=r;
 		std::string include_file=src.substr(pos,eol-pos);
 		include_file=include_file.substr(1,include_file.length()-2);
 		include_files.push_back(include_file);
 		src=src.insert(start_of_line,"//");
 		eol+=2;
-		src=src.insert(eol,"\n");
+		src=src.insert(eol,"\r\n");
 		std::string newsrc=loadShaderSource(include_file.c_str());
-		src=src.insert(eol+1,newsrc);
-		filenameChart.add(((shaderPath+"/")+include_file).c_str(),start_line,newsrc);
+		src=src.insert(eol+2,newsrc);
+		filenameChart.add(include_file.c_str(),start_line+1,newsrc);
 	}
 	std::vector<std::string> srcs;
 	for(int i=0;i<(int)include_files.size();i++)

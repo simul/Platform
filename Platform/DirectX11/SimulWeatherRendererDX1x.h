@@ -78,7 +78,7 @@ protected:
 	
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	ID3D1xEffect*						m_pTonemapEffect;
-	ID3D1xEffectTechnique*				TonemapTechnique;
+	ID3D1xEffectTechnique*				directTechnique;
 	ID3D1xEffectTechnique*				SkyOverStarsTechnique;
 	ID3D1xEffectMatrixVariable*			worldViewProj;
 	ID3D1xEffectShaderResourceVariable*	imageTexture;

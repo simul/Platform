@@ -29,7 +29,6 @@ namespace simul
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 			void Activate(void *context);
 			void Deactivate(void *context);
-			void Render(void *context,bool blend);
 			void Clear(void *context,float,float,float,float,float,int mask=0);
 			bool DrawQuad(void *context);
 			ID3D1xShaderResourceView *GetBufferResource()

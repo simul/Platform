@@ -7,43 +7,6 @@ using namespace simul;
 using namespace dx11;
 static ID3D1xDevice		*m_pd3dDevice		=NULL;
 
-class DefaultFileLoader:public simul::base::FileLoader
-{
-public:
-	void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename,bool open_as_text)
-	{
-		FILE *fp = fopen(filename,open_as_text?"r":"rb");
-		if(!fp)
-		{
-			std::cerr<<"Failed to find file "<<filename<<std::endl;
-			return;
-		}
-		fseek(fp, 0, SEEK_END);
-		bytes = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
-		pointer = malloc(bytes);
-		fread(pointer, 1, bytes, fp);
-		fclose(fp);
-	}
-	void ReleaseFileContents(void* pointer)
-	{
-		free(pointer);
-	}
-};
-static DefaultFileLoader fl;
-static simul::base::FileLoader *fileLoader=&fl;
-
-namespace simul
-{
-	namespace dx11
-	{
-		void SetFileLoader(simul::base::FileLoader *l)
-		{
-			fileLoader=l;
-		}
-	}
-}
-
 TextureStruct::TextureStruct()
 	:texture(NULL)
 	,shaderResourceView(NULL)
@@ -502,15 +465,37 @@ void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext,float x1
 
 void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext)
 {
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
+	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	//m_pImmediateContext->IASetInputLayout(NULL);
+	m_pImmediateContext->Draw(4,0);
+	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+}			
+
+void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffect* eff,ID3D1xEffectTechnique* tech)
+{
+	DrawQuad2(m_pImmediateContext
+		,2.f*(float)x1/(float)screen_width-1.f
+		,1.f-2.f*(float)(y1+dy)/(float)screen_height
+		,2.f*(float)dx/(float)screen_width
+		,2.f*(float)dy/(float)screen_height
+		,eff,tech);
+}
+
+void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffect* eff,ID3D1xEffectTechnique* tech)
+{
 	HRESULT hr=S_OK;
+	setParameter(eff,"rect",x1,y1,dx,dy);
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	ID3D11InputLayout* previousInputLayout;
 	m_pImmediateContext->IAGetInputLayout(&previousInputLayout );
-	//m_pImmediateContext->IASetInputLayout(NULL);
+	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
+	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(4,0);
-	m_pImmediateContext->IASetInputLayout( previousInputLayout );
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	m_pImmediateContext->IASetInputLayout( previousInputLayout );
 	SAFE_RELEASE(previousInputLayout);
 }
