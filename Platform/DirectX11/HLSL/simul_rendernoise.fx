@@ -7,9 +7,12 @@ SamplerState samplerState
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
-int octaves;
-float persistence;
 
+uniform_buffer AtmosphericsUniforms R11
+{
+	int octaves;
+	float persistence;
+}
 struct a2v
 {
     float4 position  : POSITION;

@@ -480,7 +480,7 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 	noise_texture_3D=make3DTexture(m_pd3dDevice,noise_texture_frequency,noise_texture_frequency,noise_texture_frequency,DXGI_FORMAT_R8G8B8A8_SNORM,(const float*)data);
 
 	m_pd3dDevice->CreateShaderResourceView(noise_texture_3D,NULL,&noiseTexture3DResource);
-	m_pImmediateContext->GenerateMips(noiseTexture3DResource);
+//	m_pImmediateContext->GenerateMips(noiseTexture3DResource);
 	delete [] data;
 	SAFE_RELEASE(effect);
 }
