@@ -40,7 +40,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 {
 	if(!m_pd3dDevice)
 		return;
-	CreateEffect(m_pd3dDevice,&m_pRainEffect,L"simul_rain.fx");
+	CreateEffect(m_pd3dDevice,&m_pRainEffect,"simul_rain.fx");
 
 	SAFE_RELEASE(rain_texture);
 	//rain_texture		=simul::dx11::LoadTexture("Rain.png");

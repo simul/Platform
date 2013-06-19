@@ -43,7 +43,7 @@ protected:
 	ID3D1xShaderResourceView*				flare_texture;
 	std::vector<ID3D1xShaderResourceView*>	halo_textures;
 protected:
-	tstring									FlareTexture;
+	std::string								FlareTexture;
 };
 #ifdef _MSC_VER
 	#pragma warning(pop)

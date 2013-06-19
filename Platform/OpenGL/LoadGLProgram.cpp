@@ -13,6 +13,7 @@
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Base/StringFunctions.h"
 static std::string shaderPath;
 static std::string last_filename;
 
@@ -154,7 +155,7 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 					int third_colon=line.find(":",second_colon+1);
 					int first_bracket=line.find("(");
 					int second_bracket=line.find(")",first_bracket+1);
-					int numberstart,numberlen;
+					int numberstart,numberlen=0;
 					if(third_colon>=0)
 					{
 						numberstart	=second_colon+1;
@@ -169,9 +170,21 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 						continue;
 					std::string linestr=line.substr(numberstart,numberlen);
 					std::string err_msg=line.substr(numberstart+numberlen+1,line.length()-numberstart-numberlen-1);
+					int at_pos=err_msg.find("0(");
+					while(at_pos>=0)
+					{
+						int end_brk=err_msg.find(")",at_pos);
+						if(end_brk<0)
+							break;
+						std::string l=err_msg.substr(at_pos+2,end_brk-at_pos-2);
+						int num=atoi(l.c_str());
+						NameLine n=filenameChart.find(num);
+						err_msg.replace(at_pos,end_brk-at_pos,n.filename+"("+base::stringFormat("%d",n.line)+") ");
+						at_pos=err_msg.find("0(");
+					}
 					int number=atoi(linestr.c_str());
 					NameLine n=filenameChart.find(number);
-					std::cout<<shaderPath.c_str()<<"/"<<n.filename.c_str()<<"("<<n.line<<") "<<err_msg.c_str()<<std::endl;
+					std::cerr<<shaderPath.c_str()<<"/"<<n.filename.c_str()<<"("<<n.line<<") "<<err_msg.c_str()<<std::endl;
 				}
 				pos=next;
 				next=info_log.find('\n',pos+1);

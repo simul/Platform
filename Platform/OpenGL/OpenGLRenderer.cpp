@@ -166,8 +166,8 @@ ERROR_CHECK
 		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render(context);
 		simulWeatherRenderer->RenderCelestialBackground(context);
-		depthFramebuffer.Deactivate(context);
 #if 1
+		depthFramebuffer.Deactivate(context);
 		{
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)depthFramebuffer.GetColorTex());

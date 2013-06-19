@@ -13,7 +13,7 @@ SimulOpticsRendererDX1x::SimulOpticsRendererDX1x()
 	,m_pFlareEffect(NULL)
 	,flare_texture(NULL)
 {
-	FlareTexture=_T("SunFlare.png");
+	FlareTexture=("SunFlare.png");
 }
 
 SimulOpticsRendererDX1x::~SimulOpticsRendererDX1x()
@@ -37,10 +37,10 @@ void SimulOpticsRendererDX1x::RestoreDeviceObjects(void *dev)
 	halo_textures.resize(num_halo_textures);
 	for(int i=0;i<num_halo_textures;i++)
 	{
-		tstring tn=simul::base::StringToWString(lensFlare.GetTypeName(i));
+		std::string tn=(lensFlare.GetTypeName(i));
 		ID3D1xShaderResourceView* &tex=halo_textures[i];
 		SAFE_RELEASE(tex);
-		tex=simul::dx11::LoadTexture((tn+_T(".png")).c_str());
+		tex=simul::dx11::LoadTexture((tn+".png").c_str());
 	}
 	RecompileShaders();
 }
@@ -63,7 +63,7 @@ void SimulOpticsRendererDX1x::RecompileShaders()
 	SAFE_RELEASE(m_pFlareEffect);
 	std::map<std::string,std::string> defines;
 	HRESULT hr;
-	hr=CreateEffect(m_pd3dDevice,&m_pFlareEffect,L"simul_sky.fx",defines);
+	hr=CreateEffect(m_pd3dDevice,&m_pFlareEffect,"simul_sky.fx",defines);
 	V_CHECK(hr);
 	m_hTechniqueFlare			=m_pFlareEffect->GetTechniqueByName("simul_flare");
 	worldViewProj				=m_pFlareEffect->GetVariableByName("worldViewProj")->AsMatrix();

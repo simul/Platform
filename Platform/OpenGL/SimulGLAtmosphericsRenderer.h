@@ -48,45 +48,21 @@ public:
 	//! Render the Atmospherics.
 	void RenderAsOverlay(void *context,const void *depthTexture,float exposure);
 private:
-	//! \internal Switch the current program, either sky_program or earthshadow_program.
-	//! Also sets the parameter variables.	
-	void UseProgram(GLuint);
 	bool initialized;
 	GLuint loss_program;
 	GLuint insc_program;
 	GLuint earthshadow_insc_program;
 
 	GLuint godrays_program;
-	GLuint current_insc_program;
-	GLuint cloudmix_program;
 
 	GLuint loss_texture,inscatter_texture,skylight_texture;
 	GLuint input_texture,depth_texture;
 	GLuint clouds_texture;
 	GLuint cloud_shadow_texture;
-	
-	GLint cloudsTexture;
-	GLint imageTexture;
-	GLint lossTexture;
-	GLint inscTexture;
-	GLint skylightTexture;
-	GLint cloudShadowTexture;
-
-	GLint hazeEccentricity;
-	GLint lightDir;
-	GLint invViewProj;
-	GLint mieRayleighRatio;
-	GLint directLightMultiplier;
 
 	GLuint		earthShadowUniformsUBO;
 	GLuint		atmosphericsUniformsUBO;
 	GLuint		atmosphericsUniforms2UBO;
-	
-	GLint cloudOrigin;
-	GLint cloudScale;
-	GLint maxDistance;
-	GLint viewPosition;
-	GLint overcast_param;
 
 	FramebufferGL *framebuffer;
 };

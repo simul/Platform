@@ -619,6 +619,10 @@
 				RelativePath="..\CrossPlatform\simul_inscatter_fns.sl"
 				>
 			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_terrain_constants.sl"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="FX"

@@ -119,7 +119,7 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	SAFE_RELEASE(m_pTonemapEffect);
 	if(!m_pd3dDevice)
 		return;
-	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("simul_hdr.fx"));
+	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"));
 	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
 	glowTechnique			=m_pTonemapEffect->GetTechniqueByName("simul_glow");
 	Exposure_				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();

@@ -7,6 +7,7 @@
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix.h"
 #include "Simul/Base/Timer.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 using namespace simul;
 using namespace dx11;
 
@@ -45,7 +46,7 @@ void GpuSkyGenerator::InvalidateDeviceObjects()
 void GpuSkyGenerator::RecompileShaders()
 {
 	SAFE_RELEASE(effect);
-	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,L"simul_gpu_sky.fx");
+	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_gpu_sky.fx");
 	if(effect)
 	{
 		lossTechnique	=effect->GetTechniqueByName("simul_gpu_loss");
@@ -80,8 +81,8 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				,float overcast
 				,float overcast_base_km
 				,float overcast_range_km
-				,int index
-				,int end_index
+				,int start_texel
+				,int texels
 				,const simul::sky::float4 *density_table
 				,const simul::sky::float4 *optical_table
 				,const simul::sky::float4 *blackbody_table
@@ -98,6 +99,7 @@ HRESULT hr=S_OK;
 	{
 		fb[i].SetWidthAndHeight((int)altitudes_km.size(),numElevations);
 	}
+	int gridsize_2d=altitudes_km.size()*numElevations;
 	simul::dx11::Framebuffer *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
@@ -149,6 +151,10 @@ HRESULT hr=S_OK;
 		constants.hazeEccentricity	=1.0;
 		constants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
 		constants.emissivity		=emissivity;
+		//float y_start=(float)start_texel/(float)new_density_gridsize;
+		//float y_range=(float)(texels)/(float)new_density_gridsize;
+		constants.yRange			=vec2(0.f,1.f);
+
 	//UPDATE_CONSTANT_BUFFER(constantBuffer,GpuSkyConstants,gpuSkyConstants);
 		gConstants=constants;
 		m_pImmediateContext->Unmap(constantBuffer, 0);	
@@ -178,7 +184,7 @@ HRESULT hr=S_OK;
 			F[1]->Clear(m_pImmediateContext,0.f,0.f,0.f,0.f,1.f);
 			input_texture->SetResource((ID3D11ShaderResourceView*)F[0]->GetColorTex());
 			ApplyPass(m_pImmediateContext,lossTechnique->GetPassByIndex(0));
-			F[1]->DrawQuad(m_pImmediateContext);
+			simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
 		F[1]->Deactivate(m_pImmediateContext);
 		F[1]->CopyToMemory(m_pImmediateContext,target);
 		std::swap(F[0],F[1]);

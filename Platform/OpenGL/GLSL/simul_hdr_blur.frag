@@ -9,7 +9,7 @@ void main(void)
     // original image
 	for(int i=-25;i<25;i++)
 	{
-		vec2 d=offs*i;
+		vec2 d=offs*float(i);
 		vec2 t=texc+d;
 		float ii=float(i*i);
 		float str=0.04*exp(-ii/125.0);

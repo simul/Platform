@@ -27,7 +27,7 @@ void SimulGLTerrainRenderer::RecompileShaders()
 	printProgramInfoLog(program);
 	ERROR_CHECK
 	eyePosition_param				= glGetUniformLocation(program,"eyePosition");
-	textures_param					= glGetUniformLocation(program,"textures");
+	textures_param					= glGetUniformLocation(program,"textureArray");
 	worldViewProj_param				= glGetUniformLocation(program,"worldViewProj");
 	lightDir_param					= glGetUniformLocation(program,"lightDir");
 	sunlight_param					= glGetUniformLocation(program,"sunlight");
@@ -54,10 +54,10 @@ void SimulGLTerrainRenderer::MakeTextures()
 	//GL_TEXTURE_2D_ARRAY_EXT
     glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, texArray);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_T, GL_REPEAT);
     //glTexParameterfv(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_BORDER_COLOR, borderColor);
 	unsigned bpp,width,height;
 	ERROR_CHECK
@@ -69,11 +69,11 @@ void SimulGLTerrainRenderer::MakeTextures()
 	int m=1;
 	for(int i=0;i<num_mips;i++)
 	{
-		glTexImage3D(GL_TEXTURE_2D_ARRAY_EXT, i,GL_RGBA	,width/m,height/m,num_layers,0,(bpp==24)?GL_RGB:GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, i,GL_RGBA	,width/m,height/m,num_layers,0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		if(i==0)
 		{
-			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,0,width/m,height/m,1,(bpp==24)?GL_RGB:GL_RGBA,GL_UNSIGNED_BYTE,data);
-			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,1,width/m,height/m,1,(bpp==24)?GL_RGB:GL_RGBA,GL_UNSIGNED_BYTE,moss);
+			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,0,width/m,height/m,1,(bpp==24)?GL_BGR:GL_BGRA,GL_UNSIGNED_BYTE,data);
+			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,1,width/m,height/m,1,(bpp==24)?GL_BGR:GL_BGRA,GL_UNSIGNED_BYTE,moss);
 		}
 		m*=2;
 	}
@@ -117,7 +117,7 @@ glEnable(GL_CULL_FACE);
 	if(baseSkyInterface)
 	{
 		simul::math::Vector3 irr=baseSkyInterface->GetLocalIrradiance(0.f);
-	irr*=0.05f;
+	irr*=0.1f;
 	glUniform3f(sunlight_param,irr.x,irr.y,irr.z);
 		simul::math::Vector3 sun_dir=baseSkyInterface->GetDirectionToLight(0.f);
 	glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);

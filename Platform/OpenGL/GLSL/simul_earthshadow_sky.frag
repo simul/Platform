@@ -1,10 +1,12 @@
 #version 140
+#include "CppGlsl.hs"
 #include "saturate.glsl"
 uniform float hazeEccentricity;
 uniform vec3 mieRayleighRatio;
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 uniform sampler2D inscTexture;
 #include "simul_earthshadow_uniforms.glsl"
+#include "../../CrossPlatform/earth_shadow.sl"
 
 uniform sampler2D skylightTexture;
 uniform vec3 lightDir;

@@ -51,7 +51,6 @@ vec4 godrays()
 	vec4 insc=texture(inscTexture,fade_texc);
 	vec3 skyl=texture(skylightTexture,fade_texc).rgb;
 	// trace the distance from 1.0 to zero
-	
 	// insc is the cumulative inscatter from 0 to dist.
 	// between two distances, the inscatter (AS SEEN FROM 0) is:
 	// insc2-insc1

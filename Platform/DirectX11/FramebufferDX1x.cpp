@@ -245,7 +245,7 @@ bool Framebuffer::CreateBuffers()
 	D3D1x_PASS_DESC PassDesc;
 
 	ID3D1xEffect * effect=NULL;
-	CreateEffect(m_pd3dDevice,&effect,_T("simul_hdr.fx"));
+	CreateEffect(m_pd3dDevice,&effect,("simul_hdr.fx"));
 	ID3D1xEffectTechnique*	tech=effect->GetTechniqueByName("simul_direct");
 	assert(tech->IsValid());
 	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);

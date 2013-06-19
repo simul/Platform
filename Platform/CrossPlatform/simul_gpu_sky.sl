@@ -42,6 +42,7 @@ uniform_buffer GpuSkyConstants R8
 	uniform float previousZCoord;
 	uniform vec3 mieRayleighRatio;
 	uniform float ii;
+	uniform vec4 yRange;
 };
 
 #ifndef __cplusplus
@@ -97,30 +98,30 @@ float getHazeOpticalLength(float sine_elevation,float h_km)
 
 vec4 getSunlightFactor(float alt_km,vec3 DirectionToLight)
 {
-	float sine=clamp(DirectionToLight.z,-1.0,1.0);
-	vec2 table_texc=vec2(tableSize.x*(0.5+0.5*sine),tableSize.y*(alt_km/maxDensityAltKm));
-	//table_texc*=tableSize;//vec2(tableSize.x-1.0,tableSize.y-1.0);
-	table_texc+=vec2(texelOffset,texelOffset);
-	table_texc=vec2(table_texc.x/tableSize.x,table_texc.y/tableSize.y);
+	float sine				=clamp(DirectionToLight.z,-1.0,1.0);
+	vec2 table_texc			=vec2(tableSize.x*(0.5+0.5*sine),tableSize.y*(alt_km/maxDensityAltKm));
+	//table_texc			*=tableSize;//vec2(tableSize.x-1.0,tableSize.y-1.0);
+	table_texc				+=vec2(texelOffset,texelOffset);
+	table_texc				=vec2(table_texc.x/tableSize.x,table_texc.y/tableSize.y);
 	//return vec4(table_texc,sine,1.0);
-	vec4 lookup=texture_clamp(optical_depth_texture,table_texc);
+	vec4 lookup				=texture_clamp(optical_depth_texture,table_texc);
 	float illuminated_length=lookup.x;
-	float vis=lookup.y;
-	float ozone_length=lookup.w;
-	float haze_opt_len=getHazeOpticalLength(sine,alt_km);
-	vec4 factor=vec4(vis,vis,vis,vis);
-	factor.rgb*=exp(-rayleigh*illuminated_length-hazeMie*haze_opt_len-ozone*ozone_length);
+	float vis				=lookup.y;
+	float ozone_length		=lookup.w;
+	float haze_opt_len		=getHazeOpticalLength(sine,alt_km);
+	vec4 factor				=vec4(vis,vis,vis,vis);
+	factor.rgb				*=exp(-rayleigh*illuminated_length-hazeMie*haze_opt_len-ozone*ozone_length);
 	return factor;
 }
 
 float getShortestDistanceToAltitude(float sine_elevation,float start_h_km,float finish_h_km)
 {
-	float RH=planetRadiusKm+finish_h_km;
-	float Rh=planetRadiusKm+start_h_km;
-	float cosine=-sine_elevation;
-	float b=-2.0*Rh*cosine;
-	float c=Rh*Rh-RH*RH;
-	float b24c=b*b-4*c;
+	float RH		=planetRadiusKm+finish_h_km;
+	float Rh		=planetRadiusKm+start_h_km;
+	float cosine	=-sine_elevation;
+	float b			=-2.0*Rh*cosine;
+	float c			=Rh*Rh-RH*RH;
+	float b24c		=b*b-4*c;
 	if(b24c<0)
 		return -1.0;
 	float dist;

@@ -6,13 +6,11 @@
 #define sampler2D texture2D
 #define sampler3D texture3D
 #define texture(tex,texCoords) tex.Sample(samplerState,texCoords)
-#define texture_clamp(tex,texCoords) tex.Sample(samplerStateClamp,texCoords)
 #define texture_nearest(tex,texCoords) tex.Sample(samplerStateNearest,texCoords)
 uniform sampler2D input_texture;
 uniform sampler1D density_texture;
 uniform sampler3D loss_texture;
 uniform sampler3D insc_texture;
-
 uniform sampler2D optical_depth_texture;
 
 SamplerState samplerState 
@@ -22,13 +20,7 @@ SamplerState samplerState
 	AddressV = Mirror;
 	AddressW = Clamp;
 };
-SamplerState samplerStateClamp 
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Clamp;
-	AddressV = Clamp;
-	AddressW = Clamp;
-};
+
 SamplerState samplerStateNearest 
 {
 	Filter = MIN_MAG_MIP_POINT;
@@ -37,9 +29,9 @@ SamplerState samplerStateNearest
 	AddressW = Clamp;
 };
 
-
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "CppHlsl.hlsl"
+#include "../../CrossPlatform/states.sl"
 #include "../../CrossPlatform/simul_gpu_sky.sl"
 
 struct vertexInput
@@ -59,15 +51,17 @@ vertexOutput VS_Main(idOnly IN)
     vertexOutput OUT;
 	float2 poss[4]=
 	{
-		{ 1.0,-1.0},
+		{ 1.0, 0.0},
 		{ 1.0, 1.0},
-		{-1.0,-1.0},
-		{-1.0, 1.0},
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
 	};
 	float2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=float4(pos,0.0,1.0);
-    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(pos.x,pos.y));
-	return OUT;
+	pos.y			=yRange.x+pos.y*yRange.y;
+	float4 vert_pos	=float4(float2(-1.0,1.0)+2.0*vec2(pos.x,-pos.y),1.0,1.0);
+    OUT.hPosition	=vert_pos;
+    OUT.texCoords	=pos;
+    return OUT;
 }
 
 float4 PS_Loss(vertexOutput IN) : SV_TARGET

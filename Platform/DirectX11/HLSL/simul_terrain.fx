@@ -1,27 +1,14 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-cbuffer cbPerObject R10
-{
-	matrix worldViewProj : packoffset(c0);
-};
+#include "../../CrossPlatform/simul_terrain_constants.sl"
 
-Texture2D mainTexture;
-
-float morphFactor;
-float4 eyePosition;
-float3 lightDir;
-
-float3 cloudScales;	
-float3 cloudOffset;
-float3 lightColour;
-float3 ambientColour;
-float cloudInterp;
+Texture2DArray textureArray;
 
 struct vertexInput
 {
     float3 position			: POSITION;
     float3 normal			: TEXCOORD0;
-    float2 texCoordDiffuse	: TEXCOORD1;
+    float2 texcoord	: TEXCOORD1;
     float offset			: TEXCOORD2;
 };
 
@@ -29,26 +16,30 @@ struct vertexOutput
 {
     float4 hPosition		: SV_POSITION;
     float4 normal			: TEXCOORD0;
-    float2 texCoordDiffuse	: TEXCOORD1;
+    float2 texcoord			: TEXCOORD1;
     float4 wPosition		: TEXCOORD2;
 };
 
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-    OUT.hPosition = mul(worldViewProj, float4(IN.position.xyz,1.f));
-    OUT.wPosition = float4(IN.position.xyz,1.f);
-    OUT.texCoordDiffuse=IN.texCoordDiffuse;
-    OUT.normal.xyz=IN.normal;
-    OUT.normal.a=0.5;
+    OUT.hPosition	= mul(worldViewProj, float4(IN.position.xyz,1.f));
+    OUT.wPosition	=float4(IN.position.xyz,1.f);
+	OUT.texcoord	=vec2(IN.position.xy/2000.0);
+    OUT.normal.xyz	=IN.normal;
+    OUT.normal.a	=0.5;
     return OUT;
 }
 
 float4 PS_Main( vertexOutput IN) : SV_TARGET
 {
-	float3 final=mainTexture.Sample(samplerStateWrap,IN.texCoordDiffuse.xy).rgb;
-	final.rgb+=0.1;
-    return float4(final.rgb,1.0);
+	vec4 result;
+	vec4 layer1=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,0.0));
+	vec4 layer2=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,1.0));
+	vec4 texel=mix(layer1,layer2,clamp(1.0-IN.wPosition.z/100.0,0.0,1.0));
+	result.rgb=texel.rgb*(ambientColour.rgb+lightDir.z*sunlight.rgb);
+	result.a=1.0;
+    return result;
 }
 
 technique11 simul_terrain

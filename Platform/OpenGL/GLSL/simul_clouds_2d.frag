@@ -21,6 +21,7 @@ in vec4 clip_pos;
 #include "../../CrossPlatform/depth.sl"
 
 #include "../../CrossPlatform/simul_2d_clouds.hs"
+#include "../../CrossPlatform/earth_shadow.sl"
 #include "../../CrossPlatform/simul_2d_clouds.sl"
 
 void main()
