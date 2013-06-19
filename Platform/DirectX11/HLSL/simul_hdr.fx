@@ -28,7 +28,7 @@ struct v2f
     float2 texCoords	: TEXCOORD0;
 };
 
-v2f MainVS(a2v IN)
+v2f MainVS(idOnly IN)
 {
 	v2f OUT;
 #if 1

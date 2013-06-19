@@ -88,6 +88,22 @@ struct v2f2
 	vec2 texc			: TEXCOORD0;
 };
 
+v2f2 SimpleVS(idOnly IN)
+{
+	v2f2 OUT;
+	float2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(pos,0.0,1.0);
+    OUT.texc	=0.5*(float2(1.0,1.0)+vec2(pos.x,pos.y));
+	return OUT;
+}
+/*
 v2f2 SimpleVS(a2v2 IN)
 {
 	v2f2 OUT;
@@ -95,6 +111,7 @@ v2f2 SimpleVS(a2v2 IN)
     OUT.texc		=IN.texc;
     return OUT;
 }
+*/
 
 float4 SimplePS(v2f2 IN) : SV_TARGET
 {

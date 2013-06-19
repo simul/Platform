@@ -113,7 +113,7 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 {
 	float3 view=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
 	view=normalize(view);
-	float depth=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
+	float depth= depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
 	float dist=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
 #ifdef REVERSE_DEPTH
 	if(depth<=0.0)

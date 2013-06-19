@@ -49,6 +49,24 @@ float rand(float2 co)
     return frac(sin(dot(co.xy ,float2(12.9898,78.233))) * 43758.5453);
 }
 
+vertexOutput VS_RenderRainTexture(idOnly IN) 
+{
+	vertexOutput OUT;
+	float2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(pos,1.0,1.0);
+	float2 texc2 = .5*(float2(1.0,1.0)+vec2(pos.x,pos.y));
+    OUT.texCoords	= float4(texc2, 0,0);
+	OUT.viewDir	= float3(0,0,0);
+	return OUT;
+}
+/*
 vertexOutput VS_RenderRainTexture(vertexInputRenderRainTexture IN) 
 {
     vertexOutput OUT;
@@ -57,6 +75,7 @@ vertexOutput VS_RenderRainTexture(vertexInputRenderRainTexture IN)
     OUT.viewDir	=float3(0,0,0);
     return OUT;
 }
+*/
 
 float4 PS_RenderRainTexture(vertexOutput IN): SV_TARGET
 {
