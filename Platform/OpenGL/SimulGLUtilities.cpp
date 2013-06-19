@@ -587,6 +587,13 @@ void setParameter3(GLint loc,const simul::sky::float4 &value)
 	ERROR_CHECK
 }
 
+void linkToConstantBuffer(GLuint program,const char *name,GLuint bindingIndex)
+{
+	GLint indexInShader	=glGetUniformBlockIndex(program,name);
+	if(indexInShader>=0)
+		glUniformBlockBinding(program,indexInShader,bindingIndex);
+}
+
 GLuint make2DTexture(int w,int l,const float *src)
 {
 	GLuint tex=0;

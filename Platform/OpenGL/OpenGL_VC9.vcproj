@@ -753,6 +753,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\CrossPlatform\earth_shadow.sl"
+				>
+			</File>
+			<File
 				RelativePath="..\CrossPlatform\simul_2d_clouds.hs"
 				>
 			</File>
@@ -778,6 +782,10 @@
 			</File>
 			<File
 				RelativePath="..\CrossPlatform\simul_inscatter_fns.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_terrain_constants.sl"
 				>
 			</File>
 		</Filter>

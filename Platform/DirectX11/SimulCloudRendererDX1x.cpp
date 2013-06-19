@@ -160,7 +160,7 @@ void SimulCloudRendererDX1x::RecompileShaders()
 	SAFE_RELEASE(computeConstantBuffer);
 	MAKE_CONSTANT_BUFFER(computeConstantBuffer,MixCloudsConstants)
 	m_pComputeShader=LoadComputeShader(m_pd3dDevice,"MixClouds_c.hlsl");
-	V_CHECK(CreateEffect(m_pd3dDevice,&m_pLightningEffect,L"simul_lightning.fx"));
+	V_CHECK(CreateEffect(m_pd3dDevice,&m_pLightningEffect,"simul_lightning.fx"));
 	if(m_pLightningEffect)
 	{
 		m_hTechniqueLightning	=m_pLightningEffect->GetTechniqueByName("simul_lightning");
@@ -388,7 +388,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	ID3D1xEffect*					effect=NULL;
 	ID3D1xEffectTechnique*			randomTechnique;
 	ID3D1xEffectTechnique*			noiseTechnique;
-	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,L"simul_rendernoise.fx");
+	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_rendernoise.fx");
 	randomTechnique					=effect->GetTechniqueByName("simul_random");
 	noiseTechnique					=effect->GetTechniqueByName("simul_noise_2d");
 
@@ -463,7 +463,7 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 
 	int noise_texture_frequency	=cloudKeyframer->GetEdgeNoiseFrequency();
 	ID3D1xEffect*					effect=NULL;
-	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,L"simul_rendernoise.fx");
+	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_rendernoise.fx");
 	ID3D1xEffectTechnique*			randomTechnique=effect->GetTechniqueByName("simul_random");
 
 	simul::dx11::Framebuffer	random_fb;
@@ -618,7 +618,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 		defines["Z_VERTICAL"]="1";
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
-	HRESULT hr=CreateEffect(m_pd3dDevice,&m_pCloudEffect,L"simul_clouds.fx",defines);
+	HRESULT hr=CreateEffect(m_pd3dDevice,&m_pCloudEffect,"simul_clouds.fx",defines);
 	if(cloudKeyframer->GetUse3DNoise())
 		m_hTechniqueCloud			=m_pCloudEffect->GetTechniqueByName("simul_clouds_3d_noise");
 	else
@@ -900,7 +900,6 @@ bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,const void *depth
 	CloudPerViewConstants cloudPerViewConstants;
 	SetCloudConstants(cloudConstants);
 	SetCloudPerViewConstants(cloudPerViewConstants);
-
 
 	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,cloudConstantsBuffer,CloudConstants,cloudConstants);
 	ID3DX11EffectConstantBuffer* cbCloudConstants=m_pCloudEffect->GetConstantBufferByName("CloudConstants");

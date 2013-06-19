@@ -18,10 +18,9 @@
 #include "CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include <string>
-typedef std::basic_string<TCHAR> tstring;
-tstring shader_path=TEXT("media/hlsl/dx11");
+std::string shader_path=("media/hlsl/dx11");
 std::string shader_pathA="media/hlsl/dx11";
-tstring texture_path=TEXT("media/textures");
+std::string texture_path=("media/textures");
 static DWORD default_effect_flags=0;
 
 #include <vector>
@@ -91,19 +90,6 @@ namespace simul
 {
 	namespace dx11
 	{
-		tstring tstring_of(const char *c)
-		{
-			tstring t;
-		#ifdef UNICODE
-			// tstring and TEXT cater for the confusion between wide and regular strings.
-			t.resize(strlen(c),L' '); // Make room for characters
-			// Copy string to wstring.
-			std::copy(c,c+strlen(c),t.begin());
-		#else
-			t=c;
-		#endif
-			return t;
-		}
 		void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir)
 		{
 			D3DXMATRIX tmp1;
@@ -145,15 +131,15 @@ namespace simul
 		}
 		void SetShaderPath(const char *path)
 		{
-			shader_path=tstring_of(path);
-			shader_path+=_T("/");
-			shader_pathA=simul::base::WStringToString(shader_path);
+			shader_path=(path);
+			shader_path+=("/");
+			shader_pathA=(shader_path);
 			shader_path_set=true;
 		}
 		void SetTexturePath(const char *path)
 		{
-			texture_path=tstring_of(path);
-			texture_path+=_T("/");
+			texture_path=(path);
+			texture_path+=("/");
 			texture_path_set=true;
 		}
 		void SetDevice(ID3D1xDevice* dev)
@@ -256,15 +242,15 @@ namespace simul
 	}
 }
 
-ID3D1xShaderResourceView* simul::dx11::LoadTexture(const TCHAR *filename)
+ID3D1xShaderResourceView* simul::dx11::LoadTexture(const char *filename)
 {
-	ID3D1xShaderResourceView* tex=NULL;
-	D3DX1x_IMAGE_LOAD_INFO loadInfo;
+	ID3D11ShaderResourceView* tex=NULL;
+	D3DX11_IMAGE_LOAD_INFO loadInfo;
 	ZeroMemory( &loadInfo, sizeof(D3DX11_IMAGE_LOAD_INFO) );
-	loadInfo.BindFlags = D3D1x_BIND_SHADER_RESOURCE;
+	loadInfo.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	loadInfo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	loadInfo.MipLevels=0;
-	HRESULT hr=D3DX11CreateShaderResourceViewFromFile(
+	HRESULT hr=D3DX11CreateShaderResourceViewFromFileA(
 										m_pd3dDevice,
 										(texture_path+filename).c_str(),
 										&loadInfo,
@@ -275,6 +261,39 @@ ID3D1xShaderResourceView* simul::dx11::LoadTexture(const TCHAR *filename)
 }
 
 
+ID3D11Texture2D* simul::dx11::LoadStagingTexture(const char *filename)
+{
+	D3DX11_IMAGE_LOAD_INFO loadInfo;
+
+    ZeroMemory(&loadInfo, sizeof(D3DX11_IMAGE_LOAD_INFO));
+	//loadInfo.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	//loadInfo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	loadInfo.MipLevels=0;
+
+    loadInfo.Width          = D3DX11_FROM_FILE;
+    loadInfo.Height         = D3DX11_FROM_FILE;
+     loadInfo.Depth          = D3DX11_FROM_FILE;
+	loadInfo.Usage          = D3D11_USAGE_STAGING;
+    loadInfo.Format         = (DXGI_FORMAT) D3DX11_FROM_FILE;
+    loadInfo.CpuAccessFlags = D3D11_CPU_ACCESS_READ;
+	loadInfo.FirstMipLevel  = D3DX11_FROM_FILE;
+    loadInfo.MipLevels      = D3DX11_FROM_FILE;
+    loadInfo.MiscFlags      = 0;
+    loadInfo.MipFilter      = D3DX11_FROM_FILE;
+    loadInfo.pSrcInfo       = NULL;
+    loadInfo.Filter         = D3DX11_FILTER_NONE;
+
+	ID3D11Texture2D *tex=NULL;
+	HRESULT hr=D3DX11CreateTextureFromFileA( m_pd3dDevice, (texture_path+filename).c_str()
+		,&loadInfo, NULL, ( ID3D11Resource** )&tex, &hr );
+	if(hr!=S_OK)
+	{
+#ifdef DXTRACE_ERR
+        hr=DXTRACE_ERR( L"CreateEffect", hr );
+#endif
+	}
+	return tex;
+}
 
 ID3D1xTexture1D* simul::dx11::make1DTexture(
 							ID3D1xDevice			*m_pd3dDevice
@@ -400,6 +419,12 @@ void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,ID3D11Unor
 	var->SetUnorderedAccessView(value);
 }
 
+void simul::dx11::setTextureArray(ID3D1xEffect *effect	,const char *name	,ID3D11ShaderResourceView *value)
+{
+	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	var->SetResource(value);
+}
+
 void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,float value)
 {
 	ID3D1xEffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
@@ -438,21 +463,16 @@ void simul::dx11::setMatrix(ID3D1xEffect *effect,const char *name	,const float *
 	var->SetMatrix(value);
 }
 
-ID3D1xShaderResourceView* simul::dx11::LoadTexture(const char *filename)
-{
-	return LoadTexture(tstring_of(filename).c_str());
-}
-
 struct d3dMacro
 {
 	std::string name;
 	std::string define;
 };
 #ifdef DX11
-HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
+HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const char *filename, UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	HRESULT hr=(HRESULT)(-1);
-	std::string compiled_filename=simul::base::WStringToString(filename)+"o";
+	std::string compiled_filename=std::string(filename)+"o";
 	void *pData=NULL;
 	unsigned sz=0;
 	fileLoader->AcquireFileContents(pData,sz,compiled_filename.c_str(),false);
@@ -468,11 +488,11 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const TCHAR *filename, UINT FXFl
 	return hr;
 }
 
-HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
+HRESULT WINAPI D3DX11CreateEffectFromFile(const char *filename,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 #if 1
 	// first try to find an existing text source with this filename, and compile it.
-	std::string text_filename=simul::base::WStringToString(filename);
+	std::string text_filename=(filename);
 	std::string output_filename=text_filename+"o";
 	
 	void *textData=NULL;
@@ -629,7 +649,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const TCHAR *filename,D3D10_SHADER_MAC
 }
 #endif
 
-HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename)
+HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *filename)
 {
 	std::map<std::string,std::string> defines;
 	return CreateEffect(d3dDevice,effect,filename,defines);
@@ -672,12 +692,12 @@ ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *d3dDevice,const char *filen
 	}
 }
 
-HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,const std::map<std::string,std::string>&defines)
+HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *filename,const std::map<std::string,std::string>&defines)
 {
 	HRESULT hr=S_OK;
-	std::string text_filename=simul::base::WStringToString(filename);
+	std::string text_filename=(filename);
 
-	tstring fn=shader_path+filename;
+	std::string fn=shader_path+filename;
 	
 	D3D10_SHADER_MACRO *macros=NULL;
 	std::vector<std::string> d3dmacros;

@@ -82,7 +82,7 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 void GpuCloudGenerator::RecompileShaders()
 {
 	SAFE_RELEASE(effect);
-	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,L"simul_gpu_clouds.fx");
+	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_gpu_clouds.fx");
 	if(effect)
 	{
 		densityTechnique	=effect->GetTechniqueByName("simul_gpu_density");

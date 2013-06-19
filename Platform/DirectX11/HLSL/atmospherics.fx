@@ -96,13 +96,6 @@ float4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
 	view=normalize(view);
 	float depth=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
 	float dist=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
-#ifdef REVERSE_DEPTH
-	if(depth<=0.0)
-		dist=1.0;
-#else
-	if(depth>=1.0)
-		dist=1.0;
-#endif
 	float sine=view.z;
 	float2 texc2=float2(pow(dist,0.5f),0.5f*(1.f-sine));
 	float3 loss=lossTexture.Sample(clampSamplerState,texc2).rgb;
@@ -115,19 +108,12 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	view=normalize(view);
 	float depth=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
 	float dist=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
-#ifdef REVERSE_DEPTH
-	if(depth<=0.0)
-		dist=1.0;
-#else
-	if(depth>=1.0)
-		dist=1.0;
-#endif
-	float sine=view.z;
-	float2 texc2=float2(pow(dist,0.5f),0.5f*(1.f-sine));
-	float4 inscatter_factor=inscatterTexture.Sample(clampSamplerState,texc2);
-	float cos0=dot(view,lightDir);
-	float3 colour=InscatterFunction(inscatter_factor,cos0);
-	colour+=skylightTexture.Sample(clampSamplerState,texc2).rgb;
+	float sine		=view.z;
+	float2 texc2	=float2(pow(dist,0.5f),0.5f*(1.f-sine));
+	float4 insc		=inscatterTexture.Sample(clampSamplerState,texc2);
+	float cos0		=dot(view,lightDir);
+	float3 colour	=InscatterFunction(insc,cos0);
+	colour			+=skylightTexture.Sample(clampSamplerState,texc2).rgb;
     return float4(colour.rgb,1.f);
 }
 

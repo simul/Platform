@@ -50,6 +50,26 @@ namespace simul
 			void release();
 			void init(ID3D11Device *pd3dDevice,int w,int l,int d);
 		};
+		struct ArrayTexture
+		{
+			ArrayTexture()
+				:m_pArrayTexture(NULL)
+				,m_pArrayTexture_SRV(NULL)
+			{
+			}
+			~ArrayTexture()
+			{
+				release();
+			}
+			void release()
+			{
+				SAFE_RELEASE(m_pArrayTexture)
+				SAFE_RELEASE(m_pArrayTexture_SRV)
+			}
+			void create(ID3D11Device *pd3dDevice,const std::vector<std::string> &texture_files);
+			ID3D11Texture2D*					m_pArrayTexture;
+			ID3D11ShaderResourceView*			m_pArrayTexture_SRV;
+		};
 		struct Mesh
 		{
 			Mesh();
@@ -159,3 +179,54 @@ namespace std
 									&vertexBuffer,	\
 									&stride,		\
 									&offset);
+
+//! Useful Wrapper class to encapsulate constant buffer behaviour
+template<class T> class ConstantBuffer:public T
+{
+public:
+	ConstantBuffer()
+		:m_pD3D11Buffer(NULL)
+		,m_pD3DX11EffectConstantBuffer(NULL)
+	{
+	}
+	~ConstantBuffer()
+	{
+		InvalidateDeviceObjects();
+	}
+	ID3D11Buffer*					m_pD3D11Buffer;
+	ID3DX11EffectConstantBuffer*	m_pD3DX11EffectConstantBuffer;
+	void RestoreDeviceObjects(ID3D11Device *pd3dDevice)
+	{
+		SAFE_RELEASE(m_pD3D11Buffer);	
+		D3D11_SUBRESOURCE_DATA cb_init_data;
+		cb_init_data.pSysMem = this;
+		cb_init_data.SysMemPitch = 0;
+		cb_init_data.SysMemSlicePitch = 0;
+		D3D11_BUFFER_DESC cb_desc;
+		cb_desc.Usage				= D3D11_USAGE_DYNAMIC;
+		cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
+		cb_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
+		cb_desc.MiscFlags			= 0;
+		cb_desc.ByteWidth			= PAD16(sizeof(T));
+		cb_desc.StructureByteStride = 0;
+		pd3dDevice->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
+	}
+	void LinkToEffect(ID3DX11Effect *effect,const char *name)
+	{
+		m_pD3DX11EffectConstantBuffer=effect->GetConstantBufferByName(name);
+		if(m_pD3DX11EffectConstantBuffer)
+			m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
+	}
+	void InvalidateDeviceObjects()
+	{
+		SAFE_RELEASE(m_pD3D11Buffer);
+		m_pD3DX11EffectConstantBuffer=NULL;
+	}
+	void Apply(ID3D11DeviceContext *pContext)
+	{
+		D3D11_MAPPED_SUBRESOURCE mapped_res;
+		pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
+		*(T*)mapped_res.pData = *this;
+		pContext->Unmap(m_pD3D11Buffer, 0);
+	}
+};

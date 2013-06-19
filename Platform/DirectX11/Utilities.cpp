@@ -209,6 +209,62 @@ void ComputableTexture3D::init(ID3D11Device *pd3dDevice,int w,int h,int d)
     hr=pd3dDevice->CreateShaderResourceView(texture, &srv_desc, &srv);
 }
 
+/*
+create the associated Texture2D resource as a Texture2D array resource, and then create a shader resource view for that resource.
+
+1. Load all of the textures using D3DX10CreateTextureFromFile, with a D3DX10_IMAGE_LOAD_INFO specifying that you want D3D10_USAGE_STAGING.
+		all of your textures need to be the same size, have the same format, and have the same number of mip levels
+2. Map every mip level of every texture
+3. Set up an array of D3D10_SUBRESOURCE_DATA's with number of elements == number of textures * number of mip levels. 
+4. For each texture, set the pSysMem member of a D3D10_SUBRESOURCE_DATA to the pointer you got when you mapped each mip level of each texture. Make sure you also set the SysMemPitch to the pitch you got when you mapped that mip level
+5. Call CreateTexture2D with the desired array size, and pass the array of D3D10_SUBRESOURCE_DATA's
+6. Create a shader resource view for the texture 
+*/
+void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string> &texture_files)
+{
+	release();
+	std::vector<ID3D11Texture2D *> textures;
+	for(unsigned i=0;i<texture_files.size();i++)
+	{
+		textures.push_back(simul::dx11::LoadStagingTexture(texture_files[i].c_str()));
+	}
+	D3D11_TEXTURE2D_DESC desc;
+	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[textures.size()];
+	ID3D11DeviceContext *pImmediateContext=NULL;
+	pd3dDevice->GetImmediateContext(&pImmediateContext);
+	for(int i=0;i<(int)textures.size();i++)
+	{
+		textures[i]->GetDesc(&desc);
+		D3D11_MAPPED_SUBRESOURCE mapped_res;
+		pImmediateContext->Map(textures[i],0,D3D11_MAP_READ,0,&mapped_res);	
+		subResources[i].pSysMem			=mapped_res.pData;
+		subResources[i].SysMemPitch		=mapped_res.RowPitch;
+		subResources[i].SysMemSlicePitch=mapped_res.DepthPitch;
+	}
+	static int num_mips=5;
+	desc.BindFlags=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_RENDER_TARGET;
+	desc.Usage=D3D11_USAGE_DEFAULT;
+	desc.CPUAccessFlags=0;
+	desc.ArraySize=textures.size();
+	desc.MiscFlags=D3D11_RESOURCE_MISC_GENERATE_MIPS;
+	desc.MipLevels=num_mips;
+	pd3dDevice->CreateTexture2D(&desc,NULL,&m_pArrayTexture);
+
+	if(m_pArrayTexture)
+	for(int i=0;i<textures.size();i++)
+	{
+		pImmediateContext->UpdateSubresource(m_pArrayTexture,i*num_mips, NULL,subResources[i].pSysMem,subResources[i].SysMemPitch,subResources[i].SysMemSlicePitch);
+	}
+	pd3dDevice->CreateShaderResourceView(m_pArrayTexture,NULL,&m_pArrayTexture_SRV);
+	delete [] subResources;
+	for(unsigned i=0;i<textures.size();i++)
+	{
+		pImmediateContext->Unmap(textures[i],0);
+		SAFE_RELEASE(textures[i])
+	}
+	pImmediateContext->GenerateMips(m_pArrayTexture_SRV);
+	SAFE_RELEASE(pImmediateContext)
+}
 
 Mesh::Mesh()
 	:vertexBuffer(NULL)
@@ -307,7 +363,7 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
 void UtilityRenderer::RecompileShaders()
 {
 	SAFE_RELEASE(m_pDebugEffect);
-	CreateEffect(m_pd3dDevice,&m_pDebugEffect,_T("simul_debug.fx"));
+	CreateEffect(m_pd3dDevice,&m_pDebugEffect,("simul_debug.fx"));
 }
 
 void UtilityRenderer::InvalidateDeviceObjects()

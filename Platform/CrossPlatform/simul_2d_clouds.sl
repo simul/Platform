@@ -18,7 +18,7 @@ vec4 Clouds2DPS(vec2 texc_global,vec2 texc_detail,vec3 wPosition,vec3 depth_texc
 	if(opacity<=0)
 		discard;
 	float hg				=HenyeyGreenstein(cloudEccentricity,cos0);
-	vec3 light				=EarthShadowLight(fade_texc,view);
+	vec3 light				=EarthShadowLight(fade_texc,view,0.001);
 	float scattered_light	=detail.a*exp(-detail.r*coverage.y*32.0);
 	vec3 final				=sunlight*light*(lightResponse.w+lightResponse.x*hg*scattered_light);
 	vec3 loss_lookup		=texture_clamp_mirror(lossTexture,fade_texc).rgb;

@@ -35,8 +35,8 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT void SetDevice(ID3D1xDevice* dev);
 		extern SIMUL_DIRECTX11_EXPORT void UnsetDevice();
 		extern SIMUL_DIRECTX11_EXPORT void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);
-		extern ID3D1xShaderResourceView* LoadTexture(const char *filename);
-		extern ID3D1xShaderResourceView* LoadTexture(const TCHAR *filename);
+		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(const char *filename);
+		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(const char *filename);
 		ID3D1xTexture1D* make1DTexture(
 							ID3D1xDevice			*m_pd3dDevice
 							,int w
@@ -64,14 +64,15 @@ namespace simul
 		void SIMUL_DIRECTX11_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zNear,float zFar);
 		D3DXMATRIX SIMUL_DIRECTX11_EXPORT ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj);
 	
-		void setParameter(ID3D1xEffect *effect,const char *name	,ID3D11ShaderResourceView * value);
-		void setParameter(ID3D1xEffect *effect,const char *name	,ID3D11UnorderedAccessView * value);
-		void setParameter(ID3D1xEffect *effect,const char *name	,float value);
-		void setParameter(ID3D1xEffect *effect,const char *name	,float x,float y);
-		void setParameter(ID3D1xEffect *effect,const char *name	,float x,float y,float z,float w);
-		void setParameter(ID3D1xEffect *effect,const char *name	,int value);
-		void setParameter(ID3D1xEffect *effect,const char *name	,float *vec);
-		void setMatrix(ID3D1xEffect *effect	,const char *name	,const float *value);
+		void setParameter(ID3D1xEffect *effect		,const char *name	,ID3D11ShaderResourceView * value);
+		void setParameter(ID3D1xEffect *effect		,const char *name	,ID3D11UnorderedAccessView * value);
+		void setTextureArray(ID3D1xEffect *effect	,const char *name	,ID3D11ShaderResourceView *value);
+		void setParameter(ID3D1xEffect *effect		,const char *name	,float value);
+		void setParameter(ID3D1xEffect *effect		,const char *name	,float x,float y);
+		void setParameter(ID3D1xEffect *effect		,const char *name	,float x,float y,float z,float w);
+		void setParameter(ID3D1xEffect *effect		,const char *name	,int value);
+		void setParameter(ID3D1xEffect *effect		,const char *name	,float *vec);
+		void setMatrix(ID3D1xEffect *effect			,const char *name	,const float *value);
 							
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
 	}
@@ -79,8 +80,8 @@ namespace simul
 
 typedef long HRESULT;
 extern SIMUL_DIRECTX11_EXPORT ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *d3dDevice,const char *filename);
-extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename);
-extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const TCHAR *filename,const std::map<std::string,std::string>&defines);
+extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *filename);
+extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *filename,const std::map<std::string,std::string>&defines);
 
 
 extern SIMUL_DIRECTX11_EXPORT HRESULT Map2D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp);

@@ -11,6 +11,13 @@ float depthToDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
 	float Tx=xy.x*tanHalf.x;
 	float Ty=xy.y*tanHalf.y;
 	float dist=z*sqrt(1.0+Tx*Tx+Ty*Ty);
+#ifdef REVERSE_DEPTH
+	if(depth<=0.0)
+		dist=1.0;
+#else
+	if(depth>=1.0)
+		dist=1.0;
+#endif
 	return dist;
 }
 

@@ -97,6 +97,9 @@ extern const char *GetErrorText(HRESULT hr);
 	#ifndef SAFE_RELEASE
 		#define SAFE_RELEASE(p)		{ if(p) { (p)->Release(); (p)=NULL; } }
 	#endif
+	#ifndef SAFE_RELEASE_ARRAY
+		#define SAFE_RELEASE_ARRAY(p,n)		{ if(p) for(int i=0;i<n;i++) if(p[i]) { (p[i])->Release(); (p[i])=NULL; } }
+	#endif
 
 extern void SIMUL_DIRECTX11_EXPORT BreakIfDebugging();
 #ifdef UNICODE
@@ -169,20 +172,21 @@ extern void SIMUL_DIRECTX11_EXPORT BreakIfDebugging();
 		m_pd3dDevice->CreateBuffer(&cb_desc, &cb_init_data, &cb);\
 	}
 
-#define UPDATE_CONSTANT_BUFFER(pImmediateContext,cb,DataStructType,dataStruct)	\
+#define UPDATE_CONSTANT_BUFFER(pContext,cb,DataStructType,dataStruct)	\
 	{	\
 		D3D11_MAPPED_SUBRESOURCE mapped_res;	\
-		pImmediateContext->Map(cb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);	\
+		pContext->Map(cb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);	\
 		*(DataStructType*)mapped_res.pData = dataStruct;	\
-		pImmediateContext->Unmap(cb, 0);	\
+		pContext->Unmap(cb, 0);	\
 	}
 
-#define UPDATE_CONSTANT_BUFFERS(pImmediateContext,cb,DataStructType,dataStructList,num)	\
+#define UPDATE_CONSTANT_BUFFERS(pContext,cb,DataStructType,dataStructList,num)	\
 	{	\
 		D3D11_MAPPED_SUBRESOURCE mapped_res;	\
-		pImmediateContext->Map(cb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);	\
+		pContext->Map(cb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);	\
 		for(int i=0;i<num;i++)\
 		{	((DataStructType*)(mapped_res.pData))[i]=dataStructList[i];	}\
-		pImmediateContext->Unmap(cb, 0);	\
+		pContext->Unmap(cb, 0);	\
 	}
+
 #endif

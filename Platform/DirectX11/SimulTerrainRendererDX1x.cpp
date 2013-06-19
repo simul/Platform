@@ -13,6 +13,8 @@
 #include "Simul/Math/Vector3.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
+#include "Simul/Sky/SkyInterface.h"
+
 	struct TerrainVertex_t
 	{
 		float pos[3];
@@ -28,13 +30,20 @@ SimulTerrainRendererDX1x::SimulTerrainRendererDX1x()
 	,m_pVtxDecl(NULL)
 	,m_pTerrainEffect(NULL)
 	,m_pTechnique(NULL)
-	,worldViewProj(NULL)
 {
 }
 
 SimulTerrainRendererDX1x::~SimulTerrainRendererDX1x()
 {
 	InvalidateDeviceObjects();
+}
+
+void SimulTerrainRendererDX1x::ReloadTextures()
+{
+	std::vector<std::string> texture_files;
+	texture_files.push_back("terrain.png");
+	texture_files.push_back("moss.png");
+	arrayTexture.create(m_pd3dDevice,texture_files);
 }
 
 void SimulTerrainRendererDX1x::RecompileShaders()
@@ -46,18 +55,21 @@ void SimulTerrainRendererDX1x::RecompileShaders()
 	std::map<std::string,std::string> defines;
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
-	V_CHECK(CreateEffect(m_pd3dDevice,&m_pTerrainEffect,_T("simul_terrain.fx"),defines));
+	V_CHECK(CreateEffect(m_pd3dDevice,&m_pTerrainEffect,("simul_terrain.fx"),defines));
 	
-	m_pTechnique			=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
-	worldViewProj			=m_pTerrainEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	m_pTechnique		=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
+
+	ReloadTextures();
+
+	terrainConstants.LinkToEffect(m_pTerrainEffect,"TerrainConstants");
 }
 
 void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D1xDevice*)dev;
+	terrainConstants.RestoreDeviceObjects(m_pd3dDevice);
 	RecompileShaders();
-//	ID3D1xBuffer*						m_pVertexBuffer;
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =
     {
         { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
@@ -68,7 +80,6 @@ void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *dev)
 	D3D1x_PASS_DESC PassDesc;
 	ID3D1xEffectPass *pass=m_pTechnique->GetPassByIndex(0);
 	hr=pass->GetDesc(&PassDesc);
-//return true;
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateInputLayout(decl,4,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
@@ -95,22 +106,34 @@ void SimulTerrainRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pTerrainEffect);
 	SAFE_RELEASE(m_pVtxDecl);
+	arrayTexture.release();
+	terrainConstants.InvalidateDeviceObjects();
 }
 
 void SimulTerrainRendererDX1x::Render(void *context)
 {
-	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
 	D3DXMATRIX world;
 	D3DXMatrixIdentity(&world);
 	D3DXMATRIX wvp;
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
-	worldViewProj->SetMatrix(&wvp._11);
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
-	simul::dx11::setParameter(m_pTerrainEffect,"eyePosition",cam_pos);
-	
+	simul::dx11::setTextureArray(m_pTerrainEffect,"textureArray",arrayTexture.m_pArrayTexture_SRV);
+
+	terrainConstants.eyePosition=cam_pos;
+	if(baseSkyInterface)
+	{
+		terrainConstants.ambientColour	=baseSkyInterface->GetAmbientLight(0.f);
+		terrainConstants.lightDir		=baseSkyInterface->GetDirectionToLight(0.f);
+		terrainConstants.sunlight		=0.1f*baseSkyInterface->GetLocalIrradiance(0.f);
+	}
+	terrainConstants.worldViewProj=wvp;
+	terrainConstants.worldViewProj.transpose();
+	terrainConstants.Apply(pContext);
+
 	TerrainVertex_t *vertices;
 	D3D11_MAPPED_SUBRESOURCE mapped_vertices;
-	MapBuffer(m_pImmediateContext,m_pVertexBuffer,&mapped_vertices);
+	MapBuffer(pContext,m_pVertexBuffer,&mapped_vertices);
 	vertices=(TerrainVertex_t*)mapped_vertices.pData;
 	
 	int h=heightMapInterface->GetPageSize();
@@ -160,28 +183,28 @@ void SimulTerrainRendererDX1x::Render(void *context)
 			v++;
 		}
 	}
-	UnmapBuffer(m_pImmediateContext,m_pVertexBuffer);
+	UnmapBuffer(pContext,m_pVertexBuffer);
 	UINT stride = sizeof(TerrainVertex_t);
 	UINT offset = 0;
     UINT Strides[1];
     UINT Offsets[1];
     Strides[0] = 0;
     Offsets[0] = 0;
-	m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
+	pContext->IASetVertexBuffers(	0,				// the first input slot for binding
 												1,				// the number of buffers in the array
 												&m_pVertexBuffer,	// the array of vertex buffers
 												&stride,		// array of stride values, one for each buffer
 												&offset);		// array of offset values, one for each buffer
-	ApplyPass(m_pImmediateContext,m_pTechnique->GetPassByIndex(0));
+	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
 	// Set the input layout
-	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+	pContext->IASetInputLayout(m_pVtxDecl);
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	if((v)>2)
-		m_pImmediateContext->Draw((v)-2,0);
+		pContext->Draw((v)-2,0);
 
-	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
 void SimulTerrainRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

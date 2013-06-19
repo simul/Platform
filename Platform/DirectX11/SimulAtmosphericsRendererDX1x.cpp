@@ -99,7 +99,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	std::map<std::string,std::string> defines;
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
-	V_CHECK(CreateEffect(m_pd3dDevice,&effect,L"atmospherics.fx",defines));
+	V_CHECK(CreateEffect(m_pd3dDevice,&effect,"atmospherics.fx",defines));
 	singlePassTechnique		=effect->GetTechniqueByName("simul_atmospherics");
 	twoPassOverlayTechnique	=effect->GetTechniqueByName("simul_atmospherics_overlay");
 	
@@ -176,7 +176,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	viewproj.Transpose(vpt);
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
-	//ivp.Transpose();
+
 	AtmosphericsUniforms2 atmosphericsUniforms2;
 	atmosphericsUniforms2.invViewProj=ivp;
 	atmosphericsUniforms2.invViewProj.transpose();
@@ -208,9 +208,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	ApplyPass(m_pImmediateContext,twoPassOverlayTechnique->GetPassByIndex(0));
 	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
 	ApplyPass(m_pImmediateContext,twoPassOverlayTechnique->GetPassByIndex(1));
-	//framebuffer->Render(context,false);
 	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
-	//UtilityRenderer::DrawQuad(m_pImmediateContext,-1.f,-1.f,2.f,2.f,technique);
 	lossTexture->SetResource(NULL);
 	inscatterTexture->SetResource(NULL);
 	skylightTexture->SetResource(NULL);

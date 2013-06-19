@@ -130,7 +130,7 @@ void SimulWeatherRendererDX1x::RecompileShaders()
 	std::map<std::string,std::string> defines;
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
-	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("simul_hdr.fx"), defines);
+	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"), defines);
 	directTechnique			=m_pTonemapEffect->GetTechniqueByName("simul_direct");
 	SkyOverStarsTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_over_stars");
 	imageTexture			=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
@@ -240,7 +240,7 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 	gamma_correct.RestoreDeviceObjects(m_pd3dDevice);
 
 	ID3D1xEffect* m_pTonemapEffect=NULL;
-	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,_T("simul_hdr.fx"));
+	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"));
 	ID3D1xEffectTechnique *tech=m_pTonemapEffect->GetTechniqueByName("simul_gamma");
 
 	cam_pos=GetCameraPosVector(view);
@@ -281,9 +281,8 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 		}
 		fb_cubemap.Deactivate(m_pImmediateContext);
 	}
-	std::wstring wstr=simul::base::StringToWString(filename);
 	ID3D11Texture2D *tex=fb_cubemap.GetCopy(m_pImmediateContext);
-	HRESULT hr=D3DX11SaveTextureToFile(m_pImmediateContext,tex,D3DX11_IFF_DDS,wstr.c_str());
+	HRESULT hr=D3DX11SaveTextureToFileA(m_pImmediateContext,tex,D3DX11_IFF_DDS,filename);
 	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(m_pTonemapEffect);
 	environment->cloudKeyframer->SetUse3DNoise(noise3d);
