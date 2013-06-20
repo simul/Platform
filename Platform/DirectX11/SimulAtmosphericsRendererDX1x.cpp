@@ -147,7 +147,7 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMA
 
 #include "Simul/Camera/Camera.h"
 
-void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure_hint)
+void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure)
 {
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::RenderAsOverlay");
 	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;

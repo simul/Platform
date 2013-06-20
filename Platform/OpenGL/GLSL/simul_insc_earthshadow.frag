@@ -30,6 +30,5 @@ void main()
 	vec4 insc		=EarthShadowFunction(fade_texc,view);
 	vec3 colour		=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
 	colour			+=skyl;
-
-    gl_FragColor	=vec4(view.xyz,1.0);
+    gl_FragColor	=vec4(colour.rgb,1.0);
 }

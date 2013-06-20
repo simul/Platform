@@ -1,14 +1,6 @@
 #ifndef SIMUL_EARTHSHADOW
 #define SIMUL_EARTHSHADOW
-
-uniform_buffer EarthShadowUniforms R9
-{
-	vec3 sunDir;
-	float radiusOnCylinder;
-	vec3 earthShadowNormal;
-	float maxFadeDistance;
-	float terminatorCosine;
-};
+#include "../../CrossPlatform/earth_shadow_uniforms.sl"
 
 #ifndef __cplusplus
 SamplerState inscSamplerState

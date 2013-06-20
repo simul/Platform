@@ -317,21 +317,19 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
     glMatrixMode(GL_MODELVIEW);
 		ERROR_CHECK
     glPushMatrix();
-		ERROR_CHECK
-	//glLoadIdentity();
+
+
 	simul::math::Matrix4x4 modelview;
 		ERROR_CHECK
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
-		ERROR_CHECK
+		
 	glRotatef(180.f*Yaw/pi,0.0f,0.0f,-1.0f);
-		ERROR_CHECK
+		
 	glRotatef(180.f*Pitch/pi,1.0f,0.0f,0.0f);
-		ERROR_CHECK
+		
     glDisable(GL_ALPHA_TEST);
-    glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 #if 1
-	glDepthMask(GL_FALSE);
 	// coverage is 2*atan(1/5)=11 degrees.
 	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
 	static float relative_distance=1000.f;

@@ -328,7 +328,7 @@ void SimulGLCloudRenderer::SetCloudPerViewConstants(CloudPerViewConstants &cloud
 static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(void *context,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha)
+bool SimulGLCloudRenderer::Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
@@ -516,6 +516,8 @@ ERROR_CHECK
 	helper->Update(view_pos,GetCloudInterface()->GetWindOffset(),eye_dir,up_dir,delta_t,cubemap);
 
 	SetCloudPerViewConstants(cloudPerViewConstants);
+	cloudPerViewConstants.exposure=exposure;
+
 	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
 	simul::math::Matrix4x4 proj;
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);

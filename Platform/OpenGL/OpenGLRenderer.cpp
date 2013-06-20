@@ -36,6 +36,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,ShowWater(true)
 	,ReverseDepth(false)
 	,MixCloudsAndTerrain(false)
+	,Exposure(1.0f)
 	,simple_program(0)
 {
 	simulHDRRenderer	=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
@@ -133,6 +134,7 @@ void OpenGLRenderer::paintGL()
 	else
 		glLoadMatrixf(cam->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight,false));
 	glViewport(0,0,ScreenWidth,ScreenHeight);
+	static float exposure=1.0f;
 	if(simulWeatherRenderer.get())
 	{
 		simulWeatherRenderer->PreRenderUpdate(context);
@@ -149,11 +151,11 @@ ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
 			simulHDRRenderer->StartRender(context);
-			simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
+			//simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 		}
 		else
 		{
-			simulWeatherRenderer->SetExposureHint(1.0f);
+//		simulWeatherRenderer->SetExposureHint(1.0f);
 			glClearColor(0,0,0,1.f);
 			glClearDepth(ReverseDepth?0.f:1.f);
 			glDepthMask(GL_TRUE);
@@ -164,8 +166,8 @@ ERROR_CHECK
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 #endif
 		if(simulTerrainRenderer&&ShowTerrain)
-			simulTerrainRenderer->Render(context);
-		simulWeatherRenderer->RenderCelestialBackground(context);
+			simulTerrainRenderer->Render(context,exposure);
+		simulWeatherRenderer->RenderCelestialBackground(context,exposure);
 #if 1
 		depthFramebuffer.Deactivate(context);
 		{
@@ -183,7 +185,7 @@ ERROR_CHECK
 		}
 #endif
 		simulWeatherRenderer->RenderLightning(context);
-		simulWeatherRenderer->RenderSkyAsOverlay(context,UseSkyBuffer,false,depthFramebuffer.GetDepthTex());
+		simulWeatherRenderer->RenderSkyAsOverlay(context,exposure,UseSkyBuffer,false,depthFramebuffer.GetDepthTex());
 #if 1	
 		simulWeatherRenderer->DoOcclusionTests();
 		simulWeatherRenderer->RenderPrecipitation(context);

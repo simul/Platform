@@ -186,6 +186,7 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 
 void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime, float fTimeStep)
 {
+	static float exposure=1.f;
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	fTime;fTimeStep;
@@ -218,19 +219,19 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 		simulHDRRenderer->StartRender();
-		simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
+//	simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 	}
 	else
 	{
 		pd3dDevice->Clear(0L,NULL,D3DCLEAR_ZBUFFER|D3DCLEAR_TARGET,0xFF000000,1.0f,0L);
-		simulWeatherRenderer->SetExposureHint(1.0f);
+//	simulWeatherRenderer->SetExposureHint(1.0f);
 	}
 	if(simulWeatherRenderer)
 	{
 #ifdef XBOX
 		simulWeatherRenderer->SetMatrices(view,proj);
 #endif
-		simulWeatherRenderer->RenderSky(pd3dDevice,UseSkyBuffer,false);
+		simulWeatherRenderer->RenderSky(pd3dDevice,exposure,UseSkyBuffer,false);
 	}
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 		simulWeatherRenderer->GetAtmosphericsRenderer()->StartRender(NULL);
@@ -247,7 +248,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulWeatherRenderer)
 	{
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
-		simulWeatherRenderer->RenderLateCloudLayer(pd3dDevice,true);
+		simulWeatherRenderer->RenderLateCloudLayer(pd3dDevice,exposure,true);
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{

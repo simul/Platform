@@ -9,6 +9,11 @@ void main(void)
 {
 	pos=gl_Vertex.xyz;
     gl_Position		= gl_ModelViewProjectionMatrix * gl_Vertex;
-    texcoord		= gl_MultiTexCoord0.xy;
+#ifdef REVERSE_DEPTH
+	gl_Position.z	=0.0;
+#else
+	gl_Position.z	=gl_Position.w;
+#endif
+	texcoord		= gl_MultiTexCoord0.xy;
 }
 

@@ -31,7 +31,6 @@ Framebuffer::Framebuffer(int w,int h) :
 	BaseFramebuffer(w,h)
 	,m_pd3dDevice(NULL),
 	m_pBufferVertexDecl(NULL),
-	m_pVertexBuffer(NULL),
 	hdr_buffer_texture(NULL),
 	buffer_depth_texture(NULL),
 	buffer_texture_SRV(NULL),
@@ -97,7 +96,6 @@ void Framebuffer::InvalidateDeviceObjects()
 	HRESULT hr=S_OK;
 
 	SAFE_RELEASE(m_pBufferVertexDecl);
-	SAFE_RELEASE(m_pVertexBuffer);
 	
 	SAFE_RELEASE(m_pHDRRenderTarget)
 	SAFE_RELEASE(m_pBufferDepthSurface)
@@ -276,12 +274,6 @@ bool Framebuffer::CreateBuffers()
         0,
         0
 	};
-    D3D1x_SUBRESOURCE_DATA InitData;
-    InitData.pSysMem = vertices;
-    InitData.SysMemPitch = sizeof(Vertext);
-    InitData.SysMemSlicePitch = 0;
-	SAFE_RELEASE(m_pVertexBuffer);
-	hr=m_pd3dDevice->CreateBuffer(&bdesc,&InitData,&m_pVertexBuffer);
 	SAFE_RELEASE(stagingTexture);
 	return (hr==S_OK);
 }

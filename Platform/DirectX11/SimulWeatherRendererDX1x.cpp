@@ -132,7 +132,7 @@ void SimulWeatherRendererDX1x::RecompileShaders()
 		defines["REVERSE_DEPTH"]="1";
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"), defines);
 	directTechnique			=m_pTonemapEffect->GetTechniqueByName("simul_direct");
-	SkyOverStarsTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_over_stars");
+	SkyBlendTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_sky_blend");
 	imageTexture			=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 }
@@ -230,6 +230,7 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 
 void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 {
+	static float exposure=1.f;
 	ID3D11DeviceContext* m_pImmediateContext=NULL;;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	FramebufferCubemapDX1x	fb_cubemap;
@@ -269,7 +270,7 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 				1.f,
 				600000.f);
 			SetMatrices(view_matrices[i],cube_proj);
-			HRESULT hr=RenderSky(m_pImmediateContext,false,true);
+			HRESULT hr=RenderSky(m_pImmediateContext,exposure,false,true);
 		}
 		gamma_correct.Deactivate(m_pImmediateContext);
 		{
@@ -294,6 +295,7 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 
 bool SimulWeatherRendererDX1x::RenderCubemap(void *context)
 {
+	static float exposure=1.f;
 	D3DXMATRIX ov=view;
 	D3DXMATRIX op=proj;
 	cam_pos=GetCameraPosVector(view);
@@ -312,7 +314,7 @@ bool SimulWeatherRendererDX1x::RenderCubemap(void *context)
 				1.f,
 				200000.f);
 			SetMatrices(view_matrices[i],cube_proj);
-			HRESULT hr=RenderSky(m_pImmediateContext,false,true);
+			HRESULT hr=RenderSky(m_pImmediateContext,exposure,false,true);
 		}
 		framebuffer_cubemap.Deactivate(m_pImmediateContext);
 	}
@@ -325,29 +327,30 @@ void *SimulWeatherRendererDX1x::GetCubemap()
 	return framebuffer_cubemap.GetColorTex();
 }
 
-void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,bool buffered,bool is_cubemap,const void* depthTexture)
+void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture)
 {
-	BaseWeatherRenderer::RenderSkyAsOverlay(context,buffered,is_cubemap,depthTexture);
+	BaseWeatherRenderer::RenderSkyAsOverlay(context,exposure,buffered,is_cubemap,depthTexture);
 	if(buffered&&baseFramebuffer)
 	{
 		bool blend=!is_cubemap;
 		imageTexture->SetResource(framebuffer.buffer_texture_SRV);
-		ID3D1xEffectTechnique *tech=blend?SkyOverStarsTechnique:directTechnique;
+		ID3D1xEffectTechnique *tech=blend?SkyBlendTechnique:directTechnique;
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
+		simul::dx11::setParameter(m_pTonemapEffect,"exposure",exposure);
 		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
 	}
 }
 
-bool SimulWeatherRendererDX1x::RenderSky(void *context,bool buffered,bool is_cubemap)
+bool SimulWeatherRendererDX1x::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)
 {
-	BaseWeatherRenderer::RenderSky(context,buffered,is_cubemap);
+	BaseWeatherRenderer::RenderSky(context,exposure,buffered,is_cubemap);
 	if(buffered&&baseFramebuffer)
 	{
 		bool blend=!is_cubemap;
 		HRESULT hr=S_OK;
 		hr=imageTexture->SetResource(framebuffer.buffer_texture_SRV);
-		ID3D1xEffectTechnique *tech=blend?SkyOverStarsTechnique:directTechnique;
+		ID3D1xEffectTechnique *tech=blend?SkyBlendTechnique:directTechnique;
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
 		
 		D3DXMATRIX ortho;
@@ -361,11 +364,11 @@ bool SimulWeatherRendererDX1x::RenderSky(void *context,bool buffered,bool is_cub
 	return true;
 }
 
-void SimulWeatherRendererDX1x::RenderLateCloudLayer(void *context,bool )
+void SimulWeatherRendererDX1x::RenderLateCloudLayer(void *context,float exposure,bool )
 {
 	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{
-		simulCloudRenderer->Render(context,false,0,UseDefaultFog,true);
+		simulCloudRenderer->Render(context,exposure,false,0,UseDefaultFog,true);
 	}
 }
 

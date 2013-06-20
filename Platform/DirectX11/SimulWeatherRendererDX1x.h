@@ -42,9 +42,9 @@ public:
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
 	bool Destroy();
-	void RenderSkyAsOverlay(void *context,bool buffered,bool is_cubemap,const void* depthTexture);
-	bool RenderSky(void*,bool buffered,bool is_cubemap);
-	void RenderLateCloudLayer(void *context,bool );
+	void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture);
+	bool RenderSky(void *context,float exposure,bool buffered,bool is_cubemap);
+	void RenderLateCloudLayer(void *context,float exposure,bool );
 	void RenderPrecipitation(void *context);
 	void RenderLightning(void *context);
 	bool RenderCubemap(void *context);
@@ -79,7 +79,7 @@ protected:
 	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 	ID3D1xEffect*						m_pTonemapEffect;
 	ID3D1xEffectTechnique*				directTechnique;
-	ID3D1xEffectTechnique*				SkyOverStarsTechnique;
+	ID3D1xEffectTechnique*				SkyBlendTechnique;
 	ID3D1xEffectMatrixVariable*			worldViewProj;
 	ID3D1xEffectShaderResourceVariable*	imageTexture;
 

@@ -240,7 +240,7 @@ void Simul2DCloudRendererDX11::Update(void *context)
 {
 }
 
-bool Simul2DCloudRendererDX11::Render(void*context,bool cubemap,const void *depthTexture,bool default_fog,bool write_alpha)
+bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,const void *depthTexture,bool default_fog,bool write_alpha)
 {
 	EnsureTexturesAreUpToDate(context);
 	RenderDetailTexture(context);

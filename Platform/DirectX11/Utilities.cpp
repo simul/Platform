@@ -251,7 +251,7 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 	pd3dDevice->CreateTexture2D(&desc,NULL,&m_pArrayTexture);
 
 	if(m_pArrayTexture)
-	for(int i=0;i<textures.size();i++)
+	for(unsigned i=0;i<textures.size();i++)
 	{
 		pImmediateContext->UpdateSubresource(m_pArrayTexture,i*num_mips, NULL,subResources[i].pSysMem,subResources[i].SysMemPitch,subResources[i].SysMemSlicePitch);
 	}
@@ -396,7 +396,7 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 	HRESULT hr=S_OK;
 	D3DXMATRIX world, tmp1, tmp2;
 	D3DXMatrixIdentity(&world);
-	ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_direct");
+	ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_debug");
 	ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
 
 	D3DXMATRIX wvp;

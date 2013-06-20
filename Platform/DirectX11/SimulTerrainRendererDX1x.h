@@ -35,7 +35,7 @@ public:
 	void RecompileShaders();
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
-	void Render(void *context);
+	void Render(void *context,float exposure);
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 private:

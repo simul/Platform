@@ -31,6 +31,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 		,Show2DCloudTextures(false)
 		,ReverseDepth(true)
 		,ShowOSD(false)
+		,Exposure(1.0f)
 {
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,true,false,w,h,true,true,true);
 	AddChild(simulWeatherRenderer.get());
@@ -133,8 +134,6 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		simulWeatherRenderer->SetMatrices(view,proj);
 		simulWeatherRenderer->PreRenderUpdate(pd3dImmediateContext);
-		//if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-		//	simulWeatherRenderer->GetBaseAtmosphericsRenderer()->StartRender(pd3dImmediateContext);
 	}
 	depthFramebuffer.Activate(pd3dImmediateContext);
 	depthFramebuffer.Clear(pd3dImmediateContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
@@ -142,22 +141,20 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulTerrainRenderer)
 	{
 		simulTerrainRenderer->SetMatrices(view,proj);
-		simulTerrainRenderer->Render(pd3dImmediateContext);	
+		simulTerrainRenderer->Render(pd3dImmediateContext,Exposure);	
 	}
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->RenderCelestialBackground(pd3dImmediateContext);
+		simulWeatherRenderer->RenderCelestialBackground(pd3dImmediateContext,Exposure);
 	depthFramebuffer.Deactivate(pd3dImmediateContext);
 	void *depthTexture=depthFramebuffer.GetDepthTex();
 	if(simulWeatherRenderer)
 	{
-		//if(simulWeatherRenderer->GetBaseAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-		//	simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender(pd3dImmediateContext);
-		if(simulHDRRenderer&&UseHdrPostprocessor)
+	/*	if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 		else
-			simulWeatherRenderer->SetExposureHint(1.0f);
+			simulWeatherRenderer->SetExposureHint(1.0f);*/
 		//((SimulAtmosphericsRendererDX1x*)simulWeatherRenderer->GetBaseAtmosphericsRenderer())->framebuffer->GetDepthTex();
-		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,UseSkyBuffer,false,depthTexture);
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture);
 		if(MakeCubemap)
 			simulWeatherRenderer->RenderCubemap(pd3dImmediateContext);
 	}

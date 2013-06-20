@@ -62,7 +62,7 @@ public:
 	bool Destroy();
 	void Update(void *context);
 	//! Call this to draw the clouds, including any illumination by lightning.
-	bool Render(void *context,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha);
+	bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha);
 	void RenderDebugInfo(void *context,int width,int height);
 	void RenderCrossSections(void *context,int width,int height);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).

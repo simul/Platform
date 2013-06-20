@@ -52,7 +52,7 @@ public:
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	void SetCloudShadowTexture(void *c){}
 	//! Render the Atmospherics.
-	void RenderAsOverlay(void *context,const void *depthTexture,float exposure_hint);
+	void RenderAsOverlay(void *context,const void *depthTexture,float exposure);
 protected:
 	HRESULT Destroy();
 	ID3D1xDevice*								m_pd3dDevice;

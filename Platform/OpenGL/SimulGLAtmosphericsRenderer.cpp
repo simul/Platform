@@ -120,14 +120,14 @@ ERROR_CHECK
 	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,skyInterface->GetDirectionToSun());
 	if(e.enable)
 	{
-		EarthShadowUniforms u;
-		memset(&u,0,sizeof(u));
-		u.earthShadowNormal	=e.normal;
-		u.radiusOnCylinder	=e.radius_on_cylinder;
-		u.maxFadeDistance	=fade_distance_km/e.planet_radius;
-		u.terminatorCosine	=e.terminator_cosine;
-		u.sunDir			=sun_dir;
-		UPDATE_CONSTANT_BUFFER(earthShadowUniformsUBO,e,earthShadowUniformsBindingIndex)
+		EarthShadowUniforms earthShadowUniforms;
+		memset(&earthShadowUniforms,0,sizeof(earthShadowUniforms));
+		earthShadowUniforms.earthShadowNormal	=e.normal;
+		earthShadowUniforms.radiusOnCylinder	=e.radius_on_cylinder;
+		earthShadowUniforms.maxFadeDistance		=fade_distance_km/e.planet_radius;
+		earthShadowUniforms.terminatorDistance	=e.terminator_distance_km/fade_distance_km;
+		earthShadowUniforms.sunDir				=sun_dir;
+		UPDATE_CONSTANT_BUFFER(earthShadowUniformsUBO,earthShadowUniforms,earthShadowUniformsBindingIndex)
 	}
 	ERROR_CHECK
 	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();

@@ -56,6 +56,18 @@ struct vertexOutput
     float3 wDirection		: TEXCOORD0;
 };
 
+struct vertexInput3Dto2D
+{
+    float3 position			: POSITION;
+    float2 texCoords		: TEXCOORD0;
+};
+
+struct vertexOutput3Dto2D
+{
+    float4 hPosition		: SV_POSITION;
+    float2 texCoords		: TEXCOORD0;
+};
+
 //------------------------------------
 // Vertex Shader 
 //------------------------------------
@@ -134,17 +146,16 @@ float4 PS_EarthShadow( vertexOutput IN): SV_TARGET
 	return float4(result.rgb,1.f);
 }
 
-struct vertexInput3Dto2D
+float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
-    float3 position			: POSITION;
-    float2 texCoords		: TEXCOORD0;
-};
-
-struct vertexOutput3Dto2D
-{
-    float4 hPosition		: SV_POSITION;
-    float2 texCoords		: TEXCOORD0;
-};
+	float azimuth		=3.1415926536*2.0*IN.texCoords.x;
+	float sine			=1.0-2.0*IN.texCoords.y;
+	float cosine		=sqrt(1.0-sine*sine);
+	float3 view			=normalize(float3(cosine*sin(azimuth),cosine*cos(azimuth),sine));
+	float2 fade_texc	=float2(1.0,IN.texCoords.y);
+	vec2 dist			=EarthShadowDistances(fade_texc,view);
+    return vec4(dist,0.0,1.0);
+}
 
 vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 
 {
@@ -431,6 +442,19 @@ technique11 simul_fade_3d_to_2d
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
+    }
+}
+
+technique11 simul_illumination_buffer
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_IlluminationBuffer()));
     }
 }
 

@@ -58,6 +58,7 @@ public:
 		META_ValueProperty(bool,MakeCubemap,"Render a cubemap each frame.")
 		META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 		META_ValueProperty(bool,ShowOSD,"Show debug display.")
+		META_ValueProperty(float,Exposure,"A linear multiplier for rendered brightness.")
 	META_EndProperties
 	bool IsEnabled()const{return enabled;}
 	class SimulWeatherRendererDX1x *GetSimulWeatherRenderer()

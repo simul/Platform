@@ -263,7 +263,7 @@ void Simul2DCloudRenderer::Update(void *context)
 {
 }
 
-bool Simul2DCloudRenderer::Render(void *context,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha)
+bool Simul2DCloudRenderer::Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	cubemap;
 	depth_alpha_tex;

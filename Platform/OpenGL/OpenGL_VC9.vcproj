@@ -757,6 +757,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\CrossPlatform\earth_shadow_uniforms.sl"
+				>
+			</File>
+			<File
 				RelativePath="..\CrossPlatform\simul_2d_clouds.hs"
 				>
 			</File>

@@ -852,7 +852,7 @@ void SimulCloudRendererDX1x::Update(void *context)
 	RenderCombinedCloudTexture(context);
 }
 static int test=29999;
-bool SimulCloudRendererDX1x::Render(void* context,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha)
+bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha)
 {
 	ID3D11DeviceContext* m_pImmediateContext	=(ID3D11DeviceContext*)context;
 	ID3D1xShaderResourceView *depthTexture_SRV	=(ID3D1xShaderResourceView *)depth_tex;

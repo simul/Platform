@@ -275,7 +275,7 @@ void SimulGL2DCloudRenderer::Update(void *context)
 {
 }
 
-bool SimulGL2DCloudRenderer::Render(void *context,bool,const void *depthTexture, bool, bool)
+bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool,const void *depthTexture, bool, bool)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	GLuint depth_texture=(GLuint)depthTexture;
