@@ -68,7 +68,6 @@ protected:
 	// Keep copies of these matrices:
 	D3DXMATRIX view;
 	D3DXMATRIX proj;
-	void UpdateSkyAndCloudHookup();
 	IDXGISwapChain *pSwapChain;
 	//! The size of the 2D buffer the sky is rendered to.
 	int BufferWidth,BufferHeight;

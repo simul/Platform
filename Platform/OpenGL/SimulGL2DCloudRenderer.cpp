@@ -33,7 +33,7 @@
 #include "SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/simul_2d_clouds.hs"
-
+#include "Simul/Camera/Camera.h"
 using namespace std;
 void printShaderInfoLog(GLuint sh);
 void printProgramInfoLog(GLuint obj);
@@ -330,6 +330,12 @@ bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool,const void
 	cloud2DConstants.cloudEccentricity		=cloudKeyframer->GetInterpolatedKeyframe().light_asymmetry;
 	cloud2DConstants.cloudInterp			=cloudKeyframer->GetInterpolation();
 	cloud2DConstants.eyePosition			=cam_pos;
+	
+	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
+	cloud2DConstants.tanHalfFov	=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	cloud2DConstants.nearZ		=frustum.nearZ/max_fade_distance_metres;
+	cloud2DConstants.farZ		=frustum.farZ/max_fade_distance_metres;
+
 	if(skyInterface)
 	{
 		simul::sky::float4 amb					=skyInterface->GetAmbientLight(X1.z*.001f);

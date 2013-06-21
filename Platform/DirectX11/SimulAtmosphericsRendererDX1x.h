@@ -42,6 +42,7 @@ public:
 	// BaseAtmosphericsRenderer.
 	void SetLossTexture(void* t);
 	void SetInscatterTextures(void* t,void *s);
+	void SetIlluminationTexture(void *i);
 	void SetCloudsTexture(void* t);
 	void RecompileShaders();
 
@@ -71,13 +72,15 @@ protected:
 	ID3D1xEffectScalarVariable*					fadeInterp;
 	ID3D1xEffectShaderResourceVariable*			depthTexture;
 	ID3D1xEffectShaderResourceVariable*			lossTexture;
-	ID3D1xEffectShaderResourceVariable*			inscatterTexture;
-	ID3D1xEffectShaderResourceVariable*			skylightTexture;
+	ID3D1xEffectShaderResourceVariable*			inscTexture;
+	ID3D1xEffectShaderResourceVariable*			skylTexture;
 
 	ID3D1xShaderResourceView*					skyLossTexture_SRV;
 	ID3D1xShaderResourceView*					skyInscatterTexture_SRV;
 	ID3D1xShaderResourceView*					skylightTexture_SRV;
+
 	ID3D1xShaderResourceView*					clouds_texture;
+	ID3D1xShaderResourceView*					illuminationTexture_SRV;
 
 	ID3D11Buffer*								constantBuffer;
 	ID3D11Buffer*								atmosphericsUniforms2ConstantsBuffer;

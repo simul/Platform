@@ -76,6 +76,7 @@ public:
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 
 	void Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s);
+	void *GetIlluminationTexture();
 
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);

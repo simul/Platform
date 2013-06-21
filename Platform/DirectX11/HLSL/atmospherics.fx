@@ -6,8 +6,9 @@
 Texture2D depthTexture;
 Texture2D imageTexture;
 Texture2D lossTexture;
-Texture2D inscatterTexture;
-Texture2D skylightTexture;
+Texture2D inscTexture;
+Texture2D skylTexture;
+Texture2D illuminationTexture;
 
 #define pi (3.1415926536)
 
@@ -83,10 +84,10 @@ float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 	float2 texc2=float2(pow(dist,0.5f),0.5f*(1.f-sine));
 	float3 loss=lossTexture.Sample(clampSamplerState,texc2).rgb;
 	colour*=loss;
-	float4 inscatter_factor=inscatterTexture.Sample(clampSamplerState,texc2);
+	float4 inscatter_factor=inscTexture.Sample(clampSamplerState,texc2);
 	float cos0=dot(view.xyz,lightDir.xyz);
 	colour+=InscatterFunction(inscatter_factor,cos0);
-	colour+=skylightTexture.Sample(clampSamplerState,texc2).rgb;
+	colour+=skylTexture.Sample(clampSamplerState,texc2).rgb;
     return float4(colour.rgb,1.f);
 }
 
@@ -108,12 +109,26 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	view=normalize(view);
 	float depth=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
 	float dist=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
-	float sine		=view.z;
-	float2 texc2	=float2(pow(dist,0.5f),0.5f*(1.f-sine));
-	float4 insc		=inscatterTexture.Sample(clampSamplerState,texc2);
-	float cos0		=dot(view,lightDir);
-	float3 colour	=InscatterFunction(insc,cos0);
-	colour			+=skylightTexture.Sample(clampSamplerState,texc2).rgb;
+	float sine			=view.z;
+	float2 fade_texc	=float2(pow(dist,0.5f),0.5f*(1.f-sine));
+
+	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
+	vec2 nearFarTexc	=texture_wrap_mirror(illuminationTexture,illum_texc).rg;
+	vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
+	vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
+
+	vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
+	vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
+	vec4 insc			=insc_far-insc_near;
+
+	float cos0			=dot(view,lightDir);
+	float3 colour		=InscatterFunction(insc,cos0);
+	colour				+=texture_clamp_mirror(skylTexture,fade_texc).rgb;
+
+	//colour.rg			=nearFarTexc.xx;
+	//colour.b=0;
+//	colour.rgb			=insc_near.rgb;
+	
     return float4(colour.rgb,1.f);
 }
 
@@ -121,9 +136,9 @@ technique11 simul_atmospherics
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(NoBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Atmos()));

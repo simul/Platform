@@ -7,7 +7,7 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/OpenGL/GLSL/simul_earthshadow_uniforms.glsl"
+#include "Simul/Platform/CrossPlatform/earth_shadow_uniforms.sl"
 #include "Simul/Platform/CrossPlatform/atmospherics_constants.sl"
 
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()

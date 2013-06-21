@@ -37,8 +37,8 @@ vec4 simple()
 	float cos0=dot(view,lightDir);
 	vec3 colour=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
 	vec3 skyl=texture(skylightTexture,fade_texc).rgb;
-	//colour+=skyl;
-    return vec4(colour,1.0);
+	colour+=skyl;
+    return vec4(colour.rgb,1.0);
 }
 
 vec4 godrays()

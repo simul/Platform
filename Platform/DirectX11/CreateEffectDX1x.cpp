@@ -507,7 +507,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const char *filename,D3D10_SHADER_MACR
 	fileLoader->ReleaseFileContents(binaryData);
 	
 	//ALWAYS_BUILD=1,BUILD_IF_NO_BINARY,NEVER_BUILD
-	if(textSize>0&&(shaderBuildMode==ALWAYS_BUILD||(shaderBuildMode==BUILD_IF_NO_BINARY&&!binarySize==0)))
+	if(textSize>0&&(shaderBuildMode==ALWAYS_BUILD||(shaderBuildMode==BUILD_IF_NO_BINARY&&binarySize==0)))
 	{
 		//std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
 		DeleteFileA(output_filename.c_str());
@@ -619,9 +619,8 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const char *filename,D3D10_SHADER_MACR
 					size_t pos=str.find("rror");
 					if(pos>=str.length())
 						pos=str.find("failed");
-					if(pos>=str.length())
-						continue;
-					has_errors=true;
+					if(pos<str.length())
+						has_errors=true;
 					std::cerr<<str.c_str();
 					int bracket_pos=str.find("(");
 					if(bracket_pos>0)

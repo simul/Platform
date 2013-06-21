@@ -21,7 +21,7 @@
 #include "Simul/Base/SmartPtr.h"
 #include "LoadGLImage.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/OpenGL/GLSL/simul_earthshadow_uniforms.glsl"
+#include "Simul/Platform/CrossPlatform/earth_shadow_uniforms.sl"
 
 void printShaderInfoLog(GLuint obj);
 void printProgramInfoLog(GLuint obj);

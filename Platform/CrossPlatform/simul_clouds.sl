@@ -11,6 +11,7 @@ Texture2D skylTexture: register(t5);
 Texture2D depthTexture: register(t6);
 Texture3D noiseTexture3D: register(t7);
 Texture3D lightningIlluminationTexture: register(t8);
+Texture2D illuminationTexture: register(t10);
 SamplerState cloudSamplerState: register( s0)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -54,10 +55,10 @@ vec4 calcUnfadedColour(vec3 texCoords,float layerFade,vec3 noiseval,float cos0)
 
 vec3 applyFades(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier)
 {
-	vec4 l=sampleLod(lossTexture		,fadeSamplerState,fade_texc,0);
+	vec4 l=sampleLod(lossTexture		,cmcSamplerState,fade_texc,0);
 	vec3 loss=l.rgb;
-	vec4 insc=sampleLod(inscTexture		,fadeSamplerState,fade_texc,0);
-	vec3 skyl=sampleLod(skylTexture		,fadeSamplerState,fade_texc,0).rgb;
+	vec4 insc=sampleLod(inscTexture		,cmcSamplerState,fade_texc,0);
+	vec3 skyl=sampleLod(skylTexture		,cmcSamplerState,fade_texc,0).rgb;
 	vec3 inscatter=earthshadowMultiplier*InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	final*=loss;
 	final+=skyl+inscatter;

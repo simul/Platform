@@ -402,21 +402,6 @@ void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX 
 		simulLightningRenderer->SetMatrices(view,proj);
 }
 
-void SimulWeatherRendererDX1x::UpdateSkyAndCloudHookup()
-{
-	simul::clouds::BaseWeatherRenderer::UpdateSkyAndCloudHookup();
-	if(!simulSkyRenderer)
-		return;
-	void *l=0,*i=0,*s=0;
-	simulSkyRenderer->Get2DLossAndInscatterTextures(&l,&i,&s);
-	if(simulCloudRenderer)
-	{
-		simulCloudRenderer->SetLossTexture(l);
-		simulCloudRenderer->SetInscatterTextures(i,s);
-	}
-	
-}
-
 SimulSkyRendererDX1x *SimulWeatherRendererDX1x::GetSkyRenderer()
 {
 	return simulSkyRenderer.get();

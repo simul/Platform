@@ -577,10 +577,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\GLSL\simul_earthshadow_uniforms.glsl"
-				>
-			</File>
-			<File
 				RelativePath=".\GLSL\simul_fade_3d_to_2d.frag"
 				>
 			</File>

@@ -19,9 +19,8 @@
 #include "Simul/Math/Pi.h"
 #include "Simul/LicenseKey.h"
 #include "CreateEffectDX1x.h"
-#include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
-#include "Simul/Platform/CrossPlatform/simul_2d_clouds.hs"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Camera/Camera.h"
 
 Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer *ck) :
 	simul::clouds::Base2DCloudRenderer(ck)
@@ -31,10 +30,10 @@ Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer
 	,vertexBuffer(NULL)
 	,indexBuffer(NULL)
 	,inputLayout(NULL)
-	,constantBuffer(NULL)
 	,skyLossTexture_SRV(NULL)
 	,skyInscatterTexture_SRV(NULL)
 	,skylightTexture_SRV(NULL)
+	,illuminationTexture_SRV(NULL)
 {
 }
 
@@ -108,8 +107,8 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 	SAFE_RELEASE(indexBuffer);
 	m_pd3dDevice->CreateBuffer(&indexBufferDesc,&InitData,&indexBuffer);
 	delete [] indices;
-	SAFE_RELEASE(constantBuffer);
-	MAKE_CONSTANT_BUFFER(constantBuffer,Cloud2DConstants);
+
+	cloud2DConstants.RestoreDeviceObjects(m_pd3dDevice);
 
 	detail_fb.SetWidthAndHeight(256,256);
 	detail_fb.RestoreDeviceObjects(m_pd3dDevice);
@@ -138,8 +137,12 @@ void Simul2DCloudRendererDX11::RecompileShaders()
 	SAFE_RELEASE(effect);
 	if(!m_pd3dDevice)
 		return;
-	CreateEffect(m_pd3dDevice,&effect,"simul_clouds_2d.fx");
+	std::map<std::string,std::string> defines;
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
+	CreateEffect(m_pd3dDevice,&effect,"simul_clouds_2d.fx",defines);
 	tech=effect->GetTechniqueByName("simul_clouds_2d");
+	cloud2DConstants.LinkToEffect(effect,"Cloud2DConstants");
 }
 
 void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
@@ -175,7 +178,7 @@ void Simul2DCloudRendererDX11::InvalidateDeviceObjects()
 	SAFE_RELEASE(inputLayout);
 	SAFE_RELEASE(vertexBuffer);
 	SAFE_RELEASE(indexBuffer);
-	SAFE_RELEASE(constantBuffer);
+	cloud2DConstants.InvalidateDeviceObjects();
 	for(int i=0;i<3;i++)
 		coverage_tex[i].release();
 	detail_fb.InvalidateDeviceObjects();
@@ -254,23 +257,21 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	simul::dx11::setParameter(effect,"inscTexture",skyInscatterTexture_SRV);
 	simul::dx11::setParameter(effect,"skylTexture",skylightTexture_SRV);
 	simul::dx11::setParameter(effect,"depthTexture",depthTexture_SRV);
+	simul::dx11::setParameter(effect,"illuminationTexture",illuminationTexture_SRV);
 	
-	D3DXMATRIX worldViewProj;
 	D3DXMATRIX world;
 	D3DXMatrixIdentity(&world);
-
-	simul::dx11::MakeWorldViewProjMatrix(&worldViewProj,world,view,proj);
-	D3DXMATRIX invw;
-	D3DXMatrixInverse(&invw,NULL,&worldViewProj);
+	D3DXMATRIX wvp;
+	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	static float ll=0.05f;
 	static float ff=100.f; 
-	Cloud2DConstants cloud2DConstants;
 	simul::clouds::CloudInterface *ci=cloudKeyframer->GetCloudInterface();
 	simul::math::Vector3 X1,X2;
 	ci->GetExtents(X1,X2);
 	simul::math::Vector3 DX=X2-X1;
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
-	cloud2DConstants.worldViewProj			=worldViewProj;
+
+	cloud2DConstants.worldViewProj			=wvp;
 	cloud2DConstants.worldViewProj.transpose();
 	cloud2DConstants.origin					=X1+cloudKeyframer->GetCloudInterface()->GetWindOffset();
 	cloud2DConstants.globalScale			=ci->GetCloudWidth();
@@ -278,6 +279,12 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	cloud2DConstants.cloudEccentricity		=cloudKeyframer->GetInterpolatedKeyframe().light_asymmetry;
 	cloud2DConstants.cloudInterp			=cloudKeyframer->GetInterpolation();
 	cloud2DConstants.eyePosition			=cam_pos;
+	
+	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
+	cloud2DConstants.tanHalfFov	=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	cloud2DConstants.nearZ		=frustum.nearZ/max_fade_distance_metres;
+	cloud2DConstants.farZ		=frustum.farZ/max_fade_distance_metres;
+
 	if(skyInterface)
 	{
 		simul::sky::float4 amb					=skyInterface->GetAmbientLight(X1.z*.001f);
@@ -292,7 +299,6 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	ID3D11InputLayout* previousInputLayout;
 	m_pImmediateContext->IAGetInputLayout(&previousInputLayout);
 
-	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	m_pImmediateContext->IASetInputLayout(inputLayout);
 	SET_VERTEX_BUFFER(m_pImmediateContext,vertexBuffer,simul::clouds::Cloud2DGeometryHelper::Vertex);
 
@@ -303,14 +309,12 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 
 	m_pImmediateContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R16_UINT,0);					
 
-	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,constantBuffer,Cloud2DConstants,cloud2DConstants);
-	ID3D1xEffectConstantBuffer* cb=effect->GetConstantBufferByName("Cloud2DConstants");
-	if(cb)
-		cb->SetConstantBuffer(constantBuffer);
+	cloud2DConstants.Apply(m_pImmediateContext);
 
 	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	m_pImmediateContext->DrawIndexed(num_indices-2,0,0);
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 	m_pImmediateContext->IASetInputLayout(previousInputLayout);
@@ -347,11 +351,11 @@ static float mult=1.f;
 		simul::dx11::setParameter(effect,"imageTexture",coverage_tex[i].shaderResourceView);
 		simul::dx11::setParameter(effect,"crossSectionOffset",GetCloudInterface()->GetWrap()?0.5f:0.f);
 		simul::dx11::setParameter(effect,"lightResponse",light_response);
-		simul::dx11::UtilityRenderer::RenderTexture(m_pImmediateContext,(i+1)*(w+8)+8,height-w-8,w,w,effect->GetTechniqueByName("simple"));
+		simul::dx11::UtilityRenderer::DrawQuad2(m_pImmediateContext,(i+1)*(w+8)+8,height-w-8,w,w,effect,effect->GetTechniqueByName("simple"));
 	}
 	simul::dx11::setParameter(effect,"imageTexture",(ID3D11ShaderResourceView*)detail_fb.GetColorTex());
 
-	simul::dx11::UtilityRenderer::RenderTexture(m_pImmediateContext,8,height-8-w,w,w,effect->GetTechniqueByName("simple"));
+	simul::dx11::UtilityRenderer::DrawQuad2(m_pImmediateContext,8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
 		
 }
 
@@ -364,6 +368,11 @@ void Simul2DCloudRendererDX11::SetInscatterTextures(void *t,void *s)
 {
 	skyInscatterTexture_SRV=(ID3D11ShaderResourceView*)t;
 	skylightTexture_SRV=(ID3D11ShaderResourceView*)s;
+}
+
+void Simul2DCloudRendererDX11::SetIlluminationTexture(void *i)
+{
+	illuminationTexture_SRV=(ID3D1xShaderResourceView*)i;
 }
 
 void Simul2DCloudRendererDX11::SetWindVelocity(float x,float y)

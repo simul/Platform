@@ -16,6 +16,8 @@
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
+#include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
+#include "Simul/Platform/CrossPlatform/simul_2d_clouds.hs"
 
 //! A renderer for 2D cloud layers, e.g. cirrus clouds.
 class Simul2DCloudRendererDX11: public simul::clouds::Base2DCloudRenderer
@@ -32,6 +34,7 @@ public:
 	void RenderCrossSections(void *context,int width,int height);
 	void SetLossTexture(void *l);
 	void SetInscatterTextures(void *i,void *s);
+	void SetIlluminationTexture(void *i);
 	void SetWindVelocity(float x,float y);
 	//
 	void *GetCloudShadowTexture(){return NULL;}
@@ -52,12 +55,13 @@ protected:
 	ID3D11Buffer*				indexBuffer;
 	ID3D11InputLayout*			inputLayout;
 	
-	ID3D11Buffer*				constantBuffer;
+	ConstantBuffer<Cloud2DConstants>	cloud2DConstants;
 	int num_indices;
 	
 	ID3D1xShaderResourceView*	skyLossTexture_SRV;
 	ID3D1xShaderResourceView*	skyInscatterTexture_SRV;
 	ID3D1xShaderResourceView*	skylightTexture_SRV;
+	ID3D1xShaderResourceView*	illuminationTexture_SRV;
 
 	simul::dx11::TextureStruct	coverage_tex[3];
 	simul::dx11::Framebuffer	detail_fb;
