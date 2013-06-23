@@ -65,6 +65,8 @@ OpenGLRenderer::~OpenGLRenderer()
 
 void OpenGLRenderer::initializeGL()
 {
+ERROR_CHECK
+	//glewExperimental=GL_TRUE;
     GLenum glewError = glewInit();
     if( glewError != GLEW_OK )
     {
@@ -77,6 +79,7 @@ void OpenGLRenderer::initializeGL()
         std::cerr<<"OpenGL 2.1 not supported!\n" ;
         return;
     }
+ERROR_CHECK
 //	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
 // If the GL_GREMEDY_string_marker extension is supported:
 	if(glewIsSupported("GL_GREMEDY_string_marker"))
@@ -84,16 +87,18 @@ void OpenGLRenderer::initializeGL()
 		// Get a pointer to the glStringMarkerGREMEDY function:
 		glStringMarkerGREMEDY = (PFNGLSTRINGMARKERGREMEDYPROC)wglGetProcAddress("glStringMarkerGREMEDY");
 	}
-//CheckGLError(__FILE__,__LINE__,res);
+ERROR_CHECK
 	if(!GLEW_VERSION_2_0)
 	{
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
 	}
 	CheckExtension("GL_VERSION_2_0");
+ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
 	if(cam)
 		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
+ERROR_CHECK
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	gpuSkyGenerator.RestoreDeviceObjects(NULL);
 	if(simulWeatherRenderer)

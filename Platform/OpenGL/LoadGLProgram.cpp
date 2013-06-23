@@ -249,17 +249,21 @@ GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const map<str
 		strings[s]		=sources[i].c_str();
 		lenOfStrings[s]	=strlen(strings[s]);
 	}
+ERROR_CHECK
 	glShaderSource(sh,s,strings,NULL);
+ERROR_CHECK
     if(!sh)
 		return 0;
 	else
 	{
 		glCompileShader(sh);
 	}
+ERROR_CHECK
 	printShaderInfoLog(sh,filenameChart);
 
 	int result=1;
 	glGetShaderiv(sh,GL_COMPILE_STATUS,&result);
+ERROR_CHECK
 	if(!result)
 	{
 		return 0;
@@ -348,9 +352,11 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 
 GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename,const map<string,string> &defines)
 {
+	ERROR_CHECK
 	GLuint prog						=glCreateProgram();
 	int result=IDRETRY;
 	GLuint vertex_shader=0;
+	ERROR_CHECK
 	while(result==IDRETRY)
 	{
 		vertex_shader			=LoadShader(vert_filename,defines);
@@ -364,7 +370,9 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 		}
 		else break;
 	}
+	ERROR_CHECK
 	glAttachShader(prog,vertex_shader);
+	ERROR_CHECK
 	if(geom_filename)
 	{
 		GLuint geometry_shader	=LoadShader(geom_filename,defines);
@@ -453,9 +461,9 @@ GLuint LoadShader(const char *filename,const map<string,string> &defines)
 	else if(filename_str.find(".geom")<filename_str.length())
 		shader_type=GL_GEOMETRY_SHADER;
 	else throw simul::base::RuntimeError((std::string("Shader type not known for file ")+filename_str).c_str());
-	
+ERROR_CHECK
 	std::string src=loadShaderSource(filename);
-
+ERROR_CHECK
 	FilenameChart filenameChart;
 	filenameChart.add(filename,0,src);
 	// process #includes.
@@ -482,12 +490,11 @@ GLuint LoadShader(const char *filename,const map<string,string> &defines)
 		filenameChart.add(include_file.c_str(),start_line+1,newsrc);
 	}
 	std::vector<std::string> srcs;
-	for(int i=0;i<(int)include_files.size();i++)
-	{
-		//srcs.push_back();
-	}
 	srcs.push_back(src);
+ERROR_CHECK
 	GLuint sh=glCreateShader(shader_type);
+ERROR_CHECK
 	sh=SetShader(sh,srcs,defines,filenameChart);
+	ERROR_CHECK
     return sh;
 }
