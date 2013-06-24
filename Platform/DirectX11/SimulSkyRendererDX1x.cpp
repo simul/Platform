@@ -188,7 +188,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 		skylight_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
 		skylight_2d->RestoreDeviceObjects(dev);
 	}
-	illumination_fb.SetWidthAndHeight(128,numFadeElevations);
+	illumination_fb.SetWidthAndHeight(128,numFadeElevations*2);
 	SAFE_RELEASE(moon_texture_SRV);
 	MoonTexture="Moon.png";
 	moon_texture_SRV=simul::dx11::LoadTexture(MoonTexture.c_str());
@@ -956,8 +956,11 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 		fadeTexture1->SetResource(skyl_textures_SRV[1]);
 		UtilityRenderer::DrawQuad2(context,x2	,y+16+2*size,s,s	,m_pSkyEffect,techniqueShowFade);
 	}
+	int x=x0+16+4*(s+8);
+	if(x+size>width)
+		x=8;
 	inscTexture->SetResource(illumination_fb.buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0+16+4*(s+8),y0+8	,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x,y0+8	,size,size,m_pSkyEffect,techniqueShowSky);
 	
 	return true;
 }

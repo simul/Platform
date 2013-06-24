@@ -104,7 +104,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 			{
 				float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
 				float3 noiseval		=noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
-				float4 density		=calcDensity(texCoords,1.0,noiseval);
+				float4 density		=calcDensity(texCoords,layer.layerFade,noiseval);
 				if(density.z>0)
 				{
 					float4 c=calcColour(density,cos0,texCoords.z);
@@ -116,7 +116,6 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 					colour.rgb+=c.rgb*c.a;
 					Z*=(1.0-c.a);
 					Z+=z*c.a;
-					//colour.rgb+=frac(noise_texc.xyy)*c.a;
 				}
 			}
 		}

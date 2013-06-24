@@ -437,7 +437,7 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pImmediateContext->IASetPrimitiveTopology(strip?D3D1x_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D1x_PRIMITIVE_TOPOLOGY_LINELIST);
+	m_pImmediateContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	UINT stride = sizeof(VertexXyzRgba);
 	UINT offset = 0;
     UINT Strides[1];

@@ -300,8 +300,7 @@ timer.StartTime();
 	glUseProgram(lighting_program);
 	setParameter(lighting_program,"input_light_texture",0);
 	setParameter(lighting_program,"density_texture",1);
-	//setMatrix(lighting_program,"transformMatrix",transformMatrix);
-	//setParameter(lighting_program,"extinctions",lightspace_extinctions_float3[0],lightspace_extinctions_float3[1]);
+
 	GpuCloudConstants constants;
 	constants.extinctions=lightspace_extinctions_float3;
 	constants.transformMatrix=transformMatrix;

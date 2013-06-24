@@ -30,7 +30,7 @@ vec2 fn(float r,float cos2,float sine_phi,float sine_gamma,float maxFadeDistance
 	float u			=1.0-r*r*cos2;
 	float d			=0.0;
 	float L			=0.0;
-	if(u>=0.0)
+	//if(u>=0.0)
 	{
 		L			=-r*sine_phi;
 		if(r<=1.0)
@@ -76,6 +76,10 @@ vec2 fn(float r,float cos2,float sine_phi,float sine_gamma,float maxFadeDistance
 
 vec2 EarthShadowDistances(vec2 fade_texc,vec3 view)
 {
+	if(radiusOnCylinder>=1.0&&view.z>0)
+		return vec2(0.0,1.0);
+	if(radiusOnCylinder<=1.0&&view.z<0)
+		return vec2(1.0,1.0);
 	float dist			=fade_texc.x*fade_texc.x;
 	// The Earth's shadow: 
 	// First get the part of view that is along the light direction
@@ -85,7 +89,7 @@ vec2 EarthShadowDistances(vec2 fade_texc,vec3 view)
 
 	// We define terminatorDistance as the distance to the terminator towards the sun, as a proportion of the fade distance.
 	// So we're in shadow provided that d*along<terminatorDistance;
-	float in_shadow		=1.0;//saturate(1.0*(terminatorDistance-dist*along));
+	float in_shadow		=saturate(1.0*(terminatorDistance-dist*along));
 	// subtract it to get the direction on the shadow-cylinder cross section.
 	vec3 on_cross_section=view-along*sunDir.xyz;
 		
@@ -101,75 +105,21 @@ vec2 EarthShadowDistances(vec2 fade_texc,vec3 view)
 	float cos2		=1.0-sine_phi*sine_phi;
 	
 	vec2 range1		=fn(radiusOnCylinder,cos2,sine_phi,sine_gamma,maxFadeDistance);
-	vec2 range2		=fn(radiusOnCylinder-0.001,cos2,sine_phi,sine_gamma,maxFadeDistance);
+	//vec2 range2		=fn(radiusOnCylinder-0.01,cos2,sine_phi,sine_gamma,maxFadeDistance);
 
-	float interp	=saturate((radiusOnCylinder-0.99995)/0.0001);
-	vec2 range		=mix(range2,range1,interp);
-	range			=mix(vec2(0.0,1.0),range,in_shadow);
-	return range;
+	//float interp	=saturate((radiusOnCylinder-0.999995)/0.0001);
+	//vec2 range		=mix(range2,range1,interp);
+	range1			=mix(vec2(0.0,1.0),range1,in_shadow);
+	return range1;
 }
 
 vec4 EarthShadowFunction(vec2 fade_texc,vec3 view)
 {
-	float dist			=fade_texc.x*fade_texc.x;
-	// The Earth's shadow: 
-	// First get the part of view that is along the light direction
-	float along			=dot(sunDir.xyz,view.xyz);
-	// The Terminator is the line between light and shadow on the Earth's surface,
-	// and marks the beginning of the shadow volume.
-
-	// We define terminatorDistance as the distance to the terminator towards the sun, as a proportion of the fade distance.
-	// So we're in shadow provided that d*along<terminatorDistance;
-	float in_shadow		=saturate(1.0*(terminatorDistance-dist*along));
-	// subtract it to get the direction on the shadow-cylinder cross section.
-	vec3 on_cross_section=view-along*sunDir.xyz;
-	// Now get the part that's on the cylinder radius:
-	// Let shadowNormal be the direction normal to the sunlight direction
-	//						but in the plane of the sunlight and the vertical.
-	float on_radius	=dot(on_cross_section,earthShadowNormal.xyz);
-	vec3 on_x		=on_cross_section-on_radius*earthShadowNormal.xyz;
-	float sine_phi	=on_radius/length(on_cross_section);
-	// We avoid positive phi because the cosine discards sign information leading to
-	// confusion between negative and positive angles.
-	float cos2		=1.0-sine_phi*sine_phi;
-	float r			=radiusOnCylinder;//min(radiusOnCylinder,1.0);
-	// Normalized so that Earth radius is 1.0..
-	float u			=1.0-r*r*cos2;
-	float d			=0.0;
-	float L			=0.0;
-	float sine_gamma=0.0;
-	if(u>=0.0)
-	{
-		L			=-r*sine_phi;
-		if(r<=1.0)
-			L		+=sqrt(u);
-		else
-			L		-=sqrt(u);
-		L			=max(0.0,L);
-		sine_gamma	=length(on_cross_section);
-		L			=L/sine_gamma;
-		// L is the distance to the outside of the Earth's shadow in this direction, normalized to the Earth's radius.
-		// Renormalize it to the fade distance.
-		d			=L/maxFadeDistance;
-	}
-	float a			=sqrt(d);
-	a				=min(a,fade_texc.x);
-	// Inscatter at distance d
-	vec2 fade_texc_d=vec2(a,fade_texc.y);
-	vec4 insc		=texture_clamp(inscTexture,fade_texc);
-	vec4 insc_d		=texture_clamp(inscTexture,fade_texc_d);
-	// what should the light be at distance d?
-	// We subtract the inscatter to d if we're looking OUT FROM the cylinder,
-	if(r<=1.0||a==0.0)
-	{
-		insc-=insc_d*saturate(in_shadow);
-    }
-	else
-	{
-	// but we just use the inscatter to d if we're looking INTO the cylinder.
-		insc=mix(insc,insc_d,in_shadow);
-    }
-	return insc;
+	vec2 dist=EarthShadowDistances(fade_texc,view);
+	vec2 fade_texc_1=vec2(dist.x,fade_texc.y);
+	vec2 fade_texc_2=vec2(dist.y,fade_texc.y);
+	vec4 insc_n		=texture_clamp(inscTexture,fade_texc_1);
+	vec4 insc_f		=texture_clamp(inscTexture,fade_texc_2);
+	return insc_f-insc_n;
 }
-
 #endif

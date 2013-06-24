@@ -198,6 +198,7 @@ public:
 	}
 	ID3D11Buffer*					m_pD3D11Buffer;
 	ID3DX11EffectConstantBuffer*	m_pD3DX11EffectConstantBuffer;
+	//! Create the buffer object.
 	void RestoreDeviceObjects(ID3D11Device *pd3dDevice)
 	{
 		SAFE_RELEASE(m_pD3D11Buffer);	
@@ -214,6 +215,7 @@ public:
 		cb_desc.StructureByteStride = 0;
 		pd3dDevice->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
 	}
+	//! Find the constant buffer in the given effect, and link to it.
 	void LinkToEffect(ID3DX11Effect *effect,const char *name)
 	{
 		m_pD3DX11EffectConstantBuffer=effect->GetConstantBufferByName(name);
@@ -222,11 +224,13 @@ public:
 		else
 			std::cerr<<"ConstantBuffer<> LinkToEffect did not find the buffer named "<<name<<" in the effect."<<std::endl;
 	}
+	//! Free the allocated buffer.
 	void InvalidateDeviceObjects()
 	{
 		SAFE_RELEASE(m_pD3D11Buffer);
 		m_pD3DX11EffectConstantBuffer=NULL;
 	}
+	//! Apply the stored data using the given context, in preparation for renderiing.
 	void Apply(ID3D11DeviceContext *pContext)
 	{
 		D3D11_MAPPED_SUBRESOURCE mapped_res;

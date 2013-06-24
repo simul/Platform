@@ -2,16 +2,14 @@
 
 #include "Simul/Clouds/BaseGpuCloudGenerator.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
+#include "HLSL/CppHLSL.hlsl"
+#include "Simul/Platform/CrossPlatform/simul_gpu_clouds.sl"
 
 #include <d3dx9.h>
-#ifdef DX10
-	#include <d3d10.h>
-	#include <d3dx10.h>
-#else
-	#include <d3d11.h>
-	#include <d3dx11.h>
-	#include <d3dx11effect.h>
-#endif
+#include <d3d11.h>
+#include <d3dx11.h>
+#include <d3dx11effect.h>
 
 namespace simul
 {
@@ -66,7 +64,7 @@ namespace simul
 			ID3D11ShaderResourceView		*volume_noise_tex_srv;
 			ID3D11Texture3D					*density_texture;
 			ID3D11ShaderResourceView		*density_texture_srv;
-			ID3D11Buffer					*gpuCloudConstantsBuffer;
+			ConstantBuffer<GpuCloudConstants>	gpuCloudConstants;
 		};
 	}
 }

@@ -151,6 +151,8 @@ float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 	float3 view			=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
 	float2 fade_texc	=vec2(1.0,IN.texCoords.y);
 	vec2 dist			=EarthShadowDistances(fade_texc,view);
+	if(dist.x>dist.y)
+		dist.x=dist.y;
     return vec4(dist,0.0,1.0);
 }
 
