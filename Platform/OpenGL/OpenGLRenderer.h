@@ -65,8 +65,7 @@ protected:
 	simul::base::SmartPtr<SimulGLHDRRenderer> simulHDRRenderer;
 	simul::base::SmartPtr<SimulOpticsRendererGL> simulOpticsRenderer;
 	simul::base::SmartPtr<class SimulGLTerrainRenderer> simulTerrainRenderer;
-	FramebufferGL 
-		depthFramebuffer;
+	FramebufferGL depthFramebuffer;
 	simul::opengl::GpuCloudGenerator gpuCloudGenerator;
 	simul::opengl::GpuSkyGenerator gpuSkyGenerator;
 	simul::camera::Camera *cam;

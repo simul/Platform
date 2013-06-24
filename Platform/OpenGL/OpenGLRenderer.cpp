@@ -160,27 +160,22 @@ ERROR_CHECK
 		}
 		else
 		{
-//		simulWeatherRenderer->SetExposureHint(1.0f);
 			glClearColor(0,0,0,1.f);
 			glClearDepth(ReverseDepth?0.f:1.f);
 			glDepthMask(GL_TRUE);
 			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		}
-#if 1
 		depthFramebuffer.Activate(context);
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-#endif
 		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render(context,exposure);
 		simulWeatherRenderer->RenderCelestialBackground(context,exposure);
-#if 1
 		depthFramebuffer.Deactivate(context);
 		{
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)depthFramebuffer.GetColorTex());
 			glUseProgram(simple_program);
 			GLint image_texture		=glGetUniformLocation(simple_program,"image_texture");
-//			setTexture(simple_program,"image_texture",(GLuint)depthFramebuffer.GetColorTex());
 			glUniform1i(image_texture,0);
 			glDisable(GL_DEPTH_TEST);
 			glDepthMask(GL_FALSE);
@@ -188,10 +183,8 @@ ERROR_CHECK
 			depthFramebuffer.Render(context,false);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
 		}
-#endif
 		simulWeatherRenderer->RenderLightning(context);
 		simulWeatherRenderer->RenderSkyAsOverlay(context,exposure,UseSkyBuffer,false,depthFramebuffer.GetDepthTex());
-#if 1	
 		simulWeatherRenderer->DoOcclusionTests();
 		simulWeatherRenderer->RenderPrecipitation(context);
 		if(simulOpticsRenderer&&ShowFlares)
@@ -204,11 +197,8 @@ ERROR_CHECK
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
 			simulOpticsRenderer->RenderFlare(context,exp,dir,light);
 		}
-#endif
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(context);
-#if 1
-ERROR_CHECK
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(context,ScreenWidth,ScreenHeight);
 		
@@ -221,7 +211,6 @@ ERROR_CHECK
 			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(context,ScreenWidth,ScreenHeight);
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(NULL,ScreenWidth,ScreenHeight);
-#endif
 	}
 	renderUI();
 	glPopAttrib();
