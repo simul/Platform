@@ -8,7 +8,7 @@
 	#include <d3dx11.h>
 #endif
 #include <DXUT11\Core\dxut.h>
-#include <dxutdevice11.h>
+#include <DXUT11\Core\dxutdevice11.h>
 #include <dxerr.h>
 
 #include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"

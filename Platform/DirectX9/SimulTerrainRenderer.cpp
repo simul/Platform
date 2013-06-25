@@ -816,7 +816,7 @@ void SimulTerrainRenderer::RenderOnlyDepth(void *context)
 	PIXEndNamedEvent();
 }
 
-void SimulTerrainRenderer::Render(void *context)
+void SimulTerrainRenderer::Render(void *context,float )
 {
 	PIXBeginNamedEvent(0xFF00FF00,"SimulTerrainRenderer::Render");
 	InternalRender(false);
