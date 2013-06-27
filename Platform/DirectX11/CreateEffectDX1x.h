@@ -58,7 +58,7 @@ namespace simul
 							
 		void Ensure3DTextureSizeAndFormat(
 							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xTexture3D* &tex
+							,ID3D1xTexture3D		* &tex
 							,ID3D11ShaderResourceView* &srv
 							,int w,int l,int d
 							,DXGI_FORMAT format);
