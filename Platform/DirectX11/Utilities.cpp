@@ -327,7 +327,8 @@ UtilityRenderer::UtilityRenderer()
 
 UtilityRenderer::~UtilityRenderer()
 {
-	InvalidateDeviceObjects();
+	// Calling this manually to avoid global destruction when memory has already been freed.
+	//InvalidateDeviceObjects();
 }
 
 struct Vertext
