@@ -21,7 +21,7 @@
 #include "Simul/Base/SmartPtr.h"
 #include "LoadGLImage.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/OpenGL/GLSL/simul_earthshadow_uniforms.glsl"
+#include "Simul/Platform/CrossPlatform/earth_shadow_uniforms.sl"
 
 void printShaderInfoLog(GLuint obj);
 void printProgramInfoLog(GLuint obj);
@@ -404,11 +404,11 @@ ERROR_CHECK
 	//if(e.enable)
 	{
 		EarthShadowUniforms u;
-		u.earthShadowNormal	=e.normal;
-		u.radiusOnCylinder	=e.radius_on_cylinder;
-		u.maxFadeDistance	=skyKeyframer->GetMaxDistanceKm()/skyKeyframer->GetSkyInterface()->GetPlanetRadius();
-		u.terminatorCosine	=e.terminator_cosine;
-		u.sunDir			=sun_dir;
+		u.earthShadowNormal		=e.normal;
+		u.radiusOnCylinder		=e.radius_on_cylinder;
+		u.maxFadeDistance		=skyKeyframer->GetMaxDistanceKm()/skyKeyframer->GetSkyInterface()->GetPlanetRadius();
+		u.terminatorDistance	=e.terminator_distance_km/skyKeyframer->GetMaxDistanceKm();
+		u.sunDir				=sun_dir;
 		glBindBuffer(GL_UNIFORM_BUFFER, earthShadowUniformsUBO);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(EarthShadowUniforms), &u);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -485,7 +485,9 @@ bool SimulGLSkyRenderer::RenderPointStars(void *,float exposure)
 	CalcCameraPosition(cam_pos);
 	GetSiderealTransform(sid);
 	glEnable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
+	glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 #if 1
@@ -551,28 +553,17 @@ void SimulGLSkyRenderer::RenderSun(void *,float exposure_hint)
 	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
-	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
-	
-	float maxout_brightness=2.f/exposure_hint;
-	if(maxout_brightness>1e6f)
-		maxout_brightness=1e6f;
-	if(maxout_brightness<1e-6f)
-		maxout_brightness=1e-6f;
-	if(max_bright>maxout_brightness)
-	{
-		sunlight*=maxout_brightness/max_bright;
-		sunlight.w=max_bright;
-	}
 	glUseProgram(sun_program);
 	ERROR_CHECK
 	glUniform4f(sunlight_param,sunlight.x,sunlight.y,sunlight.z,sunlight.w);
 	ERROR_CHECK
-	//if(y_vertical)
-	//	std::swap(sun_dir.y,sun_dir.z);
 	glEnable(GL_BLEND);
+	glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
-	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); 
 
 	RenderAngledQuad(sun_dir,sun_angular_size);
 	glUseProgram(0);
@@ -583,12 +574,9 @@ void SimulGLSkyRenderer::RenderPlanet(void *,void* tex,float planet_angular_size
 		ERROR_CHECK
 	CalcCameraPosition(cam_pos);
 	float alt_km=0.001f*cam_pos.z;
-	if(do_lighting)
-	{
-	}
-	else
-	{
-	}
+	glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
 
 	simul::sky::float4 original_irradiance=skyKeyframer->GetSkyInterface()->GetSunIrradiance();
 
@@ -827,7 +815,7 @@ const char *SimulGLSkyRenderer::GetDebugText()
 								skyKeyframer->GetAltitudeKM()
 								,skyKeyframer->GetDirectionToSun());
 	static char txt[400];
-	sprintf_s(txt,400,"e.normal (%4.4g, %4.4g, %4.4g) r-1: %4.4g, cos: %4.4g, illum alt: %4.4g",e.normal.x,e.normal.y,e.normal.z
-		,e.radius_on_cylinder-1.f,e.terminator_cosine,e.illumination_altitude);
+//	sprintf_s(txt,400,"e.normal (%4.4g, %4.4g, %4.4g) r-1: %4.4g, cos: %4.4g, illum alt: %4.4g",e.normal.x,e.normal.y,e.normal.z
+//		,e.radius_on_cylinder-1.f,e.terminator_cosine,e.illumination_altitude);
 	return txt;
 }

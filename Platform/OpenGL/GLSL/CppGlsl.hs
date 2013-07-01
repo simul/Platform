@@ -28,6 +28,8 @@
 	#define texture_clamp(tex,texc) texture(tex,texc)
 	#define texture_wrap(tex,texc) texture(tex,texc)
 	#define texture_clamp_mirror(tex,texc) texture(tex,texc)
+	#define texture_wrap_clamp(tex,texc) texture(tex,texc)
+	#define texture_wrap_mirror(tex,texc) texture(tex,texc)
 	#define sampleLod(tex,sampler,texc,lod) textureLod(tex,texc,lod)
 	#define texture3D texture
 	#define texture2D texture

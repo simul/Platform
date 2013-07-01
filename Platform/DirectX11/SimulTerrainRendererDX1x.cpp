@@ -110,7 +110,7 @@ void SimulTerrainRendererDX1x::InvalidateDeviceObjects()
 	terrainConstants.InvalidateDeviceObjects();
 }
 
-void SimulTerrainRendererDX1x::Render(void *context)
+void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 {
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
 	D3DXMATRIX world;
@@ -119,13 +119,12 @@ void SimulTerrainRendererDX1x::Render(void *context)
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	simul::dx11::setTextureArray(m_pTerrainEffect,"textureArray",arrayTexture.m_pArrayTexture_SRV);
-
 	terrainConstants.eyePosition=cam_pos;
 	if(baseSkyInterface)
 	{
-		terrainConstants.ambientColour	=baseSkyInterface->GetAmbientLight(0.f);
+		terrainConstants.ambientColour	=exposure*baseSkyInterface->GetAmbientLight(0.f);
 		terrainConstants.lightDir		=baseSkyInterface->GetDirectionToLight(0.f);
-		terrainConstants.sunlight		=0.1f*baseSkyInterface->GetLocalIrradiance(0.f);
+		terrainConstants.sunlight		=0.1f*exposure*baseSkyInterface->GetLocalIrradiance(0.f);
 	}
 	terrainConstants.worldViewProj=wvp;
 	terrainConstants.worldViewProj.transpose();
@@ -136,11 +135,11 @@ void SimulTerrainRendererDX1x::Render(void *context)
 	MapBuffer(pContext,m_pVertexBuffer,&mapped_vertices);
 	vertices=(TerrainVertex_t*)mapped_vertices.pData;
 	
-	int h=heightMapInterface->GetPageSize();
+	int h	=heightMapInterface->GetPageSize();
 	simul::math::Vector3 origin=heightMapInterface->GetOrigin();
 	float PageWorldX=heightMapInterface->GetPageWorldX();
 	float PageWorldY=heightMapInterface->GetPageWorldY();
-	float PageSize=(float)heightMapInterface->GetPageSize();
+	float PageSize	=(float)heightMapInterface->GetPageSize();
 	
 	int v=0;
 	for(int i=0;i<h-1;i++)
@@ -152,7 +151,7 @@ void SimulTerrainRendererDX1x::Render(void *context)
 			int J=j;
 			if(i%2)
 				J=(h-2-j);
-			float y=(J)*PageWorldX/(float)PageSize+origin.y;
+			float y	=(J)*PageWorldX/(float)PageSize+origin.y;
 			float z1=heightMapInterface->GetHeightAt(i,J);
 			float z2=heightMapInterface->GetHeightAt(i+1,J);
 			simul::math::Vector3 X1(x1,y,z1);
@@ -163,38 +162,38 @@ void SimulTerrainRendererDX1x::Render(void *context)
 				std::swap(X1,X2);
 			{
 				TerrainVertex_t &vertex=vertices[v];
-				vertex.pos[0]=X1.x;
-				vertex.pos[1]=X1.y;
-				vertex.pos[2]=X1.z;
-				vertex.n[0]=0.f;
-				vertex.n[1]=0.f;
-				vertex.n[2]=1.f;
+				vertex.pos[0]	=X1.x;
+				vertex.pos[1]	=X1.y;
+				vertex.pos[2]	=X1.z;
+				vertex.n[0]		=0.f;
+				vertex.n[1]		=0.f;
+				vertex.n[2]		=1.f;
 			}
 			v++;
 			{
 				TerrainVertex_t &vertex=vertices[v];
-				vertex.pos[0]=X2.x;
-				vertex.pos[1]=X2.y;
-				vertex.pos[2]=X2.z;
-				vertex.n[0]=0.f;
-				vertex.n[1]=0.f;
-				vertex.n[2]=1.f;
+				vertex.pos[0]	=X2.x;
+				vertex.pos[1]	=X2.y;
+				vertex.pos[2]	=X2.z;
+				vertex.n[0]		=0.f;
+				vertex.n[1]		=0.f;
+				vertex.n[2]		=1.f;
 			}
 			v++;
 		}
 	}
 	UnmapBuffer(pContext,m_pVertexBuffer);
-	UINT stride = sizeof(TerrainVertex_t);
-	UINT offset = 0;
+	UINT stride =sizeof(TerrainVertex_t);
+	UINT offset =0;
     UINT Strides[1];
     UINT Offsets[1];
-    Strides[0] = 0;
-    Offsets[0] = 0;
-	pContext->IASetVertexBuffers(	0,				// the first input slot for binding
-												1,				// the number of buffers in the array
-												&m_pVertexBuffer,	// the array of vertex buffers
-												&stride,		// array of stride values, one for each buffer
-												&offset);		// array of offset values, one for each buffer
+    Strides[0]	=0;
+    Offsets[0]	=0;
+	pContext->IASetVertexBuffers(	0,					// the first input slot for binding
+									1,					// the number of buffers in the array
+									&m_pVertexBuffer,	// the array of vertex buffers
+									&stride,			// array of stride values, one for each buffer
+									&offset);			// array of offset values, one for each buffer
 	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
 	// Set the input layout
 	pContext->IASetInputLayout(m_pVtxDecl);
@@ -203,7 +202,6 @@ void SimulTerrainRendererDX1x::Render(void *context)
 	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	if((v)>2)
 		pContext->Draw((v)-2,0);
-
 	pContext->IASetPrimitiveTopology(previousTopology);
 }
 

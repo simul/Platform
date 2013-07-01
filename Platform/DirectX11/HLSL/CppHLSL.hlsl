@@ -5,6 +5,8 @@
 #ifndef __cplusplus
 #define texture_clamp_mirror(tex,texc) tex.Sample(samplerStateClampMirror,texc)
 #define texture_clamp(tex,texc) tex.Sample(clampSamplerState,texc)
+#define texture_wrap_clamp(tex,texc) tex.Sample(wrapClampSamplerState,texc)
+#define texture_wrap_mirror(tex,texc) tex.Sample(wrapMirrorSamplerState,texc)
 #define sampleLod(tex,sampler,texc,lod) tex.SampleLevel(sampler,texc,lod)
 #define texture(tex,texc) tex.Sample(samplerState,texc)
 #define texture2D(tex,texc) tex.Sample(samplerState,texc)

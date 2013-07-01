@@ -26,7 +26,6 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	,simulWeatherRenderer(NULL)
 	,simulHDRRenderer(NULL)
 	,simulTerrainRenderer(NULL)
-	,y_vertical(true)
 	,ShowCloudCrossSections(false)
 	,Show2DCloudTextures(false)
 	,ShowLightVolume(false)
@@ -51,9 +50,9 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	simulTerrainRenderer=NULL;//new SimulTerrainRenderer();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->EnableMoon(true);
-	SetYVertical(y_vertical);
+	SetYVertical(false);
 	if(simulTerrainRenderer)
-		simulTerrainRenderer->SetYVertical(y_vertical);
+		simulTerrainRenderer->SetYVertical(false);
 	simulOpticsRenderer=new SimulOpticsRendererDX9();
 }
 
@@ -152,13 +151,12 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 	return S_OK;
 }
 
-void Direct3D9Renderer::SetYVertical(bool y)
+void Direct3D9Renderer::SetYVertical(bool )
 {
-	y_vertical=y;
 	if(simulWeatherRenderer.get())
-		simulWeatherRenderer->SetYVertical(y);
+		simulWeatherRenderer->SetYVertical(false);
 	if(simulTerrainRenderer.get())
-		simulTerrainRenderer->SetYVertical(y_vertical);
+		simulTerrainRenderer->SetYVertical(false);
 }
 static float render_timing=0,update_timing=0,weather_timing=0,hdr_timing=0;
 void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
@@ -186,6 +184,7 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 
 void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime, float fTimeStep)
 {
+	static float exposure=1.f;
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	fTime;fTimeStep;
@@ -195,7 +194,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(camera)
 	{
 		view=camera->MakeViewMatrix(false);
-		proj=camera->MakeProjectionMatrix(1.f,250000.f,aspect,y_vertical);
+		proj=camera->MakeProjectionMatrix(1.f,250000.f,aspect,false);
 	}
 	D3DXMatrixIdentity(&world);
     if(!SUCCEEDED(pd3dDevice->BeginScene()))
@@ -218,26 +217,26 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 		simulHDRRenderer->StartRender();
-		simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
+//	simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 	}
 	else
 	{
 		pd3dDevice->Clear(0L,NULL,D3DCLEAR_ZBUFFER|D3DCLEAR_TARGET,0xFF000000,1.0f,0L);
-		simulWeatherRenderer->SetExposureHint(1.0f);
+//	simulWeatherRenderer->SetExposureHint(1.0f);
 	}
 	if(simulWeatherRenderer)
 	{
 #ifdef XBOX
 		simulWeatherRenderer->SetMatrices(view,proj);
 #endif
-		simulWeatherRenderer->RenderSky(pd3dDevice,UseSkyBuffer,false);
+		simulWeatherRenderer->RenderSky(pd3dDevice,exposure,UseSkyBuffer,false);
 	}
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 		simulWeatherRenderer->GetAtmosphericsRenderer()->StartRender(NULL);
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
 		simulTerrainRenderer->SetMatrices(view,proj);
-		simulTerrainRenderer->Render(NULL);
+		simulTerrainRenderer->Render(NULL,1.f);
 	}
 	//if(simulHDRRenderer&&UseHdrPostprocessor)
 	//	simulHDRRenderer->CopyDepthAlpha();
@@ -247,7 +246,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulWeatherRenderer)
 	{
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
-		simulWeatherRenderer->RenderLateCloudLayer(pd3dDevice,true);
+		simulWeatherRenderer->RenderLateCloudLayer(pd3dDevice,exposure,true);
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{
@@ -257,7 +256,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 				simul::sky::float4 dir,light,cam_pos;
 				dir=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
 			//CalcCameraPosition(cam_pos);
-				GetCameraPosVector(view,y_vertical,cam_pos);
+				GetCameraPosVector(view,false,cam_pos);
 				light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 				simulOpticsRenderer->SetMatrices(view,proj);
 				float exposure=1.f;

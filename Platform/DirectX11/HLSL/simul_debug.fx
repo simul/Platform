@@ -68,7 +68,7 @@ BlendState NoBlend
 	BlendEnable[0] = FALSE;
 };
 
-technique11 simul_direct
+technique11 simul_debug
 {
     pass p0
     {

@@ -199,27 +199,35 @@ ERROR_CHECK
 		DrawQuad(0.f,y_start,1.f,y_end-y_start);
 std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-		if(!density_texture||density_gridsize!=total_texels*stride)
-		{
-			if(readback_to_cpu&&total_texels*stride>density_gridsize)
-			{
-				//delete [] density;
-				density_gridsize=total_texels*stride;
-				//density=new float[density_gridsize];
-			}
-			density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2],iformat==GL_RGBA32F_ARB?4:1,false,NULL);
-		}
-		glEnable(GL_TEXTURE_3D);
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,density_texture);
+
+		int w,l,d;
+		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_WIDTH,&w);
+		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_HEIGHT,&l);
+		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_DEPTH,&d);
+
+		if(!density_texture||density_gridsize!=total_texels*stride||w!=density_grid[0]||l!=density_grid[1]||d!=density_grid[2])
+		{
+			SAFE_DELETE_TEXTURE(density_texture);
+			glBindTexture(GL_TEXTURE_3D,0);
+			if(readback_to_cpu&&total_texels*stride>density_gridsize)
+			{
+				density_gridsize=total_texels*stride;
+			}
+			density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2],iformat==GL_RGBA32F_ARB?4:1,false,NULL);
+			glBindTexture(GL_TEXTURE_3D,density_texture);
+		}
+		glEnable(GL_TEXTURE_3D);
 	ERROR_CHECK
 		{
 			// Now instead of reading the pixels back to memory, we will copy them layer-by-layer into the volume texture.
 			int Y=start_texel/density_grid[0];
 			int H=texels/density_grid[0];
 			int z0=Y/density_grid[1];
-			int dz=H/density_grid[1];
-			int z1=z0+dz;
+			int z1=(start_texel+texels)/density_grid[0]/density_grid[1];
+			int dz=z1-z0;
 			int y0=Y-z0*density_grid[1];
 			int y1=Y+H-(z1-1)*density_grid[1];
 			for(int i=z0;i<z1;i++)
@@ -236,14 +244,14 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 				}
 		ERROR_CHECK
 				glCopyTexSubImage3D(GL_TEXTURE_3D,
- 					0,
- 					0,
- 					y,
- 					i,
- 					0,
- 					i*density_grid[1]+y,
- 					density_grid[0],
- 					dy);
+ 										0,					//level
+ 										0,					//x offset in 3D texture
+ 										y,					//y offset in 3D texture
+ 										i,					//z offset in 3D texture
+ 										0,					//x=0 in source 2D texture
+ 										i*density_grid[1]+y,//y offset in source 2D texture
+ 										density_grid[0],	
+ 										dy);
 		ERROR_CHECK
  			}
 		}
@@ -292,8 +300,7 @@ timer.StartTime();
 	glUseProgram(lighting_program);
 	setParameter(lighting_program,"input_light_texture",0);
 	setParameter(lighting_program,"density_texture",1);
-	//setMatrix(lighting_program,"transformMatrix",transformMatrix);
-	//setParameter(lighting_program,"extinctions",lightspace_extinctions_float3[0],lightspace_extinctions_float3[1]);
+
 	GpuCloudConstants constants;
 	constants.extinctions=lightspace_extinctions_float3;
 	constants.transformMatrix=transformMatrix;

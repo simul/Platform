@@ -62,7 +62,7 @@ public:
 	bool Destroy();
 	void Update(void *context);
 	//! Call this to draw the clouds, including any illumination by lightning.
-	bool Render(void *context,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha);
+	bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha);
 	void RenderDebugInfo(void *context,int width,int height);
 	void RenderCrossSections(void *context,int width,int height);
 	//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
@@ -78,6 +78,7 @@ public:
 	void *GetCloudShadowTexture();
 	void SetLossTexture(void *t);
 	void SetInscatterTextures(void *t,void *s);
+	void SetIlluminationTexture(void *i);
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
 	void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array){}
@@ -167,6 +168,7 @@ protected:
 	ID3D1xShaderResourceView*				skyLossTexture_SRV;
 	ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
 	ID3D1xShaderResourceView*				skylightTexture_SRV;
+	ID3D1xShaderResourceView*				illuminationTexture_SRV;
 
 	ID3D1xTexture3D*						cloud_textures[3];
 

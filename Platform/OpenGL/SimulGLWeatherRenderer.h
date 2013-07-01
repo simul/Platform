@@ -50,10 +50,10 @@ public:
 	//! Call this when the 3D device has been lost.
 	void InvalidateDeviceObjects();
 	//! Platform-dependent. Call this to draw the sky
-	bool RenderSky(void *,bool buffered,bool is_cubemap);
-	void RenderSkyAsOverlay(void *context,bool buffered,bool is_cubemap,const void* depthTexture);
+	bool RenderSky(void *,float exposure,bool buffered,bool is_cubemap);
+	void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture);
 	//! Call this to draw the clouds
-	void RenderLateCloudLayer(void *context,bool buf);
+	void RenderLateCloudLayer(void *context,float exposure,bool buf);
 	//! Call this to draw lightning.
 	void RenderLightning(void *context);
 	//! Call this to draw rain etc.

@@ -6,19 +6,33 @@ uniform_buffer GpuCloudConstants R8
 	uniform mat4 transformMatrix;
 	uniform vec4 yRange;
 	uniform int octaves;
+	uniform int a,b,c;
 	uniform float persistence;
+	uniform float d,e,f;
 	uniform float humidity;
+	uniform float g,h,k;
 	uniform float time;
+	uniform float l,m,n;
 	uniform vec3 noiseScale;
+	uniform float o;
 	uniform float zPosition;
+	uniform float p,q,r;
 	uniform vec2 extinctions;
+	uniform float s,t;
 	uniform float zPixel;
+	uniform float u,v,w;
 	uniform float zSize;
+	uniform float aa,bb,cc;
 	uniform float baseLayer;
+	uniform float dd,ee,ff;
 	uniform float transition;
+	uniform float gg,hh,ii;
 	uniform float upperDensity;
+	uniform float jj,kk,ll;
 	uniform float diffusivity;
+	uniform float mm,nn,oo;
 	uniform float invFractalSum;
+	uniform float pp,qq,rr;
 };
 
 #ifndef __cplusplus

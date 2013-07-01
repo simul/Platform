@@ -103,7 +103,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(simul::sky::AtmosphericScat
 				,float overcast,float overcast_base_km,float overcast_range_km
 				,int index,int end_index
 				,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table
-		,const simul::sky::float4 *blackbody_table,int table_size,float maxDensityAltKm
+				,const simul::sky::float4 *blackbody_table,int table_size,float maxDensityAltKm
 				,bool InfraRed
 				,float emissivity
 				,float seaLevelTemperatureK)

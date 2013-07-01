@@ -23,6 +23,9 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
+#include "Simul/Platform/DirectX11/HLSL/simul_earthshadow.hlsl"
 
 namespace simul
 {
@@ -62,6 +65,7 @@ public:
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
 	bool Render2DFades(void *context);
+	void RenderIllumationBuffer(void *context);
 	//! Get a value, from zero to one, which represents how much of the sun is visible.
 	//! Call this when the current rendering surface is the one that has obscuring
 	//! objects like mountains etc. in it, and make sure these have already been drawn.
@@ -72,6 +76,7 @@ public:
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 
 	void Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s);
+	void *GetIlluminationTexture();
 
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);
@@ -134,7 +139,7 @@ protected:
 	ID3D1xEffectShaderResourceVariable*	fadeTexture1;
 	ID3D1xEffectShaderResourceVariable*	fadeTexture2;
 	
-	ID3DX11EffectConstantBuffer*		earthShadowUniforms;
+	ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
 
 	ID3D1xTexture3D*					loss_textures[3];
 	ID3D1xTexture3D*					inscatter_textures[3];
@@ -145,14 +150,14 @@ protected:
 	simul::dx11::Framebuffer*			inscatter_2d;
 	simul::dx11::Framebuffer*			skylight_2d;
 
+	// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
+	simul::dx11::Framebuffer			illumination_fb;
+
 	ID3D1xShaderResourceView*			flare_texture_SRV;
 	ID3D1xShaderResourceView*			loss_textures_SRV[3];
 	ID3D1xShaderResourceView*			insc_textures_SRV[3];
 	ID3D1xShaderResourceView*			skyl_textures_SRV[3];
 	ID3D1xShaderResourceView*			moon_texture_SRV;
-	
-	// Shader constant buffers
-	ID3D11Buffer*						earthShadowBuffer;
 
 	int mapped_fade;
 	ID3D11DeviceContext *mapped_context;

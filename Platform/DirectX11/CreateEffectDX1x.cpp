@@ -507,7 +507,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const char *filename,D3D10_SHADER_MACR
 	fileLoader->ReleaseFileContents(binaryData);
 	
 	//ALWAYS_BUILD=1,BUILD_IF_NO_BINARY,NEVER_BUILD
-	if(textSize>0&&(shaderBuildMode==ALWAYS_BUILD||(shaderBuildMode==BUILD_IF_NO_BINARY&&!binarySize==0)))
+	if(textSize>0&&(shaderBuildMode==ALWAYS_BUILD||(shaderBuildMode==BUILD_IF_NO_BINARY&&binarySize==0)))
 	{
 		//std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
 		DeleteFileA(output_filename.c_str());
@@ -616,12 +616,22 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const char *filename,D3D10_SHADER_MACR
 				{
 					ReadFile(hReadErrorPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
 					std::string str((char*)buff, (size_t)dwBytesRead);
-					std::cerr << str.c_str();
 					size_t pos=str.find("rror");
+					if(pos>=str.length())
+						pos=str.find("failed");
 					if(pos<str.length())
 						has_errors=true;
-					if(str.find("failed")<str.length())
-						has_errors=true;
+					std::cerr<<str.c_str();
+					int bracket_pos=str.find("(");
+					if(bracket_pos>0)
+					{
+						int close_bracket_pos=str.find(")",bracket_pos);
+						int comma_pos=str.find(",",bracket_pos);
+						if(comma_pos>bracket_pos&&comma_pos<close_bracket_pos)
+						{
+							str.replace(comma_pos,close_bracket_pos-comma_pos,"");
+						}
+					}
 				}
 			}
 			// Process is done, or we timed out:
@@ -719,23 +729,22 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *f
 	}
 	DWORD flags=default_effect_flags;
 	SAFE_RELEASE(*effect);
-	hr=D3DX11CreateEffectFromFile(
+	hr=1;
+	while(hr!=S_OK)
+	{
+		hr=D3DX11CreateEffectFromFile(
 				fn.c_str(),
 				macros,
 				flags,
 				d3dDevice,
 				effect);
-	if(hr!=S_OK)
-	{
+		if(hr==S_OK)
+			break;
 		std::string err="";
 #ifdef DXTRACE_ERR
         hr=DXTRACE_ERR( L"CreateEffect", hr );
 #endif
 		DebugBreak();
-	}
-	else
-	{
-		std::string err="";
 	}
 	assert((*effect)->IsValid());
 	delete [] macros;

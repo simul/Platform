@@ -7,6 +7,8 @@ uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D skylTexture;
 uniform sampler2D depthTexture;
+uniform sampler2D illuminationTexture;
+
 SamplerState samplerState 
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -18,8 +20,10 @@ SamplerState samplerState
 
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "simul_earthshadow.hlsl"
+#include "../../CrossPlatform/earth_shadow_fade.sl"
 
 #include "../../CrossPlatform/simul_2d_clouds.sl"
+#include "../../CrossPlatform/depth.sl"
 
 struct a2v
 {
@@ -29,7 +33,7 @@ struct a2v
 struct v2f
 {
     float4 hPosition	: SV_POSITION;
-    float4 clip_pos	: TEXCOORD3;
+    float4 clip_pos		: TEXCOORD3;
 	vec2 texc_global	: TEXCOORD0;
 	vec2 texc_detail	: TEXCOORD1;
 	vec3 wPosition		: TEXCOORD2;
@@ -44,7 +48,7 @@ v2f MainVS(a2v IN)
 	float Rh=planetRadius+origin.z;
 	float dist=length(pos.xy);
 	float vertical_shift=sqrt(Rh*Rh-dist*dist)-Rh;
-	//pos.z+=vertical_shift;
+	pos.z+=vertical_shift;
 	pos.xy			+=eyePosition.xy;
 	OUT.clip_pos	=mul(worldViewProj,vec4(pos.xyz,1.0));
 	OUT.hPosition	=OUT.clip_pos;
@@ -56,10 +60,19 @@ v2f MainVS(a2v IN)
 
 float4 MainPS(v2f IN) : SV_TARGET
 {
-	vec3 depth_pos	=IN.clip_pos.xyz/IN.clip_pos.w;
-	//depth_pos.z	=clip_pos.z;
-	vec3 depth_texc	=0.5*(depth_pos+vec3(1.0,1.0,1.0));
-	float4 result=Clouds2DPS(IN.texc_global,IN.texc_detail,IN.wPosition,depth_texc);
+	vec3 depth_pos		=IN.clip_pos.xyz/IN.clip_pos.w;
+	vec3 depth_texc		=0.5*(depth_pos+vec3(1.0,1.0,1.0));
+	depth_texc.y		=1.0-depth_texc.y;
+    float depth			=texture(depthTexture,depth_texc.xy).x;
+#ifdef REVERSE_DEPTH
+	if(depth>0.0)
+		discard;
+#else
+	if(1.0>depth)
+		discard;
+#endif
+	float dist			=depthToDistance(depth,depth_pos.xy,nearZ,farZ,tanHalfFov);
+	vec4 result			=Clouds2DPS_illum(IN.texc_global,IN.texc_detail,IN.wPosition,dist);
 	return result;
 }
 
@@ -75,47 +88,49 @@ technique11 simul_clouds_2d
 		SetPixelShader(CompileShader(ps_4_0,MainPS()));
     }
 }
-
-struct a2v2
-{
-    float3 position	: POSITION;
-	vec2 texc		: TEXCOORD0;
-};
-
 struct v2f2
 {
     float4 hPosition	: SV_POSITION;
-	vec2 texc			: TEXCOORD0;
+	vec2 texCoords			: TEXCOORD0;
 };
+
+v2f2 FullScreenVS(idOnly IN)
+{
+	v2f2 OUT;
+	float2 poss[4]=
+	{
+		{ 1.0, 0.0},
+		{ 1.0, 1.0},
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(2.0*pos-vec2(1.0,1.0),0.0,1.0);
+    OUT.texCoords	=pos;
+    return OUT;
+}
+*/
 
 v2f2 SimpleVS(idOnly IN)
 {
 	v2f2 OUT;
 	float2 poss[4]=
 	{
-		{ 1.0,-1.0},
+		{ 1.0, 0.0},
 		{ 1.0, 1.0},
-		{-1.0,-1.0},
-		{-1.0, 1.0},
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
 	};
 	float2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=float4(pos,0.0,1.0);
-    OUT.texc	=0.5*(float2(1.0,1.0)+vec2(pos.x,pos.y));
-	return OUT;
-}
-/*
-v2f2 SimpleVS(a2v2 IN)
-{
-	v2f2 OUT;
-    OUT.hPosition	=float4(IN.position.xy,1.0,1.0);
-    OUT.texc		=IN.texc;
+	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
+	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
+    OUT.texCoords	=pos;
     return OUT;
 }
-*/
 
 float4 SimplePS(v2f2 IN) : SV_TARGET
 {
-	return texture2D(imageTexture,IN.texc);
+	return texture2D(imageTexture,IN.texCoords);
 }
 
 float rand(vec2 co)
@@ -125,14 +140,14 @@ float rand(vec2 co)
 
 float4 RandomPS(v2f2 IN) : SV_TARGET
 {
-    vec4 c=vec4(rand(IN.texc),rand(1.7*IN.texc),rand(0.11*IN.texc),rand(513.1*IN.texc));
+    vec4 c=vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords));
     return c;
 }
 
 float4 DetailPS(v2f2 IN) : SV_TARGET
 {
 	vec4 result=vec4(0,0,0,0);
-	vec2 texcoords=IN.texc;
+	vec2 texcoords=IN.texCoords;
 	float mul=.5;
     for(int i=0;i<24;i++)
     {
@@ -149,9 +164,9 @@ float4 DetailPS(v2f2 IN) : SV_TARGET
 
 float4 DetailLightingPS(v2f2 IN) : SV_TARGET
 {
-	vec4 c=texture(imageTexture,IN.texc);
+	vec4 c=texture(imageTexture,IN.texCoords);
 	vec4 result=c;
-	vec2 texcoords=IN.texc;
+	vec2 texcoords=IN.texCoords;
 	float mul=0.5;
 	vec2 offset=lightDir2d.xy/512.0;
 	float dens_dist=0.0;
@@ -188,7 +203,7 @@ technique11 simul_random
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
+		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
 		SetPixelShader(CompileShader(ps_4_0,RandomPS()));
     }
 }
@@ -201,7 +216,7 @@ technique11 simul_2d_cloud_detail
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
+		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
 		SetPixelShader(CompileShader(ps_4_0,DetailPS()));
     }
 }
@@ -215,7 +230,7 @@ technique11 simul_2d_cloud_detail_lighting
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
+		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
 		SetPixelShader(CompileShader(ps_4_0,DetailLightingPS()));
     }
 }

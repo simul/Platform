@@ -269,10 +269,10 @@ bool SimulWeatherRenderer::CreateBuffers()
 	return (hr==S_OK);
 }
 
-bool SimulWeatherRenderer::RenderSky(void *context,bool buffered,bool is_cubemap)
+bool SimulWeatherRenderer::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)
 {
 	PIXBeginNamedEvent(0xFF888888,"SimulWeatherRenderer::Render");
-	BaseWeatherRenderer::RenderSky(context,buffered,is_cubemap);
+	BaseWeatherRenderer::RenderSky(context,exposure,buffered,is_cubemap);
 	if(buffered&&!is_cubemap)
 	{
 #ifdef XBOX
@@ -301,7 +301,7 @@ void SimulWeatherRenderer::RenderPrecipitation(void *context)
 		simulPrecipitationRenderer->Render(context);
 }
 
-void SimulWeatherRenderer::RenderLateCloudLayer(void *context,bool buf)
+void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,bool buf)
 {
 	if(!RenderCloudsLate||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return ;
@@ -319,7 +319,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(void *context,bool buf)
 	{	
 		PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
 		{
-			simulCloudRenderer->Render(context,false,0,false,true);
+			simulCloudRenderer->Render(context,exposure,false,0,false,true);
 		}
 	}
 	

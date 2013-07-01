@@ -18,6 +18,9 @@ uniform_buffer Cloud2DConstants R11
 	uniform float hazeEccentricity;
 	uniform float detailScale;
 	uniform float planetRadius,b,c;
+	uniform float nearZ;
+	uniform float farZ;
+	uniform vec2 tanHalfFov;
 };
 
 uniform_buffer Detail2DConstants R12
@@ -29,5 +32,8 @@ uniform_buffer Detail2DConstants R12
 	uniform vec3 lightDir2d;
 	uniform float dd;
 };
-
+uniform_buffer CloudCrossSection2DConstants R13
+{
+	uniform vec4 rect;
+};
 #endif

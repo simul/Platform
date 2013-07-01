@@ -1,27 +1,9 @@
 #define pi (3.1415926536f)
 
-cbuffer cbPerObject : register(b10)
-{
-	matrix worldViewProj	;
-	matrix proj				;
-	matrix cubemapViews[6]	;
-	float4 eyePosition		;
-	float4 lightDir			;
-	float4 mieRayleighRatio;
-	float hazeEccentricity;
-	float skyInterp;
-	float altitudeTexCoord;
-	float4 colour;
-	float starBrightness;
-	float radiusRadians;
-	float4 rect;
-};
-
 Texture2D inscTexture;
-#include "CppHLSL.hlsl"
-#include "states.hlsl"
-#include "simul_earthshadow.hlsl"
 Texture2D skylTexture;
+Texture2D lossTexture;
+Texture2D illuminationTexture;
 SamplerState samplerState
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -41,6 +23,28 @@ Texture3D fadeTexture1;
 Texture3D fadeTexture2;
 
 TextureCube cubeTexture;
+#include "CppHLSL.hlsl"
+#include "states.hlsl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/earth_shadow_uniforms.sl"
+#include "../../CrossPlatform/earth_shadow.sl"
+
+cbuffer cbPerObject : register(b10)
+{
+	matrix worldViewProj	;
+	matrix proj				;
+	matrix cubemapViews[6]	;
+	float4 eyePosition		;
+	float4 lightDir			;
+	float4 mieRayleighRatio;
+	float hazeEccentricity;
+	float skyInterp;
+	float altitudeTexCoord;
+	float4 colour;
+	float starBrightness;
+	float radiusRadians;
+	float4 rect;
+};
 
 //------------------------------------
 // Structures 
@@ -54,6 +58,18 @@ struct vertexOutput
 {
     float4 hPosition		: SV_POSITION;
     float3 wDirection		: TEXCOORD0;
+};
+
+struct vertexInput3Dto2D
+{
+    float3 position			: POSITION;
+    float2 texCoords		: TEXCOORD0;
+};
+
+struct vertexOutput3Dto2D
+{
+    float4 hPosition		: SV_POSITION;
+    float2 texCoords		: TEXCOORD0;
 };
 
 //------------------------------------
@@ -74,13 +90,6 @@ vertexOutput VS_Cubemap(vertexInput IN)
     OUT.hPosition=float4(IN.position.xyz,1.0);
     OUT.wDirection=normalize(IN.position.xyz);
     return OUT;
-}
-
-float HenyeyGreenstein(float g,float cos0)
-{
-	float g2=g*g;
-	float u=1.f+g2-2.f*g*cos0;
-	return (1.f-g2)/(4.f*pi*sqrt(u*u*u));
 }
 
 float3 InscatterFunction(float4 inscatter_factor,float cos0)
@@ -134,27 +143,28 @@ float4 PS_EarthShadow( vertexOutput IN): SV_TARGET
 	return float4(result.rgb,1.f);
 }
 
-struct vertexInput3Dto2D
+float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
-    float3 position			: POSITION;
-    float2 texCoords		: TEXCOORD0;
-};
-
-struct vertexOutput3Dto2D
-{
-    float4 hPosition		: SV_POSITION;
-    float2 texCoords		: TEXCOORD0;
-};
+	float azimuth		=3.1415926536*2.0*IN.texCoords.x;
+	float sine			=-1.0+2.0*(IN.texCoords.y*targetTextureSize/(targetTextureSize-1.0));
+	float cosine		=sqrt(1.0-sine*sine);
+	float3 view			=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
+	float2 fade_texc	=vec2(1.0,IN.texCoords.y);
+	vec2 dist			=EarthShadowDistances(fade_texc,view);
+	if(dist.x>dist.y)
+		dist.x=dist.y;
+    return vec4(dist,0.0,1.0);
+}
 
 vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 
 {
     vertexOutput3Dto2D OUT;
 	float2 poss[4]=
 	{
-		{ 1.0,-1.0},
+		{ 1.0, 0.0},
 		{ 1.0, 1.0},
-		{-1.0,-1.0},
-		{-1.0, 1.0},
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
 	};
 	float2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=float4(float2(-1.0,-1.0)+2.0*pos,0.0,1.0);
@@ -164,15 +174,15 @@ vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN)
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 
 #endif
-    OUT.texCoords	=vec2(pos.x,1.0-pos.y);
+    OUT.texCoords	=pos;
     return OUT;
 }
 
 float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 {
-	float3 texc=float3(altitudeTexCoord,IN.texCoords.yx);
-	float4 colour1=fadeTexture1.Sample(fadeSamplerState,texc);
-	float4 colour2=fadeTexture2.Sample(fadeSamplerState,texc);
+	float3 texc=float3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
+	float4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
+	float4 colour2=fadeTexture2.Sample(cmcSamplerState,texc);
 	float4 result=lerp(colour1,colour2,skyInterp);
     return result;
 }
@@ -195,19 +205,19 @@ vertexOutput3Dto2D VS_ShowSkyTexture(idOnly IN)
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 
 #endif
-    OUT.texCoords	=vec2(pos.x,1.0-pos.y);
+	OUT.texCoords	=vec2(pos.x,1.0-pos.y);
     return OUT;
 }
 
 float4 PS_ShowSkyTexture(vertexOutput3Dto2D IN): SV_TARGET
 {
-	float4 result=inscTexture.Sample(fadeSamplerState,IN.texCoords.xy);
+	float4 result=inscTexture.Sample(cmcSamplerState,IN.texCoords.xy);
     return float4(result.rgb,1);
 }
 
 float4 PS_ShowFadeTexture(vertexOutput3Dto2D IN): SV_TARGET
 {
-	float4 result=fadeTexture1.Sample(fadeSamplerState,float3(altitudeTexCoord,IN.texCoords.yx));
+	float4 result=fadeTexture1.Sample(cmcSamplerState,float3(altitudeTexCoord,IN.texCoords.yx));
     return float4(result.rgb,1);
 }
 
@@ -431,6 +441,19 @@ technique11 simul_fade_3d_to_2d
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
+    }
+}
+
+technique11 simul_illumination_buffer
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_IlluminationBuffer()));
     }
 }
 

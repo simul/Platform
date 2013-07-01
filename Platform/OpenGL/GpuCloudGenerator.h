@@ -1,12 +1,13 @@
 #pragma once
 #include "Simul/Clouds/BaseGpuCloudGenerator.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
+#include "Simul/Platform/OpenGL/Export.h"
 
 namespace simul
 {
 	namespace opengl
 	{
-		class GpuCloudGenerator : public simul::clouds::BaseGpuCloudGenerator
+		class SIMUL_OPENGL_EXPORT GpuCloudGenerator : public simul::clouds::BaseGpuCloudGenerator
 		{
 		public:
 			GpuCloudGenerator();

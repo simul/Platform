@@ -11,9 +11,12 @@ SamplerState samplerState
 	AddressV = Clamp;
 };
 
-float exposure=1.f;
-float gamma=1.f/2.2f;
-float2 offset;
+uniform_buffer HdrConstants R9
+{
+	uniform float exposure=1.f;
+	uniform float gamma=1.f/2.2f;
+	uniform vec2 offset;
+}
 
 struct a2v
 {
@@ -99,13 +102,7 @@ float4 GammaPS(v2f IN) : SV_TARGET
 
 float4 DirectPS(v2f IN) : SV_TARGET
 {
-	float4 c=imageTexture.Sample(samplerState,IN.texCoords);
-    return float4(c.rgb,1.f);
-}
-
-float4 SkyOverStarsPS(v2f IN) : SV_TARGET
-{
-	float4 c=imageTexture.Sample(samplerState,IN.texCoords);
+	float4 c=exposure*imageTexture.Sample(samplerState,IN.texCoords);
     return float4(c.rgba);
 }
 
@@ -200,7 +197,7 @@ technique11 simul_tonemap
     }
 }
 
-technique11 simul_sky_over_stars
+technique11 simul_sky_blend
 {
     pass p0
     {
@@ -211,7 +208,7 @@ technique11 simul_sky_over_stars
 		//SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,SkyOverStarsPS()));
+		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
     }
 }
 

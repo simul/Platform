@@ -90,7 +90,7 @@ void SimulGLTerrainRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_TEXTURE(texArray);
 }
 
-void SimulGLTerrainRenderer::Render(void *context)
+void SimulGLTerrainRenderer::Render(void *context,float exposure)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	ERROR_CHECK
@@ -99,7 +99,7 @@ void SimulGLTerrainRenderer::Render(void *context)
 	glDepthMask(GL_TRUE);
 	glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
 	glDisable(GL_BLEND);
-glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	glUseProgram(program);
 	ERROR_CHECK
@@ -117,7 +117,7 @@ glEnable(GL_CULL_FACE);
 	if(baseSkyInterface)
 	{
 		simul::math::Vector3 irr=baseSkyInterface->GetLocalIrradiance(0.f);
-	irr*=0.1f;
+	irr*=0.1f*exposure;
 	glUniform3f(sunlight_param,irr.x,irr.y,irr.z);
 		simul::math::Vector3 sun_dir=baseSkyInterface->GetDirectionToLight(0.f);
 	glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);

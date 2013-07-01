@@ -101,7 +101,6 @@ protected:
 	simul::camera::Camera *camera;
 	float aspect;
 	bool device_reset;
-	bool y_vertical;
 	float framerate;
 	simul::base::SmartPtr<SimulOpticsRendererDX9> simulOpticsRenderer;
 	simul::base::SmartPtr<SimulWeatherRenderer> simulWeatherRenderer;

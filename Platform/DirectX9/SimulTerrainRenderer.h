@@ -50,7 +50,7 @@ public:
 
 	virtual ~SimulTerrainRenderer();
 	void RenderOnlyDepth(void *context);
-	void Render(void *context);
+	void Render(void *context,float exposure);
 	float GetMip(int i,int j) const;
 	bool RenderMap(int w);
 	void Update(float dt);

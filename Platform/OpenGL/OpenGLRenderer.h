@@ -45,6 +45,7 @@ public:
 		META_ValueProperty(bool,ShowWater,"Show water surfaces.")
 		META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane. We do not yet support ReverseDepth on OpenGL, because GL matrices do not take advantage of this.")
 		META_ValueProperty(bool,MixCloudsAndTerrain,"If true, clouds are drawn twice: once behind the terrain, and once in front.")
+		META_ValueProperty(float,Exposure,"A linear multiplier for rendered brightness.")
 	META_EndProperties
 	virtual void paintGL();
 	virtual void resizeGL(int w,int h);
@@ -64,8 +65,7 @@ protected:
 	simul::base::SmartPtr<SimulGLHDRRenderer> simulHDRRenderer;
 	simul::base::SmartPtr<SimulOpticsRendererGL> simulOpticsRenderer;
 	simul::base::SmartPtr<class SimulGLTerrainRenderer> simulTerrainRenderer;
-	FramebufferGL 
-		depthFramebuffer;
+	FramebufferGL depthFramebuffer;
 	simul::opengl::GpuCloudGenerator gpuCloudGenerator;
 	simul::opengl::GpuSkyGenerator gpuSkyGenerator;
 	simul::camera::Camera *cam;
