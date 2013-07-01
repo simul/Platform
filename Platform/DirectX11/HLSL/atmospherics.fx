@@ -108,8 +108,7 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	float3 colour		=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=texture_clamp_mirror(skylTexture,fade_texc).rgb;
 	
-    //return float4(colour.rgb,1.f);
-	return float4(1.0f,0.0f,0.0f,1.f);
+    return float4(colour.rgb,1.f);
 }
 
 technique11 simul_atmospherics

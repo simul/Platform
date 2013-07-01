@@ -32,7 +32,7 @@ public:
 	void Deactivate(void *context);
 	void Render(bool){}
 	void Clear(void *context,float,float,float,float,float,int mask=0);
-	void CopyToMemory(void *,void *,int,int){}
+	void CopyToMemory(void *context,void *,int,int){}
 	virtual void* GetColorTex()
 	{
 		return (void*)m_pCubeEnvMapSRV;
