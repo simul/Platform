@@ -16,9 +16,6 @@
 #include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
-#ifdef _MSC_VER
-#include <Windows.h>
-#endif
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
@@ -40,7 +37,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,simple_program(0)
 {
 	simulHDRRenderer	=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
-	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,ScreenWidth,ScreenHeight);
+	simulWeatherRenderer=new SimulGLWeatherRenderer(env,ScreenWidth,ScreenHeight);
 	simulOpticsRenderer	=new SimulOpticsRendererGL();
 	simulTerrainRenderer=new SimulGLTerrainRenderer();
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
@@ -79,14 +76,6 @@ ERROR_CHECK
         std::cerr<<"OpenGL 2.1 not supported!\n" ;
         return;
     }
-ERROR_CHECK
-//	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
-// If the GL_GREMEDY_string_marker extension is supported:
-	if(glewIsSupported("GL_GREMEDY_string_marker"))
-	{
-		// Get a pointer to the glStringMarkerGREMEDY function:
-		glStringMarkerGREMEDY = (PFNGLSTRINGMARKERGREMEDYPROC)wglGetProcAddress("glStringMarkerGREMEDY");
-	}
 ERROR_CHECK
 	if(!GLEW_VERSION_2_0)
 	{

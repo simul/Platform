@@ -38,7 +38,7 @@ public:
 SIMUL_OPENGL_EXPORT_CLASS SimulGLWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
-	SimulGLWeatherRenderer(simul::clouds::Environment *env,bool usebuffer=true,bool tonemap=false,int width=640,
+	SimulGLWeatherRenderer(simul::clouds::Environment *env,int width=640,
 		int height=480,bool sky=true,
 		bool rain=true);
 	virtual ~SimulGLWeatherRenderer();
@@ -96,7 +96,6 @@ protected:
 	simul::base::SmartPtr<class SimulGLAtmosphericsRenderer> simulAtmosphericsRenderer;
 	void CreateBuffers();
 	void RenderBufferToScreen(GLuint texture,int w,int h,bool use_shader,bool blend=false);
-	virtual void DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip){}
 };
 #ifdef _MSC_VER
 	#pragma warning(pop)

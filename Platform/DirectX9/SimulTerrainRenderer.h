@@ -114,9 +114,9 @@ public:
 	void TerrainModified();
 	const float *GetHighlightPos() const{return highlight_pos;}
 protected:
-	int LIGHTING_PASS;
-	int LIGHTING_PASS_WITH_SHADOWS;
-	int WIREFRAME_PASS;
+	unsigned LIGHTING_PASS;
+	unsigned LIGHTING_PASS_WITH_SHADOWS;
+	unsigned WIREFRAME_PASS;
 	bool y_vertical;
 	bool enabled;
 	bool wrap_clouds;
