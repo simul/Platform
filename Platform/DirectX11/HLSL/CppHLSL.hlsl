@@ -14,11 +14,11 @@
 #define texture_wwc(tex,texc) tex.Sample(wwcSamplerState,texc)
 #define texture3Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
 #define texture2Dpt(tex,texc) tex.Sample(samplerStateNearest,texc)
+#define texture(tex,texc) tex.Sample(samplerState,texc)
 #endif
 
 #define uniform
 #define uniform_buffer ALIGN_16 cbuffer
-#define texture(tex,texc) tex.Sample(samplerState,texc)
 #define sampler1D texture1D
 #define sampler2D texture2D
 #define sampler3D texture3D
@@ -60,24 +60,6 @@
 	{
 		uint vertex_id			: SV_VertexID;
 	};
-#endif
-
-#ifdef __cplusplus
-	#define cbuffer struct
-	#define R0
-	#define R1
-	#define R2
-	#define R3
-	#define R4
-	#define R5
-	#define R6
-	#define R7
-	#define R8
-	#define R9
-	#define R10
-	#define R11
-	#define R12
-	#define R13
 #endif
 
 #endif

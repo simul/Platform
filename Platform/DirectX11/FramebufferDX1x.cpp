@@ -412,7 +412,8 @@ void Framebuffer::Clear(void *context,float r,float g,float b,float a,float dept
     float clearColor[4]={r,g,b,a};
     if(!mask)
 		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
-	m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
+	if(m_pHDRRenderTarget)
+		m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
 	if(m_pBufferDepthSurface)
 		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,mask,depth,0);
 }

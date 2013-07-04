@@ -22,8 +22,6 @@
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/Export.h"
-#include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
-#include "Simul/Platform/CrossPlatform/simul_cloud_constants.sl"
 #include "Simul/Platform/DirectX11/Framebuffer3D.h"
 
 namespace simul
@@ -69,7 +67,6 @@ public:
 	bool RenderLightning(void *context);
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
-
 	//! Return true if the camera is above the cloudbase altitude.
 	bool IsCameraAboveCloudBase() const;
 	void SetEnableStorms(bool s);
@@ -98,8 +95,6 @@ public:
 	bool IsYVertical() const;
 protected:
 	void RenderCombinedCloudTexture(void *context);
-	void SetCloudConstants(CloudConstants &cloudConstants);
-	void SetCloudPerViewConstants(CloudPerViewConstants &cloudPerViewConstants);
 	void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip);
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
@@ -114,17 +109,6 @@ protected:
 	void Map(ID3D11DeviceContext *context,int texture_index);
 	unsigned texel_index[4];
 	bool lightning_active;
-
-/*	struct InstanceType
-	{
-		D3DXVECTOR2 noiseOffset;
-		D3DXVECTOR2 elevationRange;
-		float noiseScale;
-		float layerFade;
-		float layerDistance;
-		float pad3;
-	};*/
-	LayerConstants layerConstants;
 	ID3D11DeviceContext *mapped_context;
 	ID3D1xDevice*					m_pd3dDevice;
 	simul::dx11::Mesh				circle;
@@ -189,7 +173,6 @@ protected:
 	ID3D1xBlendState*	blendAndWriteAlpha;
 	ID3D1xBlendState*	blendAndDontWriteAlpha;
 	
-	D3DXVECTOR4			lightning_colour;
 	D3DXMATRIX			view,proj;
 
 	D3D1x_MAPPED_TEXTURE3D mapped_cloud_texture;

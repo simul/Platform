@@ -16,9 +16,6 @@
 #include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
-#ifdef _MSC_VER
-#include <Windows.h>
-#endif
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
@@ -40,7 +37,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,simple_program(0)
 {
 	simulHDRRenderer	=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
-	simulWeatherRenderer=new SimulGLWeatherRenderer(env,true,false,ScreenWidth,ScreenHeight);
+	simulWeatherRenderer=new SimulGLWeatherRenderer(env,ScreenWidth,ScreenHeight);
 	simulOpticsRenderer	=new SimulOpticsRendererGL();
 	simulTerrainRenderer=new SimulGLTerrainRenderer();
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
@@ -80,14 +77,6 @@ ERROR_CHECK
         return;
     }
 ERROR_CHECK
-//	const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
-// If the GL_GREMEDY_string_marker extension is supported:
-	if(glewIsSupported("GL_GREMEDY_string_marker"))
-	{
-		// Get a pointer to the glStringMarkerGREMEDY function:
-		glStringMarkerGREMEDY = (PFNGLSTRINGMARKERGREMEDYPROC)wglGetProcAddress("glStringMarkerGREMEDY");
-	}
-ERROR_CHECK
 	if(!GLEW_VERSION_2_0)
 	{
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
@@ -96,20 +85,15 @@ ERROR_CHECK
 ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
-	if(cam)
-		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 ERROR_CHECK
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	gpuSkyGenerator.RestoreDeviceObjects(NULL);
+	depthFramebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
+	depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(NULL);
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects();
-	//depthFramebuffer.RestoreDeviceObjects(NULL);
-	//depthFramebuffer.SetFormat(GL_RGBA32F_ARB);
-	//depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);//GL_DEPTH_COMPONENT32
-	depthFramebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
-	depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->RestoreDeviceObjects(NULL);
 	if(simulTerrainRenderer)
@@ -130,7 +114,7 @@ void OpenGLRenderer::paintGL()
 	// If called from some other OpenGL program, we should already have a modelview and projection matrix.
 	// Here we will generate the modelview matrix from the camera class:
     glMatrixMode(GL_MODELVIEW);
-	glLoadMatrixf(cam->MakeViewMatrix(false));
+	glLoadMatrixf(cam->MakeViewMatrix());
 	glMatrixMode(GL_PROJECTION);
 	static float nearPlane=1.0f;
 	static float farPlane=250000.f;

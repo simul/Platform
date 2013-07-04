@@ -68,6 +68,16 @@ RasterizerState RenderNoCull
 	CullMode = none;
 };
 
+RasterizerState RenderFrontfaceCull
+{
+	CullMode = front;
+};
+
+RasterizerState RenderBackfaceCull
+{
+	CullMode = back;
+};
+
 BlendState NoBlend
 {
 	BlendEnable[0] = FALSE;

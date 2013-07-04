@@ -193,7 +193,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		RestoreDeviceObjects(pd3dDevice);
 	if(camera)
 	{
-		view=camera->MakeViewMatrix(false);
+		view=camera->MakeViewMatrix();
 		proj=camera->MakeProjectionMatrix(1.f,250000.f,aspect,false);
 	}
 	D3DXMatrixIdentity(&world);

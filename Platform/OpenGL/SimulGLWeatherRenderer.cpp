@@ -24,15 +24,10 @@
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Decay.h"
 
-#ifdef _MSC_VER
-	// for wglGetProcAddress
-	#include <Windows.h>
-#endif
-
 static const GLenum buffer_tex_format		=GL_FLOAT;
 static const GLenum internal_buffer_format	=GL_RGBA32F_ARB;
 
-SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,bool usebuffer,bool tonemap,int width,
+SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,int width,
 		int height,bool sky,bool rain)
 		:BaseWeatherRenderer(env,sky,rain)
 		,BufferWidth(0)
@@ -113,20 +108,7 @@ void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
 
 void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 {
-	GLenum res=glewInit();
-	
-	/*const char* extensionsString = (const char*)glGetString(GL_EXTENSIONS);
-// If the GL_GREMEDY_string_marker extension is supported:
-	if(glewIsSupported("GL_GREMEDY_string_marker"))
-	{
-		// Get a pointer to the glStringMarkerGREMEDY function:
-		glStringMarkerGREMEDY = (PFNGLSTRINGMARKERGREMEDYPROC)wglGetProcAddress("glStringMarkerGREMEDY");
-	}
-	CheckGLError(__FILE__,__LINE__,res);
-	if(!GLEW_VERSION_2_0)
-	{
-		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
-	}*/
+	glewInit();
 	if(!CheckExtension("GL_VERSION_2_0"))
 		throw simul::base::RuntimeError("OpenGL version 2.0 is not supported on this hardware");
 	CheckExtension("GL_ARB_fragment_program");
