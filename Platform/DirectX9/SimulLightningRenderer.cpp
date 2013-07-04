@@ -104,7 +104,7 @@ void SimulLightningRenderer::Render(void *)
 		lightning_vertices=new PosTexVert_t[4500];
 
 	HRESULT hr=S_OK;
-bool y_vertical=true;
+//bool y_vertical=true;
 	m_pd3dDevice->SetTexture(0,lightning_texture);
 
 	//m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
@@ -136,11 +136,11 @@ bool y_vertical=true;
 
 
 
-	int vert_start=0;
-	int vert_num=0;
+//	int vert_start=0;
+//	int vert_num=0;
 	m_pLightningEffect->SetMatrix(l_worldViewProj,&wvp);
 	m_pLightningEffect->SetTechnique(m_hTechniqueLightningQuads);
-	UINT passes=1;
+//	UINT passes=1;
 /*	for(unsigned i=0;i<lightningRenderInterface->GetNumLightSources();i++)
 	{
 		if(!lightningRenderInterface->IsSourceStarted(i))
