@@ -35,11 +35,13 @@ Profiler &Profiler::GetGlobalProfiler()
 
 Profiler::~Profiler()
 {
+	std::cout<<"Profiler::~Profiler"<<std::endl;
 	Uninitialize();
 }
 
 void Profiler::Uninitialize()
 {
+	std::cout<<"Profiler::Uninitialize device was "<<(unsigned)device<<std::endl;
 	profiles.clear();
     this->device = NULL;
     enabled=true;
@@ -49,6 +51,7 @@ void Profiler::Initialize(ID3D11Device* device)
 {
     this->device = device;
     enabled=true;
+	std::cout<<"Profiler::Initialize device "<<(unsigned)device<<std::endl;
 }
 
 void Profiler::StartProfile(ID3D11DeviceContext* context,const std::string& name)
@@ -111,7 +114,7 @@ template<typename T> inline std::string ToString(const T& val)
 
 void Profiler::EndFrame(ID3D11DeviceContext* context)
 {
-    if(!enabled)
+    if(!enabled||!device)
         return;
 
     currFrame = (currFrame + 1) % QueryLatency;    
@@ -163,7 +166,7 @@ void Profiler::EndFrame(ID3D11DeviceContext* context)
 
 float Profiler::GetTime(const std::string &name) const
 {
-	if(!enabled)
+    if(!enabled||!device)
 		return 0.f;
 	return profiles.find(name)->second.time;
 }

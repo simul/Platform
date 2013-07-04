@@ -53,5 +53,11 @@ SamplerState wrapClampSamplerState: register(s10)
 	AddressU = Wrap;
 	AddressV = Clamp;
 };
-
+SamplerState samplerStateNearest: register(s11)
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Clamp;
+	AddressV = Clamp;
+	AddressW = Clamp;
+};
 #endif

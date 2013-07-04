@@ -19,19 +19,22 @@
 
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int h):
 		camera(NULL)
-		,y_vertical(true)
+		,ShowCloudCrossSections(false)
+		,ShowFlares(true)
+		,Show2DCloudTextures(false)
+		,ShowFades(false)
+		,ShowTerrain(true)
+		,ShowMap(false)
 		,UseHdrPostprocessor(true)
 		,UseSkyBuffer(true)
 		,ShowLightVolume(false)
 		,CelestialDisplay(false)
-		,enabled(false)
 		,ShowWater(true)
 		,MakeCubemap(false)
-		,ShowCloudCrossSections(false)
-		,Show2DCloudTextures(false)
 		,ReverseDepth(true)
 		,ShowOSD(false)
 		,Exposure(1.0f)
+		,enabled(false)
 {
 	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,true,false,w,h,true,true,true);
 	AddChild(simulWeatherRenderer.get());
@@ -123,7 +126,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			proj=camera->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight);
 		else
 			proj=camera->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight,false);
-		view=camera->MakeViewMatrix(!y_vertical);
+		view=camera->MakeViewMatrix();
 		D3DXMatrixIdentity(&world);
 	}
 	simul::dx11::UtilityRenderer::SetMatrices(view,proj);
@@ -211,6 +214,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 
 void Direct3D11Renderer::OnD3D11LostDevice()
 {
+	std::cout<<"Direct3D11Renderer::OnD3D11LostDevice"<<std::endl;
 	Profiler::GetGlobalProfiler().Uninitialize();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
@@ -253,13 +257,6 @@ bool Direct3D11Renderer::OnDeviceRemoved()
 		simulHDRRenderer->InvalidateDeviceObjects();
 	OnD3D11LostDevice();
 	return true;
-}
-
-void Direct3D11Renderer::SetYVertical(bool y)
-{
-	y_vertical=y;
-	if(simulWeatherRenderer.get())
-		simulWeatherRenderer->SetYVertical(y);
 }
 
 void Direct3D11Renderer::RecompileShaders()

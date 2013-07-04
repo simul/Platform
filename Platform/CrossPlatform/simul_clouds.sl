@@ -1,7 +1,6 @@
 #ifndef CLOUDS_SL
 #define CLOUDS_SL
 #ifndef GLSL
-Texture3D cloudDensity: register(t9);
 Texture3D cloudDensity1: register(t0);
 Texture3D cloudDensity2: register(t1);
 Texture2D noiseTexture: register(t2);
@@ -11,6 +10,7 @@ Texture2D skylTexture: register(t5);
 Texture2D depthTexture: register(t6);
 Texture3D noiseTexture3D: register(t7);
 Texture3D lightningIlluminationTexture: register(t8);
+Texture3D cloudDensity: register(t9);
 Texture2D illuminationTexture: register(t10);
 SamplerState cloudSamplerState: register( s0)
 {

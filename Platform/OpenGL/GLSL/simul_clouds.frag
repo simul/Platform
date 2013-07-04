@@ -46,7 +46,7 @@ void main(void)
 #endif
 	vec3 noiseval=2.0*(textureLod(noiseSampler,noiseCoord.xy,0).xyz-half_vec);
 #ifdef DETAIL_NOISE
-	noiseval+=(textureLod(noiseSampler,noiseCoord*8.0,0).xyz-0.5)/2.0;
+//	noiseval+=(textureLod(noiseSampler,noiseCoord*8.0,0).xyz-0.5)/2.0;
 #endif
 	noiseval*=texc.w;
 	vec3 pos=texc.xyz+fractalScale*noiseval;
@@ -55,7 +55,7 @@ void main(void)
 	//vec4 lightning=texture(illumSampler,texCoordLightning.xyz);
 	density=mix(density,density2,cloud_interp);
 	float opacity=layerDensity*density.y;
-	opacity+=rain*rainFade*saturate((0.25-pos.z)*50.0)*(1.0-density.x);
+	//opacity+=rain*rainFade*saturate((0.25-pos.z)*50.0)*(1.0-density.x);
 
 #ifdef USE_DEPTH_TEXTURE
 	//float depth_offset=dist-cloud_dist;

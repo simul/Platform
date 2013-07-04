@@ -229,7 +229,7 @@ void SimulGLCloudRenderer::FillIlluminationSequentially(int ,int ,int ,const uns
 {
 }
 
-void SimulGLCloudRenderer::FillIlluminationBlock(int source_index,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array)
+void SimulGLCloudRenderer::FillIlluminationBlock(int ,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array)
 {
 	glBindTexture(GL_TEXTURE_3D,illum_tex);
 	glTexSubImage3D(	GL_TEXTURE_3D,0,
@@ -790,7 +790,7 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void *context)
 	MAKE_CONSTANT_BUFFER(cloudPerViewConstantsUBO,CloudPerViewConstants,cloudPerViewConstantsBindingIndex);
 
 	RecompileShaders();
-	CreateVolumeNoise();
+	//CreateVolumeNoise();
 	using namespace simul::clouds;
 	cloudKeyframer->SetBits(CloudKeyframer::DENSITY,CloudKeyframer::BRIGHTNESS,
 		CloudKeyframer::SECONDARY,CloudKeyframer::AMBIENT);

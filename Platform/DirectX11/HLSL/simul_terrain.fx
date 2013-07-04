@@ -8,7 +8,7 @@ struct vertexInput
 {
     float3 position			: POSITION;
     float3 normal			: TEXCOORD0;
-    float2 texcoord	: TEXCOORD1;
+    float2 texcoord			: TEXCOORD1;
     float offset			: TEXCOORD2;
 };
 
@@ -46,7 +46,7 @@ technique11 simul_terrain
 {
     pass base 
     {
-		SetRasterizerState(RenderNoCull);
+		SetRasterizerState(RenderFrontfaceCull);
 		SetDepthStencilState(EnableDepth,0);
 		SetBlendState(DontBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));

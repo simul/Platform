@@ -85,20 +85,15 @@ ERROR_CHECK
 ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
-	if(cam)
-		cam->LookInDirection(simul::math::Vector3(1.f,0,0),simul::math::Vector3(0,0,1.f));
 ERROR_CHECK
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	gpuSkyGenerator.RestoreDeviceObjects(NULL);
+	depthFramebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
+	depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RestoreDeviceObjects(NULL);
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects();
-	//depthFramebuffer.RestoreDeviceObjects(NULL);
-	//depthFramebuffer.SetFormat(GL_RGBA32F_ARB);
-	//depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);//GL_DEPTH_COMPONENT32
-	depthFramebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
-	depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);
 	if(simulOpticsRenderer)
 		simulOpticsRenderer->RestoreDeviceObjects(NULL);
 	if(simulTerrainRenderer)
@@ -119,7 +114,7 @@ void OpenGLRenderer::paintGL()
 	// If called from some other OpenGL program, we should already have a modelview and projection matrix.
 	// Here we will generate the modelview matrix from the camera class:
     glMatrixMode(GL_MODELVIEW);
-	glLoadMatrixf(cam->MakeViewMatrix(false));
+	glLoadMatrixf(cam->MakeViewMatrix());
 	glMatrixMode(GL_PROJECTION);
 	static float nearPlane=1.0f;
 	static float farPlane=250000.f;

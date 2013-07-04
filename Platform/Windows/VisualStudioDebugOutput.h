@@ -40,7 +40,8 @@ public:
 		rawtime = time (&rawtime);
 		struct tm timeinfo;
 		localtime_s(&timeinfo,&rawtime);
-		std::cout <<asctime (&timeinfo) <<std::endl;
+		char timebuf[20];
+		std::cout <<asctime(&timeinfo) <<std::endl;
 	}
 	virtual ~VisualStudioDebugOutput()
 	{

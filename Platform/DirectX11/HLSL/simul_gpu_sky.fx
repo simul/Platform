@@ -20,15 +20,6 @@ SamplerState samplerState
 	AddressV = Mirror;
 	AddressW = Clamp;
 };
-
-SamplerState samplerStateNearest 
-{
-	Filter = MIN_MAG_MIP_POINT;
-	AddressU = Clamp;
-	AddressV = Clamp;
-	AddressW = Clamp;
-};
-
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "CppHlsl.hlsl"
 #include "../../CrossPlatform/states.sl"
