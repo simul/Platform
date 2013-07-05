@@ -164,7 +164,8 @@ ERROR_CHECK
 		atmosphericsUniforms.maxDistance	=fade_distance_km*1000.f;
 		atmosphericsUniforms.viewPosition	=cam_pos;
 		atmosphericsUniforms.overcast		=overcast;
-
+		atmosphericsUniforms.exposure		=exposure;
+		
 		UPDATE_CONSTANT_BUFFER(atmosphericsUniformsUBO,atmosphericsUniforms,atmosphericsUniformsBindingIndex)
 	}
 ERROR_CHECK

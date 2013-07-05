@@ -365,7 +365,7 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 			std::cerr<<vert_filename<<"(0): ERROR C1000: Shader failed to compile\n";
 			std::string msg_text=vert_filename;
 			msg_text+=" failed to compile. Edit shader and try again?";
-			int result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
+			result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
 			DebugBreak();
 		}
 		else break;
@@ -395,7 +395,7 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 			std::cerr<<frag_filename<<"(0): ERROR C1000: Shader failed to compile\n";
 			std::string msg_text=frag_filename;
 			msg_text+=" failed to compile. Edit shader and try again?";
-			int result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
+			result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
 			DebugBreak();
 		}
 		else break;

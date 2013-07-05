@@ -35,13 +35,6 @@ public:
 		}
 		old_cout_buffer=std::cout.rdbuf(this);
 		old_cerr_buffer=std::cerr.rdbuf(this);
-		
-		time_t rawtime;
-		rawtime = time (&rawtime);
-		struct tm timeinfo;
-		localtime_s(&timeinfo,&rawtime);
-		char timebuf[20];
-		std::cout <<asctime(&timeinfo) <<std::endl;
 	}
 	virtual ~VisualStudioDebugOutput()
 	{

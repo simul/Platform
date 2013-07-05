@@ -42,7 +42,7 @@ GpuCloudGenerator::~GpuCloudGenerator()
 	delete [] density;
 }
 
-void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
+void GpuCloudGenerator::RestoreDeviceObjects(void *)
 {
 	iformat=GL_LUMINANCE32F_ARB;
 	itype=GL_LUMINANCE;
@@ -227,7 +227,7 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 			int H=texels/density_grid[0];
 			int z0=Y/density_grid[1];
 			int z1=(start_texel+texels)/density_grid[0]/density_grid[1];
-			int dz=z1-z0;
+			//int dz=z1-z0;
 			int y0=Y-z0*density_grid[1];
 			int y1=Y+H-(z1-1)*density_grid[1];
 			for(int i=z0;i<z1;i++)
@@ -277,7 +277,7 @@ void GpuCloudGenerator::PerformGPURelight(float *target
 										,const int *light_grid
 										,int start_texel
 										,int texels
-										,const int *density_grid
+										,const int * //density_grid
 										,const float *transformMatrix
 										,const float *lightspace_extinctions_float3)
 {

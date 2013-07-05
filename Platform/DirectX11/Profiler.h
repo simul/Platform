@@ -10,7 +10,6 @@
 
 #pragma once
 
-
 // Platform SDK defines, specifies that our min version is Windows Vista
 #ifndef WINVER
 #define WINVER 0x0600
@@ -29,33 +28,15 @@
 #endif
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
-
-// Windows Header Files:
-//#include <windows.h>
-//#include <commctrl.h>
-//#include <psapi.h>
-
 // C RunTime Header Files
-//#include <stdlib.h>
-//#include <malloc.h>
-//#include <memory.h>
-//#include <tchar.h>
-
 // C++ Standard Library Header Files
-//#include <functional>
 #include <string>
 #include <vector>
-//#include <memory>
- #include <map>
-// #include <cmath>
- #include <sstream>
-// #include <fstream>
-// #include <algorithm>
+#include <map>
+#include <sstream>
 
-// MSVC COM Support
-// #include <comip.h>
-// #include <comdef.h>
-
+#pragma warning(push)
+#pragma warning(disable:4251)
 
 #ifdef _DEBUG
 #ifndef D3D_DEBUG_INFO
@@ -148,3 +129,5 @@ protected:
 	ID3D11DeviceContext* context;
     std::string name;
 };
+
+#pragma warning(pop)

@@ -357,7 +357,7 @@ void SimulAtmosphericsRenderer::StartRender(void *)
 	hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 }
 
-void SimulAtmosphericsRenderer::FinishRender(void *context)
+void SimulAtmosphericsRenderer::FinishRender(void *)
 {
 	D3DSURFACE_DESC desc;
 #ifdef XBOX

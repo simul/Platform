@@ -87,5 +87,5 @@ void main(void)
 	final.rgb+=InscatterFunction(insc_lookup,hazeEccentricity,cos0,mieRayleighRatio);
 	final.rgb+=skyl_lookup;
 //final.rgb=fract(noiseCoord.xyy);
-    gl_FragColor=vec4(final.rgb*opacity,1.0-opacity);
+    gl_FragColor=vec4(final.rgb*opacity*exposure,1.0-opacity);
 }

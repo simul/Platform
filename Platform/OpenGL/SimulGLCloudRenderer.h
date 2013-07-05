@@ -73,8 +73,6 @@ protected:
 	void EnsureCorrectIlluminationTextureSizes();
 	void EnsureIlluminationTexturesAreUpToDate();
 	void EnsureTextureCycle();
-	
-	void SetCloudPerViewConstants(CloudPerViewConstants &cloudPerViewConstants);
 
 	GLuint clouds_background_program;
 	GLuint clouds_foreground_program;

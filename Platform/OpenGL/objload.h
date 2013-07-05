@@ -54,6 +54,8 @@
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)
+	#pragma warning(disable:4996)	// Remove Microsoft's nonstandard "unsafe" warnings
+	#pragma warning(disable:4201)
 #endif
 //#include <Debug.h>
 
@@ -472,9 +474,6 @@ namespace Obj
 			VertexData=0;
 			BlendFuncs=0;
 		}
-
-		/// tesselates the surface at the current level of detail
-		void Tesselate(const std::vector<Vertex>& point_array);
 
 		/// sets the level of detail and does a bit of internal caching to
 		/// speed things up a little.

@@ -114,6 +114,7 @@ protected:
 	D3DXHANDLE mieRayleighRatio;
 	D3DXHANDLE hazeEccentricity;
 	D3DXHANDLE cloudEccentricity;
+	D3DXHANDLE exposure;
 
 	D3DXHANDLE	cloudDensity1;
 	D3DXHANDLE	cloudDensity2;

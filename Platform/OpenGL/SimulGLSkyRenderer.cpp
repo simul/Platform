@@ -364,7 +364,7 @@ ERROR_CHECK
 	glUseProgram(p);
 }
 
-bool SimulGLSkyRenderer::Render(void *context,bool blend)
+bool SimulGLSkyRenderer::Render(void *,bool blend)
 {
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	simul::sky::float4 cam_dir;
@@ -513,7 +513,7 @@ bool SimulGLSkyRenderer::RenderPointStars(void *,float exposure)
 	}
 	glUseProgram(stars_program);
 	float sb=skyKeyframer->GetStarlight().x;
-	float star_brightness=sb*skyKeyframer->GetStarBrightness();
+	float star_brightness=sb*exposure*skyKeyframer->GetStarBrightness();
 	glUniform1f(starBrightness_param,star_brightness);
 	float mat1[16],mat2[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX,mat1);
@@ -539,7 +539,7 @@ bool SimulGLSkyRenderer::RenderPointStars(void *,float exposure)
 	return true;
 }
 
-void SimulGLSkyRenderer::RenderSun(void *,float exposure_hint)
+void SimulGLSkyRenderer::RenderSun(void *,float exposure)
 {
 	float alt_km=0.001f*cam_pos.z;
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
@@ -549,7 +549,7 @@ void SimulGLSkyRenderer::RenderSun(void *,float exposure_hint)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
-	sunlight*=pow(1.f-sun_occlusion,0.25f)*2700.f;
+	sunlight*=exposure*pow(1.f-sun_occlusion,0.25f)*2700.f;
 	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
@@ -608,9 +608,9 @@ void SimulGLSkyRenderer::RenderPlanet(void *,void* tex,float planet_angular_size
 		or.T4.Inverse(inv_world);
 		simul::math::Multiply3(sun2,sun_dir,inv_world);
 	}
-		ERROR_CHECK
-	glUniform3f(planetLightDir_param,sun2.x,sun2.y,sun2.z);
-		ERROR_CHECK
+	if(do_lighting)
+		glUniform3f(planetLightDir_param,sun2.x,sun2.y,sun2.z);
+	ERROR_CHECK
 	glUniform1i(planetTexture_param,0);
 
 		ERROR_CHECK

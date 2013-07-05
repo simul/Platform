@@ -38,6 +38,7 @@ vec4 simple()
 	vec3 colour=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
 	vec3 skyl=texture(skylightTexture,fade_texc).rgb;
 	colour+=skyl;
+	colour*=exposure;
     return vec4(colour.rgb,1.0);
 }
 

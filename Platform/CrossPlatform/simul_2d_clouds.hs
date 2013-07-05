@@ -21,6 +21,7 @@ uniform_buffer Cloud2DConstants R11
 	uniform float nearZ;
 	uniform float farZ;
 	uniform vec2 tanHalfFov;
+	uniform float exposure;
 };
 
 uniform_buffer Detail2DConstants R12

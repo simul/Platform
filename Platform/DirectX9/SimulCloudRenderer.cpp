@@ -317,7 +317,7 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 	//cloudKeyframer->SetGpuCloudGenerator(&gpuCloudGenerator);
 	ClearIterators();
 }
-
+/*
 static std::string GetCompiledFilename(int wrap_clouds)
 {
 	std::string compiled_filename="simul_clouds_and_lightning_";
@@ -328,7 +328,7 @@ static std::string GetCompiledFilename(int wrap_clouds)
 	compiled_filename+=".fxo";
 	return compiled_filename;
 }
-
+*/
 
 void SimulCloudRenderer::RecompileShaders()
 {
@@ -872,7 +872,6 @@ void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(base_alt_km);
 	// Convert metres to km:
-	float scale=0.001f;
 	static int num_layers=4;
 	for(int l=0;l<num_layers;l++)
 	{
@@ -1058,14 +1057,13 @@ void SimulCloudRenderer::InternalRenderVolumetric(int buffer_index)
 		size_t qs_vert=0;
 		float fade=(*i)->fadeIn;
 		bool start=true;
-		if((*i)->quad_strips.size())
-		for(int j=(*i)->elev_start;j<=(*i)->elev_end;j++)
-		{
-			float j_interp=(float)j/(float)el_grid;
-			float sine=(2.f*j_interp-1.f);
-			float alt_km=min(max(0.f,view_km.z+sine*0.001f*distance),0.001f*(GetCloudInterface()->GetCloudBaseZ()+GetCloudInterface()->GetCloudHeight()));
-
-		}
+//		if((*i)->quad_strips.size())
+//		for(int j=(*i)->elev_start;j<=(*i)->elev_end;j++)
+//		{
+//			float j_interp=(float)j/(float)el_grid;
+//			float sine=(2.f*j_interp-1.f);
+//		float alt_km=min(max(0.f,view_km.z+sine*0.001f*distance),0.001f*(GetCloudInterface()->GetCloudBaseZ()+GetCloudInterface()->GetCloudHeight()));
+//		}
 		for(std::vector<const simul::clouds::CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
 			j!=(*i)->quad_strips.end();j++)
 		{
@@ -1138,9 +1136,9 @@ bool SimulCloudRenderer::MakeCubemap(void *context)
 	//vertical only specified
 	h = 1 / tanf((3.14159f * 0.5f) * 0.5f);
 	w = h ;
-	float zFar=helper->GetMaxCloudDistance();
-	float zNear=1.f;
-	float Q = zFar / (zFar - zNear);
+//float zFar=helper->GetMaxCloudDistance();
+//	float zNear=1.f;
+//float Q = zFar / (zFar - zNear);
 
 	LPDIRECT3DSURFACE9	pRenderTarget;
 	LPDIRECT3DSURFACE9	pOldRenderTarget;
