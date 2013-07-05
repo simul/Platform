@@ -8,10 +8,13 @@
 #endif
 
 #ifdef __cplusplus
+#ifdef _MSC_VER
 	#pragma warning(disable:4324)
+	#define ALIGN_16 __declspec( align( 16 ) )
+#endif
 	#define STATIC static
 	#define uniform
-	#define ALIGN_16 __declspec( align( 16 ) )
+	#define ALIGN_16
 	#define cbuffer struct
 
 	#define R0
