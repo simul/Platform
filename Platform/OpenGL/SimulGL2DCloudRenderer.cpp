@@ -127,7 +127,7 @@ ERROR_CHECK
 	glUseProgram(0);
 	return true;
 }
-
+#pragma warning(disable:4127) // "Conditional expression is constant".
 void SimulGL2DCloudRenderer::EnsureCorrectTextureSizes()
 {
 	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
@@ -271,7 +271,7 @@ void Set2DTexture(GLint shader_param,GLuint gl_texture,int channel)
 ERROR_CHECK
 }
 
-void SimulGL2DCloudRenderer::Update(void *context)
+void SimulGL2DCloudRenderer::Update(void *)
 {
 }
 
@@ -330,6 +330,7 @@ bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool,const void
 	cloud2DConstants.cloudEccentricity		=cloudKeyframer->GetInterpolatedKeyframe().light_asymmetry;
 	cloud2DConstants.cloudInterp			=cloudKeyframer->GetInterpolation();
 	cloud2DConstants.eyePosition			=cam_pos;
+	cloud2DConstants.exposure				=exposure;
 	
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 	cloud2DConstants.tanHalfFov	=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);

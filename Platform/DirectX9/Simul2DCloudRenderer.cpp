@@ -167,6 +167,7 @@ void Simul2DCloudRenderer::RecompileShaders()
 	mieRayleighRatio	=m_pCloudEffect->GetParameterByName(NULL,"mieRayleighRatio");
 	hazeEccentricity	=m_pCloudEffect->GetParameterByName(NULL,"hazeEccentricity");
 	cloudEccentricity	=m_pCloudEffect->GetParameterByName(NULL,"cloudEccentricity");
+	exposure			=m_pCloudEffect->GetParameterByName(NULL,"exposure");
 
 	cloudDensity1		=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity1");
 	cloudDensity2		=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity2");
@@ -259,11 +260,11 @@ void SetTexture()
 {
 }
 
-void Simul2DCloudRenderer::Update(void *context)
+void Simul2DCloudRenderer::Update(void *)
 {
 }
 
-bool Simul2DCloudRenderer::Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha)
+bool Simul2DCloudRenderer::Render(void *,float expos,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool )
 {
 	cubemap;
 	depth_alpha_tex;
@@ -332,7 +333,7 @@ static float light_mult=.03f;
 
 	static float sc=7.f;
 	helper->Make2DGeometry(GetCloudInterface(),true,false,max_cloud_distance);
-	float image_scale=1.f/texture_scale;
+//	float image_scale=1.f/texture_scale;
 	static float image_effect=0.9f;
 	D3DXVECTOR4 interp_vec(cloudKeyframer->GetInterpolation(),1.f-cloudKeyframer->GetInterpolation(),0,0);
 	m_pCloudEffect->SetVector	(interp				,(D3DXVECTOR4*)(&interp_vec));
@@ -349,6 +350,8 @@ static float light_mult=.03f;
 	m_pCloudEffect->SetVector	(mieRayleighRatio	,(D3DXVECTOR4*)(&mie_rayleigh_ratio));
 	m_pCloudEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 	m_pCloudEffect->SetFloat	(cloudEccentricity	,GetCloudInterface()->GetMieAsymmetry());	
+	m_pCloudEffect->SetFloat	(exposure			,expos);	
+	
 	int startv=0;
 	int v=0;
 	hr=m_pd3dDevice->SetVertexDeclaration( m_pVtxDecl );
@@ -502,7 +505,7 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 	return debug_text;
 }
 
-void Simul2DCloudRenderer::RenderCrossSections(void *,int screen_width,int screen_height)
+void Simul2DCloudRenderer::RenderCrossSections(void *,int screen_width,int )
 {
 	int w=(screen_width-16)/6;
 	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;

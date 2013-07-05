@@ -280,11 +280,11 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	cloud2DConstants.cloudInterp			=cloudKeyframer->GetInterpolation();
 	cloud2DConstants.eyePosition			=cam_pos;
 	
-	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
-	cloud2DConstants.tanHalfFov	=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	cloud2DConstants.nearZ		=frustum.nearZ/max_fade_distance_metres;
-	cloud2DConstants.farZ		=frustum.farZ/max_fade_distance_metres;
-
+	simul::camera::Frustum frustum			=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
+	cloud2DConstants.tanHalfFov				=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	cloud2DConstants.nearZ					=frustum.nearZ/max_fade_distance_metres;
+	cloud2DConstants.farZ					=frustum.farZ/max_fade_distance_metres;
+	cloud2DConstants.exposure				=exposure;
 	if(skyInterface)
 	{
 		simul::sky::float4 amb					=skyInterface->GetAmbientLight(X1.z*.001f);

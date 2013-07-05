@@ -90,7 +90,7 @@ void SimulGLTerrainRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_TEXTURE(texArray);
 }
 
-void SimulGLTerrainRenderer::Render(void *context,float exposure)
+void SimulGLTerrainRenderer::Render(void *,float exposure)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	ERROR_CHECK
@@ -131,7 +131,7 @@ void SimulGLTerrainRenderer::Render(void *context,float exposure)
 	int h=heightMapInterface->GetPageSize();
 	simul::math::Vector3 origin=heightMapInterface->GetOrigin();
 	float PageWorldX=heightMapInterface->GetPageWorldX();
-	float PageWorldY=heightMapInterface->GetPageWorldY();
+//float PageWorldY=heightMapInterface->GetPageWorldY();
 	float PageSize=(float)heightMapInterface->GetPageSize();
 	glBegin(GL_TRIANGLE_STRIP);
 	for(int i=0;i<h-1;i++)

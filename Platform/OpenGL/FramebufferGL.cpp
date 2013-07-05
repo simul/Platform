@@ -61,14 +61,14 @@ void FramebufferGL::SetWidthAndHeight(int w,int h)
 
 void FramebufferGL::SetFormat(int f)
 {
-	if(f!=colour_iformat)
+	if((GLenum)f!=colour_iformat)
 		InvalidateDeviceObjects();
 	colour_iformat=f;
 }
 
 void FramebufferGL::SetDepthFormat(int f)
 {
-	if(f!=depth_iformat)
+	if((GLenum)f!=depth_iformat)
 		InvalidateDeviceObjects();
 	depth_iformat=f;
 }
@@ -78,7 +78,7 @@ void FramebufferGL::SetWrapClampMode(GLint wr)
 	wrap_clamp=wr;
 }
 
-bool FramebufferGL::InitColor_Tex(int index, GLenum iformat)
+bool FramebufferGL::InitColor_Tex(int , GLenum iformat)
 {
 	SetFormat(iformat);
 	Init();
@@ -171,7 +171,7 @@ void FramebufferGL::Activate(void *,int x,int y,int w,int h)
 	fb_stack.push(m_fb);
 }
 
-void FramebufferGL::Deactivate(void *context) 
+void FramebufferGL::Deactivate(void *) 
 {
 	ERROR_CHECK
 	//glFlush(); 
@@ -257,7 +257,7 @@ void FramebufferGL::Clear(void*,float r,float g,float b,float a,float depth,int 
 	glClear(mask);
 }
 
-void FramebufferGL::CopyToMemory(void *context,void *target,int start_texel,int num_texels)
+void FramebufferGL::CopyToMemory(void *,void *target,int start_texel,int num_texels)
 {
 
 }

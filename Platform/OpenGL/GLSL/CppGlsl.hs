@@ -4,7 +4,6 @@
 #include "../../CrossPlatform/CppSl.hs"
 // These definitions translate the HLSL terms cbuffer and R0 for GLSL or C++
 
-#define uniform_buffer layout(std140) uniform
 #define R0
 #define R1
 #define R2
@@ -22,6 +21,7 @@
 #define GLSL
 
 #ifndef __cplusplus
+	#define uniform_buffer layout(std140) uniform
 	#include "saturate.glsl"
 	#define lerp mix
 	#define atan2 atan 
