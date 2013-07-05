@@ -17,6 +17,7 @@ uniform_buffer AtmosphericsUniforms R11
 	uniform vec3 viewPosition;
 	uniform float overcast;
 	uniform float maxDistance;
+	uniform float exposure;
 };
 
 uniform_buffer AtmosphericsUniforms2 R12
