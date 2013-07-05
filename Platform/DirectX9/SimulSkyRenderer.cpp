@@ -735,7 +735,7 @@ void SimulSkyRenderer::RenderPlanet(void* ,void* tex,float rad,const float *dir,
 	float planet_angular_size=size_mult*rad;
 	// Start the query
 	m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
-	HRESULT hr=RenderAngledQuad(planet_dir,planet_angular_size);
+	RenderAngledQuad(planet_dir,planet_angular_size);
 }
 
 bool SimulSkyRenderer::RenderFades(void *,int w,int h)
@@ -807,7 +807,7 @@ bool SimulSkyRenderer::RenderPointStars(void *,float exposure)
 	m_pSkyEffect->SetTechnique(m_hTechniquePointStars);
 
 	float sb=skyKeyframer->GetStarlight().x;
-	float star_brightness=sb*skyKeyframer->GetStarBrightness();
+	float star_brightness=sb*exposure*skyKeyframer->GetStarBrightness();
 	m_pSkyEffect->SetFloat(starBrightness,star_brightness);
 	
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
