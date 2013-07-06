@@ -500,10 +500,7 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
-	if(y_vertical)
-		defines["Y_VERTICAL"]="1";
-	else
-		defines["Z_VERTICAL"]="1";
+	defines["Z_VERTICAL"]="1";
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	V_CHECK(CreateEffect(m_pd3dDevice,&m_pSkyEffect,"simul_sky.fx",defines));
@@ -574,7 +571,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
 {
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
-	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
+	float alt_km=0.001f*(cam_pos.z);
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
@@ -606,13 +603,13 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
 void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
-	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
+	float alt_km=0.001f*(cam_pos.z);
 	flareTexture->SetResource((ID3D1xShaderResourceView*)tex);
 	simul::sky::float4 original_irradiance=skyKeyframer->GetSkyInterface()->GetSunIrradiance();
 	simul::sky::float4 planet_dir4=dir;
 	planet_dir4/=simul::sky::length(planet_dir4);
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
-	float planet_elevation=asin(y_vertical?planet_dir4.y:planet_dir4.z);
+	float planet_elevation=asin(planet_dir4.z);
 	planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 	D3DXVECTOR4 planet_dir(dir);
 	//m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
@@ -620,8 +617,7 @@ void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float 
 	colour->SetFloatVector((const float *)(&planet_colour));
 	
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
-	if(y_vertical)
-		std::swap(sun_dir.y,sun_dir.z);
+	
 	UtilityRenderer::RenderAngledQuad(context,planet_dir,rad,m_pSkyEffect
 		,do_lighting?m_hTechniquePlanet:m_hTechniqueFlare
 		,view,proj,sun_dir);
@@ -633,7 +629,7 @@ HRESULT hr=S_OK;
 /*	if(!m_pSkyEffect)
 		return (hr==S_OK);
 	float magnitude=exposure*(1.f-sun_occlusion);
-	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
+	float alt_km=0.001f*(cam_pos.z);
 	sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
@@ -648,7 +644,7 @@ HRESULT hr=S_OK;
 	float sun_angular_size=3.14159f/180.f/2.f;
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 //	hr=RenderAngledQuad(sun_dir,sun_angular_size*20.f*magnitude);
-	RenderAngledQuad(m_pd3dDevice,sun_dir,y_vertical,sun_angular_size*20.f*magnitude,m_pSkyEffect,m_hTechniqueFlare,view,proj,sun_dir);*/
+	RenderAngledQuad(m_pd3dDevice,sun_dir,sun_angular_size*20.f*magnitude,m_pSkyEffect,m_hTechniqueFlare,view,proj,sun_dir);*/
 	return (hr==S_OK);
 }
 
@@ -847,7 +843,7 @@ bool SimulSkyRendererDX1x::Render(void *context,bool blend)
 	world._41=cam_pos.x;
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
-	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
+	float alt_km=0.001f*(cam_pos.z);
 	//simul::dx11::FixProjectionMatrix(proj,1000.f);
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	worldViewProj->SetMatrix(&wvp._11);
@@ -871,11 +867,7 @@ bool SimulSkyRendererDX1x::Render(void *context,bool blend)
 	simul::sky::float4 mie_rayleigh_ratio=skyKeyframer->GetMieRayleighRatio();
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
 	simul::sky::float4 light_dir(skyKeyframer->GetDirectionToLight(alt_km));
-	if(y_vertical)
-	{
-		std::swap(light_dir.y,light_dir.z);
-		std::swap(sun_dir.y,sun_dir.z);
-	}
+
 	lightDirection->SetFloatVector(light_dir);
 	mieRayleighRatio->SetFloatVector(mie_rayleigh_ratio);
 	hazeEccentricity->SetFloat(skyKeyframer->GetMieEccentricity());
@@ -952,9 +944,9 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 		fadeTexture1->SetResource(insc_textures_SRV[1]);
 		UtilityRenderer::DrawQuad2(context,x2	,y+16+size	,s,s	,m_pSkyEffect,techniqueShowFade);
 		fadeTexture1->SetResource(skyl_textures_SRV[0]);
-		UtilityRenderer::DrawQuad2(context,x1	,y+16+2*size,s,s	,m_pSkyEffect,techniqueShowFade);
+		UtilityRenderer::DrawQuad2(context,x1	,y+24+2*size,s,s	,m_pSkyEffect,techniqueShowFade);
 		fadeTexture1->SetResource(skyl_textures_SRV[1]);
-		UtilityRenderer::DrawQuad2(context,x2	,y+16+2*size,s,s	,m_pSkyEffect,techniqueShowFade);
+		UtilityRenderer::DrawQuad2(context,x2	,y+24+2*size,s,s	,m_pSkyEffect,techniqueShowFade);
 	}
 	int x=x0+16+4*(s+8);
 	if(x+size>width)
@@ -1055,7 +1047,6 @@ void *SimulSkyRendererDX1x::GetIlluminationTexture()
 
 void SimulSkyRendererDX1x::SetYVertical(bool y)
 {
-	y_vertical=y;
 	RecompileShaders();
 }
 

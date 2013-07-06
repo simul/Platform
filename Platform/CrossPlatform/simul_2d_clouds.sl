@@ -67,6 +67,7 @@ vec4 Clouds2DPS(vec2 texc_global,vec2 texc_detail,vec3 wPosition,float dist)
 	float cos0			=dot(normalize(lightDir),view);
 	vec4 final			=Clouds2Dunfaded(view,cos0,texc_global,texc_detail,wPosition,dist);
 	final.rgb			=ApplySimpleFade(final.rgb,difference,lightDir,mieRayleighRatio,hazeEccentricity,maxFadeDistanceMetres);
+	final.rgb			*=exposure;
 	return final;
 }
 
@@ -78,6 +79,7 @@ vec4 Clouds2DPS_illum(vec2 texc_global,vec2 texc_detail,vec3 wPosition,float dis
 	float cos0			=dot(normalize(lightDir),view);
 	vec4 final			=Clouds2Dunfaded(view,cos0,texc_global,texc_detail,wPosition,dist);
 final.rgb			=ApplyEarthshadowFade(final.rgb,difference,lightDir,mieRayleighRatio,hazeEccentricity,maxFadeDistanceMetres);
+	final.rgb			*=exposure;
 	return final;
 }
 

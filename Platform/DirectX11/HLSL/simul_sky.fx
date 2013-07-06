@@ -520,7 +520,7 @@ technique11 simul_planet
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
-		SetDepthStencilState( DisableDepth, 0 );
+		SetDepthStencilState( EnableDepth, 0 );
 		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }

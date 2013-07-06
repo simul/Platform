@@ -104,6 +104,10 @@ bool SimulGLHDRRenderer::FinishRender(void *context)
 
 void SimulGLHDRRenderer::RenderGlowTexture(void *context)
 {
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
 	int main_viewport[4];
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	// Render to the low-res glow.
@@ -144,4 +148,8 @@ void SimulGLHDRRenderer::RenderGlowTexture(void *context)
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
 	glow_fb.Deactivate(context);
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
 }
