@@ -137,7 +137,7 @@ those pixels.
 void SimulPrecipitationRendererDX1x::Render(void *context)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-return;
+
 	if(rain_intensity<=0)
 		return;
 	PIXBeginNamedEvent(0,"Render Precipitation");

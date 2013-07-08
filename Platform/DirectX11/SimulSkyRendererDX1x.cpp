@@ -672,7 +672,6 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		if(loss_2d->m_pBufferDepthSurface)
 			context->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
 		simul::dx11::UtilityRenderer::DrawQuad(context);
-		//loss_2d->DrawQuad(context);
 		loss_2d->Deactivate(context);
 	}
 	{
@@ -957,7 +956,7 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 	return true;
 }
 
-void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV)
+void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	D3DXMATRIX tmp1,tmp2,wvp;
@@ -967,9 +966,9 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m
 	D3DXMatrixInverse(&tmp1,NULL,&view);
 	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 	simul::math::Vector3 pos((const float*)cam_pos);
-	float size_req=tan_x*.1f;
-	float d=2.f*size/size_req;
-	simul::math::Vector3 offs0(-.8f*(tan_x-size_req)*d,.8f*(tan_y-size_req)*d,-d);
+	float size_req=tan_x*0.1f;
+	float d=2.0f*size/size_req;
+	simul::math::Vector3 offs0(-0.8f*(tan_x-size_req)*d,0.8f*(tan_y-size_req)*d,-d);
 	simul::math::Vector3 offs;
 	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)view),offs0);
 	pos+=offs;

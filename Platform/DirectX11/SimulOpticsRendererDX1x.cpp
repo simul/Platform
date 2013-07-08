@@ -100,7 +100,7 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,const flo
 	D3DXVECTOR3 cam_pos,cam_dir;
 	//m_pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 	//m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&proj);
-	simul::dx11::GetCameraPosVector(view,false,(float*)&cam_pos,(float*)&cam_dir);
+	simul::dx11::GetCameraPosVector(view,(float*)&cam_pos,(float*)&cam_dir,false);
 	lensFlare.UpdateCamera(cam_dir,sun_dir);
 	flare_magnitude*=lensFlare.GetStrength();
 	sunlight*=sun_mult*flare_magnitude;

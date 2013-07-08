@@ -18,6 +18,7 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/GpuCloudGenerator.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
+#include "Simul/Platform/DirectX11/FramebufferCubemapDX1x.h"
 #pragma warning(push)
 #pragma warning(disable:4251)
 namespace simul
@@ -75,6 +76,7 @@ public:
 		camera=c;
 	}
 	void	RecompileShaders();
+	void	RenderCubemap(ID3D11DeviceContext* pd3dImmediateContext,D3DXVECTOR3 cam_pos);
 	// D3D11CallbackInterface
 	virtual bool	IsD3D11DeviceAcceptable(	const CD3D11EnumAdapterInfo *AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo *DeviceInfo,DXGI_FORMAT BackBufferFormat,bool bWindowed);
 	virtual bool	ModifyDeviceSettings(		DXUTDeviceSettings* pDeviceSettings);
@@ -102,6 +104,8 @@ protected:
 	int ScreenWidth,ScreenHeight;
 	// A depth-only FB to make sure we have a readable depth texture.
 	simul::dx11::Framebuffer depthFramebuffer;
+	simul::dx11::Framebuffer cubemapDepthFramebuffer;
+	FramebufferCubemapDX1x	framebuffer_cubemap;
 };	
 
 #pragma warning(pop)
