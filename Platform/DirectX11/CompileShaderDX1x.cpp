@@ -9,11 +9,20 @@
 #endif
 
 typedef std::basic_string<TCHAR> tstring;
-extern std::string shader_path;
+
+namespace simul
+{
+	namespace dx11
+	{
+		extern std::string *shader_path;
+	}
+}
+
+using namespace simul::dx11;
 
 HRESULT CompileShaderFromFile( char* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut )
 {
-	std::string fn=shader_path+szFileName;
+	std::string fn=*shader_path+szFileName;
     HRESULT hr = S_OK;
 
     // open the file

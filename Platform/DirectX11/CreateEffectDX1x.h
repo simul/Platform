@@ -35,11 +35,9 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderBuildMode(ShaderBuildMode s);
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderPath(const char *path);
 		extern SIMUL_DIRECTX11_EXPORT void SetTexturePath(const char *path);
-		extern SIMUL_DIRECTX11_EXPORT void SetDevice(ID3D1xDevice* dev);
-		extern SIMUL_DIRECTX11_EXPORT void UnsetDevice();
 		extern SIMUL_DIRECTX11_EXPORT void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);
-		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(const char *filename);
-		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(const char *filename);
+		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename);
+		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename);
 		ID3D1xTexture1D* make1DTexture(
 							ID3D1xDevice			*m_pd3dDevice
 							,int w
@@ -55,7 +53,6 @@ namespace simul
 							,int w,int l,int d
 							,DXGI_FORMAT format
 							,const void *src);
-							
 		void Ensure3DTextureSizeAndFormat(
 							ID3D1xDevice			*m_pd3dDevice
 							,ID3D1xTexture3D		* &tex

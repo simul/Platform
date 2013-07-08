@@ -18,10 +18,7 @@
 #include "CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include <string>
-std::string shader_path=("media/hlsl/dx11");
-std::string shader_pathA="media/hlsl/dx11";
-std::string texture_path=("media/textures");
-static DWORD default_effect_flags=0;
+static const DWORD default_effect_flags=0;
 
 #include <vector>
 #include <iostream>
@@ -40,11 +37,9 @@ static DWORD default_effect_flags=0;
 #pragma comment(lib,"d3dcompiler.lib")
 
 // winmm.lib comctl32.lib
-static bool shader_path_set	=false;
-static bool texture_path_set=false;
 static bool pipe_compiler_output=false;
 
-static ID3D1xDevice		*m_pd3dDevice		=NULL;
+static ID3D1xDevice		*pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
 ShaderBuildMode shaderBuildMode=ALWAYS_BUILD;
@@ -52,6 +47,9 @@ ShaderBuildMode shaderBuildMode=ALWAYS_BUILD;
 class DefaultFileLoader:public simul::base::FileLoader
 {
 public:
+	DefaultFileLoader()
+	{
+	}
 	void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename,bool open_as_text)
 	{
 		FILE *fp = fopen(filename,open_as_text?"r":"rb");
@@ -72,6 +70,7 @@ public:
 		free(pointer);
 	}
 };
+
 static DefaultFileLoader fl;
 static simul::base::FileLoader *fileLoader=&fl;
 
@@ -79,6 +78,8 @@ namespace simul
 {
 	namespace dx11
 	{
+		std::string *shader_path;
+		std::string *texture_path;
 		void SetFileLoader(simul::base::FileLoader *l)
 		{
 			fileLoader=l;
@@ -131,32 +132,29 @@ namespace simul
 		}
 		void SetShaderPath(const char *path)
 		{
-			shader_path=(path);
-			shader_path+=("/");
-			shader_pathA=(shader_path);
-			shader_path_set=true;
+			if(!path)
+				delete shader_path;
+			else
+			{
+				if(!shader_path)
+					shader_path=new std::string;
+				*shader_path=std::string(path)+"/";
+			}
 		}
 		void SetTexturePath(const char *path)
 		{
-			texture_path=(path);
-			texture_path+=("/");
-			texture_path_set=true;
-		}
-		void SetDevice(ID3D1xDevice* dev)
-		{
-			m_pd3dDevice=dev;
-			UtilityRenderer::RestoreDeviceObjects(dev);
-		}
-		void UnsetDevice()
-		{
-			UtilityRenderer::InvalidateDeviceObjects();
-			m_pd3dDevice=NULL;
+			if(!path)
+				delete texture_path;
+			else
+			{
+				if(!texture_path)
+					texture_path=new std::string;
+				*texture_path=std::string(path)+"/";
+			}
 		}
 		void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
 		{
-			//set up matrices
 			D3DXMATRIX tmp1, tmp2;
-			//D3DXMatrixInverse(&tmp1,NULL,&view);
 			D3DXMatrixMultiply(&tmp1, &world,&view);
 			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 			D3DXMatrixTranspose(wvp,&tmp2);
@@ -242,7 +240,7 @@ namespace simul
 	}
 }
 
-ID3D1xShaderResourceView* simul::dx11::LoadTexture(const char *filename)
+ID3D1xShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename)
 {
 	ID3D11ShaderResourceView* tex=NULL;
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
@@ -250,9 +248,11 @@ ID3D1xShaderResourceView* simul::dx11::LoadTexture(const char *filename)
 	loadInfo.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	loadInfo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	loadInfo.MipLevels=0;
+	if(!texture_path)
+		texture_path=new std::string("media/textures");
 	HRESULT hr=D3DX11CreateShaderResourceViewFromFileA(
-										m_pd3dDevice,
-										(texture_path+filename).c_str(),
+										pd3dDevice,
+										(*texture_path+filename).c_str(),
 										&loadInfo,
 										NULL,
 										&tex,
@@ -261,7 +261,7 @@ ID3D1xShaderResourceView* simul::dx11::LoadTexture(const char *filename)
 }
 
 
-ID3D11Texture2D* simul::dx11::LoadStagingTexture(const char *filename)
+ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const char *filename)
 {
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
 
@@ -284,7 +284,9 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(const char *filename)
     loadInfo.Filter         = D3DX11_FILTER_NONE;
 
 	ID3D11Texture2D *tex=NULL;
-	HRESULT hr=D3DX11CreateTextureFromFileA( m_pd3dDevice, (texture_path+filename).c_str()
+	if(!texture_path)
+		texture_path=new std::string("media/textures");
+	HRESULT hr=D3DX11CreateTextureFromFileA( pd3dDevice, (*texture_path+filename).c_str()
 		,&loadInfo, NULL, ( ID3D11Resource** )&tex, &hr );
 	if(hr!=S_OK)
 	{
@@ -665,15 +667,17 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *f
 	return CreateEffect(d3dDevice,effect,filename,defines);
 }
 
-ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *d3dDevice,const char *filename)
+ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *filename)
 {
-	std::string fn=(shader_pathA+"/")+filename;
+	if(!shader_path)
+		shader_path=new std::string("media/hlsl/dx11");
+	std::string fn=(*shader_path+"/")+filename;
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined( _DEBUG )
 	dwShaderFlags |= D3DCOMPILE_DEBUG;
 #endif
 
-	LPCSTR pProfile = ( m_pd3dDevice->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ) ? "cs_5_0" : "cs_4_0";
+	LPCSTR pProfile = (pd3dDevice->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ) ? "cs_5_0" : "cs_4_0";
 
 	ID3DBlob* pErrorBlob = NULL;
 	ID3DBlob* pBlob = NULL;
@@ -692,7 +696,7 @@ ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *d3dDevice,const char *filen
 	else
 	{
 		ID3D11ComputeShader *computeShader;
-		hr = m_pd3dDevice->CreateComputeShader( pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL,&computeShader );
+		hr = pd3dDevice->CreateComputeShader( pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL,&computeShader );
 		if(pErrorBlob)
 			pErrorBlob->Release();
 		if(pBlob)
@@ -706,8 +710,9 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *f
 {
 	HRESULT hr=S_OK;
 	std::string text_filename=(filename);
-
-	std::string fn=shader_path+filename;
+	if(!shader_path)
+		shader_path=new std::string("media/hlsl/dx11");
+	std::string fn=*shader_path+filename;
 	
 	D3D10_SHADER_MACRO *macros=NULL;
 	std::vector<std::string> d3dmacros;

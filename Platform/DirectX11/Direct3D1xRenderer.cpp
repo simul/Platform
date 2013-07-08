@@ -75,8 +75,8 @@ HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice,const D
 {
 	enabled=true;
 	//Set a global device pointer for use by various classes.
-	simul::dx11::SetDevice(pd3dDevice);
 	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
+	simul::dx11::UtilityRenderer::RestoreDeviceObjects(pd3dDevice);
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects(pd3dDevice);
 	if(simulWeatherRenderer)
@@ -142,7 +142,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 			if(simulTerrainRenderer)
 			{
 				simulTerrainRenderer->SetMatrices(view_matrices[i],cube_proj);
-				simulTerrainRenderer->Render(pContext,Exposure);
+			//	simulTerrainRenderer->Render(pContext,Exposure);
 			}
 			cubemapDepthFramebuffer.Deactivate(pContext);
 			if(simulWeatherRenderer)
@@ -271,7 +271,7 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 	depthFramebuffer.InvalidateDeviceObjects();
 	cubemapDepthFramebuffer.InvalidateDeviceObjects();
 	framebuffer_cubemap.InvalidateDeviceObjects();
-	simul::dx11::UnsetDevice();
+	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 }
 
 void Direct3D11Renderer::OnD3D11DestroyDevice()
