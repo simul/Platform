@@ -189,8 +189,8 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	atmosphericsUniforms2.invViewProj=ivp;
 	atmosphericsUniforms2.invViewProj.transpose();
 	atmosphericsUniforms2.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	atmosphericsUniforms2.nearZ=frustum.nearZ/fade_distance_km;
-	atmosphericsUniforms2.farZ=frustum.farZ/fade_distance_km;
+	atmosphericsUniforms2.nearZ=frustum.nearZ*0.001f/fade_distance_km;
+	atmosphericsUniforms2.farZ=frustum.farZ*0.001f/fade_distance_km;
 
 	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,atmosphericsUniforms2ConstantsBuffer,AtmosphericsUniforms2,atmosphericsUniforms2)
 	ID3DX11EffectConstantBuffer* cbAtmosphericsUniforms2=effect->GetConstantBufferByName("AtmosphericsUniforms2");
