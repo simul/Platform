@@ -90,7 +90,7 @@ namespace simul
 {
 	namespace dx11
 	{
-		void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir)
+		void GetCameraPosVector(D3DXMATRIX &view,float *dcam_pos,float *view_dir,bool y_vertical)
 		{
 			D3DXMATRIX tmp1;
 			D3DXMatrixInverse(&tmp1,NULL,&view);
@@ -118,7 +118,7 @@ namespace simul
 		const float *GetCameraPosVector(D3DXMATRIX &view,bool y_vertical)
 		{
 			static float cam_pos[4],view_dir[4];
-			GetCameraPosVector(view,y_vertical,cam_pos,view_dir);
+			GetCameraPosVector(view,(float*)cam_pos,(float*)view_dir,y_vertical);
 			return cam_pos;
 		}
 		void PipeCompilerOutput(bool p)

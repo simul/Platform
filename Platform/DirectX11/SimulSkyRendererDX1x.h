@@ -90,7 +90,7 @@ public:
 	void SetYVertical(bool y);
 
 	// for testing:
-	void DrawCubemap(void *context,ID3D1xShaderResourceView*		m_pCubeEnvMapSRV);
+	void DrawCubemap(void *context,ID3D1xShaderResourceView*	m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
 protected:
 	int cycle;
 	bool IsYVertical(){return false;}

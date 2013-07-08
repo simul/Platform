@@ -78,8 +78,8 @@ struct vertexOutput3Dto2D
 vertexOutput VS_Main(vertexInput IN) 
 {
     vertexOutput OUT;
-    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
-    OUT.wDirection=normalize(IN.position.xyz);
+    OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.wDirection	=normalize(IN.position.xyz);
     return OUT;
 }
 
@@ -87,59 +87,59 @@ vertexOutput VS_Cubemap(vertexInput IN)
 {
     vertexOutput OUT;
 	// World matrix would be identity.
-    OUT.hPosition=float4(IN.position.xyz,1.0);
-    OUT.wDirection=normalize(IN.position.xyz);
+    OUT.hPosition	=float4(IN.position.xyz,1.0);
+    OUT.wDirection	=normalize(IN.position.xyz);
     return OUT;
 }
 
 float3 InscatterFunction(float4 inscatter_factor,float cos0)
 {
-	float BetaRayleigh=0.0596831f*(1.f+cos0*cos0);
-	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
-	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
+	float BetaRayleigh	=0.0596831f*(1.f+cos0*cos0);
+	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
+	float3 BetaTotal	=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
 		/(float3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
-	float3 result=BetaTotal*inscatter_factor.rgb;
+	float3 result		=BetaTotal*inscatter_factor.rgb;
 	return result;
 }
 
 vertexOutput VS_DrawCubemap(vertexInput IN) 
 {
     vertexOutput OUT;
-    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
-    OUT.wDirection=normalize(IN.position.xyz);
+    OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.wDirection	=normalize(IN.position.xyz);
     return OUT;
 }
 
-float4 PS_DrawCubemap( vertexOutput IN): SV_TARGET
+float4 PS_DrawCubemap(vertexOutput IN): SV_TARGET
 {
-	float3 view=(IN.wDirection.xyz);
-	float4 result=cubeTexture.Sample(samplerState,view);
+	float3 view		=(IN.wDirection.xyz);
+	float4 result	=cubeTexture.Sample(samplerState,view);
 	return float4(result.rgb,1.f);
 }
 
 float4 PS_Main( vertexOutput IN): SV_TARGET
 {
-	float3 view=normalize(IN.wDirection.xyz);
-	float sine	=view.z;
+	float3 view		=normalize(IN.wDirection.xyz);
+	float sine		=view.z;
 	float2 texc2	=float2(1.0,0.5*(1.0-sine));
-	float4 insc=inscTexture.Sample(samplerState,texc2);
-	float cos0=dot(lightDir.xyz,view.xyz);
-	float4 skyl=skylTexture.Sample(samplerState,texc2);
-	float3 result=InscatterFunction(insc,cos0);
-	result+=skyl.rgb;
+	float4 insc		=inscTexture.Sample(samplerState,texc2);
+	float cos0		=dot(lightDir.xyz,view.xyz);
+	float4 skyl		=skylTexture.Sample(samplerState,texc2);
+	float3 result	=InscatterFunction(insc,cos0);
+	result			+=skyl.rgb;
 	return float4(result.rgb,1.f);
 }
 
 float4 PS_EarthShadow( vertexOutput IN): SV_TARGET
 {
-	float3 view=normalize(IN.wDirection.xyz);
-	float sine	=view.z;
+	float3 view		=normalize(IN.wDirection.xyz);
+	float sine		=view.z;
 	float2 texc2	=float2(1.0,0.5*(1.0-sine));
 	float4 insc		=EarthShadowFunction(texc2,view);
-	float cos0=dot(lightDir.xyz,view.xyz);
-	float4 skyl=skylTexture.Sample(samplerState,texc2);
-	float3 result=InscatterFunction(insc,cos0);
-	result+=skyl.rgb;
+	float cos0		=dot(lightDir.xyz,view.xyz);
+	float4 skyl		=skylTexture.Sample(samplerState,texc2);
+	float3 result	=InscatterFunction(insc,cos0);
+	result			+=skyl.rgb;
 	return float4(result.rgb,1.f);
 }
 

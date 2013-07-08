@@ -30,7 +30,6 @@
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
 
-D3DXMATRIX view_matrices[6];
 
 SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *env,
 		bool usebuffer,bool tonemap,int w,int h,bool sky,bool clouds3d,bool clouds2d,bool rain) :
@@ -83,9 +82,6 @@ void SimulWeatherRendererDX1x::RestoreDeviceObjects(void* dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D1xDevice*)dev;
-
-	framebuffer_cubemap.SetWidthAndHeight(64,64);
-	framebuffer_cubemap.RestoreDeviceObjects(m_pd3dDevice);
 	framebuffer.RestoreDeviceObjects(m_pd3dDevice);
 
 	if(simulCloudRenderer)
@@ -141,7 +137,6 @@ void SimulWeatherRendererDX1x::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_pTonemapEffect);
 	framebuffer.InvalidateDeviceObjects();
-	framebuffer_cubemap.InvalidateDeviceObjects();
 	if(simulSkyRenderer)
 		simulSkyRenderer->InvalidateDeviceObjects();
 	if(simulCloudRenderer)
@@ -245,6 +240,7 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 	ID3D1xEffectTechnique *tech=m_pTonemapEffect->GetTechniqueByName("simul_gamma");
 
 	cam_pos=GetCameraPosVector(view);
+D3DXMATRIX view_matrices[6];
 	MakeCubeMatrices(view_matrices,cam_pos);
 	bool noise3d=environment->cloudKeyframer->GetUse3DNoise();
 	environment->cloudKeyframer->SetUse3DNoise(true);
@@ -291,40 +287,6 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 	{
 		baseCloudRenderer->GetCloudGeometryHelper()->SetMaxLayers(l);
 	}
-}
-
-bool SimulWeatherRendererDX1x::RenderCubemap(void *context)
-{
-	static float exposure=1.f;
-	D3DXMATRIX ov=view;
-	D3DXMATRIX op=proj;
-	cam_pos=GetCameraPosVector(view);
-	MakeCubeMatrices(view_matrices,cam_pos);
-	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
-	for(int i=0;i<6;i++)
-	{
-		framebuffer_cubemap.SetCurrentFace(i);
-		framebuffer_cubemap.Activate(m_pImmediateContext);
-		if(simulSkyRenderer)
-		{
-			D3DXMATRIX cube_proj;
-			D3DXMatrixPerspectiveFovRH(&cube_proj,
-				3.1415926536f/2.f,
-				1.f,
-				1.f,
-				200000.f);
-			SetMatrices(view_matrices[i],cube_proj);
-			HRESULT hr=RenderSky(m_pImmediateContext,exposure,false,true);
-		}
-		framebuffer_cubemap.Deactivate(m_pImmediateContext);
-	}
-	SetMatrices(ov,op);
-	return true;
-}
-
-void *SimulWeatherRendererDX1x::GetCubemap()
-{
-	return framebuffer_cubemap.GetColorTex();
 }
 
 void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture)

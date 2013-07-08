@@ -30,7 +30,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 		,ShowLightVolume(false)
 		,CelestialDisplay(false)
 		,ShowWater(true)
-		,MakeCubemap(false)
+		,MakeCubemap(true)
 		,ReverseDepth(true)
 		,ShowOSD(false)
 		,Exposure(1.0f)
@@ -44,6 +44,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer.get());
 	ReverseDepthChanged();
 	depthFramebuffer.SetFormat(0);
+	cubemapDepthFramebuffer.SetFormat(0);
 }
 
 Direct3D11Renderer::~Direct3D11Renderer()
@@ -87,6 +88,10 @@ HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice,const D
 	gpuCloudGenerator.RestoreDeviceObjects(pd3dDevice);
 	gpuSkyGenerator.RestoreDeviceObjects(pd3dDevice);
 	depthFramebuffer.RestoreDeviceObjects(pd3dDevice);
+	cubemapDepthFramebuffer.SetWidthAndHeight(64,64);
+	cubemapDepthFramebuffer.RestoreDeviceObjects(pd3dDevice);
+	framebuffer_cubemap.SetWidthAndHeight(64,64);
+	framebuffer_cubemap.RestoreDeviceObjects(pd3dDevice);
 	return S_OK;
 }
 
@@ -110,6 +115,43 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 	catch(...)
 	{
 		return S_FALSE;
+	}
+}
+
+void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos)
+{
+	static float exposure=1.f;
+	D3DXMATRIX view;
+	D3DXMATRIX proj;
+	D3DXMATRIX view_matrices[6];
+	MakeCubeMatrices(view_matrices,cam_pos);
+	for(int i=0;i<6;i++)
+	{
+		framebuffer_cubemap.SetCurrentFace(i);
+		framebuffer_cubemap.Activate(pContext);
+		
+		{
+			D3DXMATRIX cube_proj;
+			D3DXMatrixPerspectiveFovRH(&cube_proj,
+				3.1415926536f/2.f,
+				1.f,
+				1.f,
+				200000.f);
+			cubemapDepthFramebuffer.Activate(pContext);
+			cubemapDepthFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+			if(simulTerrainRenderer)
+			{
+				simulTerrainRenderer->SetMatrices(view_matrices[i],cube_proj);
+				simulTerrainRenderer->Render(pContext,Exposure);
+			}
+			cubemapDepthFramebuffer.Deactivate(pContext);
+			if(simulWeatherRenderer)
+			{
+				simulWeatherRenderer->SetMatrices(view_matrices[i],cube_proj);
+				simulWeatherRenderer->RenderSkyAsOverlay(pContext,exposure,false,true,cubemapDepthFramebuffer.GetDepthTex());
+			}
+		}
+		framebuffer_cubemap.Deactivate(pContext);
 	}
 }
 
@@ -140,7 +182,6 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	depthFramebuffer.Activate(pd3dImmediateContext);
 	depthFramebuffer.Clear(pd3dImmediateContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
-	// Render solid things here.
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
 		simulTerrainRenderer->SetMatrices(view,proj);
@@ -152,21 +193,16 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	void *depthTexture=depthFramebuffer.GetDepthTex();
 	if(simulWeatherRenderer)
 	{
-	/*	if(simulHDRRenderer&&UseHdrPostprocessor)
-			simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
-		else
-			simulWeatherRenderer->SetExposureHint(1.0f);*/
-		//((SimulAtmosphericsRendererDX1x*)simulWeatherRenderer->GetBaseAtmosphericsRenderer())->framebuffer->GetDepthTex();
 		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture);
-		if(MakeCubemap)
-			simulWeatherRenderer->RenderCubemap(pd3dImmediateContext);
 	}
 	if(simulWeatherRenderer)
 	{
-		//simulWeatherRenderer->RenderLateCloudLayer(pd3dImmediateContext,true);
 		simulWeatherRenderer->RenderLightning(pd3dImmediateContext);
 		if(simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*	)simulWeatherRenderer->GetCubemap());
+			simulWeatherRenderer->GetSkyRenderer()->DrawCubemap(
+			pd3dImmediateContext
+			,(ID3D1xShaderResourceView*	)framebuffer_cubemap.GetColorTex()
+			,view,proj);
 		simulWeatherRenderer->DoOcclusionTests();
 	}
 	if(simulWeatherRenderer)
@@ -186,16 +222,22 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			}
 		}
 	}
+	if(MakeCubemap)
+	{
+		D3DXVECTOR3 cam_pos=simul::dx11::GetCameraPosVector(view);
+		RenderCubemap(pd3dImmediateContext,cam_pos);
+	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender(pd3dImmediateContext);
 	if(simulWeatherRenderer)
 	{
-		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
+		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,ScreenWidth,ScreenHeight);
+		simulWeatherRenderer->RenderPrecipitation(pd3dImmediateContext);
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,ScreenWidth,ScreenHeight);
-		//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
+//			simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
 		{
@@ -227,6 +269,8 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
 	depthFramebuffer.InvalidateDeviceObjects();
+	cubemapDepthFramebuffer.InvalidateDeviceObjects();
+	framebuffer_cubemap.InvalidateDeviceObjects();
 	simul::dx11::UnsetDevice();
 }
 
