@@ -87,12 +87,3 @@ unsigned char *LoadGLBitmap(const char *filename,unsigned &bpp,unsigned &width,u
 	fn+=filename;
 	return LoadBitmap(fn.c_str(),bpp,width,height);
 }
-
-void SaveGLImage(const char *filename,GLuint tex)
-{
-	std::string fn=image_path+"/";
-	fn+=filename;
-/*	FIBITMAP *bitmap2 = FreeImage_Allocate(w, h, 32);
-	FreeImage_Paste(bitmap2, bitmap, 0, 0, 255);
-    FreeImage_Save(FIF_PNG, bitmap2, "mybitmap.png", 0);*/
-}

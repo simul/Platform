@@ -92,10 +92,8 @@ public:
 	// for testing:
 	void DrawCubemap(void *context,ID3D1xShaderResourceView*		m_pCubeEnvMapSRV);
 protected:
-
-	bool y_vertical;
 	int cycle;
-	bool IsYVertical(){return y_vertical;}
+	bool IsYVertical(){return false;}
 
 	void CreateFadeTextures();
 	void EnsureCorrectTextureSizes();

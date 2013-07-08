@@ -247,16 +247,20 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderFades(void *,int w,int h)
+bool SimulGLSkyRenderer::RenderFades(void *,int width,int height)
 {
-	int size=w/4;
-	if(h/3<size)
-		size=h/3;
+	int size=width/4;
+	if(height/3<size)
+		size=height/3;
 	if(size<2)
 		return false;
-	int y0=w/2;
-	if(glStringMarkerGREMEDY)
-		glStringMarkerGREMEDY(11,"RenderFades");
+	int y0=width/2;
+	int x0=8;
+	if(width>height)
+	{
+		x0=width/2;
+		y0=8;
+	}
 	static int main_viewport[]={0,0,1,1};
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	glMatrixMode(GL_MODELVIEW);
@@ -277,16 +281,18 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,loss_texture);
-	RenderTexture(8,y0+8,size,size);
+	RenderTexture(x0,y0+8,size,size);
 	glBindTexture(GL_TEXTURE_2D,insc_texture);
-	RenderTexture(8,y0+16+size,size,size);
+	RenderTexture(x0,y0+16+size,size,size);
 	glBindTexture(GL_TEXTURE_2D,skyl_texture);
-	RenderTexture(8,y0+24+2*size,size,size);
-	int x=16+size;
+	RenderTexture(x0,y0+24+2*size,size,size);
+	x0+=24+size;
 	int s=size/numAltitudes-4;
 	for(int i=0;i<numAltitudes;i++)
 	{
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
+		int x1=x0,x2=x0+s+8;
+		int y=y0+i*(s+4);
 		glUseProgram(fade_3d_to_2d_program);
 		GLint altitudeTexCoord_fade	=glGetUniformLocation(fade_3d_to_2d_program,"altitudeTexCoord");
 		GLint skyInterp_fade		=glGetUniformLocation(fade_3d_to_2d_program,"skyInterp");
@@ -301,17 +307,17 @@ ERROR_CHECK
 		glActiveTexture(GL_TEXTURE0);
 		
 		glBindTexture(GL_TEXTURE_3D,loss_textures[0]);
-		RenderTexture(x+16+0*(s+8)	,y0+i*(s+4)+8, s,s);
+		RenderTexture(x1	,y+8, s,s);
 		glBindTexture(GL_TEXTURE_3D,loss_textures[1]);
-		RenderTexture(x+16+1*(s+8)	,y0+i*(s+4)+8, s,s);
+		RenderTexture(x2	,y+8, s,s);
 		glBindTexture(GL_TEXTURE_3D,inscatter_textures[0]);
-		RenderTexture(x+16+0*(s+8)	,y0+i*(s+4)+16+size, s,s);
+		RenderTexture(x1	,y+16+size, s,s);
 		glBindTexture(GL_TEXTURE_3D,inscatter_textures[1]);
-		RenderTexture(x+16+1*(s+8)	,y0+i*(s+4)+16+size, s,s);
+		RenderTexture(x2	,y+16+size, s,s);
 		glBindTexture(GL_TEXTURE_3D,skylight_textures[0]);
-		RenderTexture(x+16+0*(s+8)	,y0+i*(s+4)+24+2*size, s,s);
+		RenderTexture(x1	,y+24+2*size, s,s);
 		glBindTexture(GL_TEXTURE_3D,skylight_textures[1]);
-		RenderTexture(x+16+1*(s+8)	,y0+i*(s+4)+24+2*size, s,s);
+		RenderTexture(x2	,y0+24+2*size, s,s);
 	}
 
 	glUseProgram(0);
@@ -364,7 +370,7 @@ ERROR_CHECK
 	glUseProgram(p);
 }
 
-bool SimulGLSkyRenderer::Render(void *context,bool blend)
+bool SimulGLSkyRenderer::Render(void *,bool blend)
 {
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	simul::sky::float4 cam_dir;
@@ -513,7 +519,7 @@ bool SimulGLSkyRenderer::RenderPointStars(void *,float exposure)
 	}
 	glUseProgram(stars_program);
 	float sb=skyKeyframer->GetStarlight().x;
-	float star_brightness=sb*skyKeyframer->GetStarBrightness();
+	float star_brightness=sb*exposure*skyKeyframer->GetStarBrightness();
 	glUniform1f(starBrightness_param,star_brightness);
 	float mat1[16],mat2[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX,mat1);
@@ -539,7 +545,7 @@ bool SimulGLSkyRenderer::RenderPointStars(void *,float exposure)
 	return true;
 }
 
-void SimulGLSkyRenderer::RenderSun(void *,float exposure_hint)
+void SimulGLSkyRenderer::RenderSun(void *,float exposure)
 {
 	float alt_km=0.001f*cam_pos.z;
 	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
@@ -549,7 +555,7 @@ void SimulGLSkyRenderer::RenderSun(void *,float exposure_hint)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
 	// As the sun has angular radius of about 1/2 a degree, the angular area is 
 	// equal to pi/(120^2), or about 1/2700 steradians;
-	sunlight*=pow(1.f-sun_occlusion,0.25f)*2700.f;
+	sunlight*=exposure*pow(1.f-sun_occlusion,0.25f)*2700.f;
 	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
@@ -608,9 +614,9 @@ void SimulGLSkyRenderer::RenderPlanet(void *,void* tex,float planet_angular_size
 		or.T4.Inverse(inv_world);
 		simul::math::Multiply3(sun2,sun_dir,inv_world);
 	}
-		ERROR_CHECK
-	glUniform3f(planetLightDir_param,sun2.x,sun2.y,sun2.z);
-		ERROR_CHECK
+	if(do_lighting)
+		glUniform3f(planetLightDir_param,sun2.x,sun2.y,sun2.z);
+	ERROR_CHECK
 	glUniform1i(planetTexture_param,0);
 
 		ERROR_CHECK

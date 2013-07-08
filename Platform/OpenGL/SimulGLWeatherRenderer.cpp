@@ -2,7 +2,6 @@
 #ifdef _MSC_VER
 #include <stdlib.h>
 #include <GL/glew.h>
-#include <GL/glut.h>
 #endif
 
 #include "FramebufferGL.h"
@@ -239,7 +238,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,boo
 #endif
 }
 
-void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,bool buffer)
+void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,bool )
 {
 	if(!(AlwaysRenderCloudsLate||RenderCloudsLate)||!simulCloudRenderer||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return;

@@ -282,7 +282,7 @@ simul::math::Matrix4x4 ConvertReversedToRegularProjectionMatrix(const simul::mat
 	return p;
 }
 #include "Simul/Camera/Camera.h"
-void SimulGLCloudRenderer::SetCloudPerViewConstants(CloudPerViewConstants &cloudPerViewConstants)
+/*void SimulGLCloudRenderer::SetCloudPerViewConstants(CloudPerViewConstants &cloudPerViewConstants)
 {
 	simul::math::Matrix4x4 proj;
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
@@ -324,11 +324,11 @@ void SimulGLCloudRenderer::SetCloudPerViewConstants(CloudPerViewConstants &cloud
 	cloudPerViewConstants.nearZ			=frustum.nearZ/max_fade_distance_metres;
 	cloudPerViewConstants.farZ			=frustum.farZ/max_fade_distance_metres;
 	cloudPerViewConstants.noise_offset=helper->GetNoiseOffset();
-}
+}*/
 static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha)
+bool SimulGLCloudRenderer::Render(void *,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
@@ -515,12 +515,16 @@ ERROR_CHECK
 	helper->SetChurn(GetCloudInterface()->GetChurn());
 	helper->Update(view_pos,GetCloudInterface()->GetWindOffset(),eye_dir,up_dir,delta_t,cubemap);
 
-	SetCloudPerViewConstants(cloudPerViewConstants);
+	simul::math::Matrix4x4 proj;
+	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
+	simul::math::Matrix4x4 view;
+	glGetMatrix(view.RowPointer(0),GL_MODELVIEW_MATRIX);
+	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure);
 	cloudPerViewConstants.exposure=exposure;
 
 	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
-	simul::math::Matrix4x4 proj;
-	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
+	//simul::math::Matrix4x4 proj;
+	//glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
 	simul::math::Matrix4x4 worldViewProj;
 	simul::math::Multiply4x4(worldViewProj,modelview,proj);
 	setMatrixTranspose(program,"worldViewProj",worldViewProj);
@@ -777,7 +781,7 @@ ERROR_CHECK
 	glUseProgram(0);
 }
 
-void SimulGLCloudRenderer::RestoreDeviceObjects(void *context)
+void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 {
 	init=true;
 	
@@ -965,7 +969,7 @@ void SimulGLCloudRenderer::New()
 {
 	cloudKeyframer->New();
 }
-
+#pragma warning(disable:4127) // "Conditional expression is constant".
 void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 {
 	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();

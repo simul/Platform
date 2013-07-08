@@ -748,7 +748,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	CloudConstants cloudConstants;
 	CloudPerViewConstants cloudPerViewConstants;
 	SetCloudConstants(cloudConstants);
-	SetCloudPerViewConstants(cloudPerViewConstants,view,proj);
+	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure);
 
 	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,cloudConstantsBuffer,CloudConstants,cloudConstants);
 	ID3DX11EffectConstantBuffer* cbCloudConstants=m_pCloudEffect->GetConstantBufferByName("CloudConstants");

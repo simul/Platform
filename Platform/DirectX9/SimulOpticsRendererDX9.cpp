@@ -88,7 +88,7 @@ void SimulOpticsRendererDX9::SetFlare(LPDIRECT3DTEXTURE9 tex,float rad)
 	external_flare_texture=true;
 }
 
-void SimulOpticsRendererDX9::RenderFlare(void *context,float exposure,const float *dir,const float *light)
+void SimulOpticsRendererDX9::RenderFlare(void *,float exposure,const float *dir,const float *light)
 {
 	HRESULT hr=S_OK;
 	if(!m_pFlareEffect)

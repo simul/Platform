@@ -1,6 +1,7 @@
 #ifdef _MSC_VER
 #include <stdlib.h>
 #include <GL/glew.h>
+#pragma warning(disable:4505)	// Fix GLUT warnings
 #include <GL/glut.h>
 #endif
 #include "OpenGLRenderer.h"
@@ -185,7 +186,6 @@ ERROR_CHECK
 			simulHDRRenderer->FinishRender(context);
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(context,ScreenWidth,ScreenHeight);
-		
 		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(context,ScreenWidth,ScreenHeight);

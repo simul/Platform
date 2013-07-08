@@ -202,11 +202,12 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 
 	{
 		AtmosphericsUniforms atmosphericsUniforms;
-		float alt_km			=cam_pos.z/1000.f;
+		float alt_km							=cam_pos.z/1000.f;
 		atmosphericsUniforms.lightDir			=(const float*)skyInterface->GetDirectionToLight(alt_km);
 		atmosphericsUniforms.mieRayleighRatio	=(const float*)skyInterface->GetMieRayleighRatio();
 		atmosphericsUniforms.texelOffsets		=D3DXVECTOR2(0,0);
 		atmosphericsUniforms.hazeEccentricity	=skyInterface->GetMieEccentricity();
+		atmosphericsUniforms.exposure			=exposure;
 		UPDATE_CONSTANT_BUFFER(m_pImmediateContext,constantBuffer,AtmosphericsUniforms,atmosphericsUniforms)
 		ID3DX11EffectConstantBuffer* cbAtmosphericsUniforms=effect->GetConstantBufferByName("AtmosphericsUniforms");
 		if(cbAtmosphericsUniforms)

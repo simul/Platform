@@ -317,22 +317,18 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 	//cloudKeyframer->SetGpuCloudGenerator(&gpuCloudGenerator);
 	ClearIterators();
 }
-
-static std::string GetCompiledFilename(int fade_mde,int wrap_clouds,bool z_vertical)
+/*
+static std::string GetCompiledFilename(int wrap_clouds)
 {
 	std::string compiled_filename="simul_clouds_and_lightning_";
 	if(wrap_clouds)
 		compiled_filename+="w1_";
 	else
 		compiled_filename+="w0_";
-	if(z_vertical)
-		compiled_filename+="z";
-	else
-		compiled_filename+="y";
 	compiled_filename+=".fxo";
 	return compiled_filename;
 }
-
+*/
 
 void SimulCloudRenderer::RecompileShaders()
 {
@@ -521,7 +517,6 @@ bool SimulCloudRenderer::CreateNoiseTexture(void *)
 {
 	if(!m_pd3dDevice)
 		return false;
-	bool result=true;
 	SAFE_RELEASE(noise_texture);
 	HRESULT hr=S_OK;
 //..if(!override_file&&(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/noise.dds"),&noise_texture))==S_OK)
@@ -574,7 +569,7 @@ static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 	return &x;
 }
 
-void SimulCloudRenderer::Update(void *context)
+void SimulCloudRenderer::Update(void *)
 {
 }
 void SimulCloudRenderer::EnsureCorrectIlluminationTextureSizes()
@@ -760,8 +755,8 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const 
 
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;
-	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse()
-										,indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse()
+	simul::sky::float4 light_response(	exposure*direct_light_mult*GetCloudInterface()->GetLightResponse()
+										,exposure*indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse()
 										,0
 										,0);
 	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());//+.5f*GetCloudInterface()->GetCloudHeight());
@@ -769,7 +764,7 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const 
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
 	// Get the overall ambient light at this altitude, and multiply it by the cloud's ambient response.
-	simul::sky::float4 sky_light_colour=skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
+	simul::sky::float4 sky_light_colour=exposure*skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
 
 
 	float tan_half_fov_vertical=1.f/proj._22;
@@ -801,7 +796,8 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const 
 		static float bb=2.f;
 		simul::sky::float4 lightning_multipliers;
 		lightning_colour=lightningRenderInterface->GetLightningColour();
-		for(unsigned i=0;i<4;i++)
+		lightning_colour*=exposure;
+		for(int i=0;i<4;i++)
 		{
 			if(i<lightningRenderInterface->GetNumLightSources())
 				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(time);
@@ -876,7 +872,6 @@ void SimulCloudRenderer::InternalRenderHorizontal(int buffer_index)
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(base_alt_km);
 	// Convert metres to km:
-	float scale=0.001f;
 	static int num_layers=4;
 	for(int l=0;l<num_layers;l++)
 	{
@@ -1062,14 +1057,13 @@ void SimulCloudRenderer::InternalRenderVolumetric(int buffer_index)
 		size_t qs_vert=0;
 		float fade=(*i)->fadeIn;
 		bool start=true;
-		if((*i)->quad_strips.size())
-		for(int j=(*i)->elev_start;j<=(*i)->elev_end;j++)
-		{
-			float j_interp=(float)j/(float)el_grid;
-			float sine=(2.f*j_interp-1.f);
-			float alt_km=min(max(0.f,view_km.z+sine*0.001f*distance),0.001f*(GetCloudInterface()->GetCloudBaseZ()+GetCloudInterface()->GetCloudHeight()));
-
-		}
+//		if((*i)->quad_strips.size())
+//		for(int j=(*i)->elev_start;j<=(*i)->elev_end;j++)
+//		{
+//			float j_interp=(float)j/(float)el_grid;
+//			float sine=(2.f*j_interp-1.f);
+//		float alt_km=min(max(0.f,view_km.z+sine*0.001f*distance),0.001f*(GetCloudInterface()->GetCloudBaseZ()+GetCloudInterface()->GetCloudHeight()));
+//		}
 		for(std::vector<const simul::clouds::CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
 			j!=(*i)->quad_strips.end();j++)
 		{
@@ -1142,9 +1136,9 @@ bool SimulCloudRenderer::MakeCubemap(void *context)
 	//vertical only specified
 	h = 1 / tanf((3.14159f * 0.5f) * 0.5f);
 	w = h ;
-	float zFar=helper->GetMaxCloudDistance();
-	float zNear=1.f;
-	float Q = zFar / (zFar - zNear);
+//float zFar=helper->GetMaxCloudDistance();
+//	float zNear=1.f;
+//float Q = zFar / (zFar - zNear);
 
 	LPDIRECT3DSURFACE9	pRenderTarget;
 	LPDIRECT3DSURFACE9	pOldRenderTarget;

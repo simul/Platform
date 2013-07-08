@@ -3,6 +3,7 @@
 #include "Simul/Base/Timer.h"
 #include <string>
 #include <map>
+#pragma warning(disable:4251)
 namespace simul
 {
 	namespace opengl
