@@ -25,7 +25,7 @@ void SimulOpticsRendererDX1x::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D1xDevice*)dev;
 	SAFE_RELEASE(flare_texture);
-	flare_texture=simul::dx11::LoadTexture(FlareTexture.c_str());
+	flare_texture=simul::dx11::LoadTexture(m_pd3dDevice,FlareTexture.c_str());
 	
 	RecompileShaders();
 	for(size_t i=0;i<halo_textures.size();i++)
@@ -40,7 +40,7 @@ void SimulOpticsRendererDX1x::RestoreDeviceObjects(void *dev)
 		std::string tn=(lensFlare.GetTypeName(i));
 		ID3D1xShaderResourceView* &tex=halo_textures[i];
 		SAFE_RELEASE(tex);
-		tex=simul::dx11::LoadTexture((tn+".png").c_str());
+		tex=simul::dx11::LoadTexture(m_pd3dDevice,(tn+".png").c_str());
 	}
 	RecompileShaders();
 }

@@ -146,7 +146,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	D3DXMatrixIdentity(&proj);
 	RecompileShaders();
 
-	flare_texture_SRV=simul::dx11::LoadTexture("Sunburst.dds");
+	flare_texture_SRV=simul::dx11::LoadTexture(m_pd3dDevice,"Sunburst.dds");
 
 	// Vertex declaration
 	{
@@ -191,7 +191,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	illumination_fb.SetWidthAndHeight(128,numFadeElevations*2);
 	SAFE_RELEASE(moon_texture_SRV);
 	MoonTexture="Moon.png";
-	moon_texture_SRV=simul::dx11::LoadTexture(MoonTexture.c_str());
+	moon_texture_SRV=simul::dx11::LoadTexture(m_pd3dDevice,MoonTexture.c_str());
 	SetPlanetImage(moon_index,moon_texture_SRV);
 	ClearIterators();
 	

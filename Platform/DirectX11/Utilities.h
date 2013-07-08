@@ -140,14 +140,15 @@ namespace simul
 			static ID3D1xEffect *m_pDebugEffect;
 			static ID3D11InputLayout *m_pBufferVertexDecl;
 			static ID3D1xBuffer* m_pVertexBuffer;
+			static ID3D1xDevice		*m_pd3dDevice;
 		public:
 			UtilityRenderer();
 			~UtilityRenderer();
 			static void SetMatrices(D3DXMATRIX v,D3DXMATRIX p);
 			static void RestoreDeviceObjects(void *m_pd3dDevice);
+			static void InvalidateDeviceObjects();
 			static void RecompileShaders();
 			static void SetScreenSize(int w,int h);
-			static void InvalidateDeviceObjects();
 			static void PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 			static void DrawLines(ID3D11DeviceContext* pd3dImmediateContext,VertexXyzRgba *lines,int vertex_count,bool strip);
 			static void RenderAngledQuad(ID3D11DeviceContext *context,const float *dir,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);

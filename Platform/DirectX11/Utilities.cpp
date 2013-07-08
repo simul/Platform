@@ -5,7 +5,6 @@
 #include <d3dx11.h>
 using namespace simul;
 using namespace dx11;
-static ID3D1xDevice		*m_pd3dDevice		=NULL;
 
 TextureStruct::TextureStruct()
 	:texture(NULL)
@@ -226,7 +225,7 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 	std::vector<ID3D11Texture2D *> textures;
 	for(unsigned i=0;i<texture_files.size();i++)
 	{
-		textures.push_back(simul::dx11::LoadStagingTexture(texture_files[i].c_str()));
+		textures.push_back(simul::dx11::LoadStagingTexture(pd3dDevice,texture_files[i].c_str()));
 	}
 	D3D11_TEXTURE2D_DESC desc;
 	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[textures.size()];
@@ -318,6 +317,7 @@ D3DXMATRIX UtilityRenderer::view,UtilityRenderer::proj;
 ID3D1xEffect *UtilityRenderer::m_pDebugEffect=NULL;
 ID3D11InputLayout *UtilityRenderer::m_pBufferVertexDecl=NULL;
 ID3D1xBuffer* UtilityRenderer::m_pVertexBuffer=NULL;
+ID3D1xDevice* UtilityRenderer::m_pd3dDevice=NULL;
 UtilityRenderer utilityRenderer;
 
 UtilityRenderer::UtilityRenderer()
