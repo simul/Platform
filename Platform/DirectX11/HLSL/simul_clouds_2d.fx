@@ -109,7 +109,7 @@ v2f2 FullScreenVS(idOnly IN)
     OUT.texCoords	=pos;
     return OUT;
 }
-*/
+
 
 v2f2 SimpleVS(idOnly IN)
 {

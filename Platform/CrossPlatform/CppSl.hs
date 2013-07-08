@@ -8,7 +8,7 @@
 #endif
 
 #ifdef __cplusplus
-	#pragma warning(disable:4324)
+//	#pragma warning(disable:4324)
 	#define STATIC static
 	#define uniform
 	#define ALIGN_16 __declspec( align( 16 ) )
@@ -29,7 +29,7 @@
 	#define R12
 	#define R13
 
-	#define uniform_buffer ALIGN_16 cbuffer
+	#define uniform_buffer /*ALIGN_16*/ cbuffer
 
 	struct mat2
 	{

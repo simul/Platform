@@ -82,7 +82,7 @@ void Framebuffer::RestoreDeviceObjects(void *dev)
 	m_pd3dDevice=(ID3D1xDevice*)dev;
 	if(!m_pd3dDevice)
 		return;
-	RecompileShaders();
+//	RecompileShaders();
 	CreateBuffers();
 }
 
