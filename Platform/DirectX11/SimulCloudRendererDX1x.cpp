@@ -697,12 +697,9 @@ void SimulCloudRendererDX1x::Update(void *context)
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
 	EnsureTexturesAreUpToDate(pContext);
-	
 	RenderCombinedCloudTexture(context);
-
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply(pContext);
-
 	//set up matrices
 	simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();

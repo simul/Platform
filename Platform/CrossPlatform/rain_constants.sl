@@ -1,5 +1,6 @@
 #ifndef RAIN_CONSTANTS_SL
 #define RAIN_CONSTANTS_SL
+
 uniform_buffer RainConstants R10
 {
 	uniform vec4 lightColour;

@@ -124,7 +124,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	   discard;
 					fade_texc.x=sqrt(Z);
 	//colour.rgb=(1.0-colour.a)*applyFades(colour.rgb,fade_texc,cos0,earthshadowMultiplier);
-    return float4(colour.rgb,1.0-colour.a);
+    return float4(exposure*colour.rgb,1.0-colour.a);
 }
 float4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
@@ -177,7 +177,7 @@ float4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 	if(colour.a>=1.0)
 	   discard;
 	fade_texc.x=sqrt(Z);
-	colour.rgb=(1.0-colour.a)*applyFades(colour.rgb,fade_texc,cos0,earthshadowMultiplier);
+	colour.rgb=exposure*(1.0-colour.a)*applyFades(colour.rgb,fade_texc,cos0,earthshadowMultiplier);
     return float4(colour.rgb,1.0-colour.a);
 }
 

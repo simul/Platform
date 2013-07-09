@@ -298,7 +298,8 @@ void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,float exposure,b
 		imageTexture->SetResource(framebuffer.buffer_texture_SRV);
 		ID3D1xEffectTechnique *tech=blend?SkyBlendTechnique:directTechnique;
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
-		simul::dx11::setParameter(m_pTonemapEffect,"exposure",exposure);
+		simul::dx11::setParameter(m_pTonemapEffect,"exposure",1.f);
+		simul::dx11::setParameter(m_pTonemapEffect,"gamma",1.f);
 		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
 	}

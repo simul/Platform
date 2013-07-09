@@ -121,7 +121,6 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,ID
 
 void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos)
 {
-	static float exposure=1.f;
 	D3DXMATRIX view;
 	D3DXMATRIX proj;
 	D3DXMATRIX view_matrices[6];
@@ -130,30 +129,27 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	{
 		framebuffer_cubemap.SetCurrentFace(i);
 		framebuffer_cubemap.Activate(pContext);
-		
-		
-			D3DXMATRIX cube_proj;
-			float nearPlane=1.f;
-			float farPlane=200000.f;
-			static bool r=false;
-			if(ReverseDepth)
-				cube_proj=simul::camera::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
-			else
-				cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
-			cubemapDepthFramebuffer.Activate(pContext);
-			cubemapDepthFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
-			if(simulTerrainRenderer)
-			{
-				simulTerrainRenderer->SetMatrices(view_matrices[i],cube_proj);
-			//	simulTerrainRenderer->Render(pContext,Exposure);
-			}
-			cubemapDepthFramebuffer.Deactivate(pContext);
-			if(simulWeatherRenderer)
-			{
-				simulWeatherRenderer->SetMatrices(view_matrices[i],cube_proj);
-				simulWeatherRenderer->RenderSkyAsOverlay(pContext,exposure,false,true,cubemapDepthFramebuffer.GetDepthTex());
-			}
-		
+		D3DXMATRIX cube_proj;
+		float nearPlane=1.f;
+		float farPlane=200000.f;
+		static bool r=false;
+		if(ReverseDepth)
+			cube_proj=simul::camera::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
+		else
+			cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
+		cubemapDepthFramebuffer.Activate(pContext);
+		cubemapDepthFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+		if(simulTerrainRenderer)
+		{
+			simulTerrainRenderer->SetMatrices(view_matrices[i],cube_proj);
+		//	simulTerrainRenderer->Render(pContext,Exposure);
+		}
+		cubemapDepthFramebuffer.Deactivate(pContext);
+		if(simulWeatherRenderer)
+		{
+			simulWeatherRenderer->SetMatrices(view_matrices[i],cube_proj);
+			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapDepthFramebuffer.GetDepthTex());
+		}
 		framebuffer_cubemap.Deactivate(pContext);
 	}
 	if(simulWeatherRenderer)
