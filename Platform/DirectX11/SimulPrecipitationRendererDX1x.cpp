@@ -21,6 +21,7 @@ SimulPrecipitationRendererDX1x::SimulPrecipitationRendererDX1x() :
 	,m_pRainEffect(NULL)
 	,rain_texture(NULL)
 	,cubemap_SRV(NULL)
+	,random_SRV(NULL)
 {
 }
 
@@ -53,7 +54,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	// Make sure it isn't destroyed when the fb goes out of scope:
 	rain_texture->AddRef();
 
-
+	SAFE_RELEASE(random_SRV);
 	ID3DX11EffectTechnique*	tech2=m_pRainEffect->GetTechniqueByName("create_random_texture");
 	ApplyPass(m_pImmediateContext,tech2->GetPassByIndex(0));
 	simul::dx11::Framebuffer random_fb(16,16);
@@ -125,6 +126,7 @@ void SimulPrecipitationRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(rain_texture);
 	SAFE_RELEASE(m_pVertexBuffer);
+	SAFE_RELEASE(random_SRV);
 	
 	rainConstants.InvalidateDeviceObjects();
 	perViewConstants.InvalidateDeviceObjects();

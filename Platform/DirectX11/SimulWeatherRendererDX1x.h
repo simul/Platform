@@ -34,7 +34,7 @@ public:
 SIMUL_DIRECTX11_EXPORT_CLASS SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer
 {
 public:
-	SimulWeatherRendererDX1x(simul::clouds::Environment *env,bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
+	SimulWeatherRendererDX1x(simul::clouds::Environment *env,simul::base::MemoryInterface *a,bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
 	virtual ~SimulWeatherRendererDX1x();
 	void SetScreenSize(int w,int h);
 	//standard d3d object interface functions
@@ -63,6 +63,7 @@ public:
 	void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 
 protected:
+	simul::base::MemoryInterface	*memoryInterface;
 	// Keep copies of these matrices:
 	D3DXMATRIX view;
 	D3DXMATRIX proj;
@@ -82,12 +83,12 @@ protected:
 
 	bool CreateBuffers();
 	bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
-	simul::base::SmartPtr<class SimulSkyRendererDX1x> simulSkyRenderer;
-	simul::base::SmartPtr<class SimulCloudRendererDX1x> simulCloudRenderer;
-	simul::base::SmartPtr<class SimulPrecipitationRendererDX1x> simulPrecipitationRenderer;
-	simul::base::SmartPtr<class SimulAtmosphericsRendererDX1x> simulAtmosphericsRenderer;
-	simul::base::SmartPtr<class Simul2DCloudRendererDX11> simul2DCloudRenderer;
-	simul::base::SmartPtr<class SimulLightningRendererDX11> simulLightningRenderer;
+	class SimulSkyRendererDX1x *simulSkyRenderer;
+	class SimulCloudRendererDX1x *simulCloudRenderer;
+	class SimulPrecipitationRendererDX1x *simulPrecipitationRenderer;
+	class SimulAtmosphericsRendererDX1x *simulAtmosphericsRenderer;
+	class Simul2DCloudRendererDX11 *simul2DCloudRenderer;
+	class SimulLightningRendererDX11 *simulLightningRenderer;
 	simul::dx11::Framebuffer					framebuffer;
 	float							exposure;
 	float							gamma;
