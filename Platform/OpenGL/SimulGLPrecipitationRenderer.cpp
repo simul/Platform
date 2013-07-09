@@ -62,7 +62,7 @@ void SimulGLPrecipitationRenderer::Render(void*)
 {
 	if(!baseSkyInterface)
 		return;
-	if(rain_intensity<=0)
+	if(Intensity<=0)
 		return;
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	simul::sky::float4 cam_dir;
@@ -79,7 +79,7 @@ ERROR_CHECK
 ERROR_CHECK
 glUseProgram(program);
 	setTexture(program,"rainTexture",0,rain_texture);
-	setParameter(program,"intensity",rain_intensity);
+	setParameter(program,"intensity",Intensity);
 	setParameter3(program,"lightColour",light_colour);
 	setParameter3(program,"lightDir",light_dir);
 	setParameter(program,"offset",offs);

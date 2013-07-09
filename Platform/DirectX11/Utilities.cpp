@@ -471,52 +471,12 @@ void UtilityRenderer::RenderTexture(ID3D11DeviceContext *m_pImmediateContext,int
 void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech)
 {
 	HRESULT hr=S_OK;
-	if(m_pBufferVertexDecl==NULL)
-	{
-		const D3D11_INPUT_ELEMENT_DESC decl[] =
-		{
-			{ "POSITION",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	16,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-		};
-		D3DX11_PASS_DESC PassDesc;
-		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
-
-		hr=m_pd3dDevice->CreateInputLayout(decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pBufferVertexDecl);
-	}
-	Vertext vertices[4]=
-	{
-		D3DXVECTOR4(x1		,y1		,0.f,	1.f), D3DXVECTOR2(0.f,0.f),
-		D3DXVECTOR4(x1+dx	,y1		,0.f,	1.f), D3DXVECTOR2(1.f,0.f),
-		D3DXVECTOR4(x1		,y1+dy	,0.f,	1.f), D3DXVECTOR2(0.f,1.f),
-		D3DXVECTOR4(x1+dx	,y1+dy	,0.f,	1.f), D3DXVECTOR2(1.f,1.f),
-	};
-    D3D11_MAPPED_SUBRESOURCE mapped;
-	MapBuffer(m_pImmediateContext,m_pVertexBuffer,&mapped);
-	memcpy(mapped.pData,vertices,4*sizeof(Vertext));
-	UnmapBuffer(m_pImmediateContext,m_pVertexBuffer);
-
-	UINT stride	=sizeof(Vertext);
-	UINT offset	=0;
-    UINT Strides[1];
-    UINT Offsets[1];
-    Strides[0]	=0;
-    Offsets[0]	=0;
-	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
-												1,					// the number of buffers in the array
-												&m_pVertexBuffer,	// the array of vertex buffers
-												&stride,			// array of stride values, one for each buffer
-												&offset);			// array of offset values, one for each buffer
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout(&previousInputLayout );
-	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
 	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(4,0);
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-	m_pImmediateContext->IASetInputLayout( previousInputLayout );
-	SAFE_RELEASE(previousInputLayout);
 }
 
 void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext)

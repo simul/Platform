@@ -77,16 +77,16 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 
 	MAKE_CONSTANT_BUFFER(earthShadowUniformsUBO,EarthShadowUniforms,earthShadowUniformsBindingIndex);
 	MAKE_CONSTANT_BUFFER(atmosphericsUniformsUBO,AtmosphericsUniforms,atmosphericsUniformsBindingIndex);
-	MAKE_CONSTANT_BUFFER(atmosphericsUniforms2UBO,AtmosphericsUniforms2,atmosphericsUniforms2BindingIndex);
+	MAKE_CONSTANT_BUFFER(atmosphericsUniforms2UBO,AtmosphericsPerViewConstants,atmosphericsUniforms2BindingIndex);
 	
 	linkToConstantBuffer(loss_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
-	linkToConstantBuffer(loss_program,"AtmosphericsUniforms2",atmosphericsUniforms2BindingIndex);
+	linkToConstantBuffer(loss_program,"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
 	
 	linkToConstantBuffer(insc_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
-	linkToConstantBuffer(insc_program,"AtmosphericsUniforms2",atmosphericsUniforms2BindingIndex);
+	linkToConstantBuffer(insc_program,"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
 	
 	linkToConstantBuffer(earthshadow_insc_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
-	linkToConstantBuffer(earthshadow_insc_program,"AtmosphericsUniforms2",atmosphericsUniforms2BindingIndex);
+	linkToConstantBuffer(earthshadow_insc_program,"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
 	linkToConstantBuffer(earthshadow_insc_program,"EarthShadowUniforms",earthShadowUniformsBindingIndex);
 
 	glUseProgram(0);
@@ -142,7 +142,7 @@ ERROR_CHECK
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
 	
-	AtmosphericsUniforms2 atmosphericsUniforms2;
+	AtmosphericsPerViewConstants atmosphericsUniforms2;
 	atmosphericsUniforms2.invViewProj=ivp;
 	atmosphericsUniforms2.invViewProj.transpose();
 	atmosphericsUniforms2.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);

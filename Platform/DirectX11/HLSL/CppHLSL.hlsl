@@ -31,6 +31,8 @@
 	#define R3 : register(b3)
 	#define R4 : register(b4)
 	#define R5 : register(b5)
+	#define R6 : register(b6)
+	#define R7 : register(b7)
 	#define R8 : register(b8)
 	#define R9 : register(b9)
 	#define R10 : register(b10)

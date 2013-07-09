@@ -16,6 +16,7 @@
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
+#include "Simul/Math/pi.h"
 
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int h):
 		camera(NULL)
@@ -124,19 +125,21 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	D3DXMATRIX view;
 	D3DXMATRIX proj;
 	D3DXMATRIX view_matrices[6];
-	MakeCubeMatrices(view_matrices,cam_pos);
+	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
 	for(int i=0;i<6;i++)
 	{
 		framebuffer_cubemap.SetCurrentFace(i);
 		framebuffer_cubemap.Activate(pContext);
 		
-		{
+		
 			D3DXMATRIX cube_proj;
-			D3DXMatrixPerspectiveFovRH(&cube_proj,
-				3.1415926536f/2.f,
-				1.f,
-				1.f,
-				200000.f);
+			float nearPlane=1.f;
+			float farPlane=200000.f;
+			static bool r=false;
+			if(ReverseDepth)
+				cube_proj=simul::camera::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
+			else
+				cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
 			cubemapDepthFramebuffer.Activate(pContext);
 			cubemapDepthFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 			if(simulTerrainRenderer)
@@ -150,9 +153,11 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 				simulWeatherRenderer->SetMatrices(view_matrices[i],cube_proj);
 				simulWeatherRenderer->RenderSkyAsOverlay(pContext,exposure,false,true,cubemapDepthFramebuffer.GetDepthTex());
 			}
-		}
+		
 		framebuffer_cubemap.Deactivate(pContext);
 	}
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->SetCubemapTexture(framebuffer_cubemap.GetColorTex());
 }
 
 void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep)
@@ -180,6 +185,12 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		simulWeatherRenderer->SetMatrices(view,proj);
 		simulWeatherRenderer->PreRenderUpdate(pd3dImmediateContext);
 	}
+	if(MakeCubemap)
+	{
+		D3DXVECTOR3 cam_pos=simul::dx11::GetCameraPosVector(view);
+		RenderCubemap(pd3dImmediateContext,cam_pos);
+		simulWeatherRenderer->SetMatrices(view,proj);
+	}
 	depthFramebuffer.Activate(pd3dImmediateContext);
 	depthFramebuffer.Clear(pd3dImmediateContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 	if(simulTerrainRenderer&&ShowTerrain)
@@ -198,11 +209,6 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->RenderLightning(pd3dImmediateContext);
-		if(simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->DrawCubemap(
-			pd3dImmediateContext
-			,(ID3D1xShaderResourceView*	)framebuffer_cubemap.GetColorTex()
-			,view,proj);
 		simulWeatherRenderer->DoOcclusionTests();
 	}
 	if(simulWeatherRenderer)
@@ -221,11 +227,13 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				simulOpticsRenderer->RenderFlare(pd3dImmediateContext,exp,dir,light);
 			}
 		}
-	}
-	if(MakeCubemap)
+	if(simulWeatherRenderer)
 	{
-		D3DXVECTOR3 cam_pos=simul::dx11::GetCameraPosVector(view);
-		RenderCubemap(pd3dImmediateContext,cam_pos);
+		if(simulWeatherRenderer->GetSkyRenderer())
+			simulWeatherRenderer->GetSkyRenderer()->DrawCubemap(pd3dImmediateContext
+																,(ID3D1xShaderResourceView*	)framebuffer_cubemap.GetColorTex()
+																,view,proj);
+	}
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender(pd3dImmediateContext);
@@ -233,7 +241,6 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,ScreenWidth,ScreenHeight);
-		simulWeatherRenderer->RenderPrecipitation(pd3dImmediateContext);
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,ScreenWidth,ScreenHeight);

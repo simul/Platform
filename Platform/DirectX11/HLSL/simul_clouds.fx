@@ -126,6 +126,60 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	//colour.rgb=(1.0-colour.a)*applyFades(colour.rgb,fade_texc,cos0,earthshadowMultiplier);
     return float4(colour.rgb,1.0-colour.a);
 }
+float4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
+{
+	float2 texCoords	=IN.texCoords.xy;
+	texCoords.y			=1.0-texCoords.y;
+	float4 dlookup		=sampleLod(depthTexture,clampSamplerState,texCoords.xy,0);
+	float4 pos			=float4(-1.f,-1.f,1.f,1.f);
+	pos.x				+=2.f*IN.texCoords.x;
+	pos.y				+=2.f*IN.texCoords.y;
+	float3 view			=normalize(mul(invViewProj,pos).xyz);
+	float cos0			=dot(lightDir.xyz,view.xyz);
+	float sine			=view.z;
+	float3 n			=float3(pos.xy*tanHalfFov,1.0);
+	n					=normalize(n);
+	float2 noise_texc_0	=mul((float2x2)noiseMatrix,n.xy);
+
+	float min_texc_z	=-fractalScale.z*1.5;
+	float max_texc_z	=1.0-min_texc_z;
+
+	float depth			=dlookup.r;
+	float d				=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	float4 colour		=float4(0.0,0.0,0.0,1.0);
+	float Z				=0.f;
+	float2 fade_texc	=float2(0.0,0.5*(1.0-sine));
+	for(int i=0;i<layerCount;i++)
+	{
+		const LayerData layer=layers[i];
+		float dist=layer.layerDistance;
+		float z=saturate(dist/maxFadeDistanceMetres);
+		if(z<d)
+		{
+			float3 pos=viewPos+dist*view;
+			pos.z-=layer.verticalShift;
+			float3 texCoords=(pos-cornerPos)*inverseScales;
+			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
+			{
+				float4 density		=calcDensity(texCoords,layer.layerFade,vec3(0,0,0));
+				if(density.z>0)
+				{
+					float4 c=calcColour(density,cos0,texCoords.z);
+					fade_texc.x=sqrt(z);
+					colour*=(1.0-c.a);
+					colour.rgb+=c.rgb*c.a;
+					Z*=(1.0-c.a);
+					Z+=z*c.a;
+				}
+			}
+		}
+	}
+	if(colour.a>=1.0)
+	   discard;
+	fade_texc.x=sqrt(Z);
+	colour.rgb=(1.0-colour.a)*applyFades(colour.rgb,fade_texc,cos0,earthshadowMultiplier);
+    return float4(colour.rgb,1.0-colour.a);
+}
 
 float4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 {
@@ -498,6 +552,17 @@ technique11 simul_raytrace
         SetRasterizerState( RenderNoCull );
 		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Raytrace()));
+    }
+}
+
+technique11 simul_simple_raytrace
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
+		SetPixelShader(CompileShader(ps_5_0,PS_SimpleRaytrace()));
     }
 }
 

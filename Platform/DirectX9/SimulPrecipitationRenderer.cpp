@@ -90,8 +90,8 @@ void SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 			vertices[index].x=rad*cos(angle1)*fade;
 			vertices[index].z=rad*sin(angle1)*fade;
 			vertices[index].y=height*0.5f*j;
-			vertices[index].tex_x=i*TextureRepeat/(float)CONE_SIDES;
-			vertices[index].tex_y=0.5f*(float)j*height/radius/Aspect*(float)TextureRepeat;
+			vertices[index].tex_x=i*RainTextureRepeat/(float)CONE_SIDES;
+			vertices[index].tex_y=0.5f*(float)j*height/radius/Aspect*(float)RainTextureRepeat;
 			vertices[index].fade=fade;
 			index++;
 			fade=1.f-0.5f*(float)abs(j+1);
@@ -99,8 +99,8 @@ void SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 			vertices[index].x=rad*cos(angle1)*fade;
 			vertices[index].z=rad*sin(angle1)*fade;
 			vertices[index].y=height*0.5f*(j+1);
-			vertices[index].tex_x=i*TextureRepeat/(float)CONE_SIDES;
-			vertices[index].tex_y=0.5f*(float)(j+1)*height/radius/Aspect*(float)TextureRepeat;
+			vertices[index].tex_x=i*RainTextureRepeat/(float)CONE_SIDES;
+			vertices[index].tex_y=0.5f*(float)(j+1)*height/radius/Aspect*(float)RainTextureRepeat;
 			vertices[index].fade=fade;
 			index++;
 		}
@@ -157,7 +157,7 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 void SimulPrecipitationRenderer::Render(void *)
 {
 	HRESULT hr=S_OK;
-	if(rain_intensity<=0)
+	if(Intensity<=0)
 		return;
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
@@ -177,7 +177,7 @@ void SimulPrecipitationRenderer::Render(void *)
 	diff-=last_cam_pos;
 	last_cam_pos=(const float*)cam_pos;
 
-	float pitch_angle=pi/2.f-atan2f(WindEffect*wind_speed,rain_speed);
+	float pitch_angle=pi/2.f-atan2f(RainWindEffect*wind_speed,FallSpeed);
 	float rain_heading=wind_heading;
 	simul::math::Vector3 rain_vector(	cos(pitch_angle)*sin(rain_heading),
 										sin(pitch_angle),
@@ -206,7 +206,7 @@ void SimulPrecipitationRenderer::Render(void *)
 	D3DXMatrixTranspose(&tmp1,&tmp2);
 	m_pRainEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
 	m_pRainEffect->SetFloat(offset,offs);
-	m_pRainEffect->SetFloat(intensity,rain_intensity);
+	m_pRainEffect->SetFloat(intensity,Intensity);
 
 	static float cc1=3.f;
 	static float cc2=4.f;

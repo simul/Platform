@@ -25,6 +25,7 @@ public:
 	//standard d3d object interface functions:
 	//! Call this when the D3D device has been created or reset.
 	void RestoreDeviceObjects(void *pd3dDevice);
+	void SetCubemapTexture(void *){}
 	void RecompileShaders();
 	//! Call this when the D3D device has been shut down.
 	void InvalidateDeviceObjects();
@@ -35,10 +36,6 @@ public:
 #endif
 	// Set a texture not created by this class to be used:
 	bool SetExternalRainTexture(LPDIRECT3DTEXTURE9 tex);
-	void SetYVertical(bool y)
-	{
-		y_vertical=y;
-	}
 protected:
 	virtual void TextureRepeatChanged();
 	LPDIRECT3DDEVICE9		m_pd3dDevice;

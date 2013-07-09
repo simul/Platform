@@ -625,7 +625,7 @@ void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float 
 
 bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 {
-HRESULT hr=S_OK;
+	HRESULT hr=S_OK;
 /*	if(!m_pSkyEffect)
 		return (hr==S_OK);
 	float magnitude=exposure*(1.f-sun_occlusion);
@@ -966,9 +966,9 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m
 	D3DXMatrixInverse(&tmp1,NULL,&view);
 	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 	simul::math::Vector3 pos((const float*)cam_pos);
-	float size_req=tan_x*0.1f;
+	float size_req=tan_x*0.2f;
 	float d=2.0f*size/size_req;
-	simul::math::Vector3 offs0(-0.8f*(tan_x-size_req)*d,0.8f*(tan_y-size_req)*d,-d);
+	simul::math::Vector3 offs0(-0.7f*(tan_x-size_req)*d,0.7f*(tan_y-size_req)*d,-d);
 	simul::math::Vector3 offs;
 	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)view),offs0);
 	pos+=offs;

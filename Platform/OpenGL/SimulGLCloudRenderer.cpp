@@ -466,7 +466,7 @@ const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKey
 		cloudConstants.lightningColour=lightning_colour;
 	}
 	cloudConstants.maxFadeDistanceMetres=max_fade_distance_metres;
-	cloudConstants.rain=cloudKeyframer->GetPrecipitation();
+	cloudConstants.rain=cloudKeyframer->GetInterpolatedKeyframe().precipitation;
 ERROR_CHECK
 
 	static float direct_light_mult=0.25f;

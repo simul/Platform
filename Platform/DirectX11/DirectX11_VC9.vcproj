@@ -608,6 +608,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\CrossPlatform\rain_constants.sl"
+				>
+			</File>
+			<File
 				RelativePath="..\CrossPlatform\simul_2d_clouds.sl"
 				>
 			</File>
@@ -681,6 +685,10 @@
 			</File>
 			<File
 				RelativePath=".\HLSL\simul_rain.fx"
+				>
+			</File>
+			<File
+				RelativePath=".\HLSL\simul_render_cubemap.fx"
 				>
 			</File>
 			<File

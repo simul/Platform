@@ -97,7 +97,7 @@ extern SIMUL_DIRECTX11_EXPORT HRESULT MapBuffer(ID3D11DeviceContext *pImmediateC
 extern SIMUL_DIRECTX11_EXPORT void UnmapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuffer);
 extern SIMUL_DIRECTX11_EXPORT HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3D1xEffectPass *pass);
 
-extern void SIMUL_DIRECTX11_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos);
+extern void SIMUL_DIRECTX11_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos,bool ReverseDepth);
 void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
 void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
 

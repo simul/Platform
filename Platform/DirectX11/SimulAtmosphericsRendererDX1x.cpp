@@ -119,7 +119,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	skylTexture			=effect->GetVariableByName("skylTexture")->AsShaderResource();
 	
 	MAKE_CONSTANT_BUFFER(constantBuffer,AtmosphericsUniforms);
-	MAKE_CONSTANT_BUFFER(atmosphericsUniforms2ConstantsBuffer,AtmosphericsUniforms2);
+	MAKE_CONSTANT_BUFFER(atmosphericsUniforms2ConstantsBuffer,AtmosphericsPerViewConstants);
 }
 
 void SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(void* dev)
@@ -185,15 +185,15 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
 
-	AtmosphericsUniforms2 atmosphericsUniforms2;
+	AtmosphericsPerViewConstants atmosphericsUniforms2;
 	atmosphericsUniforms2.invViewProj=ivp;
 	atmosphericsUniforms2.invViewProj.transpose();
 	atmosphericsUniforms2.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	atmosphericsUniforms2.nearZ=frustum.nearZ*0.001f/fade_distance_km;
 	atmosphericsUniforms2.farZ=frustum.farZ*0.001f/fade_distance_km;
 
-	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,atmosphericsUniforms2ConstantsBuffer,AtmosphericsUniforms2,atmosphericsUniforms2)
-	ID3DX11EffectConstantBuffer* cbAtmosphericsUniforms2=effect->GetConstantBufferByName("AtmosphericsUniforms2");
+	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,atmosphericsUniforms2ConstantsBuffer,AtmosphericsPerViewConstants,atmosphericsUniforms2)
+	ID3DX11EffectConstantBuffer* cbAtmosphericsUniforms2=effect->GetConstantBufferByName("AtmosphericsPerViewConstants");
 	if(cbAtmosphericsUniforms2)
 		cbAtmosphericsUniforms2->SetConstantBuffer(atmosphericsUniforms2ConstantsBuffer);
 	

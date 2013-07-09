@@ -111,6 +111,10 @@
 			this->y=y;
 			this->z=z;
 		}
+		vec3(const float *v)
+		{
+			operator=(v);
+		}
 		operator const float *()
 		{
 			return &x;
