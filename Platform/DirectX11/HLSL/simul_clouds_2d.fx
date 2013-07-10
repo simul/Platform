@@ -110,7 +110,6 @@ v2f2 FullScreenVS(idOnly IN)
     return OUT;
 }
 
-
 v2f2 SimpleVS(idOnly IN)
 {
 	v2f2 OUT;
