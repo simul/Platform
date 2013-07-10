@@ -31,7 +31,7 @@
 #include "MacrosDX1x.h"
 
 
-SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *env,
+SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *env,simul::base::MemoryInterface *mem,
 		bool usebuffer,bool tonemap,int w,int h,bool sky,bool clouds3d,bool clouds2d,bool rain) :
 	BaseWeatherRenderer(env,sky,rain),
 	framebuffer(w/Downscale,h/Downscale),
@@ -40,31 +40,33 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 	,directTechnique(NULL)
 	,imageTexture(NULL)
 	,worldViewProj(NULL)
-	,simulSkyRenderer(NULL),
-	simulCloudRenderer(NULL),
-	BufferWidth(w/Downscale),
-	BufferHeight(h/Downscale),
-	exposure_multiplier(1.f)
+	,simulSkyRenderer(NULL)
+	,simulCloudRenderer(NULL)
+	,simulPrecipitationRenderer(NULL)
+	,simulAtmosphericsRenderer(NULL)
+	,simul2DCloudRenderer(NULL)
+	,simulLightningRenderer(NULL)
+	,BufferWidth(w/Downscale)
+	,BufferHeight(h/Downscale)
+	,exposure_multiplier(1.f)
+	,memoryInterface(mem)
 {
-	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
-	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer.get();
-	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer.get();
+	simul::sky::SkyKeyframer *sk=env->skyKeyframer;
+	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer;
+	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	if(ShowSky)
 	{
-		simulSkyRenderer=new SimulSkyRendererDX1x(sk);
-		baseSkyRenderer=simulSkyRenderer.get();
-		Group::AddChild(simulSkyRenderer.get());
+		simulSkyRenderer=new(memoryInterface) SimulSkyRendererDX1x(sk);
+		baseSkyRenderer=simulSkyRenderer;
 	}
-	simulCloudRenderer=new SimulCloudRendererDX1x(ck3d);
-	baseCloudRenderer=simulCloudRenderer.get();
-	Group::AddChild(simulCloudRenderer.get());
-	simulLightningRenderer=new SimulLightningRendererDX11(ck3d,sk);
+	simulCloudRenderer=new(memoryInterface) SimulCloudRendererDX1x(ck3d);
+	baseCloudRenderer=simulCloudRenderer;
+	simulLightningRenderer=new(memoryInterface) SimulLightningRendererDX11(ck3d,sk);
 	if(clouds2d)
-		base2DCloudRenderer=simul2DCloudRenderer=new Simul2DCloudRendererDX11(ck2d);
+		base2DCloudRenderer=simul2DCloudRenderer=new(memoryInterface) Simul2DCloudRendererDX11(ck2d);
 	if(rain)
-		basePrecipitationRenderer=simulPrecipitationRenderer=new SimulPrecipitationRendererDX1x();
-
-	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new SimulAtmosphericsRendererDX1x;
+		basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulPrecipitationRendererDX1x();
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new(memoryInterface) SimulAtmosphericsRendererDX1x;
 	baseFramebuffer=&framebuffer;
 	ConnectInterfaces();
 }
@@ -159,24 +161,16 @@ bool SimulWeatherRendererDX1x::Destroy()
 	HRESULT hr=S_OK;
 	InvalidateDeviceObjects();
 
-	if(simulSkyRenderer.get())
+	if(simulSkyRenderer)
 		simulSkyRenderer->Destroy();
-	Group::RemoveChild(simulSkyRenderer.get());
 	simulSkyRenderer=NULL;
 
-	if(simulCloudRenderer.get())
+	if(simulCloudRenderer)
 		simulCloudRenderer->Destroy();
-	Group::RemoveChild(simulCloudRenderer.get());
+	
 	simulCloudRenderer=NULL;
 
-	Group::RemoveChild(simulAtmosphericsRenderer.get());
 	simulAtmosphericsRenderer=NULL;
-	/*if(simul2DCloudRenderer)
-		simul2DCloudRenderer->Destroy();
-	if(simulPrecipitationRenderer)
-		simulPrecipitationRenderer->Destroy();
-	if(simulAtmosphericsRenderer)
-		simulAtmosphericsRenderer->InvalidateDeviceObjects();*/
 	return (hr==S_OK);
 }
 
@@ -186,9 +180,12 @@ SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
 	// Free this memory here instead of global destruction.
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	Destroy();
-/*	SAFE_DELETE(simul2DCloudRenderer);
-	SAFE_DELETE(simulPrecipitationRenderer);
-	SAFE_DELETE(simulAtmosphericsRenderer);*/
+	del(simulSkyRenderer,memoryInterface);
+	del(simulCloudRenderer,memoryInterface);
+	del(simulPrecipitationRenderer,memoryInterface);
+	del(simulAtmosphericsRenderer,memoryInterface);
+	del(simul2DCloudRenderer,memoryInterface);
+	del(simulLightningRenderer,memoryInterface);
 }
 
 /*bool SimulWeatherRendererDX1x::IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat)
@@ -300,7 +297,8 @@ void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,float exposure,b
 		imageTexture->SetResource(framebuffer.buffer_texture_SRV);
 		ID3D1xEffectTechnique *tech=blend?SkyBlendTechnique:directTechnique;
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
-		simul::dx11::setParameter(m_pTonemapEffect,"exposure",exposure);
+		simul::dx11::setParameter(m_pTonemapEffect,"exposure",1.f);
+		simul::dx11::setParameter(m_pTonemapEffect,"gamma",1.f);
 		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
 	}
@@ -370,17 +368,17 @@ void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX 
 
 SimulSkyRendererDX1x *SimulWeatherRendererDX1x::GetSkyRenderer()
 {
-	return simulSkyRenderer.get();
+	return simulSkyRenderer;
 }
 
 SimulCloudRendererDX1x *SimulWeatherRendererDX1x::GetCloudRenderer()
 {
-	return simulCloudRenderer.get();
+	return simulCloudRenderer;
 }
 
 Simul2DCloudRendererDX11 *SimulWeatherRendererDX1x::Get2DCloudRenderer()
 {
-	return simul2DCloudRenderer.get();
+	return simul2DCloudRenderer;
 }
 //! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 void SimulWeatherRendererDX1x::SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb)
