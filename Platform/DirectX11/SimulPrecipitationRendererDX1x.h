@@ -24,16 +24,11 @@ typedef long HRESULT;
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
+#include "Simul/Platform/CrossPlatform/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/rain_constants.sl"
+#include "Simul/Platform/DirectX11/Utilities.h"
 typedef long HRESULT;
 
-struct RainConstantBuffer
-{
-	mat4 worldViewProj;
-	float offset;
-	float intensity;
-	vec4 lightColour;
-	vec3 lightDir;
-};
 class SimulPrecipitationRendererDX1x:public simul::clouds::BasePrecipitationRenderer
 {
 public:
@@ -43,29 +38,27 @@ public:
 	//! Call this when the D3D device has been created or reset.
 	void RestoreDeviceObjects(void* dev);
 	void RecompileShaders();
+	void SetCubemapTexture(void *);
 	//! Call this when the D3D device has been shut down.
 	void InvalidateDeviceObjects();
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	void Render(void *context);
 protected:
-	ID3D1xDevice*					m_pd3dDevice;
-	ID3D1xInputLayout*				m_pVtxDecl;
-	ID3D1xBuffer*					m_pVertexBuffer;
-	ID3D1xEffect*					m_pRainEffect;		// The fx file for the sky
-	ID3D1xShaderResourceView*		rain_texture;
-	ID3D1xEffectShaderResourceVariable*	rainTexture;
-
-	ID3D1xEffectMatrixVariable* 	worldViewProj;
-	ID3D1xEffectScalarVariable*		offset;
-	ID3D1xEffectVectorVariable*		lightColour;
-	ID3D1xEffectVectorVariable*		lightDir;
-	ID3D1xEffectScalarVariable*		intensity;
+	void RenderParticles(void *context);
+	ID3D11Device*							m_pd3dDevice;
+	ID3D11InputLayout*						m_pVtxDecl;
+	ID3D11Buffer*							m_pVertexBuffer;
+	ID3DX11Effect*							m_pRainEffect;		// The fx file for the sky
+	ID3D11ShaderResourceView*				rain_texture;
+	ID3D11ShaderResourceView*				random_SRV;
+	ID3D11ShaderResourceView*				cubemap_SRV;
+	ID3D1xEffectShaderResourceVariable*		rainTexture;
+	vec3  *particles;
 	
-	ID3D11Buffer*					pShadingCB;
-	
-	ID3D1xEffectTechnique*			m_hTechniqueRain;	// Handle to technique in the effect 
-	D3DXMATRIX						view,proj;
-	
-	RainConstantBuffer				rainConstantBuffer;
+	ID3DX11EffectTechnique*					m_hTechniqueRain;
+	ID3DX11EffectTechnique*					m_hTechniqueParticles;
+	D3DXMATRIX								view,proj;
+	ConstantBuffer<RainConstants>			rainConstants;
+	ConstantBuffer<RainPerViewConstants>	perViewConstants;
 };

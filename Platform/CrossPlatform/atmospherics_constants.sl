@@ -26,7 +26,7 @@ uniform_buffer AtmosphericsUniforms R11
 	uniform float pad16,pad17,pad18;
 };
 
-uniform_buffer AtmosphericsUniforms2 R12
+uniform_buffer AtmosphericsPerViewConstants R12
 {
 	uniform mat4 invViewProj;
 	uniform vec2 tanHalfFov;

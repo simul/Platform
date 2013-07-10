@@ -807,31 +807,48 @@ HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3D1xEffectPass *pass)
 	return pass->Apply(0,pImmediateContext);
 }
 
-void MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos)
+void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
 {
     D3DXVECTOR3 vEyePt = D3DXVECTOR3( cam_pos );
     D3DXVECTOR3 vLookDir;
     D3DXVECTOR3 vUpDir;
-    ZeroMemory(g_amCubeMapViewAdjust, 6*sizeof(D3DXMATRIX) );
-
-	vLookDir =vEyePt+ D3DXVECTOR3( 1.0f, 0.0f, 0.0f );
-	vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
-	D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[0], &vEyePt, &vLookDir, &vUpDir );
-    vLookDir =vEyePt+D3DXVECTOR3( -1.0f, 0.0f, 0.0f );
-    vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
-    D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[1], &vEyePt, &vLookDir, &vUpDir );
-    vLookDir =vEyePt+D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
-    vUpDir = D3DXVECTOR3( 0.0f, 0.0f,-1.0f );
-    D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[2], &vEyePt, &vLookDir, &vUpDir );
-	vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 1.0f, 0.0f );
-    vUpDir = D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
-	D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[3], &vEyePt, &vLookDir, &vUpDir );
-    vLookDir =vEyePt+D3DXVECTOR3( 0.0f, 0.0f, 1.0f );
-    vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
-    D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[4], &vEyePt, &vLookDir, &vUpDir );
-	vLookDir = vEyePt+D3DXVECTOR3( 0.0f, 0.0f, -1.0f );
-    vUpDir = D3DXVECTOR3( 0.0f,-1.0f, 0.0f );
-    D3DXMatrixLookAtRH( &g_amCubeMapViewAdjust[5], &vEyePt, &vLookDir, &vUpDir );
+    ZeroMemory(mat,6*sizeof(D3DXMATRIX) );
+	static const D3DVECTOR lookf[6]=
+	{
+		 {1.f,0.f,0.f}		,{-1.f,0.f,0.f}
+		,{0.f,1.f,0.f}		,{0.f,-1.f,0.f}
+		,{0.f,0.f,1.f}		,{0.f,0.f,-1.f}
+	};
+	static const D3DVECTOR upf[6]=
+	{
+		 {0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
+		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
+		,{0.f,1.f,0.f}		,{0.f,1.f,0.f}
+	};
+	static const D3DVECTOR lookr[6]=
+	{
+		 {-1.f,0.f,0.f}		,{1.f,0.f,0.f}
+		,{0.f,-1.f,0.f}		,{0.f,1.f,0.f}
+		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
+	};
+	static const D3DVECTOR upr[6]=
+	{
+		 {0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
+		,{0.f,0.f,1.f}		,{0.f,0.f,-1.f}
+		,{0.f,1.f,0.f}		,{0.f,-1.f,0.f}
+	};
+	for(int i=0;i<6;i++)
+	{
+		vLookDir	=vEyePt+lookf[i];
+		vUpDir		=upf[i];
+		D3DXMatrixLookAtLH(&mat[i], &vEyePt, &vLookDir, &vUpDir );
+		if(ReverseDepth)
+		{
+			vLookDir	=vEyePt+lookr[i];
+			vUpDir		=upr[i];
+			D3DXMatrixLookAtRH(&mat[i], &vEyePt, &vLookDir, &vUpDir );
+		}
+	}
 }
 
 void BreakIfDebugging()

@@ -122,13 +122,14 @@ protected:
 	ID3D1xEffect*					m_pCloudEffect;
 	ID3D1xEffectTechnique*			m_hTechniqueCloud;
 	ID3D1xEffectTechnique*			m_hTechniqueRaytrace;
+	ID3D1xEffectTechnique*			m_hTechniqueSimpleRaytrace;
 	ID3D1xEffectTechnique*			m_hTechniqueRaytrace3DNoise;
 	ID3D1xEffectTechnique*			m_hTechniqueCloudsAndLightning;
 
 	ID3D1xEffectTechnique*			m_hTechniqueCrossSectionXZ;
 	ID3D1xEffectTechnique*			m_hTechniqueCrossSectionXY;
-
-	ID3D11Buffer*					cloudConstantsBuffer;
+	
+	ConstantBuffer<CloudConstants>	cloudConstants;
 	ID3D11Buffer*					cloudPerViewConstantBuffer;
 	ID3D11Buffer*					layerConstantsBuffer;
 	ID3D1xEffectMatrixVariable* 	l_worldViewProj;

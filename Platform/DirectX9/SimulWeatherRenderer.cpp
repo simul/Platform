@@ -403,11 +403,6 @@ void SimulWeatherRenderer::PreRenderUpdate(void *context,float dt)
 		#endif
 			GetCameraPosVector(view,simulCloudRenderer->IsYVertical(),cam_pos);
 			simulPrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
-			float rts=environment->cloudKeyframer->GetInterpolatedKeyframe().rain_to_snow;
-			if(rts<0.5f)
-				simulPrecipitationRenderer->ApplyDefaultRainSettings();
-			else
-				simulPrecipitationRenderer->ApplyDefaultSnowSettings();
 		}
 		else
 		{

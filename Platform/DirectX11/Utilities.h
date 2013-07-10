@@ -238,5 +238,6 @@ public:
 		pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
 		*(T*)mapped_res.pData = *this;
 		pContext->Unmap(m_pD3D11Buffer, 0);
+		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 	}
 };

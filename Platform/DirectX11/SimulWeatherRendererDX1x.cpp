@@ -243,7 +243,7 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 
 	cam_pos=GetCameraPosVector(view);
 D3DXMATRIX view_matrices[6];
-	MakeCubeMatrices(view_matrices,cam_pos);
+	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
 	bool noise3d=environment->cloudKeyframer->GetUse3DNoise();
 	environment->cloudKeyframer->SetUse3DNoise(true);
 	int l=100;
@@ -338,6 +338,7 @@ void SimulWeatherRendererDX1x::RenderLateCloudLayer(void *context,float exposure
 
 void SimulWeatherRendererDX1x::RenderPrecipitation(void *context)
 {
+	basePrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
 	if(simulPrecipitationRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible()) 
 		simulPrecipitationRenderer->Render(context);
 }
@@ -352,6 +353,7 @@ void SimulWeatherRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX 
 {
 	view=v;
 	proj=p;
+	cam_pos=GetCameraPosVector(view);
 	if(simulSkyRenderer)
 		simulSkyRenderer->SetMatrices(view,proj);
 	if(simulCloudRenderer)
