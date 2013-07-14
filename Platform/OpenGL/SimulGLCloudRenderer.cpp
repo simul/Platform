@@ -282,49 +282,6 @@ simul::math::Matrix4x4 ConvertReversedToRegularProjectionMatrix(const simul::mat
 	return p;
 }
 #include "Simul/Camera/Camera.h"
-/*void SimulGLCloudRenderer::SetCloudPerViewConstants(CloudPerViewConstants &cloudPerViewConstants)
-{
-	simul::math::Matrix4x4 proj;
-	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
-	simul::math::Matrix4x4 view;
-	glGetMatrix(view.RowPointer(0),GL_MODELVIEW_MATRIX);
-	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
-	memset(&cloudPerViewConstants,0,sizeof(cloudPerViewConstants));
-
-	simul::math::Matrix4x4 vpt;
-	simul::math::Matrix4x4 viewproj;
-	view(3,0)=view(3,1)=view(3,2)=0;
-	simul::math::Matrix4x4 p1=proj;
-	if(ReverseDepth)
-	{
-//		p1=ConvertReversedToRegularProjectionMatrix(proj);
-	}
-	simul::math::Multiply4x4(viewproj,view,p1);
-	viewproj.Transpose(vpt);
-	simul::math::Matrix4x4 ivp;
-	vpt.Inverse(ivp);
-	cloudPerViewConstants.invViewProj=ivp;
-	cloudPerViewConstants.invViewProj.transpose();
-
-	cloudPerViewConstants.viewPos=cam_pos;
-	static float direct_light_mult	=0.25f;
-	static float indirect_light_mult=0.03f;
-	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse(),
-										indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse(),0,0);
-	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
-	float top_alt_km=base_alt_km+GetCloudInterface()->GetCloudHeight()*0.001f;
-
-	static float uu=1.f;
-	float sc=uu/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
-	float noise_rotation=helper->GetNoiseRotation();
-	float f[]={cos(noise_rotation),-sin(noise_rotation),0,0,sin(noise_rotation),cos(noise_rotation),0,0,0,0,1.f,0};
-	cloudPerViewConstants.noiseMatrix			=f;
-
-	cloudPerViewConstants.tanHalfFov	=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	cloudPerViewConstants.nearZ			=frustum.nearZ/max_fade_distance_metres;
-	cloudPerViewConstants.farZ			=frustum.farZ/max_fade_distance_metres;
-	cloudPerViewConstants.noise_offset=helper->GetNoiseOffset();
-}*/
 static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()

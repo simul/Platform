@@ -228,7 +228,7 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 	FramebufferCubemapDX1x	fb_cubemap;
 	fb_cubemap.SetWidthAndHeight(2048,2048);
 	fb_cubemap.RestoreDeviceObjects(m_pd3dDevice);
-	simul::dx11::Framebuffer	gamma_correct;
+	simul::dx11::Framebuffer gamma_correct;
 	gamma_correct.SetWidthAndHeight(2048,2048);
 	gamma_correct.RestoreDeviceObjects(m_pd3dDevice);
 
@@ -237,7 +237,7 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 	ID3D1xEffectTechnique *tech=m_pTonemapEffect->GetTechniqueByName("simul_gamma");
 
 	cam_pos=GetCameraPosVector(view);
-D3DXMATRIX view_matrices[6];
+	D3DXMATRIX view_matrices[6];
 	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
 	bool noise3d=environment->cloudKeyframer->GetUse3DNoise();
 	environment->cloudKeyframer->SetUse3DNoise(true);

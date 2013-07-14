@@ -10,16 +10,18 @@ simul::base::IniFile ini("atmospherics.ini");
 #include <dxerr.h>
 void (*RenderScene)(IDirect3DDevice9* pd3dDevice)=NULL;
 
-static bool FileExists(const std::string& strFilename)
+static bool FileExists(const std::string& filename_utf8)
 {
-    FILE* pFile = fopen(strFilename.c_str( ), "r");
+    FILE* pFile = NULL;
+	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8.c_str());
+	_wfopen_s(&pFile,wstr.c_str(),L"r");
     bool bExists = (pFile != NULL);
     if (pFile)
         fclose(pFile);
     return bExists;
 }
 
-void SaveTexture(LPDIRECT3DTEXTURE9 texture,const char *txt)
+void SaveTexture(LPDIRECT3DTEXTURE9 texture,const char *filename_utf8)
 {
 	D3DXIMAGE_FILEFORMAT ff=D3DXIFF_PNG;
 	std::string path=ini.GetValue("Options","ScreenshotPath");
@@ -27,14 +29,14 @@ void SaveTexture(LPDIRECT3DTEXTURE9 texture,const char *txt)
 	{
 		path=".";
 	}
-	std::string filename=txt;
+	std::string filename=filename_utf8;
 	if(filename.find(':')<=filename.length())
 	{
 	}
 	else
 	{
 		filename=path+"\\";
-		filename+=txt;
+		filename+=filename_utf8;
 	}
 	if(filename.find(".dds")<=filename.length())
 		ff=D3DXIFF_DDS;
@@ -55,12 +57,8 @@ void SaveTexture(LPDIRECT3DTEXTURE9 texture,const char *txt)
 		filename+=number_text;
 		filename+=ext;
 	}
-#ifdef UNICODE
-	std::wstring filename2=simul::base::StringToWString(filename);
-#else
-	std::string filename2=filename;
-#endif
-	D3DXSaveTextureToFile(filename2.c_str(),ff,texture,NULL);
+	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8);
+	D3DXSaveTextureToFileW(wstr.c_str(),ff,texture,NULL);
 //	V_CHECK(hr);
 }
 

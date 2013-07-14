@@ -14,7 +14,7 @@ namespace simul
 {
 	namespace dx11
 	{
-		extern std::string *shader_path;
+		extern std::string *shaderPathUtf8;
 	}
 }
 
@@ -22,11 +22,11 @@ using namespace simul::dx11;
 
 HRESULT CompileShaderFromFile( char* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut )
 {
-	std::string fn=*shader_path+szFileName;
+	std::string fn=*shaderPathUtf8+szFileName;
     HRESULT hr = S_OK;
 
     // open the file
-    HANDLE hFile = CreateFileA( fn.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+    HANDLE hFile = CreateFileW(simul::base::Utf8ToWString(fn).c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
         FILE_FLAG_SEQUENTIAL_SCAN, NULL );
     if( INVALID_HANDLE_VALUE == hFile )
         throw simul::base::RuntimeError(std::string("File not found: ")+(fn.c_str()));

@@ -14,8 +14,8 @@
 #include "SimulGLUtilities.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringFunctions.h"
-static std::string shaderPath;
-static std::string last_filename;
+#include "Simul/Base/StringToWString.h"
+static std::string shaderPathUtf8;
 
 using namespace simul;
 using namespace opengl;
@@ -137,7 +137,6 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 		std::string info_log=infoLog;
 		if(info_log.find("No errors")>=info_log.length())
 		{
-			//std::cerr<<std::endl<<last_filename.c_str()<<":\n"<<info_log.c_str()<<std::endl;
 			int pos=0;
 			int next=info_log.find('\n',pos+1);
 			while(next>=0)
@@ -184,12 +183,11 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 					}
 					int number=atoi(linestr.c_str());
 					NameLine n=filenameChart.find(number);
-					std::cerr<<shaderPath.c_str()<<"/"<<n.filename.c_str()<<"("<<n.line<<") "<<err_msg.c_str()<<std::endl;
+					std::cerr<<shaderPathUtf8.c_str()<<"/"<<n.filename.c_str()<<"("<<n.line<<") "<<err_msg.c_str()<<std::endl;
 				}
 				pos=next;
 				next=info_log.find('\n',pos+1);
 			}
-			//std::cout<<last_filename.c_str()<<":\n"<<info_log.c_str()<<std::endl;
 		}
 		free(infoLog);
     }
@@ -210,10 +208,10 @@ void printProgramInfoLog(GLuint obj)
 		std::string info_log=infoLog;
 		if(info_log.find("No errors")>=info_log.length())
 		{
-			std::cerr<<last_filename.c_str()<<":\n"<<info_log.c_str()<<std::endl;
+			std::cerr<<info_log.c_str()<<std::endl;
 		}
 		else if(info_log.find("WARNING")<info_log.length())
-			std::cout<<last_filename.c_str()<<":\n"<<infoLog<<std::endl;
+			std::cout<<infoLog<<std::endl;
         free(infoLog);
     }
 }
@@ -281,9 +279,9 @@ namespace simul
 {
 	namespace opengl
 	{
-		void SetShaderPath(const char *path)
+		void SetShaderPath(const char *path_utf8)
 		{
-			shaderPath=path;
+			shaderPathUtf8=path_utf8;
 		}
 	}
 }
@@ -417,20 +415,18 @@ std::string loadShaderSource(const char *filename)
 	const int MAX_LINES=512;
 	const int MAX_LINE_LENGTH=256;   // 255 + NULL terminator
 	char shader_source[MAX_LINES*MAX_LINE_LENGTH];
-    std::string filePath=shaderPath;
+    std::string filename_utf8=shaderPathUtf8;
 	char last=0;
-	if(filePath.length())
-		last=filePath[filePath.length()-1];
+	if(shaderPathUtf8.length())
+		last=filename_utf8[shaderPathUtf8.length()-1];
 	if(last!='/'&&last!='\\')
-		filePath+="/";
-	filePath+=filename;
-	if(filePath.find(".glsl")>=filePath.length())
-		last_filename=filePath;
-	std::ifstream ifs(filePath.c_str());
+		filename_utf8+="/";
+	filename_utf8+=filename;
+	std::ifstream ifs(simul::base::Utf8ToWString(filename_utf8).c_str());
 	if(!ifs.good())
 	{
 		std::cerr<<"\nERROR:\tShader file "<<filename<<" not found, exiting.\n";
-		std::cerr<<"\n\t\tShader path is "<<shaderPath.c_str()<<", is this correct?\n";
+		std::cerr<<"\n\t\tShader path is "<<shaderPathUtf8.c_str()<<", is this correct?\n";
 		DebugBreak();
 		exit(1);
 	}

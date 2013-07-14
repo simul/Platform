@@ -8,7 +8,7 @@ namespace simul
 {
 	namespace opengl
 	{
-		extern SIMUL_OPENGL_EXPORT void SetShaderPath(const char *path);
+		extern SIMUL_OPENGL_EXPORT void SetShaderPath(const char *path_utf8);
 	}
 }
 

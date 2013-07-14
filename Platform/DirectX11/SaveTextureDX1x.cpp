@@ -10,9 +10,11 @@ simul::base::IniFile ini("atmospherics.ini");
 #include <dxerr.h>
 extern void RenderScene(ID3D10Device* pd3dDevice);
 
-static bool FileExists(const std::string& strFilename)
+static bool FileExists(const std::string& filename_utf8)
 {
-    FILE* pFile = fopen(strFilename.c_str( ), "r");
+    FILE* pFile = NULL;
+	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8.c_str());
+	_wfopen_s(&pFile,wstr.c_str(),L"r");
     bool bExists = (pFile != NULL);
     if (pFile)
         fclose(pFile);
