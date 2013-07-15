@@ -24,7 +24,6 @@ using namespace simul;
 using namespace clouds;
 using namespace math;
 using namespace sky;
-extern void printProgramInfoLog(GLuint obj);
 
 SimulGLLightningRenderer::SimulGLLightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk) :
 	simul::clouds::BaseLightningRenderer(ck,sk)
@@ -60,7 +59,6 @@ enable_geometry_shaders=false;
 	glow_program				=MakeProgram("simul_lightning.vert","simul_lightning.geom","simul_lightning_glow.frag");
 	lightningTexture_param		=glGetUniformLocation(lightning_program,"lightningTexture");
 	
-	printProgramInfoLog(lightning_program);
 	glUseProgram(NULL);
 }
 

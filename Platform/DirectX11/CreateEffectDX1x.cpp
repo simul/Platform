@@ -13,6 +13,7 @@
 #include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Geometry/Orientation.h"
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Base/DefaultFileLoader.h"
 #include "Simul/Sky/Float4.h"
 #include <tchar.h>
 #include "CompileShaderDX1x.h"
@@ -42,39 +43,10 @@ static bool pipe_compiler_output=false;
 static ID3D1xDevice		*pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
+using namespace base;
 ShaderBuildMode shaderBuildMode=ALWAYS_BUILD;
-
-class DefaultFileLoader:public simul::base::FileLoader
-{
-public:
-	DefaultFileLoader()
-	{
-	}
-	void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename_utf8,bool open_as_text)
-	{
-		std::wstring wstr=simul::base::Utf8ToWString(filename_utf8);
-
-		FILE *fp = NULL;
-		_wfopen_s(&fp,wstr.c_str(),L"rb");//open_as_text?L"r, ccs=UTF-8":
-		if(!fp)
-		{
-			std::cerr<<"Failed to find file "<<filename_utf8<<std::endl;
-			return;
-		}
-		fseek(fp, 0, SEEK_END);
-		bytes = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
-		pointer = malloc(bytes+1);
-		fread(pointer, 1, bytes, fp);
-		if(open_as_text)
-			((char*)pointer)[bytes]=0;
-		fclose(fp);
-	}
-	void ReleaseFileContents(void* pointer)
-	{
-		free(pointer);
-	}
-};
+static DefaultFileLoader fl;
+static FileLoader *fileLoader=&fl;
 
 class ShaderIncludeHandler : public ID3DInclude
 {
@@ -94,20 +66,26 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 {
 	try
 	{
-		std::string finalPath;
+		std::string finalPathUtf8;
 		switch(IncludeType)
 		{
 		case D3D_INCLUDE_LOCAL:
-			finalPath = m_ShaderDirUtf8 + "\\" + pFileNameUtf8;
+			finalPathUtf8	=m_ShaderDirUtf8+"\\"+pFileNameUtf8;
 			break;
 		case D3D_INCLUDE_SYSTEM:
-			finalPath = m_SystemDirUtf8 + "\\" + pFileNameUtf8;
+			finalPathUtf8	=m_SystemDirUtf8+"\\"+pFileNameUtf8;
 			break;
 		default:
 			assert(0);
 		}
-
-		std::ifstream includeFile(simul::base::Utf8ToWString(finalPath).c_str()
+		void *buf=NULL;
+		unsigned fileSize=0;
+		fileLoader->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
+		*ppData = buf;
+		*pBytes = (UINT)fileSize;
+		if(!*ppData)
+			return E_FAIL;
+	/*	std::ifstream includeFile(simul::base::Utf8ToWString(finalPath).c_str()
 			,std::ios::in|std::ios::binary|std::ios::ate);
 
 		if (includeFile.is_open())
@@ -123,7 +101,7 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 		else
 		{
 			return E_FAIL;
-		}
+		}*/
 		return S_OK;
 	}
 	catch(std::exception& e)
@@ -135,13 +113,11 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 
 HRESULT __stdcall ShaderIncludeHandler::Close(LPCVOID pData)
 {
-	char* buf = (char*)pData;
-	delete[] buf;
+	fileLoader->ReleaseFileContents((void*)pData);
+	//char* buf = (char*)pData;
+	//delete[] buf;
 	return S_OK;
 }
-
-static DefaultFileLoader fl;
-static simul::base::FileLoader *fileLoader=&fl;
 
 namespace simul
 {
@@ -153,13 +129,6 @@ namespace simul
 		{
 			fileLoader=l;
 		}
-	}
-}
-
-namespace simul
-{
-	namespace dx11
-	{
 		void GetCameraPosVector(D3DXMATRIX &view,float *dcam_pos,float *view_dir,bool y_vertical)
 		{
 			D3DXMATRIX tmp1;

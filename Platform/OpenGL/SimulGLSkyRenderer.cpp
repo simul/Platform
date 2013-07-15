@@ -23,9 +23,6 @@
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/earth_shadow_uniforms.sl"
 
-void printShaderInfoLog(GLuint obj);
-void printProgramInfoLog(GLuint obj);
-
 #if 0//def _MSC_VER
 GLenum sky_tex_format=GL_HALF_FLOAT_NV;
 GLenum internal_format=GL_RGBA16F_ARB;
@@ -365,7 +362,6 @@ ERROR_CHECK
 		maxDistance					=glGetUniformLocation(current_program,"maxDistance");
 		viewPosition				=glGetUniformLocation(current_program,"viewPosition");
 		overcast_param				=glGetUniformLocation(current_program,"overcast");
-		printProgramInfoLog(current_program);
 	}
 	glUseProgram(p);
 }
@@ -721,30 +717,23 @@ void SimulGLSkyRenderer::RecompileShaders()
 	SAFE_DELETE_PROGRAM(stars_program);
 ERROR_CHECK
 	sky_program						=MakeProgram("simul_sky");
-	printProgramInfoLog(sky_program);
 	earthshadow_program				=MakeProgram("simul_sky.vert",NULL,"simul_earthshadow_sky.frag");
-	printProgramInfoLog(earthshadow_program);
 ERROR_CHECK
 	sun_program						=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
-	printProgramInfoLog(sun_program);
 	stars_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
 	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
-	printProgramInfoLog(stars_program);
 ERROR_CHECK
 	sun_program						=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_sun.frag");
 	sunlight_param					=glGetUniformLocation(sun_program,"sunlight");
-	printProgramInfoLog(sun_program);
 	stars_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_stars.frag");
 	starBrightness_param			=glGetUniformLocation(stars_program,"starBrightness");
-	printProgramInfoLog(stars_program);
 ERROR_CHECK
 	planet_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_planet.frag");
 ERROR_CHECK
 	planetTexture_param				=glGetUniformLocation(planet_program,"planetTexture");
 	planetColour_param				=glGetUniformLocation(planet_program,"colour");
 	planetLightDir_param			=glGetUniformLocation(planet_program,"lightDir");
-	printProgramInfoLog(planet_program);
 ERROR_CHECK
 	fade_3d_to_2d_program			=MakeProgram("simul_fade_3d_to_2d");
 	

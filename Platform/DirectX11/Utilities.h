@@ -4,7 +4,7 @@
 #include <vector>
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/CrossPlatform/CppSl.hs"
-#include "Simul/Base/FileInterface.h"
+#include "Simul/Base/FileLoader.h"
 
 namespace simul
 {

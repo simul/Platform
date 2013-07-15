@@ -10,7 +10,7 @@ uniform sampler2D inscTexture;
 // Godrays are cloud-dependent. So we require the cloud texture.
 uniform sampler2D cloudShadowTexture;
 
-varying vec2 texCoords;
+in vec2 texCoords;
 
 float GetIlluminationAt(vec3 vd)
 {
