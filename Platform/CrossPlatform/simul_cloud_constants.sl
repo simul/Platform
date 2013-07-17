@@ -23,7 +23,7 @@ struct LayerData
 
 uniform_buffer SingleLayerConstants R11
 {
-	uniform LayerData layerData;
+	uniform int layerNumber;
 };
 
 uniform_buffer LayerConstants R8

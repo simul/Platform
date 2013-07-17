@@ -102,7 +102,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 			float3 texCoords=(pos-cornerPos)*inverseScales;
 			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
 			{
-				float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
+				float2 noise_texc	=noise_texc_0*layer.noiseScale;//+layer.noiseOffset;
 				float3 noiseval		=noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
 				float4 density		=calcDensity(texCoords,layer.layerFade,noiseval);
 				if(density.z>0)

@@ -22,32 +22,32 @@ SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
 	,atmosphericsUniformsUBO(0)
 	,atmosphericsUniforms2UBO(0)
 {
-	framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D);
+	//framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D);
 }
 
 SimulGLAtmosphericsRenderer::~SimulGLAtmosphericsRenderer()
 {
-	delete framebuffer;
+	//delete framebuffer;
 }
 
 void SimulGLAtmosphericsRenderer::SetBufferSize(int w,int h)
 {
-	if(w!=framebuffer->GetWidth()||h!=framebuffer->GetHeight())
+	/*if(w!=framebuffer->GetWidth()||h!=framebuffer->GetHeight())
 	{
 		framebuffer->SetWidthAndHeight(w,h);
 		if(initialized)
 			RestoreDeviceObjects(NULL);
-	}
+	}*/
 }
 
 void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 {
 	initialized=true;
-	framebuffer->InitColor_Tex(0,GL_RGBA32F_ARB);
+	//framebuffer->InitColor_Tex(0,GL_RGBA32F_ARB);
 	
   //You can also try GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24 for the internal format.
   //If GL_DEPTH24_STENCIL8_EXT, go ahead and use it (GL_EXT_packed_depth_stencil)
-	if(glewIsSupported("GL_EXT_packed_depth_stencil")||IsExtensionSupported("GL_EXT_packed_depth_stencil"))
+/*	if(glewIsSupported("GL_EXT_packed_depth_stencil")||IsExtensionSupported("GL_EXT_packed_depth_stencil"))
 	{
 		framebuffer->InitDepth_RB(GL_DEPTH24_STENCIL8_EXT);
 	}
@@ -55,7 +55,7 @@ void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
 	{
 		framebuffer->InitDepth_RB(GL_DEPTH_COMPONENT32);
 	}
-	framebuffer->NoDepth();
+	framebuffer->NoDepth();*/
 	RecompileShaders();
 }
 
@@ -207,7 +207,7 @@ ERROR_CHECK
 		setParameter3(godrays_program		,"viewPosition"		,cam_pos);
 		glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);//GL_FUNC_SUBTRACT);
 		glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ONE,GL_ONE);
-		framebuffer->Render(context,false);
+	//	framebuffer->Render(context,false);
 		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 		glBlendEquation(GL_FUNC_ADD);
 	}

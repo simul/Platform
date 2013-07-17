@@ -12,7 +12,7 @@ in vec2 multiTexCoord2;
 out float layerDensity;
 out float rainFade;
 out vec4 texCoordDiffuse;
-out vec2 noiseCoord;
+out vec2 noise_texc;
 out vec3 wPosition;
 out vec3 texCoordLightning;
 out vec2 fade_texc;
@@ -21,8 +21,9 @@ out vec4 transformed_pos;
 
 void main(void)
 {
+	LayerData layer		=layers[layerNumber];
 	vec3 pos			=vertex.xyz;
-	//pos.xyz				*=layerData.layerDistance;
+	//pos.xyz				*=layer.layerDistance;
     wPosition			=pos.xyz;
     transformed_pos		=vec4(vertex.xyz,1.0)*worldViewProj;
     gl_Position			=transformed_pos;
@@ -39,9 +40,9 @@ void main(void)
 	n					=normalize(n);
 	vec2 noise_texc_0	=(noiseMatrix*vec4(n.xy,0.0,0.0)).xy;
 
-	noiseCoord			=noise_texc_0.xy*layerData.noiseScale+layerData.noiseOffset;
+	noise_texc			=noise_texc_0.xy*layer.noiseScale;//+layer.noiseOffset;
 
 	float sine			=view.z;
 	fade_texc			=vec2(sqrt(depth),0.5*(1.0-sine));
-	rainFade			=1.0-exp(-layerData.layerDistance/10000.0);
+	rainFade			=1.0-exp(-layer.layerDistance/10000.0);
 }

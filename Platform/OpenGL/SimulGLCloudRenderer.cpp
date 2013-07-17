@@ -510,7 +510,6 @@ helper->Update2DNoiseCoords();
 
 	cloudConstants.cornerPos			=X1;
 	cloudConstants.inverseScales		=InverseDX;
-//cloudConstants.layerCount			=helper->GetSlices().size();
 
 	glBindBuffer(GL_UNIFORM_BUFFER,cloudConstantsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(CloudConstants),&cloudConstants);
@@ -555,29 +554,33 @@ helper->Update2DNoiseCoords();
 		int multiTexCoord2=glGetAttribLocation(program,"multiTexCoord2");
 	ERROR_CHECK
 		int layers_drawn=0;
+		int idx=0;
+		float wavelength=cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
 		for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
-			i!=helper->GetSlices().end();i++)
+			i!=helper->GetSlices().end();i++,idx++)
 		{
+			LayerData &inst=layerConstants.layers[idx];
 			// How thick is this layer, optically speaking?
 			simul::clouds::CloudGeometryHelper::Slice *s=*i;
 			helper->MakeLayerGeometry(GetCloudInterface(),s);
 			float dens=s->fadeIn;
 			if(!dens)
 				continue;
-			SingleLayerConstants singleLayerConstants;
 			float noise_offset[]={s->noise_tex_x/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength()
 					,s->noise_tex_y/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength(),0,0};
-			singleLayerConstants.layerData.layerFade		=s->fadeIn;
-			singleLayerConstants.layerData.layerDistance	=s->distance;
-			singleLayerConstants.layerData.noiseScale		=s->distance/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
-			//layerData.verticalShift	=helper->GetVerticalShiftDueToCurvature(s->distance,base_alt);
-			singleLayerConstants.layerData.noiseOffset.x	=noise_offset[0];
-			singleLayerConstants.layerData.noiseOffset.y	=noise_offset[1];
-//		layerData.elevationRange.x	=2.f*(float)s->elev_start/(float)el-1.f;
-	//		layerData.elevationRange.y	=2.f*(float)s->elev_end/(float)el-1.f;
-
-			UPDATE_CONSTANT_BUFFER(layerDataConstantsUBO,singleLayerConstants,layerDataConstantsBindingIndex)
-			//glUniform1f(layerDistance_param,(*i)->distance);
+			inst.layerFade		=s->fadeIn;
+			inst.layerDistance	=s->distance;
+			inst.noiseScale		=s->distance/wavelength;
+			inst.noiseOffset.x	=noise_offset[0];
+			inst.noiseOffset.y	=noise_offset[1];
+		}
+		layerConstants.layerCount			=helper->GetSlices().size();
+		UPDATE_CONSTANT_BUFFER(layerDataConstantsUBO,layerDataConstants,layerDataConstantsBindingIndex)
+	
+		idx=0;
+		for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
+			i!=helper->GetSlices().end();i++,idx++)
+		{
 			simul::sky::float4 loss			;
 			simul::sky::float4 inscatter	;
 			if(default_fog)
@@ -615,6 +618,7 @@ helper->Update2DNoiseCoords();
 	ERROR_CHECK
 			const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 			size_t qs_vert=0;
+			setParameter(program,"layerNumber",(int)idx);
 			glBegin(GL_QUAD_STRIP);
 			for(std::vector<const CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
 				j!=(*i)->quad_strips.end();j++)
@@ -626,7 +630,7 @@ helper->Update2DNoiseCoords();
 					if(multiTexCoord0>=0)
 						glVertexAttrib3f(multiTexCoord0,V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
 					if(multiTexCoord1>=0)
-						glVertexAttrib1f(multiTexCoord1,dens);
+						glVertexAttrib1f(multiTexCoord1,1.f);
 					if(multiTexCoord2>=0)
 						glVertexAttrib2f(multiTexCoord2,V.noise_tex_x,V.noise_tex_y);
 					// Here we're passing sunlight values per-vertex, loss and inscatter
@@ -697,7 +701,7 @@ ERROR_CHECK
 	if(cloudPerViewConstants>=0)
 		glUniformBlockBinding(program,cloudPerViewConstants,cloudPerViewConstantsBindingIndex);
 ERROR_CHECK
-	layerDataConstants			=glGetUniformBlockIndex(program,"SingleLayerConstants");
+	layerDataConstants			=glGetUniformBlockIndex(program,"LayerConstants");
 	if(layerDataConstants>=0)
 		glUniformBlockBinding(program,layerDataConstants,layerDataConstantsBindingIndex);
 ERROR_CHECK
@@ -747,7 +751,7 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(CloudConstants), NULL, GL_STREAM_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	
-	MAKE_CONSTANT_BUFFER(layerDataConstantsUBO,SingleLayerConstants,layerDataConstantsBindingIndex);
+	MAKE_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
 	MAKE_CONSTANT_BUFFER(cloudPerViewConstantsUBO,CloudPerViewConstants,cloudPerViewConstantsBindingIndex);
 
 	RecompileShaders();

@@ -21,7 +21,7 @@ uniform sampler2D depthTexture;
 in float layerDensity;
 in float rainFade;
 in vec4 texCoordDiffuse;
-in vec2 noiseCoord;
+in vec2 noise_texc;
 in vec3 wPosition;
 in vec3 texCoordLightning;
 in vec2 fade_texc;
@@ -44,10 +44,7 @@ void main(void)
 	vec2 tiling_offset=texture(noiseSampler,texc.xy/64.0).xy;
 	texc.xy+=2.0*(tiling_offset.xy-noise_offset.xy);
 #endif
-	vec3 noiseval=2.0*(textureLod(noiseSampler,noiseCoord.xy,0).xyz-half_vec);
-#ifdef DETAIL_NOISE
-//	noiseval+=(textureLod(noiseSampler,noiseCoord*8.0,0).xyz-0.5)/2.0;
-#endif
+	vec3 noiseval=2.0*(textureLod(noiseSampler,noise_texc.xy,0).xyz-half_vec);
 	noiseval*=texc.w;
 	vec3 pos=texc.xyz+fractalScale*noiseval;
 	vec4 density=textureLod(cloudDensity1,pos,0);

@@ -770,7 +770,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 		inst.layerFade		=s->fadeIn;
 		inst.layerDistance	=s->distance;
 		inst.verticalShift	=helper->GetVerticalShiftDueToCurvature(s->distance,base_alt);
-		inst.noiseScale		=s->distance/wavelength;
+		inst.noiseScale		=s->distance/wavelength;//s->distance/wavelength;
 		inst.noiseOffset.x	=s->noise_tex_x/wavelength;
 		inst.noiseOffset.y	=s->noise_tex_y/wavelength;
 	}
@@ -866,8 +866,6 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	ortho._14=-1.f;
 	ortho._22=-ortho._22;
 	ortho._24=1.f;
-
-	memset(&cloudConstants,0,sizeof(cloudConstants));
 	UtilityRenderer::SetScreenSize(width,height);
 	if(skyInterface)
 	for(int i=0;i<2;i++)
