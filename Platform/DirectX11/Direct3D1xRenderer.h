@@ -70,7 +70,6 @@ public:
 	{
 		return simulHDRRenderer.get();
 	}
-
 	void SetCamera(simul::camera::Camera *c)
 	{
 		camera=c;

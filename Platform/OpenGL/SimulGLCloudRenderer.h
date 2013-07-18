@@ -98,15 +98,12 @@ protected:
 	//GLint layerDistance_param;
 unsigned short *pIndices;
 
-	GLint cloudConstants;
 	GLuint cloudConstantsUBO;
 	GLint cloudConstantsBindingIndex;
 
-	GLint cloudPerViewConstants;
 	GLuint cloudPerViewConstantsUBO;
 	GLint cloudPerViewConstantsBindingIndex;
 	
-	GLint layerDataConstants;
 	GLuint	layerDataConstantsUBO;
 	GLint	layerDataConstantsBindingIndex;
 

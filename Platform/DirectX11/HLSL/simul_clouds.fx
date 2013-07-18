@@ -99,12 +99,14 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 		{
 			float3 pos=viewPos+dist*view;
 			pos.z-=layer.verticalShift;
-			float3 texCoords=(pos-cornerPos)*inverseScales;
+			float4 texCoords;
+			texCoords.xyz=(pos-cornerPos)*inverseScales;
+			texCoords.w=texCoords.z;
 			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
 			{
-				float2 noise_texc	=noise_texc_0*layer.noiseScale;//+layer.noiseOffset;
-				float3 noiseval		=noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
-				float4 density		=calcDensity(texCoords,layer.layerFade,noiseval);
+				float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
+				float3 noiseval		=texCoords.w*noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
+				float4 density		=calcDensity(texCoords.xyz,layer.layerFade,noiseval);
 				if(density.z>0)
 				{
 					float4 c=calcColour(density,cos0,texCoords.z);
@@ -122,7 +124,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	}
 	if(colour.a>=1.0)
 	   discard;
-					fade_texc.x=sqrt(Z);
+	fade_texc.x=sqrt(Z);
 	//colour.rgb=(1.0-colour.a)*applyFades(colour.rgb,fade_texc,cos0,earthshadowMultiplier);
     return float4(exposure*colour.rgb,1.0-colour.a);
 }
@@ -305,7 +307,7 @@ toPS VS_Main(vertexInput IN)
 	float3 wPos				=t1+viewPos;
 	OUT.texCoords.xyz		=wPos-cornerPos;
 	OUT.texCoords.xyz		*=inverseScales;
-	OUT.texCoords.w			=0.5f+0.5f*saturate(OUT.texCoords.z);
+	OUT.texCoords.w			=saturate(OUT.texCoords.z);
 	float3 texCoordLightning=(pos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
 	OUT.texCoordLightning	=texCoordLightning;
 	
@@ -360,7 +362,7 @@ void GS_Main(line VStoGS input[2], inout TriangleStream<toPS> OutputStream)
 			float3 wPos				=viewPos+t1;
 			OUT.texCoords.xyz		=wPos-cornerPos;
 			OUT.texCoords.xyz		*=inverseScales;
-			OUT.texCoords.w			=0.5f+0.5f*saturate(OUT.texCoords.z);
+			OUT.texCoords.w			=saturate(OUT.texCoords.z);
 			float3 texCoordLightning=(pos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
 			OUT.texCoordLightning	=texCoordLightning;
 			float3 view				=normalize(pos.xyz);

@@ -21,11 +21,6 @@ struct LayerData
 	float pad12;
 };
 
-uniform_buffer SingleLayerConstants R11
-{
-	uniform int layerNumber;
-};
-
 uniform_buffer LayerConstants R8
 {
 	uniform LayerData layers[MAX_INSTANCES];

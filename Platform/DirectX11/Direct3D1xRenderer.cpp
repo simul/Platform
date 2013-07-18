@@ -142,7 +142,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		if(simulTerrainRenderer)
 		{
 			simulTerrainRenderer->SetMatrices(view_matrices[i],cube_proj);
-		//	simulTerrainRenderer->Render(pContext,Exposure);
+		//	simulTerrainRenderer->Render(pContext,1.f);
 		}
 		cubemapDepthFramebuffer.Deactivate(pContext);
 		if(simulWeatherRenderer)
@@ -192,7 +192,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
 		simulTerrainRenderer->SetMatrices(view,proj);
-		simulTerrainRenderer->Render(pd3dImmediateContext,Exposure);	
+		simulTerrainRenderer->Render(pd3dImmediateContext,1.f);	
 	}
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RenderCelestialBackground(pd3dImmediateContext,Exposure);
