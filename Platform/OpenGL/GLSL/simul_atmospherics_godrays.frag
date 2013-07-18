@@ -4,29 +4,14 @@
 #include "../../CrossPlatform/atmospherics_constants.sl"
 #include "view_dir.glsl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
+// Godrays are cloud-dependent. So we require the cloud texture.
+uniform sampler2D cloudShadowTexture;
+#include "../../CrossPlatform/godrays.sl"
 uniform sampler2D imageTexture;
 uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
-// Godrays are cloud-dependent. So we require the cloud texture.
-uniform sampler2D cloudShadowTexture;
 
 in vec2 texCoords;
-
-float GetIlluminationAt(vec3 vd)
-{
-	vec3 pos=vd+viewPosition;
-	vec3 rel_pos=pos-cloudOrigin;
-	rel_pos.xy-=lightDir.xy/lightDir.z*rel_pos.z;
-	vec3 cloud_texc=(rel_pos)*cloudScale;
-	
-	vec4 cloud_texel=texture(cloudShadowTexture,cloud_texc.xy);
-	float illumination=cloud_texel.z;
-	float above=saturate(cloud_texc.z*10.0);
-	illumination+=above;
-	illumination=saturate(illumination);
-	return 1.0-illumination;
-}
-
 
 void main()
 {

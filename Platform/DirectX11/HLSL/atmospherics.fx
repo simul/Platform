@@ -10,6 +10,9 @@ Texture2D lossTexture;
 Texture2D inscTexture;
 Texture2D skylTexture;
 Texture2D illuminationTexture;
+Texture2D cloudShadowTexture;
+
+#include "../../CrossPlatform/godrays.sl"
 
 #define pi (3.1415926536)
 
@@ -111,6 +114,46 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
     return float4(colour.rgb,1.f);
 }
 
+
+float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
+{
+	float3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
+	view				=normalize(view);
+	float sine			=view.z;
+	float cos0			=dot(view,lightDir);
+	float depth			=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
+	vec2 texc2			=vec2(pow(depth,0.5),0.5*(1.0-sine));
+	vec4 insc			=texture_wrap_mirror(inscTexture,texc2);
+	vec4 total_insc		=vec4(0,0,0,0);
+	float illumination	=GetIlluminationAt(view*depth);
+	#define C 128
+	float retain=(float(C)-1.0)/float(C);
+	for(int i=0;i<C+1;i++)
+	{
+		float u=(float(C)-float(i))/float(C);
+		float eff=exp(-u/10.0);
+		if(u<depth)
+		{
+			texc2.x=u;
+			float prev_illumination=illumination;
+			float d=u*u*maxDistance;
+			illumination=mix(0.0,GetIlluminationAt(view*d),eff);
+			vec4 prev_insc=insc;
+			insc=texture_wrap_mirror(inscTexture,texc2);
+			vec4 insc_diff=prev_insc-insc;
+			float ill=prev_illumination;//0.5*(illumination+prev_illumination);
+			total_insc.rgb+=insc_diff.rgb*ill;
+			total_insc.a*=retain;
+			total_insc.a+=insc_diff.a*ill;
+		}
+	}
+	vec3 gr=-InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
+	gr=min(gr,vec3(0.0,0.0,0.0));
+	
+	return vec4(gr,0.0);
+}
+
+
 technique11 simul_atmospherics
 {
     pass p0
@@ -144,6 +187,15 @@ technique11 simul_atmospherics_overlay
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_AtmosOverlayInscPass()));
+    }
+    pass godrays
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_4_0,PS_AtmosOverlayGodraysPass()));
     }
 }
 

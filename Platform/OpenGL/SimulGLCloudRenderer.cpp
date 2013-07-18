@@ -351,29 +351,31 @@ ERROR_CHECK
 ERROR_CHECK
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[0]);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[1]);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
-ERROR_CHECK
+
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D,loss_tex);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D,inscatter_tex);
+
     glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D,skylight_tex);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_3D,illum_tex);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE7);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
+
 	GLuint program=depth_alpha_tex>0?clouds_foreground_program:clouds_background_program;
 
 	if(Raytrace)
@@ -385,15 +387,15 @@ ERROR_CHECK
 	glUniform1i(cloudDensity2_param,1);
 	glUniform1i(noiseSampler_param,2);
 	glUniform1i(lossSampler_param,3);
-ERROR_CHECK
+
 	glUniform1i(inscatterSampler_param,4);
-ERROR_CHECK
+
 	glUniform1i(skylightSampler_param,5);
-ERROR_CHECK
+
 	glUniform1i(illumSampler_param,6);
-ERROR_CHECK
+
 	glUniform1i(depthTexture,7);
-ERROR_CHECK
+
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	

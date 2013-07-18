@@ -11,21 +11,9 @@
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
 #include "Simul/Platform/CrossPlatform/atmospherics_constants.sl"
-#ifdef XBOX
-	#include <xgraphics.h>
-	#include <fstream>
-	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("game:\\");
-	static DWORD default_effect_flags=0;
-#else
-	#include <tchar.h>
-	#include <dxerr.h>
-	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("");
-	static DWORD default_effect_flags=D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
-#endif
+#include <tchar.h>
+#include <dxerr.h>
+#include <string>
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Clouds/CloudInterface.h"
@@ -40,12 +28,6 @@
 #include "Utilities.h"
 using namespace simul;
 using namespace dx11;
-#define BLUR_SIZE 9
-#define MONTE_CARLO_BLUR
-
-#ifdef  MONTE_CARLO_BLUR
-#include "Simul/Math/Pi.h"
-#endif
 
 SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	m_pd3dDevice(NULL)
@@ -164,8 +146,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	skylTexture->SetResource(skylightTexture_SRV);
 	
 	simul::dx11::setParameter(effect,"illuminationTexture",illuminationTexture_SRV);
-
-	simul::dx11::setParameter(effect,"depthTexture",depthTexture_SRV);//(ID3D11ShaderResourceView*)framebuffer->GetDepthTex());
+	simul::dx11::setParameter(effect,"depthTexture",depthTexture_SRV);
 	simul::math::Matrix4x4 vpt;
 	simul::math::Matrix4x4 viewproj;
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
@@ -218,6 +199,13 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
 	ApplyPass(m_pImmediateContext,twoPassOverlayTechnique->GetPassByIndex(1));
 	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
+	
+	if(this->GetShowGodrays())
+	{
+		ApplyPass(m_pImmediateContext,twoPassOverlayTechnique->GetPassByName("godrays"));
+		simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
+	}
+
 	lossTexture->SetResource(NULL);
 	inscTexture->SetResource(NULL);
 	skylTexture->SetResource(NULL);

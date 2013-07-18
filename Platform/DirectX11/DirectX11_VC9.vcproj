@@ -609,6 +609,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\CrossPlatform\godrays.sl"
+				>
+			</File>
+			<File
 				RelativePath="..\CrossPlatform\rain_constants.sl"
 				>
 			</File>

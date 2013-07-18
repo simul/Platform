@@ -548,7 +548,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	hr=D3DCompile(
 		textData,
 		textSize,
-		NULL,		//LPCSTR pSourceName,
+		text_filename_utf8.c_str(),		//LPCSTR pSourceName,
 		macros,		//const D3D_SHADER_MACRO *pDefines,
 		&shaderIncludeHandler,		//ID3DInclude *pInclude,
 		NULL,		//LPCSTR pEntrypoint,
@@ -564,7 +564,15 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	else
 	{
 		char *errs=(char*)errorMsgs->GetBufferPointer();
-		std::cerr<<errs<<std::endl;
+		std::string err(errs);
+		unsigned pos=0;
+		while(pos<err.length())
+		{
+			int last=pos;
+			pos=err.find("\n",pos+1);
+			std::string line=err.substr(last,pos-last);
+			std::cerr<<line.c_str()<<std::endl;
+		};//text_filename_utf8.c_str()<<
 	}
 	if(binaryBlob)
 		binaryBlob->Release();

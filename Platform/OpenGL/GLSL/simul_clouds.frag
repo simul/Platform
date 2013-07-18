@@ -53,7 +53,7 @@ void main(void)
 	density					=mix(density,density2,cloud_interp);
 	float opacity			=layerDensity*density.y;
 	//opacity+=rain*rainFade*saturate((0.25-pos.z)*50.0)*(1.0-density.x);
-/*
+
 #ifdef USE_DEPTH_TEXTURE
 	//float depth_offset=dist-cloud_dist;
 	//opacity*=saturate(depth_offset/0.01);
@@ -64,7 +64,7 @@ void main(void)
 #else
 	if(opacity<=0.0)
 		discard;
-#endif*/
+#endif
    // gl_FragColor=vec4(0,0,0,1.0-opacity);
 	float Beta					=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
 	vec3 sunlightColour			=mix(sunlightColour1,sunlightColour2,saturate(texCoords.z));

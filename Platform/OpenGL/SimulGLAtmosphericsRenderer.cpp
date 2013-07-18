@@ -181,7 +181,7 @@ ERROR_CHECK
 	GLuint current_insc_program=e.enable?earthshadow_insc_program:insc_program;
 	glUseProgram(current_insc_program);
 	setTexture(current_insc_program,"inscTexture"		,1,inscatter_texture);
-	setTexture(current_insc_program,"cloudShadowTexture",2,cloud_shadow_texture);
+	//setTexture(current_insc_program,"cloudShadowTexture",2,cloud_shadow_texture);
 	setTexture(current_insc_program,"skylightTexture"	,4,skylight_texture);
 	setTexture(current_insc_program,"depthTexture"		,5,depth_texture);
 	// retain background based on alpha in overlay
