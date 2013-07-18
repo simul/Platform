@@ -31,8 +31,16 @@
 #include "MacrosDX1x.h"
 
 
-SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *env,simul::base::MemoryInterface *mem,
-		bool usebuffer,bool tonemap,int w,int h,bool sky,bool clouds3d,bool clouds2d,bool rain) :
+SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *env
+													,simul::base::MemoryInterface *mem
+													,bool usebuffer
+													,bool tonemap
+													,int w
+													,int h
+													,bool sky
+													,bool clouds3d
+													,bool clouds2d
+													,bool rain) :
 	BaseWeatherRenderer(env,sky,rain),
 	framebuffer(w/Downscale,h/Downscale),
 	m_pd3dDevice(NULL),

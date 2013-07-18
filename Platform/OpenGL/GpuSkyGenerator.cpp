@@ -124,6 +124,7 @@ std::cout<<"\tGpu sky: recompile "<<timer.UpdateTime()<<std::endl;
 	}
 std::cout<<"\tGpu sky: fb "<<timer.UpdateTime()<<std::endl;
 	BaseFramebuffer *F[2];
+
 	F[0]=&fb[0];
 	F[1]=&fb[1];
 	glEnable(GL_TEXTURE_1D);
