@@ -308,6 +308,8 @@ void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,float exposure,b
 		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
 	}
+	if(baseAtmosphericsRenderer&&!is_cubemap)
+		baseAtmosphericsRenderer->RenderGodrays(context,depthTexture,exposure);
 }
 
 bool SimulWeatherRendererDX1x::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)

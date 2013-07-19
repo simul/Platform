@@ -22,7 +22,7 @@
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/Export.h"
-#include "Simul/Platform/DirectX11/Framebuffer3D.h"
+#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 
 namespace simul
 {
@@ -95,6 +95,7 @@ public:
 	bool IsYVertical() const;
 protected:
 	void RenderCombinedCloudTexture(void *context);
+	void RenderCloudShadowTexture(void *context);
 	void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip);
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
@@ -154,10 +155,12 @@ protected:
 	ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
 	ID3D1xShaderResourceView*				skylightTexture_SRV;
 	ID3D1xShaderResourceView*				illuminationTexture_SRV;
+	
+	simul::dx11::Framebuffer				cloudShadow;
 
 	ID3D1xTexture3D*						cloud_textures[3];
 
-	simul::dx11::ComputableTexture3D						cloud_texture;
+	simul::dx11::ComputableTexture3D		cloud_texture;
 	
 	ID3D1xBuffer*							computeConstantBuffer;
 	ID3D11ComputeShader*					m_pComputeShader;

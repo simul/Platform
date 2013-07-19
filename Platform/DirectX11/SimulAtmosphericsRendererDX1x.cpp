@@ -48,6 +48,7 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	,skylightTexture_SRV(NULL)
 	,clouds_texture(NULL)
 	,illuminationTexture_SRV(NULL)
+	,cloudShadowTexture_SRV(NULL)
 {
 }
 
@@ -147,6 +148,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	
 	simul::dx11::setParameter(effect,"illuminationTexture",illuminationTexture_SRV);
 	simul::dx11::setParameter(effect,"depthTexture",depthTexture_SRV);
+	simul::dx11::setParameter(effect,"cloudShadowTexture",cloudShadowTexture_SRV);
 	simul::math::Matrix4x4 vpt;
 	simul::math::Matrix4x4 viewproj;
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
@@ -172,7 +174,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	atmosphericsUniforms2.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	atmosphericsUniforms2.nearZ=frustum.nearZ*0.001f/fade_distance_km;
 	atmosphericsUniforms2.farZ=frustum.farZ*0.001f/fade_distance_km;
-
+	atmosphericsUniforms2.viewPosition=cam_pos;
 	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,atmosphericsUniforms2ConstantsBuffer,AtmosphericsPerViewConstants,atmosphericsUniforms2)
 	ID3DX11EffectConstantBuffer* cbAtmosphericsUniforms2=effect->GetConstantBufferByName("AtmosphericsPerViewConstants");
 	if(cbAtmosphericsUniforms2)
@@ -189,6 +191,10 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 		atmosphericsUniforms.texelOffsets		=D3DXVECTOR2(0,0);
 		atmosphericsUniforms.hazeEccentricity	=skyInterface->GetMieEccentricity();
 		atmosphericsUniforms.exposure			=exposure;
+		atmosphericsUniforms.cloudOrigin		=cloud_origin;
+		atmosphericsUniforms.cloudScale			=cloud_scale;
+		atmosphericsUniforms.maxDistance		=fade_distance_km*1000.f;
+		atmosphericsUniforms.overcast			=overcast;
 		UPDATE_CONSTANT_BUFFER(m_pImmediateContext,constantBuffer,AtmosphericsUniforms,atmosphericsUniforms)
 		ID3DX11EffectConstantBuffer* cbAtmosphericsUniforms=effect->GetConstantBufferByName("AtmosphericsUniforms");
 		if(cbAtmosphericsUniforms)
@@ -200,14 +206,25 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	ApplyPass(m_pImmediateContext,twoPassOverlayTechnique->GetPassByIndex(1));
 	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
 	
-	if(this->GetShowGodrays())
-	{
-		ApplyPass(m_pImmediateContext,twoPassOverlayTechnique->GetPassByName("godrays"));
-		simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
-	}
-
 	lossTexture->SetResource(NULL);
 	inscTexture->SetResource(NULL);
 	skylTexture->SetResource(NULL);
 	PIXEndNamedEvent();
+}
+
+void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *depthTexture,float exposure)
+{
+	if(!ShowGodrays)
+		return;
+	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
+	ID3D11ShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
+	lossTexture->SetResource(skyLossTexture_SRV);
+	inscTexture->SetResource(skyInscatterTexture_SRV);
+	skylTexture->SetResource(skylightTexture_SRV);
+	simul::dx11::setParameter(effect,"illuminationTexture",illuminationTexture_SRV);
+	simul::dx11::setParameter(effect,"depthTexture",depthTexture_SRV);
+	simul::dx11::setParameter(effect,"cloudShadowTexture",cloudShadowTexture_SRV);
+	twoPassOverlayTechnique	=effect->GetTechniqueByName("simul_atmospherics_overlay");
+	ApplyPass(pContext,twoPassOverlayTechnique->GetPassByName("godrays"));
+	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 }

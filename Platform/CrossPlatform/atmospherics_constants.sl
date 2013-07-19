@@ -16,8 +16,6 @@ uniform_buffer AtmosphericsUniforms R11
 	uniform float pad7;
 	uniform vec3 cloudScale;
 	uniform float pad8;
-	uniform vec3 viewPosition;
-	uniform float pad9;
 	uniform float overcast;
 	uniform float pad10,pad11,pad12;
 	uniform float maxDistance;
@@ -33,5 +31,7 @@ uniform_buffer AtmosphericsPerViewConstants R12
 	uniform float fill1,fill2;
 	uniform float nearZ;
 	uniform float farZ;
+	uniform vec3 viewPosition;
+	uniform float pad9;
 };
 #endif

@@ -667,11 +667,10 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(fadeTexture2->SetResource(loss_textures_SRV[1]));
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		loss_2d->Activate(context);
-		
-		context->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
-		if(loss_2d->m_pBufferDepthSurface)
-			context->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
-		simul::dx11::UtilityRenderer::DrawQuad(context);
+			context->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
+			if(loss_2d->m_pBufferDepthSurface)
+				context->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+			simul::dx11::UtilityRenderer::DrawQuad(context);
 		loss_2d->Deactivate(context);
 	}
 	{
@@ -680,12 +679,10 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		
 		inscatter_2d->Activate(context);
-			
-		context->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
-		if(inscatter_2d->m_pBufferDepthSurface)
-			context->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
-			D3D1x_CLEAR_STENCIL, 1.f, 0);
-		simul::dx11::UtilityRenderer::DrawQuad(context);
+			context->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
+			if(inscatter_2d->m_pBufferDepthSurface)
+				context->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+			simul::dx11::UtilityRenderer::DrawQuad(context);
 		inscatter_2d->Deactivate(context);
 	}
 	{
@@ -694,11 +691,10 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		
 		skylight_2d->Activate(context);
-		context->ClearRenderTargetView(skylight_2d->m_pHDRRenderTarget,clearColor);
-		if(skylight_2d->m_pBufferDepthSurface)
-			context->ClearDepthStencilView(skylight_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
-			D3D1x_CLEAR_STENCIL, 1.f, 0);
-		simul::dx11::UtilityRenderer::DrawQuad(context);
+			context->ClearRenderTargetView(skylight_2d->m_pHDRRenderTarget,clearColor);
+			if(skylight_2d->m_pBufferDepthSurface)
+				context->ClearDepthStencilView(skylight_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+			simul::dx11::UtilityRenderer::DrawQuad(context);
 		skylight_2d->Deactivate(context);
 	}
 	

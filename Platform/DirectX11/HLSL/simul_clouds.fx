@@ -448,6 +448,41 @@ struct vertexOutputCS
 	uniform vec4 rect;
 //};
 
+vertexOutputCS VS_FullScreen(idOnly IN)
+{
+	vertexOutputCS OUT;
+	float2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(pos,0.0,1.0);
+	// Set to far plane
+#ifdef REVERSE_DEPTH
+	OUT.hPosition.z	=0.0; 
+#else
+	OUT.hPosition.z	=OUT.hPosition.w; 
+#endif
+    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(pos.x,-pos.y));
+//OUT.texCoords	+=0.5*texelOffsets;
+	return OUT;
+}
+
+float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
+{
+    vec3 pos=vec3(IN.texCoords.xy,0.0);
+	//vec3 noiseval=
+	//vec3 pos=texCoords.xyz+fractalScale.xyz*noiseval;
+	vec4 density1=sampleLod(cloudDensity1,wwcSamplerState,pos,0);
+	vec4 density2=sampleLod(cloudDensity2,wwcSamplerState,pos,0);
+	vec4 density=lerp(density1,density2,cloud_interp);
+	return density;
+}
+
+
 vertexOutputCS VS_CrossSection(idOnly IN)
 {
     vertexOutputCS OUT;
@@ -618,6 +653,18 @@ technique11 simul_clouds_and_lightning
     }
 }
 
+technique11 cloud_shadow
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(NoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_CloudShadow()));
+    }
+}
 technique11 cross_section_xz
 {
     pass p0 

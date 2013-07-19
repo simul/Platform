@@ -148,6 +148,7 @@ ERROR_CHECK
 	atmosphericsUniforms2.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	atmosphericsUniforms2.nearZ=frustum.nearZ*0.001f/fade_distance_km;
 	atmosphericsUniforms2.farZ=frustum.farZ*0.001f/fade_distance_km;
+	atmosphericsUniforms2.viewPosition	=cam_pos;
 
 	UPDATE_CONSTANT_BUFFER(atmosphericsUniforms2UBO,atmosphericsUniforms2,atmosphericsUniforms2BindingIndex)
 
@@ -162,7 +163,6 @@ ERROR_CHECK
 		atmosphericsUniforms.cloudOrigin	=cloud_origin;
 		atmosphericsUniforms.cloudScale		=cloud_scale;
 		atmosphericsUniforms.maxDistance	=fade_distance_km*1000.f;
-		atmosphericsUniforms.viewPosition	=cam_pos;
 		atmosphericsUniforms.overcast		=overcast;
 		atmosphericsUniforms.exposure		=exposure;
 		

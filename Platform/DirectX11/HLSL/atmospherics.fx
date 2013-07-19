@@ -122,32 +122,34 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 	float sine			=view.z;
 	float cos0			=dot(view,lightDir);
 	float depth			=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-	vec2 texc2			=vec2(pow(depth,0.5),0.5*(1.0-sine));
-	vec4 insc			=texture_wrap_mirror(inscTexture,texc2);
+	float dist			=1.0;//depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
+	float max_root_dist	=0.5;
+	vec2 fade_texc		=vec2(max_root_dist,0.5*(1.0-sine));
+	vec4 insc			=texture_wrap_mirror(inscTexture,fade_texc);
 	vec4 total_insc		=vec4(0,0,0,0);
-	float illumination	=GetIlluminationAt(view*depth);
-	#define C 128
+	float illumination	=GetIlluminationAt(view*dist*maxDistance);
+	#define C 512
 	float retain=(float(C)-1.0)/float(C);
 	for(int i=0;i<C+1;i++)
 	{
-		float u=(float(C)-float(i))/float(C);
-		float eff=exp(-u/10.0);
-		if(u<depth)
+		float u=max_root_dist*((float(C)-float(i))/float(C));
+		float eff=1.0;//exp(-u/10.0);
+		//if(u<dist)
 		{
-			texc2.x=u;
+			fade_texc.x=u;
 			float prev_illumination=illumination;
 			float d=u*u*maxDistance;
 			illumination=mix(0.0,GetIlluminationAt(view*d),eff);
 			vec4 prev_insc=insc;
-			insc=texture_wrap_mirror(inscTexture,texc2);
+			insc=texture_wrap_mirror(inscTexture,fade_texc);
 			vec4 insc_diff=prev_insc-insc;
-			float ill=prev_illumination;//0.5*(illumination+prev_illumination);
+			float ill=illumination;//0.5*(illumination+prev_illumination);
 			total_insc.rgb+=insc_diff.rgb*ill;
 			total_insc.a*=retain;
 			total_insc.a+=insc_diff.a*ill;
 		}
 	}
-	vec3 gr=-InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
+	vec3 gr=-total_insc.rgb;//InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
 	gr=min(gr,vec3(0.0,0.0,0.0));
 	
 	return vec4(gr,0.0);
@@ -192,7 +194,7 @@ technique11 simul_atmospherics_overlay
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_AtmosOverlayGodraysPass()));

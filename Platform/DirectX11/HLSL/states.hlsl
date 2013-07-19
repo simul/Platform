@@ -58,6 +58,14 @@ BlendState AddBlend
 	DestBlend = ONE;
 };
 
+BlendState SubtractBlend
+{
+	BlendEnable[0] = TRUE;
+	BlendOp	= SUBTRACT;
+	SrcBlend = ONE;
+	DestBlend = ONE;
+};
+
 BlendState DontBlend
 {
 	BlendEnable[0] = FALSE;

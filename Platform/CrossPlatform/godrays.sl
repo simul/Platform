@@ -9,9 +9,9 @@ float GetIlluminationAt(vec3 vd)
 	vec3 cloud_texc		=rel_pos*cloudScale;
 	
 	vec4 cloud_texel	=texture_wrap(cloudShadowTexture,cloud_texc.xy);
-	float illumination	=cloud_texel.z;
+	float illumination	=cloud_texel.y;
 	float above			=saturate(cloud_texc.z*10.0);
-	illumination		+=above;
+	//illumination		+=above;
 	illumination		=saturate(illumination);
 	return 1.0-illumination;
 }

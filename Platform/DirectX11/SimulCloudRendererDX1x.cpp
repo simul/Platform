@@ -228,7 +228,6 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 	D3DX11_PASS_DESC PassDesc;
 	ID3DX11EffectPass *pass=m_hTechniqueCloud->GetPassByIndex(0);
 	HRESULT hr=pass->GetDesc(&PassDesc);
-//return true;
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pLightningVtxDecl);
 
@@ -238,19 +237,18 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 	hr=m_pd3dDevice->CreateInputLayout( decl,numElements,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	CreateMeshBuffers();
 	
-//return true;
 	if(m_hTechniqueLightning)
 	{
 		pass=m_hTechniqueLightning->GetPassByIndex(0);
 		hr=pass->GetDesc(&PassDesc);
 		hr=m_pd3dDevice->CreateInputLayout( std_decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pLightningVtxDecl);
 	}
-//	cloudKeyframer->SetRenderCallback(NULL);
-//	cloudKeyframer->SetRenderCallback(this);
 	if(lightningIlluminationTextureResource)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 	ClearIterators();
 	cloudConstants.RestoreDeviceObjects(m_pd3dDevice);
+
+	cloudShadow.RestoreDeviceObjects(m_pd3dDevice);
 }
 	
 void SimulCloudRendererDX1x::CreateMeshBuffers()
@@ -322,6 +320,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	Unmap();
+	cloudShadow.InvalidateDeviceObjects();
 	if(illumination_texture)
 		Unmap3D(mapped_context,illumination_texture);
 	SAFE_RELEASE(m_pComputeShader);
@@ -693,11 +692,28 @@ void SimulCloudRendererDX1x::RenderCombinedCloudTexture(void *context)
 	gpu_combine_time+=0.01f*profileBlock.GetTime();
 }
 
+void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
+{
+	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
+	ID3DX11EffectTechnique *tech	=m_pCloudEffect->GetTechniqueByName("cloud_shadow");
+	MixCloudsConstants mixCloudsConstants;
+	mixCloudsConstants.interpolation=cloudKeyframer->GetInterpolation();
+	UPDATE_CONSTANT_BUFFER(pContext,computeConstantBuffer,MixCloudsConstants,mixCloudsConstants);
+	cloudConstants.Apply(pContext);
+	cloudDensity1->SetResource(cloudDensityResource[0]);
+	cloudDensity2->SetResource(cloudDensityResource[1]);
+	ApplyPass(pContext,tech->GetPassByIndex(0));
+	cloudShadow.Activate(pContext);
+		simul::dx11::UtilityRenderer::DrawQuad(pContext);
+	cloudShadow.Deactivate(pContext);
+}
+
 void SimulCloudRendererDX1x::Update(void *context)
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
 	EnsureTexturesAreUpToDate(pContext);
 	RenderCombinedCloudTexture(context);
+	RenderCloudShadowTexture(context);
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply(pContext);
 	//set up matrices
@@ -855,17 +871,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
-/*	D3DXVECTOR4 cross_section_offset(
-			(GetCloudInterface()->GetWrap()?0.5f:0.f)+0.5f/(float)cloud_tex_width_x
-			,GetCloudInterface()->GetWrap()?0.5f:0.f+0.5f/(float)cloud_tex_length_y
-			,0.5f/(float)cloud_tex_depth_z
-			,0);*/
 	D3DXVECTOR4 cross_section_offset(0,0,0,0);
-	D3DXMATRIX ortho;
-    D3DXMatrixOrthoLH(&ortho,(float)width,(float)height,-100.f,100.f);
-	ortho._14=-1.f;
-	ortho._22=-ortho._22;
-	ortho._24=1.f;
 	UtilityRenderer::SetScreenSize(width,height);
 	if(skyInterface)
 	for(int i=0;i<2;i++)
@@ -887,6 +893,8 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	UtilityRenderer::DrawQuad2(pContext,2*(w+1)+4,h+8,w,w,m_pCloudEffect,m_hTechniqueCrossSectionXY);
 	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",noiseTextureResource);
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
+	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",(ID3D1xShaderResourceView*)cloudShadow.GetColorTex());
+	UtilityRenderer::DrawQuad2(pContext,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 }
 
 bool SimulCloudRendererDX1x::RenderLightning(void *context)
@@ -1013,7 +1021,7 @@ void SimulCloudRendererDX1x::SetEnableStorms(bool s)
 
 void *SimulCloudRendererDX1x::GetCloudShadowTexture()
 {
-	return NULL;
+	return cloudShadow.GetColorTex();
 }
 
 void SimulCloudRendererDX1x::SetYVertical(bool y)
@@ -1038,6 +1046,7 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 		return;
 	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[0]!=NULL)
 		return;
+	cloudShadow.SetWidthAndHeight(width_x,length_y);
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
