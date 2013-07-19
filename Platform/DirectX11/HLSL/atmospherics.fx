@@ -114,7 +114,8 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
     return float4(colour.rgb,1.f);
 }
 
-
+// Slanted Cylinder whose axis is along lightDir,
+// radius is at the specified horizontal distance
 float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 {
 	float3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
@@ -123,33 +124,34 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 	float cos0			=dot(view,lightDir);
 	float depth			=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
 	float dist			=1.0;//depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
-	float max_root_dist	=0.5;
-	vec2 fade_texc		=vec2(max_root_dist,0.5*(1.0-sine));
-	vec4 insc			=texture_wrap_mirror(inscTexture,fade_texc);
+//	float max_root_dist	=0.5;
+	vec2 fade_texc		=vec2(1.0,0.5*(1.0-sine));
+	vec4 insc0			=texture_wrap_mirror(inscTexture,fade_texc);
 	vec4 total_insc		=vec4(0,0,0,0);
 	float illumination	=GetIlluminationAt(view*dist*maxDistance);
-	#define C 512
+	#define C 1
 	float retain=(float(C)-1.0)/float(C);
-	for(int i=0;i<C+1;i++)
+	float u0=1.0;
+	for(int i=0;i<C;i++)
 	{
-		float u=max_root_dist*((float(C)-float(i))/float(C));
-		float eff=1.0;//exp(-u/10.0);
+		float u		=((float(C)-float(i)-.5)/float(C));
+		float u0	=((float(C)-float(i))/float(C));
+		float u1	=u0;
+		float eff	=1.0;//exp(-u/10.0);
 		//if(u<dist)
 		{
-			fade_texc.x=u;
-			float prev_illumination=illumination;
-			float d=u*u*maxDistance;
-			illumination=mix(0.0,GetIlluminationAt(view*d),eff);
-			vec4 prev_insc=insc;
-			insc=texture_wrap_mirror(inscTexture,fade_texc);
-			vec4 insc_diff=prev_insc-insc;
-			float ill=illumination;//0.5*(illumination+prev_illumination);
-			total_insc.rgb+=insc_diff.rgb*ill;
-			total_insc.a*=retain;
-			total_insc.a+=insc_diff.a*ill;
+			fade_texc.x				=u0;
+			float d					=u*u*maxDistance;
+			illumination			=GetIlluminationAt(view*d);
+			vec4 insc1				=insc0;
+			insc0					=texture_wrap_mirror(inscTexture,fade_texc);
+			vec4 insc_diff			=insc1-insc0;
+			total_insc.rgb			+=insc_diff.rgb*illumination;
+			total_insc.a			*=retain;
+			total_insc.a			+=insc_diff.a*illumination;
 		}
 	}
-	vec3 gr=-total_insc.rgb;//InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
+	vec3 gr=-illumination;//total_insc.rgb;//InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
 	gr=min(gr,vec3(0.0,0.0,0.0));
 	
 	return vec4(gr,0.0);
