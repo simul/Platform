@@ -194,7 +194,7 @@ ERROR_CHECK
 	{
 	// Draw the godrays over the entire scene - or to be more accurate, subtract the cloud shadows from the scene.
 		glUseProgram(godrays_program);
-		setParameter(godrays_program		,"imageTexture"		,0);
+	/*	setParameter(godrays_program		,"imageTexture"		,0);
 		setParameter(godrays_program		,"inscTexture"		,1);
 		setParameter(godrays_program		,"cloudShadowTexture",2);
 		setParameter3(godrays_program		,"mieRayleighRatio",ratio);
@@ -209,7 +209,7 @@ ERROR_CHECK
 		glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ONE,GL_ONE);
 	//	framebuffer->Render(context,false);
 		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-		glBlendEquation(GL_FUNC_ADD);
+		glBlendEquation(GL_FUNC_ADD);*/
 	}
 	
 	glUseProgram(0);

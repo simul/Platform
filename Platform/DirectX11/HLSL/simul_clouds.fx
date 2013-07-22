@@ -471,17 +471,35 @@ vertexOutputCS VS_FullScreen(idOnly IN)
 	return OUT;
 }
 
+// Given texture position from texCoords, convert to a worldpos with shadowMatrix.
+// Then, trace towards sun to find initial intersection with cloud volume
+// Then trace down to find first intersection with clouds, if any.
 float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
 {
-    vec3 pos=vec3(IN.texCoords.xy,0.0);
-	//vec3 noiseval=
-	//vec3 pos=texCoords.xyz+fractalScale.xyz*noiseval;
-	vec4 density1=sampleLod(cloudDensity1,wwcSamplerState,pos,0);
-	vec4 density2=sampleLod(cloudDensity2,wwcSamplerState,pos,0);
-	vec4 density=lerp(density1,density2,cloud_interp);
-	return density;
+    vec3 pos		=80000.0*vec3(IN.texCoords.xy-vec2(0.5,0.5),0.0);
+	vec3 wpos0		=mul(shadowMatrix,vec4(pos,1.0)).xyz;
+	float dh		=cornerPos.z-wpos0.z+1.0/inverseScales.z;
+	float thickness	=dh/lightDir.z;
+	float Z			=-80000.0;
+	static const int C=256;
+	for(int i=0;i<C;i++)
+	{
+		float u			=float(i)/float(C);
+		float z			=80000.0*(u-0.5);
+		vec3 wpos		=wpos0+lightDir.xyz*z;
+		vec3 texc		=(wpos-cornerPos)*inverseScales;
+		vec4 density1	=sampleLod(cloudDensity1,wwcSamplerState,texc,0);
+		vec4 density2	=sampleLod(cloudDensity2,wwcSamplerState,texc,0);
+		vec4 density	=lerp(density1,density2,cloud_interp);
+		if(density.z>0.0)
+		{
+			float mx	=density.z;
+			Z			*=(1.0-mx);
+			Z			+=mx*z;
+		}
+	}
+	return float4(Z,0,0,1.0);
 }
-
 
 vertexOutputCS VS_CrossSection(idOnly IN)
 {

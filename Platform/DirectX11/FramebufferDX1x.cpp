@@ -328,7 +328,7 @@ m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	sourceRegion.bottom = Height;
 	sourceRegion.front = 0;
 	sourceRegion.back = 1;
-	m_pImmediateContext->CopySubresourceRegion(stagingTexture, 0, 0, 0, 0, GetColorTexture(), 0, &sourceRegion);
+	m_pImmediateContext->CopySubresourceRegion(stagingTexture,0,0,0,0,GetColorTexture(),0,&sourceRegion);
 HRESULT hr=S_OK;
 	D3D11_MAPPED_SUBRESOURCE msr;
 	V_CHECK(m_pImmediateContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &msr));

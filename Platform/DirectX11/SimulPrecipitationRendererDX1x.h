@@ -29,36 +29,42 @@ typedef long HRESULT;
 #include "Simul/Platform/DirectX11/Utilities.h"
 typedef long HRESULT;
 
-class SimulPrecipitationRendererDX1x:public simul::clouds::BasePrecipitationRenderer
+namespace simul
 {
-public:
-	SimulPrecipitationRendererDX1x();
-	virtual ~SimulPrecipitationRendererDX1x();
-	//standard d3d object interface functions:
-	//! Call this when the D3D device has been created or reset.
-	void RestoreDeviceObjects(void* dev);
-	void RecompileShaders();
-	void SetCubemapTexture(void *);
-	//! Call this when the D3D device has been shut down.
-	void InvalidateDeviceObjects();
-	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-	//! Call this to draw the clouds, including any illumination by lightning.
-	void Render(void *context);
-protected:
-	void RenderParticles(void *context);
-	ID3D11Device*							m_pd3dDevice;
-	ID3D11InputLayout*						m_pVtxDecl;
-	ID3D11Buffer*							m_pVertexBuffer;
-	ID3DX11Effect*							m_pRainEffect;		// The fx file for the sky
-	ID3D11ShaderResourceView*				rain_texture;
-	ID3D11ShaderResourceView*				random_SRV;
-	ID3D11ShaderResourceView*				cubemap_SRV;
-	ID3D1xEffectShaderResourceVariable*		rainTexture;
-	vec3  *particles;
-	
-	ID3DX11EffectTechnique*					m_hTechniqueRain;
-	ID3DX11EffectTechnique*					m_hTechniqueParticles;
-	D3DXMATRIX								view,proj;
-	ConstantBuffer<RainConstants>			rainConstants;
-	ConstantBuffer<RainPerViewConstants>	perViewConstants;
-};
+	namespace dx11
+	{
+		class SimulPrecipitationRendererDX1x:public simul::clouds::BasePrecipitationRenderer
+		{
+		public:
+			SimulPrecipitationRendererDX1x();
+			virtual ~SimulPrecipitationRendererDX1x();
+			//standard d3d object interface functions:
+			//! Call this when the D3D device has been created or reset.
+			void RestoreDeviceObjects(void* dev);
+			void RecompileShaders();
+			void SetCubemapTexture(void *);
+			//! Call this when the D3D device has been shut down.
+			void InvalidateDeviceObjects();
+			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
+			//! Call this to draw the clouds, including any illumination by lightning.
+			void Render(void *context);
+		protected:
+			void RenderParticles(void *context);
+			ID3D11Device*							m_pd3dDevice;
+			ID3D11InputLayout*						m_pVtxDecl;
+			ID3D11Buffer*							m_pVertexBuffer;
+			ID3DX11Effect*							m_pRainEffect;		// The fx file for the sky
+			ID3D11ShaderResourceView*				rain_texture;
+			ID3D11ShaderResourceView*				random_SRV;
+			ID3D11ShaderResourceView*				cubemap_SRV;
+			ID3D1xEffectShaderResourceVariable*		rainTexture;
+			vec3  *particles;
+			
+			ID3DX11EffectTechnique*					m_hTechniqueRain;
+			ID3DX11EffectTechnique*					m_hTechniqueParticles;
+			D3DXMATRIX								view,proj;
+			ConstantBuffer<RainConstants>			rainConstants;
+			ConstantBuffer<RainPerViewConstants>	perViewConstants;
+		};
+	}
+}

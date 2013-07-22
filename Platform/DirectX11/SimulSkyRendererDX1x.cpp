@@ -407,7 +407,6 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 		D3D1x_CPU_ACCESS_WRITE,		//D3D1x_CPU_ACCESS_READ|
 		0
 	};
-	HRESULT hr;
 	UnmapFade();
 	for(int i=0;i<3;i++)
 	{
@@ -417,6 +416,7 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 		SAFE_RELEASE(insc_textures_SRV[i]);
 		SAFE_RELEASE(skylight_textures[i]);
 		SAFE_RELEASE(skyl_textures_SRV[i]);
+		HRESULT hr;
 		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&loss_textures[i]));
 		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&inscatter_textures[i]));
 		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&skylight_textures[i]));
@@ -657,11 +657,10 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
-	HRESULT hr;
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,0.0,0.0,0.0};
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
-	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
+	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());HRESULT hr;
 	{
 		V_CHECK(fadeTexture1->SetResource(loss_textures_SRV[0]));
 		V_CHECK(fadeTexture2->SetResource(loss_textures_SRV[1]));

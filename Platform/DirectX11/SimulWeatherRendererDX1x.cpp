@@ -29,7 +29,8 @@
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
-
+using namespace simul;
+using namespace dx11;
 
 SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *env
 													,simul::base::MemoryInterface *mem
@@ -216,7 +217,7 @@ SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
 
     return (hr==S_OK);
 }
-*/
+
 static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 {
 	D3DXMATRIX tmp1;
@@ -227,7 +228,7 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 	cam_pos.z=tmp1._43;
 	return cam_pos;
 }
-
+*/
 void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 {
 	static float exposure=1.f;

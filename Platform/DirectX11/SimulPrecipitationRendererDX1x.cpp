@@ -14,6 +14,9 @@
 #include "Simul/Camera/Camera.h"
 #include "Simul/Math/RandomNumberGenerator.h"
 
+using namespace simul;
+using namespace dx11;
+
 SimulPrecipitationRendererDX1x::SimulPrecipitationRendererDX1x() :
 	m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)

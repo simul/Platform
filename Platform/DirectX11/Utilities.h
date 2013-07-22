@@ -16,13 +16,16 @@ namespace simul
 			TextureStruct();
 			~TextureStruct();
 			void release();
-			ID3D11Texture2D*			texture;
+			ID3D11Resource*			texture;
 			ID3D11ShaderResourceView*   shaderResourceView;
-			D3D11_MAPPED_SUBRESOURCE mapped;
+			D3D11_MAPPED_SUBRESOURCE	mapped;
 			int width,length;
 			void setTexels(ID3D11DeviceContext *context,const float *float4_array,int texel_index,int num_texels);
 			void setTexels(ID3D11DeviceContext *context,const unsigned *uint_array,int texel_index,int num_texels);
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
+			void ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f);
+			void map(ID3D11DeviceContext *context);
+			void unmap();
 		private:
 			ID3D11DeviceContext *last_context;
 		};

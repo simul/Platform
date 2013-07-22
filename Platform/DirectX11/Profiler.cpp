@@ -170,7 +170,19 @@ float Profiler::GetTime(const std::string &name) const
 		return 0.f;
 	return profiles.find(name)->second.time;
 }
-
+#include "Simul/Base/StringFunctions.h"
+const char *Profiler::GetDebugText() const
+{
+	static std::string str;
+	str="";
+	for(Profiler::ProfileMap::const_iterator i=profiles.begin();i!=profiles.end();i++)
+	{
+		str+=i->first.c_str();
+		str+=" ";
+		str+=simul::base::stringFormat("%4.4g\n",i->second.time);
+	}
+	return str.c_str();
+}
 
 // == ProfileBlock ================================================================================
 

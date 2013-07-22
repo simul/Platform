@@ -22,6 +22,9 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Camera/Camera.h"
 
+using namespace simul;
+using namespace dx11;
+
 Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer *ck) :
 	simul::clouds::Base2DCloudRenderer(ck)
 	,m_pd3dDevice(NULL)

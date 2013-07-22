@@ -27,11 +27,12 @@ uniform_buffer AtmosphericsUniforms R11
 uniform_buffer AtmosphericsPerViewConstants R12
 {
 	uniform mat4 invViewProj;
+	uniform mat4 shadowMatrix;
+	uniform vec3 viewPosition;
+	uniform float pad9;
 	uniform vec2 tanHalfFov;
 	uniform float fill1,fill2;
 	uniform float nearZ;
 	uniform float farZ;
-	uniform vec3 viewPosition;
-	uniform float pad9;
 };
 #endif

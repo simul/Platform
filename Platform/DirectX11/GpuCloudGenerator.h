@@ -29,7 +29,9 @@ namespace simul
 			}
 			int GetDensityGridsize(const int *grid);
 			void* Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr);
-			void *FillDensityGrid(const int *grid
+			void CycleTexturesForward();
+			void FillDensityGrid(	int index
+									,const int *grid
 									,int start_texel
 									,int texels
 									,float humidity
@@ -38,33 +40,52 @@ namespace simul
 									,float upperDensity
 									,float time
 									,void* noise_tex,int octaves,float persistence);
-			virtual void PerformGPURelight(float *target
-									,const int *light_grid
-									,int start_texel
-									,int texels
-									,const int *density_grid
-									,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
-			void GPUTransferDataToTexture(unsigned char *target
+			virtual void PerformGPURelight(	int light_index
+											,float *target
+											,const int *light_grid
+											,int start_texel
+											,int texels
+											,const int *density_grid
+											,const float *Matrix4x4LightToDensityTexcoords
+											,const float *lightspace_extinctions_float3);
+			void GPUTransferDataToTexture(	int index
+											,unsigned char *target
 											,const float *DensityToLightTransform
-											,const float *light,const int *light_grid
-											,const float *ambient,const int *density_grid
+											,const float *light
+											,const int *light_grid
+											,const float *ambient
+											,const int *density_grid
 											,int start_texel
 											,int texels);
+			// If we want the generator to put the data directly into 3d textures:
+			void SetDirectTargets(TextureStruct **textures)
+			{
+				for(int i=0;i<3;i++)
+				{
+					if(textures)
+						finalTexture[i]=textures[i];
+					else
+						finalTexture[i]=NULL;
+				}
+			}
 		protected:
-			simul::dx11::Framebuffer		fb[2];
-			simul::dx11::Framebuffer		world_fb;
-			simul::dx11::Framebuffer		dens_fb;
-			ID3D1xDevice*					m_pd3dDevice;
-			ID3D11DeviceContext*			m_pImmediateContext;
-			ID3D1xEffect*					effect;
-			ID3D1xEffectTechnique*			densityTechnique;
-			ID3D1xEffectTechnique*			lightingTechnique;
-			ID3D1xEffectTechnique*			transformTechnique;
-			ID3D11Texture3D					*volume_noise_tex;
-			ID3D11ShaderResourceView		*volume_noise_tex_srv;
-			ID3D11Texture3D					*density_texture;
-			ID3D11ShaderResourceView		*density_texture_srv;
+			simul::dx11::Framebuffer			fb[2];
+			simul::dx11::Framebuffer			world_fb;
+			simul::dx11::Framebuffer			dens_fb;
+			ID3D1xDevice*						m_pd3dDevice;
+			ID3D11DeviceContext*				m_pImmediateContext;
+			ID3D1xEffect*						effect;
+			ID3D1xEffectTechnique*				densityTechnique;
+			ID3D1xEffectTechnique*				lightingTechnique;
+			ID3D1xEffectTechnique*				transformTechnique;
+			ID3D11Texture3D						*volume_noise_tex;
+			ID3D11ShaderResourceView			*volume_noise_tex_srv;
+			ID3D11Texture3D						*density_texture;
+			TextureStruct						*finalTexture[3];
+			TextureStruct						lightTextures[2];
+			ID3D11ShaderResourceView			*density_texture_srv;
 			ConstantBuffer<GpuCloudConstants>	gpuCloudConstants;
+
 		};
 	}
 }

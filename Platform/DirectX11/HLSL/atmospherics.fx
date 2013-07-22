@@ -115,7 +115,9 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 }
 
 // Slanted Cylinder whose axis is along lightDir,
-// radius is at the specified horizontal distance
+// radius is at the specified horizontal distance.
+// Distance c is:
+//					c=|lightDir.z*R|/|lightDir * sine - view * lightDir.z|
 float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 {
 	float3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
@@ -123,37 +125,44 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 	float sine			=view.z;
 	float cos0			=dot(view,lightDir);
 	float depth			=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-	float dist			=1.0;//depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
-//	float max_root_dist	=0.5;
-	vec2 fade_texc		=vec2(1.0,0.5*(1.0-sine));
-	vec4 insc0			=texture_wrap_mirror(inscTexture,fade_texc);
+	float dist			=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
+
 	vec4 total_insc		=vec4(0,0,0,0);
-	float illumination	=GetIlluminationAt(view*dist*maxDistance);
-	#define C 1
-	float retain=(float(C)-1.0)/float(C);
-	float u0=1.0;
+	#define C 512
+	float retain		=(float(C)-1.0)/float(C);
+	float r_max			=0.4;
+	float u_max			=r_max;
+	float r0			=r_max;
+	float u0			=abs(lightDir.z*r0)/length(view*lightDir.z-lightDir*view.z);
+	vec2 fade_texc		=vec2(sqrt(min(dist,u0)),0.5*(1.0-sine));
+	vec4 insc0			=texture_wrap_mirror(inscTexture,fade_texc);
+	float rem=1.0;
 	for(int i=0;i<C;i++)
 	{
-		float u		=((float(C)-float(i)-.5)/float(C));
-		float u0	=((float(C)-float(i))/float(C));
+		float r1	=r0;
+		r0			=r_max*((float(C)-float(i)-1.0)/float(C));
+		r0			=pow(r0,2.0);
 		float u1	=u0;
-		float eff	=1.0;//exp(-u/10.0);
-		//if(u<dist)
+		u0			=abs(lightDir.z*r0)/length(view*lightDir.z-lightDir*view.z);
+		float u		=0.5*(u0+u1);
+		float eff	=exp(-u/u_max);
+		if(u<dist)
 		{
-			fade_texc.x				=u0;
-			float d					=u*u*maxDistance;
-			illumination			=GetIlluminationAt(view*d);
-			vec4 insc1				=insc0;
-			insc0					=texture_wrap_mirror(inscTexture,fade_texc);
-			vec4 insc_diff			=insc1-insc0;
-			total_insc.rgb			+=insc_diff.rgb*illumination;
-			total_insc.a			*=retain;
-			total_insc.a			+=insc_diff.a*illumination;
+			fade_texc.x			=sqrt(u0);
+			float d				=u*maxDistance;
+			float ill			=GetIlluminationAt(viewPosition+view*d);
+			float shadow		=1.0-ill;
+			rem					*=ill;
+			vec4 insc1			=insc0;
+			insc0				=texture_wrap_mirror(inscTexture,fade_texc);
+			vec4 insc_diff		=max(insc1-insc0,vec4(0,0,0,0));
+			total_insc.rgb		+=insc_diff.rgb*shadow;
+			total_insc.a		*=retain;
+			total_insc.a		+=insc_diff.a*shadow;
 		}
 	}
-	vec3 gr=-illumination;//total_insc.rgb;//InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
+	vec3 gr=-0.75*(1.0-rem);//InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
 	gr=min(gr,vec3(0.0,0.0,0.0));
-	
 	return vec4(gr,0.0);
 }
 

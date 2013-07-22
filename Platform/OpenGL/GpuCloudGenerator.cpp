@@ -114,8 +114,12 @@ void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_sr
 	return (void*)make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
 }
 
+void GpuCloudGenerator::CycleTexturesForward()
+{
+}
+
 // Fill the stated number of texels of the density texture
-void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
+void GpuCloudGenerator::FillDensityGrid(int index,const int *density_grid
 											,int start_texel
 											,int texels
 											,float humidity
@@ -227,7 +231,6 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 			int H=texels/density_grid[0];
 			int z0=Y/density_grid[1];
 			int z1=(start_texel+texels)/density_grid[0]/density_grid[1];
-			//int dz=z1-z0;
 			int y0=Y-z0*density_grid[1];
 			int y1=Y+H-(z1-1)*density_grid[1];
 			for(int i=z0;i<z1;i++)
@@ -243,13 +246,13 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 					dy=y1-y;
 				}
 		ERROR_CHECK
-				glCopyTexSubImage3D(GL_TEXTURE_3D,
- 										0,					//level
- 										0,					//x offset in 3D texture
- 										y,					//y offset in 3D texture
- 										i,					//z offset in 3D texture
- 										0,					//x=0 in source 2D texture
- 										i*density_grid[1]+y,//y offset in source 2D texture
+				glCopyTexSubImage3D(	GL_TEXTURE_3D,
+ 										0,						//	level
+ 										0,						//	x offset in 3D texture
+ 										y,						//	y offset in 3D texture
+ 										i,						//	z offset in 3D texture
+ 										0,						//	x=0 in source 2D texture
+ 										i*density_grid[1]+y,	//	y offset in source 2D texture
  										density_grid[0],	
  										dy);
 		ERROR_CHECK
@@ -268,12 +271,10 @@ ERROR_CHECK
 ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
-ERROR_CHECK
-	return (void*)dens_fb.GetColorTex();
 }
 
 // The target is a grid of size given by light_gridsizes, arranged as d w-by-l textures.
-void GpuCloudGenerator::PerformGPURelight(float *target
+void GpuCloudGenerator::PerformGPURelight(int index,float *target
 										,const int *light_grid
 										,int start_texel
 										,int texels
@@ -386,7 +387,7 @@ std::cout<<"\tGpu clouds: SAFE_DELETE_TEXTURE "<<timer.UpdateTime()<<std::endl;
 
 // Transform light data into a world-oriented cloud texture.
 // The inputs are in RGBA float32 format, with the light values in the RG slots.
-void GpuCloudGenerator::GPUTransferDataToTexture(unsigned char *target
+void GpuCloudGenerator::GPUTransferDataToTexture(int index,unsigned char *target
 											,const float *transformMatrix
 											,const float *light,const int *light_grid
 											,const float *ambient,const int *density_grid
