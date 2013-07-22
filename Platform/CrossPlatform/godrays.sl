@@ -16,11 +16,15 @@ float GetIlluminationAt(vec3 pos)
 
 float GetIlluminationAt(vec3 wpos)
 {
+	vec3 rel_pos		=wpos-cloudOrigin;
+	vec3 cloud_texc		=rel_pos*cloudScale;
+
 	vec3 tex_pos		=mul(shadowMatrix,vec4(wpos,1.0)).xyz;
 	tex_pos.xy			/=80000.0;
 	tex_pos.xy			+=vec2(0.5,0.5);
-	float z				=texture_clamp(cloudShadowTexture,tex_pos.xy).r;
-	float illumination	=saturate((tex_pos.z-z)/1000.0);
+	float illumination	=texture_clamp(cloudShadowTexture,tex_pos.xy).r;
+	float above			=saturate((cloud_texc.z-.125)*10.0);
+	illumination		+=above;
 	return saturate(illumination);
 }
 

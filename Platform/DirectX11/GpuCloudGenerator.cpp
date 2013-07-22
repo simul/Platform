@@ -218,13 +218,15 @@ std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 			F[0]->Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
 		F[0]->Deactivate(m_pImmediateContext);
 std::cout<<"\tDraw0 "<<timer.UpdateTime()<<"ms"<<std::endl;
-		F[0]->CopyToMemory(m_pImmediateContext,target);
+		if(target)
+			F[0]->CopyToMemory(m_pImmediateContext,target);
 std::cout<<"\tCopy0 "<<timer.UpdateTime()<<"ms"<<std::endl;
 		m_pImmediateContext->CopySubresourceRegion(lightTextures[light_index].texture,0,0,0,0,F[0]->GetColorTexture(),0,&sourceRegion);
 	}
 	int i0	=start_texel/(light_grid[0]*light_grid[1]);
 	int i1	=(start_texel+texels)/(light_grid[0]*light_grid[1]);
-	target	+=i0*light_grid[0]*light_grid[1]*4;
+	if(target)
+		target	+=i0*light_grid[0]*light_grid[1]*4;
 	if(i0%2)
 		std::swap(F[0],F[1]);
 	float drawtime=0.f,copytime=0.f;
@@ -240,13 +242,15 @@ std::cout<<"\tCopy0 "<<timer.UpdateTime()<<"ms"<<std::endl;
 		F[1]->Deactivate(m_pImmediateContext);
 drawtime+=timer.UpdateTime();
 		// Copy F[1] contents to the target
-		F[1]->CopyToMemory(m_pImmediateContext,target);
+		if(target)
+			F[1]->CopyToMemory(m_pImmediateContext,target);
 
 		// Copy this layer to the volume light texture:
 		m_pImmediateContext->CopySubresourceRegion(lightTextures[light_index].texture,0,0,0,i,F[1]->GetColorTexture(),0,&sourceRegion);
 
 		std::swap(F[0],F[1]);
-		target+=light_grid[0]*light_grid[1]*4;
+		if(target)
+			target+=light_grid[0]*light_grid[1]*4;
 copytime+=timer.UpdateTime();
 	}
 
@@ -300,7 +304,8 @@ std::cout<<"\tDraw "<<timer.UpdateTime()<<"ms"<<std::endl;
 	{
 		int t0=z0*density_grid[0]*density_grid[1];
 		int t=z1*density_grid[0]*density_grid[1]-t0;
-		world_fb.CopyToMemory(m_pImmediateContext,target,t0,t);
+		if(target)
+			world_fb.CopyToMemory(m_pImmediateContext,target,t0,t);
 std::cout<<"\tMemCopy "<<timer.UpdateTime()<<"ms"<<std::endl;
 		// Copy all the layers from the 2D dens_fb texture to the 3D texture.
 		if(finalTexture[index])

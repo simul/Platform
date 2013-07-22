@@ -23,8 +23,10 @@
 #include "SimulSkyRendererDX1x.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/RandomNumberGenerator.h"
-#include "CreateEffectDX1x.h"
-#include "Utilities.h"
+#include "Simul/Camera/Camera.h"
+#include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
+
 using namespace simul;
 using namespace dx11;
 
@@ -132,22 +134,6 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMA
 	proj=p;
 }
 
-#include "Simul/Camera/Camera.h"
-
-void SimulAtmosphericsRendererDX1x::SetAtmosphericsConstants(AtmosphericsUniforms &a,float exposure)
-{
-	float alt_km		=cam_pos.z/1000.f;
-	a.lightDir			=(const float*)skyInterface->GetDirectionToLight(alt_km);
-	a.mieRayleighRatio	=(const float*)skyInterface->GetMieRayleighRatio();
-	a.texelOffsets		=D3DXVECTOR2(0,0);
-	a.hazeEccentricity	=skyInterface->GetMieEccentricity();
-	a.exposure			=exposure;
-	a.cloudOrigin		=cloud_origin;
-	a.cloudScale		=cloud_scale;
-	a.maxDistance		=fade_distance_km*1000.f;
-	a.overcast			=overcast;
-}
-
 void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure)
 {
 	HRESULT hr=S_OK;
@@ -222,7 +208,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 	
 	simul::geometry::SimulOrientation or;
 	simul::math::Vector3 north(0.f,1.f,0.f);
-	simul::math::Vector3 toSun(0.f,0.f,1.f);//=skyInterface->GetDirectionToSun();
+	simul::math::Vector3 toSun(skyInterface->GetDirectionToSun());
 	or.DefineFromYZ(north,toSun);
 	or.SetPosition((const float*)cam_pos);
 	AtmosphericsPerViewConstants atmosphericsPerViewConstants;

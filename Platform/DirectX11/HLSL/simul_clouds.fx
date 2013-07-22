@@ -476,11 +476,11 @@ vertexOutputCS VS_FullScreen(idOnly IN)
 // Then trace down to find first intersection with clouds, if any.
 float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
 {
-    vec3 pos		=80000.0*vec3(IN.texCoords.xy-vec2(0.5,0.5),0.0);
-	vec3 wpos0		=mul(shadowMatrix,vec4(pos,1.0)).xyz;
-	float dh		=cornerPos.z-wpos0.z+1.0/inverseScales.z;
-	float thickness	=dh/lightDir.z;
-	float Z			=-80000.0;
+    vec3 pos			=80000.0*vec3(IN.texCoords.xy-vec2(0.5,0.5),0.0);
+	vec3 wpos0			=mul(shadowMatrix,vec4(pos,1.0)).xyz;
+	float dh			=cornerPos.z-wpos0.z+1.0/inverseScales.z;
+	float thickness		=dh/lightDir.z;
+	float illumination	=1.0;
 	static const int C=256;
 	for(int i=0;i<C;i++)
 	{
@@ -491,14 +491,9 @@ float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
 		vec4 density1	=sampleLod(cloudDensity1,wwcSamplerState,texc,0);
 		vec4 density2	=sampleLod(cloudDensity2,wwcSamplerState,texc,0);
 		vec4 density	=lerp(density1,density2,cloud_interp);
-		if(density.z>0.0)
-		{
-			float mx	=density.z;
-			Z			*=(1.0-mx);
-			Z			+=mx*z;
-		}
+		illumination	=lerp(illumination,0,density.z);
 	}
-	return float4(Z,0,0,1.0);
+	return float4(illumination,0,0,1.0);
 }
 
 vertexOutputCS VS_CrossSection(idOnly IN)

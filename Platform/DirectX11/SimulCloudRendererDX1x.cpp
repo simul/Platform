@@ -695,7 +695,7 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	CloudPerViewConstants cloudPerViewConstants;
 	simul::geometry::SimulOrientation or;
 	simul::math::Vector3 north(0.f,1.f,0.f);
-	simul::math::Vector3 toSun(0.f,0.f,1.f);//skyInterface->GetDirectionToSun();
+	simul::math::Vector3 toSun(skyInterface->GetDirectionToSun());
 	or.DefineFromYZ(north,toSun);
 	or.SetPosition((const float*)cam_pos);
 	cloudPerViewConstants.shadowMatrix=or.T4;

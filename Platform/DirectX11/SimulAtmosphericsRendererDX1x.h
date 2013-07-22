@@ -63,7 +63,6 @@ namespace simul
 			void RenderAsOverlay(void *context,const void *depthTexture,float exposure);
 			void RenderGodrays(void *context,const void *depthTexture,float exposure);
 		protected:
-			void SetAtmosphericsConstants(AtmosphericsUniforms &a,float exposure);
 			HRESULT Destroy();
 			ID3D1xDevice*								m_pd3dDevice;
 			ID3D1xInputLayout*							vertexDecl;

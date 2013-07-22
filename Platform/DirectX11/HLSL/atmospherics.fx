@@ -125,10 +125,10 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 	float sine			=view.z;
 	float cos0			=dot(view,lightDir);
 	float depth			=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-	float dist			=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
+	float dist			=1.0;//depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
 
 	vec4 total_insc		=vec4(0,0,0,0);
-	#define C 512
+	#define C 12
 	float retain		=(float(C)-1.0)/float(C);
 	float r_max			=0.4;
 	float u_max			=r_max;
@@ -137,21 +137,21 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 	vec2 fade_texc		=vec2(sqrt(min(dist,u0)),0.5*(1.0-sine));
 	vec4 insc0			=texture_wrap_mirror(inscTexture,fade_texc);
 	float rem=1.0;
-	for(int i=0;i<C;i++)
+	for(int i=0;i<1;i++)
 	{
 		float r1	=r0;
-		r0			=r_max*((float(C)-float(i)-1.0)/float(C));
+		r0			=r_max;//*((float(C)-float(i)-1.0)/float(C));
 		r0			=pow(r0,2.0);
 		float u1	=u0;
 		u0			=abs(lightDir.z*r0)/length(view*lightDir.z-lightDir*view.z);
 		float u		=0.5*(u0+u1);
 		float eff	=exp(-u/u_max);
-		if(u<dist)
+	//	if(u<dist)
 		{
 			fade_texc.x			=sqrt(u0);
 			float d				=u*maxDistance;
 			float ill			=GetIlluminationAt(viewPosition+view*d);
-			float shadow		=1.0-ill;
+			float shadow		=eff*(1.0-ill);
 			rem					*=ill;
 			vec4 insc1			=insc0;
 			insc0				=texture_wrap_mirror(inscTexture,fade_texc);
@@ -161,7 +161,7 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 			total_insc.a		+=insc_diff.a*shadow;
 		}
 	}
-	vec3 gr=-0.75*(1.0-rem);//InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
+	vec3 gr=-.75*total_insc.rgb;//InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
 	gr=min(gr,vec3(0.0,0.0,0.0));
 	return vec4(gr,0.0);
 }
