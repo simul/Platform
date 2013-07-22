@@ -701,7 +701,7 @@ void SimulCloudRendererDX1x::Update(void *context)
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply(pContext);
 	//set up matrices
-	simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
+/*	simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
 	if(y_vertical)
 		std::swap(wind_offset.y,wind_offset.z);
@@ -715,10 +715,10 @@ void SimulCloudRendererDX1x::Update(void *context)
 	float tan_half_fov_horizontal=1.f/proj._11;
 	helper->SetNoFrustumLimit(true);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
+	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);*/
 }
 static int test=29999;
-bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha)
+bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
 	ID3D1xShaderResourceView *depthTexture_SRV	=(ID3D1xShaderResourceView *)depth_tex;
@@ -746,11 +746,35 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	simul::dx11::setParameter(m_pCloudEffect,"illuminationTexture",illuminationTexture_SRV);
 
 	CloudPerViewConstants cloudPerViewConstants;
-	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure);
+	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewportTextureRegionXYWH);
 	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
 	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=m_pCloudEffect->GetConstantBufferByName("CloudPerViewConstants");
 	if(cbCloudPerViewConstants)
 		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
+
+	if (!cubemap)
+	{
+		//set up matrices
+		simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
+		simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
+		if(y_vertical)
+			std::swap(wind_offset.y,wind_offset.z);
+		X+=wind_offset;
+		simul::math::Vector3 view_dir	(view._13,view._23,view._33);
+		if(!y_vertical)
+			view_dir.Define(-view._13,-view._23,-view._33);
+		simul::math::Vector3 up(view._12,view._22,view._32);
+		helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
+		float tan_half_fov_vertical=1.f/proj._22;
+		float tan_half_fov_horizontal=1.f/proj._11;
+		helper->SetNoFrustumLimit(true);
+		helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
+		helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
+	}
+
+
+
+
 
 	static int select_slice=-1;
 	int ii=0;

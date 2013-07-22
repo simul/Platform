@@ -42,7 +42,7 @@ public:
 	void RecompileShaders();
 	void InvalidateDeviceObjects();
 	bool Destroy();
-	void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture);
+	void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 	bool RenderSky(void *context,float exposure,bool buffered,bool is_cubemap);
 	void RenderLateCloudLayer(void *context,float exposure,bool );
 	void RenderPrecipitation(void *context);

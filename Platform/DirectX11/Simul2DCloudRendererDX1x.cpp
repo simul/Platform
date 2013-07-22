@@ -243,7 +243,7 @@ void Simul2DCloudRendererDX11::Update(void *context)
 {
 }
 
-bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,const void *depthTexture,bool default_fog,bool write_alpha)
+bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,const void *depthTexture,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	EnsureTexturesAreUpToDate(context);
 	RenderDetailTexture(context);
@@ -271,6 +271,7 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	simul::math::Vector3 DX=X2-X1;
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
 
+	cloud2DConstants.viewportToTexRegionScaleBias = simul::sky::float4( viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y );
 	cloud2DConstants.worldViewProj			=wvp;
 	cloud2DConstants.worldViewProj.transpose();
 	cloud2DConstants.origin					=X1+cloudKeyframer->GetCloudInterface()->GetWindOffset();

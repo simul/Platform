@@ -29,6 +29,7 @@ uniform_buffer AtmosphericsUniforms R11
 uniform_buffer AtmosphericsPerViewConstants R12
 {
 	uniform mat4 invViewProj;
+	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec2 tanHalfFov;
 	uniform float fill1,fill2;
 	uniform float nearZ;

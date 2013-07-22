@@ -148,7 +148,12 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		if(simulWeatherRenderer)
 		{
 			simulWeatherRenderer->SetMatrices(view_matrices[i],cube_proj);
-			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapDepthFramebuffer.GetDepthTex());
+			simul::sky::float4 relativeViewportTextureRegionXYWH; //... we have no constructor and we can't construct with an initialiser list (at least on VC10). Got to construct the tedious way -
+			relativeViewportTextureRegionXYWH.x = 0.0f;
+			relativeViewportTextureRegionXYWH.y = 0.0f;
+			relativeViewportTextureRegionXYWH.z = 1.0f;
+			relativeViewportTextureRegionXYWH.w = 1.0f;
+			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapDepthFramebuffer.GetDepthTex(),relativeViewportTextureRegionXYWH);
 		}
 		framebuffer_cubemap.Deactivate(pContext);
 	}
@@ -200,7 +205,12 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	void *depthTexture=depthFramebuffer.GetDepthTex();
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture);
+		simul::sky::float4 relativeViewportTextureRegionXYWH; //... we have no constructor and we can't construct with an initialiser list (at least on VC10). Got to construct the tedious way -
+		relativeViewportTextureRegionXYWH.x = 0.0f;
+		relativeViewportTextureRegionXYWH.y = 0.0f;
+		relativeViewportTextureRegionXYWH.z = 1.0f;
+		relativeViewportTextureRegionXYWH.w = 1.0f;
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture,relativeViewportTextureRegionXYWH);
 	}
 	if(simulWeatherRenderer)
 	{

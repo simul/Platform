@@ -152,7 +152,7 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMA
 
 #include "Simul/Camera/Camera.h"
 
-void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure)
+void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::RenderAsOverlay");
 	ID3D11DeviceContext* m_pImmediateContext=(ID3D11DeviceContext*)context;
@@ -188,6 +188,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	AtmosphericsPerViewConstants atmosphericsUniforms2;
 	atmosphericsUniforms2.invViewProj=ivp;
 	atmosphericsUniforms2.invViewProj.transpose();
+	atmosphericsUniforms2.viewportToTexRegionScaleBias = vec4(relativeViewportTextureRegionXYWH.z,relativeViewportTextureRegionXYWH.w,relativeViewportTextureRegionXYWH.x,relativeViewportTextureRegionXYWH.y);
 	atmosphericsUniforms2.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	atmosphericsUniforms2.nearZ=frustum.nearZ*0.001f/fade_distance_km;
 	atmosphericsUniforms2.farZ=frustum.farZ*0.001f/fade_distance_km;

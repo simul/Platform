@@ -51,8 +51,9 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 {
 	float3 view		=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	float4 lookup	=imageTexture.Sample(clampSamplerState,IN.texCoords.xy);
-	float4 dlookup	=depthTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	float2 viewportTexCoord = viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	float4 lookup	=imageTexture.Sample(clampSamplerState,viewportTexCoord);
+	float4 dlookup	=depthTexture.Sample(clampSamplerState,viewportTexCoord);
 	float3 colour	=lookup.rgb;
 	float depth		=dlookup.r;
 	float dist		=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
@@ -78,7 +79,7 @@ float4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
 {
 	float3 view	=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
 	view		=normalize(view);
-	float depth	=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
+	float depth	=depthTexture.Sample(clampSamplerState,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias)).x;
 	float dist	=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
 	float sine	=view.z;
 	float2 texc2=float2(pow(dist,0.5f),0.5f*(1.f-sine));
@@ -90,7 +91,7 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 {
 	float3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
 	view				=normalize(view);
-	float depth			=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
+	float depth			=depthTexture.Sample(clampSamplerState,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias)).x;
 	float dist			=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
 	float sine			=view.z;
 	float2 fade_texc	=float2(pow(dist,0.5f),0.5f*(1.f-sine));

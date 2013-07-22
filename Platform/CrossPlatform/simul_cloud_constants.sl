@@ -35,6 +35,7 @@ uniform_buffer LayerConstants R8
 
 uniform_buffer CloudPerViewConstants R13
 {
+	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 viewPos;
 	uniform float uuuu;
 	uniform mat4 invViewProj;

@@ -3,6 +3,7 @@
 
 uniform_buffer Cloud2DConstants R11
 {
+	uniform vec4 viewportToTexRegionScaleBias;
 	uniform mat4 worldViewProj;
 	uniform vec3 origin;
 	uniform float globalScale;
