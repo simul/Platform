@@ -98,7 +98,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 		//if(i==32)
 		{
 			float3 pos=viewPos+dist*view;
-			pos.z-=layer.verticalShift;
+		//	pos.z-=layer.verticalShift;
 			float4 texCoords;
 			texCoords.xyz=(pos-cornerPos)*inverseScales;
 			texCoords.w=texCoords.z;
@@ -159,7 +159,6 @@ float4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 		if(z<d)
 		{
 			float3 pos=viewPos+dist*view;
-			pos.z-=layer.verticalShift;
 			float3 texCoords=(pos-cornerPos)*inverseScales;
 			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
 			{
@@ -476,7 +475,7 @@ vertexOutputCS VS_FullScreen(idOnly IN)
 // Then trace down to find first intersection with clouds, if any.
 float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
 {
-    vec3 pos			=80000.0*vec3(IN.texCoords.xy-vec2(0.5,0.5),0.0);
+    vec3 pos			=160000.0*vec3(IN.texCoords.xy-vec2(0.5,0.5),0.0);
 	vec3 wpos0			=mul(shadowMatrix,vec4(pos,1.0)).xyz;
 	float dh			=cornerPos.z-wpos0.z+1.0/inverseScales.z;
 	float thickness		=dh/lightDir.z;
@@ -624,32 +623,6 @@ technique11 simul_raytrace_3d_noise
         SetRasterizerState( RenderNoCull );
 		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoise()));
-    }
-}
-
-technique11 simul_clouds_gs
-{
-    pass p0 
-    {
-		SetDepthStencilState(DisableDepth,0);
-        SetRasterizerState( RenderNoCull );
-		//SetBlendState(CloudBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(CompileShader(gs_5_0,GS_Main()));
-		SetVertexShader(CompileShader(vs_5_0,VS_FeedToGS()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Clouds()));
-    }
-}
-
-technique11 simul_clouds_3d_noise
-{
-    pass p0 
-    {
-		SetDepthStencilState(DisableDepth,0);
-        SetRasterizerState( RenderNoCull );
-		//SetBlendState(CloudBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(CompileShader(gs_5_0,GS_Main()));
-		SetVertexShader(CompileShader(vs_5_0,VS_FeedToGS()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Clouds3DNoise()));
     }
 }
 
