@@ -877,9 +877,8 @@ void SimulCloudRendererDX1x::DrawLines(void *context,VertexXyzRgba *vertices,int
 void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int height)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
-	
 	HRESULT hr=S_OK;
-	static int u=3;
+	static int u=4;
 	int w=(width-8)/u;
 	if(w>height/2)
 		w=height/2;
@@ -891,7 +890,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	D3DXVECTOR4 cross_section_offset(0,0,0,0);
 	UtilityRenderer::SetScreenSize(width,height);
 	if(skyInterface)
-	for(int i=0;i<2;i++)
+	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
 				static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(

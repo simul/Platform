@@ -96,6 +96,8 @@ void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_sr
 
 void GpuCloudGenerator::CycleTexturesForward()
 {
+	std::swap(finalTexture[0],finalTexture[1]);
+	std::swap(finalTexture[1],finalTexture[2]);
 }
 
 void GpuCloudGenerator::FillDensityGrid(int index,const int *density_grid

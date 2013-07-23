@@ -71,7 +71,7 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 	simulCloudRenderer=new(memoryInterface) SimulCloudRendererDX1x(ck3d);
 	baseCloudRenderer=simulCloudRenderer;
 	simulLightningRenderer=new(memoryInterface) SimulLightningRendererDX11(ck3d,sk);
-	if(clouds2d)
+	if(clouds2d&&env->cloud2DKeyframer.get())
 		base2DCloudRenderer=simul2DCloudRenderer=new(memoryInterface) Simul2DCloudRendererDX11(ck2d);
 	if(rain)
 		basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulPrecipitationRendererDX1x();
