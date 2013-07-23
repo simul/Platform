@@ -5,41 +5,43 @@
 #include "FreeImage.h"
 #include "SimulGLUtilities.h"
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Base/StringToWString.h"
 
-static std::string image_path="";
+static std::string texturePathUtf8="";
 
 namespace simul
 {
 	namespace opengl
 	{
-		void SetTexturePath(const char *path)
+		void SetTexturePath(const char *path_utf8)
 		{
-			image_path=path;
+			texturePathUtf8=path_utf8;
 		}
 	}
 }
-unsigned char * LoadBitmap(const char *filename,unsigned &bpp,unsigned &width,unsigned &height)
+unsigned char * LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
 {
 #ifdef WIN32
-	std::string fn=filename;
+	std::string fn=filename_utf8;
 	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
-	fif = FreeImage_GetFileType(fn.c_str(), 0);
+	std::wstring wstr=simul::base::Utf8ToWString(fn);
+	fif = FreeImage_GetFileTypeU(wstr.c_str(), 0);
 	if(fif == FIF_UNKNOWN)
 	{
 		// no signature ?
 		// try to guess the file format from the file extension
-		fif = FreeImage_GetFIFFromFilename(fn.c_str());
+		fif = FreeImage_GetFIFFromFilenameU(wstr.c_str());
 	}
 	// check that the plugin has reading capabilities ...
 	if((fif == FIF_UNKNOWN) ||!FreeImage_FIFSupportsReading(fif))
 	{
-		throw simul::base::RuntimeError(std::string("Can't determine bitmap type from filename: ")+std::string(filename));
+		throw simul::base::RuntimeError(std::string("Can't determine bitmap type from filename: ")+std::string(filename_utf8));
 	}
 	// ok, let's load the file
-	FIBITMAP *dib = FreeImage_Load(fif,fn.c_str());
+	FIBITMAP *dib = FreeImage_LoadU(fif,wstr.c_str());
 	if(!dib)
 	{
-		throw simul::base::RuntimeError(std::string("Failed to load bitmap ")+std::string(filename));
+		throw simul::base::RuntimeError(std::string("Failed to load bitmap ")+std::string(filename_utf8));
 	}
 
 	width  = FreeImage_GetWidth(dib),
@@ -55,11 +57,11 @@ unsigned char * LoadBitmap(const char *filename,unsigned &bpp,unsigned &width,un
 #endif
 }
 
-GLuint LoadGLImage(const char *filename,unsigned wrap)
+GLuint LoadGLImage(const char *filename_utf8,unsigned wrap)
 {
 #ifdef WIN32
-	std::string fn=image_path+"/";
-	fn+=filename;
+	std::string fn=texturePathUtf8+"/";
+	fn+=filename_utf8;
 	unsigned bpp=0;
 	unsigned width,height;
 	BYTE *pixels=(BYTE*)LoadBitmap(fn.c_str(),bpp,width,height);
@@ -81,9 +83,9 @@ GLuint LoadGLImage(const char *filename,unsigned wrap)
 #endif
 }
 
-unsigned char *LoadGLBitmap(const char *filename,unsigned &bpp,unsigned &width,unsigned &height)
+unsigned char *LoadGLBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
 {
-	std::string fn=image_path+"/";
-	fn+=filename;
+	std::string fn=texturePathUtf8+"/";
+	fn+=filename_utf8;
 	return LoadBitmap(fn.c_str(),bpp,width,height);
 }

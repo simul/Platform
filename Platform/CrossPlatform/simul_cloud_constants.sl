@@ -21,11 +21,6 @@ struct LayerData
 	float pad12;
 };
 
-uniform_buffer SingleLayerConstants R11
-{
-	uniform LayerData layerData;
-};
-
 uniform_buffer LayerConstants R8
 {
 	uniform LayerData layers[MAX_INSTANCES];
@@ -39,8 +34,8 @@ uniform_buffer CloudPerViewConstants R13
 	uniform vec3 viewPos;
 	uniform float uuuu;
 	uniform mat4 invViewProj;
+	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
 	uniform mat4 noiseMatrix;
-	uniform vec2 noise_offset;
 	uniform float nearZ;
 	uniform float farZ;
 	uniform vec2 tanHalfFov;

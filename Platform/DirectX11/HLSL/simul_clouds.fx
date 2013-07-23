@@ -98,13 +98,15 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 		//if(i==32)
 		{
 			float3 pos=viewPos+dist*view;
-			pos.z-=layer.verticalShift;
-			float3 texCoords=(pos-cornerPos)*inverseScales;
+		//	pos.z-=layer.verticalShift;
+			float4 texCoords;
+			texCoords.xyz=(pos-cornerPos)*inverseScales;
+			texCoords.w=texCoords.z;
 			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
 			{
 				float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
-				float3 noiseval		=noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
-				float4 density		=calcDensity(texCoords,layer.layerFade,noiseval);
+				float3 noiseval		=texCoords.w*noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
+				float4 density		=calcDensity(texCoords.xyz,layer.layerFade,noiseval);
 				if(density.z>0)
 				{
 					float4 c=calcColour(density,cos0,texCoords.z);
@@ -122,7 +124,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	}
 	if(colour.a>=1.0)
 	   discard;
-					fade_texc.x=sqrt(Z);
+	fade_texc.x=sqrt(Z);
 	//colour.rgb=(1.0-colour.a)*applyFades(colour.rgb,fade_texc,cos0,earthshadowMultiplier);
     return float4(exposure*colour.rgb,1.0-colour.a);
 }
@@ -157,7 +159,6 @@ float4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 		if(z<d)
 		{
 			float3 pos=viewPos+dist*view;
-			pos.z-=layer.verticalShift;
 			float3 texCoords=(pos-cornerPos)*inverseScales;
 			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
 			{
@@ -305,7 +306,7 @@ toPS VS_Main(vertexInput IN)
 	float3 wPos				=t1+viewPos;
 	OUT.texCoords.xyz		=wPos-cornerPos;
 	OUT.texCoords.xyz		*=inverseScales;
-	OUT.texCoords.w			=0.5f+0.5f*saturate(OUT.texCoords.z);
+	OUT.texCoords.w			=saturate(OUT.texCoords.z);
 	float3 texCoordLightning=(pos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
 	OUT.texCoordLightning	=texCoordLightning;
 	
@@ -360,7 +361,7 @@ void GS_Main(line VStoGS input[2], inout TriangleStream<toPS> OutputStream)
 			float3 wPos				=viewPos+t1;
 			OUT.texCoords.xyz		=wPos-cornerPos;
 			OUT.texCoords.xyz		*=inverseScales;
-			OUT.texCoords.w			=0.5f+0.5f*saturate(OUT.texCoords.z);
+			OUT.texCoords.w			=saturate(OUT.texCoords.z);
 			float3 texCoordLightning=(pos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
 			OUT.texCoordLightning	=texCoordLightning;
 			float3 view				=normalize(pos.xyz);
@@ -445,6 +446,54 @@ struct vertexOutputCS
 //{
 	uniform vec4 rect;
 //};
+
+vertexOutputCS VS_FullScreen(idOnly IN)
+{
+	vertexOutputCS OUT;
+	float2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(pos,0.0,1.0);
+	// Set to far plane
+#ifdef REVERSE_DEPTH
+	OUT.hPosition.z	=0.0; 
+#else
+	OUT.hPosition.z	=OUT.hPosition.w; 
+#endif
+    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(pos.x,-pos.y));
+//OUT.texCoords	+=0.5*texelOffsets;
+	return OUT;
+}
+
+// Given texture position from texCoords, convert to a worldpos with shadowMatrix.
+// Then, trace towards sun to find initial intersection with cloud volume
+// Then trace down to find first intersection with clouds, if any.
+float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
+{
+    vec3 pos			=160000.0*vec3(IN.texCoords.xy-vec2(0.5,0.5),0.0);
+	vec3 wpos0			=mul(shadowMatrix,vec4(pos,1.0)).xyz;
+	float dh			=cornerPos.z-wpos0.z+1.0/inverseScales.z;
+	float thickness		=dh/lightDir.z;
+	float illumination	=1.0;
+	static const int C=256;
+	for(int i=0;i<C;i++)
+	{
+		float u			=float(i)/float(C);
+		float z			=80000.0*(u-0.5);
+		vec3 wpos		=wpos0+lightDir.xyz*z;
+		vec3 texc		=(wpos-cornerPos)*inverseScales;
+		vec4 density1	=sampleLod(cloudDensity1,wwcSamplerState,texc,0);
+		vec4 density2	=sampleLod(cloudDensity2,wwcSamplerState,texc,0);
+		vec4 density	=lerp(density1,density2,cloud_interp);
+		illumination	=lerp(illumination,0,density.z);
+	}
+	return float4(illumination,0,0,1.0);
+}
 
 vertexOutputCS VS_CrossSection(idOnly IN)
 {
@@ -577,32 +626,6 @@ technique11 simul_raytrace_3d_noise
     }
 }
 
-technique11 simul_clouds_gs
-{
-    pass p0 
-    {
-		SetDepthStencilState(DisableDepth,0);
-        SetRasterizerState( RenderNoCull );
-		//SetBlendState(CloudBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(CompileShader(gs_5_0,GS_Main()));
-		SetVertexShader(CompileShader(vs_5_0,VS_FeedToGS()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Clouds()));
-    }
-}
-
-technique11 simul_clouds_3d_noise
-{
-    pass p0 
-    {
-		SetDepthStencilState(DisableDepth,0);
-        SetRasterizerState( RenderNoCull );
-		//SetBlendState(CloudBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(CompileShader(gs_5_0,GS_Main()));
-		SetVertexShader(CompileShader(vs_5_0,VS_FeedToGS()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Clouds3DNoise()));
-    }
-}
-
 technique11 simul_clouds_and_lightning
 {
     pass p0 
@@ -616,6 +639,18 @@ technique11 simul_clouds_and_lightning
     }
 }
 
+technique11 cloud_shadow
+{
+    pass p0 
+    {
+		SetDepthStencilState(DisableDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetBlendState(NoBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_CloudShadow()));
+    }
+}
 technique11 cross_section_xz
 {
     pass p0 

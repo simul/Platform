@@ -153,7 +153,7 @@ ERROR_CHECK
 		depthFramebuffer.Activate(context);
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		if(simulTerrainRenderer&&ShowTerrain)
-			simulTerrainRenderer->Render(context,exposure);
+			simulTerrainRenderer->Render(context,1.f);
 		simulWeatherRenderer->RenderCelestialBackground(context,exposure);
 		depthFramebuffer.Deactivate(context);
 		{

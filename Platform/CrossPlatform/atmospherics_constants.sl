@@ -16,8 +16,6 @@ uniform_buffer AtmosphericsUniforms R11
 	uniform float pad7;
 	uniform vec3 cloudScale;
 	uniform float pad8;
-	uniform vec3 viewPosition;
-	uniform float pad9;
 	uniform float overcast;
 	uniform float pad10,pad11,pad12;
 	uniform float maxDistance;
@@ -29,7 +27,10 @@ uniform_buffer AtmosphericsUniforms R11
 uniform_buffer AtmosphericsPerViewConstants R12
 {
 	uniform mat4 invViewProj;
+	uniform mat4 shadowMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
+	uniform vec3 viewPosition;
+	uniform float pad9;
 	uniform vec2 tanHalfFov;
 	uniform float fill1,fill2;
 	uniform float nearZ;

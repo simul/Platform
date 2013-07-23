@@ -39,6 +39,10 @@ namespace simul
 
 typedef long HRESULT;
 
+namespace simul
+{
+	namespace dx11
+	{
 //! A renderer for skies, this class will manage an instance of simul::sky::SkyNode and use it to calculate sky colours
 //! in real time for the simul_sky.fx shader.
 SIMUL_DIRECTX11_EXPORT_CLASS SimulSkyRendererDX1x:public simul::sky::BaseSkyRenderer
@@ -170,3 +174,5 @@ protected:
 	void DrawLines(void *context,Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };
+}
+}

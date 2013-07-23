@@ -407,7 +407,6 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 		D3D1x_CPU_ACCESS_WRITE,		//D3D1x_CPU_ACCESS_READ|
 		0
 	};
-	HRESULT hr;
 	UnmapFade();
 	for(int i=0;i<3;i++)
 	{
@@ -417,6 +416,7 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 		SAFE_RELEASE(insc_textures_SRV[i]);
 		SAFE_RELEASE(skylight_textures[i]);
 		SAFE_RELEASE(skyl_textures_SRV[i]);
+		HRESULT hr;
 		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&loss_textures[i]));
 		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&inscatter_textures[i]));
 		V_CHECK(m_pd3dDevice->CreateTexture3D(&desc,NULL,&skylight_textures[i]));
@@ -657,21 +657,19 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
 	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
-	HRESULT hr;
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,0.0,0.0,0.0};
 	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
-	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
+	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());HRESULT hr;
 	{
 		V_CHECK(fadeTexture1->SetResource(loss_textures_SRV[0]));
 		V_CHECK(fadeTexture2->SetResource(loss_textures_SRV[1]));
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		loss_2d->Activate(context);
-		
-		context->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
-		if(loss_2d->m_pBufferDepthSurface)
-			context->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
-		simul::dx11::UtilityRenderer::DrawQuad(context);
+			context->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
+			if(loss_2d->m_pBufferDepthSurface)
+				context->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+			simul::dx11::UtilityRenderer::DrawQuad(context);
 		loss_2d->Deactivate(context);
 	}
 	{
@@ -680,12 +678,10 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		
 		inscatter_2d->Activate(context);
-			
-		context->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
-		if(inscatter_2d->m_pBufferDepthSurface)
-			context->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
-			D3D1x_CLEAR_STENCIL, 1.f, 0);
-		simul::dx11::UtilityRenderer::DrawQuad(context);
+			context->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
+			if(inscatter_2d->m_pBufferDepthSurface)
+				context->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+			simul::dx11::UtilityRenderer::DrawQuad(context);
 		inscatter_2d->Deactivate(context);
 	}
 	{
@@ -694,11 +690,10 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		
 		skylight_2d->Activate(context);
-		context->ClearRenderTargetView(skylight_2d->m_pHDRRenderTarget,clearColor);
-		if(skylight_2d->m_pBufferDepthSurface)
-			context->ClearDepthStencilView(skylight_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|
-			D3D1x_CLEAR_STENCIL, 1.f, 0);
-		simul::dx11::UtilityRenderer::DrawQuad(context);
+			context->ClearRenderTargetView(skylight_2d->m_pHDRRenderTarget,clearColor);
+			if(skylight_2d->m_pBufferDepthSurface)
+				context->ClearDepthStencilView(skylight_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
+			simul::dx11::UtilityRenderer::DrawQuad(context);
 		skylight_2d->Deactivate(context);
 	}
 	

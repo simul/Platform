@@ -612,13 +612,7 @@ GLuint make2DTexture(int w,int l,const float *src)
 	glBindTexture(GL_TEXTURE_2D,0);
 	return tex;
 }
-/*
-void setMatrix(GLint loc,const float *value)
-{
-	static bool tr=1;
-	glUniformMatrix4fv(loc,1,tr,value);
-	ERROR_CHECK
-}*/
+
 #undef pi
 #include <windows.h>
 void CheckGLError(const char *filename,int line_number,int err)

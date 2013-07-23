@@ -24,14 +24,11 @@ void SimulGLTerrainRenderer::RecompileShaders()
 	ERROR_CHECK
 	glUseProgram(program);
 	ERROR_CHECK
-	printProgramInfoLog(program);
-	ERROR_CHECK
 	eyePosition_param				= glGetUniformLocation(program,"eyePosition");
 	textures_param					= glGetUniformLocation(program,"textureArray");
 	worldViewProj_param				= glGetUniformLocation(program,"worldViewProj");
 	lightDir_param					= glGetUniformLocation(program,"lightDir");
 	sunlight_param					= glGetUniformLocation(program,"sunlight");
-	printProgramInfoLog(program);
 	ERROR_CHECK
 }
 

@@ -67,6 +67,8 @@ public:
     void EndFrame(ID3D11DeviceContext* context);
 	
 	float GetTime(const std::string &name) const;
+	//! Get all the active profilers as a text report.
+	const char *GetDebugText() const;
 protected:
 
     static Profiler GlobalProfiler;

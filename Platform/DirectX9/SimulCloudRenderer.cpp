@@ -1057,13 +1057,6 @@ void SimulCloudRenderer::InternalRenderVolumetric(int buffer_index)
 		size_t qs_vert=0;
 		float fade=(*i)->fadeIn;
 		bool start=true;
-//		if((*i)->quad_strips.size())
-//		for(int j=(*i)->elev_start;j<=(*i)->elev_end;j++)
-//		{
-//			float j_interp=(float)j/(float)el_grid;
-//			float sine=(2.f*j_interp-1.f);
-//		float alt_km=min(max(0.f,view_km.z+sine*0.001f*distance),0.001f*(GetCloudInterface()->GetCloudBaseZ()+GetCloudInterface()->GetCloudHeight()));
-//		}
 		for(std::vector<const simul::clouds::CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
 			j!=(*i)->quad_strips.end();j++)
 		{

@@ -35,6 +35,10 @@
 	#define texture2D texture
 	#define Y(texel) texel.y
 	#define STATIC
+vec4 mul(mat4 m,vec4 v)
+{
+	return m*v;
+}
 #else
 	#define STATIC static
 #endif

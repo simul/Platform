@@ -48,7 +48,6 @@ void SimulOpticsRendererGL::RecompileShaders()
 	flare_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_flare.frag");
 	flareColour_param				=glGetUniformLocation(flare_program,"flareColour");
 	flareTexture_param				=glGetUniformLocation(flare_program,"flareTexture");
-	printProgramInfoLog(flare_program);
 
 }
 

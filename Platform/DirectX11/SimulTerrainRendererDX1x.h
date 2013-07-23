@@ -26,27 +26,33 @@ typedef long HRESULT;
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
 #include "Simul/Platform/CrossPlatform/simul_terrain_constants.sl"
 
-SIMUL_DIRECTX11_EXPORT_CLASS SimulTerrainRendererDX1x : public simul::terrain::BaseTerrainRenderer
+namespace simul
 {
-public:
-	SimulTerrainRendererDX1x();
-	~SimulTerrainRendererDX1x();
-	void ReloadTextures();
-	void RecompileShaders();
-	void RestoreDeviceObjects(void*);
-	void InvalidateDeviceObjects();
-	void Render(void *context,float exposure);
-	//! Call this once per frame to set the matrices.
-	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
-private:
-	ID3D11Device*						m_pd3dDevice;
-	ID3D11Buffer*						m_pVertexBuffer;
-	ID3D11InputLayout*					m_pVtxDecl;
-	ID3DX11Effect*						m_pTerrainEffect;
-	ID3DX11EffectTechnique*				m_pTechnique;
-	// ID3D11Texture2D	Accesses data in a 2D texture or a 2D texture array
-	simul::dx11::ArrayTexture			arrayTexture;
-	D3DXMATRIX							view,proj;
+	namespace dx11
+	{
+		SIMUL_DIRECTX11_EXPORT_CLASS SimulTerrainRendererDX1x : public simul::terrain::BaseTerrainRenderer
+		{
+		public:
+			SimulTerrainRendererDX1x();
+			~SimulTerrainRendererDX1x();
+			void ReloadTextures();
+			void RecompileShaders();
+			void RestoreDeviceObjects(void*);
+			void InvalidateDeviceObjects();
+			void Render(void *context,float exposure);
+			//! Call this once per frame to set the matrices.
+			void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
+		private:
+			ID3D11Device*						m_pd3dDevice;
+			ID3D11Buffer*						m_pVertexBuffer;
+			ID3D11InputLayout*					m_pVtxDecl;
+			ID3DX11Effect*						m_pTerrainEffect;
+			ID3DX11EffectTechnique*				m_pTechnique;
+			// ID3D11Texture2D	Accesses data in a 2D texture or a 2D texture array
+			simul::dx11::ArrayTexture			arrayTexture;
+			D3DXMATRIX							view,proj;
 
-	ConstantBuffer<TerrainConstants>	terrainConstants;
-};
+			ConstantBuffer<TerrainConstants>	terrainConstants;
+		};
+	}
+}

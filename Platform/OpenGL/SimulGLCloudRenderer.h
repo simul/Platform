@@ -53,7 +53,7 @@ public:
 	void SetIlluminationGridSize(unsigned ,unsigned ,unsigned );
 	void FillIlluminationSequentially(int ,int ,int ,const unsigned char *);
 	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *);
-	void GPUTransferDataToTexture(	unsigned char *target_texture
+	void GPUTransferDataToTexture(int index,	unsigned char *target_texture
 									,const unsigned char *direct_grid
 									,const unsigned char *indirect_grid
 									,const unsigned char *ambient_grid);
@@ -98,15 +98,12 @@ protected:
 	//GLint layerDistance_param;
 unsigned short *pIndices;
 
-	GLint cloudConstants;
 	GLuint cloudConstantsUBO;
 	GLint cloudConstantsBindingIndex;
 
-	GLint cloudPerViewConstants;
 	GLuint cloudPerViewConstantsUBO;
 	GLint cloudPerViewConstantsBindingIndex;
 	
-	GLint layerDataConstants;
 	GLuint	layerDataConstantsUBO;
 	GLint	layerDataConstantsBindingIndex;
 

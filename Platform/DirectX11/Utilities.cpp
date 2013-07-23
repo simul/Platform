@@ -11,6 +11,7 @@ TextureStruct::TextureStruct()
 	,shaderResourceView(NULL)
 	,width(0)
 	,length(0)
+	,last_context(NULL)
 {
 	memset(&mapped,0,sizeof(mapped));
 }
@@ -103,9 +104,60 @@ void TextureStruct::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 	width=w;
 	length=l;
 	SAFE_RELEASE(texture);
-	pd3dDevice->CreateTexture2D(&textureDesc,0,&texture);
+	pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)&(texture));
 	SAFE_RELEASE(shaderResourceView);
 	pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView);
+}
+
+void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f)
+{
+	D3D11_TEXTURE3D_DESC textureDesc;
+	bool ok=true;
+	if(texture)
+	{
+		ID3D11Texture3D* ppd(NULL);
+		if(texture->QueryInterface( __uuidof(ID3D11Texture3D),(void**)&ppd)!=S_OK)
+			ok=false;
+		else
+		{
+			ppd->GetDesc(&textureDesc);
+			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Depth!=d||textureDesc.Format!=f)
+				ok=false;
+		}
+		SAFE_RELEASE(ppd);
+	}
+	else
+		ok=false;
+	if(!ok)
+	{
+		release();
+		memset(&textureDesc,0,sizeof(textureDesc));
+		textureDesc.Width			=width=w;
+		textureDesc.Height			=length=l;
+		textureDesc.Depth			=d;
+		textureDesc.Format			=f;
+		textureDesc.MipLevels		=1;
+		textureDesc.Usage			=D3D11_USAGE_DYNAMIC;
+		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE;
+		textureDesc.CPUAccessFlags	=D3D11_CPU_ACCESS_WRITE;
+		textureDesc.MiscFlags		=0;
+		HRESULT hr;
+		V_CHECK(pd3dDevice->CreateTexture3D(&textureDesc,0,(ID3D11Texture3D**)(&texture)));
+		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView));
+	}
+}
+
+void TextureStruct::map(ID3D11DeviceContext *context)
+{
+	last_context=context;
+	last_context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+}
+
+void TextureStruct::unmap()
+{
+	if(mapped.pData)
+		last_context->Unmap(texture,0);
+	mapped.pData=NULL;
 }
 
 ComputableTexture::ComputableTexture()

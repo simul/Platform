@@ -6,12 +6,19 @@
 
 namespace simul
 {
+	namespace base
+	{
+		class FileLoader;
+	}
 	namespace sky
 	{
 		struct float4;
 	}
+	namespace opengl
+	{
+		extern void SetFileLoader(simul::base::FileLoader *l);
+	}
 }
-
 SIMUL_OPENGL_EXPORT_CLASS Utilities
 {
 	static int instance_count;

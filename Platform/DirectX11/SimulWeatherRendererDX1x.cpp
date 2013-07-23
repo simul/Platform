@@ -29,10 +29,19 @@
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
+using namespace simul;
+using namespace dx11;
 
-
-SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *env,simul::base::MemoryInterface *mem,
-		bool usebuffer,bool tonemap,int w,int h,bool sky,bool clouds3d,bool clouds2d,bool rain) :
+SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *env
+													,simul::base::MemoryInterface *mem
+													,bool usebuffer
+													,bool tonemap
+													,int w
+													,int h
+													,bool sky
+													,bool clouds3d
+													,bool clouds2d
+													,bool rain) :
 	BaseWeatherRenderer(env,sky,rain),
 	framebuffer(w/Downscale,h/Downscale),
 	m_pd3dDevice(NULL),
@@ -210,7 +219,7 @@ SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
 
     return (hr==S_OK);
 }
-*/
+
 static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 {
 	D3DXMATRIX tmp1;
@@ -221,7 +230,7 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 	cam_pos.z=tmp1._43;
 	return cam_pos;
 }
-
+*/
 void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 {
 	static float exposure=1.f;
@@ -230,7 +239,7 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 	FramebufferCubemapDX1x	fb_cubemap;
 	fb_cubemap.SetWidthAndHeight(2048,2048);
 	fb_cubemap.RestoreDeviceObjects(m_pd3dDevice);
-	simul::dx11::Framebuffer	gamma_correct;
+	simul::dx11::Framebuffer gamma_correct;
 	gamma_correct.SetWidthAndHeight(2048,2048);
 	gamma_correct.RestoreDeviceObjects(m_pd3dDevice);
 
@@ -239,7 +248,7 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 	ID3D1xEffectTechnique *tech=m_pTonemapEffect->GetTechniqueByName("simul_gamma");
 
 	cam_pos=GetCameraPosVector(view);
-D3DXMATRIX view_matrices[6];
+	D3DXMATRIX view_matrices[6];
 	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
 	bool noise3d=environment->cloudKeyframer->GetUse3DNoise();
 	environment->cloudKeyframer->SetUse3DNoise(true);
@@ -302,6 +311,8 @@ void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,float exposure,b
 		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
 	}
+	if(baseAtmosphericsRenderer&&!is_cubemap)
+		baseAtmosphericsRenderer->RenderGodrays(context,depthTexture,exposure);
 }
 
 bool SimulWeatherRendererDX1x::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)

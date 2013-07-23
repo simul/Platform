@@ -13,6 +13,7 @@
 #include "Simul/Base/EnvironmentVariables.h"
 #include "Simul/Geometry/Orientation.h"
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Base/DefaultFileLoader.h"
 #include "Simul/Sky/Float4.h"
 #include <tchar.h>
 #include "CompileShaderDX1x.h"
@@ -42,55 +43,92 @@ static bool pipe_compiler_output=false;
 static ID3D1xDevice		*pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
+using namespace base;
 ShaderBuildMode shaderBuildMode=ALWAYS_BUILD;
+static DefaultFileLoader fl;
+static FileLoader *fileLoader=&fl;
 
-class DefaultFileLoader:public simul::base::FileLoader
+class ShaderIncludeHandler : public ID3DInclude
 {
 public:
-	DefaultFileLoader()
+	ShaderIncludeHandler(const char* shaderDirUtf8, const char* systemDirUtf8)
+		: m_ShaderDirUtf8(shaderDirUtf8), m_SystemDirUtf8(systemDirUtf8)
 	{
 	}
-	void AcquireFileContents(void*& pointer, unsigned int& bytes, const char* filename,bool open_as_text)
-	{
-		FILE *fp = fopen(filename,open_as_text?"r":"rb");
-		if(!fp)
-		{
-			std::cerr<<"Failed to find file "<<filename<<std::endl;
-			return;
-		}
-		fseek(fp, 0, SEEK_END);
-		bytes = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
-		pointer = malloc(bytes);
-		fread(pointer, 1, bytes, fp);
-		fclose(fp);
-	}
-	void ReleaseFileContents(void* pointer)
-	{
-		free(pointer);
-	}
+	HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType,LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
+	HRESULT __stdcall Close(LPCVOID pData);
+private:
+	std::string m_ShaderDirUtf8;
+	std::string m_SystemDirUtf8;
 };
 
-static DefaultFileLoader fl;
-static simul::base::FileLoader *fileLoader=&fl;
-
-namespace simul
+HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
 {
-	namespace dx11
+	try
 	{
-		std::string *shader_path;
-		std::string *texture_path;
-		void SetFileLoader(simul::base::FileLoader *l)
+		std::string finalPathUtf8;
+		switch(IncludeType)
 		{
-			fileLoader=l;
+		case D3D_INCLUDE_LOCAL:
+			finalPathUtf8	=m_ShaderDirUtf8+"\\"+pFileNameUtf8;
+			break;
+		case D3D_INCLUDE_SYSTEM:
+			finalPathUtf8	=m_SystemDirUtf8+"\\"+pFileNameUtf8;
+			break;
+		default:
+			assert(0);
 		}
+		void *buf=NULL;
+		unsigned fileSize=0;
+		fileLoader->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
+		*ppData = buf;
+		*pBytes = (UINT)fileSize;
+		if(!*ppData)
+			return E_FAIL;
+	/*	std::ifstream includeFile(simul::base::Utf8ToWString(finalPath).c_str()
+			,std::ios::in|std::ios::binary|std::ios::ate);
+
+		if (includeFile.is_open())
+		{
+			long long fileSize = includeFile.tellg();
+			char* buf = new char[(UINT)fileSize];
+			includeFile.seekg (0, std::ios::beg);
+			includeFile.read (buf,(std::streamsize)fileSize);
+			includeFile.close();
+			*ppData = buf;
+			*pBytes = (UINT)fileSize;
+		}
+		else
+		{
+			return E_FAIL;
+		}*/
+		return S_OK;
 	}
+	catch(std::exception& e)
+	{
+		std::cerr<<e.what()<<std::endl;
+		return E_FAIL;
+	}
+}
+
+HRESULT __stdcall ShaderIncludeHandler::Close(LPCVOID pData)
+{
+	fileLoader->ReleaseFileContents((void*)pData);
+	//char* buf = (char*)pData;
+	//delete[] buf;
+	return S_OK;
 }
 
 namespace simul
 {
 	namespace dx11
 	{
+		std::string *shaderPathUtf8;
+		std::string *texture_path;
+		void SetFileLoader(simul::base::FileLoader *l)
+		{
+			fileLoader=l;
+		}
 		void GetCameraPosVector(D3DXMATRIX &view,float *dcam_pos,float *view_dir,bool y_vertical)
 		{
 			D3DXMATRIX tmp1;
@@ -130,15 +168,15 @@ namespace simul
 		{
 			shaderBuildMode=b;
 		}
-		void SetShaderPath(const char *path)
+		void SetShaderPath(const char *path_utf8)
 		{
-			if(!path)
-				delete shader_path;
+			if(!path_utf8)
+				delete shaderPathUtf8;
 			else
 			{
-				if(!shader_path)
-					shader_path=new std::string;
-				*shader_path=std::string(path)+"/";
+				if(!shaderPathUtf8)
+					shaderPathUtf8=new std::string;
+				*shaderPathUtf8=std::string(path_utf8)+"/";
 			}
 		}
 		void SetTexturePath(const char *path)
@@ -250,9 +288,10 @@ ID3D1xShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 	loadInfo.MipLevels=0;
 	if(!texture_path)
 		texture_path=new std::string("media/textures");
-	HRESULT hr=D3DX11CreateShaderResourceViewFromFileA(
+	std::wstring wstr=simul::base::Utf8ToWString(*texture_path+filename);
+	HRESULT hr=D3DX11CreateShaderResourceViewFromFileW(
 										pd3dDevice,
-										(*texture_path+filename).c_str(),
+										wstr.c_str(),
 										&loadInfo,
 										NULL,
 										&tex,
@@ -286,7 +325,8 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 	ID3D11Texture2D *tex=NULL;
 	if(!texture_path)
 		texture_path=new std::string("media/textures");
-	HRESULT hr=D3DX11CreateTextureFromFileA( pd3dDevice, (*texture_path+filename).c_str()
+	std::wstring wstr=simul::base::Utf8ToWString((*texture_path+filename).c_str());
+	HRESULT hr=D3DX11CreateTextureFromFileW(pd3dDevice,wstr.c_str()
 		,&loadInfo, NULL, ( ID3D11Resource** )&tex, &hr );
 	if(hr!=S_OK)
 	{
@@ -470,14 +510,14 @@ struct d3dMacro
 	std::string name;
 	std::string define;
 };
-#ifdef DX11
-HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const char *filename, UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
+
+HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_utf8, UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	HRESULT hr=(HRESULT)(-1);
-	std::string compiled_filename=std::string(filename)+"o";
+	std::string output_filename_utf8=std::string(text_filename_utf8)+"o";
 	void *pData=NULL;
 	unsigned sz=0;
-	fileLoader->AcquireFileContents(pData,sz,compiled_filename.c_str(),false);
+	fileLoader->AcquireFileContents(pData,sz,output_filename_utf8.c_str(),false);
 	if(sz>0)
 	{
 		hr=D3DX11CreateEffectFromMemory(pData,sz,FXFlags,pDevice,ppEffect);
@@ -485,25 +525,76 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFile(const char *filename, UINT FXFla
 			std::cerr<<"D3DX11CreateEffectFromBinaryFile error "<<(int)hr<<std::endl;
 	}
 	else
-		std::cerr<<"D3DX11CreateEffectFromBinaryFile cannot find file "<<compiled_filename.c_str()<<std::endl;
+		std::cerr<<"D3DX11CreateEffectFromBinaryFile cannot find file "<<output_filename_utf8.c_str()<<std::endl;
 	fileLoader->ReleaseFileContents(pData);
 	return hr;
 }
 
-HRESULT WINAPI D3DX11CreateEffectFromFile(const char *filename,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
+HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
+	HRESULT hr=S_OK;
 #if 1
-	// first try to find an existing text source with this filename, and compile it.
-	std::string text_filename=(filename);
-	std::string output_filename=text_filename+"o";
-	
 	void *textData=NULL;
 	unsigned textSize=0;
-	fileLoader->AcquireFileContents(textData,textSize,text_filename.c_str(),true);
+	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
+	ID3DBlob *binaryBlob=NULL;
+	ID3DBlob *errorMsgs=NULL;
+	int pos=text_filename_utf8.find_last_of("/");
+	int bpos=text_filename_utf8.find_last_of("\\");
+	if(pos<0||bpos>pos)
+		pos=bpos;
+	std::string path_utf8=text_filename_utf8.substr(0,pos);
+	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"");
+	hr=D3DCompile(
+		textData,
+		textSize,
+		text_filename_utf8.c_str(),		//LPCSTR pSourceName,
+		macros,		//const D3D_SHADER_MACRO *pDefines,
+		&shaderIncludeHandler,		//ID3DInclude *pInclude,
+		NULL,		//LPCSTR pEntrypoint,
+		"fx_5_0",	//LPCSTR pTarget,
+		0,	//UINT Flags1,
+		FXFlags,	//UINT Flags2,
+		&binaryBlob,//ID3DBlob **ppCode,
+		&errorMsgs	//ID3DBlob **ppErrorMsgs
+		);
+	fileLoader->ReleaseFileContents(textData);
+	if(hr==S_OK)
+		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
+	else
+	{
+		char *errs=(char*)errorMsgs->GetBufferPointer();
+		std::string err(errs);
+		unsigned pos=0;
+		while(pos<err.length())
+		{
+			int last=pos;
+			pos=err.find("\n",pos+1);
+			std::string line=err.substr(last,pos-last);
+			std::cerr<<line.c_str()<<std::endl;
+		};//text_filename_utf8.c_str()<<
+	}
+	if(binaryBlob)
+		binaryBlob->Release();
+	if(errorMsgs)
+		errorMsgs->Release();
+#else
+	// first try to find an existing text source with this filename, and compile it.
+	std::string text_filename_utf8=filename_utf8;
+	std::string output_filename_utf8=text_filename_utf8+"o";
+	std::string tempfile="temp.o";
+	int pos=text_filename_utf8.find_last_of("/");
+	if(pos<0)
+		pos=text_filename_utf8.find_last_of("\\");
+	if(pos>=0)
+		tempfile=text_filename_utf8.substr(pos+1,text_filename_utf8.length()-pos)+"temp.fxo";
+	void *textData=NULL;
+	unsigned textSize=0;
+	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
 	
 	void *binaryData=NULL;
 	unsigned binarySize=0;
-	fileLoader->AcquireFileContents(binaryData,binarySize,output_filename.c_str(),false);
+	fileLoader->AcquireFileContents(binaryData,binarySize,output_filename_utf8.c_str(),false);
 	
 	fileLoader->ReleaseFileContents(textData);
 	fileLoader->ReleaseFileContents(binaryData);
@@ -512,51 +603,41 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const char *filename,D3D10_SHADER_MACR
 	if(textSize>0&&(shaderBuildMode==ALWAYS_BUILD||(shaderBuildMode==BUILD_IF_NO_BINARY&&binarySize==0)))
 	{
 		//std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
-		DeleteFileA(output_filename.c_str());
-		std::string command=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("DXSDK_DIR");
-		if(!command.length())
+		DeleteFileW(simul::base::Utf8ToWString(output_filename_utf8).c_str());
+		std::wstring wcommand=simul::base::Utf8ToWString(simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("DXSDK_DIR"));
+		if(!wcommand.length())
 		{
 			std::string progfiles=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("ProgramFiles");
-			command=progfiles+"/Microsoft DirectX SDK (June 2010)/";
-			std::cerr<<"Missing DXSDK_DIR environment variable, defaulting to: "<<command.c_str()<<std::endl;
+			wcommand=simul::base::Utf8ToWString(progfiles)+L"/Microsoft DirectX SDK (June 2010)/";
+			std::cerr<<"Missing DXSDK_DIR environment variable, defaulting to: "<<wcommand.c_str()<<std::endl;
 		}
 		{
 //>"fxc.exe" /T fx_2_0 /Fo "..\..\gamma.fx"o "..\..\gamma.fx"
-			command="\""+command;
-			command+="Utilities\\Bin\\x86\\fxc.exe\"";
-			command+=" /nologo /Tfx_5_0 /Fo \"";
-			command+=text_filename+"o\" \"";
-			command+=text_filename+"\"";
+			wcommand=L"\""+wcommand;
+			wcommand+=L"Utilities\\Bin\\x86\\fxc.exe\"";
+			wcommand+=L" /nologo /Tfx_5_0 /Fo \"";
+			wcommand+=simul::base::Utf8ToWString(tempfile)+L"\" \"";
+			wcommand+=simul::base::Utf8ToWString(text_filename_utf8)+L"\"";
 			if(macros)
+			{
 				while(macros->Name)
 				{
-					command+=" /D";
-					command+=macros->Name;
-					command+="=";
-					command+=macros->Definition;
+					wcommand+=L" /D";
+					wcommand+=simul::base::Utf8ToWString(macros->Name);
+					wcommand+=L"=";
+					wcommand+=simul::base::Utf8ToWString(macros->Definition);
 					macros++;
 				}
+			}
 		//	command+=" > \""+text_filename+".log\"";
-#if 0
-			system(command.c_str());
-#else
-#if 0
-			HINSTANCE hi=ShellExecuteA(NULL,
-				LPCTSTR lpOperation,
-				LPCTSTR lpFile,
-				LPCTSTR lpParameters,
-				LPCTSTR lpDirectory,
-				INT nShowCmd
-			);
-#else
-			STARTUPINFOA si;
+			STARTUPINFOW si;
 			PROCESS_INFORMATION pi;
 			ZeroMemory( &si, sizeof(si) );
 			si.cb = sizeof(si);
 			ZeroMemory( &pi, sizeof(pi) );
 			si.wShowWindow=false;
-			char com[500];
-			strcpy(com,command.c_str());
+			wchar_t com[500];
+			wcscpy(com,wcommand.c_str());
 			si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 			si.wShowWindow = SW_HIDE;
 
@@ -575,13 +656,10 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const char *filename,D3D10_SHADER_MACR
 				CreatePipe( &hReadOutPipe, &hWriteOutPipe, &saAttr, 100 );
 				CreatePipe( &hReadErrorPipe, &hWriteErrorPipe, &saAttr, 100 );
 			}
-			//SetHandleInformation(hReadOutPipe, HANDLE_FLAG_INHERIT, 0) ;
-
-			//SetHandleInformation(hReadErrorPipe, HANDLE_FLAG_INHERIT, 0) ;
 
 			si.hStdOutput = hWriteOutPipe;
 			si.hStdError= hWriteErrorPipe;
-			CreateProcessA( NULL,		// No module name (use command line)
+			CreateProcessW( NULL,		// No module name (use command line)
 					com,				// Command line
 					NULL,				// Process handle not inheritable
 					NULL,				// Thread handle not inheritable
@@ -645,21 +723,15 @@ HRESULT WINAPI D3DX11CreateEffectFromFile(const char *filename,D3D10_SHADER_MACR
 			CloseHandle( pi.hProcess );
 			CloseHandle( pi.hThread );
 
-			/*"C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Utilities\Bin\x86\fxc.exe" /T fx_5_0 /Fo "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fxo" "MEDIA/HLSL/DX11/simul_clouds_and_lightning.fx""	char [200]
-			 */
-
-			//fclose(fp);
-#endif
-#endif
 			if(has_errors)
 				return S_FALSE;
 		}
 	}
+	CopyFileW(simul::base::Utf8ToWString(tempfile).c_str(),simul::base::Utf8ToWString(output_filename_utf8).c_str(),false);
+	hr=D3DX11CreateEffectFromBinaryFileUtf8(filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
 #endif
-	HRESULT hr=D3DX11CreateEffectFromBinaryFile(filename,FXFlags,pDevice,ppEffect);
 	return hr;
 }
-#endif
 
 HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *filename)
 {
@@ -669,9 +741,9 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *f
 
 ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *filename)
 {
-	if(!shader_path)
-		shader_path=new std::string("media/hlsl/dx11");
-	std::string fn=(*shader_path+"/")+filename;
+	if(!shaderPathUtf8)
+		shaderPathUtf8=new std::string("media/hlsl/dx11");
+	std::string fn=(*shaderPathUtf8+"/")+filename;
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined( _DEBUG )
 	dwShaderFlags |= D3DCOMPILE_DEBUG;
@@ -681,7 +753,7 @@ ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *file
 
 	ID3DBlob* pErrorBlob = NULL;
 	ID3DBlob* pBlob = NULL;
-	HRESULT hr = D3DX11CompileFromFileA( fn.c_str(), NULL, NULL, "main", pProfile, dwShaderFlags, NULL, NULL, &pBlob, &pErrorBlob, NULL );
+	HRESULT hr = D3DX11CompileFromFileW(simul::base::Utf8ToWString(fn.c_str()).c_str(), NULL, NULL, "main", pProfile, dwShaderFlags, NULL, NULL, &pBlob, &pErrorBlob, NULL );
 	if ( FAILED(hr) )
 	{
 		if ( pErrorBlob )
@@ -710,9 +782,9 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *f
 {
 	HRESULT hr=S_OK;
 	std::string text_filename=(filename);
-	if(!shader_path)
-		shader_path=new std::string("media/hlsl/dx11");
-	std::string fn=*shader_path+filename;
+	if(!shaderPathUtf8)
+		shaderPathUtf8=new std::string("media/hlsl/dx11");
+	std::string filename_utf8=*shaderPathUtf8+filename;
 	
 	D3D10_SHADER_MACRO *macros=NULL;
 	std::vector<std::string> d3dmacros;
@@ -737,8 +809,8 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *f
 	hr=1;
 	while(hr!=S_OK)
 	{
-		hr=D3DX11CreateEffectFromFile(
-				fn.c_str(),
+		hr=D3DX11CreateEffectFromFileUtf8(
+				filename_utf8,
 				macros,
 				flags,
 				d3dDevice,

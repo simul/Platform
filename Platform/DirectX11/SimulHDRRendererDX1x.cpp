@@ -9,14 +9,10 @@
 // SimulHDRRendererDX1x.cpp A renderer for skies, clouds and weather effects.
 #define NOMINMAX
 #include "SimulHDRRendererDX1x.h"
-
-
 #include <tchar.h>
 #include <dxerr.h>
 #include <string>
 #include <assert.h>
-typedef std::basic_string<TCHAR> tstring;
-
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Clouds/CloudInterface.h"
@@ -28,10 +24,9 @@ typedef std::basic_string<TCHAR> tstring;
 #include "CreateEffectDX1x.h"
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "MacrosDX1x.h"
-
-#define BLUR_SIZE 9
-
 #include "Simul/Math/Pi.h"
+using namespace simul;
+using namespace dx11;
 
 SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h)
 	:m_pd3dDevice(NULL)

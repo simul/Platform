@@ -13,13 +13,13 @@ uniform sampler2D lossTexture;
 #include "view_dir.glsl"
 
 in vec2 pos;
-in vec2 texc;
+in vec2 texCoords;
 
 void main()
 {
-	vec3 view			=texCoordToViewDirection(texc);
+	vec3 view			=texCoordToViewDirection(texCoords);
 	float sine			=view.z;
-    vec4 lookup			=texture(depthTexture,texc);
+    vec4 lookup			=texture(depthTexture,texCoords);
 	float depth			=lookup.x;
 	float dist			=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
 	vec2 fade_texc		=vec2(pow(dist,0.5),0.5*(1.0-sine));

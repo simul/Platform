@@ -14,14 +14,15 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Sky/SkyInterface.h"
+using namespace simul::dx11;
 
-	struct TerrainVertex_t
-	{
-		float pos[3];
-		float n[3];
-		float t[2];
-		float u;
-	};
+struct TerrainVertex_t
+{
+	float pos[3];
+	float n[3];
+	float t[2];
+	float u;
+};
 static const int MAX_VERTICES=1000000;
 
 SimulTerrainRendererDX1x::SimulTerrainRendererDX1x()

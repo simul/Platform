@@ -14,13 +14,28 @@
 #include "SimulGLUtilities.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringFunctions.h"
-static std::string shaderPath;
-static std::string last_filename;
+#include "Simul/Base/StringToWString.h"
+#include "Simul/Base/DefaultFileLoader.h"
 
 using namespace simul;
+using namespace base;
 using namespace opengl;
 using namespace std;
 
+static DefaultFileLoader fl;
+static FileLoader *fileLoader=&fl;
+namespace simul
+{
+	namespace opengl
+	{
+		std::string *shaderPathUtf8;
+		std::string *texture_path;
+		void SetFileLoader(simul::base::FileLoader *l)
+		{
+			fileLoader=l;
+		}
+	}
+}
 
 static int LineCount(const std::string &str)
 {
@@ -67,7 +82,7 @@ struct NameLine
 struct FilenameChart
 {
 	std::vector<TiePoint> tiePoints;
-	// Add a tie point for the start of this file, plus one to mark where its parent restarts.
+	//! Add a tie point for the start of this file, plus one to mark where its parent restarts.
 	void add(const char *filename,int global_line,const std::string &src)
 	{
 		int newlen		=LineCount(src);
@@ -137,15 +152,16 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 		std::string info_log=infoLog;
 		if(info_log.find("No errors")>=info_log.length())
 		{
-			//std::cerr<<std::endl<<last_filename.c_str()<<":\n"<<info_log.c_str()<<std::endl;
 			int pos=0;
 			int next=info_log.find('\n',pos+1);
 			while(next>=0)
 			{
-				std::string line=info_log.substr(pos+1,next-pos-1);
+				std::string line=info_log.substr(pos,next-pos);
 				int errpos=line.find("ERROR");
 				if(errpos<0)
 					errpos=line.find("error");
+				if(errpos<0)
+					errpos=line.find("WARNING");
 				if(errpos<0)
 					errpos=line.find("warning");
 				if(errpos>=0)
@@ -161,13 +177,17 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 						numberstart	=second_colon+1;
 						numberlen	=third_colon-second_colon-1;
 					}
-					if((third_colon<0||numberlen>6)&&second_bracket>=0)
+					else if((third_colon<0||numberlen>6)&&second_bracket>=0)
 					{
 						numberstart	=first_bracket+1;
 						numberlen	=second_bracket-first_bracket-1;
 					}
 					else
+					{
+						pos=next;
+						next=info_log.find('\n',pos+1);
 						continue;
+					}
 					std::string linestr=line.substr(numberstart,numberlen);
 					std::string err_msg=line.substr(numberstart+numberlen+1,line.length()-numberstart-numberlen-1);
 					int at_pos=err_msg.find("0(");
@@ -184,12 +204,11 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 					}
 					int number=atoi(linestr.c_str());
 					NameLine n=filenameChart.find(number);
-					std::cerr<<shaderPath.c_str()<<"/"<<n.filename.c_str()<<"("<<n.line<<") "<<err_msg.c_str()<<std::endl;
+					std::cerr<<(*shaderPathUtf8).c_str()<<"/"<<n.filename.c_str()<<"("<<n.line<<") "<<err_msg.c_str()<<std::endl;
 				}
 				pos=next;
 				next=info_log.find('\n',pos+1);
 			}
-			//std::cout<<last_filename.c_str()<<":\n"<<info_log.c_str()<<std::endl;
 		}
 		free(infoLog);
     }
@@ -210,57 +229,56 @@ void printProgramInfoLog(GLuint obj)
 		std::string info_log=infoLog;
 		if(info_log.find("No errors")>=info_log.length())
 		{
-			std::cerr<<last_filename.c_str()<<":\n"<<info_log.c_str()<<std::endl;
+			std::cerr<<info_log.c_str()<<std::endl;
 		}
 		else if(info_log.find("WARNING")<info_log.length())
-			std::cout<<last_filename.c_str()<<":\n"<<infoLog<<std::endl;
+			std::cout<<infoLog<<std::endl;
         free(infoLog);
     }
+	ERROR_CHECK
 }
 
 
-GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const map<string,string> &defines,const FilenameChart &filenameChart)
+GLuint SetShader(GLuint sh,const std::string &source,const map<string,string> &defines,FilenameChart filenameChart)
 {
+	std::string src=source;
 /*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
 	const int MAX_STRINGS=12;
 	const int MAX_LINES=512;
 	const int MAX_LINE_LENGTH=256;					// 255 + NULL terminator
 	const char *strings[MAX_STRINGS];
-	int s=0;
-	if(defines.size())
+
+	int start_of_line=0;
+	// We can insert #defines, but only AFTER the #version string.
+	int pos=src.find("#version");
+	if(pos>=0)
 	{
-		static char program[MAX_LINES*MAX_LINE_LENGTH];
-		char *ptr=program;
+		start_of_line=src.find("\n",pos)+1;
+		if(start_of_line<0)
+			start_of_line=src.length();
+	}
+	for(map<string,string>::const_iterator i=defines.begin();i!=defines.end();i++)
+	{
 		std::string def;
-		for(map<string,string>::const_iterator i=defines.begin();i!=defines.end();i++)
-		{
-			def+="#define ";
-			def+=i->first;
-			def+=" ";
-			def+=i->second;
-			def+="\r\n";
-		}
-		sprintf_s(ptr,MAX_LINES*MAX_LINE_LENGTH,"%s\n",def.c_str());
-		strings[s++]=program;
+		def+="#define ";
+		def+=i->first;
+		def+=" ";
+		def+=i->second;
+		def+="\r\n";
+		src=src.insert(start_of_line,def);
+		int start_line=GetLineNumber(src,start_of_line);
+		filenameChart.add("defines",start_line,def);
 	}
 	int lenOfStrings[MAX_STRINGS];
-	for(int i=0;i<(int)sources.size()&&i<MAX_STRINGS-1;i++,s++)
-	{
-		strings[s]		=sources[i].c_str();
-		lenOfStrings[s]	=strlen(strings[s]);
-	}
-ERROR_CHECK
-	glShaderSource(sh,s,strings,NULL);
+	strings[0]		=src.c_str();
+	lenOfStrings[0]	=strlen(strings[0]);
+	glShaderSource(sh,1,strings,NULL);
 ERROR_CHECK
     if(!sh)
 		return 0;
-	else
-	{
-		glCompileShader(sh);
-	}
+	glCompileShader(sh);
 ERROR_CHECK
 	printShaderInfoLog(sh,filenameChart);
-
 	int result=1;
 	glGetShaderiv(sh,GL_COMPILE_STATUS,&result);
 ERROR_CHECK
@@ -271,19 +289,26 @@ ERROR_CHECK
     return sh;
 }
 
-GLuint SetShader(GLuint sh,const std::vector<std::string> &sources,const map<string,string> &defines)
+GLuint SetShader(GLuint sh,const std::string &source,const map<string,string> &defines)
 {
 	FilenameChart filenameChart;
-	return SetShader(sh,sources,defines,filenameChart);
+	return SetShader(sh,source,defines,filenameChart);
 }
 
 namespace simul
 {
 	namespace opengl
 	{
-		void SetShaderPath(const char *path)
+		void SetShaderPath(const char *path_utf8)
 		{
-			shaderPath=path;
+			if(path_utf8&&!shaderPathUtf8)
+			{
+				shaderPathUtf8=new std::string;
+			}
+			if(path_utf8)
+				*shaderPathUtf8=path_utf8;
+			else
+				delete shaderPathUtf8;
 		}
 	}
 }
@@ -330,12 +355,8 @@ GLuint SetShaders(const char *vert_src,const char *frag_src,const map<string,str
 	GLuint prog				=glCreateProgram();
 	GLuint vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 	GLuint fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-	std::vector<std::string> v;
-	v.push_back(vert_src);
-	std::vector<std::string> f;
-	f.push_back(frag_src);
-    vertex_shader			=SetShader(vertex_shader	,v,defines);
-    fragment_shader			=SetShader(fragment_shader	,f,defines);
+    vertex_shader			=SetShader(vertex_shader	,vert_src,defines);
+    fragment_shader			=SetShader(fragment_shader	,frag_src,defines);
 	glAttachShader(prog,vertex_shader);
 	glAttachShader(prog,fragment_shader);
 	glLinkProgram(prog);
@@ -404,37 +425,37 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 	glAttachShader(prog,fragment_shader);
 	ERROR_CHECK
 	glLinkProgram(prog);
+	ERROR_CHECK
 	glUseProgram(prog);
 	printProgramInfoLog(prog);
-	ERROR_CHECK
 	return prog;
 }
 
-
-std::string loadShaderSource(const char *filename)
+std::string loadShaderSource(const char *filename_utf8)
 {
 /*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
-	const int MAX_LINES=512;
-	const int MAX_LINE_LENGTH=256;   // 255 + NULL terminator
-	char shader_source[MAX_LINES*MAX_LINE_LENGTH];
-    std::string filePath=shaderPath;
+//	const int MAX_LINES=512;
+//	const int MAX_LINE_LENGTH=256;   // 255 + NULL terminator
+	//char shader_source[MAX_LINES*MAX_LINE_LENGTH];
+    std::string filenameUtf8=*shaderPathUtf8;
 	char last=0;
-	if(filePath.length())
-		last=filePath[filePath.length()-1];
+	if(shaderPathUtf8->length())
+		last=filenameUtf8[shaderPathUtf8->length()-1];
 	if(last!='/'&&last!='\\')
-		filePath+="/";
-	filePath+=filename;
-	if(filePath.find(".glsl")>=filePath.length())
-		last_filename=filePath;
-	std::ifstream ifs(filePath.c_str());
-	if(!ifs.good())
+		filenameUtf8+="/";
+	filenameUtf8+=filename_utf8;
+	
+	void *shader_source=NULL;
+	unsigned fileSize=0;
+	fileLoader->AcquireFileContents(shader_source,fileSize,filenameUtf8.c_str(),true);
+	if(!shader_source)
 	{
-		std::cerr<<"\nERROR:\tShader file "<<filename<<" not found, exiting.\n";
-		std::cerr<<"\n\t\tShader path is "<<shaderPath.c_str()<<", is this correct?\n";
+		std::cerr<<"\nERROR:\tShader file "<<filename_utf8<<" not found, exiting.\n";
+		std::cerr<<"\n\t\tShader path is "<<shaderPathUtf8->c_str()<<", is this correct?\n";
 		DebugBreak();
 		exit(1);
 	}
-	char *ptr=shader_source;
+/*	char *ptr=shader_source;
 	while(!ifs.eof())
 	{
 		ifs.getline(ptr,MAX_LINE_LENGTH);
@@ -443,10 +464,17 @@ std::string loadShaderSource(const char *filename)
 		*ptr++='\r';
 		*ptr++='\n';
 	}
-	ifs.close();
-	if(ptr!=shader_source)
-		ptr[-2]=0;
-	std::string str(shader_source);
+	ifs.close();*/
+	//if(ptr!=shader_source)
+	//	ptr[-2]=0;
+	std::string str((const char*)shader_source);
+	fileLoader->ReleaseFileContents(shader_source);
+	int pos=str.find("\n");
+	while(pos>=0)
+	{
+		str.replace(pos,1,"\r\n");
+		pos=str.find("\n",pos+2);
+	}
 	return str;
 }
 
@@ -489,12 +517,10 @@ ERROR_CHECK
 		src=src.insert(eol+2,newsrc);
 		filenameChart.add(include_file.c_str(),start_line+1,newsrc);
 	}
-	std::vector<std::string> srcs;
-	srcs.push_back(src);
 ERROR_CHECK
 	GLuint sh=glCreateShader(shader_type);
 ERROR_CHECK
-	sh=SetShader(sh,srcs,defines,filenameChart);
+	sh=SetShader(sh,src,defines,filenameChart);
 	ERROR_CHECK
     return sh;
 }

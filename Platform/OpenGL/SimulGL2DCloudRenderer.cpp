@@ -35,8 +35,6 @@
 #include "Simul/Platform/CrossPlatform/simul_2d_clouds.hs"
 #include "Simul/Camera/Camera.h"
 using namespace std;
-void printShaderInfoLog(GLuint sh);
-void printProgramInfoLog(GLuint obj);
 
 #ifdef WIN32
 #include "Simul/Platform/Windows/VisualStudioDebugOutput.h"

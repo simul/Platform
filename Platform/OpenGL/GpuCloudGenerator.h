@@ -21,7 +21,8 @@ namespace simul
 			}
 			int GetDensityGridsize(const int *grid);
 			void* Make3DNoiseTexture(int noise_size,const float *noise_src_ptr);
-			void *FillDensityGrid(const int *grid
+			void CycleTexturesForward();
+			void FillDensityGrid(int index,const int *grid
 									,int start_texel
 									,int texels
 									,float humidity
@@ -30,13 +31,13 @@ namespace simul
 									,float upperDensity
 									,float time
 									,void*  noise_tex,int octaves,float persistence);
-			virtual void PerformGPURelight(float *target
+			virtual void PerformGPURelight(int index,float *target
 									,const int *light_grid
 									,int start_texel
 									,int texels
 									,const int *density_grid
 									,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
-			void GPUTransferDataToTexture(unsigned char *target
+			void GPUTransferDataToTexture(int index,unsigned char *target
 											,const float *DensityToLightTransform
 											,const float *light,const int *light_grid
 											,const float *ambient,const int *density_grid

@@ -90,15 +90,13 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	,current_program(0)
 	,cross_section_program(0)
 	,cloud_shadow_program(0)
-	,cloudConstants(0)
+
 	,cloudConstantsUBO(0)
 	,cloudConstantsBindingIndex(2)
 
-	,cloudPerViewConstants(0)
 	,cloudPerViewConstantsUBO(0)
 	,cloudPerViewConstantsBindingIndex(13)
 
-	,layerDataConstants(0)
 	,layerDataConstantsUBO(0)
 	,layerDataConstantsBindingIndex(4)
 {
@@ -282,49 +280,6 @@ simul::math::Matrix4x4 ConvertReversedToRegularProjectionMatrix(const simul::mat
 	return p;
 }
 #include "Simul/Camera/Camera.h"
-/*void SimulGLCloudRenderer::SetCloudPerViewConstants(CloudPerViewConstants &cloudPerViewConstants)
-{
-	simul::math::Matrix4x4 proj;
-	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
-	simul::math::Matrix4x4 view;
-	glGetMatrix(view.RowPointer(0),GL_MODELVIEW_MATRIX);
-	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
-	memset(&cloudPerViewConstants,0,sizeof(cloudPerViewConstants));
-
-	simul::math::Matrix4x4 vpt;
-	simul::math::Matrix4x4 viewproj;
-	view(3,0)=view(3,1)=view(3,2)=0;
-	simul::math::Matrix4x4 p1=proj;
-	if(ReverseDepth)
-	{
-//		p1=ConvertReversedToRegularProjectionMatrix(proj);
-	}
-	simul::math::Multiply4x4(viewproj,view,p1);
-	viewproj.Transpose(vpt);
-	simul::math::Matrix4x4 ivp;
-	vpt.Inverse(ivp);
-	cloudPerViewConstants.invViewProj=ivp;
-	cloudPerViewConstants.invViewProj.transpose();
-
-	cloudPerViewConstants.viewPos=cam_pos;
-	static float direct_light_mult	=0.25f;
-	static float indirect_light_mult=0.03f;
-	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse(),
-										indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse(),0,0);
-	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());
-	float top_alt_km=base_alt_km+GetCloudInterface()->GetCloudHeight()*0.001f;
-
-	static float uu=1.f;
-	float sc=uu/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
-	float noise_rotation=helper->GetNoiseRotation();
-	float f[]={cos(noise_rotation),-sin(noise_rotation),0,0,sin(noise_rotation),cos(noise_rotation),0,0,0,0,1.f,0};
-	cloudPerViewConstants.noiseMatrix			=f;
-
-	cloudPerViewConstants.tanHalfFov	=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	cloudPerViewConstants.nearZ			=frustum.nearZ/max_fade_distance_metres;
-	cloudPerViewConstants.farZ			=frustum.farZ/max_fade_distance_metres;
-	cloudPerViewConstants.noise_offset=helper->GetNoiseOffset();
-}*/
 static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
@@ -356,6 +311,7 @@ ERROR_CHECK
 	cam_pos.x=viewInv(3,0);
 	cam_pos.y=viewInv(3,1);
 	cam_pos.z=viewInv(3,2);
+	modelview(3,0)=modelview(3,1)=modelview(3,2)=0.f;
 ERROR_CHECK
 Raytrace=false;
 	if(Raytrace)
@@ -395,29 +351,31 @@ ERROR_CHECK
 ERROR_CHECK
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[0]);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[1]);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
-ERROR_CHECK
+
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D,loss_tex);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D,inscatter_tex);
+
     glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D,skylight_tex);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_3D,illum_tex);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE7);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
+
 	GLuint program=depth_alpha_tex>0?clouds_foreground_program:clouds_background_program;
 
 	if(Raytrace)
@@ -429,15 +387,15 @@ ERROR_CHECK
 	glUniform1i(cloudDensity2_param,1);
 	glUniform1i(noiseSampler_param,2);
 	glUniform1i(lossSampler_param,3);
-ERROR_CHECK
+
 	glUniform1i(inscatterSampler_param,4);
-ERROR_CHECK
+
 	glUniform1i(skylightSampler_param,5);
-ERROR_CHECK
+
 	glUniform1i(illumSampler_param,6);
-ERROR_CHECK
+
 	glUniform1i(depthTexture,7);
-ERROR_CHECK
+
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	
@@ -523,8 +481,6 @@ ERROR_CHECK
 	cloudPerViewConstants.exposure=exposure;
 
 	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
-	//simul::math::Matrix4x4 proj;
-	//glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
 	simul::math::Matrix4x4 worldViewProj;
 	simul::math::Multiply4x4(worldViewProj,modelview,proj);
 	setMatrixTranspose(program,"worldViewProj",worldViewProj);
@@ -553,7 +509,6 @@ helper->Update2DNoiseCoords();
 
 	cloudConstants.cornerPos			=X1;
 	cloudConstants.inverseScales		=InverseDX;
-//cloudConstants.layerCount			=helper->GetSlices().size();
 
 	glBindBuffer(GL_UNIFORM_BUFFER,cloudConstantsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(CloudConstants),&cloudConstants);
@@ -566,9 +521,6 @@ helper->Update2DNoiseCoords();
 	{
 		UseShader(raytrace_program);
 		glUseProgram(raytrace_program);
-	}
-	if(Raytrace)
-	{
 		glDisable(GL_BLEND);
 		glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
@@ -586,103 +538,67 @@ helper->Update2DNoiseCoords();
 		glPopAttrib();
 		return true;
 	}
-	else
+	// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,
+	// which is drawn as a latitude-longitude sphere. But we only draw the parts that:
+	// a) are in the view frustum
+	//  ...and...
+	// b) are in the cloud volume
+	ERROR_CHECK
+	int idx=0;
+	float wavelength=cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
+	for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
+		i!=helper->GetSlices().end();i++,idx++)
 	{
-		// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,
-		// which is drawn as a latitude-longitude sphere. But we only draw the parts that:
-		// a) are in the view frustum
-		//  ...and...
-		// b) are in the cloud volume
-		int multiTexCoord0=glGetAttribLocation(program,"multiTexCoord0");
-		int multiTexCoord1=glGetAttribLocation(program,"multiTexCoord1");
-		int multiTexCoord2=glGetAttribLocation(program,"multiTexCoord2");
+		LayerData &inst=layerConstants.layers[idx];
+		// How thick is this layer, optically speaking?
+		simul::clouds::CloudGeometryHelper::Slice *s=*i;
+		float dens=s->fadeIn;
+		if(!dens)
+			continue;
+		float noise_offset[]={	s->noise_tex_x/wavelength
+								,s->noise_tex_y/wavelength
+								,0,0};
+		inst.layerFade			=s->fadeIn;
+		inst.layerDistance		=s->distance;
+		inst.noiseScale			=s->distance/wavelength;
+		inst.noiseOffset.x		=noise_offset[0];
+		inst.noiseOffset.y		=noise_offset[1];
+	}
+	layerConstants.layerCount	=helper->GetSlices().size();
+	UPDATE_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
+	idx=0;
+	for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
+	{
 	ERROR_CHECK
-		int layers_drawn=0;
-		for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
-			i!=helper->GetSlices().end();i++)
+		simul::clouds::CloudGeometryHelper::Slice *s=*i;
+		helper->MakeLayerGeometry(GetCloudInterface(),s);
+		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
+		size_t qs_vert=0;
+		setParameter(program,"layerNumber",(int)idx);
+		glBegin(GL_QUAD_STRIP);
+		if(quad_strip_vertices.size())
+		for(std::vector<const CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
+			j!=(*i)->quad_strips.end();j++)
 		{
-			// How thick is this layer, optically speaking?
-			simul::clouds::CloudGeometryHelper::Slice *s=*i;
-			helper->MakeLayerGeometry(GetCloudInterface(),s);
-			float dens=s->fadeIn;
-			if(!dens)
-				continue;
-			SingleLayerConstants singleLayerConstants;
-			float noise_offset[]={s->noise_tex_x/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength()
-					,s->noise_tex_y/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength(),0,0};
-			singleLayerConstants.layerData.layerFade		=s->fadeIn;
-			singleLayerConstants.layerData.layerDistance	=s->distance;
-			singleLayerConstants.layerData.noiseScale		=s->distance/cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
-			//layerData.verticalShift	=helper->GetVerticalShiftDueToCurvature(s->distance,base_alt);
-			singleLayerConstants.layerData.noiseOffset.x	=noise_offset[0];
-			singleLayerConstants.layerData.noiseOffset.y	=noise_offset[1];
-//		layerData.elevationRange.x	=2.f*(float)s->elev_start/(float)el-1.f;
-	//		layerData.elevationRange.y	=2.f*(float)s->elev_end/(float)el-1.f;
-
-			UPDATE_CONSTANT_BUFFER(layerDataConstantsUBO,singleLayerConstants,layerDataConstantsBindingIndex)
-			//glUniform1f(layerDistance_param,(*i)->distance);
-			simul::sky::float4 loss			;
-			simul::sky::float4 inscatter	;
-			if(default_fog)
+			// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?
+			for(unsigned k=0;k<(*j)->num_vertices;k++,qs_vert++)
 			{
-				float mix_fog;
-				GLint fogMode;
-				GLfloat fogDens;
-				glGetIntegerv(GL_FOG_MODE,&fogMode);
-				glGetFloatv(GL_FOG_DENSITY,&fogDens);
-				switch(fogMode)
-				{
-				case GL_EXP:
-					mix_fog=1.f-exp(-fogDens*(*i)->distance);
-					break;
-				case GL_EXP2:
-					mix_fog=1.f-exp(-fogDens*(*i)->distance*(*i)->distance);
-					mix_fog=mix_fog*mix_fog;
-					break;
-				default:
-					{
-						GLfloat fogStart,fogEnd;
-						glGetFloatv(GL_FOG_START,&fogStart);
-						glGetFloatv(GL_FOG_END,&fogEnd);
-						float distance=(*i)->distance>fogEnd?fogEnd:(*i)->distance;
-						mix_fog=(distance-fogStart)/(fogEnd-fogStart);
-						mix_fog=std::min(1.f,mix_fog);
-						mix_fog=std::max(0.f,mix_fog);
-					}
-					break;
-				};
-				loss=simul::sky::float4(1,1,1,1)*(1.f-mix_fog);
-				inscatter=gl_fog*mix_fog;
+				if(qs_vert<0||qs_vert>=quad_strip_vertices.size())
+					continue;
+				int v=quad_strip_vertices[qs_vert];
+				if(v<0||v>=(int)helper->GetVertices().size())
+					continue;
+				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[v];
+				// Here we're passing sunlight values per-vertex, loss and inscatter
+				// The per-vertex sunlight allows different altitudes of cloud to have different
+				// sunlight colour - good for dawn/sunset.
+				// The per-vertex loss and inscatter is cheap for the pixel shader as it
+				// then doesn't need fade-texture lookups.
+				glVertex3f(V.x,V.y,V.z);
 			}
-			layers_drawn++;
-	ERROR_CHECK
-			const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
-			size_t qs_vert=0;
-			glBegin(GL_QUAD_STRIP);
-			for(std::vector<const CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
-				j!=(*i)->quad_strips.end();j++)
-			{
-				// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?
-				for(unsigned k=0;k<(*j)->num_vertices;k++,qs_vert++)
-				{
-					const CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
-					if(multiTexCoord0>=0)
-						glVertexAttrib3f(multiTexCoord0,V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
-					if(multiTexCoord1>=0)
-						glVertexAttrib1f(multiTexCoord1,dens);
-					if(multiTexCoord2>=0)
-						glVertexAttrib2f(multiTexCoord2,V.noise_tex_x,V.noise_tex_y);
-					// Here we're passing sunlight values per-vertex, loss and inscatter
-					// The per-vertex sunlight allows different altitudes of cloud to have different
-					// sunlight colour - good for dawn/sunset.
-					// The per-vertex loss and inscatter is cheap for the pixel shader as it
-					// then doesn't need fade-texture lookups.
-					glVertex3f(V.x,V.y,V.z);
-				}
-			}
-			glEnd();
-	ERROR_CHECK
 		}
+		glEnd();
+	ERROR_CHECK
 	}
 ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
@@ -719,19 +635,19 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 	eyePosition_param			=glGetUniformLocation(program,"eyePosition");
 	//hazeEccentricity_param		=glGetUniformLocation(program,"hazeEccentricity");
 	//mieRayleighRatio_param		=glGetUniformLocation(program,"mieRayleighRatio");
-	maxFadeDistanceMetres_param	=glGetUniformLocation(program,"maxFadeDistanceMetres");
+	maxFadeDistanceMetres_param		=glGetUniformLocation(program,"maxFadeDistanceMetres");
 
-	cloudDensity1_param			=glGetUniformLocation(program,"cloudDensity1");
-	cloudDensity2_param			=glGetUniformLocation(program,"cloudDensity2");
-	noiseSampler_param			=glGetUniformLocation(program,"noiseSampler");
-	illumSampler_param			=glGetUniformLocation(program,"illumSampler");
-	lossSampler_param			=glGetUniformLocation(program,"lossSampler");
-	inscatterSampler_param		=glGetUniformLocation(program,"inscatterSampler");
-	skylightSampler_param		=glGetUniformLocation(program,"skylightSampler");
-	depthTexture			=glGetUniformLocation(program,"depthTexture");
+	cloudDensity1_param				=glGetUniformLocation(program,"cloudDensity1");
+	cloudDensity2_param				=glGetUniformLocation(program,"cloudDensity2");
+	noiseSampler_param				=glGetUniformLocation(program,"noiseSampler");
+	illumSampler_param				=glGetUniformLocation(program,"illumSampler");
+	lossSampler_param				=glGetUniformLocation(program,"lossSampler");
+	inscatterSampler_param			=glGetUniformLocation(program,"inscatterSampler");
+	skylightSampler_param			=glGetUniformLocation(program,"skylightSampler");
+	depthTexture					=glGetUniformLocation(program,"depthTexture");
 
-	cloudConstants				=glGetUniformBlockIndex(program,"CloudConstants");
-	cloudPerViewConstants		=glGetUniformBlockIndex(program,"CloudPerViewConstants");
+	GLint cloudConstants			=glGetUniformBlockIndex(program,"CloudConstants");
+	GLint cloudPerViewConstants		=glGetUniformBlockIndex(program,"CloudPerViewConstants");
 	//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
 ERROR_CHECK
 	// If that block IS in the shader program, then BIND it to the relevant UBO.
@@ -740,7 +656,8 @@ ERROR_CHECK
 	if(cloudPerViewConstants>=0)
 		glUniformBlockBinding(program,cloudPerViewConstants,cloudPerViewConstantsBindingIndex);
 ERROR_CHECK
-	layerDataConstants			=glGetUniformBlockIndex(program,"SingleLayerConstants");
+	
+	GLint layerDataConstants			=glGetUniformBlockIndex(program,"LayerConstants");
 	if(layerDataConstants>=0)
 		glUniformBlockBinding(program,layerDataConstants,layerDataConstantsBindingIndex);
 ERROR_CHECK
@@ -774,7 +691,7 @@ ERROR_CHECK
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
 	glBindBufferRange(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO,0, sizeof(CloudConstants));
-	glBindBufferRange(GL_UNIFORM_BUFFER,layerDataConstantsBindingIndex,layerDataConstantsUBO,0, sizeof(SingleLayerConstants));
+	glBindBufferRange(GL_UNIFORM_BUFFER,layerDataConstantsBindingIndex,layerDataConstantsUBO,0, sizeof(LayerConstants));
 	glBindBufferRange(GL_UNIFORM_BUFFER,cloudPerViewConstantsBindingIndex,cloudPerViewConstantsUBO,0, sizeof(CloudPerViewConstants));
 
 ERROR_CHECK
@@ -785,12 +702,13 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 {
 	init=true;
 	
-	glGenBuffers(1, &cloudConstantsUBO);
+/*	glGenBuffers(1, &cloudConstantsUBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, cloudConstantsUBO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(CloudConstants), NULL, GL_STREAM_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);*/
 	
-	MAKE_CONSTANT_BUFFER(layerDataConstantsUBO,SingleLayerConstants,layerDataConstantsBindingIndex);
+	MAKE_CONSTANT_BUFFER(cloudConstantsUBO,CloudConstants,cloudConstantsBindingIndex);
+	MAKE_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
 	MAKE_CONSTANT_BUFFER(cloudPerViewConstantsUBO,CloudPerViewConstants,cloudPerViewConstantsBindingIndex);
 
 	RecompileShaders();
@@ -801,6 +719,7 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 //	cloudKeyframer->SetRenderCallback(this);
 	glUseProgram(NULL);
 	BuildSphereVBO();
+	helper->GenerateSphereVertices();
 }
 
 struct vertt
@@ -893,12 +812,9 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	//glDeleteTexture(volume_noise_tex);
 	volume_noise_tex=0;
 
-	
 	glDeleteBuffersARB(1,&cloudConstantsUBO);
-	cloudConstants=-1;
 	cloudConstantsUBO=0;
 	
-	layerDataConstants=-1;
 	ClearIterators();
 }
 

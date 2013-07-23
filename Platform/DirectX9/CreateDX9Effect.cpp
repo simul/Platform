@@ -10,24 +10,14 @@
 
 #include "CreateDX9Effect.h"
 
-#ifdef XBOX
-	#include <xgraphics.h>
-	#include <fstream>
-	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring shader_path=TEXT("game:\\");
-	static tstring texture_path=TEXT("game:\\");
-	static DWORD default_effect_flags=0;
-#else
-	#include <tchar.h>
-	#include <dxerr.h>
-	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring shader_path=TEXT("");
-	static tstring texture_path=TEXT("");
-	static DWORD default_effect_flags=D3DXSHADER_SKIPVALIDATION;//D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
-#endif
-	#include <vector>
+#include <tchar.h>
+#include <dxerr.h>
+#include <string>
+typedef std::basic_string<TCHAR> tstring;
+static tstring shader_path=TEXT("");
+static tstring texture_path=TEXT("");
+static DWORD default_effect_flags=D3DXSHADER_SKIPVALIDATION;//D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
+#include <vector>
 #include <iostream>
 #include <Windows.h>
 #include "Macros.h"

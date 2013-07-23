@@ -1,6 +1,7 @@
 
 #include "SimulLightningRendererDX11.h"
-
+using namespace simul;
+using namespace dx11;
 SimulLightningRendererDX11::SimulLightningRendererDX11(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk)
 	:BaseLightningRenderer(ck,sk)
 {
