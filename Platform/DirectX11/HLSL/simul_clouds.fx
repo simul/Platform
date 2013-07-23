@@ -255,15 +255,6 @@ struct vertexInput
 	float layerDistance		: TEXCOORD4;
 };
 
-struct VStoGS
-{
-    float3 position			: POSITION;
-	// Per-instance data:
-	vec2 noiseOffset		: TEXCOORD0;
-	float noiseScale		: TEXCOORD1;
-	float layerFade			: TEXCOORD2;
-	float layerDistance		: TEXCOORD3;
-};
 
 struct toPS
 {
@@ -275,18 +266,6 @@ struct toPS
     float2 fade_texc		: TEXCOORD4;
 	float layerFade			: TEXCOORD5;
 };
-
-VStoGS VS_FeedToGS(vertexInput IN)
-{
-    VStoGS OUT;
-	OUT.position=IN.position;
-	// Per-instance data:
-	OUT.noiseOffset		=IN.noiseOffset;
-	OUT.noiseScale		=IN.noiseScale;
-	OUT.layerFade		=IN.layerFade;
-	OUT.layerDistance	=IN.layerDistance;
-    return OUT;
-}
 
 toPS VS_Main(vertexInput IN)
 {
@@ -318,61 +297,6 @@ toPS VS_Main(vertexInput IN)
 }
 #define ELEV_STEPS 20
 
-[maxvertexcount(53)]
-void GS_Main(line VStoGS input[2], inout TriangleStream<toPS> OutputStream)
-{
-	/*if(input[0].texCoords.z>1.0&&input[1].texCoords.z>1.0&&input[2].texCoords.z>1.0)
-		return;
-	if(input[0].texCoords.z<0.0&&input[1].texCoords.z<0.0&&input[2].texCoords.z<0.0)
-		return;*/
-	// work out the start and end angles.
-	float dh1=cornerPos.z-viewPos.z;
-	float dh2=dh1+1.0/inverseScales.z;
-	float a1=atan(dh1/input[0].layerDistance)*2.0/pi;
-	float a2=atan(dh2/input[0].layerDistance)*2.0/pi;
-	int e1=max((int)(a1*ELEV_STEPS/2+ELEV_STEPS/2)-1,0);
-	int e2=min((int)(a2*ELEV_STEPS/2+ELEV_STEPS/2)+3,ELEV_STEPS);
-
-	for(int i=e1;i<e2+1;i++)
-	{
-		float angle=pi*(float)(i-ELEV_STEPS/2)/(float)ELEV_STEPS;
-		float cosine=cos(angle);
-		float sine=sin(angle);
-		float3 pos[2];
-		float3 t1[2];
-		float4 hpos[2];
-		for(int j = 0; j < 2; j++)
-		{
-			VStoGS IN=input[j];
-			float3 pos=cosine*IN.position;
-			pos.z=sine;
-			float3 t1=pos.xyz*IN.layerDistance;
-			float4 hpos=(float4(t1.xyz,1.0));
-			//float4 hpos=mul(worldViewProj,float4(t1.xyz,1.0));
-
-			toPS OUT;
-			OUT.hPosition			=hpos;
-			float3 noise_pos		=float3(mul((float2x2)noiseMatrix,pos.xy).xy,1.0);
-			OUT.noise_texc			=float2(atan2(noise_pos.x,noise_pos.z),atan2(noise_pos.y,noise_pos.z));
-			OUT.noise_texc			*=IN.noiseScale;
-			OUT.noise_texc			+=IN.noiseOffset;
-			
-			OUT.view				=pos.xyz;
-			float3 wPos				=viewPos+t1;
-			OUT.texCoords.xyz		=wPos-cornerPos;
-			OUT.texCoords.xyz		*=inverseScales;
-			OUT.texCoords.w			=saturate(OUT.texCoords.z);
-			float3 texCoordLightning=(pos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
-			OUT.texCoordLightning	=texCoordLightning;
-			float3 view				=normalize(pos.xyz);
-			
-			float depth				=IN.layerDistance/maxFadeDistanceMetres;
-			OUT.fade_texc			=float2(sqrt(depth),0.5f*(1.f-sine));
-			OUT.layerFade			=IN.layerFade;
-    		OutputStream.Append(OUT);
-		}
-	}
-}
 float4 PS_Clouds( toPS IN): SV_TARGET
 {
 	float3 noiseval=(noiseTexture.Sample(noiseSamplerState,IN.noise_texc.xy).xyz).xyz;
@@ -478,21 +402,23 @@ float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
     vec3 pos			=160000.0*vec3(IN.texCoords.xy-vec2(0.5,0.5),0.0);
 	vec3 wpos0			=mul(shadowMatrix,vec4(pos,1.0)).xyz;
 	float dh			=cornerPos.z-wpos0.z+1.0/inverseScales.z;
-	float thickness		=dh/lightDir.z;
+	float thickness		=dh/(lightDir.z+.1);
 	float illumination	=1.0;
-	static const int C=256;
+	float Z				=-startZMetres;
+	static const int C=128;
 	for(int i=0;i<C;i++)
 	{
 		float u			=float(i)/float(C);
-		float z			=80000.0*(u-0.5);
+		float z			=startZMetres-2.0*startZMetres*2.0*(0.5-u);
 		vec3 wpos		=wpos0+lightDir.xyz*z;
 		vec3 texc		=(wpos-cornerPos)*inverseScales;
 		vec4 density1	=sampleLod(cloudDensity1,wwcSamplerState,texc,0);
 		vec4 density2	=sampleLod(cloudDensity2,wwcSamplerState,texc,0);
 		vec4 density	=lerp(density1,density2,cloud_interp);
 		illumination	=lerp(illumination,0,density.z);
+		Z				=lerp(Z,z,density.z);
 	}
-	return float4(illumination,0,0,1.0);
+	return float4(illumination,0,Z,1.0);
 }
 
 vertexOutputCS VS_CrossSection(idOnly IN)
@@ -626,18 +552,6 @@ technique11 simul_raytrace_3d_noise
     }
 }
 
-technique11 simul_clouds_and_lightning
-{
-    pass p0 
-    {
-		SetDepthStencilState(DisableDepth,0);
-        SetRasterizerState( RenderNoCull );
-		//SetBlendState(CloudBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(CompileShader(gs_5_0,GS_Main()));
-		SetVertexShader(CompileShader(vs_5_0,VS_FeedToGS()));
-		SetPixelShader(CompileShader(ps_5_0,PS_WithLightning()));
-    }
-}
 
 technique11 cloud_shadow
 {

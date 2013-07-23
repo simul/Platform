@@ -22,6 +22,14 @@ uniform_buffer AtmosphericsUniforms R11
 	uniform float pad13,pad14,pad15;
 	uniform float exposure;
 	uniform float pad16,pad17,pad18;
+	uniform float fogBaseAlt;
+	uniform float fogScaleHeight;
+	uniform float fogDensity;
+	uniform float pad19;
+	uniform vec3 fogColour;
+	uniform float pad20;
+    uniform vec3 infraredIntegrationFactors;
+	uniform float pad21;
 };
 
 uniform_buffer AtmosphericsPerViewConstants R12
@@ -35,5 +43,6 @@ uniform_buffer AtmosphericsPerViewConstants R12
 	uniform float fill1,fill2;
 	uniform float nearZ;
 	uniform float farZ;
+	uniform float startZMetres;
 };
 #endif

@@ -20,6 +20,7 @@ namespace simul
 			void SetWidthAndHeight(int w,int h);
 			void SetFormat(int f);
 			void SetDepthFormat(int f);
+			void SetGenerateMips(bool);
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 			void RestoreDeviceObjects(void* pd3dDevice);
 			//! Call to recompile the shaders - useful for debugging.
@@ -83,6 +84,7 @@ namespace simul
 			ID3D1xRenderTargetView* MakeRenderTarget(const ID3D1xTexture2D* pTexture);
 			float timing;
 			unsigned int num_v;
+			bool GenerateMips;
 		};
 	}
 }

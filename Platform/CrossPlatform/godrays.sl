@@ -22,9 +22,11 @@ float GetIlluminationAt(vec3 wpos)
 	vec3 tex_pos		=mul(shadowMatrix,vec4(wpos,1.0)).xyz;
 	tex_pos.xy			/=160000.0;
 	tex_pos.xy			+=vec2(0.5,0.5);
-	float illumination	=texture_clamp(cloudShadowTexture,tex_pos.xy).r;
-	float above			=saturate((cloud_texc.z)*10.0);
+	vec4 texel			=sampleLod(cloudShadowTexture,clampSamplerState,tex_pos.xy,0);
+	float illumination	=texel.r;
+	float above			=saturate((tex_pos.z-texel.z)/1000.0);
 	illumination		+=above;
+	//illumination		+=1.0-exp(min(0,(tex_pos.z-texel.z)/10000.0));
 	return saturate(illumination);
 }
 
