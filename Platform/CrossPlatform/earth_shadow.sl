@@ -7,20 +7,20 @@ vec3 EarthShadowLight(vec2 fade_texc,vec3 view,float transitionDistance)
 {
 	// Project to the world position this represents, then compare it to the shadow radius.
 	// true distance normalized to fade max.
-	float dist=fade_texc.x*fade_texc.x*maxFadeDistance;
+	float dist				=fade_texc.x*fade_texc.x*maxFadeDistance;
 	// Now resolve this distance on the normal to the sun direction.
-	float along=dot(sunDir.xyz,view);
-	float in_shadow		=saturate(1.0*(terminatorDistance-dist*along));
-	vec3 on_cross_section=view-along*sunDir.xyz;
-	on_cross_section*=dist;
-	vec3 viewer_pos=vec3(0.0,0.0,radiusOnCylinder);
-	vec3 target_pos=viewer_pos+on_cross_section;
-	float target_radius=length(target_pos);
+	float along				=dot(sunDir.xyz,view);
+	float in_shadow			=saturate(1.0*(terminatorDistance-dist*along));
+	vec3 on_cross_section	=view-along*sunDir.xyz;
+	on_cross_section		*=dist;
+	vec3 viewer_pos			=vec3(0.0,0.0,radiusOnCylinder);
+	vec3 target_pos			=viewer_pos+on_cross_section;
+	float target_radius		=length(target_pos);
 
 	// Now, if target_radius<1.0, it's zero.
-	float result=clamp((target_radius-1.0+transitionDistance)/transitionDistance,0,1.0);
-	result=1.0-in_shadow*(1.0-result);
-result=in_shadow;
+	float result			=clamp((target_radius-1.0+transitionDistance)/transitionDistance,0,1.0);
+	result					=1.0-in_shadow*(1.0-result);
+	result					=in_shadow;
 	return vec3(result,result,result);
 }
 

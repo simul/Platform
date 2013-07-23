@@ -44,6 +44,7 @@ Framebuffer::Framebuffer(int w,int h) :
 	,target_format(DXGI_FORMAT_R32G32B32A32_FLOAT)
 	,depth_format(DXGI_FORMAT_D32_FLOAT) //DXGI_FORMAT_D32_FLOAT_S8X24_UINT)
 	,num_v(0)
+	,GenerateMips(false)
 {
 }
 
@@ -74,6 +75,11 @@ void Framebuffer::SetDepthFormat(int f)
 		return;
 	depth_format=F;
 	CreateBuffers();
+}
+
+void Framebuffer::SetGenerateMips(bool m)
+{
+	GenerateMips=m;
 }
 
 void Framebuffer::RestoreDeviceObjects(void *dev)
@@ -165,18 +171,18 @@ bool Framebuffer::CreateBuffers()
 	SAFE_RELEASE(hdr_buffer_texture);
 	SAFE_RELEASE(m_pHDRRenderTarget)
 	SAFE_RELEASE(buffer_texture_SRV);
-	D3D1x_TEXTURE2D_DESC desc=
+	D3D11_TEXTURE2D_DESC desc=
 	{
 		Width,
 		Height,
 		1,
-		1,
+		GenerateMips?4:1,
 		target_format,
 		{1,0},
 		D3D1x_USAGE_DEFAULT,
 		D3D1x_BIND_RENDER_TARGET|D3D11_BIND_SHADER_RESOURCE,
 		0,
-		0
+		GenerateMips?D3D11_RESOURCE_MISC_GENERATE_MIPS:0
 	};
 	if(target_format!=0)
 	{

@@ -220,7 +220,6 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 	}
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1);
 	atmosphericsPerViewConstants.shadowMatrix=or.GetInverseMatrix();
-	//atmosphericsPerViewConstants.shadowMatrix.transpose();
 
 	UPDATE_CONSTANT_BUFFER(pContext,atmosphericsUniforms2ConstantsBuffer,AtmosphericsPerViewConstants,atmosphericsPerViewConstants)
 	ID3DX11EffectConstantBuffer* cbAtmosphericsUniforms2=effect->GetConstantBufferByName("AtmosphericsPerViewConstants");

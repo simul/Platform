@@ -239,6 +239,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 	ClearIterators();
 	cloudConstants.RestoreDeviceObjects(m_pd3dDevice);
 
+	cloudShadow.SetGenerateMips(true);
 	cloudShadow.RestoreDeviceObjects(m_pd3dDevice);
 }
 	
@@ -699,12 +700,18 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	or.DefineFromYZ(north,toSun);
 	or.SetPosition((const float*)cam_pos);
 	cloudPerViewConstants.shadowMatrix=or.T4;
+	// Distance along sunDir to start tracing downwards, measured from the camera.
+	float base_alt=GetCloudInterface()->GetCloudBaseZ();
+	static float zmin=0.2f;
+	float z=std::max(toSun.z,zmin);
+	float h=GetCloudInterface()->GetCloudHeight();
+	cloudPerViewConstants.startZMetres=(base_alt+h-cam_pos.z)/z;
+	cloudPerViewConstants.extentZMetres=h/z;
 	//cloudPerViewConstants.shadowMatrix.transpose();
 	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
 	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=m_pCloudEffect->GetConstantBufferByName("CloudPerViewConstants");
 	if(cbCloudPerViewConstants)
 		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
-
 
 	cloudDensity1->SetResource(cloud_textures[0].shaderResourceView);
 	cloudDensity2->SetResource(cloud_textures[1].shaderResourceView);
@@ -712,6 +719,7 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	cloudShadow.Activate(pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	cloudShadow.Deactivate(pContext);
+	pContext->GenerateMips((ID3D11ShaderResourceView*)cloudShadow.GetColorTex());
 }
 
 void SimulCloudRendererDX1x::Update(void *context)
@@ -1055,6 +1063,7 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 		return;
 	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[0].texture!=NULL)
 		return;
+	cloudShadow.SetGenerateMips(true);
 	cloudShadow.SetWidthAndHeight(width_x,length_y);
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
