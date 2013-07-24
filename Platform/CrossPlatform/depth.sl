@@ -3,6 +3,12 @@
 
 float depthToDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
 {
+#ifdef VISION
+	float dist=depth*farZ;
+	if(depth>=1.0)
+		dist=1.0;
+	return dist;
+#else
 #ifdef REVERSE_DEPTH
 	float z=nearZ*farZ/(nearZ+(farZ-nearZ)*depth);
 #else
@@ -18,7 +24,8 @@ float depthToDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
 	if(depth>=1.0)
 		dist=1.0;
 #endif
-	return dist;
+	return depth;
+#endif
 }
 
 #endif
