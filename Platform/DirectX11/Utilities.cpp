@@ -379,7 +379,7 @@ UtilityRenderer::UtilityRenderer()
 
 UtilityRenderer::~UtilityRenderer()
 {
-	// Calling this manually to avoid global destruction when memory has already been freed.
+	// Now calling this manually instead to avoid global destruction when memory has already been freed.
 	//InvalidateDeviceObjects();
 }
 

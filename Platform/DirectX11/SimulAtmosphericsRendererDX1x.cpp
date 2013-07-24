@@ -163,13 +163,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	}
 
 	AtmosphericsPerViewConstants atmosphericsPerViewConstants;
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1);
-	atmosphericsPerViewConstants.invViewProj=ivp;
-	atmosphericsPerViewConstants.invViewProj.transpose();
-	atmosphericsPerViewConstants.viewportToTexRegionScaleBias = vec4(relativeViewportTextureRegionXYWH.z,relativeViewportTextureRegionXYWH.w,relativeViewportTextureRegionXYWH.x,relativeViewportTextureRegionXYWH.y);
-	atmosphericsPerViewConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	atmosphericsPerViewConstants.nearZ=frustum.nearZ*0.001f/fade_distance_km;
-	atmosphericsPerViewConstants.farZ=frustum.farZ*0.001f/fade_distance_km;
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1, relativeViewportTextureRegionXYWH);
 	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,atmosphericsUniforms2ConstantsBuffer,AtmosphericsPerViewConstants,atmosphericsPerViewConstants)
 	ID3DX11EffectConstantBuffer* cbAtmosphericsUniforms2=effect->GetConstantBufferByName("AtmosphericsPerViewConstants");
 	if(cbAtmosphericsUniforms2)
@@ -198,7 +192,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	PIXEndNamedEvent();
 }
 
-void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *depthTexture,float exposure)
+void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 	if(!ShowGodrays)
 		return;
@@ -224,7 +218,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 		// Convert the proj matrix into a normal non-reversed matrix.
 		p1=simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
 	}
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,relativeViewportTextureRegionXYWH);
 	atmosphericsPerViewConstants.shadowMatrix=or.GetInverseMatrix();
 
 	UPDATE_CONSTANT_BUFFER(pContext,atmosphericsUniforms2ConstantsBuffer,AtmosphericsPerViewConstants,atmosphericsPerViewConstants)

@@ -186,7 +186,7 @@ bool SimulWeatherRendererDX1x::Destroy()
 SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
 {
 	InvalidateDeviceObjects();
-	// Free this memory here instead of global destruction.
+	// Free this memory here instead of global destruction(as causes shutdown problems).
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	Destroy();
 	del(simulSkyRenderer,memoryInterface);
