@@ -64,7 +64,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
 	float2 texCoords	=IN.texCoords.xy;
 	texCoords.y			=1.0-texCoords.y;
-	float4 dlookup		=sampleLod(depthTexture,clampSamplerState,texCoords.xy,0);
+	float4 dlookup		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	float4 pos			=float4(-1.f,-1.f,1.f,1.f);
 	pos.x				+=2.f*IN.texCoords.x;
 	pos.y				+=2.f*IN.texCoords.y;

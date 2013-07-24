@@ -186,6 +186,8 @@ bool SimulWeatherRendererDX1x::Destroy()
 SimulWeatherRendererDX1x::~SimulWeatherRendererDX1x()
 {
 	InvalidateDeviceObjects();
+	// Free this memory here instead of global destruction(as causes shutdown problems).
+	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	Destroy();
 	del(simulSkyRenderer,memoryInterface);
 	del(simulCloudRenderer,memoryInterface);
@@ -295,9 +297,9 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 	}
 }
 
-void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture)
+void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
-	BaseWeatherRenderer::RenderSkyAsOverlay(context,exposure,buffered,is_cubemap,depthTexture);
+	BaseWeatherRenderer::RenderSkyAsOverlay(context,exposure,buffered,is_cubemap,depthTexture,relativeViewportTextureRegionXYWH);
 	if(buffered&&baseFramebuffer)
 	{
 		bool blend=!is_cubemap;
@@ -339,7 +341,8 @@ void SimulWeatherRendererDX1x::RenderLateCloudLayer(void *context,float exposure
 {
 	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{
-		simulCloudRenderer->Render(context,exposure,false,0,UseDefaultFog,true);
+		const simul::sky::float4 viewportTextureRegionXYWH(0,0,1,1);
+		simulCloudRenderer->Render(context,exposure,false,0,UseDefaultFog,true,viewportTextureRegionXYWH);
 	}
 }
 

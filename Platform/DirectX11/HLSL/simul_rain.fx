@@ -78,6 +78,7 @@ vec3 Frac(vec3 pos,float scale)
 	return scale*(2.0*frac(0.5*(pos/scale+unity))-unity);
 }
 
+
 particleVertexOutput VS_Particles(posOnly IN)
 {
 	particleVertexOutput OUT;
