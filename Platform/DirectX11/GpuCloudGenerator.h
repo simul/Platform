@@ -39,7 +39,8 @@ namespace simul
 									,float transition
 									,float upperDensity
 									,float time
-									,void* noise_tex,int octaves,float persistence);
+									,void* noise_tex,int octaves,float persistence
+											,bool mask);
 			virtual void PerformGPURelight(	int light_index
 											,float *target
 											,const int *light_grid
@@ -72,10 +73,13 @@ namespace simul
 			simul::dx11::Framebuffer			fb[2];
 			simul::dx11::Framebuffer			world_fb;
 			simul::dx11::Framebuffer			dens_fb;
+			simul::dx11::Framebuffer			mask_fb;
+			
 			ID3D1xDevice*						m_pd3dDevice;
 			ID3D11DeviceContext*				m_pImmediateContext;
 			ID3D1xEffect*						effect;
 			ID3D1xEffectTechnique*				densityTechnique;
+			ID3D1xEffectTechnique*				maskTechnique;
 			ID3D1xEffectTechnique*				lightingTechnique;
 			ID3D1xEffectTechnique*				transformTechnique;
 			ID3D11Texture3D						*volume_noise_tex;

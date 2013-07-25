@@ -103,7 +103,7 @@ void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 
 #include "Simul/Camera/Camera.h"
 
-void SimulGLAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depthTexture,float exposure)
+void SimulGLAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 	GLuint depth_texture=(GLuint)depthTexture;
 ERROR_CHECK

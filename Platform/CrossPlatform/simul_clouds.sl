@@ -1,24 +1,18 @@
 #ifndef CLOUDS_SL
 #define CLOUDS_SL
 #ifndef GLSL
-Texture3D cloudDensity1: register(t0);
-Texture3D cloudDensity2: register(t1);
-Texture2D noiseTexture: register(t2);
-Texture2D lossTexture: register(t3);
-Texture2D inscTexture: register(t4);
-Texture2D skylTexture: register(t5);
-Texture2D depthTexture: register(t6);
+Texture3D cloudDensity1	: register(t0);
+Texture3D cloudDensity2	: register(t1);
+Texture2D noiseTexture	: register(t2);
+Texture2D lossTexture	: register(t3);
+Texture2D inscTexture	: register(t4);
+Texture2D skylTexture	: register(t5);
+Texture2D depthTexture	: register(t6);
 Texture3D noiseTexture3D: register(t7);
 Texture3D lightningIlluminationTexture: register(t8);
-Texture3D cloudDensity: register(t9);
-Texture2D illuminationTexture: register(t10);
-SamplerState cloudSamplerState: register( s0)
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-	AddressW = Clamp;
-};
+Texture3D cloudDensity			: register(t9);
+Texture2D illuminationTexture	: register(t10);
+SamplerState cloudSamplerState	: register( s0);
 #endif
 
 vec4 calcDensity(vec3 texCoords,float layerFade,vec3 noiseval)

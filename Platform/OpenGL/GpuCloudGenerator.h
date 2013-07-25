@@ -30,7 +30,8 @@ namespace simul
 									,float transition
 									,float upperDensity
 									,float time
-									,void*  noise_tex,int octaves,float persistence);
+									,void*  noise_tex,int octaves,float persistence
+											,bool mask);
 			virtual void PerformGPURelight(int index,float *target
 									,const int *light_grid
 									,int start_texel

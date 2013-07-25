@@ -264,7 +264,7 @@ void Simul2DCloudRenderer::Update(void *)
 {
 }
 
-bool Simul2DCloudRenderer::Render(void *,float expos,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool )
+bool Simul2DCloudRenderer::Render(void *,float expos,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool,const simul::sky::float4& )
 {
 	cubemap;
 	depth_alpha_tex;
@@ -273,12 +273,12 @@ bool Simul2DCloudRenderer::Render(void *,float expos,bool cubemap,const void *de
 	if(!enabled)
 		return (hr==S_OK);
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(1, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(2, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(3, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(4, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(5, D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(0,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(1,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(2,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(3,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(4,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(5,D3DSAMP_SRGBTEXTURE,0);
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);

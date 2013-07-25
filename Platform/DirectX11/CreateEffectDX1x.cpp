@@ -449,11 +449,17 @@ void simul::dx11::Ensure3DTextureSizeAndFormat(
 	}
 }
 
+void simul::dx11::setSamplerState(ID3D1xEffect *effect,const char *name	,ID3D11SamplerState * value)
+{
+	ID3DX11EffectSamplerVariable*	var	=effect->GetVariableByName(name)->AsSampler();
+	var->SetSampler(0,value);
+} 
+
 void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,ID3D11ShaderResourceView * value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
 	var->SetResource(value);
-}
+} 
 
 void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,ID3D11UnorderedAccessView * value)
 {
@@ -533,7 +539,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_ut
 HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	HRESULT hr=S_OK;
-#if 1
+#if 0
 	void *textData=NULL;
 	unsigned textSize=0;
 	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
@@ -580,7 +586,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 		errorMsgs->Release();
 #else
 	// first try to find an existing text source with this filename, and compile it.
-	std::string text_filename_utf8=filename_utf8;
+	std::string filename_utf8= text_filename_utf8;
 	std::string output_filename_utf8=text_filename_utf8+"o";
 	std::string tempfile="temp.o";
 	int pos=text_filename_utf8.find_last_of("/");

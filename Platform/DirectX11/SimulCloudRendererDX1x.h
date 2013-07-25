@@ -65,7 +65,7 @@ namespace simul
 			bool Destroy();
 			void Update(void *context);
 			//! Call this to draw the clouds, including any illumination by lightning.
-			bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha);
+			bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH);
 			void RenderDebugInfo(void *context,int width,int height);
 			void RenderCrossSections(void *context,int width,int height);
 			//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
@@ -112,18 +112,18 @@ namespace simul
 			void EnsureTextureCycle();
 
 			void CreateMeshBuffers();
-			int mapped;
 			void Unmap();
 			void Map(ID3D11DeviceContext *context,int texture_index);
 			unsigned texel_index[4];
 			bool lightning_active;
-			ID3D11DeviceContext *mapped_context;
 			ID3D1xDevice*							m_pd3dDevice;
 			simul::dx11::Mesh						circle;
 			simul::dx11::Mesh						sphere;
 			ID3D1xBuffer *							instanceBuffer;
 			ID3D1xInputLayout*						m_pVtxDecl;
 			ID3D1xInputLayout*						m_pLightningVtxDecl;
+			ID3D11SamplerState*						m_pWrapSamplerState;
+			ID3D11SamplerState*						m_pClampSamplerState;
 
 			ID3D1xEffect*							m_pLightningEffect;
 			ID3D1xEffectTechnique*					m_hTechniqueLightning;
@@ -185,7 +185,6 @@ namespace simul
 			
 			D3DXMATRIX			view,proj;
 
-			//D3D1x_MAPPED_TEXTURE3D mapped_cloud_texture;
 			bool UpdateIlluminationTexture(float dt);
 			float LookupLargeScaleTexture(float x,float y);
 

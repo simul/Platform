@@ -668,7 +668,7 @@ void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 	}
 }
 
-bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha)
+bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	if(rebuild_shaders)
 		RecompileShaders();
@@ -1239,7 +1239,7 @@ bool SimulCloudRenderer::MakeCubemap(void *context)
 		faceViewMatrix.m[2][3]=0;
 		faceViewMatrix.m[3][3]=1;
 
-		Render(context,exposure,true,false,false,0);
+		Render(context,exposure,true,false,false,0,simul::sky::float4(0,0,1.f,1.f));
 #ifdef XBOX
 		m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, cloud_cubemap, NULL, 0, face, NULL, 0.0f, 0, NULL);
 #endif

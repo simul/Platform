@@ -60,8 +60,8 @@ namespace simul
 				cloudShadowTexture_SRV=(ID3D1xShaderResourceView*)c;
 			}
 			//! Render the Atmospherics.
-			void RenderAsOverlay(void *context,const void *depthTexture,float exposure);
-			void RenderGodrays(void *context,const void *depthTexture,float exposure);
+			void RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
+			void RenderGodrays(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 		protected:
 			HRESULT Destroy();
 			ID3D1xDevice*								m_pd3dDevice;

@@ -63,7 +63,7 @@ float4 MainPS(v2f IN) : SV_TARGET
 	vec3 depth_pos		=IN.clip_pos.xyz/IN.clip_pos.w;
 	vec3 depth_texc		=0.5*(depth_pos+vec3(1.0,1.0,1.0));
 	depth_texc.y		=1.0-depth_texc.y;
-    float depth			=texture(depthTexture,depth_texc.xy).x;
+    float depth			=texture(depthTexture,viewportCoordToTexRegionCoord(depth_texc.xy,viewportToTexRegionScaleBias)).x;
 #ifdef REVERSE_DEPTH
 	if(depth>0.0)
 		discard;

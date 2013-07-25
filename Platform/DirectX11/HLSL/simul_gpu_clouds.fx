@@ -9,6 +9,7 @@
 #include "CppHLSL.hlsl"
 uniform sampler2D inputTexture;
 uniform sampler3D densityTexture;
+uniform sampler2D maskTexture;
 uniform sampler3D lightTexture;
 uniform sampler3D ambientTexture;
 uniform sampler3D volumeNoiseTexture;
@@ -39,12 +40,20 @@ vertexOutput VS_Main(idOnly IN)
     return OUT;
 }
 
+float4 PS_DensityMask(vertexOutput IN) : SV_TARGET
+{
+	float dr					=0.1;
+	vec2 pos					=2.0*IN.texCoords.xy-vec2(1.0,1.0);
+	float r						=length(pos);
+	float dens					=saturate((1.0-r)/dr);
+    return float4(dens,dens,dens,1.0);
+}
 float4 PS_Density(vertexOutput IN) : SV_TARGET
 {
 	vec3 densityspace_texcoord	=assemble3dTexcoord(IN.texCoords.xy);
 	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
 	float noise_val				=NoiseFunction(noisespace_texcoord,octaves,persistence,time);
-	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z);
+	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z)*maskTexture.Sample(clampSamplerState,densityspace_texcoord.xy).x;
 	float diffusivity			=0.02;
 	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
@@ -94,6 +103,18 @@ BlendState DontBlend
 };
 RasterizerState RenderNoCull { CullMode = none; };
 
+technique11 density_mask
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_DensityMask()));
+    }
+}
 technique11 simul_gpu_density
 {
     pass p0 

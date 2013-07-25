@@ -40,6 +40,8 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 	fb[0].RestoreDeviceObjects(m_pd3dDevice);
 	fb[1].RestoreDeviceObjects(m_pd3dDevice);
 	dens_fb.RestoreDeviceObjects(m_pd3dDevice);
+	mask_fb.SetDepthFormat(0);
+	mask_fb.RestoreDeviceObjects(m_pd3dDevice);
 	world_fb.RestoreDeviceObjects(m_pd3dDevice);
 	gpuCloudConstants.RestoreDeviceObjects(m_pd3dDevice);
 	RecompileShaders();
@@ -50,6 +52,7 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	fb[0].InvalidateDeviceObjects();
 	fb[1].InvalidateDeviceObjects();
 	dens_fb.InvalidateDeviceObjects();
+	mask_fb.InvalidateDeviceObjects();
 	world_fb.InvalidateDeviceObjects();
 	SAFE_RELEASE(volume_noise_tex);
 	SAFE_RELEASE(volume_noise_tex_srv);
@@ -72,6 +75,7 @@ void GpuCloudGenerator::RecompileShaders()
 		densityTechnique	=effect->GetTechniqueByName("simul_gpu_density");
 		lightingTechnique	=effect->GetTechniqueByName("simul_gpu_lighting");
 		transformTechnique	=effect->GetTechniqueByName("simul_gpu_transform");
+		maskTechnique		=effect->GetTechniqueByName("density_mask");
 	}
 	gpuCloudConstants.LinkToEffect(effect,"GpuCloudConstants");
 }
@@ -96,8 +100,10 @@ void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_sr
 
 void GpuCloudGenerator::CycleTexturesForward()
 {
-	std::swap(finalTexture[0],finalTexture[1]);
-	std::swap(finalTexture[1],finalTexture[2]);
+	// Because we are storing pointers to three TextureStructs, and we cycle not the structs, but their CONTENTS,
+	// there is NO NEED to perform this cycling here.
+	//std::swap(finalTexture[0],finalTexture[1]);
+	//std::swap(finalTexture[1],finalTexture[2]);
 }
 
 void GpuCloudGenerator::FillDensityGrid(int index,const int *density_grid
@@ -110,13 +116,29 @@ void GpuCloudGenerator::FillDensityGrid(int index,const int *density_grid
 									,float time
 									,void* noise_tex
 									,int octaves
-									,float persistence)
+									,float persistence
+											,bool mask)
 {
 simul::base::Timer timer;
 timer.StartTime();
 std::cout<<"Gpu clouds: FillDensityGrid\n";
 	int density_gridsize=density_grid[0]*density_grid[1]*density_grid[2];
 	dens_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
+	mask_fb.SetWidthAndHeight(density_grid[0],density_grid[1]);
+
+	mask_fb.Activate(m_pImmediateContext);
+	if(mask)
+	{
+		mask_fb.Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
+		ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
+		dens_fb.DrawQuad(m_pImmediateContext);
+	}
+	else
+	{
+		mask_fb.Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
+	}
+	mask_fb.Deactivate(m_pImmediateContext);
+
 	simul::math::Vector3 noise_scale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0]);
 
 	float y_start					=(float)start_texel/(float)density_gridsize;
@@ -136,6 +158,7 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	gpuCloudConstants.upperDensity	=upperDensity;
 
 	simul::dx11::setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
+	simul::dx11::setParameter(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
 
 	gpuCloudConstants.Apply(m_pImmediateContext);
 	dens_fb.Activate(m_pImmediateContext);

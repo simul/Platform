@@ -127,7 +127,8 @@ void GpuCloudGenerator::FillDensityGrid(int index,const int *density_grid
 											,float transition
 											,float upperDensity
 											,float time
-											,void* noise_tex,int octaves,float persistence)
+											,void* noise_tex,int octaves,float persistence
+											,bool mask)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();

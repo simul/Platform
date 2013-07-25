@@ -46,7 +46,7 @@ public:
 		cloud_shadow_texture=(GLuint)c;
 	}
 	//! Render the Atmospherics.
-	void RenderAsOverlay(void *context,const void *depthTexture,float exposure);
+	void RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 private:
 	bool initialized;
 	GLuint loss_program;

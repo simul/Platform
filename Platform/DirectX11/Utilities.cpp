@@ -296,7 +296,7 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 	desc.BindFlags=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_RENDER_TARGET;
 	desc.Usage=D3D11_USAGE_DEFAULT;
 	desc.CPUAccessFlags=0;
-	desc.ArraySize=textures.size();
+	desc.ArraySize=(UINT)textures.size();
 	desc.MiscFlags=D3D11_RESOURCE_MISC_GENERATE_MIPS;
 	desc.MipLevels=num_mips;
 	pd3dDevice->CreateTexture2D(&desc,NULL,&m_pArrayTexture);
@@ -379,7 +379,8 @@ UtilityRenderer::UtilityRenderer()
 
 UtilityRenderer::~UtilityRenderer()
 {
-	InvalidateDeviceObjects();
+	// Now calling this manually instead to avoid global destruction when memory has already been freed.
+	//InvalidateDeviceObjects();
 }
 
 struct Vertext

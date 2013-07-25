@@ -149,7 +149,8 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		if(simulWeatherRenderer)
 		{
 			simulWeatherRenderer->SetMatrices(view_matrices[i],cube_proj);
-			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapDepthFramebuffer.GetDepthTex());
+			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
+			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapDepthFramebuffer.GetDepthTex(),relativeViewportTextureRegionXYWH);
 		}
 		framebuffer_cubemap.Deactivate(pContext);
 	}
@@ -201,7 +202,8 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	void *depthTexture=depthFramebuffer.GetDepthTex();
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture);
+		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture,relativeViewportTextureRegionXYWH);
 	}
 	if(simulWeatherRenderer)
 	{
@@ -224,13 +226,10 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				simulOpticsRenderer->RenderFlare(pd3dImmediateContext,exp,dir,light);
 			}
 		}
-	if(simulWeatherRenderer)
-	{
 		if(simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->DrawCubemap(pd3dImmediateContext
 																,(ID3D1xShaderResourceView*	)framebuffer_cubemap.GetColorTex()
 																,view,proj);
-	}
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender(pd3dImmediateContext);
@@ -328,6 +327,8 @@ void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
 
 const char *Direct3D11Renderer::GetDebugText() const
 {
+	if(!ShowOSD)
+		return "";
 	static std::string str;
 	str="DirectX 11\n";
 	//if(simulWeatherRenderer)
