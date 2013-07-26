@@ -301,10 +301,10 @@ void SimulWeatherRenderer::RenderPrecipitation(void *context)
 		simulPrecipitationRenderer->Render(context);
 }
 
-void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,bool buf)
+void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH)
 {
 	if(!RenderCloudsLate||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		return ;
+		return;
 	HRESULT hr=S_OK;
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface=NULL;
@@ -319,7 +319,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,boo
 	{	
 		PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
 		{
-			simulCloudRenderer->Render(context,exposure,false,0,false,true,simul::sky::float4(0,0,1.f,1.f));
+			simulCloudRenderer->Render(context,exposure,false,0,false,true,viewport_id,relativeViewportTextureRegionXYWH);
 		}
 	}
 	

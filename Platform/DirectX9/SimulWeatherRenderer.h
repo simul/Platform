@@ -55,7 +55,7 @@ public:
 	//! Call this to draw the sky and clouds.
 	bool RenderSky(void *,float exposure,bool buffer,bool is_cubemap);
 	//! Call this to draw the clouds after the main scene.
-	void RenderLateCloudLayer(void *context,float exposure,bool buf);
+	void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 	//! Call this to draw lightning.
 	void RenderLightning(void *context);
 	//! Call this to draw rain etc.

@@ -297,9 +297,9 @@ void SimulWeatherRendererDX1x::SaveCubemapToFile(const char *filename)
 	}
 }
 
-void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,const simul::sky::float4& relativeViewportTextureRegionXYWH)
+void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
-	BaseWeatherRenderer::RenderSkyAsOverlay(context,exposure,buffered,is_cubemap,depthTexture,relativeViewportTextureRegionXYWH);
+	BaseWeatherRenderer::RenderSkyAsOverlay(context,exposure,buffered,is_cubemap,depthTexture,viewport_id,relativeViewportTextureRegionXYWH);
 	if(buffered&&baseFramebuffer)
 	{
 		bool blend=!is_cubemap;
@@ -337,12 +337,12 @@ bool SimulWeatherRendererDX1x::RenderSky(void *context,float exposure,bool buffe
 	return true;
 }
 
-void SimulWeatherRendererDX1x::RenderLateCloudLayer(void *context,float exposure,bool )
+void SimulWeatherRendererDX1x::RenderLateCloudLayer(void *context,float exposure,bool,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 	{
 		const simul::sky::float4 viewportTextureRegionXYWH(0,0,1,1);
-		simulCloudRenderer->Render(context,exposure,false,0,UseDefaultFog,true,viewportTextureRegionXYWH);
+		simulCloudRenderer->Render(context,exposure,false,0,UseDefaultFog,true,viewport_id,viewportTextureRegionXYWH);
 	}
 }
 

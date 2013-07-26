@@ -246,7 +246,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulWeatherRenderer)
 	{
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
-		simulWeatherRenderer->RenderLateCloudLayer(pd3dDevice,exposure,true);
+		simulWeatherRenderer->RenderLateCloudLayer(pd3dDevice,exposure,true,0,simul::sky::float4(0,0,1.f,1.f));
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{

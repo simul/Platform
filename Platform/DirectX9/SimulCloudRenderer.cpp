@@ -668,7 +668,7 @@ void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 	}
 }
 
-bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH)
+bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	if(rebuild_shaders)
 		RecompileShaders();
@@ -1118,144 +1118,7 @@ void SimulCloudRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 
 bool SimulCloudRenderer::MakeCubemap(void *context)
 {
-	HRESULT hr=S_OK;
-	D3DSURFACE_DESC desc;
-	static float exposure=1.f;
-	cloud_cubemap->GetLevelDesc(0,&desc);
-	//HANDLE *handle=NULL;
-	//calc proj matrix
-	D3DXMATRIX faceViewMatrix;
-	float w,h;
-	//vertical only specified
-	h = 1 / tanf((3.14159f * 0.5f) * 0.5f);
-	w = h ;
-//float zFar=helper->GetMaxCloudDistance();
-//	float zNear=1.f;
-//float Q = zFar / (zFar - zNear);
-
-	LPDIRECT3DSURFACE9	pRenderTarget;
-	LPDIRECT3DSURFACE9	pOldRenderTarget;
-	LPDIRECT3DSURFACE9	pOldDepthSurface;
-	hr=m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget);
-	hr=m_pd3dDevice->GetDepthStencilSurface(&pOldDepthSurface);
-
-	for(int face=0;face<6;face++)
-	{
-		hr=m_pd3dDevice->CreateRenderTarget(desc.Width,desc.Height,desc.Format,D3DMULTISAMPLE_NONE,0,FALSE,&pRenderTarget,NULL);
-		m_pd3dDevice->SetRenderTarget(0, pRenderTarget);
-		float3	lookDir={0,0,0};
-		float3	upDir={0,0,0};
-		float3	side={0,0,0};
-		switch(face)
-		{
-			case D3DCUBEMAP_FACE_POSITIVE_X:
-				lookDir.x	= 1;
-				lookDir.y	= 0;
-				lookDir.z	= 0;
-				upDir.x		= 0;
-				upDir.y		= 1;
-				upDir.z		= 0;
-				side.x		= 0;
-				side.y		= 0;
-				side.z		= -1;
-				break;
-			case D3DCUBEMAP_FACE_NEGATIVE_X:
-				lookDir.x	= -1;
-				lookDir.y	= 0;
-				lookDir.z	= 0;
-				upDir.x		= 0;
-				upDir.y		= 1;
-				upDir.z		= 0;
-				side.x		= 0;
-				side.y		= 0;
-				side.z		= 1;
-				break;
-			case D3DCUBEMAP_FACE_POSITIVE_Y:
-				lookDir.x	= 0;
-				lookDir.y	= 1;
-				lookDir.z	= 0;
-				upDir.x		= 0;
-				upDir.y		= 0;
-				upDir.z		= -1;
-				side.x		= 1;
-				side.y		= 0;
-				side.z		= 0;
-				break;
-			case D3DCUBEMAP_FACE_NEGATIVE_Y:
-				lookDir.x	= 0;
-				lookDir.y	= -1;
-				lookDir.z	= 0;
-				upDir.x		= 0;
-				upDir.y		= 0;
-				upDir.z		= 1;
-				side.x		= 1;
-				side.y		= 0;
-				side.z		= 0;
-				break;
-			case D3DCUBEMAP_FACE_POSITIVE_Z:
-				lookDir.x	= 0;
-				lookDir.y	= 0;
-				lookDir.z	= 1;
-				upDir.x		= 0;
-				upDir.y		= 1;
-				upDir.z		= 0;
-				side.x		= 1;
-				side.y		= 0;
-				side.z		= 0;
-				break;
-			case D3DCUBEMAP_FACE_NEGATIVE_Z:
-				lookDir.x	= 0;
-				lookDir.y	= 0;
-				lookDir.z	= -1;
-				upDir.x		= 0;
-				upDir.y		= 1;
-				upDir.z		= 0;
-				side.x		= -1;
-				side.y		= 0;
-				side.z		= 0;
-				break;
-			default:
-				break;
-		}
-
-		faceViewMatrix.m[0][0]=side.x;
-		faceViewMatrix.m[1][0]=side.y;
-		faceViewMatrix.m[2][0]=side.z;
-
-		faceViewMatrix.m[0][1]=upDir.x;
-		faceViewMatrix.m[1][1]=upDir.y;
-		faceViewMatrix.m[2][1]=upDir.z;
-
-		faceViewMatrix.m[0][2]=lookDir.x;
-		faceViewMatrix.m[1][2]=lookDir.y;
-		faceViewMatrix.m[2][2]=lookDir.z;
-
-		faceViewMatrix.m[3][0]=0.0f;
-		faceViewMatrix.m[3][1]=0.0f;
-		faceViewMatrix.m[3][2]=0.0f;
-
-		faceViewMatrix.m[0][3]=0;
-		faceViewMatrix.m[1][3]=0;
-		faceViewMatrix.m[2][3]=0;
-		faceViewMatrix.m[3][3]=1;
-
-		Render(context,exposure,true,false,false,0,simul::sky::float4(0,0,1.f,1.f));
-#ifdef XBOX
-		m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, cloud_cubemap, NULL, 0, face, NULL, 0.0f, 0, NULL);
-#endif
-		m_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-		m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, TRUE);
-
-		pRenderTarget->Release();
-	}
-	m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
-	if(pOldRenderTarget)
-		pOldRenderTarget->Release();
-
-	//m_pd3dDevice->SetDepthStencilSurface(pOldDepthSurface);
-	if(pOldDepthSurface)
-		pOldDepthSurface->Release();
-	return (hr==S_OK);
+	return (false);
 }
 float SimulCloudRenderer::GetTiming() const
 {

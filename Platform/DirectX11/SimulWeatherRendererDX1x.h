@@ -46,9 +46,9 @@ namespace simul
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
 			bool Destroy();
-			void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,const simul::sky::float4& relativeViewportTextureRegionXYWH);
+			void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 			bool RenderSky(void *context,float exposure,bool buffered,bool is_cubemap);
-			void RenderLateCloudLayer(void *context,float exposure,bool );
+			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			void RenderPrecipitation(void *context);
 			void RenderLightning(void *context);
 			void SaveCubemapToFile(const char *filename);

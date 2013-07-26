@@ -51,9 +51,9 @@ public:
 	void InvalidateDeviceObjects();
 	//! Platform-dependent. Call this to draw the sky
 	bool RenderSky(void *,float exposure,bool buffered,bool is_cubemap);
-	void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture);
+	void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 	//! Call this to draw the clouds
-	void RenderLateCloudLayer(void *context,float exposure,bool buf);
+	void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 	//! Call this to draw lightning.
 	void RenderLightning(void *context);
 	//! Call this to draw rain etc.

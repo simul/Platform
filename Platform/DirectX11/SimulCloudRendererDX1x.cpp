@@ -769,7 +769,7 @@ void SimulCloudRendererDX1x::Update(void *context)
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);*/
 }
 static int test=29999;
-bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH)
+bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
 	ID3D1xShaderResourceView *depthTexture_SRV	=(ID3D1xShaderResourceView *)depth_tex;

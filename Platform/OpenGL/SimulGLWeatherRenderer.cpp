@@ -192,7 +192,7 @@ ERROR_CHECK
 	return true;
 }
 
-void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture)
+void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 //	BaseWeatherRenderer::RenderSkyAsOverlay(context,buffered,is_cubemap,depthTexture);
 	RenderCloudsLate=false;
@@ -205,9 +205,9 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,boo
 	buffered=(buffered&&baseFramebuffer&&!is_cubemap);
 	UpdateSkyAndCloudHookup();
 	if(baseAtmosphericsRenderer&&ShowSky)
-		baseAtmosphericsRenderer->RenderAsOverlay(context, depthTexture,exposure,simul::sky::float4(0.f,0.f,1.f,1.f));
+		baseAtmosphericsRenderer->RenderAsOverlay(context, depthTexture,exposure,relativeViewportTextureRegionXYWH);
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-		base2DCloudRenderer->Render(context,exposure,false,depthTexture,UseDefaultFog,false,simul::sky::float4(0.f,0.f,1.f,1.f));
+		base2DCloudRenderer->Render(context,exposure,false,depthTexture,UseDefaultFog,false,viewport_id,relativeViewportTextureRegionXYWH);
 	if(buffered)
 	{
 		baseFramebuffer->Activate(context);
@@ -223,7 +223,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,boo
 	// Do this AFTER sky render, to catch any changes to texture definitions:
 	UpdateSkyAndCloudHookup();
 	if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
-		baseCloudRenderer->Render(context,buffered?1.f:exposure,is_cubemap,depthTexture,UseDefaultFog,true,simul::sky::float4(0.f,0.f,1.f,1.f));
+		baseCloudRenderer->Render(context,buffered?1.f:exposure,is_cubemap,depthTexture,UseDefaultFog,true,viewport_id,relativeViewportTextureRegionXYWH);
 	if(buffered)
 	{
 		baseFramebuffer->Deactivate(context);
@@ -238,7 +238,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,boo
 #endif
 }
 
-void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,bool )
+void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,bool,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH)
 {
 	if(!(AlwaysRenderCloudsLate||RenderCloudsLate)||!simulCloudRenderer||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return;
@@ -248,7 +248,7 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,b
 	
 	scene_buffer->Activate(context);
 	scene_buffer->Clear(context,0,0,0,1.f,ReverseDepth?0.f:1.f);
-	simulCloudRenderer->Render(context,exposure,false,NULL,UseDefaultFog,true,simul::sky::float4(0.f,0.f,1.f,1.f));
+	simulCloudRenderer->Render(context,exposure,false,NULL,UseDefaultFog,true,viewport_id,relativeViewportTextureRegionXYWH);
 	scene_buffer->Deactivate(context);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	glBlendFunc(GL_ONE,GL_SRC_ALPHA);

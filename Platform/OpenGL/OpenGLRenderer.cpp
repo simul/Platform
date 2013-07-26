@@ -169,7 +169,7 @@ ERROR_CHECK
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
 		}
 		simulWeatherRenderer->RenderLightning(context);
-		simulWeatherRenderer->RenderSkyAsOverlay(context,exposure,UseSkyBuffer,false,depthFramebuffer.GetDepthTex());
+		simulWeatherRenderer->RenderSkyAsOverlay(context,exposure,UseSkyBuffer,false,depthFramebuffer.GetDepthTex(),0,simul::sky::float4(0,0,1.f,1.f));
 		simulWeatherRenderer->DoOcclusionTests();
 		simulWeatherRenderer->RenderPrecipitation(context);
 		if(simulOpticsRenderer&&ShowFlares)
