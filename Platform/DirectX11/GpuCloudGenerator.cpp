@@ -98,26 +98,18 @@ void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_sr
 	return volume_noise_tex_srv;
 }
 
-void GpuCloudGenerator::CycleTexturesForward()
-{
-	// Because we are storing pointers to three TextureStructs, and we cycle not the structs, but their CONTENTS,
-	// there is NO NEED to perform this cycling here.
-	//std::swap(finalTexture[0],finalTexture[1]);
-	//std::swap(finalTexture[1],finalTexture[2]);
-}
-
 void GpuCloudGenerator::FillDensityGrid(int index,const int *density_grid
-									,int start_texel
-									,int texels
-									,float humidity
-									,float baseLayer
-									,float transition
-									,float upperDensity
-									,float time
-									,void* noise_tex
-									,int octaves
-									,float persistence
-											,bool mask)
+										,int start_texel
+										,int texels
+										,float humidity
+										,float baseLayer
+										,float transition
+										,float upperDensity
+										,float time
+										,void* noise_tex
+										,int octaves
+										,float persistence
+										,bool mask)
 {
 simul::base::Timer timer;
 timer.StartTime();
@@ -329,8 +321,6 @@ std::cout<<"\tDraw "<<timer.UpdateTime()<<"ms"<<std::endl;
 	{
 		int t0=z0*density_grid[0]*density_grid[1];
 		int t=z1*density_grid[0]*density_grid[1]-t0;
-		if(target)
-			world_fb.CopyToMemory(m_pImmediateContext,target,t0,t);
 std::cout<<"\tMemCopy "<<timer.UpdateTime()<<"ms"<<std::endl;
 		// Copy all the layers from the 2D dens_fb texture to the 3D texture.
 		if(finalTexture[index])
@@ -348,6 +338,8 @@ std::cout<<"\tMemCopy "<<timer.UpdateTime()<<"ms"<<std::endl;
 				m_pImmediateContext->CopySubresourceRegion(finalTexture[index]->texture,0,0,0,Z,world_fb.GetColorTexture(),0,&sourceRegion);
 			}
 		}
+		if(target)
+			world_fb.CopyToMemory(m_pImmediateContext,target,t0,t);
 	}
 std::cout<<"\tGpuCopy "<<timer.UpdateTime()<<"ms"<<std::endl;
 std::cout<<"\tRelease "<<timer.UpdateTime()<<"ms"<<std::endl;

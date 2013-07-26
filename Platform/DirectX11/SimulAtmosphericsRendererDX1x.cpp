@@ -174,7 +174,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 
 	{
 		AtmosphericsUniforms atmosphericsUniforms;
-		SetAtmosphericsConstants(atmosphericsUniforms,exposure);
+		SetAtmosphericsConstants(atmosphericsUniforms,exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
 		UPDATE_CONSTANT_BUFFER(m_pImmediateContext,constantBuffer,AtmosphericsUniforms,atmosphericsUniforms)
 		ID3DX11EffectConstantBuffer* cbAtmosphericsUniforms=effect->GetConstantBufferByName("AtmosphericsUniforms");
 		if(cbAtmosphericsUniforms)

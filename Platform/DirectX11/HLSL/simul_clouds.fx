@@ -415,7 +415,7 @@ float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
 		vec4 density1	=sampleLod(cloudDensity1,wwcSamplerState,texc,0);
 		vec4 density2	=sampleLod(cloudDensity2,wwcSamplerState,texc,0);
 		vec4 density	=lerp(density1,density2,cloud_interp);
-		illumination	=lerp(illumination,0,density.z);
+		illumination	=lerp(illumination,density.y,density.z);
 		Z				=lerp(Z,z,density.z);
 	}
 	return float4(illumination,0,Z,1.0);

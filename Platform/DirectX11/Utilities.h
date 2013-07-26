@@ -25,6 +25,7 @@ namespace simul
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
 			void ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f);
 			void map(ID3D11DeviceContext *context);
+			bool isMapped() const;
 			void unmap();
 		private:
 			ID3D11DeviceContext *last_context;

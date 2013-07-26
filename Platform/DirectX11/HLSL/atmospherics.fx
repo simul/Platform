@@ -170,7 +170,7 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 			total_insc.a		+=insc_diff.a*shadow;
 		}
 	}
-	vec3 gr=-.5*InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
+	vec3 gr=-exposure*4.0*InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
 	gr=min(gr,vec3(0.0,0.0,0.0));
 	return vec4(gr,0.0);
 }

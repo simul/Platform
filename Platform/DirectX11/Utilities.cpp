@@ -153,11 +153,17 @@ void TextureStruct::map(ID3D11DeviceContext *context)
 	last_context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
 }
 
+bool TextureStruct::isMapped() const
+{
+	return (mapped.pData!=NULL);
+}
+
 void TextureStruct::unmap()
 {
 	if(mapped.pData)
 		last_context->Unmap(texture,0);
 	mapped.pData=NULL;
+	last_context=NULL;
 }
 
 ComputableTexture::ComputableTexture()

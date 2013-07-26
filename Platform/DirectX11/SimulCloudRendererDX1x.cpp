@@ -110,7 +110,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,blendAndDontWriteAlpha(NULL)
 	,enable_lightning(false)
 	,lightning_active(false)
-	,mapped(-1)
 	,m_pWrapSamplerState(NULL)
 	,m_pClampSamplerState(NULL)
 {
@@ -603,10 +602,6 @@ void SimulCloudRendererDX1x::Unmap()
 {
 	for(int i=0;i<3;i++)
 		cloud_textures[i].unmap();
-	if(mapped!=-1)
-	{
-		mapped=-1;
-	}
 }
 
 void SimulCloudRendererDX1x::Map(ID3D11DeviceContext *context,int texture_index)
@@ -957,12 +952,12 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 		cloudConstants.lightResponse=light_response;
 		cloudConstants.Apply(pContext);
 		cloudDensity1->SetResource(cloud_textures[(i+texture_cycle)%3].shaderResourceView);
-		UtilityRenderer::DrawQuad2(pContext,i*(w+1)+4,4,w,h,m_pCloudEffect,m_hTechniqueCrossSectionXZ);
-		UtilityRenderer::DrawQuad2(pContext,i*(w+1)+4,h+8,w,w,m_pCloudEffect,m_hTechniqueCrossSectionXY);
+		UtilityRenderer::DrawQuad2(pContext	,i*(w+1)+4	,4		,w,h	,m_pCloudEffect	,m_hTechniqueCrossSectionXZ);
+		UtilityRenderer::DrawQuad2(pContext	,i*(w+1)+4	,h+8	,w,w	,m_pCloudEffect	,m_hTechniqueCrossSectionXY);
 	}
-	cloudDensity1->SetResource(cloud_texture.srv);
+	/*cloudDensity1->SetResource(cloud_texture.srv);
 	UtilityRenderer::DrawQuad2(pContext,2*(w+1)+4,4,w,h,m_pCloudEffect,m_hTechniqueCrossSectionXZ);
-	UtilityRenderer::DrawQuad2(pContext,2*(w+1)+4,h+8,w,w,m_pCloudEffect,m_hTechniqueCrossSectionXY);
+	UtilityRenderer::DrawQuad2(pContext,2*(w+1)+4,h+8,w,w,m_pCloudEffect,m_hTechniqueCrossSectionXY);*/
 	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",noiseTextureResource);
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",(ID3D1xShaderResourceView*)cloudShadow.GetColorTex());
@@ -1153,19 +1148,19 @@ void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(void *context)
 	// We don't need to fill the textures if the gpu Generator has already done so:
 	if(cloudKeyframer->GetGpuCloudGenerator()==&gpuCloudGenerator&&gpuCloudGenerator.GetEnabled())
 		return;
-	Map(pContext,2);
 	for(int i=0;i<3;i++)
 	{
+		TextureStruct &texture=cloud_textures[(texture_cycle+i)%3];
 		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
 		if(!texture_fill.num_texels)
 			continue;
-		if(i!=mapped&&texture_fill.texel_index>0&&texture_fill.num_texels>0)
+		if(!texture.isMapped()&&texture_fill.texel_index>0&&texture_fill.num_texels>0)
 		{
 			seq_texture_iterator[i].texel_index=0;
 			texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
 		}
 		Map(pContext,i);
-		unsigned *ptr=(unsigned *)cloud_textures[(texture_cycle+i)%3].mapped.pData;
+		unsigned *ptr=(unsigned *)texture.mapped.pData;
 		if(!ptr)
 			continue;
 		ptr+=texture_fill.texel_index;
@@ -1191,7 +1186,9 @@ void SimulCloudRendererDX1x::EnsureTextureCycle()
 	{
 		//std::swap(cloud_textures[0],cloud_textures[1]);
 		//std::swap(cloud_textures[1],cloud_textures[2]);
-		textu re_cycle++;
+		std::swap(seq_texture_iterator[0],seq_texture_iterator[1]);
+		std::swap(seq_texture_iterator[1],seq_texture_iterator[2]);
+		texture_cycle++;
 		texture_cycle=texture_cycle%3;
 		if(texture_cycle<0)
 			texture_cycle+=3;

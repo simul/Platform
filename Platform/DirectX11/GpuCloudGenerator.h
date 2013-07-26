@@ -29,7 +29,6 @@ namespace simul
 			}
 			int GetDensityGridsize(const int *grid);
 			void* Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr);
-			void CycleTexturesForward();
 			void FillDensityGrid(	int index
 									,const int *grid
 									,int start_texel

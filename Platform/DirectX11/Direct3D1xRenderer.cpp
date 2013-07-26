@@ -328,7 +328,7 @@ void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
 const char *Direct3D11Renderer::GetDebugText() const
 {
 	if(!ShowOSD)
-		return "";
+		return " ";
 	static std::string str;
 	str="DirectX 11\n";
 	//if(simulWeatherRenderer)
