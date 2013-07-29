@@ -40,6 +40,7 @@ SIMUL_DIRECTX9_EXPORT_CLASS SimulWeatherRenderer:public simul::clouds::BaseWeath
 {
 public:
 	SimulWeatherRenderer(simul::clouds::Environment *env
+							,simul::base::MemoryInterface *mem
 							,bool usebuffer=true
 							,int width=320,
 		int height=240,bool sky=true,
@@ -57,7 +58,7 @@ public:
 	//! Call this to draw the clouds after the main scene.
 	void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 	//! Call this to draw lightning.
-	void RenderLightning(void *context);
+	void RenderLightning(void *context,int viewport_id);
 	//! Call this to draw rain etc.
 	void RenderPrecipitation(void *context);
 	//! Perform the once-per-frame time update.

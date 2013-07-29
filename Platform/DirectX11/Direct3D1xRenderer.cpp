@@ -39,7 +39,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 		,Exposure(1.0f)
 		,enabled(false)
 {
-	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,NULL,true,false,w,h,true,true,true);
+	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,simul::base::GetDefaultMemoryInterface(),true,false,w,h,true,true,true);
 	AddChild(simulWeatherRenderer.get());
 	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
 	simulOpticsRenderer=new SimulOpticsRendererDX1x();
@@ -162,6 +162,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 {
 	if(!enabled)
 		return;
+	static int viewport_id=0;
 	D3DXMATRIX world,view,proj;
 	static float nearPlane=1.f;
 	static float farPlane=250000.f;
@@ -203,11 +204,11 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture,0,relativeViewportTextureRegionXYWH);
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture,viewport_id,relativeViewportTextureRegionXYWH);
 	}
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->RenderLightning(pd3dImmediateContext);
+		simulWeatherRenderer->RenderLightning(pd3dImmediateContext,viewport_id);
 		simulWeatherRenderer->DoOcclusionTests();
 	}
 	if(simulWeatherRenderer)
@@ -233,6 +234,8 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender(pd3dImmediateContext);
+	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
+		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 	if(simulWeatherRenderer)
 	{
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
@@ -251,9 +254,6 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 		}
 	}
-	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pd3dImmediateContext,ScreenWidth,ScreenHeight);
-	
 	Profiler::GetGlobalProfiler().EndFrame(pd3dImmediateContext);
 }
 

@@ -1,6 +1,8 @@
 #ifndef DEPTH_SL
 #define DEPTH_SL
 
+// This converts a z-buffer depth into a distance in the units of nearZ and farZ,
+//	-	where usually nearZ and farZ will be factors of the maximum fade distance.
 float depthToDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
 {
 #ifdef VISION

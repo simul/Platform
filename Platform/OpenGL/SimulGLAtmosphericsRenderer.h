@@ -41,10 +41,6 @@ public:
 		input_texture=(GLuint)image;
 		depth_texture=(GLuint)depth;
 	}
-	void SetCloudShadowTexture(void *c)
-	{
-		cloud_shadow_texture=(GLuint)c;
-	}
 	//! Render the Atmospherics.
 	void RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 private:
@@ -58,7 +54,6 @@ private:
 	GLuint loss_texture,inscatter_texture,skylight_texture;
 	GLuint input_texture,depth_texture;
 	GLuint clouds_texture;
-	GLuint cloud_shadow_texture;
 
 	GLuint		earthShadowUniformsUBO;
 	GLuint		atmosphericsUniformsUBO;

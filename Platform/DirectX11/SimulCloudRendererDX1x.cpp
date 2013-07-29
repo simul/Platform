@@ -80,8 +80,8 @@ public:
 };
 ExampleHumidityCallback hm;
 
-SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck) :
-	simul::clouds::BaseCloudRenderer(ck)
+SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem) :
+	simul::clouds::BaseCloudRenderer(ck,mem)
 	,m_hTechniqueLightning(NULL)
 	,m_hTechniqueCrossSectionXZ(NULL)
 	,m_hTechniqueCrossSectionXY(NULL)
@@ -115,7 +115,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 {
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
-	helper->SetYVertical(y_vertical);
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 	texel_index[0]=texel_index[1]=texel_index[2]=texel_index[3]=0;
 }
@@ -266,6 +265,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 void SimulCloudRendererDX1x::CreateMeshBuffers()
 {
 	unsigned el,az;
+	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(0);
 	helper->GetGrid(el,az);
 	helper->GenerateSphereVertices();
 	std::vector<vec3> v;
@@ -708,19 +708,7 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	cloudConstants.Apply(pContext);
 	// per view:
 	CloudPerViewConstants cloudPerViewConstants;
-	simul::geometry::SimulOrientation or;
-	simul::math::Vector3 north(0.f,1.f,0.f);
-	simul::math::Vector3 toSun(skyInterface->GetDirectionToSun());
-	or.DefineFromYZ(north,toSun);
-	or.SetPosition((const float*)cam_pos);
-	cloudPerViewConstants.shadowMatrix=or.T4;
-	// Distance along sunDir to start tracing downwards, measured from the camera.
-	float base_alt=GetCloudInterface()->GetCloudBaseZ();
-	static float zmin=0.2f;
-	float z=std::max(toSun.z,zmin);
-	float h=GetCloudInterface()->GetCloudHeight();
-	cloudPerViewConstants.startZMetres=(base_alt+h-cam_pos.z)/z;
-	cloudPerViewConstants.extentZMetres=h/z;
+	SetCloudShadowPerViewConstants(cloudPerViewConstants);
 	//cloudPerViewConstants.shadowMatrix.transpose();
 	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
 	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=m_pCloudEffect->GetConstantBufferByName("CloudPerViewConstants");
@@ -802,12 +790,13 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 		simul::dx11::setSamplerState(m_pCloudEffect,"cloudSamplerState",m_pClampSamplerState);
 
 	CloudPerViewConstants cloudPerViewConstants;
-	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewportTextureRegionXYWH);
+	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewport_id,viewportTextureRegionXYWH);
 	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
 	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=m_pCloudEffect->GetConstantBufferByName("CloudPerViewConstants");
 	if(cbCloudPerViewConstants)
 		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
 
+	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
 	// Moved from Update function above. See commment.
 	if (!cubemap)
 	{
@@ -961,10 +950,10 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",noiseTextureResource);
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",(ID3D1xShaderResourceView*)cloudShadow.GetColorTex());
-	UtilityRenderer::DrawQuad2(pContext,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
+	UtilityRenderer::DrawQuad2(pContext,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
 }
 
-bool SimulCloudRendererDX1x::RenderLightning(void *context)
+bool SimulCloudRendererDX1x::RenderLightning(void *context,int viewport_id)
 {
 	if(!enable_lightning)
 		return S_OK;
@@ -999,6 +988,7 @@ bool SimulCloudRendererDX1x::RenderLightning(void *context)
 	float time=skyInterface->GetTime();
 	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
+	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
 	l_worldViewProj->SetMatrix(&wvp._11);
 	for(int i=0;i<lightningRenderInterface->GetNumLightSources();i++)
 	{
@@ -1086,15 +1076,16 @@ void SimulCloudRendererDX1x::SetEnableStorms(bool s)
 	enable_lightning=s;
 }
 
-void *SimulCloudRendererDX1x::GetCloudShadowTexture()
+CloudShadowStruct SimulCloudRendererDX1x::GetCloudShadowTexture()
 {
-	return cloudShadow.GetColorTex();
+	CloudShadowStruct s=BaseCloudRenderer::GetCloudShadowTexture();
+	s.texture=cloudShadow.GetColorTex();
+	return s;
 }
 
 void SimulCloudRendererDX1x::SetYVertical(bool y)
 {
-	y_vertical=y;
-	helper->SetYVertical(y);
+	BaseCloudRenderer::SetYVertical(y);
 	CreateCloudEffect();
 }
 
@@ -1114,7 +1105,7 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[texture_cycle%3].texture!=NULL)
 		return;
 	cloudShadow.SetGenerateMips(false/*true*/);
-	cloudShadow.SetWidthAndHeight(width_x,length_y);
+	cloudShadow.SetWidthAndHeight(64,512);
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;

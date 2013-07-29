@@ -38,9 +38,10 @@ public:
 SIMUL_OPENGL_EXPORT_CLASS SimulGLWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
-	SimulGLWeatherRenderer(simul::clouds::Environment *env,int width=640,
-		int height=480,bool sky=true,
-		bool rain=true);
+	SimulGLWeatherRenderer(simul::clouds::Environment *env
+						 ,simul::base::MemoryInterface *mem
+						 ,int width=640,int height=480
+						 ,bool sky=true,bool rain=true);
 	virtual ~SimulGLWeatherRenderer();
 	void SetScreenSize(int w,int h);
 	//! Call this when the device has been created
@@ -55,7 +56,7 @@ public:
 	//! Call this to draw the clouds
 	void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 	//! Call this to draw lightning.
-	void RenderLightning(void *context);
+	void RenderLightning(void *context,int viewport_id);
 	//! Call this to draw rain etc.
 	void RenderPrecipitation(void *context);
 	//! Get a pointer to the sky renderer owned by this class instance.

@@ -27,7 +27,7 @@ namespace simul
 		class Simul2DCloudRendererDX11: public simul::clouds::Base2DCloudRenderer
 		{
 		public:
-			Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer *ck2d);
+			Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer *ck2d,simul::base::MemoryInterface *mem);
 			virtual ~Simul2DCloudRendererDX11();
 			void RestoreDeviceObjects(void*);
 			void RecompileShaders();
@@ -40,8 +40,6 @@ namespace simul
 			void SetInscatterTextures(void *i,void *s);
 			void SetIlluminationTexture(void *i);
 			void SetWindVelocity(float x,float y);
-			//
-			void *GetCloudShadowTexture(){return NULL;}
 		protected:
 			void RenderDetailTexture(void *context);
 			virtual void DrawLines(void *context,VertexXyzRgba *vertices,int vertex_count,bool strip){}

@@ -281,7 +281,8 @@ void GpuCloudGenerator::PerformGPURelight(int index,float *target
 										,int texels
 										,const int * //density_grid
 										,const float *transformMatrix
-										,const float *lightspace_extinctions_float3)
+										,const float *lightspace_extinctions_float3
+											,bool wrap_light_tex)
 {
 ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);

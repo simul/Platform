@@ -72,8 +72,8 @@ public:
 };
 CumulonimbusHumidityCallback cb;
 
-SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck)
-	:BaseCloudRenderer(ck)
+SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem)
+	:BaseCloudRenderer(ck,mem)
 	,texture_scale(1.f)
 	,scale(2.f)
 	,texture_effect(1.f)
@@ -434,7 +434,7 @@ ERROR_CHECK
 										,0
 										,0);
 	
-	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
+	simul::sky::float4 fractal_scales=simul::clouds::CloudGeometryHelper::GetFractalScales(GetCloudInterface());
 
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
 	float base_alt_km=X1.z*.001f;
@@ -470,6 +470,7 @@ ERROR_CHECK
 		delta_t=0;
 	last_time=t;
 
+	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
 	helper->SetChurn(GetCloudInterface()->GetChurn());
 	helper->Update(view_pos,GetCloudInterface()->GetWindOffset(),eye_dir,up_dir,delta_t,cubemap);
 
@@ -477,7 +478,7 @@ ERROR_CHECK
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
 	simul::math::Matrix4x4 view;
 	glGetMatrix(view.RowPointer(0),GL_MODELVIEW_MATRIX);
-	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,simul::sky::float4(0.f,0.f,1.f,1.f));
+	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewport_id,viewportTextureRegionXYWH);
 	cloudPerViewConstants.exposure=exposure;
 
 	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
@@ -719,7 +720,6 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 //	cloudKeyframer->SetRenderCallback(this);
 	glUseProgram(NULL);
 	BuildSphereVBO();
-	helper->GenerateSphereVertices();
 }
 
 struct vertt
@@ -730,6 +730,7 @@ bool SimulGLCloudRenderer::BuildSphereVBO()
 {
 ERROR_CHECK
 	unsigned el=0,az=0;
+	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(0);
 	helper->GetGrid(el,az);
 
 	int vertex_count=(el+1)*(az+1);
@@ -818,8 +819,9 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	ClearIterators();
 }
 
-void *SimulGLCloudRenderer::GetCloudShadowTexture()
+CloudShadowStruct SimulGLCloudRenderer::GetCloudShadowTexture()
 {
+	CloudShadowStruct s=BaseCloudRenderer::GetCloudShadowTexture();
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -860,7 +862,8 @@ void *SimulGLCloudRenderer::GetCloudShadowTexture()
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 	glPopAttrib();
-	return (void*)cloud_shadow.GetColorTex();
+	s.texture=(void*)cloud_shadow.GetColorTex();
+	return s;
 }
 
 simul::sky::OvercastCallback *SimulGLCloudRenderer::GetOvercastCallback()

@@ -35,7 +35,7 @@ uniform_buffer AtmosphericsUniforms R11
 uniform_buffer AtmosphericsPerViewConstants R12
 {
 	uniform mat4 invViewProj;
-	uniform mat4 shadowMatrix;
+	uniform mat4 invShadowMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 viewPosition;
 	uniform float pad9;
@@ -44,5 +44,8 @@ uniform_buffer AtmosphericsPerViewConstants R12
 	uniform float nearZ;
 	uniform float farZ;
 	uniform float startZMetres;
+	uniform float fill3;
+	uniform float shadowRange;
+	uniform float fill4,fill5,fill6;
 };
 #endif

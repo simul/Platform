@@ -49,7 +49,6 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
 	,skylightTexture_SRV(NULL)
 	,clouds_texture(NULL)
 	,illuminationTexture_SRV(NULL)
-	,cloudShadowTexture_SRV(NULL)
 {
 }
 
@@ -148,7 +147,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	
 	simul::dx11::setParameter(effect,"illuminationTexture",illuminationTexture_SRV);
 	simul::dx11::setParameter(effect,"depthTexture",depthTexture_SRV);
-	simul::dx11::setParameter(effect,"cloudShadowTexture",cloudShadowTexture_SRV);
+	simul::dx11::setParameter(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	view(3,0)=view(3,1)=view(3,2)=0;
@@ -203,7 +202,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 	skylTexture->SetResource(skylightTexture_SRV);
 	simul::dx11::setParameter(effect,"illuminationTexture",illuminationTexture_SRV);
 	simul::dx11::setParameter(effect,"depthTexture",depthTexture_SRV);
-	simul::dx11::setParameter(effect,"cloudShadowTexture",cloudShadowTexture_SRV);
+	simul::dx11::setParameter(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	twoPassOverlayTechnique	=effect->GetTechniqueByName("simul_atmospherics_overlay");
 	
 	simul::geometry::SimulOrientation or;
@@ -219,7 +218,15 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 		p1=simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
 	}
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,relativeViewportTextureRegionXYWH);
-	atmosphericsPerViewConstants.shadowMatrix=or.GetInverseMatrix();
+
+	simul::math::Matrix4x4 shadowMatrix					=cloudShadowStruct.shadowMatrix;
+	simul::math::Matrix4x4 invShadowMatrix;
+	shadowMatrix.Inverse(invShadowMatrix);
+	atmosphericsPerViewConstants.invShadowMatrix		=invShadowMatrix;
+
+//atmosphericsPerViewConstants.extentZMetres			=cloudShadowStruct.extentZMetres;
+	atmosphericsPerViewConstants.startZMetres			=cloudShadowStruct.startZMetres;
+	atmosphericsPerViewConstants.shadowRange			=cloudShadowStruct.shadowRange;
 
 	UPDATE_CONSTANT_BUFFER(pContext,atmosphericsUniforms2ConstantsBuffer,AtmosphericsPerViewConstants,atmosphericsPerViewConstants)
 	ID3DX11EffectConstantBuffer* cbAtmosphericsUniforms2=effect->GetConstantBufferByName("AtmosphericsPerViewConstants");

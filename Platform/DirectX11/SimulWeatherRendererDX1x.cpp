@@ -68,11 +68,11 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 		simulSkyRenderer=new(memoryInterface) SimulSkyRendererDX1x(sk);
 		baseSkyRenderer=simulSkyRenderer;
 	}
-	simulCloudRenderer=new(memoryInterface) SimulCloudRendererDX1x(ck3d);
+	simulCloudRenderer=new(memoryInterface) SimulCloudRendererDX1x(ck3d,memoryInterface);
 	baseCloudRenderer=simulCloudRenderer;
 	simulLightningRenderer=new(memoryInterface) SimulLightningRendererDX11(ck3d,sk);
 	if(clouds2d&&env->cloud2DKeyframer.get())
-		base2DCloudRenderer=simul2DCloudRenderer=new(memoryInterface) Simul2DCloudRendererDX11(ck2d);
+		base2DCloudRenderer=simul2DCloudRenderer=new(memoryInterface) Simul2DCloudRendererDX11(ck2d,memoryInterface);
 	if(rain)
 		basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulPrecipitationRendererDX1x();
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new(memoryInterface) SimulAtmosphericsRendererDX1x;
@@ -353,7 +353,7 @@ void SimulWeatherRendererDX1x::RenderPrecipitation(void *context)
 		simulPrecipitationRenderer->Render(context);
 }
 
-void SimulWeatherRendererDX1x::RenderLightning(void *context)
+void SimulWeatherRendererDX1x::RenderLightning(void *context,int viewport_id)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
 		simulLightningRenderer->Render(context);

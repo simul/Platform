@@ -45,7 +45,7 @@ SIMUL_DIRECTX9_EXPORT_CLASS SimulCloudRenderer
 	,public simul::graph::meta::ResourceUser<simul::graph::standardnodes::ShowProgressInterface>
 {
 public:
-	SimulCloudRenderer(simul::clouds::CloudKeyframer *ck);
+	SimulCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem);
 	virtual ~SimulCloudRenderer();
 	//GpuCloudGenerator gpuCloudGenerator;
 	META_BeginProperties
@@ -59,7 +59,7 @@ public:
 	void Update(void *context);
 	//! DX9 implementation of cloud rendering. For this platform, depth_testing and default_fog are ignored.
 	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
-	void *GetCloudShadowTexture();
+
 	//! Save the first keyframe texture into a 2D image file by stacking X-Z slices vertically.
 	void SaveCloudTexture(const char *filename);
 	//! Draw clouds as horizontal layers
@@ -81,7 +81,6 @@ public:
 	bool RenderDistances(int width,int height);
 	bool RenderLightVolume();
 	void EnableFilter(bool f);
-	void SetYVertical(bool y);
 	bool IsYVertical() const{return y_vertical;}
 
 protected:
@@ -95,9 +94,9 @@ protected:
 
 	void NumBuffersChanged();
 	bool y_vertical;
-	void InternalRenderHorizontal(int buffer_index=0);
-	void InternalRenderRaytrace(int buffer_index=0);
-	void InternalRenderVolumetric(int buffer_index=0);
+	void InternalRenderHorizontal(int viewport_id);
+	void InternalRenderRaytrace(int viewport_id);
+	void InternalRenderVolumetric(int viewport_id);
 	bool wrap;
 	struct float2
 	{
@@ -210,7 +209,7 @@ protected:
 	virtual bool CreateNoiseTexture(void *);
 	bool MakeCubemap(void *context); // not ready yet
 	//! Once per frame, fill this 1-D texture with information on the layer distances and noise offsets
-	bool FillRaytraceLayerTexture();
+	bool FillRaytraceLayerTexture(int viewport_id);
 	float last_time;
 };
 #ifdef _MSC_VER

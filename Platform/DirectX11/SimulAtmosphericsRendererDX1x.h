@@ -55,10 +55,6 @@ namespace simul
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-			void SetCloudShadowTexture(void *c)
-			{
-				cloudShadowTexture_SRV=(ID3D1xShaderResourceView*)c;
-			}
 			//! Render the Atmospherics.
 			void RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 			void RenderGodrays(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
@@ -88,7 +84,6 @@ namespace simul
 			ID3D1xShaderResourceView*					skylightTexture_SRV;
 
 			ID3D1xShaderResourceView*					clouds_texture;
-			ID3D1xShaderResourceView*					cloudShadowTexture_SRV;
 			ID3D1xShaderResourceView*					illuminationTexture_SRV;
 
 			ID3D11Buffer*								constantBuffer;

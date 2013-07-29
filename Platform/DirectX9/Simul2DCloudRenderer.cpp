@@ -100,8 +100,9 @@ static void SetBits8()
 	simul::clouds::TextureGenerator::SetBits(bits8[0],bits8[1],bits8[2],bits8[3],(unsigned)4,big_endian);
 }
 
-Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck)
-	:BaseCloudRenderer(ck)
+Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,
+										   simul::base::MemoryInterface *mem)
+	:BaseCloudRenderer(ck,mem)
 	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pCloudEffect(NULL)

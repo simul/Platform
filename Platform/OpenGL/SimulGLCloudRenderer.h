@@ -30,7 +30,7 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGLCloudRenderer : public simul::clouds::BaseCloudRenderer
 {
 public:
-	SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudKeyframer);
+	SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudKeyframer,simul::base::MemoryInterface *mem);
 	virtual ~SimulGLCloudRenderer();
 	//standard ogl object interface functions
 	bool Create();
@@ -45,7 +45,7 @@ public:
 	void SetLossTexture(void *);
 	void SetInscatterTextures(void *,void *);
 	
-	void *GetCloudShadowTexture();
+	CloudShadowStruct GetCloudShadowTexture();
 	const char *GetDebugText();
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);

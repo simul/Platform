@@ -22,6 +22,8 @@ GpuCloudGenerator::GpuCloudGenerator()
 			,volume_noise_tex_srv(NULL)
 			,density_texture(NULL)
 			,density_texture_srv(NULL)
+			,m_pWwcSamplerState(NULL)
+			,m_pCccSamplerState(NULL)
 {
 	for(int i=0;i<3;i++)
 		finalTexture[i]=NULL;
@@ -44,6 +46,26 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 	mask_fb.RestoreDeviceObjects(m_pd3dDevice);
 	world_fb.RestoreDeviceObjects(m_pd3dDevice);
 	gpuCloudConstants.RestoreDeviceObjects(m_pd3dDevice);
+
+	SAFE_RELEASE(m_pWwcSamplerState);
+	SAFE_RELEASE(m_pCccSamplerState);
+	D3D11_SAMPLER_DESC samplerDesc;
+	
+    ZeroMemory( &samplerDesc, sizeof( D3D11_SAMPLER_DESC ) );
+    samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC   ;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.MaxAnisotropy = 16;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	
+	m_pd3dDevice->CreateSamplerState(&samplerDesc,&m_pWwcSamplerState);
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	m_pd3dDevice->CreateSamplerState(&samplerDesc,&m_pCccSamplerState);
+
 	RecompileShaders();
 }
 
@@ -63,6 +85,8 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	gpuCloudConstants.InvalidateDeviceObjects();
 	for(int i=0;i<2;i++)
 		lightTextures[i].release();
+	SAFE_RELEASE(m_pWwcSamplerState);
+	SAFE_RELEASE(m_pCccSamplerState);
 	m_pd3dDevice=NULL;
 }
 
@@ -98,7 +122,8 @@ void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_sr
 	return volume_noise_tex_srv;
 }
 
-void GpuCloudGenerator::FillDensityGrid(int index,const int *density_grid
+void GpuCloudGenerator::FillDensityGrid(int index
+										,const int *density_grid
 										,int start_texel
 										,int texels
 										,float humidity
@@ -153,6 +178,8 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	simul::dx11::setParameter(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
 
 	gpuCloudConstants.Apply(m_pImmediateContext);
+
+
 	dens_fb.Activate(m_pImmediateContext);
 std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 		ApplyPass(m_pImmediateContext,densityTechnique->GetPassByIndex(0));
@@ -190,7 +217,8 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 											,int texels
 											,const int *density_grid
 											,const float *Matrix4x4LightToDensityTexcoords
-											,const float *lightspace_extinctions_float3)
+											,const float *lightspace_extinctions_float3
+											,bool wrap_light_tex)
 {
 simul::base::Timer timer;
 timer.StartTime();
@@ -227,6 +255,10 @@ std::cout<<"Gpu clouds: PerformGPURelight\n";
 	sourceRegion.bottom	=light_grid[1];
 	sourceRegion.front	=0;
 	sourceRegion.back	=1;
+	if(wrap_light_tex)
+		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pWwcSamplerState);
+	else
+		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pCccSamplerState);
 std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 	if(start_texel==0)
 	{

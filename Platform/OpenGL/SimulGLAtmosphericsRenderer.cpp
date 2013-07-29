@@ -12,7 +12,6 @@
 
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
 	:clouds_texture(0)
-	,cloud_shadow_texture(0)
 	,initialized(false)
 	,insc_program(0)
 	,loss_program(0)

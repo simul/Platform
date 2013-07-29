@@ -43,6 +43,7 @@
 static simul::base::Timer timer;
 
 SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
+										   simul::base::MemoryInterface *mem,
 											bool usebuffer,int width,
 											int height,bool sky,bool rain) :
 	BaseWeatherRenderer(env,sky,rain),
@@ -72,7 +73,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	}
 	
 	{
-		simulCloudRenderer=new SimulCloudRenderer(ck3d);
+		simulCloudRenderer=new SimulCloudRenderer(ck3d,mem);
 		baseCloudRenderer=simulCloudRenderer.get();
 		AddChild(simulCloudRenderer.get());
 		simulLightningRenderer=new SimulLightningRenderer(ck3d,sk);
@@ -81,7 +82,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	}
 	
 	{
-		simul2DCloudRenderer=new Simul2DCloudRenderer(ck2d);
+		simul2DCloudRenderer=new Simul2DCloudRenderer(ck2d,mem);
 		base2DCloudRenderer=simul2DCloudRenderer.get();
 		Restore2DCloudObjects();
 	}
@@ -289,7 +290,7 @@ bool SimulWeatherRenderer::RenderSky(void *context,float exposure,bool buffered,
 	return true;
 }
 
-void SimulWeatherRenderer::RenderLightning(void *context)
+void SimulWeatherRenderer::RenderLightning(void *context,int viewport_id)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return simulLightningRenderer->Render(context);

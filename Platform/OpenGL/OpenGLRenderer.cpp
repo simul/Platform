@@ -38,7 +38,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	,simple_program(0)
 {
 	simulHDRRenderer	=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
-	simulWeatherRenderer=new SimulGLWeatherRenderer(env,ScreenWidth,ScreenHeight);
+	simulWeatherRenderer=new SimulGLWeatherRenderer(env,NULL,ScreenWidth,ScreenHeight);
 	simulOpticsRenderer	=new SimulOpticsRendererGL();
 	simulTerrainRenderer=new SimulGLTerrainRenderer();
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
@@ -105,6 +105,7 @@ ERROR_CHECK
 void OpenGLRenderer::paintGL()
 {
 	void *context=NULL;
+	static int viewport_id=0;
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	if(simulTerrainRenderer)
@@ -168,8 +169,8 @@ ERROR_CHECK
 			depthFramebuffer.Render(context,false);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
 		}
-		simulWeatherRenderer->RenderLightning(context);
-		simulWeatherRenderer->RenderSkyAsOverlay(context,exposure,UseSkyBuffer,false,depthFramebuffer.GetDepthTex(),0,simul::sky::float4(0,0,1.f,1.f));
+		simulWeatherRenderer->RenderLightning(context,viewport_id);
+		simulWeatherRenderer->RenderSkyAsOverlay(context,exposure,UseSkyBuffer,false,depthFramebuffer.GetDepthTex(),viewport_id,simul::sky::float4(0,0,1.f,1.f));
 		simulWeatherRenderer->DoOcclusionTests();
 		simulWeatherRenderer->RenderPrecipitation(context);
 		if(simulOpticsRenderer&&ShowFlares)

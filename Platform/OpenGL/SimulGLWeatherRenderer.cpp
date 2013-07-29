@@ -26,8 +26,12 @@
 static const GLenum buffer_tex_format		=GL_FLOAT;
 static const GLenum internal_buffer_format	=GL_RGBA32F_ARB;
 
-SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,int width,
-		int height,bool sky,bool rain)
+SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
+											   ,simul::base::MemoryInterface *mem
+											   ,int width
+											   ,int height
+											   ,bool sky
+											   ,bool rain)
 		:BaseWeatherRenderer(env,sky,rain)
 		,BufferWidth(0)
 		,BufferHeight(0)
@@ -38,15 +42,15 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env,i
 	simul::sky::SkyKeyframer *sk=environment->skyKeyframer.get();
 	simul::clouds::CloudKeyframer *ck2d=environment->cloud2DKeyframer.get();
 	simul::clouds::CloudKeyframer *ck3d=environment->cloudKeyframer.get();
-	if(ShowSky)
-	{
-		simulSkyRenderer=new SimulGLSkyRenderer(sk);
-		baseSkyRenderer=simulSkyRenderer.get();
-	}
-	simulCloudRenderer=new SimulGLCloudRenderer(ck3d);
-	baseCloudRenderer=simulCloudRenderer.get();
-	base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d);
+	simulSkyRenderer=new SimulGLSkyRenderer(sk);
+	baseSkyRenderer=simulSkyRenderer.get();
 	
+	simulCloudRenderer=new SimulGLCloudRenderer(ck3d,mem);
+	baseCloudRenderer=simulCloudRenderer.get();
+	if(env->cloud2DKeyframer.get())
+	{
+		base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d,mem);
+	}	
 	simulLightningRenderer=new SimulGLLightningRenderer(ck3d,sk);
 	baseLightningRenderer=simulLightningRenderer.get();
 
@@ -269,7 +273,7 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,b
 	gpu_time+=timer.Time;
 }
 
-void SimulGLWeatherRenderer::RenderLightning(void *context)
+void SimulGLWeatherRenderer::RenderLightning(void *context,int viewport_id)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		simulLightningRenderer->Render(context);

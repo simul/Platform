@@ -45,7 +45,7 @@ typedef long HRESULT;
 SIMUL_DIRECTX9_EXPORT_CLASS Simul2DCloudRenderer: public simul::clouds::BaseCloudRenderer
 {
 public:
-	Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck);
+	Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem);
 	virtual ~Simul2DCloudRenderer();
 	//standard d3d object interface functions
 	bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
@@ -73,10 +73,6 @@ public:
 
 	// a texture
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
-	virtual void *GetCloudShadowTexture()
-	{
-		return NULL;
-	}
 
 	void SetYVertical(bool y)
 	{

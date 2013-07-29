@@ -16,6 +16,8 @@ uniform sampler3D volumeNoiseTexture;
 #include "../../CrossPlatform/states.sl"
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
 
+SamplerState lightSamplerState : register(s8);
+
 struct vertexOutput
 {
     float4 hPosition	: SV_POSITION;
@@ -63,13 +65,13 @@ static const float glow=0.1;
 float4 PS_Lighting(vertexOutput IN) : SV_TARGET
 {
 	vec2 texcoord				=IN.texCoords.xy;//+texCoordOffset;
-	vec2 previous_light			=texture_wrap(inputTexture,texcoord.xy);
+	vec2 previous_light			=inputTexture.Sample(lightSamplerState,texcoord.xy);
 	vec3 lightspace_texcoord	=vec3(texcoord.xy,zPosition);
 	vec3 densityspace_texcoord	=mul(transformMatrix,vec4(lightspace_texcoord,1.0)).xyz;
 	float density				=texture_wwc(densityTexture,densityspace_texcoord).x;
 	vec2 unity					=vec2(1.0,1.0);
-	if(density==0)
-		previous_light			=unity-exp(-.1*zPixel)*(unity-previous_light);
+	//if(density==0)
+	//	previous_light			=unity-exp(-.1*zPixel)*(unity-previous_light);
 	float direct_light			=previous_light.x*exp(-extinctions.x*density);
 	float indirect_light		=previous_light.y*exp(-extinctions.y*density);
 	//indirect_light				+=(direct_light+indirect_light)*glow*density;
@@ -82,7 +84,7 @@ float4 PS_Transform(vertexOutput IN) : SV_TARGET
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord,1.0)).xyz;
 	lightspace_texcoord.z		-=zPixel;
-	vec2 light_lookup			=saturate(texture_wwc(lightTexture,lightspace_texcoord).xy);
+	vec2 light_lookup			=saturate(lightTexture.Sample(lightSamplerState,lightspace_texcoord).xy);
 	vec2 amb_texel				=texture_wwc(ambientTexture,ambient_texcoord).xy;
 	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
 	float density				=saturate(texture_wwc(densityTexture,densityspace_texcoord).x);

@@ -54,7 +54,7 @@ namespace simul
 		SIMUL_DIRECTX11_EXPORT_CLASS SimulCloudRendererDX1x : public simul::clouds::BaseCloudRenderer
 		{
 		public:
-			SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cloudKeyframer);
+			SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cloudKeyframer,simul::base::MemoryInterface *mem);
 			virtual ~SimulCloudRendererDX1x();
 			void RecompileShaders();
 			//! Call this when the D3D device has been created or reset
@@ -69,7 +69,7 @@ namespace simul
 			void RenderDebugInfo(void *context,int width,int height);
 			void RenderCrossSections(void *context,int width,int height);
 			//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
-			bool RenderLightning(void *context);
+			bool RenderLightning(void *context,int viewport_id);
 			//! Call this once per frame to set the matrices.
 			void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 			//! Return true if the camera is above the cloudbase altitude.
@@ -77,7 +77,7 @@ namespace simul
 			void SetEnableStorms(bool s);
 			float GetTiming() const;
 			//! Get the list of three textures used for cloud rendering.
-			void *GetCloudShadowTexture();
+			CloudShadowStruct GetCloudShadowTexture();
 			void SetLossTexture(void *t);
 			void SetInscatterTextures(void *t,void *s);
 			void SetIlluminationTexture(void *i);

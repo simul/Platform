@@ -44,8 +44,9 @@ uniform_buffer CloudPerViewConstants R13
 	uniform float c,d,e;
 	uniform float extentZMetres;
 	uniform float startZMetres;
+	uniform float shadowRange;
+	uniform float f;
 };
-
 uniform_buffer CloudConstants R9
 {
 	uniform vec3 inverseScales;
@@ -80,4 +81,17 @@ uniform_buffer CloudConstants R9
 	uniform vec3 noise3DTexcoordScale;
 	uniform float z1;
 };
+
+#ifdef __cplusplus
+//! A struct containing a pointer or id for the cloud shadow texture, along with 
+//! information on how to project it.
+uniform_buffer CloudShadowStruct 
+{
+	void *texture;	// texture, or SRV for DX11
+	mat4 shadowMatrix;
+	float extentZMetres;
+	float startZMetres;
+	float shadowRange;
+};
+#endif
 #endif

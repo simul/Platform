@@ -43,7 +43,8 @@ using namespace std;
 
 using std::map;
 
-SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck)
+SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
+											   ,simul::base::MemoryInterface *)
 	:Base2DCloudRenderer(ck)
 	,texture_scale(1.f)
 	,scale(2.f)

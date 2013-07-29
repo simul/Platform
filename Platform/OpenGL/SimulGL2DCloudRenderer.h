@@ -29,7 +29,8 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGL2DCloudRenderer : public simul::clouds::Base2DCloudRenderer
 {
 public:
-	SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck=NULL);
+	SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
+											   ,simul::base::MemoryInterface *mem);
 	virtual ~SimulGL2DCloudRenderer();
 	//standard ogl object interface functions
 	bool Create();
@@ -52,8 +53,6 @@ public:
 	void FillCloudTextureBlock(int texture_index,int x,int y,int w,int l,const unsigned *uint32_array);
 	void FillCloudTextureSequentially(int,int,int,const unsigned int *){}
 
-	//
-	void *GetCloudShadowTexture(){return NULL;}
 protected:
 	virtual void DrawLines(void *,VertexXyzRgba *,int ,bool ){}
 

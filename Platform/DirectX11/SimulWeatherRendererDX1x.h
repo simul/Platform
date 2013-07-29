@@ -50,7 +50,7 @@ namespace simul
 			bool RenderSky(void *context,float exposure,bool buffered,bool is_cubemap);
 			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			void RenderPrecipitation(void *context);
-			void RenderLightning(void *context);
+			void RenderLightning(void *context,int viewport_id);
 			void SaveCubemapToFile(const char *filename);
 			//! Apply the view and projection matrices, once per frame.
 			void SetMatrices(const D3DXMATRIX &viewmat,const D3DXMATRIX &projmat);
