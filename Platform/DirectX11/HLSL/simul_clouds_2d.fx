@@ -147,7 +147,7 @@ float4 DetailPS(v2f2 IN) : SV_TARGET
 {
 	vec4 result=vec4(0,0,0,0);
 	vec2 texcoords=IN.texCoords;
-	float mul=.5;
+	float mul=0.5;
     for(int i=0;i<24;i++)
     {
 		vec4 c=texture(imageTexture,texcoords);
@@ -156,7 +156,7 @@ float4 DetailPS(v2f2 IN) : SV_TARGET
 		result+=mul*c;
 		mul*=persistence;
     }
-    result.rgb=vec3(1.0,1.0,1.0);//=saturate(result*1.5);
+    result.rgb=saturate(result*1.5);
 	result.a=saturate(result.a-0.4)/0.4;
     return result;
 }
@@ -164,6 +164,7 @@ float4 DetailPS(v2f2 IN) : SV_TARGET
 float4 DetailLightingPS(v2f2 IN) : SV_TARGET
 {
 	vec4 c=texture(imageTexture,IN.texCoords);
+	return c;
 	vec4 result=c;
 	vec2 texcoords=IN.texCoords;
 	float mul=0.5;
@@ -178,7 +179,7 @@ float4 DetailLightingPS(v2f2 IN) : SV_TARGET
 			//dens_dist*=0.9;
     }
     float l=c.a*exp(-dens_dist/2.0);
-    return vec4(dens_dist/32.0,dens_dist/32.0,dens_dist/32.0,c.a);
+    return vec4(dens_dist/32.0,0,0,c.a);
 }
 
 technique11 simple

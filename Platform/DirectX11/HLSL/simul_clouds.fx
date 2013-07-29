@@ -477,7 +477,7 @@ float4 PS_ShowShadow( vertexOutputCS IN):SV_TARGET
 }
 
 #define CROSS_SECTION_STEPS 32
-#define CROSS_SECTION_STEPS_XZ 1
+#define CROSS_SECTION_STEPS_XZ 32
 float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
 {
 	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,0,crossSectionOffset.z+IN.texCoords.y);

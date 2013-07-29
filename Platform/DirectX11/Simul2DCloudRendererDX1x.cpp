@@ -341,7 +341,7 @@ void Simul2DCloudRendererDX11::RenderCrossSections(void *context,int width,int h
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
-static float mult=1.f;
+	static float mult=1.f;
 	simul::dx11::UtilityRenderer::SetScreenSize(width,height);
 	for(int i=0;i<3;i++)
 	{
@@ -351,15 +351,17 @@ static float mult=1.f;
 		if(!kf)
 			break;
 		simul::sky::float4 light_response(mult*kf->direct_light,mult*kf->indirect_light,mult*kf->ambient_light,0);
-
 		simul::dx11::setParameter(effect,"imageTexture",coverage_tex[i].shaderResourceView);
 		simul::dx11::setParameter(effect,"crossSectionOffset",GetCloudInterface()->GetWrap()?0.5f:0.f);
 		simul::dx11::setParameter(effect,"lightResponse",light_response);
-		simul::dx11::UtilityRenderer::DrawQuad2(m_pImmediateContext,(i+1)*(w+8)+8,height-w-8,w,w,effect,effect->GetTechniqueByName("simple"));
+		simul::dx11::UtilityRenderer::DrawQuad2(m_pImmediateContext,(i+4)*(w+8)+8,height-w-8,w,w,effect,effect->GetTechniqueByName("simple"));
 	}
+	simul::dx11::setParameter(effect,"imageTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
+	simul::dx11::UtilityRenderer::DrawQuad2(m_pImmediateContext,(0)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
+	simul::dx11::setParameter(effect,"imageTexture",(ID3D11ShaderResourceView*)dens_fb.GetColorTex());
+	simul::dx11::UtilityRenderer::DrawQuad2(m_pImmediateContext,(1)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
 	simul::dx11::setParameter(effect,"imageTexture",(ID3D11ShaderResourceView*)detail_fb.GetColorTex());
-
-	simul::dx11::UtilityRenderer::DrawQuad2(m_pImmediateContext,8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
+	simul::dx11::UtilityRenderer::DrawQuad2(m_pImmediateContext,(2)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
 		
 }
 
