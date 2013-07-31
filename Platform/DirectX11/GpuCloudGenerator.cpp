@@ -157,9 +157,13 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	mask_fb.Deactivate(m_pImmediateContext);
 
 	simul::math::Vector3 noise_scale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0]);
+	
 
-	float y_start					=(float)start_texel/(float)density_gridsize;
-	float y_range					=(float)(texels)/(float)density_gridsize;
+	int z0	=start_texel/(density_grid[0]*density_grid[1]);
+	int z1	=(start_texel+texels)/(density_grid[0]*density_grid[1]);
+	int zmax=density_grid[2];
+	float y_start					=(float)z0/(float)zmax;
+	float y_range					=(float)z1/(float)zmax-y_start;
 	gpuCloudConstants.yRange		=vec4(y_start,y_range,0,0);
 
 	gpuCloudConstants.octaves		=octaves;
@@ -196,9 +200,6 @@ std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 		sourceRegion.right	=density_grid[0];
 		sourceRegion.front	=0;
 		sourceRegion.back	=1;
-
-		int z0=start_texel/(density_grid[0]*density_grid[1]);
-		int z1=(start_texel+texels)/(density_grid[0]*density_grid[1]);
 
 		for(int Z=z0;Z<z1;Z++)
 		{
@@ -326,8 +327,13 @@ std::cout<<"Gpu clouds: GPUTransferDataToTexture\n";
 std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 
 	int density_gridsize				=density_grid[0]*density_grid[1]*density_grid[2];
-	float y_start						=(float)start_texel/(float)density_gridsize;
-	float y_range						=(float)(texels)/(float)density_gridsize;
+
+	int z0	=start_texel/(density_grid[0]*density_grid[1]);
+	int z1	=(start_texel+texels)/(density_grid[0]*density_grid[1]);
+	int zmax=density_grid[2];
+
+	float y_start						=(float)z0/(float)zmax;
+	float y_range						=(float)z1/(float)zmax-y_start;
 	gpuCloudConstants.yRange			=vec4(y_start,y_range,0,0);
 	gpuCloudConstants.transformMatrix	=DensityToLightTransform;
 	gpuCloudConstants.transformMatrix.transpose();
@@ -345,9 +351,6 @@ std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 		world_fb.DrawQuad(m_pImmediateContext);
 	world_fb.Deactivate(m_pImmediateContext);
 std::cout<<"\tDraw "<<timer.UpdateTime()<<"ms"<<std::endl;
-
-	int z0=start_texel/(density_grid[0]*density_grid[1]);
-	int z1=(start_texel+texels)/(density_grid[0]*density_grid[1]);
 
 	// We will only copy WHOLE Z LAYERS at a time.
 	if(z1>z0)

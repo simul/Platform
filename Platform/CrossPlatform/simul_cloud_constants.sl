@@ -80,6 +80,8 @@ uniform_buffer CloudConstants R9
 	uniform int noise3DOctaves;
 	uniform vec3 noise3DTexcoordScale;
 	uniform float z1;
+	uniform vec3 cloudIrRadiance;
+	uniform float x5;
 };
 
 #ifdef __cplusplus

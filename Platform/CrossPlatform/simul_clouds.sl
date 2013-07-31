@@ -55,7 +55,11 @@ vec3 applyFades(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier
 	vec3 skyl=sampleLod(skylTexture		,cmcSamplerState,fade_texc,0).rgb;
 	vec3 inscatter=earthshadowMultiplier*InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	final*=loss;
+#ifdef INFRARED
+	final=skyl.rgb;
+#else
 	final+=skyl+inscatter;
+#endif
     return final;
 }
 #endif
