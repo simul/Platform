@@ -45,7 +45,8 @@ namespace simul
 											,const float *light,const int *light_grid
 											,const float *ambient,const int *density_grid
 											,int start_texel
-											,int texels);
+											,int texels
+									,bool wrap_light_tex);
 		protected:
 			FramebufferGL	fb[2];
 			FramebufferGL	world_fb;

@@ -57,7 +57,8 @@ namespace simul
 											,const float *ambient
 											,const int *density_grid
 											,int start_texel
-											,int texels);
+											,int texels
+											,bool wrap_light_tex);
 			// If we want the generator to put the data directly into 3d textures:
 			void SetDirectTargets(TextureStruct **textures)
 			{
