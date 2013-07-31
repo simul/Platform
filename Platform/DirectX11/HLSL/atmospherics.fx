@@ -114,7 +114,8 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	float2 fade_texc	=float2(pow(dist,0.5f),0.5f*(1.f-sine));
 
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-	vec2 nearFarTexc	=texture_wrap_mirror(illuminationTexture,illum_texc).rg;
+	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
+	vec2 nearFarTexc	=illum_lookup.xy;
 	vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 
@@ -124,8 +125,10 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 
 	float cos0			=dot(view,lightDir);
 	float3 colour		=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
+	//colour				*=illum_lookup.z;
 	colour				+=texture_clamp_mirror(skylTexture,fade_texc).rgb;
 	colour				*=exposure;
+
     return float4(colour.rgb,1.f);
 }
 
@@ -150,12 +153,14 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 	float dist_max		=shadowRange/maxDistance;
 	float dist_1		=0.0;
 	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
+	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
+	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
 	vec4 insc1			=texture_wrap_mirror(inscTexture,fade_texc);
 	float ill			=1.0;
 	float eff_remaining	=1.0;
 	for(int i=0;i<C;i++)
 	{
-		float interp	=pow((float(i)+1.0)/float(C),2.0);
+		float interp	=pow((float(i)+1.0)/float(C),1.0);
 		float dist_0	=dist_1;
 		dist_1			=dist_max*interp;
 		float dist		=0.5*(dist_0+dist_1);
@@ -172,17 +177,17 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 			total_insc		+=insc_diff*shadow;
 		}
 	}
-	/*if(1.0<=solid_dist)
+	if(1.0<=solid_dist)
 	{
 		vec4 insc0		=insc1;
 		fade_texc.x		=sqrt(solid_dist);
 		insc1			=texture_clamp_mirror(inscTexture,fade_texc);
 		vec4 insc_diff	=max(insc1-insc0,vec4(0,0,0,0));
-		total_insc		+=insc_diff;
-	}*/
+		//total_insc		+=insc_diff;
+	}
 	float3 gr			=-InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
 	//colour			+=texture_clamp_mirror(skylTexture,fade_texc).rgb;
-	gr					*=exposure;
+	gr					*=exposure*(1.0-illum_lookup.z);
 	gr					=min(gr,vec3(0.0,0.0,0.0));
     return vec4(gr,1.0);
 }

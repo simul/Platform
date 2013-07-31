@@ -175,83 +175,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="HLSL\CppHLSL.hlsl">
-      <Filter>HLSL</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\fft_512x512_c2c.hlsl">
-      <Filter>HLSL</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\MixClouds_c.hlsl">
-      <Filter>HLSL</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\ocean_shading.hlsl">
-      <Filter>HLSL</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\ocean_simulator_cs.hlsl">
-      <Filter>HLSL</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\ocean_simulator_vs_ps.hlsl">
-      <Filter>HLSL</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_earthshadow.hlsl">
-      <Filter>HLSL</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_gpu_sky.hlsl">
-      <Filter>HLSL</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_inscatter_fns.hlsl">
-      <Filter>HLSL</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\states.hlsl">
-      <Filter>HLSL</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\atmospherics.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_clouds.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_clouds_2d.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_debug.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_foliage.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_gaussian.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_gpu_clouds.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_gpu_sky.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_hdr.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_lightning.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_rain.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_render_cubemap.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_rendernoise.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_sky.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\simul_terrain.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\CrossPlatform\simul_2d_clouds.hs">
       <Filter>HLSL</Filter>
     </None>
@@ -270,19 +193,10 @@
     <None Include="..\CrossPlatform\earth_shadow_fade.sl">
       <Filter>CrossPlatform</Filter>
     </None>
-    <None Include="..\CrossPlatform\godrays.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\rain_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
     <None Include="..\CrossPlatform\simul_2d_clouds.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\simul_cloud_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_clouds.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\simul_gpu_clouds.sl">
@@ -299,6 +213,78 @@
     </None>
     <None Include="..\CrossPlatform\states.sl">
       <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="HLSL\atmospherics.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\ocean_simulator_cs.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\CppHLSL.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\fft_512x512_c2c.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\MixClouds_c.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\ocean_shading.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\ocean_simulator_vs_ps.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\simul_debug.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_clouds.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_clouds_2d.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_earthshadow.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\simul_gpu_sky.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\simul_inscatter_fns.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\states.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\simul_terrain.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_foliage.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_gaussian.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_gpu_clouds.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_gpu_sky.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_hdr.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_lightning.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_rain.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_rendernoise.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_sky.fx">
+      <Filter>FX</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

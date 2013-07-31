@@ -704,7 +704,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	RenderIllumationBuffer(context);
 	return true;
 }
-
+#include "Simul/Sky/OvercastCallback.h"
 void SimulSkyRendererDX1x::RenderIllumationBuffer(void *c)
 {
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
@@ -719,6 +719,13 @@ void SimulSkyRendererDX1x::RenderIllumationBuffer(void *c)
 	earthShadowUniforms.terminatorDistance	=e.terminator_distance_km/skyKeyframer->GetMaxDistanceKm();
 	earthShadowUniforms.sunDir				=skyKeyframer->GetDirectionToSun();
 	earthShadowUniforms.Apply(context);
+	simul::sky::OvercastCallback *oc=skyKeyframer->GetOvercastCallback();
+
+	float overcast=0.f,overcast_base_km=0.f,overcast_scale_km=1.f;
+	if(oc)
+		oc->GetOvercastData(skyKeyframer->GetDaytime(),overcast,overcast_base_km,overcast_scale_km);
+		
+	simul::dx11::setParameter(m_pSkyEffect,"overcast",overcast*skyKeyframer->GetOvercastEffectStrength());
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,1.0,0.0,1.0};
 	{
@@ -726,7 +733,7 @@ void SimulSkyRendererDX1x::RenderIllumationBuffer(void *c)
 		ApplyPass(context,tech->GetPassByIndex(0));
 		illumination_fb.Activate(context);
 		context->ClearRenderTargetView(illumination_fb.m_pHDRRenderTarget,clearColor);
-		if(e.enable)
+		//if(e.enable)
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		illumination_fb.Deactivate(context);
 	}

@@ -43,6 +43,7 @@ cbuffer cbPerObject : register(b10)
 	float4 colour;
 	float starBrightness;
 	float radiusRadians;
+	float overcast;
 	float4 rect;
 };
 
@@ -153,7 +154,8 @@ float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 	vec2 dist			=EarthShadowDistances(fade_texc,view);
 	if(dist.x>dist.y)
 		dist.x=dist.y;
-    return vec4(dist,0.0,1.0);
+	float illum			=1.0-overcast;//(1.0-overcast)*(1.0-(dist.y-dist.x));
+    return vec4(dist,illum,1.0);
 }
 
 vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 

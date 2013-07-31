@@ -86,7 +86,8 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 
 	// Lookup in the illumination texture.
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-	vec2 nearFarTexc	=texture_wrap_mirror(illuminationTexture,illum_texc).rg;
+	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
+	vec2 nearFarTexc	=illum_lookup.xy;
 	// This provides the range of texcoords that is lit.
 	for(int i=0;i<layerCount;i++)
 	//int i=40;
@@ -109,15 +110,17 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 				float4 density		=calcDensity(texCoords.xyz,layer.layerFade,noiseval);
 				if(density.z>0)
 				{
-					float4 c=calcColour(density,cos0,texCoords.z);
-					fade_texc.x=sqrt(z);
-					float sh=saturate((fade_texc.x-nearFarTexc.x)/0.1);
-					c.rgb*=sh;
-					c.rgb=applyFades(c.rgb,fade_texc,cos0,sh);
-					colour*=(1.0-c.a);
-					colour.rgb+=c.rgb*c.a;
-					Z*=(1.0-c.a);
-					Z+=z*c.a;
+					float4 c	=calcColour(density,cos0,texCoords.z);
+					fade_texc.x	=sqrt(z);
+					float sh	=saturate((fade_texc.x-nearFarTexc.x)/0.1);
+					// overcast effect:
+					//sh			*=illum_lookup.z;
+					c.rgb		*=sh;
+					c.rgb		=applyFades(c.rgb,fade_texc,cos0,sh);
+					colour		*=(1.0-c.a);
+					colour.rgb	+=c.rgb*c.a;
+					Z			*=(1.0-c.a);
+					Z			+=z*c.a;
 				}
 			}
 		}
@@ -151,7 +154,7 @@ float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
 {
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
 	float theta						=IN.texCoords.y*2.0*3.1415926536;
-	float distance_off_centre		=shadowRange*IN.texCoords.x*IN.texCoords.x;
+	float distance_off_centre		=IN.texCoords.x*IN.texCoords.x;
 	vec3 pos_cartesian				=distance_off_centre*vec3(cos(theta),sin(theta),0.0);
 	vec2 illumination				=vec2(1.0,1.0);
 	float Z							=(startZMetres-extentZMetres)/1000.0;
@@ -459,12 +462,12 @@ vertexOutputCS VS_CrossSection(idOnly IN)
 
 float4 PS_Simple( vertexOutputCS IN):SV_TARGET
 {
-    return noiseTexture.Sample(samplerStateWrap,IN.texCoords.xy);
+    return noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
 }
 
 float4 PS_ShowNoise( vertexOutputCS IN):SV_TARGET
 {
-    float4 lookup=noiseTexture.Sample(samplerStateWrap,IN.texCoords.xy);
+    float4 lookup=noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
 	return float4(0.5*(lookup.rgb+1.0),1.0);
 }
 
@@ -472,7 +475,7 @@ float4 PS_ShowShadow( vertexOutputCS IN):SV_TARGET
 {
 	vec2 tex_pos=2.0*IN.texCoords.xy-vec2(1.0,1.0);
 	vec2 radial_texc=vec2(sqrt(length(tex_pos.xy)),atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536));
-    float4 lookup=noiseTexture.Sample(samplerStateWrap,radial_texc);
+    float4 lookup=noiseTexture.Sample(wrapSamplerState,radial_texc);
 	return float4(lookup.rgb,1.0);
 }
 

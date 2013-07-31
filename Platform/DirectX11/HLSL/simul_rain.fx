@@ -88,8 +88,8 @@ particleVertexOutput VS_Particles(posOnly IN)
 	particlePos.z		-=offset;
 	particlePos			=Frac(particlePos,30.0);
 	float p				=flurryRate*phase;
-	particlePos			+=.125*flurry*randomTexture.SampleLevel(samplerStateWrap,vec2(2.0*p+1.7*IN.position.x,2.0*p+2.3*IN.position.y),0);
-	particlePos			+=flurry*randomTexture.SampleLevel(samplerStateWrap,vec2(p+IN.position.x,p+IN.position.y),0);
+	particlePos			+=.125*flurry*randomTexture.SampleLevel(wrapSamplerState,vec2(2.0*p+1.7*IN.position.x,2.0*p+2.3*IN.position.y),0);
+	particlePos			+=flurry*randomTexture.SampleLevel(wrapSamplerState,vec2(p+IN.position.x,p+IN.position.y),0);
 	OUT.position		=mul(worldViewProj,float4(particlePos.xyz,1.0));
 	OUT.view			=normalize(particlePos.xyz);
 	OUT.pointSize		=snowSize;
@@ -134,7 +134,7 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
 
 float4 PS_Particles(particleGeometryOutput IN): SV_TARGET
 {
-	float4 result	=cubeTexture.Sample(samplerStateWrap,-IN.view);
+	float4 result	=cubeTexture.Sample(wrapSamplerState,-IN.view);
 	vec2 pos		=IN.texCoords*2.0-1.0;
 	float radius	=length(pos.xy);
 	float opacity	=saturate(1.0-radius)/.5;
@@ -217,14 +217,14 @@ float4 PS_Main(vertexOutput IN): SV_TARGET
 float4 PS_Overlay(posTexVertexOutput IN) : SV_TARGET
 {
 	float3 view		=normalize(mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz);
-	float3 light	=cubeTexture.Sample(samplerStateWrap,-view).rgb;
+	float3 light	=cubeTexture.Sample(wrapSamplerState,-view).rgb;
 	float sc=1.0;
 	float br=1.0;
 	float4 result=float4(0.0,0.0,0.0,0.0);
 	for(int i=0;i<4;i++)
 	{
 		float2 texc	=float2(atan2(view.x,view.y)*sc*7/(2.0*pi),(view.z+sc*offset)*sc);
-		float r		=br*saturate(rainTexture.Sample(samplerStateWrap,texc.xy)+intensity-1.0).x;
+		float r		=br*saturate(rainTexture.Sample(wrapSamplerState,texc.xy)+intensity-1.0).x;
 		sc*=4.0;
 		br*=.4;
 		result*=1.0-r;
