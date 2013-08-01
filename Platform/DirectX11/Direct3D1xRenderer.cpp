@@ -20,7 +20,7 @@
 using namespace simul;
 using namespace dx11;
 
-Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int h):
+Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,int w,int h):
 		camera(NULL)
 		,ShowCloudCrossSections(false)
 		,ShowFlares(true)
@@ -43,7 +43,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,int w,int
 	AddChild(simulWeatherRenderer.get());
 	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
 	simulOpticsRenderer=new SimulOpticsRendererDX1x();
-	simulTerrainRenderer=new SimulTerrainRendererDX1x();
+	simulTerrainRenderer=new SimulTerrainRendererDX1x(NULL);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer.get());
 	ReverseDepthChanged();
 	depthFramebuffer.SetFormat(0);

@@ -8,8 +8,9 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Sky/SkyInterface.h"
 
-SimulGLTerrainRenderer::SimulGLTerrainRenderer()
-	:program(0)
+SimulGLTerrainRenderer::SimulGLTerrainRenderer(simul::base::MemoryInterface *m)
+	:BaseTerrainRenderer(m)
+	,program(0)
 {
 }
 

@@ -14,7 +14,7 @@
 SIMUL_OPENGL_EXPORT_CLASS SimulGLTerrainRenderer : public simul::terrain::BaseTerrainRenderer
 {
 public:
-	SimulGLTerrainRenderer();
+	SimulGLTerrainRenderer(simul::base::MemoryInterface *m);
 	virtual ~SimulGLTerrainRenderer();
 	//standard ogl object interface functions
 	void RecompileShaders();

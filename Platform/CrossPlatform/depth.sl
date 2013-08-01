@@ -31,7 +31,7 @@ float depthToDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
 }
 
 
-float2 viewportCoordToTexRegionCoord( in float2 iViewportCoord, in float4 iViewportToTexRegionScaleBias )
+vec2 viewportCoordToTexRegionCoord( in vec2 iViewportCoord, in vec4 iViewportToTexRegionScaleBias )
 {
 	return iViewportCoord * iViewportToTexRegionScaleBias.xy + iViewportToTexRegionScaleBias.zw;
 }

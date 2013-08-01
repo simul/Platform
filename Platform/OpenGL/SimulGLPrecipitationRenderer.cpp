@@ -64,44 +64,4 @@ void SimulGLPrecipitationRenderer::Render(void*)
 		return;
 	if(Intensity<=0)
 		return;
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	simul::sky::float4 cam_dir;
-	CalcCameraPosition(cam_pos,cam_dir);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-		ERROR_CHECK
-    glDisable(GL_CULL_FACE);
-    glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-    glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-ERROR_CHECK
-	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
-ERROR_CHECK
-glUseProgram(program);
-	setTexture(program,"rainTexture",0,rain_texture);
-	setParameter(program,"intensity",Intensity);
-	setParameter3(program,"lightColour",light_colour);
-	setParameter3(program,"lightDir",light_dir);
-	setParameter(program,"offset",offs);
-	//float radius,height,offs,rain_intensity,wind_heading,wind_speed;
-ERROR_CHECK
-	glBegin(GL_TRIANGLE_STRIP);
-	for(int i=0;i<ELEV;i++)
-	{
-		for(int j=0;j<CONE_SIDES+1;j++)
-		{
-			Vertex_t &v1=vertices[i*(CONE_SIDES+1)+j];
-			Vertex_t &v2=vertices[(i+1)*(CONE_SIDES+1)+j];
-			glMultiTexCoord3f(GL_TEXTURE0,v1.tex_x,v1.tex_y,v1.fade);
-			glVertex3f(v1.x,v1.y,v1.z);
-			glMultiTexCoord3f(GL_TEXTURE0,v2.tex_x,v2.tex_y,v2.fade);
-			glVertex3f(v2.x,v2.y,v2.z);
-		}
-	}
-	glEnd();
-		ERROR_CHECK
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-		ERROR_CHECK
-	glPopAttrib();
 }

@@ -37,9 +37,12 @@ namespace simul
 									,float baseLayer
 									,float transition
 									,float upperDensity
+									,float diffusivity
 									,float time
-									,void* noise_tex,int octaves,float persistence
-											,bool mask);
+									,void* noise_tex
+									,int octaves
+									,float persistence
+									,bool mask);
 			virtual void PerformGPURelight(	int light_index
 											,float *target
 											,const int *light_grid

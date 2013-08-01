@@ -218,7 +218,7 @@ SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::
 	GetCloudInterface()->Generate();
 
 	if(!ck)
-		AddChild(cloudKeyframer.get());
+		AddChild(cloudKeyframer);
 	// A noise filter improves the shape of the clouds:
 	//cloudNode->GetNoiseInterface()->SetFilter(&circle_f);
 }
@@ -904,12 +904,12 @@ void SimulCloudRenderer::InternalRenderHorizontal(int viewport_id)
 						fadeout=1.f;
 					float x=cam_pos.x+dist*cs;
 					float y=(y_vertical?cam_pos.z:cam_pos.y)+dist*sn;
-					float z=z0+helper->GetVerticalShiftDueToCurvature(dist,z0);
+					float z=z0+helper->GetVerticalShiftDueToCurvature(dist,z0,6378000.f);
 //				float elev=atan2(z,dist);
 					pos.Define(x,y,z);
 					simul::sky::float4 dir_to_vertex(x-cam_pos.x,y-cam_pos.y,z-cam_pos.z,0);
 					dir_to_vertex/=simul::sky::length(dir_to_vertex);
-					tex_pos=helper->WorldCoordToTexCoord(GetCloudInterface(),pos);
+					tex_pos=helper->WorldCoordToTexCoord(GetCloudInterface(),6378000.f,pos);
 					std::swap(pos.y,pos.z);
 					if(v>=MAX_VERTICES)
 						break;
@@ -1045,7 +1045,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	for(iter i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++)
 	{
 		float distance=(*i)->distance;
-		helper->MakeLayerGeometry(GetCloudInterface(),*i);
+		helper->MakeLayerGeometry(GetCloudInterface(),*i,6378000.f);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		float fade=(*i)->fadeIn;

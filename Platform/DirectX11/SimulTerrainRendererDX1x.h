@@ -33,7 +33,7 @@ namespace simul
 		SIMUL_DIRECTX11_EXPORT_CLASS SimulTerrainRendererDX1x : public simul::terrain::BaseTerrainRenderer
 		{
 		public:
-			SimulTerrainRendererDX1x();
+			SimulTerrainRendererDX1x(simul::base::MemoryInterface *m);
 			~SimulTerrainRendererDX1x();
 			void ReloadTextures();
 			void RecompileShaders();

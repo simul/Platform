@@ -28,7 +28,7 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGLSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
-	SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk);
+	SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *m);
 	virtual ~SimulGLSkyRenderer();
 	//standard ogl object interface functions
 

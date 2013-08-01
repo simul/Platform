@@ -490,7 +490,7 @@ void Simul2DCloudRenderer::EnsureTextureCycle()
 
 simul::clouds::CloudKeyframer *Simul2DCloudRenderer::GetCloudKeyframer()
 {
-	return cloudKeyframer.get();
+	return cloudKeyframer;
 }
 
 void Simul2DCloudRenderer::Enable(bool val)

@@ -126,6 +126,7 @@ void GpuCloudGenerator::FillDensityGrid(int index,const int *density_grid
 											,float baseLayer
 											,float transition
 											,float upperDensity
+											,float diffusivity
 											,float time
 											,void* noise_tex,int octaves,float persistence
 											,bool mask)
@@ -182,6 +183,7 @@ timer.StartTime();
 	constants.baseLayer			=baseLayer;
 	constants.transition		=transition;
 	constants.upperDensity		=upperDensity;
+	constants.diffusivity		=diffusivity;
 
 	UPDATE_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
 	GLint gpuCloudConstants		=glGetUniformBlockIndex(density_program,"GpuCloudConstants");

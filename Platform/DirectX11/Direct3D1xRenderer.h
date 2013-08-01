@@ -45,7 +45,7 @@ namespace simul
 			,public simul::graph::meta::Group
 		{
 		public:
-			Direct3D11Renderer(simul::clouds::Environment *env,int w,int h);
+			Direct3D11Renderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,int w,int h);
 			virtual ~Direct3D11Renderer();
 			META_BeginProperties
 				META_ValueProperty(bool,ShowFlares				,"Whether to draw light flares around the sun and moon.")

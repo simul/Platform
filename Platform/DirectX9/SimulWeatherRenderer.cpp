@@ -46,7 +46,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 										   simul::base::MemoryInterface *mem,
 											bool usebuffer,int width,
 											int height,bool sky,bool rain) :
-	BaseWeatherRenderer(env,sky,rain),
+	BaseWeatherRenderer(env,mem),
 	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
 	m_pBufferToScreenEffect(NULL),
@@ -62,8 +62,8 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 {
 	//sky=rain=clouds2d=false;
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
-	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer.get();
-	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer.get();
+	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer;
+	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	SetScreenSize(width,height);
 	if(ShowSky)
 	{

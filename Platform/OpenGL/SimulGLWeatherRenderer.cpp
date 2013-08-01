@@ -32,32 +32,32 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 											   ,int height
 											   ,bool sky
 											   ,bool rain)
-		:BaseWeatherRenderer(env,sky,rain)
+		:BaseWeatherRenderer(env,mem)
 		,BufferWidth(0)
 		,BufferHeight(0)
 		,device_initialized(false)
 		,scene_buffer(NULL)
 		,cloud_overlay_program(0)
 {
-	simul::sky::SkyKeyframer *sk=environment->skyKeyframer.get();
-	simul::clouds::CloudKeyframer *ck2d=environment->cloud2DKeyframer.get();
-	simul::clouds::CloudKeyframer *ck3d=environment->cloudKeyframer.get();
-	simulSkyRenderer=new SimulGLSkyRenderer(sk);
-	baseSkyRenderer=simulSkyRenderer.get();
+	simul::sky::SkyKeyframer *sk=environment->skyKeyframer;
+	simul::clouds::CloudKeyframer *ck2d=environment->cloud2DKeyframer;
+	simul::clouds::CloudKeyframer *ck3d=environment->cloudKeyframer;
+	simulSkyRenderer=new(memoryInterface) SimulGLSkyRenderer(sk,memoryInterface);
+	baseSkyRenderer=simulSkyRenderer;
 	
-	simulCloudRenderer=new SimulGLCloudRenderer(ck3d,mem);
-	baseCloudRenderer=simulCloudRenderer.get();
-	if(env->cloud2DKeyframer.get())
+	simulCloudRenderer=new(memoryInterface) SimulGLCloudRenderer(ck3d,mem);
+	baseCloudRenderer=simulCloudRenderer;
+	if(env->cloud2DKeyframer)
 	{
 		base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d,mem);
 	}	
-	simulLightningRenderer=new SimulGLLightningRenderer(ck3d,sk);
-	baseLightningRenderer=simulLightningRenderer.get();
+	simulLightningRenderer=new(memoryInterface) SimulGLLightningRenderer(ck3d,sk);
+	baseLightningRenderer=simulLightningRenderer;
 
-	simulAtmosphericsRenderer=new SimulGLAtmosphericsRenderer;
-	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
+	simulAtmosphericsRenderer=new(memoryInterface) SimulGLAtmosphericsRenderer;
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
 	if(rain)
-		basePrecipitationRenderer=simulPrecipitationRenderer=new SimulGLPrecipitationRenderer();
+		basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulGLPrecipitationRenderer();
 
 	EnableCloudLayers();
 	SetScreenSize(width,height);
@@ -71,7 +71,7 @@ void SimulGLWeatherRenderer::EnableCloudLayers()
 	if(simul2DCloudRenderer)
 	{
 		simul2DCloudRenderer->Create();
-		if(simulSkyRenderer.get())
+		if(simulSkyRenderer)
 			simul2DCloudRenderer->SetSkyInterface(simulSkyRenderer->GetBaseSkyInterface());
 	}
 	if(device_initialized)
@@ -93,6 +93,12 @@ void SimulGLWeatherRenderer::EnableCloudLayers()
 SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 {
 	InvalidateDeviceObjects();
+	delete(simulSkyRenderer,memoryInterface);
+	delete(simulCloudRenderer,memoryInterface);
+	delete(simul2DCloudRenderer,memoryInterface);
+	delete(simulLightningRenderer,memoryInterface);
+	delete(simulPrecipitationRenderer,memoryInterface);
+	delete(simulAtmosphericsRenderer,memoryInterface);
 }
 
 void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
@@ -288,17 +294,17 @@ void SimulGLWeatherRenderer::RenderPrecipitation(void *context)
 
 class SimulGLSkyRenderer *SimulGLWeatherRenderer::GetSkyRenderer()
 {
-	return simulSkyRenderer.get();
+	return simulSkyRenderer;
 }
 
 class SimulGLCloudRenderer *SimulGLWeatherRenderer::GetCloudRenderer()
 {
-	return simulCloudRenderer.get();
+	return simulCloudRenderer;
 }
 
 class SimulGL2DCloudRenderer *SimulGLWeatherRenderer::Get2DCloudRenderer()
 {
-	return simul2DCloudRenderer.get();
+	return simul2DCloudRenderer;
 }
 /*
 const char *SimulGLWeatherRenderer::GetDebugText() const

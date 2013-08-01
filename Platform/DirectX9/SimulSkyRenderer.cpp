@@ -37,7 +37,7 @@
 #include "Resources.h"
 
 SimulSkyRenderer::SimulSkyRenderer(simul::sky::SkyKeyframer *sk)
-	:simul::sky::BaseSkyRenderer(sk)
+	:simul::sky::BaseSkyRenderer(sk,NULL)
 	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pSkyEffect(NULL)

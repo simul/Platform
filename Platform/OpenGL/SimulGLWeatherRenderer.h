@@ -89,12 +89,12 @@ protected:
 	bool					tone_map;
 	GLuint					cloud_overlay_program;
 	RenderDepthBufferCallback *renderDepthBufferCallback;
-	simul::base::SmartPtr<class SimulGLSkyRenderer> simulSkyRenderer;
-	simul::base::SmartPtr<class SimulGLCloudRenderer> simulCloudRenderer;
-	simul::base::SmartPtr<class SimulGL2DCloudRenderer> simul2DCloudRenderer;
-	simul::base::SmartPtr<class SimulGLLightningRenderer> simulLightningRenderer;
-	simul::base::SmartPtr<class SimulGLPrecipitationRenderer> simulPrecipitationRenderer;
-	simul::base::SmartPtr<class SimulGLAtmosphericsRenderer> simulAtmosphericsRenderer;
+	class SimulGLSkyRenderer *simulSkyRenderer;
+	class SimulGLCloudRenderer *simulCloudRenderer;
+	class SimulGL2DCloudRenderer *simul2DCloudRenderer;
+	class SimulGLLightningRenderer *simulLightningRenderer;
+	class SimulGLPrecipitationRenderer *simulPrecipitationRenderer;
+	class SimulGLAtmosphericsRenderer *simulAtmosphericsRenderer;
 	void CreateBuffers();
 	void RenderBufferToScreen(GLuint texture,int w,int h,bool use_shader,bool blend=false);
 };

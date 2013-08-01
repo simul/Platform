@@ -41,7 +41,7 @@ namespace simul
 SIMUL_DIRECTX9_EXPORT_CLASS SimulTerrainRenderer:public simul::terrain::BaseTerrainRenderer
 {
 public:
-	SimulTerrainRenderer();
+	SimulTerrainRenderer(simul::base::MemoryInterface *m);
 	//standard d3d object interface functions
 	bool Create(LPDIRECT3DDEVICE9 pd3dDevice);
 	void RecompileShaders();

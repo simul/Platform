@@ -48,7 +48,7 @@ namespace simul
 SIMUL_DIRECTX11_EXPORT_CLASS SimulSkyRendererDX1x:public simul::sky::BaseSkyRenderer
 {
 public:
-	SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk);
+	SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem);
 	virtual ~SimulSkyRendererDX1x();
 
 	//standard d3d object interface functions

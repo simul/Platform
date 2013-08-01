@@ -42,7 +42,7 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 													,bool clouds3d
 													,bool clouds2d
 													,bool rain) :
-	BaseWeatherRenderer(env,sky,rain),
+	BaseWeatherRenderer(env,mem),
 	framebuffer(w/Downscale,h/Downscale),
 	m_pd3dDevice(NULL),
 	m_pTonemapEffect(NULL)
@@ -65,13 +65,13 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	if(ShowSky)
 	{
-		simulSkyRenderer=new(memoryInterface) SimulSkyRendererDX1x(sk);
+		simulSkyRenderer=new(memoryInterface) SimulSkyRendererDX1x(sk,memoryInterface);
 		baseSkyRenderer=simulSkyRenderer;
 	}
 	simulCloudRenderer=new(memoryInterface) SimulCloudRendererDX1x(ck3d,memoryInterface);
 	baseCloudRenderer=simulCloudRenderer;
 	simulLightningRenderer=new(memoryInterface) SimulLightningRendererDX11(ck3d,sk);
-	if(clouds2d&&env->cloud2DKeyframer.get())
+	if(clouds2d&&env->cloud2DKeyframer)
 		base2DCloudRenderer=simul2DCloudRenderer=new(memoryInterface) Simul2DCloudRendererDX11(ck2d,memoryInterface);
 	if(rain)
 		basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulPrecipitationRendererDX1x();

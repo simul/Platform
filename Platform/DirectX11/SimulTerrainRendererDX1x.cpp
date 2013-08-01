@@ -25,8 +25,9 @@ struct TerrainVertex_t
 };
 static const int MAX_VERTICES=1000000;
 
-SimulTerrainRendererDX1x::SimulTerrainRendererDX1x()
-	:m_pd3dDevice(NULL)
+SimulTerrainRendererDX1x::SimulTerrainRendererDX1x(simul::base::MemoryInterface *m)
+	:BaseTerrainRenderer(m)
+	,m_pd3dDevice(NULL)
 	,m_pVertexBuffer(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pTerrainEffect(NULL)

@@ -7,7 +7,7 @@ uniform float yz;
 #define CROSS_SECTION_STEPS 32
 void main(void)
 {
-	vec3 texc=vec3(crossSectionOffset+texCoords.x,yz*(crossSectionOffset+texCoords.y),(1.0-yz)*(1.0-texCoords.y));//+yz*0.125
+	vec3 texc=vec3(crossSectionOffset+texCoords.x,yz*(crossSectionOffset+texCoords.y),(1.0-yz)*(texCoords.y));//+yz*0.125
 	int i=0;
 	vec3 accum=vec3(0.0,0.5,1.0);
 	for(i=0;i<CROSS_SECTION_STEPS;i++)

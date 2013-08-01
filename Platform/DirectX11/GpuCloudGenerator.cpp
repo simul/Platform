@@ -130,6 +130,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 										,float baseLayer
 										,float transition
 										,float upperDensity
+										,float diffusivity
 										,float time
 										,void* noise_tex
 										,int octaves
@@ -177,7 +178,7 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	gpuCloudConstants.baseLayer		=baseLayer;
 	gpuCloudConstants.transition	=transition;
 	gpuCloudConstants.upperDensity	=upperDensity;
-
+	gpuCloudConstants.diffusivity	=diffusivity;
 	simul::dx11::setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 	simul::dx11::setParameter(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
 

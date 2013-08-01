@@ -26,7 +26,7 @@ using namespace simul;
 using namespace dx11;
 
 Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem) :
-	simul::clouds::Base2DCloudRenderer(ck)
+	simul::clouds::Base2DCloudRenderer(ck,mem)
 	,m_pd3dDevice(NULL)
 	,effect(NULL)
 	,tech(NULL)

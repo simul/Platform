@@ -36,8 +36,8 @@ static GLint faces[6][4] = {  /* Vertex indices for the 6 faces of a cube. */
   {4, 5, 1, 0}, {5, 6, 2, 1}, {7, 4, 0, 3} };
 static GLfloat v[8][3];  /* Will be filled in with X,Y,Z vertexes. */
 
-SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk)
-	:BaseSkyRenderer(sk)
+SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *m)
+	:BaseSkyRenderer(sk,m)
 	,campos_updated(false)
 	,short_ptr(NULL)
 	,loss_2d(0,0,GL_TEXTURE_2D)

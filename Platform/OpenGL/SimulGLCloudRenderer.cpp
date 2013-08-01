@@ -403,28 +403,7 @@ ERROR_CHECK
 float time=skyInterface->GetTime();
 const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
-	CloudConstants cloudConstants;
 	CloudPerViewConstants cloudPerViewConstants;
-	if(lightningRenderInterface)
-	{
-		static float bb=.1f;
-		simul::sky::float4 lightning_multipliers;
-		static float lightning_effect_on_cloud=0.2f;
-		simul::sky::float4 lightning_colour=lightningRenderInterface->GetLightningColour();
-		for(int i=0;i<4;i++)
-		{
-			if(i<lightningRenderInterface->GetNumLightSources())
-				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(time);
-			else lightning_multipliers[i]=0;
-		}
-		lightning_colour.w=lightning_effect_on_cloud;
-		lightning_colour*=lightning_effect_on_cloud*lightningRenderInterface->GetLightSourceBrightness(time);
-		simul::sky::float4 source_pos=lightningRenderInterface->GetSourcePosition();
-		cloudConstants.lightningSourcePos=source_pos;
-		cloudConstants.lightningColour=lightning_colour;
-	}
-	cloudConstants.maxFadeDistanceMetres=max_fade_distance_metres;
-	cloudConstants.rain=cloudKeyframer->GetInterpolatedKeyframe().precipitation;
 ERROR_CHECK
 
 	static float direct_light_mult=0.25f;
@@ -439,28 +418,10 @@ ERROR_CHECK
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
 	float base_alt_km=X1.z*.001f;
 	float t=0.f;
-	simul::sky::float4 sunlight1,sunlight2;
 	
+	CloudConstants cloudConstants;
 	if(skyInterface)
-	{
-		simul::sky::float4 light_dir=skyInterface->GetDirectionToLight(base_alt_km);
-		cloudConstants.lightDir=light_dir;
-		simul::sky::float4 amb=skyInterface->GetAmbientLight(X1.z*.001f);
-		amb*=GetCloudInterface()->GetAmbientLightResponse();
-		simul::sky::EarthShadow e=skyInterface->GetEarthShadow(X1.z/1000.f,skyInterface->GetDirectionToSun());
-	//	glUniform1f(distanceToIllumination_param,e.illumination_altitude*e.planet_radius*1000.f/max_fade_distance_metres);
-		cloudConstants.hazeEccentricity=skyInterface->GetMieEccentricity();
-		simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
-		cloudConstants.mieRayleighRatio=mie_rayleigh_ratio;
-		cloudConstants.ambientColour=amb;
-		float above=(base_alt_km-e.illumination_altitude)/e.planet_radius+transitionDistance;
-		cloudConstants.earthshadowMultiplier=saturate(above/transitionDistance);
 		t=skyInterface->GetTime();
-
-		sunlight1=skyInterface->GetLocalIrradiance(base_alt_km)*saturate(base_alt_km-e.illumination_altitude);
-		float top_alt_km=X2.z*.001f;
-		sunlight2=skyInterface->GetLocalIrradiance(top_alt_km)*saturate(top_alt_km-e.illumination_altitude);
-	}
 	simul::math::Vector3 view_pos(cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::math::Vector3 eye_dir(-viewInv(2,0),-viewInv(2,1),-viewInv(2,2));
 	simul::math::Vector3 up_dir	(viewInv(1,0),viewInv(1,1),viewInv(1,2));
@@ -492,25 +453,14 @@ ERROR_CHECK
 	float tan_half_fov_vertical=1.f/proj(1,1);
 	float tan_half_fov_horizontal=std::max(1.f/left,1.f/right);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),god_rays,X1.z,god_rays);
+	float effective_world_radius_metres=6378000.f;
+	float base_alt=GetCloudInterface()->GetCloudBaseZ();
+	if(cloudKeyframer->GetMeetHorizon())
+		effective_world_radius_metres	=helper->GetEffectiveEarthRadiusToMeetHorizon(base_alt,helper->GetMaxCloudDistance());
+	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),effective_world_radius_metres,god_rays,X1.z,god_rays);
 
 helper->Update2DNoiseCoords();
-	cloudConstants.fractalScale			=fractal_scales;
-	cloudConstants.lightResponse		=light_response;
-	cloudConstants.cloud_interp			=cloudKeyframer->GetInterpolation();
-
-	cloudConstants.cloudEccentricity	=GetCloudInterface()->GetMieAsymmetry();
-
-	cloudConstants.lightningMultipliers;
-	cloudConstants.lightningColour;
-	cloudConstants.screenCoordOffset	=scr_offset;
-	cloudConstants.sunlightColour1		=sunlight1;
-	cloudConstants.sunlightColour2		=sunlight2;
-	simul::math::Vector3 InverseDX	=cloudKeyframer->GetCloudInterface()->GetInverseScales();
-
-	cloudConstants.cornerPos			=X1;
-	cloudConstants.inverseScales		=InverseDX;
-
+	SetCloudConstants(cloudConstants);
 	glBindBuffer(GL_UNIFORM_BUFFER,cloudConstantsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(CloudConstants),&cloudConstants);
 	glBindBuffer(GL_UNIFORM_BUFFER,0);
@@ -545,34 +495,14 @@ helper->Update2DNoiseCoords();
 	//  ...and...
 	// b) are in the cloud volume
 	ERROR_CHECK
-	int idx=0;
-	float wavelength=cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
-	for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
-		i!=helper->GetSlices().end();i++,idx++)
-	{
-		LayerData &inst=layerConstants.layers[idx];
-		// How thick is this layer, optically speaking?
-		simul::clouds::CloudGeometryHelper::Slice *s=*i;
-		float dens=s->fadeIn;
-		if(!dens)
-			continue;
-		float noise_offset[]={	s->noise_tex_x/wavelength
-								,s->noise_tex_y/wavelength
-								,0,0};
-		inst.layerFade			=s->fadeIn;
-		inst.layerDistance		=s->distance;
-		inst.noiseScale			=s->distance/wavelength;
-		inst.noiseOffset.x		=noise_offset[0];
-		inst.noiseOffset.y		=noise_offset[1];
-	}
-	layerConstants.layerCount	=helper->GetSlices().size();
+	SetLayerConstants(helper,layerConstants);
 	UPDATE_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
-	idx=0;
+	int idx=0;
 	for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
 	ERROR_CHECK
 		simul::clouds::CloudGeometryHelper::Slice *s=*i;
-		helper->MakeLayerGeometry(GetCloudInterface(),s);
+		helper->MakeLayerGeometry(GetCloudInterface(),s,effective_world_radius_metres);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		setParameter(program,"layerNumber",(int)idx);
@@ -590,11 +520,6 @@ helper->Update2DNoiseCoords();
 				if(v<0||v>=(int)helper->GetVertices().size())
 					continue;
 				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[v];
-				// Here we're passing sunlight values per-vertex, loss and inscatter
-				// The per-vertex sunlight allows different altitudes of cloud to have different
-				// sunlight colour - good for dawn/sunset.
-				// The per-vertex loss and inscatter is cheap for the pixel shader as it
-				// then doesn't need fade-texture lookups.
 				glVertex3f(V.x,V.y,V.z);
 			}
 		}
@@ -868,7 +793,7 @@ CloudShadowStruct SimulGLCloudRenderer::GetCloudShadowTexture()
 
 simul::sky::OvercastCallback *SimulGLCloudRenderer::GetOvercastCallback()
 {
-	return cloudKeyframer.get();
+	return cloudKeyframer;
 }
 
 SimulGLCloudRenderer::~SimulGLCloudRenderer()
@@ -1016,7 +941,7 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 
 void SimulGLCloudRenderer::RenderCrossSections(void *,int width,int height)
 {
-	static int u=3;
+	static int u=4;
 	int w=(width-8)/u;
 	if(w>height/2)
 		w=height/2;
@@ -1055,9 +980,9 @@ static float mult=1.f;
 		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
 		glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
 		glUniform1f(yz_param,0.f);
-		DrawQuad(i*(w+8)+8,8,w,h);
+		DrawQuad(i*(w+1)+4,4,w,h);
 		glUniform1f(yz_param,1.f);
-		DrawQuad(i*(w+8)+8,h+16,w,w);
+		DrawQuad(i*(w+1)+4,h+8,w,w);
 	}
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);

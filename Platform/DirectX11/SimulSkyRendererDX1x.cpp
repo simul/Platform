@@ -82,8 +82,8 @@ static Vertex_t vertices[36] =
 
 typedef std::basic_string<TCHAR> tstring;
 
-SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
-	:simul::sky::BaseSkyRenderer(sk)
+SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem)
+	:simul::sky::BaseSkyRenderer(sk,mem)
 	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pStarsVtxDecl(NULL)
@@ -120,9 +120,9 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 //EnableColourSky(false);
 	SetCameraPosition(0,0,400.f);
 	skyKeyframer->SetCalculateAllAltitudes(true);
-	loss_2d		=new simul::dx11::Framebuffer(0,0);
-	inscatter_2d=new simul::dx11::Framebuffer(0,0);
-	skylight_2d	=new simul::dx11::Framebuffer(0,0);
+	loss_2d		=new(memoryInterface) simul::dx11::Framebuffer(0,0);
+	inscatter_2d=new(memoryInterface) simul::dx11::Framebuffer(0,0);
+	skylight_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	loss_2d->SetDepthFormat(0);
 	illumination_fb.SetDepthFormat(0);
 }
@@ -252,11 +252,15 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	numFadeDistances=numFadeElevations=numAltitudes=0;
 	SAFE_RELEASE(d3dQuery);
 	earthShadowUniforms.InvalidateDeviceObjects();
+	delete [](star_vertices,memoryInterface);
 }
 
 bool SimulSkyRendererDX1x::Destroy()
 {
 	InvalidateDeviceObjects();
+	delete(loss_2d,memoryInterface);
+	delete(inscatter_2d,memoryInterface);
+	delete(skylight_2d,memoryInterface);
 	return true;
 }
 
@@ -744,8 +748,8 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	SAFE_RELEASE(m_pStarsVertexBuffer);
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
 	num_stars=current_num_stars;
-	delete [] star_vertices;
-	star_vertices=new StarVertext[num_stars];
+	delete [](star_vertices,memoryInterface);
+	star_vertices=new(memoryInterface) StarVertext[num_stars];
 	static float d=100.f;
 	for(int i=0;i<num_stars;i++)
 	{

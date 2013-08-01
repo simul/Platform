@@ -33,7 +33,7 @@ void main(void)
 	view				=normalize(pos);
 	wPosition			=viewPos+pos;
 	wPosition.z			-=layer.verticalShift;
-	texCoords.xyz		=(wPosition-cornerPos)*inverseScales;
+	texCoords.xyz		=(wPosition-vec3(0,0,layer.verticalShift)-cornerPos)*inverseScales;
 	texCoords.w			=clamp(texCoords.z,0.0,1.0);	// clamp?
 	vec2 screen_pos		=transformed_pos.xy/transformed_pos.w;
 	vec3 n				=vec3(screen_pos.xy*tanHalfFov,1.0);
