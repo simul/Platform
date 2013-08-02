@@ -730,6 +730,11 @@ void SimulSkyRendererDX1x::RenderIllumationBuffer(void *c)
 		oc->GetOvercastData(skyKeyframer->GetDaytime(),overcast,overcast_base_km,overcast_scale_km);
 		
 	simul::dx11::setParameter(m_pSkyEffect,"overcast",overcast*skyKeyframer->GetOvercastEffectStrength());
+	simul::dx11::setParameter(m_pSkyEffect,"overcastBaseKm",overcast_base_km);
+	simul::dx11::setParameter(m_pSkyEffect,"overcastRangeKm",overcast_scale_km);
+	simul::dx11::setParameter(m_pSkyEffect,"eyePosition",cam_pos);
+	simul::dx11::setParameter(m_pSkyEffect,"maxFadeDistanceKm",skyKeyframer->GetMaxDistanceKm());
+	
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,1.0,0.0,1.0};
 	{

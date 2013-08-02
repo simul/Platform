@@ -114,7 +114,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 					fade_texc.x	=sqrt(z);
 					float sh	=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 					// overcast effect:
-					//sh			*=illum_lookup.z;
+					//sh			*=saturate(illum_lookup.z+texCoords.z);
 					c.rgb		*=sh;
 					c.rgb		=applyFades(c.rgb,fade_texc,cos0,sh);
 					colour		*=(1.0-c.a);

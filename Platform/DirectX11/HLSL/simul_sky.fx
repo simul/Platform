@@ -23,6 +23,7 @@ Texture3D fadeTexture1;
 Texture3D fadeTexture2;
 
 TextureCube cubeTexture;
+
 #include "CppHLSL.hlsl"
 #include "states.hlsl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
@@ -44,6 +45,9 @@ cbuffer cbPerObject : register(b10)
 	float starBrightness;
 	float radiusRadians;
 	float overcast;
+	float overcastBaseKm;
+	float overcastRangeKm;
+	float maxFadeDistanceKm;
 	float4 rect;
 };
 
@@ -146,16 +150,43 @@ float4 PS_EarthShadow( vertexOutput IN): SV_TARGET
 
 float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
-	float azimuth		=3.1415926536*2.0*IN.texCoords.x;
-	float sine			=-1.0+2.0*(IN.texCoords.y*targetTextureSize/(targetTextureSize-1.0));
-	float cosine		=sqrt(1.0-sine*sine);
-	float3 view			=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
-	float2 fade_texc	=vec2(1.0,IN.texCoords.y);
-	vec2 dist			=EarthShadowDistances(fade_texc,view);
+	float azimuth			=3.1415926536*2.0*IN.texCoords.x;
+	float sine				=-1.0+2.0*(IN.texCoords.y*targetTextureSize/(targetTextureSize-1.0));
+	float cosine			=sqrt(1.0-sine*sine);
+	float3 view				=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
+	float2 fade_texc		=vec2(1.0,IN.texCoords.y);
+	vec2 dist				=EarthShadowDistances(fade_texc,view);
 	if(dist.x>dist.y)
 		dist.x=dist.y;
-	float illum			=1.0-overcast;//(1.0-overcast)*(1.0-(dist.y-dist.x));
-    return vec4(dist,illum,1.0);
+	float3 alt_range;
+	float alt_km					=eyePosition.z/1000.0;
+	/*alt_range.x						=alt_km+sine*dist.x*dist.x*maxFadeDistanceKm;
+	alt_range.y						=alt_km+sine*dist.y*dist.y*maxFadeDistanceKm;
+	if(alt_range.y<alt_range.x)
+	{
+		float temp					=alt_range.y;
+		alt_range.y					=alt_range.x;
+		alt_range.x					=temp;
+	}
+	alt_range.z						=alt_range.y-alt_range.x;
+	// So we have two altitudes in metres, min and max.
+	float range_below_km			=max(0.0,overcastBaseKm-alt_range.x);
+	float start_within_km			=max(0,alt_range.x-overcastBaseKm);
+	float end_within_km				=min(overcastRangeKm,alt_range.y-start_within_km);
+	float shadowed					=overcast*(range_below_km+0.5*(end_within_km*end_within_km-start_within_km*start_within_km)/overcastRangeKm)/alt_range.z;*/
+// Find the distance to the midpoint of the cloud volume. This is the transition point.
+	float mid_clouds_km				=overcastBaseKm+overcastRangeKm*0.25;
+	float dist_to_cloud_layer_km	=0.0;
+	float raw						=(mid_clouds_km-alt_km)/(sine+0.001*sign(sine));
+	if(raw>0)
+		dist_to_cloud_layer_km		=raw;
+	else
+		dist_to_cloud_layer_km		=maxFadeDistanceKm;
+	float near_km					=dist_to_cloud_layer_km;
+	float far_km					=maxFadeDistanceKm;
+	// Convert to a distance texcoord:
+	vec2 dist_normalized			=sqrt(saturate(vec2(near_km,far_km)/maxFadeDistanceKm));
+    return vec4(dist,dist_normalized);
 }
 
 vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 

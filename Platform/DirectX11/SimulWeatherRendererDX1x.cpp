@@ -140,6 +140,7 @@ void SimulWeatherRendererDX1x::RecompileShaders()
 	SkyBlendTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_sky_blend");
 	imageTexture			=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
 	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	BaseWeatherRenderer::RecompileShaders();
 }
 
 void SimulWeatherRendererDX1x::InvalidateDeviceObjects()
