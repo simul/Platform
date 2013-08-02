@@ -25,6 +25,9 @@
 #define STATIC static
 
 #ifndef __cplusplus
+	#define SIMUL_TEXTURE_REGISTER(buff_num) : register(t##buff_num)
+	#define SIMUL_SAMPLER_REGISTER(buff_num) : register(s##buff_num)
+	#define SIMUL_BUFFER_REGISTER(buff_num) : register(b##buff_num)
 	#define R0 : register(b0)
 	#define R1 : register(b1)
 	#define R2 : register(b2)

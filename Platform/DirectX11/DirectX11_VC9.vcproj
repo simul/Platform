@@ -645,6 +645,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\CrossPlatform\sky_constants.sl"
+				>
+			</File>
+			<File
 				RelativePath="..\CrossPlatform\states.sl"
 				>
 			</File>

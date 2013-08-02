@@ -85,13 +85,11 @@ typedef std::basic_string<TCHAR> tstring;
 SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem)
 	:simul::sky::BaseSkyRenderer(sk,mem)
 	,m_pd3dDevice(NULL)
-	,m_pVtxDecl(NULL)
+	,m_pCubemapVtxDecl(NULL)
 	,m_pStarsVtxDecl(NULL)
 	,m_pVertexBuffer(NULL)
 	,m_pStarsVertexBuffer(NULL)
 	,m_pSkyEffect(NULL)
-	,m_hTechniqueSky(NULL)
-	,m_hTechniqueEarthShadow(NULL)
 	,m_hTechniqueSky_CUBEMAP(NULL)
 	,m_hTechniqueFade3DTo2D(NULL)
 	,m_hTechniqueSun(NULL)
@@ -151,13 +149,13 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	// Vertex declaration
 	{
 		D3D1x_PASS_DESC PassDesc;
-		m_hTechniqueSky->GetPassByIndex(0)->GetDesc(&PassDesc);
+		m_hTechniqueSky_CUBEMAP->GetPassByIndex(0)->GetDesc(&PassDesc);
 		D3D1x_INPUT_ELEMENT_DESC decl[]=
 		{
 			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
 		};
-		SAFE_RELEASE(m_pVtxDecl);
-		hr=m_pd3dDevice->CreateInputLayout(decl,1, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pVtxDecl);
+		SAFE_RELEASE(m_pCubemapVtxDecl);
+		hr=m_pd3dDevice->CreateInputLayout(decl,1, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pCubemapVtxDecl);
 	}
 	D3D1x_BUFFER_DESC desc=
 	{
@@ -211,6 +209,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 		SAFE_RELEASE(m_pStarsVertexBuffer);
 	}
 	earthShadowUniforms.RestoreDeviceObjects(m_pd3dDevice);
+	skyConstants.RestoreDeviceObjects(m_pd3dDevice);
 }
 
 void SimulSkyRendererDX1x::InvalidateDeviceObjects()
@@ -232,7 +231,7 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	UnmapFade();
 	SAFE_RELEASE(m_pSkyEffect);
 	SAFE_RELEASE(m_pVertexBuffer);
-	SAFE_RELEASE(m_pVtxDecl);
+	SAFE_RELEASE(m_pCubemapVtxDecl);
 
 	SAFE_RELEASE(flare_texture_SRV);
 	SAFE_RELEASE(moon_texture_SRV);
@@ -252,6 +251,7 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	numFadeDistances=numFadeElevations=numAltitudes=0;
 	SAFE_RELEASE(d3dQuery);
 	earthShadowUniforms.InvalidateDeviceObjects();
+	skyConstants.InvalidateDeviceObjects();
 	delete [](star_vertices,memoryInterface);
 }
 
@@ -508,23 +508,10 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	V_CHECK(CreateEffect(m_pd3dDevice,&m_pSkyEffect,"simul_sky.fx",defines));
-	m_hTechniqueSky				=m_pSkyEffect->GetTechniqueByName("simul_sky");
-	m_hTechniqueEarthShadow		=m_pSkyEffect->GetTechniqueByName("simul_sky_earthshadow");
-	m_hTechniqueSky_CUBEMAP		=m_pSkyEffect->GetTechniqueByName("simul_sky_CUBEMAP");
-	worldViewProj				=m_pSkyEffect->GetVariableByName("worldViewProj")->AsMatrix();
-
-	projMatrix					=m_pSkyEffect->GetVariableByName("proj")->AsMatrix();
-	cubemapViews				=m_pSkyEffect->GetVariableByName("cubemapViews")->AsMatrix();
-
-	lightDirection				=m_pSkyEffect->GetVariableByName("lightDir")->AsVector();
-	mieRayleighRatio			=m_pSkyEffect->GetVariableByName("mieRayleighRatio")->AsVector();
-	hazeEccentricity			=m_pSkyEffect->GetVariableByName("hazeEccentricity")->AsScalar();
-	skyInterp					=m_pSkyEffect->GetVariableByName("skyInterp")->AsScalar();
-	altitudeTexCoord			=m_pSkyEffect->GetVariableByName("altitudeTexCoord")->AsScalar();
+	m_hTechniqueSky_CUBEMAP		=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
 
 	m_hTechniqueFade3DTo2D		=m_pSkyEffect->GetTechniqueByName("simul_fade_3d_to_2d");
 
-	colour						=m_pSkyEffect->GetVariableByName("colour")->AsVector();
 	m_hTechniqueSun				=m_pSkyEffect->GetTechniqueByName("simul_sun");
 	m_hTechniquePointStars		=m_pSkyEffect->GetTechniqueByName("simul_stars");
 	m_hTechniqueFlare			=m_pSkyEffect->GetTechniqueByName("simul_flare");
@@ -539,6 +526,7 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	m_hTechniqueQuery			=m_pSkyEffect->GetTechniqueByName("simul_query");
 
 	earthShadowUniforms.LinkToEffect(m_pSkyEffect,"EarthShadowUniforms");
+	skyConstants.LinkToEffect(m_pSkyEffect,"SkyConstants");
 }
 
 float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
@@ -589,7 +577,8 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
 	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
 	sunlight.w=1.0f/(max_bright*exposure_hint);
 	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
-	colour->SetFloatVector(sunlight);
+	skyConstants.colour=sunlight;
+	skyConstants.Apply(context);
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 	UtilityRenderer::RenderAngledQuad(context,sun_dir,sun_angular_size*2.f,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
 	// Start the query
@@ -658,13 +647,13 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		return false;
 	if(!loss_2d||!inscatter_2d||!skylight_2d)
 		return false;
-	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
-	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,0.0,0.0,0.0};
-	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
-	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());HRESULT hr;
+	skyConstants.skyInterp			=skyKeyframer->GetInterpolation();
+	skyConstants.altitudeTexCoord	=skyKeyframer->GetAltitudeTexCoord();
+	skyConstants.Apply(context);
+	HRESULT hr;
 	{
 		V_CHECK(fadeTexture1->SetResource(loss_textures_SRV[0]));
 		V_CHECK(fadeTexture2->SetResource(loss_textures_SRV[1]));
@@ -688,6 +677,9 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		inscatter_2d->Deactivate(context);
 	}
+	// We will bake the overcast effect into the alpha channel of the skylight texture.
+	
+	ID3D1xEffectTechnique* m_hTechniqueSkylightAndOvercast		=m_pSkyEffect->GetTechniqueByName("skylight_and_overcast");
 	{
 		V_CHECK(fadeTexture1->SetResource(skyl_textures_SRV[0]));
 		V_CHECK(fadeTexture2->SetResource(skyl_textures_SRV[1]));
@@ -729,11 +721,12 @@ void SimulSkyRendererDX1x::RenderIllumationBuffer(void *c)
 	if(oc)
 		oc->GetOvercastData(skyKeyframer->GetDaytime(),overcast,overcast_base_km,overcast_scale_km);
 		
-	simul::dx11::setParameter(m_pSkyEffect,"overcast",overcast*skyKeyframer->GetOvercastEffectStrength());
-	simul::dx11::setParameter(m_pSkyEffect,"overcastBaseKm",overcast_base_km);
-	simul::dx11::setParameter(m_pSkyEffect,"overcastRangeKm",overcast_scale_km);
-	simul::dx11::setParameter(m_pSkyEffect,"eyePosition",cam_pos);
-	simul::dx11::setParameter(m_pSkyEffect,"maxFadeDistanceKm",skyKeyframer->GetMaxDistanceKm());
+	skyConstants.overcast			=overcast*skyKeyframer->GetOvercastEffectStrength();
+	skyConstants.overcastBaseKm		=overcast_base_km;
+	skyConstants.overcastRangeKm	=overcast_scale_km;
+	skyConstants.eyePosition		=cam_pos;
+	skyConstants.maxFadeDistanceKm	=skyKeyframer->GetMaxDistanceKm();
+	skyConstants.Apply(context);
 	
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,1.0,0.0,1.0};
@@ -780,7 +773,7 @@ static int test = 0;
 
 bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	HRESULT hr=S_OK;
 	D3DXMATRIX tmp1, tmp2,wvp;
 	D3DXMatrixInverse(&tmp1,NULL,&view);
@@ -794,15 +787,16 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&wvp,&tmp2);
-	simul::dx11::setMatrix(m_pSkyEffect,"worldViewProj",(const float *)(&wvp));
-	hr=ApplyPass(m_pImmediateContext,m_hTechniquePointStars->GetPassByIndex(0));
+	skyConstants.worldViewProj=(const float *)(&wvp);
+	hr=ApplyPass(pContext,m_hTechniquePointStars->GetPassByIndex(0));
 	if (test < 5)
 	{
 		return true;
 	}
-	float sb=skyKeyframer->GetStarlight().x;
-	float star_brightness=sb*skyKeyframer->GetStarBrightness();
-	simul::dx11::setParameter(m_pSkyEffect,"starBrightness",star_brightness);
+	float sb					=skyKeyframer->GetStarlight().x;
+	float star_brightness		=sb*skyKeyframer->GetStarBrightness();
+	skyConstants.starBrightness	=star_brightness;
+	skyConstants.Apply(pContext);
 
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
 	if(!star_vertices||current_num_stars!=num_stars)
@@ -811,9 +805,9 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 	}
 
 	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+	pContext->IAGetInputLayout( &previousInputLayout );
 
-	m_pImmediateContext->IASetInputLayout( m_pStarsVtxDecl );
+	pContext->IASetInputLayout( m_pStarsVtxDecl );
 	UINT stride = sizeof(StarVertext);
 	UINT offset = 0;
     UINT Strides[1];
@@ -821,20 +815,20 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
     Strides[0] = 0;
     Offsets[0] = 0;
 
-	m_pImmediateContext->IASetVertexBuffers(	0,						// the first input slot for binding
+	pContext->IASetVertexBuffers(	0,						// the first input slot for binding
 												1,						// the number of buffers in the array
 												&m_pStarsVertexBuffer,	// the array of vertex buffers
 												&stride,				// array of stride values, one for each buffer
 												&offset );				// array of offset values, one for each buffer
 
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-	m_pImmediateContext->Draw(num_stars,0);
+	pContext->Draw(num_stars,0);
 
-	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+	pContext->IASetPrimitiveTopology(previousTopology);
+	pContext->IASetInputLayout( previousInputLayout );
 	SAFE_RELEASE(previousInputLayout);
 	return true;
 }
@@ -842,67 +836,6 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 bool SimulSkyRendererDX1x::Render(void *context,bool blend)
 {
 	HRESULT hr=S_OK;
-	skyInterp->SetFloat(skyKeyframer->GetInterpolation());
-	altitudeTexCoord->SetFloat(skyKeyframer->GetAltitudeTexCoord());
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	D3DXMATRIX tmp1,tmp2,wvp;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
-	D3DXMatrixIdentity(&world);
-	//set up matrices
-	world._41=cam_pos.x;
-	world._42=cam_pos.y;
-	world._43=cam_pos.z;
-	float alt_km=0.001f*(cam_pos.z);
-	//simul::dx11::FixProjectionMatrix(proj,1000.f);
-	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
-	worldViewProj->SetMatrix(&wvp._11);
-#if 0 // Code for single-pass cubemap. This DX11 feature is not so hot.
-	if(cubemap)
-	{
-		D3DXMATRIX cube_proj;
-		D3DXMatrixPerspectiveFovLH(&cube_proj,
-			3.1415926536f/2.f,
-			1.f,
-			1.f,
-			200000.f);
-		B_RETURN(projMatrix->SetMatrix(&cube_proj._11));
-		B_RETURN(cubemapViews->SetMatrixArray((const float*)view_matrices,0,6));
-	}
-#endif
-	PIXBeginNamedEvent(0,"Render Sky");
-	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
-	skylTexture->SetResource(skylight_2d->buffer_texture_SRV);
-
-	simul::sky::float4 mie_rayleigh_ratio=skyKeyframer->GetMieRayleighRatio();
-	simul::sky::float4 sun_dir(skyKeyframer->GetDirectionToSun());
-	simul::sky::float4 light_dir(skyKeyframer->GetDirectionToLight(alt_km));
-
-	lightDirection->SetFloatVector(light_dir);
-	mieRayleighRatio->SetFloatVector(mie_rayleigh_ratio);
-	hazeEccentricity->SetFloat(skyKeyframer->GetMieEccentricity());
-	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
-									skyKeyframer->GetAltitudeKM()
-									,skyKeyframer->GetDirectionToSun());
-	if(e.enable)
-	{
-		// Update constant buffer
-		earthShadowUniforms.earthShadowNormal	=e.normal;
-		earthShadowUniforms.radiusOnCylinder	=e.radius_on_cylinder;
-		earthShadowUniforms.maxFadeDistance		=skyKeyframer->GetMaxDistanceKm()/skyKeyframer->GetSkyInterface()->GetPlanetRadius();
-		earthShadowUniforms.terminatorDistance	=e.terminator_distance_km/skyKeyframer->GetMaxDistanceKm();
-		earthShadowUniforms.sunDir				=sun_dir;
-		earthShadowUniforms.Apply(m_pImmediateContext);
-		hr=ApplyPass(m_pImmediateContext,m_hTechniqueEarthShadow->GetPassByIndex(0));
-	}
-	else
-	{
-		hr=ApplyPass(m_pImmediateContext,m_hTechniqueSky->GetPassByIndex(0));
-	}
-		
-	DrawCube(context);
-
-	PIXEndNamedEvent();
 	return (hr==S_OK);
 }
 
@@ -944,7 +877,8 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
 		int x1=x0,x2=x0+s+8;
 		int y=y0+i*(s+4);
-		altitudeTexCoord->SetFloat(atc);
+		skyConstants.altitudeTexCoord=atc;
+		skyConstants.Apply(context);
 		fadeTexture1->SetResource(loss_textures_SRV[0]);
 		UtilityRenderer::DrawQuad2(context,x1	,y+8		,s,s	,m_pSkyEffect,techniqueShowFade);
 		fadeTexture1->SetResource(loss_textures_SRV[1]);
@@ -969,7 +903,7 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 
 void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	D3DXMATRIX tmp1,tmp2,wvp;
 	D3DXMatrixIdentity(&world);
 	float tan_x=1.0f/proj(0, 0);
@@ -987,11 +921,13 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m
 	world._42=pos.y;
 	world._43=pos.z;
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
-	worldViewProj->SetMatrix(&wvp._11);
+	skyConstants.worldViewProj=&wvp._11;
+	skyConstants.worldViewProj.transpose();
+	skyConstants.Apply(pContext);
 	ID3D1xEffectTechnique*				tech		=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
 	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pSkyEffect->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
-	HRESULT hr=ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
+	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));
 	DrawCube(context);
 }
 
@@ -1003,28 +939,28 @@ void SimulSkyRendererDX1x::DrawCube(void *context)
     UINT Offsets[1];
     Strides[0] = 0;
     Offsets[0] = 0;
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+	pContext->IAGetInputLayout( &previousInputLayout );
 
-	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
+	pContext->IASetVertexBuffers(	0,					// the first input slot for binding
 												1,					// the number of buffers in the array
 												&m_pVertexBuffer,	// the array of vertex buffers
 												&stride,			// array of stride values, one for each buffer
 												&offset );			// array of offset values, one for each buffer
 
 	// Set the input layout
-	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+	pContext->IASetInputLayout(m_pCubemapVtxDecl);
 
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
+	pContext->IAGetPrimitiveTopology(&previousTopology);
 
-	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	m_pImmediateContext->Draw(36,0);
+	pContext->Draw(36,0);
 
-	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+	pContext->IASetPrimitiveTopology(previousTopology);
+	pContext->IASetInputLayout( previousInputLayout );
 	SAFE_RELEASE(previousInputLayout);
 }
 

@@ -18,6 +18,10 @@
 	#define uniform
 	#define cbuffer struct
 
+	#define SIMUL_BUFFER_REGISTER(buff_num)
+	#define SIMUL_SAMPLER_REGISTER(buff_num)
+	#define SIMUL_BUFFER_REGISTER(buff_num)
+
 	#define R0
 	#define R1
 	#define R2

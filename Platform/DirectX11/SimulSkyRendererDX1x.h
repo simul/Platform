@@ -108,15 +108,12 @@ protected:
 	
 	ID3D1xDevice*						m_pd3dDevice;
 	ID3D1xBuffer*						m_pVertexBuffer;
-	ID3D1xInputLayout*					m_pVtxDecl;
+	ID3D1xInputLayout*					m_pCubemapVtxDecl;
 	ID3D1xInputLayout*					m_pStarsVtxDecl;
 	ID3D1xBuffer*						m_pStarsVertexBuffer;
 	ID3D1xEffect*						m_pSkyEffect;
 	ID3D1xQuery*						d3dQuery;
 
-	ID3D1xEffectMatrixVariable*			worldViewProj;
-	ID3D1xEffectTechnique*				m_hTechniqueSky;
-	ID3D1xEffectTechnique*				m_hTechniqueEarthShadow;
 	ID3D1xEffectTechnique*				m_hTechniqueSky_CUBEMAP;
 	ID3D1xEffectTechnique*				m_hTechniqueFade3DTo2D;
 	ID3D1xEffectTechnique*				m_hTechniqueSun;
@@ -124,16 +121,6 @@ protected:
 	ID3D1xEffectTechnique*				m_hTechniqueFlare;
 	ID3D1xEffectTechnique*				m_hTechniquePlanet;
 	ID3D1xEffectTechnique*				m_hTechniquePointStars;
-	ID3D1xEffectVectorVariable*			lightDirection;
-	ID3D1xEffectVectorVariable*			mieRayleighRatio;
-	ID3D1xEffectScalarVariable*			hazeEccentricity;
-	ID3D1xEffectScalarVariable*			overcastFactor;
-	ID3D1xEffectScalarVariable*			skyInterp;
-	ID3D1xEffectScalarVariable*			altitudeTexCoord;
-	ID3D1xEffectVectorVariable*			colour;
-
-	ID3D1xEffectMatrixVariable*			projMatrix;
-	ID3D1xEffectMatrixVariable*			cubemapViews;
 
 	ID3D1xEffectShaderResourceVariable*	flareTexture;
 	ID3D1xEffectShaderResourceVariable*	inscTexture;
@@ -142,6 +129,7 @@ protected:
 	ID3D1xEffectShaderResourceVariable*	fadeTexture2;
 	
 	ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
+	ConstantBuffer<SkyConstants>		skyConstants;
 
 	ID3D1xTexture3D*					loss_textures[3];
 	ID3D1xTexture3D*					inscatter_textures[3];

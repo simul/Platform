@@ -23,34 +23,17 @@ Texture3D fadeTexture1;
 Texture3D fadeTexture2;
 
 TextureCube cubeTexture;
+cbuffer cbPerObject : register(b11)
+{
+	float4 rect;
+};
 
 #include "CppHLSL.hlsl"
 #include "states.hlsl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/earth_shadow_uniforms.sl"
 #include "../../CrossPlatform/earth_shadow.sl"
-
-cbuffer cbPerObject : register(b10)
-{
-	matrix worldViewProj	;
-	matrix proj				;
-	matrix cubemapViews[6]	;
-	float4 eyePosition		;
-	float4 lightDir			;
-	float4 mieRayleighRatio;
-	float hazeEccentricity;
-	float skyInterp;
-	float altitudeTexCoord;
-	float4 colour;
-	float starBrightness;
-	float radiusRadians;
-	float overcast;
-	float overcastBaseKm;
-	float overcastRangeKm;
-	float maxFadeDistanceKm;
-	float4 rect;
-};
-
+#include "../../CrossPlatform/sky_constants.sl"
 //------------------------------------
 // Structures 
 //------------------------------------
@@ -122,36 +105,10 @@ float4 PS_DrawCubemap(vertexOutput IN): SV_TARGET
 	return float4(result.rgb,1.f);
 }
 
-float4 PS_Main( vertexOutput IN): SV_TARGET
-{
-	float3 view		=normalize(IN.wDirection.xyz);
-	float sine		=view.z;
-	float2 texc2	=float2(1.0,0.5*(1.0-sine));
-	float4 insc		=inscTexture.Sample(samplerState,texc2);
-	float cos0		=dot(lightDir.xyz,view.xyz);
-	float4 skyl		=skylTexture.Sample(samplerState,texc2);
-	float3 result	=InscatterFunction(insc,cos0);
-	result			+=skyl.rgb;
-	return float4(result.rgb,1.f);
-}
-
-float4 PS_EarthShadow( vertexOutput IN): SV_TARGET
-{
-	float3 view		=normalize(IN.wDirection.xyz);
-	float sine		=view.z;
-	float2 texc2	=float2(1.0,0.5*(1.0-sine));
-	float4 insc		=EarthShadowFunction(texc2,view);
-	float cos0		=dot(lightDir.xyz,view.xyz);
-	float4 skyl		=skylTexture.Sample(samplerState,texc2);
-	float3 result	=InscatterFunction(insc,cos0);
-	result			+=skyl.rgb;
-	return float4(result.rgb,1.f);
-}
-
 float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float azimuth			=3.1415926536*2.0*IN.texCoords.x;
-	float sine				=-1.0+2.0*(IN.texCoords.y*targetTextureSize/(targetTextureSize-1.0));
+	float sine				=-1.0+2.0*(IN.texCoords.y*targetTextureSize.y/(targetTextureSize.y-1.0));
 	float cosine			=sqrt(1.0-sine*sine);
 	float3 view				=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
 	float2 fade_texc		=vec2(1.0,IN.texCoords.y);
@@ -219,6 +176,19 @@ float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 	float4 result=lerp(colour1,colour2,skyInterp);
     return result;
 }
+
+float4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
+{
+	float3 texc=float3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
+	float4 colour1=fadeTexture1.Sample(cmcSamplerState,texc);
+	float4 colour2=fadeTexture2.Sample(cmcSamplerState,texc);
+	float4 result;
+	result.rgb=lerp(colour1.rgb,colour2.rgb,skyInterp);
+	result.a=1.0;
+	// Now the overcastedness 
+    return result;
+}
+
 
 vertexOutput3Dto2D VS_ShowSkyTexture(idOnly IN) 
 {
@@ -311,7 +281,6 @@ float4 PS_Flare( svertexOutput IN): SV_TARGET
 
 struct starsVertexInput
 {
-	uint vertex_id			: SV_VertexID;
     float3 position			: POSITION;
     float2 tex				: TEXCOORD0;
 };
@@ -374,70 +343,6 @@ float4 PS_Planet(svertexOutput IN): SV_TARGET
 	return result;
 }
 
-/*
-//------------------------------------
-// Technique
-//------------------------------------
-DepthStencilState DisableDepth
-{
-	DepthEnable = FALSE;
-	DepthWriteMask = ZERO;
-}; 
-DepthStencilState EnableDepth
-{
-	DepthEnable = TRUE;
-	DepthWriteMask = ALL;
-#ifdef REVERSE_DEPTH
-	DepthFunc = GREATER_EQUAL;
-#else
-	DepthFunc = LESS_EQUAL;
-#endif
-}; 
-BlendState DontBlend
-{
-	BlendEnable[0] = FALSE;
-};
-BlendState AddBlend
-{
-	BlendEnable[0] = TRUE;
-	SrcBlend = One;
-	DestBlend = One;
-};
-BlendState AlphaBlend
-{
-	BlendEnable[0] = TRUE;
-	SrcBlend = SRC_ALPHA;
-	DestBlend = INV_SRC_ALPHA;
-};
-RasterizerState RenderNoCull { CullMode = none; };
-RasterizerState CullClockwise { CullMode = back; };
-*/
-technique11 simul_sky
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Main()));
-    }
-}
-
-technique11 simul_sky_earthshadow
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-	//	SetBlendState(AddBlend,float4( 0.0f, 0.0f, 0.0f, 0.5f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_EarthShadow()));
-    }
-}
-
 technique11 simul_show_sky_texture
 {
     pass p0 
@@ -474,6 +379,19 @@ technique11 simul_fade_3d_to_2d
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
+    }
+}
+ 
+technique11 skylight_and_overcast
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_SkylightAndOvercast3Dto2D()));
     }
 }
 
