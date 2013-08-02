@@ -131,8 +131,6 @@ void SimulWeatherRendererDX1x::RecompileShaders()
 {
 	if(!m_pd3dDevice)
 		return;
-	BaseWeatherRenderer::RecompileShaders();
-	framebuffer.RecompileShaders();
 	SAFE_RELEASE(m_pTonemapEffect);
 	std::map<std::string,std::string> defines;
 	if(ReverseDepth)

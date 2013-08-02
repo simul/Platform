@@ -23,8 +23,6 @@ namespace simul
 			void SetGenerateMips(bool);
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 			void RestoreDeviceObjects(void* pd3dDevice);
-			//! Call to recompile the shaders - useful for debugging.
-			void RecompileShaders();
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
@@ -58,7 +56,6 @@ namespace simul
 			DXGI_FORMAT depth_format;
 			bool Destroy();
 			ID3D1xDevice*						m_pd3dDevice;
-			ID3D1xInputLayout*					m_pBufferVertexDecl;
 
 		public:
 			ID3D1xRenderTargetView*				m_pHDRRenderTarget;
