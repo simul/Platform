@@ -325,7 +325,7 @@ bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool,const void
 	cloud2DConstants.worldViewProj			=worldViewProj;
 	cloud2DConstants.origin					=X1+cloudKeyframer->GetCloudInterface()->GetWindOffset();
 	cloud2DConstants.globalScale			=ci->GetCloudWidth();
-	cloud2DConstants.detailScale			=ff*ci->GetFractalWavelength();
+	cloud2DConstants.detailScale			=ff;//*ci->GetFractalWavelength();
 	cloud2DConstants.cloudEccentricity		=cloudKeyframer->GetInterpolatedKeyframe().light_asymmetry;
 	cloud2DConstants.cloudInterp			=cloudKeyframer->GetInterpolation();
 	cloud2DConstants.eyePosition			=cam_pos;

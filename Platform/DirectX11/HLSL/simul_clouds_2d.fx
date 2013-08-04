@@ -1,6 +1,7 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
 uniform sampler2D imageTexture;
+uniform sampler2D noiseTexture;
 uniform sampler2D coverageTexture1;
 uniform sampler2D coverageTexture2;
 uniform sampler2D lossTexture;
@@ -33,28 +34,23 @@ struct a2v
 struct v2f
 {
     float4 hPosition	: SV_POSITION;
-    float4 clip_pos		: TEXCOORD3;
-	vec2 texc_global	: TEXCOORD0;
-	vec2 texc_detail	: TEXCOORD1;
-	vec3 wPosition		: TEXCOORD2;
+    float4 clip_pos		: TEXCOORD0;
+	vec3 wPosition		: TEXCOORD1;
 };
 
 v2f MainVS(a2v IN)
 {
 	v2f OUT;
-	vec3 pos		=IN.position.xyz;
-	pos.z			+=origin.z;
-	
-	float Rh=planetRadius+origin.z;
-	float dist=length(pos.xy);
+	vec3 pos			=IN.position.xyz;
+	pos.z				+=origin.z;
+	float Rh			=planetRadius+origin.z;
+	float dist			=length(pos.xy);
 	float vertical_shift=sqrt(Rh*Rh-dist*dist)-Rh;
-	pos.z+=vertical_shift;
-	pos.xy			+=eyePosition.xy;
-	OUT.clip_pos	=mul(worldViewProj,vec4(pos.xyz,1.0));
-	OUT.hPosition	=OUT.clip_pos;
-    OUT.wPosition	=pos.xyz;
-    OUT.texc_global	=(pos.xy-origin.xy)/globalScale;
-    OUT.texc_detail	=(pos.xy-origin.xy)/detailScale;
+	pos.z				+=vertical_shift;
+	pos.xy				+=eyePosition.xy;
+	OUT.clip_pos		=mul(worldViewProj,vec4(pos.xyz,1.0));
+	OUT.hPosition		=OUT.clip_pos;
+    OUT.wPosition		=pos.xyz;
     return OUT;
 }
 
@@ -71,9 +67,16 @@ float4 MainPS(v2f IN) : SV_TARGET
 	if(1.0>depth)
 		discard;
 #endif
+	vec2 wOffset		=IN.wPosition.xy-origin.xy;
+	vec2 noiseOffset	=fractalAmplitude*texture(noiseTexture,wOffset/100000.0);
+    vec2 texc_global	=wOffset/globalScale;
+    vec2 texc_detail	=wOffset/detailScale;
+	texc_detail			+=noiseOffset;
 	float dist			=depthToDistance(depth,depth_pos.xy,nearZ,farZ,tanHalfFov);
-	vec4 result			=Clouds2DPS_illum(IN.texc_global,IN.texc_detail,IN.wPosition,dist);
-	return result;
+	vec3 wEyeToPos		=IN.wPosition-eyePosition;
+	vec4 ret			=Clouds2DPS_illum(texc_global,texc_detail,wEyeToPos,dist,cloudInterp,sunlight.rgb,lightDir.xyz,lightResponse);
+	ret.rgb				*=exposure;
+	return ret;
 }
 
 technique11 simul_clouds_2d
@@ -132,6 +135,20 @@ float4 SimplePS(v2f2 IN) : SV_TARGET
 	return texture2D(imageTexture,IN.texCoords);
 }
 
+float4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET
+{
+    vec4 detail				=texture2D(imageTexture,IN.texCoords);
+	float opacity			=saturate(detail.a);
+	vec3 colour				=vec4(0.5,0.5,1.0,1.0);
+	if(opacity<=0)
+		return vec4(colour,1.0);
+	float light				=exp(-detail.r*extinction);
+	float scattered_light	=light;//detail.a*exp(-light*Y(coverage)*32.0);
+	colour					*=1.0-opacity;
+	colour					+=opacity*sunlight*(lightResponse.y+lightResponse.x)*scattered_light;
+    return vec4(colour,1.0);
+}
+
 float rand(vec2 co)
 {
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -140,46 +157,69 @@ float rand(vec2 co)
 float4 RandomPS(v2f2 IN) : SV_TARGET
 {
     vec4 c=vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords));
-    return c;
+    return frac(c);
 }
 
 float4 DetailPS(v2f2 IN) : SV_TARGET
 {
+#if 0
+	vec4 result=vec4(0,0,0,0);
+	vec2 texcoords=IN.texCoords;
+	float mul=.5;
+	float tot=0.0;
+	vec4 hal=vec4(0.5,0.5,0.5,0.5);
+    for(int i=0;i<octaves;i++)
+    {
+		// from -1 to 1:
+		vec4 c=2.0*(texture2D(imageTexture,texcoords)-hal);
+		texcoords+=mul*vec2(0.2,0.2)*c.xy;
+		texcoords*=2.0;
+		result+=mul*c;
+		tot+=mul;
+		mul*=persistence;
+    }
+	//put range to -1 to 1
+	result/=tot;
+	// Then rescale to go between 0 and 1.
+	result=hal+0.5*result;
+  //  result.rgb=saturate(result.rgb*1.5);
+	result.a=saturate(result.a-0.4)/0.4;
+    result=saturate(result);
+    return result;
+#else
 	vec4 result=vec4(0,0,0,0);
 	vec2 texcoords=IN.texCoords;
 	float mul=0.5;
-    for(int i=0;i<24;i++)
+    for(int i=0;i<octaves;i++)
     {
-		vec4 c=texture(imageTexture,texcoords);
+		vec4 c=texture2D(imageTexture,texcoords);
 		texcoords*=2.0;
 		texcoords+=mul*vec2(0.2,0.2)*c.xy;
 		result+=mul*c;
 		mul*=persistence;
     }
-    result.rgb=saturate(result*1.5);
-	result.a=saturate(result.a-0.4)/0.4;
+    result.rgb=saturate(result.rrr*1.5);
+	result.a=saturate(result.a+2.0*cloudiness-1.0-0.3)*1.0/0.7;
     return result;
+#endif
 }
 
 float4 DetailLightingPS(v2f2 IN) : SV_TARGET
 {
 	vec4 c=texture(imageTexture,IN.texCoords);
-	return c;
-	vec4 result=c;
 	vec2 texcoords=IN.texCoords;
 	float mul=0.5;
-	vec2 offset=lightDir2d.xy/512.0;
+	vec2 offset=lightDir2d.xy/256.0;
 	float dens_dist=0.0;
     for(int i=0;i<16;i++)
     {
 		texcoords+=offset;
 		vec4 v=texture(imageTexture,texcoords);
 		dens_dist+=v.a;
-		//if(v.a==0)
-			//dens_dist*=0.9;
+		if(v.a==0)
+			dens_dist*=0.9;
     }
-    float l=c.a*exp(-dens_dist/2.0);
-    return vec4(dens_dist/32.0,0,0,c.a);
+    return vec4(dens_dist,dens_dist,dens_dist,c.a);
 }
 
 technique11 simple
@@ -192,6 +232,19 @@ technique11 simple
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
 		SetPixelShader(CompileShader(ps_4_0,SimplePS()));
+    }
+}
+
+technique11 show_detail_texture
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
+		SetPixelShader(CompileShader(ps_4_0,ShowDetailTexturePS()));
     }
 }
 

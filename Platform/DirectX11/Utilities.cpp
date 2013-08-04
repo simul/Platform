@@ -450,6 +450,8 @@ void UtilityRenderer::PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,con
 
 void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexXyzRgba *vertices,int vertex_count,bool strip)
 {
+	if(!vertex_count)
+		return;
 	PIXWrapper(0xFF0000FF,"DrawLines")
 	{
 	HRESULT hr=S_OK;

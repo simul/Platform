@@ -499,6 +499,8 @@ ERROR_CHECK
 	size_t pos=0;
 	while((pos=src.find("#include",pos))<src.length())
 	{
+		if(pos>0&&src[pos-1]!='\n')
+			continue;
 		int start_of_line=pos;
 		int start_line=GetLineNumber(src,pos);
 		pos+=9;

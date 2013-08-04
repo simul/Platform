@@ -93,12 +93,12 @@ void SimulGLWeatherRenderer::EnableCloudLayers()
 SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 {
 	InvalidateDeviceObjects();
-	delete(simulSkyRenderer,memoryInterface);
-	delete(simulCloudRenderer,memoryInterface);
-	delete(simul2DCloudRenderer,memoryInterface);
-	delete(simulLightningRenderer,memoryInterface);
-	delete(simulPrecipitationRenderer,memoryInterface);
-	delete(simulAtmosphericsRenderer,memoryInterface);
+	operator delete(simulSkyRenderer,memoryInterface);
+	operator delete(simulCloudRenderer,memoryInterface);
+	operator delete(simul2DCloudRenderer,memoryInterface);
+	operator delete(simulLightningRenderer,memoryInterface);
+	operator delete(simulPrecipitationRenderer,memoryInterface);
+	operator delete(simulAtmosphericsRenderer,memoryInterface);
 }
 
 void SimulGLWeatherRenderer::SetScreenSize(int w,int h)

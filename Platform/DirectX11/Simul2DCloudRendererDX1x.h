@@ -58,6 +58,7 @@ namespace simul
 			ID3D11InputLayout*			inputLayout;
 			
 			ConstantBuffer<Cloud2DConstants>	cloud2DConstants;
+			ConstantBuffer<Detail2DConstants>	detail2DConstants;
 			int num_indices;
 			
 			ID3D1xShaderResourceView*	skyLossTexture_SRV;

@@ -252,15 +252,15 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(d3dQuery);
 	earthShadowUniforms.InvalidateDeviceObjects();
 	skyConstants.InvalidateDeviceObjects();
-	delete [](star_vertices,memoryInterface);
+	operator delete [](star_vertices,memoryInterface);
 }
 
 bool SimulSkyRendererDX1x::Destroy()
 {
 	InvalidateDeviceObjects();
-	delete(loss_2d,memoryInterface);
-	delete(inscatter_2d,memoryInterface);
-	delete(skylight_2d,memoryInterface);
+	operator delete(loss_2d,memoryInterface);
+	operator delete(inscatter_2d,memoryInterface);
+	operator delete(skylight_2d,memoryInterface);
 	return true;
 }
 
@@ -746,7 +746,7 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	SAFE_RELEASE(m_pStarsVertexBuffer);
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
 	num_stars=current_num_stars;
-	delete [](star_vertices,memoryInterface);
+	operator delete [](star_vertices,memoryInterface);
 	star_vertices=new(memoryInterface) StarVertext[num_stars];
 	static float d=100.f;
 	for(int i=0;i<num_stars;i++)

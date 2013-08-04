@@ -819,34 +819,11 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 		helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
 	}
 
-
-
-
-
 	static int select_slice=-1;
 	int ii=0;
 	unsigned el,az;
 	helper->GetGrid(el,az);
-	float base_alt=GetCloudInterface()->GetCloudBaseZ();
-	float wavelength=cloudKeyframer->GetCloudInterface()->GetFractalRepeatLength();
 	SetLayerConstants(helper,layerConstants);
-/*	for(std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
-		i!=helper->GetSlices().end();i++,ii++)
-	{
-		if(select_slice>=0&&select_slice!=ii)
-			continue;
-		simul::clouds::CloudGeometryHelper::Slice *s=*i;
-		if(s==NULL)
-			continue;
-		LayerData &inst=layerConstants.layers[ii];
-		inst.layerFade		=s->fadeIn;
-		inst.layerDistance	=s->distance;
-		inst.verticalShift	=helper->GetVerticalShiftDueToCurvature(s->distance,base_alt);
-		inst.noiseScale		=s->distance/wavelength;//s->distance/wavelength;
-		inst.noiseOffset.x	=s->noise_tex_x/wavelength;
-		inst.noiseOffset.y	=s->noise_tex_y/wavelength;
-	}
-	layerConstants.layerCount			=helper->GetSlices().size();*/
 	int numInstances=(int)helper->GetSlices().size();
 	if(select_slice>=0)
 		numInstances=1;

@@ -1075,8 +1075,8 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 				vertex=&vertices[v];
 				vertex->position=pos;
 				vertex->texCoords=tex_pos;
-				vertex->texCoordsNoise.x=V.noise_tex_x;
-				vertex->texCoordsNoise.y=V.noise_tex_y;
+				vertex->texCoordsNoise.x=0;//V.noise_tex_x;
+				vertex->texCoordsNoise.y=0;//V.noise_tex_y;
 				vertex->layerFade=fade;
 				vertex->sunlightColour.x=sunlight.x;
 				vertex->sunlightColour.y=sunlight.y;
