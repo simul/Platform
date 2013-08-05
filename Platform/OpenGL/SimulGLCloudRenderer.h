@@ -43,7 +43,7 @@ public:
 	//! Show the cross sections on-screen.
 	void RenderCrossSections(void *,int width,int height);
 	void SetLossTexture(void *);
-	void SetInscatterTextures(void *,void *);
+	void SetInscatterTextures(void* t,void *s,void *o);
 	
 	CloudShadowStruct GetCloudShadowTexture();
 	const char *GetDebugText();

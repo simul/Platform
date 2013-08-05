@@ -1,11 +1,13 @@
 #pragma once
 #include "Simul/Base/BufferedStringStreamBuf.h"
+#include "Simul/Base/RuntimeError.h"
 #include <windows.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <time.h>
 #include <direct.h>
+#include <cerrno>
 
 class VisualStudioDebugOutput : public simul::base::BufferedStringStreamBuf
 {
@@ -17,6 +19,8 @@ public:
 		,old_cout_buffer(NULL)
 		,old_cerr_buffer(NULL)
 	{
+		if(errno!=0)
+			simul::base::RuntimeError(strerror(errno));
 		to_output_window=send_to_output_window;
 		to_logfile=send_to_logfile;
 		char buffer[_MAX_PATH];
@@ -32,6 +36,8 @@ public:
 			fn+="/";
 			fn+=logfilename;
 			logFile.open(fn.c_str());
+		if(errno!=0)
+			simul::base::RuntimeError(strerror(errno));
 		}
 		old_cout_buffer=std::cout.rdbuf(this);
 		old_cerr_buffer=std::cerr.rdbuf(this);

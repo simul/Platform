@@ -37,7 +37,7 @@ namespace simul
 			bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 			void RenderCrossSections(void *context,int width,int height);
 			void SetLossTexture(void *l);
-			void SetInscatterTextures(void *i,void *s);
+			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
 			void SetWindVelocity(float x,float y);
 		protected:

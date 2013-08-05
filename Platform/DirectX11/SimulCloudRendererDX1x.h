@@ -79,7 +79,7 @@ namespace simul
 			//! Get the list of three textures used for cloud rendering.
 			CloudShadowStruct GetCloudShadowTexture();
 			void SetLossTexture(void *t);
-			void SetInscatterTextures(void *t,void *s);
+			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
 			// implementing CloudRenderCallback:
 			void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
@@ -161,6 +161,7 @@ namespace simul
 			ID3D1xShaderResourceView*				lightningIlluminationTextureResource;
 			ID3D1xShaderResourceView*				skyLossTexture_SRV;
 			ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
+			ID3D1xShaderResourceView*				overcInscTexture_SRV;
 			ID3D1xShaderResourceView*				skylightTexture_SRV;
 			ID3D1xShaderResourceView*				illuminationTexture_SRV;
 			

@@ -62,9 +62,10 @@ void SimulAtmosphericsRendererDX1x::SetLossTexture(void* t)
 	skyLossTexture_SRV=(ID3D1xShaderResourceView*)t;
 }
 
-void SimulAtmosphericsRendererDX1x::SetInscatterTextures(void* t,void *s)
+void SimulAtmosphericsRendererDX1x::SetInscatterTextures(void* i,void *s,void *o)
 {
-	skyInscatterTexture_SRV=(ID3D1xShaderResourceView*)t;
+	skyInscatterTexture_SRV=(ID3D1xShaderResourceView*)i;
+	overcInscTexture_SRV=(ID3D1xShaderResourceView*)o;
 	skylightTexture_SRV=(ID3D1xShaderResourceView*)s;
 }
 
@@ -142,7 +143,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
 	
 	lossTexture->SetResource(skyLossTexture_SRV);
-	inscTexture->SetResource(skyInscatterTexture_SRV);
+	inscTexture->SetResource(overcInscTexture_SRV);
 	skylTexture->SetResource(skylightTexture_SRV);
 	
 	simul::dx11::setParameter(effect,"illuminationTexture",illuminationTexture_SRV);
@@ -202,6 +203,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 	skylTexture->SetResource(skylightTexture_SRV);
 	simul::dx11::setParameter(effect,"illuminationTexture",illuminationTexture_SRV);
 	simul::dx11::setParameter(effect,"depthTexture",depthTexture_SRV);
+	simul::dx11::setParameter(effect,"overcTexture",overcInscTexture_SRV);
 	simul::dx11::setParameter(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	twoPassOverlayTechnique	=effect->GetTechniqueByName("simul_atmospherics_overlay");
 	

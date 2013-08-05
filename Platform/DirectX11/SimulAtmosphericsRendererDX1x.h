@@ -45,7 +45,7 @@ namespace simul
 
 			// BaseAtmosphericsRenderer.
 			void SetLossTexture(void* t);
-			void SetInscatterTextures(void* t,void *s);
+			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
 			void SetCloudsTexture(void* t);
 			void RecompileShaders();
@@ -81,6 +81,7 @@ namespace simul
 
 			ID3D1xShaderResourceView*					skyLossTexture_SRV;
 			ID3D1xShaderResourceView*					skyInscatterTexture_SRV;
+			ID3D1xShaderResourceView*					overcInscTexture_SRV;
 			ID3D1xShaderResourceView*					skylightTexture_SRV;
 
 			ID3D1xShaderResourceView*					clouds_texture;

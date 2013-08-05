@@ -105,6 +105,39 @@ float4 PS_DrawCubemap(vertexOutput IN): SV_TARGET
 	return float4(result.rgb,1.f);
 }
 
+vec2 OvercastDistances(vec2 fade_texc,vec3 view)
+{
+	float3 alt_range;
+	float alt_km					=eyePosition.z/1000.0;
+	float sine						=view.z;
+	vec2 range_km;
+	float cutoff_alt_km				=overcastBaseKm+0.5*overcastRangeKm;
+	if(alt_km>cutoff_alt_km)
+	{
+		if(sine<0)
+			range_km.x				=max(0.0,(cutoff_alt_km-alt_km)/sine);
+		else
+			range_km.x				=maxFadeDistanceKm;
+		range_km.y					=maxFadeDistanceKm;
+	}
+	else
+	{
+		range_km.x					=0.0;
+		if(sine>0)
+			range_km.y				=max(0.0,(cutoff_alt_km-alt_km)/sine);
+		else
+			range_km.y				=maxFadeDistanceKm;
+	}
+	return sqrt(range_km/maxFadeDistanceKm);
+}
+
+vec2 LimitWithin(vec2 original,vec2 maximum)
+{
+	original=max(original,maximum.xx);
+	original=min(original,maximum.yy);
+	return original;
+}
+
 float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float azimuth			=3.1415926536*2.0*IN.texCoords.x;
@@ -112,38 +145,10 @@ float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 	float cosine			=sqrt(1.0-sine*sine);
 	float3 view				=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
 	float2 fade_texc		=vec2(1.0,IN.texCoords.y);
-	vec2 dist				=EarthShadowDistances(fade_texc,view);
-	if(dist.x>dist.y)
-		dist.x=dist.y;
-	float3 alt_range;
-	float alt_km					=eyePosition.z/1000.0;
-	/*alt_range.x						=alt_km+sine*dist.x*dist.x*maxFadeDistanceKm;
-	alt_range.y						=alt_km+sine*dist.y*dist.y*maxFadeDistanceKm;
-	if(alt_range.y<alt_range.x)
-	{
-		float temp					=alt_range.y;
-		alt_range.y					=alt_range.x;
-		alt_range.x					=temp;
-	}
-	alt_range.z						=alt_range.y-alt_range.x;
-	// So we have two altitudes in metres, min and max.
-	float range_below_km			=max(0.0,overcastBaseKm-alt_range.x);
-	float start_within_km			=max(0,alt_range.x-overcastBaseKm);
-	float end_within_km				=min(overcastRangeKm,alt_range.y-start_within_km);
-	float shadowed					=overcast*(range_below_km+0.5*(end_within_km*end_within_km-start_within_km*start_within_km)/overcastRangeKm)/alt_range.z;*/
-// Find the distance to the midpoint of the cloud volume. This is the transition point.
-	float mid_clouds_km				=overcastBaseKm+overcastRangeKm*0.25;
-	float dist_to_cloud_layer_km	=0.0;
-	float raw						=(mid_clouds_km-alt_km)/(sine+0.001*sign(sine));
-	if(raw>0)
-		dist_to_cloud_layer_km		=raw;
-	else
-		dist_to_cloud_layer_km		=maxFadeDistanceKm;
-	float near_km					=dist_to_cloud_layer_km;
-	float far_km					=maxFadeDistanceKm;
-	// Convert to a distance texcoord:
-	vec2 dist_normalized			=sqrt(saturate(vec2(near_km,far_km)/maxFadeDistanceKm));
-    return vec4(dist,dist_normalized);
+	vec2 full_bright_range	=EarthShadowDistances(fade_texc,view);
+	vec2 overcast_range		=OvercastDistances(fade_texc,view);
+	overcast_range			=LimitWithin(overcast_range,full_bright_range);
+    return vec4(full_bright_range,overcast_range);
 }
 
 vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 
@@ -177,6 +182,30 @@ float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
     return result;
 }
 
+vec4 PS_Overc3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
+{
+	// Texcoords representing the full distance from the eye to the given point.
+	vec2 fade_texc			=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
+	vec4 insc				=inscTexture.Sample(cmcSamplerState,fade_texc);
+
+	// Only need the y-coordinate of the illumination texture to get the overcast range.
+	vec2 illum_texc			=vec2(0.5,fade_texc.y);
+	vec4 illum_lookup		=texture_wrap_mirror(illuminationTexture,illum_texc);
+	vec2 overcDistTexc		=illum_lookup.zw;
+
+	vec2 overc_near_texc	=vec2(overcDistTexc.x,fade_texc.y);
+	vec4 overc_near			=inscTexture.Sample(cmcSamplerState,overc_near_texc);
+	
+	vec2 overc_far_texc		=vec2(min(overcDistTexc.y,fade_texc.x),fade_texc.y);
+	vec4 overc_far			=inscTexture.Sample(cmcSamplerState,overc_far_texc);
+
+	vec4 overc				=max(vec4(0,0,0,0),overc_far-overc_near);
+
+	insc=max(vec4(0,0,0,0),insc-overc*overcast);
+
+    return insc;
+}
+
 float4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float3 texc=float3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
@@ -188,7 +217,6 @@ float4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
 	// Now the overcastedness 
     return result;
 }
-
 
 vertexOutput3Dto2D VS_ShowSkyTexture(idOnly IN) 
 {
@@ -379,6 +407,19 @@ technique11 simul_fade_3d_to_2d
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Fade3DTo2D()));
+    }
+}
+ 
+technique11 simul_overc_3d_to_2d
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_Overc3DTo2D()));
     }
 }
  

@@ -396,9 +396,9 @@ void Simul2DCloudRendererDX11::SetLossTexture(void *t)
 	skyLossTexture_SRV=(ID3D11ShaderResourceView*)t;
 }
 
-void Simul2DCloudRendererDX11::SetInscatterTextures(void *t,void *s)
+void Simul2DCloudRendererDX11::SetInscatterTextures(void* i,void *s,void *o)
 {
-	skyInscatterTexture_SRV=(ID3D11ShaderResourceView*)t;
+	skyInscatterTexture_SRV=(ID3D11ShaderResourceView*)i;
 	skylightTexture_SRV=(ID3D11ShaderResourceView*)s;
 }
 

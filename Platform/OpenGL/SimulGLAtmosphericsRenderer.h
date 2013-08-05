@@ -31,7 +31,7 @@ public:
 	{
 		loss_texture=(GLuint)t;
 	}
-	void SetInscatterTextures(void* t,void *s)
+	void SetInscatterTextures(void* t,void *s,void *o)
 	{
 		inscatter_texture=(GLuint)t;
 		skylight_texture=(GLuint)s;

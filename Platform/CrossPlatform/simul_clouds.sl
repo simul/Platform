@@ -15,6 +15,16 @@ Texture2D illuminationTexture	: register(t10);
 SamplerState cloudSamplerState	: register( s0);
 #endif
 
+vec4 calcDensity(vec3 pos,float layerFade)
+{
+	vec4 density1=sampleLod(cloudDensity1,cloudSamplerState,pos,0);
+	vec4 density2=sampleLod(cloudDensity2,cloudSamplerState,pos,0);
+	vec4 density=lerp(density1,density2,cloud_interp);
+	density.z*=layerFade;
+	//density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
+	return density;
+}
+
 vec4 calcDensity(vec3 texCoords,float layerFade,vec3 noiseval)
 {
 	vec3 pos=texCoords.xyz+fractalScale.xyz*noiseval;
@@ -54,6 +64,21 @@ vec3 applyFades(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier
 	vec4 insc=sampleLod(inscTexture		,cmcSamplerState,fade_texc,0);
 	vec3 skyl=sampleLod(skylTexture		,cmcSamplerState,fade_texc,0).rgb;
 	vec3 inscatter=earthshadowMultiplier*InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
+	final*=loss;
+#ifdef INFRARED
+	final=skyl.rgb;
+#else
+	final+=skyl+inscatter;
+#endif
+    return final;
+}
+
+vec3 applyFades2(vec3 final,vec2 fade_texc,float cos0,vec4 insc)
+{
+	vec4 l=sampleLod(lossTexture		,cmcSamplerState,fade_texc,0);
+	vec3 loss=l.rgb;
+	vec3 skyl=sampleLod(skylTexture		,cmcSamplerState,fade_texc,0).rgb;
+	vec3 inscatter=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	final*=loss;
 #ifdef INFRARED
 	final=skyl.rgb;

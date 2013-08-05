@@ -79,7 +79,7 @@ public:
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 
-	void Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s);
+	void Get2DLossAndInscatterTextures(void* *loss,void* *insc,void* *skyl,void* *overc);
 	void *GetIlluminationTexture();
 
 	float GetFadeInterp() const;
@@ -127,6 +127,7 @@ protected:
 	ID3D1xEffectShaderResourceVariable*	skylTexture;
 	ID3D1xEffectShaderResourceVariable*	fadeTexture1;
 	ID3D1xEffectShaderResourceVariable*	fadeTexture2;
+	ID3D1xEffectShaderResourceVariable*	illuminationTexture;
 	
 	ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
 	ConstantBuffer<SkyConstants>		skyConstants;
@@ -138,6 +139,7 @@ protected:
 	// Small framebuffers we render to once per frame to perform fade interpolation.
 	simul::dx11::Framebuffer*			loss_2d;
 	simul::dx11::Framebuffer*			inscatter_2d;
+	simul::dx11::Framebuffer*			overcast_2d;
 	simul::dx11::Framebuffer*			skylight_2d;
 
 	// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.

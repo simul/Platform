@@ -8,6 +8,7 @@ Texture2D depthTexture;
 Texture2D imageTexture;
 Texture2D lossTexture;
 Texture2D inscTexture;
+Texture2D overcTexture;
 Texture2D skylTexture;
 Texture2D illuminationTexture;
 Texture2D cloudShadowTexture;
@@ -116,17 +117,12 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
 	vec2 nearFarTexc	=illum_lookup.xy;
-	vec2 cloudDistTexc	=illum_lookup.zw;
 	vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
-
-	vec2 full_near_texc	=vec2(max(cloudDistTexc.x,near_texc.x),fade_texc.y);
-	vec2 full_far_texc	=vec2(min(cloudDistTexc.y,far_texc.x),fade_texc.y);
-
-	vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
 	vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
-	vec4 insc			=insc_far-insc_near;
+	vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
 
+	vec4 insc			=insc_far-insc_near;
 	float cos0			=dot(view,lightDir);
 	float3 colour		=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	//colour				=illum_lookup.z;
@@ -159,40 +155,31 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
-	vec4 insc1			=texture_wrap_mirror(inscTexture,fade_texc);
+	vec4 insc1			=texture_wrap_mirror(inscTexture,fade_texc)-texture_wrap_mirror(overcTexture,fade_texc);
 	float ill			=1.0;
 	float eff_remaining	=1.0;
 	for(int i=0;i<C;i++)
 	{
 		float interp	=pow((float(i)+1.0)/float(C),1.0);
 		float dist_0	=dist_1;
-		dist_1			=dist_max*interp;
+		dist_1			=godrays_distances[i]/maxDistance;//dist_max*interp;
 		float dist		=0.5*(dist_0+dist_1);
 		if(dist<solid_dist)
 		{
 			float eff		=1.0;//eff_remaining*exp(-dist/dist_max);
 			fade_texc.x		=sqrt(dist_0);
 			float d			=dist*maxDistance;
-			ill				=GetIlluminationAt(viewPosition+view*d);
-			float shadow	=eff*(1.0-ill);
+			ill				=eff*GetIlluminationAt(viewPosition+view*d);
 			vec4 insc0		=insc1;
-			insc1			=texture_wrap_mirror(inscTexture,fade_texc);
+			insc1			=texture_wrap_mirror(inscTexture,fade_texc)-texture_wrap_mirror(overcTexture,fade_texc);
 			vec4 insc_diff	=max(insc1-insc0,vec4(0,0,0,0));
-			total_insc		+=insc_diff*shadow;
+			total_insc		+=insc_diff*ill;
 		}
 	}
-	if(1.0<=solid_dist)
-	{
-		vec4 insc0		=insc1;
-		fade_texc.x		=sqrt(solid_dist);
-		insc1			=texture_clamp_mirror(inscTexture,fade_texc);
-		vec4 insc_diff	=max(insc1-insc0,vec4(0,0,0,0));
-		//total_insc		+=insc_diff;
-	}
-	float3 gr			=-InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
+	float3 gr			=InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
 	//colour			+=texture_clamp_mirror(skylTexture,fade_texc).rgb;
 	gr					*=exposure*(1.0-illum_lookup.z);
-	gr					=min(gr,vec3(0.0,0.0,0.0));
+	gr					=max(gr,vec3(0.0,0.0,0.0));
     return vec4(gr,1.0);
 }
 

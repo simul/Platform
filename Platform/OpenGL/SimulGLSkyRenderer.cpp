@@ -629,11 +629,12 @@ void SimulGLSkyRenderer::RenderPlanet(void *,void* tex,float planet_angular_size
 	glUseProgram(NULL);
 }
 
-void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s)
+void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o)
 {
 	*l1=(void*)loss_texture;
 	*i1=(void*)insc_texture;
 	*s=(void*)skyl_texture;
+	o=NULL;
 }
 
 void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d

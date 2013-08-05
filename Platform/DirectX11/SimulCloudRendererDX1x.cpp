@@ -101,6 +101,7 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,computeConstantBuffer(NULL)
 	,skyLossTexture_SRV(NULL)
 	,skyInscatterTexture_SRV(NULL)
+	,overcInscTexture_SRV(NULL)
 	,skylightTexture_SRV(NULL)
 	,illuminationTexture_SRV(NULL)
 	,noiseTextureResource(NULL)
@@ -124,9 +125,10 @@ void SimulCloudRendererDX1x::SetLossTexture(void *t)
 	skyLossTexture_SRV=(ID3D11ShaderResourceView*)t;
 }
 
-void SimulCloudRendererDX1x::SetInscatterTextures(void *t,void *s)
+void SimulCloudRendererDX1x::SetInscatterTextures(void *i,void *s,void *o)
 {
-	skyInscatterTexture_SRV=(ID3D11ShaderResourceView*)t;
+	skyInscatterTexture_SRV=(ID3D11ShaderResourceView*)i;
+	overcInscTexture_SRV=(ID3D11ShaderResourceView*)o;
 	skylightTexture_SRV=(ID3D11ShaderResourceView*)s;
 }
 
@@ -361,6 +363,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(instanceBuffer);
 	skyLossTexture_SRV		=NULL;
 	skyInscatterTexture_SRV	=NULL;
+	overcInscTexture_SRV	=NULL;
 	skylightTexture_SRV		=NULL;
 	illuminationTexture_SRV	=NULL;
 	SAFE_RELEASE(blendAndWriteAlpha);
@@ -778,7 +781,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	noiseTexture->SetResource(noiseTextureResource);
 	noiseTexture3D->SetResource(noiseTexture3DResource);
 	skyLossTexture->SetResource(skyLossTexture_SRV);
-	skyInscatterTexture->SetResource(skyInscatterTexture_SRV);
+	skyInscatterTexture->SetResource(overcInscTexture_SRV);
 	skylightTexture->SetResource(skylightTexture_SRV);
 	depthTexture->SetResource(depthTexture_SRV);
 	//simul::dx11::setParameter(m_pCloudEffect,"depthTexture",depthTexture_SRV);

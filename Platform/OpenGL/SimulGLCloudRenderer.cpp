@@ -502,7 +502,7 @@ helper->Update2DNoiseCoords();
 	{
 	ERROR_CHECK
 		simul::clouds::CloudGeometryHelper::Slice *s=*i;
-		helper->MakeLayerGeometry(GetCloudInterface(),s,effective_world_radius_metres);
+		helper->MakeLayerGeometry(s,effective_world_radius_metres);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		setParameter(program,"layerNumber",(int)idx);
@@ -547,7 +547,7 @@ void SimulGLCloudRenderer::SetLossTexture(void *l)
 	loss_tex=((GLuint)l);
 }
 
-void SimulGLCloudRenderer::SetInscatterTextures(void *i,void *s)
+void SimulGLCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
 {
 	inscatter_tex=((GLuint)i);
 	skylight_tex=((GLuint)s);

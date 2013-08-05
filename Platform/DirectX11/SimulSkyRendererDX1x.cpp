@@ -101,6 +101,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	,moon_texture_SRV(NULL)
 	,loss_2d(NULL)
 	,inscatter_2d(NULL)
+	,overcast_2d(NULL)
 	,skylight_2d(NULL)
 	,d3dQuery(NULL)
 	,mapped_fade(-1)
@@ -120,6 +121,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	skyKeyframer->SetCalculateAllAltitudes(true);
 	loss_2d		=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	inscatter_2d=new(memoryInterface) simul::dx11::Framebuffer(0,0);
+	overcast_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	skylight_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	loss_2d->SetDepthFormat(0);
 	illumination_fb.SetDepthFormat(0);
@@ -181,6 +183,11 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 		inscatter_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
 		inscatter_2d->RestoreDeviceObjects(dev);
 	}
+	if(overcast_2d)
+	{
+		overcast_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
+		overcast_2d->RestoreDeviceObjects(dev);
+	}
 	if(skylight_2d)
 	{
 		skylight_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
@@ -223,6 +230,10 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	{
 		inscatter_2d->InvalidateDeviceObjects();
 	}
+	if(overcast_2d)
+	{
+		overcast_2d->InvalidateDeviceObjects();
+	}
 	if(skylight_2d)
 	{
 		skylight_2d->InvalidateDeviceObjects();
@@ -260,6 +271,7 @@ bool SimulSkyRendererDX1x::Destroy()
 	InvalidateDeviceObjects();
 	operator delete(loss_2d,memoryInterface);
 	operator delete(inscatter_2d,memoryInterface);
+	operator delete(overcast_2d,memoryInterface);
 	operator delete(skylight_2d,memoryInterface);
 	return true;
 }
@@ -439,6 +451,11 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 		inscatter_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
 		inscatter_2d->RestoreDeviceObjects(m_pd3dDevice);
 	}
+	if(overcast_2d)
+	{
+		overcast_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
+		overcast_2d->RestoreDeviceObjects(m_pd3dDevice);
+	}
 	if(skylight_2d)
 	{
 		skylight_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
@@ -523,6 +540,7 @@ void SimulSkyRendererDX1x::RecompileShaders()
 
 	fadeTexture1				=m_pSkyEffect->GetVariableByName("fadeTexture1")->AsShaderResource();
 	fadeTexture2				=m_pSkyEffect->GetVariableByName("fadeTexture2")->AsShaderResource();
+	illuminationTexture			=m_pSkyEffect->GetVariableByName("illuminationTexture")->AsShaderResource();
 	m_hTechniqueQuery			=m_pSkyEffect->GetTechniqueByName("simul_query");
 
 	earthShadowUniforms.LinkToEffect(m_pSkyEffect,"EarthShadowUniforms");
@@ -647,12 +665,20 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		return false;
 	if(!loss_2d||!inscatter_2d||!skylight_2d)
 		return false;
+	// First render the illumination buffer, to get earthShadow and overcast properties.
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
+	RenderIllumationBuffer(context);
+	// Current keyframe properties:
+	const simul::sky::SkyKeyframer::SkyKeyframe *K=skyKeyframer->GetInterpolatedKeyframe();
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,0.0,0.0,0.0};
 	skyConstants.skyInterp			=skyKeyframer->GetInterpolation();
 	skyConstants.altitudeTexCoord	=skyKeyframer->GetAltitudeTexCoord();
+	skyConstants.overcast			=skyKeyframer->GetSkyInterface()->GetOvercast();
+	skyConstants.eyePosition		=cam_pos;
 	skyConstants.Apply(context);
+
+	illuminationTexture->SetResource((ID3D11ShaderResourceView*)illumination_fb.GetColorTex());
 	HRESULT hr;
 	{
 		V_CHECK(fadeTexture1->SetResource(loss_textures_SRV[0]));
@@ -665,6 +691,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		loss_2d->Deactivate(context);
 	}
+	
 	{
 		V_CHECK(fadeTexture1->SetResource(insc_textures_SRV[0]));
 		V_CHECK(fadeTexture2->SetResource(insc_textures_SRV[1]));
@@ -672,12 +699,19 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		
 		inscatter_2d->Activate(context);
 			context->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
-			if(inscatter_2d->m_pBufferDepthSurface)
-				context->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		inscatter_2d->Deactivate(context);
 	}
-	// We will bake the overcast effect into the alpha channel of the skylight texture.
+	ID3D1xEffectTechnique* hTechniqueOverc		=m_pSkyEffect->GetTechniqueByName("simul_overc_3d_to_2d");
+	// We will bake the overcast effect into the overcast_2d texture.
+	{
+		V_CHECK(inscTexture->SetResource((ID3D11ShaderResourceView*)inscatter_2d->GetColorTex()));
+		V_CHECK(ApplyPass(context,hTechniqueOverc->GetPassByIndex(0)));
+		overcast_2d->Activate(context);
+			context->ClearRenderTargetView(overcast_2d->m_pHDRRenderTarget,clearColor);
+			simul::dx11::UtilityRenderer::DrawQuad(context);
+		overcast_2d->Deactivate(context);
+	}
 	
 	ID3D1xEffectTechnique* m_hTechniqueSkylightAndOvercast		=m_pSkyEffect->GetTechniqueByName("skylight_and_overcast");
 	{
@@ -696,8 +730,6 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	V_CHECK(fadeTexture1->SetResource(NULL));
 	V_CHECK(fadeTexture2->SetResource(NULL));
 	V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-
-	RenderIllumationBuffer(context);
 	return true;
 }
 #include "Simul/Sky/OvercastCallback.h"
@@ -866,6 +898,8 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 	y+=size+8;
 	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
 	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
+	inscTexture->SetResource(overcast_2d->buffer_texture_SRV);
+	UtilityRenderer::DrawQuad2(context,x0-size-2,y,size,size,m_pSkyEffect,techniqueShowSky);
 	y+=size+8;
 	inscTexture->SetResource(skylight_2d->buffer_texture_SRV);
 	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
@@ -970,7 +1004,7 @@ void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 	proj=p;
 }
 
-void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s)
+void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s,void* *o)
 {
 	if(loss_2d)
 		*l1=(void*)loss_2d->buffer_texture_SRV;
@@ -984,6 +1018,10 @@ void SimulSkyRendererDX1x::Get2DLossAndInscatterTextures(void* *l1,void* *i1,voi
 		*s=(void*)skylight_2d->buffer_texture_SRV;
 	else
 		*s=NULL;
+	if(overcast_2d)
+		*o=(void*)overcast_2d->buffer_texture_SRV;
+	else
+		*o=NULL;
 }
 
 void *SimulSkyRendererDX1x::GetIlluminationTexture()

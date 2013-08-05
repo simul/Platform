@@ -445,7 +445,7 @@ void SimulGL2DCloudRenderer::SetLossTexture(void *l)
 }
 static GLint earthShadowUniformsBindingIndex=3;
 
-void SimulGL2DCloudRenderer::SetInscatterTextures(void *i,void *s)
+void SimulGL2DCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
 {
 	inscatter_tex=((GLuint)i);
 	skylight_tex=((GLuint)s);

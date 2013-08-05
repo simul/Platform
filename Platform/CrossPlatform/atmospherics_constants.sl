@@ -47,5 +47,6 @@ uniform_buffer AtmosphericsPerViewConstants R12
 	uniform float fill3;
 	uniform float shadowRange;
 	uniform float fill4,fill5,fill6;
+	uniform float godrays_distances[100];
 };
 #endif

@@ -987,7 +987,7 @@ void SimulCloudRenderer::InternalRenderRaytrace(int viewport_id)
 
 		// The NOISE matrix is for 2D noise texcoords:
 		//hr=m_pCloudEffect->SetMatrix(noiseMatrix,(const D3DXMATRIX*)noise_orient.GetInverseMatrix().RowPointer(0));
-		hr=m_pCloudEffect->SetFloat(fractalRepeatLength,GetCloudInterface()->GetFractalRepeatLength());
+		//hr=m_pCloudEffect->SetFloat(fractalRepeatLength,GetCloudInterface()->GetFractalRepeatLength());
 
 		hr=m_pCloudEffect->SetTexture(raytraceLayerTexture,raytrace_layer_texture);
 		simul::sky::float4 cloud_scales=GetCloudScales();
@@ -1045,7 +1045,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	for(iter i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++)
 	{
 		float distance=(*i)->distance;
-		helper->MakeLayerGeometry(GetCloudInterface(),*i,6378000.f);
+		helper->MakeLayerGeometry(*i,6378000.f);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		float fade=(*i)->fadeIn;
@@ -1430,7 +1430,7 @@ void SimulCloudRenderer::SetLossTexture(void *t1)
 	sky_loss_texture=(LPDIRECT3DBASETEXTURE9)t1;
 }
 
-void SimulCloudRenderer::SetInscatterTextures(void *i,void *s)
+void SimulCloudRenderer::SetInscatterTextures(void *i,void *s,void *o)
 {
 	sky_inscatter_texture=(LPDIRECT3DBASETEXTURE9)i;
 	skylight_texture=(LPDIRECT3DBASETEXTURE9)s;

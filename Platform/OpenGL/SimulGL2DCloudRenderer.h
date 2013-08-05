@@ -46,7 +46,7 @@ public:
 	//! Set the platform-dependent atmospheric loss texture.
 	void SetLossTexture(void *l);
 	//! Set the platform-dependent atmospheric inscatter texture.
-	void SetInscatterTextures(void *i,void *s);
+	void SetInscatterTextures(void* t,void *s,void *o);
 	void SetWindVelocity(float x,float y);
 
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y);
