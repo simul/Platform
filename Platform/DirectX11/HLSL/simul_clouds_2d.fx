@@ -71,7 +71,7 @@ float4 MainPS(v2f IN) : SV_TARGET
 	vec2 noiseOffset	=fractalAmplitude*texture(noiseTexture,wOffset/100000.0);
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
-	texc_detail			+=noiseOffset;
+	//texc_detail			+=noiseOffset;
 	float dist			=depthToDistance(depth,depth_pos.xy,nearZ,farZ,tanHalfFov);
 	vec3 wEyeToPos		=IN.wPosition-eyePosition;
 	vec4 ret			=Clouds2DPS_illum(texc_global,texc_detail,wEyeToPos,dist,cloudInterp,sunlight.rgb,lightDir.xyz,lightResponse);
@@ -199,7 +199,7 @@ float4 DetailPS(v2f2 IN) : SV_TARGET
 		mul*=persistence;
     }
     result.rgb=saturate(result.rrr*1.5);
-	result.a=saturate(result.a+2.0*cloudiness-1.0-0.3)*1.0/0.7;
+	result.a=saturate(result.a+2.0*cloudiness-1.0)*1.0;
     return result;
 #endif
 }

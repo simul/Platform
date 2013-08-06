@@ -18,7 +18,7 @@ uniform_buffer GpuCloudConstants R8
 	uniform float zPosition;
 	uniform float p,q,r;
 	uniform vec2 extinctions;
-	uniform float s,t;
+	uniform float s,ttt;
 	uniform float zPixel;
 	uniform float u,v,w;
 	uniform float zSize;
