@@ -157,13 +157,13 @@ float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
 	float distance_off_centre		=IN.texCoords.x*IN.texCoords.x;
 	vec3 pos_cartesian				=distance_off_centre*vec3(cos(theta),sin(theta),0.0);
 	vec2 illumination				=vec2(1.0,1.0);
-	float Z							=(startZMetres-extentZMetres)/1000.0;
-	static const int C=128;
+	float U							=-1.0;//(startZMetres-extentZMetres)/1000.0;
+	static const int C=16;
 	for(int i=0;i<C;i++)
 	{
 		float u						=1.0-float(i)/float(C);
-		float z						=startZMetres+extentZMetres*(1.0-u);
-		pos_cartesian.z				=z;
+		//float z						=startZMetres+extentZMetres*(1.0-u);
+		pos_cartesian.z				=u;
 		vec3 wpos					=mul(shadowMatrix,vec4(pos_cartesian,1.0)).xyz;
 		vec3 texc					=(wpos-cornerPos)*inverseScales;
 		vec4 density1				=sampleLod(cloudDensity1,wwcSamplerState,texc,0);
@@ -171,17 +171,18 @@ float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
 		vec4 density				=lerp(density1,density2,cloud_interp);
 		if(density.z>0)
 		{
-			illumination				=lerp(illumination,vec2(0,0),density1.z);
-			Z							=lerp(Z,z/1000.0,density.z);
+			illumination			=lerp(illumination,vec2(0,0),density1.z);
+			U						=lerp(U,u,density.z);
 		}
+		//Z=wpos.z;
 	//	else if(illumination.x<1.0)
 		{
 		//	break;
 		}
 	}
-	float4 result		=vec4(illumination,Z,1.0);
+	//float4 result		=vec4(illumination,Z,1.0);
 	//illumination		=1.0-(1.0-illumination)*exp(-IN.texCoords.x*4.0);
-	return float4(illumination,Z,1.0);
+	return float4(illumination,U,1.0);
 }
 
 float4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET

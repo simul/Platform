@@ -220,6 +220,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 		p1=simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
 	}
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,relativeViewportTextureRegionXYWH);
+	SetGodraysConstants(atmosphericsPerViewConstants,view);
 
 	simul::math::Matrix4x4 shadowMatrix					=cloudShadowStruct.shadowMatrix;
 	simul::math::Matrix4x4 invShadowMatrix;
