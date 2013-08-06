@@ -156,11 +156,6 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
 	D3DXMATRIX p1=proj;
-	if(ReverseDepth)
-	{
-		// Convert the proj matrix into a normal non-reversed matrix.
-		p1=simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
-	}
 
 	AtmosphericsPerViewConstants atmosphericsPerViewConstants;
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1, relativeViewportTextureRegionXYWH);
@@ -214,11 +209,6 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 	or.SetPosition((const float*)cam_pos);
 	AtmosphericsPerViewConstants atmosphericsPerViewConstants;
 	D3DXMATRIX p1=proj;
-	if(ReverseDepth)
-	{
-		// Convert the proj matrix into a normal non-reversed matrix.
-		p1=simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
-	}
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,relativeViewportTextureRegionXYWH);
 	SetGodraysConstants(atmosphericsPerViewConstants,view);
 

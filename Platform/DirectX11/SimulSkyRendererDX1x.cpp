@@ -560,7 +560,6 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 	D3DXMATRIX tmp=proj;
 	static float ff=0.0001f;
 	float zFar=(1.f+ff)/tan(sun_angular_size);
-	simul::dx11::FixProjectionMatrix(proj,zFar*ff,zFar);
 /*
 	// Start the query
 	d3dQuery->Begin();

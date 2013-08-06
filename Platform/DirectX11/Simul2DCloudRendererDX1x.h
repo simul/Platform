@@ -17,7 +17,6 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
-#include "Simul/Platform/CrossPlatform/simul_2d_clouds.hs"
 
 namespace simul
 {

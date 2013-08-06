@@ -12,6 +12,7 @@ Texture2D overcTexture;
 Texture2D skylTexture;
 Texture2D illuminationTexture;
 Texture2D cloudShadowTexture;
+
 SamplerState samplerState: register(s1)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -26,6 +27,7 @@ SamplerState clampWrapSamplerState: register(s8)
 	AddressV = Wrap;
 	AddressW = Clamp;
 };
+
 #include "../../CrossPlatform/godrays.sl"
 
 #define pi (3.1415926536)

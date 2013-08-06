@@ -197,71 +197,6 @@ namespace simul
 			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 			D3DXMatrixTranspose(wvp,&tmp2);
 		}
-		void FixProjectionMatrix(D3DXMATRIX &proj,float zFar)
-		{
-			// If right-handed:
-			if(proj._34<0)
-			{
-				if(proj._43>0)
-				{
-					float zF	=proj._43/proj._33;
-					float zN	=proj._43*zF/(zF+proj._43);
-					proj._33	=zN/(zFar-zN);
-					proj._43	=zFar*zN/(zFar-zN);
-
-				// F=_43/_33
-				// _33(F-N)=N
-				// N(1+_33)=_33 F
-				// _43(F-N)=FN
-				// N(F+_43)=_43 F
-				// N=_43 F/(F+_43)
-
-// depth=z/w
-//				z=(NZ+FN)/(F-N)
-//				w=-Z
-//				depth=(NZ+FN)/(F-N)/-Z
-//				depth=-N(Z+F)/Z(F-N)
-//				depth Z(F-N)=-NZ-FN
-//				Z ( depth(F-N) +N)=-FN
-//				Z=-FN/(N+d(F-N))
-				}
-				else
-				{
-					float zN	=proj._43/proj._33;
-					float zF	=proj._43*zN/(zN+proj._43);
-					proj._33	=-zFar/(zFar-zN);
-					proj._43	=-zN*zFar/(zFar-zN);
-					// _33(F-N)=-F
-					// F(1+_33)=_33 N
-// depth=z/w
-//				z=(-FZ-FN)/(F-N)
-//				w=-Z
-//				depth=-(FZ+FN)/(F-N)/-Z
-//				depth(F-N)Z=FZ+FN
-//				Z=FN/(depth(F-N)-F)
-				}
-			}
-		}
-		void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar)
-		{
-			if(proj._34<0)
-			{
-				if(proj._43>0)
-				{
-					float zF=proj._43/proj._33;
-					float zN=proj._43*zF/(zF+proj._43);
-					proj._33=-zFar/(zFar-zNear);
-					proj._43=-zNear*zFar/(zFar-zNear);
-				}
-				else
-				{
-					float zN=proj._43/proj._33;
-					float zF=proj._43*zN/(zN+proj._43);
-					proj._33=-zFar/(zFar-zNear);
-					proj._43=-zNear*zFar/(zFar-zNear);
-				}
-			}
-		}
 		D3DXMATRIX ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj)
 		{
 			D3DXMATRIX p=proj;
@@ -274,7 +209,6 @@ namespace simul
 			}
 			return p;
 		}
-
 	}
 }
 

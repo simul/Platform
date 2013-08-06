@@ -60,8 +60,6 @@ namespace simul
 							,int w,int l,int d
 							,DXGI_FORMAT format);
 							
-		void SIMUL_DIRECTX11_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zFar);
-		void SIMUL_DIRECTX11_EXPORT FixProjectionMatrix(struct D3DXMATRIX &proj,float zNear,float zFar);
 		D3DXMATRIX SIMUL_DIRECTX11_EXPORT ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj);
 	
 		void setSamplerState(ID3D1xEffect *effect	,const char *name	,ID3D11SamplerState * value);

@@ -184,7 +184,8 @@ void SimulPrecipitationRendererDX1x::Render(void *context)
 	if(ReverseDepth)
 	{
 		// Convert the proj matrix into a normal non-reversed matrix.
-		p1=simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
+		p1=proj;//simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
+		simul::camera::ConvertReversedToRegularProjectionMatrix(p1);
 	}
 	simul::math::Matrix4x4 vpt,viewproj,v((const float *)view),p((const float*)p1);
 
