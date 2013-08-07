@@ -59,6 +59,7 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	,cloud2DConstantsUBO(0)
 	,cloud2DConstantsBindingIndex(12)
 	,detail_fb(0,0,GL_TEXTURE_2D)
+	,coverage_fb(0,0,GL_TEXTURE_2D)
 {
 	helper->Initialize(16);
 }
@@ -135,6 +136,7 @@ void SimulGL2DCloudRenderer::EnsureCorrectTextureSizes()
 	if(cloud_tex_width_x==width_x&&cloud_tex_length_y==length_y&&cloud_tex_depth_z==1
 		&&coverage_tex[0]>0)
 		return;
+	coverage_fb.SetWidthAndHeight(width_x,length_y);
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=1;
@@ -298,12 +300,11 @@ bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool,const void
 
 	glUseProgram(clouds_program);
 	Set2DTexture(imageTexture_param,(GLuint)detail_fb.GetColorTex(),0);
-	Set2DTexture(coverageTexture1,coverage_tex[0],1);
-	Set2DTexture(coverageTexture2,coverage_tex[1],2);
-	Set2DTexture(lossTexture,loss_tex,3);
-	Set2DTexture(inscatterSampler_param,inscatter_tex,4);
-	Set2DTexture(skylightSampler_param,skylight_tex,5);
-	setTexture(clouds_program,"depthTexture",6,depth_texture);
+	Set2DTexture(coverageTexture,(GLuint)coverage_fb.GetColorTex(),1);
+	Set2DTexture(lossTexture,loss_tex,2);
+	Set2DTexture(inscatterSampler_param,inscatter_tex,3);
+	Set2DTexture(skylightSampler_param,skylight_tex,4);
+	setTexture(clouds_program,"depthTexture",5,depth_texture);
 
 	simul::math::Vector3 wind_offset=cloudKeyframer->GetCloudInterface()->GetWindOffset();
 
@@ -466,8 +467,7 @@ void SimulGL2DCloudRenderer::RecompileShaders()
 	clouds_program			=MakeProgram("simul_clouds_2d");
 	glUseProgram(clouds_program);
 
-	coverageTexture1		= glGetUniformLocation(clouds_program,"coverageTexture1");
-	coverageTexture2		= glGetUniformLocation(clouds_program,"coverageTexture2");
+	coverageTexture			= glGetUniformLocation(clouds_program,"coverageTexture");
 	imageTexture_param		= glGetUniformLocation(clouds_program,"imageTexture");
 	lossTexture				= glGetUniformLocation(clouds_program,"lossTexture");
 	inscatterSampler_param	= glGetUniformLocation(clouds_program,"inscTexture");

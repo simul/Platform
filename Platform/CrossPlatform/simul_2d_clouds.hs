@@ -1,7 +1,7 @@
 #ifndef SIMUL_2D_CLOUDS_HS
 #define SIMUL_2D_CLOUDS_HS
 
-uniform_buffer Cloud2DConstants R11
+uniform_buffer Cloud2DConstants SIMUL_BUFFER_REGISTER(11)
 {
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform mat4 worldViewProj;
@@ -27,15 +27,19 @@ uniform_buffer Cloud2DConstants R11
 	uniform float farZ;
 	uniform vec2 tanHalfFov;
 	uniform float exposure;
-	uniform float ab,cd,ef;
+	uniform float time;
+	uniform float coverageOctaves;
+	uniform float coveragePersistence;
+	uniform float humidity;
+	uniform float diffusivity;
+	uniform float noiseTextureScale;			// Scale from existing random texture to noise scale of coverage.
 };
 
-uniform_buffer Detail2DConstants R12
+uniform_buffer Detail2DConstants SIMUL_BUFFER_REGISTER(12)
 {
 	uniform float persistence;
 	uniform int octaves;
-	uniform float bb;
-	uniform float cc;
+	uniform float ccd,ddd;
 	uniform vec3 lightDir2d;
 	uniform float cloudiness;
 };
@@ -44,4 +48,7 @@ uniform_buffer CloudCrossSection2DConstants R13
 {
 	uniform vec4 rect;
 };
+
+#ifndef __cplusplus
+#endif
 #endif

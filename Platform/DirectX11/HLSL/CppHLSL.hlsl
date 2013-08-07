@@ -39,8 +39,6 @@
 	#define R8 : register(b8)
 	#define R9 : register(b9)
 	#define R10 : register(b10)
-	#define R11 : register(b11)
-	#define R12 : register(b12)
 	#define R13 : register(b13)
 	#define vec1 float1
 	#define vec2 float2

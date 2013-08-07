@@ -33,8 +33,6 @@
 	#define R8
 	#define R9
 	#define R10
-	#define R11
-	#define R12
 	#define R13
 
 	#define uniform_buffer ALIGN_16 cbuffer

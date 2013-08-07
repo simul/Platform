@@ -4,8 +4,7 @@
 #include "CppGlsl.hs"
 
 uniform sampler2D imageTexture;
-uniform sampler2D coverageTexture1;
-uniform sampler2D coverageTexture2;
+uniform sampler2D coverageTexture;
 uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D skylTexture;

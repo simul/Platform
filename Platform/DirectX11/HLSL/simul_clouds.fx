@@ -410,7 +410,7 @@ float4 PS_WithLightning(toPS IN): SV_TARGET
 	final.rgb+=lightningC*(final.a+IN.layerFade);
     return final;
 }
-//uniform_buffer SingleLayerConstants R12
+//uniform_buffer SingleLayerConstants SIMUL_BUFFER_REGISTER(12)
 //{
 	uniform vec4 rect;
 //};

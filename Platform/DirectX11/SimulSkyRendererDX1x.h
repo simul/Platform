@@ -25,7 +25,6 @@
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
-#include "Simul/Platform/DirectX11/HLSL/simul_earthshadow.hlsl"
 
 namespace simul
 {

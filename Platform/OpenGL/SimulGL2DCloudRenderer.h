@@ -81,14 +81,14 @@ protected:
 	
 	GLint earthShadowUniforms;
 
-	GLint coverageTexture1;
-	GLint coverageTexture2;
+	GLint coverageTexture;
 	
 	GLuint	coverage_tex[3];
 	
 	GLuint	loss_tex;
 	GLuint	inscatter_tex;
 	GLuint	skylight_tex;
+	FramebufferGL	coverage_fb;
 
 	FramebufferGL	detail_fb;
 	bool CreateNoiseTexture(void *);

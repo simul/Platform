@@ -66,6 +66,7 @@ namespace simul
 			ID3D1xShaderResourceView*	illuminationTexture_SRV;
 
 			simul::dx11::TextureStruct	coverage_tex[3];
+			simul::dx11::Framebuffer	coverage_fb;
 			simul::dx11::Framebuffer	detail_fb;
 			simul::dx11::Framebuffer	noise_fb;
 			simul::dx11::Framebuffer	dens_fb;

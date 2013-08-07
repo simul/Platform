@@ -1,7 +1,7 @@
 #ifndef ATMOSPHERICS_CONSTANTS_SL
 #define ATMOSPHERICS_CONSTANTS_SL
 
-uniform_buffer AtmosphericsUniforms R11
+uniform_buffer AtmosphericsUniforms SIMUL_BUFFER_REGISTER(11)
 {
 	uniform vec3 lightDir;
 	uniform float pad1;
@@ -32,7 +32,7 @@ uniform_buffer AtmosphericsUniforms R11
 	uniform float pad21;
 };
 
-uniform_buffer AtmosphericsPerViewConstants R12
+uniform_buffer AtmosphericsPerViewConstants SIMUL_BUFFER_REGISTER(12)
 {
 	uniform mat4 invViewProj;
 	uniform mat4 invShadowMatrix;

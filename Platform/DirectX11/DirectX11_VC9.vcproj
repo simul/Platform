@@ -563,14 +563,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\CrossPlatform\simul_2d_clouds.hs"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_earthshadow.hlsl"
-				>
-			</File>
-			<File
 				RelativePath=".\HLSL\simul_gpu_sky.hlsl"
 				>
 			</File>
@@ -622,6 +614,14 @@
 			</File>
 			<File
 				RelativePath="..\CrossPlatform\rain_constants.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_2d_cloud_detail.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_2d_clouds.hs"
 				>
 			</File>
 			<File

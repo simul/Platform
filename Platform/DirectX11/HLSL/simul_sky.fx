@@ -131,24 +131,9 @@ vec2 OvercastDistances(vec2 fade_texc,vec3 view)
 	return sqrt(range_km/maxFadeDistanceKm);
 }
 
-vec2 LimitWithin(vec2 original,vec2 maximum)
-{
-	original=max(original,maximum.xx);
-	original=min(original,maximum.yy);
-	return original;
-}
-
 float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
-	float azimuth			=3.1415926536*2.0*IN.texCoords.x;
-	float sine				=-1.0+2.0*(IN.texCoords.y*targetTextureSize.y/(targetTextureSize.y-1.0));
-	float cosine			=sqrt(1.0-sine*sine);
-	float3 view				=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
-	float2 fade_texc		=vec2(1.0,IN.texCoords.y);
-	vec2 full_bright_range	=EarthShadowDistances(fade_texc,view);
-	vec2 overcast_range		=OvercastDistances(fade_texc,view);
-	overcast_range			=LimitWithin(overcast_range,full_bright_range);
-    return vec4(full_bright_range,overcast_range);
+	return IlluminationBuffer(IN.texCoords,targetTextureSize);
 }
 
 vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 

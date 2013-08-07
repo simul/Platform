@@ -29,7 +29,9 @@ extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+
 using namespace simul::dx11;
+
 struct Vertex_t
 {
 	float x,y,z;
@@ -731,32 +733,13 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 	return true;
 }
-#include "Simul/Sky/OvercastCallback.h"
+
 void SimulSkyRendererDX1x::RenderIllumationBuffer(void *c)
 {
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
-	simul::sky::EarthShadow e=skyKeyframer->GetEarthShadow(
-									skyKeyframer->GetAltitudeKM()
-									,skyKeyframer->GetDirectionToSun());
-	// Update constant buffer
-	earthShadowUniforms.targetTextureSize	=vec2(180.0f,(float)numFadeElevations);
-	earthShadowUniforms.earthShadowNormal	=e.normal;
-	earthShadowUniforms.radiusOnCylinder	=e.radius_on_cylinder;
-	earthShadowUniforms.maxFadeDistance		=skyKeyframer->GetMaxDistanceKm()/skyKeyframer->GetSkyInterface()->GetPlanetRadius();
-	earthShadowUniforms.terminatorDistance	=e.terminator_distance_km/skyKeyframer->GetMaxDistanceKm();
-	earthShadowUniforms.sunDir				=skyKeyframer->GetDirectionToSun();
-	earthShadowUniforms.Apply(context);
-	simul::sky::OvercastCallback *oc=skyKeyframer->GetOvercastCallback();
 
-	float overcast=0.f,overcast_base_km=0.f,overcast_scale_km=1.f;
-	if(oc)
-		oc->GetOvercastData(skyKeyframer->GetDaytime(),overcast,overcast_base_km,overcast_scale_km);
-		
-	skyConstants.overcast			=overcast*skyKeyframer->GetOvercastEffectStrength();
-	skyConstants.overcastBaseKm		=overcast_base_km;
-	skyConstants.overcastRangeKm	=overcast_scale_km;
-	skyConstants.eyePosition		=cam_pos;
-	skyConstants.maxFadeDistanceKm	=skyKeyframer->GetMaxDistanceKm();
+	SetIlluminationConstants(earthShadowUniforms,skyConstants);
+	earthShadowUniforms.Apply(context);
 	skyConstants.Apply(context);
 	
 	// Clear the screen to black:
