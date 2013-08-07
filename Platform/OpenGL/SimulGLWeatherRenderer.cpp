@@ -54,7 +54,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 	simulLightningRenderer=new(memoryInterface) SimulGLLightningRenderer(ck3d,sk);
 	baseLightningRenderer=simulLightningRenderer;
 
-	simulAtmosphericsRenderer=new(memoryInterface) SimulGLAtmosphericsRenderer;
+	simulAtmosphericsRenderer=new(memoryInterface) SimulGLAtmosphericsRenderer(mem);
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
 	if(rain)
 		basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulGLPrecipitationRenderer();

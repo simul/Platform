@@ -45,7 +45,7 @@ public:
 class SimulAtmosphericsRenderer : public SimulAtmosphericsInterface, public simul::sky::BaseAtmosphericsRenderer
 {
 public:
-	SimulAtmosphericsRenderer();
+	SimulAtmosphericsRenderer(simul::base::MemoryInterface *m);
 	virtual ~SimulAtmosphericsRenderer();
 	//standard d3d object interface functions
 

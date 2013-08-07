@@ -14,7 +14,7 @@
 SIMUL_OPENGL_EXPORT_CLASS SimulGLAtmosphericsRenderer : public simul::sky::BaseAtmosphericsRenderer
 {
 public:
-	SimulGLAtmosphericsRenderer();
+	SimulGLAtmosphericsRenderer(simul::base::MemoryInterface *m);
 	virtual ~SimulGLAtmosphericsRenderer();
 	//standard ogl object interface functions
 	void RecompileShaders();

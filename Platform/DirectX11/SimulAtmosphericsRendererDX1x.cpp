@@ -30,8 +30,9 @@
 using namespace simul;
 using namespace dx11;
 
-SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x() :
-	m_pd3dDevice(NULL)
+SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x(simul::base::MemoryInterface *m)
+	:BaseAtmosphericsRenderer(m)
+	,m_pd3dDevice(NULL)
 	,vertexDecl(NULL)
 	,effect(NULL)
 	,lightDir(NULL)

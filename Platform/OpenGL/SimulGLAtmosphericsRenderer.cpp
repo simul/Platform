@@ -10,8 +10,9 @@
 #include "Simul/Platform/CrossPlatform/earth_shadow_uniforms.sl"
 #include "Simul/Platform/CrossPlatform/atmospherics_constants.sl"
 
-SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer()
-	:clouds_texture(0)
+SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer(simul::base::MemoryInterface *m)
+	:BaseAtmosphericsRenderer(m)
+	,clouds_texture(0)
 	,initialized(false)
 	,insc_program(0)
 	,loss_program(0)

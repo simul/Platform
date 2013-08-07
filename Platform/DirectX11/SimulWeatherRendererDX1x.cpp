@@ -75,7 +75,7 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 		base2DCloudRenderer=simul2DCloudRenderer=new(memoryInterface) Simul2DCloudRendererDX11(ck2d,memoryInterface);
 	if(rain)
 		basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulPrecipitationRendererDX1x();
-	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new(memoryInterface) SimulAtmosphericsRendererDX1x;
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
 	baseFramebuffer=&framebuffer;
 	ConnectInterfaces();
 }

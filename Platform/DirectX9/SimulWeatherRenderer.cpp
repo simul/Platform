@@ -88,7 +88,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	}
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
-	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer;
+	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer(mem);
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
 	baseFramebuffer=&framebuffer;
 	ConnectInterfaces();

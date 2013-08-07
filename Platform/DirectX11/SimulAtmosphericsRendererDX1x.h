@@ -38,7 +38,7 @@ namespace simul
 		class SimulAtmosphericsRendererDX1x : public simul::sky::BaseAtmosphericsRenderer
 		{
 		public:
-			SimulAtmosphericsRendererDX1x();
+			SimulAtmosphericsRendererDX1x(simul::base::MemoryInterface *m);
 			virtual ~SimulAtmosphericsRendererDX1x();
 			
 			void SetBufferSize(int w,int h);
