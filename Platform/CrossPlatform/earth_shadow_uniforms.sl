@@ -1,7 +1,7 @@
 #ifndef EARTH_SHADOW_UNIFORMS_SL
 #define EARTH_SHADOW_UNIFORMS_SL
 
-uniform_buffer EarthShadowUniforms R9
+uniform_buffer EarthShadowUniforms SIMUL_BUFFER_REGISTER(9)
 {
 	uniform vec3 sunDir;
 	uniform float temp1;

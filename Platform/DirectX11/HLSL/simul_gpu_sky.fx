@@ -88,54 +88,9 @@ float4 PS_Loss(vertexOutput IN) : SV_TARGET
 }
 
 
-float4 PS_Insc(vertexOutput IN) : SV_TARGET
+vec4 PS_Insc(vertexOutput IN) : SV_TARGET
 {
-	float4 previous_insc	=texture_nearest(input_texture,IN.texCoords.xy);
-	float3 previous_loss	=texture_nearest(loss_texture,float3(IN.texCoords.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;// should adjust texCoords - we want the PREVIOUS loss!
-	float sin_e			=clamp(1.0-2.0*(IN.texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
-	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(IN.texCoords.x*texSize.x-texelOffset)/(texSize.x-1.0);
-	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
-	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
-	float maxd			=min(spaceDistKm,distanceKm);
-	float mind			=min(spaceDistKm,prevDistanceKm);
-	float dist			=0.5*(mind+maxd);
-	float stepLengthKm	=max(0.0,maxd-mind);
-	float y				=planetRadiusKm+viewAltKm+dist*sin_e;
-	float x				=dist*cos_e;
-	float r				=sqrt(x*x+y*y);
-	float alt_km		=r-planetRadiusKm;
-	
-	float x1			=mind*cos_e;
-	float r1			=sqrt(x1*x1+y*y);
-	float alt_1_km		=r1-planetRadiusKm;
-	
-	float x2			=maxd*cos_e;
-	float r2			=sqrt(x2*x2+y*y);
-	float alt_2_km		=r2-planetRadiusKm;
-	
-	// lookups is: dens_factor,ozone_factor,haze_factor;
-	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-	float4 lookups		=texture(density_texture,dens_texc);
-	float dens_factor	=lookups.x;
-	float ozone_factor	=lookups.y;
-	float haze_factor	=getHazeFactorAtAltitude(alt_km);
-	float4 light		=float4(sunIrradiance,1.0)*getSunlightFactor(alt_km,lightDir);
-	float4 insc			=light;
-	insc				*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
-	float3 extinction	=dens_factor*rayleigh+haze_factor*hazeMie;
-	float3 total_ext	=extinction+ozone*ozone_factor;
-	float3 loss			=exp(-extinction*stepLengthKm);
-	insc.rgb			*=float3(1.0,1.0,1.0)-loss;
-	float mie_factor	=exp(-insc.w*stepLengthKm*haze_factor*hazeMie.x);
-	insc.w				=saturate((1.f-mie_factor)/(1.f-total_ext.x+0.0001f));
-	
-	insc.rgb			*=previous_loss.rgb;
-	insc.rgb			+=previous_insc.rgb;
-	float lossw=1.0;
-	insc.w				=(lossw)*(1.0-previous_insc.w)*insc.w+previous_insc.w;
-
-    return			insc;
+	return Insc(input_texture,loss_texture,IN.texCoords);
 }
 
 // What spectral radiance is added on a light path towards the viewer, due to illumination of

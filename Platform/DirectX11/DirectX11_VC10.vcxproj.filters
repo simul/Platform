@@ -286,6 +286,12 @@
     <None Include="HLSL\simul_sky.fx">
       <Filter>FX</Filter>
     </None>
+    <None Include="..\CrossPlatform\illumination.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\sky_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc">

@@ -34,9 +34,8 @@ cbuffer cbPerObject : register(b11)
 #include "../../CrossPlatform/earth_shadow_uniforms.sl"
 #include "../../CrossPlatform/earth_shadow.sl"
 #include "../../CrossPlatform/sky_constants.sl"
-//------------------------------------
-// Structures 
-//------------------------------------
+#include "../../CrossPlatform/illumination.sl"
+
 struct vertexInput
 {
     float3 position			: POSITION;
@@ -105,35 +104,10 @@ float4 PS_DrawCubemap(vertexOutput IN): SV_TARGET
 	return float4(result.rgb,1.f);
 }
 
-vec2 OvercastDistances(vec2 fade_texc,vec3 view)
-{
-	float3 alt_range;
-	float alt_km					=eyePosition.z/1000.0;
-	float sine						=view.z;
-	vec2 range_km;
-	float cutoff_alt_km				=overcastBaseKm+0.5*overcastRangeKm;
-	if(alt_km>cutoff_alt_km)
-	{
-		if(sine<0)
-			range_km.x				=max(0.0,(cutoff_alt_km-alt_km)/sine);
-		else
-			range_km.x				=maxFadeDistanceKm;
-		range_km.y					=maxFadeDistanceKm;
-	}
-	else
-	{
-		range_km.x					=0.0;
-		if(sine>0)
-			range_km.y				=max(0.0,(cutoff_alt_km-alt_km)/sine);
-		else
-			range_km.y				=maxFadeDistanceKm;
-	}
-	return sqrt(range_km/maxFadeDistanceKm);
-}
-
 float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
-	return IlluminationBuffer(IN.texCoords,targetTextureSize);
+	float alt_km			=eyePosition.z/1000.0;
+	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm);
 }
 
 vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 
@@ -171,7 +145,7 @@ vec4 PS_Overc3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 {
 	// Texcoords representing the full distance from the eye to the given point.
 	vec2 fade_texc			=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
-	vec4 insc				=inscTexture.Sample(cmcSamplerState,fade_texc);
+	/*vec4 insc				=inscTexture.Sample(cmcSamplerState,fade_texc);
 
 	// Only need the y-coordinate of the illumination texture to get the overcast range.
 	vec2 illum_texc			=vec2(0.5,fade_texc.y);
@@ -186,9 +160,9 @@ vec4 PS_Overc3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 
 	vec4 overc				=max(vec4(0,0,0,0),overc_far-overc_near);
 
-	insc=max(vec4(0,0,0,0),insc-overc*overcast);
+	insc=max(vec4(0,0,0,0),insc-overc*overcast);*/
 
-    return insc;
+    return OvercastInscatter(inscTexture,illuminationTexture,fade_texc,overcast);
 }
 
 float4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
