@@ -56,7 +56,7 @@ float GetHumidityMultiplier(float z)
 	return res2;
 }
 
-float NoiseFunction(vec3 pos,int octaves,float persistence,float time)
+float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float persistence,float time)
 {
 	float dens=0.0;
 	float mult=0.5;

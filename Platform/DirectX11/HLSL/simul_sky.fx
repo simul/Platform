@@ -145,22 +145,6 @@ vec4 PS_Overc3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 {
 	// Texcoords representing the full distance from the eye to the given point.
 	vec2 fade_texc			=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
-	/*vec4 insc				=inscTexture.Sample(cmcSamplerState,fade_texc);
-
-	// Only need the y-coordinate of the illumination texture to get the overcast range.
-	vec2 illum_texc			=vec2(0.5,fade_texc.y);
-	vec4 illum_lookup		=texture_wrap_mirror(illuminationTexture,illum_texc);
-	vec2 overcDistTexc		=illum_lookup.zw;
-
-	vec2 overc_near_texc	=vec2(overcDistTexc.x,fade_texc.y);
-	vec4 overc_near			=inscTexture.Sample(cmcSamplerState,overc_near_texc);
-	
-	vec2 overc_far_texc		=vec2(min(overcDistTexc.y,fade_texc.x),fade_texc.y);
-	vec4 overc_far			=inscTexture.Sample(cmcSamplerState,overc_far_texc);
-
-	vec4 overc				=max(vec4(0,0,0,0),overc_far-overc_near);
-
-	insc=max(vec4(0,0,0,0),insc-overc*overcast);*/
 
     return OvercastInscatter(inscTexture,illuminationTexture,fade_texc,overcast);
 }

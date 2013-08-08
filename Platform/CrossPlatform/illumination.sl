@@ -1,7 +1,6 @@
 #ifndef ILLUMINATION_SL
 #define ILLUMINATION_SL
 
-
 vec2 OvercastDistances(float alt_km,vec2 fade_texc,vec3 view,float overcastBaseKm,float overcastRangeKm,float maxFadeDistanceKm)
 {
 	float3 alt_range;

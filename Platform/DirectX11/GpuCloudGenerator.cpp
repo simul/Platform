@@ -158,7 +158,6 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	mask_fb.Deactivate(m_pImmediateContext);
 
 	simul::math::Vector3 noise_scale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0]);
-	
 
 	int z0	=start_texel/(density_grid[0]*density_grid[1]);
 	int z1	=(start_texel+texels)/(density_grid[0]*density_grid[1]);
@@ -193,21 +192,18 @@ std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 std::cout<<"\tDraw "<<timer.UpdateTime()<<"ms"<<std::endl;
 	Ensure3DTextureSizeAndFormat(m_pd3dDevice,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
 std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
-	//if(start_texel+texels>=density_gridsize)
-	{
-		// Copy all the layers from the 2D dens_fb texture to the 3D density texture.
-		D3D11_BOX sourceRegion;
-		sourceRegion.left	=0;
-		sourceRegion.right	=density_grid[0];
-		sourceRegion.front	=0;
-		sourceRegion.back	=1;
+	// Copy all the layers from the 2D dens_fb texture to the 3D density texture.
+	D3D11_BOX sourceRegion;
+	sourceRegion.left	=0;
+	sourceRegion.right	=density_grid[0];
+	sourceRegion.front	=0;
+	sourceRegion.back	=1;
 
-		for(int Z=z0;Z<z1;Z++)
-		{
-			sourceRegion.top	=density_grid[1]*Z;
-			sourceRegion.bottom	=density_grid[1]*(Z+1);
-			m_pImmediateContext->CopySubresourceRegion(density_texture,0,0,0,Z,dens_fb.GetColorTexture(),0,&sourceRegion);
-		}
+	for(int Z=z0;Z<z1;Z++)
+	{
+		sourceRegion.top	=density_grid[1]*Z;
+		sourceRegion.bottom	=density_grid[1]*(Z+1);
+		m_pImmediateContext->CopySubresourceRegion(density_texture,0,0,0,Z,dens_fb.GetColorTexture(),0,&sourceRegion);
 	}
 std::cout<<"\tfill 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 }
@@ -235,7 +231,6 @@ std::cout<<"Gpu clouds: PerformGPURelight\n";
 	for(int i=0;i<2;i++)
 	{
 		fb[i].SetWidthAndHeight(light_grid[0],light_grid[1]);
-		//fb[i].InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	}
 	lightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice,light_grid[0],light_grid[1],light_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
 	ID3D1xEffectShaderResourceVariable*	input_light_texture	=effect->GetVariableByName("inputTexture")->AsShaderResource();
@@ -317,7 +312,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int index,unsigned char *target
 												,const float *ambient,const int *density_grid
 												,int start_texel
 												,int texels
-											,bool wrap_light_tex)
+												,bool wrap_light_tex)
 {
 simul::base::Timer timer;
 timer.StartTime();
@@ -376,7 +371,10 @@ std::cout<<"\tMemCopy "<<timer.UpdateTime()<<"ms"<<std::endl;
 			}
 		}
 		if(target)
+		{
+			target+=4*t0;
 			world_fb.CopyToMemory(m_pImmediateContext,target,t0,t);
+		}
 	}
 std::cout<<"\tGpuCopy "<<timer.UpdateTime()<<"ms"<<std::endl;
 std::cout<<"\tRelease "<<timer.UpdateTime()<<"ms"<<std::endl;

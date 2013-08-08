@@ -115,7 +115,7 @@ vec2 EarthShadowDistances(vec2 fade_texc,vec3 view)
 	return range1;
 }
 
-vec4 EarthShadowFunction(vec2 fade_texc,vec3 view)
+vec4 EarthShadowFunction(Texture2D inscTexture,vec2 fade_texc,vec3 view)
 {
 	vec2 dist=EarthShadowDistances(fade_texc,view);
 	vec2 fade_texc_1=vec2(dist.x,fade_texc.y);
