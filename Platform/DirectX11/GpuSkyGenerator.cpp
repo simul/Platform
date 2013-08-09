@@ -65,7 +65,8 @@ bool GpuSkyGenerator::CanPerformGPUGeneration() const
 }
 
 void GpuSkyGenerator::Make2DLossAndInscatterTextures(
-				simul::sky::AtmosphericScatteringInterface *skyInterface
+				int cycled_index
+				,simul::sky::AtmosphericScatteringInterface *skyInterface
 				,int numElevations
 				,int numDistances
 				,simul::sky::float4 *loss

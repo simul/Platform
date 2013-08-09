@@ -13,6 +13,9 @@ uniform sampler2D maskTexture;
 uniform sampler3D lightTexture;
 uniform sampler3D ambientTexture;
 uniform sampler3D volumeNoiseTexture;
+RWTexture3D<float> targetTexture;
+RWTexture3D<float4> targetUCharTexture;
+
 #include "../../CrossPlatform/states.sl"
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
 
@@ -60,11 +63,35 @@ float4 PS_Density(vertexOutput IN) : SV_TARGET
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
     return vec4(dens,0,0,1.0);
 }
+
+
+[numthreads(8,8,8)]
+void CS_Density( uint3 groupId          : SV_GroupID,
+             uint3 pos				: SV_DispatchThreadID,
+             uint3 groupThreadId    : SV_GroupThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+{
+	//if(position.x>densityGrid.x||position.y>densityGrid.y||position.z>densityGrid.z)
+	//	return;
+	//vec2 texCoords				=position.xy/16.0;
+	/*vec3 densityspace_texcoord	=position.xyz/vec3(128.0,128.0,16.0);
+	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
+	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
+	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z)*maskTexture.SampleLevel(clampSamplerState,densityspace_texcoord.xy,0).x;
+	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
+	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
+
+*/	
+//	for(int i=0;i<5;i++)
+//	for(int j=0;j<5;j++)
+//	for(int k=0;k<5;k++)
+	targetTexture[pos] = 1.0f;
+}
+
 static const float glow=0.1;
 float4 PS_Lighting(vertexOutput IN) : SV_TARGET
 {
 	vec2 texcoord				=IN.texCoords.xy;//+texCoordOffset;
-	vec2 previous_light			=inputTexture.Sample(lightSamplerState,texcoord.xy);
+	vec2 previous_light			=inputTexture.Sample(lightSamplerState,texcoord.xy).xy;
 	vec3 lightspace_texcoord	=vec3(texcoord.xy,zPosition);
 	vec3 densityspace_texcoord	=mul(transformMatrix,vec4(lightspace_texcoord,1.0)).xyz;
 	float density				=texture_wwc(densityTexture,densityspace_texcoord).x;
@@ -83,11 +110,31 @@ float4 PS_Transform(vertexOutput IN) : SV_TARGET
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord,1.0)).xyz;
 	lightspace_texcoord.z		-=zPixel;
-	vec2 light_lookup			=saturate(lightTexture.Sample(lightSamplerState,lightspace_texcoord).xy);
-	vec2 amb_texel				=texture_wwc(ambientTexture,ambient_texcoord).xy;
+	vec2 light_lookup			=saturate(lightTexture.SampleLevel(lightSamplerState,lightspace_texcoord,0).xy);
+	vec2 amb_texel				=ambientTexture.SampleLevel(wwcSamplerState,ambient_texcoord,0).xy;
 	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
-	float density				=saturate(texture_wwc(densityTexture,densityspace_texcoord).x);
+	float density				=saturate(densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x);
 	return						vec4(light_lookup.y,light_lookup.x,density,ambient_lookup);
+}
+
+[numthreads(8,8,8)]
+void CS_Transform( uint3 groupId	: SV_GroupID,
+             uint3 pos				: SV_DispatchThreadID,
+             uint3 groupThreadId	: SV_GroupThreadID)	//SV_DispatchThreadID gives the combined id in each dimension.
+{
+	vec3 dims;
+	densityTexture.GetDimensions(dims.x,dims.y,dims.z);
+
+	vec3 densityspace_texcoord	=(pos.xyz+0.5)/dims;
+	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
+	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord,1.0)).xyz;
+	lightspace_texcoord.z		-=zPixel;
+	vec2 light_lookup			=saturate(lightTexture.SampleLevel(lightSamplerState,lightspace_texcoord,0).xy);
+	vec2 amb_texel				=ambientTexture.SampleLevel(wwcSamplerState,ambient_texcoord,0).xy;
+	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
+	float density				=saturate(densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x);
+							
+	targetUCharTexture[pos] = vec4(light_lookup.y,light_lookup.x,density,ambient_lookup);
 }
 
 //------------------------------------
@@ -129,6 +176,14 @@ technique11 simul_gpu_density
     }
 }
 
+technique11 gpu_density_compute
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Density()));
+    }
+}
+
 technique11 simul_gpu_lighting
 {
     pass p0 
@@ -152,5 +207,13 @@ technique11 simul_gpu_transform
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Transform()));
+    }
+}
+
+technique11 gpu_transform_compute
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Transform()));
     }
 }

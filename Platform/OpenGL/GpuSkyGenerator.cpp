@@ -92,7 +92,7 @@ static GLuint make1DTexture(int w,const float *src)
 }
 
 
-void GpuSkyGenerator::Make2DLossAndInscatterTextures(simul::sky::AtmosphericScatteringInterface *skyInterface
+void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,simul::sky::AtmosphericScatteringInterface *skyInterface
 				,int numElevations,int numDistances
 				,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl
 				,const std::vector<float> &altitudes_km

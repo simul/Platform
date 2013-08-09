@@ -25,6 +25,7 @@
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
+#include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 
 namespace simul
 {
@@ -94,6 +95,7 @@ public:
 
 	// for testing:
 	void DrawCubemap(void *context,ID3D1xShaderResourceView*	m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
+	simul::sky::BaseGpuSkyGenerator *GetBaseGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
 	int cycle;
 	bool IsYVertical(){return false;}
@@ -131,9 +133,9 @@ protected:
 	ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
 	ConstantBuffer<SkyConstants>		skyConstants;
 
-	ID3D1xTexture3D*					loss_textures[3];
-	ID3D1xTexture3D*					inscatter_textures[3];
-	ID3D1xTexture3D*					skylight_textures[3];
+	TextureStruct						loss_textures[3];
+	TextureStruct						insc_textures[3];
+	TextureStruct						skyl_textures[3];
 
 	// Small framebuffers we render to once per frame to perform fade interpolation.
 	simul::dx11::Framebuffer*			loss_2d;
@@ -145,16 +147,7 @@ protected:
 	simul::dx11::Framebuffer			illumination_fb;
 
 	ID3D1xShaderResourceView*			flare_texture_SRV;
-	ID3D1xShaderResourceView*			loss_textures_SRV[3];
-	ID3D1xShaderResourceView*			insc_textures_SRV[3];
-	ID3D1xShaderResourceView*			skyl_textures_SRV[3];
 	ID3D1xShaderResourceView*			moon_texture_SRV;
-
-	int mapped_fade;
-	ID3D11DeviceContext *mapped_context;
-	D3D1x_MAPPED_TEXTURE3D loss_texture_mapped;
-	D3D1x_MAPPED_TEXTURE3D insc_texture_mapped;
-	D3D1x_MAPPED_TEXTURE3D skyl_texture_mapped;
 
 	void MapFade(ID3D11DeviceContext *context,int s);
 	void UnmapFade();
@@ -162,6 +155,7 @@ protected:
 	void DrawCube(void *context);
 	void DrawLines(void *context,Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
+	simul::dx11::GpuSkyGenerator gpuSkyGenerator;
 };
 }
 }

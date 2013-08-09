@@ -68,8 +68,8 @@ SimulWeatherRendererDX1x::SimulWeatherRendererDX1x(simul::clouds::Environment *e
 		simulSkyRenderer=new(memoryInterface) SimulSkyRendererDX1x(sk,memoryInterface);
 		baseSkyRenderer=simulSkyRenderer;
 	}
-	simulCloudRenderer=new(memoryInterface) SimulCloudRendererDX1x(ck3d,memoryInterface);
-	baseCloudRenderer=simulCloudRenderer;
+	baseCloudRenderer=simulCloudRenderer=new(memoryInterface) SimulCloudRendererDX1x(ck3d,memoryInterface);
+	
 	simulLightningRenderer=new(memoryInterface) SimulLightningRendererDX11(ck3d,sk);
 	if(clouds2d&&env->cloud2DKeyframer)
 		base2DCloudRenderer=simul2DCloudRenderer=new(memoryInterface) Simul2DCloudRendererDX11(ck2d,memoryInterface);

@@ -167,7 +167,7 @@ namespace simul
 			
 			simul::dx11::Framebuffer				cloudShadow;
 
-			simul::dx11::ComputableTexture3D		cloud_texture;
+			simul::dx11::TextureStruct				cloud_texture;
 			
 			ID3D1xBuffer*							computeConstantBuffer;
 			ID3D11ComputeShader*					m_pComputeShader;

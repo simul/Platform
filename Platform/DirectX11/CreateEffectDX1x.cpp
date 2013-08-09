@@ -720,6 +720,7 @@ ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *file
 
 HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *filename,const std::map<std::string,std::string>&defines)
 {
+	SIMUL_ASSERT(d3dDevice!=NULL);
 	HRESULT hr=S_OK;
 	std::string text_filename=(filename);
 	if(!shaderPathUtf8)
@@ -814,7 +815,7 @@ void UnmapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuff
 	pImmediateContext->Unmap(vertexBuffer,0);
 }
 
-HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3D1xEffectPass *pass)
+HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass)
 {
 	return pass->Apply(0,pImmediateContext);
 }

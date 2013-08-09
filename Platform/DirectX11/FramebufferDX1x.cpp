@@ -317,7 +317,7 @@ HRESULT hr=S_OK;
 	{
 		const char *dat=(const char *)msr.pData;
 		dat+=start_texel*byteSize;
-		dst+=start_texel*byteSize;
+		//dst+=start_texel*byteSize;
 		memcpy(dst,dat,texels*byteSize);
 	}
 	else
@@ -326,7 +326,7 @@ HRESULT hr=S_OK;
 		int h0=start_texel/Width;
 		int h1=h0+texels/Width;
 		src+=msr.RowPitch*h0;
-		dst+=byteSize*Width*h0;
+		//dst+=byteSize*Width*h0;
 		for(int i=h0;i<h1;i++)
 		{
 			memcpy(dst,src,required_pitch);

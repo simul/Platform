@@ -102,11 +102,11 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 			pos.z-=layer.verticalShift;
 			float4 texCoords;
 			texCoords.xyz=(pos-cornerPos)*inverseScales;
-			texCoords.w=texCoords.z;
+			texCoords.w=0.1+saturate(texCoords.z);
 			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
 			{
 				float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
-				float3 noiseval		=texCoords.w*noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
+				float3 noiseval		=texCoords.z*noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
 				float4 density		=calcDensity(texCoords.xyz,layer.layerFade,noiseval);
 				if(density.z>0)
 				{
@@ -480,15 +480,18 @@ float4 PS_ShowShadow( vertexOutputCS IN):SV_TARGET
 	return float4(lookup.rgb,1.0);
 }
 
+
 #define CROSS_SECTION_STEPS 32
-#define CROSS_SECTION_STEPS_XZ 32
-float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
+
+float4 PS_CrossSection(vec2 texCoords,float yz)
 {
-	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,crossSectionOffset.y,crossSectionOffset.z+IN.texCoords.y);
+	//float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,yz*IN.texCoords.y,crossSectionOffset.z+(1.0-yz)*IN.texCoords.y);
+	float3 texc=float3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
 	int i=0;
 	float3 accum=float3(0.f,0.5f,1.f);
-	texc.y+=.5f/(float)CROSS_SECTION_STEPS_XZ;
-	for(i=0;i<CROSS_SECTION_STEPS_XZ;i++)
+	texc.y+=0.5*(1.0-yz)/(float)CROSS_SECTION_STEPS;
+	texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
+	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
 		float4 density=cloudDensity1.Sample(wwcSamplerState,texc);
 		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
@@ -497,29 +500,20 @@ float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
 		colour*=opacity;
 		accum*=1.f-opacity;
 		accum+=colour;
-		texc.y+=1.f/(float)CROSS_SECTION_STEPS_XZ;
+		texc.y+=(1.0-yz)/(float)CROSS_SECTION_STEPS;
+		texc.z+=yz/(float)CROSS_SECTION_STEPS;
 	}
     return float4(accum,1);
 }
 
+float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
+{
+    return PS_CrossSection(IN.texCoords,0.f);
+}
+
 float4 PS_CrossSectionXY( vertexOutputCS IN): SV_TARGET
 {
-	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,crossSectionOffset.y+IN.texCoords.y,0);
-	int i=0;
-	float3 accum=float3(0.f,0.5f,1.f);
-	texc.z+=.5f/(float)CROSS_SECTION_STEPS;
-	for(i=0;i<CROSS_SECTION_STEPS;i++)
-	{
-		float4 density=cloudDensity1.Sample(wwcSamplerState,texc);
-		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
-		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
-		float opacity=density.z;//+.05f;
-		colour*=opacity;
-		accum*=1.f-opacity;
-		accum+=colour;
-		texc.z+=1.f/(float)CROSS_SECTION_STEPS;
-	}
-    return float4(accum,1);
+    return PS_CrossSection(IN.texCoords,1.f);
 }
 
 BlendState CloudBlend
@@ -591,6 +585,7 @@ technique11 cloud_shadow
 		SetPixelShader(CompileShader(ps_4_0,PS_CloudShadow()));
     }
 }
+
 technique11 cross_section_xz
 {
     pass p0 

@@ -93,7 +93,6 @@ namespace simul
 			virtual bool	OnDeviceRemoved();
 			virtual void    OnFrameMove(double fTime,float fTimeStep);
 			virtual const	char *GetDebugText() const;
-			simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 		protected:
 			void ReverseDepthChanged();
 			bool enabled;
@@ -102,7 +101,6 @@ namespace simul
 			simul::base::SmartPtr<SimulWeatherRendererDX1x>	simulWeatherRenderer;
 			simul::base::SmartPtr<SimulHDRRendererDX1x>		simulHDRRenderer;
 			simul::base::SmartPtr<SimulTerrainRendererDX1x>	simulTerrainRenderer;
-			simul::dx11::GpuSkyGenerator gpuSkyGenerator;
 			int ScreenWidth,ScreenHeight;
 			// A depth-only FB to make sure we have a readable depth texture.
 			simul::dx11::Framebuffer depthFramebuffer;

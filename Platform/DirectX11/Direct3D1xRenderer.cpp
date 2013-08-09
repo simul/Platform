@@ -88,7 +88,6 @@ HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice,const D
 		simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->RestoreDeviceObjects(pd3dDevice);
-	gpuSkyGenerator.RestoreDeviceObjects(pd3dDevice);
 	depthFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	cubemapDepthFramebuffer.SetWidthAndHeight(64,64);
 	cubemapDepthFramebuffer.RestoreDeviceObjects(pd3dDevice);
@@ -269,7 +268,6 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 		simulOpticsRenderer->InvalidateDeviceObjects();
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
-	gpuSkyGenerator.InvalidateDeviceObjects();
 	depthFramebuffer.InvalidateDeviceObjects();
 	cubemapDepthFramebuffer.InvalidateDeviceObjects();
 	framebuffer_cubemap.InvalidateDeviceObjects();
@@ -316,7 +314,6 @@ void Direct3D11Renderer::RecompileShaders()
 		simulTerrainRenderer->RecompileShaders();
 	if(simulHDRRenderer.get())
 		simulHDRRenderer->RecompileShaders();
-	gpuSkyGenerator.RecompileShaders();
 //	if(simulTerrainRenderer.get())
 //		simulTerrainRenderer->RecompileShaders();
 }
