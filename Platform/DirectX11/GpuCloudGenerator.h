@@ -87,6 +87,7 @@ namespace simul
 			ID3DX11EffectTechnique*				maskTechnique;
 			ID3DX11EffectTechnique*				lightingTechnique;
 			ID3DX11EffectTechnique*				transformTechnique;
+			ID3DX11EffectTechnique*				transformComputeTechnique;
 			ID3D11Texture3D						*volume_noise_tex;
 			ID3D11ShaderResourceView			*volume_noise_tex_srv;
 			TextureStruct						density_texture;

@@ -19,6 +19,7 @@ GpuCloudGenerator::GpuCloudGenerator()
 			,densityComputeTechnique(NULL)
 			,lightingTechnique(NULL)
 			,transformTechnique(NULL)
+			,transformComputeTechnique(NULL)
 			,volume_noise_tex(NULL)
 			,volume_noise_tex_srv(NULL)
 			,m_pWwcSamplerState(NULL)
@@ -101,6 +102,7 @@ void GpuCloudGenerator::RecompileShaders()
 		transformTechnique		=effect->GetTechniqueByName("simul_gpu_transform");
 		maskTechnique			=effect->GetTechniqueByName("density_mask");
 		densityComputeTechnique	=effect->GetTechniqueByName("gpu_density_compute");
+		transformComputeTechnique=effect->GetTechniqueByName("gpu_transform_compute");
 	}
 	gpuCloudConstants.LinkToEffect(effect,"GpuCloudConstants");
 }
@@ -370,7 +372,7 @@ std::cout<<"\tMemCopy "<<timer.UpdateTime()<<"ms"<<std::endl;
 		// Copy all the layers from the 2D dens_fb texture to the 3D texture.
 		if(finalTexture[index])
 		{
-			finalTexture[index]->ensureTexture3DSizeAndFormat(m_pd3dDevice,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM);
+			finalTexture[index]->ensureTexture3DSizeAndFormat(m_pd3dDevice,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
 			D3D11_BOX sourceRegion;
 			sourceRegion.left	=0;
 			sourceRegion.right	=density_grid[0];
@@ -389,6 +391,12 @@ std::cout<<"\tMemCopy "<<timer.UpdateTime()<<"ms"<<std::endl;
 			world_fb.CopyToMemory(m_pImmediateContext,target,t0,t);
 		}
 	}
+	
+	simul::dx11::setParameter(effect,"targetUCharTexture",finalTexture[index]->unorderedAccessView);
+	ApplyPass(m_pImmediateContext,transformComputeTechnique->GetPassByIndex(0));
+	//m_pImmediateContext->Dispatch(1,1,1);
+	m_pImmediateContext->Dispatch(8,8,1);
+
 std::cout<<"\tGpuCopy "<<timer.UpdateTime()<<"ms"<<std::endl;
 std::cout<<"\tRelease "<<timer.UpdateTime()<<"ms"<<std::endl;
 }
