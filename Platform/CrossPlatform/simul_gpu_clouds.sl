@@ -66,7 +66,7 @@ float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float pers
 	{
 		if(i>=octaves)
 			break;
-		float lookup=texture_wrap(volumeNoiseTexture,pos).x;
+		float lookup=sampleLod(volumeNoiseTexture,wrapSamplerState,pos,0).x;
 		float val=lookup;
 		dens+=mult*val;
 		sum+=mult;
