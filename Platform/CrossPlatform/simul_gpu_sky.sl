@@ -10,11 +10,12 @@ uniform_buffer GpuSkyConstants R8
 {
 	uniform vec2 texSize;
 	uniform vec2 tableSize;
-
+	
+	uniform uint3 threadOffset;
 	uniform float emissivity;
-	uniform float aa,bb,cc;
+
 	uniform float distanceKm;
-	uniform float g,h,i;
+	uniform float g,h,ii;
 	uniform float texelOffset;
 	uniform float prevDistanceKm;
 
@@ -41,13 +42,21 @@ uniform_buffer GpuSkyConstants R8
 	uniform vec3 starlight;
 	uniform float previousZCoord;
 	uniform vec3 mieRayleighRatio;
-	uniform float ii;
+	uniform float iii;
 	uniform vec4 yRange;
 };
 
 #ifndef __cplusplus
 
 #define pi (3.1415926536)
+
+uint3 LinearThreadToPos2D(uint linear_pos,uint3 dims)
+{
+	uint Y				=linear_pos/dims.x;
+	uint X				=linear_pos-Y*dims.x;
+	uint3 pos			=uint3(X,Y,0);
+	return pos;
+}
 
 float getHazeFactorAtAltitude(float alt_km)
 {
@@ -104,7 +113,7 @@ vec4 getSunlightFactor(float alt_km,vec3 DirectionToLight)
 	table_texc				+=vec2(texelOffset,texelOffset);
 	table_texc				=vec2(table_texc.x/tableSize.x,table_texc.y/tableSize.y);
 	//return vec4(table_texc,sine,1.0);
-	vec4 lookup				=texture_clamp(optical_depth_texture,table_texc);
+	vec4 lookup				=texture_clamp_lod(optical_depth_texture,table_texc,0);
 	float illuminated_length=lookup.x;
 	float vis				=lookup.y;
 	float ozone_length		=lookup.w;
@@ -163,10 +172,10 @@ float getOvercastAtAltitudeRange(float alt1_km,float alt2_km)
 	return 1.0*oc;*/
 }
 
-vec4 Insc(Texture2D input_texture,Texture3D loss_texture,vec2 texCoords) : SV_TARGET
+vec4 Insc(Texture2D input_texture,Texture3D loss_texture,vec2 texCoords)
 {
-	vec4 previous_insc	=texture_nearest(input_texture,texCoords.xy);
-	vec3 previous_loss	=texture_nearest(loss_texture,vec3(texCoords.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;// should adjust texCoords - we want the PREVIOUS loss!
+	vec4 previous_insc	=texture_nearest_lod(input_texture,texCoords.xy,0);
+	vec3 previous_loss	=texture_nearest_lod(loss_texture,vec3(texCoords.xy,pow(distanceKm/maxDistanceKm,0.5)),0).rgb;// should adjust texCoords - we want the PREVIOUS loss!
 	float sin_e			=clamp(1.0-2.0*(texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0),-1.0,1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
 	float altTexc		=(texCoords.x*texSize.x-texelOffset)/(texSize.x-1.0);
@@ -191,7 +200,7 @@ vec4 Insc(Texture2D input_texture,Texture3D loss_texture,vec2 texCoords) : SV_TA
 	
 	// lookups is: dens_factor,ozone_factor,haze_factor;
 	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-	vec4 lookups		=texture_clamp(density_texture,dens_texc);
+	vec4 lookups		=texture_clamp_lod(density_texture,dens_texc,0);
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
