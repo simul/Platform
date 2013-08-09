@@ -814,7 +814,7 @@ void UnmapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuff
 	pImmediateContext->Unmap(vertexBuffer,0);
 }
 
-HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3D1xEffectPass *pass)
+HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass)
 {
 	return pass->Apply(0,pImmediateContext);
 }

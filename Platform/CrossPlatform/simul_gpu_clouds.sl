@@ -5,8 +5,8 @@ uniform_buffer GpuCloudConstants R8
 {
 	uniform mat4 transformMatrix;
 	uniform vec4 yRange;
+	uniform uint3 densityGrid;
 	uniform int octaves;
-	uniform int a,b,c;
 	uniform float persistence;
 	uniform float d,e,f;
 	uniform float humidity;
@@ -66,7 +66,7 @@ float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float pers
 	{
 		if(i>=octaves)
 			break;
-		float lookup=texture_wrap(volumeNoiseTexture,pos).x;
+		float lookup=texture_wrap_lod(volumeNoiseTexture,pos,0).x;
 		float val=lookup;
 		dens+=mult*val;
 		sum+=mult;

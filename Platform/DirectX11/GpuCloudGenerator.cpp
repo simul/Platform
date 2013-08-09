@@ -16,12 +16,11 @@ GpuCloudGenerator::GpuCloudGenerator()
 			,m_pImmediateContext(NULL)
 			,effect(NULL)
 			,densityTechnique(NULL)
+			,densityComputeTechnique(NULL)
 			,lightingTechnique(NULL)
 			,transformTechnique(NULL)
 			,volume_noise_tex(NULL)
 			,volume_noise_tex_srv(NULL)
-			,density_texture(NULL)
-			,density_texture_srv(NULL)
 			,m_pWwcSamplerState(NULL)
 			,m_pCccSamplerState(NULL)
 {
@@ -41,6 +40,8 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	fb[0].RestoreDeviceObjects(m_pd3dDevice);
 	fb[1].RestoreDeviceObjects(m_pd3dDevice);
+	dens_fb.SetDepthFormat(0);
+	dens_fb.SetFormat(DXGI_FORMAT_R32_FLOAT);
 	dens_fb.RestoreDeviceObjects(m_pd3dDevice);
 	mask_fb.SetDepthFormat(0);
 	mask_fb.RestoreDeviceObjects(m_pd3dDevice);
@@ -80,8 +81,7 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	SAFE_RELEASE(volume_noise_tex_srv);
 	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(effect);
-	SAFE_RELEASE(density_texture_srv);
-	SAFE_RELEASE(density_texture);
+	density_texture.release();
 	gpuCloudConstants.InvalidateDeviceObjects();
 	for(int i=0;i<2;i++)
 		lightTextures[i].release();
@@ -96,10 +96,11 @@ void GpuCloudGenerator::RecompileShaders()
 	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_gpu_clouds.fx");
 	if(effect)
 	{
-		densityTechnique	=effect->GetTechniqueByName("simul_gpu_density");
-		lightingTechnique	=effect->GetTechniqueByName("simul_gpu_lighting");
-		transformTechnique	=effect->GetTechniqueByName("simul_gpu_transform");
-		maskTechnique		=effect->GetTechniqueByName("density_mask");
+		densityTechnique		=effect->GetTechniqueByName("simul_gpu_density");
+		lightingTechnique		=effect->GetTechniqueByName("simul_gpu_lighting");
+		transformTechnique		=effect->GetTechniqueByName("simul_gpu_transform");
+		maskTechnique			=effect->GetTechniqueByName("density_mask");
+		densityComputeTechnique	=effect->GetTechniqueByName("gpu_density_compute");
 	}
 	gpuCloudConstants.LinkToEffect(effect,"GpuCloudConstants");
 }
@@ -178,11 +179,16 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	gpuCloudConstants.transition	=transition;
 	gpuCloudConstants.upperDensity	=upperDensity;
 	gpuCloudConstants.diffusivity	=diffusivity;
+	gpuCloudConstants.densityGrid	=uint3(density_grid);
 	simul::dx11::setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 	simul::dx11::setParameter(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
 
 	gpuCloudConstants.Apply(m_pImmediateContext);
-
+	
+	density_texture.ensureTexture3DSizeAndFormat(m_pd3dDevice,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32_FLOAT,false);
+//	Ensure3DTextureSizeAndFormat(m_pd3dDevice,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
+std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
+#if 1
 
 	dens_fb.Activate(m_pImmediateContext);
 std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
@@ -190,8 +196,6 @@ std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 		dens_fb.DrawQuad(m_pImmediateContext);
 	dens_fb.Deactivate(m_pImmediateContext);
 std::cout<<"\tDraw "<<timer.UpdateTime()<<"ms"<<std::endl;
-	Ensure3DTextureSizeAndFormat(m_pd3dDevice,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
-std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 	// Copy all the layers from the 2D dens_fb texture to the 3D density texture.
 	D3D11_BOX sourceRegion;
 	sourceRegion.left	=0;
@@ -203,9 +207,18 @@ std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 	{
 		sourceRegion.top	=density_grid[1]*Z;
 		sourceRegion.bottom	=density_grid[1]*(Z+1);
-		m_pImmediateContext->CopySubresourceRegion(density_texture,0,0,0,Z,dens_fb.GetColorTexture(),0,&sourceRegion);
+		m_pImmediateContext->CopySubresourceRegion(density_texture.texture,0,0,0,Z,dens_fb.GetColorTexture(),0,&sourceRegion);
 	}
+#else
+HRESULT hr;
+	simul::dx11::setParameter(effect,"targetTexture",density_texture.unorderedAccessView);
+	V_CHECK(ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0)));
+	//m_pImmediateContext->Dispatch(1,1,1);
+	m_pImmediateContext->Dispatch(8,8,1);
+//	m_pImmediateContext->Dispatch((density_grid[0]+7)/8,(density_grid[1]+7)/8,density_grid[2]);
 std::cout<<"\tfill 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
+//	simul::dx11::setParameter(effect,"targetTexture",(ID3D11UnorderedAccessView*)NULL);
+#endif
 }
 
 void GpuCloudGenerator::PerformGPURelight	(int light_index
@@ -232,7 +245,7 @@ std::cout<<"Gpu clouds: PerformGPURelight\n";
 	{
 		fb[i].SetWidthAndHeight(light_grid[0],light_grid[1]);
 	}
-	lightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice,light_grid[0],light_grid[1],light_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
+	lightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice,light_grid[0],light_grid[1],light_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT,false);
 	ID3D1xEffectShaderResourceVariable*	input_light_texture	=effect->GetVariableByName("inputTexture")->AsShaderResource();
 	ID3D1xEffectShaderResourceVariable*	densityTexture		=effect->GetVariableByName("densityTexture")->AsShaderResource();
 
@@ -244,7 +257,7 @@ std::cout<<"Gpu clouds: PerformGPURelight\n";
 	simul::dx11::Framebuffer *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
-	densityTexture->SetResource(density_texture_srv);
+	densityTexture->SetResource(density_texture.shaderResourceView);
 	D3D11_BOX sourceRegion;
 	sourceRegion.left	=0;
 	sourceRegion.right	=light_grid[0];
@@ -337,7 +350,7 @@ std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 	gpuCloudConstants.zSize=((float)density_grid[2]);
 	gpuCloudConstants.zPixel=(1.f/(float)density_grid[2]);
 
-	setParameter(effect,"densityTexture",density_texture_srv);
+	setParameter(effect,"densityTexture",density_texture.shaderResourceView);
 	setParameter(effect,"ambientTexture",lightTextures[0].shaderResourceView);
 	setParameter(effect,"lightTexture",lightTextures[1].shaderResourceView);
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.

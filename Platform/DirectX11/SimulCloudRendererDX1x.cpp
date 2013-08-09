@@ -686,7 +686,7 @@ void SimulCloudRendererDX1x::RenderCombinedCloudTexture(void *context)
 	pContext->CSSetConstantBuffers(10,1,&computeConstantBuffer);
 	pContext->CSSetShaderResources(0,1,&cloud_textures[(texture_cycle)  %3].shaderResourceView );
     pContext->CSSetShaderResources(1,1,&cloud_textures[(texture_cycle+1)%3].shaderResourceView );
-    pContext->CSSetUnorderedAccessViews(0, 1,&cloud_texture.uav,  NULL );
+	pContext->CSSetUnorderedAccessViews(0, 1,&cloud_texture.unorderedAccessView,  NULL );
 
 	//pContext->Dispatch(cloud_tex_width_x/16,cloud_tex_length_y/16,cloud_tex_depth_z/1);
 
@@ -775,7 +775,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
-	cloudDensity->SetResource(cloud_texture.srv);
+	cloudDensity->SetResource(cloud_texture.shaderResourceView);
 	cloudDensity1->SetResource(cloud_textures[(texture_cycle)  %3].shaderResourceView);
 	cloudDensity2->SetResource(cloud_textures[(texture_cycle+1)%3].shaderResourceView);
 	noiseTexture->SetResource(noiseTextureResource);
@@ -1099,7 +1099,7 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 		cloud_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,width_x,length_y,depth_z,cloud_tex_format);
 	}
 	
-	cloud_texture.init(m_pd3dDevice,width_x,length_y,depth_z);
+	//cloud_texture.ensureTexture3DSizeAndFormat(m_pd3dDevice,width_x,length_y,depth_z,cloud_tex_format,true);
 }
 
 void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(void *context)

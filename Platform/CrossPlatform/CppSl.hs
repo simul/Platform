@@ -151,6 +151,41 @@
 			w=v[3];
 		}
 	};
+
+	struct uint3
+	{
+		unsigned x,y,z;
+		uint3(unsigned x=0,unsigned y=0,unsigned z=0)
+		{
+			this->x=x;
+			this->y=y;
+			this->z=z;
+		}
+		uint3(const int *v)
+		{
+			operator=(v);
+		}
+		uint3(const unsigned *v)
+		{
+			operator=(v);
+		}
+		operator const unsigned *()
+		{
+			return &x;
+		}
+		void operator=(const int *v)
+		{
+			x=v[0];
+			y=v[1];
+			z=v[2];
+		}
+		void operator=(const unsigned *v)
+		{
+			x=v[0];
+			y=v[1];
+			z=v[2];
+		}
+	};
 #endif
 
 #endif

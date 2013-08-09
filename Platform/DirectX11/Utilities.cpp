@@ -9,6 +9,7 @@ using namespace dx11;
 TextureStruct::TextureStruct()
 	:texture(NULL)
 	,shaderResourceView(NULL)
+	,unorderedAccessView(NULL)
 	,width(0)
 	,length(0)
 	,last_context(NULL)
@@ -30,6 +31,7 @@ void TextureStruct::release()
 	}
 	SAFE_RELEASE(texture);
 	SAFE_RELEASE(shaderResourceView);
+	SAFE_RELEASE(unorderedAccessView);
 }
 
 void TextureStruct::setTexels(ID3D11DeviceContext *context,const float *float4_array,int texel_index,int num_texels)
@@ -109,7 +111,7 @@ void TextureStruct::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 	pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView);
 }
 
-void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f)
+void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable)
 {
 	D3D11_TEXTURE3D_DESC textureDesc;
 	bool ok=true;
@@ -137,13 +139,33 @@ void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		textureDesc.Depth			=d;
 		textureDesc.Format			=f;
 		textureDesc.MipLevels		=1;
-		textureDesc.Usage			=D3D11_USAGE_DYNAMIC;
-		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE;
-		textureDesc.CPUAccessFlags	=D3D11_CPU_ACCESS_WRITE;
+		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
+		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags		=0;
 		HRESULT hr;
 		V_CHECK(pd3dDevice->CreateTexture3D(&textureDesc,0,(ID3D11Texture3D**)(&texture)));
-		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView));
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+		srv_desc.Format						= f;
+		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
+		srv_desc.Texture3D.MipLevels		= 1;
+		srv_desc.Texture3D.MostDetailedMip	= 0;
+		V_CHECK(pd3dDevice->CreateShaderResourceView(texture, &srv_desc,&shaderResourceView));
+	}
+	if(computable&&(!unorderedAccessView||!ok))
+	{
+		SAFE_RELEASE(unorderedAccessView);
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+		uav_desc.Format				= f;
+		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE3D;
+		uav_desc.Texture3D.MipSlice	= 0;
+		uav_desc.Texture3D.WSize	= d;
+		uav_desc.Texture3D.FirstWSlice=0;
+		HRESULT hr;
+		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
 	}
 }
 
@@ -213,57 +235,6 @@ void ComputableTexture::init(ID3D11Device *pd3dDevice,int w,int h)
     srv_desc.Texture2D.MipLevels		= 1;
     srv_desc.Texture2D.MostDetailedMip	= 0;
     pd3dDevice->CreateShaderResourceView(g_pTex_Output, &srv_desc, &g_pSRV_Output);
-}
-
-ComputableTexture3D::ComputableTexture3D()
-	:texture(NULL)
-	,uav(NULL)
-	,srv(NULL)
-{
-}
-
-ComputableTexture3D::~ComputableTexture3D()
-{
-}
-
-void ComputableTexture3D::release()
-{
-	SAFE_RELEASE(texture);
-	SAFE_RELEASE(uav);
-	SAFE_RELEASE(srv);
-}
-
-void ComputableTexture3D::init(ID3D11Device *pd3dDevice,int w,int h,int d)
-{
-	release();
-    D3D11_TEXTURE3D_DESC tex_desc;
-	ZeroMemory(&tex_desc, sizeof(D3D11_TEXTURE3D_DESC));
-    tex_desc.BindFlags			= D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-    tex_desc.Usage				= D3D11_USAGE_DEFAULT;
-    tex_desc.Width				= w;
-    tex_desc.Height				= h;
-	tex_desc.Depth				= d;
-    tex_desc.MipLevels			= 1;
-	tex_desc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;
-    HRESULT hr;
-	hr=pd3dDevice->CreateTexture3D(&tex_desc, NULL, &texture);
-
-	D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-	ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-	uav_desc.Format				= tex_desc.Format;
-	uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE3D;
-	uav_desc.Texture3D.MipSlice	= 0;
-	uav_desc.Texture3D.WSize	= d;
-	uav_desc.Texture3D.FirstWSlice=0;
-	hr=pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &uav);
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-	ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-    srv_desc.Format						= tex_desc.Format;
-    srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
-    srv_desc.Texture3D.MipLevels		= 1;
-    srv_desc.Texture3D.MostDetailedMip	= 0;
-    hr=pd3dDevice->CreateShaderResourceView(texture, &srv_desc, &srv);
 }
 
 /*
