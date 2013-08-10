@@ -31,6 +31,7 @@ public:
 #endif
 namespace simul
 {
+	//! The namespace for the DirectX 11 platform library and its rendering classes.
 	namespace dx11
 	{
 		//! An implementation of \link simul::clouds::BaseWeatherRenderer BaseWeatherRenderer\endlink for DirectX 10 and 11

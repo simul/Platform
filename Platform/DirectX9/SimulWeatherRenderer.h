@@ -35,7 +35,24 @@ namespace simul
 		class Environment;
 	}
 }
+class SimulSkyRenderer;
+class SimulCloudRenderer;
+class SimulLightningRenderer;
+class Simul2DCloudRenderer;
+class SimulPrecipitationRenderer;
+class SimulAtmosphericsRenderer;
 
+namespace simul
+{
+	//! The namespace for the DirectX 9 platform library and its rendering classes.
+
+	//! This library is deprecated in favour of the \ref dx11 DirectX 11 library.
+	namespace dx9
+	{
+		//! A rendering class that encapsulates Simul skies and clouds.
+		//! Create an instance of this class within a DirectX 9 program.
+		//! You can take this entire class and use it as source in your project.
+		//! Make appropriate modifications where required.
 SIMUL_DIRECTX9_EXPORT_CLASS SimulWeatherRenderer:public simul::clouds::BaseWeatherRenderer
 {
 public:
@@ -70,15 +87,15 @@ public:
 	//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 	void SetExposure(float ex){exposure=ex;}
 	//! Get a pointer to the sky renderer owned by this class instance.
-	class SimulSkyRenderer *GetSkyRenderer();
+	SimulSkyRenderer *GetSkyRenderer();
 	//! Get a pointer to the 3d cloud renderer owned by this class instance.
-	class SimulCloudRenderer *GetCloudRenderer();
+	SimulCloudRenderer *GetCloudRenderer();
 	//! Get a pointer to the 2d cloud renderer owned by this class instance.
-	class Simul2DCloudRenderer *Get2DCloudRenderer();
+	Simul2DCloudRenderer *Get2DCloudRenderer();
 	//! Get a pointer to the rain renderer owned by this class instance.
-	class SimulPrecipitationRenderer *GetPrecipitationRenderer();
+	SimulPrecipitationRenderer *GetPrecipitationRenderer();
 	//! Get a pointer to the atmospherics renderer owned by this class instance.
-	class SimulAtmosphericsRenderer *GetAtmosphericsRenderer();
+	SimulAtmosphericsRenderer *GetAtmosphericsRenderer();
 	//! Get the current debug text as a c-string pointer. We don't use TCHAR here because Qt does not support using wchar_t as a built-in type.
 	const char *GetDebugText() const;
 	void EnableRain(bool e=true);
@@ -108,18 +125,20 @@ protected:
 
 	bool CreateBuffers();
 	bool RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture);
-	simul::base::SmartPtr<class SimulSkyRenderer> simulSkyRenderer;
-	simul::base::SmartPtr<class SimulCloudRenderer> simulCloudRenderer;
-	simul::base::SmartPtr<class SimulLightningRenderer> simulLightningRenderer;
-	simul::base::SmartPtr<class Simul2DCloudRenderer> simul2DCloudRenderer;
-	simul::base::SmartPtr<class SimulPrecipitationRenderer> simulPrecipitationRenderer;
-	simul::base::SmartPtr<class SimulAtmosphericsRenderer> simulAtmosphericsRenderer;
+	simul::base::SmartPtr<SimulSkyRenderer> simulSkyRenderer;
+	simul::base::SmartPtr<SimulCloudRenderer> simulCloudRenderer;
+	simul::base::SmartPtr<SimulLightningRenderer> simulLightningRenderer;
+	simul::base::SmartPtr<Simul2DCloudRenderer> simul2DCloudRenderer;
+	simul::base::SmartPtr<SimulPrecipitationRenderer> simulPrecipitationRenderer;
+	simul::base::SmartPtr<SimulAtmosphericsRenderer> simulAtmosphericsRenderer;
 	float							exposure;
 	float							gamma;
 	bool							use_buffer;
 	float							exposure_multiplier;
 	bool							show_rain;
 };
+	}
+}
 #ifdef _MSC_VER
 	#pragma warning(pop)
 #endif

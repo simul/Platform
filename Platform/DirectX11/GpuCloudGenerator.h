@@ -15,6 +15,7 @@ namespace simul
 {
 	namespace dx11
 	{
+		//! A generator for cloud volumes using DirectX 11.
 		class GpuCloudGenerator: public simul::clouds::BaseGpuCloudGenerator
 		{
 		public:

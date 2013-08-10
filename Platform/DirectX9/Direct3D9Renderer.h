@@ -43,8 +43,11 @@ namespace simul
 	{
 		class Camera;
 	}
+	namespace dx9
+	{
+		class SimulWeatherRenderer;
+	}
 }
-class SimulWeatherRenderer;
 class SimulHDRRenderer;
 class SimulTerrainRenderer;
 class SimulOpticsRendererDX9;
@@ -74,7 +77,7 @@ public:
 		META_ValueProperty(bool,ShowOSD,"Show debug display.")
 	META_EndProperties
 
-	SimulWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer.get();}
+	simul::dx9::SimulWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer.get();}
 	SimulTerrainRenderer *GetSimulTerrainRenderer(){return simulTerrainRenderer.get();}
 	SimulHDRRenderer *GetSimulHDRRenderer(){return simulHDRRenderer.get();}
 
@@ -103,7 +106,7 @@ protected:
 	bool device_reset;
 	float framerate;
 	simul::base::SmartPtr<SimulOpticsRendererDX9> simulOpticsRenderer;
-	simul::base::SmartPtr<SimulWeatherRenderer> simulWeatherRenderer;
+	simul::base::SmartPtr<simul::dx9::SimulWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulTerrainRenderer> simulTerrainRenderer;
 	simul::base::SmartPtr<SimulHDRRenderer> simulHDRRenderer;
 	const char *GetDebugText() const;

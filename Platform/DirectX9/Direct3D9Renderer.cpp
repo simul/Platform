@@ -20,6 +20,9 @@
 #include "Simul/Platform/DirectX9/Resources.h"
 #include <iomanip>
 
+using namespace simul;
+using namespace dx9;
+
 Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h)
 	:simul::graph::meta::Group()
 	,aspect(1.f)

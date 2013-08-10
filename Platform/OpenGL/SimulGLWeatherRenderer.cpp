@@ -23,6 +23,9 @@
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Decay.h"
 
+using namespace simul;
+using namespace opengl;
+
 static const GLenum buffer_tex_format		=GL_FLOAT;
 static const GLenum internal_buffer_format	=GL_RGBA32F_ARB;
 

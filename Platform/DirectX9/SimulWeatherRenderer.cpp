@@ -41,7 +41,8 @@
 
 #define WRITE_PERFORMANCE_DATA
 static simul::base::Timer timer;
-
+using namespace simul;
+using namespace dx9;
 SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 										   simul::base::MemoryInterface *mem,
 											bool usebuffer,int width,

@@ -18,7 +18,7 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
-
+using namespace simul::opengl;
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	:ScreenWidth(0)
 	,ScreenHeight(0)

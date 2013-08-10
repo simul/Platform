@@ -12,6 +12,7 @@ namespace simul
 {
 	namespace dx11
 	{
+		//! A DirectX 11 framebuffer class.
 		SIMUL_DIRECTX11_EXPORT_CLASS Framebuffer:public BaseFramebuffer
 		{
 		public:

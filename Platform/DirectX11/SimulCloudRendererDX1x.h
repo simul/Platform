@@ -32,7 +32,6 @@ namespace simul
 		class CloudInterface;
 		class LightningRenderInterface;
 		class CloudGeometryHelper;
-		class ThunderCloudNode;
 	}
 	namespace sky
 	{

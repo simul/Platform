@@ -51,7 +51,7 @@ public:
 	virtual void resizeGL(int w,int h);
 	virtual void initializeGL();
 	virtual void renderUI();
-	SimulGLWeatherRenderer *GetSimulGLWeatherRenderer(){return simulWeatherRenderer.get();}
+	simul::opengl::SimulGLWeatherRenderer *GetSimulGLWeatherRenderer(){return simulWeatherRenderer.get();}
 	SimulGLHDRRenderer *GetSimulGLHDRRenderer(){return simulHDRRenderer.get();}
 	class SimulGLTerrainRenderer *GetTerrainRenderer(){return simulTerrainRenderer.get();}
 	void SetCamera(simul::camera::Camera *c);
@@ -61,7 +61,7 @@ public:
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
 	void ReverseDepthChanged();
-	simul::base::SmartPtr<SimulGLWeatherRenderer> simulWeatherRenderer;
+	simul::base::SmartPtr<simul::opengl::SimulGLWeatherRenderer> simulWeatherRenderer;
 	simul::base::SmartPtr<SimulGLHDRRenderer> simulHDRRenderer;
 	simul::base::SmartPtr<SimulOpticsRendererGL> simulOpticsRenderer;
 	simul::base::SmartPtr<class SimulGLTerrainRenderer> simulTerrainRenderer;
