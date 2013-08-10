@@ -22,7 +22,6 @@ SamplerState flareSamplerState
 Texture3D fadeTexture1;
 Texture3D fadeTexture2;
 
-TextureCube cubeTexture;
 cbuffer cbPerObject : register(b11)
 {
 	float4 rect;
@@ -87,21 +86,6 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 		/(float3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
 	float3 result		=BetaTotal*inscatter_factor.rgb;
 	return result;
-}
-
-vertexOutput VS_DrawCubemap(vertexInput IN) 
-{
-    vertexOutput OUT;
-    OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
-    OUT.wDirection	=normalize(IN.position.xyz);
-    return OUT;
-}
-
-float4 PS_DrawCubemap(vertexOutput IN): SV_TARGET
-{
-	float3 view		=(IN.wDirection.xyz);
-	float4 result	=cubeTexture.Sample(samplerState,view);
-	return float4(result.rgb,1.f);
 }
 
 float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
@@ -457,17 +441,5 @@ technique11 simul_planet
 		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
 		SetDepthStencilState( EnableDepth, 0 );
 		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-    }
-}
-technique11 draw_cubemap
-{
-    pass p0 
-    {		
-		SetRasterizerState( RenderNoCull );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_DrawCubemap()));
-		SetPixelShader(CompileShader(ps_4_0,PS_DrawCubemap()));
-		SetDepthStencilState( EnableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }

@@ -1,7 +1,7 @@
 #include "Direct3D1xRenderer.h"
 
 // Simul Weather:
-#include "Simul/Platform/DirectX11/SimulWeatherRendererDX1x.h"
+#include "Simul/Platform/DirectX11/SimulWeatherRendererDX11.h"
 #include "Simul/Platform/DirectX11/SimulTerrainRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulCloudRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
@@ -39,7 +39,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,Exposure(1.0f)
 		,enabled(false)
 {
-	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,simul::base::GetDefaultMemoryInterface(),true,false,w,h,true,true,true);
+	simulWeatherRenderer=new SimulWeatherRendererDX11(env,simul::base::GetDefaultMemoryInterface());
 	AddChild(simulWeatherRenderer.get());
 	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
 	simulOpticsRenderer=new SimulOpticsRendererDX1x();

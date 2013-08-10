@@ -86,26 +86,26 @@ vec4 Clouds2Dunfaded(float cos0,vec2 texc_global,vec2 texc_detail,float dist,flo
 	float hg				=HenyeyGreenstein(cloudEccentricity,cos0);
 	float scattered_light	=light;//detail.a*exp(-light*Y(coverage)*32.0);
 	vec3 colour				=sunlight*(lightResponse.y+lightResponse.x*hg)*scattered_light+ambientLight;
-    return vec4(colour.rgb,opacity);
+    return					vec4(colour.rgb,opacity);
 }
 
 vec4 Clouds2DPS(vec2 texc_global,vec2 texc_detail,vec3 wEyeToPos,float dist,float cloudInterp,vec3 sunlight,vec3 lightDir,vec4 lightResponse)
 {
-	vec3 view			=normalize(wEyeToPos);
-	float cos0			=dot(normalize(lightDir),view);
-	vec4 final			=Clouds2Dunfaded(cos0,texc_global,texc_detail,dist,cloudInterp,sunlight,lightResponse);
-	final.rgb			=ApplySimpleFade(final.rgb,wEyeToPos,lightDir,mieRayleighRatio,hazeEccentricity,maxFadeDistanceMetres);
-	return final;
+	vec3 view	=normalize(wEyeToPos);
+	float cos0	=dot(normalize(lightDir),view);
+	vec4 final	=Clouds2Dunfaded(cos0,texc_global,texc_detail,dist,cloudInterp,sunlight,lightResponse);
+	final.rgb	=ApplySimpleFade(final.rgb,wEyeToPos,lightDir,mieRayleighRatio,hazeEccentricity,maxFadeDistanceMetres);
+	return		final;
 }
 
 vec4 Clouds2DPS_illum(vec2 texc_global,vec2 texc_detail,vec3 wEyeToPos,float dist,float cloudInterp,vec3 sunlight,vec3 lightDir,vec4 lightResponse)
 {
-	vec3 view			=normalize(wEyeToPos);
-
-	float cos0			=dot(normalize(lightDir),view);
-	vec4 final			=Clouds2Dunfaded(cos0,texc_global,texc_detail,dist,cloudInterp,sunlight,lightResponse);
-final.rgb			=ApplyEarthshadowFade(final.rgb,wEyeToPos,lightDir,mieRayleighRatio,hazeEccentricity,maxFadeDistanceMetres);
-	return final;
+	vec3 view	=normalize(wEyeToPos);
+	float cos0	=dot(normalize(lightDir),view);
+	vec4 final	=Clouds2Dunfaded(cos0,texc_global,texc_detail,dist,cloudInterp,sunlight,lightResponse);
+	//final.rgb	=ApplySimpleFade(final.rgb,wEyeToPos,lightDir,mieRayleighRatio,hazeEccentricity,maxFadeDistanceMetres);
+	final.rgb	=ApplyEarthshadowFade(final.rgb,wEyeToPos,lightDir,mieRayleighRatio,hazeEccentricity,maxFadeDistanceMetres);
+	return		final;
 }
 
 #endif

@@ -35,7 +35,7 @@ namespace simul
 {
 	namespace dx11
 	{
-		class SimulWeatherRendererDX1x;
+		class SimulWeatherRendererDX11;
 		class SimulHDRRendererDX1x;
 		class SimulTerrainRendererDX1x;
 		class SimulOpticsRendererDX1x;
@@ -67,7 +67,7 @@ namespace simul
 				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")
 			META_EndProperties
 			bool IsEnabled()const{return enabled;}
-			class SimulWeatherRendererDX1x *GetSimulWeatherRenderer()
+			class SimulWeatherRendererDX11 *GetSimulWeatherRenderer()
 			{
 				return simulWeatherRenderer.get();
 			}
@@ -98,7 +98,7 @@ namespace simul
 			bool enabled;
 			simul::camera::Camera *camera;
 			simul::base::SmartPtr<SimulOpticsRendererDX1x>	simulOpticsRenderer;
-			simul::base::SmartPtr<SimulWeatherRendererDX1x>	simulWeatherRenderer;
+			simul::base::SmartPtr<SimulWeatherRendererDX11>	simulWeatherRenderer;
 			simul::base::SmartPtr<SimulHDRRendererDX1x>		simulHDRRenderer;
 			simul::base::SmartPtr<SimulTerrainRendererDX1x>	simulTerrainRenderer;
 			int ScreenWidth,ScreenHeight;

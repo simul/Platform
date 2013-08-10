@@ -115,7 +115,6 @@ protected:
 	ID3D1xEffect*						m_pSkyEffect;
 	ID3D1xQuery*						d3dQuery;
 
-	ID3D1xEffectTechnique*				m_hTechniqueSky_CUBEMAP;
 	ID3D1xEffectTechnique*				m_hTechniqueFade3DTo2D;
 	ID3D1xEffectTechnique*				m_hTechniqueSun;
 	ID3D1xEffectTechnique*				m_hTechniqueQuery;
@@ -152,7 +151,6 @@ protected:
 	void MapFade(ID3D11DeviceContext *context,int s);
 	void UnmapFade();
 	D3DXMATRIX				world,view,proj;
-	void DrawCube(void *context);
 	void DrawLines(void *context,Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 	simul::dx11::GpuSkyGenerator gpuSkyGenerator;

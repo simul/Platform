@@ -130,9 +130,9 @@ namespace simul
 			static int screen_height;
 			static D3DXMATRIX view;
 			static D3DXMATRIX proj;
-			static ID3D1xEffect *m_pDebugEffect;
-			static ID3D11InputLayout *m_pBufferVertexDecl;
-			static ID3D1xBuffer* m_pVertexBuffer;
+			static ID3D1xEffect		*m_pDebugEffect;
+			static ID3D11InputLayout	*m_pCubemapVtxDecl;
+			static ID3D1xBuffer		* m_pVertexBuffer;
 			static ID3D1xDevice		*m_pd3dDevice;
 		public:
 			UtilityRenderer();
@@ -150,6 +150,8 @@ namespace simul
 			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
 			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
 			static void DrawQuad(ID3D11DeviceContext *m_pImmediateContext);
+			static void DrawCube(void *context);
+			static void DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
 		};
 	}
 }

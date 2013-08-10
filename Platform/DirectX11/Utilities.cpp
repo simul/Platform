@@ -350,7 +350,7 @@ int UtilityRenderer::screen_width=0;
 int UtilityRenderer::screen_height=0;
 D3DXMATRIX UtilityRenderer::view,UtilityRenderer::proj;
 ID3D1xEffect *UtilityRenderer::m_pDebugEffect=NULL;
-ID3D11InputLayout *UtilityRenderer::m_pBufferVertexDecl=NULL;
+ID3D11InputLayout *UtilityRenderer::m_pCubemapVtxDecl=NULL;
 ID3D1xBuffer* UtilityRenderer::m_pVertexBuffer=NULL;
 ID3D1xDevice* UtilityRenderer::m_pd3dDevice=NULL;
 UtilityRenderer utilityRenderer;
@@ -371,29 +371,89 @@ struct Vertext
 	D3DXVECTOR4 pos;
 	D3DXVECTOR2 tex;
 };
+struct Vertex3_t
+{
+	float x,y,z;
+};
 
+static const float size=5.f;
+static Vertex3_t vertices[36] =
+{
+	{-size,		-size,	size},
+	{size,		size,	size},
+	{size,		-size,	size},
+	{size,		size,	size},
+	{-size,		-size,	size},
+	{-size,		size,	size},
+	
+	{-size,		-size,	-size},
+	{ size,		-size,	-size},
+	{ size,		 size,	-size},
+	{ size,		 size,	-size},
+	{-size,		 size,	-size},
+	{-size,		-size,	-size},
+	
+	{-size,		size,	-size},
+	{ size,		size,	-size},
+	{ size,		size,	 size},
+	{ size,		size,	 size},
+	{-size,		size,	 size},
+	{-size,		size,	-size},
+				
+	{-size,		-size,  -size},
+	{ size,		-size,	 size},
+	{ size,		-size,	-size},
+	{ size,		-size,	 size},
+	{-size,		-size,  -size},
+	{-size,		-size,	 size},
+	
+	{ size,		-size,	-size},
+	{ size,		 size,	 size},
+	{ size,		 size,	-size},
+	{ size,		 size,	 size},
+	{ size,		-size,	-size},
+	{ size,		-size,	 size},
+				
+	{-size,		-size,	-size},
+	{-size,		 size,	-size},
+	{-size,		 size,	 size},
+	{-size,		 size,	 size},
+	{-size,		-size,	 size},
+	{-size,		-size,	-size},
+};
 
 void UtilityRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D1xDevice *)dev;
 	RecompileShaders();
-
-	D3D1x_BUFFER_DESC bdesc=
+	HRESULT hr;
+	SAFE_RELEASE(m_pVertexBuffer);
+	// Vertex declaration
 	{
-        4*sizeof(Vertext),
-        D3D11_USAGE_DYNAMIC,
-        D3D11_BIND_VERTEX_BUFFER,
-        D3D11_CPU_ACCESS_WRITE,
+		D3DX11_PASS_DESC PassDesc;
+		ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("vec3_input_signature");
+		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
+		D3D1x_INPUT_ELEMENT_DESC decl[]=
+		{
+			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
+		};
+		SAFE_RELEASE(m_pCubemapVtxDecl);
+		V_CHECK(m_pd3dDevice->CreateInputLayout(decl,1,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pCubemapVtxDecl));
+	}
+	D3D1x_BUFFER_DESC desc=
+	{
+        36*sizeof(vec3),
+        D3D1x_USAGE_DEFAULT,
+        D3D1x_BIND_VERTEX_BUFFER,
+        0,
         0
 	};
-    D3D11_SUBRESOURCE_DATA InitData;
-    ZeroMemory(&InitData,sizeof(D3D1x_SUBRESOURCE_DATA));
-//   InitData.pSysMem			=vertices;
-   // InitData.SysMemPitch		=sizeof(Vertext);
-    InitData.SysMemSlicePitch	=0;
-	SAFE_RELEASE(m_pVertexBuffer);
 	
-	m_pd3dDevice->CreateBuffer(&bdesc,NULL,&m_pVertexBuffer);
+    D3D1x_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    InitData.pSysMem = vertices;
+    InitData.SysMemPitch = sizeof(vec3);
+	V_CHECK(m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer));
 }
 
 void UtilityRenderer::RecompileShaders()
@@ -404,7 +464,7 @@ void UtilityRenderer::RecompileShaders()
 
 void UtilityRenderer::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(m_pBufferVertexDecl);
+	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pDebugEffect);
 }
@@ -544,12 +604,75 @@ void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout(&previousInputLayout );
-	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
 	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(4,0);
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+}
+
+void UtilityRenderer::DrawCube(void *context)
+{
+	UINT stride = sizeof(vec3);
+	UINT offset = 0;
+    UINT Strides[1];
+    UINT Offsets[1];
+    Strides[0] = 0;
+    Offsets[0] = 0;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11InputLayout* previousInputLayout;
+	pContext->IAGetInputLayout( &previousInputLayout );
+
+	pContext->IASetVertexBuffers(	0,					// the first input slot for binding
+												1,					// the number of buffers in the array
+												&m_pVertexBuffer,	// the array of vertex buffers
+												&stride,			// array of stride values, one for each buffer
+												&offset );			// array of offset values, one for each buffer
+
+	// Set the input layout
+	pContext->IASetInputLayout(m_pCubemapVtxDecl);
+
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+
+	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	pContext->Draw(36,0);
+
+	pContext->IASetPrimitiveTopology(previousTopology);
+	pContext->IASetInputLayout( previousInputLayout );
 	SAFE_RELEASE(previousInputLayout);
+}
+#include "Simul/Math/Vector3.h"
+void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	D3DXMATRIX tmp1,tmp2,wvp,world;
+	D3DXMatrixIdentity(&world);
+	float tan_x=1.0f/proj(0, 0);
+	float tan_y=1.0f/proj(1, 1);
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	//SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
+	//simul::math::Vector3 pos((const float*)cam_pos);
+	float size_req=tan_x*0.2f;
+	static float size=5.f;
+	float d=2.0f*size/size_req;
+	simul::math::Vector3 offs0(-0.7f*(tan_x-size_req)*d,0.7f*(tan_y-size_req)*d,-d);
+	simul::math::Vector3 offs;
+	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)view),offs0);
+
+	world._41=offs.x;
+	world._42=offs.y;
+	world._43=offs.z;
+	view._41=0;
+	view._42=0;
+	view._43=0;
+	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	//SkyConstants skyConstants;
+	//skyConstants.worldViewProj=&wvp._11;
+	//skyConstants.worldViewProj.transpose();
+	simul::dx11::setMatrix(m_pDebugEffect,"worldViewProj",&wvp._11);
+	ID3D1xEffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
+	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pDebugEffect->GetVariableByName("cubeTexture")->AsShaderResource();
+	cubeTexture->SetResource(m_pCubeEnvMapSRV);
+	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));
+	UtilityRenderer::DrawCube(context);
 }

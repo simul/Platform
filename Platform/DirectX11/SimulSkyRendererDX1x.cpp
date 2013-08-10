@@ -16,11 +16,8 @@
 #include <d3dx10.h>
 #include <dxerr.h>
 #include <string>
-typedef std::basic_string<TCHAR> tstring;
-static tstring filepath=TEXT("");
 static DXGI_FORMAT sky_tex_format=DXGI_FORMAT_R32G32B32A32_FLOAT;
 extern 	D3DXMATRIX view_matrices[6];
-
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/SkyKeyframer.h"
@@ -36,51 +33,6 @@ struct Vertex_t
 {
 	float x,y,z;
 };
-static const float size=5.f;
-static Vertex_t vertices[36] =
-{
-	{-size,		-size,	size},
-	{size,		size,	size},
-	{size,		-size,	size},
-	{size,		size,	size},
-	{-size,		-size,	size},
-	{-size,		size,	size},
-	
-	{-size,		-size,	-size},
-	{ size,		-size,	-size},
-	{ size,		 size,	-size},
-	{ size,		 size,	-size},
-	{-size,		 size,	-size},
-	{-size,		-size,	-size},
-	
-	{-size,		size,	-size},
-	{ size,		size,	-size},
-	{ size,		size,	 size},
-	{ size,		size,	 size},
-	{-size,		size,	 size},
-	{-size,		size,	-size},
-				
-	{-size,		-size,  -size},
-	{ size,		-size,	 size},
-	{ size,		-size,	-size},
-	{ size,		-size,	 size},
-	{-size,		-size,  -size},
-	{-size,		-size,	 size},
-	
-	{ size,		-size,	-size},
-	{ size,		 size,	 size},
-	{ size,		 size,	-size},
-	{ size,		 size,	 size},
-	{ size,		-size,	-size},
-	{ size,		-size,	 size},
-				
-	{-size,		-size,	-size},
-	{-size,		 size,	-size},
-	{-size,		 size,	 size},
-	{-size,		 size,	 size},
-	{-size,		-size,	 size},
-	{-size,		-size,	-size},
-};
 
 typedef std::basic_string<TCHAR> tstring;
 
@@ -92,7 +44,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	,m_pVertexBuffer(NULL)
 	,m_pStarsVertexBuffer(NULL)
 	,m_pSkyEffect(NULL)
-	,m_hTechniqueSky_CUBEMAP(NULL)
 	,m_hTechniqueFade3DTo2D(NULL)
 	,m_hTechniqueSun(NULL)
 	,m_hTechniqueQuery(NULL)	
@@ -141,31 +92,6 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 
 	flare_texture_SRV=simul::dx11::LoadTexture(m_pd3dDevice,"Sunburst.dds");
 
-	// Vertex declaration
-	{
-		D3D1x_PASS_DESC PassDesc;
-		m_hTechniqueSky_CUBEMAP->GetPassByIndex(0)->GetDesc(&PassDesc);
-		D3D1x_INPUT_ELEMENT_DESC decl[]=
-		{
-			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
-		};
-		SAFE_RELEASE(m_pCubemapVtxDecl);
-		hr=m_pd3dDevice->CreateInputLayout(decl,1, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pCubemapVtxDecl);
-	}
-	D3D1x_BUFFER_DESC desc=
-	{
-        36*sizeof(Vertex_t),
-        D3D1x_USAGE_DEFAULT,
-        D3D1x_BIND_VERTEX_BUFFER,
-        0,
-        0
-	};
-	
-    D3D1x_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-    InitData.pSysMem = vertices;
-    InitData.SysMemPitch = sizeof(Vertex_t);
-	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer);
 	if(loss_2d)
 	{
 		loss_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
@@ -477,7 +403,6 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	V_CHECK(CreateEffect(m_pd3dDevice,&m_pSkyEffect,"simul_sky.fx",defines));
-	m_hTechniqueSky_CUBEMAP		=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
 
 	m_hTechniqueFade3DTo2D		=m_pSkyEffect->GetTechniqueByName("simul_fade_3d_to_2d");
 
@@ -879,6 +804,7 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m
 	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 	simul::math::Vector3 pos((const float*)cam_pos);
 	float size_req=tan_x*0.2f;
+	static float size=5.f;
 	float d=2.0f*size/size_req;
 	simul::math::Vector3 offs0(-0.7f*(tan_x-size_req)*d,0.7f*(tan_y-size_req)*d,-d);
 	simul::math::Vector3 offs;
@@ -895,40 +821,7 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m
 	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pSkyEffect->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
 	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));
-	DrawCube(context);
-}
-
-void SimulSkyRendererDX1x::DrawCube(void *context)
-{
-	UINT stride = sizeof(Vertex_t);
-	UINT offset = 0;
-    UINT Strides[1];
-    UINT Offsets[1];
-    Strides[0] = 0;
-    Offsets[0] = 0;
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-	ID3D11InputLayout* previousInputLayout;
-	pContext->IAGetInputLayout( &previousInputLayout );
-
-	pContext->IASetVertexBuffers(	0,					// the first input slot for binding
-												1,					// the number of buffers in the array
-												&m_pVertexBuffer,	// the array of vertex buffers
-												&stride,			// array of stride values, one for each buffer
-												&offset );			// array of offset values, one for each buffer
-
-	// Set the input layout
-	pContext->IASetInputLayout(m_pCubemapVtxDecl);
-
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	pContext->IAGetPrimitiveTopology(&previousTopology);
-
-	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	pContext->Draw(36,0);
-
-	pContext->IASetPrimitiveTopology(previousTopology);
-	pContext->IASetInputLayout( previousInputLayout );
-	SAFE_RELEASE(previousInputLayout);
+	UtilityRenderer::DrawCube(context);
 }
 
 void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

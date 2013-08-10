@@ -35,11 +35,11 @@ namespace simul
 	{
 		//! An implementation of \link simul::clouds::BaseWeatherRenderer BaseWeatherRenderer\endlink for DirectX 10 and 11
 		//! The DX10 switch is used
-		SIMUL_DIRECTX11_EXPORT_CLASS SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer
+		SIMUL_DIRECTX11_EXPORT_CLASS SimulWeatherRendererDX11 : public simul::clouds::BaseWeatherRenderer
 		{
 		public:
-			SimulWeatherRendererDX1x(simul::clouds::Environment *env,simul::base::MemoryInterface *a,bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
-			virtual ~SimulWeatherRendererDX1x();
+			SimulWeatherRendererDX11(simul::clouds::Environment *env,simul::base::MemoryInterface *mem);
+			virtual ~SimulWeatherRendererDX11();
 			void SetScreenSize(int w,int h);
 			//standard d3d object interface functions
 			void RestoreDeviceObjects(void*);
