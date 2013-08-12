@@ -59,25 +59,25 @@ float GetHumidityMultiplier(float z)
 	return res2;
 }
 
-float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float persistence,float time)
+float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float persistence,float T)
 {
 	float dens=0.0;
 	float mult=0.5;
 	float sum=0.0;
-	float t=time;
+	float t=T;
 	for(int i=0;i<5;i++)
 	{
 		if(i>=octaves)
 			break;
 		float lookup=texture_wrap_lod(volumeNoiseTexture,pos,0).x;
-		float val=lookup;
-		dens+=mult*val;
-		sum+=mult;
-		mult*=persistence;
-		pos*=2.0;
-		t*=2.0;
+		float val	=lookup;
+		dens		=dens+mult*val;
+		sum			=sum+mult;
+		mult		=mult*persistence;
+		pos			=pos*2.0;
+		t			=t*2.0;
 	}
-	dens/=sum;
+	dens=dens/sum;
 	return dens;
 }
 #endif

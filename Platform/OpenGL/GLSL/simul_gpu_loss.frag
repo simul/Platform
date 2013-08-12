@@ -1,8 +1,13 @@
 #version 330
-#include "simul_gpu_sky.glsl"
 
 uniform sampler2D input_loss_texture;
 uniform sampler1D density_texture;
+uniform sampler2D optical_depth_texture;
+
+#include "CppGlsl.hs"
+#include "saturate.glsl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/simul_gpu_sky.sl"
 
 in vec2 texc;
 out vec4 outColor;

@@ -24,7 +24,7 @@ float NoiseFunction(Texture2D noiseTexture,vec2 pos,float octaves,float persiste
 	return saturate(dens);
 }
 
-float4 Coverage(vec2 texCoords,float octaves,float persistence,float time,Texture2D noiseTexture)
+vec4 Coverage(vec2 texCoords,float octaves,float persistence,float time,Texture2D noiseTexture)
 {
 	float noise_val			=NoiseFunction(noiseTexture,texCoords/noiseTextureScale,octaves,persistence,time);
 	float dens				=saturate((noise_val+humidity-1.0)/diffusivity);

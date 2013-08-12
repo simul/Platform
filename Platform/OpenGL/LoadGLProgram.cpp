@@ -500,7 +500,10 @@ ERROR_CHECK
 	while((pos=src.find("#include",pos))<src.length())
 	{
 		if(pos>0&&src[pos-1]!='\n')
+		{
+			pos++;
 			continue;
+		}
 		int start_of_line=pos;
 		int start_line=GetLineNumber(src,pos);
 		pos+=9;
