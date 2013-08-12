@@ -49,9 +49,12 @@ void GpuSkyGenerator::RecompileShaders()
 	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_gpu_sky.fx");
 	if(effect)
 	{
-		lossTechnique	=effect->GetTechniqueByName("simul_gpu_loss");
-		inscTechnique	=effect->GetTechniqueByName("simul_gpu_insc");
-		skylTechnique	=effect->GetTechniqueByName("simul_gpu_skyl");
+		lossTechnique			=effect->GetTechniqueByName("simul_gpu_loss");
+		inscTechnique			=effect->GetTechniqueByName("simul_gpu_insc");
+		skylTechnique			=effect->GetTechniqueByName("simul_gpu_skyl");
+		lossComputeTechnique	=effect->GetTechniqueByName("gpu_loss_compute");
+		inscComputeTechnique	=effect->GetTechniqueByName("gpu_insc_compute");
+		skylComputeTechnique	=effect->GetTechniqueByName("gpu_skyl_compute");
 		gpuSkyConstants	=effect->GetConstantBufferByName("GpuSkyConstants");
 	}
 	
@@ -100,6 +103,7 @@ HRESULT hr=S_OK;
 	{
 		fb[i].SetWidthAndHeight((int)altitudes_km.size(),numElevations);
 	}
+	int gridsize=altitudes_km.size()*numElevations*numDistances;
 	int gridsize_2d=altitudes_km.size()*numElevations;
 	simul::dx11::Framebuffer *F[2];
 	F[0]=&fb[0];
@@ -160,11 +164,13 @@ HRESULT hr=S_OK;
 		gConstants=constants;
 		m_pImmediateContext->Unmap(constantBuffer, 0);	
 	}
-	
+	finalLoss[cycled_index]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+
 	density_texture->SetResource(dens_tex);
 	// DX11 needs a whole extra Staging texture just to read the rendertarget output. Progress!
 
 	simul::sky::float4 *target=loss;
+#if 0
 	F[0]->Activate(m_pImmediateContext);
 		F[0]->Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
 	F[0]->Deactivate(m_pImmediateContext);
@@ -192,19 +198,24 @@ HRESULT hr=S_OK;
 		target+=altitudes_km.size()*numElevations;
 		prevDist_km=dist_km;
 	}
-	
-	
-	ID3D11Texture3D *loss_tex1=make3DTexture(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)loss);
+#else
+	simul::dx11::setParameter(effect,"targetTexture",finalLoss[cycled_index]->unorderedAccessView);
+	V_CHECK(ApplyPass(m_pImmediateContext,lossComputeTechnique->GetPassByIndex(0)));
+	uint3 grid((altitudes_km.size()+7)/8,(numElevations+7)/8,1);
+	m_pImmediateContext->Dispatch(grid.x,grid.y,1);
+#endif
+	finalLoss[cycled_index]->setTexels(m_pImmediateContext,(const float *)loss,0,gridsize);
+	/*ID3D11Texture3D *loss_tex1=make3DTexture(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)loss);
 	ID3D11ShaderResourceView* loss_tex;
 	m_pd3dDevice->CreateShaderResourceView(loss_tex1,NULL,&loss_tex);
-	m_pImmediateContext->GenerateMips(loss_tex);
+	m_pImmediateContext->GenerateMips(loss_tex);*/
 	
 	ID3D11Texture2D *optd_tex1=make2DTexture(m_pd3dDevice,table_size,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)optical_table);
 	ID3D11ShaderResourceView* optd_tex;
 	m_pd3dDevice->CreateShaderResourceView(optd_tex1,NULL,&optd_tex);
 	m_pImmediateContext->GenerateMips(optd_tex);
 	
-	loss_texture->SetResource(loss_tex);
+	loss_texture->SetResource(finalLoss[cycled_index]->shaderResourceView);
 	optical_depth_texture->SetResource(optd_tex);
 	
 	target=insc;
@@ -277,8 +288,6 @@ HRESULT hr=S_OK;
 	density_texture->SetResource(NULL);
 	SAFE_RELEASE(dens_tex1);
 	SAFE_RELEASE(dens_tex);
-	SAFE_RELEASE(loss_tex1);
-	SAFE_RELEASE(loss_tex);
 	SAFE_RELEASE(optd_tex1);
 	SAFE_RELEASE(optd_tex);
 	SAFE_RELEASE(insc_tex1);

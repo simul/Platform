@@ -8,7 +8,6 @@
 	#include <d3d9.h>
 	#include <d3dx9.h>
 #endif
-//! A DX9 class to generate clouds on the GPU
 namespace simul
 {
 namespace dx9

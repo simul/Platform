@@ -1,16 +1,12 @@
 #pragma once
 #include "Simul/Sky/BaseGpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 
 #include <d3dx9.h>
-#ifdef DX10
-	#include <d3d10.h>
-	#include <d3dx10.h>
-#else
-	#include <d3d11.h>
-	#include <d3dx11.h>
-	#include <d3dx11effect.h>
-#endif
+#include <d3d11.h>
+#include <d3dx11.h>
+#include <d3dx11effect.h>
 
 namespace simul
 {
@@ -38,6 +34,25 @@ namespace simul
 				,const simul::sky::float4 *blackbody_table,int table_size,float maxDensityAltKm,bool InfraRed
 				,float emissivity
 				,float seaLevelTemperatureK);
+			// If we want the generator to put the data directly into 3d textures:
+			void SetDirectTargets(TextureStruct **loss,TextureStruct **insc,TextureStruct **skyl)
+			{
+				for(int i=0;i<3;i++)
+				{
+					if(loss)
+						finalLoss[i]=loss[i];
+					else
+						finalLoss[i]=NULL;
+					if(insc)
+						finalInsc[i]=insc[i];
+					else
+						finalInsc[i]=NULL;
+					if(skyl)
+						finalSkyl[i]=skyl[i];
+					else
+						finalSkyl[i]=NULL;
+				}
+			}
 		protected:
 			simul::dx11::Framebuffer		fb[2];
 			ID3D1xDevice*					m_pd3dDevice;
@@ -46,10 +61,16 @@ namespace simul
 			ID3D1xEffectTechnique*			lossTechnique;
 			ID3D1xEffectTechnique*			inscTechnique;
 			ID3D1xEffectTechnique*			skylTechnique;
+			ID3DX11EffectTechnique*			lossComputeTechnique;
+			ID3DX11EffectTechnique*			inscComputeTechnique;
+			ID3DX11EffectTechnique*			skylComputeTechnique;
 			
 			ID3D1xBuffer*					constantBuffer;
 	
 			ID3DX11EffectConstantBuffer		*gpuSkyConstants;
+			TextureStruct					*finalLoss[3];
+			TextureStruct					*finalInsc[3];
+			TextureStruct					*finalSkyl[3];
 		};
 	}
 }

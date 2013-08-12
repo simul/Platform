@@ -88,6 +88,14 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
 	gpuSkyGenerator.RestoreDeviceObjects(m_pd3dDevice);
+	TextureStruct *loss[3],*insc[3],*skyl[3];
+	for(int i=0;i<3;i++)
+	{
+		loss[i]=&loss_textures[i];
+		insc[i]=&insc_textures[i];
+		skyl[i]=&skyl_textures[i];
+	}
+	gpuSkyGenerator.SetDirectTargets(loss,insc,skyl);
 	RecompileShaders();
 
 	flare_texture_SRV=simul::dx11::LoadTexture(m_pd3dDevice,"Sunburst.dds");
@@ -200,7 +208,7 @@ SimulSkyRendererDX1x::~SimulSkyRendererDX1x()
 
 void SimulSkyRendererDX1x::MapFade(ID3D11DeviceContext *context,int s)
 {
-	loss_textures[(texture_cycle+s)%3].map(context);
+//	loss_textures[(texture_cycle+s)%3].map(context);
 	insc_textures[(texture_cycle+s)%3].map(context);
 	skyl_textures[(texture_cycle+s)%3].map(context);
 }
@@ -380,7 +388,7 @@ void SimulSkyRendererDX1x::FillFadeTex(ID3D11DeviceContext *context,int texture_
 		else
 			if(row!=end_row)
 				num_left=slice*slice_size+(row+1)*numAltitudes-texel_index;
-		memcpy(loss_ptr,loss_float4_array	,num_left*sizeof(simul::sky::float4));
+		//memcpy(loss_ptr,loss_float4_array	,num_left*sizeof(simul::sky::float4));
 		memcpy(insc_ptr,insc_float4_array	,num_left*sizeof(simul::sky::float4));
 		memcpy(skyl_ptr,skyl_float4_array	,num_left*sizeof(simul::sky::float4));
 		loss_float4_array+=num_left;
@@ -763,26 +771,25 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
 
 	x0+=24+size;
-	int s=size/numAltitudes-4;
+	int s=size/numAltitudes-2;
+	bool show_3=false;//gpuSkyGenerator.GetEnabled()&&(skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator);
 	for(int i=0;i<numAltitudes;i++)
 	{
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
 		int x1=x0,x2=x0+s+8;
-		int y=y0+i*(s+4);
+		int y=y0+i*(s+2);
 		skyConstants.altitudeTexCoord=atc;
 		skyConstants.Apply(context);
-		fadeTexture1->SetResource(loss_textures[(texture_cycle+0)%3].shaderResourceView);
-		UtilityRenderer::DrawQuad2(context,x1	,y+8		,s,s	,m_pSkyEffect,techniqueShowFade);
-		fadeTexture1->SetResource(loss_textures[(texture_cycle+1)%3].shaderResourceView);
-		UtilityRenderer::DrawQuad2(context,x2	,y+8		,s,s	,m_pSkyEffect,techniqueShowFade);
-		fadeTexture1->SetResource(insc_textures[(texture_cycle+0)%3].shaderResourceView);
-		UtilityRenderer::DrawQuad2(context,x1	,y+16+size	,s,s	,m_pSkyEffect,techniqueShowFade);
-		fadeTexture1->SetResource(insc_textures[(texture_cycle+1)%3].shaderResourceView);
-		UtilityRenderer::DrawQuad2(context,x2	,y+16+size	,s,s	,m_pSkyEffect,techniqueShowFade);
-		fadeTexture1->SetResource(skyl_textures[(texture_cycle+0)%3].shaderResourceView);
-		UtilityRenderer::DrawQuad2(context,x1	,y+24+2*size,s,s	,m_pSkyEffect,techniqueShowFade);
-		fadeTexture1->SetResource(skyl_textures[(texture_cycle+1)%3].shaderResourceView);
-		UtilityRenderer::DrawQuad2(context,x2	,y+24+2*size,s,s	,m_pSkyEffect,techniqueShowFade);
+		for(int j=0;j<(show_3?3:2);j++)
+		{
+			int x=x0+(s+8)*j;
+			fadeTexture1->SetResource(loss_textures[(texture_cycle+j)%3].shaderResourceView);
+			UtilityRenderer::DrawQuad2(context,x	,y+8		,s,s	,m_pSkyEffect,techniqueShowFade);
+			fadeTexture1->SetResource(insc_textures[(texture_cycle+j)%3].shaderResourceView);
+			UtilityRenderer::DrawQuad2(context,x	,y+16+size	,s,s	,m_pSkyEffect,techniqueShowFade);
+			fadeTexture1->SetResource(skyl_textures[(texture_cycle+j)%3].shaderResourceView);
+			UtilityRenderer::DrawQuad2(context,x	,y+24+2*size,s,s	,m_pSkyEffect,techniqueShowFade);
+		}
 	}
 	int x=x0+16+4*(s+8);
 	if(x+size>width)
