@@ -582,7 +582,7 @@ void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext)
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	//m_pImmediateContext->IASetInputLayout(NULL);
+	m_pImmediateContext->IASetInputLayout(NULL);
 	m_pImmediateContext->Draw(4,0);
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 }			

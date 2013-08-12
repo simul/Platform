@@ -2,7 +2,8 @@
 #include "Simul/Sky/BaseGpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
-
+#include "HLSL/CppHLSL.hlsl"
+#include "Simul/Platform/CrossPlatform/simul_gpu_sky.sl"
 #include <d3dx9.h>
 #include <d3d11.h>
 #include <d3dx11.h>
@@ -67,7 +68,7 @@ namespace simul
 			
 			ID3D1xBuffer*					constantBuffer;
 	
-			ID3DX11EffectConstantBuffer		*gpuSkyConstants;
+			ConstantBuffer<GpuSkyConstants>	gpuSkyConstants;
 			TextureStruct					*finalLoss[3];
 			TextureStruct					*finalInsc[3];
 			TextureStruct					*finalSkyl[3];

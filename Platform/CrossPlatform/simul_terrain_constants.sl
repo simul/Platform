@@ -17,6 +17,12 @@ uniform_buffer TerrainConstants R10
 	uniform float cloudInterp;
 	uniform vec3 cloudOffset;
 	uniform float morphFactor;
+
+	// cloud shadow
+	uniform mat4 invShadowMatrix;
+	uniform float extentZMetres;
+	uniform float startZMetres;
+	uniform float shadowRange;
 };
 
 #endif

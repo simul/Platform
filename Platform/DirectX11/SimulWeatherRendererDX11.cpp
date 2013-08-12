@@ -55,7 +55,7 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer;
 	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer;
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
-	if(ShowSky)
+	//if(ShowSky)
 	{
 		simulSkyRenderer=new(memoryInterface) SimulSkyRendererDX1x(sk,memoryInterface);
 		baseSkyRenderer=simulSkyRenderer;
@@ -287,9 +287,12 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename)
 	}
 }
 
-void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH)
+void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
 {
-	BaseWeatherRenderer::RenderSkyAsOverlay(context,exposure,buffered,is_cubemap,depthTexture,viewport_id,relativeViewportTextureRegionXYWH);
+	BaseWeatherRenderer::RenderSkyAsOverlay(context,exposure,buffered,is_cubemap,depthTexture,viewport_id,viewportTextureRegionXYWH);
+	
+//	if(baseAtmosphericsRenderer&&!is_cubemap)
+//		baseAtmosphericsRenderer->RenderGodrays(context,depthTexture,exposure,viewportTextureRegionXYWH);
 	if(buffered&&baseFramebuffer)
 	{
 		bool blend=!is_cubemap;
@@ -301,8 +304,9 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,float exposure,b
 		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
 	}
+
 	if(baseAtmosphericsRenderer&&!is_cubemap)
-		baseAtmosphericsRenderer->RenderGodrays(context,depthTexture,exposure,relativeViewportTextureRegionXYWH);
+		baseAtmosphericsRenderer->RenderGodrays(context,depthTexture,exposure,viewportTextureRegionXYWH);
 }
 
 bool SimulWeatherRendererDX11::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)
@@ -338,7 +342,8 @@ void SimulWeatherRendererDX11::RenderLateCloudLayer(void *context,float exposure
 
 void SimulWeatherRendererDX11::RenderPrecipitation(void *context)
 {
-	basePrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
+	if(basePrecipitationRenderer)
+		basePrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
 	if(simulPrecipitationRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible()) 
 		simulPrecipitationRenderer->Render(context);
 }

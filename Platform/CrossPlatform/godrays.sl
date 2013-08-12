@@ -3,8 +3,8 @@
 
 vec3 GetRadialPos(vec3 wpos)
 {
-	vec3 rel_pos		=wpos-cloudOrigin;
-	vec3 cloud_texc		=rel_pos*cloudScale;
+	//vec3 rel_pos		=wpos-cloudOrigin;
+	//vec3 cloud_texc		=rel_pos*cloudScale;
 	vec3 tex_pos		=mul(invShadowMatrix,vec4(wpos,1.0)).xyz;
 	//tex_pos				/=vec3(1.0,1.0,1000.0);
 //for this texture, x is the square root of distance and y is the angle anticlockwise from the x-axis.
@@ -12,7 +12,7 @@ vec3 GetRadialPos(vec3 wpos)
 	return radial_pos;
 }
 
-float GetIlluminationAt(vec3 wpos)
+float GetIlluminationAt(Texture2D cloudShadowTexture,vec3 wpos)
 {
 	vec3 radial_pos		=GetRadialPos(wpos);
 	vec4 texel			=sampleLod(cloudShadowTexture,clampWrapSamplerState,radial_pos.xy,0);

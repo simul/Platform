@@ -208,7 +208,7 @@ SimulSkyRendererDX1x::~SimulSkyRendererDX1x()
 
 void SimulSkyRendererDX1x::MapFade(ID3D11DeviceContext *context,int s)
 {
-//	loss_textures[(texture_cycle+s)%3].map(context);
+	loss_textures[(texture_cycle+s)%3].map(context);
 	insc_textures[(texture_cycle+s)%3].map(context);
 	skyl_textures[(texture_cycle+s)%3].map(context);
 }
@@ -255,6 +255,8 @@ void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate(void *c)
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
+	if(gpuSkyGenerator.GetEnabled()&&skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator)
+		return;
 	for(int i=0;i<3;i++)
 	{
 		bool reset=false;
@@ -313,9 +315,6 @@ void SimulSkyRendererDX1x::CreateFadeTextures()
 	UnmapFade();
 	for(int i=0;i<3;i++)
 	{
-		loss_textures[i].release();
-		insc_textures[i].release();
-		skyl_textures[i].release();
 		loss_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,numAltitudes,numFadeElevations,numFadeDistances,sky_tex_format,false);
 		insc_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,numAltitudes,numFadeElevations,numFadeDistances,sky_tex_format,false);
 		skyl_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,numAltitudes,numFadeElevations,numFadeDistances,sky_tex_format,false);
@@ -772,7 +771,7 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 
 	x0+=24+size;
 	int s=size/numAltitudes-2;
-	bool show_3=false;//gpuSkyGenerator.GetEnabled()&&(skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator);
+	bool show_3=gpuSkyGenerator.GetEnabled()&&(skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator);
 	for(int i=0;i<numAltitudes;i++)
 	{
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);

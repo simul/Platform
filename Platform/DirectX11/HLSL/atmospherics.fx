@@ -20,14 +20,6 @@ SamplerState samplerState: register(s1)
 	AddressV = Clamp;
 };
 
-SamplerState clampWrapSamplerState: register(s8)
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Clamp;
-	AddressV = Wrap;
-	AddressW = Clamp;
-};
-
 #include "../../CrossPlatform/godrays.sl"
 
 #define pi (3.1415926536)
@@ -173,7 +165,7 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 			float eff		=exp(-dist/dist_max);
 			fade_texc.x		=sqrt(dist_0);
 			float d			=dist*maxDistance;
-			ill				=eff*GetIlluminationAt(viewPosition+view*d);
+			ill				=eff*GetIlluminationAt(cloudShadowTexture,viewPosition+view*d);
 			vec4 insc0		=insc1;
 			insc1			=max(texture_wrap_mirror(inscTexture,fade_texc)
 								-texture_wrap_mirror(overcTexture,fade_texc),vec4(0,0,0,0));
@@ -222,7 +214,11 @@ technique11 simul_atmospherics_overlay
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_AtmosOverlayInscPass()));
     }
-    pass godrays
+}
+
+technique11 simul_godrays
+{
+    pass p0
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );

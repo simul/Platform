@@ -1,7 +1,10 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
 #include "../../CrossPlatform/simul_terrain_constants.sl"
+#include "../../CrossPlatform/states.sl"
+#include "../../CrossPlatform/godrays.sl"
 
+Texture2D cloudShadowTexture;
 Texture2DArray textureArray;
 
 struct vertexInput
@@ -34,11 +37,13 @@ vertexOutput VS_Main(vertexInput IN)
 float4 PS_Main( vertexOutput IN) : SV_TARGET
 {
 	vec4 result;
-	vec4 layer1=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,0.0));
-	vec4 layer2=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,1.0));
-	vec4 texel=mix(layer1,layer2,clamp(1.0-IN.wPosition.z/100.0,0.0,1.0));
-	result.rgb=texel.rgb*(ambientColour.rgb+lightDir.z*sunlight.rgb);
-	result.a=1.0;
+	vec4 layer1	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,0.0));
+	vec4 layer2	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,1.0));
+	vec4 texel	=mix(layer1,layer2,clamp(1.0-IN.wPosition.z/100.0,0.0,1.0));
+	float light	=lightDir.z;
+	light		*=GetIlluminationAt(cloudShadowTexture,IN.wPosition.xyz);
+	result.rgb	=texel.rgb*(ambientColour.rgb+light*sunlight.rgb);
+	result.a	=1.0;
     return result;
 }
 

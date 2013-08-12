@@ -20,6 +20,7 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 typedef long HRESULT;
 namespace simul
@@ -68,6 +69,7 @@ namespace simul
 			ID3D1xEffect*								effect;
 			ID3D1xEffectTechnique*						singlePassTechnique;
 			ID3D1xEffectTechnique*						twoPassOverlayTechnique;
+			ID3D1xEffectTechnique*						godraysTechnique;
 			// Variables for this effect:
 			ID3D1xEffectMatrixVariable*					invViewProj;
 			ID3D1xEffectVectorVariable*					lightDir;
@@ -78,6 +80,9 @@ namespace simul
 			ID3D1xEffectShaderResourceVariable*			lossTexture;
 			ID3D1xEffectShaderResourceVariable*			inscTexture;
 			ID3D1xEffectShaderResourceVariable*			skylTexture;
+			ID3D1xEffectShaderResourceVariable*			illuminationTexture;
+			ID3D1xEffectShaderResourceVariable*			overcTexture;
+			ID3D1xEffectShaderResourceVariable*			cloudShadowTexture;
 
 			ID3D1xShaderResourceView*					skyLossTexture_SRV;
 			ID3D1xShaderResourceView*					skyInscatterTexture_SRV;
@@ -89,6 +94,8 @@ namespace simul
 
 			ID3D11Buffer*								constantBuffer;
 			ID3D11Buffer*								atmosphericsUniforms2ConstantsBuffer;
+			ConstantBuffer<AtmosphericsPerViewConstants>	atmosphericsPerViewConstants;
+			ConstantBuffer<AtmosphericsUniforms>			atmosphericsUniforms;
 		};
 	}
 }
