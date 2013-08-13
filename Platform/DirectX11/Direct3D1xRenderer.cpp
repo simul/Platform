@@ -38,6 +38,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,ShowOSD(false)
 		,Exposure(1.0f)
 		,enabled(false)
+		,m_pd3dDevice(NULL)
 {
 	simulWeatherRenderer=new SimulWeatherRendererDX11(env,simul::base::GetDefaultMemoryInterface());
 	AddChild(simulWeatherRenderer.get());
@@ -76,6 +77,7 @@ bool Direct3D11Renderer::ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSetting
 
 HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
+	m_pd3dDevice=pd3dDevice;
 	enabled=true;
 	//Set a global device pointer for use by various classes.
 	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
@@ -156,7 +158,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetCubemapTexture(framebuffer_cubemap.GetColorTex());
 }
-
+#include "Simul/Platform/DirectX11/SaveTextureDx1x.h"
 void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep)
 {
 	if(!enabled)
@@ -256,6 +258,20 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 	}
 	Profiler::GetGlobalProfiler().EndFrame(pd3dImmediateContext);
+}
+
+void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
+{
+	screenshotFilenameUtf8=filename_utf8;
+	simul::dx11::Framebuffer fb(ScreenWidth,ScreenHeight);
+	fb.RestoreDeviceObjects(m_pd3dDevice);
+	ID3D11DeviceContext*			pImmediateContext;
+	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
+	fb.Activate(pImmediateContext);
+	OnD3D11FrameRender(m_pd3dDevice,pImmediateContext,0.f,0.f);
+	fb.Deactivate(pImmediateContext);
+	simul::dx11::SaveTexture(m_pd3dDevice,(ID3D11Texture2D *)(fb.GetColorTexture()),screenshotFilenameUtf8.c_str());
+	SAFE_RELEASE(pImmediateContext);
 }
 
 void Direct3D11Renderer::OnD3D11LostDevice()

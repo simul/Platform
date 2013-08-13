@@ -93,9 +93,13 @@ namespace simul
 			virtual bool	OnDeviceRemoved();
 			virtual void    OnFrameMove(double fTime,float fTimeStep);
 			virtual const	char *GetDebugText() const;
+
+			void SaveScreenshot(const char *filename_utf8);
 		protected:
 			void ReverseDepthChanged();
 			bool enabled;
+			ID3D11Device* m_pd3dDevice;
+			std::string screenshotFilenameUtf8;
 			simul::camera::Camera *camera;
 			simul::base::SmartPtr<SimulOpticsRendererDX1x>	simulOpticsRenderer;
 			simul::base::SmartPtr<SimulWeatherRendererDX11>	simulWeatherRenderer;

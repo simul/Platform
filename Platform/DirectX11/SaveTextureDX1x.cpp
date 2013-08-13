@@ -1,65 +1,44 @@
 #define _CRT_SECURE_NO_WARNINGS
 
-//#include "SaveTexture.h"
+#include "SaveTextureDX1x.h"
 #include "MacrosDX1x.h"
-#include "Simul/Base/inifile.h"
 #include "Simul/Base/StringToWString.h"
-simul::base::IniFile ini("atmospherics.ini");
 #include <string>
 #include <d3dx11.h>
 #include <dxerr.h>
-extern void RenderScene(ID3D10Device* pd3dDevice);
+using namespace simul;
+using namespace dx11;
 
-static bool FileExists(const std::string& filename_utf8)
+namespace simul
 {
-    FILE* pFile = NULL;
-	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8.c_str());
-	_wfopen_s(&pFile,wstr.c_str(),L"r");
-    bool bExists = (pFile != NULL);
-    if (pFile)
-        fclose(pFile);
-    return bExists;
-}/*
-void SaveTexture(ID3D11Texture *ldr_buffer_texture,const char *txt,bool as_dds)
-{
-	std::string path=ini.GetValue("Options","ScreenshotPath");
-	if(path=="")
+	namespace dx11
 	{
-		path=".";
+		void SaveTexture(ID3D11Device *pd3dDevice,ID3D11Texture2D *texture,const char *filename_utf8)
+		{
+			std::string fn_utf8=filename_utf8;
+			bool as_dds=false;
+			if(fn_utf8.find(".dds")<fn_utf8.length())
+				as_dds=true;
+			int number=0;
+			while(simul::base::FileExists(fn_utf8))
+			{
+				number++;
+				char number_text[10];
+				sprintf_s(number_text,10,"%d",number);
+				std::string nstr(number_text);
+				int pos=fn_utf8.find_last_of(".");
+				fn_utf8=fn_utf8.replace(fn_utf8.begin()+pos,fn_utf8.begin()+pos+1,nstr+".");
+			}
+			std::wstring wfilename=simul::base::Utf8ToWString(fn_utf8);
+			ID3D11DeviceContext*			m_pImmediateContext;
+			pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+			D3DX11SaveTextureToFileW(m_pImmediateContext,texture,as_dds?D3DX11_IFF_DDS:D3DX11_IFF_PNG,wfilename.c_str());
+			SAFE_RELEASE(m_pImmediateContext);
+		}
 	}
-	std::string filename=path+"\\";
-	filename+=txt;
-	if(as_dds)
-		filename+=".dds";
-	else
-		filename+=".jpg";
-	int number=0;
-	while(FileExists(filename))
-	{
-		number++;
-		filename=path+"\\";
-		filename+=txt;
-		char number_text[10];
-		sprintf_s(number_text,10,"%d",number);
-		filename+=number_text;
-		if(as_dds)
-			filename+=".dds";
-		else
-			filename+=".jpg";
-	}
-#ifdef UNICODE
-	std::wstring filename2=simul::base::StringToWString(filename);
-#else
-	std::string filename2=filename;
-#endif
-	D3DXSaveTextureToFile(filename2.c_str(),
-												as_dds?D3DXIFF_DDS:D3DXIFF_JPG,
-												ldr_buffer_texture,
-												NULL);
-//	V_CHECK(hr);
 }
-
-void Screenshot(ID3D10Device* pd3dDevice,const char *txt)
+/*
+extern void SaveScreenshot(ID3D11Device* pd3dDevice,const char *txt);
 {
 	HRESULT hr=S_OK;
     if(!SUCCEEDED(pd3dDevice->BeginScene()))

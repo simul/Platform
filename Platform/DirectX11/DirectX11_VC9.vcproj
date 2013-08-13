@@ -413,7 +413,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SimulWeatherRendererDX1x.cpp"
+				RelativePath=".\SimulWeatherRendererDX11.cpp"
 				>
 			</File>
 			<File
@@ -527,7 +527,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SimulWeatherRendererDX1x.h"
+				RelativePath=".\SimulWeatherRendererDX11.h"
 				>
 			</File>
 			<File

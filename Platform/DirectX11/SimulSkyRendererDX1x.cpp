@@ -387,7 +387,7 @@ void SimulSkyRendererDX1x::FillFadeTex(ID3D11DeviceContext *context,int texture_
 		else
 			if(row!=end_row)
 				num_left=slice*slice_size+(row+1)*numAltitudes-texel_index;
-		//memcpy(loss_ptr,loss_float4_array	,num_left*sizeof(simul::sky::float4));
+		memcpy(loss_ptr,loss_float4_array	,num_left*sizeof(simul::sky::float4));
 		memcpy(insc_ptr,insc_float4_array	,num_left*sizeof(simul::sky::float4));
 		memcpy(skyl_ptr,skyl_float4_array	,num_left*sizeof(simul::sky::float4));
 		loss_float4_array+=num_left;

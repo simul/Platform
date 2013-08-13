@@ -27,7 +27,7 @@ void main()
 	// between two distances, the inscatter (AS SEEN FROM 0) is:
 	// insc2-insc1
 	vec4 total_insc=vec4(0,0,0,0);
-	float illumination=GetIlluminationAt(view*depth);
+	float illumination=GetIlluminationAt(cloudShadowTexture,view*depth);
 	#define C 128
 	float retain=(float(C)-1.0)/float(C);
 	for(int i=0;i<C+1;i++)
@@ -39,7 +39,7 @@ void main()
 			texc2.x=u;
 			float prev_illumination=illumination;
 			float d=u*u*maxDistance;
-			illumination=mix(0.0,GetIlluminationAt(view*d),eff);
+			illumination=mix(0.0,GetIlluminationAt(cloudShadowTexture,view*d),eff);
 			vec4 prev_insc=insc;
 		insc=texture(inscTexture,texc2);
 			vec4 insc_diff=prev_insc-insc;
