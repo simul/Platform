@@ -53,6 +53,7 @@ float4 PS_DensityMask(vertexOutput IN) : SV_TARGET
 	float dens					=saturate((1.0-r)/dr);
     return float4(dens,dens,dens,1.0);
 }
+
 float4 PS_Density(vertexOutput IN) : SV_TARGET
 {
 	vec3 densityspace_texcoord	=assemble3dTexcoord(IN.texCoords.xy);
@@ -64,27 +65,27 @@ float4 PS_Density(vertexOutput IN) : SV_TARGET
     return vec4(dens,0,0,1.0);
 }
 
-
-[numthreads(8,8,8)]
-void CS_Density( uint3 groupId          : SV_GroupID,
-             uint3 pos				: SV_DispatchThreadID,
-             uint3 groupThreadId    : SV_GroupThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+[numthreads(8,1,1)]
+void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {
-	//if(position.x>densityGrid.x||position.y>densityGrid.y||position.z>densityGrid.z)
-	//	return;
-	//vec2 texCoords				=position.xy/16.0;
-	/*vec3 densityspace_texcoord	=position.xyz/vec3(128.0,128.0,16.0);
+	targetTexture[sub_pos] = 1.0;
+	uint3 dims;
+	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	uint linear_pos		=sub_pos.x+threadOffset.x;
+	
+	uint3 pos			=LinearThreadToPos3D(linear_pos,dims);
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return;
+/*	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	vec3 densityspace_texcoord	=(pos+0.5)/vec3(dims);
 	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
-	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z)*maskTexture.SampleLevel(clampSamplerState,densityspace_texcoord.xy,0).x;
+	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z);
 	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
-
-*/	
-//	for(int i=0;i<5;i++)
-//	for(int j=0;j<5;j++)
-//	for(int k=0;k<5;k++)
-	targetTexture[pos] = 1.0f;
+	dens						=saturate(dens);
+	targetTexture[pos]			=dens;*/
+	targetTexture[pos] = 0.5;
 }
 
 static const float glow=0.1;

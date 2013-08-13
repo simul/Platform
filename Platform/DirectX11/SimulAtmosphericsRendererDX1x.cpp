@@ -157,7 +157,10 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
 	
 	lossTexture->SetResource(skyLossTexture_SRV);
-	inscTexture->SetResource(overcInscTexture_SRV);
+	if(ShowGodrays)
+		inscTexture->SetResource(overcInscTexture_SRV);
+	else
+		inscTexture->SetResource(skyInscatterTexture_SRV);
 	skylTexture->SetResource(skylightTexture_SRV);
 	
 	simul::dx11::setParameter(effect,"illuminationTexture",illuminationTexture_SRV);
@@ -216,7 +219,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 	atmosphericsUniforms.Apply(pContext);
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,relativeViewportTextureRegionXYWH);
 	SetGodraysConstants(atmosphericsPerViewConstants,view);
-
+	/*
 	simul::math::Matrix4x4 shadowMatrix				=cloudShadowStruct.shadowMatrix;
 	simul::math::Matrix4x4 invShadowMatrix;
 	shadowMatrix.Inverse(invShadowMatrix);
@@ -225,7 +228,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 //atmosphericsPerViewConstants.extentZMetres		=cloudShadowStruct.extentZMetres;
 	atmosphericsPerViewConstants.startZMetres		=cloudShadowStruct.startZMetres;
 	atmosphericsPerViewConstants.shadowRange		=cloudShadowStruct.shadowRange;
-
+	*/
 	atmosphericsPerViewConstants.Apply(pContext);
 
 	ApplyPass(pContext,godraysTechnique->GetPassByIndex(0));

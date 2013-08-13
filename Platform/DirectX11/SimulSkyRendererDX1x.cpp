@@ -39,7 +39,6 @@ typedef std::basic_string<TCHAR> tstring;
 SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem)
 	:simul::sky::BaseSkyRenderer(sk,mem)
 	,m_pd3dDevice(NULL)
-	,m_pCubemapVtxDecl(NULL)
 	,m_pStarsVtxDecl(NULL)
 	,m_pVertexBuffer(NULL)
 	,m_pStarsVertexBuffer(NULL)
@@ -169,7 +168,6 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	UnmapFade();
 	SAFE_RELEASE(m_pSkyEffect);
 	SAFE_RELEASE(m_pVertexBuffer);
-	SAFE_RELEASE(m_pCubemapVtxDecl);
 
 	SAFE_RELEASE(flare_texture_SRV);
 	SAFE_RELEASE(moon_texture_SRV);

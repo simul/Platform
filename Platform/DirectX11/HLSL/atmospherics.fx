@@ -20,6 +20,7 @@ SamplerState samplerState: register(s1)
 	AddressV = Clamp;
 };
 
+#include "../../CrossPlatform/cloud_shadow.sl"
 #include "../../CrossPlatform/godrays.sl"
 
 #define pi (3.1415926536)
@@ -116,68 +117,25 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
 	vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
 
-	vec4 insc			=insc_far-insc_near;
+	vec4 insc			=vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
 	float cos0			=dot(view,lightDir);
 	float3 colour		=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	//colour				=illum_lookup.z;
 	colour				+=texture_clamp_mirror(skylTexture,fade_texc).rgb;
 	colour				*=exposure;
-
     return float4(colour.rgb,1.f);
 }
 
 // Slanted Cylinder whose axis is along lightDir,
 // radius is at the specified horizontal distance.
-// Distance c is:
-//					c=|lightDir.z*R|/|lightDir * sine - view * lightDir.z|
+// Distance c is:		c=|lightDir.z*R|/|lightDir * sine - view * lightDir.z|
 float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 {
-	float3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	view				=normalize(view);
-	float sine			=view.z;
-	float cos0			=dot(view,lightDir);
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	float solid_depth	=depthTexture.Sample(clampSamplerState,depth_texc).x;
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToDistance(solid_depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
-
-	vec4 total_insc		=vec4(0,0,0,0);
-	#define C 100
-	float retain		=(float(C)-1.0)/float(C);
-	float dist_max		=shadowRange/maxDistance;
-	float dist_1		=0.0;
-	vec2 fade_texc		=vec2(0.0				,0.5*(1.0-sine));
-	vec2 solid_fade_texc=vec2(sqrt(solid_dist)	,0.5*(1.0-sine));
-	//vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-	//vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
-	vec4 insc1			=texture_wrap_mirror(inscTexture,fade_texc)-texture_wrap_mirror(overcTexture,fade_texc);
-	vec4 insc_s			=texture_wrap_mirror(inscTexture,solid_fade_texc)-texture_wrap_mirror(overcTexture,solid_fade_texc);
-	float ill			=1.0;
-	float eff_remaining	=1.0;
-	for(int i=0;i<26;i++)
-	{
-		float dist_0	=dist_1;
-		dist_1			=godrays_distances[i]/maxDistance;
-		if(dist_0<solid_dist)
-		{
-			dist_1			=min(dist_1,solid_dist);
-			float dist		=0.5*(dist_0+dist_1);
-			float eff		=exp(-dist/dist_max);
-			fade_texc.x		=sqrt(dist_0);
-			float d			=dist*maxDistance;
-			ill				=eff*GetIlluminationAt(cloudShadowTexture,viewPosition+view*d);
-			vec4 insc0		=insc1;
-			insc1			=max(texture_wrap_mirror(inscTexture,fade_texc)
-								-texture_wrap_mirror(overcTexture,fade_texc),vec4(0,0,0,0));
-			vec4 insc_diff	=max(insc1-insc0,vec4(0,0,0,0));
-			total_insc		+=insc_diff*ill;
-		}
-	}
-	float3 gr			=InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
-	//colour			+=texture_clamp_mirror(skylTexture,fade_texc).rgb;
-	gr					*=exposure;//*(1.0-illum_lookup.z);
-	gr					=max(gr,vec3(0.0,0.0,0.0));
-    return vec4(gr,1.0);
+	return Godrays(inscTexture,overcTexture,IN.pos,invViewProj,maxDistance,solid_dist);
 }
 
 technique11 simul_atmospherics

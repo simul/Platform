@@ -254,6 +254,7 @@
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CrossPlatform\cloud_shadow.sl" />
     <None Include="..\CrossPlatform\illumination.sl" />
     <None Include="..\CrossPlatform\sky_constants.sl" />
     <None Include="HLSL\CppHLSL.hlsl" />

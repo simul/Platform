@@ -114,7 +114,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 					fade_texc.x	=sqrt(z);
 					float sh	=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 					// overcast effect:
-					//sh			*=saturate(illum_lookup.z+texCoords.z);
+					//sh		*=saturate(illum_lookup.z+texCoords.z);
 					c.rgb		*=sh;
 					c.rgb		=applyFades(c.rgb,fade_texc,cos0,sh);
 					colour		*=(1.0-c.a);
@@ -146,43 +146,12 @@ struct vertexOutputCS
     float2 texCoords		: TEXCOORD0;
 };
 
-
 // Given texture position from texCoords, convert to a worldpos with shadowMatrix.
 // Then, trace towards sun to find initial intersection with cloud volume
 // Then trace down to find first intersection with clouds, if any.
-float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
+vec4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
 {
-//for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
-	float theta						=IN.texCoords.y*2.0*3.1415926536;
-	float distance_off_centre		=IN.texCoords.x*IN.texCoords.x;
-	vec3 pos_cartesian				=distance_off_centre*vec3(cos(theta),sin(theta),0.0);
-	vec2 illumination				=vec2(1.0,1.0);
-	float U							=-1.0;//(startZMetres-extentZMetres)/1000.0;
-	static const int C=16;
-	for(int i=0;i<C;i++)
-	{
-		float u						=1.0-float(i)/float(C);
-		//float z						=startZMetres+extentZMetres*(1.0-u);
-		pos_cartesian.z				=u;
-		vec3 wpos					=mul(shadowMatrix,vec4(pos_cartesian,1.0)).xyz;
-		vec3 texc					=(wpos-cornerPos)*inverseScales;
-		vec4 density1				=sampleLod(cloudDensity1,wwcSamplerState,texc,0);
-		vec4 density2				=sampleLod(cloudDensity2,wwcSamplerState,texc,0);
-		vec4 density				=lerp(density1,density2,cloud_interp);
-		if(density.z>0)
-		{
-			illumination			=lerp(illumination,vec2(0,0),density1.z);
-			U						=lerp(U,u,density.z);
-		}
-		//Z=wpos.z;
-	//	else if(illumination.x<1.0)
-		{
-		//	break;
-		}
-	}
-	//float4 result		=vec4(illumination,Z,1.0);
-	//illumination		=1.0-(1.0-illumination)*exp(-IN.texCoords.x*4.0);
-	return float4(illumination,U,1.0);
+	return CloudShadow(cloudDensity1,cloudDensity2,IN.texCoords,shadowMatrix,cornerPos,inverseScales);
 }
 
 float4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET

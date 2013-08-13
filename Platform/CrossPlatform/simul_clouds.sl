@@ -87,4 +87,40 @@ vec3 applyFades2(vec3 final,vec2 fade_texc,float cos0,vec4 insc)
 #endif
     return final;
 }
+
+
+vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,mat4 shadowMatrix,vec3 cornerPos,vec3 inverseScales)
+{
+//for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
+	float theta						=texCoords.y*2.0*3.1415926536;
+	float distance_off_centre		=texCoords.x*texCoords.x;
+	vec2 pos_xy						=distance_off_centre*vec2(cos(theta),sin(theta));
+	vec2 illumination				=vec2(1.0,1.0);
+	float U							=-1.0;//(startZMetres-extentZMetres)/1000.0;
+	const int NUM_STEPS=12;
+	for(int i=0;i<NUM_STEPS;i++)
+	{
+		float u						=1.0-float(i)/float(NUM_STEPS);
+		//float z						=startZMetres+extentZMetres*(1.0-u);
+		vec3 cartesian				=vec3(pos_xy.xy,u);
+		vec3 wpos					=mul(shadowMatrix,vec4(cartesian,1.0)).xyz;
+		vec3 texc					=(wpos-cornerPos)*inverseScales;
+		vec4 density1				=sampleLod(cloudDensity1,wwcSamplerState,texc,0);
+		vec4 density2				=sampleLod(cloudDensity2,wwcSamplerState,texc,0);
+		vec4 density				=lerp(density1,density2,cloud_interp);
+		if(density.z>0)
+		{
+			illumination			=lerp(illumination,vec2(0,0),density1.z);
+			U						=lerp(U,u,density.z);
+		}
+		//Z=wpos.z;
+	//	else if(illumination.x<1.0)
+		{
+		//	break;
+		}
+	}
+	//float4 result		=vec4(illumination,Z,1.0);
+	//illumination		=1.0-(1.0-illumination)*exp(-IN.texCoords.x*4.0);
+	return vec4(illumination,U,1.0);
+}
 #endif

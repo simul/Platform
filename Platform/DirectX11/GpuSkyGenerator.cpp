@@ -17,6 +17,7 @@ GpuSkyGenerator::GpuSkyGenerator()
 	,effect(NULL)
 	,constantBuffer(NULL)
 {
+	SetDirectTargets(NULL,NULL,NULL);
 }
 
 GpuSkyGenerator::~GpuSkyGenerator()
@@ -203,10 +204,6 @@ HRESULT hr=S_OK;
 
 	if(subgrid>0)
 		m_pImmediateContext->Dispatch(subgrid,1,1);
-	/*ID3D11Texture3D *loss_tex1=make3DTexture(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)loss);
-	ID3D11ShaderResourceView* loss_tex;
-	m_pd3dDevice->CreateShaderResourceView(loss_tex1,NULL,&loss_tex);
-	m_pImmediateContext->GenerateMips(loss_tex);*/
 
 	int start_insc	=range(start_step-xy_size	,0,xy_size);
 	int end_insc	=range(end_step-xy_size		,0,xy_size);
@@ -235,4 +232,9 @@ HRESULT hr=S_OK;
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 	density_texture->SetResource(NULL);
 	input_texture->SetResource(NULL);
+
+	SAFE_RELEASE(dens_tex);
+	SAFE_RELEASE(dens_tex1);
+	SAFE_RELEASE(optd_tex);
+	SAFE_RELEASE(optd_tex1);
 }

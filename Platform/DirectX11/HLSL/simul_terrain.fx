@@ -2,7 +2,7 @@
 #include "states.hlsl"
 #include "../../CrossPlatform/simul_terrain_constants.sl"
 #include "../../CrossPlatform/states.sl"
-#include "../../CrossPlatform/godrays.sl"
+#include "../../CrossPlatform/cloud_shadow.sl"
 
 Texture2D cloudShadowTexture;
 Texture2DArray textureArray;

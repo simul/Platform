@@ -39,13 +39,10 @@ uniform_buffer CloudPerViewConstants R13
 	uniform float nearZ;
 	uniform float farZ;
 	uniform vec2 tanHalfFov;
-	uniform float a,b;
 	uniform float exposure;
-	uniform float c,d,e;
 	uniform float extentZMetres;
 	uniform float startZMetres;
 	uniform float shadowRange;
-	uniform float f;
 };
 uniform_buffer CloudConstants R9
 {

@@ -6,6 +6,7 @@
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 // Godrays are cloud-dependent. So we require the cloud texture.
 uniform sampler2D cloudShadowTexture;
+#include "../../CrossPlatform/cloud_shadow.sl"
 #include "../../CrossPlatform/godrays.sl"
 uniform sampler2D imageTexture;
 uniform sampler2D lossTexture;
@@ -28,11 +29,11 @@ void main()
 	// insc2-insc1
 	vec4 total_insc=vec4(0,0,0,0);
 	float illumination=GetIlluminationAt(cloudShadowTexture,view*depth);
-	#define C 128
-	float retain=(float(C)-1.0)/float(C);
-	for(int i=0;i<C+1;i++)
+	#define NUM_STEPS 128
+	float retain=(float(NUM_STEPS)-1.0)/float(NUM_STEPS);
+	for(int i=0;i<NUM_STEPS+1;i++)
 	{
-		float u=(float(C)-float(i))/float(C);
+		float u=(float(NUM_STEPS)-float(i))/float(NUM_STEPS);
 		float eff=exp(-u/10.0);
 		if(u<depth)
 		{

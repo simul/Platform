@@ -109,7 +109,6 @@ protected:
 	
 	ID3D1xDevice*						m_pd3dDevice;
 	ID3D1xBuffer*						m_pVertexBuffer;
-	ID3D1xInputLayout*					m_pCubemapVtxDecl;
 	ID3D1xInputLayout*					m_pStarsVtxDecl;
 	ID3D1xBuffer*						m_pStarsVertexBuffer;
 	ID3D1xEffect*						m_pSkyEffect;

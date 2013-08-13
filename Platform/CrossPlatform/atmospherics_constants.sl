@@ -8,28 +8,23 @@ uniform_buffer AtmosphericsUniforms SIMUL_BUFFER_REGISTER(11)
 	uniform vec3 mieRayleighRatio;
 	uniform float pad1a;
 	uniform vec2 texelOffsets;
-	uniform float pad2,pad3;
 	uniform float hazeEccentricity;
-	uniform float pad4,pad5,pad6;
+	uniform float pad6;
 	// X, Y and Z for the bottom-left corner of the cloud shadow texture.
 	uniform vec3 cloudOrigin;
 	uniform float pad7;
 	uniform vec3 cloudScale;
 	uniform float pad8;
+
 	uniform float overcast;
-	uniform float pad10,pad11,pad12;
 	uniform float maxDistance;
-	uniform float pad13,pad14,pad15;
 	uniform float exposure;
-	uniform float pad16,pad17,pad18;
 	uniform float fogBaseAlt;
-	uniform float fogScaleHeight;
-	uniform float fogDensity;
-	uniform float pad19;
+
 	uniform vec3 fogColour;
-	uniform float pad20;
+	uniform float fogScaleHeight;
     uniform vec3 infraredIntegrationFactors;
-	uniform float pad21;
+	uniform float fogDensity;
 };
 
 uniform_buffer AtmosphericsPerViewConstants SIMUL_BUFFER_REGISTER(12)

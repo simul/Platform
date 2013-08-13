@@ -183,17 +183,43 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	gpuCloudConstants.transition	=transition;
 	gpuCloudConstants.upperDensity	=upperDensity;
 	gpuCloudConstants.diffusivity	=diffusivity;
+
+	float fractalSum=0.0;
+	float mult=0.5;
+	for(int i=0;i<octaves;i++)
+	{
+		fractalSum+=mult;
+		mult*=persistence;
+	}
+	gpuCloudConstants.invFractalSum=1.f/fractalSum;
+
 //gpuCloudConstants.densityGrid	=uint3(density_grid);
 	simul::dx11::setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 	simul::dx11::setParameter(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
 
-	gpuCloudConstants.Apply(m_pImmediateContext);
 	
 	density_texture.ensureTexture3DSizeAndFormat(m_pd3dDevice,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32_FLOAT,false);
 //	Ensure3DTextureSizeAndFormat(m_pd3dDevice,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
 std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
-#if 1
-
+#if 0
+HRESULT hr;
+	// divide the grid into 8x8x8 blocks:
+	static const int BLOCKWIDTH=8;
+	int subgrid=(density_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	int x0	=start_texel/BLOCKWIDTH;
+	int x1	=(start_texel+texels+BLOCKWIDTH-1)/BLOCKWIDTH;
+	gpuCloudConstants.threadOffset=uint3(x0*BLOCKWIDTH,0,0);
+	gpuCloudConstants.Apply(m_pImmediateContext);
+	simul::dx11::setParameter(effect,"targetTexture",density_texture.unorderedAccessView);
+	V_CHECK(ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0)));
+	//m_pImmediateContext->Dispatch(1,1,1);
+	if(x1>x0)
+		m_pImmediateContext->Dispatch(x1-x0,1,1);
+//	m_pImmediateContext->Dispatch((density_grid[0]+7)/8,(density_grid[1]+7)/8,density_grid[2]);
+std::cout<<"\tfill 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
+	simul::dx11::setParameter(effect,"targetTexture",(ID3D11UnorderedAccessView*)NULL);
+#else
+	gpuCloudConstants.Apply(m_pImmediateContext);
 	dens_fb.Activate(m_pImmediateContext);
 std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 		ApplyPass(m_pImmediateContext,densityTechnique->GetPassByIndex(0));
@@ -213,15 +239,6 @@ std::cout<<"\tDraw "<<timer.UpdateTime()<<"ms"<<std::endl;
 		sourceRegion.bottom	=density_grid[1]*(Z+1);
 		m_pImmediateContext->CopySubresourceRegion(density_texture.texture,0,0,0,Z,dens_fb.GetColorTexture(),0,&sourceRegion);
 	}
-#else
-HRESULT hr;
-	simul::dx11::setParameter(effect,"targetTexture",density_texture.unorderedAccessView);
-	V_CHECK(ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0)));
-	//m_pImmediateContext->Dispatch(1,1,1);
-	m_pImmediateContext->Dispatch(8,8,1);
-//	m_pImmediateContext->Dispatch((density_grid[0]+7)/8,(density_grid[1]+7)/8,density_grid[2]);
-std::cout<<"\tfill 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
-//	simul::dx11::setParameter(effect,"targetTexture",(ID3D11UnorderedAccessView*)NULL);
 #endif
 }
 
