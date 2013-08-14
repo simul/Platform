@@ -148,7 +148,7 @@ protected:
 	ID3D1xShaderResourceView*			moon_texture_SRV;
 
 	void MapFade(ID3D11DeviceContext *context,int s);
-	void UnmapFade();
+	void UnmapFade(int i);
 	D3DXMATRIX				world,view,proj;
 	void DrawLines(void *context,Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);

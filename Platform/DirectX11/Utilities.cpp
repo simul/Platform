@@ -129,7 +129,7 @@ void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 			ppd->GetDesc(&textureDesc);
 			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Depth!=d||textureDesc.Format!=f)
 				ok=false;
-			if(computable&&!(textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS))
+			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
 		}
 		SAFE_RELEASE(ppd);
@@ -177,6 +177,8 @@ void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 
 void TextureStruct::map(ID3D11DeviceContext *context)
 {
+	if(mapped.pData!=NULL)
+		return;
 	last_context=context;
 	last_context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
 }

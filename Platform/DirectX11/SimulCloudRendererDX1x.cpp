@@ -1082,6 +1082,12 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	int width_x=i.x;
 	int length_y=i.y;
 	int depth_z=i.z;
+	bool uav=gpuCloudGenerator.GetEnabled()&&cloudKeyframer->GetGpuCloudGenerator()==&gpuCloudGenerator;
+	static DXGI_FORMAT cloud_tex_format=DXGI_FORMAT_R8G8B8A8_UNORM;
+	for(int i=0;i<3;i++)
+	{
+		cloud_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,width_x,length_y,depth_z,cloud_tex_format,uav);
+	}
 	if(!width_x||!length_y||!depth_z)
 		return;
 	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[texture_cycle%3].texture!=NULL)
@@ -1092,11 +1098,6 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
 	HRESULT hr=S_OK;
-	static DXGI_FORMAT cloud_tex_format=DXGI_FORMAT_R8G8B8A8_UNORM;
-	for(int i=0;i<3;i++)
-	{
-		cloud_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,width_x,length_y,depth_z,cloud_tex_format);
-	}
 	
 	//cloud_texture.ensureTexture3DSizeAndFormat(m_pd3dDevice,width_x,length_y,depth_z,cloud_tex_format,true);
 }

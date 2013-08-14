@@ -15,7 +15,7 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Base/SmartPtr.h"
-#include "Simul/Clouds/BaseCloudRenderer.h"
+#include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Platform/DirectX9/Export.h"
@@ -42,7 +42,7 @@ namespace simul
 typedef long HRESULT;
 
 //! A renderer for 2D cloud layers, e.g. cirrus clouds.
-SIMUL_DIRECTX9_EXPORT_CLASS Simul2DCloudRenderer: public simul::clouds::BaseCloudRenderer
+SIMUL_DIRECTX9_EXPORT_CLASS Simul2DCloudRenderer: public simul::clouds::Base2DCloudRenderer
 {
 public:
 	Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem);
