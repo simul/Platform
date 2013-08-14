@@ -193,8 +193,6 @@ void Simul2DCloudRendererDX11::InvalidateDeviceObjects()
 	SAFE_RELEASE(indexBuffer);
 	cloud2DConstants.InvalidateDeviceObjects();
 	detail2DConstants.InvalidateDeviceObjects();
-	for(int i=0;i<3;i++)
-		coverage_tex[i].release();
 	detail_fb.InvalidateDeviceObjects();
 	noise_fb.InvalidateDeviceObjects();
 	dens_fb.InvalidateDeviceObjects();
@@ -208,14 +206,13 @@ void Simul2DCloudRendererDX11::EnsureCorrectTextureSizes()
 	int width_x=i.x;
 	int length_y=i.y;
 	coverage_fb.SetWidthAndHeight(width_x,length_y);
-	if(cloud_tex_width_x==width_x&&cloud_tex_length_y==length_y&&cloud_tex_depth_z==1
-		&&coverage_tex[0].texture)
+	if(cloud_tex_width_x==width_x&&cloud_tex_length_y==length_y&&cloud_tex_depth_z==1)
 		return;
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=1;
-	for(int i=0;i<3;i++)
-		coverage_tex[i].init(m_pd3dDevice,cloud_tex_width_x,cloud_tex_length_y,DXGI_FORMAT_R8G8B8A8_UNORM);
+	//for(int i=0;i<3;i++)
+	//	coverage_tex[i].init(m_pd3dDevice,cloud_tex_width_x,cloud_tex_length_y,DXGI_FORMAT_R8G8B8A8_UNORM);
 }
 
 void Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate(void *context)
@@ -224,7 +221,7 @@ void Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate(void *context)
     ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate");
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
-	typedef simul::clouds::CloudKeyframer::seq_texture_fill iter;
+	/*typedef simul::clouds::CloudKeyframer::seq_texture_fill iter;
 	for(int i=0;i<3;i++)
 	{
 		iter texture_fill;
@@ -232,7 +229,7 @@ void Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate(void *context)
 		{
 			coverage_tex[i].setTexels(pContext,texture_fill.uint32_array,texture_fill.texel_index,texture_fill.num_texels);
 		}
-	}
+	}*/
 }
 
 void Simul2DCloudRendererDX11::EnsureTextureCycle()
@@ -240,8 +237,8 @@ void Simul2DCloudRendererDX11::EnsureTextureCycle()
 	int cyc=(cloudKeyframer->GetTextureCycle())%3;
 	while(texture_cycle!=cyc)
 	{
-		std::swap(coverage_tex[0],coverage_tex[1]);
-		std::swap(coverage_tex[1],coverage_tex[2]);
+		//std::swap(coverage_tex[0],coverage_tex[1]);
+		//std::swap(coverage_tex[1],coverage_tex[2]);
 		std::swap(seq_texture_iterator[0],seq_texture_iterator[1]);
 		std::swap(seq_texture_iterator[1],seq_texture_iterator[2]);
 		texture_cycle++;
@@ -281,20 +278,6 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	
 	static float ff=10000.f; 
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
-
-	ID3D11InputLayout* previousInputLayout;
-	pContext->IAGetInputLayout(&previousInputLayout);
-
-	pContext->IASetInputLayout(inputLayout);
-	SET_VERTEX_BUFFER(pContext,vertexBuffer,simul::clouds::Cloud2DGeometryHelper::Vertex);
-
-	UINT prevOffset;
-	DXGI_FORMAT prevFormat;
-	ID3D11Buffer* pPrevBuffer;
-	pContext->IAGetIndexBuffer(&pPrevBuffer, &prevFormat, &prevOffset);
-
-	pContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R16_UINT,0);					
-
 	Set2DCloudConstants(cloud2DConstants,view,proj,exposure,viewportTextureRegionXYWH);
 	cloud2DConstants.Apply(pContext);
 	
@@ -306,14 +289,29 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	} 
 	coverage_fb.Deactivate(pContext);
 
+	ID3D11InputLayout* previousInputLayout;
+	UINT prevOffset;
+	DXGI_FORMAT prevFormat;
+	ID3D11Buffer* pPrevBuffer;
 	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
+
 	pContext->IAGetPrimitiveTopology(&previousTopology);
+	pContext->IAGetInputLayout(&previousInputLayout);
+	pContext->IAGetIndexBuffer(&pPrevBuffer, &prevFormat, &prevOffset);
+
+	pContext->IASetInputLayout(inputLayout);
+	SET_VERTEX_BUFFER(pContext,vertexBuffer,simul::clouds::Cloud2DGeometryHelper::Vertex);
+	pContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R16_UINT,0);					
+
+
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	pContext->DrawIndexed(num_indices-2,0,0);
+
 	pContext->IASetPrimitiveTopology(previousTopology);
 	pContext->IASetInputLayout(previousInputLayout);
 	pContext->IASetIndexBuffer(pPrevBuffer, prevFormat, prevOffset);
+
 	SAFE_RELEASE(previousInputLayout)
 	SAFE_RELEASE(pPrevBuffer);
 	
@@ -342,10 +340,10 @@ void Simul2DCloudRendererDX11::RenderCrossSections(void *context,int width,int h
 		if(!kf)
 			break;
 		simul::sky::float4 light_response(mult*kf->direct_light,mult*kf->indirect_light,mult*kf->ambient_light,0);
-		simul::dx11::setParameter(effect,"imageTexture",coverage_tex[i].shaderResourceView);
+		/*simul::dx11::setParameter(effect,"imageTexture",coverage_tex[i].shaderResourceView);
 		simul::dx11::setParameter(effect,"crossSectionOffset",GetCloudInterface()->GetWrap()?0.5f:0.f);
 		simul::dx11::setParameter(effect,"lightResponse",light_response);
-		simul::dx11::UtilityRenderer::DrawQuad2(pContext,(i+4)*(w+8)+8,height-w-8,w,w,effect,effect->GetTechniqueByName("simple"));
+		simul::dx11::UtilityRenderer::DrawQuad2(pContext,(i+4)*(w+8)+8,height-w-8,w,w,effect,effect->GetTechniqueByName("simple"));*/
 	}
 	simul::dx11::setParameter(effect,"imageTexture",(ID3D11ShaderResourceView*)coverage_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(0)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));

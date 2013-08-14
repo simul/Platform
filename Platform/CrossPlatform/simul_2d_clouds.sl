@@ -51,7 +51,7 @@ vec3 ApplyEarthshadowFade(vec3 colour,vec3 wEyeToPos,vec3 lightDir,vec3 mieRayle
 	vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
 	vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
 	vec4 skyl_lookup	=texture_clamp_mirror(skylTexture,fade_texc);
-	vec4 insc			=vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
+	vec4 insc			=vec4(insc_far.rgb-insc_near.rgb,insc_far.a);//0.5*(insc_near.a+insc_far.a));
 
 	loss				*=light;
 	colour.rgb			*=loss;

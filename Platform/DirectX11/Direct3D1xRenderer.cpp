@@ -39,12 +39,13 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,Exposure(1.0f)
 		,enabled(false)
 		,m_pd3dDevice(NULL)
+		,memoryInterface(m)
 {
-	simulWeatherRenderer=new SimulWeatherRendererDX11(env,simul::base::GetDefaultMemoryInterface());
-	AddChild(simulWeatherRenderer.get());
-	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
-	simulOpticsRenderer=new SimulOpticsRendererDX1x();
-	simulTerrainRenderer=new SimulTerrainRendererDX1x(NULL);
+	simulWeatherRenderer=new(memoryInterface) SimulWeatherRendererDX11(env,simul::base::GetDefaultMemoryInterface());
+	AddChild(simulWeatherRenderer);
+	simulHDRRenderer=new(memoryInterface) SimulHDRRendererDX1x(128,128);
+	simulOpticsRenderer=new(memoryInterface) SimulOpticsRendererDX1x();
+	simulTerrainRenderer=new(memoryInterface) SimulTerrainRendererDX1x(NULL);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	ReverseDepthChanged();
 	depthFramebuffer.SetFormat(0);
@@ -53,8 +54,12 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 
 Direct3D11Renderer::~Direct3D11Renderer()
 {
-	Group::RemoveChild(simulWeatherRenderer.get());
-	simulWeatherRenderer=NULL;
+	Group::RemoveChild(simulWeatherRenderer);
+	
+	operator delete(simulOpticsRenderer,memoryInterface);
+	operator delete(simulWeatherRenderer,memoryInterface);
+	operator delete(simulHDRRenderer,memoryInterface);
+	operator delete(simulTerrainRenderer,memoryInterface);
 }
 
 // D3D11CallbackInterface
@@ -324,13 +329,13 @@ bool Direct3D11Renderer::OnDeviceRemoved()
 void Direct3D11Renderer::RecompileShaders()
 {
 	simul::dx11::UtilityRenderer::RecompileShaders();
-	if(simulWeatherRenderer.get())
+	if(simulWeatherRenderer)
 		simulWeatherRenderer->RecompileShaders();
-	if(simulOpticsRenderer.get())
+	if(simulOpticsRenderer)
 		simulOpticsRenderer->RecompileShaders();
-	if(simulTerrainRenderer.get())
+	if(simulTerrainRenderer)
 		simulTerrainRenderer->RecompileShaders();
-	if(simulHDRRenderer.get())
+	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
 //	if(simulTerrainRenderer.get())
 //		simulTerrainRenderer->RecompileShaders();

@@ -73,22 +73,6 @@ vec3 applyFades(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier
     return final;
 }
 
-vec3 applyFades2(vec3 final,vec2 fade_texc,float cos0,vec4 insc)
-{
-	vec4 l=sampleLod(lossTexture		,cmcSamplerState,fade_texc,0);
-	vec3 loss=l.rgb;
-	vec3 skyl=sampleLod(skylTexture		,cmcSamplerState,fade_texc,0).rgb;
-	vec3 inscatter=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
-	final*=loss;
-#ifdef INFRARED
-	final=skyl.rgb;
-#else
-	final+=skyl+inscatter;
-#endif
-    return final;
-}
-
-
 vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,mat4 shadowMatrix,vec3 cornerPos,vec3 inverseScales)
 {
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.

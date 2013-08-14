@@ -295,6 +295,9 @@
     <None Include="..\CrossPlatform\cloud_shadow.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="HLSL\simul_render_cubemap.fx">
+      <Filter>FX</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc">

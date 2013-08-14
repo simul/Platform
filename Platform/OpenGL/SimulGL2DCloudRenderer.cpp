@@ -61,7 +61,6 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 	,detail_fb(0,0,GL_TEXTURE_2D)
 	,coverage_fb(0,0,GL_TEXTURE_2D)
 {
-	helper->Initialize(16);
 }
 
 bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)

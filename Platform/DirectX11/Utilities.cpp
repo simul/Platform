@@ -58,6 +58,8 @@ void TextureStruct::setTexels(ID3D11DeviceContext *context,const unsigned *uint_
 	last_context=context;
 	if(!mapped.pData)
 		context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+	if(!mapped.pData)
+		return;
 	unsigned *target=(unsigned *)mapped.pData;
 	int expected_pitch=sizeof(unsigned)*width;
 	if(mapped.RowPitch==expected_pitch)
@@ -610,6 +612,34 @@ void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x
 	m_pImmediateContext->Draw(4,0);
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 }
+
+void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pImmediateContext
+									   ,const float *dr
+									   ,float half_angle_radians
+										,ID3D1xEffect* effect
+										,ID3D1xEffectTechnique* tech
+										,D3DXMATRIX view
+										,D3DXMATRIX proj
+										,D3DXVECTOR3 sun_dir)
+{
+	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
+	// But D3DXMatrixRotationYawPitchRoll uses only left-handed, hence the change of sign below.
+	if(effect)
+	{
+//		setMatrix(effect,"worldViewProj",tmp1);
+		//setParameter(effect,"lightDir",sun2);
+	//	setParameter(effect,"radiusRadians",half_angle_radians);
+	}
+	// coverage is 2*atan(1/5)=11 degrees.
+	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
+	pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	ApplyPass(pImmediateContext,tech->GetPassByIndex(0));
+	pImmediateContext->Draw(4,0);
+	pImmediateContext->IASetPrimitiveTopology(previousTopology);
+}
+
 
 void UtilityRenderer::DrawCube(void *context)
 {

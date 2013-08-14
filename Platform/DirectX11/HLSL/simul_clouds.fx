@@ -59,6 +59,23 @@ vec4 calcDensity1(vec3 texCoords,float layerFade,vec3 noiseval)
 	//density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
 	return density;
 }
+vec3 applyFades2(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier)
+{
+	fade_texc.x=1.0;
+	vec4 l=sampleLod(lossTexture		,cmcSamplerState,fade_texc,0);
+	vec3 loss=l.rgb;
+	vec4 insc=sampleLod(inscTexture		,cmcSamplerState,fade_texc,0);
+	vec3 skyl=sampleLod(skylTexture		,cmcSamplerState,fade_texc,0).rgb;
+	vec3 inscatter=earthshadowMultiplier*InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
+	final*=loss;
+#ifdef INFRARED
+	final=skyl.rgb;
+#else
+	final+=skyl+inscatter;
+#endif
+    return insc.aaa;
+}
+
 
 float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
@@ -102,11 +119,11 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 			pos.z-=layer.verticalShift;
 			float4 texCoords;
 			texCoords.xyz=(pos-cornerPos)*inverseScales;
-			texCoords.w=0.1+saturate(texCoords.z);
+			texCoords.w=0.2+0.8*saturate(texCoords.z);
 			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
 			{
 				float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
-				float3 noiseval		=texCoords.z*noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
+				float3 noiseval		=texCoords.w*noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
 				float4 density		=calcDensity(texCoords.xyz,layer.layerFade,noiseval);
 				if(density.z>0)
 				{

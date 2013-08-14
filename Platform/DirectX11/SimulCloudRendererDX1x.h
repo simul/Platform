@@ -15,7 +15,6 @@
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <D3dx11effect.h>
-#include "Simul/Base/SmartPtr.h"
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/CloudRenderCallback.h"
 #include "Simul/Clouds/BaseCloudRenderer.h"

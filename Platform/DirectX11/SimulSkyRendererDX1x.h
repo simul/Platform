@@ -8,7 +8,6 @@
 // SimulSkyRendererDX1x.h A renderer for skies.
 
 #pragma once
-#include "Simul/Base/SmartPtr.h"
 #include "Simul/Sky/SkyTexturesCallback.h"
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include <d3dx9.h>
@@ -130,6 +129,7 @@ protected:
 	
 	ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
 	ConstantBuffer<SkyConstants>		skyConstants;
+void SetConstantsForPlanet(SkyConstants &skyConstants,const float *viewmatrix,const float *projmatrix,const float *dir,const float *light_dir);
 
 	TextureStruct						loss_textures[3];
 	TextureStruct						insc_textures[3];

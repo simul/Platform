@@ -438,9 +438,47 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 	return sun_occlusion;
 }
 
+#include "Simul/Geometry/Orientation.h"
+
+void SimulSkyRendererDX1x::SetConstantsForPlanet(SkyConstants &skyConstants,const float *v,const float *p,const float *direction,const float *light_dir)
+{
+	//simul::math::Vector3 pos;
+	simul::math::Vector3 dir(direction);
+	//pos=GetCameraPosVector(view,false);
+	float Yaw=atan2(dir.x,dir.y);
+	float Pitch=-asin(dir.z);
+	HRESULT hr=S_OK;
+	simul::math::Matrix4x4 world, tmp1, tmp2;
+	simul::math::Matrix4x4 view(v);
+	simul::math::Matrix4x4 proj(p);
+	
+	simul::geometry::SimulOrientation or;
+	or.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
+	or.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
+	world=or.T4;
+	//set up matrices
+	view._41=0.f;
+	view._42=0.f;
+	view._43=0.f;
+	simul::math::Vector3 sun2;
+	simul::math::Matrix4x4 inv_world;
+	world.Inverse(inv_world);
+	or.GlobalToLocalDirection(sun2,light_dir);
+	/*D3DXVec3TransformNormal(  &sun2,
+							  &dir,
+							  &inv_world);*/
+	simul::math::Multiply4x4(tmp1,world,view);
+	simul::math::Multiply4x4(tmp2,tmp1,proj);
+	//D3DXMatrixMultiply(&tmp1,&world,&view);
+	//D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
+	//D3DXMatrixTranspose(&tmp1,&tmp2);
+	skyConstants.worldViewProj=tmp2;
+	skyConstants.lightDir=sun2;
+}
+
 void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
 {
-	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)c;
 	float alt_km=0.001f*(cam_pos.z);
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
@@ -455,10 +493,15 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
 	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
 	sunlight.w=1.0f/(max_bright*exposure_hint);
 	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
-	skyConstants.colour=sunlight;
-	skyConstants.Apply(context);
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
-	UtilityRenderer::RenderAngledQuad(context,sun_dir,sun_angular_size*2.f,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
+	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,sun_dir);
+	skyConstants.colour=sunlight;
+	skyConstants.radiusRadians=sun_angular_size;
+	skyConstants.Apply(pContext);
+	ApplyPass(pContext,m_hTechniqueSun->GetPassByIndex(0));
+	UtilityRenderer::DrawQuad(pContext);
+
+//	UtilityRenderer::RenderAngledQuad(context,sun_dir,sun_angular_size*2.f,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
 	// Start the query
 /*d3dQuery->Begin();
 	hr=RenderAngledQuad(sun_dir,sun_angular_size);
@@ -473,7 +516,7 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
 
 void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
 {
-	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)c;
 	float alt_km=0.001f*(cam_pos.z);
 	flareTexture->SetResource((ID3D1xShaderResourceView*)tex);
 	simul::sky::float4 original_irradiance=skyKeyframer->GetSkyInterface()->GetSunIrradiance();
@@ -484,14 +527,14 @@ void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float 
 	planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 	D3DXVECTOR4 planet_dir(dir);
 	//m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
-	ID3D1xEffectVectorVariable*	colour=m_pSkyEffect->GetVariableByName("colour")->AsVector();
-	colour->SetFloatVector((const float *)(&planet_colour));
-	
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
+	SetConstantsForPlanet(skyConstants,view,proj,planet_dir,sun_dir);
+	skyConstants.colour			=planet_colour;
+	skyConstants.radiusRadians	=rad;
+	skyConstants.Apply(pContext);
 	
-	UtilityRenderer::RenderAngledQuad(context,planet_dir,rad,m_pSkyEffect
-		,do_lighting?m_hTechniquePlanet:m_hTechniqueFlare
-		,view,proj,sun_dir);
+	ApplyPass(pContext,(do_lighting?m_hTechniquePlanet:m_hTechniqueFlare)->GetPassByIndex(0));
+	UtilityRenderer::DrawQuad(pContext);
 }
 
 bool SimulSkyRendererDX1x::RenderFlare(float exposure)
@@ -660,7 +703,7 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 	D3DXMatrixMultiply(&tmp1,&world,&view);
 	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
 	D3DXMatrixTranspose(&wvp,&tmp2);
-	skyConstants.worldViewProj=(const float *)(&wvp);
+	skyConstants.worldViewProj=(const float *)(&tmp2);
 	hr=ApplyPass(pContext,m_hTechniquePointStars->GetPassByIndex(0));
 	if (test < 5)
 	{

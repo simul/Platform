@@ -69,11 +69,11 @@ namespace simul
 			bool IsEnabled()const{return enabled;}
 			class SimulWeatherRendererDX11 *GetSimulWeatherRenderer()
 			{
-				return simulWeatherRenderer.get();
+				return simulWeatherRenderer;
 			}
 			class SimulHDRRendererDX1x *GetSimulHDRRenderer()
 			{
-				return simulHDRRenderer.get();
+				return simulHDRRenderer;
 			}
 			void SetCamera(simul::camera::Camera *c)
 			{
@@ -101,15 +101,16 @@ namespace simul
 			ID3D11Device* m_pd3dDevice;
 			std::string screenshotFilenameUtf8;
 			simul::camera::Camera *camera;
-			simul::base::SmartPtr<SimulOpticsRendererDX1x>	simulOpticsRenderer;
-			simul::base::SmartPtr<SimulWeatherRendererDX11>	simulWeatherRenderer;
-			simul::base::SmartPtr<SimulHDRRendererDX1x>		simulHDRRenderer;
-			simul::base::SmartPtr<SimulTerrainRendererDX1x>	simulTerrainRenderer;
+			SimulOpticsRendererDX1x		*simulOpticsRenderer;
+			SimulWeatherRendererDX11	*simulWeatherRenderer;
+			SimulHDRRendererDX1x		*simulHDRRenderer;
+			SimulTerrainRendererDX1x	*simulTerrainRenderer;
 			int ScreenWidth,ScreenHeight;
 			// A depth-only FB to make sure we have a readable depth texture.
 			simul::dx11::Framebuffer depthFramebuffer;
 			simul::dx11::Framebuffer cubemapDepthFramebuffer;
 			FramebufferCubemapDX1x	framebuffer_cubemap;
+			simul::base::MemoryInterface *memoryInterface;
 		};
 	}
 }

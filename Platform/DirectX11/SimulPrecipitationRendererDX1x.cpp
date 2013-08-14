@@ -7,7 +7,6 @@
 // agreement.
 
 #include "SimulPrecipitationRendererDX1x.h"
-#include "Simul/Base/SmartPtr.h"
 #include "CreateEffectDX1x.h"
 #include "FramebufferDX1x.h"
 #include "Utilities.h"

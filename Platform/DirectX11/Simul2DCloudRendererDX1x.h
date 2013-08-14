@@ -12,7 +12,6 @@
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <D3dx11effect.h>
-#include "Simul/Base/SmartPtr.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
@@ -65,7 +64,7 @@ namespace simul
 			ID3D1xShaderResourceView*	skylightTexture_SRV;
 			ID3D1xShaderResourceView*	illuminationTexture_SRV;
 
-			simul::dx11::TextureStruct	coverage_tex[3];
+			//simul::dx11::TextureStruct	coverage_tex[3];
 			simul::dx11::Framebuffer	coverage_fb;
 			simul::dx11::Framebuffer	detail_fb;
 			simul::dx11::Framebuffer	noise_fb;

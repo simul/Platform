@@ -117,7 +117,7 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
 	vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
 
-	vec4 insc			=vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
+	vec4 insc			=vec4(insc_far.rgb-insc_near.rgb,insc_far.a);//0.5*(insc_near.a+insc_far.a));
 	float cos0			=dot(view,lightDir);
 	float3 colour		=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	//colour				=illum_lookup.z;
