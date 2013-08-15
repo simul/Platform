@@ -121,12 +121,12 @@ namespace simul
 
 			bool CreateBuffers();
 			bool RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture);
-			simul::base::SmartPtr<SimulSkyRenderer> simulSkyRenderer;
-			simul::base::SmartPtr<SimulCloudRenderer> simulCloudRenderer;
-			simul::base::SmartPtr<SimulLightningRenderer> simulLightningRenderer;
-			simul::base::SmartPtr<Simul2DCloudRenderer> simul2DCloudRenderer;
-			simul::base::SmartPtr<SimulPrecipitationRenderer> simulPrecipitationRenderer;
-			simul::base::SmartPtr<SimulAtmosphericsRenderer> simulAtmosphericsRenderer;
+			SimulSkyRenderer *simulSkyRenderer;
+			SimulCloudRenderer*simulCloudRenderer;
+			SimulLightningRenderer*simulLightningRenderer;
+			Simul2DCloudRenderer*simul2DCloudRenderer;
+			SimulPrecipitationRenderer*simulPrecipitationRenderer;
+			SimulAtmosphericsRenderer*simulAtmosphericsRenderer;
 			float							exposure;
 			float							gamma;
 			bool							use_buffer;

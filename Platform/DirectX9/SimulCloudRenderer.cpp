@@ -216,8 +216,6 @@ SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::
 	//cloudNode->AddHumidityCallback(&hum_callback);
 	GetCloudInterface()->Generate();
 
-	if(!ck)
-		AddChild(cloudKeyframer);
 	// A noise filter improves the shape of the clouds:
 	//cloudNode->GetNoiseInterface()->SetFilter(&circle_f);
 }
@@ -533,7 +531,7 @@ bool SimulCloudRenderer::CreateNoiseTexture(void *)
 
 	simul::graph::standardnodes::ShowProgressInterface *progress=GetResourceInterface();
 	simul::clouds::TextureGenerator::Make2DNoiseTexture(( char *)(lockedRect.pBits),
-		noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence,progress,this);
+		noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence,NULL,NULL);
 	hr=noise_texture->UnlockRect(0);
 	noise_texture->GenerateMipSubLevels();
 

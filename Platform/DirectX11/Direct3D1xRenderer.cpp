@@ -42,7 +42,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,memoryInterface(m)
 {
 	simulWeatherRenderer=new(memoryInterface) SimulWeatherRendererDX11(env,simul::base::GetDefaultMemoryInterface());
-	AddChild(simulWeatherRenderer);
+	
 	simulHDRRenderer=new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulOpticsRenderer=new(memoryInterface) SimulOpticsRendererDX1x();
 	simulTerrainRenderer=new(memoryInterface) SimulTerrainRendererDX1x(NULL);
@@ -54,12 +54,10 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 
 Direct3D11Renderer::~Direct3D11Renderer()
 {
-	Group::RemoveChild(simulWeatherRenderer);
-	
-	operator delete(simulOpticsRenderer,memoryInterface);
-	operator delete(simulWeatherRenderer,memoryInterface);
-	operator delete(simulHDRRenderer,memoryInterface);
-	operator delete(simulTerrainRenderer,memoryInterface);
+	del(simulOpticsRenderer,memoryInterface);
+	del(simulWeatherRenderer,memoryInterface);
+	del(simulHDRRenderer,memoryInterface);
+	del(simulTerrainRenderer,memoryInterface);
 }
 
 // D3D11CallbackInterface

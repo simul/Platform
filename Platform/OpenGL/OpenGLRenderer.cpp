@@ -58,6 +58,10 @@ OpenGLRenderer::~OpenGLRenderer()
 	simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
 	depthFramebuffer.InvalidateDeviceObjects();
 	SAFE_DELETE_PROGRAM(simple_program);
+	delete simulHDRRenderer;
+	delete simulWeatherRenderer;
+	delete simulOpticsRenderer;
+	delete simulTerrainRenderer;
 }
 
 
@@ -126,7 +130,7 @@ void OpenGLRenderer::paintGL()
 		glLoadMatrixf(cam->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight,false));
 	glViewport(0,0,ScreenWidth,ScreenHeight);
 	static float exposure=1.0f;
-	if(simulWeatherRenderer.get())
+	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->PreRenderUpdate(context);
 		GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
@@ -254,17 +258,17 @@ void OpenGLRenderer::SetCamera(simul::camera::Camera *c)
 
 void OpenGLRenderer::ReloadTextures()
 {
-	if(simulWeatherRenderer.get())
+	if(simulWeatherRenderer)
 		simulWeatherRenderer->ReloadTextures();
 }
 
 void OpenGLRenderer::RecompileShaders()
 {
-	if(simulHDRRenderer.get())
+	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
-	if(simulWeatherRenderer.get())
+	if(simulWeatherRenderer)
 		simulWeatherRenderer->RecompileShaders();
-	if(simulTerrainRenderer.get())
+	if(simulTerrainRenderer)
 		simulTerrainRenderer->RecompileShaders();
 	gpuCloudGenerator.RecompileShaders();
 	gpuSkyGenerator.RecompileShaders();

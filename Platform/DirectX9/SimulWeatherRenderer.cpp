@@ -69,28 +69,26 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	if(ShowSky)
 	{
 		simulSkyRenderer=new SimulSkyRenderer(sk);
-		baseSkyRenderer=simulSkyRenderer.get();
-		AddChild(simulSkyRenderer.get());
+		baseSkyRenderer=simulSkyRenderer;
 	}
 	
 	{
 		simulCloudRenderer=new SimulCloudRenderer(ck3d,mem);
-		baseCloudRenderer=simulCloudRenderer.get();
-		AddChild(simulCloudRenderer.get());
+		baseCloudRenderer=simulCloudRenderer;
 		simulLightningRenderer=new SimulLightningRenderer(ck3d,sk);
-		baseLightningRenderer=simulLightningRenderer.get();
+		baseLightningRenderer=simulLightningRenderer;
 		Restore3DCloudObjects();
 	}
 	
 	{
 		simul2DCloudRenderer=new Simul2DCloudRenderer(ck2d,mem);
-		base2DCloudRenderer=simul2DCloudRenderer.get();
+		base2DCloudRenderer=simul2DCloudRenderer;
 		Restore2DCloudObjects();
 	}
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer(mem);
-	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
 	baseFramebuffer=&framebuffer;
 	ConnectInterfaces();
 }
@@ -234,12 +232,11 @@ void SimulWeatherRenderer::InvalidateDeviceObjects()
 SimulWeatherRenderer::~SimulWeatherRenderer()
 {
 	InvalidateDeviceObjects();
-	SAFE_DELETE_SMARTPTR(simulSkyRenderer);
-	SAFE_DELETE_SMARTPTR(simulCloudRenderer);
-	SAFE_DELETE_SMARTPTR(simul2DCloudRenderer);
-	SAFE_DELETE_SMARTPTR(simulPrecipitationRenderer);
-	SAFE_DELETE_SMARTPTR(simulAtmosphericsRenderer);
-	ClearChildren();
+	del(simulSkyRenderer,memoryInterface);
+	del(simulCloudRenderer,memoryInterface);
+	del(simul2DCloudRenderer,memoryInterface);
+	del(simulPrecipitationRenderer,memoryInterface);
+	del(simulAtmosphericsRenderer,memoryInterface);
 }
 
 void SimulWeatherRenderer::EnableRain(bool e)
@@ -421,27 +418,27 @@ void SimulWeatherRenderer::PreRenderUpdate(void *context,float dt)
 
 SimulSkyRenderer *SimulWeatherRenderer::GetSkyRenderer()
 {
-	return simulSkyRenderer.get();
+	return simulSkyRenderer;
 }
 
 SimulCloudRenderer *SimulWeatherRenderer::GetCloudRenderer()
 {
-	return simulCloudRenderer.get();
+	return simulCloudRenderer;
 }
 
 Simul2DCloudRenderer *SimulWeatherRenderer::Get2DCloudRenderer()
 {
-	return simul2DCloudRenderer.get();
+	return simul2DCloudRenderer;
 }
 
 SimulPrecipitationRenderer *SimulWeatherRenderer::GetPrecipitationRenderer()
 {
-	return simulPrecipitationRenderer.get();
+	return simulPrecipitationRenderer;
 }
 
 SimulAtmosphericsRenderer *SimulWeatherRenderer::GetAtmosphericsRenderer()
 {
-	return simulAtmosphericsRenderer.get();
+	return simulAtmosphericsRenderer;
 }
 float SimulWeatherRenderer::GetTotalBrightness() const
 {

@@ -45,8 +45,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	,ReverseDepth(true)
 {
 	simulWeatherRenderer=new SimulWeatherRenderer(env,NULL,true,w,h,true,true);
-	if(simulWeatherRenderer)
-		AddChild(simulWeatherRenderer.get());
+
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
 	if(simulHDRRenderer&&simulWeatherRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
@@ -61,7 +60,11 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 
 Direct3D9Renderer::~Direct3D9Renderer()
 {
-	OnDestroyDevice();
+	OnLostDevice();
+	delete simulWeatherRenderer;
+	delete simulHDRRenderer;
+	delete simulTerrainRenderer;
+	delete simulOpticsRenderer;
 }
 
 bool Direct3D9Renderer::IsDeviceAcceptable(D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,D3DFORMAT BackBufferFormat, bool bWindowed)
@@ -156,9 +159,9 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 
 void Direct3D9Renderer::SetYVertical(bool )
 {
-	if(simulWeatherRenderer.get())
+	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetYVertical(false);
-	if(simulTerrainRenderer.get())
+	if(simulTerrainRenderer)
 		simulTerrainRenderer->SetYVertical(false);
 }
 static float render_timing=0,update_timing=0,weather_timing=0,hdr_timing=0;
@@ -334,7 +337,7 @@ const char *Direct3D9Renderer::GetDebugText() const
 	if(!ShowOSD)
 		return (("DirectX 9"));
 	tstring weather_text;
-	if(!simulWeatherRenderer.get())
+	if(!simulWeatherRenderer)
 		return (("DirectX 9"));
 #ifdef _UNICODE
 	weather_text=simul::base::StringToWString(simulWeatherRenderer->GetDebugText());
@@ -348,12 +351,12 @@ const char *Direct3D9Renderer::GetDebugText() const
 
 void Direct3D9Renderer::RecompileShaders()
 {
-	if(simulWeatherRenderer.get())
+	if(simulWeatherRenderer)
 		simulWeatherRenderer->RecompileShaders();
-	if(simulOpticsRenderer.get())
+	if(simulOpticsRenderer)
 		simulOpticsRenderer->RecompileShaders();
-	if(simulHDRRenderer.get())
+	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
-	if(simulTerrainRenderer.get())
+	if(simulTerrainRenderer)
 		simulTerrainRenderer->RecompileShaders();
 }
