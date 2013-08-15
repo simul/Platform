@@ -15,23 +15,23 @@ vec4 Godrays(Texture2D inscTexture,Texture2D overcTexture,vec2 pos,mat4 invViewP
 	float dist_max		=shadowRange/maxDistance;
 	float dist_1		=0.0;
 	vec2 fade_texc		=vec2(0.0				,0.5*(1.0-sine));
-	vec2 solid_fade_texc=vec2(sqrt(solid_dist)	,0.5*(1.0-sine));
+	vec2 solid_fade_texc=vec2(pow(solid_dist,.5)	,0.5*(1.0-sine));
 	//vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	//vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
 	vec4 insc1			=texture_clamp_mirror(inscTexture,fade_texc)-texture_clamp_mirror(overcTexture,fade_texc);
 	vec4 insc_s			=texture_clamp_mirror(inscTexture,solid_fade_texc)-texture_clamp_mirror(overcTexture,solid_fade_texc);
 	float ill			=1.0;
 	float eff_remaining	=1.0;
-	for(int i=0;i<NUM_STEPS;i++)
+	for(int i=0;i<100;i++)
 	{
 		float dist_0	=dist_1;
-		dist_1			=godrays_distances[i]/maxDistance;
-		if(dist_0<solid_dist)
+		if(i<godraysSteps&&dist_0<solid_dist)
 		{
+			dist_1			=godrays_distances[i]/maxDistance;
 			dist_1			=min(dist_1,solid_dist);
 			float dist		=0.5*(dist_0+dist_1);
 			float eff		=exp(-dist/dist_max);
-			fade_texc.x		=sqrt(dist_0);
+			fade_texc.x		=pow(dist_0,.5);
 			float d			=dist*maxDistance;
 			ill				=eff*GetIlluminationAt(cloudShadowTexture,viewPosition+view*d);
 			vec4 insc0		=insc1;

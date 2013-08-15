@@ -75,9 +75,9 @@ void SimulGLAtmosphericsRenderer::RecompileShaders()
 	earthshadow_insc_program	=MakeProgram("simul_atmospherics.vert",NULL,"simul_insc_earthshadow.frag",defines);
 	godrays_program				=MakeProgram("simul_atmospherics.vert",NULL,"simul_atmospherics_godrays.frag",defines);
 
-	MAKE_CONSTANT_BUFFER(earthShadowUniformsUBO,EarthShadowUniforms,earthShadowUniformsBindingIndex);
-	MAKE_CONSTANT_BUFFER(atmosphericsUniformsUBO,AtmosphericsUniforms,atmosphericsUniformsBindingIndex);
-	MAKE_CONSTANT_BUFFER(atmosphericsUniforms2UBO,AtmosphericsPerViewConstants,atmosphericsUniforms2BindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(earthShadowUniformsUBO,EarthShadowUniforms,earthShadowUniformsBindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,AtmosphericsUniforms,atmosphericsUniformsBindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(atmosphericsUniforms2UBO,AtmosphericsPerViewConstants,atmosphericsUniforms2BindingIndex);
 	
 	linkToConstantBuffer(loss_program,"AtmosphericsUniforms",atmosphericsUniformsBindingIndex);
 	linkToConstantBuffer(loss_program,"AtmosphericsPerViewConstants",atmosphericsUniforms2BindingIndex);
@@ -127,7 +127,7 @@ ERROR_CHECK
 		earthShadowUniforms.maxFadeDistance		=fade_distance_km/e.planet_radius;
 		earthShadowUniforms.terminatorDistance	=e.terminator_distance_km/fade_distance_km;
 		earthShadowUniforms.sunDir				=sun_dir;
-		UPDATE_CONSTANT_BUFFER(earthShadowUniformsUBO,earthShadowUniforms,earthShadowUniformsBindingIndex)
+		UPDATE_GL_CONSTANT_BUFFER(earthShadowUniformsUBO,earthShadowUniforms,earthShadowUniformsBindingIndex)
 	}
 	ERROR_CHECK
 	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
@@ -150,7 +150,7 @@ ERROR_CHECK
 	atmosphericsUniforms2.farZ=frustum.farZ*0.001f/fade_distance_km;
 	atmosphericsUniforms2.viewPosition	=cam_pos;
 
-	UPDATE_CONSTANT_BUFFER(atmosphericsUniforms2UBO,atmosphericsUniforms2,atmosphericsUniforms2BindingIndex)
+	UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniforms2UBO,atmosphericsUniforms2,atmosphericsUniforms2BindingIndex)
 
 	{
 		AtmosphericsUniforms atmosphericsUniforms;
@@ -166,7 +166,7 @@ ERROR_CHECK
 		atmosphericsUniforms.overcast		=overcast;
 		atmosphericsUniforms.exposure		=exposure;
 		
-		UPDATE_CONSTANT_BUFFER(atmosphericsUniformsUBO,atmosphericsUniforms,atmosphericsUniformsBindingIndex)
+		UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,atmosphericsUniforms,atmosphericsUniformsBindingIndex)
 	}
 ERROR_CHECK
 	glEnable(GL_BLEND);

@@ -18,8 +18,8 @@ float GetIlluminationAt(Texture2D cloudShadowTexture,vec3 wpos)
 	vec4 texel			=sampleLod(cloudShadowTexture,clampWrapSamplerState,radial_pos.xy,0);
 	float illumination	=0.5*(texel.x+texel.y);
 	float above			=saturate((radial_pos.z-texel.z)/1.05);
-	//illumination		+=above;
-	///illumination		+=1.0-exp(min(0,(radial_pos.z-texel.z)/10.0));
+	illumination		+=above;
+	illumination		+=1.0-exp(min(0,(radial_pos.z-texel.z)/10.0));
 	return saturate(illumination);
 }
 

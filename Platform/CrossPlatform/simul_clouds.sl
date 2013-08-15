@@ -77,7 +77,7 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 {
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
 	float theta						=texCoords.y*2.0*3.1415926536;
-	float distance_off_centre		=texCoords.x*texCoords.x;
+	float distance_off_centre		=pow(texCoords.x,2.0);
 	vec2 pos_xy						=distance_off_centre*vec2(cos(theta),sin(theta));
 	vec2 illumination				=vec2(1.0,1.0);
 	float U							=-1.0;//(startZMetres-extentZMetres)/1000.0;

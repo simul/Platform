@@ -749,12 +749,11 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *f
 	hr=1;
 	while(hr!=S_OK)
 	{
-		hr=D3DX11CreateEffectFromFileUtf8(
-				filename_utf8,
-				macros,
-				flags,
-				d3dDevice,
-				effect);
+		hr=D3DX11CreateEffectFromFileUtf8(	filename_utf8,
+											macros,
+											flags,
+											d3dDevice,
+											effect);
 		if(hr==S_OK)
 			break;
 		std::string err="";

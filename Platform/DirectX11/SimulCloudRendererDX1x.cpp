@@ -1093,7 +1093,7 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[texture_cycle%3].texture!=NULL)
 		return;
 	cloudShadow.SetGenerateMips(false/*true*/);
-	cloudShadow.SetWidthAndHeight(64,512);
+	cloudShadow.SetWidthAndHeight(64,64);
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
@@ -1120,8 +1120,8 @@ void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(void *context)
 	if(!noise_texture)
 		CreateNoiseTexture(pContext);
 	// We don't need to fill the textures if the gpu Generator has already done so:
-	//if(cloudKeyframer->GetGpuCloudGenerator()==&gpuCloudGenerator&&gpuCloudGenerator.GetEnabled())
-	//	return;
+	if(cloudKeyframer->GetGpuCloudGenerator()==&gpuCloudGenerator&&gpuCloudGenerator.GetEnabled())
+		return;
 	for(int i=0;i<3;i++)
 	{
 		TextureStruct &texture=cloud_textures[(texture_cycle+i)%3];

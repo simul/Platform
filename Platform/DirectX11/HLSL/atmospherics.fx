@@ -60,33 +60,6 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 	return OUT;
 }
 
-float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
-{
-	float3 view		=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	float2 viewportTexCoord = viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	float4 lookup	=imageTexture.Sample(clampSamplerState,viewportTexCoord);
-	float4 dlookup	=depthTexture.Sample(clampSamplerState,viewportTexCoord);
-	float3 colour	=lookup.rgb;
-	float depth		=dlookup.r;
-	float dist		=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
-#ifdef REVERSE_DEPTH
-	if(depth<=0.0)
-		dist=1.0;
-#else
-	if(depth>=1.0)
-		dist=1.0;
-#endif
-	float sine		=view.z;
-	float2 texc2	=float2(pow(dist,0.5f),0.5f*(1.f-sine));
-	float3 loss		=lossTexture.Sample(clampSamplerState,texc2).rgb;
-	colour			*=loss;
-	float4 inscatter_factor=inscTexture.Sample(clampSamplerState,texc2);
-	float cos0		=dot(view.xyz,lightDir.xyz);
-	colour			+=InscatterFunction(inscatter_factor,hazeEccentricity,cos0,mieRayleighRatio);
-	colour			+=skylTexture.Sample(clampSamplerState,texc2).rgb;
-    return float4(colour.rgb,1.f);
-}
-
 float4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
 {
 	float3 view	=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
@@ -99,7 +72,7 @@ float4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
     return float4(loss.rgb,1.f);
 }
 
-float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
+vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 {
 	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
 	view				=normalize(view);
@@ -107,7 +80,7 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	float depth			=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
 	float dist			=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
 	float sine			=view.z;
-	float2 fade_texc	=float2(pow(dist,0.5f),0.5f*(1.f-sine));
+	float2 fade_texc	=vec2(pow(dist,0.5f),0.5f*(1.f-sine));
 
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
@@ -136,19 +109,6 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToDistance(solid_depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
 	return Godrays(inscTexture,overcTexture,IN.pos,invViewProj,maxDistance,solid_dist);
-}
-
-technique11 simul_atmospherics
-{
-    pass p0
-    {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(NoBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Atmos()));
-    }
 }
 
 technique11 simul_atmospherics_overlay

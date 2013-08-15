@@ -48,7 +48,7 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *)
 	itype=GL_LUMINANCE;
 	RecompileShaders();
 	density_texture=0;
-	MAKE_CONSTANT_BUFFER(gpuCloudConstantsUBO,GpuCloudConstants,gpuCloudConstantsBindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,GpuCloudConstants,gpuCloudConstantsBindingIndex);
 }
 
 void GpuCloudGenerator::InvalidateDeviceObjects()
@@ -185,7 +185,7 @@ timer.StartTime();
 	constants.upperDensity		=upperDensity;
 	constants.diffusivity		=diffusivity;
 
-	UPDATE_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
+	UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
 	GLint gpuCloudConstants		=glGetUniformBlockIndex(density_program,"GpuCloudConstants");
 	if(gpuCloudConstants>=0)
 		glUniformBlockBinding(density_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
@@ -309,7 +309,7 @@ timer.StartTime();
 	GpuCloudConstants constants;
 	constants.extinctions=lightspace_extinctions_float3;
 	constants.transformMatrix=transformMatrix;
-	UPDATE_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
+	UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
 	GLint gpuCloudConstants		=glGetUniformBlockIndex(lighting_program,"GpuCloudConstants");
 	if(gpuCloudConstants>=0)
 		glUniformBlockBinding(lighting_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
@@ -351,7 +351,7 @@ ERROR_CHECK
 		float zPosition=((float)i-0.5f)/(float)light_grid[2];
 		//setParameter(lighting_program,"zPosition",zPosition);
 		constants.zPosition=zPosition;
-		UPDATE_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
+		UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
 		GLint gpuCloudConstants		=glGetUniformBlockIndex(lighting_program,"GpuCloudConstants");
 		if(gpuCloudConstants>=0)
 			glUniformBlockBinding(lighting_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
@@ -423,7 +423,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int index,unsigned char *target
 	constants.zPixel			=1.f/(float)density_grid[2];
 	constants.zSize				=(float)density_grid[2];
 	//constants.zs
-	UPDATE_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
+	UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
 	GLint gpuCloudConstants		=glGetUniformBlockIndex(transform_program,"GpuCloudConstants");
 	if(gpuCloudConstants>=0)
 		glUniformBlockBinding(transform_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);

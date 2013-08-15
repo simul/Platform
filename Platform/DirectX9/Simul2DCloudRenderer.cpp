@@ -102,7 +102,7 @@ static void SetBits8()
 
 Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,
 										   simul::base::MemoryInterface *mem)
-	:BaseCloudRenderer(ck,mem)
+	:Base2DCloudRenderer(ck,mem)
 	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pCloudEffect(NULL)

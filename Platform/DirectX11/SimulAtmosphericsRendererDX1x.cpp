@@ -96,21 +96,20 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	singlePassTechnique		=effect->GetTechniqueByName("simul_atmospherics");
 	twoPassOverlayTechnique	=effect->GetTechniqueByName("simul_atmospherics_overlay");
 	godraysTechnique		=effect->GetTechniqueByName("simul_godrays");
-	
-	
-	invViewProj			=effect->GetVariableByName("invViewProj")->AsMatrix();
-	lightDir			=effect->GetVariableByName("lightDir")->AsVector();
-	MieRayleighRatio	=effect->GetVariableByName("MieRayleighRatio")->AsVector();
-	HazeEccentricity	=effect->GetVariableByName("HazeEccentricity")->AsScalar();
-	fadeInterp			=effect->GetVariableByName("fadeInterp")->AsScalar();
-	depthTexture		=effect->GetVariableByName("depthTexture")->AsShaderResource();
-	lossTexture			=effect->GetVariableByName("lossTexture")->AsShaderResource();
-	inscTexture			=effect->GetVariableByName("inscTexture")->AsShaderResource();
-	skylTexture			=effect->GetVariableByName("skylTexture")->AsShaderResource();
 
-	illuminationTexture	=effect->GetVariableByName("illuminationTexture")->AsShaderResource();
-	overcTexture		=effect->GetVariableByName("overcTexture")->AsShaderResource();
-	cloudShadowTexture	=effect->GetVariableByName("cloudShadowTexture")->AsShaderResource();
+	invViewProj				=effect->GetVariableByName("invViewProj")->AsMatrix();
+	lightDir				=effect->GetVariableByName("lightDir")->AsVector();
+	MieRayleighRatio		=effect->GetVariableByName("MieRayleighRatio")->AsVector();
+	HazeEccentricity		=effect->GetVariableByName("HazeEccentricity")->AsScalar();
+	fadeInterp				=effect->GetVariableByName("fadeInterp")->AsScalar();
+	depthTexture			=effect->GetVariableByName("depthTexture")->AsShaderResource();
+	lossTexture				=effect->GetVariableByName("lossTexture")->AsShaderResource();
+	inscTexture				=effect->GetVariableByName("inscTexture")->AsShaderResource();
+	skylTexture				=effect->GetVariableByName("skylTexture")->AsShaderResource();
+
+	illuminationTexture		=effect->GetVariableByName("illuminationTexture")->AsShaderResource();
+	overcTexture			=effect->GetVariableByName("overcTexture")->AsShaderResource();
+	cloudShadowTexture		=effect->GetVariableByName("cloudShadowTexture")->AsShaderResource();
 	
 	atmosphericsPerViewConstants.LinkToEffect(effect,"AtmosphericsPerViewConstants");
 	atmosphericsUniforms.LinkToEffect(effect,"AtmosphericsUniforms");

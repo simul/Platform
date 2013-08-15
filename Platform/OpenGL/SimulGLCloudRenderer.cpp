@@ -466,7 +466,7 @@ helper->Update2DNoiseCoords();
 	glBindBuffer(GL_UNIFORM_BUFFER,0);
 	glBindBufferBase(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO);
 
-	UPDATE_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)
+	UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)
 	
 	if(Raytrace)
 	{
@@ -496,7 +496,7 @@ helper->Update2DNoiseCoords();
 	// b) are in the cloud volume
 	ERROR_CHECK
 	SetLayerConstants(helper,layerConstants);
-	UPDATE_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
+	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
 	int idx=0;
 	for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
@@ -628,14 +628,9 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 {
 	init=true;
 	
-/*	glGenBuffers(1, &cloudConstantsUBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, cloudConstantsUBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(CloudConstants), NULL, GL_STREAM_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);*/
-	
-	MAKE_CONSTANT_BUFFER(cloudConstantsUBO,CloudConstants,cloudConstantsBindingIndex);
-	MAKE_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
-	MAKE_CONSTANT_BUFFER(cloudPerViewConstantsUBO,CloudPerViewConstants,cloudPerViewConstantsBindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(cloudConstantsUBO,CloudConstants,cloudConstantsBindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,CloudPerViewConstants,cloudPerViewConstantsBindingIndex);
 
 	RecompileShaders();
 	//CreateVolumeNoise();
@@ -941,7 +936,7 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 
 void SimulGLCloudRenderer::RenderCrossSections(void *,int width,int height)
 {
-	static int u=4;
+	static int u=6;
 	int w=(width-8)/u;
 	if(w>height/2)
 		w=height/2;
