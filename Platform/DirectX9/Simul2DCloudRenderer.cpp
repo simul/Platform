@@ -261,7 +261,7 @@ void SetTexture()
 {
 }
 
-void Simul2DCloudRenderer::Update(void *)
+void Simul2DCloudRenderer::PreRenderUpdate(void *)
 {
 }
 

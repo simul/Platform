@@ -28,11 +28,6 @@ uniform_buffer Cloud2DConstants SIMUL_BUFFER_REGISTER(11)
 	uniform vec2 tanHalfFov;
 	uniform float exposure;
 	uniform float time;
-	uniform float coverageOctaves;
-	uniform float coveragePersistence;
-	uniform float humidity;
-	uniform float diffusivity;
-	uniform float noiseTextureScale;			// Scale from existing random texture to noise scale of coverage.
 };
 
 uniform_buffer Detail2DConstants SIMUL_BUFFER_REGISTER(12)
@@ -42,9 +37,15 @@ uniform_buffer Detail2DConstants SIMUL_BUFFER_REGISTER(12)
 	uniform float ccd,ddd;
 	uniform vec3 lightDir2d;
 	uniform float cloudiness;
+	// for coverage
+	uniform float coverageOctaves;
+	uniform float coveragePersistence;
+	uniform float humidity;
+	uniform float diffusivity;
+	uniform float noiseTextureScale;			// Scale from existing random texture to noise scale of coverage.
 };
 
-uniform_buffer CloudCrossSection2DConstants R13
+uniform_buffer CloudCrossSection2DConstants SIMUL_BUFFER_REGISTER(13)
 {
 	uniform vec4 rect;
 };

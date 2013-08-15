@@ -565,7 +565,7 @@ static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 	return &x;
 }
 
-void SimulCloudRenderer::Update(void *)
+void SimulCloudRenderer::PreRenderUpdate(void *)
 {
 }
 void SimulCloudRenderer::EnsureCorrectIlluminationTextureSizes()

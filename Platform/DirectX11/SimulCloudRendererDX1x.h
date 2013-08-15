@@ -61,7 +61,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			//! Call this to release the memory for D3D device objects.
 			bool Destroy();
-			void Update(void *context);
+			void PreRenderUpdate(void *context);
 			//! Call this to draw the clouds, including any illumination by lightning.
 			bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 			void RenderDebugInfo(void *context,int width,int height);

@@ -726,7 +726,7 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 //	pContext->GenerateMips((ID3D11ShaderResourceView*)cloudShadow.GetColorTex());
 }
 
-void SimulCloudRendererDX1x::Update(void *context)
+void SimulCloudRendererDX1x::PreRenderUpdate(void *context)
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
 	EnsureTexturesAreUpToDate(pContext);

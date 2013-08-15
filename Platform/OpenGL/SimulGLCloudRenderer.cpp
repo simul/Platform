@@ -262,7 +262,7 @@ static float saturate(float c)
 	return std::max(std::min(1.f,c),0.f);
 }
 
-void SimulGLCloudRenderer::Update(void *context)
+void SimulGLCloudRenderer::PreRenderUpdate(void *context)
 {
 	EnsureTexturesAreUpToDate(context);
 }

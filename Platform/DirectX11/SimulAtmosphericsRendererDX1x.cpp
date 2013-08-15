@@ -50,6 +50,7 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x(simul::base::Memory
 	,cloudShadowTexture(NULL)
 	,skyLossTexture_SRV(NULL)
 	,skyInscatterTexture_SRV(NULL)
+	,overcInscTexture_SRV(NULL)
 	,skylightTexture_SRV(NULL)
 	,clouds_texture(NULL)
 	,illuminationTexture_SRV(NULL)

@@ -271,7 +271,7 @@ void Set2DTexture(GLint shader_param,GLuint gl_texture,int channel)
 ERROR_CHECK
 }
 
-void SimulGL2DCloudRenderer::Update(void *)
+void SimulGL2DCloudRenderer::PreRenderUpdate(void *)
 {
 }
 

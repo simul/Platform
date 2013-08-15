@@ -1,20 +1,12 @@
 #ifndef CLOUD_CONSTANTS_SL
 #define CLOUD_CONSTANTS_SL
-STATIC const int MAX_INSTANCES=400;
+STATIC const int MAX_INSTANCES=200;
 
 struct LayerData
 {
 	vec2 noiseOffset;
-	float pad1;
-	float pad2;
 	float noiseScale;
-	float pad5;
-	float pad6;
-	float pad7;
 	float layerFade;
-	float pad8;
-	float pad9;
-	float pad10;
 	float layerDistance;
 	float verticalShift;
 	float pad11;

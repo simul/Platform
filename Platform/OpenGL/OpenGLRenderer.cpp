@@ -64,7 +64,6 @@ OpenGLRenderer::~OpenGLRenderer()
 	delete simulTerrainRenderer;
 }
 
-
 void OpenGLRenderer::initializeGL()
 {
 ERROR_CHECK

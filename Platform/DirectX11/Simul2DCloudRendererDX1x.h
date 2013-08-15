@@ -31,7 +31,7 @@ namespace simul
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
 			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-			void Update(void *context);
+			void PreRenderUpdate(void *context);
 			bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 			void RenderCrossSections(void *context,int width,int height);
 			void SetLossTexture(void *l);

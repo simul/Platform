@@ -24,7 +24,7 @@ float NoiseFunction(Texture2D noiseTexture,vec2 pos,float octaves,float persiste
 	return saturate(dens);
 }
 
-vec4 Coverage(vec2 texCoords,float octaves,float persistence,float time,Texture2D noiseTexture)
+vec4 Coverage(vec2 texCoords,float humidity,float diffusivity,float octaves,float persistence,float time,Texture2D noiseTexture,float noiseTextureScale)
 {
 	float noise_val			=NoiseFunction(noiseTexture,texCoords/noiseTextureScale,octaves,persistence,time);
 	float dens				=saturate((noise_val+humidity-1.0)/diffusivity);
@@ -60,6 +60,16 @@ vec3 ApplyEarthshadowFade(vec3 colour,vec3 wEyeToPos,vec3 lightDir,vec3 mieRayle
 	return colour;
 }
 
+vec3 InscatterFunction2(vec4 inscatter_factor,float hazeEccentricity,float cos0,vec3 mieRayleighRatio)
+{
+	float BetaRayleigh=0.0596831*(1.0+cos0*cos0);
+	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
+	vec3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz);
+		//(vec3(1.0,1.0,1.0)+0*inscatter_factor.a*mieRayleighRatio.xyz);*/
+	vec3 colour=BetaTotal*inscatter_factor.rgb;
+	return colour;
+}
+
 vec3 ApplySimpleFade(vec3 colour,vec3 wEyeToPos,vec3 lightDir,vec3 mieRayleighRatio,float hazeEccentricity,float maxFadeDistMetres)
 {
 	vec3 view		=normalize(wEyeToPos);
@@ -70,7 +80,7 @@ vec3 ApplySimpleFade(vec3 colour,vec3 wEyeToPos,vec3 lightDir,vec3 mieRayleighRa
 	vec4 insc		=texture_clamp_mirror(inscTexture,fade_texc);
 	vec4 skyl		=texture_clamp_mirror(skylTexture,fade_texc);
 	colour			*=loss;
-	colour			+=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
+	colour			+=InscatterFunction2(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour			+=skyl.rgb;
 	return colour;
 }

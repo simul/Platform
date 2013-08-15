@@ -57,6 +57,7 @@ v2f MainVS(a2v IN)
 
 float4 MainPS(v2f IN) : SV_TARGET
 {
+	//return vec4(1.0,1.0,0.8,0.5);
 	vec3 depth_pos		=IN.clip_pos.xyz/IN.clip_pos.w;
 	vec3 depth_texc		=0.5*(depth_pos+vec3(1.0,1.0,1.0));
 	depth_texc.y		=1.0-depth_texc.y;
@@ -138,7 +139,7 @@ float4 SimplePS(v2f2 IN) : SV_TARGET
 
 float4 CoveragePS(v2f2 IN) : SV_TARGET
 {
-	return Coverage(IN.texCoords,coverageOctaves,coveragePersistence,time,noiseTexture);
+	return Coverage(IN.texCoords,humidity,diffusivity,coverageOctaves,coveragePersistence,time,noiseTexture,noiseTextureScale);
 }
 
 float4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET
