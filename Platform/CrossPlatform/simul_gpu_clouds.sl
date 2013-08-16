@@ -14,7 +14,7 @@ uniform_buffer GpuCloudConstants R8
 	uniform float persistence;
 	uniform float humidity;
 	uniform vec3 noiseScale;
-	uniform float o;
+	uniform float zPixelLightspace;
 	uniform float zPosition;
 	uniform float zPixel;
 	uniform float zSize;

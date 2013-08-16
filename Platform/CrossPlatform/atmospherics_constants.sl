@@ -17,7 +17,7 @@ uniform_buffer AtmosphericsUniforms SIMUL_BUFFER_REGISTER(11)
 	uniform float pad8;
 
 	uniform float overcast;
-	uniform float maxDistance;
+	uniform float maxFadeDistanceMetres;
 	uniform float exposure;
 	uniform float fogBaseAlt;
 
@@ -31,6 +31,7 @@ uniform_buffer AtmosphericsPerViewConstants SIMUL_BUFFER_REGISTER(12)
 {
 	uniform mat4 invViewProj;
 	uniform mat4 invShadowMatrix;
+	uniform mat4 shadowMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 viewPosition;
 	uniform float pad9;

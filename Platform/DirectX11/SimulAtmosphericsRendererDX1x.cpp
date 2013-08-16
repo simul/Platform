@@ -221,16 +221,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 	atmosphericsUniforms.Apply(pContext);
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,relativeViewportTextureRegionXYWH);
 	SetGodraysConstants(atmosphericsPerViewConstants,view);
-	/*
-	simul::math::Matrix4x4 shadowMatrix				=cloudShadowStruct.shadowMatrix;
-	simul::math::Matrix4x4 invShadowMatrix;
-	shadowMatrix.Inverse(invShadowMatrix);
-	atmosphericsPerViewConstants.invShadowMatrix	=invShadowMatrix;
 
-//atmosphericsPerViewConstants.extentZMetres		=cloudShadowStruct.extentZMetres;
-	atmosphericsPerViewConstants.startZMetres		=cloudShadowStruct.startZMetres;
-	atmosphericsPerViewConstants.shadowRange		=cloudShadowStruct.shadowRange;
-	*/
 	atmosphericsPerViewConstants.Apply(pContext);
 
 	ApplyPass(pContext,godraysTechnique->GetPassByIndex(0));
