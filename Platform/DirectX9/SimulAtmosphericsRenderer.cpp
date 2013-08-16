@@ -30,8 +30,9 @@
 #include "Macros.h"
 #include "Resources.h"
 
-SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
-	:m_pd3dDevice(NULL)
+SimulAtmosphericsRenderer::SimulAtmosphericsRenderer(simul::base::MemoryInterface *m)
+	:BaseAtmosphericsRenderer(m)
+	,m_pd3dDevice(NULL)
 	,vertexDecl(NULL)
 	,effect(NULL)
 	,lightDir(NULL)
@@ -53,7 +54,6 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
 	,inscatter_texture(NULL)
 	,skylight_texture(NULL)
 	,clouds_texture(NULL)
-	,cloud_shadow_texture(NULL)
 	,m_pRenderTarget(NULL)
 	,m_pBufferDepthSurface(NULL)
 	,m_pOldRenderTarget(NULL)

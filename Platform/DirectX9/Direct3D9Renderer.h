@@ -43,8 +43,11 @@ namespace simul
 	{
 		class Camera;
 	}
+	namespace dx9
+	{
+		class SimulWeatherRenderer;
+	}
 }
-class SimulWeatherRenderer;
 class SimulHDRRenderer;
 class SimulTerrainRenderer;
 class SimulOpticsRendererDX9;
@@ -74,9 +77,9 @@ public:
 		META_ValueProperty(bool,ShowOSD,"Show debug display.")
 	META_EndProperties
 
-	SimulWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer.get();}
-	SimulTerrainRenderer *GetSimulTerrainRenderer(){return simulTerrainRenderer.get();}
-	SimulHDRRenderer *GetSimulHDRRenderer(){return simulHDRRenderer.get();}
+	simul::dx9::SimulWeatherRenderer *GetSimulWeatherRenderer(){return simulWeatherRenderer;}
+	SimulTerrainRenderer *GetSimulTerrainRenderer(){return simulTerrainRenderer;}
+	SimulHDRRenderer *GetSimulHDRRenderer(){return simulHDRRenderer;}
 
 	void SetCamera(simul::camera::Camera *c);
 //Direct3D9CallbackInterface:
@@ -102,10 +105,10 @@ protected:
 	float aspect;
 	bool device_reset;
 	float framerate;
-	simul::base::SmartPtr<SimulOpticsRendererDX9> simulOpticsRenderer;
-	simul::base::SmartPtr<SimulWeatherRenderer> simulWeatherRenderer;
-	simul::base::SmartPtr<SimulTerrainRenderer> simulTerrainRenderer;
-	simul::base::SmartPtr<SimulHDRRenderer> simulHDRRenderer;
+	SimulOpticsRendererDX9 *simulOpticsRenderer;
+	simul::dx9::SimulWeatherRenderer *simulWeatherRenderer;
+	SimulTerrainRenderer *simulTerrainRenderer;
+	SimulHDRRenderer *simulHDRRenderer;
 	const char *GetDebugText() const;
 	int width,height;
 	float time_mult;

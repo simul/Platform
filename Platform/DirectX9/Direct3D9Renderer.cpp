@@ -20,6 +20,9 @@
 #include "Simul/Platform/DirectX9/Resources.h"
 #include <iomanip>
 
+using namespace simul;
+using namespace dx9;
+
 Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h)
 	:simul::graph::meta::Group()
 	,aspect(1.f)
@@ -41,9 +44,8 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	,ShowWater(true)
 	,ReverseDepth(true)
 {
-	simulWeatherRenderer=new SimulWeatherRenderer(env,true,w,h,true,true);
-	if(simulWeatherRenderer)
-		AddChild(simulWeatherRenderer.get());
+	simulWeatherRenderer=new SimulWeatherRenderer(env,NULL,true,w,h,true,true);
+
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
 	if(simulHDRRenderer&&simulWeatherRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
@@ -58,7 +60,11 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 
 Direct3D9Renderer::~Direct3D9Renderer()
 {
-	OnDestroyDevice();
+	OnLostDevice();
+	delete simulWeatherRenderer;
+	delete simulHDRRenderer;
+	delete simulTerrainRenderer;
+	delete simulOpticsRenderer;
 }
 
 bool Direct3D9Renderer::IsDeviceAcceptable(D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,D3DFORMAT BackBufferFormat, bool bWindowed)
@@ -153,9 +159,9 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 
 void Direct3D9Renderer::SetYVertical(bool )
 {
-	if(simulWeatherRenderer.get())
+	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetYVertical(false);
-	if(simulTerrainRenderer.get())
+	if(simulTerrainRenderer)
 		simulTerrainRenderer->SetYVertical(false);
 }
 static float render_timing=0,update_timing=0,weather_timing=0,hdr_timing=0;
@@ -185,6 +191,7 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime, float fTimeStep)
 {
 	static float exposure=1.f;
+	static int viewport_id=0;
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetReverseDepth(ReverseDepth);
 	fTime;fTimeStep;
@@ -226,10 +233,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	}
 	if(simulWeatherRenderer)
 	{
-#ifdef XBOX
-		simulWeatherRenderer->SetMatrices(view,proj);
-#endif
-		simulWeatherRenderer->RenderSky(pd3dDevice,exposure,UseSkyBuffer,false);
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dDevice,exposure,UseSkyBuffer,false,NULL,viewport_id,simul::sky::float4(0,0,1.f,1.f));
 	}
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 		simulWeatherRenderer->GetAtmosphericsRenderer()->StartRender(NULL);
@@ -246,7 +250,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(simulWeatherRenderer)
 	{
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
-		simulWeatherRenderer->RenderLateCloudLayer(pd3dDevice,exposure,true);
+		simulWeatherRenderer->RenderLateCloudLayer(pd3dDevice,exposure,true,0,simul::sky::float4(0,0,1.f,1.f));
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{
@@ -268,7 +272,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 			}
 		}
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
-		simulWeatherRenderer->RenderLightning(NULL);
+		simulWeatherRenderer->RenderLightning(NULL,viewport_id);
 		if(ShowLightVolume&&simulWeatherRenderer->GetCloudRenderer())
 			simulWeatherRenderer->GetCloudRenderer()->RenderLightVolume();
 		simulWeatherRenderer->RenderPrecipitation(NULL);
@@ -333,7 +337,7 @@ const char *Direct3D9Renderer::GetDebugText() const
 	if(!ShowOSD)
 		return (("DirectX 9"));
 	tstring weather_text;
-	if(!simulWeatherRenderer.get())
+	if(!simulWeatherRenderer)
 		return (("DirectX 9"));
 #ifdef _UNICODE
 	weather_text=simul::base::StringToWString(simulWeatherRenderer->GetDebugText());
@@ -347,12 +351,12 @@ const char *Direct3D9Renderer::GetDebugText() const
 
 void Direct3D9Renderer::RecompileShaders()
 {
-	if(simulWeatherRenderer.get())
+	if(simulWeatherRenderer)
 		simulWeatherRenderer->RecompileShaders();
-	if(simulOpticsRenderer.get())
+	if(simulOpticsRenderer)
 		simulOpticsRenderer->RecompileShaders();
-	if(simulHDRRenderer.get())
+	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
-	if(simulTerrainRenderer.get())
+	if(simulTerrainRenderer)
 		simulTerrainRenderer->RecompileShaders();
 }

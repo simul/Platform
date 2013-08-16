@@ -50,7 +50,7 @@ ERROR_CHECK
 ERROR_CHECK
 	skyl_program=MakeProgram("simple.vert",NULL,"simul_gpu_skyl.frag");
 ERROR_CHECK
-	MAKE_CONSTANT_BUFFER(gpuSkyConstantsUBO,GpuSkyConstants,gpuSkyConstantsBindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,GpuSkyConstants,gpuSkyConstantsBindingIndex);
 }
 
 //! Return true if the derived class can make sky tables using the GPU.
@@ -92,7 +92,7 @@ static GLuint make1DTexture(int w,const float *src)
 }
 
 
-void GpuSkyGenerator::Make2DLossAndInscatterTextures(simul::sky::AtmosphericScatteringInterface *skyInterface
+void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,simul::sky::AtmosphericScatteringInterface *skyInterface
 				,int numElevations,int numDistances
 				,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl
 				,const std::vector<float> &altitudes_km
@@ -158,7 +158,7 @@ std::cout<<"\tGpu sky: dens_tex "<<timer.UpdateTime()<<std::endl;
 		constants.hazeEccentricity	=1.0;
 		constants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
 		constants.emissivity		=emissivity;
-		UPDATE_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
+		UPDATE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
 	}
 	setParameter(loss_program,"input_loss_texture",0);
 	setParameter(loss_program,"density_texture",1);
@@ -186,7 +186,7 @@ ERROR_CHECK
 			distKm=1000.f;
 		constants.distanceKm		=distKm;
 		constants.prevDistanceKm	=prevDistKm;
-		UPDATE_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
+		UPDATE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
 		if(gpuSkyConstants>=0)
 			glUniformBlockBinding(loss_program,gpuSkyConstants,gpuSkyConstantsBindingIndex);
 	ERROR_CHECK
@@ -247,7 +247,7 @@ ERROR_CHECK
 			distKm=1000.f;
 		constants.distanceKm		=distKm;
 		constants.prevDistanceKm	=prevDistKm;
-		UPDATE_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
+		UPDATE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
 		F[1]->Activate(NULL);
 			F[1]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 			OrthoMatrices();
@@ -306,7 +306,7 @@ ERROR_CHECK
 			distKm=1000.f;
 		constants.distanceKm		=distKm;
 		constants.prevDistanceKm	=prevDistKm;
-		UPDATE_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
+		UPDATE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
 		F[1]->Activate(NULL);
 			F[1]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 			OrthoMatrices();

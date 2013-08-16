@@ -100,8 +100,9 @@ static void SetBits8()
 	simul::clouds::TextureGenerator::SetBits(bits8[0],bits8[1],bits8[2],bits8[3],(unsigned)4,big_endian);
 }
 
-Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck)
-	:BaseCloudRenderer(ck)
+Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,
+										   simul::base::MemoryInterface *mem)
+	:Base2DCloudRenderer(ck,mem)
 	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pCloudEffect(NULL)
@@ -260,11 +261,11 @@ void SetTexture()
 {
 }
 
-void Simul2DCloudRenderer::Update(void *)
+void Simul2DCloudRenderer::PreRenderUpdate(void *)
 {
 }
 
-bool Simul2DCloudRenderer::Render(void *,float expos,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool )
+bool Simul2DCloudRenderer::Render(void *,float expos,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool,int,const simul::sky::float4& )
 {
 	cubemap;
 	depth_alpha_tex;
@@ -273,12 +274,12 @@ bool Simul2DCloudRenderer::Render(void *,float expos,bool cubemap,const void *de
 	if(!enabled)
 		return (hr==S_OK);
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(1, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(2, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(3, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(4, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(5, D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(0,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(1,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(2,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(3,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(4,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(5,D3DSAMP_SRGBTEXTURE,0);
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
@@ -489,7 +490,7 @@ void Simul2DCloudRenderer::EnsureTextureCycle()
 
 simul::clouds::CloudKeyframer *Simul2DCloudRenderer::GetCloudKeyframer()
 {
-	return cloudKeyframer.get();
+	return cloudKeyframer;
 }
 
 void Simul2DCloudRenderer::Enable(bool val)

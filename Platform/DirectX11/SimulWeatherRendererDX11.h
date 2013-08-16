@@ -31,15 +31,16 @@ public:
 #endif
 namespace simul
 {
+	//! The namespace for the DirectX 11 platform library and its rendering classes.
 	namespace dx11
 	{
 		//! An implementation of \link simul::clouds::BaseWeatherRenderer BaseWeatherRenderer\endlink for DirectX 10 and 11
 		//! The DX10 switch is used
-		SIMUL_DIRECTX11_EXPORT_CLASS SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer
+		SIMUL_DIRECTX11_EXPORT_CLASS SimulWeatherRendererDX11 : public simul::clouds::BaseWeatherRenderer
 		{
 		public:
-			SimulWeatherRendererDX1x(simul::clouds::Environment *env,simul::base::MemoryInterface *a,bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
-			virtual ~SimulWeatherRendererDX1x();
+			SimulWeatherRendererDX11(simul::clouds::Environment *env,simul::base::MemoryInterface *mem);
+			virtual ~SimulWeatherRendererDX11();
 			void SetScreenSize(int w,int h);
 			//standard d3d object interface functions
 			void RestoreDeviceObjects(void*);
@@ -51,13 +52,14 @@ namespace simul
 									bool is_cubemap,
 									const void* mainDepthTexture,
 									const void* depthTextureForClouds, //If non-null then we do low-res cloud rendering to an off-screen target of matching dimensions for compositing onto full res target.
+									int viewport_id,
 									const simul::sky::float4& relativeViewportTextureRegionXYWH,
 									bool doFinalCloudBufferToScreenComposite //indicate whether truesky should do a final low-res cloud up-sample to the main target or whether to leave that to the user (via GetFramebufferTexture())
 									);
 			bool RenderSky(void *context,float exposure,bool buffered,bool is_cubemap);
-			void RenderLateCloudLayer(void *context,float exposure,bool );
+			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			void RenderPrecipitation(void *context);
-			void RenderLightning(void *context);
+			void RenderLightning(void *context,int viewport_id);
 			void SaveCubemapToFile(const char *filename);
 			//! Apply the view and projection matrices, once per frame.
 			void SetMatrices(const D3DXMATRIX &viewmat,const D3DXMATRIX &projmat);

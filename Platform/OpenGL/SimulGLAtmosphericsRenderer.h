@@ -14,7 +14,7 @@
 SIMUL_OPENGL_EXPORT_CLASS SimulGLAtmosphericsRenderer : public simul::sky::BaseAtmosphericsRenderer
 {
 public:
-	SimulGLAtmosphericsRenderer();
+	SimulGLAtmosphericsRenderer(simul::base::MemoryInterface *m);
 	virtual ~SimulGLAtmosphericsRenderer();
 	//standard ogl object interface functions
 	void RecompileShaders();
@@ -31,7 +31,7 @@ public:
 	{
 		loss_texture=(GLuint)t;
 	}
-	void SetInscatterTextures(void* t,void *s)
+	void SetInscatterTextures(void* t,void *s,void *o)
 	{
 		inscatter_texture=(GLuint)t;
 		skylight_texture=(GLuint)s;
@@ -41,12 +41,8 @@ public:
 		input_texture=(GLuint)image;
 		depth_texture=(GLuint)depth;
 	}
-	void SetCloudShadowTexture(void *c)
-	{
-		cloud_shadow_texture=(GLuint)c;
-	}
 	//! Render the Atmospherics.
-	void RenderAsOverlay(void *context,const void *depthTexture,float exposure);
+	void RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 private:
 	bool initialized;
 	GLuint loss_program;
@@ -58,7 +54,6 @@ private:
 	GLuint loss_texture,inscatter_texture,skylight_texture;
 	GLuint input_texture,depth_texture;
 	GLuint clouds_texture;
-	GLuint cloud_shadow_texture;
 
 	GLuint		earthShadowUniformsUBO;
 	GLuint		atmosphericsUniformsUBO;

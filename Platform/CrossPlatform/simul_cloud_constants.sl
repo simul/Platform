@@ -1,20 +1,12 @@
 #ifndef CLOUD_CONSTANTS_SL
 #define CLOUD_CONSTANTS_SL
-STATIC const int MAX_INSTANCES=400;
+STATIC const int MAX_INSTANCES=200;
 
 struct LayerData
 {
 	vec2 noiseOffset;
-	float pad1;
-	float pad2;
 	float noiseScale;
-	float pad5;
-	float pad6;
-	float pad7;
 	float layerFade;
-	float pad8;
-	float pad9;
-	float pad10;
 	float layerDistance;
 	float verticalShift;
 	float pad11;
@@ -44,8 +36,8 @@ uniform_buffer CloudPerViewConstants R13
 	uniform float farZ;
 	uniform float extentZMetres;
 	uniform float startZMetres;
+	uniform float shadowRange;
 };
-
 uniform_buffer CloudConstants R9
 {
 	uniform vec3 inverseScales;
@@ -79,5 +71,20 @@ uniform_buffer CloudConstants R9
 	uniform int noise3DOctaves;
 	uniform vec3 noise3DTexcoordScale;
 	uniform float z1;
+	uniform vec3 cloudIrRadiance;
+	uniform float x5;
 };
+
+#ifdef __cplusplus
+//! A struct containing a pointer or id for the cloud shadow texture, along with 
+//! information on how to project it.
+uniform_buffer CloudShadowStruct 
+{
+	void *texture;	// texture, or SRV for DX11
+	mat4 shadowMatrix;
+	float extentZMetres;
+	float startZMetres;
+	float shadowRange;
+};
+#endif
 #endif

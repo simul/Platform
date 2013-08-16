@@ -12,6 +12,7 @@ namespace simul
 {
 	namespace dx11
 	{
+		//! A DirectX 11 framebuffer class.
 		SIMUL_DIRECTX11_EXPORT_CLASS Framebuffer:public BaseFramebuffer
 		{
 		public:
@@ -23,8 +24,6 @@ namespace simul
 			void SetGenerateMips(bool);
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 			void RestoreDeviceObjects(void* pd3dDevice);
-			//! Call to recompile the shaders - useful for debugging.
-			void RecompileShaders();
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
@@ -53,6 +52,8 @@ namespace simul
 			{
 				return (buffer_texture_SRV != NULL);
 			}
+			//! Copy from the rt to the given target memory. If not starting at the top of the texture (start_texel>0), the first byte written
+			//! is at \em target, which is the address to copy the given chunk to, not the base address of the whole in-memory texture.
 			void CopyToMemory(void *context,void *target,int start_texel=0,int texels=0);
 			void GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
 		protected:
@@ -60,7 +61,6 @@ namespace simul
 			DXGI_FORMAT depth_format;
 			bool Destroy();
 			ID3D1xDevice*						m_pd3dDevice;
-			ID3D1xInputLayout*					m_pBufferVertexDecl;
 
 		public:
 			ID3D1xRenderTargetView*				m_pHDRRenderTarget;

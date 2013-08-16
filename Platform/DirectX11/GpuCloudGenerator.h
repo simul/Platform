@@ -15,6 +15,7 @@ namespace simul
 {
 	namespace dx11
 	{
+		//! A generator for cloud volumes using DirectX 11.
 		class GpuCloudGenerator: public simul::clouds::BaseGpuCloudGenerator
 		{
 		public:
@@ -29,7 +30,6 @@ namespace simul
 			}
 			int GetDensityGridsize(const int *grid);
 			void* Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr);
-			void CycleTexturesForward();
 			void FillDensityGrid(	int index
 									,const int *grid
 									,int start_texel
@@ -38,8 +38,12 @@ namespace simul
 									,float baseLayer
 									,float transition
 									,float upperDensity
+									,float diffusivity
 									,float time
-									,void* noise_tex,int octaves,float persistence);
+									,void* noise_tex
+									,int octaves
+									,float persistence
+									,bool mask);
 			virtual void PerformGPURelight(	int light_index
 											,float *target
 											,const int *light_grid
@@ -47,7 +51,8 @@ namespace simul
 											,int texels
 											,const int *density_grid
 											,const float *Matrix4x4LightToDensityTexcoords
-											,const float *lightspace_extinctions_float3);
+											,const float *lightspace_extinctions_float3
+											,bool wrap_light_tex);
 			void GPUTransferDataToTexture(	int index
 											,unsigned char *target
 											,const float *DensityToLightTransform
@@ -56,7 +61,8 @@ namespace simul
 											,const float *ambient
 											,const int *density_grid
 											,int start_texel
-											,int texels);
+											,int texels
+											,bool wrap_light_tex);
 			// If we want the generator to put the data directly into 3d textures:
 			void SetDirectTargets(TextureStruct **textures)
 			{
@@ -72,20 +78,26 @@ namespace simul
 			simul::dx11::Framebuffer			fb[2];
 			simul::dx11::Framebuffer			world_fb;
 			simul::dx11::Framebuffer			dens_fb;
-			ID3D1xDevice*						m_pd3dDevice;
+			simul::dx11::Framebuffer			mask_fb;
+			
+			ID3D11Device*						m_pd3dDevice;
 			ID3D11DeviceContext*				m_pImmediateContext;
-			ID3D1xEffect*						effect;
-			ID3D1xEffectTechnique*				densityTechnique;
-			ID3D1xEffectTechnique*				lightingTechnique;
-			ID3D1xEffectTechnique*				transformTechnique;
+			ID3DX11Effect*						effect;
+			ID3DX11EffectTechnique*				densityTechnique;
+			ID3DX11EffectTechnique*				densityComputeTechnique;
+			ID3DX11EffectTechnique*				maskTechnique;
+			ID3DX11EffectTechnique*				lightingTechnique;
+			ID3DX11EffectTechnique*				lightingComputeTechnique;
+			ID3DX11EffectTechnique*				transformTechnique;
+			ID3DX11EffectTechnique*				transformComputeTechnique;
 			ID3D11Texture3D						*volume_noise_tex;
 			ID3D11ShaderResourceView			*volume_noise_tex_srv;
-			ID3D11Texture3D						*density_texture;
+			TextureStruct						density_texture;
 			TextureStruct						*finalTexture[3];
 			TextureStruct						lightTextures[2];
-			ID3D11ShaderResourceView			*density_texture_srv;
 			ConstantBuffer<GpuCloudConstants>	gpuCloudConstants;
-
+			ID3D11SamplerState*					m_pWwcSamplerState;
+			ID3D11SamplerState*					m_pCccSamplerState;
 		};
 	}
 }

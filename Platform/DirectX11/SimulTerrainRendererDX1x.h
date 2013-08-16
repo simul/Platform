@@ -25,6 +25,7 @@ typedef long HRESULT;
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
 #include "Simul/Platform/CrossPlatform/simul_terrain_constants.sl"
+#include "Simul/Platform/CrossPlatform/simul_cloud_constants.sl"
 
 namespace simul
 {
@@ -33,7 +34,7 @@ namespace simul
 		SIMUL_DIRECTX11_EXPORT_CLASS SimulTerrainRendererDX1x : public simul::terrain::BaseTerrainRenderer
 		{
 		public:
-			SimulTerrainRendererDX1x();
+			SimulTerrainRendererDX1x(simul::base::MemoryInterface *m);
 			~SimulTerrainRendererDX1x();
 			void ReloadTextures();
 			void RecompileShaders();

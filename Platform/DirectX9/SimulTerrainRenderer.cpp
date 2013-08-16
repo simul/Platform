@@ -39,8 +39,9 @@
 #undef max
 typedef std::basic_string<TCHAR> tstring;
 
-SimulTerrainRenderer::SimulTerrainRenderer() :
-	m_pVtxDecl(NULL)
+SimulTerrainRenderer::SimulTerrainRenderer(simul::base::MemoryInterface *m) :
+	BaseTerrainRenderer(m)
+	,m_pVtxDecl(NULL)
 	,m_pd3dDevice(NULL)
 	,m_pTerrainEffect(NULL)
 	,pRenderHeightmapEffect(NULL)
@@ -1098,7 +1099,7 @@ simul::terrain::HeightMapInterface *SimulTerrainRenderer::GetHeightMapInterface(
 
 simul::terrain::HeightMapNode *SimulTerrainRenderer::GetHeightMap()
 {
-	return heightmap.get();
+	return heightmap;
 }
 
 void SimulTerrainRenderer::Highlight(const float *x,const float *d)

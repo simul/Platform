@@ -102,6 +102,10 @@
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName)_MD.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <ResourceCompile>
+      <SuppressStartupBanner>
+      </SuppressStartupBanner>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -133,6 +137,10 @@
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName)_MDd.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <ResourceCompile>
+      <SuppressStartupBanner>
+      </SuppressStartupBanner>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
     <ClCompile>
@@ -157,6 +165,10 @@
     <Lib>
       <OutputFile>$(OutDir)$(TargetName)_MDd.lib</OutputFile>
     </Lib>
+    <ResourceCompile>
+      <SuppressStartupBanner>
+      </SuppressStartupBanner>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">
     <ClCompile>
@@ -182,6 +194,10 @@
     <Lib>
       <OutputFile>$(OutDir)$(TargetName)_MD.lib</OutputFile>
     </Lib>
+    <ResourceCompile>
+      <SuppressStartupBanner>
+      </SuppressStartupBanner>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CreateDX9Effect.cpp" />

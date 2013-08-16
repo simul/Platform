@@ -144,15 +144,6 @@ extern void SIMUL_DIRECTX11_EXPORT BreakIfDebugging();
 		#define V_FAIL(msg)	{ std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_FAIL error."<<std::endl;BreakIfDebugging();  }
 	#endif
 #endif
-	#ifndef SAFE_DELETE
-		#define SAFE_DELETE(p)		{ if(p) { delete (p);     (p)=NULL; } }
-	#endif
-	#ifndef SAFE_DELETE_SMARTPTR
-		#define SAFE_DELETE_SMARTPTR(p)		{ if(p.get()) { (p)=NULL; } }
-	#endif
-	#ifndef SAFE_DELETE_ARRAY
-	#define SAFE_DELETE_ARRAY(p) { if (p) { delete[] (p);   (p)=NULL; } }
-	#endif
 	
 #define MAKE_CONSTANT_BUFFER(cb,type)	\
 	{\

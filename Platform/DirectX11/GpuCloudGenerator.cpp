@@ -16,12 +16,15 @@ GpuCloudGenerator::GpuCloudGenerator()
 			,m_pImmediateContext(NULL)
 			,effect(NULL)
 			,densityTechnique(NULL)
+			,densityComputeTechnique(NULL)
 			,lightingTechnique(NULL)
+			,lightingComputeTechnique(NULL)
 			,transformTechnique(NULL)
+			,transformComputeTechnique(NULL)
 			,volume_noise_tex(NULL)
 			,volume_noise_tex_srv(NULL)
-			,density_texture(NULL)
-			,density_texture_srv(NULL)
+			,m_pWwcSamplerState(NULL)
+			,m_pCccSamplerState(NULL)
 {
 	for(int i=0;i<3;i++)
 		finalTexture[i]=NULL;
@@ -39,9 +42,33 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	fb[0].RestoreDeviceObjects(m_pd3dDevice);
 	fb[1].RestoreDeviceObjects(m_pd3dDevice);
+	dens_fb.SetDepthFormat(0);
+	dens_fb.SetFormat(DXGI_FORMAT_R32_FLOAT);
 	dens_fb.RestoreDeviceObjects(m_pd3dDevice);
+	mask_fb.SetDepthFormat(0);
+	mask_fb.RestoreDeviceObjects(m_pd3dDevice);
 	world_fb.RestoreDeviceObjects(m_pd3dDevice);
 	gpuCloudConstants.RestoreDeviceObjects(m_pd3dDevice);
+
+	SAFE_RELEASE(m_pWwcSamplerState);
+	SAFE_RELEASE(m_pCccSamplerState);
+	D3D11_SAMPLER_DESC samplerDesc;
+	
+    ZeroMemory( &samplerDesc, sizeof( D3D11_SAMPLER_DESC ) );
+    samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC   ;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    samplerDesc.MaxAnisotropy = 16;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	
+	m_pd3dDevice->CreateSamplerState(&samplerDesc,&m_pWwcSamplerState);
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	m_pd3dDevice->CreateSamplerState(&samplerDesc,&m_pCccSamplerState);
+
 	RecompileShaders();
 }
 
@@ -50,16 +77,18 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	fb[0].InvalidateDeviceObjects();
 	fb[1].InvalidateDeviceObjects();
 	dens_fb.InvalidateDeviceObjects();
+	mask_fb.InvalidateDeviceObjects();
 	world_fb.InvalidateDeviceObjects();
 	SAFE_RELEASE(volume_noise_tex);
 	SAFE_RELEASE(volume_noise_tex_srv);
 	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(effect);
-	SAFE_RELEASE(density_texture_srv);
-	SAFE_RELEASE(density_texture);
+	density_texture.release();
 	gpuCloudConstants.InvalidateDeviceObjects();
 	for(int i=0;i<2;i++)
 		lightTextures[i].release();
+	SAFE_RELEASE(m_pWwcSamplerState);
+	SAFE_RELEASE(m_pCccSamplerState);
 	m_pd3dDevice=NULL;
 }
 
@@ -69,9 +98,13 @@ void GpuCloudGenerator::RecompileShaders()
 	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_gpu_clouds.fx");
 	if(effect)
 	{
-		densityTechnique	=effect->GetTechniqueByName("simul_gpu_density");
-		lightingTechnique	=effect->GetTechniqueByName("simul_gpu_lighting");
-		transformTechnique	=effect->GetTechniqueByName("simul_gpu_transform");
+		densityTechnique		=effect->GetTechniqueByName("simul_gpu_density");
+		lightingTechnique		=effect->GetTechniqueByName("simul_gpu_lighting");
+		lightingComputeTechnique=effect->GetTechniqueByName("gpu_lighting_compute");
+		transformTechnique		=effect->GetTechniqueByName("simul_gpu_transform");
+		maskTechnique			=effect->GetTechniqueByName("density_mask");
+		densityComputeTechnique	=effect->GetTechniqueByName("gpu_density_compute");
+		transformComputeTechnique=effect->GetTechniqueByName("gpu_transform_compute");
 	}
 	gpuCloudConstants.LinkToEffect(effect,"GpuCloudConstants");
 }
@@ -94,31 +127,50 @@ void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_sr
 	return volume_noise_tex_srv;
 }
 
-void GpuCloudGenerator::CycleTexturesForward()
-{
-}
-
-void GpuCloudGenerator::FillDensityGrid(int index,const int *density_grid
-									,int start_texel
-									,int texels
-									,float humidity
-									,float baseLayer
-									,float transition
-									,float upperDensity
-									,float time
-									,void* noise_tex
-									,int octaves
-									,float persistence)
+void GpuCloudGenerator::FillDensityGrid(int cycled_index
+										,const int *density_grid
+										,int start_texel
+										,int texels
+										,float humidity
+										,float baseLayer
+										,float transition
+										,float upperDensity
+										,float diffusivity
+										,float time
+										,void* noise_tex
+										,int octaves
+										,float persistence
+										,bool mask)
 {
 simul::base::Timer timer;
 timer.StartTime();
 std::cout<<"Gpu clouds: FillDensityGrid\n";
+	for(int i=0;i<3;i++)
+		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
 	int density_gridsize=density_grid[0]*density_grid[1]*density_grid[2];
 	dens_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
+	mask_fb.SetWidthAndHeight(density_grid[0],density_grid[1]);
+
+	mask_fb.Activate(m_pImmediateContext);
+	if(mask)
+	{
+		mask_fb.Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
+		ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
+		dens_fb.DrawQuad(m_pImmediateContext);
+	}
+	else
+	{
+		mask_fb.Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
+	}
+	mask_fb.Deactivate(m_pImmediateContext);
+
 	simul::math::Vector3 noise_scale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0]);
 
-	float y_start					=(float)start_texel/(float)density_gridsize;
-	float y_range					=(float)(texels)/(float)density_gridsize;
+	int z0	=start_texel/(density_grid[0]*density_grid[1]);
+	int z1	=(start_texel+texels)/(density_grid[0]*density_grid[1]);
+	int zmax=density_grid[2];
+	float y_start					=(float)z0/(float)zmax;
+	float y_range					=(float)z1/(float)zmax-y_start;
 	gpuCloudConstants.yRange		=vec4(y_start,y_range,0,0);
 
 	gpuCloudConstants.octaves		=octaves;
@@ -132,9 +184,50 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	gpuCloudConstants.baseLayer		=baseLayer;
 	gpuCloudConstants.transition	=transition;
 	gpuCloudConstants.upperDensity	=upperDensity;
+	gpuCloudConstants.diffusivity	=diffusivity;
 
+	float fractalSum=0.0;
+	float mult=0.5;
+	for(int i=0;i<octaves;i++)
+	{
+		fractalSum+=mult;
+		mult*=persistence;
+	}
+	gpuCloudConstants.invFractalSum=1.f/fractalSum;
+
+//gpuCloudConstants.densityGrid	=uint3(density_grid);
 	simul::dx11::setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
+	simul::dx11::setParameter(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
 
+	//DXGI_FORMAT_R32G32B32A32_FLOAT
+	density_texture.ensureTexture3DSizeAndFormat(m_pd3dDevice
+		,density_grid[0],density_grid[1],density_grid[2]
+		,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+//	Ensure3DTextureSizeAndFormat(m_pd3dDevice,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
+std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
+#if 1
+	simul::dx11::setParameter(effect,"targetTexture",density_texture.unorderedAccessView);
+	HRESULT hr;
+	// divide the grid into 8x8x8 blocks:
+	static const int BLOCKWIDTH=8;
+	static const int BLOCKSIZE=BLOCKWIDTH*BLOCKWIDTH*BLOCKWIDTH;
+	uint3 subgrid;
+	subgrid.x=(density_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.y=(density_grid[1]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.z=(density_grid[2]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	int subgridsize=subgrid.x*subgrid.y*subgrid.z;
+	// which blocks to execute?
+	int x0	=start_texel/BLOCKSIZE/subgrid.y/subgrid.z;
+	int x1	=(((start_texel+texels+BLOCKSIZE-1)/(BLOCKSIZE)+subgrid.y-1)/subgrid.y+subgrid.z-1)/subgrid.z;
+
+	gpuCloudConstants.threadOffset=uint3(x0*BLOCKWIDTH,0,0);
+	gpuCloudConstants.Apply(m_pImmediateContext);
+	ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0));
+	if(x1>x0)
+		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,subgrid.z);
+std::cout<<"\tfill 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
+	simul::dx11::setParameter(effect,"targetTexture",(ID3D11UnorderedAccessView*)NULL);
+#else
 	gpuCloudConstants.Apply(m_pImmediateContext);
 	dens_fb.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
 std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
@@ -142,28 +235,20 @@ std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 		dens_fb.DrawQuad(m_pImmediateContext);
 	dens_fb.Deactivate(m_pImmediateContext);
 std::cout<<"\tDraw "<<timer.UpdateTime()<<"ms"<<std::endl;
-	Ensure3DTextureSizeAndFormat(m_pd3dDevice,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
-std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
-	//if(start_texel+texels>=density_gridsize)
+	// Copy all the layers from the 2D dens_fb texture to the 3D density texture.
+	D3D11_BOX sourceRegion;
+	sourceRegion.left	=0;
+	sourceRegion.right	=density_grid[0];
+	sourceRegion.front	=0;
+	sourceRegion.back	=1;
+
+	for(int Z=z0;Z<z1;Z++)
 	{
-		// Copy all the layers from the 2D dens_fb texture to the 3D density texture.
-		D3D11_BOX sourceRegion;
-		sourceRegion.left	=0;
-		sourceRegion.right	=density_grid[0];
-		sourceRegion.front	=0;
-		sourceRegion.back	=1;
-
-		int z0=start_texel/(density_grid[0]*density_grid[1]);
-		int z1=(start_texel+texels)/(density_grid[0]*density_grid[1]);
-
-		for(int Z=z0;Z<z1;Z++)
-		{
-			sourceRegion.top	=density_grid[1]*Z;
-			sourceRegion.bottom	=density_grid[1]*(Z+1);
-			m_pImmediateContext->CopySubresourceRegion(density_texture,0,0,0,Z,dens_fb.GetColorTexture(),0,&sourceRegion);
-		}
+		sourceRegion.top	=density_grid[1]*Z;
+		sourceRegion.bottom	=density_grid[1]*(Z+1);
+		m_pImmediateContext->CopySubresourceRegion(density_texture.texture,0,0,0,Z,dens_fb.GetColorTexture(),0,&sourceRegion);
 	}
-std::cout<<"\tfill 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
+#endif
 }
 
 void GpuCloudGenerator::PerformGPURelight	(int light_index
@@ -173,7 +258,8 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 											,int texels
 											,const int *density_grid
 											,const float *Matrix4x4LightToDensityTexcoords
-											,const float *lightspace_extinctions_float3)
+											,const float *lightspace_extinctions_float3
+											,bool wrap_light_tex)
 {
 simul::base::Timer timer;
 timer.StartTime();
@@ -188,9 +274,8 @@ std::cout<<"Gpu clouds: PerformGPURelight\n";
 	for(int i=0;i<2;i++)
 	{
 		fb[i].SetWidthAndHeight(light_grid[0],light_grid[1]);
-		//fb[i].InitColor_Tex(0,GL_RGBA32F_ARB,GL_FLOAT);
 	}
-	lightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice,light_grid[0],light_grid[1],light_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
+	lightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice,light_grid[0],light_grid[1],light_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT,true);
 	ID3D1xEffectShaderResourceVariable*	input_light_texture	=effect->GetVariableByName("inputTexture")->AsShaderResource();
 	ID3D1xEffectShaderResourceVariable*	densityTexture		=effect->GetVariableByName("densityTexture")->AsShaderResource();
 
@@ -198,11 +283,40 @@ std::cout<<"Gpu clouds: PerformGPURelight\n";
 	gpuCloudConstants.transformMatrix	=Matrix4x4LightToDensityTexcoords;
 	gpuCloudConstants.transformMatrix.transpose();
 	gpuCloudConstants.extinctions		=lightspace_extinctions_float3;
+	if(wrap_light_tex)
+		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pWwcSamplerState);
+	else
+		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pCccSamplerState);
+#if 1
+	simul::dx11::setParameter(effect,"targetTexture",lightTextures[light_index].unorderedAccessView);
+	// divide the grid into 8x8x8 blocks:
+	static const int BLOCKWIDTH=8;
+	static const int BLOCKSIZE=BLOCKWIDTH*BLOCKWIDTH;
+	uint3 subgrid;
+	subgrid.x=(light_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.y=(light_grid[1]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.z=1;
+	int subgridsize=subgrid.x*subgrid.y*subgrid.z;
+
+	// discard z dimension:
+	int t0=(start_texel)/light_grid[2];
+	int t1=(start_texel+texels+light_grid[2]-1)/light_grid[2];
+	int t=t1-t0;
+	// which blocks to execute?
+	int x0	=t0/BLOCKSIZE/subgrid.y;
+	int x1	=((t0+t+BLOCKSIZE-1)/BLOCKSIZE+subgrid.y-1)/subgrid.y;
+
+	gpuCloudConstants.threadOffset=uint3(x0*BLOCKWIDTH,0,0);
+	gpuCloudConstants.Apply(m_pImmediateContext);
+	ApplyPass(m_pImmediateContext,lightingComputeTechnique->GetPassByIndex(0));
+	if(x1>x0)
+		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,1);
+#else
 	// initialize the first input texture.
 	simul::dx11::Framebuffer *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
-	densityTexture->SetResource(density_texture_srv);
+	densityTexture->SetResource(density_texture.shaderResourceView);
 	D3D11_BOX sourceRegion;
 	sourceRegion.left	=0;
 	sourceRegion.right	=light_grid[0];
@@ -258,14 +372,16 @@ copytime+=timer.UpdateTime();
 	std::cout<<"\tCopy "<<copytime<<"ms"<<std::endl;
 
 	std::cout<<"\tTotal "<<timer.TimeSum<<"ms"<<std::endl;
+#endif
 }
 
-void GpuCloudGenerator::GPUTransferDataToTexture(int index,unsigned char *target
+void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index,unsigned char *target
 												,const float *DensityToLightTransform
 												,const float *light,const int *light_grid
 												,const float *ambient,const int *density_grid
 												,int start_texel
-												,int texels)
+												,int texels
+												,bool wrap_light_tex)
 {
 simul::base::Timer timer;
 timer.StartTime();
@@ -276,41 +392,68 @@ std::cout<<"Gpu clouds: GPUTransferDataToTexture\n";
 std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 
 	int density_gridsize				=density_grid[0]*density_grid[1]*density_grid[2];
-	float y_start						=(float)start_texel/(float)density_gridsize;
-	float y_range						=(float)(texels)/(float)density_gridsize;
+
+	int z0								=start_texel/(density_grid[0]*density_grid[1]);
+	int z1								=(start_texel+texels)/(density_grid[0]*density_grid[1]);
+	int zmax							=density_grid[2];
+
+	float y_start						=(float)z0/(float)zmax;
+	float y_range						=(float)z1/(float)zmax-y_start;
 	gpuCloudConstants.yRange			=vec4(y_start,y_range,0,0);
 	gpuCloudConstants.transformMatrix	=DensityToLightTransform;
 	gpuCloudConstants.transformMatrix.transpose();
 
-	gpuCloudConstants.zSize=((float)density_grid[2]);
-	gpuCloudConstants.zPixel=(1.f/(float)density_grid[2]);
+	gpuCloudConstants.zSize				=((float)density_grid[2]);
+	gpuCloudConstants.zPixel			=(1.f/(float)density_grid[2]);
 
-	setParameter(effect,"densityTexture",density_texture_srv);
+	setParameter(effect,"densityTexture",density_texture.shaderResourceView);
 	setParameter(effect,"ambientTexture",lightTextures[0].shaderResourceView);
-	setParameter(effect,"lightTexture",lightTextures[1].shaderResourceView);
+	setParameter(effect,"lightTexture"	,lightTextures[1].shaderResourceView);
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 	gpuCloudConstants.Apply(m_pImmediateContext);
+#if 1
+	for(int i=0;i<3;i++)
+	{
+		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
+	}
+	// divide the grid into 8x8x8 blocks:
+	static const int BLOCKWIDTH=8;
+	static const int BLOCKSIZE=BLOCKWIDTH*BLOCKWIDTH*BLOCKWIDTH;
+	uint3 subgrid;
+	subgrid.x=(density_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.y=(density_grid[1]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.z=(density_grid[2]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	int subgridsize=subgrid.x*subgrid.y*subgrid.z;
+	// which blocks to execute?
+	int x0	=start_texel/BLOCKSIZE/subgrid.y/subgrid.z;
+	int x1	=(((start_texel+texels+BLOCKSIZE-1)/(BLOCKSIZE)+subgrid.y-1)/subgrid.y+subgrid.z-1)/subgrid.z;
+
+	gpuCloudConstants.threadOffset=uint3(x0*BLOCKWIDTH,0,0);
+	gpuCloudConstants.Apply(m_pImmediateContext);
+	//simul::dx11::setParameter(effect,"targetTexture",density_texture.unorderedAccessView);
+	simul::dx11::setParameter(effect,"targetTexture",finalTexture[cycled_index]->unorderedAccessView);
+	ApplyPass(m_pImmediateContext,transformComputeTechnique->GetPassByIndex(0));
+	if(x1>x0)
+		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,subgrid.z);
+
+
+
+#else
 	world_fb.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
 		ApplyPass(m_pImmediateContext,transformTechnique->GetPassByIndex(0));
 		world_fb.DrawQuad(m_pImmediateContext);
 	world_fb.Deactivate(m_pImmediateContext);
 std::cout<<"\tDraw "<<timer.UpdateTime()<<"ms"<<std::endl;
 
-	int z0=start_texel/(density_grid[0]*density_grid[1]);
-	int z1=(start_texel+texels)/(density_grid[0]*density_grid[1]);
-
 	// We will only copy WHOLE Z LAYERS at a time.
 	if(z1>z0)
 	{
 		int t0=z0*density_grid[0]*density_grid[1];
 		int t=z1*density_grid[0]*density_grid[1]-t0;
-		if(target)
-			world_fb.CopyToMemory(m_pImmediateContext,target,t0,t);
 std::cout<<"\tMemCopy "<<timer.UpdateTime()<<"ms"<<std::endl;
 		// Copy all the layers from the 2D dens_fb texture to the 3D texture.
-		if(finalTexture[index])
+		if(finalTexture[cycled_index])
 		{
-			finalTexture[index]->ensureTexture3DSizeAndFormat(m_pd3dDevice,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM);
 			D3D11_BOX sourceRegion;
 			sourceRegion.left	=0;
 			sourceRegion.right	=density_grid[0];
@@ -320,10 +463,17 @@ std::cout<<"\tMemCopy "<<timer.UpdateTime()<<"ms"<<std::endl;
 			{
 				sourceRegion.top	=density_grid[1]*Z;
 				sourceRegion.bottom	=density_grid[1]*(Z+1);
-				m_pImmediateContext->CopySubresourceRegion(finalTexture[index]->texture,0,0,0,Z,world_fb.GetColorTexture(),0,&sourceRegion);
+				m_pImmediateContext->CopySubresourceRegion(finalTexture[cycled_index]->texture,0,0,0,Z,world_fb.GetColorTexture(),0,&sourceRegion);
 			}
 		}
+		if(target)
+		{
+			target+=4*t0;
+			world_fb.CopyToMemory(m_pImmediateContext,target,t0,t);
+		}
 	}
+
 std::cout<<"\tGpuCopy "<<timer.UpdateTime()<<"ms"<<std::endl;
 std::cout<<"\tRelease "<<timer.UpdateTime()<<"ms"<<std::endl;
+#endif
 }

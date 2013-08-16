@@ -15,7 +15,6 @@
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <D3dx11effect.h>
-#include "Simul/Base/SmartPtr.h"
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/CloudRenderCallback.h"
 #include "Simul/Clouds/BaseCloudRenderer.h"
@@ -32,7 +31,6 @@ namespace simul
 		class CloudInterface;
 		class LightningRenderInterface;
 		class CloudGeometryHelper;
-		class ThunderCloudNode;
 	}
 	namespace sky
 	{
@@ -54,7 +52,7 @@ namespace simul
 		SIMUL_DIRECTX11_EXPORT_CLASS SimulCloudRendererDX1x : public simul::clouds::BaseCloudRenderer
 		{
 		public:
-			SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cloudKeyframer);
+			SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *cloudKeyframer,simul::base::MemoryInterface *mem);
 			virtual ~SimulCloudRendererDX1x();
 			void RecompileShaders();
 			//! Call this when the D3D device has been created or reset
@@ -63,13 +61,13 @@ namespace simul
 			void InvalidateDeviceObjects();
 			//! Call this to release the memory for D3D device objects.
 			bool Destroy();
-			void Update(void *context);
+			void PreRenderUpdate(void *context);
 			//! Call this to draw the clouds, including any illumination by lightning.
-			bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,const simul::sky::float4& viewportTextureRegionXYWH);
+			bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 			void RenderDebugInfo(void *context,int width,int height);
 			void RenderCrossSections(void *context,int width,int height);
 			//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
-			bool RenderLightning(void *context);
+			bool RenderLightning(void *context,int viewport_id);
 			//! Call this once per frame to set the matrices.
 			void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 			//! Return true if the camera is above the cloudbase altitude.
@@ -77,9 +75,9 @@ namespace simul
 			void SetEnableStorms(bool s);
 			float GetTiming() const;
 			//! Get the list of three textures used for cloud rendering.
-			void *GetCloudShadowTexture();
+			CloudShadowStruct GetCloudShadowTexture();
 			void SetLossTexture(void *t);
-			void SetInscatterTextures(void *t,void *s);
+			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
 			// implementing CloudRenderCallback:
 			void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
@@ -112,18 +110,18 @@ namespace simul
 			void EnsureTextureCycle();
 
 			void CreateMeshBuffers();
-			int mapped;
 			void Unmap();
 			void Map(ID3D11DeviceContext *context,int texture_index);
 			unsigned texel_index[4];
 			bool lightning_active;
-			ID3D11DeviceContext *mapped_context;
 			ID3D1xDevice*							m_pd3dDevice;
 			simul::dx11::Mesh						circle;
 			simul::dx11::Mesh						sphere;
 			ID3D1xBuffer *							instanceBuffer;
 			ID3D1xInputLayout*						m_pVtxDecl;
 			ID3D1xInputLayout*						m_pLightningVtxDecl;
+			ID3D11SamplerState*						m_pWrapSamplerState;
+			ID3D11SamplerState*						m_pClampSamplerState;
 
 			ID3D1xEffect*							m_pLightningEffect;
 			ID3D1xEffectTechnique*					m_hTechniqueLightning;
@@ -161,12 +159,13 @@ namespace simul
 			ID3D1xShaderResourceView*				lightningIlluminationTextureResource;
 			ID3D1xShaderResourceView*				skyLossTexture_SRV;
 			ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
+			ID3D1xShaderResourceView*				overcInscTexture_SRV;
 			ID3D1xShaderResourceView*				skylightTexture_SRV;
 			ID3D1xShaderResourceView*				illuminationTexture_SRV;
 			
 			simul::dx11::Framebuffer				cloudShadow;
 
-			simul::dx11::ComputableTexture3D		cloud_texture;
+			simul::dx11::TextureStruct				cloud_texture;
 			
 			ID3D1xBuffer*							computeConstantBuffer;
 			ID3D11ComputeShader*					m_pComputeShader;
@@ -185,7 +184,6 @@ namespace simul
 			
 			D3DXMATRIX			view,proj;
 
-			//D3D1x_MAPPED_TEXTURE3D mapped_cloud_texture;
 			bool UpdateIlluminationTexture(float dt);
 			float LookupLargeScaleTexture(float x,float y);
 

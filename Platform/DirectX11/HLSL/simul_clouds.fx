@@ -59,6 +59,23 @@ vec4 calcDensity1(vec3 texCoords,float layerFade,vec3 noiseval)
 	//density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
 	return density;
 }
+vec3 applyFades2(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier)
+{
+	fade_texc.x=1.0;
+	vec4 l=sampleLod(lossTexture		,cmcSamplerState,fade_texc,0);
+	vec3 loss=l.rgb;
+	vec4 insc=sampleLod(inscTexture		,cmcSamplerState,fade_texc,0);
+	vec3 skyl=sampleLod(skylTexture		,cmcSamplerState,fade_texc,0).rgb;
+	vec3 inscatter=earthshadowMultiplier*InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
+	final*=loss;
+#ifdef INFRARED
+	final=skyl.rgb;
+#else
+	final+=skyl+inscatter;
+#endif
+    return insc.aaa;
+}
+
 
 float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
@@ -86,7 +103,8 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 
 	// Lookup in the illumination texture.
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-	vec2 nearFarTexc	=texture_wrap_mirror(illuminationTexture,illum_texc).rg;
+	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
+	vec2 nearFarTexc	=illum_lookup.xy;
 	// This provides the range of texcoords that is lit.
 	for(int i=0;i<layerCount;i++)
 	//int i=40;
@@ -98,10 +116,10 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 		//if(i==32)
 		{
 			float3 layerPos=viewPos+layerDist*view;
-		//	layerPos.z-=layer.verticalShift;
+			layerPos.z-=layer.verticalShift;
 			float4 layerTexCoords;
 			layerTexCoords.xyz=(layerPos-cornerPos)*inverseScales;
-			layerTexCoords.w=layerTexCoords.z;
+			layerTexCoords.w=0.2+0.8*saturate(layerTexCoords.z);
 			if(layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
 			{
 				float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
@@ -109,15 +127,17 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 				float4 density		=calcDensity(layerTexCoords.xyz,layer.layerFade,noiseval);
 				if(density.z>0)
 				{
-					float4 c=calcColour(density,cos0,layerTexCoords.z);
-					fade_texc.x=sqrt(normLayerZ);
-					float sh=saturate((fade_texc.x-nearFarTexc.x)/0.1);
-					c.rgb*=sh;
-					c.rgb=applyFades(c.rgb,fade_texc,cos0,sh);
-					colour*=(1.0-c.a);
-					colour.rgb+=c.rgb*c.a;
-					Z*=(1.0-c.a);
-					Z+=normLayerZ*c.a;
+					float4 c	=calcColour(density,cos0,layerTexCoords.z);
+					fade_texc.x	=sqrt(normLayerZ);
+					float sh	=saturate((fade_texc.x-nearFarTexc.x)/0.1);
+					// overcast effect:
+					//sh		*=saturate(illum_lookup.z+layerTexCoords.z);
+					c.rgb		*=sh;
+					c.rgb		=applyFades(c.rgb,fade_texc,cos0,sh);
+					colour		*=(1.0-c.a);
+					colour.rgb	+=c.rgb*c.a;
+					Z			*=(1.0-c.a);
+					Z			+=normLayerZ*c.a;
 				}
 			}
 		}
@@ -125,10 +145,31 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	if(colour.a>=1.0)
 	   discard;
 	fade_texc.x=sqrt(Z);
+	//colour.rgb*=0;
+	//colour.a=1.0;
 	//colour.rgb=(1.0-colour.a)*applyFades(colour.rgb,fade_texc,cos0,earthshadowMultiplier);
 	return float4(exposure*colour.rgb,1.0-colour.a);
 }
 
+struct vertexInputCS
+{
+    float4 position			: POSITION;
+    float2 texCoords		: TEXCOORD0;
+};
+
+struct vertexOutputCS
+{
+    float4 hPosition		: SV_POSITION;
+    float2 texCoords		: TEXCOORD0;
+};
+
+// Given texture position from texCoords, convert to a worldpos with shadowMatrix.
+// Then, trace towards sun to find initial intersection with cloud volume
+// Then trace down to find first intersection with clouds, if any.
+vec4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
+{
+	return CloudShadow(cloudDensity1,cloudDensity2,IN.texCoords,shadowMatrix,cornerPos,inverseScales);
+}
 
 float4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
@@ -355,20 +396,7 @@ float4 PS_WithLightning(toPS IN): SV_TARGET
 	final.rgb+=lightningC*(final.a+IN.layerFade);
     return final;
 }
-
-struct vertexInputCS
-{
-    float4 position			: POSITION;
-    float2 texCoords		: TEXCOORD0;
-};
-
-struct vertexOutputCS
-{
-    float4 hPosition		: SV_POSITION;
-    float2 texCoords		: TEXCOORD0;
-};
-
-//uniform_buffer SingleLayerConstants R12
+//uniform_buffer SingleLayerConstants SIMUL_BUFFER_REGISTER(12)
 //{
 	uniform vec4 rect;
 //};
@@ -396,33 +424,6 @@ vertexOutputCS VS_FullScreen(idOnly IN)
 	return OUT;
 }
 
-// Given texture position from texCoords, convert to a worldpos with shadowMatrix.
-// Then, trace towards sun to find initial intersection with cloud volume
-// Then trace down to find first intersection with clouds, if any.
-float4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
-{
-    vec3 pos			=160000.0*vec3(IN.texCoords.xy-vec2(0.5,0.5),0.0);
-	vec3 wpos0			=mul(shadowMatrix,vec4(pos,1.0)).xyz;
-	float dh			=cornerPos.z-wpos0.z+1.0/inverseScales.z;
-	float thickness		=dh/(lightDir.z+.1);
-	float illumination	=1.0;
-	float Z				=-startZMetres;
-	static const int C=128;
-	for(int i=0;i<C;i++)
-	{
-		float u			=float(i)/float(C);
-		float z			=startZMetres-2.0*startZMetres*2.0*(0.5-u);
-		vec3 wpos		=wpos0+lightDir.xyz*z;
-		vec3 texc		=(wpos-cornerPos)*inverseScales;
-		vec4 density1	=sampleLod(cloudDensity1,wwcSamplerState,texc,0);
-		vec4 density2	=sampleLod(cloudDensity2,wwcSamplerState,texc,0);
-		vec4 density	=lerp(density1,density2,cloud_interp);
-		illumination	=lerp(illumination,0,density.z);
-		Z				=lerp(Z,z,density.z);
-	}
-	return float4(illumination,0,Z,1.0);
-}
-
 vertexOutputCS VS_CrossSection(idOnly IN)
 {
     vertexOutputCS OUT;
@@ -448,22 +449,34 @@ vertexOutputCS VS_CrossSection(idOnly IN)
 
 float4 PS_Simple( vertexOutputCS IN):SV_TARGET
 {
-    return noiseTexture.Sample(samplerStateWrap,IN.texCoords.xy);
+    return noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
 }
 
 float4 PS_ShowNoise( vertexOutputCS IN):SV_TARGET
 {
-    float4 lookup=noiseTexture.Sample(samplerStateWrap,IN.texCoords.xy);
+    float4 lookup=noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
 	return float4(0.5*(lookup.rgb+1.0),1.0);
 }
 
-#define CROSS_SECTION_STEPS 32
-float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
+float4 PS_ShowShadow( vertexOutputCS IN):SV_TARGET
 {
-	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,0,crossSectionOffset.z+IN.texCoords.y);
+	vec2 tex_pos=2.0*IN.texCoords.xy-vec2(1.0,1.0);
+	vec2 radial_texc=vec2(sqrt(length(tex_pos.xy)),atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536));
+    float4 lookup=noiseTexture.Sample(wrapSamplerState,radial_texc);
+	return float4(lookup.rgb,1.0);
+}
+
+
+#define CROSS_SECTION_STEPS 32
+
+float4 PS_CrossSection(vec2 texCoords,float yz)
+{
+	//float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,yz*IN.texCoords.y,crossSectionOffset.z+(1.0-yz)*IN.texCoords.y);
+	float3 texc=float3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
 	int i=0;
 	float3 accum=float3(0.f,0.5f,1.f);
-	texc.y+=.5f/(float)CROSS_SECTION_STEPS;
+	texc.y+=0.5*(1.0-yz)/(float)CROSS_SECTION_STEPS;
+	texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
 		float4 density=cloudDensity1.Sample(wwcSamplerState,texc);
@@ -473,29 +486,20 @@ float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
 		colour*=opacity;
 		accum*=1.f-opacity;
 		accum+=colour;
-		texc.y+=1.f/(float)CROSS_SECTION_STEPS;
+		texc.y+=(1.0-yz)/(float)CROSS_SECTION_STEPS;
+		texc.z+=yz/(float)CROSS_SECTION_STEPS;
 	}
     return float4(accum,1);
 }
 
+float4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
+{
+    return PS_CrossSection(IN.texCoords,0.f);
+}
+
 float4 PS_CrossSectionXY( vertexOutputCS IN): SV_TARGET
 {
-	float3 texc=float3(crossSectionOffset.x+IN.texCoords.x,crossSectionOffset.y+IN.texCoords.y,0);
-	int i=0;
-	float3 accum=float3(0.f,0.5f,1.f);
-	texc.z+=.5f/(float)CROSS_SECTION_STEPS;
-	for(i=0;i<CROSS_SECTION_STEPS;i++)
-	{
-		float4 density=cloudDensity1.Sample(wwcSamplerState,texc);
-		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
-		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
-		float opacity=density.z;//+.05f;
-		colour*=opacity;
-		accum*=1.f-opacity;
-		accum+=colour;
-		texc.z+=1.f/(float)CROSS_SECTION_STEPS;
-	}
-    return float4(accum,1);
+    return PS_CrossSection(IN.texCoords,1.f);
 }
 
 BlendState CloudBlend
@@ -567,6 +571,7 @@ technique11 cloud_shadow
 		SetPixelShader(CompileShader(ps_4_0,PS_CloudShadow()));
     }
 }
+
 technique11 cross_section_xz
 {
     pass p0 
@@ -616,5 +621,18 @@ technique11 show_noise
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowNoise()));
+    }
+}
+
+technique11 show_shadow
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowShadow()));
     }
 }

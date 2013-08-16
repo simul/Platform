@@ -35,17 +35,19 @@ namespace simul
 {
 	namespace dx11
 	{
-		class SimulWeatherRendererDX1x;
+		class SimulWeatherRendererDX11;
 		class SimulHDRRendererDX1x;
 		class SimulTerrainRendererDX1x;
 		class SimulOpticsRendererDX1x;
 
+		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface
 			,public simul::graph::meta::Group
 		{
 		public:
-			Direct3D11Renderer(simul::clouds::Environment *env,int w,int h);
+			//! Constructor - pass a pointer to your Environment, and either an implementation of MemoryInterface, or NULL.
+			Direct3D11Renderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,int w,int h);
 			virtual ~Direct3D11Renderer();
 			META_BeginProperties
 				META_ValueProperty(bool,ShowFlares				,"Whether to draw light flares around the sun and moon.")
@@ -65,13 +67,13 @@ namespace simul
 				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")
 			META_EndProperties
 			bool IsEnabled()const{return enabled;}
-			class SimulWeatherRendererDX1x *GetSimulWeatherRenderer()
+			class SimulWeatherRendererDX11 *GetSimulWeatherRenderer()
 			{
-				return simulWeatherRenderer.get();
+				return simulWeatherRenderer;
 			}
 			class SimulHDRRendererDX1x *GetSimulHDRRenderer()
 			{
-				return simulHDRRenderer.get();
+				return simulHDRRenderer;
 			}
 			void SetCamera(simul::camera::Camera *c)
 			{
@@ -91,21 +93,24 @@ namespace simul
 			virtual bool	OnDeviceRemoved();
 			virtual void    OnFrameMove(double fTime,float fTimeStep);
 			virtual const	char *GetDebugText() const;
-			simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
+
+			void SaveScreenshot(const char *filename_utf8);
 		protected:
 			void ReverseDepthChanged();
 			bool enabled;
+			ID3D11Device* m_pd3dDevice;
+			std::string screenshotFilenameUtf8;
 			simul::camera::Camera *camera;
-			simul::base::SmartPtr<SimulOpticsRendererDX1x>	simulOpticsRenderer;
-			simul::base::SmartPtr<SimulWeatherRendererDX1x>	simulWeatherRenderer;
-			simul::base::SmartPtr<SimulHDRRendererDX1x>		simulHDRRenderer;
-			simul::base::SmartPtr<SimulTerrainRendererDX1x>	simulTerrainRenderer;
-			simul::dx11::GpuSkyGenerator gpuSkyGenerator;
+			SimulOpticsRendererDX1x		*simulOpticsRenderer;
+			SimulWeatherRendererDX11	*simulWeatherRenderer;
+			SimulHDRRendererDX1x		*simulHDRRenderer;
+			SimulTerrainRendererDX1x	*simulTerrainRenderer;
 			int ScreenWidth,ScreenHeight;
 			// A depth-only FB to make sure we have a readable depth texture.
 			simul::dx11::Framebuffer depthFramebuffer;
 			simul::dx11::Framebuffer cubemapDepthFramebuffer;
 			FramebufferCubemapDX1x	framebuffer_cubemap;
+			simul::base::MemoryInterface *memoryInterface;
 		};
 	}
 }

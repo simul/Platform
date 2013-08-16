@@ -30,22 +30,22 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGLCloudRenderer : public simul::clouds::BaseCloudRenderer
 {
 public:
-	SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudKeyframer);
+	SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudKeyframer,simul::base::MemoryInterface *mem);
 	virtual ~SimulGLCloudRenderer();
 	//standard ogl object interface functions
 	bool Create();
 	void RecompileShaders();
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
-	void Update(void *context);
+	void PreRenderUpdate(void *context);
 	//! Render the clouds.
-	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha);
+	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 	//! Show the cross sections on-screen.
 	void RenderCrossSections(void *,int width,int height);
 	void SetLossTexture(void *);
-	void SetInscatterTextures(void *,void *);
+	void SetInscatterTextures(void* t,void *s,void *o);
 	
-	void *GetCloudShadowTexture();
+	CloudShadowStruct GetCloudShadowTexture();
 	const char *GetDebugText();
 	// implementing CloudRenderCallback:
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
@@ -56,7 +56,8 @@ public:
 	void GPUTransferDataToTexture(int index,	unsigned char *target_texture
 									,const unsigned char *direct_grid
 									,const unsigned char *indirect_grid
-									,const unsigned char *ambient_grid);
+									,const unsigned char *ambient_grid
+									,bool wrap_light_tex);
 
 	// a callback function that translates from daytime values to overcast settings. Used for
 	// clouds to tell sky when it is overcast.

@@ -317,6 +317,14 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{BA686093-89A1-438D-948A-34ECF718D106}"
+			CopyLocal="false"
+			CopyLocalDependencies="false"
+			UseDependenciesInBuild="false"
+			CopyLocalSatelliteAssemblies="false"
+			RelativePathToProject=".\Clouds\Clouds_VC9.vcproj"
+		/>
 	</References>
 	<Files>
 		<Filter
@@ -405,7 +413,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SimulWeatherRendererDX1x.cpp"
+				RelativePath=".\SimulWeatherRendererDX11.cpp"
 				>
 			</File>
 			<File
@@ -519,7 +527,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SimulWeatherRendererDX1x.h"
+				RelativePath=".\SimulWeatherRendererDX11.h"
 				>
 			</File>
 			<File
@@ -552,14 +560,6 @@
 			</File>
 			<File
 				RelativePath=".\HLSL\ocean_simulator_vs_ps.hlsl"
-				>
-			</File>
-			<File
-				RelativePath="..\CrossPlatform\simul_2d_clouds.hs"
-				>
-			</File>
-			<File
-				RelativePath=".\HLSL\simul_earthshadow.hlsl"
 				>
 			</File>
 			<File
@@ -609,11 +609,27 @@
 				>
 			</File>
 			<File
+				RelativePath="..\CrossPlatform\earth_shadow_uniforms.sl"
+				>
+			</File>
+			<File
 				RelativePath="..\CrossPlatform\godrays.sl"
 				>
 			</File>
 			<File
+				RelativePath="..\CrossPlatform\illumination.sl"
+				>
+			</File>
+			<File
 				RelativePath="..\CrossPlatform\rain_constants.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_2d_cloud_detail.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_2d_clouds.hs"
 				>
 			</File>
 			<File
@@ -642,6 +658,10 @@
 			</File>
 			<File
 				RelativePath="..\CrossPlatform\simul_terrain_constants.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\sky_constants.sl"
 				>
 			</File>
 			<File

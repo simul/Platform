@@ -1,17 +1,9 @@
+#version 140
 uniform sampler2D noise_texture;
 uniform float persistence;
 uniform int octaves;
 varying vec2 texc;
-
-float saturate(float x)
-{
-	return clamp(x,0.0,1.0);
-}
-
-vec4 saturate(vec4 x)
-{
-	return clamp(x,vec4(0.0,0.0,0.0,0.0),vec4(1.0,1.0,1.0,1.0));
-}
+#include "CppGlsl.hs"
 
 void main(void)
 {

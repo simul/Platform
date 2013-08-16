@@ -80,31 +80,6 @@ void SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	D3DXMatrixIdentity(&proj);
 	int index=0;
 	static float rr=0.2f;
-	for(int j=-2;j<2;j++)
-	{
-		for(int i=0;i<CONE_SIDES+1;i++)
-		{
-			float angle1=2.f*3.14159f*(float)i/(float)CONE_SIDES;
-			float fade=1.f-0.5f*(float)abs(j);
-			float rad=radius*(rr+fade)/(1.f+rr);
-			vertices[index].x=rad*cos(angle1)*fade;
-			vertices[index].z=rad*sin(angle1)*fade;
-			vertices[index].y=height*0.5f*j;
-			vertices[index].tex_x=i*RainTextureRepeat/(float)CONE_SIDES;
-			vertices[index].tex_y=0.5f*(float)j*height/radius/Aspect*(float)RainTextureRepeat;
-			vertices[index].fade=fade;
-			index++;
-			fade=1.f-0.5f*(float)abs(j+1);
-			rad=radius*(rr+fade)/(1.f+rr);
-			vertices[index].x=rad*cos(angle1)*fade;
-			vertices[index].z=rad*sin(angle1)*fade;
-			vertices[index].y=height*0.5f*(j+1);
-			vertices[index].tex_x=i*RainTextureRepeat/(float)CONE_SIDES;
-			vertices[index].tex_y=0.5f*(float)(j+1)*height/radius/Aspect*(float)RainTextureRepeat;
-			vertices[index].fade=fade;
-			index++;
-		}
-	}
 	D3DVERTEXELEMENT9 decl[]=
 	{
 		{0,0,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
@@ -156,93 +131,6 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 
 void SimulPrecipitationRenderer::Render(void *)
 {
-	HRESULT hr=S_OK;
-	if(Intensity<=0)
-		return;
-#ifndef XBOX
-	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
-#endif
-	m_pd3dDevice->SetTexture(0,rain_texture);
-#ifndef XBOX
-	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
-#endif
-	hr=m_pd3dDevice->SetVertexDeclaration(m_pVtxDecl);
-
-	m_pRainEffect->SetTechnique( m_hTechniqueRain );
-	cam_pos=GetCameraPosVector(view);
-
-	simul::math::Vector3 diff=(const float*)cam_pos;
-	diff-=last_cam_pos;
-	last_cam_pos=(const float*)cam_pos;
-
-	float pitch_angle=pi/2.f-atan2f(RainWindEffect*wind_speed,FallSpeed);
-	float rain_heading=wind_heading;
-	simul::math::Vector3 rain_vector(	cos(pitch_angle)*sin(rain_heading),
-										sin(pitch_angle),
-										cos(pitch_angle)*cos(rain_heading));
-	static float camera_motion_factor=0.1f;
-	rain_vector-=camera_motion_factor*diff;
-	rain_vector.Normalize();
-	pitch_angle=pi/2.f-asin(rain_vector.y);
-	rain_heading=atan2(rain_vector.x,rain_vector.z);
-
-	D3DXMATRIX	world,direction;
-	D3DXMatrixIdentity(&world);
-	D3DXMatrixRotationY(&direction,rain_heading);
-
-
-	D3DXMatrixRotationX(&world,-pitch_angle);
-	D3DXMatrixMultiply(&world,&world,&direction);
-	world._41=cam_pos.x;
-	world._42=cam_pos.y;
-	world._43=cam_pos.z;
-	//set up matrices
-	D3DXMATRIX tmp1, tmp2;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXMatrixMultiply(&tmp1, &world,&view);
-	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
-	D3DXMatrixTranspose(&tmp1,&tmp2);
-	m_pRainEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
-	m_pRainEffect->SetFloat(offset,offs);
-	m_pRainEffect->SetFloat(intensity,Intensity);
-
-	static float cc1=3.f;
-	static float cc2=4.f;
-	static float cc3=3.5f;
-	simul::sky::float4 offs1(sin(cc1*offs)		,cos(cc1*offs),0,0);
-	simul::sky::float4 offs2(sin(cc2*offs+2.f)	,cos(cc2*offs+2.f),0,0);
-	simul::sky::float4 offs3(sin(cc3*offs+4.f)	,cos(cc3*offs+4.f),0,0);
-	static float cc1a=1.4f;
-	static float cc2a=1.211f;
-	static float cc3a=0.397f;
-	simul::sky::float4 offs1a(sin(cc1a*offs)	,cos(cc1a*offs),0,0);
-	simul::sky::float4 offs2a(sin(cc2a*offs+2.f),cos(cc2a*offs+2.f),0,0);
-	simul::sky::float4 offs3a(sin(cc3a*offs+4.f),cos(cc3a*offs+4.f),0,0);
-	offs1*=offs1a;
-	offs2*=offs2a;
-	offs3*=offs3a;
-	static float ww=0.01f;
-	offs1*=ww*Waver;
-	offs2*=ww*Waver;
-	offs3*=ww*Waver;
-	m_pRainEffect->SetVector(offset1,(D3DXVECTOR4*)(&offs1));
-	m_pRainEffect->SetVector(offset2,(D3DXVECTOR4*)(&offs2));
-	m_pRainEffect->SetVector(offset3,(D3DXVECTOR4*)(&offs3));
-
-	m_pRainEffect->SetVector(lightColour,(D3DXVECTOR4*)(&light_colour));
-
-	UINT passes=1;
-	hr=m_pRainEffect->Begin( &passes, 0 );
-	for(unsigned i = 0 ; i < passes ; ++i )
-	{
-		hr=m_pRainEffect->BeginPass(i);
-		hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,NUM_VERT-2,vertices,sizeof(Vertex_t));
-		hr=m_pRainEffect->EndPass();
-	}
-	hr=m_pRainEffect->End();
-	D3DXMatrixIdentity(&world);
 }
 
 #ifdef XBOX

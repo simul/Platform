@@ -37,7 +37,7 @@
 #include "Resources.h"
 
 SimulSkyRenderer::SimulSkyRenderer(simul::sky::SkyKeyframer *sk)
-	:simul::sky::BaseSkyRenderer(sk)
+	:simul::sky::BaseSkyRenderer(sk,NULL)
 	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pSkyEffect(NULL)
@@ -276,11 +276,12 @@ void SimulSkyRenderer::FillSunlightTexture(int texture_index,int texel_index,int
 	hr=tex->UnlockRect(0);
 }
 
-void SimulSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s1)
+void SimulSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s1,void* *o)
 {
 	*l1=(void*)loss_2d.GetColorTex();
 	*i1=(void*)inscatter_2d.GetColorTex();
 	*s1=(void*)skylight_2d.GetColorTex();
+	o=NULL;
 }
 
 float SimulSkyRenderer::GetFadeInterp() const

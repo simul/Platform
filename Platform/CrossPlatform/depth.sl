@@ -36,8 +36,16 @@ float depthBufferToLinearFadeZ(float depth, float nearZ, float farZ)
 #endif
 }
 
+// This converts a z-buffer depth into a distance in the units of nearZ and farZ,
+//	-	where usually nearZ and farZ will be factors of the maximum fade distance.
 float depthToFadeDistance(float depth,float3 depthToLinFadeDistParams,float nearZ,float farZ,vec2 xy,vec2 tanHalf)
 {
+#ifdef VISION
+	float dist=depth*farZ;
+	if(depth>=1.0)
+		dist=1.0;
+	return dist;
+#else
 #ifdef NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
 	float linearFadeDistanceZ = depthBufferToLinearFadeZ(depth,depthToLinFadeDistParams);
 #else
@@ -49,6 +57,7 @@ float depthToFadeDistance(float depth,float3 depthToLinFadeDistParams,float near
 	float fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
 	
 	return fadeDist;
+#endif
 }
 
 

@@ -22,27 +22,34 @@ namespace simul
 			int GetDensityGridsize(const int *grid);
 			void* Make3DNoiseTexture(int noise_size,const float *noise_src_ptr);
 			void CycleTexturesForward();
-			void FillDensityGrid(int index,const int *grid
+			void FillDensityGrid(int index
+									,const int *grid
 									,int start_texel
 									,int texels
 									,float humidity
 									,float baseLayer
 									,float transition
 									,float upperDensity
+									,float diffusivity
 									,float time
-									,void*  noise_tex,int octaves,float persistence);
+									,void*  noise_tex,int octaves,float persistence
+											,bool mask);
 			virtual void PerformGPURelight(int index,float *target
 									,const int *light_grid
 									,int start_texel
 									,int texels
 									,const int *density_grid
-									,const float *Matrix4x4LightToDensityTexcoords,const float *lightspace_extinctions_float3);
-			void GPUTransferDataToTexture(int index,unsigned char *target
+									,const float *Matrix4x4LightToDensityTexcoords
+									,const float *lightspace_extinctions_float3
+									,bool wrap_light_tex);
+			void GPUTransferDataToTexture(	int index
+											,unsigned char *target
 											,const float *DensityToLightTransform
 											,const float *light,const int *light_grid
 											,const float *ambient,const int *density_grid
 											,int start_texel
-											,int texels);
+											,int texels
+											,bool wrap_light_tex);
 		protected:
 			FramebufferGL	fb[2];
 			FramebufferGL	world_fb;

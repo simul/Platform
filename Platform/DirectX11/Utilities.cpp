@@ -9,6 +9,7 @@ using namespace dx11;
 TextureStruct::TextureStruct()
 	:texture(NULL)
 	,shaderResourceView(NULL)
+	,unorderedAccessView(NULL)
 	,width(0)
 	,length(0)
 	,last_context(NULL)
@@ -30,6 +31,11 @@ void TextureStruct::release()
 	}
 	SAFE_RELEASE(texture);
 	SAFE_RELEASE(shaderResourceView);
+	if(unorderedAccessView)
+	{
+		SAFE_RELEASE(unorderedAccessView);
+	}
+
 }
 
 void TextureStruct::setTexels(ID3D11DeviceContext *context,const float *float4_array,int texel_index,int num_texels)
@@ -52,6 +58,8 @@ void TextureStruct::setTexels(ID3D11DeviceContext *context,const unsigned *uint_
 	last_context=context;
 	if(!mapped.pData)
 		context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+	if(!mapped.pData)
+		return;
 	unsigned *target=(unsigned *)mapped.pData;
 	int expected_pitch=sizeof(unsigned)*width;
 	if(mapped.RowPitch==expected_pitch)
@@ -109,7 +117,7 @@ void TextureStruct::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 	pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView);
 }
 
-void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f)
+void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable)
 {
 	D3D11_TEXTURE3D_DESC textureDesc;
 	bool ok=true;
@@ -122,6 +130,8 @@ void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		{
 			ppd->GetDesc(&textureDesc);
 			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Depth!=d||textureDesc.Format!=f)
+				ok=false;
+			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
 				ok=false;
 		}
 		SAFE_RELEASE(ppd);
@@ -137,20 +147,47 @@ void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		textureDesc.Depth			=d;
 		textureDesc.Format			=f;
 		textureDesc.MipLevels		=1;
-		textureDesc.Usage			=D3D11_USAGE_DYNAMIC;
-		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE;
-		textureDesc.CPUAccessFlags	=D3D11_CPU_ACCESS_WRITE;
+		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
+		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags		=0;
 		HRESULT hr;
 		V_CHECK(pd3dDevice->CreateTexture3D(&textureDesc,0,(ID3D11Texture3D**)(&texture)));
-		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView));
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+		srv_desc.Format						= f;
+		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
+		srv_desc.Texture3D.MipLevels		= 1;
+		srv_desc.Texture3D.MostDetailedMip	= 0;
+		V_CHECK(pd3dDevice->CreateShaderResourceView(texture, &srv_desc,&shaderResourceView));
+	}
+	if(computable&&(!unorderedAccessView||!ok))
+	{
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+		uav_desc.Format				= f;
+		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE3D;
+		uav_desc.Texture3D.MipSlice	= 0;
+		uav_desc.Texture3D.WSize	= d;
+		uav_desc.Texture3D.FirstWSlice=0;
+		HRESULT hr;
+		SAFE_RELEASE(unorderedAccessView);
+		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
 	}
 }
 
 void TextureStruct::map(ID3D11DeviceContext *context)
 {
+	if(mapped.pData!=NULL)
+		return;
 	last_context=context;
 	last_context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+}
+
+bool TextureStruct::isMapped() const
+{
+	return (mapped.pData!=NULL);
 }
 
 void TextureStruct::unmap()
@@ -158,6 +195,7 @@ void TextureStruct::unmap()
 	if(mapped.pData)
 		last_context->Unmap(texture,0);
 	mapped.pData=NULL;
+	last_context=NULL;
 }
 
 ComputableTexture::ComputableTexture()
@@ -207,57 +245,6 @@ void ComputableTexture::init(ID3D11Device *pd3dDevice,int w,int h)
     srv_desc.Texture2D.MipLevels		= 1;
     srv_desc.Texture2D.MostDetailedMip	= 0;
     pd3dDevice->CreateShaderResourceView(g_pTex_Output, &srv_desc, &g_pSRV_Output);
-}
-
-ComputableTexture3D::ComputableTexture3D()
-	:texture(NULL)
-	,uav(NULL)
-	,srv(NULL)
-{
-}
-
-ComputableTexture3D::~ComputableTexture3D()
-{
-}
-
-void ComputableTexture3D::release()
-{
-	SAFE_RELEASE(texture);
-	SAFE_RELEASE(uav);
-	SAFE_RELEASE(srv);
-}
-
-void ComputableTexture3D::init(ID3D11Device *pd3dDevice,int w,int h,int d)
-{
-	release();
-    D3D11_TEXTURE3D_DESC tex_desc;
-	ZeroMemory(&tex_desc, sizeof(D3D11_TEXTURE3D_DESC));
-    tex_desc.BindFlags			= D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-    tex_desc.Usage				= D3D11_USAGE_DEFAULT;
-    tex_desc.Width				= w;
-    tex_desc.Height				= h;
-	tex_desc.Depth				= d;
-    tex_desc.MipLevels			= 1;
-	tex_desc.Format				= DXGI_FORMAT_R8G8B8A8_UNORM;
-    HRESULT hr;
-	hr=pd3dDevice->CreateTexture3D(&tex_desc, NULL, &texture);
-
-	D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-	ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-	uav_desc.Format				= tex_desc.Format;
-	uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE3D;
-	uav_desc.Texture3D.MipSlice	= 0;
-	uav_desc.Texture3D.WSize	= d;
-	uav_desc.Texture3D.FirstWSlice=0;
-	hr=pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &uav);
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
-	ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-    srv_desc.Format						= tex_desc.Format;
-    srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE3D;
-    srv_desc.Texture3D.MipLevels		= 1;
-    srv_desc.Texture3D.MostDetailedMip	= 0;
-    hr=pd3dDevice->CreateShaderResourceView(texture, &srv_desc, &srv);
 }
 
 /*
@@ -367,7 +354,7 @@ int UtilityRenderer::screen_width=0;
 int UtilityRenderer::screen_height=0;
 D3DXMATRIX UtilityRenderer::view,UtilityRenderer::proj;
 ID3D1xEffect *UtilityRenderer::m_pDebugEffect=NULL;
-ID3D11InputLayout *UtilityRenderer::m_pBufferVertexDecl=NULL;
+ID3D11InputLayout *UtilityRenderer::m_pCubemapVtxDecl=NULL;
 ID3D1xBuffer* UtilityRenderer::m_pVertexBuffer=NULL;
 ID3D1xDevice* UtilityRenderer::m_pd3dDevice=NULL;
 UtilityRenderer utilityRenderer;
@@ -388,29 +375,89 @@ struct Vertext
 	D3DXVECTOR4 pos;
 	D3DXVECTOR2 tex;
 };
+struct Vertex3_t
+{
+	float x,y,z;
+};
 
+static const float size=5.f;
+static Vertex3_t vertices[36] =
+{
+	{-size,		-size,	size},
+	{size,		size,	size},
+	{size,		-size,	size},
+	{size,		size,	size},
+	{-size,		-size,	size},
+	{-size,		size,	size},
+	
+	{-size,		-size,	-size},
+	{ size,		-size,	-size},
+	{ size,		 size,	-size},
+	{ size,		 size,	-size},
+	{-size,		 size,	-size},
+	{-size,		-size,	-size},
+	
+	{-size,		size,	-size},
+	{ size,		size,	-size},
+	{ size,		size,	 size},
+	{ size,		size,	 size},
+	{-size,		size,	 size},
+	{-size,		size,	-size},
+				
+	{-size,		-size,  -size},
+	{ size,		-size,	 size},
+	{ size,		-size,	-size},
+	{ size,		-size,	 size},
+	{-size,		-size,  -size},
+	{-size,		-size,	 size},
+	
+	{ size,		-size,	-size},
+	{ size,		 size,	 size},
+	{ size,		 size,	-size},
+	{ size,		 size,	 size},
+	{ size,		-size,	-size},
+	{ size,		-size,	 size},
+				
+	{-size,		-size,	-size},
+	{-size,		 size,	-size},
+	{-size,		 size,	 size},
+	{-size,		 size,	 size},
+	{-size,		-size,	 size},
+	{-size,		-size,	-size},
+};
 
 void UtilityRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D1xDevice *)dev;
 	RecompileShaders();
-
-	D3D1x_BUFFER_DESC bdesc=
+	HRESULT hr;
+	SAFE_RELEASE(m_pVertexBuffer);
+	// Vertex declaration
 	{
-        4*sizeof(Vertext),
-        D3D11_USAGE_DYNAMIC,
-        D3D11_BIND_VERTEX_BUFFER,
-        D3D11_CPU_ACCESS_WRITE,
+		D3DX11_PASS_DESC PassDesc;
+		ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("vec3_input_signature");
+		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
+		D3D1x_INPUT_ELEMENT_DESC decl[]=
+		{
+			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
+		};
+		SAFE_RELEASE(m_pCubemapVtxDecl);
+		V_CHECK(m_pd3dDevice->CreateInputLayout(decl,1,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pCubemapVtxDecl));
+	}
+	D3D1x_BUFFER_DESC desc=
+	{
+        36*sizeof(vec3),
+        D3D1x_USAGE_DEFAULT,
+        D3D1x_BIND_VERTEX_BUFFER,
+        0,
         0
 	};
-    D3D11_SUBRESOURCE_DATA InitData;
-    ZeroMemory(&InitData,sizeof(D3D1x_SUBRESOURCE_DATA));
-//   InitData.pSysMem			=vertices;
-   // InitData.SysMemPitch		=sizeof(Vertext);
-    InitData.SysMemSlicePitch	=0;
-	SAFE_RELEASE(m_pVertexBuffer);
 	
-	m_pd3dDevice->CreateBuffer(&bdesc,NULL,&m_pVertexBuffer);
+    D3D1x_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    InitData.pSysMem = vertices;
+    InitData.SysMemPitch = sizeof(vec3);
+	V_CHECK(m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer));
 }
 
 void UtilityRenderer::RecompileShaders()
@@ -421,7 +468,7 @@ void UtilityRenderer::RecompileShaders()
 
 void UtilityRenderer::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(m_pBufferVertexDecl);
+	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pDebugEffect);
 }
@@ -444,6 +491,8 @@ void UtilityRenderer::PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,con
 
 void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexXyzRgba *vertices,int vertex_count,bool strip)
 {
+	if(!vertex_count)
+		return;
 	PIXWrapper(0xFF0000FF,"DrawLines")
 	{
 	HRESULT hr=S_OK;
@@ -537,7 +586,7 @@ void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext)
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	//m_pImmediateContext->IASetInputLayout(NULL);
+	m_pImmediateContext->IASetInputLayout(NULL);
 	m_pImmediateContext->Draw(4,0);
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 }			
@@ -559,12 +608,103 @@ void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout(&previousInputLayout );
-	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
 	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(4,0);
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+}
+
+void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pImmediateContext
+									   ,const float *dr
+									   ,float half_angle_radians
+										,ID3D1xEffect* effect
+										,ID3D1xEffectTechnique* tech
+										,D3DXMATRIX view
+										,D3DXMATRIX proj
+										,D3DXVECTOR3 sun_dir)
+{
+	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
+	// But D3DXMatrixRotationYawPitchRoll uses only left-handed, hence the change of sign below.
+	if(effect)
+	{
+//		setMatrix(effect,"worldViewProj",tmp1);
+		//setParameter(effect,"lightDir",sun2);
+	//	setParameter(effect,"radiusRadians",half_angle_radians);
+	}
+	// coverage is 2*atan(1/5)=11 degrees.
+	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
+	pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	ApplyPass(pImmediateContext,tech->GetPassByIndex(0));
+	pImmediateContext->Draw(4,0);
+	pImmediateContext->IASetPrimitiveTopology(previousTopology);
+}
+
+
+void UtilityRenderer::DrawCube(void *context)
+{
+	UINT stride = sizeof(vec3);
+	UINT offset = 0;
+    UINT Strides[1];
+    UINT Offsets[1];
+    Strides[0] = 0;
+    Offsets[0] = 0;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11InputLayout* previousInputLayout;
+	pContext->IAGetInputLayout( &previousInputLayout );
+
+	pContext->IASetVertexBuffers(	0,					// the first input slot for binding
+												1,					// the number of buffers in the array
+												&m_pVertexBuffer,	// the array of vertex buffers
+												&stride,			// array of stride values, one for each buffer
+												&offset );			// array of offset values, one for each buffer
+
+	// Set the input layout
+	pContext->IASetInputLayout(m_pCubemapVtxDecl);
+
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+
+	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	pContext->Draw(36,0);
+
+	pContext->IASetPrimitiveTopology(previousTopology);
+	pContext->IASetInputLayout( previousInputLayout );
 	SAFE_RELEASE(previousInputLayout);
+}
+#include "Simul/Math/Vector3.h"
+void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	D3DXMATRIX tmp1,tmp2,wvp,world;
+	D3DXMatrixIdentity(&world);
+	float tan_x=1.0f/proj(0, 0);
+	float tan_y=1.0f/proj(1, 1);
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	//SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
+	//simul::math::Vector3 pos((const float*)cam_pos);
+	float size_req=tan_x*0.2f;
+	static float size=5.f;
+	float d=2.0f*size/size_req;
+	simul::math::Vector3 offs0(-0.7f*(tan_x-size_req)*d,0.7f*(tan_y-size_req)*d,-d);
+	simul::math::Vector3 offs;
+	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)view),offs0);
+
+	world._41=offs.x;
+	world._42=offs.y;
+	world._43=offs.z;
+	view._41=0;
+	view._42=0;
+	view._43=0;
+	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	//SkyConstants skyConstants;
+	//skyConstants.worldViewProj=&wvp._11;
+	//skyConstants.worldViewProj.transpose();
+	simul::dx11::setMatrix(m_pDebugEffect,"worldViewProj",&wvp._11);
+	ID3D1xEffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
+	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pDebugEffect->GetVariableByName("cubeTexture")->AsShaderResource();
+	cubeTexture->SetResource(m_pCubeEnvMapSRV);
+	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));
+	UtilityRenderer::DrawCube(context);
 }

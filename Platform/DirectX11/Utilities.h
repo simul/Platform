@@ -19,15 +19,17 @@ namespace simul
 			TextureStruct();
 			~TextureStruct();
 			void release();
-			ID3D11Resource*			texture;
+			ID3D11Resource*				texture;
 			ID3D11ShaderResourceView*   shaderResourceView;
+			ID3D11UnorderedAccessView*  unorderedAccessView;
 			D3D11_MAPPED_SUBRESOURCE	mapped;
 			int width,length;
 			void setTexels(ID3D11DeviceContext *context,const float *float4_array,int texel_index,int num_texels);
 			void setTexels(ID3D11DeviceContext *context,const unsigned *uint_array,int texel_index,int num_texels);
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
-			void ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f);
+			void ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable=false);
 			void map(ID3D11DeviceContext *context);
+			bool isMapped() const;
 			void unmap();
 		private:
 			ID3D11DeviceContext *last_context;
@@ -43,18 +45,6 @@ namespace simul
 
 			void release();
 			void init(ID3D11Device *pd3dDevice,int w,int h);
-		};
-		struct ComputableTexture3D
-		{
-			ComputableTexture3D();
-			~ComputableTexture3D();
-
-			ID3D11Texture3D*            texture;
-			ID3D11UnorderedAccessView*  uav;
-			ID3D11ShaderResourceView*   srv;
-
-			void release();
-			void init(ID3D11Device *pd3dDevice,int w,int l,int d);
 		};
 		struct ArrayTexture
 		{
@@ -143,9 +133,9 @@ namespace simul
 			static int screen_height;
 			static D3DXMATRIX view;
 			static D3DXMATRIX proj;
-			static ID3D1xEffect *m_pDebugEffect;
-			static ID3D11InputLayout *m_pBufferVertexDecl;
-			static ID3D1xBuffer* m_pVertexBuffer;
+			static ID3D1xEffect		*m_pDebugEffect;
+			static ID3D11InputLayout	*m_pCubemapVtxDecl;
+			static ID3D1xBuffer		* m_pVertexBuffer;
 			static ID3D1xDevice		*m_pd3dDevice;
 		public:
 			UtilityRenderer();
@@ -163,6 +153,8 @@ namespace simul
 			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
 			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
 			static void DrawQuad(ID3D11DeviceContext *m_pImmediateContext);
+			static void DrawCube(void *context);
+			static void DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
 		};
 	}
 }

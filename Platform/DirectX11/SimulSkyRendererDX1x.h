@@ -8,7 +8,6 @@
 // SimulSkyRendererDX1x.h A renderer for skies.
 
 #pragma once
-#include "Simul/Base/SmartPtr.h"
 #include "Simul/Sky/SkyTexturesCallback.h"
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include <d3dx9.h>
@@ -25,7 +24,7 @@
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
-#include "Simul/Platform/DirectX11/HLSL/simul_earthshadow.hlsl"
+#include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 
 namespace simul
 {
@@ -48,7 +47,7 @@ namespace simul
 SIMUL_DIRECTX11_EXPORT_CLASS SimulSkyRendererDX1x:public simul::sky::BaseSkyRenderer
 {
 public:
-	SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk);
+	SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem);
 	virtual ~SimulSkyRendererDX1x();
 
 	//standard d3d object interface functions
@@ -79,7 +78,7 @@ public:
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 
-	void Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s);
+	void Get2DLossAndInscatterTextures(void* *loss,void* *insc,void* *skyl,void* *overc);
 	void *GetIlluminationTexture();
 
 	float GetFadeInterp() const;
@@ -95,6 +94,7 @@ public:
 
 	// for testing:
 	void DrawCubemap(void *context,ID3D1xShaderResourceView*	m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
+	simul::sky::BaseGpuSkyGenerator *GetBaseGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
 	int cycle;
 	bool IsYVertical(){return false;}
@@ -108,71 +108,51 @@ protected:
 	
 	ID3D1xDevice*						m_pd3dDevice;
 	ID3D1xBuffer*						m_pVertexBuffer;
-	ID3D1xInputLayout*					m_pVtxDecl;
 	ID3D1xInputLayout*					m_pStarsVtxDecl;
 	ID3D1xBuffer*						m_pStarsVertexBuffer;
 	ID3D1xEffect*						m_pSkyEffect;
 	ID3D1xQuery*						d3dQuery;
 
-	ID3D1xEffectMatrixVariable*			worldViewProj;
-	ID3D1xEffectTechnique*				m_hTechniqueSky;
-	ID3D1xEffectTechnique*				m_hTechniqueEarthShadow;
-	ID3D1xEffectTechnique*				m_hTechniqueSky_CUBEMAP;
 	ID3D1xEffectTechnique*				m_hTechniqueFade3DTo2D;
 	ID3D1xEffectTechnique*				m_hTechniqueSun;
 	ID3D1xEffectTechnique*				m_hTechniqueQuery;
 	ID3D1xEffectTechnique*				m_hTechniqueFlare;
 	ID3D1xEffectTechnique*				m_hTechniquePlanet;
 	ID3D1xEffectTechnique*				m_hTechniquePointStars;
-	ID3D1xEffectVectorVariable*			lightDirection;
-	ID3D1xEffectVectorVariable*			mieRayleighRatio;
-	ID3D1xEffectScalarVariable*			hazeEccentricity;
-	ID3D1xEffectScalarVariable*			overcastFactor;
-	ID3D1xEffectScalarVariable*			skyInterp;
-	ID3D1xEffectScalarVariable*			altitudeTexCoord;
-	ID3D1xEffectVectorVariable*			colour;
-
-	ID3D1xEffectMatrixVariable*			projMatrix;
-	ID3D1xEffectMatrixVariable*			cubemapViews;
 
 	ID3D1xEffectShaderResourceVariable*	flareTexture;
 	ID3D1xEffectShaderResourceVariable*	inscTexture;
 	ID3D1xEffectShaderResourceVariable*	skylTexture;
 	ID3D1xEffectShaderResourceVariable*	fadeTexture1;
 	ID3D1xEffectShaderResourceVariable*	fadeTexture2;
+	ID3D1xEffectShaderResourceVariable*	illuminationTexture;
 	
 	ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
+	ConstantBuffer<SkyConstants>		skyConstants;
+void SetConstantsForPlanet(SkyConstants &skyConstants,const float *viewmatrix,const float *projmatrix,const float *dir,const float *light_dir);
 
-	ID3D1xTexture3D*					loss_textures[3];
-	ID3D1xTexture3D*					inscatter_textures[3];
-	ID3D1xTexture3D*					skylight_textures[3];
+	TextureStruct						loss_textures[3];
+	TextureStruct						insc_textures[3];
+	TextureStruct						skyl_textures[3];
 
 	// Small framebuffers we render to once per frame to perform fade interpolation.
 	simul::dx11::Framebuffer*			loss_2d;
 	simul::dx11::Framebuffer*			inscatter_2d;
+	simul::dx11::Framebuffer*			overcast_2d;
 	simul::dx11::Framebuffer*			skylight_2d;
 
 	// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
 	simul::dx11::Framebuffer			illumination_fb;
 
 	ID3D1xShaderResourceView*			flare_texture_SRV;
-	ID3D1xShaderResourceView*			loss_textures_SRV[3];
-	ID3D1xShaderResourceView*			insc_textures_SRV[3];
-	ID3D1xShaderResourceView*			skyl_textures_SRV[3];
 	ID3D1xShaderResourceView*			moon_texture_SRV;
 
-	int mapped_fade;
-	ID3D11DeviceContext *mapped_context;
-	D3D1x_MAPPED_TEXTURE3D loss_texture_mapped;
-	D3D1x_MAPPED_TEXTURE3D insc_texture_mapped;
-	D3D1x_MAPPED_TEXTURE3D skyl_texture_mapped;
-
 	void MapFade(ID3D11DeviceContext *context,int s);
-	void UnmapFade();
+	void UnmapFade(int i);
 	D3DXMATRIX				world,view,proj;
-	void DrawCube(void *context);
 	void DrawLines(void *context,Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
+	simul::dx11::GpuSkyGenerator gpuSkyGenerator;
 };
 }
 }

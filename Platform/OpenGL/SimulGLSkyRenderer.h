@@ -28,7 +28,7 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGLSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
-	SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk);
+	SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *m);
 	virtual ~SimulGLSkyRenderer();
 	//standard ogl object interface functions
 
@@ -61,7 +61,7 @@ public:
 	void		RenderPlanet(void *,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	void		RenderSun(void *context,float exposure_hint);
 
-	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s);
+	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o);
 
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual		void SetYVertical(bool ){}
