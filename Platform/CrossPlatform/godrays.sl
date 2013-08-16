@@ -14,7 +14,7 @@ vec4 Godrays(Texture2D inscTexture,Texture2D overcTexture,vec2 pos,mat4 invViewP
 	float cos0			=dot(view,lightDir);
 
 	// Now the step value is the ratio to 1 of a unit step in the shadow plane.
-	float step			=1.0;///length(view_s.xy);
+	float step			=1.0/length(view_s.xy);
 
 	vec4 total_insc		=vec4(0,0,0,0);
 
