@@ -76,7 +76,7 @@ vec3 applyFades2(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplie
     return insc.aaa;
 }
 
-//#define FORWARD_TRACE
+#define FORWARD_TRACE
 
 float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
@@ -482,10 +482,22 @@ float4 PS_ShowShadow( vertexOutputCS IN):SV_TARGET
 {
 	vec2 tex_pos=2.0*IN.texCoords.xy-vec2(1.0,1.0);
 	vec2 radial_texc=vec2(sqrt(length(tex_pos.xy)),atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536));
-    float4 lookup=noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);//radial_texc);
+
+#ifdef RADIAL_CLOUD_SHADOW
+    float4 lookup=noiseTexture.Sample(clampWrapSamplerState,radial_texc);
+#else
+    float4 lookup=noiseTexture.Sample(clampWrapSamplerState,IN.texCoords.xy);//radial_texc);
+#endif
 	return float4(lookup.rgb,1.0);
 }
 
+SamplerState crossSectionSamplerState
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Clamp;
+};
 
 #define CROSS_SECTION_STEPS 32
 
@@ -499,14 +511,14 @@ float4 PS_CrossSection(vec2 texCoords,float yz)
 	texc.z+=0.5*yz/(float)CROSS_SECTION_STEPS;
 	for(i=0;i<CROSS_SECTION_STEPS;i++)
 	{
-		float4 density=cloudDensity1.Sample(wwcSamplerState,texc);
+		float4 density=cloudDensity1.Sample(crossSectionSamplerState,texc);
 		float3 colour=float3(.5,.5,.5)*(lightResponse.x*density.y+lightResponse.y*density.x);
 		colour.gb+=float2(.125,.25)*(lightResponse.z*density.w);
 		float opacity=density.z;
 		colour*=opacity;
 		accum*=1.f-opacity;
 		accum+=colour;
-		texc.y+=(1.0-yz)/(float)CROSS_SECTION_STEPS;
+		texc.y-=(1.0-yz)/(float)CROSS_SECTION_STEPS;
 		texc.z+=yz/(float)CROSS_SECTION_STEPS;
 	}
     return float4(accum,1);

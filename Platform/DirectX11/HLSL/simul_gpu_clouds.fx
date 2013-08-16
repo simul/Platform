@@ -127,15 +127,18 @@ void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	float direct_light				=1.0;
-	for(int i=0;i<dims.z;i++)
+	targetTexture1[int3(pos.xy,0)]				=1.0;
+	for(int i=1;i<dims.z;i++)
 	{
 		uint3 idx					=uint3(pos.xy,i);
 		vec3 lightspace_texcoord	=(vec3(idx)+0.5)/vec3(dims);
 		vec3 texc					=(vec3(pos.xy,(float)i)+0.5)/vec3(dims);
 		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
 		float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
-		direct_light				*=exp(-extinctions.x*density*stepLength);
+		//if(density==0)
+		//	direct_light=1.0;
 		targetTexture1[idx]			=direct_light;
+		direct_light				*=exp(-extinctions.x*density*stepLength);
 	}
 }
 
@@ -148,20 +151,20 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	float indirect_light			=1.0;
-/*	if(pos.z>0)
+	if(pos.z>0)
 	{
-		int Z=pos.z-1;
-		int x1=(pos.x+1)%dims.x;
-		int xn=(pos.x+dims.x-1)%dims.x;
-		int y1=(pos.y+1)%dims.y;
-		int yn=(pos.y+dims.y-1)%dims.y;
+		int Z			=pos.z-1;
+		int x1			=(pos.x+1)%dims.x;
+		int xn			=(pos.x+dims.x-1)%dims.x;
+		int y1			=(pos.y+1)%dims.y;
+		int yn			=(pos.y+dims.y-1)%dims.y;
 		indirect_light	=targetTexture1[int3(pos.xy,Z)];
 		indirect_light	+=targetTexture1[int3(xn,pos.y,Z)];
 		indirect_light	+=targetTexture1[int3(x1,pos.y,Z)];
 		indirect_light	+=targetTexture1[int3(pos.x,yn,Z)];
 		indirect_light	+=targetTexture1[int3(pos.x,y1,Z)];
 		indirect_light	/=5.0;
-	}*/
+	}
 	//for(int i=0;i<dims.z;i++)
 	int i=pos.z;
 	{
@@ -172,8 +175,8 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 		float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
 		indirect_light				*=exp(-extinctions.y*density*stepLength);
 		targetTexture1[idx]			=indirect_light;
-		if(density==0)
-			indirect_light=1.0;
+		//if(density==0)
+		//	indirect_light=1.0;
 	}
 }
 
@@ -190,7 +193,7 @@ void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)	//SV_DispatchThreadID giv
 	vec3 densityspace_texcoord	=(pos.xyz+0.5)/vec3(dims);
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord,1.0)).xyz;
-	lightspace_texcoord.z		-=zPixel;
+	lightspace_texcoord.z		-=zPixelLightspace;
 	vec2 light_lookup			=vec2(lightTexture1.SampleLevel(lightSamplerState,lightspace_texcoord,0).x
 										,lightTexture2.SampleLevel(lightSamplerState,lightspace_texcoord,0).x);
 	vec2 amb_texel				=vec2(ambientTexture1.SampleLevel(wwcSamplerState,ambient_texcoord,0).x

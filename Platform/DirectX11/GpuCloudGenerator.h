@@ -101,7 +101,8 @@ namespace simul
 			TextureStruct						indirectLightTextures[2];
 			ConstantBuffer<GpuCloudConstants>	gpuCloudConstants;
 			ID3D11SamplerState*					m_pWwcSamplerState;
-			ID3D11SamplerState*					m_pCccSamplerState;
+			ID3D11SamplerState*					m_pWccSamplerState;
+			ID3D11SamplerState*					m_pCwcSamplerState;
 		};
 	}
 }

@@ -108,7 +108,7 @@ float4 PS_Godrays(atmosVertexOutput IN) : SV_TARGET
 	float solid_depth	=depthTexture.Sample(clampSamplerState,depth_texc).x;
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToDistance(solid_depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
-	return Godrays(inscTexture,overcTexture,IN.pos,invViewProj,maxDistance,solid_dist);
+	return Godrays(inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
 }
 
 technique11 simul_atmospherics_overlay

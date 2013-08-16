@@ -25,7 +25,8 @@ GpuCloudGenerator::GpuCloudGenerator()
 			,volume_noise_tex(NULL)
 			,volume_noise_tex_srv(NULL)
 			,m_pWwcSamplerState(NULL)
-			,m_pCccSamplerState(NULL)
+			,m_pCwcSamplerState(NULL)
+			,m_pWccSamplerState(NULL)
 {
 	for(int i=0;i<3;i++)
 		finalTexture[i]=NULL;
@@ -52,7 +53,8 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 	gpuCloudConstants.RestoreDeviceObjects(m_pd3dDevice);
 
 	SAFE_RELEASE(m_pWwcSamplerState);
-	SAFE_RELEASE(m_pCccSamplerState);
+	SAFE_RELEASE(m_pCwcSamplerState);
+	SAFE_RELEASE(m_pWccSamplerState);
 	D3D11_SAMPLER_DESC samplerDesc;
 	
     ZeroMemory( &samplerDesc, sizeof( D3D11_SAMPLER_DESC ) );
@@ -67,8 +69,11 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 	
 	m_pd3dDevice->CreateSamplerState(&samplerDesc,&m_pWwcSamplerState);
     samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	m_pd3dDevice->CreateSamplerState(&samplerDesc,&m_pCwcSamplerState);
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
     samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	m_pd3dDevice->CreateSamplerState(&samplerDesc,&m_pCccSamplerState);
+	m_pd3dDevice->CreateSamplerState(&samplerDesc,&m_pWccSamplerState);
 
 	RecompileShaders();
 }
@@ -92,7 +97,8 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 		indirectLightTextures[i].release();
 	}
 	SAFE_RELEASE(m_pWwcSamplerState);
-	SAFE_RELEASE(m_pCccSamplerState);
+	SAFE_RELEASE(m_pCwcSamplerState);
+	SAFE_RELEASE(m_pWccSamplerState);
 	m_pd3dDevice=NULL;
 }
 
@@ -247,7 +253,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 simul::base::Timer timer;
 timer.StartTime();
 std::cout<<"Gpu clouds: PerformGPURelight\n";
-int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//*2};
+int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
 	start_texel*=2;
 	texels*=2;
 	int gridsize=light_grid[0]*light_grid[1]*light_grid[2];
@@ -266,7 +272,7 @@ int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//*2};
 	indirectLightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice,light_grid[0],light_grid[1],light_grid[2]
 				,DXGI_FORMAT_R32_FLOAT,true);
 
-	ID3D1xEffectShaderResourceVariable*	input_light_texture	=effect->GetVariableByName("inputTexture")->AsShaderResource();
+	//ID3D1xEffectShaderResourceVariable*	input_light_texture	=effect->GetVariableByName("inputTexture")->AsShaderResource();
 	ID3D1xEffectShaderResourceVariable*	densityTexture		=effect->GetVariableByName("densityTexture")->AsShaderResource();
 
 	gpuCloudConstants.yRange			=vec4(0.0,1.0,0,0);
@@ -280,8 +286,10 @@ int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//*2};
 	gpuCloudConstants.stepLength		=simul::sky::length(step); 
 	if(wrap_light_tex)
 		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pWwcSamplerState);
+	else if(light_grid[0]>light_grid[1])
+		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pWccSamplerState);
 	else
-		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pCccSamplerState);
+		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pCwcSamplerState);
 	densityTexture->SetResource(density_texture.shaderResourceView);
 
 	// divide the grid into 8x8x8 blocks:
@@ -313,11 +321,14 @@ int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//*2};
 	int z1	=(start_texel+texels+light_grid[1]*light_grid[0]-1)/light_grid[1]/light_grid[0];
 	if(z1>z0)
 	{
-		gpuCloudConstants.threadOffset=uint3(0,0,z0);
-		gpuCloudConstants.Apply(m_pImmediateContext);
-		simul::dx11::setParameter(effect,"targetTexture1",indirectLightTextures[light_index].unorderedAccessView);
-		ApplyPass(m_pImmediateContext,secondaryLightingComputeTechnique->GetPassByIndex(0));
-		m_pImmediateContext->Dispatch(subgrid.x,subgrid.y,z1-z0);
+		for(int z=z0;z<z1;z++)
+		{
+			gpuCloudConstants.threadOffset=uint3(0,0,z);
+			gpuCloudConstants.Apply(m_pImmediateContext);
+			simul::dx11::setParameter(effect,"targetTexture1",indirectLightTextures[light_index].unorderedAccessView);
+			ApplyPass(m_pImmediateContext,secondaryLightingComputeTechnique->GetPassByIndex(0));
+			m_pImmediateContext->Dispatch(subgrid.x,subgrid.y,1);
+		}
 	}
 }
 
@@ -351,6 +362,7 @@ std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 
 	gpuCloudConstants.zSize				=((float)density_grid[2]);
 	gpuCloudConstants.zPixel			=(1.f/(float)density_grid[2]);
+	gpuCloudConstants.zPixelLightspace	=(1.f/(float)light_grid[2]);
 
 	setParameter(effect,"densityTexture",density_texture.shaderResourceView);
 	setParameter(effect,"ambientTexture1",directLightTextures[0].shaderResourceView);
