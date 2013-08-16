@@ -46,7 +46,14 @@ namespace simul
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
 			bool Destroy();
-			void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,const simul::sky::float4& relativeViewportTextureRegionXYWH);
+			void RenderSkyAsOverlay(void *context,
+									float exposure,
+									bool is_cubemap,
+									const void* mainDepthTexture,
+									const void* depthTextureForClouds, //If non-null then we do low-res cloud rendering to an off-screen target of matching dimensions for compositing onto full res target.
+									const simul::sky::float4& relativeViewportTextureRegionXYWH,
+									bool doFinalCloudBufferToScreenComposite //indicate whether truesky should do a final low-res cloud up-sample to the main target or whether to leave that to the user (via GetFramebufferTexture())
+									);
 			bool RenderSky(void *context,float exposure,bool buffered,bool is_cubemap);
 			void RenderLateCloudLayer(void *context,float exposure,bool );
 			void RenderPrecipitation(void *context);

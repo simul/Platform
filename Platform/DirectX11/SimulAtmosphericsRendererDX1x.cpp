@@ -163,7 +163,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	}
 
 	AtmosphericsPerViewConstants atmosphericsPerViewConstants;
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1, relativeViewportTextureRegionXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
 	UPDATE_CONSTANT_BUFFER(m_pImmediateContext,atmosphericsUniforms2ConstantsBuffer,AtmosphericsPerViewConstants,atmosphericsPerViewConstants)
 	ID3DX11EffectConstantBuffer* cbAtmosphericsUniforms2=effect->GetConstantBufferByName("AtmosphericsPerViewConstants");
 	if(cbAtmosphericsUniforms2)
@@ -218,7 +218,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 		// Convert the proj matrix into a normal non-reversed matrix.
 		p1=simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
 	}
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,relativeViewportTextureRegionXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
 	atmosphericsPerViewConstants.shadowMatrix=or.GetInverseMatrix();
 
 	UPDATE_CONSTANT_BUFFER(pContext,atmosphericsUniforms2ConstantsBuffer,AtmosphericsPerViewConstants,atmosphericsPerViewConstants)

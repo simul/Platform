@@ -1,4 +1,7 @@
 #pragma once
+#ifndef SIMUL_PLATFORM_DIRECTX11_UTILITIES_H
+#define SIMUL_PLATFORM_DIRECTX11_UTILITIES_H
+
 #include <d3d11.h>
 #include <utility>
 #include <vector>
@@ -244,3 +247,5 @@ public:
 		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 	}
 };
+
+#endif //SIMUL_PLATFORM_DIRECTX11_UTILITIES_H

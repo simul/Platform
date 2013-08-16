@@ -64,22 +64,22 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
 	float2 texCoords	=IN.texCoords.xy;
 	texCoords.y			=1.0-texCoords.y;
-	float4 dlookup		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
-	float4 pos			=float4(-1.f,-1.f,1.f,1.f);
-	pos.x				+=2.f*IN.texCoords.x;
-	pos.y				+=2.f*IN.texCoords.y;
-	float3 view			=normalize(mul(invViewProj,pos).xyz);
+	float dlookup		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
+	float4 clip_pos		=float4(-1.f,-1.f,1.f,1.f);
+	clip_pos.x			+=2.f*IN.texCoords.x;
+	clip_pos.y			+=2.f*IN.texCoords.y;
+	float3 view			=normalize(mul(invViewProj,clip_pos).xyz);
 	float cos0			=dot(lightDir.xyz,view.xyz);
 	float sine			=view.z;
-	float3 n			=float3(pos.xy*tanHalfFov,1.0);
+	float3 n			=float3(clip_pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
 	float2 noise_texc_0	=mul((float2x2)noiseMatrix,n.xy);
 
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;
 
-	float depth			=dlookup.r;
-	float d				=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	float depth			=dlookup;
+	float d				=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,clip_pos.xy,tanHalfFov);
 	float4 colour		=float4(0.0,0.0,0.0,1.0);
 	float Z				=0.f;
 	float2 fade_texc	=float2(0.0,0.5*(1.0-sine));
@@ -92,32 +92,32 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	//int i=40;
 	{
 		const LayerData layer=layers[i];
-		float dist=layer.layerDistance;
-		float z=saturate(dist/maxFadeDistanceMetres);
-		if(z<d)
+		float layerDist=layer.layerDistance;
+		float normLayerZ=saturate(layerDist/maxFadeDistanceMetres);
+		if(normLayerZ<d)
 		//if(i==32)
 		{
-			float3 pos=viewPos+dist*view;
-		//	pos.z-=layer.verticalShift;
-			float4 texCoords;
-			texCoords.xyz=(pos-cornerPos)*inverseScales;
-			texCoords.w=texCoords.z;
-			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
+			float3 layerPos=viewPos+layerDist*view;
+		//	layerPos.z-=layer.verticalShift;
+			float4 layerTexCoords;
+			layerTexCoords.xyz=(layerPos-cornerPos)*inverseScales;
+			layerTexCoords.w=layerTexCoords.z;
+			if(layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
 			{
 				float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
-				float3 noiseval		=texCoords.w*noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
-				float4 density		=calcDensity(texCoords.xyz,layer.layerFade,noiseval);
+				float3 noiseval		=layerTexCoords.w*noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
+				float4 density		=calcDensity(layerTexCoords.xyz,layer.layerFade,noiseval);
 				if(density.z>0)
 				{
-					float4 c=calcColour(density,cos0,texCoords.z);
-					fade_texc.x=sqrt(z);
+					float4 c=calcColour(density,cos0,layerTexCoords.z);
+					fade_texc.x=sqrt(normLayerZ);
 					float sh=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 					c.rgb*=sh;
 					c.rgb=applyFades(c.rgb,fade_texc,cos0,sh);
 					colour*=(1.0-c.a);
 					colour.rgb+=c.rgb*c.a;
 					Z*=(1.0-c.a);
-					Z+=z*c.a;
+					Z+=normLayerZ*c.a;
 				}
 			}
 		}
@@ -126,8 +126,10 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	   discard;
 	fade_texc.x=sqrt(Z);
 	//colour.rgb=(1.0-colour.a)*applyFades(colour.rgb,fade_texc,cos0,earthshadowMultiplier);
-    return float4(exposure*colour.rgb,1.0-colour.a);
+	return float4(exposure*colour.rgb,1.0-colour.a);
 }
+
+
 float4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
 	float2 texCoords	=IN.texCoords.xy;
@@ -147,7 +149,7 @@ float4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 	float max_texc_z	=1.0-min_texc_z;
 
 	float depth			=dlookup.r;
-	float d				=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	float d				=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,pos.xy,tanHalfFov);
 	float4 colour		=float4(0.0,0.0,0.0,1.0);
 	float Z				=0.f;
 	float2 fade_texc	=float2(0.0,0.5*(1.0-sine));
@@ -200,7 +202,7 @@ float4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 	float max_texc_z	=1.0-min_texc_z;
 
 	float depth=dlookup.r;
-	float d=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	float d=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,pos.xy,tanHalfFov);
 	float4 colour=float4(0.0,0.0,0.0,1.0);
 	
 	for(int i=0;i<layerCount;i++)

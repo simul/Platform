@@ -136,7 +136,7 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 	simul::dx11::setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 
 	gpuCloudConstants.Apply(m_pImmediateContext);
-	dens_fb.Activate(m_pImmediateContext);
+	dens_fb.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
 std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 		ApplyPass(m_pImmediateContext,densityTechnique->GetPassByIndex(0));
 		dens_fb.DrawQuad(m_pImmediateContext);
@@ -213,7 +213,7 @@ std::cout<<"Gpu clouds: PerformGPURelight\n";
 std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 	if(start_texel==0)
 	{
-		F[0]->Activate(m_pImmediateContext);
+		F[0]->Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
 			input_light_texture->SetResource(F[1]->GetBufferResource());
 			F[0]->Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
 		F[0]->Deactivate(m_pImmediateContext);
@@ -235,7 +235,7 @@ std::cout<<"\tCopy0 "<<timer.UpdateTime()<<"ms"<<std::endl;
 		float zPos=((float)i+0.5f)/(float)light_grid[2];
 		gpuCloudConstants.zPosition=(zPos);
 		gpuCloudConstants.Apply(m_pImmediateContext);
-		F[1]->Activate(m_pImmediateContext);
+		F[1]->Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
 			input_light_texture->SetResource(F[0]->GetBufferResource());
 			ApplyPass(m_pImmediateContext,lightingTechnique->GetPassByIndex(0));
 			F[1]->DrawQuad(m_pImmediateContext);
@@ -290,7 +290,7 @@ std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 	setParameter(effect,"lightTexture",lightTextures[1].shaderResourceView);
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 	gpuCloudConstants.Apply(m_pImmediateContext);
-	world_fb.Activate(m_pImmediateContext);
+	world_fb.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
 		ApplyPass(m_pImmediateContext,transformTechnique->GetPassByIndex(0));
 		world_fb.DrawQuad(m_pImmediateContext);
 	world_fb.Deactivate(m_pImmediateContext);

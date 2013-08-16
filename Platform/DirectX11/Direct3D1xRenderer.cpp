@@ -129,7 +129,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	for(int i=0;i<6;i++)
 	{
 		framebuffer_cubemap.SetCurrentFace(i);
-		framebuffer_cubemap.Activate(pContext);
+		framebuffer_cubemap.Activate(pContext,0.f,0.f,1.f,1.f);
 		D3DXMATRIX cube_proj;
 		float nearPlane=1.f;
 		float farPlane=200000.f;
@@ -138,7 +138,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 			cube_proj=simul::camera::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
 		else
 			cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
-		cubemapDepthFramebuffer.Activate(pContext);
+		cubemapDepthFramebuffer.Activate(pContext,0.f,0.f,1.f,1.f);
 		cubemapDepthFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		if(simulTerrainRenderer)
 		{
@@ -150,7 +150,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		{
 			simulWeatherRenderer->SetMatrices(view_matrices[i],cube_proj);
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapDepthFramebuffer.GetDepthTex(),relativeViewportTextureRegionXYWH);
+			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,true,cubemapDepthFramebuffer.GetDepthTex(),nullptr,relativeViewportTextureRegionXYWH,true);
 		}
 		framebuffer_cubemap.Deactivate(pContext);
 	}
@@ -189,7 +189,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		RenderCubemap(pd3dImmediateContext,cam_pos);
 		simulWeatherRenderer->SetMatrices(view,proj);
 	}
-	depthFramebuffer.Activate(pd3dImmediateContext);
+	depthFramebuffer.Activate(pd3dImmediateContext,0.f,0.f,1.f,1.f);
 	depthFramebuffer.Clear(pd3dImmediateContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
@@ -203,7 +203,9 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture,relativeViewportTextureRegionXYWH);
+		
+		const void* skyBufferDepthTex = UseSkyBuffer ? depthTexture : nullptr;
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,false,depthTexture,skyBufferDepthTex,relativeViewportTextureRegionXYWH,true);
 	}
 	if(simulWeatherRenderer)
 	{

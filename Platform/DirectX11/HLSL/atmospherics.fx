@@ -31,7 +31,7 @@ struct atmosVertexOutput
 {
     float4 position			: SV_POSITION;
     float2 texCoords		: TEXCOORD0;
-    float2 pos				: TEXCOORD1;
+    float2 pos			: TEXCOORD1;
 };
 
 atmosVertexOutput VS_Atmos(atmosVertexInput IN)
@@ -44,7 +44,7 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 		{-1.0,-1.0},
 		{-1.0, 1.0},
 	};
-	OUT.pos			=poss[IN.vertex_id];
+	OUT.pos		=poss[IN.vertex_id];
 	OUT.position	=float4(OUT.pos,0.0,1.0);
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
 #ifdef REVERSE_DEPTH
@@ -65,7 +65,7 @@ float4 PS_Atmos(atmosVertexOutput IN) : SV_TARGET
 	float4 dlookup	=depthTexture.Sample(clampSamplerState,viewportTexCoord);
 	float3 colour	=lookup.rgb;
 	float depth		=dlookup.r;
-	float dist		=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
+	float dist		=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,IN.pos.xy,tanHalfFov);
 #ifdef REVERSE_DEPTH
 	if(depth<=0.0)
 		dist=1.0;
@@ -89,7 +89,7 @@ float4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
 	float3 view	=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
 	view		=normalize(view);
 	float depth	=depthTexture.Sample(clampSamplerState,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias)).x;
-	float dist	=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
+	float dist	=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,IN.pos.xy,tanHalfFov);
 	float sine	=view.z;
 	float2 texc2=float2(pow(dist,0.5f),0.5f*(1.f-sine));
 	float3 loss	=lossTexture.Sample(clampSamplerState,texc2).rgb;
@@ -101,7 +101,7 @@ float4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	float3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
 	view				=normalize(view);
 	float depth			=depthTexture.Sample(clampSamplerState,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias)).x;
-	float dist			=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
+	float dist			=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,IN.pos.xy,tanHalfFov);
 	float sine			=view.z;
 	float2 fade_texc	=float2(pow(dist,0.5f),0.5f*(1.f-sine));
 
@@ -132,7 +132,7 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 	float sine			=view.z;
 	float cos0			=dot(view,lightDir);
 	float depth			=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-	float dist			=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
+	float dist			=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,IN.pos.xy,tanHalfFov);
 
 	vec4 total_insc		=vec4(0,0,0,0);
 	#define C 32

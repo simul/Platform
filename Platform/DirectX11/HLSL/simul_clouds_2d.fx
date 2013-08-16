@@ -71,7 +71,7 @@ float4 MainPS(v2f IN) : SV_TARGET
 	if(1.0>depth)
 		discard;
 #endif
-	float dist			=depthToDistance(depth,depth_pos.xy,nearZ,farZ,tanHalfFov);
+	float dist			=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,depth_pos.xy,tanHalfFov);
 	vec4 result			=Clouds2DPS_illum(IN.texc_global,IN.texc_detail,IN.wPosition,dist);
 	return result;
 }

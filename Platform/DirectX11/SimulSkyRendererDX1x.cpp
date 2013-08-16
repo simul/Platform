@@ -123,8 +123,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk)
 	loss_2d		=new simul::dx11::Framebuffer(0,0);
 	inscatter_2d=new simul::dx11::Framebuffer(0,0);
 	skylight_2d	=new simul::dx11::Framebuffer(0,0);
-	loss_2d->SetDepthFormat(0);
-	illumination_fb.SetDepthFormat(0);
 }
 
 void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
@@ -665,7 +663,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(fadeTexture1->SetResource(loss_textures_SRV[0]));
 		V_CHECK(fadeTexture2->SetResource(loss_textures_SRV[1]));
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		loss_2d->Activate(context);
+		loss_2d->Activate(context,0.f,0.f,1.f,1.f);
 			context->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
 			if(loss_2d->m_pBufferDepthSurface)
 				context->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
@@ -677,7 +675,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(fadeTexture2->SetResource(insc_textures_SRV[1]));
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		
-		inscatter_2d->Activate(context);
+		inscatter_2d->Activate(context,0.f,0.f,1.f,1.f);
 			context->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
 			if(inscatter_2d->m_pBufferDepthSurface)
 				context->ClearDepthStencilView(inscatter_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
@@ -689,7 +687,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(fadeTexture2->SetResource(skyl_textures_SRV[1]));
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		
-		skylight_2d->Activate(context);
+		skylight_2d->Activate(context,0.f,0.f,1.f,1.f);
 			context->ClearRenderTargetView(skylight_2d->m_pHDRRenderTarget,clearColor);
 			if(skylight_2d->m_pBufferDepthSurface)
 				context->ClearDepthStencilView(skylight_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
@@ -724,7 +722,7 @@ void SimulSkyRendererDX1x::RenderIllumationBuffer(void *c)
 	{
 		ID3D1xEffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("simul_illumination_buffer");
 		ApplyPass(context,tech->GetPassByIndex(0));
-		illumination_fb.Activate(context);
+		illumination_fb.Activate(context,0.f,0.f,1.f,1.f);
 		context->ClearRenderTargetView(illumination_fb.m_pHDRRenderTarget,clearColor);
 		if(e.enable)
 			simul::dx11::UtilityRenderer::DrawQuad(context);

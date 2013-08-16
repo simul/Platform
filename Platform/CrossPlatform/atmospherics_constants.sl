@@ -43,6 +43,8 @@ uniform_buffer AtmosphericsPerViewConstants R12
 	uniform float fill1,fill2;
 	uniform float nearZ;
 	uniform float farZ;
+	uniform float pad22, pad23;
+	uniform vec3 depthToLinFadeDistParams;
 	uniform float startZMetres;
 };
 #endif

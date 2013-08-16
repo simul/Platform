@@ -36,12 +36,12 @@ uniform_buffer CloudPerViewConstants R13
 	uniform mat4 invViewProj;
 	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
 	uniform mat4 noiseMatrix;
-	uniform float nearZ;
-	uniform float farZ;
+	uniform vec3 depthToLinFadeDistParams;
+	uniform float exposure;
 	uniform vec2 tanHalfFov;
 	uniform float a,b;
-	uniform float exposure;
-	uniform float c,d,e;
+	uniform float nearZ;
+	uniform float farZ;
 	uniform float extentZMetres;
 	uniform float startZMetres;
 };

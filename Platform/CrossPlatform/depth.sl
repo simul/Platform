@@ -1,24 +1,54 @@
 #ifndef DEPTH_SL
 #define DEPTH_SL
 
-float depthToDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
+//Enable/define the following to use a simpler, faster depth-to-linear-fade-z transform.
+#	define NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
+//Unlike the old implementation, it doesn't need to know about whether the projection is a reversed
+//or regular proj, it's fewer operations, and it's clearly commented and documented.
+
+
+float depthBufferToLinearFadeZ(in float depth, in float3 depthToLinFadeDistParams)
+{
+	//Usual perspective transform -
+	// Pos     Proj
+	// | _ |   | _  0  _ 0 |     |    _    |
+	// | _ |   | 0  _  _ 0 |     |    _    |
+	// |zVS| . | 0  0  a b |  =  |zVS.a + b|
+	// | 1 |   | 0  0 -1 0 |     |  -zVS   |
+	//
+	//depth = (zVS.a+b)/-zVS
+	//
+	//zVS = -b / ( depth + a )
+	//
+	//linFadeDist = -zVS / fadeDistMetres
+	//            = b / (depth*fadeDistMetres + a*fadeDistMetres)
+	//            = paramX / (depth*paramY + paramZ)
+	
+	return depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
+}
+
+float depthBufferToLinearFadeZ(float depth, float nearZ, float farZ)
 {
 #ifdef REVERSE_DEPTH
-	float z=nearZ*farZ/(nearZ+(farZ-nearZ)*depth);
+	return nearZ*farZ/(nearZ+(farZ-nearZ)*depth);
 #else
-	float z=-nearZ*farZ/((farZ-nearZ)*depth-farZ);
+	return -nearZ*farZ/((farZ-nearZ)*depth-farZ);
 #endif
+}
+
+float depthToFadeDistance(float depth,float3 depthToLinFadeDistParams,float nearZ,float farZ,vec2 xy,vec2 tanHalf)
+{
+#ifdef NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
+	float linearFadeDistanceZ = depthBufferToLinearFadeZ(depth,depthToLinFadeDistParams);
+#else
+	float linearFadeDistanceZ = depthBufferToLinearFadeZ(depth,nearZ,farZ);
+#endif
+
 	float Tx=xy.x*tanHalf.x;
 	float Ty=xy.y*tanHalf.y;
-	float dist=z*sqrt(1.0+Tx*Tx+Ty*Ty);
-#ifdef REVERSE_DEPTH
-	if(depth<=0.0)
-		dist=1.0;
-#else
-	if(depth>=1.0)
-		dist=1.0;
-#endif
-	return dist;
+	float fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
+	
+	return fadeDist;
 }
 
 

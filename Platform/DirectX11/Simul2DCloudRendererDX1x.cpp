@@ -121,7 +121,7 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 	noise_fb.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 	ID3D11DeviceContext *pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
-	noise_fb.Activate(pImmediateContext);
+	noise_fb.Activate(pImmediateContext,0.f,0.f,1.f,1.f);
 	{
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_random");
 		t->GetPassByIndex(0)->Apply(0,pImmediateContext);
@@ -152,7 +152,7 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	
-	dens_fb.Activate(context);
+	dens_fb.Activate(context,0.f,0.f,1.f,1.f);
 	{
 		simul::dx11::setParameter(effect,"imageTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_2d_cloud_detail");
@@ -161,7 +161,7 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 		dens_fb.DrawQuad(context);
 	}
 	dens_fb.Deactivate(context);
-	detail_fb.Activate(context);
+	detail_fb.Activate(context,0.f,0.f,1.f,1.f);
 	{
 		simul::dx11::setParameter(effect,"imageTexture",(ID3D11ShaderResourceView*)dens_fb.GetColorTex());
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_2d_cloud_detail_lighting");
@@ -288,6 +288,7 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	cloud2DConstants.tanHalfFov				=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	cloud2DConstants.nearZ					=frustum.nearZ/max_fade_distance_metres;
 	cloud2DConstants.farZ					=frustum.farZ/max_fade_distance_metres;
+	cloud2DConstants.depthToLinFadeDistParams = simul::math::Vector3( proj(3,2), max_fade_distance_metres, proj(2,2)*max_fade_distance_metres );
 	cloud2DConstants.exposure				=exposure;
 	if(skyInterface)
 	{
