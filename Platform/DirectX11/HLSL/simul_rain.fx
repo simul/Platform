@@ -88,8 +88,8 @@ particleVertexOutput VS_Particles(posOnly IN)
 	particlePos.z		-=offset;
 	particlePos			=Frac(particlePos,30.0);
 	float p				=flurryRate*phase;
-	particlePos			+=.125*flurry*randomTexture.SampleLevel(wrapSamplerState,vec2(2.0*p+1.7*IN.position.x,2.0*p+2.3*IN.position.y),0);
-	particlePos			+=flurry*randomTexture.SampleLevel(wrapSamplerState,vec2(p+IN.position.x,p+IN.position.y),0);
+	particlePos			+=.125*flurry*randomTexture.SampleLevel(wrapSamplerState,vec2(2.0*p+1.7*IN.position.x,2.0*p+2.3*IN.position.y),0).xyz;
+	particlePos			+=flurry*randomTexture.SampleLevel(wrapSamplerState,vec2(p+IN.position.x,p+IN.position.y),0).xyz;
 	OUT.position		=mul(worldViewProj,float4(particlePos.xyz,1.0));
 	OUT.view			=normalize(particlePos.xyz);
 	OUT.pointSize		=snowSize;
@@ -138,7 +138,7 @@ float4 PS_Particles(particleGeometryOutput IN): SV_TARGET
 	vec2 pos		=IN.texCoords*2.0-1.0;
 	float radius	=length(pos.xy);
 	float opacity	=saturate(1.0-radius)/.5;
-	return float4(IN.brightness*lightColour+result.rgb,opacity);
+	return float4(IN.brightness*lightColour.rgb+result.rgb,opacity);
 }
 
 posTexVertexOutput VS_FullScreen(idOnly IN)

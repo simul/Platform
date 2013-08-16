@@ -58,6 +58,14 @@ BlendState AddBlend
 	DestBlend = ONE;
 };
 
+BlendState AddBlendDontWriteAlpha
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = ONE;
+	DestBlend = ONE;
+	RenderTargetWriteMask[0]=7;
+};
+
 BlendState SubtractBlend
 {
 	BlendEnable[0] = TRUE;

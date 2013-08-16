@@ -41,6 +41,6 @@ uniform_buffer AtmosphericsPerViewConstants SIMUL_BUFFER_REGISTER(12)
 	uniform float shadowRange;
 	uniform int godraysSteps;
 	uniform float fill4;
-	uniform float godrays_distances[100];
+	uniform float godrays_distances[200];
 };
 #endif

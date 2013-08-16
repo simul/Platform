@@ -78,14 +78,14 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
 	float theta						=texCoords.y*2.0*3.1415926536;
 	float distance_off_centre		=pow(texCoords.x,2.0);
-	vec2 pos_xy						=distance_off_centre*vec2(cos(theta),sin(theta));
+	vec2 pos_xy						=2.0*texCoords.xy-1.0;//distance_off_centre*vec2(cos(theta),sin(theta));
 	vec2 illumination				=vec2(1.0,1.0);
 	float U							=-1.0;//(startZMetres-extentZMetres)/1000.0;
-	const int NUM_STEPS=12;
+	const int NUM_STEPS=16;
 	for(int i=0;i<NUM_STEPS;i++)
 	{
 		float u						=1.0-float(i)/float(NUM_STEPS);
-		//float z						=startZMetres+extentZMetres*(1.0-u);
+		//float z					=startZMetres+extentZMetres*(1.0-u);
 		vec3 cartesian				=vec3(pos_xy.xy,u);
 		vec3 wpos					=mul(shadowMatrix,vec4(cartesian,1.0)).xyz;
 		vec3 texc					=(wpos-cornerPos)*inverseScales;
@@ -94,7 +94,7 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 		vec4 density				=lerp(density1,density2,cloud_interp);
 		if(density.z>0)
 		{
-			illumination			=lerp(illumination,vec2(0,0),density1.z);
+			illumination			=lerp(illumination,vec2(0,0),density1.z);//density.xy
 			U						=lerp(U,u,density.z);
 		}
 		//Z=wpos.z;

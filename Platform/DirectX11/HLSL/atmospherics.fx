@@ -102,7 +102,7 @@ vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 // Slanted Cylinder whose axis is along lightDir,
 // radius is at the specified horizontal distance.
 // Distance c is:		c=|lightDir.z*R|/|lightDir * sine - view * lightDir.z|
-float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
+float4 PS_Godrays(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	float solid_depth	=depthTexture.Sample(clampSamplerState,depth_texc).x;
@@ -140,10 +140,9 @@ technique11 simul_godrays
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_4_0,PS_AtmosOverlayGodraysPass()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Godrays()));
     }
 }
-

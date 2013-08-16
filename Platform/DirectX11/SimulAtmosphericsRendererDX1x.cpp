@@ -26,6 +26,7 @@
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/Profiler.h"
 
 using namespace simul;
 using namespace dx11;
@@ -151,9 +152,9 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMA
 void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 	HRESULT hr=S_OK;
-
-	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::RenderAsOverlay");
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
+    ProfileBlock profileBlock(pContext,"Atmospherics:RenderAsOverlay");
+	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::RenderAsOverlay");
 	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
 	
 	lossTexture->SetResource(skyLossTexture_SRV);
@@ -200,6 +201,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 	if(!ShowGodrays)
 		return;
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
+    ProfileBlock profileBlock(pContext,"Atmospherics:RenderGodrays");
 	ID3D11ShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depth_texture;
 	lossTexture			->SetResource(skyLossTexture_SRV);
 	inscTexture			->SetResource(skyInscatterTexture_SRV);

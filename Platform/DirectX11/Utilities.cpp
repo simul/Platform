@@ -171,6 +171,12 @@ void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		uav_desc.Texture3D.MipSlice	= 0;
 		uav_desc.Texture3D.WSize	= d;
 		uav_desc.Texture3D.FirstWSlice=0;
+
+  /*  uav_desc.Format = DXGI_FORMAT_R32_FLOAT;
+    uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+    uav_desc.Buffer.FirstElement = 0;
+    uav_desc.Buffer.NumElements = w*l*d*4;*/
+
 		HRESULT hr;
 		SAFE_RELEASE(unorderedAccessView);
 		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));

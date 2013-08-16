@@ -76,6 +76,7 @@ vec3 applyFades2(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplie
     return insc.aaa;
 }
 
+//#define FORWARD_TRACE
 
 float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
@@ -98,7 +99,6 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	float depth			=dlookup.r;
 	float d				=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
 	float4 colour		=float4(0.0,0.0,0.0,1.0);
-	float Z				=0.f;
 	float2 fade_texc	=float2(0.0,0.5*(1.0-sine));
 
 	// Lookup in the illumination texture.
@@ -109,45 +109,65 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	for(int i=0;i<layerCount;i++)
 	//int i=40;
 	{
+		vec4 density=vec4(0,0,0,0);
+#ifdef FORWARD_TRACE
 		const LayerData layer=layers[i];
+#else
+		const LayerData layer=layers[layerCount-i];
+#endif
 		float dist=layer.layerDistance;
 		float z=saturate(dist/maxFadeDistanceMetres);
-		if(z<d)
+		if(z>d)
+			break;
 		//if(i==32)
+		
+		float3 pos=viewPos+dist*view;
+		pos.z-=layer.verticalShift;
+		float4 texCoords;
+		texCoords.xyz=(pos-cornerPos)*inverseScales;
+		texCoords.w=0.2+0.8*saturate(texCoords.z);
+		//if(texCoords.z>max_texc_z)
+		//	break;
+		if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
 		{
-			float3 pos=viewPos+dist*view;
-			pos.z-=layer.verticalShift;
-			float4 texCoords;
-			texCoords.xyz=(pos-cornerPos)*inverseScales;
-			texCoords.w=0.2+0.8*saturate(texCoords.z);
-			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
-			{
-				float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
-				float3 noiseval		=texCoords.w*noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
-				float4 density		=calcDensity(texCoords.xyz,layer.layerFade,noiseval);
-				if(density.z>0)
-				{
-					float4 c	=calcColour(density,cos0,texCoords.z);
-					fade_texc.x	=sqrt(z);
-					float sh	=saturate((fade_texc.x-nearFarTexc.x)/0.1);
-					// overcast effect:
-					//sh		*=saturate(illum_lookup.z+texCoords.z);
-					c.rgb		*=sh;
-					c.rgb		=applyFades(c.rgb,fade_texc,cos0,sh);
-					colour		*=(1.0-c.a);
-					colour.rgb	+=c.rgb*c.a;
-					Z			*=(1.0-c.a);
-					Z			+=z*c.a;
-				}
-			}
+			float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
+			float3 noiseval		=texCoords.w*noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
+			density				=calcDensity(texCoords.xyz,layer.layerFade,noiseval);
 		}
+		if(density.z>0)
+		{
+#ifdef FORWARD_TRACE
+			float4 c	=calcColour(density,cos0,texCoords.z);
+			fade_texc.x	=sqrt(z);
+			float sh	=saturate((fade_texc.x-nearFarTexc.x)/0.1);
+			// overcast effect:
+			//sh		*=saturate(illum_lookup.z+texCoords.z);
+			c.rgb		*=sh;
+			c.rgb		=applyFades(c.rgb,fade_texc,cos0,sh);
+			colour		*=1.0-c.a;
+			colour.rgb	+=c.rgb*c.a;
+#else
+			float4 c	=calcColour(density,cos0,texCoords.z);
+			fade_texc.x	=sqrt(z);
+			float sh	=saturate((fade_texc.x-nearFarTexc.x)/0.1);
+			// overcast effect:
+			//sh		*=saturate(illum_lookup.z+texCoords.z);
+			c.rgb		*=sh;
+			c.rgb		=applyFades(c.rgb,fade_texc,cos0,sh);
+			//colour		*=(1.0-c.a);
+			colour.rgb	+=c.rgb*c.a*(colour.a);
+			colour.a	*=(1.0-c.a);
+			if(colour.a<0.01)
+			{
+				colour.a=0.0;
+				break;
+			}
+#endif
+		}
+		
 	}
 	if(colour.a>=1.0)
 	   discard;
-	fade_texc.x=sqrt(Z);
-	//colour.rgb*=0;
-	//colour.a=1.0;
-	//colour.rgb=(1.0-colour.a)*applyFades(colour.rgb,fade_texc,cos0,earthshadowMultiplier);
     return float4(exposure*colour.rgb,1.0-colour.a);
 }
 
@@ -462,7 +482,7 @@ float4 PS_ShowShadow( vertexOutputCS IN):SV_TARGET
 {
 	vec2 tex_pos=2.0*IN.texCoords.xy-vec2(1.0,1.0);
 	vec2 radial_texc=vec2(sqrt(length(tex_pos.xy)),atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536));
-    float4 lookup=noiseTexture.Sample(wrapSamplerState,radial_texc);
+    float4 lookup=noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);//radial_texc);
 	return float4(lookup.rgb,1.0);
 }
 
