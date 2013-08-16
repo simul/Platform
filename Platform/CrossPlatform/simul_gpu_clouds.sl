@@ -8,7 +8,7 @@ uniform_buffer GpuCloudConstants R8
 	uniform uint3 threadOffset;
 	uniform float ss;
 	uniform vec2 extinctions;
-	uniform float s,ttt;
+	uniform float stepLength,ttt;
 	uniform int octaves;
 	uniform float time;
 	uniform float persistence;

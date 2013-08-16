@@ -127,10 +127,10 @@ void SimulWeatherRendererDX11::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"), defines);
-	directTechnique			=m_pTonemapEffect->GetTechniqueByName("simul_direct");
-	SkyBlendTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_sky_blend");
-	imageTexture			=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
-	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	directTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
+	SkyBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_blend");
+	imageTexture		=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
+	worldViewProj		=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	BaseWeatherRenderer::RecompileShaders();
 }
 
@@ -187,40 +187,6 @@ SimulWeatherRendererDX11::~SimulWeatherRendererDX11()
 	del(simulLightningRenderer,memoryInterface);
 }
 
-/*bool SimulWeatherRendererDX11::IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat)
-{
-	LPDIRECT3D9 d3d;
-	m_pd3dDevice->GetDirect3D(&d3d);
-    // Verify that the depth format exists
-    HRESULT hr=d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat,
-                                                       D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, DepthFormat);
-    if(FAILED(hr))
-		return (hr==S_OK);
-
-    // Verify that the backbuffer format is valid
-    hr=d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat, D3DUSAGE_RENDERTARGET,
-                                               D3DRTYPE_SURFACE, BackBufferFormat);
-    if(FAILED(hr))
-		return (hr==S_OK);
-
-    // Verify that the depth format is compatible
-    hr = d3d->CheckDepthStencilMatch(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat, BackBufferFormat,
-                                                    DepthFormat);
-
-    return (hr==S_OK);
-}
-
-static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
-{
-	D3DXMATRIX tmp1;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXVECTOR3 cam_pos;
-	cam_pos.x=tmp1._41;
-	cam_pos.y=tmp1._42;
-	cam_pos.z=tmp1._43;
-	return cam_pos;
-}
-*/
 void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename)
 {
 	static float exposure=1.f;
@@ -291,8 +257,6 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,float exposure,b
 {
 	BaseWeatherRenderer::RenderSkyAsOverlay(context,exposure,buffered,is_cubemap,depthTexture,viewport_id,viewportTextureRegionXYWH);
 	
-//	if(baseAtmosphericsRenderer&&!is_cubemap)
-//		baseAtmosphericsRenderer->RenderGodrays(context,depthTexture,exposure,viewportTextureRegionXYWH);
 	if(buffered&&baseFramebuffer)
 	{
 		bool blend=!is_cubemap;
@@ -304,9 +268,6 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,float exposure,b
 		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
 	}
-
-	if(baseAtmosphericsRenderer&&!is_cubemap)
-		baseAtmosphericsRenderer->RenderGodrays(context,depthTexture,exposure,viewportTextureRegionXYWH);
 }
 
 bool SimulWeatherRendererDX11::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)

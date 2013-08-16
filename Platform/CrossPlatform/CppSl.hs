@@ -60,9 +60,31 @@
 					}
 		}
 	};
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4201) // anonymous unions warning
+#endif
 	struct mat4
 	{
-		float m[16];
+		union
+		{
+			float m[16];
+			struct
+			{
+				float        _11, _12, _13, _14;
+				float        _21, _22, _23, _24;
+				float        _31, _32, _33, _34;
+				float        _41, _42, _43, _44;
+			};
+			struct
+			{
+				float        _m00, _m01, _m02, _m03;
+				float        _m10, _m11, _m12, _m13;
+				float        _m20, _m21, _m22, _m23;
+				float        _m30, _m31, _m32, _m33;
+			};
+			float M[4][4];
+		};
 		operator const float *()
 		{
 			return m;
@@ -84,6 +106,9 @@
 					}
 		}
 	};
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 	struct vec2
 	{

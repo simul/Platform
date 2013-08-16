@@ -785,7 +785,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	depthTexture->SetResource(depthTexture_SRV);
 	//simul::dx11::setParameter(m_pCloudEffect,"depthTexture",depthTexture_SRV);
 	simul::dx11::setParameter(m_pCloudEffect,"illuminationTexture",illuminationTexture_SRV);
-
+	
 	if(GetCloudInterface()->GetWrap())
 		simul::dx11::setSamplerState(m_pCloudEffect,"cloudSamplerState",m_pWrapSamplerState);
 	else
