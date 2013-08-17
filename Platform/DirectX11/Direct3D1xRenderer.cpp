@@ -255,6 +255,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		{
 			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 		}
+simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(pd3dImmediateContext,ScreenWidth,ScreenHeight);

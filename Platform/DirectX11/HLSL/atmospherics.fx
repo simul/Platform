@@ -5,6 +5,7 @@
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 
 Texture2D depthTexture;
+Texture2D cloudDepthTexture;
 Texture2D imageTexture;
 Texture2D lossTexture;
 Texture2D inscTexture;
@@ -106,8 +107,10 @@ float4 PS_Godrays(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	float solid_depth	=depthTexture.Sample(clampSamplerState,depth_texc).x;
+	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
+	float depth			=max(solid_depth,cloud_depth);
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
-	float solid_dist	=depthToDistance(solid_depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
+	float solid_dist	=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
 	return Godrays(inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
 }
 

@@ -19,6 +19,13 @@ DepthStencilState TestDepth
 #endif
 };
 
+DepthStencilState WriteDepth
+{
+	DepthEnable = TRUE;
+	DepthWriteMask = ALL;
+	DepthFunc = ALWAYS;
+};
+
 DepthStencilState EnableDepth
 {
 	DepthEnable = TRUE;

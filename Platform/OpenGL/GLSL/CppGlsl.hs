@@ -7,10 +7,6 @@
 #define SIMUL_SAMPLER_REGISTER(buff_num)
 #define SIMUL_BUFFER_REGISTER(buff_num)
 
-#define R1
-#define R2
-#define R3
-#define R4
 #define R5
 #define R6
 #define R7

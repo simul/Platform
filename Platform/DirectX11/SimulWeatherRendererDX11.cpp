@@ -68,15 +68,16 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulPrecipitationRendererDX1x();
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
 	baseFramebuffer=&framebuffer;
+	framebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 	ConnectInterfaces();
 }
 
 void SimulWeatherRendererDX11::SetScreenSize(int w,int h)
 {
-	ScreenWidth=w;
-	ScreenHeight=h;
-	BufferWidth=w/Downscale;
-	BufferHeight=h/Downscale;
+	ScreenWidth		=w;
+	ScreenHeight	=h;
+	BufferWidth		=w/Downscale;
+	BufferHeight	=h/Downscale;
 	framebuffer.SetWidthAndHeight(BufferWidth,BufferHeight);
 }
 
@@ -128,6 +129,7 @@ void SimulWeatherRendererDX11::RecompileShaders()
 		defines["REVERSE_DEPTH"]="1";
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"), defines);
 	directTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
+	showDepthTechnique	=m_pTonemapEffect->GetTechniqueByName("show_depth");
 	SkyBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_blend");
 	imageTexture		=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
 	worldViewProj		=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
@@ -291,6 +293,31 @@ bool SimulWeatherRendererDX11::RenderSky(void *context,float exposure,bool buffe
 	}
 	return true;
 }
+#include "Simul/Camera/Camera.h"
+void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,int height)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+
+	//
+	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
+
+	HRESULT hr=S_OK;
+	static int u=4;
+	int w=(width-8)/u;
+	if(w>height/3)
+		w=height/3;
+	if(!environment->skyKeyframer)
+		return;
+	float max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
+	UtilityRenderer::SetScreenSize(width,height);
+	simul::dx11::setParameter(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
+	simul::dx11::setParameter(m_pTonemapEffect,"tanHalfFov"		,frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	simul::dx11::setParameter(m_pTonemapEffect,"nearZ"			,frustum.nearZ/max_fade_distance_metres);
+	simul::dx11::setParameter(m_pTonemapEffect,"farZ"			,frustum.farZ/max_fade_distance_metres);
+	int x=8;
+	int y=height-w;
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));
+}
 
 void SimulWeatherRendererDX11::RenderLateCloudLayer(void *context,float exposure,bool,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
@@ -351,4 +378,9 @@ Simul2DCloudRendererDX11 *SimulWeatherRendererDX11::Get2DCloudRenderer()
 //! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 void SimulWeatherRendererDX11::SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb)
 {
+}
+
+void *SimulWeatherRendererDX11::GetCloudDepthTexture()
+{
+	return framebuffer.GetDepthTex();
 }

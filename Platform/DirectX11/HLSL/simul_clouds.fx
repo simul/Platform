@@ -78,7 +78,13 @@ vec3 applyFades2(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplie
 
 #define FORWARD_TRACE
 
-float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
+struct RaytracePixelOutput
+{
+	float4 colour : SV_TARGET;
+	float depth	: SV_DEPTH;
+};
+
+RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 {
 	float2 texCoords	=IN.texCoords.xy;
 	texCoords.y			=1.0-texCoords.y;
@@ -105,6 +111,8 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
 	vec2 nearFarTexc	=illum_lookup.xy;
+
+	float mean_z		=1.0;
 	// This provides the range of texcoords that is lit.
 	for(int i=0;i<layerCount;i++)
 	//int i=40;
@@ -117,10 +125,6 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 #endif
 		float dist=layer.layerDistance;
 		float z=saturate(dist/maxFadeDistanceMetres);
-		if(z>d)
-			break;
-		//if(i==32)
-		
 		float3 pos=viewPos+dist*view;
 		pos.z-=layer.verticalShift;
 		float4 texCoords;
@@ -128,7 +132,7 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 		texCoords.w=0.2+0.8*saturate(texCoords.z);
 		//if(texCoords.z>max_texc_z)
 		//	break;
-		if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
+		if(z<=d&&texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
 		{
 			float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
 			float3 noiseval		=texCoords.w*noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
@@ -163,12 +167,17 @@ float4 PS_Raytrace(RaytraceVertexOutput IN) : SV_TARGET
 				break;
 			}
 #endif
+			// depth here:
+			mean_z=lerp(mean_z,z,0.8*density.z);
 		}
 		
 	}
 	if(colour.a>=1.0)
 	   discard;
-    return float4(exposure*colour.rgb,1.0-colour.a);
+	RaytracePixelOutput res;
+    res.colour=float4(exposure*colour.rgb,1.0-colour.a);
+	res.depth=distanceToDepth(mean_z,pos.xy,nearZ,farZ,tanHalfFov);
+	return res;
 }
 
 struct vertexInputCS
@@ -561,7 +570,7 @@ technique11 simul_raytrace
 {
     pass p0 
     {
-		SetDepthStencilState(DisableDepth,0);
+		SetDepthStencilState(WriteDepth,0);
         SetRasterizerState( RenderNoCull );
 		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Raytrace()));

@@ -382,7 +382,17 @@ void Framebuffer::Deactivate(void *context)
 	SAFE_RELEASE(m_pOldDepthSurface)
 	if(num_v>0)
 		m_pImmediateContext->RSSetViewports(num_v,m_OldViewports);
-	m_pImmediateContext=NULL;
+}
+
+void Framebuffer::DeactivateDepth(void *context)
+{
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	if(!m_pHDRRenderTarget)
+	{
+		Deactivate(context);
+		return;
+	}
+	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pOldDepthSurface);
 }
 
 void Framebuffer::Clear(void *context,float r,float g,float b,float a,float depth,int mask)

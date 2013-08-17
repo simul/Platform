@@ -43,6 +43,7 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x(simul::base::Memory
 	,HazeEccentricity(NULL)
 	,fadeInterp(NULL)
 	,depthTexture(NULL)
+	,cloudDepthTexture(NULL)
 	,lossTexture(NULL)
 	,inscTexture(NULL)
 	,skylTexture(NULL)
@@ -105,6 +106,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	HazeEccentricity		=effect->GetVariableByName("HazeEccentricity")->AsScalar();
 	fadeInterp				=effect->GetVariableByName("fadeInterp")->AsScalar();
 	depthTexture			=effect->GetVariableByName("depthTexture")->AsShaderResource();
+	cloudDepthTexture		=effect->GetVariableByName("cloudDepthTexture")->AsShaderResource();
 	lossTexture				=effect->GetVariableByName("lossTexture")->AsShaderResource();
 	inscTexture				=effect->GetVariableByName("inscTexture")->AsShaderResource();
 	skylTexture				=effect->GetVariableByName("skylTexture")->AsShaderResource();
@@ -196,18 +198,20 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	PIXEndNamedEvent();
 }
 
-void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
+void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloud_depth_texture)
 {
 	if(!ShowGodrays)
 		return;
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
     ProfileBlock profileBlock(pContext,"Atmospherics:RenderGodrays");
 	ID3D11ShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depth_texture;
+	ID3D11ShaderResourceView* cloudDepthTexture_SRV=(ID3D1xShaderResourceView*)cloud_depth_texture;
 	lossTexture			->SetResource(skyLossTexture_SRV);
 	inscTexture			->SetResource(skyInscatterTexture_SRV);
 	skylTexture			->SetResource(skylightTexture_SRV);
 	illuminationTexture	->SetResource(illuminationTexture_SRV);
 	depthTexture		->SetResource(depthTexture_SRV);
+	cloudDepthTexture	->SetResource(cloudDepthTexture_SRV);
 	overcTexture		->SetResource(overcInscTexture_SRV);
 	cloudShadowTexture	->SetResource((ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	
@@ -231,6 +235,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 	skylTexture			->SetResource(NULL);
 	illuminationTexture	->SetResource(NULL);
 	depthTexture		->SetResource(NULL);
+	cloudDepthTexture	->SetResource(NULL);
 	overcTexture		->SetResource(NULL);
 	cloudShadowTexture	->SetResource(NULL);
 }

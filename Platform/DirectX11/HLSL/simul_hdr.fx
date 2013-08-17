@@ -1,4 +1,5 @@
 #include "CppHlsl.hlsl"
+#include "../../CrossPlatform/depth.sl"
 Texture2D imageTexture;
 Texture2D depthTexture;
 Texture2D<uint> glowTexture;
@@ -16,6 +17,9 @@ uniform_buffer HdrConstants R9
 	uniform float exposure=1.f;
 	uniform float gamma=1.f/2.2f;
 	uniform vec2 offset;
+	uniform vec4 rect;
+	uniform vec2 tanHalfFov;
+	uniform float nearZ,farZ;
 }
 
 struct a2v
@@ -60,6 +64,31 @@ v2f MainVS(idOnly IN)
 	OUT.texCoords = IN.texcoord;
 #endif
     return OUT;
+}
+
+v2f QuadVS(idOnly IN)
+{
+    v2f OUT;
+	vec2 poss[4]=
+	{
+		{ 1.0, 0.0},
+		{ 1.0, 1.0},
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
+	OUT.hPosition.z	=0.0; 
+    OUT.texCoords	=pos;
+	OUT.texCoords.y	=1.0-OUT.texCoords.y;
+    return OUT;
+}
+
+vec4 ShowDepthPS(v2f IN) : SV_TARGET
+{
+	vec4 depth		=depthTexture.Sample(samplerState,IN.texCoords);
+	float dist		=10.0*depthToDistance(depth.x,2.0*(IN.texCoords-0.5),nearZ,farZ,tanHalfFov);
+    return vec4(dist,dist,dist,1.0);
 }
 
 float4 convertInt(float2 texCoord)
@@ -226,4 +255,17 @@ technique11 simul_glow
     }
 }
 
+
+technique11 show_depth
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,QuadVS()));
+		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS()));
+    }
+}
 

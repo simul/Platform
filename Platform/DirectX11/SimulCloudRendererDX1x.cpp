@@ -1092,8 +1092,8 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 		return;
 	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[texture_cycle%3].texture!=NULL)
 		return;
-	cloudShadow.SetGenerateMips(false/*true*/);
-	cloudShadow.SetWidthAndHeight(64,64);
+	cloudShadow.SetGenerateMips(true);
+	cloudShadow.SetWidthAndHeight(256,256);
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;

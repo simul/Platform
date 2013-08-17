@@ -58,7 +58,7 @@ namespace simul
 			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 			//! Render the Atmospherics.
 			void RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
-			void RenderGodrays(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
+			void RenderGodrays(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloudDepthTexture);
 		protected:
 			HRESULT Destroy();
 			ID3D1xDevice*								m_pd3dDevice;
@@ -77,6 +77,7 @@ namespace simul
 			ID3D1xEffectScalarVariable*					HazeEccentricity;
 			ID3D1xEffectScalarVariable*					fadeInterp;
 			ID3D1xEffectShaderResourceVariable*			depthTexture;
+			ID3D1xEffectShaderResourceVariable*			cloudDepthTexture;
 			ID3D1xEffectShaderResourceVariable*			lossTexture;
 			ID3D1xEffectShaderResourceVariable*			inscTexture;
 			ID3D1xEffectShaderResourceVariable*			skylTexture;
