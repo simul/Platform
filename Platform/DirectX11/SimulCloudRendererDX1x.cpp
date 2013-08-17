@@ -674,6 +674,7 @@ static float saturate(float c)
 
 void SimulCloudRendererDX1x::RenderCombinedCloudTexture(void *context)
 {
+#if 0
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
     ProfileBlock profileBlock(pContext,"RenderCombinedCloudTexture");
 
@@ -688,7 +689,7 @@ void SimulCloudRendererDX1x::RenderCombinedCloudTexture(void *context)
     pContext->CSSetShaderResources(1,1,&cloud_textures[(texture_cycle+1)%3].shaderResourceView );
 	pContext->CSSetUnorderedAccessViews(0, 1,&cloud_texture.unorderedAccessView,  NULL );
 
-	//pContext->Dispatch(cloud_tex_width_x/16,cloud_tex_length_y/16,cloud_tex_depth_z/1);
+	pContext->Dispatch(cloud_tex_width_x/16,cloud_tex_length_y/16,cloud_tex_depth_z/1);
 
     pContext->CSSetShader( NULL, NULL, 0 );
 	ID3D11UnorderedAccessView *u[]={NULL,NULL};
@@ -697,6 +698,7 @@ void SimulCloudRendererDX1x::RenderCombinedCloudTexture(void *context)
 	pContext->CSSetShaderResources( 0, 2, n);
 	gpu_combine_time*=0.99f;
 	gpu_combine_time+=0.01f*profileBlock.GetTime();
+#endif
 }
 
 // The cloud shadow texture:
