@@ -35,6 +35,7 @@ uniform_buffer CloudPerViewConstants R13
 	uniform float extentZMetres;
 	uniform float startZMetres;
 	uniform float shadowRange;
+	uniform int shadowTextureSize;
 };
 uniform_buffer CloudConstants R9
 {
@@ -78,11 +79,13 @@ uniform_buffer CloudConstants R9
 //! information on how to project it.
 uniform_buffer CloudShadowStruct 
 {
-	void *texture;	// texture, or SRV for DX11
+	void *texture;			// texture, or SRV for DX11
+	void *nearFarTexture;	// texture, or SRV for DX11, represents near and far range as proportion of shadowRange
 	mat4 shadowMatrix;
 	float extentZMetres;
 	float startZMetres;
 	float shadowRange;
+	int godraysSteps;
 };
 #endif
 #endif

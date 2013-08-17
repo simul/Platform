@@ -168,15 +168,15 @@ RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 			}
 #endif
 			// depth here:
-			mean_z=lerp(mean_z,z,0.8*density.z);
+			mean_z=lerp(mean_z,z,0.5*density.z);
 		}
 		
 	}
 	if(colour.a>=1.0)
 	   discard;
 	RaytracePixelOutput res;
-    res.colour=float4(exposure*colour.rgb,1.0-colour.a);
-	res.depth=distanceToDepth(mean_z,pos.xy,nearZ,farZ,tanHalfFov);
+    res.colour		=float4(exposure*colour.rgb,1.0-colour.a);
+	res.depth		=distanceToDepth(mean_z,pos.xy,nearZ,farZ,tanHalfFov);
 	return res;
 }
 
@@ -198,6 +198,11 @@ struct vertexOutputCS
 vec4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
 {
 	return CloudShadow(cloudDensity1,cloudDensity2,IN.texCoords,shadowMatrix,cornerPos,inverseScales);
+}
+
+vec4 PS_ShadowNearFar( vertexOutputCS IN):SV_TARGET
+{
+	return CloudShadowNearFar(cloudShadowTexture,shadowTextureSize,IN.texCoords);
 }
 
 float4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
@@ -490,13 +495,20 @@ float4 PS_ShowNoise( vertexOutputCS IN):SV_TARGET
 float4 PS_ShowShadow( vertexOutputCS IN):SV_TARGET
 {
 	vec2 tex_pos=2.0*IN.texCoords.xy-vec2(1.0,1.0);
+	float dist=length(tex_pos.xy);
 	vec2 radial_texc=vec2(sqrt(length(tex_pos.xy)),atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536));
-
 #ifdef RADIAL_CLOUD_SHADOW
-    float4 lookup=noiseTexture.Sample(clampWrapSamplerState,radial_texc);
+    float4 lookup=cloudShadowTexture.Sample(clampWrapSamplerState,radial_texc);
 #else
-    float4 lookup=noiseTexture.Sample(clampWrapSamplerState,IN.texCoords.xy);//radial_texc);
+    float4 lookup=cloudShadowTexture.SampleLevel(clampWrapSamplerState,IN.texCoords.xy,3);//radial_texc);
 #endif
+    vec4 nearFarShadowLight=nearFarTexture.Sample(wrapSamplerState,vec2(radial_texc.y,0.5));
+	if(dist>=nearFarShadowLight.x&&dist<=nearFarShadowLight.y)
+	{
+		lookup*=0.5;
+		if(dist>=nearFarShadowLight.z&&dist<=nearFarShadowLight.w)
+			lookup+=0.5;
+	}
 	return float4(lookup.rgb,1.0);
 }
 
@@ -610,6 +622,19 @@ technique11 cloud_shadow
 		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_CloudShadow()));
+    }
+}
+
+technique11 shadow_near_far
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShadowNearFar()));
     }
 }
 

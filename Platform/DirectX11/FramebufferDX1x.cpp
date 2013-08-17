@@ -170,7 +170,7 @@ bool Framebuffer::CreateBuffers()
 		Width,
 		Height,
 		1,
-		GenerateMips?4:1,
+		GenerateMips?0:1,
 		target_format,
 		{1,0},
 		D3D1x_USAGE_DEFAULT,
@@ -376,12 +376,14 @@ void Framebuffer::Activate(void *context)
 
 void Framebuffer::Deactivate(void *context)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
 	if(num_v>0)
-		m_pImmediateContext->RSSetViewports(num_v,m_OldViewports);
+		pContext->RSSetViewports(num_v,m_OldViewports);
+	if(GenerateMips)
+		pContext->GenerateMips(buffer_texture_SRV);
 }
 
 void Framebuffer::DeactivateDepth(void *context)

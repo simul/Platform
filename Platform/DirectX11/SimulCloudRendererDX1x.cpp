@@ -240,8 +240,8 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 	ClearIterators();
 	cloudConstants.RestoreDeviceObjects(m_pd3dDevice);
 
-	cloudShadow.SetGenerateMips(false/*true*/);
 	cloudShadow.RestoreDeviceObjects(m_pd3dDevice);
+	shadowNearFar.RestoreDeviceObjects(m_pd3dDevice);
 
 	SAFE_RELEASE(m_pWrapSamplerState);
 	SAFE_RELEASE(m_pClampSamplerState);
@@ -335,6 +335,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	Unmap();
 	cloudShadow.InvalidateDeviceObjects();
+	shadowNearFar.InvalidateDeviceObjects();
 	//if(illumination_texture)
 	//	Unmap3D(mapped_context,illumination_texture);
 	SAFE_RELEASE(m_pWrapSamplerState);
@@ -711,7 +712,6 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	// per view:
 	CloudPerViewConstants cloudPerViewConstants;
 	SetCloudShadowPerViewConstants(cloudPerViewConstants);
-	//cloudPerViewConstants.shadowMatrix.transpose();
 	UPDATE_CONSTANT_BUFFER(pContext,cloudPerViewConstantBuffer,CloudPerViewConstants,cloudPerViewConstants);
 	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=m_pCloudEffect->GetConstantBufferByName("CloudPerViewConstants");
 	if(cbCloudPerViewConstants)
@@ -723,7 +723,13 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	cloudShadow.Activate(pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	cloudShadow.Deactivate(pContext);
-//	pContext->GenerateMips((ID3D11ShaderResourceView*)cloudShadow.GetColorTex());
+	
+	tech	=m_pCloudEffect->GetTechniqueByName("shadow_near_far");
+	simul::dx11::setParameter(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadow.GetColorTex());
+	ApplyPass(pContext,tech->GetPassByIndex(0));
+	shadowNearFar.Activate(pContext);
+		simul::dx11::UtilityRenderer::DrawQuad(pContext);
+	shadowNearFar.Deactivate(pContext);
 }
 
 void SimulCloudRendererDX1x::PreRenderUpdate(void *context)
@@ -931,7 +937,8 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	UtilityRenderer::DrawQuad2(pContext,2*(w+1)+4,h+8,w,w,m_pCloudEffect,m_hTechniqueCrossSectionXY);*/
 	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",noiseTextureResource);
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
-	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",(ID3D1xShaderResourceView*)cloudShadow.GetColorTex());
+	simul::dx11::setParameter(m_pCloudEffect,"cloudShadowTexture",(ID3D1xShaderResourceView*)cloudShadow.GetColorTex());
+	simul::dx11::setParameter(m_pCloudEffect,"nearFarTexture",(ID3D1xShaderResourceView*)shadowNearFar.GetColorTex());
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
 }
 
@@ -1062,6 +1069,7 @@ CloudShadowStruct SimulCloudRendererDX1x::GetCloudShadowTexture()
 {
 	CloudShadowStruct s=BaseCloudRenderer::GetCloudShadowTexture();
 	s.texture=cloudShadow.GetColorTex();
+	s.nearFarTexture=shadowNearFar.GetColorTex();
 	return s;
 }
 
@@ -1088,12 +1096,13 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	{
 		cloud_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,width_x,length_y,depth_z,cloud_tex_format,uav);
 	}
+	cloudShadow.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize(),cloudKeyframer->GetShadowTextureSize());
+	shadowNearFar.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize(),1);
 	if(!width_x||!length_y||!depth_z)
 		return;
 	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[texture_cycle%3].texture!=NULL)
 		return;
-	cloudShadow.SetGenerateMips(true);
-	cloudShadow.SetWidthAndHeight(256,256);
+	cloudShadow.SetGenerateMips(false);
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;

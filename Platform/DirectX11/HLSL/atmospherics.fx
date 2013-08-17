@@ -13,6 +13,7 @@ Texture2D overcTexture;
 Texture2D skylTexture;
 Texture2D illuminationTexture;
 Texture2D cloudShadowTexture;
+Texture2D cloudNearFarTexture;
 
 SamplerState samplerState: register(s1)
 {
@@ -111,7 +112,7 @@ float4 PS_Godrays(atmosVertexOutput IN) : SV_TARGET
 	float depth			=max(solid_depth,cloud_depth);
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToDistance(depth,IN.pos.xy,nearZ,farZ,tanHalfFov);
-	return Godrays(inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
+	return Godrays(cloudShadowTexture,cloudNearFarTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
 }
 
 technique11 simul_atmospherics_overlay
