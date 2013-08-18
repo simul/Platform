@@ -1,5 +1,6 @@
 #include "CppHLSL.hlsl"
 #include "states.hlsl"
+Texture2D nearFarTexture	: register(t3);
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 #include "../../CrossPlatform/depth.sl"
@@ -138,12 +139,12 @@ RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 		{
 			float2 noise_texc	=noise_texc_0*layer.noiseScale+layer.noiseOffset;
 			float3 noiseval		=texCoords.w*noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,0).xyz;
-			density				=calcDensity(texCoords.xyz,layer.layerFade,noiseval);
+			density				=calcDensity(texCoords.xyz,layer.layerFade,noiseval,fractalScale,cloud_interp);
 		}
 		if(density.z>0)
 		{
 #ifdef FORWARD_TRACE
-			float4 c	=calcColour(density,cos0,texCoords.z);
+			float4 c	=calcColour(density,cos0,texCoords.z,lightResponse,ambientColour);
 			fade_texc.x	=sqrt(z);
 			float sh	=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 			// overcast effect:
@@ -153,7 +154,7 @@ RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 			colour		*=1.0-c.a;
 			colour.rgb	+=c.rgb*c.a;
 #else
-			float4 c	=calcColour(density,cos0,texCoords.z);
+			float4 c	=calcColour(density,cos0,texCoords.z,lightResponse,ambientColour);
 			fade_texc.x	=sqrt(z);
 			float sh	=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 			// overcast effect:
@@ -241,10 +242,10 @@ float4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 			float3 texCoords=(pos-cornerPos)*inverseScales;
 			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
 			{
-				float4 density		=calcDensity(texCoords,layer.layerFade,vec3(0,0,0));
+				float4 density		=calcDensity(texCoords,layer.layerFade,vec3(0,0,0),fractalScale,cloud_interp);
 				if(density.z>0)
 				{
-					float4 c=calcColour(density,cos0,texCoords.z);
+					float4 c=calcColour(density,cos0,texCoords.z,lightResponse,ambientColour);
 					fade_texc.x=sqrt(z);
 					colour*=(1.0-c.a);
 					colour.rgb+=c.rgb*c.a;
@@ -305,10 +306,10 @@ float4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 					noise_texc*=2.0;
 					mul*=noise3DPersistence;
 				}
-				float4 density		=calcDensity(texCoords,1.0,noiseval);
+				float4 density		=calcDensity(texCoords,1.0,noiseval,fractalScale,cloud_interp);
 				if(density.z>0)
 				{
-					float4 c=calcColour(density,cos0,texCoords.z);
+					float4 c=calcColour(density,cos0,texCoords.z,lightResponse,ambientColour);
 					float2 fade_texc=float2(sqrt(z),0.5*(1.0-sine));
 					c.rgb=applyFades(c.rgb,fade_texc,cos0,earthshadowMultiplier);
 					colour*=(1.0-c.a);
@@ -385,7 +386,7 @@ float4 PS_Clouds( toPS IN): SV_TARGET
 	noiseval*=IN.texCoords.w;
 	float3 view=normalize(IN.view);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float4 final=calcUnfadedColour(IN.texCoords.xyz,IN.layerFade,noiseval,cos0);
+	float4 final=calcUnfadedColour(IN.texCoords.xyz,IN.layerFade,noiseval,fractalScale,cloud_interp,lightResponse,ambientColour,cos0);
 	final.rgb=applyFades(final.rgb,IN.fade_texc,cos0,earthshadowMultiplier);
     return final;
 }
@@ -404,7 +405,7 @@ float4 PS_Clouds3DNoise( toPS IN): SV_TARGET
 	noiseval*=IN.texCoords.w;
 	float3 view=normalize(IN.view);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float4 final=calcUnfadedColour(IN.texCoords.xyz,IN.layerFade,noiseval,cos0);
+	float4 final=calcUnfadedColour(IN.texCoords.xyz,IN.layerFade,noiseval,fractalScale,cloud_interp,lightResponse,ambientColour,cos0);
 	final.rgb=applyFades(final.rgb,IN.fade_texc,cos0,earthshadowMultiplier);
     return final;
 }
@@ -418,7 +419,7 @@ float4 PS_WithLightning(toPS IN): SV_TARGET
 	noiseval*=IN.texCoords.w;
 	float3 view=normalize(IN.view);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	float4 final=calcUnfadedColour(IN.texCoords.xyz,IN.layerFade,noiseval,cos0);
+	float4 final=calcUnfadedColour(IN.texCoords.xyz,IN.layerFade,noiseval,fractalScale,cloud_interp,lightResponse,ambientColour,cos0);
 
 	float4 lightning=lightningIlluminationTexture.Sample(lightningSamplerState,IN.texCoordLightning.xyz);
 
@@ -496,24 +497,7 @@ float4 PS_ShowNoise( vertexOutputCS IN):SV_TARGET
 
 float4 PS_ShowShadow( vertexOutputCS IN):SV_TARGET
 {
-	vec2 tex_pos=2.0*IN.texCoords.xy-vec2(1.0,1.0);
-	float dist=length(tex_pos.xy);
-	vec2 radial_texc=vec2(sqrt(length(tex_pos.xy)),atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536));
-#ifdef RADIAL_CLOUD_SHADOW
-    float4 lookup=cloudShadowTexture.Sample(clampWrapSamplerState,radial_texc);
-#else
-    float4 lookup=cloudShadowTexture.SampleLevel(clampWrapSamplerState,IN.texCoords.xy,3);//radial_texc);
-#endif
-    vec4 nearFarShadowLight=nearFarTexture.Sample(wrapSamplerState,vec2(radial_texc.y,0.5));
-	if(dist>=nearFarShadowLight.x&&dist<=nearFarShadowLight.y)
-	{
-		lookup*=0.5;
-		if(dist>=nearFarShadowLight.z&&dist<=nearFarShadowLight.w)
-			lookup+=0.5;
-	}
-	//if(abs(radial_texc.y)<0.003)
-		lookup.r+=abs(radial_texc.y);
-	return float4(lookup.rgb,1.0);
+	return ShowCloudShadow(cloudShadowTexture,nearFarTexture,IN.texCoords);
 }
 
 SamplerState crossSectionSamplerState

@@ -20,8 +20,8 @@ vec4 Godrays(Texture2D cloudShadowTexture,Texture2D cloudNearFarTexture,Texture2
 	//view_s				/=length(view_s.xy);
 	float sine			=view.z;
 	float cos0			=dot(view,lightDir);
-	// Now the step value is the ratio to 1 of a unit step in the shadow plane.
-	float step			=1.0;///length(view_s.xy);
+	// Now the stepsize value is the ratio to 1 of a unit step in the shadow plane.
+	float stepsize		=1.0;///length(view_s.xy);
 	vec4 total_insc		=vec4(0,0,0,0);
 	float dist_max		=shadowRange/maxFadeDistance;
 	float fade_dist_1	=0.0;
@@ -42,8 +42,8 @@ vec4 Godrays(Texture2D cloudShadowTexture,Texture2D cloudNearFarTexture,Texture2
 		float r0			=r1;
 		// we first get the radius on the shadow plane, then convert 
 		r1					=godrays_distances[i].x;
-		float fade_dist_0	=r0*step*shadowRange/maxFadeDistance;
-		fade_dist_1			=r1*step*shadowRange/maxFadeDistance;
+		float fade_dist_0	=r0*stepsize*shadowRange/maxFadeDistance;
+		fade_dist_1			=r1*stepsize*shadowRange/maxFadeDistance;
 		float fade_intro	=saturate((solid_dist-fade_dist_0)/(fade_dist_1-fade_dist_0));
 		//if(r0<=shadowNearFar.w&&r1>=shadowNearFar.z)
 		{
@@ -51,7 +51,7 @@ vec4 Godrays(Texture2D cloudShadowTexture,Texture2D cloudNearFarTexture,Texture2
 			if(fade_dist_0<solid_dist)
 			{
 				//fade_dist_1		=min(fade_dist_1,solid_dist);
-				float fade_dist		=r*step*shadowRange/maxFadeDistance;
+				float fade_dist		=r*stepsize*shadowRange/maxFadeDistance;
 				float eff			=exp(-.1*r1/dist_max);
 				fade_texc.x			=sqrt(fade_dist);
 				float true_dist		=fade_dist*maxFadeDistance;

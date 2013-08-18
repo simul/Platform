@@ -19,6 +19,7 @@
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Base/StringToWString.h"
+#include "Simul/Camera/Camera.h"
 #include "SimulSkyRendererDX1x.h"
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "SimulPrecipitationRendererDX1x.h"
@@ -29,6 +30,7 @@
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
+
 using namespace simul;
 using namespace dx11;
 
@@ -293,11 +295,10 @@ bool SimulWeatherRendererDX11::RenderSky(void *context,float exposure,bool buffe
 	}
 	return true;
 }
-#include "Simul/Camera/Camera.h"
+
 void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,int height)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
-
 	//
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 

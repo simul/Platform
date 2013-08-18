@@ -163,7 +163,7 @@ namespace simul
 			ID3D1xShaderResourceView*				skylightTexture_SRV;
 			ID3D1xShaderResourceView*				illuminationTexture_SRV;
 			
-			simul::dx11::Framebuffer				cloudShadow;
+			simul::dx11::Framebuffer				shadow_fb;
 			simul::dx11::Framebuffer				shadowNearFar;
 
 			simul::dx11::TextureStruct				cloud_texture;

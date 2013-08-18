@@ -203,7 +203,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	ApplyPass(pContext,twoPassOverlayTechnique->GetPassByIndex(1));
 }
 
-void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloud_depth_texture)
+void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloud_depth_texture)
 {
 	if(!ShowGodrays)
 		return;
@@ -226,7 +226,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 	or.DefineFromYZ(north,toSun);
 	or.SetPosition((const float*)cam_pos);
 	D3DXMATRIX p1=proj;
-	SetAtmosphericsConstants(atmosphericsUniforms,exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
+	SetAtmosphericsConstants(atmosphericsUniforms,strength*exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,relativeViewportTextureRegionXYWH);
 	SetGodraysConstants(atmosphericsPerViewConstants,view);
