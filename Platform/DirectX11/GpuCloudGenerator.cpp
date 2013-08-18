@@ -216,7 +216,7 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 //	Ensure3DTextureSizeAndFormat(m_pd3dDevice,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
 std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 	simul::dx11::setParameter(effect,"targetTexture",density_texture.unorderedAccessView);
-	HRESULT hr;
+
 	// divide the grid into 8x8x8 blocks:
 	static const int BLOCKWIDTH=8;
 	static const int BLOCKSIZE=BLOCKWIDTH*BLOCKWIDTH*BLOCKWIDTH;
@@ -344,7 +344,6 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index,unsigned char 
 												,int texels
 												,bool wrap_light_tex)
 {
-	return;
 simul::base::Timer timer;
 timer.StartTime();
 std::cout<<"Gpu clouds: GPUTransferDataToTexture\n";
@@ -401,11 +400,11 @@ std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 	if(x1>x0)
 		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,subgrid.z);
 	simul::dx11::setParameter(effect,"targetTexture",(ID3D11UnorderedAccessView*)NULL);
-	setParameter(effect,"densityTexture"	,(ID3D11UnorderedAccessView*)NULL);
-	setParameter(effect,"ambientTexture1"	,(ID3D11UnorderedAccessView*)NULL);
-	setParameter(effect,"ambientTexture2"	,(ID3D11UnorderedAccessView*)NULL);
-	setParameter(effect,"lightTexture1"		,(ID3D11UnorderedAccessView*)NULL);
-	setParameter(effect,"lightTexture2"		,(ID3D11UnorderedAccessView*)NULL);
+	setParameter(effect,"densityTexture"	,(ID3D11ShaderResourceView*)NULL);
+	setParameter(effect,"ambientTexture1"	,(ID3D11ShaderResourceView*)NULL);
+	setParameter(effect,"ambientTexture2"	,(ID3D11ShaderResourceView*)NULL);
+	setParameter(effect,"lightTexture1"		,(ID3D11ShaderResourceView*)NULL);
+	setParameter(effect,"lightTexture2"		,(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(m_pImmediateContext,transformComputeTechnique->GetPassByIndex(0));
 #endif
 }

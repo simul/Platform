@@ -511,6 +511,8 @@ float4 PS_ShowShadow( vertexOutputCS IN):SV_TARGET
 		if(dist>=nearFarShadowLight.z&&dist<=nearFarShadowLight.w)
 			lookup+=0.5;
 	}
+	//if(abs(radial_texc.y)<0.003)
+		lookup.r+=abs(radial_texc.y);
 	return float4(lookup.rgb,1.0);
 }
 

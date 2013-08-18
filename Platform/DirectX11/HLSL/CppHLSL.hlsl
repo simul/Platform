@@ -34,13 +34,8 @@
 	#define SIMUL_TEXTURE_REGISTER(buff_num) : register(t##buff_num)
 	#define SIMUL_SAMPLER_REGISTER(buff_num) : register(s##buff_num)
 	#define SIMUL_BUFFER_REGISTER(buff_num) : register(b##buff_num)
-	#define R5 : register(b5)
-	#define R6 : register(b6)
-	#define R7 : register(b7)
-	#define R8 : register(b8)
-	#define R9 : register(b9)
-	#define R10 : register(b10)
-	#define R13 : register(b13)
+	#define SIMUL_RWTEXTURE_REGISTER(tex_num) : register(u##tex_num)
+
 	#define vec1 float1
 	#define vec2 float2
 	#define vec3 float3

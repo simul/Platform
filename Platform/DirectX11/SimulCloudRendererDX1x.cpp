@@ -18,7 +18,7 @@
 
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Pi.h"
-#include "Simul/Camera/Camera.h"	// for simul::camera::Frustum
+#include "Simul/Camera/Camera.h"						// for simul::camera::Frustum
 
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
@@ -868,9 +868,17 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	// This actually returns the PREVIOUS FRAME's time value:
 	gpu_time*=0.99f;
 	gpu_time+=0.01f*profileBlock.GetTime();
-	cloudDensity1->SetResource(NULL);
-	cloudDensity2->SetResource(NULL);
-	depthTexture->SetResource(NULL);
+	depthTexture->SetResource((ID3D11ShaderResourceView*)NULL);
+	cloudDensity->SetResource((ID3D11ShaderResourceView*)NULL);
+	cloudDensity1->SetResource((ID3D11ShaderResourceView*)NULL);
+	cloudDensity2->SetResource((ID3D11ShaderResourceView*)NULL);
+	noiseTexture->SetResource((ID3D11ShaderResourceView*)NULL);
+	noiseTexture3D->SetResource((ID3D11ShaderResourceView*)NULL);
+	skyLossTexture->SetResource((ID3D11ShaderResourceView*)NULL);
+	skyInscatterTexture->SetResource((ID3D11ShaderResourceView*)NULL);
+	skylightTexture->SetResource((ID3D11ShaderResourceView*)NULL);
+	depthTexture->SetResource((ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(m_pCloudEffect,"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
 // To prevent BIZARRE DX11 warning, we re-apply the pass with the textures unbound:
 	ApplyPass(pContext,m_hTechniqueRaytrace->GetPassByIndex(0));
 	return (hr==S_OK);

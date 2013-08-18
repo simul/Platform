@@ -303,6 +303,16 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 
 	SAFE_RELEASE(previousInputLayout)
 	SAFE_RELEASE(pPrevBuffer);
+
+	simul::dx11::setParameter(effect,"imageTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"noiseTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"coverageTexture"		,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"lossTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"inscTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"skylTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"depthTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"illuminationTexture"	,(ID3D11ShaderResourceView*)NULL);
+	ApplyPass(pContext,tech->GetPassByIndex(0));
 	
 	return true;
 }

@@ -70,4 +70,12 @@ SamplerState samplerStateNearest: register(s11)
 	AddressV = Clamp;
 	AddressW = Clamp;
 };
+
+SamplerState cwcNearestSamplerState: register(s12)
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Clamp;
+	AddressV = Wrap;
+	AddressW = Clamp;
+};
 #endif

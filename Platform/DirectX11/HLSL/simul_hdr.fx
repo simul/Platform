@@ -12,7 +12,7 @@ SamplerState samplerState
 	AddressV = Clamp;
 };
 
-uniform_buffer HdrConstants R9
+uniform_buffer HdrConstants SIMUL_BUFFER_REGISTER(9)
 {
 	uniform float exposure=1.f;
 	uniform float gamma=1.f/2.2f;

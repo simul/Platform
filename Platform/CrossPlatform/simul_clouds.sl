@@ -118,7 +118,6 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 // from the viewer, trace outwards to find the outer and inner ranges of cloud shadow.
 // Then the outer and inner shadow distances are put in the xy.
 // Within that, the outer and inner lit distances are put in the zw.
-
 vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 texCoords)
 {
 	float theta						=texCoords.x*2.0*3.1415926536;
@@ -127,25 +126,26 @@ vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 
 	vec2 light_range				=vec2(1.0,0.0);
 	const float U					=1.0;
 	const float L					=0.0;
-	float pixel						=1.0/float(shadowTextureSize-1);
+	int N							=2*shadowTextureSize;
+	float pixel						=1.0/float(shadowTextureSize);
 #ifdef RADIAL_CLOUD_SHADOW
-	vec2 offset						=vec2(0,pixel/2.0);
+	vec2 offset						=vec2(0,pixel/1.0);
 #else
 	vec2 offset						=vec2(-sin(theta),cos(theta))*pixel/4.0;
 #endif
 	// First find the range where ther is ANY shadow:
-	for(int i=0;i<shadowTextureSize;i++)
+	for(int i=0;i<N;i++)
 	{
-		float interp					=float(i)/float(shadowTextureSize-1);
+		float interp					=float(i)/float(N-1);
 #ifdef RADIAL_CLOUD_SHADOW
 		vec2 shadow_texc				=vec2(sqrt(interp),texCoords.x);
 #else
 		float distance_off_centre		=interp;
 		vec2 shadow_texc				=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
 #endif
-		vec4 illumination				=sampleLod(cloudShadowTexture,clampSamplerState,shadow_texc,0);
-		illumination					+=sampleLod(cloudShadowTexture,clampSamplerState,shadow_texc-offset,0);
-		illumination					+=sampleLod(cloudShadowTexture,clampSamplerState,shadow_texc+offset,0);
+		vec4 illumination				=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
+		illumination					+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
+		illumination					+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
 		
 		if(illumination.y<3.0*U)
 		{
@@ -157,18 +157,18 @@ vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 
 	shadow_range=saturate(shadow_range);
 	int in_light=0;
 	// Second, within this range, find where there is ANY light.
-	for(int i=0;i<shadowTextureSize;i++)
+	for(int i=0;i<N;i++)
 	{
-		float interp					=float(i)/float(shadowTextureSize-1);
+		float interp					=float(i)/float(N-1);
 #ifdef RADIAL_CLOUD_SHADOW
 		vec2 shadow_texc				=vec2(sqrt(interp),texCoords.x);
 #else
 		float distance_off_centre		=interp;
 		vec2 shadow_texc				=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
 #endif
-		vec4 illumination				=sampleLod(cloudShadowTexture,clampSamplerState,shadow_texc,0);
-		illumination					+=sampleLod(cloudShadowTexture,clampSamplerState,shadow_texc-offset,0);
-		illumination					+=sampleLod(cloudShadowTexture,clampSamplerState,shadow_texc+offset,0);
+		vec4 illumination				=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
+		illumination					+=sampleLod(cloudShadowTexture,clampWrapSamplerState,shadow_texc-offset,0);
+		illumination					+=sampleLod(cloudShadowTexture,clampWrapSamplerState,shadow_texc+offset,0);
 		if(interp>=shadow_range.x&&interp<=shadow_range.y)
 		{
 			if(illumination.y>L*3.0)

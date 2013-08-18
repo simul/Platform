@@ -1,6 +1,6 @@
 #ifndef CPPSL_HS
 #define CPPSL_HS
-//#define RADIAL_CLOUD_SHADOW
+#define RADIAL_CLOUD_SHADOW
 // Definitions shared across C++, HLSL, and GLSL!
 
 #ifndef __cplusplus
@@ -18,9 +18,10 @@
 	#define uniform
 	#define cbuffer struct
 
-	#define SIMUL_BUFFER_REGISTER(buff_num)
-	#define SIMUL_SAMPLER_REGISTER(buff_num)
-	#define SIMUL_BUFFER_REGISTER(buff_num)
+	#define SIMUL_BUFFER_REGISTER(b)
+	#define SIMUL_SAMPLER_REGISTER(s)
+	#define SIMUL_TEXTURE_REGISTER(t)
+	#define SIMUL_RWTEXTURE_REGISTER(u)
 
 	#define uniform_buffer ALIGN_16 cbuffer
 

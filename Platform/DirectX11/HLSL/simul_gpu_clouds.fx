@@ -1,24 +1,16 @@
-#define uniform
-#define vec2 float2
-#define vec3 float3
-#define vec4 float4
-#define sampler1D texture1D
-#define sampler2D texture2D
-#define sampler3D texture3D
-
 #include "CppHLSL.hlsl"
 uniform sampler2D inputTexture;
-uniform sampler3D densityTexture;
-uniform sampler2D maskTexture;
+uniform sampler3D densityTexture SIMUL_TEXTURE_REGISTER(0);
 uniform sampler3D lightTexture;
-uniform sampler3D lightTexture1;
-uniform sampler3D lightTexture2;
+uniform sampler3D lightTexture1 SIMUL_TEXTURE_REGISTER(1);
+uniform sampler3D lightTexture2 SIMUL_TEXTURE_REGISTER(2);
+uniform sampler2D maskTexture SIMUL_TEXTURE_REGISTER(3);
 uniform sampler3D ambientTexture;
-uniform sampler3D ambientTexture1;
-uniform sampler3D ambientTexture2;
-uniform sampler3D volumeNoiseTexture;
-RWTexture3D<float4> targetTexture;
-RWTexture3D<float> targetTexture1;
+uniform sampler3D ambientTexture1 SIMUL_TEXTURE_REGISTER(4);
+uniform sampler3D ambientTexture2 SIMUL_TEXTURE_REGISTER(5);
+uniform sampler3D volumeNoiseTexture SIMUL_TEXTURE_REGISTER(6);
+RWTexture3D<float4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
+RWTexture3D<float> targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
 
 #include "../../CrossPlatform/states.sl"
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
