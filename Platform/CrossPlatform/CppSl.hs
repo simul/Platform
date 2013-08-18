@@ -22,14 +22,6 @@
 	#define SIMUL_SAMPLER_REGISTER(buff_num)
 	#define SIMUL_BUFFER_REGISTER(buff_num)
 
-	#define R5
-	#define R6
-	#define R7
-	#define R8
-	#define R9
-	#define R10
-	#define R13
-
 	#define uniform_buffer ALIGN_16 cbuffer
 
 	struct mat2

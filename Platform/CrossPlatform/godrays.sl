@@ -41,7 +41,7 @@ vec4 Godrays(Texture2D cloudShadowTexture,Texture2D cloudNearFarTexture,Texture2
 	{
 		float r0			=r1;
 		// we first get the radius on the shadow plane, then convert 
-		r1					=godrays_distances[i];
+		r1					=godrays_distances[i].x;
 		float fade_dist_0	=r0*step*shadowRange/maxFadeDistance;
 		fade_dist_1			=r1*step*shadowRange/maxFadeDistance;
 		float fade_intro	=saturate((solid_dist-fade_dist_0)/(fade_dist_1-fade_dist_0));

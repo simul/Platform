@@ -198,6 +198,9 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	inscTexture->SetResource(NULL);
 	skylTexture->SetResource(NULL);
 	PIXEndNamedEvent();
+	atmosphericsPerViewConstants.Unbind(pContext);
+	atmosphericsUniforms.Unbind(pContext);
+	ApplyPass(pContext,twoPassOverlayTechnique->GetPassByIndex(1));
 }
 
 void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloud_depth_texture)
@@ -241,4 +244,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 	overcTexture		->SetResource(NULL);
 	cloudShadowTexture	->SetResource(NULL);
 	cloudNearFarTexture	->SetResource(NULL);
+	atmosphericsPerViewConstants.Unbind(pContext);
+	atmosphericsUniforms.Unbind(pContext);
+	ApplyPass(pContext,godraysTechnique->GetPassByIndex(0));
 }

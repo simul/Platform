@@ -1,7 +1,7 @@
 #ifndef SIMUL_GPU_CLOUDS_SL
 #define SIMUL_GPU_CLOUDS_SL
 
-uniform_buffer GpuCloudConstants R8
+uniform_buffer GpuCloudConstants SIMUL_BUFFER_REGISTER(8)
 {
 	uniform mat4 transformMatrix;
 	uniform vec4 yRange;

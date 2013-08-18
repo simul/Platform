@@ -235,4 +235,8 @@ public:
 		pContext->Unmap(m_pD3D11Buffer, 0);
 		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 	}
+	void Unbind(ID3D11DeviceContext *pContext)
+	{
+		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
+	}
 };

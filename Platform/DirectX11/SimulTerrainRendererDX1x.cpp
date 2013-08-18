@@ -218,6 +218,9 @@ void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 	if((v)>2)
 		pContext->Draw((v)-2,0);
 	pContext->IASetPrimitiveTopology(previousTopology);
+	simul::dx11::setTextureArray(m_pTerrainEffect,"textureArray",NULL);
+	simul::dx11::setParameter(m_pTerrainEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)NULL);
+	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
 }
 
 void SimulTerrainRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

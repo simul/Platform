@@ -113,6 +113,8 @@ RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 	vec2 nearFarTexc	=illum_lookup.xy;
 
 	float mean_z		=1.0;
+	// For mixing in depth, the more the gap between layers, the more we need to mix in.
+	float typical_step	=layers[layerCount-2].layerDistance/float(layerCount);
 	// This provides the range of texcoords that is lit.
 	for(int i=0;i<layerCount;i++)
 	//int i=40;
@@ -168,7 +170,7 @@ RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 			}
 #endif
 			// depth here:
-			mean_z=lerp(mean_z,z,0.5*density.z);
+			mean_z=lerp(mean_z,z,depthMix*density.z);
 		}
 		
 	}

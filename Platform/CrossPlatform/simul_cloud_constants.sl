@@ -13,14 +13,14 @@ struct LayerData
 	float pad12;
 };
 
-uniform_buffer LayerConstants R8
+uniform_buffer LayerConstants SIMUL_BUFFER_REGISTER(8)
 {
 	uniform LayerData layers[MAX_INSTANCES];
 	uniform int layerCount;
 	uniform int A,B,C;
 };
 
-uniform_buffer CloudPerViewConstants R13
+uniform_buffer CloudPerViewConstants SIMUL_BUFFER_REGISTER(13)
 {
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 viewPos;
@@ -36,8 +36,9 @@ uniform_buffer CloudPerViewConstants R13
 	uniform float startZMetres;
 	uniform float shadowRange;
 	uniform int shadowTextureSize;
+	uniform float depthMix;
 };
-uniform_buffer CloudConstants R9
+uniform_buffer CloudConstants SIMUL_BUFFER_REGISTER(9)
 {
 	uniform vec3 inverseScales;
 	uniform int abcde;

@@ -41,7 +41,7 @@ Framebuffer::Framebuffer(int w,int h) :
 	,stagingTexture(NULL)
 	,timing(0.f)
 	,target_format(DXGI_FORMAT_R32G32B32A32_FLOAT)
-	,depth_format(DXGI_FORMAT_D32_FLOAT) //DXGI_FORMAT_D32_FLOAT_S8X24_UINT)
+	,depth_format(DXGI_FORMAT_UNKNOWN) //DXGI_FORMAT_D32_FLOAT)
 	,num_v(0)
 	,GenerateMips(false)
 {
@@ -394,7 +394,7 @@ void Framebuffer::DeactivateDepth(void *context)
 		Deactivate(context);
 		return;
 	}
-	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pOldDepthSurface);
+	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
 }
 
 void Framebuffer::Clear(void *context,float r,float g,float b,float a,float depth,int mask)

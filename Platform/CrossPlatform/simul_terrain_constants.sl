@@ -1,7 +1,7 @@
 #ifndef TERRAIN_CONSTANTS_SL
 #define TERRAIN_CONSTANTS_SL
 
-uniform_buffer TerrainConstants R10
+uniform_buffer TerrainConstants SIMUL_BUFFER_REGISTER(10)
 {
 	uniform mat4 worldViewProj;
 

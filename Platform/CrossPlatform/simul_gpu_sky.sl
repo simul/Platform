@@ -1,12 +1,7 @@
 #ifndef GPU_SKY_CONSTANTS_SL
 #define GPU_SKY_CONSTANTS_SL
-#ifdef __cplusplus
-#define R8
-#define cbuffer struct
-#define uniform
-#endif
 
-uniform_buffer GpuSkyConstants R8
+uniform_buffer GpuSkyConstants SIMUL_BUFFER_REGISTER(8)
 {
 	uniform vec2 texSize;
 	uniform vec2 tableSize;
