@@ -374,6 +374,38 @@ void Framebuffer::Activate(void *context)
 	m_pImmediateContext->RSSetViewports(1, &viewport);
 }
 
+void Framebuffer::ActivateColour(void *context)
+{
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	if(!m_pImmediateContext)
+		return;
+	if(!hdr_buffer_texture&&!buffer_depth_texture)
+		CreateBuffers();
+	if(!m_pHDRRenderTarget)
+		return;
+	m_pImmediateContext->RSGetViewports(&num_v,NULL);
+	if(num_v>0)
+		m_pImmediateContext->RSGetViewports(&num_v,m_OldViewports);
+
+	m_pOldRenderTarget	=NULL;
+	m_pOldDepthSurface	=NULL;
+	m_pImmediateContext->OMGetRenderTargets(	1,
+												&m_pOldRenderTarget,
+												&m_pOldDepthSurface
+												);
+	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
+	D3D11_VIEWPORT viewport;
+		// Setup the viewport for rendering.
+	viewport.Width = (float)Width;
+	viewport.Height = (float)Height;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	// Create the viewport.
+	m_pImmediateContext->RSSetViewports(1, &viewport);
+}
+
 void Framebuffer::Deactivate(void *context)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;

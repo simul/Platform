@@ -279,6 +279,7 @@ int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
 	gpuCloudConstants.transformMatrix	=Matrix4x4LightToDensityTexcoords;
 	gpuCloudConstants.transformMatrix.transpose();
 	gpuCloudConstants.extinctions		=lightspace_extinctions_float3;
+	gpuCloudConstants.zPixelLightspace	=(1.f/(float)light_grid[2]);
 
 	//transformMatrix * (0,0,1)
 	simul::sky::float4 step	(gpuCloudConstants.transformMatrix._13,gpuCloudConstants.transformMatrix._23,gpuCloudConstants.transformMatrix._33,0);

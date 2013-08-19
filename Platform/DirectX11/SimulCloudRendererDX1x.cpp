@@ -635,6 +635,7 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 	else
 		m_hTechniqueCloud			=m_pCloudEffect->GetTechniqueByName("simul_clouds");
 	m_hTechniqueRaytrace			=m_pCloudEffect->GetTechniqueByName("simul_raytrace");
+	m_hTechniqueRaytraceForward		=m_pCloudEffect->GetTechniqueByName("simul_raytrace_forward");
 	m_hTechniqueSimpleRaytrace		=m_pCloudEffect->GetTechniqueByName("simul_simple_raytrace");
 	m_hTechniqueRaytrace3DNoise		=m_pCloudEffect->GetTechniqueByName("simul_raytrace_3d_noise");
 	m_hTechniqueCloudsAndLightning	=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
@@ -852,6 +853,10 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	else if(cubemap)
 	{
 		ApplyPass(pContext,m_hTechniqueSimpleRaytrace->GetPassByIndex(0));
+	}
+	else if(cloudKeyframer->GetTraceForward())
+	{
+		ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
 	}
 	else
 	{

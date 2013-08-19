@@ -184,6 +184,7 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	
 	coverage_fb.Activate(pContext);
 	{
+		simul::dx11::setParameter(effect,"noiseTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_coverage");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		coverage_fb.DrawQuad(pContext);

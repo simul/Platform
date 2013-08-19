@@ -119,18 +119,21 @@ void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
 	float direct_light				=1.0;
-	targetTexture1[int3(pos.xy,0)]				=1.0;
+	targetTexture1[int3(pos.xy,0)]	=1.0;
+	const int C=1;
 	for(int i=1;i<dims.z;i++)
 	{
 		uint3 idx					=uint3(pos.xy,i);
-		vec3 lightspace_texcoord	=(vec3(idx)+0.5)/vec3(dims);
-		vec3 texc					=(vec3(pos.xy,(float)i)+0.5)/vec3(dims);
-		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
-		float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
+		targetTexture1[idx]			=direct_light;
+		for(int j=0;j<C;j++)
+		{
+			vec3 lightspace_texcoord	=vec3(pos.xy,float(i)+float(j)/float(C))/vec3(dims);
+			vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
+			float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
+			direct_light				*=exp(-extinctions.x*density*stepLength/float(C));
+		}
 		//if(density==0)
 		//	direct_light=1.0;
-		targetTexture1[idx]			=direct_light;
-		direct_light				*=exp(-extinctions.x*density*stepLength);
 	}
 }
 
@@ -184,7 +187,7 @@ void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)	//SV_DispatchThreadID giv
 	targetTexture[pos]			=vec4(1.0,1.0,1.0,1.0);
 	vec3 densityspace_texcoord	=(pos.xyz+0.5)/vec3(dims);
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
-	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord,1.0)).xyz;
+	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
 	lightspace_texcoord.z		-=zPixelLightspace;
 	vec2 light_lookup			=vec2(lightTexture1.SampleLevel(lightSamplerState,lightspace_texcoord,0).x
 										,lightTexture2.SampleLevel(lightSamplerState,lightspace_texcoord,0).x);
