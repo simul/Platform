@@ -57,7 +57,6 @@ v2f MainVS(a2v IN)
 
 float4 MainPS(v2f IN) : SV_TARGET
 {
-	//return vec4(1.0,1.0,0.8,0.5);
 	vec3 depth_pos		=IN.clip_pos.xyz/IN.clip_pos.w;
 	vec3 depth_texc		=0.5*(depth_pos+vec3(1.0,1.0,1.0));
 	depth_texc.y		=1.0-depth_texc.y;

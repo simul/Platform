@@ -128,6 +128,7 @@ namespace simul
 			ID3D1xEffect*							m_pCloudEffect;
 			ID3D1xEffectTechnique*					m_hTechniqueCloud;
 			ID3D1xEffectTechnique*					m_hTechniqueRaytrace;
+			ID3D1xEffectTechnique*					m_hTechniqueRaytraceForward;
 			ID3D1xEffectTechnique*					m_hTechniqueSimpleRaytrace;
 			ID3D1xEffectTechnique*					m_hTechniqueRaytrace3DNoise;
 			ID3D1xEffectTechnique*					m_hTechniqueCloudsAndLightning;

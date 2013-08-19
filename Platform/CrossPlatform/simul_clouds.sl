@@ -88,11 +88,10 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 #endif
 	vec2 illumination				=vec2(1.0,1.0);
 	float U							=-1.0;
-	const int NUM_STEPS=8;
+	const int NUM_STEPS=16;
 	for(int i=0;i<NUM_STEPS;i++)
 	{
 		float u						=1.0-float(i)/float(NUM_STEPS);
-	
 		vec3 cartesian				=vec3(pos_xy.xy,u);
 		vec3 wpos					=mul(shadowMatrix,vec4(cartesian,1.0)).xyz;
 		vec3 texc					=(wpos-cornerPos)*inverseScales;
@@ -120,8 +119,6 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 // Within that, the outer and inner lit distances are put in the zw.
 vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 texCoords)
 {
-	//float theta						=texCoords.x*2.0*3.1415926536;
-	int in_shadow					=0;		//0 = start, 1=in shadow, not yet in light, 2=in both
 	vec2 shadow_range				=vec2(1.0,0.0);
 	vec2 light_range				=vec2(1.0,0.0);
 	const float U					=1.0;
