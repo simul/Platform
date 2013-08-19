@@ -16,7 +16,7 @@
 #include <d3dx11.h>
 #include <D3dx11effect.h>
 #include "Simul/Graph/Meta/Group.h"
-#include "Simul/Clouds/CloudRenderCallback.h"
+
 #include "Simul/Clouds/BaseCloudRenderer.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
@@ -79,7 +79,7 @@ namespace simul
 			void SetLossTexture(void *t);
 			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
-			// implementing CloudRenderCallback:
+
 			void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
 			void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array){}
 			void FillCloudTextureBlock(int,int,int,int,int,int,int,const unsigned *){}

@@ -47,7 +47,7 @@ public:
 	
 	CloudShadowStruct GetCloudShadowTexture();
 	const char *GetDebugText();
-	// implementing CloudRenderCallback:
+
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	
 	void SetIlluminationGridSize(unsigned ,unsigned ,unsigned );
