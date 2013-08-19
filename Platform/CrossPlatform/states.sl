@@ -40,7 +40,7 @@ SamplerState wwcSamplerState:register(s7)
 	AddressW = Clamp;
 };
 
-SamplerState clampWrapSamplerState: register(s8)
+SamplerState cwcSamplerState: register(s8)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;

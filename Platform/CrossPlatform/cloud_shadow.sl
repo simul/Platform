@@ -24,7 +24,7 @@ vec2 GetIlluminationAt(Texture2D cloudShadowTexture,vec3 wpos)
 	vec3 tex_pos		=mul(invShadowMatrix,vec4(wpos,1.0)).xyz;
 	vec3 texc			=0.5*(tex_pos+1.0);
 #endif
-	vec4 texel			=sampleLod(cloudShadowTexture,clampWrapSamplerState,texc.xy,0);
+	vec4 texel			=texture_cwc_lod(cloudShadowTexture,texc.xy,0);
 	vec2 illumination	=texel.xy;
 	float above			=saturate((texc.z-texel.z)/2.5);
 	//illumination		-=above;

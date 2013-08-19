@@ -387,15 +387,10 @@ ERROR_CHECK
 	glUniform1i(cloudDensity2_param,1);
 	glUniform1i(noiseSampler_param,2);
 	glUniform1i(lossSampler_param,3);
-
 	glUniform1i(inscatterSampler_param,4);
-
 	glUniform1i(skylightSampler_param,5);
-
 	glUniform1i(illumSampler_param,6);
-
 	glUniform1i(depthTexture,7);
-
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	
@@ -410,8 +405,7 @@ ERROR_CHECK
 	static float indirect_light_mult=0.03f;
 	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse()
 										,indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse()
-										,0
-										,0);
+										,0,0);
 	
 	simul::sky::float4 fractal_scales=simul::clouds::CloudGeometryHelper::GetFractalScales(GetCloudInterface());
 

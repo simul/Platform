@@ -166,9 +166,9 @@ vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 
 		float distance_off_centre		=interp;
 		vec2 shadow_texc				=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
 #endif
-		vec4 illumination				=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
-		illumination					+=sampleLod(cloudShadowTexture,clampWrapSamplerState,shadow_texc-offset,0);
-		illumination					+=sampleLod(cloudShadowTexture,clampWrapSamplerState,shadow_texc+offset,0);
+		vec4 illumination				=texture_cwc_lod(cloudShadowTexture,shadow_texc,0);
+		illumination					+=texture_cwc_lod(cloudShadowTexture,shadow_texc-offset,0);
+		illumination					+=texture_cwc_lod(cloudShadowTexture,shadow_texc+offset,0);
 		if(interp>=shadow_range.x&&interp<=shadow_range.y)
 		{
 			if(illumination.y>L*3.0)
@@ -189,11 +189,11 @@ vec4 ShowCloudShadow(Texture2D cloudShadowTexture,Texture2D nearFarTexture,vec2 
 	float dist=length(tex_pos.xy);
 	vec2 radial_texc=vec2(sqrt(length(tex_pos.xy)),atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536));
 #ifdef RADIAL_CLOUD_SHADOW
-    float4 lookup=cloudShadowTexture.Sample(clampWrapSamplerState,radial_texc);
+    vec4 lookup=texture_cwc_lod(cloudShadowTexture,radial_texc,0);
 #else
-    float4 lookup=cloudShadowTexture.SampleLevel(clampWrapSamplerState,IN.texCoords.xy,3);//radial_texc);
+    vec4 lookup=texture_clamp_lod(cloudShadowTexture,IN.texCoords.xy,0);//radial_texc);
 #endif
-    vec4 nearFarShadowLight=nearFarTexture.Sample(wrapSamplerState,vec2(radial_texc.y,0.5));
+    vec4 nearFarShadowLight=texture_wrap_lod(nearFarTexture,vec2(radial_texc.y,0.5),0);
 	if(dist>=nearFarShadowLight.x&&dist<=nearFarShadowLight.y)
 	{
 		lookup*=0.5;
@@ -202,6 +202,6 @@ vec4 ShowCloudShadow(Texture2D cloudShadowTexture,Texture2D nearFarTexture,vec2 
 	}
 	//if(abs(radial_texc.y)<0.003)
 	lookup.r+=abs(radial_texc.y);
-	return float4(lookup.rgb,1.0);
+	return vec4(lookup.rgb,1.0);
 }
 #endif

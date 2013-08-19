@@ -334,6 +334,14 @@ int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
 	densityTexture->SetResource(NULL);
 	// We have to do THIS, AFTER NULLing the textures. For god's sake.
 	ApplyPass(m_pImmediateContext,secondaryLightingComputeTechnique->GetPassByIndex(0));
+
+	// copy to CPU memory if required by CloudKeyframer.
+	if(target)
+	{
+		directLightTextures[light_index].copyToMemory(m_pd3dDevice,m_pImmediateContext,target,start_texel,texels);
+		target+=gridsize;
+		indirectLightTextures[light_index].copyToMemory(m_pd3dDevice,m_pImmediateContext,target,start_texel,texels);
+	}
 }
 
 void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index,unsigned char *target
@@ -375,7 +383,6 @@ std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 	setParameter(effect,"lightTexture2"		,indirectLightTextures[1].shaderResourceView);
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 	gpuCloudConstants.Apply(m_pImmediateContext);
-#if 1
 	for(int i=0;i<3;i++)
 	{
 		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
@@ -406,5 +413,9 @@ std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 	setParameter(effect,"lightTexture1"		,(ID3D11ShaderResourceView*)NULL);
 	setParameter(effect,"lightTexture2"		,(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(m_pImmediateContext,transformComputeTechnique->GetPassByIndex(0));
-#endif
+	// copy to CPU memory if required by CloudKeyframer.
+	if(target)
+	{
+		finalTexture[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,target,start_texel,texels);
+	}
 }

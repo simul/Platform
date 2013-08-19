@@ -10,6 +10,7 @@ TextureStruct::TextureStruct()
 	:texture(NULL)
 	,shaderResourceView(NULL)
 	,unorderedAccessView(NULL)
+	,stagingBuffer(NULL)
 	,width(0)
 	,length(0)
 	,last_context(NULL)
@@ -35,7 +36,43 @@ void TextureStruct::release()
 	{
 		SAFE_RELEASE(unorderedAccessView);
 	}
+	SAFE_RELEASE(stagingBuffer);
 
+}
+
+void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *pContext,void *target,int start_texel,int texels)
+{
+	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);
+	if(!stagingBuffer)
+	{
+		//Create a "Staging" Resource to actually copy data to-from the GPU buffer. 
+		D3D11_TEXTURE3D_DESC stagingBufferDesc;
+		//stagingBufferDesc.BindFlags				=0 ;
+		//stagingBufferDesc.Usage					=D3D11_USAGE_STAGING;  
+		//stagingBufferDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_READ;
+		//stagingBufferDesc.MiscFlags				=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		//stagingBufferDesc.StructureByteStride	=sizeof(D3DXVECTOR4);
+		//stagingBufferDesc.ByteWidth				=byteSize * textureDesc. * h;
+
+		stagingBufferDesc.Width			=width;
+		stagingBufferDesc.Height		=length;
+		stagingBufferDesc.Depth			=depth;
+		stagingBufferDesc.Format		=format;
+		stagingBufferDesc.MipLevels		=1;
+		stagingBufferDesc.Usage			=D3D11_USAGE_STAGING;
+		stagingBufferDesc.BindFlags		=0;
+		stagingBufferDesc.CPUAccessFlags=D3D11_CPU_ACCESS_READ;
+		stagingBufferDesc.MiscFlags		=0;
+
+		pd3dDevice->CreateTexture3D(&stagingBufferDesc,NULL,(ID3D11Texture3D**)(&stagingBuffer));
+	}
+	pContext->CopyResource(stagingBuffer,texture);
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	pContext->Map( stagingBuffer, 0, D3D11_MAP_READ, 0, &mappedResource);
+	unsigned char *data = (unsigned char *)(mappedResource.pData);
+	data+=start_texel*byteSize;
+	memcpy(target,data,texels*byteSize);
+	pContext->Unmap( stagingBuffer, 0);
 }
 
 void TextureStruct::setTexels(ID3D11DeviceContext *context,const float *float4_array,int texel_index,int num_texels)
@@ -115,6 +152,7 @@ void TextureStruct::init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT format
 	pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)&(texture));
 	SAFE_RELEASE(shaderResourceView);
 	pd3dDevice->CreateShaderResourceView(texture,NULL,&shaderResourceView);
+	SAFE_RELEASE(stagingBuffer);
 }
 
 void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable)
@@ -144,8 +182,8 @@ void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		memset(&textureDesc,0,sizeof(textureDesc));
 		textureDesc.Width			=width=w;
 		textureDesc.Height			=length=l;
-		textureDesc.Depth			=d;
-		textureDesc.Format			=f;
+		textureDesc.Depth			=depth=d;
+		textureDesc.Format			=format=f;
 		textureDesc.MipLevels		=1;
 		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
 		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
