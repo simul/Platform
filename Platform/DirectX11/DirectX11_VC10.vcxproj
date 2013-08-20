@@ -163,9 +163,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
-    <Lib>
-      <OutputFile>$(OutDir)$(TargetName)_MDd.lib</OutputFile>
-    </Lib>
+    <Lib />
     <PostBuildEvent>
       <Command>
       </Command>
@@ -190,9 +188,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
-    <Lib>
-      <OutputFile>$(OutDir)$(TargetName)_MD.lib</OutputFile>
-    </Lib>
+    <Lib />
     <PostBuildEvent>
       <Command>
       </Command>
