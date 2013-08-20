@@ -17,6 +17,7 @@
 #include <fstream>
 #include <iomanip>
 #include <math.h>
+#include "Simul/Clouds/lightningRenderInterface.h"
 
 #ifdef XBOX
 	static D3DPOOL d3d_memory_pool=D3DUSAGE_CPU_CACHED_MEMORY;

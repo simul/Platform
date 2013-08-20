@@ -64,8 +64,9 @@ struct vertexOutput
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-    OUT.hPosition = mul(float4(IN.position.xy,1.0,1.0),vertexMatrix);
-	OUT.texc=IN.texc;
+    float4 outpos=mul(vertexMatrix,float4(IN.position.xy,1.0,1.0));
+    OUT.hPosition=outpos;
+	OUT.texc=0.5*float2(1.0+outpos.x,1.0-outpos.y);
     return OUT;
 }
 

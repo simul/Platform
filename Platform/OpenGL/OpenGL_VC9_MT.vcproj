@@ -69,6 +69,7 @@
 				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				IgnoreDefaultLibraryNames="$(SafeParentName)_MT.lib"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(TargetDir)$(TargetName)_MDd.pdb"
 				SubSystem="2"
 				ImportLibrary="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)/$(SafeParentName)_MTd.lib"
 				TargetMachine="1"
@@ -148,6 +149,7 @@
 				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
 				IgnoreDefaultLibraryNames="$(SafeParentName)_MT.lib"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(TargetDir)$(TargetName)_MD.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -272,7 +274,7 @@
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
 				AdditionalIncludeDirectories="&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -311,6 +313,20 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{BA686093-89A1-438D-948A-34ECF718D106}"
+			CopyLocal="false"
+			CopyLocalDependencies="false"
+			CopyLocalSatelliteAssemblies="false"
+			RelativePathToProject=".\Clouds\Clouds_VC9.vcproj"
+		/>
+		<ProjectReference
+			ReferencedProjectIdentifier="{CC71B070-12C2-45C9-894A-A9CDDC1F3FA4}"
+			CopyLocal="false"
+			CopyLocalDependencies="false"
+			CopyLocalSatelliteAssemblies="false"
+			RelativePathToProject=".\Terrain\Terrain_VC9.vcproj"
+		/>
 	</References>
 	<Files>
 		<Filter
@@ -320,6 +336,14 @@
 			>
 			<File
 				RelativePath=".\FramebufferGL.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GpuCloudGenerator.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GpuSkyGenerator.cpp"
 				>
 			</File>
 			<File
@@ -359,7 +383,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimulGLPrecipitationRenderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SimulGLSkyRenderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulGLTerrainRenderer.cpp"
 				>
 			</File>
 			<File
@@ -389,6 +421,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Glsl.h"
+				>
+			</File>
+			<File
+				RelativePath=".\GpuCloudGenerator.h"
+				>
+			</File>
+			<File
+				RelativePath=".\GpuSkyGenerator.h"
+				>
+			</File>
+			<File
 				RelativePath=".\LoadGLImage.h"
 				>
 			</File>
@@ -402,6 +446,10 @@
 			</File>
 			<File
 				RelativePath=".\OpenGLRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\resource.h"
 				>
 			</File>
 			<File
@@ -425,7 +473,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SimulGLPrecipitationRenderer.h"
+				>
+			</File>
+			<File
 				RelativePath=".\SimulGLSkyRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SimulGLTerrainRenderer.h"
 				>
 			</File>
 			<File
@@ -445,11 +501,23 @@
 			Name="Shaders"
 			>
 			<File
+				RelativePath=".\GLSL\simul_2d_cloud_detail.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_2d_cloud_detail_lighting.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_atmospherics.frag"
 				>
 			</File>
 			<File
 				RelativePath=".\GLSL\simul_atmospherics.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_atmospherics_earthshadow.frag"
 				>
 			</File>
 			<File
@@ -485,6 +553,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLSL\simul_earthshadow_sky.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_earthshadow_uniforms.glsl"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_fade_3d_to_2d.frag"
 				>
 			</File>
@@ -494,6 +570,50 @@
 			</File>
 			<File
 				RelativePath=".\GLSL\simul_flare.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_cloud_density.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_cloud_density.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_cloud_transform.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_cloud_transform.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_clouds.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_clouds.glsl"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_clouds.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_insc.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_loss.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_sky.glsl"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_gpu_skyl.frag"
 				>
 			</File>
 			<File
@@ -537,6 +657,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLSL\simul_terrain.geom"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_terrain.vert"
 				>
 			</File>
@@ -549,6 +673,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\OpenGL.rc"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -98,7 +98,7 @@ static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-bool SimulLightningRenderer::Render()
+void SimulLightningRenderer::Render()
 {
 	if(!lightning_vertices)
 		lightning_vertices=new PosTexVert_t[4500];
@@ -141,18 +141,10 @@ bool y_vertical=true;
 	m_pLightningEffect->SetMatrix(l_worldViewProj,&wvp);
 	m_pLightningEffect->SetTechnique(m_hTechniqueLightningQuads);
 	UINT passes=1;
-	for(unsigned i=0;i<lightningRenderInterface->GetNumLightSources();i++)
+/*	for(unsigned i=0;i<lightningRenderInterface->GetNumLightSources();i++)
 	{
 		if(!lightningRenderInterface->IsSourceStarted(i))
 			continue;
-	/*	if(i==0)
-			m_pLightningEffect->SetVector(lightningColour,&(D3DXVECTOR4(1,0,0,1)));
-		if(i==1)
-			m_pLightningEffect->SetVector(lightningColour,&(D3DXVECTOR4(0,1,0,1)));
-		if(i==2)
-			m_pLightningEffect->SetVector(lightningColour,&(D3DXVECTOR4(0,0,1,1)));
-		if(i==3)
-			m_pLightningEffect->SetVector(lightningColour,&(D3DXVECTOR4(1,1,1,1)));*/
 		m_pLightningEffect->SetVector(lightningColour,(const D3DXVECTOR4*)lightningRenderInterface->GetLightningColour());
 	hr=m_pLightningEffect->Begin(&passes,0);
 	hr=m_pLightningEffect->BeginPass(0);
@@ -161,8 +153,7 @@ bool y_vertical=true;
 		float bright1=0.f;
 		simul::math::Vector3 camPos(cam_pos);
 		lightningRenderInterface->GetSegmentVertex(i,0,0,bright1,x1.FloatPointer(0));
-//		float dist=(x1-camPos).Magnitude();
-		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
+		float vertical_shift=0;
 		for(unsigned jj=0;jj<lightningRenderInterface->GetNumBranches(i);jj++)
 		{
 			if(jj==1)
@@ -246,8 +237,7 @@ bool y_vertical=true;
 		}
 	hr=m_pLightningEffect->EndPass();
 	hr=m_pLightningEffect->End();
-	}
-	return true;
+	}*/
 }
 
 HRESULT SimulLightningRenderer::CreateLightningTexture()

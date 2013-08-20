@@ -176,6 +176,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			simulWeatherRenderer->GetBaseAtmosphericsRenderer()->FinishRender();
 			
 		simulWeatherRenderer->RenderLateCloudLayer(true);
+		simulWeatherRenderer->RenderLightning();
 		if(simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->DrawCubemap((ID3D1xShaderResourceView*	)simulWeatherRenderer->GetCubemap());
 		simulWeatherRenderer->DoOcclusionTests();

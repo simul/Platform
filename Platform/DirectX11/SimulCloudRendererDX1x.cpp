@@ -26,7 +26,7 @@
 #include "Simul/Math/Pi.h"
 #include "CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Profiler.h"
-
+#include "Simul/Clouds/LightningRenderInterface.h"
 const char *GetErrorText(HRESULT hr)
 {
 	const char *err=DXGetErrorStringA(hr);
@@ -740,7 +740,7 @@ bool SimulCloudRendererDX1x::Render(bool cubemap,void *depth_tex,bool default_fo
 		static float bb=.2f;
 		simul::sky::float4 lightning_multipliers;
 		lightning_colour=lightningRenderInterface->GetLightningColour();
-		for(unsigned i=0;i<4;i++)
+		for(int i=0;i<4;i++)
 		{
 			if(i<lightningRenderInterface->GetNumLightSources())
 				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(i);
@@ -948,26 +948,29 @@ bool SimulCloudRendererDX1x::RenderLightning()
 simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
 
 	l_worldViewProj->SetMatrix(&wvp._11);
-	for(unsigned i=0;i<lightningRenderInterface->GetNumLightSources();i++)
+	for(int i=0;i<lightningRenderInterface->GetNumLightSources();i++)
 	{
 		if(!lightningRenderInterface->IsSourceStarted(i))
 			continue;
 		simul::math::Vector3 x1,x2;
 		float bright1=0.f,bright2=0.f;
 		simul::math::Vector3 camPos(cam_pos);
-		lightningRenderInterface->GetSegmentVertex(i,0,0,bright1,x1.FloatPointer(0));
-		float dist=(x1-camPos).Magnitude();
-		float vertical_shift=helper->GetVerticalShiftDueToCurvature(dist,x1.z);
-		for(unsigned jj=0;jj<lightningRenderInterface->GetNumBranches(i);jj++)
+		for(int jj=0;jj<lightningRenderInterface->GetNumBranches(i,0);jj++)
 		{
 			simul::math::Vector3 last_transverse;
 			vert_start=vert_num;
-			for(unsigned k=0;k<lightningRenderInterface->GetNumSegments(i,jj)&&vert_num<4500;k++)
+			const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(i,0,jj);
+			x1=(const float*)branch.vertices[0];
+			float dist=(x1-camPos).Magnitude();
+			float vertical_shift=helper->GetVerticalShiftDueToCurvature(dist,x1.z);
+			for(int k=0;k<branch.numVertices-1;k++)
 			{
-				lightningRenderInterface->GetSegmentVertex(i,jj,k,bright1,x1.FloatPointer(0));
+				x1=(const float*)branch.vertices[k];
+				x2=(const float*)branch.vertices[k+1];
+				
 
 				static float ww=700.f;
-				float width=ww*lightningRenderInterface->GetBranchWidth(i,jj);
+				float width=ww*branch.width;
 				float width1=bright1*width;
 				simul::math::Vector3 dx=x2-x1;
 				simul::math::Vector3 transverse;
@@ -981,7 +984,7 @@ simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer
 				simul::math::Vector3 x1b=x1+t;
 				if(!k)
 					bright1=0;
-				if(k==lightningRenderInterface->GetNumSegments(i,jj)-1)
+				if(k==branch.numVertices-1)
 					bright2=0;
 				PosTexVert_t &v1=lightning_vertices[vert_num++];
 				if(y_vertical)

@@ -18,8 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SIMUL)/exe/$(PlatformName)/VC9/$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
+			OutputDirectory="$(SIMUL)/exe/$(PlatformName)/VC10/$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)/VC10/$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="1"
 			WholeProgramOptimization="0"
@@ -47,7 +47,6 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
@@ -63,13 +62,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\$(SafeParentName)_MDd.dll"
+				OutputFile="$(OutDir)\$(TargetName)_MDd.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Lib/x86&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/$(ConfigurationName)&quot;"
+				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC10/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC10/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC10/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/VC10/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Lib/x86&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)\$(SafeParentName)_MDd.pdb"
+				ProgramDatabaseFile="$(OutDir)\$(TargetName)_MDd.pdb"
 				SubSystem="2"
-				ImportLibrary="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)/$(SafeParentName)_MDd.lib"
+				ImportLibrary="$(SIMUL)/lib/$(PlatformName)/VC10/$(ConfigurationName)/$(TargetName)_MDd.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -98,8 +97,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SIMUL)/exe/$(PlatformName)/VC9/$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
+			OutputDirectory="$(SIMUL)/exe/$(PlatformName)/VC10/$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)/VC10/$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="1"
 			WholeProgramOptimization="0"
@@ -127,7 +126,6 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -143,15 +141,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\$(SafeParentName)_MD.dll"
+				OutputFile="$(OutDir)\$(TargetName)_MD.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/VC9/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Lib/x86&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/$(ConfigurationName)&quot;"
+				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC10/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC10/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC10/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/VC10/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Lib/x86&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(ConfigurationName)&quot;;&quot;$(DXSDK_DIR)/Samples/C++/Effects11/$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)\$(SafeParentName)_MD.pdb"
+				ProgramDatabaseFile="$(OutDir)\$(TargetName)_MD.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)/$(SafeParentName)_MD.lib"
+				ImportLibrary="$(SIMUL)/lib/$(PlatformName)/VC10/$(ConfigurationName)/$(TargetName)_MD.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -180,8 +178,8 @@
 		</Configuration>
 		<Configuration
 			Name="Static Debug|Win32"
-			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
+			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC10/$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)/VC10/$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="1"
 			WholeProgramOptimization="0"
@@ -209,7 +207,6 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
@@ -226,7 +223,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(SafeParentName)_MDd.lib"
+				OutputFile="$(OutDir)\$(TargetName)_MDd.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -247,8 +244,8 @@
 		</Configuration>
 		<Configuration
 			Name="Static Release|Win32"
-			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)/VC9/$(ConfigurationName)"
+			OutputDirectory="$(SIMUL)/lib/$(PlatformName)/VC10/$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)/VC10/$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="1"
 			WholeProgramOptimization="0"
@@ -276,7 +273,6 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX11_DLL;DX11"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -293,7 +289,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\$(SafeParentName)_MD.lib"
+				OutputFile="$(OutDir)\$(TargetName)_MD.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -319,14 +315,12 @@
 			CopyLocal="false"
 			CopyLocalDependencies="false"
 			CopyLocalSatelliteAssemblies="false"
-			RelativePathToProject=".\Clouds\Clouds_VC9.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{CC71B070-12C2-45C9-894A-A9CDDC1F3FA4}"
 			CopyLocal="false"
 			CopyLocalDependencies="false"
 			CopyLocalSatelliteAssemblies="false"
-			RelativePathToProject=".\Terrain\Terrain_VC9.vcproj"
 		/>
 	</References>
 	<Files>
@@ -389,10 +383,6 @@
 			</File>
 			<File
 				RelativePath=".\SimulHDRRendererDX1x.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\SimulLightningRendererDX11.cpp"
 				>
 			</File>
 			<File
@@ -495,10 +485,6 @@
 			</File>
 			<File
 				RelativePath=".\SimulHDRRendererDX1x.h"
-				>
-			</File>
-			<File
-				RelativePath=".\SimulLightningRendererDX11.h"
 				>
 			</File>
 			<File

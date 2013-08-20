@@ -100,6 +100,8 @@ void *GpuCloudGenerator::FillDensityGrid(const int *density_grid
 											,int start_texel
 											,int texels
 											,float humidity
+											,float baseLayer
+											,float transition
 											,float time
 											,int noise_size,int octaves,float persistence
 											,const float *noise_src_ptr)
@@ -144,6 +146,8 @@ timer.StartTime();
 	setParameter(density_program,"zPixel"				,1.f/(float)density_grid[2]);
 	setParameter(density_program,"zSize"				,(float)density_grid[2]);
 	setParameter(density_program,"noiseScale"			,noise_scale.x,noise_scale.y,noise_scale.z);
+	setParameter(density_program,"baseLayer"			,baseLayer);
+	setParameter(density_program,"transition"			,transition);
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();

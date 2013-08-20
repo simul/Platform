@@ -15,7 +15,7 @@ public:
 	SimulGLLightningRenderer(simul::clouds::LightningRenderInterface *lri);
 	~SimulGLLightningRenderer();
 	void RestoreDeviceObjects();
-	bool Render();
+	void Render();
 	void InvalidateDeviceObjects();
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual void SetYVertical(bool ){}
@@ -40,12 +40,6 @@ protected:
 			z=f[2];
 		}
 	};
-	struct PosTexVert_t
-	{
-		float3 position;	
-		float2 texCoords;
-	};
-	PosTexVert_t *lightning_vertices;
 
 	GLuint				lightning_program;	
 	GLuint				lightning_vertex_shader;

@@ -21,7 +21,7 @@ public:
 	SimulLightningRenderer(simul::clouds::LightningRenderInterface *lri);
 	~SimulLightningRenderer();
 	void RestoreDeviceObjects(void *pd3dDevice);
-	bool Render();
+	void Render();
 	void InvalidateDeviceObjects();
 	void SetYVertical(bool y)
 	{

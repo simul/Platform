@@ -12,13 +12,8 @@
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/FramebufferCubemapDX1x.h"
 #include <d3dx9.h>
-#ifdef DX10
-	#include <D3D10.h>
-	#include <d3dx10.h>
-#else
-	#include <d3d11.h>
-	#include <d3dx11.h>
-#endif
+#include <d3d11.h>
+#include <d3dx11.h>
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
 
@@ -50,6 +45,7 @@ public:
 	bool RenderSky(bool buffered,bool is_cubemap);
 	bool RenderLateCloudLayer(bool );
 	void RenderPrecipitation();
+	void RenderLightning();
 	bool RenderCubemap();
 	void *GetCubemap();
 	//! Perform the once-per-frame time update.
@@ -94,9 +90,10 @@ protected:
 	bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
 	simul::base::SmartPtr<class SimulSkyRendererDX1x> simulSkyRenderer;
 	simul::base::SmartPtr<class SimulCloudRendererDX1x> simulCloudRenderer;
+	simul::base::SmartPtr<class SimulPrecipitationRendererDX1x> simulPrecipitationRenderer;
 	simul::base::SmartPtr<class SimulAtmosphericsRendererDX1x> simulAtmosphericsRenderer;
 	simul::base::SmartPtr<class Simul2DCloudRendererDX11> simul2DCloudRenderer;
-	simul::base::SmartPtr<class SimulPrecipitationRendererDX1x> simulPrecipitationRenderer;
+	simul::base::SmartPtr<class SimulLightningRendererDX11> simulLightningRenderer;
 	FramebufferDX1x					framebuffer;
 	FramebufferCubemapDX1x			framebuffer_cubemap;
 	float							exposure;

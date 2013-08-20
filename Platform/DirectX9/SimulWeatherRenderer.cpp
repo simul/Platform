@@ -301,11 +301,10 @@ bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	return true;
 }
 
-bool SimulWeatherRenderer::RenderLightning()
+void SimulWeatherRenderer::RenderLightning()
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return simulLightningRenderer->Render();
-	return true;
 }
 
 void SimulWeatherRenderer::RenderPrecipitation()

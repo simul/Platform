@@ -24,7 +24,6 @@ extern void printProgramInfoLog(GLuint obj);
 
 SimulGLLightningRenderer::SimulGLLightningRenderer(simul::clouds::LightningRenderInterface *lightningRenderInterface) :
 	simul::clouds::BaseLightningRenderer(lightningRenderInterface)
-	,lightning_vertices(NULL)
 	,lightning_texture(0)
 {
 }
@@ -41,7 +40,7 @@ void SimulGLLightningRenderer::RestoreDeviceObjects()
 
 void SimulGLLightningRenderer::RecompileShaders()
 {
-	lightning_program			=MakeProgram("simul_lightning");
+	lightning_program			=MakeProgramWithGS("simul_lightning");//
 	lightningTexture_param		=glGetUniformLocation(lightning_program,"lightningTexture");
 	
 	printProgramInfoLog(lightning_program);
@@ -74,13 +73,11 @@ void GetCameraPosVector(simul::math::Vector3 &cam_pos,simul::math::Vector3 &cam_
 	cam_dir.z=inv(2,2);
 }
 
-bool SimulGLLightningRenderer::Render()
+void SimulGLLightningRenderer::Render()
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	if(glStringMarkerGREMEDY)
 		glStringMarkerGREMEDY(0,"SimulGLLightningRenderer::Render");
-	if(!lightning_vertices)
-		lightning_vertices=new PosTexVert_t[4500];
 ERROR_CHECK
 /*	m_pd3dDevice->SetTexture(0,lightning_texture);
 	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
@@ -110,109 +107,93 @@ ERROR_CHECK
     glBindTexture(GL_TEXTURE_1D,lightning_texture);
 	glUseProgram(lightning_program);
 	glUniform1i(lightningTexture_param,0);
-
+	simul::math::Matrix4x4 view,proj,viewproj;
+	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
+	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
+	simul::math::Multiply4x4(viewproj,view,proj);
+setMatrix(lightning_program,"worldViewProj",viewproj.RowPointer(0));
+	int main_viewport[4];
+	glGetIntegerv(GL_VIEWPORT,main_viewport);
+	float vpx=main_viewport[2];
+	float vpy=main_viewport[3];
+	setParameter(lightning_program,"viewportPixels",vpx,vpy);
+	int texcoord_index=glGetAttribLocation(lightning_program,"in_coord");
 ERROR_CHECK
 	simul::math::Vector3 pos;
-
 	static float lm=10.f;
 	static float main_bright=1.f;
 	int vert_start=0;
 	int vert_num=0;
 
-	for(unsigned i=0;i<lightningRenderInterface->GetNumLightSources();i++)
+	for(int i=0;i<lightningRenderInterface->GetNumLightSources();i++)
 	{
 		if(!lightningRenderInterface->IsSourceStarted(i))
 			continue;
-		bool quads=true;
+		bool quads=false;
 		simul::math::Vector3 x1,x2;
-		float bright1=0.f;
-		lightningRenderInterface->GetSegmentVertex(i,0,0,bright1,x1.FloatPointer(0));
 		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
-		for(unsigned jj=0;jj<lightningRenderInterface->GetNumBranches(i);jj++)
+		for(int j=0;j<lightningRenderInterface->GetNumLevels(i);j++)
 		{
-			if(jj==1)
+			for(int jj=0;jj<lightningRenderInterface->GetNumBranches(i,j);jj++)
 			{
-				/*hr=m_pLightningEffect->EndPass();
-				hr=m_pLightningEffect->End();
-				
-				m_pLightningEffect->SetTechnique(m_hTechniqueLightningLines);*/
-				quads=false;
-
-				/*hr=m_pLightningEffect->Begin(&passes,0);
-				hr=m_pLightningEffect->BeginPass(0);*/
-			}
-			simul::math::Vector3 last_transverse;
-			vert_start=vert_num;
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_ONE,GL_ONE);
-			if(quads)
-			{
-				glBegin(GL_QUAD_STRIP);
-			}
-			else
-				glBegin(GL_LINE_STRIP);
-			for(unsigned k=0;k<lightningRenderInterface->GetNumSegments(i,jj)&&vert_num<4500;k++)
-			{
-				lightningRenderInterface->GetSegmentVertex(i,jj,k,bright1,x1.FloatPointer(0));
-				simul::math::Vector3 dir;
-				lightningRenderInterface->GetSegmentVertexDirection(i,jj,k,dir.FloatPointer(0));
-
-				static float ww=100.f;
-				float width=lightningRenderInterface->GetBranchWidth(i,jj);
-				float width1=bright1*width;
-				if(quads)
-					width1*=ww;
-				simul::math::Vector3 transverse;
-				view_dir=x1-cam_pos;
-				CrossProduct(transverse,view_dir,dir);
-				transverse.Unit();
-				transverse*=width1;
-				simul::math::Vector3 t=transverse;
-				if(k)
-					t=0.5f*(last_transverse+transverse);
-				simul::math::Vector3 x1a=x1;//-t;
-				if(quads)
-					x1a=x1-t;
-				simul::math::Vector3 x1b=x1+t;
-				//if(!k)
-				//	bright1=0;
-				//if(k==lightningRenderInterface->GetNumSegments(i,jj)-1)
-				//	bright1=0;
-				PosTexVert_t &v1=lightning_vertices[vert_num++];
-
-				v1.position.x=x1a.x;
-				v1.position.y=x1a.y+vertical_shift;
-				v1.position.z=x1a.z;
-				v1.texCoords.x=0;
-				v1.texCoords.y=bright1;
-				if(!quads)
-					v1.texCoords.x=0.5f;
-					
-				glMultiTexCoord2f(GL_TEXTURE0,v1.texCoords.x,v1.texCoords.y);
-				glVertex3f(v1.position.x,v1.position.y,v1.position.z);
-					
-
-				if(quads)
+				const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(i,j,jj);
+				if(branch.width<.1f)
 				{
-					PosTexVert_t &v2=lightning_vertices[vert_num++];
-					v2.position.x=x1b.x;
-					v2.position.y=x1b.y+vertical_shift;
-					v2.position.z=x1b.z;
-					v2.texCoords.x=1.f;
-					v2.texCoords.y=bright1;
-					glMultiTexCoord2f(GL_TEXTURE0,v2.texCoords.x,v2.texCoords.y);
-					glVertex3f(v2.position.x,v2.position.y,v2.position.z);
+					quads=false;
 				}
-				last_transverse=transverse;
+				simul::math::Vector3 last_transverse;
+				vert_start=vert_num;
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_ONE,GL_ONE);
+				/*if(quads)
+				{
+					glBegin(GL_TRIANGLE_STRIP);
+				}
+				else*/
+					glBegin(GL_LINE_STRIP_ADJACENCY);
+				for(int k=0;k<branch.numVertices;k++)
+				{
+					x1=(const float *)branch.vertices[k];
+					if(k+1<branch.numVertices)
+						x2=(const float *)branch.vertices[k+1];
+					else
+					{
+						x2=2.f*x1-simul::math::Vector3((const float *)branch.vertices[k-1]);
+					}
+					bool start=(k==0);
+					bool end=(k==branch.numVertices-1);
+					simul::math::Vector3 dir=x2-x1;
+					dir.Normalize();
+					static float ww=100.f;
+					float width=branch.brightness*branch.width;
+					width*=ww;
+					simul::math::Vector3 transverse;
+					view_dir=x1-cam_pos;
+					CrossProduct(transverse,view_dir,dir);
+					transverse.Unit();
+					transverse*=width;
+					float brightness=branch.brightness;
+					if(end)
+						brightness=0.f;
+					glVertexAttrib2f(texcoord_index,width,brightness);
+					glVertex3f(x1.x,x1.y,x1.z+vertical_shift);
+					last_transverse=transverse;
+				}
+				glEnd();
+				vert_num=0;
+				int err=glGetError();
+				if(err!=0)
+				{
+					glDisable(GL_TEXTURE_1D);
+					glPopAttrib();
+					return;
+				}
 			}
-			glEnd();
-			ERROR_CHECK
 		}
 	}
 	glDisable(GL_TEXTURE_1D);
 	ERROR_CHECK
 	glPopAttrib();
-	return true;
 }
 
 bool SimulGLLightningRenderer::CreateLightningTexture()
@@ -233,7 +214,13 @@ bool SimulGLLightningRenderer::CreateLightningTexture()
 	for(unsigned i=0;i<size;i++)
 	{
 		float linear=1.f-fabs((float)(i+.5f)*2.f/(float)size-1.f);
-		float level=.5f*linear*linear+5.f*(linear>.97f);
+		float s=linear*2.f;
+		if(s>1.f)
+			s=2.f-s;
+		float u=s/0.2f;
+		if(u>1.f)
+			u=1.f;
+		float level=u;
 		float r=lightning_colour[0]*level;
 		float g=lightning_colour[1]*level;
 		float b=lightning_colour[2]*level;
