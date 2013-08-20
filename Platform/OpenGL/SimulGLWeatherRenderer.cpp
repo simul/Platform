@@ -23,6 +23,9 @@
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Decay.h"
 
+using namespace simul;
+using namespace opengl;
+
 static const GLenum buffer_tex_format		=GL_FLOAT;
 static const GLenum internal_buffer_format	=GL_RGBA32F_ARB;
 
@@ -54,7 +57,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 	simulLightningRenderer=new(memoryInterface) SimulGLLightningRenderer(ck3d,sk);
 	baseLightningRenderer=simulLightningRenderer;
 
-	simulAtmosphericsRenderer=new(memoryInterface) SimulGLAtmosphericsRenderer;
+	simulAtmosphericsRenderer=new(memoryInterface) SimulGLAtmosphericsRenderer(mem);
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
 	if(rain)
 		basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulGLPrecipitationRenderer();
@@ -93,12 +96,12 @@ void SimulGLWeatherRenderer::EnableCloudLayers()
 SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 {
 	InvalidateDeviceObjects();
-	delete(simulSkyRenderer,memoryInterface);
-	delete(simulCloudRenderer,memoryInterface);
-	delete(simul2DCloudRenderer,memoryInterface);
-	delete(simulLightningRenderer,memoryInterface);
-	delete(simulPrecipitationRenderer,memoryInterface);
-	delete(simulAtmosphericsRenderer,memoryInterface);
+	operator delete(simulSkyRenderer,memoryInterface);
+	operator delete(simulCloudRenderer,memoryInterface);
+	operator delete(simul2DCloudRenderer,memoryInterface);
+	operator delete(simulLightningRenderer,memoryInterface);
+	operator delete(simulPrecipitationRenderer,memoryInterface);
+	operator delete(simulAtmosphericsRenderer,memoryInterface);
 }
 
 void SimulGLWeatherRenderer::SetScreenSize(int w,int h)

@@ -66,7 +66,7 @@ vec4 godrays()
 		{
 			fade_texc.x=u;
 			float prev_illumination=illumination;
-			float d=u*u*maxDistance;
+			float d=u*u*maxFadeDistanceMetres;
 			illumination=GetIlluminationAt(view*d);
 			vec4 prev_insc=insc;
 		insc=texture(inscTexture,fade_texc);

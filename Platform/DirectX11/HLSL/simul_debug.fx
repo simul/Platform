@@ -1,4 +1,6 @@
 #include "CppHlsl.hlsl"
+#include "states.hlsl"
+TextureCube cubeTexture;
 
 float4x4 worldViewProj	: WorldViewProjection;
 
@@ -44,28 +46,49 @@ float4 DebugPS(v2f IN) : SV_TARGET
     return IN.colour;
 }
 
-DepthStencilState EnableDepth
+struct vec3input
 {
-	DepthEnable = TRUE;
-	DepthWriteMask = ALL;
-	DepthFunc = LESS_EQUAL;
+    float3 position	: POSITION;
 };
 
-DepthStencilState DisableDepth
+v2f Vec3InputSignatureVS(vec3input IN)
 {
-	DepthEnable = FALSE;
-	DepthWriteMask = ZERO;
+	v2f OUT;
+    OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
+	OUT.colour = float4(1.0,1.0,1.0,1.0);
+    return OUT;
+}
+
+struct v2f_cubemap
+{
+    float4 hPosition	: SV_POSITION;
+    float3 wDirection	: TEXCOORD0;
 };
 
-RasterizerState RenderNoCull
+
+v2f_cubemap VS_DrawCubemap(vec3input IN) 
 {
-	CullMode = none;
+    v2f_cubemap OUT;
+    OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
+    OUT.wDirection	=normalize(IN.position.xyz);
+    return OUT;
+}
+
+SamplerState cubeSamplerState
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	AddressU = Mirror;
+	AddressV = Mirror;
+	AddressW = Mirror;
 };
 
-BlendState NoBlend
+float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
-	BlendEnable[0] = FALSE;
-};
+	float3 view		=(IN.wDirection.xyz);
+	float4 result	=cubeTexture.Sample(cubeSamplerState,view);
+	return float4(result.rgb,1.f);
+}
+
 
 technique11 simul_debug
 {
@@ -73,9 +96,35 @@ technique11 simul_debug
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,DebugVS()));
 		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+    }
+}
+
+technique11 vec3_input_signature
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,Vec3InputSignatureVS()));
+		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
+    }
+}
+
+technique11 draw_cubemap
+{
+    pass p0 
+    {		
+		SetRasterizerState( RenderBackfaceCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_DrawCubemap()));
+		SetPixelShader(CompileShader(ps_4_0,PS_DrawCubemap()));
+		SetDepthStencilState( EnableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }

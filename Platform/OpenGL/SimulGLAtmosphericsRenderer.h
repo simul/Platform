@@ -14,7 +14,7 @@
 SIMUL_OPENGL_EXPORT_CLASS SimulGLAtmosphericsRenderer : public simul::sky::BaseAtmosphericsRenderer
 {
 public:
-	SimulGLAtmosphericsRenderer();
+	SimulGLAtmosphericsRenderer(simul::base::MemoryInterface *m);
 	virtual ~SimulGLAtmosphericsRenderer();
 	//standard ogl object interface functions
 	void RecompileShaders();
@@ -31,7 +31,7 @@ public:
 	{
 		loss_texture=(GLuint)t;
 	}
-	void SetInscatterTextures(void* t,void *s)
+	void SetInscatterTextures(void* t,void *s,void *o)
 	{
 		inscatter_texture=(GLuint)t;
 		skylight_texture=(GLuint)s;

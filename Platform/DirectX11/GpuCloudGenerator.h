@@ -15,6 +15,7 @@ namespace simul
 {
 	namespace dx11
 	{
+		//! A generator for cloud volumes using DirectX 11.
 		class GpuCloudGenerator: public simul::clouds::BaseGpuCloudGenerator
 		{
 		public:
@@ -79,22 +80,29 @@ namespace simul
 			simul::dx11::Framebuffer			dens_fb;
 			simul::dx11::Framebuffer			mask_fb;
 			
-			ID3D1xDevice*						m_pd3dDevice;
+			ID3D11Device*						m_pd3dDevice;
 			ID3D11DeviceContext*				m_pImmediateContext;
-			ID3D1xEffect*						effect;
-			ID3D1xEffectTechnique*				densityTechnique;
-			ID3D1xEffectTechnique*				maskTechnique;
-			ID3D1xEffectTechnique*				lightingTechnique;
-			ID3D1xEffectTechnique*				transformTechnique;
+			ID3DX11Effect*						effect;
+			ID3DX11EffectTechnique*				densityTechnique;
+			ID3DX11EffectTechnique*				densityComputeTechnique;
+			ID3DX11EffectTechnique*				maskTechnique;
+			ID3DX11EffectTechnique*				lightingTechnique;
+			ID3DX11EffectTechnique*				lightingComputeTechnique;
+			ID3DX11EffectTechnique*				secondaryLightingComputeTechnique;
+			ID3DX11EffectTechnique*				transformTechnique;
+			ID3DX11EffectTechnique*				transformComputeTechnique;
+
 			ID3D11Texture3D						*volume_noise_tex;
 			ID3D11ShaderResourceView			*volume_noise_tex_srv;
-			ID3D11Texture3D						*density_texture;
+
+			TextureStruct						density_texture;
 			TextureStruct						*finalTexture[3];
-			TextureStruct						lightTextures[2];
-			ID3D11ShaderResourceView			*density_texture_srv;
+			TextureStruct						directLightTextures[2];
+			TextureStruct						indirectLightTextures[2];
 			ConstantBuffer<GpuCloudConstants>	gpuCloudConstants;
 			ID3D11SamplerState*					m_pWwcSamplerState;
-			ID3D11SamplerState*					m_pCccSamplerState;
+			ID3D11SamplerState*					m_pWccSamplerState;
+			ID3D11SamplerState*					m_pCwcSamplerState;
 		};
 	}
 }

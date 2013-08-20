@@ -75,6 +75,10 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">$(Platform)/VC10/$(Configuration)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">$(Platform)/VC10/$(Configuration)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)_MDd</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectName)_MD</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">$(ProjectName)_MD</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">$(ProjectName)_MDd</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -92,13 +96,12 @@
       <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)$(TargetName)_MDd.dll</OutputFile>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/VC10/$(Configuration);$(DXSDK_DIR)/Lib/x86;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/Lib/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName)_MDd.lib</ImportLibrary>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
@@ -126,15 +129,14 @@
       <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)$(TargetName)_MD.dll</OutputFile>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC10/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/VC10/$(Configuration);$(DXSDK_DIR)/Lib/x86;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/Lib/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName)_MD.lib</ImportLibrary>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
@@ -161,9 +163,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
-    <Lib>
-      <OutputFile>$(OutDir)$(TargetName)_MDd.lib</OutputFile>
-    </Lib>
+    <Lib />
     <PostBuildEvent>
       <Command>
       </Command>
@@ -188,9 +188,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
-    <Lib>
-      <OutputFile>$(OutDir)$(TargetName)_MD.lib</OutputFile>
-    </Lib>
+    <Lib />
     <PostBuildEvent>
       <Command>
       </Command>
@@ -221,7 +219,7 @@
     <ClCompile Include="SimulPrecipitationRendererDX1x.cpp" />
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="SimulTerrainRendererDX1x.cpp" />
-    <ClCompile Include="SimulWeatherRendererDX1x.cpp" />
+    <ClCompile Include="SimulWeatherRendererDX11.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -250,10 +248,18 @@
     <ClInclude Include="SimulPrecipitationRendererDX1x.h" />
     <ClInclude Include="SimulSkyRendererDX1x.h" />
     <ClInclude Include="SimulTerrainRendererDX1x.h" />
-    <ClInclude Include="SimulWeatherRendererDX1x.h" />
+    <ClInclude Include="SimulWeatherRendererDX11.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CrossPlatform\cloud_shadow.sl" />
+    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
+    <None Include="..\CrossPlatform\godrays.sl" />
+    <None Include="..\CrossPlatform\illumination.sl" />
+    <None Include="..\CrossPlatform\rain_constants.sl" />
+    <None Include="..\CrossPlatform\simul_2d_cloud_detail.sl" />
+    <None Include="..\CrossPlatform\simul_clouds.sl" />
+    <None Include="..\CrossPlatform\sky_constants.sl" />
     <None Include="HLSL\CppHLSL.hlsl" />
     <None Include="HLSL\fft_512x512_c2c.hlsl" />
     <None Include="HLSL\MixClouds_c.hlsl" />
@@ -264,6 +270,7 @@
     <None Include="HLSL\simul_earthshadow.hlsl" />
     <None Include="HLSL\simul_gpu_sky.hlsl" />
     <None Include="HLSL\simul_inscatter_fns.hlsl" />
+    <None Include="HLSL\simul_render_cubemap.fx" />
     <None Include="HLSL\states.hlsl" />
     <None Include="..\CrossPlatform\atmospherics_constants.sl" />
     <None Include="..\CrossPlatform\CppSl.hs" />
@@ -294,6 +301,11 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Clouds\Clouds_VC10.vcxproj">
+      <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

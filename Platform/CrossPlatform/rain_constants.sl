@@ -1,7 +1,7 @@
 #ifndef RAIN_CONSTANTS_SL
 #define RAIN_CONSTANTS_SL
 
-uniform_buffer RainConstants R10
+uniform_buffer RainConstants SIMUL_BUFFER_REGISTER(10)
 {
 	uniform vec4 lightColour;
 	uniform vec3 lightDir;
@@ -12,7 +12,7 @@ uniform_buffer RainConstants R10
 	uniform float phase;
 };
 
-uniform_buffer RainPerViewConstants R8
+uniform_buffer RainPerViewConstants SIMUL_BUFFER_REGISTER(8)
 {
 	uniform mat4 worldViewProj;
 	uniform mat4 invViewProj;

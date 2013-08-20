@@ -6,52 +6,28 @@
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 // Godrays are cloud-dependent. So we require the cloud texture.
 uniform sampler2D cloudShadowTexture;
+#include "../../CrossPlatform/cloud_shadow.sl"
 #include "../../CrossPlatform/godrays.sl"
+#include "../../CrossPlatform/depth.sl"
 uniform sampler2D imageTexture;
-uniform sampler2D lossTexture;
+uniform sampler2D overcTexture;
 uniform sampler2D inscTexture;
+uniform sampler2D lossTexture;
+uniform sampler2D cloudNearFarTexture;
+uniform sampler2D depthTexture;
+uniform sampler2D cloudDepthTexture;
 
 in vec2 texCoords;
 
 void main()
 {
-	vec3 view=texCoordToViewDirection(texCoords);
-	float sine=view.z;
-    vec4 lookup=texture(imageTexture,texCoords);
-	float depth=lookup.a;
-	vec2 texc2=vec2(pow(depth,0.5),0.5*(1.0-sine));
-	vec4 insc=texture(inscTexture,texc2);
-	float cos0=dot(view,lightDir);
-	// trace the distance from 1.0 to zero
-	// insc is the cumulative inscatter from 0 to dist.
-	// between two distances, the inscatter (AS SEEN FROM 0) is:
-	// insc2-insc1
-	vec4 total_insc=vec4(0,0,0,0);
-	float illumination=GetIlluminationAt(view*depth);
-	#define C 128
-	float retain=(float(C)-1.0)/float(C);
-	for(int i=0;i<C+1;i++)
-	{
-		float u=(float(C)-float(i))/float(C);
-		float eff=exp(-u/10.0);
-		if(u<depth)
-		{
-			texc2.x=u;
-			float prev_illumination=illumination;
-			float d=u*u*maxDistance;
-			illumination=mix(0.0,GetIlluminationAt(view*d),eff);
-			vec4 prev_insc=insc;
-		insc=texture(inscTexture,texc2);
-			vec4 insc_diff=prev_insc-insc;
-			float ill=prev_illumination;//0.5*(illumination+prev_illumination);
-			total_insc.rgb+=insc_diff.rgb*ill;
-			total_insc.a*=retain;
-			total_insc.a+=insc_diff.a*ill;
-		}
-	}
-//	total_insc.a=insc.a;
-	vec3 gr=-InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio).rgb;
-	gr=min(gr,vec3(0.0,0.0,0.0));
-	
-    gl_FragColor=vec4(gr,0.0);
+	vec2 depth_texc		=(texCoords.xy);
+	vec2 pos			=2.0*texCoords.xy-vec2(1.0,1.0);
+	float solid_depth	=texture_clamp_lod(depthTexture,depth_texc,0).x;
+	float cloud_depth	=texture_clamp_lod(cloudDepthTexture,texCoords.xy,0).x;
+	float depth			=max(solid_depth,cloud_depth);
+	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
+	float solid_dist	=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	vec4 gr=Godrays(cloudShadowTexture,cloudNearFarTexture,inscTexture,overcTexture,pos,invViewProj,maxFadeDistanceMetres,solid_dist);
+    gl_FragColor=gr;
 }

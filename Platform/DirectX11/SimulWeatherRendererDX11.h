@@ -31,15 +31,16 @@ public:
 #endif
 namespace simul
 {
+	//! The namespace for the DirectX 11 platform library and its rendering classes.
 	namespace dx11
 	{
 		//! An implementation of \link simul::clouds::BaseWeatherRenderer BaseWeatherRenderer\endlink for DirectX 10 and 11
 		//! The DX10 switch is used
-		SIMUL_DIRECTX11_EXPORT_CLASS SimulWeatherRendererDX1x : public simul::clouds::BaseWeatherRenderer
+		SIMUL_DIRECTX11_EXPORT_CLASS SimulWeatherRendererDX11 : public simul::clouds::BaseWeatherRenderer
 		{
 		public:
-			SimulWeatherRendererDX1x(simul::clouds::Environment *env,simul::base::MemoryInterface *a,bool usebuffer=true,bool tonemap=false,int w=256,int h=256,bool sky=true,bool clouds3d=true,bool clouds2d=true,bool rain=true);
-			virtual ~SimulWeatherRendererDX1x();
+			SimulWeatherRendererDX11(simul::clouds::Environment *env,simul::base::MemoryInterface *mem);
+			virtual ~SimulWeatherRendererDX11();
 			void SetScreenSize(int w,int h);
 			//standard d3d object interface functions
 			void RestoreDeviceObjects(void*);
@@ -48,6 +49,7 @@ namespace simul
 			bool Destroy();
 			void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 			bool RenderSky(void *context,float exposure,bool buffered,bool is_cubemap);
+			void RenderFramebufferDepth(void *context,int w,int h);
 			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			void RenderPrecipitation(void *context);
 			void RenderLightning(void *context,int viewport_id);
@@ -67,6 +69,7 @@ namespace simul
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 
 		protected:
+			void *GetCloudDepthTexture();
 			simul::base::MemoryInterface	*memoryInterface;
 			// Keep copies of these matrices:
 			D3DXMATRIX view;
@@ -76,28 +79,29 @@ namespace simul
 			int BufferWidth,BufferHeight;
 			//! The size of the screen:
 			int ScreenWidth,ScreenHeight;
-			ID3D1xDevice*					m_pd3dDevice;
+			ID3D1xDevice*							m_pd3dDevice;
 			
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			ID3D1xEffect*						m_pTonemapEffect;
-			ID3D1xEffectTechnique*				directTechnique;
-			ID3D1xEffectTechnique*				SkyBlendTechnique;
-			ID3D1xEffectMatrixVariable*			worldViewProj;
-			ID3D1xEffectShaderResourceVariable*	imageTexture;
+			ID3D1xEffect*							m_pTonemapEffect;
+			ID3D1xEffectTechnique*					directTechnique;
+			ID3D1xEffectTechnique*					SkyBlendTechnique;
+			ID3D1xEffectTechnique*					showDepthTechnique;
+			ID3D1xEffectMatrixVariable*				worldViewProj;
+			ID3D1xEffectShaderResourceVariable		*imageTexture;
 
 			bool CreateBuffers();
 			bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
-			class SimulSkyRendererDX1x *simulSkyRenderer;
-			class SimulCloudRendererDX1x *simulCloudRenderer;
-			class SimulPrecipitationRendererDX1x *simulPrecipitationRenderer;
-			class SimulAtmosphericsRendererDX1x *simulAtmosphericsRenderer;
-			class Simul2DCloudRendererDX11 *simul2DCloudRenderer;
-			class SimulLightningRendererDX11 *simulLightningRenderer;
-			simul::dx11::Framebuffer					framebuffer;
-			float							exposure;
-			float							gamma;
-			float exposure_multiplier;
-			D3DXVECTOR3 cam_pos;
+			class SimulSkyRendererDX1x				*simulSkyRenderer;
+			class SimulCloudRendererDX1x			*simulCloudRenderer;
+			class SimulPrecipitationRendererDX1x	*simulPrecipitationRenderer;
+			class SimulAtmosphericsRendererDX1x		*simulAtmosphericsRenderer;
+			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
+			class SimulLightningRendererDX11		*simulLightningRenderer;
+			simul::dx11::Framebuffer				framebuffer;
+			float									exposure;
+			float									gamma;
+			float									exposure_multiplier;
+			D3DXVECTOR3								cam_pos;
 		};
 	}
 }

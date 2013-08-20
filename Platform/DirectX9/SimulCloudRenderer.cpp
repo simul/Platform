@@ -61,7 +61,6 @@
 
 #include "CreateDX9Effect.h"
 #include "Simul/Clouds/CloudInterface.h"
-#include "Simul/Clouds/ThunderCloudNode.h"
 #include "Simul/Clouds/TextureGenerator.h"
 #include "Simul/Clouds/CloudGeometryHelper.h"
 #include "Simul/Clouds/CloudKeyframer.h"
@@ -217,8 +216,6 @@ SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::
 	//cloudNode->AddHumidityCallback(&hum_callback);
 	GetCloudInterface()->Generate();
 
-	if(!ck)
-		AddChild(cloudKeyframer);
 	// A noise filter improves the shape of the clouds:
 	//cloudNode->GetNoiseInterface()->SetFilter(&circle_f);
 }
@@ -534,7 +531,7 @@ bool SimulCloudRenderer::CreateNoiseTexture(void *)
 
 	simul::graph::standardnodes::ShowProgressInterface *progress=GetResourceInterface();
 	simul::clouds::TextureGenerator::Make2DNoiseTexture(( char *)(lockedRect.pBits),
-		noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence,progress,this);
+		noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence,NULL,NULL);
 	hr=noise_texture->UnlockRect(0);
 	noise_texture->GenerateMipSubLevels();
 
@@ -568,7 +565,7 @@ static const D3DXVECTOR4 *MakeD3DVector(const simul::sky::float4 v)
 	return &x;
 }
 
-void SimulCloudRenderer::Update(void *)
+void SimulCloudRenderer::PreRenderUpdate(void *)
 {
 }
 void SimulCloudRenderer::EnsureCorrectIlluminationTextureSizes()
@@ -987,7 +984,7 @@ void SimulCloudRenderer::InternalRenderRaytrace(int viewport_id)
 
 		// The NOISE matrix is for 2D noise texcoords:
 		//hr=m_pCloudEffect->SetMatrix(noiseMatrix,(const D3DXMATRIX*)noise_orient.GetInverseMatrix().RowPointer(0));
-		hr=m_pCloudEffect->SetFloat(fractalRepeatLength,GetCloudInterface()->GetFractalRepeatLength());
+		//hr=m_pCloudEffect->SetFloat(fractalRepeatLength,GetCloudInterface()->GetFractalRepeatLength());
 
 		hr=m_pCloudEffect->SetTexture(raytraceLayerTexture,raytrace_layer_texture);
 		simul::sky::float4 cloud_scales=GetCloudScales();
@@ -1045,7 +1042,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	for(iter i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++)
 	{
 		float distance=(*i)->distance;
-		helper->MakeLayerGeometry(GetCloudInterface(),*i,6378000.f);
+		helper->MakeLayerGeometry(*i,6378000.f);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		float fade=(*i)->fadeIn;
@@ -1075,8 +1072,8 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 				vertex=&vertices[v];
 				vertex->position=pos;
 				vertex->texCoords=tex_pos;
-				vertex->texCoordsNoise.x=V.noise_tex_x;
-				vertex->texCoordsNoise.y=V.noise_tex_y;
+				vertex->texCoordsNoise.x=0;//V.noise_tex_x;
+				vertex->texCoordsNoise.y=0;//V.noise_tex_y;
 				vertex->layerFade=fade;
 				vertex->sunlightColour.x=sunlight.x;
 				vertex->sunlightColour.y=sunlight.y;
@@ -1182,7 +1179,7 @@ void SimulCloudRenderer::RenderCrossSections(void *,int width,int height)
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;
@@ -1195,7 +1192,7 @@ void SimulCloudRenderer::RenderCrossSections(void *,int width,int height)
 	for(int i=0;i<3;i++)
 	{
 		const simul::clouds::CloudKeyframer::Keyframe *kf=
-				cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
+				static_cast<simul::clouds::CloudKeyframer::Keyframe *>(cloudKeyframer->GetKeyframe(
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;
@@ -1430,7 +1427,7 @@ void SimulCloudRenderer::SetLossTexture(void *t1)
 	sky_loss_texture=(LPDIRECT3DBASETEXTURE9)t1;
 }
 
-void SimulCloudRenderer::SetInscatterTextures(void *i,void *s)
+void SimulCloudRenderer::SetInscatterTextures(void *i,void *s,void *o)
 {
 	sky_inscatter_texture=(LPDIRECT3DBASETEXTURE9)i;
 	skylight_texture=(LPDIRECT3DBASETEXTURE9)s;

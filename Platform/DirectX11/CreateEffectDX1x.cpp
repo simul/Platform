@@ -11,7 +11,6 @@
 #include "CreateEffectDX1x.h"
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Base/EnvironmentVariables.h"
-#include "Simul/Geometry/Orientation.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/DefaultFileLoader.h"
 #include "Simul/Sky/Float4.h"
@@ -197,71 +196,6 @@ namespace simul
 			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 			D3DXMatrixTranspose(wvp,&tmp2);
 		}
-		void FixProjectionMatrix(D3DXMATRIX &proj,float zFar)
-		{
-			// If right-handed:
-			if(proj._34<0)
-			{
-				if(proj._43>0)
-				{
-					float zF	=proj._43/proj._33;
-					float zN	=proj._43*zF/(zF+proj._43);
-					proj._33	=zN/(zFar-zN);
-					proj._43	=zFar*zN/(zFar-zN);
-
-				// F=_43/_33
-				// _33(F-N)=N
-				// N(1+_33)=_33 F
-				// _43(F-N)=FN
-				// N(F+_43)=_43 F
-				// N=_43 F/(F+_43)
-
-// depth=z/w
-//				z=(NZ+FN)/(F-N)
-//				w=-Z
-//				depth=(NZ+FN)/(F-N)/-Z
-//				depth=-N(Z+F)/Z(F-N)
-//				depth Z(F-N)=-NZ-FN
-//				Z ( depth(F-N) +N)=-FN
-//				Z=-FN/(N+d(F-N))
-				}
-				else
-				{
-					float zN	=proj._43/proj._33;
-					float zF	=proj._43*zN/(zN+proj._43);
-					proj._33	=-zFar/(zFar-zN);
-					proj._43	=-zN*zFar/(zFar-zN);
-					// _33(F-N)=-F
-					// F(1+_33)=_33 N
-// depth=z/w
-//				z=(-FZ-FN)/(F-N)
-//				w=-Z
-//				depth=-(FZ+FN)/(F-N)/-Z
-//				depth(F-N)Z=FZ+FN
-//				Z=FN/(depth(F-N)-F)
-				}
-			}
-		}
-		void FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar)
-		{
-			if(proj._34<0)
-			{
-				if(proj._43>0)
-				{
-					float zF=proj._43/proj._33;
-					float zN=proj._43*zF/(zF+proj._43);
-					proj._33=-zFar/(zFar-zNear);
-					proj._43=-zNear*zFar/(zFar-zNear);
-				}
-				else
-				{
-					float zN=proj._43/proj._33;
-					float zF=proj._43*zN/(zN+proj._43);
-					proj._33=-zFar/(zFar-zNear);
-					proj._43=-zNear*zFar/(zFar-zNear);
-				}
-			}
-		}
 		D3DXMATRIX ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj)
 		{
 			D3DXMATRIX p=proj;
@@ -274,7 +208,6 @@ namespace simul
 			}
 			return p;
 		}
-
 	}
 }
 
@@ -786,6 +719,7 @@ ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *file
 
 HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *filename,const std::map<std::string,std::string>&defines)
 {
+	SIMUL_ASSERT(d3dDevice!=NULL);
 	HRESULT hr=S_OK;
 	std::string text_filename=(filename);
 	if(!shaderPathUtf8)
@@ -815,12 +749,11 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *f
 	hr=1;
 	while(hr!=S_OK)
 	{
-		hr=D3DX11CreateEffectFromFileUtf8(
-				filename_utf8,
-				macros,
-				flags,
-				d3dDevice,
-				effect);
+		hr=D3DX11CreateEffectFromFileUtf8(	filename_utf8,
+											macros,
+											flags,
+											d3dDevice,
+											effect);
 		if(hr==S_OK)
 			break;
 		std::string err="";
@@ -880,7 +813,7 @@ void UnmapBuffer(ID3D11DeviceContext *pImmediateContext,ID3D1xBuffer *vertexBuff
 	pImmediateContext->Unmap(vertexBuffer,0);
 }
 
-HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3D1xEffectPass *pass)
+HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass)
 {
 	return pass->Apply(0,pImmediateContext);
 }
@@ -934,59 +867,6 @@ void BreakIfDebugging()
 	DebugBreak();
 }
  
-
-void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pImmediateContext
-									   ,const float *dr
-									   ,float half_angle_radians
-										,ID3D1xEffect* effect
-										,ID3D1xEffectTechnique* tech
-										,D3DXMATRIX view
-										,D3DXMATRIX proj
-										,D3DXVECTOR3 sun_dir)
-{
-	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
-	// But D3DXMatrixRotationYawPitchRoll uses only left-handed, hence the change of sign below.
-	D3DXVECTOR3 pos;
-	D3DXVECTOR3 dir(dr);
-	pos=GetCameraPosVector(view,false);
-	float Yaw=atan2(dir.x,dir.y);
-	float Pitch=-asin(dir.z);
-	HRESULT hr=S_OK;
-	D3DXMATRIX world, tmp1, tmp2;
-	D3DXMatrixIdentity(&world);
-	simul::geometry::SimulOrientation or;
-	or.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
-	or.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
-	world=*((const D3DXMATRIX*)(or.T4.RowPointer(0)));
-	//set up matrices
-	view._41=0.f;
-	view._42=0.f;
-	view._43=0.f;
-	D3DXVECTOR3 sun2;
-	D3DXMATRIX inv_world;
-	D3DXMatrixInverse(&inv_world,NULL,&world);
-	D3DXVec3TransformNormal(  &sun2,
-							  &sun_dir,
-							  &inv_world);
-	D3DXMatrixMultiply(&tmp1,&world,&view);
-	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
-	D3DXMatrixTranspose(&tmp1,&tmp2);
-	if(effect)
-	{
-		setMatrix(effect,"worldViewProj",tmp1);
-		setParameter(effect,"lightDir",sun2);
-		setParameter(effect,"radiusRadians",half_angle_radians);
-	}
-	// coverage is 2*atan(1/5)=11 degrees.
-	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ApplyPass(pImmediateContext,tech->GetPassByIndex(0));
-	pImmediateContext->Draw(4,0);
-	pImmediateContext->IASetPrimitiveTopology(previousTopology);
-}
-
 
 // Stored states
 static ID3D11DepthStencilState* m_pDepthStencilStateStored11=NULL;

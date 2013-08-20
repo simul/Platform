@@ -7,15 +7,9 @@
 
 #pragma once
 #include <d3dx9.h>
-#ifdef DX10
-#include <d3d10.h>
-#include <d3dx10.h>
-#include <d3d10effect.h>
-#else
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <D3dx11effect.h>
-#endif
 typedef long HRESULT;
 #include <vector>
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
@@ -33,6 +27,7 @@ namespace simul
 {
 	namespace dx11
 	{
+		//! A rain/snow renderer for DirectX 11.
 		class SimulPrecipitationRendererDX1x:public simul::clouds::BasePrecipitationRenderer
 		{
 		public:
@@ -46,7 +41,6 @@ namespace simul
 			//! Call this when the D3D device has been shut down.
 			void InvalidateDeviceObjects();
 			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-			//! Call this to draw the clouds, including any illumination by lightning.
 			void Render(void *context);
 		protected:
 			void RenderParticles(void *context);

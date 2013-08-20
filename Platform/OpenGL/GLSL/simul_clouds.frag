@@ -65,7 +65,6 @@ void main(void)
 	if(opacity<=0.0)
 		discard;
 #endif
-   // gl_FragColor=vec4(0,0,0,1.0-opacity);
 	float Beta					=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
 	vec3 sunlightColour			=mix(sunlightColour1,sunlightColour2,saturate(texCoords.z));
 	vec3 final					=(density.z*Beta+lightResponse.y*density.w)*sunlightColour*earthshadowMultiplier+density.x*ambientColour.rgb;

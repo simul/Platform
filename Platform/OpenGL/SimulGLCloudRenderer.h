@@ -37,17 +37,17 @@ public:
 	void RecompileShaders();
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
-	void Update(void *context);
+	void PreRenderUpdate(void *context);
 	//! Render the clouds.
 	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 	//! Show the cross sections on-screen.
 	void RenderCrossSections(void *,int width,int height);
 	void SetLossTexture(void *);
-	void SetInscatterTextures(void *,void *);
+	void SetInscatterTextures(void* t,void *s,void *o);
 	
 	CloudShadowStruct GetCloudShadowTexture();
 	const char *GetDebugText();
-	// implementing CloudRenderCallback:
+
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	
 	void SetIlluminationGridSize(unsigned ,unsigned ,unsigned );

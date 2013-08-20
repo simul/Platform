@@ -262,7 +262,7 @@ static float saturate(float c)
 	return std::max(std::min(1.f,c),0.f);
 }
 
-void SimulGLCloudRenderer::Update(void *context)
+void SimulGLCloudRenderer::PreRenderUpdate(void *context)
 {
 	EnsureTexturesAreUpToDate(context);
 }
@@ -387,15 +387,10 @@ ERROR_CHECK
 	glUniform1i(cloudDensity2_param,1);
 	glUniform1i(noiseSampler_param,2);
 	glUniform1i(lossSampler_param,3);
-
 	glUniform1i(inscatterSampler_param,4);
-
 	glUniform1i(skylightSampler_param,5);
-
 	glUniform1i(illumSampler_param,6);
-
 	glUniform1i(depthTexture,7);
-
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	
@@ -410,8 +405,7 @@ ERROR_CHECK
 	static float indirect_light_mult=0.03f;
 	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse()
 										,indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse()
-										,0
-										,0);
+										,0,0);
 	
 	simul::sky::float4 fractal_scales=simul::clouds::CloudGeometryHelper::GetFractalScales(GetCloudInterface());
 
@@ -466,7 +460,7 @@ helper->Update2DNoiseCoords();
 	glBindBuffer(GL_UNIFORM_BUFFER,0);
 	glBindBufferBase(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO);
 
-	UPDATE_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)
+	UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)
 	
 	if(Raytrace)
 	{
@@ -496,13 +490,13 @@ helper->Update2DNoiseCoords();
 	// b) are in the cloud volume
 	ERROR_CHECK
 	SetLayerConstants(helper,layerConstants);
-	UPDATE_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
+	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
 	int idx=0;
 	for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
 	ERROR_CHECK
 		simul::clouds::CloudGeometryHelper::Slice *s=*i;
-		helper->MakeLayerGeometry(GetCloudInterface(),s,effective_world_radius_metres);
+		helper->MakeLayerGeometry(s,effective_world_radius_metres);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		setParameter(program,"layerNumber",(int)idx);
@@ -547,7 +541,7 @@ void SimulGLCloudRenderer::SetLossTexture(void *l)
 	loss_tex=((GLuint)l);
 }
 
-void SimulGLCloudRenderer::SetInscatterTextures(void *i,void *s)
+void SimulGLCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
 {
 	inscatter_tex=((GLuint)i);
 	skylight_tex=((GLuint)s);
@@ -628,14 +622,9 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 {
 	init=true;
 	
-/*	glGenBuffers(1, &cloudConstantsUBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, cloudConstantsUBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(CloudConstants), NULL, GL_STREAM_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);*/
-	
-	MAKE_CONSTANT_BUFFER(cloudConstantsUBO,CloudConstants,cloudConstantsBindingIndex);
-	MAKE_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
-	MAKE_CONSTANT_BUFFER(cloudPerViewConstantsUBO,CloudPerViewConstants,cloudPerViewConstantsBindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(cloudConstantsUBO,CloudConstants,cloudConstantsBindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,CloudPerViewConstants,cloudPerViewConstantsBindingIndex);
 
 	RecompileShaders();
 	//CreateVolumeNoise();
@@ -941,7 +930,7 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 
 void SimulGLCloudRenderer::RenderCrossSections(void *,int width,int height)
 {
-	static int u=4;
+	static int u=6;
 	int w=(width-8)/u;
 	if(w>height/2)
 		w=height/2;

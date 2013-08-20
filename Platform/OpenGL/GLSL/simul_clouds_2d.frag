@@ -4,8 +4,7 @@
 #include "CppGlsl.hs"
 
 uniform sampler2D imageTexture;
-uniform sampler2D coverageTexture1;
-uniform sampler2D coverageTexture2;
+uniform sampler2D coverageTexture;
 uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D skylTexture;
@@ -41,6 +40,8 @@ void main()
 		discard;
 #endif
 	float dist		=depthToDistance(depth,depth_pos.xy,nearZ,farZ,tanHalfFov);
-	vec4 ret		=Clouds2DPS(texc_global,texc_detail,wPosition,dist);
+	vec3 wEyeToPos	=wPosition-eyePosition;
+	vec4 ret		=Clouds2DPS(texc_global,texc_detail,wEyeToPos,dist,cloudInterp,sunlight.rgb,lightDir.xyz,lightResponse);
+	ret.rgb			*=exposure;
 	gl_FragColor	=ret;//vec4(depth_texc.zzz,ret.a);
 }

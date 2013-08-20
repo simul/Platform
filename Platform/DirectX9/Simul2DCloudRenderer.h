@@ -15,7 +15,7 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Base/SmartPtr.h"
-#include "Simul/Clouds/BaseCloudRenderer.h"
+#include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Platform/DirectX9/Export.h"
@@ -42,7 +42,7 @@ namespace simul
 typedef long HRESULT;
 
 //! A renderer for 2D cloud layers, e.g. cirrus clouds.
-SIMUL_DIRECTX9_EXPORT_CLASS Simul2DCloudRenderer: public simul::clouds::BaseCloudRenderer
+SIMUL_DIRECTX9_EXPORT_CLASS Simul2DCloudRenderer: public simul::clouds::Base2DCloudRenderer
 {
 public:
 	Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem);
@@ -56,7 +56,7 @@ public:
 	void InvalidateDeviceObjects();
 	//! Return debugging information.
 	const char *GetDebugText() const;
-	void Update(void *context);
+	void PreRenderUpdate(void *context);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	//! On DX9, depth_testing and default_fog are ignored for now.
 	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);

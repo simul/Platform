@@ -2,6 +2,8 @@
 #include <assert.h>
 const int MIPLEVELS=1;
 
+using namespace simul::dx11;
+
 FramebufferCubemapDX1x::FramebufferCubemapDX1x()
 	:m_pCubeEnvDepthMap(NULL)
 	,m_pCubeEnvMap(NULL)

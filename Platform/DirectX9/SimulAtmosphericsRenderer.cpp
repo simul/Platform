@@ -30,8 +30,9 @@
 #include "Macros.h"
 #include "Resources.h"
 
-SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
-	:m_pd3dDevice(NULL)
+SimulAtmosphericsRenderer::SimulAtmosphericsRenderer(simul::base::MemoryInterface *m)
+	:BaseAtmosphericsRenderer(m)
+	,m_pd3dDevice(NULL)
 	,vertexDecl(NULL)
 	,effect(NULL)
 	,lightDir(NULL)

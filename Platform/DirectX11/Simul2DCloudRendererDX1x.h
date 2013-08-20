@@ -12,12 +12,10 @@
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <D3dx11effect.h>
-#include "Simul/Base/SmartPtr.h"
 #include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
-#include "Simul/Platform/CrossPlatform/simul_2d_clouds.hs"
 
 namespace simul
 {
@@ -33,11 +31,11 @@ namespace simul
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
 			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-			void Update(void *context);
+			void PreRenderUpdate(void *context);
 			bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 			void RenderCrossSections(void *context,int width,int height);
 			void SetLossTexture(void *l);
-			void SetInscatterTextures(void *i,void *s);
+			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
 			void SetWindVelocity(float x,float y);
 		protected:
@@ -58,6 +56,7 @@ namespace simul
 			ID3D11InputLayout*			inputLayout;
 			
 			ConstantBuffer<Cloud2DConstants>	cloud2DConstants;
+			ConstantBuffer<Detail2DConstants>	detail2DConstants;
 			int num_indices;
 			
 			ID3D1xShaderResourceView*	skyLossTexture_SRV;
@@ -65,7 +64,8 @@ namespace simul
 			ID3D1xShaderResourceView*	skylightTexture_SRV;
 			ID3D1xShaderResourceView*	illuminationTexture_SRV;
 
-			simul::dx11::TextureStruct	coverage_tex[3];
+			//simul::dx11::TextureStruct	coverage_tex[3];
+			simul::dx11::Framebuffer	coverage_fb;
 			simul::dx11::Framebuffer	detail_fb;
 			simul::dx11::Framebuffer	noise_fb;
 			simul::dx11::Framebuffer	dens_fb;

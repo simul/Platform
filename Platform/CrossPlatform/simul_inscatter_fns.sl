@@ -9,13 +9,24 @@ float HenyeyGreenstein(float g,float cos0)
 	return (1.0-g2)*pow(u,-1.5)/(4.0*pi);
 }
 
-vec3 InscatterFunction(vec4 inscatter_factor,float hazeEccentricity,float cos0,vec3 mieRayleighRatio)
+vec3 PrecalculatedInscatterFunction(vec4 inscatter_factor,float BetaRayleigh,float BetaMie,vec3 mieRayleighRatio)
 {
-	float BetaRayleigh=0.0596831*(1.0+cos0*cos0);
-	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
-	vec3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
-		/(vec3(1.0,1.0,1.0)+0*inscatter_factor.a*mieRayleighRatio.xyz);
-	vec3 colour=BetaTotal*inscatter_factor.rgb;
+	vec3 BetaTotal	=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
+		/(vec3(1.0,1.0,1.0)+1.0*inscatter_factor.a*mieRayleighRatio.xyz);
+	vec3 colour		=BetaTotal*inscatter_factor.rgb;
 	return colour;
 }
+
+vec3 InscatterFunction(vec4 inscatter_factor,float hazeEccentricity,float cos0,vec3 mieRayleighRatio)
+{
+	float BetaRayleigh	=0.0596831*(1.0+cos0*cos0);
+	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
+	return PrecalculatedInscatterFunction(inscatter_factor,BetaRayleigh,BetaMie,mieRayleighRatio);
+}
+
+float CalcRayleighBeta(float cos0)
+{
+	return 0.0596831*(1.0+cos0*cos0);
+}
+
 #endif

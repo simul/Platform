@@ -20,7 +20,7 @@ void main()
 	float sine=view.z;
 	// Full brightness:
 	vec2 texc2=vec2(1.0,0.5*(1.0-sine));
-	vec4 insc=EarthShadowFunction(texc2,view);
+	vec4 insc=EarthShadowFunction(inscTexture,texc2,view);
 	vec4 skyl=texture2D(skylightTexture,texc2);
 	float cos0=dot(view,lightDir);
 	vec3 colour=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);

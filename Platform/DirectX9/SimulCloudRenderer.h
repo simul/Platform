@@ -56,7 +56,7 @@ public:
 	void RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the 3D device has been lost.
 	void InvalidateDeviceObjects();
-	void Update(void *context);
+	void PreRenderUpdate(void *context);
 	//! DX9 implementation of cloud rendering. For this platform, depth_testing and default_fog are ignored.
 	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 
@@ -72,7 +72,7 @@ public:
 	float GetTiming() const;
 	void *GetIlluminationTexture();
 	void SetLossTexture(void *t1);
-	void SetInscatterTextures(void *i,void *s);
+	void SetInscatterTextures(void *i,void *s,void *o);
 	LPDIRECT3DTEXTURE9 GetNoiseTexture()
 	{
 		return noise_texture;

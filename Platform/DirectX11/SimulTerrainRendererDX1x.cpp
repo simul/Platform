@@ -11,6 +11,7 @@
 #include <dxerr.h>
 #include <string>
 #include "Simul/Math/Vector3.h"
+#include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Sky/SkyInterface.h"
@@ -64,6 +65,7 @@ void SimulTerrainRendererDX1x::RecompileShaders()
 	ReloadTextures();
 
 	terrainConstants.LinkToEffect(m_pTerrainEffect,"TerrainConstants");
+	
 }
 
 void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *dev)
@@ -121,6 +123,7 @@ void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	simul::dx11::setTextureArray(m_pTerrainEffect,"textureArray",arrayTexture.m_pArrayTexture_SRV);
+	simul::dx11::setParameter(m_pTerrainEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	terrainConstants.eyePosition=cam_pos;
 	if(baseSkyInterface)
 	{
@@ -130,6 +133,16 @@ void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 	}
 	terrainConstants.worldViewProj=wvp;
 	terrainConstants.worldViewProj.transpose();
+
+	
+	simul::math::Matrix4x4 shadowMatrix		=cloudShadowStruct.shadowMatrix;
+	simul::math::Matrix4x4 invShadowMatrix;
+	shadowMatrix.Inverse(invShadowMatrix);
+	terrainConstants.invShadowMatrix		=invShadowMatrix;
+	terrainConstants.extentZMetres			=cloudShadowStruct.extentZMetres;
+	terrainConstants.startZMetres			=cloudShadowStruct.startZMetres;
+	terrainConstants.shadowRange			=cloudShadowStruct.shadowRange;
+
 	terrainConstants.Apply(pContext);
 
 	TerrainVertex_t *vertices;
@@ -205,6 +218,9 @@ void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 	if((v)>2)
 		pContext->Draw((v)-2,0);
 	pContext->IASetPrimitiveTopology(previousTopology);
+	simul::dx11::setTextureArray(m_pTerrainEffect,"textureArray",NULL);
+	simul::dx11::setParameter(m_pTerrainEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)NULL);
+	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
 }
 
 void SimulTerrainRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
