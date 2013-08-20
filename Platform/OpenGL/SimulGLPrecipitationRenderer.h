@@ -9,6 +9,7 @@
 #include "Simul/Math/Vector3.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
 #include "Simul/Platform/OpenGl/Export.h"
+#include "Simul/Platform/OpenGL/FramebufferGL.h"
 typedef long HRESULT;
 class SimulGLPrecipitationRenderer: public simul::clouds::BasePrecipitationRenderer
 {
@@ -19,17 +20,18 @@ public:
 	void RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the D3D device has been shut down.
 	void InvalidateDeviceObjects();
+	void SetCubemapTexture(void *){}
 	void RecompileShaders();
 	//! Call this to draw the clouds, including any illumination by lightning.
-	void Render();
+	void Render(void*);
 	// Set a texture not created by this class to be used:
 	bool SetExternalRainTexture(void* tex);
-	void SetYVertical(bool y)
+	void SetYVertical(bool )
 	{
-		y_vertical=y;
 	}
 protected:
-	bool y_vertical;
 	virtual void TextureRepeatChanged();
-	bool external_rain_texture;
+	bool		external_rain_texture;
+	GLuint		program;
+	GLuint		rain_texture;
 };

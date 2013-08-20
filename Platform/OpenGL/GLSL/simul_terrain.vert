@@ -1,4 +1,4 @@
-#version 130
+#version 140
 //#extension GL_EXT_geometry_shader4 : enable
 // simul_terrain.vert - an OGLSL vertex shader
 // Copyright 2012 Simul Software Ltd
@@ -11,8 +11,8 @@ out vec2 texcoord;
 
 void main(void)
 {
-    gl_Position		= worldViewProj * vec4(vertex, 1.0);
-	wPosition		= vertex;
-	texcoord		= vec2(wPosition.xy/2000.0);
+    gl_Position		=worldViewProj*vec4(vertex,1.0);
+	wPosition		=vertex;
+	texcoord		=vec2(wPosition.xy/2000.0);
 }
 

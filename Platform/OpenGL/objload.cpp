@@ -11,11 +11,6 @@
 
 using namespace Obj;
 
-void BezierPatch::Tesselate(const std::vector<Vertex>& point_array)
-{
-
-}
-
 void BezierPatch::SetLod(unsigned new_lod)
 {
 	delete[] VertexData;
@@ -530,7 +525,7 @@ std::string File::ReadChunk(std::istream& ifs)
 	std::string s;
 	do
 	{
-		char c = ifs.get();
+		char c = (char)ifs.get();
 		if (c == '\\')
 		{
 			while (ifs.get() != '\n')
@@ -552,13 +547,13 @@ std::string File::ReadChunk(std::istream& ifs)
 		{
 			break;
 		}
-	} while (1);
+	} while (true);
 	return s;
 }
 
 int File::GetIndex(const char *name)
 {
-	for(int i=0;i<vertex_buffers.size();i++)
+	for(int i=0;i<(int)vertex_buffers.size();i++)
 	{
 		if(strcmp(name,vertex_buffers[i].name.c_str())==0)
 		{
@@ -570,7 +565,7 @@ int File::GetIndex(const char *name)
 
 void File::SetTransform(int index,const float *trans)
 {
-	if(index<0||index>=vertex_buffers.size())
+	if(index<0||index>=(int)vertex_buffers.size())
 		return;
 	vertex_buffers[index].m_pTransform=trans;
 }
@@ -660,7 +655,7 @@ void File::ReadLine(std::istream& ifs)
 	char c;
 	std::vector < std::string > VertInfo;
 
-	c = ifs.get();
+	c = (char)ifs.get();
 	// store all strings
 	do
 	{
@@ -694,7 +689,7 @@ void File::ReadLine(std::istream& ifs)
 		while (c != ' ' && c != '\t' && c != '\n')
 		{
 			s += c;
-			c = ifs.get();
+			c =(char)ifs.get();
 			if (ifs.eof())
 			{
 				goto vinf;
@@ -766,7 +761,7 @@ void File::ReadFace(std::istream& ifs)
 		}
 		while (c == ' ' || c == '\t')
 		{
-			c = ifs.get();
+			c =(char)ifs.get();
 			if (ifs.eof())
 			{
 				goto vinf;
@@ -778,7 +773,7 @@ void File::ReadFace(std::istream& ifs)
 		while (c != ' ' && c != '\t' && c != '\n')
 		{
 			s += c;
-			c = ifs.get();
+			c =(char)ifs.get();
 			if (ifs.eof())
 			{
 				goto vinf;
@@ -1642,7 +1637,7 @@ unsigned int File::OnLoadTexture(const char filename[])
 {
 	int last_slash = Filename.find_last_of('/');
 	int last_backslash = Filename.find_last_of('\\');
-	if (last_backslash < Filename.length() && last_backslash > last_slash)
+	if (last_backslash < (int)Filename.length() && last_backslash > last_slash)
 		last_slash = last_backslash;
 	std::string fn = Filename.substr(0, last_slash);
 	fn += "/";

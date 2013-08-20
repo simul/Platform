@@ -100,8 +100,9 @@ static void SetBits8()
 	simul::clouds::TextureGenerator::SetBits(bits8[0],bits8[1],bits8[2],bits8[3],(unsigned)4,big_endian);
 }
 
-Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck)
-	:BaseCloudRenderer(ck)
+Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,
+										   simul::base::MemoryInterface *mem)
+	:Base2DCloudRenderer(ck,mem)
 	,m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pCloudEffect(NULL)
@@ -125,9 +126,7 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck)
 	cloudKeyframer->InitKeyframesFromClouds();
 
 	helper=new simul::clouds::Cloud2DGeometryHelper();
-	helper->SetYVertical(true);
-	static float max_distance=500000.f;
-	helper->Initialize(8,max_distance);
+	helper->Initialize(8);
 	helper->SetGrid(12,24);
 	
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
@@ -169,6 +168,7 @@ void Simul2DCloudRenderer::RecompileShaders()
 	mieRayleighRatio	=m_pCloudEffect->GetParameterByName(NULL,"mieRayleighRatio");
 	hazeEccentricity	=m_pCloudEffect->GetParameterByName(NULL,"hazeEccentricity");
 	cloudEccentricity	=m_pCloudEffect->GetParameterByName(NULL,"cloudEccentricity");
+	exposure			=m_pCloudEffect->GetParameterByName(NULL,"exposure");
 
 	cloudDensity1		=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity1");
 	cloudDensity2		=m_pCloudEffect->GetParameterByName(NULL,"cloudDensity2");
@@ -192,7 +192,7 @@ void Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
 	};
 	SAFE_RELEASE(m_pVtxDecl);
 	V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	V_CHECK(CreateNoiseTexture());
+	V_CHECK(CreateNoiseTexture(m_pd3dDevice));
 	hr=CreateImageTexture();
 	RecompileShaders();
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
@@ -222,14 +222,14 @@ Simul2DCloudRenderer::~Simul2DCloudRenderer()
 	InvalidateDeviceObjects();
 }
 
-bool Simul2DCloudRenderer::CreateNoiseTexture(bool override_file)
+bool Simul2DCloudRenderer::CreateNoiseTexture(void *)
 {
 	SAFE_RELEASE(noise_texture);
 	// Can we load it from disk?
 	HRESULT hr=S_OK;
-	if(!override_file)
-		if((hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/noise.dds"),&noise_texture))==S_OK)
-			return false;
+//	if(!override_file)
+//		if((hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/noise.dds"),&noise_texture))==S_OK)
+//			return false;
 	// Otherwise create it:
 	int size=512;
 	// NOTE: We specify ONE mipmap for this texture, NOT ZERO. If we use zero, that means
@@ -240,7 +240,7 @@ bool Simul2DCloudRenderer::CreateNoiseTexture(bool override_file)
 	if(FAILED(hr=noise_texture->LockRect(0,&lockedRect,NULL,NULL)))
 		return false;
 	SetBits8();
-	simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)(lockedRect.pBits),size,16,8,0.8f);
+	simul::clouds::TextureGenerator::Make2DNoiseTexture(( char *)(lockedRect.pBits),size,16,8,0.8f);
 	hr=noise_texture->UnlockRect(0);
 	//noise_texture->GenerateMipSubLevels();
 	return true;
@@ -261,7 +261,11 @@ void SetTexture()
 {
 }
 
-bool Simul2DCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
+void Simul2DCloudRenderer::PreRenderUpdate(void *)
+{
+}
+
+bool Simul2DCloudRenderer::Render(void *,float expos,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool,int,const simul::sky::float4& )
 {
 	cubemap;
 	depth_alpha_tex;
@@ -270,12 +274,12 @@ bool Simul2DCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool defaul
 	if(!enabled)
 		return (hr==S_OK);
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(1, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(2, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(3, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(4, D3DSAMP_SRGBTEXTURE,0);
-	m_pd3dDevice->SetSamplerState(5, D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(0,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(1,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(2,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(3,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(4,D3DSAMP_SRGBTEXTURE,0);
+	m_pd3dDevice->SetSamplerState(5,D3DSAMP_SRGBTEXTURE,0);
 #ifndef XBOX
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
@@ -290,8 +294,9 @@ bool Simul2DCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool defaul
 	m_pCloudEffect->SetTexture(noiseTexture					,noise_texture);
 	m_pCloudEffect->SetTexture(imageTexture					,image_texture);
 
+	float max_cloud_distance=400000.f;
 	// Mess with the proj matrix to extend the far clipping plane:
-	 FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,IsYVertical());
+	 FixProjectionMatrix(proj,max_cloud_distance*1.1f,false);
 		
 	//set up matrices
 	D3DXMATRIX tmp1, tmp2;
@@ -328,9 +333,8 @@ static float light_mult=.03f;
 	simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
 
 	static float sc=7.f;
-	helper->Set2DNoiseTexturing(-0.8f,1.f,1.f);
-	helper->Make2DGeometry(GetCloudInterface());
-	float image_scale=1.f/texture_scale;
+	helper->Make2DGeometry(GetCloudInterface(),true,false,max_cloud_distance);
+//	float image_scale=1.f/texture_scale;
 	static float image_effect=0.9f;
 	D3DXVECTOR4 interp_vec(cloudKeyframer->GetInterpolation(),1.f-cloudKeyframer->GetInterpolation(),0,0);
 	m_pCloudEffect->SetVector	(interp				,(D3DXVECTOR4*)(&interp_vec));
@@ -347,6 +351,8 @@ static float light_mult=.03f;
 	m_pCloudEffect->SetVector	(mieRayleighRatio	,(D3DXVECTOR4*)(&mie_rayleigh_ratio));
 	m_pCloudEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 	m_pCloudEffect->SetFloat	(cloudEccentricity	,GetCloudInterface()->GetMieAsymmetry());	
+	m_pCloudEffect->SetFloat	(exposure			,expos);	
+	
 	int startv=0;
 	int v=0;
 	hr=m_pd3dDevice->SetVertexDeclaration( m_pVtxDecl );
@@ -362,7 +368,6 @@ static float light_mult=.03f;
 	simul::math::Vector3 pos;
 	simul::sky::float4 loss2,inscatter2;
 	int i=0;
-	const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 	size_t qs_vert=0;
 	for(std::vector<simul::clouds::Cloud2DGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
 		j!=helper->GetQuadStrips().end();j++,i++)
@@ -374,19 +379,16 @@ static float light_mult=.03f;
 		
 		bool bit=false;
 
-		for(size_t k=0;k<(j)->num_vertices;k++,qs_vert++,v++,bit=!bit)
+		for(size_t k=0;k<(j)->indices.size();k++,qs_vert++,v++,bit=!bit)
 		{
 			Vertex2D_t &vertex=vertices[v];
-			const simul::clouds::Cloud2DGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
+			const simul::clouds::Cloud2DGeometryHelper::Vertex &V=helper->GetVertices()[(j)->indices[k]];
 			
 			simul::sky::float4 inscatter;
 			pos.Define(V.x,V.y,V.z);
 			if(v>=MAX_VERTICES)
 				break;
 			vertex.position=float3(V.x,V.y,V.z);
-			vertex.texCoords=float2(sc*V.cloud_tex_x,sc*V.cloud_tex_y);
-			vertex.texCoordNoise=float2(V.noise_tex_x,V.noise_tex_y);
-			vertex.imageCoords=float2(vertex.texCoords.x*image_scale,vertex.texCoords.y*image_scale);
 		}
 		if(v>=MAX_VERTICES)
 			break;
@@ -453,7 +455,7 @@ void Simul2DCloudRenderer::EnsureCorrectTextureSizes()
 	}
 }
 
-void Simul2DCloudRenderer::EnsureTexturesAreUpToDate()
+void Simul2DCloudRenderer::EnsureTexturesAreUpToDate(void*)
 {
 	EnsureTextureCycle();
 	for(int i=0;i<3;i++)
@@ -488,7 +490,7 @@ void Simul2DCloudRenderer::EnsureTextureCycle()
 
 simul::clouds::CloudKeyframer *Simul2DCloudRenderer::GetCloudKeyframer()
 {
-	return cloudKeyframer.get();
+	return cloudKeyframer;
 }
 
 void Simul2DCloudRenderer::Enable(bool val)
@@ -504,7 +506,7 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 	return debug_text;
 }
 
-void Simul2DCloudRenderer::RenderCrossSections(int screen_width,int screen_height)
+void Simul2DCloudRenderer::RenderCrossSections(void *,int screen_width,int )
 {
 	int w=(screen_width-16)/6;
 	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;

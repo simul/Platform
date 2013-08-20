@@ -12,10 +12,10 @@
 SIMUL_OPENGL_EXPORT_CLASS SimulGLLightningRenderer: public simul::clouds::BaseLightningRenderer
 {
 public:
-	SimulGLLightningRenderer(simul::clouds::LightningRenderInterface *lri);
+	SimulGLLightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk);
 	~SimulGLLightningRenderer();
 	void RestoreDeviceObjects();
-	void Render();
+	void Render(void*);
 	void InvalidateDeviceObjects();
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual void SetYVertical(bool ){}
@@ -41,11 +41,11 @@ protected:
 		}
 	};
 
-	GLuint				lightning_program;	
-	GLuint				lightning_vertex_shader;
-	GLuint				lightning_fragment_shader;
+	GLuint				lightning_program;
+	GLuint				glow_program;
 	GLuint				lightning_texture;
 	GLuint				lightningTexture_param;
 
 	bool CreateLightningTexture();
+	bool enable_geometry_shaders;
 };

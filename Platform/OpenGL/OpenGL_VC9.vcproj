@@ -52,6 +52,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				DebugInformationFormat="4"
+				ForcedIncludeFiles="Simul/UseDlls.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -133,6 +134,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				DebugInformationFormat="3"
+				ForcedIncludeFiles="Simul/UseDlls.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -321,15 +323,10 @@
 			ReferencedProjectIdentifier="{BA686093-89A1-438D-948A-34ECF718D106}"
 			CopyLocal="false"
 			CopyLocalDependencies="false"
+			UseInBuild="false"
+			UseDependenciesInBuild="false"
 			CopyLocalSatelliteAssemblies="false"
 			RelativePathToProject=".\Clouds\Clouds_VC9.vcproj"
-		/>
-		<ProjectReference
-			ReferencedProjectIdentifier="{CC71B070-12C2-45C9-894A-A9CDDC1F3FA4}"
-			CopyLocal="false"
-			CopyLocalDependencies="false"
-			CopyLocalSatelliteAssemblies="false"
-			RelativePathToProject=".\Terrain\Terrain_VC9.vcproj"
 		/>
 	</References>
 	<Files>
@@ -364,6 +361,10 @@
 			</File>
 			<File
 				RelativePath=".\OpenGLRenderer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Profiler.cpp"
 				>
 			</File>
 			<File
@@ -425,10 +426,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Glsl.h"
-				>
-			</File>
-			<File
 				RelativePath=".\GpuCloudGenerator.h"
 				>
 			</File>
@@ -450,6 +447,10 @@
 			</File>
 			<File
 				RelativePath=".\OpenGLRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Profiler.h"
 				>
 			</File>
 			<File
@@ -505,6 +506,22 @@
 			Name="Shaders"
 			>
 			<File
+				RelativePath=".\GLSL\CppGlsl.hs"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\saturate.glsl"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simple.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simple.vert"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_2d_cloud_detail.frag"
 				>
 			</File>
@@ -513,7 +530,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\GLSL\simul_atmospherics.frag"
+				RelativePath=".\GLSL\simul_2d_noise.frag"
 				>
 			</File>
 			<File
@@ -521,7 +538,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\GLSL\simul_atmospherics_earthshadow.frag"
+				RelativePath=".\GLSL\simul_atmospherics_godrays.frag"
 				>
 			</File>
 			<File
@@ -530,6 +547,10 @@
 			</File>
 			<File
 				RelativePath=".\GLSL\simul_cloud_cross_section.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_cloud_overlay.frag"
 				>
 			</File>
 			<File
@@ -561,10 +582,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\GLSL\simul_earthshadow_uniforms.glsl"
-				>
-			</File>
-			<File
 				RelativePath=".\GLSL\simul_fade_3d_to_2d.frag"
 				>
 			</File>
@@ -574,6 +591,10 @@
 			</File>
 			<File
 				RelativePath=".\GLSL\simul_flare.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_glow.frag"
 				>
 			</File>
 			<File
@@ -621,6 +642,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLSL\simul_hdr_blur.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_insc.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_insc_earthshadow.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_lightning.frag"
 				>
 			</File>
@@ -633,7 +666,35 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLSL\simul_loss.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_noise.frag"
+				>
+			</File>
+			<File
 				RelativePath=".\GLSL\simul_planet.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_rain.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_rain.vert"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_raytrace_clouds.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_simple_lightning.frag"
+				>
+			</File>
+			<File
+				RelativePath=".\GLSL\simul_simple_lightning.vert"
 				>
 			</File>
 			<File
@@ -678,6 +739,58 @@
 			</File>
 			<File
 				RelativePath=".\GLSL\tonemap.vert"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="CrossPlatform"
+			>
+			<File
+				RelativePath="..\CrossPlatform\CppSl.hs"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\depth.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\earth_shadow.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\earth_shadow_uniforms.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_2d_clouds.hs"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_2d_clouds.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_cloud_constants.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_clouds.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_gpu_clouds.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_gpu_sky.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_inscatter_fns.sl"
+				>
+			</File>
+			<File
+				RelativePath="..\CrossPlatform\simul_terrain_constants.sl"
 				>
 			</File>
 		</Filter>

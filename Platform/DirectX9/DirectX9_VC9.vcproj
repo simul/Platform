@@ -335,15 +335,10 @@
 			ReferencedProjectIdentifier="{BA686093-89A1-438D-948A-34ECF718D106}"
 			CopyLocal="false"
 			CopyLocalDependencies="false"
+			UseInBuild="false"
+			UseDependenciesInBuild="false"
 			CopyLocalSatelliteAssemblies="false"
 			RelativePathToProject=".\Clouds\Clouds_VC9.vcproj"
-		/>
-		<ProjectReference
-			ReferencedProjectIdentifier="{CC71B070-12C2-45C9-894A-A9CDDC1F3FA4}"
-			CopyLocal="false"
-			CopyLocalDependencies="false"
-			CopyLocalSatelliteAssemblies="false"
-			RelativePathToProject=".\Terrain\Terrain_VC9.vcproj"
 		/>
 	</References>
 	<Files>

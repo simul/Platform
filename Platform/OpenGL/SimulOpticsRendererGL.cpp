@@ -45,10 +45,9 @@ void SimulOpticsRendererGL::RestoreDeviceObjects(void *)
 void SimulOpticsRendererGL::RecompileShaders()
 {
 	SAFE_DELETE_PROGRAM(flare_program);
-	flare_program					=LoadPrograms("simul_sun_planet_flare.vert",NULL,"simul_flare.frag");
+	flare_program					=MakeProgram("simul_sun_planet_flare.vert",NULL,"simul_flare.frag");
 	flareColour_param				=glGetUniformLocation(flare_program,"flareColour");
 	flareTexture_param				=glGetUniformLocation(flare_program,"flareTexture");
-	printProgramInfoLog(flare_program);
 
 }
 
@@ -62,7 +61,7 @@ void SimulOpticsRendererGL::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(flare_program);
 }
 
-void SimulOpticsRendererGL::RenderFlare(float exposure,const float *dir,const float *light)
+void SimulOpticsRendererGL::RenderFlare(void *,float exposure,const float *dir,const float *light)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	simul::sky::float4 sun_dir(dir);//skyKeyframer->GetDirectionToLight());
@@ -82,6 +81,8 @@ void SimulOpticsRendererGL::RenderFlare(float exposure,const float *dir,const fl
 	sunlight*=sun_mult*flare_magnitude;
 	
 	glEnable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
 	
 	glBlendFunc(GL_ONE,GL_ONE);
 	

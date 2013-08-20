@@ -2,14 +2,17 @@
 #include <assert.h>
 const int MIPLEVELS=1;
 
+using namespace simul::dx11;
+
 FramebufferCubemapDX1x::FramebufferCubemapDX1x()
-	:m_pImmediateContext(NULL)
-	,m_pCubeEnvDepthMap(NULL)
+	:m_pCubeEnvDepthMap(NULL)
 	,m_pCubeEnvMap(NULL)
 	,m_pCubeEnvMapSRV(NULL)
 	,Width(0)
 	,Height(0)
 	,current_face(0)
+	,format(DXGI_FORMAT_R8G8B8A8_UNORM)
+	,stagingTexture(NULL)
 {
 	for(int i=0;i<6;i++)
 	{
@@ -30,15 +33,19 @@ void FramebufferCubemapDX1x::SetWidthAndHeight(int w,int h)
 	assert(h==w);
 }
 
-void FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
+void FramebufferCubemapDX1x::SetFormat(int f)
+{
+	DXGI_FORMAT F=(DXGI_FORMAT)f;
+	if(F==format)
+		return;
+	format=F;
+	//CreateBuffers();
+}
+
+void FramebufferCubemapDX1x::RestoreDeviceObjects(void* dev)
 {
 	HRESULT hr=S_OK;
-#ifdef DX10
-	m_pImmediateContext=pd3dDevice;
-#else
-	SAFE_RELEASE(m_pImmediateContext);
-	pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-#endif
+	pd3dDevice=(ID3D1xDevice*)dev;
 	// Create cubic depth stencil texture
 	D3D1x_TEXTURE2D_DESC dstex;
 	dstex.Width = Width;
@@ -74,7 +81,7 @@ void FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
 	 
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	// Create the cube map for env map render target
-	dstex.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	dstex.Format = format;
 	dstex.BindFlags = D3D1x_BIND_RENDER_TARGET | D3D1x_BIND_SHADER_RESOURCE;
 	dstex.MiscFlags = D3D1x_RESOURCE_MISC_GENERATE_MIPS | D3D1x_RESOURCE_MISC_TEXTURECUBE;
 	dstex.MipLevels = MIPLEVELS;
@@ -106,6 +113,24 @@ void FramebufferCubemapDX1x::RestoreDeviceObjects(ID3D1xDevice* pd3dDevice)
 	 
 	V_CHECK( pd3dDevice->CreateShaderResourceView(m_pCubeEnvMap, &SRVDesc, &m_pCubeEnvMapSRV ));
 }
+ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *pd3dDevice,int w,DXGI_FORMAT target_format)
+{
+	D3D11_TEXTURE2D_DESC dstex;
+	dstex.Width					= w;
+	dstex.Height				= w;
+	dstex.MipLevels				= 1;
+	dstex.ArraySize				= 6;
+	dstex.SampleDesc.Count		= 1;
+	dstex.SampleDesc.Quality	= 0;
+	dstex.Format				= target_format;
+	dstex.Usage					= D3D11_USAGE_STAGING;
+	dstex.BindFlags				= 0;
+	dstex.CPUAccessFlags		=D3D11_CPU_ACCESS_READ| D3D11_CPU_ACCESS_WRITE;
+	dstex.MiscFlags				=D3D11_RESOURCE_MISC_TEXTURECUBE;
+	ID3D11Texture2D* tex		=NULL;
+	pd3dDevice->CreateTexture2D(&dstex,NULL,&tex);
+	return tex;
+}
 
 void FramebufferCubemapDX1x::InvalidateDeviceObjects()
 {
@@ -117,25 +142,43 @@ void FramebufferCubemapDX1x::InvalidateDeviceObjects()
 		SAFE_RELEASE(m_pCubeEnvDepthMapDSV[i]);
 	}
 	SAFE_RELEASE(m_pCubeEnvMapSRV);
-	SAFE_RELEASE(m_pImmediateContext);
 }
 
 void FramebufferCubemapDX1x::SetCurrentFace(int i)
 {
 	current_face=i;
 }
-void FramebufferCubemapDX1x::Activate()
+
+ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy(void *context)
 {
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext*)context;
+	if(!stagingTexture)
+		stagingTexture		=makeStagingTexture(pd3dDevice,Width,format);
+	D3D11_BOX sourceRegion;
+	sourceRegion.left = 0;
+	sourceRegion.right = Width;
+	sourceRegion.top = 0;
+	sourceRegion.bottom = Height;
+	sourceRegion.front = 0;
+	sourceRegion.back = 1;
+	for(int i=0;i<6;i++)
+		m_pImmediateContext->CopySubresourceRegion(stagingTexture,i, 0, 0, 0, m_pCubeEnvMap,i, &sourceRegion);
+	return stagingTexture;
+}
+
+void FramebufferCubemapDX1x::Activate(void *context)
+{
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 #if 0
 	for(int i=0;i<6;i++)
 	{
-		cubemap_framebuffers[i].Activate();
+		cubemap_framebuffers[i].Activate(context);
 		if(simulSkyRenderer)
 		{
 			simulSkyRenderer->SetMatrices(view_matrices[i],proj);
 			hr=simulSkyRenderer->Render(true);
 		}
-		cubemap_framebuffers[i].Deactivate();
+		cubemap_framebuffers[i].Deactivate(context);
 	}
 #else
 	HRESULT hr=S_OK;
@@ -165,9 +208,9 @@ void FramebufferCubemapDX1x::Activate()
 #endif
 }
 
-void FramebufferCubemapDX1x::Deactivate()
+void FramebufferCubemapDX1x::Deactivate(void *context)
 {
-	//ID3D11RenderTargetView* rTargets[2] = { m_pOldRenderTarget, NULL };
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
@@ -175,8 +218,9 @@ void FramebufferCubemapDX1x::Deactivate()
 	m_pImmediateContext->RSSetViewports(1,m_OldViewports);
 }
 
-void FramebufferCubemapDX1x::Clear(float r,float g,float b,float a,int mask)
+void FramebufferCubemapDX1x::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
 {
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	if(!mask)
 		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
 	// Clear the screen to black:
@@ -185,6 +229,6 @@ void FramebufferCubemapDX1x::Clear(float r,float g,float b,float a,int mask)
     {
 		m_pImmediateContext->ClearRenderTargetView(m_pCubeEnvMapRTV[i],clearColor);
 		if(m_pCubeEnvDepthMapDSV[i])
-			m_pImmediateContext->ClearDepthStencilView(m_pCubeEnvDepthMapDSV[i],mask, 1.f, 0);
+			m_pImmediateContext->ClearDepthStencilView(m_pCubeEnvDepthMapDSV[i],mask,depth, 0);
 		}
 }

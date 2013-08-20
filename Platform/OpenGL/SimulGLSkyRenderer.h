@@ -28,7 +28,7 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGLSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
-	SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk);
+	SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *m);
 	virtual ~SimulGLSkyRenderer();
 	//standard ogl object interface functions
 
@@ -37,13 +37,14 @@ public:
 	void						RestoreDeviceObjects(void*);
 	//! Destroy the API-specific objects used in rendering.
 	void						InvalidateDeviceObjects();
+	void						ReloadTextures();
 	void						RecompileShaders();
 	//! GL Implementation of render function.
-	bool						Render(bool blend);
+	bool						Render(void *,bool blend);
 	//! Render the stars, as points.
-	bool						RenderPointStars();
+	bool						RenderPointStars(void *,float exposure);
 	//! Draw the 2D fades to screen for debugging.
-	bool						RenderFades(int w,int h);
+	bool						RenderFades(void *,int w,int h);
 
 	// Implementing simul::sky::SkyTexturesCallback
 	virtual void SetSkyTextureSize(unsigned ){}
@@ -54,13 +55,13 @@ public:
 	}
 	virtual		void CycleTexturesForward(){}
 	virtual		bool HasFastFadeLookup() const{return true;}
-	virtual		const float *GetFastLossLookup(float distance_texcoord,float elevation_texcoord);
-	virtual		const float *GetFastInscatterLookup(float distance_texcoord,float elevation_texcoord);
+	virtual		const float *GetFastLossLookup(void* context,float distance_texcoord,float elevation_texcoord);
+	virtual		const float *GetFastInscatterLookup(void* context,float distance_texcoord,float elevation_texcoord);
 
-	bool		RenderPlanet(void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void		RenderSun(float exposure_hint);
+	void		RenderPlanet(void *,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
+	void		RenderSun(void *context,float exposure_hint);
 
-	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s);
+	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o);
 
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual		void SetYVertical(bool ){}
@@ -77,7 +78,7 @@ protected:
 	void		EnsureTextureCycle();
 
 	bool		initialized;
-	bool		Render2DFades();
+	bool		Render2DFades(void *context);
 	void		CreateFadeTextures();
 	void		CreateSkyTextures();
 
@@ -110,6 +111,7 @@ protected:
 	GLint			MieRayleighRatio_param;
 	GLint			hazeEccentricity_param;
 	GLint			lightDirection_sky_param;
+
 	GLint			earthShadowUniforms;
 	GLuint			earthShadowUniformsUBO;
 	
@@ -128,10 +130,20 @@ protected:
 	GLint			maxDistance;
 	GLint			viewPosition;
 	GLint			overcast_param;
+
+	
+	GLint			altitudeTexCoord_fade	;
+	GLint			skyInterp_fade		;
+	GLint			fadeTexture1_fade		;
+	GLint			fadeTexture2_fade		;
 	
 	FramebufferGL	loss_2d;
 	FramebufferGL	inscatter_2d;
 	FramebufferGL	skylight_2d;
+
+	GLuint			loss_texture;
+	GLuint			insc_texture;
+	GLuint			skyl_texture;
 
 	bool campos_updated;
 	short *short_ptr;
@@ -139,7 +151,7 @@ protected:
 	{
 		return false;
 	}
-	void DrawLines(Vertext *lines,int vertex_count,bool strip=false);
-	void PrintAt3dPos(const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
+	void DrawLines(void *,Vertext *lines,int vertex_count,bool strip=false);
+	void PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };
 

@@ -17,62 +17,54 @@
 SIMUL_OPENGL_EXPORT_CLASS FramebufferGL:public BaseFramebuffer
 {
 public:
-	FramebufferGL(int w=0, int h=0, GLenum target = GL_TEXTURE_2D,const char *shader=0,
+	FramebufferGL(int w=0, int h=0, GLenum target = GL_TEXTURE_2D,
 			int samples = 0, int coverageSamples = 0);
 
 	~FramebufferGL();
+	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
-	void SetExposure(float e)
-	{
-		exposure = e;
-	}
-	void SetGamma(float g)
-	{
-		gamma = g;
-	}
-	void SetShader(int i);
 	void SetWidthAndHeight(int w,int h);
+	void SetFormat(int);
+	void SetDepthFormat(int);
+	void SetWrapClampMode(GLint wr);
 	// In order to use a color buffer, either
 	// InitColor_RB or InitColor_Tex needs to be called.
 	//void InitColor_RB(int index, GLenum internal_format);
-	bool InitColor_Tex(int index, GLenum internal_format,GLenum format,GLint wrap_clamp=GL_CLAMP_TO_EDGE);
+	bool InitColor_Tex(int index, GLenum internal_format);
 	// In order to use a depth buffer, either
 	// InitDepth_RB or InitDepth_Tex needs to be called.
 	void InitDepth_RB(GLenum iformat = GL_DEPTH_COMPONENT24);
 	void InitDepth_Tex(GLenum iformat = GL_DEPTH_COMPONENT24);
+	void Init();
+	/// Use the existing depth buffer
+	void NoDepth();
 	/// Activate / deactivate the FBO as a render target
 	/// The FBO needs to be deactivated when using the associated textures.
-	void Activate();
+	void Activate(void *context);
 	/// Activate rendering to a viewport
-	void Activate(int x,int y,int w,int h);
-	void Deactivate();
-	void Clear(float r,float g,float b,float a,int mask=0);
-	void DeactivateAndRender(bool blend);
-	void Render(bool blend);
-	void Render(GLuint prog,bool blend);
-	//void DrawQuad(int w, int h);
-	void DrawQuad();
+	void Activate(void *context,int x,int y,int w,int h);
+	void Deactivate(void *context);
+	void CopyDepthFromFramebuffer();
+	void Clear(void*,float r,float g,float b,float a,float depth,int mask=0);
+	void DeactivateAndRender(void *,bool blend);
+	void Render(void *,bool blend);
 	// Get the dimension of the surface
 	inline int GetWidth()
 	{
-		return m_width;
+		return Width;
 	}
 	inline int GetHeight()
 	{
-		return m_height;
+		return Height;
 	}
 	// Get the internal texture object IDs.
 	void* GetColorTex()
 	{
 		return (void*) m_tex_col[0];
 	}
-	void* GetColorTex(int index)
+	void* GetDepthTex()
 	{
-		return (void*) m_tex_col[index];
-	}
-	inline GLenum GetDepthTex()
-	{
-		return m_tex_depth;
+		return (void*)m_tex_depth;
 	}
 	// Get the target texture format (texture2d or texture_rectangle)
 	inline GLenum GetTarget()
@@ -83,23 +75,18 @@ public:
 	{
 		return m_fb;
 	}
-	void RecompileShaders();
-	GLuint GetProgram() const 
-	{
-		return tonemap_program;
-	}
+	void CopyToMemory(void *context,void *target,int start_texel,int num_texels);
 private:
-	const char *shader_filename;
 	static std::stack<GLuint> fb_stack;
 	void CheckFramebufferStatus();
 	// Bind the internal textures
-	void BindColor(int index = 0)
+	void BindColor()
 	{
-		glBindTexture(m_target, m_tex_col[index]);
+		glBindTexture(m_target, m_tex_col[0]);
 	}
-	inline void Bind(int index = 0)
+	inline void Bind()
 	{
-		BindColor(index);
+		BindColor();
 	}
 	// aliased to BindColor.  this reduces app code changes while migrating
 	// from the pbuffer implementation.
@@ -111,25 +98,17 @@ private:
 	{
 		glBindTexture(m_target, 0);
 	}
-	const static int num_col_buffers = 16;
+	const static int num_col_buffers = 1;
 	int main_viewport[4];
-	int m_width, m_height;
 	GLenum m_target;
 	int m_samples; // 0 if not multisampled
 	int m_coverageSamples; // for CSAA
 	GLuint m_fb;
-	GLuint m_tex_col[num_col_buffers], m_rb_col[num_col_buffers];
+	GLuint m_tex_col[num_col_buffers];//, m_rb_col[num_col_buffers];
 	GLuint m_tex_depth, m_rb_depth;
-	// shaders
-	GLuint tonemap_vertex_shader;
-	GLuint tonemap_fragment_shader;
-	GLuint tonemap_program;
-	GLint exposure_param;
-	GLint gamma_param;
-	GLint buffer_tex_param;
 	GLenum colour_iformat,depth_iformat;
-	float exposure, gamma;
 	bool initialized;
+	GLint wrap_clamp;
 };
 
 #ifdef _MSC_VER

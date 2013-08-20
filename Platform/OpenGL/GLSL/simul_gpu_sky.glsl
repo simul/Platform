@@ -1,14 +1,12 @@
 #ifndef SIMUL_GPU_SKY_GLSL
 #define SIMUL_GPU_SKY_GLSL
 #ifndef __cplusplus
-#include "simul_inscatter_fns.glsl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
 #endif
-#define ALIGN
-#define cbuffer layout(std140) uniform
-#define R0
+#include "CppGlsl.hs"
 #ifndef __cplusplus
 uniform sampler2D optical_depth_texture;
 #endif
-#define texture_clamp texture
+#include "saturate.glsl"
 #include "../../CrossPlatform/simul_gpu_sky.sl"
 #endif

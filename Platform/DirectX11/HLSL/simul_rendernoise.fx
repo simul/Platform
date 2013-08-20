@@ -1,71 +1,119 @@
-
-Texture2D noiseTexture;
+#include "CppHlsl.hlsl"
+Texture2D noise_texture;
 
 SamplerState samplerState 
 {
 	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Clamp;
-	AddressV = Clamp;
+	AddressU = Wrap;
+	AddressV = Wrap;
 };
-int octaves;
-float persistence;
+
+uniform_buffer RendernoiseConstants SIMUL_BUFFER_REGISTER(10)
+{
+	int octaves;
+	float persistence;
+};
 
 struct a2v
 {
     float4 position  : POSITION;
-    float4 texcoord  : TEXCOORD0;
+    float2 texCoords  : TEXCOORD0;
 };
 
 struct v2f
 {
-    float4 position  : POSITION;
-    float4 texcoord  : TEXCOORD0;
+    float4 hPosition  : SV_POSITION;
+    float2 texCoords  : TEXCOORD0;
 };
 
-v2f MainVS(a2v IN)
+float rand(vec2 co)
 {
-	v2f OUT;
-	OUT.position = IN.position;
-	OUT.texcoord = IN.texcoord;
-    return OUT;
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-float4 MainPS(v2f IN) : COLOR
+v2f MainVS(idOnly IN)
 {
-	float3 c=float3(0,0,0);
-	float scale=.5f;
-	int i;
-	float2 sc;
-	float r;
-	float az;
-	for(i=0;i<octaves;i++)
+    v2f OUT;
+	float2 poss[4]=
 	{
-		float4 lookup=noiseTexture.Sample(samplerState,IN.texcoord.xy);
-		r=1.0-pow(lookup.x,4.0);
-		az=lookup.y*6.283;
-		sincos(az,sc.x,sc.y);
-		float sinel=lookup.z*2.0-1.0;
-		float cosel=sqrt(1.0-sinel*sinel);
-		sc*=cosel;
-		float3 random_dir=float3(sc.x,sc.y,sinel);
-		float3 newc=scale*r*random_dir;
-		c+=newc;
-		scale*=persistence;
-		IN.texcoord*=2.0;
-	}
-	c+=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
-    return float4(c.rrr,c.r);
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(pos,0.0,1.0);
+    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(pos.x,pos.y));
+	return OUT;
 }
 
-technique simul_rendernoise
+float4 RandomPS(v2f IN) : SV_TARGET
+{
+	// Range from -1 to 1.
+    vec4 c=2.0*vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords))-1.0;
+    return c;
+}
+
+float4 MainPS(v2f IN) : SV_TARGET
+{
+	vec4 result=vec4(0,0,0,0);
+	vec2 texcoords=IN.texCoords;
+	float mul=.5;
+	float total=0.0;
+    for(int i=0;i<octaves;i++)
+    {
+		vec4 c=texture2D(noise_texture,texcoords);
+		texcoords*=2.0;
+		total+=mul;
+		result+=mul*c;
+		mul*=persistence;
+    }
+	// divide by total to get the range -1,1.
+	result*=1.0/total;
+    return result;
+}
+
+DepthStencilState DisableDepth
+{
+	DepthEnable = FALSE;
+	DepthWriteMask = ZERO;
+};
+
+RasterizerState RenderNoCull
+{
+	CullMode = none;
+};
+
+BlendState NoBlend
+{
+	BlendEnable[0] = FALSE;
+};
+
+technique11 simul_random
 {
     pass p0
     {
-		cullmode = none;
-		ZEnable = false;
-		ZWriteEnable = false;
-		AlphaBlendEnable = false;
-		VertexShader = compile vs_2_0 MainVS();
-		PixelShader = compile ps_3_0 MainPS();
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		//SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
+		SetPixelShader(CompileShader(ps_4_0,RandomPS()));
     }
 }
+
+technique11 simul_noise_2d
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		//SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
+		SetPixelShader(CompileShader(ps_4_0,MainPS()));
+    }
+}
+

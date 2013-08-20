@@ -1,3 +1,4 @@
+
 // Copyright (c) 2007-2011 Simul Software Ltd
 // All Rights Reserved.
 //
@@ -44,7 +45,7 @@ SIMUL_DIRECTX9_EXPORT_CLASS SimulCloudRenderer
 	,public simul::graph::meta::ResourceUser<simul::graph::standardnodes::ShowProgressInterface>
 {
 public:
-	SimulCloudRenderer(simul::clouds::CloudKeyframer *ck);
+	SimulCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem);
 	virtual ~SimulCloudRenderer();
 	//GpuCloudGenerator gpuCloudGenerator;
 	META_BeginProperties
@@ -55,13 +56,10 @@ public:
 	void RestoreDeviceObjects(void *pd3dDevice);
 	//! Call this when the 3D device has been lost.
 	void InvalidateDeviceObjects();
+	void PreRenderUpdate(void *context);
 	//! DX9 implementation of cloud rendering. For this platform, depth_testing and default_fog are ignored.
-	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
-	//! Call this to draw the clouds, including any illumination by lightning.
-	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,int buffer_index,bool write_alpha);
-	//! Get the list of three textures used for cloud rendering.
-	void **GetCloudTextures();
-	void *GetCloudShadowTexture();
+	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
+
 	//! Save the first keyframe texture into a 2D image file by stacking X-Z slices vertically.
 	void SaveCloudTexture(const char *filename);
 	//! Draw clouds as horizontal layers
@@ -74,31 +72,31 @@ public:
 	float GetTiming() const;
 	void *GetIlluminationTexture();
 	void SetLossTexture(void *t1);
-	void SetInscatterTextures(void *i,void *s);
+	void SetInscatterTextures(void *i,void *s,void *o);
 	LPDIRECT3DTEXTURE9 GetNoiseTexture()
 	{
 		return noise_texture;
 	}
-	void RenderCrossSections(int width,int height);
+	void RenderCrossSections(void *,int width,int height);
 	bool RenderDistances(int width,int height);
 	bool RenderLightVolume();
 	void EnableFilter(bool f);
-	void SetYVertical(bool y);
 	bool IsYVertical() const{return y_vertical;}
 
 protected:
+	virtual void DrawLines(void*,VertexXyzRgba *,int ,bool ){}
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void*);
 	void EnsureCorrectIlluminationTextureSizes();
 	void EnsureIlluminationTexturesAreUpToDate();
 	void EnsureTextureCycle();
 
 	void NumBuffersChanged();
 	bool y_vertical;
-	void InternalRenderHorizontal(int buffer_index=0);
-	void InternalRenderRaytrace(int buffer_index=0);
-	void InternalRenderVolumetric(int buffer_index=0);
+	void InternalRenderHorizontal(int viewport_id);
+	void InternalRenderRaytrace(int viewport_id);
+	void InternalRenderVolumetric(int viewport_id);
 	bool wrap;
 	struct float2
 	{
@@ -208,10 +206,10 @@ protected:
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 	LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;
-	virtual bool CreateNoiseTexture(bool override_file=false);
-	bool MakeCubemap(); // not ready yet
+	virtual bool CreateNoiseTexture(void *);
+	bool MakeCubemap(void *context); // not ready yet
 	//! Once per frame, fill this 1-D texture with information on the layer distances and noise offsets
-	bool FillRaytraceLayerTexture();
+	bool FillRaytraceLayerTexture(int viewport_id);
 	float last_time;
 };
 #ifdef _MSC_VER

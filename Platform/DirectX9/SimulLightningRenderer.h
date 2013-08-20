@@ -18,10 +18,10 @@ typedef long HRESULT;
 class SimulLightningRenderer: public simul::clouds::BaseLightningRenderer
 {
 public:
-	SimulLightningRenderer(simul::clouds::LightningRenderInterface *lri);
+	SimulLightningRenderer(simul::clouds::CloudKeyframer *lri,simul::sky::BaseSkyInterface *sk);
 	~SimulLightningRenderer();
 	void RestoreDeviceObjects(void *pd3dDevice);
-	void Render();
+	void Render(void *);
 	void InvalidateDeviceObjects();
 	void SetYVertical(bool y)
 	{

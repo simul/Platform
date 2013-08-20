@@ -10,8 +10,10 @@ layout(std140) uniform CloudConstants
 	uniform vec3 lightDir;
 	uniform float fadeInterp;
 	uniform vec4 lightningMultipliers;
-	uniform vec4 lightningColour;
-	uniform vec2 screenCoordOffset;
+	uniform vec3 lightningColour;
 	uniform float earthshadowMultiplier;
+	uniform vec3 lightningSourcePos;
+	uniform float rain;
+	uniform vec2 screenCoordOffset;
 };
 #endif

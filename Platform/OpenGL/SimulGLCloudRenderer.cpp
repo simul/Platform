@@ -26,14 +26,13 @@
 #include "Simul/Clouds/TextureGenerator.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/CloudKeyframer.h"
+#include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
 #include "LoadGLProgram.h"
-#include "Simul/Platform/OpenGL/Glsl.h"
-#include "Simul/Platform/OpenGL/GLSL/CloudConstants.glsl"
 
 #include <algorithm>
 
@@ -73,8 +72,8 @@ public:
 };
 CumulonimbusHumidityCallback cb;
 
-SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudKeyframer)
-	:BaseCloudRenderer(cloudKeyframer)
+SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem)
+	:BaseCloudRenderer(ck,mem)
 	,texture_scale(1.f)
 	,scale(2.f)
 	,texture_effect(1.f)
@@ -85,12 +84,21 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudK
 	,init(false)
 	,clouds_background_program(0)
 	,clouds_foreground_program(0)
+	,raytrace_program(0)
+	,noise_prog(0)
+	,edge_noise_prog(0)
 	,current_program(0)
 	,cross_section_program(0)
 	,cloud_shadow_program(0)
-	,cloudConstants(0)
+
 	,cloudConstantsUBO(0)
 	,cloudConstantsBindingIndex(2)
+
+	,cloudPerViewConstantsUBO(0)
+	,cloudPerViewConstantsBindingIndex(13)
+
+	,layerDataConstantsUBO(0)
+	,layerDataConstantsBindingIndex(4)
 {
 	for(int i=0;i<3;i++)
 	{
@@ -122,15 +130,19 @@ ERROR_CHECK
     glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 	const float *data=GetCloudGridInterface()->GetNoiseInterface()->GetData();
     glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA32F_ARB,size,size,size,0,GL_RGBA,GL_FLOAT,data);
-	glGenerateMipmap(GL_TEXTURE_3D);
+	//glGenerateMipmap(GL_TEXTURE_3D);
 ERROR_CHECK
 }
 
-bool SimulGLCloudRenderer::CreateNoiseTexture(bool override_file)
+bool SimulGLCloudRenderer::CreateNoiseTexture(void *context)
 {
 	if(!init)
 		return false;
-ERROR_CHECK
+	int noise_texture_size		=cloudKeyframer->GetEdgeNoiseTextureSize();
+	int noise_texture_frequency	=cloudKeyframer->GetEdgeNoiseFrequency();
+	int texture_octaves			=cloudKeyframer->GetEdgeNoiseOctaves();
+	float texture_persistence	=cloudKeyframer->GetEdgeNoisePersistence();
+	SAFE_DELETE_TEXTURE(noise_tex);
     glGenTextures(1,&noise_tex);
     glBindTexture(GL_TEXTURE_2D,noise_tex);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -138,53 +150,66 @@ ERROR_CHECK
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_R,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA8,noise_texture_size,noise_texture_size,0,GL_RGBA,GL_UNSIGNED_INT,0);
-	unsigned char *data=new unsigned char[4*noise_texture_size*noise_texture_size];
-	bool got_data=false;
-	if(!override_file)
-	{
-		ifstream ifs("noise_3d_clouds",ios_base::binary);
-		if(ifs.good()){
-			int size=0,octaves=0,freq=0;
-			float pers=0.f;
-			ifs.read(( char*)&size,sizeof(size));
-			ifs.read(( char*)&freq,sizeof(freq));
-			ifs.read(( char*)&octaves,sizeof(octaves));
-			ifs.read(( char*)&pers,sizeof(pers));
-			if(size==noise_texture_size&&freq==noise_texture_frequency&&octaves==texture_octaves&&pers==texture_persistence)
-			{
-				ifs.read(( char*)data,noise_texture_size*noise_texture_size*sizeof(unsigned));
-				got_data=true;
-			}
-		}
-	}
-	if(!got_data)
-	{
-		simul::clouds::TextureGenerator::SetBits((unsigned)255<<24,(unsigned)255<<8,(unsigned)255<<16,(unsigned)255<<0,4,false);
-		simul::clouds::TextureGenerator::Make2DNoiseTexture((unsigned char *)data,noise_texture_size,noise_texture_frequency,texture_octaves,texture_persistence);
-	}
-	glTexSubImage2D(
-		GL_TEXTURE_2D,0,
-		0,0,
-		noise_texture_size,noise_texture_size,
-		GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
-		data);
+	//GL_RGBA8_SNORM is not yet properly supported!
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,noise_texture_size,noise_texture_size,0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,0);
 ERROR_CHECK
-	glGenerateMipmap(GL_TEXTURE_2D);
-	if(!got_data)
+glGenerateMipmap(GL_TEXTURE_2D);
+	FramebufferGL noise_fb(noise_texture_frequency,noise_texture_frequency,GL_TEXTURE_2D);
+	noise_fb.SetWrapClampMode(GL_REPEAT);
+	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB);
+ERROR_CHECK
+	noise_fb.Activate(context);
 	{
-		ofstream ofs("noise_3d_clouds",ios_base::binary);
-		ofs.write((const char*)&noise_texture_size,sizeof(noise_texture_size));
-		ofs.write((const char*)&noise_texture_frequency,sizeof(noise_texture_frequency));
-		ofs.write((const char*)&texture_octaves,sizeof(texture_octaves));
-		ofs.write((const char*)&texture_persistence,sizeof(texture_persistence));
-		ofs.write((const char*)data,noise_texture_size*noise_texture_size*sizeof(unsigned));
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0,1.0,0,1.0,-1.0,1.0);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glUseProgram(noise_prog);
+		DrawQuad(0,0,1,1);
 	}
-	delete [] data;
+	noise_fb.Deactivate(context);
+	glUseProgram(0);
+ERROR_CHECK	
+	FramebufferGL n_fb(noise_texture_size,noise_texture_size,GL_TEXTURE_2D);
+ERROR_CHECK	
+	n_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
+	n_fb.SetWrapClampMode(GL_REPEAT);
+	n_fb.InitColor_Tex(0,GL_RGBA);
+ERROR_CHECK	
+	n_fb.Activate(context);
+	{
+	ERROR_CHECK
+		n_fb.Clear(context,0.f,0.f,0.f,0.f,1.f);
+	ERROR_CHECK
+		Ortho();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
+	ERROR_CHECK
+		glUseProgram(edge_noise_prog);
+	ERROR_CHECK
+		setParameter(edge_noise_prog,"persistence",texture_persistence);
+		setParameter(edge_noise_prog,"octaves",texture_octaves);
+		DrawFullScreenQuad();
+	}
+ERROR_CHECK	
+	//glReadBuffer(GL_COLOR_ATTACHMENT0);
+ERROR_CHECK	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,noise_tex);
+ERROR_CHECK	
+	glCopyTexSubImage2D(GL_TEXTURE_2D,
+ 						0,0,0,0,0,
+ 						noise_texture_size,
+ 						noise_texture_size);
+ERROR_CHECK	
+	glGenerateMipmap(GL_TEXTURE_2D);
+ERROR_CHECK	
+	n_fb.Deactivate(context);
+	glUseProgram(0);
 ERROR_CHECK
 	return true;
 }
-
 	
 void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z)
 {
@@ -202,7 +227,7 @@ void SimulGLCloudRenderer::FillIlluminationSequentially(int ,int ,int ,const uns
 {
 }
 
-void SimulGLCloudRenderer::FillIlluminationBlock(int source_index,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array)
+void SimulGLCloudRenderer::FillIlluminationBlock(int ,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array)
 {
 	glBindTexture(GL_TEXTURE_3D,illum_tex);
 	glTexSubImage3D(	GL_TEXTURE_3D,0,
@@ -236,12 +261,36 @@ static float saturate(float c)
 {
 	return std::max(std::min(1.f,c),0.f);
 }
+
+void SimulGLCloudRenderer::PreRenderUpdate(void *context)
+{
+	EnsureTexturesAreUpToDate(context);
+}
+
+simul::math::Matrix4x4 ConvertReversedToRegularProjectionMatrix(const simul::math::Matrix4x4 &proj)
+{
+	simul::math::Matrix4x4 p=proj;
+	if(proj._43>0)
+	{
+		float zF=proj._43/proj._33;
+		float zN=proj._43*zF/(zF+proj._43);
+		p._33=-zF/(zF-zN);
+		p._43=-zN*zF/(zF-zN);
+	}
+	return p;
+}
+#include "Simul/Camera/Camera.h"
+static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha)
+bool SimulGLCloudRenderer::Render(void *,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	EnsureTexturesAreUpToDate();
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	simul::opengl::ProfileBlock profileBlock("SimulCloudRendererDX1x::Render");
+	simul::base::Timer timer;
+	timer.StartTime();
 ERROR_CHECK
 	cubemap;
 //cloud buffer alpha to screen = ?
@@ -262,12 +311,23 @@ ERROR_CHECK
 	cam_pos.x=viewInv(3,0);
 	cam_pos.y=viewInv(3,1);
 	cam_pos.z=viewInv(3,2);
+	modelview(3,0)=modelview(3,1)=modelview(3,2)=0.f;
 ERROR_CHECK
-    glEnable(GL_BLEND);
-	if(god_rays)
-		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
+Raytrace=false;
+	if(Raytrace)
+	{
+		glDisable(GL_BLEND);
+		glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	}
 	else
-		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	{
+		glEnable(GL_BLEND);
+		if(god_rays)
+			glBlendFunc(GL_ONE,GL_SRC_ALPHA);
+		else
+			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	}
 	simul::sky::float4 gl_fog;
 	if(default_fog)
 	{
@@ -284,146 +344,102 @@ ERROR_CHECK
 	// disable alpha testing - if we enable this, the usual reference alpha is reversed because
 	// the shaders return transparency, not opacity, in the alpha channel.
     glDisable(GL_ALPHA_TEST);
-	if(depth_alpha_tex)
-		glEnable(GL_DEPTH_TEST);
-	else
-		glDisable(GL_DEPTH_TEST);
+	glDisable(GL_DEPTH_TEST);
 ERROR_CHECK
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 ERROR_CHECK
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[0]);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[1]);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
-ERROR_CHECK
+
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D,loss_tex);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_2D,inscatter_tex);
+
     glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D,skylight_tex);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_3D,illum_tex);
-ERROR_CHECK
+
     glActiveTexture(GL_TEXTURE7);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
+
 	GLuint program=depth_alpha_tex>0?clouds_foreground_program:clouds_background_program;
+
+	if(Raytrace)
+		program=raytrace_program;
 	UseShader(program);
 	glUseProgram(program);
-ERROR_CHECK
+
 	glUniform1i(cloudDensity1_param,0);
-ERROR_CHECK
 	glUniform1i(cloudDensity2_param,1);
-ERROR_CHECK
 	glUniform1i(noiseSampler_param,2);
-ERROR_CHECK
 	glUniform1i(lossSampler_param,3);
-ERROR_CHECK
 	glUniform1i(inscatterSampler_param,4);
-ERROR_CHECK
 	glUniform1i(skylightSampler_param,5);
-ERROR_CHECK
 	glUniform1i(illumSampler_param,6);
-ERROR_CHECK
-	glUniform1i(depthAlphaTexture,7);
-ERROR_CHECK
-	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
+	glUniform1i(depthTexture,7);
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	
 ERROR_CHECK
-	simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningRenderInterface();
+float time=skyInterface->GetTime();
+const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
-	CloudConstants cloudConstants;
-	if(enable_lightning)
-	{
-		static float bb=.1f;
-		simul::sky::float4 lightning_multipliers;
-		simul::sky::float4 lightning_colour=lightningRenderInterface->GetLightningColour();
-		for(unsigned i=0;i<4;i++)
-		{
-			if(i<lightningRenderInterface->GetNumLightSources())
-				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(i);
-			else lightning_multipliers[i]=0;
-		}
-		static float lightning_effect_on_cloud=20.f;
-		lightning_colour.w=lightning_effect_on_cloud;
-	
-//GLint lightningMultipliers;
-//GLint lightningColour;
-//		m_pCloudEffect->SetVector	(lightningMultipliers_param	,(const float*)(&lightning_multipliers));
-//		m_pCloudEffect->SetVector	(lightningColour_param		,(const float*)(&lightning_colour));
-
-		simul::math::Vector3 light_X1,light_X2,light_DX;
-		light_X1=lightningRenderInterface->GetIlluminationOrigin();
-		light_DX=lightningRenderInterface->GetIlluminationScales();
-
-//	cloudConstants.illuminationOrigin_param=light_X1;
-//		cloudConstants.illuminationScales_param=light_DX;
-	}
+	CloudPerViewConstants cloudPerViewConstants;
 ERROR_CHECK
 
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;
 	simul::sky::float4 light_response(	direct_light_mult*GetCloudInterface()->GetLightResponse()
 										,indirect_light_mult*GetCloudInterface()->GetSecondaryLightResponse()
-										,0
-										,0);
+										,0,0);
 	
-	simul::sky::float4 fractal_scales=helper->GetFractalScales(GetCloudInterface());
+	simul::sky::float4 fractal_scales=simul::clouds::CloudGeometryHelper::GetFractalScales(GetCloudInterface());
 
-	//glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
+	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
 	float base_alt_km=X1.z*.001f;
 	float t=0.f;
-	simul::sky::float4 sunlight1,sunlight2;
 	
+	CloudConstants cloudConstants;
 	if(skyInterface)
-	{
-		simul::sky::float4 light_dir=skyInterface->GetDirectionToLight(base_alt_km);
-		cloudConstants.lightDir=light_dir;
-		simul::sky::float4 amb=skyInterface->GetAmbientLight(X1.z*.001f);
-		amb*=GetCloudInterface()->GetAmbientLightResponse();
-		simul::sky::EarthShadow e=skyInterface->GetEarthShadow(X1.z/1000.f,skyInterface->GetDirectionToSun());
-	//	glUniform1f(distanceToIllumination_param,e.illumination_altitude*e.planet_radius*1000.f/max_fade_distance_metres);
-		glUniform1f(hazeEccentricity_param,skyInterface->GetMieEccentricity());
-		simul::sky::float4 mie_rayleigh_ratio=skyInterface->GetMieRayleighRatio();
-		glUniform3f(mieRayleighRatio_param,mie_rayleigh_ratio.x,mie_rayleigh_ratio.y,mie_rayleigh_ratio.z);
-		cloudConstants.ambientColour=amb;
-		cloudConstants.earthshadowMultiplier=saturate(base_alt_km-e.illumination_altitude);
 		t=skyInterface->GetTime();
-
-		sunlight1=skyInterface->GetLocalIrradiance(base_alt_km)*saturate(base_alt_km-e.illumination_altitude);
-		float top_alt_km=X2.z*.001f;
-		sunlight2=skyInterface->GetLocalIrradiance(top_alt_km)*saturate(top_alt_km-e.illumination_altitude);
-	}
-
 	simul::math::Vector3 view_pos(cam_pos.x,cam_pos.y,cam_pos.z);
 	simul::math::Vector3 eye_dir(-viewInv(2,0),-viewInv(2,1),-viewInv(2,2));
 	simul::math::Vector3 up_dir	(viewInv(1,0),viewInv(1,1),viewInv(1,2));
 
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
 	float delta_t=(t-last_time)*cloudKeyframer->GetTimeFactor();
 	if(!last_time)
 		delta_t=0;
 	last_time=t;
 
+	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
 	helper->SetChurn(GetCloudInterface()->GetChurn());
 	helper->Update(view_pos,GetCloudInterface()->GetWindOffset(),eye_dir,up_dir,delta_t,cubemap);
 
-	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
 	simul::math::Matrix4x4 proj;
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
+	simul::math::Matrix4x4 view;
+	glGetMatrix(view.RowPointer(0),GL_MODELVIEW_MATRIX);
+	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewport_id,viewportTextureRegionXYWH);
+	cloudPerViewConstants.exposure=exposure;
+
+	FixGlProjectionMatrix(helper->GetMaxCloudDistance()*1.1f);
+	simul::math::Matrix4x4 worldViewProj;
+	simul::math::Multiply4x4(worldViewProj,modelview,proj);
+	setMatrixTranspose(program,"worldViewProj",worldViewProj);
 
 	float left	=proj(0,0)+proj(0,3);
 	float right	=proj(0,0)-proj(0,3);
@@ -431,110 +447,78 @@ ERROR_CHECK
 	float tan_half_fov_vertical=1.f/proj(1,1);
 	float tan_half_fov_horizontal=std::max(1.f/left,1.f/right);
 	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),god_rays,X1.z,god_rays);
+	float effective_world_radius_metres=6378000.f;
+	float base_alt=GetCloudInterface()->GetCloudBaseZ();
+	if(cloudKeyframer->GetMeetHorizon())
+		effective_world_radius_metres	=helper->GetEffectiveEarthRadiusToMeetHorizon(base_alt,helper->GetMaxCloudDistance());
+	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),effective_world_radius_metres,god_rays,X1.z,god_rays);
 
-	cloudConstants.fractalScale			=fractal_scales;
-	cloudConstants.lightResponse		=light_response;
-	cloudConstants.cloud_interp			=cloudKeyframer->GetInterpolation();
-
-	cloudConstants.cloudEccentricity	=GetCloudInterface()->GetMieAsymmetry();
-	cloudConstants.fadeInterp			=0.f;
-	cloudConstants.lightningMultipliers;
-	cloudConstants.lightningColour;
-	cloudConstants.screenCoordOffset=scr_offset;
-		
-		
-		
-ERROR_CHECK
-		glBindBuffer(GL_UNIFORM_BUFFER, cloudConstantsUBO);
-ERROR_CHECK
-		glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(CloudConstants), &cloudConstants);
-ERROR_CHECK
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-ERROR_CHECK
+helper->Update2DNoiseCoords();
+	SetCloudConstants(cloudConstants);
+	glBindBuffer(GL_UNIFORM_BUFFER,cloudConstantsUBO);
+	glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(CloudConstants),&cloudConstants);
+	glBindBuffer(GL_UNIFORM_BUFFER,0);
 	glBindBufferBase(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO);
+
+	UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)
 	
-ERROR_CHECK
+	if(Raytrace)
+	{
+		UseShader(raytrace_program);
+		glUseProgram(raytrace_program);
+		glDisable(GL_BLEND);
+		glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0,1.0,0,1.0,-1.0,1.0);
+		DrawFullScreenQuad();
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+		glDisable(GL_BLEND);
+		glUseProgram(NULL);
+		glDisable(GL_TEXTURE_3D);
+		glDisable(GL_TEXTURE_2D);
+		glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
+		glPopAttrib();
+		return true;
+	}
 	// Draw the layers of cloud from the furthest to the nearest. Each layer is a spherical shell,
 	// which is drawn as a latitude-longitude sphere. But we only draw the parts that:
 	// a) are in the view frustum
 	//  ...and...
 	// b) are in the cloud volume
-ERROR_CHECK
-	int layers_drawn=0;
-	for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();
-		i!=helper->GetSlices().end();i++)
+	ERROR_CHECK
+	SetLayerConstants(helper,layerConstants);
+	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
+	int idx=0;
+	for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
-		// How thick is this layer, optically speaking?
-		float dens=(*i)->fadeIn;
-		if(!dens)
-			continue;
-		glUniform1f(layerDistance_param,(*i)->distance);
-		simul::sky::float4 loss			;
-		simul::sky::float4 inscatter	;
-		if(default_fog)
-		{
-			float mix_fog;
-			GLint fogMode;
-			GLfloat fogDens;
-			glGetIntegerv(GL_FOG_MODE,&fogMode);
-			glGetFloatv(GL_FOG_DENSITY,&fogDens);
-			switch(fogMode)
-			{
-			case GL_EXP:
-				mix_fog=1.f-exp(-fogDens*(*i)->distance);
-				break;
-			case GL_EXP2:
-				mix_fog=1.f-exp(-fogDens*(*i)->distance*(*i)->distance);
-				mix_fog=mix_fog*mix_fog;
-				break;
-			default:
-				{
-					GLfloat fogStart,fogEnd;
-					glGetFloatv(GL_FOG_START,&fogStart);
-					glGetFloatv(GL_FOG_END,&fogEnd);
-					float distance=(*i)->distance>fogEnd?fogEnd:(*i)->distance;
-					mix_fog=(distance-fogStart)/(fogEnd-fogStart);
-					mix_fog=std::min(1.f,mix_fog);
-					mix_fog=std::max(0.f,mix_fog);
-				}
-				break;
-			};
-
-			loss=simul::sky::float4(1,1,1,1)*(1.f-mix_fog);
-			inscatter=gl_fog*mix_fog;
-		}
-		layers_drawn++;
-		helper->MakeLayerGeometry(GetCloudInterface(),*i);
-
-ERROR_CHECK
+	ERROR_CHECK
+		simul::clouds::CloudGeometryHelper::Slice *s=*i;
+		helper->MakeLayerGeometry(s,effective_world_radius_metres);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
+		setParameter(program,"layerNumber",(int)idx);
 		glBegin(GL_QUAD_STRIP);
+		if(quad_strip_vertices.size())
 		for(std::vector<const CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
 			j!=(*i)->quad_strips.end();j++)
 		{
 			// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?
 			for(unsigned k=0;k<(*j)->num_vertices;k++,qs_vert++)
 			{
-				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
-		
-				glMultiTexCoord3f(GL_TEXTURE0,V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
-				glMultiTexCoord2f(GL_TEXTURE1,V.noise_tex_x,V.noise_tex_y);
-				glMultiTexCoord1f(GL_TEXTURE2,dens);
-				float h=max(0.f,min((V.z-X1.z)/DX.z,1.f));
-				simul::sky::float4 sunlight=lerp(h,sunlight1,sunlight2);
-				// Here we're passing sunlight values per-vertex, loss and inscatter
-				// The per-vertex sunlight allows different altitudes of cloud to have different
-				// sunlight colour - good for dawn/sunset.
-				// The per-vertex loss and inscatter is cheap for the pixel shader as it
-				// then doesn't need fade-texture lookups.
-				glMultiTexCoord3f(GL_TEXTURE3,sunlight.x,sunlight.y,sunlight.z);
+				if(qs_vert<0||qs_vert>=quad_strip_vertices.size())
+					continue;
+				int v=quad_strip_vertices[qs_vert];
+				if(v<0||v>=(int)helper->GetVertices().size())
+					continue;
+				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[v];
 				glVertex3f(V.x,V.y,V.z);
 			}
 		}
 		glEnd();
-ERROR_CHECK
+	ERROR_CHECK
 	}
 ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
@@ -546,6 +530,8 @@ ERROR_CHECK
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
 	glPopAttrib();
 ERROR_CHECK
+	timer.FinishTime();
+	gpu_time=profileBlock.GetTime();
 	return true;
 }
 
@@ -555,7 +541,7 @@ void SimulGLCloudRenderer::SetLossTexture(void *l)
 	loss_tex=((GLuint)l);
 }
 
-void SimulGLCloudRenderer::SetInscatterTextures(void *i,void *s)
+void SimulGLCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
 {
 	inscatter_tex=((GLuint)i);
 	skylight_tex=((GLuint)s);
@@ -566,62 +552,82 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 	if(current_program==program)
 		return;
 	current_program=program;
-	hazeEccentricity_param		=glGetUniformLocation(program,"hazeEccentricity");
-	mieRayleighRatio_param		=glGetUniformLocation(program,"mieRayleighRatio");
-	maxFadeDistanceMetres_param	=glGetUniformLocation(program,"maxFadeDistanceMetres");
+	eyePosition_param			=glGetUniformLocation(program,"eyePosition");
+	//hazeEccentricity_param		=glGetUniformLocation(program,"hazeEccentricity");
+	//mieRayleighRatio_param		=glGetUniformLocation(program,"mieRayleighRatio");
+	maxFadeDistanceMetres_param		=glGetUniformLocation(program,"maxFadeDistanceMetres");
 
-	cloudDensity1_param			=glGetUniformLocation(program,"cloudDensity1");
-	cloudDensity2_param			=glGetUniformLocation(program,"cloudDensity2");
-	noiseSampler_param			=glGetUniformLocation(program,"noiseSampler");
-	illumSampler_param			=glGetUniformLocation(program,"illumSampler");
-	lossSampler_param			=glGetUniformLocation(program,"lossSampler");
-	inscatterSampler_param		=glGetUniformLocation(program,"inscatterSampler");
-	skylightSampler_param		=glGetUniformLocation(program,"skylightSampler");
-	depthAlphaTexture			=glGetUniformLocation(program,"depthAlphaTexture");
+	cloudDensity1_param				=glGetUniformLocation(program,"cloudDensity1");
+	cloudDensity2_param				=glGetUniformLocation(program,"cloudDensity2");
+	noiseSampler_param				=glGetUniformLocation(program,"noiseSampler");
+	illumSampler_param				=glGetUniformLocation(program,"illumSampler");
+	lossSampler_param				=glGetUniformLocation(program,"lossSampler");
+	inscatterSampler_param			=glGetUniformLocation(program,"inscatterSampler");
+	skylightSampler_param			=glGetUniformLocation(program,"skylightSampler");
+	depthTexture					=glGetUniformLocation(program,"depthTexture");
 
-	layerDistance_param			=glGetUniformLocation(program,"layerDistance");
-
-	cloudConstants				=glGetUniformBlockIndex(program,"CloudConstants");
+	GLint cloudConstants			=glGetUniformBlockIndex(program,"CloudConstants");
+	GLint cloudPerViewConstants		=glGetUniformBlockIndex(program,"CloudPerViewConstants");
 	//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
 ERROR_CHECK
 	// If that block IS in the shader program, then BIND it to the relevant UBO.
 	if(cloudConstants>=0)
-	{
 		glUniformBlockBinding(program,cloudConstants,cloudConstantsBindingIndex);
+	if(cloudPerViewConstants>=0)
+		glUniformBlockBinding(program,cloudPerViewConstants,cloudPerViewConstantsBindingIndex);
 ERROR_CHECK
-	}
+	
+	GLint layerDataConstants			=glGetUniformBlockIndex(program,"LayerConstants");
+	if(layerDataConstants>=0)
+		glUniformBlockBinding(program,layerDataConstants,layerDataConstantsBindingIndex);
+ERROR_CHECK
 }
 
 void SimulGLCloudRenderer::RecompileShaders()
 {
+	if(!init)
+		return;
 current_program=0;
 ERROR_CHECK
-	clouds_background_program	=MakeProgram("simul_clouds","#define DETAIL_NOISE 1\r\n");
-	clouds_foreground_program	=MakeProgram("simul_clouds","#define DETAIL_NOISE 1\r\n#define USE_DEPTH_TEXTURE 1\r\n");
-
+	SAFE_DELETE_PROGRAM(clouds_background_program);
+	SAFE_DELETE_PROGRAM(clouds_foreground_program);
+	SAFE_DELETE_PROGRAM(raytrace_program);
 	
+	SAFE_DELETE_PROGRAM(noise_prog);
+	SAFE_DELETE_PROGRAM(edge_noise_prog);
+	std::map<std::string,std::string> defines;
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
+	defines["DETAIL_NOISE"]="1";
+	clouds_background_program	=MakeProgram("simul_clouds",defines);
+	defines["USE_DEPTH_TEXTURE"]="1";
+	clouds_foreground_program	=MakeProgram("simul_clouds",defines);
+	raytrace_program			=MakeProgram("simple.vert",NULL,"simul_raytrace_clouds.frag",defines);
+	noise_prog=MakeProgram("simple.vert",NULL,"simul_noise.frag");
+	edge_noise_prog=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
 ERROR_CHECK
 	cross_section_program	=MakeProgram("simul_cloud_cross_section");
 	
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
-	cloud_shadow_program=LoadPrograms("simple.vert",NULL,"simul_cloud_shadow.frag");
+	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
 	glBindBufferRange(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO,0, sizeof(CloudConstants));
+	glBindBufferRange(GL_UNIFORM_BUFFER,layerDataConstantsBindingIndex,layerDataConstantsUBO,0, sizeof(LayerConstants));
+	glBindBufferRange(GL_UNIFORM_BUFFER,cloudPerViewConstantsBindingIndex,cloudPerViewConstantsUBO,0, sizeof(CloudPerViewConstants));
+
 ERROR_CHECK
 	glUseProgram(0);
 }
 
-void SimulGLCloudRenderer::RestoreDeviceObjects(void*)
+void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 {
 	init=true;
-	CreateNoiseTexture();
-	CreateVolumeNoise();
 	
-	glGenBuffers(1, &cloudConstantsUBO);
-	glBindBuffer(GL_UNIFORM_BUFFER, cloudConstantsUBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(CloudConstants), NULL, GL_STREAM_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	
+	MAKE_GL_CONSTANT_BUFFER(cloudConstantsUBO,CloudConstants,cloudConstantsBindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
+	MAKE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,CloudPerViewConstants,cloudPerViewConstantsBindingIndex);
+
 	RecompileShaders();
+	//CreateVolumeNoise();
 	using namespace simul::clouds;
 	cloudKeyframer->SetBits(CloudKeyframer::DENSITY,CloudKeyframer::BRIGHTNESS,
 		CloudKeyframer::SECONDARY,CloudKeyframer::AMBIENT);
@@ -638,6 +644,7 @@ bool SimulGLCloudRenderer::BuildSphereVBO()
 {
 ERROR_CHECK
 	unsigned el=0,az=0;
+	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(0);
 	helper->GetGrid(el,az);
 
 	int vertex_count=(el+1)*(az+1);
@@ -694,16 +701,19 @@ ERROR_CHECK
 void SimulGLCloudRenderer::InvalidateDeviceObjects()
 {
 	init=false;
+	SAFE_DELETE_TEXTURE(noise_tex);
 	SAFE_DELETE_PROGRAM(cross_section_program);
 
 	SAFE_DELETE_PROGRAM(clouds_background_program);
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
+	SAFE_DELETE_PROGRAM(clouds_foreground_program);
+	SAFE_DELETE_PROGRAM(noise_prog);
+	SAFE_DELETE_PROGRAM(edge_noise_prog);
 
 	clouds_background_program				=0;
 	eyePosition_param			=0;
-	hazeEccentricity_param		=0;
-	mieRayleighRatio_param		=0;
-	//distanceToIllumination_param=0;
+	//hazeEccentricity_param		=0;
+	//mieRayleighRatio_param		=0;
 	
 	cloudDensity1_param			=0;
 	cloudDensity2_param			=0;
@@ -717,28 +727,23 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	//glDeleteTexture(volume_noise_tex);
 	volume_noise_tex=0;
 
-	
 	glDeleteBuffersARB(1,&cloudConstantsUBO);
-	cloudConstants=-1;
-	cloudConstantsUBO=-1;
+	cloudConstantsUBO=0;
 	
 	ClearIterators();
 }
 
-void **SimulGLCloudRenderer::GetCloudTextures()
+CloudShadowStruct SimulGLCloudRenderer::GetCloudShadowTexture()
 {
-	return (void**)cloud_tex;
-}
-
-void *SimulGLCloudRenderer::GetCloudShadowTexture()
-{
+	CloudShadowStruct s=BaseCloudRenderer::GetCloudShadowTexture();
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
 	cloud_shadow.SetWidthAndHeight(cloud_tex_width_x,cloud_tex_length_y);
-	cloud_shadow.InitColor_Tex(0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,GL_REPEAT);
+	cloud_shadow.SetWrapClampMode(GL_REPEAT);
+	cloud_shadow.InitColor_Tex(0,GL_RGBA);
 	
 	glUseProgram(cloud_shadow_program);
 	glEnable(GL_TEXTURE_3D);
@@ -748,9 +753,9 @@ void *SimulGLCloudRenderer::GetCloudShadowTexture()
 	glBindTexture(GL_TEXTURE_3D,cloud_tex[1]);
 	setParameter(cloud_shadow_program,"cloudTexture1"	,0);
 	setParameter(cloud_shadow_program,"cloudTexture2"	,1);
-	setParameter(cloud_shadow_program,"interp"			,this->GetInterpolation());
+	setParameter(cloud_shadow_program,"interp"			,cloudKeyframer->GetInterpolation());
 	
-	cloud_shadow.Activate();
+	cloud_shadow.Activate(NULL);
 		//cloud_shadow.Clear(0.f,0.f,0.f,0.f);
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
@@ -759,7 +764,7 @@ void *SimulGLCloudRenderer::GetCloudShadowTexture()
 		glLoadIdentity();
 		DrawQuad(0,0,1,1);
 		ERROR_CHECK;
-	cloud_shadow.Deactivate();
+	cloud_shadow.Deactivate(NULL);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,0);
 	glActiveTexture(GL_TEXTURE1);
@@ -771,12 +776,13 @@ void *SimulGLCloudRenderer::GetCloudShadowTexture()
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 	glPopAttrib();
-	return (void*)cloud_shadow.GetColorTex(0);
+	s.texture=(void*)cloud_shadow.GetColorTex();
+	return s;
 }
 
 simul::sky::OvercastCallback *SimulGLCloudRenderer::GetOvercastCallback()
 {
-	return cloudKeyframer.get();
+	return cloudKeyframer;
 }
 
 SimulGLCloudRenderer::~SimulGLCloudRenderer()
@@ -796,7 +802,7 @@ void SimulGLCloudRenderer::New()
 {
 	cloudKeyframer->New();
 }
-
+#pragma warning(disable:4127) // "Conditional expression is constant".
 void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 {
 	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
@@ -809,11 +815,9 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 	cloud_tex_width_x=width_x;
 	cloud_tex_length_y=length_y;
 	cloud_tex_depth_z=depth_z;
-
 	for(int i=0;i<3;i++)
 	{
 		glGenTextures(1,&(cloud_tex[i]));
-
 		glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
 		if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLushort))
 			glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA4,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_SHORT,0);
@@ -841,8 +845,20 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 
 }
 
-void SimulGLCloudRenderer::EnsureTexturesAreUpToDate()
+void SimulGLCloudRenderer::EnsureTexturesAreUpToDate(void *context)
 {
+	int a	=cloudKeyframer->GetEdgeNoiseTextureSize();
+	int b	=cloudKeyframer->GetEdgeNoiseFrequency();
+	int c	=cloudKeyframer->GetEdgeNoiseOctaves();
+	float d	=cloudKeyframer->GetEdgeNoisePersistence();
+	unsigned check=a+b+c+(*(unsigned*)(&d));
+	if(check!=noise_checksum)
+	{
+		SAFE_DELETE_TEXTURE(noise_tex);
+		noise_checksum=check;
+	}
+	if(!noise_tex)
+		CreateNoiseTexture(context);
 	EnsureCorrectTextureSizes();
 ERROR_CHECK
 	EnsureTextureCycle();
@@ -906,13 +922,15 @@ void SimulGLCloudRenderer::EnsureTextureCycle()
 			texture_cycle+=3;
 	}
 }
-void SimulGLCloudRenderer::DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip)
+
+void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_count,bool strip)
 {
 	::DrawLines(vertices,vertex_count,strip);
 }
-void SimulGLCloudRenderer::RenderCrossSections(int width,int height)
+
+void SimulGLCloudRenderer::RenderCrossSections(void *,int width,int height)
 {
-	static int u=4;
+	static int u=6;
 	int w=(width-8)/u;
 	if(w>height/2)
 		w=height/2;
@@ -951,11 +969,14 @@ static float mult=1.f;
 		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
 		glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
 		glUniform1f(yz_param,0.f);
-		DrawQuad(i*(w+8)+8,8,w,h);
+		DrawQuad(i*(w+1)+4,4,w,h);
 		glUniform1f(yz_param,1.f);
-		DrawQuad(i*(w+8)+8,h+16,w,w);
+		DrawQuad(i*(w+1)+4,h+8,w,w);
 	}
-
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,noise_tex);
+glUseProgram(Utilities::GetSingleton().simple_program);
+	DrawQuad(width-(w+8),height-(w+8),w,w);
 	glUseProgram(0);
 ERROR_CHECK
 }

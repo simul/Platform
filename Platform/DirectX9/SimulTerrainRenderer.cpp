@@ -39,8 +39,9 @@
 #undef max
 typedef std::basic_string<TCHAR> tstring;
 
-SimulTerrainRenderer::SimulTerrainRenderer() :
-	m_pVtxDecl(NULL)
+SimulTerrainRenderer::SimulTerrainRenderer(simul::base::MemoryInterface *m) :
+	BaseTerrainRenderer(m)
+	,m_pVtxDecl(NULL)
 	,m_pd3dDevice(NULL)
 	,m_pTerrainEffect(NULL)
 	,pRenderHeightmapEffect(NULL)
@@ -94,7 +95,7 @@ bool SimulTerrainRenderer::MakeMapTexture()
 	SAFE_RELEASE(soil_depth_texture);
 	SAFE_RELEASE(water_texture);
 	SAFE_RELEASE(flux_texture);
-	int mips=heightmap->GetNumMipMapLevels();
+//int mips=heightmap->GetNumMipMapLevels();
 	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&height_texture));
 	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&rock_height_texture));
 	V_CHECK(D3DXCreateTexture(m_pd3dDevice,size,size,1,D3DUSAGE_RENDERTARGET,D3DFMT_A32B32G32R32F,D3DPOOL_DEFAULT,&soil_depth_texture));
@@ -104,7 +105,7 @@ bool SimulTerrainRenderer::MakeMapTexture()
 	LPDIRECT3DSURFACE9						pOldRenderTarget=NULL;
 	V_CHECK(m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget));
 	{
-		int terrain_size=heightmap->GetPageSize()-1;
+//	int terrain_size=heightmap->GetPageSize()-1;
 		LPDIRECT3DSURFACE9						pRenderTarget=NULL;
 		water_texture->GetSurfaceLevel(0,&pRenderTarget);
 		V_CHECK(m_pd3dDevice->SetRenderTarget(0,pRenderTarget));
@@ -278,10 +279,10 @@ void SimulTerrainRenderer::GpuMakeNormals()
 	pRenderHeightmapEffect->SetFloat(gridSize,(float)(terrain_size));
 	D3DXHANDLE worldSize					=pRenderHeightmapEffect->GetParameterByName(NULL,"worldSize");
 	pRenderHeightmapEffect->SetFloat(worldSize,world_size);
-	D3DXHANDLE heightTexture				=pRenderHeightmapEffect->GetParameterByName(NULL,"heightTexture");
+//D3DXHANDLE heightTexture				=pRenderHeightmapEffect->GetParameterByName(NULL,"heightTexture");
 	D3DXHANDLE addTexture				=pRenderHeightmapEffect->GetParameterByName(NULL,"addTexture");
 	pRenderHeightmapEffect->SetTexture(addTexture,water_texture);
-	D3DXHANDLE soilTexture					=pRenderHeightmapEffect->GetParameterByName(NULL,"soilTexture");
+//D3DXHANDLE soilTexture					=pRenderHeightmapEffect->GetParameterByName(NULL,"soilTexture");
 	D3DXHANDLE makeNormalsTechnique			=pRenderHeightmapEffect->GetTechniqueByName("height_to_normals");
 	{
 	/*	SAFE_RELEASE(height_texture);
@@ -300,7 +301,7 @@ void SimulTerrainRenderer::GpuMakeNormals()
 	}
 }
 
-void SimulTerrainRenderer::GpuThermalErosion(float time_step)
+void SimulTerrainRenderer::GpuThermalErosion(float )
 {
 	HRESULT hr=S_OK;
 	if(!m_pd3dDevice)
@@ -351,7 +352,7 @@ void SimulTerrainRenderer::GpuThermalErosion(float time_step)
 	SAFE_RELEASE(out_texture);
 }
 
-void SimulTerrainRenderer::GpuWaterErosion(float time_step)
+void SimulTerrainRenderer::GpuWaterErosion(float )
 {
 	HRESULT hr=S_OK;
 	if(!m_pd3dDevice)
@@ -374,7 +375,7 @@ void SimulTerrainRenderer::GpuWaterErosion(float time_step)
 	D3DXHANDLE hydraulicErosionTechnique3	=pRenderHeightmapEffect->GetTechniqueByName("hydraulic_erosion_apply");
 	D3DXHANDLE heightTexture				=pRenderHeightmapEffect->GetParameterByName(NULL,"heightTexture");
 	D3DXHANDLE addTexture					=pRenderHeightmapEffect->GetParameterByName(NULL,"addTexture");
-	D3DXHANDLE waterTexture					=pRenderHeightmapEffect->GetParameterByName(NULL,"waterTexture");
+////D3DXHANDLE waterTexture					=pRenderHeightmapEffect->GetParameterByName(NULL,"waterTexture");
 	D3DXHANDLE rainfall						=pRenderHeightmapEffect->GetParameterByName(NULL,"rainfall");
 	D3DXHANDLE evaporation					=pRenderHeightmapEffect->GetParameterByName(NULL,"evaporation");
 	pRenderHeightmapEffect->SetTexture(addTexture,water_texture);
@@ -809,14 +810,14 @@ SimulTerrainRenderer::~SimulTerrainRenderer()
 	static const float radius=50.f;
 	static const float height=150.f;
 
-void SimulTerrainRenderer::RenderOnlyDepth()
+void SimulTerrainRenderer::RenderOnlyDepth(void *)
 {
 	PIXBeginNamedEvent(0xFF006600,"SimulTerrainRenderer::RenderOnlyDepth");
 	InternalRender(true);
 	PIXEndNamedEvent();
 }
 
-void SimulTerrainRenderer::Render()
+void SimulTerrainRenderer::Render(void *,float )
 {
 	PIXBeginNamedEvent(0xFF00FF00,"SimulTerrainRenderer::Render");
 	InternalRender(false);
@@ -932,7 +933,7 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 	B_RETURN(m_pd3dDevice->SetVertexDeclaration(m_pVtxDecl));
 	float tile_texsize=(float)(heightMapInterface->GetTileSize()-1)/(float)(heightMapInterface->GetPageSize()-1);
 	static bool only=false;
-	for(int p=0;p<passes;++p)
+	for(UINT p=0;p<passes;++p)
 	{
 		//D3DXHANDLE h=m_pTerrainEffect->GetPass(m_hTechniqueTerrain,p);
 		if((p!=LIGHTING_PASS_WITH_SHADOWS&&p!=LIGHTING_PASS&&p!=WIREFRAME_PASS)||
@@ -1098,7 +1099,7 @@ simul::terrain::HeightMapInterface *SimulTerrainRenderer::GetHeightMapInterface(
 
 simul::terrain::HeightMapNode *SimulTerrainRenderer::GetHeightMap()
 {
-	return heightmap.get();
+	return heightmap;
 }
 
 void SimulTerrainRenderer::Highlight(const float *x,const float *d)
@@ -1137,17 +1138,17 @@ void SimulTerrainRenderer::Update(float dt)
 	if(WaterErosion)
 		GpuWaterErosion(dt);
 }
-
+/*
 void SimulTerrainRenderer::SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb)
 {
 	if(cb)
 	{
-		SetCloudTextures	(cb->GetCloudTextures(),cb->GetWrap());
+	//	SetCloudTexture	(cb->GetCloudTexture(),cb->GetWrap());
 		SetCloudScales		(cb->GetCloudScales());
 		SetCloudOffset		(cb->GetCloudOffset());
 		setCloudInterpolation(cb->GetInterpolation());
 	}
-}
+}*/
 
 void SimulTerrainRenderer::ReleaseIndexBuffers()
 {

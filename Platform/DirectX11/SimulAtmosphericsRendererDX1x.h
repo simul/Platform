@@ -20,6 +20,7 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
 typedef long HRESULT;
 namespace simul
@@ -30,83 +31,73 @@ namespace simul
 	}
 }
 
-// A class that takes an image buffer and a z-buffer and applies atmospheric fading.
-class SimulAtmosphericsRendererDX1x : public simul::sky::BaseAtmosphericsRenderer
+namespace simul
 {
-public:
-	SimulAtmosphericsRendererDX1x();
-	virtual ~SimulAtmosphericsRendererDX1x();
-	
-	void SetBufferSize(int w,int h);
-
-	// BaseAtmosphericsRenderer.
-	void SetYVertical(bool y);
-	void SetDistanceTexture(void* t);
-	void SetLossTexture(void* t);
-	void SetInscatterTextures(void* t,void *s);
-	void SetCloudsTexture(void* t);
-	void RecompileShaders();
-
-	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-	HRESULT RestoreDeviceObjects(ID3D1xDevice* pd3dDevice);
-	//! Call this when the device has been lost.
-	HRESULT InvalidateDeviceObjects();
-	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
-	void SetInputTextures(ID3D1xTexture2D* image,ID3D1xTexture2D* depth)
+	namespace dx11
 	{
-		input_texture=image;
-		depth_texture=depth;
+		// A class that takes an image buffer and a z-buffer and applies atmospheric fading.
+		class SimulAtmosphericsRendererDX1x : public simul::sky::BaseAtmosphericsRenderer
+		{
+		public:
+			SimulAtmosphericsRendererDX1x(simul::base::MemoryInterface *m);
+			virtual ~SimulAtmosphericsRendererDX1x();
+			
+			void SetBufferSize(int w,int h);
+
+			// BaseAtmosphericsRenderer.
+			void SetLossTexture(void* t);
+			void SetInscatterTextures(void* i,void *s,void *o);
+			void SetIlluminationTexture(void *i);
+			void SetCloudsTexture(void* t);
+			void RecompileShaders();
+
+			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
+			void RestoreDeviceObjects(void* pd3dDevice);
+			//! Call this when the device has been lost.
+			void InvalidateDeviceObjects();
+			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
+			//! Render the Atmospherics.
+			void RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
+			void RenderGodrays(void *context,float strength,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloudDepthTexture);
+		protected:
+			HRESULT Destroy();
+			ID3D1xDevice*								m_pd3dDevice;
+			ID3D1xInputLayout*							vertexDecl;
+			D3DXMATRIX									view,proj;
+
+			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
+			ID3D1xEffect*								effect;
+			ID3D1xEffectTechnique*						singlePassTechnique;
+			ID3D1xEffectTechnique*						twoPassOverlayTechnique;
+			ID3D1xEffectTechnique*						godraysTechnique;
+			// Variables for this effect:
+			ID3D1xEffectMatrixVariable*					invViewProj;
+			ID3D1xEffectVectorVariable*					lightDir;
+			ID3D1xEffectVectorVariable*					MieRayleighRatio;
+			ID3D1xEffectScalarVariable*					HazeEccentricity;
+			ID3D1xEffectScalarVariable*					fadeInterp;
+			ID3D1xEffectShaderResourceVariable*			depthTexture;
+			ID3D1xEffectShaderResourceVariable*			cloudDepthTexture;
+			ID3D1xEffectShaderResourceVariable*			lossTexture;
+			ID3D1xEffectShaderResourceVariable*			inscTexture;
+			ID3D1xEffectShaderResourceVariable*			skylTexture;
+			ID3D1xEffectShaderResourceVariable*			illuminationTexture;
+			ID3D1xEffectShaderResourceVariable*			overcTexture;
+			ID3D1xEffectShaderResourceVariable*			cloudShadowTexture;
+			ID3D1xEffectShaderResourceVariable*			cloudNearFarTexture;
+
+			ID3D1xShaderResourceView*					skyLossTexture_SRV;
+			ID3D1xShaderResourceView*					skyInscatterTexture_SRV;
+			ID3D1xShaderResourceView*					overcInscTexture_SRV;
+			ID3D1xShaderResourceView*					skylightTexture_SRV;
+
+			ID3D1xShaderResourceView*					clouds_texture;
+			ID3D1xShaderResourceView*					illuminationTexture_SRV;
+
+			ID3D11Buffer*								constantBuffer;
+			ID3D11Buffer*								atmosphericsUniforms2ConstantsBuffer;
+			ConstantBuffer<AtmosphericsPerViewConstants>	atmosphericsPerViewConstants;
+			ConstantBuffer<AtmosphericsUniforms>			atmosphericsUniforms;
+		};
 	}
-	void SetCloudShadowTexture(void *c){}
-	void SetOvercastFactor(float of)
-	{
-		overcast_factor=of;
-	}
-	void SetFadeInterpolation(float s)
-	{
-		fade_interp=s;
-	}
-	//! Render the Atmospherics.
-	void StartRender();
-	void FinishRender();
-	void *GetDepthAlphaTexture()
-	{
-		return (void*)framebuffer->buffer_texture_SRV;
-	}
-protected:
-	FramebufferDX1x								*framebuffer;
-	HRESULT Destroy();
-	ID3D1xDevice*								m_pd3dDevice;
-	ID3D1xDeviceContext*						m_pImmediateContext;
-	ID3D1xInputLayout*							vertexDecl;
-	D3DXMATRIX									view,proj;
-
-	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-	ID3D1xEffect*								effect;
-	ID3D1xEffectTechnique*						technique;
-	// Variables for this effect:
-	ID3D1xEffectMatrixVariable*					invViewProj;
-	ID3D1xEffectVectorVariable*					lightDir;
-	ID3D1xEffectVectorVariable*					MieRayleighRatio;
-	ID3D1xEffectScalarVariable*					HazeEccentricity;
-	ID3D1xEffectScalarVariable*					fadeInterp;
-	ID3D1xEffectShaderResourceVariable*			imageTexture;
-	ID3D1xEffectShaderResourceVariable*			depthTexture;
-	ID3D1xEffectShaderResourceVariable*			lossTexture1;
-	ID3D1xEffectShaderResourceVariable*			inscatterTexture1;
-	ID3D1xEffectShaderResourceVariable*			skylightTexture;
-
-	ID3D1xShaderResourceView*					skyLossTexture_SRV;
-	ID3D1xShaderResourceView*					skyInscatterTexture_SRV;
-	ID3D1xShaderResourceView*					skylightTexture_SRV;
-	ID3D1xShaderResourceView*					clouds_texture;
-
-	ID3D11Buffer*						constantBuffer;
-	//! The depth buffer.
-	ID3D1xTexture2D*				depth_texture;
-	//! The un-faded image buffer.
-	ID3D1xTexture2D*				input_texture;
-
-	float fade_interp,overcast_factor;
-
-};
+}

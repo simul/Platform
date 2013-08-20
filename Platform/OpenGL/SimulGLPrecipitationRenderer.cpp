@@ -6,23 +6,32 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
+
+#include <GL/glew.h>
 #include "SimulGLPrecipitationRenderer.h"
 
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
+#include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Sky/Float4.h"
 
 SimulGLPrecipitationRenderer::SimulGLPrecipitationRenderer() :
 	external_rain_texture(false)
+		,program(0)
+		,rain_texture(0)
 {
 }
 
 void SimulGLPrecipitationRenderer::TextureRepeatChanged()
 {
+	MakeMesh();
 }
 
 void SimulGLPrecipitationRenderer::RestoreDeviceObjects(void *)
 {
+	MakeMesh();
+	RecompileShaders();
 }
 
 bool SimulGLPrecipitationRenderer::SetExternalRainTexture(void* )
@@ -32,10 +41,16 @@ bool SimulGLPrecipitationRenderer::SetExternalRainTexture(void* )
 
 void SimulGLPrecipitationRenderer::InvalidateDeviceObjects()
 {
+	SAFE_DELETE_PROGRAM(program);
+	SAFE_DELETE_TEXTURE(rain_texture);
 }
 
 void SimulGLPrecipitationRenderer::RecompileShaders()
 {
+	SAFE_DELETE_PROGRAM(program);
+	SAFE_DELETE_TEXTURE(rain_texture);
+	program						=MakeProgram("simul_rain");
+	rain_texture				=LoadGLImage("Rain.jpg",GL_REPEAT);
 }
 
 SimulGLPrecipitationRenderer::~SimulGLPrecipitationRenderer()
@@ -43,6 +58,10 @@ SimulGLPrecipitationRenderer::~SimulGLPrecipitationRenderer()
 	InvalidateDeviceObjects();
 }
 
-void SimulGLPrecipitationRenderer::Render()
+void SimulGLPrecipitationRenderer::Render(void*)
 {
+	if(!baseSkyInterface)
+		return;
+	if(Intensity<=0)
+		return;
 }

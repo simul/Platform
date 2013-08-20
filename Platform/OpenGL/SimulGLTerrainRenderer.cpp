@@ -8,8 +8,9 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Sky/SkyInterface.h"
 
-SimulGLTerrainRenderer::SimulGLTerrainRenderer()
-	:program(0)
+SimulGLTerrainRenderer::SimulGLTerrainRenderer(simul::base::MemoryInterface *m)
+	:BaseTerrainRenderer(m)
+	,program(0)
 {
 }
 
@@ -24,15 +25,11 @@ void SimulGLTerrainRenderer::RecompileShaders()
 	ERROR_CHECK
 	glUseProgram(program);
 	ERROR_CHECK
-	printProgramInfoLog(program);
-	ERROR_CHECK
 	eyePosition_param				= glGetUniformLocation(program,"eyePosition");
-	maxFadeDistanceMetres_param		= glGetUniformLocation(program,"maxFadeDistanceMetres");
-	textures_param					= glGetUniformLocation(program,"textures");
+	textures_param					= glGetUniformLocation(program,"textureArray");
 	worldViewProj_param				= glGetUniformLocation(program,"worldViewProj");
 	lightDir_param					= glGetUniformLocation(program,"lightDir");
 	sunlight_param					= glGetUniformLocation(program,"sunlight");
-	printProgramInfoLog(program);
 	ERROR_CHECK
 }
 
@@ -55,10 +52,10 @@ void SimulGLTerrainRenderer::MakeTextures()
 	//GL_TEXTURE_2D_ARRAY_EXT
     glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, texArray);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_T, GL_REPEAT);
     //glTexParameterfv(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_BORDER_COLOR, borderColor);
 	unsigned bpp,width,height;
 	ERROR_CHECK
@@ -70,11 +67,11 @@ void SimulGLTerrainRenderer::MakeTextures()
 	int m=1;
 	for(int i=0;i<num_mips;i++)
 	{
-		glTexImage3D(GL_TEXTURE_2D_ARRAY_EXT, i,GL_RGBA	,width/m,height/m,num_layers,0,(bpp==24)?GL_RGB:GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, i,GL_RGBA	,width/m,height/m,num_layers,0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 		if(i==0)
 		{
-			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,0,width/m,height/m,1,(bpp==24)?GL_RGB:GL_RGBA,GL_UNSIGNED_BYTE,data);
-			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,1,width/m,height/m,1,(bpp==24)?GL_RGB:GL_RGBA,GL_UNSIGNED_BYTE,moss);
+			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,0,width/m,height/m,1,(bpp==24)?GL_BGR:GL_BGRA,GL_UNSIGNED_BYTE,data);
+			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,1,width/m,height/m,1,(bpp==24)?GL_BGR:GL_BGRA,GL_UNSIGNED_BYTE,moss);
 		}
 		m*=2;
 	}
@@ -91,15 +88,17 @@ void SimulGLTerrainRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_TEXTURE(texArray);
 }
 
-void SimulGLTerrainRenderer::Render()
+void SimulGLTerrainRenderer::Render(void *,float exposure)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	ERROR_CHECK
 	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_STENCIL_TEST);
 	glDepthMask(GL_TRUE);
+	glDepthFunc(ReverseDepth?GL_GEQUAL:GL_LEQUAL);
 	glDisable(GL_BLEND);
-	glPolygonMode(GL_FRONT,GL_FILL);
-	glPolygonMode(GL_BACK,GL_LINE);
+	glEnable(GL_CULL_FACE);
+	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	glUseProgram(program);
 	ERROR_CHECK
 	simul::math::Vector3 cam_pos;
@@ -116,13 +115,11 @@ void SimulGLTerrainRenderer::Render()
 	if(baseSkyInterface)
 	{
 		simul::math::Vector3 irr=baseSkyInterface->GetLocalIrradiance(0.f);
-	irr*=0.05f;
+	irr*=0.1f*exposure;
 	glUniform3f(sunlight_param,irr.x,irr.y,irr.z);
 		simul::math::Vector3 sun_dir=baseSkyInterface->GetDirectionToLight(0.f);
 	glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	}
-	float max_fade_distance_metres=MaxFadeDistanceKm*1000.f;
-	glUniform1f(maxFadeDistanceMetres_param,max_fade_distance_metres);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, texArray);
@@ -132,7 +129,7 @@ void SimulGLTerrainRenderer::Render()
 	int h=heightMapInterface->GetPageSize();
 	simul::math::Vector3 origin=heightMapInterface->GetOrigin();
 	float PageWorldX=heightMapInterface->GetPageWorldX();
-	float PageWorldY=heightMapInterface->GetPageWorldY();
+//float PageWorldY=heightMapInterface->GetPageWorldY();
 	float PageSize=(float)heightMapInterface->GetPageSize();
 	glBegin(GL_TRIANGLE_STRIP);
 	for(int i=0;i<h-1;i++)
@@ -151,9 +148,7 @@ void SimulGLTerrainRenderer::Render()
 			simul::math::Vector3 X2(x2,y,z2);
 			if(i%2==1)
 				std::swap(X1,X2);
-			glTexCoord3f(0,0,1.f);
 			glVertex3f(X1.x,X1.y,X1.z);
-			glTexCoord3f(0,0,1.f);
 			glVertex3f(X2.x,X2.y,X2.z);
 		}
 	}

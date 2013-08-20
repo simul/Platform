@@ -29,7 +29,8 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGL2DCloudRenderer : public simul::clouds::Base2DCloudRenderer
 {
 public:
-	SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck=NULL);
+	SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
+											   ,simul::base::MemoryInterface *mem);
 	virtual ~SimulGL2DCloudRenderer();
 	//standard ogl object interface functions
 	bool Create();
@@ -38,24 +39,25 @@ public:
 	void RecompileShaders();
 	//! OpenGL Implementation of device invalidation - not strictly needed in GL.
 	void InvalidateDeviceObjects();
+	void PreRenderUpdate(void *context);
 	//! OpenGL Implementation of 2D cloud rendering.
-	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
-	void RenderCrossSections(int width,int height);
+	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
+	void RenderCrossSections(void *,int width,int height);
 	//! Set the platform-dependent atmospheric loss texture.
 	void SetLossTexture(void *l);
 	//! Set the platform-dependent atmospheric inscatter texture.
-	void SetInscatterTextures(void *i,void *s);
+	void SetInscatterTextures(void* t,void *s,void *o);
 	void SetWindVelocity(float x,float y);
 
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y);
 	void FillCloudTextureBlock(int texture_index,int x,int y,int w,int l,const unsigned *uint32_array);
 	void FillCloudTextureSequentially(int,int,int,const unsigned int *){}
-	//CloudShadowCallback
-	void **GetCloudTextures(){return 0;}
-	void *GetCloudShadowTexture() {return NULL;}
+
 protected:
+	virtual void DrawLines(void *,VertexXyzRgba *,int ,bool ){}
+
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void *);
 	void EnsureTextureCycle();
 	void EnsureCorrectIlluminationTextureSizes(){}
 	void EnsureIlluminationTexturesAreUpToDate(){}
@@ -69,25 +71,27 @@ protected:
 	GLint origin;
 
 	GLint imageTexture_param;
-	GLint lossSampler_param;
+	GLint lossTexture;
 	GLint inscatterSampler_param;
 	GLint skylightSampler_param;
 	
 	GLint cloud2DConstants;
 	GLuint cloud2DConstantsUBO;
 	GLint cloud2DConstantsBindingIndex;
+	
+	GLint earthShadowUniforms;
 
-	GLint coverageTexture1;
-	GLint coverageTexture2;
+	GLint coverageTexture;
 	
 	GLuint	coverage_tex[3];
 	
 	GLuint	loss_tex;
 	GLuint	inscatter_tex;
 	GLuint	skylight_tex;
+	FramebufferGL	coverage_fb;
 
 	FramebufferGL	detail_fb;
-	bool CreateNoiseTexture(bool override_file=false);
+	bool CreateNoiseTexture(void *);
 	//void CreateImageTexture();
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();

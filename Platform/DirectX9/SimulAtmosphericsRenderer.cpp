@@ -30,8 +30,9 @@
 #include "Macros.h"
 #include "Resources.h"
 
-SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
-	:m_pd3dDevice(NULL)
+SimulAtmosphericsRenderer::SimulAtmosphericsRenderer(simul::base::MemoryInterface *m)
+	:BaseAtmosphericsRenderer(m)
+	,m_pd3dDevice(NULL)
 	,vertexDecl(NULL)
 	,effect(NULL)
 	,lightDir(NULL)
@@ -53,7 +54,6 @@ SimulAtmosphericsRenderer::SimulAtmosphericsRenderer()
 	,inscatter_texture(NULL)
 	,skylight_texture(NULL)
 	,clouds_texture(NULL)
-	,cloud_shadow_texture(NULL)
 	,m_pRenderTarget(NULL)
 	,m_pBufferDepthSurface(NULL)
 	,m_pOldRenderTarget(NULL)
@@ -208,11 +208,13 @@ void SimulAtmosphericsRenderer::SetCloudProperties(void* c1,void* c2,
 void SimulAtmosphericsRenderer::SetLightningProperties(	void *tex,
 		simul::clouds::LightningRenderInterface *lri)
 {
+	if(!lri)
+		return;
 	lightning_illumination_texture=(LPDIRECT3DBASETEXTURE9)tex;
 	for(int i=0;i<4;i++)
 	{
 		if(i<(int)lri->GetNumLightSources())
-			(lightning_multipliers.operator float *())[i]=lri->GetLightSourceBrightness(i);
+			(lightning_multipliers.operator float *())[i]=lri->GetLightSourceBrightness(0.f);
 		else
 			(lightning_multipliers.operator float *())[i]=0;
 	}
@@ -337,7 +339,7 @@ bool SimulAtmosphericsRenderer::DrawScreenQuad()
 	return (hr==S_OK);
 }
 
-void SimulAtmosphericsRenderer::StartRender()
+void SimulAtmosphericsRenderer::StartRender(void *)
 {
 	PIXBeginNamedEvent(0xFF88FFFF,"SimulAtmosphericsRenderer::StartRender to FinishRender");
 	HRESULT hr=S_OK;
@@ -355,7 +357,7 @@ void SimulAtmosphericsRenderer::StartRender()
 	hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 }
 
-void SimulAtmosphericsRenderer::FinishRender()
+void SimulAtmosphericsRenderer::FinishRender(void *)
 {
 	D3DSURFACE_DESC desc;
 #ifdef XBOX

@@ -14,7 +14,7 @@
 SIMUL_OPENGL_EXPORT_CLASS SimulGLAtmosphericsRenderer : public simul::sky::BaseAtmosphericsRenderer
 {
 public:
-	SimulGLAtmosphericsRenderer();
+	SimulGLAtmosphericsRenderer(simul::base::MemoryInterface *m);
 	virtual ~SimulGLAtmosphericsRenderer();
 	//standard ogl object interface functions
 	void RecompileShaders();
@@ -22,13 +22,6 @@ public:
 	void InvalidateDeviceObjects();
 	// Interface
 	void SetBufferSize(int w,int h);
-	void SetYVertical(bool )
-	{
-	}
-	void *GetDepthAlphaTexture()
-	{
-		return (void*) framebuffer->GetColorTex(0);
-	}
 	// Assign the clouds framebuffer texture
 	void SetCloudsTexture(void* t)
 	{
@@ -38,7 +31,7 @@ public:
 	{
 		loss_texture=(GLuint)t;
 	}
-	void SetInscatterTextures(void* t,void *s)
+	void SetInscatterTextures(void* t,void *s,void *o)
 	{
 		inscatter_texture=(GLuint)t;
 		skylight_texture=(GLuint)s;
@@ -48,51 +41,23 @@ public:
 		input_texture=(GLuint)image;
 		depth_texture=(GLuint)depth;
 	}
-	void SetCloudShadowTexture(void *c)
-	{
-		cloud_shadow_texture=(GLuint)c;
-	}
 	//! Render the Atmospherics.
-	void StartRender();
-	void FinishRender();
+	void RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 private:
-	//! \internal Switch the current program, either sky_program or earthshadow_program.
-	//! Also sets the parameter variables.	
-	void UseProgram(GLuint);
 	bool initialized;
-	GLuint distance_fade_program;
-	GLuint earthshadow_fade_program;
+	GLuint loss_program;
+	GLuint insc_program;
+	GLuint earthshadow_insc_program;
+
 	GLuint godrays_program;
-	GLuint current_program;
-	GLuint cloudmix_program;
 
 	GLuint loss_texture,inscatter_texture,skylight_texture;
 	GLuint input_texture,depth_texture;
 	GLuint clouds_texture;
-	GLuint cloud_shadow_texture;
-	
-	GLint cloudsTexture;
-	GLint imageTexture;
-	GLint lossTexture;
-	GLint inscTexture;
-	GLint skylightTexture;
-	GLint cloudShadowTexture;
 
-	GLint hazeEccentricity;
-	GLint lightDir;
-	GLint invViewProj;
-	GLint mieRayleighRatio;
-	GLint directLightMultiplier;
-	
-	GLint earthShadowUniforms;
-	GLuint earthShadowUniformsUBO;
-	GLint earthShadowUniformsBindingIndex;
-	
-	GLint cloudOrigin;
-	GLint cloudScale;
-	GLint maxDistance;
-	GLint viewPosition;
-	GLint overcast_param;
+	GLuint		earthShadowUniformsUBO;
+	GLuint		atmosphericsUniformsUBO;
+	GLuint		atmosphericsUniforms2UBO;
 
 	FramebufferGL *framebuffer;
 };

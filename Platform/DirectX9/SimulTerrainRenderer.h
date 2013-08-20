@@ -41,7 +41,7 @@ namespace simul
 SIMUL_DIRECTX9_EXPORT_CLASS SimulTerrainRenderer:public simul::terrain::BaseTerrainRenderer
 {
 public:
-	SimulTerrainRenderer();
+	SimulTerrainRenderer(simul::base::MemoryInterface *m);
 	//standard d3d object interface functions
 	bool Create(LPDIRECT3DDEVICE9 pd3dDevice);
 	void RecompileShaders();
@@ -49,8 +49,8 @@ public:
 	void InvalidateDeviceObjects();
 
 	virtual ~SimulTerrainRenderer();
-	void RenderOnlyDepth();
-	void Render();
+	void RenderOnlyDepth(void *context);
+	void Render(void *context,float exposure);
 	float GetMip(int i,int j) const;
 	bool RenderMap(int w);
 	void Update(float dt);
@@ -58,7 +58,7 @@ public:
 	void GpuThermalErosion(float time_step);
 	void GpuWaterErosion(float time_step);
 	// Set a callback that will return cloud shadow data and textures:
-	void SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb);
+	//void SetCloudShadowCallback(simul::clouds::CloudShadowCallback *cb);
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 	void SetCloudTextures(void **t,bool wrap);
 	void SetSkyInterface(simul::sky::BaseSkyInterface *si){skyInterface=si;}
@@ -114,9 +114,9 @@ public:
 	void TerrainModified();
 	const float *GetHighlightPos() const{return highlight_pos;}
 protected:
-	int LIGHTING_PASS;
-	int LIGHTING_PASS_WITH_SHADOWS;
-	int WIREFRAME_PASS;
+	unsigned LIGHTING_PASS;
+	unsigned LIGHTING_PASS_WITH_SHADOWS;
+	unsigned WIREFRAME_PASS;
 	bool y_vertical;
 	bool enabled;
 	bool wrap_clouds;

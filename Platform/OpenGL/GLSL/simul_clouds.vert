@@ -1,45 +1,48 @@
-// simul_sky.vert - an OGLSL vertex shader
-// Copyright 2008 Simul Software Ltd
+#version 140
+#include "CppGlsl.hs"
+#include "../../CrossPlatform/simul_cloud_constants.sl"
 
-// varyings are written by vert shader, interpolated, and read by frag shader.
+uniform mat4 worldViewProj;
 
-uniform vec3 illuminationOrigin;
-uniform vec3 illuminationScales;
-uniform vec3 eyePosition;
-uniform float layerDistance;
-uniform float maxFadeDistanceMetres;
+uniform int layerNumber;
 
-varying float layerDensity;
-varying vec4 texCoordDiffuse;
-varying vec2 noiseCoord;
-varying vec3 wPosition;
-varying vec3 sunlight;
-varying vec3 loss;
-varying vec4 insc;
-varying vec3 texCoordLightning;
-varying vec2 fade_texc;
-varying vec3 view;
-varying vec4 transformed_pos;
+in vec4 vertex;
+
+out float layerDensity;
+out float rainFade;
+out vec4 texCoords;
+out vec2 noise_texc;
+out vec3 wPosition;
+out vec3 texCoordLightning;
+out vec2 fade_texc;
+out vec3 view;
+out vec4 transformed_pos;
 
 void main(void)
 {
-	vec4 pos			=gl_Vertex;
-	//pos.xyz			*=layerDistance;
-    wPosition			=pos.xyz-eyePosition.xyz;
-    transformed_pos		=gl_ModelViewProjectionMatrix*pos;
+	LayerData layer		=layers[layerCount-1-layerNumber];
+	vec3 pos			=vertex.xyz;
+	pos.xyz				*=layer.layerDistance;
+    wPosition			=pos.xyz;
+    transformed_pos		=vec4(vertex.xyz,1.0)*worldViewProj;
     gl_Position			=transformed_pos;
-	texCoordDiffuse.xyz	=gl_MultiTexCoord0.xyz;
-	texCoordDiffuse.w	=0.5+0.5*clamp(gl_MultiTexCoord0.z,0.0,1.0);// clamp?
-	noiseCoord			=gl_MultiTexCoord1.xy;
-	layerDensity		=gl_MultiTexCoord2.x;
-	sunlight			=gl_MultiTexCoord3.xyz;
-	loss				=gl_MultiTexCoord4.xyz;
-	insc				=gl_MultiTexCoord5.xyzw;
-	
-	texCoordLightning	=(wPosition.xzy-illuminationOrigin.xyz)/illuminationScales.xyz;
-	view=normalize(wPosition);
 
-	float sine=view.z;
-	float depth=length(wPosition)/maxFadeDistanceMetres;
-	fade_texc=vec2(sqrt(depth),0.5*(1.0-sine));
+	layerDensity		=layer.layerFade;
+	texCoordLightning	=(wPosition.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
+	float depth			=length(pos)/maxFadeDistanceMetres;
+	view				=normalize(pos);
+	wPosition			=viewPos+pos;
+	wPosition.z			-=layer.verticalShift;
+	texCoords.xyz		=(wPosition-vec3(0,0,layer.verticalShift)-cornerPos)*inverseScales;
+	texCoords.w			=clamp(texCoords.z,0.0,1.0);	// clamp?
+	vec2 screen_pos		=transformed_pos.xy/transformed_pos.w;
+	vec3 n				=vec3(screen_pos.xy*tanHalfFov,1.0);
+	n					=normalize(n);
+	vec2 noise_texc_0	=(noiseMatrix*vec4(n.xy,0.0,0.0)).xy;
+
+	noise_texc			=noise_texc_0.xy*layer.noiseScale+layer.noiseOffset;
+
+	float sine			=view.z;
+	fade_texc			=vec2(sqrt(depth),0.5*(1.0-sine));
+	rainFade			=1.0-exp(-layer.layerDistance/10000.0);
 }

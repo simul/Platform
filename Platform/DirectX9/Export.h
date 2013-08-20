@@ -17,17 +17,17 @@
 	#endif
 #endif
 
-#if defined(DOXYGEN) || defined(SN_TARGET_PS3) || defined(__GNUC__)
-	#define SIMUL_DIRECTX9_EXPORT
-#else
+#if defined(SIMUL_DLL) && !defined(DOXYGEN)
 // In this lib:
-	#if !defined(SIMUL_DIRECTX9_DLL) && defined(SIMUL_DLL)
+	#if !defined(SIMUL_DIRECTX9_DLL) 
 	// If we're building dll libraries but not in this library IMPORT the classes
 		#define SIMUL_DIRECTX9_EXPORT __declspec(dllimport)
 	#else
 	// In ALL OTHER CASES we EXPORT the classes!
 		#define SIMUL_DIRECTX9_EXPORT __declspec(dllexport)
 	#endif
+#else
+	#define SIMUL_DIRECTX9_EXPORT
 #endif
 
 #ifdef _MSC_VER

@@ -41,11 +41,13 @@
 
 #define WRITE_PERFORMANCE_DATA
 static simul::base::Timer timer;
-
+using namespace simul;
+using namespace dx9;
 SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
+										   simul::base::MemoryInterface *mem,
 											bool usebuffer,int width,
 											int height,bool sky,bool rain) :
-	BaseWeatherRenderer(env,sky,rain),
+	BaseWeatherRenderer(env,mem),
 	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
 	m_pBufferToScreenEffect(NULL),
@@ -57,39 +59,36 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	simul2DCloudRenderer(NULL),
 	simulPrecipitationRenderer(NULL),
 	exposure_multiplier(1.f),
-	show_rain(rain),
-	renderDepthBufferCallback(NULL)
+	show_rain(rain)
 {
 	//sky=rain=clouds2d=false;
-	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
-	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer.get();
-	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer.get();
+	simul::sky::SkyKeyframer *sk=env->skyKeyframer;
+	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer;
+	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	SetScreenSize(width,height);
 	if(ShowSky)
 	{
 		simulSkyRenderer=new SimulSkyRenderer(sk);
-		baseSkyRenderer=simulSkyRenderer.get();
-		AddChild(simulSkyRenderer.get());
+		baseSkyRenderer=simulSkyRenderer;
 	}
 	
 	{
-		simulCloudRenderer=new SimulCloudRenderer(ck3d);
-		baseCloudRenderer=simulCloudRenderer.get();
-		AddChild(simulCloudRenderer.get());
-		simulLightningRenderer=new SimulLightningRenderer(simulCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
-		baseLightningRenderer=simulLightningRenderer.get();
+		simulCloudRenderer=new SimulCloudRenderer(ck3d,mem);
+		baseCloudRenderer=simulCloudRenderer;
+		simulLightningRenderer=new SimulLightningRenderer(ck3d,sk);
+		baseLightningRenderer=simulLightningRenderer;
 		Restore3DCloudObjects();
 	}
 	
 	{
-		simul2DCloudRenderer=new Simul2DCloudRenderer(ck2d);
-		base2DCloudRenderer=simul2DCloudRenderer.get();
+		simul2DCloudRenderer=new Simul2DCloudRenderer(ck2d,mem);
+		base2DCloudRenderer=simul2DCloudRenderer;
 		Restore2DCloudObjects();
 	}
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
-	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer;
-	baseAtmosphericsRenderer=simulAtmosphericsRenderer.get();
+	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer(mem);
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
 	baseFramebuffer=&framebuffer;
 	ConnectInterfaces();
 }
@@ -233,23 +232,16 @@ void SimulWeatherRenderer::InvalidateDeviceObjects()
 SimulWeatherRenderer::~SimulWeatherRenderer()
 {
 	InvalidateDeviceObjects();
-	SAFE_DELETE_SMARTPTR(simulSkyRenderer);
-	SAFE_DELETE_SMARTPTR(simulCloudRenderer);
-	SAFE_DELETE_SMARTPTR(simul2DCloudRenderer);
-	SAFE_DELETE_SMARTPTR(simulPrecipitationRenderer);
-	SAFE_DELETE_SMARTPTR(simulAtmosphericsRenderer);
-	ClearChildren();
+	del(simulSkyRenderer,memoryInterface);
+	del(simulCloudRenderer,memoryInterface);
+	del(simul2DCloudRenderer,memoryInterface);
+	del(simulPrecipitationRenderer,memoryInterface);
+	del(simulAtmosphericsRenderer,memoryInterface);
 }
 
 void SimulWeatherRenderer::EnableRain(bool e)
 {
 	show_rain=e;
-}
-
-void SimulWeatherRenderer::SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb)
-{
-	renderDepthBufferCallback=cb;
-	//AlwaysRenderCloudsLate=(cb!=NULL);
 }
 
 bool SimulWeatherRenderer::CreateBuffers()
@@ -276,15 +268,10 @@ bool SimulWeatherRenderer::CreateBuffers()
 	return (hr==S_OK);
 }
 
-bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
+bool SimulWeatherRenderer::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)
 {
 	PIXBeginNamedEvent(0xFF888888,"SimulWeatherRenderer::Render");
-	BaseWeatherRenderer::RenderSky(buffered,is_cubemap);
-	if(baseCloudRenderer&&simulAtmosphericsRenderer)
-	{
-		simulAtmosphericsRenderer->SetLightningProperties(baseCloudRenderer->GetIlluminationTexture(),
-								baseCloudRenderer->GetCloudKeyframer()->GetLightningRenderInterface());
-	}
+	BaseWeatherRenderer::RenderSky(context,exposure,buffered,is_cubemap);
 	if(buffered&&!is_cubemap)
 	{
 #ifdef XBOX
@@ -301,51 +288,40 @@ bool SimulWeatherRenderer::RenderSky(bool buffered,bool is_cubemap)
 	return true;
 }
 
-void SimulWeatherRenderer::RenderLightning()
+void SimulWeatherRenderer::RenderLightning(void *context,int viewport_id)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		return simulLightningRenderer->Render();
+		return simulLightningRenderer->Render(context);
 }
 
-void SimulWeatherRenderer::RenderPrecipitation()
+void SimulWeatherRenderer::RenderPrecipitation(void *context)
 {
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		simulPrecipitationRenderer->Render();
-}
-bool SimulWeatherRenderer::RenderLateCloudLayer(bool buf)
-{
-	if(!RenderCloudsLate||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		return true;
-	RenderLateCloudLayer(0,buf);
-	return true;
+		simulPrecipitationRenderer->Render(context);
 }
 
-void SimulWeatherRenderer::RenderLateCloudLayer(int buffer_index,bool buf)
+void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH)
 {
+	if(!RenderCloudsLate||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+		return;
 	HRESULT hr=S_OK;
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface=NULL;
 	if(buf)
 	{
-		if(buffer_index==1)
-			lowdef_framebuffer.Activate();
-		else
-		framebuffer.Activate();
+		framebuffer.Activate(NULL);
 		static float depth_start=1.f;
 		hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 	}
-	//if(1)
-	{
-		//if(renderDepthBufferCallback)
-		//	renderDepthBufferCallback->Render();
-		if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		{	
-			PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
-			{
-				simulCloudRenderer->Render(false,depth_alpha_tex,false,true);
-			}
+	
+	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+	{	
+		PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
+		{
+			simulCloudRenderer->Render(context,exposure,false,0,false,true,viewport_id,relativeViewportTextureRegionXYWH);
 		}
 	}
+	
 	static bool do_fx=true;
 	if(do_fx)
 	if(simulAtmosphericsRenderer&&simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
@@ -367,17 +343,8 @@ void SimulWeatherRenderer::RenderLateCloudLayer(int buffer_index,bool buf)
 	if(buf)
 	{
 		m_pBufferToScreenEffect->SetTechnique(CloudBlendTechnique);
-		if(buffer_index==1)
 		{
-			lowdef_framebuffer.Deactivate();
-	#ifdef XBOX
-			m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL,lowdef_framebuffer.hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
-	#endif
-			RenderBufferToScreen((LPDIRECT3DTEXTURE9)framebuffer.GetColorTex());
-		}
-		else
-		{
-			framebuffer.Deactivate();
+			framebuffer.Deactivate(NULL);
 	#ifdef XBOX
 			m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, framebuffer.hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
 	#endif
@@ -411,23 +378,23 @@ void SimulWeatherRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 }
 #endif
 
-void SimulWeatherRenderer::Update(float dt)
+void SimulWeatherRenderer::PreRenderUpdate(void *context,float dt)
 {
-	BaseWeatherRenderer::Update(dt);
-	if(simulCloudRenderer&&simulAtmosphericsRenderer)
+	BaseWeatherRenderer::PreRenderUpdate(context);
+	//if(baseCloudRenderer&&baseAtmosphericsRenderer)
 	{
-		LPDIRECT3DBASETEXTURE9 *c=(LPDIRECT3DBASETEXTURE9*)simulCloudRenderer->GetCloudTextures();
-		simulAtmosphericsRenderer->SetCloudProperties(c[0],c[1],
-			simulCloudRenderer->GetCloudScales(),
-			simulCloudRenderer->GetCloudOffset(),
-			simulCloudRenderer->GetInterpolation());
+		//void **c=baseCloudRenderer->GetCloudTextures();
+	/*	baseAtmosphericsRenderer->SetCloudProperties(c[0],c[1],
+			baseCloudRenderer->GetCloudScales(),
+			baseCloudRenderer->GetCloudOffset(),
+			baseCloudRenderer->GetInterpolation());*/
 	}
 	if(simulPrecipitationRenderer)
 	{
-		simulPrecipitationRenderer->Update(dt);
-		if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
+		simulPrecipitationRenderer->PreRenderUpdate(dt);
+		if(simulCloudRenderer&&environment->cloudKeyframer->GetVisible())
 		{
-			simulPrecipitationRenderer->SetWind(simulCloudRenderer->GetWindSpeed(),simulCloudRenderer->GetWindHeadingDegrees());
+			simulPrecipitationRenderer->SetWind(environment->cloudKeyframer->GetWindSpeed(),environment->cloudKeyframer->GetWindHeadingDegrees());
 		#ifndef XBOX
 			float cam_pos[3];
 			D3DXMATRIX view;
@@ -435,11 +402,6 @@ void SimulWeatherRenderer::Update(float dt)
 		#endif
 			GetCameraPosVector(view,simulCloudRenderer->IsYVertical(),cam_pos);
 			simulPrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
-			float rts=simulCloudRenderer->GetRainToSnow();
-			if(rts<0.5f)
-				simulPrecipitationRenderer->ApplyDefaultRainSettings();
-			else
-				simulPrecipitationRenderer->ApplyDefaultSnowSettings();
 		}
 		else
 		{
@@ -456,34 +418,28 @@ void SimulWeatherRenderer::Update(float dt)
 
 SimulSkyRenderer *SimulWeatherRenderer::GetSkyRenderer()
 {
-	return simulSkyRenderer.get();
+	return simulSkyRenderer;
 }
 
 SimulCloudRenderer *SimulWeatherRenderer::GetCloudRenderer()
 {
-	return simulCloudRenderer.get();
+	return simulCloudRenderer;
 }
 
 Simul2DCloudRenderer *SimulWeatherRenderer::Get2DCloudRenderer()
 {
-	return simul2DCloudRenderer.get();
+	return simul2DCloudRenderer;
 }
 
 SimulPrecipitationRenderer *SimulWeatherRenderer::GetPrecipitationRenderer()
 {
-	return simulPrecipitationRenderer.get();
+	return simulPrecipitationRenderer;
 }
 
 SimulAtmosphericsRenderer *SimulWeatherRenderer::GetAtmosphericsRenderer()
 {
-	return simulAtmosphericsRenderer.get();
+	return simulAtmosphericsRenderer;
 }
-
-float SimulWeatherRenderer::GetTiming() const
-{
-	return total_timing;
-}
-
 float SimulWeatherRenderer::GetTotalBrightness() const
 {
 	return exposure*exposure_multiplier;

@@ -1,33 +1,17 @@
-cbuffer cbPerObject : register(b0)
-{
-	matrix worldViewProj : packoffset(c0);
-};
+#include "CppHlsl.hlsl"
+#include "states.hlsl"
+#include "../../CrossPlatform/simul_terrain_constants.sl"
+#include "../../CrossPlatform/states.sl"
+#include "../../CrossPlatform/cloud_shadow.sl"
 
-Texture2D mainTexture;
-SamplerState samplerState
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-};
-
-float maxFadeDistanceMetres ;
-
-float morphFactor;
-float4 eyePosition;
-float3 lightDir;
-
-float3 cloudScales;	
-float3 cloudOffset;
-float3 lightColour;
-float3 ambientColour;
-float cloudInterp;
+Texture2D cloudShadowTexture;
+Texture2DArray textureArray;
 
 struct vertexInput
 {
     float3 position			: POSITION;
     float3 normal			: TEXCOORD0;
-    float2 texCoordDiffuse	: TEXCOORD1;
+    float2 texcoord			: TEXCOORD1;
     float offset			: TEXCOORD2;
 };
 
@@ -35,46 +19,39 @@ struct vertexOutput
 {
     float4 hPosition		: SV_POSITION;
     float4 normal			: TEXCOORD0;
-    float2 texCoordDiffuse	: TEXCOORD1;
+    float2 texcoord			: TEXCOORD1;
     float4 wPosition		: TEXCOORD2;
 };
 
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-    OUT.hPosition = mul(worldViewProj, float4(IN.position.xyz,1.f));
-    OUT.wPosition = float4(IN.position.xyz,1.f);
-    OUT.texCoordDiffuse=IN.texCoordDiffuse;
-    OUT.normal.xyz=IN.normal;
-    OUT.normal.a=0.5;
+    OUT.hPosition	= mul(worldViewProj, float4(IN.position.xyz,1.f));
+    OUT.wPosition	=float4(IN.position.xyz,1.f);
+	OUT.texcoord	=vec2(IN.position.xy/2000.0);
+    OUT.normal.xyz	=IN.normal;
+    OUT.normal.a	=0.5;
     return OUT;
 }
 
 float4 PS_Main( vertexOutput IN) : SV_TARGET
 {
-	float depth=length(IN.wPosition-eyePosition)/maxFadeDistanceMetres;
-	float3 final=float3(.1,.1,.1);//mainTexture.Sample(samplerState,IN.texCoordDiffuse.xy).rgb;
-    return float4(final,depth);
+	vec4 result;
+	vec4 layer1	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,0.0));
+	vec4 layer2	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,1.0));
+	vec4 texel	=mix(layer1,layer2,clamp(1.0-IN.wPosition.z/100.0,0.0,1.0));
+	vec2 light	=lightDir.z;
+	light		*=GetIlluminationAt(cloudShadowTexture,IN.wPosition.xyz);
+	result.rgb	=texel.rgb*(ambientColour.rgb+light.x*sunlight.rgb);
+	result.a	=1.0;
+    return result;
 }
-
-DepthStencilState EnableDepth
-{
-	DepthEnable = TRUE;
-	DepthWriteMask = ALL;
-}; 
-
-BlendState DontBlend
-{
-	BlendEnable[0] = FALSE;
-};
-
-RasterizerState RenderNoCull { CullMode = none; };//back front
 
 technique11 simul_terrain
 {
     pass base 
     {
-		SetRasterizerState(RenderNoCull);
+		SetRasterizerState(RenderFrontfaceCull);
 		SetDepthStencilState(EnableDepth,0);
 		SetBlendState(DontBlend,float4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));

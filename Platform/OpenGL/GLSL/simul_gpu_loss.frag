@@ -1,8 +1,13 @@
 #version 330
-#include "simul_gpu_sky.glsl"
 
 uniform sampler2D input_loss_texture;
 uniform sampler1D density_texture;
+uniform sampler2D optical_depth_texture;
+
+#include "CppGlsl.hs"
+#include "saturate.glsl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/simul_gpu_sky.sl"
 
 in vec2 texc;
 out vec4 outColor;
@@ -12,11 +17,11 @@ void main(void)
 	vec4 previous_loss	=texture(input_loss_texture,texc.xy);
 	float sin_e			=1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(texc.x*texSize.x-texelOffset)/(texSize.x-1.0);
+	float altTexc		=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
-	float maxd			=min(spaceDistKm,distKm);
-	float mind			=min(spaceDistKm,prevDistKm);
+	float maxd			=min(spaceDistKm,distanceKm);
+	float mind			=min(spaceDistKm,prevDistanceKm);
 	float dist			=0.5*(mind+maxd);
 	float stepLengthKm	=max(0.0,maxd-mind);
 	float y				=planetRadiusKm+viewAltKm+dist*sin_e;
@@ -34,6 +39,5 @@ void main(void)
 	loss.rgb			=exp(-extinction*stepLengthKm);
 	loss.a				=(loss.r+loss.g+loss.b)/3.0;
 	loss				*=previous_loss;
-	
     outColor			=loss;
 }

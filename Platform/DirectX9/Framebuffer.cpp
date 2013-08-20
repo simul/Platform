@@ -4,14 +4,13 @@
 
 Framebuffer::Framebuffer()
 	:m_pd3dDevice(NULL)
-	,Width(0)
-	,Height(0)
 	,buffer_depth_texture(NULL)
 	,buffer_texture(NULL)
 	,m_pHDRRenderTarget(NULL)
 	,m_pBufferDepthSurface(NULL)
 	,m_pOldRenderTarget(NULL)
 	,m_pOldDepthSurface(NULL)
+	,depth_format((D3DFORMAT)0)
 {
 #ifndef XBOX
 	texture_format=D3DFMT_A16B16G16R16F;
@@ -57,17 +56,29 @@ void Framebuffer::MakeTexture()
 	m_pHDRRenderTarget=MakeRenderTarget(buffer_texture);
 }
 
-bool Framebuffer::SetFormat(D3DFORMAT f)
+void Framebuffer::SetFormat(int f)
 {
-	bool ok=CanUseTexFormat(m_pd3dDevice,f)==S_OK;
+	D3DFORMAT F=(D3DFORMAT)f;
+	bool ok=CanUseTexFormat(m_pd3dDevice,F)==S_OK;
 	if(ok)
 	{
-		if(texture_format==f)
-			return true;
-		texture_format=f;
+		if(texture_format==F)
+			return;
+		texture_format=F;
 		MakeTexture();
 	}
-	return ok;
+}
+	
+void Framebuffer::SetDepthFormat(int f)
+{
+	D3DFORMAT F=(D3DFORMAT)f;
+	bool ok=CanUseTexFormat(m_pd3dDevice,F)==S_OK;
+	if(ok)
+	{
+		if(depth_format==F)
+			return;
+		depth_format=F;
+	}
 }
 	
 void Framebuffer::RestoreDeviceObjects(void *dev)
@@ -84,7 +95,7 @@ void Framebuffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pBufferDepthSurface);
 }
 
-void Framebuffer::Activate()
+void Framebuffer::Activate(void *)
 {
 	m_pOldRenderTarget=NULL;
 	m_pOldDepthSurface=NULL;
@@ -98,7 +109,7 @@ void Framebuffer::Activate()
 		m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
 }
 
-void Framebuffer::Deactivate()
+void Framebuffer::Deactivate(void *)
 {
 	//m_pOldRenderTarget->GetDesc(&desc);
 	m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
@@ -107,19 +118,20 @@ void Framebuffer::Deactivate()
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
-void Framebuffer::Clear(float r,float g,float b,float a,int mask)
+void Framebuffer::Clear(void *,float r,float g,float b,float a,float depth,int mask)
 {
+	// Don't yet support reverse depth on dx9.
 	if(!mask)
 		mask=D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER;
-	m_pd3dDevice->Clear(0L,NULL,mask,D3DCOLOR_COLORVALUE(r,g,b,a),1.f,0L);
+	m_pd3dDevice->Clear(0L,NULL,mask,D3DCOLOR_COLORVALUE(r,g,b,a),depth,0L);
 }
 
-void Framebuffer::DeactivateAndRender(bool blend)
+void Framebuffer::DeactivateAndRender(void *context,bool blend)
 {
-	Deactivate();
-	Render(blend);
+	Deactivate(NULL);
+	Render(context,blend);
 }
-void Framebuffer::Render(bool blend)
+void Framebuffer::Render(void *,bool blend)
 {
 	blend;
 }

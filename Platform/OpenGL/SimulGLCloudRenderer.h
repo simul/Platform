@@ -9,6 +9,8 @@
 #include "Simul/Clouds/BaseCloudRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
+#include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
+#include "Simul/Platform/CrossPlatform/simul_cloud_constants.sl"
 namespace simul
 {
 	namespace clouds
@@ -28,34 +30,34 @@ namespace simul
 SIMUL_OPENGL_EXPORT_CLASS SimulGLCloudRenderer : public simul::clouds::BaseCloudRenderer
 {
 public:
-	SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudKeyframer);
+	SimulGLCloudRenderer(simul::clouds::CloudKeyframer *cloudKeyframer,simul::base::MemoryInterface *mem);
 	virtual ~SimulGLCloudRenderer();
 	//standard ogl object interface functions
 	bool Create();
 	void RecompileShaders();
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
+	void PreRenderUpdate(void *context);
 	//! Render the clouds.
-	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
+	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 	//! Show the cross sections on-screen.
-	void RenderCrossSections(int width,int height);
+	void RenderCrossSections(void *,int width,int height);
 	void SetLossTexture(void *);
-	void SetInscatterTextures(void *,void *);
-	//! Get the list of three textures used for cloud rendering.
-	void **GetCloudTextures();
+	void SetInscatterTextures(void* t,void *s,void *o);
 	
-	void *GetCloudShadowTexture();
+	CloudShadowStruct GetCloudShadowTexture();
 	const char *GetDebugText();
-	// implementing CloudRenderCallback:
+
 	void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z);
 	
 	void SetIlluminationGridSize(unsigned ,unsigned ,unsigned );
 	void FillIlluminationSequentially(int ,int ,int ,const unsigned char *);
 	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *);
-	void GPUTransferDataToTexture(	unsigned char *target_texture
+	void GPUTransferDataToTexture(int index,	unsigned char *target_texture
 									,const unsigned char *direct_grid
 									,const unsigned char *indirect_grid
-									,const unsigned char *ambient_grid);
+									,const unsigned char *ambient_grid
+									,bool wrap_light_tex);
 
 	// a callback function that translates from daytime values to overcast settings. Used for
 	// clouds to tell sky when it is overcast.
@@ -64,19 +66,22 @@ public:
 	void New();
 protected:
 	void SwitchShaders(GLuint program);
-	void DrawLines(VertexXyzRgba *vertices,int vertex_count,bool strip);
+	void DrawLines(void *,VertexXyzRgba *vertices,int vertex_count,bool strip);
 	bool init;
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void *);
 	void EnsureCorrectIlluminationTextureSizes();
 	void EnsureIlluminationTexturesAreUpToDate();
 	void EnsureTextureCycle();
 
 	GLuint clouds_background_program;
 	GLuint clouds_foreground_program;
+	GLuint raytrace_program;
+	GLuint noise_prog;
+	GLuint edge_noise_prog;
 	GLuint current_program;
-void UseShader(GLuint program);
+	void UseShader(GLuint program);
 
 	GLuint cross_section_program;
 
@@ -90,13 +95,18 @@ void UseShader(GLuint program);
 	GLint inscatterSampler_param;
 	GLint illumSampler_param;
 	GLint skylightSampler_param;
-	GLint depthAlphaTexture;
-	GLint layerDistance_param;
+	GLint depthTexture;
+	//GLint layerDistance_param;
 unsigned short *pIndices;
 
-	GLint cloudConstants;
 	GLuint cloudConstantsUBO;
 	GLint cloudConstantsBindingIndex;
+
+	GLuint cloudPerViewConstantsUBO;
+	GLint cloudPerViewConstantsBindingIndex;
+	
+	GLuint	layerDataConstantsUBO;
+	GLint	layerDataConstantsBindingIndex;
 
 	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;
@@ -118,7 +128,7 @@ unsigned short *pIndices;
 	GLuint		sphere_ibo;
 
 	void CreateVolumeNoise();
-	virtual bool CreateNoiseTexture(bool override_file=false);
+	virtual bool CreateNoiseTexture(void *);
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();
 

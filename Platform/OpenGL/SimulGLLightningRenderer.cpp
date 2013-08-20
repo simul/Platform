@@ -15,16 +15,20 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Sky/Float4.h"
+#include "Simul/Sky/SkyInterface.h"
 #include "LoadGLImage.h"
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
 
-using namespace simul::clouds;
-extern void printProgramInfoLog(GLuint obj);
+using namespace simul;
+using namespace clouds;
+using namespace math;
+using namespace sky;
 
-SimulGLLightningRenderer::SimulGLLightningRenderer(simul::clouds::LightningRenderInterface *lightningRenderInterface) :
-	simul::clouds::BaseLightningRenderer(lightningRenderInterface)
+SimulGLLightningRenderer::SimulGLLightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk) :
+	simul::clouds::BaseLightningRenderer(ck,sk)
 	,lightning_texture(0)
+	,enable_geometry_shaders(false)
 {
 }
 
@@ -40,10 +44,21 @@ void SimulGLLightningRenderer::RestoreDeviceObjects()
 
 void SimulGLLightningRenderer::RecompileShaders()
 {
-	lightning_program			=MakeProgramWithGS("simul_lightning");//
+	const char* version = (const char*)glGetString(GL_VERSION); 
+	double vers=atof(version);
+	enable_geometry_shaders=(vers>=3.2);
+	enable_geometry_shaders=glewIsSupported("GL_EXT_geometry_shader4")!=0;
+enable_geometry_shaders=false;
+	if(enable_geometry_shaders)
+	{
+		std::cout<<"Enabled geometry shaders for lightning."<<std::endl;
+		lightning_program		=MakeProgramWithGS("simul_lightning");
+	}
+	else
+		lightning_program		=MakeProgram("simul_simple_lightning");
+	glow_program				=MakeProgram("simul_lightning.vert","simul_lightning.geom","simul_lightning_glow.frag");
 	lightningTexture_param		=glGetUniformLocation(lightning_program,"lightningTexture");
 	
-	printProgramInfoLog(lightning_program);
 	glUseProgram(NULL);
 }
 
@@ -72,30 +87,14 @@ void GetCameraPosVector(simul::math::Vector3 &cam_pos,simul::math::Vector3 &cam_
 	cam_dir.y=inv(2,1);
 	cam_dir.z=inv(2,2);
 }
+					static float ww=50.f;
+					static float uu=9.f;
 
-void SimulGLLightningRenderer::Render()
+void SimulGLLightningRenderer::Render(void*)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	if(glStringMarkerGREMEDY)
 		glStringMarkerGREMEDY(0,"SimulGLLightningRenderer::Render");
-ERROR_CHECK
-/*	m_pd3dDevice->SetTexture(0,lightning_texture);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-	m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAXANISOTROPY, 1);
-		*/
-	//set up matrices
-/*	D3DXMATRIX wvp;
-	D3DXMatrixIdentity(&world);
-	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-	m_pd3dDevice->GetTransform(D3DTS_WORLD,&world);
-	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
-
-	MakeWorldViewProjMatrix(&wvp,world,view,proj);
-	D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
-*/
 ERROR_CHECK
 	simul::math::Vector3 view_dir,cam_pos;
 	GetCameraPosVector(cam_pos,view_dir);
@@ -103,6 +102,7 @@ ERROR_CHECK
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_3D);
 	glEnable(GL_TEXTURE_1D);
+	glEnable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_1D,lightning_texture);
 	glUseProgram(lightning_program);
@@ -111,76 +111,82 @@ ERROR_CHECK
 	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
 	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
 	simul::math::Multiply4x4(viewproj,view,proj);
-setMatrix(lightning_program,"worldViewProj",viewproj.RowPointer(0));
 	int main_viewport[4];
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
-	float vpx=main_viewport[2];
-	float vpy=main_viewport[3];
-	setParameter(lightning_program,"viewportPixels",vpx,vpy);
+	float vpx=(float)main_viewport[2];
+	float vpy=(float)main_viewport[3];
+	setMatrix(lightning_program		,"worldViewProj"	,viewproj.RowPointer(0));
+	if(enable_geometry_shaders)
+		setParameter(lightning_program	,"viewportPixels"	,vpx,vpy);
 	int texcoord_index=glGetAttribLocation(lightning_program,"in_coord");
 ERROR_CHECK
 	simul::math::Vector3 pos;
 	static float lm=10.f;
 	static float main_bright=1.f;
-	int vert_start=0;
-	int vert_num=0;
-
-	for(int i=0;i<lightningRenderInterface->GetNumLightSources();i++)
+	static int cc=8;
+	float time=baseSkyInterface->GetTime();
+	glEnable(GL_LINE_SMOOTH);
+	const simul::clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
+	for(int i=0;i<cloudKeyframer->GetNumLightningBolts(time);i++)
 	{
-		if(!lightningRenderInterface->IsSourceStarted(i))
+		const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,i);
+		if(!lightningRenderInterface)
 			continue;
-		bool quads=false;
-		simul::math::Vector3 x1,x2;
+		if(!lightningRenderInterface->IsSourceStarted(time))
+			continue;
+	float4 colour=lightningRenderInterface->GetLightningColour();
+	setParameter(lightning_program,"lightningColour",colour.x,colour.y,colour.z);
+		simul::sky::float4 x1,x2;
+		static float maxwidth=8.f;
 		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
-		for(int j=0;j<lightningRenderInterface->GetNumLevels(i);j++)
+		for(int j=0;j<lightningRenderInterface->GetNumLevels();j++)
 		{
-			for(int jj=0;jj<lightningRenderInterface->GetNumBranches(i,j);jj++)
+			for(int jj=0;jj<lightningRenderInterface->GetNumBranches(j);jj++)
 			{
-				const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(i,j,jj);
-				if(branch.width<.1f)
-				{
-					quads=false;
-				}
-				simul::math::Vector3 last_transverse;
-				vert_start=vert_num;
+				const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(time,j,jj);
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_ONE,GL_ONE);
-				/*if(quads)
-				{
-					glBegin(GL_TRIANGLE_STRIP);
-				}
-				else*/
+				glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ONE,GL_ONE);
+				float dist=0.001f*(cam_pos-simul::math::Vector3(branch.vertices[0])).Magnitude();
+				glLineWidth(maxwidth*branch.width/dist);
+				if(enable_geometry_shaders)
 					glBegin(GL_LINE_STRIP_ADJACENCY);
-				for(int k=0;k<branch.numVertices;k++)
+				else
+					glBegin(GL_LINE_STRIP);
+				for(int k=-1;k<branch.numVertices;k++)
 				{
-					x1=(const float *)branch.vertices[k];
+					bool start=(k<0);
+					if(start)
+						x1=(const float *)branch.vertices[k+2];
+					else
+						x1=(const float *)branch.vertices[k];
 					if(k+1<branch.numVertices)
 						x2=(const float *)branch.vertices[k+1];
 					else
-					{
-						x2=2.f*x1-simul::math::Vector3((const float *)branch.vertices[k-1]);
-					}
-					bool start=(k==0);
+						x2=2.f*x1-simul::sky::float4((const float *)branch.vertices[k-1]);
 					bool end=(k==branch.numVertices-1);
-					simul::math::Vector3 dir=x2-x1;
-					dir.Normalize();
-					static float ww=100.f;
+					if(k<0)
+					{
+						simul::sky::float4 dir=x2-x1;
+						x1=x2+dir;
+					}
 					float width=branch.brightness*branch.width;
 					width*=ww;
-					simul::math::Vector3 transverse;
-					view_dir=x1-cam_pos;
-					CrossProduct(transverse,view_dir,dir);
-					transverse.Unit();
-					transverse*=width;
+
 					float brightness=branch.brightness;
+					float dh=x1.z/1000.f-K.cloud_base_km;
+					if(dh>0)
+					{
+						static float cc=0.1f;
+						float d=exp(-dh/cc);
+						brightness*=d;
+					}
 					if(end)
 						brightness=0.f;
-					glVertexAttrib2f(texcoord_index,width,brightness);
-					glVertex3f(x1.x,x1.y,x1.z+vertical_shift);
-					last_transverse=transverse;
+					glVertexAttrib3f(texcoord_index,width,x1.w,brightness);
+					glVertex4f(x1.x,x1.y,x1.z+vertical_shift,x1.w);
 				}
 				glEnd();
-				vert_num=0;
 				int err=glGetError();
 				if(err!=0)
 				{
@@ -209,8 +215,6 @@ bool SimulGLLightningRenderer::CreateLightningTexture()
 	glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_S,GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_1D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 
-
-	const float *lightning_colour=lightningRenderInterface->GetLightningColour();
 	for(unsigned i=0;i<size;i++)
 	{
 		float linear=1.f-fabs((float)(i+.5f)*2.f/(float)size-1.f);
@@ -221,9 +225,9 @@ bool SimulGLLightningRenderer::CreateLightningTexture()
 		if(u>1.f)
 			u=1.f;
 		float level=u;
-		float r=lightning_colour[0]*level;
-		float g=lightning_colour[1]*level;
-		float b=lightning_colour[2]*level;
+		float r=level;
+		float g=level;
+		float b=level;
 		float a=level;
 		if(r>1.f)
 			r=1.f;

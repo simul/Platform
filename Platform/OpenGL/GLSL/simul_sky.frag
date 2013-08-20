@@ -1,6 +1,8 @@
 // simul_sky.frag - a GLSL fragment shader
 // Copyright 2008-2012 Simul Software Ltd
-#include "simul_inscatter_fns.glsl"
+uniform float hazeEccentricity;
+uniform vec3 mieRayleighRatio;
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
 
 uniform sampler2D inscTexture;
 uniform sampler2D skylightTexture;
@@ -8,8 +10,6 @@ uniform vec3 lightDir;
 uniform vec3 earthShadowNormal;
 uniform float radiusOnCylinder;
 uniform float skyInterp;
-uniform float hazeEccentricity;
-uniform vec3 mieRayleighRatio;
 
 uniform float maxDistance;
 // X, Y and Z for the bottom-left corner of the cloud shadow texture.

@@ -6,7 +6,7 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
-// FramebufferDX1x.cpp A renderer for skies, clouds and weather effects.
+// Framebuffer.cpp A renderer for skies, clouds and weather effects.
 
 #include "FramebufferDX1x.h"
 
@@ -21,17 +21,15 @@ typedef std::basic_string<TCHAR> tstring;
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
-
-
-#define BLUR_SIZE 9
-
+#include "Utilities.h"
 #include "Simul/Math/Pi.h"
+using namespace simul;
+using namespace dx11;
 
-FramebufferDX1x::FramebufferDX1x(int w,int h) :
-	m_pd3dDevice(NULL),
-	m_pImmediateContext(NULL),
-	m_pBufferVertexDecl(NULL),
-	m_pVertexBuffer(NULL),
+
+Framebuffer::Framebuffer(int w,int h) :
+	BaseFramebuffer(w,h)
+	,m_pd3dDevice(NULL),
 	hdr_buffer_texture(NULL),
 	buffer_depth_texture(NULL),
 	buffer_texture_SRV(NULL),
@@ -41,67 +39,60 @@ FramebufferDX1x::FramebufferDX1x(int w,int h) :
 	m_pOldRenderTarget(NULL),
 	m_pOldDepthSurface(NULL)
 	,stagingTexture(NULL)
-	,Width(w)
-	,Height(h)
 	,timing(0.f)
-	,screen_width(0)
-	,screen_height(0)
 	,target_format(DXGI_FORMAT_R32G32B32A32_FLOAT)
+	,depth_format(DXGI_FORMAT_UNKNOWN) //DXGI_FORMAT_D32_FLOAT)
+	,num_v(0)
+	,GenerateMips(false)
 {
 }
 
-void FramebufferDX1x::SetWidthAndHeight(int w,int h)
+void Framebuffer::SetWidthAndHeight(int w,int h)
 {
 	if(Width!=w||Height!=h)
 	{
 		Width=w;
 		Height=h;
-		InvalidateDeviceObjects();
+		if(m_pd3dDevice)
+			InvalidateDeviceObjects();
 	}
 }
 
-void FramebufferDX1x::SetTargetWidthAndHeight(int w,int h)
+void Framebuffer::SetFormat(int f)
 {
-	screen_width=w;
-	screen_height=h;
-}
-
-void FramebufferDX1x::SetTargetFormat(DXGI_FORMAT f)
-{
-	if(f==target_format)
+	DXGI_FORMAT F=(DXGI_FORMAT)f;
+	if(F==target_format)
 		return;
-	target_format=f;
-	CreateBuffers();
+	target_format=F;
+	InvalidateDeviceObjects();
 }
 
-void FramebufferDX1x::RestoreDeviceObjects(void *dev)
+void Framebuffer::SetDepthFormat(int f)
+{
+	DXGI_FORMAT F=(DXGI_FORMAT)f;
+	if(F==depth_format)
+		return;
+	depth_format=F;
+	InvalidateDeviceObjects();
+}
+
+void Framebuffer::SetGenerateMips(bool m)
+{
+	GenerateMips=m;
+}
+
+void Framebuffer::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D1xDevice*)dev;
-#ifdef DX10
-	m_pImmediateContext=dev;
-#else
-	SAFE_RELEASE(m_pImmediateContext);
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-#endif
-	RecompileShaders();
-	CreateBuffers();
+	if(!m_pd3dDevice)
+		return;
 }
 
-void FramebufferDX1x::RecompileShaders()
-{
-	CreateBuffers();
-}
-
-void FramebufferDX1x::InvalidateDeviceObjects()
+void Framebuffer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-#ifndef DX10
-	SAFE_RELEASE(m_pImmediateContext);
-#endif
-	SAFE_RELEASE(m_pBufferVertexDecl);
-	SAFE_RELEASE(m_pVertexBuffer);
-	
+
 	SAFE_RELEASE(m_pHDRRenderTarget)
 	SAFE_RELEASE(m_pBufferDepthSurface)
 
@@ -116,19 +107,19 @@ void FramebufferDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(stagingTexture);
 }
 
-bool FramebufferDX1x::Destroy()
+bool Framebuffer::Destroy()
 {
 	InvalidateDeviceObjects();
 	return true;
 }
 
-FramebufferDX1x::~FramebufferDX1x()
+Framebuffer::~Framebuffer()
 {
-	Destroy();
+	InvalidateDeviceObjects();
 }
 
 
-bool FramebufferDX1x::IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat)
+bool Framebuffer::IsDepthFormatOk(DXGI_FORMAT DepthFormat, DXGI_FORMAT AdapterFormat, DXGI_FORMAT BackBufferFormat)
 {
 	DepthFormat;
 	AdapterFormat;
@@ -160,57 +151,58 @@ struct Vertext
 	D3DXVECTOR2 tex;
 };
 
-bool FramebufferDX1x::CreateBuffers()
+bool Framebuffer::CreateBuffers()
 {
 	if(!Width||!Height)
 		return false;
+	if(!m_pd3dDevice)
+		return false;
 	HRESULT hr=S_OK;
-	D3D1x_TEXTURE2D_DESC desc=
+	SAFE_RELEASE(hdr_buffer_texture);
+	SAFE_RELEASE(m_pHDRRenderTarget)
+	SAFE_RELEASE(buffer_texture_SRV);
+	SAFE_RELEASE(buffer_depth_texture);
+	SAFE_RELEASE(m_pBufferDepthSurface)
+	SAFE_RELEASE(buffer_depth_texture_SRV);
+	SAFE_RELEASE(stagingTexture);
+	D3D11_TEXTURE2D_DESC desc=
 	{
 		Width,
 		Height,
 		1,
-		1,
+		GenerateMips?0:1,
 		target_format,
 		{1,0},
 		D3D1x_USAGE_DEFAULT,
-		D3D1x_BIND_RENDER_TARGET|D3D1x_BIND_SHADER_RESOURCE,
+		D3D1x_BIND_RENDER_TARGET|D3D11_BIND_SHADER_RESOURCE,
 		0,
-		0
+		GenerateMips?D3D11_RESOURCE_MISC_GENERATE_MIPS:0
 	};
-	SAFE_RELEASE(hdr_buffer_texture);
-	V_CHECK(m_pd3dDevice->CreateTexture2D(	&desc,
-											NULL,
-											&hdr_buffer_texture
-										))
-	SAFE_RELEASE(m_pHDRRenderTarget)
-	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
-	//hdr_buffer_texture->GetDesc(&desc);
-	SAFE_RELEASE(buffer_texture_SRV);
-    V_CHECK(m_pd3dDevice->CreateShaderResourceView(hdr_buffer_texture, NULL, &buffer_texture_SRV ));
-
- 	//desc.Width=Width/4;
-	//desc.Height=Height/4;
-	DXGI_FORMAT fmtDepthTex = DXGI_FORMAT_D32_FLOAT;//DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-	
+	if(target_format!=0)
+	{
+		V_CHECK(m_pd3dDevice->CreateTexture2D(	&desc,
+												NULL,
+												&hdr_buffer_texture	))
+		m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
+		V_CHECK(m_pd3dDevice->CreateShaderResourceView(hdr_buffer_texture, NULL, &buffer_texture_SRV ));
+	}
+	DXGI_FORMAT fmtDepthTex = depth_format ;
 	DXGI_FORMAT possibles[]={
 		DXGI_FORMAT_D24_UNORM_S8_UINT,
 		DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
 		DXGI_FORMAT_D32_FLOAT,
 		DXGI_FORMAT_D16_UNORM,
 		DXGI_FORMAT_UNKNOWN};
-
-	SAFE_RELEASE(buffer_depth_texture);
 	// Try creating a depth texture
 	desc.Width = Width;
 	desc.Height = Height;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = fmtDepthTex;
+	desc.Format = DXGI_FORMAT_R32_TYPELESS;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.Usage = D3D1x_USAGE_DEFAULT;
-	desc.BindFlags = D3D1x_BIND_DEPTH_STENCIL;
+	desc.BindFlags = D3D1x_BIND_DEPTH_STENCIL|D3D11_BIND_SHADER_RESOURCE;
 	desc.CPUAccessFlags = 0;
 	desc.MiscFlags = 0;
 	if(fmtDepthTex!=DXGI_FORMAT_UNKNOWN)
@@ -219,33 +211,30 @@ bool FramebufferDX1x::CreateBuffers()
 												NULL,
 												&buffer_depth_texture))
 	}
-	SAFE_RELEASE(m_pBufferDepthSurface)
 	if(buffer_depth_texture)
-		hr=m_pd3dDevice->CreateDepthStencilView((ID3D1xResource*)buffer_depth_texture, NULL, &m_pBufferDepthSurface);
+	{
+		D3D11_TEX2D_DSV dsv;
+		dsv.MipSlice=0;
+		D3D11_DEPTH_STENCIL_VIEW_DESC depthDesc;
+		depthDesc.ViewDimension		=D3D11_DSV_DIMENSION_TEXTURE2D;
+		depthDesc.Format			=DXGI_FORMAT_D32_FLOAT;
+		depthDesc.Flags				=0;
+		depthDesc.Texture2D			=dsv;
+		hr=m_pd3dDevice->CreateDepthStencilView((ID3D1xResource*)buffer_depth_texture,&depthDesc, &m_pBufferDepthSurface);
+		D3D11_SHADER_RESOURCE_VIEW_DESC depthSrvDesc;
+		depthSrvDesc.Format			=DXGI_FORMAT_R32_FLOAT;
+		depthSrvDesc.ViewDimension	=D3D_SRV_DIMENSION_TEXTURE2D;
+		depthSrvDesc.Texture2D.MipLevels=1;
+		depthSrvDesc.Texture2D.MostDetailedMip=0;
+
+		V_CHECK(m_pd3dDevice->CreateShaderResourceView(buffer_depth_texture,&depthSrvDesc, &buffer_depth_texture_SRV ));
+	}
 
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =
 	{
 		{ "POSITION",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	16,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
 	};
-
-	// Witness the following DX11 silliness.
-	D3D1x_PASS_DESC PassDesc;
-
-	ID3D1xEffect * effect=NULL;
-	CreateEffect(m_pd3dDevice,&effect,_T("gamma.fx"));
-	ID3D1xEffectTechnique*	tech=effect->GetTechniqueByName("simul_direct");
-	assert(tech->IsValid());
-	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
-	assert(pass->IsValid());
-	hr=pass->GetDesc(&PassDesc);
-	V_CHECK(hr);
-
-	SAFE_RELEASE(m_pBufferVertexDecl);
-	hr=m_pd3dDevice->CreateInputLayout(
-		decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize
-		, &m_pBufferVertexDecl);
-	SAFE_RELEASE(effect);
 
 	static float x=-1.f,y=-1.f;
 	static float width=2.f,height=2.f;
@@ -264,31 +253,25 @@ bool FramebufferDX1x::CreateBuffers()
         0,
         0
 	};
-    D3D1x_SUBRESOURCE_DATA InitData;
-    InitData.pSysMem = vertices;
-    InitData.SysMemPitch = sizeof(Vertext);
-    InitData.SysMemSlicePitch = 0;
-	SAFE_RELEASE(m_pVertexBuffer);
-	hr=m_pd3dDevice->CreateBuffer(&bdesc,&InitData,&m_pVertexBuffer);
 	return (hr==S_OK);
 }
 
-ID3D1xRenderTargetView* FramebufferDX1x::MakeRenderTarget(const ID3D1xTexture2D* pTexture)
+ID3D1xRenderTargetView* Framebuffer::MakeRenderTarget(const ID3D1xTexture2D* pTexture)
 {
 	ID3D1xRenderTargetView* pRenderTargetView;
 	HRESULT hr;
 	// Setup the description of the render target view.
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-	renderTargetViewDesc.Format = target_format;
-	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-	renderTargetViewDesc.Texture2D.MipSlice = 0;
+	renderTargetViewDesc.Format				=target_format;
+	renderTargetViewDesc.ViewDimension		=D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.Texture2D.MipSlice	=0;
 	// Create the render target in DX11:
 	hr=m_pd3dDevice->CreateRenderTargetView((ID3D1xResource*)pTexture,&renderTargetViewDesc, &pRenderTargetView);
 	return pRenderTargetView;
 }
 
-ID3D11Texture2D* makeStagingTexture(ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xDeviceContext	*m_pImmediateContext,int w,int h,DXGI_FORMAT target_format)
+ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *m_pd3dDevice
+							,int w,int h,DXGI_FORMAT target_format)
 {
 	ID3D11Texture2D*	tex;
 	D3D11_TEXTURE2D_DESC textureDesc=
@@ -307,15 +290,15 @@ ID3D11Texture2D* makeStagingTexture(ID3D1xDevice			*m_pd3dDevice
 	return tex;
 }
 
-void FramebufferDX1x::CopyToMemory(void *target)
+void Framebuffer::CopyToMemory(void *context,void *target,int start_texel,int texels)
 {
-	CopyToMemory(target,0,Width*Height);
-}
+	ID3D11DeviceContext *m_pImmediateContext=NULL;
+	if(texels==0)
+		texels=Width*Height;
+m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 
-void FramebufferDX1x::CopyToMemory(void *target,int start_texel,int texels)
-{
 	if(!stagingTexture)
-		stagingTexture		=makeStagingTexture(m_pd3dDevice,m_pImmediateContext,Width,Height,target_format);
+		stagingTexture=makeStagingTexture(m_pd3dDevice,Width,Height,target_format);
 	D3D11_BOX sourceRegion;
 	sourceRegion.left = 0;
 	sourceRegion.right = Width;
@@ -323,7 +306,7 @@ void FramebufferDX1x::CopyToMemory(void *target,int start_texel,int texels)
 	sourceRegion.bottom = Height;
 	sourceRegion.front = 0;
 	sourceRegion.back = 1;
-	m_pImmediateContext->CopySubresourceRegion(stagingTexture, 0, 0, 0, 0, GetColorTexResource(), 0, &sourceRegion);
+	m_pImmediateContext->CopySubresourceRegion(stagingTexture,0,0,0,0,GetColorTexture(),0,&sourceRegion);
 HRESULT hr=S_OK;
 	D3D11_MAPPED_SUBRESOURCE msr;
 	V_CHECK(m_pImmediateContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &msr));
@@ -334,7 +317,7 @@ HRESULT hr=S_OK;
 	{
 		const char *dat=(const char *)msr.pData;
 		dat+=start_texel*byteSize;
-		dst+=start_texel*byteSize;
+		//dst+=start_texel*byteSize;
 		memcpy(dst,dat,texels*byteSize);
 	}
 	else
@@ -343,7 +326,7 @@ HRESULT hr=S_OK;
 		int h0=start_texel/Width;
 		int h1=h0+texels/Width;
 		src+=msr.RowPitch*h0;
-		dst+=byteSize*Width*h0;
+		//dst+=byteSize*Width*h0;
 		for(int i=h0;i<h1;i++)
 		{
 			memcpy(dst,src,required_pitch);
@@ -353,16 +336,19 @@ HRESULT hr=S_OK;
 	}
 	// copy data
 	m_pImmediateContext->Unmap(stagingTexture, 0);
+	SAFE_RELEASE(m_pImmediateContext)
 }
 
-void FramebufferDX1x::Activate()
+void Framebuffer::Activate(void *context)
 {
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	if(!m_pImmediateContext)
-		RestoreDeviceObjects(m_pd3dDevice);
+		return;
+	if(!hdr_buffer_texture&&!buffer_depth_texture)
+		CreateBuffers();
 	HRESULT hr=S_OK;
-	unsigned int num_v=0;
 	m_pImmediateContext->RSGetViewports(&num_v,NULL);
-	if(num_v<=4)
+	if(num_v>0)
 		m_pImmediateContext->RSGetViewports(&num_v,m_OldViewports);
 
 	m_pOldRenderTarget	=NULL;
@@ -371,7 +357,10 @@ void FramebufferDX1x::Activate()
 												&m_pOldRenderTarget,
 												&m_pOldDepthSurface
 												);
-	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
+	if(m_pHDRRenderTarget)
+		m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
+	else 
+		m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
 	D3D11_VIEWPORT viewport;
 		// Setup the viewport for rendering.
 	viewport.Width = (float)Width;
@@ -385,51 +374,77 @@ void FramebufferDX1x::Activate()
 	m_pImmediateContext->RSSetViewports(1, &viewport);
 }
 
-void FramebufferDX1x::Deactivate()
+void Framebuffer::ActivateColour(void *context)
 {
-	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
-	SAFE_RELEASE(m_pOldRenderTarget)
-	SAFE_RELEASE(m_pOldDepthSurface)
-	m_pImmediateContext->RSSetViewports(1,m_OldViewports);
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	if(!m_pImmediateContext)
+		return;
+	if(!hdr_buffer_texture&&!buffer_depth_texture)
+		CreateBuffers();
+	if(!m_pHDRRenderTarget)
+		return;
+	m_pImmediateContext->RSGetViewports(&num_v,NULL);
+	if(num_v>0)
+		m_pImmediateContext->RSGetViewports(&num_v,m_OldViewports);
+
+	m_pOldRenderTarget	=NULL;
+	m_pOldDepthSurface	=NULL;
+	m_pImmediateContext->OMGetRenderTargets(	1,
+												&m_pOldRenderTarget,
+												&m_pOldDepthSurface
+												);
+	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
+	D3D11_VIEWPORT viewport;
+		// Setup the viewport for rendering.
+	viewport.Width = (float)Width;
+	viewport.Height = (float)Height;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	// Create the viewport.
+	m_pImmediateContext->RSSetViewports(1, &viewport);
 }
 
-void FramebufferDX1x::Clear(float r,float g,float b,float a,int mask)
+void Framebuffer::Deactivate(void *context)
 {
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
+	SAFE_RELEASE(m_pOldRenderTarget)
+	SAFE_RELEASE(m_pOldDepthSurface)
+	if(num_v>0)
+		pContext->RSSetViewports(num_v,m_OldViewports);
+	if(GenerateMips)
+		pContext->GenerateMips(buffer_texture_SRV);
+}
+
+void Framebuffer::DeactivateDepth(void *context)
+{
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	if(!m_pHDRRenderTarget)
+	{
+		Deactivate(context);
+		return;
+	}
+	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
+}
+
+void Framebuffer::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
+{
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	// Clear the screen to black:
     float clearColor[4]={r,g,b,a};
     if(!mask)
 		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
-	m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
+	if(m_pHDRRenderTarget)
+		m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
 	if(m_pBufferDepthSurface)
-		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,mask, 1.f, 0);
-}
-void FramebufferDX1x::DeactivateAndRender(bool blend)
-{
-	Deactivate();
-	Render(blend);
+		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,mask,depth,0);
 }
 
-void FramebufferDX1x::Render(bool blend)
+bool Framebuffer::DrawQuad(void *context)
 {
-	DrawQuad();
-}
-
-bool FramebufferDX1x::DrawQuad()
-{
-	HRESULT hr=S_OK;
-	UINT stride = sizeof(Vertext);
-	UINT offset = 0;
-    UINT Strides[1];
-    UINT Offsets[1];
-    Strides[0] = 0;
-    Offsets[0] = 0;
-	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
-												1,					// the number of buffers in the array
-												&m_pVertexBuffer,	// the array of vertex buffers
-												&stride,			// array of stride values, one for each buffer
-												&offset);			// array of offset values, one for each buffer
-	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	m_pImmediateContext->IASetInputLayout(m_pBufferVertexDecl);
-	m_pImmediateContext->Draw(4,0);
-	return (hr==S_OK);
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
+	return true;
 }

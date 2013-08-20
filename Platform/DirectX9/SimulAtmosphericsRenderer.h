@@ -45,7 +45,7 @@ public:
 class SimulAtmosphericsRenderer : public SimulAtmosphericsInterface, public simul::sky::BaseAtmosphericsRenderer
 {
 public:
-	SimulAtmosphericsRenderer();
+	SimulAtmosphericsRenderer(simul::base::MemoryInterface *m);
 	virtual ~SimulAtmosphericsRenderer();
 	//standard d3d object interface functions
 
@@ -55,8 +55,10 @@ public:
 	//! Call this when the device has been lost.
 	void InvalidateDeviceObjects();
 	//! StartRender: sets up the rendertarget for atmospherics, and make it the current target. Call at the start of the frame's rendering.
-	void StartRender();
-	void FinishRender();
+	void StartRender(void *context);
+	void FinishRender(void *context);
+	//! Not implemented for DirectX 9.
+	void RenderAsOverlay(void *,const void *,float,const simul::sky::float4 &){}
 	void *GetDepthAlphaTexture()
 	{
 		return (void*)input_texture;
@@ -83,7 +85,7 @@ public:
 	{
 		loss_texture=(LPDIRECT3DBASETEXTURE9)t;
 	}
-	void SetInscatterTextures(void* t,void *s)
+	void SetInscatterTextures(void* t,void *s,void *o)
 	{
 		inscatter_texture=(LPDIRECT3DBASETEXTURE9)t;
 		skylight_texture=(LPDIRECT3DBASETEXTURE9)s;
@@ -91,10 +93,6 @@ public:
 	void SetCloudsTexture(void* t)
 	{
 		clouds_texture=(LPDIRECT3DBASETEXTURE9)t;
-	}
-	void SetCloudShadowTexture(void *c)
-	{
-		cloud_shadow_texture=(LPDIRECT3DBASETEXTURE9)c;
 	}
 	void SetFadeInterpolation(float s)
 	{
@@ -157,7 +155,6 @@ protected:
 	LPDIRECT3DBASETEXTURE9			inscatter_texture;
 	LPDIRECT3DBASETEXTURE9			skylight_texture;
 	LPDIRECT3DBASETEXTURE9			clouds_texture;
-	LPDIRECT3DBASETEXTURE9			cloud_shadow_texture;
 
 	LPDIRECT3DSURFACE9				m_pRenderTarget;
 	LPDIRECT3DSURFACE9				m_pBufferDepthSurface;

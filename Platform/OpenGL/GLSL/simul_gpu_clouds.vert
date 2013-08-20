@@ -3,6 +3,7 @@ varying vec2 in_texcoord;
 
 void main(void)
 {
-    gl_Position	=ftransform();
-    in_texcoord	=gl_MultiTexCoord0.xy;
+    vec4 outpos	=ftransform();
+	gl_Position =outpos;
+	in_texcoord	=gl_Vertex.xy;
 }

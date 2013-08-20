@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <GL/glew.h>
+#pragma warning(disable:4505)	// Fix GLUT warnings
 #include <GL/glut.h>
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
@@ -139,11 +140,14 @@ bool IsExtensionSupported(const char *name)
 
 bool CheckExtension(const char *txt)
 {
+ERROR_CHECK
 	if(!glewIsSupported(txt)&&!IsExtensionSupported(txt))
 	{
 		std::cerr<<"Error - required OpenGL extension is not supported: "<<txt<<std::endl;
+ERROR_CHECK
 		return false;
 	}
+ERROR_CHECK
 	return true;
 }
 
@@ -193,9 +197,10 @@ void SetPerspectiveProjection(int w,int h,float field_of_view)
 }
 void RenderString(float x, float y, void *font, const char* string)
 {
-	glColor4f(1.f,1.f,1.f,1.f); 
+	glColor4f(1.f,1.f,1.f,1.f);
 	glRasterPos2f(x,win_h-y);
-
+	glDisable(GL_LIGHTING);
+	glBindTexture(GL_TEXTURE_2D,0);
 	const char *s=string;
 	while(*s)
 	{
@@ -223,8 +228,13 @@ void SetVSync(int vsync)
 #endif
 }
 
-// draw a quad with texture coordinate for texture rectangle
 void DrawQuad(int x,int y,int w,int h)
+{
+	DrawQuad((float)x,(float)y,(float)w,(float)h);
+}
+
+// draw a quad with texture coordinate for texture rectangle
+void DrawQuad(float x,float y,float w,float h)
 {
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0,1.0);
@@ -236,22 +246,11 @@ void DrawQuad(int x,int y,int w,int h)
 	glTexCoord2f(0.0,0.0);
 	glVertex2f(x,y);
 	glEnd();
-}/*
-
-void FramebufferGL::DrawQuad(int w,int h)
+}
+void DrawFullScreenQuad()
 {
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.f,1.f);
-	glVertex2f(0.f,(float)h);
-	glTexCoord2f(1.f,1.f);
-	glVertex2f((float)w,(float)h);
-	glTexCoord2f(1.0,0.f);
-	glVertex2f((float)w,0.f);
-	glTexCoord2f(0.f,0.f);
-	glVertex2f(0.f,0.f);
-	glEnd();
-}*/
-
+	DrawQuad(0.f,0.f,1.f,1.f);
+}
 
 float GetFramerate()
 {
@@ -322,20 +321,19 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
     glMatrixMode(GL_MODELVIEW);
 		ERROR_CHECK
     glPushMatrix();
-		ERROR_CHECK
-	//glLoadIdentity();
+
+
 	simul::math::Matrix4x4 modelview;
 		ERROR_CHECK
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
-		ERROR_CHECK
+		
 	glRotatef(180.f*Yaw/pi,0.0f,0.0f,-1.0f);
-		ERROR_CHECK
+		
 	glRotatef(180.f*Pitch/pi,1.0f,0.0f,0.0f);
-		ERROR_CHECK
+		
     glDisable(GL_ALPHA_TEST);
-    glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
-	glDepthMask(GL_FALSE);
+#if 1
 	// coverage is 2*atan(1/5)=11 degrees.
 	// the sun covers 1 degree. so the sun circle should be about 1/10th of this quad in width.
 	static float relative_distance=1000.f;
@@ -365,6 +363,7 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
 		glVertex3f(V.x,V.y,V.z);
 	}
 	glEnd();
+#endif
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 		ERROR_CHECK
@@ -405,7 +404,10 @@ void DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 	glUseProgram(Utilities::GetSingleton().linedraw_program);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
+    glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_1D);
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_TEXTURE_3D);
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_CULL_FACE);
 	glDepthMask(GL_FALSE);
@@ -431,11 +433,15 @@ void FixGlProjectionMatrix(float required_distance)
 	simul::math::Matrix4x4 proj;
 	glGetMatrix(proj.RowPointer(0),GL_PROJECTION_MATRIX);
 
-	float zFar=proj(3,2)/(1.f+proj(2,2));
-	float zNear=proj(3,2)/(proj(2,2)-1.f);
-	zFar=required_distance;
-	proj(2,2)=-(zFar+zNear)/(zFar-zNear);
-	proj(3,2)=-2.f*(zNear*zFar)/(zFar-zNear);
+	float F=proj(3,2)/(1.f+proj(2,2));
+	float N=proj(3,2)/(proj(2,2)-1.f);
+	F=required_distance;
+	proj(2,2)=-(F+N)/(F-N);
+	proj(3,2)=-2.f*(N*F)/(F-N);
+	
+	// Make it a DirectX-style matrix with depth reversed.
+	proj(2,2)	=N/(F-N);
+	proj(3,2)	=F*N/(F-N);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixf(proj.RowPointer(0));
@@ -456,7 +462,8 @@ void setParameter(GLuint program,const char *name,float value)
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<0)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
-	glUniform1f(loc,value);
+	else
+		glUniform1f(loc,value);
 	ERROR_CHECK
 }
 
@@ -465,7 +472,8 @@ void setParameter(GLuint program,const char *name,float value1,float value2)
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<0)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
-	glUniform2f(loc,value1,value2);
+	else
+		glUniform2f(loc,value1,value2);
 	ERROR_CHECK
 }
 
@@ -474,7 +482,8 @@ void setParameter(GLuint program,const char *name,float value1,float value2,floa
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<0)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
-	glUniform3f(loc,value1,value2,value3);
+	else
+		glUniform3f(loc,value1,value2,value3);
 	ERROR_CHECK
 }
 
@@ -483,16 +492,20 @@ void setParameter(GLuint program,const char *name,int value)
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<0)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
-	glUniform1i(loc,value);
+	else
+		glUniform1i(loc,value);
 	ERROR_CHECK
 }
 
 void setParameter(GLuint program,const char *name,const simul::sky::float4 &value)
 {
+	ERROR_CHECK
 	GLint loc=glGetUniformLocation(program,name);
+	ERROR_CHECK
 	if(loc<0)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
-	glUniform4f(loc,value.x,value.y,value.z,value.w);
+	else
+		glUniform4f(loc,value.x,value.y,value.z,value.w);
 	ERROR_CHECK
 }
 
@@ -510,8 +523,11 @@ void setParameter3(GLuint program,const char *name,const simul::sky::float4 &val
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<0)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
-	glUniform3f(loc,value.x,value.y,value.z);
-	ERROR_CHECK
+	else
+	{
+		glUniform3f(loc,value.x,value.y,value.z);
+		ERROR_CHECK
+	}
 }
 
 void setMatrix(GLuint program,const char *name,const float *value)
@@ -519,9 +535,12 @@ void setMatrix(GLuint program,const char *name,const float *value)
 	GLint loc=glGetUniformLocation(program,name);
 	if(loc<0)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
-	static bool tr=0;
-	glUniformMatrix4fv(loc,1,tr,value);
-	ERROR_CHECK
+	else
+	{
+		static bool tr=0;
+		glUniformMatrix4fv(loc,1,tr,value);
+		ERROR_CHECK
+	}
 }
 
 void setMatrixTranspose(GLuint program,const char *name,const float *value)
@@ -534,6 +553,22 @@ void setMatrixTranspose(GLuint program,const char *name,const float *value)
 	ERROR_CHECK
 }
 
+extern void setTexture(GLuint program,const char *name,int texture_number,GLuint texture)
+{
+    glActiveTexture(GL_TEXTURE0+texture_number);
+ERROR_CHECK
+	glBindTexture(GL_TEXTURE_2D,texture);
+ERROR_CHECK
+	GLint loc=glGetUniformLocation(program,name);
+ERROR_CHECK
+	if(loc<0)
+		std::cout<<"Warning: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
+	else
+	{
+		glUniform1i(loc,texture_number);
+	}
+ERROR_CHECK
+}
 void setParameter(GLint loc,int value)
 {
 	glUniform1i(loc,value);
@@ -556,13 +591,28 @@ void setParameter3(GLint loc,const simul::sky::float4 &value)
 	glUniform3f(loc,value.x,value.y,value.z);
 	ERROR_CHECK
 }
-/*
-void setMatrix(GLint loc,const float *value)
+
+void linkToConstantBuffer(GLuint program,const char *name,GLuint bindingIndex)
 {
-	static bool tr=1;
-	glUniformMatrix4fv(loc,1,tr,value);
-	ERROR_CHECK
-}*/
+	GLint indexInShader	=glGetUniformBlockIndex(program,name);
+	if(indexInShader>=0)
+		glUniformBlockBinding(program,indexInShader,bindingIndex);
+}
+
+GLuint make2DTexture(int w,int l,const float *src)
+{
+	GLuint tex=0;
+	glGenTextures(1,&tex);
+	glBindTexture(GL_TEXTURE_2D,tex);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F_ARB,w,l,0,GL_RGBA,GL_FLOAT,src);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_2D,0);
+	return tex;
+}
+
 #undef pi
 #include <windows.h>
 void CheckGLError(const char *filename,int line_number,int err)

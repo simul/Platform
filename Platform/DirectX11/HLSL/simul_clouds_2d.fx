@@ -1,4 +1,13 @@
-float4x4 worldViewProj	: WorldViewProjection;
+#include "CppHlsl.hlsl"
+#include "states.hlsl"
+uniform sampler2D imageTexture;
+uniform sampler2D noiseTexture;
+uniform sampler2D coverageTexture;
+uniform sampler2D lossTexture;
+uniform sampler2D inscTexture;
+uniform sampler2D skylTexture;
+uniform sampler2D depthTexture;
+uniform sampler2D illuminationTexture;
 
 SamplerState samplerState 
 {
@@ -7,133 +16,244 @@ SamplerState samplerState
 	AddressV = Wrap;
 };
 
-Texture2D cloudDensity1;
-Texture2D cloudDensity2;
-Texture2D noiseTexture;
-Texture2D imageTexture;
+#include "../../CrossPlatform/simul_2d_clouds.hs"
 
-float3 sunlightColour=float3(1,1,1);
-float4 eyePosition : EYEPOSITION_WORLDSPACE = {0,0,0,0};
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/earth_shadow_uniforms.sl"
+#include "../../CrossPlatform/earth_shadow.sl"
+#include "../../CrossPlatform/earth_shadow_fade.sl"
 
-float4 lightResponse;
-float3 ambientColour ={0,0,0};
-float4 lightDir : Direction = {1.0f, -1.0f, 1.0f, 0.0f};
-float4 fractalScale={600.f/80000.f,600.f/80000.f,600.f/3500.f,0};
-static const float pi=3.1415926536f;
-float2 interp={0,1};
-float layerDensity=1.f;
-float imageEffect=.2f;
-float hazeEccentricity=0;
-float3 mieRayleighRatio;
-float cloudEccentricity=0.87f;
+#include "../../CrossPlatform/simul_2d_clouds.sl"
+#include "../../CrossPlatform/simul_2d_cloud_detail.sl"
+#include "../../CrossPlatform/depth.sl"
 
-struct vertexInput
+struct a2v
 {
-    float3 position			: POSITION;
-    float2 texCoords		: TEXCOORD0;
-    float3 loss				: TEXCOORD1;
-    float3 inscatter		: TEXCOORD2;
-    float2 texCoordsNoise	: TEXCOORD3;
-	float2 imageCoords		: TEXCOORD4;
+    float3 position	: POSITION;
 };
 
-struct vertexOutput
+struct v2f
 {
-    float4 hPosition		: POSITION;
-    float2 texCoords		: TEXCOORD1;
-    float3 loss				: TEXCOORD2;
-    float3 inscatter		: TEXCOORD3;
-    float2 texCoordsNoise	: TEXCOORD4;
-	float2 imageCoords		: TEXCOORD5;
-	float3 wPosition		: TEXCOORD6;
+    float4 hPosition	: SV_POSITION;
+    float4 clip_pos		: TEXCOORD0;
+	vec3 wPosition		: TEXCOORD1;
 };
 
-vertexOutput VS_Main(vertexInput IN)
+v2f MainVS(a2v IN)
 {
-    vertexOutput OUT;
-    OUT.hPosition = mul( worldViewProj, float4(IN.position.xyz , 1.0));
-	OUT.texCoords=IN.texCoords;
-	OUT.texCoordsNoise=IN.texCoordsNoise;
-	OUT.imageCoords=IN.imageCoords;
-	OUT.loss=IN.loss;
-	OUT.inscatter=IN.inscatter;
-	OUT.wPosition=normalize(IN.position.xyz-eyePosition.xyz);
+	v2f OUT;
+	vec3 pos			=IN.position.xyz;
+	pos.z				+=origin.z;
+	float Rh			=planetRadius+origin.z;
+	float dist			=length(pos.xy);
+	float vertical_shift=sqrt(Rh*Rh-dist*dist)-Rh;
+	pos.z				+=vertical_shift;
+	pos.xy				+=eyePosition.xy;
+	OUT.clip_pos		=mul(worldViewProj,vec4(pos.xyz,1.0));
+	OUT.hPosition		=OUT.clip_pos;
+    OUT.wPosition		=pos.xyz;
     return OUT;
 }
 
-#define pi (3.1415926536f)
-float HenyeyGreenstein(float g,float cos0)
+float4 MainPS(v2f IN) : SV_TARGET
 {
-	float g2=g*g;
-	return (1.f-g2)/(4.f*pi*pow(1.f+g2-2.f*g*cos0,1.5f));
-}
-
-
-float3 InscatterFunction(float4 inscatter_factor,float cos0)
-{
-	float BetaRayleigh=0.0596831f*(1.f+cos0*cos0);
-	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
-	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
-		/(float3(1.f,1.f,1.f)+inscatter_factor.a*mieRayleighRatio.xyz);
-	float3 colour=BetaTotal*inscatter_factor.rgb;
-	return colour;
-}
-
-//#define SMOOTH_BLENDING
-float4 PS_Main( vertexOutput IN): color
-{
-	float3 view=normalize(IN.wPosition);
-	float cos0=dot(lightDir.xyz,view.xyz);
-	//cos0=pow(cos0,36.f);
-	float3 noiseval=noiseTexture.Sample(samplerState,IN.texCoordsNoise.xy).xyz;
-	float2 pos=IN.texCoords+fractalScale.xy*(noiseval.xy-.5f);
-	float4 density=cloudDensity1.Sample(samplerState,pos.xy);
-	float4 density2=cloudDensity2.Sample(samplerState,pos.xy);
-	float Beta=HenyeyGreenstein(cloudEccentricity,cos0);
-
-	float3 image=imageTexture.Sample(samplerState,IN.imageCoords.xy).rgb;
-	density=lerp(density,density2,interp.x);
-
-#ifdef SMOOTH_BLENDING
-	density.x*=3.f;
-	density.x-=1.f;
-	density.x=saturate(density.x);
+	vec3 depth_pos		=IN.clip_pos.xyz/IN.clip_pos.w;
+	vec3 depth_texc		=0.5*(depth_pos+vec3(1.0,1.0,1.0));
+	depth_texc.y		=1.0-depth_texc.y;
+    float depth			=texture(depthTexture,viewportCoordToTexRegionCoord(depth_texc.xy,viewportToTexRegionScaleBias)).x;
+#ifdef REVERSE_DEPTH
+	if(depth>0.0)
+		discard;
+#else
+	if(1.0>depth)
+		discard;
 #endif
-	density.x*=(.5f+imageEffect*(image.x-0.5f));
-
-	float opacity=saturate(density.x);
-	float3 final=(lightResponse.x*Beta*density.z+lightResponse.y*density.y)*sunlightColour+density.w*ambientColour.rgb;
-
-	final*=IN.loss;
-	final+=IN.inscatter;
-	final.rgb*=opacity;
-    return float4(final.rgb,opacity);
+	vec2 wOffset		=IN.wPosition.xy-origin.xy;
+	vec2 noiseOffset	=fractalAmplitude*texture(noiseTexture,wOffset/100000.0).xy;
+    vec2 texc_global	=wOffset/globalScale;
+    vec2 texc_detail	=wOffset/detailScale;
+	//texc_detail		+=noiseOffset;
+	float dist			=depthToDistance(depth,depth_pos.xy,nearZ,farZ,tanHalfFov);
+	vec3 wEyeToPos		=IN.wPosition-eyePosition;
+	vec4 ret			=Clouds2DPS_illum(texc_global,texc_detail,wEyeToPos,dist,cloudInterp,sunlight.rgb,lightDir.xyz,lightResponse);
+	ret.rgb				*=exposure;
+	return ret;
 }
 
-technique simul_clouds_2d
+technique11 simul_clouds_2d
 {
-    pass p0 
+    pass p0
     {
-		zenable = false;
-		DepthBias =0;
-		SlopeScaleDepthBias =0;
-		ZWriteEnable = false;
-		alphablendenable = true;
-        CullMode = None;
-		AlphaTestEnable=false;
-		FillMode = Solid;
-        AlphaBlendEnable = true;
-		SrcBlend = One;
-		DestBlend = InvSrcAlpha;
-		
-		// We would LIKE to do the following:
-		//SeparateAlphaEnable = true;
-		//SrcBlendAlpha = Zero;
-		//DestBlendAlpha = InvSrcAlpha;
-		// but it's not implemented!
-
-		VertexShader = compile vs_3_0 VS_Main();
-		PixelShader  = compile ps_3_0 PS_Main();
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
+		SetPixelShader(CompileShader(ps_4_0,MainPS()));
     }
 }
+struct v2f2
+{
+    float4 hPosition	: SV_POSITION;
+	vec2 texCoords		: TEXCOORD0;
+};
+
+v2f2 FullScreenVS(idOnly IN)
+{
+	v2f2 OUT;
+	float2 poss[4]=
+	{
+		{ 1.0, 0.0},
+		{ 1.0, 1.0},
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(2.0*pos-vec2(1.0,1.0),0.0,1.0);
+    OUT.texCoords	=pos;
+    return OUT;
+}
+
+v2f2 SimpleVS(idOnly IN)
+{
+	v2f2 OUT;
+	float2 poss[4]=
+	{
+		{ 1.0, 0.0},
+		{ 1.0, 1.0},
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
+	};
+	float2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
+	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
+    OUT.texCoords	=pos;
+    return OUT;
+}
+
+float4 SimplePS(v2f2 IN) : SV_TARGET
+{
+	return texture2D(imageTexture,IN.texCoords);
+}
+
+float4 CoveragePS(v2f2 IN) : SV_TARGET
+{
+	return Coverage(IN.texCoords,humidity,diffusivity,coverageOctaves,coveragePersistence,time,noiseTexture,noiseTextureScale);
+}
+
+float4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET
+{
+    vec4 detail				=texture2D(imageTexture,IN.texCoords);
+	float opacity			=saturate(detail.a);
+	vec3 colour				=vec3(0.5,0.5,1.0);
+	if(opacity<=0)
+		return vec4(colour,1.0);
+	float light				=exp(-detail.r*extinction);
+	float scattered_light	=light;//detail.a*exp(-light*Y(coverage)*32.0);
+	colour					*=1.0-opacity;
+	colour					+=opacity*sunlight*(lightResponse.y+lightResponse.x)*scattered_light;
+    return vec4(colour,1.0);
+}
+
+float rand(vec2 co)
+{
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+float4 RandomPS(v2f2 IN) : SV_TARGET
+{
+    vec4 c=vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords));
+    return frac(c);
+}
+
+float4 DetailPS(v2f2 IN) : SV_TARGET
+{
+    return DetailDensity(IN.texCoords,imageTexture);
+}
+
+float4 DetailLightingPS(v2f2 IN) : SV_TARGET
+{
+    return DetailLighting(IN.texCoords,imageTexture);
+}
+
+technique11 simul_coverage
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
+		SetPixelShader(CompileShader(ps_4_0,CoveragePS()));
+    }
+}
+
+technique11 simple
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
+		SetPixelShader(CompileShader(ps_4_0,SimplePS()));
+    }
+}
+
+technique11 show_detail_texture
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
+		SetPixelShader(CompileShader(ps_4_0,ShowDetailTexturePS()));
+    }
+}
+
+technique11 simul_random
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
+		SetPixelShader(CompileShader(ps_4_0,RandomPS()));
+    }
+}
+
+technique11 simul_2d_cloud_detail
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
+		SetPixelShader(CompileShader(ps_4_0,DetailPS()));
+    }
+}
+
+
+technique11 simul_2d_cloud_detail_lighting
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
+		SetPixelShader(CompileShader(ps_4_0,DetailLightingPS()));
+    }
+}
+
+
 

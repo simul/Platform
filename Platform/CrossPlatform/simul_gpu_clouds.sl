@@ -1,18 +1,39 @@
-uniform float zPixel;
-uniform float zSize;
-uniform float baseLayer;
-uniform float transition;
-uniform sampler3D volumeNoiseTexture;
-uniform mat4 transformMatrix;
+#ifndef SIMUL_GPU_CLOUDS_SL
+#define SIMUL_GPU_CLOUDS_SL
 
-float saturate(float x)
+uniform_buffer GpuCloudConstants SIMUL_BUFFER_REGISTER(8)
 {
-	return clamp(x,0.0,1.0);
-}
+	uniform mat4 transformMatrix;
+	uniform vec4 yRange;
+	uniform uint3 threadOffset;
+	uniform float ss;
+	uniform vec2 extinctions;
+	uniform float stepLength,ttt;
+	uniform int octaves;
+	uniform float time;
+	uniform float persistence;
+	uniform float humidity;
+	uniform vec3 noiseScale;
+	uniform float zPixelLightspace;
+	uniform float zPosition;
+	uniform float zPixel;
+	uniform float zSize;
+	uniform float baseLayer;
+	uniform float transition;
+	uniform float upperDensity;
+	uniform float diffusivity;
+	uniform float invFractalSum;
+};
 
-vec2 saturate(vec2 v)
+#ifndef __cplusplus
+
+uint3 LinearThreadToPos3D(uint linear_pos,uint3 dims)
 {
-	return clamp(v,vec2(0.0,0.0),vec2(1.0,1.0));
+	uint Z				=linear_pos/dims.x/dims.y;
+	uint Y				=(linear_pos-Z*dims.x*dims.y)/dims.x;
+	uint X				=linear_pos-Y*(dims.x+Z*dims.y);
+	uint3 pos			=uint3(X,Y,Z);
+	return pos;
 }
 
 vec3 assemble3dTexcoord(vec2 texcoord2)
@@ -27,32 +48,32 @@ vec3 assemble3dTexcoord(vec2 texcoord2)
 
 float GetHumidityMultiplier(float z)
 {
-	const float mul=0.7;
 	const float default_=1.0;
 	float i=saturate((z-baseLayer)/transition);
-	return default_*(1.0-i)+mul*i;
+	float res1=default_*(1.0-i)+upperDensity*i;
+	float res2=res1*lerp(0.75,1.0,saturate((1.0-z)/transition));
+	return res2;
 }
 
-float NoiseFunction(vec3 pos,int octaves,float persistence,float time)
+float NoiseFunction(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float persistence,float t)
 {
 	float dens=0.0;
-	float mul=0.5;
-	float this_grid_height=1.0;
+	float mult=0.5;
 	float sum=0.0;
-	float t=time;
 	for(int i=0;i<5;i++)
 	{
 		if(i>=octaves)
 			break;
-		float lookup=texture3D(volumeNoiseTexture,pos).x;
-		float val=lookup;
-		dens+=mul*val;
-		sum+=mul;
-		mul*=persistence;
-		pos*=2.0;
-		this_grid_height*=2.0;
-		t*=2.0;
+		float lookup=texture_wrap_lod(volumeNoiseTexture,pos,0).x;
+		float val	=lookup;//0.5*(1.0+cos(2.0*3.1415926536*(lookup+t)));
+		dens		=dens+mult*val;
+		sum			=sum+mult;
+		mult		=mult*persistence;
+		pos			=pos*2.0;
+		t			=t*2.0;
 	}
-	dens/=sum;
+	dens=dens/sum;
 	return dens;
 }
+#endif
+#endif

@@ -14,20 +14,19 @@
 SIMUL_OPENGL_EXPORT_CLASS SimulGLTerrainRenderer : public simul::terrain::BaseTerrainRenderer
 {
 public:
-	SimulGLTerrainRenderer();
+	SimulGLTerrainRenderer(simul::base::MemoryInterface *m);
 	virtual ~SimulGLTerrainRenderer();
 	//standard ogl object interface functions
 	void RecompileShaders();
 	void RestoreDeviceObjects(void*);
 	void InvalidateDeviceObjects();
-	void Render();
+	void Render(void *,float exposure);
 private:
 	void MakeTextures();
 	GLuint texArray;
 	GLuint program;
 	GLint eyePosition_param;
 	GLint textures_param;
-	GLint maxFadeDistanceMetres_param;
 	GLint worldViewProj_param;
 	GLint lightDir_param;
 	GLint sunlight_param;

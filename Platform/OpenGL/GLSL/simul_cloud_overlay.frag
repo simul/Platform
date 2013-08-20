@@ -8,9 +8,13 @@ void main(void)
 {
 	vec2 depthTexCoord	=screenCoordOffset+texc;
 	float depth			=texture(depthAlphaTexture,depthTexCoord).a;
-	if(depth>=1.0)
-		discard;
+#ifdef REVERSE_DEPTH
+	//if(depth<=0.0)
+	//	discard;
+#else
+	//if(depth>=1.0)
+	//	discard;
+#endif
     vec4 c = texture2D(image_texture,texc);
-   
     gl_FragColor=c;
 }

@@ -36,8 +36,8 @@
 typedef std::basic_string<TCHAR> tstring;
 using namespace simul::clouds;
 
-SimulLightningRenderer::SimulLightningRenderer(simul::clouds::LightningRenderInterface *lightningRenderInterface) :
-	simul::clouds::BaseLightningRenderer(lightningRenderInterface)
+SimulLightningRenderer::SimulLightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk) :
+	simul::clouds::BaseLightningRenderer(ck,sk)
 	,m_pLightningVtxDecl(NULL)
 	,m_pLightningEffect(NULL)
 	,lightning_vertices(NULL)
@@ -98,13 +98,13 @@ static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-void SimulLightningRenderer::Render()
+void SimulLightningRenderer::Render(void *)
 {
 	if(!lightning_vertices)
 		lightning_vertices=new PosTexVert_t[4500];
 
 	HRESULT hr=S_OK;
-bool y_vertical=true;
+//bool y_vertical=true;
 	m_pd3dDevice->SetTexture(0,lightning_texture);
 
 	//m_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
@@ -136,11 +136,11 @@ bool y_vertical=true;
 
 
 
-	int vert_start=0;
-	int vert_num=0;
+//	int vert_start=0;
+//	int vert_num=0;
 	m_pLightningEffect->SetMatrix(l_worldViewProj,&wvp);
 	m_pLightningEffect->SetTechnique(m_hTechniqueLightningQuads);
-	UINT passes=1;
+//	UINT passes=1;
 /*	for(unsigned i=0;i<lightningRenderInterface->GetNumLightSources();i++)
 	{
 		if(!lightningRenderInterface->IsSourceStarted(i))
@@ -243,6 +243,7 @@ bool y_vertical=true;
 HRESULT SimulLightningRenderer::CreateLightningTexture()
 {
 	HRESULT hr=S_OK;
+#if 0
 	unsigned size=64;
 	SAFE_RELEASE(lightning_texture);
 	if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,1,0,D3DUSAGE_AUTOGENMIPMAP,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&lightning_texture)))
@@ -250,15 +251,14 @@ HRESULT SimulLightningRenderer::CreateLightningTexture()
 	D3DLOCKED_RECT lockedRect={0};
 	if(FAILED(hr=lightning_texture->LockRect(0,&lockedRect,NULL,NULL)))
 		return hr;
-	const float *lightning_colour=lightningRenderInterface->GetLightningColour();
 	unsigned char *lightning_tex_data=(unsigned char *)(lockedRect.pBits);
 	for(unsigned i=0;i<size;i++)
 	{
 		float linear=1.f-fabs((float)(i+.5f)*2.f/(float)size-1.f);
 		float level=.5f*linear*linear+5.f*(linear>.97f);
-		float r=lightning_colour[0]	*level;
-		float g=lightning_colour[1]	*level;
-		float b=lightning_colour[2]	*level;
+		float r=level;
+		float g=level;
+		float b=level;
 		if(r>1.f)
 			r=1.f;
 		if(g>1.f)
@@ -271,5 +271,6 @@ HRESULT SimulLightningRenderer::CreateLightningTexture()
 		lightning_tex_data[4*i+3]=(unsigned char)(255.f*r);
 	}
 	hr=lightning_texture->UnlockRect(0);
+#endif
 	return hr;
 }

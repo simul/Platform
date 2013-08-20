@@ -15,7 +15,7 @@
 	#include <d3dx9.h>
 #endif
 #include "Simul/Base/SmartPtr.h"
-#include "Simul/Clouds/BaseCloudRenderer.h"
+#include "Simul/Clouds/Base2DCloudRenderer.h"
 #include "Simul/Clouds/Cloud2DGeometryHelper.h"
 #include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Platform/DirectX9/Export.h"
@@ -42,10 +42,10 @@ namespace simul
 typedef long HRESULT;
 
 //! A renderer for 2D cloud layers, e.g. cirrus clouds.
-SIMUL_DIRECTX9_EXPORT_CLASS Simul2DCloudRenderer: public simul::clouds::BaseCloudRenderer
+SIMUL_DIRECTX9_EXPORT_CLASS Simul2DCloudRenderer: public simul::clouds::Base2DCloudRenderer
 {
 public:
-	Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck);
+	Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem);
 	virtual ~Simul2DCloudRenderer();
 	//standard d3d object interface functions
 	bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
@@ -56,10 +56,11 @@ public:
 	void InvalidateDeviceObjects();
 	//! Return debugging information.
 	const char *GetDebugText() const;
+	void PreRenderUpdate(void *context);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	//! On DX9, depth_testing and default_fog are ignored for now.
-	bool Render(bool cubemap,void *depth_alpha_tex,bool default_fog,bool write_alpha);
-	void RenderCrossSections(int width,int height);
+	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
+	void RenderCrossSections(void *,int width,int height);
 #if defined(XBOX) || defined(DOXYGEN)
 	//! Call this once per frame to set the matrices (X360 only).
 	void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
@@ -72,12 +73,6 @@ public:
 
 	// a texture
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
-	
-	virtual void **GetCloudTextures(){return NULL;}
-	virtual void *GetCloudShadowTexture()
-	{
-		return NULL;
-	}
 
 	void SetYVertical(bool y)
 	{
@@ -85,9 +80,10 @@ public:
 	}
 	bool IsYVertical() const{return y_vertical;}
 protected:
+	virtual void DrawLines(void*,VertexXyzRgba *,int ,bool ){}
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
-	void EnsureTexturesAreUpToDate();
+	void EnsureTexturesAreUpToDate(void*);
 	void EnsureCorrectIlluminationTextureSizes(){}
 	void EnsureIlluminationTexturesAreUpToDate(){}
 	void EnsureTextureCycle();
@@ -114,6 +110,7 @@ protected:
 	D3DXHANDLE mieRayleighRatio;
 	D3DXHANDLE hazeEccentricity;
 	D3DXHANDLE cloudEccentricity;
+	D3DXHANDLE exposure;
 
 	D3DXHANDLE	cloudDensity1;
 	D3DXHANDLE	cloudDensity2;
@@ -127,7 +124,7 @@ protected:
 	D3DXVECTOR4					cam_pos;
 	D3DXMATRIX					world,view,proj;
 
-	virtual bool CreateNoiseTexture(bool override_file=false);
+	virtual bool CreateNoiseTexture(void *);
 	bool CreateImageTexture();
 	bool MakeCubemap(); // not ready yet
 	float texture_scale;

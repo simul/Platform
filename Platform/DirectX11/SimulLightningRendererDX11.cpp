@@ -1,7 +1,9 @@
 
 #include "SimulLightningRendererDX11.h"
-
-SimulLightningRendererDX11::SimulLightningRendererDX11()
+using namespace simul;
+using namespace dx11;
+SimulLightningRendererDX11::SimulLightningRendererDX11(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk)
+	:BaseLightningRenderer(ck,sk)
 {
 }
 
@@ -21,6 +23,6 @@ void SimulLightningRendererDX11::InvalidateDeviceObjects()
 void SimulLightningRendererDX11::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 }
-void SimulLightningRendererDX11::Render()
+void SimulLightningRendererDX11::Render(void *context)
 {
 }
