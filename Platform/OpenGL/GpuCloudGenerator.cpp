@@ -339,10 +339,12 @@ timer.StartTime();
 		F[0]->Activate(NULL);
 			F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+			if(target)
 			glReadPixels(0,0,light_grid[0],light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 		F[0]->Deactivate(NULL);
 		z0++;
 	}
+	if(target)
 	target+=z0*light_grid[0]*light_grid[1]*4;
 ERROR_CHECK
 	float draw_time=0.f,read_time=0.f;
@@ -369,13 +371,15 @@ ERROR_CHECK
 			ERROR_CHECK
 		// Copy F[1] contents to the target
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-			glReadPixels(0,0,light_grid[0],light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			if(target)
+				glReadPixels(0,0,light_grid[0],light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 			read_time+=timer.UpdateTime();
 			ERROR_CHECK
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
-		target+=light_grid[0]*light_grid[1]*4;
+		if(target)
+			target+=light_grid[0]*light_grid[1]*4;
 	}
 	glUseProgram(0);
 	glDisable(GL_TEXTURE_2D);
@@ -448,13 +452,16 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int index,unsigned char *target
 			// input light values:
 			DrawQuad(0.f,y_start,1.f,y_end-y_start);
 			ERROR_CHECK
-		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			ERROR_CHECK
 			int YMAX=density_grid[1]*density_grid[2];
 			int Y0=(int)(y_start*(float)YMAX);
 			int Y1=(int)(y_end*(float)YMAX);
-			target+=Y0*density_grid[0]*4;
-		glReadPixels(0,Y0,density_grid[0],Y1-Y0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
+			if(target)
+			{
+				target+=Y0*density_grid[0]*4;
+				glReadPixels(0,Y0,density_grid[0],Y1-Y0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
+			}
 			ERROR_CHECK
 		world_fb.Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);

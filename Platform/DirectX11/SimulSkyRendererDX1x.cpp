@@ -754,11 +754,12 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 		size=height/3;
 	if(size<2)
 		return false;
+	int s=size/numAltitudes-2;
 	int y0=width/2;
 	int x0=8;
 	if(width>height)
 	{
-		x0=width/2;
+		x0=width-(size+8)*2-(s+8)*3;
 		y0=8;
 	}
 	simul::dx11::UtilityRenderer::SetScreenSize(width,height);
@@ -770,18 +771,17 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 
 	int y=y0+8;
 	inscTexture->SetResource(loss_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowSky);
 	y+=size+8;
 	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowSky);
 	inscTexture->SetResource(overcast_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0-size-2,y,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
 	y+=size+8;
 	inscTexture->SetResource(skylight_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowSky);
 
-	x0+=24+size;
-	int s=size/numAltitudes-2;
+	x0+=2*(size+8);
 	bool show_3=gpuSkyGenerator.GetEnabled()&&(skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator);
 	for(int i=0;i<numAltitudes;i++)
 	{

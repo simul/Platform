@@ -33,7 +33,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,ShowLightVolume(false)
 		,CelestialDisplay(false)
 		,ShowWater(true)
-		,MakeCubemap(false)
+		,MakeCubemap(true)
 		,ReverseDepth(true)
 		,ShowOSD(false)
 		,Exposure(1.0f)
@@ -235,10 +235,8 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				simulOpticsRenderer->RenderFlare(pd3dImmediateContext,exp,dir,light);
 			}
 		}
-	/*	if(simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->DrawCubemap(pd3dImmediateContext
-																,(ID3D1xShaderResourceView*	)framebuffer_cubemap.GetColorTex()
-																,view,proj);*/
+		if(simulWeatherRenderer->GetSkyRenderer())
+			UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)framebuffer_cubemap.GetColorTex(),view,proj);
 	}
 #endif
 	if(simulHDRRenderer&&UseHdrPostprocessor)

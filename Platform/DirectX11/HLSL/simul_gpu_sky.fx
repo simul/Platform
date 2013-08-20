@@ -51,7 +51,6 @@ vec3 getSkylight(float alt_km)
 	vec4 insc		=texture_clamp_lod(insc_texture,vec3(sqrt(alt_km/maxOutputAltKm),0.0,1.0),0);
 	vec3 skylight	=InscatterFunction(insc,hazeEccentricity,0.0,mieRayleighRatio);
 	return skylight;
-//	return vec3(.05,.1,.2);
 }
 
 
@@ -294,6 +293,7 @@ void CS_Skyl( uint3 sub_pos : SV_DispatchThreadID )
 		//skyl.w			=(loss.w)*(1.f-previous_skyl.w)*skyl.w+previous_skyl.w;
 		skyl.rgb			*=previous_loss.rgb;
 		skyl.rgb			+=previous_skyl.rgb;
+		
 		float lossw=1.0;
 		skyl.w				=(lossw)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
 		targetTexture[idx]	=skyl;

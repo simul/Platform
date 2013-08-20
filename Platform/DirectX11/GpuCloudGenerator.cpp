@@ -153,9 +153,6 @@ void GpuCloudGenerator::FillDensityGrid(int cycled_index
 										,float persistence
 										,bool mask)
 {
-simul::base::Timer timer;
-timer.StartTime();
-std::cout<<"Gpu clouds: FillDensityGrid\n";
 	for(int i=0;i<3;i++)
 		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
 	int density_gridsize=density_grid[0]*density_grid[1]*density_grid[2];
@@ -214,7 +211,6 @@ std::cout<<"Gpu clouds: FillDensityGrid\n";
 		,density_grid[0],density_grid[1],density_grid[2]
 		,DXGI_FORMAT_R32_FLOAT,true);
 //	Ensure3DTextureSizeAndFormat(m_pd3dDevice,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
-std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 	simul::dx11::setParameter(effect,"targetTexture",density_texture.unorderedAccessView);
 
 	// divide the grid into 8x8x8 blocks:
@@ -233,7 +229,6 @@ std::cout<<"\tmake 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 	ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0));
 	if(x1>x0)
 		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,subgrid.z);
-std::cout<<"\tfill 3DTexture "<<timer.UpdateTime()<<"ms"<<std::endl;
 	simul::dx11::setParameter(effect,"volumeNoiseTexture"	,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setParameter(effect,"maskTexture"			,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setParameter(effect,"targetTexture"		,(ID3D11UnorderedAccessView*)NULL);
@@ -250,9 +245,6 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 											,const float *lightspace_extinctions_float3
 											,bool wrap_light_tex)
 {
-simul::base::Timer timer;
-timer.StartTime();
-std::cout<<"Gpu clouds: PerformGPURelight\n";
 int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
 	start_texel*=2;
 	texels*=2;
@@ -353,13 +345,9 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index,unsigned char 
 												,int texels
 												,bool wrap_light_tex)
 {
-simul::base::Timer timer;
-timer.StartTime();
-std::cout<<"Gpu clouds: GPUTransferDataToTexture\n";
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	world_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
 	world_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
-std::cout<<"\tInit "<<timer.UpdateTime()<<"ms"<<std::endl;
 
 	int density_gridsize				=density_grid[0]*density_grid[1]*density_grid[2];
 

@@ -220,15 +220,15 @@ float4 PS_Overlay(posTexVertexOutput IN) : SV_TARGET
 	float3 light	=cubeTexture.Sample(wrapSamplerState,-view).rgb;
 	float sc=1.0;
 	float br=1.0;
-	float4 result=float4(0.0,0.0,0.0,0.0);
+	vec4 result=vec4(light.rgb,0);//float4(0.0,0.0,0.0,0.0);
 	for(int i=0;i<4;i++)
 	{
 		float2 texc	=float2(atan2(view.x,view.y)*sc*7/(2.0*pi),(view.z+sc*offset)*sc);
 		float r		=br*saturate(rainTexture.Sample(wrapSamplerState,texc.xy)+intensity-1.0).x;
 		sc*=4.0;
 		br*=.4;
-		result*=1.0-r;
-		result.rgb+=r*light.rgb;
+		//result*=1.0-r;
+		//result.rgb+=r*light.rgb;
 		result.a+=r;
 	}
 	return result;
