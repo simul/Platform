@@ -44,7 +44,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
 	simulOpticsRenderer=new SimulOpticsRendererDX1x();
 	simulTerrainRenderer=new SimulTerrainRendererDX1x(NULL);
-	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer.get());
+	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	ReverseDepthChanged();
 	depthFramebuffer.SetFormat(0);
 	cubemapDepthFramebuffer.SetFormat(0);

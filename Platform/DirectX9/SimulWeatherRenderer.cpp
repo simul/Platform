@@ -61,7 +61,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	show_rain(rain)
 {
 	//sky=rain=clouds2d=false;
-	simul::sky::SkyKeyframer *sk=env->skyKeyframer.get();
+	simul::sky::SkyKeyframer *sk=env->skyKeyframer;
 	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer;
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	SetScreenSize(width,height);
