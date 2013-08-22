@@ -41,19 +41,11 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,m_pd3dDevice(NULL)
 		,memoryInterface(m)
 {
-<<<<<<< HEAD
-	simulWeatherRenderer=new SimulWeatherRendererDX1x(env,simul::base::GetDefaultMemoryInterface(),true,false,w,h,true,true,true);
-	AddChild(simulWeatherRenderer.get());
-	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
-	simulOpticsRenderer=new SimulOpticsRendererDX1x();
-	simulTerrainRenderer=new SimulTerrainRendererDX1x(NULL);
-=======
 	simulWeatherRenderer=new(memoryInterface) SimulWeatherRendererDX11(env,simul::base::GetDefaultMemoryInterface());
 	
 	simulHDRRenderer=new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulOpticsRenderer=new(memoryInterface) SimulOpticsRendererDX1x();
 	simulTerrainRenderer=new(memoryInterface) SimulTerrainRendererDX1x(NULL);
->>>>>>> 53e78f099e6c3e5871d0c739751f326d00572f12
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	ReverseDepthChanged();
 	depthFramebuffer.SetFormat(0);

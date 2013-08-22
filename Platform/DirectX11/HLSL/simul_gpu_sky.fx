@@ -6,7 +6,6 @@
 #define sampler2D texture2D
 #define sampler3D texture3D
 #define texture(tex,texCoords) tex.Sample(samplerState,texCoords)
-#define texture_nearest(tex,texCoords) tex.Sample(samplerStateNearest,texCoords)
 uniform sampler2D input_texture;
 uniform sampler1D density_texture;
 uniform sampler3D loss_texture;

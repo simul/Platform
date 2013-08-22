@@ -113,6 +113,7 @@ vec4 Clouds2DPS_illum(vec2 texc_global,vec2 texc_detail,vec3 wEyeToPos,float dis
 	vec3 view	=normalize(wEyeToPos);
 	float cos0	=dot(normalize(lightDir),view);
 	vec4 final	=Clouds2Dunfaded(cos0,texc_global,texc_detail,dist,cloudInterp,sunlight,lightResponse);
+
 	//final.rgb	=ApplySimpleFade(final.rgb,wEyeToPos,lightDir,mieRayleighRatio,hazeEccentricity,maxFadeDistanceMetres);
 	final.rgb	=ApplyEarthshadowFade(final.rgb,wEyeToPos,lightDir,mieRayleighRatio,hazeEccentricity,maxFadeDistanceMetres);
 	return		final;

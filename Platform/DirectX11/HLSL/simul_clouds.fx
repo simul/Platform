@@ -220,7 +220,7 @@ RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 			c.rgb		=applyFades(c.rgb,fade_texc,cos0,sh);
 			colour.rgb	+=c.rgb*c.a*(colour.a);
 			colour.a	*=(1.0-c.a);
-			if(colour.a<0.03)
+			if(colour.a<0.01)
 			{
 				colour.a=0.0;
 				mean_z=lerp(mean_z,z,depthMix);
