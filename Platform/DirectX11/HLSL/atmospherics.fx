@@ -64,7 +64,8 @@ float4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
 {
 	float3 view	=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
 	view		=normalize(view);
-	float depth	=depthTexture.Sample(clampSamplerState,viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias)).x;
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	float depth	=depthTexture.Sample(clampSamplerState,depth_texc).x;
 	float dist	=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,IN.pos.xy,tanHalfFov);
 	float sine	=view.z;
 	float2 texc2=float2(pow(dist,0.5f),0.5f*(1.f-sine));
@@ -77,7 +78,7 @@ vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
 	view				=normalize(view);
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	float depth			=depthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
+	float depth			=depthTexture.Sample(clampSamplerState,depth_texc).x;
 	float dist			=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,IN.pos.xy,tanHalfFov);
 	float sine			=view.z;
 	float2 fade_texc	=vec2(pow(dist,0.5f),0.5f*(1.f-sine));
@@ -107,7 +108,7 @@ float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	float solid_depth	=depthTexture.Sample(clampSamplerState,depth_texc).x;
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
-	float solid_dist	=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,IN.pos.xy,tanHalfFov);
+	float solid_dist	=depthToFadeDistance(solid_depth,depthToLinFadeDistParams,nearZ,farZ,IN.pos.xy,tanHalfFov);
 	return Godrays(inscTexture,overcTexture,IN.pos,invViewProj,maxDistance,solid_dist);
 }
 

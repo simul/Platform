@@ -9,13 +9,14 @@
 
 // SimulSkyRendererDX1x.cpp A renderer for skies.
 #define NOMINMAX
-#include "SimulSkyRendererDX1x.h"
+
 
 #include <tchar.h>
-#include <d3d10.h>
+#include <d3d10_1.h>
 #include <d3dx10.h>
 #include <dxerr.h>
 #include <string>
+#include "SimulSkyRendererDX1x.h"
 static DXGI_FORMAT sky_tex_format=DXGI_FORMAT_R32G32B32A32_FLOAT;
 extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Sky/SkyInterface.h"
@@ -183,7 +184,7 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	earthShadowUniforms.InvalidateDeviceObjects();
 	skyConstants.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
-	operator delete [](star_vertices,memoryInterface);
+	memoryInterface->Deallocate(star_vertices);
 }
 
 bool SimulSkyRendererDX1x::Destroy()
@@ -608,7 +609,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	{
 		V_CHECK(inscTexture->SetResource((ID3D11ShaderResourceView*)inscatter_2d->GetColorTex()));
 		V_CHECK(ApplyPass(context,hTechniqueOverc->GetPassByIndex(0)));
-		overcast_2d->Activate(context);
+		overcast_2d->Activate(context,0.f,0.f,1.f,1.f);
 			context->ClearRenderTargetView(overcast_2d->m_pHDRRenderTarget,clearColor);
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		overcast_2d->Deactivate(context);
@@ -660,7 +661,7 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	SAFE_RELEASE(m_pStarsVertexBuffer);
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
 	num_stars=current_num_stars;
-	operator delete [](star_vertices,memoryInterface);
+	memoryInterface->Deallocate(star_vertices);
 	star_vertices=new(memoryInterface) StarVertext[num_stars];
 	static float d=100.f;
 	for(int i=0;i<num_stars;i++)

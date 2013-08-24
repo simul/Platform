@@ -57,16 +57,16 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	//if(ShowSky)
 	{
-		simulSkyRenderer=new SimulSkyRendererDX1x(sk);
+		simulSkyRenderer=new SimulSkyRendererDX1x(sk, memoryInterface);
 		baseSkyRenderer=simulSkyRenderer;
 	}
-	simulCloudRenderer=new SimulCloudRendererDX1x(ck3d);
+	simulCloudRenderer=new SimulCloudRendererDX1x(ck3d, memoryInterface);
 	baseCloudRenderer=simulCloudRenderer;
 	simulLightningRenderer=new SimulLightningRendererDX11(ck3d,sk);
 	if(env->cloud2DKeyframer)
-		base2DCloudRenderer=simul2DCloudRenderer=new Simul2DCloudRendererDX11(ck2d);
-	basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulPrecipitationRendererDX1x();
-	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
+		base2DCloudRenderer=simul2DCloudRenderer=new Simul2DCloudRendererDX11(ck2d, memoryInterface);
+	basePrecipitationRenderer=simulPrecipitationRenderer=new SimulPrecipitationRendererDX1x();
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new SimulAtmosphericsRendererDX1x(mem);
 	baseFramebuffer=&framebuffer;
 	ConnectInterfaces();
 }
@@ -287,7 +287,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename)
 	}
 }
 
-void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,
+void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 												float exposure,
 												bool is_cubemap,
 												const void* mainDepthTexture,
@@ -319,7 +319,7 @@ void SimulWeatherRendererDX1x::RenderSkyAsOverlay(void *context,
 	}
 
 	if(baseAtmosphericsRenderer&&!is_cubemap)
-		baseAtmosphericsRenderer->RenderGodrays(context,mainDepthTexture,exposure,viewportTextureRegionXYWH);
+		baseAtmosphericsRenderer->RenderGodrays(context,mainDepthTexture,exposure,relativeViewportTextureRegionXYWH);
 }
 
 bool SimulWeatherRendererDX11::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)

@@ -41,11 +41,11 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,m_pd3dDevice(NULL)
 		,memoryInterface(m)
 {
-	simulWeatherRenderer=new(memoryInterface) SimulWeatherRendererDX11(env,simul::base::GetDefaultMemoryInterface());
+	simulWeatherRenderer=new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
 	
-	simulHDRRenderer=new(memoryInterface) SimulHDRRendererDX1x(128,128);
-	simulOpticsRenderer=new(memoryInterface) SimulOpticsRendererDX1x();
-	simulTerrainRenderer=new(memoryInterface) SimulTerrainRendererDX1x(NULL);
+	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
+	simulOpticsRenderer=new SimulOpticsRendererDX1x();
+	simulTerrainRenderer=new SimulTerrainRendererDX1x(memoryInterface);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	ReverseDepthChanged();
 	depthFramebuffer.SetFormat(0);
@@ -272,7 +272,7 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 	fb.RestoreDeviceObjects(m_pd3dDevice);
 	ID3D11DeviceContext*			pImmediateContext;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
-	fb.Activate(pImmediateContext);
+	fb.Activate(pImmediateContext,0.f,0.f,1.f,1.f);
 	OnD3D11FrameRender(m_pd3dDevice,pImmediateContext,0.f,0.f);
 	fb.Deactivate(pImmediateContext);
 	simul::dx11::SaveTexture(m_pd3dDevice,(ID3D11Texture2D *)(fb.GetColorTexture()),screenshotFilenameUtf8.c_str());
