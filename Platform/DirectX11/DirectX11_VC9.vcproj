@@ -593,6 +593,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\CrossPlatform\cloud_shadow.sl"
+				>
+			</File>
+			<File
 				RelativePath="..\CrossPlatform\CppSl.hs"
 				>
 			</File>

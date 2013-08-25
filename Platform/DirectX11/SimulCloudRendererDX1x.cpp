@@ -88,12 +88,10 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,m_pVtxDecl(NULL)
 	,m_pLightningVtxDecl(NULL)
 	,m_pCloudEffect(NULL)
-	,instanceBuffer(NULL)
 	,m_pLightningEffect(NULL)
 	,cloudPerViewConstantBuffer(NULL)
 	,layerConstantsBuffer(NULL)
 	,noise_texture(NULL)
-	,noise_texture_3D(NULL)
 	,lightning_texture(NULL)
 	,illumination_texture(NULL)
 	,m_pComputeShader(NULL)
@@ -104,7 +102,6 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,skylightTexture_SRV(NULL)
 	,illuminationTexture_SRV(NULL)
 	,noiseTextureResource(NULL)
-	,noiseTexture3DResource(NULL)
 	,lightningIlluminationTextureResource(NULL)
 	,blendAndWriteAlpha(NULL)
 	,blendAndDontWriteAlpha(NULL)
@@ -239,6 +236,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 	ClearIterators();
 	cloudConstants.RestoreDeviceObjects(m_pd3dDevice);
+	layerBuffer.RestoreDeviceObjects(m_pd3dDevice,SIMUL_MAX_CLOUD_RAYTRACE_STEPS);
 
 	shadow_fb.RestoreDeviceObjects(m_pd3dDevice);
 	shadowNearFar.RestoreDeviceObjects(m_pd3dDevice);
@@ -298,35 +296,6 @@ void SimulCloudRendererDX1x::CreateMeshBuffers()
 	circle.init(m_pd3dDevice,num_vertices,num_indices,vertices,indices);
     delete [] vertices;
     delete [] indices;
-
-	// Instance buffer:
-	SAFE_RELEASE(instanceBuffer);
-	D3D11_BUFFER_DESC instanceBufferDesc;
-	D3D11_SUBRESOURCE_DATA instanceData;
-		// Set up the description of the instance buffer.
-	instanceBufferDesc.Usage				=D3D11_USAGE_DYNAMIC;
-	instanceBufferDesc.ByteWidth			=sizeof(LayerData)*MAX_INSTANCES;
-	instanceBufferDesc.BindFlags			=D3D11_BIND_VERTEX_BUFFER;
-	instanceBufferDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
-	instanceBufferDesc.MiscFlags			=0;
-	instanceBufferDesc.StructureByteStride	=0;
-	// Give the subresource structure a pointer to the instance data.
-	instanceData.pSysMem = layerConstants.layers;
-	instanceData.SysMemPitch = 0;
-	instanceData.SysMemSlicePitch = 0;
-
-	// Create the instance buffer.
-	m_pd3dDevice->CreateBuffer(&instanceBufferDesc, &instanceData, &instanceBuffer);
-	{
-		ID3D11DeviceContext* pContext;
-		m_pd3dDevice->GetImmediateContext(&pContext);
-		D3D11_MAPPED_SUBRESOURCE mapped_res;
-		pContext->Map(instanceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
-		for(int i=0;i<MAX_INSTANCES;i++)
-			((LayerData*)(mapped_res.pData))[i]=layerConstants.layers[i];
-		pContext->Unmap(instanceBuffer, 0);
-		SAFE_RELEASE(pContext)
-	}
 }
 
 void SimulCloudRendererDX1x::InvalidateDeviceObjects()
@@ -360,7 +329,6 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(illumination_texture);
 	circle.release();
 	sphere.release();
-	SAFE_RELEASE(instanceBuffer);
 	skyLossTexture_SRV		=NULL;
 	skyInscatterTexture_SRV	=NULL;
 	overcInscTexture_SRV	=NULL;
@@ -370,11 +338,11 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(blendAndDontWriteAlpha);
 
 	SAFE_RELEASE(noiseTextureResource);
-	SAFE_RELEASE(noise_texture_3D);
-	SAFE_RELEASE(noiseTexture3DResource);
+	noise_texture_3D.release();
 	
 	SAFE_RELEASE(lightningIlluminationTextureResource);
 	cloudConstants.InvalidateDeviceObjects();
+	layerBuffer.release();
 	ClearIterators();
 }
 
@@ -480,15 +448,13 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 {
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
 	//using noise_size and noise_src_ptr, make a 3d texture:
-	SAFE_RELEASE(noise_texture_3D);
-	SAFE_RELEASE(noiseTexture3DResource);
 
-	int noise_texture_frequency	=cloudKeyframer->GetEdgeNoiseFrequency();
-	ID3D1xEffect*					effect=NULL;
-	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_rendernoise.fx");
-	ID3D1xEffectTechnique*			randomTechnique=effect->GetTechniqueByName("simul_random");
+	int noise_texture_frequency				=cloudKeyframer->GetEdgeNoiseFrequency();
+	ID3D1xEffect *effect					=NULL;
+	HRESULT hr								=CreateEffect(m_pd3dDevice,&effect,"simul_rendernoise.fx");
+	ID3D1xEffectTechnique *randomTechnique	=effect->GetTechniqueByName("simul_random");
 
-	simul::dx11::Framebuffer	random_fb;
+	simul::dx11::Framebuffer random_fb;
 	random_fb.RestoreDeviceObjects(m_pd3dDevice);
 	random_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency*noise_texture_frequency);
 	random_fb.SetFormat((int)DXGI_FORMAT_R8G8B8A8_SNORM);
@@ -497,14 +463,15 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 		random_fb.DrawQuad(context);
 	random_fb.Deactivate(context);
 
-	char *data=new char[4*noise_texture_frequency*noise_texture_frequency*noise_texture_frequency];
+	unsigned *data=new(memoryInterface) unsigned[noise_texture_frequency*noise_texture_frequency*noise_texture_frequency];
+	operator delete [](data,memoryInterface);
+	data=new(memoryInterface) unsigned[noise_texture_frequency*noise_texture_frequency*noise_texture_frequency];
 	random_fb.CopyToMemory(pContext,data);
-	noise_texture_3D=make3DTexture(m_pd3dDevice,noise_texture_frequency,noise_texture_frequency,noise_texture_frequency,DXGI_FORMAT_R8G8B8A8_SNORM,(const float*)data);
+	
+	noise_texture_3D.ensureTexture3DSizeAndFormat(m_pd3dDevice,noise_texture_frequency,noise_texture_frequency,noise_texture_frequency,DXGI_FORMAT_R8G8B8A8_SNORM,false);
+	noise_texture_3D.setTexels(pContext,(unsigned*)data,0,noise_texture_frequency*noise_texture_frequency*noise_texture_frequency);
 
-	m_pd3dDevice->CreateShaderResourceView(noise_texture_3D,NULL,&noiseTexture3DResource);
-// Told to comment out by Rod as was causing an issue - needs sorting out.
-//	pContext->GenerateMips(noiseTexture3DResource);
-	delete [] data;
+	operator delete [](data,memoryInterface);
 	SAFE_RELEASE(effect);
 }
 
@@ -789,7 +756,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	cloudDensity1->SetResource(cloud_textures[(texture_cycle)  %3].shaderResourceView);
 	cloudDensity2->SetResource(cloud_textures[(texture_cycle+1)%3].shaderResourceView);
 	noiseTexture->SetResource(noiseTextureResource);
-	noiseTexture3D->SetResource(noiseTexture3DResource);
+	noiseTexture3D->SetResource(noise_texture_3D.shaderResourceView);
 	skyLossTexture->SetResource(skyLossTexture_SRV);
 	skyInscatterTexture->SetResource(overcInscTexture_SRV);
 	skylightTexture->SetResource(skylightTexture_SRV);
@@ -808,8 +775,13 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	ID3DX11EffectConstantBuffer* cbCloudPerViewConstants=m_pCloudEffect->GetConstantBufferByName("CloudPerViewConstants");
 	if(cbCloudPerViewConstants)
 		cbCloudPerViewConstants->SetConstantBuffer(cloudPerViewConstantBuffer);
-
+	
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
+
+	SmallLayerData *layers=layerBuffer.GetBuffer(pContext);
+	SetLayerBuffer(helper,layers);
+	layerBuffer.apply(pContext,m_pCloudEffect,"layersSB");
+
 	// Moved from Update function above. See commment.
 	if (!cubemap)
 	{
@@ -840,7 +812,6 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	int numInstances=(int)helper->GetSlices().size();
 	if(select_slice>=0)
 		numInstances=1;
-	UPDATE_CONSTANT_BUFFERS(pContext,instanceBuffer,LayerData,layerConstants.layers,numInstances)
 
 	UPDATE_CONSTANT_BUFFER(pContext,layerConstantsBuffer,LayerConstants,layerConstants)
 	ID3DX11EffectConstantBuffer* cbLayerConstants=m_pCloudEffect->GetConstantBufferByName("LayerConstants");

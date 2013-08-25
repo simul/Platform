@@ -5,14 +5,14 @@
 #include "Simul/Platform/OpenGL/SimulOpticsRendererGL.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
-#include "Simul/Platform/OpenGL/GpuCloudGenerator.h"
-#include "Simul/Platform/OpenGL/GpuSkyGenerator.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Graph/Meta/Group.h"
+
 #ifdef _MSC_VER
 	#pragma warning(push)
 	#pragma warning(disable:4251)
 #endif
+
 namespace simul
 {
 	namespace clouds
@@ -57,8 +57,6 @@ public:
 	void SetCamera(simul::camera::Camera *c);
 	void ReloadTextures();
 	void RecompileShaders();
-	simul::opengl::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
-	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
 	void ReverseDepthChanged();
 	simul::opengl::SimulGLWeatherRenderer *simulWeatherRenderer;
@@ -66,8 +64,6 @@ protected:
 	SimulOpticsRendererGL *simulOpticsRenderer;
 	class SimulGLTerrainRenderer *simulTerrainRenderer;
 	FramebufferGL depthFramebuffer;
-	simul::opengl::GpuCloudGenerator gpuCloudGenerator;
-	simul::opengl::GpuSkyGenerator gpuSkyGenerator;
 	simul::camera::Camera *cam;
 	int ScreenWidth,ScreenHeight;
 	GLuint simple_program;

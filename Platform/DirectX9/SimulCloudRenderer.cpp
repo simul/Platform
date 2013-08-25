@@ -1055,7 +1055,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 			{
 				const simul::clouds::CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
 				pos.Define(V.x,V.y,V.z);
-				simul::math::Vector3 tex_pos(V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
+				//simul::math::Vector3 tex_pos(V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
 				if(v>=MAX_VERTICES)
 				{
 					break;
@@ -1071,7 +1071,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 				Vertex_t *vertex=NULL;
 				vertex=&vertices[v];
 				vertex->position=pos;
-				vertex->texCoords=tex_pos;
+				//vertex->texCoords=tex_pos;
 				vertex->texCoordsNoise.x=0;//V.noise_tex_x;
 				vertex->texCoordsNoise.y=0;//V.noise_tex_y;
 				vertex->layerFade=fade;

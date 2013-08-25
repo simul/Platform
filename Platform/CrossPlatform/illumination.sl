@@ -62,10 +62,12 @@ vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 
 	vec2 overc_far_texc		=vec2(min(overcDistTexc.y,fade_texc.x),fade_texc.y);
 	vec4 overc_far			=inscTexture.Sample(cmcSamplerState,overc_far_texc);
 
-	vec4 overc				=max(vec4(0,0,0,0),overc_far-overc_near);
+	vec4 overc;
+	overc.rgb				=max(vec3(0,0,0),overc_far.rgb-overc_near.rgb);
+	overc.w					=0.5*(overc_far.a+overc_near.a);
 
-	insc=max(vec4(0,0,0,0),insc-overc*overcast);
-	
+	insc.rgb				=max(vec3(0,0,0),insc.rgb-overc.rgb*overcast);
+	insc.w					=lerp(insc.a,0,overcast)*overcast;
     return insc;
 }
 

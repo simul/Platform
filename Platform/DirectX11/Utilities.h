@@ -158,8 +158,146 @@ namespace simul
 			static void DrawCube(void *context);
 			static void DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
 		};
+		//! Useful Wrapper class to encapsulate constant buffer behaviour
+		template<class T> class ConstantBuffer:public T
+		{
+		public:
+			ConstantBuffer()
+				:m_pD3D11Buffer(NULL)
+				,m_pD3DX11EffectConstantBuffer(NULL)
+			{
+				// Clear out the part of memory that corresponds to the base class.
+				// We should ONLY inherit from simple structs.
+				memset(((T*)this),0,sizeof(T));
+			}
+			~ConstantBuffer()
+			{
+				InvalidateDeviceObjects();
+			}
+			ID3D11Buffer*					m_pD3D11Buffer;
+			ID3DX11EffectConstantBuffer*	m_pD3DX11EffectConstantBuffer;
+			//! Create the buffer object.
+			void RestoreDeviceObjects(ID3D11Device *pd3dDevice)
+			{
+				SAFE_RELEASE(m_pD3D11Buffer);	
+				D3D11_SUBRESOURCE_DATA cb_init_data;
+				cb_init_data.pSysMem = this;
+				cb_init_data.SysMemPitch = 0;
+				cb_init_data.SysMemSlicePitch = 0;
+				D3D11_BUFFER_DESC cb_desc;
+				cb_desc.Usage				= D3D11_USAGE_DYNAMIC;
+				cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
+				cb_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
+				cb_desc.MiscFlags			= 0;
+				cb_desc.ByteWidth			= PAD16(sizeof(T));
+				cb_desc.StructureByteStride = 0;
+				pd3dDevice->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
+			}
+			//! Find the constant buffer in the given effect, and link to it.
+			void LinkToEffect(ID3DX11Effect *effect,const char *name)
+			{
+				m_pD3DX11EffectConstantBuffer=effect->GetConstantBufferByName(name);
+				if(m_pD3DX11EffectConstantBuffer)
+					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
+				else
+					std::cerr<<"ConstantBuffer<> LinkToEffect did not find the buffer named "<<name<<" in the effect."<<std::endl;
+			}
+			//! Free the allocated buffer.
+			void InvalidateDeviceObjects()
+			{
+				SAFE_RELEASE(m_pD3D11Buffer);
+				m_pD3DX11EffectConstantBuffer=NULL;
+			}
+			//! Apply the stored data using the given context, in preparation for renderiing.
+			void Apply(ID3D11DeviceContext *pContext)
+			{
+				D3D11_MAPPED_SUBRESOURCE mapped_res;
+				pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
+				*(T*)mapped_res.pData = *this;
+				pContext->Unmap(m_pD3D11Buffer, 0);
+				m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
+			}
+			void Unbind(ID3D11DeviceContext *pContext)
+			{
+				m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
+			}
+		};
+
+		template<class T> class StructuredBuffer 
+		{
+		public:
+			StructuredBuffer()
+				:size(0)
+				,buffer(0)
+				,shaderResourceView(0)
+				,unorderedAccessView(0)
+			{
+				memset(&mapped,0,sizeof(mapped));
+			}
+			~StructuredBuffer()
+			{
+				release();
+			}
+			void RestoreDeviceObjects(ID3D11Device *pd3dDevice,int size)
+			{
+				this->size=size;
+				D3D11_BUFFER_DESC sbDesc;
+				memset(&sbDesc,0,sizeof(sbDesc));
+				sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE ;
+				sbDesc.Usage				=D3D11_USAGE_DYNAMIC;
+				sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
+				sbDesc.MiscFlags			=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED ;
+				sbDesc.StructureByteStride	=sizeof(T);
+				sbDesc.ByteWidth			=sizeof(T) *size;
+
+
+				HRESULT hr;
+				V_CHECK(pd3dDevice->CreateBuffer( &sbDesc, NULL, &buffer ));
+				D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+				memset(&srv_desc,0,sizeof(srv_desc));
+				srv_desc.Format						=DXGI_FORMAT_UNKNOWN;
+				srv_desc.ViewDimension				=D3D11_SRV_DIMENSION_BUFFER;
+				srv_desc.Buffer.ElementOffset		=0;
+				srv_desc.Buffer.ElementWidth		=0;
+				srv_desc.Buffer.FirstElement		=0;
+				srv_desc.Buffer.NumElements			=size;
+				V_CHECK(pd3dDevice->CreateShaderResourceView(buffer, &srv_desc,&shaderResourceView));
+
+			}
+			T *GetBuffer(ID3D11DeviceContext *pContext)
+			{
+				lastContext=pContext;
+				if(!mapped.pData)
+					pContext->Map(buffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+				T *ptr=(T *)mapped.pData;
+				return ptr;
+			}
+			void apply(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name)
+			{
+				if(lastContext&&mapped.pData)
+					lastContext->Unmap(buffer,0);
+				memset(&mapped,0,sizeof(mapped));
+				ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+				var->SetResource(shaderResourceView);
+			}
+			void release()
+			{
+				if(lastContext&&mapped.pData)
+					lastContext->Unmap(buffer,0);
+				SAFE_RELEASE(unorderedAccessView);
+				SAFE_RELEASE(shaderResourceView);
+				SAFE_RELEASE(buffer);
+			}
+			ID3D11Buffer						*buffer;
+			ID3D11ShaderResourceView			*shaderResourceView;
+			ID3D11UnorderedAccessView			*unorderedAccessView;
+			D3D11_MAPPED_SUBRESOURCE	mapped;
+			int size;
+			ID3D11DeviceContext					*lastContext;
+		};
 	}
 }
+
 namespace std
 {
 	template<> inline void swap(simul::dx11::TextureStruct& _Left, simul::dx11::TextureStruct& _Right)
@@ -180,68 +318,3 @@ namespace std
 									&vertexBuffer,	\
 									&stride,		\
 									&offset);
-
-//! Useful Wrapper class to encapsulate constant buffer behaviour
-template<class T> class ConstantBuffer:public T
-{
-public:
-	ConstantBuffer()
-		:m_pD3D11Buffer(NULL)
-		,m_pD3DX11EffectConstantBuffer(NULL)
-	{
-		// Clear out the part of memory that corresponds to the base class.
-		// We should ONLY inherit from simple structs.
-		memset(((T*)this),0,sizeof(T));
-	}
-	~ConstantBuffer()
-	{
-		InvalidateDeviceObjects();
-	}
-	ID3D11Buffer*					m_pD3D11Buffer;
-	ID3DX11EffectConstantBuffer*	m_pD3DX11EffectConstantBuffer;
-	//! Create the buffer object.
-	void RestoreDeviceObjects(ID3D11Device *pd3dDevice)
-	{
-		SAFE_RELEASE(m_pD3D11Buffer);	
-		D3D11_SUBRESOURCE_DATA cb_init_data;
-		cb_init_data.pSysMem = this;
-		cb_init_data.SysMemPitch = 0;
-		cb_init_data.SysMemSlicePitch = 0;
-		D3D11_BUFFER_DESC cb_desc;
-		cb_desc.Usage				= D3D11_USAGE_DYNAMIC;
-		cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
-		cb_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
-		cb_desc.MiscFlags			= 0;
-		cb_desc.ByteWidth			= PAD16(sizeof(T));
-		cb_desc.StructureByteStride = 0;
-		pd3dDevice->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
-	}
-	//! Find the constant buffer in the given effect, and link to it.
-	void LinkToEffect(ID3DX11Effect *effect,const char *name)
-	{
-		m_pD3DX11EffectConstantBuffer=effect->GetConstantBufferByName(name);
-		if(m_pD3DX11EffectConstantBuffer)
-			m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
-		else
-			std::cerr<<"ConstantBuffer<> LinkToEffect did not find the buffer named "<<name<<" in the effect."<<std::endl;
-	}
-	//! Free the allocated buffer.
-	void InvalidateDeviceObjects()
-	{
-		SAFE_RELEASE(m_pD3D11Buffer);
-		m_pD3DX11EffectConstantBuffer=NULL;
-	}
-	//! Apply the stored data using the given context, in preparation for renderiing.
-	void Apply(ID3D11DeviceContext *pContext)
-	{
-		D3D11_MAPPED_SUBRESOURCE mapped_res;
-		pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
-		*(T*)mapped_res.pData = *this;
-		pContext->Unmap(m_pD3D11Buffer, 0);
-		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
-	}
-	void Unbind(ID3D11DeviceContext *pContext)
-	{
-		m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
-	}
-};
