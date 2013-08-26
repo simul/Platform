@@ -52,8 +52,8 @@ float rand(float2 co)
 struct posTexVertexOutput
 {
     float4 position			: SV_POSITION;
-    float2 pos				: TEXCOORD0;
-    float2 texCoords		: TEXCOORD1;
+    float2 pos				: TEXCOORD1;
+    float2 texCoords		: TEXCOORD0;
 };
 
 struct particleVertexOutput
@@ -184,35 +184,6 @@ float4 PS_RenderRandomTexture(posTexVertexOutput IN): SV_TARGET
     vec4 result=vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords));
     return result;
 }
-    
-vertexOutput VS_Main(vertexInput IN)
-{
-    vertexOutput OUT;
-    OUT.hPosition=mul(worldViewProj, float4(IN.position.xyz,1.0));
-	OUT.texCoords=IN.texCoords;
-	OUT.viewDir=normalize(IN.position.xyz);
-    return OUT;
-}
-
-float4 PS_Main(vertexOutput IN): SV_TARGET
-{
-	float2 offs=float2(0,offset);
-	float4 fade=IN.texCoords.z;
-	IN.texCoords.x*=4;
-	IN.texCoords.y*=9;
-	float4 colour=saturate(rainTexture.Sample(rainSampler,IN.texCoords.xy+offs)+intensity-1.0);
-	IN.texCoords.xy*=1.7;
-	colour+=0.7f*saturate(rainTexture.Sample(rainSampler,IN.texCoords.xy+2*offs)+intensity-1.0);
-	IN.texCoords.xy*=4;
-	colour+=0.4f*saturate(rainTexture.Sample(rainSampler,IN.texCoords.xy+4*offs)+intensity-1.0);
-	IN.texCoords.xy*=4;
-	colour+=0.2f*saturate(rainTexture.Sample(rainSampler,IN.texCoords.xy+8*offs)+intensity-1.0);
-    colour=fade*saturate(colour);
-	colour.a=colour.r*intensity;
-	float cos0=dot(lightDir.xyz,normalize(IN.viewDir.xyz));
-    colour*=lightColour*(0.1+HenyeyGreenstein(0.8,cos0));
-    return colour;
-}
 
 float4 PS_Overlay(posTexVertexOutput IN) : SV_TARGET
 {
@@ -257,19 +228,6 @@ technique11 simul_particles
 		SetPixelShader(CompileShader(ps_4_0,PS_Particles()));
 		SetDepthStencilState(DisableDepth,0);
 		SetBlendState(AlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
-    }
-}
-
-technique11 simul_rain_geometric
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Main()));
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
 

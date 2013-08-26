@@ -660,7 +660,7 @@ void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int
 		ERROR_CHECK
 }
 
-void SimulGLSkyRenderer::EnsureTexturesAreUpToDate()
+void SimulGLSkyRenderer::EnsureTexturesAreUpToDate(void *)
 {
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
@@ -710,6 +710,7 @@ void SimulGLSkyRenderer::RecompileShaders()
 	inscatter_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	loss_2d.InitColor_Tex(0,GL_RGBA32F_ARB);
 	inscatter_2d.InitColor_Tex(0,GL_RGBA32F_ARB);
+	gpuSkyGenerator.RecompileShaders();
 	SAFE_DELETE_PROGRAM(sky_program);
 	SAFE_DELETE_PROGRAM(earthshadow_program);
 	SAFE_DELETE_PROGRAM(planet_program);
@@ -753,6 +754,7 @@ void SimulGLSkyRenderer::RestoreDeviceObjects(void*)
 {
 ERROR_CHECK
 	initialized=true;
+	gpuSkyGenerator.RestoreDeviceObjects(NULL);
 	loss_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	inscatter_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	skylight_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
@@ -778,6 +780,7 @@ ERROR_CHECK
 void SimulGLSkyRenderer::InvalidateDeviceObjects()
 {
 	initialized=false;
+	gpuSkyGenerator.InvalidateDeviceObjects();
 	SAFE_DELETE_PROGRAM(sky_program);
 	SAFE_DELETE_PROGRAM(earthshadow_program);
 	SAFE_DELETE_PROGRAM(planet_program);

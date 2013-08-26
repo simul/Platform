@@ -135,7 +135,7 @@ void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 	terrainConstants.worldViewProj.transpose();
 
 	
-	simul::math::Matrix4x4 shadowMatrix		=cloudShadowStruct.shadowMatrix;
+	simul::math::Matrix4x4 shadowMatrix		=cloudShadowStruct.simpleOffsetMatrix;
 	simul::math::Matrix4x4 invShadowMatrix;
 	shadowMatrix.Inverse(invShadowMatrix);
 	terrainConstants.invShadowMatrix		=invShadowMatrix;

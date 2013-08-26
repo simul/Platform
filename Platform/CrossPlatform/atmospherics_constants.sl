@@ -44,4 +44,15 @@ uniform_buffer AtmosphericsPerViewConstants SIMUL_BUFFER_REGISTER(12)
 	uniform float fill4;
 	uniform vec4 godrays_distances[200];	// We use vec4 instead of float, because DirectX debug reports an error - perhaps floats are packed as float4 for arrays.
 };
+
+/*
+maybe use  D3D11_RESOURCE_MISC_BUFFER_STRUCTURED for godrays_distances
+
+On Orbis See initAsRegularBuffer 
+
+StructuredBuffer<unsigned int> indexBufferRO;
+RWStructuredBuffer<unsigned int> indexBufferRW;
+Orbis
+RegularBuffer<unsigned int> indexBufferRO : register( t0 );
+RW_RegularBuffer<unsigned int> indexBufferRW : register( u0 ); */
 #endif

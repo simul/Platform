@@ -213,14 +213,6 @@ ERROR_CHECK
 	
 void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z)
 {
-	glGenTextures(1,&illum_tex);
-	glBindTexture(GL_TEXTURE_3D,illum_tex);
-	glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_INT,0);
-	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
 }
 
 void SimulGLCloudRenderer::FillIlluminationSequentially(int ,int ,int ,const unsigned char *)
@@ -229,12 +221,6 @@ void SimulGLCloudRenderer::FillIlluminationSequentially(int ,int ,int ,const uns
 
 void SimulGLCloudRenderer::FillIlluminationBlock(int ,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array)
 {
-	glBindTexture(GL_TEXTURE_3D,illum_tex);
-	glTexSubImage3D(	GL_TEXTURE_3D,0,
-						x,y,z,
-						w,l,d,
-						GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
-						uchar8_array);
 }
 
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
@@ -547,6 +533,11 @@ void SimulGLCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
 	skylight_tex=((GLuint)s);
 }
 
+void SimulGLCloudRenderer::SetIlluminationTexture(void* i)
+{
+	illum_tex=((GLuint)i);
+}
+
 void SimulGLCloudRenderer::UseShader(GLuint program)
 {
 	if(current_program==program)
@@ -589,6 +580,7 @@ void SimulGLCloudRenderer::RecompileShaders()
 		return;
 current_program=0;
 ERROR_CHECK
+	gpuCloudGenerator.RecompileShaders();
 	SAFE_DELETE_PROGRAM(clouds_background_program);
 	SAFE_DELETE_PROGRAM(clouds_foreground_program);
 	SAFE_DELETE_PROGRAM(raytrace_program);
@@ -621,6 +613,7 @@ ERROR_CHECK
 void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 {
 	init=true;
+	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	
 	MAKE_GL_CONSTANT_BUFFER(cloudConstantsUBO,CloudConstants,cloudConstantsBindingIndex);
 	MAKE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
@@ -701,6 +694,7 @@ ERROR_CHECK
 void SimulGLCloudRenderer::InvalidateDeviceObjects()
 {
 	init=false;
+	gpuCloudGenerator.InvalidateDeviceObjects();
 	SAFE_DELETE_TEXTURE(noise_tex);
 	SAFE_DELETE_PROGRAM(cross_section_program);
 
@@ -930,7 +924,7 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 
 void SimulGLCloudRenderer::RenderCrossSections(void *,int width,int height)
 {
-	static int u=6;
+	static int u=4;
 	int w=(width-8)/u;
 	if(w>height/2)
 		w=height/2;

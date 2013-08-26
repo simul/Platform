@@ -123,12 +123,12 @@ HRESULT hr=S_OK;
 	ID3D11Texture1D *dens_tex1					=make1DTexture(m_pd3dDevice,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)density_table);
 	ID3D11ShaderResourceView* dens_tex;
 	m_pd3dDevice->CreateShaderResourceView(dens_tex1,NULL,&dens_tex);
-	m_pImmediateContext->GenerateMips(dens_tex);
+	//m_pImmediateContext->GenerateMips(dens_tex);
 	
 	ID3D11Texture2D *optd_tex1=make2DTexture(m_pd3dDevice,table_size,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)optical_table);
 	ID3D11ShaderResourceView* optd_tex;
 	m_pd3dDevice->CreateShaderResourceView(optd_tex1,NULL,&optd_tex);
-	m_pImmediateContext->GenerateMips(optd_tex);
+	//m_pImmediateContext->GenerateMips(optd_tex);
 
 	ID3D1xEffectScalarVariable *distKm							=effect->GetVariableByName("distKm")->AsScalar();
 	ID3D1xEffectScalarVariable *prevDistKm						=effect->GetVariableByName("prevDistKm")->AsScalar();
@@ -194,18 +194,19 @@ HRESULT hr=S_OK;
 	int end_loss	=range(end_step				,0,xy_size);
 	int num_loss	=range(end_loss-start_loss	,0,xy_size);
 
-	simul::sky::float4 *target=loss;
-	simul::dx11::setParameter(effect,"targetTexture",finalLoss[cycled_index]->unorderedAccessView);
+	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalLoss[cycled_index]->unorderedAccessView);
 	gpuSkyConstants.threadOffset=uint3(start_loss,0,0);
 	gpuSkyConstants.Apply(m_pImmediateContext);
 	V_CHECK(ApplyPass(m_pImmediateContext,lossComputeTechnique->GetPassByIndex(0)));
 	
-	int subgrid;
-	subgrid=(num_loss+BLOCKWIDTH-1)/BLOCKWIDTH;
+	int subgrid=(num_loss+BLOCKWIDTH-1)/BLOCKWIDTH;
 
 	if(subgrid>0)
+	{
 		m_pImmediateContext->Dispatch(subgrid,1,1);
-
+		if(loss)
+			finalLoss[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,loss,start_loss*subgrid,num_loss*subgrid);
+	}
 	int start_insc	=range(start_step-xy_size	,0,xy_size);
 	int end_insc	=range(end_step-xy_size		,0,xy_size);
 	int num_insc	=range(end_insc-start_insc	,0,xy_size);
@@ -213,27 +214,38 @@ HRESULT hr=S_OK;
 	loss_texture->SetResource(finalLoss[cycled_index]->shaderResourceView);
 	optical_depth_texture->SetResource(optd_tex);
 
-	simul::dx11::setParameter(effect,"targetTexture",finalInsc[cycled_index]->unorderedAccessView);
+	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalInsc[cycled_index]->unorderedAccessView);
 	gpuSkyConstants.threadOffset=uint3(start_insc,0,0);
 	gpuSkyConstants.Apply(m_pImmediateContext);
 	V_CHECK(ApplyPass(m_pImmediateContext,inscComputeTechnique->GetPassByIndex(0)));
 	subgrid=(num_insc+BLOCKWIDTH-1)/BLOCKWIDTH;
 	if(subgrid>0)
+	{
 		m_pImmediateContext->Dispatch(subgrid,1,1);
-	int start_skyl	=range(start_step-2*xy_size	,0,xy_size);
-	int end_skyl	=range(end_step-2*xy_size	,0,xy_size);
-	int num_skyl	=range(end_skyl-start_skyl	,0,xy_size);
+		if(insc)
+			finalInsc[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,insc,start_insc*subgrid,num_insc*subgrid);
+	}
+	int start_skyl	=range(start_step-2*xy_size	,0	,xy_size);
+	int end_skyl	=range(end_step-2*xy_size	,0	,xy_size);
+	int num_skyl	=range(end_skyl-start_skyl	,0	,xy_size);
 	insc_texture->SetResource(finalInsc[cycled_index]->shaderResourceView);
-	simul::dx11::setParameter(effect,"targetTexture",finalSkyl[cycled_index]->unorderedAccessView);
+	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalSkyl[cycled_index]->unorderedAccessView);
 	gpuSkyConstants.threadOffset=uint3(start_skyl,0,0);
 	gpuSkyConstants.Apply(m_pImmediateContext);
 	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
 	subgrid=(num_skyl+BLOCKWIDTH-1)/BLOCKWIDTH;
 	if(subgrid>0)
+	{
 		m_pImmediateContext->Dispatch(subgrid,1,1);
+		if(skyl)
+			finalSkyl[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,skyl,start_skyl*subgrid,num_skyl*subgrid);
+	}
 	density_texture->SetResource(NULL);
 	input_texture->SetResource(NULL);
-
+	simul::dx11::setUnorderedAccessView(effect,"targetTexture",NULL);
+	loss_texture->SetResource(NULL);
+	insc_texture->SetResource(NULL);
+	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
 	SAFE_RELEASE(dens_tex);
 	SAFE_RELEASE(dens_tex1);
 	SAFE_RELEASE(optd_tex);

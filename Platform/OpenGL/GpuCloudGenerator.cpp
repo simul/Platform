@@ -8,23 +8,6 @@
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/simul_gpu_clouds.sl"
 using namespace simul::opengl;
-/*
-static void MakeVertexMatrix(const int *grid,int start_texel,int texels)
-{
-	int gridsize=grid[0]*grid[1]*grid[2];
-	//start_texel-=grid[0]*grid[1];
-	if(start_texel<0)
-		start_texel=0;
-	//texels+=grid[0]*grid[1];
-	if(start_texel+texels>gridsize)
-		texels=start_texel-gridsize;
-	float y_start=(float)start_texel/(float)gridsize;
-	float y_end=(float)(start_texel+texels)/(float)gridsize;
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0,1.0,y_start,y_end,-1.0,1.0);
-}*/
-
 GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
 			,density_program(0)
 			,lighting_program(0)

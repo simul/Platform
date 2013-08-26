@@ -9,13 +9,14 @@ uniform_buffer GpuCloudConstants SIMUL_BUFFER_REGISTER(8)
 	uniform float ss;
 	uniform vec2 extinctions;
 	uniform float stepLength,ttt;
+	uniform uint3 gaussianOffset;
 	uniform int octaves;
+	uniform vec3 noiseScale;
+	uniform float zPosition;
 	uniform float time;
 	uniform float persistence;
 	uniform float humidity;
-	uniform vec3 noiseScale;
 	uniform float zPixelLightspace;
-	uniform float zPosition;
 	uniform float zPixel;
 	uniform float zSize;
 	uniform float baseLayer;
