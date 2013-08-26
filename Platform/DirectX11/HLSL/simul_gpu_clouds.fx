@@ -69,7 +69,6 @@ void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID g
 	uint3 pos			=sub_pos+threadOffset;
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
 	vec3 densityspace_texcoord	=(pos+0.5)/vec3(dims);
 	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
