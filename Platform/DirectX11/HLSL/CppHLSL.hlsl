@@ -13,7 +13,9 @@
 #define texture_wrap(tex,texc) tex.Sample(wrapSamplerState,texc)
 #define texture_wrap_lod(tex,texc,lod) tex.SampleLevel(wrapSamplerState,texc,lod)
 #define texture_clamp_lod(tex,texc,lod) tex.SampleLevel(clampSamplerState,texc,lod)
+#define texture_cwc_lod(tex,texc,lod) tex.SampleLevel(cwcSamplerState,texc,lod)
 #define texture_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,texc,lod)
+#define texture_clamp_mirror_lod(tex,texc,lod) tex.SampleLevel(samplerStateClampMirror,texc,lod)
 
 #define texture_wwc(tex,texc) tex.Sample(wwcSamplerState,texc)
 #define texture_nearest(tex,texc) tex.SampleLevel(samplerStateNearest,texc)
@@ -33,17 +35,8 @@
 	#define SIMUL_TEXTURE_REGISTER(buff_num) : register(t##buff_num)
 	#define SIMUL_SAMPLER_REGISTER(buff_num) : register(s##buff_num)
 	#define SIMUL_BUFFER_REGISTER(buff_num) : register(b##buff_num)
-	#define R1 : register(b1)
-	#define R2 : register(b2)
-	#define R3 : register(b3)
-	#define R4 : register(b4)
-	#define R5 : register(b5)
-	#define R6 : register(b6)
-	#define R7 : register(b7)
-	#define R8 : register(b8)
-	#define R9 : register(b9)
-	#define R10 : register(b10)
-	#define R13 : register(b13)
+	#define SIMUL_RWTEXTURE_REGISTER(tex_num) : register(u##tex_num)
+
 	#define vec1 float1
 	#define vec2 float2
 	#define vec3 float3

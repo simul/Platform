@@ -162,7 +162,7 @@ ERROR_CHECK
 		
 		atmosphericsUniforms.cloudOrigin	=cloud_origin;
 		atmosphericsUniforms.cloudScale		=cloud_scale;
-		atmosphericsUniforms.maxDistance	=fade_distance_km*1000.f;
+		atmosphericsUniforms.maxFadeDistanceMetres	=fade_distance_km*1000.f;
 		atmosphericsUniforms.overcast		=overcast;
 		atmosphericsUniforms.exposure		=exposure;
 		

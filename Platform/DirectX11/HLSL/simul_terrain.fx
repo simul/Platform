@@ -40,9 +40,9 @@ float4 PS_Main( vertexOutput IN) : SV_TARGET
 	vec4 layer1	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,0.0));
 	vec4 layer2	=textureArray.Sample(wwcSamplerState,vec3(IN.texcoord,1.0));
 	vec4 texel	=mix(layer1,layer2,clamp(1.0-IN.wPosition.z/100.0,0.0,1.0));
-	float light	=lightDir.z;
+	vec2 light	=lightDir.z;
 	light		*=GetIlluminationAt(cloudShadowTexture,IN.wPosition.xyz);
-	result.rgb	=texel.rgb*(ambientColour.rgb+light*sunlight.rgb);
+	result.rgb	=texel.rgb*(ambientColour.rgb+light.x*sunlight.rgb);
 	result.a	=1.0;
     return result;
 }

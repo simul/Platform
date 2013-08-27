@@ -19,6 +19,7 @@ uniform_buffer SkyConstants SIMUL_BUFFER_REGISTER(10)
 	float overcastBaseKm;
 	float overcastRangeKm;
 	float maxFadeDistanceKm;
+	float cloudShadowRange;		// As a distance texcoord
 };
 
 #endif

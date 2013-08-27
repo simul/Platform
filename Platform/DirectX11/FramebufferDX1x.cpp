@@ -170,7 +170,7 @@ bool Framebuffer::CreateBuffers()
 		Width,
 		Height,
 		1,
-		GenerateMips?4:1,
+		GenerateMips?0:1,
 		target_format,
 		{1,0},
 		D3D1x_USAGE_DEFAULT,
@@ -374,15 +374,59 @@ void Framebuffer::Activate(void *context, float viewportX, float viewportY, floa
 	m_pImmediateContext->RSSetViewports(1, &viewport);
 }
 
-void Framebuffer::Deactivate(void *context)
+void Framebuffer::ActivateColour(void *context)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
+	if(!m_pImmediateContext)
+		return;
+	if(!hdr_buffer_texture&&!buffer_depth_texture)
+		CreateBuffers();
+	if(!m_pHDRRenderTarget)
+		return;
+	m_pImmediateContext->RSGetViewports(&num_v,NULL);
+	if(num_v>0)
+		m_pImmediateContext->RSGetViewports(&num_v,m_OldViewports);
+
+	m_pOldRenderTarget	=NULL;
+	m_pOldDepthSurface	=NULL;
+	m_pImmediateContext->OMGetRenderTargets(	1,
+												&m_pOldRenderTarget,
+												&m_pOldDepthSurface
+												);
+	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
+	D3D11_VIEWPORT viewport;
+		// Setup the viewport for rendering.
+	viewport.Width = (float)Width;
+	viewport.Height = (float)Height;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	// Create the viewport.
+	m_pImmediateContext->RSSetViewports(1, &viewport);
+}
+
+void Framebuffer::Deactivate(void *context)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
 	if(num_v>0)
-		m_pImmediateContext->RSSetViewports(num_v,m_OldViewports);
-	m_pImmediateContext=NULL;
+		pContext->RSSetViewports(num_v,m_OldViewports);
+	if(GenerateMips)
+		pContext->GenerateMips(buffer_texture_SRV);
+}
+
+void Framebuffer::DeactivateDepth(void *context)
+{
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	if(!m_pHDRRenderTarget)
+	{
+		Deactivate(context);
+		return;
+	}
+	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
 }
 
 void Framebuffer::Clear(void *context,float r,float g,float b,float a,float depth,int mask)

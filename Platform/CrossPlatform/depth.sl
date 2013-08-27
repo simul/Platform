@@ -60,6 +60,37 @@ float depthToFadeDistance(float depth,float3 depthToLinFadeDistParams,float near
 #endif
 }
 
+//------------------------------------------------------------------------------------------------------------------
+
+float fadeDistanceToDepth(in float dist, in float3 depthToLinFadeDistParams)
+{
+	// Inverse of depthBufferToLinearFadeZ
+	// See depthBufferToLinearFadeZ for more detail of transform
+	
+	return ((depthToLinFadeDistParams.x / dist) - depthToLinFadeDistParams.z) / depthToLinFadeDistParams.y;
+}
+
+
+float fadeDistanceToDepth(float dist,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
+{
+#ifdef REVERSE_DEPTH
+	return ((nearZ*farZ)/dist-nearZ)/(farZ-nearZ);
+#endif
+	return 0.f;
+}
+
+float fadeDistanceToDepth(float dist,float3 depthToLinFadeDistParams,float nearZ,float farZ,vec2 xy,vec2 tanHalf)
+{
+	float Tx	=xy.x*tanHalf.x;
+	float Ty	=xy.y*tanHalf.y;
+	float z		=dist/sqrt(1.0+Tx*Tx+Ty*Ty);
+#ifdef NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
+	float depth = fadeDistanceToDepth(dist,depthToLinFadeDistParams);
+#else
+	float depth = fadeDistanceToDepth(dist,nearZ,farZ);
+#endif
+return depth;
+}
 
 float2 viewportCoordToTexRegionCoord( in float2 iViewportCoord, in float4 iViewportToTexRegionScaleBias )
 {

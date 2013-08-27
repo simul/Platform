@@ -578,6 +578,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	skyConstants.altitudeTexCoord	=skyKeyframer->GetAltitudeTexCoord();
 	skyConstants.overcast			=skyKeyframer->GetSkyInterface()->GetOvercast();
 	skyConstants.eyePosition		=cam_pos;
+	skyConstants.cloudShadowRange	=sqrt(80.f/skyKeyframer->GetMaxDistanceKm());
 	skyConstants.Apply(context);
 
 	illuminationTexture->SetResource((ID3D11ShaderResourceView*)illumination_fb.GetColorTex());
@@ -593,16 +594,23 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		loss_2d->Deactivate(context);
 	}
-	
 	{
 		V_CHECK(fadeTexture1->SetResource(insc_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(insc_textures[(texture_cycle+1)%3].shaderResourceView));
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		
 		inscatter_2d->Activate(context,0.f,0.f,1.f,1.f);
-			context->ClearRenderTargetView(inscatter_2d->m_pHDRRenderTarget,clearColor);
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		inscatter_2d->Deactivate(context);
+	}
+	//ID3D1xEffectTechnique* m_hTechniqueSkylightAndOvercast		=m_pSkyEffect->GetTechniqueByName("skylight_and_overcast");
+	{
+		V_CHECK(fadeTexture1->SetResource(skyl_textures[(texture_cycle+0)%3].shaderResourceView));
+		V_CHECK(fadeTexture2->SetResource(skyl_textures[(texture_cycle+1)%3].shaderResourceView));
+		//V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
+		skylight_2d->Activate(context,0.f,0.f,1.f,1.f);
+			simul::dx11::UtilityRenderer::DrawQuad(context);
+		skylight_2d->Deactivate(context);
 	}
 	ID3D1xEffectTechnique* hTechniqueOverc		=m_pSkyEffect->GetTechniqueByName("simul_overc_3d_to_2d");
 	// We will bake the overcast effect into the overcast_2d texture.
@@ -610,25 +618,9 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(inscTexture->SetResource((ID3D11ShaderResourceView*)inscatter_2d->GetColorTex()));
 		V_CHECK(ApplyPass(context,hTechniqueOverc->GetPassByIndex(0)));
 		overcast_2d->Activate(context,0.f,0.f,1.f,1.f);
-			context->ClearRenderTargetView(overcast_2d->m_pHDRRenderTarget,clearColor);
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		overcast_2d->Deactivate(context);
 	}
-	
-	ID3D1xEffectTechnique* m_hTechniqueSkylightAndOvercast		=m_pSkyEffect->GetTechniqueByName("skylight_and_overcast");
-	{
-		V_CHECK(fadeTexture1->SetResource(skyl_textures[(texture_cycle+0)%3].shaderResourceView));
-		V_CHECK(fadeTexture2->SetResource(skyl_textures[(texture_cycle+1)%3].shaderResourceView));
-		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		
-		skylight_2d->Activate(context,0.f,0.f,1.f,1.f);
-			context->ClearRenderTargetView(skylight_2d->m_pHDRRenderTarget,clearColor);
-			if(skylight_2d->m_pBufferDepthSurface)
-				context->ClearDepthStencilView(skylight_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
-			simul::dx11::UtilityRenderer::DrawQuad(context);
-		skylight_2d->Deactivate(context);
-	}
-	
 	V_CHECK(fadeTexture1->SetResource(NULL));
 	V_CHECK(fadeTexture2->SetResource(NULL));
 	V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
@@ -761,11 +753,12 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 		size=height/3;
 	if(size<2)
 		return false;
+	int s=size/numAltitudes-2;
 	int y0=width/2;
 	int x0=8;
 	if(width>height)
 	{
-		x0=width/2;
+		x0=width-(size+8)*2-(s+8)*3;
 		y0=8;
 	}
 	simul::dx11::UtilityRenderer::SetScreenSize(width,height);
@@ -777,18 +770,17 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 
 	int y=y0+8;
 	inscTexture->SetResource(loss_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowSky);
 	y+=size+8;
 	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowSky);
 	inscTexture->SetResource(overcast_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0-size-2,y,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
 	y+=size+8;
 	inscTexture->SetResource(skylight_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowSky);
 
-	x0+=24+size;
-	int s=size/numAltitudes-2;
+	x0+=2*(size+8);
 	bool show_3=gpuSkyGenerator.GetEnabled()&&(skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator);
 	for(int i=0;i<numAltitudes;i++)
 	{

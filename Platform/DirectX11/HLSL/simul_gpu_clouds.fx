@@ -1,19 +1,16 @@
-#define uniform
-#define vec2 float2
-#define vec3 float3
-#define vec4 float4
-#define sampler1D texture1D
-#define sampler2D texture2D
-#define sampler3D texture3D
-
 #include "CppHLSL.hlsl"
 uniform sampler2D inputTexture;
-uniform sampler3D densityTexture;
-uniform sampler2D maskTexture;
+uniform sampler3D densityTexture SIMUL_TEXTURE_REGISTER(0);
 uniform sampler3D lightTexture;
+uniform sampler3D lightTexture1 SIMUL_TEXTURE_REGISTER(1);
+uniform sampler3D lightTexture2 SIMUL_TEXTURE_REGISTER(2);
+uniform sampler2D maskTexture SIMUL_TEXTURE_REGISTER(3);
 uniform sampler3D ambientTexture;
-uniform sampler3D volumeNoiseTexture;
-RWTexture3D<float4> targetTexture;
+uniform sampler3D ambientTexture1 SIMUL_TEXTURE_REGISTER(4);
+uniform sampler3D ambientTexture2 SIMUL_TEXTURE_REGISTER(5);
+uniform sampler3D volumeNoiseTexture SIMUL_TEXTURE_REGISTER(6);
+RWTexture3D<float4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
+RWTexture3D<float> targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
 
 #include "../../CrossPlatform/states.sl"
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
@@ -118,21 +115,63 @@ void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
 {
 	uint3 dims;
 	uint3 pos						=sub_pos+threadOffset;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	targetTexture1.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
-	vec2 current_light				=vec2(1.0,1.0);
-	for(int i=0;i<dims.z;i++)
+	float direct_light				=1.0;
+	targetTexture1[int3(pos.xy,0)]	=1.0;
+	const int C=1;
+	for(int i=1;i<dims.z;i++)
+	{
+		uint3 idx					=uint3(pos.xy,i);
+		targetTexture1[idx]			=direct_light;
+		for(int j=0;j<C;j++)
+		{
+			vec3 lightspace_texcoord	=vec3(pos.xy,float(i)+float(j)/float(C))/vec3(dims);
+			vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
+			float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
+			direct_light				*=exp(-extinctions.x*density*stepLength/float(C));
+		}
+		//if(density==0)
+		//	direct_light=1.0;
+	}
+}
+
+[numthreads(8,8,1)]
+void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
+{
+	uint3 dims;
+	uint3 pos						=sub_pos+threadOffset;
+	targetTexture1.GetDimensions(dims.x,dims.y,dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return;
+	float indirect_light			=1.0;
+	if(pos.z>0)
+	{
+		int Z			=pos.z-1;
+		int x1			=(pos.x+1)%dims.x;
+		int xn			=(pos.x+dims.x-1)%dims.x;
+		int y1			=(pos.y+1)%dims.y;
+		int yn			=(pos.y+dims.y-1)%dims.y;
+		indirect_light	=targetTexture1[int3(pos.xy,Z)];
+		indirect_light	+=targetTexture1[int3(xn,pos.y,Z)];
+		indirect_light	+=targetTexture1[int3(x1,pos.y,Z)];
+		indirect_light	+=targetTexture1[int3(pos.x,yn,Z)];
+		indirect_light	+=targetTexture1[int3(pos.x,y1,Z)];
+		indirect_light	/=5.0;
+	}
+	//for(int i=0;i<dims.z;i++)
+	int i=pos.z;
 	{
 		uint3 idx					=uint3(pos.xy,i);
 		vec3 lightspace_texcoord	=(vec3(idx)+0.5)/vec3(dims);
 		vec3 texc					=(vec3(pos.xy,(float)i)+0.5)/vec3(dims);
 		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
 		float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
-		float direct_light			=current_light.x*exp(-extinctions.x*density);
-		float indirect_light		=current_light.y*exp(-extinctions.y*density);
-		current_light				=vec2(direct_light,indirect_light);
-		targetTexture[idx]			=vec4(current_light,0.0,0.0);
+		indirect_light				*=exp(-extinctions.y*density*stepLength);
+		targetTexture1[idx]			=indirect_light;
+		//if(density==0)
+		//	indirect_light=1.0;
 	}
 }
 
@@ -148,16 +187,18 @@ void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)	//SV_DispatchThreadID giv
 	targetTexture[pos]			=vec4(1.0,1.0,1.0,1.0);
 	vec3 densityspace_texcoord	=(pos.xyz+0.5)/vec3(dims);
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
-	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord,1.0)).xyz;
-	lightspace_texcoord.z		-=zPixel;
-	vec2 light_lookup			=saturate(lightTexture.SampleLevel(lightSamplerState,lightspace_texcoord,0).xy);
-	vec2 amb_texel				=ambientTexture.SampleLevel(wwcSamplerState,ambient_texcoord,0).xy;
+	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
+	lightspace_texcoord.z		-=zPixelLightspace;
+	vec2 light_lookup			=vec2(lightTexture1.SampleLevel(lightSamplerState,lightspace_texcoord,0).x
+										,lightTexture2.SampleLevel(lightSamplerState,lightspace_texcoord,0).x);
+	vec2 amb_texel				=vec2(ambientTexture1.SampleLevel(wwcSamplerState,ambient_texcoord,0).x
+										,ambientTexture2.SampleLevel(wwcSamplerState,ambient_texcoord,0).x);
 	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
 	float density				=saturate(densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x);
 
     vec4 res					=vec4(light_lookup.y,light_lookup.x,density,ambient_lookup);
    // res							=vec4(lightspace_texcoord.zz,density,lightspace_texcoord.z);
-	targetTexture[pos]		=res;
+	targetTexture[pos]			=res;
 }
 
 
@@ -239,6 +280,14 @@ technique11 gpu_lighting_compute
     pass p0 
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Lighting()));
+    }
+}
+
+technique11 gpu_secondary_compute
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_SecondaryLighting()));
     }
 }
 

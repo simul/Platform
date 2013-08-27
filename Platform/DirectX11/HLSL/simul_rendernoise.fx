@@ -8,7 +8,7 @@ SamplerState samplerState
 	AddressV = Wrap;
 };
 
-uniform_buffer RendernoiseConstants R10
+uniform_buffer RendernoiseConstants SIMUL_BUFFER_REGISTER(10)
 {
 	int octaves;
 	float persistence;

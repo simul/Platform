@@ -33,7 +33,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,ShowLightVolume(false)
 		,CelestialDisplay(false)
 		,ShowWater(true)
-		,MakeCubemap(false)
+		,MakeCubemap(true)
 		,ReverseDepth(true)
 		,ShowOSD(false)
 		,Exposure(1.0f)
@@ -49,6 +49,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	ReverseDepthChanged();
 	depthFramebuffer.SetFormat(0);
+	depthFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 	cubemapDepthFramebuffer.SetFormat(0);
 }
 
@@ -214,6 +215,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		const void* skyBufferDepthTex = UseSkyBuffer ? depthTexture : nullptr;
 		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,false,depthTexture,skyBufferDepthTex,viewport_id,relativeViewportTextureRegionXYWH,true);
 	}
+#if 1
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->RenderLightning(pd3dImmediateContext,viewport_id);
@@ -235,11 +237,10 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				simulOpticsRenderer->RenderFlare(pd3dImmediateContext,exp,dir,light);
 			}
 		}
-	/*	if(simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->DrawCubemap(pd3dImmediateContext
-																,(ID3D1xShaderResourceView*	)framebuffer_cubemap.GetColorTex()
-																,view,proj);*/
+		if(simulWeatherRenderer->GetSkyRenderer())
+			UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)framebuffer_cubemap.GetColorTex(),view,proj);
 	}
+#endif
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender(pd3dImmediateContext);
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
@@ -252,6 +253,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 //			simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
+			simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
 		{

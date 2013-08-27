@@ -19,6 +19,13 @@ DepthStencilState TestDepth
 #endif
 };
 
+DepthStencilState WriteDepth
+{
+	DepthEnable = TRUE;
+	DepthWriteMask = ALL;
+	DepthFunc = ALWAYS;
+};
+
 DepthStencilState EnableDepth
 {
 	DepthEnable = TRUE;
@@ -56,6 +63,14 @@ BlendState AddBlend
 	BlendEnable[0] = TRUE;
 	SrcBlend = ONE;
 	DestBlend = ONE;
+};
+
+BlendState AddBlendDontWriteAlpha
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = ONE;
+	DestBlend = ONE;
+	RenderTargetWriteMask[0]=7;
 };
 
 BlendState SubtractBlend

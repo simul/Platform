@@ -184,6 +184,7 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	
 	coverage_fb.Activate(pContext,0.f,0.f,1.f,1.f);
 	{
+		simul::dx11::setParameter(effect,"noiseTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_coverage");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		coverage_fb.DrawQuad(pContext);
@@ -303,6 +304,16 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 
 	SAFE_RELEASE(previousInputLayout)
 	SAFE_RELEASE(pPrevBuffer);
+
+	simul::dx11::setParameter(effect,"imageTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"noiseTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"coverageTexture"		,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"lossTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"inscTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"skylTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"depthTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setParameter(effect,"illuminationTexture"	,(ID3D11ShaderResourceView*)NULL);
+	ApplyPass(pContext,tech->GetPassByIndex(0));
 	
 	return true;
 }

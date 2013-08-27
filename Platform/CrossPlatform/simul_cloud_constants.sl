@@ -13,14 +13,14 @@ struct LayerData
 	float pad12;
 };
 
-uniform_buffer LayerConstants R8
+uniform_buffer LayerConstants SIMUL_BUFFER_REGISTER(8)
 {
 	uniform LayerData layers[MAX_INSTANCES];
 	uniform int layerCount;
 	uniform int A,B,C;
 };
 
-uniform_buffer CloudPerViewConstants R13
+uniform_buffer CloudPerViewConstants SIMUL_BUFFER_REGISTER(13)
 {
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 viewPos;
@@ -37,8 +37,10 @@ uniform_buffer CloudPerViewConstants R13
 	uniform float extentZMetres;
 	uniform float startZMetres;
 	uniform float shadowRange;
+	uniform int shadowTextureSize;
+	uniform float depthMix;
 };
-uniform_buffer CloudConstants R9
+uniform_buffer CloudConstants SIMUL_BUFFER_REGISTER(9)
 {
 	uniform vec3 inverseScales;
 	uniform int abcde;
@@ -80,11 +82,13 @@ uniform_buffer CloudConstants R9
 //! information on how to project it.
 uniform_buffer CloudShadowStruct 
 {
-	void *texture;	// texture, or SRV for DX11
+	void *texture;			// texture, or SRV for DX11
+	void *nearFarTexture;	// texture, or SRV for DX11, represents near and far range as proportion of shadowRange
 	mat4 shadowMatrix;
 	float extentZMetres;
 	float startZMetres;
 	float shadowRange;
+	int godraysSteps;
 };
 #endif
 #endif

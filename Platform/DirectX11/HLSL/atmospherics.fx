@@ -5,6 +5,7 @@
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 
 Texture2D depthTexture;
+Texture2D cloudDepthTexture;
 Texture2D imageTexture;
 Texture2D lossTexture;
 Texture2D inscTexture;
@@ -12,6 +13,7 @@ Texture2D overcTexture;
 Texture2D skylTexture;
 Texture2D illuminationTexture;
 Texture2D cloudShadowTexture;
+Texture2D cloudNearFarTexture;
 
 SamplerState samplerState: register(s1)
 {
@@ -103,13 +105,15 @@ vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 // Slanted Cylinder whose axis is along lightDir,
 // radius is at the specified horizontal distance.
 // Distance c is:		c=|lightDir.z*R|/|lightDir * sine - view * lightDir.z|
-float4 PS_AtmosOverlayGodraysPass(atmosVertexOutput IN) : SV_TARGET
+float4 PS_Godrays(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	float solid_depth	=depthTexture.Sample(clampSamplerState,depth_texc).x;
+	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
+	float depth			=max(solid_depth,cloud_depth);
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
-	float solid_dist	=depthToFadeDistance(solid_depth,depthToLinFadeDistParams,nearZ,farZ,IN.pos.xy,tanHalfFov);
-	return Godrays(inscTexture,overcTexture,IN.pos,invViewProj,maxDistance,solid_dist);
+	float solid_dist	=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,IN.pos.xy,tanHalfFov);
+	return Godrays(cloudShadowTexture,cloudNearFarTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
 }
 
 technique11 simul_atmospherics_overlay
@@ -141,10 +145,9 @@ technique11 simul_godrays
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_4_0,PS_AtmosOverlayGodraysPass()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Godrays()));
     }
 }
-

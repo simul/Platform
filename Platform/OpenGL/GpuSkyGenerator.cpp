@@ -56,7 +56,7 @@ ERROR_CHECK
 //! Return true if the derived class can make sky tables using the GPU.
 bool GpuSkyGenerator::CanPerformGPUGeneration() const
 {
-	return Enabled;
+	return false;//Enabled;
 }
 
 // make a 3D texture. X=altitude (clamp), Y=elevation (clamp), Z=distance (clamp)

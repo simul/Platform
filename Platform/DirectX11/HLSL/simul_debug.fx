@@ -120,7 +120,7 @@ technique11 draw_cubemap
 {
     pass p0 
     {		
-		SetRasterizerState( RenderNoCull );
+		SetRasterizerState( RenderBackfaceCull );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_DrawCubemap()));
 		SetPixelShader(CompileShader(ps_4_0,PS_DrawCubemap()));

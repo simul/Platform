@@ -16,7 +16,7 @@
 #include <d3dx11.h>
 #include <D3dx11effect.h>
 #include "Simul/Graph/Meta/Group.h"
-#include "Simul/Clouds/CloudRenderCallback.h"
+
 #include "Simul/Clouds/BaseCloudRenderer.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
@@ -79,7 +79,7 @@ namespace simul
 			void SetLossTexture(void *t);
 			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
-			// implementing CloudRenderCallback:
+
 			void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
 			void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array){}
 			void FillCloudTextureBlock(int,int,int,int,int,int,int,const unsigned *){}
@@ -128,6 +128,7 @@ namespace simul
 			ID3D1xEffect*							m_pCloudEffect;
 			ID3D1xEffectTechnique*					m_hTechniqueCloud;
 			ID3D1xEffectTechnique*					m_hTechniqueRaytrace;
+			ID3D1xEffectTechnique*					m_hTechniqueRaytraceForward;
 			ID3D1xEffectTechnique*					m_hTechniqueSimpleRaytrace;
 			ID3D1xEffectTechnique*					m_hTechniqueRaytrace3DNoise;
 			ID3D1xEffectTechnique*					m_hTechniqueCloudsAndLightning;
@@ -163,7 +164,8 @@ namespace simul
 			ID3D1xShaderResourceView*				skylightTexture_SRV;
 			ID3D1xShaderResourceView*				illuminationTexture_SRV;
 			
-			simul::dx11::Framebuffer				cloudShadow;
+			simul::dx11::Framebuffer				shadow_fb;
+			simul::dx11::Framebuffer				shadowNearFar;
 
 			simul::dx11::TextureStruct				cloud_texture;
 			

@@ -44,6 +44,7 @@ void GpuSkyGenerator::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(constantBuffer);
+	m_pd3dDevice=NULL;
 }
 
 void GpuSkyGenerator::RecompileShaders()
@@ -132,8 +133,8 @@ HRESULT hr=S_OK;
 	ID3D1xEffectScalarVariable *distKm							=effect->GetVariableByName("distKm")->AsScalar();
 	ID3D1xEffectScalarVariable *prevDistKm						=effect->GetVariableByName("prevDistKm")->AsScalar();
 	ID3D1xEffectShaderResourceVariable*	input_texture			=effect->GetVariableByName("input_texture")->AsShaderResource();
-	ID3DX11EffectUnorderedAccessViewVariable *targetTexture			=effect->GetVariableByName("targetTexture")->AsUnorderedAccessView();
-	ID3DX11EffectShaderResourceVariable*	optical_depth_texture	=effect->GetVariableByName("optical_depth_texture")->AsShaderResource();
+	ID3DX11EffectUnorderedAccessViewVariable *targetTexture		=effect->GetVariableByName("targetTexture")->AsUnorderedAccessView();
+	ID3DX11EffectShaderResourceVariable* optical_depth_texture	=effect->GetVariableByName("optical_depth_texture")->AsShaderResource();
 	ID3D1xEffectShaderResourceVariable*	density_texture			=effect->GetVariableByName("density_texture")->AsShaderResource();
 	ID3D1xEffectShaderResourceVariable*	loss_texture			=effect->GetVariableByName("loss_texture")->AsShaderResource();
 	ID3D1xEffectShaderResourceVariable*	insc_texture			=effect->GetVariableByName("insc_texture")->AsShaderResource();
@@ -194,8 +195,6 @@ HRESULT hr=S_OK;
 	int num_loss	=range(end_loss-start_loss	,0,xy_size);
 
 	simul::sky::float4 *target=loss;
-	F[0]->Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
-		F[1]->Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
 	simul::dx11::setParameter(effect,"targetTexture",finalLoss[cycled_index]->unorderedAccessView);
 	gpuSkyConstants.threadOffset=uint3(start_loss,0,0);
 	gpuSkyConstants.Apply(m_pImmediateContext);
@@ -221,14 +220,10 @@ HRESULT hr=S_OK;
 	subgrid=(num_insc+BLOCKWIDTH-1)/BLOCKWIDTH;
 	if(subgrid>0)
 		m_pImmediateContext->Dispatch(subgrid,1,1);
-	
-	F[0]->Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
-		F[1]->Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
-	F[0]->Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
-		F[1]->Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
 	int start_skyl	=range(start_step-2*xy_size	,0,xy_size);
 	int end_skyl	=range(end_step-2*xy_size	,0,xy_size);
 	int num_skyl	=range(end_skyl-start_skyl	,0,xy_size);
+	insc_texture->SetResource(finalInsc[cycled_index]->shaderResourceView);
 	simul::dx11::setParameter(effect,"targetTexture",finalSkyl[cycled_index]->unorderedAccessView);
 	gpuSkyConstants.threadOffset=uint3(start_skyl,0,0);
 	gpuSkyConstants.Apply(m_pImmediateContext);

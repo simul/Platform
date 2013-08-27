@@ -57,7 +57,6 @@ v2f MainVS(a2v IN)
 
 float4 MainPS(v2f IN) : SV_TARGET
 {
-	//return vec4(1.0,1.0,0.8,0.5);
 	vec3 depth_pos		=IN.clip_pos.xyz/IN.clip_pos.w;
 	vec3 depth_texc		=0.5*(depth_pos+vec3(1.0,1.0,1.0));
 	depth_texc.y		=1.0-depth_texc.y;
@@ -70,7 +69,7 @@ float4 MainPS(v2f IN) : SV_TARGET
 		discard;
 #endif
 	vec2 wOffset		=IN.wPosition.xy-origin.xy;
-	vec2 noiseOffset	=fractalAmplitude*texture(noiseTexture,wOffset/100000.0);
+	vec2 noiseOffset	=fractalAmplitude*texture(noiseTexture,wOffset/100000.0).xy;
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
 	//texc_detail		+=noiseOffset;
@@ -146,7 +145,7 @@ float4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET
 {
     vec4 detail				=texture2D(imageTexture,IN.texCoords);
 	float opacity			=saturate(detail.a);
-	vec3 colour				=vec4(0.5,0.5,1.0,1.0);
+	vec3 colour				=vec3(0.5,0.5,1.0);
 	if(opacity<=0)
 		return vec4(colour,1.0);
 	float light				=exp(-detail.r*extinction);

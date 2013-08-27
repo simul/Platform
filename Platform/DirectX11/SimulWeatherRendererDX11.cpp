@@ -19,6 +19,7 @@
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Base/StringToWString.h"
+#include "Simul/Camera/Camera.h"
 #include "SimulSkyRendererDX1x.h"
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "SimulPrecipitationRendererDX1x.h"
@@ -29,6 +30,7 @@
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
+
 using namespace simul;
 using namespace dx11;
 
@@ -68,15 +70,16 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	basePrecipitationRenderer=simulPrecipitationRenderer=new SimulPrecipitationRendererDX1x();
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new SimulAtmosphericsRendererDX1x(mem);
 	baseFramebuffer=&framebuffer;
+	framebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 	ConnectInterfaces();
 }
 
 void SimulWeatherRendererDX11::SetScreenSize(int w,int h)
 {
-	ScreenWidth=w;
-	ScreenHeight=h;
-	BufferWidth=w/Downscale;
-	BufferHeight=h/Downscale;
+	ScreenWidth		=w;
+	ScreenHeight	=h;
+	BufferWidth		=w/Downscale;
+	BufferHeight	=h/Downscale;
 	framebuffer.SetWidthAndHeight(BufferWidth,BufferHeight);
 }
 
@@ -127,10 +130,11 @@ void SimulWeatherRendererDX11::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"), defines);
-	directTechnique			=m_pTonemapEffect->GetTechniqueByName("simul_direct");
-	SkyBlendTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_sky_blend");
-	imageTexture			=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
-	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	directTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
+	showDepthTechnique	=m_pTonemapEffect->GetTechniqueByName("show_depth");
+	SkyBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_blend");
+	imageTexture		=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
+	worldViewProj		=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	BaseWeatherRenderer::RecompileShaders();
 }
 
@@ -187,40 +191,6 @@ SimulWeatherRendererDX11::~SimulWeatherRendererDX11()
 	del(simulLightningRenderer,memoryInterface);
 }
 
-/*bool SimulWeatherRendererDX11::IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat)
-{
-	LPDIRECT3D9 d3d;
-	m_pd3dDevice->GetDirect3D(&d3d);
-    // Verify that the depth format exists
-    HRESULT hr=d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat,
-                                                       D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_SURFACE, DepthFormat);
-    if(FAILED(hr))
-		return (hr==S_OK);
-
-    // Verify that the backbuffer format is valid
-    hr=d3d->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat, D3DUSAGE_RENDERTARGET,
-                                               D3DRTYPE_SURFACE, BackBufferFormat);
-    if(FAILED(hr))
-		return (hr==S_OK);
-
-    // Verify that the depth format is compatible
-    hr = d3d->CheckDepthStencilMatch(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, AdapterFormat, BackBufferFormat,
-                                                    DepthFormat);
-
-    return (hr==S_OK);
-}
-
-static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
-{
-	D3DXMATRIX tmp1;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXVECTOR3 cam_pos;
-	cam_pos.x=tmp1._41;
-	cam_pos.y=tmp1._42;
-	cam_pos.z=tmp1._43;
-	return cam_pos;
-}
-*/
 void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename)
 {
 	static float exposure=1.f;
@@ -317,9 +287,6 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
 	}
-
-	if(baseAtmosphericsRenderer&&!is_cubemap)
-		baseAtmosphericsRenderer->RenderGodrays(context,mainDepthTexture,exposure,relativeViewportTextureRegionXYWH);
 }
 
 bool SimulWeatherRendererDX11::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)
@@ -342,6 +309,30 @@ bool SimulWeatherRendererDX11::RenderSky(void *context,float exposure,bool buffe
 		imageTexture->SetResource(NULL);
 	}
 	return true;
+}
+
+void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,int height)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+	//
+	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
+
+	HRESULT hr=S_OK;
+	static int u=4;
+	int w=(width-8)/u;
+	if(w>height/3)
+		w=height/3;
+	if(!environment->skyKeyframer)
+		return;
+	float max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
+	UtilityRenderer::SetScreenSize(width,height);
+	simul::dx11::setParameter(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
+	simul::dx11::setParameter(m_pTonemapEffect,"tanHalfFov"		,frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	simul::dx11::setParameter(m_pTonemapEffect,"nearZ"			,frustum.nearZ/max_fade_distance_metres);
+	simul::dx11::setParameter(m_pTonemapEffect,"farZ"			,frustum.farZ/max_fade_distance_metres);
+	int x=8;
+	int y=height-w;
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));
 }
 
 void SimulWeatherRendererDX11::RenderLateCloudLayer(void *context,float exposure,bool,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH)
@@ -403,4 +394,9 @@ Simul2DCloudRendererDX11 *SimulWeatherRendererDX11::Get2DCloudRenderer()
 //! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 void SimulWeatherRendererDX11::SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb)
 {
+}
+
+void *SimulWeatherRendererDX11::GetCloudDepthTexture()
+{
+	return framebuffer.GetDepthTex();
 }

@@ -7,17 +7,6 @@
 #define SIMUL_SAMPLER_REGISTER(buff_num)
 #define SIMUL_BUFFER_REGISTER(buff_num)
 
-#define R1
-#define R2
-#define R3
-#define R4
-#define R5
-#define R6
-#define R7
-#define R8
-#define R9
-#define R10
-#define R13
 #define GLSL
 
 #ifndef __cplusplus
@@ -38,8 +27,10 @@
 	#define texture_wrap_mirror(tex,texc) texture(tex,texc) 
 	#define sampleLod(tex,sampler,texc,lod) textureLod(tex,texc,lod)
 	#define texture_wrap_lod(tex,texc,lod) textureLod(tex,texc,lod)
+	#define texture_cwc_lod(tex,texc,lod) textureLod(tex,texc,lod)
 	#define texture_clamp_lod(tex,texc,lod) textureLod(tex,texc,lod) 
 	#define texture_nearest_lod(tex,texc,lod) textureLod(tex,texc,lod) 
+	#define texture_clamp_mirror_lod(tex,texc,lod) textureLod(tex,texc,lod) 
 	#define texture3D texture
 	#define texture2D texture 
 	#define Texture3D sampler3D 

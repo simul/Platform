@@ -88,16 +88,21 @@ namespace simul
 			ID3DX11EffectTechnique*				maskTechnique;
 			ID3DX11EffectTechnique*				lightingTechnique;
 			ID3DX11EffectTechnique*				lightingComputeTechnique;
+			ID3DX11EffectTechnique*				secondaryLightingComputeTechnique;
 			ID3DX11EffectTechnique*				transformTechnique;
 			ID3DX11EffectTechnique*				transformComputeTechnique;
+
 			ID3D11Texture3D						*volume_noise_tex;
 			ID3D11ShaderResourceView			*volume_noise_tex_srv;
+
 			TextureStruct						density_texture;
 			TextureStruct						*finalTexture[3];
-			TextureStruct						lightTextures[2];
+			TextureStruct						directLightTextures[2];
+			TextureStruct						indirectLightTextures[2];
 			ConstantBuffer<GpuCloudConstants>	gpuCloudConstants;
 			ID3D11SamplerState*					m_pWwcSamplerState;
-			ID3D11SamplerState*					m_pCccSamplerState;
+			ID3D11SamplerState*					m_pWccSamplerState;
+			ID3D11SamplerState*					m_pCwcSamplerState;
 		};
 	}
 }

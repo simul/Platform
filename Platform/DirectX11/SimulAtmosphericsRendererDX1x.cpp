@@ -26,6 +26,7 @@
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/Profiler.h"
 
 using namespace simul;
 using namespace dx11;
@@ -42,12 +43,14 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x(simul::base::Memory
 	,HazeEccentricity(NULL)
 	,fadeInterp(NULL)
 	,depthTexture(NULL)
+	,cloudDepthTexture(NULL)
 	,lossTexture(NULL)
 	,inscTexture(NULL)
 	,skylTexture(NULL)
 	,illuminationTexture(NULL)
 	,overcTexture(NULL)
 	,cloudShadowTexture(NULL)
+	,cloudNearFarTexture(NULL)
 	,skyLossTexture_SRV(NULL)
 	,skyInscatterTexture_SRV(NULL)
 	,overcInscTexture_SRV(NULL)
@@ -104,6 +107,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	HazeEccentricity		=effect->GetVariableByName("HazeEccentricity")->AsScalar();
 	fadeInterp				=effect->GetVariableByName("fadeInterp")->AsScalar();
 	depthTexture			=effect->GetVariableByName("depthTexture")->AsShaderResource();
+	cloudDepthTexture		=effect->GetVariableByName("cloudDepthTexture")->AsShaderResource();
 	lossTexture				=effect->GetVariableByName("lossTexture")->AsShaderResource();
 	inscTexture				=effect->GetVariableByName("inscTexture")->AsShaderResource();
 	skylTexture				=effect->GetVariableByName("skylTexture")->AsShaderResource();
@@ -111,6 +115,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	illuminationTexture		=effect->GetVariableByName("illuminationTexture")->AsShaderResource();
 	overcTexture			=effect->GetVariableByName("overcTexture")->AsShaderResource();
 	cloudShadowTexture		=effect->GetVariableByName("cloudShadowTexture")->AsShaderResource();
+	cloudNearFarTexture		=effect->GetVariableByName("cloudNearFarTexture")->AsShaderResource();
 	
 	atmosphericsPerViewConstants.LinkToEffect(effect,"AtmosphericsPerViewConstants");
 	atmosphericsUniforms.LinkToEffect(effect,"AtmosphericsUniforms");
@@ -151,9 +156,9 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMA
 void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 	HRESULT hr=S_OK;
-
-	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::RenderAsOverlay");
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
+    ProfileBlock profileBlock(pContext,"Atmospherics:RenderAsOverlay");
+	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::RenderAsOverlay");
 	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
 	
 	lossTexture->SetResource(skyLossTexture_SRV);
@@ -193,42 +198,39 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	inscTexture->SetResource(NULL);
 	skylTexture->SetResource(NULL);
 	PIXEndNamedEvent();
+	atmosphericsPerViewConstants.Unbind(pContext);
+	atmosphericsUniforms.Unbind(pContext);
+	ApplyPass(pContext,twoPassOverlayTechnique->GetPassByIndex(1));
 }
 
-void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
+void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloud_depth_texture)
 {
 	if(!ShowGodrays)
 		return;
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
+    ProfileBlock profileBlock(pContext,"Atmospherics:RenderGodrays");
 	ID3D11ShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depth_texture;
+	ID3D11ShaderResourceView* cloudDepthTexture_SRV=(ID3D1xShaderResourceView*)cloud_depth_texture;
 	lossTexture			->SetResource(skyLossTexture_SRV);
 	inscTexture			->SetResource(skyInscatterTexture_SRV);
 	skylTexture			->SetResource(skylightTexture_SRV);
 	illuminationTexture	->SetResource(illuminationTexture_SRV);
 	depthTexture		->SetResource(depthTexture_SRV);
+	cloudDepthTexture	->SetResource(cloudDepthTexture_SRV);
 	overcTexture		->SetResource(overcInscTexture_SRV);
 	cloudShadowTexture	->SetResource((ID3D11ShaderResourceView*)cloudShadowStruct.texture);
-	
+	cloudNearFarTexture	->SetResource((ID3D11ShaderResourceView*)cloudShadowStruct.nearFarTexture);
 	simul::geometry::SimulOrientation or;
 	simul::math::Vector3 north(0.f,1.f,0.f);
 	simul::math::Vector3 toSun(skyInterface->GetDirectionToSun());
 	or.DefineFromYZ(north,toSun);
 	or.SetPosition((const float*)cam_pos);
 	D3DXMATRIX p1=proj;
-	SetAtmosphericsConstants(atmosphericsUniforms,exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
+	SetAtmosphericsConstants(atmosphericsUniforms,strength*exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
 	SetGodraysConstants(atmosphericsPerViewConstants,view);
-	/*
-	simul::math::Matrix4x4 shadowMatrix				=cloudShadowStruct.shadowMatrix;
-	simul::math::Matrix4x4 invShadowMatrix;
-	shadowMatrix.Inverse(invShadowMatrix);
-	atmosphericsPerViewConstants.invShadowMatrix	=invShadowMatrix;
 
-//atmosphericsPerViewConstants.extentZMetres		=cloudShadowStruct.extentZMetres;
-	atmosphericsPerViewConstants.startZMetres		=cloudShadowStruct.startZMetres;
-	atmosphericsPerViewConstants.shadowRange		=cloudShadowStruct.shadowRange;
-	*/
 	atmosphericsPerViewConstants.Apply(pContext);
 
 	ApplyPass(pContext,godraysTechnique->GetPassByIndex(0));
@@ -238,6 +240,11 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,const void *dept
 	skylTexture			->SetResource(NULL);
 	illuminationTexture	->SetResource(NULL);
 	depthTexture		->SetResource(NULL);
+	cloudDepthTexture	->SetResource(NULL);
 	overcTexture		->SetResource(NULL);
 	cloudShadowTexture	->SetResource(NULL);
+	cloudNearFarTexture	->SetResource(NULL);
+	atmosphericsPerViewConstants.Unbind(pContext);
+	atmosphericsUniforms.Unbind(pContext);
+	ApplyPass(pContext,godraysTechnique->GetPassByIndex(0));
 }
