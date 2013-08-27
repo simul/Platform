@@ -148,7 +148,6 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Lib>
@@ -288,6 +287,7 @@
     <None Include="HLSL\simul_rendernoise.fx" />
     <None Include="HLSL\simul_sky.fx" />
     <None Include="HLSL\simul_terrain.fx" />
+    <None Include="HLSL\states.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc" />

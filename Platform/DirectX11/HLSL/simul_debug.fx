@@ -28,8 +28,8 @@ v2f Debug2DVS(idOnly IN)
 	};
 	float2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=float4(pos,1.0,1.0);
-	float2 texc2 = .5*(float2(1.0,1.0)+vec2(pos.x,pos.y));
-	OUT.colour	= float4(texc2, 0,0);
+	float2 texc2	=0.5*(float2(1.0,1.0)+vec2(pos.x,pos.y));
+	OUT.colour		=float4(texc2, 0,0);
 	return OUT;
 }
 

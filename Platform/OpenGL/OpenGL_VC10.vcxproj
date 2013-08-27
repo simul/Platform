@@ -148,7 +148,6 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Lib />
@@ -209,7 +208,6 @@
   <ItemGroup>
     <ClInclude Include="Export.h" />
     <ClInclude Include="FramebufferGL.h" />
-    <ClInclude Include="Glsl.h" />
     <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="GpuSkyGenerator.h" />
     <ClInclude Include="LoadGLImage.h" />
@@ -231,6 +229,7 @@
     <ClInclude Include="SimulOpticsRendererGL.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="GLSL\CppGlsl.hs" />
     <None Include="GLSL\saturate.glsl" />
     <None Include="GLSL\simple.frag" />
     <None Include="GLSL\simple.vert" />

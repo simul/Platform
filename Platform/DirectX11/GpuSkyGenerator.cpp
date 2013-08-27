@@ -115,8 +115,8 @@ HRESULT hr=S_OK;
 	{
 		fb[i].SetWidthAndHeight((int)altitudes_km.size(),numElevations);
 	}
-	int gridsize=altitudes_km.size()*numElevations*numDistances;
-	int gridsize_2d=altitudes_km.size()*numElevations;
+	int gridsize=(int)altitudes_km.size()*numElevations*numDistances;
+	int gridsize_2d=(int)altitudes_km.size()*numElevations;
 	simul::dx11::Framebuffer *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
@@ -176,16 +176,16 @@ HRESULT hr=S_OK;
 	}
 	for(int i=0;i<3;i++)
 	{
-		finalLoss[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
-		finalInsc[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
-		finalSkyl[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalLoss[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalInsc[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalSkyl[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
 	}
 	density_texture->SetResource(dens_tex);
 
 	// divide the grid into blocks:
 	static const int BLOCKWIDTH=8;
 
-	int xy_size		=altitudes_km.size()*numElevations;
+	int xy_size		=(int)altitudes_km.size()*numElevations;
 	
 	int start_step	=(start_texel*3)/numDistances;
 	int end_step	=((start_texel+num_texels)*3+numDistances-1)/numDistances;

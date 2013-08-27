@@ -123,6 +123,7 @@ unsigned short *pIndices;
 	GLuint		loss_tex;
 	GLuint		inscatter_tex;
 	GLuint		skylight_tex;
+	GLuint		overcast_tex;
 
 	GLuint		illum_tex;
 	

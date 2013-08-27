@@ -528,9 +528,9 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	std::string filename_utf8= text_filename_utf8;
 	std::string output_filename_utf8=text_filename_utf8+"o";
 	std::string tempfile="temp.o";
-	int pos=text_filename_utf8.find_last_of("/");
+	int pos=(int)text_filename_utf8.find_last_of("/");
 	if(pos<0)
-		pos=text_filename_utf8.find_last_of("\\");
+		pos=(int)text_filename_utf8.find_last_of("\\");
 	if(pos>=0)
 		tempfile=text_filename_utf8.substr(pos+1,text_filename_utf8.length()-pos)+"temp.fxo";
 	void *textData=NULL;
@@ -647,11 +647,11 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 					if(pos<str.length())
 						has_errors=true;
 					std::cerr<<str.c_str();
-					int bracket_pos=str.find("(");
+					int bracket_pos=(int)str.find("(");
 					if(bracket_pos>0)
 					{
-						int close_bracket_pos=str.find(")",bracket_pos);
-						int comma_pos=str.find(",",bracket_pos);
+						int close_bracket_pos	=(int)str.find(")",bracket_pos);
+						int comma_pos			=(int)str.find(",",bracket_pos);
 						if(comma_pos>bracket_pos&&comma_pos<close_bracket_pos)
 						{
 							str.replace(comma_pos,close_bracket_pos-comma_pos,"");

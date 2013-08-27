@@ -37,6 +37,9 @@
 	#define SIMUL_BUFFER_REGISTER(buff_num) : register(b##buff_num)
 	#define SIMUL_RWTEXTURE_REGISTER(tex_num) : register(u##tex_num)
 
+	#define SIMUL_TARGET_OUTPUT : SV_TARGET
+	#define SIMUL_DEPTH_OUTPUT : SV_DEPTH
+
 	#define vec1 float1
 	#define vec2 float2
 	#define vec3 float3
