@@ -385,7 +385,7 @@ void SimulCloudRenderer::RecompileShaders()
 	skylightTexture				=m_pCloudEffect->GetParameterByName(NULL,"skylightTexture");
 	
 	invViewProj			=m_pCloudEffect->GetParameterByName(NULL,"invViewProj");
-	noiseMatrix			=m_pCloudEffect->GetParameterByName(NULL,"noiseMatrix");
+	//noiseMatrix			=m_pCloudEffect->GetParameterByName(NULL,"noiseMatrix");
 	fractalRepeatLength	=m_pCloudEffect->GetParameterByName(NULL,"fractalRepeatLength");
 	cloudScales			=m_pCloudEffect->GetParameterByName(NULL,"cloudScales");
 	cloudOffset			=m_pCloudEffect->GetParameterByName(NULL,"cloudOffset");
@@ -981,10 +981,6 @@ void SimulCloudRenderer::InternalRenderRaytrace(int viewport_id)
 		D3DXMatrixInverse(&ivp,NULL,&vpt);
 
 		hr=m_pCloudEffect->SetMatrix(invViewProj,&ivp);
-
-		// The NOISE matrix is for 2D noise texcoords:
-		//hr=m_pCloudEffect->SetMatrix(noiseMatrix,(const D3DXMATRIX*)noise_orient.GetInverseMatrix().RowPointer(0));
-		//hr=m_pCloudEffect->SetFloat(fractalRepeatLength,GetCloudInterface()->GetFractalRepeatLength());
 
 		hr=m_pCloudEffect->SetTexture(raytraceLayerTexture,raytrace_layer_texture);
 		simul::sky::float4 cloud_scales=GetCloudScales();

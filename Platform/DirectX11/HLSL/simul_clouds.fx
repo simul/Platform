@@ -67,7 +67,7 @@ RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 	float sine			=view.z;
 	vec3 n				=vec3(pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
-	vec2 noise_texc_0	=mul((float2x2)noiseMatrix,n.xy);
+	vec2 noise_texc_0	=mul(noiseMatrix,n.xy);
 
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;
@@ -183,7 +183,7 @@ vec4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 	float sine			=view.z;
 	vec3 n			=vec3(pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
-	vec2 noise_texc_0	=mul((float2x2)noiseMatrix,n.xy);
+	vec2 noise_texc_0	=mul(noiseMatrix,n.xy);
 
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;
@@ -295,9 +295,9 @@ toPS VS_Main(vertexInput IN)
 		pos*=0.f;
 	OUT.view				=normalize(pos.xyz);
 	float sine				=OUT.view.z;
-	vec3 t1				=pos.xyz*IN.layerDistance;
+	vec3 t1					=pos.xyz*IN.layerDistance;
 	OUT.hPosition			=vec4(t1.xyz,1.0);
-	vec2 noise_pos		=mul((float2x2)noiseMatrix,pos.xy);
+	vec2 noise_pos			=mul(noiseMatrix,pos.xy);
 	OUT.noise_texc			=vec2(atan2(noise_pos.x,1.0),atan2(noise_pos.y,1.0));
 	OUT.noise_texc			*=IN.noiseScale;
 	OUT.noise_texc			+=IN.noiseOffset;
@@ -306,7 +306,7 @@ toPS VS_Main(vertexInput IN)
 	OUT.texCoords.xyz		=wPos-cornerPos;
 	OUT.texCoords.xyz		*=inverseScales;
 	OUT.texCoords.w			=saturate(OUT.texCoords.z);
-	vec3 texCoordLightning=(pos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
+	vec3 texCoordLightning	=(pos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
 	OUT.texCoordLightning	=texCoordLightning;
 	
 	float depth				=IN.layerDistance/maxFadeDistanceMetres;

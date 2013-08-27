@@ -252,6 +252,7 @@ float unshadowedBrightness(float hg,float texz,vec4 lightResponse)
 	return final;
 }
 
+#ifndef GLSL
 vec4 SimpleRaytraceCloudsForward(Texture3D cloudDensity1,Texture3D cloudDensity2,Texture2D depthTexture,vec2 texCoords)
 {
 	vec4 dlookup		=sampleLod(depthTexture,clampSamplerState,texCoords.xy,0);
@@ -263,30 +264,29 @@ vec4 SimpleRaytraceCloudsForward(Texture3D cloudDensity1,Texture3D cloudDensity2
 	float sine			=view.z;
 	vec3 n				=vec3(pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
-	vec2 noise_texc_0	=mul((float2x2)noiseMatrix,n.xy);
 
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;
 
 	float depth			=dlookup.r;
 	float d				=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
-	vec4 colour		=vec4(0.0,0.0,0.0,1.0);
+	vec4 colour			=vec4(0.0,0.0,0.0,1.0);
 	float Z				=0.f;
-	vec2 fade_texc	=vec2(0.0,0.5*(1.0-sine));
+	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
 	// Precalculate hg effects
 	float hg_clouds		=HenyeyGreenstein(cloudEccentricity,cos0);
 	float BetaRayleigh	=0.0596831*(1.0+cos0*cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);
 	for(int i=0;i<layerCount;i++)
 	{
-		const LayerData layer=layers[i];
-		float dist=layer.layerDistance;
-		float z=saturate(dist/maxFadeDistanceMetres);
-		vec4 density=vec4(0,0,0,0);
+		const LayerData layer	=layers[i];
+		float dist				=layer.layerDistance;
+		float z					=saturate(dist/maxFadeDistanceMetres);
+		vec4 density			=vec4(0,0,0,0);
 		if(z<d)
 		{
-			vec3 pos=viewPos+dist*view;
-			vec3 texCoords=(pos-cornerPos)*inverseScales;
+			vec3 pos			=viewPos+dist*view;
+			vec3 texCoords		=(pos-cornerPos)*inverseScales;
 			if(texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
 			{
 				density		=calcDensity(texCoords,layer.layerFade,vec3(0,0,0),fractalScale,cloud_interp);
@@ -331,7 +331,7 @@ RaytracePixelOutput RaytraceCloudsForward(	Texture3D cloudDensity1
 	float sine			=view.z;
 	vec3 n				=vec3(pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
-	vec2 noise_texc_0	=mul((float2x2)noiseMatrix,n.xy);
+	vec2 noise_texc_0	=mul(noiseMatrix,vec4(n.xy,0,0)).xy;
 
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;
@@ -406,4 +406,5 @@ RaytracePixelOutput RaytraceCloudsForward(	Texture3D cloudDensity1
 	res.depth		=distanceToDepth(mean_z,pos.xy,nearZ,farZ,tanHalfFov);
 	return res;
 }
+#endif
 #endif

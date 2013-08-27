@@ -40,10 +40,14 @@
 	#define Texture1D sampler1D 
 	#define Y(texel) texel.y
 	#define STATIC
-vec4 mul(mat4 m,vec4 v)
-{
-	return m*v;
-}
+	vec4 mul(mat4 m,vec4 v)
+	{
+		return m*v;
+	}
+	vec2 mul(mat2 m,vec2 v)
+	{
+		return m*v;
+	}
 #else
 	#define STATIC static
 #endif
