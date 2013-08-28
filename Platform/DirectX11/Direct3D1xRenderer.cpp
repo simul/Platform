@@ -22,7 +22,7 @@ using namespace dx11;
 
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,int w,int h):
 		camera(NULL)
-		,ShowCloudCrossSections(false)
+		,ShowCloudCrossSections(true/*false*/)
 		,ShowFlares(true)
 		,Show2DCloudTextures(false)
 		,ShowFades(false)

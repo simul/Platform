@@ -331,6 +331,7 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 	simul::dx11::setParameter(m_pTonemapEffect,"tanHalfFov"		,frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	simul::dx11::setParameter(m_pTonemapEffect,"nearZ"			,frustum.nearZ/max_fade_distance_metres);
 	simul::dx11::setParameter(m_pTonemapEffect,"farZ"			,frustum.farZ/max_fade_distance_metres);
+	simul::dx11::setParameter(m_pTonemapEffect,"depthToLinFadeDistParams", proj[14], max_fade_distance_metres, proj[10]*max_fade_distance_metres, 1.0f );
 	int x=8;
 	int y=height-w;
 	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));

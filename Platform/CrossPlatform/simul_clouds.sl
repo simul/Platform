@@ -374,8 +374,9 @@ RaytracePixelOutput RaytraceCloudsForward(	Texture3D cloudDensity1
 			float noise_factor		=0.2+0.8*saturate(layerTexCoords.z);
 			vec3 noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
 			density					=calcDensity(layerTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
+			density.z				*=saturate((d-normLayerZ)/0.001);
 		}
-		float depth					=fadeDistanceToDepth(normLayerZ,depthToLinFadeDistParams,nearZ,farZ,clip_pos.xy,tanHalfFov);
+//		float depth					=fadeDistanceToDepth(normLayerZ,depthToLinFadeDistParams,nearZ,farZ,clip_pos.xy,tanHalfFov);
 		if(density.z>0)
 		{
 			float brightness_factor	=unshadowedBrightness(hg_clouds,layerTexCoords.z,lightResponse);
