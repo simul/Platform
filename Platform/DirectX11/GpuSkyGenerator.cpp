@@ -115,20 +115,20 @@ HRESULT hr=S_OK;
 	{
 		fb[i].SetWidthAndHeight((int)altitudes_km.size(),numElevations);
 	}
-	int gridsize=altitudes_km.size()*numElevations*numDistances;
-	int gridsize_2d=altitudes_km.size()*numElevations;
+	int gridsize=(int)altitudes_km.size()*numElevations*numDistances;
+	int gridsize_2d=(int)altitudes_km.size()*numElevations;
 	simul::dx11::Framebuffer *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
 	ID3D11Texture1D *dens_tex1					=make1DTexture(m_pd3dDevice,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)density_table);
 	ID3D11ShaderResourceView* dens_tex;
 	m_pd3dDevice->CreateShaderResourceView(dens_tex1,NULL,&dens_tex);
-	m_pImmediateContext->GenerateMips(dens_tex);
+	//m_pImmediateContext->GenerateMips(dens_tex);
 	
 	ID3D11Texture2D *optd_tex1=make2DTexture(m_pd3dDevice,table_size,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,(const float *)optical_table);
 	ID3D11ShaderResourceView* optd_tex;
 	m_pd3dDevice->CreateShaderResourceView(optd_tex1,NULL,&optd_tex);
-	m_pImmediateContext->GenerateMips(optd_tex);
+	//m_pImmediateContext->GenerateMips(optd_tex);
 
 	ID3D1xEffectScalarVariable *distKm							=effect->GetVariableByName("distKm")->AsScalar();
 	ID3D1xEffectScalarVariable *prevDistKm						=effect->GetVariableByName("prevDistKm")->AsScalar();
@@ -140,25 +140,25 @@ HRESULT hr=S_OK;
 	ID3D1xEffectShaderResourceVariable*	insc_texture			=effect->GetVariableByName("insc_texture")->AsShaderResource();
 	
 	{
-		gpuSkyConstants.texSize			=vec2((float)altitudes_km.size(),(float)numElevations);
+		gpuSkyConstants.texSize				=vec2((float)altitudes_km.size(),(float)numElevations);
 		static float tto=0.5f;
-		gpuSkyConstants.texelOffset		=tto;
+		gpuSkyConstants.texelOffset			=tto;
 		gpuSkyConstants.tableSize			=vec2((float)table_size,(float)table_size);
 		
 		gpuSkyConstants.maxDistanceKm		=max_distance_km;
 		
-		gpuSkyConstants.planetRadiusKm	=skyInterface->GetPlanetRadius();
-		gpuSkyConstants.maxOutputAltKm	=maxOutputAltKm;
-		gpuSkyConstants.maxDensityAltKm	=maxDensityAltKm;
+		gpuSkyConstants.planetRadiusKm		=skyInterface->GetPlanetRadius();
+		gpuSkyConstants.maxOutputAltKm		=maxOutputAltKm;
+		gpuSkyConstants.maxDensityAltKm		=maxDensityAltKm;
 		gpuSkyConstants.hazeBaseHeightKm	=skyInterface->GetHazeBaseHeightKm();
 		gpuSkyConstants.hazeScaleHeightKm	=skyInterface->GetHazeScaleHeightKm();
 
-		gpuSkyConstants.overcastBaseKm	=overcast_base_km;
-		gpuSkyConstants.overcastRangeKm	=overcast_range_km;
+		gpuSkyConstants.overcastBaseKm		=overcast_base_km;
+		gpuSkyConstants.overcastRangeKm		=overcast_range_km;
 		gpuSkyConstants.overcast			=overcast;
 
 		gpuSkyConstants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-		gpuSkyConstants.hazeMie			=(const float*)(haze*skyInterface->GetMie());
+		gpuSkyConstants.hazeMie				=(const float*)(haze*skyInterface->GetMie());
 		gpuSkyConstants.ozone				=(const float*)(skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
 
 		gpuSkyConstants.sunIrradiance		=(const float*)sun_irradiance;
@@ -168,24 +168,24 @@ HRESULT hr=S_OK;
 		
 		gpuSkyConstants.hazeEccentricity	=1.0;
 		gpuSkyConstants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
-		gpuSkyConstants.emissivity		=emissivity;
+		gpuSkyConstants.emissivity			=emissivity;
 		//float y_start=(float)start_texel/(float)new_density_gridsize;
 		//float y_range=(float)(texels)/(float)new_density_gridsize;
-		gpuSkyConstants.yRange			=vec2(0.f,1.f);
+		gpuSkyConstants.yRange				=vec2(0.f,1.f);
 
 	}
 	for(int i=0;i<3;i++)
 	{
-		finalLoss[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
-		finalInsc[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
-		finalSkyl[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalLoss[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalInsc[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalSkyl[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
 	}
 	density_texture->SetResource(dens_tex);
 
 	// divide the grid into blocks:
 	static const int BLOCKWIDTH=8;
 
-	int xy_size		=altitudes_km.size()*numElevations;
+	int xy_size		=(int)altitudes_km.size()*numElevations;
 	
 	int start_step	=(start_texel*3)/numDistances;
 	int end_step	=((start_texel+num_texels)*3+numDistances-1)/numDistances;
@@ -194,18 +194,19 @@ HRESULT hr=S_OK;
 	int end_loss	=range(end_step				,0,xy_size);
 	int num_loss	=range(end_loss-start_loss	,0,xy_size);
 
-	simul::sky::float4 *target=loss;
-	simul::dx11::setParameter(effect,"targetTexture",finalLoss[cycled_index]->unorderedAccessView);
+	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalLoss[cycled_index]->unorderedAccessView);
 	gpuSkyConstants.threadOffset=uint3(start_loss,0,0);
 	gpuSkyConstants.Apply(m_pImmediateContext);
 	V_CHECK(ApplyPass(m_pImmediateContext,lossComputeTechnique->GetPassByIndex(0)));
 	
-	int subgrid;
-	subgrid=(num_loss+BLOCKWIDTH-1)/BLOCKWIDTH;
+	int subgrid=(num_loss+BLOCKWIDTH-1)/BLOCKWIDTH;
 
 	if(subgrid>0)
+	{
 		m_pImmediateContext->Dispatch(subgrid,1,1);
-
+		if(loss)
+			finalLoss[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,loss,start_loss*subgrid,num_loss*subgrid);
+	}
 	int start_insc	=range(start_step-xy_size	,0,xy_size);
 	int end_insc	=range(end_step-xy_size		,0,xy_size);
 	int num_insc	=range(end_insc-start_insc	,0,xy_size);
@@ -213,27 +214,38 @@ HRESULT hr=S_OK;
 	loss_texture->SetResource(finalLoss[cycled_index]->shaderResourceView);
 	optical_depth_texture->SetResource(optd_tex);
 
-	simul::dx11::setParameter(effect,"targetTexture",finalInsc[cycled_index]->unorderedAccessView);
+	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalInsc[cycled_index]->unorderedAccessView);
 	gpuSkyConstants.threadOffset=uint3(start_insc,0,0);
 	gpuSkyConstants.Apply(m_pImmediateContext);
 	V_CHECK(ApplyPass(m_pImmediateContext,inscComputeTechnique->GetPassByIndex(0)));
 	subgrid=(num_insc+BLOCKWIDTH-1)/BLOCKWIDTH;
 	if(subgrid>0)
+	{
 		m_pImmediateContext->Dispatch(subgrid,1,1);
-	int start_skyl	=range(start_step-2*xy_size	,0,xy_size);
-	int end_skyl	=range(end_step-2*xy_size	,0,xy_size);
-	int num_skyl	=range(end_skyl-start_skyl	,0,xy_size);
+		if(insc)
+			finalInsc[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,insc,start_insc*subgrid,num_insc*subgrid);
+	}
+	int start_skyl	=range(start_step-2*xy_size	,0	,xy_size);
+	int end_skyl	=range(end_step-2*xy_size	,0	,xy_size);
+	int num_skyl	=range(end_skyl-start_skyl	,0	,xy_size);
 	insc_texture->SetResource(finalInsc[cycled_index]->shaderResourceView);
-	simul::dx11::setParameter(effect,"targetTexture",finalSkyl[cycled_index]->unorderedAccessView);
+	simul::dx11::setUnorderedAccessView(effect,"targetTexture",finalSkyl[cycled_index]->unorderedAccessView);
 	gpuSkyConstants.threadOffset=uint3(start_skyl,0,0);
 	gpuSkyConstants.Apply(m_pImmediateContext);
 	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
 	subgrid=(num_skyl+BLOCKWIDTH-1)/BLOCKWIDTH;
 	if(subgrid>0)
+	{
 		m_pImmediateContext->Dispatch(subgrid,1,1);
+		if(skyl)
+			finalSkyl[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,skyl,start_skyl*subgrid,num_skyl*subgrid);
+	}
 	density_texture->SetResource(NULL);
 	input_texture->SetResource(NULL);
-
+	simul::dx11::setUnorderedAccessView(effect,"targetTexture",NULL);
+	loss_texture->SetResource(NULL);
+	insc_texture->SetResource(NULL);
+	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
 	SAFE_RELEASE(dens_tex);
 	SAFE_RELEASE(dens_tex1);
 	SAFE_RELEASE(optd_tex);

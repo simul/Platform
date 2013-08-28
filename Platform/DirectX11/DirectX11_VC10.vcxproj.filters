@@ -10,17 +10,17 @@
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="HLSL">
-      <UniqueIdentifier>{a70cd5bd-c82c-41b3-a9e6-224c43beaa5a}</UniqueIdentifier>
+      <UniqueIdentifier>{e219929b-633e-4a9c-9546-ee848cbb7060}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
-    <Filter Include="CrossPlatform">
-      <UniqueIdentifier>{77c68490-8026-46f2-b3c4-c43be218286a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="FX">
-      <UniqueIdentifier>{fe77c4b7-223b-4235-86c3-522969f12926}</UniqueIdentifier>
+      <UniqueIdentifier>{5d73817c-1944-4eb3-8910-339dae04280d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CrossPlatform">
+      <UniqueIdentifier>{c6275862-f101-4904-baac-8e003a70d943}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -34,9 +34,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DX11Exception.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Framebuffer3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FramebufferCubemapDX1x.cpp">
@@ -110,9 +107,6 @@
     <ClInclude Include="Export.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Framebuffer3D.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="FramebufferCubemapDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -175,85 +169,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="..\CrossPlatform\atmospherics_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\CppSl.hs">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\depth.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\earth_shadow_fade.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_2d_clouds.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_cloud_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_gpu_clouds.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_gpu_sky.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_inscatter_fns.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_terrain_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\states.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="HLSL\atmospherics.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\ocean_simulator_cs.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
     <None Include="HLSL\CppHLSL.hlsl">
       <Filter>HLSL</Filter>
     </None>
-    <None Include="HLSL\fft_512x512_c2c.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\MixClouds_c.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\ocean_shading.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\ocean_simulator_vs_ps.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\simul_debug.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_clouds.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_clouds_2d.fx">
-      <Filter>FX</Filter>
-    </None>
     <None Include="HLSL\simul_earthshadow.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\simul_gpu_sky.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\simul_inscatter_fns.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\states.hlsl">
       <Filter>HLSL</Filter>
     </None>
     <None Include="HLSL\simul_terrain.fx">
@@ -266,6 +185,9 @@
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\simul_gpu_clouds.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_gpu_lighting.fx">
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\simul_gpu_sky.fx">
@@ -286,22 +208,49 @@
     <None Include="HLSL\simul_sky.fx">
       <Filter>FX</Filter>
     </None>
-    <None Include="..\CrossPlatform\illumination.sl">
-      <Filter>CrossPlatform</Filter>
+    <None Include="HLSL\simul_debug.fx">
+      <Filter>FX</Filter>
     </None>
-    <None Include="..\CrossPlatform\sky_constants.sl">
+    <None Include="HLSL\gamma.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_clouds.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_clouds_2d.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_clouds_and_lightning_dx11.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\atmospherics.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\atmospherics_constants.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\cloud_shadow.sl">
       <Filter>CrossPlatform</Filter>
     </None>
-    <None Include="HLSL\simul_render_cubemap.fx">
-      <Filter>FX</Filter>
+    <None Include="..\CrossPlatform\CppSl.hs">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\depth.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\earth_shadow.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\earth_shadow_fade.sl">
+      <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\earth_shadow_uniforms.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\godrays.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\illumination.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\rain_constants.sl">
@@ -310,8 +259,38 @@
     <None Include="..\CrossPlatform\simul_2d_cloud_detail.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="..\CrossPlatform\simul_2d_clouds.hs">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_2d_clouds.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_cloud_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
     <None Include="..\CrossPlatform\simul_clouds.sl">
       <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_gpu_clouds.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_gpu_sky.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_inscatter_fns.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_terrain_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\sky_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\states.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="HLSL\states.hlsl">
+      <Filter>HLSL</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

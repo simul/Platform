@@ -6,6 +6,8 @@
 #define SIMUL_BUFFER_REGISTER(buff_num)
 #define SIMUL_SAMPLER_REGISTER(buff_num)
 #define SIMUL_BUFFER_REGISTER(buff_num)
+#define SIMUL_TARGET_OUTPUT
+#define	SIMUL_DEPTH_OUTPUT
 
 #define GLSL
 
@@ -38,10 +40,14 @@
 	#define Texture1D sampler1D 
 	#define Y(texel) texel.y
 	#define STATIC
-vec4 mul(mat4 m,vec4 v)
-{
-	return m*v;
-}
+	vec4 mul(mat4 m,vec4 v)
+	{
+		return m*v;
+	}
+	vec2 mul(mat2 m,vec2 v)
+	{
+		return m*v;
+	}
 #else
 	#define STATIC static
 #endif

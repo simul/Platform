@@ -188,7 +188,7 @@ protected:
 	D3DXHANDLE					skylightTexture;
 	
 	D3DXHANDLE					invViewProj;
-	D3DXHANDLE					noiseMatrix;
+	
 	D3DXHANDLE					fractalRepeatLength;
 	D3DXHANDLE					cloudScales;
 	D3DXHANDLE					cloudOffset;

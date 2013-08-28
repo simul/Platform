@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -62,7 +62,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SIMUL)/exe/$(Platform)/VC10/$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)/VC10/$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
@@ -90,10 +90,9 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>opengl32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glut64.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)_MDd.dll</OutputFile>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/OpenGL/lib/x64;$(SIMUL)/External/FreeImage/Dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -118,10 +117,9 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>opengl32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glut64.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)_MD.dll</OutputFile>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(SIMUL)/External/OpenGL/lib/x64;$(SIMUL)/External/FreeImage/Dist;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -153,7 +151,6 @@
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)$(TargetName)_MDd.lib</OutputFile>
-      <TargetMachine>MachineX64</TargetMachine>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">
@@ -174,7 +171,6 @@
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)$(TargetName)_MD.lib</OutputFile>
-      <TargetMachine>MachineX64</TargetMachine>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -223,18 +219,16 @@
     <ClInclude Include="SimulOpticsRendererGL.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="GLSL\CppGlsl.hs" />
     <None Include="GLSL\saturate.glsl" />
     <None Include="GLSL\simple.frag" />
     <None Include="GLSL\simple.vert" />
     <None Include="GLSL\simul_2d_cloud_detail.frag" />
     <None Include="GLSL\simul_2d_cloud_detail_lighting.frag" />
-    <None Include="GLSL\simul_2d_noise.frag" />
+    <None Include="GLSL\simul_atmospherics.frag" />
     <None Include="GLSL\simul_atmospherics.vert" />
-    <None Include="GLSL\simul_atmospherics_godrays.frag" />
+    <None Include="GLSL\simul_atmospherics_earthshadow.frag" />
     <None Include="GLSL\simul_cloud_cross_section.frag" />
     <None Include="GLSL\simul_cloud_cross_section.vert" />
-    <None Include="GLSL\simul_cloud_overlay.frag" />
     <None Include="GLSL\simul_cloudmix.frag" />
     <None Include="GLSL\simul_cloudmix.vert" />
     <None Include="GLSL\simul_clouds.frag" />
@@ -242,6 +236,7 @@
     <None Include="GLSL\simul_clouds_2d.frag" />
     <None Include="GLSL\simul_clouds_2d.vert" />
     <None Include="GLSL\simul_earthshadow_sky.frag" />
+    <None Include="GLSL\simul_earthshadow_uniforms.glsl" />
     <None Include="GLSL\simul_fade_3d_to_2d.frag" />
     <None Include="GLSL\simul_fade_3d_to_2d.vert" />
     <None Include="GLSL\simul_flare.frag" />
@@ -258,17 +253,13 @@
     <None Include="GLSL\simul_gpu_sky.glsl" />
     <None Include="GLSL\simul_gpu_skyl.frag" />
     <None Include="GLSL\simul_hdr_blur.frag" />
-    <None Include="GLSL\simul_insc.frag" />
-    <None Include="GLSL\simul_insc_earthshadow.frag" />
     <None Include="GLSL\simul_lightning.frag" />
     <None Include="GLSL\simul_lightning.geom" />
     <None Include="GLSL\simul_lightning.vert" />
-    <None Include="GLSL\simul_loss.frag" />
     <None Include="GLSL\simul_noise.frag" />
     <None Include="GLSL\simul_planet.frag" />
     <None Include="GLSL\simul_rain.frag" />
     <None Include="GLSL\simul_rain.vert" />
-    <None Include="GLSL\simul_raytrace_clouds.frag" />
     <None Include="GLSL\simul_simple_lightning.frag" />
     <None Include="GLSL\simul_simple_lightning.vert" />
     <None Include="GLSL\simul_sky.frag" />
@@ -282,18 +273,6 @@
     <None Include="GLSL\simul_terrain.vert" />
     <None Include="GLSL\tonemap.frag" />
     <None Include="GLSL\tonemap.vert" />
-    <None Include="..\CrossPlatform\CppSl.hs" />
-    <None Include="..\CrossPlatform\depth.sl" />
-    <None Include="..\CrossPlatform\earth_shadow.sl" />
-    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
-    <None Include="..\CrossPlatform\simul_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
-    <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
-    <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
-    <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

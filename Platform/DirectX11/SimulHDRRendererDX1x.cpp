@@ -173,7 +173,7 @@ bool SimulHDRRendererDX1x::StartRender(void *context)
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
 	if(imageTexture)
 		imageTexture->SetResource(NULL);
-	framebuffer.Activate(context);
+	framebuffer.Activate(context,0.f,0.f,1.f,1.f);
 	framebuffer.Clear(context,0.f,0.f,0.0f,0.f,ReverseDepth?0.f:1.f);
 
 	PIXEndNamedEvent();
@@ -191,7 +191,7 @@ bool SimulHDRRendererDX1x::FinishRender(void *context)
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
 	framebuffer.Deactivate(context);
-	imageTexture->SetResource(framebuffer.GetBufferResource());//buffer_texture_SRV);
+	imageTexture->SetResource(framebuffer.GetBufferResource());
 	Gamma_->SetFloat(Gamma);
 	Exposure_->SetFloat(Exposure);
 	D3DXMATRIX ortho;
@@ -234,7 +234,7 @@ static float g_FilterRadius = 30;
 		imageTexture->SetResource(framebuffer.GetBufferResource());
 		simul::dx11::setParameter(m_pTonemapEffect,"offset",1.f/Width,1.f/Height);
 		ApplyPass(m_pImmediateContext,glowTechnique->GetPassByIndex(0));
-		glow_fb.Activate(context);
+		glow_fb.Activate(context,0.f,0.f,1.f,1.f);
 		glow_fb.DrawQuad(context);
 		glow_fb.Deactivate(context);
 	}
@@ -251,7 +251,7 @@ static float g_FilterRadius = 30;
 	// Input texture
 	simul::dx11::setParameter(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
 	// Output texture
-	simul::dx11::setParameter(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
+	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
 	simul::dx11::setParameter(m_pGaussianEffect,"g_NumApproxPasses",g_NumApproxPasses - 1);
 	simul::dx11::setParameter(m_pGaussianEffect,"g_HalfBoxFilterWidth",half_box_width);
 	simul::dx11::setParameter(m_pGaussianEffect,"g_FracHalfBoxFilterWidth",frac_half_box_width);
@@ -273,7 +273,7 @@ static float g_FilterRadius = 30;
 	// Input texture
 	simul::dx11::setParameter(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
 	// Output texture
-	simul::dx11::setParameter(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
+	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
 
 	// Select pass
 	gaussianRowTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_row");

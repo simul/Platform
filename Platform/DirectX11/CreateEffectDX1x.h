@@ -62,16 +62,17 @@ namespace simul
 							
 		D3DXMATRIX SIMUL_DIRECTX11_EXPORT ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj);
 	
-		void setSamplerState(ID3D1xEffect *effect	,const char *name	,ID3D11SamplerState * value);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,ID3D11ShaderResourceView * value);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,ID3D11UnorderedAccessView * value);
-		void setTextureArray(ID3D1xEffect *effect	,const char *name	,ID3D11ShaderResourceView *value);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,float value);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,float x,float y);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,float x,float y,float z,float w);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,int value);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,float *vec);
-		void setMatrix(ID3D1xEffect *effect			,const char *name	,const float *value);
+		void setSamplerState		(ID3D1xEffect *effect	,const char *name	,ID3D11SamplerState * value);
+		void setParameter			(ID3D1xEffect *effect	,const char *name	,ID3D11ShaderResourceView * value);
+		void setUnorderedAccessView	(ID3D1xEffect *effect	,const char *name	,ID3D11UnorderedAccessView * value);
+		void setTextureArray		(ID3D1xEffect *effect	,const char *name	,ID3D11ShaderResourceView *value);
+		void setStructuredBuffer	(ID3D1xEffect *effect	,const char *name	,ID3D11ShaderResourceView * value);
+		void setParameter			(ID3D1xEffect *effect	,const char *name	,float value);
+		void setParameter			(ID3D1xEffect *effect	,const char *name	,float x,float y);
+		void setParameter			(ID3D1xEffect *effect	,const char *name	,float x,float y,float z,float w);
+		void setParameter			(ID3D1xEffect *effect	,const char *name	,int value);
+		void setParameter			(ID3D1xEffect *effect	,const char *name	,float *vec);
+		void setMatrix				(ID3D1xEffect *effect	,const char *name	,const float *value);
 							
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
 	}

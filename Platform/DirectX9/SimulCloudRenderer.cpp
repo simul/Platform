@@ -385,7 +385,7 @@ void SimulCloudRenderer::RecompileShaders()
 	skylightTexture				=m_pCloudEffect->GetParameterByName(NULL,"skylightTexture");
 	
 	invViewProj			=m_pCloudEffect->GetParameterByName(NULL,"invViewProj");
-	noiseMatrix			=m_pCloudEffect->GetParameterByName(NULL,"noiseMatrix");
+	//noiseMatrix			=m_pCloudEffect->GetParameterByName(NULL,"noiseMatrix");
 	fractalRepeatLength	=m_pCloudEffect->GetParameterByName(NULL,"fractalRepeatLength");
 	cloudScales			=m_pCloudEffect->GetParameterByName(NULL,"cloudScales");
 	cloudOffset			=m_pCloudEffect->GetParameterByName(NULL,"cloudOffset");
@@ -982,10 +982,6 @@ void SimulCloudRenderer::InternalRenderRaytrace(int viewport_id)
 
 		hr=m_pCloudEffect->SetMatrix(invViewProj,&ivp);
 
-		// The NOISE matrix is for 2D noise texcoords:
-		//hr=m_pCloudEffect->SetMatrix(noiseMatrix,(const D3DXMATRIX*)noise_orient.GetInverseMatrix().RowPointer(0));
-		//hr=m_pCloudEffect->SetFloat(fractalRepeatLength,GetCloudInterface()->GetFractalRepeatLength());
-
 		hr=m_pCloudEffect->SetTexture(raytraceLayerTexture,raytrace_layer_texture);
 		simul::sky::float4 cloud_scales=GetCloudScales();
 		simul::sky::float4 cloud_offset=GetCloudOffset();
@@ -1055,7 +1051,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 			{
 				const simul::clouds::CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
 				pos.Define(V.x,V.y,V.z);
-				simul::math::Vector3 tex_pos(V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
+				//simul::math::Vector3 tex_pos(V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
 				if(v>=MAX_VERTICES)
 				{
 					break;
@@ -1071,7 +1067,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 				Vertex_t *vertex=NULL;
 				vertex=&vertices[v];
 				vertex->position=pos;
-				vertex->texCoords=tex_pos;
+				//vertex->texCoords=tex_pos;
 				vertex->texCoordsNoise.x=0;//V.noise_tex_x;
 				vertex->texCoordsNoise.y=0;//V.noise_tex_y;
 				vertex->layerFade=fade;

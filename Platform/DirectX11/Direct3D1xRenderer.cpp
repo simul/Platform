@@ -22,7 +22,7 @@ using namespace dx11;
 
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,int w,int h):
 		camera(NULL)
-		,ShowCloudCrossSections(false)
+		,ShowCloudCrossSections(true/*false*/)
 		,ShowFlares(true)
 		,Show2DCloudTextures(false)
 		,ShowFades(false)
@@ -41,11 +41,11 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,m_pd3dDevice(NULL)
 		,memoryInterface(m)
 {
-	simulWeatherRenderer=new(memoryInterface) SimulWeatherRendererDX11(env,simul::base::GetDefaultMemoryInterface());
+	simulWeatherRenderer=new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
 	
-	simulHDRRenderer=new(memoryInterface) SimulHDRRendererDX1x(128,128);
-	simulOpticsRenderer=new(memoryInterface) SimulOpticsRendererDX1x();
-	simulTerrainRenderer=new(memoryInterface) SimulTerrainRendererDX1x(NULL);
+	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
+	simulOpticsRenderer=new SimulOpticsRendererDX1x();
+	simulTerrainRenderer=new SimulTerrainRendererDX1x(memoryInterface);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	ReverseDepthChanged();
 	depthFramebuffer.SetFormat(0);
@@ -134,7 +134,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	for(int i=0;i<6;i++)
 	{
 		framebuffer_cubemap.SetCurrentFace(i);
-		framebuffer_cubemap.Activate(pContext);
+		framebuffer_cubemap.Activate(pContext,0.f,0.f,1.f,1.f);
 		D3DXMATRIX cube_proj;
 		float nearPlane=1.f;
 		float farPlane=200000.f;
@@ -143,7 +143,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 			cube_proj=simul::camera::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
 		else
 			cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
-		cubemapDepthFramebuffer.Activate(pContext);
+		cubemapDepthFramebuffer.Activate(pContext,0.f,0.f,1.f,1.f);
 		cubemapDepthFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		if(simulTerrainRenderer)
 		{
@@ -155,7 +155,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		{
 			simulWeatherRenderer->SetMatrices(view_matrices[i],cube_proj);
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapDepthFramebuffer.GetDepthTex(),0,relativeViewportTextureRegionXYWH);
+			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,true,cubemapDepthFramebuffer.GetDepthTex(),nullptr,0,relativeViewportTextureRegionXYWH,true);
 		}
 		framebuffer_cubemap.Deactivate(pContext);
 	}
@@ -195,7 +195,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		RenderCubemap(pd3dImmediateContext,cam_pos);
 		simulWeatherRenderer->SetMatrices(view,proj);
 	}
-	depthFramebuffer.Activate(pd3dImmediateContext);
+	depthFramebuffer.Activate(pd3dImmediateContext,0.f,0.f,1.f,1.f);
 	depthFramebuffer.Clear(pd3dImmediateContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
@@ -211,7 +211,9 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture,viewport_id,relativeViewportTextureRegionXYWH);
+		
+		const void* skyBufferDepthTex = UseSkyBuffer ? depthTexture : nullptr;
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,false,depthTexture,skyBufferDepthTex,viewport_id,relativeViewportTextureRegionXYWH,true);
 	}
 #if 1
 	if(simulWeatherRenderer)
@@ -235,7 +237,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				simulOpticsRenderer->RenderFlare(pd3dImmediateContext,exp,dir,light);
 			}
 		}
-		if(simulWeatherRenderer->GetSkyRenderer())
+		if(ShowCubemaps&&framebuffer_cubemap.IsValid())
 			UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)framebuffer_cubemap.GetColorTex(),view,proj);
 	}
 #endif
@@ -272,7 +274,7 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 	fb.RestoreDeviceObjects(m_pd3dDevice);
 	ID3D11DeviceContext*			pImmediateContext;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
-	fb.Activate(pImmediateContext);
+	fb.Activate(pImmediateContext,0.f,0.f,1.f,1.f);
 	OnD3D11FrameRender(m_pd3dDevice,pImmediateContext,0.f,0.f);
 	fb.Deactivate(pImmediateContext);
 	simul::dx11::SaveTexture(m_pd3dDevice,(ID3D11Texture2D *)(fb.GetColorTexture()),screenshotFilenameUtf8.c_str());

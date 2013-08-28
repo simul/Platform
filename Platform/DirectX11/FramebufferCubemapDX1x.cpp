@@ -166,7 +166,7 @@ ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy(void *context)
 	return stagingTexture;
 }
 
-void FramebufferCubemapDX1x::Activate(void *context)
+void FramebufferCubemapDX1x::Activate(void *context, float viewportX, float viewportY, float viewportW, float viewportH)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 #if 0
@@ -196,12 +196,12 @@ void FramebufferCubemapDX1x::Activate(void *context)
 	m_pImmediateContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV[current_face],m_pCubeEnvDepthMapDSV[current_face]);
 	D3D11_VIEWPORT viewport;
 		// Setup the viewport for rendering.
-	viewport.Width = (float)Width;
-	viewport.Height = (float)Width;
+	viewport.Width = floorf((float)Width*viewportW + 0.5f);
+	viewport.Height = floorf((float)Height*viewportH + 0.5f);
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
+	viewport.TopLeftX = floorf((float)Width*viewportX + 0.5f);
+	viewport.TopLeftY = floorf((float)Height*viewportY + 0.5f);
 
 	// Create the viewport.
 	m_pImmediateContext->RSSetViewports(1, &viewport);
@@ -231,4 +231,26 @@ void FramebufferCubemapDX1x::Clear(void *context,float r,float g,float b,float a
 		if(m_pCubeEnvDepthMapDSV[i])
 			m_pImmediateContext->ClearDepthStencilView(m_pCubeEnvDepthMapDSV[i],mask,depth, 0);
 		}
+}
+
+void FramebufferCubemapDX1x::ClearColour(void *context,float r,float g,float b,float a)
+{
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	float clearColor[4]={r,g,b,a};
+	for(int i=0;i<6;i++)
+	{
+		m_pImmediateContext->ClearRenderTargetView(m_pCubeEnvMapRTV[i],clearColor);
+	}
+}
+
+void FramebufferCubemapDX1x::GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const
+{
+	ID3D11Resource* pTexResource;
+	const_cast<ID3D11ShaderResourceView*>( reinterpret_cast<const ID3D11ShaderResourceView*>(tex) )->GetResource(&pTexResource); //GetResource increments the resources ref.count so we need to Release when done.
+	ID3D11Texture2D* pD3DDepthTex = static_cast<ID3D11Texture2D*>(pTexResource);
+	D3D11_TEXTURE2D_DESC depthTexDesc;
+	pD3DDepthTex->GetDesc(&depthTexDesc);
+	widthOut = depthTexDesc.Width;
+	heightOut = depthTexDesc.Height;
+	pTexResource->Release();
 }

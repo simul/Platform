@@ -14,7 +14,6 @@ vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture)
 		mult*=persistence;
     }
     result.rgb=saturate(result.rrr*1.5);
-	result.a=saturate(result.a+2.0*cloudiness-1.0)*1.0;
     return result;
 }
 
@@ -27,6 +26,7 @@ vec4 DetailLighting(vec2 texcoords,Texture2D imageTexture)
     {
 		texcoords+=offset;
 		vec4 v=texture_wrap(imageTexture,texcoords);
+		v.a=saturate(v.a+0.2*cloudiness-0.1);
 		dens_dist+=v.a;
 		if(v.a==0)
 			dens_dist*=0.9;

@@ -73,7 +73,7 @@ float4 MainPS(v2f IN) : SV_TARGET
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
 	//texc_detail		+=noiseOffset;
-	float dist			=depthToDistance(depth,depth_pos.xy,nearZ,farZ,tanHalfFov);
+	float dist			=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,depth_pos.xy,tanHalfFov);
 	vec3 wEyeToPos		=IN.wPosition-eyePosition;
 	vec4 ret			=Clouds2DPS_illum(texc_global,texc_detail,wEyeToPos,dist,cloudInterp,sunlight.rgb,lightDir.xyz,lightResponse);
 	ret.rgb				*=exposure;
@@ -152,6 +152,7 @@ float4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET
 	float scattered_light	=light;//detail.a*exp(-light*Y(coverage)*32.0);
 	colour					*=1.0-opacity;
 	colour					+=opacity*sunlight*(lightResponse.y+lightResponse.x)*scattered_light;
+	
     return vec4(colour,1.0);
 }
 

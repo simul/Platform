@@ -20,8 +20,6 @@ public:
 	void RecompileShaders();
 	void RestoreDeviceObjects(void *);
 	void InvalidateDeviceObjects();
-	// Interface
-	void SetBufferSize(int w,int h);
 	// Assign the clouds framebuffer texture
 	void SetCloudsTexture(void* t)
 	{
@@ -35,6 +33,7 @@ public:
 	{
 		inscatter_texture=(GLuint)t;
 		skylight_texture=(GLuint)s;
+		overcast_texture=(GLuint)o;
 	}
 	void SetInputTextures(void* image,void* depth)
 	{
@@ -51,7 +50,7 @@ private:
 
 	GLuint godrays_program;
 
-	GLuint loss_texture,inscatter_texture,skylight_texture;
+	GLuint loss_texture,inscatter_texture,skylight_texture,overcast_texture;
 	GLuint input_texture,depth_texture;
 	GLuint clouds_texture;
 

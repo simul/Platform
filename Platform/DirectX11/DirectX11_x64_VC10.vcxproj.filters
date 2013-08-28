@@ -1,29 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="HLSL">
-      <UniqueIdentifier>{dd14abf0-b066-4a9b-a149-9830da7324cf}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
-    </Filter>
-    <Filter Include="CrossPlatform">
-      <UniqueIdentifier>{3df996a6-ea1c-4cb6-bd22-6de6f794fa7a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="FX">
-      <UniqueIdentifier>{6114eb70-d5bb-4f18-b940-6c5a0d50e188}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
+    <ClCompile Include="Utilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="CompileShaderDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -34,9 +14,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DX11Exception.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Framebuffer3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FramebufferCubemapDX1x.cpp">
@@ -84,10 +61,7 @@
     <ClCompile Include="SimulTerrainRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulWeatherRendererDX1x.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Utilities.cpp">
+    <ClCompile Include="SimulWeatherRendererDX11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -105,12 +79,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DX11Exception.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Export.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Framebuffer3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FramebufferCubemapDX1x.h">
@@ -131,19 +99,19 @@
     <ClInclude Include="Profiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="ResourcesDx1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ResourcesDx1x.h">
+    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SaveTextureDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Simul2DCloudRendererDX1x.h">
+    <ClInclude Include="SimulAtmosphericsRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulAtmosphericsRendererDX1x.h">
+    <ClInclude Include="Simul2DCloudRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulCloudRendererDX1x.h">
@@ -161,13 +129,16 @@
     <ClInclude Include="SimulPrecipitationRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulSkyRendererDX1x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SimulTerrainRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulWeatherRendererDX1x.h">
+    <ClInclude Include="SimulWeatherRendererDX11.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimulSkyRendererDX1x.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Export.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Utilities.h">
@@ -175,40 +146,13 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="HLSL\CppHLSL.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\fft_512x512_c2c.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\MixClouds_c.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\ocean_shading.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\ocean_simulator_cs.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\ocean_simulator_vs_ps.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\simul_earthshadow.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\simul_gpu_sky.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\simul_inscatter_fns.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="HLSL\states.hlsl">
-      <Filter>HLSL</Filter>
-    </None>
+    <ResourceCompile Include="DirectX11.rc" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="..\CrossPlatform\atmospherics_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\cloud_shadow.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\CppSl.hs">
@@ -223,10 +167,31 @@
     <None Include="..\CrossPlatform\earth_shadow_fade.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\godrays.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\illumination.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\rain_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_2d_cloud_detail.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_2d_clouds.hs">
+      <Filter>CrossPlatform</Filter>
+    </None>
     <None Include="..\CrossPlatform\simul_2d_clouds.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\simul_cloud_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_clouds.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\simul_gpu_clouds.sl">
@@ -241,10 +206,22 @@
     <None Include="..\CrossPlatform\simul_terrain_constants.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="..\CrossPlatform\sky_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
     <None Include="..\CrossPlatform\states.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="HLSL\atmospherics.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\gamma.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\CppHLSL.hlsl">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_terrain.fx">
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\simul_clouds.fx">
@@ -253,7 +230,13 @@
     <None Include="HLSL\simul_clouds_2d.fx">
       <Filter>FX</Filter>
     </None>
+    <None Include="HLSL\simul_clouds_and_lightning_dx11.fx">
+      <Filter>FX</Filter>
+    </None>
     <None Include="HLSL\simul_debug.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_earthshadow.hlsl">
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\simul_foliage.fx">
@@ -283,13 +266,19 @@
     <None Include="HLSL\simul_sky.fx">
       <Filter>FX</Filter>
     </None>
-    <None Include="HLSL\simul_terrain.fx">
-      <Filter>FX</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="DirectX11.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
+    <Filter Include="CrossPlatform">
+      <UniqueIdentifier>{0ca8f925-24dc-426c-8ad7-daa24ce5893f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FX">
+      <UniqueIdentifier>{75ea4b25-c1ee-40fd-8053-d07eef1a5df3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{ed7ecff9-abc6-42a0-bf73-089772153dc0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{e1f63307-ab68-4208-b847-dc62832ee849}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

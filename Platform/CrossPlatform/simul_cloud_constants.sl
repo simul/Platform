@@ -1,21 +1,29 @@
 #ifndef CLOUD_CONSTANTS_SL
 #define CLOUD_CONSTANTS_SL
-STATIC const int MAX_INSTANCES=200;
+STATIC const int SIMUL_MAX_CLOUD_RAYTRACE_STEPS=200;
 
 struct LayerData
 {
 	vec2 noiseOffset;
-	float noiseScale;
+	//float noiseScale;
 	float layerFade;
 	float layerDistance;
 	float verticalShift;
 	float pad11;
 	float pad12;
+	float pad13;
+};
+struct SmallLayerData
+{
+	vec2 noiseOffset;
+	float layerFade;
+	float layerDistance;
+	float verticalShift;
 };
 
 uniform_buffer LayerConstants SIMUL_BUFFER_REGISTER(8)
 {
-	uniform LayerData layers[MAX_INSTANCES];
+	uniform LayerData layers[SIMUL_MAX_CLOUD_RAYTRACE_STEPS];
 	uniform int layerCount;
 	uniform int A,B,C;
 };
@@ -28,10 +36,12 @@ uniform_buffer CloudPerViewConstants SIMUL_BUFFER_REGISTER(13)
 	uniform mat4 invViewProj;
 	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
 	uniform mat4 noiseMatrix;
+	uniform vec3 depthToLinFadeDistParams;
+	uniform float exposure;
+	uniform vec2 tanHalfFov;
+	uniform float a,b;
 	uniform float nearZ;
 	uniform float farZ;
-	uniform vec2 tanHalfFov;
-	uniform float exposure;
 	uniform float extentZMetres;
 	uniform float startZMetres;
 	uniform float shadowRange;
@@ -56,7 +66,7 @@ uniform_buffer CloudConstants SIMUL_BUFFER_REGISTER(9)
 	uniform vec3 lightningSourcePos;
 	uniform float rain;
 	uniform vec3 sunlightColour1;
-	uniform float x3;
+	uniform float fractalRepeatLength;
 	uniform vec3 sunlightColour2;
 	uniform float x4;
 	uniform vec2 screenCoordOffset;
@@ -83,6 +93,7 @@ uniform_buffer CloudShadowStruct
 	void *texture;			// texture, or SRV for DX11
 	void *nearFarTexture;	// texture, or SRV for DX11, represents near and far range as proportion of shadowRange
 	mat4 shadowMatrix;
+	mat4 simpleOffsetMatrix;
 	float extentZMetres;
 	float startZMetres;
 	float shadowRange;

@@ -27,15 +27,15 @@
 
 	struct mat2
 	{
-		float m[4];
+		float m[8];
 		operator const float *()
 		{
 			return m;
 		}
-		void operator=(const float *v)
+		void operator=(const float *u)
 		{
 			for(int i=0;i<4;i++)
-				m[i]=v[i];
+				m[i]=u[i];
 		}
 		void transpose()
 		{

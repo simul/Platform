@@ -49,7 +49,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	simul::dx11::Framebuffer make_rain_fb(512,512);
 	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
-	make_rain_fb.Activate(m_pImmediateContext);
+	make_rain_fb.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
 	make_rain_fb.DrawQuad(m_pImmediateContext);
 	make_rain_fb.Deactivate(m_pImmediateContext);
 	rain_texture=make_rain_fb.buffer_texture_SRV;
@@ -62,7 +62,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	simul::dx11::Framebuffer random_fb(16,16);
 	random_fb.SetDepthFormat(0);
 	random_fb.RestoreDeviceObjects(m_pd3dDevice);
-	random_fb.Activate(m_pImmediateContext);
+	random_fb.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
 	random_fb.DrawQuad(m_pImmediateContext);
 	random_fb.Deactivate(m_pImmediateContext);
 	random_SRV=random_fb.buffer_texture_SRV;
@@ -134,7 +134,6 @@ void SimulPrecipitationRendererDX1x::InvalidateDeviceObjects()
 	perViewConstants.InvalidateDeviceObjects();
 }
 
-
 SimulPrecipitationRendererDX1x::~SimulPrecipitationRendererDX1x()
 {
 	InvalidateDeviceObjects();
@@ -155,7 +154,11 @@ those pixels.
 void SimulPrecipitationRendererDX1x::Render(void *context)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	if(Intensity<=0)
+	static float intens=0.f;
+	static float cc=0.002f;
+	intens*=1.f-cc;
+	intens+=cc*Intensity;
+	if(intens<=0)
 		return;
 	PIXBeginNamedEvent(0,"Render Precipitation");
 	rainTexture->SetResource(rain_texture);
@@ -205,7 +208,7 @@ void SimulPrecipitationRendererDX1x::Render(void *context)
 
 	if(RainToSnow<1.f)
 	{
-		rainConstants.intensity		=Intensity*(1.f-RainToSnow);
+		rainConstants.intensity		=intens*(1.f-RainToSnow);
 		rainConstants.Apply(m_pImmediateContext);
 		UINT passes=1;
 		for(unsigned i = 0 ; i < passes ; ++i )
@@ -216,7 +219,7 @@ void SimulPrecipitationRendererDX1x::Render(void *context)
 	}
 	if(RainToSnow>0)
 	{
-		rainConstants.intensity		=Intensity*(RainToSnow);
+		rainConstants.intensity		=intens*(RainToSnow);
 		rainConstants.Apply(m_pImmediateContext);
 		RenderParticles(m_pImmediateContext);
 	}

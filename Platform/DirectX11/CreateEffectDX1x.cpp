@@ -394,10 +394,16 @@ void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,ID3D11Shad
 	var->SetResource(value);
 } 
 
-void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,ID3D11UnorderedAccessView * value)
+void simul::dx11::setUnorderedAccessView(ID3D1xEffect *effect,const char *name	,ID3D11UnorderedAccessView * value)
 {
 	ID3DX11EffectUnorderedAccessViewVariable*	var	=effect->GetVariableByName(name)->AsUnorderedAccessView();
 	var->SetUnorderedAccessView(value);
+}
+
+void simul::dx11::setStructuredBuffer(ID3D1xEffect *effect,const char *name,ID3D11ShaderResourceView * value)
+{
+	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	var->SetResource(value);
 }
 
 void simul::dx11::setTextureArray(ID3D1xEffect *effect	,const char *name	,ID3D11ShaderResourceView *value)
@@ -522,9 +528,9 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	std::string filename_utf8= text_filename_utf8;
 	std::string output_filename_utf8=text_filename_utf8+"o";
 	std::string tempfile="temp.o";
-	int pos=text_filename_utf8.find_last_of("/");
+	int pos=(int)text_filename_utf8.find_last_of("/");
 	if(pos<0)
-		pos=text_filename_utf8.find_last_of("\\");
+		pos=(int)text_filename_utf8.find_last_of("\\");
 	if(pos>=0)
 		tempfile=text_filename_utf8.substr(pos+1,text_filename_utf8.length()-pos)+"temp.fxo";
 	void *textData=NULL;
@@ -548,7 +554,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 		{
 			std::string progfiles=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("ProgramFiles");
 			wcommand=simul::base::Utf8ToWString(progfiles)+L"/Microsoft DirectX SDK (June 2010)/";
-			std::cerr<<"Missing DXSDK_DIR environment variable, defaulting to: "<<wcommand.c_str()<<std::endl;
+			std::cerr<<"Missing DXSDK_DIR environment variable, defaulting to June 2010 "<<std::endl;
 		}
 		{
 //>"fxc.exe" /T fx_2_0 /Fo "..\..\gamma.fx"o "..\..\gamma.fx"
@@ -641,11 +647,11 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 					if(pos<str.length())
 						has_errors=true;
 					std::cerr<<str.c_str();
-					int bracket_pos=str.find("(");
+					int bracket_pos=(int)str.find("(");
 					if(bracket_pos>0)
 					{
-						int close_bracket_pos=str.find(")",bracket_pos);
-						int comma_pos=str.find(",",bracket_pos);
+						int close_bracket_pos	=(int)str.find(")",bracket_pos);
+						int comma_pos			=(int)str.find(",",bracket_pos);
 						if(comma_pos>bracket_pos&&comma_pos<close_bracket_pos)
 						{
 							str.replace(comma_pos,close_bracket_pos-comma_pos,"");

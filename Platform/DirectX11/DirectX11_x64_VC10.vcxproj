@@ -62,7 +62,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SIMUL)/exe/$(Platform)/VC10/$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)/VC10/$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
@@ -89,7 +89,6 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)_MDd.dll</OutputFile>
@@ -119,7 +118,6 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)_MD.dll</OutputFile>
@@ -164,7 +162,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">
     <ClCompile>
-      <Optimization>Disabled</Optimization>
+      <Optimization>Full</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -176,10 +174,14 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)$(TargetName)_MD.lib</OutputFile>
       <TargetMachine>MachineX64</TargetMachine>
+      <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
     </Lib>
     <PostBuildEvent>
       <Command>
@@ -191,7 +193,6 @@
     <ClCompile Include="CreateEffectDX1x.cpp" />
     <ClCompile Include="Direct3D1xRenderer.cpp" />
     <ClCompile Include="DX11Exception.cpp" />
-    <ClCompile Include="Framebuffer3D.cpp" />
     <ClCompile Include="FramebufferCubemapDX1x.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
@@ -207,7 +208,7 @@
     <ClCompile Include="SimulPrecipitationRendererDX1x.cpp" />
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="SimulTerrainRendererDX1x.cpp" />
-    <ClCompile Include="SimulWeatherRendererDX1x.cpp" />
+    <ClCompile Include="SimulWeatherRendererDX11.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -217,7 +218,6 @@
     <ClInclude Include="Direct3D1xRenderer.h" />
     <ClInclude Include="DX11Exception.h" />
     <ClInclude Include="Export.h" />
-    <ClInclude Include="Framebuffer3D.h" />
     <ClInclude Include="FramebufferCubemapDX1x.h" />
     <ClInclude Include="FramebufferDX1x.h" />
     <ClInclude Include="GpuCloudGenerator.h" />
@@ -236,37 +236,39 @@
     <ClInclude Include="SimulPrecipitationRendererDX1x.h" />
     <ClInclude Include="SimulSkyRendererDX1x.h" />
     <ClInclude Include="SimulTerrainRendererDX1x.h" />
-    <ClInclude Include="SimulWeatherRendererDX1x.h" />
+    <ClInclude Include="SimulWeatherRendererDX11.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="HLSL\CppHLSL.hlsl" />
-    <None Include="HLSL\fft_512x512_c2c.hlsl" />
-    <None Include="HLSL\MixClouds_c.hlsl" />
-    <None Include="HLSL\ocean_shading.hlsl" />
-    <None Include="HLSL\ocean_simulator_cs.hlsl" />
-    <None Include="HLSL\ocean_simulator_vs_ps.hlsl" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
-    <None Include="HLSL\simul_earthshadow.hlsl" />
-    <None Include="HLSL\simul_gpu_sky.hlsl" />
-    <None Include="HLSL\simul_inscatter_fns.hlsl" />
-    <None Include="HLSL\states.hlsl" />
     <None Include="..\CrossPlatform\atmospherics_constants.sl" />
+    <None Include="..\CrossPlatform\cloud_shadow.sl" />
     <None Include="..\CrossPlatform\CppSl.hs" />
     <None Include="..\CrossPlatform\depth.sl" />
     <None Include="..\CrossPlatform\earth_shadow.sl" />
     <None Include="..\CrossPlatform\earth_shadow_fade.sl" />
+    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
+    <None Include="..\CrossPlatform\godrays.sl" />
+    <None Include="..\CrossPlatform\illumination.sl" />
+    <None Include="..\CrossPlatform\rain_constants.sl" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
     <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_2d_cloud_detail.sl" />
+    <None Include="..\CrossPlatform\simul_clouds.sl" />
     <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
     <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
     <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
     <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
     <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
+    <None Include="..\CrossPlatform\sky_constants.sl" />
     <None Include="..\CrossPlatform\states.sl" />
     <None Include="HLSL\atmospherics.fx" />
+    <None Include="HLSL\CppHLSL.hlsl" />
+    <None Include="HLSL\gamma.fx" />
     <None Include="HLSL\simul_clouds.fx" />
     <None Include="HLSL\simul_clouds_2d.fx" />
+    <None Include="HLSL\simul_clouds_and_lightning_dx11.fx" />
     <None Include="HLSL\simul_debug.fx" />
+    <None Include="HLSL\simul_earthshadow.hlsl" />
     <None Include="HLSL\simul_foliage.fx" />
     <None Include="HLSL\simul_gaussian.fx" />
     <None Include="HLSL\simul_gpu_clouds.fx" />
@@ -280,6 +282,11 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Clouds\Clouds_x64_VC10.vcxproj">
+      <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
