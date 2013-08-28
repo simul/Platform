@@ -1,5 +1,6 @@
 #include "CppHlsl.hlsl"
 #include "../../CrossPlatform/depth.sl"
+#include "states.hlsl"
 Texture2D imageTexture;
 Texture2D depthTexture;
 Texture2D<uint> glowTexture;
@@ -135,6 +136,14 @@ float4 DirectPS(v2f IN) : SV_TARGET
     return float4(c.rgba);
 }
 
+float4 CloudBlendPS(v2f IN) : SV_TARGET
+{
+	float4 c=imageTexture.Sample(samplerState,IN.texCoords);
+	//if(c.a>=1.0)
+	//	discard;
+    return float4(c.rgb*exposure,c.a);
+}
+
 float4 GlowPS(v2f IN) : SV_TARGET
 {
     // original image has double the resulution, so we sample 2x2
@@ -150,41 +159,6 @@ float4 GlowPS(v2f IN) : SV_TARGET
 	c=clamp(c,vec4(0.0,0.0,0.0,0.0),vec4(10.0,10.0,10.0,10.0));
     return c;
 }
-
-DepthStencilState EnableDepth
-{
-	DepthEnable = TRUE;
-	DepthWriteMask = ALL;
-#ifdef REVERSE_DEPTH
-	DepthFunc = GREATER_EQUAL;
-#else
-	DepthFunc = LESS_EQUAL;
-#endif
-};
-
-DepthStencilState DisableDepth
-{
-	DepthEnable = FALSE;
-	DepthWriteMask = ZERO;
-};
-
-RasterizerState RenderNoCull
-{
-	CullMode = none;
-};
-
-BlendState NoBlend
-{
-	BlendEnable[0] = FALSE;
-};
-
-BlendState DoBlend
-{
-	BlendEnable[0] = TRUE;
-	SrcBlend = ONE;
-	DestBlend = SRC_ALPHA;
-	RenderTargetWriteMask[0]=7;
-};
 
 technique11 simul_direct
 {
@@ -233,11 +207,11 @@ technique11 simul_sky_blend
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 //		SetDepthStencilState( EnableDepth, 0 );
-		SetBlendState(DoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
+		SetBlendState(CloudBufferBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
 		//SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
+		SetPixelShader(CompileShader(ps_4_0,CloudBlendPS()));
     }
 }
 

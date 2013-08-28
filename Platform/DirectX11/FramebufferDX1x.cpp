@@ -435,7 +435,7 @@ void Framebuffer::Clear(void *context,float r,float g,float b,float a,float dept
 	// Clear the screen to black:
     float clearColor[4]={r,g,b,a};
     if(!mask)
-		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
+		mask=D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL;
 	if(m_pHDRRenderTarget)
 		m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
 	if(m_pBufferDepthSurface)
