@@ -47,14 +47,14 @@ vec4 GodraysSimplified(Texture2D cloudShadowTexture,Texture2D cloudNearFarTextur
 		float fade_dist_0	=r0*stepsize*shadowRange/maxFadeDistance;
 		fade_dist_1			=r1*stepsize*shadowRange/maxFadeDistance;
 		float r				=0.5*(r0+r1);
-		if(r>=shadowNearFar.z&&fade_dist_0<solid_dist)
+	//	if(r>=shadowNearFar.z&&fade_dist_0<solid_dist)
 		{
-		float fade_intro	=saturate((solid_dist-fade_dist_0)/(fade_dist_1-fade_dist_0));
+		float fade_intro	= 1.0f;//saturate((solid_dist-fade_dist_0)/(fade_dist_1-fade_dist_0));
 			//fade_dist_1		=min(fade_dist_1,solid_dist);
 			float fade_dist		=r*stepsize*shadowRange/maxFadeDistance;
 			float eff			=exp(-.1*r1/dist_max);
 			float true_dist		=fade_dist*maxFadeDistance;
-			ill					=eff*fade_intro*GetIlluminationAt(cloudShadowTexture,viewPosition+view*true_dist).y;//eff*
+			ill					= 1.0f;//eff*fade_intro*GetIlluminationAt(cloudShadowTexture,viewPosition+view*true_dist).y;//eff*
 
 			total_ill			+=ill*abs(r1-r0);
 		}
@@ -62,7 +62,7 @@ vec4 GodraysSimplified(Texture2D cloudShadowTexture,Texture2D cloudNearFarTextur
 	total_insc			=insc_s*saturate(total_ill);
 	//Exaggerate the effect:
 	total_insc.a=1.0;
-	vec3 gr				=InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
+	vec3 gr				=total_ill;//InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
 	gr					*=exposure;
 	gr					=max(gr,vec3(0.0,0.0,0.0));
     return vec4(gr,1.0);

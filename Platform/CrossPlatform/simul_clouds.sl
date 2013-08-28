@@ -269,7 +269,7 @@ vec4 SimpleRaytraceCloudsForward(Texture3D cloudDensity1,Texture3D cloudDensity2
 	float max_texc_z	=1.0-min_texc_z;
 
 	float depth			=dlookup.r;
-	float d				=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	float d				=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,pos.xy,tanHalfFov);
 	vec4 colour			=vec4(0.0,0.0,0.0,1.0);
 	float Z				=0.f;
 	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
@@ -368,14 +368,14 @@ RaytracePixelOutput RaytraceCloudsForward(	Texture3D cloudDensity1
 			break;
 		if((min_texc_z-layerTexCoords.z)*down>0.1)
 			break;*/
-		if(z<=d&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
+		if(normLayerZ<=d&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
 		{
 			vec2 noise_texc			=noise_texc_0*layerWorldDist/fractalRepeatLength+layer.noiseOffset;
 			float noise_factor		=0.2+0.8*saturate(layerTexCoords.z);
 			vec3 noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
 			density					=calcDensity(layerTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
 		}
-		float depth					=distanceToDepth(normLayerZ,pos.xy,nearZ,farZ,tanHalfFov);
+		float depth					=fadeDistanceToDepth(normLayerZ,depthToLinFadeDistParams,nearZ,farZ,clip_pos.xy,tanHalfFov);
 		if(density.z>0)
 		{
 			float brightness_factor	=unshadowedBrightness(hg_clouds,layerTexCoords.z,lightResponse);
@@ -387,7 +387,7 @@ RaytracePixelOutput RaytraceCloudsForward(	Texture3D cloudDensity1
 			c.rgb					=applyFades2(c.rgb,fade_texc,BetaRayleigh,BetaMie,sh);
 			colour.rgb				+=c.rgb*c.a*(colour.a);
 			// depth here:
-			mean_z					+=z*c.a*colour.a;
+			mean_z					+=normLayerZ*c.a*colour.a;
 			colour.a				*=(1.0-c.a);
 			if(colour.a*brightness_factor<0.003)
 			{
@@ -396,7 +396,7 @@ RaytracePixelOutput RaytraceCloudsForward(	Texture3D cloudDensity1
 				break;
 			}
 		}
-		prev_z=z;
+		prev_z=normLayerZ;
 	}
 	if(colour.a>=1.0)
 	   discard;
