@@ -523,7 +523,7 @@ void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float 
 	planet_dir4/=simul::sky::length(planet_dir4);
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(planet_dir4.z);
-	planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
+	//planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 	D3DXVECTOR4 planet_dir(dir);
 	//m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());

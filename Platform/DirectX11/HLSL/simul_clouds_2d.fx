@@ -152,6 +152,7 @@ float4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET
 	float scattered_light	=light;//detail.a*exp(-light*Y(coverage)*32.0);
 	colour					*=1.0-opacity;
 	colour					+=opacity*sunlight*(lightResponse.y+lightResponse.x)*scattered_light;
+	
     return vec4(colour,1.0);
 }
 

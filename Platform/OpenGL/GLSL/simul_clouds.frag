@@ -30,6 +30,7 @@ in vec4 transformed_pos;
 
 void main(void)
 {
+
 	vec3 half_vec			=vec3(0.5,0.5,0.5);//0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float cos0				=dot(lightDir.xyz,normalize(view.xyz));
 #ifdef USE_DEPTH_TEXTURE	

@@ -34,9 +34,13 @@ vec2 fn(float r,float cos2,float sine_phi,float sine_gamma,float maxFadeDistance
 	{
 		L			=-r*sine_phi;
 		if(r<=1.0)
+		{
 			L		+=sqrt(u);
+		}
 		else
+		{
 			L		-=sqrt(u);
+		}
 		L			=max(0.0,L);
 		L			=L/sine_gamma;
 		// L is the distance to the outside of the Earth's shadow in this direction, normalized to the Earth's radius.
@@ -105,10 +109,7 @@ vec2 EarthShadowDistances(vec2 fade_texc,vec3 view)
 	float cos2		=1.0-sine_phi*sine_phi;
 	
 	vec2 range1		=fn(radiusOnCylinder,cos2,sine_phi,sine_gamma,maxFadeDistance);
-	//vec2 range2		=fn(radiusOnCylinder-0.01,cos2,sine_phi,sine_gamma,maxFadeDistance);
-
-	//float interp	=saturate((radiusOnCylinder-0.999995)/0.0001);
-	//vec2 range		=mix(range2,range1,interp);
+	
 	range1			=mix(vec2(0.0,1.0),range1,in_shadow);
 	if(range1.x>range1.y)
 		range1.x=range1.y;

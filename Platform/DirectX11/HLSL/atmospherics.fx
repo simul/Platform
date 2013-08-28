@@ -93,10 +93,10 @@ vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
 	vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
 
-	vec4 insc			=vec4(insc_far.rgb-insc_near.rgb,insc_far.a);//0.5*(insc_near.a+insc_far.a));
+	vec4 insc			=vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
 	float cos0			=dot(view,lightDir);
 	float3 colour		=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
-	//colour				=illum_lookup.z;
+
 	colour				+=texture_clamp_mirror(skylTexture,fade_texc).rgb;
 	colour				*=exposure;
     return float4(colour.rgb,1.f);
@@ -113,7 +113,7 @@ float4 PS_Godrays(atmosVertexOutput IN) : SV_TARGET
 	float depth			=max(solid_depth,cloud_depth);
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,IN.pos.xy,tanHalfFov);
-	return Godrays(cloudShadowTexture,cloudNearFarTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
+	return GodraysSimplified(cloudShadowTexture,cloudNearFarTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
 }
 
 technique11 simul_atmospherics_overlay

@@ -244,7 +244,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,c
 	overcTexture		->SetResource(NULL);
 	cloudShadowTexture	->SetResource(NULL);
 	cloudNearFarTexture	->SetResource(NULL);
-	atmosphericsPerViewConstants.Unbind(pContext);
-	atmosphericsUniforms.Unbind(pContext);
+	//atmosphericsPerViewConstants.Unbind(pContext);
+	//atmosphericsUniforms.Unbind(pContext);
 	ApplyPass(pContext,godraysTechnique->GetPassByIndex(0));
 }

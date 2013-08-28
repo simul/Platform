@@ -237,7 +237,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				simulOpticsRenderer->RenderFlare(pd3dImmediateContext,exp,dir,light);
 			}
 		}
-		if(simulWeatherRenderer->GetSkyRenderer())
+		if(ShowCubemaps&&framebuffer_cubemap.IsValid())
 			UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)framebuffer_cubemap.GetColorTex(),view,proj);
 	}
 #endif

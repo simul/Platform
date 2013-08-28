@@ -90,7 +90,7 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 
 float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
-	float alt_km			=eyePosition.z/1000.0;
+	float alt_km		=eyePosition.z/1000.0;
 	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm);
 }
 
@@ -128,7 +128,7 @@ float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 vec4 PS_Overc3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 {
 	// Texcoords representing the full distance from the eye to the given point.
-	vec2 fade_texc			=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
+	vec2 fade_texc	=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
 
     return OvercastInscatter(inscTexture,illuminationTexture,fade_texc,overcast);
 }
@@ -170,6 +170,7 @@ vertexOutput3Dto2D VS_ShowSkyTexture(idOnly IN)
 float4 PS_ShowSkyTexture(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float4 result=inscTexture.Sample(cmcSamplerState,IN.texCoords.xy);
+	//result.rgb*=result.a;
     return float4(result.rgb,1);
 }
 
@@ -290,11 +291,11 @@ float4 PS_Planet(svertexOutput IN): SV_TARGET
 	float l=length(IN.tex);
 	if(l>1.0)
 		discard;
-	normal.z=-sqrt(1.0-l*l);
-	float light=approx_oren_nayar(0.2,float3(0,0,1.0),normal,lightDir.xyz);
-	result.rgb*=colour.rgb;
-	result.rgb*=light;
-	result.a*=saturate((0.99-l)/0.01);
+	normal.z	=-sqrt(1.0-l*l);
+	float light	=approx_oren_nayar(0.2,float3(0,0,1.0),normal,lightDir.xyz);
+	//result.rgb*=colour.rgb;
+	result.rgb	*=light;
+	result.a	*=saturate((0.99-l)/0.01);
 	return result;
 }
 
