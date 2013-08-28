@@ -21,6 +21,12 @@ SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer(simul::base::MemoryInte
 	,earthShadowUniformsUBO(0)
 	,atmosphericsUniformsUBO(0)
 	,atmosphericsUniforms2UBO(0)
+	,loss_texture(0)
+	,inscatter_texture(0)
+	,skylight_texture(0)
+	,overcast_texture(0)
+	,input_texture(0)
+	,depth_texture(0)
 {
 	//framebuffer=new FramebufferGL(0,0,GL_TEXTURE_2D);
 }
@@ -28,16 +34,6 @@ SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer(simul::base::MemoryInte
 SimulGLAtmosphericsRenderer::~SimulGLAtmosphericsRenderer()
 {
 	//delete framebuffer;
-}
-
-void SimulGLAtmosphericsRenderer::SetBufferSize(int w,int h)
-{
-	/*if(w!=framebuffer->GetWidth()||h!=framebuffer->GetHeight())
-	{
-		framebuffer->SetWidthAndHeight(w,h);
-		if(initialized)
-			RestoreDeviceObjects(NULL);
-	}*/
 }
 
 void SimulGLAtmosphericsRenderer::RestoreDeviceObjects(void *)
@@ -103,7 +99,7 @@ void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 
 #include "Simul/Camera/Camera.h"
 
-void SimulGLAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
+void SimulGLAtmosphericsRenderer::RenderAsOverlay(void *,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 	GLuint depth_texture=(GLuint)depthTexture;
 ERROR_CHECK

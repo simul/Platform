@@ -73,7 +73,7 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
     InitData.SysMemPitch=sizeof(simul::clouds::Cloud2DGeometryHelper::Vertex);
 	D3D11_BUFFER_DESC desc=
 	{
-        vertices.size()*sizeof(simul::clouds::Cloud2DGeometryHelper::Vertex),
+		(UINT)(vertices.size()*sizeof(simul::clouds::Cloud2DGeometryHelper::Vertex)),
         D3D11_USAGE_DEFAULT,
         D3D11_BIND_VERTEX_BUFFER,
         0,0
@@ -84,8 +84,8 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 	const std::vector<simul::clouds::Cloud2DGeometryHelper::QuadStrip> &quads=helper->GetQuadStrips();
 	num_indices=0;
 	for(int i=0;i<(int)quads.size();i++)
-		num_indices+=quads[i].indices.size()+2;
-	num_indices+=(quads.size()-1)*2;
+		num_indices+=(int)quads[i].indices.size()+2;
+	num_indices+=((int)quads.size()-1)*2;
 	unsigned short *indices=new unsigned short[num_indices];
 	int n=0;
 	for(int i=0;i<(int)quads.size();i++)

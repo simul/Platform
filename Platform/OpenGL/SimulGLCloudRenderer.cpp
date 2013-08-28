@@ -211,7 +211,7 @@ ERROR_CHECK
 	return true;
 }
 	
-void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z)
+void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned ,unsigned ,unsigned )
 {
 }
 
@@ -219,7 +219,7 @@ void SimulGLCloudRenderer::FillIlluminationSequentially(int ,int ,int ,const uns
 {
 }
 
-void SimulGLCloudRenderer::FillIlluminationBlock(int ,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array)
+void SimulGLCloudRenderer::FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *)
 {
 }
 
@@ -382,7 +382,7 @@ ERROR_CHECK
 	
 ERROR_CHECK
 float time=skyInterface->GetTime();
-const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
+//const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
 	CloudPerViewConstants cloudPerViewConstants;
 ERROR_CHECK
@@ -396,7 +396,7 @@ ERROR_CHECK
 	simul::sky::float4 fractal_scales=simul::clouds::CloudGeometryHelper::GetFractalScales(GetCloudInterface());
 
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
-	float base_alt_km=X1.z*.001f;
+//	float base_alt_km=X1.z*.001f;
 	float t=0.f;
 	
 	CloudConstants cloudConstants;
@@ -531,6 +531,7 @@ void SimulGLCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
 {
 	inscatter_tex=((GLuint)i);
 	skylight_tex=((GLuint)s);
+	overcast_tex=((GLuint)o);
 }
 
 void SimulGLCloudRenderer::SetIlluminationTexture(void* i)

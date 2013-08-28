@@ -69,9 +69,29 @@ void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *p
 	pContext->CopyResource(stagingBuffer,texture);
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	pContext->Map( stagingBuffer, 0, D3D11_MAP_READ, 0, &mappedResource);
-	unsigned char *data = (unsigned char *)(mappedResource.pData);
-	data+=start_texel*byteSize;
-	memcpy(target,data,texels*byteSize);
+	unsigned char *src = (unsigned char *)(mappedResource.pData);
+	
+	int required_pitch=width*byteSize;
+	char *dst=(char*)target;
+	if(mappedResource.RowPitch==required_pitch)
+	{
+		src+=start_texel*byteSize;
+		memcpy(dst,src,texels*byteSize);
+	}
+	else
+	{
+		int h0=start_texel/width;
+		int h1=(start_texel+texels)/width;
+		src+=mappedResource.RowPitch*h0;
+		for(int i=h0;i<h1;i++)
+		{
+			memcpy(dst,src,required_pitch);
+			dst+=required_pitch;
+			src+=mappedResource.RowPitch;
+		}
+	}
+	//src+=start_texel*byteSize;
+//	memcpy(target,src,texels*byteSize);
 	pContext->Unmap( stagingBuffer, 0);
 }
 

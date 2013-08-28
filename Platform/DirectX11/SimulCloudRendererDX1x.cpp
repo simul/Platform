@@ -166,10 +166,10 @@ void SimulCloudRendererDX1x::RecompileShaders()
 	omDesc.RenderTarget[0].BlendEnable		= true;
 	omDesc.RenderTarget[0].BlendOp			= D3D11_BLEND_OP_ADD;
 	omDesc.RenderTarget[0].BlendOpAlpha		= D3D11_BLEND_OP_ADD;
-	omDesc.RenderTarget[0].SrcBlend			= Raytrace?D3D11_BLEND_ONE:D3D11_BLEND_SRC_ALPHA;
-	omDesc.RenderTarget[0].DestBlend		= D3D11_BLEND_INV_SRC_ALPHA;
+	omDesc.RenderTarget[0].SrcBlend			= D3D11_BLEND_ONE;
+	omDesc.RenderTarget[0].DestBlend		= D3D11_BLEND_SRC_ALPHA;
 	omDesc.RenderTarget[0].SrcBlendAlpha	= D3D11_BLEND_ZERO;
-	omDesc.RenderTarget[0].DestBlendAlpha	= D3D11_BLEND_INV_SRC_ALPHA;
+	omDesc.RenderTarget[0].DestBlendAlpha	= D3D11_BLEND_SRC_ALPHA;
 	omDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	omDesc.IndependentBlendEnable			=true;
 	omDesc.AlphaToCoverageEnable			=false;
@@ -744,9 +744,9 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	float blendFactor[] = {0, 0, 0, 0};
 	UINT sampleMask   = 0xffffffff;
 	if(write_alpha)
-		pContext->OMSetBlendState(blendAndWriteAlpha, blendFactor, sampleMask);
+		pContext->OMSetBlendState(blendAndWriteAlpha,blendFactor,sampleMask);
 	else
-		pContext->OMSetBlendState(blendAndDontWriteAlpha, blendFactor, sampleMask);
+		pContext->OMSetBlendState(blendAndDontWriteAlpha,blendFactor,sampleMask);
 
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");

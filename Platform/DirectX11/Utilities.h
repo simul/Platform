@@ -78,8 +78,8 @@ namespace simul
 			void release();
 			template<class T> void init(ID3D11Device *pd3dDevice,const std::vector<T> &vertices,std::vector<unsigned short> indices)
 			{
-				int num_vertices	=vertices.size();
-				int num_indices		=indices.size();
+				int num_vertices	=(int)vertices.size();
+				int num_indices		=(int)indices.size();
 				T *v				=new T[num_vertices];
 				unsigned short *ind	=new unsigned short[num_indices];
 				for(int i=0;i<num_vertices;i++)

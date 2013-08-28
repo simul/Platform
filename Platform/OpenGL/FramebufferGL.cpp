@@ -257,7 +257,7 @@ void FramebufferGL::Clear(void*,float r,float g,float b,float a,float depth,int 
 	glClear(mask);
 }
 
-void FramebufferGL::CopyToMemory(void *,void *target,int start_texel,int num_texels)
+void FramebufferGL::CopyToMemory(void *,void * /*target*/,int /*start_texel*/,int /*num_texels*/)
 {
 
 }

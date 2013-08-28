@@ -115,8 +115,8 @@ HRESULT hr=S_OK;
 	{
 		fb[i].SetWidthAndHeight((int)altitudes_km.size(),numElevations);
 	}
-	int gridsize=altitudes_km.size()*numElevations*numDistances;
-	int gridsize_2d=altitudes_km.size()*numElevations;
+	int gridsize=(int)altitudes_km.size()*numElevations*numDistances;
+	int gridsize_2d=(int)altitudes_km.size()*numElevations;
 	simul::dx11::Framebuffer *F[2];
 	F[0]=&fb[0];
 	F[1]=&fb[1];
@@ -140,25 +140,25 @@ HRESULT hr=S_OK;
 	ID3D1xEffectShaderResourceVariable*	insc_texture			=effect->GetVariableByName("insc_texture")->AsShaderResource();
 	
 	{
-		gpuSkyConstants.texSize			=vec2((float)altitudes_km.size(),(float)numElevations);
+		gpuSkyConstants.texSize				=vec2((float)altitudes_km.size(),(float)numElevations);
 		static float tto=0.5f;
-		gpuSkyConstants.texelOffset		=tto;
+		gpuSkyConstants.texelOffset			=tto;
 		gpuSkyConstants.tableSize			=vec2((float)table_size,(float)table_size);
 		
 		gpuSkyConstants.maxDistanceKm		=max_distance_km;
 		
-		gpuSkyConstants.planetRadiusKm	=skyInterface->GetPlanetRadius();
-		gpuSkyConstants.maxOutputAltKm	=maxOutputAltKm;
-		gpuSkyConstants.maxDensityAltKm	=maxDensityAltKm;
+		gpuSkyConstants.planetRadiusKm		=skyInterface->GetPlanetRadius();
+		gpuSkyConstants.maxOutputAltKm		=maxOutputAltKm;
+		gpuSkyConstants.maxDensityAltKm		=maxDensityAltKm;
 		gpuSkyConstants.hazeBaseHeightKm	=skyInterface->GetHazeBaseHeightKm();
 		gpuSkyConstants.hazeScaleHeightKm	=skyInterface->GetHazeScaleHeightKm();
 
-		gpuSkyConstants.overcastBaseKm	=overcast_base_km;
-		gpuSkyConstants.overcastRangeKm	=overcast_range_km;
+		gpuSkyConstants.overcastBaseKm		=overcast_base_km;
+		gpuSkyConstants.overcastRangeKm		=overcast_range_km;
 		gpuSkyConstants.overcast			=overcast;
 
 		gpuSkyConstants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-		gpuSkyConstants.hazeMie			=(const float*)(haze*skyInterface->GetMie());
+		gpuSkyConstants.hazeMie				=(const float*)(haze*skyInterface->GetMie());
 		gpuSkyConstants.ozone				=(const float*)(skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
 
 		gpuSkyConstants.sunIrradiance		=(const float*)sun_irradiance;
@@ -168,24 +168,24 @@ HRESULT hr=S_OK;
 		
 		gpuSkyConstants.hazeEccentricity	=1.0;
 		gpuSkyConstants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
-		gpuSkyConstants.emissivity		=emissivity;
+		gpuSkyConstants.emissivity			=emissivity;
 		//float y_start=(float)start_texel/(float)new_density_gridsize;
 		//float y_range=(float)(texels)/(float)new_density_gridsize;
-		gpuSkyConstants.yRange			=vec2(0.f,1.f);
+		gpuSkyConstants.yRange				=vec2(0.f,1.f);
 
 	}
 	for(int i=0;i<3;i++)
 	{
-		finalLoss[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
-		finalInsc[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
-		finalSkyl[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalLoss[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalInsc[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalSkyl[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
 	}
 	density_texture->SetResource(dens_tex);
 
 	// divide the grid into blocks:
 	static const int BLOCKWIDTH=8;
 
-	int xy_size		=altitudes_km.size()*numElevations;
+	int xy_size		=(int)altitudes_km.size()*numElevations;
 	
 	int start_step	=(start_texel*3)/numDistances;
 	int end_step	=((start_texel+num_texels)*3+numDistances-1)/numDistances;
