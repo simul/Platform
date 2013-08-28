@@ -59,16 +59,16 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	//if(ShowSky)
 	{
-		simulSkyRenderer=new(memoryInterface) SimulSkyRendererDX1x(sk,memoryInterface);
+		simulSkyRenderer=new SimulSkyRendererDX1x(sk, memoryInterface);
 		baseSkyRenderer=simulSkyRenderer;
 	}
-	baseCloudRenderer=simulCloudRenderer=new(memoryInterface) SimulCloudRendererDX1x(ck3d,memoryInterface);
-	
-	simulLightningRenderer=new(memoryInterface) SimulLightningRendererDX11(ck3d,sk);
+	simulCloudRenderer=new SimulCloudRendererDX1x(ck3d, memoryInterface);
+	baseCloudRenderer=simulCloudRenderer;
+	simulLightningRenderer=new SimulLightningRendererDX11(ck3d,sk);
 	if(env->cloud2DKeyframer)
-		base2DCloudRenderer=simul2DCloudRenderer=new(memoryInterface) Simul2DCloudRendererDX11(ck2d,memoryInterface);
-	basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulPrecipitationRendererDX1x();
-	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
+		base2DCloudRenderer=simul2DCloudRenderer=new Simul2DCloudRendererDX11(ck2d, memoryInterface);
+	basePrecipitationRenderer=simulPrecipitationRenderer=new SimulPrecipitationRendererDX1x();
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new SimulAtmosphericsRendererDX1x(mem);
 	baseFramebuffer=&framebuffer;
 	framebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 	ConnectInterfaces();
@@ -221,8 +221,8 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	for(int i=0;i<6;i++)
 	{
 		fb_cubemap.SetCurrentFace(i);
-		fb_cubemap.Activate(m_pImmediateContext);
-		gamma_correct.Activate(m_pImmediateContext);
+		fb_cubemap.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
+		gamma_correct.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
 		gamma_correct.Clear(m_pImmediateContext,0.f,0.f,0.f,0.f,0.f);
 		if(simulSkyRenderer)
 		{
@@ -233,7 +233,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 				1.f,
 				600000.f);
 			SetMatrices(view_matrices[i],cube_proj);
-			RenderSkyAsOverlay(m_pImmediateContext,exposure,false,true,NULL,0,simul::sky::float4(0,0,1.f,1.f));
+			RenderSkyAsOverlay(m_pImmediateContext,exposure,false,NULL,NULL,0,simul::sky::float4(0,0,1.f,1.f), true);
 		}
 		gamma_correct.Deactivate(m_pImmediateContext);
 		{
@@ -258,11 +258,26 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	}
 }
 
-void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
+void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
+												float exposure,
+												bool is_cubemap,
+												const void* mainDepthTexture,
+												const void* depthTextureForClouds,
+												int viewport_id,
+												const simul::sky::float4& relativeViewportTextureRegionXYWH,
+												bool doFinalCloudBufferToScreenComposite
+												)
 {
-	BaseWeatherRenderer::RenderSkyAsOverlay(context,exposure,buffered,is_cubemap,depthTexture,viewport_id,viewportTextureRegionXYWH);
-	
-	if(buffered&&baseFramebuffer)
+	BaseWeatherRenderer::RenderSkyAsOverlay(context,
+											exposure,
+											is_cubemap,
+											mainDepthTexture,
+											depthTextureForClouds,
+											viewport_id,
+											relativeViewportTextureRegionXYWH,
+											doFinalCloudBufferToScreenComposite
+											);
+	if(depthTextureForClouds&&baseFramebuffer&&doFinalCloudBufferToScreenComposite)
 	{
 		bool blend=!is_cubemap;
 		imageTexture->SetResource(framebuffer.buffer_texture_SRV);

@@ -38,6 +38,7 @@ uniform_buffer AtmosphericsPerViewConstants SIMUL_BUFFER_REGISTER(12)
 	uniform vec2 tanHalfFov;
 	uniform float nearZ;
 	uniform float farZ;
+	uniform vec3 depthToLinFadeDistParams;
 	uniform float startZMetres;
 	uniform float shadowRange;
 	uniform int godraysSteps;

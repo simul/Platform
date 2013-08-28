@@ -32,10 +32,11 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void SetCurrentFace(int i);
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-			void Activate(void *context);
+			void Activate(void *context, float viewportX, float viewportY, float viewportW, float viewportH );
 			void Deactivate(void *context);
 			void Render(bool){}
 			void Clear(void *context,float,float,float,float,float,int mask=0);
+			void ClearColour(void* context, float, float, float, float );
 			void CopyToMemory(void* /*context*/,void *,int,int){}
 			virtual void* GetColorTex()
 			{
@@ -45,6 +46,7 @@ namespace simul
 			{
 				return (m_pCubeEnvMapSRV != NULL);
 			}
+			void GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
 
 			ID3D11Texture2D					*GetCopy(void *context);
 		protected:

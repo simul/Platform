@@ -9,13 +9,14 @@
 
 // SimulSkyRendererDX1x.cpp A renderer for skies.
 #define NOMINMAX
-#include "SimulSkyRendererDX1x.h"
+
 
 #include <tchar.h>
-#include <d3d10.h>
+#include <d3d10_1.h>
 #include <d3dx10.h>
 #include <dxerr.h>
 #include <string>
+#include "SimulSkyRendererDX1x.h"
 static DXGI_FORMAT sky_tex_format=DXGI_FORMAT_R32G32B32A32_FLOAT;
 extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Sky/SkyInterface.h"
@@ -65,8 +66,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	inscatter_2d=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	overcast_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	skylight_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
-	loss_2d->SetDepthFormat(0);
-	illumination_fb.SetDepthFormat(0);
 }
 
 void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
@@ -185,7 +184,7 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	earthShadowUniforms.InvalidateDeviceObjects();
 	skyConstants.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
-	operator delete [](star_vertices,memoryInterface);
+	memoryInterface->Deallocate(star_vertices);
 }
 
 bool SimulSkyRendererDX1x::Destroy()
@@ -588,7 +587,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(fadeTexture1->SetResource(loss_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(loss_textures[(texture_cycle+1)%3].shaderResourceView));
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		loss_2d->Activate(context);
+		loss_2d->Activate(context,0.f,0.f,1.f,1.f);
 			context->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
 			if(loss_2d->m_pBufferDepthSurface)
 				context->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
@@ -599,7 +598,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(fadeTexture1->SetResource(insc_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(insc_textures[(texture_cycle+1)%3].shaderResourceView));
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		inscatter_2d->Activate(context);
+		inscatter_2d->Activate(context,0.f,0.f,1.f,1.f);
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		inscatter_2d->Deactivate(context);
 	}
@@ -609,7 +608,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(fadeTexture2->SetResource(skyl_textures[(texture_cycle+1)%3].shaderResourceView));
 		//V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		skylight_2d->Activate(context);
+		skylight_2d->Activate(context,0.f,0.f,1.f,1.f);
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		skylight_2d->Deactivate(context);
 	}
@@ -618,7 +617,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	{
 		V_CHECK(inscTexture->SetResource((ID3D11ShaderResourceView*)inscatter_2d->GetColorTex()));
 		V_CHECK(ApplyPass(context,hTechniqueOverc->GetPassByIndex(0)));
-		overcast_2d->Activate(context);
+		overcast_2d->Activate(context,0.f,0.f,1.f,1.f);
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		overcast_2d->Deactivate(context);
 	}
@@ -641,7 +640,7 @@ void SimulSkyRendererDX1x::RenderIllumationBuffer(void *c)
 	{
 		ID3D1xEffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("simul_illumination_buffer");
 		ApplyPass(context,tech->GetPassByIndex(0));
-		illumination_fb.Activate(context);
+		illumination_fb.Activate(context,0.f,0.f,1.f,1.f);
 		context->ClearRenderTargetView(illumination_fb.m_pHDRRenderTarget,clearColor);
 		//if(e.enable)
 			simul::dx11::UtilityRenderer::DrawQuad(context);
@@ -654,7 +653,7 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	SAFE_RELEASE(m_pStarsVertexBuffer);
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
 	num_stars=current_num_stars;
-	operator delete [](star_vertices,memoryInterface);
+	memoryInterface->Deallocate(star_vertices);
 	star_vertices=new(memoryInterface) StarVertext[num_stars];
 	static float d=100.f;
 	for(int i=0;i<num_stars;i++)
