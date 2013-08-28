@@ -106,7 +106,7 @@ RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;
 
-	float depth			=dlookup;
+	float depth			=dlookup.r;
 	float d				=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,clip_pos.xy,tanHalfFov);
 	float4 colour		=float4(0.0,0.0,0.0,1.0);
 	float2 fade_texc	=float2(0.0,0.5*(1.0-sine));
