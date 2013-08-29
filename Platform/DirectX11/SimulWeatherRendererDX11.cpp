@@ -289,6 +289,7 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 		simul::dx11::setParameter(m_pTonemapEffect,"gamma",1.f);
 		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
+		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
 	}
 }
 

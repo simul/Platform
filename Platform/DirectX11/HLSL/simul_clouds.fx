@@ -397,18 +397,6 @@ vec4 PS_CrossSectionXY( vertexOutputCS IN): SV_TARGET
     return PS_CrossSection(IN.texCoords,1.f);
 }
 
-BlendState CloudBlend
-{
-	BlendEnable[0] = TRUE;
-	SrcBlend = SRC_ALPHA;
-	DestBlend = INV_SRC_ALPHA;
-    BlendOp = ADD;
-    SrcBlendAlpha = ZERO;
-    DestBlendAlpha = INV_SRC_ALPHA;
-    BlendOpAlpha = ADD;
-    //RenderTargetWriteMask[0] = 0x0F;
-};
-
 technique11 simul_clouds
 {
     pass p0 
