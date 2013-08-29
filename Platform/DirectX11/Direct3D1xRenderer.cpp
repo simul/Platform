@@ -22,7 +22,7 @@ using namespace dx11;
 
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,int w,int h):
 		camera(NULL)
-		,ShowCloudCrossSections(true/*false*/)
+		,ShowCloudCrossSections(false)
 		,ShowFlares(true)
 		,Show2DCloudTextures(false)
 		,ShowFades(false)
@@ -43,9 +43,9 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 {
 	simulWeatherRenderer=new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
 	
-	simulHDRRenderer=new SimulHDRRendererDX1x(128,128);
-	simulOpticsRenderer=new SimulOpticsRendererDX1x();
-	simulTerrainRenderer=new SimulTerrainRendererDX1x(memoryInterface);
+	simulHDRRenderer=new(memoryInterface) SimulHDRRendererDX1x(128,128);
+	simulOpticsRenderer=new(memoryInterface) SimulOpticsRendererDX1x();
+	simulTerrainRenderer=new(memoryInterface) SimulTerrainRendererDX1x(memoryInterface);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	ReverseDepthChanged();
 	depthFramebuffer.SetFormat(0);
@@ -193,7 +193,8 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		D3DXVECTOR3 cam_pos=simul::dx11::GetCameraPosVector(view);
 		RenderCubemap(pd3dImmediateContext,cam_pos);
-		simulWeatherRenderer->SetMatrices(view,proj);
+		if(simulWeatherRenderer)
+			simulWeatherRenderer->SetMatrices(view,proj);
 	}
 	depthFramebuffer.Activate(pd3dImmediateContext);
 	depthFramebuffer.Clear(pd3dImmediateContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
@@ -212,7 +213,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 		
-		const void* skyBufferDepthTex = UseSkyBuffer ? depthTexture : nullptr;
+		const void* skyBufferDepthTex = UseSkyBuffer ? depthTexture : NULL;
 		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture,skyBufferDepthTex,viewport_id,relativeViewportTextureRegionXYWH,true);
 	}
 #if 1
@@ -304,8 +305,6 @@ void Direct3D11Renderer::OnD3D11DestroyDevice()
 	OnD3D11LostDevice();
 	// We don't clear the renderers because InvalidateDeviceObjects has already handled DX-specific destruction
 	// And after OnD3D11DestroyDevice we might go back to startup without destroying the renderer.
-	simulWeatherRenderer=NULL;
-	simulHDRRenderer=NULL;
 }
 
 void Direct3D11Renderer::OnD3D11ReleasingSwapChain()

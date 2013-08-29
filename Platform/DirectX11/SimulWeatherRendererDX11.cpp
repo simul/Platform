@@ -59,16 +59,16 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	//if(ShowSky)
 	{
-		simulSkyRenderer=new SimulSkyRendererDX1x(sk, memoryInterface);
-		baseSkyRenderer=simulSkyRenderer;
+		simulSkyRenderer	=new(memoryInterface) SimulSkyRendererDX1x(sk, memoryInterface);
+		baseSkyRenderer		=simulSkyRenderer;
 	}
-	simulCloudRenderer=new SimulCloudRendererDX1x(ck3d, memoryInterface);
-	baseCloudRenderer=simulCloudRenderer;
-	simulLightningRenderer=new SimulLightningRendererDX11(ck3d,sk);
+	simulCloudRenderer		=new(memoryInterface) SimulCloudRendererDX1x(ck3d, memoryInterface);
+	baseCloudRenderer		=simulCloudRenderer;
+	simulLightningRenderer	=new(memoryInterface) SimulLightningRendererDX11(ck3d,sk);
 	if(env->cloud2DKeyframer)
-		base2DCloudRenderer=simul2DCloudRenderer=new Simul2DCloudRendererDX11(ck2d, memoryInterface);
-	basePrecipitationRenderer=simulPrecipitationRenderer=new SimulPrecipitationRendererDX1x();
-	baseAtmosphericsRenderer=simulAtmosphericsRenderer=new SimulAtmosphericsRendererDX1x(mem);
+		base2DCloudRenderer=simul2DCloudRenderer		=new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
+	basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulPrecipitationRendererDX1x();
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer	=new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
 	baseFramebuffer=&framebuffer;
 	framebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 	ConnectInterfaces();
