@@ -154,7 +154,7 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	
 	noise_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency);
 	noise_fb.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
-	noise_fb.Activate(pContext,0.f,0.f,1.f,1.f);
+	noise_fb.Activate(pContext);
 	{
 	//	ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture noise");
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_random");
@@ -163,7 +163,7 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	} 
 	noise_fb.Deactivate(pContext);
 	dens_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
-	dens_fb.Activate(context,0.f,0.f,1.f,1.f);
+	dens_fb.Activate(context);
 	{
 	//	ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture dens");
 		SetDetail2DCloudConstants(detail2DConstants);
@@ -174,7 +174,7 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 		dens_fb.DrawQuad(context);
 	}
 	dens_fb.Deactivate(context);
-	detail_fb.Activate(context,0.f,0.f,1.f,1.f);
+	detail_fb.Activate(context);
 	{
 	//	ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture lighting");
 		simul::dx11::setParameter(effect,"imageTexture",(ID3D11ShaderResourceView*)dens_fb.GetColorTex());
@@ -184,7 +184,7 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	}
 	detail_fb.Deactivate(context);
 	
-	coverage_fb.Activate(pContext,0.f,0.f,1.f,1.f);
+	coverage_fb.Activate(pContext);
 	{
 	//	ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture coverage");
 		simul::dx11::setParameter(effect,"noiseTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());

@@ -89,8 +89,8 @@ v2f QuadVS(idOnly IN)
 vec4 ShowDepthPS(v2f IN) : SV_TARGET
 {
 	vec4 depth		=depthTexture.Sample(samplerState,IN.texCoords);
-	float dist		=10.0*depthToFadeDistance(depth.x,depthToLinFadeDistParams,nearZ,farZ,2.0*(IN.texCoords-0.5),tanHalfFov);
-    return vec4(dist,dist,dist,1.0);
+	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
+    return vec4(1,dist,dist,1.0);
 }
 
 float4 convertInt(float2 texCoord)

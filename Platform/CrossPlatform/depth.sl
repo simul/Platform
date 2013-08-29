@@ -7,7 +7,7 @@
 //or regular proj, it's fewer operations, and it's clearly commented and documented.
 
 
-float depthBufferToLinearFadeZ(in float depth, in float3 depthToLinFadeDistParams)
+float depthBufferToLinearFadeZ(in float depth, in vec3 depthToLinFadeDistParams)
 {
 	//Usual perspective transform -
 	// Pos     Proj
@@ -38,7 +38,7 @@ float depthBufferToLinearFadeZ(float depth, float nearZ, float farZ)
 
 // This converts a z-buffer depth into a distance in the units of nearZ and farZ,
 //	-	where usually nearZ and farZ will be factors of the maximum fade distance.
-float depthToFadeDistance(float depth,float3 depthToLinFadeDistParams,float nearZ,float farZ,vec2 xy,vec2 tanHalf)
+float depthToFadeDistance(float depth,vec2 xy,vec3 depthToLinFadeDistParams,vec2 tanHalf)
 {
 #ifdef VISION
 	float dist=depth*farZ;
@@ -59,17 +59,30 @@ float depthToFadeDistance(float depth,float3 depthToLinFadeDistParams,float near
 	return fadeDist;
 #endif
 }
+float depthToFadeDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
+{
+#ifdef VISION
+	float dist=depth*farZ;
+	if(depth>=1.0)
+		dist=1.0;
+	return dist;
+#else
+	float linearFadeDistanceZ = depthBufferToLinearFadeZ(depth,nearZ,farZ);
 
-//------------------------------------------------------------------------------------------------------------------
+	float Tx=xy.x*tanHalf.x;
+	float Ty=xy.y*tanHalf.y;
+	float fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
+	
+	return fadeDist;
+#endif
+}
 
-float fadeDistanceToDepth(in float dist, in float3 depthToLinFadeDistParams)
+float fadeDistanceToDepth(float dist, vec3 depthToLinFadeDistParams)
 {
 	// Inverse of depthBufferToLinearFadeZ
 	// See depthBufferToLinearFadeZ for more detail of transform
-	
 	return ((depthToLinFadeDistParams.x / dist) - depthToLinFadeDistParams.z) / depthToLinFadeDistParams.y;
 }
-
 
 float fadeDistanceToDepth(float dist,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
 {
@@ -79,7 +92,7 @@ float fadeDistanceToDepth(float dist,vec2 xy,float nearZ,float farZ,vec2 tanHalf
 	return 0.f;
 }
 
-float fadeDistanceToDepth(float dist,float3 depthToLinFadeDistParams,float nearZ,float farZ,vec2 xy,vec2 tanHalf)
+float fadeDistanceToDepth(float dist,vec3 depthToLinFadeDistParams,float nearZ,float farZ,vec2 xy,vec2 tanHalf)
 {
 	float Tx	=xy.x*tanHalf.x;
 	float Ty	=xy.y*tanHalf.y;
@@ -92,7 +105,7 @@ float fadeDistanceToDepth(float dist,float3 depthToLinFadeDistParams,float nearZ
 return depth;
 }
 
-float2 viewportCoordToTexRegionCoord( in float2 iViewportCoord, in float4 iViewportToTexRegionScaleBias )
+vec2 viewportCoordToTexRegionCoord( in vec2 iViewportCoord,  vec4 iViewportToTexRegionScaleBias )
 {
 	return iViewportCoord * iViewportToTexRegionScaleBias.xy + iViewportToTexRegionScaleBias.zw;
 }

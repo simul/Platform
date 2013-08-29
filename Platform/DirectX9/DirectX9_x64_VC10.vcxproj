@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -62,7 +62,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SIMUL)/exe/$(Platform)/VC10/$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)/VC10/$(Configuration)\</IntDir>
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedManifest>
@@ -73,6 +73,10 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">$(Platform)/VC10/$(Configuration)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">$(Platform)/VC10/$(Configuration)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectName)_MD</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">$(ProjectName)_MD</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectName)_MDd</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Static Debug|x64'">$(ProjectName)_MDd</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -93,13 +97,12 @@
       <ForcedUsingFiles>%(ForcedUsingFiles)</ForcedUsingFiles>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)$(TargetName)_MD.dll</OutputFile>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/lib/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName)_MD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MD.pdb</ProgramDatabaseFile>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName)_MD.lib</ImportLibrary>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
@@ -124,13 +127,12 @@
       <ForcedIncludeFiles>Simul/UseDLLs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)$(TargetName)_MDd.dll</OutputFile>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
       <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration);$(DXSDK_DIR)/lib/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName)_MDd.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_MDd.pdb</ProgramDatabaseFile>
-      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName)_MDd.lib</ImportLibrary>
+      <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
@@ -149,13 +151,12 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <CallingConvention>Cdecl</CallingConvention>
       <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)$(TargetName)_MDd.lib</OutputFile>
+      <TargetMachine>MachineX64</TargetMachine>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|x64'">
@@ -180,7 +181,7 @@
       <ForcedUsingFiles>%(ForcedUsingFiles)</ForcedUsingFiles>
     </ClCompile>
     <Lib>
-      <OutputFile>$(OutDir)$(TargetName)_MD.lib</OutputFile>
+      <TargetMachine>MachineX64</TargetMachine>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>

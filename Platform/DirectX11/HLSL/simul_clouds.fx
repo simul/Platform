@@ -73,7 +73,7 @@ RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 	float max_texc_z	=1.0-min_texc_z;
 
 	float depth			=dlookup.r;
-	float d				=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,clip_pos.xy,tanHalfFov);
+	float d				=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec4 colour			=vec4(0.0,0.0,0.0,1.0);
 	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
 
@@ -133,6 +133,7 @@ RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 	vec2 texCoords		=IN.texCoords.xy;
 	texCoords.y			=1.0-texCoords.y;
 	RaytracePixelOutput p=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,texCoords);
+
 	return p;
 }
 
@@ -171,7 +172,7 @@ vec4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 
 vec4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 {
-	vec2 texCoords	=IN.texCoords.xy;
+	vec2 texCoords		=IN.texCoords.xy;
 	texCoords.y			=1.0-texCoords.y;
 	vec4 dlookup		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec4 pos			=vec4(-1.f,-1.f,1.f,1.f);
@@ -180,7 +181,7 @@ vec4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 	vec3 view			=normalize(mul(invViewProj,pos).xyz);
 	float cos0			=dot(lightDir.xyz,view.xyz);
 	float sine			=view.z;
-	vec3 n			=vec3(pos.xy*tanHalfFov,1.0);
+	vec3 n				=vec3(pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
 	vec2 noise_texc_0	=mul(noiseMatrix,n.xy);
 
@@ -188,9 +189,9 @@ vec4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 	float max_texc_z	=1.0-min_texc_z;
 
 	float depth			=dlookup.r;
-	float d=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,pos.xy,tanHalfFov);
-	vec4 colour		=vec4(0.0,0.0,0.0,1.0);
-	vec2 fade_texc	=vec2(0.0,0.5*(1.0-sine));
+	float d				=depthToFadeDistance(depth,pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec4 colour			=vec4(0.0,0.0,0.0,1.0);
+	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
 
 	// Lookup in the illumination texture.
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);

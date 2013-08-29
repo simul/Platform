@@ -31,7 +31,7 @@ vec4 simple()
 	float sine=view.z;
     vec4 lookup=texture(depthTexture,texCoords);
 	float depth=lookup.x;
-	float dist=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	float dist=depthToFadeDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
 	vec2 fade_texc=vec2(pow(dist,0.5),0.5*(1.0-sine));
 	vec4 insc=texture(inscTexture,fade_texc);
 	float cos0=dot(view,lightDir);

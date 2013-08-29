@@ -173,7 +173,7 @@ bool SimulHDRRendererDX1x::StartRender(void *context)
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
 	if(imageTexture)
 		imageTexture->SetResource(NULL);
-	framebuffer.Activate(context,0.f,0.f,1.f,1.f);
+	framebuffer.Activate(context);
 	framebuffer.Clear(context,0.f,0.f,0.0f,0.f,ReverseDepth?0.f:1.f);
 
 	PIXEndNamedEvent();
@@ -234,7 +234,7 @@ static float g_FilterRadius = 30;
 		imageTexture->SetResource(framebuffer.GetBufferResource());
 		simul::dx11::setParameter(m_pTonemapEffect,"offset",1.f/Width,1.f/Height);
 		ApplyPass(m_pImmediateContext,glowTechnique->GetPassByIndex(0));
-		glow_fb.Activate(context,0.f,0.f,1.f,1.f);
+		glow_fb.Activate(context);
 		glow_fb.DrawQuad(context);
 		glow_fb.Deactivate(context);
 	}

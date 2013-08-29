@@ -107,6 +107,27 @@ void Framebuffer::Activate(void *)
 	hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
 	if(m_pBufferDepthSurface)
 		m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
+	D3DVIEWPORT9 viewport;
+	viewport.Width	=Width;
+	viewport.Height	=Height;
+	viewport.X		=Width;
+	viewport.Y		=Height;
+	viewport.MinZ	=0.f;
+	viewport.MaxZ	=1.f;
+	m_pd3dDevice->SetViewport(&viewport);
+}
+
+void Framebuffer::ActivateViewport(void* context,float viewportX, float viewportY, float viewportW, float viewportH)
+{
+	Activate(context);
+	D3DVIEWPORT9 viewport;
+	viewport.Width	=(int)(viewportW*Width);
+	viewport.Height	=(int)(viewportH*Height);
+	viewport.X		=(int)(viewportX*Width);
+	viewport.Y		=(int)(viewportY*Height);
+	viewport.MinZ	=0.f;
+	viewport.MaxZ	=1.f;
+	m_pd3dDevice->SetViewport(&viewport);
 }
 
 void Framebuffer::Deactivate(void *)
@@ -124,6 +145,11 @@ void Framebuffer::Clear(void *,float r,float g,float b,float a,float depth,int m
 	if(!mask)
 		mask=D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER;
 	m_pd3dDevice->Clear(0L,NULL,mask,D3DCOLOR_COLORVALUE(r,g,b,a),depth,0L);
+}
+
+void Framebuffer::ClearColour(void *context,float r,float g,float b,float a)
+{
+	Clear(context,r,g,b,a,0.f,D3DCLEAR_TARGET);
 }
 
 void Framebuffer::DeactivateAndRender(void *context,bool blend)

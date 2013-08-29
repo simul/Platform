@@ -49,6 +49,7 @@ namespace simul
 			bool Destroy();
 			void RenderSkyAsOverlay(void *context,
 									float exposure,
+									bool buffered,
 									bool is_cubemap,
 									const void* mainDepthTexture,
 									const void* depthTextureForClouds, //If non-null then we do low-res cloud rendering to an off-screen target of matching dimensions for compositing onto full res target.
