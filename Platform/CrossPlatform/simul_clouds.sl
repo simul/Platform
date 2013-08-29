@@ -355,20 +355,53 @@ RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
 	float hg_clouds		=HenyeyGreenstein(cloudEccentricity,cos0);
 	float BetaRayleigh	=0.0596831*(1.0+cos0*cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);
+
+	float dh1			=cornerPos.z-viewPos.z;
+	float dh2			=cornerPos.z+1.0/inverseScales.z-viewPos.z;
+
+	float D1			=0.0;
+	float D2			=1.0;
+	// If we're not IN the clouds:
+	if(dh1*dh2>0)
+	{
+		// Looking in the wrong direction?
+		if(dh1*sine<0)
+			discard;
+		if(sine>0)
+		{
+			D1=dh1/sine;
+			D2=dh2/sine;
+		}
+		else
+		{
+			D1=abs(dh2/sine);
+			D2=abs(dh1/sine);
+		}
+	}
+	else
+	{
+		// looking up or down?
+		if(sine>0)
+			D2=dh2/sine;
+		else
+			D2=dh1/sine;
+	}
+
 	// This provides the range of texcoords that is lit.
 	for(int i=0;i<layerCount;i++)
 	{
 		vec4 density			=vec4(0,0,0,0);
 		const LayerData layer	=layers[i];
-		float layerWorldDist	=layer.layerDistance;
-		float normLayerZ					=saturate(layerWorldDist/maxFadeDistanceMetres);
+		float layerWorldDist	=lerp(D1,D2,float(i)/float(layerCount));//layer.layerDistance;
+		float normLayerZ		=saturate(layerWorldDist/maxFadeDistanceMetres);
 		vec3 world_pos			=viewPos+layerWorldDist*view;
-		world_pos.z				-=layer.verticalShift;
-		vec3 layerTexCoords			=(world_pos-cornerPos)*inverseScales;
+	//	world_pos.z				-=layer.verticalShift;
+		vec3 layerTexCoords		=(world_pos-cornerPos)*inverseScales;
 		if(normLayerZ<=d&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
 		{
 			vec3 noise_texc			=layerTexCoords.xyz*noise3DTexcoordScale;
 			float noise_factor		=0.2+0.8*saturate(layerTexCoords.z);
+			
 			vec3 noiseval			=vec3(0.0,0.0,0.0);
 			float mul=0.5;
 			for(int j=0;j<2;j++)
@@ -378,8 +411,9 @@ RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
 				mul					*=noise3DPersistence;
 			}
 			noiseval				*=noise_factor;
-
 			density					=calcDensity(layerTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
+	// density=sampleLod(cloudDensity1,cloudSamplerState,layerTexCoords,0);
+			//density.z=saturate(density.z*100.0);
 			density.z				*=saturate((d-normLayerZ)/0.001);
 		}
 		if(density.z>0)
@@ -392,6 +426,7 @@ RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
 			c.rgb					*=sh;
 			c.rgb					=applyFades2(c.rgb,fade_texc,BetaRayleigh,BetaMie,sh);
 			colour.rgb				+=c.rgb*c.a*(colour.a);
+				
 			// depth here:
 			mean_z					+=normLayerZ*c.a*colour.a;
 			colour.a				*=(1.0-c.a);
