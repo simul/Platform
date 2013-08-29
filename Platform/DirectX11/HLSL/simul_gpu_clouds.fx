@@ -76,7 +76,7 @@ void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID g
 	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
 	dens						=saturate(dens);
-	targetTexture[pos]			=dens;
+	targetTexture[pos]			= dens;
 }
 
 static const float glow=0.1;

@@ -37,7 +37,7 @@ void main(void)
 	vec2 clip_pos			=transformed_pos.xy/transformed_pos.w;
 	vec2 screenCoord		=screenCoordOffset+0.5*(clip_pos.xy)+vec2(0.5,0.5);
 	float depth				=texture(depthTexture,screenCoord).x;
-	float dist				=depthToDistance(depth,clip_pos.xy,nearZ,farZ,tanHalfFov);
+	float dist				=depthToFadeDistance(depth,clip_pos.xy,nearZ,farZ,tanHalfFov);
 	float cloud_dist		=pow(fade_texc.x,2.0);
 #endif
 	vec4 texc				=texCoords;

@@ -19,7 +19,8 @@ vec2 GetIlluminationAt(Texture2D cloudShadowTexture,vec3 wpos)
 #endif
 	vec4 texel			=texture_cwc_lod(cloudShadowTexture,texc.xy,0);
 	vec2 illumination	=texel.xy;
-	float above			=saturate((texc.z-texel.z)/2.5);
+	float above			=saturate((texc.z-texel.z)/0.5);
+	illumination		+=above;
 	return saturate(illumination);
 }
 
@@ -27,7 +28,9 @@ float GetSimpleIlluminationAt(Texture2D cloudShadowTexture,mat4 invShadowMatrix,
 {
 	vec3 texc			=mul(invShadowMatrix,vec4(wpos,1.0)).xyz;
 	vec4 texel			=texture_cwc_lod(cloudShadowTexture,texc.xy,0);
-	return texel.a;
+	float above			=saturate((texc.z)/0.5);
+	texel.a				+=above;
+	return saturate(texel.a);
 }
 
 #endif

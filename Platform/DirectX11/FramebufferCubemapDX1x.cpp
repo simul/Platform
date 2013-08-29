@@ -151,7 +151,7 @@ void FramebufferCubemapDX1x::SetCurrentFace(int i)
 
 ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy(void *context)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	if(!stagingTexture)
 		stagingTexture		=makeStagingTexture(pd3dDevice,Width,format);
 	D3D11_BOX sourceRegion;
@@ -162,73 +162,87 @@ ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy(void *context)
 	sourceRegion.front = 0;
 	sourceRegion.back = 1;
 	for(int i=0;i<6;i++)
-		m_pImmediateContext->CopySubresourceRegion(stagingTexture,i, 0, 0, 0, m_pCubeEnvMap,i, &sourceRegion);
+		pContext->CopySubresourceRegion(stagingTexture,i, 0, 0, 0, m_pCubeEnvMap,i, &sourceRegion);
 	return stagingTexture;
 }
 
 void FramebufferCubemapDX1x::Activate(void *context)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-#if 0
-	for(int i=0;i<6;i++)
-	{
-		cubemap_framebuffers[i].Activate(context);
-		if(simulSkyRenderer)
-		{
-			simulSkyRenderer->SetMatrices(view_matrices[i],proj);
-			hr=simulSkyRenderer->Render(true);
-		}
-		cubemap_framebuffers[i].Deactivate(context);
-	}
-#else
+	ActivateViewport(context,0.f,0.f,1.f,1.f);
+}
+
+void FramebufferCubemapDX1x::ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	HRESULT hr=S_OK;
 	unsigned int num_v=0;
-	m_pImmediateContext->RSGetViewports(&num_v,NULL);
+	pContext->RSGetViewports(&num_v,NULL);
 	if(num_v<=4)
-		m_pImmediateContext->RSGetViewports(&num_v,m_OldViewports);
+		pContext->RSGetViewports(&num_v,m_OldViewports);
 
 	m_pOldRenderTarget	=NULL;
 	m_pOldDepthSurface	=NULL;
-	m_pImmediateContext->OMGetRenderTargets(	1,
-												&m_pOldRenderTarget,
-												&m_pOldDepthSurface
-												);
-	m_pImmediateContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV[current_face],m_pCubeEnvDepthMapDSV[current_face]);
+	pContext->OMGetRenderTargets(	1,
+									&m_pOldRenderTarget,
+									&m_pOldDepthSurface
+									);
+	pContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV[current_face],m_pCubeEnvDepthMapDSV[current_face]);
 	D3D11_VIEWPORT viewport;
 		// Setup the viewport for rendering.
-	viewport.Width = (float)Width;
-	viewport.Height = (float)Width;
+	viewport.Width = floorf((float)Width*viewportW + 0.5f);
+	viewport.Height = floorf((float)Height*viewportH + 0.5f);
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
+	viewport.TopLeftX = floorf((float)Width*viewportX + 0.5f);
+	viewport.TopLeftY = floorf((float)Height*viewportY + 0.5f);
 
 	// Create the viewport.
-	m_pImmediateContext->RSSetViewports(1, &viewport);
-#endif
+	pContext->RSSetViewports(1, &viewport);
 }
 
 void FramebufferCubemapDX1x::Deactivate(void *context)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
 	// Create the viewport.
-	m_pImmediateContext->RSSetViewports(1,m_OldViewports);
+	pContext->RSSetViewports(1,m_OldViewports);
 }
 
 void FramebufferCubemapDX1x::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	if(!mask)
 		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
 	// Clear the screen to black:
     float clearColor[4]={r,g,b,a};
     for(int i=0;i<6;i++)
     {
-		m_pImmediateContext->ClearRenderTargetView(m_pCubeEnvMapRTV[i],clearColor);
+		pContext->ClearRenderTargetView(m_pCubeEnvMapRTV[i],clearColor);
 		if(m_pCubeEnvDepthMapDSV[i])
-			m_pImmediateContext->ClearDepthStencilView(m_pCubeEnvDepthMapDSV[i],mask,depth, 0);
+			pContext->ClearDepthStencilView(m_pCubeEnvDepthMapDSV[i],mask,depth, 0);
 		}
+}
+
+void FramebufferCubemapDX1x::ClearColour(void *context,float r,float g,float b,float a)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	float clearColor[4]={r,g,b,a};
+	for(int i=0;i<6;i++)
+	{
+		pContext->ClearRenderTargetView(m_pCubeEnvMapRTV[i],clearColor);
+	}
+}
+
+void FramebufferCubemapDX1x::GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const
+{
+	ID3D11Resource* pTexResource;
+	const_cast<ID3D11ShaderResourceView*>( reinterpret_cast<const ID3D11ShaderResourceView*>(tex) )->GetResource(&pTexResource); //GetResource increments the resources ref.count so we need to Release when done.
+	ID3D11Texture2D* pD3DDepthTex = static_cast<ID3D11Texture2D*>(pTexResource);
+	D3D11_TEXTURE2D_DESC depthTexDesc;
+	pD3DDepthTex->GetDesc(&depthTexDesc);
+	widthOut = depthTexDesc.Width;
+	heightOut = depthTexDesc.Height;
+	pTexResource->Release();
 }

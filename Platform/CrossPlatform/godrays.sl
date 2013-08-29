@@ -13,7 +13,7 @@ vec4 GodraysSimplified(Texture2D cloudShadowTexture,Texture2D cloudNearFarTextur
 	vec4 shadowNearFar	=texture_wrap_lod(cloudNearFarTexture,vec2(nearFarTexcX,0.5),0);//vec4(0,1.0,0,1.f);//
 	if(shadowNearFar.w<=shadowNearFar.z)
 	{
-		discard;
+	//	discard;
 	}
 	//view_s				/=length(view_s.xy);
 	float sine			=view.z;
@@ -31,7 +31,7 @@ vec4 GodraysSimplified(Texture2D cloudShadowTexture,Texture2D cloudNearFarTextur
 	{
 		vec3 gr				=InscatterFunction(insc_s,hazeEccentricity,cos0,mieRayleighRatio);
 		gr					=max(gr,vec3(0.0,0.0,0.0));
-		return vec4(gr,1.0);
+	//	return vec4(gr,1.0);
 	}
 	float ill			=1.0;
 	float eff_remaining	=1.0;
@@ -47,7 +47,7 @@ vec4 GodraysSimplified(Texture2D cloudShadowTexture,Texture2D cloudNearFarTextur
 		float fade_dist_0	=r0*stepsize*shadowRange/maxFadeDistance;
 		fade_dist_1			=r1*stepsize*shadowRange/maxFadeDistance;
 		float r				=0.5*(r0+r1);
-		if(r>=shadowNearFar.z&&fade_dist_0<solid_dist)
+		//if(r>=shadowNearFar.z&&fade_dist_0<solid_dist)
 		{
 		float fade_intro	=saturate((solid_dist-fade_dist_0)/(fade_dist_1-fade_dist_0));
 			//fade_dist_1		=min(fade_dist_1,solid_dist);

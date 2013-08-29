@@ -460,12 +460,10 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 	random_fb.SetFormat((int)DXGI_FORMAT_R8G8B8A8_SNORM);
 	ApplyPass(pContext,randomTechnique->GetPassByIndex(0));
 	random_fb.Activate(context);
-		random_fb.DrawQuad(context);
+	random_fb.DrawQuad(context);
 	random_fb.Deactivate(context);
 
 	unsigned *data=new(memoryInterface) unsigned[noise_texture_frequency*noise_texture_frequency*noise_texture_frequency];
-	//operator delete [](data,memoryInterface);
-	//data=new(memoryInterface) unsigned[noise_texture_frequency*noise_texture_frequency*noise_texture_frequency];
 	random_fb.CopyToMemory(pContext,data);
 	
 	noise_texture_3D.ensureTexture3DSizeAndFormat(m_pd3dDevice,noise_texture_frequency,noise_texture_frequency,noise_texture_frequency,DXGI_FORMAT_R8G8B8A8_SNORM,false);

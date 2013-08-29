@@ -41,11 +41,11 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,m_pd3dDevice(NULL)
 		,memoryInterface(m)
 {
-	simulWeatherRenderer=new(memoryInterface) SimulWeatherRendererDX11(env,simul::base::GetDefaultMemoryInterface());
+	simulWeatherRenderer=new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
 	
 	simulHDRRenderer=new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulOpticsRenderer=new(memoryInterface) SimulOpticsRendererDX1x();
-	simulTerrainRenderer=new(memoryInterface) SimulTerrainRendererDX1x(NULL);
+	simulTerrainRenderer=new(memoryInterface) SimulTerrainRendererDX1x(memoryInterface);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	ReverseDepthChanged();
 	depthFramebuffer.SetFormat(0);
@@ -155,7 +155,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		{
 			simulWeatherRenderer->SetMatrices(view_matrices[i],cube_proj);
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapDepthFramebuffer.GetDepthTex(),0,relativeViewportTextureRegionXYWH);
+			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapDepthFramebuffer.GetDepthTex(),NULL,0,relativeViewportTextureRegionXYWH,true);
 		}
 		framebuffer_cubemap.Deactivate(pContext);
 	}
@@ -193,7 +193,8 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		D3DXVECTOR3 cam_pos=simul::dx11::GetCameraPosVector(view);
 		RenderCubemap(pd3dImmediateContext,cam_pos);
-		simulWeatherRenderer->SetMatrices(view,proj);
+		if(simulWeatherRenderer)
+			simulWeatherRenderer->SetMatrices(view,proj);
 	}
 	depthFramebuffer.Activate(pd3dImmediateContext);
 	depthFramebuffer.Clear(pd3dImmediateContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
@@ -211,7 +212,9 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture,viewport_id,relativeViewportTextureRegionXYWH);
+		
+		const void* skyBufferDepthTex = UseSkyBuffer ? depthTexture : NULL;
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture,skyBufferDepthTex,viewport_id,relativeViewportTextureRegionXYWH,true);
 	}
 #if 1
 	if(simulWeatherRenderer)
@@ -302,8 +305,6 @@ void Direct3D11Renderer::OnD3D11DestroyDevice()
 	OnD3D11LostDevice();
 	// We don't clear the renderers because InvalidateDeviceObjects has already handled DX-specific destruction
 	// And after OnD3D11DestroyDevice we might go back to startup without destroying the renderer.
-	simulWeatherRenderer=NULL;
-	simulHDRRenderer=NULL;
 }
 
 void Direct3D11Renderer::OnD3D11ReleasingSwapChain()

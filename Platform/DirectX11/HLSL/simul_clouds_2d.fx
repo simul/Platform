@@ -73,7 +73,7 @@ float4 MainPS(v2f IN) : SV_TARGET
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
 	//texc_detail		+=noiseOffset;
-	float dist			=depthToDistance(depth,depth_pos.xy,nearZ,farZ,tanHalfFov);
+	float dist			=depthToFadeDistance(depth,depth_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec3 wEyeToPos		=IN.wPosition-eyePosition;
 	vec4 ret			=Clouds2DPS_illum(texc_global,texc_detail,wEyeToPos,dist,cloudInterp,sunlight.rgb,lightDir.xyz,lightResponse);
 	ret.rgb				*=exposure;
