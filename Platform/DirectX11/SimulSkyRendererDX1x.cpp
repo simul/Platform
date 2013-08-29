@@ -9,13 +9,14 @@
 
 // SimulSkyRendererDX1x.cpp A renderer for skies.
 #define NOMINMAX
-#include "SimulSkyRendererDX1x.h"
+
 
 #include <tchar.h>
-#include <d3d10.h>
+#include <d3d10_1.h>
 #include <d3dx10.h>
 #include <dxerr.h>
 #include <string>
+#include "SimulSkyRendererDX1x.h"
 static DXGI_FORMAT sky_tex_format=DXGI_FORMAT_R32G32B32A32_FLOAT;
 extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Sky/SkyInterface.h"
@@ -65,8 +66,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	inscatter_2d=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	overcast_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	skylight_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
-	loss_2d->SetDepthFormat(0);
-	illumination_fb.SetDepthFormat(0);
 }
 
 void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
@@ -185,7 +184,7 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	earthShadowUniforms.InvalidateDeviceObjects();
 	skyConstants.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
-	operator delete [](star_vertices,memoryInterface);
+	operator delete[](star_vertices,memoryInterface);
 }
 
 bool SimulSkyRendererDX1x::Destroy()
@@ -654,7 +653,7 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	SAFE_RELEASE(m_pStarsVertexBuffer);
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
 	num_stars=current_num_stars;
-	operator delete [](star_vertices,memoryInterface);
+	operator delete[](star_vertices,memoryInterface);
 	star_vertices=new(memoryInterface) StarVertext[num_stars];
 	static float d=100.f;
 	for(int i=0;i<num_stars;i++)

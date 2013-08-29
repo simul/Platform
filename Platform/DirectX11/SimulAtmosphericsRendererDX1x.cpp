@@ -176,7 +176,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 
 	D3DXMATRIX p1=proj;
 
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1, relativeViewportTextureRegionXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
 	
 	atmosphericsPerViewConstants.Apply(pContext);
 	
@@ -225,7 +225,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,c
 	D3DXMATRIX p1=proj;
 	SetAtmosphericsConstants(atmosphericsUniforms,strength*exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,relativeViewportTextureRegionXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
 	SetGodraysConstants(atmosphericsPerViewConstants,view);
 
 	atmosphericsPerViewConstants.Apply(pContext);

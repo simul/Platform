@@ -233,7 +233,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	}
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->RenderSkyAsOverlay(pd3dDevice,exposure,UseSkyBuffer,false,NULL,viewport_id,simul::sky::float4(0,0,1.f,1.f));
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dDevice,exposure,UseSkyBuffer,false,NULL,NULL,viewport_id,simul::sky::float4(0,0,1.f,1.f),true);
 	}
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 		simulWeatherRenderer->GetAtmosphericsRenderer()->StartRender(NULL);

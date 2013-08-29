@@ -20,6 +20,7 @@ uniform_buffer HdrConstants SIMUL_BUFFER_REGISTER(9)
 	uniform vec4 rect;
 	uniform vec2 tanHalfFov;
 	uniform float nearZ,farZ;
+	uniform vec3 depthToLinFadeDistParams;
 }
 
 struct a2v
@@ -87,8 +88,8 @@ v2f QuadVS(idOnly IN)
 vec4 ShowDepthPS(v2f IN) : SV_TARGET
 {
 	vec4 depth		=depthTexture.Sample(samplerState,IN.texCoords);
-	float dist		=10.0*depthToDistance(depth.x,2.0*(IN.texCoords-0.5),nearZ,farZ,tanHalfFov);
-    return vec4(dist,dist,dist,1.0);
+	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
+    return vec4(1,dist,dist,1.0);
 }
 
 float4 convertInt(float2 texCoord)

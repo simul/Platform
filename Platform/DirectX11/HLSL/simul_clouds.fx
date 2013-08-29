@@ -57,15 +57,15 @@ RaytraceVertexOutput VS_Raytrace(idOnly IN)
 RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 {
 	vec2 texCoords		=IN.texCoords.xy;
-	texCoords.y			=1.0-texCoords.y;
-	vec4 dlookup		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec4 pos			=vec4(-1.f,-1.f,1.f,1.f);
-	pos.x				+=2.f*IN.texCoords.x;
-	pos.y				+=2.f*IN.texCoords.y;
-	vec3 view			=normalize(mul(invViewProj,pos).xyz);
-	float cos0			=dot(lightDir.xyz,view.xyz);
-	float sine			=view.z;
-	vec3 n				=vec3(pos.xy*tanHalfFov,1.0);
+	texCoords.y		=1.0-texCoords.y;
+	float dlookup		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
+	vec4 clip_pos		=vec4(-1.f,-1.f,1.f,1.f);
+	clip_pos.x		+=2.f*IN.texCoords.x;
+	clip_pos.y		+=2.f*IN.texCoords.y;
+	vec3 view		=normalize(mul(invViewProj,clip_pos).xyz);
+	float cos0		=dot(lightDir.xyz,view.xyz);
+	float sine		=view.z;
+	vec3 n			=vec3(clip_pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
 	vec2 noise_texc_0	=mul(noiseMatrix,n.xy);
 
@@ -73,7 +73,7 @@ RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 	float max_texc_z	=1.0-min_texc_z;
 
 	float depth			=dlookup.r;
-	float d				=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
+	float d				=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec4 colour			=vec4(0.0,0.0,0.0,1.0);
 	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
 
@@ -89,42 +89,42 @@ RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 	//int i=40;
 	{
 		vec4 density			=vec4(0,0,0,0);
-		const LayerData layer	=layers[i];
-		float dist				=layer.layerDistance;
-		float z					=saturate(dist/maxFadeDistanceMetres);
-		vec3 pos				=viewPos+dist*view;
-		pos.z					-=layer.verticalShift;
-		vec4 texCoords;
-		texCoords.xyz			=(pos-cornerPos)*inverseScales;
-		texCoords.w				=0.2+0.8*saturate(texCoords.z);
+		const LayerData layer		=layers[i];
+		float layerDist			=layer.layerDistance;
+		float normLayerZ		=saturate(layerDist/maxFadeDistanceMetres);
+		vec3 layerPos			=viewPos+layerDist*view;
+		layerPos.z			-=layer.verticalShift;
+		vec4 layerTexCoords;
+		layerTexCoords.xyz		=(layerPos-cornerPos)*inverseScales;
+		layerTexCoords.w		=0.2+0.8*saturate(layerTexCoords.z);
 		//if(texCoords.z>max_texc_z)
 		//	break;
-		if(z<=d&&texCoords.z>=min_texc_z&&texCoords.z<=max_texc_z)
+		if(normLayerZ<=d&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
 		{
-			vec2 noise_texc	=noise_texc_0*layer.layerDistance/fractalRepeatLength+layer.noiseOffset;
-			vec3 noiseval		=texCoords.w*noiseTexture.SampleLevel(wrapSamplerState,noise_texc.xy,0).xyz;
-			density				=calcDensity(texCoords.xyz,layer.layerFade,noiseval,fractalScale,cloud_interp);
+			vec2 noise_texc	=noise_texc_0*layerDist/fractalRepeatLength+layer.noiseOffset;
+			vec3 noiseval		=layerTexCoords.w*noiseTexture.SampleLevel(wrapSamplerState,noise_texc.xy,0).xyz;
+			density				=calcDensity(layerTexCoords.xyz,layer.layerFade,noiseval,fractalScale,cloud_interp);
 		}
 		if(density.z>0)
 		{
-			vec4 c	=calcColour(density,cos0,texCoords.z,lightResponse,ambientColour);
-			fade_texc.x	=sqrt(z);
+			vec4 c	=calcColour(density,cos0,layerTexCoords.z,lightResponse,ambientColour);
+			fade_texc.x	=sqrt(normLayerZ);
 			float sh	=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 			// overcast effect:
-			//sh		*=saturate(illum_lookup.z+texCoords.z);
+			//sh		*=saturate(illum_lookup.z+layerTexCoords.z);
 			c.rgb		*=sh;
 			c.rgb		=applyFades(c.rgb,fade_texc,cos0,sh);
 			colour		*=1.0-c.a;
 			colour.rgb	+=c.rgb*c.a;
 			// depth here:
-			mean_z=lerp(mean_z,z,depthMix*density.z);
+			mean_z=lerp(mean_z,normLayerZ,depthMix*density.z);
 		}
 	}
 	if(colour.a>=1.0)
 	   discard;
 	RaytracePixelOutput res;
     res.colour		=vec4(exposure*colour.rgb,colour.a);
-	res.depth		=distanceToDepth(mean_z,pos.xy,nearZ,farZ,tanHalfFov);
+	res.depth		=fadeDistanceToDepth(mean_z,depthToLinFadeDistParams,nearZ,farZ,clip_pos.xy,tanHalfFov);
 	return res;
 }
 
@@ -172,7 +172,7 @@ vec4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 
 vec4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 {
-	vec2 texCoords	=IN.texCoords.xy;
+	vec2 texCoords		=IN.texCoords.xy;
 	texCoords.y			=1.0-texCoords.y;
 	vec4 dlookup		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec4 pos			=vec4(-1.f,-1.f,1.f,1.f);
@@ -181,7 +181,7 @@ vec4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 	vec3 view			=normalize(mul(invViewProj,pos).xyz);
 	float cos0			=dot(lightDir.xyz,view.xyz);
 	float sine			=view.z;
-	vec3 n			=vec3(pos.xy*tanHalfFov,1.0);
+	vec3 n				=vec3(pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
 	vec2 noise_texc_0	=mul(noiseMatrix,n.xy);
 
@@ -189,9 +189,9 @@ vec4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 	float max_texc_z	=1.0-min_texc_z;
 
 	float depth			=dlookup.r;
-	float d				=depthToDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
-	vec4 colour		=vec4(0.0,0.0,0.0,1.0);
-	vec2 fade_texc	=vec2(0.0,0.5*(1.0-sine));
+	float d				=depthToFadeDistance(depth,pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec4 colour			=vec4(0.0,0.0,0.0,1.0);
+	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
 
 	// Lookup in the illumination texture.
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
@@ -260,7 +260,7 @@ vec4 PS_Raytrace3DNoise(RaytraceVertexOutput IN) : SV_TARGET
 	   discard;
 	RaytracePixelOutput res;
     res.colour		=vec4(exposure*colour.rgb,1.0-colour.a);
-	res.depth		=distanceToDepth(mean_z,pos.xy,nearZ,farZ,tanHalfFov);
+	res.depth		=fadeDistanceToDepth(mean_z,depthToLinFadeDistParams,nearZ,farZ,pos.xy,tanHalfFov);
 	return res.colour;
 }
 
