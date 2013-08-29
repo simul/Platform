@@ -221,8 +221,8 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	for(int i=0;i<6;i++)
 	{
 		fb_cubemap.SetCurrentFace(i);
-		fb_cubemap.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
-		gamma_correct.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
+		fb_cubemap.Activate(m_pImmediateContext);
+		gamma_correct.Activate(m_pImmediateContext);
 		gamma_correct.Clear(m_pImmediateContext,0.f,0.f,0.f,0.f,0.f);
 		if(simulSkyRenderer)
 		{
@@ -233,7 +233,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 				1.f,
 				600000.f);
 			SetMatrices(view_matrices[i],cube_proj);
-			RenderSkyAsOverlay(m_pImmediateContext,exposure,false,NULL,NULL,0,simul::sky::float4(0,0,1.f,1.f), true);
+			RenderSkyAsOverlay(m_pImmediateContext,exposure,false,false,NULL,NULL,0,simul::sky::float4(0,0,1.f,1.f), true);
 		}
 		gamma_correct.Deactivate(m_pImmediateContext);
 		{
@@ -260,6 +260,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 
 void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 												float exposure,
+												bool buffered,
 												bool is_cubemap,
 												const void* mainDepthTexture,
 												const void* depthTextureForClouds,
@@ -270,6 +271,7 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 {
 	BaseWeatherRenderer::RenderSkyAsOverlay(context,
 											exposure,
+											buffered,
 											is_cubemap,
 											mainDepthTexture,
 											depthTextureForClouds,
@@ -277,7 +279,7 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 											relativeViewportTextureRegionXYWH,
 											doFinalCloudBufferToScreenComposite
 											);
-	if(depthTextureForClouds&&baseFramebuffer&&doFinalCloudBufferToScreenComposite)
+	if(buffered&&doFinalCloudBufferToScreenComposite)
 	{
 		bool blend=!is_cubemap;
 		imageTexture->SetResource(framebuffer.buffer_texture_SRV);

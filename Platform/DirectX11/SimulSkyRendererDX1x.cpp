@@ -184,7 +184,7 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	earthShadowUniforms.InvalidateDeviceObjects();
 	skyConstants.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
-	memoryInterface->Deallocate(star_vertices);
+	operator delete[](star_vertices,memoryInterface);
 }
 
 bool SimulSkyRendererDX1x::Destroy()
@@ -587,7 +587,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(fadeTexture1->SetResource(loss_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(loss_textures[(texture_cycle+1)%3].shaderResourceView));
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		loss_2d->Activate(context,0.f,0.f,1.f,1.f);
+		loss_2d->Activate(context);
 			context->ClearRenderTargetView(loss_2d->m_pHDRRenderTarget,clearColor);
 			if(loss_2d->m_pBufferDepthSurface)
 				context->ClearDepthStencilView(loss_2d->m_pBufferDepthSurface,D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL, 1.f, 0);
@@ -598,7 +598,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(fadeTexture1->SetResource(insc_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(insc_textures[(texture_cycle+1)%3].shaderResourceView));
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		inscatter_2d->Activate(context,0.f,0.f,1.f,1.f);
+		inscatter_2d->Activate(context);
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		inscatter_2d->Deactivate(context);
 	}
@@ -608,7 +608,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		V_CHECK(fadeTexture2->SetResource(skyl_textures[(texture_cycle+1)%3].shaderResourceView));
 		//V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
 		V_CHECK(ApplyPass(context,m_hTechniqueFade3DTo2D->GetPassByIndex(0)));
-		skylight_2d->Activate(context,0.f,0.f,1.f,1.f);
+		skylight_2d->Activate(context);
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		skylight_2d->Deactivate(context);
 	}
@@ -617,7 +617,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	{
 		V_CHECK(inscTexture->SetResource((ID3D11ShaderResourceView*)inscatter_2d->GetColorTex()));
 		V_CHECK(ApplyPass(context,hTechniqueOverc->GetPassByIndex(0)));
-		overcast_2d->Activate(context,0.f,0.f,1.f,1.f);
+		overcast_2d->Activate(context);
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		overcast_2d->Deactivate(context);
 	}
@@ -640,7 +640,7 @@ void SimulSkyRendererDX1x::RenderIllumationBuffer(void *c)
 	{
 		ID3D1xEffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("simul_illumination_buffer");
 		ApplyPass(context,tech->GetPassByIndex(0));
-		illumination_fb.Activate(context,0.f,0.f,1.f,1.f);
+		illumination_fb.Activate(context);
 		context->ClearRenderTargetView(illumination_fb.m_pHDRRenderTarget,clearColor);
 		//if(e.enable)
 			simul::dx11::UtilityRenderer::DrawQuad(context);
@@ -653,7 +653,7 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	SAFE_RELEASE(m_pStarsVertexBuffer);
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
 	num_stars=current_num_stars;
-	memoryInterface->Deallocate(star_vertices);
+	operator delete[](star_vertices,memoryInterface);
 	star_vertices=new(memoryInterface) StarVertext[num_stars];
 	static float d=100.f;
 	for(int i=0;i<num_stars;i++)

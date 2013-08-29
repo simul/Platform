@@ -159,7 +159,7 @@ void GpuCloudGenerator::FillDensityGrid(int cycled_index
 	dens_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
 	mask_fb.SetWidthAndHeight(density_grid[0],density_grid[1]);
 
-	mask_fb.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
+	mask_fb.Activate(m_pImmediateContext);
 	if(mask)
 	{
 		mask_fb.Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);

@@ -269,7 +269,7 @@ vec4 SimpleRaytraceCloudsForward(Texture3D cloudDensity1,Texture3D cloudDensity2
 	float max_texc_z	=1.0-min_texc_z;
 
 	float depth			=dlookup.r;
-	float d				=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,pos.xy,tanHalfFov);
+	float d				=depthToFadeDistance(depth,pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec4 colour			=vec4(0.0,0.0,0.0,1.0);
 	float Z				=0.f;
 	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
@@ -337,7 +337,7 @@ RaytracePixelOutput RaytraceCloudsForward(	Texture3D cloudDensity1
 	float max_texc_z	=1.0-min_texc_z;
 
 	float depth			=dlookup;
-	float d				=depthToFadeDistance(depth,depthToLinFadeDistParams,nearZ,farZ,clip_pos.xy,tanHalfFov);
+	float d				=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec4 colour			=vec4(0.0,0.0,0.0,1.0);
 	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
 

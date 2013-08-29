@@ -292,10 +292,10 @@ ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *m_pd3dDevice
 
 void Framebuffer::CopyToMemory(void *context,void *target,int start_texel,int texels)
 {
-	ID3D11DeviceContext *m_pImmediateContext=NULL;
+	ID3D11DeviceContext *pContext=NULL;
 	if(texels==0)
 		texels=Width*Height;
-m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+m_pd3dDevice->GetImmediateContext(&pContext);
 
 	if(!stagingTexture)
 		stagingTexture=makeStagingTexture(m_pd3dDevice,Width,Height,target_format);
@@ -306,10 +306,10 @@ m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	sourceRegion.bottom = Height;
 	sourceRegion.front = 0;
 	sourceRegion.back = 1;
-	m_pImmediateContext->CopySubresourceRegion(stagingTexture,0,0,0,0,GetColorTexture(),0,&sourceRegion);
+	pContext->CopySubresourceRegion(stagingTexture,0,0,0,0,GetColorTexture(),0,&sourceRegion);
 HRESULT hr=S_OK;
 	D3D11_MAPPED_SUBRESOURCE msr;
-	V_CHECK(m_pImmediateContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &msr));
+	V_CHECK(pContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &msr));
 	int byteSize=simul::dx11::ByteSizeOfFormatElement(target_format);
 	int required_pitch=Width*byteSize;
 	char *dst=(char*)target;
@@ -335,32 +335,13 @@ HRESULT hr=S_OK;
 		}
 	}
 	// copy data
-	m_pImmediateContext->Unmap(stagingTexture, 0);
-	SAFE_RELEASE(m_pImmediateContext)
+	pContext->Unmap(stagingTexture, 0);
+	SAFE_RELEASE(pContext)
 }
 
-void Framebuffer::Activate(void *context, float viewportX, float viewportY, float viewportW, float viewportH)
+void Framebuffer::ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	if(!m_pImmediateContext)
-		return;
-	if(!hdr_buffer_texture&&!buffer_depth_texture)
-		CreateBuffers();
-	HRESULT hr=S_OK;
-	m_pImmediateContext->RSGetViewports(&num_v,NULL);
-	if(num_v>0)
-		m_pImmediateContext->RSGetViewports(&num_v,m_OldViewports);
-
-	m_pOldRenderTarget	=NULL;
-	m_pOldDepthSurface	=NULL;
-	m_pImmediateContext->OMGetRenderTargets(	1,
-												&m_pOldRenderTarget,
-												&m_pOldDepthSurface
-												);
-	if(m_pHDRRenderTarget)
-		m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
-	else 
-		m_pImmediateContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
+	Activate(context);
 	D3D11_VIEWPORT viewport;
 	// Setup the viewport for rendering.
 	viewport.Width = floorf((float)Width*viewportW + 0.5f);
@@ -371,29 +352,65 @@ void Framebuffer::Activate(void *context, float viewportX, float viewportY, floa
 	viewport.TopLeftY = floorf((float)Height*viewportY + 0.5f);
 
 	// Create the viewport.
-	m_pImmediateContext->RSSetViewports(1, &viewport);
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	pContext->RSSetViewports(1, &viewport);
+}
+
+void Framebuffer::Activate(void *context)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	if(!pContext)
+		return;
+	if(!hdr_buffer_texture&&!buffer_depth_texture)
+		CreateBuffers();
+	HRESULT hr=S_OK;
+	pContext->RSGetViewports(&num_v,NULL);
+	if(num_v>0)
+		pContext->RSGetViewports(&num_v,m_OldViewports);
+
+	m_pOldRenderTarget	=NULL;
+	m_pOldDepthSurface	=NULL;
+	pContext->OMGetRenderTargets(	1,
+												&m_pOldRenderTarget,
+												&m_pOldDepthSurface
+												);
+	if(m_pHDRRenderTarget)
+		pContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
+	else 
+		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
+	D3D11_VIEWPORT viewport;
+	// Setup the viewport for rendering.
+	viewport.Width = (float) Width;
+	viewport.Height = (float)Height;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0.f;
+	viewport.TopLeftY = 0.f;
+
+	// Create the viewport.
+	pContext->RSSetViewports(1, &viewport);
 }
 
 void Framebuffer::ActivateColour(void *context)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	if(!m_pImmediateContext)
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	if(!pContext)
 		return;
 	if(!hdr_buffer_texture&&!buffer_depth_texture)
 		CreateBuffers();
 	if(!m_pHDRRenderTarget)
 		return;
-	m_pImmediateContext->RSGetViewports(&num_v,NULL);
+	pContext->RSGetViewports(&num_v,NULL);
 	if(num_v>0)
-		m_pImmediateContext->RSGetViewports(&num_v,m_OldViewports);
+		pContext->RSGetViewports(&num_v,m_OldViewports);
 
 	m_pOldRenderTarget	=NULL;
 	m_pOldDepthSurface	=NULL;
-	m_pImmediateContext->OMGetRenderTargets(	1,
+	pContext->OMGetRenderTargets(	1,
 												&m_pOldRenderTarget,
 												&m_pOldDepthSurface
 												);
-	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
+	pContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
 	D3D11_VIEWPORT viewport;
 		// Setup the viewport for rendering.
 	viewport.Width = (float)Width;
@@ -403,7 +420,7 @@ void Framebuffer::ActivateColour(void *context)
 	viewport.TopLeftX = 0.0f;
 	viewport.TopLeftY = 0.0f;
 	// Create the viewport.
-	m_pImmediateContext->RSSetViewports(1, &viewport);
+	pContext->RSSetViewports(1, &viewport);
 }
 
 void Framebuffer::Deactivate(void *context)
@@ -420,40 +437,40 @@ void Framebuffer::Deactivate(void *context)
 
 void Framebuffer::DeactivateDepth(void *context)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	if(!m_pHDRRenderTarget)
 	{
 		Deactivate(context);
 		return;
 	}
-	m_pImmediateContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
+	pContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
 }
 
 void Framebuffer::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	// Clear the screen to black:
     float clearColor[4]={r,g,b,a};
     if(!mask)
 		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
 	if(m_pHDRRenderTarget)
-		m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
+		pContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
 	if(m_pBufferDepthSurface)
-		m_pImmediateContext->ClearDepthStencilView(m_pBufferDepthSurface,mask,depth,0);
+		pContext->ClearDepthStencilView(m_pBufferDepthSurface,mask,depth,0);
 }
 
 void Framebuffer::ClearColour(void *context,float r,float g,float b,float a)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	float clearColor[4]={r,g,b,a};
 	if(m_pHDRRenderTarget)
-		m_pImmediateContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
+		pContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
 }
 
 bool Framebuffer::DrawQuad(void *context)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	return true;
 }
 

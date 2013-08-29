@@ -32,7 +32,8 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void SetCurrentFace(int i);
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-			void Activate(void *context, float viewportX, float viewportY, float viewportW, float viewportH );
+			void ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH );
+			void Activate(void *context );
 			void Deactivate(void *context);
 			void Render(bool){}
 			void Clear(void *context,float,float,float,float,float,int mask=0);

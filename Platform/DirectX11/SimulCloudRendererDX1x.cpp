@@ -387,7 +387,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	random_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency);
 	random_fb.SetFormat((int)DXGI_FORMAT_R32G32B32A32_FLOAT);
 	ApplyPass(pContext,randomTechnique->GetPassByIndex(0));
-	random_fb.Activate(context,0.f,0.f,1.f,1.f);
+	random_fb.Activate(context);
 		random_fb.DrawQuad(context);
 	random_fb.Deactivate(context);
 
@@ -395,7 +395,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	n_fb.RestoreDeviceObjects(m_pd3dDevice);
 	n_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
 	n_fb.SetFormat((int)DXGI_FORMAT_R8G8B8A8_SNORM);
-	n_fb.Activate(context,0.f,0.f,1.f,1.f);
+	n_fb.Activate(context);
 	{
 		simul::dx11::setParameter(effect,"noise_texture"	,(ID3D11ShaderResourceView*)random_fb.GetColorTex());
 		ID3D1xEffectShaderResourceVariable*	noiseTexture	=effect->GetVariableByName("noise_texture")->AsShaderResource();
@@ -459,17 +459,17 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 	random_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency*noise_texture_frequency);
 	random_fb.SetFormat((int)DXGI_FORMAT_R8G8B8A8_SNORM);
 	ApplyPass(pContext,randomTechnique->GetPassByIndex(0));
-	random_fb.Activate(context,0.f,0.f,1.f,1.f);
+	random_fb.Activate(context);
 	random_fb.DrawQuad(context);
 	random_fb.Deactivate(context);
 
-	unsigned *data= (unsigned*)memoryInterface->Allocate( sizeof(unsigned)*noise_texture_frequency*noise_texture_frequency*noise_texture_frequency );
+	unsigned *data=new(memoryInterface) unsigned[noise_texture_frequency*noise_texture_frequency*noise_texture_frequency];
 	random_fb.CopyToMemory(pContext,data);
 	
 	noise_texture_3D.ensureTexture3DSizeAndFormat(m_pd3dDevice,noise_texture_frequency,noise_texture_frequency,noise_texture_frequency,DXGI_FORMAT_R8G8B8A8_SNORM,false);
 	noise_texture_3D.setTexels(pContext,(unsigned*)data,0,noise_texture_frequency*noise_texture_frequency*noise_texture_frequency);
 
-	memoryInterface->Deallocate(data);
+	operator delete [](data,memoryInterface);
 	SAFE_RELEASE(effect);
 }
 
@@ -688,14 +688,14 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	cloudDensity1->SetResource(cloud_textures[(texture_cycle)  %3].shaderResourceView);
 	cloudDensity2->SetResource(cloud_textures[(texture_cycle+1)%3].shaderResourceView);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
-	shadow_fb.Activate(pContext,0.f,0.f,1.f,1.f);
+	shadow_fb.Activate(pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	shadow_fb.Deactivate(pContext);
 	
 	tech	=m_pCloudEffect->GetTechniqueByName("shadow_near_far");
 	simul::dx11::setParameter(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
 	ApplyPass(pContext,tech->GetPassByIndex(0));
-	shadowNearFar.Activate(pContext,0.f,0.f,1.f,1.f);
+	shadowNearFar.Activate(pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	shadowNearFar.Deactivate(pContext);
 	cloudDensity1->SetResource(NULL);

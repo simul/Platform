@@ -49,7 +49,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	simul::dx11::Framebuffer make_rain_fb(512,512);
 	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
-	make_rain_fb.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
+	make_rain_fb.Activate(m_pImmediateContext);
 	make_rain_fb.DrawQuad(m_pImmediateContext);
 	make_rain_fb.Deactivate(m_pImmediateContext);
 	rain_texture=make_rain_fb.buffer_texture_SRV;
@@ -62,7 +62,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	simul::dx11::Framebuffer random_fb(16,16);
 	random_fb.SetDepthFormat(0);
 	random_fb.RestoreDeviceObjects(m_pd3dDevice);
-	random_fb.Activate(m_pImmediateContext,0.f,0.f,1.f,1.f);
+	random_fb.Activate(m_pImmediateContext);
 	random_fb.DrawQuad(m_pImmediateContext);
 	random_fb.Deactivate(m_pImmediateContext);
 	random_SRV=random_fb.buffer_texture_SRV;
