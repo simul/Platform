@@ -5,12 +5,11 @@ STATIC const int SIMUL_MAX_CLOUD_RAYTRACE_STEPS=200;
 struct LayerData
 {
 	vec2 noiseOffset;
-	//float noiseScale;
 	float layerFade;
 	float layerDistance;
 	float verticalShift;
-	float pad11;
-	float pad12;
+	float sine_threshold;
+	float sine_range;
 	float pad13;
 };
 struct SmallLayerData
@@ -48,6 +47,7 @@ uniform_buffer CloudPerViewConstants SIMUL_BUFFER_REGISTER(13)
 	uniform int shadowTextureSize;
 	uniform float depthMix;
 };
+
 uniform_buffer CloudConstants SIMUL_BUFFER_REGISTER(9)
 {
 	uniform vec3 inverseScales;
@@ -83,6 +83,8 @@ uniform_buffer CloudConstants SIMUL_BUFFER_REGISTER(9)
 	uniform float z1;
 	uniform vec3 cloudIrRadiance;
 	uniform float x5;
+	uniform float baseNoiseFactor;
+	uniform float x6,x7,x8;
 };
 
 #ifdef __cplusplus

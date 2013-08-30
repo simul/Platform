@@ -839,9 +839,6 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	depthTexture->SetResource(NULL);
 	ApplyPass(pContext,m_hTechniqueRaytrace->GetPassByIndex(0));
 	pContext->OMSetBlendState(NULL, blendFactor, sampleMask);
-	// This actually returns the PREVIOUS FRAME's time value:
-	gpu_time*=0.99f;
-	gpu_time+=0.01f*profileBlock.GetTime();
 	depthTexture->SetResource((ID3D11ShaderResourceView*)NULL);
 	cloudDensity->SetResource((ID3D11ShaderResourceView*)NULL);
 	cloudDensity1->SetResource((ID3D11ShaderResourceView*)NULL);
@@ -855,6 +852,9 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	simul::dx11::setParameter(m_pCloudEffect,"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
 // To prevent BIZARRE DX11 warning, we re-apply the pass with the textures unbound:
 	ApplyPass(pContext,m_hTechniqueRaytrace->GetPassByIndex(0));
+	// This actually returns the PREVIOUS FRAME's time value:
+	gpu_time*=0.99f;
+	gpu_time+=0.01f*profileBlock.GetTime();
 	return (hr==S_OK);
 }
 

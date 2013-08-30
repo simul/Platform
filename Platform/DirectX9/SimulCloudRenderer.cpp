@@ -948,7 +948,7 @@ bool SimulCloudRenderer::FillRaytraceLayerTexture(int viewport_id)
 	int j=0;
 	for(iter i=helper->GetSlices().rbegin();i!=helper->GetSlices().rend()&&j<128;i++,j++)
 	{
-		float distance=(*i)->distance;
+		float distance=(*i)->layerDistance;
 		*float_ptr++=distance;
 		*float_ptr++=(*i)->noise_tex_x;
 		*float_ptr++=(*i)->noise_tex_y;
@@ -1037,11 +1037,11 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	for(iter i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++)
 	{
-		float distance=(*i)->distance;
+		float distance=(*i)->layerDistance;
 		helper->MakeLayerGeometry(*i,6378000.f);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
-		float fade=(*i)->fadeIn;
+		float fade=(*i)->layerFade;
 		bool start=true;
 		for(std::vector<const simul::clouds::CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
 			j!=(*i)->quad_strips.end();j++)
@@ -1397,14 +1397,14 @@ bool SimulCloudRenderer::RenderDistances(int width,int height)
 	{
 		if(!(*i))
 			continue;
-		float d=(*i)->distance/max_distance*width*.9f;
+		float d=(*i)->layerDistance/max_distance*width*.9f;
 		lines[j].x=width*0.05f+d; 
 		lines[j].y=0.9f*height;  
 		lines[j].z=0;
 		lines[j].r=1.f;
 		lines[j].g=1.f;
 		lines[j].b=0.f;
-		lines[j].a=(*i)->fadeIn;
+		lines[j].a=(*i)->layerFade;
 		j++;
 		lines[j].x=width*0.05f+d; 
 		lines[j].y=0.95f*height; 
@@ -1412,7 +1412,7 @@ bool SimulCloudRenderer::RenderDistances(int width,int height)
 		lines[j].r=1.f;
 		lines[j].g=1.f;
 		lines[j].b=0.f;
-		lines[j].a=(*i)->fadeIn;
+		lines[j].a=(*i)->layerFade;
 	}
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,(unsigned)helper->GetSlices().size(),lines,(unsigned)sizeof(Vertext));
 	delete [] lines;

@@ -459,10 +459,10 @@ struct d3dMacro
 HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_utf8, UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	HRESULT hr=(HRESULT)(-1);
-	std::string output_filename_utf8=std::string(text_filename_utf8)+"o";
+	std::string binary_filename_utf8=std::string(text_filename_utf8)+"o";
 	void *pData=NULL;
 	unsigned sz=0;
-	fileLoader->AcquireFileContents(pData,sz,output_filename_utf8.c_str(),false);
+	fileLoader->AcquireFileContents(pData,sz,binary_filename_utf8.c_str(),false);
 	if(sz>0)
 	{
 		hr=D3DX11CreateEffectFromMemory(pData,sz,FXFlags,pDevice,ppEffect);
@@ -470,7 +470,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_ut
 			std::cerr<<"D3DX11CreateEffectFromBinaryFile error "<<(int)hr<<std::endl;
 	}
 	else
-		std::cerr<<"D3DX11CreateEffectFromBinaryFile cannot find file "<<output_filename_utf8.c_str()<<std::endl;
+		std::cerr<<"D3DX11CreateEffectFromBinaryFile cannot find file "<<binary_filename_utf8.c_str()<<std::endl;
 	fileLoader->ReleaseFileContents(pData);
 	return hr;
 }
@@ -526,20 +526,18 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 #else
 	// first try to find an existing text source with this filename, and compile it.
 	std::string filename_utf8= text_filename_utf8;
-	std::string output_filename_utf8=text_filename_utf8+"o";
-	std::string tempfile="temp.o";
+	std::string binary_filename_utf8=text_filename_utf8+"o";
 	int pos=(int)text_filename_utf8.find_last_of("/");
 	if(pos<0)
 		pos=(int)text_filename_utf8.find_last_of("\\");
-	if(pos>=0)
-		tempfile=text_filename_utf8.substr(pos+1,text_filename_utf8.length()-pos)+"temp.fxo";
+	std::string temporary_filename_utf8=std::string(text_filename_utf8)+"temp";
 	void *textData=NULL;
 	unsigned textSize=0;
 	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
 	
 	void *binaryData=NULL;
 	unsigned binarySize=0;
-	fileLoader->AcquireFileContents(binaryData,binarySize,output_filename_utf8.c_str(),false);
+	fileLoader->AcquireFileContents(binaryData,binarySize,binary_filename_utf8.c_str(),false);
 	
 	fileLoader->ReleaseFileContents(textData);
 	fileLoader->ReleaseFileContents(binaryData);
@@ -548,7 +546,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	if(textSize>0&&(shaderBuildMode==ALWAYS_BUILD||(shaderBuildMode==BUILD_IF_NO_BINARY&&binarySize==0)))
 	{
 		//std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
-		DeleteFileW(simul::base::Utf8ToWString(output_filename_utf8).c_str());
+		DeleteFileW(simul::base::Utf8ToWString(binary_filename_utf8).c_str());
 		std::wstring wcommand=simul::base::Utf8ToWString(simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("DXSDK_DIR"));
 		if(!wcommand.length())
 		{
@@ -561,7 +559,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 			wcommand=L"\""+wcommand;
 			wcommand+=L"Utilities\\Bin\\x86\\fxc.exe\"";
 			wcommand+=L" /nologo /Tfx_5_0 /Fo \"";
-			wcommand+=simul::base::Utf8ToWString(tempfile)+L"\" \"";
+			wcommand+=simul::base::Utf8ToWString(temporary_filename_utf8)+L"\" \"";
 			wcommand+=simul::base::Utf8ToWString(text_filename_utf8)+L"\"";
 			if(macros)
 			{
@@ -646,7 +644,6 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 						pos=str.find("failed");
 					if(pos<str.length())
 						has_errors=true;
-					std::cerr<<str.c_str();
 					int bracket_pos=(int)str.find("(");
 					if(bracket_pos>0)
 					{
@@ -657,6 +654,12 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 							str.replace(comma_pos,close_bracket_pos-comma_pos,"");
 						}
 					}
+					// IF it's not an absolute path:
+					if(shaderPathUtf8&&str.find(":")!=1)
+					{
+						str=*shaderPathUtf8+str;
+					}
+					std::cerr<<str.c_str();
 				}
 			}
 			// Process is done, or we timed out:
@@ -672,7 +675,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 				return S_FALSE;
 		}
 	}
-	CopyFileW(simul::base::Utf8ToWString(tempfile).c_str(),simul::base::Utf8ToWString(output_filename_utf8).c_str(),false);
+	MoveFileW(simul::base::Utf8ToWString(temporary_filename_utf8).c_str(),simul::base::Utf8ToWString(binary_filename_utf8).c_str());
 	hr=D3DX11CreateEffectFromBinaryFileUtf8(filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
 #endif
 	return hr;
