@@ -1,40 +1,8 @@
 #ifndef DEPTH_SL
 #define DEPTH_SL
 
-//Enable/define the following to use a simpler, faster depth-to-linear-fade-z transform.
-#	define NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
-//Unlike the old implementation, it doesn't need to know about whether the projection is a reversed
-//or regular proj, it's fewer operations, and it's clearly commented and documented.
-
-
-float depthBufferToLinearFadeZ(in float depth, in vec3 depthToLinFadeDistParams)
-{
-	//Usual perspective transform -
-	// Pos     Proj
-	// | _ |   | _  0  _ 0 |     |    _    |
-	// | _ |   | 0  _  _ 0 |     |    _    |
-	// |zVS| . | 0  0  a b |  =  |zVS.a + b|
-	// | 1 |   | 0  0 -1 0 |     |  -zVS   |
-	//
-	//depth = (zVS.a+b)/-zVS
-	//
-	//zVS = -b / ( depth + a )
-	//
-	//linFadeDist = -zVS / fadeDistMetres
-	//            = b / (depth*fadeDistMetres + a*fadeDistMetres)
-	//            = paramX / (depth*paramY + paramZ)
-	
-	return depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
-}
-
-float depthBufferToLinearFadeZ(float depth, float nearZ, float farZ)
-{
-#ifdef REVERSE_DEPTH
-	return nearZ*farZ/(nearZ+(farZ-nearZ)*depth);
-#else
-	return -nearZ*farZ/((farZ-nearZ)*depth-farZ);
-#endif
-}
+// Enable the following to use a 3-parameter depth conversion, for possible slight speed improvement
+#define NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
 
 // This converts a z-buffer depth into a distance in the units of nearZ and farZ,
 //	-	where usually nearZ and farZ will be factors of the maximum fade distance.
@@ -46,29 +14,40 @@ float depthToFadeDistance(float depth,vec2 xy,vec3 depthToLinFadeDistParams,vec2
 		dist=1.0;
 	return dist;
 #else
-#ifdef NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
-	float linearFadeDistanceZ = depthBufferToLinearFadeZ(depth,depthToLinFadeDistParams);
+#ifdef REVERSE_DEPTH
+	if(depth<=0)
+		return 1.0;
 #else
-	float linearFadeDistanceZ = depthBufferToLinearFadeZ(depth,nearZ,farZ);
+	if(depth>=1.0)
+		return 1.0;
 #endif
-
+	float linearFadeDistanceZ = depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
 	float Tx=xy.x*tanHalf.x;
 	float Ty=xy.y*tanHalf.y;
 	float fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
-	
 	return fadeDist;
 #endif
 }
 float depthToFadeDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
 {
+#ifdef REVERSE_DEPTH
+	if(depth<=0)
+		return 1.0;
+#else
+	if(depth>=1.0)
+		return 1.0;
+#endif
 #ifdef VISION
 	float dist=depth*farZ;
 	if(depth>=1.0)
 		dist=1.0;
 	return dist;
 #else
-	float linearFadeDistanceZ = depthBufferToLinearFadeZ(depth,nearZ,farZ);
-
+#ifdef REVERSE_DEPTH
+	float linearFadeDistanceZ = nearZ*farZ/(nearZ+(farZ-nearZ)*depth);
+#else
+	float linearFadeDistanceZ = nearZ*farZ/(farZ-(farZ-nearZ)*depth);
+#endif
 	float Tx=xy.x*tanHalf.x;
 	float Ty=xy.y*tanHalf.y;
 	float fadeDist = linearFadeDistanceZ * sqrt(1.0+Tx*Tx+Ty*Ty);
@@ -77,38 +56,46 @@ float depthToFadeDistance(float depth,vec2 xy,float nearZ,float farZ,vec2 tanHal
 #endif
 }
 
-float fadeDistanceToDepth(float dist, vec3 depthToLinFadeDistParams)
+float fadeDistanceToDepth(float dist,vec2 xy,vec3 depthToLinFadeDistParams,vec2 tanHalf)
 {
-	// Inverse of depthBufferToLinearFadeZ
-	// See depthBufferToLinearFadeZ for more detail of transform
-	return ((depthToLinFadeDistParams.x / dist) - depthToLinFadeDistParams.z) / depthToLinFadeDistParams.y;
+#ifdef REVERSE_DEPTH
+	if(dist>=1.0)
+		return 0.0;
+#else
+	if(dist>=1.0)
+		return 1.0;
+#endif
+	float Tx				=xy.x*tanHalf.x;
+	float Ty				=xy.y*tanHalf.y;
+	float linearDistanceZ	=dist/sqrt(1.0+Tx*Tx+Ty*Ty);
+	float depth =((depthToLinFadeDistParams.x / linearDistanceZ) - depthToLinFadeDistParams.z) / depthToLinFadeDistParams.y;
+	return depth;
 }
+
 
 float fadeDistanceToDepth(float dist,vec2 xy,float nearZ,float farZ,vec2 tanHalf)
 {
 #ifdef REVERSE_DEPTH
-	return ((nearZ*farZ)/dist-nearZ)/(farZ-nearZ);
-#endif
-	return 0.f;
-}
-
-float fadeDistanceToDepth(float dist,vec3 depthToLinFadeDistParams,float nearZ,float farZ,vec2 xy,vec2 tanHalf)
-{
-	float Tx	=xy.x*tanHalf.x;
-	float Ty	=xy.y*tanHalf.y;
-	float z		=dist/sqrt(1.0+Tx*Tx+Ty*Ty);
-#ifdef NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
-	float depth = fadeDistanceToDepth(dist,depthToLinFadeDistParams);
+	if(dist>=1.0)
+		return 0.0;
 #else
-	float depth = fadeDistanceToDepth(dist,nearZ,farZ);
+	if(dist>=1.0)
+		return 1.0;
 #endif
-return depth;
+	float Tx				=xy.x*tanHalf.x;
+	float Ty				=xy.y*tanHalf.y;
+	float linearDistanceZ	=dist/sqrt(1.0+Tx*Tx+Ty*Ty);
+#ifdef REVERSE_DEPTH
+	float depth				=((nearZ*farZ)/linearDistanceZ-nearZ)/(farZ-nearZ);
+#else
+	float depth				=((nearZ*farZ)/linearDistanceZ-farZ)/(nearZ-farZ);
+#endif
+	return depth;
 }
 
-vec2 viewportCoordToTexRegionCoord( in vec2 iViewportCoord,  vec4 iViewportToTexRegionScaleBias )
+vec2 viewportCoordToTexRegionCoord(vec2 iViewportCoord,vec4 iViewportToTexRegionScaleBias )
 {
 	return iViewportCoord * iViewportToTexRegionScaleBias.xy + iViewportToTexRegionScaleBias.zw;
 }
-
 
 #endif
