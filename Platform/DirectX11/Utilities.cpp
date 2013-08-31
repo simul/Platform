@@ -729,7 +729,7 @@ void UtilityRenderer::DrawCube(void *context)
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 
-	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	pContext->Draw(36,0);
 
