@@ -236,7 +236,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 	ClearIterators();
 	cloudConstants.RestoreDeviceObjects(m_pd3dDevice);
-	layerBuffer.RestoreDeviceObjects(m_pd3dDevice,SIMUL_MAX_CLOUD_RAYTRACE_STEPS);
+	layerBuffer.RestoreDeviceObjects(m_pd3dDevice,20);
 
 	shadow_fb.RestoreDeviceObjects(m_pd3dDevice);
 	shadowNearFar.RestoreDeviceObjects(m_pd3dDevice);
@@ -739,7 +739,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
 	ID3D1xShaderResourceView *depthTexture_SRV	=(ID3D1xShaderResourceView *)depth_tex;
-    ProfileBlock profileBlock(pContext,"SimulCloudRendererDX1x::Render");
+    ProfileBlock profileBlock(pContext,cubemap?"SimulCloudRendererDX1x::Render (cubemap side)":"SimulCloudRendererDX1x::Render");
 
 	float blendFactor[] = {0, 0, 0, 0};
 	UINT sampleMask   = 0xffffffff;
@@ -759,7 +759,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	skyInscatterTexture->SetResource(overcInscTexture_SRV);
 	skylightTexture->SetResource(skylightTexture_SRV);
 	depthTexture->SetResource(depthTexture_SRV);
-	//simul::dx11::setParameter(m_pCloudEffect,"depthTexture",depthTexture_SRV);
+
 	simul::dx11::setParameter(m_pCloudEffect,"illuminationTexture",illuminationTexture_SRV);
 	
 	if(GetCloudInterface()->GetWrap())
@@ -776,12 +776,8 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
 
-	SmallLayerData *layers=layerBuffer.GetBuffer(pContext);
-	SetLayerBuffer(helper,layers);
-	layerBuffer.apply(pContext,m_pCloudEffect,"layersSB");
-
 	// Moved from Update function above. See commment.
-	if (!cubemap)
+	//if(!cubemap)
 	{
 		//set up matrices
 		simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
@@ -789,7 +785,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 		if(y_vertical)
 			std::swap(wind_offset.y,wind_offset.z);
 		X+=wind_offset;
-		simul::math::Vector3 view_dir	(view._13,view._23,view._33);
+		simul::math::Vector3 view_dir(view._13,view._23,view._33);
 		if(!y_vertical)
 			view_dir.Define(-view._13,-view._23,-view._33);
 		simul::math::Vector3 up(view._12,view._22,view._32);
@@ -801,6 +797,10 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 		helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
 		helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
 	}
+
+	//SmallLayerData *layers=layerBuffer.GetBuffer(pContext);
+	//SetLayerBuffer(helper,layers);
+	//layerBuffer.apply(pContext,m_pCloudEffect,"layersSB");
 
 	static int select_slice=-1;
 	int ii=0;
@@ -839,9 +839,6 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	depthTexture->SetResource(NULL);
 	ApplyPass(pContext,m_hTechniqueRaytrace->GetPassByIndex(0));
 	pContext->OMSetBlendState(NULL, blendFactor, sampleMask);
-	// This actually returns the PREVIOUS FRAME's time value:
-	gpu_time*=0.99f;
-	gpu_time+=0.01f*profileBlock.GetTime();
 	depthTexture->SetResource((ID3D11ShaderResourceView*)NULL);
 	cloudDensity->SetResource((ID3D11ShaderResourceView*)NULL);
 	cloudDensity1->SetResource((ID3D11ShaderResourceView*)NULL);

@@ -3,12 +3,12 @@
 Texture2D nearFarTexture	: register(t3);
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/simul_cloud_constants.sl"
+StructuredBuffer<SmallLayerData> layersSB;
 #include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/simul_clouds.sl"
 #include "../../CrossPlatform/states.sl"
 #include "../../CrossPlatform/earth_shadow_fade.sl"
 
-StructuredBuffer<SmallLayerData> layersSB;
 
 #define Z_VERTICAL 1
 #ifndef WRAP_CLOUDS
