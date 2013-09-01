@@ -11,6 +11,7 @@
 #endif
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Clouds/BaseFramebuffer.h"
 
 namespace simul
@@ -50,22 +51,27 @@ namespace simul
 			void GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
 
 			ID3D11Texture2D					*GetCopy(void *context);
+
+			//! Calculate the spherical harmonics of this cubemap and store the result internally.
+			//! Changing the number of bands will resize the internal storeage.
+			void							calcSphericalHarmonics(void *context,int bands);
 		protected:
 			//! The size of the 2D buffer the sky is rendered to.
 			int Width,Height;
 			ID3D11Texture2D					*stagingTexture;	// Only initialized if CopyToMemory or GetCopy invoked.
-			ID3D1xDevice*					pd3dDevice;
-			ID3D1xRenderTargetView*			m_pOldRenderTarget;
-			ID3D1xDepthStencilView*			m_pOldDepthSurface;
-			D3D1x_VIEWPORT					m_OldViewports[4];
+			ID3D11Device*					pd3dDevice;
+			ID3D11RenderTargetView*			m_pOldRenderTarget;
+			ID3D11DepthStencilView*			m_pOldDepthSurface;
+			D3D11_VIEWPORT					m_OldViewports[4];
 	
 			ID3D11Texture2D*				m_pCubeEnvDepthMap;
 			ID3D11Texture2D*				m_pCubeEnvMap;
-			ID3D1xRenderTargetView*			m_pCubeEnvMapRTV[6];
-			ID3D1xDepthStencilView*			m_pCubeEnvDepthMapDSV[6];
-			ID3D1xShaderResourceView*		m_pCubeEnvMapSRV;
+			ID3D11RenderTargetView*			m_pCubeEnvMapRTV[6];
+			ID3D11DepthStencilView*			m_pCubeEnvDepthMapDSV[6];
+			ID3D11ShaderResourceView*		m_pCubeEnvMapSRV;
 			int								current_face;
 			DXGI_FORMAT						format;
+			TextureStruct					sphericalHarmonics;
 		};
 	}
 }

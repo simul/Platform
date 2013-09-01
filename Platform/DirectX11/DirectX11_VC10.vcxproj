@@ -270,7 +270,6 @@
     <None Include="..\CrossPlatform\states.sl" />
     <None Include="HLSL\atmospherics.fx" />
     <None Include="HLSL\CppHLSL.hlsl" />
-    <None Include="HLSL\gamma.fx" />
     <None Include="HLSL\simul_clouds.fx" />
     <None Include="HLSL\simul_clouds_2d.fx" />
     <None Include="HLSL\simul_clouds_and_lightning_dx11.fx" />
@@ -287,6 +286,7 @@
     <None Include="HLSL\simul_rendernoise.fx" />
     <None Include="HLSL\simul_sky.fx" />
     <None Include="HLSL\simul_terrain.fx" />
+    <None Include="HLSL\spherical_harmonics.fx" />
     <None Include="HLSL\states.hlsl" />
   </ItemGroup>
   <ItemGroup>

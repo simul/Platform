@@ -142,6 +142,7 @@ void FramebufferCubemapDX1x::InvalidateDeviceObjects()
 		SAFE_RELEASE(m_pCubeEnvDepthMapDSV[i]);
 	}
 	SAFE_RELEASE(m_pCubeEnvMapSRV);
+	sphericalHarmonics.release();
 }
 
 void FramebufferCubemapDX1x::SetCurrentFace(int i)
@@ -164,6 +165,11 @@ ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy(void *context)
 	for(int i=0;i<6;i++)
 		pContext->CopySubresourceRegion(stagingTexture,i, 0, 0, 0, m_pCubeEnvMap,i, &sourceRegion);
 	return stagingTexture;
+}
+
+void FramebufferCubemapDX1x::calcSphericalHarmonics(void *context,int bands)
+{
+	sphericalHarmonics.ensureTexture2DSizeAndFormat(pd3dDevice,(bands+1),(bands+1),DXGI_FORMAT_R32G32B32_FLOAT);
 }
 
 void FramebufferCubemapDX1x::Activate(void *context)

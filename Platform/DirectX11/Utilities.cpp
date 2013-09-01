@@ -230,10 +230,63 @@ void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		uav_desc.Texture3D.WSize	= d;
 		uav_desc.Texture3D.FirstWSlice=0;
 
-  /*  uav_desc.Format = DXGI_FORMAT_R32_FLOAT;
-    uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-    uav_desc.Buffer.FirstElement = 0;
-    uav_desc.Buffer.NumElements = w*l*d*4;*/
+		HRESULT hr;
+		SAFE_RELEASE(unorderedAccessView);
+		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
+	}
+}
+
+void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable)
+{
+	D3D11_TEXTURE2D_DESC textureDesc;
+	bool ok=true;
+	if(texture)
+	{
+		ID3D11Texture2D* ppd(NULL);
+		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)
+			ok=false;
+		else
+		{
+			ppd->GetDesc(&textureDesc);
+			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=f)
+				ok=false;
+			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
+				ok=false;
+		}
+		SAFE_RELEASE(ppd);
+	}
+	else
+		ok=false;
+	if(!ok)
+	{
+		release();
+		memset(&textureDesc,0,sizeof(textureDesc));
+		textureDesc.Width			=width=w;
+		textureDesc.Height			=length=l;
+		textureDesc.Format			=format=f;
+		textureDesc.MipLevels		=1;
+		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
+		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
+		textureDesc.MiscFlags		=0;
+		HRESULT hr;
+		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+		srv_desc.Format						= f;
+		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
+		srv_desc.Texture2D.MipLevels		= 1;
+		srv_desc.Texture2D.MostDetailedMip	= 0;
+		V_CHECK(pd3dDevice->CreateShaderResourceView(texture, &srv_desc,&shaderResourceView));
+	}
+	if(computable&&(!unorderedAccessView||!ok))
+	{
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+		uav_desc.Format				= f;
+		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE2D;
+		uav_desc.Texture2D.MipSlice	= 0;
 
 		HRESULT hr;
 		SAFE_RELEASE(unorderedAccessView);
