@@ -191,6 +191,12 @@ struct svertexOutput
     float2 tex				: TEXCOORD0;
 };
 
+struct starsVertexOutput
+{
+    float4 hPosition		: SV_POSITION;
+    float tex				: TEXCOORD0;
+};
+
 svertexOutput VS_Sun(indexVertexInput IN) 
 {
     svertexOutput OUT;
@@ -238,12 +244,12 @@ float4 PS_Flare( svertexOutput IN): SV_TARGET
 struct starsVertexInput
 {
     float3 position			: POSITION;
-    float2 tex				: TEXCOORD0;
+    float tex				: TEXCOORD0;
 };
 
-svertexOutput VS_Stars(starsVertexInput IN) 
+starsVertexOutput VS_Stars(starsVertexInput IN) 
 {
-    svertexOutput OUT;
+    starsVertexOutput OUT;
     OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
 
 	// Set to far plane so can use depth test as want this geometry effectively at infinity
@@ -256,9 +262,9 @@ svertexOutput VS_Stars(starsVertexInput IN)
     return OUT;
 }
 
-float4 PS_Stars( svertexOutput IN): SV_TARGET
+float4 PS_Stars( starsVertexOutput IN): SV_TARGET
 {
-	float3 colour=float3(1.0,1.0,1.0)*clamp(starBrightness*IN.tex.x,0.0,1.0);
+	float3 colour=float3(1.0,1.0,1.0)*clamp(starBrightness*IN.tex,0.0,1.0);
 	return float4(colour,1.0);
 }
 

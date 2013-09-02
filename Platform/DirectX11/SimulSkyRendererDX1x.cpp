@@ -132,7 +132,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 		D3D1x_INPUT_ELEMENT_DESC decl[]=
 		{
 			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD",	0, DXGI_FORMAT_R32_FLOAT,			0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 		SAFE_RELEASE(m_pStarsVtxDecl);
 		hr=m_pd3dDevice->CreateInputLayout(decl,2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pStarsVtxDecl);
@@ -696,10 +696,7 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 	D3DXMatrixTranspose(&wvp,&tmp2);
 	skyConstants.worldViewProj=(const float *)(&tmp2);
 	hr=ApplyPass(pContext,m_hTechniquePointStars->GetPassByIndex(0));
-	if (test < 5)
-	{
-		return true;
-	}
+
 	float sb					=skyKeyframer->GetStarlight().x;
 	float star_brightness		=sb*skyKeyframer->GetStarBrightness();
 	skyConstants.starBrightness	=star_brightness;
@@ -723,10 +720,10 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
     Offsets[0] = 0;
 
 	pContext->IASetVertexBuffers(	0,						// the first input slot for binding
-												1,						// the number of buffers in the array
-												&m_pStarsVertexBuffer,	// the array of vertex buffers
-												&stride,				// array of stride values, one for each buffer
-												&offset );				// array of offset values, one for each buffer
+									1,						// the number of buffers in the array
+									&m_pStarsVertexBuffer,	// the array of vertex buffers
+									&stride,				// array of stride values, one for each buffer
+									&offset );				// array of offset values, one for each buffer
 
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
