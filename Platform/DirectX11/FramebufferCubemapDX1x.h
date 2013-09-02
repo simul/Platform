@@ -1,14 +1,8 @@
 #pragma once
 #include <d3dx9.h>
-#ifdef DX10
-#include <d3d10.h>
-#include <d3dx10.h>
-#include <d3d10effect.h>
-#else
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <D3dx11effect.h>
-#endif
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
@@ -54,7 +48,7 @@ namespace simul
 
 			//! Calculate the spherical harmonics of this cubemap and store the result internally.
 			//! Changing the number of bands will resize the internal storeage.
-			void							calcSphericalHarmonics(void *context,int bands);
+			void							CalcSphericalHarmonics(void *context,int bands);
 		protected:
 			//! The size of the 2D buffer the sky is rendered to.
 			int Width,Height;

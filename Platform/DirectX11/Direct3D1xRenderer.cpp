@@ -158,6 +158,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapDepthFramebuffer.GetDepthTex(),NULL,1,relativeViewportTextureRegionXYWH,true);
 		}
 		framebuffer_cubemap.Deactivate(pContext);
+		framebuffer_cubemap.CalcSphericalHarmonics(pContext,3);
 	}
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetCubemapTexture(framebuffer_cubemap.GetColorTex());

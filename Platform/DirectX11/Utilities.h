@@ -14,7 +14,7 @@ namespace simul
 	namespace dx11
 	{
 		extern void SetFileLoader(simul::base::FileLoader *l);
-		struct TextureStruct
+		struct SIMUL_DIRECTX11_EXPORT TextureStruct
 		{
 			TextureStruct();
 			~TextureStruct();
@@ -160,6 +160,7 @@ namespace simul
 			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
 			static void DrawQuad(ID3D11DeviceContext *m_pImmediateContext);
 			static void DrawCube(void *context);
+			static void DrawSphere(void *context,int latitudes,int longitudes);
 			static void DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
 		};
 		//! Useful Wrapper class to encapsulate constant buffer behaviour

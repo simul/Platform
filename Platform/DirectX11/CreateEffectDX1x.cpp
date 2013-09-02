@@ -855,7 +855,7 @@ void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
 	{
 		 {0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
 		,{0.f,0.f,1.f}		,{0.f,0.f,-1.f}
-		,{0.f,1.f,0.f}		,{0.f,-1.f,0.f}
+		,{0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
 	};
 	for(int i=0;i<6;i++)
 	{

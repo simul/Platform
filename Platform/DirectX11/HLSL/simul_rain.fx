@@ -49,7 +49,7 @@ float rand(float2 co)
     return frac(sin(dot(co.xy ,float2(12.9898,78.233))) * 43758.5453);
 }
 
-struct posTexVertexOutput
+struct rainVertexOutput
 {
     float4 position			: SV_POSITION;
     float2 pos				: TEXCOORD1;
@@ -141,9 +141,9 @@ float4 PS_Particles(particleGeometryOutput IN): SV_TARGET
 	return float4(IN.brightness*lightColour.rgb+result.rgb,opacity);
 }
 
-posTexVertexOutput VS_FullScreen(idOnly IN)
+rainVertexOutput VS_FullScreen(idOnly IN)
 {
-	posTexVertexOutput OUT;
+	rainVertexOutput OUT;
 	float2 poss[4]=
 	{
 		{ 1.0,-1.0},
@@ -164,7 +164,7 @@ posTexVertexOutput VS_FullScreen(idOnly IN)
 	return OUT;
 }
 
-float4 PS_RenderRainTexture(posTexVertexOutput IN): SV_TARGET
+float4 PS_RenderRainTexture(rainVertexOutput IN): SV_TARGET
 {
 	float r=0;
 	float2 t=IN.texCoords.xy;
@@ -178,14 +178,14 @@ float4 PS_RenderRainTexture(posTexVertexOutput IN): SV_TARGET
     return result;
 }
 
-float4 PS_RenderRandomTexture(posTexVertexOutput IN): SV_TARGET
+float4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
 {
 	float r=0;
     vec4 result=vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords));
     return result;
 }
 
-float4 PS_Overlay(posTexVertexOutput IN) : SV_TARGET
+float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 {
 	float3 view		=normalize(mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz);
 	float3 light	=cubeTexture.Sample(wrapSamplerState,-view).rgb;
