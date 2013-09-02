@@ -169,7 +169,10 @@ ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy(void *context)
 
 void FramebufferCubemapDX1x::CalcSphericalHarmonics(void *context,int bands)
 {
-	sphericalHarmonics.ensureTexture2DSizeAndFormat(pd3dDevice,(bands+1),(bands+1),DXGI_FORMAT_R32G32B32_FLOAT);
+	int s=(bands+1);
+	if(s<16)
+		s=16;
+	sphericalHarmonics.ensureTexture2DSizeAndFormat(pd3dDevice,s,s,DXGI_FORMAT_R32G32B32A32_FLOAT);
 }
 
 void FramebufferCubemapDX1x::Activate(void *context)
