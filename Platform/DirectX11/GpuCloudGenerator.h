@@ -86,7 +86,6 @@ namespace simul
 			ID3DX11EffectTechnique*				densityTechnique;
 			ID3DX11EffectTechnique*				densityComputeTechnique;
 			ID3DX11EffectTechnique*				maskTechnique;
-			ID3DX11EffectTechnique*				lightingTechnique;
 			ID3DX11EffectTechnique*				lightingComputeTechnique;
 			ID3DX11EffectTechnique*				secondaryLightingComputeTechnique;
 			ID3DX11EffectTechnique*				transformTechnique;

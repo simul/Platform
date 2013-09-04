@@ -1,8 +1,29 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
+#include "../../CrossPlatform/spherical_harmonics_constants.sl"
+// The cubemap input we are creating coefficients for.
+TextureCube cubeTexture;
+// A texture (l+1)^2 of coefficients.
+RWStructuredBuffer<float4> targetBuffer;
+// A buffer of nxn random sample positions. The higher res, the more accurate.
+RWStructuredBuffer<SphericalHarmonicsSample> samplesBuffer;
+static const float PI=3.1415926536;
 float rand(vec2 co)
 {
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+float factorial(int j)
+{
+	float vals[]={1.0,1.0,2.0,6.0,24.0,120.0,720.0,5040.0,40320.0,362880.0
+				,3628800.0
+				,39916800.0
+				,479001600.0
+				,6227020800.0
+				,87178291200.0
+				,1307674368000.0
+				,20922789888000.0};
+	return vals[j];
 }
 
 float K(int l, int m) 
@@ -11,6 +32,7 @@ float K(int l, int m)
 	float temp = ((2.0*l+1.0)*factorial(l-m)) / (4.0*PI*factorial(l+m)); 
 	return sqrt(temp); 
 }
+
 double P(int l,int m,float x) 
 { 
 	// evaluate an Associated Legendre Polynomial P(l,m,x) at x 
@@ -56,56 +78,73 @@ float SH(int l, int m, float theta, float phi)
 	 return sqrt2*K(l,-m)*sin(-m*phi)*P(l,-m,cos(theta)); 
 }
 
-struct SHSample
-{ 
-	vec3 sph; 
-	vec3 vec; 
-	float coeff[36]; 
-}; 
-const float PI=3.1415926536;
-void SH_setup_spherical_samples(SHSample samples[], int sqrt_n_samples) 
+void SH_setup_spherical_samples(int2 pos,int sqrt_n_samples,int n_bands) 
 { 
 	// fill an N*N*2 array with uniformly distributed 
 	// samples across the sphere using jittered stratification 
-	int i=0; // array index 
 	double oneoverN = 1.0/sqrt_n_samples; 
-	for(int a=0; a<sqrt_n_samples; a++)
+	int a=pos.x;
+	int b=pos.y;
+	int i=a*4+b; // array index 
+	// generate unbiased distribution of spherical coords 
+	float x		=(a + rand(vec2(a,b))) * oneoverN; // do not reuse results 
+	float y		=(b + rand(vec2(2*a,b))) * oneoverN; // each sample must be random 
+	float theta	=2.0 * acos(sqrt(1.0 - x)); 
+	float phi	=2.0 * PI * y; 
+	samplesBuffer[i].theta=theta;
+	samplesBuffer[i].phi	=phi;
+	// convert spherical coords to unit vector 
+	vec3 vec		=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
+	samplesBuffer[i].dir	= vec; 
+	// precompute all SH coefficients for this sample 
+	for(int l=0; l<n_bands; ++l)
 	{ 
-		for(int b=0; b<sqrt_n_samples; b++)
+		for(int m=-l; m<=l; ++m)
 		{ 
-			// generate unbiased distribution of spherical coords 
-			float x			= (a + rand(vec2(a,b))) * oneoverN; // do not reuse results 
-			float y			= (b + rand(vec2(2*a,b))) * oneoverN; // each sample must be random 
-			float theta		= 2.0 * acos(sqrt(1.0 - x)); 
-			float phi		= 2.0 * PI * y; 
-			samples[i].sph	= vec3(theta,phi,1.0); 
-			// convert spherical coords to unit vector 
-			vec3 vec		=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
-			samples[i].vec	= vec; 
-			// precompute all SH coefficients for this sample 
-			for(int l=0; l<n_bands; ++l)
-			{ 
-				for(int m=-l; m<=l; ++m)
-				{ 
-					int index = l*(l+1)+m; 
-					samples[i].coeff[index] = SH(l,m,theta,phi);
-				}
-			}
-			i++;
+			int index = l*(l+1)+m; 
+			samplesBuffer[i].coeff[index] = SH(l,m,theta,phi);
 		}
 	}
 }
 
+[numthreads(1,1,1)]
+void CS_Jitter(uint3 sub_pos: SV_DispatchThreadID )
+{
+	SH_setup_spherical_samples(sub_pos.xy,16,3);
+}
+
+[numthreads(1,1,1)]
+void CS_Encode(uint3 sub_pos: SV_DispatchThreadID )
+{
+	SphericalHarmonicsSample sample=samplesBuffer[sub_pos.x];
+	// The sub_pos gives the co-ordinate in the table of samples.
+	vec4 colour		=cubeTexture.SampleLevel(wrapSamplerState,sample.dir,0);
+	const double weight = 4.0*PI; 
+	// for each sample 
+	
+	double theta = sample.theta; 
+	double phi = sample.phi; 
+	// divide the result by weight and number of samples 
+	double factor = weight / 1024.0; 
+	for(int n=0; n<16; ++n)
+	{ 
+		targetBuffer[n] += colour * sample.coeff[n]*factor; 
+	} 
+}
+
+technique11 jitter
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Jitter()));
+    }
+}
+
 technique11 encode
 {
-    pass p0
+    pass p0 
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
-		SetPixelShader(CompileShader(ps_4_0,EncodePS()));
+		SetComputeShader(CompileShader(cs_5_0,CS_Encode()));
     }
 }
 

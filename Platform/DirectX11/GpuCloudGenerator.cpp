@@ -17,7 +17,6 @@ GpuCloudGenerator::GpuCloudGenerator()
 			,effect(NULL)
 			,densityTechnique(NULL)
 			,densityComputeTechnique(NULL)
-			,lightingTechnique(NULL)
 			,lightingComputeTechnique(NULL)
 			,secondaryLightingComputeTechnique(NULL)
 			,transformTechnique(NULL)
@@ -109,7 +108,6 @@ void GpuCloudGenerator::RecompileShaders()
 	if(effect)
 	{
 		densityTechnique					=effect->GetTechniqueByName("simul_gpu_density");
-		lightingTechnique					=effect->GetTechniqueByName("simul_gpu_lighting");
 		lightingComputeTechnique			=effect->GetTechniqueByName("gpu_lighting_compute");
 		secondaryLightingComputeTechnique	=effect->GetTechniqueByName("gpu_secondary_compute");
 		transformTechnique					=effect->GetTechniqueByName("simul_gpu_transform");

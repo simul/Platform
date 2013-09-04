@@ -255,6 +255,7 @@
     <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
     <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
     <None Include="..\CrossPlatform\sky_constants.sl" />
+    <None Include="..\CrossPlatform\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\states.sl" />
     <None Include="HLSL\atmospherics.fx" />
     <None Include="HLSL\CppHLSL.hlsl" />

@@ -7,6 +7,7 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Clouds/BaseFramebuffer.h"
+#include "Simul/Platform/CrossPlatform/spherical_harmonics_constants.sl"
 
 namespace simul
 {
@@ -43,29 +44,28 @@ namespace simul
 				return (m_pCubeEnvMapSRV != NULL);
 			}
 			void GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
-
 			ID3D11Texture2D					*GetCopy(void *context);
-
 			//! Calculate the spherical harmonics of this cubemap and store the result internally.
 			//! Changing the number of bands will resize the internal storeage.
 			void							CalcSphericalHarmonics(void *context,int bands);
 		protected:
 			//! The size of the 2D buffer the sky is rendered to.
 			int Width,Height;
-			ID3D11Texture2D					*stagingTexture;	// Only initialized if CopyToMemory or GetCopy invoked.
-			ID3D11Device*					pd3dDevice;
-			ID3D11RenderTargetView*			m_pOldRenderTarget;
-			ID3D11DepthStencilView*			m_pOldDepthSurface;
-			D3D11_VIEWPORT					m_OldViewports[4];
-	
-			ID3D11Texture2D*				m_pCubeEnvDepthMap;
-			ID3D11Texture2D*				m_pCubeEnvMap;
-			ID3D11RenderTargetView*			m_pCubeEnvMapRTV[6];
-			ID3D11DepthStencilView*			m_pCubeEnvDepthMapDSV[6];
-			ID3D11ShaderResourceView*		m_pCubeEnvMapSRV;
-			int								current_face;
-			DXGI_FORMAT						format;
-			TextureStruct					sphericalHarmonics;
+			ID3D11Texture2D								*stagingTexture;	// Only initialized if CopyToMemory or GetCopy invoked.
+			ID3D11Device*								pd3dDevice;
+			ID3D11RenderTargetView*						m_pOldRenderTarget;
+			ID3D11DepthStencilView*						m_pOldDepthSurface;
+			D3D11_VIEWPORT								m_OldViewports[4];
+			ID3D11Texture2D*							m_pCubeEnvDepthMap;
+			ID3D11Texture2D*							m_pCubeEnvMap;
+			ID3D11RenderTargetView*						m_pCubeEnvMapRTV[6];
+			ID3D11DepthStencilView*						m_pCubeEnvDepthMapDSV[6];
+			ID3D11ShaderResourceView*					m_pCubeEnvMapSRV;
+			int											current_face;
+			DXGI_FORMAT									format;
+			StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;
+			StructuredBuffer<vec4>						sphericalHarmonics;
+	ID3DX11Effect *sphericalHarmonicsEffect;
 		};
 	}
 }

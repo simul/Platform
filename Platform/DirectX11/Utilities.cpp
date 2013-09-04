@@ -12,6 +12,7 @@ TextureStruct::TextureStruct()
 	:texture(NULL)
 	,shaderResourceView(NULL)
 	,unorderedAccessView(NULL)
+	,renderTargetView(NULL)
 	,stagingBuffer(NULL)
 	,width(0)
 	,length(0)
@@ -34,10 +35,8 @@ void TextureStruct::release()
 	}
 	SAFE_RELEASE(texture);
 	SAFE_RELEASE(shaderResourceView);
-	if(unorderedAccessView)
-	{
-		SAFE_RELEASE(unorderedAccessView);
-	}
+	SAFE_RELEASE(unorderedAccessView);
+	SAFE_RELEASE(renderTargetView);
 	SAFE_RELEASE(stagingBuffer);
 
 }
@@ -238,7 +237,7 @@ void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 	}
 }
 
-void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable)
+void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable,bool rendertarget)
 {
 	D3D11_TEXTURE2D_DESC textureDesc;
 	bool ok=true;
@@ -282,7 +281,7 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
 		srv_desc.Texture2D.MipLevels		= 1;
 		srv_desc.Texture2D.MostDetailedMip	= 0;
-		V_CHECK(pd3dDevice->CreateShaderResourceView(texture, &srv_desc,&shaderResourceView));
+		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&shaderResourceView));
 	}
 	if(computable&&(!unorderedAccessView||!ok))
 	{
@@ -294,7 +293,18 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 
 		HRESULT hr;
 		SAFE_RELEASE(unorderedAccessView);
-		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
+		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture,&uav_desc,&unorderedAccessView));
+	}
+	if(rendertarget&&(!renderTargetView||!ok))
+	{
+		HRESULT hr;
+		// Setup the description of the render target view.
+		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+		renderTargetViewDesc.Format				=f;
+		renderTargetViewDesc.ViewDimension		=D3D11_RTV_DIMENSION_TEXTURE2D;
+		renderTargetViewDesc.Texture2D.MipSlice	=0;
+		// Create the render target in DX11:
+		V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&renderTargetView));
 	}
 }
 

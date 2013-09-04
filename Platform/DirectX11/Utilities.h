@@ -22,7 +22,7 @@ namespace simul
 			ID3D11Resource*				texture;
 			ID3D11ShaderResourceView*   shaderResourceView;
 			ID3D11UnorderedAccessView*  unorderedAccessView;
-			
+			ID3D11RenderTargetView*		renderTargetView;
 			ID3D11Resource*				stagingBuffer;
 
 			D3D11_MAPPED_SUBRESOURCE	mapped;
@@ -33,7 +33,7 @@ namespace simul
 			void setTexels(ID3D11DeviceContext *context,const unsigned *uint_array,int texel_index,int num_texels);
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
 			void ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable=false);
-			void ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable=false);
+			void ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable=false,bool rendertarget=false);
 			void map(ID3D11DeviceContext *context);
 			bool isMapped() const;
 			void unmap();
@@ -296,7 +296,7 @@ namespace simul
 			ID3D11Buffer						*buffer;
 			ID3D11ShaderResourceView			*shaderResourceView;
 			ID3D11UnorderedAccessView			*unorderedAccessView;
-			D3D11_MAPPED_SUBRESOURCE	mapped;
+			D3D11_MAPPED_SUBRESOURCE			mapped;
 			int size;
 			ID3D11DeviceContext					*lastContext;
 		};
