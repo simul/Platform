@@ -192,7 +192,7 @@ void FramebufferCubemapDX1x::CalcSphericalHarmonics(void *context,int bands)
 	// The table of coefficients.
 	sphericalHarmonics.RestoreDeviceObjects(pd3dDevice,s*s);
 	
-	ID3DX11EffectTechnique *tech=sphericalHarmonicsEffect->GetTechniqueByName("encode");
+	ID3DX11EffectTechnique *tech	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
 	simul::dx11::setParameter			(sphericalHarmonicsEffect,"cubemapTexture",(ID3D11ShaderResourceView*)m_pCubeEnvMapSRV);
 	simul::dx11::setParameter			(sphericalHarmonicsEffect,"targetBuffer",(ID3D11ShaderResourceView*)sphericalHarmonics.unorderedAccessView);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
