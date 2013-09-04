@@ -59,7 +59,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	,d3dQuery(NULL)
 	,cycle(0)
 {
-//EnableColourSky(false);
 	SetCameraPosition(0,0,400.f);
 	skyKeyframer->SetCalculateAllAltitudes(true);
 	loss_2d		=new(memoryInterface) simul::dx11::Framebuffer(0,0);
@@ -185,6 +184,7 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	skyConstants.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
 	operator delete[](star_vertices,memoryInterface);
+	star_vertices=NULL;
 }
 
 bool SimulSkyRendererDX1x::Destroy()
@@ -676,7 +676,7 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pStarsVertexBuffer);
 }
 
-static int test = 0;
+
 
 bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 {
@@ -697,9 +697,7 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 	skyConstants.worldViewProj=(const float *)(&tmp2);
 	hr=ApplyPass(pContext,m_hTechniquePointStars->GetPassByIndex(0));
 
-	float sb					=skyKeyframer->GetStarlight().x;
-	float star_brightness		=sb*skyKeyframer->GetStarBrightness();
-	skyConstants.starBrightness	=star_brightness;
+	skyConstants.starBrightness	=skyKeyframer->GetCurrentStarBrightness();
 	skyConstants.Apply(pContext);
 
 	int current_num_stars=skyKeyframer->stars.GetNumStars();

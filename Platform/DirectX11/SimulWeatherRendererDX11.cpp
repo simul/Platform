@@ -396,6 +396,7 @@ Simul2DCloudRendererDX11 *SimulWeatherRendererDX11::Get2DCloudRenderer()
 {
 	return simul2DCloudRenderer;
 }
+
 //! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 void SimulWeatherRendererDX11::SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb)
 {
