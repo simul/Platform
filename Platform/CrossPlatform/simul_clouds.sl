@@ -306,10 +306,10 @@ vec4 SimpleRaytraceCloudsForward(Texture3D cloudDensity1,Texture3D cloudDensity2
 }
 
 RaytracePixelOutput ExperimentalRaytraceCloudsForward3DNoise(Texture3D cloudDensity1
-											,Texture3D cloudDensity2
-											,Texture3D noiseTexture3D
-											,Texture2D depthTexture
-											,vec2 texCoords)
+															,Texture3D cloudDensity2
+															,Texture3D noiseTexture3D
+															,Texture2D depthTexture
+															,vec2 texCoords)
 {
 	float dlookup 		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
 	vec4 clip_pos		=vec4(-1.f,1.f,1.f,1.f);
@@ -446,10 +446,10 @@ RaytracePixelOutput ExperimentalRaytraceCloudsForward3DNoise(Texture3D cloudDens
 
 
 RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
-											,Texture3D cloudDensity2
-											,Texture3D noiseTexture3D
-											,Texture2D depthTexture
-											,vec2 texCoords)
+												,Texture3D cloudDensity2
+												,Texture3D noiseTexture3D
+												,Texture2D depthTexture
+												,vec2 texCoords)
 {
 	float dlookup 		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
 	vec4 clip_pos		=vec4(-1.f,1.f,1.f,1.f);
@@ -499,7 +499,7 @@ RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
 			vec3 noiseval			=vec3(0.0,0.0,0.0);
 			vec3 noise_texc			=layerTexCoords.xyz*noise3DTexcoordScale;
 			float mul=0.5;
-			for(int j=0;j<3;j++)
+			for(int j=0;j<4;j++)
 			{
 				noiseval			+=(noiseTexture3D.SampleLevel(wrapSamplerState,noise_texc,0).xyz)*mul;
 				noise_texc			*=2.0;

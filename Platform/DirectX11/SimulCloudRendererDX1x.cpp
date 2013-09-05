@@ -20,6 +20,7 @@
 #include "Simul/Math/Pi.h"
 #include "Simul/Camera/Camera.h"						// for simul::camera::Frustum
 
+#include "Simul/Math/Noise3D.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Clouds/CloudInterface.h"
@@ -443,33 +444,51 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(void* context)
 	Create3DNoiseTexture(context);
 	return true;
 }
-#include "Simul/Math/Noise3D.h"
+
 void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 {
+	return;
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
 	//using noise_size and noise_src_ptr, make a 3d texture:
 
-	int noise_texture_frequency				=cloudKeyframer->GetEdgeNoiseFrequency();
-	ID3D1xEffect *effect					=NULL;
-	HRESULT hr								=CreateEffect(m_pd3dDevice,&effect,"simul_rendernoise.fx");
-	ID3D1xEffectTechnique *randomTechnique	=effect->GetTechniqueByName("simul_random");
+	int noise_texture_frequency						=cloudKeyframer->GetEdgeNoiseFrequency();
+	int noise_texture_size							=cloudKeyframer->GetEdgeNoiseTextureSize();
+	ID3D1xEffect *effect							=NULL;
+	HRESULT hr										=CreateEffect(m_pd3dDevice,&effect,"simul_rendernoise.fx");
+	ID3DX11EffectTechnique *randomComputeTechnique	=effect->GetTechniqueByName("random_3d_compute");
+	ID3DX11EffectTechnique *noise3DComputeTechnique	=effect->GetTechniqueByName("noise_3d_compute");
 
-	simul::dx11::Framebuffer random_fb;
-	random_fb.RestoreDeviceObjects(m_pd3dDevice);
-	random_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency*noise_texture_frequency);
-	random_fb.SetFormat((int)DXGI_FORMAT_R8G8B8A8_SNORM);
-	ApplyPass(pContext,randomTechnique->GetPassByIndex(0));
-	random_fb.Activate(context);
-	random_fb.DrawQuad(context);
-	random_fb.Deactivate(context);
+	TextureStruct random_3d;
+	random_3d.ensureTexture3DSizeAndFormat(m_pd3dDevice
+		,noise_texture_frequency,noise_texture_frequency,noise_texture_frequency
+		,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+	simul::dx11::setUnorderedAccessView(effect,"targetTexture",random_3d.unorderedAccessView);
+	ApplyPass(pContext,randomComputeTechnique->GetPassByIndex(0));
+	int d=(noise_texture_frequency+7)/8;
+	pContext->Dispatch(d,d,d);
 
-	unsigned *data=new(memoryInterface) unsigned[noise_texture_frequency*noise_texture_frequency*noise_texture_frequency];
-	random_fb.CopyToMemory(pContext,data);
+	while(noise_texture_size>32)
+	{
+		noise_texture_size/=2;
+		realtime_3d_octaves++;
+	}
+	noise_texture_3D.ensureTexture3DSizeAndFormat(m_pd3dDevice
+		,noise_texture_size,noise_texture_size,noise_texture_size
+		,DXGI_FORMAT_R8G8B8A8_SNORM,true);
 	
-	noise_texture_3D.ensureTexture3DSizeAndFormat(m_pd3dDevice,noise_texture_frequency,noise_texture_frequency,noise_texture_frequency,DXGI_FORMAT_R8G8B8A8_SNORM,false);
-	noise_texture_3D.setTexels(pContext,(unsigned*)data,0,noise_texture_frequency*noise_texture_frequency*noise_texture_frequency);
-
-	operator delete [](data,memoryInterface);
+	simul::dx11::setParameter(effect,"random_texture_3d",random_3d.shaderResourceView);
+	simul::dx11::setUnorderedAccessView(effect,"targetTexture",noise_texture_3D.unorderedAccessView);
+	int texture_octaves			=cloudKeyframer->GetEdgeNoiseOctaves();
+	float texture_persistence	=cloudKeyframer->GetEdgeNoisePersistence();
+	simul::dx11::setParameter(effect,"octaves"		,texture_octaves);
+	simul::dx11::setParameter(effect,"persistence"	,texture_persistence);
+	//noise_texture_3D.setTexels(pContext,(unsigned*)data,0,noise_texture_frequency*noise_texture_frequency*noise_texture_frequency);
+	ApplyPass(pContext,noise3DComputeTechnique->GetPassByIndex(0));
+	int t=(noise_texture_size+7)/8;
+	pContext->Dispatch(t,t,t);
+	simul::dx11::setParameter(effect,"random_texture_3d",(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setUnorderedAccessView(effect,"targetTexture",NULL);
+	ApplyPass(pContext,noise3DComputeTechnique->GetPassByIndex(0));
 	SAFE_RELEASE(effect);
 }
 
