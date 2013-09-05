@@ -1,12 +1,7 @@
 #pragma once
 // Direct3D includes
-#ifdef DX10
-	#include <D3D10.h>
-	#include <d3dx10.h>
-#else
-	#include <d3d11.h>
-	#include <d3dx11.h>
-#endif
+#include <d3d11.h>
+#include <d3dx11.h>
 #include <Simul\External\DirectX\DXUT11\Core\dxut.h>
 #include <Simul\External\DirectX\DXUT11\Core\dxutdevice11.h>
 #include <dxerr.h>
@@ -62,6 +57,7 @@ namespace simul
 				META_ValueProperty(bool,CelestialDisplay		,"Show geographical and sidereal overlay.")
 				META_ValueProperty(bool,ShowWater				,"Show water surfaces.")
 				META_ValueProperty(bool,MakeCubemap				,"Render a cubemap each frame.")
+				META_ValueProperty(bool,ShowCubemaps			,"Show any generated cubemaps onscreen.")
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
 				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")

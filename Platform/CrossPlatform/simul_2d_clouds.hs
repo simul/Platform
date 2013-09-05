@@ -26,6 +26,7 @@ uniform_buffer Cloud2DConstants SIMUL_BUFFER_REGISTER(11)
 	uniform float nearZ;
 	uniform float farZ;
 	uniform vec2 tanHalfFov;
+	uniform vec3 depthToLinFadeDistParams;
 	uniform float exposure;
 	uniform float time;
 };

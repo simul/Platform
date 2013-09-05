@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2011 Simul Software Ltd
+// Copyright (c) 2007-2013 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -211,30 +211,16 @@ ERROR_CHECK
 	return true;
 }
 	
-void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned width_x,unsigned length_y,unsigned depth_z)
+void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned ,unsigned ,unsigned )
 {
-	glGenTextures(1,&illum_tex);
-	glBindTexture(GL_TEXTURE_3D,illum_tex);
-	glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA,width_x,length_y,depth_z,0,GL_RGBA,GL_UNSIGNED_INT,0);
-	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE);
 }
 
 void SimulGLCloudRenderer::FillIlluminationSequentially(int ,int ,int ,const unsigned char *)
 {
 }
 
-void SimulGLCloudRenderer::FillIlluminationBlock(int ,int x,int y,int z,int w,int l,int d,const unsigned char *uchar8_array)
+void SimulGLCloudRenderer::FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *)
 {
-	glBindTexture(GL_TEXTURE_3D,illum_tex);
-	glTexSubImage3D(	GL_TEXTURE_3D,0,
-						x,y,z,
-						w,l,d,
-						GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
-						uchar8_array);
 }
 
 static void glGetMatrix(GLfloat *m,GLenum src=GL_PROJECTION_MATRIX)
@@ -396,7 +382,7 @@ ERROR_CHECK
 	
 ERROR_CHECK
 float time=skyInterface->GetTime();
-const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
+//const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
 	CloudPerViewConstants cloudPerViewConstants;
 ERROR_CHECK
@@ -410,7 +396,7 @@ ERROR_CHECK
 	simul::sky::float4 fractal_scales=simul::clouds::CloudGeometryHelper::GetFractalScales(GetCloudInterface());
 
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
-	float base_alt_km=X1.z*.001f;
+//	float base_alt_km=X1.z*.001f;
 	float t=0.f;
 	
 	CloudConstants cloudConstants;
@@ -545,6 +531,12 @@ void SimulGLCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
 {
 	inscatter_tex=((GLuint)i);
 	skylight_tex=((GLuint)s);
+	overcast_tex=((GLuint)o);
+}
+
+void SimulGLCloudRenderer::SetIlluminationTexture(void* i)
+{
+	illum_tex=((GLuint)i);
 }
 
 void SimulGLCloudRenderer::UseShader(GLuint program)
@@ -589,6 +581,7 @@ void SimulGLCloudRenderer::RecompileShaders()
 		return;
 current_program=0;
 ERROR_CHECK
+	gpuCloudGenerator.RecompileShaders();
 	SAFE_DELETE_PROGRAM(clouds_background_program);
 	SAFE_DELETE_PROGRAM(clouds_foreground_program);
 	SAFE_DELETE_PROGRAM(raytrace_program);
@@ -621,6 +614,7 @@ ERROR_CHECK
 void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 {
 	init=true;
+	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	
 	MAKE_GL_CONSTANT_BUFFER(cloudConstantsUBO,CloudConstants,cloudConstantsBindingIndex);
 	MAKE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
@@ -701,6 +695,7 @@ ERROR_CHECK
 void SimulGLCloudRenderer::InvalidateDeviceObjects()
 {
 	init=false;
+	gpuCloudGenerator.InvalidateDeviceObjects();
 	SAFE_DELETE_TEXTURE(noise_tex);
 	SAFE_DELETE_PROGRAM(cross_section_program);
 
@@ -930,7 +925,7 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 
 void SimulGLCloudRenderer::RenderCrossSections(void *,int width,int height)
 {
-	static int u=6;
+	static int u=4;
 	int w=(width-8)/u;
 	if(w>height/2)
 		w=height/2;

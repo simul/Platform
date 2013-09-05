@@ -1,3 +1,4 @@
+#define NOMINMAX
 // Copyright (c) 2007-2009 Simul Software Ltd
 // All Rights Reserved.
 //
@@ -134,7 +135,6 @@ void SimulPrecipitationRendererDX1x::InvalidateDeviceObjects()
 	perViewConstants.InvalidateDeviceObjects();
 }
 
-
 SimulPrecipitationRendererDX1x::~SimulPrecipitationRendererDX1x()
 {
 	InvalidateDeviceObjects();
@@ -155,7 +155,11 @@ those pixels.
 void SimulPrecipitationRendererDX1x::Render(void *context)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	if(Intensity<=0)
+	static float intens=0.f;
+	static float cc=0.002f;
+	intens*=1.f-cc;
+	intens+=cc*Intensity;
+	if(intens<=0)
 		return;
 	PIXBeginNamedEvent(0,"Render Precipitation");
 	rainTexture->SetResource(rain_texture);
@@ -205,7 +209,7 @@ void SimulPrecipitationRendererDX1x::Render(void *context)
 
 	if(RainToSnow<1.f)
 	{
-		rainConstants.intensity		=Intensity*(1.f-RainToSnow);
+		rainConstants.intensity		=intens*(1.f-RainToSnow);
 		rainConstants.Apply(m_pImmediateContext);
 		UINT passes=1;
 		for(unsigned i = 0 ; i < passes ; ++i )
@@ -216,7 +220,7 @@ void SimulPrecipitationRendererDX1x::Render(void *context)
 	}
 	if(RainToSnow>0)
 	{
-		rainConstants.intensity		=Intensity*(RainToSnow);
+		rainConstants.intensity		=intens*(RainToSnow);
 		rainConstants.Apply(m_pImmediateContext);
 		RenderParticles(m_pImmediateContext);
 	}

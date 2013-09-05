@@ -62,7 +62,7 @@ void main()
 		//if(texCoords.z<min_texc_z||texCoords.z>max_texc_z)
 		//	continue;
 		/*vec2 noise_texc		=noise_texc_0*layer.noiseScale+layer.noiseOffset;
-		vec3 noiseval=(noiseTexture.SampleLevel(noiseSamplerState,noise_texc.xy,3).xyz).xyz;
+		vec3 noiseval=(noiseTexture.SampleLevel(wrapSamplerState,noise_texc.xy,3).xyz).xyz;
 #ifdef DETAIL_NOISE
 		//noiseval+=(noiseTexture.SampleLevel(noiseSamplerState,8.0*noise_texc.xy,0).xyz)/2.0;
 #endif*/

@@ -7,7 +7,7 @@
 // agreement.
 
 // SimulAtmosphericsRendererDX1x.cpp A renderer for skies, clouds and weather effects.
-
+#define NOMINMAX
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
 #include <tchar.h>
@@ -73,8 +73,8 @@ void SimulAtmosphericsRendererDX1x::SetLossTexture(void* t)
 void SimulAtmosphericsRendererDX1x::SetInscatterTextures(void* i,void *s,void *o)
 {
 	skyInscatterTexture_SRV=(ID3D1xShaderResourceView*)i;
-	overcInscTexture_SRV=(ID3D1xShaderResourceView*)o;
 	skylightTexture_SRV=(ID3D1xShaderResourceView*)s;
+	overcInscTexture_SRV=(ID3D1xShaderResourceView*)o;
 }
 
 void SimulAtmosphericsRendererDX1x::SetIlluminationTexture(void *i)
@@ -162,10 +162,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
 	
 	lossTexture->SetResource(skyLossTexture_SRV);
-	if(ShowGodrays)
-		inscTexture->SetResource(overcInscTexture_SRV);
-	else
-		inscTexture->SetResource(skyInscatterTexture_SRV);
+	inscTexture->SetResource(overcInscTexture_SRV);
 	skylTexture->SetResource(skylightTexture_SRV);
 	
 	simul::dx11::setParameter(effect,"illuminationTexture",illuminationTexture_SRV);
@@ -179,7 +176,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 
 	D3DXMATRIX p1=proj;
 
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1, relativeViewportTextureRegionXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
 	
 	atmosphericsPerViewConstants.Apply(pContext);
 	
@@ -228,7 +225,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,c
 	D3DXMATRIX p1=proj;
 	SetAtmosphericsConstants(atmosphericsUniforms,strength*exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,relativeViewportTextureRegionXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
 	SetGodraysConstants(atmosphericsPerViewConstants,view);
 
 	atmosphericsPerViewConstants.Apply(pContext);
@@ -244,7 +241,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,c
 	overcTexture		->SetResource(NULL);
 	cloudShadowTexture	->SetResource(NULL);
 	cloudNearFarTexture	->SetResource(NULL);
-	atmosphericsPerViewConstants.Unbind(pContext);
-	atmosphericsUniforms.Unbind(pContext);
+	//atmosphericsPerViewConstants.Unbind(pContext);
+	//atmosphericsUniforms.Unbind(pContext);
 	ApplyPass(pContext,godraysTechnique->GetPassByIndex(0));
 }

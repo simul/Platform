@@ -106,7 +106,6 @@ SimulGLWeatherRenderer::~SimulGLWeatherRenderer()
 
 void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
 {
-	simulAtmosphericsRenderer->SetBufferSize(w,h);
 	BufferWidth=w/Downscale;
 	BufferHeight=h/Downscale;
     if(scene_buffer)

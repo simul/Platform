@@ -37,6 +37,9 @@
 	#define SIMUL_BUFFER_REGISTER(buff_num) : register(b##buff_num)
 	#define SIMUL_RWTEXTURE_REGISTER(tex_num) : register(u##tex_num)
 
+	#define SIMUL_TARGET_OUTPUT : SV_TARGET
+	#define SIMUL_DEPTH_OUTPUT : SV_DEPTH
+
 	#define vec1 float1
 	#define vec2 float2
 	#define vec3 float3
@@ -60,6 +63,28 @@
 	{
 		uint vertex_id			: SV_VertexID;
 	};
+	struct posTexVertexOutput
+	{
+		float4 hPosition	: SV_POSITION;
+		float2 texCoords	: TEXCOORD0;		
+	};
+	posTexVertexOutput VS_SimpleFullscreen(idOnly IN)
+	{
+		posTexVertexOutput OUT;
+		vec2 poss[4]=
+		{
+			{ 1.0,-1.0},
+			{ 1.0, 1.0},
+			{-1.0,-1.0},
+			{-1.0, 1.0},
+		};
+		vec2 pos		=poss[IN.vertex_id];
+		OUT.hPosition	=vec4(pos,0.0,1.0);
+		OUT.hPosition.z	=0.0; 
+		OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
+		return OUT;
+	}
+
 #endif
 
 #endif

@@ -9,13 +9,14 @@
 
 // SimulSkyRendererDX1x.cpp A renderer for skies.
 #define NOMINMAX
-#include "SimulSkyRendererDX1x.h"
+
 
 #include <tchar.h>
-#include <d3d10.h>
+#include <d3d10_1.h>
 #include <d3dx10.h>
 #include <dxerr.h>
 #include <string>
+#include "SimulSkyRendererDX1x.h"
 static DXGI_FORMAT sky_tex_format=DXGI_FORMAT_R32G32B32A32_FLOAT;
 extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Sky/SkyInterface.h"
@@ -58,15 +59,12 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	,d3dQuery(NULL)
 	,cycle(0)
 {
-//EnableColourSky(false);
 	SetCameraPosition(0,0,400.f);
 	skyKeyframer->SetCalculateAllAltitudes(true);
 	loss_2d		=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	inscatter_2d=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	overcast_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	skylight_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
-	loss_2d->SetDepthFormat(0);
-	illumination_fb.SetDepthFormat(0);
 }
 
 void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
@@ -119,7 +117,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 		skylight_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
 		skylight_2d->RestoreDeviceObjects(dev);
 	}
-	illumination_fb.SetWidthAndHeight(128,numFadeElevations*2);
+	illumination_fb.SetWidthAndHeight(64,numFadeElevations*4);
 	SAFE_RELEASE(moon_texture_SRV);
 	MoonTexture="Moon.png";
 	moon_texture_SRV=simul::dx11::LoadTexture(m_pd3dDevice,MoonTexture.c_str());
@@ -133,7 +131,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 		D3D1x_INPUT_ELEMENT_DESC decl[]=
 		{
 			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32_FLOAT,		0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD",	0, DXGI_FORMAT_R32_FLOAT,			0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 		SAFE_RELEASE(m_pStarsVtxDecl);
 		hr=m_pd3dDevice->CreateInputLayout(decl,2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pStarsVtxDecl);
@@ -185,7 +183,8 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	earthShadowUniforms.InvalidateDeviceObjects();
 	skyConstants.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
-	operator delete [](star_vertices,memoryInterface);
+	operator delete[](star_vertices,memoryInterface);
+	star_vertices=NULL;
 }
 
 bool SimulSkyRendererDX1x::Destroy()
@@ -524,7 +523,7 @@ void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float 
 	planet_dir4/=simul::sky::length(planet_dir4);
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(planet_dir4.z);
-	planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
+	//planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 	D3DXVECTOR4 planet_dir(dir);
 	//m_pSkyEffect->SetVector(colour,(D3DXVECTOR4*)(&planet_colour));
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
@@ -654,7 +653,7 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	SAFE_RELEASE(m_pStarsVertexBuffer);
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
 	num_stars=current_num_stars;
-	operator delete [](star_vertices,memoryInterface);
+	operator delete[](star_vertices,memoryInterface);
 	star_vertices=new(memoryInterface) StarVertext[num_stars];
 	static float d=100.f;
 	for(int i=0;i<num_stars;i++)
@@ -677,7 +676,7 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pStarsVertexBuffer);
 }
 
-static int test = 0;
+
 
 bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 {
@@ -697,13 +696,8 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 	D3DXMatrixTranspose(&wvp,&tmp2);
 	skyConstants.worldViewProj=(const float *)(&tmp2);
 	hr=ApplyPass(pContext,m_hTechniquePointStars->GetPassByIndex(0));
-	if (test < 5)
-	{
-		return true;
-	}
-	float sb					=skyKeyframer->GetStarlight().x;
-	float star_brightness		=sb*skyKeyframer->GetStarBrightness();
-	skyConstants.starBrightness	=star_brightness;
+
+	skyConstants.starBrightness	=skyKeyframer->GetCurrentStarBrightness();
 	skyConstants.Apply(pContext);
 
 	int current_num_stars=skyKeyframer->stars.GetNumStars();
@@ -724,10 +718,10 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
     Offsets[0] = 0;
 
 	pContext->IASetVertexBuffers(	0,						// the first input slot for binding
-												1,						// the number of buffers in the array
-												&m_pStarsVertexBuffer,	// the array of vertex buffers
-												&stride,				// array of stride values, one for each buffer
-												&offset );				// array of offset values, one for each buffer
+									1,						// the number of buffers in the array
+									&m_pStarsVertexBuffer,	// the array of vertex buffers
+									&stride,				// array of stride values, one for each buffer
+									&offset );				// array of offset values, one for each buffer
 
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);

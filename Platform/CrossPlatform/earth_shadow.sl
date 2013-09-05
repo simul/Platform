@@ -34,9 +34,13 @@ vec2 fn(float r,float cos2,float sine_phi,float sine_gamma,float maxFadeDistance
 	{
 		L			=-r*sine_phi;
 		if(r<=1.0)
+		{
 			L		+=sqrt(u);
+		}
 		else
+		{
 			L		-=sqrt(u);
+		}
 		L			=max(0.0,L);
 		L			=L/sine_gamma;
 		// L is the distance to the outside of the Earth's shadow in this direction, normalized to the Earth's radius.
@@ -76,43 +80,39 @@ vec2 fn(float r,float cos2,float sine_phi,float sine_gamma,float maxFadeDistance
 
 vec2 EarthShadowDistances(vec2 fade_texc,vec3 view)
 {
-	if(radiusOnCylinder>=1.0&&view.z>0)
+		//return vec2(0.0,1.0);
+	/*if(radiusOnCylinder>=1.0&&view.z>0)
 		return vec2(0.0,1.0);
 	if(radiusOnCylinder<=1.0&&view.z<0)
-		return vec2(1.0,1.0);
-	float dist			=fade_texc.x*fade_texc.x;
+		return vec2(1.0,1.0);*/
+	float dist				=fade_texc.x*fade_texc.x;
 	// The Earth's shadow: 
 	// First get the part of view that is along the light direction
-	float along			=dot(sunDir.xyz,view.xyz);
+	float along				=dot(sunDir.xyz,view.xyz);
 	// The Terminator is the line between light and shadow on the Earth's surface,
 	// and marks the beginning of the shadow volume.
 
 	// We define terminatorDistance as the distance to the terminator towards the sun, as a proportion of the fade distance.
 	// So we're in shadow provided that d*along<terminatorDistance;
-	float in_shadow		=saturate(1.0*(terminatorDistance-dist*along));
+	float in_shadow			=saturate(1.0*(terminatorDistance-dist*along));
 	// subtract it to get the direction on the shadow-cylinder cross section.
-	vec3 on_cross_section=view-along*sunDir.xyz;
+	vec3 on_cross_section	=view-along*sunDir.xyz;
 		
 	// Now get the part that's on the cylinder radius:
 	// Let shadowNormal be the direction normal to the sunlight direction
 	//						but in the plane of the sunlight and the vertical.
-	float on_radius	=dot(on_cross_section,earthShadowNormal.xyz);
-	vec3 on_x		=on_cross_section-on_radius*earthShadowNormal.xyz;
-	float sine_gamma=length(on_cross_section);
-	float sine_phi	=on_radius/sine_gamma;
+	float on_radius			=dot(on_cross_section,earthShadowNormal.xyz);
+	vec3 on_x				=on_cross_section-on_radius*earthShadowNormal.xyz;
+	float sine_gamma		=length(on_cross_section);
+	float sine_phi			=on_radius/sine_gamma;
 	// We avoid positive phi because the cosine discards sign information leading to
 	// confusion between negative and positive angles.
-	float cos2		=1.0-sine_phi*sine_phi;
-	
-	vec2 range1		=fn(radiusOnCylinder,cos2,sine_phi,sine_gamma,maxFadeDistance);
-	//vec2 range2		=fn(radiusOnCylinder-0.01,cos2,sine_phi,sine_gamma,maxFadeDistance);
-
-	//float interp	=saturate((radiusOnCylinder-0.999995)/0.0001);
-	//vec2 range		=mix(range2,range1,interp);
-	range1			=mix(vec2(0.0,1.0),range1,in_shadow);
-	if(range1.x>range1.y)
-		range1.x=range1.y;
-	return range1;
+	float cos2			=1.0-sine_phi*sine_phi;
+	vec2 range			=fn(radiusOnCylinder,cos2,sine_phi,sine_gamma,maxFadeDistance);
+	range				=mix(vec2(0.0,1.0),range,in_shadow);
+	if(range.x>range.y)
+		range.x=range.y;
+	return range;
 }
 
 vec4 EarthShadowFunction(Texture2D inscTexture,vec2 fade_texc,vec3 view)

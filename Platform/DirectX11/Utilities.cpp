@@ -2,7 +2,9 @@
 #include "MacrosDX1x.h"
 #include "Simul\Base\StringToWString.h"
 #include "Simul/Sky/Float4.h"
+#include "Simul/Math/Vector3.h"
 #include <d3dx11.h>
+
 using namespace simul;
 using namespace dx11;
 
@@ -10,6 +12,7 @@ TextureStruct::TextureStruct()
 	:texture(NULL)
 	,shaderResourceView(NULL)
 	,unorderedAccessView(NULL)
+	,renderTargetView(NULL)
 	,stagingBuffer(NULL)
 	,width(0)
 	,length(0)
@@ -32,10 +35,8 @@ void TextureStruct::release()
 	}
 	SAFE_RELEASE(texture);
 	SAFE_RELEASE(shaderResourceView);
-	if(unorderedAccessView)
-	{
-		SAFE_RELEASE(unorderedAccessView);
-	}
+	SAFE_RELEASE(unorderedAccessView);
+	SAFE_RELEASE(renderTargetView);
 	SAFE_RELEASE(stagingBuffer);
 
 }
@@ -69,12 +70,32 @@ void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *p
 	pContext->CopyResource(stagingBuffer,texture);
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	pContext->Map( stagingBuffer, 0, D3D11_MAP_READ, 0, &mappedResource);
-	unsigned char *data = (unsigned char *)(mappedResource.pData);
-	data+=start_texel*byteSize;
-	memcpy(target,data,texels*byteSize);
+	unsigned char *src = (unsigned char *)(mappedResource.pData);
+	
+	int required_pitch=width*byteSize;
+	char *dst=(char*)target;
+	if(mappedResource.RowPitch==required_pitch)
+	{
+		src+=start_texel*byteSize;
+		memcpy(dst,src,texels*byteSize);
+	}
+	else
+	{
+		int h0=start_texel/width;
+		int h1=(start_texel+texels)/width;
+		src+=mappedResource.RowPitch*h0;
+		for(int i=h0;i<h1;i++)
+		{
+			memcpy(dst,src,required_pitch);
+			dst+=required_pitch;
+			src+=mappedResource.RowPitch;
+		}
+	}
+	//src+=start_texel*byteSize;
+//	memcpy(target,src,texels*byteSize);
 	pContext->Unmap( stagingBuffer, 0);
 }
-
+/*
 void TextureStruct::setTexels(ID3D11DeviceContext *context,const float *float4_array,int texel_index,int num_texels)
 {
 	last_context=context;
@@ -88,43 +109,45 @@ void TextureStruct::setTexels(ID3D11DeviceContext *context,const float *float4_a
 		last_context->Unmap(texture,0);
 		memset(&mapped,0,sizeof(mapped));
 	}
-}
+}*/
 
-void TextureStruct::setTexels(ID3D11DeviceContext *context,const unsigned *uint_array,int texel_index,int num_texels)
+void TextureStruct::setTexels(ID3D11DeviceContext *context,const void *src,int texel_index,int num_texels)
 {
 	last_context=context;
 	if(!mapped.pData)
 		context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
 	if(!mapped.pData)
 		return;
-	unsigned *target=(unsigned *)mapped.pData;
-	int expected_pitch=sizeof(unsigned)*width;
+	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);
+	const unsigned char *source=(const unsigned char*)src;
+	unsigned char *target=(unsigned char*)mapped.pData;
+	int expected_pitch=byteSize*width;
 	if(mapped.RowPitch==expected_pitch)
 	{
-		target+=texel_index;
-		memcpy(target,uint_array,num_texels*sizeof(unsigned));
+		target+=texel_index*byteSize;
+		memcpy(target,source,num_texels*byteSize);
 	}
 	else
 	{
-		int block	=mapped.RowPitch/sizeof(unsigned);
+		int block	=mapped.RowPitch/byteSize;
 		int row		=texel_index/width;
 		int last_row=(texel_index+num_texels)/width;
 		int col		=texel_index-row*width;
-		target		+=row*block;
-		uint_array	+=col;
+		target		+=row*block*byteSize;
+		source		+=col*byteSize;
 		int columns=min(num_texels,width-col);
-		memcpy(target,uint_array,columns*sizeof(unsigned));
-		uint_array	+=columns;
-		target		+=block;
+		memcpy(target,source,columns*byteSize);
+		source		+=columns*byteSize;
+		target		+=block*byteSize;
 		for(int r=row+1;r<last_row;r++)
 		{
-			memcpy(target,uint_array,width*sizeof(unsigned));
-			target		+=block;
-			uint_array	+=width;
+			memcpy(target,source,width*byteSize);
+			target		+=block*byteSize;
+			source		+=width*byteSize;
 		}
 		int end_columns=texel_index+num_texels-last_row*width;
 		if(end_columns>0)
-			memcpy(target,uint_array,end_columns*sizeof(unsigned));
+			memcpy(target,source,end_columns*byteSize);
 	}
 	if(texel_index+num_texels>=width*length)
 	{
@@ -210,14 +233,139 @@ void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		uav_desc.Texture3D.WSize	= d;
 		uav_desc.Texture3D.FirstWSlice=0;
 
-  /*  uav_desc.Format = DXGI_FORMAT_R32_FLOAT;
-    uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-    uav_desc.Buffer.FirstElement = 0;
-    uav_desc.Buffer.NumElements = w*l*d*4;*/
-
 		HRESULT hr;
 		SAFE_RELEASE(unorderedAccessView);
 		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
+	}
+}
+
+void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable,bool rendertarget)
+{
+	D3D11_TEXTURE2D_DESC textureDesc;
+	bool ok=true;
+	if(texture)
+	{
+		ID3D11Texture2D* ppd(NULL);
+		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)
+			ok=false;
+		else
+		{
+			ppd->GetDesc(&textureDesc);
+			if(textureDesc.Width!=w||textureDesc.Height!=l||textureDesc.Format!=f)
+				ok=false;
+			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
+				ok=false;
+		}
+		SAFE_RELEASE(ppd);
+	}
+	else
+		ok=false;
+	if(!ok)
+	{
+		release();
+		memset(&textureDesc,0,sizeof(textureDesc));
+		textureDesc.Width				=width=w;
+		textureDesc.Height				=length=l;
+		depth							=1;
+		textureDesc.Format				=format=f;
+		textureDesc.MipLevels			=1;
+		textureDesc.ArraySize			=1;
+		textureDesc.Usage				=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		textureDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
+		textureDesc.CPUAccessFlags		=computable?0:D3D11_CPU_ACCESS_WRITE;
+		textureDesc.MiscFlags			=0;
+		textureDesc.SampleDesc.Count	= 1;
+		HRESULT hr;
+		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+		srv_desc.Format						= f;
+		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE2D;
+		srv_desc.Texture2D.MipLevels		= 1;
+		srv_desc.Texture2D.MostDetailedMip	= 0;
+		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&shaderResourceView));
+	}
+	if(computable&&(!unorderedAccessView||!ok))
+	{
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+		uav_desc.Format				= f;
+		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE2D;
+		uav_desc.Texture2D.MipSlice	= 0;
+
+		HRESULT hr;
+		SAFE_RELEASE(unorderedAccessView);
+		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture,&uav_desc,&unorderedAccessView));
+	}
+	if(rendertarget&&(!renderTargetView||!ok))
+	{
+		HRESULT hr;
+		// Setup the description of the render target view.
+		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+		renderTargetViewDesc.Format				=f;
+		renderTargetViewDesc.ViewDimension		=D3D11_RTV_DIMENSION_TEXTURE2D;
+		renderTargetViewDesc.Texture2D.MipSlice	=0;
+		// Create the render target in DX11:
+		V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&renderTargetView));
+	}
+}
+
+void TextureStruct::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT f,bool computable)
+{
+	D3D11_TEXTURE1D_DESC textureDesc;
+	bool ok=true;
+	if(texture)
+	{
+		ID3D11Texture1D* ppd(NULL);
+		if(texture->QueryInterface( __uuidof(ID3D11Texture1D),(void**)&ppd)!=S_OK)
+			ok=false;
+		else
+		{
+			ppd->GetDesc(&textureDesc);
+			if(textureDesc.Width!=w||textureDesc.Format!=f)
+				ok=false;
+			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
+				ok=false;
+		}
+		SAFE_RELEASE(ppd);
+	}
+	else
+		ok=false;
+	if(!ok)
+	{
+		release();
+		memset(&textureDesc,0,sizeof(textureDesc));
+		textureDesc.Width			=width=w;
+		length						=depth=1;
+		textureDesc.Format			=format=f;
+		textureDesc.MipLevels		=1;
+		textureDesc.ArraySize		=1;
+		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
+		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
+		textureDesc.MiscFlags		=0;
+		HRESULT hr;
+		V_CHECK(pd3dDevice->CreateTexture1D(&textureDesc,0,(ID3D11Texture1D**)(&texture)));
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+		srv_desc.Format						= f;
+		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE1D;
+		srv_desc.Texture1D.MipLevels		= 1;
+		srv_desc.Texture1D.MostDetailedMip	= 0;
+		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&shaderResourceView));
+	}
+	if(computable&&(!unorderedAccessView||!ok))
+	{
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+		uav_desc.Format				= f;
+		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE1D;
+		uav_desc.Texture1D.MipSlice	= 0;
+		HRESULT hr;
+		SAFE_RELEASE(unorderedAccessView);
+		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture,&uav_desc,&unorderedAccessView));
 	}
 }
 
@@ -684,7 +832,6 @@ void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pImmediateContext
 	pImmediateContext->IASetPrimitiveTopology(previousTopology);
 }
 
-
 void UtilityRenderer::DrawCube(void *context)
 {
 	UINT stride = sizeof(vec3);
@@ -698,10 +845,10 @@ void UtilityRenderer::DrawCube(void *context)
 	pContext->IAGetInputLayout( &previousInputLayout );
 
 	pContext->IASetVertexBuffers(	0,					// the first input slot for binding
-												1,					// the number of buffers in the array
-												&m_pVertexBuffer,	// the array of vertex buffers
-												&stride,			// array of stride values, one for each buffer
-												&offset );			// array of offset values, one for each buffer
+									1,					// the number of buffers in the array
+									&m_pVertexBuffer,	// the array of vertex buffers
+									&stride,			// array of stride values, one for each buffer
+									&offset );			// array of offset values, one for each buffer
 
 	// Set the input layout
 	pContext->IASetInputLayout(m_pCubemapVtxDecl);
@@ -709,7 +856,7 @@ void UtilityRenderer::DrawCube(void *context)
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 
-	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	pContext->Draw(36,0);
 
@@ -717,7 +864,19 @@ void UtilityRenderer::DrawCube(void *context)
 	pContext->IASetInputLayout( previousInputLayout );
 	SAFE_RELEASE(previousInputLayout);
 }
-#include "Simul/Math/Vector3.h"
+
+void UtilityRenderer::DrawSphere(void *context,int latitudes,int longitudes)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	// The number of indices per lat strip is (longitudes+1)*2.
+	// The number of lat strips is (latitudes+1)
+	pContext->Draw((longitudes+1)*(latitudes+1)*2,0);
+	pContext->IASetPrimitiveTopology(previousTopology);
+}
+
 void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
@@ -726,15 +885,12 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCub
 	float tan_x=1.0f/proj(0, 0);
 	float tan_y=1.0f/proj(1, 1);
 	D3DXMatrixInverse(&tmp1,NULL,&view);
-	//SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
-	//simul::math::Vector3 pos((const float*)cam_pos);
 	float size_req=tan_x*0.2f;
 	static float size=5.f;
 	float d=2.0f*size/size_req;
 	simul::math::Vector3 offs0(-0.7f*(tan_x-size_req)*d,0.7f*(tan_y-size_req)*d,-d);
 	simul::math::Vector3 offs;
 	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)view),offs0);
-
 	world._41=offs.x;
 	world._42=offs.y;
 	world._43=offs.z;
@@ -742,13 +898,15 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCub
 	view._42=0;
 	view._43=0;
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
-	//SkyConstants skyConstants;
-	//skyConstants.worldViewProj=&wvp._11;
-	//skyConstants.worldViewProj.transpose();
 	simul::dx11::setMatrix(m_pDebugEffect,"worldViewProj",&wvp._11);
-	ID3D1xEffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
+	//ID3D1xEffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
+	ID3D1xEffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");
 	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pDebugEffect->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
 	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));
-	UtilityRenderer::DrawCube(context);
+	simul::dx11::setParameter(m_pDebugEffect,"latitudes",16);
+	simul::dx11::setParameter(m_pDebugEffect,"longitudes",32);
+	static float rr=6.f;
+	simul::dx11::setParameter(m_pDebugEffect,"radius",rr);
+	UtilityRenderer::DrawSphere(context,16,32);
 }

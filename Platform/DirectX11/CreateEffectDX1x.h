@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2011 Simul Software Ltd
+// Copyright (c) 2007-2013 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -38,7 +38,7 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename);
-		ID3D1xTexture1D* make1DTexture(
+		ID3D11Texture1D* make1DTexture(
 							ID3D1xDevice			*m_pd3dDevice
 							,int w
 							,DXGI_FORMAT format
@@ -48,7 +48,7 @@ namespace simul
 							,int w,int h
 							,DXGI_FORMAT format
 							,const float *src);
-		ID3D1xTexture3D* make3DTexture(
+		ID3D11Texture3D* make3DTexture(
 							ID3D1xDevice			*m_pd3dDevice
 							,int w,int l,int d
 							,DXGI_FORMAT format
@@ -62,16 +62,17 @@ namespace simul
 							
 		D3DXMATRIX SIMUL_DIRECTX11_EXPORT ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj);
 	
-		void setSamplerState(ID3D1xEffect *effect	,const char *name	,ID3D11SamplerState * value);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,ID3D11ShaderResourceView * value);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,ID3D11UnorderedAccessView * value);
-		void setTextureArray(ID3D1xEffect *effect	,const char *name	,ID3D11ShaderResourceView *value);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,float value);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,float x,float y);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,float x,float y,float z,float w);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,int value);
-		void setParameter(ID3D1xEffect *effect		,const char *name	,float *vec);
-		void setMatrix(ID3D1xEffect *effect			,const char *name	,const float *value);
+		void setSamplerState		(ID3D1xEffect *effect	,const char *name	,ID3D11SamplerState * value);
+		void setParameter			(ID3D1xEffect *effect	,const char *name	,ID3D11ShaderResourceView * value);
+		void setUnorderedAccessView	(ID3D1xEffect *effect	,const char *name	,ID3D11UnorderedAccessView * value);
+		void setTextureArray		(ID3D1xEffect *effect	,const char *name	,ID3D11ShaderResourceView *value);
+		void setStructuredBuffer	(ID3D1xEffect *effect	,const char *name	,ID3D11ShaderResourceView * value);
+		void setParameter			(ID3D1xEffect *effect	,const char *name	,float value);
+		void setParameter			(ID3D1xEffect *effect	,const char *name	,float x,float y);
+		void setParameter			(ID3D1xEffect *effect	,const char *name	,float x,float y,float z,float w);
+		void setParameter			(ID3D1xEffect *effect	,const char *name	,int value);
+		void setParameter			(ID3D1xEffect *effect	,const char *name	,float *vec);
+		void setMatrix				(ID3D1xEffect *effect	,const char *name	,const float *value);
 							
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
 	}

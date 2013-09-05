@@ -30,7 +30,8 @@ namespace simul
 				,simul::sky::float4 sun_irradiance
 				,simul::sky::float4 starlight
 				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon,float haze
-				,float overcast,float overcast_base_km,float overcast_range_km
+				,unsigned tables_checksum
+				,float overcast_base_km,float overcast_range_km
 				,int index,int end_index,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table
 				,const simul::sky::float4 *blackbody_table,int table_size,float maxDensityAltKm,bool InfraRed
 				,float emissivity
@@ -55,13 +56,9 @@ namespace simul
 				}
 			}
 		protected:
-			simul::dx11::Framebuffer		fb[2];
 			ID3D1xDevice*					m_pd3dDevice;
 			ID3D11DeviceContext*			m_pImmediateContext;
 			ID3D1xEffect*					effect;
-			ID3D1xEffectTechnique*			lossTechnique;
-			ID3D1xEffectTechnique*			inscTechnique;
-			ID3D1xEffectTechnique*			skylTechnique;
 			ID3DX11EffectTechnique*			lossComputeTechnique;
 			ID3DX11EffectTechnique*			inscComputeTechnique;
 			ID3DX11EffectTechnique*			skylComputeTechnique;
@@ -72,6 +69,9 @@ namespace simul
 			TextureStruct					*finalLoss[3];
 			TextureStruct					*finalInsc[3];
 			TextureStruct					*finalSkyl[3];
+			TextureStruct					dens_tex,optd_tex;
+
+			unsigned						tables_checksum;
 		};
 	}
 }
