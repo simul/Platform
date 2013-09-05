@@ -95,7 +95,7 @@ void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *p
 //	memcpy(target,src,texels*byteSize);
 	pContext->Unmap( stagingBuffer, 0);
 }
-
+/*
 void TextureStruct::setTexels(ID3D11DeviceContext *context,const float *float4_array,int texel_index,int num_texels)
 {
 	last_context=context;
@@ -109,43 +109,45 @@ void TextureStruct::setTexels(ID3D11DeviceContext *context,const float *float4_a
 		last_context->Unmap(texture,0);
 		memset(&mapped,0,sizeof(mapped));
 	}
-}
+}*/
 
-void TextureStruct::setTexels(ID3D11DeviceContext *context,const unsigned *uint_array,int texel_index,int num_texels)
+void TextureStruct::setTexels(ID3D11DeviceContext *context,const void *src,int texel_index,int num_texels)
 {
 	last_context=context;
 	if(!mapped.pData)
 		context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
 	if(!mapped.pData)
 		return;
-	unsigned *target=(unsigned *)mapped.pData;
-	int expected_pitch=sizeof(unsigned)*width;
+	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);
+	const unsigned char *source=(const unsigned char*)src;
+	unsigned char *target=(unsigned char*)mapped.pData;
+	int expected_pitch=byteSize*width;
 	if(mapped.RowPitch==expected_pitch)
 	{
-		target+=texel_index;
-		memcpy(target,uint_array,num_texels*sizeof(unsigned));
+		target+=texel_index*byteSize;
+		memcpy(target,source,num_texels*byteSize);
 	}
 	else
 	{
-		int block	=mapped.RowPitch/sizeof(unsigned);
+		int block	=mapped.RowPitch/byteSize;
 		int row		=texel_index/width;
 		int last_row=(texel_index+num_texels)/width;
 		int col		=texel_index-row*width;
-		target		+=row*block;
-		uint_array	+=col;
+		target		+=row*block*byteSize;
+		source		+=col*byteSize;
 		int columns=min(num_texels,width-col);
-		memcpy(target,uint_array,columns*sizeof(unsigned));
-		uint_array	+=columns;
-		target		+=block;
+		memcpy(target,source,columns*byteSize);
+		source		+=columns*byteSize;
+		target		+=block*byteSize;
 		for(int r=row+1;r<last_row;r++)
 		{
-			memcpy(target,uint_array,width*sizeof(unsigned));
-			target		+=block;
-			uint_array	+=width;
+			memcpy(target,source,width*byteSize);
+			target		+=block*byteSize;
+			source		+=width*byteSize;
 		}
 		int end_columns=texel_index+num_texels-last_row*width;
 		if(end_columns>0)
-			memcpy(target,uint_array,end_columns*sizeof(unsigned));
+			memcpy(target,source,end_columns*byteSize);
 	}
 	if(texel_index+num_texels>=width*length)
 	{
@@ -262,15 +264,16 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 	{
 		release();
 		memset(&textureDesc,0,sizeof(textureDesc));
-		textureDesc.Width			=width=w;
-		textureDesc.Height			=length=l;
-		textureDesc.Format			=format=f;
-		textureDesc.MipLevels		=1;
-		textureDesc.ArraySize		=1;
-		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
-		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
-		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
-		textureDesc.MiscFlags		=0;
+		textureDesc.Width				=width=w;
+		textureDesc.Height				=length=l;
+		depth							=1;
+		textureDesc.Format				=format=f;
+		textureDesc.MipLevels			=1;
+		textureDesc.ArraySize			=1;
+		textureDesc.Usage				=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		textureDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
+		textureDesc.CPUAccessFlags		=computable?0:D3D11_CPU_ACCESS_WRITE;
+		textureDesc.MiscFlags			=0;
 		textureDesc.SampleDesc.Count	= 1;
 		HRESULT hr;
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
@@ -305,6 +308,64 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		renderTargetViewDesc.Texture2D.MipSlice	=0;
 		// Create the render target in DX11:
 		V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&renderTargetView));
+	}
+}
+
+void TextureStruct::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT f,bool computable)
+{
+	D3D11_TEXTURE1D_DESC textureDesc;
+	bool ok=true;
+	if(texture)
+	{
+		ID3D11Texture1D* ppd(NULL);
+		if(texture->QueryInterface( __uuidof(ID3D11Texture1D),(void**)&ppd)!=S_OK)
+			ok=false;
+		else
+		{
+			ppd->GetDesc(&textureDesc);
+			if(textureDesc.Width!=w||textureDesc.Format!=f)
+				ok=false;
+			if(computable!=((textureDesc.BindFlags&D3D11_BIND_UNORDERED_ACCESS)==D3D11_BIND_UNORDERED_ACCESS))
+				ok=false;
+		}
+		SAFE_RELEASE(ppd);
+	}
+	else
+		ok=false;
+	if(!ok)
+	{
+		release();
+		memset(&textureDesc,0,sizeof(textureDesc));
+		textureDesc.Width			=width=w;
+		length						=depth=1;
+		textureDesc.Format			=format=f;
+		textureDesc.MipLevels		=1;
+		textureDesc.ArraySize		=1;
+		textureDesc.Usage			=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
+		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
+		textureDesc.MiscFlags		=0;
+		HRESULT hr;
+		V_CHECK(pd3dDevice->CreateTexture1D(&textureDesc,0,(ID3D11Texture1D**)(&texture)));
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+		srv_desc.Format						= f;
+		srv_desc.ViewDimension				= D3D11_SRV_DIMENSION_TEXTURE1D;
+		srv_desc.Texture1D.MipLevels		= 1;
+		srv_desc.Texture1D.MostDetailedMip	= 0;
+		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&shaderResourceView));
+	}
+	if(computable&&(!unorderedAccessView||!ok))
+	{
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+		uav_desc.Format				= f;
+		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE1D;
+		uav_desc.Texture1D.MipSlice	= 0;
+		HRESULT hr;
+		SAFE_RELEASE(unorderedAccessView);
+		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture,&uav_desc,&unorderedAccessView));
 	}
 }
 

@@ -145,6 +145,7 @@ void FramebufferCubemapDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pCubeEnvMapSRV);
 	sphericalHarmonics.release();
 	SAFE_RELEASE(sphericalHarmonicsEffect);
+	sphericalSamples.release();
 }
 
 void FramebufferCubemapDX1x::SetCurrentFace(int i)

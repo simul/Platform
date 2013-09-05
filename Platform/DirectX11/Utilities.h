@@ -29,11 +29,11 @@ namespace simul
 			int width,length,depth;
 			DXGI_FORMAT format;
 			void copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *context,void *target,int start_texel=0,int texels=0);
-			void setTexels(ID3D11DeviceContext *context,const float *float4_array,int texel_index,int num_texels);
-			void setTexels(ID3D11DeviceContext *context,const unsigned *uint_array,int texel_index,int num_texels);
+			void setTexels(ID3D11DeviceContext *context,const void *src,int texel_index,int num_texels);
 			void init(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f);
 			void ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,int d,DXGI_FORMAT f,bool computable=false);
 			void ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,int l,DXGI_FORMAT f,bool computable=false,bool rendertarget=false);
+			void ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT f,bool computable=false);
 			void map(ID3D11DeviceContext *context);
 			bool isMapped() const;
 			void unmap();

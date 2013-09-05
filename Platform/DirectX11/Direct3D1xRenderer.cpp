@@ -39,6 +39,10 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,Exposure(1.0f)
 		,enabled(false)
 		,m_pd3dDevice(NULL)
+		,simulOpticsRenderer(NULL)
+		,simulWeatherRenderer(NULL)
+		,simulHDRRenderer(NULL)
+		,simulTerrainRenderer(NULL)
 		,memoryInterface(m)
 {
 	simulWeatherRenderer=new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
@@ -158,8 +162,8 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapDepthFramebuffer.GetDepthTex(),NULL,1,relativeViewportTextureRegionXYWH,true);
 		}
 		framebuffer_cubemap.Deactivate(pContext);
-		framebuffer_cubemap.CalcSphericalHarmonics(pContext,3);
 	}
+	//	framebuffer_cubemap.CalcSphericalHarmonics(pContext,3);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetCubemapTexture(framebuffer_cubemap.GetColorTex());
 }
