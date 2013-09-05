@@ -1,3 +1,4 @@
+#define NOMINMAX
 // Copyright (c) 2007-2009 Simul Software Ltd
 // All Rights Reserved.
 //

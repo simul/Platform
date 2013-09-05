@@ -7,7 +7,7 @@
 // agreement.
 
 // SimulAtmosphericsRendererDX1x.cpp A renderer for skies, clouds and weather effects.
-
+#define NOMINMAX
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
 #include <tchar.h>

@@ -7,7 +7,7 @@
 // agreement.
 
 // Simul2DCloudRendererDX11.cpp A renderer for 2D cloud layers.
-
+#define NOMINMAX
 #include "Simul2DCloudRendererdx1x.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/FastCloudNode.h"

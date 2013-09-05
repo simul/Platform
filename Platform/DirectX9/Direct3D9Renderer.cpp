@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include <tchar.h>
 #include "Direct3D9Renderer.h"
 #include "Simul/Platform/DirectX9/CreateDX9Effect.h"

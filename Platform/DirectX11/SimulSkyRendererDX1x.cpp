@@ -117,7 +117,7 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 		skylight_2d->SetWidthAndHeight(numFadeDistances,numFadeElevations);
 		skylight_2d->RestoreDeviceObjects(dev);
 	}
-	illumination_fb.SetWidthAndHeight(128,numFadeElevations*2);
+	illumination_fb.SetWidthAndHeight(64,numFadeElevations*4);
 	SAFE_RELEASE(moon_texture_SRV);
 	MoonTexture="Moon.png";
 	moon_texture_SRV=simul::dx11::LoadTexture(m_pd3dDevice,MoonTexture.c_str());

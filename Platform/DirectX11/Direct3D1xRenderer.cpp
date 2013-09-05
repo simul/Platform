@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "Direct3D1xRenderer.h"
 
 // Simul Weather:

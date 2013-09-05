@@ -236,7 +236,7 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 	ClearIterators();
 	cloudConstants.RestoreDeviceObjects(m_pd3dDevice);
-	layerBuffer.RestoreDeviceObjects(m_pd3dDevice,20);
+	layerBuffer.RestoreDeviceObjects(m_pd3dDevice,SIMUL_MAX_CLOUD_RAYTRACE_STEPS);
 
 	shadow_fb.RestoreDeviceObjects(m_pd3dDevice);
 	shadowNearFar.RestoreDeviceObjects(m_pd3dDevice);
@@ -777,7 +777,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
 
 	// Moved from Update function above. See commment.
-	//if(!cubemap)
+	if (!cubemap)
 	{
 		//set up matrices
 		simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
@@ -790,7 +790,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 			view_dir.Define(-view._13,-view._23,-view._33);
 		simul::math::Vector3 up(view._12,view._22,view._32);
 		helper->SetChurn(GetCloudInterface()->GetChurn());
-		helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
+		helper->Update((const float*)cam_pos,wind_offset,view_dir,up,1.0);
 		float tan_half_fov_vertical=1.f/proj._22;
 		float tan_half_fov_horizontal=1.f/proj._11;
 		helper->SetNoFrustumLimit(true);

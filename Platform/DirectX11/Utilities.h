@@ -197,6 +197,8 @@ namespace simul
 				cb_desc.ByteWidth			= PAD16(sizeof(T));
 				cb_desc.StructureByteStride = 0;
 				pd3dDevice->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
+				if(m_pD3DX11EffectConstantBuffer)
+					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 			}
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToEffect(ID3DX11Effect *effect,const char *name)

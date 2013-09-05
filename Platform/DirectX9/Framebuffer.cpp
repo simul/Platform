@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "Simul/Platform/DirectX9/Framebuffer.h"
 #include "Simul/Platform/DirectX9/Macros.h"
 #include "Simul/Platform/DirectX9/CreateDX9Effect.h"
