@@ -174,7 +174,7 @@ public:
 		float z_offset=ratio*(z-column_height);
 		float doughnut_r=sqrt(r_offset*r_offset+z_offset*z_offset);
 		if(doughnut_r<doughnut_minor_radius)
-			val=max(1.f,val);
+			val=std::max(1.f,val);
 
 		return val;
 	}

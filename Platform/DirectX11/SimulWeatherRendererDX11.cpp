@@ -270,6 +270,8 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 												bool doFinalCloudBufferToScreenComposite
 												)
 {
+	SIMUL_PROFILE_START("RenderSkyAsOverlay")
+	SIMUL_GPU_PROFILE_START(context,"RenderSkyAsOverlay")
 	BaseWeatherRenderer::RenderSkyAsOverlay(context,
 											exposure,
 											buffered,
@@ -292,6 +294,8 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 		imageTexture->SetResource(NULL);
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
 	}
+	SIMUL_GPU_PROFILE_END(context,"RenderSkyAsOverlay")
+	SIMUL_PROFILE_END
 }
 
 bool SimulWeatherRendererDX11::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)

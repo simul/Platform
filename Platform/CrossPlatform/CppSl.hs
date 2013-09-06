@@ -1,6 +1,7 @@
 #ifndef CPPSL_HS
 #define CPPSL_HS
-#define RADIAL_CLOUD_SHADOW
+#undef RADIAL_CLOUD_SHADOW
+//#define RADIAL_CLOUD_SHADOW
 // Definitions shared across C++, HLSL, and GLSL!
 
 #ifndef __cplusplus

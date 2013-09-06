@@ -138,22 +138,22 @@ vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 
 	vec2 offset						=vec2(0,pixel/1.0);
 #else
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
-	float theta						=texCoords.y*2.0*3.1415926536;
+	float theta						=texCoords.x*2.0*3.1415926536;
 	vec2 offset						=vec2(-sin(theta),cos(theta))*pixel/4.0;
 #endif
-	// First find the range where ther is ANY shadow:
+	// First find the range where there is ANY shadow:
 	for(int i=0;i<N;i++)
 	{
-		float interp					=float(i)/float(N-1);
+		float interp				=float(i)/float(N-1);
 #ifdef RADIAL_CLOUD_SHADOW
-		vec2 shadow_texc				=vec2(sqrt(interp),texCoords.x);
+		vec2 shadow_texc			=vec2(sqrt(interp),texCoords.x);
 #else
-		float distance_off_centre		=interp;
-		vec2 shadow_texc				=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
+		float distance_off_centre	=interp;
+		vec2 shadow_texc			=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
 #endif
-		vec4 illumination				=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
-		illumination					+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
-		illumination					+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
+		vec4 illumination			=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
+		illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
+		illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
 		
 		if(illumination.y<3.0*U)
 		{
@@ -200,9 +200,11 @@ vec4 ShowCloudShadow(Texture2D cloudShadowTexture,Texture2D nearFarTexture,vec2 
 #ifdef RADIAL_CLOUD_SHADOW
     vec4 lookup=texture_cwc_lod(cloudShadowTexture,radial_texc,0);
 #else
-    vec4 lookup=texture_clamp_lod(cloudShadowTexture,texCoords.xy,0);//radial_texc);
+    vec4 lookup=texture_clamp_lod(cloudShadowTexture,texCoords.xy,0);
 #endif
 	lookup*=0.5;
+	if(radial_texc.y<0)
+		radial_texc.y+=1.0;
     vec4 nearFarShadowLight=texture_wrap_lod(nearFarTexture,vec2(radial_texc.y,0.5),0);
 	if(dist>=nearFarShadowLight.x&&dist<=nearFarShadowLight.y)
 	{
@@ -320,7 +322,7 @@ RaytracePixelOutput ExperimentalRaytraceCloudsForward3DNoise(Texture3D cloudDens
 	float sine			=view.z;
 	vec3 n				=vec3(clip_pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
-	vec2 noise_texc_0	=mul(noiseMatrix,vec4(n.xy,0,0)).xy;
+	//vec2 noise_texc_0	=mul(noiseMatrix,vec4(n.xy,0,0)).xy;
 
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;
@@ -402,7 +404,7 @@ RaytracePixelOutput ExperimentalRaytraceCloudsForward3DNoise(Texture3D cloudDens
 				float mul=0.5;
 				for(int j=0;j<2;j++)
 				{
-					noiseval			+=(noiseTexture3D.SampleLevel(wrapSamplerState,noise_texc,0).xyz)*mul;
+					noiseval			+=(texture_wrap_lod(noiseTexture3D,noise_texc,0).xyz)*mul;
 					noise_texc			*=2.0;
 					mul					*=noise3DPersistence;
 				}
@@ -460,7 +462,7 @@ RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
 	float sine			=view.z;
 	vec3 n				=vec3(clip_pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
-	vec2 noise_texc_0	=mul(noiseMatrix,vec4(n.xy,0,0)).xy;
+	//vec2 noise_texc_0	=mul(noiseMatrix,vec4(n.xy,0,0)).xy;
 
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;
@@ -501,7 +503,7 @@ RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
 			float mul=0.5;
 			for(int j=0;j<3;j++)
 			{
-				noiseval			+=(noiseTexture3D.SampleLevel(wrapSamplerState,noise_texc,0).xyz)*mul;
+				noiseval			+=(texture_wrap_lod(noiseTexture3D,noise_texc,0).xyz)*mul;
 				noise_texc			*=2.0;
 				mul					*=noise3DPersistence;
 			}
@@ -554,7 +556,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float sine			=view.z;
 	vec3 n				=vec3(clip_pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
-	vec2 noise_texc_0	=mul(noiseMatrix,vec4(n.xy,0,0)).xy;
+	vec2 noise_texc_0	=mul(noiseMatrix,vec4(n.xy,0,0)).xy/fractalRepeatLength;
 
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;
@@ -586,18 +588,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		vec3 world_pos			=viewPos+layerWorldDist*view;
 		world_pos.z				-=layer.verticalShift;
 		vec3 layerTexCoords		=(world_pos-cornerPos)*inverseScales;
-		/*if(sine>0)
-		{
-			if(layerTexCoords.z<min_texc_z)
-				continue;
-			if(layerTexCoords.z>max_texc_z)
-				break;
-		}*/
-	//	float layerFade			=layer.layerFade;//*saturate((abs(sine)-layer.sine_threshold)/layer.sine_range);
-		if(normLayerZ<=d&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
+		float layerFade			=layer.layerFade;//*saturate((abs(sine)-layer.sine_threshold)/layer.sine_range);
+		if(layerFade>0&&normLayerZ<=d&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
 		{
 			float noise_factor		=lerp(baseNoiseFactor,1.0,saturate(layerTexCoords.z));
-			vec2 noise_texc			=noise_texc_0*layerWorldDist/fractalRepeatLength+layer.noiseOffset;
+			vec2 noise_texc			=noise_texc_0*layerWorldDist+layer.noiseOffset;
 			vec3 noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
 			density					=calcDensity(layerTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
 			density.z				*=saturate((d-normLayerZ)/0.001);
@@ -614,9 +609,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			colour.rgb				+=c.rgb*c.a*(colour.a);
 			mean_z					+=normLayerZ*c.a*colour.a;
 			colour.a				*=(1.0-c.a);
-			if(colour.a*brightness_factor<0.03)
+			if(colour.a*brightness_factor<0.003)
 			{
 				colour.a	=0.0;
+				//mean_z		=normLayerZ;//lerp(mean_z,normLayerZ,depthMix);
 				break;
 			}
 		}
