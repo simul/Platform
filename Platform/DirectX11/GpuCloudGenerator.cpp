@@ -162,7 +162,7 @@ void GpuCloudGenerator::FillDensityGrid(int cycled_index
 	{
 		mask_fb.Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
 		ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
-		dens_fb.DrawQuad(m_pImmediateContext);
+		mask_fb.DrawQuad(m_pImmediateContext);
 	}
 	else
 	{

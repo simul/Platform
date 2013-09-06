@@ -46,7 +46,7 @@ float4 PS_DensityMask(vertexOutput IN) : SV_TARGET
 	float dr					=0.1;
 	vec2 pos					=2.0*IN.texCoords.xy-vec2(1.0,1.0);
 	float r						=length(pos);
-	float dens					=saturate((1.0-r)/dr);
+	float dens					=saturate((0.9-r)/dr);
     return float4(dens,dens,dens,1.0);
 }
 
@@ -61,6 +61,36 @@ float4 PS_Density(vertexOutput IN) : SV_TARGET
     return vec4(dens,0,0,1.0);
 }
 
+float NoiseFunction2(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float persistence,float t)
+{
+	float dens=0.0;
+	float mult=0.5;
+	float sum=0.0;
+	{
+		float lookup=texture_wrap_lod(volumeNoiseTexture,vec3(pos.xy,0.0),0).x;
+		float val	=lookup;//0.5*(1.0+cos(2.0*3.1415926536*(lookup+t)));
+		dens		=dens+mult*val;
+		sum			=sum+mult;
+		mult		=mult*persistence;
+		pos			=pos*2.0;
+		t			=t*2.0;
+	}
+	for(int i=1;i<5;i++)
+	{
+		if(i>=octaves)
+			break;
+		float lookup=texture_wrap_lod(volumeNoiseTexture,pos,0).x;
+		float val	=lookup;//0.5*(1.0+cos(2.0*3.1415926536*(lookup+t)));
+		dens		=dens+mult*val;
+		sum			=sum+mult;
+		mult		=mult*persistence;
+		pos			=pos*2.0;
+		t			=t*2.0;
+	}
+	dens=dens/sum;
+	return dens;
+}
+
 [numthreads(8,8,8)]
 void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {
@@ -71,8 +101,11 @@ void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID g
 		return;
 	vec3 densityspace_texcoord	=(pos+0.5)/vec3(dims);
 	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
-	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
-	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z);
+	float noise_val				=NoiseFunction2(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
+	float hm					=humidity;
+	//hm							*=texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
+	hm							*=GetHumidityMultiplier(densityspace_texcoord.z);
+
 	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
 	dens						=saturate(dens);
