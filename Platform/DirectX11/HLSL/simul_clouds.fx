@@ -445,7 +445,7 @@ technique11 simul_raytrace_3d_noise
 {
     pass p0 
     {
-		SetDepthStencilState(DisableDepth,0);
+		SetDepthStencilState(WriteDepth,0);
         SetRasterizerState( RenderNoCull );
 		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Raytrace3DNoise()));

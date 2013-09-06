@@ -886,7 +886,7 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCub
 	float tan_y=1.0f/proj(1, 1);
 	D3DXMatrixInverse(&tmp1,NULL,&view);
 	float size_req=tan_x*0.2f;
-	static float size=5.f;
+	static float size=3.f;
 	float d=2.0f*size/size_req;
 	simul::math::Vector3 offs0(-0.7f*(tan_x-size_req)*d,0.7f*(tan_y-size_req)*d,-d);
 	simul::math::Vector3 offs;

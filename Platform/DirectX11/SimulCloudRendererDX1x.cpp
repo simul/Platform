@@ -53,33 +53,6 @@ struct PosTexVert_t
 PosTexVert_t *lightning_vertices=NULL;
 #define MAX_VERTICES (12000)
 
-class ExampleHumidityCallback:public simul::clouds::HumidityCallbackInterface
-{
-public:
-	ExampleHumidityCallback()
-		:base_layer(0.28f)
-		,transition(0.2f)
-		,mul(0.86f)
-		,default_(1.f)
-	{}
-	float base_layer;
-	float transition;
-	float mul;
-	float default_;
-	virtual float GetHumidityMultiplier(float ,float ,float z) const
-	{
-		if(z>base_layer)
-		{
-			if(z>base_layer+transition)
-				return mul;
-			float i=(z-base_layer)/transition;
-			return default_*(1.f-i)+mul*i;
-		}
-		return default_;
-	}
-};
-ExampleHumidityCallback hm;
-
 SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem) :
 	simul::clouds::BaseCloudRenderer(ck,mem)
 	,m_hTechniqueLightning(NULL)
@@ -447,7 +420,6 @@ bool SimulCloudRendererDX1x::CreateNoiseTexture(void* context)
 
 void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 {
-	return;
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
 	//using noise_size and noise_src_ptr, make a 3d texture:
 
@@ -796,7 +768,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
 
 	// Moved from Update function above. See commment.
-	if (!cubemap)
+	//if (!cubemap)
 	{
 		//set up matrices
 		simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);

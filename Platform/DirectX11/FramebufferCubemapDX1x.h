@@ -8,7 +8,7 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Clouds/BaseFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/spherical_harmonics_constants.sl"
-
+#pragma warning(disable:4251)
 namespace simul
 {
 	namespace dx11
@@ -65,7 +65,7 @@ namespace simul
 			DXGI_FORMAT									format;
 			StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;
 			StructuredBuffer<vec4>						sphericalHarmonics;
-	ID3DX11Effect *sphericalHarmonicsEffect;
+			ID3DX11Effect *sphericalHarmonicsEffect;
 		};
 	}
 }
