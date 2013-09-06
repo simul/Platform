@@ -830,10 +830,8 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const 
 		m_pCloudEffect->SetTechnique(m_hTechniqueCloud);
 
 	//InternalRenderHorizontal(viewport_id);
-	if(render_mode==SLICES)
-		InternalRenderVolumetric(viewport_id);
-	else
-		InternalRenderRaytrace(viewport_id);
+	InternalRenderVolumetric(viewport_id);
+	
 	m_pd3dDevice->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
 	PIXEndNamedEvent();
 	if(!write_alpha)

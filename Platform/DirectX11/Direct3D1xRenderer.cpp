@@ -136,6 +136,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	D3DXMATRIX proj;
 	D3DXMATRIX view_matrices[6];
 	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
+	framebuffer_cubemap.Clear(pContext,0,0,0,0,0);
 	for(int i=0;i<6;i++)
 	{
 		framebuffer_cubemap.SetCurrentFace(i);
@@ -252,15 +253,14 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				}
 			}
 		}
+		if(simulWeatherRenderer&&ShowCubemaps&&framebuffer_cubemap.IsValid())
+			UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)framebuffer_cubemap.GetColorTex(),view,proj);
+
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(pd3dImmediateContext);
 		if(simulWeatherRenderer)
 		{
 			ProfileBlock profileBlock(pd3dImmediateContext,"debug overlays");
-			if(ShowCubemaps&&framebuffer_cubemap.IsValid())
-			{
-				UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)framebuffer_cubemap.GetColorTex(),view,proj);
-			}
 			if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 				simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 			if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())

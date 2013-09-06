@@ -24,7 +24,6 @@
 #include "SimulSkyRendererDX1x.h"
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "SimulPrecipitationRendererDX1x.h"
-
 #include "SimulCloudRendererDX1x.h"
 #include "Simul2DCloudRendererDX1x.h"
 #include "SimulLightningRendererDX11.h"
@@ -211,6 +210,8 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	D3DXMATRIX view_matrices[6];
 	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
 	bool noise3d=environment->cloudKeyframer->GetUse3DNoise();
+	bool godrays=GetBaseAtmosphericsRenderer()->GetShowGodrays();
+	GetBaseAtmosphericsRenderer()->SetShowGodrays(false);
 	environment->cloudKeyframer->SetUse3DNoise(true);
 	int l=100;
 	if(baseCloudRenderer)
@@ -257,6 +258,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	{
 		baseCloudRenderer->GetCloudGeometryHelper()->SetMaxLayers(l);
 	}
+	GetBaseAtmosphericsRenderer()->SetShowGodrays(godrays);
 }
 
 void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
