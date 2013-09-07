@@ -772,7 +772,8 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const 
 	static bool nofs=false;
 	helper->SetNoFrustumLimit(nofs);
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),false);
-
+	
+	const simul::clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
 	float cloud_interp=cloudKeyframer->GetInterpolation();
 	m_pCloudEffect->SetFloat	(interp					,cloud_interp);
 	m_pCloudEffect->SetVector	(eyePosition			,(D3DXVECTOR4*)(&cam_pos));
@@ -785,7 +786,7 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const 
 	m_pCloudEffect->SetVector	(mieRayleighRatio	,MakeD3DVector(skyInterface->GetMieRayleighRatio()));
 	m_pCloudEffect->SetFloat	(hazeEccentricity	,skyInterface->GetMieEccentricity());
 	m_pCloudEffect->SetFloat	(cloudEccentricity	,GetCloudInterface()->GetMieAsymmetry());
-	m_pCloudEffect->SetFloat	(alphaSharpness		,GetCloudInterface()->GetAlphaSharpness());
+	m_pCloudEffect->SetFloat	(alphaSharpness		,K.edge_sharpness);
 	float time=skyInterface->GetTime();
 	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 

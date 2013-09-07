@@ -44,39 +44,35 @@ vec4 GodraysSimplified(Texture2D cloudShadowTexture,Texture2D cloudNearFarTextur
 	float ill			=1.0;
 	float eff_remaining	=1.0;
 	float total_ill		=0.0;
-	float r1			=0.0;
+	float r				=godraysDistanceStart;
 	vec4 total_overc	=vec4(0,0,0,0);
 	// what proportion of the ray is in light?
 	
 	vec3 texc_start		=0.5*(mul(invShadowMatrix,vec4(viewPosition,1.0)).xyz+1.0);
 	vec3 wpos_end		=viewPosition+view*shadowRange;
 	vec3 texc_end		=0.5*(mul(invShadowMatrix,vec4(wpos_end,1.0)).xyz+1.0);
-	for(int i=0;i<38;i++)
+	
+	for(int i=0;i<godraysSteps;i++)
 	{
-		float r0			=r1;
-		float fade_dist_0	=fade_dist_1;
 		// we first get the radius on the shadow plane, then convert 
-		r1					=godrays_distances[i].x;
-		fade_dist_1			=r1*shadowRange/maxFadeDistance;
-		float r				=0.5*(r0+r1);
-		float eff			=exp(-.1*r1);
+		float fade_dist			=r*shadowRange/maxFadeDistance;
+		float eff				=exp(-.1*r);
 		//if(r>=shadowNearFar.z&&fade_dist_0<solid_dist)
 		{
-			float fade_intro	=saturate((solid_dist-fade_dist_0)/(fade_dist_1-fade_dist_0));
-			float true_dist		=r*shadowRange;
-			float fade_dist		=true_dist/maxFadeDistance;
+			float fade_intro	=saturate((solid_dist-fade_dist)/godraysDistanceStep);
 			vec3 texc			=lerp(texc_start,texc_end,r);
 			vec4 texel			=texture_clamp(cloudShadowTexture,texc.xy);
 			float ill			=texel.x;
 			float above			=saturate((texc.z-texel.z)/0.5);
 			ill					+=above;
 			ill					*=eff*fade_intro;
-			total_ill			+=ill*(r1-r0);
+			total_ill			+=ill*godraysDistanceStep;
 		}
+		r+=godraysDistanceStep;
 	}
 	total_insc			=insc_s*saturate(total_ill);
 	//Exaggerate the effect:
-	total_insc.a=1.0;
+	//total_insc.a=1.0;
 	vec3 gr				=InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
 	gr					*=exposure;
 //	gr					=max(gr,vec3(0.0,0.0,0.0));
@@ -132,7 +128,7 @@ vec4 Godrays(Texture2D cloudShadowTexture,Texture2D cloudNearFarTexture,Texture2
 	{
 		float r0			=r1;
 		// we first get the radius on the shadow plane, then convert 
-		r1					=godrays_distances[i].x;
+		r1					=godraysDistanceStart+i*godraysDistanceStep;
 		float fade_dist_0	=r0*stepsize*shadowRange/maxFadeDistance;
 		fade_dist_1			=r1*stepsize*shadowRange/maxFadeDistance;
 		float fade_intro	=saturate((solid_dist-fade_dist_0)/(fade_dist_1-fade_dist_0));

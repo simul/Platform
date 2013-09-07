@@ -144,33 +144,37 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 	targetTexture1.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
-	float indirect_light			=1.0;
+	float indirect_light			=0.0;
 	if(pos.z>0)
 	{
-		int Z			=pos.z-1;
-		int x1			=(pos.x+2)%dims.x;
-		int xn			=(pos.x+dims.x-2)%dims.x;
-		int y1			=(pos.y+2)%dims.y;
-		int yn			=(pos.y+dims.y-2)%dims.y;
-		indirect_light	=targetTexture1[int3(pos.xy,Z)];
-		indirect_light	+=targetTexture1[int3(xn,pos.y,Z)];
-		indirect_light	+=targetTexture1[int3(x1,pos.y,Z)];
-		indirect_light	+=targetTexture1[int3(pos.x,yn,Z)];
-		indirect_light	+=targetTexture1[int3(pos.x,y1,Z)];
-		indirect_light	/=5.0;
+		int Z				=pos.z-1;
+		int x1				=(pos.x+2)%dims.x;
+		int xn				=(pos.x+dims.x-2)%dims.x;
+		int y1				=(pos.y+2)%dims.y;
+		int yn				=(pos.y+dims.y-2)%dims.y;
+		int3 sample_pts[]	={int3(pos.xy,Z),int3(xn,pos.y,Z),int3(x1,pos.y,Z),int3(pos.x,yn,Z),int3(pos.x,y1,Z)};
+		for(int i=0;i<5;i++)
+		{
+			//vec3 lightspace_texcoord	=(vec3(sample_pts[i])+0.5)/vec3(dims);
+			//vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
+			//float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
+			indirect_light	+=targetTexture1[sample_pts[i]];
+		}
+		indirect_light		/=5.0;
 	}
-	//for(int i=0;i<dims.z;i++)
 	int i=pos.z;
 	{
 		uint3 idx					=uint3(pos.xy,i);
 		vec3 lightspace_texcoord	=(vec3(idx)+0.5)/vec3(dims);
-		vec3 texc					=(vec3(pos.xy,(float)i)+0.5)/vec3(dims);
+	//	vec3 texc					=(vec3(pos.xy,(float)i)+0.5)/vec3(dims);
 		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
 		float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
 		indirect_light				*=exp(-extinctions.y*density*stepLength);
-		targetTexture1[idx]			=indirect_light;
 		//if(density==0)
 		//	indirect_light=1.0;
+indirect_light+=lightTexture1[pos.xyz]*density;
+//indirect_light=density;
+		targetTexture1[idx]			=indirect_light;
 	}
 }
 [numthreads(8,8,1)]
@@ -224,8 +228,14 @@ void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)	//SV_DispatchThreadID giv
 	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
 	float density				=saturate(densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x);
 
-    vec4 res					=vec4(light_lookup.y,light_lookup.x,density,ambient_lookup);
-   // res							=vec4(lightspace_texcoord.zz,density,lightspace_texcoord.z);
+	vec3 offset[]				={vec3(1.0,0,0),vec3(-1.0,0,0),vec3(0,1.0,0),vec3(0,-1.0,0),vec3(0,0,1.0),vec3(0,0,-1.0)};
+	float filtered_density		=density;
+	for(int i=0;i<6;i++)
+		filtered_density		+=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord+offset[i]/vec3(dims),0).x;
+	filtered_density			/=7.0;
+
+    vec4 res					=vec4(light_lookup.y*filtered_density,light_lookup.x,density,ambient_lookup);
+	//res							=vec4(.5,.5,.5,.5);
 	targetTexture[pos]			=res;
 }
 

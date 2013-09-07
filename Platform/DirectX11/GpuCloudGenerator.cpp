@@ -273,7 +273,7 @@ int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
 
 	//transformMatrix * (0,0,1)
 	simul::sky::float4 step	(gpuCloudConstants.transformMatrix._13,gpuCloudConstants.transformMatrix._23,gpuCloudConstants.transformMatrix._33,0);
-		//	Vector3 step=fabs(scales(axis))*light_vec/(float)grid[2];
+
 	gpuCloudConstants.stepLength		=simul::sky::length(step); 
 	if(wrap_light_tex)
 		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pWwcSamplerState);

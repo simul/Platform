@@ -29,7 +29,7 @@ vec4 calcDensity(vec3 pos,float layerFade,float cloud_interp)
 	vec4 density2=sampleLod(cloudDensity2,cloudSamplerState,pos,0);
 	vec4 density=lerp(density1,density2,cloud_interp);
 	density.z*=layerFade;
-	//density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
+	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
 	return density;
 }
 
@@ -40,7 +40,7 @@ vec4 calcDensity(vec3 texCoords,float layerFade,vec3 noiseval,vec3 fractalScale,
 	vec4 density2=sampleLod(cloudDensity2,cloudSamplerState,pos,0);
 	vec4 density=lerp(density1,density2,cloud_interp);
 	density.z*=layerFade;
-	//density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
+	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
 	return density;
 }
 

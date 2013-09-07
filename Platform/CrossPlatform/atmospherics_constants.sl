@@ -42,9 +42,8 @@ uniform_buffer AtmosphericsPerViewConstants SIMUL_BUFFER_REGISTER(12)
 	uniform float startZMetres;
 	uniform float shadowRange;
 	uniform int godraysSteps;
-	uniform float fill4;
-	uniform float fill5;
-	uniform vec4 godrays_distances[200];	// We use vec4 instead of float, because DirectX debug reports an error - perhaps floats are packed as float4 for arrays.
+	uniform float godraysDistanceStart;
+	uniform float godraysDistanceStep;
 };
 
 /*

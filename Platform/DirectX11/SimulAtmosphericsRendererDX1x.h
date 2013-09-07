@@ -61,41 +61,32 @@ namespace simul
 			void RenderGodrays(void *context,float strength,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloudDepthTexture);
 		protected:
 			HRESULT Destroy();
-			ID3D1xDevice*								m_pd3dDevice;
-			ID3D1xInputLayout*							vertexDecl;
-			D3DXMATRIX									view,proj;
+			ID3D1xDevice*									m_pd3dDevice;
+			D3DXMATRIX										view,proj;
 
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			ID3D1xEffect*								effect;
-			ID3D1xEffectTechnique*						singlePassTechnique;
-			ID3D1xEffectTechnique*						twoPassOverlayTechnique;
-			ID3D1xEffectTechnique*						godraysTechnique;
+			ID3D1xEffect*									effect;
+			ID3D1xEffectTechnique*							singlePassTechnique;
+			ID3D1xEffectTechnique*							twoPassOverlayTechnique;
+			ID3D1xEffectTechnique*							godraysTechnique;
 			// Variables for this effect:
-			ID3D1xEffectMatrixVariable*					invViewProj;
-			ID3D1xEffectVectorVariable*					lightDir;
-			ID3D1xEffectVectorVariable*					MieRayleighRatio;
-			ID3D1xEffectScalarVariable*					HazeEccentricity;
-			ID3D1xEffectScalarVariable*					fadeInterp;
-			ID3D1xEffectShaderResourceVariable*			depthTexture;
-			ID3D1xEffectShaderResourceVariable*			cloudDepthTexture;
-			ID3D1xEffectShaderResourceVariable*			lossTexture;
-			ID3D1xEffectShaderResourceVariable*			inscTexture;
-			ID3D1xEffectShaderResourceVariable*			skylTexture;
-			ID3D1xEffectShaderResourceVariable*			illuminationTexture;
-			ID3D1xEffectShaderResourceVariable*			overcTexture;
-			ID3D1xEffectShaderResourceVariable*			cloudShadowTexture;
-			ID3D1xEffectShaderResourceVariable*			cloudNearFarTexture;
+			ID3D1xEffectShaderResourceVariable*				depthTexture;
+			ID3D1xEffectShaderResourceVariable*				cloudDepthTexture;
+			ID3D1xEffectShaderResourceVariable*				lossTexture;
+			ID3D1xEffectShaderResourceVariable*				inscTexture;
+			ID3D1xEffectShaderResourceVariable*				skylTexture;
+			ID3D1xEffectShaderResourceVariable*				illuminationTexture;
+			ID3D1xEffectShaderResourceVariable*				overcTexture;
+			ID3D1xEffectShaderResourceVariable*				cloudShadowTexture;
+			ID3D1xEffectShaderResourceVariable*				cloudNearFarTexture;
 
-			ID3D1xShaderResourceView*					skyLossTexture_SRV;
-			ID3D1xShaderResourceView*					skyInscatterTexture_SRV;
-			ID3D1xShaderResourceView*					overcInscTexture_SRV;
-			ID3D1xShaderResourceView*					skylightTexture_SRV;
+			ID3D1xShaderResourceView*						skyLossTexture_SRV;
+			ID3D1xShaderResourceView*						skyInscatterTexture_SRV;
+			ID3D1xShaderResourceView*						overcInscTexture_SRV;
+			ID3D1xShaderResourceView*						skylightTexture_SRV;
 
-			ID3D1xShaderResourceView*					clouds_texture;
-			ID3D1xShaderResourceView*					illuminationTexture_SRV;
+			ID3D1xShaderResourceView*						illuminationTexture_SRV;
 
-			ID3D11Buffer*								constantBuffer;
-			ID3D11Buffer*								atmosphericsUniforms2ConstantsBuffer;
 			ConstantBuffer<AtmosphericsPerViewConstants>	atmosphericsPerViewConstants;
 			ConstantBuffer<AtmosphericsUniforms>			atmosphericsUniforms;
 		};
