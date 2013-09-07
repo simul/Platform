@@ -164,9 +164,7 @@
       <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
-    <Lib>
-      <OutputFile>$(OutDir)$(TargetName)_MDd.lib</OutputFile>
-    </Lib>
+    <Lib />
     <ResourceCompile>
       <SuppressStartupBanner>
       </SuppressStartupBanner>
@@ -193,9 +191,7 @@
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <ForcedUsingFiles>%(ForcedUsingFiles)</ForcedUsingFiles>
     </ClCompile>
-    <Lib>
-      <OutputFile>$(OutDir)$(TargetName)_MD.lib</OutputFile>
-    </Lib>
+    <Lib />
     <ResourceCompile>
       <SuppressStartupBanner>
       </SuppressStartupBanner>
