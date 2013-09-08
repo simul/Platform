@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2011 Simul Software Ltd
+// Copyright (c) 2007-2013 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -191,7 +191,7 @@ bool SimulHDRRendererDX1x::FinishRender(void *context)
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
 	framebuffer.Deactivate(context);
-	imageTexture->SetResource(framebuffer.GetBufferResource());//buffer_texture_SRV);
+	imageTexture->SetResource(framebuffer.GetBufferResource());
 	Gamma_->SetFloat(Gamma);
 	Exposure_->SetFloat(Exposure);
 	D3DXMATRIX ortho;
@@ -251,7 +251,7 @@ static float g_FilterRadius = 30;
 	// Input texture
 	simul::dx11::setParameter(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
 	// Output texture
-	simul::dx11::setParameter(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
+	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
 	simul::dx11::setParameter(m_pGaussianEffect,"g_NumApproxPasses",g_NumApproxPasses - 1);
 	simul::dx11::setParameter(m_pGaussianEffect,"g_HalfBoxFilterWidth",half_box_width);
 	simul::dx11::setParameter(m_pGaussianEffect,"g_FracHalfBoxFilterWidth",frac_half_box_width);
@@ -273,7 +273,7 @@ static float g_FilterRadius = 30;
 	// Input texture
 	simul::dx11::setParameter(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
 	// Output texture
-	simul::dx11::setParameter(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
+	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
 
 	// Select pass
 	gaussianRowTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_row");

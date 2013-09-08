@@ -148,15 +148,7 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 	SetDepthFormat(iformat);
 }
 
-
-// Activate / deactivate the FBO as a render target
-// The FBO needs to be deactivated when using the associated Textures.
-void FramebufferGL::Activate(void *context)
-{
-	Activate(context,0,0,Width,Height);
-}
-
-void FramebufferGL::Activate(void *,int x,int y,int w,int h)
+void FramebufferGL::Activate(void *)
 {
 	if(!m_fb)
 		Init();
@@ -166,7 +158,25 @@ void FramebufferGL::Activate(void *,int x,int y,int w,int h)
 	CheckFramebufferStatus();
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	ERROR_CHECK
-	glViewport(x,y,w,h);
+	glViewport(0,0,Width,Height);
+	ERROR_CHECK
+	fb_stack.push(m_fb);
+}
+// Activate the FBO as a render target
+// The FBO needs to be deactivated when using the associated Textures.
+
+void FramebufferGL::ActivateViewport(void *,float viewportX, float viewportY, float viewportW, float viewportH)
+{
+	if(!m_fb)
+		Init();
+	CheckFramebufferStatus();
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
+	ERROR_CHECK
+	CheckFramebufferStatus();
+	glGetIntegerv(GL_VIEWPORT,main_viewport);
+	ERROR_CHECK
+	glViewport((int)((float)Width*viewportX),(int)((float)Height*viewportY)
+			,(int)((float)Width*viewportW),(int)((float)Height*viewportH));
 	ERROR_CHECK
 	fb_stack.push(m_fb);
 }
@@ -243,11 +253,11 @@ ERROR_CHECK
 }
 
 
-void FramebufferGL::Clear(void*,float r,float g,float b,float a,float depth,int mask)
+void FramebufferGL::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
 {
 	if(!mask)
 		mask=GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT;
-	glClearColor(r,g,b,a);
+	ClearColour(context,r,g,b,a);
 	if(mask&GL_COLOR_BUFFER_BIT)
 		 glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
 	// AMAZINGLY, OpenGL requires depth mask to be set to clear the depth buffer.
@@ -257,7 +267,12 @@ void FramebufferGL::Clear(void*,float r,float g,float b,float a,float depth,int 
 	glClear(mask);
 }
 
-void FramebufferGL::CopyToMemory(void *,void *target,int start_texel,int num_texels)
+void FramebufferGL::ClearColour(void*,float r,float g,float b,float a)
+{
+	glClearColor(r,g,b,a);
+}
+
+void FramebufferGL::CopyToMemory(void *,void * /*target*/,int /*start_texel*/,int /*num_texels*/)
 {
 
 }

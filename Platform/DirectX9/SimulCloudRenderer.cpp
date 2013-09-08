@@ -1,4 +1,5 @@
-// Copyright (c) 2007-2011 Simul Software Ltd
+#define NOMINMAX
+// Copyright (c) 2007-2013 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -173,7 +174,7 @@ public:
 		float z_offset=ratio*(z-column_height);
 		float doughnut_r=sqrt(r_offset*r_offset+z_offset*z_offset);
 		if(doughnut_r<doughnut_minor_radius)
-			val=max(1.f,val);
+			val=std::max(1.f,val);
 
 		return val;
 	}
@@ -385,7 +386,7 @@ void SimulCloudRenderer::RecompileShaders()
 	skylightTexture				=m_pCloudEffect->GetParameterByName(NULL,"skylightTexture");
 	
 	invViewProj			=m_pCloudEffect->GetParameterByName(NULL,"invViewProj");
-	noiseMatrix			=m_pCloudEffect->GetParameterByName(NULL,"noiseMatrix");
+	//noiseMatrix			=m_pCloudEffect->GetParameterByName(NULL,"noiseMatrix");
 	fractalRepeatLength	=m_pCloudEffect->GetParameterByName(NULL,"fractalRepeatLength");
 	cloudScales			=m_pCloudEffect->GetParameterByName(NULL,"cloudScales");
 	cloudOffset			=m_pCloudEffect->GetParameterByName(NULL,"cloudOffset");
@@ -948,7 +949,7 @@ bool SimulCloudRenderer::FillRaytraceLayerTexture(int viewport_id)
 	int j=0;
 	for(iter i=helper->GetSlices().rbegin();i!=helper->GetSlices().rend()&&j<128;i++,j++)
 	{
-		float distance=(*i)->distance;
+		float distance=(*i)->layerDistance;
 		*float_ptr++=distance;
 		*float_ptr++=(*i)->noise_tex_x;
 		*float_ptr++=(*i)->noise_tex_y;
@@ -981,10 +982,6 @@ void SimulCloudRenderer::InternalRenderRaytrace(int viewport_id)
 		D3DXMatrixInverse(&ivp,NULL,&vpt);
 
 		hr=m_pCloudEffect->SetMatrix(invViewProj,&ivp);
-
-		// The NOISE matrix is for 2D noise texcoords:
-		//hr=m_pCloudEffect->SetMatrix(noiseMatrix,(const D3DXMATRIX*)noise_orient.GetInverseMatrix().RowPointer(0));
-		//hr=m_pCloudEffect->SetFloat(fractalRepeatLength,GetCloudInterface()->GetFractalRepeatLength());
 
 		hr=m_pCloudEffect->SetTexture(raytraceLayerTexture,raytrace_layer_texture);
 		simul::sky::float4 cloud_scales=GetCloudScales();
@@ -1041,11 +1038,11 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	for(iter i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++)
 	{
-		float distance=(*i)->distance;
+		float distance=(*i)->layerDistance;
 		helper->MakeLayerGeometry(*i,6378000.f);
 		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
-		float fade=(*i)->fadeIn;
+		float fade=(*i)->layerFade;
 		bool start=true;
 		for(std::vector<const simul::clouds::CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
 			j!=(*i)->quad_strips.end();j++)
@@ -1055,7 +1052,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 			{
 				const simul::clouds::CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
 				pos.Define(V.x,V.y,V.z);
-				simul::math::Vector3 tex_pos(V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
+				//simul::math::Vector3 tex_pos(V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
 				if(v>=MAX_VERTICES)
 				{
 					break;
@@ -1071,7 +1068,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 				Vertex_t *vertex=NULL;
 				vertex=&vertices[v];
 				vertex->position=pos;
-				vertex->texCoords=tex_pos;
+				//vertex->texCoords=tex_pos;
 				vertex->texCoordsNoise.x=0;//V.noise_tex_x;
 				vertex->texCoordsNoise.y=0;//V.noise_tex_y;
 				vertex->layerFade=fade;
@@ -1401,14 +1398,14 @@ bool SimulCloudRenderer::RenderDistances(int width,int height)
 	{
 		if(!(*i))
 			continue;
-		float d=(*i)->distance/max_distance*width*.9f;
+		float d=(*i)->layerDistance/max_distance*width*.9f;
 		lines[j].x=width*0.05f+d; 
 		lines[j].y=0.9f*height;  
 		lines[j].z=0;
 		lines[j].r=1.f;
 		lines[j].g=1.f;
 		lines[j].b=0.f;
-		lines[j].a=(*i)->fadeIn;
+		lines[j].a=(*i)->layerFade;
 		j++;
 		lines[j].x=width*0.05f+d; 
 		lines[j].y=0.95f*height; 
@@ -1416,7 +1413,7 @@ bool SimulCloudRenderer::RenderDistances(int width,int height)
 		lines[j].r=1.f;
 		lines[j].g=1.f;
 		lines[j].b=0.f;
-		lines[j].a=(*i)->fadeIn;
+		lines[j].a=(*i)->layerFade;
 	}
 	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,(unsigned)helper->GetSlices().size(),lines,(unsigned)sizeof(Vertext));
 	delete [] lines;

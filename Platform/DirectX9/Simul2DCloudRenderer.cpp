@@ -1,4 +1,5 @@
-// Copyright (c) 2007-2011 Simul Software Ltd
+#define NOMINMAX
+// Copyright (c) 2007-2013 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or

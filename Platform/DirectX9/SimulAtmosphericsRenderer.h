@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2011 Simul Software Ltd
+// Copyright (c) 2007-2013 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -85,7 +85,7 @@ public:
 	{
 		loss_texture=(LPDIRECT3DBASETEXTURE9)t;
 	}
-	void SetInscatterTextures(void* t,void *s,void *o)
+	void SetInscatterTextures(void* t,void *s,void *)
 	{
 		inscatter_texture=(LPDIRECT3DBASETEXTURE9)t;
 		skylight_texture=(LPDIRECT3DBASETEXTURE9)s;

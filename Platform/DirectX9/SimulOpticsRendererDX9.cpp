@@ -1,3 +1,4 @@
+#define NOMINMAX
 
 #include "SimulOpticsRendererDX9.h"
 #include "Macros.h"

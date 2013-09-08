@@ -1,13 +1,6 @@
 #ifndef STATES_SL
 #define STATES_SL
 
-SamplerState noiseSamplerState : register(s2)
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Wrap;
-	AddressV = Wrap;
-	AddressW = Wrap;
-};
 
 SamplerState wrapMirrorSamplerState:register(s3)
 {
@@ -77,5 +70,13 @@ SamplerState cwcNearestSamplerState: register(s12)
 	AddressU = Clamp;
 	AddressV = Wrap;
 	AddressW = Clamp;
+};
+
+SamplerState wrapNearestSamplerState: register(s13)
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
 };
 #endif

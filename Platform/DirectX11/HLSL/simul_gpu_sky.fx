@@ -6,7 +6,6 @@
 #define sampler2D texture2D
 #define sampler3D texture3D
 #define texture(tex,texCoords) tex.Sample(samplerState,texCoords)
-#define texture_nearest(tex,texCoords) tex.Sample(samplerStateNearest,texCoords)
 uniform sampler2D input_texture;
 uniform sampler1D density_texture;
 uniform sampler3D loss_texture;
@@ -159,11 +158,11 @@ void CS_Loss(uint3 sub_pos	: SV_DispatchThreadID )
 [numthreads(8,1,1)]
 void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 {
-	uint3 dims;
+	int3 dims;
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
 	uint linear_pos		=sub_pos.x+threadOffset.x;
 	
-	uint3 pos			=LinearThreadToPos2D(linear_pos,dims);
+	int3 pos			=LinearThreadToPos2D(linear_pos,dims);
 	if(pos.x>=dims.x||pos.y>=dims.y)
 		return;
 	
@@ -179,6 +178,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 	float prevDist_km	=0.0;
 	
 	targetTexture[pos]	=previous_insc;
+	vec3 mie_factor		=vec3(1.0,1.0,1.0);
 	for(int i=1;i<dims.z;i++)
 	{
 		uint3 idx			=uint3(pos.xy,i);
@@ -223,13 +223,14 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 		vec3 loss;
 		loss				=exp(-extinction*stepLengthKm);
 		insc.rgb			*=vec3(1.0,1.0,1.0)-loss;
-		float mie_factor	=exp(-insc.w*stepLengthKm*haze_factor*hazeMie.x);
-		insc.w				=saturate((1.f-mie_factor)/(1.f-total_ext.x+0.0001f));
+		mie_factor			*=exp(-insc.w*stepLengthKm*haze_factor*hazeMie);
 	
 		insc.rgb			*=previous_loss.rgb;
 		insc.rgb			+=previous_insc.rgb;
-		float lossw=1.0;
-		insc.w				=(lossw)*(1.0-previous_insc.w)*insc.w+previous_insc.w;
+		//float lossw=1.0;
+		//insc.w				=(lossw)*(1.0-previous_insc.w)*insc.w+previous_insc.w;
+		//final.w=::saturate((1.f-mie_factor)/(1.f-total_loss.x+0.0001f));
+		insc.w				=saturate((1.0-mie_factor)/(1.0-previous_loss.x+0.0001f));
 		
 		targetTexture[idx]	=insc;
 		prevDist_km			=dist_km;

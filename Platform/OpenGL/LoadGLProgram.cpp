@@ -157,13 +157,20 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 			while(next>=0)
 			{
 				std::string line=info_log.substr(pos,next-pos);
+				bool is_error=true;
 				int errpos=line.find("ERROR");
 				if(errpos<0)
 					errpos=line.find("error");
 				if(errpos<0)
+				{
 					errpos=line.find("WARNING");
+					is_error=false;
+				}
 				if(errpos<0)
+				{
 					errpos=line.find("warning");
+					is_error=false;
+				}
 				if(errpos>=0)
 				{
 					int first_colon=line.find(":");
@@ -204,7 +211,8 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 					}
 					int number=atoi(linestr.c_str());
 					NameLine n=filenameChart.find(number);
-					std::cerr<<(*shaderPathUtf8).c_str()<<"/"<<n.filename.c_str()<<"("<<n.line<<") "<<err_msg.c_str()<<std::endl;
+					const char *err_warn=is_error?"error":"warning";
+					std::cerr<<(*shaderPathUtf8).c_str()<<"/"<<n.filename.c_str()<<"("<<n.line<<"): "<<err_warn<<" G1000: "<<err_msg.c_str()<<std::endl;
 				}
 				pos=next;
 				next=info_log.find('\n',pos+1);

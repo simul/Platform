@@ -27,11 +27,13 @@ namespace simul
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-			void Activate(void *context);
+			void Activate(void *context );
+			void ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH );
 			void ActivateColour(void *context);
 			void Deactivate(void *context);
 			void DeactivateDepth(void *context);
 			void Clear(void *context,float,float,float,float,float,int mask=0);
+			void ClearColour(void* context, float, float, float, float );
 			bool DrawQuad(void *context);
 			ID3D1xShaderResourceView *GetBufferResource()
 			{
@@ -56,6 +58,7 @@ namespace simul
 			//! Copy from the rt to the given target memory. If not starting at the top of the texture (start_texel>0), the first byte written
 			//! is at \em target, which is the address to copy the given chunk to, not the base address of the whole in-memory texture.
 			void CopyToMemory(void *context,void *target,int start_texel=0,int texels=0);
+			void GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const;
 		protected:
 			DXGI_FORMAT target_format;
 			DXGI_FORMAT depth_format;
@@ -71,7 +74,6 @@ namespace simul
 			ID3D1xRenderTargetView*				m_pOldRenderTarget;
 			ID3D1xDepthStencilView*				m_pOldDepthSurface;
 			D3D1x_VIEWPORT						m_OldViewports[16];
-
 			//! The texture the scene is rendered to.
 		public:
 			ID3D1xTexture2D*					hdr_buffer_texture;

@@ -44,6 +44,26 @@ BlendState DoBlend
 	DestBlend = INV_SRC_ALPHA;
 };
 
+BlendState CloudBlend
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = SRC_ALPHA;
+	DestBlend = INV_SRC_ALPHA;
+    BlendOp = ADD;
+    SrcBlendAlpha = ZERO;
+    DestBlendAlpha = INV_SRC_ALPHA;
+    BlendOpAlpha = ADD;
+    //RenderTargetWriteMask[0] = 0x0F;
+};
+
+BlendState CloudBufferBlend
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = ONE;
+	DestBlend = SRC_ALPHA;
+    BlendOp = ADD;
+};
+
 BlendState AlphaBlend
 {
 	BlendEnable[0] = TRUE;

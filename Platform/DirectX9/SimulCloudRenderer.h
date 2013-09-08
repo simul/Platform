@@ -1,5 +1,5 @@
 
-// Copyright (c) 2007-2011 Simul Software Ltd
+// Copyright (c) 2007-2013 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -188,7 +188,7 @@ protected:
 	D3DXHANDLE					skylightTexture;
 	
 	D3DXHANDLE					invViewProj;
-	D3DXHANDLE					noiseMatrix;
+	
 	D3DXHANDLE					fractalRepeatLength;
 	D3DXHANDLE					cloudScales;
 	D3DXHANDLE					cloudOffset;

@@ -1,4 +1,5 @@
 
+#define NOMINMAX
 #include "SimulLightningRendererDX11.h"
 using namespace simul;
 using namespace dx11;

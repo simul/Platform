@@ -11,6 +11,7 @@
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/simul_cloud_constants.sl"
+#include "Simul/Platform/OpenGL/GpuCloudGenerator.h"
 namespace simul
 {
 	namespace clouds
@@ -44,6 +45,9 @@ public:
 	void RenderCrossSections(void *,int width,int height);
 	void SetLossTexture(void *);
 	void SetInscatterTextures(void* t,void *s,void *o);
+	void SetIlluminationTexture(void *i);
+	simul::opengl::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
+	simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
 	
 	CloudShadowStruct GetCloudShadowTexture();
 	const char *GetDebugText();
@@ -65,6 +69,7 @@ public:
 	//! Clear the sequence()
 	void New();
 protected:
+	simul::opengl::GpuCloudGenerator gpuCloudGenerator;
 	void SwitchShaders(GLuint program);
 	void DrawLines(void *,VertexXyzRgba *vertices,int vertex_count,bool strip);
 	bool init;
@@ -112,13 +117,15 @@ unsigned short *pIndices;
 	GLint mieRayleighRatio_param;
 	
 	GLint		maxFadeDistanceMetres_param;
-	GLuint		illum_tex;
 
 	GLuint		cloud_tex[3];
 	// 2D textures (x=distance, y=elevation) for fades, updated per-frame:
 	GLuint		loss_tex;
 	GLuint		inscatter_tex;
 	GLuint		skylight_tex;
+	GLuint		overcast_tex;
+
+	GLuint		illum_tex;
 	
 	// 2D texture
 	GLuint		noise_tex;

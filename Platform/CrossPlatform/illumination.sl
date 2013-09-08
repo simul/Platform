@@ -36,13 +36,13 @@ vec4 IlluminationBuffer(float alt_km,vec2 texCoords,vec2 targetTextureSize,float
 {
 	float azimuth			=3.1415926536*2.0*texCoords.x;
 	float sine				=-1.0+2.0*(texCoords.y*targetTextureSize.y/(targetTextureSize.y-1.0));
+	sine					=clamp(sine,-1.0,1.0);
 	float cosine			=sqrt(1.0-sine*sine);
 	vec3 view				=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
 	vec2 fade_texc			=vec2(1.0,texCoords.y);
 	vec2 full_bright_range	=EarthShadowDistances(fade_texc,view);
 	vec2 overcast_range		=OvercastDistances(alt_km,fade_texc,view,overcastBaseKm,overcastRangeKm, maxFadeDistanceKm);
-	//overcast_range			=LimitWithin(overcast_range,full_bright_range);
-	//overcast_range	=vec2(0,1.0);
+	
     return vec4(full_bright_range,overcast_range);
 }
 
@@ -62,10 +62,12 @@ vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 
 	vec2 overc_far_texc		=vec2(min(overcDistTexc.y,fade_texc.x),fade_texc.y);
 	vec4 overc_far			=inscTexture.Sample(cmcSamplerState,overc_far_texc);
 
-	vec4 overc				=max(vec4(0,0,0,0),overc_far-overc_near);
+	vec4 overc;
+	overc.rgb				=max(vec3(0,0,0),overc_far.rgb-overc_near.rgb);
+	overc.w					=0.5*(overc_far.a+overc_near.a);
 
-	insc=max(vec4(0,0,0,0),insc-overc*overcast);
-	
+	insc.rgb				=max(vec3(0,0,0),insc.rgb-overc.rgb*overcast);
+	insc.w					=lerp(insc.a,0,overcast)*overcast;
     return insc;
 }
 

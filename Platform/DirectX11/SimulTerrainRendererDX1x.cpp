@@ -1,3 +1,4 @@
+#define NOMINMAX
 // Copyright (c) 2007-2013 Simul Software Ltd
 // All Rights Reserved.
 //
@@ -122,8 +123,8 @@ void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 	D3DXMATRIX wvp;
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
-	simul::dx11::setTextureArray(m_pTerrainEffect,"textureArray",arrayTexture.m_pArrayTexture_SRV);
-	simul::dx11::setParameter(m_pTerrainEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
+	simul::dx11::setTextureArray(	m_pTerrainEffect,"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
+	simul::dx11::setParameter(		m_pTerrainEffect,"cloudShadowTexture"	,(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	terrainConstants.eyePosition=cam_pos;
 	if(baseSkyInterface)
 	{
@@ -134,8 +135,7 @@ void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 	terrainConstants.worldViewProj=wvp;
 	terrainConstants.worldViewProj.transpose();
 
-	
-	simul::math::Matrix4x4 shadowMatrix		=cloudShadowStruct.shadowMatrix;
+	simul::math::Matrix4x4 shadowMatrix		=cloudShadowStruct.simpleOffsetMatrix;
 	simul::math::Matrix4x4 invShadowMatrix;
 	shadowMatrix.Inverse(invShadowMatrix);
 	terrainConstants.invShadowMatrix		=invShadowMatrix;
@@ -150,11 +150,11 @@ void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 	MapBuffer(pContext,m_pVertexBuffer,&mapped_vertices);
 	vertices=(TerrainVertex_t*)mapped_vertices.pData;
 	
-	int h	=heightMapInterface->GetPageSize();
-	simul::math::Vector3 origin=heightMapInterface->GetOrigin();
-	float PageWorldX=heightMapInterface->GetPageWorldX();
-	float PageWorldY=heightMapInterface->GetPageWorldY();
-	float PageSize	=(float)heightMapInterface->GetPageSize();
+	int h						=heightMapInterface->GetPageSize();
+	simul::math::Vector3 origin	=heightMapInterface->GetOrigin();
+	float PageWorldX			=heightMapInterface->GetPageWorldX();
+	float PageWorldY			=heightMapInterface->GetPageWorldY();
+	float PageSize				=(float)heightMapInterface->GetPageSize();
 	
 	int v=0;
 	for(int i=0;i<h-1;i++)

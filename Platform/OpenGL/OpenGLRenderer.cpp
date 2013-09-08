@@ -53,8 +53,6 @@ OpenGLRenderer::~OpenGLRenderer()
 		simulWeatherRenderer->InvalidateDeviceObjects();
 	if(simulHDRRenderer)
 		simulHDRRenderer->InvalidateDeviceObjects();
-	gpuCloudGenerator.InvalidateDeviceObjects();
-	gpuSkyGenerator.InvalidateDeviceObjects();
 	simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
 	depthFramebuffer.InvalidateDeviceObjects();
 	SAFE_DELETE_PROGRAM(simple_program);
@@ -90,8 +88,6 @@ ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
 ERROR_CHECK
-	gpuCloudGenerator.RestoreDeviceObjects(NULL);
-	gpuSkyGenerator.RestoreDeviceObjects(NULL);
 	depthFramebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
 	depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);
 	if(simulWeatherRenderer)
@@ -269,8 +265,6 @@ void OpenGLRenderer::RecompileShaders()
 		simulWeatherRenderer->RecompileShaders();
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->RecompileShaders();
-	gpuCloudGenerator.RecompileShaders();
-	gpuSkyGenerator.RecompileShaders();
 	SAFE_DELETE_PROGRAM(simple_program);
 	simple_program=MakeProgram("simple.vert",NULL,"simple.frag");
 }

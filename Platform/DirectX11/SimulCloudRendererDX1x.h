@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2011 Simul Software Ltd
+// Copyright (c) 2007-2013 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -22,6 +22,7 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
+#include "Simul/Platform/DirectX11/GpuCloudGenerator.h"
 #include "Simul/Platform/DirectX11/GpuCloudGenerator.h"
 
 namespace simul
@@ -79,6 +80,7 @@ namespace simul
 			void SetLossTexture(void *t);
 			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
+			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
 
 			void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
 			void FillCloudTextureSequentially(int texture_index,int texel_index,int num_texels,const unsigned *uint32_array){}
@@ -117,7 +119,6 @@ namespace simul
 			ID3D1xDevice*							m_pd3dDevice;
 			simul::dx11::Mesh						circle;
 			simul::dx11::Mesh						sphere;
-			ID3D1xBuffer *							instanceBuffer;
 			ID3D1xInputLayout*						m_pVtxDecl;
 			ID3D1xInputLayout*						m_pLightningVtxDecl;
 			ID3D11SamplerState*						m_pWrapSamplerState;
@@ -137,6 +138,7 @@ namespace simul
 			ID3D1xEffectTechnique*					m_hTechniqueCrossSectionXY;
 			
 			ConstantBuffer<CloudConstants>			cloudConstants;
+			StructuredBuffer<SmallLayerData>		layerBuffer;
 			ID3D11Buffer*							cloudPerViewConstantBuffer;
 			ID3D11Buffer*							layerConstantsBuffer;
 			ID3D1xEffectMatrixVariable* 			l_worldViewProj;
@@ -156,7 +158,6 @@ namespace simul
 			TextureStruct							cloud_textures[3];
 
 			ID3D1xShaderResourceView*				noiseTextureResource;
-			ID3D1xShaderResourceView*				noiseTexture3DResource;
 			ID3D1xShaderResourceView*				lightningIlluminationTextureResource;
 			ID3D1xShaderResourceView*				skyLossTexture_SRV;
 			ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
@@ -177,7 +178,7 @@ namespace simul
 			D3D1x_MAPPED_TEXTURE3D					mapped_illumination;
 
 			ID3D11Texture2D*	noise_texture;
-			ID3D11Texture3D*	noise_texture_3D;
+			TextureStruct		noise_texture_3D;
 			ID3D1xTexture1D*	lightning_texture;
 			ID3D1xTexture2D*	cloud_cubemap;
 			

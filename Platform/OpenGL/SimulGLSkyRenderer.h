@@ -10,6 +10,7 @@
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
+#include "Simul/Platform/OpenGL/GpuSkyGenerator.h"
 #include <cstdlib>
 namespace simul
 {
@@ -66,7 +67,9 @@ public:
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual		void SetYVertical(bool ){}
 	const		char *GetDebugText();
+	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
+	simul::opengl::GpuSkyGenerator gpuSkyGenerator;
 	//! \internal Switch the current program, either sky_program or earthshadow_program.
 	//! Also sets the parameter variables.	
 	void		UseProgram(GLuint);
@@ -74,7 +77,7 @@ protected:
 	void		FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d
 				,const float *loss_float4_array,const float *inscatter_float4_array,const float *skylight_float4_array);
 
-	void		EnsureTexturesAreUpToDate();
+	void		EnsureTexturesAreUpToDate(void *);
 	void		EnsureTextureCycle();
 
 	bool		initialized;
