@@ -364,7 +364,7 @@ ERROR_CHECK
 	helper->Make2DGeometry(ci,true,false,max_cloud_distance);
 ERROR_CHECK
 	
-	for(std::vector<Cloud2DGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
+	for(Cloud2DGeometryHelper::QuadStripVector::const_iterator j=helper->GetQuadStrips().begin();
 		j!=helper->GetQuadStrips().end();j++)
 	{
 		glBegin(GL_QUAD_STRIP);

@@ -126,7 +126,7 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,
 	cloudKeyframer->SetMake2DTextures(true);
 	cloudKeyframer->InitKeyframesFromClouds();
 
-	helper=new simul::clouds::Cloud2DGeometryHelper();
+	helper=new simul::clouds::Cloud2DGeometryHelper(memoryInterface);
 	helper->Initialize(8);
 	helper->SetGrid(12,24);
 	
@@ -370,7 +370,7 @@ static float light_mult=.03f;
 	simul::sky::float4 loss2,inscatter2;
 	int i=0;
 	size_t qs_vert=0;
-	for(std::vector<simul::clouds::Cloud2DGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
+	for(simul::clouds::Cloud2DGeometryHelper::QuadStripVector::const_iterator j=helper->GetQuadStrips().begin();
 		j!=helper->GetQuadStrips().end();j++,i++)
 	{
 		// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?

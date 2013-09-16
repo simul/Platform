@@ -217,8 +217,8 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	if(baseCloudRenderer)
 	{
 		baseCloudRenderer->RecompileShaders();
-		l=baseCloudRenderer->GetCloudGeometryHelper()->GetMaxLayers();
-		baseCloudRenderer->GetCloudGeometryHelper()->SetMaxLayers(250);
+		l=baseCloudRenderer->GetMaxSlices(0);
+		baseCloudRenderer->SetMaxSlices(0,250);
 	}
 	for(int i=0;i<6;i++)
 	{
@@ -256,7 +256,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	environment->cloudKeyframer->SetUse3DNoise(noise3d);
 	if(baseCloudRenderer)
 	{
-		baseCloudRenderer->GetCloudGeometryHelper()->SetMaxLayers(l);
+		baseCloudRenderer->SetMaxSlices(0,l);
 	}
 	GetBaseAtmosphericsRenderer()->SetShowGodrays(godrays);
 }

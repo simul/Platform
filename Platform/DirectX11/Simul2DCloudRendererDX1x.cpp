@@ -63,8 +63,8 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 	}
 	static float max_cloud_distance=400000.f;
 	helper->MakeDefaultGeometry(max_cloud_distance);
-	const std::vector<simul::clouds::Cloud2DGeometryHelper::Vertex> &vertices=helper->GetVertices();
-	simul::clouds::Cloud2DGeometryHelper::Vertex *v=new simul::clouds::Cloud2DGeometryHelper::Vertex[vertices.size()];
+	const simul::clouds::Cloud2DGeometryHelper::VertexVector &vertices=helper->GetVertices();
+	simul::clouds::Cloud2DGeometryHelper::Vertex *v=::new(memoryInterface) simul::clouds::Cloud2DGeometryHelper::Vertex[vertices.size()];
 	for(int i=0;i<(int)vertices.size();i++)
 		v[i]=vertices[i];
     D3D11_SUBRESOURCE_DATA InitData;
@@ -80,8 +80,8 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 	};
 	SAFE_RELEASE(vertexBuffer);
 	m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
-	delete v;
-	const std::vector<simul::clouds::Cloud2DGeometryHelper::QuadStrip> &quads=helper->GetQuadStrips();
+	::operator delete [](v,memoryInterface);
+	const simul::clouds::Cloud2DGeometryHelper::QuadStripVector &quads=helper->GetQuadStrips();
 	num_indices=0;
 	for(int i=0;i<(int)quads.size();i++)
 		num_indices+=(int)quads[i].indices.size()+2;
