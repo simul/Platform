@@ -18,17 +18,16 @@ vec4 FastGodrays(Texture2D cloudGodraysTexture,Texture2D inscTexture,Texture2D o
 	vec3 view_s				=normalize(mul(invShadowMatrix,vec4(view,0.0)).xyz);
 	vec3 tex_pos			=mul(invShadowMatrix,vec4(view,0.0)).xyz;
 	float azimuth_texc		=atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536);
-	float dist_texc			=solid_dist*maxFadeDistance/shadowRange;
-	vec4 illum_amount		=texture_wrap_lod(cloudGodraysTexture,vec2(azimuth_texc,dist_texc),0);
+	float true_distance		=solid_dist*maxFadeDistance;
+	float dist_texc			=length(view_s.xy)/length(view_s)*true_distance/shadowRange;
+	vec4 illum_amount		=texture_wrap_clamp(cloudGodraysTexture,vec2(azimuth_texc,dist_texc));
 	float sine				=view.z;
 	float cos0				=dot(view,lightDir);
-	// Now the stepsize	value is the ratio to 1 of a unit step in the shadow plane.
-	float dist_max			=shadowRange/maxFadeDistance;
-	vec2 solid_fade_texc	=vec2(pow(solid_dist,.5),0.5*(1.0-sine));
+	vec2 solid_fade_texc	=vec2(pow(solid_dist,0.5),0.5*(1.0-sine));
 	vec4 insc_s				=texture_clamp_mirror(inscTexture,solid_fade_texc)
 								-texture_clamp_mirror(overcTexture,solid_fade_texc);
-	vec4 total_insc			=insc_s*saturate(illum_amount.x);
-	vec3 gr					=InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
+	vec4 extra_insc			=insc_s*saturate(illum_amount.x);
+	vec3 gr					=InscatterFunction(extra_insc,hazeEccentricity,cos0,mieRayleighRatio);
 	gr						*=exposure;
     return vec4(gr,1.0);
 }

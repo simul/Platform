@@ -1,6 +1,7 @@
 #include "CppHLSL.hlsl"
 #include "states.hlsl"
 Texture2D nearFarTexture	: register(t3);
+Texture2D cloudGodraysTexture;
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 StructuredBuffer<SmallLayerData> layersSB;
@@ -356,7 +357,12 @@ vec4 PS_ShowNoise( vertexOutputCS IN):SV_TARGET
 
 vec4 PS_ShowShadow( vertexOutputCS IN):SV_TARGET
 {
-	return ShowCloudShadow(cloudShadowTexture,nearFarTexture,IN.texCoords);
+	return ShowCloudShadow(cloudShadowTexture,nearFarTexture,cloudGodraysTexture,IN.texCoords);
+}
+
+vec4 PS_ShowGodraysTexture( vertexOutputCS IN):SV_TARGET
+{
+	return texture_wrap_clamp(cloudGodraysTexture,IN.texCoords);
 }
 
 SamplerState crossSectionSamplerState
@@ -371,7 +377,6 @@ SamplerState crossSectionSamplerState
 
 vec4 PS_CrossSection(vec2 texCoords,float yz)
 {
-	//vec3 texc=vec3(crossSectionOffset.x+IN.texCoords.x,yz*IN.texCoords.y,crossSectionOffset.z+(1.0-yz)*IN.texCoords.y);
 	vec3 texc=vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
 	int i=0;
 	vec3 accum=vec3(0.f,0.5f,1.f);
@@ -502,8 +507,8 @@ technique11 cross_section_xz
     pass p0 
     {
 		SetDepthStencilState(DisableDepth,0);
-        SetRasterizerState( RenderNoCull );
-		SetBlendState(NoBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetRasterizerState(RenderNoCull);
+		SetBlendState(NoBlend,vec4(0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_CrossSectionXZ()));
@@ -559,5 +564,17 @@ technique11 show_shadow
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowShadow()));
+    }
+}
+technique11 show_godrays_texture
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowGodraysTexture()));
     }
 }

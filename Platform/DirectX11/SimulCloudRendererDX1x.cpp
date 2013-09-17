@@ -915,10 +915,10 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 	simul::dx11::setParameter(m_pCloudEffect,"cloudShadowTexture",(ID3D1xShaderResourceView*)shadow_fb.GetColorTex());
 	simul::dx11::setParameter(m_pCloudEffect,"nearFarTexture",(ID3D1xShaderResourceView*)shadowNearFar.GetColorTex());
+	simul::dx11::setParameter(m_pCloudEffect,"cloudGodraysTexture",(ID3D11ShaderResourceView*)godrays_fb.GetColorTex());
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
 
-	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",(ID3D11ShaderResourceView*)godrays_fb.GetColorTex());
-	UtilityRenderer::DrawQuad2(pContext,width-3*(w+8),height-2*(w+8),w*2,w/2,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
+	UtilityRenderer::DrawQuad2(pContext,width-2*(w+8),height-(w+8)-w/2,w*2,w/2,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_godrays_texture"));
 
 	cloudDensity1->SetResource(NULL);
 	cloudDensity2->SetResource(NULL);
@@ -936,7 +936,7 @@ bool SimulCloudRendererDX1x::RenderLightning(void *context,int viewport_id)
 	using namespace simul::clouds;
 
 	if(!lightning_vertices)
-		lightning_vertices=new PosTexVert_t[4500];
+		lightning_vertices=new(memoryInterface) PosTexVert_t[4500];
 
 	HRESULT hr=S_OK;
 
