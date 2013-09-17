@@ -94,6 +94,7 @@ uniform_buffer CloudShadowStruct
 {
 	void *texture;			// texture, or SRV for DX11
 	void *nearFarTexture;	// texture, or SRV for DX11, represents near and far range as proportion of shadowRange
+	void *godraysTexture;	// texture, or SRV for DX11, represents accumulated illumination at a given angle and distance.
 	mat4 shadowMatrix;
 	mat4 simpleOffsetMatrix;
 	float extentZMetres;

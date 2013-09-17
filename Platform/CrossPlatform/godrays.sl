@@ -10,6 +10,30 @@ vec2 GetIlluminationAt2(Texture2D cloudShadowTexture,vec3 texc)
 	return saturate(illumination);
 }
 
+vec4 FastGodrays(Texture2D cloudGodraysTexture,Texture2D inscTexture,Texture2D overcTexture,vec2 pos,mat4 invViewProj,float maxFadeDistance,float solid_dist)
+{
+	vec3 view				=mul(invViewProj,vec4(pos.xy,1.0,1.0)).xyz;
+	view					=normalize(view);
+	// Get the direction in shadow space, then scale so that we have unit xy.
+	vec3 view_s				=normalize(mul(invShadowMatrix,vec4(view,0.0)).xyz);
+	vec3 tex_pos			=mul(invShadowMatrix,vec4(view,0.0)).xyz;
+	float azimuth_texc		=atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536);
+	float dist_texc			=solid_dist*maxFadeDistance/shadowRange;
+	vec4 illum_amount		=texture_wrap_lod(cloudGodraysTexture,vec2(azimuth_texc,dist_texc),0);
+	float sine				=view.z;
+	float cos0				=dot(view,lightDir);
+	// Now the stepsize	value is the ratio to 1 of a unit step in the shadow plane.
+	float dist_max			=shadowRange/maxFadeDistance;
+	vec2 solid_fade_texc	=vec2(pow(solid_dist,.5),0.5*(1.0-sine));
+	vec4 insc_s				=texture_clamp_mirror(inscTexture,solid_fade_texc)
+								-texture_clamp_mirror(overcTexture,solid_fade_texc);
+	vec4 total_insc			=insc_s*saturate(illum_amount.x);
+	vec3 gr					=InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
+	gr						*=exposure;
+    return vec4(gr,1.0);
+}
+
+
 vec4 GodraysSimplified(Texture2D cloudShadowTexture,Texture2D cloudNearFarTexture,Texture2D inscTexture,Texture2D overcTexture,vec2 pos,mat4 invViewProj,float maxFadeDistance,float solid_dist)
 {
 	vec3 view			=mul(invViewProj,vec4(pos.xy,1.0,1.0)).xyz;
@@ -30,7 +54,6 @@ vec4 GodraysSimplified(Texture2D cloudShadowTexture,Texture2D cloudNearFarTextur
 	// Now the stepsize value is the ratio to 1 of a unit step in the shadow plane.
 	vec4 total_insc		=vec4(0,0,0,0);
 	float dist_max		=shadowRange/maxFadeDistance;
-	float fade_dist_1	=0.0;
 	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
 	vec2 solid_fade_texc=vec2(pow(solid_dist,.5),0.5*(1.0-sine));
 	vec4 insc1			=texture_clamp_mirror(inscTexture,fade_texc)-texture_clamp_mirror(overcTexture,fade_texc);
@@ -137,7 +160,6 @@ vec4 Godrays(Texture2D cloudShadowTexture,Texture2D cloudNearFarTexture,Texture2
 			float r				=0.5*(r0+r1);
 			if(fade_dist_0<solid_dist)
 			{
-				//fade_dist_1		=min(fade_dist_1,solid_dist);
 				float fade_dist		=r*stepsize*shadowRange/maxFadeDistance;
 				float eff			=exp(-.1*r1/dist_max);
 				fade_texc.x			=sqrt(fade_dist);

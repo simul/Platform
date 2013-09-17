@@ -69,6 +69,7 @@ namespace simul
 			ID3D1xEffectTechnique*							singlePassTechnique;
 			ID3D1xEffectTechnique*							twoPassOverlayTechnique;
 			ID3D1xEffectTechnique*							godraysTechnique;
+			ID3D1xEffectTechnique*							fastGodraysTechnique;
 			// Variables for this effect:
 			ID3D1xEffectShaderResourceVariable*				depthTexture;
 			ID3D1xEffectShaderResourceVariable*				cloudDepthTexture;
@@ -79,6 +80,7 @@ namespace simul
 			ID3D1xEffectShaderResourceVariable*				overcTexture;
 			ID3D1xEffectShaderResourceVariable*				cloudShadowTexture;
 			ID3D1xEffectShaderResourceVariable*				cloudNearFarTexture;
+			ID3D1xEffectShaderResourceVariable*				cloudGodraysTexture;
 
 			ID3D1xShaderResourceView*						skyLossTexture_SRV;
 			ID3D1xShaderResourceView*						skyInscatterTexture_SRV;

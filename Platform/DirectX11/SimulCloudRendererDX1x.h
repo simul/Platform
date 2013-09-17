@@ -168,6 +168,11 @@ namespace simul
 			simul::dx11::Framebuffer				shadow_fb;
 			simul::dx11::Framebuffer				shadowNearFar;
 
+			// A texture whose x-axis represents azimuth, and whose y-axis represents distance
+			// as a proportion of shadow range. The texels represent how much illumination accumulates between the viewer
+			// and that distance.
+			simul::dx11::Framebuffer				godrays_fb;
+
 			simul::dx11::TextureStruct				cloud_texture;
 			
 			ID3D1xBuffer*							computeConstantBuffer;

@@ -191,6 +191,39 @@ vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 
 	return vec4(shadow_range,light_range);
 }
 
+
+vec4 GodraysAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 texCoords)
+{
+	const float U					=1.0;
+	const float L					=0.0;
+	int N							=texCoords.y*float(shadowTextureSize);
+	float pixel						=1.0/float(shadowTextureSize);
+#ifdef RADIAL_CLOUD_SHADOW
+	vec2 offset						=vec2(0,pixel/1.0);
+#else
+//for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
+	float theta						=texCoords.x*2.0*3.1415926536;
+	vec2 offset						=vec2(-sin(theta),cos(theta))*pixel/4.0;
+#endif
+	vec4 total_ill					=vec4(0,0,0,0);
+	// Find the total illumination
+	for(int i=0;i<N;i++)
+	{
+		float interp				=float(i)/float(shadowTextureSize-1);
+#ifdef RADIAL_CLOUD_SHADOW
+		vec2 shadow_texc			=vec2(sqrt(interp),texCoords.x);
+#else
+		float distance_off_centre	=interp;
+		vec2 shadow_texc			=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
+#endif
+		vec4 illumination			=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
+		illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
+		illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
+		total_ill					+=illumination.xxxx;
+	}
+	return total_ill/float(N);
+}
+
 vec4 ShowCloudShadow(Texture2D cloudShadowTexture,Texture2D nearFarTexture,vec2 texCoords)
 {
 	vec2 tex_pos=2.0*texCoords.xy-vec2(1.0,1.0);

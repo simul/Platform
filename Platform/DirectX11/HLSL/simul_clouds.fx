@@ -162,6 +162,11 @@ vec4 PS_ShadowNearFar( vertexOutputCS IN):SV_TARGET
 	return CloudShadowNearFar(cloudShadowTexture,shadowTextureSize,IN.texCoords);
 }
 
+vec4 PS_GodraysAccumulation( vertexOutputCS IN):SV_TARGET
+{
+	return GodraysAccumulation(cloudShadowTexture,shadowTextureSize,IN.texCoords);
+}
+
 vec4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
 	vec2 texCoords		=IN.texCoords.xy;
@@ -476,6 +481,19 @@ technique11 shadow_near_far
 		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShadowNearFar()));
+    }
+}
+
+technique11 godrays_accumulation
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_GodraysAccumulation()));
     }
 }
 
