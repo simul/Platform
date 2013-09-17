@@ -75,25 +75,29 @@ vec4 GodraysSimplified(Texture2D cloudShadowTexture,Texture2D cloudNearFarTextur
 	vec3 wpos_end		=viewPosition+view*shadowRange;
 	vec3 texc_end		=0.5*(mul(invShadowMatrix,vec4(wpos_end,1.0)).xyz+1.0);
 	
+	float eff			=1.0;//exp(-.1*r);
+	float fadeout		=exp(-.1*godraysDistanceStep);
 	for(int i=0;i<godraysSteps;i++)
 	{
 		// we first get the radius on the shadow plane, then convert 
 		float fade_dist			=r*shadowRange/maxFadeDistance;
-		float eff				=exp(-.1*r);
-		//if(r>=shadowNearFar.z&&fade_dist_0<solid_dist)
+		//if(r>=shadowNearFar.z&&fade_dist<solid_dist)
 		{
 			float fade_intro	=saturate((solid_dist-fade_dist)/godraysDistanceStep);
 			vec3 texc			=lerp(texc_start,texc_end,r);
-			vec4 texel			=texture_clamp(cloudShadowTexture,texc.xy);
+			vec4 texel			=texture_clamp_lod(cloudShadowTexture,texc.xy,0);
 			float ill			=texel.x;
 			float above			=saturate((texc.z-texel.z)/0.5);
+			if(texc.z>1.0)
+				break;
 			ill					+=above;
 			ill					*=eff*fade_intro;
-			total_ill			+=ill*godraysDistanceStep;
+			total_ill			+=ill;
 		}
-		r+=godraysDistanceStep;
+		r		+=godraysDistanceStep;
+		eff		*=fadeout;
 	}
-	total_insc			=insc_s*saturate(total_ill);
+	total_insc			=insc_s*saturate(total_ill*godraysDistanceStep);
 	//Exaggerate the effect:
 	//total_insc.a=1.0;
 	vec3 gr				=InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);

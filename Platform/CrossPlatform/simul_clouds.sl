@@ -644,24 +644,24 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			vec3 noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
 			density					=calcDensity(layerTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
 			density.z				*=saturate((d-normLayerZ)/0.001);
-		}
-		// TODO: faster inside above brace. But: PS4 problems?
-		if(density.z>0)
-		{
-			float brightness_factor	=unshadowedBrightness(BetaClouds,layerTexCoords.z,lightResponse);
-			vec4 c					=calcColour2( density,BetaClouds,layerTexCoords.z,lightResponse,ambientColour);
-			fade_texc.x				=sqrt(normLayerZ);
-			float sh				=saturate((fade_texc.x-nearFarTexc.x)/0.1);
-			c.rgb					*=sh;
-			c.rgb					=applyFades2(c.rgb,fade_texc,BetaRayleigh,BetaMie,sh);
-			colour.rgb				+=c.rgb*c.a*(colour.a);
-			mean_z					+=normLayerZ*c.a*colour.a;
-			colour.a				*=(1.0-c.a);
-			if(colour.a*brightness_factor<0.003)
+			// TODO: faster inside above brace. But: PS4 problems?
+			if(density.z>0)
 			{
-				colour.a	=0.0;
-				//mean_z		=normLayerZ;//lerp(mean_z,normLayerZ,depthMix);
-				break;
+				float brightness_factor	=unshadowedBrightness(BetaClouds,layerTexCoords.z,lightResponse);
+				vec4 c					=calcColour2( density,BetaClouds,layerTexCoords.z,lightResponse,ambientColour);
+				fade_texc.x				=sqrt(normLayerZ);
+				float sh				=saturate((fade_texc.x-nearFarTexc.x)/0.1);
+				c.rgb					*=sh;
+				c.rgb					=applyFades2(c.rgb,fade_texc,BetaRayleigh,BetaMie,sh);
+				colour.rgb				+=c.rgb*c.a*(colour.a);
+				mean_z					+=normLayerZ*c.a*colour.a;
+				colour.a				*=(1.0-c.a);
+				if(colour.a*brightness_factor<0.003)
+				{
+					colour.a	=0.0;
+					//mean_z		=normLayerZ;//lerp(mean_z,normLayerZ,depthMix);
+					break;
+				}
 			}
 		}
 	}
