@@ -113,7 +113,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 	int gridsize_2d			=(int)altitudes_km.size()*numElevations;
 	if(dens_tex.width!=table_size||optd_tex.width!=table_size)
 		tables_checksum=0;
-	dens_tex.ensureTexture1DSizeAndFormat(m_pd3dDevice,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,false);
+	dens_tex.ensureTexture2DSizeAndFormat(m_pd3dDevice,table_size,1,DXGI_FORMAT_R32G32B32A32_FLOAT,false);
 	optd_tex.ensureTexture2DSizeAndFormat(m_pd3dDevice,table_size,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,false,false);
 
 	if(new_tables_checksum!=tables_checksum)
