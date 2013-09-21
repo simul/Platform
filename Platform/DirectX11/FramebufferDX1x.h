@@ -3,7 +3,7 @@
 #include <d3dx9.h>
 #include <d3d11.h>
 #include <d3dx11.h>
-#include <D3dx11effect.h>
+#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Clouds/BaseFramebuffer.h"

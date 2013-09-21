@@ -7,7 +7,10 @@
 #include "Simul/Base/Timer.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/simul_gpu_clouds.sl"
-using namespace simul::opengl;
+
+using namespace simul;
+using namespace opengl;
+
 GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
 			,density_program(0)
 			,lighting_program(0)
@@ -94,7 +97,8 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 
 void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr)
 {
-	return (void*)make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
+	volume_noise_tex=(GLuint)make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
+	return (void*)volume_noise_tex;
 }
 
 void GpuCloudGenerator::CycleTexturesForward()
@@ -102,16 +106,9 @@ void GpuCloudGenerator::CycleTexturesForward()
 }
 
 // Fill the stated number of texels of the density texture
-void GpuCloudGenerator::FillDensityGrid(int index,const int *density_grid
+void GpuCloudGenerator::FillDensityGrid(int index,const clouds::GpuCloudsParameters &params
 											,int start_texel
 											,int texels
-											,float humidity
-											,float baseLayer
-											,float transition
-											,float upperDensity
-											,float diffusivity
-											,float time
-											,void* noise_tex,int octaves,float persistence
 											,bool mask)
 {
 	glMatrixMode(GL_PROJECTION);
@@ -120,11 +117,11 @@ void GpuCloudGenerator::FillDensityGrid(int index,const int *density_grid
 	glPushMatrix();
 simul::base::Timer timer;
 timer.StartTime();
-	int total_texels=GetDensityGridsize(density_grid);
+	int total_texels=GetDensityGridsize(params.density_grid);
 	if(!density_program)
 		RecompileShaders();
 	// We render out a 2D texture with each XY layer laid end-to-end, and copy it to the target.
-	dens_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
+	dens_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]*params.density_grid[2]);
 	if(!dens_fb.InitColor_Tex(0,iformat))
 	{
 		itype=GL_INTENSITY;
@@ -138,10 +135,9 @@ timer.StartTime();
 	}
 	int stride=(iformat==GL_RGBA32F_ARB)?4:1;
 
-	simul::math::Vector3 noise_scale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0]);
+	simul::math::Vector3 noise_scale(1.f,1.f,(float)params.density_grid[2]/(float)params.density_grid[0]);
 
 	//using noise_size and noise_src_ptr, make a 3d texture:
-	GLuint volume_noise_tex=(GLuint)noise_tex;
 	
 	glEnable(GL_TEXTURE_3D);
 	glActiveTexture(GL_TEXTURE0);
@@ -152,32 +148,18 @@ timer.StartTime();
 	setParameter(density_program,"volumeNoiseTexture"	,0);
 
 	GpuCloudConstants constants;
-	constants.octaves		=octaves;
-	constants.persistence	=persistence;
-	constants.humidity		=humidity;
-	constants.time			=time;
-	constants.noiseScale	=noise_scale;
-
-	constants.zPosition		=0.f;
-	//constants.vertexMatrix	=vertexMatrix;
-	constants.extinctions	;
-	constants.zPixel			=1.f/(float)density_grid[2];
-	constants.zSize				=(float)density_grid[2];
-	constants.baseLayer			=baseLayer;
-	constants.transition		=transition;
-	constants.upperDensity		=upperDensity;
-	constants.diffusivity		=diffusivity;
 
 	UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
 	GLint gpuCloudConstants		=glGetUniformBlockIndex(density_program,"GpuCloudConstants");
 	if(gpuCloudConstants>=0)
 		glUniformBlockBinding(density_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
-	//MakeVertexMatrix(density_grid,start_texel,texels);
+	//MakeVertexMatrix(params.density_grid,start_texel,texels);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(0,1.0,0.0,1.0,-1.0,1.0);
 	float y_start=(float)start_texel/(float)total_texels;
 	float y_end=(float)(start_texel+texels)/(float)total_texels;
+	SetGpuCloudConstants(constants,params,y_start,y_end-y_start);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -198,7 +180,7 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_HEIGHT,&l);
 		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_DEPTH,&d);
 
-		if(!density_texture||density_gridsize!=total_texels*stride||w!=density_grid[0]||l!=density_grid[1]||d!=density_grid[2])
+		if(!density_texture||density_gridsize!=total_texels*stride||w!=params.density_grid[0]||l!=params.density_grid[1]||d!=params.density_grid[2])
 		{
 			SAFE_DELETE_TEXTURE(density_texture);
 			glBindTexture(GL_TEXTURE_3D,0);
@@ -206,26 +188,26 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 			{
 				density_gridsize=total_texels*stride;
 			}
-			density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2],iformat==GL_RGBA32F_ARB?4:1,false,NULL);
+			density_texture	=make3DTexture(params.density_grid[0],params.density_grid[1],params.density_grid[2],iformat==GL_RGBA32F_ARB?4:1,false,NULL);
 			glBindTexture(GL_TEXTURE_3D,density_texture);
 		}
 		glEnable(GL_TEXTURE_3D);
 	ERROR_CHECK
 		{
 			// Now instead of reading the pixels back to memory, we will copy them layer-by-layer into the volume texture.
-			int Y=start_texel/density_grid[0];
-			int H=texels/density_grid[0];
-			int z0=Y/density_grid[1];
-			int z1=(start_texel+texels)/density_grid[0]/density_grid[1];
-			int y0=Y-z0*density_grid[1];
-			int y1=Y+H-(z1-1)*density_grid[1];
+			int Y=start_texel/params.density_grid[0];
+			int H=texels/params.density_grid[0];
+			int z0=Y/params.density_grid[1];
+			int z1=(start_texel+texels)/params.density_grid[0]/params.density_grid[1];
+			int y0=Y-z0*params.density_grid[1];
+			int y1=Y+H-(z1-1)*params.density_grid[1];
 			for(int i=z0;i<z1;i++)
 			{
-				int y=0,dy=density_grid[1];
+				int y=0,dy=params.density_grid[1];
 				if(i==z0)
 				{
 					y=y0;
-					dy=density_grid[1]-y0;
+					dy=params.density_grid[1]-y0;
 				}
 				if(i==z1-1)
 				{
@@ -238,8 +220,8 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
  										y,						//	y offset in 3D texture
  										i,						//	z offset in 3D texture
  										0,						//	x=0 in source 2D texture
- 										i*density_grid[1]+y,	//	y offset in source 2D texture
- 										density_grid[0],	
+ 										i*params.density_grid[1]+y,	//	y offset in source 2D texture
+ 										params.density_grid[0],	
  										dy);
 		ERROR_CHECK
  			}
