@@ -66,13 +66,8 @@ void SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 
 	{
-#ifdef XBOX
-		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0,  12, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#else
 		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
 		{ 0, 12, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#endif
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(vertexDecl);
@@ -83,16 +78,11 @@ void SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 	g_BackBuffer->GetDesc(&desc);
 	SAFE_RELEASE(g_BackBuffer);
 
-	int BufferWidth=desc.Width;
-	int BufferHeight=desc.Height;
+	int BufferWidth							=desc.Width;
+	int BufferHeight						=desc.Height;
 
 	SAFE_RELEASE(input_texture);
-	D3DFORMAT hdr_format;
-#ifndef XBOX
-		hdr_format=D3DFMT_A32B32G32R32F;
-#else
-		hdr_format=D3DFMT_LIN_A32B32G32R32F;
-#endif
+	D3DFORMAT hdr_format					=D3DFMT_A32B32G32R32F;
 	m_pd3dDevice->CreateTexture(			BufferWidth,
 											BufferHeight,
 											1,

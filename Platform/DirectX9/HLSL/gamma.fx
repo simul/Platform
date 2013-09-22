@@ -76,7 +76,6 @@ float4 PS_CloudBlend(vertexOutputPosTexc IN) : COLOR
 	vec4 c=tex2D(hdr_texture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
 	//if(c.a>=1.f)
 	//	discard;
-	c.a=.5;
     return vec4(c.rgb*exposure,c.a);
 }
 
@@ -158,6 +157,7 @@ technique simul_sky_over_stars
 		PixelShader = compile ps_2_0 DirectPS();
     }
 }
+
 technique simul_tonemap
 {
     pass p0
@@ -172,7 +172,6 @@ technique simul_tonemap
 		PixelShader = compile ps_3_0 TonemapPS();
     }
 }
-
 
 technique simul_tonemap_zwrite
 {

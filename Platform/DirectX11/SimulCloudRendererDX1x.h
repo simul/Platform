@@ -118,9 +118,7 @@ namespace simul
 			unsigned texel_index[4];
 			bool lightning_active;
 			ID3D1xDevice*							m_pd3dDevice;
-			simul::dx11::Mesh						circle;
-			simul::dx11::Mesh						sphere;
-			//ID3D1xInputLayout*						m_pVtxDecl;
+		
 			ID3D1xInputLayout*						m_pLightningVtxDecl;
 			ID3D11SamplerState*						m_pWrapSamplerState;
 			ID3D11SamplerState*						m_pClampSamplerState;

@@ -140,12 +140,13 @@ float interp;
 float fadeInterp=0;
 float distance=1.0;
 float3 texScales;
-float layerFade;
 
 struct vertexInput
 {
     float3 position			: POSITION;
-    float layerFade			: TEXCOORD0;
+    vec2 layerNoiseOffset	: TEXCOORD0;
+    float layerFade			: TEXCOORD1;
+    float layerWorldDist	: TEXCOORD2;
 };
 
 struct vertexInputPositionColour
@@ -189,20 +190,20 @@ float4 PS_PositionColour(vertexOutputPositionColour IN): color
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-    OUT.hPosition			=mul(worldViewProj, float4(IN.position.xyz , 1.0));
 	vec3 wPos				=IN.position.xyz+eyePosition.xyz;
+    OUT.hPosition			=mul(worldViewProj, float4(wPos.xyz , 1.0));
 //	wPos.z	-=wPos.z;
 	OUT.texCoords.xyz		=(wPos-cornerPos.xyz)*inverseScales;
 	OUT.texCoords.w			=0.5f+0.5f*saturate(OUT.texCoords.z);
 	//const float c			=fractalScale.w;
-	vec3 n					=vec3(OUT.hPosition.xy*tanHalfFov,1.0);
+	vec3 n					=vec3(OUT.hPosition.xy/OUT.hPosition.z*tanHalfFov,1.0);
 	n						=normalize(n);
-	vec2 noise_texc_0		=mul(vec4(n.xy,0,0),noiseMatrix).xy/fractalRepeatLength;
-	OUT.texCoordsNoise		=noise_texc_0;
-	OUT.wPosition			=(IN.position.xyz);//-eyePosition.xyz);
+	vec2 noise_texc_0		=mul(noiseMatrix,vec4(n.xy,0,0)).xy/fractalRepeatLength;
+	OUT.texCoordsNoise		=noise_texc_0*IN.layerWorldDist+IN.layerNoiseOffset;
+	OUT.wPosition			=(wPos.xyz);//-eyePosition.xyz);
 	OUT.layerFade			=IN.layerFade;
 // Note position.xzy is used if Y is vertical!
-	float3 texCoordLightning=(IN.position.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
+	float3 texCoordLightning=(wPos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
 	texCoordLightning.z		=0.5f;
 	OUT.texCoordLightning	=texCoordLightning;
 	float3 view				=normalize(OUT.wPosition.xyz);
@@ -249,7 +250,7 @@ float4 CloudColour(vertexOutput IN,float cos0)
 
 	density=lerp(density,density2,interp);
 
-	//density.x*=IN.layerFade;
+	density.x*=IN.layerFade;
 	density.x=saturate(density.x*(1.f+alphaSharpness)-alphaSharpness);
 
 	//if(density.x<=0)
@@ -294,10 +295,6 @@ vec4 PS_Clouds(vertexOutput IN): color
 {
 	vec3 view=normalize(IN.wPosition);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	if(IN.texCoords.z<0)
-		discard;
-	if(IN.texCoords.z>1.0)
-		discard;
 	//vec4 lookup=tex3D(cloud_density_1,IN.texCoords.xyz);
 
 // Fade mode 1 means using textures for distance fade.
@@ -336,6 +333,12 @@ vertexOutputCS VS_CrossSection(vertexInputCS IN)
 	OUT.texCoords.z=1;
     return OUT;
 }
+
+vec4 PS_ShowNoise(vertexOutputCS IN): color
+{
+	return tex2D(noise_texture,IN.texCoords.xy);
+}
+
 #define CROSS_SECTION_STEPS 32
 float4 PS_CrossSectionXZ( vertexOutputCS IN): color
 {
@@ -690,5 +693,22 @@ technique colour_lines
 
 		VertexShader = compile vs_3_0 VS_PositionColour();
 		PixelShader  = compile ps_3_0 PS_PositionColour();
+    }
+}
+
+technique show_noise
+{
+    pass p0 
+    {
+		zenable = false;
+		zfunc = lessequal;
+		ZWriteEnable = false;
+        CullMode = None;
+		AlphaTestEnable=false;
+		FillMode = Solid;
+        AlphaBlendEnable = false;
+
+		VertexShader = compile vs_3_0 VS_CrossSection();
+		PixelShader  = compile ps_3_0 PS_ShowNoise();
     }
 }

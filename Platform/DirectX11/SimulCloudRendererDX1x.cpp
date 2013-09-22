@@ -253,7 +253,6 @@ void SimulCloudRendererDX1x::CreateMeshBuffers()
 				v
 				,ind
 				,el,az);
-	sphere.init(m_pd3dDevice,v,ind);
 
 	int num_vertices=32;
 	int num_indices=33;
@@ -264,16 +263,14 @@ void SimulCloudRendererDX1x::CreateMeshBuffers()
 	for(int i=0;i<num_vertices;i++,dest++)
 	{
 		float angle=2.f*pi*(float)i/(float)num_vertices;
-		dest->x = sin(angle);	//helper->GetVertices()[i].x;
-		dest->y = cos(angle);	//helper->GetVertices()[i].y;
-		dest->z = 0.f;			//helper->GetVertices()[i].z;
+		dest->x = sin(angle);
+		dest->y = cos(angle);
+		dest->z = 0.f;		
 	}
 	for(int i=0;i<num_indices;i++)
 	{
-	//	unsigned short s=helper->GetQuadStripIndices()[i];
 		indices[i]=i%num_vertices;
 	}
-	circle.init(m_pd3dDevice,num_vertices,num_indices,vertices,indices);
     delete [] vertices;
     delete [] indices;
 }
@@ -293,7 +290,6 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(computeConstantBuffer);
 	SAFE_RELEASE(cloudPerViewConstantBuffer);
 	SAFE_RELEASE(layerConstantsBuffer);
-	//SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pLightningVtxDecl);
 	SAFE_RELEASE(m_pCloudEffect);
 	SAFE_RELEASE(m_pLightningEffect);
@@ -307,8 +303,6 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(noise_texture);
 	SAFE_RELEASE(lightning_texture);
 	SAFE_RELEASE(illumination_texture);
-	circle.release();
-	sphere.release();
 	skyLossTexture_SRV		=NULL;
 	skyInscatterTexture_SRV	=NULL;
 	overcInscTexture_SRV	=NULL;
@@ -329,7 +323,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 bool SimulCloudRendererDX1x::Destroy()
 {
 	InvalidateDeviceObjects();
-	return (true);
+	return true;
 }
 
 SimulCloudRendererDX1x::~SimulCloudRendererDX1x()
@@ -913,6 +907,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 	cloudDensity2->SetResource(NULL);
 	ApplyPass(pContext,m_pCloudEffect->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
 }
+
 void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int width,int height)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;

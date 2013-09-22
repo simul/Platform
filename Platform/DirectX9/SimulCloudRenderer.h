@@ -78,6 +78,7 @@ public:
 		return noise_texture;
 	}
 	void RenderCrossSections(void *,int width,int height);
+	void RenderAuxiliaryTextures(void *context,int width,int height);
 	bool RenderDistances(int width,int height);
 	bool RenderLightVolume();
 	void EnableFilter(bool f);
@@ -105,10 +106,9 @@ protected:
 	struct Vertex_t
 	{
 		vec3 position;
-		vec3 texCoords;
+		vec2 layerNoiseOffset;
 		float layerFade;
-		vec2 texCoordsNoise;
-		vec3 sunlightColour;
+		float layerDistance;
 	};
 	struct CPUFadeVertex_t : public Vertex_t
 	{
