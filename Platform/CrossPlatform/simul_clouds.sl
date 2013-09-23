@@ -108,8 +108,8 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 		//vec3 cartesian			=vec3(pos_xy.xy,u);
 		//vec3 wpos					=mul(shadowMatrix,vec4(cartesian,1.0)).xyz;
 		vec3 texc					=lerp(texc_1,texc_2,u);//(wpos-cornerPos)*inverseScales;
-		vec4 density1				=sampleLod(cloudDensity1,wwcSamplerState,texc,0);
-		vec4 density2				=sampleLod(cloudDensity2,wwcSamplerState,texc,0);
+		vec4 density1				=sampleLod(cloudDensity1,cloudSamplerState,texc,0);
+		vec4 density2				=sampleLod(cloudDensity2,cloudSamplerState,texc,0);
 		vec4 density				=lerp(density1,density2,cloud_interp);
 		if(density.z>0)
 		{

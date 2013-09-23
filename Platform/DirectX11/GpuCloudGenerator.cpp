@@ -46,7 +46,8 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 	dens_fb.SetDepthFormat(0);
 	dens_fb.SetFormat(DXGI_FORMAT_R32_FLOAT);
 	dens_fb.RestoreDeviceObjects(m_pd3dDevice);
-	mask_fb.SetDepthFormat(0);
+	// Mask musst have depth as that's how it merges.
+	mask_fb.SetDepthFormat(DXGI_FORMAT_R32_FLOAT);
 	mask_fb.RestoreDeviceObjects(m_pd3dDevice);
 	world_fb.RestoreDeviceObjects(m_pd3dDevice);
 	gpuCloudConstants.RestoreDeviceObjects(m_pd3dDevice);
@@ -149,7 +150,7 @@ void GpuCloudGenerator::FillDensityGrid(int cycled_index
 										,void* noise_tex
 										,int octaves
 										,float persistence
-										,bool mask)
+										,const simul::clouds::MaskMap &masks)
 {
 	for(int i=0;i<3;i++)
 		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
@@ -158,11 +159,21 @@ void GpuCloudGenerator::FillDensityGrid(int cycled_index
 	mask_fb.SetWidthAndHeight(density_grid[0],density_grid[1]);
 
 	mask_fb.Activate(m_pImmediateContext);
-	if(mask)
+	if(masks.size())
 	{
-		mask_fb.Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
-		ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
-		dens_fb.DrawQuad(m_pImmediateContext);
+		mask_fb.Clear(m_pImmediateContext,0.f,0.f,0.f,0.f,0.f);
+		
+		for(simul::clouds::MaskMap::const_iterator i=masks.begin();i!=masks.end();i++)
+		{
+	gpuCloudConstants.yRange		=vec4(0,1.f,0,0);
+			gpuCloudConstants.maskCentre	=vec2(i->second.x,i->second.y);
+			gpuCloudConstants.maskRadius	=i->second.radius;
+			gpuCloudConstants.maskFeather	=0.1f;
+			gpuCloudConstants.maskThickness	=i->second.thickness;
+			gpuCloudConstants.Apply(m_pImmediateContext);
+			ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
+			mask_fb.DrawQuad(m_pImmediateContext);
+		}
 	}
 	else
 	{
@@ -201,14 +212,12 @@ void GpuCloudGenerator::FillDensityGrid(int cycled_index
 	}
 	gpuCloudConstants.invFractalSum=1.f/fractalSum;
 
-//gpuCloudConstants.densityGrid	=uint3(density_grid);
 	simul::dx11::setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 	simul::dx11::setParameter(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
-	//DXGI_FORMAT_R32G32B32A32_FLOAT
+
 	density_texture.ensureTexture3DSizeAndFormat(m_pd3dDevice
-		,density_grid[0],density_grid[1],density_grid[2]
-		,DXGI_FORMAT_R32_FLOAT,true);
-//	Ensure3DTextureSizeAndFormat(m_pd3dDevice,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
+														,density_grid[0],density_grid[1],density_grid[2]
+														,DXGI_FORMAT_R32_FLOAT,true);
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",density_texture.unorderedAccessView);
 
 	// divide the grid into 8x8x8 blocks:

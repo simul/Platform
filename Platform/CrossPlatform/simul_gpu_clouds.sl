@@ -13,17 +13,25 @@ uniform_buffer GpuCloudConstants SIMUL_BUFFER_REGISTER(8)
 	uniform int octaves;
 	uniform vec3 noiseScale;
 	uniform float zPosition;
+
 	uniform float time;
 	uniform float persistence;
 	uniform float humidity;
 	uniform float zPixelLightspace;
+
 	uniform float zPixel;
 	uniform float zSize;
 	uniform float baseLayer;
 	uniform float transition;
+
 	uniform float upperDensity;
 	uniform float diffusivity;
 	uniform float invFractalSum;
+	uniform float maskThickness;
+
+	uniform vec2 maskCentre;
+	uniform float maskRadius;
+	uniform float maskFeather;
 };
 
 #ifndef __cplusplus

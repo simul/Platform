@@ -33,7 +33,7 @@ namespace simul
 									,float diffusivity
 									,float time
 									,void*  noise_tex,int octaves,float persistence
-											,bool mask);
+											,const simul::clouds::MaskMap &masks);
 			virtual void PerformGPURelight(int index,float *target
 									,const int *light_grid
 									,int start_texel
