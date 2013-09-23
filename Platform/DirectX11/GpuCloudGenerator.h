@@ -32,7 +32,7 @@ namespace simul
 									,const clouds::GpuCloudsParameters &params
 									,int start_texel
 									,int texels
-									,bool mask);
+									,const simul::clouds::MaskMap &masks);
 			virtual void PerformGPURelight(	int light_index
 											,float *target
 											,const int *light_grid

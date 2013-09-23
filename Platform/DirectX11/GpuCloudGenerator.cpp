@@ -41,7 +41,8 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 	m_pd3dDevice=(ID3D1xDevice*)dev;
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-	mask_fb.SetDepthFormat(0);
+	// Mask must have depth as that's how it merges.
+	mask_fb.SetDepthFormat(DXGI_FORMAT_R32_FLOAT);
 	mask_fb.RestoreDeviceObjects(m_pd3dDevice);
 	gpuCloudConstants.RestoreDeviceObjects(m_pd3dDevice);
 
@@ -130,7 +131,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 										,const clouds::GpuCloudsParameters &params
 										,int start_texel
 										,int texels
-										,bool mask)
+										,const simul::clouds::MaskMap &masks)
 {
 	for(int i=0;i<3;i++)
 		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
@@ -138,10 +139,21 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	mask_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]);
 
 	mask_fb.Activate(m_pImmediateContext);
-	if(mask)
+	if(masks.size())
 	{
-		mask_fb.Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
+		mask_fb.Clear(m_pImmediateContext,0.f,0.f,0.f,0.f,0.f);
+		
+		for(simul::clouds::MaskMap::const_iterator i=masks.begin();i!=masks.end();i++)
+		{
+	gpuCloudConstants.yRange		=vec4(0,1.f,0,0);
+			gpuCloudConstants.maskCentre	=vec2(i->second.x,i->second.y);
+			gpuCloudConstants.maskRadius	=i->second.radius;
+			gpuCloudConstants.maskFeather	=0.1f;
+			gpuCloudConstants.maskThickness	=i->second.thickness;
+			gpuCloudConstants.Apply(m_pImmediateContext);
 		ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
+			mask_fb.DrawQuad(m_pImmediateContext);
+		}
 	}
 	else
 	{

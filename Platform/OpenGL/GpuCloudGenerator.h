@@ -25,7 +25,7 @@ namespace simul
 			void FillDensityGrid(int index,const clouds::GpuCloudsParameters &params
 											,int start_texel
 											,int texels
-											,bool mask);
+											,const simul::clouds::MaskMap &masks);
 			virtual void PerformGPURelight(int index,float *target
 									,const int *light_grid
 									,int start_texel

@@ -12,7 +12,7 @@ uniform sampler3D volumeNoiseTexture SIMUL_TEXTURE_REGISTER(6);
 RWTexture3D<float4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
 RWTexture3D<float> targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
 
-#include "../../CrossPlatform/states.sl"
+#include "states.hlsl"
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
 
 SamplerState lightSamplerState : register(s8);
@@ -41,28 +41,25 @@ vertexOutput VS_Main(idOnly IN)
     return OUT;
 }
 
-float4 PS_DensityMask(vertexOutput IN) : SV_TARGET
+struct ColourDepthOutput
 {
-	float dr					=0.1;
-	vec2 pos					=2.0*IN.texCoords.xy-vec2(1.0,1.0);
-	float r						=length(pos);
-	float dens					=saturate((1.0-r)/dr);
-    return float4(dens,dens,dens,1.0);
+	vec4 colour SIMUL_TARGET_OUTPUT;
+	float depth	SIMUL_DEPTH_OUTPUT;
+};
+
+ColourDepthOutput PS_DensityMask(vertexOutput IN)
+{
+	ColourDepthOutput result;
+	result.colour				=vec4(dens,dens,dens,dens);
+	result.depth				=dens;
 }
 
 float4 PS_Density(vertexOutput IN) : SV_TARGET
 {
-	vec3 densityspace_texcoord	=assemble3dTexcoord(IN.texCoords.xy);
-	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
-	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
-	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z)*maskTexture.Sample(clampSamplerState,densityspace_texcoord.xy).x;
-	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
-	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
-    return vec4(dens,0,0,1.0);
+    return PS_CloudDensity(volumeNoiseTexture, maskTexture, texCoords, humidity, diffusivity, octaves, persistence, time, zPixel);
 }
 
-[numthreads(8,8,8)]
-void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+void CS_CloudDensity(RWTexture3D targetTexture,uint3 sub_pos)
 {
 	uint3 dims;
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
@@ -72,11 +69,17 @@ void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID g
 	vec3 densityspace_texcoord	=(pos+0.5)/vec3(dims);
 	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
-	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z);
+	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
 	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
 	dens						=saturate(dens);
 	targetTexture[pos]			= dens;
+}
+
+[numthreads(8,8,8)]
+void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+{
+    CS_CloudDensity(sub_pos);
 }
 
 static const float glow=0.1;
@@ -172,7 +175,7 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 		indirect_light				*=exp(-extinctions.y*density*stepLength);
 
 		if(density==0)
-			indirect_light			=1.0-(1.0-indirect_light)*exp(-extinctions.y*stepLength);
+			indirect_light			=1.0;//-(1.0-indirect_light)*exp(-extinctions.y*stepLength);
 		targetTexture1[idx]			=indirect_light;
 	}
 }
@@ -234,26 +237,12 @@ void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)	//SV_DispatchThreadID giv
 }
 
 
-//------------------------------------
-// Technique
-//------------------------------------
-DepthStencilState DisableDepth
-{
-	DepthEnable = FALSE;
-	DepthWriteMask = ZERO;
-};
-BlendState DontBlend
-{
-	BlendEnable[0] = FALSE;
-};
-RasterizerState RenderNoCull { CullMode = none; };
-
 technique11 density_mask
 {
     pass p0 
     {
 		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
+		SetDepthStencilState(ReverseDepth, 0 );
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
