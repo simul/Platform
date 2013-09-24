@@ -7,6 +7,7 @@ struct LayerData
 	vec2 noiseOffset;
 	float layerFade;
 	float layerDistance;
+
 	float verticalShift;
 	float sine_threshold;
 	float sine_range;
