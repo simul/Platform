@@ -50,16 +50,18 @@ struct ColourDepthOutput
 ColourDepthOutput PS_DensityMask(vertexOutput IN)
 {
 	ColourDepthOutput result;
+	float dens						=GpuCloudMask(IN.texCoords, maskCentre, maskRadius,maskFeather, maskThickness);
 	result.colour				=vec4(dens,dens,dens,dens);
 	result.depth				=dens;
+	return result;
 }
 
 float4 PS_Density(vertexOutput IN) : SV_TARGET
 {
-    return PS_CloudDensity(volumeNoiseTexture, maskTexture, texCoords, humidity, diffusivity, octaves, persistence, time, zPixel);
+    return PS_CloudDensity(volumeNoiseTexture, maskTexture,IN.texCoords, humidity, diffusivity, octaves, persistence, time, zPixel);
 }
 
-void CS_CloudDensity(RWTexture3D targetTexture,uint3 sub_pos)
+void CS_CloudDensity(RWTexture3D<float4> targetTexture,uint3 sub_pos)
 {
 	uint3 dims;
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
@@ -79,7 +81,7 @@ void CS_CloudDensity(RWTexture3D targetTexture,uint3 sub_pos)
 [numthreads(8,8,8)]
 void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {
-    CS_CloudDensity(sub_pos);
+    CS_CloudDensity(targetTexture,sub_pos);
 }
 
 static const float glow=0.1;
@@ -255,7 +257,7 @@ technique11 simul_gpu_density
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(AddBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Density()));

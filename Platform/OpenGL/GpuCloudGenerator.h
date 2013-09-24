@@ -23,8 +23,8 @@ namespace simul
 			void* Make3DNoiseTexture(int noise_size,const float *noise_src_ptr);
 			void CycleTexturesForward();
 			void FillDensityGrid(int index,const clouds::GpuCloudsParameters &params
-											,int start_texel
-											,int texels
+									,int start_texel
+									,int texels
 											,const simul::clouds::MaskMap &masks);
 			virtual void PerformGPURelight(int index,float *target
 									,const int *light_grid
