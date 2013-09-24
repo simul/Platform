@@ -109,7 +109,7 @@ void GpuCloudGenerator::CycleTexturesForward()
 void GpuCloudGenerator::FillDensityGrid(int index,const clouds::GpuCloudsParameters &params
 											,int start_texel
 											,int texels
-											,bool mask)
+											,const simul::clouds::MaskMap &masks)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();

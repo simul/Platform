@@ -108,8 +108,8 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 		//vec3 cartesian			=vec3(pos_xy.xy,u);
 		//vec3 wpos					=mul(shadowMatrix,vec4(cartesian,1.0)).xyz;
 		vec3 texc					=lerp(texc_1,texc_2,u);//(wpos-cornerPos)*inverseScales;
-		vec4 density1				=sampleLod(cloudDensity1,wwcSamplerState,texc,0);
-		vec4 density2				=sampleLod(cloudDensity2,wwcSamplerState,texc,0);
+		vec4 density1				=sampleLod(cloudDensity1,cloudSamplerState,texc,0);
+		vec4 density2				=sampleLod(cloudDensity2,cloudSamplerState,texc,0);
 		vec4 density				=lerp(density1,density2,cloud_interp);
 		if(density.z>0)
 		{
@@ -291,7 +291,6 @@ vec4 SimpleRaytraceCloudsForward(Texture3D cloudDensity1,Texture3D cloudDensity2
 	clip_pos.x			+=2.0*texCoords.x;
 	clip_pos.y			-=2.0*texCoords.y;
 	vec3 view			=normalize(mul(invViewProj,clip_pos).xyz);
-	
 	float cos0			=dot(lightDir.xyz,view.xyz);
 	float sine			=view.z;
 	vec3 n				=vec3(clip_pos.xy*tanHalfFov,1.0);
@@ -586,7 +585,6 @@ RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
 	RaytracePixelOutput res;
     res.colour		=vec4(exposure*colour.rgb,colour.a);
 	res.depth		=fadeDistanceToDepth(mean_z,clip_pos.xy,nearZ,farZ,tanHalfFov);
-
 	return res;
 }
 
@@ -654,7 +652,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				float sh				=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 				c.rgb					*=sh;
 				c.rgb					=applyFades2(c.rgb,fade_texc,BetaRayleigh,BetaMie,sh);
-		
 				colour.rgb				+=c.rgb*c.a*(colour.a);
 				mean_z					+=normLayerZ*c.a*colour.a;
 				colour.a				*=(1.0-c.a);
