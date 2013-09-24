@@ -71,6 +71,7 @@ struct v2f_cubemap
     float3 wDirection	: TEXCOORD0;
 };
 
+
 v2f_cubemap VS_DrawCubemap(vec3input IN) 
 {
     v2f_cubemap OUT;
@@ -83,10 +84,10 @@ v2f_cubemap VS_DrawCubemapSphere(idOnly IN)
 {
     v2f_cubemap OUT;
 	// we have (latitudes+1)*(longitudes+1)*2 id's
-	int vertex_id		=IN.vertex_id;
-	int latitude_strip	=vertex_id/(longitudes+1)/2;
+	uint vertex_id		=IN.vertex_id;
+	uint latitude_strip	=vertex_id/(longitudes+1)/2;
 	vertex_id			-=latitude_strip*(longitudes+1)*2;
-	int longitude		=(vertex_id)/2;
+	uint longitude		=(vertex_id)/2;
 	vertex_id			-=longitude*2;
 	float azimuth		=2.0*3.1415926536*float(longitude)/float(longitudes);
 	float elevation		=(float(latitude_strip+vertex_id)/float(latitudes)-0.5)*3.1415926536;
@@ -150,7 +151,6 @@ technique11 draw_cubemap
 		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
-
 technique11 draw_cubemap_sphere
 {
     pass p0 

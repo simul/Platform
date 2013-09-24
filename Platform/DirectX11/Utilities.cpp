@@ -4,7 +4,6 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Vector3.h"
 #include <d3dx11.h>
-
 using namespace simul;
 using namespace dx11;
 
@@ -832,6 +831,7 @@ void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pImmediateContext
 	pImmediateContext->IASetPrimitiveTopology(previousTopology);
 }
 
+
 void UtilityRenderer::DrawCube(void *context)
 {
 	UINT stride = sizeof(vec3);
@@ -891,6 +891,7 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCub
 	simul::math::Vector3 offs0(-0.7f*(tan_x-size_req)*d,0.7f*(tan_y-size_req)*d,-d);
 	simul::math::Vector3 offs;
 	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)view),offs0);
+
 	world._41=offs.x;
 	world._42=offs.y;
 	world._43=offs.z;

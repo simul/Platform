@@ -478,17 +478,17 @@ helper->Update2DNoiseCoords();
 	SetLayerConstants(helper,layerConstants);
 	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
 	int idx=0;
-	for(std::vector<CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
+	for(CloudGeometryHelper::SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
 	ERROR_CHECK
 		simul::clouds::CloudGeometryHelper::Slice *s=*i;
 		helper->MakeLayerGeometry(s,effective_world_radius_metres);
-		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
+		const simul::clouds::CloudGeometryHelper::IntVector &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		setParameter(program,"layerNumber",(int)idx);
 		glBegin(GL_QUAD_STRIP);
 		if(quad_strip_vertices.size())
-		for(std::vector<const CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
+		for(CloudGeometryHelper::QuadStripPtrVector::const_iterator j=(*i)->quad_strips.begin();
 			j!=(*i)->quad_strips.end();j++)
 		{
 			// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?

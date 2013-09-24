@@ -10,16 +10,24 @@ uniform_buffer SkyConstants SIMUL_BUFFER_REGISTER(10)
 	vec4 lightDir;
 	vec4 mieRayleighRatio;
 	vec4 colour;
+
 	float hazeEccentricity;
 	float skyInterp;
 	float altitudeTexCoord;
 	float starBrightness;
+
 	float radiusRadians;
 	float overcast;
 	float overcastBaseKm;
 	float overcastRangeKm;
+	
+	uniform uint3 threadOffset;
 	float maxFadeDistanceKm;
+
 	float cloudShadowRange;		// As a distance texcoord
+	float illumination_alt_texc;	// Due to earth shadow
+	uint cycled_index;
+	float a3;
 };
 
 #endif

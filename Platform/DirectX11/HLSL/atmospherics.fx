@@ -97,26 +97,14 @@ vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 	vec4 insc			=vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
 	float cos0			=dot(view,lightDir);
 	float3 colour		=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
+
 	colour				+=texture_clamp_mirror(skylTexture,fade_texc).rgb;
 	colour				*=exposure;
     return float4(colour.rgb,1.f);
 }
 
-// Slanted Cylinder whose axis is along lightDir,
-// radius is at the specified horizontal distance.
-// Distance c is:		c=|lightDir.z*R|/|lightDir * sine - view * lightDir.z|
-float4 PS_Godrays(atmosVertexOutput IN) : SV_TARGET
-{
-	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	float solid_depth	=depthTexture.Sample(clampSamplerState,depth_texc).x;
-	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-	float depth			=max(solid_depth,cloud_depth);
-	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
-	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	return GodraysSimplified(cloudShadowTexture,cloudNearFarTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
-}
 
-float4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
+vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	float solid_depth	=depthTexture.Sample(clampSamplerState,depth_texc).x;
@@ -124,7 +112,9 @@ float4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 	float depth			=max(solid_depth,cloud_depth);
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	return FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
+	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
+	
+	return res;
 }
 
 technique11 simul_atmospherics_overlay
@@ -147,19 +137,6 @@ technique11 simul_atmospherics_overlay
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_AtmosOverlayInscPass()));
-    }
-}
-
-technique11 simul_godrays
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Godrays()));
     }
 }
 

@@ -5,8 +5,9 @@
 #include "CreateDX9Effect.h"
 #include "Simul/Math/Decay.h"
 
-SimulOpticsRendererDX9::SimulOpticsRendererDX9()
-	:m_pd3dDevice(NULL)
+SimulOpticsRendererDX9::SimulOpticsRendererDX9(simul::base::MemoryInterface *m)
+	:BaseOpticsRenderer(m)
+	,m_pd3dDevice(NULL)
 	,m_pFlareEffect(NULL)
 	,external_flare_texture(false)
 	,flare_texture(NULL)

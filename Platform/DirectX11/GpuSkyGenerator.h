@@ -37,7 +37,7 @@ namespace simul
 				,float emissivity
 				,float seaLevelTemperatureK);
 			// If we want the generator to put the data directly into 3d textures:
-			void SetDirectTargets(TextureStruct **loss,TextureStruct **insc,TextureStruct **skyl)
+			void SetDirectTargets(TextureStruct **loss,TextureStruct **insc,TextureStruct **skyl,TextureStruct *light_table)
 			{
 				for(int i=0;i<3;i++)
 				{
@@ -53,6 +53,7 @@ namespace simul
 						finalSkyl[i]=skyl[i];
 					else
 						finalSkyl[i]=NULL;
+					this->light_table=light_table;
 				}
 			}
 		protected:
@@ -62,6 +63,7 @@ namespace simul
 			ID3DX11EffectTechnique*			lossComputeTechnique;
 			ID3DX11EffectTechnique*			inscComputeTechnique;
 			ID3DX11EffectTechnique*			skylComputeTechnique;
+			ID3DX11EffectTechnique*			lightComputeTechnique;
 			
 			ID3D1xBuffer*					constantBuffer;
 	
@@ -69,6 +71,7 @@ namespace simul
 			TextureStruct					*finalLoss[3];
 			TextureStruct					*finalInsc[3];
 			TextureStruct					*finalSkyl[3];
+			TextureStruct					*light_table;
 			TextureStruct					dens_tex,optd_tex;
 
 			unsigned						tables_checksum;

@@ -56,7 +56,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	SetYVertical(false);
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->SetYVertical(false);
-	simulOpticsRenderer=new SimulOpticsRendererDX9();
+	simulOpticsRenderer=new SimulOpticsRendererDX9(NULL);
 }
 
 Direct3D9Renderer::~Direct3D9Renderer()
