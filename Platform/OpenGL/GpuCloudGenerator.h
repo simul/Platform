@@ -22,17 +22,9 @@ namespace simul
 			int GetDensityGridsize(const int *grid);
 			void* Make3DNoiseTexture(int noise_size,const float *noise_src_ptr);
 			void CycleTexturesForward();
-			void FillDensityGrid(int index
-									,const int *grid
+			void FillDensityGrid(int index,const clouds::GpuCloudsParameters &params
 									,int start_texel
 									,int texels
-									,float humidity
-									,float baseLayer
-									,float transition
-									,float upperDensity
-									,float diffusivity
-									,float time
-									,void*  noise_tex,int octaves,float persistence
 											,const simul::clouds::MaskMap &masks);
 			virtual void PerformGPURelight(int index,float *target
 									,const int *light_grid
@@ -57,6 +49,7 @@ namespace simul
 			GLuint			density_program;
 			GLuint			lighting_program;
 			GLuint			transform_program;
+			GLuint volume_noise_tex;
 			GLenum			iformat;
 			GLenum			itype;
 			GLuint			density_texture;

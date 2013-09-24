@@ -3,13 +3,11 @@
 #include "Simul/Clouds/BaseGpuCloudGenerator.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
-#include "HLSL/CppHLSL.hlsl"
-#include "Simul/Platform/CrossPlatform/simul_gpu_clouds.sl"
 
 #include <d3dx9.h>
 #include <d3d11.h>
 #include <d3dx11.h>
-#include <d3dx11effect.h>
+#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
 
 namespace simul
 {
@@ -31,20 +29,10 @@ namespace simul
 			int GetDensityGridsize(const int *grid);
 			void* Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr);
 			void FillDensityGrid(	int index
-									,const int *grid
+									,const clouds::GpuCloudsParameters &params
 									,int start_texel
 									,int texels
-									,float humidity
-									,float baseLayer
-									,float transition
-									,float upperDensity
-									,float diffusivity
-									,float time
-									,void* noise_tex
-									,int octaves
-									,float persistence
-									,const simul::clouds::MaskMap &masks
-									);
+									,const simul::clouds::MaskMap &masks);
 			virtual void PerformGPURelight(	int light_index
 											,float *target
 											,const int *light_grid
@@ -76,9 +64,6 @@ namespace simul
 				}
 			}
 		protected:
-			simul::dx11::Framebuffer			fb[2];
-			simul::dx11::Framebuffer			world_fb;
-			simul::dx11::Framebuffer			dens_fb;
 			simul::dx11::Framebuffer			mask_fb;
 			
 			ID3D11Device*						m_pd3dDevice;

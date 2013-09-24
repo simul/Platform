@@ -1,6 +1,7 @@
 #include "CppHlsl.hlsl"
 #include "../../CrossPlatform/states.sl"
 #include "../../CrossPlatform/noise.sl"
+
 Texture2D noise_texture SIMUL_TEXTURE_REGISTER(0);
 Texture3D random_texture_3d SIMUL_TEXTURE_REGISTER(1);
 RWTexture3D<float4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
@@ -10,12 +11,6 @@ SamplerState samplerState
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Wrap;
-};
-
-uniform_buffer RendernoiseConstants SIMUL_BUFFER_REGISTER(10)
-{
-	int octaves;
-	float persistence;
 };
 
 struct a2v
@@ -55,7 +50,7 @@ float4 RandomPS(v2f IN) : SV_TARGET
 
 float4 MainPS(v2f IN) : SV_TARGET
 {
-	vec4 result=vec4(0,0,0,0);
+	/*vec4 result=vec4(0,0,0,0);
 	vec2 texcoords=IN.texCoords;
 	float mul=.5;
 	float total=0.0;
@@ -68,8 +63,8 @@ float4 MainPS(v2f IN) : SV_TARGET
 		mul*=persistence;
     }
 	// divide by total to get the range -1,1.
-	result*=1.0/total;
-    return result;
+	result*=1.0/total;*/
+    return  Noise( noise_texture,IN.texCoords, persistence, octaves);
 }
 
 [numthreads(8,8,8)]

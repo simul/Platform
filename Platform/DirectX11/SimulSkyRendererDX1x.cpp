@@ -676,8 +676,6 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pStarsVertexBuffer);
 }
 
-
-
 bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
@@ -698,6 +696,8 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 	hr=ApplyPass(pContext,m_hTechniquePointStars->GetPassByIndex(0));
 
 	skyConstants.starBrightness	=skyKeyframer->GetCurrentStarBrightness();
+	if(skyConstants.starBrightness<minimumStarBrightness)
+		return true;
 	skyConstants.Apply(pContext);
 
 	int current_num_stars=skyKeyframer->stars.GetNumStars();

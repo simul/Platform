@@ -959,7 +959,7 @@ bool SimulCloudRendererDX1x::RenderLightning(void *context,int viewport_id)
 	using namespace simul::clouds;
 
 	if(!lightning_vertices)
-		lightning_vertices=new PosTexVert_t[4500];
+		lightning_vertices=new(memoryInterface) PosTexVert_t[4500];
 
 	HRESULT hr=S_OK;
 

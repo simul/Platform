@@ -50,10 +50,7 @@ struct ColourDepthOutput
 ColourDepthOutput PS_DensityMask(vertexOutput IN)
 {
 	ColourDepthOutput result;
-	float dr					=maskFeather;
-	vec2 pos					=IN.texCoords.xy-maskCentre;
-	float r						=length(pos)/maskRadius;
-	float dens					=maskThickness*saturate((1.0-r)/dr);
+	float dens						=GpuCloudMask(IN.texCoords, maskCentre, maskRadius,maskFeather, maskThickness);
 	result.colour				=vec4(dens,dens,dens,dens);
 	result.depth				=dens;
 	return result;
@@ -61,17 +58,10 @@ ColourDepthOutput PS_DensityMask(vertexOutput IN)
 
 float4 PS_Density(vertexOutput IN) : SV_TARGET
 {
-	vec3 densityspace_texcoord	=assemble3dTexcoord(IN.texCoords.xy);
-	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
-	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
-	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z);//*maskTexture.Sample(clampSamplerState,densityspace_texcoord.xy).x;
-	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
-	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
-    return vec4(dens,0,0,1.0);
+    return PS_CloudDensity(volumeNoiseTexture, maskTexture,IN.texCoords, humidity, diffusivity, octaves, persistence, time, zPixel);
 }
 
-[numthreads(8,8,8)]
-void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+void CS_CloudDensity(RWTexture3D<float4> targetTexture,uint3 sub_pos)
 {
 	uint3 dims;
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
@@ -86,6 +76,12 @@ void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID g
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
 	dens						=saturate(dens);
 	targetTexture[pos]			= dens;
+}
+
+[numthreads(8,8,8)]
+void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+{
+    CS_CloudDensity(targetTexture,sub_pos);
 }
 
 static const float glow=0.1;

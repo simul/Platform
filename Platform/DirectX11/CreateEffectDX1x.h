@@ -10,7 +10,7 @@
 #ifndef CREATEEFFECTDX1X_H
 #define CREATEEFFECTDX1X_H
 #include <d3dx11.h>
-#include <d3dx11effect.h>
+#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
 #include <D3Dcompiler.h>
 #include <d3dx9.h>
 #include <map>

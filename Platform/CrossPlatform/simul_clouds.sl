@@ -224,7 +224,7 @@ vec4 GodraysAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,vec2
 	return total_ill/float(N);
 }
 
-vec4 ShowCloudShadow(Texture2D cloudShadowTexture,Texture2D nearFarTexture,vec2 texCoords)
+vec4 ShowCloudShadow(Texture2D cloudShadowTexture,Texture2D nearFarTexture,Texture2D cloudGodraysTexture,vec2 texCoords)
 {
 	vec2 tex_pos=2.0*texCoords.xy-vec2(1.0,1.0);
 	float dist=length(tex_pos.xy);
@@ -244,9 +244,8 @@ vec4 ShowCloudShadow(Texture2D cloudShadowTexture,Texture2D nearFarTexture,vec2 
 	}
 	if(dist>=nearFarShadowLight.z&&dist<=nearFarShadowLight.w)
 		lookup.g+=0.5;
-	//if(abs(radial_texc.y)<0.003)
-	//lookup.r+=abs(radial_texc.y);
-	//lookup.gb+=lookup.a;
+	vec4 godrays_illum=texture_wrap_clamp(cloudGodraysTexture,vec2(radial_texc.y,dist));
+	lookup.rgb+=godrays_illum.xxxx;
 	return vec4(lookup.rgb,1.0);
 }
 
@@ -659,7 +658,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				if(colour.a*brightness_factor<0.003)
 				{
 					colour.a	=0.0;
-					//mean_z		=normLayerZ;//lerp(mean_z,normLayerZ,depthMix);
+					//mean_z	=normLayerZ;//lerp(mean_z,normLayerZ,depthMix);
 					break;
 				}
 			}
