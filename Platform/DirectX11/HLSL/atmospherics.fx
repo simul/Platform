@@ -78,7 +78,12 @@ float4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
 
 vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 {
-	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
+	vec4 clip_pos		=vec4(-1.f,1.f,1.f,1.f);
+	clip_pos.x			+=2.0*texCoords.x;
+	clip_pos.y			-=2.0*texCoords.y;
+	vec3 view			=normalize(mul(invViewProj,clip_pos).xyz);
+
+	//vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
 	view				=normalize(view);
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	float depth			=depthTexture.Sample(clampSamplerState,depth_texc).x;

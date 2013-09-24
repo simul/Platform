@@ -596,6 +596,7 @@ RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
 	RaytracePixelOutput res;
     res.colour		=vec4(exposure*colour.rgb,colour.a);
 	res.depth		=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,nearZ,farZ,tanHalfFov);
+
 	return res;
 }
 

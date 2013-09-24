@@ -712,6 +712,8 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 	skyConstants.starBrightness	= exposure * skyKeyframer->GetCurrentStarBrightness();
 	if(skyConstants.starBrightness<minimumStarBrightness)
 		return true;
+	if(skyConstants.starBrightness<minimumStarBrightness)
+		return true;
 	skyConstants.Apply(pContext);
 
 	int current_num_stars=skyKeyframer->stars.GetNumStars();

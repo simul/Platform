@@ -21,7 +21,6 @@ vec4 FastGodrays(Texture2D cloudGodraysTexture,Texture2D inscTexture,Texture2D o
 	float true_distance		=solid_dist*maxFadeDistance;
 	float dist_texc			=length(view_s.xy)/length(view_s)*true_distance/shadowRange;
 	vec4 illum_amount		=texture_wrap_clamp(cloudGodraysTexture,vec2(azimuth_texc,dist_texc));
-    //illum_amount/=dist_texc;
 	float sine				=view.z;
 	float cos0				=dot(view,lightDir);
 	vec2 solid_fade_texc	=vec2(pow(solid_dist,0.5),0.5*(1.0-sine));

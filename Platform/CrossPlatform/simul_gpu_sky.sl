@@ -194,7 +194,7 @@ vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture1D density_textu
 	
 	// lookups is: dens_factor,ozone_factor,haze_factor;
 	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-	vec4 lookups		=texture_clamp_lod(density_texture,dens_texc,0);
+	vec4 lookups		=texture_clamp_lod(density_texture,vec2(dens_texc,0.5),0);
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
