@@ -15,11 +15,9 @@ GpuCloudGenerator::GpuCloudGenerator()
 			:m_pd3dDevice(NULL)
 			,m_pImmediateContext(NULL)
 			,effect(NULL)
-			,densityTechnique(NULL)
 			,densityComputeTechnique(NULL)
 			,lightingComputeTechnique(NULL)
 			,secondaryLightingComputeTechnique(NULL)
-			,transformTechnique(NULL)
 			,transformComputeTechnique(NULL)
 			,volume_noise_tex(NULL)
 			,volume_noise_tex_srv(NULL)
@@ -107,10 +105,8 @@ void GpuCloudGenerator::RecompileShaders()
 	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_gpu_clouds.fx");
 	if(effect)
 	{
-		densityTechnique					=effect->GetTechniqueByName("simul_gpu_density");
 		lightingComputeTechnique			=effect->GetTechniqueByName("gpu_lighting_compute");
 		secondaryLightingComputeTechnique	=effect->GetTechniqueByName("gpu_secondary_compute");
-		transformTechnique					=effect->GetTechniqueByName("simul_gpu_transform");
 		maskTechnique						=effect->GetTechniqueByName("density_mask");
 		densityComputeTechnique				=effect->GetTechniqueByName("gpu_density_compute");
 		transformComputeTechnique			=effect->GetTechniqueByName("gpu_transform_compute");

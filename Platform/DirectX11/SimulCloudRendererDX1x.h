@@ -23,7 +23,6 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/GpuCloudGenerator.h"
-#include "Simul/Platform/DirectX11/GpuCloudGenerator.h"
 
 namespace simul
 {

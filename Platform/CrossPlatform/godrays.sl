@@ -101,7 +101,6 @@ vec4 GodraysSimplified(Texture2D cloudShadowTexture,Texture2D cloudNearFarTextur
 	//total_insc.a=1.0;
 	vec3 gr				=InscatterFunction(total_insc,hazeEccentricity,cos0,mieRayleighRatio);
 	gr					*=exposure;
-//	gr					=max(gr,vec3(0.0,0.0,0.0));
     return vec4(gr,1.0);
 }
 
