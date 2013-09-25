@@ -176,7 +176,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture,Texture2D coverageTexture
 	return colour;
 }
 
-float4 ShowDetailTexture(Texture2D imageTexture,vec2 texCoords,vec3 sunlight,vec4 lightResponse)
+vec4 ShowDetailTexture(Texture2D imageTexture,vec2 texCoords,vec3 sunlight,vec4 lightResponse)
 {
 	texCoords+=0.5;
     vec4 detail				=texture_wrap(imageTexture,texCoords);
@@ -188,7 +188,7 @@ float4 ShowDetailTexture(Texture2D imageTexture,vec2 texCoords,vec3 sunlight,vec
 	float scattered_light	=light;//detail.a*exp(-light*Y(coverage)*32.0);
 	colour					*=1.0-opacity;
 	colour					+=opacity*sunlight*(lightResponse.y+lightResponse.x)*scattered_light;
-	colour=detail.r*.1;
+	//colour=detail.r*.1;
     return vec4(colour,1.0);
 }
 #endif

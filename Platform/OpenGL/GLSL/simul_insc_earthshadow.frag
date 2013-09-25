@@ -28,7 +28,7 @@ void main()
 
 	vec2 fade_texc2		=vec2(1.0,0.5*(1.0-sine));
 
-	vec2 nearFarTexc	=EarthShadowDistances(fade_texc2,view);
+	vec2 nearFarTexc	=EarthShadowDistances(fade_texc2,view,earthShadowNormal,sunDir,maxFadeDistance,terminatorDistance,radiusOnCylinder);
 	vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 

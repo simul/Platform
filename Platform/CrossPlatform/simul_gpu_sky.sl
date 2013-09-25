@@ -166,7 +166,7 @@ float getDistanceToSpace(float sine_elevation,float h_km)
 	return getShortestDistanceToAltitude(sine_elevation,h_km,maxDensityAltKm);
 }
 
-vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture1D density_texture,Texture2D optical_depth_texture,vec2 texCoords)
+vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture2D density_texture,Texture2D optical_depth_texture,vec2 texCoords)
 {
 	vec4 previous_insc	=texture_nearest_lod(input_texture,texCoords.xy,0);
 	vec3 previous_loss	=texture_nearest_lod(loss_texture,vec3(texCoords.xy,pow(distanceKm/maxDistanceKm,0.5)),0).rgb;// should adjust texCoords - we want the PREVIOUS loss!
@@ -230,7 +230,7 @@ vec3 getSkylight(float alt_km, Texture3D insc_texture)
 	vec3 skylight	=InscatterFunction(insc,hazeEccentricity,0.0,mieRayleighRatio);
 	return skylight;
 }
-
+#ifndef GLSL
 void MakeLightTable(RWTexture3D<float4> targetTexture, Texture3D insc_texture, uint3 sub_pos)
 {
 	// threadOffset.y determines the cycled index.
@@ -258,7 +258,7 @@ void MakeLightTable(RWTexture3D<float4> targetTexture, Texture3D insc_texture, u
 	uint3 pos_both		=uint3(pos.xy,3);
     targetTexture[pos_both]	=sunlight+moonlight;
 }
-
+#endif
 #endif
 
 #endif

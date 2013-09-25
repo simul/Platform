@@ -108,7 +108,7 @@ void CS_Loss(uint3 sub_pos	: SV_DispatchThreadID )
 	
 	float prevDist_km	=0.0;
 
-	for(int i=0;i<dims.z;i++)
+	for(uint i=0;i<dims.z;i++)
 	{
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow((float)(i)/((float)dims.z-1.f),2.f);
@@ -219,7 +219,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 		//float lossw=1.0;
 		//insc.w				=(lossw)*(1.0-previous_insc.w)*insc.w+previous_insc.w;
 		//final.w=::saturate((1.f-mie_factor)/(1.f-total_loss.x+0.0001f));
-		insc.w				=saturate((1.0-mie_factor)/(1.0-previous_loss.x+0.0001f));
+		insc.w				=saturate((1.0-mie_factor.x)/(1.0-previous_loss.x+0.0001f));
 		
 		targetTexture[idx]	=insc;
 		prevDist_km			=dist_km;
@@ -248,7 +248,7 @@ void CS_Skyl( uint3 sub_pos : SV_DispatchThreadID )
 
 	float prevDist_km	=0.0;
 	// The midpoint of the step represented by this layer
-	for(int i=0;i<dims.z;i++)
+	for(int i=0;i<int(dims.z);i++)
 	{
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow((float)(i)/((float)dims.z-1.0),2.0);

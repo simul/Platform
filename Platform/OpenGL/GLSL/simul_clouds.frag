@@ -30,9 +30,8 @@ in vec4 transformed_pos;
 
 void main(void)
 {
-
 	vec3 half_vec			=vec3(0.5,0.5,0.5);//0.49803921568627452,0.49803921568627452,0.49803921568627452);
-	float cos0				=dot(lightDir.xyz,normalize(view.xyz));
+	float cos0				=dot(directionToSun.xyz,normalize(view.xyz));
 #ifdef USE_DEPTH_TEXTURE	
 	vec2 clip_pos			=transformed_pos.xy/transformed_pos.w;
 	vec2 screenCoord		=screenCoordOffset+0.5*(clip_pos.xy)+vec2(0.5,0.5);

@@ -41,7 +41,7 @@ void main(void)
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
-	vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor(alt_km,lightDir);
+	vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor(optical_depth_texture,alt_km,lightDir);
 	vec4 insc			=light;
 #ifdef OVERCAST
 	insc*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);

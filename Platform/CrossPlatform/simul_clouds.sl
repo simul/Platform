@@ -197,7 +197,7 @@ vec4 GodraysAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,vec2
 {
 	//const float U					=1.0;
 	//const float L					=0.0;
-	int N							=texCoords.y*float(shadowTextureSize);
+	int N							=int(texCoords.y*float(shadowTextureSize));
 	float pixel						=1.0/float(shadowTextureSize);
 #ifdef RADIAL_CLOUD_SHADOW
 	vec2 offset						=vec2(0,pixel/1.0);
