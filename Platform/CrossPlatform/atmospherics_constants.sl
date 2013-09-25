@@ -41,9 +41,6 @@ uniform_buffer AtmosphericsPerViewConstants SIMUL_BUFFER_REGISTER(12)
 	uniform vec3 depthToLinFadeDistParams;
 	uniform float startZMetres;
 	uniform float shadowRange;
-	uniform int godraysSteps;
-	uniform float godraysDistanceStart;
-	uniform float godraysDistanceStep;
 };
 
 /*

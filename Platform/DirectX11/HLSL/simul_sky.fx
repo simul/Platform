@@ -21,6 +21,9 @@ SamplerState flareSamplerState
 
 Texture3D fadeTexture1;
 Texture3D fadeTexture2;
+Texture3D sourceTexture;
+RWTexture2D<float4> targetTexture;
+Texture2D lightTable2DTexture;
 
 cbuffer cbPerObject : register(b11)
 {
@@ -91,7 +94,8 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 float4 PS_IlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float alt_km		=eyePosition.z/1000.0;
-	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm);
+	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm
+			,maxFadeDistance,terminatorDistance,radiusOnCylinder,earthShadowNormal,sunDir);
 }
 
 vertexOutput3Dto2D VS_Fade3DTo2D(idOnly IN) 
@@ -141,7 +145,6 @@ float4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
 	float4 result;
 	result.rgb=lerp(colour1.rgb,colour2.rgb,skyInterp);
 	result.a=1.0;
-	// Now the overcastedness 
     return result;
 }
 
@@ -174,10 +177,48 @@ float4 PS_ShowSkyTexture(vertexOutput3Dto2D IN): SV_TARGET
     return float4(result.rgb,1);
 }
 
+
+float4 PS_ShowIlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
+{
+	return ShowIlluminationBuffer(inscTexture,IN.texCoords);
+}
+
 float4 PS_ShowFadeTexture(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float4 result=fadeTexture1.Sample(cmcSamplerState,float3(altitudeTexCoord,IN.texCoords.yx));
     return float4(result.rgb,1);
+}
+
+float4 PS_Show3DLightTable(vertexOutput3Dto2D IN): SV_TARGET
+{
+	float4 result=fadeTexture1.Sample(samplerStateNearest,vec3(IN.texCoords.y,(float(cycled_index)+.5)/3.0,IN.texCoords.x));
+    return float4(result.rgb,1);
+}
+
+float4 PS_Show2DLightTable(vertexOutput3Dto2D IN): SV_TARGET
+{
+	float4 result=texture_nearest_lod(lightTable2DTexture,IN.texCoords.yx,0);
+
+    return float4(result.rgb,1);
+}
+
+[numthreads(1,1,1)]
+void CS_InterpLightTable(uint3 pos	: SV_DispatchThreadID )
+{
+	uint3 dims;
+	sourceTexture.GetDimensions(dims.x,dims.y,dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.z)
+		return;
+	float alt_texc_x	=float(pos.x)/float(dims.x);
+	float which_texc	=(float(pos.y)+0.5)/float(dims.z);
+	vec3 texc_3a		=vec3(alt_texc_x,(float( cycled_index  )   +0.5)/3.0,which_texc);
+	vec3 texc_3b		=vec3(alt_texc_x,(float((cycled_index+1)%3)+0.5)/3.0,which_texc);
+	vec4 colour1		=texture_nearest_lod(sourceTexture,texc_3a,0);
+	vec4 colour2		=texture_nearest_lod(sourceTexture,texc_3b,0);
+	vec4 colour			=lerp(colour1,colour2,skyInterp);
+	// Apply earth shadow to sunlight.
+	//colour				*=saturate(alt_texc_x-illumination_alt_texc);
+	targetTexture[pos.xy]	=colour;
 }
 
 struct indexVertexInput
@@ -299,7 +340,7 @@ float4 PS_Planet(svertexOutput IN): SV_TARGET
 		discard;
 	normal.z	=-sqrt(1.0-l*l);
 	float light	=approx_oren_nayar(0.2,float3(0,0,1.0),normal,lightDir.xyz);
-	//result.rgb*=colour.rgb;
+	result.rgb	*=colour.rgb;
 	result.rgb	*=light;
 	result.a	*=saturate((0.99-l)/0.01);
 	return result;
@@ -318,6 +359,19 @@ technique11 simul_show_sky_texture
     }
 }
 
+technique11 show_illumination_buffer
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowSkyTexture()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowIlluminationBuffer()));
+    }
+}
+
 technique11 simul_show_fade_texture
 {
     pass p0 
@@ -328,6 +382,32 @@ technique11 simul_show_fade_texture
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowSkyTexture()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeTexture()));
+    }
+}
+
+technique11 show_light_table
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowSkyTexture()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_Show3DLightTable()));
+    }
+}
+
+technique11 show_2d_light_table
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowSkyTexture()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_Show2DLightTable()));
     }
 }
 
@@ -448,5 +528,13 @@ technique11 simul_planet
 		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
 		SetDepthStencilState( EnableDepth, 0 );
 		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+    }
+}
+
+technique11 interp_light_table
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_InterpLightTable()));
     }
 }

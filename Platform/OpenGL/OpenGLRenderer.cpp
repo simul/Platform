@@ -19,7 +19,7 @@
 #include "Simul/Base/Timer.h"
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 using namespace simul::opengl;
-OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
+OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m)
 	:ScreenWidth(0)
 	,ScreenHeight(0)
 	,cam(NULL)
@@ -39,7 +39,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 {
 	simulHDRRenderer	=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,NULL,ScreenWidth,ScreenHeight);
-	simulOpticsRenderer	=new SimulOpticsRendererGL();
+	simulOpticsRenderer	=new SimulOpticsRendererGL(m);
 	simulTerrainRenderer=new SimulGLTerrainRenderer(NULL);
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);

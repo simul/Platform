@@ -22,7 +22,7 @@ vec4 DetailLighting(vec2 texcoords,Texture2D imageTexture)
 	vec4 c=texture_wrap(imageTexture,texcoords);
 	vec2 offset=lightDir2d.xy/256.0;
 	float dens_dist=0.0;
-    for(int i=0;i<16;i++)
+    for(int i=0;i<12;i++)
     {
 		texcoords+=offset;
 		vec4 v=texture_wrap(imageTexture,texcoords);
@@ -31,7 +31,7 @@ vec4 DetailLighting(vec2 texcoords,Texture2D imageTexture)
 		if(v.a==0)
 			dens_dist*=0.9;
     }
-    return vec4(dens_dist,dens_dist,dens_dist,c.a);
+    return vec4(dens_dist/12.0,dens_dist/12.0,dens_dist/12.0,c.a);
 }
 
 #endif

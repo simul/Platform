@@ -45,22 +45,24 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 	simul::sky::SkyKeyframer *sk=environment->skyKeyframer;
 	simul::clouds::CloudKeyframer *ck2d=environment->cloud2DKeyframer;
 	simul::clouds::CloudKeyframer *ck3d=environment->cloudKeyframer;
-	simulSkyRenderer=new(memoryInterface) SimulGLSkyRenderer(sk,memoryInterface);
+	simulSkyRenderer					=::new(memoryInterface) SimulGLSkyRenderer(sk,memoryInterface);
 	baseSkyRenderer=simulSkyRenderer;
 	
-	simulCloudRenderer=new(memoryInterface) SimulGLCloudRenderer(ck3d,mem);
+	simulCloudRenderer					=::new(memoryInterface) SimulGLCloudRenderer(ck3d,mem);
 	baseCloudRenderer=simulCloudRenderer;
 	if(env->cloud2DKeyframer)
 	{
-		base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d,mem);
+		base2DCloudRenderer				=simul2DCloudRenderer
+										=::new SimulGL2DCloudRenderer(ck2d,mem);
 	}	
-	simulLightningRenderer=new(memoryInterface) SimulGLLightningRenderer(ck3d,sk);
+	simulLightningRenderer				=::new(memoryInterface) SimulGLLightningRenderer(ck3d,sk);
 	baseLightningRenderer=simulLightningRenderer;
 
-	simulAtmosphericsRenderer=new(memoryInterface) SimulGLAtmosphericsRenderer(mem);
+	simulAtmosphericsRenderer			=::new(memoryInterface) SimulGLAtmosphericsRenderer(mem);
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
 	if(rain)
-		basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulGLPrecipitationRenderer();
+		basePrecipitationRenderer		=simulPrecipitationRenderer
+										=::new(memoryInterface) SimulGLPrecipitationRenderer();
 
 	EnableCloudLayers();
 	SetScreenSize(width,height);

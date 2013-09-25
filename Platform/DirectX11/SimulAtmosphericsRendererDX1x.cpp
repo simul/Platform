@@ -43,7 +43,6 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x(simul::base::Memory
 	,illuminationTexture(NULL)
 	,overcTexture(NULL)
 	,cloudShadowTexture(NULL)
-	,cloudNearFarTexture(NULL)
 	,cloudGodraysTexture(NULL)
 	,skyLossTexture_SRV(NULL)
 	,skyInscatterTexture_SRV(NULL)
@@ -99,10 +98,10 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	lossTexture				=effect->GetVariableByName("lossTexture")->AsShaderResource();
 	inscTexture				=effect->GetVariableByName("inscTexture")->AsShaderResource();
 	skylTexture				=effect->GetVariableByName("skylTexture")->AsShaderResource();
+
 	illuminationTexture		=effect->GetVariableByName("illuminationTexture")->AsShaderResource();
 	overcTexture			=effect->GetVariableByName("overcTexture")->AsShaderResource();
 	cloudShadowTexture		=effect->GetVariableByName("cloudShadowTexture")->AsShaderResource();
-	cloudNearFarTexture		=effect->GetVariableByName("cloudNearFarTexture")->AsShaderResource();
 	cloudGodraysTexture		=effect->GetVariableByName("cloudGodraysTexture")->AsShaderResource();
 	atmosphericsPerViewConstants.LinkToEffect(effect,"AtmosphericsPerViewConstants");
 	atmosphericsUniforms.LinkToEffect(effect,"AtmosphericsUniforms");
@@ -155,7 +154,6 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	view(3,0)=view(3,1)=view(3,2)=0;
-
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
 	D3DXMATRIX p1=proj;
@@ -200,7 +198,6 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,c
 	cloudDepthTexture	->SetResource(cloudDepthTexture_SRV);
 	overcTexture		->SetResource(overcInscTexture_SRV);
 	cloudShadowTexture	->SetResource((ID3D11ShaderResourceView*)cloudShadowStruct.texture);
-	cloudNearFarTexture	->SetResource((ID3D11ShaderResourceView*)cloudShadowStruct.nearFarTexture);
 	cloudGodraysTexture	->SetResource((ID3D11ShaderResourceView*)cloudShadowStruct.godraysTexture);
 	simul::geometry::SimulOrientation or;
 	simul::math::Vector3 north(0.f,1.f,0.f);
@@ -229,7 +226,6 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,c
 	cloudDepthTexture	->SetResource(NULL);
 	overcTexture		->SetResource(NULL);
 	cloudShadowTexture	->SetResource(NULL);
-	cloudNearFarTexture	->SetResource(NULL);
 	cloudGodraysTexture	->SetResource(NULL);
 	//atmosphericsPerViewConstants.Unbind(pContext);
 	//atmosphericsUniforms.Unbind(pContext);

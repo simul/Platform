@@ -8,8 +8,8 @@ struct LayerData
 	float layerFade;
 	float layerDistance;
 	float verticalShift;
-	float sine_threshold;
-	float sine_range;
+	float pad11;
+	float pad12;
 	float pad13;
 };
 struct SmallLayerData
@@ -57,7 +57,7 @@ uniform_buffer CloudConstants SIMUL_BUFFER_REGISTER(9)
 	uniform vec3 fractalScale;
 	uniform float cloudEccentricity;
 	uniform vec4 lightResponse;
-	uniform vec3 lightDir;
+	uniform vec3 directionToSun;
 	uniform float earthshadowMultiplier;
 	uniform vec3 cornerPos;
 	uniform float hazeEccentricity;
@@ -68,7 +68,7 @@ uniform_buffer CloudConstants SIMUL_BUFFER_REGISTER(9)
 	uniform vec3 sunlightColour1;
 	uniform float fractalRepeatLength;
 	uniform vec3 sunlightColour2;
-	uniform float x4;
+	uniform float maxAltitudeMetres;
 	uniform vec2 screenCoordOffset;
 	uniform vec2 y1;
 	uniform vec3 mieRayleighRatio;
@@ -83,8 +83,8 @@ uniform_buffer CloudConstants SIMUL_BUFFER_REGISTER(9)
 	uniform float z1;
 	uniform vec3 cloudIrRadiance;
 	uniform float x5;
+	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactor;
-	uniform float x6,x7,x8;
 };
 
 #ifdef __cplusplus
@@ -93,14 +93,12 @@ uniform_buffer CloudConstants SIMUL_BUFFER_REGISTER(9)
 uniform_buffer CloudShadowStruct 
 {
 	void *texture;			// texture, or SRV for DX11
-	void *nearFarTexture;	// texture, or SRV for DX11, represents near and far range as proportion of shadowRange
 	void *godraysTexture;	// texture, or SRV for DX11, represents accumulated illumination at a given angle and distance.
 	mat4 shadowMatrix;
 	mat4 simpleOffsetMatrix;
 	float extentZMetres;
 	float startZMetres;
 	float shadowRange;
-	int godraysSteps;
 };
 #endif
 #endif

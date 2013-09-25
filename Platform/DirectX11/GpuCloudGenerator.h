@@ -83,12 +83,10 @@ namespace simul
 			ID3D11Device*						m_pd3dDevice;
 			ID3D11DeviceContext*				m_pImmediateContext;
 			ID3DX11Effect*						effect;
-			ID3DX11EffectTechnique*				densityTechnique;
 			ID3DX11EffectTechnique*				densityComputeTechnique;
 			ID3DX11EffectTechnique*				maskTechnique;
 			ID3DX11EffectTechnique*				lightingComputeTechnique;
 			ID3DX11EffectTechnique*				secondaryLightingComputeTechnique;
-			ID3DX11EffectTechnique*				transformTechnique;
 			ID3DX11EffectTechnique*				transformComputeTechnique;
 
 			ID3D11Texture3D						*volume_noise_tex;
