@@ -310,25 +310,7 @@ class SimulGL2DCloudRenderer *SimulGLWeatherRenderer::Get2DCloudRenderer()
 {
 	return simul2DCloudRenderer;
 }
-/*
-const char *SimulGLWeatherRenderer::GetDebugText() const
-{
-	static char debug_text[256];
-	sprintf_s(debug_text,256,"RENDER %3.3g ms (clouds %3.3g ms, sky %3.3g ms, final %3.3g)\r\n"
-		"TEXTURE UPDATE %3.3g ms (sky %3.3g ms)\r\n"
-		"UPDATE %3.3g ms (clouds %3.3g ms, sky %3.3g ms)",
-			total_timing
-			,baseCloudRenderer?baseCloudRenderer->GetRenderTime():0.f
-			,baseSkyRenderer?baseSkyRenderer->GetRenderTime():0.f
-			,render_time
-			,baseSkyRenderer?baseSkyRenderer->GetTextureUpdateTime():0.f
-			,baseSkyRenderer?baseSkyRenderer->GetTextureUpdateTime():0.f
-			,environment->total_update_timing
-			,environment->cloud_update_timing
-			,environment->sky_update_timing);
-	return debug_text;
-}
-*/
+
 GLuint SimulGLWeatherRenderer::GetFramebufferTexture()
 {
 	return (GLuint)scene_buffer->GetColorTex();
