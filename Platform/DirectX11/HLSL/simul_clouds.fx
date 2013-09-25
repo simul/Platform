@@ -58,17 +58,17 @@ RaytraceVertexOutput VS_Raytrace(idOnly IN)
 RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 {
 	vec2 texCoords		=IN.texCoords.xy;
-	texCoords.y		=1.0-texCoords.y;
+	texCoords.y			=1.0-texCoords.y;
 	float dlookup		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
 	vec4 clip_pos		=vec4(-1.f,-1.f,1.f,1.f);
-	clip_pos.x		+=2.f*IN.texCoords.x;
-	clip_pos.y		+=2.f*IN.texCoords.y;
-	vec3 view		=normalize(mul(invViewProj,clip_pos).xyz);
-	float cos0		=dot(lightDir.xyz,view.xyz);
-	float sine		=view.z;
-	vec3 n			=vec3(clip_pos.xy*tanHalfFov,1.0);
+	clip_pos.x			+=2.f*IN.texCoords.x;
+	clip_pos.y			+=2.f*IN.texCoords.y;
+	vec3 view			=normalize(mul(invViewProj,clip_pos).xyz);
+	float cos0			=dot(lightDir.xyz,view.xyz);
+	float sine			=view.z;
+	vec3 n				=vec3(clip_pos.xy*tanHalfFov,1.0);
 	n					=normalize(n);
-	vec2 noise_texc_0	=mul(noiseMatrix,n.xy);
+	vec2 noise_texc_0	=(mul(noiseMatrix,n.xy)).xy;
 
 	float min_texc_z	=-fractalScale.z*1.5;
 	float max_texc_z	=1.0-min_texc_z;

@@ -39,6 +39,10 @@ namespace simul
 			{
 				return (void*)m_pCubeEnvMapSRV;
 			}
+			virtual void* GetDepthTex()
+			{
+				return (void*)m_pCubeEnvMapDepthSRV;
+			}
 			bool IsValid()
 			{
 				return (m_pCubeEnvMapSRV != NULL);
@@ -61,6 +65,7 @@ namespace simul
 			ID3D11RenderTargetView*						m_pCubeEnvMapRTV[6];
 			ID3D11DepthStencilView*						m_pCubeEnvDepthMapDSV[6];
 			ID3D11ShaderResourceView*					m_pCubeEnvMapSRV;
+			ID3D11ShaderResourceView*					m_pCubeEnvMapDepthSRV;
 			int											current_face;
 			DXGI_FORMAT									format;
 			StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;

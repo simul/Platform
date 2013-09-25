@@ -245,7 +245,7 @@ vec4 ShowCloudShadow(Texture2D cloudShadowTexture,Texture2D nearFarTexture,Textu
 	if(dist>=nearFarShadowLight.z&&dist<=nearFarShadowLight.w)
 		lookup.g+=0.5;
 	vec4 godrays_illum=texture_wrap_clamp(cloudGodraysTexture,vec2(radial_texc.y,dist));
-	lookup.rgb+=godrays_illum.xxxx;
+	lookup.rgb+=godrays_illum.xxx;
 	return vec4(lookup.rgb,1.0);
 }
 

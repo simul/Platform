@@ -50,7 +50,7 @@ struct ColourDepthOutput
 ColourDepthOutput PS_DensityMask(vertexOutput IN)
 {
 	ColourDepthOutput result;
-	float dens						=GpuCloudMask(IN.texCoords, maskCentre, maskRadius,maskFeather, maskThickness);
+	float dens					=GpuCloudMask(IN.texCoords, maskCentre, maskRadius,maskFeather, maskThickness);
 	result.colour				=vec4(dens,dens,dens,dens);
 	result.depth				=dens;
 	return result;
