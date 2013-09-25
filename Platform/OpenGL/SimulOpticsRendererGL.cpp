@@ -7,8 +7,9 @@
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Math/Matrix4x4.h"
 
-SimulOpticsRendererGL::SimulOpticsRendererGL()
-	:flare_program(0)
+SimulOpticsRendererGL::SimulOpticsRendererGL(simul::base::MemoryInterface *m)
+	:BaseOpticsRenderer(m)
+	,flare_program(0)
 {
 }
 

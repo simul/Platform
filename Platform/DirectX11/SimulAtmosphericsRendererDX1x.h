@@ -79,7 +79,6 @@ namespace simul
 			ID3D1xEffectShaderResourceVariable*				illuminationTexture;
 			ID3D1xEffectShaderResourceVariable*				overcTexture;
 			ID3D1xEffectShaderResourceVariable*				cloudShadowTexture;
-			ID3D1xEffectShaderResourceVariable*				cloudNearFarTexture;
 			ID3D1xEffectShaderResourceVariable*				cloudGodraysTexture;
 
 			ID3D1xShaderResourceView*						skyLossTexture_SRV;

@@ -37,6 +37,7 @@ namespace simul
 			void SetLossTexture(void *l);
 			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
+			void SetLightTableTexture(void *l);
 			void SetWindVelocity(float x,float y);
 		protected:
 			void RenderDetailTexture(void *context);
@@ -63,8 +64,8 @@ namespace simul
 			ID3D1xShaderResourceView*	skyInscatterTexture_SRV;
 			ID3D1xShaderResourceView*	skylightTexture_SRV;
 			ID3D1xShaderResourceView*	illuminationTexture_SRV;
+			ID3D1xShaderResourceView*	lightTableTexture_SRV;
 
-			//simul::dx11::TextureStruct	coverage_tex[3];
 			simul::dx11::Framebuffer	coverage_fb;
 			simul::dx11::Framebuffer	detail_fb;
 			simul::dx11::Framebuffer	noise_fb;

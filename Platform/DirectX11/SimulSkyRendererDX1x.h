@@ -80,6 +80,7 @@ public:
 
 	void Get2DLossAndInscatterTextures(void* *loss,void* *insc,void* *skyl,void* *overc);
 	void *GetIlluminationTexture();
+			void *GetLightTableTexture();
 
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);
@@ -120,6 +121,8 @@ protected:
 	ID3D1xEffectTechnique*				m_hTechniquePlanet;
 	ID3D1xEffectTechnique*				m_hTechniquePointStars;
 
+			ID3D1xEffectTechnique*				m_TechniqueLightTableInterp;
+
 	ID3D1xEffectShaderResourceVariable*	flareTexture;
 	ID3D1xEffectShaderResourceVariable*	inscTexture;
 	ID3D1xEffectShaderResourceVariable*	skylTexture;
@@ -134,16 +137,17 @@ void SetConstantsForPlanet(SkyConstants &skyConstants,const float *viewmatrix,co
 	TextureStruct						loss_textures[3];
 	TextureStruct						insc_textures[3];
 	TextureStruct						skyl_textures[3];
+			TextureStruct						light_table;
 
 	// Small framebuffers we render to once per frame to perform fade interpolation.
 	simul::dx11::Framebuffer*			loss_2d;
 	simul::dx11::Framebuffer*			inscatter_2d;
 	simul::dx11::Framebuffer*			overcast_2d;
 	simul::dx11::Framebuffer*			skylight_2d;
+			TextureStruct						light_table_2d;
 
 	// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
 	simul::dx11::Framebuffer			illumination_fb;
-
 	ID3D1xShaderResourceView*			flare_texture_SRV;
 	ID3D1xShaderResourceView*			moon_texture_SRV;
 

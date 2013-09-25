@@ -3,7 +3,7 @@
 
 //fade_texc is (sqrt(dist), .5(1+sine)).
 // This function is to determine whether the given position is in sunlight or not.
-vec3 EarthShadowLight(vec2 fade_texc,vec3 view,float transitionDistance)
+vec3 EarthShadowLight(vec2 fade_texc,vec3 view,float transitionDistance,vec3 sunDir,float maxFadeDistance,float terminatorDistance,float radiusOnCylinder)
 {
 	// Project to the world position this represents, then compare it to the shadow radius.
 	// true distance normalized to fade max.
@@ -78,7 +78,7 @@ vec2 fn(float r,float cos2,float sine_phi,float sine_gamma,float maxFadeDistance
 //		if we're inside the shadow looking into it, it's all dark.
 //		if we're inside the shadow looking out, the part beyond the cylinder is lit.
 
-vec2 EarthShadowDistances(vec2 fade_texc,vec3 view)
+vec2 EarthShadowDistances(vec2 fade_texc,vec3 view,vec3 earthShadowNormal,vec3 sunDir,float maxFadeDistance,float terminatorDistance,float radiusOnCylinder)
 {
 		//return vec2(0.0,1.0);
 	/*if(radiusOnCylinder>=1.0&&view.z>0)
@@ -102,7 +102,7 @@ vec2 EarthShadowDistances(vec2 fade_texc,vec3 view)
 	// Let shadowNormal be the direction normal to the sunlight direction
 	//						but in the plane of the sunlight and the vertical.
 	float on_radius			=dot(on_cross_section,earthShadowNormal.xyz);
-	vec3 on_x				=on_cross_section-on_radius*earthShadowNormal.xyz;
+	//vec3 on_x		=on_cross_section-on_radius*earthShadowNormal.xyz;
 	float sine_gamma		=length(on_cross_section);
 	float sine_phi			=on_radius/sine_gamma;
 	// We avoid positive phi because the cosine discards sign information leading to
@@ -115,9 +115,9 @@ vec2 EarthShadowDistances(vec2 fade_texc,vec3 view)
 	return range;
 }
 
-vec4 EarthShadowFunction(Texture2D inscTexture,vec2 fade_texc,vec3 view)
+vec4 EarthShadowFunction(Texture2D inscTexture,vec2 fade_texc,vec3 view,vec3 earthShadowNormal,vec3 sunDir,float maxFadeDistance,float terminatorDistance,float radiusOnCylinder)
 {
-	vec2 dist=EarthShadowDistances(fade_texc,view);
+	vec2 dist=EarthShadowDistances(fade_texc,view,earthShadowNormal,sunDir,maxFadeDistance,terminatorDistance,radiusOnCylinder);
 	vec2 fade_texc_1=vec2(dist.x,fade_texc.y);
 	vec2 fade_texc_2=vec2(dist.y,fade_texc.y);
 	vec4 insc_n		=texture_clamp(inscTexture,fade_texc_1);

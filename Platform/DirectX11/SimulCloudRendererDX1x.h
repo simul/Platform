@@ -79,6 +79,7 @@ namespace simul
 			void SetLossTexture(void *t);
 			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
+			void SetLightTableTexture(void *l);
 			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
 
 			void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
@@ -118,7 +119,7 @@ namespace simul
 			ID3D1xDevice*							m_pd3dDevice;
 			simul::dx11::Mesh						circle;
 			simul::dx11::Mesh						sphere;
-			ID3D1xInputLayout*						m_pVtxDecl;
+			//ID3D1xInputLayout*						m_pVtxDecl;
 			ID3D1xInputLayout*						m_pLightningVtxDecl;
 			ID3D11SamplerState*						m_pWrapSamplerState;
 			ID3D11SamplerState*						m_pClampSamplerState;
@@ -153,6 +154,7 @@ namespace simul
 			ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;
 			ID3D1xEffectShaderResourceVariable*		skylightTexture;
 			ID3D1xEffectShaderResourceVariable*		depthTexture;
+			ID3D1xEffectShaderResourceVariable*		lightTableTexture;
 
 			TextureStruct							cloud_textures[3];
 
@@ -163,9 +165,8 @@ namespace simul
 			ID3D1xShaderResourceView*				overcInscTexture_SRV;
 			ID3D1xShaderResourceView*				skylightTexture_SRV;
 			ID3D1xShaderResourceView*				illuminationTexture_SRV;
-			
+			ID3D1xShaderResourceView*				lightTableTexture_SRV;
 			simul::dx11::Framebuffer				shadow_fb;
-			simul::dx11::Framebuffer				shadowNearFar;
 
 			// A texture whose x-axis represents azimuth, and whose y-axis represents distance
 			// as a proportion of shadow range. The texels represent how much illumination accumulates between the viewer

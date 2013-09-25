@@ -30,7 +30,7 @@ SIMUL_OPENGL_EXPORT_CLASS OpenGLRenderer
 	,public simul::graph::meta::Group
 {
 public:
-	OpenGLRenderer(simul::clouds::Environment *env);
+	OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m);
 	virtual ~OpenGLRenderer();
 	META_BeginProperties
 		META_ValueProperty(bool,ShowCloudCrossSections,"Show cross-sections of the cloud volumes as an overlay.")

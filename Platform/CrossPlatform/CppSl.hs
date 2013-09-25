@@ -165,7 +165,7 @@
 			w=v[3];
 		}
 	};
-
+	typedef unsigned int uint;
 	struct uint3
 	{
 		unsigned x,y,z;

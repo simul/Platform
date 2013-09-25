@@ -8,6 +8,7 @@ uniform sampler2D inscTexture;
 uniform sampler2D skylTexture;
 uniform sampler2D depthTexture;
 uniform sampler2D illuminationTexture;
+uniform sampler2D lightTableTexture;
 
 SamplerState samplerState 
 {
@@ -57,25 +58,33 @@ v2f MainVS(a2v IN)
 
 float4 MainPS(v2f IN) : SV_TARGET
 {
-	vec3 depth_pos		=IN.clip_pos.xyz/IN.clip_pos.w;
-	vec3 depth_texc		=0.5*(depth_pos+vec3(1.0,1.0,1.0));
-	depth_texc.y		=1.0-depth_texc.y;
-    float depth			=texture(depthTexture,viewportCoordToTexRegionCoord(depth_texc.xy,viewportToTexRegionScaleBias)).x;
-#ifdef REVERSE_DEPTH
-	if(depth>0.0)
-		discard;
-#else
-	if(1.0>depth)
-		discard;
-#endif
 	vec2 wOffset		=IN.wPosition.xy-origin.xy;
-	vec2 noiseOffset	=fractalAmplitude*texture(noiseTexture,wOffset/100000.0).xy;
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
-	//texc_detail		+=noiseOffset;
-	float dist			=depthToFadeDistance(depth,depth_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec3 wEyeToPos		=IN.wPosition-eyePosition;
-	vec4 ret			=Clouds2DPS_illum(texc_global,texc_detail,wEyeToPos,dist,cloudInterp,sunlight.rgb,lightDir.xyz,lightResponse);
+#ifdef USE_LIGHT_TABLES
+	float alt_texc			=IN.wPosition.z/maxAltitudeMetres;
+	vec3 sun_irr			=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
+	vec3 moon_irr			=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
+	vec3 ambient_light		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
+#else
+	vec3 sun_irr			=sunlight.rgb;
+	vec3 moon_irr			=moonlight.rgb;
+	vec3 ambient_light		=ambientLight.rgb;
+#endif
+	vec4 ret				=Clouds2DPS_illum(imageTexture,coverageTexture
+										,illuminationTexture
+										,lossTexture
+										,inscTexture
+										,skylTexture
+										,texc_global,texc_detail
+										,wEyeToPos
+										,sun_irr
+										,moon_irr
+										,ambient_light.rgb
+										,lightDir.xyz
+										,lightResponse);
+
 	ret.rgb				*=exposure;
 	return ret;
 }
@@ -85,7 +94,7 @@ technique11 simul_clouds_2d
     pass p0
     {
 		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
+		SetDepthStencilState( TestDepth, 0 );
 		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
@@ -143,17 +152,7 @@ float4 CoveragePS(v2f2 IN) : SV_TARGET
 
 float4 ShowDetailTexturePS(v2f2 IN) : SV_TARGET
 {
-    vec4 detail				=texture2D(imageTexture,IN.texCoords);
-	float opacity			=saturate(detail.a);
-	vec3 colour				=vec3(0.5,0.5,1.0);
-	if(opacity<=0)
-		return vec4(colour,1.0);
-	float light				=exp(-detail.r*extinction);
-	float scattered_light	=light;//detail.a*exp(-light*Y(coverage)*32.0);
-	colour					*=1.0-opacity;
-	colour					+=opacity*sunlight*(lightResponse.y+lightResponse.x)*scattered_light;
-	
-    return vec4(colour,1.0);
+	return ShowDetailTexture(imageTexture,IN.texCoords,sunlight,lightResponse);
 }
 
 float rand(vec2 co)

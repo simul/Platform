@@ -943,7 +943,7 @@ bool SimulCloudRenderer::FillRaytraceLayerTexture(int viewport_id)
 	HRESULT hr=S_OK;
 	B_RETURN(raytrace_layer_texture->LockRect(0,&lockedRect,NULL,NULL));
 	float *float_ptr=(float *)(lockedRect.pBits);
-	typedef std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_reverse_iterator iter;
+	typedef simul::clouds::CloudGeometryHelper::SliceVector::const_reverse_iterator iter;
 	static float cutoff=100000.f;
 	int j=0;
 	for(iter i=helper->GetSlices().rbegin();i!=helper->GetSlices().rend()&&j<128;i++,j++)
@@ -1032,18 +1032,18 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	helper->GetGrid(el_grid,grid_x);
 	simul::sky::float4 view_km=(const float*)cam_pos;
 	view_km*=0.001f;
-	typedef std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator iter;
+	typedef simul::clouds::CloudGeometryHelper::SliceVector::const_iterator iter;
 	static float cutoff=100000.f;	// Get the sunlight at this altitude:
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	for(iter i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++)
 	{
 		float distance=(*i)->layerDistance;
 		helper->MakeLayerGeometry(*i,6378000.f);
-		const std::vector<int> &quad_strip_vertices=helper->GetQuadStripIndices();
+		const simul::clouds::CloudGeometryHelper::IntVector &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		float fade=(*i)->layerFade;
 		bool start=true;
-		for(std::vector<const simul::clouds::CloudGeometryHelper::QuadStrip*>::const_iterator j=(*i)->quad_strips.begin();
+		for(simul::clouds::CloudGeometryHelper::QuadStripPtrVector::const_iterator j=(*i)->quad_strips.begin();
 			j!=(*i)->quad_strips.end();j++)
 		{
 			bool l=0;
@@ -1393,7 +1393,7 @@ bool SimulCloudRenderer::RenderDistances(int width,int height)
 	Vertext *lines=new Vertext[2*helper->GetSlices().size()];
 	int j=0;
 	float max_distance=helper->GetMaxCloudDistance();
-	for(std::vector<simul::clouds::CloudGeometryHelper::Slice*>::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,j++)
+	for(simul::clouds::CloudGeometryHelper::SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,j++)
 	{
 		if(!(*i))
 			continue;

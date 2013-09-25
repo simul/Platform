@@ -22,7 +22,7 @@ namespace simul
 		SIMUL_DIRECTX11_EXPORT_CLASS SimulOpticsRendererDX1x:public simul::camera::BaseOpticsRenderer
 		{
 		public:
-			SimulOpticsRendererDX1x();
+			SimulOpticsRendererDX1x(simul::base::MemoryInterface *m);
 			virtual ~SimulOpticsRendererDX1x();
 			virtual void RestoreDeviceObjects(void *device);
 			virtual void InvalidateDeviceObjects();

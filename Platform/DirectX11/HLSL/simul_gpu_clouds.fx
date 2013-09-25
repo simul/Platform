@@ -172,11 +172,10 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 		indirect_light				*=exp(-extinctions.y*density*stepLength);
 
 		if(density==0)
-			indirect_light			=1.0-(1.0-indirect_light)*exp(-extinctions.y*stepLength);
+			indirect_light			=1.0;//-(1.0-indirect_light)*exp(-5.0*stepLength);
 		targetTexture1[idx]			=indirect_light;
 	}
 }
-
 [numthreads(8,8,1)]
 void CS_GaussianFilter(uint3 sub_pos : SV_DispatchThreadID)
 {

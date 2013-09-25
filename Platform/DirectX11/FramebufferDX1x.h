@@ -74,6 +74,7 @@ namespace simul
 			ID3D1xRenderTargetView*				m_pOldRenderTarget;
 			ID3D1xDepthStencilView*				m_pOldDepthSurface;
 			D3D1x_VIEWPORT						m_OldViewports[16];
+
 			//! The texture the scene is rendered to.
 		public:
 			ID3D1xTexture2D*					hdr_buffer_texture;
