@@ -7,7 +7,7 @@
 #define sampler3D texture3D
 #define texture(tex,texCoords) tex.Sample(samplerState,texCoords)
 uniform sampler2D input_texture;
-uniform sampler1D density_texture;
+uniform sampler2D density_texture;
 uniform sampler3D loss_texture;
 uniform sampler3D insc_texture;
 uniform sampler2D optical_depth_texture;
