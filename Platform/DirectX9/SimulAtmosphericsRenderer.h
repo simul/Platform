@@ -57,8 +57,7 @@ public:
 	//! StartRender: sets up the rendertarget for atmospherics, and make it the current target. Call at the start of the frame's rendering.
 	void StartRender(void *context);
 	void FinishRender(void *context);
-	//! Not implemented for DirectX 9.
-	void RenderAsOverlay(void *,const void *,float,const simul::sky::float4 &){}
+	void RenderAsOverlay(void *,const void *,float,const simul::sky::float4 &);
 	void *GetDepthAlphaTexture()
 	{
 		return (void*)input_texture;

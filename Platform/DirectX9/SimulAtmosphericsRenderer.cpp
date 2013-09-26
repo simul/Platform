@@ -357,6 +357,51 @@ void SimulAtmosphericsRenderer::StartRender(void *)
 	static float depth_start=1.f;
 	hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 }
+#include "Simul/Camera/Camera.h"
+void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
+{
+	HRESULT hr=S_OK;
+	PIXBeginNamedEvent(0,"SimulAtmosphericsRenderer::RenderAsOverlay");
+	LPDIRECT3DBASETEXTURE9 depthTexture=(LPDIRECT3DBASETEXTURE9)depth_texture;
+	
+	simul::dx9::setTexture(effect,"lossTexture",loss_texture);
+	simul::dx9::setTexture(effect,"inscTexture",inscatter_texture);
+	simul::dx9::setTexture(effect,"skylTexture",skylight_texture);
+	
+	//simul::dx9::setTexture(effect,"illuminationTexture",illuminationTexture);
+	simul::dx9::setTexture(effect,"depthTexture",depthTexture);
+	//simul::dx9::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
+	
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
+	view(3,0)=view(3,1)=view(3,2)=0;
+	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
+
+	D3DXMATRIX p1=proj;
+	AtmosphericsPerViewConstants atmosphericsPerViewConstants;
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
+	
+	atmosphericsPerViewConstants.Apply(pContext);
+	
+	simul::sky::float4 light_dir	=skyInterface->GetDirectionToLight(cam_pos.z/1000.f);
+	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
+
+	SetAtmosphericsConstants(atmosphericsUniforms,exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
+	atmosphericsUniforms.Apply(pContext);
+	
+	ApplyPass(pContext,twoPassOverlayTechnique->GetPassByIndex(0));
+	simul::dx9::UtilityRenderer::DrawQuad(pContext);
+	ApplyPass(pContext,twoPassOverlayTechnique->GetPassByIndex(1));
+	simul::dx9::UtilityRenderer::DrawQuad(pContext);
+	
+	lossTexture->SetResource(NULL);
+	inscTexture->SetResource(NULL);
+	skylTexture->SetResource(NULL);
+	PIXEndNamedEvent();
+	atmosphericsPerViewConstants.Unbind(pContext);
+	atmosphericsUniforms.Unbind(pContext);
+	ApplyPass(pContext,twoPassOverlayTechnique->GetPassByIndex(1));
+}
 
 void SimulAtmosphericsRenderer::FinishRender(void *)
 {
@@ -388,9 +433,7 @@ bool SimulAtmosphericsRenderer::Render()
 	{
 		hr=effect->SetFloat(fadeInterp,fade_interp);
 		hr=effect->SetTexture(imageTexture,input_texture);
-#ifndef XBOX
 		m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-#endif
 		D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
 		float altitude_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 		hr=effect->SetFloat(heightAboveFogLayer,(altitude_km-fog_height_km)/(fade_distance_km));

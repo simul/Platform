@@ -141,7 +141,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	HRESULT hr=S_OK;
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
     ProfileBlock profileBlock(pContext,"Atmospherics:RenderAsOverlay");
-	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::RenderAsOverlay");
+	PIXBeginNamedEvent(0,"SimulAtmosphericsRendererDX11::RenderAsOverlay");
 	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
 	
 	lossTexture->SetResource(skyLossTexture_SRV);

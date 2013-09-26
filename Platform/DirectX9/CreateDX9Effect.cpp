@@ -432,6 +432,8 @@ LocalFree( lpMsgBuf );
 HRESULT CanUseTexFormat(IDirect3DDevice9 *device,D3DFORMAT f)
 {
 	IDirect3D9 *pd3d=0;
+	if(!device)
+		return S_OK;
 	HRESULT hr=device->GetDirect3D(&pd3d);
 	D3DDISPLAYMODE DisplayMode;
 	ZeroMemory(&DisplayMode,sizeof(D3DDISPLAYMODE));
@@ -489,15 +491,9 @@ void RT::RestoreDeviceObjects(IDirect3DDevice9 *m_pd3dDevice)
 		// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 		D3DVERTEXELEMENT9 decl[] = 
 		{
-	#ifdef XBOX
-			{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-			{ 0, 8, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
-			{ 0, 24, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-	#else
 			{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
 			{ 0, 16, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
 			{ 0, 32, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-	#endif
 			D3DDECL_END()
 		};
 		V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
@@ -544,24 +540,6 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&v);
 	m_pd3dDevice->GetTransform(D3DTS_WORLD,&w);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&p);
-#ifdef XBOX
-	float x=-1.f,y=1.f;
-	float w=2.f;
-	float h=-2.f;
-	struct Vertext
-	{
-		float x,y;
-		float r,g,b,a;
-		float tx,ty;
-	};
-	Vertext vertices[4] =
-	{
-		{x,			y,			0	,0},
-		{x+w,		y,			1.f	,0},
-		{x+w,		y+h,		1.f	,1.f},
-		{x,			y+h,		0	,1.f},
-	};
-#else
 	float x=(float)x1,y=(float)y1;
 	struct Vertext
 	{
@@ -577,15 +555,12 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 		{x+width,	y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
 		{x,			y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
 	};
-#endif
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
 	m_pd3dDevice->SetVertexDeclaration(RT::m_pBufferVertexDecl);
-#ifndef XBOX
 	m_pd3dDevice->SetTransform(D3DTS_VIEW,&ident);
 	m_pd3dDevice->SetTransform(D3DTS_WORLD,&ident);
 	m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&ident);
-#endif
 	unsigned passes=0;
 	if(eff)
 	{
@@ -820,7 +795,7 @@ HRESULT DrawFullScreenQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT effect)
 	D3DXMATRIX ivp;
 	D3DXMatrixInverse(&ivp,NULL,&vpt);
 	//hr=effect->SetMatrix(invViewProj,&ivp);
-	#ifdef XBOX
+#ifdef XBOX
 	float x=-1.f,y=1.f;
 	float w=2.f;
 	float h=-2.f;
@@ -873,6 +848,23 @@ HRESULT DrawFullScreenQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT effect)
 	return hr;
 }
 
+void DrawQuad(LPDIRECT3DDEVICE9 m_pd3dDevice)
+{
+	struct Vertext
+	{
+		float x,y,z;
+	};
+	Vertext vertices[4] =
+	{
+		{-1.f,	-1.f	,0.5f},
+		{ 1.f,	-1.f	,0.5f},
+		{ 1.f,	 1.f	,0.5f},
+		{-1.f,	 1.f	,0.5f},
+	};
+	m_pd3dDevice->SetFVF(D3DFVF_XYZ);
+	m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
+}
+
 bool IsDepthFormatOk(LPDIRECT3DDEVICE9 pd3dDevice,D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat)
 {
 	LPDIRECT3D9 d3d;
@@ -900,18 +892,7 @@ bool IsDepthFormatOk(LPDIRECT3DDEVICE9 pd3dDevice,D3DFORMAT DepthFormat, D3DFORM
 LPDIRECT3DSURFACE9 MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture)
 {
 	LPDIRECT3DSURFACE9 pRenderTarget;
-#ifdef XBOX
-	XGTEXTURE_DESC desc;
-	XGGetTextureDesc( pTexture, 0, &desc );
-	D3DSURFACE_PARAMETERS SurfaceParams = {0};
-	//HANDLE handle=&SurfaceParams;
-	HRESULT hr=m_pd3dDevice->CreateRenderTarget(
-		desc.Width, desc.Height, desc.Format, D3DMULTISAMPLE_NONE, 0, FALSE, &pRenderTarget,&SurfaceParams);
-	if(hr!=S_OK)
-		std::cerr<<"SimulWeatherRenderer::MakeRenderTarget - Failed to create render target!\n";
-#else
 	pTexture->GetSurfaceLevel(0,&pRenderTarget);
-#endif
 	return pRenderTarget;
 }
 
@@ -1027,4 +1008,18 @@ void RT::DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 	V_CHECK(last_d3dDevice->DrawPrimitiveUP(strip?D3DPT_LINESTRIP:D3DPT_LINELIST,strip?(vertex_count-1):(vertex_count/2),lines,(unsigned)sizeof(VertexXyzRgba)));
 	V_CHECK(m_pDebugEffect->EndPass());
 	V_CHECK(m_pDebugEffect->End());
+}
+
+
+namespace simul
+{
+	namespace dx9
+	{
+		void setTexture(LPD3DXEFFECT effect,const char *txt,LPDIRECT3DBASETEXTURE9 texture)
+		{
+			D3DXHANDLE h=effect->GetParameterByName(NULL,txt);
+			if(h)
+				effect->SetTexture(h,texture);
+		}
+	}
 }

@@ -11,17 +11,13 @@
 #define NOMINMAX
 #include "SimulSkyRenderer.h"
 
-#ifdef XBOX
-	#include <a>
-	static D3DPOOL d3d_memory_pool=D3DUSAGE_CPU_CACHED_MEMORY;
-#else
-	#include <tchar.h>
-	#include <d3d9.h>
-	#include <d3dx9.h>
-	#include <dxerr.h>
-	#include <string>
-	static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
-#endif
+#include <tchar.h>
+#include <d3d9.h>
+#include <d3dx9.h>
+#include <dxerr.h>
+#include <string>
+static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
+
 #include <fstream>
 
 #include "CreateDX9Effect.h"
@@ -319,6 +315,8 @@ void SimulSkyRenderer::CreateFadeTextures()
 	loss_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	loss_2d.RestoreDeviceObjects(m_pd3dDevice);
 	inscatter_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
+	inscatter_2d.SetDepthFormat(0);
+	inscatter_2d.SetFormat(D3DFMT_A32B32G32R32F);
 	inscatter_2d.RestoreDeviceObjects(m_pd3dDevice);
 	skylight_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	skylight_2d.RestoreDeviceObjects(m_pd3dDevice);
@@ -750,9 +748,9 @@ bool SimulSkyRenderer::RenderFades(void *,int w,int h)
 	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex());
 	RenderTexture(m_pd3dDevice,8	,y0+8		,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
 	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)loss_2d.GetColorTex());
-	RenderTexture(m_pd3dDevice,8	,y0+16+size,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
+	RenderTexture(m_pd3dDevice,8	,y0+16+size,size,size,(LPDIRECT3DBASETEXTURE9)loss_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
 	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)skylight_2d.GetColorTex());
-	RenderTexture(m_pd3dDevice,8	,y0+24+2*size,size,size,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
+	RenderTexture(m_pd3dDevice,8	,y0+24+2*size,size,size,(LPDIRECT3DBASETEXTURE9)skylight_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
 	int x=16+size;
 	int s=size/numAltitudes-4;
 	for(int i=0;i<numAltitudes;i++)
@@ -849,9 +847,12 @@ bool SimulSkyRenderer::RenderPointStars(void *,float exposure)
 
 bool SimulSkyRenderer::Render2DFades(void *)
 {
+	PIXBeginNamedEvent(0xF0F0F0F0,"Render2DFades");
+
+	UINT passes=1;
 	// Not needed if called from Render():
-	//m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
-	//m_pSkyEffect->SetFloat	(skyInterp		,skyKeyframer->GetInterpolation());
+	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
+	m_pSkyEffect->SetFloat	(skyInterp		,skyKeyframer->GetInterpolation());
 	m_pSkyEffect->SetTechnique(m_hTechnique3DTo2DFade);
 	m_pSkyEffect->SetTexture(fadeTexture,loss_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,loss_textures[1]);
@@ -864,90 +865,40 @@ bool SimulSkyRenderer::Render2DFades(void *)
 	float atc=GetAltitudeTextureCoordinate();
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
 	loss_2d.Activate(NULL);
-	DrawFullScreenQuad(m_pd3dDevice,m_pSkyEffect);
+	//	loss_2d.Clear(NULL,1.f,1.f,0.f,1.f,1.f);
+		m_pSkyEffect->Begin(&passes,0);
+		m_pSkyEffect->BeginPass(0);
+		DrawQuad(m_pd3dDevice);
+		m_pSkyEffect->EndPass();
+		m_pSkyEffect->End();
 	loss_2d.Deactivate(NULL);
 	m_pSkyEffect->SetTexture(fadeTexture,inscatter_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,inscatter_textures[1]);
 	inscatter_2d.Activate(NULL);
-	DrawFullScreenQuad(m_pd3dDevice,m_pSkyEffect);
+	//inscatter_2d.Clear(NULL,1.0,1.0,0.0,0.0,1.0);
+		m_pSkyEffect->Begin(&passes,0);
+		m_pSkyEffect->BeginPass(0);
+		DrawQuad(m_pd3dDevice);
+		m_pSkyEffect->EndPass();
+		m_pSkyEffect->End();
 	inscatter_2d.Deactivate(NULL);
 	
 	m_pSkyEffect->SetTexture(fadeTexture,skylight_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,skylight_textures[1]);
 	skylight_2d.Activate(NULL);
-	DrawFullScreenQuad(m_pd3dDevice,m_pSkyEffect);
+		m_pSkyEffect->Begin(&passes,0);
+		m_pSkyEffect->BeginPass(0);
+		DrawQuad(m_pd3dDevice);
+		m_pSkyEffect->EndPass();
+		m_pSkyEffect->End();
 	skylight_2d.Deactivate(NULL);
+	PIXEndNamedEvent();
 	return true;
 }
 
 bool SimulSkyRenderer::Render(void *context,bool blend)
 {
-	interp_at_last_render=skyKeyframer->GetInterpolation();
-	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
-	m_pSkyEffect->SetFloat	(skyInterp			,skyKeyframer->GetInterpolation());
-	EnsureTexturesAreUpToDate(context);
-	Render2DFades(context);
-	PIXBeginNamedEvent(0xFF00FFFF,"SimulSkyRenderer::Render");
-	HRESULT hr=S_OK;
-#ifndef XBOX
-	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
-#endif
-	D3DXMATRIX tmp1, tmp2;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
-
-	cam_dir.x=tmp1._31;
-	cam_dir.y=tmp1._32;
-	cam_dir.z=tmp1._33;
-
-	D3DXMatrixIdentity(&world);
-	//set up matrices
-	world._41=cam_pos.x;
-	world._42=cam_pos.y;
-	world._43=cam_pos.z;
-	D3DXMatrixMultiply(&tmp1, &world,&view);
-	D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
-	D3DXMatrixTranspose(&tmp1,&tmp2);
-	m_pSkyEffect->SetMatrix(worldViewProj,(const D3DXMATRIX *)(&tmp1));
-
-	m_pSkyEffect->SetTexture(inscTexture,(LPDIRECT3DBASETEXTURE9)inscatter_2d.GetColorTex());
-	m_pSkyEffect->SetTexture(skylTexture,(LPDIRECT3DBASETEXTURE9)skylight_2d.GetColorTex());
-
-	hr=m_pd3dDevice->SetVertexDeclaration( m_pVtxDecl );
-
-	m_pSkyEffect->SetTechnique(m_hTechniqueSky);
-	if(blend)
-	{
-		m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
-		m_pd3dDevice->SetRenderState(D3DRS_SRCBLEND,D3DBLEND_ONE);
-		m_pd3dDevice->SetRenderState(D3DRS_DESTBLEND,D3DBLEND_ONE);
-	}
-	else
-	{
-		m_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
-	}
-	simul::sky::float4 mie_rayleigh_ratio=skyKeyframer->GetMieRayleighRatio();
-	D3DXVECTOR4 ratio(mie_rayleigh_ratio);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight(cam_pos.z*0.001f));
-	if(y_vertical)
-		std::swap(sun_dir.y,sun_dir.z);
-
-	m_pSkyEffect->SetVector	(lightDirection		,&sun_dir);
-	m_pSkyEffect->SetVector	(mieRayleighRatio	,&ratio);
-	m_pSkyEffect->SetFloat	(hazeEccentricity	,skyKeyframer->GetMieEccentricity());
-	UINT passes=1;
-	hr=m_pSkyEffect->Begin( &passes, 0 );
-	for(unsigned i = 0 ; i < passes ; ++i )
-	{
-		hr=m_pSkyEffect->BeginPass(i);
-		hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLELIST,12,vertices,sizeof(Vertex_t));
-		hr=m_pSkyEffect->EndPass();
-	}
-	hr=m_pSkyEffect->End();
-	D3DXMatrixIdentity(&world);
-	PIXEndNamedEvent();
-	return (hr==S_OK);
+	return true;
 }
 #ifdef XBOX
 void SimulSkyRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

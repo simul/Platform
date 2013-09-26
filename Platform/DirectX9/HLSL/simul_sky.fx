@@ -127,8 +127,12 @@ struct vertexInput3Dto2D
     float3 position			: POSITION;
     float2 texCoords		: TEXCOORD0;
 };
+struct vertexInputPositionOnly
+{
+    float3 position		: POSITION;
+};
 
-struct vertexOutput3Dto2D
+struct vertexOutputPosTexc
 {
     float4 hPosition		: POSITION;
     float2 texCoords		: TEXCOORD0;
@@ -142,6 +146,13 @@ vertexOutput VS_Main(vertexInput IN)
     OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
     OUT.hPosition.z=OUT.hPosition.w;
     OUT.wDirection=normalize(IN.position.xyz);
+    return OUT;
+}
+vertexOutputPosTexc VS_FullScreen(vertexInputPositionOnly IN)
+{
+    vertexOutputPosTexc OUT;
+    OUT.hPosition	=float4(IN.position.xy,0.f,1.f);
+	OUT.texCoords	=0.5*(IN.position.xy+float2(1.0,1.0));
     return OUT;
 }
 
@@ -313,7 +324,6 @@ float4 PS_ShowSkyTexture( vertexOutputCS IN): color
     return float4(result.rgb,1);
 }
 
-
 vertexOutputCS VS_CrossSection(vertexInputCS IN)
 {
     vertexOutputCS OUT;
@@ -331,20 +341,21 @@ float4 PS_CrossSectionXZ( vertexOutputCS IN): color
     return float4(result.rgb,1);
 }
 
-vertexOutput3Dto2D VS_3D_to_2D(vertexInput3Dto2D IN)
+vertexOutputPosTexc VS_3D_to_2D(vertexInput3Dto2D IN)
 {
-    vertexOutput3Dto2D OUT;
-    OUT.hPosition =float4(IN.position,1.f);
-	OUT.texCoords=IN.texCoords;
+    vertexOutputPosTexc OUT;
+    OUT.hPosition	=float4(IN.position.xy,0.f,1.f);
+	OUT.texCoords	=IN.texCoords;
     return OUT;
 }
 
-float4 PS_3D_to_2D(vertexOutput3Dto2D IN): color
+float4 PS_3D_to_2D(vertexOutputPosTexc IN): color
 {
-	float3 texc=float3(altitudeTexCoord,IN.texCoords.yx)*texelScale+texelOffset;
-	float4 colour1=tex3D(fade_texture,texc);
-	float4 colour2=tex3D(fade_texture_2,texc);
-	float4 result=lerp(colour1,colour2,skyInterp);
+	float3 texc		=float3(altitudeTexCoord,IN.texCoords.yx)*texelScale+texelOffset;
+	float4 colour1	=tex3D(fade_texture,texc);
+	float4 colour2	=tex3D(fade_texture_2,texc);
+	float4 result	=lerp(colour1,colour2,skyInterp);
+	
     return result;
 }
 
@@ -426,6 +437,7 @@ technique simul_sun
         AlphaBlendEnable = true;
 		SrcBlend = One;
 		DestBlend = One;
+        CullMode = None;
 // Don't write alpha, as that's depth!
 		ColorWriteEnable=7;
 #ifndef XBOX
@@ -446,6 +458,7 @@ technique simul_planet
         AlphaBlendEnable = true;
 		SrcBlend = SrcAlpha;
 		DestBlend = InvSrcAlpha;
+        CullMode = None;
 // Don't write alpha, as that's depth!
 		ColorWriteEnable=7;
 #ifndef XBOX
@@ -464,6 +477,7 @@ technique simul_flare
 		zenable = false;
 		zwriteenable = false;
         AlphaBlendEnable = true;
+        CullMode = None;
 		SrcBlend = One;
 		DestBlend = One;
 // Don't write alpha, as that's depth!
@@ -483,6 +497,7 @@ technique simul_query
 		zenable = true;
 		zwriteenable = false;
         AlphaBlendEnable = true;
+        CullMode = None;
 		SrcBlend = One;
 		DestBlend = One;
 // Don't write alpha, as that's depth!
@@ -499,6 +514,7 @@ technique simul_show_fade
     {		
 		VertexShader = compile vs_3_0 VS_ShowFade();
 		PixelShader  = compile ps_3_0 PS_ShowFade();
+        CullMode = None;
 		zenable = false;
 		zwriteenable = false;
         AlphaBlendEnable = false;
@@ -514,6 +530,7 @@ technique simul_show_sky_texture
     {		
 		VertexShader = compile vs_3_0 VS_ShowFade();
 		PixelShader  = compile ps_3_0 PS_ShowSkyTexture();
+        CullMode = None;
 		zenable = false;
 		zwriteenable = false;
         AlphaBlendEnable = false;
@@ -529,12 +546,11 @@ technique simul_fade_cross_section_xz
     {		
 		VertexShader = compile vs_3_0 VS_CrossSection();
 		PixelShader  = compile ps_3_0 PS_CrossSectionXZ();
+        CullMode = None;
 		zenable = false;
 		zwriteenable = false;
         AlphaBlendEnable = false;
-#ifndef XBOX
 		lighting = false;
-#endif
     }
 }
 
@@ -542,14 +558,13 @@ technique simul_fade_3d_to_2d
 {
     pass p0 
     {		
-		VertexShader = compile vs_3_0 VS_3D_to_2D();
+		VertexShader = compile vs_3_0 VS_FullScreen();
 		PixelShader  = compile ps_3_0 PS_3D_to_2D();
+        CullMode = None;
 		zenable = false;
 		zwriteenable = false;
         AlphaBlendEnable = false;
-#ifndef XBOX
 		lighting = false;
-#endif
     }
 }
 

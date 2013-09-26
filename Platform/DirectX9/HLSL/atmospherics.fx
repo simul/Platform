@@ -33,20 +33,31 @@ sampler2D image_texture= sampler_state
 	AddressV = Clamp;
 };
 
-texture lossTexture1;
+texture lossTexture;
 sampler2D sky_loss_texture_1= sampler_state 
 {
-    Texture = <lossTexture1>;
+    Texture = <lossTexture>;
     MipFilter = LINEAR;
     MinFilter = LINEAR;
     MagFilter = LINEAR;
 	AddressU = Clamp;
 	AddressV = Mirror;
 };
-texture inscatterTexture1;
+texture inscTexture;
 sampler2D sky_inscatter_texture_1= sampler_state 
 {
-    Texture = <inscatterTexture1>;
+    Texture = <inscTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+	AddressU = Clamp;
+	AddressV = Mirror;
+};
+
+texture skylTexture;
+sampler2D skylight_texture sampler_state 
+{
+    Texture = <skylTexture>;
     MipFilter = LINEAR;
     MinFilter = LINEAR;
     MagFilter = LINEAR;

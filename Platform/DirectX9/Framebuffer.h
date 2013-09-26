@@ -24,8 +24,6 @@ public:
 	void Deactivate(void *);
 	void Clear(void *,float,float,float,float,float depth,int mask=0);
 	void ClearColour(void *,float,float,float,float);
-	void DeactivateAndRender(void *,bool blend);
-	void Render(void *,bool blend);
 	void SetFormat(int f);
 	void SetDepthFormat(int f);
 	void* GetColorTex()

@@ -206,11 +206,20 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	}
 	D3DXMatrixIdentity(&world);
     if(!SUCCEEDED(pd3dDevice->BeginScene()))
-		return;
-	static simul::base::Timer timer;
-	timer.TimeSum=0.f;
-	timer.StartTime();
-	//pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF00FF00,1.0f,0L);
+		return;/*
+V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF00FF00,1.0f,0L));
+		
+	Framebuffer					loss_2d;
+	loss_2d.SetWidthAndHeight(32,32);
+	loss_2d.RestoreDeviceObjects(pd3dDevice);
+	loss_2d.Activate(NULL);
+		loss_2d.Clear(NULL,1.f,1.f,0.f,1.f,1.f);
+V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.0f,0L));
+	loss_2d.Deactivate(NULL);
+	loss_2d.InvalidateDeviceObjects();*/
+#if 1
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->PreRenderUpdate(NULL,fTimeStep);
 	//since our skybox will blend based on alpha we have to clear the backbuffer to this alpha value
 	pd3dDevice->SetRenderState( D3DRS_ZENABLE,FALSE);
 	pd3dDevice->SetRenderState( D3DRS_ZWRITEENABLE,FALSE);
@@ -219,18 +228,14 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	// Make left-handed matrix if y is vertical
 	pd3dDevice->SetTransform(D3DTS_PROJECTION,&proj);
 	
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->PreRenderUpdate(NULL,fTimeStep);
 
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 		simulHDRRenderer->StartRender();
-//	simulWeatherRenderer->SetExposureHint(simulHDRRenderer->GetExposure());
 	}
 	else
 	{
 		pd3dDevice->Clear(0L,NULL,D3DCLEAR_ZBUFFER|D3DCLEAR_TARGET,0xFF000000,1.0f,0L);
-//	simulWeatherRenderer->SetExposureHint(1.0f);
 	}
 	if(simulWeatherRenderer)
 	{
@@ -243,11 +248,9 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 		simulTerrainRenderer->SetMatrices(view,proj);
 		simulTerrainRenderer->Render(NULL,1.f);
 	}
-	//if(simulHDRRenderer&&UseHdrPostprocessor)
-	//	simulHDRRenderer->CopyDepthAlpha();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
 		simulWeatherRenderer->GetAtmosphericsRenderer()->FinishRender(pd3dDevice);
-	timer.UpdateTime();
+
 	if(simulWeatherRenderer)
 	{
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
@@ -278,17 +281,13 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 			simulWeatherRenderer->GetCloudRenderer()->RenderLightVolume();
 		simulWeatherRenderer->RenderPrecipitation(NULL);
 	}
-	timer.UpdateTime();
-	simul::math::FirstOrderDecay(weather_timing,timer.Time,1.f,fTimeStep);
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&ShowFades)
 		simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dDevice,width,height);
 
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		simulHDRRenderer->FinishRender(pd3dDevice);
-	timer.UpdateTime();
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(NULL,width,height);
-	simul::math::FirstOrderDecay(hdr_timing,timer.Time,1.f,fTimeStep);
 
 	if(ShowCloudCrossSections&&simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())
 	{
@@ -302,9 +301,8 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	
 	if(simulTerrainRenderer&&ShowMap)
 		simulTerrainRenderer->RenderMap(width);
+#endif
 	pd3dDevice->EndScene();
-	timer.FinishTime();
-	simul::math::FirstOrderDecay(render_timing,timer.TimeSum,1.f,fTimeStep);
 }
 
 

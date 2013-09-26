@@ -13,17 +13,8 @@ Framebuffer::Framebuffer()
 	,m_pOldDepthSurface(NULL)
 	,depth_format((D3DFORMAT)0)
 {
-#ifndef XBOX
 	texture_format=D3DFMT_A16B16G16R16F;
-#else
-	texture_format=D3DFMT_LIN_A16B16G16R16F;
-#endif
-	//if(hr!=S_OK)
-#ifndef XBOX
-		texture_format=D3DFMT_A32B32G32R32F;
-#else
-		texture_format=D3DFMT_LIN_A32B32G32R32F;
-#endif
+	texture_format=D3DFMT_A32B32G32R32F;
 }
 
 Framebuffer::~Framebuffer()
@@ -101,21 +92,21 @@ void Framebuffer::Activate(void *)
 	m_pOldRenderTarget=NULL;
 	m_pOldDepthSurface=NULL;
 	D3DSURFACE_DESC desc;
-	buffer_texture->GetLevelDesc(0,&desc);
-	HRESULT hr=m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
+	V_CHECK(buffer_texture->GetLevelDesc(0,&desc));
+	V_CHECK(m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget));
 	m_pOldRenderTarget->GetDesc(&desc);
-	hr=m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
-	hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
+	V_CHECK(m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface));
+	V_CHECK(m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget));
 	if(m_pBufferDepthSurface)
-		m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
+		V_CHECK(m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface));
 	D3DVIEWPORT9 viewport;
 	viewport.Width	=Width;
 	viewport.Height	=Height;
-	viewport.X		=Width;
-	viewport.Y		=Height;
+	viewport.X		=0;
+	viewport.Y		=0;
 	viewport.MinZ	=0.f;
 	viewport.MaxZ	=1.f;
-	m_pd3dDevice->SetViewport(&viewport);
+	V_CHECK(m_pd3dDevice->SetViewport(&viewport));
 }
 
 void Framebuffer::ActivateViewport(void* context,float viewportX, float viewportY, float viewportW, float viewportH)
@@ -151,14 +142,4 @@ void Framebuffer::Clear(void *,float r,float g,float b,float a,float depth,int m
 void Framebuffer::ClearColour(void *context,float r,float g,float b,float a)
 {
 	Clear(context,r,g,b,a,0.f,D3DCLEAR_TARGET);
-}
-
-void Framebuffer::DeactivateAndRender(void *context,bool blend)
-{
-	Deactivate(NULL);
-	Render(context,blend);
-}
-void Framebuffer::Render(void *,bool blend)
-{
-	blend;
 }
