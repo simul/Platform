@@ -1,6 +1,9 @@
 #ifndef SIMUL_INSCATTER_FNS_HLSL
 #define SIMUL_INSCATTER_FNS_HLSL
+
+#ifndef pi
 #define pi (3.1415926536)
+#endif
 
 float HenyeyGreenstein(float g,float cos0)
 {

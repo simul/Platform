@@ -58,10 +58,10 @@ public:
 	void InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
-	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
+	//! \deprecated This function is no longer used, as the sky is drawn by the atmospherics renderer. See simul::sky::BaseAtmosphericsRenderer.
 	bool Render(void *context,bool blend);
-	bool RenderPointStars(void *context,float exposure_hint);
-	void RenderSun(void *context,float exposure_hint);
+	bool RenderPointStars(void *context,float exposure);
+	void RenderSun(void *context,float exposure);
 	//! Draw the fade textures to screen
 	bool RenderFades(void *context,int w,int h);
 	virtual void RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
@@ -144,7 +144,7 @@ void SetConstantsForPlanet(SkyConstants &skyConstants,const float *viewmatrix,co
 	simul::dx11::Framebuffer*			inscatter_2d;
 	simul::dx11::Framebuffer*			overcast_2d;
 	simul::dx11::Framebuffer*			skylight_2d;
-			TextureStruct						light_table_2d;
+	TextureStruct						light_table_2d;
 
 	// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
 	simul::dx11::Framebuffer			illumination_fb;

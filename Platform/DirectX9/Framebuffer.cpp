@@ -3,6 +3,9 @@
 #include "Simul/Platform/DirectX9/Macros.h"
 #include "Simul/Platform/DirectX9/CreateDX9Effect.h"
 
+using namespace simul;
+using namespace dx9;
+
 Framebuffer::Framebuffer()
 	:m_pd3dDevice(NULL)
 	,buffer_depth_texture(NULL)
@@ -131,6 +134,14 @@ void Framebuffer::Deactivate(void *)
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
+
+void Framebuffer::DeactivateDepth(void*)
+{
+	if(m_pOldDepthSurface)
+		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
+	SAFE_RELEASE(m_pOldDepthSurface);
+}
+
 void Framebuffer::Clear(void *,float r,float g,float b,float a,float depth,int mask)
 {
 	// Don't yet support reverse depth on dx9.

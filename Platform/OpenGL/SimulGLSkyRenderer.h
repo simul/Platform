@@ -60,7 +60,7 @@ public:
 	virtual		const float *GetFastInscatterLookup(void* context,float distance_texcoord,float elevation_texcoord);
 
 	void		RenderPlanet(void *,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void		RenderSun(void *context,float exposure_hint);
+	void		RenderSun(void *context,float exposure);
 
 	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o);
 

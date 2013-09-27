@@ -48,9 +48,12 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	simulWeatherRenderer=new SimulWeatherRenderer(env,NULL,true,w,h,true,true);
 
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
+	hdrFramebuffer.SetWidthAndHeight(w,h);
+	hdrFramebuffer.SetFormat(D3DFMT_A32B32G32R32F);
+	hdrFramebuffer.SetDepthFormat(D3DFMT_D32);
 	if(simulHDRRenderer&&simulWeatherRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
-	simulTerrainRenderer=NULL;//new SimulTerrainRenderer();
+	simulTerrainRenderer=new SimulTerrainRenderer(NULL);
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		simulWeatherRenderer->GetSkyRenderer()->EnableMoon(true);
 	SetYVertical(false);
@@ -115,6 +118,7 @@ void Direct3D9Renderer::ReverseDepthChanged()
 
 HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 {
+	hdrFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	RT::RestoreDeviceObjects(pd3dDevice);
 	RT::SetScreenSize(width,height);
 	float weather_restore_time=0.f,hdr_restore_time=0.f,terrain_restore_time=0.f,optics_restore_time=0.f;
@@ -132,6 +136,8 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 		simulHDRRenderer->SetBufferSize(width,height);
 		simulHDRRenderer->RestoreDeviceObjects(pd3dDevice);
 	}
+	hdrFramebuffer.SetWidthAndHeight(width,height);
+	hdrFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	timer.UpdateTime();
 	hdr_restore_time=timer.Time/1000.f;
 	if(simulTerrainRenderer)
@@ -228,33 +234,34 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 	// Make left-handed matrix if y is vertical
 	pd3dDevice->SetTransform(D3DTS_PROJECTION,&proj);
 	
-
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
-		simulHDRRenderer->StartRender();
+		hdrFramebuffer.Activate(NULL);
+		static float depth_start=1.f;
+		pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 	}
 	else
 	{
 		pd3dDevice->Clear(0L,NULL,D3DCLEAR_ZBUFFER|D3DCLEAR_TARGET,0xFF000000,1.0f,0L);
 	}
-	if(simulWeatherRenderer)
-	{
-		simulWeatherRenderer->RenderSkyAsOverlay(pd3dDevice,exposure,UseSkyBuffer,false,NULL,NULL,viewport_id,simul::sky::float4(0,0,1.f,1.f),true);
-	}
-	if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-		simulWeatherRenderer->GetAtmosphericsRenderer()->StartRender(NULL);
+	//if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
+	//	simulWeatherRenderer->GetAtmosphericsRenderer()->StartRender(NULL);
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
 		simulTerrainRenderer->SetMatrices(view,proj);
 		simulTerrainRenderer->Render(NULL,1.f);
 	}
-	if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-		simulWeatherRenderer->GetAtmosphericsRenderer()->FinishRender(pd3dDevice);
+	if(simulHDRRenderer&&UseHdrPostprocessor)
+	{
+		hdrFramebuffer.DeactivateDepth(NULL);
+	}
+	//if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
+	//	simulWeatherRenderer->GetAtmosphericsRenderer()->FinishRender(pd3dDevice);
 
 	if(simulWeatherRenderer)
 	{
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
-		simulWeatherRenderer->RenderLateCloudLayer(pd3dDevice,exposure,true,0,simul::sky::float4(0,0,1.f,1.f));
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dDevice,exposure,UseSkyBuffer,false,NULL,NULL,viewport_id,simul::sky::float4(0,0,1.f,1.f),true);
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{
@@ -263,7 +270,7 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 			{
 				simul::sky::float4 dir,light,cam_pos;
 				dir=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
-			//CalcCameraPosition(cam_pos);
+			
 				GetCameraPosVector(view,false,cam_pos);
 				light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 				simulOpticsRenderer->SetMatrices(view,proj);
@@ -277,26 +284,31 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 		}
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 		simulWeatherRenderer->RenderLightning(NULL,viewport_id);
-		if(ShowLightVolume&&simulWeatherRenderer->GetCloudRenderer())
-			simulWeatherRenderer->GetCloudRenderer()->RenderLightVolume();
 		simulWeatherRenderer->RenderPrecipitation(NULL);
 	}
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&ShowFades)
 		simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dDevice,width,height);
 
 	if(simulHDRRenderer&&UseHdrPostprocessor)
-		simulHDRRenderer->FinishRender(pd3dDevice);
-	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-		simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(NULL,width,height);
-
-	if(ShowCloudCrossSections&&simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())
 	{
-		simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dDevice,width,height);
-	//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
+		hdrFramebuffer.Deactivate(pd3dDevice);
+		simulHDRRenderer->Render(pd3dDevice,hdrFramebuffer.GetColorTex());
 	}
-	if(Show2DCloudTextures&&simulWeatherRenderer&&simulWeatherRenderer->Get2DCloudRenderer())
+	if(simulWeatherRenderer)
 	{
-	//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
+		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(NULL,width,height);
+		if(ShowLightVolume&&simulWeatherRenderer->GetCloudRenderer())
+			simulWeatherRenderer->GetCloudRenderer()->RenderLightVolume();
+		if(ShowCloudCrossSections&&simulWeatherRenderer&&simulWeatherRenderer->GetCloudRenderer())
+		{
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dDevice,width,height);
+		//	simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
+		}
+		if(Show2DCloudTextures&&simulWeatherRenderer&&simulWeatherRenderer->Get2DCloudRenderer())
+		{
+		//	simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(width,height);
+		}
 	}
 	
 	if(simulTerrainRenderer&&ShowMap)
@@ -314,6 +326,7 @@ LRESULT Direct3D9Renderer::MsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 void Direct3D9Renderer::OnLostDevice()
 {
+	hdrFramebuffer.InvalidateDeviceObjects();
 	RT::InvalidateDeviceObjects();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();

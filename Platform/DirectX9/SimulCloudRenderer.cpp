@@ -20,6 +20,9 @@
 #include <math.h>
 #include "Simul/Clouds/lightningRenderInterface.h"
 
+using namespace simul;
+using namespace dx9;
+
 #ifdef XBOX
 	static D3DPOOL d3d_memory_pool=D3DUSAGE_CPU_CACHED_MEMORY;
 #else
@@ -250,17 +253,20 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 									  D3DPOOL_DEFAULT, &unitSphereVertexBuffer,
 									  NULL));
 	PosVert_t *unit_sphere_vertices;
-	V_CHECK(unitSphereVertexBuffer->Lock(0,sizeof(PosVert_t),(void**)&unit_sphere_vertices,0 ));
-	PosVert_t *V=unit_sphere_vertices;
-	for(size_t i=0;i<helper->GetVertices().size();i++)
+	if(unitSphereVertexBuffer)
 	{
-		const simul::clouds::CloudGeometryHelper::Vertex &v=helper->GetVertices()[i];
-		V->position.x=v.x;
-		V->position.y=v.y;
-		V->position.z=v.z;
-		V++;
+		V_CHECK(unitSphereVertexBuffer->Lock(0,sizeof(PosVert_t),(void**)&unit_sphere_vertices,0 ));
+		PosVert_t *V=unit_sphere_vertices;
+		for(size_t i=0;i<helper->GetVertices().size();i++)
+		{
+			const simul::clouds::CloudGeometryHelper::Vertex &v=helper->GetVertices()[i];
+			V->position.x=v.x;
+			V->position.y=v.y;
+			V->position.z=v.z;
+			V++;
+		}
+		V_CHECK(unitSphereVertexBuffer->Unlock());
 	}
-	V_CHECK(unitSphereVertexBuffer->Unlock());
 	unsigned num_indices=(unsigned)helper->GetQuadStripIndices().size();
 	SAFE_RELEASE(unitSphereIndexBuffer);
 	V_CHECK(m_pd3dDevice->CreateIndexBuffer(num_indices*sizeof(unsigned),D3DUSAGE_WRITEONLY,D3DFMT_INDEX32,
@@ -1120,7 +1126,7 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 {
 	std::wstring fn=simul::base::StringToWString(filename);
 	std::wstring ext=L".png";
-	Framebuffer fb;
+	simul::dx9::Framebuffer fb;
 	static D3DFORMAT f=D3DFMT_A8R8G8B8;
 	fb.SetFormat(f);
 	fb.SetWidthAndHeight(cloud_tex_width_x*2,cloud_tex_length_y*cloud_tex_depth_z);

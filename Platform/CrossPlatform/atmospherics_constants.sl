@@ -1,8 +1,7 @@
 #ifndef ATMOSPHERICS_CONSTANTS_SL
 #define ATMOSPHERICS_CONSTANTS_SL
 
-uniform_buffer AtmosphericsUniforms SIMUL_BUFFER_REGISTER(11)
-{
+SIMUL_CONSTANT_BUFFER(AtmosphericsUniforms,11)
 	uniform vec3 lightDir;
 	uniform float pad1;
 	uniform vec3 mieRayleighRatio;
@@ -25,10 +24,9 @@ uniform_buffer AtmosphericsUniforms SIMUL_BUFFER_REGISTER(11)
 	uniform float fogScaleHeight;
     uniform vec3 infraredIntegrationFactors;
 	uniform float fogDensity;
-};
+SIMUL_CONSTANT_BUFFER_END
 
-uniform_buffer AtmosphericsPerViewConstants SIMUL_BUFFER_REGISTER(12)
-{
+SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform mat4 invViewProj;
 	uniform mat4 invShadowMatrix;
 	uniform mat4 shadowMatrix;
@@ -41,16 +39,6 @@ uniform_buffer AtmosphericsPerViewConstants SIMUL_BUFFER_REGISTER(12)
 	uniform vec3 depthToLinFadeDistParams;
 	uniform float startZMetres;
 	uniform float shadowRange;
-};
+SIMUL_CONSTANT_BUFFER_END
 
-/*
-maybe use  D3D11_RESOURCE_MISC_BUFFER_STRUCTURED for godrays_distances
-
-On Orbis See initAsRegularBuffer 
-
-StructuredBuffer<unsigned int> indexBufferRO;
-RWStructuredBuffer<unsigned int> indexBufferRW;
-Orbis
-RegularBuffer<unsigned int> indexBufferRO : register( t0 );
-RW_RegularBuffer<unsigned int> indexBufferRW : register( u0 ); */
 #endif

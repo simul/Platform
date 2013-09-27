@@ -28,6 +28,6 @@ uniform_buffer SkyConstants SIMUL_BUFFER_REGISTER(10)
 	float illumination_alt_texc;	// Due to earth shadow
 	uint cycled_index;
 	float a3;
-};
+SIMUL_CONSTANT_BUFFER_END
 
 #endif

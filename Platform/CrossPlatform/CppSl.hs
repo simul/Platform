@@ -26,6 +26,9 @@
 
 	#define uniform_buffer ALIGN_16 cbuffer
 
+	#define SIMUL_CONSTANT_BUFFER(name,buff_num) struct name {
+	#define SIMUL_CONSTANT_BUFFER_END };
+
 	struct mat2
 	{
 		float m[8];

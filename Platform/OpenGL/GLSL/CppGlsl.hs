@@ -13,6 +13,8 @@
 
 #ifndef __cplusplus
 	#define uniform_buffer layout(std140) uniform
+	#define SIMUL_CONSTANT_BUFFER(name,buff_num) uniform_buffer name {
+	#define SIMUL_CONSTANT_BUFFER_END };
 #include "saturate.glsl"
 	#define lerp mix
 	#define atan2 atan

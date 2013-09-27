@@ -39,6 +39,10 @@ namespace simul
 			{
 				return (void*)m_pCubeEnvMapSRV;
 			}
+			void* GetDepthTex()
+			{
+				return NULL;
+			}
 			bool IsValid()
 			{
 				return (m_pCubeEnvMapSRV != NULL);

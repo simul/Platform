@@ -479,7 +479,7 @@ void SimulSkyRendererDX1x::SetConstantsForPlanet(SkyConstants &skyConstants,cons
 	skyConstants.lightDir=sun2;
 }
 
-void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
+void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)c;
 	float alt_km=0.001f*(cam_pos.z);
@@ -494,7 +494,7 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure_hint)
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
 	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
-	sunlight.w=1.0f/(max_bright*exposure_hint);
+	sunlight.w=1.0f/(max_bright*exposure);
 	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,sun_dir);
@@ -775,12 +775,12 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 	simul::dx11::UtilityRenderer::SetScreenSize(width,height);
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
 
-	ID3D1xEffectTechnique*	techniqueShowSky		=m_pSkyEffect->GetTechniqueByName("simul_show_sky_texture");
-	ID3D1xEffectTechnique*	techniqueShowFade		=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");
-	ID3D1xEffectShaderResourceVariable*	inscTexture	=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
+	ID3D1xEffectTechnique*	techniqueShowSky				=m_pSkyEffect->GetTechniqueByName("simul_show_sky_texture");
+	ID3D1xEffectTechnique*	techniqueShowFade				=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");
+	ID3D1xEffectShaderResourceVariable*	inscTexture			=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
 
-	ID3D1xEffectTechnique*	techniqueShowLightTable		=m_pSkyEffect->GetTechniqueByName("show_light_table");
-	ID3D1xEffectTechnique*	techniqueShow2DLightTable	=m_pSkyEffect->GetTechniqueByName("show_2d_light_table");
+	ID3D1xEffectTechnique*	techniqueShowLightTable			=m_pSkyEffect->GetTechniqueByName("show_light_table");
+	ID3D1xEffectTechnique*	techniqueShow2DLightTable		=m_pSkyEffect->GetTechniqueByName("show_2d_light_table");
 	ID3D1xEffectTechnique*	techniqueShowIlluminationBuffer	=m_pSkyEffect->GetTechniqueByName("show_illumination_buffer");
 	
 	int y=y0+8;
@@ -797,7 +797,7 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 	y+=size+8;
 	inscTexture->SetResource(illumination_fb.buffer_texture_SRV);
 	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowIlluminationBuffer);
-
+	int x=16+size;
 	y=y0+8;
 	bool show_3=gpuSkyGenerator.GetEnabled()&&(skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator);
 

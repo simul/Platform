@@ -235,6 +235,7 @@
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CrossPlatform\atmospherics.sl" />
     <None Include="..\CrossPlatform\atmospherics_constants.sl" />
     <None Include="..\CrossPlatform\cloud_shadow.sl" />
     <None Include="..\CrossPlatform\CppSl.hs" />
