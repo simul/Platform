@@ -112,16 +112,43 @@ void Framebuffer::Activate(void *)
 	V_CHECK(m_pd3dDevice->SetViewport(&viewport));
 }
 
+void Framebuffer::ActivateColour(void *context,const float viewportXYWH[4])
+{
+	m_pOldRenderTarget=NULL;
+	m_pOldDepthSurface=NULL;
+	D3DSURFACE_DESC desc;
+	V_CHECK(buffer_texture->GetLevelDesc(0,&desc));
+	V_CHECK(m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget));
+	m_pOldRenderTarget->GetDesc(&desc);
+	V_CHECK(m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface));
+	V_CHECK(m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget));
+	V_CHECK(m_pd3dDevice->SetDepthStencilSurface(NULL));
+	SetViewport(context,viewportXYWH[0],viewportXYWH[1],viewportXYWH[2],viewportXYWH[3]);
+	/*D3DVIEWPORT9 viewport;
+	viewport.Width	=viewportXYWH[2];
+	viewport.Height	=viewportXYWH[3];
+	viewport.X		=viewportXYWH[0];
+	viewport.Y		=viewportXYWH[1];
+	viewport.MinZ	=0.f;
+	viewport.MaxZ	=1.f;
+	V_CHECK(m_pd3dDevice->SetViewport(&viewport));*/
+}
+
 void Framebuffer::ActivateViewport(void* context,float viewportX, float viewportY, float viewportW, float viewportH)
 {
 	Activate(context);
+	SetViewport(context,viewportX,viewportY,viewportW,viewportH);
+}
+
+void Framebuffer::SetViewport(void*,float viewportX, float viewportY, float viewportW, float viewportH,float Z,float D)
+{
 	D3DVIEWPORT9 viewport;
 	viewport.Width	=(int)(viewportW*Width);
 	viewport.Height	=(int)(viewportH*Height);
 	viewport.X		=(int)(viewportX*Width);
 	viewport.Y		=(int)(viewportY*Height);
-	viewport.MinZ	=0.f;
-	viewport.MaxZ	=1.f;
+	viewport.MinZ	=Z;
+	viewport.MaxZ	=D;
 	m_pd3dDevice->SetViewport(&viewport);
 }
 

@@ -339,21 +339,40 @@ HRESULT hr=S_OK;
 	SAFE_RELEASE(pContext)
 }
 
+void Framebuffer::ActivateColour(void *context,const float viewportXYWH[4])
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	if(!pContext)
+		return;
+	SaveOldRTs(context);
+	if(!hdr_buffer_texture&&!buffer_depth_texture)
+		CreateBuffers();
+	if(m_pHDRRenderTarget)
+		pContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
+	else 
+		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,NULL);
+	SetViewport(context,viewportXYWH[0],viewportXYWH[1],viewportXYWH[2],viewportXYWH[3],0,1.f);
+
+}
+
 void Framebuffer::ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH)
 {
 	Activate(context);
-	D3D11_VIEWPORT viewport;
-	// Setup the viewport for rendering.
-	viewport.Width = floorf((float)Width*viewportW + 0.5f);
-	viewport.Height = floorf((float)Height*viewportH + 0.5f);
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = floorf((float)Width*viewportX + 0.5f);
-	viewport.TopLeftY = floorf((float)Height*viewportY + 0.5f);
+	SetViewport(context,viewportX,viewportY,viewportW,viewportH,0,1.f);
+}
 
-	// Create the viewport.
+void Framebuffer::SaveOldRTs(void *context)
+{
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-	pContext->RSSetViewports(1, &viewport);
+	pContext->RSGetViewports(&num_v,NULL);
+	if(num_v>0)
+		pContext->RSGetViewports(&num_v,m_OldViewports);
+	m_pOldRenderTarget	=NULL;
+	m_pOldDepthSurface	=NULL;
+	pContext->OMGetRenderTargets(	1,
+									&m_pOldRenderTarget,
+									&m_pOldDepthSurface
+									);
 }
 
 void Framebuffer::Activate(void *context)
@@ -361,33 +380,28 @@ void Framebuffer::Activate(void *context)
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	if(!pContext)
 		return;
+	SaveOldRTs(context);
 	if(!hdr_buffer_texture&&!buffer_depth_texture)
 		CreateBuffers();
-	HRESULT hr=S_OK;
-	pContext->RSGetViewports(&num_v,NULL);
-	if(num_v>0)
-		pContext->RSGetViewports(&num_v,m_OldViewports);
-
-	m_pOldRenderTarget	=NULL;
-	m_pOldDepthSurface	=NULL;
-	pContext->OMGetRenderTargets(	1,
-												&m_pOldRenderTarget,
-												&m_pOldDepthSurface
-												);
 	if(m_pHDRRenderTarget)
 		pContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
 	else 
 		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
+	SetViewport(context,0,0,1.f,1.f,0,1.f);
+}
+
+void Framebuffer::SetViewport(void *context,float X,float Y,float W,float H,float Z,float D)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	if(!pContext)
+		return;
 	D3D11_VIEWPORT viewport;
-	// Setup the viewport for rendering.
-	viewport.Width = (float) Width;
-	viewport.Height = (float)Height;
+	viewport.Width = floorf((float)Width*W + 0.5f);
+	viewport.Height = floorf((float)Height*H + 0.5f);
+	viewport.TopLeftX = floorf((float)Width*X + 0.5f);
+	viewport.TopLeftY = floorf((float)Height*Y+ 0.5f);
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0.f;
-	viewport.TopLeftY = 0.f;
-
-	// Create the viewport.
 	pContext->RSSetViewports(1, &viewport);
 }
 
@@ -400,27 +414,9 @@ void Framebuffer::ActivateColour(void *context)
 		CreateBuffers();
 	if(!m_pHDRRenderTarget)
 		return;
-	pContext->RSGetViewports(&num_v,NULL);
-	if(num_v>0)
-		pContext->RSGetViewports(&num_v,m_OldViewports);
-
-	m_pOldRenderTarget	=NULL;
-	m_pOldDepthSurface	=NULL;
-	pContext->OMGetRenderTargets(	1,
-												&m_pOldRenderTarget,
-												&m_pOldDepthSurface
-												);
+	SaveOldRTs(context);
 	pContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
-	D3D11_VIEWPORT viewport;
-		// Setup the viewport for rendering.
-	viewport.Width = (float)Width;
-	viewport.Height = (float)Height;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
-	// Create the viewport.
-	pContext->RSSetViewports(1, &viewport);
+	SetViewport(context,0,0,1.f,1.f,0,1.f);
 }
 
 void Framebuffer::Deactivate(void *context)

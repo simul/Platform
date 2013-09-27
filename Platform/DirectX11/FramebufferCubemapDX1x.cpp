@@ -208,6 +208,35 @@ void FramebufferCubemapDX1x::Activate(void *context)
 	ActivateViewport(context,0.f,0.f,1.f,1.f);
 }
 
+void FramebufferCubemapDX1x::ActivateColour(void *context,const float viewportXYWH[4])
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	HRESULT hr=S_OK;
+	unsigned int num_v=0;
+	pContext->RSGetViewports(&num_v,NULL);
+	if(num_v<=4)
+		pContext->RSGetViewports(&num_v,m_OldViewports);
+
+	m_pOldRenderTarget	=NULL;
+	m_pOldDepthSurface	=NULL;
+	pContext->OMGetRenderTargets(	1,
+									&m_pOldRenderTarget,
+									&m_pOldDepthSurface
+									);
+	pContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV[current_face],NULL);
+	D3D11_VIEWPORT viewport;
+		// Setup the viewport for rendering.
+	viewport.Width = floorf((float)Width*viewportXYWH[2] + 0.5f);
+	viewport.Height = floorf((float)Height*viewportXYWH[3] + 0.5f);
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = floorf((float)Width*viewportXYWH[0] + 0.5f);
+	viewport.TopLeftY = floorf((float)Height*viewportXYWH[1]+ 0.5f);
+
+	// Create the viewport.
+	pContext->RSSetViewports(1, &viewport);
+}
+
 void FramebufferCubemapDX1x::ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;

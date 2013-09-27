@@ -17,6 +17,7 @@
 #include <string>
 #include "Simul/Platform/DirectX9/Export.h"
 #include "Simul/Clouds/BaseCloudRenderer.h"
+#include "Simul/Base/RuntimeError.h"
 enum ShaderModel {NO_SHADERMODEL=0,USE_SHADER_2,USE_SHADER_2A,USE_SHADER_3};
 extern ShaderModel SIMUL_DIRECTX9_EXPORT GetShaderModel();
 extern void SIMUL_DIRECTX9_EXPORT SetMaxShaderModel(ShaderModel m);
@@ -87,6 +88,15 @@ namespace simul
 			D3DXHANDLE h=effect->GetParameterByName(NULL,txt);
 			if(h)
 				effect->SetValue(h,&value,sizeof(T));
+			else
+				SIMUL_THROW("Can't find parameter in simul::dx9::setParameter");
+		}
+		//! For matrices, we set the \em transpose by default in DirectX 9, to allow it to use the same shader functions as DX11.
+		template<> inline void setParameter<mat4>(LPD3DXEFFECT effect,const char *txt,mat4 value)
+		{
+			D3DXHANDLE h=effect->GetParameterByName(NULL,txt);
+			if(h)
+				effect->SetMatrixTranspose(h,(const D3DXMATRIX*)&value);
 			else
 				SIMUL_THROW("Can't find parameter in simul::dx9::setParameter");
 		}

@@ -4,6 +4,7 @@
 #include <string>
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
+#include "Simul/Base/RuntimeError.h"
 #include <windows.h>
 std::stack<GLuint> FramebufferGL::fb_stack;
 
@@ -150,6 +151,22 @@ void FramebufferGL::InitDepth_Tex(GLenum iformat)
 
 void FramebufferGL::Activate(void *)
 {
+	if(!m_fb)
+		Init();
+	CheckFramebufferStatus();
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
+	ERROR_CHECK
+	CheckFramebufferStatus();
+	glGetIntegerv(GL_VIEWPORT,main_viewport);
+	ERROR_CHECK
+	glViewport(0,0,Width,Height);
+	ERROR_CHECK
+	fb_stack.push(m_fb);
+}
+
+void FramebufferGL::ActivateColour(void *,const float /*viewportXYWH*/[4])
+{
+	SIMUL_THROW("ActivateColour does not yet work for FramebufferGL");
 	if(!m_fb)
 		Init();
 	CheckFramebufferStatus();

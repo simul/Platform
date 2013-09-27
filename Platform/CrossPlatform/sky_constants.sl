@@ -1,8 +1,7 @@
 #ifndef SKY_CONSTANTS_SL
 #define SKY_CONSTANTS_SL
 
-uniform_buffer SkyConstants SIMUL_BUFFER_REGISTER(10)
-{
+SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	mat4 worldViewProj;
 	mat4 proj;
 	mat4 cubemapViews[6];

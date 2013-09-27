@@ -39,6 +39,9 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform vec3 depthToLinFadeDistParams;
 	uniform float startZMetres;
 	uniform float shadowRange;
+	uniform float pad1;
+	uniform float pad2;
+	uniform float pad3;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

@@ -28,6 +28,7 @@ namespace simul
 			void InvalidateDeviceObjects();
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 			void Activate(void *context );
+			void ActivateColour(void*,const float viewportXYWH[4]);
 			void ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH );
 			void ActivateColour(void *context);
 			void Deactivate(void *context);
@@ -90,6 +91,8 @@ namespace simul
 			float timing;
 			unsigned int num_v;
 			bool GenerateMips;
+			void SaveOldRTs(void *context);
+			void SetViewport(void *context,float X,float Y,float W,float H,float Z,float D);
 		};
 	}
 }

@@ -1,3 +1,7 @@
+#include "dx9.hlsl"
+#include "../../CrossPlatform/sky_constants.sl"
+#include "../../CrossPlatform/illumination.sl"
+
 float4x4 worldViewProj : WorldViewProjection;
 
 texture inscTexture;
@@ -83,7 +87,7 @@ sampler2D fade_texture_2d= sampler_state
 //------------------------------------
 // Parameters 
 //------------------------------------
-float4 eyePosition : EYEPOSITION_WORLDSPACE;
+/*float4 eyePosition : EYEPOSITION_WORLDSPACE;
 float4 lightDir : Direction;
 float4 mieRayleighRatio;
 float hazeEccentricity;
@@ -94,7 +98,7 @@ float altitudeTexCoord;
 float4 colour;
 float starBrightness=.1f;
 float3 texelOffset;
-float3 texelScale;
+float3 texelScale;*/
 //------------------------------------
 // Structures 
 //------------------------------------
@@ -359,6 +363,13 @@ float4 PS_3D_to_2D(vertexOutputPosTexc IN): color
     return result;
 }
 
+vec4 PS_OvercastInscatter(vertexOutput3Dto2D IN): color
+{
+	// Texcoords representing the full distance from the eye to the given point.
+	vec2 fade_texc	=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
+    return OvercastInscatter(inscTexture,illuminationTexture,fade_texc,overcast);
+}
+
 struct vertexInputPosTex
 {
     float3 position			: POSITION;
@@ -560,6 +571,20 @@ technique simul_fade_3d_to_2d
     {		
 		VertexShader = compile vs_3_0 VS_FullScreen();
 		PixelShader  = compile ps_3_0 PS_3D_to_2D();
+        CullMode = None;
+		zenable = false;
+		zwriteenable = false;
+        AlphaBlendEnable = false;
+		lighting = false;
+    }
+}
+ 
+technique overcast_inscatter
+{
+    pass p0 
+    {
+		VertexShader = compile vs_3_0 VS_FullScreen();
+		PixelShader  = compile ps_3_0 PS_OvercastInscatter();
         CullMode = None;
 		zenable = false;
 		zwriteenable = false;

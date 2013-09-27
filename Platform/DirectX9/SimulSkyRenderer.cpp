@@ -200,6 +200,7 @@ void SimulSkyRenderer::InvalidateDeviceObjects()
 	screen_pixel_height=0;
 	loss_2d.InvalidateDeviceObjects();
 	inscatter_2d.InvalidateDeviceObjects();
+	overcast_2d.InvalidateDeviceObjects();
 	skylight_2d.InvalidateDeviceObjects();
 	illumination_fb.InvalidateDeviceObjects();
 	
@@ -276,12 +277,12 @@ void SimulSkyRenderer::FillSunlightTexture(int texture_index,int texel_index,int
 	hr=tex->UnlockRect(0);
 }
 
-void SimulSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void* *s1,void* *o)
+void SimulSkyRenderer::Get2DLossAndInscatterTextures(void* *l,void* *i,void* *s,void* *o)
 {
-	*l1=(void*)loss_2d.GetColorTex();
-	*i1=(void*)inscatter_2d.GetColorTex();
-	*s1=(void*)skylight_2d.GetColorTex();
-	o=NULL;
+	*l=(void*)loss_2d.GetColorTex();
+	*i=(void*)inscatter_2d.GetColorTex();
+	*s=(void*)skylight_2d.GetColorTex();
+	*o=(void*)overcast_2d.GetColorTex();
 }
 
 float SimulSkyRenderer::GetFadeInterp() const
@@ -314,14 +315,27 @@ void SimulSkyRenderer::CreateFadeTextures()
 	}
 	loss_2d.InvalidateDeviceObjects();
 	inscatter_2d.InvalidateDeviceObjects();
+	overcast_2d.InvalidateDeviceObjects();
 	skylight_2d.InvalidateDeviceObjects();
+
 	loss_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
+	loss_2d.SetDepthFormat(0);
+	loss_2d.SetFormat(D3DFMT_A32B32G32R32F);
 	loss_2d.RestoreDeviceObjects(m_pd3dDevice);
+
 	inscatter_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
 	inscatter_2d.SetDepthFormat(0);
 	inscatter_2d.SetFormat(D3DFMT_A32B32G32R32F);
 	inscatter_2d.RestoreDeviceObjects(m_pd3dDevice);
+	
+	overcast_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
+	overcast_2d.SetDepthFormat(0);
+	overcast_2d.SetFormat(D3DFMT_A32B32G32R32F);
+	overcast_2d.RestoreDeviceObjects(m_pd3dDevice);
+
 	skylight_2d.SetWidthAndHeight(numFadeDistances,numFadeElevations);
+	skylight_2d.SetDepthFormat(0);
+	skylight_2d.SetFormat(D3DFMT_A32B32G32R32F);
 	skylight_2d.RestoreDeviceObjects(m_pd3dDevice);
 }
 
@@ -763,8 +777,7 @@ bool SimulSkyRenderer::RenderFades(void *,int width,int height)
 	y+=size+8;
 	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)illumination_fb.GetColorTex());
 	RenderTexture(m_pd3dDevice,x0+size+2,y		,size,size,(LPDIRECT3DBASETEXTURE9)skylight_2d.GetColorTex(),m_pSkyEffect
-		,m_pSkyEffect->GetTechniqueByName("show_illumination_buffer");
-);
+		,m_pSkyEffect->GetTechniqueByName("show_illumination_buffer"));
 
 	int x=16+size;
 	y=y0+8;
@@ -866,11 +879,9 @@ bool SimulSkyRenderer::RenderPointStars(void *,float exposure)
 bool SimulSkyRenderer::Render2DFades(void *)
 {
 	PIXBeginNamedEvent(0xF0F0F0F0,"Render2DFades");
-
 	UINT passes=1;
-	// Not needed if called from Render():
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,GetAltitudeTextureCoordinate());
-	m_pSkyEffect->SetFloat	(skyInterp		,skyKeyframer->GetInterpolation());
+	m_pSkyEffect->SetFloat	(skyInterp			,skyKeyframer->GetInterpolation());
 	m_pSkyEffect->SetTechnique(m_hTechnique3DTo2DFade);
 	m_pSkyEffect->SetTexture(fadeTexture,loss_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,loss_textures[1]);
@@ -892,14 +903,15 @@ bool SimulSkyRenderer::Render2DFades(void *)
 	loss_2d.Deactivate(NULL);
 	m_pSkyEffect->SetTexture(fadeTexture,inscatter_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,inscatter_textures[1]);
+
 	inscatter_2d.Activate(NULL);
-	//inscatter_2d.Clear(NULL,1.0,1.0,0.0,0.0,1.0);
 		m_pSkyEffect->Begin(&passes,0);
 		m_pSkyEffect->BeginPass(0);
 		DrawQuad(m_pd3dDevice);
 		m_pSkyEffect->EndPass();
 		m_pSkyEffect->End();
 	inscatter_2d.Deactivate(NULL);
+	
 	
 	m_pSkyEffect->SetTexture(fadeTexture,skylight_textures[0]);
 	m_pSkyEffect->SetTexture(fadeTexture2,skylight_textures[1]);
@@ -910,6 +922,18 @@ bool SimulSkyRenderer::Render2DFades(void *)
 		m_pSkyEffect->EndPass();
 		m_pSkyEffect->End();
 	skylight_2d.Deactivate(NULL);
+	
+	
+	D3DXHANDLE hTechniqueOverc		=m_pSkyEffect->GetTechniqueByName("overcast_inscatter");
+	m_pSkyEffect->SetTechnique(hTechniqueOverc);
+	overcast_2d.Activate(NULL);
+		m_pSkyEffect->Begin(&passes,0);
+		m_pSkyEffect->BeginPass(0);
+		DrawQuad(m_pd3dDevice);
+		m_pSkyEffect->EndPass();
+		m_pSkyEffect->End();
+	overcast_2d.Deactivate(NULL);
+
 	PIXEndNamedEvent();
 	return true;
 }
@@ -924,13 +948,16 @@ void SimulSkyRenderer::RenderIllumationBuffer(void *)
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,1.0,0.0,1.0};
 	{
-		ID3D1xEffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("simul_illumination_buffer");
-		ApplyPass(context,tech->GetPassByIndex(0));
-		illumination_fb.Activate(context);
-		context->ClearRenderTargetView(illumination_fb.m_pHDRRenderTarget,clearColor);
+		D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("simul_illumination_buffer");
+		m_pSkyEffect->SetTechnique(tech);
+		unsigned passes;
+		m_pSkyEffect->Begin(&passes,0);
+		m_pSkyEffect->BeginPass(0);
+		illumination_fb.Activate(m_pd3dDevice);
+		illumination_fb.Clear(m_pd3dDevice,0.0f,1.0f,0.0f,1.0f,0.f);
 		//if(e.enable)
-			simul::dx11::UtilityRenderer::DrawQuad(context);
-		illumination_fb.Deactivate(context);
+			simul::dx9::DrawQuad(m_pd3dDevice);
+		illumination_fb.Deactivate(m_pd3dDevice);
 	}
 }
 
