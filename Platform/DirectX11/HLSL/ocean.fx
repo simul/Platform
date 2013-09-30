@@ -1,20 +1,5 @@
-// Copyright (c) 2011 NVIDIA Corporation. All rights reserved.
-//
-// TO  THE MAXIMUM  EXTENT PERMITTED  BY APPLICABLE  LAW, THIS SOFTWARE  IS PROVIDED
-// *AS IS*  AND NVIDIA AND  ITS SUPPLIERS DISCLAIM  ALL WARRANTIES,  EITHER  EXPRESS
-// OR IMPLIED, INCLUDING, BUT NOT LIMITED  TO, NONINFRINGEMENT,IMPLIED WARRANTIES OF
-// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  IN NO EVENT SHALL  NVIDIA 
-// OR ITS SUPPLIERS BE  LIABLE  FOR  ANY  DIRECT, SPECIAL,  INCIDENTAL,  INDIRECT,  OR  
-// CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION,  DAMAGES FOR LOSS 
-// OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF BUSINESS INFORMATION, OR ANY 
-// OTHER PECUNIARY LOSS) ARISING OUT OF THE  USE OF OR INABILITY  TO USE THIS SOFTWARE, 
-// EVEN IF NVIDIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
-//
-// Please direct any bugs or questions to SDKFeedback@nvidia.com
-
-//-----------------------------------------------------------------------------
-// Global variables
-//------------------------------- ----------------------------------------------
+#include "CppHLSL.hlsl"
+#include "states.hlsl"
 
 #define PATCH_BLEND_BEGIN		800
 #define PATCH_BLEND_END			20000
@@ -78,21 +63,89 @@ Texture2D	g_skyLossTexture		: register(t5);
 Texture2D	g_skyInscatterTexture	: register(t6);
 
 // FFT wave displacement map in VS, XY for choppy field, Z for height field
-SamplerState g_samplerDisplacement	: register(s0);
+SamplerState g_samplerDisplacement	: register(s0)
+{
+	Filter			= MIN_MAG_MIP_POINT;
+	AddressU		= Wrap;
+	AddressV		= Wrap;
+	AddressW		= Wrap;
+	MipLODBias		= 0;
+	MaxAnisotropy	= 1;
+	//ComparisonFunc	= D3D11_COMPARISON_NEVER;
+	MinLOD			= 0;
+	MaxLOD			= 1e23;
+};
 
 // Perlin noise for composing distant waves, W for height field, XY for gradient
-SamplerState g_samplerPerlin		: register(s1);
+SamplerState g_samplerPerlin		: register(s1)
+{
+	Filter =ANISOTROPIC;
+	AddressU =WRAP;
+	AddressV =WRAP;
+	AddressW =WRAP;
+	MipLODBias = 0;
+	MaxAnisotropy = 1;
+	//ComparisonFunc = NEVER;
+	MinLOD = 0;
+	MaxLOD = 1e23;
+	MaxAnisotropy = 4;
+};
 
 // FFT wave gradient map, converted to normal value in PS
-SamplerState g_samplerGradient		: register(s2);
-
+SamplerState g_samplerGradient		: register(s2)
+{
+	Filter =ANISOTROPIC;
+	AddressU =WRAP;
+	AddressV =WRAP;
+	AddressW =WRAP;
+	MipLODBias = 0;
+	MaxAnisotropy = 1;
+	//ComparisonFunc = NEVER;
+	MinLOD = 0;
+	MaxLOD = 1e23;
+	MaxAnisotropy = 8;
+};
 // Fresnel factor lookup table
-SamplerState g_samplerFresnel		: register(s3);
+SamplerState g_samplerFresnel		: register(s3)
+{
+	Filter =MIN_MAG_MIP_LINEAR;
+	AddressU =CLAMP;
+	AddressV =CLAMP;
+	AddressW =CLAMP;
+	MipLODBias = 0;
+	MaxAnisotropy = 1;
+	//ComparisonFunc = NEVER;
+	MinLOD = 0;
+	MaxLOD = 1e23;
+	MaxAnisotropy = 4;
+};
 
 // A small sky cubemap for reflection
-SamplerState g_samplerCube			: register(s4);
+SamplerState g_samplerCube			: register(s4)
+{
+	Filter			= MIN_MAG_MIP_LINEAR;
+	AddressU		= Wrap;
+	AddressV		= Wrap;
+	AddressW		= Wrap;
+	MipLODBias		= 0;
+	MaxAnisotropy	= 1;
+	//ComparisonFunc	= D3D11_COMPARISON_NEVER;
+	MinLOD			= 0;
+	MaxLOD			= 1e23;
+};
 
-SamplerState g_samplerAtmospherics	: register(s5);
+SamplerState g_samplerAtmospherics	: register(s5)
+{
+	Filter			= MIN_MAG_MIP_LINEAR;
+	AddressU		= Clamp;
+	AddressV		= Mirror;
+	AddressW		= Clamp;
+	MipLODBias		= 0;
+	MaxAnisotropy	= 1;
+	//ComparisonFunc	= D3D11_COMPARISON_NEVER;
+	MinLOD			= 0;
+	MaxLOD			= 1e23;
+};
 
 //-----------------------------------------------------------------------------
 // Name: OceanSurfVS
@@ -246,8 +299,8 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 	float3 loss=g_skyLossTexture.Sample(g_samplerAtmospherics,In.fade_texc).rgb;
 	float4 insc=g_skyInscatterTexture.Sample(g_samplerAtmospherics,In.fade_texc);
 	float3 inscatter=InscatterFunction(insc,cos_angle);
-	water_color*=loss;
-	water_color+=inscatter;
+	//water_color*=loss;
+	//water_color+=inscatter;
 	return float4(water_color, 1);
 }
 
@@ -260,3 +313,32 @@ float4 WireframePS() : SV_Target
 {
 	return float4(0.9f, 0.9f, 0.9f, 1);
 }
+
+#ifdef FX
+technique11 ocean
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( EnableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,OceanSurfVS()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,OceanSurfPS()));
+	}
+}
+technique11 wireframe
+{
+    pass p0 
+    {
+		SetRasterizerState( wireframeRasterizer );
+		SetDepthStencilState(TestDepth, 0 );
+		SetBlendState(AddBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,OceanSurfVS()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,WireframePS()));
+	}
+}
+
+
+#endif

@@ -186,12 +186,15 @@
   <ItemGroup>
     <ClCompile Include="CompileShaderDX1x.cpp" />
     <ClCompile Include="CreateEffectDX1x.cpp" />
+    <ClCompile Include="CSFFT\fft_512x512.cpp" />
     <ClCompile Include="Direct3D1xRenderer.cpp" />
     <ClCompile Include="DX11Exception.cpp" />
     <ClCompile Include="FramebufferCubemapDX1x.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
+    <ClCompile Include="OceanRenderer.cpp" />
+    <ClCompile Include="OceanSimulator.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
     <ClCompile Include="Simul2DCloudRendererDX1x.cpp" />
@@ -209,6 +212,7 @@
   <ItemGroup>
     <ClInclude Include="CompileShaderDX1x.h" />
     <ClInclude Include="CreateEffectDX1x.h" />
+    <ClInclude Include="CSFFT\fft_512x512.h" />
     <ClInclude Include="Direct3D11CallbackInterface.h" />
     <ClInclude Include="Direct3D1xRenderer.h" />
     <ClInclude Include="DX11Exception.h" />
@@ -218,6 +222,8 @@
     <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="GpuSkyGenerator.h" />
     <ClInclude Include="MacrosDx1x.h" />
+    <ClInclude Include="OceanRenderer.h" />
+    <ClInclude Include="OceanSimulator.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ResourcesDx1x.h" />
@@ -257,8 +263,12 @@
     <None Include="..\CrossPlatform\sky_constants.sl" />
     <None Include="..\CrossPlatform\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\states.sl" />
+    <None Include="CSFFT\fft_512x512_c2c.hlsl" />
     <None Include="HLSL\atmospherics.fx" />
     <None Include="HLSL\CppHLSL.hlsl" />
+    <None Include="HLSL\ocean.fx" />
+    <None Include="HLSL\ocean_simulator_cs.hlsl" />
+    <None Include="HLSL\ocean_simulator_vs_ps.hlsl" />
     <None Include="HLSL\simul_clouds.fx" />
     <None Include="HLSL\simul_clouds_2d.fx" />
     <None Include="HLSL\simul_clouds_and_lightning_dx11.fx" />

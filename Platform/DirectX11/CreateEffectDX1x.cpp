@@ -17,6 +17,7 @@
 #include <tchar.h>
 #include "CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/CompileShaderDX1x.h"
 #include <string>
 static const DWORD default_effect_flags=0;
 
@@ -47,20 +48,6 @@ ShaderBuildMode shaderBuildMode=ALWAYS_BUILD;
 static DefaultFileLoader fl;
 static FileLoader *fileLoader=&fl;
 
-class ShaderIncludeHandler : public ID3DInclude
-{
-public:
-	ShaderIncludeHandler(const char* shaderDirUtf8, const char* systemDirUtf8)
-		: m_ShaderDirUtf8(shaderDirUtf8), m_SystemDirUtf8(systemDirUtf8)
-	{
-	}
-	HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType,LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
-	HRESULT __stdcall Close(LPCVOID pData);
-private:
-	std::string m_ShaderDirUtf8;
-	std::string m_SystemDirUtf8;
-};
-
 HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
 {
 	try
@@ -84,23 +71,6 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 		*pBytes = (UINT)fileSize;
 		if(!*ppData)
 			return E_FAIL;
-	/*	std::ifstream includeFile(simul::base::Utf8ToWString(finalPath).c_str()
-			,std::ios::in|std::ios::binary|std::ios::ate);
-
-		if (includeFile.is_open())
-		{
-			long long fileSize = includeFile.tellg();
-			char* buf = new char[(UINT)fileSize];
-			includeFile.seekg (0, std::ios::beg);
-			includeFile.read (buf,(std::streamsize)fileSize);
-			includeFile.close();
-			*ppData = buf;
-			*pBytes = (UINT)fileSize;
-		}
-		else
-		{
-			return E_FAIL;
-		}*/
 		return S_OK;
 	}
 	catch(std::exception& e)
@@ -113,8 +83,6 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 HRESULT __stdcall ShaderIncludeHandler::Close(LPCVOID pData)
 {
 	fileLoader->ReleaseFileContents((void*)pData);
-	//char* buf = (char*)pData;
-	//delete[] buf;
 	return S_OK;
 }
 
@@ -382,72 +350,96 @@ void simul::dx11::Ensure3DTextureSizeAndFormat(
 	}
 }
 
-void simul::dx11::setSamplerState(ID3D1xEffect *effect,const char *name	,ID3D11SamplerState * value)
+void simul::dx11::setDepthState(ID3DX11Effect *effect,const char *name	,ID3D11DepthStencilState * value)
+{
+	ID3DX11EffectDepthStencilVariable*	var	=effect->GetVariableByName(name)->AsDepthStencil();
+	var->SetDepthStencilState(0,value);
+}
+
+void simul::dx11::setSamplerState(ID3DX11Effect *effect,const char *name	,ID3D11SamplerState * value)
 {
 	ID3DX11EffectSamplerVariable*	var	=effect->GetVariableByName(name)->AsSampler();
 	var->SetSampler(0,value);
-} 
+}
 
-void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,ID3D11ShaderResourceView * value)
+void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,ID3D11ShaderResourceView * value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
 	var->SetResource(value);
-} 
+}
 
-void simul::dx11::setUnorderedAccessView(ID3D1xEffect *effect,const char *name	,ID3D11UnorderedAccessView * value)
+void simul::dx11::setUnorderedAccessView(ID3DX11Effect *effect,const char *name	,ID3D11UnorderedAccessView * value)
 {
 	ID3DX11EffectUnorderedAccessViewVariable*	var	=effect->GetVariableByName(name)->AsUnorderedAccessView();
 	var->SetUnorderedAccessView(value);
 }
 
-void simul::dx11::setStructuredBuffer(ID3D1xEffect *effect,const char *name,ID3D11ShaderResourceView * value)
+void simul::dx11::setStructuredBuffer(ID3DX11Effect *effect,const char *name,ID3D11ShaderResourceView * value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
 	var->SetResource(value);
 }
 
-void simul::dx11::setTextureArray(ID3D1xEffect *effect	,const char *name	,ID3D11ShaderResourceView *value)
+void simul::dx11::setTextureArray(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
 	var->SetResource(value);
 }
 
-void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,float value)
+void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float value)
 {
-	ID3D1xEffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
+	ID3DX11EffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
 	var->SetFloat(value);
 }
 
-void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,float x,float y)
+void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,float y)
 {
-	ID3D1xEffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
+	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
 	float V[]={x,y,0.f,0.f};
 	var->SetFloatVector(V);
 }
 
-void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,float x,float y,float z,float w)
+void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,float y,float z,float w)
 {
-	ID3D1xEffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
+	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
 	float V[]={x,y,z,w};
 	var->SetFloatVector(V);
 }
 
-void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,int value)
+void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,int value)
 {
-	ID3D1xEffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
+	ID3DX11EffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
 	var->SetInt(value);
 }
 
-void simul::dx11::setParameter(ID3D1xEffect *effect,const char *name	,float *value)
+void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float *value)
 {
-	ID3D1xEffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
+	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
 	var->SetFloatVector(value);
 }
 
-void simul::dx11::setMatrix(ID3D1xEffect *effect,const char *name	,const float *value)
+void simul::dx11::setMatrix(ID3DX11Effect *effect,const char *name	,const float *value)
 {
-	ID3D1xEffectMatrixVariable*	var	=effect->GetVariableByName(name)->AsMatrix();
+	ID3DX11EffectMatrixVariable*	var	=effect->GetVariableByName(name)->AsMatrix();
 	var->SetMatrix(value);
+}
+
+void simul::dx11::setConstantBuffer(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b)
+{
+	ID3DX11EffectConstantBuffer*	pD3DX11EffectConstantBuffer=effect->GetConstantBufferByName(name);
+	pD3DX11EffectConstantBuffer->SetConstantBuffer(b);
+}
+
+void simul::dx11::unbindTextures(ID3DX11Effect *effect)
+{
+	D3DX11_EFFECT_DESC desc;
+	effect->GetDesc(&desc);
+	for(unsigned i=0;i<desc.GlobalVariables;i++)
+	{
+		ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByIndex(i)->AsShaderResource();
+		if(var->IsValid())
+			var->SetResource(NULL);
+	}
 }
 
 struct d3dMacro
@@ -681,17 +673,17 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	return hr;
 }
 
-HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *filename)
+HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *filename)
 {
 	std::map<std::string,std::string> defines;
 	return CreateEffect(d3dDevice,effect,filename,defines);
 }
 
-ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *filename)
+ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *filename_utf8)
 {
 	if(!shaderPathUtf8)
 		shaderPathUtf8=new std::string("media/hlsl/dx11");
-	std::string fn=(*shaderPathUtf8+"/")+filename;
+	std::string fn=(*shaderPathUtf8+"/")+filename_utf8;
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined( _DEBUG )
 	dwShaderFlags |= D3DCOMPILE_DEBUG;
@@ -726,14 +718,14 @@ ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *file
 	}
 }
 
-HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *filename,const std::map<std::string,std::string>&defines)
+HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines)
 {
 	SIMUL_ASSERT(d3dDevice!=NULL);
 	HRESULT hr=S_OK;
-	std::string text_filename=(filename);
+	std::string text_filename=(filenameUtf8);
 	if(!shaderPathUtf8)
 		shaderPathUtf8=new std::string("media/hlsl/dx11");
-	std::string filename_utf8=*shaderPathUtf8+filename;
+	std::string filename_utf8=*shaderPathUtf8+filenameUtf8;
 	
 	D3D10_SHADER_MACRO *macros=NULL;
 	std::vector<std::string> d3dmacros;
@@ -774,6 +766,12 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3D1xEffect **effect,const char *f
 	assert((*effect)->IsValid());
 	delete [] macros;
 	return hr;
+}
+ID3DX11Effect *LoadEffect(ID3D1xDevice *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines)
+{
+	ID3DX11Effect *effect=NULL;
+	CreateEffect(d3dDevice,&effect,filename_utf8,defines);
+	return effect;
 }
 
 #define D3D10_SHADER_ENABLE_STRICTNESS              (1 << 11)

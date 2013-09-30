@@ -4,6 +4,7 @@
 // Simul Weather:
 #include "Simul/Platform/DirectX11/SimulWeatherRendererDX11.h"
 #include "Simul/Platform/DirectX11/SimulTerrainRendererDX1x.h"
+#include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/DirectX11/SimulCloudRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
 #include "Simul/Platform/DirectX11/Simul2DCloudRendererDX1x.h"
@@ -44,6 +45,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,simulWeatherRenderer(NULL)
 		,simulHDRRenderer(NULL)
 		,simulTerrainRenderer(NULL)
+		,oceanRenderer(NULL)
 		,memoryInterface(m)
 {
 	simulWeatherRenderer=new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
@@ -52,6 +54,8 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 	simulOpticsRenderer=new(memoryInterface) SimulOpticsRendererDX1x();
 	simulTerrainRenderer=new(memoryInterface) SimulTerrainRendererDX1x(memoryInterface);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
+
+	oceanRenderer=new(memoryInterface) OceanRenderer(env->seaKeyframer);
 	ReverseDepthChanged();
 	depthFramebuffer.SetFormat(0);
 	depthFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
@@ -64,6 +68,7 @@ Direct3D11Renderer::~Direct3D11Renderer()
 	del(simulWeatherRenderer,memoryInterface);
 	del(simulHDRRenderer,memoryInterface);
 	del(simulTerrainRenderer,memoryInterface);
+	del(oceanRenderer,memoryInterface);
 }
 
 // D3D11CallbackInterface
@@ -99,6 +104,8 @@ HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice,const D
 		simulOpticsRenderer->RestoreDeviceObjects(pd3dDevice);
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->RestoreDeviceObjects(pd3dDevice);
+	if(oceanRenderer)
+		oceanRenderer->RestoreDeviceObjects(pd3dDevice);
 	depthFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	cubemapDepthFramebuffer.SetWidthAndHeight(64,64);
 	cubemapDepthFramebuffer.RestoreDeviceObjects(pd3dDevice);
@@ -167,6 +174,8 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	//	framebuffer_cubemap.CalcSphericalHarmonics(pContext,3);
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetCubemapTexture(framebuffer_cubemap.GetColorTex());
+	if(oceanRenderer)
+		oceanRenderer->SetCubemapTexture(framebuffer_cubemap.GetColorTex());
 }
 #include "Simul/Platform/DirectX11/SaveTextureDx1x.h"
 void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep)
@@ -216,6 +225,13 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
 				simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture());
 			simulTerrainRenderer->Render(pd3dImmediateContext,1.f);	
+		}
+		if(oceanRenderer)
+		{
+			oceanRenderer->SetMatrices(view,proj);
+			oceanRenderer->Render(pd3dImmediateContext,1.f);
+			if(oceanRenderer->GetShowWireframes())
+				oceanRenderer->RenderWireframe(pd3dImmediateContext);
 		}
 		if(simulWeatherRenderer)
 		{
@@ -310,6 +326,8 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 		simulOpticsRenderer->InvalidateDeviceObjects();
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
+	if(oceanRenderer)
+		oceanRenderer->InvalidateDeviceObjects();
 	depthFramebuffer.InvalidateDeviceObjects();
 	cubemapDepthFramebuffer.InvalidateDeviceObjects();
 	framebuffer_cubemap.InvalidateDeviceObjects();
@@ -352,6 +370,8 @@ void Direct3D11Renderer::RecompileShaders()
 		simulOpticsRenderer->RecompileShaders();
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->RecompileShaders();
+	if(oceanRenderer)
+		oceanRenderer->RecompileShaders();
 	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
 //	if(simulTerrainRenderer.get())
@@ -382,4 +402,6 @@ void Direct3D11Renderer::ReverseDepthChanged()
 		simulHDRRenderer->SetReverseDepth(ReverseDepth);
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->SetReverseDepth(ReverseDepth);
+	if(oceanRenderer)
+		oceanRenderer->SetReverseDepth(ReverseDepth);
 }

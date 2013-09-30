@@ -1,9 +1,11 @@
 
+#define NOMINMAX
 #include "CreateEffectDX1x.h"
 
 #include <assert.h>
-#include "ocean_simulator.h"
+#include "OceanSimulator.h"
 #include "CompileShaderDX1x.h"
+#define SAFE_DELETE_ARRAY(c) delete [] c;c=NULL;
 
 // Disable warning "conditional expression is constant"
 #pragma warning(disable:4127)
@@ -207,7 +209,7 @@ OceanSimulator::OceanSimulator(simul::terrain::OceanParameter *params, ID3D11Dev
     ID3DBlob* pBlobUpdateSpectrumCS = NULL;
     try
     {
-		CompileShaderFromFile(L"ocean_simulator_cs.hlsl", "UpdateSpectrumCS", "cs_4_0", &pBlobUpdateSpectrumCS);
+		CompileShaderFromFile("ocean_simulator_cs.hlsl", "UpdateSpectrumCS", "cs_4_0", &pBlobUpdateSpectrumCS);
 	}
 	catch(...)
 	{
@@ -218,7 +220,7 @@ OceanSimulator::OceanSimulator(simul::terrain::OceanParameter *params, ID3D11Dev
 
 	// Create the vertex shader:
     ID3DBlob* pBlobQuadVS = NULL;
-    CompileShaderFromFile(L"ocean_simulator_vs_ps.hlsl", "QuadVS", "vs_4_0", &pBlobQuadVS);
+    CompileShaderFromFile("ocean_simulator_vs_ps.hlsl", "QuadVS", "vs_4_0", &pBlobQuadVS);
     pd3dDevice->CreateVertexShader(pBlobQuadVS->GetBufferPointer(), pBlobQuadVS->GetBufferSize(), NULL, &m_pQuadVS);
 	// Create the vertex shader's input layout:
 	D3D11_INPUT_ELEMENT_DESC quad_layout_desc[] =
@@ -230,12 +232,12 @@ OceanSimulator::OceanSimulator(simul::terrain::OceanParameter *params, ID3D11Dev
 	
 	// Create the pixel shaders:
     ID3DBlob* pBlobUpdateDisplacementPS = NULL;
-	CompileShaderFromFile(L"ocean_simulator_vs_ps.hlsl", "UpdateDisplacementPS", "ps_4_0", &pBlobUpdateDisplacementPS);
+	CompileShaderFromFile("ocean_simulator_vs_ps.hlsl", "UpdateDisplacementPS", "ps_4_0", &pBlobUpdateDisplacementPS);
     pd3dDevice->CreatePixelShader(pBlobUpdateDisplacementPS->GetBufferPointer(), pBlobUpdateDisplacementPS->GetBufferSize(), NULL, &m_pUpdateDisplacementPS);
 	SAFE_RELEASE(pBlobUpdateDisplacementPS);
 
 	ID3DBlob* pBlobGenGradientFoldingPS = NULL;
-    CompileShaderFromFile(L"ocean_simulator_vs_ps.hlsl", "GenGradientFoldingPS", "ps_4_0", &pBlobGenGradientFoldingPS);
+    CompileShaderFromFile("ocean_simulator_vs_ps.hlsl", "GenGradientFoldingPS", "ps_4_0", &pBlobGenGradientFoldingPS);
     pd3dDevice->CreatePixelShader(pBlobGenGradientFoldingPS->GetBufferPointer(), pBlobGenGradientFoldingPS->GetBufferSize(), NULL, &m_pGenGradientFoldingPS);
 	SAFE_RELEASE(pBlobGenGradientFoldingPS);
 

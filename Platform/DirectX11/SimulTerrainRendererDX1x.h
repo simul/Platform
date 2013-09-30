@@ -6,14 +6,9 @@
 // in accordance with the terms of that agreement.
 #pragma once
 #include <d3dx9.h>
-#ifdef DX10
-	#include <d3d10.h>
-	#include <d3dx10.h>
-#else
-	#include <d3d11.h>
-	#include <d3dx11.h>
-	#include <d3dx11effect.h>
-#endif
+#include <d3d11.h>
+#include <d3dx11.h>
+#include <d3dx11effect.h>
 typedef long HRESULT;
 #include "Simul/Base/Referenced.h"
 #include "Simul/Terrain/BaseTerrainRenderer.h"

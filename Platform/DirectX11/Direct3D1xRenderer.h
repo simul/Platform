@@ -13,6 +13,7 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/FramebufferCubemapDX1x.h"
+#include "Simul/Platform/DirectX11/OceanRenderer.h"
 #pragma warning(push)
 #pragma warning(disable:4251)
 namespace simul
@@ -33,6 +34,7 @@ namespace simul
 		class SimulWeatherRendererDX11;
 		class SimulHDRRendererDX1x;
 		class SimulTerrainRendererDX1x;
+		class OceanRenderer;
 		class SimulOpticsRendererDX1x;
 
 		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
@@ -71,6 +73,10 @@ namespace simul
 			{
 				return simulHDRRenderer;
 			}
+			OceanRenderer				*GetOceanRenderer()
+			{
+				return oceanRenderer;
+			}
 			void SetCamera(simul::camera::Camera *c)
 			{
 				camera=c;
@@ -101,6 +107,7 @@ namespace simul
 			SimulWeatherRendererDX11	*simulWeatherRenderer;
 			SimulHDRRendererDX1x		*simulHDRRenderer;
 			SimulTerrainRendererDX1x	*simulTerrainRenderer;
+			OceanRenderer				*oceanRenderer;
 			int ScreenWidth,ScreenHeight;
 			// A depth-only FB to make sure we have a readable depth texture.
 			simul::dx11::Framebuffer depthFramebuffer;

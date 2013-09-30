@@ -120,6 +120,20 @@ RasterizerState RenderBackfaceCull
 {
 	CullMode = back;
 };
+#define DEPTH_BIAS_D32_FLOAT(d) (d/(1/pow(2,23)))
+RasterizerState wireframeRasterizer
+{
+	FillMode					= WIREFRAME;
+	CullMode					= none;
+	FrontCounterClockwise		= FALSE;
+	DepthBias					= 0;//DEPTH_BIAS_D32_FLOAT(-0.00001);
+	DepthBiasClamp				= 0.f;
+	SlopeScaledDepthBias		= 0.f;
+	DepthClipEnable				= FALSE;
+	ScissorEnable				= FALSE;
+	MultisampleEnable			= FALSE;
+	AntialiasedLineEnable		= FALSE;
+};
 
 BlendState NoBlend
 {
