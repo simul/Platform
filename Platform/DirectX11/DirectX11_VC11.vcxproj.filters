@@ -84,10 +84,10 @@
     <ClCompile Include="SimulTerrainRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulWeatherRendererDX1x.cpp">
+    <ClCompile Include="Utilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Utilities.cpp">
+    <ClCompile Include="SimulWeatherRendererDX11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -167,10 +167,10 @@
     <ClInclude Include="SimulTerrainRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulWeatherRendererDX1x.h">
+    <ClInclude Include="Utilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities.h">
+    <ClInclude Include="SimulWeatherRendererDX11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

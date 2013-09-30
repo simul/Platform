@@ -19,6 +19,7 @@
 #include <map>
 #include "Simul/Platform/DirectX9/Export.h"
 #include "Simul/Platform/DirectX9/Framebuffer.h"
+#include "Simul/Platform/DirectX9/Utilities.h"
 
 namespace simul
 {
@@ -48,6 +49,10 @@ typedef long HRESULT;
 //! A renderer for skies, this class will manage an instance of simul::sky::SkyNode and use it to calculate sky colours
 //! in real time for the simul_sky.fx shader.
 
+namespace simul
+{
+	namespace dx9
+	{
 SIMUL_DIRECTX9_EXPORT_CLASS SimulSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
@@ -150,9 +155,9 @@ protected:
 	// Three sunlight textures.
 	LPDIRECT3DTEXTURE9			sunlight_textures[3];
 	// These are generated as necessary:
-	LPDIRECT3DBASETEXTURE9		loss_textures[3];
-	LPDIRECT3DBASETEXTURE9		inscatter_textures[3];
-	LPDIRECT3DBASETEXTURE9		skylight_textures[3];
+	TextureStruct				loss_textures[3];
+	TextureStruct				inscatter_textures[3];
+	TextureStruct				skylight_textures[3];
 	// Max fade distance, constant, except towards the ground
 	LPDIRECT3DTEXTURE9			max_distance_texture;
 
@@ -176,3 +181,5 @@ protected:
 	}
 	float						maxPixelsVisible;
 };
+}
+}

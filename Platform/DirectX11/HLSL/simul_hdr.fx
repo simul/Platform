@@ -119,7 +119,7 @@ float4 TonemapPS(v2f IN) : SV_TARGET
 	c.rgb+=glow.rgb;
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
-	c.rgb+=depthTexture.Sample(samplerState,IN.texCoords).rgb;
+	//c.rgb+=depthTexture.Sample(samplerState,IN.texCoords).rgb;
     return float4(c.rgb,1.f);
 }
 

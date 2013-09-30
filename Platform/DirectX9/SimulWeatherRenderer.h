@@ -30,8 +30,11 @@ namespace simul
 	{
 		class Environment;
 	}
+	namespace dx9
+	{
+		class SimulSkyRenderer;
+	}
 }
-class SimulSkyRenderer;
 class SimulCloudRenderer;
 class SimulLightningRenderer;
 class Simul2DCloudRenderer;

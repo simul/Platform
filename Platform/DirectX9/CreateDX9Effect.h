@@ -8,11 +8,7 @@
 
 // CreateDX9Effect.h Create a DirectX .fx effect and report errors.
 
-#ifdef XBOX
-	#include <xgraphics.h>
-#else
-	#include <d3dx9.h>
-#endif
+#include <d3dx9.h>
 #include <map>
 #include <string>
 #include "Simul/Platform/DirectX9/Export.h"

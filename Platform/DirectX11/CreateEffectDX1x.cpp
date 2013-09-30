@@ -478,7 +478,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_ut
 HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	HRESULT hr=S_OK;
-#if 0
+#if 1
 	void *textData=NULL;
 	unsigned textSize=0;
 	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
@@ -505,7 +505,10 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 		);
 	fileLoader->ReleaseFileContents(textData);
 	if(hr==S_OK)
+	{
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
+		//if(fileLoader->
+	}
 	else
 	{
 		char *errs=(char*)errorMsgs->GetBufferPointer();

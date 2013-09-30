@@ -196,6 +196,7 @@
     <ClCompile Include="SimulSkyRenderer.cpp" />
     <ClCompile Include="SimulTerrainRenderer.cpp" />
     <ClCompile Include="SimulWeatherRenderer.cpp" />
+    <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CreateDX9Effect.h" />
@@ -217,8 +218,10 @@
     <ClInclude Include="SimulSkyRenderer.h" />
     <ClInclude Include="SimulTerrainRenderer.h" />
     <ClInclude Include="SimulWeatherRenderer.h" />
+    <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CrossPlatform\atmospherics.sl" />
     <None Include="..\CrossPlatform\atmospherics_constants.sl" />
     <None Include="..\CrossPlatform\cloud_shadow.sl" />
     <None Include="..\CrossPlatform\CppSl.hs" />

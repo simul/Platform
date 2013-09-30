@@ -195,7 +195,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 	int start_loss	=range(start_step			,0,xy_size);
 	int end_loss	=range(end_step				,0,xy_size);
 	int num_loss	=range(end_loss-start_loss	,0,xy_size);
-	int subgrid=(num_loss+BLOCKWIDTH-1)/BLOCKWIDTH;
+	int subgrid		=(num_loss+BLOCKWIDTH-1)/BLOCKWIDTH;
 	
 	if(subgrid>0)
 	{
@@ -205,7 +205,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 		V_CHECK(ApplyPass(m_pImmediateContext,lossComputeTechnique->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 		if(loss)
-			finalLoss[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,loss,start_loss*subgrid,num_loss*subgrid);
+			finalLoss[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,loss,start_loss*numDistances,num_loss*numDistances);
 	}
 	int start_insc	=range(start_step-xy_size	,0,xy_size);
 	int end_insc	=range(end_step-xy_size		,0,xy_size);
@@ -222,7 +222,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 		V_CHECK(ApplyPass(m_pImmediateContext,inscComputeTechnique->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 		if(insc)
-			finalInsc[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,insc,start_insc*subgrid,num_insc*subgrid);
+			finalInsc[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,insc,start_insc*numDistances,num_insc*numDistances);
 	}
 	SIMUL_PROFILE_END
 	SIMUL_PROFILE_START("GpuSkyGenerator 3")
@@ -239,7 +239,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 	{
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 		if(skyl)
-			finalSkyl[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,skyl,start_skyl*subgrid,num_skyl*subgrid);
+			finalSkyl[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,skyl,start_skyl*numDistances,num_skyl*numDistances);
 	}
 	//light_table
 	{

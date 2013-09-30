@@ -3,7 +3,7 @@
 #include <d3dx9.h>
 #include <d3d11.h>
 #include <d3dx11.h>
-#include <D3dx11effect.h>
+#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Clouds/BaseFramebuffer.h"
@@ -13,7 +13,7 @@ namespace simul
 	namespace dx11
 	{
 		//! A DirectX 11 framebuffer class.
-		SIMUL_DIRECTX11_EXPORT_CLASS Framebuffer:public BaseFramebuffer
+		SIMUL_DIRECTX11_EXPORT_CLASS Framebuffer : public BaseFramebuffer
 		{
 		public:
 			Framebuffer(int w=0,int h=0);
@@ -21,6 +21,14 @@ namespace simul
 			void SetWidthAndHeight(int w,int h);
 			void SetFormat(int f);
 			void SetDepthFormat(int f);
+			void SetAntialiasing(int a)
+			{
+				if(numAntialiasingSamples!=a)
+				{
+					numAntialiasingSamples=a;
+					InvalidateDeviceObjects();
+				}
+			}
 			void SetGenerateMips(bool);
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 			void RestoreDeviceObjects(void* pd3dDevice);
@@ -29,6 +37,7 @@ namespace simul
 			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
 			void Activate(void *context );
 			void ActivateColour(void*,const float viewportXYWH[4]);
+			void ActivateDepth(void *context);
 			void ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH );
 			void ActivateColour(void *context);
 			void Deactivate(void *context);

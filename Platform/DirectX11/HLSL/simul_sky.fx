@@ -449,7 +449,7 @@ technique11 skylight_and_overcast
     }
 }
 
-technique11 simul_illumination_buffer
+technique11 illumination_buffer
 {
     pass p0 
     {

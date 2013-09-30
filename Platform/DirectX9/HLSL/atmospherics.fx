@@ -2,6 +2,7 @@
 #include "../../CrossPlatform/atmospherics_constants.sl"
 #include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/atmospherics.sl"
 
 texture maxDistanceTexture;
@@ -168,7 +169,9 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 
 vec4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : color
 {
-	vec3 loss=AtmosphericsLoss(depth_texture,loss_texture
+	vec3 loss=AtmosphericsLoss(depth_texture
+							,viewportToTexRegionScaleBias
+							,loss_texture
 							,invViewProj
 							,IN.texCoords
 							,IN.clip_pos
@@ -194,7 +197,7 @@ vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : color
 							,lightDir
 							,mieRayleighRatio);
 
-	return vec4(insc,1.0);
+	return vec4(insc*exposure,1.0);
 }
 
 vec4 PS_Godrays(atmosVertexOutput IN) : color

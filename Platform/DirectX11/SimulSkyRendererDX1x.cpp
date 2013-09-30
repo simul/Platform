@@ -652,7 +652,7 @@ void SimulSkyRendererDX1x::RenderIllumationBuffer(void *c)
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,1.0,0.0,1.0};
 	{
-		ID3D1xEffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("simul_illumination_buffer");
+		ID3D1xEffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
 		ApplyPass(context,tech->GetPassByIndex(0));
 		illumination_fb.Activate(context);
 		context->ClearRenderTargetView(illumination_fb.m_pHDRRenderTarget,clearColor);
