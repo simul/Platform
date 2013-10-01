@@ -5,6 +5,7 @@
 #include <assert.h>
 #include "OceanSimulator.h"
 #include "CompileShaderDX1x.h"
+#include "Utilities.h"
 #define SAFE_DELETE_ARRAY(c) delete [] c;c=NULL;
 
 // Disable warning "conditional expression is constant"
@@ -134,7 +135,101 @@ void createTextureAndViews(ID3D11Device* pd3dDevice, UINT width, UINT height, DX
 	}
 }
 
-OceanSimulator::OceanSimulator(simul::terrain::OceanParameter *params, ID3D11Device* pd3dDevice):m_param(params)
+OceanSimulator::OceanSimulator(simul::terrain::OceanParameter *params)
+	:m_param(params)
+	,m_pBuffer_Float2_H0(NULL)
+	,m_pBuffer_Float_Omega(NULL)
+	,m_pBuffer_Float2_Ht(NULL)
+	,m_pBuffer_Float_Dxyz(NULL)
+
+	,m_pPointSamplerState(NULL)
+
+	,m_pQuadVB(NULL)
+
+	,m_pUAV_H0(NULL)
+	,m_pUAV_Omega(NULL)
+	,m_pUAV_Ht(NULL)
+	,m_pUAV_Dxyz(NULL)
+
+	,m_pSRV_H0(NULL)
+	,m_pSRV_Omega(NULL)
+	,m_pSRV_Ht(NULL)
+	,m_pSRV_Dxyz(NULL)
+
+	,m_pDisplacementMap(NULL)
+	,m_pDisplacementSRV(NULL)
+	,m_pDisplacementRTV(NULL)
+
+	,m_pGradientMap(NULL)
+	,m_pGradientSRV(NULL)
+	,m_pGradientRTV(NULL)
+
+	,m_pUpdateSpectrumCS(NULL)
+	,m_pQuadVS(NULL)
+	,m_pUpdateDisplacementPS(NULL)
+	,m_pGenGradientFoldingPS(NULL)
+
+	,m_pQuadLayout(NULL)
+
+	,m_pImmutableCB(NULL)
+	,m_pPerFrameCB(NULL)
+
+	,m_pd3dImmediateContext(NULL)
+	,effect(NULL)
+
+#ifdef CS_DEBUG_BUFFER
+	,m_pDebugBuffer(NULL)
+#endif
+{
+}
+
+void OceanSimulator::InvalidateDeviceObjects()
+{
+	SAFE_RELEASE(m_pBuffer_Float2_H0);
+	SAFE_RELEASE(m_pBuffer_Float_Omega);
+	SAFE_RELEASE(m_pBuffer_Float2_Ht);
+	SAFE_RELEASE(m_pBuffer_Float_Dxyz);
+
+	SAFE_RELEASE(m_pPointSamplerState);
+
+	SAFE_RELEASE(m_pQuadVB);
+
+	SAFE_RELEASE(m_pUAV_H0);
+	SAFE_RELEASE(m_pUAV_Omega);
+	SAFE_RELEASE(m_pUAV_Ht);
+	SAFE_RELEASE(m_pUAV_Dxyz);
+
+	SAFE_RELEASE(m_pSRV_H0);
+	SAFE_RELEASE(m_pSRV_Omega);
+	SAFE_RELEASE(m_pSRV_Ht);
+	SAFE_RELEASE(m_pSRV_Dxyz);
+
+	SAFE_RELEASE(m_pDisplacementMap);
+	SAFE_RELEASE(m_pDisplacementSRV);
+	SAFE_RELEASE(m_pDisplacementRTV);
+
+	SAFE_RELEASE(m_pGradientMap);
+	SAFE_RELEASE(m_pGradientSRV);
+	SAFE_RELEASE(m_pGradientRTV);
+
+	SAFE_RELEASE(m_pUpdateSpectrumCS);
+	SAFE_RELEASE(m_pQuadVS);
+	SAFE_RELEASE(m_pUpdateDisplacementPS);
+	SAFE_RELEASE(m_pGenGradientFoldingPS);
+
+	SAFE_RELEASE(m_pQuadLayout);
+
+	SAFE_RELEASE(m_pImmutableCB);
+	SAFE_RELEASE(m_pPerFrameCB);
+
+	SAFE_RELEASE(m_pd3dImmediateContext);
+
+#ifdef CS_DEBUG_BUFFER
+	SAFE_RELEASE(m_pDebugBuffer);
+#endif
+}
+
+void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 {
 	// If the device becomes invalid at some point, delete current instance and generate a new one.
 	assert(pd3dDevice);
@@ -147,7 +242,6 @@ OceanSimulator::OceanSimulator(simul::terrain::OceanParameter *params, ID3D11Dev
 	float* omega_data = new float[height_map_size * sizeof(float)];
 	initHeightMap(h0_data, omega_data);
 
-	m_param = params;
 	int hmap_dim = m_param->dmap_dim;
 	int input_full_size = (hmap_dim + 4) * (hmap_dim + 1);
 	// This value should be (hmap_dim / 2 + 1) * hmap_dim, but we use full sized buffer here for simplicity.
@@ -205,6 +299,7 @@ OceanSimulator::OceanSimulator(simul::terrain::OceanParameter *params, ID3D11Dev
 	pd3dDevice->CreateSamplerState(&sam_desc, &m_pPointSamplerState);
 	assert(m_pPointSamplerState);
 
+	effect=LoadEffect(pd3dDevice,"ocean.fx");
 	// Create the compute shader: UpdateSpectrumCS
     ID3DBlob* pBlobUpdateSpectrumCS = NULL;
     try
@@ -327,50 +422,8 @@ OceanSimulator::OceanSimulator(simul::terrain::OceanParameter *params, ID3D11Dev
 
 OceanSimulator::~OceanSimulator()
 {
-	SAFE_RELEASE(m_pBuffer_Float2_H0);
-	SAFE_RELEASE(m_pBuffer_Float_Omega);
-	SAFE_RELEASE(m_pBuffer_Float2_Ht);
-	SAFE_RELEASE(m_pBuffer_Float_Dxyz);
-
-	SAFE_RELEASE(m_pPointSamplerState);
-
-	SAFE_RELEASE(m_pQuadVB);
-
-	SAFE_RELEASE(m_pUAV_H0);
-	SAFE_RELEASE(m_pUAV_Omega);
-	SAFE_RELEASE(m_pUAV_Ht);
-	SAFE_RELEASE(m_pUAV_Dxyz);
-
-	SAFE_RELEASE(m_pSRV_H0);
-	SAFE_RELEASE(m_pSRV_Omega);
-	SAFE_RELEASE(m_pSRV_Ht);
-	SAFE_RELEASE(m_pSRV_Dxyz);
-
-	SAFE_RELEASE(m_pDisplacementMap);
-	SAFE_RELEASE(m_pDisplacementSRV);
-	SAFE_RELEASE(m_pDisplacementRTV);
-
-	SAFE_RELEASE(m_pGradientMap);
-	SAFE_RELEASE(m_pGradientSRV);
-	SAFE_RELEASE(m_pGradientRTV);
-
-	SAFE_RELEASE(m_pUpdateSpectrumCS);
-	SAFE_RELEASE(m_pQuadVS);
-	SAFE_RELEASE(m_pUpdateDisplacementPS);
-	SAFE_RELEASE(m_pGenGradientFoldingPS);
-
-	SAFE_RELEASE(m_pQuadLayout);
-
-	SAFE_RELEASE(m_pImmutableCB);
-	SAFE_RELEASE(m_pPerFrameCB);
-
-	SAFE_RELEASE(m_pd3dImmediateContext);
-
-#ifdef CS_DEBUG_BUFFER
-	SAFE_RELEASE(m_pDebugBuffer);
-#endif
+	InvalidateDeviceObjects();
 }
-
 
 // Initialize the vector field.
 // wlen_x: width of wave tile, in meters
@@ -424,14 +477,17 @@ void OceanSimulator::updateDisplacementMap(float time)
 {
 	// ---------------------------- H(0) -> H(t), D(x, t), D(y, t) --------------------------------
 	// Compute shader
-	m_pd3dImmediateContext->CSSetShader(m_pUpdateSpectrumCS, NULL, 0);
-
+	//m_pd3dImmediateContext->CSSetShader(m_pUpdateSpectrumCS, NULL, 0);
+	ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName("update_spectrum");
 	// Buffers
-	ID3D11ShaderResourceView* cs0_srvs[2] = {m_pSRV_H0, m_pSRV_Omega};
-	m_pd3dImmediateContext->CSSetShaderResources(0, 2, cs0_srvs);
+	//ID3D11ShaderResourceView* cs0_srvs[2] = {m_pSRV_H0, m_pSRV_Omega};
+	//m_pd3dImmediateContext->CSSetShaderResources(0, 2, cs0_srvs);
+	simul::dx11::setParameter(effect,"g_InputH0"	,m_pSRV_H0);
+	simul::dx11::setParameter(effect,"g_InputOmega"	,m_pSRV_Omega);
 
-	ID3D11UnorderedAccessView* cs0_uavs[1] = {m_pUAV_Ht};
-	m_pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1, cs0_uavs, (UINT*)(&cs0_uavs[0]));
+	//ID3D11UnorderedAccessView* cs0_uavs[1] = {m_pUAV_Ht};
+	//m_pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1, cs0_uavs, (UINT*)(&cs0_uavs[0]));
+	simul::dx11::setUnorderedAccessView(effect,"g_OutputHt"	,m_pUAV_Ht);
 
 	// Consts
 	D3D11_MAPPED_SUBRESOURCE mapped_res;            
@@ -446,21 +502,24 @@ void OceanSimulator::updateDisplacementMap(float time)
 	per_frame_data[2] = m_param->dmap_dim / m_param->patch_length;
 	m_pd3dImmediateContext->Unmap(m_pPerFrameCB, 0);
 
-	ID3D11Buffer* cs_cbs[2] = {m_pImmutableCB, m_pPerFrameCB};
-	m_pd3dImmediateContext->CSSetConstantBuffers(0, 2, cs_cbs);
+	//ID3D11Buffer* cs_cbs[2] = {m_pImmutableCB, m_pPerFrameCB};
+	//m_pd3dImmediateContext->CSSetConstantBuffers(0, 2, cs_cbs);
+	simul::dx11::setConstantBuffer(effect,"cbComputeImmutable"	,m_pImmutableCB);
+	simul::dx11::setConstantBuffer(effect,"cbComputePerFrame"	,m_pPerFrameCB);
 
 	// Run the CS
 	UINT group_count_x = (m_param->dmap_dim + BLOCK_SIZE_X - 1) / BLOCK_SIZE_X;
 	UINT group_count_y = (m_param->dmap_dim + BLOCK_SIZE_Y - 1) / BLOCK_SIZE_Y;
 	m_pd3dImmediateContext->Dispatch(group_count_x, group_count_y, 1);
 
+	simul::dx11::unbindTextures(effect);
 	// Unbind resources for CS
-	cs0_uavs[0] = NULL;
+	/*cs0_uavs[0] = NULL;
 	m_pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1, cs0_uavs, (UINT*)(&cs0_uavs[0]));
 	cs0_srvs[0] = NULL;
 	cs0_srvs[1] = NULL;
 	m_pd3dImmediateContext->CSSetShaderResources(0, 2, cs0_srvs);
-
+	*/
 	// Perform Fast (inverse) Fourier Transform from the source Ht to the destination Dxyz.
 	// NOTE: we also provide the SRV of Dxyz so that FFT can use it as a temporary buffer and save space.
 	m_fft.fft_512x512_c2c(m_pUAV_Dxyz,m_pSRV_Dxyz,m_pSRV_Ht);

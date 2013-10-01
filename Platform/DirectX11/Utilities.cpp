@@ -48,12 +48,6 @@ void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *p
 	{
 		//Create a "Staging" Resource to actually copy data to-from the GPU buffer. 
 		D3D11_TEXTURE3D_DESC stagingBufferDesc;
-		//stagingBufferDesc.BindFlags				=0 ;
-		//stagingBufferDesc.Usage					=D3D11_USAGE_STAGING;  
-		//stagingBufferDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_READ;
-		//stagingBufferDesc.MiscFlags				=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-		//stagingBufferDesc.StructureByteStride	=sizeof(D3DXVECTOR4);
-		//stagingBufferDesc.ByteWidth				=byteSize * textureDesc. * h;
 
 		stagingBufferDesc.Width			=width;
 		stagingBufferDesc.Height		=length;

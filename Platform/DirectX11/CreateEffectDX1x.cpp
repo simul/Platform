@@ -439,6 +439,9 @@ void simul::dx11::unbindTextures(ID3DX11Effect *effect)
 		ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByIndex(i)->AsShaderResource();
 		if(var->IsValid())
 			var->SetResource(NULL);
+	ID3DX11EffectUnorderedAccessViewVariable*	uav	=effect->GetVariableByIndex(i)->AsUnorderedAccessView();
+		if(var->IsValid())
+			var->SetResource(NULL);
 	}
 }
 
@@ -767,6 +770,13 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *
 	delete [] macros;
 	return hr;
 }
+
+ID3DX11Effect *LoadEffect(ID3D1xDevice *d3dDevice,const char *filename_utf8)
+{
+	std::map<std::string,std::string> defines;
+	return LoadEffect(d3dDevice,filename_utf8,defines);
+}
+
 ID3DX11Effect *LoadEffect(ID3D1xDevice *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines)
 {
 	ID3DX11Effect *effect=NULL;

@@ -32,6 +32,7 @@ namespace simul
 			void SetLossTexture(void *t1);
 			void SetInscatterTextures(void *t1,void *s);
 		protected:
+			OceanSimulator						*oceanSimulator;
 			D3DXMATRIX view,proj;
 			ID3D11Device*						m_pd3dDevice;
 			// HLSL shaders

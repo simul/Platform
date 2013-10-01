@@ -56,6 +56,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 
 	oceanRenderer=new(memoryInterface) OceanRenderer(env->seaKeyframer);
+	oceanRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	ReverseDepthChanged();
 	depthFramebuffer.SetFormat(0);
 	depthFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);

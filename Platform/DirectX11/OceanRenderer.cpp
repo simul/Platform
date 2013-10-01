@@ -25,7 +25,6 @@ struct ocean_vertex
 	float index_y;
 };
 
-OceanSimulator* g_pOceanSimulator=NULL;
 // Mesh properties:
 
 // Shading properties:
@@ -93,6 +92,7 @@ struct Const_Shading
 
 OceanRenderer::OceanRenderer(simul::terrain::SeaKeyframer *s)
 	:simul::terrain::BaseSeaRenderer(s)
+	,oceanSimulator(NULL)
 	,m_pd3dDevice(NULL)
 	,effect(NULL)
 	,g_pPerCallCB(NULL)
@@ -157,16 +157,10 @@ void OceanRenderer::RestoreDeviceObjects(ID3D11Device* dev)
 {
 	InvalidateDeviceObjects();
 	m_pd3dDevice=dev;
-	try
-	{
-		g_pOceanSimulator = new OceanSimulator(ocean_parameters, m_pd3dDevice);
-	}
-	catch(...)
-	{
-		throw;
-	}
+	oceanSimulator = new OceanSimulator(ocean_parameters);
+	oceanSimulator->RestoreDeviceObjects(m_pd3dDevice);
 	// Update the simulation for the first time.
-	g_pOceanSimulator->updateDisplacementMap(0);
+	oceanSimulator->updateDisplacementMap(0);
 
 	// D3D buffers
 	createSurfaceMesh();
@@ -253,9 +247,13 @@ void OceanRenderer::SetInscatterTextures(void *t,void *s)
 
 void OceanRenderer::InvalidateDeviceObjects()
 {
+	if(oceanSimulator)
+	{
+		oceanSimulator->InvalidateDeviceObjects();
     // Ocean object
-	delete (g_pOceanSimulator);
-	g_pOceanSimulator=NULL;
+		delete (oceanSimulator);
+		oceanSimulator=NULL;
+	}
 	SAFE_RELEASE(g_pMeshIB);
 	SAFE_RELEASE(g_pMeshVB);
 	SAFE_RELEASE(g_pMeshLayout);
@@ -471,11 +469,12 @@ void OceanRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 
 void OceanRenderer::Render(void *context,float exposure)
 {
-app_time+=0.01f;
-	g_pOceanSimulator->updateDisplacementMap((float)app_time);
+	if(skyInterface)
+		app_time=skyInterface->GetTime();
+	oceanSimulator->updateDisplacementMap((float)app_time);
 	ID3D11DeviceContext*	pContext=(ID3D11DeviceContext*)context;
-	ID3D11ShaderResourceView* displacement_map = g_pOceanSimulator->getDisplacementMap();
-	ID3D11ShaderResourceView* gradient_map = g_pOceanSimulator->getGradientMap();
+	ID3D11ShaderResourceView* displacement_map = oceanSimulator->getDisplacementMap();
+	ID3D11ShaderResourceView* gradient_map = oceanSimulator->getGradientMap();
 
 	// Build rendering list
 	g_render_list.clear();
@@ -601,7 +600,7 @@ app_time+=0.01f;
 void OceanRenderer::RenderWireframe(void *context)
 {
 	ID3D11DeviceContext*	pContext=(ID3D11DeviceContext*)context;
-	ID3D11ShaderResourceView* displacement_map = g_pOceanSimulator->getDisplacementMap();
+	ID3D11ShaderResourceView* displacement_map = oceanSimulator->getDisplacementMap();
 	// Build rendering list
 	g_render_list.clear();
 	float ocean_extent = ocean_parameters->patch_length * (1 << g_FurthestCover);

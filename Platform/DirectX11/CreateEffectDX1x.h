@@ -10,7 +10,7 @@
 #ifndef CREATEEFFECTDX1X_H
 #define CREATEEFFECTDX1X_H
 #include <d3dx11.h>
-#include <d3dx11effect.h>
+#include "Simul/External/DirectX/Effects11/Inc/D3dx11effect.h"
 #include <D3Dcompiler.h>
 #include <d3dx9.h>
 #include <map>
@@ -38,19 +38,23 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename);
-		ID3D11Texture1D* make1DTexture(	ID3D1xDevice			*m_pd3dDevice
+		ID3D11Texture1D* make1DTexture(
+							ID3D1xDevice			*m_pd3dDevice
 										,int w
 										,DXGI_FORMAT format
 										,const float *src);
-		ID3D11Texture2D* make2DTexture(	ID3D1xDevice			*m_pd3dDevice
+		ID3D11Texture2D* make2DTexture(
+							ID3D1xDevice			*m_pd3dDevice
 										,int w,int h
 										,DXGI_FORMAT format
 										,const float *src);
-		ID3D11Texture3D* make3DTexture(	ID3D1xDevice			*m_pd3dDevice
+		ID3D11Texture3D* make3DTexture(
+							ID3D1xDevice			*m_pd3dDevice
 										,int w,int l,int d
 										,DXGI_FORMAT format
 										,const void *src);
-		void Ensure3DTextureSizeAndFormat(	ID3D1xDevice			*m_pd3dDevice
+		void Ensure3DTextureSizeAndFormat(
+							ID3D1xDevice			*m_pd3dDevice
 											,ID3D1xTexture3D		* &tex
 											,ID3D11ShaderResourceView* &srv
 											,int w,int l,int d
@@ -83,6 +87,7 @@ extern SIMUL_DIRECTX11_EXPORT ID3D11ComputeShader *LoadComputeShader(ID3D1xDevic
 extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *filename);
 //! Create an effect from the named .fx file. Depending on what was passed to SetShaderBuildMode(), this may instead simply load the binary .fxo file that corresponds to the given filename. In that case, the defines are ignored.
 extern SIMUL_DIRECTX11_EXPORT HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *filename,const std::map<std::string,std::string>&defines);
+extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D1xDevice *d3dDevice,const char *filename_utf8);
 extern SIMUL_DIRECTX11_EXPORT ID3DX11Effect *LoadEffect(ID3D1xDevice *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines);
 
 extern SIMUL_DIRECTX11_EXPORT HRESULT Map2D(ID3D11DeviceContext *pImmediateContext,ID3D1xTexture2D *tex,D3D1x_MAPPED_TEXTURE2D *mp);
