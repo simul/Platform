@@ -17,6 +17,8 @@
 #include <string>
 #include "Simul/Platform/DirectX9/Export.h"
 #include "Simul/Clouds/BaseCloudRenderer.h"
+#include "Simul/Base/RuntimeError.h"
+
 enum ShaderModel {NO_SHADERMODEL=0,USE_SHADER_2,USE_SHADER_2A,USE_SHADER_3};
 extern ShaderModel SIMUL_DIRECTX9_EXPORT GetShaderModel();
 extern void SIMUL_DIRECTX9_EXPORT SetMaxShaderModel(ShaderModel m);

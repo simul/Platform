@@ -763,8 +763,7 @@ bool SimulSkyRenderer::RenderFades(void *,int width,int height)
 	y+=size+8;
 	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)illumination_fb.GetColorTex());
 	RenderTexture(m_pd3dDevice,x0+size+2,y		,size,size,(LPDIRECT3DBASETEXTURE9)skylight_2d.GetColorTex(),m_pSkyEffect
-		,m_pSkyEffect->GetTechniqueByName("show_illumination_buffer");
-);
+		,m_pSkyEffect->GetTechniqueByName("show_illumination_buffer"));
 
 	int x=16+size;
 	y=y0+8;
@@ -914,7 +913,7 @@ bool SimulSkyRenderer::Render2DFades(void *)
 	return true;
 }
 
-void SimulSkyRenderer::RenderIllumationBuffer(void *)
+void SimulSkyRenderer::RenderIllumationBuffer(void *context)
 {
 	EarthShadowUniforms earthShadowUniforms;
 	SkyConstants skyConstants;
@@ -924,12 +923,17 @@ void SimulSkyRenderer::RenderIllumationBuffer(void *)
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,1.0,0.0,1.0};
 	{
-		ID3D1xEffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("simul_illumination_buffer");
-		ApplyPass(context,tech->GetPassByIndex(0));
+		D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("simul_illumination_buffer");
+		m_pSkyEffect->SetTechnique(tech);
 		illumination_fb.Activate(context);
-		context->ClearRenderTargetView(illumination_fb.m_pHDRRenderTarget,clearColor);
+		illumination_fb.Clear(context,0,0,0,0,0);
+		unsigned passes;
 		//if(e.enable)
-			simul::dx11::UtilityRenderer::DrawQuad(context);
+		m_pSkyEffect->Begin(&passes,0);
+		m_pSkyEffect->BeginPass(0);
+			simul::dx9::DrawQuad(m_pd3dDevice);
+		m_pSkyEffect->EndPass();
+		m_pSkyEffect->End();
 		illumination_fb.Deactivate(context);
 	}
 }
