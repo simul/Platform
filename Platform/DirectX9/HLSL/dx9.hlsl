@@ -23,6 +23,14 @@
 	{
 		return tex3D(tex,texc);
 	}
+	float4 generic_texture_lookup_lod(sampler2D tex,vec2 texc,int lod)
+	{
+		return tex2Dlod(tex,vec4(texc,0,(float)lod));
+	}
+	float4 generic_texture_lookup_lod(sampler3D tex,vec3 texc,int lod)
+	{
+		return tex3Dlod(tex,vec4(texc,(float)lod));
+	}
 	#define texture_clamp_mirror(tex,texc) generic_texture_lookup(tex,texc)
 	#define texture_clamp(tex,texc) generic_texture_lookup(tex,texc)
 	#define texture_wrap_clamp(tex,texc) generic_texture_lookup(tex,texc)

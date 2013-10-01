@@ -194,13 +194,16 @@ SimulWeatherRendererDX11::~SimulWeatherRendererDX11()
 
 void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float exposure,float gamma)
 {
-	ID3D11DeviceContext* m_pImmediateContext=NULL;;
+	std::wstring filenamew=simul::base::Utf8ToWString(filename_utf8);
+	ID3D11DeviceContext* m_pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	FramebufferCubemapDX1x	fb_cubemap;
-	fb_cubemap.SetWidthAndHeight(2048,2048);
+	static int cubesize=1024;
+	fb_cubemap.SetWidthAndHeight(cubesize,cubesize);
+	fb_cubemap.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 	fb_cubemap.RestoreDeviceObjects(m_pd3dDevice);
 	simul::dx11::Framebuffer gamma_correct;
-	gamma_correct.SetWidthAndHeight(2048,2048);
+	gamma_correct.SetWidthAndHeight(cubesize,cubesize);
 	gamma_correct.RestoreDeviceObjects(m_pd3dDevice);
 
 	ID3D1xEffect* m_pTonemapEffect=NULL;
@@ -214,6 +217,8 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	bool godrays=GetBaseAtmosphericsRenderer()->GetShowGodrays();
 	GetBaseAtmosphericsRenderer()->SetShowGodrays(false);
 	environment->cloudKeyframer->SetUse3DNoise(true);
+
+	bool gamma_correction=false;//(filenamew.find(L".hdr")>=filenamew.length());
 	int l=100;
 	if(baseCloudRenderer)
 	{
@@ -225,8 +230,11 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	{
 		fb_cubemap.SetCurrentFace(i);
 		fb_cubemap.Activate(m_pImmediateContext);
-		gamma_correct.Activate(m_pImmediateContext);
-		gamma_correct.Clear(m_pImmediateContext,0.f,0.f,0.f,0.f,0.f);
+		if(gamma_correction)
+		{
+			gamma_correct.Activate(m_pImmediateContext);
+			gamma_correct.Clear(m_pImmediateContext,0.f,0.f,0.f,0.f,0.f);
+		}
 		if(simulSkyRenderer)
 		{
 			D3DXMATRIX cube_proj;
@@ -238,8 +246,9 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 			SetMatrices(view_matrices[i],cube_proj);
 			RenderSkyAsOverlay(m_pImmediateContext,exposure,false,false,NULL,NULL,0,simul::sky::float4(0,0,1.f,1.f), true);
 		}
-		gamma_correct.Deactivate(m_pImmediateContext);
+		if(gamma_correction)
 		{
+			gamma_correct.Deactivate(m_pImmediateContext);
 			simul::dx11::setParameter(m_pTonemapEffect,"imageTexture",gamma_correct.GetBufferResource());
 			simul::dx11::setParameter(m_pTonemapEffect,"gamma",gamma);
 			simul::dx11::setParameter(m_pTonemapEffect,"exposure",exposure);
@@ -249,8 +258,15 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 		fb_cubemap.Deactivate(m_pImmediateContext);
 	}
 	ID3D11Texture2D *tex=fb_cubemap.GetCopy(m_pImmediateContext);
-	std::wstring filenamew=simul::base::Utf8ToWString(filename_utf8);
-	HRESULT hr=D3DX11SaveTextureToFileW(m_pImmediateContext,tex,D3DX11_IFF_DDS,filenamew.c_str());
+	//if(gamma_correction)
+	{
+		HRESULT hr=D3DX11SaveTextureToFileW(m_pImmediateContext,tex,D3DX11_IFF_DDS,filenamew.c_str());
+	}
+	//else
+	{
+		//vec4 target=new vec4(cubesize*cubesize*6);
+		//fb_cubemap.CopyToMemory(target);
+	}
 	SAFE_RELEASE(m_pImmediateContext);
 	SAFE_RELEASE(m_pTonemapEffect);
 	SAFE_RELEASE(tex);

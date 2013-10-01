@@ -40,14 +40,10 @@ namespace simul
 			void RestoreDeviceObjects(void *x);
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
-			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-			bool StartRender(void *context);
-			//! ApplyFade: call this after rendering the solid stuff, before rendering transparent and background imagery.
-			bool ApplyFade();
-			//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
-			bool FinishRender(void *context);
+			//! Render: write the given texture to screen using the HDR rendering shaders
+			void Render(void *context,void *texture_srv);
 			//! Create the glow texture that will be overlaid due to strong lights.
-			void RenderGlowTexture(void *context);
+			void RenderGlowTexture(void *context,void *texture_srv);
 			//! Get the current debug text as a c-string pointer.
 			const char *GetDebugText() const;
 			//! Get a timing value for debugging.
@@ -56,7 +52,6 @@ namespace simul
 			void RecompileShaders();
 		protected:
 			bool Destroy();
-			simul::dx11::Framebuffer framebuffer;
 			simul::dx11::Framebuffer glow_fb;
 			int Width,Height;
 			ID3D1xDevice*						m_pd3dDevice;

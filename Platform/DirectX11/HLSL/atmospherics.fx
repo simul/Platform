@@ -1,9 +1,9 @@
 #include "CppHlsl.hlsl"
-#include "../../CrossPlatform/atmospherics_constants.sl"
 #include "states.hlsl"
 #include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/atmospherics.sl"
+#include "../../CrossPlatform/atmospherics_constants.sl"
 
 Texture2D depthTexture;
 Texture2D cloudDepthTexture;
@@ -66,7 +66,9 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 
 vec4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
 {
-	vec3 loss=AtmosphericsLoss(depthTexture,lossTexture
+	vec3 loss=AtmosphericsLoss(depthTexture
+							,viewportToTexRegionScaleBias
+							,lossTexture
 							,invViewProj
 							,IN.texCoords
 							,IN.pos
@@ -75,7 +77,7 @@ vec4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
     return float4(loss.rgb,1.f);
 }
 
-vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
+vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 clip_pos		=vec2(-1.f,1.f);
 	clip_pos.x			+=2.0*IN.texCoords.x;
@@ -93,7 +95,24 @@ vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
 							,hazeEccentricity
 							,lightDir
 							,mieRayleighRatio);
-    return float4(insc.rgb,1.f);
+    return float4(insc.rgb*exposure,1.f);
+/*
+	vec4 res=InscatterMSAA(inscTexture
+				,skylTexture
+				,illuminationTexture
+				,depthTexture
+				,IN.texCoords
+				,invViewProj
+				,lightDir
+				,hazeEccentricity
+				,mieRayleighRatio
+				,viewportToTexRegionScaleBias
+				,depthToLinFadeDistParams
+				,tanHalfFov);
+	
+	res.rgb	*=exposure;
+	return res;
+>>>>>>> remotes/github/rheinmetall*/
 }
 
 
@@ -129,7 +148,7 @@ technique11 simul_atmospherics_overlay
 		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_4_0,PS_AtmosOverlayInscPass()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Inscatter()));
     }
 }
 

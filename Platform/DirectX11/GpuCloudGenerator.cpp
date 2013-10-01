@@ -39,14 +39,9 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 	m_pd3dDevice=(ID3D1xDevice*)dev;
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-	fb[0].RestoreDeviceObjects(m_pd3dDevice);
-	fb[1].RestoreDeviceObjects(m_pd3dDevice);
-	dens_fb.SetDepthFormat(0);
-	dens_fb.SetFormat(DXGI_FORMAT_R32_FLOAT);
-	dens_fb.RestoreDeviceObjects(m_pd3dDevice);
-	mask_fb.SetDepthFormat(0);
+	// Mask must have depth as that's how it merges.
+	mask_fb.SetDepthFormat(DXGI_FORMAT_R32_FLOAT);
 	mask_fb.RestoreDeviceObjects(m_pd3dDevice);
-	world_fb.RestoreDeviceObjects(m_pd3dDevice);
 	gpuCloudConstants.RestoreDeviceObjects(m_pd3dDevice);
 
 	SAFE_RELEASE(m_pWwcSamplerState);
@@ -77,11 +72,7 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *dev)
 
 void GpuCloudGenerator::InvalidateDeviceObjects()
 {
-	fb[0].InvalidateDeviceObjects();
-	fb[1].InvalidateDeviceObjects();
-	dens_fb.InvalidateDeviceObjects();
 	mask_fb.InvalidateDeviceObjects();
-	world_fb.InvalidateDeviceObjects();
 	SAFE_RELEASE(volume_noise_tex);
 	SAFE_RELEASE(volume_noise_tex_srv);
 	SAFE_RELEASE(m_pImmediateContext);
@@ -132,33 +123,33 @@ void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_sr
 	return volume_noise_tex_srv;
 }
 
-void GpuCloudGenerator::FillDensityGrid(int cycled_index
-										,const int *density_grid
+void GpuCloudGenerator::FillDensityGrid(int index
+										,const clouds::GpuCloudsParameters &params
 										,int start_texel
 										,int texels
-										,float humidity
-										,float baseLayer
-										,float transition
-										,float upperDensity
-										,float diffusivity
-										,float time
-										,void* noise_tex
-										,int octaves
-										,float persistence
-										,bool mask)
+										,const simul::clouds::MaskMap &masks)
 {
 	for(int i=0;i<3;i++)
-		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
-	int density_gridsize=density_grid[0]*density_grid[1]*density_grid[2];
-	dens_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
-	mask_fb.SetWidthAndHeight(density_grid[0],density_grid[1]);
+		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
+	int density_gridsize=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
+	mask_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]);
 
 	mask_fb.Activate(m_pImmediateContext);
-	if(mask)
+	if(masks.size())
 	{
-		mask_fb.Clear(m_pImmediateContext,1.f,1.f,1.f,1.f,1.f);
+		mask_fb.Clear(m_pImmediateContext,0.f,0.f,0.f,0.f,0.f);
+		
+		for(simul::clouds::MaskMap::const_iterator i=masks.begin();i!=masks.end();i++)
+		{
+	gpuCloudConstants.yRange		=vec4(0,1.f,0,0);
+			gpuCloudConstants.maskCentre	=vec2(i->second.x,i->second.y);
+			gpuCloudConstants.maskRadius	=i->second.radius;
+			gpuCloudConstants.maskFeather	=0.1f;
+			gpuCloudConstants.maskThickness	=i->second.thickness;
+			gpuCloudConstants.Apply(m_pImmediateContext);
 		ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
-		dens_fb.DrawQuad(m_pImmediateContext);
+			mask_fb.DrawQuad(m_pImmediateContext);
+	}
 	}
 	else
 	{
@@ -166,54 +157,29 @@ void GpuCloudGenerator::FillDensityGrid(int cycled_index
 	}
 	mask_fb.Deactivate(m_pImmediateContext);
 
-	simul::math::Vector3 noise_scale(1.f,1.f,(float)density_grid[2]/(float)density_grid[0]);
-
-	int z0	=start_texel/(density_grid[0]*density_grid[1]);
-	int z1	=(start_texel+texels)/(density_grid[0]*density_grid[1]);
-	int zmax=density_grid[2];
+	int z0	=start_texel/(params.density_grid[0]*params.density_grid[1]);
+	int z1	=(start_texel+texels)/(params.density_grid[0]*params.density_grid[1]);
+	int zmax=params.density_grid[2];
 	float y_start					=(float)z0/(float)zmax;
 	float y_range					=(float)z1/(float)zmax-y_start;
-	gpuCloudConstants.yRange		=vec4(y_start,y_range,0,0);
+	SetGpuCloudConstants(gpuCloudConstants,params,y_start,y_range);
 
-	gpuCloudConstants.octaves		=octaves;
-	gpuCloudConstants.persistence	=persistence;
-	gpuCloudConstants.humidity		=humidity;
-	gpuCloudConstants.time			=time;
-	gpuCloudConstants.noiseScale	=noise_scale;
-
-	gpuCloudConstants.zPixel		=1.f/(float)density_grid[2];
-	gpuCloudConstants.zSize			=(float)density_grid[2];
-	gpuCloudConstants.baseLayer		=baseLayer;
-	gpuCloudConstants.transition	=transition;
-	gpuCloudConstants.upperDensity	=upperDensity;
-	gpuCloudConstants.diffusivity	=diffusivity;
-
-	float fractalSum=0.0;
-	float mult=0.5;
-	for(int i=0;i<octaves;i++)
-	{
-		fractalSum+=mult;
-		mult*=persistence;
-	}
-	gpuCloudConstants.invFractalSum=1.f/fractalSum;
-
-//gpuCloudConstants.densityGrid	=uint3(density_grid);
 	simul::dx11::setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
 	simul::dx11::setParameter(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
-	//DXGI_FORMAT_R32G32B32A32_FLOAT
+	
 	density_texture.ensureTexture3DSizeAndFormat(m_pd3dDevice
-		,density_grid[0],density_grid[1],density_grid[2]
+		,params.density_grid[0],params.density_grid[1],params.density_grid[2]
 		,DXGI_FORMAT_R32_FLOAT,true);
-//	Ensure3DTextureSizeAndFormat(m_pd3dDevice,density_texture,density_texture_srv,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R32G32B32A32_FLOAT);
+
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",density_texture.unorderedAccessView);
 
 	// divide the grid into 8x8x8 blocks:
 	static const int BLOCKWIDTH=8;
 	static const int BLOCKSIZE=BLOCKWIDTH*BLOCKWIDTH*BLOCKWIDTH;
 	uint3 subgrid;
-	subgrid.x=(density_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
-	subgrid.y=(density_grid[1]+BLOCKWIDTH-1)/BLOCKWIDTH;
-	subgrid.z=(density_grid[2]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.x=(params.density_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.y=(params.density_grid[1]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.z=(params.density_grid[2]+BLOCKWIDTH-1)/BLOCKWIDTH;
 	int subgridsize=subgrid.x*subgrid.y*subgrid.z;
 	// which blocks to execute?
 	int x0	=start_texel/BLOCKSIZE/subgrid.y/subgrid.z;
@@ -239,7 +205,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 											,const float *lightspace_extinctions_float3
 											,bool wrap_light_tex)
 {
-int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
+	int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
 	start_texel*=2;
 	texels*=2;
 	int gridsize=light_grid[0]*light_grid[1]*light_grid[2];
@@ -248,17 +214,14 @@ int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
 	if(start_texel>gridsize)
 		start_texel=gridsize;	
 	if(start_texel+texels>gridsize)
-		texels=gridsize-start_texel; 
-	for(int i=0;i<2;i++)
-	{
-		fb[i].SetWidthAndHeight(light_grid[0],light_grid[1]);
-	}
-	directLightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice,light_grid[0],light_grid[1],light_grid[2]
+		texels=gridsize-start_texel;
+	directLightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice
+				,light_grid[0],light_grid[1],light_grid[2]
 				,DXGI_FORMAT_R32_FLOAT,true);
-	indirectLightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice,light_grid[0],light_grid[1],light_grid[2]
+	indirectLightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice
+				,light_grid[0],light_grid[1],light_grid[2]
 				,DXGI_FORMAT_R32_FLOAT,true);
 
-	//ID3D1xEffectShaderResourceVariable*	input_light_texture	=effect->GetVariableByName("inputTexture")->AsShaderResource();
 	ID3D1xEffectShaderResourceVariable*	densityTexture		=effect->GetVariableByName("densityTexture")->AsShaderResource();
 
 	gpuCloudConstants.yRange			=vec4(0.0,1.0,0,0);
@@ -340,9 +303,6 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index,unsigned char 
 												,int texels
 												,bool wrap_light_tex)
 {
-	// For each level in the z direction, we render out a 2D texture and copy it to the target.
-	world_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
-	world_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
 
 	int density_gridsize				=density_grid[0]*density_grid[1]*density_grid[2];
 

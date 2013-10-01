@@ -50,7 +50,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
 	hdrFramebuffer.SetWidthAndHeight(w,h);
 	hdrFramebuffer.SetFormat(D3DFMT_A32B32G32R32F);
-	hdrFramebuffer.SetDepthFormat(D3DFMT_D32);
+	hdrFramebuffer.SetDepthFormat(D3DFMT_D24X8);			//! This is one of only three formats that can be used as textures.
 	if(simulHDRRenderer&&simulWeatherRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
 	simulTerrainRenderer=new SimulTerrainRenderer(NULL);
@@ -242,10 +242,8 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 	}
 	else
 	{
-		pd3dDevice->Clear(0L,NULL,D3DCLEAR_ZBUFFER|D3DCLEAR_TARGET,0xFF000000,1.0f,0L);
+		pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,1.0f,0L);
 	}
-	//if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-	//	simulWeatherRenderer->GetAtmosphericsRenderer()->StartRender(NULL);
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
 		simulTerrainRenderer->SetMatrices(view,proj);
@@ -255,13 +253,11 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 	{
 		hdrFramebuffer.DeactivateDepth(NULL);
 	}
-	//if(simulWeatherRenderer&&simulWeatherRenderer->GetAtmosphericsRenderer()&&simulWeatherRenderer->GetShowAtmospherics())
-	//	simulWeatherRenderer->GetAtmosphericsRenderer()->FinishRender(pd3dDevice);
-
+	void *depth_texture=hdrFramebuffer.GetDepthTex();
 	if(simulWeatherRenderer)
 	{
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
-		simulWeatherRenderer->RenderSkyAsOverlay(pd3dDevice,exposure,UseSkyBuffer,false,NULL,NULL,viewport_id,simul::sky::float4(0,0,1.f,1.f),true);
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dDevice,exposure,UseSkyBuffer,false,depth_texture,NULL,viewport_id,simul::sky::float4(0,0,1.f,1.f),true);
 		simulWeatherRenderer->DoOcclusionTests();
 		if(simulOpticsRenderer&&ShowFlares)
 		{

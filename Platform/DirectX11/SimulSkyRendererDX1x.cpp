@@ -607,7 +607,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		inscatter_2d->Deactivate(context);
 	}
-	//ID3D1xEffectTechnique* m_hTechniqueSkylightAndOvercast		=m_pSkyEffect->GetTechniqueByName("skylight_and_overcast");
+
 	{
 		V_CHECK(fadeTexture1->SetResource(skyl_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(skyl_textures[(texture_cycle+1)%3].shaderResourceView));
@@ -617,7 +617,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		skylight_2d->Deactivate(context);
 	}
-	ID3D1xEffectTechnique* hTechniqueOverc		=m_pSkyEffect->GetTechniqueByName("simul_overc_3d_to_2d");
+	ID3D1xEffectTechnique* hTechniqueOverc		=m_pSkyEffect->GetTechniqueByName("overcast_inscatter");
 	// We will bake the overcast effect into the overcast_2d texture.
 	{
 		V_CHECK(inscTexture->SetResource((ID3D11ShaderResourceView*)inscatter_2d->GetColorTex()));
@@ -652,7 +652,7 @@ void SimulSkyRendererDX1x::RenderIllumationBuffer(void *c)
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,1.0,0.0,1.0};
 	{
-		ID3D1xEffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("simul_illumination_buffer");
+		ID3D1xEffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
 		ApplyPass(context,tech->GetPassByIndex(0));
 		illumination_fb.Activate(context);
 		context->ClearRenderTargetView(illumination_fb.m_pHDRRenderTarget,clearColor);

@@ -372,6 +372,7 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_
 	//simul::dx9::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
 	D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
 	view(3,0)=view(3,1)=view(3,2)=0;
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);

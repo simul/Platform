@@ -7,6 +7,7 @@ SamplerState wrapMirrorSamplerState:register(s3)
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Mirror;
+	AddressW = Wrap;
 };
 
 SamplerState cmcSamplerState:register(s5)

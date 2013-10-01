@@ -21,6 +21,7 @@ namespace simul
 			void RestoreDeviceObjects(void *pd3dDevice);
 			void InvalidateDeviceObjects();
 			void Activate(void *);
+			void ActivateColour(void*,const float viewportXYWH[4]);
 			void ActivateViewport(void*,float viewportX, float viewportY, float viewportW, float viewportH);
 			void Deactivate(void *);
 			void DeactivateDepth(void*);
@@ -48,6 +49,7 @@ namespace simul
 			LPDIRECT3DTEXTURE9	buffer_depth_texture;
 			LPDIRECT3DSURFACE9	m_pHDRRenderTarget;
 			void MakeTexture();
+			void SetViewport(void* ,float viewportX, float viewportY, float viewportW, float viewportH,float Z=0.f,float D=1.f);
 		};
 	}
 }

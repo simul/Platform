@@ -84,10 +84,11 @@ public:
 	{
 		loss_texture=(LPDIRECT3DBASETEXTURE9)t;
 	}
-	void SetInscatterTextures(void* t,void *s,void *)
+	void SetInscatterTextures(void* t,void *s,void *o)
 	{
 		inscatter_texture=(LPDIRECT3DBASETEXTURE9)t;
 		skylight_texture=(LPDIRECT3DBASETEXTURE9)s;
+		overc_inscatter_texture=(LPDIRECT3DBASETEXTURE9)o;
 	}
 	void SetCloudsTexture(void* t)
 	{
@@ -152,6 +153,7 @@ protected:
 
 	LPDIRECT3DBASETEXTURE9			loss_texture;
 	LPDIRECT3DBASETEXTURE9			inscatter_texture;
+	LPDIRECT3DBASETEXTURE9			overc_inscatter_texture;
 	LPDIRECT3DBASETEXTURE9			skylight_texture;
 	LPDIRECT3DBASETEXTURE9			clouds_texture;
 

@@ -129,11 +129,10 @@ float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
     return result;
 }
 
-vec4 PS_Overc3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
+vec4 PS_OvercastInscatter(vertexOutput3Dto2D IN): SV_TARGET
 {
 	// Texcoords representing the full distance from the eye to the given point.
 	vec2 fade_texc	=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
-
     return OvercastInscatter(inscTexture,illuminationTexture,fade_texc,overcast);
 }
 
@@ -424,7 +423,7 @@ technique11 simul_fade_3d_to_2d
     }
 }
  
-technique11 simul_overc_3d_to_2d
+technique11 overcast_inscatter
 {
     pass p0 
     {
@@ -433,7 +432,7 @@ technique11 simul_overc_3d_to_2d
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Overc3DTo2D()));
+		SetPixelShader(CompileShader(ps_4_0,PS_OvercastInscatter()));
     }
 }
  
@@ -450,7 +449,7 @@ technique11 skylight_and_overcast
     }
 }
 
-technique11 simul_illumination_buffer
+technique11 illumination_buffer
 {
     pass p0 
     {
