@@ -77,14 +77,14 @@ float4 ShowIlluminationBuffer(Texture2D inscTexture,vec2 texCoords)
 	if(texCoords.x<0.5)
 	{
 		texCoords.x*=2.0;
-		float4 nf=inscTexture.Sample(cmcSamplerState,texCoords);
+		float4 nf=texture_cmc_lod(inscTexture,texCoords,0);
 		return vec4(nf.zw,0.0,1.0);
 	}
 	else
 	{
 		texCoords.x=2.0*(texCoords.x-0.5);
 		vec2 texc=vec2(0.5,texCoords.y);
-		float4 nf=inscTexture.Sample(cmcSamplerState,texc);
+		float4 nf=texture_cmc_lod(inscTexture,texc,0);
 	
 		// Near Far for EarthShadow illumination is xy
 		// Near Far for clouds overcast is zw.

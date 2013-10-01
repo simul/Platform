@@ -61,6 +61,7 @@ namespace simul
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
 				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")
+				META_ValueProperty(int,Antialiasing				,"How many antialiasing samples to use.")
 			META_EndProperties
 			bool IsEnabled()const{return enabled;}
 			class SimulWeatherRendererDX11 *GetSimulWeatherRenderer()
@@ -103,8 +104,8 @@ namespace simul
 			SimulTerrainRendererDX1x	*simulTerrainRenderer;
 			int ScreenWidth,ScreenHeight;
 			// A depth-only FB to make sure we have a readable depth texture.
-			simul::dx11::Framebuffer depthFramebuffer;
-			simul::dx11::Framebuffer cubemapDepthFramebuffer;
+			simul::dx11::Framebuffer hdrFramebuffer;
+			//simul::dx11::Framebuffer cubemapDepthFramebuffer;
 			FramebufferCubemapDX1x	framebuffer_cubemap;
 			simul::base::MemoryInterface *memoryInterface;
 		};

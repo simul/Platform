@@ -8,6 +8,7 @@ FramebufferCubemapDX1x::FramebufferCubemapDX1x()
 	:m_pCubeEnvDepthMap(NULL)
 	,m_pCubeEnvMap(NULL)
 	,m_pCubeEnvMapSRV(NULL)
+	,m_pCubeEnvMapDepthSRV(NULL)
 	,Width(0)
 	,Height(0)
 	,current_face(0)
@@ -48,25 +49,25 @@ void FramebufferCubemapDX1x::RestoreDeviceObjects(void* dev)
 	HRESULT hr=S_OK;
 	pd3dDevice=(ID3D1xDevice*)dev;
 	// Create cubic depth stencil texture
-	D3D1x_TEXTURE2D_DESC dstex;
-	dstex.Width = Width;
-	dstex.Height = Width;
-	dstex.MipLevels = 1;
-	dstex.ArraySize = 6;
-	dstex.SampleDesc.Count = 1;
-	dstex.SampleDesc.Quality = 0;
-	dstex.Format = DXGI_FORMAT_R24G8_TYPELESS;//DXGI_FORMAT_D32_FLOAT;
-	dstex.Usage = D3D1x_USAGE_DEFAULT;
-	dstex.BindFlags = D3D1x_BIND_DEPTH_STENCIL | D3D1x_BIND_SHADER_RESOURCE;
-	dstex.CPUAccessFlags = 0;
-	dstex.MiscFlags = D3D1x_RESOURCE_MISC_TEXTURECUBE;
+	D3D11_TEXTURE2D_DESC tex2dDesc;
+	tex2dDesc.Width = Width;
+	tex2dDesc.Height = Width;
+	tex2dDesc.MipLevels = 1;
+	tex2dDesc.ArraySize = 6;
+	tex2dDesc.SampleDesc.Count = 1;
+	tex2dDesc.SampleDesc.Quality = 0;
+	tex2dDesc.Format = DXGI_FORMAT_R32_TYPELESS;//DXGI_FORMAT_D32_FLOAT;
+	tex2dDesc.Usage = D3D1x_USAGE_DEFAULT;
+	tex2dDesc.BindFlags = D3D1x_BIND_DEPTH_STENCIL | D3D1x_BIND_SHADER_RESOURCE;
+	tex2dDesc.CPUAccessFlags = 0;
+	tex2dDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
  
-	V_CHECK( pd3dDevice->CreateTexture2D( &dstex, NULL, &m_pCubeEnvDepthMap ));
+	V_CHECK( pd3dDevice->CreateTexture2D( &tex2dDesc, NULL, &m_pCubeEnvDepthMap ));
 
 	// Create the depth stencil view for the entire cube
 	D3D1x_DEPTH_STENCIL_VIEW_DESC DescDS;
     ZeroMemory( &DescDS, sizeof( DescDS ) );
-	DescDS.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DescDS.Format = DXGI_FORMAT_D32_FLOAT;
 	DescDS.ViewDimension = D3D1x_DSV_DIMENSION_TEXTURE2DARRAY;
 	DescDS.Texture2DArray.FirstArraySlice = 0;
 	DescDS.Texture2DArray.ArraySize = 6;
@@ -82,16 +83,16 @@ void FramebufferCubemapDX1x::RestoreDeviceObjects(void* dev)
 	 
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	// Create the cube map for env map render target
-	dstex.Format = format;
-	dstex.BindFlags = D3D1x_BIND_RENDER_TARGET | D3D1x_BIND_SHADER_RESOURCE;
-	dstex.MiscFlags = D3D1x_RESOURCE_MISC_GENERATE_MIPS | D3D1x_RESOURCE_MISC_TEXTURECUBE;
-	dstex.MipLevels = MIPLEVELS;
+	tex2dDesc.Format = format;
+	tex2dDesc.BindFlags = D3D1x_BIND_RENDER_TARGET | D3D1x_BIND_SHADER_RESOURCE;
+	tex2dDesc.MiscFlags = D3D1x_RESOURCE_MISC_GENERATE_MIPS | D3D1x_RESOURCE_MISC_TEXTURECUBE;
+	tex2dDesc.MipLevels = MIPLEVELS;
  
-	V_CHECK(pd3dDevice->CreateTexture2D(&dstex,NULL,&m_pCubeEnvMap));
+	V_CHECK(pd3dDevice->CreateTexture2D(&tex2dDesc,NULL,&m_pCubeEnvMap));
 
 	// Create the 6-face render target view
 	D3D1x_RENDER_TARGET_VIEW_DESC DescRT;
-	DescRT.Format = dstex.Format;
+	DescRT.Format = tex2dDesc.Format;
 	DescRT.ViewDimension = D3D1x_RTV_DIMENSION_TEXTURE2DARRAY;
 	DescRT.Texture2DArray.FirstArraySlice = 0;
 	DescRT.Texture2DArray.ArraySize = 6;
@@ -107,29 +108,39 @@ void FramebufferCubemapDX1x::RestoreDeviceObjects(void* dev)
 	// Create the shader resource view for the cubic env map
 	D3D1x_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 	ZeroMemory( &SRVDesc, sizeof(SRVDesc) );
-	SRVDesc.Format = dstex.Format;
-	SRVDesc.ViewDimension = D3D1x_SRV_DIMENSION_TEXTURECUBE;
+	SRVDesc.Format = tex2dDesc.Format;
+	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
 	SRVDesc.TextureCube.MipLevels = MIPLEVELS;
 	SRVDesc.TextureCube.MostDetailedMip = 0;
 	 
 	V_CHECK( pd3dDevice->CreateShaderResourceView(m_pCubeEnvMap, &SRVDesc, &m_pCubeEnvMapSRV ));
+	
+	ZeroMemory( &SRVDesc, sizeof(SRVDesc) );
+	SRVDesc.Format = DescDS.Format;
+	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+	SRVDesc.TextureCube.MipLevels = MIPLEVELS;
+	SRVDesc.TextureCube.MostDetailedMip = 0;
+	 
+	//V_CHECK( pd3dDevice->CreateShaderResourceView(m_pCubeEnvDepthMap, &SRVDesc, &m_pCubeEnvMapDepthSRV ));
+	
 }
+
 ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *pd3dDevice,int w,DXGI_FORMAT target_format)
 {
-	D3D11_TEXTURE2D_DESC dstex;
-	dstex.Width					= w;
-	dstex.Height				= w;
-	dstex.MipLevels				= 1;
-	dstex.ArraySize				= 6;
-	dstex.SampleDesc.Count		= 1;
-	dstex.SampleDesc.Quality	= 0;
-	dstex.Format				= target_format;
-	dstex.Usage					= D3D11_USAGE_STAGING;
-	dstex.BindFlags				= 0;
-	dstex.CPUAccessFlags		=D3D11_CPU_ACCESS_READ| D3D11_CPU_ACCESS_WRITE;
-	dstex.MiscFlags				=D3D11_RESOURCE_MISC_TEXTURECUBE;
+	D3D11_TEXTURE2D_DESC tex2dDesc;
+	tex2dDesc.Width					= w;
+	tex2dDesc.Height				= w;
+	tex2dDesc.MipLevels				= 1;
+	tex2dDesc.ArraySize				= 6;
+	tex2dDesc.SampleDesc.Count		= 1;
+	tex2dDesc.SampleDesc.Quality	= 0;
+	tex2dDesc.Format				= target_format;
+	tex2dDesc.Usage					= D3D11_USAGE_STAGING;
+	tex2dDesc.BindFlags				= 0;
+	tex2dDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_READ| D3D11_CPU_ACCESS_WRITE;
+	tex2dDesc.MiscFlags				=D3D11_RESOURCE_MISC_TEXTURECUBE;
 	ID3D11Texture2D* tex		=NULL;
-	pd3dDevice->CreateTexture2D(&dstex,NULL,&tex);
+	pd3dDevice->CreateTexture2D(&tex2dDesc,NULL,&tex);
 	return tex;
 }
 
@@ -206,6 +217,35 @@ void FramebufferCubemapDX1x::CalcSphericalHarmonics(void *context,int bands)
 void FramebufferCubemapDX1x::Activate(void *context)
 {
 	ActivateViewport(context,0.f,0.f,1.f,1.f);
+}
+
+void FramebufferCubemapDX1x::ActivateColour(void *context,const float viewportXYWH[4])
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	HRESULT hr=S_OK;
+	unsigned int num_v=0;
+	pContext->RSGetViewports(&num_v,NULL);
+	if(num_v<=4)
+		pContext->RSGetViewports(&num_v,m_OldViewports);
+
+	m_pOldRenderTarget	=NULL;
+	m_pOldDepthSurface	=NULL;
+	pContext->OMGetRenderTargets(	1,
+									&m_pOldRenderTarget,
+									&m_pOldDepthSurface
+									);
+	pContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV[current_face],NULL);
+	D3D11_VIEWPORT viewport;
+		// Setup the viewport for rendering.
+	viewport.Width = floorf((float)Width*viewportXYWH[2] + 0.5f);
+	viewport.Height = floorf((float)Height*viewportXYWH[3] + 0.5f);
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = floorf((float)Width*viewportXYWH[0] + 0.5f);
+	viewport.TopLeftY = floorf((float)Height*viewportXYWH[1]+ 0.5f);
+
+	// Create the viewport.
+	pContext->RSSetViewports(1, &viewport);
 }
 
 void FramebufferCubemapDX1x::ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH)

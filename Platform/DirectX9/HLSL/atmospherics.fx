@@ -2,6 +2,7 @@
 #include "../../CrossPlatform/atmospherics_constants.sl"
 #include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/atmospherics.sl"
 
 texture maxDistanceTexture;
@@ -148,7 +149,6 @@ float3 illuminationScales;
 struct atmosVertexInput
 {
     float2 position			: POSITION;
-    float2 texCoords		: TEXCOORD0;
 };
 
 struct atmosVertexOutput
@@ -162,26 +162,25 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 {
 	atmosVertexOutput OUT;
 	OUT.position		=vec4(IN.position.xy,0,1);
-	//OUT.hpos_duplicate	=vec4(IN.position.xy,0,1);
-	OUT.texCoords		=IN.texCoords;
-	//OUT.texCoords*=(float2(1.0,1.0)+texelOffsets);
-	OUT.texCoords		+=0.5*texelOffsets;
-	OUT.clip_pos		=vec2(-1.0,1.0);
-	OUT.clip_pos.x		+=2.0*OUT.texCoords.x;
-	OUT.clip_pos.y		-=2.0*OUT.texCoords.y;
+	OUT.clip_pos.xy		=IN.position.xy;
+	OUT.texCoords		=0.5*vec2(IN.position.x+1.0,1.0-IN.position.y);
 	return OUT;
 }
 
 vec4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : color
 {
-	vec3 loss=AtmosphericsLoss(depth_texture,loss_texture
+	vec3 loss=AtmosphericsLoss(depth_texture
+							,viewportToTexRegionScaleBias
+							,loss_texture
 							,invViewProj
 							,IN.texCoords
 							,IN.clip_pos
 							,depthToLinFadeDistParams
 							,tanHalfFov);
+	loss*=0;
     return float4(loss.rgb,1.f);
 }
+
 vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : color
 {
 	vec3 insc=AtmosphericsInsc(depth_texture
@@ -197,7 +196,8 @@ vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : color
 							,hazeEccentricity
 							,lightDir
 							,mieRayleighRatio);
-	return vec4(insc,1.0);
+
+	return vec4(insc*exposure,1.0);
 }
 
 vec4 PS_Godrays(atmosVertexOutput IN) : color
