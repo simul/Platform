@@ -174,7 +174,6 @@ SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::
 	,m_pVtxDecl(NULL)
 	,m_pHudVertexDecl(NULL)
 	,m_pCloudEffect(NULL)
-	,noise_texture(NULL)
 	,raytrace_layer_texture(NULL)
 	,illumination_texture(NULL)
 	,sky_loss_texture(NULL)
@@ -389,7 +388,7 @@ void SimulCloudRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pCloudEffect);
 	for(int i=0;i<3;i++)
 		SAFE_RELEASE(cloud_textures[i]);
-	SAFE_RELEASE(noise_texture);
+	noise_fb.InvalidateDeviceObjects();
 	SAFE_RELEASE(illumination_texture);
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	SAFE_RELEASE(unitSphereIndexBuffer);
@@ -415,11 +414,10 @@ bool SimulCloudRenderer::RenderNoiseTexture()
 	HRESULT hr=S_OK;
 	if(!m_pd3dDevice)
 		return (hr==S_OK);
-	SAFE_RELEASE(noise_texture);
+	
 	LPDIRECT3DSURFACE9				pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9				pNoiseRenderTarget=NULL;
 	LPD3DXEFFECT					pRenderNoiseEffect=NULL;
-	LPDIRECT3DTEXTURE9				input_texture=NULL;
 
 	B_RETURN(CreateDX9Effect(m_pd3dDevice,pRenderNoiseEffect,"simul_rendernoise.fx"));
 	D3DXHANDLE inputTexture		=pRenderNoiseEffect->GetParameterByName(NULL,"noiseTexture");
@@ -432,56 +430,51 @@ bool SimulCloudRenderer::RenderNoiseTexture()
 	int texture_octaves			=cloudKeyframer->GetEdgeNoiseOctaves();
 	float texture_persistence	=cloudKeyframer->GetEdgeNoisePersistence();
 	// Make the input texture:
+	simul::dx9::Framebuffer	random_fb;
 	{
-		if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,noise_texture_frequency,noise_texture_frequency,0,default_texture_usage,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&input_texture)))
-			return (hr==S_OK);
-		D3DLOCKED_RECT lockedRect={0};
-		if(FAILED(hr=input_texture->LockRect(0,&lockedRect,NULL,NULL)))
-			return (hr==S_OK);
-		SetBits8();
-
-		simul::clouds::TextureGenerator::Make2DRandomTexture((unsigned char *)(lockedRect.pBits),noise_texture_frequency);
-		hr=input_texture->UnlockRect(0);
-		input_texture->GenerateMipSubLevels();
+		unsigned passes;
+		random_fb.RestoreDeviceObjects(m_pd3dDevice);
+		random_fb.SetWidthAndHeight(noise_texture_frequency,noise_texture_frequency);
+		random_fb.SetFormat((int)D3DFMT_A32B32G32R32F);
+		pRenderNoiseEffect->SetTechnique(pRenderNoiseEffect->GetTechniqueByName("random"));
+		random_fb.Activate(NULL);
+			pRenderNoiseEffect->Begin(&passes,0);
+			pRenderNoiseEffect->BeginPass(0);
+			simul::dx9::DrawQuad(m_pd3dDevice);
+			pRenderNoiseEffect->EndPass();
+			pRenderNoiseEffect->End();
+		random_fb.Deactivate(NULL);
 	}
 
 	{
-		hr=(m_pd3dDevice->CreateTexture(	noise_texture_size,
-											noise_texture_size,
-											0,
-											D3DUSAGE_RENDERTARGET,
-											D3DFMT_A8R8G8B8,
-											D3DPOOL_DEFAULT,
-											&noise_texture,
-											NULL
-										));
-		noise_texture->GetSurfaceLevel(0,&pNoiseRenderTarget);
-		hr=m_pd3dDevice->GetRenderTarget(0,&pOldRenderTarget);
-
-		hr=m_pd3dDevice->SetRenderTarget(0,pNoiseRenderTarget);
-		hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x0000000,1.f,0L);
-	}
-	
-	pRenderNoiseEffect->SetTexture(inputTexture,input_texture);
+		unsigned passes;
+		noise_fb.RestoreDeviceObjects(m_pd3dDevice);
+		noise_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
+		noise_fb.SetFormat((int)D3DFMT_A8R8G8B8);
+		noise_fb.Activate(NULL);
+		hr=m_pd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xAA88FF88,1.f,0L);
+	pRenderNoiseEffect->SetTechnique(pRenderNoiseEffect->GetTechniqueByName("noise"));
+	pRenderNoiseEffect->SetTexture(inputTexture,(LPDIRECT3DTEXTURE9)random_fb.GetColorTex());
 	pRenderNoiseEffect->SetFloat(persistence,texture_persistence);
-
 	int size=(int)(log((float)noise_texture_size)/log(2.f));
 	int freq=(int)(log((float)noise_texture_frequency)/log(2.f));
 	texture_octaves=size-freq;
 
 	pRenderNoiseEffect->SetInt(octaves,texture_octaves);
-
-	RenderTexture(m_pd3dDevice,0,0,noise_texture_size,noise_texture_size,
-					  input_texture,pRenderNoiseEffect,NULL);
-
-	m_pd3dDevice->SetRenderTarget(0,pOldRenderTarget);
-
-	D3DXSaveTextureToFile(TEXT("Media/Textures/noise.dds"),D3DXIFF_DDS,noise_texture,NULL);
-	noise_texture->GenerateMipSubLevels();
-D3DXSaveTextureToFile(TEXT("Media/Textures/noise.jpg"),D3DXIFF_JPG,noise_texture,NULL);
+			pRenderNoiseEffect->Begin(&passes,0);
+			pRenderNoiseEffect->BeginPass(0);
+			simul::dx9::DrawQuad(m_pd3dDevice);
+			pRenderNoiseEffect->EndPass();
+			pRenderNoiseEffect->End();
+		noise_fb.Deactivate(NULL);
+	}
+	
+	D3DXSaveTextureToFile(TEXT("Media/Textures/noise.dds"),D3DXIFF_DDS,(LPDIRECT3DTEXTURE9)noise_fb.GetColorTex(),NULL);
+	//noise_texture->GenerateMipSubLevels();
+D3DXSaveTextureToFile(TEXT("Media/Textures/noise.jpg"),D3DXIFF_JPG,(LPDIRECT3DTEXTURE9)noise_fb.GetColorTex(),NULL);
 	SAFE_RELEASE(pOldRenderTarget);
 	SAFE_RELEASE(pRenderNoiseEffect);
-	SAFE_RELEASE(input_texture);
+
 	SAFE_RELEASE(pNoiseRenderTarget);
 	return (hr==S_OK);
 }
@@ -489,7 +482,9 @@ bool SimulCloudRenderer::CreateNoiseTexture(void *)
 {
 	if(!m_pd3dDevice)
 		return false;
-	SAFE_RELEASE(noise_texture);
+	RenderNoiseTexture();
+	return true;
+	/*SAFE_RELEASE(noise_texture);
 	HRESULT hr=S_OK;
 //..if(!override_file&&(hr=D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/noise.dds"),&noise_texture))==S_OK)
 //		return result;
@@ -513,7 +508,7 @@ bool SimulCloudRenderer::CreateNoiseTexture(void *)
 
 	D3DXSaveTextureToFile(TEXT("Media/Textures/noise.png"),D3DXIFF_PNG,noise_texture,NULL);
 	D3DXSaveTextureToFile(TEXT("Media/Textures/noise.dds"),D3DXIFF_DDS,noise_texture,NULL);
-	return true;
+	return true;*/
 }
 void SimulCloudRenderer::EnsureTextureCycle()
 {
@@ -589,10 +584,14 @@ void SimulCloudRenderer::EnsureCorrectTextureSizes()
 	}
 }
 
-void SimulCloudRenderer::EnsureTexturesAreUpToDate(void*)
+void SimulCloudRenderer::EnsureTexturesAreUpToDate(void* context)
 {
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
+	if(FailedNoiseChecksum())
+		noise_fb.InvalidateDeviceObjects();
+	if(!noise_fb.GetColorTex())
+		CreateNoiseTexture(context);
 	for(int i=0;i<3;i++)
 	{
 		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
@@ -658,13 +657,6 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const 
 		RecompileShaders();
 	HRESULT hr=S_OK;
 	enable_lightning=cloudKeyframer->GetInterpolatedKeyframe().lightning>0;
-	if(!noise_texture)
-	{
-		//B_RETURN(CreateNoiseTexture(context));
-		RenderNoiseTexture();
-		if(!noise_texture)
-			return true;
-	}
 	// Disable any in-texture gamma-correction that might be lingering from some other bit of rendering:
 	/*m_pd3dDevice->SetSamplerState(0,D3DSAMP_SRGBTEXTURE,0);
 	m_pd3dDevice->SetSamplerState(1,D3DSAMP_SRGBTEXTURE,0);
@@ -680,7 +672,7 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const 
 
 	m_pCloudEffect->SetTexture(cloudDensity1				,cloud_textures[0]);
 	m_pCloudEffect->SetTexture(cloudDensity2				,cloud_textures[1]);
-	m_pCloudEffect->SetTexture(noiseTexture					,noise_texture);
+	m_pCloudEffect->SetTexture(noiseTexture					,(LPDIRECT3DTEXTURE9)noise_fb.GetColorTex());
 
 	if(enable_lightning)
 	{
@@ -1157,11 +1149,11 @@ void SimulCloudRenderer::RenderAuxiliaryTextures(void *context,int width,int hei
 		h=1;
 	h*=gi->GetGridHeight();
 	D3DXVECTOR4 cross_section_offset(0,0,0,0);
-	m_pCloudEffect->SetTexture(noiseTexture,noise_texture);
+	m_pCloudEffect->SetTexture(noiseTexture,(LPDIRECT3DTEXTURE9)noise_fb.GetColorTex());
 	D3DXHANDLE tech			=GetDX9Technique(m_pCloudEffect,"show_noise");
 	RenderTexture(m_pd3dDevice
 		,width-(w+8),height-(w+8),w,w
-		,noise_texture
+		,(LPDIRECT3DTEXTURE9)noise_fb.GetColorTex()
 		,m_pCloudEffect,tech);
 }
 

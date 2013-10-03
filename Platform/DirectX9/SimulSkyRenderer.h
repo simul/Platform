@@ -98,7 +98,6 @@ public:
 	float CalcSunOcclusion(float cloud_occlusion);
 
 	void FillSunlightTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void CycleTexturesForward();
 	const char *GetDebugText() const;
 protected:
 	void FillSkyTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);

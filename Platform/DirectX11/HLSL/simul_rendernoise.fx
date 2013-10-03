@@ -64,7 +64,7 @@ float4 MainPS(v2f IN) : SV_TARGET
     }
 	// divide by total to get the range -1,1.
 	result*=1.0/total;*/
-    return  Noise( noise_texture,IN.texCoords, persistence, octaves);
+    return Noise(noise_texture,IN.texCoords,persistence,octaves);
 }
 
 [numthreads(8,8,8)]

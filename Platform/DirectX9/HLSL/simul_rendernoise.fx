@@ -12,39 +12,21 @@ sampler2D noise_texture= sampler_state
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
-struct a2v
-{
-    float4 position  : POSITION;
-    float2 texCoords  : TEXCOORD0;
-};
 
-struct v2f
-{
-    float4 position  : POSITION;
-    float2 texCoords  : TEXCOORD0;
-};
-
-v2f MainVS(a2v IN)
-{
-	v2f OUT;
-	OUT.position = IN.position;
-	OUT.texCoords = IN.texCoords;
-    return OUT;
-}
-
-float4 RandomPS(v2f IN) : COLOR
+vec4 RandomPS(vertexOutputPosTexc IN) : COLOR
 {
 	// Range from -1 to 1.
     vec4 c=2.0*vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords))-1.0;
     return c;
 }
 
-float4 MainPS(v2f IN) : COLOR
+vec4 MainPS(vertexOutputPosTexc IN) : COLOR
 {
-    return Noise( noise_texture,IN.texCoords, persistence, octaves);
+    vec4 res=0.5*(Noise(noise_texture,IN.texCoords, persistence, octaves)+vec4(1.0,1.0,1.0,1.0));
+	return res;
 }
 
-technique simul_rendernoise
+technique random
 {
     pass p0
     {
@@ -52,7 +34,20 @@ technique simul_rendernoise
 		ZEnable = false;
 		ZWriteEnable = false;
 		AlphaBlendEnable = false;
-		VertexShader = compile vs_2_0 MainVS();
+		VertexShader = compile vs_3_0 VS_FullScreen();
+		PixelShader = compile ps_3_0 RandomPS();
+    }
+}
+
+technique noise
+{
+    pass p0
+    {
+		cullmode = none;
+		ZEnable = false;
+		ZWriteEnable = false;
+		AlphaBlendEnable = false;
+		VertexShader = compile vs_3_0 VS_FullScreen();
 		PixelShader = compile ps_3_0 MainPS();
     }
 }

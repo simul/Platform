@@ -1,5 +1,6 @@
 #include "dx9.hlsl"
 #include "../../CrossPlatform/simul_cloud_constants.sl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
 #ifndef WRAP_CLOUDS
 	#define WRAP_CLOUDS 1
 #endif
@@ -216,31 +217,12 @@ vertexOutput VS_Main(vertexInput IN)
     return OUT;
 }
 
-#define pi (3.1415926536f)
-
-float HenyeyGreenstein(float g,float cos0)
-{
-	float g2=g*g;
-	float u=1.f+g2-2.f*g*cos0;
-	return (1.f-g2)/(4.f*pi*sqrt(u*u*u));
-}
-
-float3 InscatterFunction(float4 inscatter_factor,float cos0)
-{
-	float BetaRayleigh=0.0596831f*(1.f+cos0*cos0);
-	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
-	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
-		/(float3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
-	float3 colour=BetaTotal*inscatter_factor.rgb;
-	return colour;
-}
-
 float4 CloudColour(vertexOutput IN,float cos0)
 {
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
 #if DETAIL_NOISE==1
-	noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8.0).xyz-noise_offset)/2.0;
+	//noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8.0).xyz-noise_offset)/2.0;
 #endif
 	noiseval*=IN.texCoords.w;
 	float3 texcoord=IN.texCoords.xyz+fractalScale.xyz*noiseval;
@@ -281,8 +263,7 @@ float4 PS_WithLightning(vertexOutput IN): color
 	float4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
 	float3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
 	float3 skyl=tex2D(skylight_texture,IN.fade_texc).rgb;
-	float3 inscatter=skyl+InscatterFunction(insc,cos0);
-
+	float3 inscatter=skyl+InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	final.rgb*=loss.xyz;
 	final.rgb+=inscatter.xyz;
 	final.rgb*=opacity;
@@ -295,15 +276,13 @@ vec4 PS_Clouds(vertexOutput IN): color
 {
 	vec3 view=normalize(IN.wPosition);
 	float cos0=dot(lightDir.xyz,view.xyz);
-	//vec4 lookup=tex3D(cloud_density_1,IN.texCoords.xyz);
-
 // Fade mode 1 means using textures for distance fade.
 	vec4 final=CloudColour(IN,cos0);
 	float opacity=final.a;
 	vec4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
 	vec3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
 	vec3 skyl=tex2D(skylight_texture,IN.fade_texc).rgb;
-	vec3 inscatter=skyl+InscatterFunction(insc,cos0);
+	vec3 inscatter=skyl+InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	final.rgb*=loss;
 	final.rgb+=inscatter;
 	

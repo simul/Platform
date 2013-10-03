@@ -21,6 +21,7 @@
 #include "Simul/Graph/Meta/Resource.h"
 #include "Simul/Graph/StandardNodes/ShowProgressInterface.h"
 #include "Simul/Platform/DirectX9/Export.h"
+#include "Simul/Platform/DirectX9/Framebuffer.h"
 //#include "Simul/Platform/DirectX9/GpuCloudGenerator.h"
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -75,7 +76,7 @@ public:
 	void SetInscatterTextures(void *i,void *s,void *o);
 	LPDIRECT3DTEXTURE9 GetNoiseTexture()
 	{
-		return noise_texture;
+		return (LPDIRECT3DTEXTURE9)noise_fb.GetColorTex();
 	}
 	void RenderCrossSections(void *,int width,int height);
 	void RenderAuxiliaryTextures(void *context,int width,int height);
@@ -177,7 +178,7 @@ protected:
 
 	LPDIRECT3DVOLUMETEXTURE9	cloud_textures[3];
 	LPDIRECT3DVOLUMETEXTURE9	illumination_texture;
-	LPDIRECT3DTEXTURE9			noise_texture;
+	simul::dx9::Framebuffer		noise_fb;
 	LPDIRECT3DTEXTURE9			raytrace_layer_texture;
 	LPDIRECT3DBASETEXTURE9		sky_loss_texture;
 	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture;

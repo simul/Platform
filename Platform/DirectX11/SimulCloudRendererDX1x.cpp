@@ -343,18 +343,19 @@ static int PowerOfTwo(int unum)
 
 void SimulCloudRendererDX1x::RenderNoise(void *context)
 {
-	int noise_texture_size		=cloudKeyframer->GetEdgeNoiseTextureSize();
-	int noise_texture_frequency	=cloudKeyframer->GetEdgeNoiseFrequency();
-	int texture_octaves			=cloudKeyframer->GetEdgeNoiseOctaves();
-	float texture_persistence	=cloudKeyframer->GetEdgeNoisePersistence();
+	ID3D11DeviceContext* pContext			=(ID3D11DeviceContext*)context;
 
-	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
-	ID3D1xEffect*					effect=NULL;
-	ID3D1xEffectTechnique*			randomTechnique;
-	ID3D1xEffectTechnique*			noiseTechnique;
+	int noise_texture_size					=cloudKeyframer->GetEdgeNoiseTextureSize();
+	int noise_texture_frequency				=cloudKeyframer->GetEdgeNoiseFrequency();
+	int texture_octaves						=cloudKeyframer->GetEdgeNoiseOctaves();
+	float texture_persistence				=cloudKeyframer->GetEdgeNoisePersistence();
+
+	ID3D1xEffect*					effect	=NULL;
+	ID3D1xEffectTechnique *randomTechnique	=NULL;
+	ID3D1xEffectTechnique *noiseTechnique	=NULL;
 	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_rendernoise.fx");
-	randomTechnique					=effect->GetTechniqueByName("simul_random");
-	noiseTechnique					=effect->GetTechniqueByName("simul_noise_2d");
+	randomTechnique							=effect->GetTechniqueByName("simul_random");
+	noiseTechnique							=effect->GetTechniqueByName("simul_noise_2d");
 
 	simul::dx11::Framebuffer	random_fb;
 	random_fb.RestoreDeviceObjects(m_pd3dDevice);
@@ -930,7 +931,7 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int width,int
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
 
 	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",(ID3D11ShaderResourceView*)godrays_fb.GetColorTex());
-	UtilityRenderer::DrawQuad2(pContext,width-3*(w+8),height-2*(w+8),w*2,w/2,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
+	UtilityRenderer::DrawQuad2(pContext,width-2*(w+8),height-(w+8)-w/2,w*2,w/2,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 
 	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture"			,(ID3D1xShaderResourceView*)NULL);
 	simul::dx11::setParameter(m_pCloudEffect,"cloudShadowTexture"	,(ID3D1xShaderResourceView*)NULL);
@@ -1110,16 +1111,8 @@ void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(void *context)
 	EnsureCorrectTextureSizes();
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	EnsureTextureCycle();
-	int a	=cloudKeyframer->GetEdgeNoiseTextureSize();
-	int b	=cloudKeyframer->GetEdgeNoiseFrequency();
-	int c	=cloudKeyframer->GetEdgeNoiseOctaves();
-	float d	=cloudKeyframer->GetEdgeNoisePersistence();
-	unsigned check=a+b+c+(*(unsigned*)(&d));
-	if(check!=noise_checksum)
-	{
+	if(FailedNoiseChecksum())
 		SAFE_RELEASE(noise_texture);
-		noise_checksum=check;
-	}
 	if(!noise_texture)
 		CreateNoiseTexture(pContext);
 	// We don't need to fill the textures if the gpu Generator has already done so:
