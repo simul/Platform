@@ -73,7 +73,7 @@ float4 BlendPS(v2f IN) : COLOR
 
 float4 PS_CloudBlend(vertexOutputPosTexc IN) : COLOR
 {
-	vec4 c=tex2D(hdr_texture,IN.texCoords);
+	vec4 c=tex2D(hdr_texture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
 	//if(c.a>=1.f)
 	//	discard;
 	c.a=.5;

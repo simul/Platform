@@ -298,11 +298,10 @@ vec4 PS_Clouds(vertexOutput IN): color
 		discard;
 	if(IN.texCoords.z>1.0)
 		discard;
-	vec4 lookup=tex3D(cloud_density_1,IN.texCoords.xyz);
+	//vec4 lookup=tex3D(cloud_density_1,IN.texCoords.xyz);
 
 // Fade mode 1 means using textures for distance fade.
 	vec4 final=CloudColour(IN,cos0);
-    return vec4(frac(IN.texCoords.rgb),.5);
 	float opacity=final.a;
 	vec4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
 	vec3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
@@ -311,8 +310,8 @@ vec4 PS_Clouds(vertexOutput IN): color
 	final.rgb*=loss;
 	final.rgb+=inscatter;
 	
-	final.r=saturate(IN.texCoords.z);
-	opacity=.5;
+	//final.r=saturate(IN.texCoords.z);
+	//opacity=.5;
     return vec4(final.rgb,opacity);
 }
 

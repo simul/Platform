@@ -98,41 +98,22 @@ protected:
 	void InternalRenderRaytrace(int viewport_id);
 	void InternalRenderVolumetric(int viewport_id);
 	bool wrap;
-	struct float2
-	{
-		float x,y;
-		void operator=(const float*f)
-		{
-			x=f[0];
-			y=f[1];
-		}
-	};
-	struct float3
-	{
-		float x,y,z;
-		void operator=(const float*f)
-		{
-			x=f[0];
-			y=f[1];
-			z=f[2];
-		}
-	};
 	struct PosVert_t
 	{
-		float3 position;
+		vec3 position;
 	};
 	struct Vertex_t
 	{
-		float3 position;
-		float3 texCoords;
+		vec3 position;
+		vec3 texCoords;
 		float layerFade;
-		float2 texCoordsNoise;
-		float3 sunlightColour;
+		vec2 texCoordsNoise;
+		vec3 sunlightColour;
 	};
 	struct CPUFadeVertex_t : public Vertex_t
 	{
-		float3 loss;
-		float3 inscatter;
+		vec3 loss;
+		vec3 inscatter;
 	};
 	Vertex_t *vertices;
 	CPUFadeVertex_t *cpu_fade_vertices;

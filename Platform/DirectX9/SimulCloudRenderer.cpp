@@ -23,45 +23,26 @@
 using namespace simul;
 using namespace dx9;
 
-#ifdef XBOX
-	static D3DPOOL d3d_memory_pool=D3DUSAGE_CPU_CACHED_MEMORY;
-#else
-	static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
-#endif
-#ifdef XBOX
-	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	D3DFORMAT cloud_tex_format=D3DFMT_LIN_A4R4G4B4;
-	D3DFORMAT illumination_tex_format=D3DFMT_LIN_A8R8G8B8;
-	const bool big_endian=true;
-	static DWORD default_texture_usage=0;
-	// NOTE: We specify ONE mipmap for this texture, NOT ZERO. If we use zero, that means
-	// automatically generate mipmaps.
-	static unsigned default_mip_levels=1;
-	static unsigned bits[4]={	(unsigned)0x0F00,
-								(unsigned)0x000F,
-								(unsigned)0xF000,
-								(unsigned)0x00F0};
-	static D3DPOOL default_d3d_pool=D3DUSAGE_CPU_CACHED_MEMORY;
-#else
-	#include <tchar.h>
-	#include <dxerr.h>
-	#include <string>
-	D3DFORMAT cloud_tex_format=D3DFMT_A8R8G8B8;
-	D3DFORMAT illumination_tex_format=D3DFMT_A8R8G8B8;
-	const bool big_endian=false;
-	static DWORD default_texture_usage=D3DUSAGE_AUTOGENMIPMAP;
-	static unsigned default_mip_levels=0;
-	static unsigned bits[4]={	(unsigned)0x0F00,
-								(unsigned)0x000F,
-								(unsigned)0x00F0,
-								(unsigned)0xF000};
-	static unsigned bits8[4]={	(unsigned)0x00FF0000,
-								(unsigned)0x000000FF,
-								(unsigned)0x0000FF00,
-								(unsigned)0xFF000000};
-	static D3DPOOL default_d3d_pool=D3DPOOL_MANAGED;
-#endif
+static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
+
+#include <tchar.h>
+#include <dxerr.h>
+#include <string>
+D3DFORMAT cloud_tex_format=D3DFMT_A8R8G8B8;
+D3DFORMAT illumination_tex_format=D3DFMT_A8R8G8B8;
+const bool big_endian=false;
+static DWORD default_texture_usage=D3DUSAGE_AUTOGENMIPMAP;
+static unsigned default_mip_levels=0;
+static unsigned bits[4]={	(unsigned)0x0F00,
+							(unsigned)0x000F,
+							(unsigned)0x00F0,
+							(unsigned)0xF000};
+static unsigned bits8[4]={	(unsigned)0x00FF0000,
+							(unsigned)0x000000FF,
+							(unsigned)0x0000FF00,
+							(unsigned)0xFF000000};
+static D3DPOOL default_d3d_pool=D3DPOOL_MANAGED;
+
 
 #include "CreateDX9Effect.h"
 #include "Simul/Clouds/CloudInterface.h"
@@ -1069,14 +1050,23 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	//set up matrices
 	D3DXMATRIX wvp;
 	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,y_vertical);
-	view._41=view._42=view._43=0.f;
+	//view._41=view._42=view._43=0.f;
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
+
+	D3DXMATRIX tmp1,tmp2,w,ident;
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	cam_pos.x=tmp1._41;
+	cam_pos.y=tmp1._42;
+	cam_pos.z=tmp1._43;
+	D3DXMatrixMultiply(&tmp2,&view,&proj);
+	D3DXMatrixTranspose(&wvp,&tmp2);
+
 	m_pCloudEffect->SetMatrix(worldViewProj, &wvp);
 	unsigned passes=0;
 	hr=m_pCloudEffect->Begin(&passes,0);
 	hr=m_pCloudEffect->BeginPass(0);
 	int v=0;
-	simul::math::Vector3 pos;
+	simul::sky::float4 pos;
 	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());//+.5f*GetCloudInterface()->GetCloudHeight());
 	unsigned grid_x,el_grid;
 	helper->GetGrid(el_grid,grid_x);
@@ -1100,7 +1090,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 			for(size_t k=0;k<(*j)->num_vertices;k++,qs_vert++,l++,v++)
 			{
 				const simul::clouds::CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
-				pos.Define(V.x,V.y,V.z);
+				pos.Set(V.x,V.y,V.z,0);
 				//simul::math::Vector3 tex_pos(V.cloud_tex_x,V.cloud_tex_y,V.cloud_tex_z);
 				if(v>=MAX_VERTICES)
 				{
@@ -1116,7 +1106,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 				}
 				Vertex_t *vertex=NULL;
 				vertex=&vertices[v];
-				vertex->position=pos*distance;
+				vertex->position=cam_pos+pos*distance;
 				//vertex->texCoords=tex_pos;
 			//	vertex->texCoordsNoise.x=0;//V.noise_tex_x;
 				//vertex->texCoordsNoise.y=0;//V.noise_tex_y;
@@ -1279,7 +1269,7 @@ bool SimulCloudRenderer::RenderLightVolume()
 	
 	Vertext *lines=new Vertext[24];
 
-	static float3 vertices[8] =
+	static float vertices[8][3] =
 	{
 		{0.f,		0.f,	1.f},
 		{1.f,		0.f,	1.f},
@@ -1309,8 +1299,8 @@ bool SimulCloudRenderer::RenderLightVolume()
 			i1=i%4;
 			i2=i1+4;
 		}
-		simul::math::Vector3 X1=cloudKeyframer->GetCloudInterface()->ConvertLightCoordsToReal(vertices[i1].x,vertices[i1].y,vertices[i1].z);
-		simul::math::Vector3 X2=cloudKeyframer->GetCloudInterface()->ConvertLightCoordsToReal(vertices[i2].x,vertices[i2].y,vertices[i2].z);
+		simul::math::Vector3 X1=cloudKeyframer->GetCloudInterface()->ConvertLightCoordsToReal(vertices[i1][0],vertices[i1][1],vertices[i1][2]);
+		simul::math::Vector3 X2=cloudKeyframer->GetCloudInterface()->ConvertLightCoordsToReal(vertices[i2][0],vertices[i2][1],vertices[i2][2]);
 		std::swap(X1.y,X1.z);
 		std::swap(X2.y,X2.z);
 		lines[i*2].x=X1.x; 
@@ -1359,8 +1349,8 @@ bool SimulCloudRenderer::RenderLightVolume()
 			i1=i%4;
 			i2=i1+4;
 		}
-		simul::math::Vector3 X1=cloudKeyframer->GetCloudInterface()->ConvertTextureCoordsToReal(vertices[i1].x,vertices[i1].y,vertices[i1].z);
-		simul::math::Vector3 X2=cloudKeyframer->GetCloudInterface()->ConvertTextureCoordsToReal(vertices[i2].x,vertices[i2].y,vertices[i2].z);
+		simul::math::Vector3 X1=cloudKeyframer->GetCloudInterface()->ConvertTextureCoordsToReal(vertices[i1][0],vertices[i1][1],vertices[i1][2]);
+		simul::math::Vector3 X2=cloudKeyframer->GetCloudInterface()->ConvertTextureCoordsToReal(vertices[i2][0],vertices[i2][1],vertices[i2][2]);
 		std::swap(X1.y,X1.z);
 		std::swap(X2.y,X2.z);
 		lines[i*2].x=X1.x; 

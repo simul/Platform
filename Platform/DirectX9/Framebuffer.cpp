@@ -127,14 +127,7 @@ void Framebuffer::Activate(void *context)
 	V_CHECK(m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget));
 	if(m_pBufferDepthSurface)
 		V_CHECK(m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface));
-	D3DVIEWPORT9 viewport;
-	viewport.Width	=Width;
-	viewport.Height	=Height;
-	viewport.X		=0;
-	viewport.Y		=0;
-	viewport.MinZ	=0.f;
-	viewport.MaxZ	=1.f;
-	V_CHECK(m_pd3dDevice->SetViewport(&viewport));
+	SetViewport(context,0,0,1.f,1.f);
 }
 
 void Framebuffer::ActivateColour(void *context,const float viewportXYWH[4])
@@ -179,6 +172,8 @@ void Framebuffer::Deactivate(void *)
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 	m_pd3dDevice->SetViewport(&old_viewport);
+	old_viewport.Width=old_viewport.Height=old_viewport.X=old_viewport.Y=0;
+	old_viewport.MaxZ=old_viewport.MinZ=0.f;
 }
 
 void Framebuffer::DeactivateDepth(void*)
