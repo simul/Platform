@@ -50,7 +50,8 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	simulHDRRenderer=new SimulHDRRenderer(128,128);
 	hdrFramebuffer.SetWidthAndHeight(w,h);
 	hdrFramebuffer.SetFormat(D3DFMT_A32B32G32R32F);
-	hdrFramebuffer.SetDepthFormat(D3DFMT_D24X8);			//! This is one of only three formats that can be used as textures.
+	D3DFORMAT INTZ=((D3DFORMAT) MAKEFOURCC('I','N','T','Z'));
+	hdrFramebuffer.SetDepthFormat(INTZ);//D3DFMT_D24X8);			//! This is one of only three formats that can be used as textures.
 	if(simulHDRRenderer&&simulWeatherRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
 	simulTerrainRenderer=new SimulTerrainRenderer(NULL);
@@ -251,7 +252,9 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
+		// We would LIKE to use the depth buffer as a texture from here onwards, but this is not well-supported.
 		hdrFramebuffer.DeactivateDepth(NULL);
+		// Therefore we will 
 	}
 	void *depth_texture=hdrFramebuffer.GetDepthTex();
 	if(simulWeatherRenderer)
@@ -282,14 +285,14 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 		simulWeatherRenderer->RenderLightning(NULL,viewport_id);
 		simulWeatherRenderer->RenderPrecipitation(NULL);
 	}
-	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&ShowFades)
-		simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dDevice,width,height);
 
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 		hdrFramebuffer.Deactivate(pd3dDevice);
 		simulHDRRenderer->Render(pd3dDevice,hdrFramebuffer.GetColorTex());
 	}
+	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&ShowFades)
+		simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dDevice,width,height);
 	if(simulWeatherRenderer)
 	{
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)

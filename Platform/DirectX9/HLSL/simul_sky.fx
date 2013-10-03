@@ -96,21 +96,6 @@ sampler2D illumination_texture= sampler_state
 	AddressV = Clamp;
 };
 //------------------------------------
-// Parameters 
-//------------------------------------
-/*float4 eyePosition : EYEPOSITION_WORLDSPACE;
-float4 lightDir : Direction;
-float4 mieRayleighRatio;
-float hazeEccentricity;
-float skyInterp;
-float altitudeTexCoord;
-#define pi (3.1415926536f)
-
-float4 colour;
-float starBrightness=.1f;
-float3 texelOffset;
-float3 texelScale;*/
-//------------------------------------
 // Structures 
 //------------------------------------
 struct vertexInput
@@ -142,16 +127,6 @@ struct vertexInput3Dto2D
     float3 position			: POSITION;
     float2 texCoords		: TEXCOORD0;
 };
-struct vertexInputPositionOnly
-{
-    float3 position		: POSITION;
-};
-
-struct vertexOutputPosTexc
-{
-    float4 hPosition		: POSITION;
-    float2 texCoords		: TEXCOORD0;
-};
 //------------------------------------
 // Vertex Shader 
 //------------------------------------
@@ -161,13 +136,6 @@ vertexOutput VS_Main(vertexInput IN)
     OUT.hPosition=mul(worldViewProj,float4(IN.position.xyz,1.0));
     OUT.hPosition.z=OUT.hPosition.w;
     OUT.wDirection=normalize(IN.position.xyz);
-    return OUT;
-}
-vertexOutputPosTexc VS_FullScreen(vertexInputPositionOnly IN)
-{
-    vertexOutputPosTexc OUT;
-    OUT.hPosition	=float4(IN.position.xy,0.f,1.f);
-	OUT.texCoords	=0.5*(IN.position.xy+float2(1.0,1.0));
     return OUT;
 }
 
@@ -285,16 +253,15 @@ float4 PS_Point_Stars(svertexOutput IN): color
 vertexOutputCS VS_ShowFade(vertexInputCS IN)
 {
     vertexOutputCS OUT;
-    OUT.hPosition = mul(worldViewProj,float4(IN.position.xyz,1.0));
-	OUT.texCoords.xy=IN.texCoords.xy;
-	OUT.texCoords.z=1;
+    OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
+	OUT.texCoords.xy=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
+	OUT.texCoords.z	=1;
 	OUT.colour=IN.colour;
     return OUT;
 }
 
 float4 PS_ShowFade( vertexOutputCS IN): color
 {
-	IN.texCoords.y=1.0-IN.texCoords.y;
 	float4 result=tex2D(fade_texture_2d,IN.texCoords.xy);
     return float4(result.rgb,1);
 }
@@ -341,13 +308,6 @@ float4 PS_3D_to_2D(vertexOutputPosTexc IN): color
     return result;
 }
 
-float4 PS_IlluminationBuffer(vertexOutputPosTexc IN): SV_TARGET
-{
-	float alt_km		=eyePosition.z/1000.0;
-	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm
-			,maxFadeDistance,terminatorDistance,radiusOnCylinder,earthShadowNormal,sunDir);
-}
-
 vec4 PS_OvercastInscatter(vertexOutputPosTexc IN): color
 {
 	// Texcoords representing the full distance from the eye to the given point.
@@ -382,6 +342,17 @@ float4 PS_PointStars(vertexOutputPosTex IN): color
 	return float4(result,1.f);
 }
 
+float4 PS_IlluminationBuffer(vertexOutputPosTexc IN): SV_TARGET
+{
+	float alt_km		=eyePosition.z/1000.0;
+	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm
+			,maxFadeDistance,terminatorDistance,radiusOnCylinder,earthShadowNormal,sunDir);
+}
+
+float4 PS_ShowIlluminationBuffer(vertexOutputPosTex IN): color
+{
+	return ShowIlluminationBuffer(fade_texture_2d,IN.texCoords);
+}
 
 technique simul_starry_sky
 {
@@ -559,7 +530,6 @@ technique overcast_inscatter
     }
 }
 
-
 technique illumination_buffer
 {
     pass p0 
@@ -590,5 +560,19 @@ technique simul_point_stars
 #ifndef XBOX
 		lighting = false;
 #endif
+    }
+}
+
+technique show_illumination_buffer
+{
+    pass p0 
+    {
+		VertexShader = compile vs_3_0 VS_ShowFade();
+		PixelShader  = compile ps_3_0 PS_ShowIlluminationBuffer();
+        CullMode = None;
+		zenable = false;
+		zwriteenable = false;
+        AlphaBlendEnable = false;
+		lighting = false;
     }
 }

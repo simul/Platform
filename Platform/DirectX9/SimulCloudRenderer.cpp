@@ -207,7 +207,6 @@ SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::
 	,vertices(NULL)
 	,cpu_fade_vertices(NULL)
 	,last_time(0)
-	,y_vertical(true)
 	,NumBuffers(1)
 {
 	for(int i=0;i<3;i++)
@@ -288,23 +287,9 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 	D3DVERTEXELEMENT9 decl[]=
 	{
 		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
-		{0, 12	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
-		{0,	24	,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
-		{0,	28	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
-		{0,	36	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
+		{0, 12	,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
 		D3DDECL_END()
 	};
-/*D3DVERTEXELEMENT9 cpu_decl[]=
-	{
-		{0, 0	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0},
-		{0, 12	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0},
-		{0,	24	,D3DDECLTYPE_FLOAT1,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,1},
-		{0,	28	,D3DDECLTYPE_FLOAT2,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,2},
-		{0,	36	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,3},
-		{0,	48	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,4},
-		{0,	60	,D3DDECLTYPE_FLOAT3,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,5},
-		D3DDECL_END()
-	};*/
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(m_pHudVertexDecl);
 	{
@@ -737,17 +722,13 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const 
 	}
 
 	// Mess with the proj matrix to extend the far clipping plane? not now
-	GetCameraPosVector(view,y_vertical,cam_pos);
+	GetCameraPosVector(view,false,cam_pos);
 	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
-
-	if(y_vertical)
-		std::swap(wind_offset.y,wind_offset.z);
 
 	simul::math::Vector3 view_dir	(view._13,view._23,view._33);
 	simul::math::Vector3 up			(view._12,view._22,view._32);
 	
-	if(!y_vertical)
-		view_dir.Define(-view._13,-view._23,-view._33);
+	view_dir.Define(-view._13,-view._23,-view._33);
 
 	float t=skyInterface->GetTime();
 	float delta_t=(t-last_time)*cloudKeyframer->GetTimeFactor();
@@ -757,9 +738,8 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const 
 
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
 	helper->SetChurn(GetCloudInterface()->GetChurn());
+	helper->SetNoFrustumLimit(true);
 	helper->Update((const float*)cam_pos,wind_offset,view_dir,up,delta_t,cubemap);
-	//if(y_vertical)
-	//	std::swap(cam_pos.y,cam_pos.z);
 
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;
@@ -769,8 +749,8 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const 
 										,0);
 	float base_alt_km=0.001f*(GetCloudInterface()->GetCloudBaseZ());//+.5f*GetCloudInterface()->GetCloudHeight());
 	simul::sky::float4 sun_dir=skyInterface->GetDirectionToLight(base_alt_km);
-	if(y_vertical)
-		std::swap(sun_dir.y,sun_dir.z);
+	
+	
 	// Get the overall ambient light at this altitude, and multiply it by the cloud's ambient response.
 	simul::sky::float4 sky_light_colour=exposure*skyInterface->GetAmbientLight(base_alt_km)*GetCloudInterface()->GetAmbientLightResponse();
 
@@ -860,7 +840,7 @@ void SimulCloudRenderer::InternalRenderHorizontal(int viewport_id)
 	float max_dist=max_fade_distance_metres;
 	//set up matrices
 	D3DXMATRIX wvp;
-	FixProjectionMatrix(proj,max_dist*1.1f,y_vertical);
+	//FixProjectionMatrix(proj,max_dist*1.1f,y_vertical);
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	m_pCloudEffect->SetMatrix(worldViewProj,&wvp);
 	unsigned passes=0;
@@ -1025,11 +1005,71 @@ void SimulCloudRenderer::InternalRenderRaytrace(int viewport_id)
 
 void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 {
+	float exposure=1.f;
+	CloudConstants cloudConstants;
+	CloudPerViewConstants cloudPerViewConstants;
+	SetCloudConstants(cloudConstants);
+	simul::sky::float4 viewportTextureRegionXYWH(0,0,1.f,1.f);
+	SetCloudPerViewConstants(cloudPerViewConstants,view,proj,exposure,viewport_id
+		,viewportTextureRegionXYWH);
+	{
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,viewportToTexRegionScaleBias);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,viewPos);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,invViewProj);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,shadowMatrix);		// Transform from texcoords xy to world viewplane XYZ
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,noiseMatrix);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,depthToLinFadeDistParams);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,exposure);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,tanHalfFov);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,nearZ);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,farZ);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,extentZMetres);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,startZMetres);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,shadowRange);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,shadowTextureSize);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudPerViewConstants,depthMix);
+	}
+	{
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,inverseScales);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,ambientColour);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,cloud_interp);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,fractalScale);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,cloudEccentricity);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,lightResponse);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,directionToSun);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,earthshadowMultiplier);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,cornerPos);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,hazeEccentricity);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,lightningMultipliers);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,lightningColour);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,lightningSourcePos);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,rain);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,sunlightColour1);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,fractalRepeatLength);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,sunlightColour2);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,maxAltitudeMetres);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,screenCoordOffset);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,mieRayleighRatio);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,alphaSharpness);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,illuminationOrigin);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,maxFadeDistanceMetres);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,illuminationScales);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,noise3DPersistence);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,crossSectionOffset);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,noise3DOctaves);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,noise3DTexcoordScale);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,cloudIrRadiance);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,directionToMoon);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,baseNoiseFactor);
+	}
+
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(viewport_id);
+
 	HRESULT hr=S_OK;
 	//set up matrices
 	D3DXMATRIX wvp;
 	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,y_vertical);
+	view._41=view._42=view._43=0.f;
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	m_pCloudEffect->SetMatrix(worldViewProj, &wvp);
 	unsigned passes=0;
@@ -1076,14 +1116,14 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 				}
 				Vertex_t *vertex=NULL;
 				vertex=&vertices[v];
-				vertex->position=pos;
+				vertex->position=pos*distance;
 				//vertex->texCoords=tex_pos;
-				vertex->texCoordsNoise.x=0;//V.noise_tex_x;
-				vertex->texCoordsNoise.y=0;//V.noise_tex_y;
+			//	vertex->texCoordsNoise.x=0;//V.noise_tex_x;
+				//vertex->texCoordsNoise.y=0;//V.noise_tex_y;
 				vertex->layerFade=fade;
-				vertex->sunlightColour.x=sunlight.x;
-				vertex->sunlightColour.y=sunlight.y;
-				vertex->sunlightColour.z=sunlight.z;
+			//	vertex->sunlightColour.x=sunlight.x;
+				//vertex->sunlightColour.y=sunlight.y;
+			//	..vertex->sunlightColour.z=sunlight.z;
 			}
 		}
 		if(v>=MAX_VERTICES)
@@ -1097,7 +1137,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	}
 	if(v>2)
 	{
-			hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,v-2,&(vertices[0]),sizeof(Vertex_t));
+		hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,v-2,&(vertices[0]),sizeof(Vertex_t));
 	}
 
 	hr=m_pCloudEffect->EndPass();

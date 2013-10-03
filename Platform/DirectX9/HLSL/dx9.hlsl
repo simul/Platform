@@ -1,6 +1,18 @@
 #ifndef DX9_HLSL
 #define DX9_HLSL
 #include "../../CrossPlatform/CppSl.hs"
+#ifndef __cplusplus
+	#define SIMUL_TEXTURE_REGISTER(tex_num)
+	#define SIMUL_SAMPLER_REGISTER(samp_num)
+	#define SIMUL_BUFFER_REGISTER(buff_num)
+	#define SIMUL_RWTEXTURE_REGISTER(rwtex_num)
+
+	#define SIMUL_CONSTANT_BUFFER(name,buff_num)
+	#define SIMUL_CONSTANT_BUFFER_END
+
+	#define SIMUL_TARGET_OUTPUT : COLOR
+	#define SIMUL_DEPTH_OUTPUT
+#endif
 
 	#define vec2 float2
 	#define vec3 float3
@@ -58,6 +70,25 @@
 	#define uniform_buffer struct
 	#define STATIC static
 
-	#define SIMUL_CONSTANT_BUFFER(name,buff_num)
-	#define SIMUL_CONSTANT_BUFFER_END
+	// Let's define some standard structs and shader functions to be used in .fx files:
+#ifndef __cplusplus
+	struct vertexInputPositionOnly
+	{
+		vec3 position		: POSITION;
+	};
+
+	struct vertexOutputPosTexc
+	{
+		vec4 hPosition		: POSITION;
+		vec2 texCoords		: TEXCOORD0;
+	};
+	vertexOutputPosTexc VS_FullScreen(vertexInputPositionOnly IN)
+	{
+		vertexOutputPosTexc OUT;
+		OUT.hPosition	=vec4(IN.position.xy,0.f,1.f);
+		OUT.texCoords	=0.5*(IN.position.xy+vec2(1.0,1.0));
+		return OUT;
+	}
+#endif
+
 #endif

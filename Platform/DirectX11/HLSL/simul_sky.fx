@@ -147,7 +147,7 @@ float4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET
     return result;
 }
 
-vertexOutput3Dto2D VS_ShowSkyTexture(idOnly IN) 
+vertexOutput3Dto2D VS_ShowFade(idOnly IN) 
 {
     vertexOutput3Dto2D OUT;
 	float2 poss[4]=
@@ -352,7 +352,7 @@ technique11 simul_show_sky_texture
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_ShowSkyTexture()));
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowSkyTexture()));
     }
@@ -365,7 +365,7 @@ technique11 show_illumination_buffer
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_ShowSkyTexture()));
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowIlluminationBuffer()));
     }
@@ -378,7 +378,7 @@ technique11 simul_show_fade_texture
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_ShowSkyTexture()));
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeTexture()));
     }
@@ -391,7 +391,7 @@ technique11 show_light_table
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_ShowSkyTexture()));
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Show3DLightTable()));
     }
@@ -404,7 +404,7 @@ technique11 show_2d_light_table
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_ShowSkyTexture()));
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Show2DLightTable()));
     }
@@ -427,9 +427,9 @@ technique11 overcast_inscatter
 {
     pass p0 
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth, 0 );
+		SetBlendState(DontBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_OvercastInscatter()));

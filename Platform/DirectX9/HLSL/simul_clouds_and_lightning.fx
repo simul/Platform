@@ -1,7 +1,5 @@
-
-#ifndef Z_VERTICAL
-	#define Y_VERTICAL 1
-#endif
+#include "dx9.hlsl"
+#include "../../CrossPlatform/simul_cloud_constants.sl"
 #ifndef WRAP_CLOUDS
 	#define WRAP_CLOUDS 1
 #endif
@@ -15,8 +13,6 @@
 float4x4 worldViewProj	: WorldViewProjection;
 
 // raytrace
-float4x4 invViewProj;
-float4x4 noiseMatrix;
 float3 cloudScales;
 float3 cloudOffset;
 
@@ -27,13 +23,8 @@ sampler3D cloud_density_1= sampler_state
     MipFilter = LINEAR;
     MinFilter = LINEAR;
     MagFilter = LINEAR;
-#ifdef WRAP_CLOUDS
 	AddressU = Wrap;
 	AddressV = Wrap;
-#else
-	AddressU = Clamp;
-	AddressV = Clamp;
-#endif
 	AddressW = Clamp;
 	SRGBTexture = 0;
 };
@@ -43,13 +34,8 @@ sampler3D cloud_density_1a= sampler_state
     MipFilter = POINT;
     MinFilter = POINT;
     MagFilter = POINT;
-#ifdef WRAP_CLOUDS
 	AddressU = Wrap;
 	AddressV = Wrap;
-#else
-	AddressU = Clamp;
-	AddressV = Clamp;
-#endif
 	AddressW = Clamp;
 	SRGBTexture = 0;
 };
@@ -146,38 +132,20 @@ sampler1D raytrace_layer_texture= sampler_state
 };
 
 float4 eyePosition : EYEPOSITION_WORLDSPACE;
-float maxFadeDistanceMetres;
 // Light response: primary,secondary,anisotropic,ambient
-float4 lightResponse;
 float3 lightDir : Direction;
 float3 skylightColour;
-float4 fractalScale;
 float interp;
-float3 crossSectionOffset;
-// Noise in raytracing:
-float fractalRepeatLength;
 // Lightning glow:
-float4 lightningMultipliers;
-float4 lightningColour;
-float3 illuminationOrigin;
-float3 illuminationScales;
-float hazeEccentricity=0;
-float3 mieRayleighRatio;
 float fadeInterp=0;
 float distance=1.0;
-float3 cornerPos;
 float3 texScales;
 float layerFade;
-float cloudEccentricity=0.87f;
-float alphaSharpness=0.5f;
 
 struct vertexInput
 {
     float3 position			: POSITION;
-    float3 texCoords		: TEXCOORD0;
-    float layerFade			: TEXCOORD1;
-    float2 texCoordsNoise	: TEXCOORD2;
-    float3 lightColour		: TEXCOORD3;
+    float layerFade			: TEXCOORD0;
 };
 
 struct vertexInputPositionColour
@@ -221,32 +189,29 @@ float4 PS_PositionColour(vertexOutputPositionColour IN): color
 vertexOutput VS_Main(vertexInput IN)
 {
     vertexOutput OUT;
-    OUT.hPosition = mul( worldViewProj, float4(IN.position.xyz , 1.0));
-	OUT.texCoords.xyz=IN.texCoords;
-	OUT.texCoords.w=0.5f+0.5f*saturate(IN.texCoords.z);
-	const float c=fractalScale.w;
-	OUT.texCoordsNoise=IN.texCoordsNoise;
-	OUT.wPosition=(IN.position.xyz-eyePosition.xyz);
-	OUT.layerFade=IN.layerFade;
+    OUT.hPosition			=mul(worldViewProj, float4(IN.position.xyz , 1.0));
+	vec3 wPos				=IN.position.xyz+eyePosition.xyz;
+//	wPos.z	-=wPos.z;
+	OUT.texCoords.xyz		=(wPos-cornerPos.xyz)*inverseScales;
+	OUT.texCoords.w			=0.5f+0.5f*saturate(OUT.texCoords.z);
+	//const float c			=fractalScale.w;
+	vec3 n					=vec3(OUT.hPosition.xy*tanHalfFov,1.0);
+	n						=normalize(n);
+	vec2 noise_texc_0		=mul(vec4(n.xy,0,0),noiseMatrix).xy/fractalRepeatLength;
+	OUT.texCoordsNoise		=noise_texc_0;
+	OUT.wPosition			=(IN.position.xyz);//-eyePosition.xyz);
+	OUT.layerFade			=IN.layerFade;
 // Note position.xzy is used if Y is vertical!
-#ifdef Z_VERTICAL
 	float3 texCoordLightning=(IN.position.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
-#else
-	float3 texCoordLightning=(IN.position.xzy-illuminationOrigin.xyz)/illuminationScales.xyz;
-#endif
-	texCoordLightning.z=0.5f;
-	OUT.texCoordLightning=texCoordLightning;
-	float3 view=normalize(OUT.wPosition.xyz);
-#ifdef Z_VERTICAL
-	float sine	=view.z;
-#else
-	float sine	=view.y;
-#endif
-	OUT.lightColour=IN.lightColour;
+	texCoordLightning.z		=0.5f;
+	OUT.texCoordLightning	=texCoordLightning;
+	float3 view				=normalize(OUT.wPosition.xyz);
+	float sine				=view.z;
+	OUT.lightColour			=sunlightColour1;
 // Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
-	float depth=length(OUT.wPosition.xyz)/maxFadeDistanceMetres;
-	//OUT.fade_texc=float2(,0.5f*(1.f-sine));
-	OUT.fade_texc=float2(sqrt(depth),0.5f*(1.f-sine));
+	float depth				=length(OUT.wPosition.xyz)/maxFadeDistanceMetres;
+	//OUT.fade_texc			=float2(,0.5f*(1.f-sine));
+	OUT.fade_texc			=float2(sqrt(depth),0.5f*(1.f-sine));
     return OUT;
 }
 
@@ -287,8 +252,8 @@ float4 CloudColour(vertexOutput IN,float cos0)
 	//density.x*=IN.layerFade;
 	density.x=saturate(density.x*(1.f+alphaSharpness)-alphaSharpness);
 
-	if(density.x<=0)
-		discard;
+	//if(density.x<=0)
+	//	discard;
 // cloudEccentricity is multiplied by density.z (i.e. direct light) to avoid interpolation artifacts.
 	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.y,cos0);
 	float3 ambient=skylightColour.rgb*density.w;
@@ -303,6 +268,8 @@ float4 PS_WithLightning(vertexOutput IN): color
 {
 	float3 view=normalize(IN.wPosition);
 	float cos0=dot(lightDir.xyz,view.xyz);
+	vec4 lookup=tex3D(cloud_density_1,IN.texCoords.xyz);
+	return vec4(frac(IN.texCoords.xyz),.5);
 	float4 final=CloudColour(IN,cos0);
 	float opacity=final.a;
 	float4 lightning=tex3D(lightning_illumination,IN.texCoordLightning.xyz);
@@ -323,63 +290,30 @@ float4 PS_WithLightning(vertexOutput IN): color
     return float4(final.rgb,opacity);
 }
 
-float4 PS_Clouds( vertexOutput IN): color
+vec4 PS_Clouds(vertexOutput IN): color
 {
-	float3 view=normalize(IN.wPosition);
+	vec3 view=normalize(IN.wPosition);
 	float cos0=dot(lightDir.xyz,view.xyz);
+	if(IN.texCoords.z<0)
+		discard;
+	if(IN.texCoords.z>1.0)
+		discard;
+	vec4 lookup=tex3D(cloud_density_1,IN.texCoords.xyz);
+
 // Fade mode 1 means using textures for distance fade.
-	float4 final=CloudColour(IN,cos0);
+	vec4 final=CloudColour(IN,cos0);
+    return vec4(frac(IN.texCoords.rgb),.5);
 	float opacity=final.a;
-	float4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
-	float3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
-	float3 skyl=tex2D(skylight_texture,IN.fade_texc).rgb;
-	float3 inscatter=skyl+InscatterFunction(insc,cos0);
+	vec4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
+	vec3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
+	vec3 skyl=tex2D(skylight_texture,IN.fade_texc).rgb;
+	vec3 inscatter=skyl+InscatterFunction(insc,cos0);
 	final.rgb*=loss;
 	final.rgb+=inscatter;
-    return float4(final.rgb,opacity);
-}
-
-
-float4 PS_CloudsPS2( vertexOutput IN): color
-{
-	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
-	float3 noiseval=tex2D(noise_texture,IN.texCoordsNoise.xy).xyz-noise_offset;
-#if DETAIL_NOISE==1
-	noiseval+=(tex2D(noise_texture,IN.texCoordsNoise.xy*8).xyz-noise_offset)/2.0;
-	noiseval*=IN.texCoords.w;
-#endif
-	float3 texcoord=IN.texCoords.xyz+fractalScale.xyz*noiseval;
-
-	float4 density=tex3D(cloud_density_1,texcoord);
-	float4 density2=tex3D(cloud_density_2,texcoord);
-
-	density=lerp(density,density2,interp);
-
-	density.x*=IN.layerFade;
-	density.x=saturate(density.x*(1.f+alphaSharpness)-alphaSharpness);
-
-	if(density.x<=0)
-		discard;
-	float3 view=normalize(IN.wPosition);
-	float cos0=dot(lightDir.xyz,view.xyz);
-// cloudEccentricity is multiplied by density.z (i.e. direct light) to avoid interpolation artifacts.
-	float Beta=HenyeyGreenstein(.7,cos0);//lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.z,cos0);
-// Fade mode 1 means using textures for distance fade.
-
-	float4 insc_lookup=tex2D(sky_inscatter_texture,IN.fade_texc);
-	float3 loss_lookup=tex2D(sky_loss_texture,IN.fade_texc).rgb;
-	float3 skyl_lookup=tex2D(skylight_texture,IN.fade_texc).rgb;
-
-	float3 ambient=skylightColour.rgb*density.w;
-
-	float opacity=density.x;
-	float3 final=(density.z*Beta+lightResponse.y*density.y)*IN.lightColour+ambient.rgb;
-
-	final*=loss_lookup;
-	final+=InscatterFunction(insc_lookup,cos0);
-	final.rgb+=skyl_lookup;
-
-    return float4(final,opacity);
+	
+	final.r=saturate(IN.texCoords.z);
+	opacity=.5;
+    return vec4(final.rgb,opacity);
 }
 
 struct vertexInputCS
@@ -505,13 +439,10 @@ float4 PS_RaytraceWithLightning(raytraceVertexOutput IN) : color
 	float4 colour=float4(0,0,0,1.0);
 	float3 noise_pos=mul(noiseMatrix,float4(view,1.0f)).xyz;
 	float3 noise_offset=float3(0.49803921568627452,0.49803921568627452,0.49803921568627452);
-#ifdef Y_VERTICAL
-	float sine	=view.y;
-	float2 base_noise_texc=float2(atan2(noise_pos.x,noise_pos.y),atan2(noise_pos.z,noise_pos.y));
-#else
+
 	float sine	=view.z;
 	float2 base_noise_texc=float2(atan2(noise_pos.x,noise_pos.z),atan2(noise_pos.y,noise_pos.z));
-#endif
+
 	float cos0=dot(lightDir.xyz,view.xyz);
 // Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
 #if FADE_MODE==1
@@ -525,11 +456,7 @@ float4 PS_RaytraceWithLightning(raytraceVertexOutput IN) : color
 		float d=(128-i-0.5)/128.0;
 		float4 layer_lookup=tex1D(raytrace_layer_texture,d);
 		d=layer_lookup.x;
-	//	if(d==0)
-	//		continue;
-		//d*=d;
-		//float dd=depth*10.f-d;
-		//d*=200000.0;
+
 		wPosition*=d;
 #if FADE_MODE==1
 		fade_texc.x=d/maxFadeDistanceMetres;
@@ -544,11 +471,9 @@ float4 PS_RaytraceWithLightning(raytraceVertexOutput IN) : color
 		noise_texc*=noiseScale;
 		noise_texc+=noiseOffset;
 		float3 noiseval=tex2D(noise_texture,noise_texc.xy).xyz-noise_offset;
-#ifdef Y_VERTICAL
-		float3 cloud_texc=(wPosition.xzy-cloudOffset.xyz)*cloudScales.xyz;
-#else
+
 		float3 cloud_texc=(wPosition.xyz-cloudOffset.xyz)*cloudScales.xyz;
-#endif
+
 #if DETAIL_NOISE==1
 		noiseval+=(tex2D(noise_texture,noise_texc.xy*8).xyz-noise_offset)/2.0;
 		noiseval*=0.5+0.5*cloud_texc.z;
@@ -677,35 +602,6 @@ technique cross_section_xy
 
 		VertexShader = compile vs_3_0 VS_CrossSection();
 		PixelShader  = compile ps_3_0 PS_CrossSectionXY();
-    }
-}
-
-// If shader model 3 is not available, 2 will do, but is slower on SM3-capable hardware!
-technique simul_clouds_sm2
-{
-    pass p0 
-    {
-		zenable = true;
-		zfunc = lessequal;
-		DepthBias =0;
-		SlopeScaleDepthBias =0;
-		ZWriteEnable = false;
-		alphablendenable = true;
-        CullMode = None;
-		AlphaTestEnable=false;
-		FillMode = Solid;
-        AlphaBlendEnable = true;
-		SrcBlend = SrcAlpha;
-		DestBlend = InvSrcAlpha;
-		
-		// We would LIKE to do the following:
-		//SeparateAlphaEnable = true;
-		//SrcBlendAlpha = Zero;
-		//DestBlendAlpha = InvSrcAlpha;
-		// but it's not implemented!
-
-		VertexShader = compile vs_2_0 VS_Main();
-		PixelShader  = compile ps_2_0 PS_CloudsPS2();
     }
 }
 

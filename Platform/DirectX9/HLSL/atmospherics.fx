@@ -177,7 +177,6 @@ vec4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : color
 							,IN.clip_pos
 							,depthToLinFadeDistParams
 							,tanHalfFov);
-	loss*=0;
     return float4(loss.rgb,1.f);
 }
 
@@ -259,8 +258,8 @@ technique simul_atmospherics
 		alphablendenable = true;
 		ZWriteEnable = false;
 		ZEnable= false;
-		SrcBlend = SrcColor;
-		DestBlend = One;
+		SrcBlend = Zero;
+		DestBlend = SrcColor;
     }
     pass insc_pass
     {

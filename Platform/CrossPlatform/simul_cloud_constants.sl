@@ -13,6 +13,7 @@ struct LayerData
 	float pad12;
 	float pad13;
 };
+
 struct SmallLayerData
 {
 	vec2 noiseOffset;
@@ -21,15 +22,13 @@ struct SmallLayerData
 	float verticalShift;
 };
 
-uniform_buffer LayerConstants SIMUL_BUFFER_REGISTER(8)
-{
+SIMUL_CONSTANT_BUFFER(LayerConstants,8)
 	uniform LayerData layers[SIMUL_MAX_CLOUD_RAYTRACE_STEPS];
 	uniform int layerCount;
 	uniform int A,B,C;
-};
+SIMUL_CONSTANT_BUFFER_END
 
-uniform_buffer CloudPerViewConstants SIMUL_BUFFER_REGISTER(13)
-{
+SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 viewPos;
 	uniform float uuuu;
@@ -47,10 +46,9 @@ uniform_buffer CloudPerViewConstants SIMUL_BUFFER_REGISTER(13)
 	uniform float shadowRange;
 	uniform int shadowTextureSize;
 	uniform float depthMix;
-};
+SIMUL_CONSTANT_BUFFER_END
 
-uniform_buffer CloudConstants SIMUL_BUFFER_REGISTER(9)
-{
+SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform vec3 inverseScales;
 	uniform int abcde;
 	uniform vec3 ambientColour;
@@ -86,7 +84,7 @@ uniform_buffer CloudConstants SIMUL_BUFFER_REGISTER(9)
 	uniform float x5;
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactor;
-};
+SIMUL_CONSTANT_BUFFER_END
 
 #ifdef __cplusplus
 //! A struct containing a pointer or id for the cloud shadow texture, along with 

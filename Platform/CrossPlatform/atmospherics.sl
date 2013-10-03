@@ -58,7 +58,7 @@ vec3 AtmosphericsInsc(	Texture2D depthTexture
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 	float depth			=texture_clamp(depthTexture,depth_texc).x;
 	float dist			=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	return vec3(depth,0,0);
+	
 	float sine			=view.z;
 	
 	float2 fade_texc	=vec2(pow(dist,0.5f),0.5f*(1.f-sine));

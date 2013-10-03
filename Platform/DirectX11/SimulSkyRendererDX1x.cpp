@@ -803,15 +803,15 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 
 	for(int j=0;j<(show_3?3:2);j++)
 	{
-		int x=x0-size+(16+8)*j;
+		int x=x0+9*j;
 		fadeTexture1->SetResource(light_table.shaderResourceView);
 		skyConstants.cycled_index=(texture_cycle+j)%3;
 		skyConstants.Apply(context);
-		UtilityRenderer::DrawQuad2(context,x	,y+8		,16,size	,m_pSkyEffect,techniqueShowLightTable);
+		UtilityRenderer::DrawQuad2(context,x	,y		,8,size	,m_pSkyEffect,techniqueShowLightTable);
 	}
 	simul::dx11::setParameter(m_pSkyEffect,"lightTable2DTexture",light_table_2d.shaderResourceView);
 
-	UtilityRenderer::DrawQuad2(context,x0-size+(16+8)*4	,y+8,16,size	,m_pSkyEffect,techniqueShow2DLightTable);
+	UtilityRenderer::DrawQuad2(context,x0+9*4	,y,8,size	,m_pSkyEffect,techniqueShow2DLightTable);
 	x0+=2*(size+8);
 	for(int i=0;i<numAltitudes;i++)
 	{

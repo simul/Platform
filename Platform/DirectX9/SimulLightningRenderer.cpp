@@ -9,13 +9,7 @@
 
 #include "SimulLightningRenderer.h"
 
-#ifdef XBOX
-	#include <dxerr.h>
-	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("game:\\");
-	static D3DPOOL d3d_memory_pool=D3DUSAGE_CPU_CACHED_MEMORY;
-#else
+
 	#include <tchar.h>
 	#include <d3d9.h>
 	#include <d3dx9.h>
@@ -24,7 +18,6 @@
 	typedef std::basic_string<TCHAR> tstring;
 	static tstring filepath=TEXT("");
 	static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
-#endif
 
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Math/Pi.h"
@@ -39,6 +32,7 @@ using namespace simul::clouds;
 
 SimulLightningRenderer::SimulLightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk) :
 	simul::clouds::BaseLightningRenderer(ck,sk)
+	,m_pd3dDevice(NULL)
 	,m_pLightningVtxDecl(NULL)
 	,m_pLightningEffect(NULL)
 	,lightning_vertices(NULL)

@@ -11,19 +11,9 @@
 
 #include "SimulAtmosphericsRenderer.h"
 
-#ifdef XBOX
-	#include <xgraphics.h>
-	#include <fstream>
-	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("game:\\");
-#else
-	#include <tchar.h>
-	#include <dxerr.h>
-	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("");
-#endif
+#include <tchar.h>
+#include <dxerr.h>
+#include <string>
 #include "CreateDX9Effect.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
@@ -119,6 +109,8 @@ void SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 void SimulAtmosphericsRenderer::RecompileShaders()
 {
 	SAFE_RELEASE(effect);
+	if(!m_pd3dDevice)
+		return;
 	std::map<std::string,std::string> defines;
 	defines["WRAP_CLOUDS"]="1";
 	if(!y_vertical)
@@ -224,17 +216,6 @@ void SimulAtmosphericsRenderer::SetLightningProperties(	void *tex,
 	illumination_scales.z=1.f/illumination_scales.z;
 	illumination_offset=lri->GetIlluminationOrigin();
 	lightning_colour=lri->GetLightningColour();
-}
-
-static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
-{
-	D3DXMATRIX tmp1;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXVECTOR4 dcam_pos;
-	dcam_pos.x=tmp1._41;
-	dcam_pos.y=tmp1._42;
-	dcam_pos.z=tmp1._43;
-	return dcam_pos;
 }
 
 bool SimulAtmosphericsRenderer::RenderGodRays(float strength)
@@ -361,10 +342,12 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_
 {
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(0,"SimulAtmosphericsRenderer::RenderAsOverlay");
-	LPDIRECT3DBASETEXTURE9 depthTexture=(LPDIRECT3DBASETEXTURE9)depth_texture;
+	LPDIRECT3DTEXTURE9 depthTexture=(LPDIRECT3DTEXTURE9)depth_texture;
+	D3DSURFACE_DESC desc;
+	depthTexture->GetLevelDesc(0,&desc);
 	
 	simul::dx9::setTexture(effect,"lossTexture",loss_texture);
-	simul::dx9::setTexture(effect,"inscTexture",inscatter_texture);
+	simul::dx9::setTexture(effect,"inscTexture",overc_inscatter_texture);
 	simul::dx9::setTexture(effect,"skylTexture",skylight_texture);
 	
 	//simul::dx9::setTexture(effect,"illuminationTexture",illuminationTexture);

@@ -93,7 +93,7 @@ protected:
 	void EnsureTextureCycle();
 
 	void NumBuffersChanged();
-	bool y_vertical;
+	//bool y_vertical;
 	void InternalRenderHorizontal(int viewport_id);
 	void InternalRenderRaytrace(int viewport_id);
 	void InternalRenderVolumetric(int viewport_id);

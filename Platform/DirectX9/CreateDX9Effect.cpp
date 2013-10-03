@@ -687,6 +687,20 @@ void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,
 	D3DXMatrixTranspose(wvp,&tmp2);
 }
 
+D3DXMATRIX MakeViewProjMatrix(D3DXMATRIX &view,D3DXMATRIX &proj)
+{
+	//set up matrices
+	D3DXMATRIX viewt, projt,vp, tmp2;
+	D3DXMatrixTranspose(&viewt,&view);
+	D3DXMatrixTranspose(&projt,&proj);
+	D3DXMatrixMultiply(&vp, &projt,&viewt);
+
+	D3DXMatrixMultiply(&tmp2, &view,&proj);
+	D3DXMatrixTranspose(&vp,&tmp2);
+
+	return vp;
+}
+
 HRESULT RenderAngledQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,D3DXVECTOR3 cam_pos,D3DXVECTOR3 dir,bool y_vertical,float half_angle_radians,LPD3DXEFFECT effect)
 {
 	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
@@ -920,6 +934,17 @@ void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *
 			view_dir[2]=-view._33;
 		}
 	}
+}
+
+D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
+{
+	D3DXMATRIX tmp1;
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	D3DXVECTOR4 dcam_pos;
+	dcam_pos.x=tmp1._41;
+	dcam_pos.y=tmp1._42;
+	dcam_pos.z=tmp1._43;
+	return dcam_pos;
 }
 
 

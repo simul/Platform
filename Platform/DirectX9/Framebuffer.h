@@ -39,10 +39,12 @@ namespace simul
 			}
 			void CopyToMemory(void*,void*,int,int){}
 		protected:
+			void SaveOldRTs(void *context);
 			LPDIRECT3DDEVICE9	m_pd3dDevice;
 			LPDIRECT3DSURFACE9	m_pBufferDepthSurface;
 			LPDIRECT3DSURFACE9	m_pOldRenderTarget;
 			LPDIRECT3DSURFACE9	m_pOldDepthSurface;
+			D3DVIEWPORT9		old_viewport;
 			D3DFORMAT			texture_format;
 			D3DFORMAT			depth_format;
 			LPDIRECT3DTEXTURE9	buffer_texture;

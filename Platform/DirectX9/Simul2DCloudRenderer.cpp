@@ -150,6 +150,8 @@ Vertex2D_t *vertices=NULL;
 
 void Simul2DCloudRenderer::RecompileShaders()
 {
+	if(!m_pd3dDevice)
+		return;
 	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_2d.fx"));
 
 	m_hTechniqueCloud	=m_pCloudEffect->GetTechniqueByName("simul_clouds_2d");

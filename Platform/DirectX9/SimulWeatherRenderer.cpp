@@ -49,7 +49,6 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 											bool usebuffer,int width,
 											int height,bool sky,bool rain) :
 	BaseWeatherRenderer(env,mem),
-	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
 	m_pBufferToScreenEffect(NULL),
 	use_buffer(usebuffer),
@@ -169,41 +168,29 @@ bool SimulWeatherRenderer::Restore2DCloudObjects()
 	return (hr==S_OK);
 }
 
+void SimulWeatherRenderer::RecompileShaders()
+{
+	if(!m_pd3dDevice)
+		return;
+	BaseWeatherRenderer::RecompileShaders();
+	SAFE_RELEASE(m_pBufferToScreenEffect);
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pBufferToScreenEffect,"gamma.fx"));
+	SkyOverStarsTechnique		=m_pBufferToScreenEffect->GetTechniqueByName("simul_sky_over_stars");
+	CloudBlendTechnique			=m_pBufferToScreenEffect->GetTechniqueByName("cloud_blend");
+	bufferTexture				=m_pBufferToScreenEffect->GetParameterByName(NULL,"hdrTexture");
+}
+
 void SimulWeatherRenderer::RestoreDeviceObjects(void *dev)
 {
-	simul::base::Timer timer;
-	timer.TimeSum=0;
-	timer.StartTime();
-
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
-	if(!m_pBufferToScreenEffect)
-		V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pBufferToScreenEffect,"gamma.fx"));
-	SkyOverStarsTechnique		=m_pBufferToScreenEffect->GetTechniqueByName("simul_sky_over_stars");
-	CloudBlendTechnique			=m_pBufferToScreenEffect->GetTechniqueByName("simul_cloud_blend");
-	bufferTexture				=m_pBufferToScreenEffect->GetParameterByName(NULL,"hdrTexture");
+	RecompileShaders();
 	CreateBuffers();
-	
-	timer.UpdateTime();
-	float create_buffers_time=timer.Time/1000.f;
-
 	if(simulSkyRenderer)
 		simulSkyRenderer->RestoreDeviceObjects(m_pd3dDevice);
-	timer.UpdateTime();
-	float sky_restore_time=timer.Time/1000.f;
-	(Restore3DCloudObjects());
-	timer.UpdateTime();
-	float clouds_3d_restore_time=timer.Time/1000.f;
-	(Restore2DCloudObjects());
-	timer.UpdateTime();
-	float clouds_2d_restore_time=timer.Time/1000.f;
+	Restore3DCloudObjects();
+	Restore2DCloudObjects();
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->RestoreDeviceObjects(dev);
-	timer.UpdateTime();
-	float atmospherics_restore_time=timer.Time/1000.f;
-	std::cout<<std::setprecision(4)<<"RESTORE TIMINGS: create_buffers="<<create_buffers_time
-		<<", sky="<<sky_restore_time<<", clouds_3d="<<clouds_3d_restore_time<<", clouds_2d="<<clouds_2d_restore_time
-		<<", atmospherics="<<atmospherics_restore_time<<std::endl;
-
 	UpdateSkyAndCloudHookup();
 }
 
@@ -222,7 +209,6 @@ void SimulWeatherRenderer::InvalidateDeviceObjects()
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
 	if(simulLightningRenderer)
 		simulLightningRenderer->InvalidateDeviceObjects();
-	SAFE_RELEASE(m_pBufferVertexDecl);
 	if(m_pBufferToScreenEffect)
         hr=m_pBufferToScreenEffect->OnLostDevice();
 	SAFE_RELEASE(m_pBufferToScreenEffect);
@@ -252,20 +238,6 @@ bool SimulWeatherRenderer::CreateBuffers()
 	framebuffer.RestoreDeviceObjects(m_pd3dDevice);
 	lowdef_framebuffer.SetWidthAndHeight(BufferWidth/2,BufferHeight/2);
 	lowdef_framebuffer.RestoreDeviceObjects(m_pd3dDevice);
-	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
-	D3DVERTEXELEMENT9 decl[] = 
-	{
-#ifdef XBOX
-		{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0,  8, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#else
-		{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
-		{ 0, 16, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#endif
-		D3DDECL_END()
-	};
-	SAFE_RELEASE(m_pBufferVertexDecl);
-	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl);
 	return (hr==S_OK);
 }
 
@@ -283,11 +255,54 @@ bool SimulWeatherRenderer::RenderSky(void *context,float exposure,bool buffered,
 		// have this set aside for depth!
 		static int u=7;
 		m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,u);
-		RenderBufferToScreen((LPDIRECT3DTEXTURE9)framebuffer.GetColorTex());
 		m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,15);
 	}
 	return true;
 }
+
+void SimulWeatherRenderer::RenderSkyAsOverlay(void *context,
+												float exposure,
+												bool buffered,
+												bool is_cubemap,
+												const void* mainDepthTexture,
+												const void* depthTextureForClouds,
+												int viewport_id,
+												const simul::sky::float4& relativeViewportTextureRegionXYWH,
+												bool doFinalCloudBufferToScreenComposite
+												)
+{
+	SIMUL_PROFILE_START("RenderSkyAsOverlay")
+	SIMUL_GPU_PROFILE_START(context,"RenderSkyAsOverlay")
+	BaseWeatherRenderer::RenderSkyAsOverlay(context,
+											exposure,
+											buffered,
+											is_cubemap,
+											mainDepthTexture,
+											depthTextureForClouds,
+											viewport_id,
+											relativeViewportTextureRegionXYWH,
+											doFinalCloudBufferToScreenComposite
+											);
+	if(buffered&&doFinalCloudBufferToScreenComposite)
+	{
+		bool blend=!is_cubemap;
+		m_pBufferToScreenEffect->SetTexture(bufferTexture,(LPDIRECT3DBASETEXTURE9)framebuffer.GetColorTex());
+		m_pBufferToScreenEffect->SetTechnique(CloudBlendTechnique);
+		unsigned passes;
+		simul::dx9::setParameter(m_pBufferToScreenEffect,"exposure",exposure);
+		//simul::dx9::setParameter(m_pBufferToScreenEffect,"gamma",1.f);
+		m_pBufferToScreenEffect->Begin(&passes,0);
+		m_pBufferToScreenEffect->BeginPass(0);
+
+		simul::dx9::DrawQuad(m_pd3dDevice);
+		m_pBufferToScreenEffect->EndPass();
+		m_pBufferToScreenEffect->End();
+		m_pBufferToScreenEffect->SetTexture(bufferTexture,NULL);
+	}
+	SIMUL_GPU_PROFILE_END(context,"RenderSkyAsOverlay")
+	SIMUL_PROFILE_END
+}
+
 
 void SimulWeatherRenderer::RenderLightning(void *context,int viewport_id)
 {
@@ -341,28 +356,9 @@ void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,boo
 			simulAtmosphericsRenderer->RenderGodRays(str);
 		simulAtmosphericsRenderer->RenderAirglow();
 	}
-	if(buf)
-	{
-		m_pBufferToScreenEffect->SetTechnique(CloudBlendTechnique);
-		{
-			framebuffer.Deactivate(NULL);
-	#ifdef XBOX
-			m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, framebuffer.hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
-	#endif
-			RenderBufferToScreen((LPDIRECT3DTEXTURE9)framebuffer.GetColorTex());
-		}
-	}
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
 }
-
-bool SimulWeatherRenderer::RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture)
-{
-	HRESULT hr=m_pBufferToScreenEffect->SetTexture(bufferTexture,texture);
-	hr=DrawFullScreenQuad(m_pd3dDevice,m_pBufferToScreenEffect);
-	return (hr==S_OK);
-}
-
 #ifdef XBOX
 void SimulWeatherRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {

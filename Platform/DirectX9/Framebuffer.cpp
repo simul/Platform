@@ -105,15 +105,25 @@ void Framebuffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pBufferDepthSurface);
 }
 
-void Framebuffer::Activate(void *)
+void Framebuffer::SaveOldRTs(void *)
+{
+	m_pd3dDevice->GetViewport(&old_viewport);
+	m_pOldRenderTarget	=NULL;
+	m_pOldDepthSurface	=NULL;
+	m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
+	m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
+}
+
+void Framebuffer::Activate(void *context)
 {
 	m_pOldRenderTarget=NULL;
 	m_pOldDepthSurface=NULL;
-	D3DSURFACE_DESC desc;
-	V_CHECK(buffer_texture->GetLevelDesc(0,&desc));
-	V_CHECK(m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget));
-	m_pOldRenderTarget->GetDesc(&desc);
-	V_CHECK(m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface));
+	//D3DSURFACE_DESC desc;
+	//V_CHECK(buffer_texture->GetLevelDesc(0,&desc));
+	SaveOldRTs(context);
+	//V_CHECK(m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget));
+	//m_pOldRenderTarget->GetDesc(&desc);
+	//V_CHECK(m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface));
 	V_CHECK(m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget));
 	if(m_pBufferDepthSurface)
 		V_CHECK(m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface));
@@ -131,11 +141,12 @@ void Framebuffer::ActivateColour(void *context,const float viewportXYWH[4])
 {
 	m_pOldRenderTarget=NULL;
 	m_pOldDepthSurface=NULL;
-	D3DSURFACE_DESC desc;
-	V_CHECK(buffer_texture->GetLevelDesc(0,&desc));
-	V_CHECK(m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget));
-	m_pOldRenderTarget->GetDesc(&desc);
-	V_CHECK(m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface));
+	//D3DSURFACE_DESC desc;
+	//V_CHECK(buffer_texture->GetLevelDesc(0,&desc));
+	//V_CHECK(m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget));
+	//m_pOldRenderTarget->GetDesc(&desc);
+	//V_CHECK(m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface));
+	SaveOldRTs(context);
 	V_CHECK(m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget));
 	V_CHECK(m_pd3dDevice->SetDepthStencilSurface(NULL));
 	SetViewport(context,viewportXYWH[0],viewportXYWH[1],viewportXYWH[2],viewportXYWH[3]);
@@ -167,6 +178,7 @@ void Framebuffer::Deactivate(void *)
 		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
+	m_pd3dDevice->SetViewport(&old_viewport);
 }
 
 void Framebuffer::DeactivateDepth(void*)
