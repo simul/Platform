@@ -69,6 +69,7 @@ public:
 	const		char *GetDebugText();
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
+	void RenderIlluminationBuffer(void *context);
 	simul::opengl::GpuSkyGenerator gpuSkyGenerator;
 	//! \internal Switch the current program, either sky_program or earthshadow_program.
 	//! Also sets the parameter variables.	

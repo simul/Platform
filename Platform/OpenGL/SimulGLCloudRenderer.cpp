@@ -951,7 +951,7 @@ void SimulGLCloudRenderer::RenderCrossSections(void *,int width,int height)
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;
-		simul::sky::float4 light_response(mult*kf->direct_light,mult*kf->indirect_light,mult*kf->ambient_light,0);
+		simul::sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
