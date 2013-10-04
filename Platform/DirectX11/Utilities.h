@@ -310,10 +310,15 @@ namespace std
 	template<> inline void swap(simul::dx11::TextureStruct& _Left, simul::dx11::TextureStruct& _Right)
 	{
 		std::swap(_Left.shaderResourceView	,_Right.shaderResourceView);
+		std::swap(_Left.unorderedAccessView	,_Right.unorderedAccessView);
+		std::swap(_Left.renderTargetView	,_Right.renderTargetView);
+		std::swap(_Left.stagingBuffer		,_Right.stagingBuffer);
 		std::swap(_Left.texture				,_Right.texture);
 		std::swap(_Left.width				,_Right.width);
 		std::swap(_Left.length				,_Right.length);
+		std::swap(_Left.depth				,_Right.depth);
 		std::swap(_Left.mapped				,_Right.mapped);
+		std::swap(_Left.format				,_Right.format);
 	}
 }
 

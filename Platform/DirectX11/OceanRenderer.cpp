@@ -1,16 +1,23 @@
-#include "SimulOceanRendererDX1x.h"
+#define NOMINMAX
+#include "OceanRenderer.h"
 #include "CreateEffectDX1x.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/SkyInterface.h"
 #include <D3DX11tex.h>
 #include "CompileShaderDX1x.h"
+#include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #pragma warning(disable:4995)
 #include <vector>
+#include <string>
+#include <map>
 #include <assert.h>
 using namespace std;
+using namespace simul;
+using namespace dx11;
 
 #define FRESNEL_TEX_SIZE			256
 #define PERLIN_TEX_SIZE				64
+#define SAFE_DELETE_ARRAY(c) delete [] c;c=NULL;
 
 struct ocean_vertex
 {
@@ -18,7 +25,6 @@ struct ocean_vertex
 	float index_y;
 };
 
-OceanSimulator* g_pOceanSimulator=NULL;
 // Mesh properties:
 
 // Shading properties:
@@ -52,7 +58,6 @@ struct Const_Per_Call
 	D3DXVECTOR2 g_UVBase;
 	D3DXVECTOR2 g_PerlinMovement;
 	D3DXVECTOR3	g_LocalEye;
-	
 	// Atmospherics
 	float		hazeEccentricity;
 	D3DXVECTOR3	lightDir;
@@ -63,17 +68,14 @@ struct Const_Shading
 {
 	// The color of bottomless water body
 	D3DXVECTOR3		g_WaterbodyColor;
-
 	// The strength, direction and color of sun streak
 	float			g_Shineness;
 	D3DXVECTOR3		g_SunDir;
 	float			unused1;
 	D3DXVECTOR3		g_SunColor;
 	float			unused2;
-	
 	// The parameter is used for fixing an artifact
 	D3DXVECTOR3		g_BendParam;
-
 	// Perlin noise for distant wave crest
 	float			g_PerlinSize;
 	D3DXVECTOR3		g_PerlinAmplitude;
@@ -88,19 +90,11 @@ struct Const_Shading
 };
 
 
-SimulOceanRendererDX1x::SimulOceanRendererDX1x(simul::terrain::SeaKeyframer *s)
+OceanRenderer::OceanRenderer(simul::terrain::SeaKeyframer *s)
 	:simul::terrain::BaseSeaRenderer(s)
+	,oceanSimulator(NULL)
 	,m_pd3dDevice(NULL)
-	,m_pImmediateContext(NULL)
-	,g_pOceanSurfVS(NULL)
-	,g_pOceanSurfPS(NULL)
-	,g_pWireframePS(NULL)
-	,g_pRSState_Solid(NULL)
-	,g_pRSState_Wireframe(NULL)
-	,g_pDSState_Disable(NULL)
-	,g_pDSState_Enable(NULL)
-	,g_pBState_Transparent(NULL)
-	,g_pBState_Solid(NULL)
+	,effect(NULL)
 	,g_pPerCallCB(NULL)
 	,g_pPerFrameCB(NULL)
 	,g_pShadingCB(NULL)
@@ -117,47 +111,31 @@ SimulOceanRendererDX1x::SimulOceanRendererDX1x(simul::terrain::SeaKeyframer *s)
 	,g_pSRV_ReflectCube(NULL)
 	,skyLossTexture_SRV(NULL)
 	,skyInscatterTexture_SRV(NULL)
-	// Samplers
-	,g_pHeightSampler(NULL)
-	,g_pGradientSampler(NULL)
-	,g_pFresnelSampler(NULL)
-	,g_pPerlinSampler(NULL)
-	,g_pCubeSampler(NULL)
-	,g_pAtmosphericsSampler(NULL)
 {
 }
 
-SimulOceanRendererDX1x::~SimulOceanRendererDX1x()
+OceanRenderer::~OceanRenderer()
 {
 	InvalidateDeviceObjects();
 }
 
 
-void SimulOceanRendererDX1x::Update(float dt)
+void OceanRenderer::Update(float dt)
 {
 	// Update simulation
 	app_time += (double)dt;
-	g_pOceanSimulator->updateDisplacementMap((float)app_time);
 }
 
-void SimulOceanRendererDX1x::RecompileShaders()
+void OceanRenderer::RecompileShaders()
 {
-	SAFE_RELEASE(g_pOceanSurfVS);
-	SAFE_RELEASE(g_pOceanSurfPS);
-	SAFE_RELEASE(g_pWireframePS);
-
-	ID3DBlob* pBlobOceanSurfVS = NULL;
-	ID3DBlob* pBlobOceanSurfPS = NULL;
-	ID3DBlob* pBlobWireframePS = NULL;
-
-	CompileShaderFromFile(L"ocean_shading.hlsl", "OceanSurfVS", "vs_4_0", &pBlobOceanSurfVS);
-	CompileShaderFromFile(L"ocean_shading.hlsl", "OceanSurfPS", "ps_4_0", &pBlobOceanSurfPS);
-	CompileShaderFromFile(L"ocean_shading.hlsl", "WireframePS", "ps_4_0", &pBlobWireframePS);
-
-	m_pd3dDevice->CreateVertexShader(pBlobOceanSurfVS->GetBufferPointer(), pBlobOceanSurfVS->GetBufferSize(), NULL, &g_pOceanSurfVS);
-	m_pd3dDevice->CreatePixelShader(pBlobOceanSurfPS->GetBufferPointer(), pBlobOceanSurfPS->GetBufferSize(), NULL, &g_pOceanSurfPS);
-	m_pd3dDevice->CreatePixelShader(pBlobWireframePS->GetBufferPointer(), pBlobWireframePS->GetBufferSize(), NULL, &g_pWireframePS);
-
+	SAFE_RELEASE(effect);
+	if(!m_pd3dDevice)
+		return;
+	std::map<std::string,std::string> defines;
+	if(ReverseDepth)
+		defines["REVERSE_DEPTH"]="1";
+	defines["FX"]="1";
+	effect=LoadEffect(m_pd3dDevice,"ocean.fx",defines);
 
 	// Input layout
 	D3D11_INPUT_ELEMENT_DESC mesh_layout_desc[] =
@@ -165,33 +143,24 @@ void SimulOceanRendererDX1x::RecompileShaders()
 		{"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
 
-	m_pd3dDevice->CreateInputLayout(mesh_layout_desc, 1, pBlobOceanSurfVS->GetBufferPointer(), pBlobOceanSurfVS->GetBufferSize(), &g_pMeshLayout);
-	assert(g_pMeshLayout);
-
-	SAFE_RELEASE(pBlobOceanSurfVS);
-	SAFE_RELEASE(pBlobOceanSurfPS);
-	SAFE_RELEASE(pBlobWireframePS);
+	
+	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("ocean");
+	if(tech)
+	{
+		D3DX11_PASS_DESC PassDesc;
+		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
+		m_pd3dDevice->CreateInputLayout(mesh_layout_desc,1, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &g_pMeshLayout);
+	}
 }
 
-void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
+void OceanRenderer::RestoreDeviceObjects(ID3D11Device* dev)
 {
 	InvalidateDeviceObjects();
 	m_pd3dDevice=dev;
-#ifdef DX10
-	m_pImmediateContext=dev;
-#else
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-#endif
-	try
-	{
-		g_pOceanSimulator = new OceanSimulator(ocean_parameters, m_pd3dDevice);
-	}
-	catch(...)
-	{
-		throw;
-	}
+	oceanSimulator = new OceanSimulator(ocean_parameters);
+	oceanSimulator->RestoreDeviceObjects(m_pd3dDevice);
 	// Update the simulation for the first time.
-	g_pOceanSimulator->updateDisplacementMap(0);
+	oceanSimulator->updateDisplacementMap(0);
 
 	// D3D buffers
 	createSurfaceMesh();
@@ -243,88 +212,6 @@ void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 	m_pd3dDevice->CreateBuffer(&cb_desc, &cb_init_data, &g_pShadingCB);
 	assert(g_pShadingCB);
 
-	// Samplers
-	D3D11_SAMPLER_DESC sam_desc;
-	sam_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	sam_desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sam_desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sam_desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sam_desc.MipLODBias = 0;
-	sam_desc.MaxAnisotropy = 1;
-	sam_desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	sam_desc.BorderColor[0] = 1.0f;
-	sam_desc.BorderColor[1] = 1.0f;
-	sam_desc.BorderColor[2] = 1.0f;
-	sam_desc.BorderColor[3] = 1.0f;
-	sam_desc.MinLOD = 0;
-	sam_desc.MaxLOD = FLT_MAX;
-	m_pd3dDevice->CreateSamplerState(&sam_desc, &g_pHeightSampler);
-	assert(g_pHeightSampler);
-
-	sam_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	m_pd3dDevice->CreateSamplerState(&sam_desc, &g_pCubeSampler);
-	assert(g_pCubeSampler);
-
-	sam_desc.Filter = D3D11_FILTER_ANISOTROPIC;
-	sam_desc.MaxAnisotropy = 8;
-	m_pd3dDevice->CreateSamplerState(&sam_desc, &g_pGradientSampler);
-	assert(g_pGradientSampler);
-
-	sam_desc.MaxLOD = FLT_MAX;
-	sam_desc.MaxAnisotropy = 4;
-	m_pd3dDevice->CreateSamplerState(&sam_desc, &g_pPerlinSampler);
-	assert(g_pPerlinSampler);
-
-	sam_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	sam_desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	sam_desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	sam_desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	m_pd3dDevice->CreateSamplerState(&sam_desc, &g_pFresnelSampler);
-	assert(g_pFresnelSampler);
-
-	sam_desc.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR;
-	m_pd3dDevice->CreateSamplerState(&sam_desc, &g_pAtmosphericsSampler);
-	assert(g_pAtmosphericsSampler);
-
-	// State blocks
-	D3D11_RASTERIZER_DESC ras_desc;
-	ras_desc.FillMode = D3D11_FILL_SOLID; 
-	ras_desc.CullMode = D3D11_CULL_NONE; 
-	ras_desc.FrontCounterClockwise = FALSE; 
-	ras_desc.DepthBias = 0;
-	ras_desc.SlopeScaledDepthBias = 0.0f;
-	ras_desc.DepthBiasClamp = 0.0f;
-	ras_desc.DepthClipEnable= TRUE;
-	ras_desc.ScissorEnable = FALSE;
-	ras_desc.MultisampleEnable = TRUE;
-	ras_desc.AntialiasedLineEnable = FALSE;
-
-	m_pd3dDevice->CreateRasterizerState(&ras_desc, &g_pRSState_Solid);
-	assert(g_pRSState_Solid);
-
-	ras_desc.FillMode = D3D11_FILL_WIREFRAME; 
-
-	m_pd3dDevice->CreateRasterizerState(&ras_desc, &g_pRSState_Wireframe);
-	assert(g_pRSState_Wireframe);
-
-	D3D11_DEPTH_STENCIL_DESC depth_desc;
-	memset(&depth_desc, 0, sizeof(D3D11_DEPTH_STENCIL_DESC));
-	depth_desc.DepthEnable = FALSE;
-	depth_desc.StencilEnable = FALSE;
-	depth_desc.DepthEnable = TRUE;
-	depth_desc.DepthWriteMask =D3D11_DEPTH_WRITE_MASK_ZERO;
-	depth_desc.DepthFunc = D3D11_COMPARISON_LESS;
-	m_pd3dDevice->CreateDepthStencilState(&depth_desc, &g_pDSState_Disable);
-	assert(g_pDSState_Disable);
-
-	depth_desc.DepthEnable = TRUE;
-	depth_desc.StencilEnable = FALSE;
-	depth_desc.DepthEnable = TRUE;
-	depth_desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depth_desc.DepthFunc = D3D11_COMPARISON_LESS;
-	m_pd3dDevice->CreateDepthStencilState(&depth_desc, &g_pDSState_Enable);
-	assert(g_pDSState_Enable);
-
 	D3D11_BLEND_DESC blend_desc;
 	memset(&blend_desc, 0, sizeof(D3D11_BLEND_DESC));
 	blend_desc.AlphaToCoverageEnable = FALSE;
@@ -337,66 +224,49 @@ void SimulOceanRendererDX1x::RestoreDeviceObjects(ID3D11Device* dev)
 	blend_desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
 	blend_desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	blend_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	m_pd3dDevice->CreateBlendState(&blend_desc, &g_pBState_Transparent);
-	assert(g_pBState_Transparent);
 	
 	blend_desc.RenderTarget[0].BlendEnable = FALSE;
 	blend_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	m_pd3dDevice->CreateBlendState(&blend_desc, &g_pBState_Solid);
-	assert(g_pBState_Solid);
 }
 
-void SimulOceanRendererDX1x::SetCubemap(ID3D1xShaderResourceView *c)
+void OceanRenderer::SetCubemapTexture(void *c)
 {
-	g_pSRV_ReflectCube=c;
+	g_pSRV_ReflectCube=(ID3D1xShaderResourceView*)c;
 }
 
-void SimulOceanRendererDX1x::SetLossTexture(void *t)
+void OceanRenderer::SetLossTexture(void *t)
 {
 	skyLossTexture_SRV=((ID3D1xShaderResourceView*)t);
 }
 
-void SimulOceanRendererDX1x::SetInscatterTextures(void *t,void *s)
+void OceanRenderer::SetInscatterTextures(void *t,void *s)
 {
 	skyInscatterTexture_SRV=((ID3D1xShaderResourceView*)t);
 	skylightTexture_SRV=((ID3D1xShaderResourceView*)s);
 }
 
-void SimulOceanRendererDX1x::InvalidateDeviceObjects()
+void OceanRenderer::InvalidateDeviceObjects()
 {
+	if(oceanSimulator)
+	{
+		oceanSimulator->InvalidateDeviceObjects();
     // Ocean object
-	SAFE_DELETE(g_pOceanSimulator);
+		delete (oceanSimulator);
+		oceanSimulator=NULL;
+	}
 	SAFE_RELEASE(g_pMeshIB);
 	SAFE_RELEASE(g_pMeshVB);
 	SAFE_RELEASE(g_pMeshLayout);
-
-	SAFE_RELEASE(g_pOceanSurfVS);
-	SAFE_RELEASE(g_pOceanSurfPS);
-	SAFE_RELEASE(g_pWireframePS);
+	
+	SAFE_RELEASE(effect);
 
 	SAFE_RELEASE(g_pFresnelMap);
 	SAFE_RELEASE(g_pSRV_Fresnel);
 	SAFE_RELEASE(g_pSRV_Perlin);
 
-	SAFE_RELEASE(g_pHeightSampler);
-	SAFE_RELEASE(g_pGradientSampler);
-	SAFE_RELEASE(g_pFresnelSampler);
-	SAFE_RELEASE(g_pPerlinSampler);
-	SAFE_RELEASE(g_pCubeSampler);
-	SAFE_RELEASE(g_pAtmosphericsSampler);
-
 	SAFE_RELEASE(g_pPerCallCB);
 	SAFE_RELEASE(g_pPerFrameCB);
 	SAFE_RELEASE(g_pShadingCB);
-
-	SAFE_RELEASE(g_pRSState_Solid);
-	SAFE_RELEASE(g_pRSState_Wireframe);
-	SAFE_RELEASE(g_pDSState_Disable);
-	SAFE_RELEASE(g_pDSState_Enable);
-	SAFE_RELEASE(g_pBState_Transparent);
-	SAFE_RELEASE(g_pBState_Solid);
-
-	SAFE_RELEASE(m_pImmediateContext);
 
 	g_render_list.clear();
 }
@@ -404,7 +274,7 @@ void SimulOceanRendererDX1x::InvalidateDeviceObjects()
 #define MESH_INDEX_2D(x, y)	(((y) + vert_rect.bottom) * (g_MeshDim + 1) + (x) + vert_rect.left)
 
 
-void SimulOceanRendererDX1x::createSurfaceMesh()
+void OceanRenderer::createSurfaceMesh()
 {
 	// --------------------------------- Vertex Buffer -------------------------------
 	int num_verts = (g_MeshDim + 1) * (g_MeshDim + 1);
@@ -471,7 +341,7 @@ void SimulOceanRendererDX1x::createSurfaceMesh()
 	SAFE_DELETE_ARRAY(index_array);
 }
 
-void SimulOceanRendererDX1x::EnumeratePatterns(unsigned long* index_array)
+void OceanRenderer::EnumeratePatterns(unsigned long* index_array)
 {
 	int offset = 0;
 	int level_size = g_MeshDim;
@@ -524,12 +394,10 @@ void SimulOceanRendererDX1x::EnumeratePatterns(unsigned long* index_array)
 		}
 		level_size /= 2;
 	}
-
-
 //	assert(offset == index_size_lookup[g_Lods]);
 }
 
-void SimulOceanRendererDX1x::createFresnelMap()
+void OceanRenderer::createFresnelMap()
 {
 	DWORD* buffer = new DWORD[FRESNEL_TEX_SIZE];
 	for (int i = 0; i < FRESNEL_TEX_SIZE; i++)
@@ -571,7 +439,7 @@ void SimulOceanRendererDX1x::createFresnelMap()
 	assert(g_pSRV_Fresnel);
 }
 
-void SimulOceanRendererDX1x::loadTextures()
+void OceanRenderer::loadTextures()
 {
     WCHAR strPath[MAX_PATH];
     swprintf_s(strPath, MAX_PATH, L"../../Platform/DirectX11/Textures/perlin_noise.dds");
@@ -591,18 +459,22 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 	return cam_pos;
 }
 
-void SimulOceanRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void OceanRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
-	if(IsYVertical())
-		view=D3DXMATRIX(1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1) * v;
+//	if(IsYVertical())
+//		view=D3DXMATRIX(1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1) * v;
 	proj=p;
 }
 
-void SimulOceanRendererDX1x::Render()
+void OceanRenderer::Render(void *context,float exposure)
 {
-	ID3D11ShaderResourceView* displacement_map = g_pOceanSimulator->getDisplacementMap();
-	ID3D11ShaderResourceView* gradient_map = g_pOceanSimulator->getGradientMap();
+	if(skyInterface)
+		app_time=skyInterface->GetTime();
+	oceanSimulator->updateDisplacementMap((float)app_time);
+	ID3D11DeviceContext*	pContext=(ID3D11DeviceContext*)context;
+	ID3D11ShaderResourceView* displacement_map = oceanSimulator->getDisplacementMap();
+	ID3D11ShaderResourceView* gradient_map = oceanSimulator->getGradientMap();
 
 	// Build rendering list
 	g_render_list.clear();
@@ -615,85 +487,61 @@ void SimulOceanRendererDX1x::Render()
 	D3DXMATRIX matProj = proj;
 
 	// VS & PS
-	m_pImmediateContext->VSSetShader(g_pOceanSurfVS, NULL, 0);
-	m_pImmediateContext->PSSetShader(g_pOceanSurfPS, NULL, 0);
+	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("ocean");
+	tech->GetPassByIndex(0)->Apply(0,pContext);
 
 	// Textures
-	ID3D11ShaderResourceView* vs_srvs[2] = {displacement_map, g_pSRV_Perlin};
-	m_pImmediateContext->VSSetShaderResources(0, 2, &vs_srvs[0]);
-
-	ID3D11ShaderResourceView* ps_srvs[6] = {g_pSRV_Perlin, gradient_map, g_pSRV_Fresnel, g_pSRV_ReflectCube,skyLossTexture_SRV,skyInscatterTexture_SRV};
-    m_pImmediateContext->PSSetShaderResources(1, 6, &ps_srvs[0]);
-
-	// Samplers
-	ID3D11SamplerState* vs_samplers[2] = {g_pHeightSampler, g_pPerlinSampler};
-	m_pImmediateContext->VSSetSamplers(0, 2, &vs_samplers[0]);
-
-	ID3D11SamplerState* ps_samplers[5] = {g_pPerlinSampler, g_pGradientSampler, g_pFresnelSampler, g_pCubeSampler,g_pAtmosphericsSampler};
-	m_pImmediateContext->PSSetSamplers(1, 5, &ps_samplers[0]);
-
-	//m_pImmediateContext->PSSetSamplers(1, 5, &g_pAtmosphericsSampler);
+	setParameter(effect,"g_texDisplacement"		,displacement_map);
+	setParameter(effect,"g_texPerlin"			,g_pSRV_Perlin);
+	setParameter(effect,"g_texGradient"			,gradient_map);
+	setParameter(effect,"g_texFresnel"			,g_pSRV_Fresnel);
+	setParameter(effect,"g_texReflectCube"		,g_pSRV_ReflectCube);
+	setParameter(effect,"g_skyLossTexture"		,skyLossTexture_SRV);
+	setParameter(effect,"g_skyInscatterTexture"	,skyInscatterTexture_SRV);
 
 	// IA setup
-	m_pImmediateContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
+	pContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
 
 	ID3D11Buffer* vbs[1] = {g_pMeshVB};
 	UINT strides[1] = {sizeof(ocean_vertex)};
 	UINT offsets[1] = {0};
-	m_pImmediateContext->IASetVertexBuffers(0, 1, &vbs[0], &strides[0], &offsets[0]);
-
-	m_pImmediateContext->IASetInputLayout(g_pMeshLayout);
-
-	// State blocks
-	m_pImmediateContext->RSSetState(g_pRSState_Solid);
-	m_pImmediateContext->OMSetDepthStencilState(g_pDSState_Enable,0);
-
-	m_pImmediateContext->OMSetBlendState(g_pBState_Solid,0,0xFFFFFFFF);
+	pContext->IASetVertexBuffers(0, 1, &vbs[0], &strides[0], &offsets[0]);
+	pContext->IASetInputLayout(g_pMeshLayout);
 
 	// Constants
 	ID3D11Buffer* cbs[1] = {g_pShadingCB};
-	m_pImmediateContext->VSSetConstantBuffers(2, 1, cbs);
-	m_pImmediateContext->PSSetConstantBuffers(2, 1, cbs);
+	setConstantBuffer(effect,"cbShading"	,g_pShadingCB);
 
 	// We assume the center of the ocean surface at (0, 0, 0).
 	for (int i = 0; i < (int)g_render_list.size(); i++)
 	{
 		QuadNode& node = g_render_list[i];
-		
 		if (!node.isLeaf())
 			continue;
-
 		// Check adjacent patches and select mesh pattern
 		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters->patch_length);
-
 		// Find the right LOD to render
 		int level_size = g_MeshDim;
 		for (int lod = 0; lod < node.lod; lod++)
 			level_size >>= 1;
-
 		// Matrices and constants
 		Const_Per_Call call_consts;
-
 		// Expand of the local coordinate to world space patch size
 		D3DXMATRIX matScale;
 		D3DXMatrixScaling(&matScale, node.length / level_size, node.length / level_size, 0);
 		D3DXMatrixTranspose(&call_consts.g_matLocal, &matScale);
-
 		// WVP matrix
 		D3DXMATRIX matWorld;
 		D3DXMatrixTranslation(&matWorld, node.bottom_left.x, node.bottom_left.y, 0);
 		D3DXMatrixTranspose(&call_consts.g_matWorld, &matWorld);
 		D3DXMATRIX matWVP = matWorld * matView * matProj;
 		D3DXMatrixTranspose(&call_consts.g_matWorldViewProj, &matWVP);
-
 		// Texcoord for perlin noise
 		D3DXVECTOR2 uv_base = node.bottom_left / ocean_parameters->patch_length * g_PerlinSize;
 		call_consts.g_UVBase = uv_base;
-
 		// Constant g_PerlinSpeed need to be adjusted mannually
 		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters->wind_dir)*(-(float)app_time)* g_PerlinSpeed;
 		call_consts.g_PerlinMovement = perlin_move;
-
 		// Eye point
 		D3DXMATRIX matInvWV = matWorld * matView;
 		D3DXMatrixInverse(&matInvWV, NULL, &matInvWV);
@@ -717,46 +565,42 @@ void SimulOceanRendererDX1x::Render()
 
 		// Update constant buffer
 		D3D11_MAPPED_SUBRESOURCE mapped_res;            
-		m_pImmediateContext->Map(g_pPerCallCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
+		pContext->Map(g_pPerCallCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
 		assert(mapped_res.pData);
 		*(Const_Per_Call*)mapped_res.pData = call_consts;
-		m_pImmediateContext->Unmap(g_pPerCallCB, 0);
+		pContext->Unmap(g_pPerCallCB, 0);
 
 		cbs[0] = g_pPerCallCB;
-		m_pImmediateContext->VSSetConstantBuffers(4, 1, cbs);
-		m_pImmediateContext->PSSetConstantBuffers(4, 1, cbs);
-
+		//pContext->VSSetConstantBuffers(4, 1, cbs);
+		//pContext->PSSetConstantBuffers(4, 1, cbs);
+		setConstantBuffer(effect,"cbChangePerCall"	,g_pPerCallCB);
+		tech->GetPassByIndex(0)->Apply(0,pContext);
 		// Perform draw call
 		if (render_param.num_inner_faces > 0)
 		{
 			// Inner mesh of the patch
-			m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-			m_pImmediateContext->DrawIndexed(render_param.num_inner_faces + 2, render_param.inner_start_index, 0);
+			pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			pContext->DrawIndexed(render_param.num_inner_faces + 2, render_param.inner_start_index, 0);
 		}
 
 		if (render_param.num_boundary_faces > 0)
 		{
 			// Boundary mesh of the patch
-			m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			m_pImmediateContext->DrawIndexed(render_param.num_boundary_faces * 3, render_param.boundary_start_index, 0);
+			pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			pContext->DrawIndexed(render_param.num_boundary_faces * 3, render_param.boundary_start_index, 0);
 		}
 	}
 
 	// Unbind
-	vs_srvs[0] = NULL;
-	vs_srvs[1] = NULL;
-	m_pImmediateContext->VSSetShaderResources(0, 2, &vs_srvs[0]);
+	unbindTextures(effect);
 
-	ps_srvs[0] = NULL;
-	ps_srvs[1] = NULL;
-	ps_srvs[2] = NULL;
-	ps_srvs[3] = NULL;
-    m_pImmediateContext->PSSetShaderResources(1, 4, &ps_srvs[0]);
+	tech->GetPassByIndex(0)->Apply(0,pContext);
 }
 
-void SimulOceanRendererDX1x::RenderWireframe(float time)
+void OceanRenderer::RenderWireframe(void *context)
 {
-	ID3D11ShaderResourceView* displacement_map = NULL;//g_pOceanSimulator->getD3D11DisplacementMap();
+	ID3D11DeviceContext*	pContext=(ID3D11DeviceContext*)context;
+	ID3D11ShaderResourceView* displacement_map = oceanSimulator->getDisplacementMap();
 	// Build rendering list
 	g_render_list.clear();
 	float ocean_extent = ocean_parameters->patch_length * (1 << g_FurthestCover);
@@ -764,42 +608,28 @@ void SimulOceanRendererDX1x::RenderWireframe(float time)
 	buildNodeList(root_node,ocean_parameters->patch_length,view,proj);
 
 	// Matrices
-	D3DXMATRIX matView = view;//*camera.GetViewMatrix();
-	//D3DXMatrixInverse(&matView,NULL,&view);
-	D3DXMATRIX matProj = proj;//*camera.GetProjMatrix();
+	D3DXMATRIX matView = view;
+	D3DXMATRIX matProj = proj;
 
 	// VS & PS
-	m_pImmediateContext->VSSetShader(g_pOceanSurfVS, NULL, 0);
-	m_pImmediateContext->PSSetShader(g_pWireframePS, NULL, 0);
-
-	// Textures
-	ID3D11ShaderResourceView* vs_srvs[2] = {displacement_map, g_pSRV_Perlin};
-	m_pImmediateContext->VSSetShaderResources(0, 2, &vs_srvs[0]);
-
-	// Samplers
-	ID3D11SamplerState* vs_samplers[2] = {g_pHeightSampler, g_pPerlinSampler};
-	m_pImmediateContext->VSSetSamplers(0, 2, &vs_samplers[0]);
-
-	ID3D11SamplerState* ps_samplers[4] = {NULL, NULL, NULL, NULL};
-	m_pImmediateContext->PSSetSamplers(1, 4, &ps_samplers[0]);
+	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("wireframe");
+	
+	setParameter(effect,"g_texDisplacement",displacement_map);
+	setParameter(effect,"g_texPerlin",g_pSRV_Perlin);
 
 	// IA setup
-	m_pImmediateContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
+	pContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
 
 	ID3D11Buffer* vbs[1] = {g_pMeshVB};
 	UINT strides[1] = {sizeof(ocean_vertex)};
 	UINT offsets[1] = {0};
-	m_pImmediateContext->IASetVertexBuffers(0, 1, &vbs[0], &strides[0], &offsets[0]);
+	pContext->IASetVertexBuffers(0, 1, &vbs[0], &strides[0], &offsets[0]);
 
-	m_pImmediateContext->IASetInputLayout(g_pMeshLayout);
-
-	// State blocks
-	m_pImmediateContext->RSSetState(g_pRSState_Wireframe);
+	pContext->IASetInputLayout(g_pMeshLayout);
 
 	// Constants
 	ID3D11Buffer* cbs[1] = {g_pShadingCB};
-	m_pImmediateContext->VSSetConstantBuffers(2, 1, cbs);
-	m_pImmediateContext->PSSetConstantBuffers(2, 1, cbs);
+	setConstantBuffer(effect,"cbShading",g_pShadingCB);
 
 	// We assume the center of the ocean surface is at (0, 0, 0).
 	for (int i = 0; i < (int)g_render_list.size(); i++)
@@ -837,7 +667,7 @@ void SimulOceanRendererDX1x::RenderWireframe(float time)
 		call_consts.g_UVBase = uv_base;
 
 		// Constant g_PerlinSpeed need to be adjusted mannually
-		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters->wind_dir) *-time * g_PerlinSpeed;
+		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters->wind_dir) *(-(float)app_time)* g_PerlinSpeed;
 		call_consts.g_PerlinMovement = perlin_move;
 
 		// Eye point
@@ -849,36 +679,29 @@ void SimulOceanRendererDX1x::RenderWireframe(float time)
 
 		// Update constant buffer
 		D3D11_MAPPED_SUBRESOURCE mapped_res;            
-		m_pImmediateContext->Map(g_pPerCallCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
+		pContext->Map(g_pPerCallCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
 		assert(mapped_res.pData);
 		*(Const_Per_Call*)mapped_res.pData = call_consts;
-		m_pImmediateContext->Unmap(g_pPerCallCB, 0);
+		pContext->Unmap(g_pPerCallCB, 0);
 
 		cbs[0] = g_pPerCallCB;
-		m_pImmediateContext->VSSetConstantBuffers(4, 1, cbs);
-		m_pImmediateContext->PSSetConstantBuffers(4, 1, cbs);
-
+		setConstantBuffer(effect,"cbChangePerCall",g_pPerCallCB);
+		tech->GetPassByIndex(0)->Apply(0,pContext);
 		// Perform draw call
 		if (render_param.num_inner_faces > 0)
 		{
 			// Inner mesh of the patch
-			m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-			m_pImmediateContext->DrawIndexed(render_param.num_inner_faces + 2, render_param.inner_start_index, 0);
+			pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			pContext->DrawIndexed(render_param.num_inner_faces + 2, render_param.inner_start_index, 0);
 		}
 
 		if (render_param.num_boundary_faces > 0)
 		{
 			// Boundary mesh of the patch
-			m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			m_pImmediateContext->DrawIndexed(render_param.num_boundary_faces * 3, render_param.boundary_start_index, 0);
+			pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			pContext->DrawIndexed(render_param.num_boundary_faces * 3, render_param.boundary_start_index, 0);
 		}
 	}
-
-	// Unbind
-	vs_srvs[0] = NULL;
-	vs_srvs[1] = NULL;
-	m_pImmediateContext->VSSetShaderResources(0, 2, &vs_srvs[0]);
-
-	// Restore states
-	m_pImmediateContext->RSSetState(g_pRSState_Solid);
+	unbindTextures(effect);
+	tech->GetPassByIndex(0)->Apply(0,pContext);
 }

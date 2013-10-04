@@ -8,7 +8,7 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Clouds/BaseFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/spherical_harmonics_constants.sl"
-
+#pragma warning(disable:4251)
 namespace simul
 {
 	namespace dx11
