@@ -32,9 +32,7 @@ static const GLenum internal_buffer_format	=GL_RGBA32F_ARB;
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 											   ,simul::base::MemoryInterface *mem
 											   ,int width
-											   ,int height
-											   ,bool sky
-											   ,bool rain)
+											   ,int height)
 		:BaseWeatherRenderer(env,mem)
 		,BufferWidth(0)
 		,BufferHeight(0)
@@ -60,8 +58,7 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 
 	simulAtmosphericsRenderer			=::new(memoryInterface) SimulGLAtmosphericsRenderer(mem);
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
-	if(rain)
-		basePrecipitationRenderer		=simulPrecipitationRenderer
+	basePrecipitationRenderer			=simulPrecipitationRenderer
 										=::new(memoryInterface) SimulGLPrecipitationRenderer();
 
 	EnableCloudLayers();
@@ -131,16 +128,16 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 	CheckExtension("GL_EXT_framebuffer_object");
     if(scene_buffer)
         delete scene_buffer;
-ERROR_CHECK
+GL_ERROR_CHECK
 	baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
-ERROR_CHECK
+GL_ERROR_CHECK
 	scene_buffer->InitColor_Tex(0,internal_buffer_format);
-ERROR_CHECK
+GL_ERROR_CHECK
 	device_initialized=true;
 	EnableCloudLayers();
-	///simulSkyRenderer->RestoreDeviceObjects();
-	//simulCloudRenderer->RestoreDeviceObjects(NULL);
-	//simulLightningRenderer->RestoreDeviceObjects();
+	simulSkyRenderer->RestoreDeviceObjects(NULL);
+	simulCloudRenderer->RestoreDeviceObjects(NULL);
+	simulLightningRenderer->RestoreDeviceObjects();
 	simulAtmosphericsRenderer->RestoreDeviceObjects(NULL);
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
 	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag");
@@ -180,13 +177,13 @@ void SimulGLWeatherRenderer::RecompileShaders()
 bool SimulGLWeatherRenderer::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)
 {
 	buffered&=(Utilities::GetSingleton().simple_program>0);
-ERROR_CHECK
+GL_ERROR_CHECK
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-ERROR_CHECK
+GL_ERROR_CHECK
 	BaseWeatherRenderer::RenderSky(context,exposure,buffered,is_cubemap);
 	if(buffered)
 	{

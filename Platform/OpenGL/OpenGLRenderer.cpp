@@ -64,7 +64,7 @@ OpenGLRenderer::~OpenGLRenderer()
 
 void OpenGLRenderer::initializeGL()
 {
-ERROR_CHECK
+GL_ERROR_CHECK
 	//glewExperimental=GL_TRUE;
     GLenum glewError = glewInit();
     if( glewError != GLEW_OK )
@@ -78,16 +78,16 @@ ERROR_CHECK
         std::cerr<<"OpenGL 2.1 not supported!\n" ;
         return;
     }
-ERROR_CHECK
+GL_ERROR_CHECK
 	if(!GLEW_VERSION_2_0)
 	{
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
 	}
 	CheckExtension("GL_VERSION_2_0");
-ERROR_CHECK
+GL_ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
-ERROR_CHECK
+GL_ERROR_CHECK
 	depthFramebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
 	depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);
 	if(simulWeatherRenderer)
@@ -137,7 +137,7 @@ void OpenGLRenderer::paintGL()
 		glFogf(GL_FOG_START,1.0f);						// Fog Start Depth
 		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
 		glDisable(GL_FOG);
-ERROR_CHECK
+GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
 			simulHDRRenderer->StartRender(context);

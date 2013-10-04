@@ -62,7 +62,7 @@ extern SIMUL_OPENGL_EXPORT float GetFramerate();
 extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_number);
 //! Check the given error code, and halt the program if it is non-zero.
 extern SIMUL_OPENGL_EXPORT void CheckGLError(const char *filename,int line_number,int err);
-#define ERROR_CHECK CheckGLError(__FILE__,__LINE__);
+#define GL_ERROR_CHECK CheckGLError(__FILE__,__LINE__);
 #define SAFE_DELETE_PROGRAM(prog)		if(prog){GLuint shaders[2];GLsizei count;glGetAttachedShaders(prog,2,&count,shaders);for(int i=0;i<count;i++) glDeleteShader(shaders[i]); glDeleteProgram(prog);prog=0;}
 #define SAFE_DELETE_TEXTURE(tex)		if(tex) glDeleteTextures(1,&tex);tex=0;
 #define SAFE_DELETE_BUFFER(buff)		if(buff) glDeleteBuffersARB(1,&buff);buff=0;
@@ -110,4 +110,62 @@ extern GLuint make2DTexture(int w,int l,const float *src=NULL);
 	glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(constants), &constants);	\
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);		\
 	glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
+
+namespace simul
+{
+	namespace opengl
+	{
+		//! Useful Wrapper class to encapsulate constant buffer behaviour
+		template<class T> class ConstantBuffer:public T
+		{
+		public:
+			ConstantBuffer()
+				:ubo(0)
+			{
+				// Clear out the part of memory that corresponds to the base class.
+				// We should ONLY inherit from simple structs.
+				memset(static_cast<T*>(this),0,sizeof(T));
+			}
+			~ConstantBuffer()
+			{
+				Release();
+			}
+			GLuint	ubo;
+			//! Create the buffer object.
+			void RestoreDeviceObjects()
+			{
+				Release();
+				glGenBuffers(1, &ubo);
+				glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+				glBufferData(GL_UNIFORM_BUFFER, sizeof(T), NULL, GL_STREAM_DRAW);
+				glBindBuffer(GL_UNIFORM_BUFFER, 0);
+			}
+			//! Find the constant buffer in the given effect, and link to it.
+			void LinkToProgram(GLuint program,const char *name,GLint bindingIndex)
+			{
+				GLint indexInShader=glGetUniformBlockIndex(program,name);
+				if(indexInShader>=0)
+				{
+					glUniformBlockBinding(program,indexInShader,bindingIndex);
+					glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,sizeof(T));	
+				}
+				else
+					std::cerr<<"ConstantBuffer<> LinkToEffect did not find the buffer named "<<name<<" in the program."<<std::endl;
+			}
+			//! Free the allocated buffer.
+			void Release()
+			{
+				SAFE_DELETE_BUFFER(ubo);
+			}
+			//! Apply the stored data using the given context, in preparation for rendering.
+			void Apply()
+			{
+				glBindBuffer(GL_UNIFORM_BUFFER,ubo);
+				glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(T),static_cast<T*>(this));
+				glBindBuffer(GL_UNIFORM_BUFFER,0);
+				//glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
+			}
+		};
+	}
+}
 #endif

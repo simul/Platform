@@ -11,6 +11,7 @@
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Platform/OpenGL/GpuSkyGenerator.h"
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include <cstdlib>
 namespace simul
 {
@@ -105,6 +106,9 @@ protected:
 	GLuint			planet_program;
 	GLuint			sun_program;
 	GLuint			stars_program;
+	GLuint			illumination_buffer_program;
+	GLuint			overcast_inscatter_program;
+	GLuint			show_illumination_buffer_program;
 
 	GLuint			fade_3d_to_2d_program;
 	GLint			planetTexture_param;
@@ -116,8 +120,8 @@ protected:
 	GLint			hazeEccentricity_param;
 	GLint			lightDirection_sky_param;
 
-	GLint			earthShadowUniforms;
-	GLuint			earthShadowUniformsUBO;
+	simul::opengl::ConstantBuffer<SkyConstants> skyConstants;
+	simul::opengl::ConstantBuffer<EarthShadowUniforms> earthShadowUniforms;
 	
 	GLint			skyInterp_param;
 	GLint			sunlight_param;

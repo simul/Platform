@@ -795,7 +795,7 @@ bool SimulSkyRenderer::Render2DFades(void *context)
 	m_pSkyEffect->SetVector(texelScale,&sc);
 	float atc=GetAltitudeTextureCoordinate();
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
-
+	
 	RenderIlluminationBuffer(context);
 
 	SkyConstants skyConstants;
@@ -885,13 +885,10 @@ void SimulSkyRenderer::RenderIlluminationBuffer(void *context)
 	DX9_STRUCTMEMBER_SET(m_pSkyEffect,skyConstants,overcastRangeKm);
 	DX9_STRUCTMEMBER_SET(m_pSkyEffect,skyConstants,eyePosition);
 	DX9_STRUCTMEMBER_SET(m_pSkyEffect,skyConstants,maxFadeDistanceKm);
-
 	{
 		D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
 		m_pSkyEffect->SetTechnique(tech);
 		unsigned passes;
-		m_pSkyEffect->Begin(&passes,0);
-		m_pSkyEffect->BeginPass(0);
 		illumination_fb.Activate(m_pd3dDevice);
 		illumination_fb.Clear(m_pd3dDevice,0.0f,0.0f,1.0f,1.0f,0.f);
 		//if(e.enable)

@@ -1,7 +1,8 @@
+#version 140
 uniform sampler2D image_texture;
 uniform sampler2D depthAlphaTexture;
 
-varying vec2 texc;
+in vec2 texc;
 uniform vec2 screenCoordOffset;
 
 void main(void)

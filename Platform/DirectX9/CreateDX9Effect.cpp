@@ -430,8 +430,6 @@ HRESULT CanUseTexFormat(IDirect3DDevice9 *device,D3DFORMAT f)
 	{
 		std::cout<<"D3DERR_NOTAVAILABLE "<<std::endl;
 	}
-	if(SUCCEEDED(hr))
-		std::cout<<"OK to use texture format "<<f<<std::endl;
 	if(FAILED(hr))
 		std::cout<<"Cannot use texture format "<<f<<std::endl;
 	hr=S_OK;

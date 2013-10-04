@@ -9,6 +9,8 @@
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/earth_shadow_uniforms.sl"
 #include "Simul/Platform/CrossPlatform/atmospherics_constants.sl"
+using namespace simul;
+using namespace opengl;
 
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer(simul::base::MemoryInterface *m)
 	:BaseAtmosphericsRenderer(m)
@@ -102,9 +104,9 @@ void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 void SimulGLAtmosphericsRenderer::RenderAsOverlay(void *,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 	GLuint depth_texture=(GLuint)depthTexture;
-ERROR_CHECK
+GL_ERROR_CHECK
     glEnable(GL_TEXTURE_2D);
-ERROR_CHECK
+GL_ERROR_CHECK
 	simul::math::Matrix4x4 view,proj;
 	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
 	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
@@ -112,7 +114,7 @@ ERROR_CHECK
 
 	simul::sky::float4 light_dir	=skyInterface->GetDirectionToLight(cam_pos.z/1000.f);
 	simul::sky::float4 sun_dir		=skyInterface->GetDirectionToSun();
-ERROR_CHECK
+GL_ERROR_CHECK
 	simul::sky::EarthShadow e=skyInterface->GetEarthShadow(cam_pos.z/1000.f,skyInterface->GetDirectionToSun());
 	if(e.enable)
 	{
@@ -125,10 +127,10 @@ ERROR_CHECK
 		earthShadowUniforms.sunDir				=sun_dir;
 		UPDATE_GL_CONSTANT_BUFFER(earthShadowUniformsUBO,earthShadowUniforms,earthShadowUniformsBindingIndex)
 	}
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
 
-ERROR_CHECK
+GL_ERROR_CHECK
 	simul::math::Matrix4x4 vpt;
 	simul::math::Matrix4x4 viewproj;
 	CalcCameraPosition(cam_pos);
@@ -164,7 +166,7 @@ ERROR_CHECK
 		
 		UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,atmosphericsUniforms,atmosphericsUniformsBindingIndex)
 	}
-ERROR_CHECK
+GL_ERROR_CHECK
 	glEnable(GL_BLEND);
 
 	glUseProgram(loss_program);
@@ -176,7 +178,7 @@ ERROR_CHECK
 
 	GLuint current_insc_program=e.enable?earthshadow_insc_program:insc_program;
 	glUseProgram(current_insc_program);
-	setTexture(current_insc_program,"inscTexture"		,1,inscatter_texture);
+	setTexture(current_insc_program,"inscTexture"		,1,overcast_texture);
 	//setTexture(current_insc_program,"cloudShadowTexture",2,cloud_shadow_texture);
 	setTexture(current_insc_program,"skylightTexture"	,4,skylight_texture);
 	setTexture(current_insc_program,"depthTexture"		,5,depth_texture);
@@ -186,32 +188,10 @@ ERROR_CHECK
 	glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ZERO,GL_ONE);
 	DrawQuad(0.f,0.f,1.f,1.f);
 	
-	if(ShowGodrays)
-	{
-	// Draw the godrays over the entire scene - or to be more accurate, subtract the cloud shadows from the scene.
-		glUseProgram(godrays_program);
-	/*	setParameter(godrays_program		,"imageTexture"		,0);
-		setParameter(godrays_program		,"inscTexture"		,1);
-		setParameter(godrays_program		,"cloudShadowTexture",2);
-		setParameter3(godrays_program		,"mieRayleighRatio",ratio);
-		setParameter3(godrays_program		,"lightDir"			,light_dir);
-		setParameter(godrays_program		,"hazeEccentricity"	,skyInterface->GetMieEccentricity());
-		setMatrixTranspose(godrays_program	,"invViewProj"		,ivp.RowPointer(0));
-		setParameter3(godrays_program		,"cloudOrigin"		,cloud_origin);
-		setParameter3(godrays_program		,"cloudScale"		,cloud_scale);
-		setParameter(godrays_program		,"maxDistance"		,fade_distance_km*1000.f);
-		setParameter3(godrays_program		,"viewPosition"		,cam_pos);
-		glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);//GL_FUNC_SUBTRACT);
-		glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ONE,GL_ONE);
-	//	framebuffer->Render(context,false);
-		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-		glBlendEquation(GL_FUNC_ADD);*/
-	}
-	
 	glUseProgram(0);
     glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D,0);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glDisable(GL_BLEND);
     glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,0);
@@ -224,5 +204,5 @@ ERROR_CHECK
     glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D,0);
     glDisable(GL_TEXTURE_2D);
-ERROR_CHECK
+GL_ERROR_CHECK
 }

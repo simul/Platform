@@ -6,16 +6,16 @@ uniform sampler2D input_insc_texture;
 uniform sampler1D density_texture;
 uniform sampler3D loss_texture;
 
-in vec2 texc;
+in vec2 texCoords;
 out  vec4 outColor;
 
 void main(void)
 {
-	vec4 previous_insc	=texture(input_insc_texture,texc.xy);
-	vec3 previous_loss	=texture(loss_texture,vec3(texc.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;// should adjust texc - we want the PREVIOUS loss!
-	float sin_e			=1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0);
+	vec4 previous_insc	=texture(input_insc_texture,texCoords.xy);
+	vec3 previous_loss	=texture(loss_texture,vec3(texCoords.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;// should adjust texc - we want the PREVIOUS loss!
+	float sin_e			=1.0-2.0*(texCoords.y*texSize.y-texelOffset)/(texSize.y-1.0);
 	float cos_e			=sqrt(1.0-sin_e*sin_e);
-	float altTexc		=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
+	float altTexc		=(texCoords.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
 	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
 	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
 	float maxd			=min(spaceDistKm,distanceKm);

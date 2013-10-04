@@ -95,7 +95,6 @@ protected:
 	//void CreateImageTexture();
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();
-	simul::base::SmartPtr<simul::clouds::FastCloudNode> cloudNode;
 
 	float texture_scale;
 	float scale;

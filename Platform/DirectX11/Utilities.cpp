@@ -745,7 +745,7 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 	SAFE_RELEASE(m_pVtxDecl);
 	}
 }
-
+/*
 void UtilityRenderer::RenderTexture(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech)
 {
 	DrawQuad(m_pImmediateContext
@@ -764,7 +764,7 @@ void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext,float x1
 	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 	m_pImmediateContext->Draw(4,0);
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-}
+}*/
 
 void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext)
 {

@@ -215,18 +215,21 @@ namespace simul
 				SAFE_RELEASE(m_pD3D11Buffer);
 				m_pD3DX11EffectConstantBuffer=NULL;
 			}
-			//! Apply the stored data using the given context, in preparation for renderiing.
+			//! Apply the stored data using the given context, in preparation for rendering.
 			void Apply(ID3D11DeviceContext *pContext)
 			{
 				D3D11_MAPPED_SUBRESOURCE mapped_res;
 				pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
 				*(T*)mapped_res.pData = *this;
 				pContext->Unmap(m_pD3D11Buffer, 0);
-				m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
+				if(m_pD3DX11EffectConstantBuffer)
+					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 			}
+			//! Unbind from the effect.
 			void Unbind(ID3D11DeviceContext *pContext)
 			{
-				m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
+				if(m_pD3DX11EffectConstantBuffer)
+					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
 			}
 		};
 

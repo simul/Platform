@@ -176,7 +176,6 @@ float4 PS_ShowSkyTexture(vertexOutput3Dto2D IN): SV_TARGET
     return float4(result.rgb,1);
 }
 
-
 float4 PS_ShowIlluminationBuffer(vertexOutput3Dto2D IN): SV_TARGET
 {
 	return ShowIlluminationBuffer(inscTexture,IN.texCoords);

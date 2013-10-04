@@ -1,7 +1,7 @@
 
 uniform sampler1D lightningTexture;
 uniform vec3 lightningColour;
-varying vec2 texc;
+varying vec2 texCoords;
 varying float brightness;
 
 void main(void)

@@ -285,17 +285,17 @@ void Surface::gl() const
 				m_AssignedMaterials.begin();
 		for (; it != m_AssignedMaterials.end(); ++it)
 		{
-ERROR_CHECK
+GL_ERROR_CHECK
 			// if file valid, assign materials
 			if (m_pFile && m_pFile->m_Materials.size() > it->m_MaterialIdx)
 				m_pFile->OnBindMaterial(
 						m_pFile->m_Materials[it->m_MaterialIdx]);
-ERROR_CHECK
+GL_ERROR_CHECK
 			glBegin(GL_TRIANGLES);
 			// draw each face with this material assigned.
 			DrawRange(it->m_StartFace, it->m_EndFace);
 			glEnd();
-ERROR_CHECK
+GL_ERROR_CHECK
 		}
 	}
 	else
@@ -303,7 +303,7 @@ ERROR_CHECK
 	glBegin(GL_TRIANGLES);
 		DrawRange(0, static_cast<unsigned>(m_Triangles.size()));
 		glEnd();
-ERROR_CHECK
+GL_ERROR_CHECK
 	}
 }
 
@@ -1342,7 +1342,7 @@ void File::Draw() const
 		for (; itvb != vertex_buffers.end(); ++itvb)
 		{
 			itvb->gl();
-			ERROR_CHECK
+			GL_ERROR_CHECK
 		}
 	}
 	else if(surfaces.size())
@@ -1366,16 +1366,16 @@ void File::Draw() const
 						itg->m_AssignedMaterials.begin();
 				for (; itmg != itg->m_AssignedMaterials.end(); ++itmg)
 				{
-					ERROR_CHECK
+					GL_ERROR_CHECK
 					// bind the required material
 					OnBindMaterial(m_Materials[itmg->m_MaterialIdx]);
-					ERROR_CHECK
+					GL_ERROR_CHECK
 
 					// draw faces that use this material
 					glBegin(GL_TRIANGLES);
 					DrawRange(itmg->m_StartFace, itmg->m_EndFace);
 					glEnd();
-					ERROR_CHECK
+					GL_ERROR_CHECK
 				}
 			}
 			else
@@ -1384,7 +1384,7 @@ void File::Draw() const
 				DrawRange(itg->StartFace, itg->EndFace);
 				glEnd();
 			}
-			ERROR_CHECK
+			GL_ERROR_CHECK
 		}
 	}
 	else
@@ -1393,8 +1393,8 @@ void File::Draw() const
 		DrawRange(0, static_cast<unsigned int>(m_Triangles.size()));glEnd
 		();
 	}
-	ERROR_CHECK
-	ERROR_CHECK
+	GL_ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void File::CalculateNormals()

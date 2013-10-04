@@ -35,6 +35,8 @@
 #include "LoadGLProgram.h"
 
 #include <algorithm>
+using namespace simul;
+using namespace opengl;
 
 bool god_rays=false;
 using std::map;
@@ -120,7 +122,7 @@ void SimulGLCloudRenderer::CreateVolumeNoise()
 	GetCloudInterface()->GetNoisePeriod();
 	GetCloudInterface()->GetNoisePersistence();
 	int size=GetCloudInterface()->GetNoiseResolution();
-ERROR_CHECK
+GL_ERROR_CHECK
     glGenTextures(1,&volume_noise_tex);
     glBindTexture(GL_TEXTURE_3D,volume_noise_tex);
     glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -131,7 +133,7 @@ ERROR_CHECK
 	const float *data=GetCloudGridInterface()->GetNoiseInterface()->GetData();
     glTexImage3D(GL_TEXTURE_3D,0,GL_RGBA32F_ARB,size,size,size,0,GL_RGBA,GL_FLOAT,data);
 	//glGenerateMipmap(GL_TEXTURE_3D);
-ERROR_CHECK
+GL_ERROR_CHECK
 }
 
 void SimulGLCloudRenderer::CreateNoiseTexture(void *context)
@@ -152,12 +154,12 @@ void SimulGLCloudRenderer::CreateNoiseTexture(void *context)
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
 	//GL_RGBA8_SNORM is not yet properly supported!
 	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,noise_texture_size,noise_texture_size,0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,0);
-ERROR_CHECK
+GL_ERROR_CHECK
 glGenerateMipmap(GL_TEXTURE_2D);
 	FramebufferGL noise_fb(noise_texture_frequency,noise_texture_frequency,GL_TEXTURE_2D);
 	noise_fb.SetWrapClampMode(GL_REPEAT);
 	noise_fb.InitColor_Tex(0,GL_RGBA32F_ARB);
-ERROR_CHECK
+GL_ERROR_CHECK
 	noise_fb.Activate(context);
 	{
 		glMatrixMode(GL_PROJECTION);
@@ -170,44 +172,44 @@ ERROR_CHECK
 	}
 	noise_fb.Deactivate(context);
 	glUseProgram(0);
-ERROR_CHECK	
+GL_ERROR_CHECK	
 	FramebufferGL n_fb(noise_texture_size,noise_texture_size,GL_TEXTURE_2D);
-ERROR_CHECK	
+GL_ERROR_CHECK	
 	n_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
 	n_fb.SetWrapClampMode(GL_REPEAT);
 	n_fb.InitColor_Tex(0,GL_RGBA);
-ERROR_CHECK	
+GL_ERROR_CHECK	
 	n_fb.Activate(context);
 	{
-	ERROR_CHECK
+	GL_ERROR_CHECK
 		n_fb.Clear(context,0.f,0.f,0.f,0.f,1.f);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
-	ERROR_CHECK
+	GL_ERROR_CHECK
 		glUseProgram(edge_noise_prog);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 		setParameter(edge_noise_prog,"persistence",texture_persistence);
 		setParameter(edge_noise_prog,"octaves",texture_octaves);
 		DrawFullScreenQuad();
 	}
-ERROR_CHECK	
+GL_ERROR_CHECK	
 	//glReadBuffer(GL_COLOR_ATTACHMENT0);
-ERROR_CHECK	
+GL_ERROR_CHECK	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
-ERROR_CHECK	
+GL_ERROR_CHECK	
 	glCopyTexSubImage2D(GL_TEXTURE_2D,
  						0,0,0,0,0,
  						noise_texture_size,
  						noise_texture_size);
-ERROR_CHECK	
+GL_ERROR_CHECK	
 	glGenerateMipmap(GL_TEXTURE_2D);
-ERROR_CHECK	
+GL_ERROR_CHECK	
 	n_fb.Deactivate(context);
 	glUseProgram(0);
-ERROR_CHECK
+GL_ERROR_CHECK
 }
 	
 void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned ,unsigned ,unsigned )
@@ -250,6 +252,46 @@ static float saturate(float c)
 void SimulGLCloudRenderer::PreRenderUpdate(void *context)
 {
 	EnsureTexturesAreUpToDate(context);
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+	cloud_shadow.SetWidthAndHeight(cloud_tex_width_x,cloud_tex_length_y);
+	cloud_shadow.SetWrapClampMode(GL_REPEAT);
+	cloud_shadow.InitColor_Tex(0,GL_RGBA);
+	
+	glUseProgram(cloud_shadow_program);
+	glEnable(GL_TEXTURE_3D);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D,cloud_tex[0]);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_3D,cloud_tex[1]);
+	setParameter(cloud_shadow_program,"cloudTexture1"	,0);
+	setParameter(cloud_shadow_program,"cloudTexture2"	,1);
+	setParameter(cloud_shadow_program,"interp"			,cloudKeyframer->GetInterpolation());
+	
+	cloud_shadow.Activate(NULL);
+		//cloud_shadow.Clear(0.f,0.f,0.f,0.f);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0,1.0,0,1.0,-1.0,1.0);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		DrawQuad(0,0,1,1);
+		GL_ERROR_CHECK;
+	cloud_shadow.Deactivate(NULL);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D,0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_3D,0);
+	glDisable(GL_TEXTURE_3D);
+	glUseProgram(0);
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+	glPopAttrib();
 }
 
 simul::math::Matrix4x4 ConvertReversedToRegularProjectionMatrix(const simul::math::Matrix4x4 &proj)
@@ -276,7 +318,7 @@ bool SimulGLCloudRenderer::Render(void *,float exposure,bool cubemap,const void 
 	simul::opengl::ProfileBlock profileBlock("SimulCloudRendererDX1x::Render");
 	simul::base::Timer timer;
 	timer.StartTime();
-ERROR_CHECK
+GL_ERROR_CHECK
 	cubemap;
 //cloud buffer alpha to screen = ?
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,write_alpha?GL_TRUE:GL_FALSE);
@@ -297,7 +339,7 @@ ERROR_CHECK
 	cam_pos.y=viewInv(3,1);
 	cam_pos.z=viewInv(3,2);
 	modelview(3,0)=modelview(3,1)=modelview(3,2)=0.f;
-ERROR_CHECK
+GL_ERROR_CHECK
 Raytrace=false;
 	if(Raytrace)
 	{
@@ -323,17 +365,17 @@ Raytrace=false;
 		glDisable(GL_FOG);
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_ONE,GL_SRC_ALPHA,GL_ZERO,GL_SRC_ALPHA);
-ERROR_CHECK
+GL_ERROR_CHECK
 	glDisable(GL_STENCIL_TEST);
 	glDepthMask(GL_FALSE);
 	// disable alpha testing - if we enable this, the usual reference alpha is reversed because
 	// the shaders return transparency, not opacity, in the alpha channel.
     glDisable(GL_ALPHA_TEST);
 	glDisable(GL_DEPTH_TEST);
-ERROR_CHECK
+GL_ERROR_CHECK
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-ERROR_CHECK
+GL_ERROR_CHECK
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
 
@@ -350,7 +392,7 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,loss_tex);
 
     glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D,inscatter_tex);
+	glBindTexture(GL_TEXTURE_2D,overcast_tex);
 
     glActiveTexture(GL_TEXTURE5);
 	glBindTexture(GL_TEXTURE_2D,skylight_tex);
@@ -379,12 +421,12 @@ ERROR_CHECK
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	
-ERROR_CHECK
+GL_ERROR_CHECK
 float time=skyInterface->GetTime();
 //const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
 	CloudPerViewConstants cloudPerViewConstants;
-ERROR_CHECK
+GL_ERROR_CHECK
 
 	static float direct_light_mult=0.25f;
 	static float indirect_light_mult=0.03f;
@@ -473,13 +515,13 @@ helper->Update2DNoiseCoords();
 	// a) are in the view frustum
 	//  ...and...
 	// b) are in the cloud volume
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	SetLayerConstants(helper,layerConstants);
 	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
 	int idx=0;
 	for(CloudGeometryHelper::SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
-	ERROR_CHECK
+	GL_ERROR_CHECK
 		simul::clouds::CloudGeometryHelper::Slice *s=*i;
 		helper->MakeLayerGeometry(s,effective_world_radius_metres);
 		const simul::clouds::CloudGeometryHelper::IntVector &quad_strip_vertices=helper->GetQuadStripIndices();
@@ -503,9 +545,9 @@ helper->Update2DNoiseCoords();
 			}
 		}
 		glEnd();
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	}
-ERROR_CHECK
+GL_ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glDisable(GL_BLEND);
@@ -514,7 +556,7 @@ ERROR_CHECK
 	glDisable(GL_TEXTURE_2D);
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
 	glPopAttrib();
-ERROR_CHECK
+GL_ERROR_CHECK
 	timer.FinishTime();
 	gpu_time=profileBlock.GetTime();
 	return true;
@@ -560,18 +602,18 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 	GLint cloudConstants			=glGetUniformBlockIndex(program,"CloudConstants");
 	GLint cloudPerViewConstants		=glGetUniformBlockIndex(program,"CloudPerViewConstants");
 	//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
-ERROR_CHECK
+GL_ERROR_CHECK
 	// If that block IS in the shader program, then BIND it to the relevant UBO.
 	if(cloudConstants>=0)
 		glUniformBlockBinding(program,cloudConstants,cloudConstantsBindingIndex);
 	if(cloudPerViewConstants>=0)
 		glUniformBlockBinding(program,cloudPerViewConstants,cloudPerViewConstantsBindingIndex);
-ERROR_CHECK
+GL_ERROR_CHECK
 	
 	GLint layerDataConstants			=glGetUniformBlockIndex(program,"LayerConstants");
 	if(layerDataConstants>=0)
 		glUniformBlockBinding(program,layerDataConstants,layerDataConstantsBindingIndex);
-ERROR_CHECK
+GL_ERROR_CHECK
 }
 
 void SimulGLCloudRenderer::RecompileShaders()
@@ -579,7 +621,7 @@ void SimulGLCloudRenderer::RecompileShaders()
 	if(!init)
 		return;
 current_program=0;
-ERROR_CHECK
+GL_ERROR_CHECK
 	gpuCloudGenerator.RecompileShaders();
 	SAFE_DELETE_PROGRAM(clouds_background_program);
 	SAFE_DELETE_PROGRAM(clouds_foreground_program);
@@ -595,10 +637,10 @@ ERROR_CHECK
 	defines["USE_DEPTH_TEXTURE"]="1";
 	clouds_foreground_program	=MakeProgram("simul_clouds",defines);
 	raytrace_program			=MakeProgram("simple.vert",NULL,"simul_raytrace_clouds.frag",defines);
-	noise_prog=MakeProgram("simple.vert",NULL,"simul_noise.frag");
-	edge_noise_prog=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
-ERROR_CHECK
-	cross_section_program	=MakeProgram("simul_cloud_cross_section");
+	noise_prog					=MakeProgram("simple.vert",NULL,"simul_noise.frag");
+	edge_noise_prog				=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
+
+	cross_section_program		=MakeProgram("simul_cloud_cross_section");
 	
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
@@ -606,7 +648,7 @@ ERROR_CHECK
 	glBindBufferRange(GL_UNIFORM_BUFFER,layerDataConstantsBindingIndex,layerDataConstantsUBO,0, sizeof(LayerConstants));
 	glBindBufferRange(GL_UNIFORM_BUFFER,cloudPerViewConstantsBindingIndex,cloudPerViewConstantsUBO,0, sizeof(CloudPerViewConstants));
 
-ERROR_CHECK
+GL_ERROR_CHECK
 	glUseProgram(0);
 }
 
@@ -635,7 +677,7 @@ struct vertt
 };
 bool SimulGLCloudRenderer::BuildSphereVBO()
 {
-ERROR_CHECK
+GL_ERROR_CHECK
 	unsigned el=0,az=0;
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(0);
 	helper->GetGrid(el,az);
@@ -662,7 +704,7 @@ ERROR_CHECK
 	glBindBufferARB( GL_ARRAY_BUFFER_ARB, sphere_vbo );			// Bind The Buffer
 	// Load The Data
 	glBufferDataARB( GL_ARRAY_BUFFER_ARB, vertex_count*3*sizeof(float), pVertices, GL_STATIC_DRAW_ARB );
-ERROR_CHECK
+GL_ERROR_CHECK
 	// Our Copy Of The Data Is No Longer Necessary, It Is Safe In The Graphics Card
 	delete [] pVertices;
 	glBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
@@ -686,7 +728,7 @@ ERROR_CHECK
 	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, index_count*sizeof(GLushort), pIndices, GL_STATIC_DRAW_ARB); //upload data
 
 	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-ERROR_CHECK
+GL_ERROR_CHECK
 	return true;
 }
 
@@ -718,7 +760,6 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 	glDeleteBuffersARB(1,&sphere_ibo);
 	sphere_vbo=sphere_ibo=0;
 
-	//glDeleteTexture(volume_noise_tex);
 	volume_noise_tex=0;
 
 	glDeleteBuffersARB(1,&cloudConstantsUBO);
@@ -730,46 +771,6 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 CloudShadowStruct SimulGLCloudRenderer::GetCloudShadowTexture()
 {
 	CloudShadowStruct s=BaseCloudRenderer::GetCloudShadowTexture();
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-	cloud_shadow.SetWidthAndHeight(cloud_tex_width_x,cloud_tex_length_y);
-	cloud_shadow.SetWrapClampMode(GL_REPEAT);
-	cloud_shadow.InitColor_Tex(0,GL_RGBA);
-	
-	glUseProgram(cloud_shadow_program);
-	glEnable(GL_TEXTURE_3D);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D,cloud_tex[0]);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_3D,cloud_tex[1]);
-	setParameter(cloud_shadow_program,"cloudTexture1"	,0);
-	setParameter(cloud_shadow_program,"cloudTexture2"	,1);
-	setParameter(cloud_shadow_program,"interp"			,cloudKeyframer->GetInterpolation());
-	
-	cloud_shadow.Activate(NULL);
-		//cloud_shadow.Clear(0.f,0.f,0.f,0.f);
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glOrtho(0,1.0,0,1.0,-1.0,1.0);
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-		DrawQuad(0,0,1,1);
-		ERROR_CHECK;
-	cloud_shadow.Deactivate(NULL);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D,0);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_3D,0);
-	glDisable(GL_TEXTURE_3D);
-	glUseProgram(0);
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-	glPopAttrib();
 	s.texture=(void*)cloud_shadow.GetColorTex();
 	return s;
 }
@@ -854,7 +855,7 @@ void SimulGLCloudRenderer::EnsureTexturesAreUpToDate(void *context)
 	if(!noise_tex)
 		CreateNoiseTexture(context);
 	EnsureCorrectTextureSizes();
-ERROR_CHECK
+GL_ERROR_CHECK
 	EnsureTextureCycle();
 	typedef simul::clouds::CloudKeyframer::block_texture_fill iter;
 	for(int i=0;i<3;i++)
@@ -868,7 +869,7 @@ ERROR_CHECK
 				break;
 
 			glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
-ERROR_CHECK
+GL_ERROR_CHECK
 			if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLushort))
 			{
 				unsigned short *uint16_array=(unsigned short *)texture_fill.uint32_array;
@@ -877,7 +878,7 @@ ERROR_CHECK
 									texture_fill.w,texture_fill.l,texture_fill.d,
 									GL_RGBA,GL_UNSIGNED_SHORT_4_4_4_4,
 									uint16_array);
-ERROR_CHECK
+GL_ERROR_CHECK
 			}
 			else if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLuint))
 			{
@@ -886,7 +887,7 @@ ERROR_CHECK
 									texture_fill.w,texture_fill.l,texture_fill.d,
 									GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
 									texture_fill.uint32_array);
-ERROR_CHECK
+GL_ERROR_CHECK
 			}
 			//seq_texture_iterator[i].texel_index+=texture_fill.w*texture_fill.l*texture_fill.d;
 		}

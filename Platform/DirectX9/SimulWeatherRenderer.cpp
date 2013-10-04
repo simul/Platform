@@ -57,7 +57,6 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	,exposure_multiplier(1.f)
 	,show_rain(rain)
 {
-	//sky=rain=clouds2d=false;
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer;
 	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer;
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
@@ -65,7 +64,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	
 		simulSkyRenderer=new SimulSkyRenderer(sk);
 		baseSkyRenderer=simulSkyRenderer;
-	
+#if 1
 	{
 		simulCloudRenderer=new SimulCloudRenderer(ck3d,mem);
 		baseCloudRenderer=simulCloudRenderer;
@@ -86,6 +85,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();*/
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer(mem);
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
+#endif
 	baseFramebuffer=&framebuffer;
 	ConnectInterfaces();
 }

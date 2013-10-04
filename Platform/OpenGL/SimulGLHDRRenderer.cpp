@@ -10,6 +10,8 @@
 #include "SimulGLHDRRenderer.h"
 #include "SimulGLUtilities.h"
 #include "LoadGLProgram.h"
+using namespace simul;
+using namespace opengl;
 
 SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h)
 	:Gamma(0.45f),Exposure(1.f)
@@ -54,7 +56,7 @@ void SimulGLHDRRenderer::RestoreDeviceObjects()
 		glow_fb.InitDepth_RB(GL_DEPTH_COMPONENT32);
 		alt_fb.InitDepth_RB(GL_DEPTH_COMPONENT32);
 	}
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	RecompileShaders();
 }
 
@@ -65,7 +67,7 @@ void SimulGLHDRRenderer::RecompileShaders()
     exposure_param		=glGetUniformLocation(tonemap_program,"exposure");
     gamma_param			=glGetUniformLocation(tonemap_program,"gamma");
     buffer_tex_param	=glGetUniformLocation(tonemap_program,"image_texture");
-	ERROR_CHECK
+	GL_ERROR_CHECK
 
 	glow_program		=MakeProgram("simple.vert",NULL,"simul_glow.frag");
 	blur_program		=MakeProgram("simple.vert",NULL,"simul_hdr_blur.frag");
@@ -79,7 +81,7 @@ bool SimulGLHDRRenderer::StartRender(void *context)
 {
 	framebuffer.Activate(context);
 	framebuffer.Clear(context,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	return true;
 }
 
@@ -90,14 +92,14 @@ bool SimulGLHDRRenderer::FinishRender(void *context)
 
 	glUseProgram(tonemap_program);
 	setTexture(tonemap_program,"image_texture",0,(GLuint)framebuffer.GetColorTex());
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glUniform1f(exposure_param,Exposure);
 	glUniform1f(gamma_param,Gamma);
 	glUniform1i(buffer_tex_param,0);
 	setTexture(tonemap_program,"glowTexture",1,(GLuint)glow_fb.GetColorTex());
 
 	framebuffer.Render(context,false);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glUseProgram(0);
 	return true;
 }

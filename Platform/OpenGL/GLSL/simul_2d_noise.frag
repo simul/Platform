@@ -1,9 +1,10 @@
 #version 140
+#include "CppGlsl.hs"
 uniform sampler2D noise_texture;
 uniform float persistence;
 uniform int octaves;
-varying vec2 texc;
-#include "CppGlsl.hs"
+in vec2 texc;
+out vec4 gl_FragColor;
 
 void main(void)
 {

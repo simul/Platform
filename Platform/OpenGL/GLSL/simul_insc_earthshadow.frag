@@ -14,6 +14,7 @@ uniform sampler2D lossTexture;
 
 in vec2 pos;
 in vec2 texCoords;
+out vec4 gl_FragColor;
 
 void main()
 {

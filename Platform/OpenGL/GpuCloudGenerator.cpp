@@ -164,10 +164,10 @@ timer.StartTime();
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	{
-ERROR_CHECK
+GL_ERROR_CHECK
 		dens_fb.Activate(NULL);
 //dens_fb.Clear(0,0,0,0);
-ERROR_CHECK
+GL_ERROR_CHECK
 		DrawQuad(0.f,y_start,1.f,y_end-y_start);
 std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
@@ -192,7 +192,7 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 			glBindTexture(GL_TEXTURE_3D,density_texture);
 		}
 		glEnable(GL_TEXTURE_3D);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 		{
 			// Now instead of reading the pixels back to memory, we will copy them layer-by-layer into the volume texture.
 			int Y=start_texel/params.density_grid[0];
@@ -213,7 +213,7 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 				{
 					dy=y1-y;
 				}
-		ERROR_CHECK
+		GL_ERROR_CHECK
 				glCopyTexSubImage3D(	GL_TEXTURE_3D,
  										0,						//	level
  										0,						//	x offset in 3D texture
@@ -223,20 +223,20 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
  										i*params.density_grid[1]+y,	//	y offset in source 2D texture
  										params.density_grid[0],	
  										dy);
-		ERROR_CHECK
+		GL_ERROR_CHECK
  			}
 		}
 		dens_fb.Deactivate(NULL);
 	}
 	glDisable(GL_TEXTURE_3D);
 	glUseProgram(0);
-ERROR_CHECK
+GL_ERROR_CHECK
 std::cout<<"\tGpu clouds: glReadPixels "<<timer.UpdateTime()<<std::endl;
 	glDeleteTextures(1,&volume_noise_tex);
-ERROR_CHECK
+GL_ERROR_CHECK
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
-ERROR_CHECK
+GL_ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 }
@@ -251,7 +251,7 @@ void GpuCloudGenerator::PerformGPURelight(int index,float *target
 										,const float *lightspace_extinctions_float3
 											,bool wrap_light_tex)
 {
-ERROR_CHECK
+GL_ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -289,9 +289,9 @@ timer.StartTime();
 	glBindTexture(GL_TEXTURE_3D,density_texture);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,0);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	int light_gridsize=light_grid[0]*light_grid[1]*light_grid[2];
 	int z0=(start_texel*light_grid[2])/light_gridsize;
 	int z1=((start_texel+texels)*light_grid[2])/light_gridsize;
@@ -311,7 +311,7 @@ timer.StartTime();
 	}
 	if(target)
 	target+=z0*light_grid[0]*light_grid[1]*4;
-ERROR_CHECK
+GL_ERROR_CHECK
 	float draw_time=0.f,read_time=0.f;
 	for(int i=z0;i<z1;i++)
 	{
@@ -333,13 +333,13 @@ ERROR_CHECK
 			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
 			DrawQuad(0,0,1,1);
 			draw_time+=timer.UpdateTime();
-			ERROR_CHECK
+			GL_ERROR_CHECK
 		// Copy F[1] contents to the target
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			if(target)
 				glReadPixels(0,0,light_grid[0],light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 			read_time+=timer.UpdateTime();
-			ERROR_CHECK
+			GL_ERROR_CHECK
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
@@ -416,9 +416,9 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int index,unsigned char *target
 			glLoadIdentity();
 			// input light values:
 			DrawQuad(0.f,y_start,1.f,y_end-y_start);
-			ERROR_CHECK
+			GL_ERROR_CHECK
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-			ERROR_CHECK
+			GL_ERROR_CHECK
 			int YMAX=density_grid[1]*density_grid[2];
 			int Y0=(int)(y_start*(float)YMAX);
 			int Y1=(int)(y_end*(float)YMAX);
@@ -427,10 +427,10 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int index,unsigned char *target
 				target+=Y0*density_grid[0]*4;
 				glReadPixels(0,Y0,density_grid[0],Y1-Y0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
 			}
-			ERROR_CHECK
+			GL_ERROR_CHECK
 		world_fb.Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-			ERROR_CHECK
+			GL_ERROR_CHECK
 		//target+=density_grid[0]*density_grid[1]*4;
 	}
 	glUseProgram(0);

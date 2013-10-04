@@ -1,3 +1,4 @@
+#version 140
 #include "saturate.glsl"
 uniform sampler2D rainTexture;
 

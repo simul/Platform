@@ -52,8 +52,7 @@ namespace simul
 		public:
 			SimulGLWeatherRenderer(simul::clouds::Environment *env
 								 ,simul::base::MemoryInterface *mem
-								 ,int width=640,int height=480
-								 ,bool sky=true,bool rain=true);
+								 ,int width=640,int height=480);
 			virtual ~SimulGLWeatherRenderer();
 			void SetScreenSize(int w,int h);
 			//! Call this when the device has been created

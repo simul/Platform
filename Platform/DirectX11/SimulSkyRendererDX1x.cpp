@@ -35,8 +35,6 @@ struct Vertex_t
 	float x,y,z;
 };
 
-typedef std::basic_string<TCHAR> tstring;
-
 SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem)
 	:simul::sky::BaseSkyRenderer(sk,mem)
 	,m_pd3dDevice(NULL)

@@ -72,19 +72,19 @@ vec4 IlluminationBuffer(float alt_km,vec2 texCoords,vec2 targetTextureSize
     return vec4(full_bright_range,overcast_range);
 }
 
-float4 ShowIlluminationBuffer(Texture2D illTexture,vec2 texCoords)
+vec4 ShowIlluminationBuffer(Texture2D illTexture,vec2 texCoords)
 {
 	if(texCoords.x<0.5)
 	{
 		texCoords.x*=2.0;
-		float4 nf=texture_cmc_lod(illTexture,texCoords,0);
+		vec4 nf=texture_cmc_lod(illTexture,texCoords,0);
 		return saturate(vec4(nf.zw,0.0,1.0));
 	}
 	else
 	{
 		texCoords.x=2.0*(texCoords.x-0.5);
 		vec2 texc=vec2(0.5,texCoords.y);
-		float4 nf=texture_cmc_lod(illTexture,texc,0);
+		vec4 nf=texture_cmc_lod(illTexture,texc,0);
 		// Near Far for EarthShadow illumination is xy
 		// Near Far for clouds overcast is zw.
 		vec4 result=vec4(0,1.0,0,0);
@@ -92,7 +92,7 @@ float4 ShowIlluminationBuffer(Texture2D illTexture,vec2 texCoords)
 			result.r=1.0;
 		if(texCoords.x>=nf.z&&texCoords.x<=nf.w)
 			result.g=0.0;
-		return float4(result.rgb,1);
+		return vec4(result.rgb,1);
 	}
 }
 #endif

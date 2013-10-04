@@ -43,13 +43,12 @@ void GpuSkyGenerator::RecompileShaders()
 	SAFE_DELETE_PROGRAM(insc_program);
 	SAFE_DELETE_PROGRAM(skyl_program);
 	loss_program=MakeProgram("simple.vert",NULL,"simul_gpu_loss.frag");
-ERROR_CHECK
+GL_ERROR_CHECK
 	std::map<std::string,std::string> defines;
 	//defines["OVERCAST"]="1";
 	insc_program=MakeProgram("simple.vert",NULL,"simul_gpu_insc.frag",defines);
-ERROR_CHECK
 	skyl_program=MakeProgram("simple.vert",NULL,"simul_gpu_skyl.frag");
-ERROR_CHECK
+GL_ERROR_CHECK
 	MAKE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,GpuSkyConstants,gpuSkyConstantsBindingIndex);
 }
 
@@ -168,7 +167,7 @@ std::cout<<"\tGpu sky: dens_tex "<<timer.UpdateTime()<<std::endl;
 		glUniformBlockBinding(loss_program,gpuSkyConstants,gpuSkyConstantsBindingIndex);
 
 	simul::sky::float4 *target=loss;
-ERROR_CHECK
+GL_ERROR_CHECK
 	F[0]->Activate(NULL);
 		F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
@@ -176,7 +175,7 @@ ERROR_CHECK
 	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	target+=altitudes_km.size()*numElevations;
-ERROR_CHECK
+GL_ERROR_CHECK
 	float prevDistKm=0.f;
 	for(int i=1;i<numDistances;i++)
 	{
@@ -190,9 +189,9 @@ ERROR_CHECK
 		UPDATE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
 		if(gpuSkyConstants>=0)
 			glUniformBlockBinding(loss_program,gpuSkyConstants,gpuSkyConstantsBindingIndex);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 		F[1]->Activate(NULL);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 			F[1]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 			OrthoMatrices();
 			// input light values:
@@ -203,7 +202,7 @@ ERROR_CHECK
 			DrawQuad(0,0,1,1);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 //std::cout<<"\tGpu sky: render loss"<<i<<" "<<timer.UpdateTime()<<std::endl;
-	ERROR_CHECK
+	GL_ERROR_CHECK
 			glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 //std::cout<<"\tGpu sky: loss read"<<i<<" "<<timer.UpdateTime()<<std::endl;
 		F[1]->Deactivate(NULL);
@@ -229,7 +228,7 @@ std::cout<<"\tGpu sky: loss_tex,optd_tex "<<timer.UpdateTime()<<std::endl;
 	setParameter(insc_program,"density_texture",1);
 	setParameter(insc_program,"loss_texture",2);
 	setParameter(insc_program,"optical_depth_texture",3);
-ERROR_CHECK
+GL_ERROR_CHECK
 	target=insc;
 	F[0]->Activate(NULL);
 		F[0]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
@@ -288,7 +287,7 @@ std::cout<<"\tGpu sky: insc_tex "<<timer.UpdateTime()<<std::endl;
 	setParameter(skyl_program,"loss_texture",2);
 //	setParameter(skyl_program,"optical_depth_texture",3);
 	setParameter(skyl_program,"insc_texture",4);
-ERROR_CHECK
+GL_ERROR_CHECK
 	target=skyl;
 	F[0]->Activate(NULL);
 		F[0]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
@@ -322,7 +321,7 @@ ERROR_CHECK
 			glBindTexture(GL_TEXTURE_2D,optd_tex);
 			DrawQuad(0,0,1,1);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 			glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
