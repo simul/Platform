@@ -74,11 +74,6 @@ public:
 	// a texture
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
 
-	void SetYVertical(bool y)
-	{
-		y_vertical=y;
-	}
-	bool IsYVertical() const{return y_vertical;}
 protected:
 	virtual void DrawLines(void*,VertexXyzRgba *,int ,bool ){}
 	// Make up to date with respect to keyframer:
@@ -88,7 +83,6 @@ protected:
 	void EnsureIlluminationTexturesAreUpToDate(){}
 	void EnsureTextureCycle();
 
-	bool y_vertical;
 	bool enabled;
 	simul::base::SmartPtr<simul::clouds::Cloud2DGeometryHelper> helper;
 
@@ -124,14 +118,10 @@ protected:
 	D3DXVECTOR4					cam_pos;
 	D3DXMATRIX					world,view,proj;
 
-	virtual bool CreateNoiseTexture(void *);
+	void CreateNoiseTexture(void *);
 	bool CreateImageTexture();
 	bool MakeCubemap(); // not ready yet
 	float texture_scale;
-	virtual bool IsYVertical()
-	{
-		return y_vertical;
-	}
 };
 
 #ifdef _MSC_VER

@@ -134,10 +134,10 @@ ERROR_CHECK
 ERROR_CHECK
 }
 
-bool SimulGLCloudRenderer::CreateNoiseTexture(void *context)
+void SimulGLCloudRenderer::CreateNoiseTexture(void *context)
 {
 	if(!init)
-		return false;
+		return ;
 	int noise_texture_size		=cloudKeyframer->GetEdgeNoiseTextureSize();
 	int noise_texture_frequency	=cloudKeyframer->GetEdgeNoiseFrequency();
 	int texture_octaves			=cloudKeyframer->GetEdgeNoiseOctaves();
@@ -208,7 +208,6 @@ ERROR_CHECK
 	n_fb.Deactivate(context);
 	glUseProgram(0);
 ERROR_CHECK
-	return true;
 }
 	
 void SimulGLCloudRenderer::SetIlluminationGridSize(unsigned ,unsigned ,unsigned )
@@ -927,27 +926,23 @@ void SimulGLCloudRenderer::RenderCrossSections(void *,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;
-	if(w>height/2)
-		w=height/2;
+	if(w>height/3)
+		w=height/3;
 	simul::clouds::CloudGridInterface *gi=GetCloudGridInterface();
 	int h=w/gi->GetGridWidth();
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
-	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
-	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
-	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
-	GLint crossSectionOffset	= glGetUniformLocation(cross_section_program,"crossSectionOffset");
-
+	GLint cloudDensity1_param	=glGetUniformLocation(cross_section_program,"cloud_density");
+	GLint lightResponse_param	=glGetUniformLocation(cross_section_program,"lightResponse");
+	GLint yz_param				=glGetUniformLocation(cross_section_program,"yz");
+	GLint crossSectionOffset	=glGetUniformLocation(cross_section_program,"crossSectionOffset");
     glDisable(GL_BLEND);
-(GL_CULL_FACE);
+	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-ERROR_CHECK
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
 	glUseProgram(cross_section_program);
-ERROR_CHECK
-static float mult=1.f;
 	glUniform1i(cloudDensity1_param,0);
 	for(int i=0;i<3;i++)
 	{
@@ -958,7 +953,6 @@ static float mult=1.f;
 			break;
 		simul::sky::float4 light_response(mult*kf->direct_light,mult*kf->indirect_light,mult*kf->ambient_light,0);
 
-	ERROR_CHECK
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,cloud_tex[i]);
 		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
@@ -970,8 +964,7 @@ static float mult=1.f;
 	}
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
-glUseProgram(Utilities::GetSingleton().simple_program);
+	glUseProgram(Utilities::GetSingleton().simple_program);
 	DrawQuad(width-(w+8),height-(w+8),w,w);
 	glUseProgram(0);
-ERROR_CHECK
 }

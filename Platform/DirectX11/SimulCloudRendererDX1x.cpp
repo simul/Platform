@@ -410,13 +410,12 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	SAFE_RELEASE(effect);
 }
 
-bool SimulCloudRendererDX1x::CreateNoiseTexture(void* context)
+void SimulCloudRendererDX1x::CreateNoiseTexture(void* context)
 {
 	if(!m_pd3dDevice)
-		return false;
+		return;
 	RenderNoise(context);
 	Create3DNoiseTexture(context);
-	return true;
 }
 
 void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)

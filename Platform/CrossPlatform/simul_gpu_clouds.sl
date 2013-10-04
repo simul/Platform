@@ -95,12 +95,12 @@ float GpuCloudMask(vec2 texCoords,vec2 maskCentre,float maskRadius,float maskFea
 }
 
 
-float4 PS_CloudDensity(Texture3D volumeNoiseTexture,Texture2D maskTexture,vec2 texCoords,float humidity,float diffusivity,int octaves,float persistence,float time,float zPixel)
+vec4 PS_CloudDensity(Texture3D volumeNoiseTexture,Texture2D maskTexture,vec2 texCoords,float humidity,float diffusivity,int octaves,float persistence,float time,float zPixel)
 {
 	vec3 densityspace_texcoord	=assemble3dTexcoord(texCoords.xy);
 	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
-	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z)*maskTexture.Sample(clampSamplerState,densityspace_texcoord.xy).x;
+	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z)*texture_clamp(maskTexture,densityspace_texcoord.xy).x;
 	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
     return vec4(dens,0,0,1.0);

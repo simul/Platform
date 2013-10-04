@@ -133,12 +133,12 @@ namespace simul
 			D3DXHANDLE						bufferTexture;
 
 			bool CreateBuffers();
-			SimulSkyRenderer *simulSkyRenderer;
-			SimulCloudRenderer*simulCloudRenderer;
-			SimulLightningRenderer*simulLightningRenderer;
-			Simul2DCloudRenderer*simul2DCloudRenderer;
-			SimulPrecipitationRenderer*simulPrecipitationRenderer;
-			SimulAtmosphericsRenderer*simulAtmosphericsRenderer;
+			SimulSkyRenderer				*simulSkyRenderer;
+			SimulCloudRenderer				*simulCloudRenderer;
+			SimulLightningRenderer			*simulLightningRenderer;
+			Simul2DCloudRenderer			*simul2DCloudRenderer;
+			SimulPrecipitationRenderer		*simulPrecipitationRenderer;
+			SimulAtmosphericsRenderer		*simulAtmosphericsRenderer;
 			float							exposure;
 			float							gamma;
 			bool							use_buffer;

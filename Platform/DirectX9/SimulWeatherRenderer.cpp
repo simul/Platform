@@ -11,15 +11,9 @@
 
 #include "SimulWeatherRenderer.h"
 
-#ifdef XBOX
-	#include <xgraphics.h>
-	#include <fstream>
-	#include <string>
-#else
-	#include <tchar.h>
-	#include <dxerr.h>
-	#include <string>
-#endif
+#include <tchar.h>
+#include <dxerr.h>
+#include <string>
 
 #include "Simul/Platform/DirectX9/CreateDX9Effect.h"
 #include "Simul/Math/Decay.h"
@@ -47,34 +41,37 @@ using namespace dx9;
 SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 										   simul::base::MemoryInterface *mem,
 											bool usebuffer,int width,
-											int height,bool sky,bool rain) :
-	BaseWeatherRenderer(env,mem),
-	m_pd3dDevice(NULL),
-	m_pBufferToScreenEffect(NULL),
-	use_buffer(usebuffer),
-	exposure(1.f),
-	gamma(1.f/2.2f),
-	simulSkyRenderer(NULL),
-	simulCloudRenderer(NULL),
-	simul2DCloudRenderer(NULL),
-	simulPrecipitationRenderer(NULL),
-	exposure_multiplier(1.f),
-	show_rain(rain)
+											int height,bool sky,bool rain)
+	:BaseWeatherRenderer(env,mem)
+	,m_pd3dDevice(NULL)
+	,m_pBufferToScreenEffect(NULL)
+	,use_buffer(usebuffer)
+	,exposure(1.f)
+	,gamma(1.f/2.2f)
+	,simulSkyRenderer(NULL)
+	,simulCloudRenderer(NULL)
+	,simulLightningRenderer(NULL)
+	,simul2DCloudRenderer(NULL)
+	,simulPrecipitationRenderer(NULL)
+	,simulAtmosphericsRenderer(NULL)
+	,exposure_multiplier(1.f)
+	,show_rain(rain)
 {
 	//sky=rain=clouds2d=false;
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer;
 	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer;
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	SetScreenSize(width,height);
-	if(ShowSky)
-	{
+	
 		simulSkyRenderer=new SimulSkyRenderer(sk);
 		baseSkyRenderer=simulSkyRenderer;
-	}
 	
 	{
 		simulCloudRenderer=new SimulCloudRenderer(ck3d,mem);
 		baseCloudRenderer=simulCloudRenderer;
+	}
+	/*
+	{
 		simulLightningRenderer=new SimulLightningRenderer(ck3d,sk);
 		baseLightningRenderer=simulLightningRenderer;
 		Restore3DCloudObjects();
@@ -86,7 +83,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 		Restore2DCloudObjects();
 	}
 	if(rain)
-		simulPrecipitationRenderer=new SimulPrecipitationRenderer();
+		simulPrecipitationRenderer=new SimulPrecipitationRenderer();*/
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer(mem);
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
 	baseFramebuffer=&framebuffer;

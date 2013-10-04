@@ -91,7 +91,7 @@ protected:
 	FramebufferGL	coverage_fb;
 
 	FramebufferGL	detail_fb;
-	bool CreateNoiseTexture(void *);
+	void CreateNoiseTexture(void *);
 	//void CreateImageTexture();
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();

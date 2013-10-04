@@ -112,7 +112,6 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,
 	,own_image_texture(true)
 	,texture_scale(0.25f)
 	,enabled(true)
-	,y_vertical(true)
 {
 	D3DXMatrixIdentity(&world);
 	D3DXMatrixIdentity(&view);
@@ -195,7 +194,7 @@ void Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
 	};
 	SAFE_RELEASE(m_pVtxDecl);
 	V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	V_CHECK(CreateNoiseTexture(m_pd3dDevice));
+	CreateNoiseTexture(m_pd3dDevice);
 	hr=CreateImageTexture();
 	RecompileShaders();
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
@@ -225,7 +224,7 @@ Simul2DCloudRenderer::~Simul2DCloudRenderer()
 	InvalidateDeviceObjects();
 }
 
-bool Simul2DCloudRenderer::CreateNoiseTexture(void *)
+void Simul2DCloudRenderer::CreateNoiseTexture(void *)
 {
 	SAFE_RELEASE(noise_texture);
 	// Can we load it from disk?
@@ -238,15 +237,14 @@ bool Simul2DCloudRenderer::CreateNoiseTexture(void *)
 	// NOTE: We specify ONE mipmap for this texture, NOT ZERO. If we use zero, that means
 	// automatically generate mipmaps.
 	if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,size,default_mip_levels,default_texture_usage,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&noise_texture)))
-		return false;
+		return ;
 	D3DLOCKED_RECT lockedRect={0};
 	if(FAILED(hr=noise_texture->LockRect(0,&lockedRect,NULL,NULL)))
-		return false;
+		return ;
 	SetBits8();
 	simul::clouds::TextureGenerator::Make2DNoiseTexture(( char *)(lockedRect.pBits),size,16,8,0.8f);
 	hr=noise_texture->UnlockRect(0);
 	//noise_texture->GenerateMipSubLevels();
-	return true;
 }
 
 bool Simul2DCloudRenderer::CreateImageTexture()

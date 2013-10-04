@@ -118,7 +118,7 @@ protected:
 	};
 	Vertex_t *vertices;
 	CPUFadeVertex_t *cpu_fade_vertices;
-	bool RenderNoiseTexture();
+	void CreateNoiseTexture(void *context);
 	simul::sound::fmod::NodeSound *sound;
 	float timing;
 
@@ -188,7 +188,6 @@ protected:
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 	LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;
-	virtual bool CreateNoiseTexture(void *);
 	bool MakeCubemap(void *context); // not ready yet
 	//! Once per frame, fill this 1-D texture with information on the layer distances and noise offsets
 	bool FillRaytraceLayerTexture(int viewport_id);

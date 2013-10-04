@@ -573,7 +573,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 		return false;
 	// First render the illumination buffer, to get earthShadow and overcast properties.
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
-	RenderIllumationBuffer(context);
+	RenderIlluminationBuffer(context);
 	// Current keyframe properties:
 	const simul::sky::SkyKeyframer::SkyKeyframe *K=skyKeyframer->GetInterpolatedKeyframe();
 	// Clear the screen to black:
@@ -643,7 +643,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	return true;
 }
 
-void SimulSkyRendererDX1x::RenderIllumationBuffer(void *c)
+void SimulSkyRendererDX1x::RenderIlluminationBuffer(void *c)
 {
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
 	SetIlluminationConstants(earthShadowUniforms,skyConstants);

@@ -68,7 +68,7 @@ public:
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
 	bool Render2DFades(void *context);
-	void RenderIllumationBuffer(void *context);
+	void RenderIlluminationBuffer(void *context);
 	//! Get a value, from zero to one, which represents how much of the sun is visible.
 	//! Call this when the current rendering surface is the one that has obscuring
 	//! objects like mountains etc. in it, and make sure these have already been drawn.

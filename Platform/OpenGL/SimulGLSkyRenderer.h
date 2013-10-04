@@ -134,15 +134,17 @@ protected:
 	GLint			viewPosition;
 	GLint			overcast_param;
 
-	
-	GLint			altitudeTexCoord_fade	;
-	GLint			skyInterp_fade		;
-	GLint			fadeTexture1_fade		;
-	GLint			fadeTexture2_fade		;
+	GLint			altitudeTexCoord_fade;
+	GLint			skyInterp_fade;
+	GLint			fadeTexture1_fade;
+	GLint			fadeTexture2_fade;
 	
 	FramebufferGL	loss_2d;
 	FramebufferGL	inscatter_2d;
 	FramebufferGL	skylight_2d;
+	FramebufferGL	overcast_2d;
+
+	FramebufferGL	illumination_fb;
 
 	GLuint			loss_texture;
 	GLuint			insc_texture;
@@ -150,10 +152,6 @@ protected:
 
 	bool campos_updated;
 	short *short_ptr;
-	virtual bool IsYVertical()
-	{
-		return false;
-	}
 	void DrawLines(void *,Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };

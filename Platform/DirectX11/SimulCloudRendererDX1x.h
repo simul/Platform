@@ -195,7 +195,7 @@ namespace simul
 			float LookupLargeScaleTexture(float x,float y);
 
 			bool CreateLightningTexture();
-			virtual bool CreateNoiseTexture(void *context);
+			void CreateNoiseTexture(void *context);
 			void Create3DNoiseTexture(void *context);
 			bool CreateCloudEffect();
 			bool MakeCubemap(); // not ready yet

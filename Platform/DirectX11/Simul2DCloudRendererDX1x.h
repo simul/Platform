@@ -47,7 +47,7 @@ namespace simul
 			void EnsureTextureCycle();
 			void EnsureCorrectIlluminationTextureSizes(){}
 			void EnsureIlluminationTexturesAreUpToDate(){}
-			virtual bool CreateNoiseTexture(void *context){return true;}
+			void CreateNoiseTexture(void *context){}
 			D3DXMATRIX					view,proj;
 			ID3D11Device*				m_pd3dDevice;
 			ID3DX11Effect*				effect;

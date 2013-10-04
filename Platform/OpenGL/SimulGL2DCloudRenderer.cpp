@@ -64,7 +64,7 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 {
 }
 
-bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)
+void SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)
 {
 	//image_tex=LoadGLImage("Cirrocumulus.png",GL_REPEAT);
 	FramebufferGL	noise_fb(16,16,GL_TEXTURE_2D);
@@ -125,7 +125,6 @@ ERROR_CHECK
 	}
 	detail_fb.Deactivate(context);
 	glUseProgram(0);
-	return true;
 }
 #pragma warning(disable:4127) // "Conditional expression is constant".
 void SimulGL2DCloudRenderer::EnsureCorrectTextureSizes()

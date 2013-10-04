@@ -22,6 +22,7 @@ Framebuffer::Framebuffer()
 
 Framebuffer::~Framebuffer()
 {
+	InvalidateDeviceObjects();
 }
 
 void Framebuffer::SetWidthAndHeight(int w,int h)

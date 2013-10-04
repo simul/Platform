@@ -113,7 +113,7 @@ protected:
 	void PrintAt3dPos(void*,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 	int screen_pixel_height;
 	bool Render2DFades(void *context);
-	void RenderIllumationBuffer(void *context);
+	void RenderIlluminationBuffer(void *context);
 	bool y_vertical;
 	float timing;
 	D3DFORMAT sky_tex_format;

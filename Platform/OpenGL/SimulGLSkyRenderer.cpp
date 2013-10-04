@@ -180,6 +180,31 @@ const float *SimulGLSkyRenderer::GetFastInscatterLookup(void *context,float dist
 	return Lookup(context,inscatter_2d,distance_texcoord,elevation_texcoord);
 }
 
+
+void SimulGLSkyRenderer::RenderIlluminationBuffer(void *context)
+{
+	EarthShadowUniforms earthShadowUniforms;
+	SkyConstants skyConstants;
+	SetIlluminationConstants(earthShadowUniforms,skyConstants);
+	
+
+	{
+		D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
+		m_pSkyEffect->SetTechnique(tech);
+		unsigned passes;
+		m_pSkyEffect->Begin(&passes,0);
+		m_pSkyEffect->BeginPass(0);
+		illumination_fb.Activate(m_pd3dDevice);
+		illumination_fb.Clear(m_pd3dDevice,0.0f,0.0f,1.0f,1.0f,0.f);
+		//if(e.enable)
+		m_pSkyEffect->Begin(&passes,0);
+		m_pSkyEffect->BeginPass(0);
+			simul::dx9::DrawQuad(m_pd3dDevice);
+		m_pSkyEffect->EndPass();
+		m_pSkyEffect->End();
+		illumination_fb.Deactivate(context);
+	}
+}
 // Here we blend the four 3D fade textures (distance x elevation x altitude at two keyframes, for loss and inscatter)
 // into pair of 2D textures (distance x elevation), eliminating the viewing altitude and time factor.
 bool SimulGLSkyRenderer::Render2DFades(void *context)
@@ -218,20 +243,29 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 		DrawQuad(0,0,1,1);
 		// copy to target:
 		{
-			//glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			glEnable(GL_TEXTURE_2D);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D,target_textures[i]);
 			glCopyTexSubImage2D(GL_TEXTURE_2D,0
 					,0,0
 					,0,0,
- 					numFadeDistances,numFadeElevations
-					);
+ 					numFadeDistances,numFadeElevations	);
 			glDisable(GL_TEXTURE_2D);
 		}
 	}
 	fb[0]->Deactivate(context);
 	glUseProgram(NULL);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D,(GLuint)inscatter_2d.GetColorTex(0));
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D,(GLuint)illumination_fb.GetColorTex(0));
+	glUseProgram(overcast_inscatter_program);
+	overcast_2d.Activate(NULL);
+		overcast_2d.Clear(NULL,1.f,1.f,0.f,1.f,1.f);
+		DrawQuad(0,0,1,1);
+	overcast_2d.Deactivate(NULL);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,NULL);
 	glActiveTexture(GL_TEXTURE1);
@@ -246,18 +280,20 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 
 bool SimulGLSkyRenderer::RenderFades(void *,int width,int height)
 {
-	int size=width/4;
-	if(height/3<size)
-		size=height/3;
+	int size=width/6;
+	if(height/4<size)
+		size=height/4;
 	if(size<2)
 		return false;
+	int s=size/numAltitudes-2;
 	int y0=width/2;
 	int x0=8;
 	if(width>height)
 	{
-		x0=width/2;
+		x0=width-(size+8)*2-(s+8)*3;
 		y0=8;
 	}
+	int y=y0+8;
 	static int main_viewport[]={0,0,1,1};
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
 	glMatrixMode(GL_MODELVIEW);
@@ -277,12 +313,23 @@ ERROR_CHECK
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,0);
 	glActiveTexture(GL_TEXTURE0);
+
 	glBindTexture(GL_TEXTURE_2D,loss_texture);
-	RenderTexture(x0,y0+8,size,size);
+	RenderTexture(x0+size+2,y	,size,size);
+	y+=size+8;
 	glBindTexture(GL_TEXTURE_2D,insc_texture);
-	RenderTexture(x0,y0+16+size,size,size);
+	RenderTexture(x0+size+2,y	,size,size);
+	glBindTexture(GL_TEXTURE_2D,overc_texture);
+	RenderTexture(x0		,y	,size,size);
+	y+=size+8;
+
 	glBindTexture(GL_TEXTURE_2D,skyl_texture);
-	RenderTexture(x0,y0+24+2*size,size,size);
+	RenderTexture(x0+size+2	,y	,size,size);
+	y+=size+8;
+
+	glBindTexture(GL_TEXTURE_2D,(GLuint)illumination_fb.GetColorTex());
+	RenderTexture(x0+size+2	,y	,size,size);
+
 	x0+=24+size;
 	int s=size/numAltitudes-4;
 	for(int i=0;i<numAltitudes;i++)
@@ -663,6 +710,8 @@ void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int
 void SimulGLSkyRenderer::EnsureTexturesAreUpToDate(void *)
 {
 	EnsureCorrectTextureSizes();
+	illumination_fb.SetWidthAndHeight(128,numFadeElevations);
+	illumination_fb.RestoreDeviceObjects(0);
 	EnsureTextureCycle();
 	for(int i=0;i<3;i++)
 	{
@@ -791,6 +840,11 @@ void SimulGLSkyRenderer::InvalidateDeviceObjects()
 	SAFE_DELETE_TEXTURE(loss_texture);
 	SAFE_DELETE_TEXTURE(insc_texture);
 	SAFE_DELETE_TEXTURE(skyl_texture);
+	
+	loss_2d.InvalidateDeviceObjects();
+	inscatter_2d.InvalidateDeviceObjects();
+	skylight_2d.InvalidateDeviceObjects();
+	illumination_fb.InvalidateDeviceObjects();
 }
 
 SimulGLSkyRenderer::~SimulGLSkyRenderer()

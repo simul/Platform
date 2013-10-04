@@ -670,15 +670,14 @@ bool SimulSkyRenderer::RenderFades(void *,int width,int height)
 	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)overcast_2d.GetColorTex());
 	RenderTexture(m_pd3dDevice,x0		,y		,size,size,(LPDIRECT3DBASETEXTURE9)overcast_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
 	y+=size+8;
+
 	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)skylight_2d.GetColorTex());
 	RenderTexture(m_pd3dDevice,x0+size+2,y		,size,size,(LPDIRECT3DBASETEXTURE9)skylight_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);
 	y+=size+8;
+
 	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)illumination_fb.GetColorTex());
 	D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("show_illumination_buffer");
-	RenderTexture(m_pd3dDevice,x0+size+2,y		,size,size,(LPDIRECT3DBASETEXTURE9)illumination_fb.GetColorTex()
-		//,NULL,NULL);		
-		,m_pSkyEffect
-		,tech);
+	RenderTexture(m_pd3dDevice,x0+size+2,y		,size,size,(LPDIRECT3DBASETEXTURE9)illumination_fb.GetColorTex(),m_pSkyEffect,tech);
 
 	int x=16+size;
 	y=y0+8;
@@ -797,7 +796,7 @@ bool SimulSkyRenderer::Render2DFades(void *context)
 	float atc=GetAltitudeTextureCoordinate();
 	m_pSkyEffect->SetFloat	(altitudeTexCoord	,atc);
 
-	RenderIllumationBuffer(context);
+	RenderIlluminationBuffer(context);
 
 	SkyConstants skyConstants;
 	skyConstants.skyInterp			=skyKeyframer->GetInterpolation();
@@ -861,7 +860,7 @@ bool SimulSkyRenderer::Render2DFades(void *context)
 	return true;
 }
 
-void SimulSkyRenderer::RenderIllumationBuffer(void *context)
+void SimulSkyRenderer::RenderIlluminationBuffer(void *context)
 {
 	EarthShadowUniforms earthShadowUniforms;
 	SkyConstants skyConstants;
