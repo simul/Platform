@@ -97,6 +97,7 @@ namespace simul
 			void ReverseDepthChanged();
 			bool enabled;
 			ID3D11Device* m_pd3dDevice;
+			ID3DX11Effect*					mixedResolutionEffect;
 			std::string screenshotFilenameUtf8;
 			simul::camera::Camera *camera;
 			SimulOpticsRendererDX1x		*simulOpticsRenderer;
@@ -109,7 +110,6 @@ namespace simul
 			simul::dx11::TextureStruct			lowResDepthTexture;
 			simul::dx11::CubemapFramebuffer		cubemapFramebuffer;
 			simul::base::MemoryInterface		*memoryInterface;
-			ID3DX11Effect*					mixedResolutionEffect;
 		};
 	}
 }
