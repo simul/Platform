@@ -12,7 +12,7 @@
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
-#include "Simul/Platform/DirectX11/FramebufferCubemapDX1x.h"
+#include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #pragma warning(push)
 #pragma warning(disable:4251)
 namespace simul
@@ -93,9 +93,11 @@ namespace simul
 
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
+			void DownscaleDepth(ID3D11DeviceContext* pContext);
 			void ReverseDepthChanged();
 			bool enabled;
 			ID3D11Device* m_pd3dDevice;
+			ID3DX11Effect*					mixedResolutionEffect;
 			std::string screenshotFilenameUtf8;
 			simul::camera::Camera *camera;
 			SimulOpticsRendererDX1x		*simulOpticsRenderer;
@@ -103,11 +105,11 @@ namespace simul
 			SimulHDRRendererDX1x		*simulHDRRenderer;
 			SimulTerrainRendererDX1x	*simulTerrainRenderer;
 			int ScreenWidth,ScreenHeight;
-			// A depth-only FB to make sure we have a readable depth texture.
-			simul::dx11::Framebuffer hdrFramebuffer;
-			//simul::dx11::Framebuffer cubemapDepthFramebuffer;
-			FramebufferCubemapDX1x	framebuffer_cubemap;
-			simul::base::MemoryInterface *memoryInterface;
+			// A framebuffer with depth
+			simul::dx11::Framebuffer			hdrFramebuffer;
+			simul::dx11::TextureStruct			lowResDepthTexture;
+			simul::dx11::CubemapFramebuffer		cubemapFramebuffer;
+			simul::base::MemoryInterface		*memoryInterface;
 		};
 	}
 }

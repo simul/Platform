@@ -58,21 +58,26 @@ v2f MainVS(a2v IN)
 
 float4 MainPS(v2f IN) : SV_TARGET
 {
+	vec2 depthTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
+	depthTexCoords.y	=1.0-depthTexCoords.y;
+	float dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(depthTexCoords.xy,viewportToTexRegionScaleBias),0).r;
+	if(dlookup!=0)
+		discard;
 	vec2 wOffset		=IN.wPosition.xy-origin.xy;
     vec2 texc_global	=wOffset/globalScale;
     vec2 texc_detail	=wOffset/detailScale;
 	vec3 wEyeToPos		=IN.wPosition-eyePosition;
 #ifdef USE_LIGHT_TABLES
-	float alt_texc			=IN.wPosition.z/maxAltitudeMetres;
-	vec3 sun_irr			=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
-	vec3 moon_irr			=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
-	vec3 ambient_light		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
+	float alt_texc		=IN.wPosition.z/maxAltitudeMetres;
+	vec3 sun_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
+	vec3 moon_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
+	vec3 ambient_light	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
 #else
-	vec3 sun_irr			=sunlight.rgb;
-	vec3 moon_irr			=moonlight.rgb;
-	vec3 ambient_light		=ambientLight.rgb;
+	vec3 sun_irr		=sunlight.rgb;
+	vec3 moon_irr		=moonlight.rgb;
+	vec3 ambient_light	=ambientLight.rgb;
 #endif
-	vec4 ret				=Clouds2DPS_illum(imageTexture,coverageTexture
+	vec4 ret			=Clouds2DPS_illum(imageTexture,coverageTexture
 										,illuminationTexture
 										,lossTexture
 										,inscTexture
@@ -89,18 +94,6 @@ float4 MainPS(v2f IN) : SV_TARGET
 	return ret;
 }
 
-technique11 simul_clouds_2d
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( TestDepth, 0 );
-		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,MainPS()));
-    }
-}
 struct v2f2
 {
     float4 hPosition	: SV_POSITION;
@@ -255,5 +248,15 @@ technique11 simul_2d_cloud_detail_lighting
     }
 }
 
-
-
+technique11 simul_clouds_2d
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( TestDepth, 0 );
+		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
+		SetPixelShader(CompileShader(ps_4_0,MainPS()));
+    }
+}

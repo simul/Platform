@@ -14,11 +14,11 @@ namespace simul
 	namespace dx11
 	{
 		//! A DirectX 11 class for rendering to a cubemap.
-		SIMUL_DIRECTX11_EXPORT_CLASS FramebufferCubemapDX1x:public BaseFramebuffer
+		SIMUL_DIRECTX11_EXPORT_CLASS CubemapFramebuffer:public BaseFramebuffer
 		{
 		public:
-			FramebufferCubemapDX1x();
-			virtual ~FramebufferCubemapDX1x();
+			CubemapFramebuffer();
+			virtual ~CubemapFramebuffer();
 			void SetWidthAndHeight(int w,int h);
 			void SetFormat(int i);
 			void SetDepthFormat(int){}

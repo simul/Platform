@@ -169,6 +169,37 @@
 		}
 	};
 	typedef unsigned int uint;
+	struct uint2
+	{
+		unsigned x,y;
+		uint2(unsigned x=0,unsigned y=0)
+		{
+			this->x=x;
+			this->y=y;
+		}
+		uint2(const int *v)
+		{
+			operator=(v);
+		}
+		uint2(const unsigned *v)
+		{
+			operator=(v);
+		}
+		operator const unsigned *()
+		{
+			return &x;
+		}
+		void operator=(const int *v)
+		{
+			x=v[0];
+			y=v[1];
+		}
+		void operator=(const unsigned *v)
+		{
+			x=v[0];
+			y=v[1];
+		}
+	};
 	struct uint3
 	{
 		unsigned x,y,z;

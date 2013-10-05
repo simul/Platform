@@ -139,11 +139,11 @@ namespace simul
 			static int screen_height;
 			static D3DXMATRIX view;
 			static D3DXMATRIX proj;
+		public:
 			static ID3D1xEffect		*m_pDebugEffect;
-			static ID3D11InputLayout	*m_pCubemapVtxDecl;
+			static ID3D11InputLayout*m_pCubemapVtxDecl;
 			static ID3D1xBuffer		* m_pVertexBuffer;
 			static ID3D1xDevice		*m_pd3dDevice;
-		public:
 			UtilityRenderer();
 			~UtilityRenderer();
 			static void SetMatrices(D3DXMATRIX v,D3DXMATRIX p);
