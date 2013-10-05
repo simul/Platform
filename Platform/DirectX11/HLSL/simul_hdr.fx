@@ -3,18 +3,11 @@
 #include "states.hlsl"
 Texture2D imageTexture;
 Texture2D depthTexture;
+Texture2D cloudDepthTexture;
 Texture2D<uint> glowTexture;
 float4x4 worldViewProj	: WorldViewProjection;
 
-SamplerState samplerState 
-{
-	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = Clamp;
-	AddressV = Clamp;
-};
-
-uniform_buffer HdrConstants SIMUL_BUFFER_REGISTER(9)
-{
+SIMUL_CONSTANT_BUFFER(HdrConstants,9)
 	uniform float exposure=1.f;
 	uniform float gamma=1.f/2.2f;
 	uniform vec2 offset;
@@ -22,7 +15,7 @@ uniform_buffer HdrConstants SIMUL_BUFFER_REGISTER(9)
 	uniform vec2 tanHalfFov;
 	uniform float nearZ,farZ;
 	uniform vec3 depthToLinFadeDistParams;
-}
+SIMUL_CONSTANT_BUFFER_END
 
 struct a2v
 {
@@ -33,38 +26,29 @@ struct a2v
 
 struct v2f
 {
-    float4 hPosition	: SV_POSITION;
-    float2 texCoords	: TEXCOORD0;
+    float4 hPosition: SV_POSITION;
+    float2 texCoords: TEXCOORD0;
 };
 
 v2f MainVS(idOnly IN)
 {
 	v2f OUT;
-#if 1
-	float2 poss[4]=
+	vec2 poss[4]=
 	{
 		{ 1.0,-1.0},
 		{ 1.0, 1.0},
 		{-1.0,-1.0},
 		{-1.0, 1.0},
 	};
-	float2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=float4(pos,0.0,1.0);
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=vec4(pos,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
 #ifdef REVERSE_DEPTH
 	OUT.hPosition.z	=0.0; 
 #else
 	OUT.hPosition.z	=OUT.hPosition.w; 
 #endif
-    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(pos.x,-pos.y));
-
-#else
-    OUT.hPosition.xy=IN.position.xy;
-	OUT.hPosition.z=0.05*IN.position.z;
-	OUT.hPosition.w=0.5*IN.position.z+IN.position.w;
-   // OUT.hPosition = mul(worldViewProj, float4(IN.position.xyz,1.0));
-	OUT.texCoords = IN.texcoord;
-#endif
+    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
     return OUT;
 }
 
@@ -88,12 +72,12 @@ v2f QuadVS(idOnly IN)
 
 vec4 ShowDepthPS(v2f IN) : SV_TARGET
 {
-	vec4 depth		=depthTexture.Sample(samplerState,IN.texCoords);
+	vec4 depth		=texture_clamp(depthTexture,IN.texCoords);
 	float dist		=10.0*depthToFadeDistance(depth.x,2.0*(IN.texCoords-0.5),depthToLinFadeDistParams,tanHalfFov);
     return vec4(1,dist,dist,1.0);
 }
 
-float4 convertInt(float2 texCoord)
+vec4 convertInt(vec2 texCoord)
 {
 	uint2 tex_dim;
 	glowTexture.GetDimensions(tex_dim.x, tex_dim.y);
@@ -102,7 +86,7 @@ float4 convertInt(float2 texCoord)
 	uint int_color = glowTexture[location];
 
 	// Convert R11G11B10 to float3
-	float4 color;
+	vec4 color;
 	color.r = (float)(int_color >> 21) / 2047.0f;
 	color.g = (float)((int_color >> 10) & 0x7ff) / 2047.0f;
 	color.b = (float)(int_color & 0x0003ff) / 1023.0f;
@@ -111,50 +95,58 @@ float4 convertInt(float2 texCoord)
 	return color;
 }
 
-float4 TonemapPS(v2f IN) : SV_TARGET
+vec4 TonemapPS(v2f IN) : SV_TARGET
 {
-	float4 c=imageTexture.Sample(samplerState,IN.texCoords);
-	
-	float4 glow=convertInt(IN.texCoords);
+	vec4 c=texture_clamp(imageTexture,IN.texCoords);
+	vec4 glow=convertInt(IN.texCoords);
 	c.rgb+=glow.rgb;
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
-	//c.rgb+=depthTexture.Sample(samplerState,IN.texCoords).rgb;
-    return float4(c.rgb,1.f);
+    return vec4(c.rgb,1.f);
 }
 
-float4 GammaPS(v2f IN) : SV_TARGET
+vec4 GammaPS(v2f IN) : SV_TARGET
 {
-	float4 c=imageTexture.Sample(samplerState,IN.texCoords);
+	vec4 c=texture_clamp(imageTexture,IN.texCoords);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
-    return float4(c.rgb,1.f);
+    return vec4(c.rgb,1.f);
 }
 
-float4 DirectPS(v2f IN) : SV_TARGET
+vec4 DirectPS(v2f IN) : SV_TARGET
 {
-	float4 c=exposure*imageTexture.Sample(samplerState,IN.texCoords);
-    return float4(c.rgba);
+	vec4 c=exposure*texture_clamp(imageTexture,IN.texCoords);
+    return vec4(c.rgba);
 }
 
-float4 CloudBlendPS(v2f IN) : SV_TARGET
+// Blend the low-res clouds into the scene, using a hi-res depth texture.
+// depthTexture.x is the depth value.
+// imageTexture.a is the depth that was used to calculate the particular cloud value.
+
+// the blend is 1.0, SRC_ALPHA.
+vec4 CloudBlendPS(v2f IN) : SV_TARGET
 {
-	float4 c=imageTexture.Sample(samplerState,IN.texCoords);
-	//if(c.a>=1.0)
-	//	discard;
-    return float4(c.rgb*exposure,c.a);
+	vec4 c		=texture_clamp(imageTexture,IN.texCoords);
+	vec4 d1		=texture_clamp(depthTexture,IN.texCoords);
+	vec4 d2		=texture_clamp(cloudDepthTexture,IN.texCoords);
+	float a		=c.a;
+	vec3 rgb	=c.rgb*exposure;
+	float blend	=saturate((d2.x-d1.x)*1000.0);
+	vec4 res	=vec4(rgb,c.a);
+	res			=lerp(res,vec4(0,0,0,1.0),blend);
+    return res;
 }
 
-float4 GlowPS(v2f IN) : SV_TARGET
+vec4 GlowPS(v2f IN) : SV_TARGET
 {
     // original image has double the resulution, so we sample 2x2
     vec4 c=vec4(0,0,0,0);
-	c+=texture2D(imageTexture,IN.texCoords+offset/2.0);
-	c+=texture2D(imageTexture,IN.texCoords-offset/2.0);
+	c+=texture_clamp(imageTexture,IN.texCoords+offset/2.0);
+	c+=texture_clamp(imageTexture,IN.texCoords-offset/2.0);
 	vec2 offset2=offset;
 	offset2.x=offset.x*-1.0;
-	c+=texture2D(imageTexture,IN.texCoords+offset2/2.0);
-	c+=texture2D(imageTexture,IN.texCoords-offset2/2.0);
+	c+=texture_clamp(imageTexture,IN.texCoords+offset2/2.0);
+	c+=texture_clamp(imageTexture,IN.texCoords-offset2/2.0);
 	c=c*exposure/4.0;
 	c-=1.0*vec4(1.0,1.0,1.0,1.0);
 	c=clamp(c,vec4(0.0,0.0,0.0,0.0),vec4(10.0,10.0,10.0,10.0));
@@ -207,9 +199,7 @@ technique11 simul_sky_blend
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-//		SetDepthStencilState( EnableDepth, 0 );
-		SetBlendState(CloudBufferBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
-		//SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(CloudBufferBlend,vec4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,CloudBlendPS()));
@@ -222,8 +212,7 @@ technique11 simul_glow
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DoBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
-		//SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DoBlend,vec4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,GlowPS()));
@@ -235,9 +224,9 @@ technique11 show_depth
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(NoBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,QuadVS()));
 		SetPixelShader(CompileShader(ps_4_0,ShowDepthPS()));

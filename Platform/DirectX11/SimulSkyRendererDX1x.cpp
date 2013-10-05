@@ -10,15 +10,11 @@
 // SimulSkyRendererDX1x.cpp A renderer for skies.
 #define NOMINMAX
 
-
-#include <tchar.h>
 #include <d3d10_1.h>
 #include <d3dx10.h>
 #include <dxerr.h>
 #include <string>
 #include "SimulSkyRendererDX1x.h"
-static DXGI_FORMAT sky_tex_format=DXGI_FORMAT_R32G32B32A32_FLOAT;
-extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/SkyKeyframer.h"
@@ -28,12 +24,9 @@ extern 	D3DXMATRIX view_matrices[6];
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 
-using namespace simul::dx11;
+extern D3DXMATRIX view_matrices[6];
 
-struct Vertex_t
-{
-	float x,y,z;
-};
+using namespace simul::dx11;
 
 SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem)
 	:simul::sky::BaseSkyRenderer(sk,mem)
@@ -230,9 +223,9 @@ void SimulSkyRendererDX1x::EnsureCorrectTextureSizes()
 	bool uav=gpuSkyGenerator.GetEnabled()&&skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator;
 	for(int i=0;i<3;i++)
 	{
-		loss_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,num_alt,num_elev,num_dist,sky_tex_format,uav);
-		insc_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,num_alt,num_elev,num_dist,sky_tex_format,uav);
-		skyl_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,num_alt,num_elev,num_dist,sky_tex_format,uav);
+		loss_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,num_alt,num_elev,num_dist,DXGI_FORMAT_R32G32B32A32_FLOAT,uav);
+		insc_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,num_alt,num_elev,num_dist,DXGI_FORMAT_R32G32B32A32_FLOAT,uav);
+		skyl_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,num_alt,num_elev,num_dist,DXGI_FORMAT_R32G32B32A32_FLOAT,uav);
 	}
 	light_table_2d.ensureTexture2DSizeAndFormat(m_pd3dDevice,num_alt*32,4,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
 	

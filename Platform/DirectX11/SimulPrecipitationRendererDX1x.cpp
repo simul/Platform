@@ -32,10 +32,8 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 {
 	if(!m_pd3dDevice)
 		return;
-	CreateEffect(m_pd3dDevice,&m_pRainEffect,"simul_rain.fx");
-
+	CreateEffect(m_pd3dDevice,&m_pRainEffect,"rain.fx");
 	SAFE_RELEASE(rain_texture);
-	//rain_texture		=simul::dx11::LoadTexture("Rain.png");
 	m_hTechniqueRain		=m_pRainEffect->GetTechniqueByName("simul_rain");
 	m_hTechniqueParticles	=m_pRainEffect->GetTechniqueByName("simul_particles");
 	rainTexture				=m_pRainEffect->GetVariableByName("rainTexture")->AsShaderResource();

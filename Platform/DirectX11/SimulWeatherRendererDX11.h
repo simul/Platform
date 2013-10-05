@@ -91,12 +91,12 @@ namespace simul
 			ID3D1xDevice*							m_pd3dDevice;
 			
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			ID3D1xEffect*							m_pTonemapEffect;
-			ID3D1xEffectTechnique*					directTechnique;
-			ID3D1xEffectTechnique*					SkyBlendTechnique;
-			ID3D1xEffectTechnique*					showDepthTechnique;
-			ID3D1xEffectMatrixVariable*				worldViewProj;
-			ID3D1xEffectShaderResourceVariable		*imageTexture;
+			ID3DX11Effect							*m_pTonemapEffect;
+			ID3DX11EffectTechnique					*directTechnique;
+			ID3DX11EffectTechnique					*SkyBlendTechnique;
+			ID3DX11EffectTechnique					*showDepthTechnique;
+			ID3DX11EffectMatrixVariable				*worldViewProj;
+			ID3DX11EffectShaderResourceVariable		*imageTexture;
 
 			bool CreateBuffers();
 			bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
