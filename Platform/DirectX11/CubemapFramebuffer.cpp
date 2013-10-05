@@ -1,10 +1,10 @@
-#include "FramebufferCubemapDX1x.h"
+#include "CubemapFramebuffer.h"
 #include <assert.h>
 const int MIPLEVELS=1;
 
 using namespace simul::dx11;
 
-FramebufferCubemapDX1x::FramebufferCubemapDX1x()
+CubemapFramebuffer::CubemapFramebuffer()
 	:m_pCubeEnvDepthMap(NULL)
 	,m_pCubeEnvMap(NULL)
 	,m_pCubeEnvMapSRV(NULL)
@@ -23,19 +23,19 @@ FramebufferCubemapDX1x::FramebufferCubemapDX1x()
 	}
 }
 
-FramebufferCubemapDX1x::~FramebufferCubemapDX1x()
+CubemapFramebuffer::~CubemapFramebuffer()
 {
 	InvalidateDeviceObjects();
 }
 
-void FramebufferCubemapDX1x::SetWidthAndHeight(int w,int h)
+void CubemapFramebuffer::SetWidthAndHeight(int w,int h)
 {
 	Width=w;
 	Height=w;
 	assert(h==w);
 }
 
-void FramebufferCubemapDX1x::SetFormat(int f)
+void CubemapFramebuffer::SetFormat(int f)
 {
 	DXGI_FORMAT F=(DXGI_FORMAT)f;
 	if(F==format)
@@ -44,7 +44,7 @@ void FramebufferCubemapDX1x::SetFormat(int f)
 	//CreateBuffers();
 }
 
-void FramebufferCubemapDX1x::RestoreDeviceObjects(void* dev)
+void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 {
 	HRESULT hr=S_OK;
 	pd3dDevice=(ID3D1xDevice*)dev;
@@ -144,7 +144,7 @@ ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *pd3dDevice,int w,DXGI_FORMAT t
 	return tex;
 }
 
-void FramebufferCubemapDX1x::InvalidateDeviceObjects()
+void CubemapFramebuffer::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_pCubeEnvDepthMap);
 	SAFE_RELEASE(m_pCubeEnvMap);
@@ -159,12 +159,12 @@ void FramebufferCubemapDX1x::InvalidateDeviceObjects()
 	sphericalSamples.release();
 }
 
-void FramebufferCubemapDX1x::SetCurrentFace(int i)
+void CubemapFramebuffer::SetCurrentFace(int i)
 {
 	current_face=i;
 }
 
-ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy(void *context)
+ID3D11Texture2D *CubemapFramebuffer::GetCopy(void *context)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	if(!stagingTexture)
@@ -181,7 +181,7 @@ ID3D11Texture2D *FramebufferCubemapDX1x::GetCopy(void *context)
 	return stagingTexture;
 }
 
-void FramebufferCubemapDX1x::CalcSphericalHarmonics(void *context,int bands)
+void CubemapFramebuffer::CalcSphericalHarmonics(void *context,int bands)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	if(!sphericalHarmonicsEffect)
@@ -214,12 +214,12 @@ void FramebufferCubemapDX1x::CalcSphericalHarmonics(void *context,int bands)
 	sphericalSamples.release();
 }
 
-void FramebufferCubemapDX1x::Activate(void *context)
+void CubemapFramebuffer::Activate(void *context)
 {
 	ActivateViewport(context,0.f,0.f,1.f,1.f);
 }
 
-void FramebufferCubemapDX1x::ActivateColour(void *context,const float viewportXYWH[4])
+void CubemapFramebuffer::ActivateColour(void *context,const float viewportXYWH[4])
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	HRESULT hr=S_OK;
@@ -248,7 +248,7 @@ void FramebufferCubemapDX1x::ActivateColour(void *context,const float viewportXY
 	pContext->RSSetViewports(1, &viewport);
 }
 
-void FramebufferCubemapDX1x::ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH)
+void CubemapFramebuffer::ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	HRESULT hr=S_OK;
@@ -277,7 +277,7 @@ void FramebufferCubemapDX1x::ActivateViewport(void *context, float viewportX, fl
 	pContext->RSSetViewports(1, &viewport);
 }
 
-void FramebufferCubemapDX1x::Deactivate(void *context)
+void CubemapFramebuffer::Deactivate(void *context)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pOldDepthSurface);
@@ -287,7 +287,7 @@ void FramebufferCubemapDX1x::Deactivate(void *context)
 	pContext->RSSetViewports(1,m_OldViewports);
 }
 
-void FramebufferCubemapDX1x::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
+void CubemapFramebuffer::Clear(void *context,float r,float g,float b,float a,float depth,int mask)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	if(!mask)
@@ -302,7 +302,7 @@ void FramebufferCubemapDX1x::Clear(void *context,float r,float g,float b,float a
 	}
 }
 
-void FramebufferCubemapDX1x::ClearColour(void *context,float r,float g,float b,float a)
+void CubemapFramebuffer::ClearColour(void *context,float r,float g,float b,float a)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	float clearColor[4]={r,g,b,a};
@@ -312,7 +312,7 @@ void FramebufferCubemapDX1x::ClearColour(void *context,float r,float g,float b,f
 	}
 }
 
-void FramebufferCubemapDX1x::GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const
+void CubemapFramebuffer::GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const
 {
 	ID3D11Resource* pTexResource;
 	const_cast<ID3D11ShaderResourceView*>( reinterpret_cast<const ID3D11ShaderResourceView*>(tex) )->GetResource(&pTexResource); //GetResource increments the resources ref.count so we need to Release when done.

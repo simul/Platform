@@ -186,9 +186,9 @@
   <ItemGroup>
     <ClCompile Include="CompileShaderDX1x.cpp" />
     <ClCompile Include="CreateEffectDX1x.cpp" />
-    <ClCompile Include="Direct3D1xRenderer.cpp" />
+    <ClCompile Include="Direct3D11Renderer.cpp" />
     <ClCompile Include="DX11Exception.cpp" />
-    <ClCompile Include="FramebufferCubemapDX1x.cpp" />
+    <ClCompile Include="CubemapFramebuffer.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
@@ -210,10 +210,10 @@
     <ClInclude Include="CompileShaderDX1x.h" />
     <ClInclude Include="CreateEffectDX1x.h" />
     <ClInclude Include="Direct3D11CallbackInterface.h" />
-    <ClInclude Include="Direct3D1xRenderer.h" />
+    <ClInclude Include="Direct3D11Renderer.h" />
     <ClInclude Include="DX11Exception.h" />
     <ClInclude Include="Export.h" />
-    <ClInclude Include="FramebufferCubemapDX1x.h" />
+    <ClInclude Include="CubemapFramebuffer.h" />
     <ClInclude Include="FramebufferDX1x.h" />
     <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="GpuSkyGenerator.h" />
@@ -261,9 +261,9 @@
     <None Include="..\CrossPlatform\states.sl" />
     <None Include="HLSL\atmospherics.fx" />
     <None Include="HLSL\CppHLSL.hlsl" />
+    <None Include="HLSL\mixed_resolution.fx" />
     <None Include="HLSL\simul_clouds.fx" />
     <None Include="HLSL\simul_clouds_2d.fx" />
-    <None Include="HLSL\simul_clouds_and_lightning_dx11.fx" />
     <None Include="HLSL\simul_debug.fx" />
     <None Include="HLSL\simul_earthshadow.hlsl" />
     <None Include="HLSL\simul_foliage.fx" />

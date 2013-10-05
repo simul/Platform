@@ -606,7 +606,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,Texture2D lightTableTexture
 											,vec2 texCoords)
 {
-	float dlookup 		= sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
+	float dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
 	vec4 clip_pos		=vec4(-1.f,1.f,1.f,1.f);
 	clip_pos.x			+=2.0*texCoords.x;
 	clip_pos.y			-=2.0*texCoords.y;

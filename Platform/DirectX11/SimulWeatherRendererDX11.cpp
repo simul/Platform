@@ -197,7 +197,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	std::wstring filenamew=simul::base::Utf8ToWString(filename_utf8);
 	ID3D11DeviceContext* m_pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-	FramebufferCubemapDX1x	fb_cubemap;
+	CubemapFramebuffer	fb_cubemap;
 	static int cubesize=1024;
 	fb_cubemap.SetWidthAndHeight(cubesize,cubesize);
 	fb_cubemap.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);

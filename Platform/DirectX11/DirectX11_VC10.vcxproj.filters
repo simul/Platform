@@ -30,13 +30,7 @@
     <ClCompile Include="CreateEffectDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Direct3D1xRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DX11Exception.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FramebufferCubemapDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FramebufferDX1x.cpp">
@@ -87,6 +81,12 @@
     <ClCompile Include="SimulWeatherRendererDX11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Direct3D11Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CubemapFramebuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompileShaderDX1x.h">
@@ -98,16 +98,10 @@
     <ClInclude Include="Direct3D11CallbackInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Direct3D1xRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DX11Exception.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Export.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FramebufferCubemapDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FramebufferDX1x.h">
@@ -167,6 +161,12 @@
     <ClInclude Include="SimulWeatherRendererDX11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Direct3D11Renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CubemapFramebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\CppHLSL.hlsl">
@@ -215,9 +215,6 @@
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\simul_clouds_2d.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_clouds_and_lightning_dx11.fx">
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\atmospherics.fx">
@@ -300,6 +297,9 @@
     </None>
     <None Include="..\CrossPlatform\atmospherics.sl">
       <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="HLSL\mixed_resolution.fx">
+      <Filter>FX</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
