@@ -41,7 +41,7 @@ v2f Debug2DVS(idOnly IN)
 	float2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
 	OUT.hPosition.z	=0.0; 
-	OUT.colour	=vec4(pos.x,1.0-pos.y,0,0);
+	OUT.colour		=vec4(pos.x,1.0-pos.y,0,0);
     return OUT;
 }
 

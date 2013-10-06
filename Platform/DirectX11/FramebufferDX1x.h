@@ -61,6 +61,10 @@ namespace simul
 			{
 				return hdr_buffer_texture;
 			}
+			ID3D11Texture2D* GetDepthTexture()
+			{
+				return buffer_depth_texture;
+			}
 			bool IsValid()
 			{
 				return (buffer_texture_SRV != NULL);

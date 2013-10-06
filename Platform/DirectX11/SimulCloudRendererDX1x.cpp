@@ -791,10 +791,6 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 		helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);
 	}
 
-	//SmallLayerData *layers=layerBuffer.GetBuffer(pContext);
-	//SetLayerBuffer(helper,layers);
-	//layerBuffer.apply(pContext,m_pCloudEffect,"layersSB");
-
 	static int select_slice=-1;
 	int ii=0;
 	unsigned el,az;

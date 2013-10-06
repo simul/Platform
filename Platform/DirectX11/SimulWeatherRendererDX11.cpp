@@ -79,8 +79,13 @@ void SimulWeatherRendererDX11::SetScreenSize(int w,int h)
 {
 	ScreenWidth		=w;
 	ScreenHeight	=h;
-	BufferWidth		=w/Downscale;
-	BufferHeight	=h/Downscale;
+	BufferSizeChanged();
+}
+
+void SimulWeatherRendererDX11::BufferSizeChanged()
+{
+	BufferWidth		=ScreenWidth/Downscale;
+	BufferHeight	=ScreenHeight/Downscale;
 	framebuffer.SetWidthAndHeight(BufferWidth,BufferHeight);
 }
 
@@ -299,16 +304,17 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 											depthTextureForClouds,
 											viewport_id,
 											relativeViewportTextureRegionXYWH,
-											doFinalCloudBufferToScreenComposite
-											);
+											doFinalCloudBufferToScreenComposite	);
 	if(buffered&&doFinalCloudBufferToScreenComposite)
 	{
 		bool blend=!is_cubemap;
 		imageTexture->SetResource(framebuffer.buffer_texture_SRV);
+		simul::dx11::setParameter(m_pTonemapEffect,"depthTexture"		,(ID3D1xShaderResourceView*)mainDepthTexture);
+		simul::dx11::setParameter(m_pTonemapEffect,"cloudDepthTexture"	,(ID3D1xShaderResourceView*)baseFramebuffer->GetDepthTex());
 		ID3D1xEffectTechnique *tech=blend?SkyBlendTechnique:directTechnique;
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
-		simul::dx11::setParameter(m_pTonemapEffect,"exposure",1.f);
-		simul::dx11::setParameter(m_pTonemapEffect,"gamma",1.f);
+		simul::dx11::setParameter(m_pTonemapEffect,"exposure"	,1.f);
+		simul::dx11::setParameter(m_pTonemapEffect,"gamma"		,1.f);
 		framebuffer.DrawQuad(context);
 		imageTexture->SetResource(NULL);
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));

@@ -745,26 +745,13 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 	SAFE_RELEASE(m_pVtxDecl);
 	}
 }
-/*
-void UtilityRenderer::RenderTexture(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech)
-{
-	DrawQuad(m_pImmediateContext
-		,2.f*(float)x1/(float)screen_width-1.f
-		,1.f-2.f*(float)(y1+dy)/(float)screen_height
-		,2.f*(float)dx/(float)screen_width
-		,2.f*(float)dy/(float)screen_height,tech);
-}
 
-void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech)
+void UtilityRenderer::DrawTexture(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t)
 {
-	HRESULT hr=S_OK;
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pImmediateContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
-	m_pImmediateContext->Draw(4,0);
-	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-}*/
+	simul::dx11::setParameter(m_pDebugEffect,"imageTexture",t);
+	if(m_pDebugEffect)
+		UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,m_pDebugEffect->GetTechniqueByName("textured"));
+}
 
 void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext)
 {
