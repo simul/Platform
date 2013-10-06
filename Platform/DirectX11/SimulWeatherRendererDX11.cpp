@@ -79,8 +79,13 @@ void SimulWeatherRendererDX11::SetScreenSize(int w,int h)
 {
 	ScreenWidth		=w;
 	ScreenHeight	=h;
-	BufferWidth		=w/Downscale;
-	BufferHeight	=h/Downscale;
+	BufferSizeChanged();
+}
+
+void SimulWeatherRendererDX11::BufferSizeChanged()
+{
+	BufferWidth		=ScreenWidth/Downscale;
+	BufferHeight	=ScreenHeight/Downscale;
 	framebuffer.SetWidthAndHeight(BufferWidth,BufferHeight);
 }
 

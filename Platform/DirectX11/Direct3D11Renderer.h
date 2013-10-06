@@ -13,6 +13,11 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
+	struct MixedResolutionConstants
+	{
+		uniform uint2 scale;
+		uniform float a,b;
+	};
 #pragma warning(push)
 #pragma warning(disable:4251)
 namespace simul
@@ -107,9 +112,12 @@ namespace simul
 			int ScreenWidth,ScreenHeight;
 			// A framebuffer with depth
 			simul::dx11::Framebuffer			hdrFramebuffer;
+			// The depth from the HDR framebuffer can be resolved into this texture:
+			simul::dx11::Framebuffer			resolvedDepth_fb;
 			simul::dx11::TextureStruct			lowResDepthTexture;
 			simul::dx11::CubemapFramebuffer		cubemapFramebuffer;
 			simul::base::MemoryInterface		*memoryInterface;
+	ConstantBuffer<MixedResolutionConstants> mixedResolutionConstants;
 		};
 	}
 }

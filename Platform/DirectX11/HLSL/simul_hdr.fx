@@ -126,14 +126,15 @@ vec4 DirectPS(v2f IN) : SV_TARGET
 // the blend is 1.0, SRC_ALPHA.
 vec4 CloudBlendPS(v2f IN) : SV_TARGET
 {
-	vec4 c		=texture_clamp(imageTexture,IN.texCoords);
-	vec4 d1		=texture_clamp(depthTexture,IN.texCoords);
-	vec4 d2		=texture_clamp(cloudDepthTexture,IN.texCoords);
+	vec4 c		=texture_nearest_lod(imageTexture,IN.texCoords,0);
+	float d1	=texture_nearest_lod(depthTexture,IN.texCoords,0).x;
+	float d2	=texture_nearest_lod(cloudDepthTexture,IN.texCoords,0).x;
+	//depthToFadeDistance(d1,texture_nearest_lod,depthToLinFadeDistParams,tanHalf);
 	float a		=c.a;
 	vec3 rgb	=c.rgb*exposure;
-	float blend	=saturate((d2.x-d1.x)*1000.0);
+	float blend	=saturate((d1-d2)*10000.0);//(1.0-c.a)*
 	vec4 res	=vec4(rgb,c.a);
-	res			=lerp(res,vec4(0,0,0,1.0),blend);
+	//res			=lerp(res,vec4(0,0,0,1.0),blend);
     return res;
 }
 
