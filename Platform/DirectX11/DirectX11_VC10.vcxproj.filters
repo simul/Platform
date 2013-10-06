@@ -301,6 +301,9 @@
     <None Include="HLSL\mixed_resolution.fx">
       <Filter>FX</Filter>
     </None>
+    <None Include="..\CrossPlatform\hdr_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc">

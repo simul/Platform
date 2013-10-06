@@ -95,7 +95,6 @@ namespace simul
 			ID3DX11EffectTechnique					*directTechnique;
 			ID3DX11EffectTechnique					*SkyBlendTechnique;
 			ID3DX11EffectTechnique					*showDepthTechnique;
-			ID3DX11EffectMatrixVariable				*worldViewProj;
 			ID3DX11EffectShaderResourceVariable		*imageTexture;
 
 			bool CreateBuffers();
@@ -107,6 +106,7 @@ namespace simul
 			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
 			class SimulLightningRendererDX11		*simulLightningRenderer;
 			simul::dx11::Framebuffer				framebuffer;
+			simul::dx11::ConstantBuffer<HdrConstants> hdrConstants;
 			float									exposure;
 			float									gamma;
 			float									exposure_multiplier;

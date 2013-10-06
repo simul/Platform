@@ -17,6 +17,8 @@
 	{
 		uniform uint2 scale;
 		uniform float a,b;
+		uniform vec3 depthToLinFadeDistParams;
+		uniform float c;
 	};
 #pragma warning(push)
 #pragma warning(disable:4251)
@@ -98,7 +100,7 @@ namespace simul
 
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
-			void DownscaleDepth(ID3D11DeviceContext* pContext);
+			void DownscaleDepth(ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
 			void ReverseDepthChanged();
 			bool enabled;
 			ID3D11Device* m_pd3dDevice;

@@ -244,6 +244,7 @@
     <None Include="..\CrossPlatform\earth_shadow_fade.sl" />
     <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
     <None Include="..\CrossPlatform\godrays.sl" />
+    <None Include="..\CrossPlatform\hdr_constants.sl" />
     <None Include="..\CrossPlatform\illumination.sl" />
     <None Include="..\CrossPlatform\noise.sl" />
     <None Include="..\CrossPlatform\rain_constants.sl" />

@@ -185,7 +185,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		simulWeatherRenderer->SetCubemapTexture(cubemapFramebuffer.GetColorTex());
 }
 
-void Direct3D11Renderer::DownscaleDepth(ID3D11DeviceContext* pContext)
+void Direct3D11Renderer::DownscaleDepth(ID3D11DeviceContext* pContext,const D3DXMATRIX &proj)
 {
 	HRESULT hr;
 	if(!simulWeatherRenderer)
@@ -194,7 +194,7 @@ void Direct3D11Renderer::DownscaleDepth(ID3D11DeviceContext* pContext)
 	int w=ScreenWidth/s;
 	int h=ScreenHeight/s;
 	// DXGI_FORMAT_D32_FLOAT->DXGI_FORMAT_R32_FLOAT
-	lowResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
+	lowResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	lowResDepthTexture_scratch.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	// Resolve depth first:
 	ID3D11Texture2D *depthTexture=hdrFramebuffer.GetDepthTexture();
@@ -207,6 +207,7 @@ void Direct3D11Renderer::DownscaleDepth(ID3D11DeviceContext* pContext)
 	resolvedDepth_fb.Deactivate(pContext);
 	//pContext->ResolveSubresource(resolvedDepthTexture.texture, 0, depthTexture, 0, DXGI_FORMAT_R32_FLOAT);
 	mixedResolutionConstants.scale=uint2(s,s);
+	mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj);
 	mixedResolutionConstants.Apply(pContext);
 	static const int BLOCKWIDTH			=8;
 	uint2 subgrid						=uint2((lowResDepthTexture.width+BLOCKWIDTH-1)/BLOCKWIDTH,(lowResDepthTexture.length+BLOCKWIDTH-1)/BLOCKWIDTH);
@@ -283,7 +284,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	void *depthTexture=hdrFramebuffer.GetDepthTex();
 	if(simulWeatherRenderer)
 	{
-		DownscaleDepth(pd3dImmediateContext);
+		DownscaleDepth(pd3dImmediateContext,proj);
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 		static bool test=true;
 		const void* skyBufferDepthTex = (UseSkyBuffer&test)? lowResDepthTexture.shaderResourceView : depthTexture;

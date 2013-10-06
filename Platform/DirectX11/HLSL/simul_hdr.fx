@@ -1,21 +1,12 @@
 #include "CppHlsl.hlsl"
 #include "../../CrossPlatform/depth.sl"
+#include "../../CrossPlatform/hdr_constants.sl"
 #include "states.hlsl"
 Texture2D imageTexture;
 Texture2D depthTexture;
+Texture2D lowResDepthTexture;
 Texture2D cloudDepthTexture;
 Texture2D<uint> glowTexture;
-float4x4 worldViewProj	: WorldViewProjection;
-
-SIMUL_CONSTANT_BUFFER(HdrConstants,9)
-	uniform float exposure=1.f;
-	uniform float gamma=1.f/2.2f;
-	uniform vec2 offset;
-	uniform vec4 rect;
-	uniform vec2 tanHalfFov;
-	uniform float nearZ,farZ;
-	uniform vec3 depthToLinFadeDistParams;
-SIMUL_CONSTANT_BUFFER_END
 
 struct a2v
 {
@@ -126,15 +117,22 @@ vec4 DirectPS(v2f IN) : SV_TARGET
 // the blend is 1.0, SRC_ALPHA.
 vec4 CloudBlendPS(v2f IN) : SV_TARGET
 {
-	vec4 c		=texture_nearest_lod(imageTexture,IN.texCoords,0);
-	float d1	=texture_nearest_lod(depthTexture,IN.texCoords,0).x;
-	float d2	=texture_nearest_lod(cloudDepthTexture,IN.texCoords,0).x;
-	//depthToFadeDistance(d1,texture_nearest_lod,depthToLinFadeDistParams,tanHalf);
-	float a		=c.a;
-	vec3 rgb	=c.rgb*exposure;
-	float blend	=saturate((d1-d2)*10000.0);//(1.0-c.a)*
-	vec4 res	=vec4(rgb,c.a);
-	//res			=lerp(res,vec4(0,0,0,1.0),blend);
+	vec4 res			=texture_nearest_lod(imageTexture,IN.texCoords,0);
+	res.rgb				*=exposure;
+	vec4 solid			=texture_clamp_lod(depthTexture,IN.texCoords,0);
+	vec4 lowres			=texture_nearest_lod(lowResDepthTexture,IN.texCoords,0);
+	vec4 cloud			=texture_clamp_lod(cloudDepthTexture,IN.texCoords,0);
+	float solid_dist	=depthToFadeDistance(solid.x,vec2(0,0),depthToLinFadeDistParams,vec2(1.0,1.0));
+	float cloud_dist	=depthToFadeDistance(cloud.x,vec2(0,0),depthToLinFadeDistParams,vec2(1.0,1.0));
+	// We only care about edges that are IN FRONT of the clouds. So solid
+	float u				=saturate(10000.0*(cloud_dist-solid_dist));
+	float edge			=saturate(1.0*(abs(lowres.y)+abs(lowres.z)))*u;
+	if(edge>0.5)
+	{
+		float blend		=saturate((cloud_dist-solid_dist)*100.0);
+		res				=lerp(res,vec4(0,0,0,1.0),blend);
+	}
+	res.g=edge;
     return res;
 }
 
