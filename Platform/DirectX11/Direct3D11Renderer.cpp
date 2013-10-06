@@ -293,11 +293,11 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 
-		
+/*		
 	simul::dx11::UtilityRenderer::SetScreenSize(ScreenWidth,ScreenHeight);
 	simul::dx11::setParameter(simul::dx11::UtilityRenderer::m_pDebugEffect,"imageTexture",lowResDepthTexture.shaderResourceView);
 	UtilityRenderer::DrawQuad2(pd3dImmediateContext,0,0,lowResDepthTexture.width,lowResDepthTexture.length,simul::dx11::UtilityRenderer::m_pDebugEffect,simul::dx11::UtilityRenderer::m_pDebugEffect->GetTechniqueByName("textured"));
-
+	*/
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,ScreenWidth,ScreenHeight);

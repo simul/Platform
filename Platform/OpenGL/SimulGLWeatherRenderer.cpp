@@ -174,35 +174,6 @@ void SimulGLWeatherRenderer::RecompileShaders()
 	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag",defines);
 }
 
-bool SimulGLWeatherRenderer::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)
-{
-	buffered&=(Utilities::GetSingleton().simple_program>0);
-GL_ERROR_CHECK
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-GL_ERROR_CHECK
-	BaseWeatherRenderer::RenderSky(context,exposure,buffered,is_cubemap);
-	if(buffered)
-	{
-		glUseProgram(Utilities::GetSingleton().simple_program);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
-		scene_buffer->Render(context,true);
-		glUseProgram(0);
-	}
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-	int d=0;
-	glGetIntegerv(GL_ATTRIB_STACK_DEPTH,&d);
-	glPopAttrib();
-	return true;
-}
-
 void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 //	BaseWeatherRenderer::RenderSkyAsOverlay(context,buffered,is_cubemap,depthTexture);

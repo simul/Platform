@@ -57,7 +57,6 @@ namespace simul
 									const simul::sky::float4& relativeViewportTextureRegionXYWH,
 									bool doFinalCloudBufferToScreenComposite //indicate whether truesky should do a final low-res cloud up-sample to the main target or whether to leave that to the user (via GetFramebufferTexture())
 									);
-			bool RenderSky(void *context,float exposure,bool buffered,bool is_cubemap);
 			void RenderFramebufferDepth(void *context,int w,int h);
 			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			void RenderPrecipitation(void *context);

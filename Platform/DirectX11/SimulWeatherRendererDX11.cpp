@@ -317,28 +317,6 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 	SIMUL_PROFILE_END
 }
 
-bool SimulWeatherRendererDX11::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)
-{
-	BaseWeatherRenderer::RenderSky(context,exposure,buffered,is_cubemap);
-	if(buffered&&baseFramebuffer)
-	{
-		bool blend=!is_cubemap;
-		HRESULT hr=S_OK;
-		hr=imageTexture->SetResource(framebuffer.buffer_texture_SRV);
-		ID3D1xEffectTechnique *tech=blend?SkyBlendTechnique:directTechnique;
-		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
-		
-		D3DXMATRIX ortho;
-		D3DXMatrixIdentity(&ortho);
-		D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
-		worldViewProj->SetMatrix(ortho);
-		
-		framebuffer.DrawQuad(context);
-		imageTexture->SetResource(NULL);
-	}
-	return true;
-}
-
 void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,int height)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;

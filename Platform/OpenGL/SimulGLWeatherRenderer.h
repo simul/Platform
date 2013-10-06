@@ -62,7 +62,6 @@ namespace simul
 			//! Call this when the 3D device has been lost.
 			void InvalidateDeviceObjects();
 			//! Platform-dependent. Call this to draw the sky
-			bool RenderSky(void *,float exposure,bool buffered,bool is_cubemap);
 			void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 			//! Call this to draw the clouds
 			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);

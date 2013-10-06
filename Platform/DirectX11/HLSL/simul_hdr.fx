@@ -139,7 +139,7 @@ float4 DirectPS(v2f IN) : SV_TARGET
 
 float4 CloudBlendPS(v2f IN) : SV_TARGET
 {
-	float4 c=imageTexture.Sample(samplerState,IN.texCoords);
+	float4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
 	//if(c.a>=1.0)
 	//	discard;
     return float4(c.rgb*exposure,c.a);

@@ -238,25 +238,6 @@ bool SimulWeatherRenderer::CreateBuffers()
 	return (hr==S_OK);
 }
 
-bool SimulWeatherRenderer::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)
-{
-	PIXBeginNamedEvent(0xFF888888,"SimulWeatherRenderer::Render");
-	BaseWeatherRenderer::RenderSky(context,exposure,buffered,is_cubemap);
-	if(buffered&&!is_cubemap)
-	{
-#ifdef XBOX
-		m_pd3dDevice->Resolve(D3DRESOLVE_RENDERTARGET0, NULL, hdr_buffer_texture, NULL, 0, 0, NULL, 0.0f, 0, NULL);
-#endif
-		m_pBufferToScreenEffect->SetTechnique(SkyOverStarsTechnique);
-		// When we put the sky buffer to the screen we want to NOT change the destination alpha, because we may
-		// have this set aside for depth!
-		static int u=7;
-		m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,u);
-		m_pd3dDevice->SetRenderState(D3DRS_COLORWRITEENABLE,15);
-	}
-	return true;
-}
-
 void SimulWeatherRenderer::RenderSkyAsOverlay(void *context,
 												float exposure,
 												bool buffered,
