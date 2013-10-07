@@ -9,8 +9,6 @@
 #include "Simul/Clouds/BaseCloudRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
-#include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/CrossPlatform/simul_cloud_constants.sl"
 #include "Simul/Platform/OpenGL/GpuCloudGenerator.h"
 namespace simul
 {

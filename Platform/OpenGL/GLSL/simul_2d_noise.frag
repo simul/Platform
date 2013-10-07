@@ -1,14 +1,15 @@
 #version 140
 #include "CppGlsl.hs"
+#include "../../CrossPlatform/noise.sl"
 uniform sampler2D noise_texture;
-uniform float persistence;
-uniform int octaves;
-in vec2 texc;
+in vec2 texCoords;
 out vec4 gl_FragColor;
 
 void main(void)
 {
-	vec4 result=vec4(0,0,0,0);
+//	gl_FragColor=texture2D(noise_texture,texCoords);
+	gl_FragColor=Noise(noise_texture,texCoords,persistence,octaves);
+/*	vec4 result=vec4(0,0,0,0);
 	vec2 texcoords=texc;
 	float mul=.5;
 	float tot=0.0;
@@ -27,5 +28,5 @@ void main(void)
 	// Then rescale to go between 0 and 1.
 	result=hal+0.5*result;
     result=saturate(result);
-    gl_FragColor=result;
+    gl_FragColor=result;*/
 }

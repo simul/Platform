@@ -191,7 +191,7 @@ SamplerState crossSectionSamplerState
 
 vec4 PS_CrossSection(vec2 texCoords,float yz)
 {
-	vec3 texc=vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
+	vec3 texc=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
 	int i=0;
 	vec3 accum=vec3(0.f,0.5f,1.f);
 	texc.y+=0.5*(1.0-yz)/(float)CROSS_SECTION_STEPS;

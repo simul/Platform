@@ -10,6 +10,7 @@ SIMUL_CONSTANT_BUFFER(HdrConstants,9)
 	uniform float gamma;
 	uniform vec3 depthToLinFadeDistParams;
 	uniform float padHdrConstants;
+	uniform vec2 lowResTexelSize;
 SIMUL_CONSTANT_BUFFER_END
 
 

@@ -1149,8 +1149,6 @@ void SimulCloudRendererDX1x::EnsureTextureCycle()
 	int cyc=(cloudKeyframer->GetTextureCycle())%3;
 	while(texture_cycle!=cyc)
 	{
-		//std::swap(cloud_textures[0],cloud_textures[1]);
-		//std::swap(cloud_textures[1],cloud_textures[2]);
 		std::swap(seq_texture_iterator[0],seq_texture_iterator[1]);
 		std::swap(seq_texture_iterator[1],seq_texture_iterator[2]);
 		texture_cycle++;

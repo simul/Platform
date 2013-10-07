@@ -27,6 +27,7 @@
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
+#include "Simul/Platform/CrossPlatform/noise.sl"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/TextureGenerator.h"
@@ -190,9 +191,14 @@ GL_ERROR_CHECK
 	GL_ERROR_CHECK
 		glUseProgram(edge_noise_prog);
 	GL_ERROR_CHECK
-		setParameter(edge_noise_prog,"persistence",texture_persistence);
-		setParameter(edge_noise_prog,"octaves",texture_octaves);
+		simul::opengl::ConstantBuffer<RendernoiseConstants> rendernoiseConstants;
+		rendernoiseConstants.RestoreDeviceObjects();
+		rendernoiseConstants.LinkToProgram(edge_noise_prog,"RendernoiseConstants",0);
+		rendernoiseConstants.octaves		=texture_octaves;
+		rendernoiseConstants.persistence	=texture_persistence;
+		rendernoiseConstants.Apply();
 		DrawFullScreenQuad();
+		rendernoiseConstants.Release();
 	}
 GL_ERROR_CHECK	
 	//glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -243,10 +249,6 @@ void Inverse(const simul::math::Matrix4x4 &Mat,simul::math::Matrix4x4 &Inv)
 	Inv(3,1)=-((xe)*(*YY));
 	Inv(3,2)=-((xe)*(*ZZ));
 	Inv(3,3)=1.f;
-}
-static float saturate(float c)
-{
-	return std::max(std::min(1.f,c),0.f);
 }
 
 void SimulGLCloudRenderer::PreRenderUpdate(void *context)

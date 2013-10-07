@@ -125,16 +125,81 @@ vec4 CloudBlendPS(v2f IN) : SV_TARGET
 	float solid_dist	=depthToFadeDistance(solid.x,vec2(0,0),depthToLinFadeDistParams,vec2(1.0,1.0));
 	float cloud_dist	=depthToFadeDistance(cloud.x,vec2(0,0),depthToLinFadeDistParams,vec2(1.0,1.0));
 	// We only care about edges that are IN FRONT of the clouds. So solid
-	float u				=saturate(10000.0*(cloud_dist-solid_dist));
+	float u				=saturate(10000.0*(0.05+cloud_dist-solid_dist));
+	float edge			=saturate(1.0*(abs(lowres.y)+abs(lowres.z)))*u;
+//	if(edge>0.5)
+	{
+		float blend		=saturate((cloud_dist-solid_dist)*100000.0);
+		res				=lerp(res,vec4(0,0,0,1.0),blend);
+		res.g=blend;
+	}
+	//res.g=edge;
+    return res;
+}
+
+void UpdateNearestSample(	inout float MinDist,
+							inout vec2 NearestUV,
+							float Z,
+							vec2 UV,
+							float ZFull
+							)
+{
+	float Dist = abs(Z - ZFull);
+	if (Dist < MinDist)
+	{
+		MinDist = Dist;
+		NearestUV = UV;
+	}
+}
+
+bool IsSampleNearer(inout float MinDist,float Z,float ZFull)
+{
+	float Dist = abs(Z - ZFull);
+	return (Dist < MinDist);
+}
+
+vec4 NearestDepthCloudBlendPS(v2f IN) : SV_TARGET
+{
+	vec4 res			=texture_clamp_lod(imageTexture,IN.texCoords,0);
+	vec4 solid			=texture_nearest_lod(depthTexture,IN.texCoords,0);
+	vec4 lowres			=texture_nearest_lod(lowResDepthTexture,IN.texCoords,0);
+	vec4 cloud			=texture_nearest_lod(cloudDepthTexture,IN.texCoords,0);
+	float solid_dist	=depthToLinearDistance(solid.x,depthToLinFadeDistParams);
+	float cloud_dist	=depthToLinearDistance(cloud.x,depthToLinFadeDistParams);
+	float lowres_dist	=depthToLinearDistance(lowres.x,depthToLinFadeDistParams);
+	vec2 lowResTexCoords=IN.texCoords;//uint2(IN.texCoords/lowResTexelSize)*lowResTexelSize;
+	vec2 NearestUV		=lowResTexCoords;
+	float u				=saturate(10000.0*(0.05+cloud_dist-solid_dist));
 	float edge			=saturate(1.0*(abs(lowres.y)+abs(lowres.z)))*u;
 	if(edge>0.5)
 	{
-		float blend		=saturate((cloud_dist-solid_dist)*100.0);
-		res				=lerp(res,vec4(0,0,0,1.0),blend);
+		// GatherRed seems to not fit the bill. We will sample as follows:
+		// x = right, y = up, z = left, w = down
+		float4 nearDepths	;//=lowResDepthTexture.GatherRed(samplerStateNearest,lowResTexCoords);
+		vec2 texc_right		=vec2(lowResTexCoords.x+lowResTexelSize.x,lowResTexCoords.y);
+		vec2 texc_left		=vec2(lowResTexCoords.x-lowResTexelSize.x,lowResTexCoords.y);
+		vec2 texc_up		=vec2(lowResTexCoords.x,lowResTexCoords.y+lowResTexelSize.y);
+		vec2 texc_down		=vec2(lowResTexCoords.x,lowResTexCoords.y-lowResTexelSize.y);
+		nearDepths.x		=texture_nearest_lod(lowResDepthTexture,texc_right	,0).x;
+		nearDepths.y		=texture_nearest_lod(lowResDepthTexture,texc_up		,0).x;
+		nearDepths.z		=texture_nearest_lod(lowResDepthTexture,texc_left	,0).x;
+		nearDepths.w		=texture_nearest_lod(lowResDepthTexture,texc_down	,0).x;
+
+		vec4 near_dist		=depthToLinearDistance(nearDepths,depthToLinFadeDistParams);
+		// Whichever depth is nearest to the hi-res depth, use the colour from that one.
+		res.rgb=0;
+		float MinDist		=1.e8f;
+		UpdateNearestSample	(MinDist,NearestUV,lowres_dist,lowResTexCoords,solid_dist);
+		UpdateNearestSample	(MinDist,NearestUV,near_dist.x,texc_right	,solid_dist);
+		UpdateNearestSample	(MinDist,NearestUV,near_dist.y,texc_up		,solid_dist);
+		UpdateNearestSample	(MinDist,NearestUV,near_dist.z,texc_left	,solid_dist);
+		UpdateNearestSample	(MinDist,NearestUV,near_dist.w,texc_down	,solid_dist);
+		res=texture_nearest_lod(imageTexture,NearestUV,0);
 	}
-	res.g=edge;
+	res.rgb				*=exposure;
     return res;
 }
+
 
 vec4 GlowPS(v2f IN) : SV_TARGET
 {
@@ -200,8 +265,8 @@ technique11 simul_sky_blend
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(CloudBufferBlend,vec4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,CloudBlendPS()));
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,NearestDepthCloudBlendPS()));
     }
 }
 

@@ -29,7 +29,7 @@ void CS_DownscaleDepth(uint3 pos : SV_DispatchThreadID )
 				farthest_depth	=d;
 		}
 	}
-	target2DTexture[pos.xy]	=farthest_depth;
+	target2DTexture[pos.xy]	=sourceDepthTexture[pos2.xy].x;//farthest_depth;
 }
 float AdaptDepth(float depth)
 {
@@ -60,7 +60,7 @@ void CS_FilterLowresDepth(uint3 pos : SV_DispatchThreadID )
 		dy	+=abs(AdaptDepth(sourceDepthTexture[pos.xy+uint2(i,1)].x)-AdaptDepth(sourceDepthTexture[pos.xy+uint2(i,-1)].x));
 	}
 	blended_depth/=9.0;
-	target2DTexture[pos.xy]	=vec4(farthest_depth,dx,dy,0);
+	target2DTexture[pos.xy]	=vec4(sourceDepthTexture[pos.xy].x,dx,dy,0);
 }
 
 vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
