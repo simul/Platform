@@ -283,7 +283,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	}
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture1",(ID3D11UnorderedAccessView*)NULL);
 	densityTexture->SetResource(NULL);
-	// We have to do THIS, AFTER NULLing the textures. For god's sake.
+	// We have to do THIS, AFTER NULLing the textures to avoid DX11 warnings.
 	ApplyPass(m_pImmediateContext,secondaryLightingComputeTechnique->GetPassByIndex(0));
 
 	// copy to CPU memory if required by CloudKeyframer.

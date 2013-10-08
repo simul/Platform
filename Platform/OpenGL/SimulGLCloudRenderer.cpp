@@ -39,7 +39,6 @@
 using namespace simul;
 using namespace opengl;
 
-bool god_rays=false;
 using std::map;
 using namespace std;
 
@@ -330,8 +329,7 @@ GL_ERROR_CHECK
 	using namespace simul::clouds;
 	simul::math::Vector3 X1,X2;
 	GetCloudInterface()->GetExtents(X1,X2);
-	if(god_rays)
-		X1.z=2.f*X1.z-X2.z;
+
 	simul::math::Vector3 DX=X2-X1;
 	simul::math::Matrix4x4 modelview;
 	glGetMatrix(modelview.RowPointer(0),GL_MODELVIEW_MATRIX);
@@ -352,10 +350,7 @@ Raytrace=false;
 	else
 	{
 		glEnable(GL_BLEND);
-		if(god_rays)
-			glBlendFunc(GL_ONE,GL_SRC_ALPHA);
-		else
-			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	}
 	simul::sky::float4 gl_fog;
 	if(default_fog)
@@ -480,9 +475,9 @@ GL_ERROR_CHECK
 	float base_alt=GetCloudInterface()->GetCloudBaseZ();
 	if(cloudKeyframer->GetMeetHorizon())
 		effective_world_radius_metres	=helper->GetEffectiveEarthRadiusToMeetHorizon(base_alt,helper->GetMaxCloudDistance());
-	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),effective_world_radius_metres,god_rays,X1.z,god_rays);
+	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),effective_world_radius_metres,false,X1.z,false);
 
-helper->Update2DNoiseCoords();
+	helper->Update2DNoiseCoords();
 	SetCloudConstants(cloudConstants);
 	glBindBuffer(GL_UNIFORM_BUFFER,cloudConstantsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(CloudConstants),&cloudConstants);

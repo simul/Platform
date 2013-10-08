@@ -76,7 +76,9 @@ float4 PS_CloudBlend(vertexOutputPosTexc IN) : COLOR
 	vec4 c=tex2D(hdr_texture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
 	//if(c.a>=1.f)
 	//	discard;
-    return vec4(c.rgb*exposure,c.a);
+    vec4 result=vec4(c.rgb*exposure,c.a);
+	//result.a=1;
+	return result;
 }
 
 technique cloud_blend
