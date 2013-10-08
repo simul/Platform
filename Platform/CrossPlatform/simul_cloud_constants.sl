@@ -38,7 +38,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform vec3 depthToLinFadeDistParams;
 	uniform float exposure;
 	uniform vec2 tanHalfFov;
-	uniform float a,b;
+	uniform float CloudPerViewConstantsPad1,CloudPerViewConstantsPad2;
 	uniform float nearZ;
 	uniform float farZ;
 	uniform float extentZMetres;
@@ -46,6 +46,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform float shadowRange;
 	uniform int shadowTextureSize;
 	uniform float depthMix;
+	uniform float CloudPerViewConstantsPad3;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudConstants,9)
