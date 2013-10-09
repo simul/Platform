@@ -678,8 +678,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				//c.rgb					*=sh;
 				c.rgb					=applyFades2(c.rgb,fade_texc,BetaRayleigh,BetaMie,sh);
 				colour.rgb				+=c.rgb*c.a*(colour.a);
-				//meanFadeDistance		+=fadeDistance*c.a*colour.a;
-				meanFadeDistance		=min(meanFadeDistance,fadeDistance);
+				meanFadeDistance		+=fadeDistance*c.a*colour.a;
+				//meanFadeDistance		=min(meanFadeDistance,fadeDistance);
 				colour.a				*=(1.0-c.a);
 				if(colour.a*brightness_factor<0.003)
 				{
@@ -692,7 +692,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	}
 	if(colour.a>=1.0)
 	   discard;
-	//meanFadeDistance+=colour.a;
+	meanFadeDistance+=colour.a;
 	RaytracePixelOutput res;
     res.colour		=vec4(exposure*colour.rgb,colour.a);
 

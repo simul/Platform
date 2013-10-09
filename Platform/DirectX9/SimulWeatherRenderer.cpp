@@ -263,7 +263,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context,
 											);
 	if(buffered&&doFinalCloudBufferToScreenComposite)
 	{
-		bool blend=!is_cubemap;
+//		bool blend=!is_cubemap;
 		m_pBufferToScreenEffect->SetTexture(bufferTexture,(LPDIRECT3DBASETEXTURE9)framebuffer.GetColorTex());
 		m_pBufferToScreenEffect->SetTechnique(CloudBlendTechnique);
 		unsigned passes;
