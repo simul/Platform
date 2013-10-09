@@ -909,7 +909,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	HRESULT hr=S_OK;
 	//set up matrices
 	D3DXMATRIX wvp;
-	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,y_vertical);
+//	FixProjectionMatrix(proj,helper->GetMaxCloudDistance()*1.1f,y_vertical);
 	//view._41=view._42=view._43=0.f;
 	MakeWorldViewProjMatrix(&wvp,world,view,proj);
 
