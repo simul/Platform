@@ -309,7 +309,7 @@ void SimulCloudRenderer::RecompileShaders()
 	simul::base::Timer timer;
 	std::map<std::string,std::string> defines=MakeDefinesList(GetCloudInterface()->GetWrap(),y_vertical);
 	float defines_time=timer.UpdateTime()/1000.f;
-	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_and_lightning.fx",defines));
+	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds.fx",defines));
 	float clouds_effect=timer.UpdateTime()/1000.f;
 	
 	m_hTechniqueCloud					=GetDX9Technique(m_pCloudEffect,"simul_clouds");
@@ -357,6 +357,7 @@ void SimulCloudRenderer::RecompileShaders()
 	skyLossTexture				=m_pCloudEffect->GetParameterByName(NULL,"skyLossTexture");
 	skyInscatterTexture			=m_pCloudEffect->GetParameterByName(NULL,"skyInscatterTexture");
 	skylightTexture				=m_pCloudEffect->GetParameterByName(NULL,"skylightTexture");
+	illuminationTexture			=m_pCloudEffect->GetParameterByName(NULL,"illuminationTexture");
 	
 	invViewProj			=m_pCloudEffect->GetParameterByName(NULL,"invViewProj");
 	//noiseMatrix			=m_pCloudEffect->GetParameterByName(NULL,"noiseMatrix");
@@ -388,7 +389,6 @@ void SimulCloudRenderer::InvalidateDeviceObjects()
 	for(int i=0;i<3;i++)
 		SAFE_RELEASE(cloud_textures[i]);
 	noise_fb.InvalidateDeviceObjects();
-	SAFE_RELEASE(illumination_texture);
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	SAFE_RELEASE(unitSphereIndexBuffer);
 	delete vertices;
@@ -509,24 +509,6 @@ void SimulCloudRenderer::PreRenderUpdate(void *)
 }
 void SimulCloudRenderer::EnsureCorrectIlluminationTextureSizes()
 {
-	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetIlluminationTextureSizes();
-	int width_x=i.x;
-	int length_y=i.y;
-	int depth_z=i.z;
-	if(!width_x||!length_y||!depth_z)
-		return;
-	if(width_x==illum_tex_width_x&&length_y==illum_tex_length_y&&depth_z==illum_tex_depth_z)
-		return;
-	illum_tex_width_x	=width_x;
-	illum_tex_length_y	=length_y;
-	illum_tex_depth_z	=depth_z;
-	SAFE_RELEASE(illumination_texture);
-	VOID_RETURN(D3DXCreateVolumeTexture(m_pd3dDevice,width_x,length_y,depth_z,1,0,illumination_tex_format,default_d3d_pool,&illumination_texture));
-	D3DLOCKED_BOX lockedBox={0};
-	if(FAILED(illumination_texture->LockBox(0,&lockedBox,NULL,NULL)))
-		return;
-	memset(lockedBox.pBits,0,4*width_x*length_y*depth_z);
-	VOID_RETURN(illumination_texture->UnlockBox(0));
 }
 
 void SimulCloudRenderer::EnsureCorrectTextureSizes()
@@ -579,32 +561,6 @@ void SimulCloudRenderer::EnsureTexturesAreUpToDate(void* context)
 
 void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 {
-	for(int i=0;i<4;i++)
-	{
-		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialIlluminationTextureFill(seq_illum_texture_iterator[i]);
-		if(!texture_fill.num_texels)
-			return;
-		D3DLOCKED_BOX lockedBox={0};
-		HRESULT hr=illumination_texture->LockBox(0,&lockedBox,NULL,NULL);
-		if(FAILED(hr))
-			return;
-		unsigned *ptr=(unsigned *)(lockedBox.pBits);
-		ptr+=texture_fill.texel_index;
-		static unsigned offset[]={16,8,0,24};
-		const unsigned char *uchar8_array=(const unsigned char *)texture_fill.uint32_array;
-		for(int i=0;i<texture_fill.num_texels;i++)
-		{
-			unsigned ui=(unsigned)(*uchar8_array);
-			ui<<=offset[i];
-			unsigned msk=255<<offset[i];
-			msk=~msk;
-			(*ptr)&=msk;
-			(*ptr)|=ui;
-			uchar8_array++;
-			ptr++;
-		}
-		hr=illumination_texture->UnlockBox(0);
-	}
 }
 
 bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
@@ -637,19 +593,11 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,const 
 	m_pCloudEffect->SetTexture(cloudDensity2				,cloud_textures[1]);
 	m_pCloudEffect->SetTexture(noiseTexture					,(LPDIRECT3DTEXTURE9)noise_fb.GetColorTex());
 
-	if(enable_lightning)
-	{
-		EnsureCorrectIlluminationTextureSizes();
-		EnsureIlluminationTexturesAreUpToDate();
-		m_pCloudEffect->SetTexture(lightningIlluminationTexture	,illumination_texture);
-	}
-
-	{
-		m_pCloudEffect->SetTexture(skyLossTexture				,sky_loss_texture);
-		m_pCloudEffect->SetTexture(skyInscatterTexture			,sky_inscatter_texture);
-		m_pCloudEffect->SetTexture(skylightTexture				,skylight_texture);
-	}
-
+	m_pCloudEffect->SetTexture(skyLossTexture		,sky_loss_texture);
+	m_pCloudEffect->SetTexture(skyInscatterTexture	,sky_inscatter_texture);
+	m_pCloudEffect->SetTexture(skylightTexture		,skylight_texture);
+	m_pCloudEffect->SetTexture(illuminationTexture	,illumination_texture);
+	
 	// Mess with the proj matrix to extend the far clipping plane? not now
 	GetCameraPosVector(view,false,cam_pos);
 	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
@@ -1010,7 +958,7 @@ float SimulCloudRenderer::GetTiming() const
 
 void *SimulCloudRenderer::GetIlluminationTexture()
 {
-	return (void *)illumination_texture;
+	return (void *)NULL;
 }
 
 void SimulCloudRenderer::SaveCloudTexture(const char *filename)
@@ -1310,6 +1258,10 @@ void SimulCloudRenderer::SetInscatterTextures(void *i,void *s,void *o)
 {
 	sky_inscatter_texture=(LPDIRECT3DBASETEXTURE9)o;
 	skylight_texture=(LPDIRECT3DBASETEXTURE9)s;
+}
+void SimulCloudRenderer::SetIlluminationTexture(void *i)
+{
+	illumination_texture=(LPDIRECT3DBASETEXTURE9)i;
 }
 
 const char *SimulCloudRenderer::GetDebugText() const

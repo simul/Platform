@@ -120,6 +120,18 @@ sampler2D skylight_texture= sampler_state
 	AddressW = Clamp;
 	SRGBTexture = 0;
 };
+texture illuminationTexture;
+sampler2D illumination_texture= sampler_state
+{
+    Texture = <illuminationTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+	AddressU = Clamp;
+	AddressV = Mirror;
+	AddressW = Clamp;
+	SRGBTexture = 0;
+};
 
 texture raytraceLayerTexture;
 sampler1D raytrace_layer_texture= sampler_state 
@@ -211,9 +223,9 @@ vertexOutput VS_Main(vertexInput IN)
 	float sine				=view.z;
 	OUT.lightColour			=sunlightColour1;
 // Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
-	float depth				=length(OUT.wPosition.xyz)/maxFadeDistanceMetres;
+	float dist				=length(OUT.wPosition.xyz)/maxFadeDistanceMetres;
 	//OUT.fade_texc			=float2(,0.5f*(1.f-sine));
-	OUT.fade_texc			=float2(sqrt(depth),0.5f*(1.f-sine));
+	OUT.fade_texc			=float2(sqrt(dist),0.5f*(1.f-sine));
     return OUT;
 }
 
@@ -259,7 +271,6 @@ float4 PS_WithLightning(vertexOutput IN): color
 	float l=dot(lightningMultipliers.xyzw,lightning.xyzw);
 	float3 lightningC=l*lightningColour.xyz;
 	final.rgb+=lightningColour.w*lightningC;
-
 	float4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
 	float3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
 	float3 skyl=tex2D(skylight_texture,IN.fade_texc).rgb;
@@ -274,20 +285,22 @@ float4 PS_WithLightning(vertexOutput IN): color
 
 vec4 PS_Clouds(vertexOutput IN): color
 {
-	vec3 view=normalize(IN.wPosition);
-	float cos0=dot(lightDir.xyz,view.xyz);
+	vec3 view			=normalize(IN.wPosition);
+	float sine			=view.z;
+	float cos0			=dot(lightDir.xyz,view.xyz);
 // Fade mode 1 means using textures for distance fade.
-	vec4 final=CloudColour(IN,cos0);
-	float opacity=final.a;
-	vec4 insc=tex2D(sky_inscatter_texture,IN.fade_texc);
-	vec3 loss=tex2D(sky_loss_texture,IN.fade_texc).rgb;
-	vec3 skyl=tex2D(skylight_texture,IN.fade_texc).rgb;
-	vec3 inscatter=skyl+InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
-	final.rgb*=loss;
-	final.rgb+=inscatter;
-	
-	//final.r=saturate(IN.texCoords.z);
-	//opacity=.5;
+	vec4 final			=CloudColour(IN,cos0);
+	float opacity		=final.a;
+	vec2 fade_texc		=vec2(IN.fade_texc.x,0.5*(1.0-sine));
+	vec4 insc			=tex2D(sky_inscatter_texture,fade_texc);
+	vec3 loss			=tex2D(sky_loss_texture,fade_texc).rgb;
+	vec3 skyl			=tex2D(skylight_texture,fade_texc).rgb;
+	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
+	vec2 nearFarTexc	=texture_wrap_mirror(illumination_texture,illum_texc).xy;
+	float sh			=saturate((fade_texc.x-nearFarTexc.x)/0.1);
+	vec3 inscatter		=skyl+sh*InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
+	final.rgb			*=loss;
+	final.rgb			+=inscatter;
     return vec4(final.rgb,opacity);
 }
 

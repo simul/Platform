@@ -85,6 +85,7 @@ public:
 	simul::sky::float4 GetAmbient() const;
 	simul::sky::float4 GetLightColour() const;
 	void Get2DLossAndInscatterTextures(void **l1,void **i1,void **s1,void* *o);
+	void *GetIlluminationTexture();
 	void * GetDistanceTexture()
 	{
 		return (void *)max_distance_texture;

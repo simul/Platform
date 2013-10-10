@@ -280,6 +280,11 @@ void SimulSkyRenderer::Get2DLossAndInscatterTextures(void* *l,void* *i,void* *s,
 	*o=(void*)overcast_2d.GetColorTex();
 }
 
+void *SimulSkyRenderer::GetIlluminationTexture()
+{
+	return (void*)illumination_fb.GetColorTex();
+}
+
 float SimulSkyRenderer::GetFadeInterp() const
 {
 	return skyKeyframer->GetInterpolation();

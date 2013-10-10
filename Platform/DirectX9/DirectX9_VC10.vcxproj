@@ -251,7 +251,7 @@
     <None Include="HLSL\land.fx" />
     <None Include="HLSL\metal.fx" />
     <None Include="HLSL\simul_clouds_2d.fx" />
-    <None Include="HLSL\simul_clouds_and_lightning.fx" />
+    <None Include="HLSL\simul_clouds.fx" />
     <None Include="HLSL\simul_debug.fx" />
     <None Include="HLSL\simul_foliage.fx" />
     <None Include="HLSL\simul_gpulighting.fx" />

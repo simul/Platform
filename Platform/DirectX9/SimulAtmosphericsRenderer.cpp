@@ -340,7 +340,7 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_
 	simul::dx9::setTexture(effect,"inscTexture",overc_inscatter_texture);
 	simul::dx9::setTexture(effect,"skylTexture",skylight_texture);
 	
-	//simul::dx9::setTexture(effect,"illuminationTexture",illuminationTexture);
+	simul::dx9::setTexture(effect,"illuminationTexture",illumination_texture);
 	simul::dx9::setTexture(effect,"depthTexture",depthTexture);
 	//simul::dx9::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	

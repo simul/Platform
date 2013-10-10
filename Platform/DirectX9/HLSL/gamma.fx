@@ -77,7 +77,7 @@ float4 PS_CloudBlend(vertexOutputPosTexc IN) : COLOR
 	//if(c.a>=1.f)
 	//	discard;
     vec4 result=vec4(c.rgb*exposure,c.a);
-	//result.a=1;
+
 	return result;
 }
 

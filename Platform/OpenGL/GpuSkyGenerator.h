@@ -16,8 +16,9 @@ namespace simul
 			void RecompileShaders();
 			//! Return true if the derived class can make sky tables using the GPU.
 			bool CanPerformGPUGeneration() const;
-			void Make2DLossAndInscatterTextures(int cycled_index,simul::sky::AtmosphericScatteringInterface *skyInterface,int NumElevations,int NumDistances,
-				simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl
+			void Make2DLossAndInscatterTextures(int cycled_index
+				,simul::sky::AtmosphericScatteringInterface *skyInterface
+				,int NumElevations,int NumDistances
 				,const std::vector<float> &altitudes_km,float max_distance_km
 				,simul::sky::float4 sun_irradiance
 				,simul::sky::float4 starlight
@@ -30,14 +31,19 @@ namespace simul
 				,bool InfraRed
 				,float emissivity
 				,float seaLevelTemperatureK);
+			virtual void CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl);
 		protected:
 		// framebuffer to render out by distance.
 			FramebufferGL	fb[2];
 			GLuint			loss_program;
 			GLuint			insc_program;
 			GLuint			skyl_program;
-			GLuint gpuSkyConstantsUBO;
-			GLint gpuSkyConstantsBindingIndex;
+			GLuint			gpuSkyConstantsUBO;
+			GLint			gpuSkyConstantsBindingIndex;
+			simul::sky::float4			*loss_cache;
+			simul::sky::float4			*insc_cache;
+			simul::sky::float4			*skyl_cache;
+			int				cache_size;
 		};
 	}
 }

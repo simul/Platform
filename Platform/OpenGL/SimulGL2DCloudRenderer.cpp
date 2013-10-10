@@ -443,7 +443,7 @@ static float mult=1.f;
 void SimulGL2DCloudRenderer::SetLossTexture(void *l)
 {
 	if(l)
-	loss_tex=((GLuint)l);
+		loss_tex=((GLuint)l);
 }
 static GLint earthShadowUniformsBindingIndex=3;
 
@@ -456,7 +456,6 @@ void SimulGL2DCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
 void SimulGL2DCloudRenderer::RestoreDeviceObjects(void *context)
 {
 	CreateNoiseTexture(context);
-	
 GL_ERROR_CHECK
 	RecompileShaders();
 GL_ERROR_CHECK

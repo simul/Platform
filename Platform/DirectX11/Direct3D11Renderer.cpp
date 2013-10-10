@@ -35,7 +35,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,ShowLightVolume(false)
 		,CelestialDisplay(false)
 		,ShowWater(true)
-		,MakeCubemap(true)
+		,MakeCubemap(false)
 		,ReverseDepth(true)
 		,ShowOSD(false)
 		,Exposure(1.0f)

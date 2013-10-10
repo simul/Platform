@@ -90,6 +90,10 @@ public:
 		skylight_texture=(LPDIRECT3DBASETEXTURE9)s;
 		overc_inscatter_texture=(LPDIRECT3DBASETEXTURE9)o;
 	}
+	void SetIlluminationTexture(void *t)
+	{
+		illumination_texture=(LPDIRECT3DBASETEXTURE9)t;
+	}
 	void SetCloudsTexture(void* t)
 	{
 		clouds_texture=(LPDIRECT3DBASETEXTURE9)t;
@@ -156,6 +160,7 @@ protected:
 	LPDIRECT3DBASETEXTURE9			overc_inscatter_texture;
 	LPDIRECT3DBASETEXTURE9			skylight_texture;
 	LPDIRECT3DBASETEXTURE9			clouds_texture;
+	LPDIRECT3DBASETEXTURE9			illumination_texture;
 
 	LPDIRECT3DSURFACE9				m_pRenderTarget;
 	LPDIRECT3DSURFACE9				m_pBufferDepthSurface;

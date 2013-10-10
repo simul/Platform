@@ -74,6 +74,7 @@ public:
 	void *GetIlluminationTexture();
 	void SetLossTexture(void *t1);
 	void SetInscatterTextures(void *i,void *s,void *o);
+	void SetIlluminationTexture(void *i);
 	LPDIRECT3DTEXTURE9 GetNoiseTexture()
 	{
 		return (LPDIRECT3DTEXTURE9)noise_fb.GetColorTex();
@@ -167,6 +168,7 @@ protected:
 	D3DXHANDLE					skyLossTexture;
 	D3DXHANDLE					skyInscatterTexture;
 	D3DXHANDLE					skylightTexture;
+	D3DXHANDLE					illuminationTexture;
 	
 	D3DXHANDLE					invViewProj;
 	
@@ -176,12 +178,12 @@ protected:
 	D3DXHANDLE					raytraceLayerTexture;
 
 	LPDIRECT3DVOLUMETEXTURE9	cloud_textures[3];
-	LPDIRECT3DVOLUMETEXTURE9	illumination_texture;
 	simul::dx9::Framebuffer		noise_fb;
 	LPDIRECT3DTEXTURE9			raytrace_layer_texture;
 	LPDIRECT3DBASETEXTURE9		sky_loss_texture;
 	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture;
 	LPDIRECT3DBASETEXTURE9		skylight_texture;
+	LPDIRECT3DBASETEXTURE9		illumination_texture;
 	LPDIRECT3DCUBETEXTURE9		cloud_cubemap;
 	D3DXVECTOR4					lightning_colour;
 	D3DXMATRIX					world,view,proj;

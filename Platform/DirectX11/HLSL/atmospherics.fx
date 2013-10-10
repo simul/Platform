@@ -82,19 +82,19 @@ vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 	vec2 clip_pos		=vec2(-1.f,1.f);
 	clip_pos.x			+=2.0*IN.texCoords.x;
 	clip_pos.y			-=2.0*IN.texCoords.y;
-	vec3 insc=AtmosphericsInsc(depthTexture
-							,illuminationTexture
-							,inscTexture
-							,skylTexture
-							,invViewProj
-							,IN.texCoords
-							,clip_pos.xy
-							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
-							,tanHalfFov
-							,hazeEccentricity
-							,lightDir
-							,mieRayleighRatio);
+	vec3 insc			=AtmosphericsInsc(depthTexture
+										,illuminationTexture
+										,inscTexture
+										,skylTexture
+										,invViewProj
+										,IN.texCoords
+										,clip_pos.xy
+										,viewportToTexRegionScaleBias
+										,depthToLinFadeDistParams
+										,tanHalfFov
+										,hazeEccentricity
+										,lightDir
+										,mieRayleighRatio);
     return float4(insc.rgb*exposure,1.f);
 /*
 	vec4 res=InscatterMSAA(inscTexture

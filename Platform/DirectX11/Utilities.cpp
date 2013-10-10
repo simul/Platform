@@ -66,24 +66,32 @@ void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *p
 	
 	int expected_pitch=byteSize*width;
 	char *dest=(char*)target;
-	dest+=start_texel*byteSize;
 	if(mappedResource.RowPitch==expected_pitch)
 	{
 		source+=start_texel*byteSize;
+		dest+=start_texel*byteSize;
 		memcpy(dest,source,num_texels*byteSize);
 	}
 	else
 	{
+		//num_texels=start_texel+num_texels;
+		//start_texel=0;
+		dest+=start_texel*byteSize;
+
 		int row		=start_texel/width;
 		int last_row=(start_texel+num_texels)/width;
 		int col		=start_texel-row*width;
 		source		+=row*mappedResource.RowPitch;
-		dest		+=col*byteSize;
-		int columns	=min(num_texels,width-col);
-		memcpy(dest,source,columns*byteSize);
-		source		+=mappedResource.RowPitch;
-		dest		+=columns*byteSize;
-		for(int r=row+1;r<last_row;r++)
+		if(col>0)
+		{
+			source		+=col*byteSize;
+			int columns	=min(num_texels,width-col);
+			memcpy(dest,source,columns*byteSize);
+			source		+=mappedResource.RowPitch;
+			dest		+=columns*byteSize;
+			row++;
+		}
+		for(int r=row;r<last_row;r++)
 		{
 			memcpy(dest,source,width*byteSize);
 			source		+=mappedResource.RowPitch;

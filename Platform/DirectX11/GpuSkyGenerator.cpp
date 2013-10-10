@@ -84,9 +84,6 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				,simul::sky::AtmosphericScatteringInterface *skyInterface
 				,int numElevations
 				,int numDistances
-				,simul::sky::float4 *loss
-				,simul::sky::float4 *insc
-				,simul::sky::float4 *skyl
 				,const std::vector<float> &altitudes_km
 				,float max_distance_km
 				,simul::sky::float4 sun_irradiance
@@ -202,8 +199,6 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 		gpuSkyConstants.Apply(m_pImmediateContext);
 		V_CHECK(ApplyPass(m_pImmediateContext,lossComputeTechnique->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
-		if(loss)
-			finalLoss[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,loss,start_loss*numDistances,num_loss*numDistances);
 	}
 	int start_insc	=range(start_step-xy_size	,0,xy_size);
 	int end_insc	=range(end_step-xy_size		,0,xy_size);
@@ -219,10 +214,6 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 		gpuSkyConstants.Apply(m_pImmediateContext);
 		V_CHECK(ApplyPass(m_pImmediateContext,inscComputeTechnique->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
-		if(insc)
-		{
-			finalInsc[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,insc,start_insc*numDistances,num_insc*numDistances);	
-		}
 	}
 	SIMUL_PROFILE_END
 	SIMUL_PROFILE_START("GpuSkyGenerator 3")
@@ -238,8 +229,6 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 	if(subgrid>0)
 	{
 		m_pImmediateContext->Dispatch(subgrid,1,1);
-		if(skyl)
-			finalSkyl[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,skyl,start_skyl*numDistances,num_skyl*numDistances);
 	}
 	//light_table
 	{
@@ -267,4 +256,15 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
 	
 	SIMUL_PROFILE_END
+}
+
+void GpuSkyGenerator::CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl)
+{
+	int size=finalLoss[cycled_index]->depth*finalLoss[cycled_index]->width*finalLoss[cycled_index]->length;
+	if(loss)
+		finalLoss[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,loss,0,size);
+	if(insc)
+		finalInsc[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,insc,0,size);	
+	if(skyl)
+		finalSkyl[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,skyl,0,size);
 }

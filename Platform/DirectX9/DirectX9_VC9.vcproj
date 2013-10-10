@@ -407,6 +407,10 @@
 				RelativePath=".\SimulWeatherRenderer.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\Utilities.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -487,6 +491,10 @@
 			</File>
 			<File
 				RelativePath=".\SimulWeatherRenderer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Utilities.h"
 				>
 			</File>
 		</Filter>
