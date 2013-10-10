@@ -37,10 +37,9 @@ void TextureStruct::release()
 	SAFE_RELEASE(unorderedAccessView);
 	SAFE_RELEASE(renderTargetView);
 	SAFE_RELEASE(stagingBuffer);
-
 }
 
-void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *pContext,void *target,int start_texel,int texels)
+void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *pContext,void *target,int start_texel,int num_texels)
 {
 	int byteSize=simul::dx11::ByteSizeOfFormatElement(format);
 	if(!stagingBuffer)
@@ -63,46 +62,39 @@ void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *p
 	pContext->CopyResource(stagingBuffer,texture);
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	pContext->Map( stagingBuffer, 0, D3D11_MAP_READ, 0, &mappedResource);
-	unsigned char *src = (unsigned char *)(mappedResource.pData);
+	unsigned char *source = (unsigned char *)(mappedResource.pData);
 	
-	int required_pitch=width*byteSize;
-	char *dst=(char*)target;
-	if(mappedResource.RowPitch==required_pitch)
+	int expected_pitch=byteSize*width;
+	char *dest=(char*)target;
+	dest+=start_texel*byteSize;
+	if(mappedResource.RowPitch==expected_pitch)
 	{
-		src+=start_texel*byteSize;
-		memcpy(dst,src,texels*byteSize);
+		source+=start_texel*byteSize;
+		memcpy(dest,source,num_texels*byteSize);
 	}
 	else
 	{
-		int h0=start_texel/width;
-		int h1=(start_texel+texels)/width;
-		src+=mappedResource.RowPitch*h0;
-		for(int i=h0;i<h1;i++)
+		int row		=start_texel/width;
+		int last_row=(start_texel+num_texels)/width;
+		int col		=start_texel-row*width;
+		source		+=row*mappedResource.RowPitch;
+		dest		+=col*byteSize;
+		int columns	=min(num_texels,width-col);
+		memcpy(dest,source,columns*byteSize);
+		source		+=mappedResource.RowPitch;
+		dest		+=columns*byteSize;
+		for(int r=row+1;r<last_row;r++)
 		{
-			memcpy(dst,src,required_pitch);
-			dst+=required_pitch;
-			src+=mappedResource.RowPitch;
+			memcpy(dest,source,width*byteSize);
+			source		+=mappedResource.RowPitch;
+			dest		+=width*byteSize;
 		}
+		int end_columns=start_texel+num_texels-last_row*width;
+		if(end_columns>0)
+			memcpy(dest,source,end_columns*byteSize);
 	}
-	//src+=start_texel*byteSize;
-//	memcpy(target,src,texels*byteSize);
 	pContext->Unmap( stagingBuffer, 0);
 }
-/*
-void TextureStruct::setTexels(ID3D11DeviceContext *context,const float *float4_array,int texel_index,int num_texels)
-{
-	last_context=context;
-	if(!mapped.pData)
-		context->Map(texture,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
-	float *ptr=(float *)mapped.pData;
-	ptr+=texel_index*4;
-	memcpy(ptr,float4_array,num_texels*sizeof(float)*4);
-	if(texel_index+num_texels>=width*length)
-	{
-		last_context->Unmap(texture,0);
-		memset(&mapped,0,sizeof(mapped));
-	}
-}*/
 
 void TextureStruct::setTexels(ID3D11DeviceContext *context,const void *src,int texel_index,int num_texels)
 {

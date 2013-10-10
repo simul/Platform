@@ -160,9 +160,6 @@ void SimulWeatherRendererDX11::InvalidateDeviceObjects()
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
 	if(simulLightningRenderer)
 		simulLightningRenderer->InvalidateDeviceObjects();
-//	if(m_pTonemapEffect)
-//        hr=m_pTonemapEffect->OnLostDevice();
-// Free the cubemap resources. 
 }
 
 bool SimulWeatherRendererDX11::Destroy()
@@ -344,12 +341,20 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 	float max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	UtilityRenderer::SetScreenSize(width,height);
 	simul::dx11::setParameter(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
-	simul::dx11::setParameter(m_pTonemapEffect,"tanHalfFov"		,frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	simul::dx11::setParameter(m_pTonemapEffect,"nearZ"			,frustum.nearZ/max_fade_distance_metres);
-	simul::dx11::setParameter(m_pTonemapEffect,"farZ"			,frustum.farZ/max_fade_distance_metres);
-	simul::dx11::setParameter(m_pTonemapEffect,"depthToLinFadeDistParams", proj[14], max_fade_distance_metres, proj[10]*max_fade_distance_metres, 1.0f );
 	int x=8;
 	int y=height-w;
+
+	hdrConstants.tanHalfFov					=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	hdrConstants.nearZ						=frustum.nearZ/max_fade_distance_metres;
+	hdrConstants.farZ						=frustum.farZ/max_fade_distance_metres;
+	hdrConstants.depthToLinFadeDistParams	=vec3(proj[14], max_fade_distance_metres, proj[10]*max_fade_distance_metres);
+	hdrConstants.rect						=vec4((float)x/(float)width
+												,(float)y/(float)height
+												,(float)w/(float)width
+												,(float)w/(float)height);
+	hdrConstants.Apply(pContext);
+
+
 	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));
 }
 

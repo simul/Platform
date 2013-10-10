@@ -167,8 +167,6 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 		gpuSkyConstants.hazeEccentricity	=1.0;
 		gpuSkyConstants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
 		gpuSkyConstants.emissivity			=emissivity;
-		//float y_start=(float)start_texel/(float)new_density_gridsize;
-		//float y_range=(float)(texels)/(float)new_density_gridsize;
 		gpuSkyConstants.yRange				=vec2(0.f,1.f);
 
 	}
@@ -222,7 +220,9 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 		V_CHECK(ApplyPass(m_pImmediateContext,inscComputeTechnique->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 		if(insc)
-			finalInsc[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,insc,start_insc*numDistances,num_insc*numDistances);
+		{
+			finalInsc[cycled_index]->copyToMemory(m_pd3dDevice,m_pImmediateContext,insc,start_insc*numDistances,num_insc*numDistances);	
+		}
 	}
 	SIMUL_PROFILE_END
 	SIMUL_PROFILE_START("GpuSkyGenerator 3")

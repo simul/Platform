@@ -128,7 +128,6 @@ v2f2 SimpleVS(idOnly IN)
 	};
 	float2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
-	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
     OUT.texCoords	=pos;
     return OUT;
 }

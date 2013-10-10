@@ -61,8 +61,6 @@ SimulSkyRenderer::SimulSkyRenderer(simul::sky::SkyKeyframer *sk)
 	{
 		sunlight_textures[i]=NULL;
 	}
-	skyKeyframer->SetTime(0.5f);
-	SetCameraPosition(0,0,400.f);
 }
 
 void SimulSkyRenderer::SaveTextures(const char *base_filename)

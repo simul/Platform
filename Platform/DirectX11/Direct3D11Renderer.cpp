@@ -320,15 +320,16 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 
-		/*simul::dx11::UtilityRenderer::SetScreenSize(ScreenWidth,ScreenHeight);
-		UtilityRenderer::DrawTexture(pd3dImmediateContext,0							,0,lowResDepthTexture.width,lowResDepthTexture.length,lowResDepthTexture.shaderResourceView);
+		simul::dx11::UtilityRenderer::SetScreenSize(ScreenWidth,ScreenHeight);
+	/*	UtilityRenderer::DrawTexture(pd3dImmediateContext,0							,0,lowResDepthTexture.width,lowResDepthTexture.length,lowResDepthTexture.shaderResourceView);
 		UtilityRenderer::DrawTexture(pd3dImmediateContext,lowResDepthTexture.width	,0,lowResDepthTexture.width,lowResDepthTexture.length,(ID3D1xShaderResourceView*)resolvedDepth_fb.GetColorTex());
 		UtilityRenderer::DrawTexture(pd3dImmediateContext,2*lowResDepthTexture.width,0,lowResDepthTexture.width,lowResDepthTexture.length,(ID3D1xShaderResourceView*)hdrFramebuffer.GetDepthTex());
 		*/
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
+			simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,ScreenWidth,ScreenHeight);
-			//..simulWeatherRenderer->GetCloudRenderer()->RenderDistances(width,height);
+		
 			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 			simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 		}

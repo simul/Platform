@@ -634,7 +634,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	vec4 illum_lookup		=texture_wrap_mirror(illuminationTexture,illum_texc);
 	vec2 nearFarTexc		=illum_lookup.xy;
 
-	float meanFadeDistance	=1.0;
+	float meanFadeDistance	=0.0;
 	// Precalculate hg effects
 	float BetaClouds		=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	float BetaRayleigh		=0.0596831*(1.0+cos0*cos0);

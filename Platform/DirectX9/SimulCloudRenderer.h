@@ -80,13 +80,12 @@ public:
 	}
 	void RenderCrossSections(void *,int width,int height);
 	void RenderAuxiliaryTextures(void *context,int width,int height);
-	bool RenderDistances(int width,int height);
 	bool RenderLightVolume();
 	void EnableFilter(bool f);
 	bool IsYVertical() const{return y_vertical;}
 
 protected:
-	virtual void DrawLines(void*,VertexXyzRgba *,int ,bool ){}
+	void DrawLines(void*,VertexXyzRgba *,int num,bool strip);
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate(void*);

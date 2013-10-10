@@ -999,7 +999,7 @@ void SimulCloudRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 }
 #endif
 
-bool SimulCloudRenderer::MakeCubemap(void *context)
+bool SimulCloudRenderer::MakeCubemap(void *)
 {
 	return (false);
 }
@@ -1253,28 +1253,20 @@ bool SimulCloudRenderer::RenderLightVolume()
 	return (hr==S_OK);
 }
 
-bool SimulCloudRenderer::RenderDistances(int width,int height)
+void SimulCloudRenderer::DrawLines(void*,VertexXyzRgba *verts,int num,bool strip)
 {
 	HRESULT hr=S_OK;
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 
 	{
-		{ 0,  0, D3DDECLTYPE_FLOAT4	,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
-		{ 0, 16, D3DDECLTYPE_FLOAT4	,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
-		{ 0, 32, D3DDECLTYPE_FLOAT2	,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
+		{ 0,  0, D3DDECLTYPE_FLOAT3	,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
+		{ 0, 12, D3DDECLTYPE_FLOAT4	,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
 		D3DDECL_END()
 	};
 	if(!m_pHudVertexDecl)
 	{
-		B_RETURN(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl));
+		m_pd3dDevice->CreateVertexDeclaration(decl,&m_pHudVertexDecl);
 	}
-
-	struct Vertext
-	{
-		float x,y,z,h;
-		float r,g,b,a;
-		float tx,ty;
-	};
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
 	m_pd3dDevice->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
@@ -1306,36 +1298,9 @@ bool SimulCloudRenderer::RenderDistances(int width,int height)
 	m_pd3dDevice->SetRenderState(D3DRS_DESTBLEND,D3DBLEND_INVSRCALPHA);
 
 	m_pd3dDevice->SetTexture(0,NULL);
-	
-	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(0);
-	Vertext *lines=new Vertext[2*helper->GetSlices().size()];
-	int j=0;
-	float max_distance=helper->GetMaxCloudDistance();
-	for(simul::clouds::CloudGeometryHelper::SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,j++)
-	{
-		if(!(*i))
-			continue;
-		float d=(*i)->layerDistance/max_distance*width*.9f;
-		lines[j].x=width*0.05f+d; 
-		lines[j].y=0.9f*height;  
-		lines[j].z=0;
-		lines[j].r=1.f;
-		lines[j].g=1.f;
-		lines[j].b=0.f;
-		lines[j].a=(*i)->layerFade;
-		j++;
-		lines[j].x=width*0.05f+d; 
-		lines[j].y=0.95f*height; 
-		lines[j].z=0;
-		lines[j].r=1.f;
-		lines[j].g=1.f;
-		lines[j].b=0.f;
-		lines[j].a=(*i)->layerFade;
-	}
-	hr=m_pd3dDevice->DrawPrimitiveUP(D3DPT_LINELIST,(unsigned)helper->GetSlices().size(),lines,(unsigned)sizeof(Vertext));
-	delete [] lines;
-	return (hr==S_OK);
+	hr=m_pd3dDevice->DrawPrimitiveUP(strip?D3DPT_LINESTRIP:D3DPT_LINELIST,num/2,verts,(unsigned)sizeof(VertexXyzRgba));
 }
+
 void SimulCloudRenderer::SetLossTexture(void *t1)
 {
 	sky_loss_texture=(LPDIRECT3DBASETEXTURE9)t1;

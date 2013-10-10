@@ -129,6 +129,8 @@ void GpuCloudGenerator::FillDensityGrid(int index
 										,int texels
 										,const simul::clouds::MaskMap &masks)
 {
+	if(texels<=0)
+		return;
 	for(int i=0;i<3;i++)
 		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
 	int density_gridsize=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
@@ -205,6 +207,8 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 											,const float *lightspace_extinctions_float3
 											,bool wrap_light_tex)
 {
+	if(texels<=0)
+		return;
 	int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
 	start_texel*=2;
 	texels*=2;
@@ -303,7 +307,8 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index,unsigned char 
 												,int texels
 												,bool wrap_light_tex)
 {
-
+	if(texels<=0)
+		return;
 	int density_gridsize				=density_grid[0]*density_grid[1]*density_grid[2];
 
 	int z0								=start_texel/(density_grid[0]*density_grid[1]);

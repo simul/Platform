@@ -46,7 +46,7 @@ v2f MainVS(idOnly IN)
 v2f QuadVS(idOnly IN)
 {
     v2f OUT;
-	vec2 poss[4]=
+	float2 poss[4]=
 	{
 		{ 1.0, 0.0},
 		{ 1.0, 1.0},
@@ -54,10 +54,9 @@ v2f QuadVS(idOnly IN)
 		{ 0.0, 1.0},
 	};
 	float2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
-	OUT.hPosition.z	=0.0; 
-    OUT.texCoords	=pos;
-	OUT.texCoords.y	=1.0-OUT.texCoords.y;
+	OUT.hPosition	=vec4(pos,0.0,1.0);
+	OUT.hPosition	=float4(vec2(2.0*rect.x-1.0,1.0-2.0*(rect.y+rect.w))+2.0*rect.zw*pos,0.0,1.0);
+    OUT.texCoords	=vec2(pos.x,1.0-pos.y);
     return OUT;
 }
 
