@@ -22,9 +22,11 @@
 #pragma comment(lib,"glew32")
 #pragma comment(lib,"freeglut")
 
+#ifndef GLUT_BITMAP_HELVETICA_12
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
+#endif
 using namespace simul::opengl;
-OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m)
+OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,bool init_glut)
 	:ScreenWidth(0)
 	,ScreenHeight(0)
 	,cam(NULL)
@@ -48,6 +50,13 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 	simulTerrainRenderer=new SimulGLTerrainRenderer(NULL);
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
+	if(init_glut)
+	{
+		char argv[]="no program";
+		char *a=argv;
+		int argc=1;
+	    glutInit(&argc,&a);
+	}
 }
 
 OpenGLRenderer::~OpenGLRenderer()
