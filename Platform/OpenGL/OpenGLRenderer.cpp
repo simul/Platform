@@ -17,6 +17,11 @@
 #include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
+
+#pragma comment(lib,"opengl32")
+#pragma comment(lib,"glew32")
+#pragma comment(lib,"freeglut")
+
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 using namespace simul::opengl;
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m)
