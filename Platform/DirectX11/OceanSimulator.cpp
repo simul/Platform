@@ -453,7 +453,7 @@ void OceanSimulator::updateDisplacementMap(float time)
 
 	//ID3D11Buffer* cs_cbs[2] = {m_pImmutableCB, m_pPerFrameCB};
 	//m_pd3dImmediateContext->CSSetConstantBuffers(0, 2, cs_cbs);
-	simul::dx11::setConstantBuffer(effect,"cbImmutable"	,m_pImmutableCB);
+	simul::dx11::setConstantBuffer(effect,"cbImmutable"			,m_pImmutableCB);
 	simul::dx11::setConstantBuffer(effect,"cbChangePerFrame"	,m_pPerFrameCB);
 
 	// Run the CS
@@ -463,7 +463,9 @@ void OceanSimulator::updateDisplacementMap(float time)
 
 	simul::dx11::unbindTextures(effect);
 	simul::dx11::setUnorderedAccessView(effect,"g_OutputHt"	,NULL);
+
 	tech->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
+return;
 	// Perform Fast (inverse) Fourier Transform from the source Ht to the destination Dxyz.
 	// NOTE: we also provide the SRV of Dxyz so that FFT can use it as a temporary buffer and save space.
 	m_fft.fft_512x512_c2c(m_pUAV_Dxyz,m_pSRV_Dxyz,m_pSRV_Ht);
@@ -535,6 +537,11 @@ ID3D11ShaderResourceView* OceanSimulator::GetFftOutput()
 ID3D11ShaderResourceView* OceanSimulator::getDisplacementMap()
 {
 	return displacement.shaderResourceView;
+}
+
+ID3D11ShaderResourceView* OceanSimulator::GetSpectrum()
+{
+	return m_pSRV_Ht;
 }
 
 ID3D11ShaderResourceView* OceanSimulator::getGradientMap()

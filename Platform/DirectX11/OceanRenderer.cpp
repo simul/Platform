@@ -270,8 +270,12 @@ void OceanRenderer::RenderTextures(void *context,int width,int height)
 //	simul::dx11::setParameter(effect,"showTexture",g_pSRV_Fresnel);
 	//UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
 //	x+=w+2;
-	simul::dx11::setParameter(effect,"showTexture",oceanSimulator->GetFftOutput());
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	// structured buffer
+	simul::dx11::setParameter(effect,"g_InputDxyz",oceanSimulator->GetSpectrum());
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
+	x+=w+2;
+	simul::dx11::setParameter(effect,"g_InputDxyz",oceanSimulator->GetFftOutput());
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
 
 	
 	simul::dx11::unbindTextures(effect);

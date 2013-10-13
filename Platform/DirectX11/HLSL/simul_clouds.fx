@@ -107,7 +107,7 @@ RaytracePixelOutput PS_Raytrace(RaytraceVertexOutput IN)
 		}
 		if(density.z>0)
 		{
-			vec4 c	=calcColour(density,cos0,layerTexCoords.z,lightResponse,ambientColour);
+			vec4 c		=calcColour(density,cos0,layerTexCoords.z,lightResponse,ambientColour);
 			fade_texc.x	=sqrt(normLayerZ);
 			float sh	=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 			// overcast effect:

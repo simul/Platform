@@ -4,13 +4,6 @@
 #define PATCH_BLEND_BEGIN		800
 #define PATCH_BLEND_END			20000
 
-
-// Textures and sampling states
-Texture2D g_samplerDisplacementMap : register(t0);
-// The following three should contains only real numbers. But we have only C2C FFT now.
-StructuredBuffer<float2>	g_InputDxyz		: register(t0);
-SamplerState LinearSampler : register(s0);
-
 cbuffer cbChangePerFrame : register(b1)
 {
 	float g_Time;
@@ -78,18 +71,20 @@ cbuffer osd:register(b5)
 {
 	vec4 rect;
 };
-//-----------------------------------------------------------------------------------
-// Texture & Samplers
-//-----------------------------------------------------------------------------------
-Texture2D	showTexture				: register(t0);		// FFT wave displacement map in VS
-Texture2D	g_texDisplacement		: register(t0);		// FFT wave displacement map in VS
-Texture2D	g_texPerlin				: register(t1);		// FFT wave gradient map in PS
-Texture2D	g_texGradient			: register(t2);		// Perlin wave displacement & gradient map in both VS & PS
-Texture1D	g_texFresnel			: register(t3);		// Fresnel factor lookup table
-TextureCube	g_texReflectCube		: register(t4);		// A small skybox cube texture for reflection
 
-Texture2D	g_skyLossTexture		: register(t5);
-Texture2D	g_skyInscatterTexture	: register(t6);
+Texture2D g_samplerDisplacementMap		: register(t0);
+// The following three should contains only real numbers. But we have only C2C FFT now.
+StructuredBuffer<float2> g_InputDxyz	: register(t0);
+
+Texture2D	showTexture					: register(t0);		// FFT wave displacement map in VS
+Texture2D	g_texDisplacement			: register(t0);		// FFT wave displacement map in VS
+Texture2D	g_texPerlin					: register(t1);		// FFT wave gradient map in PS
+Texture2D	g_texGradient				: register(t2);		// Perlin wave displacement & gradient map in both VS & PS
+Texture1D	g_texFresnel				: register(t3);		// Fresnel factor lookup table
+TextureCube	g_texReflectCube			: register(t4);		// A small skybox cube texture for reflection
+
+Texture2D	g_skyLossTexture			: register(t5);
+Texture2D	g_skyInscatterTexture		: register(t6);
 #define PI 3.1415926536f
 #define BLOCK_SIZE_X 16
 #define BLOCK_SIZE_Y 16
@@ -111,7 +106,8 @@ RWStructuredBuffer<float2>	g_OutputHt		: register(u0);
 [numthreads(BLOCK_SIZE_X, BLOCK_SIZE_Y, 1)]
 void UpdateSpectrumCS(uint3 DTid : SV_DispatchThreadID)
 {
-	int in_index = DTid.y * g_InWidth + DTid.x;
+	g_OutputHt[DTid.x]=vec2(1.0,.5);
+/*	int in_index = DTid.y * g_InWidth + DTid.x;
 	int in_mindex = (g_ActualDim - DTid.y) * g_InWidth + (g_ActualDim - DTid.x);
 	int out_index = DTid.y * g_OutWidth + DTid.x;
 
@@ -143,7 +139,7 @@ void UpdateSpectrumCS(uint3 DTid : SV_DispatchThreadID)
         g_OutputHt[out_index] = ht;
 		g_OutputHt[out_index + g_DxAddressOffset] = dt_x;
 		g_OutputHt[out_index + g_DyAddressOffset] = dt_y;
-	}
+	}*/
 }
 
 // Post-FFT data wrap up: Dx, Dy, Dz -> Displacement
@@ -446,6 +442,13 @@ vec4 PS_ShowTexture( posTexVertexOutput IN):SV_TARGET
 	return vec4(lookup.rgb,1.0);
 }
 
+vec4 PS_ShowStructuredBuffer( posTexVertexOutput IN):SV_TARGET
+{
+    vec2 lookup=1000.0*g_InputDxyz[0];//IN.texCoords.x*512+IN.texCoords.y*512*512];
+	return vec4(lookup.rg,0.0,1.0);
+}
+
+
 
 technique11 ocean
 {
@@ -470,6 +473,18 @@ technique11 show_texture
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowTexture()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));
+    }
+}
+technique11 show_structured_buffer
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowTexture()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowStructuredBuffer()));
     }
 }
 

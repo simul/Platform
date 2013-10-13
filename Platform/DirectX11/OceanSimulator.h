@@ -28,6 +28,7 @@ public:
 	// Texture access
 	ID3D11ShaderResourceView* GetFftOutput();
 	ID3D11ShaderResourceView* getDisplacementMap();
+	ID3D11ShaderResourceView* GetSpectrum();
 	ID3D11ShaderResourceView* getGradientMap();
 
 	const simul::terrain::OceanParameter *getParameters();
@@ -68,6 +69,10 @@ protected:
 	ID3D11Buffer* m_pBuffer_Float2_Ht;
 	ID3D11UnorderedAccessView* m_pUAV_Ht;
 	ID3D11ShaderResourceView* m_pSRV_Ht;
+	
+	StructuredBuffer<vec2>						sphericalHarmonics;
+	sphericalHarmonics.RestoreDeviceObjects(pd3dDevice,s*s);
+	sphericalHarmonics.release();
 
 	// Height & choppy buffer in the space domain, corresponding to H(t), Dx(t) and Dy(t)
 	ID3D11Buffer* m_pBuffer_Float_Dxyz;
