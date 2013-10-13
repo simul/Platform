@@ -4,8 +4,12 @@
 
 #include <assert.h>
 #include "OceanSimulator.h"
-#include "CompileShaderDX1x.h"
 #include "Utilities.h"
+#include "CompileShaderDX1x.h"
+
+using namespace simul;
+using namespace dx11;
+
 #define SAFE_DELETE_ARRAY(c) delete [] c;c=NULL;
 
 // Disable warning "conditional expression is constant"
@@ -156,19 +160,6 @@ OceanSimulator::OceanSimulator(simul::terrain::OceanParameter *params)
 	,m_pSRV_Ht(NULL)
 	,m_pSRV_Dxyz(NULL)
 
-	,m_pDisplacementMap(NULL)
-	,m_pDisplacementSRV(NULL)
-	,m_pDisplacementRTV(NULL)
-
-	,m_pGradientMap(NULL)
-	,m_pGradientSRV(NULL)
-	,m_pGradientRTV(NULL)
-
-	,m_pUpdateSpectrumCS(NULL)
-	,m_pQuadVS(NULL)
-	,m_pUpdateDisplacementPS(NULL)
-	,m_pGenGradientFoldingPS(NULL)
-
 	,m_pQuadLayout(NULL)
 
 	,m_pImmutableCB(NULL)
@@ -204,18 +195,8 @@ void OceanSimulator::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pSRV_Ht);
 	SAFE_RELEASE(m_pSRV_Dxyz);
 
-	SAFE_RELEASE(m_pDisplacementMap);
-	SAFE_RELEASE(m_pDisplacementSRV);
-	SAFE_RELEASE(m_pDisplacementRTV);
-
-	SAFE_RELEASE(m_pGradientMap);
-	SAFE_RELEASE(m_pGradientSRV);
-	SAFE_RELEASE(m_pGradientRTV);
-
-	SAFE_RELEASE(m_pUpdateSpectrumCS);
-	SAFE_RELEASE(m_pQuadVS);
-	SAFE_RELEASE(m_pUpdateDisplacementPS);
-	SAFE_RELEASE(m_pGenGradientFoldingPS);
+	displacement.release();
+	gradient.release();
 
 	SAFE_RELEASE(m_pQuadLayout);
 
@@ -231,6 +212,7 @@ void OceanSimulator::InvalidateDeviceObjects()
 
 void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 {
+	m_pd3dDevice=pd3dDevice;
 	// If the device becomes invalid at some point, delete current instance and generate a new one.
 	assert(pd3dDevice);
 	pd3dDevice->GetImmediateContext(&m_pd3dImmediateContext);
@@ -278,8 +260,8 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	// Have now created: H0, Ht, Omega, Dxyz - as both UAV's and SRV's.
 
 	// D3D11 Textures - these ar the outputs of the ocean simulator.
-	createTextureAndViews(pd3dDevice, hmap_dim, hmap_dim, DXGI_FORMAT_R32G32B32A32_FLOAT, &m_pDisplacementMap, &m_pDisplacementSRV, &m_pDisplacementRTV);
-	createTextureAndViews(pd3dDevice, hmap_dim, hmap_dim, DXGI_FORMAT_R16G16B16A16_FLOAT, &m_pGradientMap, &m_pGradientSRV, &m_pGradientRTV);
+	displacement.ensureTexture2DSizeAndFormat(pd3dDevice,hmap_dim,hmap_dim,DXGI_FORMAT_R32G32B32A32_FLOAT,false,true);
+	gradient.ensureTexture2DSizeAndFormat(pd3dDevice,hmap_dim,hmap_dim,DXGI_FORMAT_R16G16B16A16_FLOAT,false,true);
 
 	// Sampler state for no filtering:
 	D3D11_SAMPLER_DESC sam_desc;
@@ -299,42 +281,7 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	pd3dDevice->CreateSamplerState(&sam_desc, &m_pPointSamplerState);
 	assert(m_pPointSamplerState);
 
-	effect=LoadEffect(pd3dDevice,"ocean.fx");
-	// Create the compute shader: UpdateSpectrumCS
-    ID3DBlob* pBlobUpdateSpectrumCS = NULL;
-    try
-    {
-		CompileShaderFromFile("ocean_simulator_cs.hlsl", "UpdateSpectrumCS", "cs_4_0", &pBlobUpdateSpectrumCS);
-	}
-	catch(...)
-	{
-		throw;
-	}
-    pd3dDevice->CreateComputeShader(pBlobUpdateSpectrumCS->GetBufferPointer(),pBlobUpdateSpectrumCS->GetBufferSize(),NULL,&m_pUpdateSpectrumCS);  
-    SAFE_RELEASE(pBlobUpdateSpectrumCS);
-
-	// Create the vertex shader:
-    ID3DBlob* pBlobQuadVS = NULL;
-    CompileShaderFromFile("ocean_simulator_vs_ps.hlsl", "QuadVS", "vs_4_0", &pBlobQuadVS);
-    pd3dDevice->CreateVertexShader(pBlobQuadVS->GetBufferPointer(), pBlobQuadVS->GetBufferSize(), NULL, &m_pQuadVS);
-	// Create the vertex shader's input layout:
-	D3D11_INPUT_ELEMENT_DESC quad_layout_desc[] =
-	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-	};
-	pd3dDevice->CreateInputLayout(quad_layout_desc, 1, pBlobQuadVS->GetBufferPointer(), pBlobQuadVS->GetBufferSize(), &m_pQuadLayout);
-	SAFE_RELEASE(pBlobQuadVS);
-	
-	// Create the pixel shaders:
-    ID3DBlob* pBlobUpdateDisplacementPS = NULL;
-	CompileShaderFromFile("ocean_simulator_vs_ps.hlsl", "UpdateDisplacementPS", "ps_4_0", &pBlobUpdateDisplacementPS);
-    pd3dDevice->CreatePixelShader(pBlobUpdateDisplacementPS->GetBufferPointer(), pBlobUpdateDisplacementPS->GetBufferSize(), NULL, &m_pUpdateDisplacementPS);
-	SAFE_RELEASE(pBlobUpdateDisplacementPS);
-
-	ID3DBlob* pBlobGenGradientFoldingPS = NULL;
-    CompileShaderFromFile("ocean_simulator_vs_ps.hlsl", "GenGradientFoldingPS", "ps_4_0", &pBlobGenGradientFoldingPS);
-    pd3dDevice->CreatePixelShader(pBlobGenGradientFoldingPS->GetBufferPointer(), pBlobGenGradientFoldingPS->GetBufferSize(), NULL, &m_pGenGradientFoldingPS);
-	SAFE_RELEASE(pBlobGenGradientFoldingPS);
+	RecompileShaders();
 
 	// Create YET ANOTHER fullscreen quad vertex buffer - because DirectX can't just do this in a single line of code!
 	D3D11_BUFFER_DESC vb_desc;
@@ -420,6 +367,12 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 #endif
 }
 
+void OceanSimulator::RecompileShaders()
+{
+	effect=LoadEffect(m_pd3dDevice,"ocean.fx");
+	m_fft.RecompileShaders();
+}
+
 OceanSimulator::~OceanSimulator()
 {
 	InvalidateDeviceObjects();
@@ -477,16 +430,12 @@ void OceanSimulator::updateDisplacementMap(float time)
 {
 	// ---------------------------- H(0) -> H(t), D(x, t), D(y, t) --------------------------------
 	// Compute shader
-	//m_pd3dImmediateContext->CSSetShader(m_pUpdateSpectrumCS, NULL, 0);
 	ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName("update_spectrum");
+	tech->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
 	// Buffers
-	//ID3D11ShaderResourceView* cs0_srvs[2] = {m_pSRV_H0, m_pSRV_Omega};
-	//m_pd3dImmediateContext->CSSetShaderResources(0, 2, cs0_srvs);
 	simul::dx11::setParameter(effect,"g_InputH0"	,m_pSRV_H0);
 	simul::dx11::setParameter(effect,"g_InputOmega"	,m_pSRV_Omega);
 
-	//ID3D11UnorderedAccessView* cs0_uavs[1] = {m_pUAV_Ht};
-	//m_pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1, cs0_uavs, (UINT*)(&cs0_uavs[0]));
 	simul::dx11::setUnorderedAccessView(effect,"g_OutputHt"	,m_pUAV_Ht);
 
 	// Consts
@@ -504,8 +453,8 @@ void OceanSimulator::updateDisplacementMap(float time)
 
 	//ID3D11Buffer* cs_cbs[2] = {m_pImmutableCB, m_pPerFrameCB};
 	//m_pd3dImmediateContext->CSSetConstantBuffers(0, 2, cs_cbs);
-	simul::dx11::setConstantBuffer(effect,"cbComputeImmutable"	,m_pImmutableCB);
-	simul::dx11::setConstantBuffer(effect,"cbComputePerFrame"	,m_pPerFrameCB);
+	simul::dx11::setConstantBuffer(effect,"cbImmutable"	,m_pImmutableCB);
+	simul::dx11::setConstantBuffer(effect,"cbChangePerFrame"	,m_pPerFrameCB);
 
 	// Run the CS
 	UINT group_count_x = (m_param->dmap_dim + BLOCK_SIZE_X - 1) / BLOCK_SIZE_X;
@@ -513,17 +462,11 @@ void OceanSimulator::updateDisplacementMap(float time)
 	m_pd3dImmediateContext->Dispatch(group_count_x, group_count_y, 1);
 
 	simul::dx11::unbindTextures(effect);
-	// Unbind resources for CS
-	/*cs0_uavs[0] = NULL;
-	m_pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1, cs0_uavs, (UINT*)(&cs0_uavs[0]));
-	cs0_srvs[0] = NULL;
-	cs0_srvs[1] = NULL;
-	m_pd3dImmediateContext->CSSetShaderResources(0, 2, cs0_srvs);
-	*/
+	simul::dx11::setUnorderedAccessView(effect,"g_OutputHt"	,NULL);
+	tech->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
 	// Perform Fast (inverse) Fourier Transform from the source Ht to the destination Dxyz.
 	// NOTE: we also provide the SRV of Dxyz so that FFT can use it as a temporary buffer and save space.
 	m_fft.fft_512x512_c2c(m_pUAV_Dxyz,m_pSRV_Dxyz,m_pSRV_Ht);
-
 	// Now we will use the transformed Dxyz to create our displacement map
 	// --------------------------------- Wrap Dx, Dy and Dz ---------------------------------------
 	// Save the current RenderTarget and viewport:
@@ -539,61 +482,40 @@ void OceanSimulator::updateDisplacementMap(float time)
 	m_pd3dImmediateContext->RSSetViewports(1, &new_vp);
 
 	// Set the RenderTarget as the displacement map:
-	ID3D11RenderTargetView* rt_views[1] = {m_pDisplacementRTV};
-	m_pd3dImmediateContext->OMSetRenderTargets(1, rt_views, NULL);
+	m_pd3dImmediateContext->OMSetRenderTargets(1, &displacement.renderTargetView, NULL);
 
 	// Assign the shaders:
-	m_pd3dImmediateContext->VSSetShader(m_pQuadVS, NULL, 0);
-	m_pd3dImmediateContext->PSSetShader(m_pUpdateDisplacementPS, NULL, 0);
+	effect->GetTechniqueByName("update_displacement")->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
 
 	// Assign the constant-buffers to the pixel shader:
-	ID3D11Buffer* ps_cbs[2] = {m_pImmutableCB, m_pPerFrameCB};
-	m_pd3dImmediateContext->PSSetConstantBuffers(0, 2, ps_cbs);
-
+	simul::dx11::setConstantBuffer(effect,"cbImmutable"	,m_pImmutableCB);
+	simul::dx11::setConstantBuffer(effect,"cbChangePerFrame"	,m_pPerFrameCB);
 	// Assign the Dxyz source as a resource for the pixel shader:
-	ID3D11ShaderResourceView* ps_srvs[1] = {m_pSRV_Dxyz};
-    m_pd3dImmediateContext->PSSetShaderResources(0, 1, ps_srvs);
+	simul::dx11::setParameter(effect,"g_InputDxyz"	,m_pSRV_Dxyz);
 
-	// Setup the input layout - all this just to draw a quad:
-	ID3D11Buffer* vbs[1] = {m_pQuadVB};
-	UINT strides[1] = {sizeof(D3DXVECTOR4)};
-	UINT offsets[1] = {0};
-	m_pd3dImmediateContext->IASetVertexBuffers(0, 1, &vbs[0], &strides[0], &offsets[0]);
-	m_pd3dImmediateContext->IASetInputLayout(m_pQuadLayout);
-	m_pd3dImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-	// Perform draw call
-	m_pd3dImmediateContext->Draw(4, 0);
+	UtilityRenderer::DrawQuad(m_pd3dImmediateContext);
 
 	// Unbind the shader resource (i.e. the input texture map). Must do this or we get a DX warning when we
 	// try to write to the texture again:
-	ps_srvs[0] = NULL;
-    m_pd3dImmediateContext->PSSetShaderResources(0, 1, ps_srvs);
-
+	simul::dx11::unbindTextures(effect);
+	effect->GetTechniqueByName("update_displacement")->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
 
 	// Now generate the gradient map.
 	// Set the gradient texture as the RenderTarget:
-	rt_views[0] = m_pGradientRTV;
-	m_pd3dImmediateContext->OMSetRenderTargets(1, rt_views, NULL);
+	m_pd3dImmediateContext->OMSetRenderTargets(1, &gradient.renderTargetView, NULL);
 
 	// VS & PS
-	m_pd3dImmediateContext->VSSetShader(m_pQuadVS, NULL, 0);
-	m_pd3dImmediateContext->PSSetShader(m_pGenGradientFoldingPS, NULL, 0);
+	effect->GetTechniqueByName("gradient_folding")->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
 
 	// Use the Displacement map as the texture input:
-	ps_srvs[0] = m_pDisplacementSRV;
-    m_pd3dImmediateContext->PSSetShaderResources(0, 1, ps_srvs);
-
-	// Set the sampler state for point (i.e. unfiltered) rendering - don't want smoothing for this operation:
-	ID3D11SamplerState* samplers[1] = {m_pPointSamplerState};
-	m_pd3dImmediateContext->PSSetSamplers(0, 1, &samplers[0]);
+	simul::dx11::setParameter(effect,"g_samplerDisplacementMap"	,displacement.shaderResourceView);
 
 	// Perform draw call
-	m_pd3dImmediateContext->Draw(4, 0);
+	UtilityRenderer::DrawQuad(m_pd3dImmediateContext);
 
 	// Unbind the shader resource (the texture):
-	ps_srvs[0] = NULL;
-    m_pd3dImmediateContext->PSSetShaderResources(0, 1, ps_srvs);
+	simul::dx11::unbindTextures(effect);
+	effect->GetTechniqueByName("gradient_folding")->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
 
 	// Reset the renderTarget to what it was before:
 	m_pd3dImmediateContext->RSSetViewports(1, &old_viewport);
@@ -602,17 +524,22 @@ void OceanSimulator::updateDisplacementMap(float time)
 	SAFE_RELEASE(old_depth);
 
 	// Make mipmaps for the gradient texture, apparently this is a quick operation:
-	m_pd3dImmediateContext->GenerateMips(m_pGradientSRV);
+	m_pd3dImmediateContext->GenerateMips(gradient.shaderResourceView);
+}
+
+ID3D11ShaderResourceView* OceanSimulator::GetFftOutput()
+{
+	return m_pSRV_Dxyz;
 }
 
 ID3D11ShaderResourceView* OceanSimulator::getDisplacementMap()
 {
-	return m_pDisplacementSRV;
+	return displacement.shaderResourceView;
 }
 
 ID3D11ShaderResourceView* OceanSimulator::getGradientMap()
 {
-	return m_pGradientSRV;
+	return gradient.shaderResourceView;
 }
 
 const simul::terrain::OceanParameter *OceanSimulator::getParameters()

@@ -16,7 +16,7 @@
 #define TWIDDLE_1_8 COS_PI_4_16, -COS_PI_4_16
 #define TWIDDLE_3_8 -COS_PI_4_16, -COS_PI_4_16
 
-#define COHERENCY_GRANULARITY 128
+#define COHERENCY_GRANULARITY 1 //28
 
 cbuffer cbChangePerCall
 {
@@ -113,6 +113,7 @@ RWStructuredBuffer<float2>	g_DstData : register(u0);
 [numthreads(COHERENCY_GRANULARITY, 1, 1)]
 void Radix008A_CS(uint3 thread_id : SV_DispatchThreadID)
 {
+	g_DstData[0]=float2(2.0,1.0);
     if (thread_id.x >= thread_count)
         return;
 
@@ -148,11 +149,13 @@ void Radix008A_CS(uint3 thread_id : SV_DispatchThreadID)
 [numthreads(COHERENCY_GRANULARITY, 1, 1)]
 void Radix008A_CS2(uint3 thread_id : SV_DispatchThreadID)
 {
+	uint i;
+	for (i = 0; i < 8; i++)
+		g_DstData[i]=float2(2.0,1.0);
 	if(thread_id.x >= thread_count)
 		return;
 
 	// Fetch 8 complex numbers
-	uint i;
 	float2 D[8];
 	uint iaddr = thread_id << 3;
 	for (i = 0; i < 8; i++)

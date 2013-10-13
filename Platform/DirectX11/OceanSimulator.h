@@ -7,6 +7,7 @@
 
 #include "Simul/Terrain/BaseSeaRenderer.h"
 #include "CSFFT/fft_512x512.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 
 //#define CS_DEBUG_BUFFER
 #define PAD16(n) (((n)+15)/16*16)
@@ -18,12 +19,14 @@ public:
 	~OceanSimulator();
 
 	void RestoreDeviceObjects(ID3D11Device* pd3dDevice);
+	void RecompileShaders();
 	void InvalidateDeviceObjects();
 	// -------------------------- Initialization & simulation routines ------------------------
 	// Update ocean wave when tick arrives.
 	void updateDisplacementMap(float time);
 
 	// Texture access
+	ID3D11ShaderResourceView* GetFftOutput();
 	ID3D11ShaderResourceView* getDisplacementMap();
 	ID3D11ShaderResourceView* getGradientMap();
 
@@ -39,14 +42,10 @@ protected:
 	ID3DX11Effect				*effect;
 	
 	// Displacement map
-	ID3D11Texture2D				*m_pDisplacementMap;		// (RGBA32F)
-	ID3D11ShaderResourceView	*m_pDisplacementSRV;
-	ID3D11RenderTargetView		*m_pDisplacementRTV;
+	simul::dx11::TextureStruct displacement;
 
 	// Gradient field
-	ID3D11Texture2D				*m_pGradientMap;			// (RGBA16F)
-	ID3D11ShaderResourceView	*m_pGradientSRV;
-	ID3D11RenderTargetView		*m_pGradientRTV;
+	simul::dx11::TextureStruct gradient;
 
 	// Samplers
 	ID3D11SamplerState			*m_pPointSamplerState;
@@ -77,13 +76,6 @@ protected:
 
 	ID3D11Buffer* m_pQuadVB;
 
-	// Shaders, layouts and constants
-	ID3D11ComputeShader* m_pUpdateSpectrumCS;
-
-	ID3D11VertexShader* m_pQuadVS;
-	ID3D11PixelShader* m_pUpdateDisplacementPS;
-	ID3D11PixelShader* m_pGenGradientFoldingPS;
-
 	ID3D11InputLayout* m_pQuadLayout;
 
 	ID3D11Buffer* m_pImmutableCB;
@@ -95,6 +87,8 @@ protected:
 #ifdef CS_DEBUG_BUFFER
 	ID3D11Buffer* m_pDebugBuffer;
 #endif
+
+	ID3D11Device* m_pd3dDevice;
 };
 
 #endif	// _OCEAN_WAVE_H

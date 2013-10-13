@@ -31,12 +31,13 @@ namespace simul
 			void SetCubemapTexture(void *c);
 			void SetLossTexture(void *t1);
 			void SetInscatterTextures(void *t1,void *s);
+			void RenderTextures(void *context,int width,int depth);
 		protected:
 			OceanSimulator						*oceanSimulator;
 			D3DXMATRIX view,proj;
-			ID3D11Device*						m_pd3dDevice;
+			ID3D11Device						*m_pd3dDevice;
 			// HLSL shaders
-			ID3DX11Effect*						effect;
+			ID3DX11Effect						*effect;
 			// State blocks
 			ID3D11Buffer* g_pPerCallCB;
 			ID3D11Buffer* g_pPerFrameCB;
@@ -61,14 +62,6 @@ namespace simul
 			ID3D1xShaderResourceView* skyInscatterTexture_SRV;
 			ID3D1xShaderResourceView* skylightTexture_SRV;
 	
-
-			// Samplers
-			//ID3D11SamplerState* g_pHeightSampler;
-			//ID3D11SamplerState* g_pGradientSampler;
-			//ID3D11SamplerState* g_pFresnelSampler;
-			//ID3D11SamplerState* g_pPerlinSampler;
-			//ID3D11SamplerState* g_pCubeSampler;
-			//ID3D11SamplerState* g_pAtmosphericsSampler;
 			// create a triangle strip mesh for ocean surface.
 			void createSurfaceMesh();
 			// create color/fresnel lookup table.

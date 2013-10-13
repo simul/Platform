@@ -297,6 +297,8 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 			}
 		}
+		if(oceanRenderer)
+			oceanRenderer->RenderTextures(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 	}
 	Profiler::GetGlobalProfiler().EndFrame(pd3dImmediateContext);
 }

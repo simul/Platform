@@ -139,25 +139,19 @@ RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 
 struct vertexInputCS
 {
-    vec4 position			: POSITION;
-    vec2 texCoords		: TEXCOORD0;
-};
-
-struct vertexOutputCS
-{
-    vec4 hPosition		: SV_POSITION;
+    vec4 position		: POSITION;
     vec2 texCoords		: TEXCOORD0;
 };
 
 // Given texture position from texCoords, convert to a worldpos with shadowMatrix.
 // Then, trace towards sun to find initial intersection with cloud volume
 // Then trace down to find first intersection with clouds, if any.
-vec4 PS_CloudShadow( vertexOutputCS IN):SV_TARGET
+vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 {
 	return CloudShadow(cloudDensity1,cloudDensity2,IN.texCoords,shadowMatrix,cornerPos,inverseScales);
 }
 
-vec4 PS_ShadowNearFar( vertexOutputCS IN):SV_TARGET
+vec4 PS_ShadowNearFar( posTexVertexOutput IN):SV_TARGET
 {
 	return CloudShadowNearFar(cloudShadowTexture,shadowTextureSize,IN.texCoords);
 }
@@ -292,9 +286,9 @@ vec4 PS_WithLightning(toPS IN): SV_TARGET
 	uniform vec4 rect;
 //};
 
-vertexOutputCS VS_FullScreen(idOnly IN)
+posTexVertexOutput VS_FullScreen(idOnly IN)
 {
-	vertexOutputCS OUT;
+	posTexVertexOutput OUT;
 	vec2 poss[4]=
 	{
 		{ 1.0,-1.0},
@@ -315,41 +309,23 @@ vertexOutputCS VS_FullScreen(idOnly IN)
 	return OUT;
 }
 
-vertexOutputCS VS_CrossSection(idOnly IN)
+posTexVertexOutput VS_CrossSection(idOnly id)
 {
-    vertexOutputCS OUT;
-	vec2 poss[4]=
-	{
-		{ 1.0, 0.0},
-		{ 1.0, 1.0},
-		{ 0.0, 0.0},
-		{ 0.0, 1.0},
-	};
-	vec2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
-	//OUT.hPosition	=vec4(pos,0.0,1.0);
-	// Set to far plane so can use depth test as we want this geometry effectively at infinity
-#ifdef REVERSE_DEPTH
-	OUT.hPosition.z	=0.0; 
-#else
-	OUT.hPosition.z	=OUT.hPosition.w; 
-#endif
-    OUT.texCoords	=pos;
-    return OUT;
+    return VS_ScreenQuad(id,rect);
 }
 
-vec4 PS_Simple( vertexOutputCS IN):SV_TARGET
+vec4 PS_Simple( posTexVertexOutput IN):SV_TARGET
 {
     return noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
 }
 
-vec4 PS_ShowNoise( vertexOutputCS IN):SV_TARGET
+vec4 PS_ShowNoise( posTexVertexOutput IN):SV_TARGET
 {
     vec4 lookup=noiseTexture.Sample(wrapSamplerState,IN.texCoords.xy);
 	return vec4(0.5*(lookup.rgb+1.0),1.0);
 }
 
-vec4 PS_ShowShadow( vertexOutputCS IN):SV_TARGET
+vec4 PS_ShowShadow( posTexVertexOutput IN):SV_TARGET
 {
 	return ShowCloudShadow(cloudShadowTexture,nearFarTexture,IN.texCoords);
 }
@@ -387,12 +363,12 @@ vec4 PS_CrossSection(vec2 texCoords,float yz)
     return vec4(accum,1);
 }
 
-vec4 PS_CrossSectionXZ( vertexOutputCS IN):SV_TARGET
+vec4 PS_CrossSectionXZ( posTexVertexOutput IN):SV_TARGET
 {
     return PS_CrossSection(IN.texCoords,0.f);
 }
 
-vec4 PS_CrossSectionXY( vertexOutputCS IN): SV_TARGET
+vec4 PS_CrossSectionXY( posTexVertexOutput IN): SV_TARGET
 {
     return PS_CrossSection(IN.texCoords,1.f);
 }

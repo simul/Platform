@@ -4,6 +4,31 @@
 #define PATCH_BLEND_BEGIN		800
 #define PATCH_BLEND_END			20000
 
+
+// Textures and sampling states
+Texture2D g_samplerDisplacementMap : register(t0);
+// The following three should contains only real numbers. But we have only C2C FFT now.
+StructuredBuffer<float2>	g_InputDxyz		: register(t0);
+SamplerState LinearSampler : register(s0);
+
+cbuffer cbChangePerFrame : register(b1)
+{
+	float g_Time;
+	float g_ChoppyScale;
+	float g_GridLen;
+};
+
+// Constants
+cbuffer cbImmutable : register(b0)
+{
+	uint g_ActualDim;
+	uint g_InWidth;
+	uint g_OutWidth;
+	uint g_OutHeight;
+	uint g_DxAddressOffset;
+	uint g_DyAddressOffset;
+};
+
 // Shading parameters
 cbuffer cbShading : register(b2)
 {
@@ -49,10 +74,14 @@ cbuffer cbChangePerCall : register(b4)
 	float4		mieRayleighRatio;
 }
 
-
+cbuffer osd:register(b5)
+{
+	vec4 rect;
+};
 //-----------------------------------------------------------------------------------
 // Texture & Samplers
 //-----------------------------------------------------------------------------------
+Texture2D	showTexture				: register(t0);		// FFT wave displacement map in VS
 Texture2D	g_texDisplacement		: register(t0);		// FFT wave displacement map in VS
 Texture2D	g_texPerlin				: register(t1);		// FFT wave gradient map in PS
 Texture2D	g_texGradient			: register(t2);		// Perlin wave displacement & gradient map in both VS & PS
@@ -64,23 +93,6 @@ Texture2D	g_skyInscatterTexture	: register(t6);
 #define PI 3.1415926536f
 #define BLOCK_SIZE_X 16
 #define BLOCK_SIZE_Y 16
-
-cbuffer cbComputeImmutable : register(b0)
-{
-	uint g_ActualDim;
-	uint g_InWidth;
-	uint g_OutWidth;
-	uint g_OutHeight;
-	uint g_DtxAddressOffset;
-	uint g_DtyAddressOffset;
-};
-
-cbuffer cbComputePerFrame : register(b1)
-{
-	float g_Time;
-	float g_ChoppyScale;
-};
-
 StructuredBuffer<float2>	g_InputH0		: register(t0);
 StructuredBuffer<float>		g_InputOmega	: register(t1);
 RWStructuredBuffer<float2>	g_OutputHt		: register(u0);
@@ -129,11 +141,58 @@ void UpdateSpectrumCS(uint3 DTid : SV_DispatchThreadID)
     if ((DTid.x < g_OutWidth) && (DTid.y < g_OutHeight))
 	{
         g_OutputHt[out_index] = ht;
-		g_OutputHt[out_index + g_DtxAddressOffset] = dt_x;
-		g_OutputHt[out_index + g_DtyAddressOffset] = dt_y;
+		g_OutputHt[out_index + g_DxAddressOffset] = dt_x;
+		g_OutputHt[out_index + g_DyAddressOffset] = dt_y;
 	}
 }
 
+// Post-FFT data wrap up: Dx, Dy, Dz -> Displacement
+float4 UpdateDisplacementPS(posTexVertexOutput In) : SV_Target
+{
+	uint index_x = (uint)(In.texCoords.x * (float)g_OutWidth);
+	uint index_y = (uint)(In.texCoords.y * (float)g_OutHeight);
+	uint addr = g_OutWidth * index_y + index_x;
+
+	// cos(pi * (m1 + m2))
+	int sign_correction = ((index_x + index_y) & 1) ? -1 : 1;
+
+	float dx = g_InputDxyz[addr + g_DxAddressOffset].x * sign_correction * g_ChoppyScale;
+	float dy = g_InputDxyz[addr + g_DyAddressOffset].x * sign_correction * g_ChoppyScale;
+	float dz = g_InputDxyz[addr].x * sign_correction;
+
+	return float4(dx, dy, dz, 1);
+}
+
+// Displacement -> Normal, Folding
+float4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
+{
+	// Sample neighbour texels
+	float2 one_texel = float2(1.0f / (float)g_OutWidth, 1.0f / (float)g_OutHeight);
+
+	float2 tc_left  = float2(In.texCoords.x - one_texel.x, In.texCoords.y);
+	float2 tc_right = float2(In.texCoords.x + one_texel.x, In.texCoords.y);
+	float2 tc_back  = float2(In.texCoords.x, In.texCoords.y - one_texel.y);
+	float2 tc_front = float2(In.texCoords.x, In.texCoords.y + one_texel.y);
+
+	float3 displace_left  = g_samplerDisplacementMap.Sample(samplerStateNearest, tc_left).xyz;
+	float3 displace_right = g_samplerDisplacementMap.Sample(samplerStateNearest, tc_right).xyz;
+	float3 displace_back  = g_samplerDisplacementMap.Sample(samplerStateNearest, tc_back).xyz;
+	float3 displace_front = g_samplerDisplacementMap.Sample(samplerStateNearest, tc_front).xyz;
+	
+	// Do not store the actual normal value. Using gradient instead, which preserves two differential values.
+	float2 gradient = {-(displace_right.z - displace_left.z), -(displace_front.z - displace_back.z)};
+
+	// Calculate Jacobian correlation from the partial differential of height field
+	float2 Dx = (displace_right.xy - displace_left.xy) * g_ChoppyScale * g_GridLen;
+	float2 Dy = (displace_front.xy - displace_back.xy) * g_ChoppyScale * g_GridLen;
+	float J = (1.0f + Dx.x) * (1.0f + Dy.y) - Dx.y * Dy.x;
+
+	// Practical subsurface scale calculation: max[0, (1 - J) + Amplitude * (2 * Coverage - 1)].
+	float fold = max(1.0f - J, 0);
+
+	// Output
+	return float4(gradient, 0, fold);
+}
 // FFT wave displacement map in VS, XY for choppy field, Z for height field
 SamplerState g_samplerDisplacement	: register(s0)
 {
@@ -227,7 +286,7 @@ SamplerState g_samplerAtmospherics	: register(s5)
 struct VS_OUTPUT
 {
     float4 Position		: SV_POSITION;
-    float2 TexCoord		: TEXCOORD0;
+    float2 texCoords		: TEXCOORD0;
     float3 LocalPos		: TEXCOORD1;
     float2 fade_texc	: TEXCOORD2;
 };
@@ -267,14 +326,14 @@ VS_OUTPUT OceanSurfVS(float2 vPos : POSITION)
 		displacement = g_texDisplacement.SampleLevel(g_samplerDisplacement, uv_local, 0).xyz;
 	displacement = lerp(float3(0, 0, perlin), displacement, blend_factor);
 	pos_local.xyz += displacement;
-pos_local.z+=500.f*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_PerlinMovement/4.f, 0).w;
+//pos_local.z+=500.f*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_PerlinMovement/4.f, 0).w;
 	// Transform
 	Output.Position = mul(pos_local, g_matWorldViewProj);
    // Output.Position = mul( g_matWorldViewProj,pos_local);
 	Output.LocalPos = pos_local.xyz;
 	
 	// Pass thru texture coordinate
-	Output.TexCoord = uv_local;
+	Output.texCoords = uv_local;
 
 	float3 wPosition;
 	wPosition= mul(pos_local, g_matWorld).xyz;
@@ -309,11 +368,6 @@ float3 InscatterFunction(float4 inscatter_factor,float cos0)
 	return colour;
 }
 
-//-----------------------------------------------------------------------------
-// Name: OceanSurfPS
-// Type: Pixel shader                                      
-// Desc: Ocean shading pixel shader. Check SDK document for more details
-//-----------------------------------------------------------------------------
 float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 {
 	// Calculate eye vector.
@@ -326,7 +380,7 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 	blend_factor = clamp(blend_factor * blend_factor * blend_factor, 0, 1);
 
 	// Compose perlin waves from three octaves
-	float2 perlin_tc = In.TexCoord * g_PerlinSize + g_UVBase;
+	float2 perlin_tc = In.texCoords * g_PerlinSize + g_UVBase;
 	float2 perlin_tc0 = (blend_factor < 1) ? perlin_tc * g_PerlinOctave.x + g_PerlinMovement : 0;
 	float2 perlin_tc1 = (blend_factor < 1) ? perlin_tc * g_PerlinOctave.y + g_PerlinMovement : 0;
 	float2 perlin_tc2 = (blend_factor < 1) ? perlin_tc * g_PerlinOctave.z + g_PerlinMovement : 0;
@@ -339,7 +393,7 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 
 	// --------------- Water body color
 	// Texcoord mash optimization: Texcoord of FFT wave is not required when blend_factor > 1
-	float2 fft_tc = (blend_factor > 0) ? In.TexCoord : 0;
+	float2 fft_tc = (blend_factor > 0) ? In.texCoords : 0;
 
 	float2 grad = g_texGradient.Sample(g_samplerGradient, fft_tc).xy;
 	grad = lerp(perlin, grad, blend_factor);
@@ -376,17 +430,23 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 	return float4(water_color, 1);
 }
 
-//-----------------------------------------------------------------------------
-// Name: WireframePS
-// Type: Pixel shader                                      
-// Desc:
-//-----------------------------------------------------------------------------
 float4 WireframePS() : SV_Target
 {
 	return float4(0.9f, 0.9f, 0.9f, 1);
 }
 
-#ifdef FX
+posTexVertexOutput VS_ShowTexture(idOnly id)
+{
+    return VS_ScreenQuad(id,rect);
+}
+
+vec4 PS_ShowTexture( posTexVertexOutput IN):SV_TARGET
+{
+    vec4 lookup=showTexture.Sample(wrapSamplerState,IN.texCoords.xy);
+	return vec4(lookup.rgb,1.0);
+}
+
+
 technique11 ocean
 {
     pass p0 
@@ -399,6 +459,20 @@ technique11 ocean
 		SetPixelShader(CompileShader(ps_4_0,OceanSurfPS()));
 	}
 }
+
+technique11 show_texture
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowTexture()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));
+    }
+}
+
 technique11 wireframe
 {
     pass p0 
@@ -420,4 +494,32 @@ technique11 update_spectrum
 	}
 }
 
-#endif
+
+technique11 update_displacement
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,UpdateDisplacementPS()));
+    }
+}
+
+technique11 gradient_folding
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,GenGradientFoldingPS()));
+    }
+}
+
+
+	

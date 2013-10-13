@@ -6,6 +6,7 @@
 #include <D3DX11tex.h>
 #include "CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 #pragma warning(disable:4995)
 #include <vector>
 #include <string>
@@ -142,8 +143,6 @@ void OceanRenderer::RecompileShaders()
 	{
 		{"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
-
-	
 	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("ocean");
 	if(tech)
 	{
@@ -151,6 +150,8 @@ void OceanRenderer::RecompileShaders()
 		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
 		m_pd3dDevice->CreateInputLayout(mesh_layout_desc,1, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &g_pMeshLayout);
 	}
+	if(oceanSimulator)
+		oceanSimulator->RecompileShaders();
 }
 
 void OceanRenderer::RestoreDeviceObjects(ID3D11Device* dev)
@@ -243,6 +244,38 @@ void OceanRenderer::SetInscatterTextures(void *t,void *s)
 {
 	skyInscatterTexture_SRV=((ID3D1xShaderResourceView*)t);
 	skylightTexture_SRV=((ID3D1xShaderResourceView*)s);
+}
+
+void OceanRenderer::RenderTextures(void *context,int width,int height)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+
+	HRESULT hr=S_OK;
+	static int u=5;
+	int w=(width-8)/u;
+	if(w>height/3)
+		w=height/3;
+	UtilityRenderer::SetScreenSize(width,height);
+	int x=8;
+	int y=height-w;
+	simul::dx11::setParameter(effect,"showTexture",oceanSimulator->getDisplacementMap());
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	x+=w+2;
+	simul::dx11::setParameter(effect,"showTexture",oceanSimulator->getGradientMap());
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	x+=w+2;
+	simul::dx11::setParameter(effect,"showTexture",g_pSRV_Perlin);
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	x+=w+2;
+//	simul::dx11::setParameter(effect,"showTexture",g_pSRV_Fresnel);
+	//UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+//	x+=w+2;
+	simul::dx11::setParameter(effect,"showTexture",oceanSimulator->GetFftOutput());
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+
+	
+	simul::dx11::unbindTextures(effect);
+	effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->Apply(0,pContext);
 }
 
 void OceanRenderer::InvalidateDeviceObjects()

@@ -32,6 +32,7 @@
 HRESULT CompileShaderFromFile( const char* szFileName, const char* szEntryPoint, const char* szShaderModel, ID3DBlob** ppBlobOut );
 
 FFT_512x512::FFT_512x512()
+	:m_pd3dDevice(NULL)
 {
 }
 FFT_512x512::~FFT_512x512()
@@ -41,23 +42,12 @@ FFT_512x512::~FFT_512x512()
 
 void FFT_512x512::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
 {
+	m_pd3dDevice=pd3dDevice;
 	slices = s;
 
 	// Context
 	pd3dDevice->GetImmediateContext(&pd3dImmediateContext);
-
-	// Compute shaders
-    ID3DBlob* pBlobCS = NULL;
-    ID3DBlob* pBlobCS2 = NULL;
-
-    CompileShaderFromFile("fft_512x512_c2c.hlsl", "Radix008A_CS", "cs_4_0", &pBlobCS);
-    CompileShaderFromFile("fft_512x512_c2c.hlsl", "Radix008A_CS2", "cs_4_0", &pBlobCS2);
-
-    pd3dDevice->CreateComputeShader(pBlobCS->GetBufferPointer(), pBlobCS->GetBufferSize(), NULL, &pRadix008A_CS);
-    pd3dDevice->CreateComputeShader(pBlobCS2->GetBufferPointer(), pBlobCS2->GetBufferSize(), NULL, &pRadix008A_CS2);
-    
-    SAFE_RELEASE(pBlobCS);
-    SAFE_RELEASE(pBlobCS2);
+	RecompileShaders();
 
 	// Constants
 	// Create 6 cbuffers for 512x512 transform
@@ -93,6 +83,24 @@ void FFT_512x512::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
 	srv_desc.Buffer.NumElements = (512 * slices) * 512;
 
 	pd3dDevice->CreateShaderResourceView(pBuffer_Tmp, &srv_desc, &pSRV_Tmp);
+}
+
+void FFT_512x512::RecompileShaders()
+{
+	if(!m_pd3dDevice)
+		return;
+	// Compute shaders
+    ID3DBlob* pBlobCS = NULL;
+    ID3DBlob* pBlobCS2 = NULL;
+
+    CompileShaderFromFile("fft_512x512_c2c.hlsl", "Radix008A_CS", "cs_4_0", &pBlobCS);
+    CompileShaderFromFile("fft_512x512_c2c.hlsl", "Radix008A_CS2", "cs_4_0", &pBlobCS2);
+
+    m_pd3dDevice->CreateComputeShader(pBlobCS->GetBufferPointer(), pBlobCS->GetBufferSize(), NULL, &pRadix008A_CS);
+    m_pd3dDevice->CreateComputeShader(pBlobCS2->GetBufferPointer(), pBlobCS2->GetBufferSize(), NULL, &pRadix008A_CS2);
+    
+    SAFE_RELEASE(pBlobCS);
+    SAFE_RELEASE(pBlobCS2);
 }
 
 void FFT_512x512::InvalidateDeviceObjects()

@@ -439,7 +439,7 @@ void simul::dx11::unbindTextures(ID3DX11Effect *effect)
 		ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByIndex(i)->AsShaderResource();
 		if(var->IsValid())
 			var->SetResource(NULL);
-	ID3DX11EffectUnorderedAccessViewVariable*	uav	=effect->GetVariableByIndex(i)->AsUnorderedAccessView();
+		ID3DX11EffectUnorderedAccessViewVariable*	uav	=effect->GetVariableByIndex(i)->AsUnorderedAccessView();
 		if(var->IsValid())
 			var->SetResource(NULL);
 	}

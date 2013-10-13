@@ -30,6 +30,7 @@ struct FFT_512x512
 	~FFT_512x512();
 	void RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT slices);
 	void InvalidateDeviceObjects();
+	void RecompileShaders();
 	void CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices);
 	void fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
 							ID3D11ShaderResourceView* pSRV_Dst,
@@ -39,6 +40,7 @@ struct FFT_512x512
 				   UINT thread_count,
 				   UINT istride);
 protected:
+	ID3D11Device* m_pd3dDevice;
 	// D3D11 objects
 	ID3D11DeviceContext* pd3dImmediateContext;
 	ID3D11ComputeShader* pRadix008A_CS;
