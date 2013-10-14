@@ -3,6 +3,14 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
 
+#if _MSC_VER==1700
+#pragma message("_MSC_VER=1700")
+#elif _MSC_VER==1600
+#pragma message("_MSC_VER=1600")
+#else
+#pragma message("_MSC_VER other")
+#endif
+
 #define D3D10_SHADER_ENABLE_STRICTNESS              (1 << 11)
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
