@@ -139,75 +139,26 @@ void createTextureAndViews(ID3D11Device* pd3dDevice, UINT width, UINT height, DX
 	}
 }
 
-OceanSimulator::OceanSimulator(simul::terrain::OceanParameter *params)
-	:m_param(params)
-	,m_pBuffer_Float2_H0(NULL)
-	,m_pBuffer_Float_Omega(NULL)
-	,m_pBuffer_Float2_Ht(NULL)
-	,m_pBuffer_Float_Dxyz(NULL)
-
-	,m_pPointSamplerState(NULL)
-
-	,m_pQuadVB(NULL)
-
-	,m_pUAV_H0(NULL)
-	,m_pUAV_Omega(NULL)
-	,m_pUAV_Ht(NULL)
-	,m_pUAV_Dxyz(NULL)
-
-	,m_pSRV_H0(NULL)
-	,m_pSRV_Omega(NULL)
-	,m_pSRV_Ht(NULL)
-	,m_pSRV_Dxyz(NULL)
-
-	,m_pQuadLayout(NULL)
-
-	,m_pImmutableCB(NULL)
-	,m_pPerFrameCB(NULL)
-
+OceanSimulator::OceanSimulator(simul::terrain::SeaKeyframer *s)
+	:m_param(s)
 	,m_pd3dImmediateContext(NULL)
 	,effect(NULL)
-
-#ifdef CS_DEBUG_BUFFER
-	,m_pDebugBuffer(NULL)
-#endif
 {
 }
 
 void OceanSimulator::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(m_pBuffer_Float2_H0);
-	SAFE_RELEASE(m_pBuffer_Float_Omega);
-	SAFE_RELEASE(m_pBuffer_Float2_Ht);
-	SAFE_RELEASE(m_pBuffer_Float_Dxyz);
+	immutableConstants		.InvalidateDeviceObjects();
+	changePerFrameConstants	.InvalidateDeviceObjects();
 
-	SAFE_RELEASE(m_pPointSamplerState);
-
-	SAFE_RELEASE(m_pQuadVB);
-
-	SAFE_RELEASE(m_pUAV_H0);
-	SAFE_RELEASE(m_pUAV_Omega);
-	SAFE_RELEASE(m_pUAV_Ht);
-	SAFE_RELEASE(m_pUAV_Dxyz);
-
-	SAFE_RELEASE(m_pSRV_H0);
-	SAFE_RELEASE(m_pSRV_Omega);
-	SAFE_RELEASE(m_pSRV_Ht);
-	SAFE_RELEASE(m_pSRV_Dxyz);
-
+	choppy		.release();
+	omega		.release();
 	displacement.release();
-	gradient.release();
-
-	SAFE_RELEASE(m_pQuadLayout);
-
-	SAFE_RELEASE(m_pImmutableCB);
-	SAFE_RELEASE(m_pPerFrameCB);
+	gradient	.release();
+	dxyz		.release();
+	h0			.release();
 
 	SAFE_RELEASE(m_pd3dImmediateContext);
-
-#ifdef CS_DEBUG_BUFFER
-	SAFE_RELEASE(m_pDebugBuffer);
-#endif
 }
 
 void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
@@ -231,27 +182,35 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	int output_size = hmap_dim * hmap_dim;
 
 	// For filling the buffer with zeroes.
-	char* zero_data = new char[3 * output_size * sizeof(float) * 2];
-	memset(zero_data, 0, 3 * output_size * sizeof(float) * 2);
+	float* zero_data = new float[3 * output_size * 2];
+	for(int i=0;i<3 * output_size * 2;i++)
+		zero_data[i]=0.f;
+	//memset(zero_data, 0, 3 * output_size * sizeof(float) * 2);
 
 	// RW buffer allocations
 	// H0
 	UINT float2_stride = 2 * sizeof(float);
-	createBufferAndUAV(pd3dDevice, h0_data, input_full_size * float2_stride, float2_stride, &m_pBuffer_Float2_H0, &m_pUAV_H0, &m_pSRV_H0);
+	createBufferAndUAV(pd3dDevice, h0_data, input_full_size * float2_stride, float2_stride
+		, &h0.buffer, &h0.unorderedAccessView, &h0.shaderResourceView);
 
 	// Notice: The following 3 buffers should be half sized buffer because of conjugate symmetric input. But
 	// we use full sized buffers due to the CS4.0 restriction.
 
 	// Put H(t), Dx(t) and Dy(t) into one buffer because CS4.0 allows only 1 UAV at a time
-	createBufferAndUAV(pd3dDevice, zero_data, 3 * input_half_size * float2_stride, float2_stride, &m_pBuffer_Float2_Ht, &m_pUAV_Ht, &m_pSRV_Ht);
-
+	createBufferAndUAV(pd3dDevice, zero_data, 3 * input_half_size * float2_stride, float2_stride,
+		//&m_pBuffer_Float2_Ht, &m_pUAV_Ht, &m_pSRV_Ht);
+		&choppy.buffer,&choppy.unorderedAccessView,&choppy.shaderResourceView);
+	
+	//choppy.RestoreDeviceObjects(pd3dDevice,3 * input_half_size);
 	// omega
-	createBufferAndUAV(pd3dDevice, omega_data, input_full_size * sizeof(float), sizeof(float), &m_pBuffer_Float_Omega, &m_pUAV_Omega, &m_pSRV_Omega);
+	createBufferAndUAV(pd3dDevice, omega_data, input_full_size * sizeof(float), sizeof(float)
+		, &omega.buffer, &omega.unorderedAccessView, &omega.shaderResourceView);
 
 	// Notice: The following 3 should be real number data. But here we use the complex numbers and C2C FFT
 	// due to the CS4.0 restriction.
 	// Put Dz, Dx and Dy into one buffer because CS4.0 allows only 1 UAV at a time
-	createBufferAndUAV(pd3dDevice, zero_data, 3 * output_size * float2_stride, float2_stride, &m_pBuffer_Float_Dxyz, &m_pUAV_Dxyz, &m_pSRV_Dxyz);
+	createBufferAndUAV(pd3dDevice, zero_data, 3 * output_size * float2_stride, float2_stride
+		, &dxyz.buffer, &dxyz.unorderedAccessView, &dxyz.shaderResourceView);
 
 	SAFE_DELETE_ARRAY(zero_data);
 	SAFE_DELETE_ARRAY(h0_data);
@@ -263,114 +222,37 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	displacement.ensureTexture2DSizeAndFormat(pd3dDevice,hmap_dim,hmap_dim,DXGI_FORMAT_R32G32B32A32_FLOAT,false,true);
 	gradient.ensureTexture2DSizeAndFormat(pd3dDevice,hmap_dim,hmap_dim,DXGI_FORMAT_R16G16B16A16_FLOAT,false,true);
 
-	// Sampler state for no filtering:
-	D3D11_SAMPLER_DESC sam_desc;
-	sam_desc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-	sam_desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sam_desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sam_desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sam_desc.MipLODBias = 0; 
-	sam_desc.MaxAnisotropy = 1; 
-	sam_desc.ComparisonFunc = D3D11_COMPARISON_NEVER; 
-	sam_desc.BorderColor[0] = 1.0f;
-	sam_desc.BorderColor[1] = 1.0f;
-	sam_desc.BorderColor[2] = 1.0f;
-	sam_desc.BorderColor[3] = 1.0f;
-	sam_desc.MinLOD = -FLT_MAX;
-	sam_desc.MaxLOD = FLT_MAX;
-	pd3dDevice->CreateSamplerState(&sam_desc, &m_pPointSamplerState);
-	assert(m_pPointSamplerState);
-
+	
+	
+	immutableConstants		.RestoreDeviceObjects(pd3dDevice);
+	changePerFrameConstants	.RestoreDeviceObjects(pd3dDevice);
+	
 	RecompileShaders();
 
-	// Create YET ANOTHER fullscreen quad vertex buffer - because DirectX can't just do this in a single line of code!
-	D3D11_BUFFER_DESC vb_desc;
-	vb_desc.ByteWidth = 4 * sizeof(D3DXVECTOR4);
-	vb_desc.Usage = D3D11_USAGE_IMMUTABLE;
-	vb_desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vb_desc.CPUAccessFlags = 0;
-	vb_desc.MiscFlags = 0;
-
-	float quad_verts[] =
-	{
-		-1, -1, 0, 1,
-		-1,  1, 0, 1,
-		 1, -1, 0, 1,
-		 1,  1, 0, 1,
-	};
-	D3D11_SUBRESOURCE_DATA init_data;
-	init_data.pSysMem = &quad_verts[0];
-	init_data.SysMemPitch = 0;
-	init_data.SysMemSlicePitch = 0;
-	pd3dDevice->CreateBuffer(&vb_desc, &init_data, &m_pQuadVB);
 
 	// Constant buffers
 	UINT actual_dim = m_param->dmap_dim;
 
-	// Compare this to the definition in the shaders.
-	struct cbImmutable
-	{
-		UINT g_ActualDim;
-		UINT g_InWidth;
-		UINT g_OutWidth;
-		UINT g_OutHeight;
-		UINT g_DxAddressOffset;
-		UINT g_DyAddressOffset;
-	};
-	cbImmutable immutable;
 	// We use full sized data here. The value "output_width" should be actual_dim/2+1 though.
-	immutable.g_ActualDim		=actual_dim;
-	immutable.g_InWidth			=actual_dim + 4;
-	immutable.g_OutWidth		=actual_dim;
-	immutable.g_OutHeight		=actual_dim;
-	immutable.g_DxAddressOffset	=actual_dim*actual_dim;
-	immutable.g_DyAddressOffset	=actual_dim*actual_dim*2;
-
-	D3D11_SUBRESOURCE_DATA init_cb0 = {&immutable, 0, 0};
-
-	D3D11_BUFFER_DESC cb_desc;
-	cb_desc.Usage = D3D11_USAGE_IMMUTABLE;
-	cb_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	cb_desc.CPUAccessFlags = 0;
-	cb_desc.MiscFlags = 0;    
-	cb_desc.ByteWidth = PAD16(sizeof(immutable));
-	pd3dDevice->CreateBuffer(&cb_desc, &init_cb0, &m_pImmutableCB);
-	assert(m_pImmutableCB);
-
-	// Assign this constant buffer to both the compute shader and the pixel shader.
-	ID3D11Buffer* cbs[1] = {m_pImmutableCB};
-	m_pd3dImmediateContext->CSSetConstantBuffers(0, 1, cbs);
-	m_pd3dImmediateContext->PSSetConstantBuffers(0, 1, cbs);
-
-	cb_desc.Usage = D3D11_USAGE_DYNAMIC;
-	cb_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	cb_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	cb_desc.MiscFlags = 0;    
-	cb_desc.ByteWidth = PAD16(sizeof(float) * 3);
-	pd3dDevice->CreateBuffer(&cb_desc, NULL, &m_pPerFrameCB);
-	assert(m_pPerFrameCB);
+	immutableConstants.g_ActualDim		=actual_dim;
+	immutableConstants.g_InWidth			=actual_dim + 4;
+	immutableConstants.g_OutWidth		=actual_dim;
+	immutableConstants.g_OutHeight		=actual_dim;
+	immutableConstants.g_DxAddressOffset	=actual_dim*actual_dim;
+	immutableConstants.g_DyAddressOffset	=actual_dim*actual_dim*2;
 
 	// FFT
 	//fft512x512_create_plan(&m_fft, pd3dDevice, 3);
 	m_fft.RestoreDeviceObjects(pd3dDevice, 3);
-#ifdef CS_DEBUG_BUFFER
-	D3D11_BUFFER_DESC buf_desc;
-	buf_desc.ByteWidth = 3 * input_half_size * float2_stride;
-    buf_desc.Usage = D3D11_USAGE_STAGING;
-    buf_desc.BindFlags = 0;
-    buf_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-    buf_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    buf_desc.StructureByteStride = float2_stride;
-
-	pd3dDevice->CreateBuffer(&buf_desc, NULL, &m_pDebugBuffer);
-	assert(m_pDebugBuffer);
-#endif
 }
 
 void OceanSimulator::RecompileShaders()
 {
 	effect=LoadEffect(m_pd3dDevice,"ocean.fx");
 	m_fft.RecompileShaders();
+	
+	immutableConstants		.LinkToEffect(effect,"cbImmutable");
+	changePerFrameConstants	.LinkToEffect(effect,"cbChangePerFrame");
 }
 
 OceanSimulator::~OceanSimulator()
@@ -414,7 +296,7 @@ void OceanSimulator::initHeightMap(D3DXVECTOR2* out_h0, float* out_omega)
 			out_h0[i * (height_map_dim + 4) + j].y = phil*Gauss()*HALF_SQRT_2;
 
 			// The angular frequency is following the dispersion relation:
-			//            out_omega^2 = g*k
+			//            out_omega^2 = g |k|
 			// The equation of Gerstner wave:
 			//            x = x0 - K/k * A * sin(dot(K, x0) - sqrt(g * k) * t), x is a 2D vector.
 			//            z = A * cos(dot(K, x0) - sqrt(g * k) * t)
@@ -431,44 +313,32 @@ void OceanSimulator::updateDisplacementMap(float time)
 	// ---------------------------- H(0) -> H(t), D(x, t), D(y, t) --------------------------------
 	// Compute shader
 	ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName("update_spectrum");
-	tech->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
 	// Buffers
-	simul::dx11::setParameter(effect,"g_InputH0"	,m_pSRV_H0);
-	simul::dx11::setParameter(effect,"g_InputOmega"	,m_pSRV_Omega);
+	simul::dx11::setTexture(effect,"g_InputH0"		,h0.shaderResourceView);
+	simul::dx11::setTexture(effect,"g_InputOmega"	,omega.shaderResourceView);
 
-	simul::dx11::setUnorderedAccessView(effect,"g_OutputHt"	,m_pUAV_Ht);
+	simul::dx11::setUnorderedAccessView(effect,"g_OutputHt",choppy.unorderedAccessView);
 
-	// Consts
-	D3D11_MAPPED_SUBRESOURCE mapped_res;            
-	m_pd3dImmediateContext->Map(m_pPerFrameCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
-	assert(mapped_res.pData);
-	float* per_frame_data = (float*)mapped_res.pData;
-	// g_Time
-	per_frame_data[0] = time * m_param->time_scale;
-	// g_ChoppyScale
-	per_frame_data[1] = m_param->choppy_scale;
-	// g_GridLen
-	per_frame_data[2] = m_param->dmap_dim / m_param->patch_length;
-	m_pd3dImmediateContext->Unmap(m_pPerFrameCB, 0);
-
-	//ID3D11Buffer* cs_cbs[2] = {m_pImmutableCB, m_pPerFrameCB};
-	//m_pd3dImmediateContext->CSSetConstantBuffers(0, 2, cs_cbs);
-	simul::dx11::setConstantBuffer(effect,"cbImmutable"			,m_pImmutableCB);
-	simul::dx11::setConstantBuffer(effect,"cbChangePerFrame"	,m_pPerFrameCB);
+	changePerFrameConstants.g_Time			=time*m_param->time_scale;
+	changePerFrameConstants.g_ChoppyScale	=m_param->choppy_scale;
+	changePerFrameConstants.g_GridLen		=m_param->dmap_dim / m_param->patch_length;
+	
+	immutableConstants		.Apply(m_pd3dImmediateContext);
+	changePerFrameConstants	.Apply(m_pd3dImmediateContext);
 
 	// Run the CS
 	UINT group_count_x = (m_param->dmap_dim + BLOCK_SIZE_X - 1) / BLOCK_SIZE_X;
 	UINT group_count_y = (m_param->dmap_dim + BLOCK_SIZE_Y - 1) / BLOCK_SIZE_Y;
+	tech->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
 	m_pd3dImmediateContext->Dispatch(group_count_x, group_count_y, 1);
 
 	simul::dx11::unbindTextures(effect);
-	simul::dx11::setUnorderedAccessView(effect,"g_OutputHt"	,NULL);
+	simul::dx11::setUnorderedAccessView(effect,"g_OutputHt",NULL);
 
 	tech->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
-return;
 	// Perform Fast (inverse) Fourier Transform from the source Ht to the destination Dxyz.
 	// NOTE: we also provide the SRV of Dxyz so that FFT can use it as a temporary buffer and save space.
-	m_fft.fft_512x512_c2c(m_pUAV_Dxyz,m_pSRV_Dxyz,m_pSRV_Ht);
+	m_fft.fft_512x512_c2c(dxyz.unorderedAccessView,dxyz.shaderResourceView,choppy.shaderResourceView);
 	// Now we will use the transformed Dxyz to create our displacement map
 	// --------------------------------- Wrap Dx, Dy and Dz ---------------------------------------
 	// Save the current RenderTarget and viewport:
@@ -478,60 +348,54 @@ return;
 	D3D11_VIEWPORT old_viewport;
 	UINT num_viewport = 1;
 	m_pd3dImmediateContext->RSGetViewports(&num_viewport, &old_viewport);
-
 	// Set the new viewport as equal to the size of the displacement texture we're writing to:
-	D3D11_VIEWPORT new_vp = {0, 0, (float)m_param->dmap_dim, (float)m_param->dmap_dim, 0.0f, 1.0f};
+	D3D11_VIEWPORT new_vp={0,0,(float)m_param->dmap_dim,(float)m_param->dmap_dim,0.0f,1.0f};
 	m_pd3dImmediateContext->RSSetViewports(1, &new_vp);
-
 	// Set the RenderTarget as the displacement map:
 	m_pd3dImmediateContext->OMSetRenderTargets(1, &displacement.renderTargetView, NULL);
-
+	// Assign the constant-buffers to the pixel shader:
+	immutableConstants		.Apply(m_pd3dImmediateContext);
+	changePerFrameConstants	.Apply(m_pd3dImmediateContext);
+	// Assign the Dxyz source as a resource for the pixel shader:
+	simul::dx11::setTexture(effect,"g_InputDxyz"				,dxyz.shaderResourceView);
 	// Assign the shaders:
 	effect->GetTechniqueByName("update_displacement")->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
-
-	// Assign the constant-buffers to the pixel shader:
-	simul::dx11::setConstantBuffer(effect,"cbImmutable"	,m_pImmutableCB);
-	simul::dx11::setConstantBuffer(effect,"cbChangePerFrame"	,m_pPerFrameCB);
-	// Assign the Dxyz source as a resource for the pixel shader:
-	simul::dx11::setParameter(effect,"g_InputDxyz"	,m_pSRV_Dxyz);
-
 	UtilityRenderer::DrawQuad(m_pd3dImmediateContext);
-
 	// Unbind the shader resource (i.e. the input texture map). Must do this or we get a DX warning when we
 	// try to write to the texture again:
 	simul::dx11::unbindTextures(effect);
+	simul::dx11::setTexture(effect,"g_InputDxyz"				,NULL);
 	effect->GetTechniqueByName("update_displacement")->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
-
 	// Now generate the gradient map.
 	// Set the gradient texture as the RenderTarget:
 	m_pd3dImmediateContext->OMSetRenderTargets(1, &gradient.renderTargetView, NULL);
-
 	// VS & PS
-	effect->GetTechniqueByName("gradient_folding")->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
-
 	// Use the Displacement map as the texture input:
-	simul::dx11::setParameter(effect,"g_samplerDisplacementMap"	,displacement.shaderResourceView);
-
+	simul::dx11::setTexture(effect,"g_samplerDisplacementMap"	,displacement.shaderResourceView);
+	effect->GetTechniqueByName("gradient_folding")->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
 	// Perform draw call
 	UtilityRenderer::DrawQuad(m_pd3dImmediateContext);
-
 	// Unbind the shader resource (the texture):
 	simul::dx11::unbindTextures(effect);
+	simul::dx11::setTexture(effect,"g_InputDxyz"				,(ID3D11ShaderResourceView*)NULL);
 	effect->GetTechniqueByName("gradient_folding")->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
-
 	// Reset the renderTarget to what it was before:
 	m_pd3dImmediateContext->RSSetViewports(1, &old_viewport);
 	m_pd3dImmediateContext->OMSetRenderTargets(1, &old_target, old_depth);
 	SAFE_RELEASE(old_target);
 	SAFE_RELEASE(old_depth);
-
 	// Make mipmaps for the gradient texture, apparently this is a quick operation:
 	m_pd3dImmediateContext->GenerateMips(gradient.shaderResourceView);
 }
 
 ID3D11ShaderResourceView* OceanSimulator::GetFftOutput()
 {
-	return m_pSRV_Dxyz;
+	return dxyz.shaderResourceView;//m_pSRV_Dxyz;
+}
+
+ID3D11ShaderResourceView* OceanSimulator::GetFftInput()
+{
+	return h0.shaderResourceView;//m_pSRV_Dxyz;
 }
 
 ID3D11ShaderResourceView* OceanSimulator::getDisplacementMap()
@@ -541,7 +405,7 @@ ID3D11ShaderResourceView* OceanSimulator::getDisplacementMap()
 
 ID3D11ShaderResourceView* OceanSimulator::GetSpectrum()
 {
-	return m_pSRV_Ht;
+	return choppy.shaderResourceView;
 }
 
 ID3D11ShaderResourceView* OceanSimulator::getGradientMap()
@@ -549,7 +413,7 @@ ID3D11ShaderResourceView* OceanSimulator::getGradientMap()
 	return gradient.shaderResourceView;
 }
 
-const simul::terrain::OceanParameter *OceanSimulator::getParameters()
+const simul::terrain::SeaKeyframer *OceanSimulator::GetSeaKeyframer()
 {
 	return m_param;
 }

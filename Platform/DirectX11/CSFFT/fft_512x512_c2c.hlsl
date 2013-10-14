@@ -150,8 +150,8 @@ void Radix008A_CS(uint3 thread_id : SV_DispatchThreadID)
 void Radix008A_CS2(uint3 thread_id : SV_DispatchThreadID)
 {
 	uint i;
-	for (i = 0; i < 8; i++)
-		g_DstData[i]=float2(2.0,1.0);
+	//for (i = 0; i < 8; i++)
+	//	g_DstData[i]=float2(2.0,1.0);
 	if(thread_id.x >= thread_count)
 		return;
 

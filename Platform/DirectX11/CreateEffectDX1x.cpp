@@ -353,48 +353,56 @@ void simul::dx11::Ensure3DTextureSizeAndFormat(
 void simul::dx11::setDepthState(ID3DX11Effect *effect,const char *name	,ID3D11DepthStencilState * value)
 {
 	ID3DX11EffectDepthStencilVariable*	var	=effect->GetVariableByName(name)->AsDepthStencil();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetDepthStencilState(0,value);
 }
 
 void simul::dx11::setSamplerState(ID3DX11Effect *effect,const char *name	,ID3D11SamplerState * value)
 {
 	ID3DX11EffectSamplerVariable*	var	=effect->GetVariableByName(name)->AsSampler();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetSampler(0,value);
 }
 
-void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,ID3D11ShaderResourceView * value)
+void simul::dx11::setTexture(ID3DX11Effect *effect,const char *name	,ID3D11ShaderResourceView * value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetResource(value);
 }
 
 void simul::dx11::setUnorderedAccessView(ID3DX11Effect *effect,const char *name	,ID3D11UnorderedAccessView * value)
 {
 	ID3DX11EffectUnorderedAccessViewVariable*	var	=effect->GetVariableByName(name)->AsUnorderedAccessView();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetUnorderedAccessView(value);
 }
 
 void simul::dx11::setStructuredBuffer(ID3DX11Effect *effect,const char *name,ID3D11ShaderResourceView * value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetResource(value);
 }
 
 void simul::dx11::setTextureArray(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetResource(value);
 }
 
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float value)
 {
 	ID3DX11EffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetFloat(value);
 }
 
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,float y)
 {
 	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	float V[]={x,y,0.f,0.f};
 	var->SetFloatVector(V);
 }
@@ -402,6 +410,7 @@ void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,f
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,float y,float z,float w)
 {
 	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	float V[]={x,y,z,w};
 	var->SetFloatVector(V);
 }
@@ -409,24 +418,28 @@ void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,f
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,int value)
 {
 	ID3DX11EffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetInt(value);
 }
 
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float *value)
 {
 	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetFloatVector(value);
 }
 
 void simul::dx11::setMatrix(ID3DX11Effect *effect,const char *name	,const float *value)
 {
 	ID3DX11EffectMatrixVariable*	var	=effect->GetVariableByName(name)->AsMatrix();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetMatrix(value);
 }
 
 void simul::dx11::setConstantBuffer(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b)
 {
 	ID3DX11EffectConstantBuffer*	pD3DX11EffectConstantBuffer=effect->GetConstantBufferByName(name);
+	SIMUL_ASSERT(pD3DX11EffectConstantBuffer->IsValid()!=0);
 	pD3DX11EffectConstantBuffer->SetConstantBuffer(b);
 }
 

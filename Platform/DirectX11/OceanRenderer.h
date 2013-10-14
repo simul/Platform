@@ -61,6 +61,8 @@ namespace simul
 			ID3D1xShaderResourceView* skyLossTexture_SRV;
 			ID3D1xShaderResourceView* skyInscatterTexture_SRV;
 			ID3D1xShaderResourceView* skylightTexture_SRV;
+			simul::dx11::ConstantBuffer<cbShading>			shadingConstants;
+			simul::dx11::ConstantBuffer<cbChangePerCall>	changePerCallConstants;
 	
 			// create a triangle strip mesh for ocean surface.
 			void createSurfaceMesh();

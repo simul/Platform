@@ -165,9 +165,9 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	inscTexture->SetResource(overcInscTexture_SRV);
 	skylTexture->SetResource(skylightTexture_SRV);
 	
-	simul::dx11::setParameter(effect,"illuminationTexture",illuminationTexture_SRV);
-	simul::dx11::setParameter(effect,"depthTexture",depthTexture_SRV);
-	simul::dx11::setParameter(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
+	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
+	simul::dx11::setTexture(effect,"depthTexture",depthTexture_SRV);
+	simul::dx11::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	view(3,0)=view(3,1)=view(3,2)=0;

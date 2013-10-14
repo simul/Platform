@@ -325,6 +325,9 @@
     <None Include="HLSL\ocean.fx">
       <Filter>FX</Filter>
     </None>
+    <None Include="..\CrossPlatform\ocean_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc">

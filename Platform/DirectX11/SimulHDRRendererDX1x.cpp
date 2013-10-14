@@ -199,8 +199,8 @@ bool SimulHDRRendererDX1x::FinishRender(void *context)
     D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
 	worldViewProj->SetMatrix(ortho);
 	RenderGlowTexture(context);
-	simul::dx11::setParameter(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
-	simul::dx11::setParameter(m_pTonemapEffect,"depthTexture",(ID3D11ShaderResourceView*)framebuffer.GetDepthTex());
+	simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
+	simul::dx11::setTexture(m_pTonemapEffect,"depthTexture",(ID3D11ShaderResourceView*)framebuffer.GetDepthTex());
 
 	ApplyPass(m_pImmediateContext,TonemapTechnique->GetPassByIndex(0));
 	framebuffer.DrawQuad(context);
@@ -249,7 +249,7 @@ static float g_FilterRadius = 30;
 	float rcp_box_width = 1.0f / box_width;
 	// Step 1. Vertical passes: Each thread group handles a colomn in the image
 	// Input texture
-	simul::dx11::setParameter(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
+	simul::dx11::setTexture(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
 	// Output texture
 	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
 	simul::dx11::setParameter(m_pGaussianEffect,"g_NumApproxPasses",g_NumApproxPasses - 1);
@@ -271,7 +271,7 @@ static float g_FilterRadius = 30;
 
 	// Step 2. Horizontal passes: Each thread group handles a row in the image
 	// Input texture
-	simul::dx11::setParameter(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
+	simul::dx11::setTexture(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
 	// Output texture
 	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
 

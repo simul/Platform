@@ -163,8 +163,8 @@ void SimulPrecipitationRendererDX1x::Render(void *context)
 		return;
 	PIXBeginNamedEvent(0,"Render Precipitation");
 	rainTexture->SetResource(rain_texture);
-	simul::dx11::setParameter(m_pRainEffect,"cubeTexture",cubemap_SRV);
-	simul::dx11::setParameter(m_pRainEffect,"randomTexture",random_SRV);
+	simul::dx11::setTexture(m_pRainEffect,"cubeTexture",cubemap_SRV);
+	simul::dx11::setTexture(m_pRainEffect,"randomTexture",random_SRV);
 	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 	//set up matrices
 	D3DXMATRIX world,wvp;

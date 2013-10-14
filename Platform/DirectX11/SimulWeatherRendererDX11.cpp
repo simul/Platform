@@ -238,7 +238,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 		}
 		gamma_correct.Deactivate(m_pImmediateContext);
 		{
-			simul::dx11::setParameter(m_pTonemapEffect,"imageTexture",gamma_correct.GetBufferResource());
+			simul::dx11::setTexture(m_pTonemapEffect,"imageTexture",gamma_correct.GetBufferResource());
 			simul::dx11::setParameter(m_pTonemapEffect,"gamma",gamma);
 			simul::dx11::setParameter(m_pTonemapEffect,"exposure",exposure);
 			ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
@@ -331,7 +331,7 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 		return;
 	float max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	UtilityRenderer::SetScreenSize(width,height);
-	simul::dx11::setParameter(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
+	simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
 	simul::dx11::setParameter(m_pTonemapEffect,"tanHalfFov"		,frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	simul::dx11::setParameter(m_pTonemapEffect,"nearZ"			,frustum.nearZ/max_fade_distance_metres);
 	simul::dx11::setParameter(m_pTonemapEffect,"farZ"			,frustum.farZ/max_fade_distance_metres);

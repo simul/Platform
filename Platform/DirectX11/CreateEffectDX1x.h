@@ -62,9 +62,12 @@ namespace simul
 							
 		D3DXMATRIX SIMUL_DIRECTX11_EXPORT ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj);
 	
+		// These functions encapsulate getting an effect variable of the given name if it exists, and
+		// if so, setting its value. Due to inefficiency it is best to replace usage of this over time
+		// with Effect variable pointers, but this is a good way to write new render code quickly
 		void setDepthState			(ID3DX11Effect *effect	,const char *name	,ID3D11DepthStencilState * value);
 		void setSamplerState		(ID3DX11Effect *effect	,const char *name	,ID3D11SamplerState * value);
-		void setParameter			(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
+		void setTexture				(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
 		void setUnorderedAccessView	(ID3DX11Effect *effect	,const char *name	,ID3D11UnorderedAccessView * value);
 		void setTextureArray		(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value);
 		void setStructuredBuffer	(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);

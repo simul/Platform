@@ -152,13 +152,15 @@ void OceanRenderer::RecompileShaders()
 	}
 	if(oceanSimulator)
 		oceanSimulator->RecompileShaders();
+	shadingConstants		.LinkToEffect(effect,"cbShading");
+	changePerCallConstants	.LinkToEffect(effect,"cbChangePerCall");
 }
 
 void OceanRenderer::RestoreDeviceObjects(ID3D11Device* dev)
 {
 	InvalidateDeviceObjects();
 	m_pd3dDevice=dev;
-	oceanSimulator = new OceanSimulator(ocean_parameters);
+	oceanSimulator=new OceanSimulator(seaKeyframer);
 	oceanSimulator->RestoreDeviceObjects(m_pd3dDevice);
 	// Update the simulation for the first time.
 	oceanSimulator->updateDisplacementMap(0);
@@ -168,8 +170,10 @@ void OceanRenderer::RestoreDeviceObjects(ID3D11Device* dev)
 	createFresnelMap();
 	loadTextures();
 
+	
+	shadingConstants		.RestoreDeviceObjects(m_pd3dDevice);
+	changePerCallConstants	.RestoreDeviceObjects(m_pd3dDevice);
 	RecompileShaders();
-
 	// Constants
 	D3D11_BUFFER_DESC cb_desc;
 	cb_desc.Usage = D3D11_USAGE_DYNAMIC;
@@ -183,12 +187,12 @@ void OceanRenderer::RestoreDeviceObjects(ID3D11Device* dev)
 
 	Const_Shading shading_data;
 	// Grid side length * 2
-	shading_data.g_TexelLength_x2 = ocean_parameters->patch_length / ocean_parameters->dmap_dim * 2;;
+	shading_data.g_TexelLength_x2 = seaKeyframer->patch_length / seaKeyframer->dmap_dim * 2;;
 	// Color
 	shading_data.g_WaterbodyColor = g_WaterbodyColor;
 	// Texcoord
-	shading_data.g_UVScale = 1.0f / ocean_parameters->patch_length;
-	shading_data.g_UVOffset = 0.5f / ocean_parameters->dmap_dim;
+	shading_data.g_UVScale = 1.0f / seaKeyframer->patch_length;
+	shading_data.g_UVOffset = 0.5f / seaKeyframer->dmap_dim;
 	// Perlin
 	shading_data.g_PerlinSize = g_PerlinSize;
 	shading_data.g_PerlinAmplitude = g_PerlinAmplitude;
@@ -246,42 +250,6 @@ void OceanRenderer::SetInscatterTextures(void *t,void *s)
 	skylightTexture_SRV=((ID3D1xShaderResourceView*)s);
 }
 
-void OceanRenderer::RenderTextures(void *context,int width,int height)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
-
-	HRESULT hr=S_OK;
-	static int u=5;
-	int w=(width-8)/u;
-	if(w>height/3)
-		w=height/3;
-	UtilityRenderer::SetScreenSize(width,height);
-	int x=8;
-	int y=height-w;
-	simul::dx11::setParameter(effect,"showTexture",oceanSimulator->getDisplacementMap());
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
-	x+=w+2;
-	simul::dx11::setParameter(effect,"showTexture",oceanSimulator->getGradientMap());
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
-	x+=w+2;
-	simul::dx11::setParameter(effect,"showTexture",g_pSRV_Perlin);
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
-	x+=w+2;
-//	simul::dx11::setParameter(effect,"showTexture",g_pSRV_Fresnel);
-	//UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
-//	x+=w+2;
-	// structured buffer
-	simul::dx11::setParameter(effect,"g_InputDxyz",oceanSimulator->GetSpectrum());
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
-	x+=w+2;
-	simul::dx11::setParameter(effect,"g_InputDxyz",oceanSimulator->GetFftOutput());
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
-
-	
-	simul::dx11::unbindTextures(effect);
-	effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->Apply(0,pContext);
-}
-
 void OceanRenderer::InvalidateDeviceObjects()
 {
 	if(oceanSimulator)
@@ -304,6 +272,8 @@ void OceanRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(g_pPerCallCB);
 	SAFE_RELEASE(g_pPerFrameCB);
 	SAFE_RELEASE(g_pShadingCB);
+	shadingConstants		.InvalidateDeviceObjects();
+	changePerCallConstants	.InvalidateDeviceObjects();
 
 	g_render_list.clear();
 }
@@ -499,8 +469,6 @@ static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
 void OceanRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
-//	if(IsYVertical())
-//		view=D3DXMATRIX(1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1) * v;
 	proj=p;
 }
 
@@ -509,15 +477,16 @@ void OceanRenderer::Render(void *context,float exposure)
 	if(skyInterface)
 		app_time=skyInterface->GetTime();
 	oceanSimulator->updateDisplacementMap((float)app_time);
+
 	ID3D11DeviceContext*	pContext=(ID3D11DeviceContext*)context;
 	ID3D11ShaderResourceView* displacement_map = oceanSimulator->getDisplacementMap();
 	ID3D11ShaderResourceView* gradient_map = oceanSimulator->getGradientMap();
 
 	// Build rendering list
 	g_render_list.clear();
-	float ocean_extent = ocean_parameters->patch_length * (1 << g_FurthestCover);
-	QuadNode root_node = {D3DXVECTOR2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
-	buildNodeList(root_node,ocean_parameters->patch_length,view,proj);
+	float ocean_extent =seaKeyframer->patch_length * (1 << g_FurthestCover);
+	QuadNode root_node ={D3DXVECTOR2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
+	buildNodeList(root_node,seaKeyframer->patch_length,view,proj);
 
 	// Matrices
 	D3DXMATRIX matView = view;
@@ -528,13 +497,13 @@ void OceanRenderer::Render(void *context,float exposure)
 	tech->GetPassByIndex(0)->Apply(0,pContext);
 
 	// Textures
-	setParameter(effect,"g_texDisplacement"		,displacement_map);
-	setParameter(effect,"g_texPerlin"			,g_pSRV_Perlin);
-	setParameter(effect,"g_texGradient"			,gradient_map);
-	setParameter(effect,"g_texFresnel"			,g_pSRV_Fresnel);
-	setParameter(effect,"g_texReflectCube"		,g_pSRV_ReflectCube);
-	setParameter(effect,"g_skyLossTexture"		,skyLossTexture_SRV);
-	setParameter(effect,"g_skyInscatterTexture"	,skyInscatterTexture_SRV);
+	setTexture(effect,"g_texDisplacement"		,displacement_map);
+	setTexture(effect,"g_texPerlin"			,g_pSRV_Perlin);
+	setTexture(effect,"g_texGradient"			,gradient_map);
+	setTexture(effect,"g_texFresnel"			,g_pSRV_Fresnel);
+	setTexture(effect,"g_texReflectCube"		,g_pSRV_ReflectCube);
+	setTexture(effect,"g_skyLossTexture"		,skyLossTexture_SRV);
+	setTexture(effect,"g_skyInscatterTexture"	,skyInscatterTexture_SRV);
 
 	// IA setup
 	pContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
@@ -556,7 +525,7 @@ void OceanRenderer::Render(void *context,float exposure)
 		if (!node.isLeaf())
 			continue;
 		// Check adjacent patches and select mesh pattern
-		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters->patch_length);
+		QuadRenderParam& render_param = selectMeshPattern(node,seaKeyframer->patch_length);
 		// Find the right LOD to render
 		int level_size = g_MeshDim;
 		for (int lod = 0; lod < node.lod; lod++)
@@ -574,10 +543,10 @@ void OceanRenderer::Render(void *context,float exposure)
 		D3DXMATRIX matWVP = matWorld * matView * matProj;
 		D3DXMatrixTranspose(&call_consts.g_matWorldViewProj, &matWVP);
 		// Texcoord for perlin noise
-		D3DXVECTOR2 uv_base = node.bottom_left / ocean_parameters->patch_length * g_PerlinSize;
+		D3DXVECTOR2 uv_base = node.bottom_left / seaKeyframer->patch_length * g_PerlinSize;
 		call_consts.g_UVBase = uv_base;
 		// Constant g_PerlinSpeed need to be adjusted mannually
-		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters->wind_dir)*(-(float)app_time)* g_PerlinSpeed;
+		D3DXVECTOR2 perlin_move =D3DXVECTOR2(seaKeyframer->wind_dir)*(-(float)app_time)* g_PerlinSpeed;
 		call_consts.g_PerlinMovement = perlin_move;
 		// Eye point
 		D3DXMATRIX matInvWV = matWorld * matView;
@@ -640,9 +609,9 @@ void OceanRenderer::RenderWireframe(void *context)
 	ID3D11ShaderResourceView* displacement_map = oceanSimulator->getDisplacementMap();
 	// Build rendering list
 	g_render_list.clear();
-	float ocean_extent = ocean_parameters->patch_length * (1 << g_FurthestCover);
+	float ocean_extent = seaKeyframer->patch_length * (1 << g_FurthestCover);
 	QuadNode root_node = {D3DXVECTOR2(-ocean_extent * 0.5f, -ocean_extent * 0.5f), ocean_extent, 0, {-1,-1,-1,-1}};
-	buildNodeList(root_node,ocean_parameters->patch_length,view,proj);
+	buildNodeList(root_node,seaKeyframer->patch_length,view,proj);
 
 	// Matrices
 	D3DXMATRIX matView = view;
@@ -651,8 +620,8 @@ void OceanRenderer::RenderWireframe(void *context)
 	// VS & PS
 	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("wireframe");
 	
-	setParameter(effect,"g_texDisplacement",displacement_map);
-	setParameter(effect,"g_texPerlin",g_pSRV_Perlin);
+	setTexture(effect,"g_texDisplacement",displacement_map);
+	setTexture(effect,"g_texPerlin",g_pSRV_Perlin);
 
 	// IA setup
 	pContext->IASetIndexBuffer(g_pMeshIB, DXGI_FORMAT_R32_UINT, 0);
@@ -677,7 +646,7 @@ void OceanRenderer::RenderWireframe(void *context)
 			continue;
 
 		// Check adjacent patches and select mesh pattern
-		QuadRenderParam& render_param = selectMeshPattern(node,ocean_parameters->patch_length);
+		QuadRenderParam& render_param = selectMeshPattern(node,seaKeyframer->patch_length);
 
 		// Find the right LOD to render
 		int level_size = g_MeshDim;
@@ -700,11 +669,11 @@ void OceanRenderer::RenderWireframe(void *context)
 		D3DXMatrixTranspose(&call_consts.g_matWorldViewProj, &matWVP);
 
 		// Texcoord for perlin noise
-		D3DXVECTOR2 uv_base = node.bottom_left / ocean_parameters->patch_length * g_PerlinSize;
+		D3DXVECTOR2 uv_base = node.bottom_left / seaKeyframer->patch_length * g_PerlinSize;
 		call_consts.g_UVBase = uv_base;
 
 		// Constant g_PerlinSpeed need to be adjusted mannually
-		D3DXVECTOR2 perlin_move =D3DXVECTOR2(ocean_parameters->wind_dir) *(-(float)app_time)* g_PerlinSpeed;
+		D3DXVECTOR2 perlin_move =D3DXVECTOR2(seaKeyframer->wind_dir) *(-(float)app_time)* g_PerlinSpeed;
 		call_consts.g_PerlinMovement = perlin_move;
 
 		// Eye point
@@ -741,4 +710,50 @@ void OceanRenderer::RenderWireframe(void *context)
 	}
 	unbindTextures(effect);
 	tech->GetPassByIndex(0)->Apply(0,pContext);
+}
+
+void OceanRenderer::RenderTextures(void *context,int width,int height)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+
+	HRESULT hr=S_OK;
+	static int u=8;
+	int w=(width-8)/u;
+	if(w>height/3)
+		w=height/3;
+	UtilityRenderer::SetScreenSize(width,height);
+	int x=8;
+	int y=height-w;
+	simul::dx11::setTexture(effect,"showTexture",oceanSimulator->getDisplacementMap());
+	simul::dx11::setParameter(effect,"showMultiplier",0.01f);
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	x+=w+2;
+	static float gradient_multiplier=1000.0f;
+	simul::dx11::setTexture(effect,"showTexture",oceanSimulator->getGradientMap());
+	simul::dx11::setParameter(effect,"showMultiplier",gradient_multiplier);
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	x+=w+2;
+	simul::dx11::setTexture(effect,"showTexture",g_pSRV_Perlin);
+	simul::dx11::setParameter(effect,"showMultiplier",10.f);
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	x+=w+2;
+//	simul::dx11::setParameter(effect,"showTexture",g_pSRV_Fresnel);
+	//UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+//	x+=w+2;
+	// structured buffer
+	static float spectrum_multiplier=10000.0f;
+	simul::dx11::setTexture(effect,"g_InputDxyz",oceanSimulator->GetSpectrum());
+	simul::dx11::setParameter(effect,"showMultiplier",spectrum_multiplier);
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
+	x+=w+2;
+	/*simul::dx11::setTexture(effect,"g_InputDxyz",oceanSimulator->GetFftInput());
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
+	x+=w+2;*/
+	simul::dx11::setTexture(effect,"g_InputDxyz",oceanSimulator->GetFftOutput());
+	simul::dx11::setParameter(effect,"showMultiplier",0.01f);
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
+
+	simul::dx11::setTexture(effect,"g_InputDxyz",NULL);
+	simul::dx11::unbindTextures(effect);
+	effect->GetTechniqueByName("show_structured_buffer")->GetPassByIndex(0)->Apply(0,pContext);
 }

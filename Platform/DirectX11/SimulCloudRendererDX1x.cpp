@@ -397,7 +397,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	n_fb.SetFormat((int)DXGI_FORMAT_R8G8B8A8_SNORM);
 	n_fb.Activate(context);
 	{
-		simul::dx11::setParameter(effect,"noise_texture"	,(ID3D11ShaderResourceView*)random_fb.GetColorTex());
+		simul::dx11::setTexture(effect,"noise_texture"	,(ID3D11ShaderResourceView*)random_fb.GetColorTex());
 		ID3D1xEffectShaderResourceVariable*	noiseTexture	=effect->GetVariableByName("noise_texture")->AsShaderResource();
 		noiseTexture->SetResource((ID3D11ShaderResourceView*)random_fb.GetColorTex());
 		simul::dx11::setParameter(effect,"octaves"		,texture_octaves);
@@ -693,7 +693,7 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	shadow_fb.Deactivate(pContext);
 	
 	tech	=m_pCloudEffect->GetTechniqueByName("shadow_near_far");
-	simul::dx11::setParameter(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
+	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	shadowNearFar.Activate(pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
@@ -760,7 +760,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	skylightTexture->SetResource(skylightTexture_SRV);
 	depthTexture->SetResource(depthTexture_SRV);
 
-	simul::dx11::setParameter(m_pCloudEffect,"illuminationTexture",illuminationTexture_SRV);
+	simul::dx11::setTexture(m_pCloudEffect,"illuminationTexture",illuminationTexture_SRV);
 	
 	if(GetCloudInterface()->GetWrap())
 		simul::dx11::setSamplerState(m_pCloudEffect,"cloudSamplerState",m_pWrapSamplerState);
@@ -849,7 +849,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	skyInscatterTexture->SetResource((ID3D11ShaderResourceView*)NULL);
 	skylightTexture->SetResource((ID3D11ShaderResourceView*)NULL);
 	depthTexture->SetResource((ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setParameter(m_pCloudEffect,"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
 // To prevent BIZARRE DX11 warning, we re-apply the pass with the textures unbound:
 	ApplyPass(pContext,m_hTechniqueRaytrace->GetPassByIndex(0));
 	return (hr==S_OK);
@@ -909,16 +909,16 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 		UtilityRenderer::DrawQuad2(pContext	,i*(w+1)+4	,4		,w,h	,m_pCloudEffect	,m_hTechniqueCrossSectionXZ);
 		UtilityRenderer::DrawQuad2(pContext	,i*(w+1)+4	,h+8	,w,w	,m_pCloudEffect	,m_hTechniqueCrossSectionXY);
 	}
-	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",noiseTextureResource);
+	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture",noiseTextureResource);
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
-	simul::dx11::setParameter(m_pCloudEffect,"cloudShadowTexture",(ID3D1xShaderResourceView*)shadow_fb.GetColorTex());
-	simul::dx11::setParameter(m_pCloudEffect,"nearFarTexture",(ID3D1xShaderResourceView*)shadowNearFar.GetColorTex());
+	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D1xShaderResourceView*)shadow_fb.GetColorTex());
+	simul::dx11::setTexture(m_pCloudEffect,"nearFarTexture",(ID3D1xShaderResourceView*)shadowNearFar.GetColorTex());
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
 	cloudDensity1->SetResource(NULL);
 	cloudDensity2->SetResource(NULL);
-	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture"			,(ID3D1xShaderResourceView*)NULL);
-	simul::dx11::setParameter(m_pCloudEffect,"cloudShadowTexture"	,(ID3D1xShaderResourceView*)NULL);
-	simul::dx11::setParameter(m_pCloudEffect,"nearFarTexture"		,(ID3D1xShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"			,(ID3D1xShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture"	,(ID3D1xShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"nearFarTexture"		,(ID3D1xShaderResourceView*)NULL);
 	ApplyPass(pContext,m_pCloudEffect->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
 }
 

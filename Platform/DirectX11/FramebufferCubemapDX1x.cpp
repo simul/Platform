@@ -194,11 +194,11 @@ void FramebufferCubemapDX1x::CalcSphericalHarmonics(void *context,int bands)
 	sphericalHarmonics.RestoreDeviceObjects(pd3dDevice,s*s);
 	
 	ID3DX11EffectTechnique *tech	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
-	simul::dx11::setParameter			(sphericalHarmonicsEffect,"cubemapTexture",(ID3D11ShaderResourceView*)m_pCubeEnvMapSRV);
-	simul::dx11::setParameter			(sphericalHarmonicsEffect,"targetBuffer",(ID3D11ShaderResourceView*)sphericalHarmonics.unorderedAccessView);
+	simul::dx11::setTexture			(sphericalHarmonicsEffect,"cubemapTexture",(ID3D11ShaderResourceView*)m_pCubeEnvMapSRV);
+	simul::dx11::setTexture			(sphericalHarmonicsEffect,"targetBuffer",(ID3D11ShaderResourceView*)sphericalHarmonics.unorderedAccessView);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	pContext->Dispatch(16,16,1);
-	simul::dx11::setParameter			(sphericalHarmonicsEffect,"cubemapTexture",(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture			(sphericalHarmonicsEffect,"cubemapTexture",(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	sphericalSamples.release();
 }

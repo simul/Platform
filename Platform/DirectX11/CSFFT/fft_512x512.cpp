@@ -123,30 +123,30 @@ void FFT_512x512::radix008A(	ID3D11UnorderedAccessView* pUAV_Dst,
 {
     // Setup execution configuration
 	UINT grid = thread_count / COHERENCY_GRANULARITY;
-
 	// Buffers -
 	//		source
-	ID3D11ShaderResourceView* cs_srvs[1] = {pSRV_Src};
-	pd3dImmediateContext->CSSetShaderResources(0, 1,cs_srvs);
+	pd3dImmediateContext->CSSetShaderResources(0, 1,&pSRV_Src);
 	//		destination
-	ID3D11UnorderedAccessView* cs_uavs[1] = {pUAV_Dst};
-	pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1,cs_uavs, 0);
-
+	pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1,&pUAV_Dst, 0);
 	// Shader
 	if (istride > 1)
-		pd3dImmediateContext->CSSetShader(pRadix008A_CS, NULL, 0);
+		pd3dImmediateContext->CSSetShader(pRadix008A_CS,NULL,0);
 	else
-		pd3dImmediateContext->CSSetShader(pRadix008A_CS2, NULL, 0);
-
+		pd3dImmediateContext->CSSetShader(pRadix008A_CS2,NULL,0);
 	// Dispatch means run the compute shader.
 	pd3dImmediateContext->Dispatch(grid, 1, 1);
-
 	// Unbind resource
-	cs_srvs[0] = NULL;
+	ID3D11ShaderResourceView* cs_srvs[1] = {NULL};
 	pd3dImmediateContext->CSSetShaderResources(0, 1, cs_srvs);
-
-	cs_uavs[0] = NULL;
+	ID3D11UnorderedAccessView* cs_uavs[1] = {NULL};
 	pd3dImmediateContext->CSSetUnorderedAccessViews(0, 1, cs_uavs,0);
+
+	// THEN REDO THIS!
+	// Shader
+	if (istride > 1)
+		pd3dImmediateContext->CSSetShader(pRadix008A_CS,NULL,0);
+	else
+		pd3dImmediateContext->CSSetShader(pRadix008A_CS2,NULL,0);
 }
 					 
 void FFT_512x512::fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,

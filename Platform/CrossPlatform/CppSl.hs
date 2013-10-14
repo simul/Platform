@@ -25,6 +25,7 @@
 
 	#define uniform_buffer ALIGN_16 cbuffer
 
+	typedef unsigned int uint;
 	struct mat2
 	{
 		float m[8];

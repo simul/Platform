@@ -14,6 +14,8 @@
 
 #include <d3d11.h>
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
+#include "Simul/Platform/CrossPlatform/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/ocean_constants.sl"
 
 
 //Memory access coherency (in threads)
