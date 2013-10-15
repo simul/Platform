@@ -15,6 +15,7 @@
 
 #include "Simul/Camera/Camera.h"
 #include "Simul/Clouds/CloudInterface.h"
+#include "Simul/Clouds/BasePrecipitationRenderer.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/pi.h"
@@ -35,7 +36,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,ShowLightVolume(false)
 		,CelestialDisplay(false)
 		,ShowWater(true)
-		,MakeCubemap(false)
+		,MakeCubemap(true)
 		,ReverseDepth(true)
 		,ShowOSD(false)
 		,Exposure(1.0f)
@@ -336,7 +337,10 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
 		{
 			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(pd3dImmediateContext,ScreenWidth,ScreenHeight);
-			
+		}
+		if(simulWeatherRenderer->GetBasePrecipitationRenderer())
+		{
+	//		simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 		{

@@ -23,7 +23,7 @@
 #include "Simul/Camera/Camera.h"
 #include "SimulSkyRendererDX1x.h"
 #include "SimulAtmosphericsRendererDX1x.h"
-#include "SimulPrecipitationRendererDX1x.h"
+#include "PrecipitationRenderer.h"
 
 #include "SimulCloudRendererDX1x.h"
 #include "Simul2DCloudRendererDX1x.h"
@@ -67,7 +67,7 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	simulLightningRenderer	=::new(memoryInterface) SimulLightningRendererDX11(ck3d,sk);
 	if(env->cloud2DKeyframer)
 		base2DCloudRenderer=simul2DCloudRenderer		=::new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
-	basePrecipitationRenderer=simulPrecipitationRenderer=::new(memoryInterface) SimulPrecipitationRendererDX1x();
+	basePrecipitationRenderer=simulPrecipitationRenderer=::new(memoryInterface) PrecipitationRenderer();
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer	=::new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
 	baseFramebuffer=&framebuffer;
 	framebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);

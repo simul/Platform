@@ -101,7 +101,7 @@ namespace simul
 			bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
 			class SimulSkyRendererDX1x				*simulSkyRenderer;
 			class SimulCloudRendererDX1x			*simulCloudRenderer;
-			class SimulPrecipitationRendererDX1x	*simulPrecipitationRenderer;
+			class PrecipitationRenderer	*simulPrecipitationRenderer;
 			class SimulAtmosphericsRendererDX1x		*simulAtmosphericsRenderer;
 			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
 			class SimulLightningRendererDX11		*simulLightningRenderer;

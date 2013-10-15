@@ -7,7 +7,7 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
-#include "SimulPrecipitationRendererDX1x.h"
+#include "PrecipitationRenderer.h"
 #include "CreateEffectDX1x.h"
 #include "FramebufferDX1x.h"
 #include "Utilities.h"
@@ -17,36 +17,36 @@
 using namespace simul;
 using namespace dx11;
 
-SimulPrecipitationRendererDX1x::SimulPrecipitationRendererDX1x() :
+PrecipitationRenderer::PrecipitationRenderer() :
 	m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
 	,m_pVertexBuffer(NULL)
-	,m_pRainEffect(NULL)
+	,effect(NULL)
 	,rain_texture(NULL)
 	,cubemap_SRV(NULL)
 	,random_SRV(NULL)
 {
 }
 
-void SimulPrecipitationRendererDX1x::RecompileShaders()
+void PrecipitationRenderer::RecompileShaders()
 {
 	if(!m_pd3dDevice)
 		return;
-	CreateEffect(m_pd3dDevice,&m_pRainEffect,"rain.fx");
+	CreateEffect(m_pd3dDevice,&effect,"rain.fx");
 	SAFE_RELEASE(rain_texture);
-	m_hTechniqueRain		=m_pRainEffect->GetTechniqueByName("simul_rain");
-	m_hTechniqueParticles	=m_pRainEffect->GetTechniqueByName("simul_particles");
-	rainTexture				=m_pRainEffect->GetVariableByName("rainTexture")->AsShaderResource();
+	m_hTechniqueRain		=effect->GetTechniqueByName("simul_rain");
+	m_hTechniqueParticles	=effect->GetTechniqueByName("simul_particles");
+	rainTexture				=effect->GetVariableByName("rainTexture")->AsShaderResource();
 
-	rainConstants.LinkToEffect(m_pRainEffect,"RainConstants");
-	perViewConstants.LinkToEffect(m_pRainEffect,"RainPerViewConstants");
+	rainConstants.LinkToEffect(effect,"RainConstants");
+	perViewConstants.LinkToEffect(effect,"RainPerViewConstants");
 
 	ID3D11DeviceContext *m_pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 
-	ID3DX11EffectTechnique*			tech=m_pRainEffect->GetTechniqueByName("create_rain_texture");
+	ID3DX11EffectTechnique *tech		=effect->GetTechniqueByName("create_rain_texture");
 	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
-	simul::dx11::Framebuffer make_rain_fb(512,512);
+	simul::dx11::Framebuffer make_rain_fb(512,64);
 	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
 	make_rain_fb.Activate(m_pImmediateContext);
 	make_rain_fb.DrawQuad(m_pImmediateContext);
@@ -56,7 +56,7 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	rain_texture->AddRef();
 
 	SAFE_RELEASE(random_SRV);
-	ID3DX11EffectTechnique*	tech2=m_pRainEffect->GetTechniqueByName("create_random_texture");
+	ID3DX11EffectTechnique*	tech2=effect->GetTechniqueByName("create_random_texture");
 	ApplyPass(m_pImmediateContext,tech2->GetPassByIndex(0));
 	simul::dx11::Framebuffer random_fb(16,16);
 	random_fb.SetDepthFormat(0);
@@ -70,12 +70,26 @@ void SimulPrecipitationRendererDX1x::RecompileShaders()
 	SAFE_RELEASE(m_pImmediateContext);
 }
 
-void SimulPrecipitationRendererDX1x::SetCubemapTexture(void *t)
+void PrecipitationRenderer::RenderTextures(void *context,int width,int height)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+	HRESULT hr=S_OK;
+	static int u=4;
+	int w=(width-8)/u;
+	if(w>height/3)
+		w=height/3;
+	UtilityRenderer::SetScreenSize(width,height);
+	simul::dx11::setParameter(effect,"showTexture",rain_texture);
+	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w/8,effect,effect->GetTechniqueByName("show_texture"));
+	simul::dx11::setParameter(effect,"showTexture",NULL);
+}
+
+void PrecipitationRenderer::SetCubemapTexture(void *t)
 {
 	cubemap_SRV=(ID3D11ShaderResourceView*)t;
 }
 
-void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
+void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D11Device*)dev;
 	HRESULT hr=S_OK;
@@ -94,9 +108,9 @@ void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
 	hr=m_pd3dDevice->CreateInputLayout(decl,1,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
     D3D1x_SUBRESOURCE_DATA InitData;
     ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-	particles=new vec3[20000];
+	particles=new vec3[40000];
 	simul::math::RandomNumberGenerator random;
-	for(int i=0;i<20000;i++)
+	for(int i=0;i<40000;i++)
 	{
 		vec3 pos(2.f*random.FRand()-1.f,2.f*random.FRand()-1.f,2.f*random.FRand()-1.f);
 		particles[i]=pos;
@@ -105,7 +119,7 @@ void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
     InitData.SysMemPitch	= sizeof(vec3);
 	D3D11_BUFFER_DESC desc	=
 	{
-        20000*sizeof(vec3),
+        40000*sizeof(vec3),
         D3D11_USAGE_DEFAULT,
         D3D11_BIND_VERTEX_BUFFER,
         0,
@@ -119,11 +133,11 @@ void SimulPrecipitationRendererDX1x::RestoreDeviceObjects(void *dev)
 }
 
 
-void SimulPrecipitationRendererDX1x::InvalidateDeviceObjects()
+void PrecipitationRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
 	cubemap_SRV=NULL;
-	SAFE_RELEASE(m_pRainEffect);
+	SAFE_RELEASE(effect);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(rain_texture);
 	SAFE_RELEASE(m_pVertexBuffer);
@@ -133,7 +147,7 @@ void SimulPrecipitationRendererDX1x::InvalidateDeviceObjects()
 	perViewConstants.InvalidateDeviceObjects();
 }
 
-SimulPrecipitationRendererDX1x::~SimulPrecipitationRendererDX1x()
+PrecipitationRenderer::~PrecipitationRenderer()
 {
 	InvalidateDeviceObjects();
 }
@@ -150,19 +164,18 @@ depth map of the scene to find the pixels for which the rain
 streak is not occluded by the scene. The streak is rendered only over
 those pixels.
 */
-void SimulPrecipitationRendererDX1x::Render(void *context)
+void PrecipitationRenderer::Render(void *context)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	static float intens=0.f;
-	static float cc=0.002f;
-	intens*=1.f-cc;
-	intens+=cc*Intensity;
-	if(intens<=0)
+	static float cc=0.006f;
+	intensity*=1.f-cc;
+	intensity+=cc*Intensity;
+	if(intensity<=0.05)
 		return;
 	PIXBeginNamedEvent(0,"Render Precipitation");
 	rainTexture->SetResource(rain_texture);
-	simul::dx11::setParameter(m_pRainEffect,"cubeTexture",cubemap_SRV);
-	simul::dx11::setParameter(m_pRainEffect,"randomTexture",random_SRV);
+	simul::dx11::setParameter(effect,"cubeTexture",cubemap_SRV);
+	simul::dx11::setParameter(effect,"randomTexture",random_SRV);
 	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 	//set up matrices
 	D3DXMATRIX world,wvp;
@@ -207,7 +220,7 @@ void SimulPrecipitationRendererDX1x::Render(void *context)
 
 	if(RainToSnow<1.f)
 	{
-		rainConstants.intensity		=intens*(1.f-RainToSnow);
+		rainConstants.intensity		=intensity*(1.f-RainToSnow);
 		rainConstants.Apply(m_pImmediateContext);
 		UINT passes=1;
 		for(unsigned i = 0 ; i < passes ; ++i )
@@ -218,13 +231,13 @@ void SimulPrecipitationRendererDX1x::Render(void *context)
 	}
 	if(RainToSnow>0)
 	{
-		rainConstants.intensity		=intens*(RainToSnow);
+		rainConstants.intensity		=intensity*(RainToSnow);
 		rainConstants.Apply(m_pImmediateContext);
 		RenderParticles(m_pImmediateContext);
 	}
 }
 
-void SimulPrecipitationRendererDX1x::RenderParticles(void *context)
+void PrecipitationRenderer::RenderParticles(void *context)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	ID3D11InputLayout* previousInputLayout;
@@ -233,6 +246,8 @@ void SimulPrecipitationRendererDX1x::RenderParticles(void *context)
 	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 	UINT stride = sizeof(vec3);
 	UINT offset = 0;
+
+	int numParticles=(int)(intensity*(RainToSnow)*40000.f);
 
 	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
 												1,					// the number of buffers in the array
@@ -245,14 +260,14 @@ void SimulPrecipitationRendererDX1x::RenderParticles(void *context)
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 	ApplyPass(m_pImmediateContext,m_hTechniqueParticles->GetPassByIndex(0));
-	m_pImmediateContext->Draw(10000,0);
+	m_pImmediateContext->Draw(numParticles,0);
 
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 	m_pImmediateContext->IASetInputLayout( previousInputLayout );
 	SAFE_RELEASE(previousInputLayout);
 }
 
-void SimulPrecipitationRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void PrecipitationRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
 	proj=p;

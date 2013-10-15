@@ -181,7 +181,8 @@ GL_ERROR_CHECK
 	F[0]->Activate(NULL);
 		F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-		glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+		if(target)
+			glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	target+=altitudes_km.size()*numElevations;
@@ -213,12 +214,14 @@ GL_ERROR_CHECK
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 //std::cout<<"\tGpu sky: render loss"<<i<<" "<<timer.UpdateTime()<<std::endl;
 	GL_ERROR_CHECK
-			glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			if(target)
+				glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 //std::cout<<"\tGpu sky: loss read"<<i<<" "<<timer.UpdateTime()<<std::endl;
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
-		target+=altitudes_km.size()*numElevations;
+		if(target)
+			target+=altitudes_km.size()*numElevations;
 		prevDistKm=distKm;
 	}
 	glUseProgram(0);

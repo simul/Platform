@@ -66,9 +66,6 @@
     <ClCompile Include="SimulOpticsRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulPrecipitationRendererDX1x.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SimulSkyRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -85,6 +82,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CubemapFramebuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrecipitationRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -146,9 +146,6 @@
     <ClInclude Include="SimulOpticsRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulPrecipitationRendererDX1x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SimulSkyRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -165,6 +162,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CubemapFramebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PrecipitationRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -197,9 +197,6 @@
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\simul_lightning.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_rain.fx">
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\simul_rendernoise.fx">
@@ -303,6 +300,9 @@
     </None>
     <None Include="..\CrossPlatform\hdr_constants.sl">
       <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="HLSL\rain.fx">
+      <Filter>FX</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
