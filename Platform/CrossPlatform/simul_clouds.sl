@@ -664,7 +664,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float BetaRayleigh		=0.0596831*(1.0+cos0*cos0);
 	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
 #ifndef USE_LIGHT_TABLES	
-	vec3 amb				=vec3(0,0,0);//ambientColour.rgb;
+	vec3 amb				=ambientColour.rgb;
 #endif
 	// This provides the range of texcoords that is lit.
 	for(int i=0;i<layerCount;i++)
