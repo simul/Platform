@@ -267,7 +267,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	else
 	{
 		hdrFramebuffer.ActivateDepth(pd3dImmediateContext);
-		hdrFramebuffer.Clear(pd3dImmediateContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+		hdrFramebuffer.ClearDepth(pd3dImmediateContext,ReverseDepth?0.f:1.f);
 	}
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetMatrices(view,proj);
@@ -281,7 +281,10 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RenderCelestialBackground(pd3dImmediateContext,Exposure);
-	hdrFramebuffer.DeactivateDepth(pd3dImmediateContext);
+	if(simulHDRRenderer&&UseHdrPostprocessor)
+		hdrFramebuffer.DeactivateDepth(pd3dImmediateContext);
+	else
+		hdrFramebuffer.Deactivate(pd3dImmediateContext);
 	void *depthTexture=hdrFramebuffer.GetDepthTex();
 	if(simulWeatherRenderer)
 	{

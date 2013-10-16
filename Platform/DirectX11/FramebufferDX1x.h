@@ -43,6 +43,7 @@ namespace simul
 			void Deactivate(void *context);
 			void DeactivateDepth(void *context);
 			void Clear(void *context,float,float,float,float,float,int mask=0);
+			void ClearDepth(void *context,float);
 			void ClearColour(void* context, float, float, float, float );
 			bool DrawQuad(void *context);
 			ID3D1xShaderResourceView *GetBufferResource()

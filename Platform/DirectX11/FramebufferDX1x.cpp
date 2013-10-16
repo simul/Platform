@@ -419,9 +419,9 @@ void Framebuffer::ActivateDepth(void *context)
 	m_pOldRenderTarget	=NULL;
 	m_pOldDepthSurface	=NULL;
 	pContext->OMGetRenderTargets(	1,
-												&m_pOldRenderTarget,
-												&m_pOldDepthSurface
-												);
+									&m_pOldRenderTarget,
+									&m_pOldDepthSurface
+									);
 	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
 	D3D11_VIEWPORT viewport;
 	// Setup the viewport for rendering.
@@ -484,6 +484,13 @@ void Framebuffer::Clear(void *context,float r,float g,float b,float a,float dept
 		pContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
 	if(m_pBufferDepthSurface)
 		pContext->ClearDepthStencilView(m_pBufferDepthSurface,mask,depth,0);
+}
+
+void Framebuffer::ClearDepth(void *context,float depth)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	if(m_pBufferDepthSurface)
+		pContext->ClearDepthStencilView(m_pBufferDepthSurface,D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL,depth,0);
 }
 
 void Framebuffer::ClearColour(void *context,float r,float g,float b,float a)
