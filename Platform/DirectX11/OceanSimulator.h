@@ -69,7 +69,8 @@ protected:
 	simul::dx11::StructuredBuffer<vec2>				dxyz;
 
 	// FFT wrap-up
-	FFT_512x512 m_fft;
+	Fft m_fft;
+	float start_time;
 };
 
 #endif	// _OCEAN_WAVE_H

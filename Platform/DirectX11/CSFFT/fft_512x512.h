@@ -26,10 +26,10 @@
 // Common types
 ///////////////////////////////////////////////////////////////////////////////
 
-struct FFT_512x512
+struct Fft
 {
-	FFT_512x512();
-	~FFT_512x512();
+	Fft();
+	~Fft();
 	void RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT slices);
 	void InvalidateDeviceObjects();
 	void RecompileShaders();
@@ -42,20 +42,22 @@ struct FFT_512x512
 				   UINT thread_count,
 				   UINT istride);
 protected:
-	ID3D11Device* m_pd3dDevice;
+	ID3D11Device				* m_pd3dDevice;
 	// D3D11 objects
-	ID3D11DeviceContext* pd3dImmediateContext;
-	ID3D11ComputeShader* pRadix008A_CS;
-	ID3D11ComputeShader* pRadix008A_CS2;
+	ID3D11DeviceContext			* pd3dImmediateContext;
+	ID3D11ComputeShader			* pRadix008A_CS;
+	ID3D11ComputeShader			* pRadix008A_CS2;
 
 	// More than one array can be transformed at same time
-	UINT slices;
+	UINT						slices;
 
 	// For 512x512 config, we need 6 constant buffers
-	ID3D11Buffer* pRadix008A_CB[6];
+	ID3D11Buffer				* pRadix008A_CB[6];
 	// Temporary buffers
-	ID3D11Buffer* pBuffer_Tmp;
-	ID3D11UnorderedAccessView* pUAV_Tmp;
-	ID3D11ShaderResourceView* pSRV_Tmp;
+	ID3D11Buffer				* pBuffer_Tmp;
+	ID3D11UnorderedAccessView	* pUAV_Tmp;
+	ID3D11ShaderResourceView	* pSRV_Tmp;
+
+	int							size;
 };
 

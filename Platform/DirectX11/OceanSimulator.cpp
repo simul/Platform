@@ -143,6 +143,7 @@ OceanSimulator::OceanSimulator(simul::terrain::SeaKeyframer *s)
 	:m_param(s)
 	,m_pd3dImmediateContext(NULL)
 	,effect(NULL)
+	,start_time(0.f)
 {
 }
 
@@ -248,9 +249,8 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 
 void OceanSimulator::RecompileShaders()
 {
-	effect=LoadEffect(m_pd3dDevice,"ocean.fx");
-	m_fft.RecompileShaders();
-	
+	effect					=LoadEffect(m_pd3dDevice,"ocean.fx");
+	m_fft					.RecompileShaders();
 	immutableConstants		.LinkToEffect(effect,"cbImmutable");
 	changePerFrameConstants	.LinkToEffect(effect,"cbChangePerFrame");
 }
@@ -318,8 +318,10 @@ void OceanSimulator::updateDisplacementMap(float time)
 	simul::dx11::setTexture(effect,"g_InputOmega"	,omega.shaderResourceView);
 
 	simul::dx11::setUnorderedAccessView(effect,"g_OutputHt",choppy.unorderedAccessView);
-
-	changePerFrameConstants.g_Time			=time*m_param->time_scale;
+	if(start_time==0)
+		start_time=time;
+	float time_seconds						=(time-start_time)*3600.f*24.f;
+	changePerFrameConstants.g_Time			=time_seconds*m_param->time_scale;
 	changePerFrameConstants.g_ChoppyScale	=m_param->choppy_scale;
 	changePerFrameConstants.g_GridLen		=m_param->dmap_dim / m_param->patch_length;
 	
@@ -330,7 +332,7 @@ void OceanSimulator::updateDisplacementMap(float time)
 	UINT group_count_x = (m_param->dmap_dim + BLOCK_SIZE_X - 1) / BLOCK_SIZE_X;
 	UINT group_count_y = (m_param->dmap_dim + BLOCK_SIZE_Y - 1) / BLOCK_SIZE_Y;
 	tech->GetPassByIndex(0)->Apply(0,m_pd3dImmediateContext);
-	m_pd3dImmediateContext->Dispatch(group_count_x, group_count_y, 1);
+	m_pd3dImmediateContext->Dispatch(group_count_x,group_count_y,1);
 
 	simul::dx11::unbindTextures(effect);
 	simul::dx11::setUnorderedAccessView(effect,"g_OutputHt",NULL);

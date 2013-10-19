@@ -246,8 +246,8 @@ void OceanRenderer::SetLossTexture(void *t)
 
 void OceanRenderer::SetInscatterTextures(void *t,void *s)
 {
-	skyInscatterTexture_SRV=((ID3D1xShaderResourceView*)t);
-	skylightTexture_SRV=((ID3D1xShaderResourceView*)s);
+	skyInscatterTexture_SRV	=((ID3D1xShaderResourceView*)t);
+	skylightTexture_SRV		=((ID3D1xShaderResourceView*)s);
 }
 
 void OceanRenderer::InvalidateDeviceObjects()
@@ -724,6 +724,15 @@ void OceanRenderer::RenderTextures(void *context,int width,int height)
 	UtilityRenderer::SetScreenSize(width,height);
 	int x=8;
 	int y=height-w;
+	simul::dx11::setTexture(effect,"showTexture",g_pSRV_Perlin);
+	simul::dx11::setParameter(effect,"showMultiplier",10.f);
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
+	x+=w+2;
+	static float spectrum_multiplier=10000.0f;
+	simul::dx11::setTexture(effect,"g_InputDxyz",oceanSimulator->GetSpectrum());
+	simul::dx11::setParameter(effect,"showMultiplier",spectrum_multiplier);
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
+	x+=w+2;
 	simul::dx11::setTexture(effect,"showTexture",oceanSimulator->getDisplacementMap());
 	simul::dx11::setParameter(effect,"showMultiplier",0.01f);
 	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
@@ -733,19 +742,10 @@ void OceanRenderer::RenderTextures(void *context,int width,int height)
 	simul::dx11::setParameter(effect,"showMultiplier",gradient_multiplier);
 	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
 	x+=w+2;
-	simul::dx11::setTexture(effect,"showTexture",g_pSRV_Perlin);
-	simul::dx11::setParameter(effect,"showMultiplier",10.f);
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
-	x+=w+2;
 //	simul::dx11::setParameter(effect,"showTexture",g_pSRV_Fresnel);
 	//UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_texture"));
 //	x+=w+2;
 	// structured buffer
-	static float spectrum_multiplier=10000.0f;
-	simul::dx11::setTexture(effect,"g_InputDxyz",oceanSimulator->GetSpectrum());
-	simul::dx11::setParameter(effect,"showMultiplier",spectrum_multiplier);
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
-	x+=w+2;
 	/*simul::dx11::setTexture(effect,"g_InputDxyz",oceanSimulator->GetFftInput());
 	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,effect,effect->GetTechniqueByName("show_structured_buffer"));
 	x+=w+2;*/

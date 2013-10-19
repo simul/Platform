@@ -121,6 +121,7 @@ void Radix008A_CS(uint3 thread_id : SV_DispatchThreadID)
 	float2 D[8];
 
 	uint i;
+	// istride is, e.g. 32768, 4096, 512, 64, 8, 1
 	uint imod = thread_id & (istride - 1);
 	uint iaddr = ((thread_id - imod) << 3) + imod;
 	for (i = 0; i < 8; i++)

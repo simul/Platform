@@ -31,16 +31,17 @@
 
 HRESULT CompileShaderFromFile( const char* szFileName, const char* szEntryPoint, const char* szShaderModel, ID3DBlob** ppBlobOut );
 
-FFT_512x512::FFT_512x512()
+Fft::Fft()
 	:m_pd3dDevice(NULL)
+	,size(512)
 {
 }
-FFT_512x512::~FFT_512x512()
+Fft::~Fft()
 {
 	InvalidateDeviceObjects();
 }
 
-void FFT_512x512::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
+void Fft::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
 {
 	m_pd3dDevice=pd3dDevice;
 	slices = s;
@@ -55,7 +56,7 @@ void FFT_512x512::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
 
 	// Temp buffer
 	D3D11_BUFFER_DESC buf_desc;
-	buf_desc.ByteWidth = sizeof(float) * 2 * (512 * slices) * 512;
+	buf_desc.ByteWidth = sizeof(float) * 2 * (size * slices) * size;
     buf_desc.Usage = D3D11_USAGE_DEFAULT;
     buf_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
     buf_desc.CPUAccessFlags = 0;
@@ -70,7 +71,7 @@ void FFT_512x512::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
 	uav_desc.Format = DXGI_FORMAT_UNKNOWN;
 	uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
 	uav_desc.Buffer.FirstElement = 0;
-	uav_desc.Buffer.NumElements = (512 * slices) * 512;
+	uav_desc.Buffer.NumElements = (size * slices) * size;
 	uav_desc.Buffer.Flags = 0;
 
 	pd3dDevice->CreateUnorderedAccessView(pBuffer_Tmp, &uav_desc, &pUAV_Tmp);
@@ -80,12 +81,12 @@ void FFT_512x512::RestoreDeviceObjects(ID3D11Device* pd3dDevice, UINT s)
 	srv_desc.Format = DXGI_FORMAT_UNKNOWN;
 	srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
 	srv_desc.Buffer.FirstElement = 0;
-	srv_desc.Buffer.NumElements = (512 * slices) * 512;
+	srv_desc.Buffer.NumElements = (size * slices) * size;
 
 	pd3dDevice->CreateShaderResourceView(pBuffer_Tmp, &srv_desc, &pSRV_Tmp);
 }
 
-void FFT_512x512::RecompileShaders()
+void Fft::RecompileShaders()
 {
 	if(!m_pd3dDevice)
 		return;
@@ -103,7 +104,7 @@ void FFT_512x512::RecompileShaders()
     SAFE_RELEASE(pBlobCS2);
 }
 
-void FFT_512x512::InvalidateDeviceObjects()
+void Fft::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(pSRV_Tmp);
 	SAFE_RELEASE(pUAV_Tmp);
@@ -116,10 +117,10 @@ void FFT_512x512::InvalidateDeviceObjects()
 		SAFE_RELEASE(pRadix008A_CB[i]);
 }
 
-void FFT_512x512::radix008A(	ID3D11UnorderedAccessView* pUAV_Dst,
-								ID3D11ShaderResourceView* pSRV_Src,
-								UINT thread_count,
-								UINT istride)
+void Fft::radix008A(	ID3D11UnorderedAccessView* pUAV_Dst,
+						ID3D11ShaderResourceView* pSRV_Src,
+						UINT thread_count,
+						UINT istride)
 {
     // Setup execution configuration
 	UINT grid = thread_count / COHERENCY_GRANULARITY;
@@ -149,16 +150,16 @@ void FFT_512x512::radix008A(	ID3D11UnorderedAccessView* pUAV_Dst,
 		pd3dImmediateContext->CSSetShader(pRadix008A_CS2,NULL,0);
 }
 					 
-void FFT_512x512::fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
+void Fft::fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
 									ID3D11ShaderResourceView* pSRV_Dst,
 									ID3D11ShaderResourceView* pSRV_Src)
 {
-	const UINT thread_count = slices * (512 * 512) / 8;
+	const UINT thread_count = slices * (size * size) / 8;
 	ID3D11Buffer* cs_cbs[1];
-
-	UINT istride = 512 * 512 / 8;
-
-	for(int i=0;i<6;i++)
+	UINT istride = size * size / 8;
+	// i.e. istride is 32768, 4096, 512, 64, 8, 1
+	int i=0;
+	while(istride>0)
 	{
 		cs_cbs[0] = pRadix008A_CB[i];
 		pd3dImmediateContext->CSSetConstantBuffers(0, 1, &cs_cbs[0]);
@@ -169,10 +170,11 @@ void FFT_512x512::fft_512x512_c2c(	ID3D11UnorderedAccessView* pUAV_Dst,
 		ID3D11UnorderedAccessView *uav=(i%2==0?pUAV_Tmp:pUAV_Dst);
 		radix008A(uav, srv, thread_count, istride);
 		istride /= 8;
+		i++;
 	}
 }
 
-void FFT_512x512::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
+void Fft::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
 {
 	// Create 6 cbuffers for 512x512 transform.
 
@@ -198,17 +200,17 @@ void FFT_512x512::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
 	};
 
 	// Buffer 0
-	const UINT thread_count = slices * (512 * 512) / 8;
-	UINT ostride = 512 * 512 / 8;
+	const UINT thread_count = slices * (size * size) / 8;
+	UINT ostride = size * size / 8;
 	UINT istride = ostride;
-	double phase_base = -TWO_PI / (512.0 * 512.0);
+	double phase_base = -TWO_PI / ((double)size * (double)size);
 	
 	CB_Structure cb_data_buf0 =
 	{
 		thread_count,
 		ostride,
 		istride,
-		512,
+		size,
 		(float)phase_base
 	};
 	cb_data.pSysMem = &cb_data_buf0;
@@ -224,7 +226,7 @@ void FFT_512x512::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
 		thread_count,
 		ostride,
 		istride,
-		512,
+		size,
 		(float)phase_base
 	};
 	cb_data.pSysMem = &cb_data_buf1;
@@ -240,7 +242,7 @@ void FFT_512x512::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
 		thread_count,
 		ostride,
 		istride,
-		512,
+		size,
 		(float)phase_base
 	};
 	cb_data.pSysMem = &cb_data_buf2;
@@ -251,7 +253,7 @@ void FFT_512x512::CreateCBuffers(ID3D11Device* pd3dDevice, UINT slices)
 	// Buffer 3
 	istride /= 8;
 	phase_base *= 8.0;
-	ostride /= 512;
+	ostride /= size;
 	
 	CB_Structure cb_data_buf3 =
 	{
