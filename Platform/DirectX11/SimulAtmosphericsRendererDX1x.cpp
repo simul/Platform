@@ -18,7 +18,7 @@
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "SimulCloudRendererDX1x.h"
-#include "SimulPrecipitationRendererDX1x.h"
+#include "PrecipitationRenderer.h"
 #include "Simul2DCloudRendererDX1x.h"
 #include "SimulSkyRendererDX1x.h"
 #include "Simul/Base/Timer.h"

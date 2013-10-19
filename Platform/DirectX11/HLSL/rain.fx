@@ -1,9 +1,11 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
 #include "../../CrossPlatform/rain_constants.sl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
 texture2D randomTexture;
 TextureCube cubeTexture;
 texture2D rainTexture;
+texture2D showTexture;
 SamplerState rainSampler
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -35,14 +37,6 @@ struct vertexOutput
     float4 texCoords	: TEXCOORD0;		/// z is intensity!
     float3 viewDir		: TEXCOORD1;
 };
-#define pi (3.1415926536f)
-
-float HenyeyGreenstein(float g,float cos0)
-{
-	float g2=g*g;
-	float u=1.f+g2-2.f*g*cos0;
-	return (1.f-g2)/(4.f*pi*sqrt(u*u*u));
-}
 
 float rand(float2 co)
 {
@@ -78,6 +72,16 @@ vec3 Frac(vec3 pos,float scale)
 	return scale*(2.0*frac(0.5*(pos/scale+unity))-unity);
 }
 
+posTexVertexOutput VS_ShowTexture(idOnly id)
+{
+    return VS_ScreenQuad(id,rect);
+}
+
+
+float4 PS_ShowTexture(posTexVertexOutput In): SV_TARGET
+{
+    return texture_wrap_lod(showTexture,In.texCoords,0);
+}
 
 particleVertexOutput VS_Particles(posOnly IN)
 {
@@ -136,8 +140,8 @@ float4 PS_Particles(particleGeometryOutput IN): SV_TARGET
 {
 	float4 result	=cubeTexture.Sample(wrapSamplerState,-IN.view);
 	vec2 pos		=IN.texCoords*2.0-1.0;
-	float radius	=length(pos.xy);
-	float opacity	=saturate(1.0-radius)/.5;
+	float radius	=intensity*length(pos.xy);
+	float opacity	=saturate(intensity-radius)/.5;
 	return float4(IN.brightness*lightColour.rgb+result.rgb,opacity);
 }
 
@@ -195,13 +199,14 @@ float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 	for(int i=0;i<4;i++)
 	{
 		float2 texc	=float2(atan2(view.x,view.y)*sc*7/(2.0*pi),(view.z+sc*offset)*sc);
-		float r		=br*saturate(rainTexture.Sample(wrapSamplerState,texc.xy)+intensity-1.0).x;
+		float r		=br*(saturate(rainTexture.Sample(wrapSamplerState,texc.xy)).x+intensity-1.0);//
 		sc*=4.0;
 		br*=.4;
 		//result*=1.0-r;
 		//result.rgb+=r*light.rgb;
 		result.a+=r;
 	}
+	result.a=saturate(result.a);
 	return result;
 }
 
@@ -252,6 +257,20 @@ technique11 create_random_texture
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_4_0,PS_RenderRandomTexture()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+    }
+}
+
+
+technique11 show_texture
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_ShowTexture()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }

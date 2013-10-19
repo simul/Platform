@@ -28,11 +28,11 @@ namespace simul
 	namespace dx11
 	{
 		//! A rain/snow renderer for DirectX 11.
-		class SimulPrecipitationRendererDX1x:public simul::clouds::BasePrecipitationRenderer
+		class PrecipitationRenderer:public simul::clouds::BasePrecipitationRenderer
 		{
 		public:
-			SimulPrecipitationRendererDX1x();
-			virtual ~SimulPrecipitationRendererDX1x();
+			PrecipitationRenderer();
+			virtual ~PrecipitationRenderer();
 			//standard d3d object interface functions:
 			//! Call this when the D3D device has been created or reset.
 			void RestoreDeviceObjects(void* dev);
@@ -42,12 +42,14 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 			void Render(void *context);
+			//! Put textures to screen for debugging
+			void RenderTextures(void *context,int width,int height);
 		protected:
 			void RenderParticles(void *context);
 			ID3D11Device*							m_pd3dDevice;
 			ID3D11InputLayout*						m_pVtxDecl;
 			ID3D11Buffer*							m_pVertexBuffer;
-			ID3DX11Effect*							m_pRainEffect;		// The fx file for the sky
+			ID3DX11Effect*							effect;		// The fx file for the sky
 			ID3D11ShaderResourceView*				rain_texture;
 			ID3D11ShaderResourceView*				random_SRV;
 			ID3D11ShaderResourceView*				cubemap_SRV;
@@ -59,6 +61,7 @@ namespace simul
 			D3DXMATRIX								view,proj;
 			ConstantBuffer<RainConstants>			rainConstants;
 			ConstantBuffer<RainPerViewConstants>	perViewConstants;
+			float intensity;
 		};
 	}
 }

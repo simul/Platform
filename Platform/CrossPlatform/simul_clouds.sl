@@ -278,70 +278,94 @@ float unshadowedBrightness(float Beta,vec4 lightResponse,vec3 ambientColour)
 #ifndef GLSL
 vec4 SimpleRaytraceCloudsForward(Texture3D cloudDensity1,Texture3D cloudDensity2,Texture2D depthTexture,Texture2D lightTableTexture,vec2 texCoords)
 {
-	float dlookup 		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
-	vec4 clip_pos		=vec4(-1.f,1.f,1.f,1.f);
-	clip_pos.x			+=2.0*texCoords.x;
-	clip_pos.y			-=2.0*texCoords.y;
-	vec3 view			=normalize(mul(invViewProj,clip_pos).xyz);
+	float dlookup 			=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
+	vec4 clip_pos			=vec4(-1.f,1.f,1.f,1.f);
+	clip_pos.x				+=2.0*texCoords.x;
+	clip_pos.y				-=2.0*texCoords.y;
+	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
 
-	float s				=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
-	vec3 lightDir		=lerp(directionToMoon,directionToSun,s);
+	float s					=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
+	vec3 lightDir			=lerp(directionToMoon,directionToSun,s);
 
-	float cos0			=dot(lightDir.xyz,view.xyz);
-	float sine			=view.z;
-	vec3 n				=vec3(clip_pos.xy*tanHalfFov,1.0);
-	n					=normalize(n);
+	float cos0				=dot(lightDir.xyz,view.xyz);
+	float sine				=view.z;
+	vec3 n					=vec3(clip_pos.xy*tanHalfFov,1.0);
+	n						=normalize(n);
+	vec2 noise_texc_0		=mul(noiseMatrix,vec4(n.xy,0,0)).xy/fractalRepeatLength;
 
-	float min_texc_z	=-fractalScale.z*1.5;
-	float max_texc_z	=1.0-min_texc_z;
+	float min_texc_z		=-fractalScale.z*1.5;
+	float max_texc_z		=1.0-min_texc_z;
 
-	float depth			=dlookup.r;
-	float d				=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	vec4 colour			=vec4(0.0,0.0,0.0,1.0);
-	float meanFadeDistance		=0.0;
-	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
+	float depth				=dlookup;
+	float d					=depthToFadeDistance(depth,clip_pos.xy,nearZ,farZ,tanHalfFov);
+	vec4 colour				=vec4(0.0,0.0,0.0,1.0);
+	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
+
+	// Lookup in the illumination texture.
+	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
+	vec4 illum_lookup		=texture_wrap_mirror(illuminationTexture,illum_texc);
+	vec2 nearFarTexc		=illum_lookup.xy;
+
+	float meanFadeDistance	=0.0;
 	// Precalculate hg effects
-	float BetaClouds	=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-
-#ifdef USE_LIGHT_TABLES
-	float alt_texc				=viewPos.z/maxAltitudeMetres;
-	vec3 combinedLightColour	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,3.5/4.0),0).rgb;
-	vec3 ambientLightColour		=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;
-#else
-	vec3 combinedLightColour	=sunlightColour1.rgb;
-	vec3 ambientLightColour		=ambientColour.rgb;
+	float BetaClouds		=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
+	float BetaRayleigh		=0.0596831*(1.0+cos0*cos0);
+	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
+#ifndef USE_LIGHT_TABLES	
+	vec3 amb				=vec3(0,0,0);//ambientColour.rgb;
 #endif
-
+	// This provides the range of texcoords that is lit.
 	for(int i=0;i<layerCount;i++)
 	{
-		const LayerData layer	=layers[i];
-		float dist				=layer.layerDistance;
-		float fadeDistance		=saturate(dist/maxFadeDistanceMetres);
-		vec4 density			=vec4(0,0,0,0);
-		if(fadeDistance<d)
+		vec4 density				=vec4(0,0,0,0);
+		const LayerData layer		=layers[i];
+		float layerWorldDist		=layer.layerDistance;
+		float fadeDistance			=saturate(layerWorldDist/maxFadeDistanceMetres);
+		vec3 world_pos				=viewPos+layerWorldDist*view;
+		world_pos.z					-=layer.verticalShift;
+		vec3 layerTexCoords			=(world_pos-cornerPos)*inverseScales;
+		float layerFade				=layer.layerFade;//*saturate((abs(sine)-layer.sine_threshold)/layer.sine_range);
+		if(layerFade>0&&fadeDistance<=d&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
 		{
-			vec3 world_pos		=viewPos+dist*view;
-			vec3 cloudTexCoords		=(world_pos-cornerPos)*inverseScales;
-			if(cloudTexCoords.z>=min_texc_z&&cloudTexCoords.z<=max_texc_z)
-		{
-				density			=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,cloud_interp);
-		}
-		if(density.z>0)
-		{
-				vec4 c=calcColour2(density,BetaClouds,lightResponse,combinedLightColour,ambientLightColour);
-				colour*=(1.0-c.a);
-				colour.rgb+=c.rgb*c.a;
-				meanFadeDistance					+=fadeDistance*c.a*colour.a;
+			density					=calcDensity(cloudDensity1,cloudDensity2,layerTexCoords,layer.layerFade,cloud_interp);
+			density.z				*=saturate((d-fadeDistance)/0.0001);
+			if(density.z>0)
+			{
+#ifdef USE_LIGHT_TABLES
+				float alt_texc			=world_pos.z/maxAltitudeMetres;
+				vec3 combinedLightColour=texture_clamp_lod(lightTableTexture,vec2(alt_texc,3.5/4.0),0).rgb;
+				vec3 amb				=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;
+#else
+				vec3 combinedLightColour=lerp(sunlightColour1.rgb,sunlightColour2.rgb,layerTexCoords.z);
+#endif
+				float brightness_factor	=unshadowedBrightness(BetaClouds,lightResponse,amb);
+				vec4 c					=calcColour2( density,BetaClouds,lightResponse,combinedLightColour,amb);
+				fade_texc.x				=sqrt(fadeDistance);
+
+				float sh				=saturate((fade_texc.x-nearFarTexc.x)/0.1);
+				
+				c.rgb					=applyFades2(c.rgb,fade_texc,BetaRayleigh,BetaMie,sh);
+				colour.rgb				+=c.rgb*c.a*(colour.a);
+				meanFadeDistance		+=fadeDistance*c.a*colour.a;
+				//meanFadeDistance		=min(meanFadeDistance,fadeDistance);
+				colour.a				*=(1.0-c.a);
+				if(colour.a*brightness_factor<0.003)
+				{
+					colour.a	=0.0;
+					//meanFadeDistance		=fadeDistance;//lerp(meanFadeDistance,fadeDistance,depthMix);
+					break;
 				}
+			}
 		}
 	}
 	if(colour.a>=1.0)
 	   discard;
-	float BetaRayleigh	=0.0596831*(1.0+cos0*cos0);
-	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);
-	fade_texc.x=sqrt(meanFadeDistance);
-	colour.rgb=exposure*applyFades2(colour.rgb,fade_texc,BetaRayleigh,BetaMie,earthshadowMultiplier);
-    return vec4(colour.rgb,colour.a);
+	meanFadeDistance+=colour.a;
+	RaytracePixelOutput res;
+    res.colour		=vec4(exposure*colour.rgb,colour.a);
+
+	res.depth		=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,nearZ,farZ,tanHalfFov);
+	return res.colour;
 }
 
 RaytracePixelOutput ExperimentalRaytraceCloudsForward3DNoise(Texture3D cloudDensity1
@@ -640,7 +664,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float BetaRayleigh		=0.0596831*(1.0+cos0*cos0);
 	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
 #ifndef USE_LIGHT_TABLES	
-	vec3 amb				=vec3(0,0,0);//ambientColour.rgb;
+	vec3 amb				=ambientColour.rgb;
 #endif
 	// This provides the range of texcoords that is lit.
 	for(int i=0;i<layerCount;i++)

@@ -90,7 +90,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				,simul::sky::float4 starlight
 				,simul::sky::float4 dir_to_sun
 				,simul::sky::float4 dir_to_moon
-				,float haze
+				,float haze,float haze_base_km,float haze_scale_km
 				,unsigned new_tables_checksum
 				,float overcast_base_km
 				,float overcast_range_km
@@ -145,8 +145,8 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 		gpuSkyConstants.planetRadiusKm		=skyInterface->GetPlanetRadius();
 		gpuSkyConstants.maxOutputAltKm		=maxOutputAltKm;
 		gpuSkyConstants.maxDensityAltKm		=maxDensityAltKm;
-		gpuSkyConstants.hazeBaseHeightKm	=skyInterface->GetHazeBaseHeightKm();
-		gpuSkyConstants.hazeScaleHeightKm	=skyInterface->GetHazeScaleHeightKm();
+		gpuSkyConstants.hazeBaseHeightKm	=haze_base_km;
+		gpuSkyConstants.hazeScaleHeightKm	=haze_scale_km;
 
 		gpuSkyConstants.overcastBaseKmX		=overcast_base_km;
 		gpuSkyConstants.overcastRangeKmX		=overcast_range_km;
