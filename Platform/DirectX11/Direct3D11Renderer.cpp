@@ -195,8 +195,10 @@ void Direct3D11Renderer::DownscaleDepth(ID3D11DeviceContext* pContext,const D3DX
 	int w=ScreenWidth/s;
 	int h=ScreenHeight/s;
 	// DXGI_FORMAT_D32_FLOAT->DXGI_FORMAT_R32_FLOAT
-	lowResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
+	lowResDepthTexture_near.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
+	lowResDepthTexture_far.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	lowResDepthTexture_scratch.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
+	
 	// Resolve depth first:
 	ID3D11Texture2D *depthTexture=hdrFramebuffer.GetDepthTexture();
 	// Sadly, ResolveSubresource doesn't work for depth. And compute can't do MS lookups. So we use a framebufferinstead.
@@ -211,22 +213,26 @@ void Direct3D11Renderer::DownscaleDepth(ID3D11DeviceContext* pContext,const D3DX
 	mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj);
 	mixedResolutionConstants.Apply(pContext);
 	static const int BLOCKWIDTH			=8;
-	uint2 subgrid						=uint2((lowResDepthTexture.width+BLOCKWIDTH-1)/BLOCKWIDTH,(lowResDepthTexture.length+BLOCKWIDTH-1)/BLOCKWIDTH);
-	simul::dx11::setParameter			(mixedResolutionEffect,"sourceDepthTexture"	,(ID3D11ShaderResourceView*)resolvedDepth_fb.GetColorTex());
-	simul::dx11::setUnorderedAccessView	(mixedResolutionEffect,"target2DTexture"	,lowResDepthTexture_scratch.unorderedAccessView);
+	uint2 subgrid						=uint2((lowResDepthTexture_near.width+BLOCKWIDTH-1)/BLOCKWIDTH,(lowResDepthTexture_near.length+BLOCKWIDTH-1)/BLOCKWIDTH);
+	simul::dx11::setParameter			(mixedResolutionEffect,"sourceDepthTexture"	,(ID3D11ShaderResourceView*)hdrFramebuffer.GetDepthTex());
+	simul::dx11::setUnorderedAccessView	(mixedResolutionEffect,"target2DTexture"	,lowResDepthTexture_near.unorderedAccessView);
 	
-	simul::dx11::applyPass(pContext,mixedResolutionEffect,"downscale_depth");
+	simul::dx11::applyPass(pContext,mixedResolutionEffect,"downscale_near_depth");
+	pContext->Dispatch(subgrid.x,subgrid.y,1);
+	simul::dx11::setUnorderedAccessView	(mixedResolutionEffect,"target2DTexture"	,lowResDepthTexture_far.unorderedAccessView);
+	
+	simul::dx11::applyPass(pContext,mixedResolutionEffect,"downscale_far_depth");
 	pContext->Dispatch(subgrid.x,subgrid.y,1);
 	// Now we need to do another pass to make each depth value the maximum of all its adjacent ones. Otherwise we halos due to filtering when we put the
 	// clouds to the screen.
-	
+	/*
 	simul::dx11::setParameter			(mixedResolutionEffect,"sourceDepthTexture"	,lowResDepthTexture_scratch.shaderResourceView);
 	simul::dx11::setUnorderedAccessView	(mixedResolutionEffect,"target2DTexture"	,lowResDepthTexture.unorderedAccessView);
 	simul::dx11::applyPass(pContext,mixedResolutionEffect,"filter_lowres_depth");
 	pContext->Dispatch(subgrid.x,subgrid.y,1);
-
+	*/
 	unbindTextures(mixedResolutionEffect);
-	simul::dx11::applyPass(pContext,mixedResolutionEffect,"downscale_depth");
+	simul::dx11::applyPass(pContext,mixedResolutionEffect,"downscale_far_depth");
 }
 
 void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep)
@@ -325,10 +331,11 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 
 		simul::dx11::UtilityRenderer::SetScreenSize(ScreenWidth,ScreenHeight);
-	/*	UtilityRenderer::DrawTexture(pd3dImmediateContext,0							,0,lowResDepthTexture.width,lowResDepthTexture.length,lowResDepthTexture.shaderResourceView);
-		UtilityRenderer::DrawTexture(pd3dImmediateContext,lowResDepthTexture.width	,0,lowResDepthTexture.width,lowResDepthTexture.length,(ID3D1xShaderResourceView*)resolvedDepth_fb.GetColorTex());
-		UtilityRenderer::DrawTexture(pd3dImmediateContext,2*lowResDepthTexture.width,0,lowResDepthTexture.width,lowResDepthTexture.length,(ID3D1xShaderResourceView*)hdrFramebuffer.GetDepthTex());
-		*/
+		UtilityRenderer::DrawTexture(pd3dImmediateContext,0								,0,lowResDepthTexture_near.width,lowResDepthTexture_near.length,lowResDepthTexture_near.shaderResourceView);
+		UtilityRenderer::DrawTexture(pd3dImmediateContext,lowResDepthTexture.width		,0,lowResDepthTexture_near.width,lowResDepthTexture_near.length,lowResDepthTexture_far.shaderResourceView);
+		UtilityRenderer::DrawTexture(pd3dImmediateContext,2*lowResDepthTexture.width	,0,lowResDepthTexture_near.width,lowResDepthTexture_near.length,(ID3D1xShaderResourceView*)resolvedDepth_fb.GetColorTex());
+		UtilityRenderer::DrawTexture(pd3dImmediateContext,3*lowResDepthTexture.width	,0,lowResDepthTexture_near.width,lowResDepthTexture_near.length,(ID3D1xShaderResourceView*)hdrFramebuffer.GetDepthTex());
+		
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,ScreenWidth,ScreenHeight);
@@ -381,7 +388,8 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 		simulTerrainRenderer->InvalidateDeviceObjects();
 	hdrFramebuffer.InvalidateDeviceObjects();
 	resolvedDepth_fb.InvalidateDeviceObjects();
-	lowResDepthTexture.release();
+	lowResDepthTexture_near.release();
+	lowResDepthTexture_far.release();
 	lowResDepthTexture_scratch.release();
 	cubemapFramebuffer.InvalidateDeviceObjects();
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();

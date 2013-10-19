@@ -1,6 +1,6 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-Texture2D<float4> sourceDepthTexture SIMUL_TEXTURE_REGISTER(0);
+Texture2DMS sourceMSDepthTexture SIMUL_TEXTURE_REGISTER(0);
 RWTexture2D<float4> target2DTexture SIMUL_RWTEXTURE_REGISTER(1);
 
 SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
@@ -11,25 +11,60 @@ SIMUL_CONSTANT_BUFFER(MixedResolutionConstants,11)
 SIMUL_CONSTANT_BUFFER_END
 
 [numthreads(8,8,1)]
-void CS_DownscaleDepth(uint3 pos : SV_DispatchThreadID )
+void CS_DownscaleDepthNear(uint3 pos : SV_DispatchThreadID )
 {
+	uint2 source_dims;
+	uint numberOfSamples;
+	sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
 	uint2 dims;
 	target2DTexture.GetDimensions(dims.x,dims.y);
 	if(pos.x>=dims.x||pos.y>=dims.y)
 		return;
+	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
+	uint2 pos2					=pos.xy*scale;
+	float nearest_depth			=0.0;
+	for(int i=0;i<scale.x;i++)
+	{
+		for(int j=0;j<scale.y;j++)
+		{
+			for(int k=0;k<numberOfSamples;k++)
+			{
+				uint2 hires_pos		=pos2+uint2(i,j);
+				float d				=sourceDepthTexture[hires_pos].x;
+				if(d>nearest_depth)
+					nearest_depth	=d;
+			}
+		}
+	}
+	target2DTexture[pos.xy]	=nearest_depth;
+}
+[numthreads(8,8,1)]
+void CS_DownscaleDepthFar(uint3 pos : SV_DispatchThreadID )
+{
+	uint2 source_dims;
+	uint numberOfSamples;
+	sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
+	uint2 dims;
+	target2DTexture.GetDimensions(dims.x,dims.y);
+	if(pos.x>=dims.x||pos.y>=dims.y)
+		return;
+	// scale must represent the exact number of horizontal and vertical pixels for the multisampled texture that fit into each texel of the downscaled texture.
 	uint2 pos2					=pos.xy*scale;
 	float farthest_depth		=1.0;
 	for(int i=0;i<scale.x;i++)
 	{
 		for(int j=0;j<scale.y;j++)
 		{
-			uint2 hires_pos		=pos2+uint2(i,j);
-			float d				=sourceDepthTexture[hires_pos].x;
-			if(d<farthest_depth)
-				farthest_depth	=d;
+			for(int k=0;k<numberOfSamples;k++)
+			{
+				uint2 hires_pos		=pos2+uint2(i,j);
+				float d				=sourceDepthTexture[hires_pos].x;
+				if(d<farthest_depth)
+					farthest_depth	=d;
+			}
 		}
 	}
-	target2DTexture[pos.xy]	=sourceDepthTexture[pos2.xy].x;//farthest_depth;
+	target2DTexture[pos.xy]	=farthest_depth;
 }
 float AdaptDepth(float depth)
 {
@@ -68,7 +103,7 @@ vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
 	return texture_clamp_lod(sourceDepthTexture,IN.texCoords,0);
 }
 
-technique11 downscale_depth
+technique11 downscale_depth_near
 {
     pass p0
     {
@@ -76,11 +111,19 @@ technique11 downscale_depth
     }
 }
 
+technique11 downscale_depth_far
+{
+    pass p0
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFar()));
+    }
+}
+
 technique11 filter_lowres_depth
 {
     pass p0
     {
-		SetComputeShader(CompileShader(cs_5_0,CS_FilterLowresDepth()));
+		SetComputeShader(CompileShader(cs_5_0,CS_FilterLowresDepthNear()));
     }
 }
 

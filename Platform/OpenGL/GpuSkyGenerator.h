@@ -26,6 +26,7 @@ namespace simul
 				,float haze,float haze_base_km,float haze_scale_km
 				,unsigned new_checksum,
 				float overcast_base_km,float overcast_range_km
+				,simul::sky::float4 ozone
 				,int index,int end_index,const simul::sky::float4 *density_table
 				,const simul::sky::float4 *blackbody_table,const simul::sky::float4 *optical_table,int table_size
 				,float maxDensityAltKm

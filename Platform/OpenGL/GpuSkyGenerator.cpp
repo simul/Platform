@@ -107,6 +107,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,simul::sky
 				,float haze,float haze_base_km,float haze_scale_km
 				,unsigned new_checksum
 				,float overcast_base_km,float overcast_range_km
+				,simul::sky::float4 ozone
 				,int index,int end_index
 				,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table
 				,const simul::sky::float4 *blackbody_table,int table_size,float maxDensityAltKm
@@ -162,7 +163,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,simul::sky
 		constants.overcastX			=0.f;
 		constants.rayleigh			=(const float*)skyInterface->GetRayleigh();
 		constants.hazeMie			=(const float*)(haze*skyInterface->GetMie());
-		constants.ozone				=(const float*)(skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
+		constants.ozone				=(const float*)(ozone);
 		constants.sunIrradiance		=(const float*)sun_irradiance;
 		constants.lightDir			=(const float*)dir_to_sun;
 		constants.starlight			=(const float*)(starlight);
