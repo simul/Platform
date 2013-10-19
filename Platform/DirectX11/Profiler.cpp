@@ -35,13 +35,13 @@ Profiler &Profiler::GetGlobalProfiler()
 
 Profiler::~Profiler()
 {
-	std::cout<<"Profiler::~Profiler"<<std::endl;
+	//std::cout<<"Profiler::~Profiler"<<std::endl;
 	Uninitialize();
 }
 
 void Profiler::Uninitialize()
 {
-	std::cout<<"Profiler::Uninitialize device was "<<(unsigned)device<<std::endl;
+	//std::cout<<"Profiler::Uninitialize device was "<<(unsigned)device<<std::endl;
 	profiles.clear();
     this->device = NULL;
     enabled=true;
@@ -51,7 +51,7 @@ void Profiler::Initialize(ID3D11Device* device)
 {
     this->device = device;
     enabled=true;
-	std::cout<<"Profiler::Initialize device "<<(unsigned)device<<std::endl;
+//	std::cout<<"Profiler::Initialize device "<<(unsigned)device<<std::endl;
 }
 
 void Profiler::StartProfile(ID3D11DeviceContext* context,const std::string& name)
