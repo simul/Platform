@@ -48,11 +48,10 @@ void CS_DownscaleDepthNearFar(uint3 pos : SV_DispatchThreadID )
 	float n=AdaptDepth(nearest_depth);
 	float f=AdaptDepth(farthest_depth);
 	float edge=f-n;
-	edge=step(0.002,edge);
-	target2DTexture[pos.xy]	=vec4(nearest_depth,farthest_depth,edge,0.0);
+	edge=1.0;//step(0.0002,edge);
+	target2DTexture[pos.xy]	=vec4(farthest_depth,nearest_depth,edge,0.0);
 }
 
-/*
 [numthreads(8,8,1)]
 void CS_FilterLowresDepth(uint3 pos : SV_DispatchThreadID )
 {
@@ -61,7 +60,7 @@ void CS_FilterLowresDepth(uint3 pos : SV_DispatchThreadID )
 	if(pos.x>=dims.x||pos.y>=dims.y)
 		return;
 	float farthest_depth		=1.0;
-	float blended_depth		=0.0;
+	float blended_depth			=0.0;
 	float dx=0;
 	float dy=0;
 	for(int i=-1;i<2;i++)
@@ -80,7 +79,7 @@ void CS_FilterLowresDepth(uint3 pos : SV_DispatchThreadID )
 	blended_depth/=9.0;
 	target2DTexture[pos.xy]	=vec4(sourceMSDepthTexture[pos.xy].x,dx,dy,0);
 }
-*/
+
 vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
 {
 	return texture_clamp_lod(sourceDepthTexture,IN.texCoords,0);
@@ -98,7 +97,7 @@ technique11 filter_lowres_depth
 {
     pass p0
     {
-		//SetComputeShader(CompileShader(cs_5_0,CS_FilterLowresDepthNear()));
+		//SetComputeShader(CompileShader(cs_5_0,CS_FilterLowresDepth()));
     }
 }
 

@@ -31,7 +31,7 @@ namespace simul
 				,simul::sky::float4 sun_irradiance
 				,simul::sky::float4 starlight
 				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon
-				,float haze,float haze_base_km,float haze_scale_km
+				,const simul::sky::HazeStruct &hazeStruct
 				,unsigned tables_checksum
 				,float overcast_base_km,float overcast_range_km
 				,int index,int end_index,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table

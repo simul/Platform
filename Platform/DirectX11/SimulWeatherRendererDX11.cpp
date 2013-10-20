@@ -340,6 +340,7 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 		simul::dx11::setParameter(m_pTonemapEffect,"depthTexture"		,(ID3D1xShaderResourceView*)mainDepthTexture);
 		simul::dx11::setParameter(m_pTonemapEffect,"lowResDepthTexture"	,(ID3D1xShaderResourceView*)lowResDepthTexture);
 		simul::dx11::setParameter(m_pTonemapEffect,"cloudDepthTexture"	,(ID3D1xShaderResourceView*)baseFramebuffer->GetDepthTex());
+		simul::dx11::setParameter(m_pTonemapEffect,"nearImageTexture"	,(ID3D1xShaderResourceView*)nearFramebuffer.buffer_texture_SRV);
 		ID3D1xEffectTechnique *tech=blend?SkyBlendTechnique:directTechnique;
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
 		hdrConstants.exposure					=1.f;

@@ -322,10 +322,12 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 
 		simul::dx11::UtilityRenderer::SetScreenSize(ScreenWidth,ScreenHeight);
-		UtilityRenderer::DrawTexture(pd3dImmediateContext,0								,0,lowResDepthTexture.width,lowResDepthTexture.length,lowResDepthTexture.shaderResourceView);
-		UtilityRenderer::DrawTexture(pd3dImmediateContext,2*lowResDepthTexture.width	,0,lowResDepthTexture.width,lowResDepthTexture.length,(ID3D1xShaderResourceView*)resolvedDepth_fb.GetColorTex());
-		UtilityRenderer::DrawTexture(pd3dImmediateContext,3*lowResDepthTexture.width	,0,lowResDepthTexture.width,lowResDepthTexture.length,(ID3D1xShaderResourceView*)hdrFramebuffer.GetDepthTex());
-		
+/*
+		int w=lowResDepthTexture.width*4,l=lowResDepthTexture.length*4;
+		UtilityRenderer::DrawTexture(pd3dImmediateContext,0		,0,w,l,lowResDepthTexture.shaderResourceView);
+		UtilityRenderer::DrawTexture(pd3dImmediateContext,2*w	,0,w,l,(ID3D1xShaderResourceView*)resolvedDepth_fb.GetColorTex());
+		UtilityRenderer::DrawTexture(pd3dImmediateContext,3*w	,0,w,l,(ID3D1xShaderResourceView*)hdrFramebuffer.GetDepthTex());
+		*/
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,ScreenWidth,ScreenHeight);

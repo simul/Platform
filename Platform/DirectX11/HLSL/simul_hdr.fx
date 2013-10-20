@@ -3,6 +3,7 @@
 #include "../../CrossPlatform/hdr_constants.sl"
 #include "states.hlsl"
 Texture2D imageTexture;
+Texture2D nearImageTexture;
 Texture2D depthTexture;
 Texture2D lowResDepthTexture;
 Texture2D cloudDepthTexture;
@@ -198,21 +199,29 @@ vec4 NearestDepthCloudBlendPS(v2f IN) : SV_TARGET
 	res.rgb				*=exposure;
     return res;
 }
-
+// texture_clamp_lod texture_nearest_lod
 vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
 {
-	vec4 res			=texture_nearest_lod(imageTexture,IN.texCoords,0);
-	vec4 solid			=texture_nearest_lod(depthTexture,IN.texCoords,0);
-	vec4 lowres			=texture_nearest_lod(lowResDepthTexture,IN.texCoords,0);
+	vec4 cloudFar		=texture_clamp_lod(imageTexture,IN.texCoords,0);
+	vec4 cloudNear		=vec4(0,0,0,1.0);
+	vec4 solid			=texture_clamp_lod(depthTexture,IN.texCoords,0);
+	vec4 lowres			=texture_clamp_lod(lowResDepthTexture,IN.texCoords,0);
 	float edge			=lowres.z;
-	if(edge>0.5)
+	vec4 result;
+	vec2 nearFarDist	=depthToLinearDistance(lowres.yx,depthToLinFadeDistParams);
+	float trueDist		=depthToLinearDistance(solid.x,depthToLinFadeDistParams);
+	if(edge>0.0)
 	{
-		res.r			=1;
+		cloudNear		=texture_clamp_lod(nearImageTexture,IN.texCoords,0);
 	}
-	//res.rg				=depthToLinearDistance(lowres.rg,depthToLinFadeDistParams);
-	//res.b				=depthToLinearDistance(solid.x,depthToLinFadeDistParams);
-	res.rgb				*=exposure;
-    return res;
+	else
+	{
+		nearFarDist.x	=0.0;
+	}
+	float interp		=edge*saturate((nearFarDist.y-trueDist)/(nearFarDist.y-nearFarDist.x));
+	result				=lerp(cloudFar,cloudNear,interp);
+	result.rgb			*=exposure;
+    return result;
 }
 
 
