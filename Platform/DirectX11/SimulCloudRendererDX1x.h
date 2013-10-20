@@ -63,7 +63,7 @@ namespace simul
 			bool Destroy();
 			void PreRenderUpdate(void *context);
 			//! Call this to draw the clouds, including any illumination by lightning.
-			bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
+			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 			void RenderDebugInfo(void *context,int width,int height);
 			void RenderAuxiliaryTextures(void *context,int width,int height);
 			void RenderCrossSections(void *context,int width,int height);
@@ -127,7 +127,7 @@ namespace simul
 			ID3D1xEffectTechnique*					m_hTechniqueLightning;
 			ID3D1xEffect*							m_pCloudEffect;
 			ID3D1xEffectTechnique*					m_hTechniqueCloud;
-			ID3D1xEffectTechnique*					m_hTechniqueRaytrace;
+			ID3D1xEffectTechnique*					m_hTechniqueRaytraceNearPass;
 			ID3D1xEffectTechnique*					m_hTechniqueRaytraceForward;
 			ID3D1xEffectTechnique*					m_hTechniqueSimpleRaytrace;
 			ID3D1xEffectTechnique*					m_hTechniqueRaytrace3DNoise;

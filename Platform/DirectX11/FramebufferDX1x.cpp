@@ -347,11 +347,15 @@ void Framebuffer::ActivateColour(void *context,const float viewportXYWH[4])
 	if(!hdr_buffer_texture&&!buffer_depth_texture)
 		CreateBuffers();
 	if(m_pHDRRenderTarget)
+	{
+		colour_active=true;
 		pContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
+	}
 	else 
+	{
 		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,NULL);
+	}
 	SetViewport(context,viewportXYWH[0],viewportXYWH[1],viewportXYWH[2],viewportXYWH[3],0,1.f);
-
 }
 
 void Framebuffer::ActivateViewport(void *context, float viewportX, float viewportY, float viewportW, float viewportH)
@@ -383,9 +387,16 @@ void Framebuffer::Activate(void *context)
 	if(!hdr_buffer_texture&&!buffer_depth_texture)
 		CreateBuffers();
 	if(m_pHDRRenderTarget)
+	{
+		colour_active=true;
+		depth_active=(m_pBufferDepthSurface!=NULL);
 		pContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
+	}
 	else 
+	{
+		depth_active=(m_pBufferDepthSurface!=NULL);
 		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
+	}
 	SetViewport(context,0,0,1.f,1.f,0,1.f);
 }
 
@@ -423,6 +434,7 @@ void Framebuffer::ActivateDepth(void *context)
 									&m_pOldDepthSurface
 									);
 	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
+	depth_active=(m_pBufferDepthSurface!=NULL);
 	D3D11_VIEWPORT viewport;
 	// Setup the viewport for rendering.
 	viewport.Width = (float) Width;
@@ -447,6 +459,7 @@ void Framebuffer::ActivateColour(void *context)
 		return;
 	SaveOldRTs(context);
 	pContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
+	colour_active=true;
 	SetViewport(context,0,0,1.f,1.f,0,1.f);
 }
 
@@ -460,6 +473,8 @@ void Framebuffer::Deactivate(void *context)
 		pContext->RSSetViewports(num_v,m_OldViewports);
 	if(GenerateMips)
 		pContext->GenerateMips(buffer_texture_SRV);
+	colour_active=false;
+	depth_active=false;
 }
 
 void Framebuffer::DeactivateDepth(void *context)
@@ -471,6 +486,7 @@ void Framebuffer::DeactivateDepth(void *context)
 		return;
 	}
 	pContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,NULL);
+	depth_active=false;
 }
 
 void Framebuffer::Clear(void *context,float r,float g,float b,float a,float depth,int mask)

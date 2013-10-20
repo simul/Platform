@@ -628,9 +628,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,Texture2D noiseTexture
 											,Texture2D depthTexture
 											,Texture2D lightTableTexture
-											,vec2 texCoords)
+											,vec2 texCoords
+											,bool near_pass)
 {
-	float dlookup 			=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
+	vec4 dlookup 			=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec4 clip_pos			=vec4(-1.f,1.f,1.f,1.f);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
@@ -648,7 +649,17 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float min_texc_z		=-fractalScale.z*1.5;
 	float max_texc_z		=1.0-min_texc_z;
 
-	float depth				=dlookup;
+	float depth;
+	if(near_pass)
+	{
+		if(dlookup.z==0)
+			discard;
+		depth=dlookup.y;
+	}
+	else
+	{
+		depth=dlookup.x;
+	}
 	float d					=depthToFadeDistance(depth,clip_pos.xy,nearZ,farZ,tanHalfFov);
 	vec4 colour				=vec4(0.0,0.0,0.0,1.0);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));

@@ -159,7 +159,7 @@ bool IsSampleNearer(inout float MinDist,float Z,float ZFull)
 
 vec4 NearestDepthCloudBlendPS(v2f IN) : SV_TARGET
 {
-	vec4 res			=texture_clamp_lod(imageTexture,IN.texCoords,0);
+	vec4 res			=texture_nearest_lod(imageTexture,IN.texCoords,0);
 	vec4 solid			=texture_nearest_lod(depthTexture,IN.texCoords,0);
 	vec4 lowres			=texture_nearest_lod(lowResDepthTexture,IN.texCoords,0);
 	vec4 cloud			=texture_nearest_lod(cloudDepthTexture,IN.texCoords,0);
@@ -195,6 +195,22 @@ vec4 NearestDepthCloudBlendPS(v2f IN) : SV_TARGET
 		UpdateNearestSample	(MinDist,NearestUV,near_dist.w,texc_down	,solid_dist);
 		res=texture_nearest_lod(imageTexture,NearestUV,0);
 	}
+	res.rgb				*=exposure;
+    return res;
+}
+
+vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
+{
+	vec4 res			=texture_nearest_lod(imageTexture,IN.texCoords,0);
+	vec4 solid			=texture_nearest_lod(depthTexture,IN.texCoords,0);
+	vec4 lowres			=texture_nearest_lod(lowResDepthTexture,IN.texCoords,0);
+	float edge			=lowres.z;
+	if(edge>0.5)
+	{
+		res.r			=1;
+	}
+	//res.rg				=depthToLinearDistance(lowres.rg,depthToLinFadeDistParams);
+	//res.b				=depthToLinearDistance(solid.x,depthToLinFadeDistParams);
 	res.rgb				*=exposure;
     return res;
 }
@@ -265,7 +281,7 @@ technique11 simul_sky_blend
 		SetBlendState(CloudBufferBlend,vec4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
-		SetPixelShader(CompileShader(ps_5_0,NearestDepthCloudBlendPS()));
+		SetPixelShader(CompileShader(ps_5_0,NearFarDepthCloudBlendPS()));
     }
 }
 

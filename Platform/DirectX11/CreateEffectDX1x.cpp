@@ -407,7 +407,7 @@ void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,
 	if(!tech)
 		SIMUL_THROW("Technique not found");
 	ID3DX11EffectPass *pass			=tech->GetPassByIndex(pass_num);
-	if(!pass)
+	if(!pass->IsValid())
 		SIMUL_THROW("Pass not found");
 	HRESULT hr=pass->Apply(0,pContext);
 	V_CHECK(hr);
