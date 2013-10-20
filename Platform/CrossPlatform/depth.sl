@@ -24,7 +24,7 @@ vec2 depthToLinearDistance(vec2 depth,vec3 depthToLinFadeDistParams)
 float depthToFadeDistance(float depth,vec2 xy,vec3 depthToLinFadeDistParams,vec2 tanHalf)
 {
 #ifdef VISION
-	float dist=depth*farZ;
+	float dist=nearZ+depth*farZ;
 	if(depth>=1.0)
 		dist=1.0;
 	return dist;
