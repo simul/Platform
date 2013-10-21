@@ -891,6 +891,8 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 				cloudKeyframer->GetKeyframeAtTime(skyInterface->GetTime())+i));
 		if(!kf)
 			break;
+
+		h=(int)(kf->cloud_height_km*1000.f/GetCloudInterface()->GetCloudWidth()*(float)w);
 		D3DXVECTOR4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
 		cloudConstants.lightResponse=light_response;
 		cloudConstants.crossSectionOffset=vec3(0.5f,0.5f,0.f);

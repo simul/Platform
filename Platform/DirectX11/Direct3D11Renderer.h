@@ -116,9 +116,7 @@ namespace simul
 			simul::dx11::Framebuffer			hdrFramebuffer;
 			// The depth from the HDR framebuffer can be resolved into this texture:
 			simul::dx11::Framebuffer			resolvedDepth_fb;
-			simul::dx11::TextureStruct			lowResDepthTexture_scratch;
-			simul::dx11::TextureStruct			lowResDepthTexture_near;
-			simul::dx11::TextureStruct			lowResDepthTexture_far;
+			simul::dx11::TextureStruct			lowResDepthTexture;
 			simul::dx11::CubemapFramebuffer		cubemapFramebuffer;
 			simul::base::MemoryInterface		*memoryInterface;
 	ConstantBuffer<MixedResolutionConstants> mixedResolutionConstants;

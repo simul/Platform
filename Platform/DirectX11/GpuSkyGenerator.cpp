@@ -80,29 +80,24 @@ bool GpuSkyGenerator::CanPerformGPUGeneration() const
 }
 
 void GpuSkyGenerator::Make2DLossAndInscatterTextures(
-				int cycled_index
-				,simul::sky::AtmosphericScatteringInterface *skyInterface
-				,int numElevations
-				,int numDistances
-				,const std::vector<float> &altitudes_km
-				,float max_distance_km
+				int cycled_index,
+				simul::sky::AtmosphericScatteringInterface *skyInterface
+				,int numElevations,int numDistances
+				,const std::vector<float> &altitudes_km,float max_distance_km
 				,simul::sky::float4 sun_irradiance
 				,simul::sky::float4 starlight
-				,simul::sky::float4 dir_to_sun
-				,simul::sky::float4 dir_to_moon
+				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon
 				,float haze,float haze_base_km,float haze_scale_km
 				,unsigned new_tables_checksum
-				,float overcast_base_km
-				,float overcast_range_km
-				,int start_texel
-				,int num_texels
+				,float overcast_base_km,float overcast_range_km
+				,simul::sky::float4 ozone
+				,int start_texel,int num_texels
 				,const simul::sky::float4 *density_table
 				,const simul::sky::float4 *optical_table
 				,const simul::sky::float4 *blackbody_table
 				,int table_size
 				,float maxDensityAltKm
-				,bool InfraRed
-				,float emissivity
+				,bool InfraRed,float emissivity
 				,float seaLevelTemperatureK
 				)
 {
@@ -154,7 +149,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 
 		gpuSkyConstants.rayleigh			=(const float*)skyInterface->GetRayleigh();
 		gpuSkyConstants.hazeMie				=(const float*)(haze*skyInterface->GetMie());
-		gpuSkyConstants.ozone				=(const float*)(skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
+		gpuSkyConstants.ozone				=(const float*)(ozone);
 
 		gpuSkyConstants.sunIrradiance		=(const float*)sun_irradiance;
 		gpuSkyConstants.lightDir			=(const float*)dir_to_sun;

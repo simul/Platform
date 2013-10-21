@@ -931,7 +931,6 @@ void BreakIfDebugging()
 {
 	DebugBreak();
 }
- 
 
 // Stored states
 static ID3D11DepthStencilState* m_pDepthStencilStateStored11=NULL;
