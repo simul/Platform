@@ -68,7 +68,7 @@ vec4 ShowDepthPS(v2f IN) : SV_TARGET
     return vec4(1,dist,dist,1.0);
 }
 
-vec4 convertInt(vec2 texCoord)
+vec4 convertInt(Texture2D<uint> glowTexture,vec2 texCoord)
 {
 	uint2 tex_dim;
 	glowTexture.GetDimensions(tex_dim.x, tex_dim.y);
@@ -86,17 +86,17 @@ vec4 convertInt(vec2 texCoord)
 	return color;
 }
 
-vec4 TonemapPS(v2f IN) : SV_TARGET
+vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
 {
 	vec4 c=texture_clamp(imageTexture,IN.texCoords);
-	vec4 glow=convertInt(IN.texCoords);
+	vec4 glow=convertInt(glowTexture,IN.texCoords);
 	c.rgb+=glow.rgb;
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
     return vec4(c.rgb,1.f);
 }
 
-vec4 GammaPS(v2f IN) : SV_TARGET
+vec4 ExposureGammaPS(v2f IN) : SV_TARGET
 {
 	vec4 c=texture_clamp(imageTexture,IN.texCoords);
 	c.rgb*=exposure;
@@ -255,7 +255,7 @@ technique11 simul_direct
 }
 
 
-technique11 simul_gamma
+technique11 exposure_gamma
 {
     pass p0
     {
@@ -264,11 +264,11 @@ technique11 simul_gamma
 		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,GammaPS()));
+		SetPixelShader(CompileShader(ps_4_0,ExposureGammaPS()));
     }
 }
 
-technique11 simul_tonemap
+technique11 glow_exposure_gamma
 {
     pass p0
     {
@@ -277,7 +277,7 @@ technique11 simul_tonemap
 		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,TonemapPS()));
+		SetPixelShader(CompileShader(ps_4_0,GlowExposureGammaPS()));
     }
 }
 

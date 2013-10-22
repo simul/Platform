@@ -6,6 +6,7 @@
 #include "../../CrossPlatform/atmospherics_constants.sl"
 
 Texture2D depthTexture;
+Texture2DMS<float> depthTextureMS;
 Texture2D cloudDepthTexture;
 Texture2D imageTexture;
 Texture2D lossTexture;
@@ -119,9 +120,24 @@ vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	float solid_depth	=depthTexture.Sample(clampSamplerState,depth_texc).x;
+	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
 	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-	float depth			=max(solid_depth,cloud_depth);
+	float depth			=max(depth_lookup.x,cloud_depth);
+	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
+	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
+	
+	return res;
+}
+
+vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
+	if(depth_lookup.z==0)
+		discard;
+	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
+	float depth			=max(depth_lookup.y,cloud_depth);
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
@@ -162,5 +178,18 @@ technique11 fast_godrays
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_FastGodrays()));
+    }
+}
+
+technique11 near_depth_godrays
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_4_0,PS_NearGodrays()));
     }
 }

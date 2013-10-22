@@ -214,7 +214,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	gamma_correct.SetWidthAndHeight(cubesize,cubesize);
 	gamma_correct.RestoreDeviceObjects(m_pd3dDevice);
 
-	ID3D1xEffectTechnique *tech=m_pTonemapEffect->GetTechniqueByName("simul_gamma");
+	ID3D1xEffectTechnique *tech=m_pTonemapEffect->GetTechniqueByName("exposure_gamma");
 
 	cam_pos=GetCameraPosVector(view);
 	D3DXMATRIX view_matrices[6];
@@ -386,7 +386,6 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 												,(float)w/(float)width
 												,(float)w/(float)height);
 	hdrConstants.Apply(pContext);
-
 
 	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));
 }

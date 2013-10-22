@@ -31,18 +31,13 @@ static const uint SCAN_LOG2_WARP_SIZE = 5;
 //static const uint NUM_IMAGE_ROWS = 1200;
 //static const uint NUM_IMAGE_COLS = 1600;
 
-
 //-----------------------------------------------------------------------------
 // Shared memory variables
-//-----------------------------------------------------------------------------
-
 // Shared memory for prefix sum operation (scan).
 groupshared float3 gs_ScanData[SCAN_SMEM_SIZE];
 
-
 //-----------------------------------------------------------------------------
 // Shader constant buffers
-//-----------------------------------------------------------------------------
 
 cbuffer cbParams: register(b13)
 {
@@ -267,6 +262,21 @@ inline float3 uint_to_color3(uint int_color)
 	return float3(r/2047.0f, g/2047.0f, b/1023.0f);
 }
 
+inline void input_row_color(uint group_id, uint thread_id)
+{
+	uint col = thread_id;
+	uint row = group_id;
+	// Fetch back the data output by vertical filtering pass.
+	while (col < NUM_IMAGE_COLS)
+	{
+		uint int_color = g_rwtOutput[uint2(col, row)];
+		gs_ScanData[col] = uint_to_color3(int_color);
+		col += THREADS_PER_GROUP;
+	}
+	// Wait until all write operations finished
+	GroupMemoryBarrierWithGroupSync();
+}
+
 inline void input_col_color(uint group_id, uint thread_id)
 {
 	uint col = group_id;
@@ -294,20 +304,6 @@ inline void output_col_color(uint group_id, uint thread_id)
 	}
 }
 
-inline void input_row_color(uint group_id, uint thread_id)
-{
-	uint col = thread_id;
-	uint row = group_id;
-	// Fetch back the data output by vertical filtering pass.
-	while (col < NUM_IMAGE_COLS)
-	{
-		uint int_color = g_rwtOutput[uint2(col, row)];
-		gs_ScanData[col] = uint_to_color3(int_color);
-		col += THREADS_PER_GROUP;
-	}
-	// Wait until all write operations finished
-	GroupMemoryBarrierWithGroupSync();
-}
 inline void output_row_color(uint group_id, uint thread_id)
 {
 	uint col = thread_id;

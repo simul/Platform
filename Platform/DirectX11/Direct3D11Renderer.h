@@ -60,6 +60,7 @@ namespace simul
 				META_ValueProperty(bool,ShowMap					,"Show the terrain map as an overlay.")
 				META_ValueProperty(bool,UseHdrPostprocessor		,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
 				META_ValueProperty(bool,UseSkyBuffer			,"Render the sky to a low-res buffer to increase performance.")
+				META_ValueProperty(bool,ShowDepthBuffers		,"Show the depth buffers .")
 				META_ValueProperty(bool,ShowLightVolume			,"Show the cloud light volume as a wireframe box.")
 				META_ValueProperty(bool,CelestialDisplay		,"Show geographical and sidereal overlay.")
 				META_ValueProperty(bool,ShowWater				,"Show water surfaces.")

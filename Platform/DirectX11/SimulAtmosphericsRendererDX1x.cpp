@@ -91,8 +91,8 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	V_CHECK(CreateEffect(m_pd3dDevice,&effect,"atmospherics.fx",defines));
 	singlePassTechnique		=effect->GetTechniqueByName("simul_atmospherics");
 	twoPassOverlayTechnique	=effect->GetTechniqueByName("simul_atmospherics_overlay");
-	godraysTechnique		=effect->GetTechniqueByName("simul_godrays");
-	fastGodraysTechnique	=effect->GetTechniqueByName("fast_godrays");
+	godraysTechnique		=effect->GetTechniqueByName("fast_godrays");
+	godraysNearPassTechnique=effect->GetTechniqueByName("near_depth_godrays");
 	depthTexture			=effect->GetVariableByName("depthTexture")->AsShaderResource();
 	cloudDepthTexture		=effect->GetVariableByName("cloudDepthTexture")->AsShaderResource();
 	lossTexture				=effect->GetVariableByName("lossTexture")->AsShaderResource();
@@ -150,6 +150,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	
 	simul::dx11::setParameter(effect,"illuminationTexture",illuminationTexture_SRV);
 	simul::dx11::setParameter(effect,"depthTexture",depthTexture_SRV);
+	simul::dx11::setParameter(effect,"depthTextureMS",depthTexture_SRV);
 	simul::dx11::setParameter(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
@@ -182,7 +183,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	ApplyPass(pContext,twoPassOverlayTechnique->GetPassByIndex(1));
 }
 
-void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloud_depth_texture)
+void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,bool near_pass,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloud_depth_texture)
 {
 	if(!ShowGodrays)
 		return;
@@ -212,9 +213,8 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,c
 
 	atmosphericsPerViewConstants.Apply(pContext);
 
-	static bool fast_godrays=true;
-	if(fast_godrays)
-		ApplyPass(pContext,fastGodraysTechnique->GetPassByIndex(0));
+	if(near_pass)
+		ApplyPass(pContext,godraysNearPassTechnique->GetPassByIndex(0));
 	else
 		ApplyPass(pContext,godraysTechnique->GetPassByIndex(0));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);

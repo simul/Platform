@@ -55,7 +55,11 @@ void CS_DownscaleDepthFarNear(uint3 pos : SV_DispatchThreadID )
 
 vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
 {
-	return texture_clamp_lod(sourceDepthTexture,IN.texCoords,0);
+	uint2 source_dims;
+	uint numberOfSamples;
+	sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
+	uint2 hires_pos		=uint2(vec2(source_dims)*IN.texCoords.xy);
+	return sourceMSDepthTexture.Load(hires_pos,0).x;
 }
 
 technique11 downscale_depth_far_near
@@ -73,8 +77,8 @@ technique11 resolve_depth
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_SimpleFullscreen()));
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_ResolveDepth()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ResolveDepth()));
     }
 }

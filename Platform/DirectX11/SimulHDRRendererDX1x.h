@@ -32,6 +32,7 @@ namespace simul
 			META_BeginProperties
 				META_ValueProperty(float,Gamma,"")
 				META_ValueProperty(float,Exposure,"")
+				META_ValueProperty(bool,Glow,"Whether to apply a glow effect")
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,RecompileShaders,"")
 			META_EndProperties
 			void SetBufferSize(int w,int h);
@@ -59,11 +60,12 @@ namespace simul
 
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3D1xEffect*						m_pTonemapEffect;
-			ID3D1xEffectTechnique*				TonemapTechnique;
+			ID3D1xEffectTechnique*				exposureGammaTechnique;
+			ID3D1xEffectTechnique*				glowExposureGammaTechnique;
 			ID3D1xEffectTechnique*				glowTechnique;
 			ID3D1xEffectScalarVariable*			Exposure_;
 			ID3D1xEffectScalarVariable*			Gamma_;
-			ID3D1xEffectMatrixVariable*			worldViewProj;
+			//ID3D1xEffectMatrixVariable*			worldViewProj;
 			ID3D1xEffectShaderResourceVariable*	imageTexture;
 
 			ID3D1xEffect*						m_pGaussianEffect;

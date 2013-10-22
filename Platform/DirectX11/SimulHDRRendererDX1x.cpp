@@ -24,7 +24,9 @@
 #include "CreateEffectDX1x.h"
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "MacrosDX1x.h"
+#include "Utilities.h"
 #include "Simul/Math/Pi.h"
+
 using namespace simul;
 using namespace dx11;
 
@@ -35,16 +37,18 @@ SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h)
 	,m_pGaussianEffect(NULL)
 	,Exposure(1.f)
 	,Gamma(1.f/2.2f)			// no need for shader-based gamma-correction with DX10/11
+	,Glow(false)
 	,Width(w)
 	,Height(h)
 	,timing(0.f)
 	,glow_fb(w/2,h/2)
-	,TonemapTechnique(NULL)
+	,exposureGammaTechnique(NULL)
+	,glowExposureGammaTechnique(NULL)
 	,glowTechnique(NULL)
 	,Exposure_(NULL)
 	,Gamma_(NULL)
 	,imageTexture(NULL)
-	,worldViewProj(NULL)
+	//,worldViewProj(NULL)
 {
 }
 
@@ -112,12 +116,13 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"));
-	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
-	glowTechnique			=m_pTonemapEffect->GetTechniqueByName("simul_glow");
-	Exposure_				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
-	Gamma_					=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
-	imageTexture			=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
-	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	exposureGammaTechnique		=m_pTonemapEffect->GetTechniqueByName("exposure_gamma");
+	glowExposureGammaTechnique	=m_pTonemapEffect->GetTechniqueByName("glow_exposure_gamma");
+	glowTechnique				=m_pTonemapEffect->GetTechniqueByName("simul_glow");
+	Exposure_					=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
+	Gamma_						=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
+	imageTexture				=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
+	//worldViewProj				=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 		
 	SAFE_RELEASE(m_pGaussianEffect);
 	
@@ -140,7 +145,7 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	defs["NUM_IMAGE_COLS"]	=string_format("%d",W);
 	defs["NUM_IMAGE_ROWS"]	=string_format("%d",H);
 	
-//	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,_T("simul_gaussian.fx"),defs);
+	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs);
 }
 
 void SimulHDRRendererDX1x::InvalidateDeviceObjects()
@@ -163,26 +168,29 @@ SimulHDRRendererDX1x::~SimulHDRRendererDX1x()
 {
 	Destroy();
 }
-#include "Utilities.h"
+
 void SimulHDRRendererDX1x::Render(void *context,void *texture_srv)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	imageTexture->SetResource(textureSRV);
-	Gamma_->SetFloat(Gamma);
-	Exposure_->SetFloat(Exposure);
-	D3DXMATRIX ortho;
-	D3DXMatrixIdentity(&ortho);
-    D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
-	worldViewProj->SetMatrix(ortho);
-	RenderGlowTexture(context,texture_srv);
-	simul::dx11::setParameter(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
-	//simul::dx11::setParameter(m_pTonemapEffect,"depthTexture",(ID3D11ShaderResourceView*)framebuffer.GetDepthTex());
-
-	ApplyPass(pContext,TonemapTechnique->GetPassByIndex(0));
+	Gamma_		->SetFloat(Gamma);
+	Exposure_	->SetFloat(Exposure);
+	//D3DXMATRIX ortho;
+	//D3DXMatrixIdentity(&ortho);
+   // D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
+	//worldViewProj->SetMatrix(ortho);
+	if(Glow)
+	{
+		RenderGlowTexture(context,texture_srv);
+		simul::dx11::setParameter(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
+		ApplyPass(pContext,glowExposureGammaTechnique->GetPassByIndex(0));
+	}
+	else
+		ApplyPass(pContext,exposureGammaTechnique->GetPassByIndex(0));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	imageTexture->SetResource(NULL);
-	ApplyPass(pContext,TonemapTechnique->GetPassByIndex(0));
+	ApplyPass(pContext,exposureGammaTechnique->GetPassByIndex(0));
 }
 
 static float CalculateBoxFilterWidth(float radius, int pass)
@@ -201,9 +209,9 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 		return;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-static int g_NumApproxPasses=3;
-static int	g_MaxApproxPasses = 8;
-static float g_FilterRadius = 30;
+	static int g_NumApproxPasses=3;
+	static int	g_MaxApproxPasses = 8;
+	static float g_FilterRadius = 30;
 	// Render to the low-res glow.
 	if(glowTechnique)
 	{
@@ -223,7 +231,7 @@ static float g_FilterRadius = 30;
 	float frac_half_box_width = (half_box_width + 0.5f) - (int)(half_box_width + 0.5f);
 	float inv_frac_half_box_width = 1.0f - frac_half_box_width;
 	float rcp_box_width = 1.0f / box_width;
-	// Step 1. Vertical passes: Each thread group handles a colomn in the image
+	// Step 1. Vertical passes: Each thread group handles a column in the image
 	// Input texture
 	simul::dx11::setParameter(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
 	// Output texture

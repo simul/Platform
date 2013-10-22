@@ -70,14 +70,14 @@ public:
 	const		char *GetDebugText();
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
-	void RenderIlluminationBuffer(void *context);
+	void		RenderIlluminationBuffer(void *context);
 	simul::opengl::GpuSkyGenerator gpuSkyGenerator;
 	//! \internal Switch the current program, either sky_program or earthshadow_program.
 	//! Also sets the parameter variables.	
 	void		UseProgram(GLuint);
 	void		SetFadeTexSize(int width_num_distances,int height_num_elevations,int num_altitudes);
 	void		FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d
-				,const float *loss_float4_array,const float *inscatter_float4_array,const float *skylight_float4_array);
+					,const float *loss_float4_array,const float *inscatter_float4_array,const float *skylight_float4_array);
 
 	void		EnsureTexturesAreUpToDate(void *);
 	void		EnsureTextureCycle();

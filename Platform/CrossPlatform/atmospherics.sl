@@ -16,7 +16,7 @@ vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,T
 }
 
 void CalcInsc(	Texture2D inscTexture
-              ,Texture2D skylTexture
+				,Texture2D skylTexture
 				,Texture2D illuminationTexture
 				,Texture2D depthTexture
 				,vec2 texCoords
@@ -40,7 +40,7 @@ void CalcInsc(	Texture2D inscTexture
 	vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
 	vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
 	insc                =vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
-    skyl                =texture_clamp_mirror(skylTexture,fade_texc);
+    skyl                =texture_clamp_mirror(skylTexture,fade_texc).rgb;
 }
 
 vec3 AtmosphericsInsc(	Texture2D depthTexture

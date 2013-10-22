@@ -58,7 +58,7 @@ namespace simul
 			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 			//! Render the Atmospherics.
 			void RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
-			void RenderGodrays(void *context,float strength,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloudDepthTexture);
+			void RenderGodrays(void *context,float strength,bool near_pass,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloudDepthTexture);
 		protected:
 			HRESULT Destroy();
 			ID3D1xDevice*									m_pd3dDevice;
@@ -69,7 +69,7 @@ namespace simul
 			ID3D1xEffectTechnique*							singlePassTechnique;
 			ID3D1xEffectTechnique*							twoPassOverlayTechnique;
 			ID3D1xEffectTechnique*							godraysTechnique;
-			ID3D1xEffectTechnique*							fastGodraysTechnique;
+			ID3D1xEffectTechnique*							godraysNearPassTechnique;
 			// Variables for this effect:
 			ID3D1xEffectShaderResourceVariable*				depthTexture;
 			ID3D1xEffectShaderResourceVariable*				cloudDepthTexture;
