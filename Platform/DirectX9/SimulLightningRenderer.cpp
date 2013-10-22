@@ -81,7 +81,7 @@ void SimulLightningRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pLightningEffect);
 	SAFE_RELEASE(lightning_texture);
 }
-
+/*
 static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 {
 	D3DXMATRIX tmp1;
@@ -91,7 +91,7 @@ static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
 	cam_pos.y=tmp1._42;
 	cam_pos.z=tmp1._43;
 	return cam_pos;
-}
+}*/
 
 void SimulLightningRenderer::Render(void *)
 {

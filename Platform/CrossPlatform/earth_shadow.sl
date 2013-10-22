@@ -1,9 +1,9 @@
 #ifndef EARTH_SHADOW_SL
 #define EARTH_SHADOW_SL
-
+/*
 //fade_texc is (sqrt(dist), .5(1+sine)).
 // This function is to determine whether the given position is in sunlight or not.
-vec3 EarthShadowLight(vec2 fade_texc,vec3 view,float transitionDistance,vec3 sunDir,float maxFadeDistance,float terminatorDistance,float radiusOnCylinder)
+vec3 EarthShadowLight(vec2 fade_texc,vec3 view,vec3 sunDir,float transitionDistance,float terminatorDistance,float maxFadeDistance)
 {
 	// Project to the world position this represents, then compare it to the shadow radius.
 	// true distance normalized to fade max.
@@ -23,7 +23,7 @@ vec3 EarthShadowLight(vec2 fade_texc,vec3 view,float transitionDistance,vec3 sun
 	result					=in_shadow;
 	return vec3(result,result,result);
 }
-
+*/
 vec2 fn(float r,float cos2,float sine_phi,float sine_gamma,float maxFadeDistance)
 {
 	// Normalized so that Earth radius is 1.0..

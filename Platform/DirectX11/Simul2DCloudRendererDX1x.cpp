@@ -265,7 +265,7 @@ void Simul2DCloudRendererDX11::PreRenderUpdate(void *context)
 	RenderDetailTexture(context);
 }
 
-bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,const void *depthTexture,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
+bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depthTexture,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
     ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::Render");

@@ -60,7 +60,16 @@ RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
 	texCoords.y				=1.0-texCoords.y;
-	RaytracePixelOutput p	=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,texCoords);
+	RaytracePixelOutput p	=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,true,texCoords,false);
+
+	return p;
+}
+
+RaytracePixelOutput PS_RaytraceNearPass(RaytraceVertexOutput IN)
+{
+	vec2 texCoords			=IN.texCoords.xy;
+	texCoords.y				=1.0-texCoords.y;
+	RaytracePixelOutput p	=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,true,texCoords,true);
 
 	return p;
 }
@@ -230,6 +239,17 @@ technique11 simul_raytrace_forward
         SetRasterizerState( RenderNoCull );
 		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
 		SetPixelShader(CompileShader(ps_5_0,PS_RaytraceForward()));
+    }
+}
+
+technique11 raytrace_near_pass
+{
+    pass p0 
+    {
+		SetDepthStencilState(WriteDepth,0);
+        SetRasterizerState( RenderNoCull );
+		SetVertexShader(CompileShader(vs_5_0,VS_Raytrace()));
+		SetPixelShader(CompileShader(ps_5_0,PS_RaytraceNearPass()));
     }
 }
 

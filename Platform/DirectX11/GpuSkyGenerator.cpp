@@ -87,7 +87,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				,simul::sky::float4 sun_irradiance
 				,simul::sky::float4 starlight
 				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon
-				,float haze,float haze_base_km,float haze_scale_km
+				,const simul::sky::HazeStruct &hazeStruct
 				,unsigned new_tables_checksum
 				,float overcast_base_km,float overcast_range_km
 				,simul::sky::float4 ozone
@@ -140,15 +140,15 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 		gpuSkyConstants.planetRadiusKm		=skyInterface->GetPlanetRadius();
 		gpuSkyConstants.maxOutputAltKm		=maxOutputAltKm;
 		gpuSkyConstants.maxDensityAltKm		=maxDensityAltKm;
-		gpuSkyConstants.hazeBaseHeightKm	=haze_base_km;
-		gpuSkyConstants.hazeScaleHeightKm	=haze_scale_km;
+		gpuSkyConstants.hazeBaseHeightKm	=hazeStruct.haze_base_height_km;
+		gpuSkyConstants.hazeScaleHeightKm	=hazeStruct.haze_scale_height_km;
 
 		gpuSkyConstants.overcastBaseKmX		=overcast_base_km;
 		gpuSkyConstants.overcastRangeKmX		=overcast_range_km;
 		gpuSkyConstants.overcastX			=0.0f;
 
 		gpuSkyConstants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-		gpuSkyConstants.hazeMie				=(const float*)(haze*skyInterface->GetMie());
+		gpuSkyConstants.hazeMie				=(const float*)(hazeStruct.haze*hazeStruct.mie);
 		gpuSkyConstants.ozone				=(const float*)(ozone);
 
 		gpuSkyConstants.sunIrradiance		=(const float*)sun_irradiance;

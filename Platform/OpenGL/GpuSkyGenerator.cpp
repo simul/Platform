@@ -97,22 +97,24 @@ static GLuint make1DTexture(int w,const float *src)
 }
 
 
-void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,simul::sky::AtmosphericScatteringInterface *skyInterface
+void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,
+				simul::sky::AtmosphericScatteringInterface *skyInterface
 				,int numElevations,int numDistances
-				,const std::vector<float> &altitudes_km
-				,float max_distance_km
+				,const std::vector<float> &altitudes_km,float max_distance_km
 				,simul::sky::float4 sun_irradiance
 				,simul::sky::float4 starlight
 				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon
-				,float haze,float haze_base_km,float haze_scale_km
-				,unsigned new_checksum
+				,const simul::sky::HazeStruct &hazeStruct
+				,unsigned tables_checksum
 				,float overcast_base_km,float overcast_range_km
 				,simul::sky::float4 ozone
 				,int index,int end_index
-				,const simul::sky::float4 *density_table,const simul::sky::float4 *optical_table
-				,const simul::sky::float4 *blackbody_table,int table_size,float maxDensityAltKm
-				,bool InfraRed
-				,float emissivity
+				,const simul::sky::float4 *density_table
+				,const simul::sky::float4 *optical_table
+				,const simul::sky::float4 *blackbody_table
+				,int table_size
+				,float maxDensityAltKm
+				,bool InfraRed,float emissivity
 				,float seaLevelTemperatureK)
 {
 	GLint gpuSkyConstants;
@@ -156,14 +158,14 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,simul::sky
 		constants.planetRadiusKm	=skyInterface->GetPlanetRadius();
 		constants.maxOutputAltKm	=maxOutputAltKm;
 		constants.maxDensityAltKm	=maxDensityAltKm;
-		constants.hazeBaseHeightKm	=haze_base_km;
-		constants.hazeScaleHeightKm	=haze_scale_km;
+		constants.hazeBaseHeightKm	=hazeStruct.haze_base_height_km;
+		constants.hazeScaleHeightKm	=hazeStruct.haze_scale_height_km;
 		constants.overcastBaseKmX	=overcast_base_km;
 		constants.overcastRangeKmX	=overcast_range_km;
 		constants.overcastX			=0.f;
 		constants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-		constants.hazeMie			=(const float*)(haze*skyInterface->GetMie());
-		constants.ozone				=(const float*)(ozone);
+		constants.hazeMie			=(const float*)(hazeStruct.haze*skyInterface->GetMie());
+		constants.ozone				=(const float*)(skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
 		constants.sunIrradiance		=(const float*)sun_irradiance;
 		constants.lightDir			=(const float*)dir_to_sun;
 		constants.starlight			=(const float*)(starlight);

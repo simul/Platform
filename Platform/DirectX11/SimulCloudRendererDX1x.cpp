@@ -570,7 +570,6 @@ void SimulCloudRendererDX1x::Map(ID3D11DeviceContext *context,int texture_index)
 	cloud_textures[(texture_cycle+texture_index)%3].map(context);
 }
 
-
 bool SimulCloudRendererDX1x::CreateCloudEffect()
 {
 	if(!m_pd3dDevice)
@@ -592,8 +591,8 @@ bool SimulCloudRendererDX1x::CreateCloudEffect()
 		m_hTechniqueCloud			=m_pCloudEffect->GetTechniqueByName("simul_clouds_3d_noise");
 	else
 		m_hTechniqueCloud			=m_pCloudEffect->GetTechniqueByName("simul_clouds");
-	m_hTechniqueRaytrace			=m_pCloudEffect->GetTechniqueByName("simul_raytrace");
 	m_hTechniqueRaytraceForward		=m_pCloudEffect->GetTechniqueByName("simul_raytrace_forward");
+	m_hTechniqueRaytraceNearPass	=m_pCloudEffect->GetTechniqueByName("raytrace_near_pass");
 	m_hTechniqueSimpleRaytrace		=m_pCloudEffect->GetTechniqueByName("simul_simple_raytrace");
 	m_hTechniqueRaytrace3DNoise		=m_pCloudEffect->GetTechniqueByName("simul_raytrace_3d_noise");
 	m_hTechniqueCloudsAndLightning	=m_pCloudEffect->GetTechniqueByName("simul_clouds_and_lightning");
@@ -726,7 +725,7 @@ void SimulCloudRendererDX1x::PreRenderUpdate(void *context)
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);*/
 }
 static int test=29999;
-bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,const void *depth_tex
+bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bool near_pass,const void *depth_tex
 ,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
@@ -814,11 +813,10 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	}
 	else if(cloudKeyframer->GetTraceForward())
 	{
-		ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
-	}
-	else
-	{
-		ApplyPass(pContext,m_hTechniqueRaytrace->GetPassByIndex(0));
+		if(near_pass)
+			ApplyPass(pContext,m_hTechniqueRaytraceNearPass->GetPassByIndex(0));
+		else
+			ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
 	}
 	UtilityRenderer::DrawQuad(pContext);
 	PIXEndNamedEvent();
@@ -826,7 +824,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	skyInscatterTexture->SetResource(NULL);
 	skylightTexture->SetResource(NULL);
 	depthTexture->SetResource(NULL);
-	ApplyPass(pContext,m_hTechniqueRaytrace->GetPassByIndex(0));
+	ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
 	pContext->OMSetBlendState(NULL, blendFactor, sampleMask);
 	depthTexture->SetResource((ID3D11ShaderResourceView*)NULL);
 	cloudDensity->SetResource((ID3D11ShaderResourceView*)NULL);
@@ -841,7 +839,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,co
 	lightTableTexture	->SetResource((ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setParameter(m_pCloudEffect,"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
 // To prevent BIZARRE DX11 warning, we re-apply the pass with the textures unbound:
-	ApplyPass(pContext,m_hTechniqueRaytrace->GetPassByIndex(0));
+	ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
 	return (hr==S_OK);
 }
 

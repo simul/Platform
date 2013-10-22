@@ -628,9 +628,11 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,Texture2D noiseTexture
 											,Texture2D depthTexture
 											,Texture2D lightTableTexture
-											,vec2 texCoords)
+                                            ,bool do_depth_mix
+											,vec2 texCoords
+											,bool near_pass)
 {
-	float dlookup 			=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
+	vec4 dlookup 			=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec4 clip_pos			=vec4(-1.f,1.f,1.f,1.f);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
@@ -648,7 +650,17 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float min_texc_z		=-fractalScale.z*1.5;
 	float max_texc_z		=1.0-min_texc_z;
 
-	float depth				=dlookup;
+	float depth;
+	if(near_pass)
+	{
+		if(dlookup.z==0)
+			discard;
+		depth=dlookup.y;
+	}
+	else
+	{
+		depth=dlookup.x;
+	}
 	float d					=depthToFadeDistance(depth,clip_pos.xy,nearZ,farZ,tanHalfFov);
 	vec4 colour				=vec4(0.0,0.0,0.0,1.0);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
@@ -677,13 +689,14 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		world_pos.z					-=layer.verticalShift;
 		vec3 layerTexCoords			=(world_pos-cornerPos)*inverseScales;
 		float layerFade				=layer.layerFade;//*saturate((abs(sine)-layer.sine_threshold)/layer.sine_range);
-		if(layerFade>0&&fadeDistance<=d&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
+		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
 		{
 			float noise_factor		=lerp(baseNoiseFactor,1.0,saturate(layerTexCoords.z));
 			vec2 noise_texc			=noise_texc_0*layerWorldDist+layer.noiseOffset;
 			vec3 noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
 			density					=calcDensity(cloudDensity1,cloudDensity2,layerTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
-			density.z				*=saturate((d-fadeDistance)/0.0001);
+            if(do_depth_mix)
+				density.z				*=saturate((d-fadeDistance)/0.0001);
 			if(density.z>0)
 			{
 #ifdef USE_LIGHT_TABLES
