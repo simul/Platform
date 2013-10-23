@@ -162,12 +162,12 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture,Texture2D coverageTexture
 	vec2 far_texc			=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 
 	vec3 loss				=texture_cmc_lod(lossTexture,fade_texc,0).rgb;
-	//vec4 insc_far			=texture_clamp_mirror(inscTexture,far_texc);
-	//vec4 insc_near			=texture_clamp_mirror(inscTexture,near_texc);
+	vec4 insc_far			=texture_clamp_mirror(inscTexture,far_texc);
+	vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
 	vec4 skyl_lookup		=texture_cmc_lod(skylTexture,fade_texc,0);
-	//vec4 insc				=vec4(insc_far.rgb-insc_near.rgb,insc_far.a);//0.5*(insc_near.a+insc_far.a));
-	vec4 insc				=visible_light*texture_cmc_lod(inscTexture,fade_texc,0);
-	
+	vec4 insc				=vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
+	//vec4 insc				=texture_cmc_lod(inscTexture,fade_texc,0);
+	insc.rgb				*=visible_light;
 	vec3 light				=sun_irr*visible_light+moon_irr;
 	vec4 colour				=vec4(light*(lightResponse.y+lightResponse.x*hg)*scattered_light+amb,opacity);
 	colour.rgb				*=loss;

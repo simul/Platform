@@ -312,12 +312,14 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 		if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
 			UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetColorTex(),view,proj);
-
-		if(simulHDRRenderer&&UseHdrPostprocessor)
-		{
-			hdrFramebuffer.Deactivate(pd3dImmediateContext);
-			simulHDRRenderer->Render(pd3dImmediateContext,hdrFramebuffer.GetColorTex());
-		}
+	}
+	if(simulHDRRenderer&&UseHdrPostprocessor)
+	{
+		hdrFramebuffer.Deactivate(pd3dImmediateContext);
+		simulHDRRenderer->Render(pd3dImmediateContext,hdrFramebuffer.GetColorTex());
+	}
+	if(simulWeatherRenderer)
+	{
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pd3dImmediateContext,ScreenWidth,ScreenHeight);
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
@@ -446,7 +448,7 @@ void Direct3D11Renderer::RecompileShaders()
 	mixedResolutionConstants.LinkToEffect(mixedResolutionEffect,"MixedResolutionConstants");
 }
 
-void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
+void Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
 {
 }
 

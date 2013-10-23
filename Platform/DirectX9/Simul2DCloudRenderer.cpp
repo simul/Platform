@@ -123,7 +123,7 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,
 	test=new simul::base::Referenced;
 	test=NULL;
 	cloudKeyframer->SetMake2DTextures(true);
-	cloudKeyframer->InitKeyframesFromClouds();
+//	cloudKeyframer->InitKeyframesFromClouds();
 
 	helper=new simul::clouds::Cloud2DGeometryHelper(memoryInterface);
 	helper->Initialize(8);

@@ -114,7 +114,7 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 		vec4 density				=lerp(density1,density2,cloud_interp);
 		if(density.z>0)
 		{
-			illumination			=lerp(illumination,vec2(0,0),density1.z);//density.xy
+			illumination			=lerp(illumination,vec2(0,0),density.z);//density.xy
 			U						=lerp(U,u,density.z);
 		}
 	}

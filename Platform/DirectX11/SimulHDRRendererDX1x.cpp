@@ -176,10 +176,6 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv)
 	imageTexture->SetResource(textureSRV);
 	Gamma_		->SetFloat(Gamma);
 	Exposure_	->SetFloat(Exposure);
-	//D3DXMATRIX ortho;
-	//D3DXMatrixIdentity(&ortho);
-   // D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
-	//worldViewProj->SetMatrix(ortho);
 	if(Glow)
 	{
 		RenderGlowTexture(context,texture_srv);
