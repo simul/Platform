@@ -20,7 +20,7 @@ out vec4 transformed_pos;
 
 void main(void)
 {
-	LayerData layer		=layers[layerCount-1-layerNumber];
+	LayerData layer		=layers[layerNumber];//layerCount-1-layerNumber];
 	vec3 pos			=vertex.xyz;
 	pos.xyz				*=layer.layerDistance;
     wPosition			=pos.xyz;

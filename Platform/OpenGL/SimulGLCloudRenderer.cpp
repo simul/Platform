@@ -93,14 +93,11 @@ SimulGLCloudRenderer::SimulGLCloudRenderer(simul::clouds::CloudKeyframer *ck,sim
 	,cross_section_program(0)
 	,cloud_shadow_program(0)
 
-	,cloudConstantsUBO(0)
-	,cloudConstantsBindingIndex(2)
+	//,cloudPerViewConstantsUBO(0)
+	//,cloudPerViewConstantsBindingIndex(13)
 
-	,cloudPerViewConstantsUBO(0)
-	,cloudPerViewConstantsBindingIndex(13)
-
-	,layerDataConstantsUBO(0)
-	,layerDataConstantsBindingIndex(4)
+	//,layerDataConstantsUBO(0)
+	//,layerDataConstantsBindingIndex(4)
 {
 	for(int i=0;i<3;i++)
 	{
@@ -422,7 +419,7 @@ GL_ERROR_CHECK
 float time=skyInterface->GetTime();
 //const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
-	CloudPerViewConstants cloudPerViewConstants;
+	//CloudPerViewConstants cloudPerViewConstants;
 GL_ERROR_CHECK
 
 	static float direct_light_mult=0.25f;
@@ -437,7 +434,6 @@ GL_ERROR_CHECK
 //	float base_alt_km=X1.z*.001f;
 	float t=0.f;
 	
-	CloudConstants cloudConstants;
 	if(skyInterface)
 		t=skyInterface->GetTime();
 	simul::math::Vector3 view_pos(cam_pos.x,cam_pos.y,cam_pos.z);
@@ -479,13 +475,15 @@ GL_ERROR_CHECK
 
 	helper->Update2DNoiseCoords();
 	SetCloudConstants(cloudConstants);
-	glBindBuffer(GL_UNIFORM_BUFFER,cloudConstantsUBO);
+	cloudConstants.Apply();
+/*	glBindBuffer(GL_UNIFORM_BUFFER,cloudConstantsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(CloudConstants),&cloudConstants);
-	glBindBuffer(GL_UNIFORM_BUFFER,0);
-	glBindBufferBase(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER,0);*
+	glBindBufferBase(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO);*/
 
-	UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)
-	
+	//UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)
+	cloudPerViewConstants.layerIndex=18;
+	cloudPerViewConstants.Apply();
 	if(Raytrace)
 	{
 		UseShader(raytrace_program);
@@ -514,16 +512,28 @@ GL_ERROR_CHECK
 	// b) are in the cloud volume
 	GL_ERROR_CHECK
 	SetLayerConstants(helper,layerConstants);
-	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
+	layerConstants.thisLayerIndex=18;
+	layerConstants.Apply();
+//	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
 	int idx=0;
+	static int isolate_layer=-1;
 	for(CloudGeometryHelper::SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
+		if(isolate_layer>=0&&isolate_layer!=idx)
+			continue;
 	GL_ERROR_CHECK
 		simul::clouds::CloudGeometryHelper::Slice *s=*i;
 		helper->MakeLayerGeometry(s,effective_world_radius_metres);
 		const simul::clouds::CloudGeometryHelper::IntVector &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
-		setParameter(program,"layerNumber",(int)idx);
+		int layer=(int)helper->GetSlices().size()-1-idx;
+		setParameter(program,"layerNumber",layer);
+		const LayerData &L=layerConstants.layers[helper->GetSlices().size()-1-idx];
+		singleLayerConstants.noiseOffset_	=L.noiseOffset;
+		singleLayerConstants.layerFade_		=L.layerFade;
+		singleLayerConstants.layerDistance_	=L.layerDistance;
+		singleLayerConstants.verticalShift_	=L.verticalShift;
+		//singleLayerConstants.Apply();
 		glBegin(GL_QUAD_STRIP);
 		if(quad_strip_vertices.size())
 		for(CloudGeometryHelper::QuadStripPtrVector::const_iterator j=(*i)->quad_strips.begin();
@@ -596,20 +606,24 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 	skylightSampler_param			=glGetUniformLocation(program,"skylightSampler");
 	depthTexture					=glGetUniformLocation(program,"depthTexture");
 
-	GLint cloudConstants			=glGetUniformBlockIndex(program,"CloudConstants");
-	GLint cloudPerViewConstants		=glGetUniformBlockIndex(program,"CloudPerViewConstants");
+	//GLint cloudConstants			=glGetUniformBlockIndex(program,"CloudConstants");
+	//GLint cloudPerViewConstants		=glGetUniformBlockIndex(program,"CloudPerViewConstants");
 	//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
 GL_ERROR_CHECK
 	// If that block IS in the shader program, then BIND it to the relevant UBO.
-	if(cloudConstants>=0)
-		glUniformBlockBinding(program,cloudConstants,cloudConstantsBindingIndex);
-	if(cloudPerViewConstants>=0)
-		glUniformBlockBinding(program,cloudPerViewConstants,cloudPerViewConstantsBindingIndex);
+	cloudConstants.LinkToProgram(program,"CloudConstants",2);
+layerConstants.LinkToProgram(program,"LayerConstants",4);
+singleLayerConstants.LinkToProgram(program,"SingleLayerConstants",5);
+	//if(cloudConstants>=0)
+	//	glUniformBlockBinding(program,cloudConstants,cloudConstantsBindingIndex);
+	//if(cloudPerViewConstants>=0)
+	//	glUniformBlockBinding(program,cloudPerViewConstants,cloudPerViewConstantsBindingIndex);
+	cloudPerViewConstants.LinkToProgram(program,"CloudPerViewConstants",13);
 GL_ERROR_CHECK
 	
-	GLint layerDataConstants			=glGetUniformBlockIndex(program,"LayerConstants");
-	if(layerDataConstants>=0)
-		glUniformBlockBinding(program,layerDataConstants,layerDataConstantsBindingIndex);
+	//GLint layerDataConstants			=glGetUniformBlockIndex(program,"LayerConstants");
+	//if(layerDataConstants>=0)
+	///	glUniformBlockBinding(program,layerDataConstants,layerDataConstantsBindingIndex);
 GL_ERROR_CHECK
 }
 
@@ -641,10 +655,20 @@ GL_ERROR_CHECK
 	
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
-	glBindBufferRange(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO,0, sizeof(CloudConstants));
-	glBindBufferRange(GL_UNIFORM_BUFFER,layerDataConstantsBindingIndex,layerDataConstantsUBO,0, sizeof(LayerConstants));
-	glBindBufferRange(GL_UNIFORM_BUFFER,cloudPerViewConstantsBindingIndex,cloudPerViewConstantsUBO,0, sizeof(CloudPerViewConstants));
-
+	cloudConstants.LinkToProgram(clouds_background_program,"CloudConstants",2);
+	cloudConstants.LinkToProgram(clouds_foreground_program,"CloudConstants",2);
+	//glBindBufferRange(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO,0, sizeof(CloudConstants));
+//	glBindBufferRange(GL_UNIFORM_BUFFER,layerDataConstantsBindingIndex,layerDataConstantsUBO,0, sizeof(LayerConstants));
+	//glBindBufferRange(GL_UNIFORM_BUFFER,cloudPerViewConstantsBindingIndex,cloudPerViewConstantsUBO,0, sizeof(CloudPerViewConstants));
+	cloudPerViewConstants.LinkToProgram(clouds_background_program,"CloudPerViewConstants",13);
+	cloudPerViewConstants.LinkToProgram(clouds_foreground_program,"CloudPerViewConstants",13);
+	
+	layerConstants.LinkToProgram(clouds_background_program,"LayerConstants",4);
+	layerConstants.LinkToProgram(clouds_foreground_program,"LayerConstants",4);
+	
+	singleLayerConstants.LinkToProgram(clouds_background_program,"SingleLayerConstants",5);
+	singleLayerConstants.LinkToProgram(clouds_foreground_program,"SingleLayerConstants",5);
+	
 GL_ERROR_CHECK
 	glUseProgram(0);
 }
@@ -654,9 +678,13 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 	init=true;
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	
-	MAKE_GL_CONSTANT_BUFFER(cloudConstantsUBO,CloudConstants,cloudConstantsBindingIndex);
-	MAKE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
-	MAKE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,CloudPerViewConstants,cloudPerViewConstantsBindingIndex);
+	//MAKE_GL_CONSTANT_BUFFER(cloudConstantsUBO,CloudConstants,cloudConstantsBindingIndex);
+	cloudConstants.RestoreDeviceObjects();
+	//MAKE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
+	layerConstants.RestoreDeviceObjects();
+	singleLayerConstants.RestoreDeviceObjects();
+	cloudPerViewConstants.RestoreDeviceObjects();
+	//MAKE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,CloudPerViewConstants,cloudPerViewConstantsBindingIndex);
 
 	RecompileShaders();
 	//CreateVolumeNoise();
@@ -759,8 +787,12 @@ void SimulGLCloudRenderer::InvalidateDeviceObjects()
 
 	volume_noise_tex=0;
 
-	glDeleteBuffersARB(1,&cloudConstantsUBO);
-	cloudConstantsUBO=0;
+	//glDeleteBuffersARB(1,&cloudConstantsUBO);
+	cloudConstants.Release();
+	cloudPerViewConstants.Release();
+	layerConstants.Release();
+	singleLayerConstants.Release();
+	//cloudConstantsUBO=0;
 	
 	ClearIterators();
 }

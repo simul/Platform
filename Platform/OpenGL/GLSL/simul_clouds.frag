@@ -30,6 +30,7 @@ in vec4 transformed_pos;
 
 void main(void)
 {
+//gl_FragColor=vec4(0.5,0.5,0.5,.5);
 	vec3 half_vec			=vec3(0.5,0.5,0.5);//0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float cos0				=dot(directionToSun.xyz,normalize(view.xyz));
 #ifdef USE_DEPTH_TEXTURE	
@@ -82,6 +83,5 @@ void main(void)
 	final.rgb					*=loss_lookup;
 	final.rgb					+=InscatterFunction(insc_lookup,hazeEccentricity,cos0,mieRayleighRatio);
 	final.rgb					+=skyl_lookup;
-//final.rgb=fract(noiseCoord.xyy);
     gl_FragColor				=vec4(final.rgb*opacity*exposure,1.0-opacity);
 }

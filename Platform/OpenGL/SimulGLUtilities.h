@@ -131,6 +131,7 @@ namespace simul
 				Release();
 			}
 			GLuint	ubo;
+			GLint bindingIndex;
 			//! Create the buffer object.
 			void RestoreDeviceObjects()
 			{
@@ -143,6 +144,7 @@ namespace simul
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToProgram(GLuint program,const char *name,GLint bindingIndex)
 			{
+				this->bindingIndex=bindingIndex;
 				GLint indexInShader=glGetUniformBlockIndex(program,name);
 				if(indexInShader>=0)
 				{
@@ -163,7 +165,7 @@ namespace simul
 				glBindBuffer(GL_UNIFORM_BUFFER,ubo);
 				glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(T),static_cast<T*>(this));
 				glBindBuffer(GL_UNIFORM_BUFFER,0);
-				//glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
+				glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 			}
 		};
 	}

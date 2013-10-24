@@ -10,6 +10,7 @@
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Platform/OpenGL/GpuCloudGenerator.h"
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 namespace simul
 {
 	namespace clouds
@@ -102,14 +103,10 @@ protected:
 	//GLint layerDistance_param;
 unsigned short *pIndices;
 
-	GLuint cloudConstantsUBO;
-	GLint cloudConstantsBindingIndex;
-
-	GLuint cloudPerViewConstantsUBO;
-	GLint cloudPerViewConstantsBindingIndex;
-	
-	GLuint	layerDataConstantsUBO;
-	GLint	layerDataConstantsBindingIndex;
+	simul::opengl::ConstantBuffer<CloudConstants> cloudConstants;
+	simul::opengl::ConstantBuffer<CloudPerViewConstants> cloudPerViewConstants;
+	simul::opengl::ConstantBuffer<LayerConstants> layerConstants;
+	simul::opengl::ConstantBuffer<SingleLayerConstants> singleLayerConstants;
 
 	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;

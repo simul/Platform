@@ -692,7 +692,7 @@ GL_ERROR_CHECK
 	skyConstants					.LinkToProgram(illumination_buffer_program	,"SkyConstants"		,10);
 	skyConstants					.LinkToProgram(overcast_inscatter_program	,"SkyConstants"		,10);
 	earthShadowUniforms				.LinkToProgram(illumination_buffer_program	,"EarthShadowUniforms",9);
-	earthShadowUniforms				.LinkToProgram(overcast_inscatter_program	,"EarthShadowUniforms",9);
+	//earthShadowUniforms				.LinkToProgram(overcast_inscatter_program	,"EarthShadowUniforms",9);
 }
 
 void SimulGLSkyRenderer::RestoreDeviceObjects(void*)

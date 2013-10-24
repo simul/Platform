@@ -5,7 +5,7 @@
 #include "../../CrossPlatform/sky_constants.sl"
 uniform sampler2D planetTexture;
 // inputs are written by vert shader, interpolated, and read by frag shader.
-in vec2 texcoord;
+in vec2 texCoords;
 out vec4 gl_FragColor;
 
 float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
@@ -30,9 +30,9 @@ float approx_oren_nayar(float roughness,vec3 view,vec3 normal,vec3 lightDir)
 
 void main()
 {
-	vec4 result=texture(planetTexture,texcoord);
+	vec4 result=texture(planetTexture,texCoords);
 	vec3 normal;
-	normal.xy=-2.0*(texcoord-vec2(0.5,0.5));
+	normal.xy=-2.0*(texCoords-vec2(0.5,0.5));
 	float l=length(normal.xy);
 	if(l>1.0)
 		discard;

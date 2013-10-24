@@ -5,12 +5,11 @@ STATIC const int SIMUL_MAX_CLOUD_RAYTRACE_STEPS=200;
 struct LayerData
 {
 	vec2 noiseOffset;
-	float layerFade;
-	float layerDistance;
-
-	float verticalShift;
 	float pad11;
 	float pad12;
+	float layerFade;
+	float layerDistance;
+	float verticalShift;
 	float pad13;
 };
 
@@ -22,16 +21,26 @@ struct SmallLayerData
 	float verticalShift;
 };
 
+SIMUL_CONSTANT_BUFFER(SingleLayerConstants,5)
+	vec2 noiseOffset_;
+	float layerFade_;
+	float layerDistance_;
+	float verticalShift_;
+	float pad121;
+	float pad122;
+	float pad123;
+SIMUL_CONSTANT_BUFFER_END
+
 SIMUL_CONSTANT_BUFFER(LayerConstants,8)
 	uniform LayerData layers[SIMUL_MAX_CLOUD_RAYTRACE_STEPS];
 	uniform int layerCount;
-	uniform int A,B,C;
+	uniform int thisLayerIndex,B,C;
 SIMUL_CONSTANT_BUFFER_END
 
 SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 viewPos;
-	uniform float uuuu;
+	uniform uint layerIndex;
 	uniform mat4 invViewProj;
 	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
 	uniform mat4 noiseMatrix;

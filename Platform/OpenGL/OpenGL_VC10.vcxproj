@@ -255,6 +255,7 @@
     <None Include="GLSL\simul_clouds.vert" />
     <None Include="GLSL\simul_clouds_2d.frag" />
     <None Include="GLSL\simul_clouds_2d.vert" />
+    <None Include="GLSL\simul_cloud_overlay.frag" />
     <None Include="GLSL\simul_cloud_shadow.frag" />
     <None Include="GLSL\simul_earthshadow_sky.frag" />
     <None Include="GLSL\simul_earthshadow_uniforms.glsl" />

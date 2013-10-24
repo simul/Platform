@@ -5,11 +5,11 @@ uniform sampler2D input_light_texture;
 uniform sampler3D density_texture;
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
 
-varying vec2 in_texcoord;
+varying vec2 texCoords;
 
 void main(void)
 {
-	vec2 texcoord				=in_texcoord.xy;//+texCoordOffset;
+	vec2 texcoord				=texCoords.xy;//+texCoordOffset;
 	vec4 previous_light			=texture(input_light_texture,texcoord.xy);
 	vec3 lightspace_texcoord	=vec3(texcoord.xy,zPosition);
 	vec3 densityspace_texcoord	=(vec4(lightspace_texcoord,1.0)*transformMatrix).xyz;

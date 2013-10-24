@@ -102,7 +102,6 @@
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-
 	struct vec2
 	{
 		float x,y;
