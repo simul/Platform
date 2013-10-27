@@ -35,6 +35,11 @@
 #include "LoadGLProgram.h"
 
 #include <algorithm>
+#include <stdint.h>  // for uintptr_t
+
+#ifndef _MSC_VER
+#define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
+#endif
 
 bool god_rays=false;
 using std::map;
@@ -184,7 +189,7 @@ ERROR_CHECK
 	ERROR_CHECK
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
+		glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)noise_fb.GetColorTex());
 	ERROR_CHECK
 		glUseProgram(edge_noise_prog);
 	ERROR_CHECK
@@ -360,7 +365,7 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_3D,illum_tex);
 
     glActiveTexture(GL_TEXTURE7);
-	glBindTexture(GL_TEXTURE_2D,(GLuint)depth_alpha_tex);
+	glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)depth_alpha_tex);
 
 	GLuint program=depth_alpha_tex>0?clouds_foreground_program:clouds_background_program;
 
@@ -524,19 +529,19 @@ ERROR_CHECK
 void SimulGLCloudRenderer::SetLossTexture(void *l)
 {
 	if(l)
-	loss_tex=((GLuint)l);
+	loss_tex=((GLuint)(uintptr_t)l);
 }
 
 void SimulGLCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
 {
-	inscatter_tex=((GLuint)i);
-	skylight_tex=((GLuint)s);
-	overcast_tex=((GLuint)o);
+       inscatter_tex=((GLuint)(uintptr_t)i);
+       skylight_tex=((GLuint)(uintptr_t)s);
+       overcast_tex=((GLuint)(uintptr_t)o);
 }
 
 void SimulGLCloudRenderer::SetIlluminationTexture(void* i)
 {
-	illum_tex=((GLuint)i);
+        illum_tex=((GLuint)(uintptr_t)i);
 }
 
 void SimulGLCloudRenderer::UseShader(GLuint program)
@@ -973,5 +978,4 @@ static float mult=1.f;
 glUseProgram(Utilities::GetSingleton().simple_program);
 	DrawQuad(width-(w+8),height-(w+8),w,w);
 	glUseProgram(0);
-ERROR_CHECK
 }

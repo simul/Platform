@@ -17,6 +17,11 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Base/DefaultFileLoader.h"
 
+#ifndef _MSC_VER
+#define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
+#define DebugBreak()
+#endif
+
 using namespace simul;
 using namespace base;
 using namespace opengl;
@@ -139,16 +144,16 @@ struct FilenameChart
 
 void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 {
-    int infologLength = 0;
-    int charsWritten  = 0;
-    char *infoLog;
+	int infologLength = 0;
+	int charsWritten  = 0;
+	char *infoLog;
 
 	glGetShaderiv(sh, GL_INFO_LOG_LENGTH,&infologLength);
 
-    if (infologLength > 1)
-    {
-        infoLog = (char *)malloc(infologLength);
-        glGetShaderInfoLog(sh, infologLength, &charsWritten, infoLog);
+	if (infologLength > 1)
+	{
+		infoLog = (char *)malloc(infologLength);
+		glGetShaderInfoLog(sh, infologLength, &charsWritten, infoLog);
 		std::string info_log=infoLog;
 		if(info_log.find("No errors")>=info_log.length())
 		{
@@ -219,21 +224,21 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 			}
 		}
 		free(infoLog);
-    }
+	}
 }
 
 void printProgramInfoLog(GLuint obj)
 {
-    int infologLength = 0;
-    int charsWritten  = 0;
-    char *infoLog;
+	int infologLength = 0;
+	int charsWritten  = 0;
+	char *infoLog;
 
 	glGetProgramiv(obj, GL_INFO_LOG_LENGTH,&infologLength);
 
-    if (infologLength > 1)
-    {
-        infoLog = (char *)malloc(infologLength);
-        glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
+	if (infologLength > 1)
+	{
+		infoLog = (char *)malloc(infologLength);
+		glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
 		std::string info_log=infoLog;
 		if(info_log.find("No errors")>=info_log.length())
 		{
@@ -241,10 +246,10 @@ void printProgramInfoLog(GLuint obj)
 		}
 		else if(info_log.find("WARNING")<info_log.length())
 			std::cout<<infoLog<<std::endl;
-        free(infoLog);
-    }
+		free(infoLog);
+	}
 	ERROR_CHECK
-}
+		}
 
 
 GLuint SetShader(GLuint sh,const std::string &source,const map<string,string> &defines,FilenameChart filenameChart)
@@ -281,20 +286,20 @@ GLuint SetShader(GLuint sh,const std::string &source,const map<string,string> &d
 	strings[0]		=src.c_str();
 	lenOfStrings[0]	=strlen(strings[0]);
 	glShaderSource(sh,1,strings,NULL);
-ERROR_CHECK
-    if(!sh)
+	ERROR_CHECK
+	if(!sh)
 		return 0;
 	glCompileShader(sh);
-ERROR_CHECK
+	ERROR_CHECK
 	printShaderInfoLog(sh,filenameChart);
 	int result=1;
 	glGetShaderiv(sh,GL_COMPILE_STATUS,&result);
-ERROR_CHECK
+	ERROR_CHECK
 	if(!result)
 	{
 		return 0;
 	}
-    return sh;
+	return sh;
 }
 
 GLuint SetShader(GLuint sh,const std::string &source,const map<string,string> &defines)
@@ -383,6 +388,9 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 {
 	ERROR_CHECK
 	GLuint prog						=glCreateProgram();
+#ifndef IDRETRY
+#define IDRETRY 0
+#endif
 	int result=IDRETRY;
 	GLuint vertex_shader=0;
 	ERROR_CHECK
@@ -392,10 +400,14 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 		if(!vertex_shader)
 		{
 			std::cerr<<vert_filename<<"(0): ERROR C1000: Shader failed to compile\n";
+#ifdef _MSC_VER
 			std::string msg_text=vert_filename;
 			msg_text+=" failed to compile. Edit shader and try again?";
 			result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
 			DebugBreak();
+#else
+			break;
+#endif
 		}
 		else break;
 	}
@@ -422,10 +434,14 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 		if(!fragment_shader)
 		{
 			std::cerr<<frag_filename<<"(0): ERROR C1000: Shader failed to compile\n";
+#ifdef _MSC_VER
 			std::string msg_text=frag_filename;
 			msg_text+=" failed to compile. Edit shader and try again?";
 			result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
 			DebugBreak();
+#else
+			break;
+#endif
 		}
 		else break;
 	}
@@ -445,7 +461,7 @@ std::string loadShaderSource(const char *filename_utf8)
 //	const int MAX_LINES=512;
 //	const int MAX_LINE_LENGTH=256;   // 255 + NULL terminator
 	//char shader_source[MAX_LINES*MAX_LINE_LENGTH];
-    std::string filenameUtf8=*shaderPathUtf8;
+	std::string filenameUtf8=*shaderPathUtf8;
 	char last=0;
 	if(shaderPathUtf8->length())
 		last=filenameUtf8[shaderPathUtf8->length()-1];
@@ -534,6 +550,6 @@ ERROR_CHECK
 	GLuint sh=glCreateShader(shader_type);
 ERROR_CHECK
 	sh=SetShader(sh,src,defines,filenameChart);
-	ERROR_CHECK
-    return sh;
+ERROR_CHECK
+	return sh;
 }

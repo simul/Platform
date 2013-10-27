@@ -3,6 +3,7 @@
 #include "Simul/Base/Timer.h"
 #include <stdio.h>
 #include <math.h>
+#include <stdint.h> // for uintptr_t
 
 #include <GL/glew.h>
 
@@ -282,7 +283,12 @@ ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,insc_texture);
 	RenderTexture(x0,y0+16+size,size,size);
 	glBindTexture(GL_TEXTURE_2D,skyl_texture);
-	RenderTexture(x0,y0+24+2*size,size,size);
+	RenderTexture(x0+size+2	,y	,size,size);
+	y+=size+8;
+
+            glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)illumination_fb.GetColorTex());
+	RenderTexture(x0+size+2	,y	,size,size);
+
 	x0+=24+size;
 	int s=size/numAltitudes-4;
 	for(int i=0;i<numAltitudes;i++)
@@ -603,11 +609,12 @@ void SimulGLSkyRenderer::RenderPlanet(void *,void* tex,float planet_angular_size
 	simul::math::Vector3 sun_dir=skyKeyframer->GetDirectionToSun();
 	simul::math::Vector3 sun2;
 	{
-		simul::geometry::SimulOrientation or;
-		or.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
-		or.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
+            // or is a reserved token name in the C++ standard
+		simul::geometry::SimulOrientation ori;
+		ori.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
+		ori.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
 		simul::math::Matrix4x4 inv_world;
-		or.T4.Inverse(inv_world);
+		ori.T4.Inverse(inv_world);
 		simul::math::Multiply3(sun2,sun_dir,inv_world);
 	}
 	if(do_lighting)
@@ -631,9 +638,9 @@ void SimulGLSkyRenderer::RenderPlanet(void *,void* tex,float planet_angular_size
 
 void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o)
 {
-	*l1=(void*)loss_texture;
-	*i1=(void*)insc_texture;
-	*s=(void*)skyl_texture;
+	*l1=(void*)(uintptr_t)loss_texture;
+	*i1=(void*)(uintptr_t)insc_texture;
+	*s=(void*)(uintptr_t)skyl_texture;
 	o=NULL;
 }
 
@@ -699,7 +706,7 @@ void SimulGLSkyRenderer::EnsureTextureCycle()
 
 void SimulGLSkyRenderer::ReloadTextures()
 {
-	moon_texture=(void*)LoadGLImage(skyKeyframer->GetMoonTexture().c_str(),GL_CLAMP_TO_EDGE);
+	moon_texture=(void*)(uintptr_t)LoadGLImage(skyKeyframer->GetMoonTexture().c_str(),GL_CLAMP_TO_EDGE);
 	SetPlanetImage(moon_index,moon_texture);
 }
 

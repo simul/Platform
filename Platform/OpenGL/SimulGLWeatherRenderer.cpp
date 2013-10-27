@@ -22,6 +22,7 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Decay.h"
+#include <stdint.h>  // for uintptr_t
 
 using namespace simul;
 using namespace opengl;
@@ -266,7 +267,7 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,b
 	glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	GLuint prog=cloud_overlay_program;//AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,(GLuint)scene_buffer->GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)scene_buffer->GetColorTex());
 	glUseProgram(prog);
 
 	GLint image_texture		=glGetUniformLocation(prog,"image_texture");
@@ -329,5 +330,5 @@ const char *SimulGLWeatherRenderer::GetDebugText() const
 */
 GLuint SimulGLWeatherRenderer::GetFramebufferTexture()
 {
-	return (GLuint)scene_buffer->GetColorTex();
+    return (GLuint)(uintptr_t)scene_buffer->GetColorTex();
 }

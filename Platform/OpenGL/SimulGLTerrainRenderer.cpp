@@ -1,7 +1,7 @@
 #include <GL/glew.h>
 #include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
-#include "Simul/Platform/OpenGL/SimuLGLUtilities.h"
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLImage.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
@@ -41,7 +41,7 @@ void SimulGLTerrainRenderer::RestoreDeviceObjects(void*)
 
 void SimulGLTerrainRenderer::MakeTextures()
 {
-    glGenTextures(1, &texArray);
+	glGenTextures(1, &texArray);
 	if(!IsExtensionSupported("GL_EXT_texture_array"))
 	{
 		simul::base::RuntimeError("SimulGLTerrainRenderer needs the GL_EXT_texture_array extension.");
@@ -50,13 +50,13 @@ void SimulGLTerrainRenderer::MakeTextures()
 	//if(!IsExtensionSupported("GL_EXT_gpu_shader4"))
 	//	return;
 	//GL_TEXTURE_2D_ARRAY_EXT
-    glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, texArray);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    //glTexParameterfv(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_BORDER_COLOR, borderColor);
+	glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, texArray);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//glTexParameterfv(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_BORDER_COLOR, borderColor);
 	unsigned bpp,width,height;
 	ERROR_CHECK
 	unsigned char *data=LoadGLBitmap("terrain.png",bpp,width,height);
@@ -114,11 +114,11 @@ void SimulGLTerrainRenderer::Render(void *,float exposure)
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
 	if(baseSkyInterface)
 	{
-		simul::math::Vector3 irr=baseSkyInterface->GetLocalIrradiance(0.f);
-	irr*=0.1f*exposure;
-	glUniform3f(sunlight_param,irr.x,irr.y,irr.z);
-		simul::math::Vector3 sun_dir=baseSkyInterface->GetDirectionToLight(0.f);
-	glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
+		simul::math::Vector3 irr(baseSkyInterface->GetLocalIrradiance(0.f));
+		irr*=0.1f*exposure;
+		glUniform3f(sunlight_param,irr.x,irr.y,irr.z);
+		simul::math::Vector3 sun_dir(baseSkyInterface->GetDirectionToLight(0.f));
+		glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	}
 
 	glActiveTexture(GL_TEXTURE0);

@@ -12,8 +12,15 @@
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
 #include <math.h>
+#include <string.h>
+#ifdef _MSC_VER
 #include <windows.h>
+#endif
 #include "Simul/Math/Pi.h"
+
+#ifndef _MSC_VER
+#define DebugBreak()
+#endif
 
 int Utilities::instance_count=0;
 int Utilities::screen_width=0;
@@ -614,7 +621,9 @@ GLuint make2DTexture(int w,int l,const float *src)
 }
 
 #undef pi
+#ifdef _MSC_VER
 #include <windows.h>
+#endif
 void CheckGLError(const char *filename,int line_number,int err)
 {
 	if(err)

@@ -1,5 +1,6 @@
 #include <GL/glew.h>
 #include <sstream>
+#include <stdexcept> // for runtime_error
 #include "Profiler.h"
 #include "SimulGLUtilities.h"
 using std::string;
@@ -7,6 +8,11 @@ using std::map;
 bool enabled=false;
 using namespace simul;
 using namespace opengl;
+
+#ifndef _MSC_VER
+#include <cassert>
+#define _ASSERT(x) (assert(x))
+#endif
 
 Profiler Profiler::GlobalProfiler;
 

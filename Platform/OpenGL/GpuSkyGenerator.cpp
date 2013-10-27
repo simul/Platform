@@ -1,4 +1,5 @@
-#include <gl/glew.h>
+#include <GL/glew.h>
+#include <stdint.h> // for uintptr_t
 #include "Simul/Platform/OpenGL/GpuSkyGenerator.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
@@ -197,7 +198,7 @@ ERROR_CHECK
 			OrthoMatrices();
 			// input light values:
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)F[0]->GetColorTex());
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_1D,dens_tex);
 			DrawQuad(0,0,1,1);
@@ -254,7 +255,7 @@ ERROR_CHECK
 			OrthoMatrices();
 			// input inscatter values:
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)F[0]->GetColorTex());
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_1D,dens_tex);
 			glActiveTexture(GL_TEXTURE2);
@@ -313,7 +314,7 @@ ERROR_CHECK
 			OrthoMatrices();
 			// input inscatter values:
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)F[0]->GetColorTex());
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_1D,dens_tex);
 			glActiveTexture(GL_TEXTURE2);

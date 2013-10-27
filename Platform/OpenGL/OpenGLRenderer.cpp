@@ -17,7 +17,13 @@
 #include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
+#include <stdint.h> // for uintptr_t
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
+
+#ifndef _MSC_VER
+#define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
+#endif
+
 using namespace simul::opengl;
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 	:ScreenWidth(0)
@@ -158,7 +164,7 @@ ERROR_CHECK
 		depthFramebuffer.Deactivate(context);
 		{
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)depthFramebuffer.GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)depthFramebuffer.GetColorTex());
 			glUseProgram(simple_program);
 			GLint image_texture		=glGetUniformLocation(simple_program,"image_texture");
 			glUniform1i(image_texture,0);

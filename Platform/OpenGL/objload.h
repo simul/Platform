@@ -48,6 +48,7 @@
 #include <set>
 #include <map>
 #include <string>
+#include <string.h> // for memset
 #include <vector>
 #include <iostream>
 #include "Simul/Platform/OpenGL/Export.h"

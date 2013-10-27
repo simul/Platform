@@ -1,7 +1,7 @@
-#include <gl/glew.h>
+#include <GL/glew.h>
 #include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
-#include "Simul/Platform/OpenGL/SimuLGLUtilities.h"
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Sky/Float4.h"
@@ -9,7 +9,8 @@
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/earth_shadow_uniforms.sl"
 #include "Simul/Platform/CrossPlatform/atmospherics_constants.sl"
-
+#include <stdint.h>  // for uintptr_t
+#include <string.h>  // for memset
 SimulGLAtmosphericsRenderer::SimulGLAtmosphericsRenderer(simul::base::MemoryInterface *m)
 	:BaseAtmosphericsRenderer(m)
 	,clouds_texture(0)
@@ -101,7 +102,7 @@ void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 
 void SimulGLAtmosphericsRenderer::RenderAsOverlay(void *,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
-	GLuint depth_texture=(GLuint)depthTexture;
+	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
 ERROR_CHECK
     glEnable(GL_TEXTURE_2D);
 ERROR_CHECK
