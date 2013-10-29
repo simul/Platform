@@ -130,7 +130,7 @@ HRESULT SimulAtmosphericsRendererDX1x::Destroy()
 	return S_OK;
 }
 
-void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void SimulAtmosphericsRendererDX1x::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
 	view=v;
 	proj=p;

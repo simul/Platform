@@ -101,6 +101,7 @@ namespace simul
 
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
+			void RenderScene(ID3D11DeviceContext* pd3dImmediateContext);
 			void DownscaleDepth(ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
 			void ReverseDepthChanged();
 			bool enabled;

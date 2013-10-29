@@ -213,6 +213,7 @@
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
+    <ClCompile Include="PrecipitationRenderer.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
     <ClCompile Include="Simul2DCloudRendererDX1x.cpp" />
@@ -221,7 +222,6 @@
     <ClCompile Include="SimulHDRRendererDX1x.cpp" />
     <ClCompile Include="SimulLightningRendererDX11.cpp" />
     <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
-    <ClCompile Include="SimulPrecipitationRendererDX1x.cpp" />
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="SimulTerrainRendererDX1x.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
@@ -240,6 +240,7 @@
     <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="GpuSkyGenerator.h" />
     <ClInclude Include="MacrosDx1x.h" />
+    <ClInclude Include="PrecipitationRenderer.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ResourcesDx1x.h" />
@@ -250,7 +251,6 @@
     <ClInclude Include="SimulHDRRendererDX1x.h" />
     <ClInclude Include="SimulLightningRendererDX11.h" />
     <ClInclude Include="SimulOpticsRendererDX1x.h" />
-    <ClInclude Include="SimulPrecipitationRendererDX1x.h" />
     <ClInclude Include="SimulSkyRendererDX1x.h" />
     <ClInclude Include="SimulTerrainRendererDX1x.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />

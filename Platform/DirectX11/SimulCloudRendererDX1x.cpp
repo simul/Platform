@@ -85,8 +85,8 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,m_pWrapSamplerState(NULL)
 	,m_pClampSamplerState(NULL)
 {
-	D3DXMatrixIdentity(&view);
-	D3DXMatrixIdentity(&proj);
+	view.Identity();
+	proj.Identity();
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 	texel_index[0]=texel_index[1]=texel_index[2]=texel_index[3]=0;
 }
@@ -1035,13 +1035,6 @@ bool SimulCloudRendererDX1x::RenderLightning(void *context,int viewport_id)
 //	hr=m_pLightningEffect->End();
 	PIXEndNamedEvent();
 	return (hr==S_OK);
-}
-
-void SimulCloudRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
-{
-	view=v;
-	proj=p;
-	cam_pos=GetCameraPosVector(view);
 }
 
 

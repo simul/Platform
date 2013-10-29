@@ -23,7 +23,7 @@ namespace simul
 			void RestoreDeviceObjects(void* dev);
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
-			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
+			void SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
 			void Render(void *context);
 		protected:
 		};

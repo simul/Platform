@@ -94,8 +94,8 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	m_pd3dDevice=(ID3D11Device*)dev;
 	HRESULT hr=S_OK;
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
-	D3DXMatrixIdentity(&view);
-	D3DXMatrixIdentity(&proj);
+	view.Identity();
+	proj.Identity();
 	MakeMesh();
     RecompileShaders();
 	D3D11_INPUT_ELEMENT_DESC decl[] =
@@ -194,7 +194,7 @@ void PrecipitationRenderer::Render(void *context)
 
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
-	D3DXMATRIX p1=proj;
+	simul::math::Matrix4x4 p1=proj;
 	if(ReverseDepth)
 	{
 		// Convert the proj matrix into a normal non-reversed matrix.
@@ -267,7 +267,7 @@ void PrecipitationRenderer::RenderParticles(void *context)
 	SAFE_RELEASE(previousInputLayout);
 }
 
-void PrecipitationRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void PrecipitationRenderer::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
 	view=v;
 	proj=p;

@@ -16,6 +16,7 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Sky/SkyInterface.h"
+
 using namespace simul::dx11;
 
 struct TerrainVertex_t
