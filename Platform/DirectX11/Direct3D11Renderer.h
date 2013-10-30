@@ -13,13 +13,7 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
-	struct MixedResolutionConstants
-	{
-		uniform uint2 scale;
-		uniform float a,b;
-		uniform vec3 depthToLinFadeDistParams;
-		uniform float c;
-	};
+#include "Simul/Platform/CrossPlatform/mixed_resolution_constants.sl"
 #pragma warning(push)
 #pragma warning(disable:4251)
 namespace simul

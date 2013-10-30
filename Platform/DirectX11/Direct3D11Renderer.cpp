@@ -215,6 +215,8 @@ void Direct3D11Renderer::DownscaleDepth(ID3D11DeviceContext* pContext,const D3DX
 	//pContext->ResolveSubresource(resolvedDepthTexture.texture, 0, depthTexture, 0, DXGI_FORMAT_R32_FLOAT);
 	mixedResolutionConstants.scale=uint2(s,s);
 	mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj);
+	mixedResolutionConstants.nearZ=0;
+	mixedResolutionConstants.farZ=0;
 	mixedResolutionConstants.Apply(pContext);
 	static const int BLOCKWIDTH			=8;
 	uint2 subgrid						=uint2((lowResDepthTexture.width+BLOCKWIDTH-1)/BLOCKWIDTH,(lowResDepthTexture.length+BLOCKWIDTH-1)/BLOCKWIDTH);

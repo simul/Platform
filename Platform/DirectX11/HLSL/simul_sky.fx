@@ -131,9 +131,10 @@ float4 PS_Fade3DTo2D(vertexOutput3Dto2D IN): SV_TARGET
 
 vec4 PS_OvercastInscatter(vertexOutput3Dto2D IN): SV_TARGET
 {
+	float alt_km		=eyePosition.z/1000.0;
 	// Texcoords representing the full distance from the eye to the given point.
-	vec2 fade_texc	=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
-    return OvercastInscatter(inscTexture,illuminationTexture,fade_texc,overcast);
+	vec2 fade_texc		=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
+    return OvercastInscatter(inscTexture,illuminationTexture,fade_texc,alt_km,maxFadeDistanceKm,overcast,overcastBaseKm,overcastRangeKm);
 }
 
 float4 PS_SkylightAndOvercast3Dto2D(vertexOutput3Dto2D IN): SV_TARGET

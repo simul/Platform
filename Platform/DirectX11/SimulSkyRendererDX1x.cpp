@@ -24,8 +24,6 @@
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 
-extern D3DXMATRIX view_matrices[6];
-
 using namespace simul::dx11;
 
 SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::base::MemoryInterface *mem)
