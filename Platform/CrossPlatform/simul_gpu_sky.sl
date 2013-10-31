@@ -9,8 +9,9 @@ uniform_buffer GpuSkyConstants SIMUL_BUFFER_REGISTER(8)
 	uniform uint3 threadOffset;
 	uniform float emissivity;
 
+	uniform vec3 directionToMoon;
 	uniform float distanceKm;
-	uniform float g,h,ii;
+
 	uniform float texelOffset;
 	uniform float prevDistanceKm;
 
@@ -23,11 +24,11 @@ uniform_buffer GpuSkyConstants SIMUL_BUFFER_REGISTER(8)
 	uniform float seaLevelTemperatureK;
 
 	uniform vec3 rayleigh;
-	uniform float overcastBaseKm;
+	uniform float overcastBaseKmX;
 	uniform vec3 hazeMie;
-	uniform float overcastRangeKm;
+	uniform float overcastRangeKmX;
 	uniform vec3 ozone;
-	uniform float overcast;
+	uniform float overcastX;
 
 	uniform vec3 sunIrradiance;
 	uniform float maxDistanceKm;
@@ -100,14 +101,14 @@ float getHazeOpticalLength(float sine_elevation,float h_km)
 	return haze_opt_len;
 }
 
-vec4 getSunlightFactor(float alt_km,vec3 DirectionToLight)
+vec4 getSunlightFactor(Texture2D optical_depth_texture,float alt_km,vec3 DirectionToLight)
 {
 	float sine				=clamp(DirectionToLight.z,-1.0,1.0);
 	vec2 table_texc			=vec2(tableSize.x*(0.5+0.5*sine),tableSize.y*(alt_km/maxDensityAltKm));
-	//table_texc			*=tableSize;//vec2(tableSize.x-1.0,tableSize.y-1.0);
+
 	table_texc				+=vec2(texelOffset,texelOffset);
 	table_texc				=vec2(table_texc.x/tableSize.x,table_texc.y/tableSize.y);
-	//return vec4(table_texc,sine,1.0);
+	
 	vec4 lookup				=texture_clamp_lod(optical_depth_texture,table_texc,0);
 	float illuminated_length=lookup.x;
 	float vis				=lookup.y;
@@ -115,6 +116,24 @@ vec4 getSunlightFactor(float alt_km,vec3 DirectionToLight)
 	float haze_opt_len		=getHazeOpticalLength(sine,alt_km);
 	vec4 factor				=vec4(vis,vis,vis,vis);
 	factor.rgb				*=exp(-rayleigh*illuminated_length-hazeMie*haze_opt_len-ozone*ozone_length);
+	return factor;
+}
+
+vec4 getSunlightFactor2(Texture2D optical_depth_texture,float alt_km,vec3 DirectionToLight)
+{
+	float sine				=clamp(DirectionToLight.z,-1.0,1.0);
+	vec2 table_texc			=vec2(0.5+0.5*sine,alt_km/maxDensityAltKm);
+
+	table_texc				+=vec2(texelOffset/tableSize.x,texelOffset/tableSize.y);
+	
+	vec4 lookup				=texture_clamp_lod(optical_depth_texture,table_texc,0);
+	float illuminated_length=lookup.x;
+	float vis				=lookup.y;
+	float ozone_length		=lookup.w;
+	float haze_opt_len		=getHazeOpticalLength(sine,alt_km);
+	vec4 factor				=vec4(vis,vis,vis,vis);
+	factor.rgb				*=exp(-rayleigh*illuminated_length-hazeMie*haze_opt_len-ozone*ozone_length);
+
 	return factor;
 }
 
@@ -142,32 +161,7 @@ float getDistanceToSpace(float sine_elevation,float h_km)
 	return getShortestDistanceToAltitude(sine_elevation,h_km,maxDensityAltKm);
 }
 
-float getOvercastAtAltitude(float h_km)
-{
-	return overcast*saturate((overcastBaseKm+overcastRangeKm-h_km)/overcastRangeKm);
-}
-
-float getOvercastAtAltitudeRange(float alt1_km,float alt2_km)
-{
-	// So now alt1 is Definitely lower than alt2.
-	float alt1				=min(alt1_km,alt2_km);
-	//float alt2				=max(alt1_km,alt2_km);
-	//if(alt1==alt2)
-		return getOvercastAtAltitude(alt1);
-	/*float diff_km			=alt2-alt1;
-	float const_start_km	=min(alt1,overcastBaseKm);
-	float const_end_km		=min(alt2,overcastBaseKm);
-	float x1				=min(max(alt1-overcastBaseKm,0.0),overcastRangeKm);
-	float x2				=min(max(alt2-overcastBaseKm,0.0),overcastRangeKm);
-	float oc1_km			=const_end_km-const_start_km;
-	// In the varying part, we integrate o=1-x/overcastRangeKm wrt x
-	float oc2_km			=(x2-x1)+(x1*x1-x2*x2)/(2.0*overcastRangeKm);
-	float oc				=(oc1_km+oc2_km)/diff_km;
-	oc						*=overcast;
-	return 1.0*oc;*/
-}
-
-vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture1D density_texture,vec2 texCoords)
+vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture2D density_texture,Texture2D optical_depth_texture,vec2 texCoords)
 {
 	vec4 previous_insc	=texture_nearest_lod(input_texture,texCoords.xy,0);
 	vec3 previous_loss	=texture_nearest_lod(loss_texture,vec3(texCoords.xy,pow(distanceKm/maxDistanceKm,0.5)),0).rgb;// should adjust texCoords - we want the PREVIOUS loss!
@@ -185,23 +179,23 @@ vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture1D density_textu
 	float r				=sqrt(x*x+y*y);
 	float alt_km		=r-planetRadiusKm;
 	
-	float x1			=mind*cos_e;
-	float r1			=sqrt(x1*x1+y*y);
-	float alt_1_km		=r1-planetRadiusKm;
+	//float x1			=mind*cos_e;
+	//float r1			=sqrt(x1*x1+y*y);
+	//float alt_1_km		=r1-planetRadiusKm;
 	
-	float x2			=maxd*cos_e;
-	float r2			=sqrt(x2*x2+y*y);
-	float alt_2_km		=r2-planetRadiusKm;
+	//float x2			=maxd*cos_e;
+	//float r2			=sqrt(x2*x2+y*y);
+	//float alt_2_km		=r2-planetRadiusKm;
 	
 	// lookups is: dens_factor,ozone_factor,haze_factor;
 	float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-	vec4 lookups		=texture_clamp_lod(density_texture,dens_texc,0);
+	vec4 lookups		=texture_clamp_lod(density_texture,vec2(dens_texc,0.5),0);
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
-	vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor(alt_km,lightDir);
+	vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor(optical_depth_texture,alt_km,lightDir);
 	vec4 insc			=light;
-	insc				*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
+	//insc				*=1.0-getOvercastAtAltitudeRange(alt_1_km,alt_2_km);
 	vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie;
 	vec3 total_ext		=extinction+ozone*ozone_factor;
 	vec3 loss			=exp(-extinction*stepLengthKm);
@@ -216,6 +210,50 @@ vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture1D density_textu
 
     return			insc;
 }
+
+// What spectral radiance is added on a light path towards the viewer, due to illumination of
+// a volume of air by the surrounding sky?
+// in cpp:
+//	float cos0=dir_to_sun.z;
+//	Skylight=GetAnisotropicInscatterFactor(true,hh,pif/2.f,0,1e5f,dir_to_sun,dir_to_moon,haze,false,1);
+//	Skylight*=GetInscatterAngularMultiplier(cos0,Skylight.w,hh);
+
+vec3 getSkylight(float alt_km, Texture3D insc_texture)
+{
+// The inscatter factor, at this altitude looking straight up, is given by:
+	vec4 insc		=texture_clamp_lod(insc_texture,vec3(sqrt(alt_km/maxOutputAltKm),0.0,1.0),0);
+	vec3 skylight	=InscatterFunction(insc,hazeEccentricity,0.0,mieRayleighRatio);
+	return skylight;
+}
+#ifndef GLSL
+void MakeLightTable(RWTexture3D<float4> targetTexture, Texture3D insc_texture, uint3 sub_pos)
+{
+	// threadOffset.y determines the cycled index.
+	uint3 pos			=sub_pos+threadOffset;
+	uint3 dims;
+	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y)
+		return;
+	float alt_texc			=float(pos.x)/float(dims.x);
+	float alt_km			=maxOutputAltKm*alt_texc;
+	vec4 sunlight			=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,alt_km,lightDir);
+	float moon_angular_radius=pi/180.f/2.f;
+	float moon_angular_area_ratio=pi*moon_angular_radius*moon_angular_radius/(4.f*pi);
+	vec4 moonlight			=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,alt_km,directionToMoon)*0.136f*moon_angular_area_ratio;
+	// equivalent to GetAnisotropicInscatterFactor(true,altitude_km,pi/2.f,0,1e5f,sun_irradiance,starlight,dir_to_sun,dir_to_moon,haze,overcast,false,0):
+	vec4 ambientLight		=vec4(getSkylight(alt_km, insc_texture),1.0);
+	uint3 pos_sun			=uint3(pos.xy,0);
+    targetTexture[pos_sun]	=sunlight;
+	uint3 pos_moon			=uint3(pos.xy,1);
+    targetTexture[pos_moon]	=moonlight;
+	uint3 pos_amb			=uint3(pos.xy,2);
+    targetTexture[pos_amb]	=ambientLight;
+
+	// Combined sun and moonlight:
+	uint3 pos_both		=uint3(pos.xy,3);
+    targetTexture[pos_both]	=sunlight+moonlight;
+}
+#endif
 #endif
 
 #endif

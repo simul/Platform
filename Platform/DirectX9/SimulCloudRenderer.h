@@ -21,6 +21,7 @@
 #include "Simul/Graph/Meta/Resource.h"
 #include "Simul/Graph/StandardNodes/ShowProgressInterface.h"
 #include "Simul/Platform/DirectX9/Export.h"
+#include "Simul/Platform/DirectX9/Framebuffer.h"
 //#include "Simul/Platform/DirectX9/GpuCloudGenerator.h"
 #ifdef _MSC_VER
 	#pragma warning(push)
@@ -58,7 +59,7 @@ public:
 	void InvalidateDeviceObjects();
 	void PreRenderUpdate(void *context);
 	//! DX9 implementation of cloud rendering. For this platform, depth_testing and default_fog are ignored.
-	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
+	bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 
 	//! Save the first keyframe texture into a 2D image file by stacking X-Z slices vertically.
 	void SaveCloudTexture(const char *filename);
@@ -73,18 +74,19 @@ public:
 	void *GetIlluminationTexture();
 	void SetLossTexture(void *t1);
 	void SetInscatterTextures(void *i,void *s,void *o);
+	void SetIlluminationTexture(void *i);
 	LPDIRECT3DTEXTURE9 GetNoiseTexture()
 	{
-		return noise_texture;
+		return (LPDIRECT3DTEXTURE9)noise_fb.GetColorTex();
 	}
 	void RenderCrossSections(void *,int width,int height);
-	bool RenderDistances(int width,int height);
+	void RenderAuxiliaryTextures(void *context,int width,int height);
 	bool RenderLightVolume();
 	void EnableFilter(bool f);
 	bool IsYVertical() const{return y_vertical;}
 
 protected:
-	virtual void DrawLines(void*,VertexXyzRgba *,int ,bool ){}
+	void DrawLines(void*,VertexXyzRgba *,int num,bool strip);
 	// Make up to date with respect to keyframer:
 	void EnsureCorrectTextureSizes();
 	void EnsureTexturesAreUpToDate(void*);
@@ -93,50 +95,30 @@ protected:
 	void EnsureTextureCycle();
 
 	void NumBuffersChanged();
-	bool y_vertical;
+	//bool y_vertical;
 	void InternalRenderHorizontal(int viewport_id);
 	void InternalRenderRaytrace(int viewport_id);
 	void InternalRenderVolumetric(int viewport_id);
 	bool wrap;
-	struct float2
-	{
-		float x,y;
-		void operator=(const float*f)
-		{
-			x=f[0];
-			y=f[1];
-		}
-	};
-	struct float3
-	{
-		float x,y,z;
-		void operator=(const float*f)
-		{
-			x=f[0];
-			y=f[1];
-			z=f[2];
-		}
-	};
 	struct PosVert_t
 	{
-		float3 position;
+		vec3 position;
 	};
 	struct Vertex_t
 	{
-		float3 position;
-		float3 texCoords;
+		vec3 position;
+		vec2 layerNoiseOffset;
 		float layerFade;
-		float2 texCoordsNoise;
-		float3 sunlightColour;
+		float layerDistance;
 	};
 	struct CPUFadeVertex_t : public Vertex_t
 	{
-		float3 loss;
-		float3 inscatter;
+		vec3 loss;
+		vec3 inscatter;
 	};
 	Vertex_t *vertices;
 	CPUFadeVertex_t *cpu_fade_vertices;
-	bool RenderNoiseTexture();
+	void CreateNoiseTexture(void *context);
 	simul::sound::fmod::NodeSound *sound;
 	float timing;
 
@@ -186,6 +168,7 @@ protected:
 	D3DXHANDLE					skyLossTexture;
 	D3DXHANDLE					skyInscatterTexture;
 	D3DXHANDLE					skylightTexture;
+	D3DXHANDLE					illuminationTexture;
 	
 	D3DXHANDLE					invViewProj;
 	
@@ -195,18 +178,17 @@ protected:
 	D3DXHANDLE					raytraceLayerTexture;
 
 	LPDIRECT3DVOLUMETEXTURE9	cloud_textures[3];
-	LPDIRECT3DVOLUMETEXTURE9	illumination_texture;
-	LPDIRECT3DTEXTURE9			noise_texture;
+	simul::dx9::Framebuffer		noise_fb;
 	LPDIRECT3DTEXTURE9			raytrace_layer_texture;
 	LPDIRECT3DBASETEXTURE9		sky_loss_texture;
 	LPDIRECT3DBASETEXTURE9		sky_inscatter_texture;
 	LPDIRECT3DBASETEXTURE9		skylight_texture;
+	LPDIRECT3DBASETEXTURE9		illumination_texture;
 	LPDIRECT3DCUBETEXTURE9		cloud_cubemap;
 	D3DXVECTOR4					lightning_colour;
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 	LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;
-	virtual bool CreateNoiseTexture(void *);
 	bool MakeCubemap(void *context); // not ready yet
 	//! Once per frame, fill this 1-D texture with information on the layer distances and noise offsets
 	bool FillRaytraceLayerTexture(int viewport_id);

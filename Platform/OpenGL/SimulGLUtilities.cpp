@@ -21,6 +21,8 @@
 #ifndef _MSC_VER
 #define DebugBreak()
 #endif
+using namespace simul;
+using namespace opengl;
 
 int Utilities::instance_count=0;
 int Utilities::screen_width=0;
@@ -71,17 +73,17 @@ void Utilities::RestoreDeviceObjects(void *)
 						"	gl_FragColor=colr;"
 						"}";
 	linedraw_program=SetShaders(vert,frag);
-	const char *simple_vert="varying vec2 texc;"
+	const char *simple_vert="varying vec2 texCoords;"
 						"void main(void)"
 						"{"
 						"    gl_Position		= ftransform();"
-						"    texc=gl_MultiTexCoord0.xy;"
+						"    texCoords=gl_MultiTexCoord0.xy;"
 						"}";
 	const char *simple_frag="uniform sampler2D image_texture;"
-						"varying vec2 texc;"
+						"varying vec2 texCoords;"
 						"void main(void)"
 						"{"
-						"	vec4 c = texture2D(image_texture,texc);"
+						"	vec4 c = texture2D(image_texture,texCoords);"
 						"	gl_FragColor=c;"
 						"}";
 	simple_program=SetShaders(simple_vert,simple_frag);
@@ -107,7 +109,7 @@ Utilities::~Utilities()
 
 void RenderTexture(int x,int y,int w,int h)
 {
-	ERROR_CHECK		
+	GL_ERROR_CHECK		
 	int prog=0;
 	glGetIntegerv(GL_CURRENT_PROGRAM, &prog);
 	if(prog==0)
@@ -125,7 +127,7 @@ void RenderTexture(int x,int y,int w,int h)
 	glTexCoord2f(0.f,0.f);
 	glVertex2f((float)x,(float)y);
 	glEnd();
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 bool IsExtensionSupported(const char *name)
@@ -147,14 +149,14 @@ bool IsExtensionSupported(const char *name)
 
 bool CheckExtension(const char *txt)
 {
-ERROR_CHECK
+GL_ERROR_CHECK
 	if(!glewIsSupported(txt)&&!IsExtensionSupported(txt))
 	{
 		std::cerr<<"Error - required OpenGL extension is not supported: "<<txt<<std::endl;
-ERROR_CHECK
+GL_ERROR_CHECK
 		return false;
 	}
-ERROR_CHECK
+GL_ERROR_CHECK
 	return true;
 }
 
@@ -305,7 +307,7 @@ void CalcCameraPosition(float *cam_pos,float *cam_dir)
 {
 	simul::math::Matrix4x4 modelview;
 	glGetFloatv(GL_MODELVIEW_MATRIX,modelview.RowPointer(0));
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	simul::math::Matrix4x4 inv;
 	modelview.Inverse(inv);
 	cam_pos[0]=inv(3,0);
@@ -320,18 +322,18 @@ void CalcCameraPosition(float *cam_pos,float *cam_dir)
 }
 bool RenderAngledQuad(const float *dir,float half_angle_radians)
 {
-		ERROR_CHECK
+		GL_ERROR_CHECK
 	float cam_dir[3],cam_pos[3];
 	CalcCameraPosition(cam_pos,cam_dir);
 	float Yaw=atan2(dir[0],dir[1]);
 	float Pitch=asin(dir[2]);
     glMatrixMode(GL_MODELVIEW);
-		ERROR_CHECK
+		GL_ERROR_CHECK
     glPushMatrix();
 
 
 	simul::math::Matrix4x4 modelview;
-		ERROR_CHECK
+		GL_ERROR_CHECK
 	glTranslatef(cam_pos[0],cam_pos[1],cam_pos[2]);
 		
 	glRotatef(180.f*Yaw/pi,0.0f,0.0f,-1.0f);
@@ -373,7 +375,7 @@ bool RenderAngledQuad(const float *dir,float half_angle_radians)
 #endif
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-		ERROR_CHECK
+		GL_ERROR_CHECK
 	return true;
 }
 
@@ -471,7 +473,7 @@ void setParameter(GLuint program,const char *name,float value)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform1f(loc,value);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void setParameter(GLuint program,const char *name,float value1,float value2)
@@ -481,7 +483,7 @@ void setParameter(GLuint program,const char *name,float value1,float value2)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform2f(loc,value1,value2);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void setParameter(GLuint program,const char *name,float value1,float value2,float value3)
@@ -491,7 +493,7 @@ void setParameter(GLuint program,const char *name,float value1,float value2,floa
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform3f(loc,value1,value2,value3);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void setParameter(GLuint program,const char *name,int value)
@@ -501,19 +503,19 @@ void setParameter(GLuint program,const char *name,int value)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform1i(loc,value);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void setParameter(GLuint program,const char *name,const simul::sky::float4 &value)
 {
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	GLint loc=glGetUniformLocation(program,name);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	if(loc<0)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 		glUniform4f(loc,value.x,value.y,value.z,value.w);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void setParameter2(GLuint program,const char *name,const simul::sky::float4 &value)
@@ -522,7 +524,7 @@ void setParameter2(GLuint program,const char *name,const simul::sky::float4 &val
 	if(loc<0)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	glUniform2f(loc,value.x,value.y);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void setParameter3(GLuint program,const char *name,const simul::sky::float4 &value)
@@ -533,7 +535,7 @@ void setParameter3(GLuint program,const char *name,const simul::sky::float4 &val
 	else
 	{
 		glUniform3f(loc,value.x,value.y,value.z);
-		ERROR_CHECK
+		GL_ERROR_CHECK
 	}
 }
 
@@ -546,7 +548,7 @@ void setMatrix(GLuint program,const char *name,const float *value)
 	{
 		static bool tr=0;
 		glUniformMatrix4fv(loc,1,tr,value);
-		ERROR_CHECK
+		GL_ERROR_CHECK
 	}
 }
 
@@ -557,46 +559,46 @@ void setMatrixTranspose(GLuint program,const char *name,const float *value)
 		std::cout<<"Warning: parameter "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	static bool tr=1;
 	glUniformMatrix4fv(loc,1,tr,value);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 extern void setTexture(GLuint program,const char *name,int texture_number,GLuint texture)
 {
     glActiveTexture(GL_TEXTURE0+texture_number);
-ERROR_CHECK
+GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,texture);
-ERROR_CHECK
+GL_ERROR_CHECK
 	GLint loc=glGetUniformLocation(program,name);
-ERROR_CHECK
+GL_ERROR_CHECK
 	if(loc<0)
 		std::cout<<"Warning: texture "<<name<<" was not found in GLSL program "<<program<<std::endl;
 	else
 	{
 		glUniform1i(loc,texture_number);
 	}
-ERROR_CHECK
+GL_ERROR_CHECK
 }
 void setParameter(GLint loc,int value)
 {
 	glUniform1i(loc,value);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void setParameter(GLint loc,float value)
 {
 	glUniform1f(loc,value);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void setParameter2(GLint loc,const simul::sky::float4 &value)
 {
 	glUniform2f(loc,value.x,value.y);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 void setParameter3(GLint loc,const simul::sky::float4 &value)
 {
 	glUniform3f(loc,value.x,value.y,value.z);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void linkToConstantBuffer(GLuint program,const char *name,GLuint bindingIndex)

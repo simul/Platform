@@ -41,7 +41,7 @@ public:
 	bool CopyDepthAlpha();
 	//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
 	bool FinishRender(void *context);
-
+	void Render(void *context,void *tex);
 	//! Get the current debug text as a c-string pointer.
 	const char *GetDebugText() const;
 	//! Get a timing value for debugging.

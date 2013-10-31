@@ -41,7 +41,18 @@ void main()
 #endif
 	float dist		=depthToFadeDistance(depth,depth_pos.xy,nearZ,farZ,tanHalfFov);
 	vec3 wEyeToPos	=wPosition-eyePosition;
-	vec4 ret		=Clouds2DPS(texc_global,texc_detail,wEyeToPos,dist,cloudInterp,sunlight.rgb,lightDir.xyz,lightResponse);
+	vec4 ret		=Clouds2DPS(imageTexture
+						,coverageTexture
+						,lossTexture
+						,inscTexture
+						,skylTexture
+						,texc_global
+						,texc_detail
+						,wEyeToPos
+						,sunlight.rgb
+						,ambientLight.rgb
+						,lightDir.xyz
+						,lightResponse);
 	ret.rgb			*=exposure;
 	gl_FragColor	=ret;//vec4(depth_texc.zzz,ret.a);
 }

@@ -32,6 +32,7 @@ namespace simul
 			META_BeginProperties
 				META_ValueProperty(float,Gamma,"")
 				META_ValueProperty(float,Exposure,"")
+				META_ValueProperty(bool,Glow,"Whether to apply a glow effect")
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,RecompileShaders,"")
 			META_EndProperties
 			void SetBufferSize(int w,int h);
@@ -40,14 +41,10 @@ namespace simul
 			void RestoreDeviceObjects(void *x);
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
-			//! StartRender: sets up the rendertarget for HDR, and make it the current target. Call at the start of the frame's rendering.
-			bool StartRender(void *context);
-			//! ApplyFade: call this after rendering the solid stuff, before rendering transparent and background imagery.
-			bool ApplyFade();
-			//! FinishRender: wraps up rendering to the HDR target, and then uses tone mapping to render this HDR image to the screen. Call at the end of the frame's rendering.
-			bool FinishRender(void *context);
+			//! Render: write the given texture to screen using the HDR rendering shaders
+			void Render(void *context,void *texture_srv);
 			//! Create the glow texture that will be overlaid due to strong lights.
-			void RenderGlowTexture(void *context);
+			void RenderGlowTexture(void *context,void *texture_srv);
 			//! Get the current debug text as a c-string pointer.
 			const char *GetDebugText() const;
 			//! Get a timing value for debugging.
@@ -56,7 +53,6 @@ namespace simul
 			void RecompileShaders();
 		protected:
 			bool Destroy();
-			simul::dx11::Framebuffer framebuffer;
 			simul::dx11::Framebuffer glow_fb;
 			int Width,Height;
 			ID3D1xDevice*						m_pd3dDevice;
@@ -64,11 +60,11 @@ namespace simul
 
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3D1xEffect*						m_pTonemapEffect;
-			ID3D1xEffectTechnique*				TonemapTechnique;
+			ID3D1xEffectTechnique*				exposureGammaTechnique;
+			ID3D1xEffectTechnique*				glowExposureGammaTechnique;
 			ID3D1xEffectTechnique*				glowTechnique;
 			ID3D1xEffectScalarVariable*			Exposure_;
 			ID3D1xEffectScalarVariable*			Gamma_;
-			ID3D1xEffectMatrixVariable*			worldViewProj;
 			ID3D1xEffectShaderResourceVariable*	imageTexture;
 
 			ID3D1xEffect*						m_pGaussianEffect;

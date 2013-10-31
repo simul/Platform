@@ -32,11 +32,12 @@ namespace simul
 			void InvalidateDeviceObjects();
 			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 			void PreRenderUpdate(void *context);
-			bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
+			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 			void RenderCrossSections(void *context,int width,int height);
 			void SetLossTexture(void *l);
 			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
+			void SetLightTableTexture(void *l);
 			void SetWindVelocity(float x,float y);
 		protected:
 			void RenderDetailTexture(void *context);
@@ -46,7 +47,7 @@ namespace simul
 			void EnsureTextureCycle();
 			void EnsureCorrectIlluminationTextureSizes(){}
 			void EnsureIlluminationTexturesAreUpToDate(){}
-			virtual bool CreateNoiseTexture(void *context){return true;}
+			void CreateNoiseTexture(void *context){}
 			D3DXMATRIX					view,proj;
 			ID3D11Device*				m_pd3dDevice;
 			ID3DX11Effect*				effect;
@@ -63,8 +64,8 @@ namespace simul
 			ID3D1xShaderResourceView*	skyInscatterTexture_SRV;
 			ID3D1xShaderResourceView*	skylightTexture_SRV;
 			ID3D1xShaderResourceView*	illuminationTexture_SRV;
+			ID3D1xShaderResourceView*	lightTableTexture_SRV;
 
-			//simul::dx11::TextureStruct	coverage_tex[3];
 			simul::dx11::Framebuffer	coverage_fb;
 			simul::dx11::Framebuffer	detail_fb;
 			simul::dx11::Framebuffer	noise_fb;

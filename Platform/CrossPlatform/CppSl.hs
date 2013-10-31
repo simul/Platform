@@ -1,6 +1,7 @@
 #ifndef CPPSL_HS
 #define CPPSL_HS
-#define RADIAL_CLOUD_SHADOW
+#undef RADIAL_CLOUD_SHADOW
+//#define RADIAL_CLOUD_SHADOW
 // Definitions shared across C++, HLSL, and GLSL!
 
 #ifndef __cplusplus
@@ -25,7 +26,9 @@
 
 	#define uniform_buffer ALIGN_16 cbuffer
 
-	typedef unsigned int uint;
+	#define SIMUL_CONSTANT_BUFFER(name,buff_num) struct name {
+	#define SIMUL_CONSTANT_BUFFER_END };
+
 	struct mat2
 	{
 		float m[8];
@@ -165,7 +168,38 @@
 			w=v[3];
 		}
 	};
-
+	typedef unsigned int uint;
+	struct uint2
+	{
+		unsigned x,y;
+		uint2(unsigned x=0,unsigned y=0)
+		{
+			this->x=x;
+			this->y=y;
+		}
+		uint2(const int *v)
+		{
+			operator=(v);
+		}
+		uint2(const unsigned *v)
+		{
+			operator=(v);
+		}
+		operator const unsigned *()
+		{
+			return &x;
+		}
+		void operator=(const int *v)
+		{
+			x=v[0];
+			y=v[1];
+		}
+		void operator=(const unsigned *v)
+		{
+			x=v[0];
+			y=v[1];
+		}
+	};
 	struct uint3
 	{
 		unsigned x,y,z;

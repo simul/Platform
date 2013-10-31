@@ -57,8 +57,7 @@ public:
 	//! StartRender: sets up the rendertarget for atmospherics, and make it the current target. Call at the start of the frame's rendering.
 	void StartRender(void *context);
 	void FinishRender(void *context);
-	//! Not implemented for DirectX 9.
-	void RenderAsOverlay(void *,const void *,float,const simul::sky::float4 &){}
+	void RenderAsOverlay(void *,const void *,float,const simul::sky::float4 &);
 	void *GetDepthAlphaTexture()
 	{
 		return (void*)input_texture;
@@ -85,10 +84,15 @@ public:
 	{
 		loss_texture=(LPDIRECT3DBASETEXTURE9)t;
 	}
-	void SetInscatterTextures(void* t,void *s,void *)
+	void SetInscatterTextures(void* t,void *s,void *o)
 	{
 		inscatter_texture=(LPDIRECT3DBASETEXTURE9)t;
 		skylight_texture=(LPDIRECT3DBASETEXTURE9)s;
+		overc_inscatter_texture=(LPDIRECT3DBASETEXTURE9)o;
+	}
+	void SetIlluminationTexture(void *t)
+	{
+		illumination_texture=(LPDIRECT3DBASETEXTURE9)t;
 	}
 	void SetCloudsTexture(void* t)
 	{
@@ -153,8 +157,10 @@ protected:
 
 	LPDIRECT3DBASETEXTURE9			loss_texture;
 	LPDIRECT3DBASETEXTURE9			inscatter_texture;
+	LPDIRECT3DBASETEXTURE9			overc_inscatter_texture;
 	LPDIRECT3DBASETEXTURE9			skylight_texture;
 	LPDIRECT3DBASETEXTURE9			clouds_texture;
+	LPDIRECT3DBASETEXTURE9			illumination_texture;
 
 	LPDIRECT3DSURFACE9				m_pRenderTarget;
 	LPDIRECT3DSURFACE9				m_pBufferDepthSurface;

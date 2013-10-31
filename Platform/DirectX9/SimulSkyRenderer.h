@@ -19,6 +19,7 @@
 #include <map>
 #include "Simul/Platform/DirectX9/Export.h"
 #include "Simul/Platform/DirectX9/Framebuffer.h"
+#include "Simul/Platform/DirectX9/Utilities.h"
 
 namespace simul
 {
@@ -48,6 +49,10 @@ typedef long HRESULT;
 //! A renderer for skies, this class will manage an instance of simul::sky::SkyNode and use it to calculate sky colours
 //! in real time for the simul_sky.fx shader.
 
+namespace simul
+{
+	namespace dx9
+	{
 SIMUL_DIRECTX9_EXPORT_CLASS SimulSkyRenderer : public simul::sky::BaseSkyRenderer
 {
 public:
@@ -61,11 +66,11 @@ public:
 	//! Call this when the D3D device has been shut down.
 	void						InvalidateDeviceObjects();
 	void						RenderPlanet(void*,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void						RenderSun(void *context,float exposure_hint);
+	void						RenderSun(void *context,float exposure);
 	//! Get the transform that goes from declination/right-ascension to azimuth and elevation.
 	//bool						GetSiderealTransform(D3DXMATRIX *world);
 	//! Render the stars, as points.
-	bool						RenderPointStars(void *,float exposure_hint);
+	bool						RenderPointStars(void *,float exposure);
 	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
 	bool						Render(void *,bool blend);
 	//! Draw the fade textures to screen
@@ -80,6 +85,7 @@ public:
 	simul::sky::float4 GetAmbient() const;
 	simul::sky::float4 GetLightColour() const;
 	void Get2DLossAndInscatterTextures(void **l1,void **i1,void **s1,void* *o);
+	void *GetIlluminationTexture();
 	void * GetDistanceTexture()
 	{
 		return (void *)max_distance_texture;
@@ -93,9 +99,7 @@ public:
 	float CalcSunOcclusion(float cloud_occlusion);
 
 	void FillSunlightTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
-	void CycleTexturesForward();
 	const char *GetDebugText() const;
-	void SetYVertical(bool y);
 protected:
 	void FillSkyTexture(int texture_index,int texel_index,int num_texels,const float *float4_array);
 	void FillFadeTexturesSequentially(int texture_index,int texel_index
@@ -110,6 +114,7 @@ protected:
 	void PrintAt3dPos(void*,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 	int screen_pixel_height;
 	bool Render2DFades(void *context);
+	void RenderIlluminationBuffer(void *context);
 	bool y_vertical;
 	float timing;
 	D3DFORMAT sky_tex_format;
@@ -150,16 +155,19 @@ protected:
 	// Three sunlight textures.
 	LPDIRECT3DTEXTURE9			sunlight_textures[3];
 	// These are generated as necessary:
-	LPDIRECT3DBASETEXTURE9		loss_textures[3];
-	LPDIRECT3DBASETEXTURE9		inscatter_textures[3];
-	LPDIRECT3DBASETEXTURE9		skylight_textures[3];
+	TextureStruct				loss_textures[3];
+	TextureStruct				inscatter_textures[3];
+	TextureStruct				skylight_textures[3];
 	// Max fade distance, constant, except towards the ground
 	LPDIRECT3DTEXTURE9			max_distance_texture;
 
 	// Two in-use 2D sky textures. We render a slice of the 3D textures into these, then use them for all fades.
-	Framebuffer					loss_2d;
-	Framebuffer					inscatter_2d;
-	Framebuffer					skylight_2d;
+	simul::dx9::Framebuffer		loss_2d;
+	simul::dx9::Framebuffer		inscatter_2d;
+	simul::dx9::Framebuffer		overcast_2d;
+	simul::dx9::Framebuffer		skylight_2d;
+	simul::dx9::Framebuffer		illumination_fb;
+
 	simul::sky::float4			cam_dir;
 	D3DXMATRIX					world,view,proj;
 	LPDIRECT3DQUERY9			d3dQuery;
@@ -173,3 +181,5 @@ protected:
 	}
 	float						maxPixelsVisible;
 };
+}
+}

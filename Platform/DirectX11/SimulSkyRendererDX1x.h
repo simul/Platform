@@ -58,17 +58,17 @@ public:
 	void InvalidateDeviceObjects();
 	//! Call this to release the memory for D3D device objects.
 	bool Destroy();
-	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
+	//! \deprecated This function is no longer used, as the sky is drawn by the atmospherics renderer. See simul::sky::BaseAtmosphericsRenderer.
 	bool Render(void *context,bool blend);
-	bool RenderPointStars(void *context,float exposure_hint);
-	void RenderSun(void *context,float exposure_hint);
+	bool RenderPointStars(void *context,float exposure);
+	void RenderSun(void *context,float exposure);
 	//! Draw the fade textures to screen
 	bool RenderFades(void *context,int w,int h);
 	virtual void RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
 	//! Call this to draw the sun flare, usually drawn last, on the main render target.
 	bool RenderFlare(float exposure);
 	bool Render2DFades(void *context);
-	void RenderIllumationBuffer(void *context);
+	void RenderIlluminationBuffer(void *context);
 	//! Get a value, from zero to one, which represents how much of the sun is visible.
 	//! Call this when the current rendering surface is the one that has obscuring
 	//! objects like mountains etc. in it, and make sure these have already been drawn.
@@ -80,6 +80,7 @@ public:
 
 	void Get2DLossAndInscatterTextures(void* *loss,void* *insc,void* *skyl,void* *overc);
 	void *GetIlluminationTexture();
+			void *GetLightTableTexture();
 
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);
@@ -120,6 +121,7 @@ protected:
 	ID3D1xEffectTechnique*				m_hTechniquePlanet;
 	ID3D1xEffectTechnique*				m_hTechniquePointStars;
 
+			ID3D1xEffectTechnique*				m_TechniqueLightTableInterp;
 	ID3D1xEffectShaderResourceVariable*	flareTexture;
 	ID3D1xEffectShaderResourceVariable*	inscTexture;
 	ID3D1xEffectShaderResourceVariable*	skylTexture;
@@ -134,12 +136,14 @@ void SetConstantsForPlanet(SkyConstants &skyConstants,const float *viewmatrix,co
 	TextureStruct						loss_textures[3];
 	TextureStruct						insc_textures[3];
 	TextureStruct						skyl_textures[3];
+			TextureStruct						light_table;
 
 	// Small framebuffers we render to once per frame to perform fade interpolation.
 	simul::dx11::Framebuffer*			loss_2d;
 	simul::dx11::Framebuffer*			inscatter_2d;
 	simul::dx11::Framebuffer*			overcast_2d;
 	simul::dx11::Framebuffer*			skylight_2d;
+	TextureStruct						light_table_2d;
 
 	// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
 	simul::dx11::Framebuffer			illumination_fb;

@@ -48,10 +48,10 @@ void Profiler::StartProfile(const std::string& name)
 			//glQueryCounter(profileData.TimestampQuery[i], GL_TIMESTAMP);
 		}
     }
-ERROR_CHECK
+GL_ERROR_CHECK
 	glBeginQuery(GL_TIME_ELAPSED,profileData.TimestampQuery[currFrame]);
     profileData.QueryStarted = true;
-ERROR_CHECK
+GL_ERROR_CHECK
 }
 
 void Profiler::EndProfile(const std::string& name)

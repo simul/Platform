@@ -8,8 +8,9 @@
 #include "Simul/Platform/DirectX11/Utilities.h"
 using namespace simul::dx11;
 
-SimulOpticsRendererDX1x::SimulOpticsRendererDX1x()
-	:m_pd3dDevice(NULL)
+SimulOpticsRendererDX1x::SimulOpticsRendererDX1x(simul::base::MemoryInterface *m)
+	:BaseOpticsRenderer(m)
+	,m_pd3dDevice(NULL)
 	,m_pFlareEffect(NULL)
 	,flare_texture(NULL)
 {

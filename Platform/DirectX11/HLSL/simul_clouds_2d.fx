@@ -8,6 +8,7 @@ uniform sampler2D inscTexture;
 uniform sampler2D skylTexture;
 uniform sampler2D depthTexture;
 uniform sampler2D illuminationTexture;
+uniform sampler2D lightTableTexture;
 
 SamplerState samplerState 
 {
@@ -75,7 +76,30 @@ float4 MainPS(v2f IN) : SV_TARGET
 	//texc_detail		+=noiseOffset;
 	float dist			=depthToFadeDistance(depth,depth_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec3 wEyeToPos		=IN.wPosition-eyePosition;
-	vec4 ret			=Clouds2DPS_illum(texc_global,texc_detail,wEyeToPos,dist,cloudInterp,sunlight.rgb,lightDir.xyz,lightResponse);
+//	vec4 ret			=Clouds2DPS_illum(texc_global,texc_detail,wEyeToPos,dist,cloudInterp,sunlight.rgb,lightDir.xyz,lightResponse);
+#ifdef USE_LIGHT_TABLES
+	float alt_texc		=IN.wPosition.z/maxAltitudeMetres;
+	vec3 sun_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,0.5/3.0),0).rgb;
+	vec3 moon_irr		=texture_clamp_lod(lightTableTexture,vec2(alt_texc,1.5/3.0),0).rgb;
+	vec3 ambient_light	=texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/3.0),0).rgb*lightResponse.w;
+#else
+	vec3 sun_irr		=sunlight.rgb;
+	vec3 moon_irr		=moonlight.rgb;
+	vec3 ambient_light	=ambientLight.rgb;
+#endif
+	vec4 ret			=Clouds2DPS_illum(imageTexture,coverageTexture
+										,illuminationTexture
+										,lossTexture
+										,inscTexture
+										,skylTexture
+										,texc_global,texc_detail
+										,wEyeToPos
+										,sun_irr
+										,moon_irr
+										,ambient_light.rgb
+										,lightDir.xyz
+										,lightResponse);
+
 	ret.rgb				*=exposure;
 	return ret;
 }

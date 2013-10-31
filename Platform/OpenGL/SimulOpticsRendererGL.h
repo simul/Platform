@@ -15,7 +15,7 @@
 SIMUL_OPENGL_EXPORT_CLASS SimulOpticsRendererGL:public simul::camera::BaseOpticsRenderer
 {
 public:
-	SimulOpticsRendererGL();
+	SimulOpticsRendererGL(simul::base::MemoryInterface *m);
 	virtual ~SimulOpticsRendererGL();
 	virtual void RestoreDeviceObjects(void *device);
 	virtual void InvalidateDeviceObjects();

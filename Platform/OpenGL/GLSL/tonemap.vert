@@ -1,5 +1,5 @@
 
-varying vec2 texc;
+varying vec2 texCoords;
 
 void main(void)
 {

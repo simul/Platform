@@ -29,7 +29,7 @@
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
-//#include "Simul/LicenseKey.h"
+#include "Simul/LicenseKey.h"
 #include "LoadGLImage.h"
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
@@ -37,6 +37,8 @@
 #include "Simul/Platform/CrossPlatform/simul_2d_clouds.hs"
 #include "Simul/Camera/Camera.h"
 using namespace std;
+using namespace simul;
+using namespace opengl;
 
 #ifdef WIN32
 #include "Simul/Platform/Windows/VisualStudioDebugOutput.h"
@@ -65,7 +67,7 @@ SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
 {
 }
 
-bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)
+void SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)
 {
 	//image_tex=LoadGLImage("Cirrocumulus.png",GL_REPEAT);
 	FramebufferGL	noise_fb(16,16,GL_TEXTURE_2D);
@@ -85,7 +87,7 @@ bool SimulGL2DCloudRenderer::CreateNoiseTexture(void *context)
 	}
 	noise_fb.Deactivate(context);
 	glUseProgram(0);
-ERROR_CHECK
+GL_ERROR_CHECK
 	FramebufferGL dens_fb(512,512,GL_TEXTURE_2D);
 	dens_fb.SetWidthAndHeight(512,512);
 	dens_fb.SetWrapClampMode(GL_REPEAT);
@@ -126,7 +128,6 @@ ERROR_CHECK
 	}
 	detail_fb.Deactivate(context);
 	glUseProgram(0);
-	return true;
 }
 #pragma warning(disable:4127) // "Conditional expression is constant".
 void SimulGL2DCloudRenderer::EnsureCorrectTextureSizes()
@@ -187,7 +188,7 @@ void SimulGL2DCloudRenderer::EnsureTexturesAreUpToDate(void *)
 			if(!texture_fill.w||!texture_fill.l||!texture_fill.d)
 				break;
 			glBindTexture(GL_TEXTURE_2D,coverage_tex[i]);
-ERROR_CHECK
+GL_ERROR_CHECK
 			if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLushort))
 			{
 				unsigned short *uint16_array=(unsigned short *)texture_fill.uint32_array;
@@ -196,7 +197,7 @@ ERROR_CHECK
 									texture_fill.w,texture_fill.l,
 									GL_RGBA,GL_UNSIGNED_SHORT_4_4_4_4,
 									uint16_array);
-ERROR_CHECK
+GL_ERROR_CHECK
 			}
 			else if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLuint))
 			{
@@ -205,7 +206,7 @@ ERROR_CHECK
 									texture_fill.w,texture_fill.l,
 									GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
 									texture_fill.uint32_array);
-ERROR_CHECK
+GL_ERROR_CHECK
 			}
 			//seq_texture_iterator[i].texel_index+=texture_fill.w*texture_fill.l*texture_fill.d;
 		}
@@ -270,14 +271,14 @@ void Set2DTexture(GLint shader_param,GLuint gl_texture,int channel)
 	glActiveTexture(GL_TEXTURE0+channel);
 	glBindTexture(GL_TEXTURE_2D,gl_texture);
 	glUniform1i(shader_param,channel);
-ERROR_CHECK
+GL_ERROR_CHECK
 }
 
 void SimulGL2DCloudRenderer::PreRenderUpdate(void *)
 {
 }
 
-bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool,const void *depthTexture, bool, bool,int,const simul::sky::float4& )
+bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depthTexture, bool, bool,int,const simul::sky::float4& )
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
@@ -353,19 +354,19 @@ bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool,const void
 	glBindBufferBase(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO);
 	glBufferSubData(GL_UNIFORM_BUFFER,0, sizeof(Cloud2DConstants), &cloud2DConstants);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-ERROR_CHECK
+GL_ERROR_CHECK
 	glBindBufferBase(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO);
-ERROR_CHECK
+GL_ERROR_CHECK
 	simul::math::Vector3 view_pos(cam_pos.x,cam_pos.y,cam_pos.z);
-ERROR_CHECK
+GL_ERROR_CHECK
 	simul::math::Vector3 eye_dir=viewInv.RowPointer(2);
 	eye_dir*=-1.f;
 	simul::math::Vector3 up_dir=viewInv.RowPointer(1);
 	helper->Update(view_pos,ci->GetWindOffset(),eye_dir,up_dir);
 	helper->Make2DGeometry(ci,true,false,max_cloud_distance);
-ERROR_CHECK
+GL_ERROR_CHECK
 	
-	for(std::vector<Cloud2DGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
+	for(Cloud2DGeometryHelper::QuadStripVector::const_iterator j=helper->GetQuadStrips().begin();
 		j!=helper->GetQuadStrips().end();j++)
 	{
 		glBegin(GL_QUAD_STRIP);
@@ -376,7 +377,7 @@ ERROR_CHECK
 		}
 		glEnd();
 	}
-ERROR_CHECK
+GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,0);
 	glActiveTexture(GL_TEXTURE1);
@@ -387,7 +388,7 @@ ERROR_CHECK
     glDisable(GL_TEXTURE_2D);
 	glUseProgram(0);
 	glPopAttrib();
-ERROR_CHECK
+GL_ERROR_CHECK
 	return true;
 }
 
@@ -410,10 +411,10 @@ void SimulGL2DCloudRenderer::RenderCrossSections(void *,int width,int height)
     glDisable(GL_BLEND);
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-ERROR_CHECK
+GL_ERROR_CHECK
 	glEnable(GL_TEXTURE_2D);
 	glUseProgram(cross_section_program);
-ERROR_CHECK
+GL_ERROR_CHECK
 static float mult=1.f;
 	glUniform1i(cloudDensity1_param,0);
 	for(int i=0;i<3;i++)
@@ -425,7 +426,7 @@ static float mult=1.f;
 			break;
 		simul::sky::float4 light_response(mult*kf->direct_light,mult*kf->indirect_light,mult*kf->ambient_light,0);
 
-	ERROR_CHECK
+	GL_ERROR_CHECK
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D,coverage_tex[i]);
 		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
@@ -456,10 +457,9 @@ void SimulGL2DCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
 void SimulGL2DCloudRenderer::RestoreDeviceObjects(void *context)
 {
 	CreateNoiseTexture(context);
-	
-ERROR_CHECK
+GL_ERROR_CHECK
 	RecompileShaders();
-ERROR_CHECK
+GL_ERROR_CHECK
 }
 
 void SimulGL2DCloudRenderer::RecompileShaders()
@@ -503,7 +503,7 @@ void SimulGL2DCloudRenderer::RecompileShaders()
 	glBindBuffer(GL_UNIFORM_BUFFER,0);
 	//glBindBufferRange(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO,0,sizeof(Cloud2DConstants));
 	glBindBufferBase(GL_UNIFORM_BUFFER,cloud2DConstantsBindingIndex,cloud2DConstantsUBO);
-ERROR_CHECK
+GL_ERROR_CHECK
 }
 
 void SimulGL2DCloudRenderer::InvalidateDeviceObjects()

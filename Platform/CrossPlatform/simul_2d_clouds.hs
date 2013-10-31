@@ -23,12 +23,18 @@ uniform_buffer Cloud2DConstants SIMUL_BUFFER_REGISTER(11)
 	uniform float planetRadius;
 	uniform float fractalWavelength;
 	uniform float fractalAmplitude;
+	
+	uniform vec2 tanHalfFov;
 	uniform float nearZ;
 	uniform float farZ;
-	uniform vec2 tanHalfFov;
+
 	uniform vec3 depthToLinFadeDistParams;
 	uniform float exposure;
 	uniform float time;
+	uniform float maxAltitudeMetres;
+	uniform float agage,hrs;
+	uniform vec3 moonlight;
+	uniform float agagehrs;
 };
 
 uniform_buffer Detail2DConstants SIMUL_BUFFER_REGISTER(12)

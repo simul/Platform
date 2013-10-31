@@ -214,16 +214,9 @@ bool SimulHDRRenderer::CreateBuffers()
 	g_BackBuffer->GetDesc(&desc);
 	SAFE_RELEASE(g_BackBuffer);
     D3DDISPLAYMODE d3ddm;
-#ifdef XBOX
-	if(FAILED(hr=m_pd3dDevice->GetDisplayMode( D3DADAPTER_DEFAULT, &d3ddm )))
-    {
-        return (hr==S_OK);
-    }
-#else
 	LPDIRECT3D9 d3d;
 	m_pd3dDevice->GetDirect3D(&d3d);
 	B_RETURN(d3d->GetAdapterDisplayMode( D3DADAPTER_DEFAULT, &d3ddm ));
-#endif
 	SAFE_RELEASE(m_pHDRRenderTarget);
 	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
 	SAFE_RELEASE(m_pFadedRenderTarget)
@@ -252,49 +245,18 @@ bool SimulHDRRenderer::CreateBuffers()
 LPDIRECT3DSURFACE9 SimulHDRRenderer::MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture)
 {
 	LPDIRECT3DSURFACE9 pRenderTarget;
-#ifdef XBOX
-	XGTEXTURE_DESC desc;
-	XGGetTextureDesc( pTexture, 0, &desc );
-	D3DSURFACE_PARAMETERS SurfaceParams = {0};
-	HRESULT hr=m_pd3dDevice->CreateRenderTarget(
-		desc.Width, desc.Height, desc.Format, D3DMULTISAMPLE_NONE, 0, FALSE, &pRenderTarget,&SurfaceParams);
-	if(hr!=S_OK)
-	{
-		std::cout<<"SimulHDRRenderer::MakeRenderTarget - Failed to create render target!\n";
-		wchar_t message[500];
-		wsprintf(message,_T("SimulHDRRenderer::MakeRenderTarget - Failed to create render target from format %d, width %d, height %d",desc.Format,desc.Width,desc.Height);
-		MessageBox(NULL,message, _T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);
-		return (hr==S_OK);
-	}
-#else
 	if(!pTexture)
 	{
 		MessageBox(NULL, _T("Trying to create RenderTarget from NULL texture!"), _T("ERROR"), MB_OK|MB_SETFOREGROUND|MB_TOPMOST);
 	}
 	V_CHECK(pTexture->GetSurfaceLevel(0,&pRenderTarget));
-#endif
 	return pRenderTarget;
 }
 static float depth_start=1.f;
 
 bool SimulHDRRenderer::StartRender()
-{		 
-	PIXBeginNamedEvent(0xFF88FFFF,"SimulHDRRenderer::StartRender to FinishRender");
-	HRESULT hr=S_OK;
-	m_pOldRenderTarget		=NULL;
-	m_pOldDepthSurface		=NULL;
-	hr=m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
-	hr=m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
-	hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
-	if(m_pBufferDepthSurface)
-		hr=(m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface));
-	hr=m_pd3dDevice->SetRenderState(D3DRS_STENCILENABLE,FALSE);
-	hr=m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
-	hr=m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
-	static float depth_start=1.f;
-	hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
-	last_texture=hdr_buffer_texture;
-	return (hr==S_OK);
+{
+	return (true);
 }
 
 bool SimulHDRRenderer::CopyDepthAlpha()
@@ -326,6 +288,11 @@ bool SimulHDRRenderer::CopyDepthAlpha()
 
 bool SimulHDRRenderer::FinishRender(void *)
 {
+	return true;
+}
+
+void SimulHDRRenderer::Render(void *context,void *tex)
+{
 	HRESULT hr=S_OK;
 	D3DSURFACE_DESC desc;
 	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
@@ -333,24 +300,15 @@ bool SimulHDRRenderer::FinishRender(void *)
 	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC,D3DCMP_LESSEQUAL);
 	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC,D3DCMP_LESSEQUAL);
 
-	// using gamma, render the hdr image to the LDR buffer:
-	m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
-	if(m_pOldDepthSurface)
-		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
-	m_pOldRenderTarget->GetDesc(&desc);
-
 //	B_RETURN(m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET,0xFF000000,depth_start,0L));
 	m_pTonemapEffect->SetTechnique(ToneMapTechnique);
-	B_RETURN(m_pTonemapEffect->SetFloat(Exposure_,Exposure));
-	B_RETURN(m_pTonemapEffect->SetFloat(Gamma_,Gamma));
-	B_RETURN(m_pTonemapEffect->SetTexture(hdrTexture,last_texture));
+	(m_pTonemapEffect->SetFloat(Exposure_,Exposure));
+	(m_pTonemapEffect->SetFloat(Gamma_,Gamma));
+	(m_pTonemapEffect->SetTexture(hdrTexture,(LPDIRECT3DBASETEXTURE9)tex));
 
 	DrawFullScreenQuad(m_pd3dDevice,m_pTonemapEffect);
 
-	SAFE_RELEASE(m_pOldRenderTarget)
-	SAFE_RELEASE(m_pOldDepthSurface)
 	PIXEndNamedEvent();
-	return (hr==S_OK);
 }
 
 const char *SimulHDRRenderer::GetDebugText() const

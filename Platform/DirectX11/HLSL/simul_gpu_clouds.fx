@@ -12,7 +12,7 @@ uniform sampler3D volumeNoiseTexture SIMUL_TEXTURE_REGISTER(6);
 RWTexture3D<float4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
 RWTexture3D<float> targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
 
-#include "../../CrossPlatform/states.sl"
+#include "states.hlsl"
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
 
 SamplerState lightSamplerState : register(s8);
@@ -41,58 +41,23 @@ vertexOutput VS_Main(idOnly IN)
     return OUT;
 }
 
-float4 PS_DensityMask(vertexOutput IN) : SV_TARGET
+struct ColourDepthOutput
 {
-	float dr					=0.1;
-	vec2 pos					=2.0*IN.texCoords.xy-vec2(1.0,1.0);
-	float r						=length(pos);
-	float dens					=saturate((0.9-r)/dr);
-    return float4(dens,dens,dens,1.0);
+	vec4 colour SIMUL_TARGET_OUTPUT;
+	float depth	SIMUL_DEPTH_OUTPUT;
+};
+
+ColourDepthOutput PS_DensityMask(vertexOutput IN)
+{
+	ColourDepthOutput result;
+	float dens					=GpuCloudMask(IN.texCoords, maskCentre, maskRadius,maskFeather, maskThickness);
+	result.colour				=vec4(dens,dens,dens,dens);
+	result.depth				=dens;
+	return result;
 }
 
-float4 PS_Density(vertexOutput IN) : SV_TARGET
-{
-	vec3 densityspace_texcoord	=assemble3dTexcoord(IN.texCoords.xy);
-	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
-	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
-	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z)*maskTexture.Sample(clampSamplerState,densityspace_texcoord.xy).x;
-	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
-	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
-    return vec4(dens,0,0,1.0);
-}
 
-float NoiseFunction2(Texture3D volumeNoiseTexture,vec3 pos,int octaves,float persistence,float t)
-{
-	float dens=0.0;
-	float mult=0.5;
-	float sum=0.0;
-	{
-		float lookup=texture_wrap_lod(volumeNoiseTexture,vec3(pos.xy,0.0),0).x;
-		float val	=lookup;//0.5*(1.0+cos(2.0*3.1415926536*(lookup+t)));
-		dens		=dens+mult*val;
-		sum			=sum+mult;
-		mult		=mult*persistence;
-		pos			=pos*2.0;
-		t			=t*2.0;
-	}
-	for(int i=1;i<5;i++)
-	{
-		if(i>=octaves)
-			break;
-		float lookup=texture_wrap_lod(volumeNoiseTexture,pos,0).x;
-		float val	=lookup;//0.5*(1.0+cos(2.0*3.1415926536*(lookup+t)));
-		dens		=dens+mult*val;
-		sum			=sum+mult;
-		mult		=mult*persistence;
-		pos			=pos*2.0;
-		t			=t*2.0;
-	}
-	dens=dens/sum;
-	return dens;
-}
-
-[numthreads(8,8,8)]
-void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
+void CS_CloudDensity(RWTexture3D<float4> targetTexture,uint3 sub_pos)
 {
 	uint3 dims;
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
@@ -101,10 +66,8 @@ void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID g
 		return;
 	vec3 densityspace_texcoord	=(pos+0.5)/vec3(dims);
 	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
-	float noise_val				=NoiseFunction2(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
-	float hm					=humidity;
-	//hm							*=texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
-	hm							*=GetHumidityMultiplier(densityspace_texcoord.z);
+	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
+	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
 
 	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
 	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
@@ -112,35 +75,13 @@ void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID g
 	targetTexture[pos]			= dens;
 }
 
-static const float glow=0.1;
-float4 PS_Lighting(vertexOutput IN) : SV_TARGET
+[numthreads(8,8,8)]
+void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {
-	vec2 texcoord				=IN.texCoords.xy;//+texCoordOffset;
-	vec2 previous_light			=inputTexture.Sample(lightSamplerState,texcoord.xy).xy;
-	vec3 lightspace_texcoord	=vec3(texcoord.xy,zPosition);
-	vec3 densityspace_texcoord	=mul(transformMatrix,vec4(lightspace_texcoord,1.0)).xyz;
-	float density				=texture_wwc(densityTexture,densityspace_texcoord).x;
-	vec2 unity					=vec2(1.0,1.0);
-	//if(density==0)
-	//	previous_light			=unity-exp(-.1*zPixel)*(unity-previous_light);
-	float direct_light			=previous_light.x*exp(-extinctions.x*density);
-	float indirect_light		=previous_light.y*exp(-extinctions.y*density);
-	//indirect_light				+=(direct_light+indirect_light)*glow*density;
-    return						vec4(direct_light,indirect_light,0,0);
+    CS_CloudDensity(targetTexture,sub_pos);
 }
 
-float4 PS_Transform(vertexOutput IN) : SV_TARGET
-{
-	vec3 densityspace_texcoord	=assemble3dTexcoord(IN.texCoords.xy);
-	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
-	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord,1.0)).xyz;
-	lightspace_texcoord.z		-=zPixel;
-	vec2 light_lookup			=saturate(lightTexture.SampleLevel(lightSamplerState,lightspace_texcoord,0).xy);
-	vec2 amb_texel				=ambientTexture.SampleLevel(wwcSamplerState,ambient_texcoord,0).xy;
-	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
-	float density				=saturate(densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x);
-	return						vec4(light_lookup.y,light_lookup.x,density,ambient_lookup);
-}
+static const float glow=0.1;
 
 [numthreads(8,8,1)]
 void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
@@ -177,7 +118,7 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 	targetTexture1.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
-	float indirect_light			=1.0;
+	float indirect_light			=0.0;
 	if(pos.z>0)
 	{
 		int Z			=pos.z-1;
@@ -185,25 +126,28 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 		int xn			=(pos.x+dims.x-2)%dims.x;
 		int y1			=(pos.y+2)%dims.y;
 		int yn			=(pos.y+dims.y-2)%dims.y;
-		indirect_light	=targetTexture1[int3(pos.xy,Z)];
-		indirect_light	+=targetTexture1[int3(xn,pos.y,Z)];
-		indirect_light	+=targetTexture1[int3(x1,pos.y,Z)];
-		indirect_light	+=targetTexture1[int3(pos.x,yn,Z)];
-		indirect_light	+=targetTexture1[int3(pos.x,y1,Z)];
+		int3 sample_pts[]	={int3(pos.xy,Z),int3(xn,pos.y,Z),int3(x1,pos.y,Z),int3(pos.x,yn,Z),int3(pos.x,y1,Z)};
+		for(int i=0;i<5;i++)
+		{
+			//vec3 lightspace_texcoord	=(vec3(sample_pts[i])+0.5)/vec3(dims);
+			//vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
+			//float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
+			indirect_light	+=targetTexture1[sample_pts[i]];
+		}
 		indirect_light	/=5.0;
 	}
-	//for(int i=0;i<dims.z;i++)
 	int i=pos.z;
 	{
 		uint3 idx					=uint3(pos.xy,i);
 		vec3 lightspace_texcoord	=(vec3(idx)+0.5)/vec3(dims);
-		vec3 texc					=(vec3(pos.xy,(float)i)+0.5)/vec3(dims);
+
 		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
 		float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
 		indirect_light				*=exp(-extinctions.y*density*stepLength);
+
+		if(density==0)
+			indirect_light			=1.0;//-(1.0-indirect_light)*exp(-5.0*stepLength);
 		targetTexture1[idx]			=indirect_light;
-		//if(density==0)
-		//	indirect_light=1.0;
 	}
 }
 [numthreads(8,8,1)]
@@ -263,42 +207,16 @@ void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)	//SV_DispatchThreadID giv
 }
 
 
-//------------------------------------
-// Technique
-//------------------------------------
-DepthStencilState DisableDepth
-{
-	DepthEnable = FALSE;
-	DepthWriteMask = ZERO;
-};
-BlendState DontBlend
-{
-	BlendEnable[0] = FALSE;
-};
-RasterizerState RenderNoCull { CullMode = none; };
-
 technique11 density_mask
 {
     pass p0 
     {
 		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
+		SetDepthStencilState(ReverseDepth, 0 );
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_DensityMask()));
-    }
-}
-technique11 simul_gpu_density
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Density()));
     }
 }
 
@@ -307,32 +225,6 @@ technique11 gpu_density_compute
     pass p0 
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_Density()));
-    }
-}
-
-technique11 simul_gpu_lighting
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Lighting()));
-    }
-}
-
-technique11 simul_gpu_transform
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_Transform()));
     }
 }
 

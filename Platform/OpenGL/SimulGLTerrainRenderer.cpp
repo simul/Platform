@@ -7,6 +7,8 @@
 #include "Simul/Math/Matrix4x4.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Sky/SkyInterface.h"
+using namespace simul;
+using namespace opengl;
 
 SimulGLTerrainRenderer::SimulGLTerrainRenderer(simul::base::MemoryInterface *m)
 	:BaseTerrainRenderer(m)
@@ -22,15 +24,15 @@ void SimulGLTerrainRenderer::RecompileShaders()
 {
 	SAFE_DELETE_PROGRAM(program);
 	program							=MakeProgram("simul_terrain");//WithGS
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glUseProgram(program);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	eyePosition_param				= glGetUniformLocation(program,"eyePosition");
 	textures_param					= glGetUniformLocation(program,"textureArray");
 	worldViewProj_param				= glGetUniformLocation(program,"worldViewProj");
 	lightDir_param					= glGetUniformLocation(program,"lightDir");
 	sunlight_param					= glGetUniformLocation(program,"sunlight");
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void SimulGLTerrainRenderer::RestoreDeviceObjects(void*)
@@ -58,10 +60,10 @@ void SimulGLTerrainRenderer::MakeTextures()
 	glTexParameteri(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	//glTexParameterfv(GL_TEXTURE_2D_ARRAY_EXT, GL_TEXTURE_BORDER_COLOR, borderColor);
 	unsigned bpp,width,height;
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	unsigned char *data=LoadGLBitmap("terrain.png",bpp,width,height);
 	unsigned char *moss=LoadGLBitmap("moss.png",bpp,width,height);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	int num_layers=2;
 	int num_mips=8;
 	int m=1;
@@ -79,7 +81,7 @@ void SimulGLTerrainRenderer::MakeTextures()
 	//glTexImage3D	(GL_TEXTURE_2D_ARRAY, 2, GL_RGBA, width/4, height/4, num_layers, ...);
 
 	glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void SimulGLTerrainRenderer::InvalidateDeviceObjects()
@@ -91,7 +93,7 @@ void SimulGLTerrainRenderer::InvalidateDeviceObjects()
 void SimulGLTerrainRenderer::Render(void *,float exposure)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_STENCIL_TEST);
 	glDepthMask(GL_TRUE);
@@ -100,7 +102,7 @@ void SimulGLTerrainRenderer::Render(void *,float exposure)
 	glEnable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	glUseProgram(program);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	simul::math::Vector3 cam_pos;
 	CalcCameraPosition(cam_pos);
 
@@ -114,10 +116,10 @@ void SimulGLTerrainRenderer::Render(void *,float exposure)
 	glUniform3f(eyePosition_param,cam_pos.x,cam_pos.y,cam_pos.z);
 	if(baseSkyInterface)
 	{
-		simul::math::Vector3 irr(baseSkyInterface->GetLocalIrradiance(0.f));
+		simul::math::Vector3 irr=baseSkyInterface->GetLocalIrradiance(0.f);
 		irr*=0.1f*exposure;
 		glUniform3f(sunlight_param,irr.x,irr.y,irr.z);
-		simul::math::Vector3 sun_dir(baseSkyInterface->GetDirectionToLight(0.f));
+		simul::math::Vector3 sun_dir=baseSkyInterface->GetDirectionToLight(0.f);
 		glUniform3f(lightDir_param,sun_dir.x,sun_dir.y,sun_dir.z);
 	}
 
@@ -125,7 +127,7 @@ void SimulGLTerrainRenderer::Render(void *,float exposure)
 	glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, texArray);
 	glUniform1i(textures_param,0); 
 
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	int h=heightMapInterface->GetPageSize();
 	simul::math::Vector3 origin=heightMapInterface->GetOrigin();
 	float PageWorldX=heightMapInterface->GetPageWorldX();
@@ -154,7 +156,7 @@ void SimulGLTerrainRenderer::Render(void *,float exposure)
 	}
 	glEnd();
 	glUseProgram(0);
-ERROR_CHECK
+GL_ERROR_CHECK
 	glPopAttrib();
-ERROR_CHECK
+GL_ERROR_CHECK
 }

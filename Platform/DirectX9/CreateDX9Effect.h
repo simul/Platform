@@ -8,15 +8,13 @@
 
 // CreateDX9Effect.h Create a DirectX .fx effect and report errors.
 
-#ifdef XBOX
-	#include <xgraphics.h>
-#else
 	#include <d3dx9.h>
-#endif
 #include <map>
 #include <string>
 #include "Simul/Platform/DirectX9/Export.h"
 #include "Simul/Clouds/BaseCloudRenderer.h"
+#include "Simul/Base/RuntimeError.h"
+
 enum ShaderModel {NO_SHADERMODEL=0,USE_SHADER_2,USE_SHADER_2A,USE_SHADER_3};
 extern ShaderModel SIMUL_DIRECTX9_EXPORT GetShaderModel();
 extern void SIMUL_DIRECTX9_EXPORT SetMaxShaderModel(ShaderModel m);
@@ -67,9 +65,44 @@ extern void SIMUL_DIRECTX9_EXPORT FixProjectionMatrix(D3DXMATRIX &proj,float zFa
 extern void SIMUL_DIRECTX9_EXPORT FixProjectionMatrix(D3DXMATRIX &proj,float zNear,float zFar,bool y_vertical);
 extern void SIMUL_DIRECTX9_EXPORT SetResourceModule(const char *txt);
 extern void SIMUL_DIRECTX9_EXPORT MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);
+extern D3DXMATRIX SIMUL_DIRECTX9_EXPORT MakeViewProjMatrix(D3DXMATRIX &view,D3DXMATRIX &proj);
 extern HRESULT RenderAngledQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,D3DXVECTOR3 cam_pos,D3DXVECTOR3 dir,bool y_vertical,float half_angle_radians,LPD3DXEFFECT effect);
 extern HRESULT SIMUL_DIRECTX9_EXPORT DrawFullScreenQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT effect);
+
 extern bool SIMUL_DIRECTX9_EXPORT IsDepthFormatOk(LPDIRECT3DDEVICE9 pd3dDevice,D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
 extern LPDIRECT3DSURFACE9 SIMUL_DIRECTX9_EXPORT MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture);
 extern void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *view_dir=NULL);
+
+
+extern D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view);
 extern std::map<std::string,std::string> MakeDefinesList(bool wrap,bool y_vertical);
+
+
+namespace simul
+{
+	namespace dx9
+	{
+		extern void DrawQuad(LPDIRECT3DDEVICE9 m_pd3dDevice);
+		extern void SIMUL_DIRECTX9_EXPORT setTexture(LPD3DXEFFECT effect,const char *txt,LPDIRECT3DBASETEXTURE9);
+		template<typename T> void setParameter(LPD3DXEFFECT effect,const char *txt,T value)
+		{
+			D3DXHANDLE h=effect->GetParameterByName(NULL,txt);
+			if(h)
+				effect->SetValue(h,&value,sizeof(T));
+			else
+				SIMUL_THROW("Can't find parameter in simul::dx9::setParameter");
+		}
+		//! For matrices, we set the \em transpose by default in DirectX 9, to allow it to use the same shader functions as DX11.
+		template<> inline void setParameter<mat4>(LPD3DXEFFECT effect,const char *txt,mat4 value)
+		{
+			D3DXHANDLE h=effect->GetParameterByName(NULL,txt);
+			if(h)
+				effect->SetMatrixTranspose(h,(const D3DXMATRIX*)&value);
+			else
+				SIMUL_THROW("Can't find parameter in simul::dx9::setParameter");
+	}
+}
+}
+
+#define DX9_STRUCTMEMBER_SET(effect,struct_name,member_name)\
+	simul::dx9::setParameter(effect,#member_name,struct_name.##member_name);

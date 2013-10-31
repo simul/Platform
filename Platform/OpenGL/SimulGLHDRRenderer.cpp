@@ -11,6 +11,8 @@
 #include "SimulGLUtilities.h"
 #include "LoadGLProgram.h"
 #include <stdint.h>  // for uintptr_t
+using namespace simul;
+using namespace opengl;
 
 SimulGLHDRRenderer::SimulGLHDRRenderer(int w,int h)
 	:Gamma(0.45f),Exposure(1.f)
@@ -55,7 +57,7 @@ void SimulGLHDRRenderer::RestoreDeviceObjects()
 		glow_fb.InitDepth_RB(GL_DEPTH_COMPONENT32);
 		alt_fb.InitDepth_RB(GL_DEPTH_COMPONENT32);
 	}
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	RecompileShaders();
 }
 
@@ -66,7 +68,7 @@ void SimulGLHDRRenderer::RecompileShaders()
     exposure_param		=glGetUniformLocation(tonemap_program,"exposure");
     gamma_param			=glGetUniformLocation(tonemap_program,"gamma");
     buffer_tex_param	=glGetUniformLocation(tonemap_program,"image_texture");
-	ERROR_CHECK
+	GL_ERROR_CHECK
 
 	glow_program		=MakeProgram("simple.vert",NULL,"simul_glow.frag");
 	blur_program		=MakeProgram("simple.vert",NULL,"simul_hdr_blur.frag");
@@ -80,7 +82,7 @@ bool SimulGLHDRRenderer::StartRender(void *context)
 {
 	framebuffer.Activate(context);
 	framebuffer.Clear(context,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	return true;
 }
 
@@ -90,15 +92,15 @@ bool SimulGLHDRRenderer::FinishRender(void *context)
 	RenderGlowTexture(context);
 
 	glUseProgram(tonemap_program);
-	setTexture(tonemap_program,"image_texture",0,(GLuint)(uintptr_t)framebuffer.GetColorTex());
-	ERROR_CHECK
+	setTexture(tonemap_program,"image_texture",0,(GLuint)framebuffer.GetColorTex());
+	GL_ERROR_CHECK
 	glUniform1f(exposure_param,Exposure);
 	glUniform1f(gamma_param,Gamma);
 	glUniform1i(buffer_tex_param,0);
-	setTexture(tonemap_program,"glowTexture",1,(GLuint)(uintptr_t)glow_fb.GetColorTex());
+	setTexture(tonemap_program,"glowTexture",1,(GLuint)glow_fb.GetColorTex());
 
 	framebuffer.Render(context,false);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glUseProgram(0);
 	return true;
 }
@@ -116,7 +118,7 @@ void SimulGLHDRRenderer::RenderGlowTexture(void *context)
 	glUseProgram(glow_program);
 	glow_fb.Activate(context);
 	{
-		setTexture(glow_program,"image_texture",0,(GLuint)(uintptr_t)framebuffer.GetColorTex());
+		setTexture(glow_program,"image_texture",0,(GLuint)framebuffer.GetColorTex());
 		int glow_viewport[4];
 		glGetIntegerv(GL_VIEWPORT,glow_viewport);
 		SetOrthoProjection(glow_viewport[2],glow_viewport[3]);
@@ -133,7 +135,7 @@ void SimulGLHDRRenderer::RenderGlowTexture(void *context)
 		int glow_viewport[4];
 		glGetIntegerv(GL_VIEWPORT,glow_viewport);
 		SetOrthoProjection(glow_viewport[2],glow_viewport[3]);
-		setTexture(blur_program,"image_texture",0,(GLuint)(uintptr_t)glow_fb.GetColorTex());
+		setTexture(blur_program,"image_texture",0,(GLuint)glow_fb.GetColorTex());
 		setParameter(blur_program,"offset",1.f/(float)glow_viewport[2],0.f);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}
@@ -144,7 +146,7 @@ void SimulGLHDRRenderer::RenderGlowTexture(void *context)
 		int glow_viewport[4];
 		glGetIntegerv(GL_VIEWPORT,glow_viewport);
 		SetOrthoProjection(glow_viewport[2],glow_viewport[3]);
-		setTexture(blur_program,"image_texture",0,(GLuint)(uintptr_t)alt_fb.GetColorTex());
+		setTexture(blur_program,"image_texture",0,(GLuint)alt_fb.GetColorTex());
 		setParameter(blur_program,"offset",0.f,0.5f/(float)glow_viewport[3]);
 		::DrawQuad(0,0,glow_viewport[2],glow_viewport[3]);
 	}

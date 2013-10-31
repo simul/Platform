@@ -7,6 +7,7 @@ SamplerState wrapMirrorSamplerState:register(s3)
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Mirror;
+	AddressW = Wrap;
 };
 
 SamplerState cmcSamplerState:register(s5)
@@ -17,6 +18,21 @@ SamplerState cmcSamplerState:register(s5)
 	AddressW = Clamp;
 };
 
+SamplerState cmcNearestSamplerState
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Clamp;
+	AddressV = Mirror;
+	AddressW = Clamp;
+};
+	
+SamplerState samplerStateNearestWrap
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+};
 SamplerState wrapSamplerState:register(s6)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -54,6 +70,7 @@ SamplerState wrapClampSamplerState: register(s10)
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
 	AddressV = Clamp;
+	AddressW = Clamp;
 };
 
 SamplerState samplerStateNearest: register(s11)
@@ -64,27 +81,11 @@ SamplerState samplerStateNearest: register(s11)
 	AddressW = Clamp;
 };
 
-SamplerState samplerStateNearestWrap: register(s14)
-{
-	Filter = MIN_MAG_MIP_POINT;
-	AddressU = Wrap;
-	AddressV = Wrap;
-	AddressW = Wrap;
-};
-
 SamplerState cwcNearestSamplerState: register(s12)
 {
 	Filter = MIN_MAG_MIP_POINT;
 	AddressU = Clamp;
 	AddressV = Wrap;
 	AddressW = Clamp;
-};
-
-SamplerState wrapNearestSamplerState: register(s13)
-{
-	Filter = MIN_MAG_MIP_POINT;
-	AddressU = Wrap;
-	AddressV = Wrap;
-	AddressW = Wrap;
 };
 #endif

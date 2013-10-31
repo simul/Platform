@@ -10,7 +10,7 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
-#include "Simul/Platform/DirectX11/FramebufferCubemapDX1x.h"
+#include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include <d3dx9.h>
 #include <d3d11.h>
 #include <d3dx11.h>
@@ -57,9 +57,7 @@ namespace simul
 									const simul::sky::float4& relativeViewportTextureRegionXYWH,
 									bool doFinalCloudBufferToScreenComposite //indicate whether truesky should do a final low-res cloud up-sample to the main target or whether to leave that to the user (via GetFramebufferTexture())
 									);
-			bool RenderSky(void *context,float exposure,bool buffered,bool is_cubemap);
 			void RenderFramebufferDepth(void *context,int w,int h);
-			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			void RenderPrecipitation(void *context);
 			void RenderLightning(void *context,int viewport_id);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
@@ -78,6 +76,7 @@ namespace simul
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 
 		protected:
+			void BufferSizeChanged();
 			void *GetCloudDepthTexture();
 			simul::base::MemoryInterface	*memoryInterface;
 			// Keep copies of these matrices:
@@ -91,22 +90,25 @@ namespace simul
 			ID3D1xDevice*							m_pd3dDevice;
 			
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			ID3D1xEffect*							m_pTonemapEffect;
-			ID3D1xEffectTechnique*					directTechnique;
-			ID3D1xEffectTechnique*					SkyBlendTechnique;
-			ID3D1xEffectTechnique*					showDepthTechnique;
-			ID3D1xEffectMatrixVariable*				worldViewProj;
-			ID3D1xEffectShaderResourceVariable		*imageTexture;
+			ID3DX11Effect							*m_pTonemapEffect;
+			ID3DX11EffectTechnique					*directTechnique;
+			ID3DX11EffectTechnique					*SkyBlendTechnique;
+			ID3DX11EffectTechnique					*showDepthTechnique;
+			ID3DX11EffectShaderResourceVariable		*imageTexture;
 
 			bool CreateBuffers();
 			bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
 			class SimulSkyRendererDX1x				*simulSkyRenderer;
 			class SimulCloudRendererDX1x			*simulCloudRenderer;
-			class SimulPrecipitationRendererDX1x	*simulPrecipitationRenderer;
+			class PrecipitationRenderer	*simulPrecipitationRenderer;
 			class SimulAtmosphericsRendererDX1x		*simulAtmosphericsRenderer;
 			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
 			class SimulLightningRendererDX11		*simulLightningRenderer;
+			// The main framebuffer uses far depth for each pixel.
 			simul::dx11::Framebuffer				framebuffer;
+			// Edge pixels are rendered with the near framebuffer as well as the far one.
+			simul::dx11::Framebuffer				nearFramebuffer;
+			simul::dx11::ConstantBuffer<HdrConstants> hdrConstants;
 			float									exposure;
 			float									gamma;
 			float									exposure_multiplier;

@@ -23,7 +23,7 @@
 #include "Simul/Camera/Camera.h"
 #include "SimulSkyRendererDX1x.h"
 #include "SimulAtmosphericsRendererDX1x.h"
-#include "SimulPrecipitationRendererDX1x.h"
+#include "PrecipitationRenderer.h"
 
 #include "SimulCloudRendererDX1x.h"
 #include "Simul2DCloudRendererDX1x.h"
@@ -39,11 +39,11 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 													,simul::base::MemoryInterface *mem) :
 	BaseWeatherRenderer(env,mem),
 	framebuffer(0,0),
+	nearFramebuffer(0,0),
 	m_pd3dDevice(NULL),
 	m_pTonemapEffect(NULL)
 	,directTechnique(NULL)
 	,imageTexture(NULL)
-	,worldViewProj(NULL)
 	,simulSkyRenderer(NULL)
 	,simulCloudRenderer(NULL)
 	,simulPrecipitationRenderer(NULL)
@@ -60,18 +60,19 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	//if(ShowSky)
 	{
-		simulSkyRenderer	=new(memoryInterface) SimulSkyRendererDX1x(sk, memoryInterface);
+		simulSkyRenderer	=::new(memoryInterface) SimulSkyRendererDX1x(sk, memoryInterface);
 		baseSkyRenderer		=simulSkyRenderer;
 	}
-	simulCloudRenderer		=new(memoryInterface) SimulCloudRendererDX1x(ck3d, memoryInterface);
+	simulCloudRenderer		=::new(memoryInterface) SimulCloudRendererDX1x(ck3d, memoryInterface);
 	baseCloudRenderer		=simulCloudRenderer;
-	simulLightningRenderer	=new(memoryInterface) SimulLightningRendererDX11(ck3d,sk);
+	simulLightningRenderer	=::new(memoryInterface) SimulLightningRendererDX11(ck3d,sk);
 	if(env->cloud2DKeyframer)
-		base2DCloudRenderer=simul2DCloudRenderer		=new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
-	basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulPrecipitationRendererDX1x();
-	baseAtmosphericsRenderer=simulAtmosphericsRenderer	=new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
+		base2DCloudRenderer=simul2DCloudRenderer		=::new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
+	basePrecipitationRenderer=simulPrecipitationRenderer=::new(memoryInterface) PrecipitationRenderer();
+	baseAtmosphericsRenderer=simulAtmosphericsRenderer	=::new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
 	baseFramebuffer=&framebuffer;
 	framebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+	nearFramebuffer.SetDepthFormat(0);
 	ConnectInterfaces();
 }
 
@@ -79,9 +80,16 @@ void SimulWeatherRendererDX11::SetScreenSize(int w,int h)
 {
 	ScreenWidth		=w;
 	ScreenHeight	=h;
-	BufferWidth		=w/Downscale;
-	BufferHeight	=h/Downscale;
+	BufferSizeChanged();
+}
+
+void SimulWeatherRendererDX11::BufferSizeChanged()
+{
+	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
+	BufferWidth		=(ScreenWidth+Downscale-1)/Downscale;
+	BufferHeight	=(ScreenHeight+Downscale-1)/Downscale;
 	framebuffer.SetWidthAndHeight(BufferWidth,BufferHeight);
+	nearFramebuffer.SetWidthAndHeight(BufferWidth,BufferHeight);
 }
 
 void SimulWeatherRendererDX11::RestoreDeviceObjects(void* dev)
@@ -89,7 +97,8 @@ void SimulWeatherRendererDX11::RestoreDeviceObjects(void* dev)
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D1xDevice*)dev;
 	framebuffer.RestoreDeviceObjects(m_pd3dDevice);
-
+	nearFramebuffer.RestoreDeviceObjects(m_pd3dDevice);
+	hdrConstants.RestoreDeviceObjects(m_pd3dDevice);
 	if(simulCloudRenderer)
 	{
 		simulCloudRenderer->RestoreDeviceObjects(m_pd3dDevice);
@@ -135,7 +144,7 @@ void SimulWeatherRendererDX11::RecompileShaders()
 	showDepthTechnique	=m_pTonemapEffect->GetTechniqueByName("show_depth");
 	SkyBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_blend");
 	imageTexture		=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
-	worldViewProj		=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	hdrConstants.LinkToEffect(m_pTonemapEffect,"HdrConstants");
 	BaseWeatherRenderer::RecompileShaders();
 }
 
@@ -143,6 +152,8 @@ void SimulWeatherRendererDX11::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_pTonemapEffect);
 	framebuffer.InvalidateDeviceObjects();
+	nearFramebuffer.InvalidateDeviceObjects();
+	hdrConstants.InvalidateDeviceObjects();
 	if(simulSkyRenderer)
 		simulSkyRenderer->InvalidateDeviceObjects();
 	if(simulCloudRenderer)
@@ -155,9 +166,6 @@ void SimulWeatherRendererDX11::InvalidateDeviceObjects()
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
 	if(simulLightningRenderer)
 		simulLightningRenderer->InvalidateDeviceObjects();
-//	if(m_pTonemapEffect)
-//        hr=m_pTonemapEffect->OnLostDevice();
-// Free the cubemap resources. 
 }
 
 bool SimulWeatherRendererDX11::Destroy()
@@ -194,37 +202,45 @@ SimulWeatherRendererDX11::~SimulWeatherRendererDX11()
 
 void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float exposure,float gamma)
 {
-	ID3D11DeviceContext* m_pImmediateContext=NULL;;
+	std::wstring filenamew=simul::base::Utf8ToWString(filename_utf8);
+	ID3D11DeviceContext* m_pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
-	FramebufferCubemapDX1x	fb_cubemap;
-	fb_cubemap.SetWidthAndHeight(2048,2048);
+	CubemapFramebuffer	fb_cubemap;
+	static int cubesize=1024;
+	fb_cubemap.SetWidthAndHeight(cubesize,cubesize);
+	fb_cubemap.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 	fb_cubemap.RestoreDeviceObjects(m_pd3dDevice);
 	simul::dx11::Framebuffer gamma_correct;
-	gamma_correct.SetWidthAndHeight(2048,2048);
+	gamma_correct.SetWidthAndHeight(cubesize,cubesize);
 	gamma_correct.RestoreDeviceObjects(m_pd3dDevice);
 
-	ID3D1xEffect* m_pTonemapEffect=NULL;
-	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"));
-	ID3D1xEffectTechnique *tech=m_pTonemapEffect->GetTechniqueByName("simul_gamma");
+	ID3D1xEffectTechnique *tech=m_pTonemapEffect->GetTechniqueByName("exposure_gamma");
 
 	cam_pos=GetCameraPosVector(view);
 	D3DXMATRIX view_matrices[6];
 	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
 	bool noise3d=environment->cloudKeyframer->GetUse3DNoise();
+	bool godrays=GetBaseAtmosphericsRenderer()->GetShowGodrays();
+	GetBaseAtmosphericsRenderer()->SetShowGodrays(false);
 	environment->cloudKeyframer->SetUse3DNoise(true);
+
+	bool gamma_correction=false;//(filenamew.find(L".hdr")>=filenamew.length());
 	int l=100;
 	if(baseCloudRenderer)
 	{
 		baseCloudRenderer->RecompileShaders();
-		l=baseCloudRenderer->GetCloudGeometryHelper()->GetMaxLayers();
-		baseCloudRenderer->GetCloudGeometryHelper()->SetMaxLayers(250);
+		l=baseCloudRenderer->GetMaxSlices(0);
+		baseCloudRenderer->SetMaxSlices(0,250);
 	}
 	for(int i=0;i<6;i++)
 	{
 		fb_cubemap.SetCurrentFace(i);
 		fb_cubemap.Activate(m_pImmediateContext);
+		if(gamma_correction)
+		{
 		gamma_correct.Activate(m_pImmediateContext);
 		gamma_correct.Clear(m_pImmediateContext,0.f,0.f,0.f,0.f,0.f);
+		}
 		if(simulSkyRenderer)
 		{
 			D3DXMATRIX cube_proj;
@@ -236,27 +252,36 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 			SetMatrices(view_matrices[i],cube_proj);
 			RenderSkyAsOverlay(m_pImmediateContext,exposure,false,false,NULL,NULL,0,simul::sky::float4(0,0,1.f,1.f), true);
 		}
-		gamma_correct.Deactivate(m_pImmediateContext);
+		if(gamma_correction)
 		{
+			gamma_correct.Deactivate(m_pImmediateContext);
 			simul::dx11::setTexture(m_pTonemapEffect,"imageTexture",gamma_correct.GetBufferResource());
-			simul::dx11::setParameter(m_pTonemapEffect,"gamma",gamma);
-			simul::dx11::setParameter(m_pTonemapEffect,"exposure",exposure);
+			hdrConstants.gamma=gamma;
+			hdrConstants.exposure=exposure;
+			hdrConstants.Apply(m_pImmediateContext);
 			ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
 			gamma_correct.DrawQuad(m_pImmediateContext);
 		}
 		fb_cubemap.Deactivate(m_pImmediateContext);
 	}
 	ID3D11Texture2D *tex=fb_cubemap.GetCopy(m_pImmediateContext);
-	std::wstring filenamew=simul::base::Utf8ToWString(filename_utf8);
+	//if(gamma_correction)
+	{
 	HRESULT hr=D3DX11SaveTextureToFileW(m_pImmediateContext,tex,D3DX11_IFF_DDS,filenamew.c_str());
+	}
+	//else
+	{
+		//vec4 target=new vec4(cubesize*cubesize*6);
+		//fb_cubemap.CopyToMemory(target);
+	}
 	SAFE_RELEASE(m_pImmediateContext);
-	SAFE_RELEASE(m_pTonemapEffect);
 	SAFE_RELEASE(tex);
 	environment->cloudKeyframer->SetUse3DNoise(noise3d);
 	if(baseCloudRenderer)
 	{
-		baseCloudRenderer->GetCloudGeometryHelper()->SetMaxLayers(l);
+		baseCloudRenderer->SetMaxSlices(0,l);
 	}
+	GetBaseAtmosphericsRenderer()->SetShowGodrays(godrays);
 }
 
 void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
@@ -264,56 +289,73 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 												bool buffered,
 												bool is_cubemap,
 												const void* mainDepthTexture,
-												const void* depthTextureForClouds,
+												const void* lowResDepthTexture,
 												int viewport_id,
-												const simul::sky::float4& relativeViewportTextureRegionXYWH,
+												const simul::sky::float4& viewportRegionXYWH,
 												bool doFinalCloudBufferToScreenComposite
 												)
 {
-	BaseWeatherRenderer::RenderSkyAsOverlay(context,
+	SIMUL_PROFILE_START("RenderSkyAsOverlay")
+	SIMUL_GPU_PROFILE_START(context,"RenderSkyAsOverlay")
+/*	BaseWeatherRenderer::RenderSkyAsOverlay(context,
 											exposure,
 											buffered,
 											is_cubemap,
 											mainDepthTexture,
-											depthTextureForClouds,
+											lowResDepthTexture,
 											viewport_id,
-											relativeViewportTextureRegionXYWH,
-											doFinalCloudBufferToScreenComposite
-											);
-	if(buffered&&doFinalCloudBufferToScreenComposite)
+											viewportRegionXYWH,
+											doFinalCloudBufferToScreenComposite	);*/
+
+	RenderFullResolutionElements(context,exposure,mainDepthTexture,viewport_id,viewportRegionXYWH);
+	float godrays_strength		=(float)(!is_cubemap)*environment->cloudKeyframer->GetInterpolatedKeyframe().godray_strength;
+	if(buffered)
 	{
+		// No need for cloud depth texture if godrays are not active.
+	/*	if(godrays_strength==0)
+		{
+			baseFramebuffer->ActivateColour(context,relativeViewportTextureRegionXYWH);
+			baseFramebuffer->ClearColour(context,0.0f,0.0f,0.f,1.f);
+	}
+		else*/
+		{
+			baseFramebuffer->ActivateViewport(context,viewportRegionXYWH.x,viewportRegionXYWH.y,viewportRegionXYWH.z,viewportRegionXYWH.w);
+			baseFramebuffer->Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
+}
+	}
+	RenderLowResolutionElements(context,exposure,godrays_strength,is_cubemap,false,lowResDepthTexture,viewport_id,viewportRegionXYWH);
+	if(buffered)
+		baseFramebuffer->Deactivate(context);
+
+	nearFramebuffer.ActivateColour(context);
+	nearFramebuffer.ClearColour(context,0.0f,0.0f,0.f,1.f);
+	RenderLowResolutionElements(context,exposure,godrays_strength,is_cubemap,true,lowResDepthTexture,viewport_id,viewportRegionXYWH);
+	nearFramebuffer.Deactivate(context);
+
+	if(buffered&&doFinalCloudBufferToScreenComposite)
+{
+		ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 		bool blend=!is_cubemap;
 		imageTexture->SetResource(framebuffer.buffer_texture_SRV);
+		simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"		,(ID3D1xShaderResourceView*)mainDepthTexture);
+		simul::dx11::setTexture(m_pTonemapEffect,"lowResDepthTexture"	,(ID3D1xShaderResourceView*)lowResDepthTexture);
+		simul::dx11::setTexture(m_pTonemapEffect,"cloudDepthTexture"	,(ID3D1xShaderResourceView*)baseFramebuffer->GetDepthTex());
+		simul::dx11::setTexture(m_pTonemapEffect,"nearImageTexture"	,(ID3D1xShaderResourceView*)nearFramebuffer.buffer_texture_SRV);
 		ID3D1xEffectTechnique *tech=blend?SkyBlendTechnique:directTechnique;
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
-		simul::dx11::setParameter(m_pTonemapEffect,"exposure",1.f);
-		simul::dx11::setParameter(m_pTonemapEffect,"gamma",1.f);
-		framebuffer.DrawQuad(context);
-		imageTexture->SetResource(NULL);
-		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
-	}
-}
-
-bool SimulWeatherRendererDX11::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)
-{
-	BaseWeatherRenderer::RenderSky(context,exposure,buffered,is_cubemap);
-	if(buffered&&baseFramebuffer)
-	{
-		bool blend=!is_cubemap;
-		HRESULT hr=S_OK;
-		hr=imageTexture->SetResource(framebuffer.buffer_texture_SRV);
-		ID3D1xEffectTechnique *tech=blend?SkyBlendTechnique:directTechnique;
-		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
+		hdrConstants.exposure					=1.f;
+		hdrConstants.gamma						=1.f;
+		float max_fade_distance_metres			=baseSkyRenderer->GetSkyKeyframer()->GetMaxDistanceKm()*1000.f;
+		hdrConstants.depthToLinFadeDistParams	=simul::math::Vector3(proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
+		hdrConstants.lowResTexelSize			=vec2(1.0f/(float)BufferWidth,1.0f/(float)BufferHeight);
+		hdrConstants.Apply(pContext);
 		
-		D3DXMATRIX ortho;
-		D3DXMatrixIdentity(&ortho);
-		D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
-		worldViewProj->SetMatrix(ortho);
-		
-		framebuffer.DrawQuad(context);
+		framebuffer.DrawQuad(pContext);
 		imageTexture->SetResource(NULL);
+		ApplyPass(pContext,tech->GetPassByIndex(0));
 	}
-	return true;
+	SIMUL_GPU_PROFILE_END(context,"RenderSkyAsOverlay")
+	SIMUL_PROFILE_END
 }
 
 void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,int height)
@@ -332,22 +374,19 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 	float max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	UtilityRenderer::SetScreenSize(width,height);
 	simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
-	simul::dx11::setParameter(m_pTonemapEffect,"tanHalfFov"		,frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	simul::dx11::setParameter(m_pTonemapEffect,"nearZ"			,frustum.nearZ/max_fade_distance_metres);
-	simul::dx11::setParameter(m_pTonemapEffect,"farZ"			,frustum.farZ/max_fade_distance_metres);
-	simul::dx11::setParameter(m_pTonemapEffect,"depthToLinFadeDistParams", proj[14], max_fade_distance_metres, proj[10]*max_fade_distance_metres, 1.0f );
 	int x=8;
 	int y=height-w;
-	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));
-}
 
-void SimulWeatherRendererDX11::RenderLateCloudLayer(void *context,float exposure,bool,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH)
-{
-	if(simulCloudRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-	{
-		const simul::sky::float4 viewportTextureRegionXYWH(0,0,1,1);
-		simulCloudRenderer->Render(context,exposure,false,0,UseDefaultFog,true,viewport_id,viewportTextureRegionXYWH);
-	}
+	hdrConstants.tanHalfFov					=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	hdrConstants.nearZ						=frustum.nearZ/max_fade_distance_metres;
+	hdrConstants.farZ						=frustum.farZ/max_fade_distance_metres;
+	hdrConstants.depthToLinFadeDistParams	=vec3(proj[14], max_fade_distance_metres, proj[10]*max_fade_distance_metres);
+	hdrConstants.rect						=vec4((float)x/(float)width
+												,(float)y/(float)height
+												,(float)w/(float)width
+												,(float)w/(float)height);
+	hdrConstants.Apply(pContext);
+	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));
 }
 
 void SimulWeatherRendererDX11::RenderPrecipitation(void *context)

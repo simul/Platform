@@ -6,11 +6,11 @@ uniform sampler3D density_texture;
 uniform sampler3D light_texture;
 uniform sampler3D ambient_texture;
 
-in vec2 in_texcoord;
+in vec2 texCoords;
 
 void main(void)
 {	
-	vec3 densityspace_texcoord	=assemble3dTexcoord(in_texcoord.xy);
+	vec3 densityspace_texcoord	=assemble3dTexcoord(texCoords.xy);
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 
 	vec3 lightspace_texcoord	=(vec4(densityspace_texcoord,1.0)*transformMatrix).xyz;

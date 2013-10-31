@@ -16,6 +16,7 @@
 #define texture_wrap_clamp_lod(tex,texc,lod) tex.SampleLevel(wrapClampSamplerState,texc,lod)
 #define texture_cwc_lod(tex,texc,lod) tex.SampleLevel(cwcSamplerState,texc,lod)
 #define texture_cmc_lod(tex,texc,lod) tex.SampleLevel(cmcSamplerState,texc,lod)
+#define texture_cmc_nearest_lod(tex,texc,lod) tex.SampleLevel(cmcNearestSamplerState,texc,lod)
 #define texture_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,texc,lod)
 #define texture_wrap_nearest_lod(tex,texc,lod) tex.SampleLevel(wrapNearestSamplerState,texc,lod)
 #define texture_clamp_mirror_lod(tex,texc,lod) tex.SampleLevel(samplerStateClampMirror,texc,lod)

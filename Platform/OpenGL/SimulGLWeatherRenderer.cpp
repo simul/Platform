@@ -33,9 +33,7 @@ static const GLenum internal_buffer_format	=GL_RGBA32F_ARB;
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 											   ,simul::base::MemoryInterface *mem
 											   ,int width
-											   ,int height
-											   ,bool sky
-											   ,bool rain)
+											   ,int height)
 		:BaseWeatherRenderer(env,mem)
 		,BufferWidth(0)
 		,BufferHeight(0)
@@ -46,22 +44,23 @@ SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 	simul::sky::SkyKeyframer *sk=environment->skyKeyframer;
 	simul::clouds::CloudKeyframer *ck2d=environment->cloud2DKeyframer;
 	simul::clouds::CloudKeyframer *ck3d=environment->cloudKeyframer;
-	simulSkyRenderer=new(memoryInterface) SimulGLSkyRenderer(sk,memoryInterface);
+	simulSkyRenderer					=::new(memoryInterface) SimulGLSkyRenderer(sk,memoryInterface);
 	baseSkyRenderer=simulSkyRenderer;
 	
-	simulCloudRenderer=new(memoryInterface) SimulGLCloudRenderer(ck3d,mem);
+	simulCloudRenderer					=::new(memoryInterface) SimulGLCloudRenderer(ck3d,mem);
 	baseCloudRenderer=simulCloudRenderer;
 	if(env->cloud2DKeyframer)
 	{
-		base2DCloudRenderer=simul2DCloudRenderer=new SimulGL2DCloudRenderer(ck2d,mem);
+		base2DCloudRenderer				=simul2DCloudRenderer
+										=::new SimulGL2DCloudRenderer(ck2d,mem);
 	}	
-	simulLightningRenderer=new(memoryInterface) SimulGLLightningRenderer(ck3d,sk);
+	simulLightningRenderer				=::new(memoryInterface) SimulGLLightningRenderer(ck3d,sk);
 	baseLightningRenderer=simulLightningRenderer;
 
-	simulAtmosphericsRenderer=new(memoryInterface) SimulGLAtmosphericsRenderer(mem);
+	simulAtmosphericsRenderer			=::new(memoryInterface) SimulGLAtmosphericsRenderer(mem);
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
-	if(rain)
-		basePrecipitationRenderer=simulPrecipitationRenderer=new(memoryInterface) SimulGLPrecipitationRenderer();
+	basePrecipitationRenderer			=simulPrecipitationRenderer
+										=::new(memoryInterface) SimulGLPrecipitationRenderer();
 
 	EnableCloudLayers();
 	SetScreenSize(width,height);
@@ -130,16 +129,16 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
 	CheckExtension("GL_EXT_framebuffer_object");
     if(scene_buffer)
         delete scene_buffer;
-ERROR_CHECK
+GL_ERROR_CHECK
 	baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
-ERROR_CHECK
+GL_ERROR_CHECK
 	scene_buffer->InitColor_Tex(0,internal_buffer_format);
-ERROR_CHECK
+GL_ERROR_CHECK
 	device_initialized=true;
 	EnableCloudLayers();
-	///simulSkyRenderer->RestoreDeviceObjects();
-	//simulCloudRenderer->RestoreDeviceObjects(NULL);
-	//simulLightningRenderer->RestoreDeviceObjects();
+	simulSkyRenderer->RestoreDeviceObjects(NULL);
+	simulCloudRenderer->RestoreDeviceObjects(NULL);
+	simulLightningRenderer->RestoreDeviceObjects();
 	simulAtmosphericsRenderer->RestoreDeviceObjects(NULL);
 	SAFE_DELETE_PROGRAM(cloud_overlay_program);
 	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag");
@@ -176,35 +175,6 @@ void SimulGLWeatherRenderer::RecompileShaders()
 	cloud_overlay_program=MakeProgram("simple.vert",NULL,"simul_cloud_overlay.frag",defines);
 }
 
-bool SimulGLWeatherRenderer::RenderSky(void *context,float exposure,bool buffered,bool is_cubemap)
-{
-	buffered&=(Utilities::GetSingleton().simple_program>0);
-ERROR_CHECK
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-ERROR_CHECK
-	BaseWeatherRenderer::RenderSky(context,exposure,buffered,is_cubemap);
-	if(buffered)
-	{
-		glUseProgram(Utilities::GetSingleton().simple_program);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
-		scene_buffer->Render(context,true);
-		glUseProgram(0);
-	}
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-	int d=0;
-	glGetIntegerv(GL_ATTRIB_STACK_DEPTH,&d);
-	glPopAttrib();
-	return true;
-}
-
 void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 //	BaseWeatherRenderer::RenderSkyAsOverlay(context,buffered,is_cubemap,depthTexture);
@@ -220,7 +190,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,boo
 	if(baseAtmosphericsRenderer&&ShowSky)
 		baseAtmosphericsRenderer->RenderAsOverlay(context, depthTexture,exposure,relativeViewportTextureRegionXYWH);
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-		base2DCloudRenderer->Render(context,exposure,false,depthTexture,UseDefaultFog,false,viewport_id,relativeViewportTextureRegionXYWH);
+		base2DCloudRenderer->Render(context,exposure,false,false,depthTexture,UseDefaultFog,false,viewport_id,relativeViewportTextureRegionXYWH);
 	if(buffered)
 	{
 		baseFramebuffer->Activate(context);
@@ -236,7 +206,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,boo
 	// Do this AFTER sky render, to catch any changes to texture definitions:
 	UpdateSkyAndCloudHookup();
 	if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
-		baseCloudRenderer->Render(context,buffered?1.f:exposure,is_cubemap,depthTexture,UseDefaultFog,true,viewport_id,relativeViewportTextureRegionXYWH);
+		baseCloudRenderer->Render(context,buffered?1.f:exposure,is_cubemap,false,depthTexture,UseDefaultFog,true,viewport_id,relativeViewportTextureRegionXYWH);
 	if(buffered)
 	{
 		baseFramebuffer->Deactivate(context);
@@ -261,13 +231,13 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,b
 	
 	scene_buffer->Activate(context);
 	scene_buffer->Clear(context,0,0,0,1.f,ReverseDepth?0.f:1.f);
-	simulCloudRenderer->Render(context,exposure,false,NULL,UseDefaultFog,true,viewport_id,relativeViewportTextureRegionXYWH);
+	simulCloudRenderer->Render(context,exposure,false,false,NULL,UseDefaultFog,true,viewport_id,relativeViewportTextureRegionXYWH);
 	scene_buffer->Deactivate(context);
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 	GLuint prog=cloud_overlay_program;//AlwaysRenderCloudsLate?cloud_overlay_program:Utilities::GetSingleton().simple_program;
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)scene_buffer->GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)scene_buffer->GetColorTex());
 	glUseProgram(prog);
 
 	GLint image_texture		=glGetUniformLocation(prog,"image_texture");
@@ -309,26 +279,8 @@ class SimulGL2DCloudRenderer *SimulGLWeatherRenderer::Get2DCloudRenderer()
 {
 	return simul2DCloudRenderer;
 }
-/*
-const char *SimulGLWeatherRenderer::GetDebugText() const
-{
-	static char debug_text[256];
-	sprintf_s(debug_text,256,"RENDER %3.3g ms (clouds %3.3g ms, sky %3.3g ms, final %3.3g)\r\n"
-		"TEXTURE UPDATE %3.3g ms (sky %3.3g ms)\r\n"
-		"UPDATE %3.3g ms (clouds %3.3g ms, sky %3.3g ms)",
-			total_timing
-			,baseCloudRenderer?baseCloudRenderer->GetRenderTime():0.f
-			,baseSkyRenderer?baseSkyRenderer->GetRenderTime():0.f
-			,render_time
-			,baseSkyRenderer?baseSkyRenderer->GetTextureUpdateTime():0.f
-			,baseSkyRenderer?baseSkyRenderer->GetTextureUpdateTime():0.f
-			,environment->total_update_timing
-			,environment->cloud_update_timing
-			,environment->sky_update_timing);
-	return debug_text;
-}
-*/
+
 GLuint SimulGLWeatherRenderer::GetFramebufferTexture()
 {
-    return (GLuint)(uintptr_t)scene_buffer->GetColorTex();
+	return (GLuint)scene_buffer->GetColorTex();
 }

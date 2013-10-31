@@ -15,6 +15,8 @@
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Sky/Float4.h"
+using namespace simul;
+using namespace opengl;
 
 SimulGLPrecipitationRenderer::SimulGLPrecipitationRenderer() :
 	external_rain_texture(false)

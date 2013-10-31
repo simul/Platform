@@ -16,20 +16,26 @@ namespace simul
 			void RecompileShaders();
 			//! Return true if the derived class can make sky tables using the GPU.
 			bool CanPerformGPUGeneration() const;
-			void Make2DLossAndInscatterTextures(int cycled_index,simul::sky::AtmosphericScatteringInterface *skyInterface,int NumElevations,int NumDistances,
-				simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl
+			void Make2DLossAndInscatterTextures(int cycled_index,
+				simul::sky::AtmosphericScatteringInterface *skyInterface
+				,int numElevations,int numDistances
 				,const std::vector<float> &altitudes_km,float max_distance_km
 				,simul::sky::float4 sun_irradiance
 				,simul::sky::float4 starlight
-				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon,float haze
+				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon
+				,const simul::sky::HazeStruct &hazeStruct
 				,unsigned tables_checksum
 				,float overcast_base_km,float overcast_range_km
-				,int index,int end_index,const simul::sky::float4 *density_table
-				,const simul::sky::float4 *blackbody_table,const simul::sky::float4 *optical_table,int table_size
+				,simul::sky::float4 ozone
+				,int index,int end_index
+				,const simul::sky::float4 *density_table
+				,const simul::sky::float4 *optical_table
+				,const simul::sky::float4 *blackbody_table
+				,int table_size
 				,float maxDensityAltKm
-				,bool InfraRed
-				,float emissivity
+				,bool InfraRed,float emissivity
 				,float seaLevelTemperatureK);
+			virtual void CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl);
 		protected:
 		// framebuffer to render out by distance.
 			FramebufferGL	fb[2];
@@ -38,6 +44,10 @@ namespace simul
 			GLuint			skyl_program;
 			GLuint gpuSkyConstantsUBO;
 			GLint gpuSkyConstantsBindingIndex;
+			simul::sky::float4			*loss_cache;
+			simul::sky::float4			*insc_cache;
+			simul::sky::float4			*skyl_cache;
+			int				cache_size;
 		};
 	}
 }

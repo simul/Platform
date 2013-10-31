@@ -1,4 +1,9 @@
-float4x4 worldViewProj : WorldViewProjection;
+#include "dx9.hlsl"
+#include "../../CrossPlatform/sky_constants.sl"
+#include "../../CrossPlatform/earth_shadow.sl"
+#include "../../CrossPlatform/illumination.sl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/earth_shadow_uniforms.sl"
 
 texture inscTexture;
 
@@ -80,21 +85,16 @@ sampler2D fade_texture_2d= sampler_state
 	AddressV = Clamp;
 };
 
-//------------------------------------
-// Parameters 
-//------------------------------------
-float4 eyePosition : EYEPOSITION_WORLDSPACE;
-float4 lightDir : Direction;
-float4 mieRayleighRatio;
-float hazeEccentricity;
-float skyInterp;
-float altitudeTexCoord;
-#define pi (3.1415926536f)
-
-float4 colour;
-float starBrightness=.1f;
-float3 texelOffset;
-float3 texelScale;
+texture illuminationTexture;
+sampler2D illumination_texture= sampler_state
+{
+    Texture = <illuminationTexture>;
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+	AddressU = Wrap;
+	AddressV = Clamp;
+};
 //------------------------------------
 // Structures 
 //------------------------------------
@@ -127,12 +127,6 @@ struct vertexInput3Dto2D
     float3 position			: POSITION;
     float2 texCoords		: TEXCOORD0;
 };
-
-struct vertexOutput3Dto2D
-{
-    float4 hPosition		: POSITION;
-    float2 texCoords		: TEXCOORD0;
-};
 //------------------------------------
 // Vertex Shader 
 //------------------------------------
@@ -143,40 +137,6 @@ vertexOutput VS_Main(vertexInput IN)
     OUT.hPosition.z=OUT.hPosition.w;
     OUT.wDirection=normalize(IN.position.xyz);
     return OUT;
-}
-
-float HenyeyGreenstein(float g,float cos0)
-{
-	float g2=g*g;
-	float u=1.f+g2-2.f*g*cos0;
-	return (1.f-g2)/(4.f*pi*sqrt(u*u*u));
-}
-
-float3 InscatterFunction(float4 inscatter_factor,float cos0)
-{
-	float BetaRayleigh=0.0596831f*(1.f+cos0*cos0);
-	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
-	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
-		/(float3(1,1,1)+inscatter_factor.a*mieRayleighRatio.xyz);
-	float3 result=BetaTotal*inscatter_factor.rgb;
-	return result;
-}
-
-float4 PS_Main( vertexOutput IN): COLOR
-{
-	float3 view=normalize(IN.wDirection.xyz);
-#ifdef Y_VERTICAL
-	float sine	=view.y;
-#else
-	float sine	=view.z;
-#endif
-	float2 texcoord	=float2(1.0,0.5*(1.0-sine));
-	float4 insc_factor	=tex2D(insc_texture,texcoord);
-	float4 skyl			=tex2D(skyl_texture,texcoord);
-	float cos0=dot(lightDir.xyz,view.xyz);
-	float3 result=InscatterFunction(insc_factor,cos0);
-	result.rgb+=skyl.rgb;
-	return float4(result.rgb,1.0);
 }
 
 float4 PS_Stars(vertexOutput IN): COLOR
@@ -263,7 +223,7 @@ float4 PS_Planet(svertexOutput IN): color
 	if(l>1.0)
 		discard;
 	normal.z=-sqrt(1.f-l*l);
-	float light=approx_oren_nayar(0.2,float3(0,0,1.0),normal,lightDir);
+	float light=approx_oren_nayar(0.2,float3(0,0,1.0),normal.xyz,lightDir.xyz);
 	result.rgb*=colour.rgb;
 	result.rgb*=light;
 	result.a*=saturate((0.99-l)/0.01);
@@ -293,16 +253,15 @@ float4 PS_Point_Stars(svertexOutput IN): color
 vertexOutputCS VS_ShowFade(vertexInputCS IN)
 {
     vertexOutputCS OUT;
-    OUT.hPosition = mul(worldViewProj,float4(IN.position.xyz,1.0));
-	OUT.texCoords.xy=IN.texCoords.xy;
-	OUT.texCoords.z=1;
+    OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
+	OUT.texCoords.xy=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
+	OUT.texCoords.z	=1;
 	OUT.colour=IN.colour;
     return OUT;
 }
 
 float4 PS_ShowFade( vertexOutputCS IN): color
 {
-	IN.texCoords.y=1.0-IN.texCoords.y;
 	float4 result=tex2D(fade_texture_2d,IN.texCoords.xy);
     return float4(result.rgb,1);
 }
@@ -312,7 +271,6 @@ float4 PS_ShowSkyTexture( vertexOutputCS IN): color
 	float4 result=tex2D(fade_texture_2d,float2(IN.texCoords.y,altitudeTexCoord));
     return float4(result.rgb,1);
 }
-
 
 vertexOutputCS VS_CrossSection(vertexInputCS IN)
 {
@@ -331,21 +289,30 @@ float4 PS_CrossSectionXZ( vertexOutputCS IN): color
     return float4(result.rgb,1);
 }
 
-vertexOutput3Dto2D VS_3D_to_2D(vertexInput3Dto2D IN)
+vertexOutputPosTexc VS_3D_to_2D(vertexInput3Dto2D IN)
 {
-    vertexOutput3Dto2D OUT;
-    OUT.hPosition =float4(IN.position,1.f);
-	OUT.texCoords=IN.texCoords;
+    vertexOutputPosTexc OUT;
+    OUT.hPosition	=float4(IN.position.xy,0.f,1.f);
+	OUT.texCoords	=IN.texCoords;
     return OUT;
 }
 
-float4 PS_3D_to_2D(vertexOutput3Dto2D IN): color
+float4 PS_3D_to_2D(vertexOutputPosTexc IN): color
 {
-	float3 texc=float3(altitudeTexCoord,IN.texCoords.yx)*texelScale+texelOffset;
-	float4 colour1=tex3D(fade_texture,texc);
-	float4 colour2=tex3D(fade_texture_2,texc);
-	float4 result=lerp(colour1,colour2,skyInterp);
+	float3 texc		=float3(altitudeTexCoord,1.0-IN.texCoords.y,IN.texCoords.x);
+	//float3 texc		=float3(altitudeTexCoord,IN.texCoords.yx);
+	float4 colour1	=tex3D(fade_texture,texc);
+	float4 colour2	=tex3D(fade_texture_2,texc);
+	float4 result	=lerp(colour1,colour2,skyInterp);
+	
     return result;
+}
+
+vec4 PS_OvercastInscatter(vertexOutputPosTexc IN): color
+{
+	// Texcoords representing the full distance from the eye to the given point.
+	vec2 fade_texc	=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
+    return OvercastInscatter(insc_texture,illumination_texture,fade_texc,overcast);
 }
 
 struct vertexInputPosTex
@@ -375,24 +342,16 @@ float4 PS_PointStars(vertexOutputPosTex IN): color
 	return float4(result,1.f);
 }
 
-//------------------------------------
-// Technique 
-//------------------------------------
-technique simul_sky
+float4 PS_IlluminationBuffer(vertexOutputPosTexc IN): SV_TARGET
 {
-    pass p0 
-    {		
-		VertexShader = compile vs_2_0 VS_Main();
-		PixelShader  = compile ps_2_0 PS_Main();
-       
-        CullMode = None;
-		zenable = true;
-		zwriteenable = false;
-      //  AlphaBlendEnable = false;
-#ifndef XBOX
-		lighting = false;
-#endif
-    }
+	float alt_km		=eyePosition.z/1000.0;
+	return IlluminationBuffer(alt_km,IN.texCoords,targetTextureSize,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm
+			,maxFadeDistance,terminatorDistance,radiusOnCylinder,earthShadowNormal,sunDir);
+}
+
+float4 PS_ShowIlluminationBuffer(vertexOutputPosTex IN): color
+{
+	return ShowIlluminationBuffer(fade_texture_2d,IN.texCoords);
 }
 
 technique simul_starry_sky
@@ -426,6 +385,7 @@ technique simul_sun
         AlphaBlendEnable = true;
 		SrcBlend = One;
 		DestBlend = One;
+        CullMode = None;
 // Don't write alpha, as that's depth!
 		ColorWriteEnable=7;
 #ifndef XBOX
@@ -446,6 +406,7 @@ technique simul_planet
         AlphaBlendEnable = true;
 		SrcBlend = SrcAlpha;
 		DestBlend = InvSrcAlpha;
+        CullMode = None;
 // Don't write alpha, as that's depth!
 		ColorWriteEnable=7;
 #ifndef XBOX
@@ -464,6 +425,7 @@ technique simul_flare
 		zenable = false;
 		zwriteenable = false;
         AlphaBlendEnable = true;
+        CullMode = None;
 		SrcBlend = One;
 		DestBlend = One;
 // Don't write alpha, as that's depth!
@@ -483,6 +445,7 @@ technique simul_query
 		zenable = true;
 		zwriteenable = false;
         AlphaBlendEnable = true;
+        CullMode = None;
 		SrcBlend = One;
 		DestBlend = One;
 // Don't write alpha, as that's depth!
@@ -499,6 +462,7 @@ technique simul_show_fade
     {		
 		VertexShader = compile vs_3_0 VS_ShowFade();
 		PixelShader  = compile ps_3_0 PS_ShowFade();
+        CullMode = None;
 		zenable = false;
 		zwriteenable = false;
         AlphaBlendEnable = false;
@@ -514,6 +478,7 @@ technique simul_show_sky_texture
     {		
 		VertexShader = compile vs_3_0 VS_ShowFade();
 		PixelShader  = compile ps_3_0 PS_ShowSkyTexture();
+        CullMode = None;
 		zenable = false;
 		zwriteenable = false;
         AlphaBlendEnable = false;
@@ -529,12 +494,11 @@ technique simul_fade_cross_section_xz
     {		
 		VertexShader = compile vs_3_0 VS_CrossSection();
 		PixelShader  = compile ps_3_0 PS_CrossSectionXZ();
+        CullMode = None;
 		zenable = false;
 		zwriteenable = false;
         AlphaBlendEnable = false;
-#ifndef XBOX
 		lighting = false;
-#endif
     }
 }
 
@@ -542,14 +506,41 @@ technique simul_fade_3d_to_2d
 {
     pass p0 
     {		
-		VertexShader = compile vs_3_0 VS_3D_to_2D();
+		VertexShader = compile vs_3_0 VS_FullScreen();
 		PixelShader  = compile ps_3_0 PS_3D_to_2D();
+        CullMode = None;
 		zenable = false;
 		zwriteenable = false;
         AlphaBlendEnable = false;
-#ifndef XBOX
 		lighting = false;
-#endif
+    }
+}
+ 
+technique overcast_inscatter
+{
+    pass p0 
+    {
+		VertexShader = compile vs_3_0 VS_FullScreen();
+		PixelShader  = compile ps_3_0 PS_OvercastInscatter();
+        CullMode = None;
+		zenable = false;
+		zwriteenable = false;
+        AlphaBlendEnable = false;
+		lighting = false;
+    }
+}
+
+technique illumination_buffer
+{
+    pass p0 
+    {
+		VertexShader = compile vs_3_0 VS_FullScreen();
+		PixelShader  = compile ps_3_0 PS_IlluminationBuffer();
+        CullMode = None;
+		zenable = false;
+		zwriteenable = false;
+        AlphaBlendEnable = false;
+		lighting = false;
     }
 }
 
@@ -569,5 +560,19 @@ technique simul_point_stars
 #ifndef XBOX
 		lighting = false;
 #endif
+    }
+}
+
+technique show_illumination_buffer
+{
+    pass p0 
+    {
+		VertexShader = compile vs_3_0 VS_ShowFade();
+		PixelShader  = compile ps_3_0 PS_ShowIlluminationBuffer();
+        CullMode = None;
+		zenable = false;
+		zwriteenable = false;
+        AlphaBlendEnable = false;
+		lighting = false;
     }
 }

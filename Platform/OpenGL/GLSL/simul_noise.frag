@@ -1,12 +1,10 @@
-varying vec2 texc;
-
-float rand(vec2 co)
-{
-    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
-}
+#version 140
+#include "CppGlsl.hs"
+#include "../../CrossPlatform/noise.sl"
+varying vec2 texCoords;
 
 void main(void)
 {
-    vec4 c=vec4(rand(texc),rand(1.7*texc),rand(0.11*texc),rand(513.1*texc));
+    vec4 c=vec4(rand(texCoords),rand(1.7*texCoords),rand(0.11*texCoords),rand(513.1*texCoords));
     gl_FragColor=c;
 }

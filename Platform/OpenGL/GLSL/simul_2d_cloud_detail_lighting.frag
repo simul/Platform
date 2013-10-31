@@ -1,13 +1,13 @@
 #version 140
 uniform sampler2D dens_texture;
 uniform vec3 lightDir;
-varying vec2 texc;
+varying vec2 texCoords;
 
 void main(void)
 {
-    vec4 c=texture(dens_texture,texc);
+    vec4 c=texture(dens_texture,texCoords);
 	vec4 result=c;
-	vec2 texcoords=texc;
+	vec2 texcoords=texCoords;
 	float mul=0.5;
 	vec2 offset=lightDir.xy/512.0;
 	float dens_dist=0.0;
