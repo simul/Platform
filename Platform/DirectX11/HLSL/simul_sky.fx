@@ -21,6 +21,9 @@ SamplerState flareSamplerState
 
 Texture3D fadeTexture1;
 Texture3D fadeTexture2;
+Texture3D sourceTexture;
+RWTexture2D<float4> targetTexture;
+Texture2D lightTable2DTexture;
 
 cbuffer cbPerObject : register(b11)
 {

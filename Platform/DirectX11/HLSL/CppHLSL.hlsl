@@ -13,7 +13,9 @@
 #define texture_wrap(tex,texc) tex.Sample(wrapSamplerState,texc)
 #define texture_wrap_lod(tex,texc,lod) tex.SampleLevel(wrapSamplerState,texc,lod)
 #define texture_clamp_lod(tex,texc,lod) tex.SampleLevel(clampSamplerState,texc,lod)
+#define texture_wrap_clamp_lod(tex,texc,lod) tex.SampleLevel(wrapClampSamplerState,texc,lod)
 #define texture_cwc_lod(tex,texc,lod) tex.SampleLevel(cwcSamplerState,texc,lod)
+#define texture_cmc_lod(tex,texc,lod) tex.SampleLevel(cmcSamplerState,texc,lod)
 #define texture_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,texc,lod)
 #define texture_wrap_nearest_lod(tex,texc,lod) tex.SampleLevel(wrapNearestSamplerState,texc,lod)
 #define texture_clamp_mirror_lod(tex,texc,lod) tex.SampleLevel(samplerStateClampMirror,texc,lod)
@@ -33,15 +35,16 @@
 #define STATIC static
 
 #ifndef __cplusplus
-	#define SIMUL_TEXTURE_REGISTER(buff_num) : register(t##buff_num)
-	#define SIMUL_SAMPLER_REGISTER(buff_num) : register(s##buff_num)
+	#define SIMUL_TEXTURE_REGISTER(tex_num) : register(t##tex_num)
+	#define SIMUL_SAMPLER_REGISTER(samp_num) : register(s##samp_num)
 	#define SIMUL_BUFFER_REGISTER(buff_num) : register(b##buff_num)
-	#define SIMUL_RWTEXTURE_REGISTER(tex_num) : register(u##tex_num)
+	#define SIMUL_RWTEXTURE_REGISTER(rwtex_num) : register(u##rwtex_num)
 
+	#define SIMUL_CONSTANT_BUFFER(name,buff_num) uniform_buffer name SIMUL_BUFFER_REGISTER(buff_num) {
+	#define SIMUL_CONSTANT_BUFFER_END };
 	#define SIMUL_TARGET_OUTPUT : SV_TARGET
 	#define SIMUL_DEPTH_OUTPUT : SV_DEPTH
 
-	#define vec1 float1
 	#define vec2 float2
 	#define vec3 float3
 	#define vec4 float4
