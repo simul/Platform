@@ -461,9 +461,9 @@ void CopyArray(std::vector<T>& output, const std::vector<T>& input,
 		unsigned start, unsigned end)
 {
 	output.resize(end - start + 1);
-	std::vector<T>::iterator ito = output.begin();
-	std::vector<T>::const_iterator it = input.begin() + start;
-	std::vector<T>::const_iterator itend = input.begin() + end + 1;
+	typename std::vector<T>::iterator ito = output.begin();
+	typename std::vector<T>::const_iterator it = input.begin() + start;
+	typename std::vector<T>::const_iterator itend = input.begin() + end + 1;
 	for (; it != itend; ++it, ++ito)
 	{
 		*ito = *it;
@@ -513,8 +513,8 @@ void DetermineIndexRange(unsigned int& s_vert, unsigned int& e_vert,
 template<typename T> void WriteArrayRange(std::ostream& ofs, const std::vector<T>& the_array,
 		unsigned start, unsigned end)
 {
-	std::vector<T>::const_iterator it = the_array.begin() + start;
-	std::vector<T>::const_iterator itend = the_array.begin() + end + 1;
+	typename std::vector<T>::const_iterator it = the_array.begin() + start;
+	typename std::vector<T>::const_iterator itend = the_array.begin() + end + 1;
 	for (; it != itend; ++it)
 		ofs << *it;
 }

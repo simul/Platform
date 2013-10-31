@@ -1,7 +1,9 @@
 #ifndef FRAMEBUFFERGL_H
 #define FRAMEBUFFERGL_H
 
+#include <GL/glew.h>
 #include <stack>
+#include <stdint.h> // for uintptr_t
 #include "LoadGLImage.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Clouds/BaseFramebuffer.h"
@@ -61,11 +63,11 @@ public:
 	// Get the internal texture object IDs.
 	void* GetColorTex()
 	{
-		return (void*) m_tex_col[0];
+		return (void*) (uintptr_t)m_tex_col[0];
 	}
 	void* GetDepthTex()
 	{
-		return (void*)m_tex_depth;
+		return (void*)(uintptr_t)m_tex_depth;
 	}
 	// Get the target texture format (texture2d or texture_rectangle)
 	inline GLenum GetTarget()
