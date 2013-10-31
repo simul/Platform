@@ -1,6 +1,7 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
 TextureCube cubeTexture;
+sampler2D imageTexture;
 
 uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
 {
@@ -8,6 +9,11 @@ uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
 	uniform int latitudes,longitudes;
 	uniform float radius;
 	uniform float xxxx;
+};
+
+cbuffer cbPerObject : register(b11)
+{
+	float4 rect;
 };
 
 struct a2v
@@ -27,15 +33,15 @@ v2f Debug2DVS(idOnly IN)
 	v2f OUT;
 	float2 poss[4]=
 	{
-		{ 1.0,-1.0},
+		{ 1.0, 0.0},
 		{ 1.0, 1.0},
-		{-1.0,-1.0},
-		{-1.0, 1.0},
+		{ 0.0, 0.0},
+		{ 0.0, 1.0},
 	};
 	float2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=float4(pos,1.0,1.0);
-	float2 texc2	=0.5*(float2(1.0,1.0)+vec2(pos.x,pos.y));
-	OUT.colour		=float4(texc2, 0,0);
+	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
+	OUT.hPosition.z	=0.0; 
+	OUT.colour		=vec4(pos.x,1.0-pos.y,0,0);
 	return OUT;
 }
 
@@ -50,6 +56,12 @@ v2f DebugVS(a2v IN)
 float4 DebugPS(v2f IN) : SV_TARGET
 {
     return IN.colour;
+}
+
+vec4 TexturedPS(v2f IN) : SV_TARGET
+{
+	vec4 res=10000.0*texture_clamp(imageTexture,IN.colour.xy);
+	return res;
 }
 
 struct vec3input
@@ -83,10 +95,10 @@ v2f_cubemap VS_DrawCubemapSphere(idOnly IN)
 {
     v2f_cubemap OUT;
 	// we have (latitudes+1)*(longitudes+1)*2 id's
-	int vertex_id		=IN.vertex_id;
-	int latitude_strip	=vertex_id/(longitudes+1)/2;
+	uint vertex_id		=IN.vertex_id;
+	uint latitude_strip	=vertex_id/(longitudes+1)/2;
 	vertex_id			-=latitude_strip*(longitudes+1)*2;
-	int longitude		=(vertex_id)/2;
+	uint longitude		=(vertex_id)/2;
 	vertex_id			-=longitude*2;
 	float azimuth		=2.0*3.1415926536*float(longitude)/float(longitudes);
 	float elevation		=(float(latitude_strip+vertex_id)/float(latitudes)-0.5)*3.1415926536;
@@ -124,6 +136,20 @@ technique11 simul_debug
 		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
     }
 }
+
+technique11 textured
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
+		SetPixelShader(CompileShader(ps_4_0,TexturedPS()));
+    }
+}
+
 
 technique11 vec3_input_signature
 {

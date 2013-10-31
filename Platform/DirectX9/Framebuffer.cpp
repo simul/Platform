@@ -3,6 +3,9 @@
 #include "Simul/Platform/DirectX9/Macros.h"
 #include "Simul/Platform/DirectX9/CreateDX9Effect.h"
 
+using namespace simul;
+using namespace dx9;
+
 Framebuffer::Framebuffer()
 	:m_pd3dDevice(NULL)
 	,buffer_depth_texture(NULL)
@@ -13,21 +16,13 @@ Framebuffer::Framebuffer()
 	,m_pOldDepthSurface(NULL)
 	,depth_format((D3DFORMAT)0)
 {
-#ifndef XBOX
 	texture_format=D3DFMT_A16B16G16R16F;
-#else
-	texture_format=D3DFMT_LIN_A16B16G16R16F;
-#endif
-	//if(hr!=S_OK)
-#ifndef XBOX
-		texture_format=D3DFMT_A32B32G32R32F;
-#else
-		texture_format=D3DFMT_LIN_A32B32G32R32F;
-#endif
+	texture_format=D3DFMT_A32B32G32R32F;
 }
 
 Framebuffer::~Framebuffer()
 {
+	InvalidateDeviceObjects();
 }
 
 void Framebuffer::SetWidthAndHeight(int w,int h)
@@ -46,15 +41,30 @@ void Framebuffer::MakeTexture()
 	SAFE_RELEASE(m_pHDRRenderTarget);
 	if(!Width||!Height)
 		return;
-	m_pd3dDevice->CreateTexture(	Width,
+	V_CHECK(m_pd3dDevice->CreateTexture(	Width,
 									Height,
 									1,
 									D3DUSAGE_RENDERTARGET,
 									texture_format,
 									D3DPOOL_DEFAULT,
 									&buffer_texture,
-									NULL);
+									NULL));
 	m_pHDRRenderTarget=MakeRenderTarget(buffer_texture);
+	
+	SAFE_RELEASE(buffer_depth_texture);
+	SAFE_RELEASE(m_pBufferDepthSurface);
+	if(depth_format!=0)
+	{
+		V_CHECK(m_pd3dDevice->CreateTexture(	Width,
+										Height,
+										1,
+										D3DUSAGE_DEPTHSTENCIL,
+										depth_format,
+										D3DPOOL_DEFAULT,
+										&buffer_depth_texture,
+										NULL));
+		buffer_depth_texture->GetSurfaceLevel(0,&m_pBufferDepthSurface);
+	}
 }
 
 void Framebuffer::SetFormat(int f)
@@ -73,11 +83,11 @@ void Framebuffer::SetFormat(int f)
 void Framebuffer::SetDepthFormat(int f)
 {
 	D3DFORMAT F=(D3DFORMAT)f;
+	if(depth_format==F)
+		return;
 	bool ok=CanUseTexFormat(m_pd3dDevice,F)==S_OK;
 	if(ok)
 	{
-		if(depth_format==F)
-			return;
 		depth_format=F;
 	}
 }
@@ -96,38 +106,61 @@ void Framebuffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pBufferDepthSurface);
 }
 
-void Framebuffer::Activate(void *)
+void Framebuffer::SaveOldRTs(void *)
+{
+	m_pd3dDevice->GetViewport(&old_viewport);
+	m_pOldRenderTarget	=NULL;
+	m_pOldDepthSurface	=NULL;
+	m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
+	m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
+}
+
+void Framebuffer::Activate(void *context)
 {
 	m_pOldRenderTarget=NULL;
 	m_pOldDepthSurface=NULL;
-	D3DSURFACE_DESC desc;
-	buffer_texture->GetLevelDesc(0,&desc);
-	HRESULT hr=m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget);
-	m_pOldRenderTarget->GetDesc(&desc);
-	hr=m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface);
-	hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
+	//D3DSURFACE_DESC desc;
+	//V_CHECK(buffer_texture->GetLevelDesc(0,&desc));
+	SaveOldRTs(context);
+	//V_CHECK(m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget));
+	//m_pOldRenderTarget->GetDesc(&desc);
+	//V_CHECK(m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface));
+	V_CHECK(m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget));
 	if(m_pBufferDepthSurface)
-		m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface);
-	D3DVIEWPORT9 viewport;
-	viewport.Width	=Width;
-	viewport.Height	=Height;
-	viewport.X		=Width;
-	viewport.Y		=Height;
-	viewport.MinZ	=0.f;
-	viewport.MaxZ	=1.f;
-	m_pd3dDevice->SetViewport(&viewport);
+		V_CHECK(m_pd3dDevice->SetDepthStencilSurface(m_pBufferDepthSurface));
+	SetViewport(context,0,0,1.f,1.f);
+}
+
+void Framebuffer::ActivateColour(void *context,const float viewportXYWH[4])
+{
+	m_pOldRenderTarget=NULL;
+	m_pOldDepthSurface=NULL;
+	//D3DSURFACE_DESC desc;
+	//V_CHECK(buffer_texture->GetLevelDesc(0,&desc));
+	//V_CHECK(m_pd3dDevice->GetRenderTarget(0,&m_pOldRenderTarget));
+	//m_pOldRenderTarget->GetDesc(&desc);
+	//V_CHECK(m_pd3dDevice->GetDepthStencilSurface(&m_pOldDepthSurface));
+	SaveOldRTs(context);
+	V_CHECK(m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget));
+	V_CHECK(m_pd3dDevice->SetDepthStencilSurface(NULL));
+	SetViewport(context,viewportXYWH[0],viewportXYWH[1],viewportXYWH[2],viewportXYWH[3]);
 }
 
 void Framebuffer::ActivateViewport(void* context,float viewportX, float viewportY, float viewportW, float viewportH)
 {
 	Activate(context);
+	SetViewport(context,viewportX,viewportY,viewportW,viewportH);
+}
+
+void Framebuffer::SetViewport(void*,float viewportX, float viewportY, float viewportW, float viewportH,float Z,float D)
+{
 	D3DVIEWPORT9 viewport;
 	viewport.Width	=(int)(viewportW*Width);
 	viewport.Height	=(int)(viewportH*Height);
 	viewport.X		=(int)(viewportX*Width);
 	viewport.Y		=(int)(viewportY*Height);
-	viewport.MinZ	=0.f;
-	viewport.MaxZ	=1.f;
+	viewport.MinZ	=Z;
+	viewport.MaxZ	=D;
 	m_pd3dDevice->SetViewport(&viewport);
 }
 
@@ -139,7 +172,18 @@ void Framebuffer::Deactivate(void *)
 		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
 	SAFE_RELEASE(m_pOldRenderTarget);
 	SAFE_RELEASE(m_pOldDepthSurface);
+	m_pd3dDevice->SetViewport(&old_viewport);
+	old_viewport.Width=old_viewport.Height=old_viewport.X=old_viewport.Y=0;
+	old_viewport.MaxZ=old_viewport.MinZ=0.f;
 }
+
+void Framebuffer::DeactivateDepth(void*)
+{
+	if(m_pOldDepthSurface)
+		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
+	SAFE_RELEASE(m_pOldDepthSurface);
+}
+
 void Framebuffer::Clear(void *,float r,float g,float b,float a,float depth,int mask)
 {
 	// Don't yet support reverse depth on dx9.
@@ -151,14 +195,4 @@ void Framebuffer::Clear(void *,float r,float g,float b,float a,float depth,int m
 void Framebuffer::ClearColour(void *context,float r,float g,float b,float a)
 {
 	Clear(context,r,g,b,a,0.f,D3DCLEAR_TARGET);
-}
-
-void Framebuffer::DeactivateAndRender(void *context,bool blend)
-{
-	Deactivate(NULL);
-	Render(context,blend);
-}
-void Framebuffer::Render(void *,bool blend)
-{
-	blend;
 }

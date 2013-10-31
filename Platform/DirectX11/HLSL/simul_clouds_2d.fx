@@ -8,6 +8,7 @@ uniform sampler2D inscTexture;
 uniform sampler2D skylTexture;
 uniform sampler2D depthTexture;
 uniform sampler2D illuminationTexture;
+uniform sampler2D lightTableTexture;
 
 SamplerState samplerState 
 {

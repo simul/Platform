@@ -106,6 +106,7 @@ protected:
 	bool device_reset;
 	float framerate;
 	SimulOpticsRendererDX9 *simulOpticsRenderer;
+	simul::dx9::Framebuffer hdrFramebuffer;
 	simul::dx9::SimulWeatherRenderer *simulWeatherRenderer;
 	SimulTerrainRenderer *simulTerrainRenderer;
 	SimulHDRRenderer *simulHDRRenderer;

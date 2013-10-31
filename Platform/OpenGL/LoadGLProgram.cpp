@@ -39,7 +39,16 @@ namespace simul
 		{
 			fileLoader=l;
 		}
+		void SetShaderPath(const char *path_utf8)
+		{
+			if(path_utf8&&!shaderPathUtf8)
+			{
+				shaderPathUtf8=new std::string;
 	}
+			if(path_utf8)
+				*shaderPathUtf8=path_utf8;
+			else
+				delete shaderPathUtf8;
 }
 
 static int LineCount(const std::string &str)
@@ -248,17 +257,17 @@ void printProgramInfoLog(GLuint obj)
 			std::cout<<infoLog<<std::endl;
 		free(infoLog);
 	}
-	ERROR_CHECK
+	GL_ERROR_CHECK
 		}
 
 
-GLuint SetShader(GLuint sh,const std::string &source,const map<string,string> &defines,FilenameChart filenameChart)
+GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines,FilenameChart filenameChart)
 {
 	std::string src=source;
 /*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
 	const int MAX_STRINGS=12;
-	const int MAX_LINES=512;
-	const int MAX_LINE_LENGTH=256;					// 255 + NULL terminator
+//	const int MAX_LINES=512;
+//	const int MAX_LINE_LENGTH=256;					// 255 + NULL terminator
 	const char *strings[MAX_STRINGS];
 
 	int start_of_line=0;
@@ -286,15 +295,15 @@ GLuint SetShader(GLuint sh,const std::string &source,const map<string,string> &d
 	strings[0]		=src.c_str();
 	lenOfStrings[0]	=strlen(strings[0]);
 	glShaderSource(sh,1,strings,NULL);
-	ERROR_CHECK
+GL_ERROR_CHECK
 	if(!sh)
 		return 0;
 	glCompileShader(sh);
-	ERROR_CHECK
+GL_ERROR_CHECK
 	printShaderInfoLog(sh,filenameChart);
 	int result=1;
 	glGetShaderiv(sh,GL_COMPILE_STATUS,&result);
-	ERROR_CHECK
+GL_ERROR_CHECK
 	if(!result)
 	{
 		return 0;
@@ -302,28 +311,10 @@ GLuint SetShader(GLuint sh,const std::string &source,const map<string,string> &d
 	return sh;
 }
 
-GLuint SetShader(GLuint sh,const std::string &source,const map<string,string> &defines)
+GLuint CompileShaderFromSource(GLuint sh,const std::string &source,const map<string,string> &defines)
 {
 	FilenameChart filenameChart;
-	return SetShader(sh,source,defines,filenameChart);
-}
-
-namespace simul
-{
-	namespace opengl
-	{
-		void SetShaderPath(const char *path_utf8)
-		{
-			if(path_utf8&&!shaderPathUtf8)
-			{
-				shaderPathUtf8=new std::string;
-			}
-			if(path_utf8)
-				*shaderPathUtf8=path_utf8;
-			else
-				delete shaderPathUtf8;
-		}
-	}
+	return CompileShaderFromSource(sh,source,defines,filenameChart);
 }
 
 GLuint MakeProgram(const char *filename)
@@ -368,8 +359,8 @@ GLuint SetShaders(const char *vert_src,const char *frag_src,const map<string,str
 	GLuint prog				=glCreateProgram();
 	GLuint vertex_shader	=glCreateShader(GL_VERTEX_SHADER);
 	GLuint fragment_shader	=glCreateShader(GL_FRAGMENT_SHADER);
-    vertex_shader			=SetShader(vertex_shader	,vert_src,defines);
-    fragment_shader			=SetShader(fragment_shader	,frag_src,defines);
+    vertex_shader			=CompileShaderFromSource(vertex_shader	,vert_src,defines);
+    fragment_shader			=CompileShaderFromSource(fragment_shader	,frag_src,defines);
 	glAttachShader(prog,vertex_shader);
 	glAttachShader(prog,fragment_shader);
 	glLinkProgram(prog);
@@ -386,14 +377,11 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 
 GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename,const map<string,string> &defines)
 {
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	GLuint prog						=glCreateProgram();
-#ifndef IDRETRY
-#define IDRETRY 0
-#endif
 	int result=IDRETRY;
 	GLuint vertex_shader=0;
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	while(result==IDRETRY)
 	{
 		vertex_shader			=LoadShader(vert_filename,defines);
@@ -411,9 +399,9 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 		}
 		else break;
 	}
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glAttachShader(prog,vertex_shader);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	if(geom_filename)
 	{
 		GLuint geometry_shader	=LoadShader(geom_filename,defines);
@@ -423,9 +411,9 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 			DebugBreak();
 		}
 		glAttachShader(prog,geometry_shader);
-		ERROR_CHECK
+		GL_ERROR_CHECK
 	}
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	GLuint fragment_shader=0;
 	result=IDRETRY;
 	while(result==IDRETRY)
@@ -445,11 +433,11 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 		}
 		else break;
 	}
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glAttachShader(prog,fragment_shader);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glLinkProgram(prog);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glUseProgram(prog);
 	printProgramInfoLog(prog);
 	return prog;
@@ -513,9 +501,9 @@ GLuint LoadShader(const char *filename,const map<string,string> &defines)
 	else if(filename_str.find(".geom")<filename_str.length())
 		shader_type=GL_GEOMETRY_SHADER;
 	else throw simul::base::RuntimeError((std::string("Shader type not known for file ")+filename_str).c_str());
-ERROR_CHECK
+GL_ERROR_CHECK
 	std::string src=loadShaderSource(filename);
-ERROR_CHECK
+GL_ERROR_CHECK
 	FilenameChart filenameChart;
 	filenameChart.add(filename,0,src);
 	// process #includes.
@@ -546,10 +534,13 @@ ERROR_CHECK
 		src=src.insert(eol+2,newsrc);
 		filenameChart.add(include_file.c_str(),start_line+1,newsrc);
 	}
-ERROR_CHECK
+GL_ERROR_CHECK
 	GLuint sh=glCreateShader(shader_type);
-ERROR_CHECK
-	sh=SetShader(sh,src,defines,filenameChart);
-ERROR_CHECK
+GL_ERROR_CHECK
+	sh=CompileShaderFromSource(sh,src,defines,filenameChart);
+	GL_ERROR_CHECK
 	return sh;
+}
+
+	}
 }

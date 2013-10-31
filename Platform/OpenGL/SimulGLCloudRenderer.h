@@ -9,9 +9,8 @@
 #include "Simul/Clouds/BaseCloudRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
-#include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/CrossPlatform/simul_cloud_constants.sl"
 #include "Simul/Platform/OpenGL/GpuCloudGenerator.h"
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 namespace simul
 {
 	namespace clouds
@@ -40,7 +39,7 @@ public:
 	void InvalidateDeviceObjects();
 	void PreRenderUpdate(void *context);
 	//! Render the clouds.
-	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
+	bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 	//! Show the cross sections on-screen.
 	void RenderCrossSections(void *,int width,int height);
 	void SetLossTexture(void *);
@@ -104,14 +103,10 @@ protected:
 	//GLint layerDistance_param;
 unsigned short *pIndices;
 
-	GLuint cloudConstantsUBO;
-	GLint cloudConstantsBindingIndex;
-
-	GLuint cloudPerViewConstantsUBO;
-	GLint cloudPerViewConstantsBindingIndex;
-	
-	GLuint	layerDataConstantsUBO;
-	GLint	layerDataConstantsBindingIndex;
+	simul::opengl::ConstantBuffer<CloudConstants> cloudConstants;
+	simul::opengl::ConstantBuffer<CloudPerViewConstants> cloudPerViewConstants;
+	simul::opengl::ConstantBuffer<LayerConstants> layerConstants;
+	simul::opengl::ConstantBuffer<SingleLayerConstants> singleLayerConstants;
 
 	GLint hazeEccentricity_param;
 	GLint mieRayleighRatio_param;
@@ -135,7 +130,7 @@ unsigned short *pIndices;
 	GLuint		sphere_ibo;
 
 	void CreateVolumeNoise();
-	virtual bool CreateNoiseTexture(void *);
+	void CreateNoiseTexture(void *);
 	bool CreateCloudEffect();
 	bool RenderCloudsToBuffer();
 

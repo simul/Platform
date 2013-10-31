@@ -18,14 +18,20 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include <stdint.h> // for uintptr_t
-#define GLUT_BITMAP_HELVETICA_12	((void*)7)
 
+#pragma comment(lib,"opengl32")
+#pragma comment(lib,"glew32")
+#pragma comment(lib,"freeglut")
 #ifndef _MSC_VER
 #define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
 #endif
 
+
+#ifndef GLUT_BITMAP_HELVETICA_12
+#define GLUT_BITMAP_HELVETICA_12	((void*)7)
+#endif
 using namespace simul::opengl;
-OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
+OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,bool init_glut)
 	:ScreenWidth(0)
 	,ScreenHeight(0)
 	,cam(NULL)
@@ -45,10 +51,17 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env)
 {
 	simulHDRRenderer	=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
 	simulWeatherRenderer=new SimulGLWeatherRenderer(env,NULL,ScreenWidth,ScreenHeight);
-	simulOpticsRenderer	=new SimulOpticsRendererGL();
+	simulOpticsRenderer	=new SimulOpticsRendererGL(m);
 	simulTerrainRenderer=new SimulGLTerrainRenderer(NULL);
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
+	if(init_glut)
+	{
+		char argv[]="no program";
+		char *a=argv;
+		int argc=1;
+	    glutInit(&argc,&a);
+}
 }
 
 OpenGLRenderer::~OpenGLRenderer()
@@ -70,7 +83,7 @@ OpenGLRenderer::~OpenGLRenderer()
 
 void OpenGLRenderer::initializeGL()
 {
-ERROR_CHECK
+GL_ERROR_CHECK
 	//glewExperimental=GL_TRUE;
     GLenum glewError = glewInit();
     if( glewError != GLEW_OK )
@@ -84,16 +97,16 @@ ERROR_CHECK
         std::cerr<<"OpenGL 2.1 not supported!\n" ;
         return;
     }
-ERROR_CHECK
+GL_ERROR_CHECK
 	if(!GLEW_VERSION_2_0)
 	{
 		std::cerr<<"GL ERROR: No OpenGL 2.0 support on this hardware!\n";
 	}
 	CheckExtension("GL_VERSION_2_0");
-ERROR_CHECK
+GL_ERROR_CHECK
 	const GLubyte* pVersion = glGetString(GL_VERSION); 
 	std::cout<<"GL_VERSION: "<<pVersion<<std::endl;
-ERROR_CHECK
+GL_ERROR_CHECK
 	depthFramebuffer.InitColor_Tex(0,GL_RGBA32F_ARB);
 	depthFramebuffer.SetDepthFormat(GL_DEPTH_COMPONENT32F);
 	if(simulWeatherRenderer)
@@ -143,7 +156,7 @@ void OpenGLRenderer::paintGL()
 		glFogf(GL_FOG_START,1.0f);						// Fog Start Depth
 		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
 		glDisable(GL_FOG);
-ERROR_CHECK
+GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
 			simulHDRRenderer->StartRender(context);

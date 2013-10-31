@@ -24,6 +24,7 @@
 #include "CreateEffectDX1x.h"
 #include "SimulAtmosphericsRendererDX1x.h"
 #include "MacrosDX1x.h"
+#include "Utilities.h"
 #include "Simul/Math/Pi.h"
 using namespace simul;
 using namespace dx11;
@@ -35,17 +36,18 @@ SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h)
 	,m_pGaussianEffect(NULL)
 	,Exposure(1.f)
 	,Gamma(1.f/2.2f)			// no need for shader-based gamma-correction with DX10/11
+	,Glow(false)
 	,Width(w)
 	,Height(h)
 	,timing(0.f)
-	,framebuffer(w,h)
 	,glow_fb(w/2,h/2)
-	,TonemapTechnique(NULL)
+	,exposureGammaTechnique(NULL)
+	,glowExposureGammaTechnique(NULL)
 	,glowTechnique(NULL)
 	,Exposure_(NULL)
 	,Gamma_(NULL)
 	,imageTexture(NULL)
-	,worldViewProj(NULL)
+	//,worldViewProj(NULL)
 {
 }
 
@@ -57,7 +59,6 @@ void SimulHDRRendererDX1x::SetBufferSize(int w,int h)
 	Height=h;
 	if(Width>0&&Height>0)
 	{
-		framebuffer.SetWidthAndHeight(w,h);
 		if(m_pd3dDevice)
 			glowTexture.init(m_pd3dDevice,Width/2,Height/2);
 		glow_fb.SetWidthAndHeight(Width/2,Height/2);
@@ -68,7 +69,6 @@ void SimulHDRRendererDX1x::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D1xDevice*)dev;
-	framebuffer.RestoreDeviceObjects(m_pd3dDevice);
 	glow_fb.RestoreDeviceObjects(m_pd3dDevice);
 
 	glowTexture.release();
@@ -115,12 +115,13 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"));
-	TonemapTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_tonemap");
+	exposureGammaTechnique		=m_pTonemapEffect->GetTechniqueByName("exposure_gamma");
+	glowExposureGammaTechnique	=m_pTonemapEffect->GetTechniqueByName("glow_exposure_gamma");
 	glowTechnique			=m_pTonemapEffect->GetTechniqueByName("simul_glow");
 	Exposure_				=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
 	Gamma_					=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
 	imageTexture			=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
-	worldViewProj			=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
+	//worldViewProj				=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 		
 	SAFE_RELEASE(m_pGaussianEffect);
 	
@@ -143,12 +144,11 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	defs["NUM_IMAGE_COLS"]	=string_format("%d",W);
 	defs["NUM_IMAGE_ROWS"]	=string_format("%d",H);
 	
-//	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,_T("simul_gaussian.fx"),defs);
+	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs);
 }
 
 void SimulHDRRendererDX1x::InvalidateDeviceObjects()
 {
-	framebuffer.InvalidateDeviceObjects();
 	glow_fb.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pTonemapEffect);
 	SAFE_RELEASE(m_pVertexBuffer);
@@ -168,46 +168,25 @@ SimulHDRRendererDX1x::~SimulHDRRendererDX1x()
 	Destroy();
 }
 
-bool SimulHDRRendererDX1x::StartRender(void *context)
+void SimulHDRRendererDX1x::Render(void *context,void *texture_srv)
 {
-	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::StartRender");
-	if(imageTexture)
-		imageTexture->SetResource(NULL);
-	framebuffer.Activate(context);
-	framebuffer.Clear(context,0.f,0.f,0.0f,0.f,ReverseDepth?0.f:1.f);
-
-	PIXEndNamedEvent();
-	return true;
-}
-
-bool SimulHDRRendererDX1x::ApplyFade()
-{
-	HRESULT hr=S_OK;
-	return (hr==S_OK);
-}
-
-bool SimulHDRRendererDX1x::FinishRender(void *context)
-{
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	PIXBeginNamedEvent(0,"SimulHDRRendererDX1x::FinishRender");
-	framebuffer.Deactivate(context);
-	imageTexture->SetResource(framebuffer.GetBufferResource());
+	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
+	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
+	imageTexture->SetResource(textureSRV);
 	Gamma_->SetFloat(Gamma);
 	Exposure_->SetFloat(Exposure);
-	D3DXMATRIX ortho;
-	D3DXMatrixIdentity(&ortho);
-    D3DXMatrixOrthoLH(&ortho,2.f,2.f,-100.f,100.f);
-	worldViewProj->SetMatrix(ortho);
-	RenderGlowTexture(context);
-	simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
-	simul::dx11::setTexture(m_pTonemapEffect,"depthTexture",(ID3D11ShaderResourceView*)framebuffer.GetDepthTex());
+	if(Glow)
+	{
+		RenderGlowTexture(context,texture_srv);
+		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
+		ApplyPass(pContext,glowExposureGammaTechnique->GetPassByIndex(0));
+	}
+	else
+		ApplyPass(pContext,exposureGammaTechnique->GetPassByIndex(0));
+	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 
-	ApplyPass(m_pImmediateContext,TonemapTechnique->GetPassByIndex(0));
-	framebuffer.DrawQuad(context);
 	imageTexture->SetResource(NULL);
-	ApplyPass(m_pImmediateContext,TonemapTechnique->GetPassByIndex(0));
-	PIXEndNamedEvent();
-	return true;
+	ApplyPass(pContext,exposureGammaTechnique->GetPassByIndex(0));
 }
 
 static float CalculateBoxFilterWidth(float radius, int pass)
@@ -220,10 +199,11 @@ static float CalculateBoxFilterWidth(float radius, int pass)
 	return box_width;
 }
 
-void SimulHDRRendererDX1x::RenderGlowTexture(void *context)
+void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 {
 	if(!m_pGaussianEffect)
 		return;
+	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 static int g_NumApproxPasses=3;
 static int	g_MaxApproxPasses = 8;
@@ -231,7 +211,7 @@ static float g_FilterRadius = 30;
 	// Render to the low-res glow.
 	if(glowTechnique)
 	{
-		imageTexture->SetResource(framebuffer.GetBufferResource());
+		imageTexture->SetResource(textureSRV);
 		simul::dx11::setParameter(m_pTonemapEffect,"offset",1.f/Width,1.f/Height);
 		ApplyPass(m_pImmediateContext,glowTechnique->GetPassByIndex(0));
 		glow_fb.Activate(context);
@@ -247,7 +227,7 @@ static float g_FilterRadius = 30;
 	float frac_half_box_width = (half_box_width + 0.5f) - (int)(half_box_width + 0.5f);
 	float inv_frac_half_box_width = 1.0f - frac_half_box_width;
 	float rcp_box_width = 1.0f / box_width;
-	// Step 1. Vertical passes: Each thread group handles a colomn in the image
+	// Step 1. Vertical passes: Each thread group handles a column in the image
 	// Input texture
 	simul::dx11::setTexture(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
 	// Output texture

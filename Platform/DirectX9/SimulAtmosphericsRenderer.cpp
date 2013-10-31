@@ -11,19 +11,9 @@
 
 #include "SimulAtmosphericsRenderer.h"
 
-#ifdef XBOX
-	#include <xgraphics.h>
-	#include <fstream>
-	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("game:\\");
-#else
-	#include <tchar.h>
-	#include <dxerr.h>
-	#include <string>
-	typedef std::basic_string<TCHAR> tstring;
-	static tstring filepath=TEXT("");
-#endif
+#include <tchar.h>
+#include <dxerr.h>
+#include <string>
 #include "CreateDX9Effect.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
@@ -76,13 +66,8 @@ void SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 
 	{
-#ifdef XBOX
-		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-		{ 0,  12, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#else
 		{ 0,  0, D3DDECLTYPE_FLOAT3		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
 		{ 0, 12, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-#endif
 		D3DDECL_END()
 	};
 	SAFE_RELEASE(vertexDecl);
@@ -93,16 +78,11 @@ void SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 	g_BackBuffer->GetDesc(&desc);
 	SAFE_RELEASE(g_BackBuffer);
 
-	int BufferWidth=desc.Width;
-	int BufferHeight=desc.Height;
+	int BufferWidth							=desc.Width;
+	int BufferHeight						=desc.Height;
 
 	SAFE_RELEASE(input_texture);
-	D3DFORMAT hdr_format;
-#ifndef XBOX
-		hdr_format=D3DFMT_A32B32G32R32F;
-#else
-		hdr_format=D3DFMT_LIN_A32B32G32R32F;
-#endif
+	D3DFORMAT hdr_format					=D3DFMT_A32B32G32R32F;
 	m_pd3dDevice->CreateTexture(			BufferWidth,
 											BufferHeight,
 											1,
@@ -119,6 +99,8 @@ void SimulAtmosphericsRenderer::RestoreDeviceObjects(void *dev)
 void SimulAtmosphericsRenderer::RecompileShaders()
 {
 	SAFE_RELEASE(effect);
+	if(!m_pd3dDevice)
+		return;
 	std::map<std::string,std::string> defines;
 	defines["WRAP_CLOUDS"]="1";
 	if(!y_vertical)
@@ -138,7 +120,6 @@ void SimulAtmosphericsRenderer::RecompileShaders()
 
 	fogExtinction		=effect->GetParameterByName(NULL,"fogExtinction");
 	fogDensity			=effect->GetParameterByName(NULL,"fogDensity");
-
 
 	lightDir			=effect->GetParameterByName(NULL,"lightDir");
 	sunDir				=effect->GetParameterByName(NULL,"sunDir");
@@ -225,17 +206,6 @@ void SimulAtmosphericsRenderer::SetLightningProperties(	void *tex,
 	illumination_scales.z=1.f/illumination_scales.z;
 	illumination_offset=lri->GetIlluminationOrigin();
 	lightning_colour=lri->GetLightningColour();
-}
-
-static D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
-{
-	D3DXMATRIX tmp1;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXVECTOR4 dcam_pos;
-	dcam_pos.x=tmp1._41;
-	dcam_pos.y=tmp1._42;
-	dcam_pos.z=tmp1._43;
-	return dcam_pos;
 }
 
 bool SimulAtmosphericsRenderer::RenderGodRays(float strength)
@@ -357,6 +327,90 @@ void SimulAtmosphericsRenderer::StartRender(void *)
 	static float depth_start=1.f;
 	hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 }
+#include "Simul/Camera/Camera.h"
+void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
+{
+	HRESULT hr=S_OK;
+	PIXBeginNamedEvent(0,"SimulAtmosphericsRenderer::RenderAsOverlay");
+	LPDIRECT3DTEXTURE9 depthTexture=(LPDIRECT3DTEXTURE9)depth_texture;
+	D3DSURFACE_DESC desc;
+	depthTexture->GetLevelDesc(0,&desc);
+	
+	simul::dx9::setTexture(effect,"lossTexture",loss_texture);
+	simul::dx9::setTexture(effect,"inscTexture",overc_inscatter_texture);
+	simul::dx9::setTexture(effect,"skylTexture",skylight_texture);
+	
+	simul::dx9::setTexture(effect,"illuminationTexture",illumination_texture);
+	simul::dx9::setTexture(effect,"depthTexture",depthTexture);
+	//simul::dx9::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
+	
+	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
+	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&proj);
+	D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
+	view(3,0)=view(3,1)=view(3,2)=0;
+//	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
+
+	D3DXMATRIX p1=proj;
+	AtmosphericsPerViewConstants atmosphericsPerViewConstants;
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
+	
+	// Instead of atmosphericsPerViewConstants.Apply(pContext), we do this:
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,invViewProj);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,invShadowMatrix);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,shadowMatrix);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewportToTexRegionScaleBias);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewPosition);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,pad9);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,tanHalfFov);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,nearZ);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,farZ);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,depthToLinFadeDistParams);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,startZMetres);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,shadowRange);
+	
+	simul::sky::float4 light_dir	=skyInterface->GetDirectionToLight(cam_pos.z/1000.f);
+	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
+	AtmosphericsUniforms atmosphericsUniforms;
+	SetAtmosphericsConstants(atmosphericsUniforms,exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
+	// And instead of atmosphericsUniforms.Apply(pContext):
+	
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,lightDir);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,pad1);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,mieRayleighRatio);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,pad1a);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,texelOffsets);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,hazeEccentricity);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,pad6);
+
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,cloudOrigin);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,pad7);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,cloudScale);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,pad8);
+
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,overcast);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,maxFadeDistanceMetres);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,exposure);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,fogBaseAlt);
+
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,fogColour);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,fogScaleHeight);
+    DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,infraredIntegrationFactors);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,fogDensity);
+	
+	effect->SetTechnique(technique);
+	
+	unsigned passes=0;			// should be 2
+	hr=effect->Begin(&passes,0);
+	for(unsigned i=0;i<passes;i++)
+	{
+		hr=effect->BeginPass(i);
+		simul::dx9::DrawQuad(m_pd3dDevice);
+		hr=effect->EndPass();
+	}
+	hr=effect->End();
+	
+	PIXEndNamedEvent();
+}
 
 void SimulAtmosphericsRenderer::FinishRender(void *)
 {
@@ -373,7 +427,7 @@ void SimulAtmosphericsRenderer::FinishRender(void *)
 	if(m_pOldDepthSurface)
 		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);
 	m_pOldRenderTarget->GetDesc(&desc);
-	Render();
+	//Render();
 
 	SAFE_RELEASE(m_pOldRenderTarget)
 	SAFE_RELEASE(m_pOldDepthSurface)
@@ -388,9 +442,7 @@ bool SimulAtmosphericsRenderer::Render()
 	{
 		hr=effect->SetFloat(fadeInterp,fade_interp);
 		hr=effect->SetTexture(imageTexture,input_texture);
-#ifndef XBOX
 		m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-#endif
 		D3DXVECTOR4 cam_pos=GetCameraPosVector(view);
 		float altitude_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 		hr=effect->SetFloat(heightAboveFogLayer,(altitude_km-fog_height_km)/(fade_distance_km));
@@ -406,11 +458,6 @@ bool SimulAtmosphericsRenderer::Render()
 			D3DXVECTOR4 mie_rayleigh_ratio(skyInterface->GetMieRayleighRatio());
 			D3DXVECTOR4 light_dir(skyInterface->GetDirectionToLight(altitude_km));
 			D3DXVECTOR4 sun_dir(skyInterface->GetDirectionToSun());
-			if(y_vertical)
-			{
-				std::swap(light_dir.y,light_dir.z);
-				std::swap(sun_dir.y,sun_dir.z);
-			}
 			effect->SetVector	(lightDir			,&light_dir);
 			effect->SetVector	(sunDir				,&sun_dir);
 			effect->SetVector	(mieRayleighRatio	,&mie_rayleigh_ratio);

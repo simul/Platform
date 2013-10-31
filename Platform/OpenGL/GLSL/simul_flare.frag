@@ -3,11 +3,11 @@
 uniform sampler2D flareTexture;
 uniform vec3 flareColour;
 // varyings are written by vert shader, interpolated, and read by frag shader.
-varying vec2 texcoord;
+varying vec2 texCoords;
 
 void main(void)
 {
-	vec4 result=texture2D(flareTexture,texcoord);
+	vec4 result=texture2D(flareTexture,texCoords);
 	result.rgb*=flareColour;
 	result.a=1.0;
     gl_FragColor=result;

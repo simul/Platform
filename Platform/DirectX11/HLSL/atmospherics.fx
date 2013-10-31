@@ -1,10 +1,12 @@
 #include "CppHlsl.hlsl"
-#include "../../CrossPlatform/atmospherics_constants.sl"
 #include "states.hlsl"
 #include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/atmospherics.sl"
+#include "../../CrossPlatform/atmospherics_constants.sl"
 
 Texture2D depthTexture;
+Texture2DMS<float> depthTextureMS;
 Texture2D cloudDepthTexture;
 Texture2D imageTexture;
 Texture2D lossTexture;
@@ -14,6 +16,7 @@ Texture2D skylTexture;
 Texture2D illuminationTexture;
 Texture2D cloudShadowTexture;
 Texture2D cloudNearFarTexture;
+Texture2D cloudGodraysTexture;
 
 SamplerState samplerState: register(s1)
 {
@@ -62,58 +65,82 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 	return OUT;
 }
 
-float4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
+vec4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
 {
-	float3 view	=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	view		=normalize(view);
-	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	float depth	=depthTexture.Sample(clampSamplerState,depth_texc).x;
-	float dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	float sine	=view.z;
-	float2 texc2=float2(pow(dist,0.5f),0.5f*(1.f-sine));
-	float3 loss	=lossTexture.Sample(clampSamplerState,texc2).rgb;
+	vec3 loss=AtmosphericsLoss(depthTexture
+							,viewportToTexRegionScaleBias
+							,lossTexture
+							,invViewProj
+							,IN.texCoords
+							,IN.pos
+							,depthToLinFadeDistParams
+							,tanHalfFov);
     return float4(loss.rgb,1.f);
 }
 
-vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : SV_TARGET
+vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 {
-	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	view				=normalize(view);
-	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	float depth			=depthTexture.Sample(clampSamplerState,depth_texc).x;
-	float dist			=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	float sine			=view.z;
-	float2 fade_texc	=vec2(pow(dist,0.5f),0.5f*(1.f-sine));
-
-	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
-	vec2 nearFarTexc	=illum_lookup.xy;
-	vec2 near_texc		=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
-	vec2 far_texc		=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
-	vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
-	vec4 insc_far		=texture_clamp_mirror(inscTexture,far_texc);
-
-	vec4 insc			=vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
-	float cos0			=dot(view,lightDir);
-	float3 colour		=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
-
-	colour				+=texture_clamp_mirror(skylTexture,fade_texc).rgb;
-	colour				*=exposure;
-    return float4(colour.rgb,1.f);
+	vec2 clip_pos		=vec2(-1.f,1.f);
+	clip_pos.x			+=2.0*IN.texCoords.x;
+	clip_pos.y			-=2.0*IN.texCoords.y;
+	vec3 insc			=AtmosphericsInsc(depthTexture
+										,illuminationTexture
+										,inscTexture
+										,skylTexture
+										,invViewProj
+										,IN.texCoords
+										,clip_pos.xy
+										,viewportToTexRegionScaleBias
+										,depthToLinFadeDistParams
+										,tanHalfFov
+										,hazeEccentricity
+										,lightDir
+										,mieRayleighRatio);
+    return float4(insc.rgb*exposure,1.f);
+/*
+	vec4 res=InscatterMSAA(inscTexture
+				,skylTexture
+				,illuminationTexture
+				,depthTexture
+				,IN.texCoords
+				,invViewProj
+				,lightDir
+				,hazeEccentricity
+				,mieRayleighRatio
+				,viewportToTexRegionScaleBias
+				,depthToLinFadeDistParams
+				,tanHalfFov);
+	
+	res.rgb	*=exposure;
+	return res;
+>>>>>>> remotes/github/rheinmetall*/
 }
 
-// Slanted Cylinder whose axis is along lightDir,
-// radius is at the specified horizontal distance.
-// Distance c is:		c=|lightDir.z*R|/|lightDir * sine - view * lightDir.z|
-float4 PS_Godrays(atmosVertexOutput IN) : SV_TARGET
+vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	float solid_depth	=depthTexture.Sample(clampSamplerState,depth_texc).x;
+	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
 	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-	float depth			=max(solid_depth,cloud_depth);
+	float depth			=max(depth_lookup.x,cloud_depth);
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	return GodraysSimplified(cloudShadowTexture,cloudNearFarTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
+	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
+	return res;
+}
+
+vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
+	if(depth_lookup.z==0)
+		discard;
+	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
+	float depth			=max(depth_lookup.y,cloud_depth);
+	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
+	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
+	
+	return res;
 }
 
 technique11 simul_atmospherics_overlay
@@ -135,11 +162,11 @@ technique11 simul_atmospherics_overlay
 		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_4_0,PS_AtmosOverlayInscPass()));
+		SetPixelShader(CompileShader(ps_4_0,PS_Inscatter()));
     }
 }
 
-technique11 simul_godrays
+technique11 fast_godrays
 {
     pass p0
     {
@@ -148,6 +175,19 @@ technique11 simul_godrays
 		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Godrays()));
+		SetPixelShader(CompileShader(ps_4_0,PS_FastGodrays()));
+    }
+}
+
+technique11 near_depth_godrays
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_4_0,PS_NearGodrays()));
     }
 }

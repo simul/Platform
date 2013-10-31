@@ -6,9 +6,12 @@
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Math/Matrix4x4.h"
+using namespace simul;
+using namespace opengl;
 
-SimulOpticsRendererGL::SimulOpticsRendererGL()
-	:flare_program(0)
+SimulOpticsRendererGL::SimulOpticsRendererGL(simul::base::MemoryInterface *m)
+	:BaseOpticsRenderer(m)
+	,flare_program(0)
 {
 }
 
@@ -91,7 +94,7 @@ void SimulOpticsRendererGL::RenderFlare(void *,float exposure,const float *dir,c
 	glBindTexture(GL_TEXTURE_2D,(GLuint)((long int)flare_texture));
 
 	glUseProgram(flare_program);
-		ERROR_CHECK
+		GL_ERROR_CHECK
 
 	glUniform3f(flareColour_param,sunlight.x,sunlight.y,sunlight.z);
 	

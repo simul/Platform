@@ -2,11 +2,11 @@
 #include "CppGlsl.hs"
 uniform sampler3D volumeNoiseTexture;
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
-varying vec2 in_texcoord;
+varying vec2 texCoords;
 
 void main()
 {
-	vec3 densityspace_texcoord	=assemble3dTexcoord(in_texcoord.xy);
+	vec3 densityspace_texcoord	=assemble3dTexcoord(texCoords.xy);
 	vec3 noisespace_texcoord	=densityspace_texcoord*noiseScale+vec3(1.0,1.0,0);
 	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time);
 	float hm=humidity*GetHumidityMultiplier(densityspace_texcoord.z);

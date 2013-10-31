@@ -139,11 +139,11 @@ namespace simul
 			static int screen_height;
 			static D3DXMATRIX view;
 			static D3DXMATRIX proj;
+		public:
 			static ID3D1xEffect		*m_pDebugEffect;
 			static ID3D11InputLayout	*m_pCubemapVtxDecl;
 			static ID3D1xBuffer		* m_pVertexBuffer;
 			static ID3D1xDevice		*m_pd3dDevice;
-		public:
 			UtilityRenderer();
 			~UtilityRenderer();
 			static void SetMatrices(D3DXMATRIX v,D3DXMATRIX p);
@@ -154,7 +154,7 @@ namespace simul
 			static void PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 			static void DrawLines(ID3D11DeviceContext* pd3dImmediateContext,VertexXyzRgba *lines,int vertex_count,bool strip);
 			static void RenderAngledQuad(ID3D11DeviceContext *context,const float *dir,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
-			static void RenderTexture(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffectTechnique* tech);
+			static void DrawTexture(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t);
 			static void DrawQuad(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech);	
 			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
 			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
@@ -184,6 +184,7 @@ namespace simul
 			//! Create the buffer object.
 			void RestoreDeviceObjects(ID3D11Device *pd3dDevice)
 			{
+				InvalidateDeviceObjects();
 				SAFE_RELEASE(m_pD3D11Buffer);	
 				D3D11_SUBRESOURCE_DATA cb_init_data;
 				cb_init_data.pSysMem = this;
@@ -215,17 +216,20 @@ namespace simul
 				SAFE_RELEASE(m_pD3D11Buffer);
 				m_pD3DX11EffectConstantBuffer=NULL;
 			}
-			//! Apply the stored data using the given context, in preparation for renderiing.
+			//! Apply the stored data using the given context, in preparation for rendering.
 			void Apply(ID3D11DeviceContext *pContext)
 			{
 				D3D11_MAPPED_SUBRESOURCE mapped_res;
 				pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
 				*(T*)mapped_res.pData = *this;
 				pContext->Unmap(m_pD3D11Buffer, 0);
+				if(m_pD3DX11EffectConstantBuffer)
 				m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 			}
+			//! Unbind from the effect.
 			void Unbind(ID3D11DeviceContext *pContext)
 			{
+				if(m_pD3DX11EffectConstantBuffer)
 				m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
 			}
 		};

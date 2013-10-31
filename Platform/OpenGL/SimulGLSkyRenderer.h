@@ -11,6 +11,7 @@
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Platform/OpenGL/GpuSkyGenerator.h"
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include <cstdlib>
 namespace simul
 {
@@ -60,7 +61,7 @@ public:
 	virtual		const float *GetFastInscatterLookup(void* context,float distance_texcoord,float elevation_texcoord);
 
 	void		RenderPlanet(void *,void* tex,float rad,const float *dir,const float *colr,bool do_lighting);
-	void		RenderSun(void *context,float exposure_hint);
+	void		RenderSun(void *context,float exposure);
 
 	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o);
 
@@ -69,6 +70,7 @@ public:
 	const		char *GetDebugText();
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
+	void		RenderIlluminationBuffer(void *context);
 	simul::opengl::GpuSkyGenerator gpuSkyGenerator;
 	//! \internal Switch the current program, either sky_program or earthshadow_program.
 	//! Also sets the parameter variables.	
@@ -104,6 +106,9 @@ protected:
 	GLuint			planet_program;
 	GLuint			sun_program;
 	GLuint			stars_program;
+	GLuint			illumination_buffer_program;
+	GLuint			overcast_inscatter_program;
+	GLuint			show_illumination_buffer_program;
 
 	GLuint			fade_3d_to_2d_program;
 	GLint			planetTexture_param;
@@ -115,8 +120,8 @@ protected:
 	GLint			hazeEccentricity_param;
 	GLint			lightDirection_sky_param;
 
-	GLint			earthShadowUniforms;
-	GLuint			earthShadowUniformsUBO;
+	simul::opengl::ConstantBuffer<SkyConstants> skyConstants;
+	simul::opengl::ConstantBuffer<EarthShadowUniforms> earthShadowUniforms;
 	
 	GLint			skyInterp_param;
 	GLint			sunlight_param;
@@ -134,7 +139,6 @@ protected:
 	GLint			viewPosition;
 	GLint			overcast_param;
 
-	
 	GLint			altitudeTexCoord_fade	;
 	GLint			skyInterp_fade		;
 	GLint			fadeTexture1_fade		;
@@ -143,6 +147,9 @@ protected:
 	FramebufferGL	loss_2d;
 	FramebufferGL	inscatter_2d;
 	FramebufferGL	skylight_2d;
+	FramebufferGL	overcast_2d;
+
+	FramebufferGL	illumination_fb;
 
 	GLuint			loss_texture;
 	GLuint			insc_texture;
@@ -150,10 +157,6 @@ protected:
 
 	bool campos_updated;
 	short *short_ptr;
-	virtual bool IsYVertical()
-	{
-		return false;
-	}
 	void DrawLines(void *,Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(void *,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 };

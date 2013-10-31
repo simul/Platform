@@ -353,14 +353,12 @@ void simul::dx11::Ensure3DTextureSizeAndFormat(
 void simul::dx11::setDepthState(ID3DX11Effect *effect,const char *name	,ID3D11DepthStencilState * value)
 {
 	ID3DX11EffectDepthStencilVariable*	var	=effect->GetVariableByName(name)->AsDepthStencil();
-	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetDepthStencilState(0,value);
 }
 
 void simul::dx11::setSamplerState(ID3DX11Effect *effect,const char *name	,ID3D11SamplerState * value)
 {
 	ID3DX11EffectSamplerVariable*	var	=effect->GetVariableByName(name)->AsSampler();
-	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetSampler(0,value);
 }
 
@@ -369,6 +367,18 @@ void simul::dx11::setTexture(ID3DX11Effect *effect,const char *name	,ID3D11Shade
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
 	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetResource(value);
+}
+
+void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,int pass_num)
+{
+	ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName(name);
+	if(!tech)
+		SIMUL_THROW("Technique not found");
+	ID3DX11EffectPass *pass			=tech->GetPassByIndex(pass_num);
+	if(!pass->IsValid())
+		SIMUL_THROW("Pass not found");
+	HRESULT hr=pass->Apply(0,pContext);
+	V_CHECK(hr);
 }
 
 void simul::dx11::setUnorderedAccessView(ID3DX11Effect *effect,const char *name	,ID3D11UnorderedAccessView * value)
@@ -449,12 +459,12 @@ void simul::dx11::unbindTextures(ID3DX11Effect *effect)
 	effect->GetDesc(&desc);
 	for(unsigned i=0;i<desc.GlobalVariables;i++)
 	{
-		ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByIndex(i)->AsShaderResource();
-		if(var->IsValid())
-			var->SetResource(NULL);
+		ID3DX11EffectShaderResourceVariable*	srv	=effect->GetVariableByIndex(i)->AsShaderResource();
+		if(srv->IsValid())
+			srv->SetResource(NULL);
 		ID3DX11EffectUnorderedAccessViewVariable*	uav	=effect->GetVariableByIndex(i)->AsUnorderedAccessView();
-		if(var->IsValid())
-			var->SetResource(NULL);
+		if(uav->IsValid())
+			uav->SetUnorderedAccessView(NULL);
 	}
 }
 
@@ -486,7 +496,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_ut
 HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	HRESULT hr=S_OK;
-#if 0
+#if 1
 	void *textData=NULL;
 	unsigned textSize=0;
 	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
@@ -513,7 +523,10 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 		);
 	fileLoader->ReleaseFileContents(textData);
 	if(hr==S_OK)
+	{
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
+		//if(fileLoader->
+	}
 	else
 	{
 		char *errs=(char*)errorMsgs->GetBufferPointer();
@@ -896,7 +909,6 @@ void BreakIfDebugging()
 {
 	DebugBreak();
 }
- 
 
 // Stored states
 static ID3D11DepthStencilState* m_pDepthStencilStateStored11=NULL;

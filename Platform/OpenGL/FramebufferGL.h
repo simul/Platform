@@ -1,7 +1,6 @@
 #ifndef FRAMEBUFFERGL_H
 #define FRAMEBUFFERGL_H
 
-#include <GL/glew.h>
 #include <stack>
 #include <stdint.h> // for uintptr_t
 #include "LoadGLImage.h"
@@ -43,6 +42,7 @@ public:
 	/// Activate / deactivate the FBO as a render target
 	/// The FBO needs to be deactivated when using the associated textures.
 	void Activate(void *);
+	void ActivateColour(void *,const float [4]);
 	void ActivateViewport(void *context,float viewportX, float viewportY, float viewportW, float viewportH);
 	void Deactivate(void *context);
 	void CopyDepthFromFramebuffer();

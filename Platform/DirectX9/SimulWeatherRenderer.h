@@ -30,8 +30,11 @@ namespace simul
 	{
 		class Environment;
 	}
+	namespace dx9
+	{
+		class SimulSkyRenderer;
+	}
 }
-class SimulSkyRenderer;
 class SimulCloudRenderer;
 class SimulLightningRenderer;
 class Simul2DCloudRenderer;
@@ -62,12 +65,22 @@ namespace simul
 			void SetScreenSize(int w,int h);
 			//standard d3d object interface functions
 			bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
+			void RecompileShaders();
 			//! Call this when the device has been created
 			void RestoreDeviceObjects(void *pd3dDevice);
 			//! Call this when the 3D device has been lost.
 			void InvalidateDeviceObjects();
 			//! Call this to draw the sky and clouds.
-			bool RenderSky(void *,float exposure,bool buffer,bool is_cubemap);
+			void RenderSkyAsOverlay(void *context,
+									float exposure,
+									bool buffered,
+									bool is_cubemap,
+									const void* mainDepthTexture,
+									const void* depthTextureForClouds,
+									int viewport_id,
+									const simul::sky::float4& relativeViewportTextureRegionXYWH,
+									bool doFinalCloudBufferToScreenComposite
+									);
 			//! Call this to draw the clouds after the main scene.
 			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			//! Call this to draw lightning.
@@ -110,7 +123,6 @@ namespace simul
 			//! The size of the 2D buffer the sky is rendered to.
 			int BufferWidth,BufferHeight;
 			LPDIRECT3DDEVICE9				m_pd3dDevice;
-			LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl;
 			LPDIRECT3DTEXTURE9 temp_depth_texture;
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			LPD3DXEFFECT					m_pBufferToScreenEffect;
@@ -120,13 +132,12 @@ namespace simul
 			D3DXHANDLE						bufferTexture;
 
 			bool CreateBuffers();
-			bool RenderBufferToScreen(LPDIRECT3DTEXTURE9 texture);
-			SimulSkyRenderer *simulSkyRenderer;
-			SimulCloudRenderer*simulCloudRenderer;
-			SimulLightningRenderer*simulLightningRenderer;
-			Simul2DCloudRenderer*simul2DCloudRenderer;
-			SimulPrecipitationRenderer*simulPrecipitationRenderer;
-			SimulAtmosphericsRenderer*simulAtmosphericsRenderer;
+			SimulSkyRenderer				*simulSkyRenderer;
+			SimulCloudRenderer				*simulCloudRenderer;
+			SimulLightningRenderer			*simulLightningRenderer;
+			Simul2DCloudRenderer			*simul2DCloudRenderer;
+			SimulPrecipitationRenderer		*simulPrecipitationRenderer;
+			SimulAtmosphericsRenderer		*simulAtmosphericsRenderer;
 			float							exposure;
 			float							gamma;
 			bool							use_buffer;

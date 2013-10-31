@@ -1,4 +1,4 @@
-
+#include "dx9.hlsl"
 texture hdrTexture;
 sampler2D hdr_texture= sampler_state 
 {
@@ -17,13 +17,13 @@ float gamma=1.f/2.2f;
 struct a2v
 {
     float4 position  : POSITION;
-    float4 texcoord  : TEXCOORD0;
+    float2 texcoord  : TEXCOORD0;
 };
 
 struct v2f
 {
     float4 position  : POSITION;
-    float4 texcoord  : TEXCOORD0;
+    float2 texcoord  : TEXCOORD0;
 };
 
 v2f TonemapVS(a2v IN)
@@ -71,15 +71,17 @@ float4 BlendPS(v2f IN) : COLOR
     return c;
 }
 
-float4 CloudBlendPS(v2f IN) : COLOR
+float4 PS_CloudBlend(vertexOutputPosTexc IN) : COLOR
 {
-	float4 c=tex2D(hdr_texture,IN.texcoord);
-	if(c.a>=1.f)
-		discard;
-    return c;
+	vec4 c=tex2D(hdr_texture,vec2(IN.texCoords.x,1.0-IN.texCoords.y));
+	//if(c.a>=1.f)
+	//	discard;
+    vec4 result=vec4(c.rgb*exposure,c.a);
+
+	return result;
 }
 
-technique simul_cloud_blend
+technique cloud_blend
 {
     pass p0
     {
@@ -91,8 +93,8 @@ technique simul_cloud_blend
 		DestBlend = SrcAlpha;
 		AlphaTestEnable=false;
 		COLORWRITEENABLE=15;
-		VertexShader = compile vs_3_0 TonemapVS();
-		PixelShader = compile ps_3_0 CloudBlendPS();
+		VertexShader = compile vs_3_0 VS_FullScreen();
+		PixelShader  = compile ps_3_0 PS_CloudBlend();
     }
 }
 
@@ -157,6 +159,7 @@ technique simul_sky_over_stars
 		PixelShader = compile ps_2_0 DirectPS();
     }
 }
+
 technique simul_tonemap
 {
     pass p0
@@ -171,7 +174,6 @@ technique simul_tonemap
 		PixelShader = compile ps_3_0 TonemapPS();
     }
 }
-
 
 technique simul_tonemap_zwrite
 {

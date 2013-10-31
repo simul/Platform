@@ -13,6 +13,8 @@
 
 #ifndef __cplusplus
 	#define uniform_buffer layout(std140) uniform
+	#define SIMUL_CONSTANT_BUFFER(name,buff_num) uniform_buffer name {
+	#define SIMUL_CONSTANT_BUFFER_END };
 #include "saturate.glsl"
 	#define lerp mix
 	#define atan2 atan
@@ -33,6 +35,7 @@
 	#define texture_clamp_lod(tex,texc,lod) textureLod(tex,texc,lod) 
 	#define texture_nearest_lod(tex,texc,lod) textureLod(tex,texc,lod) 
 	#define texture_clamp_mirror_lod(tex,texc,lod) textureLod(tex,texc,lod) 
+	#define texture_cmc_lod(tex,texc,lod) textureLod(tex,texc,lod) 
 	#define texture3D texture
 	#define texture2D texture 
 	#define Texture3D sampler3D 

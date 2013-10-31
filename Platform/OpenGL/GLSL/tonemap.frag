@@ -3,16 +3,16 @@ uniform sampler2D image_texture;
 uniform sampler2D glowTexture;
 uniform float exposure;
 uniform float gamma;
-varying vec2 texc;
+varying vec2 texCoords;
 
 void main(void)
 {
     // original image
-    vec4 c = texture2D(image_texture,texc);
+    vec4 c = texture2D(image_texture,texCoords);
     // exposure
 	c.rgb*=exposure;
 
-	vec4 glow=texture(glowTexture,texc);
+	vec4 glow=texture(glowTexture,texCoords);
 	c.rgb+=glow.rgb;
 
     // gamma correction

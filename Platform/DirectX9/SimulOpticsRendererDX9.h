@@ -18,7 +18,7 @@
 SIMUL_DIRECTX9_EXPORT_CLASS SimulOpticsRendererDX9:public simul::camera::BaseOpticsRenderer
 {
 public:
-	SimulOpticsRendererDX9();
+	SimulOpticsRendererDX9(simul::base::MemoryInterface *m);
 	virtual ~SimulOpticsRendererDX9();
 	virtual void RestoreDeviceObjects(void *device);
 	virtual void InvalidateDeviceObjects();

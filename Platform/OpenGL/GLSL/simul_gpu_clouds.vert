@@ -1,9 +1,9 @@
 
-varying vec2 in_texcoord;
+varying vec2 texCoords;
 
 void main(void)
 {
     vec4 outpos	=ftransform();
 	gl_Position =outpos;
-	in_texcoord	=gl_Vertex.xy;
+	texCoords	=gl_Vertex.xy;
 }

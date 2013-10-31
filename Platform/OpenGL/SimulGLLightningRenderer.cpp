@@ -24,6 +24,7 @@ using namespace simul;
 using namespace clouds;
 using namespace math;
 using namespace sky;
+using namespace opengl;
 
 SimulGLLightningRenderer::SimulGLLightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk) :
 	simul::clouds::BaseLightningRenderer(ck,sk)
@@ -95,10 +96,10 @@ void SimulGLLightningRenderer::Render(void*)
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	if(glStringMarkerGREMEDY)
 		glStringMarkerGREMEDY(0,"SimulGLLightningRenderer::Render");
-ERROR_CHECK
+GL_ERROR_CHECK
 	simul::math::Vector3 view_dir,cam_pos;
 	GetCameraPosVector(cam_pos,view_dir);
-ERROR_CHECK
+GL_ERROR_CHECK
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_3D);
 	glEnable(GL_TEXTURE_1D);
@@ -119,7 +120,7 @@ ERROR_CHECK
 	if(enable_geometry_shaders)
 		setParameter(lightning_program	,"viewportPixels"	,vpx,vpy);
 	int texcoord_index=glGetAttribLocation(lightning_program,"in_coord");
-ERROR_CHECK
+GL_ERROR_CHECK
 	simul::math::Vector3 pos;
 	static float lm=10.f;
 	static float main_bright=1.f;
@@ -198,7 +199,7 @@ ERROR_CHECK
 		}
 	}
 	glDisable(GL_TEXTURE_1D);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glPopAttrib();
 }
 
@@ -249,7 +250,7 @@ bool SimulGLLightningRenderer::CreateLightningTexture()
 		size,
 		GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
 		lightning_tex_data);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	delete [] lightning_tex_data;
 	glDisable(GL_TEXTURE_1D);
 	return true;

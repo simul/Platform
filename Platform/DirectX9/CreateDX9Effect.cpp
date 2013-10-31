@@ -16,7 +16,7 @@
 #include <string>
 typedef std::basic_string<TCHAR> tstring;
 static tstring shader_path=TEXT("");
-static tstring texture_path=TEXT("");
+static std::string texture_path_utf8;
 static DWORD default_effect_flags=D3DXSHADER_SKIPVALIDATION;//D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #include <vector>
 #include <iostream>
@@ -24,12 +24,7 @@ static DWORD default_effect_flags=D3DXSHADER_SKIPVALIDATION;//D3DXSHADER_ENABLE_
 #include "Macros.h"
 #include "Resources.h"
 #include "Simul/Geometry/Orientation.h"
-#ifndef SAFE_RELEASE
-#define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
-#endif
-#ifndef V_RETURN
-#define V_RETURN(x)			{ hr = x; if( FAILED(hr) ) { return hr; } }
-#endif
+#include "Simul/Base/StringToWString.h"
 
 unsigned (*GetResourceId)(const char *filename)=NULL;
 LPDIRECT3DDEVICE9				last_d3dDevice			=NULL;
@@ -76,18 +71,10 @@ namespace simul
 		#endif
 			shader_path_set=true;
 		}
-		void SetTexturePath(const char *path)
+		void SetTexturePath(const char *path_utf8)
 		{
-		#ifdef UNICODE
-			// tstring and TEXT cater for the confusion between wide and regular strings.
-			texture_path.resize(strlen(path),L' '); // Make room for characters
-			// Copy string to wstring.
-			std::copy(path,path+strlen(path),texture_path.begin());
-			texture_path+=L"/";
-		#else
-			texture_path=path;
-			texture_path+="/";
-		#endif
+			texture_path_utf8=path_utf8;
+			texture_path_utf8+="/";
 			texture_path_set=true;
 		}
 	}
@@ -242,42 +229,35 @@ HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &text
 	return D3DXCreateTextureFromResource(m_pd3dDevice,hModule,rn,&texture);
 }
 
-HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &texture,const char *filename)
+HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &texture,const char *filename_utf8)
 {
 	if(BUNDLE_SHADERS)
-		return CreateDX9Texture(m_pd3dDevice,texture,(*GetResourceId)(filename));
+		return CreateDX9Texture(m_pd3dDevice,texture,(*GetResourceId)(filename_utf8));
 	if(!texture_path_set)
 	{
 		std::cerr<<"CreateDX9Texture: Texture path not set, use SetTexturePath() with the relative path to the image files."<<std::endl;
 	}
-#ifdef UNICODE
-	// tstring and TEXT cater for the confusion between wide and regular strings.
-	std::wstring wfilename(strlen(filename),L' '); // Make room for characters
-	// Copy string to wstring.
-	std::copy(filename,filename+strlen(filename),wfilename.begin());
-	tstring fn=texture_path+wfilename;
-#else
-	tstring fn=filename;
-	fn=texture_path+fn;
-#endif
-	HRESULT hr=D3DXCreateTextureFromFileEx(	m_pd3dDevice,
-											fn.c_str(),
-											D3DX_DEFAULT_NONPOW2,
-											D3DX_DEFAULT_NONPOW2,
-											D3DX_DEFAULT,
-											0,
-											D3DFMT_UNKNOWN,
-											D3DPOOL_DEFAULT,
-											D3DX_DEFAULT,
-											D3DX_DEFAULT,
-											0,
-											NULL,
-											NULL,
-											&texture);
+	std::string fn_utf8=texture_path_utf8+filename_utf8;
+
+	std::wstring wstr	=simul::base::Utf8ToWString(fn_utf8.c_str());
+	HRESULT hr=D3DXCreateTextureFromFileExW(	m_pd3dDevice,
+												wstr.c_str(),
+												D3DX_DEFAULT_NONPOW2,
+												D3DX_DEFAULT_NONPOW2,
+												D3DX_DEFAULT,
+												0,
+												D3DFMT_UNKNOWN,
+												D3DPOOL_DEFAULT,
+												D3DX_DEFAULT,
+												D3DX_DEFAULT,
+												0,
+												NULL,
+												NULL,
+												&texture);
 	// if failed, try to get the resource:
 	if(hr!=S_OK)
 	{
-		hr=CreateDX9Texture(m_pd3dDevice,texture,GetResourceId(filename));
+		hr=CreateDX9Texture(m_pd3dDevice,texture,GetResourceId(filename_utf8));
 	}
 	return hr;
 }
@@ -315,38 +295,41 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 	D3DXMACRO *macros=MakeMacroList(defines);
 
 	SAFE_RELEASE(effect);
-	
-	hr=D3DXCreateEffectFromFile(
-			m_pd3dDevice,
-			fn.c_str(),
-			macros,
-			NULL,
-			default_effect_flags,
-			NULL,
-			&effect,
-			&errors);
-	std::string err="";
-	if(errors)
+	hr=S_FALSE;
+	while(hr!=S_OK)
 	{
-		if(FAILED(hr))
-			std::cerr<<"Errors building "<<filename<<std::endl;
-		else
-			std::cerr<<"Warnings building "<<filename<<std::endl;
-		err=static_cast<const char*>(errors->GetBufferPointer());
-		std::cerr<<err<<std::endl;
-	}
-	if(FAILED(hr))
-	{
-		const TCHAR *err=DXGetErrorString(hr);
-		std::cerr<<err<<std::endl;
-		if(GetResourceId)
-			hr=CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename),defines);
+		hr=D3DXCreateEffectFromFile(
+				m_pd3dDevice,
+				fn.c_str(),
+				macros,
+				NULL,
+				default_effect_flags,
+				NULL,
+				&effect,
+				&errors);
+		std::string err="";
+		if(errors)
+		{
+			if(FAILED(hr))
+				std::cerr<<"Errors building "<<filename<<std::endl;
+			else
+				std::cerr<<"Warnings building "<<filename<<std::endl;
+			err=static_cast<const char*>(errors->GetBufferPointer());
+			std::cerr<<err<<std::endl;
+		}
 		if(FAILED(hr))
 		{
-#ifdef DXTRACE_ERR
-			hr=DXTRACE_ERR(_T("CreateDX9Effect"), hr );
-#endif
-			DebugBreak();
+			const TCHAR *err=DXGetErrorString(hr);
+			std::cerr<<err<<std::endl;
+			if(GetResourceId)
+				hr=CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename),defines);
+			if(FAILED(hr))
+			{
+	#ifdef DXTRACE_ERR
+				hr=DXTRACE_ERR(_T("CreateDX9Effect"), hr );
+	#endif
+				DebugBreak();
+			}
 		}
 	}
 	delete [] macros;
@@ -432,6 +415,8 @@ LocalFree( lpMsgBuf );
 HRESULT CanUseTexFormat(IDirect3DDevice9 *device,D3DFORMAT f)
 {
 	IDirect3D9 *pd3d=0;
+	if(!device)
+		return S_OK;
 	HRESULT hr=device->GetDirect3D(&pd3d);
 	D3DDISPLAYMODE DisplayMode;
 	ZeroMemory(&DisplayMode,sizeof(D3DDISPLAYMODE));
@@ -445,8 +430,6 @@ HRESULT CanUseTexFormat(IDirect3DDevice9 *device,D3DFORMAT f)
 	{
 		std::cout<<"D3DERR_NOTAVAILABLE "<<std::endl;
 	}
-	if(SUCCEEDED(hr))
-		std::cout<<"OK to use texture format "<<f<<std::endl;
 	if(FAILED(hr))
 		std::cout<<"Cannot use texture format "<<f<<std::endl;
 	hr=S_OK;
@@ -489,15 +472,9 @@ void RT::RestoreDeviceObjects(IDirect3DDevice9 *m_pd3dDevice)
 		// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 		D3DVERTEXELEMENT9 decl[] = 
 		{
-	#ifdef XBOX
-			{ 0,  0, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITION,0 },
-			{ 0, 8, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
-			{ 0, 24, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-	#else
 			{ 0,  0, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_POSITIONT,0 },
 			{ 0, 16, D3DDECLTYPE_FLOAT4		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_COLOR,0 },
 			{ 0, 32, D3DDECLTYPE_FLOAT2		,D3DDECLMETHOD_DEFAULT,D3DDECLUSAGE_TEXCOORD,0 },
-	#endif
 			D3DDECL_END()
 		};
 		V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pBufferVertexDecl));
@@ -544,24 +521,6 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 	m_pd3dDevice->GetTransform(D3DTS_VIEW,&v);
 	m_pd3dDevice->GetTransform(D3DTS_WORLD,&w);
 	m_pd3dDevice->GetTransform(D3DTS_PROJECTION,&p);
-#ifdef XBOX
-	float x=-1.f,y=1.f;
-	float w=2.f;
-	float h=-2.f;
-	struct Vertext
-	{
-		float x,y;
-		float r,g,b,a;
-		float tx,ty;
-	};
-	Vertext vertices[4] =
-	{
-		{x,			y,			0	,0},
-		{x+w,		y,			1.f	,0},
-		{x+w,		y+h,		1.f	,1.f},
-		{x,			y+h,		0	,1.f},
-	};
-#else
 	float x=(float)x1,y=(float)y1;
 	struct Vertext
 	{
@@ -577,15 +536,12 @@ HRESULT RenderTexture(IDirect3DDevice9 *m_pd3dDevice,int x1,int y1,int dx,int dy
 		{x+width,	y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,1.0f	,1.0f},
 		{x,			y+height,	0.f,	1.f, 1.f,1.f,1.f,1.f	,0.0f	,1.0f},
 	};
-#endif
 	D3DXMATRIX ident;
 	D3DXMatrixIdentity(&ident);
 	m_pd3dDevice->SetVertexDeclaration(RT::m_pBufferVertexDecl);
-#ifndef XBOX
 	m_pd3dDevice->SetTransform(D3DTS_VIEW,&ident);
 	m_pd3dDevice->SetTransform(D3DTS_WORLD,&ident);
 	m_pd3dDevice->SetTransform(D3DTS_PROJECTION,&ident);
-#endif
 	unsigned passes=0;
 	if(eff)
 	{
@@ -729,6 +685,20 @@ void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,
 	D3DXMatrixTranspose(wvp,&tmp2);
 }
 
+D3DXMATRIX MakeViewProjMatrix(D3DXMATRIX &view,D3DXMATRIX &proj)
+{
+	//set up matrices
+	D3DXMATRIX viewt, projt,vp, tmp2;
+	D3DXMatrixTranspose(&viewt,&view);
+	D3DXMatrixTranspose(&projt,&proj);
+	D3DXMatrixMultiply(&vp, &projt,&viewt);
+
+	D3DXMatrixMultiply(&tmp2, &view,&proj);
+	D3DXMatrixTranspose(&vp,&tmp2);
+
+	return vp;
+}
+
 HRESULT RenderAngledQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,D3DXVECTOR3 cam_pos,D3DXVECTOR3 dir,bool y_vertical,float half_angle_radians,LPD3DXEFFECT effect)
 {
 	// If y is vertical, we have LEFT-HANDED rotations, otherwise right.
@@ -820,7 +790,7 @@ HRESULT DrawFullScreenQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT effect)
 	D3DXMATRIX ivp;
 	D3DXMatrixInverse(&ivp,NULL,&vpt);
 	//hr=effect->SetMatrix(invViewProj,&ivp);
-	#ifdef XBOX
+#ifdef XBOX
 	float x=-1.f,y=1.f;
 	float w=2.f;
 	float h=-2.f;
@@ -873,6 +843,29 @@ HRESULT DrawFullScreenQuad(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT effect)
 	return hr;
 }
 
+
+namespace simul
+{
+	namespace dx9
+	{
+		void DrawQuad(LPDIRECT3DDEVICE9 m_pd3dDevice)
+		{
+			struct Vertext
+			{
+				float x,y,z;
+			};
+			Vertext vertices[4] =
+			{
+				{-1.f,	-1.f	,0.5f},
+				{ 1.f,	-1.f	,0.5f},
+				{ 1.f,	 1.f	,0.5f},
+				{-1.f,	 1.f	,0.5f},
+			};
+			m_pd3dDevice->SetFVF(D3DFVF_XYZ);
+			m_pd3dDevice->DrawPrimitiveUP(D3DPT_TRIANGLEFAN,2,vertices,sizeof(Vertext));
+		}
+	}
+}
 bool IsDepthFormatOk(LPDIRECT3DDEVICE9 pd3dDevice,D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat)
 {
 	LPDIRECT3D9 d3d;
@@ -900,18 +893,7 @@ bool IsDepthFormatOk(LPDIRECT3DDEVICE9 pd3dDevice,D3DFORMAT DepthFormat, D3DFORM
 LPDIRECT3DSURFACE9 MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture)
 {
 	LPDIRECT3DSURFACE9 pRenderTarget;
-#ifdef XBOX
-	XGTEXTURE_DESC desc;
-	XGGetTextureDesc( pTexture, 0, &desc );
-	D3DSURFACE_PARAMETERS SurfaceParams = {0};
-	//HANDLE handle=&SurfaceParams;
-	HRESULT hr=m_pd3dDevice->CreateRenderTarget(
-		desc.Width, desc.Height, desc.Format, D3DMULTISAMPLE_NONE, 0, FALSE, &pRenderTarget,&SurfaceParams);
-	if(hr!=S_OK)
-		std::cerr<<"SimulWeatherRenderer::MakeRenderTarget - Failed to create render target!\n";
-#else
 	pTexture->GetSurfaceLevel(0,&pRenderTarget);
-#endif
 	return pRenderTarget;
 }
 
@@ -950,6 +932,17 @@ void GetCameraPosVector(D3DXMATRIX &view,bool y_vertical,float *dcam_pos,float *
 			view_dir[2]=-view._33;
 		}
 	}
+}
+
+D3DXVECTOR4 GetCameraPosVector(D3DXMATRIX &view)
+{
+	D3DXMATRIX tmp1;
+	D3DXMatrixInverse(&tmp1,NULL,&view);
+	D3DXVECTOR4 dcam_pos;
+	dcam_pos.x=tmp1._41;
+	dcam_pos.y=tmp1._42;
+	dcam_pos.z=tmp1._43;
+	return dcam_pos;
 }
 
 
@@ -1027,4 +1020,56 @@ void RT::DrawLines(VertexXyzRgba *lines,int vertex_count,bool strip)
 	V_CHECK(last_d3dDevice->DrawPrimitiveUP(strip?D3DPT_LINESTRIP:D3DPT_LINELIST,strip?(vertex_count-1):(vertex_count/2),lines,(unsigned)sizeof(VertexXyzRgba)));
 	V_CHECK(m_pDebugEffect->EndPass());
 	V_CHECK(m_pDebugEffect->End());
+}
+
+
+namespace simul
+{
+	namespace dx9
+	{
+		void setTexture(LPD3DXEFFECT effect,const char *txt,LPDIRECT3DBASETEXTURE9 texture)
+		{
+			D3DXHANDLE h=effect->GetParameterByName(NULL,txt);
+			if(h)
+				effect->SetTexture(h,texture);
+		}
+#if 0
+		void setParameter(LPD3DXEFFECT effect,const char *txt,int value)
+		{
+			D3DXHANDLE h=effect->GetParameterByName(NULL,txt);
+			if(h)
+				effect->SetInt(h,value);
+		}
+		void setParameter(LPD3DXEFFECT effect,const char *txt,float value)
+		{
+			D3DXHANDLE h=effect->GetParameterByName(NULL,txt);
+			if(h)
+				effect->SetFloat(h,value);
+		}
+		void setParameter(LPD3DXEFFECT effect,const char *txt,vec2 &value)
+		{
+			D3DXHANDLE h=effect->GetParameterByName(NULL,txt);
+			if(h)
+				effect->SetVector(h,(const D3DXVECTOR4 *)&value);
+		}
+		void setParameter(LPD3DXEFFECT effect,const char *txt,vec3 &value)
+		{
+			D3DXHANDLE h=effect->GetParameterByName(NULL,txt);
+			if(h)
+				effect->SetVector(h,(const D3DXVECTOR4 *)&value);
+		}
+		void setParameter(LPD3DXEFFECT effect,const char *txt,vec4 &value)
+		{
+			D3DXHANDLE h=effect->GetParameterByName(NULL,txt);
+			if(h)
+				effect->SetVector(h,(const D3DXVECTOR4 *)&value);
+		}
+		void setParameter(LPD3DXEFFECT effect,const char *txt,mat4 &value)
+		{
+			D3DXHANDLE h=effect->GetParameterByName(NULL,txt);
+			if(h)
+				effect->SetMatrix(h,(const D3DXMATRIX *)&value);
+		}
+#endif
+	}
 }

@@ -4,6 +4,7 @@
 #include <string>
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
+#include "Simul/Base/RuntimeError.h"
 #ifdef _MSC_VER
 #include <windows.h>
 #else
@@ -95,7 +96,7 @@ void FramebufferGL::Init()
 {
 	if(!Width||!Height)
 		return;
-ERROR_CHECK
+GL_ERROR_CHECK
 	initialized=true;
 	if(!m_fb)
 	{
@@ -136,7 +137,7 @@ ERROR_CHECK
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-ERROR_CHECK
+GL_ERROR_CHECK
 }
 // In order to use a depth buffer, either
 // InitDepth_RB or InitDepth_Tex needs to be called.
@@ -160,12 +161,28 @@ void FramebufferGL::Activate(void *)
 		Init();
 	CheckFramebufferStatus();
     glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	CheckFramebufferStatus();
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glViewport(0,0,Width,Height);
-	ERROR_CHECK
+	GL_ERROR_CHECK
+	fb_stack.push(m_fb);
+}
+
+void FramebufferGL::ActivateColour(void *,const float /*viewportXYWH*/[4])
+{
+	SIMUL_THROW("ActivateColour does not yet work for FramebufferGL");
+	if(!m_fb)
+		Init();
+	CheckFramebufferStatus();
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
+	GL_ERROR_CHECK
+	CheckFramebufferStatus();
+	glGetIntegerv(GL_VIEWPORT,main_viewport);
+	GL_ERROR_CHECK
+	glViewport(0,0,Width,Height);
+	GL_ERROR_CHECK
 	fb_stack.push(m_fb);
 }
 // Activate the FBO as a render target
@@ -177,56 +194,56 @@ void FramebufferGL::ActivateViewport(void *,float viewportX, float viewportY, fl
 		Init();
 	CheckFramebufferStatus();
     glBindFramebuffer(GL_FRAMEBUFFER, m_fb); 
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	CheckFramebufferStatus();
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glViewport((int)((float)Width*viewportX),(int)((float)Height*viewportY)
 			,(int)((float)Width*viewportW),(int)((float)Height*viewportH));
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	fb_stack.push(m_fb);
 }
 
 void FramebufferGL::Deactivate(void *) 
 {
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	//glFlush(); 
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	CheckFramebufferStatus();
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	// remove m_fb from the stack and...
 	fb_stack.pop();
 	// ..restore the n one down.
 	GLuint last_fb=fb_stack.top();
-	ERROR_CHECK
+	GL_ERROR_CHECK
     glBindFramebuffer(GL_FRAMEBUFFER,last_fb);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glViewport(0,0,main_viewport[2],main_viewport[3]);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 void FramebufferGL::CopyDepthFromFramebuffer() 
 {
 	glBindFramebuffer (GL_READ_FRAMEBUFFER, m_fb);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glBindFramebuffer (GL_DRAW_FRAMEBUFFER, fb_stack.top());
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glBlitFramebuffer (0, 0, Width, Height, 0, 0, Width, Height,
 			   GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	glBindFramebuffer (GL_FRAMEBUFFER, fb_stack.top());
-	ERROR_CHECK
+	GL_ERROR_CHECK
 }
 
 void FramebufferGL::DeactivateAndRender(void *context,bool blend)
 {
-	ERROR_CHECK
+	GL_ERROR_CHECK
 	Deactivate(context);
 	Render(context,blend);
 }
 
 void FramebufferGL::Render(void *,bool blend)
 {
-ERROR_CHECK
+GL_ERROR_CHECK
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -247,14 +264,14 @@ ERROR_CHECK
 		glEnable(GL_BLEND);
 	}
 	glDepthMask(GL_FALSE);
-ERROR_CHECK
+GL_ERROR_CHECK
 	::DrawQuad(0,0,1,1);
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glPopAttrib();
-ERROR_CHECK
+GL_ERROR_CHECK
 	Release();
 }
 

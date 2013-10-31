@@ -1,6 +1,6 @@
 uniform sampler2D image_texture;
 uniform vec2 offset;
-varying vec2 texc;
+varying vec2 texCoords;
 
 void main(void)
 {
@@ -10,7 +10,7 @@ void main(void)
 	for(int i=-25;i<25;i++)
 	{
 		vec2 d=offs*float(i);
-		vec2 t=texc+d;
+		vec2 t=texCoords+d;
 		float ii=float(i*i);
 		float str=0.04*exp(-ii/125.0);
 		vec4 c=str*texture2D(image_texture,t);

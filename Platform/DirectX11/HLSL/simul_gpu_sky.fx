@@ -7,7 +7,7 @@
 #define sampler3D texture3D
 #define texture(tex,texCoords) tex.Sample(samplerState,texCoords)
 uniform sampler2D input_texture;
-uniform sampler1D density_texture;
+uniform sampler2D density_texture;
 uniform sampler3D loss_texture;
 uniform sampler3D insc_texture;
 uniform sampler2D optical_depth_texture;
@@ -36,22 +36,6 @@ struct vertexOutput
     float4 hPosition	: SV_POSITION;
 	float2 texCoords	: TEXCOORD0;		
 };
-
-// What spectral radiance is added on a light path towards the viewer, due to illumination of
-// a volume of air by the surrounding sky?
-// in cpp:
-//	float cos0=dir_to_sun.z;
-//	Skylight=GetAnisotropicInscatterFactor(true,hh,pif/2.f,0,1e5f,dir_to_sun,dir_to_moon,haze,false,1);
-//	Skylight*=GetInscatterAngularMultiplier(cos0,Skylight.w,hh);
-
-vec3 getSkylight(float alt_km)
-{
-// The inscatter factor, at this altitude looking straight up, is given by:
-	vec4 insc		=texture_clamp_lod(insc_texture,vec3(sqrt(alt_km/maxOutputAltKm),0.0,1.0),0);
-	vec3 skylight	=InscatterFunction(insc,hazeEccentricity,0.0,mieRayleighRatio);
-	return skylight;
-}
-
 
 vertexOutput VS_Main(idOnly IN)
 {
@@ -97,7 +81,7 @@ float4 PS_Loss(vertexOutput IN) : SV_TARGET
 	vec4 loss;
 	loss.rgb			=exp(-extinction*stepLengthKm);
 	loss.a				=(loss.r+loss.g+loss.b)/3.0;
-//loss.rgb	*=0.5;//=vec3(alt_km/maxDensityAltKm,stepLengthKm/512.0,stepLengthKm/512.0);
+
 	loss				*=previous_loss;
 
     return			loss;
@@ -106,7 +90,6 @@ float4 PS_Loss(vertexOutput IN) : SV_TARGET
 [numthreads(8,1,1)]
 void CS_Loss(uint3 sub_pos	: SV_DispatchThreadID )
 {
-	//targetTexture[sub_pos]	=vec4(1.0,1.0,0.0,1.0);
 	uint3 dims;
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
 	uint linear_pos		=sub_pos.x+threadOffset.x;
@@ -125,7 +108,7 @@ void CS_Loss(uint3 sub_pos	: SV_DispatchThreadID )
 	
 	float prevDist_km	=0.0;
 
-	for(int i=0;i<dims.z;i++)
+	for(uint i=0;i<dims.z;i++)
 	{
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow((float)(i)/((float)dims.z-1.f),2.f);
@@ -153,6 +136,12 @@ void CS_Loss(uint3 sub_pos	: SV_DispatchThreadID )
 		prevDist_km			=dist_km;
 		previous_loss		=loss;
 	}
+}
+
+[numthreads(1,1,1)]
+void CS_LightTable( uint3 sub_pos : SV_DispatchThreadID )
+{
+	MakeLightTable(targetTexture,insc_texture,sub_pos);
 }
 
 [numthreads(8,1,1)]
@@ -184,7 +173,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow((float)(i)/((float)dims.z-1.f),2.0);
 		
-		vec3 previous_loss	=loss_texture[idx].rgb;//vec3(IN.texc.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;// should adjust texc - we want the PREVIOUS loss!
+		vec3 previous_loss	=loss_texture[idx].rgb;
 
 		float dist_km		=zPosition*maxDistanceKm;
 		if(i==dims.z-1)
@@ -212,7 +201,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 		float dens_factor	=lookups.x;
 		float ozone_factor	=lookups.y;
 		float haze_factor	=getHazeFactorAtAltitude(alt_km);
-		vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor(alt_km,lightDir);
+		vec4 light			=vec4(sunIrradiance,1.0)*getSunlightFactor(optical_depth_texture,alt_km,lightDir);
 		vec4 insc			=light;
 
 		// We don't do this anymore - overcast is applied separately.
@@ -230,7 +219,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 		//float lossw=1.0;
 		//insc.w				=(lossw)*(1.0-previous_insc.w)*insc.w+previous_insc.w;
 		//final.w=::saturate((1.f-mie_factor)/(1.f-total_loss.x+0.0001f));
-		insc.w				=saturate((1.0-mie_factor)/(1.0-previous_loss.x+0.0001f));
+		insc.w				=saturate((1.0-mie_factor.x)/(1.0-previous_loss.x+0.0001f));
 		
 		targetTexture[idx]	=insc;
 		prevDist_km			=dist_km;
@@ -259,7 +248,7 @@ void CS_Skyl( uint3 sub_pos : SV_DispatchThreadID )
 
 	float prevDist_km	=0.0;
 	// The midpoint of the step represented by this layer
-	for(int i=0;i<dims.z;i++)
+	for(int i=0;i<int(dims.z);i++)
 	{
 		uint3 idx			=uint3(pos.xy,i);
 		float zPosition		=pow((float)(i)/((float)dims.z-1.0),2.0);
@@ -282,7 +271,7 @@ void CS_Skyl( uint3 sub_pos : SV_DispatchThreadID )
 		float dens_factor	=lookups.x;
 		float ozone_factor	=lookups.y;
 		float haze_factor	=getHazeFactorAtAltitude(alt_km);
-		vec4 light			=vec4(starlight+getSkylight(alt_km),0.0);
+		vec4 light			=vec4(starlight+getSkylight(alt_km,insc_texture),0.0);
 		vec4 skyl			=light;
 		vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie;
 		vec3 total_ext		=extinction+ozone*ozone_factor;
@@ -306,7 +295,7 @@ void CS_Skyl( uint3 sub_pos : SV_DispatchThreadID )
 
 vec4 PS_Insc(vertexOutput IN) : SV_TARGET
 {
-	return Insc(input_texture,loss_texture,density_texture,IN.texCoords);
+	return Insc(input_texture,loss_texture,density_texture,optical_depth_texture,IN.texCoords);
 }
 
 float4 PS_Skyl(vertexOutput IN) : SV_TARGET
@@ -333,7 +322,7 @@ float4 PS_Skyl(vertexOutput IN) : SV_TARGET
 	float dens_factor	=lookups.x;
 	float ozone_factor	=lookups.y;
 	float haze_factor	=getHazeFactorAtAltitude(alt_km);
-	vec4 light			=vec4(starlight+getSkylight(alt_km),0.0);
+	vec4 light			=vec4(starlight+getSkylight(alt_km,insc_texture),0.0);
 	vec4 skyl			=light;
 	vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie;
 	vec3 total_ext		=extinction+ozone*ozone_factor;
@@ -401,6 +390,13 @@ technique11 simul_gpu_skyl
 		SetVertexShader(CompileShader(vs_4_0,VS_Main()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_Skyl()));
+    }
+}
+technique11 gpu_light_table_compute
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_LightTable()));
     }
 }
 

@@ -23,7 +23,6 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/GpuCloudGenerator.h"
-#include "Simul/Platform/DirectX11/GpuCloudGenerator.h"
 
 namespace simul
 {
@@ -64,8 +63,9 @@ namespace simul
 			bool Destroy();
 			void PreRenderUpdate(void *context);
 			//! Call this to draw the clouds, including any illumination by lightning.
-			bool Render(void *context,float exposure,bool cubemap,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
+			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 			void RenderDebugInfo(void *context,int width,int height);
+			void RenderAuxiliaryTextures(void *context,int width,int height);
 			void RenderCrossSections(void *context,int width,int height);
 			//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 			bool RenderLightning(void *context,int viewport_id);
@@ -80,6 +80,7 @@ namespace simul
 			void SetLossTexture(void *t);
 			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
+			void SetLightTableTexture(void *l);
 			simul::clouds::BaseGpuCloudGenerator *GetBaseGpuCloudGenerator(){return &gpuCloudGenerator;}
 
 			void SetCloudTextureSize(unsigned width_x,unsigned length_y,unsigned depth_z){}
@@ -117,9 +118,7 @@ namespace simul
 			unsigned texel_index[4];
 			bool lightning_active;
 			ID3D1xDevice*							m_pd3dDevice;
-			simul::dx11::Mesh						circle;
-			simul::dx11::Mesh						sphere;
-			ID3D1xInputLayout*						m_pVtxDecl;
+		
 			ID3D1xInputLayout*						m_pLightningVtxDecl;
 			ID3D11SamplerState*						m_pWrapSamplerState;
 			ID3D11SamplerState*						m_pClampSamplerState;
@@ -128,7 +127,7 @@ namespace simul
 			ID3D1xEffectTechnique*					m_hTechniqueLightning;
 			ID3D1xEffect*							m_pCloudEffect;
 			ID3D1xEffectTechnique*					m_hTechniqueCloud;
-			ID3D1xEffectTechnique*					m_hTechniqueRaytrace;
+			ID3D1xEffectTechnique*					m_hTechniqueRaytraceNearPass;
 			ID3D1xEffectTechnique*					m_hTechniqueRaytraceForward;
 			ID3D1xEffectTechnique*					m_hTechniqueSimpleRaytrace;
 			ID3D1xEffectTechnique*					m_hTechniqueRaytrace3DNoise;
@@ -154,6 +153,7 @@ namespace simul
 			ID3D1xEffectShaderResourceVariable*		skyInscatterTexture;
 			ID3D1xEffectShaderResourceVariable*		skylightTexture;
 			ID3D1xEffectShaderResourceVariable*		depthTexture;
+			ID3D1xEffectShaderResourceVariable*		lightTableTexture;
 
 			TextureStruct							cloud_textures[3];
 
@@ -164,9 +164,13 @@ namespace simul
 			ID3D1xShaderResourceView*				overcInscTexture_SRV;
 			ID3D1xShaderResourceView*				skylightTexture_SRV;
 			ID3D1xShaderResourceView*				illuminationTexture_SRV;
-			
+			ID3D1xShaderResourceView*				lightTableTexture_SRV;
 			simul::dx11::Framebuffer				shadow_fb;
-			simul::dx11::Framebuffer				shadowNearFar;
+
+			// A texture whose x-axis represents azimuth, and whose y-axis represents distance
+			// as a proportion of shadow range. The texels represent how much illumination accumulates between the viewer
+			// and that distance.
+			simul::dx11::Framebuffer				godrays_fb;
 
 			simul::dx11::TextureStruct				cloud_texture;
 			
@@ -191,7 +195,7 @@ namespace simul
 			float LookupLargeScaleTexture(float x,float y);
 
 			bool CreateLightningTexture();
-			virtual bool CreateNoiseTexture(void *context);
+			void CreateNoiseTexture(void *context);
 			void Create3DNoiseTexture(void *context);
 			bool CreateCloudEffect();
 			bool MakeCubemap(); // not ready yet

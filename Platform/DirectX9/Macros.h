@@ -1,5 +1,6 @@
 #ifndef MACROS_H_DONE
 	#define MACROS_H_DONE
+	#define ENABLE_PIX
 	#include <iostream>
 	#include <tchar.h>
 	#include <comdef.h>
@@ -18,8 +19,8 @@
 	extern const TCHAR *GetErrorText(HRESULT hrx);
 
 	#ifdef ENABLE_PIX
-		#define PIXBeginNamedEvent(colour,name) //D3DPERF_BeginEvent(colour,L##name)
-		#define PIXEndNamedEvent()				//D3DPERF_EndEvent()
+		#define PIXBeginNamedEvent(colour,name) D3DPERF_BeginEvent(colour,L##name)
+		#define PIXEndNamedEvent()				D3DPERF_EndEvent()
 		#define PIXWrapper(colour,name)			D3DPERF_BeginEvent(colour,L##name);for(int pixw=0;pixw<1;pixw++,D3DPERF_EndEvent())
 	#else
 		#define PIXBeginNamedEvent(colour,name) //D3DPERF_BeginEvent(colour,L##name)

@@ -11,6 +11,7 @@ uniform sampler2D cloudShadowTexture;
 
 in vec2 pos;
 in vec2 texCoords;
+out vec4 gl_FragColor;
 
 #include "view_dir.glsl"
 

@@ -26,6 +26,21 @@ DepthStencilState WriteDepth
 	DepthFunc = ALWAYS;
 };
 
+DepthStencilState ReverseDepth
+{
+	DepthEnable = TRUE;
+	DepthWriteMask = ALL;
+	DepthFunc = GREATER_EQUAL;
+};
+
+DepthStencilState ForwardDepth
+{
+	DepthEnable = TRUE;
+	DepthWriteMask = ALL;
+	DepthFunc = LESS_EQUAL;
+};
+
+
 DepthStencilState EnableDepth
 {
 	DepthEnable = TRUE;

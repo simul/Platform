@@ -119,17 +119,6 @@ SimulPrecipitationRenderer::~SimulPrecipitationRenderer()
 	InvalidateDeviceObjects();
 }
 
-static D3DXVECTOR3 GetCameraPosVector(D3DXMATRIX &view)
-{
-	D3DXMATRIX tmp1;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	D3DXVECTOR3 cam_pos;
-	cam_pos.x=tmp1._41;
-	cam_pos.y=tmp1._42;
-	cam_pos.z=tmp1._43;
-	return cam_pos;
-}
-
 void SimulPrecipitationRenderer::Render(void *)
 {
 }

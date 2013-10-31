@@ -23,4 +23,8 @@ uniform_buffer RainPerViewConstants SIMUL_BUFFER_REGISTER(8)
 	uniform float nearZ;
 	uniform float farZ;
 };
+uniform_buffer RainOsdConstants SIMUL_BUFFER_REGISTER(9)
+{
+	uniform vec4 rect;
+};
 #endif

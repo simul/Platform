@@ -59,7 +59,7 @@ public:
 	void PreRenderUpdate(void *context);
 	//! Call this to draw the clouds, including any illumination by lightning.
 	//! On DX9, depth_testing and default_fog are ignored for now.
-	bool Render(void *context,float exposure,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
+	bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 	void RenderCrossSections(void *,int width,int height);
 #if defined(XBOX) || defined(DOXYGEN)
 	//! Call this once per frame to set the matrices (X360 only).
@@ -74,11 +74,6 @@ public:
 	// a texture
 	void SetExternalTexture(LPDIRECT3DTEXTURE9	tex);
 
-	void SetYVertical(bool y)
-	{
-		y_vertical=y;
-	}
-	bool IsYVertical() const{return y_vertical;}
 protected:
 	virtual void DrawLines(void*,VertexXyzRgba *,int ,bool ){}
 	// Make up to date with respect to keyframer:
@@ -88,7 +83,6 @@ protected:
 	void EnsureIlluminationTexturesAreUpToDate(){}
 	void EnsureTextureCycle();
 
-	bool y_vertical;
 	bool enabled;
 	simul::base::SmartPtr<simul::clouds::Cloud2DGeometryHelper> helper;
 
@@ -124,14 +118,10 @@ protected:
 	D3DXVECTOR4					cam_pos;
 	D3DXMATRIX					world,view,proj;
 
-	virtual bool CreateNoiseTexture(void *);
+	void CreateNoiseTexture(void *);
 	bool CreateImageTexture();
 	bool MakeCubemap(); // not ready yet
 	float texture_scale;
-	virtual bool IsYVertical()
-	{
-		return y_vertical;
-	}
 };
 
 #ifdef _MSC_VER

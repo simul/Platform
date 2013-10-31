@@ -21,8 +21,6 @@ public:
 	void RecompileShaders();
 	void RestoreDeviceObjects(void *);
 	void InvalidateDeviceObjects();
-	// Interface
-	void SetBufferSize(int w,int h);
 	// Assign the clouds framebuffer texture
 	void SetCloudsTexture(void* t)
 	{
@@ -36,6 +34,7 @@ public:
 	{
 		inscatter_texture=(GLuint)(uintptr_t)t;
 		skylight_texture=(GLuint)(uintptr_t)s;
+		overcast_texture=(GLuint)(uintptr_t)o;
 	}
 	void SetInputTextures(void* image,void* depth)
 	{

@@ -479,16 +479,16 @@ void SimulTerrainRenderer::RestoreDeviceObjects(void *dev)
 	hr=m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl);
 
 	SAFE_RELEASE(terrain_texture);
-	V_CHECK(D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/MudGrass01.dds"),&terrain_texture));
+	V_CHECK(CreateDX9Texture( m_pd3dDevice,terrain_texture,"terrain.png"));
 
 	SAFE_RELEASE(detail_texture);
-	V_CHECK(D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/grass01.dds"),&detail_texture));
+	V_CHECK(CreateDX9Texture(m_pd3dDevice,detail_texture,"moss.png"));
 
 	SAFE_RELEASE(road_texture);
-	V_CHECK(D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/road.dds"),&road_texture));
+	//V_CHECK(D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/road.dds"),&road_texture));
 
 	SAFE_RELEASE(colourkey_texture);
-	D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/colourkey.png"),&colourkey_texture);
+	//D3DXCreateTextureFromFile(m_pd3dDevice,TEXT("Media/Textures/colourkey.png"),&colourkey_texture);
 
 	rebuild_effect=true;
 
@@ -808,8 +808,8 @@ SimulTerrainRenderer::~SimulTerrainRenderer()
 {
 	InvalidateDeviceObjects();
 }
-	static const float radius=50.f;
-	static const float height=150.f;
+static const float radius=50.f;
+static const float height=150.f;
 
 void SimulTerrainRenderer::RenderOnlyDepth(void *)
 {
@@ -823,7 +823,6 @@ void SimulTerrainRenderer::Render(void *,float )
 	PIXBeginNamedEvent(0xFF00FF00,"SimulTerrainRenderer::Render");
 	InternalRender(false);
 	PIXEndNamedEvent();
-
 	if(highlight_pos.x+highlight_pos.y+highlight_pos.z!=0)
 	{
 		static float cc=100.f;

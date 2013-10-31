@@ -12,8 +12,9 @@
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
-#include "Simul/Platform/DirectX11/FramebufferCubemapDX1x.h"
+#include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
+#include "Simul/Platform/CrossPlatform/mixed_resolution_constants.sl"
 #pragma warning(push)
 #pragma warning(disable:4251)
 namespace simul
@@ -55,6 +56,7 @@ namespace simul
 				META_ValueProperty(bool,ShowMap					,"Show the terrain map as an overlay.")
 				META_ValueProperty(bool,UseHdrPostprocessor		,"Whether to apply post-processing for exposure and gamma-correction using a post-processing renderer.")
 				META_ValueProperty(bool,UseSkyBuffer			,"Render the sky to a low-res buffer to increase performance.")
+				META_ValueProperty(bool,ShowDepthBuffers		,"Show the depth buffers .")
 				META_ValueProperty(bool,ShowLightVolume			,"Show the cloud light volume as a wireframe box.")
 				META_ValueProperty(bool,CelestialDisplay		,"Show geographical and sidereal overlay.")
 				META_ValueProperty(bool,ShowWater				,"Show water surfaces.")
@@ -63,6 +65,7 @@ namespace simul
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
 				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")
+				META_ValueProperty(int,Antialiasing				,"How many antialiasing samples to use.")
 			META_EndProperties
 			bool IsEnabled()const{return enabled;}
 			class SimulWeatherRendererDX11 *GetSimulWeatherRenderer()
@@ -98,9 +101,11 @@ namespace simul
 
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
+			void DownscaleDepth(ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
 			void ReverseDepthChanged();
 			bool enabled;
 			ID3D11Device* m_pd3dDevice;
+			ID3DX11Effect*					mixedResolutionEffect;
 			std::string screenshotFilenameUtf8;
 			simul::camera::Camera *camera;
 			SimulOpticsRendererDX1x		*simulOpticsRenderer;
@@ -109,11 +114,14 @@ namespace simul
 			SimulTerrainRendererDX1x	*simulTerrainRenderer;
 			OceanRenderer				*oceanRenderer;
 			int ScreenWidth,ScreenHeight;
-			// A depth-only FB to make sure we have a readable depth texture.
-			simul::dx11::Framebuffer depthFramebuffer;
-			simul::dx11::Framebuffer cubemapDepthFramebuffer;
-			FramebufferCubemapDX1x	framebuffer_cubemap;
+			// A framebuffer with depth
+			simul::dx11::Framebuffer			hdrFramebuffer;
+			// The depth from the HDR framebuffer can be resolved into this texture:
+			simul::dx11::Framebuffer			resolvedDepth_fb;
+			simul::dx11::TextureStruct			lowResDepthTexture;
+			simul::dx11::CubemapFramebuffer		cubemapFramebuffer;
 			simul::base::MemoryInterface *memoryInterface;
+	ConstantBuffer<MixedResolutionConstants> mixedResolutionConstants;
 		};
 	}
 }

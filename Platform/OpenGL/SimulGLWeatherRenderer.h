@@ -52,8 +52,7 @@ namespace simul
 		public:
 			SimulGLWeatherRenderer(simul::clouds::Environment *env
 								 ,simul::base::MemoryInterface *mem
-								 ,int width=640,int height=480
-								 ,bool sky=true,bool rain=true);
+								 ,int width=640,int height=480);
 			virtual ~SimulGLWeatherRenderer();
 			void SetScreenSize(int w,int h);
 			//! Call this when the device has been created
@@ -63,7 +62,6 @@ namespace simul
 			//! Call this when the 3D device has been lost.
 			void InvalidateDeviceObjects();
 			//! Platform-dependent. Call this to draw the sky
-			bool RenderSky(void *,float exposure,bool buffered,bool is_cubemap);
 			void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 			//! Call this to draw the clouds
 			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);

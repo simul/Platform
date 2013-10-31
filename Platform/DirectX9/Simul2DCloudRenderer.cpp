@@ -112,7 +112,6 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,
 	,own_image_texture(true)
 	,texture_scale(0.25f)
 	,enabled(true)
-	,y_vertical(true)
 {
 	D3DXMatrixIdentity(&world);
 	D3DXMatrixIdentity(&view);
@@ -124,9 +123,9 @@ Simul2DCloudRenderer::Simul2DCloudRenderer(simul::clouds::CloudKeyframer *ck,
 	test=new simul::base::Referenced;
 	test=NULL;
 	cloudKeyframer->SetMake2DTextures(true);
-	cloudKeyframer->InitKeyframesFromClouds();
+//	cloudKeyframer->InitKeyframesFromClouds();
 
-	helper=new simul::clouds::Cloud2DGeometryHelper();
+	helper=new simul::clouds::Cloud2DGeometryHelper(memoryInterface);
 	helper->Initialize(8);
 	helper->SetGrid(12,24);
 	
@@ -150,6 +149,8 @@ Vertex2D_t *vertices=NULL;
 
 void Simul2DCloudRenderer::RecompileShaders()
 {
+	if(!m_pd3dDevice)
+		return;
 	V_CHECK(CreateDX9Effect(m_pd3dDevice,m_pCloudEffect,"simul_clouds_2d.fx"));
 
 	m_hTechniqueCloud	=m_pCloudEffect->GetTechniqueByName("simul_clouds_2d");
@@ -193,7 +194,7 @@ void Simul2DCloudRenderer::RestoreDeviceObjects(void *dev)
 	};
 	SAFE_RELEASE(m_pVtxDecl);
 	V_CHECK(m_pd3dDevice->CreateVertexDeclaration(decl,&m_pVtxDecl))
-	V_CHECK(CreateNoiseTexture(m_pd3dDevice));
+	CreateNoiseTexture(m_pd3dDevice);
 	hr=CreateImageTexture();
 	RecompileShaders();
 	// NOW can set the rendercallback, as we have a device to implement the callback fns with:
@@ -223,7 +224,7 @@ Simul2DCloudRenderer::~Simul2DCloudRenderer()
 	InvalidateDeviceObjects();
 }
 
-bool Simul2DCloudRenderer::CreateNoiseTexture(void *)
+void Simul2DCloudRenderer::CreateNoiseTexture(void *)
 {
 	SAFE_RELEASE(noise_texture);
 	// Can we load it from disk?
@@ -236,15 +237,14 @@ bool Simul2DCloudRenderer::CreateNoiseTexture(void *)
 	// NOTE: We specify ONE mipmap for this texture, NOT ZERO. If we use zero, that means
 	// automatically generate mipmaps.
 	if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,size,size,default_mip_levels,default_texture_usage,D3DFMT_A8R8G8B8,D3DPOOL_MANAGED,&noise_texture)))
-		return false;
+		return ;
 	D3DLOCKED_RECT lockedRect={0};
 	if(FAILED(hr=noise_texture->LockRect(0,&lockedRect,NULL,NULL)))
-		return false;
+		return ;
 	SetBits8();
 	simul::clouds::TextureGenerator::Make2DNoiseTexture(( char *)(lockedRect.pBits),size,16,8,0.8f);
 	hr=noise_texture->UnlockRect(0);
 	//noise_texture->GenerateMipSubLevels();
-	return true;
 }
 
 bool Simul2DCloudRenderer::CreateImageTexture()
@@ -266,7 +266,7 @@ void Simul2DCloudRenderer::PreRenderUpdate(void *)
 {
 }
 
-bool Simul2DCloudRenderer::Render(void *,float expos,bool cubemap,const void *depth_alpha_tex,bool default_fog,bool,int,const simul::sky::float4& )
+bool Simul2DCloudRenderer::Render(void *,float expos,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool,int,const simul::sky::float4& )
 {
 	cubemap;
 	depth_alpha_tex;
@@ -370,7 +370,7 @@ static float light_mult=.03f;
 	simul::sky::float4 loss2,inscatter2;
 	int i=0;
 	size_t qs_vert=0;
-	for(std::vector<simul::clouds::Cloud2DGeometryHelper::QuadStrip>::const_iterator j=helper->GetQuadStrips().begin();
+	for(simul::clouds::Cloud2DGeometryHelper::QuadStripVector::const_iterator j=helper->GetQuadStrips().begin();
 		j!=helper->GetQuadStrips().end();j++,i++)
 	{
 		// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?

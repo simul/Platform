@@ -4,12 +4,27 @@
 // Enable the following to use a 3-parameter depth conversion, for possible slight speed improvement
 #define NEW_DEPTH_TO_LINEAR_FADE_DIST_Z
 
+float depthToLinearDistance(float depth,vec3 depthToLinFadeDistParams)
+{
+	float linearFadeDistanceZ = depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
+	return linearFadeDistanceZ;
+}
+vec4 depthToLinearDistance(vec4 depth,vec3 depthToLinFadeDistParams)
+{
+	vec4 linearFadeDistanceZ = depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz);
+	return linearFadeDistanceZ;
+}
+vec2 depthToLinearDistance(vec2 depth,vec3 depthToLinFadeDistParams)
+{
+	vec2 linearFadeDistanceZ = depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz);
+	return linearFadeDistanceZ;
+}
 // This converts a z-buffer depth into a distance in the units of nearZ and farZ,
 //	-	where usually nearZ and farZ will be factors of the maximum fade distance.
 float depthToFadeDistance(float depth,vec2 xy,vec3 depthToLinFadeDistParams,vec2 tanHalf)
 {
 #ifdef VISION
-	float dist=depth*farZ;
+	float dist=nearZ+depth*farZ;
 	if(depth>=1.0)
 		dist=1.0;
 	return dist;

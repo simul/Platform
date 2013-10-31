@@ -1,3 +1,6 @@
+#include "dx9.hlsl"
+#include "../../CrossPlatform/states.sl"
+#include "../../CrossPlatform/noise.sl"
 
 texture noiseTexture;
 sampler2D noise_texture= sampler_state 
@@ -9,54 +12,21 @@ sampler2D noise_texture= sampler_state
 	AddressU = Wrap;
 	AddressV = Wrap;
 };
-int octaves;
-float persistence;
 
-struct a2v
+vec4 RandomPS(vertexOutputPosTexc IN) : COLOR
 {
-    float4 position  : POSITION;
-    float4 texcoord  : TEXCOORD0;
-};
-
-struct v2f
-{
-    float4 position  : POSITION;
-    float4 texcoord  : TEXCOORD0;
-};
-
-v2f MainVS(a2v IN)
-{
-	v2f OUT;
-	OUT.position = IN.position;
-	OUT.texcoord = IN.texcoord;
-    return OUT;
-}
-
-float4 MainPS(v2f IN) : COLOR
-{
-	float4 c=float4(0,0,0,0);
-	float scale=.5f;
-	int i;
-	//float total=0.f;
-	for(i=0;i<octaves;i++)
-	{
-		float4 lookup=tex2D(noise_texture,IN.texcoord);
-		float r=1.f-pow(lookup.x,4.f);
-		float az=lookup.y*2*3.1415926536f;
-		float el=asin(lookup.z*2.f-1.f);
-		float4 newc=scale*float4(r*sin(az)*cos(el),r*cos(az)*cos(el),r*sin(el),0);
-		c+=newc;
-		scale*=persistence;
-		IN.texcoord*=2.f;
-		//total+=mult;
-	}
-	c+=float4(0.5f,0.5f,0.5f,0.5f);
-	//c/=total;
-	//c.r=0.3f;
+	// Range from -1 to 1.
+    vec4 c=2.0*vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords))-1.0;
     return c;
 }
 
-technique simul_rendernoise
+vec4 MainPS(vertexOutputPosTexc IN) : COLOR
+{
+    vec4 res=0.5*(Noise(noise_texture,IN.texCoords, persistence, octaves)+vec4(1.0,1.0,1.0,1.0));
+	return res;
+}
+
+technique random
 {
     pass p0
     {
@@ -64,7 +34,20 @@ technique simul_rendernoise
 		ZEnable = false;
 		ZWriteEnable = false;
 		AlphaBlendEnable = false;
-		VertexShader = compile vs_2_0 MainVS();
+		VertexShader = compile vs_3_0 VS_FullScreen();
+		PixelShader = compile ps_3_0 RandomPS();
+    }
+}
+
+technique noise
+{
+    pass p0
+    {
+		cullmode = none;
+		ZEnable = false;
+		ZWriteEnable = false;
+		AlphaBlendEnable = false;
+		VertexShader = compile vs_3_0 VS_FullScreen();
 		PixelShader = compile ps_3_0 MainPS();
     }
 }
