@@ -96,9 +96,9 @@ namespace simul
 		{
 			fileLoader=l;
 		}
-		void GetCameraPosVector(D3DXMATRIX &view,float *dcam_pos,float *view_dir,bool y_vertical)
+		void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,bool y_vertical)
 		{
-			D3DXMATRIX tmp1;
+			D3DXMATRIX tmp1,view(v);
 			D3DXMatrixInverse(&tmp1,NULL,&view);
 			
 			dcam_pos[0]=tmp1._41;
@@ -121,8 +121,9 @@ namespace simul
 			}
 		}
 
-		const float *GetCameraPosVector(D3DXMATRIX &view,bool y_vertical)
+		const float *GetCameraPosVector(const float *v,bool y_vertical)
 		{
+			D3DXMATRIX view(v);
 			static float cam_pos[4],view_dir[4];
 			GetCameraPosVector(view,(float*)cam_pos,(float*)view_dir,y_vertical);
 			return cam_pos;
@@ -157,9 +158,9 @@ namespace simul
 				*texture_path=std::string(path)+"/";
 			}
 		}
-		void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
+		void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,const float *w,const float *v,const float *p)
 		{
-			D3DXMATRIX tmp1, tmp2;
+			D3DXMATRIX tmp1, tmp2,view(v),proj(p),world(w);
 			D3DXMatrixMultiply(&tmp1, &world,&view);
 			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 			D3DXMatrixTranspose(wvp,&tmp2);

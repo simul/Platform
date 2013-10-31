@@ -249,7 +249,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 				1.f,
 				1.f,
 				600000.f);
-			SetMatrices(view_matrices[i],cube_proj);
+			SetMatrices((const float*)&view_matrices[i],(const float*)&cube_proj);
 			RenderSkyAsOverlay(m_pImmediateContext,exposure,false,false,NULL,NULL,0,simul::sky::float4(0,0,1.f,1.f), true);
 		}
 		if(gamma_correction)
@@ -404,7 +404,7 @@ void SimulWeatherRendererDX11::RenderLightning(void *context,int viewport_id)
 		simulLightningRenderer->Render(context);
 }
 
-void SimulWeatherRendererDX11::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void SimulWeatherRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
 	view=v;
 	proj=p;

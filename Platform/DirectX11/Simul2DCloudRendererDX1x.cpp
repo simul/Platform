@@ -253,7 +253,7 @@ void Simul2DCloudRendererDX11::EnsureTextureCycle()
 	}
 }
 
-void Simul2DCloudRendererDX11::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void Simul2DCloudRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
 	view=v;
 	proj=p;
