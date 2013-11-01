@@ -31,6 +31,8 @@ static const DWORD default_effect_flags=0;
 
 #pragma comment(lib,"d3dx9.lib")
 #pragma comment(lib,"d3d9.lib")
+#pragma comment(lib,"dxgi.lib")
+#pragma comment(lib,"d3d11.lib")
 #pragma comment(lib,"d3dx11.lib")
 #pragma comment(lib,"Effects11.lib")
 #pragma comment(lib,"dxerr.lib")
