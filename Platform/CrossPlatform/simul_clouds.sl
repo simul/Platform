@@ -310,7 +310,7 @@ vec4 SimpleRaytraceCloudsForward(Texture3D cloudDensity1,Texture3D cloudDensity2
 	float meanFadeDistance	=0.0;
 	// Precalculate hg effects
 	float BetaClouds	=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-	float BetaRayleigh		=0.0596831*(1.0+cos0*cos0);
+	float BetaRayleigh		=CalcRayleighBeta(cos0);
 	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
 #ifndef USE_LIGHT_TABLES	
 	vec3 amb				=vec3(0,0,0);//ambientColour.rgb;
@@ -409,7 +409,7 @@ RaytracePixelOutput ExperimentalRaytraceCloudsForward3DNoise(Texture3D cloudDens
 	//float down			=step(0.1,-sine);
 	// Precalculate hg effects
 	float BetaClouds	=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-	float BetaRayleigh	=0.0596831*(1.0+cos0*cos0);
+	float BetaRayleigh	=CalcRayleighBeta(cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);
 
 	float dh1			=cornerPos.z-viewPos.z;
@@ -556,7 +556,7 @@ RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
 	//float down			=step(0.1,-sine);
 	// Precalculate hg effects
 	float BetaClouds	=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-	float BetaRayleigh	=0.0596831*(1.0+cos0*cos0);
+	float BetaRayleigh	=CalcRayleighBeta(cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);
 #ifndef USE_LIGHT_TABLES
 	vec3 combinedLightColour=sunlightColour1.rgb;
@@ -674,7 +674,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float meanFadeDistance	=0.0;
 	// Precalculate hg effects
 	float BetaClouds	=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-	float BetaRayleigh	=0.0596831*(1.0+cos0*cos0);
+	float BetaRayleigh	=CalcRayleighBeta(cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);
 #ifndef USE_LIGHT_TABLES	
 	vec3 amb				=ambientColour.rgb;
