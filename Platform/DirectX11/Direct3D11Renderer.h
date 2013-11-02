@@ -30,6 +30,20 @@ namespace simul
 {
 	namespace dx11
 	{
+		struct View
+		{
+			View();
+			~View();
+			void RestoreDeviceObjects(ID3D11Device *m_pd3dDevice);
+			void InvalidateDeviceObjects();
+			int ScreenWidth;
+			int ScreenHeight;
+			// A framebuffer with depth
+			simul::dx11::Framebuffer			hdrFramebuffer;
+			// The depth from the HDR framebuffer can be resolved into this texture:
+			simul::dx11::Framebuffer			resolvedDepth_fb;
+			simul::dx11::TextureStruct			lowResDepthTexture;
+		};
 		class SimulWeatherRendererDX11;
 		class SimulHDRRendererDX1x;
 		class SimulTerrainRendererDX1x;
@@ -86,23 +100,25 @@ namespace simul
 			void	RenderCubemap(ID3D11DeviceContext* pd3dImmediateContext,D3DXVECTOR3 cam_pos);
 			// D3D11CallbackInterface
 			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
-			virtual HRESULT				OnD3D11CreateDevice(		ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
-			virtual HRESULT				OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,IDXGISwapChain* pSwapChain,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
-			virtual void				OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep);
-			virtual void				OnD3D11LostDevice();
+			virtual void				OnD3D11CreateDevice	(ID3D11Device* pd3dDevice);
+			virtual int					AddView				(const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
+			virtual void				Render				(int,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext);
+			virtual void				OnD3D11LostDevice	();
 			virtual void				OnD3D11DestroyDevice();
-			virtual void				OnD3D11ReleasingSwapChain();
-			virtual bool				OnDeviceRemoved();
-			virtual void				OnFrameMove(double fTime,float fTimeStep);
-			virtual const char *		GetDebugText() const;
+			virtual void				RemoveView			(int);
+			virtual bool				OnDeviceRemoved		();
+			virtual void				OnFrameMove			(double fTime,float fTimeStep);
+			virtual const char *		GetDebugText		() const;
 
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
-			void DownscaleDepth(ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
+			int last_created_view_id;
+			int cubemap_view_id;
+			void DownscaleDepth(int view_id,ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
 			void ReverseDepthChanged();
 			bool enabled;
-			ID3D11Device* m_pd3dDevice;
-			ID3DX11Effect*					mixedResolutionEffect;
+			ID3D11Device				*m_pd3dDevice;
+			ID3DX11Effect				*mixedResolutionEffect;
 			std::string screenshotFilenameUtf8;
 			simul::camera::Camera *camera;
 			SimulOpticsRendererDX1x		*simulOpticsRenderer;
@@ -110,12 +126,8 @@ namespace simul
 			SimulHDRRendererDX1x		*simulHDRRenderer;
 			SimulTerrainRendererDX1x	*simulTerrainRenderer;
 			OceanRenderer				*oceanRenderer;
-			int ScreenWidth,ScreenHeight;
-			// A framebuffer with depth
-			simul::dx11::Framebuffer			hdrFramebuffer;
-			// The depth from the HDR framebuffer can be resolved into this texture:
-			simul::dx11::Framebuffer			resolvedDepth_fb;
-			simul::dx11::TextureStruct			lowResDepthTexture;
+			typedef std::map<int,View*>	ViewMap;
+			ViewMap						views;
 			simul::dx11::CubemapFramebuffer		cubemapFramebuffer;
 			simul::base::MemoryInterface *memoryInterface;
 	ConstantBuffer<MixedResolutionConstants> mixedResolutionConstants;

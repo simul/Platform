@@ -22,6 +22,30 @@
 using namespace simul;
 using namespace dx11;
 
+ View::View()
+ {
+ }
+ View::~View()
+ {
+	 InvalidateDeviceObjects();
+ }
+void View::RestoreDeviceObjects(ID3D11Device *pd3dDevice)
+{
+	hdrFramebuffer.RestoreDeviceObjects(pd3dDevice);
+	resolvedDepth_fb.RestoreDeviceObjects(pd3dDevice);
+	hdrFramebuffer.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
+	hdrFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+	resolvedDepth_fb.SetFormat(DXGI_FORMAT_R32_FLOAT);
+}
+
+void View::InvalidateDeviceObjects()
+{
+	hdrFramebuffer.InvalidateDeviceObjects();
+	resolvedDepth_fb.InvalidateDeviceObjects();
+	lowResDepthTexture.release();
+}
+
+
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,int w,int h):
 		camera(NULL)
 		,ShowCloudCrossSections(false)
@@ -41,6 +65,8 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,ShowOSD(false)
 		,Exposure(1.0f)
 		,Antialiasing(1)
+		,last_created_view_id(-1)
+		,cubemap_view_id(-1)
 		,enabled(false)
 		,m_pd3dDevice(NULL)
 		,mixedResolutionEffect(NULL)
@@ -60,10 +86,6 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 	oceanRenderer=new(memoryInterface) OceanRenderer(env->seaKeyframer);
 	oceanRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	ReverseDepthChanged();
-	hdrFramebuffer.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
-	hdrFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
-	hdrFramebuffer.SetAntialiasing(Antialiasing);
-	resolvedDepth_fb.SetFormat(DXGI_FORMAT_R32_FLOAT);
 	cubemapFramebuffer.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 	cubemapFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 }
@@ -83,7 +105,7 @@ D3D_FEATURE_LEVEL Direct3D11Renderer::GetMinimumFeatureLevel() const
 	return D3D_FEATURE_LEVEL_11_0;
 }
 
-HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
+void	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 {
 	m_pd3dDevice=pd3dDevice;
 	enabled=true;
@@ -101,49 +123,46 @@ HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice,const D
 		simulTerrainRenderer->RestoreDeviceObjects(pd3dDevice);
 	if(oceanRenderer)
 		oceanRenderer->RestoreDeviceObjects(pd3dDevice);
-	hdrFramebuffer.RestoreDeviceObjects(pd3dDevice);
-	resolvedDepth_fb.RestoreDeviceObjects(pd3dDevice);
-	//cubemapDepthFramebuffer.SetWidthAndHeight(64,64);
-	//cubemapDepthFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	cubemapFramebuffer.SetWidthAndHeight(64,64);
 	cubemapFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	RecompileShaders();
-	return S_OK;
 }
 
-HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice,IDXGISwapChain* pSwapChain
-	,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
+int	Direct3D11Renderer::AddView(const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
 	if(!enabled)
-		return S_OK;
+		return -1;
+	int view_id=-1;
 	try
 	{
-		ScreenWidth=pBackBufferSurfaceDesc->Width;
-		ScreenHeight=pBackBufferSurfaceDesc->Height;
-		ScreenWidth=pBackBufferSurfaceDesc->Width;
-		ScreenHeight=pBackBufferSurfaceDesc->Height;
+		last_created_view_id++;
+		view_id=last_created_view_id;
+		View *view=views[view_id]=new View();
+		view->RestoreDeviceObjects(m_pd3dDevice);
+		view->ScreenWidth	=pBackBufferSurfaceDesc->Width;
+		view->ScreenHeight	=pBackBufferSurfaceDesc->Height;
 
 		// Must have a whole number of full-res pixels per low-res pixel.
-		int w=ScreenWidth,h=ScreenHeight;
+		int w=view->ScreenWidth,h=view->ScreenHeight;
 		if(simulWeatherRenderer)
 		{
-			simulWeatherRenderer->SetScreenSize(ScreenWidth,ScreenHeight);
-			int s=simulWeatherRenderer->GetDownscale();
-			w				=(ScreenWidth +s-1)/s;
-			h				=(ScreenHeight+s-1)/s;
-			ScreenWidth		=w*s;
-			ScreenHeight	=h*s;
+			simulWeatherRenderer->SetScreenSize(view_id,view->ScreenWidth,view->ScreenHeight);
+			int					s=simulWeatherRenderer->GetDownscale();
+			w					=(view->ScreenWidth +s-1)/s;
+			h					=(view->ScreenHeight+s-1)/s;
+			view->ScreenWidth	=w*s;
+			view->ScreenHeight	=h*s;
 		}
 		if(simulHDRRenderer)
-			simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
-		hdrFramebuffer.SetWidthAndHeight(ScreenWidth,ScreenHeight);
-		resolvedDepth_fb.SetWidthAndHeight(ScreenWidth,ScreenHeight);
-		return S_OK;
+			simulHDRRenderer->SetBufferSize(view->ScreenWidth,view->ScreenHeight);
+		view->hdrFramebuffer.SetWidthAndHeight(view->ScreenWidth,view->ScreenHeight);
+		view->resolvedDepth_fb.SetWidthAndHeight(view->ScreenWidth,view->ScreenHeight);
+		view->hdrFramebuffer.SetAntialiasing(Antialiasing);
 	}
 	catch(...)
 	{
-		return S_FALSE;
 	}
+	return view_id;
 }
 
 void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos)
@@ -152,6 +171,11 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	D3DXMATRIX proj;
 	D3DXMATRIX view_matrices[6];
 	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
+	if(cubemap_view_id<0)
+	{
+		last_created_view_id++;
+		cubemap_view_id=last_created_view_id;
+	}
 	for(int i=0;i<6;i++)
 	{
 		cubemapFramebuffer.SetCurrentFace(i);
@@ -176,7 +200,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		{
 			simulWeatherRenderer->SetMatrices(view_matrices[i],cube_proj);
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapFramebuffer.GetDepthTex(),NULL,1,relativeViewportTextureRegionXYWH,true);
+			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapFramebuffer.GetDepthTex(),NULL,cubemap_view_id,relativeViewportTextureRegionXYWH,true);
 		}
 		cubemapFramebuffer.Deactivate(pContext);
 	}
@@ -186,28 +210,29 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		oceanRenderer->SetCubemapTexture(cubemapFramebuffer.GetColorTex());
 }
 
-void Direct3D11Renderer::DownscaleDepth(ID3D11DeviceContext* pContext,const D3DXMATRIX &proj)
+void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContext,const D3DXMATRIX &proj)
 {
 	HRESULT hr;
 	if(!simulWeatherRenderer)
 		return;
 	int s=simulWeatherRenderer->GetDownscale();
-	int w=ScreenWidth/s;
-	int h=ScreenHeight/s;
+	View *view=views[view_id];
+	int w=view->ScreenWidth/s;
+	int h=view->ScreenHeight/s;
 	// DXGI_FORMAT_D32_FLOAT->DXGI_FORMAT_R32_FLOAT
-	lowResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
+	view->lowResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	//lowResDepthTexture_far.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	//lowResDepthTexture_scratch.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	
 	// Resolve depth first:
-	ID3D11Texture2D *depthTexture=hdrFramebuffer.GetDepthTexture();
+	ID3D11Texture2D *depthTexture=view->hdrFramebuffer.GetDepthTexture();
 	// Sadly, ResolveSubresource doesn't work for depth. And compute can't do MS lookups. So we use a framebufferinstead.
-	resolvedDepth_fb.Activate(pContext);
-		simul::dx11::setTexture		(mixedResolutionEffect,"sourceMSDepthTexture"	,(ID3D11ShaderResourceView*)hdrFramebuffer.GetDepthTex());
+	view->resolvedDepth_fb.Activate(pContext);
+		simul::dx11::setTexture		(mixedResolutionEffect,"sourceMSDepthTexture"	,(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex());
 		ID3DX11EffectTechnique *tech	=mixedResolutionEffect->GetTechniqueByName("resolve_depth");
 		V_CHECK(ApplyPass(pContext,tech->GetPassByIndex(0)));
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
-	resolvedDepth_fb.Deactivate(pContext);
+	view->resolvedDepth_fb.Deactivate(pContext);
 	//pContext->ResolveSubresource(resolvedDepthTexture.texture, 0, depthTexture, 0, DXGI_FORMAT_R32_FLOAT);
 	mixedResolutionConstants.scale=uint2(s,s);
 	mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj);
@@ -215,9 +240,9 @@ void Direct3D11Renderer::DownscaleDepth(ID3D11DeviceContext* pContext,const D3DX
 	mixedResolutionConstants.farZ=0;
 	mixedResolutionConstants.Apply(pContext);
 	static const int BLOCKWIDTH			=8;
-	uint2 subgrid						=uint2((lowResDepthTexture.width+BLOCKWIDTH-1)/BLOCKWIDTH,(lowResDepthTexture.length+BLOCKWIDTH-1)/BLOCKWIDTH);
-	simul::dx11::setTexture				(mixedResolutionEffect,"sourceMSDepthTexture"	,(ID3D11ShaderResourceView*)hdrFramebuffer.GetDepthTex());
-	simul::dx11::setUnorderedAccessView	(mixedResolutionEffect,"target2DTexture"		,lowResDepthTexture.unorderedAccessView);
+	uint2 subgrid						=uint2((view->lowResDepthTexture.width+BLOCKWIDTH-1)/BLOCKWIDTH,(view->lowResDepthTexture.length+BLOCKWIDTH-1)/BLOCKWIDTH);
+	simul::dx11::setTexture				(mixedResolutionEffect,"sourceMSDepthTexture"	,(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex());
+	simul::dx11::setUnorderedAccessView	(mixedResolutionEffect,"target2DTexture"		,view->lowResDepthTexture.unorderedAccessView);
 	
 	simul::dx11::applyPass(pContext,mixedResolutionEffect,"downscale_depth_far_near");
 	pContext->Dispatch(subgrid.x,subgrid.y,1);
@@ -225,141 +250,141 @@ void Direct3D11Renderer::DownscaleDepth(ID3D11DeviceContext* pContext,const D3DX
 	simul::dx11::applyPass(pContext,mixedResolutionEffect,"downscale_depth_far_near");
 }
 
-void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep)
+void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext)
 {
 	if(!enabled)
 		return;
-		static int viewport_id=0;
-		D3DXMATRIX world,view,proj;
-		static float nearPlane=1.f;
-		static float farPlane=250000.f;
-		if(camera)
-		{
-			if(ReverseDepth)
-				proj=camera->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight);
-			else
-				proj=camera->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight,false);
-			view=camera->MakeViewMatrix();
-			D3DXMatrixIdentity(&world);
-		}
-		simul::dx11::UtilityRenderer::SetMatrices(view,proj);
+	D3DXMATRIX world,v,proj;
+	static float nearPlane=1.f;
+	static float farPlane=250000.f;
+	View *view=views[view_id];
+	if(camera)
+	{
+		if(ReverseDepth)
+			proj=camera->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,(float)view->ScreenWidth/(float)view->ScreenHeight);
+		else
+			proj=camera->MakeProjectionMatrix(nearPlane,farPlane,(float)view->ScreenWidth/(float)view->ScreenHeight,false);
+		v=camera->MakeViewMatrix();
 		D3DXMatrixIdentity(&world);
-		if(simulWeatherRenderer)
-		{
-			simulWeatherRenderer->SetMatrices(view,proj);
-			simulWeatherRenderer->PreRenderUpdate(pd3dImmediateContext);
-		}
-		if(MakeCubemap)
-		{
-			D3DXVECTOR3 cam_pos=simul::dx11::GetCameraPosVector(view);
-			RenderCubemap(pd3dImmediateContext,cam_pos);
+		simul::dx11::UtilityRenderer::SetMatrices(v,proj);
 	}
-	if(simulHDRRenderer&&UseHdrPostprocessor)
-	{
-		hdrFramebuffer.SetAntialiasing(Antialiasing);
-		hdrFramebuffer.Activate(pd3dImmediateContext);
-		hdrFramebuffer.Clear(pd3dImmediateContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
-	}
-	else
-	{
-		hdrFramebuffer.ActivateDepth(pd3dImmediateContext);
-		hdrFramebuffer.ClearDepth(pd3dImmediateContext,ReverseDepth?0.f:1.f);
-	}
-			if(simulWeatherRenderer)
-				simulWeatherRenderer->SetMatrices(view,proj);
-	
-		if(simulTerrainRenderer&&ShowTerrain)
-		{
-			simulTerrainRenderer->SetMatrices(view,proj);
-			if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
-				simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture());
-			simulTerrainRenderer->Render(pd3dImmediateContext,1.f);	
-		}
-		if(oceanRenderer)
-		{
-			oceanRenderer->SetMatrices(view,proj);
-			oceanRenderer->Render(pd3dImmediateContext,1.f);
-			if(oceanRenderer->GetShowWireframes())
-				oceanRenderer->RenderWireframe(pd3dImmediateContext);
-		}
-		if(simulWeatherRenderer)
-			simulWeatherRenderer->RenderCelestialBackground(pd3dImmediateContext,Exposure);
-	if(simulHDRRenderer&&UseHdrPostprocessor)
-		hdrFramebuffer.DeactivateDepth(pd3dImmediateContext);
-	else
-		hdrFramebuffer.Deactivate(pd3dImmediateContext);
-//	void *depthTexture=hdrFramebuffer.GetDepthTex();
-	void *depthTexture=resolvedDepth_fb.GetColorTex();
-		if(simulWeatherRenderer)
-		{
-		DownscaleDepth(pd3dImmediateContext,proj);
-			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-		static bool test=true;
-		const void* skyBufferDepthTex = (UseSkyBuffer&test)? lowResDepthTexture.shaderResourceView : depthTexture;
-			simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture,skyBufferDepthTex,viewport_id,relativeViewportTextureRegionXYWH,true);
-
-			simulWeatherRenderer->RenderLightning(pd3dImmediateContext,viewport_id);
-			simulWeatherRenderer->DoOcclusionTests();
-
-			simulWeatherRenderer->RenderPrecipitation(pd3dImmediateContext);
-			if(simulOpticsRenderer&&ShowFlares)
-			{
-				simul::sky::float4 dir,light;
-				if(simulWeatherRenderer->GetSkyRenderer())
-				{
-					dir=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
-					light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
-					simulOpticsRenderer->SetMatrices(view,proj);
-					float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
-					float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-					simulOpticsRenderer->RenderFlare(pd3dImmediateContext,exp,dir,light);
-				}
-			}
-		if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
-			UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetColorTex(),view,proj);
-		}
-		if(simulHDRRenderer&&UseHdrPostprocessor)
-		{
-		hdrFramebuffer.Deactivate(pd3dImmediateContext);
-		simulHDRRenderer->Render(pd3dImmediateContext,hdrFramebuffer.GetColorTex());
-			}
+	D3DXMatrixIdentity(&world);
 	if(simulWeatherRenderer)
 	{
-			if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-				simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pd3dImmediateContext,ScreenWidth,ScreenHeight);
-			if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
-				simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,ScreenWidth,ScreenHeight);
-		simul::dx11::UtilityRenderer::SetScreenSize(ScreenWidth,ScreenHeight);
+		simulWeatherRenderer->SetMatrices(v,proj);
+		simulWeatherRenderer->PreRenderUpdate(pd3dImmediateContext);
+	}
+	if(MakeCubemap)
+	{
+		D3DXVECTOR3 cam_pos=simul::dx11::GetCameraPosVector(v);
+		RenderCubemap(pd3dImmediateContext,cam_pos);
+	}
+	if(simulHDRRenderer&&UseHdrPostprocessor)
+	{
+		view->hdrFramebuffer.SetAntialiasing(Antialiasing);
+		view->hdrFramebuffer.Activate(pd3dImmediateContext);
+		view->hdrFramebuffer.Clear(pd3dImmediateContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+	}
+	else
+	{
+		view->hdrFramebuffer.ActivateDepth(pd3dImmediateContext);
+		view->hdrFramebuffer.ClearDepth(pd3dImmediateContext,ReverseDepth?0.f:1.f);
+	}
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->SetMatrices(v,proj);
+	
+	if(simulTerrainRenderer&&ShowTerrain)
+	{
+		simulTerrainRenderer->SetMatrices(v,proj);
+		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
+			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture());
+		simulTerrainRenderer->Render(pd3dImmediateContext,1.f);	
+	}
+	if(oceanRenderer)
+	{
+		oceanRenderer->SetMatrices(v,proj);
+		oceanRenderer->Render(pd3dImmediateContext,1.f);
+		if(oceanRenderer->GetShowWireframes())
+			oceanRenderer->RenderWireframe(pd3dImmediateContext);
+	}
+	if(simulWeatherRenderer)
+		simulWeatherRenderer->RenderCelestialBackground(pd3dImmediateContext,Exposure);
+	if(simulHDRRenderer&&UseHdrPostprocessor)
+		view->hdrFramebuffer.DeactivateDepth(pd3dImmediateContext);
+	else
+		view->hdrFramebuffer.Deactivate(pd3dImmediateContext);
+//	void *depthTexture=hdrFramebuffer.GetDepthTex();
+	void *depthTexture=view->resolvedDepth_fb.GetColorTex();
+	if(simulWeatherRenderer)
+	{
+		DownscaleDepth(view_id,pd3dImmediateContext,proj);
+		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
+		static bool test=true;
+		const void* skyBufferDepthTex = (UseSkyBuffer&test)? view->lowResDepthTexture.shaderResourceView : depthTexture;
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture,skyBufferDepthTex,view_id,relativeViewportTextureRegionXYWH,true);
+
+		simulWeatherRenderer->RenderLightning(pd3dImmediateContext,view_id);
+		simulWeatherRenderer->DoOcclusionTests();
+
+		simulWeatherRenderer->RenderPrecipitation(pd3dImmediateContext);
+		if(simulOpticsRenderer&&ShowFlares)
+		{
+			simul::sky::float4 dir,light;
+			if(simulWeatherRenderer->GetSkyRenderer())
+			{
+				dir=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
+				light=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
+				simulOpticsRenderer->SetMatrices(v,proj);
+				float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
+				float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
+				simulOpticsRenderer->RenderFlare(pd3dImmediateContext,exp,dir,light);
+			}
+		}
+		if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
+			UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetColorTex(),v,proj);
+	}
+	if(simulHDRRenderer&&UseHdrPostprocessor)
+	{
+		view->hdrFramebuffer.Deactivate(pd3dImmediateContext);
+		simulHDRRenderer->Render(pd3dImmediateContext,view->hdrFramebuffer.GetColorTex());
+	}
+	if(simulWeatherRenderer)
+	{
+		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
+		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
+		simul::dx11::UtilityRenderer::SetScreenSize(view->ScreenWidth,view->ScreenHeight);
 		if(ShowDepthBuffers)
 		{
-			int w=lowResDepthTexture.width*4;
-			int l=lowResDepthTexture.length*4;
-			if(w>hdrFramebuffer.Width/4)
+			int w=view->lowResDepthTexture.width*4;
+			int l=view->lowResDepthTexture.length*4;
+			if(w>view->hdrFramebuffer.Width/4)
 			{
-				l*=hdrFramebuffer.Width/4;
+				l*=view->hdrFramebuffer.Width/4;
 				l/=w;
-				w=hdrFramebuffer.Width/4;
+				w=view->hdrFramebuffer.Width/4;
 			}
-			if(l>hdrFramebuffer.Height/4)
+			if(l>view->hdrFramebuffer.Height/4)
 			{
-				w*=hdrFramebuffer.Height/4;
+				w*=view->hdrFramebuffer.Height/4;
 				w/=l;
-				l=hdrFramebuffer.Height/4;
+				l=view->hdrFramebuffer.Height/4;
 			}
-			UtilityRenderer::DrawTexture(pd3dImmediateContext,0*w	,0,w,l,(ID3D1xShaderResourceView*)hdrFramebuffer.GetDepthTex());
-			UtilityRenderer::DrawTexture(pd3dImmediateContext,1*w	,0,w,l,(ID3D1xShaderResourceView*)resolvedDepth_fb.GetColorTex());
-			UtilityRenderer::DrawTexture(pd3dImmediateContext,2*w	,0,w,l,lowResDepthTexture.shaderResourceView);
+			UtilityRenderer::DrawTexture(pd3dImmediateContext,0*w	,0,w,l,(ID3D1xShaderResourceView*)view->hdrFramebuffer.GetDepthTex());
+			UtilityRenderer::DrawTexture(pd3dImmediateContext,1*w	,0,w,l,(ID3D1xShaderResourceView*)view->resolvedDepth_fb.GetColorTex());
+			UtilityRenderer::DrawTexture(pd3dImmediateContext,2*w	,0,w,l,view->lowResDepthTexture.shaderResourceView);
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
-			simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,ScreenWidth,ScreenHeight);
-				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,ScreenWidth,ScreenHeight);
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pd3dImmediateContext,ScreenWidth,ScreenHeight);
-				simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
+				simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
+				simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
 			}
 			if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
 			{
-				simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(pd3dImmediateContext,ScreenWidth,ScreenHeight);
+				simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
 			}
 			if(simulWeatherRenderer->GetBasePrecipitationRenderer())
 			{
@@ -367,23 +392,24 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			}
 			if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 			{
-				simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(pd3dImmediateContext,ScreenWidth,ScreenHeight);
+				simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
 			}
 		}
 		if(oceanRenderer)
-			oceanRenderer->RenderTextures(pd3dImmediateContext,ScreenWidth,ScreenHeight);
+			oceanRenderer->RenderTextures(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
 	
 }
 
 void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 {
 	screenshotFilenameUtf8=filename_utf8;
-	simul::dx11::Framebuffer fb(ScreenWidth,ScreenHeight);
+	View *view=views[0];
+	simul::dx11::Framebuffer fb(view->ScreenWidth,view->ScreenHeight);
 	fb.RestoreDeviceObjects(m_pd3dDevice);
 	ID3D11DeviceContext*			pImmediateContext;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
 	fb.Activate(pImmediateContext);
-	OnD3D11FrameRender(m_pd3dDevice,pImmediateContext,0.f,0.f);
+	Render(0,m_pd3dDevice,pImmediateContext);
 	fb.Deactivate(pImmediateContext);
 	simul::dx11::SaveTexture(m_pd3dDevice,(ID3D11Texture2D *)(fb.GetColorTexture()),screenshotFilenameUtf8.c_str());
 	SAFE_RELEASE(pImmediateContext);
@@ -404,9 +430,12 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 		simulTerrainRenderer->InvalidateDeviceObjects();
 	if(oceanRenderer)
 		oceanRenderer->InvalidateDeviceObjects();
-	hdrFramebuffer.InvalidateDeviceObjects();
-	resolvedDepth_fb.InvalidateDeviceObjects();
-	lowResDepthTexture.release();
+	for(ViewMap::iterator i=views.begin();i!=views.end();i++)
+	{
+		i->second->hdrFramebuffer.InvalidateDeviceObjects();
+		i->second->resolvedDepth_fb.InvalidateDeviceObjects();
+		i->second->lowResDepthTexture.release();
+	}
 	cubemapFramebuffer.InvalidateDeviceObjects();
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	SAFE_RELEASE(mixedResolutionEffect);
@@ -420,8 +449,10 @@ void Direct3D11Renderer::OnD3D11DestroyDevice()
 	// And after OnD3D11DestroyDevice we might go back to startup without destroying the renderer.
 }
 
-void Direct3D11Renderer::OnD3D11ReleasingSwapChain()
+void Direct3D11Renderer::RemoveView(int view_id)
 {
+	delete views[view_id];
+	views.erase(view_id);
     //Profiler::GetGlobalProfiler().Uninitialize();
 	//if(simulWeatherRenderer)
 	//	simulWeatherRenderer->InvalidateDeviceObjects();

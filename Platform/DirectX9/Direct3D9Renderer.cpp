@@ -127,7 +127,7 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->SetScreenSize(width,height);
+		simulWeatherRenderer->SetScreenSize(0,width,height);
 		simulWeatherRenderer->RestoreDeviceObjects(pd3dDevice);
 	}
 	timer.UpdateTime();

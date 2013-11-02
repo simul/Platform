@@ -54,7 +54,7 @@ namespace simul
 								 ,simul::base::MemoryInterface *mem
 								 ,int width=640,int height=480);
 			virtual ~SimulGLWeatherRenderer();
-			void SetScreenSize(int w,int h);
+			void SetScreenSize(int view_id,int w,int h);
 			//! Call this when the device has been created
 			void RestoreDeviceObjects(void*);
 			void ReloadTextures();

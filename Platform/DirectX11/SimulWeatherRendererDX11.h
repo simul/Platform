@@ -41,7 +41,7 @@ namespace simul
 		public:
 			SimulWeatherRendererDX11(simul::clouds::Environment *env,simul::base::MemoryInterface *mem);
 			virtual ~SimulWeatherRendererDX11();
-			void SetScreenSize(int w,int h);
+			void SetScreenSize(int view_id,int w,int h);
 			//standard d3d object interface functions
 			void RestoreDeviceObjects(void*);
 			void RecompileShaders();
@@ -105,9 +105,9 @@ namespace simul
 			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
 			class SimulLightningRendererDX11		*simulLightningRenderer;
 			// The main framebuffer uses far depth for each pixel.
-			simul::dx11::Framebuffer				framebuffer;
+			//simul::dx11::Framebuffer				framebuffer;
 			// Edge pixels are rendered with the near framebuffer as well as the far one.
-			simul::dx11::Framebuffer				nearFramebuffer;
+			//simul::dx11::Framebuffer				nearFramebuffer;
 			simul::dx11::ConstantBuffer<HdrConstants> hdrConstants;
 			float									exposure;
 			float									gamma;

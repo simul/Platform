@@ -259,7 +259,7 @@ void OpenGLRenderer::resizeGL(int w,int h)
 	ScreenWidth=w;
 	ScreenHeight=h;
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->SetScreenSize(ScreenWidth,ScreenHeight);
+		simulWeatherRenderer->SetScreenSize(0,ScreenWidth,ScreenHeight);
 	if(simulHDRRenderer)
 		simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
 	depthFramebuffer.SetWidthAndHeight(ScreenWidth,ScreenHeight);

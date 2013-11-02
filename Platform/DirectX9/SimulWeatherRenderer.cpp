@@ -60,7 +60,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer;
 	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer;
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
-	SetScreenSize(width,height);
+	SetScreenSize(0,width,height);
 	
 		simulSkyRenderer=new SimulSkyRenderer(sk);
 		baseSkyRenderer=simulSkyRenderer;
@@ -86,7 +86,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer(mem);
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
 #endif
-	baseFramebuffer=&framebuffer;
+	framebuffers[0]=&framebuffer;
 	ConnectInterfaces();
 }
 
@@ -108,7 +108,7 @@ void SimulWeatherRenderer::ConnectInterfaces()
 		simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 }
 */
-void SimulWeatherRenderer::SetScreenSize(int w,int h)
+void SimulWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 {
 	BufferWidth=w/Downscale;
 	BufferHeight=h/Downscale;
