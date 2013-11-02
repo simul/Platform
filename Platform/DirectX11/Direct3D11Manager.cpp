@@ -272,7 +272,9 @@ void Window::SetRenderer(Direct3D11CallbackInterface *ci)
 	surfaceDesc.SampleDesc	=swapDesc.SampleDesc;
 	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
 	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
-	renderer->AddView(&surfaceDesc);
+	if(view_id<0)
+		view_id=renderer->AddView();
+	renderer->ResizeView(view_id,&surfaceDesc);
 }
 
 void Window::Release()
@@ -304,19 +306,13 @@ void Direct3D11Manager::Initialize()
 {
 	HRESULT result;
 	IDXGIFactory* factory;
-	int  i, numerator, denominator;
+	int  i;//, numerator, denominator;
 	DXGI_ADAPTER_DESC adapterDesc;
 	int error;
 	D3D_FEATURE_LEVEL featureLevel;
 
 	// Store the vsync setting.
 	m_vsync_enabled = true;
-	//Before we can initialize Direct3D we have to get the refresh rate from the video card/monitor.
-	//Each computer may be slightly different so we will need to query for that information.
-	//We query for the numerator and denominator values and then pass them to DirectX during the setup and it will calculate the proper refresh rate.
-	// If we don't do this and just set the refresh rate to a default value which may not exist on all computers then DirectX will respond by performing
-	// a blit instead of a buffer flip which will degrade performance and give us annoying errors in the debug output.
-
 	// Create a DirectX graphics interface factory.
 	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
 	SIMUL_ASSERT(result==S_OK);
@@ -424,6 +420,14 @@ Output Direct3D11Manager::GetOutput(int i)
 	// Now fill the display mode list structures.
 	result = output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, displayModeList);
 	SIMUL_ASSERT(result==S_OK);
+	
+	// It is useful to get the refresh rate from the video card/monitor.
+	//Each computer may be slightly different so we will need to query for that information.
+	//We query for the numerator and denominator values and then pass them to DirectX during the setup and it will calculate the proper refresh rate.
+	// If we don't do this and just set the refresh rate to a default value which may not exist on all computers then DirectX will respond by performing
+	// a blit instead of a buffer flip which will degrade performance and give us annoying errors in the debug output.
+
+
 	// Now go through all the display modes and find the one that matches the screen width and height.
 	// When a match is found store the numerator and denominator of the refresh rate for that monitor.
 	for(i=0; i<(int)numModes; i++)
@@ -453,6 +457,7 @@ void Direct3D11Manager::Shutdown()
 	outputs.clear();
 	for(WindowMap::iterator i=windows.begin();i!=windows.end();i++)
 	{
+		SetFullScreen(i->second->hwnd,false,0);
 		delete i->second;
 	}
 	windows.clear();
@@ -461,13 +466,14 @@ void Direct3D11Manager::Shutdown()
 	return;
 }
 
-void Direct3D11Manager::RemoveWindow(HWND h)
+void Direct3D11Manager::RemoveWindow(HWND hwnd)
 {
-	if(windows.find(h)==windows.end())
+	if(windows.find(hwnd)==windows.end())
 		return;
-	Window *w=windows[h];
+	Window *w=windows[hwnd];
+	SetFullScreen(hwnd,false,0);
 	delete w;
-	windows.erase(h);
+	windows.erase(hwnd);
 }
 
 IDXGISwapChain *Direct3D11Manager::GetSwapChain(HWND h)
@@ -507,6 +513,29 @@ void Direct3D11Manager::SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci)
 	w->SetRenderer(ci);
 }
 
+Window *Direct3D11Manager::GetWindow(HWND hwnd)
+{
+	if(windows.find(hwnd)==windows.end())
+		return NULL;
+	Window *w=windows[hwnd];
+	return w;
+}
+
+void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output)
+{
+	Window *w=GetWindow(hwnd);
+	if(!w)
+		return;
+	IDXGIOutput *output=outputs[which_output];
+	if(!w->m_swapChain)
+		return;
+	w->m_swapChain->SetFullscreenState(fullscreen,output);
+	DXGI_OUTPUT_DESC outputDesc;
+	output->GetDesc(&outputDesc);
+	ResizeSwapChain(hwnd,outputDesc.DesktopCoordinates.right-outputDesc.DesktopCoordinates.left
+		,abs(outputDesc.DesktopCoordinates.bottom-outputDesc.DesktopCoordinates.top));
+}
+
 void Direct3D11Manager::ResizeSwapChain(HWND hwnd,int width,int height)
 {
 	if(windows.find(hwnd)==windows.end())
@@ -533,6 +562,8 @@ ID3D11DeviceContext* Direct3D11Manager::GetDeviceContext()
 
 void Direct3D11Manager::AddWindow(HWND hwnd)
 {
+	if(windows.find(hwnd)!=windows.end())
+		return;
 	Window *window=new Window;
 	windows[hwnd]=window;
 	window->hwnd=hwnd;

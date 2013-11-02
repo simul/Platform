@@ -499,8 +499,19 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 {
 	HRESULT hr=S_OK;
 #if 1
+	std::string binary_filename_utf8=text_filename_utf8+"o";
 	void *textData=NULL;
 	unsigned textSize=0;
+	//if(shaderBuildMode==BUILD_IF_NO_BINARY)
+	// See if there's a binary that's newer than the file date.
+	double text_date_jdn=fileLoader->GetFileDate(text_filename_utf8.c_str());
+	double binary_date_jdn=fileLoader->GetFileDate(binary_filename_utf8.c_str());
+	if(binary_date_jdn>text_date_jdn)
+	{
+		hr=D3DX11CreateEffectFromBinaryFileUtf8(text_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
+		if(hr==S_OK)
+			return S_OK;
+	}
 	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
 	ID3DBlob *binaryBlob=NULL;
 	ID3DBlob *errorMsgs=NULL;
@@ -527,7 +538,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	if(hr==S_OK)
 	{
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
-		//if(fileLoader->
+		//if(fileLoader->GetFileDate
 	}
 	else
 	{
@@ -549,7 +560,6 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 #else
 	// first try to find an existing text source with this filename, and compile it.
 	std::string filename_utf8= text_filename_utf8;
-	std::string binary_filename_utf8=text_filename_utf8+"o";
 	int pos=(int)text_filename_utf8.find_last_of("/");
 	if(pos<0)
 		pos=(int)text_filename_utf8.find_last_of("\\");

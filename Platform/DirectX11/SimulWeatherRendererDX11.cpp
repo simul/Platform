@@ -392,7 +392,7 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 		return;
 	float max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	UtilityRenderer::SetScreenSize(width,height);
-	BaseFramebuffer *fb=framebuffers[0];
+	BaseFramebuffer *fb=framebuffers.begin()->second;
 	simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)fb->GetDepthTex());
 	int x=8;
 	int y=height-w;
@@ -464,5 +464,5 @@ void SimulWeatherRendererDX11::SetRenderDepthBufferCallback(RenderDepthBufferCal
 
 void *SimulWeatherRendererDX11::GetCloudDepthTexture()
 {
-	return framebuffers[0]->GetDepthTex();
+	return framebuffers.begin()->second->GetDepthTex();
 }

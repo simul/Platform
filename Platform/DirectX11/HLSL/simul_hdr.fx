@@ -45,6 +45,28 @@ v2f MainVS(idOnly IN)
     return OUT;
 }
 
+v2f OffsetVS(idOnly IN)
+{
+	v2f OUT;
+	vec2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=vec4(pos+offset,0.0,1.0);
+	// Set to far plane so can use depth test as we want this geometry effectively at infinity
+#ifdef REVERSE_DEPTH
+	OUT.hPosition.z	=0.0; 
+#else
+	OUT.hPosition.z	=OUT.hPosition.w; 
+#endif
+    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
+    return OUT;
+}
+
 v2f QuadVS(idOnly IN)
 {
     v2f OUT;
@@ -268,7 +290,7 @@ technique11 exposure_gamma
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,MainVS()));
+		SetVertexShader(CompileShader(vs_4_0,OffsetVS()));
 		SetPixelShader(CompileShader(ps_4_0,ExposureGammaPS()));
     }
 }
@@ -281,7 +303,7 @@ technique11 glow_exposure_gamma
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,MainVS()));
+		SetVertexShader(CompileShader(vs_4_0,OffsetVS()));
 		SetPixelShader(CompileShader(ps_4_0,GlowExposureGammaPS()));
     }
 }

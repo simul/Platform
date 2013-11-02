@@ -170,11 +170,17 @@ SimulHDRRendererDX1x::~SimulHDRRendererDX1x()
 
 void SimulHDRRendererDX1x::Render(void *context,void *texture_srv)
 {
+	Render(context,texture_srv,0);
+}
+
+void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
+{
 	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	imageTexture->SetResource(textureSRV);
 	Gamma_->SetFloat(Gamma);
 	Exposure_->SetFloat(Exposure);
+	simul::dx11::setParameter(m_pTonemapEffect,"offset",offsetX,0.f);
 	if(Glow)
 	{
 		RenderGlowTexture(context,texture_srv);

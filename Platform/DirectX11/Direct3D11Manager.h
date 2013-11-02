@@ -5,23 +5,9 @@
 #include <map>
 #include <string>
 #include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
+#include "Simul/Platform/DirectX11/Direct3D11ManagerInterface.h"
 #include "Simul/Platform/DirectX11/Export.h"
 
-#ifndef DIRECT3D11MANAGERINTERFACE
-#define DIRECT3D11MANAGERINTERFACE
-class Direct3D11ManagerInterface
-{
-public:
-	virtual void					AddWindow(HWND h)=0;
-	virtual void					RemoveWindow(HWND h)=0;
-	virtual IDXGISwapChain *		GetSwapChain(HWND h)=0;
-	virtual void					StartRendering(HWND h)=0;
-	virtual void					SetRenderer(HWND,Direct3D11CallbackInterface *ci)=0;
-	virtual void					ResizeSwapChain(HWND hwnd,int width,int height)=0;
-	virtual ID3D11Device*			GetDevice()=0;
-	virtual ID3D11DeviceContext*	GetDeviceContext()=0;
-};
-#endif
 namespace simul
 {
 	namespace dx11
@@ -48,14 +34,6 @@ namespace simul
 			D3D11_VIEWPORT				viewport;
 			Direct3D11CallbackInterface *renderer;
 		};
-		struct Output
-		{
-			std::string monitorName;
-			int desktopX;
-			int desktopY;
-			int width;
-			int height;
-		};
 		//! A class intended to replace DXUT, while allowing for multiple swap chains (i.e. rendering windows) to share the same d3d device.
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Manager: public Direct3D11ManagerInterface
 		{
@@ -70,10 +48,11 @@ namespace simul
 			void RemoveWindow(HWND h);
 			void Shutdown();
 			
-			IDXGISwapChain *GetSwapChain(HWND h);
-			void StartRendering(HWND h);
-			void SetRenderer(HWND h,Direct3D11CallbackInterface *ci);
-			void ResizeSwapChain(HWND hw,int width,int height);
+			IDXGISwapChain *GetSwapChain(HWND hwnd);
+			void StartRendering(HWND hwnd);
+			void SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci);
+			void SetFullScreen(HWND hwnd,bool fullscreen,int which_output);
+			void ResizeSwapChain(HWND hwnd,int width,int height);
 			ID3D11Device* GetDevice();
 			ID3D11DeviceContext* GetDeviceContext();
 			int GetNumOutputs();
@@ -81,6 +60,7 @@ namespace simul
 
 			void GetVideoCardInfo(char*, int&);
 		protected:
+			Window *GetWindow(HWND hwnd);
 			bool m_vsync_enabled;
 			int m_videoCardMemory;
 			char m_videoCardDescription[128];

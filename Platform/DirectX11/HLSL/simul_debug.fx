@@ -189,3 +189,4 @@ technique11 draw_cubemap_sphere
 		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
+

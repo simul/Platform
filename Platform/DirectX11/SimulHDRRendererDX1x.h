@@ -42,6 +42,7 @@ namespace simul
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			//! Render: write the given texture to screen using the HDR rendering shaders
+			void Render(void *context,void *texture_srv,float offsetX);
 			void Render(void *context,void *texture_srv);
 			//! Create the glow texture that will be overlaid due to strong lights.
 			void RenderGlowTexture(void *context,void *texture_srv);

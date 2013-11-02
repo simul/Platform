@@ -203,6 +203,9 @@
     <ClInclude Include="Direct3D11Manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Direct3D11ManagerInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\CppHLSL.hlsl">
