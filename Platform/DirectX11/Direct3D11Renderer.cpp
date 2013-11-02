@@ -250,6 +250,10 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 	simul::dx11::applyPass(pContext,mixedResolutionEffect,"downscale_depth_far_near");
 }
 
+void Direct3D11Renderer::RenderFadeEditView(ID3D11DeviceContext* pd3dImmediateContext)
+{
+}
+
 void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext)
 {
 	if(!enabled)
@@ -258,6 +262,10 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	static float nearPlane=1.f;
 	static float farPlane=250000.f;
 	View *view=views[view_id];
+	if(view->ViewType==FADE_EDITING)
+	{
+		RenderFadeEditView(pd3dImmediateContext);
+	}
 	if(camera)
 	{
 		if(ReverseDepth)

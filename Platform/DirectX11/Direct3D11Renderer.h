@@ -30,6 +30,11 @@ namespace simul
 {
 	namespace dx11
 	{
+		enum ViewType
+		{
+			MAIN_3D_VIEW
+			,FADE_EDITING
+		};
 		struct View
 		{
 			View();
@@ -43,6 +48,7 @@ namespace simul
 			// The depth from the HDR framebuffer can be resolved into this texture:
 			simul::dx11::Framebuffer			resolvedDepth_fb;
 			simul::dx11::TextureStruct			lowResDepthTexture;
+			ViewType							viewType;
 		};
 		class SimulWeatherRendererDX11;
 		class SimulHDRRendererDX1x;
@@ -110,6 +116,7 @@ namespace simul
 			virtual void				OnFrameMove			(double fTime,float fTimeStep);
 			virtual const char *		GetDebugText		() const;
 
+			void SetViewType(int view_id,const char *txt);
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
 			int last_created_view_id;
@@ -130,7 +137,7 @@ namespace simul
 			ViewMap						views;
 			simul::dx11::CubemapFramebuffer		cubemapFramebuffer;
 			simul::base::MemoryInterface *memoryInterface;
-	ConstantBuffer<MixedResolutionConstants> mixedResolutionConstants;
+			ConstantBuffer<MixedResolutionConstants> mixedResolutionConstants;
 		};
 	}
 }
