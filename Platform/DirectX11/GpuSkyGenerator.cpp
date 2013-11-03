@@ -82,39 +82,25 @@ bool GpuSkyGenerator::CanPerformGPUGeneration() const
 void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				int cycled_index,
 				simul::sky::AtmosphericScatteringInterface *skyInterface
-				,int numElevations,int numDistances
-				,const std::vector<float> &altitudes_km,float max_distance_km
-				,simul::sky::float4 sun_irradiance
-				,simul::sky::float4 starlight
-				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon
-				,const simul::sky::HazeStruct &hazeStruct
-				,unsigned new_tables_checksum
-				,float overcast_base_km,float overcast_range_km
-				,simul::sky::float4 ozone
-				,int start_texel,int num_texels
-				,const simul::sky::float4 *density_table
-				,const simul::sky::float4 *optical_table
-				,const simul::sky::float4 *blackbody_table
-				,int table_size
-				,float maxDensityAltKm
-				,bool InfraRed,float emissivity
-				,float seaLevelTemperatureK
+				,const sky::GpuSkyParameters &p
+				,const sky::GpuSkyAtmosphereParameters &a
+				,const sky::GpuSkyInfraredParameters &ir
 				)
 {
 	SIMUL_PROFILE_START("GpuSkyGenerator init")
 	HRESULT hr=S_OK;
-	int gridsize			=(int)altitudes_km.size()*numElevations*numDistances;
-	int gridsize_2d			=(int)altitudes_km.size()*numElevations;
-	if(dens_tex.width!=table_size||optd_tex.width!=table_size)
+	int gridsize			=(int)p.altitudes_km.size()*p.numElevations*p.numDistances;
+	int gridsize_2d			=(int)p.altitudes_km.size()*p.numElevations;
+	if(dens_tex.width!=a.table_size||optd_tex.width!=a.table_size)
 		tables_checksum=0;
-	dens_tex.ensureTexture2DSizeAndFormat(m_pd3dDevice,table_size,1,DXGI_FORMAT_R32G32B32A32_FLOAT,false);
-	optd_tex.ensureTexture2DSizeAndFormat(m_pd3dDevice,table_size,table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,false,false);
+	dens_tex.ensureTexture2DSizeAndFormat(m_pd3dDevice,a.table_size,1,DXGI_FORMAT_R32G32B32A32_FLOAT,false);
+	optd_tex.ensureTexture2DSizeAndFormat(m_pd3dDevice,a.table_size,a.table_size,DXGI_FORMAT_R32G32B32A32_FLOAT,false,false);
 
-	if(new_tables_checksum!=tables_checksum)
+	if(a.tables_checksum!=tables_checksum)
 	{
-		dens_tex.setTexels(m_pImmediateContext,(unsigned*)density_table,0,table_size);
-		optd_tex.setTexels(m_pImmediateContext,(unsigned *)optical_table,0,table_size*table_size);
-		tables_checksum=new_tables_checksum;
+		dens_tex.setTexels(m_pImmediateContext,(unsigned*)a.density_table,0,a.table_size);
+		optd_tex.setTexels(m_pImmediateContext,(unsigned *)a.optical_table,0,a.table_size*a.table_size);
+		tables_checksum=a.tables_checksum;
 	}
 	SIMUL_PROFILE_END
 	SIMUL_PROFILE_START("GpuSkyGenerator 1")
@@ -128,48 +114,45 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 	ID3D1xEffectShaderResourceVariable*	loss_texture			=effect->GetVariableByName("loss_texture")->AsShaderResource();
 	ID3D1xEffectShaderResourceVariable*	insc_texture			=effect->GetVariableByName("insc_texture")->AsShaderResource();
 	
-	float maxOutputAltKm	=altitudes_km[altitudes_km.size()-1];
+	float maxOutputAltKm	=p.altitudes_km[p.altitudes_km.size()-1];
 	{
-		gpuSkyConstants.texSize				=vec2((float)altitudes_km.size(),(float)numElevations);
+		gpuSkyConstants.texSize				=vec2((float)p.altitudes_km.size(),(float)p.numElevations);
 		static float tto=0.5f;
 		gpuSkyConstants.texelOffset			=tto;
-		gpuSkyConstants.tableSize			=vec2((float)table_size,(float)table_size);
+		gpuSkyConstants.tableSize			=vec2((float)a.table_size,(float)a.table_size);
 		
-		gpuSkyConstants.maxDistanceKm		=max_distance_km;
+		gpuSkyConstants.maxDistanceKm		=p.max_distance_km;
 		
 		gpuSkyConstants.planetRadiusKm		=skyInterface->GetPlanetRadius();
 		gpuSkyConstants.maxOutputAltKm		=maxOutputAltKm;
-		gpuSkyConstants.maxDensityAltKm		=maxDensityAltKm;
-		gpuSkyConstants.hazeBaseHeightKm	=hazeStruct.haze_base_height_km;
-		gpuSkyConstants.hazeScaleHeightKm	=hazeStruct.haze_scale_height_km;
-
-		gpuSkyConstants.overcastBaseKmX		=overcast_base_km;
-		gpuSkyConstants.overcastRangeKmX		=overcast_range_km;
-		gpuSkyConstants.overcastX			=0.0f;
+		gpuSkyConstants.maxDensityAltKm		=a.maxDensityAltKm;
+		gpuSkyConstants.hazeBaseHeightKm	=p.hazeStruct.haze_base_height_km;
+		gpuSkyConstants.hazeScaleHeightKm	=p.hazeStruct.haze_scale_height_km;
 
 		gpuSkyConstants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-		gpuSkyConstants.hazeMie				=(const float*)(hazeStruct.haze*hazeStruct.mie);
-		gpuSkyConstants.ozone				=(const float*)(ozone);
+		gpuSkyConstants.hazeMie				=(const float*)(p.hazeStruct.haze*p.hazeStruct.mie);
+		gpuSkyConstants.ozone				=(const float*)(p.ozone);
 
-		gpuSkyConstants.sunIrradiance		=(const float*)sun_irradiance;
-		gpuSkyConstants.lightDir			=(const float*)dir_to_sun;
-		gpuSkyConstants.directionToMoon		=(const float*)dir_to_moon;
-		gpuSkyConstants.starlight			=(const float*)(starlight);
+		gpuSkyConstants.sunIrradiance		=(const float*)p.sun_irradiance;
+		gpuSkyConstants.lightDir			=(const float*)p.dir_to_sun;
+		gpuSkyConstants.directionToMoon		=(const float*)p.dir_to_moon;
+		gpuSkyConstants.starlight			=(const float*)(p.starlight);
 		
 		gpuSkyConstants.hazeEccentricity	=1.0;
 		gpuSkyConstants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
-		gpuSkyConstants.emissivity			=emissivity;
+		gpuSkyConstants.emissivity			=ir.emissivity;
 		gpuSkyConstants.yRange				=vec2(0.f,1.f);
 
 	}
+	//SetGpuSkyConstants(gpuSkyConstants,p,a,ir);
 	for(int i=0;i<3;i++)
 	{
-		finalLoss[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
-		finalInsc[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
-		finalSkyl[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size(),numElevations,numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalLoss[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalInsc[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		finalSkyl[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size(),p.numElevations,p.numDistances,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
 	}
 	if(light_table)
-		light_table->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)altitudes_km.size()*32,3,4,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+		light_table->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size()*32,3,4,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
 	density_texture->SetResource(dens_tex.shaderResourceView);
 	SIMUL_PROFILE_END
 	SIMUL_PROFILE_START("GpuSkyGenerator 2")
@@ -177,10 +160,10 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 	// divide the grid into blocks:
 	static const int BLOCKWIDTH=8;
 
-	int xy_size		=(int)altitudes_km.size()*numElevations;
+	int xy_size		=(int)p.altitudes_km.size()*p.numElevations;
 	
-	int start_step	=(start_texel*3)/numDistances;
-	int end_step	=((start_texel+num_texels)*3+numDistances-1)/numDistances;
+	int start_step	=(p.start_texel*3)/p.numDistances;
+	int end_step	=((p.start_texel+p.num_texels)*3+p.numDistances-1)/p.numDistances;
 
 	int start_loss	=range(start_step			,0,xy_size);
 	int end_loss	=range(end_step				,0,xy_size);
