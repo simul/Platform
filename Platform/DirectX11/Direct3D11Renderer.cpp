@@ -25,6 +25,8 @@ using namespace dx11;
  View::View()
 	 :camera(NULL)
 	 ,viewType(MAIN_3D_VIEW)
+	 ,ScreenWidth(0)
+	,ScreenHeight(0)
  {
  }
 
@@ -183,6 +185,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	{
 		cubemapFramebuffer.SetCurrentFace(i);
 		cubemapFramebuffer.Activate(pContext);
+		cubemapFramebuffer.Clear(pContext,0,0,0,0,0);
 		D3DXMATRIX cube_proj;
 		float nearPlane=1.f;
 		float farPlane=200000.f;
@@ -341,28 +344,20 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		simulWeatherRenderer->SetMatrices(v,proj);
 		simulWeatherRenderer->PreRenderUpdate(pd3dImmediateContext);
 	}
-	if(MakeCubemap)
-	{
-		D3DXVECTOR3 cam_pos=simul::dx11::GetCameraPosVector(v);
-		RenderCubemap(pd3dImmediateContext,cam_pos);
-	}
 	if(view->viewType==OCULUS_VR)
 	{
 		D3D11_VIEWPORT				viewport;
 		memset(&viewport,0,sizeof(D3D11_VIEWPORT));
 		viewport.MinDepth			=0.0f;
 		viewport.MaxDepth			=1.0f;
-		viewport.Width				=view->ScreenWidth;///2.f;
+		viewport.Width				=view->ScreenWidth/2.f;
 		viewport.Height				=view->ScreenHeight;
 		pd3dImmediateContext->RSSetViewports(1, &viewport);
 		//left eye
 		if(cam)
 		{
-			if(ReverseDepth)
-				proj=cam->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,(float)view->ScreenWidth/2.f/(float)view->ScreenHeight);
-			else
-				proj=cam->MakeProjectionMatrix(nearPlane,farPlane,(float)view->ScreenWidth/2.f/(float)view->ScreenHeight);
-			//v=cam->MakeViewMatrix();
+			proj=cam->MakeStereoProjectionMatrix(simul::camera::LEFT_EYE,nearPlane,farPlane,(float)view->ScreenWidth/2.f/(float)view->ScreenHeight,ReverseDepth);
+			v	=cam->MakeStereoViewMatrix(simul::camera::LEFT_EYE);
 			simul::dx11::UtilityRenderer::SetMatrices(v,proj);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
@@ -375,9 +370,17 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
 			view->hdrFramebuffer.Deactivate(pd3dImmediateContext);
-			simulHDRRenderer->Render(pd3dImmediateContext,view->hdrFramebuffer.GetColorTex());
+			simulHDRRenderer->RenderWithOculusCorrection(pd3dImmediateContext,view->hdrFramebuffer.GetColorTex(),0.f);
+		}
+		//right eye
+		if(cam)
+		{
+			proj=cam->MakeStereoProjectionMatrix(simul::camera::RIGHT_EYE,nearPlane,farPlane,(float)view->ScreenWidth/2.f/(float)view->ScreenHeight,ReverseDepth);
+			v	=cam->MakeStereoViewMatrix(simul::camera::RIGHT_EYE);
+			simul::dx11::UtilityRenderer::SetMatrices(v,proj);
 		}
 		viewport.TopLeftX			=view->ScreenWidth/2.f;
+		pd3dImmediateContext->RSSetViewports(1, &viewport);
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
 			view->hdrFramebuffer.SetAntialiasing(Antialiasing);
@@ -388,9 +391,14 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
 			view->hdrFramebuffer.Deactivate(pd3dImmediateContext);
-			simulHDRRenderer->Render(pd3dImmediateContext,view->hdrFramebuffer.GetColorTex(),1.f);
+			simulHDRRenderer->RenderWithOculusCorrection(pd3dImmediateContext,view->hdrFramebuffer.GetColorTex(),1.f);
 		}
 		return;
+	}
+	if(MakeCubemap)
+	{
+		D3DXVECTOR3 cam_pos=simul::dx11::GetCameraPosVector(v);
+		RenderCubemap(pd3dImmediateContext,cam_pos);
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
@@ -404,13 +412,13 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		view->hdrFramebuffer.ClearDepth(pd3dImmediateContext,ReverseDepth?0.f:1.f);
 	}
 	RenderScene(view_id,pd3dImmediateContext,v,proj);
+	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
+		UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetColorTex(),v,proj);
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 		view->hdrFramebuffer.Deactivate(pd3dImmediateContext);
 		simulHDRRenderer->Render(pd3dImmediateContext,view->hdrFramebuffer.GetColorTex());
 	}
-	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
-		UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetColorTex(),v,proj);
 	if(simulWeatherRenderer)
 	{
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)

@@ -11,6 +11,8 @@
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <d3dx11effect.h>
+#include "Simul/Platform/CrossPlatform/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/hdr_constants.sl"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
@@ -44,6 +46,7 @@ namespace simul
 			//! Render: write the given texture to screen using the HDR rendering shaders
 			void Render(void *context,void *texture_srv,float offsetX);
 			void Render(void *context,void *texture_srv);
+			void RenderWithOculusCorrection(void *context,void *texture_srv,float offsetX);
 			//! Create the glow texture that will be overlaid due to strong lights.
 			void RenderGlowTexture(void *context,void *texture_srv);
 			//! Get the current debug text as a c-string pointer.
@@ -63,6 +66,9 @@ namespace simul
 			ID3D1xEffect*						m_pTonemapEffect;
 			ID3D1xEffectTechnique*				exposureGammaTechnique;
 			ID3D1xEffectTechnique*				glowExposureGammaTechnique;
+			ID3D1xEffectTechnique*				warpExposureGamma;
+			ID3D1xEffectTechnique*				warpGlowExposureGamma;
+			
 			ID3D1xEffectTechnique*				glowTechnique;
 			ID3D1xEffectScalarVariable*			Exposure_;
 			ID3D1xEffectScalarVariable*			Gamma_;
@@ -73,8 +79,8 @@ namespace simul
 			ID3D1xEffectTechnique*				gaussianColTechnique;
 
 			float timing;
-		private:
-			simul::dx11::ComputableTexture					glowTexture;
+			simul::dx11::ComputableTexture		glowTexture;
+			ConstantBuffer<HdrConstants>		hdrConstants;
 		};
 	}
 }

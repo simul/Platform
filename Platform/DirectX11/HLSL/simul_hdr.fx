@@ -56,7 +56,7 @@ v2f OffsetVS(idOnly IN)
 		{-1.0, 1.0},
 	};
 	vec2 pos		=poss[IN.vertex_id];
-	OUT.hPosition	=vec4(pos+offset,0.0,1.0);
+	OUT.hPosition	=vec4(pos/*+offset*/,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
 #ifdef REVERSE_DEPTH
 	OUT.hPosition.z	=0.0; 
@@ -124,7 +124,30 @@ vec4 ExposureGammaPS(v2f IN) : SV_TARGET
 	vec4 c=texture_clamp(imageTexture,IN.texCoords);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
+	
     return vec4(c.rgb,1.f);
+}
+
+// Scales input texture coordinates for distortion.
+vec2 HmdWarp(vec2 texCoords)
+{
+	vec2 theta		= (texCoords - warpLensCentre) * warpScaleIn; // Scales to [-1, 1]
+	float rSq		= theta.x*theta.x+theta.y*theta.y;
+	vec2 rvector	= theta * (warpHmdWarpParam.x + warpHmdWarpParam.y * rSq +
+								warpHmdWarpParam.z * rSq * rSq +
+								warpHmdWarpParam.w * rSq * rSq * rSq);
+	return warpLensCentre+rvector* warpScale ;
+}
+
+float4 WarpExposureGammaPS(v2f IN) : SV_Target
+{
+	vec2 tc = HmdWarp(IN.texCoords);
+	//if(any(clamp(tc,warpScreenCentre-vec2(0.25,0.5),warpScreenCentre+vec2(0.25, 0.5))-tc))
+	//	return vec4(0,0,0,0);
+	vec4 c=texture_clamp(imageTexture,tc);
+	c.rgb*=exposure;
+	c.rgb=pow(c.rgb,gamma);
+    return vec4(c.rgb,1.0);
 }
 
 vec4 DirectPS(v2f IN) : SV_TARGET
@@ -292,6 +315,31 @@ technique11 exposure_gamma
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,OffsetVS()));
 		SetPixelShader(CompileShader(ps_4_0,ExposureGammaPS()));
+    }
+}
+technique11 warp_exposure_gamma
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,OffsetVS()));
+		SetPixelShader(CompileShader(ps_4_0,WarpExposureGammaPS()));
+    }
+}
+
+technique11 warp_glow_exposure_gamma
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,OffsetVS()));
+		SetPixelShader(CompileShader(ps_4_0,WarpExposureGammaPS()));
     }
 }
 

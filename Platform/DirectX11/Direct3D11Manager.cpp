@@ -529,11 +529,28 @@ void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output
 	IDXGIOutput *output=outputs[which_output];
 	if(!w->m_swapChain)
 		return;
+	BOOL current_fullscreen;
+	w->m_swapChain->GetFullscreenState(&current_fullscreen,NULL);
+	if((current_fullscreen==TRUE)==fullscreen)
+		return;
 	w->m_swapChain->SetFullscreenState(fullscreen,output);
 	DXGI_OUTPUT_DESC outputDesc;
 	output->GetDesc(&outputDesc);
-	ResizeSwapChain(hwnd,outputDesc.DesktopCoordinates.right-outputDesc.DesktopCoordinates.left
-		,abs(outputDesc.DesktopCoordinates.bottom-outputDesc.DesktopCoordinates.top));
+	int W=0,H=0;
+	if(fullscreen)
+	{
+		W=outputDesc.DesktopCoordinates.right-outputDesc.DesktopCoordinates.left;
+		H=outputDesc.DesktopCoordinates.bottom-outputDesc.DesktopCoordinates.top;
+	}
+	else
+	{
+		// Will this work, or will the hwnd just be the size of the full screen initially?
+		RECT rect;
+		GetWindowRect(hwnd,&rect);
+		W	=abs(rect.right-rect.left);
+		H=abs(rect.bottom-rect.top);
+	}
+	ResizeSwapChain(hwnd,W,H);
 }
 
 void Direct3D11Manager::ResizeSwapChain(HWND hwnd,int width,int height)
@@ -543,6 +560,10 @@ void Direct3D11Manager::ResizeSwapChain(HWND hwnd,int width,int height)
 	Window *w=windows[hwnd];
 	if(!w)
 		return;
+		RECT rect;
+		GetWindowRect(hwnd,&rect);
+		int W	=abs(rect.right-rect.left);
+		int H	=abs(rect.bottom-rect.top);
 	SAFE_RELEASE(w->m_renderTargetView);
 	HRESULT hr=w->m_swapChain->ResizeBuffers(1,width,height,DXGI_FORMAT_R8G8B8A8_UNORM,0);
 	w->CreateRenderTarget(d3dDevice);

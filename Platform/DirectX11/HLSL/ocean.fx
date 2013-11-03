@@ -173,10 +173,10 @@ float4 GenGradientFoldingPS(posTexVertexOutput In) : SV_Target
 	vec2 tc_back  = vec2(In.texCoords.x, In.texCoords.y - one_texel.y);
 	vec2 tc_front = vec2(In.texCoords.x, In.texCoords.y + one_texel.y);
 
-	float3 displace_left  = g_samplerDisplacementMap.Sample(samplerStateNearestWrap, tc_left).xyz;
-	float3 displace_right = g_samplerDisplacementMap.Sample(samplerStateNearestWrap, tc_right).xyz;
-	float3 displace_back  = g_samplerDisplacementMap.Sample(samplerStateNearestWrap, tc_back).xyz;
-	float3 displace_front = g_samplerDisplacementMap.Sample(samplerStateNearestWrap, tc_front).xyz;
+	vec3 displace_left  = g_samplerDisplacementMap.Sample(samplerStateNearestWrap, tc_left).xyz;
+	vec3 displace_right = g_samplerDisplacementMap.Sample(samplerStateNearestWrap, tc_right).xyz;
+	vec3 displace_back  = g_samplerDisplacementMap.Sample(samplerStateNearestWrap, tc_back).xyz;
+	vec3 displace_front = g_samplerDisplacementMap.Sample(samplerStateNearestWrap, tc_front).xyz;
 	
 	// Do not store the actual normal value. Using gradient instead, which preserves two differential values.
 	vec2 gradient = {-(displace_right.z - displace_left.z), -(displace_front.z - displace_back.z)};
@@ -202,7 +202,7 @@ struct VS_OUTPUT
 {
     float4 Position		: SV_POSITION;
     vec2 texCoords		: TEXCOORD0;
-    float3 LocalPos		: TEXCOORD1;
+    vec3 LocalPos		: TEXCOORD1;
     vec2 fade_texc	: TEXCOORD2;
 };
 #ifndef MAX_FADE_DISTANCE_METRES
@@ -218,7 +218,7 @@ VS_OUTPUT OceanSurfVS(vec2 vPos : POSITION)
 	vec2 uv_local = pos_local.xy * g_UVScale + g_UVOffset;
 
 	// Blend displacement to avoid tiling artifact
-	float3 eye_vec = pos_local.xyz - g_LocalEye;
+	vec3 eye_vec = pos_local.xyz - g_LocalEye;
 	float dist_2d = length(eye_vec.xy);
 	float blend_factor = (PATCH_BLEND_END - dist_2d) / (PATCH_BLEND_END - PATCH_BLEND_BEGIN);
 	blend_factor = clamp(blend_factor, 0, 1);
@@ -236,10 +236,10 @@ VS_OUTPUT OceanSurfVS(vec2 vPos : POSITION)
 	}
 
 	// Displacement map
-	float3 displacement = 0;
+	vec3 displacement = 0;
 	if (blend_factor > 0)
 		displacement = g_texDisplacement.SampleLevel(g_samplerDisplacement, uv_local, 0).xyz;
-	displacement = lerp(float3(0, 0, perlin), displacement, blend_factor);
+	displacement = lerp(vec3(0, 0, perlin), displacement, blend_factor);
 	pos_local.xyz += displacement;
 //pos_local.z+=500.f*g_texPerlin.SampleLevel(g_samplerPerlin,perlin_tc/32.f+ g_PerlinMovement/4.f, 0).w;
 	// Transform
@@ -250,10 +250,10 @@ VS_OUTPUT OceanSurfVS(vec2 vPos : POSITION)
 	// Pass thru texture coordinate
 	Output.texCoords = uv_local;
 
-	float3 wPosition;
+	vec3 wPosition;
 	wPosition= mul(pos_local, g_matWorld).xyz;
 	
-	float3 view=normalize(wPosition.xyz);
+	vec3 view=normalize(wPosition.xyz);
 #ifdef Y_VERTICAL
 	float sine=view.y;
 #else
@@ -269,8 +269,8 @@ VS_OUTPUT OceanSurfVS(vec2 vPos : POSITION)
 float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 {
 	// Calculate eye vector.
-	float3 eye_vec = g_LocalEye - In.LocalPos;
-	float3 eye_dir = normalize(eye_vec);
+	vec3 eye_vec = g_LocalEye - In.LocalPos;
+	vec3 eye_dir = normalize(eye_vec);
 	// --------------- Blend perlin noise for reducing the tiling artifacts
 	// Blend displacement to avoid tiling artifact
 	float dist_2d = length(eye_vec.xy);
@@ -297,9 +297,9 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 	grad = lerp(perlin, grad, blend_factor);
 
 	// Calculate normal here.
-	float3 normal = normalize(float3(grad, g_TexelLength_x2));
+	vec3 normal = normalize(vec3(grad, g_TexelLength_x2));
 	// Reflected ray
-	float3 reflect_vec = reflect(-eye_dir, normal);
+	vec3 reflect_vec = reflect(-eye_dir, normal);
 	// dot(N, V)
 	float cos_angle = dot(normal, eye_dir);
 	// --------------- Reflected color
@@ -308,24 +308,22 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 // A workaround to deal with "indirect reflection vectors" (which are rays requiring multiple reflections to reach the sky).
 //	if (reflect_vec.z < g_BendParam.x)
 //		ramp = lerp(ramp, g_BendParam.z, (g_BendParam.x - reflect_vec.z)/(g_BendParam.x - g_BendParam.y));
-	reflect_vec.z = max(0, reflect_vec.z);
-#ifdef Y_VERTICAL
-	float3 reflected_color = g_texReflectCube.Sample(g_samplerCube, reflect_vec.xzy).xyz;
-#else
-	float3 reflected_color = g_texReflectCube.Sample(g_samplerCube, reflect_vec.xyz).xyz;
-#endif
+	reflect_vec.z		=max(0, reflect_vec.z);
+
+	vec3 reflected_color=g_texReflectCube.Sample(g_samplerCube, reflect_vec.xyz).xyz;
+
 	// Combine waterbody color and reflected color
-	float3 water_color = lerp(g_WaterbodyColor, reflected_color, ramp.x);
+	vec3 water_color	=g_WaterbodyColor;//lerp(g_WaterbodyColor, reflected_color, ramp.x);
+	water_color	=reflected_color;
 	// --------------- Sun spots
 /*	float cos_spec = clamp(dot(reflect_vec, g_SunDir), 0, 1);
 	float sun_spot = pow(cos_spec, g_Shineness);
 	water_color += g_SunColor * sun_spot;*/
-	float3 loss=g_skyLossTexture.Sample(g_samplerAtmospherics,In.fade_texc).rgb;
-	float4 insc=g_skyInscatterTexture.Sample(g_samplerAtmospherics,In.fade_texc);
-	float3 inscatter=InscatterFunction(insc, hazeEccentricity, cos_angle, mieRayleighRatio);
+	vec3 loss		=g_skyLossTexture.Sample(g_samplerAtmospherics,In.fade_texc).rgb;
+	float4 insc		=g_skyInscatterTexture.Sample(g_samplerAtmospherics,In.fade_texc);
+	vec3 inscatter	=InscatterFunction(insc, hazeEccentricity, cos_angle, mieRayleighRatio);
 	//water_color*=loss;
-	//water_color+=inscatter;
-	return float4(water_color, 1);
+	return vec4(water_color, 1);
 }
 
 float4 WireframePS() : SV_Target
