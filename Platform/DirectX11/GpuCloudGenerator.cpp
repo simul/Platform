@@ -166,8 +166,8 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	float y_range					=(float)z1/(float)zmax-y_start;
 	SetGpuCloudConstants(gpuCloudConstants,params,y_start,y_range);
 
-	simul::dx11::setParameter(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
-	simul::dx11::setParameter(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
+	simul::dx11::setTexture(effect,"volumeNoiseTexture"	,volume_noise_tex_srv);
+	simul::dx11::setTexture(effect,"maskTexture"			,(ID3D11ShaderResourceView*)mask_fb.GetColorTex());
 	
 	density_texture.ensureTexture3DSizeAndFormat(m_pd3dDevice
 		,params.density_grid[0],params.density_grid[1],params.density_grid[2]
@@ -191,8 +191,8 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0));
 	if(x1>x0)
 		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,subgrid.z);
-	simul::dx11::setParameter			(effect,"volumeNoiseTexture",(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setParameter			(effect,"maskTexture"		,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture				(effect,"volumeNoiseTexture",(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture				(effect,"maskTexture"		,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setUnorderedAccessView	(effect,"targetTexture"		,(ID3D11UnorderedAccessView*)NULL);
 	ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0));
 }
@@ -279,7 +279,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 		{
 			gpuCloudConstants.threadOffset=uint3(0,0,z);
 			gpuCloudConstants.Apply(m_pImmediateContext);
-			setParameter(effect,"lightTexture1"				,directLightTextures[light_index].shaderResourceView);
+			setTexture(effect,"lightTexture1"				,directLightTextures[light_index].shaderResourceView);
 			simul::dx11::setUnorderedAccessView(effect,"targetTexture1",indirectLightTextures[light_index].unorderedAccessView);
 			ApplyPass(m_pImmediateContext,secondaryLightingComputeTechnique->GetPassByIndex(0));
 			m_pImmediateContext->Dispatch(subgrid.x,subgrid.y,1);
@@ -325,11 +325,11 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index,unsigned char 
 	gpuCloudConstants.zPixel			=(1.f/(float)density_grid[2]);
 	gpuCloudConstants.zPixelLightspace	=(1.f/(float)light_grid[2]);
 
-	setParameter(effect,"densityTexture"	,density_texture.shaderResourceView);
-	setParameter(effect,"ambientTexture1"	,directLightTextures[0].shaderResourceView);
-	setParameter(effect,"ambientTexture2"	,indirectLightTextures[0].shaderResourceView);
-	setParameter(effect,"lightTexture1"		,directLightTextures[1].shaderResourceView);
-	setParameter(effect,"lightTexture2"		,indirectLightTextures[1].shaderResourceView);
+	setTexture(effect,"densityTexture"		,density_texture.shaderResourceView);
+	setTexture(effect,"ambientTexture1"		,directLightTextures[0].shaderResourceView);
+	setTexture(effect,"ambientTexture2"		,indirectLightTextures[0].shaderResourceView);
+	setTexture(effect,"lightTexture1"		,directLightTextures[1].shaderResourceView);
+	setTexture(effect,"lightTexture2"		,indirectLightTextures[1].shaderResourceView);
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 	gpuCloudConstants.Apply(m_pImmediateContext);
 	for(int i=0;i<3;i++)
@@ -356,11 +356,11 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index,unsigned char 
 	if(x1>x0)
 		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,subgrid.z);
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",(ID3D11UnorderedAccessView*)NULL);
-	setParameter(effect,"densityTexture"	,(ID3D11ShaderResourceView*)NULL);
-	setParameter(effect,"ambientTexture1"	,(ID3D11ShaderResourceView*)NULL);
-	setParameter(effect,"ambientTexture2"	,(ID3D11ShaderResourceView*)NULL);
-	setParameter(effect,"lightTexture1"		,(ID3D11ShaderResourceView*)NULL);
-	setParameter(effect,"lightTexture2"		,(ID3D11ShaderResourceView*)NULL);
+	setTexture(effect,"densityTexture"	,(ID3D11ShaderResourceView*)NULL);
+	setTexture(effect,"ambientTexture1"	,(ID3D11ShaderResourceView*)NULL);
+	setTexture(effect,"ambientTexture2"	,(ID3D11ShaderResourceView*)NULL);
+	setTexture(effect,"lightTexture1"		,(ID3D11ShaderResourceView*)NULL);
+	setTexture(effect,"lightTexture2"		,(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(m_pImmediateContext,transformComputeTechnique->GetPassByIndex(0));
 	// copy to CPU memory if required by CloudKeyframer.
 	if(target)

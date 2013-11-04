@@ -125,7 +125,7 @@ void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	simul::dx11::setTextureArray(	m_pTerrainEffect,"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
-	simul::dx11::setParameter(		m_pTerrainEffect,"cloudShadowTexture"	,(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
+	simul::dx11::setTexture(		m_pTerrainEffect,"cloudShadowTexture"	,(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	terrainConstants.eyePosition=cam_pos;
 	if(baseSkyInterface)
 	{
@@ -220,7 +220,7 @@ void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 		pContext->Draw((v)-2,0);
 	pContext->IASetPrimitiveTopology(previousTopology);
 	simul::dx11::setTextureArray(m_pTerrainEffect,"textureArray",NULL);
-	simul::dx11::setParameter(m_pTerrainEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pTerrainEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
 }
 

@@ -3,6 +3,7 @@
 #include "Simul/Base/Timer.h"
 #include <stdio.h>
 #include <math.h>
+#include <stdint.h> // for uintptr_t
 
 #include <GL/glew.h>
 
@@ -566,10 +567,10 @@ void SimulGLSkyRenderer::RenderPlanet(void *,void* tex,float planet_angular_size
 
 void SimulGLSkyRenderer::Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o)
 {
-	*l1=(void*)loss_texture;
-	*i1=(void*)insc_texture;
-	*s=(void*)skyl_texture;
-	*o=(void*)overcast_2d.GetColorTex();
+	*l1=(void*)(uintptr_t)loss_texture;
+	*i1=(void*)(uintptr_t)insc_texture;
+	*s=(void*)(uintptr_t)skyl_texture;
+	*o=(void*)(uintptr_t)overcast_2d.GetColorTex();
 }
 
 void SimulGLSkyRenderer::FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d
@@ -636,7 +637,7 @@ void SimulGLSkyRenderer::EnsureTextureCycle()
 
 void SimulGLSkyRenderer::ReloadTextures()
 {
-	moon_texture=(void*)LoadGLImage(skyKeyframer->GetMoonTexture().c_str(),GL_CLAMP_TO_EDGE);
+	moon_texture=(void*)(uintptr_t)LoadGLImage(skyKeyframer->GetMoonTexture().c_str(),GL_CLAMP_TO_EDGE);
 	SetPlanetImage(moon_index,moon_texture);
 }
 

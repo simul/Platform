@@ -9,6 +9,8 @@
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
 #include "Simul/Platform/CrossPlatform/earth_shadow_uniforms.sl"
 #include "Simul/Platform/CrossPlatform/atmospherics_constants.sl"
+#include <stdint.h>  // for uintptr_t
+#include <string.h>  // for memset
 using namespace simul;
 using namespace opengl;
 
@@ -103,7 +105,7 @@ void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 
 void SimulGLAtmosphericsRenderer::RenderAsOverlay(void *,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
-	GLuint depth_texture=(GLuint)depthTexture;
+	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
 GL_ERROR_CHECK
     glEnable(GL_TEXTURE_2D);
 GL_ERROR_CHECK

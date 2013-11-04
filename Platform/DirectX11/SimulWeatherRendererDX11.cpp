@@ -255,7 +255,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 		if(gamma_correction)
 		{
 			gamma_correct.Deactivate(m_pImmediateContext);
-			simul::dx11::setParameter(m_pTonemapEffect,"imageTexture",gamma_correct.GetBufferResource());
+			simul::dx11::setTexture(m_pTonemapEffect,"imageTexture",gamma_correct.GetBufferResource());
 			hdrConstants.gamma=gamma;
 			hdrConstants.exposure=exposure;
 			hdrConstants.Apply(m_pImmediateContext);
@@ -337,10 +337,10 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 		ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 		bool blend=!is_cubemap;
 		imageTexture->SetResource(framebuffer.buffer_texture_SRV);
-		simul::dx11::setParameter(m_pTonemapEffect,"depthTexture"		,(ID3D1xShaderResourceView*)mainDepthTexture);
-		simul::dx11::setParameter(m_pTonemapEffect,"lowResDepthTexture"	,(ID3D1xShaderResourceView*)lowResDepthTexture);
-		simul::dx11::setParameter(m_pTonemapEffect,"cloudDepthTexture"	,(ID3D1xShaderResourceView*)baseFramebuffer->GetDepthTex());
-		simul::dx11::setParameter(m_pTonemapEffect,"nearImageTexture"	,(ID3D1xShaderResourceView*)nearFramebuffer.buffer_texture_SRV);
+		simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"		,(ID3D1xShaderResourceView*)mainDepthTexture);
+		simul::dx11::setTexture(m_pTonemapEffect,"lowResDepthTexture"	,(ID3D1xShaderResourceView*)lowResDepthTexture);
+		simul::dx11::setTexture(m_pTonemapEffect,"cloudDepthTexture"	,(ID3D1xShaderResourceView*)baseFramebuffer->GetDepthTex());
+		simul::dx11::setTexture(m_pTonemapEffect,"nearImageTexture"	,(ID3D1xShaderResourceView*)nearFramebuffer.buffer_texture_SRV);
 		ID3D1xEffectTechnique *tech=blend?SkyBlendTechnique:directTechnique;
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
 		hdrConstants.exposure					=1.f;
@@ -373,7 +373,7 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 		return;
 	float max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	UtilityRenderer::SetScreenSize(width,height);
-	simul::dx11::setParameter(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
+	simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
 	int x=8;
 	int y=height-w;
 

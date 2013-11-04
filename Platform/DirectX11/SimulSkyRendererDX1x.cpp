@@ -10,6 +10,8 @@
 // SimulSkyRendererDX1x.cpp A renderer for skies.
 #define NOMINMAX
 
+
+#include <tchar.h>
 #include <d3d10_1.h>
 #include <d3dx10.h>
 #include <dxerr.h>
@@ -23,8 +25,6 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
-
-extern D3DXMATRIX view_matrices[6];
 
 using namespace simul::dx11;
 
@@ -619,12 +619,12 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	}
 	// light_table - using compute.
 	{
-		simul::dx11::setParameter(m_pSkyEffect				,"sourceTexture"	,light_table.shaderResourceView);
+		simul::dx11::setTexture(m_pSkyEffect				,"sourceTexture"	,light_table.shaderResourceView);
 		simul::dx11::setUnorderedAccessView(m_pSkyEffect	,"targetTexture"	,light_table_2d.unorderedAccessView);
 		ID3D1xEffectTechnique* m_TechniqueLightTableInterp	=m_pSkyEffect->GetTechniqueByName("interp_light_table");
 		V_CHECK(ApplyPass(context,m_TechniqueLightTableInterp->GetPassByIndex(0)));
 		context->Dispatch(light_table_2d.width,light_table_2d.length,1);
-		simul::dx11::setParameter(m_pSkyEffect				,"sourceTexture"	,(ID3D11ShaderResourceView*)NULL);
+		simul::dx11::setTexture(m_pSkyEffect				,"sourceTexture"	,(ID3D11ShaderResourceView*)NULL);
 		simul::dx11::setUnorderedAccessView(m_pSkyEffect	,"targetTexture"	,NULL);
 		V_CHECK(ApplyPass(context,m_TechniqueLightTableInterp->GetPassByIndex(0)));
 	}
@@ -800,7 +800,7 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 		skyConstants.Apply(context);
 		UtilityRenderer::DrawQuad2(context,x	,y		,8,size	,m_pSkyEffect,techniqueShowLightTable);
 	}
-	simul::dx11::setParameter(m_pSkyEffect,"lightTable2DTexture",light_table_2d.shaderResourceView);
+	simul::dx11::setTexture(m_pSkyEffect,"lightTable2DTexture",light_table_2d.shaderResourceView);
 
 	UtilityRenderer::DrawQuad2(context,x0+9*4	,y,8,size	,m_pSkyEffect,techniqueShow2DLightTable);
 	x0+=2*(size+8);

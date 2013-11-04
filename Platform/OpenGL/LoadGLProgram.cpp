@@ -17,6 +17,11 @@
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Base/DefaultFileLoader.h"
 
+#ifndef _MSC_VER
+#define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
+#define DebugBreak()
+#endif
+
 using namespace simul;
 using namespace base;
 using namespace opengl;
@@ -384,10 +389,14 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 		if(!vertex_shader)
 		{
 			std::cerr<<vert_filename<<"(0): ERROR C1000: Shader failed to compile\n";
+#ifdef _MSC_VER
 			std::string msg_text=vert_filename;
 			msg_text+=" failed to compile. Edit shader and try again?";
 			result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
 			DebugBreak();
+#else
+			break;
+#endif
 		}
 		else break;
 	}
@@ -414,10 +423,14 @@ GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const cha
 		if(!fragment_shader)
 		{
 			std::cerr<<frag_filename<<"(0): ERROR C1000: Shader failed to compile\n";
+#ifdef _MSC_VER
 			std::string msg_text=frag_filename;
 			msg_text+=" failed to compile. Edit shader and try again?";
 			result=MessageBoxA(NULL,msg_text.c_str(),"Simul",MB_RETRYCANCEL|MB_SETFOREGROUND|MB_TOPMOST);
 			DebugBreak();
+#else
+			break;
+#endif
 		}
 		else break;
 	}
