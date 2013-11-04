@@ -619,12 +619,12 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	}
 	// light_table - using compute.
 	{
-		simul::dx11::setParameter(m_pSkyEffect				,"sourceTexture"	,light_table.shaderResourceView);
+		simul::dx11::setTexture(m_pSkyEffect				,"sourceTexture"	,light_table.shaderResourceView);
 		simul::dx11::setUnorderedAccessView(m_pSkyEffect	,"targetTexture"	,light_table_2d.unorderedAccessView);
 		ID3D1xEffectTechnique* m_TechniqueLightTableInterp	=m_pSkyEffect->GetTechniqueByName("interp_light_table");
 		V_CHECK(ApplyPass(context,m_TechniqueLightTableInterp->GetPassByIndex(0)));
 		context->Dispatch(light_table_2d.width,light_table_2d.length,1);
-		simul::dx11::setParameter(m_pSkyEffect				,"sourceTexture"	,(ID3D11ShaderResourceView*)NULL);
+		simul::dx11::setTexture(m_pSkyEffect				,"sourceTexture"	,(ID3D11ShaderResourceView*)NULL);
 		simul::dx11::setUnorderedAccessView(m_pSkyEffect	,"targetTexture"	,NULL);
 		V_CHECK(ApplyPass(context,m_TechniqueLightTableInterp->GetPassByIndex(0)));
 	}
@@ -800,7 +800,7 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 		skyConstants.Apply(context);
 		UtilityRenderer::DrawQuad2(context,x	,y		,8,size	,m_pSkyEffect,techniqueShowLightTable);
 	}
-	simul::dx11::setParameter(m_pSkyEffect,"lightTable2DTexture",light_table_2d.shaderResourceView);
+	simul::dx11::setTexture(m_pSkyEffect,"lightTable2DTexture",light_table_2d.shaderResourceView);
 
 	UtilityRenderer::DrawQuad2(context,x0+9*4	,y,8,size	,m_pSkyEffect,techniqueShow2DLightTable);
 	x0+=2*(size+8);

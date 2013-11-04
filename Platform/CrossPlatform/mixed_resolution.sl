@@ -5,6 +5,24 @@ float AdaptDepth(float depth,vec3 depthToLinFadeDistParams)
 {
 	return  depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
 }
+
+void Resolve(Texture2DMS<float4> sourceTextureMS,RWTexture2D<float4> targetTexture,uint2 pos)
+{
+	uint2 source_dims;
+	uint numberOfSamples;
+	sourceTextureMS.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
+	uint2 dims;
+	targetTexture.GetDimensions(dims.x,dims.y);
+	if(pos.x>=dims.x||pos.y>=dims.y)
+		return;
+	vec4 d=vec4(0,0,0,0);
+	for(int k=0;k<numberOfSamples;k++)
+	{
+		d+=sourceTextureMS.Load(pos,k);
+	}
+	d/=float(numberOfSamples);
+	targetTexture[pos.xy]	=d;
+}
 void DownscaleDepthFarNear(Texture2DMS<float4> sourceMSDepthTexture,RWTexture2D<float4> target2DTexture,uint3 pos,vec2 scale,vec3 depthToLinFadeDistParams)
 {
 	uint2 source_dims;

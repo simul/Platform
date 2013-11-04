@@ -96,7 +96,9 @@ namespace simul
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
 			void RenderScene(ID3D11DeviceContext* pd3dImmediateContext);
-			void DownscaleDepth(ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
+			//! Downscale the depth buffer and resolve the MSAA framebuffer.
+			void ResolveDepth(ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
+			void ResolveColour(ID3D11DeviceContext* pContext);
 			void ReverseDepthChanged();
 			bool enabled;
 			ID3D11Device* m_pd3dDevice;
@@ -108,11 +110,12 @@ namespace simul
 			SimulHDRRendererDX1x		*simulHDRRenderer;
 			SimulTerrainRendererDX1x	*simulTerrainRenderer;
 			int ScreenWidth,ScreenHeight;
-			// A framebuffer with depth
+			// A MSAA framebuffer with depth
 			simul::dx11::Framebuffer			hdrFramebuffer;
 			// The depth from the HDR framebuffer can be resolved into this texture:
 			simul::dx11::Framebuffer			resolvedDepth_fb;
 			simul::dx11::TextureStruct			lowResDepthTexture;
+			simul::dx11::TextureStruct			resolvedColourTexture;
 			simul::dx11::CubemapFramebuffer		cubemapFramebuffer;
 			simul::base::MemoryInterface		*memoryInterface;
 	ConstantBuffer<MixedResolutionConstants> mixedResolutionConstants;

@@ -280,7 +280,7 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	simul::dx11::setTexture(effect,"skylTexture",skylightTexture_SRV);
 	simul::dx11::setTexture(effect,"depthTexture",depthTexture_SRV);
 	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
-	simul::dx11::setParameter(effect,"lightTableTexture",lightTableTexture_SRV);
+	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture_SRV);
 	
 	static float ff=10000.f; 
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);

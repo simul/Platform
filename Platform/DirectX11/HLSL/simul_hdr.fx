@@ -4,6 +4,7 @@
 #include "../../CrossPlatform/mixed_resolution.sl"
 #include "states.hlsl"
 Texture2D imageTexture;
+Texture2DMS<float4> imageTextureMS;
 Texture2D nearImageTexture;
 Texture2D depthTexture;
 Texture2D lowResDepthTexture;

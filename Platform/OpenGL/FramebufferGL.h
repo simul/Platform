@@ -1,7 +1,6 @@
 #ifndef FRAMEBUFFERGL_H
 #define FRAMEBUFFERGL_H
 
-#include <GL/glew.h>
 #include <stack>
 #include <stdint.h> // for uintptr_t
 #include "LoadGLImage.h"

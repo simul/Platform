@@ -748,7 +748,7 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 
 void UtilityRenderer::DrawTexture(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t)
 {
-	simul::dx11::setParameter(m_pDebugEffect,"imageTexture",t);
+	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",t);
 	if(m_pDebugEffect)
 		UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,m_pDebugEffect->GetTechniqueByName("textured"));
 }

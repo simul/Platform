@@ -79,9 +79,9 @@ void PrecipitationRenderer::RenderTextures(void *context,int width,int height)
 	if(w>height/3)
 		w=height/3;
 	UtilityRenderer::SetScreenSize(width,height);
-	simul::dx11::setParameter(effect,"showTexture",rain_texture);
+	simul::dx11::setTexture(effect,"showTexture",rain_texture);
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w/8,effect,effect->GetTechniqueByName("show_texture"));
-	simul::dx11::setParameter(effect,"showTexture",NULL);
+	simul::dx11::setTexture(effect,"showTexture",NULL);
 }
 
 void PrecipitationRenderer::SetCubemapTexture(void *t)
@@ -174,8 +174,8 @@ void PrecipitationRenderer::Render(void *context)
 		return;
 	PIXBeginNamedEvent(0,"Render Precipitation");
 	rainTexture->SetResource(rain_texture);
-	simul::dx11::setParameter(effect,"cubeTexture",cubemap_SRV);
-	simul::dx11::setParameter(effect,"randomTexture",random_SRV);
+	simul::dx11::setTexture(effect,"cubeTexture",cubemap_SRV);
+	simul::dx11::setTexture(effect,"randomTexture",random_SRV);
 	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 	//set up matrices
 	D3DXMATRIX world,wvp;

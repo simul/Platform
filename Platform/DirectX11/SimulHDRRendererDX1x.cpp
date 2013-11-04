@@ -179,7 +179,7 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv)
 	if(Glow)
 	{
 		RenderGlowTexture(context,texture_srv);
-		simul::dx11::setParameter(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
+		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
 		ApplyPass(pContext,glowExposureGammaTechnique->GetPassByIndex(0));
 	}
 	else
@@ -229,7 +229,7 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 	float rcp_box_width = 1.0f / box_width;
 	// Step 1. Vertical passes: Each thread group handles a column in the image
 	// Input texture
-	simul::dx11::setParameter(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
+	simul::dx11::setTexture(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
 	// Output texture
 	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
 	simul::dx11::setParameter(m_pGaussianEffect,"g_NumApproxPasses",g_NumApproxPasses - 1);
@@ -251,7 +251,7 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 
 	// Step 2. Horizontal passes: Each thread group handles a row in the image
 	// Input texture
-	simul::dx11::setParameter(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
+	simul::dx11::setTexture(m_pGaussianEffect,"g_texInput",(ID3D11ShaderResourceView*)glow_fb.GetColorTex());
 	// Output texture
 	simul::dx11::setUnorderedAccessView(m_pGaussianEffect,"g_rwtOutput",glowTexture.g_pUAV_Output);
 
