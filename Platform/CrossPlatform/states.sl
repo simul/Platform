@@ -18,6 +18,21 @@ SamplerState cmcSamplerState:register(s5)
 	AddressW = Clamp;
 };
 
+SamplerState cmcNearestSamplerState
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Clamp;
+	AddressV = Mirror;
+	AddressW = Clamp;
+};
+
+SamplerState samplerStateNearestWrap
+{
+	Filter = MIN_MAG_MIP_POINT;
+	AddressU = Wrap;
+	AddressV = Wrap;
+	AddressW = Wrap;
+};
 SamplerState wrapSamplerState:register(s6)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
