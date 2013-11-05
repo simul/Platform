@@ -165,7 +165,7 @@ namespace simul
 				glBindBuffer(GL_UNIFORM_BUFFER,ubo);
 				glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(T),static_cast<T*>(this));
 				glBindBuffer(GL_UNIFORM_BUFFER,0);
-				glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
+			//	glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 			}
 		};
 	}

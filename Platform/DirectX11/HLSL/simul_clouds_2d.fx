@@ -43,7 +43,7 @@ struct v2f
 v2f MainVS(a2v IN)
 {
 	v2f OUT;
-	vec3 pos			=IN.position.xyz;
+	vec3 pos			=maxCloudDistanceMetres*IN.position.xyz;
 	pos.z				+=origin.z;
 	float Rh			=planetRadius+origin.z;
 	float dist			=length(pos.xy);
@@ -160,7 +160,7 @@ float4 RandomPS(v2f2 IN) : SV_TARGET
 
 float4 DetailPS(v2f2 IN) : SV_TARGET
 {
-    return DetailDensity(IN.texCoords,imageTexture);
+    return DetailDensity(IN.texCoords,imageTexture,amplitude);
 }
 
 float4 DetailLightingPS(v2f2 IN) : SV_TARGET
@@ -172,9 +172,9 @@ technique11 simul_coverage
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
 		SetPixelShader(CompileShader(ps_4_0,CoveragePS()));
@@ -185,9 +185,9 @@ technique11 simple
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
 		SetPixelShader(CompileShader(ps_4_0,SimplePS()));
@@ -198,9 +198,9 @@ technique11 show_detail_texture
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
 		SetPixelShader(CompileShader(ps_4_0,ShowDetailTexturePS()));
@@ -211,9 +211,9 @@ technique11 simul_random
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
 		SetPixelShader(CompileShader(ps_4_0,RandomPS()));
@@ -224,23 +224,22 @@ technique11 simul_2d_cloud_detail
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
 		SetPixelShader(CompileShader(ps_4_0,DetailPS()));
     }
 }
 
-
 technique11 simul_2d_cloud_detail_lighting
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
 		SetPixelShader(CompileShader(ps_4_0,DetailLightingPS()));
@@ -251,9 +250,9 @@ technique11 simul_clouds_2d
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( TestDepth, 0 );
-		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(TestDepth,0);
+		SetBlendState(AlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,MainPS()));

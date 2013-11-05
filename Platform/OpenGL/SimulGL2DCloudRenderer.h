@@ -68,6 +68,7 @@ protected:
 
 	GLint globalScale;
 	GLint detailScale;
+	GLint offsetScale;
 	GLint origin;
 
 	GLint imageTexture_param;

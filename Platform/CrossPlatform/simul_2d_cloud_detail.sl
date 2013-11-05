@@ -1,7 +1,7 @@
 #ifndef SIMUL_2D_CLOUD_DETAIL_SL
 #define SIMUL_2D_CLOUD_DETAIL_SL
 
-vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture)
+vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture,float amplitude)
 {
 	vec4 result=vec4(0,0,0,0);
 	float mult=0.5;
@@ -9,11 +9,12 @@ vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture)
     {
 		vec4 c=texture_wrap(imageTexture,texcoords);
 		texcoords*=2.0;
-		texcoords+=mult*vec2(0.2,0.2)*c.xy;
+		texcoords+=mult*vec2(0.1,0.1)*amplitude*c.xy;
 		result+=mult*c;
 		mult*=persistence;
     }
     result.rgb=saturate(result.rrr*1.5);
+	result.a=saturate((result.a+density+diffusivity-1.0)/diffusivity);
     return result;
 }
 
@@ -26,7 +27,7 @@ vec4 DetailLighting(vec2 texcoords,Texture2D imageTexture)
     {
 		texcoords+=offset;
 		vec4 v=texture_wrap(imageTexture,texcoords);
-		v.a=saturate(v.a+0.2*cloudiness-0.1);
+		v.a=saturate(v.a+0.1);//0.2*density-0.1);
 		dens_dist+=v.a;
 		if(v.a==0)
 			dens_dist*=0.9;

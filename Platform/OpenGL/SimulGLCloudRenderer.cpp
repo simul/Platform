@@ -516,10 +516,10 @@ GL_ERROR_CHECK
 	layerConstants.Apply();
 //	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
 	int idx=0;
-	static int isolate_layer=-1;
+	static int isolate_layer=17;
 	for(CloudGeometryHelper::SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
-		if(isolate_layer>=0&&isolate_layer!=idx)
+		if(isolate_layer>=0&&idx>isolate_layer)
 			continue;
 	GL_ERROR_CHECK
 		simul::clouds::CloudGeometryHelper::Slice *s=*i;
@@ -533,7 +533,7 @@ GL_ERROR_CHECK
 		singleLayerConstants.layerFade_		=L.layerFade;
 		singleLayerConstants.layerDistance_	=L.layerDistance;
 		singleLayerConstants.verticalShift_	=L.verticalShift;
-		//singleLayerConstants.Apply();
+		singleLayerConstants.Apply();
 		glBegin(GL_QUAD_STRIP);
 		if(quad_strip_vertices.size())
 		for(CloudGeometryHelper::QuadStripPtrVector::const_iterator j=(*i)->quad_strips.begin();

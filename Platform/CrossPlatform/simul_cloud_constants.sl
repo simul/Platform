@@ -5,11 +5,11 @@ STATIC const int SIMUL_MAX_CLOUD_RAYTRACE_STEPS=200;
 struct LayerData
 {
 	vec2 noiseOffset;
-	float pad11;
-	float pad12;
 	float layerFade;
 	float layerDistance;
 	float verticalShift;
+	float pad11;
+	float pad12;
 	float pad13;
 };
 
