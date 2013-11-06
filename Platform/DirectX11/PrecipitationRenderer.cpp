@@ -79,9 +79,9 @@ void PrecipitationRenderer::RenderTextures(void *context,int width,int height)
 	if(w>height/3)
 		w=height/3;
 	UtilityRenderer::SetScreenSize(width,height);
-	simul::dx11::setParameter(effect,"showTexture",rain_texture);
+	simul::dx11::setTexture(effect,"showTexture",rain_texture);
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w/8,effect,effect->GetTechniqueByName("show_texture"));
-	simul::dx11::setParameter(effect,"showTexture",NULL);
+	simul::dx11::setTexture(effect,"showTexture",NULL);
 }
 
 void PrecipitationRenderer::SetCubemapTexture(void *t)
@@ -94,8 +94,8 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	m_pd3dDevice=(ID3D11Device*)dev;
 	HRESULT hr=S_OK;
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
-	D3DXMatrixIdentity(&view);
-	D3DXMatrixIdentity(&proj);
+	view.Identity();
+	proj.Identity();
 	MakeMesh();
     RecompileShaders();
 	D3D11_INPUT_ELEMENT_DESC decl[] =
@@ -174,8 +174,8 @@ void PrecipitationRenderer::Render(void *context)
 		return;
 	PIXBeginNamedEvent(0,"Render Precipitation");
 	rainTexture->SetResource(rain_texture);
-	simul::dx11::setParameter(effect,"cubeTexture",cubemap_SRV);
-	simul::dx11::setParameter(effect,"randomTexture",random_SRV);
+	simul::dx11::setTexture(effect,"cubeTexture",cubemap_SRV);
+	simul::dx11::setTexture(effect,"randomTexture",random_SRV);
 	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 	//set up matrices
 	D3DXMATRIX world,wvp;
@@ -194,7 +194,7 @@ void PrecipitationRenderer::Render(void *context)
 
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
-	D3DXMATRIX p1=proj;
+	simul::math::Matrix4x4 p1=proj;
 	if(ReverseDepth)
 	{
 		// Convert the proj matrix into a normal non-reversed matrix.
@@ -267,7 +267,7 @@ void PrecipitationRenderer::RenderParticles(void *context)
 	SAFE_RELEASE(previousInputLayout);
 }
 
-void PrecipitationRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void PrecipitationRenderer::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
 	view=v;
 	proj=p;

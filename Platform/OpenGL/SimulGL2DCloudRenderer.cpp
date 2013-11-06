@@ -18,6 +18,7 @@
 #include "FreeImage.h"
 #include <fstream>
 #include <algorithm>
+#include <stdint.h>  // for uintptr_t
 
 #include "SimulGL2DCloudRenderer.h"
 #include "Simul/Clouds/FastCloudNode.h"
@@ -96,7 +97,7 @@ GL_ERROR_CHECK
 		dens_fb.Clear(context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
+		glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)noise_fb.GetColorTex());
 		GLuint dens_prog=MakeProgram("simple.vert",NULL,"simul_2d_cloud_detail.frag");
 		glUseProgram(dens_prog);
 		GLint persistence		=glGetUniformLocation(dens_prog,"persistence");
@@ -115,7 +116,7 @@ GL_ERROR_CHECK
 		detail_fb.Clear(context,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,(GLuint)dens_fb.GetColorTex());
+		glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)dens_fb.GetColorTex());
 		GLuint lighting_prog=MakeProgram("simple.vert",NULL,"simul_2d_cloud_detail_lighting.frag");
 		glUseProgram(lighting_prog);
 		GLint densTexture	=glGetUniformLocation(lighting_prog,"dens_texture");
@@ -280,7 +281,7 @@ void SimulGL2DCloudRenderer::PreRenderUpdate(void *)
 bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool,bool,const void *depthTexture, bool, bool,int,const simul::sky::float4& )
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	GLuint depth_texture=(GLuint)depthTexture;
+	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
 	EnsureTexturesAreUpToDate(context);
 	using namespace simul::clouds;
 	if(skyInterface)
@@ -300,8 +301,8 @@ bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool,bool,const
     glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 
 	glUseProgram(clouds_program);
-	Set2DTexture(imageTexture_param,(GLuint)detail_fb.GetColorTex(),0);
-	Set2DTexture(coverageTexture,(GLuint)coverage_fb.GetColorTex(),1);
+	Set2DTexture(imageTexture_param,(GLuint)(uintptr_t)detail_fb.GetColorTex(),0);
+	Set2DTexture(coverageTexture,(GLuint)(uintptr_t)coverage_fb.GetColorTex(),1);
 	Set2DTexture(lossTexture,loss_tex,2);
 	Set2DTexture(inscatterSampler_param,inscatter_tex,3);
 	Set2DTexture(skylightSampler_param,skylight_tex,4);
@@ -434,7 +435,7 @@ static float mult=1.f;
 		DrawQuad((i+1)*(w+8)+8,height-w-8,w,w);
 	}
 	
-	glBindTexture(GL_TEXTURE_2D,(GLuint)detail_fb.GetColorTex());
+	glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)detail_fb.GetColorTex());
 	glUseProgram(Utilities::GetSingleton().simple_program);
 	DrawQuad(8,height-8-w,w,w);
 	
@@ -444,14 +445,14 @@ static float mult=1.f;
 void SimulGL2DCloudRenderer::SetLossTexture(void *l)
 {
 	if(l)
-		loss_tex=((GLuint)l);
+	loss_tex=((GLuint)(uintptr_t)l);
 }
 static GLint earthShadowUniformsBindingIndex=3;
 
 void SimulGL2DCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
 {
-	inscatter_tex=((GLuint)i);
-	skylight_tex=((GLuint)s);
+	inscatter_tex=((GLuint)(uintptr_t)i);
+	skylight_tex=((GLuint)(uintptr_t)s);
 }
 
 void SimulGL2DCloudRenderer::RestoreDeviceObjects(void *context)

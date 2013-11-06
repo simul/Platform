@@ -5,7 +5,13 @@
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
 #include "Simul/Base/RuntimeError.h"
+#ifdef _MSC_VER
 #include <windows.h>
+#else
+#define DebugBreak() 
+#endif
+
+
 std::stack<GLuint> FramebufferGL::fb_stack;
 
 FramebufferGL::FramebufferGL(int w,int h,GLenum target,int samples,int coverageSamples)

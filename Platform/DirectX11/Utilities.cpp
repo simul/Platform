@@ -263,10 +263,10 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		textureDesc.Format				=format=f;
 		textureDesc.MipLevels			=1;
 		textureDesc.ArraySize			=1;
-		textureDesc.Usage				=computable?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
-		textureDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
-		textureDesc.CPUAccessFlags		=computable?0:D3D11_CPU_ACCESS_WRITE;
-		textureDesc.MiscFlags			=0;
+		textureDesc.Usage				=(computable||rendertarget)?D3D11_USAGE_DEFAULT:D3D11_USAGE_DYNAMIC;
+		textureDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0)|(rendertarget?D3D11_BIND_RENDER_TARGET:0);
+		textureDesc.CPUAccessFlags		=(computable||rendertarget)?0:D3D11_CPU_ACCESS_WRITE;
+		textureDesc.MiscFlags			=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
 		textureDesc.SampleDesc.Count	= 1;
 		HRESULT hr;
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
@@ -748,9 +748,16 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 
 void UtilityRenderer::DrawTexture(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t)
 {
-	simul::dx11::setParameter(m_pDebugEffect,"imageTexture",t);
+	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",t);
 	if(m_pDebugEffect)
 		UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,m_pDebugEffect->GetTechniqueByName("textured"));
+}
+
+void UtilityRenderer::DrawTextureMS(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t)
+{
+	simul::dx11::setTexture(m_pDebugEffect,"imageTextureMS",t);
+	if(m_pDebugEffect)
+		UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,m_pDebugEffect->GetTechniqueByName("texturedMS"));
 }
 
 void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext)

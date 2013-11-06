@@ -15,23 +15,28 @@ vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,T
 	return loss;
 }
 
+vec3 AtmosphericsLossMSAA(Texture2DMS<float4> depthTextureMS,uint numSampes,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
+	,mat4 invViewProj,vec2 texCoords,uint2 depth_pos2,vec2 clip_pos,vec3 depthToLinFadeDistParams,vec2 tanHalfFov)
+{
+	float3 view	=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
+	view		=normalize(view);
+	float depth	=depthTextureMS.Load(depth_pos2,0).x;
+	float dist	=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	float sine	=view.z;
+	vec2 texc2	=vec2(pow(dist,0.5),0.5*(1.f-sine));
+	vec3 loss	=texture_clamp_mirror(lossTexture,texc2).rgb;
+	return loss;
+}
+
 void CalcInsc(	Texture2D inscTexture
 				,Texture2D skylTexture
 				,Texture2D illuminationTexture
-				,Texture2D depthTexture
-				,vec2 texCoords
-				,vec2 clip_pos
+				,float dist
 				,vec2 fade_texc
 				,vec2 illum_texc
-				,vec4 viewportToTexRegionScaleBias
-				,vec3 depthToLinFadeDistParams
-				,vec2 tanHalfFov
                 ,out vec4 insc
                 ,out vec3 skyl)
 {
-	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
-	float depth			=texture_clamp_lod(depthTexture,depth_texc,0).x;
-	float dist			=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	fade_texc.x			=pow(dist,0.5f);
 	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
 	vec2 nearFarTexc	=illum_lookup.xy;
@@ -89,9 +94,10 @@ vec3 AtmosphericsInsc(	Texture2D depthTexture
 vec4 InscatterMSAA(	Texture2D inscTexture
 				,Texture2D skylTexture
 				,Texture2D illuminationTexture
-				,Texture2D depthTexture
-				,vec2 depthPixelScales
+				,Texture2DMS<float4> depthTextureMS
+				,int numSamples
 				,vec2 texCoords
+				,int2 pos2
 				,mat4 invViewProj
 				,vec3 lightDir
 				,float hazeEccentricity
@@ -113,27 +119,28 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 	float sine			=view.z;
 	float2 fade_texc	=vec2(0,0.5f*(1.f-sine));
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-	vec2 textureDims;
-	for(int i=0;i<9;i++)
+		//float depth1			=depthTextureMS.Load(pos2,0).x;
+		///float dist1			=depthToFadeDistance(depth1,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	for(int i=0;i<numSamples;i++)
 	{
 		vec4 insc_i;
         vec3 skyl_i;
+		vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+		float depth			=depthTextureMS.Load(pos2,i).x;
+		float dist			=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
         CalcInsc(	inscTexture
 					,skylTexture
-							,illuminationTexture
-							,depthTexture
-							,texCoords.xy+offset[i]*depthPixelScales
-					,clip_pos.xy
-							,fade_texc
-							,illum_texc
-							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
-					,tanHalfFov
+					,illuminationTexture
+					,dist
+					,fade_texc
+					,illum_texc
                     ,insc_i
                     ,skyl_i);
-        insc+=insc_i/9.0;
-        skyl+=skyl_i/9.0;
+        insc+=insc_i;
+        skyl+=skyl_i;
 	}
+	insc/=float(numSamples);
+	skyl/=float(numSamples);
 	float cos0			=dot(view,lightDir);
 #ifdef INFRARED
 	vec3 colour			=skyl.rgb;
@@ -143,6 +150,7 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 #else
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;
+
 	return float4(colour.rgb,1.0);
 #endif
 }
@@ -174,17 +182,15 @@ vec4 Inscatter(	Texture2D inscTexture
 	
 	vec4 insc;
 	vec3 skyl;
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+	float depth			=texture_clamp_lod(depthTexture,depth_texc,0).x;
+	float dist			=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	CalcInsc(	inscTexture
 				,skylTexture
-							,illuminationTexture
-							,depthTexture
-							,texCoords.xy
-				,clip_pos.xy
-							,fade_texc
-							,illum_texc
-							,viewportToTexRegionScaleBias
-							,depthToLinFadeDistParams
-				,tanHalfFov
+				,illuminationTexture
+				,dist
+				,fade_texc
+				,illum_texc
 				,insc
 				,skyl);
 	float cos0			=dot(view,lightDir);

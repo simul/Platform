@@ -85,8 +85,8 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,m_pWrapSamplerState(NULL)
 	,m_pClampSamplerState(NULL)
 {
-	D3DXMatrixIdentity(&view);
-	D3DXMatrixIdentity(&proj);
+	view.Identity();
+	proj.Identity();
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 	texel_index[0]=texel_index[1]=texel_index[2]=texel_index[3]=0;
 }
@@ -372,7 +372,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	n_fb.SetFormat((int)DXGI_FORMAT_R8G8B8A8_SNORM);
 	n_fb.Activate(context);
 	{
-		simul::dx11::setParameter(effect,"noise_texture"	,(ID3D11ShaderResourceView*)random_fb.GetColorTex());
+		simul::dx11::setTexture(effect,"noise_texture"	,(ID3D11ShaderResourceView*)random_fb.GetColorTex());
 		ID3D1xEffectShaderResourceVariable*	noiseTexture	=effect->GetVariableByName("noise_texture")->AsShaderResource();
 		noiseTexture->SetResource((ID3D11ShaderResourceView*)random_fb.GetColorTex());
 		simul::dx11::setParameter(effect,"octaves"		,texture_octaves);
@@ -448,7 +448,7 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 		,noise_texture_size,noise_texture_size,noise_texture_size
 		,DXGI_FORMAT_R8G8B8A8_SNORM,true);
 	
-	simul::dx11::setParameter(effect,"random_texture_3d",random_3d.shaderResourceView);
+	simul::dx11::setTexture(effect,"random_texture_3d",random_3d.shaderResourceView);
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",noise_texture_3D.unorderedAccessView);
 	int texture_octaves			=cloudKeyframer->GetEdgeNoiseOctaves();
 	float texture_persistence	=cloudKeyframer->GetEdgeNoisePersistence();
@@ -458,7 +458,7 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 	ApplyPass(pContext,noise3DComputeTechnique->GetPassByIndex(0));
 	int t=(noise_texture_size+7)/8;
 	pContext->Dispatch(t,t,t);
-	simul::dx11::setParameter(effect,"random_texture_3d",(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture(effect,"random_texture_3d",(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",NULL);
 	ApplyPass(pContext,noise3DComputeTechnique->GetPassByIndex(0));
 	SAFE_RELEASE(effect);
@@ -682,7 +682,7 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	
 	
 	tech	=m_pCloudEffect->GetTechniqueByName("godrays_accumulation");
-	simul::dx11::setParameter(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
+	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	godrays_fb.Activate(pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
@@ -752,7 +752,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 	depthTexture->SetResource(depthTexture_SRV);
 	lightTableTexture	->SetResource(lightTableTexture_SRV);
 
-	simul::dx11::setParameter(m_pCloudEffect,"illuminationTexture",illuminationTexture_SRV);
+	simul::dx11::setTexture(m_pCloudEffect,"illuminationTexture",illuminationTexture_SRV);
 	
 	if(GetCloudInterface()->GetWrap())
 		simul::dx11::setSamplerState(m_pCloudEffect,"cloudSamplerState",m_pWrapSamplerState);
@@ -837,7 +837,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 	skylightTexture->SetResource((ID3D11ShaderResourceView*)NULL);
 	depthTexture->SetResource((ID3D11ShaderResourceView*)NULL);
 	lightTableTexture	->SetResource((ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setParameter(m_pCloudEffect,"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"illuminationTexture",(ID3D11ShaderResourceView*)NULL);
 // To prevent BIZARRE DX11 warning, we re-apply the pass with the textures unbound:
 	ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
 	return (hr==S_OK);
@@ -919,17 +919,17 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int width,int
 	h*=gi->GetGridHeight();
 	D3DXVECTOR4 cross_section_offset(0,0,0,0);
 	UtilityRenderer::SetScreenSize(width,height);
-	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",noiseTextureResource);
+	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture",noiseTextureResource);
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
-	simul::dx11::setParameter(m_pCloudEffect,"cloudShadowTexture",(ID3D1xShaderResourceView*)shadow_fb.GetColorTex());
-	simul::dx11::setParameter(m_pCloudEffect,"cloudGodraysTexture",(ID3D11ShaderResourceView*)godrays_fb.GetColorTex());
+	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D1xShaderResourceView*)shadow_fb.GetColorTex());
+	simul::dx11::setTexture(m_pCloudEffect,"cloudGodraysTexture",(ID3D11ShaderResourceView*)godrays_fb.GetColorTex());
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
 
-	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture",(ID3D11ShaderResourceView*)godrays_fb.GetColorTex());
+	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture",(ID3D11ShaderResourceView*)godrays_fb.GetColorTex());
 	UtilityRenderer::DrawQuad2(pContext,width-2*(w+8),height-(w+8)-w/2,w*2,w/2,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 
-	simul::dx11::setParameter(m_pCloudEffect,"noiseTexture"			,(ID3D1xShaderResourceView*)NULL);
-	simul::dx11::setParameter(m_pCloudEffect,"cloudShadowTexture"	,(ID3D1xShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"			,(ID3D1xShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture"	,(ID3D1xShaderResourceView*)NULL);
 	ApplyPass(pContext,m_pCloudEffect->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
 }
 
@@ -1035,13 +1035,6 @@ bool SimulCloudRendererDX1x::RenderLightning(void *context,int viewport_id)
 //	hr=m_pLightningEffect->End();
 	PIXEndNamedEvent();
 	return (hr==S_OK);
-}
-
-void SimulCloudRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
-{
-	view=v;
-	proj=p;
-	cam_pos=GetCameraPosVector(view);
 }
 
 

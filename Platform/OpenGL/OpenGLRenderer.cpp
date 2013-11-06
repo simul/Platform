@@ -17,10 +17,15 @@
 #include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
+#include <stdint.h> // for uintptr_t
 
 #pragma comment(lib,"opengl32")
 #pragma comment(lib,"glew32")
 #pragma comment(lib,"freeglut")
+#ifndef _MSC_VER
+#define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
+#endif
+
 
 #ifndef GLUT_BITMAP_HELVETICA_12
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
@@ -172,7 +177,7 @@ GL_ERROR_CHECK
 		depthFramebuffer.Deactivate(context);
 		{
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,(GLuint)depthFramebuffer.GetColorTex());
+			glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)depthFramebuffer.GetColorTex());
 			glUseProgram(simple_program);
 			GLint image_texture		=glGetUniformLocation(simple_program,"image_texture");
 			glUniform1i(image_texture,0);

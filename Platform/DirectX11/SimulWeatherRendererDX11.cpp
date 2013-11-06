@@ -140,10 +140,10 @@ void SimulWeatherRendererDX11::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"), defines);
-	directTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
-	showDepthTechnique	=m_pTonemapEffect->GetTechniqueByName("show_depth");
-	SkyBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_blend");
-	imageTexture		=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
+	directTechnique				=m_pTonemapEffect->GetTechniqueByName("simul_direct");
+	showDepthTechnique			=m_pTonemapEffect->GetTechniqueByName("show_depth");
+	farNearDepthBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("far_near_depth_blend");
+	imageTexture				=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
 	hdrConstants.LinkToEffect(m_pTonemapEffect,"HdrConstants");
 	BaseWeatherRenderer::RecompileShaders();
 }
@@ -249,13 +249,13 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 				1.f,
 				1.f,
 				600000.f);
-			SetMatrices(view_matrices[i],cube_proj);
+			SetMatrices((const float*)&view_matrices[i],(const float*)&cube_proj);
 			RenderSkyAsOverlay(m_pImmediateContext,exposure,false,false,NULL,NULL,0,simul::sky::float4(0,0,1.f,1.f), true);
 		}
 		if(gamma_correction)
 		{
 			gamma_correct.Deactivate(m_pImmediateContext);
-			simul::dx11::setParameter(m_pTonemapEffect,"imageTexture",gamma_correct.GetBufferResource());
+			simul::dx11::setTexture(m_pTonemapEffect,"imageTexture",gamma_correct.GetBufferResource());
 			hdrConstants.gamma=gamma;
 			hdrConstants.exposure=exposure;
 			hdrConstants.Apply(m_pImmediateContext);
@@ -334,22 +334,25 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 
 	if(buffered&&doFinalCloudBufferToScreenComposite)
 	{
-		ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
-		bool blend=!is_cubemap;
+		ID3D11DeviceContext *pContext			=(ID3D11DeviceContext*)context;
+		bool blend								=!is_cubemap;
 		imageTexture->SetResource(framebuffer.buffer_texture_SRV);
-		simul::dx11::setParameter(m_pTonemapEffect,"depthTexture"		,(ID3D1xShaderResourceView*)mainDepthTexture);
-		simul::dx11::setParameter(m_pTonemapEffect,"lowResDepthTexture"	,(ID3D1xShaderResourceView*)lowResDepthTexture);
-		simul::dx11::setParameter(m_pTonemapEffect,"cloudDepthTexture"	,(ID3D1xShaderResourceView*)baseFramebuffer->GetDepthTex());
-		simul::dx11::setParameter(m_pTonemapEffect,"nearImageTexture"	,(ID3D1xShaderResourceView*)nearFramebuffer.buffer_texture_SRV);
-		ID3D1xEffectTechnique *tech=blend?SkyBlendTechnique:directTechnique;
+		// Set both regular and MSAA depth variables. Which it is depends on the situation.
+		simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"			,(ID3D1xShaderResourceView*)mainDepthTexture);
+		simul::dx11::setTexture(m_pTonemapEffect,"depthTextureMS"		,(ID3D1xShaderResourceView*)mainDepthTexture);
+		// The low res depth texture contains the total near and far depths in its x and y.
+		simul::dx11::setTexture(m_pTonemapEffect,"lowResDepthTexture"	,(ID3D1xShaderResourceView*)lowResDepthTexture);
+		simul::dx11::setTexture(m_pTonemapEffect,"cloudDepthTexture"	,(ID3D1xShaderResourceView*)baseFramebuffer->GetDepthTex());
+		simul::dx11::setTexture(m_pTonemapEffect,"nearImageTexture"		,(ID3D1xShaderResourceView*)nearFramebuffer.buffer_texture_SRV);
+		ID3D1xEffectTechnique *tech					=blend?farNearDepthBlendTechnique:directTechnique;
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
-		hdrConstants.exposure					=1.f;
-		hdrConstants.gamma						=1.f;
-		float max_fade_distance_metres			=baseSkyRenderer->GetSkyKeyframer()->GetMaxDistanceKm()*1000.f;
-		hdrConstants.depthToLinFadeDistParams	=simul::math::Vector3(proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
-		hdrConstants.lowResTexelSize			=vec2(1.0f/(float)BufferWidth,1.0f/(float)BufferHeight);
+		hdrConstants.exposure						=1.f;
+		hdrConstants.gamma							=1.f;
+		hdrConstants.viewportToTexRegionScaleBias=vec4(viewportRegionXYWH.z, viewportRegionXYWH.w, viewportRegionXYWH.x, viewportRegionXYWH.y);
+		float max_fade_distance_metres				=baseSkyRenderer->GetSkyKeyframer()->GetMaxDistanceKm()*1000.f;
+		hdrConstants.depthToLinFadeDistParams		=simul::math::Vector3(proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
+		hdrConstants.lowResTexelSize				=vec2(1.0f/(float)BufferWidth,1.0f/(float)BufferHeight);
 		hdrConstants.Apply(pContext);
-
 		framebuffer.DrawQuad(pContext);
 		imageTexture->SetResource(NULL);
 		ApplyPass(pContext,tech->GetPassByIndex(0));
@@ -373,7 +376,7 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 		return;
 	float max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	UtilityRenderer::SetScreenSize(width,height);
-	simul::dx11::setParameter(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
+	simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
 	int x=8;
 	int y=height-w;
 
@@ -404,7 +407,7 @@ void SimulWeatherRendererDX11::RenderLightning(void *context,int viewport_id)
 		simulLightningRenderer->Render(context);
 }
 
-void SimulWeatherRendererDX11::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void SimulWeatherRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
 	view=v;
 	proj=p;

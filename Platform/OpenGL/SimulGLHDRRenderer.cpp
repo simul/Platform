@@ -10,6 +10,7 @@
 #include "SimulGLHDRRenderer.h"
 #include "SimulGLUtilities.h"
 #include "LoadGLProgram.h"
+#include <stdint.h>  // for uintptr_t
 using namespace simul;
 using namespace opengl;
 

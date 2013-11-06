@@ -30,7 +30,7 @@ namespace simul
 			void RestoreDeviceObjects(void*);
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
-			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
+			void SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
 			void PreRenderUpdate(void *context);
 			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 			void RenderCrossSections(void *context,int width,int height);
@@ -48,7 +48,7 @@ namespace simul
 			void EnsureCorrectIlluminationTextureSizes(){}
 			void EnsureIlluminationTexturesAreUpToDate(){}
 			void CreateNoiseTexture(void *context){}
-			D3DXMATRIX					view,proj;
+			simul::math::Matrix4x4					view,proj;
 			ID3D11Device*				m_pd3dDevice;
 			ID3DX11Effect*				effect;
 			ID3DX11EffectTechnique*		tech;

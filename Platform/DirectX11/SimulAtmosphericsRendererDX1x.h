@@ -8,15 +8,10 @@
 #pragma once
 #include <tchar.h>
 #include <d3dx9.h>
-#ifdef DX10
-#include <d3d10.h>
-#include <d3dx10.h>
-#include <d3d10effect.h>
-#else
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <D3dx11effect.h>
-#endif
+#include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
@@ -55,14 +50,14 @@ namespace simul
 			void RestoreDeviceObjects(void* pd3dDevice);
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
-			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
+			void SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
 			//! Render the Atmospherics.
 			void RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 			void RenderGodrays(void *context,float strength,bool near_pass,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloudDepthTexture);
 		protected:
 			HRESULT Destroy();
 			ID3D1xDevice*									m_pd3dDevice;
-			D3DXMATRIX										view,proj;
+			simul::math::Matrix4x4							view,proj;
 
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3D1xEffect*									effect;

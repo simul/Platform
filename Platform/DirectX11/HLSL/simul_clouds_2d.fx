@@ -7,6 +7,7 @@ uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D skylTexture;
 uniform sampler2D depthTexture;
+uniform Texture2DMS<float4> depthTextureMS;
 uniform sampler2D illuminationTexture;
 uniform sampler2D lightTableTexture;
 
@@ -58,9 +59,14 @@ v2f MainVS(a2v IN)
 
 float4 MainPS(v2f IN) : SV_TARGET
 {
-	vec2 depthTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
-	depthTexCoords.y	=1.0-depthTexCoords.y;
-	float dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(depthTexCoords.xy,viewportToTexRegionScaleBias),0).r;
+	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
+	viewportTexCoords.y		=1.0-viewportTexCoords.y;
+	uint2 depthDims;
+	uint depthSamples;
+	vec2 depthTexCoords=viewportCoordToTexRegionCoord(viewportTexCoords.xy,viewportToTexRegionScaleBias);
+	depthTextureMS.GetDimensions(depthDims.x,depthDims.y,depthSamples);
+	uint2 depth_pos2	=uint2(depthTexCoords.xy*vec2(depthDims.xy));
+	float dlookup 		=depthTextureMS.Load(depth_pos2,0).r;
 	if(dlookup!=0)
 		discard;
 	vec2 wOffset		=IN.wPosition.xy-origin.xy;
@@ -254,7 +260,7 @@ technique11 simul_clouds_2d
 		SetDepthStencilState(TestDepth,0);
 		SetBlendState(AlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,MainPS()));
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,MainPS()));
     }
 }

@@ -26,16 +26,16 @@ namespace simul
 			ALWAYS_BUILD=1,BUILD_IF_NO_BINARY,NEVER_BUILD
 		};
 		//! Find the camera position and view direction from the given view matrix.
-		extern SIMUL_DIRECTX11_EXPORT void GetCameraPosVector(D3DXMATRIX &view,float *dcam_pos,float *view_dir,bool y_vertical=false);
+		extern SIMUL_DIRECTX11_EXPORT void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,bool y_vertical=false);
 		//! Find the camera position from the given view matrix.
-		extern SIMUL_DIRECTX11_EXPORT const float *GetCameraPosVector(D3DXMATRIX &view,bool y_vertical=false);
+		extern SIMUL_DIRECTX11_EXPORT const float *GetCameraPosVector(const float *v,bool y_vertical=false);
 		//! Call this to make the FX compiler put its warnings and errors to the standard output when used.
 		extern SIMUL_DIRECTX11_EXPORT void PipeCompilerOutput(bool p);
 		//! When shader should be built, or loaded if available.
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderBuildMode(ShaderBuildMode s);
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderPath(const char *path);
 		extern SIMUL_DIRECTX11_EXPORT void SetTexturePath(const char *path);
-		extern SIMUL_DIRECTX11_EXPORT void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);
+		extern SIMUL_DIRECTX11_EXPORT void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,const float *world,const float *view,const float *proj);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename);
 		ID3D11Texture1D* make1DTexture(
@@ -62,9 +62,12 @@ namespace simul
 							
 		D3DXMATRIX SIMUL_DIRECTX11_EXPORT ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj);
 	
+		// These functions encapsulate getting an effect variable of the given name if it exists, and
+		// if so, setting its value. Due to inefficiency it is best to replace usage of this over time
+		// with Effect variable pointers, but this is a good way to write new render code quickly
 		void setDepthState			(ID3DX11Effect *effect	,const char *name	,ID3D11DepthStencilState * value);
 		void setSamplerState		(ID3DX11Effect *effect	,const char *name	,ID3D11SamplerState * value);
-		void setParameter			(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
+		void setTexture				(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
 		void applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,int pass=0);
 		void setUnorderedAccessView	(ID3DX11Effect *effect	,const char *name	,ID3D11UnorderedAccessView * value);
 		void setTextureArray		(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value);
@@ -103,6 +106,7 @@ extern SIMUL_DIRECTX11_EXPORT void UnmapBuffer(ID3D11DeviceContext *pImmediateCo
 extern SIMUL_DIRECTX11_EXPORT HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass);
 
 extern void SIMUL_DIRECTX11_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos,bool ReverseDepth);
+
 void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
 void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
 

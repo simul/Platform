@@ -22,6 +22,7 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Decay.h"
+#include <stdint.h>  // for uintptr_t
 
 using namespace simul;
 using namespace opengl;

@@ -48,20 +48,6 @@ ShaderBuildMode shaderBuildMode=ALWAYS_BUILD;
 static DefaultFileLoader fl;
 static FileLoader *fileLoader=&fl;
 
-class ShaderIncludeHandler : public ID3DInclude
-{
-public:
-	ShaderIncludeHandler(const char* shaderDirUtf8, const char* systemDirUtf8)
-		: m_ShaderDirUtf8(shaderDirUtf8), m_SystemDirUtf8(systemDirUtf8)
-	{
-	}
-	HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType,LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
-	HRESULT __stdcall Close(LPCVOID pData);
-private:
-	std::string m_ShaderDirUtf8;
-	std::string m_SystemDirUtf8;
-};
-
 HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
 {
 	try
@@ -85,23 +71,6 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 		*pBytes = (UINT)fileSize;
 		if(!*ppData)
 			return E_FAIL;
-	/*	std::ifstream includeFile(simul::base::Utf8ToWString(finalPath).c_str()
-			,std::ios::in|std::ios::binary|std::ios::ate);
-
-		if (includeFile.is_open())
-		{
-			long long fileSize = includeFile.tellg();
-			char* buf = new char[(UINT)fileSize];
-			includeFile.seekg (0, std::ios::beg);
-			includeFile.read (buf,(std::streamsize)fileSize);
-			includeFile.close();
-			*ppData = buf;
-			*pBytes = (UINT)fileSize;
-		}
-		else
-		{
-			return E_FAIL;
-		}*/
 		return S_OK;
 	}
 	catch(std::exception& e)
@@ -114,8 +83,6 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 HRESULT __stdcall ShaderIncludeHandler::Close(LPCVOID pData)
 {
 	fileLoader->ReleaseFileContents((void*)pData);
-	//char* buf = (char*)pData;
-	//delete[] buf;
 	return S_OK;
 }
 
@@ -129,9 +96,9 @@ namespace simul
 		{
 			fileLoader=l;
 		}
-		void GetCameraPosVector(D3DXMATRIX &view,float *dcam_pos,float *view_dir,bool y_vertical)
+		void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,bool y_vertical)
 		{
-			D3DXMATRIX tmp1;
+			D3DXMATRIX tmp1,view(v);
 			D3DXMatrixInverse(&tmp1,NULL,&view);
 			
 			dcam_pos[0]=tmp1._41;
@@ -154,8 +121,9 @@ namespace simul
 			}
 		}
 
-		const float *GetCameraPosVector(D3DXMATRIX &view,bool y_vertical)
+		const float *GetCameraPosVector(const float *v,bool y_vertical)
 		{
+			D3DXMATRIX view(v);
 			static float cam_pos[4],view_dir[4];
 			GetCameraPosVector(view,(float*)cam_pos,(float*)view_dir,y_vertical);
 			return cam_pos;
@@ -190,9 +158,9 @@ namespace simul
 				*texture_path=std::string(path)+"/";
 			}
 		}
-		void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
+		void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,const float *w,const float *v,const float *p)
 		{
-			D3DXMATRIX tmp1, tmp2;
+			D3DXMATRIX tmp1, tmp2,view(v),proj(p),world(w);
 			D3DXMatrixMultiply(&tmp1, &world,&view);
 			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 			D3DXMatrixTranspose(wvp,&tmp2);
@@ -395,9 +363,10 @@ void simul::dx11::setSamplerState(ID3DX11Effect *effect,const char *name	,ID3D11
 	var->SetSampler(0,value);
 } 
 
-void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,ID3D11ShaderResourceView * value)
+void simul::dx11::setTexture(ID3DX11Effect *effect,const char *name	,ID3D11ShaderResourceView * value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetResource(value);
 } 
 		
@@ -416,30 +385,35 @@ void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,
 void simul::dx11::setUnorderedAccessView(ID3DX11Effect *effect,const char *name	,ID3D11UnorderedAccessView * value)
 {
 	ID3DX11EffectUnorderedAccessViewVariable*	var	=effect->GetVariableByName(name)->AsUnorderedAccessView();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetUnorderedAccessView(value);
 }
 
 void simul::dx11::setStructuredBuffer(ID3DX11Effect *effect,const char *name,ID3D11ShaderResourceView * value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetResource(value);
 }
 
 void simul::dx11::setTextureArray(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value)
 {
 	ID3DX11EffectShaderResourceVariable*	var	=effect->GetVariableByName(name)->AsShaderResource();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetResource(value);
 }
 
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float value)
 {
 	ID3DX11EffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetFloat(value);
 }
 
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,float y)
 {
 	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	float V[]={x,y,0.f,0.f};
 	var->SetFloatVector(V);
 }
@@ -447,6 +421,7 @@ void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,f
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,float y,float z,float w)
 {
 	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	float V[]={x,y,z,w};
 	var->SetFloatVector(V);
 }
@@ -454,24 +429,28 @@ void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float x,f
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,int value)
 {
 	ID3DX11EffectScalarVariable*	var	=effect->GetVariableByName(name)->AsScalar();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetInt(value);
 }
 
 void simul::dx11::setParameter(ID3DX11Effect *effect,const char *name	,float *value)
 {
 	ID3DX11EffectVectorVariable*	var	=effect->GetVariableByName(name)->AsVector();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetFloatVector(value);
 }
 
 void simul::dx11::setMatrix(ID3DX11Effect *effect,const char *name	,const float *value)
 {
 	ID3DX11EffectMatrixVariable*	var	=effect->GetVariableByName(name)->AsMatrix();
+	SIMUL_ASSERT(var->IsValid()!=0);
 	var->SetMatrix(value);
 }
 
 void simul::dx11::setConstantBuffer(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b)
 {
 	ID3DX11EffectConstantBuffer*	pD3DX11EffectConstantBuffer=effect->GetConstantBufferByName(name);
+	SIMUL_ASSERT(pD3DX11EffectConstantBuffer->IsValid()!=0);
 	pD3DX11EffectConstantBuffer->SetConstantBuffer(b);
 }
 
@@ -519,8 +498,19 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 {
 	HRESULT hr=S_OK;
 #if 1
+	std::string binary_filename_utf8=text_filename_utf8+"o";
 	void *textData=NULL;
 	unsigned textSize=0;
+	//if(shaderBuildMode==BUILD_IF_NO_BINARY)
+	// See if there's a binary that's newer than the file date.
+	double text_date_jdn=fileLoader->GetFileDate(text_filename_utf8.c_str());
+	double binary_date_jdn=fileLoader->GetFileDate(binary_filename_utf8.c_str());
+	if(binary_date_jdn>text_date_jdn)
+	{
+		hr=D3DX11CreateEffectFromBinaryFileUtf8(text_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
+		if(hr==S_OK)
+			return S_OK;
+	}
 	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
 	ID3DBlob *binaryBlob=NULL;
 	ID3DBlob *errorMsgs=NULL;
@@ -547,7 +537,10 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	if(hr==S_OK)
 	{
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
-		//if(fileLoader->
+		if(hr==S_OK)
+		{
+			fileLoader->Save(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
+		}
 	}
 	else
 	{
@@ -569,7 +562,6 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 #else
 	// first try to find an existing text source with this filename, and compile it.
 	std::string filename_utf8= text_filename_utf8;
-	std::string binary_filename_utf8=text_filename_utf8+"o";
 	int pos=(int)text_filename_utf8.find_last_of("/");
 	if(pos<0)
 		pos=(int)text_filename_utf8.find_last_of("\\");

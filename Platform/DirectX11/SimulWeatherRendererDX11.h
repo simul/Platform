@@ -15,6 +15,7 @@
 #include <d3d11.h>
 #include <d3dx11.h>
 #include "Simul/Graph/Meta/Group.h"
+#include "Simul/Math/Matrix4x4.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
 
 #ifndef RENDERDEPTHBUFFERCALLBACK
@@ -62,7 +63,7 @@ namespace simul
 			void RenderLightning(void *context,int viewport_id);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
 			//! Apply the view and projection matrices, once per frame.
-			void SetMatrices(const D3DXMATRIX &viewmat,const D3DXMATRIX &projmat);
+			void SetMatrices(const simul::math::Matrix4x4 &viewmat,const simul::math::Matrix4x4 &projmat);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 			void SetExposure(float ex){exposure=ex;}
 
@@ -80,8 +81,8 @@ namespace simul
 			void *GetCloudDepthTexture();
 			simul::base::MemoryInterface	*memoryInterface;
 			// Keep copies of these matrices:
-			D3DXMATRIX view;
-			D3DXMATRIX proj;
+			simul::math::Matrix4x4 view;
+			simul::math::Matrix4x4 proj;
 			IDXGISwapChain *pSwapChain;
 			//! The size of the 2D buffer the sky is rendered to.
 			int BufferWidth,BufferHeight;
@@ -92,7 +93,7 @@ namespace simul
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3DX11Effect							*m_pTonemapEffect;
 			ID3DX11EffectTechnique					*directTechnique;
-			ID3DX11EffectTechnique					*SkyBlendTechnique;
+			ID3DX11EffectTechnique					*farNearDepthBlendTechnique;
 			ID3DX11EffectTechnique					*showDepthTechnique;
 			ID3DX11EffectShaderResourceVariable		*imageTexture;
 

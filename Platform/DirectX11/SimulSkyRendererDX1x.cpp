@@ -10,6 +10,8 @@
 // SimulSkyRendererDX1x.cpp A renderer for skies.
 #define NOMINMAX
 
+
+#include <tchar.h>
 #include <d3d10_1.h>
 #include <d3dx10.h>
 #include <dxerr.h>
@@ -23,8 +25,6 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
-
-extern D3DXMATRIX view_matrices[6];
 
 using namespace simul::dx11;
 
@@ -72,9 +72,9 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	};
     m_pd3dDevice->CreateQuery(&qdesc,&d3dQuery);
 	HRESULT hr=S_OK;
-	D3DXMatrixIdentity(&world);
-	D3DXMatrixIdentity(&view);
-	D3DXMatrixIdentity(&proj);
+	world.Identity();
+	view.Identity();
+	proj.Identity();
 	gpuSkyGenerator.RestoreDeviceObjects(m_pd3dDevice);
 	TextureStruct *loss[3],*insc[3],*skyl[3];
 	for(int i=0;i<3;i++)
@@ -619,12 +619,12 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	}
 	// light_table - using compute.
 	{
-		simul::dx11::setParameter(m_pSkyEffect				,"sourceTexture"	,light_table.shaderResourceView);
+		simul::dx11::setTexture(m_pSkyEffect				,"sourceTexture"	,light_table.shaderResourceView);
 		simul::dx11::setUnorderedAccessView(m_pSkyEffect	,"targetTexture"	,light_table_2d.unorderedAccessView);
 		ID3D1xEffectTechnique* m_TechniqueLightTableInterp	=m_pSkyEffect->GetTechniqueByName("interp_light_table");
 		V_CHECK(ApplyPass(context,m_TechniqueLightTableInterp->GetPassByIndex(0)));
 		context->Dispatch(light_table_2d.width,light_table_2d.length,1);
-		simul::dx11::setParameter(m_pSkyEffect				,"sourceTexture"	,(ID3D11ShaderResourceView*)NULL);
+		simul::dx11::setTexture(m_pSkyEffect				,"sourceTexture"	,(ID3D11ShaderResourceView*)NULL);
 		simul::dx11::setUnorderedAccessView(m_pSkyEffect	,"targetTexture"	,NULL);
 		V_CHECK(ApplyPass(context,m_TechniqueLightTableInterp->GetPassByIndex(0)));
 	}
@@ -686,16 +686,16 @@ bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	HRESULT hr=S_OK;
 	D3DXMATRIX tmp1, tmp2,wvp;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
+	D3DXMatrixInverse(&tmp1,NULL,(const D3DXMATRIX*)&view);
 	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 
 	GetSiderealTransform((float*)&world);
 	world._41=cam_pos.x;
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
-	D3DXMatrixInverse(&tmp2,NULL,&world);
-	D3DXMatrixMultiply(&tmp1,&world,&view);
-	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
+	D3DXMatrixInverse(&tmp2,NULL,(const D3DXMATRIX*)&world);
+	D3DXMatrixMultiply(&tmp1,(const D3DXMATRIX*)&world,(const D3DXMATRIX*)&view);
+	D3DXMatrixMultiply(&tmp2,&tmp1,(const D3DXMATRIX*)&proj);
 	D3DXMatrixTranspose(&wvp,&tmp2);
 	skyConstants.worldViewProj=(const float *)(&tmp2);
 	hr=ApplyPass(pContext,m_hTechniquePointStars->GetPassByIndex(0));
@@ -800,7 +800,7 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 		skyConstants.Apply(context);
 		UtilityRenderer::DrawQuad2(context,x	,y		,8,size	,m_pSkyEffect,techniqueShowLightTable);
 	}
-	simul::dx11::setParameter(m_pSkyEffect,"lightTable2DTexture",light_table_2d.shaderResourceView);
+	simul::dx11::setTexture(m_pSkyEffect,"lightTable2DTexture",light_table_2d.shaderResourceView);
 
 	UtilityRenderer::DrawQuad2(context,x0+9*4	,y,8,size	,m_pSkyEffect,techniqueShow2DLightTable);
 	x0+=2*(size+8);
@@ -829,7 +829,7 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	D3DXMATRIX tmp1,tmp2,wvp;
-	D3DXMatrixIdentity(&world);
+	world.Identity();
 	float tan_x=1.0f/proj(0, 0);
 	float tan_y=1.0f/proj(1, 1);
 	D3DXMatrixInverse(&tmp1,NULL,&view);
@@ -856,7 +856,7 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m
 	UtilityRenderer::DrawCube(context);
 }
 
-void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void SimulSkyRendererDX1x::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
 	view=v;
 	proj=p;

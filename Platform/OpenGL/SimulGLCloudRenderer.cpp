@@ -36,9 +36,13 @@
 #include "LoadGLProgram.h"
 
 #include <algorithm>
+#include <stdint.h>  // for uintptr_t
 using namespace simul;
 using namespace opengl;
 
+#ifndef _MSC_VER
+#define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
+#endif
 using std::map;
 using namespace std;
 
@@ -183,7 +187,7 @@ GL_ERROR_CHECK
 	GL_ERROR_CHECK
 		Ortho();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,(GLuint)noise_fb.GetColorTex());
+		glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)noise_fb.GetColorTex());
 	GL_ERROR_CHECK
 		glUseProgram(edge_noise_prog);
 	GL_ERROR_CHECK

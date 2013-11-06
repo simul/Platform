@@ -369,6 +369,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\PrecipitationRenderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Profiler.cpp"
 				>
 			</File>
@@ -398,10 +402,6 @@
 			</File>
 			<File
 				RelativePath=".\SimulOpticsRendererDX1x.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\SimulPrecipitationRendererDX1x.cpp"
 				>
 			</File>
 			<File
@@ -475,6 +475,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\PrecipitationRenderer.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Profiler.h"
 				>
 			</File>
@@ -512,10 +516,6 @@
 			</File>
 			<File
 				RelativePath=".\SimulOpticsRendererDX1x.h"
-				>
-			</File>
-			<File
-				RelativePath=".\SimulPrecipitationRendererDX1x.h"
 				>
 			</File>
 			<File
