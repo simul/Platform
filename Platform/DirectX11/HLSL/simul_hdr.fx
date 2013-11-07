@@ -1,8 +1,8 @@
 #include "CppHlsl.hlsl"
+#include "states.hlsl"
 #include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/hdr_constants.sl"
 #include "../../CrossPlatform/mixed_resolution.sl"
-#include "states.hlsl"
 Texture2D imageTexture;
 Texture2D nearImageTexture;
 Texture2D depthTexture;
@@ -205,7 +205,9 @@ vec4 NearestDepthCloudBlendPS(v2f IN) : SV_TARGET
 // texture_clamp_lod texture_nearest_lod
 vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
 {
-	return NearFarDepthCloudBlend(IN.texCoords.xy,imageTexture,nearImageTexture,lowResDepthTexture,depthTextureMS,viewportToTexRegionScaleBias,depthToLinFadeDistParams);
+	vec4 result= NearFarDepthCloudBlend(IN.texCoords.xy,imageTexture,nearImageTexture,lowResDepthTexture,depthTextureMS,viewportToTexRegionScaleBias,depthToLinFadeDistParams);
+	result.rgb			*=exposure;
+	return result;
 }
 
 

@@ -259,28 +259,6 @@ svertexOutput VS_Sun(indexVertexInput IN)
     return OUT;
 }
 
-// Sun could be overbright. So the colour is in the range [0,1], and a brightness factor is
-// stored in the alpha channel.
-float4 PS_Sun( svertexOutput IN): SV_TARGET
-{
-	float r=2.0*length(IN.tex);
-	if(r>2.0)
-		discard;
-	float brightness=1.0;
-	if(r>1.0)
-	//	discard;
-		brightness=colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
-	float3 result=brightness*colour.rgb;
-	return float4(result,1.f);
-}
-
-float4 PS_Flare( svertexOutput IN): SV_TARGET
-{
-	float3 output=colour.rgb*flareTexture.Sample(flareSamplerState,float2(.5f,.5f)+0.5f*IN.tex).rgb;
-
-	return float4(output,1.f);
-}
-
 struct starsVertexInput
 {
     float3 position			: POSITION;
@@ -327,6 +305,28 @@ float approx_oren_nayar(float roughness,float3 view,float3 normal,float3 lightDi
 	return diffuse;
 }
 
+// Sun could be overbright. So the colour is in the range [0,1], and a brightness factor is
+// stored in the alpha channel.
+float4 PS_Sun( svertexOutput IN): SV_TARGET
+{
+	float r=2.0*length(IN.tex);
+	if(r>2.0)
+		discard;
+	float brightness=1.0;
+	if(r>1.0)
+	//	discard;
+		brightness=colour.a/pow(r,4.0);//+colour.a*saturate((0.9-r)/0.1);
+	float3 result=brightness*colour.rgb;
+	return float4(result,1.f);
+}
+
+float4 PS_Flare( svertexOutput IN): SV_TARGET
+{
+	float3 output=colour.rgb*flareTexture.Sample(flareSamplerState,float2(.5f,.5f)+0.5f*IN.tex).rgb;
+
+	return float4(output,1.f);
+}
+
 float4 PS_Planet(svertexOutput IN): SV_TARGET
 {
 	float4 result=flareTexture.Sample(flareSamplerState,float2(.5f,.5f)-0.5f*IN.tex);
@@ -336,7 +336,9 @@ float4 PS_Planet(svertexOutput IN): SV_TARGET
 	normal.y=IN.tex.y;
 	float l=length(IN.tex);
 	if(l>1.0)
-		discard;
+		return vec4(0,10.0,0,1.0);
+	//	discard;
+	return vec4(10.0,0,0,1.0);
 	normal.z	=-sqrt(1.0-l*l);
 	float light	=approx_oren_nayar(0.2,float3(0,0,1.0),normal,lightDir.xyz);
 	result.rgb	*=colour.rgb;
