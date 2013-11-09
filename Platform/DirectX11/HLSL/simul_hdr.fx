@@ -4,6 +4,7 @@
 #include "../../CrossPlatform/mixed_resolution.sl"
 #include "states.hlsl"
 Texture2D imageTexture;
+Texture2DMS<float4> imageTextureMS;
 Texture2D nearImageTexture;
 Texture2D depthTexture;
 Texture2D lowResDepthTexture;
@@ -124,7 +125,6 @@ vec4 ExposureGammaPS(v2f IN) : SV_TARGET
 	vec4 c=texture_clamp(imageTexture,IN.texCoords);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
-	
     return vec4(c.rgb,1.f);
 }
 

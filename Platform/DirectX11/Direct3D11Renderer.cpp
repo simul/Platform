@@ -286,15 +286,15 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pd3dImmedi
 		view->hdrFramebuffer.DeactivateDepth(pd3dImmediateContext);
 	else
 		view->hdrFramebuffer.Deactivate(pd3dImmediateContext);
-//	void *depthTexture=hdrFramebuffer.GetDepthTex();
-	void *depthTexture=view->resolvedDepth_fb.GetColorTex();
+	void *depthTextureMS		=view->hdrFramebuffer.GetDepthTex();
+	void *depthTextureResolved	=view->resolvedDepth_fb.GetColorTex();
 	if(simulWeatherRenderer)
 	{
 		DownscaleDepth(view_id,pd3dImmediateContext,proj);
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 		static bool test=true;
-		const void* skyBufferDepthTex = (UseSkyBuffer&test)? view->lowResDepthTexture.shaderResourceView : depthTexture;
-		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTexture,skyBufferDepthTex,view_id,relativeViewportTextureRegionXYWH,true);
+		const void* skyBufferDepthTex = (UseSkyBuffer&test)? view->lowResDepthTexture.shaderResourceView : depthTextureResolved;
+		simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTextureMS,skyBufferDepthTex,view_id,relativeViewportTextureRegionXYWH,true);
 
 		simulWeatherRenderer->RenderLightning(pd3dImmediateContext,view_id);
 		simulWeatherRenderer->DoOcclusionTests();

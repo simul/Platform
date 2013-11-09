@@ -46,7 +46,7 @@ static ID3D1xDevice		*pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
 using namespace base;
-ShaderBuildMode shaderBuildMode=ALWAYS_BUILD;
+ShaderBuildMode shaderBuildMode=BUILD_IF_NO_BINARY;
 static DefaultFileLoader fl;
 static FileLoader *fileLoader=&fl;
 
@@ -87,6 +87,51 @@ HRESULT __stdcall ShaderIncludeHandler::Close(LPCVOID pData)
 	fileLoader->ReleaseFileContents((void*)pData);
 	return S_OK;
 }
+
+HRESULT __stdcall DetectChangesIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
+{
+	try
+	{
+		std::string finalPathUtf8;
+		switch(IncludeType)
+		{
+		case D3D_INCLUDE_LOCAL:
+			finalPathUtf8	=m_ShaderDirUtf8+"\\"+pFileNameUtf8;
+			break;
+		case D3D_INCLUDE_SYSTEM:
+			finalPathUtf8	=m_SystemDirUtf8+"\\"+pFileNameUtf8;
+			break;
+		default:
+			assert(0);
+		}
+		void *buf=NULL;
+		unsigned fileSize=0;
+		double dateTimeJdn=fileLoader->GetFileDate(finalPathUtf8.c_str());
+		if(dateTimeJdn>lastCompileTime)
+		{
+			anyChanges=true;
+			return E_FAIL;
+		}
+		fileLoader->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
+		*ppData = buf;
+		*pBytes = (UINT)fileSize;
+		if(!*ppData)
+			return E_FAIL;
+		return S_OK;
+	}
+	catch(std::exception& e)
+	{
+		std::cerr<<e.what()<<std::endl;
+		return E_FAIL;
+	}
+}
+
+HRESULT __stdcall DetectChangesIncludeHandler::Close(LPCVOID pData)
+{
+	fileLoader->ReleaseFileContents((void*)pData);
+	return S_OK;
+}
+
 
 namespace simul
 {
@@ -498,42 +543,66 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_ut
 HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	HRESULT hr=S_OK;
-#if 1
-	std::string binary_filename_utf8=text_filename_utf8+"o";
-	void *textData=NULL;
-	unsigned textSize=0;
-	//if(shaderBuildMode==BUILD_IF_NO_BINARY)
-	// See if there's a binary that's newer than the file date.
-	double text_date_jdn=fileLoader->GetFileDate(text_filename_utf8.c_str());
-	double binary_date_jdn=fileLoader->GetFileDate(binary_filename_utf8.c_str());
-	if(binary_date_jdn>text_date_jdn)
-	{
-		hr=D3DX11CreateEffectFromBinaryFileUtf8(text_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
-		if(hr==S_OK)
-			return S_OK;
-	}
-	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
-	ID3DBlob *binaryBlob=NULL;
-	ID3DBlob *errorMsgs=NULL;
 	int pos=text_filename_utf8.find_last_of("/");
 	int bpos=text_filename_utf8.find_last_of("\\");
 	if(pos<0||bpos>pos)
 		pos=bpos;
 	std::string path_utf8=text_filename_utf8.substr(0,pos);
+#if 1
+	std::string binary_filename_utf8=text_filename_utf8+"o";
+	void *textData=NULL;
+	unsigned textSize=0;
+	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
+	// See if there's a binary that's newer than the file date.
+	if(shaderBuildMode==BUILD_IF_NO_BINARY)
+	{
+		double text_date_jdn	=fileLoader->GetFileDate(text_filename_utf8.c_str());
+		double binary_date_jdn	=fileLoader->GetFileDate(binary_filename_utf8.c_str());
+		bool changes_detected=false;
+		if(binary_date_jdn>text_date_jdn||!binary_date_jdn)
+			changes_detected=true;
+		else if(text_date_jdn>0)	// maybe some of the includes have changed?
+		{
+			ID3DBlob *binaryBlob=NULL;
+			ID3DBlob *errorMsgs=NULL;
+			DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),text_date_jdn);
+			hr=D3DPreprocess(	textData	
+								,textSize
+								,text_filename_utf8.c_str()		//in   LPCSTR pSourceName,
+								,macros							//in   const D3D_SHADER_MACRO *pDefines,
+								,&detectChangesIncludeHandler	//in   ID3DInclude pInclude,
+								,&binaryBlob				//ID3DBlob **ppCodeText,
+								,&errorMsgs					//ID3DBlob **ppErrorMsgs
+								);
+			if(hr!=S_OK||detectChangesIncludeHandler.HasDetectedChanges())
+				changes_detected=true;
+			if(binaryBlob)
+				binaryBlob->Release();
+			if(errorMsgs)
+				errorMsgs->Release();
+		}
+		if(!changes_detected&&binary_date_jdn>0)
+		{
+			hr=D3DX11CreateEffectFromBinaryFileUtf8(text_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
+			if(hr==S_OK)
+				return S_OK;
+		}
+	}
+	ID3DBlob *binaryBlob=NULL;
+	ID3DBlob *errorMsgs=NULL;
 	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"");
-	hr=D3DCompile(
-		textData,
-		textSize,
-		text_filename_utf8.c_str(),		//LPCSTR pSourceName,
-		macros,		//const D3D_SHADER_MACRO *pDefines,
-		&shaderIncludeHandler,		//ID3DInclude *pInclude,
-		NULL,		//LPCSTR pEntrypoint,
-		"fx_5_0",	//LPCSTR pTarget,
-		0,	//UINT Flags1,
-		FXFlags,	//UINT Flags2,
-		&binaryBlob,//ID3DBlob **ppCode,
-		&errorMsgs	//ID3DBlob **ppErrorMsgs
-		);
+	hr=D3DCompile(		textData,
+						textSize,
+						text_filename_utf8.c_str(),	//LPCSTR pSourceName,
+						macros,						//const D3D_SHADER_MACRO *pDefines,
+						&shaderIncludeHandler,		//ID3DInclude *pInclude,
+						NULL,						//LPCSTR pEntrypoint,
+						"fx_5_0",					//LPCSTR pTarget,
+						0,							//UINT Flags1,
+						FXFlags,					//UINT Flags2,
+						&binaryBlob,				//ID3DBlob **ppCode,
+						&errorMsgs					//ID3DBlob **ppErrorMsgs
+						);
 	fileLoader->ReleaseFileContents(textData);
 	if(hr==S_OK)
 	{
