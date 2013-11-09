@@ -78,6 +78,7 @@ void SimulHDRRendererDX1x::RestoreDeviceObjects(void *dev)
 		glowTexture.init(m_pd3dDevice,Width/2,Height/2);
 		glow_fb.SetWidthAndHeight(Width/2,Height/2);
 	}
+	hdrConstants.RestoreDeviceObjects(m_pd3dDevice);
 	RecompileShaders();
 }
 
@@ -123,7 +124,7 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	Gamma_						=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
 	imageTexture				=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
 	//worldViewProj				=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
-		
+	hdrConstants.LinkToEffect(m_pTonemapEffect,"HdrConstants");
 	SAFE_RELEASE(m_pGaussianEffect);
 	
 	int	threadsPerGroup = 256;
@@ -146,10 +147,12 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	defs["NUM_IMAGE_ROWS"]	=string_format("%d",H);
 	
 	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs);
+	hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
 }
 
 void SimulHDRRendererDX1x::InvalidateDeviceObjects()
 {
+	hdrConstants.InvalidateDeviceObjects();
 	glow_fb.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pTonemapEffect);
 	SAFE_RELEASE(m_pVertexBuffer);
@@ -171,11 +174,19 @@ SimulHDRRendererDX1x::~SimulHDRRendererDX1x()
 
 void SimulHDRRendererDX1x::Render(void *context,void *texture_srv)
 {
+	Render(context,texture_srv,0);
+}
+
+void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
+{
 	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	imageTexture->SetResource(textureSRV);
-	Gamma_		->SetFloat(Gamma);
-	Exposure_	->SetFloat(Exposure);
+	hdrConstants.gamma=Gamma;
+	hdrConstants.exposure=Exposure;
+	hdrConstants.Apply(pContext);
+	//Gamma_->SetFloat(Gamma);
+	//Exposure_->SetFloat(Exposure);
 	if(Glow)
 	{
 		RenderGlowTexture(context,texture_srv);
@@ -186,6 +197,7 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv)
 		ApplyPass(pContext,exposureGammaTechnique->GetPassByIndex(0));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	imageTexture->SetResource(NULL);
+	hdrConstants.Unbind(pContext);
 	ApplyPass(pContext,exposureGammaTechnique->GetPassByIndex(0));
 }
 

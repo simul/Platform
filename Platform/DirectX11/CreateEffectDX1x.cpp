@@ -31,6 +31,8 @@ static const DWORD default_effect_flags=0;
 
 #pragma comment(lib,"d3dx9.lib")
 #pragma comment(lib,"d3d9.lib")
+#pragma comment(lib,"dxgi.lib")
+#pragma comment(lib,"d3d11.lib")
 #pragma comment(lib,"d3dx11.lib")
 #pragma comment(lib,"Effects11.lib")
 #pragma comment(lib,"dxerr.lib")
@@ -498,6 +500,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 {
 	HRESULT hr=S_OK;
 #if 1
+	std::string binary_filename_utf8=text_filename_utf8+"o";
 	void *textData=NULL;
 	unsigned textSize=0;
 	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
@@ -526,7 +529,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	if(hr==S_OK)
 	{
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
-		//if(fileLoader->
+		//if(fileLoader->GetFileDate
 	}
 	else
 	{
@@ -548,7 +551,6 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 #else
 	// first try to find an existing text source with this filename, and compile it.
 	std::string filename_utf8= text_filename_utf8;
-	std::string binary_filename_utf8=text_filename_utf8+"o";
 	int pos=(int)text_filename_utf8.find_last_of("/");
 	if(pos<0)
 		pos=(int)text_filename_utf8.find_last_of("\\");
