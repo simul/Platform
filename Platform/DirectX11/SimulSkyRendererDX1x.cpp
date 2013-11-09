@@ -1,4 +1,4 @@
-
+﻿
 // Copyright (c) 2007-2012 Simul Software Ltd
 // All Rights Reserved.
 //
@@ -478,8 +478,9 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
-	// As the sun has angular radius of about 1/2 a degree, the angular area is 
-	// equal to pi/(120^2), or about 1/2700 steradians;
+	// As the sun has angular diameter of about 1/2 a degree,
+	// which is pi/360 or 0.00873 radians (actually 0.0095), the angular area is 
+	// equal to 2 pi/(1-cos(angular_radius)), or about  6.87×10−5 steradians;
 	sunlight*=2700.f;
 	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!

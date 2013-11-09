@@ -682,7 +682,7 @@ bool SimulSkyRenderer::RenderFades(void *,int width,int height)
 	D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("show_illumination_buffer");
 	RenderTexture(m_pd3dDevice,x0+size+2,y		,size,size,(LPDIRECT3DBASETEXTURE9)illumination_fb.GetColorTex(),m_pSkyEffect,tech);
 
-	int x=16+size;
+//	int x=16+size;
 	y=y0+8;
 	x0+=2*(size+8);
 	bool show_3=true;//gpuSkyGenerator.GetEnabled()&&(skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator);
@@ -690,7 +690,7 @@ bool SimulSkyRenderer::RenderFades(void *,int width,int height)
 	for(int i=0;i<numAltitudes;i++)
 	{
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
-		int x1=x0,x2=x0+s+8;
+		//int x1=x0,x2=x0+s+8;
 		int y=y0+i*(s+2);
 		for(int j=0;j<(show_3?3:2);j++)
 		{
@@ -902,11 +902,6 @@ void SimulSkyRenderer::RenderIlluminationBuffer(void *context)
 		m_pSkyEffect->End();
 		illumination_fb.Deactivate(context);
 	}
-}
-
-bool SimulSkyRenderer::Render(void *context,bool blend)
-{
-	return true;
 }
 
 float SimulSkyRenderer::GetTiming() const

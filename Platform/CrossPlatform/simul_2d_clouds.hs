@@ -34,7 +34,7 @@ uniform_buffer Cloud2DConstants SIMUL_BUFFER_REGISTER(11)
 
 	uniform float time;
 	uniform float maxAltitudeMetres;
-	uniform float agage,hrs;
+	uniform float offsetScale,maxCloudDistanceMetres;
 	uniform vec3 moonlight;
 	uniform float agagehrs;
 };
@@ -43,11 +43,13 @@ uniform_buffer Detail2DConstants SIMUL_BUFFER_REGISTER(12)
 {
 	uniform float persistence;
 	uniform int octaves;
-	uniform float ccd,ddd;
+	uniform float amplitude;
+	uniform float density;						// Uniformly distributed thickness/cloudiness
+
 	uniform vec3 lightDir2d;
-	uniform float cloudiness;
 	// for coverage
 	uniform float coverageOctaves;
+
 	uniform float coveragePersistence;
 	uniform float humidity;
 	uniform float diffusivity;

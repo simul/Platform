@@ -7,6 +7,7 @@ uniform sampler2D lossTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D skylTexture;
 uniform sampler2D depthTexture;
+uniform Texture2DMS<float4> depthTextureMS;
 uniform sampler2D illuminationTexture;
 uniform sampler2D lightTableTexture;
 
@@ -43,7 +44,7 @@ struct v2f
 v2f MainVS(a2v IN)
 {
 	v2f OUT;
-	vec3 pos			=IN.position.xyz;
+	vec3 pos			=maxCloudDistanceMetres*IN.position.xyz;
 	pos.z				+=origin.z;
 	float Rh			=planetRadius+origin.z;
 	float dist			=length(pos.xy);
@@ -58,9 +59,14 @@ v2f MainVS(a2v IN)
 
 float4 MainPS(v2f IN) : SV_TARGET
 {
-	vec2 depthTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
-	depthTexCoords.y	=1.0-depthTexCoords.y;
-	float dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(depthTexCoords.xy,viewportToTexRegionScaleBias),0).r;
+	vec2 viewportTexCoords	=0.5*(vec2(1.0,1.0)+(IN.clip_pos.xy/IN.clip_pos.w));
+	viewportTexCoords.y		=1.0-viewportTexCoords.y;
+	uint2 depthDims;
+	uint depthSamples;
+	vec2 depthTexCoords=viewportCoordToTexRegionCoord(viewportTexCoords.xy,viewportToTexRegionScaleBias);
+	depthTextureMS.GetDimensions(depthDims.x,depthDims.y,depthSamples);
+	uint2 depth_pos2	=uint2(depthTexCoords.xy*vec2(depthDims.xy));
+	float dlookup 		=depthTextureMS.Load(depth_pos2,0).r;
 	if(dlookup!=0)
 		discard;
 	vec2 wOffset		=IN.wPosition.xy-origin.xy;
@@ -160,7 +166,7 @@ float4 RandomPS(v2f2 IN) : SV_TARGET
 
 float4 DetailPS(v2f2 IN) : SV_TARGET
 {
-    return DetailDensity(IN.texCoords,imageTexture);
+    return DetailDensity(IN.texCoords,imageTexture,amplitude);
 }
 
 float4 DetailLightingPS(v2f2 IN) : SV_TARGET
@@ -172,9 +178,9 @@ technique11 simul_coverage
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
 		SetPixelShader(CompileShader(ps_4_0,CoveragePS()));
@@ -185,9 +191,9 @@ technique11 simple
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
 		SetPixelShader(CompileShader(ps_4_0,SimplePS()));
@@ -198,9 +204,9 @@ technique11 show_detail_texture
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,SimpleVS()));
 		SetPixelShader(CompileShader(ps_4_0,ShowDetailTexturePS()));
@@ -211,9 +217,9 @@ technique11 simul_random
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
 		SetPixelShader(CompileShader(ps_4_0,RandomPS()));
@@ -224,23 +230,22 @@ technique11 simul_2d_cloud_detail
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
 		SetPixelShader(CompileShader(ps_4_0,DetailPS()));
     }
 }
 
-
 technique11 simul_2d_cloud_detail_lighting
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(DisableDepth,0);
+		SetBlendState(DontBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,FullScreenVS()));
 		SetPixelShader(CompileShader(ps_4_0,DetailLightingPS()));
@@ -251,11 +256,11 @@ technique11 simul_clouds_2d
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( TestDepth, 0 );
-		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetRasterizerState(RenderNoCull);
+		SetDepthStencilState(TestDepth,0);
+		SetBlendState(AlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,MainPS()));
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,MainPS()));
     }
 }

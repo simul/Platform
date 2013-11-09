@@ -3,6 +3,7 @@
 
 SIMUL_CONSTANT_BUFFER(HdrConstants,9)
 	uniform vec4 rect;
+	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec2 offset;
 	uniform float nearZ,farZ;
 	uniform vec2 tanHalfFov;

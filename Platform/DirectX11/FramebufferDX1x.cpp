@@ -182,11 +182,17 @@ bool Framebuffer::CreateBuffers()
 	if(target_format!=0)
 	{
 		unsigned int numQualityLevels=0;
-		HRESULT hr=m_pd3dDevice->CheckMultisampleQualityLevels(
+		while(numQualityLevels==0&&numAntialiasingSamples>1)
+		{
+			V_CHECK(m_pd3dDevice->CheckMultisampleQualityLevels(
 				target_format,
 				numAntialiasingSamples,
-				&numQualityLevels	);
-		quality=numQualityLevels-1;
+				&numQualityLevels	));
+			if(numQualityLevels>0)
+				quality=numQualityLevels-1;
+			if(numQualityLevels==0)
+				numAntialiasingSamples/=2;
+		};
 		desc.SampleDesc.Count	=numAntialiasingSamples;
 		desc.SampleDesc.Quality	=quality;//numQualityLevels-1;
 

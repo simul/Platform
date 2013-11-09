@@ -271,8 +271,14 @@ void Direct3D11Renderer::RenderScene(ID3D11DeviceContext* pContext)
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
-		hdrFramebuffer.SetAntialiasing(Antialiasing);
+		if(hdrFramebuffer.numAntialiasingSamples!=Antialiasing)
+		{
+			hdrFramebuffer.SetAntialiasing(Antialiasing);
+		}
 		hdrFramebuffer.Activate(pContext);
+			// Did we fail to set the requested value?
+		if(hdrFramebuffer.numAntialiasingSamples!=Antialiasing)
+			Antialiasing=hdrFramebuffer.numAntialiasingSamples;
 		hdrFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 	}
 	else
@@ -361,7 +367,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				w/=l;
 				l=hdrFramebuffer.Height/4;
 			}
-			UtilityRenderer::DrawTexture(pContext,0*w	,0,w,l,(ID3D1xShaderResourceView*)hdrFramebuffer.GetDepthTex());
+			UtilityRenderer::DrawTextureMS(pContext,0*w	,0,w,l,(ID3D1xShaderResourceView*)hdrFramebuffer.GetDepthTex());
 			UtilityRenderer::DrawTexture(pContext,1*w	,0,w,l,(ID3D1xShaderResourceView*)resolvedDepth_fb.GetColorTex());
 			UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,lowResDepthTexture.shaderResourceView);
 		}

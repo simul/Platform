@@ -62,7 +62,7 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
 		m_pd3dDevice->CreateInputLayout(decl,1, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &inputLayout);
 	}
-	static float max_cloud_distance=400000.f;
+	static float max_cloud_distance=1.f;
 	helper->MakeDefaultGeometry(max_cloud_distance);
 	const simul::clouds::Cloud2DGeometryHelper::VertexVector &vertices=helper->GetVertices();
 	simul::clouds::Cloud2DGeometryHelper::Vertex *v=::new(memoryInterface) simul::clouds::Cloud2DGeometryHelper::Vertex[vertices.size()];
@@ -160,7 +160,6 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	noise_fb.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 	noise_fb.Activate(pContext);
 	{
-	//	ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture noise");
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_random");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		noise_fb.DrawQuad(pContext);
@@ -169,7 +168,6 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	dens_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
 	dens_fb.Activate(context);
 	{
-	//	ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture dens");
 		SetDetail2DCloudConstants(detail2DConstants);
 		detail2DConstants.Apply(pContext);
 		simul::dx11::setTexture(effect,"imageTexture"	,(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
@@ -180,23 +178,20 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	dens_fb.Deactivate(context);
 	detail_fb.Activate(context);
 	{
-	//	ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture lighting");
 		simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)dens_fb.GetColorTex());
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_2d_cloud_detail_lighting");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		detail_fb.DrawQuad(context);
 	}
 	detail_fb.Deactivate(context);
-	
-	coverage_fb.Activate(pContext);
+	coverage_fb.Activate(context);
 	{
-	//	ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture coverage");
 		simul::dx11::setTexture(effect,"noiseTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_coverage");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		coverage_fb.DrawQuad(pContext);
 	} 
-	coverage_fb.Deactivate(pContext);
+	coverage_fb.Deactivate(context);
 }
 
 void Simul2DCloudRendererDX11::InvalidateDeviceObjects()
@@ -278,7 +273,10 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	simul::dx11::setTexture(effect,"lossTexture",skyLossTexture_SRV);
 	simul::dx11::setTexture(effect,"inscTexture",skyInscatterTexture_SRV);
 	simul::dx11::setTexture(effect,"skylTexture",skylightTexture_SRV);
+	// Set both MS and regular - we'll only use one of them:
 	simul::dx11::setTexture(effect,"depthTexture",depthTexture_SRV);
+	simul::dx11::setTexture(effect,"depthTextureMS",depthTexture_SRV);
+
 	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
 	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture_SRV);
 	
@@ -319,6 +317,7 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	simul::dx11::setTexture(effect,"inscTexture"			,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect,"skylTexture"			,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect,"depthTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture(effect,"depthTextureMS"			,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect,"illuminationTexture"	,(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	
