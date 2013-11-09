@@ -71,6 +71,7 @@ namespace simul
 				META_ValueProperty(bool,ShowFlares				,"Whether to draw light flares around the sun and moon.")
 				META_ValueProperty(bool,ShowCloudCrossSections	,"Show the cloud textures as an overlay.")
 				META_ValueProperty(bool,Show2DCloudTextures		,"Show the 2D cloud textures as an overlay.")
+				META_ValueProperty(bool,ShowWaterTextures		,"Show the textures generated for water effects as an overlay.")
 				META_ValueProperty(bool,ShowFades				,"Show the fade textures as an overlay.")
 				META_ValueProperty(bool,ShowTerrain				,"Whether to draw the terrain.")
 				META_ValueProperty(bool,ShowMap					,"Show the terrain map as an overlay.")
@@ -127,6 +128,7 @@ namespace simul
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
 			void DownscaleDepth(int view_id,ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
 			void ReverseDepthChanged();
+			void EnsureCorrectBufferSizes(int view_id);
 			View *GetView(int view_id);
 
 			int last_created_view_id;

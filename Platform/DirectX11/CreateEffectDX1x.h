@@ -23,7 +23,7 @@ namespace simul
 	{
 		enum ShaderBuildMode
 		{
-			ALWAYS_BUILD=1,BUILD_IF_NO_BINARY,NEVER_BUILD
+			ALWAYS_BUILD=1,BUILD_IF_CHANGED,NEVER_BUILD
 		};
 		//! Find the camera position and view direction from the given view matrix.
 		extern SIMUL_DIRECTX11_EXPORT void GetCameraPosVector(D3DXMATRIX &view,float *dcam_pos,float *view_dir,bool y_vertical=false);

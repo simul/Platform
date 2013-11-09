@@ -15,6 +15,7 @@
 #include <d3d11.h>
 #include <d3dx11.h>
 #include "Simul/Graph/Meta/Group.h"
+#include "Simul/Math/Matrix4x4.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
 
 #ifndef RENDERDEPTHBUFFERCALLBACK
@@ -92,7 +93,7 @@ namespace simul
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3DX11Effect							*m_pTonemapEffect;
 			ID3DX11EffectTechnique					*directTechnique;
-			ID3DX11EffectTechnique					*SkyBlendTechnique;
+			ID3DX11EffectTechnique					*farNearDepthBlendTechnique;
 			ID3DX11EffectTechnique					*showDepthTechnique;
 			ID3DX11EffectShaderResourceVariable		*imageTexture;
 

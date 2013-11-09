@@ -27,6 +27,7 @@ StructuredBuffer<vec2>	g_InputH0		: register(t8);
 RWStructuredBuffer<vec2> g_OutputHt		: register(u0);
 StructuredBuffer<float>	g_InputOmega	: register(t9);
 
+
 // FFT wave displacement map in VS, XY for choppy field, Z for height field
 SamplerState g_samplerDisplacement	: register(s0)
 {

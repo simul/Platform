@@ -154,7 +154,7 @@ namespace simul
 			static void PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 			static void DrawLines(ID3D11DeviceContext* pd3dImmediateContext,VertexXyzRgba *lines,int vertex_count,bool strip);
 			static void RenderAngledQuad(ID3D11DeviceContext *context,const float *dir,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
-			static void DrawTexture(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t);
+			static void DrawTexture(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,float brightnessMultiplier,ID3D11ShaderResourceView *t);
 			static void DrawQuad(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech);	
 			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
 			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
@@ -169,7 +169,6 @@ namespace simul
 		public:
 			ConstantBuffer()
 				:m_pD3D11Buffer(NULL)
-				,m_pD3DX11EffectConstantBuffer(NULL)
 			{
 				// Clear out the part of memory that corresponds to the base class.
 				// We should ONLY inherit from simple structs.
@@ -180,7 +179,8 @@ namespace simul
 				InvalidateDeviceObjects();
 			}
 			ID3D11Buffer*					m_pD3D11Buffer;
-			ID3DX11EffectConstantBuffer*	m_pD3DX11EffectConstantBuffer;
+			//typedef std::map<ID3DX11Effect*,ID3DX11EffectConstantBuffer*> BufferMap;
+			//BufferMap m_EffectBuffers;
 			//! Create the buffer object.
 			void RestoreDeviceObjects(ID3D11Device *pd3dDevice)
 			{
@@ -198,15 +198,18 @@ namespace simul
 				cb_desc.ByteWidth			= PAD16(sizeof(T));
 				cb_desc.StructureByteStride = 0;
 				pd3dDevice->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
-				if(m_pD3DX11EffectConstantBuffer)
-					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
+				//m_EffectBuffers.clear();
 			}
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToEffect(ID3DX11Effect *effect,const char *name)
 			{
-				m_pD3DX11EffectConstantBuffer=effect->GetConstantBufferByName(name);
-				if(m_pD3DX11EffectConstantBuffer)
-					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
+				ID3DX11EffectConstantBuffer *b=effect->GetConstantBufferByName(name);
+
+				if(b)
+				{
+					b->SetConstantBuffer(m_pD3D11Buffer);
+					//m_EffectBuffers[effect]=b;
+				}
 				else
 					std::cerr<<"ConstantBuffer<> LinkToEffect did not find the buffer named "<<name<<" in the effect."<<std::endl;
 			}
@@ -214,7 +217,7 @@ namespace simul
 			void InvalidateDeviceObjects()
 			{
 				SAFE_RELEASE(m_pD3D11Buffer);
-				m_pD3DX11EffectConstantBuffer=NULL;
+				//m_EffectBuffers.clear();
 			}
 			//! Apply the stored data using the given context, in preparation for rendering.
 			void Apply(ID3D11DeviceContext *pContext)
@@ -223,14 +226,14 @@ namespace simul
 				pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
 				*(T*)mapped_res.pData = *this;
 				pContext->Unmap(m_pD3D11Buffer, 0);
-				if(m_pD3DX11EffectConstantBuffer)
-				m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
+				//if(m_pD3DX11EffectConstantBuffer)
+				//	m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 			}
 			//! Unbind from the effect.
 			void Unbind(ID3D11DeviceContext *pContext)
 			{
-				if(m_pD3DX11EffectConstantBuffer)
-				m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
+				//for(BufferMap::iterator i=m_EffectBuffers.begin();i!=m_EffectBuffers.end();i++)
+				//	i->second->SetConstantBuffer(NULL);
 			}
 		};
 

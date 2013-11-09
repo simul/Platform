@@ -8,7 +8,7 @@ uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
 	uniform float4x4 worldViewProj	: WorldViewProjection;
 	uniform int latitudes,longitudes;
 	uniform float radius;
-	uniform float xxxx;
+	uniform float textureMultiplier;
 };
 
 cbuffer cbPerObject : register(b11)
@@ -60,7 +60,7 @@ float4 DebugPS(v2f IN) : SV_TARGET
 
 vec4 TexturedPS(v2f IN) : SV_TARGET
 {
-	vec4 res=10000.0*texture_clamp(imageTexture,IN.colour.xy);
+	vec4 res=textureMultiplier*texture_clamp(imageTexture,IN.colour.xy);
 	return res;
 }
 

@@ -46,7 +46,7 @@ static ID3D1xDevice		*pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
 using namespace base;
-ShaderBuildMode shaderBuildMode=BUILD_IF_NO_BINARY;
+ShaderBuildMode shaderBuildMode=BUILD_IF_CHANGED;
 static DefaultFileLoader fl;
 static FileLoader *fileLoader=&fl;
 
@@ -554,18 +554,18 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	unsigned textSize=0;
 	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
 	// See if there's a binary that's newer than the file date.
-	if(shaderBuildMode==BUILD_IF_NO_BINARY)
+	if(shaderBuildMode==BUILD_IF_CHANGED)
 	{
 		double text_date_jdn	=fileLoader->GetFileDate(text_filename_utf8.c_str());
 		double binary_date_jdn	=fileLoader->GetFileDate(binary_filename_utf8.c_str());
 		bool changes_detected=false;
-		if(binary_date_jdn>text_date_jdn||!binary_date_jdn)
+		if(text_date_jdn>binary_date_jdn||!binary_date_jdn)
 			changes_detected=true;
 		else if(text_date_jdn>0)	// maybe some of the includes have changed?
 		{
 			ID3DBlob *binaryBlob=NULL;
 			ID3DBlob *errorMsgs=NULL;
-			DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),text_date_jdn);
+			DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),binary_date_jdn);
 			hr=D3DPreprocess(	textData	
 								,textSize
 								,text_filename_utf8.c_str()		//in   LPCSTR pSourceName,
@@ -607,7 +607,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	if(hr==S_OK)
 	{
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
-		//if(fileLoader->GetFileDate
+		fileLoader->Save(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
 	}
 	else
 	{
@@ -644,8 +644,8 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	fileLoader->ReleaseFileContents(textData);
 	fileLoader->ReleaseFileContents(binaryData);
 	
-	//ALWAYS_BUILD=1,BUILD_IF_NO_BINARY,NEVER_BUILD
-	if(textSize>0&&(shaderBuildMode==ALWAYS_BUILD||(shaderBuildMode==BUILD_IF_NO_BINARY&&binarySize==0)))
+	//ALWAYS_BUILD=1,BUILD_IF_CHANGED,NEVER_BUILD
+	if(textSize>0&&(shaderBuildMode==ALWAYS_BUILD||(shaderBuildMode==BUILD_IF_CHANGED&&binarySize==0)))
 	{
 		//std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
 		DeleteFileW(simul::base::Utf8ToWString(binary_filename_utf8).c_str());

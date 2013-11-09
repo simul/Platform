@@ -193,7 +193,7 @@ float4 RandomPS(v2f2 IN) : SV_TARGET
 
 float4 DetailPS(v2f2 IN) : SV_TARGET
 {
-    return DetailDensity(IN.texCoords,imageTexture);
+    return DetailDensity(IN.texCoords,imageTexture,amplitude);
 }
 
 float4 DetailLightingPS(v2f2 IN) : SV_TARGET

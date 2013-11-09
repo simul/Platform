@@ -151,10 +151,10 @@ void SimulWeatherRendererDX11::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"), defines);
-	directTechnique		=m_pTonemapEffect->GetTechniqueByName("simul_direct");
-	showDepthTechnique	=m_pTonemapEffect->GetTechniqueByName("show_depth");
-	SkyBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("simul_sky_blend");
-	imageTexture		=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
+	directTechnique				=m_pTonemapEffect->GetTechniqueByName("simul_direct");
+	showDepthTechnique			=m_pTonemapEffect->GetTechniqueByName("show_depth");
+	farNearDepthBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("far_near_depth_blend");
+	imageTexture				=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
 	hdrConstants.LinkToEffect(m_pTonemapEffect,"HdrConstants");
 	BaseWeatherRenderer::RecompileShaders();
 }
@@ -357,14 +357,18 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 		ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 		bool blend=!is_cubemap;
 		imageTexture->SetResource((ID3D1xShaderResourceView*)fb->GetColorTex());
+		// Set both regular and MSAA depth variables. Which it is depends on the situation.
 		simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"			,(ID3D1xShaderResourceView*)mainDepthTexture);
+		simul::dx11::setTexture(m_pTonemapEffect,"depthTextureMS"		,(ID3D1xShaderResourceView*)mainDepthTexture);
+		// The low res depth texture contains the total near and far depths in its x and y.
 		simul::dx11::setTexture(m_pTonemapEffect,"lowResDepthTexture"	,(ID3D1xShaderResourceView*)lowResDepthTexture);
 		simul::dx11::setTexture(m_pTonemapEffect,"cloudDepthTexture"	,(ID3D1xShaderResourceView*)fb->GetDepthTex());
 		simul::dx11::setTexture(m_pTonemapEffect,"nearImageTexture"		,(ID3D1xShaderResourceView*)near_fb->GetColorTex());
-		ID3D1xEffectTechnique *tech=blend?SkyBlendTechnique:directTechnique;
+		ID3D1xEffectTechnique *tech=blend?farNearDepthBlendTechnique:directTechnique;
 		ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
 		hdrConstants.exposure					=1.f;
 		hdrConstants.gamma						=1.f;
+		hdrConstants.viewportToTexRegionScaleBias=vec4(viewportRegionXYWH.z, viewportRegionXYWH.w, viewportRegionXYWH.x, viewportRegionXYWH.y);
 		float max_fade_distance_metres			=baseSkyRenderer->GetSkyKeyframer()->GetMaxDistanceKm()*1000.f;
 		hdrConstants.depthToLinFadeDistParams	=simul::math::Vector3(proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
 		hdrConstants.lowResTexelSize			=vec2(1.0f/(float)BufferWidth,1.0f/(float)BufferHeight);

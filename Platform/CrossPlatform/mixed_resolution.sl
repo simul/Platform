@@ -58,54 +58,5 @@ void DownscaleDepthFarNear(Texture2DMS<float4> sourceMSDepthTexture,RWTexture2D<
 	edge=1.0;//step(0.0002,edge);
 	target2DTexture[pos.xy]	=vec4(farthest_depth,nearest_depth,edge,0.0);
 }
-// Filter the texture, but bias the result towards the nearest depth values.
-vec4 depthDependentFilteredImage(Texture2D imageTexture,Texture2D depthTexture,vec2 texc,vec4 depthMask,vec3 depthToLinFadeDistParams,float d)
-{
-	uint width,height;
-	imageTexture.GetDimensions(width,height);
-	vec2 texc_unit	=texc*vec2(width,height)-vec2(.5,.5);
-	uint2 idx		=floor(texc_unit);
-	vec2 xy			=frac(texc_unit);
-	uint2 i11		=idx;
-	uint2 i21		=idx+uint2(1,0);
-	uint2 i12		=idx+uint2(0,1);
-	uint2 i22		=idx+uint2(1,1);
-	// x = right, y = up, z = left, w = down
-	vec4 f11		=imageTexture[i11];
-	vec4 f21		=imageTexture[i21];
-	vec4 f12		=imageTexture[i12];
-	vec4 f22		=imageTexture[i22];
-
-	float d11		=depthToLinearDistance(dot(depthTexture[i11],depthMask),depthToLinFadeDistParams);
-	float d21		=depthToLinearDistance(dot(depthTexture[i21],depthMask),depthToLinFadeDistParams);
-	float d12		=depthToLinearDistance(dot(depthTexture[i12],depthMask),depthToLinFadeDistParams);
-	float d22		=depthToLinearDistance(dot(depthTexture[i22],depthMask),depthToLinFadeDistParams);
-
-	// But now we modify these values:
-	float D1		=saturate((d-d11)/(d21-d11));
-	float delta1	=abs(d21-d11);			
-	f11				=lerp(f11,f21,delta1*D1);
-	f21				=lerp(f21,f11,delta1*(1-D1));
-	float D2		=saturate((d-d12)/(d22-d12));
-	float delta2	=abs(d22-d12);			
-	f12				=lerp(f12,f22,delta2*D2);
-	f22				=lerp(f22,f12,delta2*(1-D2));
-
-	vec4 f1			=lerp(f11,f21,xy.x);
-	vec4 f2			=lerp(f12,f22,xy.x);
-	
-	float d1		=lerp(d11,d21,xy.x);
-	float d2		=lerp(d12,d22,xy.x);
-	
-	float D			=saturate((d-d1)/(d2-d1));
-	float delta		=abs(d2-d1);
-
-	f1				=lerp(f1,f2,delta*D);
-	f2				=lerp(f2,f1,delta*(1.0-D));
-
-	vec4 f			=lerp(f1,f2,xy.y);
-
-	return f;
-}
 
 #endif

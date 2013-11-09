@@ -6,7 +6,7 @@
 #include "../../CrossPlatform/atmospherics_constants.sl"
 
 Texture2D depthTexture;
-Texture2DMS<float> depthTextureMS;
+Texture2DMS<float4> depthTextureMS;
 Texture2D cloudDepthTexture;
 Texture2D imageTexture;
 Texture2D lossTexture;
@@ -67,11 +67,17 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 
 vec4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
 {
-	vec3 loss=AtmosphericsLoss(depthTexture
+	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	int2 pos2;
+	int numSamples;
+	GetMSAACoordinates(depthTextureMS,depth_texc,pos2,numSamples);
+	vec3 loss		=AtmosphericsLossMSAA(depthTextureMS
+											,numSamples
 							,viewportToTexRegionScaleBias
 							,lossTexture
 							,invViewProj
 							,IN.texCoords
+											,pos2
 							,IN.pos
 							,depthToLinFadeDistParams
 							,tanHalfFov);
@@ -101,12 +107,12 @@ vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 	uint2 dims;
 	int numSamples;
 	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
-	int2 pos2=IN.texCoords*vec2(dims.xy);
+	int2 pos2=int2(IN.texCoords*vec2(dims.xy));
 	vec4 res=InscatterMSAA(inscTexture
 				,skylTexture
 				,illuminationTexture
 							,depthTextureMS
-							,8//numSamples
+							,numSamples
 				,IN.texCoords
 							,pos2
 				,invViewProj
