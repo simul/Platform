@@ -5,6 +5,12 @@
 #define pi (3.1415926536)
 #endif
 
+
+float CalcRayleighBeta(float cos0)
+{
+	return (1.0+cos0*cos0); // Factor of (0.0596831) is applied in texture generation now.
+}
+
 float HenyeyGreenstein(float g,float cos0)
 {
 	float g2=g*g;
@@ -25,11 +31,6 @@ vec3 InscatterFunction(vec4 inscatter_factor,float hazeEccentricity,float cos0,v
 	float BetaRayleigh	=0.0596831*(1.0+cos0*cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
 	return PrecalculatedInscatterFunction(inscatter_factor,BetaRayleigh,BetaMie,mieRayleighRatio);
-}
-
-float CalcRayleighBeta(float cos0)
-{
-	return 0.0596831*(1.0+cos0*cos0);
 }
 
 #endif

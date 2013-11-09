@@ -4,6 +4,7 @@
 #include "../../CrossPlatform/hdr_constants.sl"
 #include "../../CrossPlatform/mixed_resolution.sl"
 Texture2D imageTexture;
+Texture2DMS<float4> imageTextureMS;
 Texture2D nearImageTexture;
 Texture2D depthTexture;
 Texture2DMS<float4> depthTextureMS;
@@ -36,6 +37,28 @@ v2f MainVS(idOnly IN)
 	};
 	vec2 pos		=poss[IN.vertex_id];
 	OUT.hPosition	=vec4(pos,0.0,1.0);
+	// Set to far plane so can use depth test as we want this geometry effectively at infinity
+#ifdef REVERSE_DEPTH
+	OUT.hPosition.z	=0.0; 
+#else
+	OUT.hPosition.z	=OUT.hPosition.w; 
+#endif
+    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
+    return OUT;
+}
+
+v2f OffsetVS(idOnly IN)
+{
+	v2f OUT;
+	vec2 poss[4]=
+	{
+		{ 1.0,-1.0},
+		{ 1.0, 1.0},
+		{-1.0,-1.0},
+		{-1.0, 1.0},
+	};
+	vec2 pos		=poss[IN.vertex_id];
+	OUT.hPosition	=vec4(pos/*+offset*/,0.0,1.0);
 	// Set to far plane so can use depth test as we want this geometry effectively at infinity
 #ifdef REVERSE_DEPTH
 	OUT.hPosition.z	=0.0; 
