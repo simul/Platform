@@ -696,7 +696,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			vec3 noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
 			density					=calcDensity(cloudDensity1,cloudDensity2,layerTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
             if(do_depth_mix)
-				density.z				*=saturate((d-fadeDistance)/0.0001);
+				density.z				*=saturate((d-fadeDistance)/0.01);
 			if(density.z>0)
 			{
 #ifdef USE_LIGHT_TABLES
