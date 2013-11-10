@@ -607,7 +607,10 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	if(hr==S_OK)
 	{
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
+		if(hr==S_OK)
+		{
 		fileLoader->Save(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
+	}
 	}
 	else
 	{
