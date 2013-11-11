@@ -336,14 +336,13 @@ float4 PS_Planet(svertexOutput IN): SV_TARGET
 	normal.y=IN.tex.y;
 	float l=length(IN.tex);
 	if(l>1.0)
-		return vec4(0,10.0,0,1.0);
+		return vec4(0,0.0,0,1.0);
 	//	discard;
-	return vec4(10.0,0,0,1.0);
 	normal.z	=-sqrt(1.0-l*l);
 	float light	=approx_oren_nayar(0.2,float3(0,0,1.0),normal,lightDir.xyz);
 	result.rgb	*=colour.rgb;
 	result.rgb	*=light;
-	result.a	*=saturate((0.99-l)/0.01);
+	result.a	*=saturate((0.97-l)/0.03);
 	return result;
 }
 
