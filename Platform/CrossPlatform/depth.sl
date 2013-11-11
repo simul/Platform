@@ -130,10 +130,14 @@ vec4 depthDependentFilteredImage(Texture2D imageTexture,Texture2D depthTexture,v
 	vec2 texc_unit	=texc*vec2(width,height)-vec2(.5,.5);
 	uint2 idx		=floor(texc_unit);
 	vec2 xy			=frac(texc_unit);
-	uint2 i11		=idx;
-	uint2 i21		=idx+uint2(1,0);
-	uint2 i12		=idx+uint2(0,1);
-	uint2 i22		=idx+uint2(1,1);
+	int i1			=max(0,idx.x);
+	int i2			=min(idx.x+1,width-1);
+	int j1			=max(0,idx.y);
+	int j2			=min(idx.y+1,height-1);
+	uint2 i11		=uint2(i1,j1);
+	uint2 i21		=uint2(i2,j1);
+	uint2 i12		=uint2(i1,j2);
+	uint2 i22		=uint2(i2,j2);
 	// x = right, y = up, z = left, w = down
 	vec4 f11		=imageTexture[i11];
 	vec4 f21		=imageTexture[i21];
@@ -168,7 +172,7 @@ vec4 depthDependentFilteredImage(Texture2D imageTexture,Texture2D depthTexture,v
 	f2				=lerp(f2,f1,delta*(1.0-D));
 
 	vec4 f			=lerp(f1,f2,xy.y);
-
+//f.rg=xy;
 	return f;
 }
 // Blending (not just clouds but any low-resolution alpha-blended volumetric image) into a hi-res target.
