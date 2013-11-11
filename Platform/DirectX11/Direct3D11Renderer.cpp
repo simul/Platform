@@ -124,10 +124,10 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice,IDX
 		return S_OK;
 	try
 	{
-		ScreenWidth	=pBackBufferSurfaceDesc->Width;
-		ScreenHeight=pBackBufferSurfaceDesc->Height;
-		ScreenWidth	=pBackBufferSurfaceDesc->Width;
-		ScreenHeight=pBackBufferSurfaceDesc->Height;
+		ScreenWidth	=pBackBufferSurfaceDesc->Width/4;
+		ScreenHeight=pBackBufferSurfaceDesc->Height/4;
+		ScreenWidth	=pBackBufferSurfaceDesc->Width/4;
+		ScreenHeight=pBackBufferSurfaceDesc->Height/4;
 		return S_OK;
 	}
 	catch(...)
