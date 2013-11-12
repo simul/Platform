@@ -311,11 +311,11 @@ float4 OceanSurfPS(VS_OUTPUT In) : SV_Target
 //		ramp = lerp(ramp, g_BendParam.z, (g_BendParam.x - reflect_vec.z)/(g_BendParam.x - g_BendParam.y));
 	reflect_vec.z		=max(0, reflect_vec.z);
 
-	vec3 reflected_color=g_texReflectCube.Sample(g_samplerCube, reflect_vec.xyz).xyz;
+	vec3 reflected_color=g_texReflectCube.Sample(g_samplerCube,-reflect_vec.xyz).xyz;
 
 	// Combine waterbody color and reflected color
-	vec3 water_color	=g_WaterbodyColor;//lerp(g_WaterbodyColor, reflected_color, ramp.x);
-	water_color	=reflected_color;
+	vec3 water_color	=lerp(g_WaterbodyColor, reflected_color, ramp.x);
+//	water_color	=reflected_color;
 	// --------------- Sun spots
 /*	float cos_spec = clamp(dot(reflect_vec, g_SunDir), 0, 1);
 	float sun_spot = pow(cos_spec, g_Shineness);

@@ -677,7 +677,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float BetaRayleigh	=CalcRayleighBeta(cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);
 #ifndef USE_LIGHT_TABLES	
-	vec3 amb				=ambientColour.rgb;
+	vec3 amb			=ambientColour.rgb;
 #endif
 	// This provides the range of texcoords that is lit.
 	for(int i=0;i<layerCount;i++)
@@ -689,7 +689,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		vec3 world_pos			=viewPos+layerWorldDist*view;
 		world_pos.z				-=layer.verticalShift;
 		vec3 layerTexCoords		=(world_pos-cornerPos)*inverseScales;
-		float layerFade				=layer.layerFade;//*saturate((abs(sine)-layer.sine_threshold)/layer.sine_range);
+		float layerFade			=layer.layerFade;//*saturate((abs(sine)-layer.sine_threshold)/layer.sine_range);
 		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
 		{
 			float noise_factor		=lerp(baseNoiseFactor,1.0,saturate(layerTexCoords.z));
@@ -697,7 +697,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			vec3 noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
 			density					=calcDensity(cloudDensity1,cloudDensity2,layerTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
             if(do_depth_mix)
-				density.z				*=saturate((d-fadeDistance)/0.0001);
+				density.z				*=saturate((d-fadeDistance)/0.01);
 		if(density.z>0)
 		{
 #ifdef USE_LIGHT_TABLES

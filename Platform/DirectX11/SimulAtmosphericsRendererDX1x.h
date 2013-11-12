@@ -8,15 +8,10 @@
 #pragma once
 #include <tchar.h>
 #include <d3dx9.h>
-#ifdef DX10
-#include <d3d10.h>
-#include <d3dx10.h>
-#include <d3d10effect.h>
-#else
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <D3dx11effect.h>
-#endif
+#include "Simul/Math/Matrix4x4.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
@@ -66,8 +61,10 @@ namespace simul
 
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3D1xEffect*								effect;
-			ID3D1xEffectTechnique*						singlePassTechnique;
+
 			ID3D1xEffectTechnique*						twoPassOverlayTechnique;
+			ID3D1xEffectTechnique*							twoPassOverlayTechniqueMSAA;
+
 			ID3D1xEffectTechnique*						godraysTechnique;
 			ID3D1xEffectTechnique*							godraysNearPassTechnique;
 			// Variables for this effect:

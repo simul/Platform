@@ -89,8 +89,10 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 		defines["REVERSE_DEPTH"]="1";
 	//defines["GODRAYS_STEPS"]=simul::base::stringFormat("%d",
 	V_CHECK(CreateEffect(m_pd3dDevice,&effect,"atmospherics.fx",defines));
-	singlePassTechnique		=effect->GetTechniqueByName("simul_atmospherics");
+
 	twoPassOverlayTechnique	=effect->GetTechniqueByName("simul_atmospherics_overlay");
+	twoPassOverlayTechniqueMSAA	=effect->GetTechniqueByName("simul_atmospherics_overlay_msaa");
+
 	godraysTechnique		=effect->GetTechniqueByName("fast_godrays");
 	godraysNearPassTechnique=effect->GetTechniqueByName("near_depth_godrays");
 	depthTexture			=effect->GetVariableByName("depthTexture")->AsShaderResource();
@@ -142,7 +144,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
     ProfileBlock profileBlock(pContext,"Atmospherics:RenderAsOverlay");
 	PIXBeginNamedEvent(0,"SimulAtmosphericsRendererDX11::RenderAsOverlay");
-	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
+	ID3D11ShaderResourceView* depthTexture_SRV=(ID3D11ShaderResourceView*)depthTexture;
 	
 	lossTexture->SetResource(skyLossTexture_SRV);
 	inscTexture->SetResource(overcInscTexture_SRV);
@@ -170,9 +172,19 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	SetAtmosphericsConstants(atmosphericsUniforms,exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
 	
-	ApplyPass(pContext,twoPassOverlayTechnique->GetPassByIndex(0));
+	ID3D1xEffectTechnique *tech=twoPassOverlayTechnique;
+	
+	if(depthTexture_SRV)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
+		depthTexture_SRV->GetDesc(&depthDesc);
+		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
+			tech=twoPassOverlayTechniqueMSAA;
+	}
+
+	ApplyPass(pContext,tech->GetPassByIndex(0));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
-	ApplyPass(pContext,twoPassOverlayTechnique->GetPassByIndex(1));
+	ApplyPass(pContext,tech->GetPassByIndex(1));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	
 	lossTexture->SetResource(NULL);
@@ -181,7 +193,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	PIXEndNamedEvent();
 	atmosphericsPerViewConstants.Unbind(pContext);
 	atmosphericsUniforms.Unbind(pContext);
-	ApplyPass(pContext,twoPassOverlayTechnique->GetPassByIndex(1));
+	ApplyPass(pContext,tech->GetPassByIndex(1));
 }
 
 void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,bool near_pass,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloud_depth_texture)

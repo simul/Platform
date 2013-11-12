@@ -741,15 +741,15 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
-	cloudDensity->SetResource(cloud_texture.shaderResourceView);
-	cloudDensity1->SetResource(cloud_textures[(texture_cycle)  %3].shaderResourceView);
-	cloudDensity2->SetResource(cloud_textures[(texture_cycle+1)%3].shaderResourceView);
-	noiseTexture->SetResource(noiseTextureResource);
-	noiseTexture3D->SetResource(noise_texture_3D.shaderResourceView);
-	skyLossTexture->SetResource(skyLossTexture_SRV);
-	skyInscatterTexture->SetResource(overcInscTexture_SRV);
-	skylightTexture->SetResource(skylightTexture_SRV);
-	depthTexture->SetResource(depthTexture_SRV);
+	cloudDensity		->SetResource(cloud_texture.shaderResourceView);
+	cloudDensity1		->SetResource(cloud_textures[(texture_cycle)  %3].shaderResourceView);
+	cloudDensity2		->SetResource(cloud_textures[(texture_cycle+1)%3].shaderResourceView);
+	noiseTexture		->SetResource(noiseTextureResource);
+	noiseTexture3D		->SetResource(noise_texture_3D.shaderResourceView);
+	skyLossTexture		->SetResource(skyLossTexture_SRV);
+	skyInscatterTexture	->SetResource(overcInscTexture_SRV);
+	skylightTexture		->SetResource(skylightTexture_SRV);
+	depthTexture		->SetResource(depthTexture_SRV);
 	lightTableTexture	->SetResource(lightTableTexture_SRV);
 
 	simul::dx11::setTexture(m_pCloudEffect,"illuminationTexture",illuminationTexture_SRV);

@@ -54,7 +54,7 @@ namespace simul
 		};
 		class SimulWeatherRendererDX11;
 		class SimulHDRRendererDX1x;
-		class SimulTerrainRendererDX1x;
+		class TerrainRenderer;
 		class OceanRenderer;
 		class SimulOpticsRendererDX1x;
 
@@ -83,6 +83,7 @@ namespace simul
 				META_ValueProperty(bool,ShowWater				,"Show water surfaces.")
 				META_ValueProperty(bool,MakeCubemap				,"Render a cubemap each frame.")
 				META_ValueProperty(bool,ShowCubemaps			,"Show any generated cubemaps onscreen.")
+				META_ValueProperty(bool,ShowRainTextures		,"Show rain textures onscreen.")
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
 				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")
@@ -100,6 +101,10 @@ namespace simul
 			OceanRenderer				*GetOceanRenderer()
 			{
 				return oceanRenderer;
+			}
+			TerrainRenderer	*GetTerrainRenderer()
+			{
+				return simulTerrainRenderer;
 			}
 			void	RecompileShaders();
 			void	RenderCubemap(ID3D11DeviceContext* pd3dImmediateContext,D3DXVECTOR3 cam_pos);
@@ -139,7 +144,7 @@ namespace simul
 			SimulOpticsRendererDX1x		*simulOpticsRenderer;
 			SimulWeatherRendererDX11	*simulWeatherRenderer;
 			SimulHDRRendererDX1x		*simulHDRRenderer;
-			SimulTerrainRendererDX1x	*simulTerrainRenderer;
+			TerrainRenderer	*simulTerrainRenderer;
 			OceanRenderer				*oceanRenderer;
 			typedef std::map<int,View*>	ViewMap;
 			ViewMap						views;

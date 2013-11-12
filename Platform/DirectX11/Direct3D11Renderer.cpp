@@ -1,7 +1,7 @@
 #define NOMINMAX
 #include "Simul/Platform/DirectX11/Direct3D11Renderer.h"
 #include "Simul/Platform/DirectX11/SimulWeatherRendererDX11.h"
-#include "Simul/Platform/DirectX11/SimulTerrainRendererDX1x.h"
+#include "Simul/Platform/DirectX11/TerrainRenderer.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/DirectX11/SimulCloudRendererDX1x.h"
 #include "Simul/Platform/DirectX11/SimulHDRRendererDX1x.h"
@@ -67,6 +67,8 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,CelestialDisplay(false)
 		,ShowWater(true)
 		,MakeCubemap(true)
+		,ShowCubemaps(false)
+		,ShowRainTextures(false)
 		,ReverseDepth(true)
 		,ShowOSD(false)
 		,Exposure(1.0f)
@@ -86,7 +88,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
 	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
 	simulOpticsRenderer		=::new(memoryInterface) SimulOpticsRendererDX1x(memoryInterface);
-	simulTerrainRenderer	=::new(memoryInterface) SimulTerrainRendererDX1x(memoryInterface);
+	simulTerrainRenderer	=::new(memoryInterface) TerrainRenderer(memoryInterface);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 
 	oceanRenderer=new(memoryInterface) OceanRenderer(env->seaKeyframer);
@@ -129,7 +131,7 @@ void	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 		simulTerrainRenderer->RestoreDeviceObjects(pd3dDevice);
 	if(oceanRenderer)
 		oceanRenderer->RestoreDeviceObjects(pd3dDevice);
-	cubemapFramebuffer.SetWidthAndHeight(64,64);
+	cubemapFramebuffer.SetWidthAndHeight(32,32);
 	cubemapFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	RecompileShaders();
 }
@@ -187,11 +189,11 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		last_created_view_id++;
 		cubemap_view_id=last_created_view_id;
 	}
+	cubemapFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 	for(int i=0;i<6;i++)
 	{
 		cubemapFramebuffer.SetCurrentFace(i);
 		cubemapFramebuffer.Activate(pContext);
-		cubemapFramebuffer.Clear(pContext,0,0,0,0,0);
 		D3DXMATRIX cube_proj;
 		float nearPlane=1.f;
 		float farPlane=200000.f;
@@ -465,9 +467,9 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			{
 				simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
 			}
-			if(simulWeatherRenderer->GetBasePrecipitationRenderer())
+			if(simulWeatherRenderer->GetBasePrecipitationRenderer()&&ShowRainTextures)
 			{
-	//		simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(pd3dImmediateContext,ScreenWidth,ScreenHeight);
+				simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
 			}
 			if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 			{

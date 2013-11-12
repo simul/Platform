@@ -21,6 +21,7 @@ typedef long HRESULT;
 #include "Simul/Platform/CrossPlatform/CppSl.hs"
 #include "Simul/Platform/CrossPlatform/rain_constants.sl"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Math/Matrix4x4.h"
 typedef long HRESULT;
 
 namespace simul

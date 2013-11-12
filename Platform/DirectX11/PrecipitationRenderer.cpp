@@ -76,8 +76,8 @@ void PrecipitationRenderer::RenderTextures(void *context,int width,int height)
 	HRESULT hr=S_OK;
 	static int u=4;
 	int w=(width-8)/u;
-	if(w>height/3)
-		w=height/3;
+	if(w/8>height/3)
+		w=8*height/3;
 	UtilityRenderer::SetScreenSize(width,height);
 	simul::dx11::setTexture(effect,"showTexture",rain_texture);
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w/8,effect,effect->GetTechniqueByName("show_texture"));

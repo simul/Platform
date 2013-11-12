@@ -7,7 +7,7 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
-#include "SimulTerrainRendererDX1x.h"
+#include "TerrainRenderer.h"
 
 #include <dxerr.h>
 #include <string>
@@ -27,7 +27,7 @@ struct TerrainVertex_t
 };
 static const int MAX_VERTICES=1000000;
 
-SimulTerrainRendererDX1x::SimulTerrainRendererDX1x(simul::base::MemoryInterface *m)
+TerrainRenderer::TerrainRenderer(simul::base::MemoryInterface *m)
 	:BaseTerrainRenderer(m)
 	,m_pd3dDevice(NULL)
 	,m_pVertexBuffer(NULL)
@@ -37,12 +37,12 @@ SimulTerrainRendererDX1x::SimulTerrainRendererDX1x(simul::base::MemoryInterface 
 {
 }
 
-SimulTerrainRendererDX1x::~SimulTerrainRendererDX1x()
+TerrainRenderer::~TerrainRenderer()
 {
 	InvalidateDeviceObjects();
 }
 
-void SimulTerrainRendererDX1x::ReloadTextures()
+void TerrainRenderer::ReloadTextures()
 {
 	std::vector<std::string> texture_files;
 	texture_files.push_back("terrain.png");
@@ -50,7 +50,7 @@ void SimulTerrainRendererDX1x::ReloadTextures()
 	arrayTexture.create(m_pd3dDevice,texture_files);
 }
 
-void SimulTerrainRendererDX1x::RecompileShaders()
+void TerrainRenderer::RecompileShaders()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pTerrainEffect);
@@ -69,7 +69,7 @@ void SimulTerrainRendererDX1x::RecompileShaders()
 	
 }
 
-void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *dev)
+void TerrainRenderer::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D1xDevice*)dev;
@@ -106,7 +106,7 @@ void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *dev)
 	delete [] vertices;
 }
 
-void SimulTerrainRendererDX1x::InvalidateDeviceObjects()
+void TerrainRenderer::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pTerrainEffect);
@@ -115,7 +115,7 @@ void SimulTerrainRendererDX1x::InvalidateDeviceObjects()
 	terrainConstants.InvalidateDeviceObjects();
 }
 
-void SimulTerrainRendererDX1x::Render(void *context,float exposure)
+void TerrainRenderer::Render(void *context,float exposure)
 {
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
 	D3DXMATRIX world;
@@ -223,7 +223,7 @@ void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
 }
 
-void SimulTerrainRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void TerrainRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
 	proj=p;
