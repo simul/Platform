@@ -323,14 +323,18 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 			baseFramebuffer->Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
 		}
 	}
-	RenderLowResolutionElements(context,exposure,godrays_strength,is_cubemap,false,lowResDepthTexture,viewport_id,viewportRegionXYWH);
+	//if(!is_cubemap)
+		RenderLowResolutionElements(context,exposure,godrays_strength,is_cubemap,false,lowResDepthTexture,viewport_id,viewportRegionXYWH);
 	if(buffered)
 		baseFramebuffer->Deactivate(context);
 
-	nearFramebuffer.ActivateColour(context);
-	nearFramebuffer.ClearColour(context,0.0f,0.0f,0.f,1.f);
-	RenderLowResolutionElements(context,exposure,godrays_strength,is_cubemap,true,lowResDepthTexture,viewport_id,viewportRegionXYWH);
-	nearFramebuffer.Deactivate(context);
+	if(buffered&&!is_cubemap)
+	{
+		nearFramebuffer.ActivateColour(context);
+		nearFramebuffer.ClearColour(context,0.0f,0.0f,0.f,1.f);
+		RenderLowResolutionElements(context,exposure,godrays_strength,is_cubemap,true,lowResDepthTexture,viewport_id,viewportRegionXYWH);
+		nearFramebuffer.Deactivate(context);
+	}
 
 	if(buffered&&doFinalCloudBufferToScreenComposite)
 	{

@@ -292,7 +292,7 @@ void CubemapFramebuffer::Clear(void *context,float r,float g,float b,float a,flo
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	if(!mask)
 		mask=D3D1x_CLEAR_DEPTH|D3D1x_CLEAR_STENCIL;
-	// Clear the screen to black:
+	// Clear the screen to the colour specified:
     float clearColor[4]={r,g,b,a};
     for(int i=0;i<6;i++)
     {

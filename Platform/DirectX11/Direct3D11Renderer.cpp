@@ -38,6 +38,8 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,CelestialDisplay(false)
 		,ShowWater(true)
 		,MakeCubemap(true)
+		,ShowCubemaps(false)
+		,ShowRainTextures(false)
 		,ReverseDepth(true)
 		,ShowOSD(false)
 		,Exposure(1.0f)
@@ -124,10 +126,10 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice,IDX
 		return S_OK;
 	try
 	{
-		ScreenWidth	=pBackBufferSurfaceDesc->Width/4;
-		ScreenHeight=pBackBufferSurfaceDesc->Height/4;
-		ScreenWidth	=pBackBufferSurfaceDesc->Width/4;
-		ScreenHeight=pBackBufferSurfaceDesc->Height/4;
+		ScreenWidth	=pBackBufferSurfaceDesc->Width	/1;
+		ScreenHeight=pBackBufferSurfaceDesc->Height	/1;
+		ScreenWidth	=pBackBufferSurfaceDesc->Width	/1;
+		ScreenHeight=pBackBufferSurfaceDesc->Height	/1;
 		return S_OK;
 	}
 	catch(...)
@@ -142,6 +144,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	D3DXMATRIX proj;
 	D3DXMATRIX view_matrices[6];
 	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
+	cubemapFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 	for(int i=0;i<6;i++)
 	{
 		cubemapFramebuffer.SetCurrentFace(i);
@@ -155,7 +158,6 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		else
 			cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
 		//cubemapDepthFramebuffer.Activate(pContext);
-		//cubemapDepthFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 		if(simulTerrainRenderer)
 		{
 			simulTerrainRenderer->SetMatrices(view_matrices[i],cube_proj);
@@ -382,9 +384,9 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 		{
 			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(pContext,ScreenWidth,ScreenHeight);
 		}
-		if(simulWeatherRenderer->GetBasePrecipitationRenderer())
+		if(simulWeatherRenderer->GetBasePrecipitationRenderer()&&ShowRainTextures)
 		{
-	//		simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(pContext,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(pContext,ScreenWidth,ScreenHeight);
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 		{
@@ -427,6 +429,7 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	SAFE_RELEASE(mixedResolutionEffect);
 	mixedResolutionConstants.InvalidateDeviceObjects();
+	resolvedColourTexture.release();
 }
 
 void Direct3D11Renderer::OnD3D11DestroyDevice()

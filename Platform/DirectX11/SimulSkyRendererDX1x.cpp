@@ -409,16 +409,16 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 		return sun_occlusion;
 //	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
-	float sun_angular_size=3.14159f/180.f/2.f;
+	float sun_angular_radius=3.14159f/180.f/2.f;
 
 	// fix the projection matrix so this quad is far away:
 	D3DXMATRIX tmp=proj;
 	static float ff=0.0001f;
-	float zFar=(1.f+ff)/tan(sun_angular_size);
+	float zFar=(1.f+ff)/tan(sun_angular_radius);
 /*
 	// Start the query
 	d3dQuery->Begin();
-	RenderAngledQuad(sun_dir,sun_angular_size);
+	RenderAngledQuad(sun_dir,sun_angular_radius);
 	// End the query, get the data
 	d3dQuery->End();
     // Loop until the data becomes available
@@ -491,15 +491,15 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,sun_dir);
 	skyConstants.colour=sunlight;
-	skyConstants.radiusRadians=sun_angular_size;
+	skyConstants.radiusRadians=sun_angular_radius;
 	skyConstants.Apply(pContext);
 	ApplyPass(pContext,m_hTechniqueSun->GetPassByIndex(0));
 	UtilityRenderer::DrawQuad(pContext);
 
-//	UtilityRenderer::RenderAngledQuad(context,sun_dir,sun_angular_size*2.f,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
+//	UtilityRenderer::RenderAngledQuad(context,sun_dir,sun_angular_radius*2.f,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
 	// Start the query
 /*d3dQuery->Begin();
-	hr=RenderAngledQuad(sun_dir,sun_angular_size);
+	hr=RenderAngledQuad(sun_dir,sun_angular_radius);
 	// End the query, get the data
     d3dQuery->End();
 
@@ -550,10 +550,10 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 	colour->SetFloatVector(sunlight);
 	//m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
 	//flareTexture->SetResource(flare_texture_SRV);
-	float sun_angular_size=3.14159f/180.f/2.f;
+	float sun_angular_radius=3.14159f/180.f/2.f;
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
-//	hr=RenderAngledQuad(sun_dir,sun_angular_size*20.f*magnitude);
-	RenderAngledQuad(m_pd3dDevice,sun_dir,sun_angular_size*20.f*magnitude,m_pSkyEffect,m_hTechniqueFlare,view,proj,sun_dir);*/
+//	hr=RenderAngledQuad(sun_dir,sun_angular_radius*20.f*magnitude);
+	RenderAngledQuad(m_pd3dDevice,sun_dir,sun_angular_radius*20.f*magnitude,m_pSkyEffect,m_hTechniqueFlare,view,proj,sun_dir);*/
 	return (hr==S_OK);
 }
 
