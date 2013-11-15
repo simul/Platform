@@ -124,10 +124,11 @@ HRESULT	Direct3D11Renderer::OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice,IDX
 		return S_OK;
 	try
 	{
-		ScreenWidth	=pBackBufferSurfaceDesc->Width/4;
-		ScreenHeight=pBackBufferSurfaceDesc->Height/4;
-		ScreenWidth	=pBackBufferSurfaceDesc->Width/4;
-		ScreenHeight=pBackBufferSurfaceDesc->Height/4;
+		// To debug antialiasing, divide all these by about 4:
+		ScreenWidth	=pBackBufferSurfaceDesc->Width;
+		ScreenHeight=pBackBufferSurfaceDesc->Height;
+		ScreenWidth	=pBackBufferSurfaceDesc->Width;
+		ScreenHeight=pBackBufferSurfaceDesc->Height;
 		return S_OK;
 	}
 	catch(...)
@@ -427,6 +428,7 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	SAFE_RELEASE(mixedResolutionEffect);
 	mixedResolutionConstants.InvalidateDeviceObjects();
+	resolvedColourTexture.release();
 }
 
 void Direct3D11Renderer::OnD3D11DestroyDevice()
