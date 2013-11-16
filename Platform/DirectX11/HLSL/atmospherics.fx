@@ -65,7 +65,21 @@ atmosVertexOutput VS_Atmos(atmosVertexInput IN)
 	return OUT;
 }
 
-vec4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : SV_TARGET
+vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	vec3 loss		=AtmosphericsLoss(depthTexture
+									,viewportToTexRegionScaleBias
+									,lossTexture
+									,invViewProj
+									,IN.texCoords
+									,IN.pos
+									,depthToLinFadeDistParams
+									,tanHalfFov);
+    return float4(loss.rgb,1.f);
+}
+
+vec4 PS_LossMSAA(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	int2 pos2;
@@ -89,7 +103,7 @@ vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 	vec2 clip_pos		=vec2(-1.f,1.f);
 	clip_pos.x			+=2.0*IN.texCoords.x;
 	clip_pos.y			-=2.0*IN.texCoords.y;
-/*	vec3 insc			=AtmosphericsInsc(depthTexture
+	vec3 insc			=AtmosphericsInsc(depthTexture
 										,illuminationTexture
 										,inscTexture
 										,skylTexture
@@ -103,7 +117,13 @@ vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 										,lightDir
 										,mieRayleighRatio);
     return float4(insc.rgb*exposure,1.f);
-	*/
+}
+
+vec4 PS_InscatterMSAA(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 clip_pos		=vec2(-1.f,1.f);
+	clip_pos.x			+=2.0*IN.texCoords.x;
+	clip_pos.y			-=2.0*IN.texCoords.y;
 	uint2 dims;
 	int numSamples;
 	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
@@ -164,7 +184,7 @@ technique11 simul_atmospherics_overlay
 		//SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_AtmosOverlayLossPass()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Loss()));
     }
     pass p1
     {
@@ -174,6 +194,30 @@ technique11 simul_atmospherics_overlay
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter()));
+    }
+}
+
+
+technique11 simul_atmospherics_overlay_msaa
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		//SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_LossMSAA()));
+    }
+    pass p1
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_InscatterMSAA()));
     }
 }
 

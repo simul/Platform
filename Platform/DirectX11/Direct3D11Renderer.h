@@ -31,6 +31,28 @@ namespace simul
 {
 	namespace dx11
 	{
+		enum ViewType
+		{
+			MAIN_3D_VIEW
+			,OCULUS_VR
+			,FADE_EDITING
+		};
+		struct View
+		{
+			View();
+			~View();
+			void RestoreDeviceObjects(ID3D11Device *m_pd3dDevice);
+			void InvalidateDeviceObjects();
+			int ScreenWidth;
+			int ScreenHeight;
+			// A framebuffer with depth
+			simul::dx11::Framebuffer					hdrFramebuffer;
+			// The depth from the HDR framebuffer can be resolved into this texture:
+			simul::dx11::Framebuffer					resolvedDepth_fb;
+			simul::dx11::TextureStruct					lowResDepthTexture;
+			ViewType									viewType;
+			const simul::camera::CameraOutputInterface	*camera;
+		};
 		class SimulWeatherRendererDX11;
 		class SimulHDRRendererDX1x;
 		class SimulTerrainRendererDX1x;
@@ -60,6 +82,7 @@ namespace simul
 				META_ValueProperty(bool,ShowWater				,"Show water surfaces.")
 				META_ValueProperty(bool,MakeCubemap				,"Render a cubemap each frame.")
 				META_ValueProperty(bool,ShowCubemaps			,"Show any generated cubemaps onscreen.")
+				META_ValueProperty(bool,ShowRainTextures		,"Show rain textures onscreen.")
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
 				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")

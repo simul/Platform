@@ -503,7 +503,7 @@ void SimulGLSkyRenderer::RenderSun(void *,float exposure)
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); 
 
-	RenderAngledQuad(sun_dir,sun_angular_size);
+	RenderAngledQuad(sun_dir,sun_angular_radius);
 	glUseProgram(0);
 }
 
