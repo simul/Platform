@@ -114,6 +114,7 @@ vec2 viewportCoordToTexRegionCoord(vec2 iViewportCoord,vec4 iViewportToTexRegion
 }
 
 #ifndef GLSL
+#ifndef DX9
 
 void GetMSAACoordinates(Texture2DMS<float4> textureMS,vec2 texc,out int2 pos2,out int numSamples)
 {
@@ -123,11 +124,9 @@ void GetMSAACoordinates(Texture2DMS<float4> textureMS,vec2 texc,out int2 pos2,ou
 }
 
 // Filter the texture, but bias the result towards the nearest depth values.
-vec4 depthDependentFilteredImage(Texture2D imageTexture,Texture2D depthTexture,vec2 texc,vec4 depthMask,vec3 depthToLinFadeDistParams,float d)
+vec4 depthDependentFilteredImage(Texture2D imageTexture,Texture2D depthTexture,vec2 imageDims,vec2 texc,vec4 depthMask,vec3 depthToLinFadeDistParams,float d)
 {
-	uint width,height;
-	imageTexture.GetDimensions(width,height);
-	vec2 texc_unit	=texc*vec2(width,height)-vec2(.5,.5);
+	vec2 texc_unit	=texc*imageDims-vec2(.5,.5);
 	uint2 idx		=floor(texc_unit);
 	vec2 xy			=frac(texc_unit);
 	uint2 i11		=idx;
@@ -182,6 +181,10 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 							,vec4 viewportToTexRegionScaleBias
 							,vec3 depthToLinFadeDistParams)
 {
+	uint width,height;
+	nearImageTexture.GetDimensions(width,height);
+	vec2 imageDims	=vec2(width,height);
+
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 	int2 hires_depth_pos2;
 	int numSamples;
@@ -201,8 +204,8 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 		{
 			vec4 hiresDepth	=depthTextureMS.Load(hires_depth_pos2,i).x;
 			float trueDist	=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
-			cloudNear		=depthDependentFilteredImage(nearImageTexture	,lowResDepthTexture,texCoords,vec4(0,1.0,0,0),depthToLinFadeDistParams,trueDist);
-			cloudFar		=depthDependentFilteredImage(farImageTexture	,lowResDepthTexture,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
+			cloudNear		=depthDependentFilteredImage(nearImageTexture	,lowResDepthTexture,imageDims,texCoords,vec4(0,1.0,0,0),depthToLinFadeDistParams,trueDist);
+			cloudFar		=depthDependentFilteredImage(farImageTexture	,lowResDepthTexture,imageDims,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
 			float interp	=edge*saturate((nearFarDist.y-trueDist)/(nearFarDist.y-nearFarDist.x));
 			result			+=lerp(cloudFar,cloudNear,interp);
 		}
@@ -213,11 +216,12 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 		// Just use the zero MSAA sample if we're not at an edge:
 		vec4 hiresDepth	=depthTextureMS.Load(hires_depth_pos2,0).x;
 		float trueDist	=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
-		result			=depthDependentFilteredImage(farImageTexture,lowResDepthTexture,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
+		result			=depthDependentFilteredImage(farImageTexture,lowResDepthTexture,imageDims,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
 	}
 	//result.g=edge;
     return result;
 }
 
+#endif
 #endif
 #endif

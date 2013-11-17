@@ -1,6 +1,7 @@
 #version 140
 #include "CppGlsl.hs"
 #include "../../CrossPlatform/earth_shadow.sl"
+#include "../../CrossPlatform/earth_shadow_uniforms.sl"
 #include "../../CrossPlatform/illumination.sl"
 #include "../../CrossPlatform/sky_constants.sl"
 uniform sampler2D inscTexture;
@@ -10,5 +11,7 @@ out vec4 gl_FragColor;
 
 void main(void)
 {
-    gl_FragColor= OvercastInscatter(inscTexture,illuminationTexture,texCoords,overcast);
+	float alt_km		=eyePosition.z/1000.0;
+    gl_FragColor		=OvercastInscatter(inscTexture,illuminationTexture,texCoords,alt_km,maxFadeDistanceKm
+								,overcast,overcastBaseKm,overcastRangeKm,targetTextureSize);
 }

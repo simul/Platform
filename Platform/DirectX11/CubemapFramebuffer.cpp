@@ -121,7 +121,7 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 	SRVDesc.TextureCube.MipLevels = MIPLEVELS;
 	SRVDesc.TextureCube.MostDetailedMip = 0;
 	 
-	//V_CHECK( pd3dDevice->CreateShaderResourceView(m_pCubeEnvDepthMap, &SRVDesc, &m_pCubeEnvMapDepthSRV ));
+	V_CHECK( pd3dDevice->CreateShaderResourceView(m_pCubeEnvDepthMap, &SRVDesc, &m_pCubeEnvMapDepthSRV ));
 	
 }
 

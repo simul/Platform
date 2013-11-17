@@ -136,12 +136,13 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture,Texture2D coverageTexture
 						,Texture2D lossTexture
 						,Texture2D inscTexture
 						,Texture2D skylTexture
+						,Texture2D noiseTexture
 						,vec2 texc_global
 						,vec2 texc_detail
 						,vec3 wEyeToPos
 						,vec3 sun_irr,vec3 moon_irr,vec3 amb,vec3 lightDir,vec4 lightResponse)
 {
-    vec2 texc_offset	=texc_detail/7.11;//offsetScale;
+    vec2 texc_offset		=texc_detail/7.11;//offsetScale;
     vec4 noise				=texture_wrap(noiseTexture,texc_offset);
     vec4 coverage			=texture_wrap(coverageTexture,texc_global);
     vec4 detail				=texture_wrap(imageTexture,texc_detail+.2*noise.xy);
