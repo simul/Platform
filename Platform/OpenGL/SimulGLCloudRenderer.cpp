@@ -520,7 +520,7 @@ GL_ERROR_CHECK
 	layerConstants.Apply();
 //	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
 	int idx=0;
-	static int isolate_layer=17;
+	static int isolate_layer=-1;
 	for(CloudGeometryHelper::SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
 		if(isolate_layer>=0&&idx>isolate_layer)
@@ -552,7 +552,7 @@ GL_ERROR_CHECK
 				if(v<0||v>=(int)helper->GetVertices().size())
 					continue;
 				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[v];
-				glVertex3f(V.x,V.y,V.z);
+				glVertex3f(V.x*s->layerDistance,V.y*s->layerDistance,V.z*s->layerDistance);
 			}
 		}
 		glEnd();

@@ -21,6 +21,7 @@ namespace simul
 	namespace camera
 	{
 		class Camera;
+		class CameraOutputInterface;
 	}
 	namespace clouds
 	{

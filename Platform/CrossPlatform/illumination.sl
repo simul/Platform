@@ -84,7 +84,7 @@ vec2 OvercastDistances(float alt_km,float sine,float overcastBaseKm,float overca
 }
 
 vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 fade_texc,float alt_km,float maxFadeDistanceKm
-	,float overcast,float overcastBaseKm,float overcastRangeKm)
+	,float overcast,float overcastBaseKm,float overcastRangeKm,vec2 targetTextureSize)
 {
 	// Texcoords representing the full distance from the eye to the given point.
 	vec4 insc				=texture_cmc_lod(inscTexture,fade_texc,0);
@@ -130,7 +130,7 @@ vec4 IlluminationBuffer(float alt_km,vec2 texCoords,vec2 targetTextureSize
 	float cosine			=sqrt(1.0-sine*sine);
 	vec3 view				=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
 	vec2 fade_texc			=vec2(1.0,texCoords.y);
-	vec2 full_bright_range	=EarthShadowDistances(fade_texc,sine,earthShadowNormal,sunDir,maxFadeDistance,terminatorDistance,radiusOnCylinder);
+	vec2 full_bright_range	=EarthShadowDistances(fade_texc,view,earthShadowNormal,sunDir,maxFadeDistance,terminatorDistance,radiusOnCylinder);
 	vec2 overcast_range		=OvercastDistances(alt_km,sine,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm);
     return vec4(full_bright_range,overcast_range);
 }

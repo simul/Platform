@@ -22,7 +22,7 @@ void main(void)
 {
 	LayerData layer		=layers[layerIndex];//layerCount-1-layerNumber];
 	vec3 pos			=vertex.xyz;
-	pos.xyz				*=layer.layerDistance;
+//	pos.xyz				*=layer.layerDistance;
     wPosition			=pos.xyz;
     transformed_pos		=vec4(vertex.xyz,1.0)*worldViewProj;
     gl_Position			=transformed_pos;

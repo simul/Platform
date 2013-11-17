@@ -162,7 +162,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		if(simulTerrainRenderer)
 		{
 			simulTerrainRenderer->SetMatrices(view_matrices[i],cube_proj);
-		//	simulTerrainRenderer->Render(pContext,1.f);
+			simulTerrainRenderer->Render(pContext,1.f);
 		}
 		cubemapFramebuffer.DeactivateDepth(pContext);
 		if(simulWeatherRenderer)
