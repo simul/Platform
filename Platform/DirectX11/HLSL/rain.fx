@@ -138,7 +138,7 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
 
 float4 PS_Particles(particleGeometryOutput IN): SV_TARGET
 {
-	float4 result	=cubeTexture.Sample(wrapSamplerState,-IN.view);
+	float4 result	=cubeTexture.Sample(wrapSamplerState,IN.view);
 	vec2 pos		=IN.texCoords*2.0-1.0;
 	float radius	=intensity*length(pos.xy);
 	float opacity	=saturate(intensity-radius)/.5;
@@ -192,7 +192,7 @@ float4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
 float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 {
 	float3 view		=normalize(mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz);
-	float3 light	=cubeTexture.Sample(wrapSamplerState,-view).rgb;
+	float3 light	=cubeTexture.Sample(wrapSamplerState,view).rgb;
 	float sc=1.0;
 	float br=1.0;
 	vec4 result=vec4(light.rgb,0);//float4(0.0,0.0,0.0,0.0);
@@ -207,7 +207,7 @@ float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 		result.a+=r;
 	}
 	result.a=saturate(result.a);
-	return result;
+	return vec4(view,1);
 }
 
 technique11 simul_rain

@@ -15,7 +15,7 @@ void CS_Jitter(uint3 sub_pos: SV_DispatchThreadID )
 {
 //	samplesBufferRW[sub_pos.y*16+sub_pos.x].dir=vec3(0,0,.7);
 //	samplesBufferRW[sub_pos.y*16+sub_pos.x].theta=0;
-	SH_setup_spherical_samples(samplesBufferRW,sub_pos.xy,16,3);
+	SH_setup_spherical_samples(samplesBufferRW,sub_pos.xy,16,5);
 }
 
 [numthreads(8,1,1)]
@@ -27,19 +27,19 @@ void CS_Clear(uint3 sub_pos: SV_DispatchThreadID )
 [numthreads(1,1,1)]
 void CS_Encode(uint3 sub_pos: SV_DispatchThreadID )
 {
-	SphericalHarmonicsSample sample	=samplesBuffer[sub_pos.x];
-	// The sub_pos gives the co-ordinate in the table of samples.
-	vec4 colour						=cubemapTexture.SampleLevel(wrapSamplerState,sample.dir,0);
+	// The sub_pos gives the co-ordinate in the table of sam
 	const double weight				=4.0*PI; 
-	// for each sample
-	double theta					=sample.theta; 
-	double phi						=sample.phi; 
 	// divide the result by weight and number of samples 
 	double factor					=weight/1024.0; 
-	for(int n=0; n<16; ++n)
+	for(int n=0;n<1024;n++)
 	{ 
-		targetBuffer[n]				+=colour*factor;//sample.coeff[n]*factor; 
-	} 
+		SphericalHarmonicsSample sample	=samplesBuffer[n];
+		vec4 colour						=cubemapTexture.SampleLevel(wrapSamplerState,-sample.dir,0);
+		// for each sample
+		double theta					=sample.theta; 
+		double phi						=sample.phi; 
+		targetBuffer[sub_pos.x]			+=colour*factor*sample.coeff[sub_pos.x]; 
+	}
 }
 
 technique11 jitter

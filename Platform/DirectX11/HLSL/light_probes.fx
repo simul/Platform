@@ -40,12 +40,12 @@ vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 	// return a point sample of a Spherical Harmonic basis function 
 	vec4 result		=vec4(0,0,0,0);
 	int n=0;
-	for(int l=0;l<4;l++)
+	for(int l=0;l<5;l++)
 	{ 
 		for(int m=-l;m<=l;m++)
-			result+=basisBuffer[0];//SH(l,m,theta,phi)*A[l]*basisBuffer[n++];
+			result+=SH(l,m,theta,phi)*basisBuffer[n++]*3.141;//*A[l];
 	} 
-	return result;
+	return saturate(result);
 }
 
 technique11 irradiance_map

@@ -13,7 +13,7 @@ struct SphericalHarmonicsSample
 	float dummy1,dummy2;
 	vec3 dir; 
 	float dummy3;
-	float coeff[16]; 
+	float coeff[25]; 
 }; 
 
 #endif

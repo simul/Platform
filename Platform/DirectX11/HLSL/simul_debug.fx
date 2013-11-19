@@ -133,6 +133,7 @@ float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
 	float3 view		=(IN.wDirection.xyz);
 	float4 result	=cubeTexture.Sample(cubeSamplerState,view);
+	result.rgb=view.xyz;
 	return float4(result.rgb,1.f);
 }
 
@@ -208,7 +209,7 @@ technique11 draw_cubemap_sphere
 		SetRasterizerState( RenderBackfaceCull );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_DrawCubemapSphere()));
-		SetPixelShader(CompileShader(ps_4_0,PS_DrawCubemap()));
+		SetPixelShader(CompileShader(ps_4_0	,PS_DrawCubemap()));
 		SetDepthStencilState( EnableDepth, 0 );
 		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }

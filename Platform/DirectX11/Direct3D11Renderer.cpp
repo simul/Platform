@@ -151,7 +151,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	D3DXMATRIX view;
 	D3DXMATRIX proj;
 	D3DXMATRIX view_matrices[6];
-	MakeCubeMatrices(view_matrices,cam_pos,ReverseDepth);
+	MakeCubeMatrices(view_matrices,cam_pos,false);//ReverseDepth);
 	cubemapFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
 	for(int i=0;i<6;i++)
 	{
@@ -182,7 +182,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		cubemapFramebuffer.Deactivate(pContext);
 	}
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->SetCubemapTexture(cubemapFramebuffer.GetColorTex());
+		simulWeatherRenderer->SetCubemapTexture(envmapFramebuffer.GetColorTex());
 }
 	
 void Direct3D11Renderer::RenderEnvmap(ID3D11DeviceContext* pContext)

@@ -81,12 +81,12 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 	double oneoverN = 1.0/sqrt_n_samples; 
 	int a=pos.x;
 	int b=pos.y;
-	int i=a*4+b; // array index 
+	int i=a*16+b; // array index 
 	// generate unbiased distribution of spherical coords 
 	float x		=(a + rand(vec2(a,b))) * oneoverN; // do not reuse results 
 	float y		=(b + rand(vec2(2*a,b))) * oneoverN; // each sample must be random 
 	float theta	=2.0 * acos(sqrt(1.0 - x)); 
-	float phi	=2.0 * PI * y; 
+	float phi	=2.0 * PI * y;
 	samplesBufferRW[i].theta=theta;
 	samplesBufferRW[i].phi	=phi;
 	// convert spherical coords to unit vector 
@@ -98,7 +98,7 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 		for(int m=-l; m<=l; ++m)
 		{ 
 			int index = l*(l+1)+m; 
-			samplesBufferRW[i].coeff[index] = 1;//SH(l,m,theta,phi);
+			samplesBufferRW[i].coeff[index] = SH(l,m,theta,phi);
 		}
 	}
 }

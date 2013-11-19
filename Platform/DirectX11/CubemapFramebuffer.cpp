@@ -5,7 +5,7 @@ const int MIPLEVELS=1;
 using namespace simul::dx11;
 
 CubemapFramebuffer::CubemapFramebuffer()
-	:bands(3)
+	:bands(4)
 	,m_pCubeEnvMap(NULL)
 	,m_pCubeEnvMapSRV(NULL)
 	,Width(0)
@@ -225,10 +225,10 @@ void CubemapFramebuffer::CalcSphericalHarmonics(void *context)
 	ID3DX11EffectTechnique *tech		=sphericalHarmonicsEffect->GetTechniqueByName("encode");
 	simul::dx11::setTexture				(sphericalHarmonicsEffect,"cubemapTexture"	,m_pCubeEnvMapSRV);
 	simul::dx11::setTexture				(sphericalHarmonicsEffect,"samplesBuffer"	,sphericalSamples.shaderResourceView);
-	
 
 	ApplyPass(pContext,tech->GetPassByIndex(0));
-	pContext->Dispatch(1024,1,1);
+	static int c=25;
+	pContext->Dispatch(c,1,1);
 	simul::dx11::setTexture				(sphericalHarmonicsEffect,"cubemapTexture"	,NULL);
 	simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect,"targetBuffer"	,NULL);
 	simul::dx11::setTexture				(sphericalHarmonicsEffect,"samplesBuffer"	,NULL);
