@@ -14,8 +14,11 @@
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include "Simul/Platform/CrossPlatform/mixed_resolution_constants.sl"
+#include "Simul/Platform/CrossPlatform/light_probe_constants.sl"
+
 #pragma warning(push)
 #pragma warning(disable:4251)
+
 namespace simul
 {
 	namespace camera
@@ -28,6 +31,7 @@ namespace simul
 		class Environment;
 	}
 }
+
 namespace simul
 {
 	namespace dx11
@@ -102,21 +106,21 @@ namespace simul
 			{
 				camera=c;
 			}
-			void	RecompileShaders();
-			void	RenderCubemap(ID3D11DeviceContext* pd3dImmediateContext,D3DXVECTOR3 cam_pos);
+			void			RecompileShaders();
+			void			RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos);
+			void			RenderEnvmap(ID3D11DeviceContext* pContext);
 			// D3D11CallbackInterface
-			virtual bool	IsD3D11DeviceAcceptable(	const CD3D11EnumAdapterInfo *AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo *DeviceInfo,DXGI_FORMAT BackBufferFormat,bool bWindowed);
-			virtual bool	ModifyDeviceSettings(		DXUTDeviceSettings* pDeviceSettings);
-			virtual HRESULT	OnD3D11CreateDevice(		ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
-			virtual HRESULT	OnD3D11ResizedSwapChain(	ID3D11Device* pd3dDevice,IDXGISwapChain* pSwapChain,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
-			virtual void	OnD3D11FrameRender(			ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep);
+			virtual bool	IsD3D11DeviceAcceptable(const CD3D11EnumAdapterInfo *AdapterInfo, UINT Output, const CD3D11EnumDeviceInfo *DeviceInfo,DXGI_FORMAT BackBufferFormat,bool bWindowed);
+			virtual bool	ModifyDeviceSettings(	DXUTDeviceSettings* pDeviceSettings);
+			virtual HRESULT	OnD3D11CreateDevice(	ID3D11Device* pd3dDevice,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
+			virtual HRESULT	OnD3D11ResizedSwapChain(ID3D11Device* pd3dDevice,IDXGISwapChain* pSwapChain,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
+			virtual void	OnD3D11FrameRender(		ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext,double fTime, float fTimeStep);
 			virtual void	OnD3D11LostDevice();
 			virtual void	OnD3D11DestroyDevice();
 			virtual void	OnD3D11ReleasingSwapChain();
 			virtual bool	OnDeviceRemoved();
 			virtual void    OnFrameMove(double fTime,float fTimeStep);
 			virtual const	char *GetDebugText() const;
-
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
 			void RenderScene(ID3D11DeviceContext* pd3dImmediateContext);
@@ -124,25 +128,28 @@ namespace simul
 			void ResolveDepth(ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
 			void ResolveColour(ID3D11DeviceContext* pContext);
 			void ReverseDepthChanged();
-			bool enabled;
-			ID3D11Device* m_pd3dDevice;
-			ID3DX11Effect*					mixedResolutionEffect;
-			std::string screenshotFilenameUtf8;
-			simul::camera::Camera *camera;
-			SimulOpticsRendererDX1x		*simulOpticsRenderer;
-			SimulWeatherRendererDX11	*simulWeatherRenderer;
-			SimulHDRRendererDX1x		*simulHDRRenderer;
-			SimulTerrainRendererDX1x	*simulTerrainRenderer;
+			bool										enabled;
+			std::string									screenshotFilenameUtf8;
+			ID3D11Device								*m_pd3dDevice;
+			ID3DX11Effect								*mixedResolutionEffect;
+			ID3DX11Effect								*lightProbesEffect;
+			simul::camera::Camera						*camera;
+			SimulOpticsRendererDX1x						*simulOpticsRenderer;
+			SimulWeatherRendererDX11					*simulWeatherRenderer;
+			SimulHDRRendererDX1x						*simulHDRRenderer;
+			SimulTerrainRendererDX1x					*simulTerrainRenderer;
 			int ScreenWidth,ScreenHeight;
 			// A MSAA framebuffer with depth
-			simul::dx11::Framebuffer			hdrFramebuffer;
+			simul::dx11::Framebuffer					hdrFramebuffer;
 			// The depth from the HDR framebuffer can be resolved into this texture:
-			simul::dx11::Framebuffer			resolvedDepth_fb;
-			simul::dx11::TextureStruct			lowResDepthTexture;
-			simul::dx11::TextureStruct			resolvedColourTexture;
-			simul::dx11::CubemapFramebuffer		cubemapFramebuffer;
-			simul::base::MemoryInterface		*memoryInterface;
-	ConstantBuffer<MixedResolutionConstants> mixedResolutionConstants;
+			simul::dx11::Framebuffer					resolvedDepth_fb;
+			simul::dx11::TextureStruct					lowResDepthTexture;
+			simul::dx11::TextureStruct					resolvedColourTexture;
+			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
+			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
+			ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
+			ConstantBuffer<LightProbeConstants>			lightProbeConstants;
+			simul::base::MemoryInterface				*memoryInterface;
 		};
 	}
 }

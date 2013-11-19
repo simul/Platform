@@ -5,10 +5,9 @@ const int MIPLEVELS=1;
 using namespace simul::dx11;
 
 CubemapFramebuffer::CubemapFramebuffer()
-	:m_pCubeEnvDepthMap(NULL)
+	:bands(3)
 	,m_pCubeEnvMap(NULL)
 	,m_pCubeEnvMapSRV(NULL)
-	,m_pCubeEnvMapDepthSRV(NULL)
 	,Width(0)
 	,Height(0)
 	,current_face(0)
@@ -18,8 +17,10 @@ CubemapFramebuffer::CubemapFramebuffer()
 {
 	for(int i=0;i<6;i++)
 	{
-		m_pCubeEnvMapRTV[i]=NULL;
+		m_pCubeEnvMapRTV[i]		=NULL;
 		m_pCubeEnvDepthMapDSV[i]=NULL;
+		m_pCubeEnvDepthMapSRV[i]=NULL;
+		m_pCubeEnvDepthMap[i]	=NULL;
 	}
 }
 
@@ -46,83 +47,97 @@ void CubemapFramebuffer::SetFormat(int f)
 
 void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 {
+	for(int i=0;i<6;i++)
+	{
+		SAFE_RELEASE(m_pCubeEnvMapRTV[i]);
+		SAFE_RELEASE(m_pCubeEnvDepthMapDSV[i]);
+		SAFE_RELEASE(m_pCubeEnvDepthMapSRV[i]);
+	}
 	HRESULT hr=S_OK;
 	pd3dDevice=(ID3D1xDevice*)dev;
+	// The table of coefficients.
+	int s=(bands+1);
+	if(s<4)
+		s=4;
+	sphericalHarmonics.RestoreDeviceObjects(pd3dDevice,s*s,true);
 	// Create cubic depth stencil texture
 	D3D11_TEXTURE2D_DESC tex2dDesc;
-	tex2dDesc.Width = Width;
-	tex2dDesc.Height = Width;
-	tex2dDesc.MipLevels = 1;
-	tex2dDesc.ArraySize = 6;
-	tex2dDesc.SampleDesc.Count = 1;
-	tex2dDesc.SampleDesc.Quality = 0;
-	tex2dDesc.Format = DXGI_FORMAT_R32_TYPELESS;//DXGI_FORMAT_D32_FLOAT;
-	tex2dDesc.Usage = D3D1x_USAGE_DEFAULT;
-	tex2dDesc.BindFlags = D3D1x_BIND_DEPTH_STENCIL | D3D1x_BIND_SHADER_RESOURCE;
-	tex2dDesc.CPUAccessFlags = 0;
-	tex2dDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+	tex2dDesc.Width				=Width;
+	tex2dDesc.Height			=Width;
+	tex2dDesc.MipLevels			=1;
+	tex2dDesc.ArraySize			=6;
+	tex2dDesc.SampleDesc.Count	=1;
+	tex2dDesc.SampleDesc.Quality=0;
+	tex2dDesc.Format			=DXGI_FORMAT_R32_TYPELESS;//DXGI_FORMAT_D32_FLOAT;
+	tex2dDesc.Usage				=D3D1x_USAGE_DEFAULT;
+	tex2dDesc.BindFlags			=D3D1x_BIND_DEPTH_STENCIL | D3D1x_BIND_SHADER_RESOURCE;
+	tex2dDesc.CPUAccessFlags	=0;
+	tex2dDesc.MiscFlags			=D3D11_RESOURCE_MISC_TEXTURECUBE;
  
-	V_CHECK( pd3dDevice->CreateTexture2D( &tex2dDesc, NULL, &m_pCubeEnvDepthMap ));
 
 	// Create the depth stencil view for the entire cube
-	D3D1x_DEPTH_STENCIL_VIEW_DESC DescDS;
+	D3D11_DEPTH_STENCIL_VIEW_DESC DescDS;
     ZeroMemory( &DescDS, sizeof( DescDS ) );
-	DescDS.Format = DXGI_FORMAT_D32_FLOAT;
-	DescDS.ViewDimension = D3D1x_DSV_DIMENSION_TEXTURE2DARRAY;
-	DescDS.Texture2DArray.FirstArraySlice = 0;
-	DescDS.Texture2DArray.ArraySize = 6;
-	DescDS.Texture2DArray.MipSlice = 0;
+	DescDS.Format						=DXGI_FORMAT_D32_FLOAT;
+	DescDS.ViewDimension				=D3D11_DSV_DIMENSION_TEXTURE2D;
+	DescDS.Texture2D.MipSlice			=0;
  
+	D3D11_SHADER_RESOURCE_VIEW_DESC depthSRVDesc;
+	ZeroMemory(&depthSRVDesc,sizeof(depthSRVDesc));
+	depthSRVDesc.Format						=DXGI_FORMAT_R32_FLOAT;
+	depthSRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURE2D;
+	depthSRVDesc.Texture2D.MipLevels		=MIPLEVELS;
+	depthSRVDesc.Texture2D.MostDetailedMip	=0;
 	//B_RETURN( pd3dDevice->CreateDepthStencilView(m_pCubeEnvDepthMap, &DescDS, &m_pCubeEnvDepthMapDSV ));
 	for(int i=0;i<6;i++)
 	{
-		DescDS.Texture2DArray.FirstArraySlice = i;
-		DescDS.Texture2DArray.ArraySize = 1;
-		V_CHECK(pd3dDevice->CreateDepthStencilView(m_pCubeEnvDepthMap, &DescDS, &(m_pCubeEnvDepthMapDSV[i])));
+		V_CHECK(pd3dDevice->CreateTexture2D(&tex2dDesc, NULL, &m_pCubeEnvDepthMap[i] ));
+		V_CHECK(pd3dDevice->CreateDepthStencilView(m_pCubeEnvDepthMap[i]	,&DescDS		,&m_pCubeEnvDepthMapDSV[i]));
+		V_CHECK(pd3dDevice->CreateShaderResourceView(m_pCubeEnvDepthMap[i]	,&depthSRVDesc	,&m_pCubeEnvDepthMapSRV[i]));
 	}
-	 
-	//////////////////////////////////////////////////////////////////////////////////////////////////
 	// Create the cube map for env map render target
-	tex2dDesc.Format = format;
-	tex2dDesc.BindFlags = D3D1x_BIND_RENDER_TARGET | D3D1x_BIND_SHADER_RESOURCE;
-	tex2dDesc.MiscFlags = D3D1x_RESOURCE_MISC_GENERATE_MIPS | D3D1x_RESOURCE_MISC_TEXTURECUBE;
-	tex2dDesc.MipLevels = MIPLEVELS;
+	tex2dDesc.Format	=format;
+	tex2dDesc.BindFlags =D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	tex2dDesc.MiscFlags =D3D11_RESOURCE_MISC_GENERATE_MIPS | D3D11_RESOURCE_MISC_TEXTURECUBE;
+	tex2dDesc.MipLevels =MIPLEVELS;
  
 	V_CHECK(pd3dDevice->CreateTexture2D(&tex2dDesc,NULL,&m_pCubeEnvMap));
 
 	// Create the 6-face render target view
 	D3D1x_RENDER_TARGET_VIEW_DESC DescRT;
-	DescRT.Format = tex2dDesc.Format;
-	DescRT.ViewDimension = D3D1x_RTV_DIMENSION_TEXTURE2DARRAY;
-	DescRT.Texture2DArray.FirstArraySlice = 0;
-	DescRT.Texture2DArray.ArraySize = 6;
-	DescRT.Texture2DArray.MipSlice = 0;
+	DescRT.Format							=tex2dDesc.Format;
+	DescRT.ViewDimension					=D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+	DescRT.Texture2DArray.FirstArraySlice	=0;
+	DescRT.Texture2DArray.ArraySize			=6;
+	DescRT.Texture2DArray.MipSlice			=0;
 	 
 	for(int i=0;i<6;i++)
 	{
-		DescRT.Texture2DArray.FirstArraySlice = i;
-		DescRT.Texture2DArray.ArraySize = 1;
+		DescRT.Texture2DArray.FirstArraySlice	=i;
+		DescRT.Texture2DArray.ArraySize			=1;
 		V_CHECK(pd3dDevice->CreateRenderTargetView(m_pCubeEnvMap, &DescRT, &(m_pCubeEnvMapRTV[i])));
 	}
-
+	
 	// Create the shader resource view for the cubic env map
-	D3D1x_SHADER_RESOURCE_VIEW_DESC SRVDesc;
-	ZeroMemory( &SRVDesc, sizeof(SRVDesc) );
-	SRVDesc.Format = tex2dDesc.Format;
-	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-	SRVDesc.TextureCube.MipLevels = MIPLEVELS;
-	SRVDesc.TextureCube.MostDetailedMip = 0;
+	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+	ZeroMemory(&SRVDesc,sizeof(SRVDesc));
+	SRVDesc.Format						=tex2dDesc.Format;
+	SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURECUBE;
+	SRVDesc.TextureCube.MipLevels		=MIPLEVELS;
+	SRVDesc.TextureCube.MostDetailedMip	=0;
 	 
 	V_CHECK( pd3dDevice->CreateShaderResourceView(m_pCubeEnvMap, &SRVDesc, &m_pCubeEnvMapSRV ));
-	
+
+	// A single face depth texture:
+
+	/*
 	ZeroMemory( &SRVDesc, sizeof(SRVDesc) );
-	SRVDesc.Format = DescDS.Format;
-	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-	SRVDesc.TextureCube.MipLevels = MIPLEVELS;
-	SRVDesc.TextureCube.MostDetailedMip = 0;
+	SRVDesc.Format						=DXGI_FORMAT_R32_FLOAT;
+	SRVDesc.ViewDimension				=D3D11_SRV_DIMENSION_TEXTURECUBE;
+	SRVDesc.TextureCube.MipLevels		=MIPLEVELS;
+	SRVDesc.TextureCube.MostDetailedMip	=0;
 	 
-	V_CHECK( pd3dDevice->CreateShaderResourceView(m_pCubeEnvDepthMap, &SRVDesc, &m_pCubeEnvMapDepthSRV ));
-	
+	V_CHECK(pd3dDevice->CreateShaderResourceView(m_pCubeEnvDepthMap,&SRVDesc,&m_pCubeEnvMapDepthSRV));*/
 }
 
 ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *pd3dDevice,int w,DXGI_FORMAT target_format)
@@ -139,19 +154,20 @@ ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *pd3dDevice,int w,DXGI_FORMAT t
 	tex2dDesc.BindFlags				= 0;
 	tex2dDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_READ| D3D11_CPU_ACCESS_WRITE;
 	tex2dDesc.MiscFlags				=D3D11_RESOURCE_MISC_TEXTURECUBE;
-	ID3D11Texture2D* tex		=NULL;
+	ID3D11Texture2D* tex			=NULL;
 	pd3dDevice->CreateTexture2D(&tex2dDesc,NULL,&tex);
 	return tex;
 }
 
 void CubemapFramebuffer::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(m_pCubeEnvDepthMap);
 	SAFE_RELEASE(m_pCubeEnvMap);
 	for(int i=0;i<6;i++)
 	{
 		SAFE_RELEASE(m_pCubeEnvMapRTV[i]);
 		SAFE_RELEASE(m_pCubeEnvDepthMapDSV[i]);
+		SAFE_RELEASE(m_pCubeEnvDepthMapSRV[i]);
+		SAFE_RELEASE(m_pCubeEnvDepthMap[i]);
 	}
 	SAFE_RELEASE(m_pCubeEnvMapSRV);
 	sphericalHarmonics.release();
@@ -180,36 +196,42 @@ ID3D11Texture2D *CubemapFramebuffer::GetCopy(void *context)
 		pContext->CopySubresourceRegion(stagingTexture,i, 0, 0, 0, m_pCubeEnvMap,i, &sourceRegion);
 	return stagingTexture;
 }
-
-void CubemapFramebuffer::CalcSphericalHarmonics(void *context,int bands)
+void CubemapFramebuffer::RecompileShaders()
+{
+	SAFE_RELEASE(sphericalHarmonicsEffect);
+	CreateEffect(pd3dDevice,&sphericalHarmonicsEffect,"spherical_harmonics.fx");
+}
+void CubemapFramebuffer::CalcSphericalHarmonics(void *context)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	if(!sphericalHarmonicsEffect)
-		CreateEffect(pd3dDevice,&sphericalHarmonicsEffect,"spherical_harmonics.fx");
+		RecompileShaders();
+	simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect,"targetBuffer"	,sphericalHarmonics.unorderedAccessView);
+	ID3DX11EffectTechnique *clear		=sphericalHarmonicsEffect->GetTechniqueByName("clear");
+	ApplyPass(pContext,clear->GetPassByIndex(0));
+	pContext->Dispatch(16/2,1,1);
 	{
 		// The table of 3D directional sample positions. 16 x 16
 		// We just fill this texture with random 3d directions.
-		sphericalSamples.RestoreDeviceObjects(pd3dDevice,1024);
+		sphericalSamples.RestoreDeviceObjects(pd3dDevice,1024,true);
 		ID3DX11EffectTechnique *jitter=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
-		simul::dx11::setUnorderedAccessView(sphericalHarmonicsEffect,"targetBuffer",(ID3D11UnorderedAccessView*)sphericalSamples.unorderedAccessView);
+		simul::dx11::setUnorderedAccessView(sphericalHarmonicsEffect,"samplesBufferRW",sphericalSamples.unorderedAccessView);
 		ApplyPass(pContext,jitter->GetPassByIndex(0));
-		pContext->Dispatch(16,16,1);
-		simul::dx11::setUnorderedAccessView(sphericalHarmonicsEffect,"targetBuffer",(ID3D11UnorderedAccessView*)NULL);
+		pContext->Dispatch(16/8,16/8,1);
+		simul::dx11::setUnorderedAccessView(sphericalHarmonicsEffect,"samplesBufferRW",NULL);
 		ApplyPass(pContext,jitter->GetPassByIndex(0));
 	}
-
-	int s=(bands+1);
-	if(s<4)
-		s=4;
-	// The table of coefficients.
-	sphericalHarmonics.RestoreDeviceObjects(pd3dDevice,s*s);
 	
-	ID3DX11EffectTechnique *tech	=sphericalHarmonicsEffect->GetTechniqueByName("encode");
-	simul::dx11::setTexture			(sphericalHarmonicsEffect,"cubemapTexture",(ID3D11ShaderResourceView*)m_pCubeEnvMapSRV);
-	simul::dx11::setTexture			(sphericalHarmonicsEffect,"targetBuffer",(ID3D11ShaderResourceView*)sphericalHarmonics.unorderedAccessView);
+	ID3DX11EffectTechnique *tech		=sphericalHarmonicsEffect->GetTechniqueByName("encode");
+	simul::dx11::setTexture				(sphericalHarmonicsEffect,"cubemapTexture"	,m_pCubeEnvMapSRV);
+	simul::dx11::setTexture				(sphericalHarmonicsEffect,"samplesBuffer"	,sphericalSamples.shaderResourceView);
+	
+
 	ApplyPass(pContext,tech->GetPassByIndex(0));
-	pContext->Dispatch(16,16,1);
-	simul::dx11::setTexture			(sphericalHarmonicsEffect,"cubemapTexture",(ID3D11ShaderResourceView*)NULL);
+	pContext->Dispatch(1024,1,1);
+	simul::dx11::setTexture				(sphericalHarmonicsEffect,"cubemapTexture"	,NULL);
+	simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect,"targetBuffer"	,NULL);
+	simul::dx11::setTexture				(sphericalHarmonicsEffect,"samplesBuffer"	,NULL);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	sphericalSamples.release();
 }
@@ -285,6 +307,12 @@ void CubemapFramebuffer::Deactivate(void *context)
 	SAFE_RELEASE(m_pOldDepthSurface)
 	// Create the viewport.
 	pContext->RSSetViewports(1,m_OldViewports);
+}
+
+void CubemapFramebuffer::DeactivateDepth(void *context)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	pContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV[current_face],NULL);
 }
 
 void CubemapFramebuffer::Clear(void *context,float r,float g,float b,float a,float depth,int mask)

@@ -130,9 +130,9 @@ vec4 depthDependentFilteredImage(Texture2D imageTexture,Texture2D depthTexture,v
 	uint2 idx		=floor(texc_unit);
 	vec2 xy			=frac(texc_unit);
 	int i1			=max(0,idx.x);
-	int i2			=min(idx.x+1,width-1);
+	int i2			=min(idx.x+1,imageDims.x-1);
 	int j1			=max(0,idx.y);
-	int j2			=min(idx.y+1,height-1);
+	int j2			=min(idx.y+1,imageDims.y-1);
 	uint2 i11		=uint2(i1,j1);
 	uint2 i21		=uint2(i2,j1);
 	uint2 i12		=uint2(i1,j2);

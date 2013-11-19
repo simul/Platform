@@ -205,7 +205,7 @@ void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
 		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags		=0;
-		HRESULT hr;
+		
 		V_CHECK(pd3dDevice->CreateTexture3D(&textureDesc,0,(ID3D11Texture3D**)(&texture)));
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
@@ -226,7 +226,6 @@ void TextureStruct::ensureTexture3DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		uav_desc.Texture3D.WSize	= d;
 		uav_desc.Texture3D.FirstWSlice=0;
 
-		HRESULT hr;
 		SAFE_RELEASE(unorderedAccessView);
 		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture, &uav_desc, &unorderedAccessView));
 	}
@@ -268,7 +267,6 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		textureDesc.CPUAccessFlags		=(computable||rendertarget)?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags			=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
 		textureDesc.SampleDesc.Count	= 1;
-		HRESULT hr;
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
@@ -287,13 +285,11 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE2D;
 		uav_desc.Texture2D.MipSlice	= 0;
 
-		HRESULT hr;
 		SAFE_RELEASE(unorderedAccessView);
 		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture,&uav_desc,&unorderedAccessView));
 	}
 	if(rendertarget&&(!renderTargetView||!ok))
 	{
-		HRESULT hr;
 		// Setup the description of the render target view.
 		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 		renderTargetViewDesc.Format				=f;
@@ -338,7 +334,7 @@ void TextureStruct::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		textureDesc.BindFlags		=D3D11_BIND_SHADER_RESOURCE|(computable?D3D11_BIND_UNORDERED_ACCESS:0);
 		textureDesc.CPUAccessFlags	=computable?0:D3D11_CPU_ACCESS_WRITE;
 		textureDesc.MiscFlags		=0;
-		HRESULT hr;
+		
 		V_CHECK(pd3dDevice->CreateTexture1D(&textureDesc,0,(ID3D11Texture1D**)(&texture)));
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
@@ -615,7 +611,7 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D1xDevice *)dev;
 	RecompileShaders();
-	HRESULT hr;
+
 	SAFE_RELEASE(m_pVertexBuffer);
 	// Vertex declaration
 	{
@@ -865,7 +861,7 @@ void UtilityRenderer::DrawSphere(void *context,int latitudes,int longitudes)
 	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
-void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj)
+void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	D3DXMATRIX tmp1,tmp2,wvp,world;
@@ -876,7 +872,7 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCub
 	float size_req=tan_x*0.2f;
 	static float size=3.f;
 	float d=2.0f*size/size_req;
-	simul::math::Vector3 offs0(-0.7f*(tan_x-size_req)*d,0.7f*(tan_y-size_req)*d,-d);
+	simul::math::Vector3 offs0(offsetx*(tan_x-size_req)*d,offsety*(tan_y-size_req)*d,-d);
 	simul::math::Vector3 offs;
 	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)view),offs0);
 

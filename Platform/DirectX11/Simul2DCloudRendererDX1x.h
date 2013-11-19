@@ -48,10 +48,11 @@ namespace simul
 			void EnsureCorrectIlluminationTextureSizes(){}
 			void EnsureIlluminationTexturesAreUpToDate(){}
 			void CreateNoiseTexture(void *context){}
-			simul::math::Matrix4x4					view,proj;
+			simul::math::Matrix4x4		view,proj;
 			ID3D11Device*				m_pd3dDevice;
 			ID3DX11Effect*				effect;
-			ID3DX11EffectTechnique*		tech;
+			ID3DX11EffectTechnique*		msaaTechnique;
+			ID3DX11EffectTechnique*		technique;
 			ID3D11Buffer*				vertexBuffer;
 			ID3D11Buffer*				indexBuffer;
 			ID3D11InputLayout*			inputLayout;

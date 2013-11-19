@@ -10,12 +10,10 @@
 
 #include "FramebufferDX1x.h"
 
-
 #include <tchar.h>
 #include <dxerr.h>
 #include <string>
 #include <assert.h>
-typedef std::basic_string<TCHAR> tstring;
 
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
@@ -244,7 +242,7 @@ bool Framebuffer::CreateBuffers()
 		D3D11_TEX2D_DSV dsv;
 		dsv.MipSlice=0;
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthDesc;
-		depthDesc.ViewDimension		=numAntialiasingSamples>0?D3D11_DSV_DIMENSION_TEXTURE2DMS:D3D11_DSV_DIMENSION_TEXTURE2D;
+		depthDesc.ViewDimension		=numAntialiasingSamples>1?D3D11_DSV_DIMENSION_TEXTURE2DMS:D3D11_DSV_DIMENSION_TEXTURE2D;
 		depthDesc.Format			=DXGI_FORMAT_D32_FLOAT;
 		depthDesc.Flags				=0;
 		depthDesc.Texture2D			=dsv;
@@ -252,7 +250,7 @@ bool Framebuffer::CreateBuffers()
 
 		D3D11_SHADER_RESOURCE_VIEW_DESC depthSrvDesc;
 		depthSrvDesc.Format			=DXGI_FORMAT_R32_FLOAT;
-		depthSrvDesc.ViewDimension	=numAntialiasingSamples>0?D3D_SRV_DIMENSION_TEXTURE2DMS:D3D_SRV_DIMENSION_TEXTURE2D;
+		depthSrvDesc.ViewDimension	=numAntialiasingSamples>1?D3D_SRV_DIMENSION_TEXTURE2DMS:D3D_SRV_DIMENSION_TEXTURE2D;
 		depthSrvDesc.Texture2D.MipLevels=1;
 		depthSrvDesc.Texture2D.MostDetailedMip=0;
 

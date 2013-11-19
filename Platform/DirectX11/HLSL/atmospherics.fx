@@ -79,25 +79,6 @@ vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET
     return float4(loss.rgb,1.f);
 }
 
-vec4 PS_LossMSAA(atmosVertexOutput IN) : SV_TARGET
-{
-	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	int2 pos2;
-	int numSamples;
-	GetMSAACoordinates(depthTextureMS,depth_texc,pos2,numSamples);
-	vec3 loss		=AtmosphericsLossMSAA(depthTextureMS
-											,numSamples
-											,viewportToTexRegionScaleBias
-											,lossTexture
-											,invViewProj
-											,IN.texCoords
-											,pos2
-											,IN.pos
-											,depthToLinFadeDistParams
-											,tanHalfFov);
-    return float4(loss.rgb,1.f);
-}
-
 vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 clip_pos		=vec2(-1.f,1.f);
@@ -117,6 +98,25 @@ vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 										,lightDir
 										,mieRayleighRatio);
     return float4(insc.rgb*exposure,1.f);
+}
+
+vec4 PS_LossMSAA(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	int2 pos2;
+	int numSamples;
+	GetMSAACoordinates(depthTextureMS,depth_texc,pos2,numSamples);
+	vec3 loss		=AtmosphericsLossMSAA(depthTextureMS
+											,numSamples
+											,viewportToTexRegionScaleBias
+											,lossTexture
+											,invViewProj
+											,IN.texCoords
+											,pos2
+											,IN.pos
+											,depthToLinFadeDistParams
+											,tanHalfFov);
+    return float4(loss.rgb,1.f);
 }
 
 vec4 PS_InscatterMSAA(atmosVertexOutput IN) : SV_TARGET

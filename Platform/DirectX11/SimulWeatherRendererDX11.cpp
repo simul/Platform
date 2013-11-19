@@ -371,27 +371,27 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 	//
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
-	HRESULT hr=S_OK;
-	static int u=4;
-	int w=(width-8)/u;
+	HRESULT hr		=S_OK;
+	static int u	=4;
+	int w			=(width-8)/u;
 	if(w>height/3)
-		w=height/3;
+		w			=height/3;
 	if(!environment->skyKeyframer)
 		return;
-	float max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
+	float max_fade_distance_metres	=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	UtilityRenderer::SetScreenSize(width,height);
 	simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)framebuffer.GetDepthTex());
-	int x=8;
-	int y=height-w;
+	int x			=8;
+	int y			=height-w;
 
 	hdrConstants.tanHalfFov					=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	hdrConstants.nearZ						=frustum.nearZ/max_fade_distance_metres;
 	hdrConstants.farZ						=frustum.farZ/max_fade_distance_metres;
 	hdrConstants.depthToLinFadeDistParams	=vec3(proj[14], max_fade_distance_metres, proj[10]*max_fade_distance_metres);
-	hdrConstants.rect						=vec4((float)x/(float)width
-												,(float)y/(float)height
-												,(float)w/(float)width
-												,(float)w/(float)height);
+	hdrConstants.rect						=vec4(	(float)x/(float)width
+													,(float)y/(float)height
+													,(float)w/(float)width
+													,(float)w/(float)height);
 	hdrConstants.Apply(pContext);
 
 	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));

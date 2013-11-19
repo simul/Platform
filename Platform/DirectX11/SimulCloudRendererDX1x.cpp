@@ -124,7 +124,7 @@ void SimulCloudRendererDX1x::RecompileShaders()
 	CreateCloudEffect();
 	if(!m_pd3dDevice)
 		return;
-	HRESULT hr;
+	
 	SAFE_RELEASE(m_pComputeShader);
 	SAFE_RELEASE(computeConstantBuffer);
 	MAKE_CONSTANT_BUFFER(computeConstantBuffer,MixCloudsConstants)
@@ -929,7 +929,8 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int width,int
 	UtilityRenderer::DrawQuad2(pContext,width-2*(w+8),height-(w+8)-w/2,w*2,w/2,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 
 	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"			,(ID3D1xShaderResourceView*)NULL);
-	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture"	,(ID3D1xShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture"		,(ID3D1xShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"cloudGodraysTexture"	,(ID3D1xShaderResourceView*)NULL);
 	ApplyPass(pContext,m_pCloudEffect->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
 }
 

@@ -39,6 +39,7 @@ namespace simul
 			//! Call this once per frame to set the matrices.
 			void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 		private:
+			void MakeVertexBuffer();
 			ID3D11Device*						m_pd3dDevice;
 			ID3D11Buffer*						m_pVertexBuffer;
 			ID3D11InputLayout*					m_pVtxDecl;
@@ -49,6 +50,7 @@ namespace simul
 			D3DXMATRIX							view,proj;
 
 			ConstantBuffer<TerrainConstants>	terrainConstants;
+			int numVertices;
 		};
 	}
 }

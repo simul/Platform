@@ -246,6 +246,7 @@
     <None Include="..\CrossPlatform\godrays.sl" />
     <None Include="..\CrossPlatform\hdr_constants.sl" />
     <None Include="..\CrossPlatform\illumination.sl" />
+    <None Include="..\CrossPlatform\light_probe_constants.sl" />
     <None Include="..\CrossPlatform\mixed_resolution.sl" />
     <None Include="..\CrossPlatform\noise.sl" />
     <None Include="..\CrossPlatform\rain_constants.sl" />
@@ -259,10 +260,12 @@
     <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
     <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
     <None Include="..\CrossPlatform\sky_constants.sl" />
+    <None Include="..\CrossPlatform\spherical_harmonics.sl" />
     <None Include="..\CrossPlatform\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\states.sl" />
     <None Include="HLSL\atmospherics.fx" />
     <None Include="HLSL\CppHLSL.hlsl" />
+    <None Include="HLSL\light_probes.fx" />
     <None Include="HLSL\mixed_resolution.fx" />
     <None Include="HLSL\rain.fx" />
     <None Include="HLSL\simul_clouds.fx" />

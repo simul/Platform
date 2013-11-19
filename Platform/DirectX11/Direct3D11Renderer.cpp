@@ -47,6 +47,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,enabled(false)
 		,m_pd3dDevice(NULL)
 		,mixedResolutionEffect(NULL)
+		,lightProbesEffect(NULL)
 		,simulOpticsRenderer(NULL)
 		,simulWeatherRenderer(NULL)
 		,simulHDRRenderer(NULL)
@@ -65,6 +66,9 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 	resolvedDepth_fb.SetFormat(DXGI_FORMAT_R32_FLOAT);
 	cubemapFramebuffer.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 	cubemapFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+	
+	envmapFramebuffer.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
+	envmapFramebuffer.SetDepthFormat(DXGI_FORMAT_UNKNOWN);
 }
 
 Direct3D11Renderer::~Direct3D11Renderer()
@@ -87,7 +91,7 @@ bool Direct3D11Renderer::IsD3D11DeviceAcceptable(const CD3D11EnumAdapterInfo *Ad
 
 bool Direct3D11Renderer::ModifyDeviceSettings(DXUTDeviceSettings* pDeviceSettings)
 {
-	//pDeviceSettings->d3d11.CreateFlags|=D3D11_CREATE_DEVICE_DEBUG;
+	pDeviceSettings->d3d11.CreateFlags|=D3D11_CREATE_DEVICE_DEBUG;
 	if(pDeviceSettings->d3d11.DriverType!=D3D_DRIVER_TYPE_HARDWARE||pDeviceSettings->MinimumFeatureLevel<D3D_FEATURE_LEVEL_11_0)
 		enabled=false;
     return true;
@@ -101,6 +105,7 @@ HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice,const D
 	Profiler::GetGlobalProfiler().Initialize(pd3dDevice);
 	simul::dx11::UtilityRenderer::RestoreDeviceObjects(pd3dDevice);
 	mixedResolutionConstants.RestoreDeviceObjects(m_pd3dDevice);
+	lightProbeConstants.RestoreDeviceObjects(m_pd3dDevice);
 	if(simulHDRRenderer)
 		simulHDRRenderer->RestoreDeviceObjects(pd3dDevice);
 	if(simulWeatherRenderer)
@@ -115,6 +120,8 @@ HRESULT	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice,const D
 	//cubemapDepthFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	cubemapFramebuffer.SetWidthAndHeight(64,64);
 	cubemapFramebuffer.RestoreDeviceObjects(pd3dDevice);
+	envmapFramebuffer.SetWidthAndHeight(64,64);
+	envmapFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	RecompileShaders();
 	return S_OK;
 }
@@ -159,7 +166,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		else
 			cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
 		//cubemapDepthFramebuffer.Activate(pContext);
-		if(simulTerrainRenderer)
+		if(simulTerrainRenderer&&ShowTerrain)
 		{
 			simulTerrainRenderer->SetMatrices(view_matrices[i],cube_proj);
 			simulTerrainRenderer->Render(pContext,1.f);
@@ -169,7 +176,8 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		{
 			simulWeatherRenderer->SetMatrices((const float *)&(view_matrices[i]),(const float *)&cube_proj);
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
-			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapFramebuffer.GetDepthTex(),NULL,1,relativeViewportTextureRegionXYWH,true);
+			void *d=cubemapFramebuffer.GetDepthTex(i);
+			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,d,NULL,1,relativeViewportTextureRegionXYWH,true);
 		}
 		cubemapFramebuffer.Deactivate(pContext);
 	}
@@ -177,6 +185,33 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		simulWeatherRenderer->SetCubemapTexture(cubemapFramebuffer.GetColorTex());
 }
 	
+void Direct3D11Renderer::RenderEnvmap(ID3D11DeviceContext* pContext)
+{
+	cubemapFramebuffer.CalcSphericalHarmonics(pContext);
+	envmapFramebuffer.Clear(pContext,0.f,1.f,0.f,1.f,0.f);
+	D3DXMATRIX invViewProj;
+	D3DXMATRIX view_matrices[6];
+	float cam_pos[]={0,0,0};
+	ID3DX11EffectTechnique *tech=lightProbesEffect->GetTechniqueByName("irradiance_map");
+	MakeCubeMatrices(view_matrices,cam_pos,true);
+	// For each face, 
+	for(int i=0;i<6;i++)
+	{
+		envmapFramebuffer.SetCurrentFace(i);
+		envmapFramebuffer.Activate(pContext);
+		D3DXMATRIX cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,1.f,200000.f,false);
+		{
+			MakeInvViewProjMatrix(invViewProj,view_matrices[i],cube_proj);
+			lightProbeConstants.invViewProj=invViewProj;
+			lightProbeConstants.Apply(pContext);
+			simul::dx11::setTexture(lightProbesEffect,"basisBuffer"	,cubemapFramebuffer.GetSphericalHarmonics().shaderResourceView);
+			ApplyPass(pContext,tech->GetPassByIndex(0));
+			UtilityRenderer::DrawQuad(pContext);
+		}
+		envmapFramebuffer.Deactivate(pContext);
+	}
+}
+
 void Direct3D11Renderer::ResolveColour(ID3D11DeviceContext* pContext)
 {
 	static const int BLOCKWIDTH			=8;
@@ -194,7 +229,6 @@ void Direct3D11Renderer::ResolveColour(ID3D11DeviceContext* pContext)
 
 void Direct3D11Renderer::ResolveDepth(ID3D11DeviceContext* pContext,const D3DXMATRIX &proj)
 {
-	HRESULT hr;
 	if(!simulWeatherRenderer)
 		return;
 	int s=simulWeatherRenderer->GetDownscale();
@@ -271,6 +305,7 @@ void Direct3D11Renderer::RenderScene(ID3D11DeviceContext* pContext)
 	{
 		D3DXVECTOR3 cam_pos=simul::dx11::GetCameraPosVector((const float *)&view);
 		RenderCubemap(pContext,cam_pos);
+		RenderEnvmap(pContext);
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
@@ -336,10 +371,13 @@ void Direct3D11Renderer::RenderScene(ID3D11DeviceContext* pContext)
 	{
 		hdrFramebuffer.Deactivate(pContext);
 	ResolveColour(pContext);
-		simulHDRRenderer->Render(pContext,resolvedColourTexture.shaderResourceView);
+		simulHDRRenderer->Render(pContext,resolvedColourTexture.shaderResourceView);//hdrFramebuffer.GetColorTex());//
 	}
 	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
-		UtilityRenderer::DrawCubemap(pContext,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetColorTex(),view,proj);
+	{
+		UtilityRenderer::DrawCubemap(pContext,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetColorTex(),view,proj,-.7f,.7f);
+		UtilityRenderer::DrawCubemap(pContext,(ID3D1xShaderResourceView*)envmapFramebuffer.GetColorTex(),view,proj,-.4f,.7f);
+	}
 }
 
 void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext,double fTime, float fTimeStep)
@@ -370,16 +408,17 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				w/=l;
 				l=hdrFramebuffer.Height/4;
 			}
-			UtilityRenderer::DrawTextureMS(pContext,0*w	,0,w,l,(ID3D1xShaderResourceView*)hdrFramebuffer.GetDepthTex());
-			UtilityRenderer::DrawTexture(pContext,1*w	,0,w,l,(ID3D1xShaderResourceView*)resolvedDepth_fb.GetColorTex());
-			UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,lowResDepthTexture.shaderResourceView);
+			UtilityRenderer::DrawTextureMS(	pContext,0*w,0,w,l,(ID3D1xShaderResourceView*)hdrFramebuffer.GetDepthTex());
+			UtilityRenderer::DrawTexture(	pContext,1*w,0,w,l,(ID3D1xShaderResourceView*)resolvedDepth_fb.GetColorTex());
+			UtilityRenderer::DrawTexture(	pContext,2*w,0,w,l,lowResDepthTexture.shaderResourceView);
+			UtilityRenderer::DrawTexture(	pContext,3*w,0,w,l,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetDepthTex(0));
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
-			simulWeatherRenderer->RenderFramebufferDepth(pContext,ScreenWidth,ScreenHeight);
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pContext,ScreenWidth,ScreenHeight);
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pContext,ScreenWidth,ScreenHeight);
-			simulWeatherRenderer->RenderFramebufferDepth(pContext,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->RenderFramebufferDepth(						pContext,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(		pContext,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(	pContext,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->RenderFramebufferDepth(						pContext,ScreenWidth,ScreenHeight);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
 		{
@@ -394,6 +433,7 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(pContext,ScreenWidth,ScreenHeight);
 		}
 	}
+	Profiler::GetGlobalProfiler().EndFrame(pContext);
 }
 
 void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
@@ -430,7 +470,9 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	SAFE_RELEASE(mixedResolutionEffect);
 	mixedResolutionConstants.InvalidateDeviceObjects();
+	lightProbeConstants.InvalidateDeviceObjects();
 	resolvedColourTexture.release();
+	SAFE_RELEASE(lightProbesEffect);
 }
 
 void Direct3D11Renderer::OnD3D11DestroyDevice()
@@ -462,6 +504,7 @@ bool Direct3D11Renderer::OnDeviceRemoved()
 
 void Direct3D11Renderer::RecompileShaders()
 {
+	cubemapFramebuffer.RecompileShaders();
 	simul::dx11::UtilityRenderer::RecompileShaders();
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RecompileShaders();
@@ -474,8 +517,11 @@ void Direct3D11Renderer::RecompileShaders()
 //	if(simulTerrainRenderer.get())
 //		simulTerrainRenderer->RecompileShaders();
 	SAFE_RELEASE(mixedResolutionEffect);
-	HRESULT hr=CreateEffect(m_pd3dDevice,&mixedResolutionEffect,"mixed_resolution.fx");
+	V_CHECK(CreateEffect(m_pd3dDevice,&mixedResolutionEffect,"mixed_resolution.fx"));
 	mixedResolutionConstants.LinkToEffect(mixedResolutionEffect,"MixedResolutionConstants");
+	SAFE_RELEASE(lightProbesEffect);
+	V_CHECK(CreateEffect(m_pd3dDevice,&lightProbesEffect,"light_probes.fx"));
+	lightProbeConstants.LinkToEffect(lightProbesEffect,"LightProbeConstants");
 }
 
 void Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)

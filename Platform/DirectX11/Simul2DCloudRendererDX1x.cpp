@@ -30,7 +30,8 @@ Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer
 	simul::clouds::Base2DCloudRenderer(ck,mem)
 	,m_pd3dDevice(NULL)
 	,effect(NULL)
-	,tech(NULL)
+	,msaaTechnique(NULL)
+	,technique(NULL)
 	,vertexBuffer(NULL)
 	,indexBuffer(NULL)
 	,inputLayout(NULL)
@@ -52,14 +53,14 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 	m_pd3dDevice=(ID3D11Device*)dev;
     RecompileShaders();
 	SAFE_RELEASE(inputLayout);
-	if(tech)
+	if(technique)
 	{
 		D3D11_INPUT_ELEMENT_DESC decl[] =
 		{
 			{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT	,0,0	,D3D11_INPUT_PER_VERTEX_DATA,0},
 		};
 		D3D1x_PASS_DESC PassDesc;
-		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
+		technique->GetPassByIndex(0)->GetDesc(&PassDesc);
 		m_pd3dDevice->CreateInputLayout(decl,1, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &inputLayout);
 	}
 	static float max_cloud_distance=1.f;
@@ -142,7 +143,8 @@ void Simul2DCloudRendererDX11::RecompileShaders()
 	if(UseLightTables)
 		defines["USE_LIGHT_TABLES"]="1";
 	CreateEffect(m_pd3dDevice,&effect,"simul_clouds_2d.fx",defines);
-	tech=effect->GetTechniqueByName("simul_clouds_2d");
+	msaaTechnique=effect->GetTechniqueByName("simul_clouds_2d_msaa");
+	technique	=effect->GetTechniqueByName("simul_clouds_2d");
 	cloud2DConstants.LinkToEffect(effect,"Cloud2DConstants");
 	detail2DConstants.LinkToEffect(effect,"Detail2DConstants");
 }
@@ -300,6 +302,18 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	pContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R16_UINT,0);					
 
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	
+	ID3DX11EffectTechnique*		tech;
+	if(depthTexture_SRV)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
+		depthTexture_SRV->GetDesc(&depthDesc);
+		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
+			tech=msaaTechnique;
+		else
+			return false;
+	}
+
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	pContext->DrawIndexed(num_indices-2,0,0);
 

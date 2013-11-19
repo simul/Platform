@@ -122,7 +122,7 @@ extern void SIMUL_DIRECTX11_EXPORT BreakIfDebugging();
 		#define V_RETURN(x)	{VERIFY_EXPLICIT_CAST(x,HRESULT);hr = x; if( FAILED(hr) ) {std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_RETURN error, return value is  "<<GetErrorText(x)<<std::endl;BreakIfDebugging();return hr; } }
 	#endif
 	#ifndef V_CHECK
-		#define V_CHECK(x)	{VERIFY_EXPLICIT_CAST(x,HRESULT);hr = x; if( FAILED(hr) ) {std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_CHECK error, return value is "<<GetErrorText(x)<<std::endl;BreakIfDebugging(); } }
+		#define V_CHECK(x)	{VERIFY_EXPLICIT_CAST(x,HRESULT);HRESULT hrx = x; if( FAILED(hrx) ) {std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_CHECK error, return value is "<<GetErrorText(hrx)<<std::endl;BreakIfDebugging(); } }
 	#endif
 	#ifndef V_FAIL
 		#define V_FAIL(msg)	{ std::cerr<<__FILE__<<"("<<__LINE__<<"): error B0001: V_FAIL error."<<std::endl;BreakIfDebugging();  }

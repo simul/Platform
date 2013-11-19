@@ -162,7 +162,7 @@ namespace simul
 			static void DrawQuad(			ID3D11DeviceContext *pContext);
 			static void DrawCube(void *context);
 			static void DrawSphere(void *context,int latitudes,int longitudes);
-			static void DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
+			static void DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety);
 		};
 		//! Useful Wrapper class to encapsulate constant buffer behaviour
 		template<class T> class ConstantBuffer:public T
@@ -250,21 +250,30 @@ namespace simul
 			{
 				release();
 			}
-			void RestoreDeviceObjects(ID3D11Device *pd3dDevice,int size)
+			void RestoreDeviceObjects(ID3D11Device *pd3dDevice,int size,bool computable=false)
 			{
+				release();
+
 				this->size=size;
 				D3D11_BUFFER_DESC sbDesc;
 				memset(&sbDesc,0,sizeof(sbDesc));
-				sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE ;
-				sbDesc.Usage				=D3D11_USAGE_DYNAMIC;
-				sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
+				if(computable)
+				{
+					sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_UNORDERED_ACCESS;
+					sbDesc.Usage				=D3D11_USAGE_DEFAULT;
+					sbDesc.CPUAccessFlags		=0;
+				}
+				else
+				{
+					sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE;
+					sbDesc.Usage				=D3D11_USAGE_DYNAMIC;
+					sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
+				}
 				sbDesc.MiscFlags			=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED ;
 				sbDesc.StructureByteStride	=sizeof(T);
 				sbDesc.ByteWidth			=sizeof(T) *size;
-
-
-				HRESULT hr;
 				V_CHECK(pd3dDevice->CreateBuffer( &sbDesc, NULL, &buffer ));
+
 				D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 				memset(&srv_desc,0,sizeof(srv_desc));
 				srv_desc.Format						=DXGI_FORMAT_UNKNOWN;
@@ -274,7 +283,18 @@ namespace simul
 				srv_desc.Buffer.FirstElement		=0;
 				srv_desc.Buffer.NumElements			=size;
 				V_CHECK(pd3dDevice->CreateShaderResourceView(buffer, &srv_desc,&shaderResourceView));
-
+				
+				if(computable)
+				{
+					D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+					memset(&uav_desc,0,sizeof(uav_desc));
+					uav_desc.Format						=DXGI_FORMAT_UNKNOWN;
+					uav_desc.ViewDimension				=D3D11_UAV_DIMENSION_BUFFER;
+					uav_desc.Buffer.FirstElement		=0;
+					uav_desc.Buffer.Flags				=0;
+					uav_desc.Buffer.NumElements			=size;
+					V_CHECK(pd3dDevice->CreateUnorderedAccessView(buffer, &uav_desc,&unorderedAccessView));
+				}
 			}
 			T *GetBuffer(ID3D11DeviceContext *pContext)
 			{

@@ -68,7 +68,6 @@ void SimulHDRRendererDX1x::SetBufferSize(int w,int h)
 
 void SimulHDRRendererDX1x::RestoreDeviceObjects(void *dev)
 {
-	return;
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D1xDevice*)dev;
 	glow_fb.RestoreDeviceObjects(m_pd3dDevice);
@@ -114,7 +113,6 @@ template<typename t> t max3(t a,t b,t c)
 
 void SimulHDRRendererDX1x::RecompileShaders()
 {
-	return;
 	SAFE_RELEASE(m_pTonemapEffect);
 	if(!m_pd3dDevice)
 		return;
@@ -181,7 +179,6 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv)
 
 void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
 {
-	return;
 	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	imageTexture->SetResource(textureSRV);
