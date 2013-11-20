@@ -134,7 +134,8 @@ float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 	//..if(IN.wDirection.x<0)
 	//	discard;
 	float3 view		=IN.wDirection.xyz;
-	float4 result	=cubeTexture.Sample(cubeSamplerState,view);
+	// Note: cubemap lookups are reversed, so we have to use -view.
+	float4 result	=cubeTexture.Sample(cubeSamplerState,-view);
 	//..result.rgb		=view.xyz;
 	return float4(result.rgb,1.f);
 }

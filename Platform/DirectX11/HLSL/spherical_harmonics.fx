@@ -34,7 +34,7 @@ void CS_Encode(uint3 sub_pos: SV_DispatchThreadID )
 	for(int n=0;n<1024;n++)
 	{ 
 		SphericalHarmonicsSample sample	=samplesBuffer[n];
-		vec4 colour						=vec4(sample.dir,1.0);//cubemapTexture.SampleLevel(wrapSamplerState,-sample.dir,0);
+		vec4 colour						=cubemapTexture.SampleLevel(wrapSamplerState,-sample.dir,0);
 		// for each sample
 		double theta					=sample.theta; 
 		double phi						=sample.phi; 

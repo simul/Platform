@@ -192,7 +192,7 @@ float4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
 float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 {
 	float3 view		=normalize(mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz);
-	float3 light	=cubeTexture.Sample(wrapSamplerState,view).rgb;
+	float3 light	=cubeTexture.Sample(wrapSamplerState,-view).rgb;
 	float sc=1.0;
 	float br=1.0;
 	vec4 result=vec4(light.rgb,0);//float4(0.0,0.0,0.0,0.0);
@@ -207,7 +207,7 @@ float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 		result.a+=r;
 	}
 	result.a=saturate(result.a);
-	return vec4(view,.5);
+	return result;
 }
 
 technique11 simul_rain

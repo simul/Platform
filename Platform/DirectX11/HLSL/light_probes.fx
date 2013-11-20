@@ -45,7 +45,7 @@ vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 		for(int m=-l;m<=l;m++)
 			result+=SH(l,m,theta,phi)*basisBuffer[n++]*3.141;//*A[l];
 	} 
-	return view.rgbb;//saturate(result);
+	return saturate(result);
 }
 
 technique11 irradiance_map
