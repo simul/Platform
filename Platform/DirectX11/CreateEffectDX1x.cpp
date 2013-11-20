@@ -981,26 +981,26 @@ void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
     D3DCUBEMAP_FACE_NEGATIVE_Z     = 5,*/
 	static const D3DVECTOR lookf[6]=
 	{
-		 {-1.f,0.f,0.f}		,{1.f,0.f,0.f}
-		,{0.f,1.f,0.f}		,{0.f,-1.f,0.f}
+		 {1.f,0.f,0.f}		,{-1.f,0.f,0.f}
+		,{0.f,-1.f,0.f}		,{0.f,1.f,0.f}
 		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
 	};
 	static const D3DVECTOR upf[6]=
 	{
-		 {0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
+		 {0.f,1.f,0.f}		,{0.f,1.f,0.f}
 		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
 		,{0.f,1.f,0.f}		,{0.f,1.f,0.f}
 	};
 	static const D3DVECTOR lookr[6]=
 	{
-		 {1.f,0.f,0.f}		,{-1.f,0.f,0.f}
-		,{0.f,1.f,0.f}		,{0.f,-1.f,0.f}
-		,{0.f,0.f,1.f}		,{0.f,0.f,-1.f}
+		 {-1.f,0.f,0.f}		,{1.f,0.f,0.f}
+		,{0.f,-1.f,0.f}		,{0.f,1.f,0.f}
+		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
 	};
 	static const D3DVECTOR upr[6]=
 	{
-		 {0.f,1.f,0.f}		,{0.f,1.f,0.f}
-		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
+		 {0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
+		,{0.f,0.f,1.f}		,{0.f,0.f,-1.f}
 		,{0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
 	};
 	for(int i=0;i<6;i++)

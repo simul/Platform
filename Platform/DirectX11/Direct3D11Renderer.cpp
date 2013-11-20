@@ -165,7 +165,6 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		else
 			cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,false);
 		//
-		cube_proj._11*=-1.f;
 		//cubemapDepthFramebuffer.Activate(pContext);
 		if(simulTerrainRenderer&&ShowTerrain)
 		{
@@ -201,7 +200,6 @@ void Direct3D11Renderer::RenderEnvmap(ID3D11DeviceContext* pContext)
 		envmapFramebuffer.SetCurrentFace(i);
 		envmapFramebuffer.Activate(pContext);
 		D3DXMATRIX cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,1.f,200000.f,false);
-		cube_proj._11*=-1.f;
 		{
 			MakeInvViewProjMatrix(invViewProj,view_matrices[i],cube_proj);
 			lightProbeConstants.invViewProj=invViewProj;

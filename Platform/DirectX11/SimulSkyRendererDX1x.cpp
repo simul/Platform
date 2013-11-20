@@ -22,6 +22,7 @@
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Math/Vector3.h"
+#include "Simul/Math/Pi.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
@@ -409,7 +410,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 		return sun_occlusion;
 //	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
-	float sun_angular_radius=3.14159f/180.f/2.f;
+	float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 
 	// fix the projection matrix so this quad is far away:
 	D3DXMATRIX tmp=proj;
@@ -485,13 +486,14 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
-	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
-	sunlight.w=1.0f/(max_bright*exposure);
-	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
+	float max_bright	=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
+	sunlight.w			=1.0f/(max_bright*exposure);
+	sunlight			*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,sun_dir);
-	skyConstants.colour=sunlight;
-	skyConstants.radiusRadians=sun_angular_radius;
+	skyConstants.colour			=sunlight;
+	// 2 * sun radius because we want glow around it.
+	skyConstants.radiusRadians	=2.f*skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 	skyConstants.Apply(pContext);
 	ApplyPass(pContext,m_hTechniqueSun->GetPassByIndex(0));
 	UtilityRenderer::DrawQuad(pContext);
@@ -550,7 +552,6 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 	colour->SetFloatVector(sunlight);
 	//m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
 	//flareTexture->SetResource(flare_texture_SRV);
-	float sun_angular_radius=3.14159f/180.f/2.f;
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 //	hr=RenderAngledQuad(sun_dir,sun_angular_radius*20.f*magnitude);
 	RenderAngledQuad(m_pd3dDevice,sun_dir,sun_angular_radius*20.f*magnitude,m_pSkyEffect,m_hTechniqueFlare,view,proj,sun_dir);*/
