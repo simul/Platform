@@ -6,7 +6,7 @@ TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
 
 uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
 {
-	uniform float4x4 worldViewProj	: WorldViewProjection;
+	uniform mat4 worldViewProj;
 	uniform int latitudes,longitudes;
 	uniform float radius;
 	uniform float xxxx;
@@ -131,9 +131,11 @@ SamplerState cubeSamplerState
 
 float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
-	float3 view		=(IN.wDirection.xyz);
+	//..if(IN.wDirection.x<0)
+	//	discard;
+	float3 view		=IN.wDirection.xyz;
 	float4 result	=cubeTexture.Sample(cubeSamplerState,view);
-	result.rgb=view.xyz;
+	//..result.rgb		=view.xyz;
 	return float4(result.rgb,1.f);
 }
 

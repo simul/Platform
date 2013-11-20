@@ -207,7 +207,7 @@ float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 		result.a+=r;
 	}
 	result.a=saturate(result.a);
-	return vec4(view,1);
+	return vec4(view,.5);
 }
 
 technique11 simul_rain

@@ -187,17 +187,17 @@ namespace simul
 			{
 				InvalidateDeviceObjects();
 				SAFE_RELEASE(m_pD3D11Buffer);	
-				D3D11_SUBRESOURCE_DATA cb_init_data;
-				cb_init_data.pSysMem = this;
-				cb_init_data.SysMemPitch = 0;
-				cb_init_data.SysMemSlicePitch = 0;
-				D3D11_BUFFER_DESC cb_desc;
-				cb_desc.Usage				= D3D11_USAGE_DYNAMIC;
-				cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
-				cb_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
-				cb_desc.MiscFlags			= 0;
-				cb_desc.ByteWidth			= PAD16(sizeof(T));
-				cb_desc.StructureByteStride = 0;
+				D3D11_SUBRESOURCE_DATA			cb_init_data;
+				cb_init_data.pSysMem			= this;
+				cb_init_data.SysMemPitch		= 0;
+				cb_init_data.SysMemSlicePitch	= 0;
+				D3D11_BUFFER_DESC				cb_desc;
+				cb_desc.Usage					= D3D11_USAGE_DYNAMIC;
+				cb_desc.BindFlags				= D3D11_BIND_CONSTANT_BUFFER;
+				cb_desc.CPUAccessFlags			= D3D11_CPU_ACCESS_WRITE;
+				cb_desc.MiscFlags				= 0;
+				cb_desc.ByteWidth				= PAD16(sizeof(T));
+				cb_desc.StructureByteStride		= 0;
 				pd3dDevice->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
 				if(m_pD3DX11EffectConstantBuffer)
 					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);

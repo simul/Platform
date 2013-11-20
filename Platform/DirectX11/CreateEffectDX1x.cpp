@@ -43,7 +43,7 @@ static const DWORD default_effect_flags=0;
 // winmm.lib comctl32.lib
 static bool pipe_compiler_output=false;
 
-static ID3D1xDevice		*pd3dDevice		=NULL;
+//static ID3D1xDevice		*pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
 using namespace base;
@@ -970,7 +970,7 @@ HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass
 void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
 {
     D3DXVECTOR3 vEyePt = D3DXVECTOR3( cam_pos );
-    D3DXVECTOR3 vLookDir;
+    D3DXVECTOR3 vLookAt;
     D3DXVECTOR3 vUpDir;
     ZeroMemory(mat,6*sizeof(D3DXMATRIX) );
     /*D3DCUBEMAP_FACE_POSITIVE_X     = 0,
@@ -981,38 +981,38 @@ void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
     D3DCUBEMAP_FACE_NEGATIVE_Z     = 5,*/
 	static const D3DVECTOR lookf[6]=
 	{
-		 {1.f,0.f,0.f}		,{-1.f,0.f,0.f}
-		,{0.f,-1.f,0.f}		,{0.f,1.f,0.f}
+		 {-1.f,0.f,0.f}		,{1.f,0.f,0.f}
+		,{0.f,1.f,0.f}		,{0.f,-1.f,0.f}
 		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
 	};
 	static const D3DVECTOR upf[6]=
 	{
-		 {0.f,1.f,0.f}		,{0.f,1.f,0.f}
+		 {0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
 		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
 		,{0.f,1.f,0.f}		,{0.f,1.f,0.f}
 	};
 	static const D3DVECTOR lookr[6]=
 	{
-		 {-1.f,0.f,0.f}		,{1.f,0.f,0.f}
-		,{0.f,-1.f,0.f}		,{0.f,1.f,0.f}
-		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
+		 {1.f,0.f,0.f}		,{-1.f,0.f,0.f}
+		,{0.f,1.f,0.f}		,{0.f,-1.f,0.f}
+		,{0.f,0.f,1.f}		,{0.f,0.f,-1.f}
 	};
 	static const D3DVECTOR upr[6]=
 	{
-		 {0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
-		,{0.f,0.f,1.f}		,{0.f,0.f,-1.f}
+		 {0.f,1.f,0.f}		,{0.f,1.f,0.f}
+		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
 		,{0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
 	};
 	for(int i=0;i<6;i++)
 	{
-		vLookDir	=vEyePt+lookf[i];
+		vLookAt		=vEyePt+lookf[i];
 		vUpDir		=upf[i];
-		D3DXMatrixLookAtLH(&mat[i], &vEyePt, &vLookDir, &vUpDir );
-		if(ReverseDepth)
+		D3DXMatrixLookAtLH(&mat[i], &vEyePt,&vLookAt, &vUpDir );
+		if(true)//everseDepth)
 		{
-			vLookDir	=vEyePt+lookr[i];
+			vLookAt		=vEyePt+lookr[i];
 			vUpDir		=upr[i];
-			D3DXMatrixLookAtRH(&mat[i], &vEyePt, &vLookDir, &vUpDir );
+			D3DXMatrixLookAtRH(&mat[i], &vEyePt, &vLookAt, &vUpDir );
 		}
 	}
 }

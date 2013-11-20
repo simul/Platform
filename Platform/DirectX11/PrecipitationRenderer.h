@@ -59,7 +59,7 @@ namespace simul
 			
 			ID3DX11EffectTechnique*					m_hTechniqueRain;
 			ID3DX11EffectTechnique*					m_hTechniqueParticles;
-			simul::math::Matrix4x4								view,proj;
+			simul::math::Matrix4x4					view,proj;
 			ConstantBuffer<RainConstants>			rainConstants;
 			ConstantBuffer<RainPerViewConstants>	perViewConstants;
 			float intensity;

@@ -160,11 +160,12 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		D3DXMATRIX cube_proj;
 		float nearPlane=1.f;
 		float farPlane=200000.f;
-		static bool r=false;
 		if(ReverseDepth)
-			cube_proj=simul::camera::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
+			cube_proj=simul::camera::Camera::MakeDepthReversedProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,false);
 		else
-			cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,r);
+			cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,false);
+		//
+		cube_proj._11*=-1.f;
 		//cubemapDepthFramebuffer.Activate(pContext);
 		if(simulTerrainRenderer&&ShowTerrain)
 		{
@@ -193,16 +194,18 @@ void Direct3D11Renderer::RenderEnvmap(ID3D11DeviceContext* pContext)
 	D3DXMATRIX view_matrices[6];
 	float cam_pos[]={0,0,0};
 	ID3DX11EffectTechnique *tech=lightProbesEffect->GetTechniqueByName("irradiance_map");
-	MakeCubeMatrices(view_matrices,cam_pos,true);
+	MakeCubeMatrices(view_matrices,cam_pos,false);
 	// For each face, 
 	for(int i=0;i<6;i++)
 	{
 		envmapFramebuffer.SetCurrentFace(i);
 		envmapFramebuffer.Activate(pContext);
 		D3DXMATRIX cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,1.f,200000.f,false);
+		cube_proj._11*=-1.f;
 		{
 			MakeInvViewProjMatrix(invViewProj,view_matrices[i],cube_proj);
 			lightProbeConstants.invViewProj=invViewProj;
+			//lightProbeConstants.invViewProj.transpose();
 			lightProbeConstants.Apply(pContext);
 			simul::dx11::setTexture(lightProbesEffect,"basisBuffer"	,cubemapFramebuffer.GetSphericalHarmonics().shaderResourceView);
 			ApplyPass(pContext,tech->GetPassByIndex(0));
@@ -370,7 +373,7 @@ void Direct3D11Renderer::RenderScene(ID3D11DeviceContext* pContext)
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 		hdrFramebuffer.Deactivate(pContext);
-	ResolveColour(pContext);
+		ResolveColour(pContext);
 		simulHDRRenderer->Render(pContext,resolvedColourTexture.shaderResourceView);//hdrFramebuffer.GetColorTex());//
 	}
 	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
