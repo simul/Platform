@@ -89,7 +89,6 @@ void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *dev)
 	hr=pass->GetDesc(&PassDesc);
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateInputLayout(decl,4,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
-	
 	// Create the main vertex buffer:
 	D3D1x_BUFFER_DESC desc=
 	{
@@ -175,6 +174,7 @@ void SimulTerrainRendererDX1x::MakeVertexBuffer()
 		}
 	}
 	UnmapBuffer(pImmediateContext,m_pVertexBuffer);
+	SAFE_RELEASE(pImmediateContext);
 }
 
 void SimulTerrainRendererDX1x::Render(void *context,float exposure)

@@ -59,7 +59,7 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 	int s=(bands+1);
 	if(s<4)
 		s=4;
-	sphericalHarmonics.RestoreDeviceObjects(pd3dDevice,s*s,true);
+	sphericalHarmonics.release();
 	// Create cubic depth stencil texture
 	D3D11_TEXTURE2D_DESC tex2dDesc;
 	tex2dDesc.Width				=Width;
@@ -74,6 +74,7 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 	tex2dDesc.CPUAccessFlags	=0;
 	tex2dDesc.MiscFlags			=D3D11_RESOURCE_MISC_TEXTURECUBE;
  
+	sphericalHarmonicsConstants.RestoreDeviceObjects(pd3dDevice);
 
 	// Create the depth stencil view for the entire cube
 	D3D11_DEPTH_STENCIL_VIEW_DESC DescDS;
@@ -161,6 +162,7 @@ ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *pd3dDevice,int w,DXGI_FORMAT t
 
 void CubemapFramebuffer::InvalidateDeviceObjects()
 {
+	sphericalHarmonicsConstants.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pCubeEnvMap);
 	for(int i=0;i<6;i++)
 	{
@@ -196,28 +198,40 @@ ID3D11Texture2D *CubemapFramebuffer::GetCopy(void *context)
 		pContext->CopySubresourceRegion(stagingTexture,i, 0, 0, 0, m_pCubeEnvMap,i, &sourceRegion);
 	return stagingTexture;
 }
+
 void CubemapFramebuffer::RecompileShaders()
 {
 	SAFE_RELEASE(sphericalHarmonicsEffect);
 	CreateEffect(pd3dDevice,&sphericalHarmonicsEffect,"spherical_harmonics.fx");
+	sphericalHarmonicsConstants.LinkToEffect(sphericalHarmonicsEffect,"SphericalHarmonicsConstants");
 }
+
 void CubemapFramebuffer::CalcSphericalHarmonics(void *context)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	if(!sphericalHarmonicsEffect)
 		RecompileShaders();
+	int num_coefficients=(bands+1)*(bands+1);
+	if(!sphericalHarmonics.size)
+		sphericalHarmonics.RestoreDeviceObjects(pd3dDevice,num_coefficients,true);
+	static int sqrt_jitter_samples					=16;
+	sphericalHarmonicsConstants.num_bands			=bands;
+	sphericalHarmonicsConstants.sqrtJitterSamples	=sqrt_jitter_samples;
+	sphericalHarmonicsConstants.numJitterSamples	=sqrt_jitter_samples*sqrt_jitter_samples;
+	sphericalHarmonicsConstants.invNumJitterSamples	=1.0f/(float)sphericalHarmonicsConstants.numJitterSamples;
+	sphericalHarmonicsConstants.Apply(pContext);
 	simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect,"targetBuffer"	,sphericalHarmonics.unorderedAccessView);
 	ID3DX11EffectTechnique *clear		=sphericalHarmonicsEffect->GetTechniqueByName("clear");
 	ApplyPass(pContext,clear->GetPassByIndex(0));
-	pContext->Dispatch(16/2,1,1);
+	pContext->Dispatch(num_coefficients,1,1);
 	{
-		// The table of 3D directional sample positions. 16 x 16
+		// The table of 3D directional sample positions. sqrt_jitter_samples x sqrt_jitter_samples
 		// We just fill this texture with random 3d directions.
-		sphericalSamples.RestoreDeviceObjects(pd3dDevice,1024,true);
+		sphericalSamples.RestoreDeviceObjects(pd3dDevice,sphericalHarmonicsConstants.numJitterSamples,true);
 		ID3DX11EffectTechnique *jitter=sphericalHarmonicsEffect->GetTechniqueByName("jitter");
 		simul::dx11::setUnorderedAccessView(sphericalHarmonicsEffect,"samplesBufferRW",sphericalSamples.unorderedAccessView);
 		ApplyPass(pContext,jitter->GetPassByIndex(0));
-		pContext->Dispatch(16/8,16/8,1);
+		pContext->Dispatch(sqrt_jitter_samples/8,sqrt_jitter_samples/8,1);
 		simul::dx11::setUnorderedAccessView(sphericalHarmonicsEffect,"samplesBufferRW",NULL);
 		ApplyPass(pContext,jitter->GetPassByIndex(0));
 	}
@@ -227,11 +241,11 @@ void CubemapFramebuffer::CalcSphericalHarmonics(void *context)
 	simul::dx11::setTexture				(sphericalHarmonicsEffect,"samplesBuffer"	,sphericalSamples.shaderResourceView);
 
 	ApplyPass(pContext,tech->GetPassByIndex(0));
-	static int c=25;
-	pContext->Dispatch(c,1,1);
+	pContext->Dispatch(num_coefficients,1,1);
 	simul::dx11::setTexture				(sphericalHarmonicsEffect,"cubemapTexture"	,NULL);
 	simul::dx11::setUnorderedAccessView	(sphericalHarmonicsEffect,"targetBuffer"	,NULL);
 	simul::dx11::setTexture				(sphericalHarmonicsEffect,"samplesBuffer"	,NULL);
+	sphericalHarmonicsConstants.Unbind(pContext);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	sphericalSamples.release();
 }

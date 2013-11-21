@@ -17,12 +17,12 @@ StructuredBuffer<float4> basisBuffer;
 //A_6 = 0.049087 
 
 static float A[]={ 3.141593
-				  , 2.094395
-				  , 0.785398
-				  , 0		
-				  , -0.130900
-				  , 0 
-				  , 0.049087 };
+				  ,2.094395
+				  ,0.785398
+				  ,0
+				  ,-0.130900
+				  ,0
+				  ,0.049087	};
 
 vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 {
@@ -40,10 +40,10 @@ vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 	// return a point sample of a Spherical Harmonic basis function 
 	vec4 result		=vec4(0,0,0,0);
 	int n=0;
-	for(int l=0;l<5;l++)
+	for(int l=0;l<MAX_SH_BANDS;l++)
 	{ 
 		for(int m=-l;m<=l;m++)
-			result+=SH(l,m,theta,phi)*basisBuffer[n++]*3.141;//*A[l];
+			result+=SH(l,m,theta,phi)*basisBuffer[n++];//*A[l];
 	} 
 	return saturate(result);
 }

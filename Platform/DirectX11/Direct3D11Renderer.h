@@ -92,6 +92,7 @@ namespace simul
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
 				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")
 				META_ValueProperty(int,Antialiasing				,"How many antialiasing samples to use.")
+				META_ValueProperty(int,SphericalHarmonicsBands	,"How many bands to use for spherical harmonics.")
 			META_EndProperties
 			bool IsEnabled()const{return enabled;}
 			class SimulWeatherRendererDX11 *GetSimulWeatherRenderer()

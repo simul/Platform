@@ -81,7 +81,7 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 	double oneoverN = 1.0/sqrt_n_samples; 
 	int a=pos.x;
 	int b=pos.y;
-	int i=a*16+b; // array index 
+	int i=a*sqrt_n_samples+b; // array index 
 	// generate unbiased distribution of spherical coords 
 	float x		=(a + rand(vec2(a,b))) * oneoverN; // do not reuse results 
 	float y		=(b + rand(vec2(2*a,b))) * oneoverN; // each sample must be random 

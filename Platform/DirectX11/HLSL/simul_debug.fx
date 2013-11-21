@@ -1,8 +1,11 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
+
 sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 Texture2DMS<float4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
 TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
+
+#define pi (3.1415926536)
 
 uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
 {
@@ -45,7 +48,6 @@ v2f Debug2DVS(idOnly IN)
 	OUT.colour		=vec4(pos.x,1.0-pos.y,0,0);
     return OUT;
 }
-
 
 v2f DebugVS(a2v IN)
 {
@@ -93,14 +95,15 @@ struct v2f_cubemap
 {
     float4 hPosition	: SV_POSITION;
     float3 wDirection	: TEXCOORD0;
+    float temp			: TEXCOORD1;
 };
-
 
 v2f_cubemap VS_DrawCubemap(vec3input IN) 
 {
     v2f_cubemap OUT;
     OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
     OUT.wDirection	=normalize(IN.position.xyz);
+    OUT.temp		=0.0;
     return OUT;
 }
 
@@ -111,13 +114,15 @@ v2f_cubemap VS_DrawCubemapSphere(idOnly IN)
 	uint vertex_id		=IN.vertex_id;
 	uint latitude_strip	=vertex_id/(longitudes+1)/2;
 	vertex_id			-=latitude_strip*(longitudes+1)*2;
-	uint longitude		=(vertex_id)/2;
+	uint longitude		=vertex_id/2;
 	vertex_id			-=longitude*2;
-	float azimuth		=2.0*3.1415926536*float(longitude)/float(longitudes);
-	float elevation		=(float(latitude_strip+vertex_id)/float(latitudes)-0.5)*3.1415926536;
+	float azimuth		=2.0*pi*float(longitude)/float(longitudes);
+	float e				=float(latitude_strip+vertex_id)/float(latitudes+1);
+	float elevation		=(e-0.5)*pi;
 	vec3 pos			=radius*vec3(sin(azimuth)*cos(elevation),cos(azimuth)*cos(elevation),sin(elevation));
-    OUT.hPosition		=mul(worldViewProj,float4(pos.xyz,1.0));
+    OUT.hPosition		=mul(worldViewProj,vec4(pos.xyz,1.0));
     OUT.wDirection		=normalize(pos.xyz);
+	OUT.temp			=elevation;
     return OUT;
 }
 
@@ -131,13 +136,13 @@ SamplerState cubeSamplerState
 
 float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
-	//..if(IN.wDirection.x<0)
+	//if(IN.wDirection.x<0)
 	//	discard;
-	float3 view		=IN.wDirection.xyz;
+	vec3 view		=IN.wDirection.xyz;
 	// Note: cubemap lookups are reversed, so we have to use -view.
-	float4 result	=cubeTexture.Sample(cubeSamplerState,-view);
-	//..result.rgb		=view.xyz;
-	return float4(result.rgb,1.f);
+	vec4 result		=cubeTexture.Sample(cubeSamplerState,-view);
+	//result.rgb		=IN.temp;
+	return vec4(result.rgb,1.f);
 }
 
 
@@ -147,7 +152,7 @@ technique11 simul_debug
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,DebugVS()));
 		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
@@ -160,7 +165,7 @@ technique11 textured
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_4_0,TexturedPS()));
@@ -173,7 +178,7 @@ technique11 texturedMS
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,Debug2DVS()));
 		SetPixelShader(CompileShader(ps_5_0,TexturedMSPS()));
@@ -186,7 +191,7 @@ technique11 vec3_input_signature
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,Vec3InputSignatureVS()));
 		SetPixelShader(CompileShader(ps_4_0,DebugPS()));
@@ -202,7 +207,7 @@ technique11 draw_cubemap
 		SetVertexShader(CompileShader(vs_4_0,VS_DrawCubemap()));
 		SetPixelShader(CompileShader(ps_4_0,PS_DrawCubemap()));
 		SetDepthStencilState( EnableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend, vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
 }
 technique11 draw_cubemap_sphere
@@ -214,6 +219,6 @@ technique11 draw_cubemap_sphere
 		SetVertexShader(CompileShader(vs_4_0,VS_DrawCubemapSphere()));
 		SetPixelShader(CompileShader(ps_4_0	,PS_DrawCubemap()));
 		SetDepthStencilState( EnableDepth, 0 );
-		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetBlendState(DontBlend,vec4(0.0,0.0,0.0,0.0), 0xFFFFFFFF );
     }
 }

@@ -44,6 +44,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,ShowOSD(false)
 		,Exposure(1.0f)
 		,Antialiasing(1)
+		,SphericalHarmonicsBands(4)
 		,enabled(false)
 		,m_pd3dDevice(NULL)
 		,mixedResolutionEffect(NULL)
@@ -153,6 +154,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	D3DXMATRIX view_matrices[6];
 	MakeCubeMatrices(view_matrices,cam_pos,false);//ReverseDepth);
 	cubemapFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
+
 	for(int i=0;i<6;i++)
 	{
 		cubemapFramebuffer.SetCurrentFace(i);
@@ -187,6 +189,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	
 void Direct3D11Renderer::RenderEnvmap(ID3D11DeviceContext* pContext)
 {
+	cubemapFramebuffer.SetBands(SphericalHarmonicsBands);
 	cubemapFramebuffer.CalcSphericalHarmonics(pContext);
 	envmapFramebuffer.Clear(pContext,0.f,1.f,0.f,1.f,0.f);
 	D3DXMATRIX invViewProj;
@@ -202,12 +205,14 @@ void Direct3D11Renderer::RenderEnvmap(ID3D11DeviceContext* pContext)
 		D3DXMATRIX cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,1.f,200000.f,false);
 		{
 			MakeInvViewProjMatrix(invViewProj,view_matrices[i],cube_proj);
-			lightProbeConstants.invViewProj=invViewProj;
-			//lightProbeConstants.invViewProj.transpose();
+			lightProbeConstants.invViewProj	=invViewProj;
+			lightProbeConstants.numSHBands	=SphericalHarmonicsBands;
 			lightProbeConstants.Apply(pContext);
 			simul::dx11::setTexture(lightProbesEffect,"basisBuffer"	,cubemapFramebuffer.GetSphericalHarmonics().shaderResourceView);
 			ApplyPass(pContext,tech->GetPassByIndex(0));
 			UtilityRenderer::DrawQuad(pContext);
+			simul::dx11::setTexture(lightProbesEffect,"basisBuffer"	,NULL);
+			ApplyPass(pContext,tech->GetPassByIndex(0));
 		}
 		envmapFramebuffer.Deactivate(pContext);
 	}
@@ -368,16 +373,16 @@ void Direct3D11Renderer::RenderScene(ID3D11DeviceContext* pContext)
 			}
 		}
 	}
+	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
+	{
+		UtilityRenderer::DrawCubemap(pContext,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetColorTex(),view,proj,-.7f,.7f);
+		UtilityRenderer::DrawCubemap(pContext,(ID3D1xShaderResourceView*)envmapFramebuffer.GetColorTex(),view,proj,-.4f,.7f);
+	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 		hdrFramebuffer.Deactivate(pContext);
 		ResolveColour(pContext);
 		simulHDRRenderer->Render(pContext,resolvedColourTexture.shaderResourceView);//hdrFramebuffer.GetColorTex());//
-	}
-	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
-	{
-		UtilityRenderer::DrawCubemap(pContext,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetColorTex(),view,proj,-.7f,.7f);
-		UtilityRenderer::DrawCubemap(pContext,(ID3D1xShaderResourceView*)envmapFramebuffer.GetColorTex(),view,proj,-.4f,.7f);
 	}
 }
 
@@ -468,6 +473,7 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 	resolvedDepth_fb.InvalidateDeviceObjects();
 	lowResDepthTexture.release();
 	cubemapFramebuffer.InvalidateDeviceObjects();
+	envmapFramebuffer.InvalidateDeviceObjects();
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	SAFE_RELEASE(mixedResolutionEffect);
 	mixedResolutionConstants.InvalidateDeviceObjects();

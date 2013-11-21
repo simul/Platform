@@ -268,6 +268,16 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
     ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::Render");
 	
 	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
+	ID3DX11EffectTechnique*		tech;
+	if(depthTexture_SRV)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
+		depthTexture_SRV->GetDesc(&depthDesc);
+		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
+			tech=msaaTechnique;
+		else
+			return false;
+	}
 
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)detail_fb.GetColorTex());
 	simul::dx11::setTexture(effect,"noiseTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
@@ -303,20 +313,10 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	
-	ID3DX11EffectTechnique*		tech;
-	if(depthTexture_SRV)
-	{
-		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
-		depthTexture_SRV->GetDesc(&depthDesc);
-		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
-			tech=msaaTechnique;
-		else
-			return false;
-	}
-
+	
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	pContext->DrawIndexed(num_indices-2,0,0);
-
+		
 	pContext->IASetPrimitiveTopology(previousTopology);
 	pContext->IASetInputLayout(previousInputLayout);
 	pContext->IASetIndexBuffer(pPrevBuffer, prevFormat, prevOffset);

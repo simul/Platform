@@ -306,7 +306,7 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 											viewport_id,
 											viewportRegionXYWH,
 											doFinalCloudBufferToScreenComposite	);*/
-
+									
 	RenderFullResolutionElements(context,exposure,mainDepthTexture,viewport_id,viewportRegionXYWH);
 	float godrays_strength		=(float)(!is_cubemap)*environment->cloudKeyframer->GetInterpolatedKeyframe().godray_strength;
 	if(buffered)

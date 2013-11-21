@@ -63,13 +63,18 @@ namespace simul
 			{
 				return sphericalHarmonics;
 			}
-void SetBands(int b)
-{
-
-bands=b;
-}
+			void SetBands(int b)
+			{
+				if(b>MAX_SH_BANDS)
+					b=MAX_SH_BANDS;
+				if(bands!=b)
+				{
+					bands=b;
+					sphericalHarmonics.release();
+				}
+			}
 		protected:
-int bands;
+			int bands;
 			//! The size of the 2D buffer the sky is rendered to.
 			int Width,Height;
 			ID3D11Texture2D								*stagingTexture;	// Only initialized if CopyToMemory or GetCopy invoked.
@@ -92,10 +97,10 @@ int bands;
 
 			DXGI_FORMAT									format;
 
-
+			ConstantBuffer<SphericalHarmonicsConstants> sphericalHarmonicsConstants;
 			StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;
 			StructuredBuffer<vec4>						sphericalHarmonics;
-			ID3DX11Effect *sphericalHarmonicsEffect;
+			ID3DX11Effect								*sphericalHarmonicsEffect;
 		};
 	}
 }

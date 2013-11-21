@@ -250,11 +250,10 @@ namespace simul
 			{
 				release();
 			}
-			void RestoreDeviceObjects(ID3D11Device *pd3dDevice,int size,bool computable=false)
+			void RestoreDeviceObjects(ID3D11Device *pd3dDevice,int s,bool computable=false)
 			{
 				release();
-
-				this->size=size;
+				size=s;
 				D3D11_BUFFER_DESC sbDesc;
 				memset(&sbDesc,0,sizeof(sbDesc));
 				if(computable)
@@ -319,6 +318,7 @@ namespace simul
 				SAFE_RELEASE(unorderedAccessView);
 				SAFE_RELEASE(shaderResourceView);
 				SAFE_RELEASE(buffer);
+				size=0;
 			}
 			ID3D11Buffer						*buffer;
 			ID3D11ShaderResourceView			*shaderResourceView;
