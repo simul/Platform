@@ -2,10 +2,13 @@
 #include "states.hlsl"
 #include "../../CrossPlatform/rain_constants.sl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/depth.sl"
 texture2D randomTexture;
 TextureCube cubeTexture;
 texture2D rainTexture;
 texture2D showTexture;
+// The RESOLVED depth texture at full resolution
+texture2D depthTexture;
 SamplerState rainSampler
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -191,20 +194,20 @@ float4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
 
 float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 {
-	float3 view		=normalize(mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz);
-	float3 light	=cubeTexture.Sample(wrapSamplerState,-view).rgb;
+	vec3 view		=normalize(mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz);
+	vec3 light		=cubeTexture.Sample(wrapSamplerState,-view).rgb;
 	float sc=1.0;
 	float br=1.0;
-	vec4 result=vec4(light.rgb,0);//float4(0.0,0.0,0.0,0.0);
+	vec4 result		=vec4(light.rgb,0);
+	vec2 texc		=vec2(atan2(view.x,view.y)/(2.0*pi)*5.0,view.z*2.0);
 	for(int i=0;i<4;i++)
 	{
-		float2 texc	=float2(atan2(view.x,view.y)*sc*7/(2.0*pi),(view.z+sc*offset)*sc);
-		float r		=br*(saturate(rainTexture.Sample(wrapSamplerState,texc.xy)).x+intensity-1.0);//
+		vec2 layer_texc	=vec2(texc.x*sc,(texc.y)*sc*.3+.2*offset);
+		vec4 r		=rainTexture.Sample(wrapSamplerState,layer_texc.xy);
+		float a		=br*(saturate(r.x+intensity-1.0));
 		sc*=4.0;
 		br*=.4;
-		//result*=1.0-r;
-		//result.rgb+=r*light.rgb;
-		result.a+=r;
+		result.a+=a;
 	}
 	result.a=saturate(result.a);
 	return result;

@@ -59,7 +59,7 @@ namespace simul
 									bool doFinalCloudBufferToScreenComposite //indicate whether truesky should do a final low-res cloud up-sample to the main target or whether to leave that to the user (via GetFramebufferTexture())
 									);
 			void RenderFramebufferDepth(void *context,int w,int h);
-			void RenderPrecipitation(void *context);
+			void RenderPrecipitation(void *context,void *depth_tex,simul::sky::float4 depthViewportXYWH);
 			void RenderLightning(void *context,int viewport_id);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
 			//! Apply the view and projection matrices, once per frame.

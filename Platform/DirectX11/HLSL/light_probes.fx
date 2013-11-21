@@ -16,13 +16,16 @@ StructuredBuffer<float4> basisBuffer;
 //A_5 = 0 
 //A_6 = 0.049087 
 
-static float A[]={ 3.141593
-				  ,2.094395
-				  ,0.785398
-				  ,0
-				  ,-0.130900
-				  ,0
-				  ,0.049087	};
+static float A[]={	3.141593
+					,2.094395
+					,0.785398
+					,0
+					,-0.130900
+					,0
+					,0.049087
+					,0
+					,0
+					,0};
 
 vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 {
@@ -43,8 +46,8 @@ vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 	for(int l=0;l<MAX_SH_BANDS;l++)
 	{ 
 		for(int m=-l;m<=l;m++)
-			result+=SH(l,m,theta,phi)*basisBuffer[n++];//*A[l];
-	} 
+			result+=SH(l,m,theta,phi)*basisBuffer[n++]*A[l];
+	}
 	return saturate(result);
 }
 

@@ -42,7 +42,7 @@ namespace simul
 			//! Call this when the D3D device has been shut down.
 			void InvalidateDeviceObjects();
 			void SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
-			void Render(void *context);
+			void Render(void *context,void *depth_tex,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH);
 			//! Put textures to screen for debugging
 			void RenderTextures(void *context,int width,int height);
 		protected:

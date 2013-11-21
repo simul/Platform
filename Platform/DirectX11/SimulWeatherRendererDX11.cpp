@@ -397,12 +397,15 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));
 }
 
-void SimulWeatherRendererDX11::RenderPrecipitation(void *context)
+void SimulWeatherRendererDX11::RenderPrecipitation(void *context,void *depth_tex,simul::sky::float4 depthViewportXYWH)
 {
 	if(basePrecipitationRenderer)
 		basePrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
+	float max_fade_dist_metres=1.f;
+	if(environment->skyKeyframer)
+		max_fade_dist_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	if(simulPrecipitationRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		simulPrecipitationRenderer->Render(context);
+		simulPrecipitationRenderer->Render(context,depth_tex,max_fade_dist_metres,depthViewportXYWH);
 }
 
 void SimulWeatherRendererDX11::RenderLightning(void *context,int viewport_id)

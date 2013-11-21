@@ -28,7 +28,7 @@ float K(int l, int m)
 }
 
 // evaluate an Associated Legendre Polynomial P(l,m,x) at x 
-double P(int l,int m,float x) 
+float P(int l,int m,float x) 
 { 
 	float pmm = 1.0; 
 	if(m>0)
@@ -78,24 +78,24 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 { 
 	// fill an N*N*2 array with uniformly distributed 
 	// samples across the sphere using jittered stratification 
-	double oneoverN = 1.0/sqrt_n_samples; 
-	int a=pos.x;
-	int b=pos.y;
-	int i=a*sqrt_n_samples+b; // array index 
+	float oneoverN	= 1.0/sqrt_n_samples; 
+	int a			=pos.x;
+	int b			=pos.y;
+	int i			=a*sqrt_n_samples+b; // array index 
 	// generate unbiased distribution of spherical coords 
-	float x		=(a + rand(vec2(a,b))) * oneoverN; // do not reuse results 
-	float y		=(b + rand(vec2(2*a,b))) * oneoverN; // each sample must be random 
-	float theta	=2.0 * acos(sqrt(1.0 - x)); 
-	float phi	=2.0 * PI * y;
-	samplesBufferRW[i].theta=theta;
-	samplesBufferRW[i].phi	=phi;
+	float x			=(a + rand(vec2(a,b))) * oneoverN; // do not reuse results 
+	float y			=(b + rand(vec2(2*a,b))) * oneoverN; // each sample must be random 
+	float theta		=2.0*acos(sqrt(1.0 - x)); 
+	float phi		=2.0*PI*y;
+	//samplesBufferRW[i].theta=theta;
+	//samplesBufferRW[i].phi	=phi;
 	// convert spherical coords to unit vector 
 	vec3 vec		=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
 	samplesBufferRW[i].dir	= vec; 
 	// precompute all SH coefficients for this sample 
-	for(int l=0; l<n_bands; ++l)
+	for(int l=0; l<n_bands; l++)
 	{ 
-		for(int m=-l; m<=l; ++m)
+		for(int m=-l; m<=l; m++)
 		{ 
 			int index = l*(l+1)+m; 
 			samplesBufferRW[i].coeff[index] = SH(l,m,theta,phi);

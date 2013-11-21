@@ -352,7 +352,7 @@ void TextureStruct::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		uav_desc.Format				= f;
 		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE1D;
 		uav_desc.Texture1D.MipSlice	= 0;
-		HRESULT hr;
+		
 		SAFE_RELEASE(unorderedAccessView);
 		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture,&uav_desc,&unorderedAccessView));
 	}

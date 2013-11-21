@@ -19,9 +19,11 @@ uniform_buffer RainPerViewConstants SIMUL_BUFFER_REGISTER(8)
 	uniform vec3 viewPos;
 	uniform float filld;
 	uniform vec2 tanHalfFov;
-	uniform float fill1,fill2;
 	uniform float nearZ;
 	uniform float farZ;
+	uniform vec3 depthToLinFadeDistParams;
+	uniform float fill1;
+	uniform vec4 viewportToTexRegionScaleBias;
 };
 uniform_buffer RainOsdConstants SIMUL_BUFFER_REGISTER(9)
 {

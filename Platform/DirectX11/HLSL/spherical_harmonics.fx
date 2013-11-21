@@ -4,7 +4,7 @@
 #include "../../CrossPlatform/spherical_harmonics.sl"
 // The cubemap input we are creating coefficients for.
 TextureCube cubemapTexture;
-// A texture (l+1)^2 of coefficients.
+// A texture (l_max+1)^2 of coefficients.
 RWStructuredBuffer<float4> targetBuffer;
 // A buffer of nxn random sample positions. The higher res, the more accurate.
 RWStructuredBuffer<SphericalHarmonicsSample> samplesBufferRW;
@@ -30,20 +30,18 @@ void CS_Encode(uint3 sub_pos: SV_DispatchThreadID )
 	// divide the result by weight and number of samples 
 	double factor						=weight*invNumJitterSamples; 
 #if 0
-	SphericalHarmonicsSample sample	=samplesBuffer[sub_pos.x];
-	vec4 colour						=cubemapTexture.SampleLevel(wrapSamplerState,-sample.dir,0);
+	SphericalHarmonicsSample sample		=samplesBuffer[sub_pos.x];
+	vec4 colour							=cubemapTexture.SampleLevel(wrapSamplerState,-sample.dir,0);
 	for(int n=0;n<num_bands;n++)
 	{ 
-		targetBuffer[n]			+=colour*factor*sample.coeff[n]; 
+		targetBuffer[n]					+=colour;//*factor*sample.coeff[n]; 
 	}
 #else
+	//if(sub_pos.x<num_bands)
 	for(int n=0;n<numJitterSamples;n++)
 	{ 
 		SphericalHarmonicsSample sample	=samplesBuffer[n];
 		vec4 colour						=cubemapTexture.SampleLevel(wrapSamplerState,-sample.dir,0);
-		// for each sample
-		double theta					=sample.theta; 
-		double phi						=sample.phi; 
 		targetBuffer[sub_pos.x]			+=colour*factor*sample.coeff[sub_pos.x]; 
 	}
 #endif

@@ -70,20 +70,6 @@ void PrecipitationRenderer::RecompileShaders()
 	SAFE_RELEASE(m_pImmediateContext);
 }
 
-void PrecipitationRenderer::RenderTextures(void *context,int width,int height)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
-	HRESULT hr=S_OK;
-	static int u=4;
-	int w=(width-8)/u;
-	if(w/8>height/3)
-		w=8*height/3;
-	UtilityRenderer::SetScreenSize(width,height);
-	simul::dx11::setTexture(effect,"showTexture",rain_texture);
-	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w/8,effect,effect->GetTechniqueByName("show_texture"));
-	simul::dx11::setTexture(effect,"showTexture",NULL);
-}
-
 void PrecipitationRenderer::SetCubemapTexture(void *t)
 {
 	cubemap_SRV=(ID3D11ShaderResourceView*)t;
@@ -164,7 +150,7 @@ depth map of the scene to find the pixels for which the rain
 streak is not occluded by the scene. The streak is rendered only over
 those pixels.
 */
-void PrecipitationRenderer::Render(void *context)
+void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	static float cc=0.006f;
@@ -176,6 +162,7 @@ void PrecipitationRenderer::Render(void *context)
 	rainTexture->SetResource(rain_texture);
 	simul::dx11::setTexture(effect,"cubeTexture",cubemap_SRV);
 	simul::dx11::setTexture(effect,"randomTexture",random_SRV);
+	simul::dx11::setTexture(effect,"depthTexture",(ID3D11ShaderResourceView*)depth_tex);
 	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 	//set up matrices
 	D3DXMATRIX world,wvp;
@@ -216,6 +203,13 @@ void PrecipitationRenderer::Render(void *context)
 	perViewConstants.nearZ=0;//frustum.nearZ*0.001f/fade_distance_km;
 	perViewConstants.farZ=0;//frustum.farZ*0.001f/fade_distance_km;
 	perViewConstants.viewPos		=viewPos;
+
+	perViewConstants.depthToLinFadeDistParams = simul::math::Vector3( proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
+	
+	perViewConstants.viewportToTexRegionScaleBias = simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
+
+
+
 	perViewConstants.Apply(m_pImmediateContext);
 
 	if(RainToSnow<1.f)
@@ -271,4 +265,18 @@ void PrecipitationRenderer::SetMatrices(const simul::math::Matrix4x4 &v,const si
 {
 	view=v;
 	proj=p;
+}
+
+void PrecipitationRenderer::RenderTextures(void *context,int width,int height)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+	HRESULT hr=S_OK;
+	static int u=1;
+	int w=(width-8)/u;
+	//if(w/8>height/3)
+	//	w=8*height/3;
+	UtilityRenderer::SetScreenSize(width,height);
+	simul::dx11::setTexture(effect,"showTexture",rain_texture);
+	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w/8,effect,effect->GetTechniqueByName("show_texture"));
+	simul::dx11::setTexture(effect,"showTexture",NULL);
 }
