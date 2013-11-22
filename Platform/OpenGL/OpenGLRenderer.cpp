@@ -187,10 +187,11 @@ GL_ERROR_CHECK
 			depthFramebuffer.Render(context,false);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
 		}
+		simul::sky::float4 viewportTextureRegionXYWH(0,0,1.f,1.f);
 		simulWeatherRenderer->RenderLightning(context,viewport_id);
-		simulWeatherRenderer->RenderSkyAsOverlay(context,exposure,UseSkyBuffer,false,depthFramebuffer.GetDepthTex(),viewport_id,simul::sky::float4(0,0,1.f,1.f));
+		simulWeatherRenderer->RenderSkyAsOverlay(context,exposure,UseSkyBuffer,false,depthFramebuffer.GetDepthTex(),viewport_id,viewportTextureRegionXYWH);
 		simulWeatherRenderer->DoOcclusionTests();
-		simulWeatherRenderer->RenderPrecipitation(context);
+		simulWeatherRenderer->RenderPrecipitation(context,depthFramebuffer.GetDepthTex(),viewportTextureRegionXYWH);
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light,cam_pos;

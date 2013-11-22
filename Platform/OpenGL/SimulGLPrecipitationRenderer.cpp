@@ -60,7 +60,7 @@ SimulGLPrecipitationRenderer::~SimulGLPrecipitationRenderer()
 	InvalidateDeviceObjects();
 }
 
-void SimulGLPrecipitationRenderer::Render(void*)
+void SimulGLPrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH)
 {
 	if(!baseSkyInterface)
 		return;

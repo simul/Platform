@@ -276,7 +276,7 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
 			tech=msaaTechnique;
 		else
-			return false;
+			tech=technique;
 	}
 
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)detail_fb.GetColorTex());

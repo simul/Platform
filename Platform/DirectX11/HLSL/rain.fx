@@ -49,7 +49,7 @@ float rand(float2 co)
 struct rainVertexOutput
 {
     float4 position			: SV_POSITION;
-    float2 pos				: TEXCOORD1;
+    float2 clip_pos			: TEXCOORD1;
     float2 texCoords		: TEXCOORD0;
 };
 
@@ -80,7 +80,6 @@ posTexVertexOutput VS_ShowTexture(idOnly id)
     return VS_ScreenQuad(id,rect);
 }
 
-
 float4 PS_ShowTexture(posTexVertexOutput In): SV_TARGET
 {
     return texture_wrap_lod(showTexture,In.texCoords,0);
@@ -100,7 +99,7 @@ particleVertexOutput VS_Particles(posOnly IN)
 	OUT.position		=mul(worldViewProj,float4(particlePos.xyz,1.0));
 	OUT.view			=normalize(particlePos.xyz);
 	OUT.pointSize		=snowSize;
-	OUT.brightness		=1.f;//(float)frac(viewPos.x);//60.1/length(pos-viewPos);
+	OUT.brightness		=1.f;//(float)frac(viewPos.x);//60.1/length(clip_pos-viewPos);
 	return OUT;
 }
 
@@ -158,15 +157,15 @@ rainVertexOutput VS_FullScreen(idOnly IN)
 		{-1.0,-1.0},
 		{-1.0, 1.0},
 	};
-	OUT.pos			=poss[IN.vertex_id];
-	OUT.position	=float4(OUT.pos,0.0,1.0);
+	OUT.clip_pos	=poss[IN.vertex_id];
+	OUT.position	=float4(OUT.clip_pos,0.0,1.0);
 	// Set to far plane
 #ifdef REVERSE_DEPTH
 	OUT.position.z	=0.0; 
 #else
 	OUT.position.z	=OUT.position.w; 
 #endif
-    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(OUT.pos.x,-OUT.pos.y));
+    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(OUT.clip_pos.x,-OUT.clip_pos.y));
 //OUT.texCoords	+=0.5*texelOffsets;
 	return OUT;
 }
@@ -194,22 +193,33 @@ float4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
 
 float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 {
-	vec3 view		=normalize(mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz);
-	vec3 light		=cubeTexture.Sample(wrapSamplerState,-view).rgb;
-	float sc=1.0;
-	float br=1.0;
-	vec4 result		=vec4(light.rgb,0);
-	vec2 texc		=vec2(atan2(view.x,view.y)/(2.0*pi)*5.0,view.z*2.0);
-	for(int i=0;i<4;i++)
+	vec3 view				=normalize(mul(invViewProj,vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
+	
+	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	float depth				=texture_clamp(depthTexture,depth_texc).x;
+	float dist				=depthToFadeDistance(depth,IN.clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+
+	vec3 light				=cubeTexture.Sample(wrapSamplerState,-view).rgb;
+	float br				=4.0;
+	vec4 result				=vec4(light.rgb,0);
+	vec2 texc				=vec2(atan2(view.x,view.y)/(2.0*pi)*3.0,view.z*.3);
+	float layer_distance	=nearRainDistance;
+	float mult				=4.0;
+	float step_range		=layer_distance;
+	for(int i=0;i<2;i++)
 	{
-		vec2 layer_texc	=vec2(texc.x*sc,(texc.y)*sc*.3+.2*offset);
-		vec4 r		=rainTexture.Sample(wrapSamplerState,layer_texc.xy);
-		float a		=br*(saturate(r.x+intensity-1.0));
-		sc*=4.0;
-		br*=.4;
-		result.a+=a;
+		vec2 layer_texc		=vec2(texc.x,texc.y+.5*offset);
+		vec4 r				=rainTexture.Sample(wrapSamplerState,layer_texc.xy);
+		float a				=saturate(br*(saturate(r.x+intensity-1.0)));
+		a					*=saturate((dist-layer_distance)/step_range);
+		texc				*=mult;
+		layer_distance		*=mult;
+		step_range			*=mult;
+		br					*=0.5;
+		result.a			+=a;
 	}
 	result.a=saturate(result.a);
+
 	return result;
 }
 

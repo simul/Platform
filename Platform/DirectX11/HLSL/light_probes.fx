@@ -4,6 +4,9 @@
 #include "../../CrossPlatform/spherical_harmonics.sl"
 #include "../../CrossPlatform/light_probe_constants.sl"
 
+#ifndef pi
+#define pi (3.1415926536)
+#endif
 // A texture (l+1)^2 of basis coefficients.
 StructuredBuffer<float4> basisBuffer;
 
@@ -16,7 +19,7 @@ StructuredBuffer<float4> basisBuffer;
 //A_5 = 0 
 //A_6 = 0.049087 
 
-static float A[]={	3.141593
+static float A[]={	3.1415926
 					,2.094395
 					,0.785398
 					,0
@@ -26,6 +29,11 @@ static float A[]={	3.141593
 					,0
 					,0
 					,0};
+
+float WindowFunction(float x)
+{
+	return (0.0001+sin(pi*x))/(0.0001+pi*x);
+}
 
 vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 {
@@ -46,9 +54,10 @@ vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 	for(int l=0;l<MAX_SH_BANDS;l++)
 	{ 
 		for(int m=-l;m<=l;m++)
-			result+=SH(l,m,theta,phi)*basisBuffer[n++]*A[l];
+			result+=SH(l,m,theta,phi)*basisBuffer[n++]*WindowFunction(float(l)/float(MAX_SH_BANDS));
+		//*A[l]/3.1415926
 	}
-	return saturate(result);
+	return max(result,vec4(0,0,0,0));
 }
 
 technique11 irradiance_map

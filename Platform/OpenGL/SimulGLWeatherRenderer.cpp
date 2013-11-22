@@ -258,10 +258,13 @@ void SimulGLWeatherRenderer::RenderLightning(void *context,int viewport_id)
 		simulLightningRenderer->Render(context);
 }
 
-void SimulGLWeatherRenderer::RenderPrecipitation(void *context)
+void SimulGLWeatherRenderer::RenderPrecipitation(void *context,void *depth_tex,simul::sky::float4 viewportTextureRegionXYWH)
 {
+	float max_fade_distance_metres=1.f;
+	if(environment->skyKeyframer)
+		max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
 	if(simulPrecipitationRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible()) 
-		simulPrecipitationRenderer->Render(context);
+		simulPrecipitationRenderer->Render(context,depth_tex,max_fade_distance_metres,viewportTextureRegionXYWH);
 }
 
 

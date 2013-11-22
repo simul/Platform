@@ -68,7 +68,7 @@ namespace simul
 			//! Call this to draw lightning.
 			void RenderLightning(void *context,int viewport_id);
 			//! Call this to draw rain etc.
-			void RenderPrecipitation(void *context);
+			void RenderPrecipitation(void *context,void *depth_tex,simul::sky::float4 viewportTextureRegionXYWH);
 			//! Get a pointer to the sky renderer owned by this class instance.
 			SimulGLSkyRenderer *GetSkyRenderer();
 			//! Get a pointer to the 3d cloud renderer owned by this class instance.

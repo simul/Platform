@@ -22,7 +22,7 @@ uniform_buffer RainPerViewConstants SIMUL_BUFFER_REGISTER(8)
 	uniform float nearZ;
 	uniform float farZ;
 	uniform vec3 depthToLinFadeDistParams;
-	uniform float fill1;
+	uniform float nearRainDistance;			// as a proportion of max fade distance
 	uniform vec4 viewportToTexRegionScaleBias;
 };
 uniform_buffer RainOsdConstants SIMUL_BUFFER_REGISTER(9)

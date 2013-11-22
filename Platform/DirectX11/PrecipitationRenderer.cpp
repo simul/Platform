@@ -203,7 +203,8 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	perViewConstants.nearZ=0;//frustum.nearZ*0.001f/fade_distance_km;
 	perViewConstants.farZ=0;//frustum.farZ*0.001f/fade_distance_km;
 	perViewConstants.viewPos		=viewPos;
-
+	static float near_rain_distance_metres=250.f;
+	perViewConstants.nearRainDistance=near_rain_distance_metres/max_fade_distance_metres;
 	perViewConstants.depthToLinFadeDistParams = simul::math::Vector3( proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
 	
 	perViewConstants.viewportToTexRegionScaleBias = simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
