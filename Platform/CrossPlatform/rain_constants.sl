@@ -14,9 +14,9 @@ uniform_buffer RainConstants SIMUL_BUFFER_REGISTER(10)
 
 uniform_buffer RainPerViewConstants SIMUL_BUFFER_REGISTER(8)
 {
-	uniform mat4 worldViewProj;
-	uniform mat4 invViewProj;
-	uniform vec3 viewPos;
+	uniform mat4 worldViewProj[2];
+	uniform mat4 invViewProj[2];
+	uniform vec3 viewPos[2];
 	uniform float filld;
 	uniform vec2 tanHalfFov;
 	uniform float nearZ;
@@ -29,4 +29,13 @@ uniform_buffer RainOsdConstants SIMUL_BUFFER_REGISTER(9)
 {
 	uniform vec4 rect;
 };
+
+struct TransformedParticle
+{
+    vec4 position;
+	float pointSize;
+	float brightness;
+	vec3 view;
+};
+
 #endif

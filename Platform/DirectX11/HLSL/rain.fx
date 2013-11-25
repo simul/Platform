@@ -3,12 +3,27 @@
 #include "../../CrossPlatform/rain_constants.sl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/depth.sl"
+// Same as transformedParticle, but with semantics
+struct particleVertexOutput
+{
+    float4 position0		:SV_POSITION;
+    float4 position1		:TEXCOORD2;
+	float pointSize			:PSIZE;
+	float brightness		:TEXCOORD0;
+	vec3 view				:TEXCOORD1;
+};
+
 texture2D randomTexture;
 TextureCube cubeTexture;
 texture2D rainTexture;
 texture2D showTexture;
 // The RESOLVED depth texture at full resolution
 texture2D depthTexture;
+
+StructuredBuffer<vec3> positions;
+RWStructuredBuffer<TransformedParticle> transformedParticlesRW;
+StructuredBuffer<TransformedParticle> transformedParticles;
+
 SamplerState rainSampler
 {
 	Filter = MIN_MAG_MIP_LINEAR;
@@ -18,8 +33,8 @@ SamplerState rainSampler
 
 struct vertexInputRenderRainTexture
 {
-    float4 position			: POSITION;
-    float2 texCoords		: TEXCOORD0;
+    float4 position		: POSITION;
+    float2 texCoords	: TEXCOORD0;
 };
 
 struct vertexInput
@@ -31,7 +46,7 @@ struct vertexInput
 struct posOnly
 {
     float3 position		: POSITION;
-	uint vertex_id			: SV_VertexID;
+	uint vertex_id		: SV_VertexID;
 };
 
 struct vertexOutput
@@ -41,9 +56,9 @@ struct vertexOutput
     float3 viewDir		: TEXCOORD1;
 };
 
-float rand(float2 co)
+float rand(vec2 co)
 {
-    return frac(sin(dot(co.xy ,float2(12.9898,78.233))) * 43758.5453);
+    return frac(sin(dot(co.xy,vec2(12.9898,78.233)))*43758.5453);
 }
 
 struct rainVertexOutput
@@ -51,14 +66,6 @@ struct rainVertexOutput
     float4 position			: SV_POSITION;
     float2 clip_pos			: TEXCOORD1;
     float2 texCoords		: TEXCOORD0;
-};
-
-struct particleVertexOutput
-{
-    float4 position			:SV_POSITION;
-	float pointSize			:PSIZE;
-	float brightness		:TEXCOORD0;
-	vec3 view				:TEXCOORD1;
 };
 
 struct particleGeometryOutput
@@ -80,26 +87,49 @@ posTexVertexOutput VS_ShowTexture(idOnly id)
     return VS_ScreenQuad(id,rect);
 }
 
-float4 PS_ShowTexture(posTexVertexOutput In): SV_TARGET
+vec4 PS_ShowTexture(posTexVertexOutput In): SV_TARGET
 {
     return texture_wrap_lod(showTexture,In.texCoords,0);
+}
+
+void transf(out TransformedParticle p,in vec3 position,int i)
+{
+	vec3 particlePos	=position.xyz;
+	particlePos			*=30.0;
+	particlePos			-=viewPos[i];
+	particlePos.z		-=offset;
+	particlePos			=Frac(particlePos,30.0);
+	float ph			=flurryRate*phase;
+	particlePos			+=.125*flurry*randomTexture.SampleLevel(wrapSamplerState,vec2(2.0*ph+1.7*position.x,2.0*ph+2.3*position.y),0).xyz;
+	particlePos			+=flurry*randomTexture.SampleLevel(wrapSamplerState,vec2(ph+position.x,ph+position.y),0).xyz;
+	p.position			=mul(worldViewProj[i],vec4(particlePos.xyz,1.0));
+	p.view				=normalize(particlePos.xyz);
+	p.pointSize			=snowSize;
+	p.brightness		=1.f;//(float)frac(viewPos.x);//60.1/length(clip_pos-viewPos);
+}
+
+// transform to 
+[numthreads(1,1,1)]
+void CS_Transform(uint3 pos	: SV_DispatchThreadID )
+{
+	TransformedParticle p;
+	transf(p,positions[pos.x],1);
+	transformedParticlesRW[pos.x]=p;
 }
 
 particleVertexOutput VS_Particles(posOnly IN)
 {
 	particleVertexOutput OUT;
-	vec3 particlePos	=IN.position.xyz;
-	particlePos			*=30.0;
-	particlePos			-=viewPos;
-	particlePos.z		-=offset;
-	particlePos			=Frac(particlePos,30.0);
-	float p				=flurryRate*phase;
-	particlePos			+=.125*flurry*randomTexture.SampleLevel(wrapSamplerState,vec2(2.0*p+1.7*IN.position.x,2.0*p+2.3*IN.position.y),0).xyz;
-	particlePos			+=flurry*randomTexture.SampleLevel(wrapSamplerState,vec2(p+IN.position.x,p+IN.position.y),0).xyz;
-	OUT.position		=mul(worldViewProj,float4(particlePos.xyz,1.0));
-	OUT.view			=normalize(particlePos.xyz);
-	OUT.pointSize		=snowSize;
-	OUT.brightness		=1.f;//(float)frac(viewPos.x);//60.1/length(clip_pos-viewPos);
+	TransformedParticle p0;
+	transf(p0,IN.position.xyz,0);
+	TransformedParticle p1;
+	transf(p1,IN.position.xyz,1);
+	
+    OUT.position0	=p0.position;
+    OUT.position1	=p1.position;
+	OUT.pointSize	=p1.pointSize;
+	OUT.brightness	=p1.brightness;
+	OUT.view		=p1.view;
 	return OUT;
 }
 
@@ -128,8 +158,8 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
 	// Emit two new triangles
 	[unroll]for(int i=0; i<4; i++)
 	{
-        output.position = input[0].position + float4(g_positions[i].xy * input[0].pointSize,0,0); 
-        //output.Position.y *= g_fAspectRatio; // Correct for the screen aspect ratio, since the sprite is calculated in eye space
+        output.position		=input[0].position + vec4(g_positions[i].xy*input[0].pointSize,0,0); 
+        //output.Position.y *= aspectRatio; // Correct for the screen aspect ratio, since the sprite is calculated in eye space
 		output.texCoords	=g_texcoords[i];
         output.brightness	=input[0].brightness;  
         output.view			=input[0].view;     
@@ -138,13 +168,13 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
     SpriteStream.RestartStrip();
 }
 
-float4 PS_Particles(particleGeometryOutput IN): SV_TARGET
+vec4 PS_Particles(particleGeometryOutput IN): SV_TARGET
 {
-	float4 result	=cubeTexture.Sample(wrapSamplerState,IN.view);
+	vec4 result		=cubeTexture.Sample(wrapSamplerState,-IN.view);
 	vec2 pos		=IN.texCoords*2.0-1.0;
 	float radius	=intensity*length(pos.xy);
 	float opacity	=saturate(intensity-radius)/.5;
-	return float4(IN.brightness*lightColour.rgb+result.rgb,opacity);
+	return vec4(result.rgb,opacity);
 }
 
 rainVertexOutput VS_FullScreen(idOnly IN)
@@ -158,14 +188,14 @@ rainVertexOutput VS_FullScreen(idOnly IN)
 		{-1.0, 1.0},
 	};
 	OUT.clip_pos	=poss[IN.vertex_id];
-	OUT.position	=float4(OUT.clip_pos,0.0,1.0);
+	OUT.position	=vec4(OUT.clip_pos,0.0,1.0);
 	// Set to far plane
 #ifdef REVERSE_DEPTH
 	OUT.position.z	=0.0; 
 #else
 	OUT.position.z	=OUT.position.w; 
 #endif
-    OUT.texCoords	=0.5*(float2(1.0,1.0)+vec2(OUT.clip_pos.x,-OUT.clip_pos.y));
+    OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(OUT.clip_pos.x,-OUT.clip_pos.y));
 //OUT.texCoords	+=0.5*texelOffsets;
 	return OUT;
 }
@@ -173,14 +203,14 @@ rainVertexOutput VS_FullScreen(idOnly IN)
 float4 PS_RenderRainTexture(rainVertexOutput IN): SV_TARGET
 {
 	float r=0;
-	float2 t=IN.texCoords.xy;
+	vec2 t=IN.texCoords.xy;
 	for(int i=0;i<32;i++)
 	{
 		r+=rand(frac(t.xy));
 		t.y+=1.0/512.0;
 	}
 	r/=32.0;
-	float4 result=float4(r,r,r,r);
+	float4 result=vec4(r,r,r,r);
     return result;
 }
 
@@ -193,7 +223,7 @@ float4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
 
 float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 {
-	vec3 view				=normalize(mul(invViewProj,vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
+	vec3 view				=normalize(mul(invViewProj[1],vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
 	
 	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	float depth				=texture_clamp(depthTexture,depth_texc).x;
@@ -233,6 +263,15 @@ technique11 simul_rain
 		SetPixelShader(CompileShader(ps_4_0,PS_Overlay()));
 		SetDepthStencilState(DisableDepth,0);
 		SetBlendState(AlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+    }
+}
+
+// Transform to screen space.
+technique11 transform_particles
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_Transform()));
     }
 }
 
