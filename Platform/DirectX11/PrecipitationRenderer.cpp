@@ -40,7 +40,7 @@ void PrecipitationRenderer::RecompileShaders()
 
 	rainConstants.LinkToEffect(effect,"RainConstants");
 	perViewConstants.LinkToEffect(effect,"RainPerViewConstants");
-
+	
 	ID3D11DeviceContext *m_pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 
@@ -173,7 +173,6 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	
 	rainConstants.lightColour	=(const float*)light_colour;
 	rainConstants.lightDir		=(const float*)light_dir;
-	rainConstants.offset		=offs;
 	rainConstants.phase			=Phase;
 	rainConstants.flurry		=Waver;
 	rainConstants.flurryRate	=1.0f;
@@ -200,6 +199,8 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	perViewConstants.worldViewProj[0]	=perViewConstants.worldViewProj[1];
 	perViewConstants.worldViewProj[1]	=wvp;
 	perViewConstants.worldViewProj[1].transpose();
+	perViewConstants.offset[0]		=perViewConstants.offset[1];
+	perViewConstants.offset[1]		=vec4(0,0,offs,0);
 	perViewConstants.tanHalfFov		=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	perViewConstants.nearZ=0;//frustum.nearZ*0.001f/fade_distance_km;
 	perViewConstants.farZ=0;//frustum.farZ*0.001f/fade_distance_km;

@@ -82,6 +82,14 @@ vec3 Frac(vec3 pos,float scale)
 	return scale*(2.0*frac(0.5*(pos/scale+unity))-unity);
 }
 
+vec3 Frac(vec3 pos,vec3 p1,float scale)
+{
+	vec3 unity	=vec3(1.0,1.0,1.0);
+	vec3 p2		=scale*(2.0*frac(0.5*(p1/scale+unity))-unity);
+	pos			+=p2-p1;
+	return pos;
+}
+
 posTexVertexOutput VS_ShowTexture(idOnly id)
 {
     return VS_ScreenQuad(id,rect);
@@ -96,9 +104,10 @@ void transf(out TransformedParticle p,in vec3 position,int i)
 {
 	vec3 particlePos	=position.xyz;
 	particlePos			*=30.0;
-	particlePos			-=viewPos[i];
-	particlePos.z		-=offset;
-	particlePos			=Frac(particlePos,30.0);
+	vec3 pp1			=particlePos-viewPos[1].xyz-offset[1].xyz;
+	particlePos			-=viewPos[i].xyz;
+	particlePos			-=offset[i].xyz;
+	particlePos			=Frac(particlePos,pp1,30.0);
 	float ph			=flurryRate*phase;
 	particlePos			+=.125*flurry*randomTexture.SampleLevel(wrapSamplerState,vec2(2.0*ph+1.7*position.x,2.0*ph+2.3*position.y),0).xyz;
 	particlePos			+=flurry*randomTexture.SampleLevel(wrapSamplerState,vec2(ph+position.x,ph+position.y),0).xyz;
@@ -137,25 +146,84 @@ cbuffer cbImmutable
 {
     float4 g_positions[4] : packoffset(c0) =
     {
-        float4( 0.5,-0.5,0,0),
-        float4( 0.5, 0.5,0,0),
         float4(-0.5,-0.5,0,0),
+        float4( 0.5,-0.5,0,0),
         float4(-0.5, 0.5,0,0),
+        float4( 0.5, 0.5,0,0),
     };
     float2 g_texcoords[4] : packoffset(c4) = 
     { 
-        float2(1,0), 
-        float2(1,1),
         float2(0,0),
+        float2(1,0), 
         float2(0,1),
+        float2(1,1),
     };
 };
 
-[maxvertexcount(4)]
+[maxvertexcount(6)]
 void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<particleGeometryOutput> SpriteStream)
 {
     particleGeometryOutput output;
-	// Emit two new triangles
+	// Emit four new triangles.
+
+	// The two centres of the streak positions.
+	vec4 pos1=input[0].position0;
+	vec4 pos2=input[0].position1;
+	
+	if(pos1.y>pos2.y)
+	{
+		vec4 pos_temp=pos2;
+		pos2=pos1;
+		pos1=pos_temp;
+	}
+	float sz=input[0].pointSize;
+	output.brightness	=input[0].brightness;  
+	output.view			=input[0].view;    
+	if(pos1.x<=pos2.x)
+	{
+		// bottom-left quadrant:
+		output.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[0];
+		SpriteStream.Append(output);
+		output.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[1];
+		SpriteStream.Append(output);
+		output.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[2];
+		SpriteStream.Append(output);
+		output.position		=pos2+vec4(g_positions[1].xy*sz,0,0);  
+		output.texCoords	=g_texcoords[1];
+		SpriteStream.Append(output);
+		output.position		=pos2+vec4(g_positions[2].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[2];
+		SpriteStream.Append(output);
+		output.position		=pos2+vec4(g_positions[3].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[3];
+		SpriteStream.Append(output);
+	}
+	/*else
+	{
+		// bottom-left quadrant:
+		output.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[0];
+		SpriteStream.Append(output);
+		output.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[2];
+		SpriteStream.Append(output);
+		output.position		=pos2+vec4(g_positions[0].xy*sz,0,0);  
+		output.texCoords	=g_texcoords[0];
+		SpriteStream.Append(output);
+		output.position		=pos1+vec4(g_positions[3].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[3];
+		SpriteStream.Append(output);
+		output.position		=pos2+vec4(g_positions[2].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[2];
+		SpriteStream.Append(output);
+		output.position		=pos2+vec4(g_positions[1].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[1];
+		SpriteStream.Append(output);
+	}*/
+	/*
 	[unroll]for(int i=0; i<4; i++)
 	{
         output.position		=input[0].position + vec4(g_positions[i].xy*input[0].pointSize,0,0); 
@@ -164,7 +232,7 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
         output.brightness	=input[0].brightness;  
         output.view			=input[0].view;     
 		SpriteStream.Append(output);
-    }
+    }*/
     SpriteStream.RestartStrip();
 }
 
@@ -238,7 +306,7 @@ float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 	float step_range		=layer_distance;
 	for(int i=0;i<2;i++)
 	{
-		vec2 layer_texc		=vec2(texc.x,texc.y+.5*offset);
+		vec2 layer_texc		=vec2(texc.x,texc.y+.5*offset[1].z);
 		vec4 r				=rainTexture.Sample(wrapSamplerState,layer_texc.xy);
 		float a				=saturate(br*(saturate(r.x+intensity-1.0)));
 		a					*=saturate((dist-layer_distance)/step_range);
