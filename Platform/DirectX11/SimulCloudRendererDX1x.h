@@ -75,6 +75,7 @@ namespace simul
 			float GetTiming() const;
 			//! Get the list of three textures used for cloud rendering.
 			CloudShadowStruct GetCloudShadowTexture();
+			void *GetRandomTexture3D();
 			void SetLossTexture(void *t);
 			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);

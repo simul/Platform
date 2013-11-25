@@ -24,7 +24,6 @@ PrecipitationRenderer::PrecipitationRenderer() :
 	,effect(NULL)
 	,rain_texture(NULL)
 	,cubemap_SRV(NULL)
-	,random_SRV(NULL)
 {
 }
 
@@ -55,24 +54,17 @@ void PrecipitationRenderer::RecompileShaders()
 	// Make sure it isn't destroyed when the fb goes out of scope:
 	rain_texture->AddRef();
 
-	SAFE_RELEASE(random_SRV);
-	ID3DX11EffectTechnique*	tech2=effect->GetTechniqueByName("create_random_texture");
-	ApplyPass(m_pImmediateContext,tech2->GetPassByIndex(0));
-	simul::dx11::Framebuffer random_fb(16,16);
-	random_fb.SetDepthFormat(0);
-	random_fb.RestoreDeviceObjects(m_pd3dDevice);
-	random_fb.Activate(m_pImmediateContext);
-	random_fb.DrawQuad(m_pImmediateContext);
-	random_fb.Deactivate(m_pImmediateContext);
-	random_SRV=random_fb.buffer_texture_SRV;
-	random_SRV->AddRef();
-
 	SAFE_RELEASE(m_pImmediateContext);
 }
 
 void PrecipitationRenderer::SetCubemapTexture(void *t)
 {
 	cubemap_SRV=(ID3D11ShaderResourceView*)t;
+}
+
+void PrecipitationRenderer::SetRandomTexture3D(void *t)
+{
+	randomTexture3D=(ID3D11ShaderResourceView*)t;
 }
 
 void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
@@ -127,7 +119,6 @@ void PrecipitationRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(rain_texture);
 	SAFE_RELEASE(m_pVertexBuffer);
-	SAFE_RELEASE(random_SRV);
 	
 	rainConstants.InvalidateDeviceObjects();
 	perViewConstants.InvalidateDeviceObjects();
@@ -161,7 +152,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	PIXBeginNamedEvent(0,"Render Precipitation");
 	rainTexture->SetResource(rain_texture);
 	simul::dx11::setTexture(effect,"cubeTexture",cubemap_SRV);
-	simul::dx11::setTexture(effect,"randomTexture",random_SRV);
+	simul::dx11::setTexture(effect,"randomTexture3D",randomTexture3D);
 	simul::dx11::setTexture(effect,"depthTexture",(ID3D11ShaderResourceView*)depth_tex);
 	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
 	//set up matrices
@@ -177,7 +168,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	rainConstants.phase			=Phase;
 	rainConstants.flurry		=Waver;
 	rainConstants.flurryRate	=1.0f;
-	rainConstants.snowSize		=0.2f;
+	rainConstants.snowSize		=0.1f;
 
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
@@ -208,9 +199,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	perViewConstants.depthToLinFadeDistParams = simul::math::Vector3( proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
 	
 	perViewConstants.viewportToTexRegionScaleBias = simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
-
-
-
+	
 	perViewConstants.Apply(m_pImmediateContext);
 
 	if(RainToSnow<1.f)
@@ -230,6 +219,10 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 		rainConstants.Apply(m_pImmediateContext);
 		RenderParticles(m_pImmediateContext);
 	}
+	simul::dx11::setTexture(effect,"cubeTexture",NULL);
+	simul::dx11::setTexture(effect,"randomTexture3D",NULL);
+	simul::dx11::setTexture(effect,"depthTexture",NULL);
+	ApplyPass(m_pImmediateContext,m_hTechniqueRain->GetPassByIndex(0));
 }
 
 void PrecipitationRenderer::RenderParticles(void *context)
@@ -276,8 +269,11 @@ void PrecipitationRenderer::RenderTextures(void *context,int width,int height)
 	int w=(width-8)/u;
 	//if(w/8>height/3)
 	//	w=8*height/3;
+	int h=w/8;
 	UtilityRenderer::SetScreenSize(width,height);
 	simul::dx11::setTexture(effect,"showTexture",rain_texture);
-	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w/8,effect,effect->GetTechniqueByName("show_texture"));
+	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(h+8),w,h,effect,effect->GetTechniqueByName("show_texture"));
+	//simul::dx11::setTexture(effect,"showTexture",random_SRV);
+	//UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-2*(h+8),h,h,effect,effect->GetTechniqueByName("show_texture"));
 	simul::dx11::setTexture(effect,"showTexture",NULL);
 }

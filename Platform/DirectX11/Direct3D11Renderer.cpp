@@ -168,6 +168,8 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 			cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,nearPlane,farPlane,false);
 		//
 		//cubemapDepthFramebuffer.Activate(pContext);
+		// We must render the celestial background because the sun is bright, and therefore adds to the Spherical harmonics
+		simulWeatherRenderer->RenderCelestialBackground(pContext,Exposure);
 		if(simulTerrainRenderer&&ShowTerrain)
 		{
 			simulTerrainRenderer->SetMatrices(view_matrices[i],cube_proj);

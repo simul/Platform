@@ -45,6 +45,8 @@ namespace simul
 			void Render(void *context,void *depth_tex,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH);
 			//! Put textures to screen for debugging
 			void RenderTextures(void *context,int width,int height);
+			//! Provide a random 3D texture. This is set externally so the texture can be shared.
+			void SetRandomTexture3D(void *text);
 		protected:
 			void RenderParticles(void *context);
 			ID3D11Device*							m_pd3dDevice;
@@ -52,7 +54,7 @@ namespace simul
 			ID3D11Buffer*							m_pVertexBuffer;
 			ID3DX11Effect*							effect;		// The fx file for the sky
 			ID3D11ShaderResourceView*				rain_texture;
-			ID3D11ShaderResourceView*				random_SRV;
+			ID3D11ShaderResourceView*				randomTexture3D;
 			ID3D11ShaderResourceView*				cubemap_SRV;
 			ID3D1xEffectShaderResourceVariable*		rainTexture;
 			vec3  *particles;

@@ -293,7 +293,6 @@ bool SimulHDRRenderer::FinishRender(void *)
 
 void SimulHDRRenderer::Render(void *context,void *tex)
 {
-	HRESULT hr=S_OK;
 	D3DSURFACE_DESC desc;
 	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
 	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);

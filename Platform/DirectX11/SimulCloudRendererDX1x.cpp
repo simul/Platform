@@ -1058,6 +1058,11 @@ CloudShadowStruct SimulCloudRendererDX1x::GetCloudShadowTexture()
 	return s;
 }
 
+void *SimulCloudRendererDX1x::GetRandomTexture3D()
+{
+	return noise_texture_3D.shaderResourceView;
+}
+
 void SimulCloudRendererDX1x::SetYVertical(bool y)
 {
 	BaseCloudRenderer::SetYVertical(y);

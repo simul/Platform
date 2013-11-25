@@ -111,13 +111,33 @@ vec4 convertInt(Texture2D<uint> glowTexture,vec2 texCoord)
 	return color;
 }
 
+/*
+ The Filmic tone mapper is from: http://filmicgames.com/Downloads/GDC_2010/Uncharted2-Hdr-Lighting.pptx
+These numbers DO NOT have the pow(x,1/2.2) baked in
+*/
+vec3 FilmicTone(vec3 x)
+{
+	float A				=0.22;	//Shoulder Strength
+	float B				=0.30;	//Linear Strength
+	float C				=0.10;	//Linear Angle
+	float D				=0.20;	//Toe Strength
+	float E				=0.01;	//Toe Numerator
+	float F				=0.30;	//Toe Denominator
+	//Note: E/F = Toe Angle
+	float LinearWhite	=1.2;	//Linear White Point Value
+	vec3 Fx				= ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F)) - E/F;
+	vec3 Fw				= ((LinearWhite*(A*LinearWhite+C*B)+D*E)/(LinearWhite*(A*LinearWhite+B)+D*F)) - E/F;
+	vec3 c				= Fx/Fw;
+	return c;
+}
+
 vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
 {
 	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
 	vec4 glow=convertInt(glowTexture,IN.texCoords);
 	c.rgb+=glow.rgb;
 	c.rgb*=exposure;
-	c.rgb=pow(c.rgb,gamma);
+	c.rgb=FilmicTone(c.rgb);//pow(c.rgb,gamma);
     return vec4(c.rgb,1.f);
 }
 
@@ -126,7 +146,7 @@ vec4 ExposureGammaPS(v2f IN) : SV_TARGET
 	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
 
 	c.rgb*=exposure;
-	c.rgb=pow(c.rgb,gamma);
+	c.rgb=FilmicTone(c.rgb);//pow(c.rgb,gamma);
     return vec4(c.rgb,1.f);
 }
 
