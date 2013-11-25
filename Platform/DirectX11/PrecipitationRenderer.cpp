@@ -39,7 +39,7 @@ void PrecipitationRenderer::RecompileShaders()
 
 	rainConstants.LinkToEffect(effect,"RainConstants");
 	perViewConstants.LinkToEffect(effect,"RainPerViewConstants");
-
+	
 	ID3D11DeviceContext *m_pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 
@@ -164,7 +164,6 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	
 	rainConstants.lightColour	=(const float*)light_colour;
 	rainConstants.lightDir		=(const float*)light_dir;
-	rainConstants.offset		=offs;
 	rainConstants.phase			=Phase;
 	rainConstants.flurry		=Waver;
 	rainConstants.flurryRate	=1.0f;
@@ -185,15 +184,19 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	viewproj.Transpose(vpt);
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
-
-	perViewConstants.invViewProj=ivp;
-	perViewConstants.invViewProj.transpose();
-	perViewConstants.worldViewProj	=wvp;
-	perViewConstants.worldViewProj.transpose();
-	perViewConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	perViewConstants.invViewProj[0]	=perViewConstants.invViewProj[1];
+	perViewConstants.invViewProj[1]	=ivp;
+	perViewConstants.invViewProj[1].transpose();
+	perViewConstants.worldViewProj[0]	=perViewConstants.worldViewProj[1];
+	perViewConstants.worldViewProj[1]	=wvp;
+	perViewConstants.worldViewProj[1].transpose();
+	perViewConstants.offset[0]		=perViewConstants.offset[1];
+	perViewConstants.offset[1]		=vec4(0,0,offs,0);
+	perViewConstants.tanHalfFov		=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	perViewConstants.nearZ=0;//frustum.nearZ*0.001f/fade_distance_km;
 	perViewConstants.farZ=0;//frustum.farZ*0.001f/fade_distance_km;
-	perViewConstants.viewPos		=viewPos;
+	perViewConstants.viewPos[0]		=perViewConstants.viewPos[1];
+	perViewConstants.viewPos[1]		=viewPos;
 	static float near_rain_distance_metres=250.f;
 	perViewConstants.nearRainDistance=near_rain_distance_metres/max_fade_distance_metres;
 	perViewConstants.depthToLinFadeDistParams = simul::math::Vector3( proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
