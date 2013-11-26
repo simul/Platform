@@ -36,6 +36,7 @@ struct TransformedParticle
 	float pointSize;
 	float brightness;
 	vec3 view;
+	float fade;
 };
 
 #endif

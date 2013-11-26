@@ -13,6 +13,7 @@ struct particleVertexOutput
 	float pointSize			:PSIZE;
 	float brightness		:TEXCOORD0;
 	vec3 view				:TEXCOORD1;
+	float fade				:TEXCOORD3;
 };
 
 texture2D randomTexture;
@@ -23,6 +24,7 @@ texture2D showTexture;
 texture2D depthTexture;
 
 StructuredBuffer<vec3> positions;
+RWStructuredBuffer<float> targetVertexBuffer;
 RWStructuredBuffer<TransformedParticle> transformedParticlesRW;
 StructuredBuffer<TransformedParticle> transformedParticles;
 
@@ -71,6 +73,7 @@ struct particleGeometryOutput
     float2 texCoords		:TEXCOORD0;
 	float brightness		:TEXCOORD1;
 	vec3 view				:TEXCOORD2;
+	float fade				:TEXCOORD3;
 };
 
 vec3 Frac(vec3 pos,float scale)
@@ -106,40 +109,43 @@ void transf(out TransformedParticle p,in vec3 position,int i)
 	particlePos			+=offset[i].xyz;
 	particlePos			=Frac(particlePos,pp1,20.0);
 	float ph			=flurryRate*phase;
-	vec3 rand1			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/40.0,0).xyz;
-	vec3 rand2			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/40.0*5.0,0).xyz;
+	vec3 rand1			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/100.0,0).xyz;
+	vec3 rand2			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/100.0*5.0,0).xyz;
 	particlePos			+=2.5*flurry*rand1;
 	particlePos			+=.7*flurry*rand2;
 	p.position			=mul(worldViewProj[i],vec4(particlePos.xyz,1.0));
 	p.view				=normalize(particlePos.xyz);
-	p.pointSize			=snowSize*(0.4+0.2*rand2.y);
-	p.brightness		=1.5*saturate((float)10.0*p.position.w);///length(clip_pos-viewPos);
+	p.pointSize			=snowSize*(1.5+0.4*rand2.y);
+	p.brightness		=1.0;
+	p.fade				=saturate(.1*p.position.w);///length(clip_pos-viewPos);
 }
 
-[numthreads(1,1,1)]
-void CS_Transform(uint3 pos	: SV_DispatchThreadID )
+[numthreads(10,10,10)]
+void CS_MakeVertexBuffer(uint3 idx	: SV_DispatchThreadID )
 {
-	TransformedParticle p;
-	transf(p,positions[pos.x],1);
-	transformedParticlesRW[pos.x]=p;
+	vec3 r						=vec3(idx)/40.0;
+	vec3 pos					=vec3(rand3(r),rand3(11.01*r),rand3(587.087*r));
+	pos							*=2.0;
+	pos							-=vec3(1.0,1.0,1.0);
+	int i						=idx.z*1600+idx.y*40+idx.x;
+	targetVertexBuffer[i*3]		=pos.x;
+	targetVertexBuffer[i*3+1]	=pos.y;
+	targetVertexBuffer[i*3+2]	=pos.z;
 }
 
-particleVertexOutput VS_Particles(idOnly id)
+particleVertexOutput VS_Particles(posOnly IN)
 {
-	vec2 r=vec2(id.vertex_id*.777,101.11*id.vertex_id);
-	vec3 pos=vec3(2.0*rand(r.xy)-1.0
-				,2.0*rand(3.11*r.yy)-1.0
-				,2.0*rand(8.9167*r.yx)-1.0);
 	particleVertexOutput OUT;
 	TransformedParticle p0;
-	transf(p0,pos,0);
+	transf(p0,IN.position,0);
 	TransformedParticle p1;
-	transf(p1,pos,1);
+	transf(p1,IN.position,1);
 	
     OUT.position0	=p0.position;
     OUT.position1	=p1.position;
 	OUT.pointSize	=p1.pointSize;
 	OUT.brightness	=p1.brightness;
+	OUT.fade		=p1.fade;
 	OUT.view		=p1.view;
 	return OUT;
 }
@@ -172,16 +178,39 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
 	vec4 pos1=input[0].position0;
 	vec4 pos2=input[0].position1;
 	
-	if(pos1.y>pos2.y)
+	if(pos1.y/pos1.w>pos2.y/pos2.w)
 	{
 		vec4 pos_temp=pos2;
 		pos2=pos1;
 		pos1=pos_temp;
 	}
 	float sz=input[0].pointSize;
+	vec2 diff	=pos2.yx-pos1.yx;
+	diff.y		=-diff.y;
+	diff		=sz*diff/(0.0001+length(diff));
+
 	output.brightness	=input[0].brightness;  
-	output.view			=input[0].view;    
-	if(pos1.x<=pos2.x)
+	output.fade			=input[0].fade;  
+	output.view			=input[0].view;
+
+	vec4 side			=vec4(diff/2.0,0,0);
+#if 0
+	{
+		output.position		=pos1+side; 
+		output.texCoords	=g_texcoords[0];
+		SpriteStream.Append(output);
+		output.position		=pos1-side; 
+		output.texCoords	=g_texcoords[1];
+		SpriteStream.Append(output);
+		output.position		=pos2+side; 
+		output.texCoords	=g_texcoords[2];
+		SpriteStream.Append(output);
+		output.position		=pos2-side; 
+		output.texCoords	=g_texcoords[3];
+		SpriteStream.Append(output);
+	}
+#else
+	if(pos1.x/pos1.w<=pos2.x/pos2.w)
 	{
 		// bottom-left quadrant:
 		output.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
@@ -206,35 +235,26 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
 	else
 	{
 		// bottom-left quadrant:
-		output.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[1];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[0];
-		SpriteStream.Append(output);
-		output.position		=pos2+vec4(g_positions[1].xy*sz,0,0);  
-		output.texCoords	=g_texcoords[1];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
+		output.position		=pos2+vec4(g_positions[2].xy*sz,0,0); 
 		output.texCoords	=g_texcoords[2];
 		SpriteStream.Append(output);
 		output.position		=pos2+vec4(g_positions[3].xy*sz,0,0); 
 		output.texCoords	=g_texcoords[3];
 		SpriteStream.Append(output);
-		output.position		=pos2+vec4(g_positions[2].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[2];
+		output.position		=pos2+vec4(g_positions[0].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[0];
+		SpriteStream.Append(output);
+		output.position		=pos1+vec4(g_positions[3].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[3];
+		SpriteStream.Append(output);
+		output.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[0];
+		SpriteStream.Append(output);
+		output.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[1];
 		SpriteStream.Append(output);
 	}
-	/*
-	[unroll]for(int i=0;i<4;i++)
-	{
-        output.position		=input[0].position + vec4(g_positions[i].xy*input[0].pointSize,0,0); 
-        //output.Position.y *= aspectRatio; // Correct for the screen aspect ratio, since the sprite is calculated in eye space
-		output.texCoords	=g_texcoords[i];
-        output.brightness	=input[0].brightness;  
-        output.view			=input[0].view;     
-		SpriteStream.Append(output);
-    }*/
+#endif
     SpriteStream.RestartStrip();
 }
 
@@ -244,8 +264,8 @@ vec4 PS_Particles(particleGeometryOutput IN): SV_TARGET
 	vec2 pos		=IN.texCoords*2.0-1.0;
 	float radius	=length(pos.xy);
 	float angle		=atan2(pos.x,pos.y);
-	float spoke		=fract(angle/pi*3.0)-0.5;
-	float opacity	=saturate(IN.brightness*saturate(1.0-radius)-spoke*spoke);
+	//float spoke		=fract(angle/pi*3.0)-0.5;
+	float opacity	=IN.fade*saturate(1.0-radius);//-spoke*spoke);
 	return (vec4(result.rgb,opacity));
 }
 
@@ -342,11 +362,11 @@ technique11 simul_rain
 }
 
 // Transform to screen space.
-technique11 transform_particles
+technique11 make_vertex_buffer
 {
     pass p0 
     {
-		SetComputeShader(CompileShader(cs_5_0,CS_Transform()));
+		SetComputeShader(CompileShader(cs_5_0,CS_MakeVertexBuffer()));
     }
 }
 
@@ -355,11 +375,12 @@ technique11 simul_particles
     pass p0 
     {
 		SetRasterizerState(RenderNoCull);
+		//SetRasterizerState( wireframeRasterizer );
         SetGeometryShader(CompileShader(gs_4_0,GS_Particles()));
 		SetVertexShader(CompileShader(vs_4_0,VS_Particles()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Particles()));
 		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(AddAlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
     }
 }
 

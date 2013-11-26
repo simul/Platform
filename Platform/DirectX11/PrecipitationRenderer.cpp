@@ -20,10 +20,11 @@ using namespace dx11;
 PrecipitationRenderer::PrecipitationRenderer() :
 	m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
-	//,m_pVertexBuffer(NULL)
+	,m_pVertexBuffer(NULL)
 	,effect(NULL)
 	,rain_texture(NULL)
 	,cubemap_SRV(NULL)
+	,view_initialized(false)
 {
 }
 
@@ -53,8 +54,8 @@ void PrecipitationRenderer::RecompileShaders()
 	rain_texture=make_rain_fb.buffer_texture_SRV;
 	// Make sure it isn't destroyed when the fb goes out of scope:
 	rain_texture->AddRef();
-
 	SAFE_RELEASE(m_pImmediateContext);
+	view_initialized=false;
 }
 
 void PrecipitationRenderer::SetCubemapTexture(void *t)
@@ -84,30 +85,49 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
     D3D1x_PASS_DESC PassDesc;
 	m_hTechniqueParticles->GetPassByIndex(0)->GetDesc(&PassDesc);
 	hr=m_pd3dDevice->CreateInputLayout(decl,1,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
-/*   D3D1x_SUBRESOURCE_DATA InitData;
+/*	D3D1x_SUBRESOURCE_DATA InitData;
     ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-	particles=new vec3[40000];
+	particles=new vec3[64000];
 	simul::math::RandomNumberGenerator random;
-	for(int i=0;i<40000;i++)
+	for(int i=0;i<64000;i++)
 	{
 		vec3 pos(2.f*random.FRand()-1.f,2.f*random.FRand()-1.f,2.f*random.FRand()-1.f);
 		particles[i]=pos;
 	}
     InitData.pSysMem		= particles;
     InitData.SysMemPitch	= sizeof(vec3);*/
-/*	D3D11_BUFFER_DESC desc	=
+	D3D11_BUFFER_DESC desc	=
 	{
-        40000*sizeof(vec3),
+        64000*sizeof(vec3),
         D3D11_USAGE_DEFAULT,
-        D3D11_BIND_VERTEX_BUFFER,
-        0,
-        0
+        D3D11_BIND_VERTEX_BUFFER|D3D11_BIND_UNORDERED_ACCESS
+        ,0// CPU
+		,0//D3D11_RESOURCE_MISC_BUFFER_STRUCTURED
+		,sizeof(vec3)			//StructureByteStride
 	};
 	SAFE_RELEASE(m_pVertexBuffer);
-	m_pd3dDevice->CreateBuffer(&desc,NULL,&m_pVertexBuffer);
-	*/
-	// Use a compute shader to initialize the vertex buffer with 
+	V_CHECK(m_pd3dDevice->CreateBuffer(&desc,NULL,&m_pVertexBuffer));
+	
+	// Use a compute shader to initialize the vertex buffer with random positions
 	{
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+		ZeroMemory(&uav_desc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+		uav_desc.Format					=DXGI_FORMAT_R32_FLOAT;
+		uav_desc.ViewDimension			=D3D11_UAV_DIMENSION_BUFFER;
+		uav_desc.Buffer.FirstElement	=0;
+		uav_desc.Buffer.NumElements		=64000;
+		uav_desc.Buffer.Flags			=0;
+		ID3D11UnorderedAccessView* unorderedAccessView;
+		V_CHECK(m_pd3dDevice->CreateUnorderedAccessView(m_pVertexBuffer, &uav_desc, &unorderedAccessView));
+		ID3D11DeviceContext *m_pImmediateContext;
+		m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+		// shader has been created:
+		dx11::setUnorderedAccessView(effect,"targetVertexBuffer",unorderedAccessView);
+		ApplyPass(m_pImmediateContext,effect->GetTechniqueByName("make_vertex_buffer")->GetPassByIndex(0));
+		//40*40*40
+		m_pImmediateContext->Dispatch(4,4,4);
+		SAFE_RELEASE(unorderedAccessView);
+		SAFE_RELEASE(m_pImmediateContext);
 	}
 	rainConstants.RestoreDeviceObjects(m_pd3dDevice);
 	perViewConstants.RestoreDeviceObjects(m_pd3dDevice);
@@ -122,7 +142,7 @@ void PrecipitationRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(rain_texture);
-	//SAFE_RELEASE(m_pVertexBuffer);
+	SAFE_RELEASE(m_pVertexBuffer);
 	
 	rainConstants.InvalidateDeviceObjects();
 	perViewConstants.InvalidateDeviceObjects();
@@ -188,19 +208,43 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	viewproj.Transpose(vpt);
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
-	perViewConstants.invViewProj[0]	=perViewConstants.invViewProj[1];
+	if(view_initialized)
+	{
+		perViewConstants.invViewProj[0]		=perViewConstants.invViewProj[1];
+		perViewConstants.worldViewProj[0]	=perViewConstants.worldViewProj[1];
+		perViewConstants.offset[0]			=perViewConstants.offset[1];
+		perViewConstants.viewPos[0]			=perViewConstants.viewPos[1];
+	}
+
 	perViewConstants.invViewProj[1]	=ivp;
 	perViewConstants.invViewProj[1].transpose();
-	perViewConstants.worldViewProj[0]	=perViewConstants.worldViewProj[1];
 	perViewConstants.worldViewProj[1]	=wvp;
 	perViewConstants.worldViewProj[1].transpose();
-	perViewConstants.offset[0]		=perViewConstants.offset[1];
 	perViewConstants.offset[1]		=offs;
 	perViewConstants.tanHalfFov		=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	perViewConstants.nearZ=0;//frustum.nearZ*0.001f/fade_distance_km;
 	perViewConstants.farZ=0;//frustum.farZ*0.001f/fade_distance_km;
-	perViewConstants.viewPos[0]		=perViewConstants.viewPos[1];
 	perViewConstants.viewPos[1]		=viewPos;
+	
+	if(!view_initialized)
+	{
+		perViewConstants.invViewProj[0]		=perViewConstants.invViewProj[1];
+		perViewConstants.worldViewProj[0]	=perViewConstants.worldViewProj[1];
+		perViewConstants.offset[0]			=perViewConstants.offset[1];
+		perViewConstants.viewPos[0]			=perViewConstants.viewPos[1];
+		view_initialized=true;
+	}
+	// enforce the maximum offset for viewPos
+	sky::float4 pos0=perViewConstants.viewPos[0];
+	sky::float4 pos1=perViewConstants.viewPos[1];
+	sky::float4 diff=pos1-pos0;
+	float dist=sky::length(diff);
+	if(dist>1.0)
+	{
+		pos0=pos1-diff/dist;
+		perViewConstants.viewPos[0]=pos0;
+	}
+
 	static float near_rain_distance_metres=250.f;
 	perViewConstants.nearRainDistance=near_rain_distance_metres/max_fade_distance_metres;
 	perViewConstants.depthToLinFadeDistParams = simul::math::Vector3( proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
@@ -242,14 +286,14 @@ void PrecipitationRenderer::RenderParticles(void *context)
 	UINT stride = sizeof(vec3);
 	UINT offset = 0;
 
-	int numParticles=(int)(intensity*(RainToSnow)*100000.f);
+	int numParticles=(int)(intensity*(RainToSnow)*64000.f);
 
-/*	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
+	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
 												1,					// the number of buffers in the array
 												&m_pVertexBuffer,	// the array of vertex buffers
 												&stride,			// array of stride values, one for each buffer
 												&offset );			// array of offset values, one for each buffer
-*/
+
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
