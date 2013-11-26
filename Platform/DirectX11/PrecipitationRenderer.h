@@ -51,7 +51,7 @@ namespace simul
 			void RenderParticles(void *context);
 			ID3D11Device*							m_pd3dDevice;
 			ID3D11InputLayout*						m_pVtxDecl;
-			ID3D11Buffer*							m_pVertexBuffer;
+		//	..ID3D11Buffer*							m_pVertexBuffer;
 			ID3DX11Effect*							effect;		// The fx file for the sky
 			ID3D11ShaderResourceView*				rain_texture;
 			ID3D11ShaderResourceView*				randomTexture3D;

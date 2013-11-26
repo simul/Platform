@@ -20,7 +20,7 @@ using namespace dx11;
 PrecipitationRenderer::PrecipitationRenderer() :
 	m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
-	,m_pVertexBuffer(NULL)
+	//,m_pVertexBuffer(NULL)
 	,effect(NULL)
 	,rain_texture(NULL)
 	,cubemap_SRV(NULL)
@@ -84,7 +84,7 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
     D3D1x_PASS_DESC PassDesc;
 	m_hTechniqueParticles->GetPassByIndex(0)->GetDesc(&PassDesc);
 	hr=m_pd3dDevice->CreateInputLayout(decl,1,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
-    D3D1x_SUBRESOURCE_DATA InitData;
+/*   D3D1x_SUBRESOURCE_DATA InitData;
     ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
 	particles=new vec3[40000];
 	simul::math::RandomNumberGenerator random;
@@ -94,8 +94,8 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 		particles[i]=pos;
 	}
     InitData.pSysMem		= particles;
-    InitData.SysMemPitch	= sizeof(vec3);
-	D3D11_BUFFER_DESC desc	=
+    InitData.SysMemPitch	= sizeof(vec3);*/
+/*	D3D11_BUFFER_DESC desc	=
 	{
         40000*sizeof(vec3),
         D3D11_USAGE_DEFAULT,
@@ -104,10 +104,14 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
         0
 	};
 	SAFE_RELEASE(m_pVertexBuffer);
-	m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer);
+	m_pd3dDevice->CreateBuffer(&desc,NULL,&m_pVertexBuffer);
+	*/
+	// Use a compute shader to initialize the vertex buffer with 
+	{
+	}
 	rainConstants.RestoreDeviceObjects(m_pd3dDevice);
 	perViewConstants.RestoreDeviceObjects(m_pd3dDevice);
-	delete [] particles;
+	//delete [] particles;
 }
 
 
@@ -118,7 +122,7 @@ void PrecipitationRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(rain_texture);
-	SAFE_RELEASE(m_pVertexBuffer);
+	//SAFE_RELEASE(m_pVertexBuffer);
 	
 	rainConstants.InvalidateDeviceObjects();
 	perViewConstants.InvalidateDeviceObjects();
@@ -167,7 +171,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	rainConstants.phase			=Phase;
 	rainConstants.flurry		=Waver;
 	rainConstants.flurryRate	=1.0f;
-	rainConstants.snowSize		=0.1f;
+	rainConstants.snowSize		=0.15f;
 
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
@@ -191,7 +195,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	perViewConstants.worldViewProj[1]	=wvp;
 	perViewConstants.worldViewProj[1].transpose();
 	perViewConstants.offset[0]		=perViewConstants.offset[1];
-	perViewConstants.offset[1]		=vec4(0,0,offs,0);
+	perViewConstants.offset[1]		=offs;
 	perViewConstants.tanHalfFov		=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	perViewConstants.nearZ=0;//frustum.nearZ*0.001f/fade_distance_km;
 	perViewConstants.farZ=0;//frustum.farZ*0.001f/fade_distance_km;
@@ -238,14 +242,14 @@ void PrecipitationRenderer::RenderParticles(void *context)
 	UINT stride = sizeof(vec3);
 	UINT offset = 0;
 
-	int numParticles=(int)(intensity*(RainToSnow)*40000.f);
+	int numParticles=(int)(intensity*(RainToSnow)*100000.f);
 
-	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
+/*	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
 												1,					// the number of buffers in the array
 												&m_pVertexBuffer,	// the array of vertex buffers
 												&stride,			// array of stride values, one for each buffer
 												&offset );			// array of offset values, one for each buffer
-
+*/
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);

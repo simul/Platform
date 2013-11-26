@@ -119,8 +119,8 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 		}
 	}
 	vec3 simple_texc				=vec3(texCoords,0);
-	float shadow					=lerp(sampleLod(cloudDensity1,wwcSamplerState,simple_texc,0).y,sampleLod(cloudDensity2,wwcSamplerState,simple_texc,0).y,cloud_interp);
-	return vec4(illumination,U,shadow);//*edge
+	vec2 shadow						=lerp(sampleLod(cloudDensity1,wwcSamplerState,simple_texc,0).xy,sampleLod(cloudDensity2,wwcSamplerState,simple_texc,0).xy,cloud_interp);
+	return vec4(illumination,U,0.5*(shadow.x+shadow.y));//*edge
 }
 
 // from the viewer, trace outwards to find the outer and inner ranges of cloud shadow.

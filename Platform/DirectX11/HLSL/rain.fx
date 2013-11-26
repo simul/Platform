@@ -100,20 +100,20 @@ vec4 PS_ShowTexture(posTexVertexOutput In): SV_TARGET
 void transf(out TransformedParticle p,in vec3 position,int i)
 {
 	vec3 particlePos	=position.xyz;
-	particlePos			*=30.0;
-	vec3 pp1			=particlePos-viewPos[1].xyz-offset[1].xyz;
+	particlePos			*=20.0;
+	vec3 pp1			=particlePos-viewPos[1].xyz+offset[1].xyz;
 	particlePos			-=viewPos[i].xyz;
-	particlePos			-=offset[i].xyz;
-	particlePos			=Frac(particlePos,pp1,30.0);
+	particlePos			+=offset[i].xyz;
+	particlePos			=Frac(particlePos,pp1,20.0);
 	float ph			=flurryRate*phase;
 	vec3 rand1			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/40.0,0).xyz;
 	vec3 rand2			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/40.0*5.0,0).xyz;
-	particlePos			+=1.5*flurry*rand1;
-	particlePos			+=.3*flurry*rand2;
+	particlePos			+=2.5*flurry*rand1;
+	particlePos			+=.7*flurry*rand2;
 	p.position			=mul(worldViewProj[i],vec4(particlePos.xyz,1.0));
 	p.view				=normalize(particlePos.xyz);
-	p.pointSize			=snowSize*(1.0+0.2*rand2.y);
-	p.brightness		=(float)60.1*p.position.w;///length(clip_pos-viewPos);
+	p.pointSize			=snowSize*(0.4+0.2*rand2.y);
+	p.brightness		=1.5*saturate((float)10.0*p.position.w);///length(clip_pos-viewPos);
 }
 
 [numthreads(1,1,1)]
@@ -124,13 +124,17 @@ void CS_Transform(uint3 pos	: SV_DispatchThreadID )
 	transformedParticlesRW[pos.x]=p;
 }
 
-particleVertexOutput VS_Particles(posOnly IN)
+particleVertexOutput VS_Particles(idOnly id)
 {
+	vec2 r=vec2(id.vertex_id*.777,101.11*id.vertex_id);
+	vec3 pos=vec3(2.0*rand(r.xy)-1.0
+				,2.0*rand(3.11*r.yy)-1.0
+				,2.0*rand(8.9167*r.yx)-1.0);
 	particleVertexOutput OUT;
 	TransformedParticle p0;
-	transf(p0,IN.position.xyz,0);
+	transf(p0,pos,0);
 	TransformedParticle p1;
-	transf(p1,IN.position.xyz,1);
+	transf(p1,pos,1);
 	
     OUT.position0	=p0.position;
     OUT.position1	=p1.position;
@@ -199,28 +203,28 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
 		output.texCoords	=g_texcoords[3];
 		SpriteStream.Append(output);
 	}
-	/*else
+	else
 	{
 		// bottom-left quadrant:
+		output.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
+		output.texCoords	=g_texcoords[1];
+		SpriteStream.Append(output);
 		output.position		=pos1+vec4(g_positions[0].xy*sz,0,0); 
 		output.texCoords	=g_texcoords[0];
+		SpriteStream.Append(output);
+		output.position		=pos2+vec4(g_positions[1].xy*sz,0,0);  
+		output.texCoords	=g_texcoords[1];
 		SpriteStream.Append(output);
 		output.position		=pos1+vec4(g_positions[2].xy*sz,0,0); 
 		output.texCoords	=g_texcoords[2];
 		SpriteStream.Append(output);
-		output.position		=pos2+vec4(g_positions[0].xy*sz,0,0);  
-		output.texCoords	=g_texcoords[0];
-		SpriteStream.Append(output);
-		output.position		=pos1+vec4(g_positions[3].xy*sz,0,0); 
+		output.position		=pos2+vec4(g_positions[3].xy*sz,0,0); 
 		output.texCoords	=g_texcoords[3];
 		SpriteStream.Append(output);
 		output.position		=pos2+vec4(g_positions[2].xy*sz,0,0); 
 		output.texCoords	=g_texcoords[2];
 		SpriteStream.Append(output);
-		output.position		=pos2+vec4(g_positions[1].xy*sz,0,0); 
-		output.texCoords	=g_texcoords[1];
-		SpriteStream.Append(output);
-	}*/
+	}
 	/*
 	[unroll]for(int i=0;i<4;i++)
 	{
@@ -236,11 +240,13 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
 
 vec4 PS_Particles(particleGeometryOutput IN): SV_TARGET
 {
-	vec4 result		=cubeTexture.Sample(wrapSamplerState,-IN.view);
+	vec4 result		=IN.brightness*cubeTexture.Sample(wrapSamplerState,-IN.view);
 	vec2 pos		=IN.texCoords*2.0-1.0;
-	float radius	=intensity*length(pos.xy);
-	float opacity	=saturate(intensity-radius)/.5;
-	return vec4(result.rgb,opacity);
+	float radius	=length(pos.xy);
+	float angle		=atan2(pos.x,pos.y);
+	float spoke		=fract(angle/pi*3.0)-0.5;
+	float opacity	=saturate(IN.brightness*saturate(1.0-radius)-spoke*spoke);
+	return (vec4(result.rgb,opacity));
 }
 
 rainVertexOutput VS_FullScreen(idOnly IN)
@@ -307,7 +313,7 @@ float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 	float step_range		=layer_distance;
 	for(int i=0;i<3;i++)
 	{
-		vec2 layer_texc		=vec2(texc.x,texc.y+.5*offset[1].z);
+		vec2 layer_texc		=vec2(texc.x,texc.y-.5*offset[1].z);
 		vec4 r				=rainTexture.Sample(wrapSamplerState,layer_texc.xy);
 		float a				=(br*(saturate(r.x+intensity-1.0)));
 		a					*=saturate((dist-layer_distance)/step_range);

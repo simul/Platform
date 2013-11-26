@@ -580,7 +580,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	skyConstants.Apply(context);
 
 	illuminationTexture->SetResource((ID3D11ShaderResourceView*)illumination_fb.GetColorTex());
-	HRESULT hr;
+	
 	{
 		V_CHECK(fadeTexture1->SetResource(loss_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(loss_textures[(texture_cycle+1)%3].shaderResourceView));

@@ -32,7 +32,7 @@ static float A[]={	3.1415926
 
 float WindowFunction(float x)
 {
-	return (0.0001+sin(pi*x))/(0.0001+pi*x);
+	return saturate((0.0001+sin(pi*x))/(0.0001+pi*x));
 }
 
 vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
@@ -52,9 +52,10 @@ vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 	vec4 result		=vec4(0,0,0,0);
 	int n=0;
 	for(int l=0;l<MAX_SH_BANDS;l++)
-	{ 
+	{
+		float w=WindowFunction(float(l)/float(numSHBands));
 		for(int m=-l;m<=l;m++)
-			result+=SH(l,m,theta,phi)*basisBuffer[n++]*WindowFunction(float(l)/float(MAX_SH_BANDS));
+			result+=SH(l,m,theta,phi)*basisBuffer[n++]*w;
 		//*A[l]/3.1415926
 	}
 	return max(result,vec4(0,0,0,0));

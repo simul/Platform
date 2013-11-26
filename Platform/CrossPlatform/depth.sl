@@ -206,7 +206,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 		// At an edge we will do the interpolation for each MSAA sample.
 		for(int i=0;i<numSamples;i++)
 		{
-			vec4 hiresDepth	=depthTextureMS.Load(hires_depth_pos2,i).x;
+			float hiresDepth=depthTextureMS.Load(hires_depth_pos2,i).x;
 			float trueDist	=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
 			cloudNear		=depthDependentFilteredImage(nearImageTexture	,lowResDepthTexture,imageDims,texCoords,vec4(0,1.0,0,0),depthToLinFadeDistParams,trueDist);
 			cloudFar		=depthDependentFilteredImage(farImageTexture	,lowResDepthTexture,imageDims,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
@@ -218,7 +218,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 	else
 	{
 		// Just use the zero MSAA sample if we're not at an edge:
-		vec4 hiresDepth	=depthTextureMS.Load(hires_depth_pos2,0).x;
+		float hiresDepth=depthTextureMS.Load(hires_depth_pos2,0).x;
 		float trueDist	=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
 		result			=depthDependentFilteredImage(farImageTexture,lowResDepthTexture,imageDims,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
 	}
