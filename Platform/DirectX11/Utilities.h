@@ -72,6 +72,50 @@ namespace simul
 			ID3D11Texture2D*					m_pArrayTexture;
 			ID3D11ShaderResourceView*			m_pArrayTexture_SRV;
 		};
+		//! A vertex buffer wrapper class for arbitrary vertex types.
+		template<class T> struct VertexBuffer
+		{
+			ID3D11Buffer				*vertexBuffer;
+			ID3D11UnorderedAccessView	*unorderedAccessView;
+			VertexBuffer()
+				:vertexBuffer(NULL)
+				,unorderedAccessView(NULL)
+			{
+			}
+			~VertexBuffer()
+			{
+				release();
+			}
+			//! Make sure the buffer has the number of vertices specified.
+			void ensureBufferSize(ID3D11Device *pd3dDevice,int numVertices)
+			{
+				release();
+				D3D11_BUFFER_DESC desc	=
+				{
+					numVertices*sizeof(T),
+					D3D11_USAGE_DEFAULT,
+					D3D11_BIND_VERTEX_BUFFER|D3D11_BIND_UNORDERED_ACCESS
+					,0// CPU
+					,0//D3D11_RESOURCE_MISC_BUFFER_STRUCTURED
+					,sizeof(T)			//StructureByteStride
+				};
+				SAFE_RELEASE(vertexBuffer);
+				V_CHECK(pd3dDevice->CreateBuffer(&desc,NULL,&vertexBuffer));
+				D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+				ZeroMemory(&uav_desc,sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+				uav_desc.Format					=DXGI_FORMAT_R32_FLOAT;
+				uav_desc.ViewDimension			=D3D11_UAV_DIMENSION_BUFFER;
+				uav_desc.Buffer.FirstElement	=0;
+				uav_desc.Buffer.NumElements		=numVertices;
+				uav_desc.Buffer.Flags			=0;
+				V_CHECK(pd3dDevice->CreateUnorderedAccessView(vertexBuffer, &uav_desc, &unorderedAccessView));
+			}
+			void release()
+			{
+				SAFE_RELEASE(vertexBuffer)
+				SAFE_RELEASE(unorderedAccessView)
+			}
+		};
 		struct Mesh
 		{
 			Mesh();

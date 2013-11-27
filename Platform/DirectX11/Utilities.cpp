@@ -485,6 +485,7 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 	SAFE_RELEASE(pImmediateContext)
 }
 
+
 Mesh::Mesh()
 	:vertexBuffer(NULL)
 	,indexBuffer(NULL)

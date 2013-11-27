@@ -16,7 +16,7 @@ float rand(vec2 co)
 
 float rand3(vec3 co)
 {
-    return fract(sin(dot(co.xyz,vec3(12.9898,78.233,12.9898))) * 43758.5453);
+    return fract(sin(dot(co.xyz,vec3(12.9898,78.233,42.1897))) * 43758.5453);
 }
 
 vec4 Noise(Texture2D noise_texture,vec2 texCoords,float persistence,int octaves)

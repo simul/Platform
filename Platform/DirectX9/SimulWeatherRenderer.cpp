@@ -366,7 +366,7 @@ void SimulWeatherRenderer::PreRenderUpdate(void *context,float dt)
 	}
 	if(simulPrecipitationRenderer)
 	{
-		simulPrecipitationRenderer->PreRenderUpdate(dt);
+		simulPrecipitationRenderer->PreRenderUpdate(context,dt);
 		if(simulCloudRenderer&&environment->cloudKeyframer->GetVisible())
 		{
 			simulPrecipitationRenderer->SetWind(environment->cloudKeyframer->GetWindSpeed(),environment->cloudKeyframer->GetWindHeadingDegrees());
