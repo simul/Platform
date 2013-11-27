@@ -361,7 +361,7 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 		imageTexture->SetResource(NULL);
 		ApplyPass(pContext,tech->GetPassByIndex(0));
 	}
-	SIMUL_GPU_PROFILE_END(context,"RenderSkyAsOverlay")
+	SIMUL_GPU_PROFILE_END
 	SIMUL_PROFILE_END
 }
 

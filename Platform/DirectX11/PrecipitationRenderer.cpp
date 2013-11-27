@@ -13,6 +13,7 @@
 #include "Utilities.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Math/RandomNumberGenerator.h"
+#include "Simul/Base/ProfilingInterface.h"
 
 using namespace simul;
 using namespace dx11;
@@ -173,6 +174,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	intensity+=cc*Intensity;
 	if(intensity<=0.05)
 		return;
+	SIMUL_COMBINED_PROFILE_START(context,"Rain Overlay")
 	PIXBeginNamedEvent(0,"Render Precipitation");
 	rainTexture->SetResource(rain_texture);
 	simul::dx11::setTexture(effect,"cubeTexture",cubemap_SRV);
@@ -253,9 +255,9 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	
 	perViewConstants.Apply(m_pImmediateContext);
 
-	if(RainToSnow<1.f)
+	
 	{
-		rainConstants.intensity		=intensity*(1.f-RainToSnow);
+		rainConstants.intensity		=intensity;
 		rainConstants.Apply(m_pImmediateContext);
 		UINT passes=1;
 		for(unsigned i = 0 ; i < passes ; ++i )
@@ -264,9 +266,11 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 			simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
 		}
 	}
+	SIMUL_COMBINED_PROFILE_END
+	SIMUL_COMBINED_PROFILE_START(context,"Rain/snow Particles")
 	if(RainToSnow>0)
 	{
-		rainConstants.intensity		=intensity*(RainToSnow);
+		rainConstants.intensity		=intensity*RainToSnow;
 		rainConstants.Apply(m_pImmediateContext);
 		RenderParticles(m_pImmediateContext);
 	}
@@ -274,6 +278,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	simul::dx11::setTexture(effect,"randomTexture3D",NULL);
 	simul::dx11::setTexture(effect,"depthTexture",NULL);
 	ApplyPass(m_pImmediateContext,m_hTechniqueRain->GetPassByIndex(0));
+	SIMUL_COMBINED_PROFILE_END
 }
 
 void PrecipitationRenderer::RenderParticles(void *context)

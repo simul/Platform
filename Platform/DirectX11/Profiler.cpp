@@ -11,6 +11,8 @@
 #include "Profiler.h"
 #include "DX11Exception.h"
 
+using namespace simul;
+using namespace dx11;
 using std::string;
 using std::map;
 bool enabled=false;
@@ -54,8 +56,11 @@ void Profiler::Initialize(ID3D11Device* device)
 //	std::cout<<"Profiler::Initialize device "<<(unsigned)device<<std::endl;
 }
 
-void Profiler::StartProfile(ID3D11DeviceContext* context,const std::string& name)
+void Profiler::Begin(void *ctx,const char *name)
 {
+	ID3D11DeviceContext *context=(ID3D11DeviceContext*)ctx;
+	last_context.push_back(context);
+	last_name.push_back(name);
     if(!enabled||!device)
         return;
     ProfileData& profileData = profiles[name];
@@ -85,18 +90,21 @@ void Profiler::StartProfile(ID3D11DeviceContext* context,const std::string& name
     profileData.QueryStarted = TRUE;
 }
 
-void Profiler::EndProfile(ID3D11DeviceContext* context,const std::string& name)
+void Profiler::End()
 {
+	std::string name		=last_name.back();
+	last_name.pop_back();
+	ID3D11DeviceContext *context=last_context.back();
+	last_context.pop_back();
     if(!enabled||!device)
         return;
-
     ProfileData& profileData = profiles[name];
     if(profileData.QueryStarted != TRUE)
 		return;
     _ASSERT(profileData.QueryFinished == FALSE);
 
     // Insert the end timestamp    
-    context->End(profileData.TimestampEndQuery[currFrame]);
+	context->End(profileData.TimestampEndQuery[currFrame]);
 
     // End the disjoint query
     context->End(profileData.DisjointQuery[currFrame]);
@@ -190,12 +198,12 @@ ProfileBlock::ProfileBlock(ID3D11DeviceContext* c,const std::string& name)
 	:name(name)
 	,context(c)
 {
-    Profiler::GetGlobalProfiler().StartProfile(context,name);
+	Profiler::GetGlobalProfiler().Begin(context,name.c_str());
 }
 
 ProfileBlock::~ProfileBlock()
 {
-    Profiler::GetGlobalProfiler().EndProfile(context,name);
+    Profiler::GetGlobalProfiler().End();
 }
 
 float ProfileBlock::GetTime() const

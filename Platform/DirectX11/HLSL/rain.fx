@@ -103,11 +103,12 @@ vec4 PS_ShowTexture(posTexVertexOutput In): SV_TARGET
 void transf(out TransformedParticle p,in vec3 position,int i)
 {
 	vec3 particlePos	=position.xyz;
-	particlePos			*=20.0;
-	vec3 pp1			=particlePos-viewPos[1].xyz+offset[1].xyz;
+	particlePos			*=10.0;
+	float sc			=1.0+0.7*rand3(position.xyz);
+	vec3 pp1			=particlePos-viewPos[1].xyz+offset[1].xyz*sc;
 	particlePos			-=viewPos[i].xyz;
-	particlePos			+=offset[i].xyz;
-	particlePos			=Frac(particlePos,pp1,20.0);
+	particlePos			+=offset[i].xyz*sc;
+	particlePos			=Frac(particlePos,pp1,10.0);
 	float ph			=flurryRate*phase;
 	vec3 rand1			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/100.0,0).xyz;
 	vec3 rand2			=randomTexture3D.SampleLevel(wrapSamplerState,particlePos/100.0*5.0,0).xyz;
@@ -115,9 +116,10 @@ void transf(out TransformedParticle p,in vec3 position,int i)
 	particlePos			+=.7*flurry*rand2;
 	p.position			=mul(worldViewProj[i],vec4(particlePos.xyz,1.0));
 	p.view				=normalize(particlePos.xyz);
-	p.pointSize			=snowSize*(1.5+0.4*rand2.y);
+	p.pointSize			=snowSize*(1.0+0.4*rand2.y);
 	p.brightness		=1.0;
-	p.fade				=saturate(.1*p.position.w);///length(clip_pos-viewPos);
+	float dist			=length(particlePos.xyz-viewPos[1].xyz);
+	p.fade				=saturate(1000.0/dist);///length(clip_pos-viewPos);
 }
 
 [numthreads(10,10,10)]
@@ -292,7 +294,7 @@ rainVertexOutput VS_FullScreen(idOnly IN)
 	return OUT;
 }
 
-#define NUM (8)
+#define NUM (1)
 
 float4 PS_RenderRainTexture(rainVertexOutput IN): SV_TARGET
 {
@@ -300,7 +302,7 @@ float4 PS_RenderRainTexture(rainVertexOutput IN): SV_TARGET
 	vec2 t=IN.texCoords.xy;
 	for(int i=0;i<NUM;i++)
 	{
-		r+=saturate(rand(frac(t.xy))-0.99)*12.0;
+		r+=saturate(rand(frac(t.xy))-0.97)*12.0;
 		t.y+=1.0/64.0;
 	}
 	r=saturate(r);
@@ -325,18 +327,18 @@ float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 	float dist				=depthToFadeDistance(depth,IN.clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 
 	vec3 light				=cubeTexture.Sample(wrapSamplerState,-view).rgb;
-	float br				=4.0;
 	vec4 result				=vec4(light.rgb,0);
-	vec2 texc				=vec2(atan2(view.x,view.y)/(2.0*pi)*5.0,view.z);
+	vec2 texc				=vec2(atan2(view.x,view.y)/(2.0*pi)*5.0,tan(view.z*pi/2.0));
 	float layer_distance	=nearRainDistance;
-	float mult				=4.0;
+	float mult				=2.0;
 	float step_range		=layer_distance;
-	for(int i=0;i<3;i++)
+	float br				=1.0-abs(view.z*view.z);
+	for(int i=0;i<4;i++)
 	{
 		vec2 layer_texc		=vec2(texc.x,texc.y-.5*offset[1].z);
 		vec4 r				=rainTexture.Sample(wrapSamplerState,layer_texc.xy);
 		float a				=(br*(saturate(r.x+intensity-1.0)));
-		a					*=saturate((dist-layer_distance)/step_range);
+		//a					*=saturate(10000.0*(dist-layer_distance)/step_range);
 		texc				*=mult;
 		layer_distance		*=mult;
 		step_range			*=mult;
@@ -344,7 +346,6 @@ float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 		result.a			+=a;
 	}
 	result.a=saturate(result.a);
-
 	return result;
 }
 
@@ -357,7 +358,7 @@ technique11 simul_rain
 		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Overlay()));
 		SetDepthStencilState(DisableDepth,0);
-		SetBlendState(AlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
+		SetBlendState(AddAlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
     }
 }
 
