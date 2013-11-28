@@ -53,7 +53,7 @@ namespace simul
 			ID3D11Device*							m_pd3dDevice;
 			ID3D11InputLayout*						m_pVtxDecl;
 			VertexBuffer<vec3>						vertexBuffer;
-			//ID3D11Buffer*							m_pVertexBuffer;
+			simul::dx11::ArrayTexture				rainArrayTexture;
 			ID3D11Buffer*							m_pVertexBufferSwap;
 			ID3DX11Effect*							effect;					// The fx file for this renderer
 			ID3D11ShaderResourceView*				rain_texture;

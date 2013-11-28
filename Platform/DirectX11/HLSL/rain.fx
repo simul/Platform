@@ -25,6 +25,7 @@ texture2D showTexture;
 texture2D depthTexture;
 Texture2DArray rainTextureArray;
 
+RWTexture2DArray<vec4> targetTextureArray;
 StructuredBuffer<vec3> positions;
 RWStructuredBuffer<vec3> targetVertexBuffer;
 
@@ -136,6 +137,37 @@ void transf(out TransformedParticle p,in vec3 position,int i)
 	float dist			=length(particlePos.xyz-viewPos[1].xyz);
 	
 	p.fade				=saturate(10000.0/dist);///length(clip_pos-viewPos);
+}
+
+[numthreads(1,1,1)]
+void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
+{
+	int X,Y,N;
+	targetTextureArray.GetDimensions(X,Y,N);
+	vec4 result				=vec4(0.0,0,0,0.5);
+	// idx.x gives the index in the array.
+	int n	=idx.z;
+	for(int i=0;i<3;i++)
+	{
+		float V				=0.8/pi*(1.0+0.9*rand(n+10*i));
+		float b				=rand(n+7*i+0.5);
+	
+		float y				=float(idx.y)/float(Y);
+		float c				=0.5*sin(y/V);
+		float brightness	=(i+1)*pow(sin((y+b)/V),i+1);
+	
+		float x				=2.0*(idx.x+0.5)/float(X)-1.0;		// goes between -1 and 1
+		float dx			=(x-c)*6.0;
+		float s				=exp(-dx*dx);
+		result.rgba			+=brightness*s;
+	}
+	targetTextureArray.mips[0][idx]	=saturate(result);
+	for(int i=1;i<5;i++)
+	{
+		idx=idx/2;
+		uint4 pos=uint4(idx,i);
+		targetTextureArray.mips[1][idx]	=vec4(1.0,0,0,1.0);
+	}
 }
 
 [numthreads(10,10,10)]
@@ -388,19 +420,24 @@ float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 struct PSSceneIn
 {
     float4 pos : SV_Position;
-    float3 lightDir   : LIGHT;
-    float3 pointLightDir : LIGHT2;
-    float3 eyeVec     : EYE;
-    float2 tex : TEXTURE0;
+    float3 lightDir			: LIGHT;
+    float3 pointLightDir	: LIGHT2;
+    float3 view				: EYE;
+    float2 texCoords		: TEXTURE0;
     uint type  : TYPE;
     float random : RAND;
 };
-
-
-PosOnly VS_ParticleRain(PosAndId input )
+struct RainParticleVertexOutput
 {
-	PosOnly p;
-	p.position=input.position;
+    vec3 position	: POSITION;
+	uint type		:TEXCOORD0;
+};
+
+RainParticleVertexOutput VS_ParticleRain(PosAndId input )
+{
+	RainParticleVertexOutput p;
+	p.position	=input.position;
+	p.type		=input.vertex_id%32;
     return p;
 }
 
@@ -435,8 +472,8 @@ bool cullSprite( float3 position, float SpriteSize)
 float g_SpriteSize=0.5;
 void GenRainSpriteVertices(float3 worldPos, float3 velVec, float3 eyePos, out float3 outPos[4])
 {
-    float height = g_SpriteSize/2.0;
-    float width = height/10.0;
+    float height =length(velVec)/7.0;// g_SpriteSize/2.0;
+    float width = g_SpriteSize/20.0;
 
     velVec = normalize(velVec);
     float3 eyeVec =  - worldPos;
@@ -452,13 +489,13 @@ void GenRainSpriteVertices(float3 worldPos, float3 velVec, float3 eyePos, out fl
     
 // GS for rendering rain as point sprites.  Takes a point and turns it into 2 tris.
 [maxvertexcount(4)]
-void GS_ParticleRain(point PosOnly input[1], inout TriangleStream<PSSceneIn> SpriteStream)
+void GS_ParticleRain(point RainParticleVertexOutput input[1], inout TriangleStream<PSSceneIn> SpriteStream)
 {
     float totalIntensity = 1.0;//g_PointLightIntensity*g_ResponsePointLight + dirLightIntensity*g_ResponseDirLight;
 	//if(!cullSprite(input[0].position.xyz,2*g_SpriteSize) && totalIntensity > 0)
     {    
-        PSSceneIn output = (PSSceneIn)0;
-        //output.type = input[0].Type;
+        PSSceneIn output	= (PSSceneIn)0;
+        output.type			= input[0].type;
        // output.random = input[0].random;
        
         float3 pos[4];
@@ -472,29 +509,29 @@ void GS_ParticleRain(point PosOnly input[1], inout TriangleStream<PSSceneIn> Spr
         output.pos				=mul(  worldViewProj[1],float4(pos[0],1.0));
         output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[0];
-        output.eyeVec			=viewPos[1].xyz		-pos[0];
-        output.tex				=g_texcoords[0];
+        output.view				=normalize(pos[0]);
+        output.texCoords				=g_texcoords[0];
         SpriteStream.Append(output);
                 
         output.pos				=mul(worldViewProj[1],float4(pos[1],1.0));
         output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[1];
-        output.eyeVec			=viewPos[1].xyz		-pos[1];
-        output.tex				=g_texcoords[1];
+        output.view				=normalize(pos[1]);
+        output.texCoords				=g_texcoords[1];
         SpriteStream.Append(output);
         
         output.pos				=mul(worldViewProj[1],float4(pos[2],1.0));
         output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[2];
-        output.eyeVec			=viewPos[1].xyz		-pos[2];
-        output.tex				=g_texcoords[2];
+        output.view				=normalize(pos[2]);
+        output.texCoords				=g_texcoords[2];
         SpriteStream.Append(output);
                 
         output.pos				=mul(worldViewProj[1],float4(pos[3],1.0));
         output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[3];
-        output.eyeVec			=viewPos[1].xyz		-pos[3];
-        output.tex				=g_texcoords[3];
+        output.view				=normalize(pos[3]);
+        output.texCoords				=g_texcoords[3];
         SpriteStream.Append(output);
         
         SpriteStream.RestartStrip();
@@ -564,8 +601,8 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
         float t = frac(vangle);
 
         // textureCoordsH[1|2] used in case we need to flip the texture horizontally
-        float textureCoordsH1 = input.tex.x;
-        float textureCoordsH2 = input.tex.x;
+        float textureCoordsH1 = input.texCoords.x;
+        float textureCoordsH2 = input.texCoords.x;
         
         // horizontalLightIndex[1|2] - two indices in the horizontal direction
         // s - fraction at which the hangle is between these two indices (for lerp)
@@ -605,7 +642,7 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
                 
         if(verticalLightIndex1 >= MAX_VIDX)
         {
-            textureCoordsH2 = input.tex.x;
+            textureCoordsH2 = input.texCoords.x;
             horizontalLightIndex1 = 0;
             horizontalLightIndex2 = 0;
             s = 0;
@@ -615,21 +652,21 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
         uint type = input.type;
         uint2 texIndicesV1 = uint2(verticalLightIndex1*90 + horizontalLightIndex1*10 + type,
                                      verticalLightIndex1*90 + horizontalLightIndex2*10 + type);
-        float3 tex1 = float3(textureCoordsH1, input.tex.y, texIndicesV1.x);
-        float3 tex2 = float3(textureCoordsH2, input.tex.y, texIndicesV1.y);
+        float3 tex1 = float3(textureCoordsH1, input.texCoords.y, texIndicesV1.x);
+        float3 tex2 = float3(textureCoordsH2, input.texCoords.y, texIndicesV1.y);
         if( (verticalLightIndex1<4) && (verticalLightIndex2>=4) ) 
         {
             s = 0;
             horizontalLightIndex1 = 0;
             horizontalLightIndex2 = 0;
-            textureCoordsH1 = input.tex.x;
-            textureCoordsH2 = input.tex.x;
+            textureCoordsH1 = input.texCoords.x;
+            textureCoordsH2 = input.texCoords.x;
         }
         
         uint2 texIndicesV2 = uint2(verticalLightIndex2*90 + horizontalLightIndex1*10 + type,
                                      verticalLightIndex2*90 + horizontalLightIndex2*10 + type);
-        float3 tex3 = float3(textureCoordsH1, input.tex.y, texIndicesV2.x);        
-        float3 tex4 = float3(textureCoordsH2, input.tex.y, texIndicesV2.y);
+        float3 tex3 = float3(textureCoordsH1, input.texCoords.y, texIndicesV2.x);        
+        float3 tex4 = float3(textureCoordsH2, input.texCoords.y, texIndicesV2.y);
 
         // Sample opacity from the textures
         float col1 = rainTextureArray.Sample( samAniso, tex1);//* g_rainfactors[texIndicesV1.x];
@@ -652,13 +689,14 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
 vec4 PS_ParticleRain(PSSceneIn input) : SV_Target
 {     
       //return float4(1,0,0,0.1);
-       
+		vec3 light			=cubeTexture.Sample(wrapSamplerState,-input.view).rgb;
+      vec4 texel			=rainTextureArray.SampleLevel(samAniso,vec3(input.texCoords,input.type),0);
       //directional lighting---------------------------------------------------------------------------------
-      vec4 directionalLight=vec4(1,1,1,1);
+      vec4 directionalLight	=vec4(1,1,1,1);
       //rainResponse(input, input.lightDir, 2.0*dirLightIntensity*g_ResponseDirLight*input.random, float3(1.0,1.0,1.0), input.eyeVec, false, directionalLight);
 
       //point lighting---------------------------------------------------------------------------------------
-      vec4 pointLight = vec4(0,0,0,0);
+      vec4 pointLight		=vec4(0,0,0,0);
      /* 
       vec3 L = normalize( input.pointLightDir );
       float angleToSpotLight = dot(-L, g_SpotLightDir);
@@ -667,7 +705,8 @@ vec4 PS_ParticleRain(PSSceneIn input) : SV_Target
           rainResponse(input, input.pointLightDir, 2*g_PointLightIntensity*g_ResponsePointLight*input.random, pointLightColor.xyz, input.eyeVec, true,pointLight);
       */
       float totalOpacity = pointLight.a+directionalLight.a;
-      return vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
+
+      return vec4(texel.rgb*light,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
 }
 
 technique11 rain_particles
@@ -679,7 +718,7 @@ technique11 rain_particles
         SetGeometryShader( CompileShader( gs_4_0, GS_ParticleRain() ) );
         SetPixelShader( CompileShader(    ps_4_0, PS_ParticleRain() ) );
         
-        SetBlendState( AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetBlendState( AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetDepthStencilState( DisableDepth, 0 );
     }  
 }
@@ -727,6 +766,14 @@ technique11 move_particles_compute
     }
 }
 
+technique11 make_rain_texture_array
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MakeRainTextureArray()));
+    }
+}
+
 technique11 create_rain_texture
 {
     pass p0 
@@ -771,7 +818,7 @@ technique11 show_texture
 // advance rain
 //--------------------------------------------------------------------------------------------
 
-VSParticleIn VS_MoveParticles(PosOnly input)
+PosOnly VS_MoveParticles(PosOnly input)
 {
      //if(moveParticles)
      {

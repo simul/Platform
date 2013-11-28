@@ -44,21 +44,32 @@ void PrecipitationRenderer::RecompileShaders()
 	rainConstants.LinkToEffect(effect,"RainConstants");
 	perViewConstants.LinkToEffect(effect,"RainPerViewConstants");
 	
-	ID3D11DeviceContext *m_pImmediateContext=NULL;
-	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
+	ID3D11DeviceContext *pImmediateContext=NULL;
+	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
 
 	ID3DX11EffectTechnique *tech		=effect->GetTechniqueByName("create_rain_texture");
-	ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
+	ApplyPass(pImmediateContext,tech->GetPassByIndex(0));
 	simul::dx11::Framebuffer make_rain_fb(512,64);
 	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
-	make_rain_fb.Activate(m_pImmediateContext);
-	make_rain_fb.DrawQuad(m_pImmediateContext);
-	make_rain_fb.Deactivate(m_pImmediateContext);
+	make_rain_fb.Activate(pImmediateContext);
+	make_rain_fb.DrawQuad(pImmediateContext);
+	make_rain_fb.Deactivate(pImmediateContext);
 	rain_texture=make_rain_fb.buffer_texture_SRV;
 	// Make sure it isn't destroyed when the fb goes out of scope:
 	rain_texture->AddRef();
-	SAFE_RELEASE(m_pImmediateContext);
 	view_initialized=false;
+	// The array of rain textures:
+	rainArrayTexture.create(m_pd3dDevice,16,512,32,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
+	
+	// Use a compute shader to initialize the rain texture:
+	
+	// shader has been created:
+	dx11::setUnorderedAccessView(effect,"targetTextureArray",rainArrayTexture.unorderedAccessView);
+	ApplyPass(pImmediateContext,effect->GetTechniqueByName("make_rain_texture_array")->GetPassByIndex(0));
+	
+	pImmediateContext->Dispatch(16,512,32);
+	
+	SAFE_RELEASE(pImmediateContext);
 }
 
 void PrecipitationRenderer::SetCubemapTexture(void *t)
@@ -79,26 +90,6 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	view.Identity();
 	proj.Identity();
 	MakeMesh();
-    RecompileShaders();
-	D3D11_INPUT_ELEMENT_DESC decl[] =
-	{
-		{"POSITION"	,0	,DXGI_FORMAT_R32G32B32_FLOAT	,0	,0	,D3D11_INPUT_PER_VERTEX_DATA,0},
-	};
-	SAFE_RELEASE(m_pVtxDecl);
-    D3D1x_PASS_DESC PassDesc;
-	m_hTechniqueParticles->GetPassByIndex(0)->GetDesc(&PassDesc);
-	hr=m_pd3dDevice->CreateInputLayout(decl,1,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
-/*	D3D1x_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-	particles=new vec3[64000];
-	simul::math::RandomNumberGenerator random;
-	for(int i=0;i<64000;i++)
-	{
-		vec3 pos(2.f*random.FRand()-1.f,2.f*random.FRand()-1.f,2.f*random.FRand()-1.f);
-		particles[i]=pos;
-	}
-    InitData.pSysMem		= particles;
-    InitData.SysMemPitch	= sizeof(vec3);*/
 	D3D11_BUFFER_DESC desc	=
 	{
         125000*sizeof(vec3),
@@ -113,20 +104,32 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	//V_CHECK(m_pd3dDevice->CreateBuffer(&desc,NULL,&m_pVertexBuffer));
 	V_CHECK(m_pd3dDevice->CreateBuffer(&desc,NULL,&m_pVertexBufferSwap));
 	vertexBuffer.ensureBufferSize(m_pd3dDevice,125000);
+
+    RecompileShaders();
+	
+	ID3D11DeviceContext *pImmediateContext;
+	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
 	// Use a compute shader to initialize the vertex buffer with random positions
 	{
-		ID3D11DeviceContext *pImmediateContext;
-		m_pd3dDevice->GetImmediateContext(&pImmediateContext);
 		// shader has been created:
 		dx11::setUnorderedAccessView(effect,"targetVertexBuffer",vertexBuffer.unorderedAccessView);
 		ApplyPass(pImmediateContext,effect->GetTechniqueByName("make_vertex_buffer")->GetPassByIndex(0));
 		
 		pImmediateContext->Dispatch(5,5,5);
-		SAFE_RELEASE(pImmediateContext);
 	}
+	SAFE_RELEASE(pImmediateContext);
 	rainConstants.RestoreDeviceObjects(m_pd3dDevice);
 	perViewConstants.RestoreDeviceObjects(m_pd3dDevice);
-	//delete [] particles;
+
+	D3D11_INPUT_ELEMENT_DESC decl[] =
+	{
+		{"POSITION"	,0	,DXGI_FORMAT_R32G32B32_FLOAT	,0	,0	,D3D11_INPUT_PER_VERTEX_DATA,0},
+	};
+	SAFE_RELEASE(m_pVtxDecl);
+    D3D1x_PASS_DESC PassDesc;
+	m_hTechniqueParticles->GetPassByIndex(0)->GetDesc(&PassDesc);
+	hr=m_pd3dDevice->CreateInputLayout(decl,1,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+
 }
 
 
@@ -135,6 +138,7 @@ void PrecipitationRenderer::InvalidateDeviceObjects()
 	HRESULT hr=S_OK;
 	cubemap_SRV=NULL;
 	vertexBuffer.release();
+	rainArrayTexture.release();
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(rain_texture);
@@ -151,6 +155,10 @@ PrecipitationRenderer::~PrecipitationRenderer()
 
 void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 {
+	if(dt<0)
+		dt*=-1.0f;
+	if(dt>1.0f)
+		dt=1.0f;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	BasePrecipitationRenderer::PreRenderUpdate(context,dt);
 #if 1
@@ -167,9 +175,9 @@ void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 	SIMUL_COMBINED_PROFILE_START(context,"Rain/snow Particle Update by StreamOut")
 		
 	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+	pImmediateContext->IAGetInputLayout( &previousInputLayout );
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
+	pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
 	
 	// update using render to stream
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST );
@@ -200,8 +208,8 @@ void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 	m_pVertexBufferSwap = vertexBuffer.vertexBuffer;
 	vertexBuffer.vertexBuffer		= pTemp;
 
-	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+	pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	pImmediateContext->IASetInputLayout( previousInputLayout );
 	SIMUL_COMBINED_PROFILE_END
 #endif
 }
@@ -229,9 +237,10 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	SIMUL_COMBINED_PROFILE_START(context,"Rain Overlay")
 	PIXBeginNamedEvent(0,"Render Precipitation");
 	rainTexture->SetResource(rain_texture);
-	simul::dx11::setTexture(effect,"cubeTexture",cubemap_SRV);
-	simul::dx11::setTexture(effect,"randomTexture3D",randomTexture3D);
-	simul::dx11::setTexture(effect,"depthTexture",(ID3D11ShaderResourceView*)depth_tex);
+	dx11::setTexture(effect,"cubeTexture",cubemap_SRV);
+	dx11::setTexture(effect,"randomTexture3D",randomTexture3D);
+	dx11::setTexture(effect,"depthTexture",(ID3D11ShaderResourceView*)depth_tex);
+	dx11::setTextureArray(effect,"rainTextureArray",rainArrayTexture.m_pArrayTexture_SRV);
 	pContext->IASetInputLayout( m_pVtxDecl );
 	//set up matrices
 	D3DXMATRIX world,wvp;
@@ -330,41 +339,42 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	simul::dx11::setTexture(effect,"cubeTexture",NULL);
 	simul::dx11::setTexture(effect,"randomTexture3D",NULL);
 	simul::dx11::setTexture(effect,"depthTexture",NULL);
+	dx11::setTextureArray(effect,"rainTextureArray",NULL);
 	ApplyPass(pContext,m_hTechniqueRain->GetPassByIndex(0));
 	SIMUL_COMBINED_PROFILE_END
 }
 
 void PrecipitationRenderer::RenderParticles(void *context)
 {
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pImmediateContext=(ID3D11DeviceContext *)context;
 	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+	pImmediateContext->IAGetInputLayout( &previousInputLayout );
 
-	m_pImmediateContext->IASetInputLayout( m_pVtxDecl );
+	pImmediateContext->IASetInputLayout( m_pVtxDecl );
 	UINT stride = sizeof(vec3);
 	UINT offset = 0;
 	
 	rainConstants.intensity		=intensity;
-	rainConstants.Apply(m_pImmediateContext);
+	rainConstants.Apply(pImmediateContext);
 	int numParticles=(int)(intensity*125000.f);
 
-	m_pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
+	pImmediateContext->IASetVertexBuffers(	0,					// the first input slot for binding
 												1,					// the number of buffers in the array
 												&vertexBuffer.vertexBuffer,	// the array of vertex buffers
 												&stride,			// array of stride values, one for each buffer
 												&offset );			// array of offset values, one for each buffer
 
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+	pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
+	pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	if(RainToSnow>.5)
-		ApplyPass(m_pImmediateContext,m_hTechniqueParticles->GetPassByIndex(0));
+		ApplyPass(pImmediateContext,m_hTechniqueParticles->GetPassByIndex(0));
 	else
-		ApplyPass(m_pImmediateContext,m_hTechniqueRainParticles->GetPassByIndex(0));
-	m_pImmediateContext->Draw(numParticles,0);
+		ApplyPass(pImmediateContext,m_hTechniqueRainParticles->GetPassByIndex(0));
+	pImmediateContext->Draw(numParticles,0);
 
-	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-	m_pImmediateContext->IASetInputLayout( previousInputLayout );
+	pImmediateContext->IASetPrimitiveTopology(previousTopology);
+	pImmediateContext->IASetInputLayout( previousInputLayout );
 	SAFE_RELEASE(previousInputLayout);
 }
 

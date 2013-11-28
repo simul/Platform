@@ -485,6 +485,30 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 	SAFE_RELEASE(pImmediateContext)
 }
 
+void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORMAT f,bool computable)
+{
+	release();
+	D3D11_TEXTURE2D_DESC desc;
+//	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[num];
+	ID3D11DeviceContext *pImmediateContext=NULL;
+	pd3dDevice->GetImmediateContext(&pImmediateContext);
+	static int num_mips		=3;
+	desc.Width				=w;
+	desc.Height				=l;
+	desc.Format				=f;
+	desc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_UNORDERED_ACCESS;
+	desc.Usage				=D3D11_USAGE_DEFAULT;
+	desc.CPUAccessFlags		=0;
+	desc.ArraySize			=num;
+	desc.MiscFlags			=0;
+	desc.MipLevels			=num_mips;
+	desc.SampleDesc.Count	=1;
+	desc.SampleDesc.Quality	=0;
+	V_CHECK(pd3dDevice->CreateTexture2D(&desc,NULL,&m_pArrayTexture));
+	V_CHECK(pd3dDevice->CreateShaderResourceView(m_pArrayTexture,NULL,&m_pArrayTexture_SRV));
+	V_CHECK(pd3dDevice->CreateUnorderedAccessView(m_pArrayTexture,NULL,&unorderedAccessView));
+	SAFE_RELEASE(pImmediateContext)
+}
 
 Mesh::Mesh()
 	:vertexBuffer(NULL)

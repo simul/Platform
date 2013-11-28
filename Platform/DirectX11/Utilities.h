@@ -57,6 +57,7 @@ namespace simul
 			ArrayTexture()
 				:m_pArrayTexture(NULL)
 				,m_pArrayTexture_SRV(NULL)
+				,unorderedAccessView(NULL)
 			{
 			}
 			~ArrayTexture()
@@ -69,8 +70,10 @@ namespace simul
 				SAFE_RELEASE(m_pArrayTexture_SRV)
 			}
 			void create(ID3D11Device *pd3dDevice,const std::vector<std::string> &texture_files);
+			void create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORMAT f,bool computable);
 			ID3D11Texture2D*					m_pArrayTexture;
 			ID3D11ShaderResourceView*			m_pArrayTexture_SRV;
+			ID3D11UnorderedAccessView*			unorderedAccessView;
 		};
 		//! A vertex buffer wrapper class for arbitrary vertex types.
 		template<class T> struct VertexBuffer
