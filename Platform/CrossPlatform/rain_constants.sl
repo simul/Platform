@@ -40,7 +40,7 @@ struct PrecipitationVertex
     vec3 position;	
 	uint type;
 	vec3 velocity;
-	//float dummy;
+	float dummy;
 };
 
 #ifndef __cplusplus
@@ -49,7 +49,7 @@ struct PrecipitationVertexInput
     vec3 position	: POSITION;         //position of the particle
 	uint type		: TYPE;             //particle type
 	vec3 velocity	: VELOCITY;
-	//float dummy		: DUMMY;
+	float dummy		: DUMMY;
 };
 #endif
 

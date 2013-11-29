@@ -90,7 +90,7 @@ namespace simul
 				release();
 			}
 			//! Make sure the buffer has the number of vertices specified.
-			void ensureBufferSize(ID3D11Device *pd3dDevice,int numVertices)
+			void ensureBufferSize(ID3D11Device *pd3dDevice,int numVertices,void *data=NULL)
 			{
 				release();
 				D3D11_BUFFER_DESC desc	=
@@ -103,7 +103,11 @@ namespace simul
 					,sizeof(T)			//StructureByteStride
 				};
 				SAFE_RELEASE(vertexBuffer);
-				V_CHECK(pd3dDevice->CreateBuffer(&desc,NULL,&vertexBuffer));
+				D3D11_SUBRESOURCE_DATA init;
+				init.pSysMem			=data;
+				init.SysMemPitch		=sizeof(T);
+				init.SysMemSlicePitch	=0;
+				V_CHECK(pd3dDevice->CreateBuffer(&desc,data?(&init):NULL,&vertexBuffer));
 				D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 				ZeroMemory(&uav_desc,sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
 				uav_desc.Format					=DXGI_FORMAT_R32_FLOAT;

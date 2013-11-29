@@ -154,34 +154,34 @@ void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 	float V				=0.4/pi*(0.6+0.8*rand(n));
 	float U				=0.4/pi*(0.6+0.8*rand(n*4.41));
 	float c				=0.5*sin(y/V);
-	float brightness	=brightnessMult*sin((y+b)/U);
+	float brightness	=brightnessMult*abs(sin((y+b)/U));
 	
 	float h				=rand(n+0.9);
 	float highlight		=30.0*saturate(sin((y+h)/V)-0.95);
 	
 	float x				=2.0*(idx.x+0.5)/float(X)-1.0;		// goes between -1 and 1
-	float dx			=(x-c)*3.0;
+	float dx			=(x-c)*2.0;
 	float s				=exp(-dx*dx);
 	result.rgba			+=(brightness+highlight)*s;
 	
 	targetTextureArray[idx]	=saturate(result);
 }
 
-[numthreads(10,10,10)]
+[numthreads(6,6,6)]
 void CS_MakeVertexBuffer(uint3 idx	: SV_DispatchThreadID )
 {
-	vec3 r							=vec3(idx)/60.0;
+	vec3 r							=vec3(idx)/600.0;
 	vec3 pos						=vec3(rand3(r),rand3(11.01*r),rand3(587.087*r));
 	pos								*=2.0;
 	pos								-=vec3(1.0,1.0,1.0);
 	int i							=idx.z*3600+idx.y*60+idx.x;
+	
 	targetVertexBuffer[i].position	=particleZoneSize*pos;
 	// velocity is normalized in order to scale with fall speed
 	vec3 v							=vec3(rand3(1.7*r),rand3(17.01*r),rand3(887.087*r));
 	v								=2.0*v-vec3(1.0,1.0,1.0);
-	
 	targetVertexBuffer[i].velocity	=v;
-	targetVertexBuffer[i].type		=i%32;
+	targetVertexBuffer[i].type		=0;//i%32;
 }
 
 [numthreads(10,10,10)]
@@ -476,7 +476,7 @@ bool cullSprite( float3 position, float SpriteSize)
     
     return false;
 }
-float g_SpriteSize=0.2;
+float g_SpriteSize=0.1;
 void GenRainSpriteVertices(float3 worldPos, float3 velVec, float3 eyePos, out float3 outPos[4])
 {
     float height =length(velVec);// g_SpriteSize/2.0;
@@ -506,7 +506,7 @@ void GS_RainParticles(point RainParticleVertexOutput input[1], inout TriangleStr
        // output.random = input[0].random;
        
         float3 pos[4];
-		float g_FrameRate=60.f;
+		float g_FrameRate=20.f;
         GenRainSpriteVertices(input[0].position.xyz,( meanFallVelocity+meanFallVelocity.z*flurry*input[0].velocity)/g_FrameRate, viewPos[1], pos);
         
         float3 closestPointLight=vec3(0,0,500);
@@ -711,8 +711,8 @@ vec4 PS_RainParticles(PSSceneIn input) : SV_Target
           rainResponse(input, input.pointLightDir, 2*g_PointLightIntensity*g_ResponsePointLight*input.random, pointLightColor.xyz, input.eyeVec, true,pointLight);
       */
       float totalOpacity = pointLight.a+directionalLight.a;
-
-      return vec4(texel.rgb*light,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
+	  //texel.rgb*
+      return vec4(light,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
 }
 
 technique11 rain_particles
@@ -720,9 +720,9 @@ technique11 rain_particles
     pass p0
     {
         SetRasterizerState( RenderNoCull );
-        SetVertexShader( CompileShader(   vs_4_0, VS_RainParticles() ) );
-        SetGeometryShader( CompileShader( gs_4_0, GS_RainParticles() ) );
-        SetPixelShader( CompileShader(    ps_4_0, PS_RainParticles() ) );
+        SetVertexShader( CompileShader(   vs_5_0, VS_RainParticles() ) );
+        SetGeometryShader( CompileShader( gs_5_0, GS_RainParticles() ) );
+        SetPixelShader( CompileShader(    ps_5_0, PS_RainParticles() ) );
         
         SetBlendState( AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetDepthStencilState( DisableDepth, 0 );
@@ -735,9 +735,9 @@ technique11 simul_particles
     {
 		SetRasterizerState(RenderNoCull);
 		//SetRasterizerState( wireframeRasterizer );
-        SetGeometryShader(CompileShader(gs_4_0,GS_Particles()));
-		SetVertexShader(CompileShader(vs_4_0,VS_Particles()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Particles()));
+        SetGeometryShader(CompileShader(gs_5_0,GS_Particles()));
+		SetVertexShader(CompileShader(vs_5_0,VS_Particles()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Particles()));
 		SetDepthStencilState(DisableDepth,0);
 		SetBlendState(AddAlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
     }
@@ -749,8 +749,8 @@ technique11 simul_rain
     {
 		SetRasterizerState(RenderNoCull);
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Overlay()));
+		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Overlay()));
 		SetDepthStencilState(DisableDepth,0);
 		SetBlendState(AddAlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
     }
@@ -786,8 +786,8 @@ technique11 create_rain_texture
     {
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
-		SetPixelShader(CompileShader(ps_4_0,PS_RenderRainTexture()));
+		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+		SetPixelShader(CompileShader(ps_5_0,PS_RenderRainTexture()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
@@ -799,8 +799,8 @@ technique11 create_random_texture
     {
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
-		SetPixelShader(CompileShader(ps_4_0,PS_RenderRandomTexture()));
+		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+		SetPixelShader(CompileShader(ps_5_0,PS_RenderRandomTexture()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
@@ -813,8 +813,8 @@ technique11 show_texture
     {
 		SetRasterizerState( RenderNoCull );
         SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_ShowTexture()));
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowTexture()));
+		SetVertexShader(CompileShader(vs_5_0,VS_ShowTexture()));
+		SetPixelShader(CompileShader(ps_5_0,PS_ShowTexture()));
 		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
@@ -846,13 +846,13 @@ PosOnly VS_MoveParticles(PosOnly input)
     
 }
 
-GeometryShader gsStreamOut = ConstructGSWithSO( CompileShader( vs_4_0, VS_MoveParticles() ), "POSITION.xyz");//; SEED.xyz; SPEED.xyz; RAND.x; TYPE.x" );
+GeometryShader gsStreamOut = ConstructGSWithSO( CompileShader( vs_5_0, VS_MoveParticles() ), "POSITION.xyz");//; SEED.xyz; SPEED.xyz; RAND.x; TYPE.x" );
 
 technique11 move_particles
 {
     pass p0
     {
-        SetVertexShader( CompileShader( vs_4_0, VS_MoveParticles() ) );
+        SetVertexShader( CompileShader( vs_5_0, VS_MoveParticles() ) );
         SetGeometryShader( gsStreamOut );
         SetPixelShader( NULL );
         

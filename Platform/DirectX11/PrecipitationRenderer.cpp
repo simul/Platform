@@ -77,12 +77,18 @@ void PrecipitationRenderer::RecompileShaders()
 		{"POSITION"	,0	,DXGI_FORMAT_R32G32B32_FLOAT	,0	,0	,D3D11_INPUT_PER_VERTEX_DATA,0},
 		{"TYPE"		,0	,DXGI_FORMAT_R32_UINT			,0	,12	,D3D11_INPUT_PER_VERTEX_DATA,0},
 		{"VELOCITY"	,0	,DXGI_FORMAT_R32G32B32_FLOAT	,0	,16	,D3D11_INPUT_PER_VERTEX_DATA,0},
-	//	{"DUMMY"	,0	,DXGI_FORMAT_R32_FLOAT			,0	,28	,D3D11_INPUT_PER_VERTEX_DATA,0},
+		{"DUMMY"	,0	,DXGI_FORMAT_R32_FLOAT			,0	,28	,D3D11_INPUT_PER_VERTEX_DATA,0},
 	};
 	SAFE_RELEASE(m_pVtxDecl);
     D3DX11_PASS_DESC PassDesc;
 	m_hTechniqueRainParticles->GetPassByIndex(0)->GetDesc(&PassDesc);
-	V_CHECK(m_pd3dDevice->CreateInputLayout(decl,3,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl));
+	V_CHECK(m_pd3dDevice->CreateInputLayout(decl,4,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl));
+	
+	// Use a compute shader to initialize the vertex buffer with random positions
+	// shader has been created:
+	dx11::setUnorderedAccessView(effect,"targetVertexBuffer",vertexBuffer.unorderedAccessView);
+	ApplyPass(pImmediateContext,effect->GetTechniqueByName("make_vertex_buffer")->GetPassByIndex(0));
+	pImmediateContext->Dispatch(10,10,10);
 
 	SAFE_RELEASE(pImmediateContext);
 }
@@ -105,20 +111,22 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	view.Identity();
 	proj.Identity();
 	MakeMesh();
-	vertexBuffer.ensureBufferSize(m_pd3dDevice,216000);
+
+	PrecipitationVertex *dat=new PrecipitationVertex[216000];
+	memset(dat,0,216000);
+	for(int i=0;i<216000;i++)
+	{
+		dat[i].position.y=35;
+		dat[i].position.x=i/2160.0f;
+	}
+
+	vertexBuffer.ensureBufferSize(m_pd3dDevice,216000,dat);
+	delete dat;
 
     RecompileShaders();
 	
 	ID3D11DeviceContext *pImmediateContext;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
-	// Use a compute shader to initialize the vertex buffer with random positions
-	
-	// shader has been created:
-	dx11::setUnorderedAccessView(effect,"targetVertexBuffer",vertexBuffer.unorderedAccessView);
-	ApplyPass(pImmediateContext,effect->GetTechniqueByName("make_vertex_buffer")->GetPassByIndex(0));
-	
-	pImmediateContext->Dispatch(6,6,6);
-	
 	SAFE_RELEASE(pImmediateContext);
 	rainConstants.RestoreDeviceObjects(m_pd3dDevice);
 	perViewConstants.RestoreDeviceObjects(m_pd3dDevice);
@@ -182,7 +190,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	intensity*=1.f-cc;
 	intensity+=cc*Intensity;
 	intensity=Intensity;
-	if(intensity<=0.05)
+	if(intensity<=0.01)
 		return;
 	SIMUL_COMBINED_PROFILE_START(context,"Rain Overlay")
 	PIXBeginNamedEvent(0,"Render Precipitation");
