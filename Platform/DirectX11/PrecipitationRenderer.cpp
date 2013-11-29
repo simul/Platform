@@ -116,8 +116,8 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	memset(dat,0,216000);
 	for(int i=0;i<216000;i++)
 	{
-		dat[i].position.y=35;
-		dat[i].position.x=i/2160.0f;
+		dat[i].position.y=6;
+		dat[i].position.x=10*(i/216000.0f-.5f);
 	}
 
 	vertexBuffer.ensureBufferSize(m_pd3dDevice,216000,dat);
@@ -125,9 +125,6 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 
     RecompileShaders();
 	
-	ID3D11DeviceContext *pImmediateContext;
-	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
-	SAFE_RELEASE(pImmediateContext);
 	rainConstants.RestoreDeviceObjects(m_pd3dDevice);
 	perViewConstants.RestoreDeviceObjects(m_pd3dDevice);
 

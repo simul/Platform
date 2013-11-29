@@ -170,18 +170,20 @@ void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 [numthreads(6,6,6)]
 void CS_MakeVertexBuffer(uint3 idx	: SV_DispatchThreadID )
 {
-	vec3 r							=vec3(idx)/600.0;
-	vec3 pos						=vec3(rand3(r),rand3(11.01*r),rand3(587.087*r));
-	pos								*=2.0;
-	pos								-=vec3(1.0,1.0,1.0);
-	int i							=idx.z*3600+idx.y*60+idx.x;
-	
-	targetVertexBuffer[i].position	=particleZoneSize*pos;
+	vec3 r					=vec3(idx)/600.0;
+	vec3 pos				=vec3(rand3(r),rand3(11.01*r),rand3(587.087*r));
+	pos						*=2.0;
+	pos						-=vec3(1.0,1.0,1.0);
+	uint i					=24000+idx.z*3600+idx.y*60+idx.x;
+	PrecipitationVertex v;
+	v.position				=particleZoneSize*pos;
 	// velocity is normalized in order to scale with fall speed
-	vec3 v							=vec3(rand3(1.7*r),rand3(17.01*r),rand3(887.087*r));
-	v								=2.0*v-vec3(1.0,1.0,1.0);
-	targetVertexBuffer[i].velocity	=v;
-	targetVertexBuffer[i].type		=0;//i%32;
+	vec3 velocity			=vec3(rand3(1.7*r),rand3(17.01*r),rand3(887.087*r));
+	velocity				=2.0*velocity-vec3(1.0,1.0,1.0);
+	v.velocity				=velocity;
+	v.type					=0;//i%32;
+	v.dummy					=0.f;
+	targetVertexBuffer[i]	=v;
 }
 
 [numthreads(10,10,10)]
@@ -510,11 +512,11 @@ void GS_RainParticles(point RainParticleVertexOutput input[1], inout TriangleStr
         GenRainSpriteVertices(input[0].position.xyz,( meanFallVelocity+meanFallVelocity.z*flurry*input[0].velocity)/g_FrameRate, viewPos[1], pos);
         
         float3 closestPointLight=vec3(0,0,500);
-        float closestDistance	=length(closestPointLight - pos[0]);
+        float closestDistance	=length(closestPointLight-pos[0]);
         
-        output.pos				=mul(  worldViewProj[1],float4(pos[0],1.0));
+        output.pos				=mul(worldViewProj[1],float4(pos[0],1.0));
         output.lightDir			=lightDir;
-        output.pointLightDir	=closestPointLight	-pos[0];
+        output.pointLightDir	=closestPointLight-pos[0];
         output.view				=normalize(pos[0]);
         output.texCoords		=g_texcoords[0];
         SpriteStream.Append(output);
@@ -675,10 +677,10 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
         float3 tex4 = float3(textureCoordsH2, input.texCoords.y, texIndicesV2.y);
 
         // Sample opacity from the textures
-        float col1 = rainTextureArray.Sample( samAniso, tex1);//* g_rainfactors[texIndicesV1.x];
-        float col2 = rainTextureArray.Sample( samAniso, tex2);//* g_rainfactors[texIndicesV1.y];
-        float col3 = rainTextureArray.Sample( samAniso, tex3);//* g_rainfactors[texIndicesV2.x];
-        float col4 = rainTextureArray.Sample( samAniso, tex4);//* g_rainfactors[texIndicesV2.y];
+        float col1 = rainTextureArray.Sample( samAniso, tex1).x;//* g_rainfactors[texIndicesV1.x];
+        float col2 = rainTextureArray.Sample( samAniso, tex2).x;//* g_rainfactors[texIndicesV1.y];
+        float col3 = rainTextureArray.Sample( samAniso, tex3).x;//* g_rainfactors[texIndicesV2.x];
+        float col4 = rainTextureArray.Sample( samAniso, tex4).x;//* g_rainfactors[texIndicesV2.y];
 
         // Compute interpolated opacity using the s and t factors
         float hOpacity1 = lerp(col1,col2,s);
