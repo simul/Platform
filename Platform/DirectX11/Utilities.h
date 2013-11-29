@@ -113,6 +113,16 @@ namespace simul
 				uav_desc.Buffer.Flags			=0;
 				V_CHECK(pd3dDevice->CreateUnorderedAccessView(vertexBuffer, &uav_desc, &unorderedAccessView));
 			}
+			void apply(ID3D11DeviceContext *pContext,int slot)
+			{
+				UINT stride = sizeof(T);
+				UINT offset = 0;
+				pContext->IASetVertexBuffers(	slot,				// the first input slot for binding
+												1,					// the number of buffers in the array
+												&vertexBuffer,		// the array of vertex buffers
+												&stride,			// array of stride values, one for each buffer
+												&offset );			// array of offset values, one for each buffer
+			}
 			void release()
 			{
 				SAFE_RELEASE(vertexBuffer)

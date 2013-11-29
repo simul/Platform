@@ -35,6 +35,24 @@ uniform_buffer RainOsdConstants SIMUL_BUFFER_REGISTER(9)
 	uniform vec4 rect;
 };
 
+struct PrecipitationVertex
+{
+    vec3 position;	
+	uint type;
+	vec3 velocity;
+	//float dummy;
+};
+
+#ifndef __cplusplus
+struct PrecipitationVertexInput
+{
+    vec3 position	: POSITION;         //position of the particle
+	uint type		: TYPE;             //particle type
+	vec3 velocity	: VELOCITY;
+	//float dummy		: DUMMY;
+};
+#endif
+
 struct TransformedParticle
 {
     vec4 position;

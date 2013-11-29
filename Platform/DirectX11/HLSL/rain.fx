@@ -1,6 +1,6 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-float particleZoneSize=20.0;
+float particleZoneSize=10.0;
 #include "../../CrossPlatform/rain_constants.sl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/depth.sl"
@@ -9,12 +9,12 @@ texture3D randomTexture3D;
 // Same as transformedParticle, but with semantics
 struct particleVertexOutput
 {
-    float4 position0		:SV_POSITION;
-    float4 position1		:TEXCOORD2;
-	float pointSize			:PSIZE;
-	float brightness		:TEXCOORD0;
-	vec3 view				:TEXCOORD1;
-	float fade				:TEXCOORD3;
+    float4 position0	:SV_POSITION;
+    float4 position1	:TEXCOORD2;
+	float pointSize		:PSIZE;
+	float brightness	:TEXCOORD0;
+	vec3 view			:TEXCOORD1;
+	float fade			:TEXCOORD3;
 };
 
 texture2D randomTexture;
@@ -26,8 +26,7 @@ texture2D depthTexture;
 Texture2DArray rainTextureArray;
 
 RWTexture2DArray<vec4> targetTextureArray;
-StructuredBuffer<vec3> positions;
-RWStructuredBuffer<vec3> targetVertexBuffer;
+RWStructuredBuffer<PrecipitationVertex> targetVertexBuffer;
 
 SamplerState rainSampler
 {
@@ -58,7 +57,7 @@ struct PosOnly
 {
     float3 position		: POSITION;
 };
-
+/*
 struct VSParticleIn
 {   
     float3 pos			: POSITION;         //position of the particle
@@ -67,7 +66,7 @@ struct VSParticleIn
     //float random		: RAND;
     //uint Type			: TYPE;             //particle type
 };
-
+*/
 
 struct vertexOutput
 {
@@ -78,18 +77,18 @@ struct vertexOutput
 
 struct rainVertexOutput
 {
-    float4 position			: SV_POSITION;
-    float2 clip_pos			: TEXCOORD1;
-    float2 texCoords		: TEXCOORD0;
+    float4 position		: SV_POSITION;
+    float2 clip_pos		: TEXCOORD1;
+    float2 texCoords	: TEXCOORD0;
 };
 
 struct particleGeometryOutput
 {
-    float4 position			:SV_POSITION;
-    float2 texCoords		:TEXCOORD0;
-	float brightness		:TEXCOORD1;
-	vec3 view				:TEXCOORD2;
-	float fade				:TEXCOORD3;
+    float4 position		:SV_POSITION;
+    float2 texCoords	:TEXCOORD0;
+	float brightness	:TEXCOORD1;
+	vec3 view			:TEXCOORD2;
+	float fade			:TEXCOORD3;
 };
 
 vec3 Frac(vec3 pos,float scale)
@@ -143,50 +142,55 @@ void transf(out TransformedParticle p,in vec3 position,int i)
 void CS_MakeRainTextureArray(uint3 idx: SV_DispatchThreadID )
 {
 	int X,Y,N;
+	int n	=idx.z;
 	targetTextureArray.GetDimensions(X,Y,N);
+	float brightnessMult	=rand(n*1001.1);
 	vec4 result				=vec4(0.0,0,0,0.5);
 	// idx.x gives the index in the array.
-	int n	=idx.z;
-	for(int i=0;i<3;i++)
-	{
-		float V				=0.8/pi*(1.0+0.9*rand(n+10*i));
-		float b				=rand(n+7*i+0.5);
+	float b				=rand(n+0.5);
 	
-		float y				=float(idx.y)/float(Y);
-		float c				=0.5*sin(y/V);
-		float brightness	=(i+1)*pow(sin((y+b)/V),i+1);
+	float y				=float(idx.y)/float(Y);
 	
-		float x				=2.0*(idx.x+0.5)/float(X)-1.0;		// goes between -1 and 1
-		float dx			=(x-c)*6.0;
-		float s				=exp(-dx*dx);
-		result.rgba			+=brightness*s;
-	}
-	targetTextureArray.mips[0][idx]	=saturate(result);
-	for(int i=1;i<5;i++)
-	{
-		idx=idx/2;
-		uint4 pos=uint4(idx,i);
-		targetTextureArray.mips[1][idx]	=vec4(1.0,0,0,1.0);
-	}
+	float V				=0.4/pi*(0.6+0.8*rand(n));
+	float U				=0.4/pi*(0.6+0.8*rand(n*4.41));
+	float c				=0.5*sin(y/V);
+	float brightness	=brightnessMult*sin((y+b)/U);
+	
+	float h				=rand(n+0.9);
+	float highlight		=30.0*saturate(sin((y+h)/V)-0.95);
+	
+	float x				=2.0*(idx.x+0.5)/float(X)-1.0;		// goes between -1 and 1
+	float dx			=(x-c)*3.0;
+	float s				=exp(-dx*dx);
+	result.rgba			+=(brightness+highlight)*s;
+	
+	targetTextureArray[idx]	=saturate(result);
 }
 
 [numthreads(10,10,10)]
 void CS_MakeVertexBuffer(uint3 idx	: SV_DispatchThreadID )
 {
-	vec3 r						=vec3(idx)/50.0;
-	vec3 pos					=vec3(rand3(r),rand3(11.01*r),rand3(587.087*r));
-	pos							*=2.0;
-	pos							-=vec3(1.0,1.0,1.0);
-	int i						=idx.z*2500+idx.y*50+idx.x;
-	targetVertexBuffer[i]		=particleZoneSize*pos;
+	vec3 r							=vec3(idx)/60.0;
+	vec3 pos						=vec3(rand3(r),rand3(11.01*r),rand3(587.087*r));
+	pos								*=2.0;
+	pos								-=vec3(1.0,1.0,1.0);
+	int i							=idx.z*3600+idx.y*60+idx.x;
+	targetVertexBuffer[i].position	=particleZoneSize*pos;
+	// velocity is normalized in order to scale with fall speed
+	vec3 v							=vec3(rand3(1.7*r),rand3(17.01*r),rand3(887.087*r));
+	v								=2.0*v-vec3(1.0,1.0,1.0);
+	
+	targetVertexBuffer[i].velocity	=v;
+	targetVertexBuffer[i].type		=i%32;
 }
 
 [numthreads(10,10,10)]
 void CS_MoveParticles(uint3 idx	: SV_DispatchThreadID )
 {
-	int i						=idx.z*2500+idx.y*50+idx.x;
-	vec3 pos					=targetVertexBuffer[i];
-	pos							+=meanFallVelocity*timeStepSeconds;
+	int i						=idx.z*3600+idx.y*60+idx.x;
+	vec3 pos					=targetVertexBuffer[i].position;
+	pos							+=(meanFallVelocity+meanFallVelocity.z*targetVertexBuffer[i].velocity*flurry)*timeStepSeconds;
+	//pos							+=meanFallVelocity*timeStepSeconds;
 	if(pos.z<-particleZoneSize)
 		pos.z+=2.0*particleZoneSize;
 	if(pos.x<-particleZoneSize)
@@ -197,7 +201,7 @@ void CS_MoveParticles(uint3 idx	: SV_DispatchThreadID )
 		pos.y+=2.0*particleZoneSize;
 	else if(pos.y>particleZoneSize)
 		pos.y-=2.0*particleZoneSize;
-	targetVertexBuffer[i]		=pos;
+	targetVertexBuffer[i].position		=pos;
 }
 
 particleVertexOutput VS_Particles(PosAndId IN)
@@ -427,17 +431,20 @@ struct PSSceneIn
     uint type  : TYPE;
     float random : RAND;
 };
+
 struct RainParticleVertexOutput
 {
     vec3 position	: POSITION;
 	uint type		:TEXCOORD0;
+    vec3 velocity	: TEXCOORD1;
 };
 
-RainParticleVertexOutput VS_ParticleRain(PosAndId input )
+RainParticleVertexOutput VS_RainParticles(PrecipitationVertexInput input )
 {
 	RainParticleVertexOutput p;
 	p.position	=input.position;
-	p.type		=input.vertex_id%32;
+	p.type		=input.type;
+	p.velocity	=input.velocity;
     return p;
 }
 
@@ -469,10 +476,10 @@ bool cullSprite( float3 position, float SpriteSize)
     
     return false;
 }
-float g_SpriteSize=0.5;
+float g_SpriteSize=0.2;
 void GenRainSpriteVertices(float3 worldPos, float3 velVec, float3 eyePos, out float3 outPos[4])
 {
-    float height =length(velVec)/7.0;// g_SpriteSize/2.0;
+    float height =length(velVec);// g_SpriteSize/2.0;
     float width = g_SpriteSize/20.0;
 
     velVec = normalize(velVec);
@@ -489,7 +496,7 @@ void GenRainSpriteVertices(float3 worldPos, float3 velVec, float3 eyePos, out fl
     
 // GS for rendering rain as point sprites.  Takes a point and turns it into 2 tris.
 [maxvertexcount(4)]
-void GS_ParticleRain(point RainParticleVertexOutput input[1], inout TriangleStream<PSSceneIn> SpriteStream)
+void GS_RainParticles(point RainParticleVertexOutput input[1], inout TriangleStream<PSSceneIn> SpriteStream)
 {
     float totalIntensity = 1.0;//g_PointLightIntensity*g_ResponsePointLight + dirLightIntensity*g_ResponseDirLight;
 	//if(!cullSprite(input[0].position.xyz,2*g_SpriteSize) && totalIntensity > 0)
@@ -499,9 +506,8 @@ void GS_ParticleRain(point RainParticleVertexOutput input[1], inout TriangleStre
        // output.random = input[0].random;
        
         float3 pos[4];
-		vec3 spd=vec3(0,0,0);//input[0].speed
 		float g_FrameRate=60.f;
-        GenRainSpriteVertices(input[0].position.xyz, spd.xyz/g_FrameRate + meanFallVelocity, viewPos[1], pos);
+        GenRainSpriteVertices(input[0].position.xyz,( meanFallVelocity+meanFallVelocity.z*flurry*input[0].velocity)/g_FrameRate, viewPos[1], pos);
         
         float3 closestPointLight=vec3(0,0,500);
         float closestDistance	=length(closestPointLight - pos[0]);
@@ -510,7 +516,7 @@ void GS_ParticleRain(point RainParticleVertexOutput input[1], inout TriangleStre
         output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[0];
         output.view				=normalize(pos[0]);
-        output.texCoords				=g_texcoords[0];
+        output.texCoords		=g_texcoords[0];
         SpriteStream.Append(output);
                 
         output.pos				=mul(worldViewProj[1],float4(pos[1],1.0));
@@ -686,11 +692,11 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
 
 }
 
-vec4 PS_ParticleRain(PSSceneIn input) : SV_Target
+vec4 PS_RainParticles(PSSceneIn input) : SV_Target
 {     
       //return float4(1,0,0,0.1);
 		vec3 light			=cubeTexture.Sample(wrapSamplerState,-input.view).rgb;
-      vec4 texel			=rainTextureArray.SampleLevel(samAniso,vec3(input.texCoords,input.type),0);
+      vec4 texel			=rainTextureArray.Sample(samAniso,vec3(input.texCoords,input.type));
       //directional lighting---------------------------------------------------------------------------------
       vec4 directionalLight	=vec4(1,1,1,1);
       //rainResponse(input, input.lightDir, 2.0*dirLightIntensity*g_ResponseDirLight*input.random, float3(1.0,1.0,1.0), input.eyeVec, false, directionalLight);
@@ -714,9 +720,9 @@ technique11 rain_particles
     pass p0
     {
         SetRasterizerState( RenderNoCull );
-        SetVertexShader( CompileShader(   vs_4_0, VS_ParticleRain() ) );
-        SetGeometryShader( CompileShader( gs_4_0, GS_ParticleRain() ) );
-        SetPixelShader( CompileShader(    ps_4_0, PS_ParticleRain() ) );
+        SetVertexShader( CompileShader(   vs_4_0, VS_RainParticles() ) );
+        SetGeometryShader( CompileShader( gs_4_0, GS_RainParticles() ) );
+        SetPixelShader( CompileShader(    ps_4_0, PS_RainParticles() ) );
         
         SetBlendState( AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetDepthStencilState( DisableDepth, 0 );

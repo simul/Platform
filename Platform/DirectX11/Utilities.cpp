@@ -492,15 +492,15 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORM
 //	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[num];
 	ID3D11DeviceContext *pImmediateContext=NULL;
 	pd3dDevice->GetImmediateContext(&pImmediateContext);
-	static int num_mips		=3;
+	static int num_mips		=5;
 	desc.Width				=w;
 	desc.Height				=l;
 	desc.Format				=f;
-	desc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_UNORDERED_ACCESS;
+	desc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_UNORDERED_ACCESS|D3D11_BIND_RENDER_TARGET ;
 	desc.Usage				=D3D11_USAGE_DEFAULT;
 	desc.CPUAccessFlags		=0;
 	desc.ArraySize			=num;
-	desc.MiscFlags			=0;
+	desc.MiscFlags			=D3D11_RESOURCE_MISC_GENERATE_MIPS;
 	desc.MipLevels			=num_mips;
 	desc.SampleDesc.Count	=1;
 	desc.SampleDesc.Quality	=0;
