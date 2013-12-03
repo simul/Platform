@@ -77,19 +77,38 @@ void PrecipitationRenderer::RecompileShaders()
 		{"POSITION"	,0	,DXGI_FORMAT_R32G32B32_FLOAT	,0	,0	,D3D11_INPUT_PER_VERTEX_DATA,0},
 		{"TYPE"		,0	,DXGI_FORMAT_R32_UINT			,0	,12	,D3D11_INPUT_PER_VERTEX_DATA,0},
 		{"VELOCITY"	,0	,DXGI_FORMAT_R32G32B32_FLOAT	,0	,16	,D3D11_INPUT_PER_VERTEX_DATA,0},
-		{"DUMMY"	,0	,DXGI_FORMAT_R32_FLOAT			,0	,28	,D3D11_INPUT_PER_VERTEX_DATA,0},
+		//{"DUMMY"	,0	,DXGI_FORMAT_R32_FLOAT			,0	,28	,D3D11_INPUT_PER_VERTEX_DATA,0},
 	};
 	SAFE_RELEASE(m_pVtxDecl);
     D3DX11_PASS_DESC PassDesc;
 	m_hTechniqueRainParticles->GetPassByIndex(0)->GetDesc(&PassDesc);
-	V_CHECK(m_pd3dDevice->CreateInputLayout(decl,4,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl));
+	V_CHECK(m_pd3dDevice->CreateInputLayout(decl,3,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl));
 	
+#if 1
+	ID3D11InputLayout* previousInputLayout;
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	pImmediateContext->IAGetInputLayout(&previousInputLayout);
+	pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
+	{
+		pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST );
+		pImmediateContext->IASetInputLayout(m_pVtxDecl);
+		vertexBuffer.setAsStreamOutTarget(pImmediateContext);
+		ApplyPass(pImmediateContext,effect->GetTechniqueByName("init_particles")->GetPassByIndex(0));
+		pImmediateContext->Draw(8000,0);
+		ID3D11Buffer *pBuffer =NULL;
+		UINT offset=0;
+		pImmediateContext->SOSetTargets(1,&pBuffer,&offset);
+	}
+	pImmediateContext->IASetPrimitiveTopology(previousTopology );
+	pImmediateContext->IASetInputLayout(previousInputLayout);
+#else
 	// Use a compute shader to initialize the vertex buffer with random positions
 	// shader has been created:
+
 	dx11::setUnorderedAccessView(effect,"targetVertexBuffer",vertexBuffer.unorderedAccessView);
 	ApplyPass(pImmediateContext,effect->GetTechniqueByName("make_vertex_buffer")->GetPassByIndex(0));
 	pImmediateContext->Dispatch(10,10,10);
-
+#endif
 	SAFE_RELEASE(pImmediateContext);
 }
 
@@ -112,15 +131,16 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	proj.Identity();
 	MakeMesh();
 
-	PrecipitationVertex *dat=new PrecipitationVertex[216000];
-	memset(dat,0,216000);
-	for(int i=0;i<216000;i++)
+	PrecipitationVertex *dat=new PrecipitationVertex[8000];
+	memset(dat,0,8000);
+	for(int i=0;i<8000;i++)
 	{
 		dat[i].position.y=6;
-		dat[i].position.x=10*(i/216000.0f-.5f);
+		dat[i].position.x=10*(i/8000.0f-.5f);
 	}
 
-	vertexBuffer.ensureBufferSize(m_pd3dDevice,216000,dat);
+	vertexBuffer.ensureBufferSize(m_pd3dDevice,8000,dat);
+	vertexBufferSwap.ensureBufferSize(m_pd3dDevice,8000,dat);
 	delete dat;
 
     RecompileShaders();
@@ -135,6 +155,7 @@ void PrecipitationRenderer::InvalidateDeviceObjects()
 	HRESULT hr=S_OK;
 	cubemap_SRV=NULL;
 	vertexBuffer.release();
+	vertexBufferSwap.release();
 	rainArrayTexture.release();
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(m_pVtxDecl);
@@ -158,15 +179,40 @@ void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 		dt=1.0f;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	BasePrecipitationRenderer::PreRenderUpdate(context,dt);
-	// update using compute
-	SIMUL_COMBINED_PROFILE_START(context,"Rain/snow Particle Update by Compute")
-	dx11::setUnorderedAccessView(effect,"targetVertexBuffer",vertexBuffer.unorderedAccessView);
+	
 	rainConstants.meanFallVelocity	=meanVelocity;
 	rainConstants.timeStepSeconds	=dt;
 	rainConstants.Apply(pContext);
+	return;
+
+#if 1
+	ID3D11InputLayout* previousInputLayout;
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	pContext->IAGetInputLayout(&previousInputLayout);
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+	{
+		pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST );
+		pContext->IASetInputLayout(m_pVtxDecl);
+		vertexBuffer.apply(pContext,0);
+		vertexBufferSwap.setAsStreamOutTarget(pContext);
+		techniqueMoveParticles->GetPassByIndex(0)->Apply(0,pContext);
+		ApplyPass(pContext,effect->GetTechniqueByName("move_particles")->GetPassByIndex(0));
+		pContext->Draw(8000,0);
+		ID3D11Buffer *pBuffer =NULL;
+		UINT offset=0;
+		pContext->SOSetTargets(1,&pBuffer,&offset );
+		std::swap(vertexBuffer,vertexBufferSwap);
+	}
+	pContext->IASetPrimitiveTopology(previousTopology );
+	pContext->IASetInputLayout(previousInputLayout);
+#else
+	// update using compute
+	SIMUL_COMBINED_PROFILE_START(context,"Rain/snow Particle Update by Compute")
+	dx11::setUnorderedAccessView(effect,"targetVertexBuffer",vertexBuffer.unorderedAccessView);
 	ApplyPass(pContext,effect->GetTechniqueByName("move_particles_compute")->GetPassByIndex(0));
 	pContext->Dispatch(6,6,6);
 	SIMUL_COMBINED_PROFILE_END
+#endif
 }
 
 /*	Here, we only consider the effect of exposure time on the transparency of the rain streak. It has been
@@ -307,7 +353,7 @@ void PrecipitationRenderer::RenderParticles(void *context)
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	rainConstants.intensity		=intensity;
 	rainConstants.Apply(pContext);
-	int numParticles			=(int)(intensity*216000.f);
+	int numParticles			=(int)(intensity*8000.f);
 	vertexBuffer.apply(pContext,0);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	if(RainToSnow>.5)

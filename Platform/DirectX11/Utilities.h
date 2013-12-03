@@ -79,10 +79,10 @@ namespace simul
 		template<class T> struct VertexBuffer
 		{
 			ID3D11Buffer				*vertexBuffer;
-			ID3D11UnorderedAccessView	*unorderedAccessView;
+			//ID3D11UnorderedAccessView	*unorderedAccessView;
 			VertexBuffer()
 				:vertexBuffer(NULL)
-				,unorderedAccessView(NULL)
+				//,unorderedAccessView(NULL)
 			{
 			}
 			~VertexBuffer()
@@ -97,7 +97,7 @@ namespace simul
 				{
 					numVertices*sizeof(T),
 					D3D11_USAGE_DEFAULT,
-					D3D11_BIND_VERTEX_BUFFER|D3D11_BIND_UNORDERED_ACCESS
+					D3D11_BIND_VERTEX_BUFFER|D3D11_BIND_STREAM_OUTPUT	//D3D11_BIND_UNORDERED_ACCESS is useless for VB's in DX11
 					,0// CPU
 					,0//D3D11_RESOURCE_MISC_BUFFER_STRUCTURED
 					,sizeof(T)			//StructureByteStride
@@ -108,15 +108,16 @@ namespace simul
 				init.SysMemPitch		=sizeof(T);
 				init.SysMemSlicePitch	=0;
 				V_CHECK(pd3dDevice->CreateBuffer(&desc,data?(&init):NULL,&vertexBuffer));
-				D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+			/*	D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
 				ZeroMemory(&uav_desc,sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
 				uav_desc.Format					=DXGI_FORMAT_R32_FLOAT;
 				uav_desc.ViewDimension			=D3D11_UAV_DIMENSION_BUFFER;
 				uav_desc.Buffer.FirstElement	=0;
 				uav_desc.Buffer.NumElements		=numVertices;
 				uav_desc.Buffer.Flags			=0;
-				V_CHECK(pd3dDevice->CreateUnorderedAccessView(vertexBuffer, &uav_desc, &unorderedAccessView));
+				V_CHECK(pd3dDevice->CreateUnorderedAccessView(vertexBuffer, &uav_desc, &unorderedAccessView));*/
 			}
+			//! Use this vertex buffer in the next draw call - wraps IASetVertexBuffers.
 			void apply(ID3D11DeviceContext *pContext,int slot)
 			{
 				UINT stride = sizeof(T);
@@ -127,10 +128,16 @@ namespace simul
 												&stride,			// array of stride values, one for each buffer
 												&offset );			// array of offset values, one for each buffer
 			}
+			//! Write to this vertex buffer from the Geometry shader in the next draw call - wraps SOSetTargets.
+			void setAsStreamOutTarget(ID3D11DeviceContext *pContext)
+			{
+				UINT offset = 0;
+				pContext->SOSetTargets(1,&vertexBuffer,&offset );
+			}
 			void release()
 			{
 				SAFE_RELEASE(vertexBuffer)
-				SAFE_RELEASE(unorderedAccessView)
+				//SAFE_RELEASE(unorderedAccessView)
 			}
 		};
 		struct Mesh
@@ -405,6 +412,11 @@ namespace std
 		std::swap(_Left.depth				,_Right.depth);
 		std::swap(_Left.mapped				,_Right.mapped);
 		std::swap(_Left.format				,_Right.format);
+	}
+	template<class T> inline void swap(simul::dx11::VertexBuffer<T>& _Left, simul::dx11::VertexBuffer<T>& _Right)
+	{
+		std::swap(_Left.vertexBuffer		,_Right.vertexBuffer);
+//		std::swap(_Left.unorderedAccessView	,_Right.unorderedAccessView);
 	}
 }
 
