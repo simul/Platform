@@ -143,15 +143,15 @@ void GpuCloudGenerator::FillDensityGrid(int index
 		
 		for(simul::clouds::MaskMap::const_iterator i=masks.begin();i!=masks.end();i++)
 		{
-	gpuCloudConstants.yRange		=vec4(0,1.f,0,0);
+			gpuCloudConstants.yRange		=vec4(0,1.f,0,0);
 			gpuCloudConstants.maskCentre	=vec2(i->second.x,i->second.y);
 			gpuCloudConstants.maskRadius	=i->second.radius;
 			gpuCloudConstants.maskFeather	=0.1f;
 			gpuCloudConstants.maskThickness	=i->second.thickness;
 			gpuCloudConstants.Apply(m_pImmediateContext);
-		ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
+			ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
 			mask_fb.DrawQuad(m_pImmediateContext);
-	}
+		}
 	}
 	else
 	{

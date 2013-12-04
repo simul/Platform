@@ -83,7 +83,6 @@ void PrecipitationRenderer::RecompileShaders()
     D3DX11_PASS_DESC PassDesc;
 	m_hTechniqueRainParticles->GetPassByIndex(0)->GetDesc(&PassDesc);
 	V_CHECK(m_pd3dDevice->CreateInputLayout(decl,3,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl));
-	
 #if 1
 	ID3D11InputLayout* previousInputLayout;
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
@@ -94,7 +93,7 @@ void PrecipitationRenderer::RecompileShaders()
 		pImmediateContext->IASetInputLayout(m_pVtxDecl);
 		vertexBuffer.setAsStreamOutTarget(pImmediateContext);
 		ApplyPass(pImmediateContext,effect->GetTechniqueByName("init_particles")->GetPassByIndex(0));
-		pImmediateContext->Draw(8000,0);
+		pImmediateContext->Draw(125000,0);
 		ID3D11Buffer *pBuffer =NULL;
 		UINT offset=0;
 		pImmediateContext->SOSetTargets(1,&pBuffer,&offset);
@@ -104,7 +103,6 @@ void PrecipitationRenderer::RecompileShaders()
 #else
 	// Use a compute shader to initialize the vertex buffer with random positions
 	// shader has been created:
-
 	dx11::setUnorderedAccessView(effect,"targetVertexBuffer",vertexBuffer.unorderedAccessView);
 	ApplyPass(pImmediateContext,effect->GetTechniqueByName("make_vertex_buffer")->GetPassByIndex(0));
 	pImmediateContext->Dispatch(10,10,10);
@@ -131,16 +129,16 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	proj.Identity();
 	MakeMesh();
 
-	PrecipitationVertex *dat=new PrecipitationVertex[8000];
-	memset(dat,0,8000);
-	for(int i=0;i<8000;i++)
+	PrecipitationVertex *dat=new PrecipitationVertex[125000];
+	memset(dat,0,125000);
+	for(int i=0;i<125000;i++)
 	{
 		dat[i].position.y=6;
-		dat[i].position.x=10*(i/8000.0f-.5f);
+		dat[i].position.x=10*(i/125000.0f-.5f);
 	}
 
-	vertexBuffer.ensureBufferSize(m_pd3dDevice,8000,dat);
-	vertexBufferSwap.ensureBufferSize(m_pd3dDevice,8000,dat);
+	vertexBuffer.ensureBufferSize(m_pd3dDevice,125000,dat);
+	vertexBufferSwap.ensureBufferSize(m_pd3dDevice,125000,dat);
 	delete dat;
 
     RecompileShaders();
@@ -183,7 +181,6 @@ void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 	rainConstants.meanFallVelocity	=meanVelocity;
 	rainConstants.timeStepSeconds	=dt;
 	rainConstants.Apply(pContext);
-	return;
 
 #if 1
 	ID3D11InputLayout* previousInputLayout;
@@ -197,7 +194,7 @@ void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 		vertexBufferSwap.setAsStreamOutTarget(pContext);
 		techniqueMoveParticles->GetPassByIndex(0)->Apply(0,pContext);
 		ApplyPass(pContext,effect->GetTechniqueByName("move_particles")->GetPassByIndex(0));
-		pContext->Draw(8000,0);
+		pContext->Draw(125000,0);
 		ID3D11Buffer *pBuffer =NULL;
 		UINT offset=0;
 		pContext->SOSetTargets(1,&pBuffer,&offset );
@@ -255,7 +252,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	rainConstants.phase			=Phase;
 	rainConstants.flurry		=Waver;
 	rainConstants.flurryRate	=1.0f;
-	rainConstants.snowSize		=0.15f;
+	rainConstants.snowSize		=0.05f;
 
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
@@ -353,7 +350,7 @@ void PrecipitationRenderer::RenderParticles(void *context)
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	rainConstants.intensity		=intensity;
 	rainConstants.Apply(pContext);
-	int numParticles			=(int)(intensity*8000.f);
+	int numParticles			=(int)(intensity*125000.f);
 	vertexBuffer.apply(pContext,0);
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	if(RainToSnow>.5)

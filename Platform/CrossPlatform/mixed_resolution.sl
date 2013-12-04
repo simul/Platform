@@ -52,10 +52,10 @@ void DownscaleDepthFarNear(Texture2DMS<float4> sourceMSDepthTexture,RWTexture2D<
 			}
 		}
 	}
-	float n=AdaptDepth(nearest_depth,depthToLinFadeDistParams);
-	float f=AdaptDepth(farthest_depth,depthToLinFadeDistParams);
-	float edge=f-n;
-	edge=1.0;//step(0.0002,edge);
+	float n		=AdaptDepth(nearest_depth,depthToLinFadeDistParams);
+	float f		=AdaptDepth(farthest_depth,depthToLinFadeDistParams);
+	float edge	=f-n;
+	edge		=1.0;//step(0.0002,edge);
 	target2DTexture[pos.xy]	=vec4(farthest_depth,nearest_depth,edge,0.0);
 }
 

@@ -259,28 +259,8 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
 	}
 	float sz=input[0].pointSize;
 	output.brightness	=input[0].brightness;  
-	output.fade			=input[0].fade;  
+	output.fade			=input[0].fade*sz/(sz+length(pos2-pos1));  
 	output.view			=input[0].view;
-#if 0
-	vec2 diff				=pos2.yx-pos1.yx;
-	diff.y					=-diff.y;
-	diff					=sz*diff/(0.0001+length(diff));
-	vec4 side				=vec4(diff/2.0,0,0);
-	{
-		output.position		=pos1+side; 
-		output.texCoords	=g_texcoords[0];
-		SpriteStream.Append(output);
-		output.position		=pos1-side; 
-		output.texCoords	=g_texcoords[1];
-		SpriteStream.Append(output);
-		output.position		=pos2+side; 
-		output.texCoords	=g_texcoords[2];
-		SpriteStream.Append(output);
-		output.position		=pos2-side; 
-		output.texCoords	=g_texcoords[3];
-		SpriteStream.Append(output);
-	}
-#else
 	if(pos1.x/pos1.w<=pos2.x/pos2.w)
 	{
 		// bottom-left quadrant:
@@ -325,7 +305,6 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
 		output.texCoords	=g_texcoords[1];
 		SpriteStream.Append(output);
 	}
-#endif
     SpriteStream.RestartStrip();
 }
 
@@ -478,14 +457,14 @@ bool cullSprite( float3 position, float SpriteSize)
     
     return false;
 }
-float g_SpriteSize=20.1;
+float g_SpriteSize=0.01;
 void GenRainSpriteVertices(float3 worldPos, float3 velVec, float3 eyePos, out float3 outPos[4])
 {
     float height =length(velVec);// g_SpriteSize/2.0;
-    float width = g_SpriteSize/20.0;
+    float width = g_SpriteSize;
 
     velVec = normalize(velVec);
-    float3 eyeVec =  - worldPos;
+    float3 eyeVec = - worldPos;
     float3 eyeOnVelVecPlane =  - ((dot(eyeVec, velVec)) * velVec);
     float3 projectedEyeVec = eyeOnVelVecPlane - worldPos;
     float3 sideVec = normalize(cross(projectedEyeVec, velVec));
@@ -689,33 +668,28 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
         opacity = pow(opacity,0.7); // inverse gamma correction (expand dynamic range)
         opacity = 4*lightIntensity * opacity * fallOff;
     }
-         
-   rainResponseVal = float4(lightColor,opacity);
-
+	rainResponseVal = float4(lightColor,opacity);
 }
 
 vec4 PS_RainParticles(PSSceneIn input) : SV_Target
 {     
       //return float4(1,0,0,0.1);
-		vec3 light			=cubeTexture.Sample(wrapSamplerState,-input.view).rgb;
-      vec4 texel			=rainTextureArray.Sample(samAniso,vec3(input.texCoords,input.type));
-      //directional lighting---------------------------------------------------------------------------------
-      vec4 directionalLight	=vec4(1,1,1,1);
-      //rainResponse(input, input.lightDir, 2.0*dirLightIntensity*g_ResponseDirLight*input.random, float3(1.0,1.0,1.0), input.eyeVec, false, directionalLight);
+	vec3 light			=cubeTexture.Sample(wrapSamplerState,-input.view).rgb;
+	vec4 texel			=rainTextureArray.Sample(samAniso,vec3(input.texCoords,input.type));
+	//directional lighting---------------------------------------------------------------------------------
+	vec4 directionalLight	=vec4(1,1,1,1);
+	//rainResponse(input, input.lightDir, 2.0*dirLightIntensity*g_ResponseDirLight*input.random, float3(1.0,1.0,1.0), input.eyeVec, false, directionalLight);
 
-      //point lighting---------------------------------------------------------------------------------------
-      vec4 pointLight		=vec4(0,0,0,0);
-     /* 
-      vec3 L = normalize( input.pointLightDir );
+	//point lighting---------------------------------------------------------------------------------------
+	vec4 pointLight		=vec4(0,0,0,0);
+/*	vec3 L = normalize( input.pointLightDir );
       float angleToSpotLight = dot(-L, g_SpotLightDir);
       
       if( !g_useSpotLight || g_useSpotLight && angleToSpotLight > g_cosSpotlightAngle )
           rainResponse(input, input.pointLightDir, 2*g_PointLightIntensity*g_ResponsePointLight*input.random, pointLightColor.xyz, input.eyeVec, true,pointLight);
       */
-      float totalOpacity = pointLight.a+directionalLight.a;
-	  //texel.rgb*
-      return vec4(1,1,0,1);
-      return vec4(light,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
+	float totalOpacity = pointLight.a+directionalLight.a;
+	return vec4(texel.rgb*light,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
 }
 
 technique11 rain_particles
@@ -727,7 +701,7 @@ technique11 rain_particles
         SetGeometryShader( CompileShader( gs_5_0, GS_RainParticles() ) );
         SetPixelShader( CompileShader(    ps_5_0, PS_RainParticles() ) );
         
-        SetBlendState( AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetBlendState( AddAlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetDepthStencilState( DisableDepth, 0 );
     }  
 }
@@ -827,30 +801,40 @@ technique11 show_texture
 // advance rain
 //--------------------------------------------------------------------------------------------
 
-PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput input)
+PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput input,uint vertex_id	: SV_VertexID)
 {
-	input.position.xyz=vec3(0,15,2);
-	input.type=1;
-	input.velocity.xyz=vec3(0,0,0);
-    return input;
+	vec3 pos				=vec3(rand(vertex_id*0.5),rand(7.01*vertex_id),rand(vertex_id));
+	pos						*=2.0;
+	pos						-=vec3(1.0,1.0,1.0);
+	PrecipitationVertexInput v;
+	v.position				=particleZoneSize*pos;
+	// velocity is normalized in order to scale with fall speed
+	vec3 velocity			=vec3(rand(1.7*vertex_id),rand(17.01*vertex_id),rand(2.087*vertex_id));
+	velocity				=2.0*velocity-vec3(1.0,1.0,1.0);
+	v.velocity				=velocity;
+	v.type					=vertex_id%32;
+	//v.dummy					=0.f;
+
+    return v;
 }
 
-PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input)
+PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input,uint vertex_id	: SV_VertexID)
 {
-    //move forward
-    //input.pos.xyz += input.speed.xyz/g_FrameRate + g_TotalVel.xyz;
-	input.position.z-=.01;//
-    //if the particle is outside the bounds, move it to random position near the eye         
-    if(input.position.z <=-particleZoneSize)//  g_eyePos.y-g_heightRange )
-    {
-       //float x =/*input.seed.x*/+ g_eyePos.x;
-       //float z =/*input.seed.z*/+ g_eyePos.z;
-       //float y =/*input.seed.y*/+ g_eyePos.y;
-       //input.pos = float3(x,y,z);
-		 input.position.z+=2.0*particleZoneSize;
-    }
+	vec3 pos					=input.position;
+	pos							+=(meanFallVelocity+meanFallVelocity.z*input.velocity*flurry)*timeStepSeconds;
+	//pos							+=meanFallVelocity*timeStepSeconds;
+	if(pos.z<-particleZoneSize)
+		pos.z+=2.0*particleZoneSize;
+	if(pos.x<-particleZoneSize)
+		pos.x+=2.0*particleZoneSize;
+	else if(pos.x>particleZoneSize)
+		pos.x-=2.0*particleZoneSize;
+	if(pos.y<-particleZoneSize)
+		pos.y+=2.0*particleZoneSize;
+	else if(pos.y>particleZoneSize)
+		pos.y-=2.0*particleZoneSize;
+	input.position		=pos;
     return input;
-    
 }
 
 GeometryShader gsStreamOut = ConstructGSWithSO( CompileShader( vs_5_0, VS_InitParticles() ), "POSITION.xyz; TYPE.x; VELOCITY.xyz" );
