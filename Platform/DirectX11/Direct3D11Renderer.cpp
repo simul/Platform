@@ -359,8 +359,12 @@ void Direct3D11Renderer::RenderScene(ID3D11DeviceContext* pContext)
 
 		simulWeatherRenderer->RenderLightning(pContext,viewport_id);
 		simulWeatherRenderer->DoOcclusionTests();
-
+		
+		//if(simulHDRRenderer&&UseHdrPostprocessor)
+		//	hdrFramebuffer.ActivateDepth(pContext);
 		simulWeatherRenderer->RenderPrecipitation(pContext,resolvedDepth_fb.GetColorTex(),relativeViewportTextureRegionXYWH);
+		//if(simulHDRRenderer&&UseHdrPostprocessor)
+		//	hdrFramebuffer.DeactivateDepth(pContext);
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir,light;

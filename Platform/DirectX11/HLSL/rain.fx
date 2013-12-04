@@ -1,6 +1,10 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-float particleZoneSize=10.0;
+float particleZoneSize=15.0;	// = 625 m^3
+// Brittanica.com: http://www.britannica.com/EBchecked/topic/489827/rain#ref259264
+// Concentrations of raindrops typically range from 100 to 1,000 per cubic m (3 to 30 per cubic foot);
+// drizzle droplets usually are more numerous. 
+
 #include "../../CrossPlatform/rain_constants.sl"
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/depth.sl"
@@ -191,7 +195,7 @@ void CS_MoveParticles(uint3 idx	: SV_DispatchThreadID )
 {
 	int i						=idx.z*400+idx.y*20+idx.x;
 	vec3 pos					=targetVertexBuffer[i].position;
-	pos							+=(meanFallVelocity+meanFallVelocity.z*targetVertexBuffer[i].velocity*flurry)*timeStepSeconds;
+	pos							+=(meanFallVelocity+meanFallVelocity.z*targetVertexBuffer[i].velocity*flurry*0.1)*timeStepSeconds;
 	//pos							+=meanFallVelocity*timeStepSeconds;
 	if(pos.z<-particleZoneSize)
 		pos.z+=2.0*particleZoneSize;
@@ -488,7 +492,7 @@ void GS_RainParticles(point RainParticleVertexOutput input[1], inout TriangleStr
        
         float3 pos[4];
 		float g_FrameRate=20.f;
-        GenRainSpriteVertices(input[0].position.xyz,( meanFallVelocity+meanFallVelocity.z*flurry*input[0].velocity)/g_FrameRate, viewPos[1], pos);
+        GenRainSpriteVertices(input[0].position.xyz,( meanFallVelocity+meanFallVelocity.z*flurry*0.1*input[0].velocity)/g_FrameRate, viewPos[1], pos);
         
         float3 closestPointLight=vec3(0,0,500);
         float closestDistance	=length(closestPointLight-pos[0]);
@@ -682,12 +686,9 @@ vec4 PS_RainParticles(PSSceneIn input) : SV_Target
 
 	//point lighting---------------------------------------------------------------------------------------
 	vec4 pointLight		=vec4(0,0,0,0);
-/*	vec3 L = normalize( input.pointLightDir );
-      float angleToSpotLight = dot(-L, g_SpotLightDir);
-      
-      if( !g_useSpotLight || g_useSpotLight && angleToSpotLight > g_cosSpotlightAngle )
-          rainResponse(input, input.pointLightDir, 2*g_PointLightIntensity*g_ResponsePointLight*input.random, pointLightColor.xyz, input.eyeVec, true,pointLight);
-      */
+	//vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	//float depth			=texture_clamp(depthTexture,depth_texc).x;
+	//float dist			=depthToFadeDistance(depth,IN.clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	float totalOpacity = pointLight.a+directionalLight.a;
 	return vec4(texel.rgb*light,texel.a);//vec4( vec3(pointLight.rgb*pointLight.a/totalOpacity + directionalLight.rgb*directionalLight.a/totalOpacity), totalOpacity);
 }
@@ -702,7 +703,7 @@ technique11 rain_particles
         SetPixelShader( CompileShader(    ps_5_0, PS_RainParticles() ) );
         
         SetBlendState( AddAlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetDepthStencilState( DisableDepth, 0 );
+        SetDepthStencilState( EnableDepth, 0 );
     }  
 }
 
@@ -715,7 +716,7 @@ technique11 simul_particles
         SetGeometryShader(CompileShader(gs_5_0,GS_Particles()));
 		SetVertexShader(CompileShader(vs_5_0,VS_Particles()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Particles()));
-		SetDepthStencilState(DisableDepth,0);
+		SetDepthStencilState(EnableDepth,0);
 		SetBlendState(AddAlphaBlend,float4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
     }
 }
@@ -821,7 +822,7 @@ PrecipitationVertexInput VS_InitParticles(PrecipitationVertexInput input,uint ve
 PrecipitationVertexInput VS_MoveParticles(PrecipitationVertexInput input,uint vertex_id	: SV_VertexID)
 {
 	vec3 pos					=input.position;
-	pos							+=(meanFallVelocity+meanFallVelocity.z*input.velocity*flurry)*timeStepSeconds;
+	pos							+=(meanFallVelocity+meanFallVelocity.z*input.velocity*0.1*flurry)*timeStepSeconds;
 	//pos							+=meanFallVelocity*timeStepSeconds;
 	if(pos.z<-particleZoneSize)
 		pos.z+=2.0*particleZoneSize;

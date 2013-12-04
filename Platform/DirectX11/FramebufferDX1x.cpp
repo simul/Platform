@@ -427,17 +427,22 @@ void Framebuffer::ActivateDepth(void *context)
 	if(!hdr_buffer_texture&&!buffer_depth_texture)
 		CreateBuffers();
 	HRESULT hr=S_OK;
-	pContext->RSGetViewports(&num_v,NULL);
-	if(num_v>0)
-		pContext->RSGetViewports(&num_v,m_OldViewports);
 
-	m_pOldRenderTarget	=NULL;
-	m_pOldDepthSurface	=NULL;
-	pContext->OMGetRenderTargets(	1,
-									&m_pOldRenderTarget,
-									&m_pOldDepthSurface
-									);
-	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
+	if(m_pOldRenderTarget==NULL&&m_pOldDepthSurface==NULL)
+	{
+		pContext->RSGetViewports(&num_v,NULL);
+		if(num_v>0)
+			pContext->RSGetViewports(&num_v,m_OldViewports);
+		pContext->OMGetRenderTargets(	1,
+										&m_pOldRenderTarget,
+										&m_pOldDepthSurface
+										);
+		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
+	}
+	else
+	{
+		pContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
+	}
 	depth_active=(m_pBufferDepthSurface!=NULL);
 	D3D11_VIEWPORT viewport;
 	// Setup the viewport for rendering.
