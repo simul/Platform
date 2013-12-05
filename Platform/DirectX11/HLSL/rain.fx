@@ -408,7 +408,7 @@ float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 
 struct PSSceneIn
 {
-    float4 pos : SV_Position;
+    float4 pos				: SV_Position;
     float3 lightDir			: LIGHT;
     float3 pointLightDir	: LIGHT2;
     float3 view				: EYE;
