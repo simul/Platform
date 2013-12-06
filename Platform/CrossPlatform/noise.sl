@@ -1,13 +1,6 @@
 #ifndef PLATFORM_CROSSPLATFORM_NOISE_SL
 #define PLATFORM_CROSSPLATFORM_NOISE_SL
 
-SIMUL_CONSTANT_BUFFER(RendernoiseConstants,10)
-	uniform int octaves;
-	uniform float persistence;
-	uniform float noisepad1;
-	uniform float noisepad2;
-SIMUL_CONSTANT_BUFFER_END
-
 #ifndef __cplusplus
 float rand(vec2 co)
 {

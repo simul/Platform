@@ -14,7 +14,12 @@ RWTexture3D<float> targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
 
 #include "states.hlsl"
 #include "../../CrossPlatform/simul_gpu_clouds.sl"
+#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/noise.sl"
+#include "../../CrossPlatform/spherical_harmonics_constants.sl"
+#include "../../CrossPlatform/spherical_harmonics.sl"
 
+#define pi (3.1415926536)
 SamplerState lightSamplerState : register(s8);
 
 struct vertexOutput
@@ -114,6 +119,57 @@ void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
 	}
 }
 
+vec3 randomDirection(float seed)
+{
+	float x			=rand(vec2(seed,7.71*seed));  
+	float y			=rand(vec2(1.89*seed,5.41*seed));
+	float theta		=2.0*acos(sqrt(1.0 - x)); 
+	float phi		=2.0*pi*y;
+	// convert spherical coords to unit vector 
+	vec3 vec		=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
+	return vec;
+}
+
+#define NUM_SAMPLES (17)
+#define NUM_STEPS (28)
+
+[numthreads(8,8,8)]
+void CS_SecondaryHarmonic(uint3 sub_pos : SV_DispatchThreadID)
+{
+	uint3 dims;
+	uint3 pos						=sub_pos+threadOffset;
+	targetTexture1.GetDimensions(dims.x,dims.y,dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return;
+	vec3 ratio						=vec3(dims.z/float(dims.x),dims.z/float(dims.y),1.0);
+	float indirect_light			=0.0;
+	// The indirect light is obtained by integrating a NUM number of directions for direct light.
+	for(int i=0;i<NUM_SAMPLES;i++)
+	{
+		vec3 lightspace_texcoord	=(pos+0.5)/vec3(dims);
+		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
+		vec3 dir					=randomDirection(0.927*i+7.7*pos.x+11.94*pos.y+21.07*pos.z);
+
+		float opt_depth				=0.0;
+		vec3 lightDir				=vec3(0,0,1.0);
+		float cos0					=dot(lightDir,dir);
+		float beta					=1;//HenyeyGreenstein(.5,cos0);	
+		for(int j=0;j<NUM_STEPS;j++)
+		{
+			float c					=float(j+0.5)/float(NUM_STEPS)/2.0;
+			vec3 l					=lightspace_texcoord+ratio*dir*c;
+			vec3 d					=mul(transformMatrix,vec4(l,1.0)).xyz;
+			d.z						-=0.5/float(dims.z);
+			float density			=densityTexture.SampleLevel(wwcSamplerState,d,0).x;
+			float direct_light		=beta*lightTexture1.SampleLevel(wwcSamplerState,l,0).x;
+
+			indirect_light			+=direct_light*density/float(NUM_STEPS);//*exp(-extinctions.x*opt_depth);
+			opt_depth				+=density;
+		}
+	}
+	targetTexture1[pos]			=indirect_light/float(NUM_SAMPLES);
+}
+
 [numthreads(8,8,1)]
 void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 {
@@ -133,9 +189,6 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 		int3 sample_pts[]	={int3(pos.xy,Z),int3(xn,pos.y,Z),int3(x1,pos.y,Z),int3(pos.x,yn,Z),int3(pos.x,y1,Z)};
 		for(int i=0;i<5;i++)
 		{
-			//vec3 lightspace_texcoord	=(vec3(sample_pts[i])+0.5)/vec3(dims);
-			//vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
-			//float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
 			indirect_light	+=targetTexture1[sample_pts[i]];
 		}
 		indirect_light		/=5.0;
@@ -147,13 +200,15 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 
 		vec3 densityspace_texcoord	=(mul(transformMatrix,vec4(lightspace_texcoord,1.0))).xyz;
 		float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
+		float direct_light			=lightTexture1.SampleLevel(wwcSamplerState,lightspace_texcoord,0).x;
 		indirect_light				*=exp(-extinctions.y*density*stepLength);
-
+		//indirect_light				+=direct_light*density;
 		if(density==0)
 			indirect_light			=1.0;//-(1.0-indirect_light)*exp(-5.0*stepLength);
 		targetTexture1[idx]			=indirect_light;
 	}
 }
+
 [numthreads(8,8,1)]
 void CS_GaussianFilter(uint3 sub_pos : SV_DispatchThreadID)
 {
@@ -245,6 +300,14 @@ technique11 gpu_secondary_compute
     pass p0 
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_SecondaryLighting()));
+    }
+}
+
+technique11 gpu_secondary_harmonic
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_SecondaryHarmonic()));
     }
 }
 

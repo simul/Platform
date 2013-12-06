@@ -2,10 +2,10 @@
 #define SPHERICAL_HARMONICS_SL
 
 static const float PI=3.1415926536;
-float rand(vec2 co)
+/*float rand(vec2 co)
 {
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
-}
+}*/
 
 float factorial(int j)
 {
@@ -87,8 +87,6 @@ void SH_setup_spherical_samples(RWStructuredBuffer<SphericalHarmonicsSample> sam
 	float y			=(b + rand(vec2(2*a,b))) * oneoverN; // each sample must be random 
 	float theta		=2.0*acos(sqrt(1.0 - x)); 
 	float phi		=2.0*PI*y;
-	//samplesBufferRW[i].theta=theta;
-	//samplesBufferRW[i].phi	=phi;
 	// convert spherical coords to unit vector 
 	vec3 vec		=vec3(sin(theta)*cos(phi),sin(theta)*sin(phi),cos(theta)); 
 	samplesBufferRW[i].dir	= vec; 

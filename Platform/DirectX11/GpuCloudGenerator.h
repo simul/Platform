@@ -33,13 +33,14 @@ namespace simul
 									,int start_texel
 									,int texels
 									,const simul::clouds::MaskMap &masks);
-			virtual void PerformGPURelight(	int light_index
+			void PerformGPURelight(	int light_index
 											,float *target
 											,const int *light_grid
 											,int start_texel
 											,int texels
 											,const int *density_grid
 											,const float *Matrix4x4LightToDensityTexcoords
+											,const float *DensityGridScalesM
 											,const float *lightspace_extinctions_float3
 											,bool wrap_light_tex);
 			void GPUTransferDataToTexture(	int index
@@ -73,6 +74,7 @@ namespace simul
 			ID3DX11EffectTechnique*				maskTechnique;
 			ID3DX11EffectTechnique*				lightingComputeTechnique;
 			ID3DX11EffectTechnique*				secondaryLightingComputeTechnique;
+			ID3DX11EffectTechnique*				secondaryHarmonicTechnique;
 			ID3DX11EffectTechnique*				transformComputeTechnique;
 
 			ID3D11Texture3D						*volume_noise_tex;

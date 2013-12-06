@@ -249,6 +249,7 @@
     <None Include="..\CrossPlatform\light_probe_constants.sl" />
     <None Include="..\CrossPlatform\mixed_resolution.sl" />
     <None Include="..\CrossPlatform\noise.sl" />
+    <None Include="..\CrossPlatform\noise_constants.sl" />
     <None Include="..\CrossPlatform\rain_constants.sl" />
     <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
     <None Include="..\CrossPlatform\simul_2d_clouds.sl" />

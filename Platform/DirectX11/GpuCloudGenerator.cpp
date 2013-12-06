@@ -98,6 +98,7 @@ void GpuCloudGenerator::RecompileShaders()
 	{
 		lightingComputeTechnique			=effect->GetTechniqueByName("gpu_lighting_compute");
 		secondaryLightingComputeTechnique	=effect->GetTechniqueByName("gpu_secondary_compute");
+		secondaryHarmonicTechnique			=effect->GetTechniqueByName("gpu_secondary_harmonic");
 		maskTechnique						=effect->GetTechniqueByName("density_mask");
 		densityComputeTechnique				=effect->GetTechniqueByName("gpu_density_compute");
 		transformComputeTechnique			=effect->GetTechniqueByName("gpu_transform_compute");
@@ -204,6 +205,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 											,int texels
 											,const int *density_grid
 											,const float *Matrix4x4LightToDensityTexcoords
+											,const float *DensityGridScalesM
 											,const float *lightspace_extinctions_float3
 											,bool wrap_light_tex)
 {
@@ -235,8 +237,11 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	gpuCloudConstants.zPixelLightspace	=(1.f/(float)light_grid[2]);
 
 	//transformMatrix * (0,0,1)
-	simul::sky::float4 step	(gpuCloudConstants.transformMatrix._13,gpuCloudConstants.transformMatrix._23,gpuCloudConstants.transformMatrix._33,0);
-
+	simul::sky::float4 step(gpuCloudConstants.transformMatrix._31,gpuCloudConstants.transformMatrix._32,gpuCloudConstants.transformMatrix._33,0);
+	// We require stepLength to be the distance in km of each step along the light path.
+	// So we divide by the light texel count in the light direction, then multiply by the three density axis scales.
+	step*=gpuCloudConstants.zPixelLightspace;
+	step*=simul::sky::float4(DensityGridScalesM[0],DensityGridScalesM[1],DensityGridScalesM[2],1.0);
 	gpuCloudConstants.stepLength		=simul::sky::length(step); 
 	if(wrap_light_tex)
 		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pWwcSamplerState);
@@ -252,7 +257,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	uint3 subgrid;
 	subgrid.x=(light_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
 	subgrid.y=(light_grid[1]+BLOCKWIDTH-1)/BLOCKWIDTH;
-	subgrid.z=1;
+	subgrid.z=(light_grid[2]+BLOCKWIDTH-1)/BLOCKWIDTH;
 	int subgridsize=subgrid.x*subgrid.y*subgrid.z;
 
 	// discard z dimension:
@@ -273,8 +278,19 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	}
 	int z0	=start_texel/light_grid[1]/light_grid[0];
 	int z1	=(start_texel+texels+light_grid[1]*light_grid[0]-1)/light_grid[1]/light_grid[0];
+	static bool harmonic_secondary=false;
 	if(z1>z0)
 	{
+		if(harmonic_secondary)
+		{
+			gpuCloudConstants.threadOffset=uint3(0,0,0);
+			gpuCloudConstants.Apply(m_pImmediateContext);
+			setTexture(effect,"lightTexture1"				,directLightTextures[light_index].shaderResourceView);
+			simul::dx11::setUnorderedAccessView(effect,"targetTexture1",indirectLightTextures[light_index].unorderedAccessView);
+			ApplyPass(m_pImmediateContext,secondaryHarmonicTechnique->GetPassByIndex(0));
+			m_pImmediateContext->Dispatch(subgrid.x,subgrid.y,subgrid.z);
+		}
+		else
 		for(int z=z0;z<z1;z++)
 		{
 			gpuCloudConstants.threadOffset=uint3(0,0,z);
