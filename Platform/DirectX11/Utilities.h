@@ -68,6 +68,7 @@ namespace simul
 			{
 				SAFE_RELEASE(m_pArrayTexture)
 				SAFE_RELEASE(m_pArrayTexture_SRV)
+				SAFE_RELEASE(unorderedAccessView);
 			}
 			void create(ID3D11Device *pd3dDevice,const std::vector<std::string> &texture_files);
 			void create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORMAT f,bool computable);

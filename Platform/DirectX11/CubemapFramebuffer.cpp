@@ -42,7 +42,6 @@ void CubemapFramebuffer::SetFormat(int f)
 	if(F==format)
 		return;
 	format=F;
-	//CreateBuffers();
 }
 
 void CubemapFramebuffer::RestoreDeviceObjects(void* dev)

@@ -137,7 +137,7 @@ vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
 	vec4 glow=convertInt(glowTexture,IN.texCoords);
 	c.rgb+=glow.rgb;
 	c.rgb*=exposure;
-	c.rgb=FilmicTone(c.rgb);//pow(c.rgb,gamma);
+	c.rgb=pow(c.rgb,gamma);
     return vec4(c.rgb,1.f);
 }
 
@@ -146,7 +146,7 @@ vec4 ExposureGammaPS(v2f IN) : SV_TARGET
 	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
 
 	c.rgb*=exposure;
-	c.rgb=FilmicTone(c.rgb);//pow(c.rgb,gamma);
+	c.rgb=pow(c.rgb,gamma);
     return vec4(c.rgb,1.f);
 }
 

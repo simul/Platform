@@ -248,6 +248,7 @@ void GpuCloudGenerator::PerformGPURelight(int index,float *target
 										,int texels
 										,const int * //density_grid
 										,const float *transformMatrix
+									,const float *DensityGridScalesM
 										,const float *lightspace_extinctions_float3
 											,bool wrap_light_tex)
 {

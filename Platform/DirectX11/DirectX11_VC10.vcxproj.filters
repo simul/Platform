@@ -316,6 +316,9 @@
     <None Include="..\CrossPlatform\light_probe_constants.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="..\CrossPlatform\noise_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc">

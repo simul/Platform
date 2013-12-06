@@ -490,8 +490,8 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORM
 	release();
 	D3D11_TEXTURE2D_DESC desc;
 //	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[num];
-	ID3D11DeviceContext *pImmediateContext=NULL;
-	pd3dDevice->GetImmediateContext(&pImmediateContext);
+	//ID3D11DeviceContext *pImmediateContext=NULL;
+	//pd3dDevice->GetImmediateContext(&pImmediateContext);
 	static int num_mips		=5;
 	desc.Width				=w;
 	desc.Height				=l;
@@ -507,7 +507,7 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORM
 	V_CHECK(pd3dDevice->CreateTexture2D(&desc,NULL,&m_pArrayTexture));
 	V_CHECK(pd3dDevice->CreateShaderResourceView(m_pArrayTexture,NULL,&m_pArrayTexture_SRV));
 	V_CHECK(pd3dDevice->CreateUnorderedAccessView(m_pArrayTexture,NULL,&unorderedAccessView));
-	SAFE_RELEASE(pImmediateContext)
+	//SAFE_RELEASE(pImmediateContext)
 }
 
 Mesh::Mesh()

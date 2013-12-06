@@ -32,6 +32,7 @@ namespace simul
 									,int texels
 									,const int *density_grid
 									,const float *Matrix4x4LightToDensityTexcoords
+									,const float *DensityGridScalesM
 									,const float *lightspace_extinctions_float3
 									,bool wrap_light_tex);
 			void GPUTransferDataToTexture(	int index
