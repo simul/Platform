@@ -27,7 +27,7 @@ namespace simul
 				return Enabled&&m_pd3dDevice!=NULL;
 			}
 			int GetDensityGridsize(const int *grid);
-			void* Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr);
+			void* Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr,int generation_number);
 			void FillDensityGrid(	int index
 									,const clouds::GpuCloudsParameters &params
 									,int start_texel

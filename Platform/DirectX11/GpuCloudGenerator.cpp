@@ -112,7 +112,7 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 	return grid[0]*grid[1]*grid[2];
 }
 
-void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr)
+void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr,int generation_number)
 {
 	//using noise_size and noise_src_ptr, make a 3d texture:
 	SAFE_RELEASE(volume_noise_tex);
