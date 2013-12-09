@@ -161,7 +161,7 @@ void CS_SecondaryHarmonic(uint3 sub_pos : SV_DispatchThreadID)
 			vec3 d					=mul(transformMatrix,vec4(l,1.0)).xyz;
 			d.z						-=0.5/float(dims.z);
 			float density			=densityTexture.SampleLevel(wwcSamplerState,d,0).x;
-			float direct_light		=beta*lightTexture1.SampleLevel(wwcSamplerState,l,0).x;
+			float direct_light		=2.0*beta*lightTexture1.SampleLevel(wwcSamplerState,l,0).x;
 
 			indirect_light			+=direct_light*density/float(NUM_STEPS);//*exp(-extinctions.x*opt_depth);
 			opt_depth				+=density;
@@ -178,7 +178,7 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 	targetTexture1.GetDimensions(dims.x,dims.y,dims.z);
 	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
 		return;
-	float indirect_light			=0.0;
+	float indirect_light			=0.5;
 	if(pos.z>0)
 	{
 		int Z				=pos.z-1;
@@ -202,9 +202,9 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 		float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
 		float direct_light			=lightTexture1.SampleLevel(wwcSamplerState,lightspace_texcoord,0).x;
 		indirect_light				*=exp(-extinctions.y*density*stepLength);
-		//indirect_light				+=direct_light*density;
+		indirect_light				+=.5*direct_light*density;
 		if(density==0)
-			indirect_light			=1.0;//-(1.0-indirect_light)*exp(-5.0*stepLength);
+			indirect_light			=0.5;//-(1.0-indirect_light)*exp(-5.0*stepLength);
 		targetTexture1[idx]			=indirect_light;
 	}
 }

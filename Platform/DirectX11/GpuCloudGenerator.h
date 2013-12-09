@@ -19,6 +19,10 @@ namespace simul
 		public:
 			GpuCloudGenerator();
 			~GpuCloudGenerator();
+			void SetHarmonicLighting(bool h)
+			{
+				harmonic_secondary=h;
+			}
 			void RestoreDeviceObjects(void *dev);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
@@ -88,6 +92,7 @@ namespace simul
 			ID3D11SamplerState*					m_pWwcSamplerState;
 			ID3D11SamplerState*					m_pWccSamplerState;
 			ID3D11SamplerState*					m_pCwcSamplerState;
+	bool harmonic_secondary;
 		};
 	}
 }

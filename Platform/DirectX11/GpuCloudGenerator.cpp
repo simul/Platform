@@ -24,6 +24,7 @@ GpuCloudGenerator::GpuCloudGenerator()
 			,m_pWwcSamplerState(NULL)
 			,m_pCwcSamplerState(NULL)
 			,m_pWccSamplerState(NULL)
+	,harmonic_secondary(false)
 {
 	for(int i=0;i<3;i++)
 		finalTexture[i]=NULL;
@@ -278,7 +279,6 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	}
 	int z0	=start_texel/light_grid[1]/light_grid[0];
 	int z1	=(start_texel+texels+light_grid[1]*light_grid[0]-1)/light_grid[1]/light_grid[0];
-	static bool harmonic_secondary=false;
 	if(z1>z0)
 	{
 		if(harmonic_secondary)
