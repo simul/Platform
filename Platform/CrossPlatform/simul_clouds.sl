@@ -694,9 +694,13 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		float layerFade				=layer.layerFade;//*saturate((abs(sine)-layer.sine_threshold)/layer.sine_range);
 		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
 		{
+#ifndef SIMPLE
 			float noise_factor		=lerp(baseNoiseFactor,1.0,saturate(layerTexCoords.z));
 			vec2 noise_texc			=noise_texc_0*layerWorldDist+layer.noiseOffset;
 			vec3 noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
+#else
+			vec3 noiseval			=vec3(0,0,0);
+#endif
 			density					=calcDensity(cloudDensity1,cloudDensity2,layerTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
             if(do_depth_mix)
 				density.z				*=saturate((d-fadeDistance)/0.01);
