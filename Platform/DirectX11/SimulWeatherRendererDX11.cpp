@@ -405,6 +405,28 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));
 }
 
+void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int width,int length)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+	int w=width*4;
+	int l=length*4;
+	if(w>ScreenWidth/4)
+	{
+		l*=ScreenWidth/4;
+		l/=w;
+		w=ScreenWidth/4;
+	}
+	if(l>ScreenHeight/4)
+	{
+		w*=ScreenHeight/4;
+		w/=l;
+		l=ScreenHeight/4;
+	}
+
+	UtilityRenderer::DrawTexture(	pContext,0*w,l,w,l,(ID3D1xShaderResourceView*)fullResFramebufferDx11.GetColorTex());
+	UtilityRenderer::DrawTexture(	pContext,1*w,l,w,l,(ID3D1xShaderResourceView*)fullResNearFramebufferDx11.GetColorTex());
+}
+
 void SimulWeatherRendererDX11::RenderPrecipitation(void *context,void *depth_tex,simul::sky::float4 depthViewportXYWH)
 {
 	if(basePrecipitationRenderer)

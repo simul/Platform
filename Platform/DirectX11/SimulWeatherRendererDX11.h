@@ -64,6 +64,7 @@ namespace simul
 												,const void* lowResDepthTexture
 												,const simul::sky::float4& viewportRegionXYWH);
 			void RenderFramebufferDepth(void *context,int w,int h);
+			void RenderCompositingTextures(void *context,int w,int h);
 			void RenderPrecipitation(void *context,void *depth_tex,simul::sky::float4 depthViewportXYWH);
 			void RenderLightning(void *context,int viewport_id);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
