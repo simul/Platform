@@ -86,7 +86,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer(mem);
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
 #endif
-	baseFramebuffer=&framebuffer;
+	lowResFramebuffer=&framebuffer;
 	ConnectInterfaces();
 }
 

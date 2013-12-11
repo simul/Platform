@@ -51,7 +51,7 @@ void PrecipitationRenderer::RecompileShaders()
 	simul::dx11::Framebuffer make_rain_fb(512,64);
 	make_rain_fb.RestoreDeviceObjects(m_pd3dDevice);
 	make_rain_fb.Activate(pImmediateContext);
-	make_rain_fb.DrawQuad(pImmediateContext);
+	simul::dx11::UtilityRenderer::DrawQuad(pImmediateContext);
 	make_rain_fb.Deactivate(pImmediateContext);
 	rain_texture=make_rain_fb.buffer_texture_SRV;
 	// Make sure it isn't destroyed when the fb goes out of scope:

@@ -91,7 +91,7 @@ vec3 AtmosphericsInsc(	Texture2D depthTexture
 //colour.rgb=.05*insc.rgb;
     return				colour;
 }
-
+#define USE_NEAREST_SAMPLE;
 vec4 InscatterMSAA(	Texture2D inscTexture
 				,Texture2D skylTexture
 				,Texture2D illuminationTexture
@@ -120,15 +120,20 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 	float sine			=view.z;
 	float2 fade_texc	=vec2(0,0.5f*(1.f-sine));
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-		//float depth1			=depthTextureMS.Load(pos2,0).x;
-		///float dist1			=depthToFadeDistance(depth1,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+#ifdef USE_NEAREST_SAMPLE
+	float nearest_dist	=1000.0;
+#endif
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 	for(int i=0;i<numSamples;i++)
 	{
 		vec4 insc_i;
         vec3 skyl_i;
-		vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 		float depth			=depthTextureMS.Load(pos2,i).x;
 		float dist			=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+#ifdef USE_NEAREST_SAMPLE
+		if(dist<nearest_dist)
+			nearest_dist=dist;
+#else
         CalcInsc(	inscTexture
 					,skylTexture
 					,illuminationTexture
@@ -139,9 +144,21 @@ vec4 InscatterMSAA(	Texture2D inscTexture
                     ,skyl_i);
         insc+=insc_i;
         skyl+=skyl_i;
+#endif
 	}
+#ifdef USE_NEAREST_SAMPLE
+        CalcInsc(	inscTexture
+					,skylTexture
+					,illuminationTexture
+					,nearest_dist
+					,fade_texc
+					,illum_texc
+                    ,insc
+                    ,skyl);
+#else
 	insc/=float(numSamples);
 	skyl/=float(numSamples);
+#endif
 	float cos0			=dot(view,lightDir);
 #ifdef INFRARED
 	vec3 colour			=skyl.rgb;

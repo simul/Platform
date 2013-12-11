@@ -3,14 +3,20 @@
 #include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/hdr_constants.sl"
 #include "../../CrossPlatform/mixed_resolution.sl"
+//#include "../../CrossPlatform/atmospherics_constants.sl"
+
 Texture2D imageTexture;
 Texture2DMS<float4> imageTextureMS;
 Texture2D nearImageTexture;
 Texture2D depthTexture;
 Texture2DMS<float4> depthTextureMS;
 Texture2D lowResDepthTexture;
-Texture2D cloudDepthTexture;
 Texture2D<uint> glowTexture;
+
+Texture2D inscatterTexture;			// Far, or default inscatter
+Texture2D nearInscatterTexture;		// Near inscatter.
+
+
 
 struct a2v
 {
@@ -178,33 +184,6 @@ vec4 DirectPS(v2f IN) : SV_TARGET
     return vec4(c.rgba);
 }
 
-// Blend the low-res clouds into the scene, using a hi-res depth texture.
-// depthTexture.x is the depth value.
-// imageTexture.a is the depth that was used to calculate the particular cloud value.
-
-// the blend is 1.0, SRC_ALPHA.
-vec4 CloudBlendPS(v2f IN) : SV_TARGET
-{
-	vec4 res			=texture_nearest_lod(imageTexture,IN.texCoords,0);
-	res.rgb				*=exposure;
-	vec4 solid			=texture_clamp_lod(depthTexture,IN.texCoords,0);
-	vec4 lowres			=texture_nearest_lod(lowResDepthTexture,IN.texCoords,0);
-	vec4 cloud			=texture_clamp_lod(cloudDepthTexture,IN.texCoords,0);
-	float solid_dist	=depthToFadeDistance(solid.x,vec2(0,0),depthToLinFadeDistParams,vec2(1.0,1.0));
-	float cloud_dist	=depthToFadeDistance(cloud.x,vec2(0,0),depthToLinFadeDistParams,vec2(1.0,1.0));
-	// We only care about edges that are IN FRONT of the clouds. So solid
-	float u				=saturate(10000.0*(0.05+cloud_dist-solid_dist));
-	float edge			=saturate(1.0*(abs(lowres.y)+abs(lowres.z)))*u;
-//	if(edge>0.5)
-	{
-		float blend		=saturate((cloud_dist-solid_dist)*100000.0);
-		res				=lerp(res,vec4(0,0,0,1.0),blend);
-		res.g=blend;
-	}
-	//res.g=edge;
-    return res;
-}
-
 void UpdateNearestSample(	inout float MinDist,
 							inout vec2 NearestUV,
 							float Z,
@@ -229,7 +208,8 @@ bool IsSampleNearer(inout float MinDist,float Z,float ZFull)
 // texture_clamp_lod texture_nearest_lod
 vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
 {
-	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy,imageTexture,nearImageTexture,lowResDepthTexture,depthTextureMS,viewportToTexRegionScaleBias,depthToLinFadeDistParams);
+	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy,imageTexture,nearImageTexture,lowResDepthTexture,depthTextureMS,viewportToTexRegionScaleBias,depthToLinFadeDistParams
+		,inscatterTexture,nearInscatterTexture);
 	result.rgb	*=exposure;
 	return result;
 }

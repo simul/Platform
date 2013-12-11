@@ -217,7 +217,7 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 	if(!m_pGaussianEffect)
 		return;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	static int g_NumApproxPasses=3;
 	static int	g_MaxApproxPasses = 8;
 	static float g_FilterRadius = 30;
@@ -226,9 +226,9 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 	{
 		imageTexture->SetResource(textureSRV);
 		simul::dx11::setParameter(m_pTonemapEffect,"offset",1.f/Width,1.f/Height);
-		ApplyPass(m_pImmediateContext,glowTechnique->GetPassByIndex(0));
+		ApplyPass(pContext,glowTechnique->GetPassByIndex(0));
 		glow_fb.Activate(context);
-		glow_fb.DrawQuad(context);
+		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 		glow_fb.Deactivate(context);
 	}
     D3D11_TEXTURE2D_DESC tex_desc;
@@ -253,14 +253,14 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 
 	// Select pass
 	gaussianColTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_col");
-	gaussianColTechnique->GetPassByIndex(0)->Apply(0,m_pImmediateContext);
-	m_pImmediateContext->Dispatch(tex_desc.Width,1,1);
+	gaussianColTechnique->GetPassByIndex(0)->Apply(0,pContext);
+	pContext->Dispatch(tex_desc.Width,1,1);
 
 	// Unbound CS resource and output
 	ID3D11ShaderResourceView* srv_array[] = {NULL, NULL, NULL, NULL};
-	m_pImmediateContext->CSSetShaderResources(0, 4, srv_array);
+	pContext->CSSetShaderResources(0, 4, srv_array);
 	ID3D11UnorderedAccessView* uav_array[] = {NULL, NULL, NULL, NULL};
-	m_pImmediateContext->CSSetUnorderedAccessViews(0, 4, uav_array, NULL);
+	pContext->CSSetUnorderedAccessViews(0, 4, uav_array, NULL);
 
 	// Step 2. Horizontal passes: Each thread group handles a row in the image
 	// Input texture
@@ -270,12 +270,12 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 
 	// Select pass
 	gaussianRowTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_row");
-	gaussianRowTechnique->GetPassByIndex(0)->Apply(0,m_pImmediateContext);
-	m_pImmediateContext->Dispatch(tex_desc.Height,1,1);
+	gaussianRowTechnique->GetPassByIndex(0)->Apply(0,pContext);
+	pContext->Dispatch(tex_desc.Height,1,1);
 
 	// Unbound CS resource and output
-	m_pImmediateContext->CSSetShaderResources(0,4,srv_array);
-	m_pImmediateContext->CSSetUnorderedAccessViews(0,4,uav_array, NULL);
+	pContext->CSSetShaderResources(0,4,srv_array);
+	pContext->CSSetUnorderedAccessViews(0,4,uav_array, NULL);
 }
 
 const char *SimulHDRRendererDX1x::GetDebugText() const

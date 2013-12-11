@@ -183,7 +183,8 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 							,Texture2D lowResDepthTexture
 							,Texture2DMS<float4> depthTextureMS
 							,vec4 viewportToTexRegionScaleBias
-							,vec3 depthToLinFadeDistParams)
+							,vec3 depthToLinFadeDistParams
+							,Texture2D inscatterTexture,Texture2D nearInscatterTexture)
 {
 	uint width,height;
 	nearImageTexture.GetDimensions(width,height);
@@ -196,11 +197,12 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 
 	// First get the values that don't vary with MSAA sample:
 	vec4 cloudFar;
-	vec4 cloudNear		=vec4(0,0,0,1.0);
-	vec4 lowres			=texture_clamp_lod(lowResDepthTexture,texCoords,0);
-	float edge			=lowres.z;
-	vec4 result;
-	vec2 nearFarDist	=depthToLinearDistance(lowres.yx,depthToLinFadeDistParams);
+	vec4 cloudNear			=vec4(0,0,0,1.0);
+	vec4 lowres				=texture_clamp_lod(lowResDepthTexture,texCoords,0);
+	float edge				=lowres.z;
+	vec4 result				=vec4(0,0,0,0);
+	vec2 nearFarDist		=depthToLinearDistance(lowres.yx,depthToLinFadeDistParams);
+	vec4 insc				=texture_clamp_lod(inscatterTexture,texCoords,0);
 	if(edge>0.0)
 	{
 		// At an edge we will do the interpolation for each MSAA sample.
@@ -213,16 +215,17 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 			float interp	=edge*saturate((nearFarDist.y-trueDist)/(nearFarDist.y-nearFarDist.x));
 			result			+=lerp(cloudFar,cloudNear,interp);
 		}
-		result/=float(numSamples);
+		result				/=float(numSamples);
 	}
 	else
 	{
 		// Just use the zero MSAA sample if we're not at an edge:
-		float hiresDepth=depthTextureMS.Load(hires_depth_pos2,0).x;
-		float trueDist	=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
-		result			=depthDependentFilteredImage(farImageTexture,lowResDepthTexture,imageDims,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
+		float hiresDepth	=depthTextureMS.Load(hires_depth_pos2,0).x;
+		float trueDist		=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
+		result				=depthDependentFilteredImage(farImageTexture,lowResDepthTexture,imageDims,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
 	}
 	//result.g=edge;
+	result.rgb				+=insc.rgb;
     return result;
 }
 

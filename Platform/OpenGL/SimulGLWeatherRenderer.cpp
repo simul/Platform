@@ -111,7 +111,7 @@ void SimulGLWeatherRenderer::SetScreenSize(int w,int h)
     if(scene_buffer)
 	{
 		delete scene_buffer;
-		baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+		lowResFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 		
 		scene_buffer->InitColor_Tex(0,internal_buffer_format);
 	}
@@ -130,7 +130,7 @@ void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)
     if(scene_buffer)
         delete scene_buffer;
 GL_ERROR_CHECK
-	baseFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
+	lowResFramebuffer=scene_buffer=new FramebufferGL(BufferWidth,BufferHeight,GL_TEXTURE_2D);
 GL_ERROR_CHECK
 	scene_buffer->InitColor_Tex(0,internal_buffer_format);
 GL_ERROR_CHECK
@@ -185,7 +185,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,boo
 		baseSkyRenderer->EnsureTexturesAreUpToDate(context);
 		baseSkyRenderer->Render2DFades(context);
 	}
-	buffered=(buffered&&baseFramebuffer&&!is_cubemap);
+	buffered=(buffered&&lowResFramebuffer&&!is_cubemap);
 	UpdateSkyAndCloudHookup();
 	if(baseAtmosphericsRenderer&&ShowSky)
 		baseAtmosphericsRenderer->RenderAsOverlay(context, depthTexture,exposure,relativeViewportTextureRegionXYWH);
@@ -193,8 +193,8 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,boo
 		base2DCloudRenderer->Render(context,exposure,false,false,depthTexture,UseDefaultFog,false,viewport_id,relativeViewportTextureRegionXYWH);
 	if(buffered)
 	{
-		baseFramebuffer->Activate(context);
-		baseFramebuffer->Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.f:1.f);
+		lowResFramebuffer->Activate(context);
+		lowResFramebuffer->Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.f:1.f);
 	}
 	if(baseSkyRenderer)
 	{
@@ -209,8 +209,8 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context,float exposure,boo
 		baseCloudRenderer->Render(context,buffered?1.f:exposure,is_cubemap,false,depthTexture,UseDefaultFog,true,viewport_id,relativeViewportTextureRegionXYWH);
 	if(buffered)
 	{
-		baseFramebuffer->Deactivate(context);
-	//	setTexture(Utilities::GetSingleton().simple_program,"image_texure",0,(GLuint)baseFramebuffer->GetColorTex());
+		lowResFramebuffer->Deactivate(context);
+	//	setTexture(Utilities::GetSingleton().simple_program,"image_texure",0,(GLuint)lowResFramebuffer->GetColorTex());
 		glUseProgram(Utilities::GetSingleton().simple_program);
 		//setParameter(
 		glEnable(GL_BLEND);

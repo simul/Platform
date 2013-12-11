@@ -58,6 +58,11 @@ namespace simul
 									const simul::sky::float4& relativeViewportTextureRegionXYWH,
 									bool doFinalCloudBufferToScreenComposite //indicate whether truesky should do a final low-res cloud up-sample to the main target or whether to leave that to the user (via GetFramebufferTexture())
 									);
+			void CompositeCloudsToScreen(void *context
+												,bool depth_blend
+												,const void* mainDepthTexture
+												,const void* lowResDepthTexture
+												,const simul::sky::float4& viewportRegionXYWH);
 			void RenderFramebufferDepth(void *context,int w,int h);
 			void RenderPrecipitation(void *context,void *depth_tex,simul::sky::float4 depthViewportXYWH);
 			void RenderLightning(void *context,int viewport_id);
@@ -105,10 +110,12 @@ namespace simul
 			class SimulAtmosphericsRendererDX1x		*simulAtmosphericsRenderer;
 			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
 			class SimulLightningRendererDX11		*simulLightningRenderer;
-			// The main framebuffer uses far depth for each pixel.
-			simul::dx11::Framebuffer				framebuffer;
-			// Edge pixels are rendered with the near framebuffer as well as the far one.
-			simul::dx11::Framebuffer				nearFramebuffer;
+			// The main framebufferDx11 uses far depth for each pixel.
+			simul::dx11::Framebuffer				framebufferDx11;
+			// Edge pixels are rendered with the near framebufferDx11 as well as the far one.
+			simul::dx11::Framebuffer				nearFramebufferDx11;
+			simul::dx11::Framebuffer				fullResFramebufferDx11;
+			simul::dx11::Framebuffer				fullResNearFramebufferDx11;
 			simul::dx11::ConstantBuffer<HdrConstants> hdrConstants;
 			float									exposure;
 			float									gamma;

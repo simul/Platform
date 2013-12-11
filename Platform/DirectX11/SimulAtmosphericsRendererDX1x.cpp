@@ -139,6 +139,14 @@ void SimulAtmosphericsRendererDX1x::SetMatrices(const simul::math::Matrix4x4 &v,
 	proj=p;
 }
 
+void SimulAtmosphericsRendererDX1x::RenderLoss(void *context,const void *depthTexture,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass)
+{
+}
+
+void SimulAtmosphericsRendererDX1x::RenderInscatter(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,bool near_pass)
+{
+}
+
 void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure
 	,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
@@ -166,9 +174,6 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
 	
 	atmosphericsPerViewConstants.Apply(pContext);
-	
-	simul::sky::float4 light_dir	=skyInterface->GetDirectionToLight(cam_pos.z/1000.f);
-	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
 
 	SetAtmosphericsConstants(atmosphericsUniforms,exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);

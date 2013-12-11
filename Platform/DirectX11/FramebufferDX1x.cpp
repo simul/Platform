@@ -526,13 +526,6 @@ void Framebuffer::ClearColour(void *context,float r,float g,float b,float a)
 		pContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
 }
 
-bool Framebuffer::DrawQuad(void *context)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-	simul::dx11::UtilityRenderer::DrawQuad(pContext);
-	return true;
-}
-
 void Framebuffer::GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const
 {
 	ID3D11Resource* pTexResource;

@@ -363,7 +363,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	random_fb.SetFormat((int)DXGI_FORMAT_R32G32B32A32_FLOAT);
 	ApplyPass(pContext,randomTechnique->GetPassByIndex(0));
 	random_fb.Activate(context);
-		random_fb.DrawQuad(context);
+		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	random_fb.Deactivate(context);
 
 	simul::dx11::Framebuffer n_fb;
@@ -378,7 +378,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 		simul::dx11::setParameter(effect,"octaves"		,texture_octaves);
 		simul::dx11::setParameter(effect,"persistence"	,texture_persistence);
 		ApplyPass(pContext,noiseTechnique->GetPassByIndex(0));
-		n_fb.DrawQuad(context);
+		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	}
 	n_fb.Deactivate(context);
 	// Now copy to a texture.
