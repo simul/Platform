@@ -119,6 +119,22 @@ void CS_Lighting(uint3 sub_pos : SV_DispatchThreadID)
 	}
 }
 
+[numthreads(8,8,1)]
+void CS_SecondaryDiffusion(uint3 sub_pos : SV_DispatchThreadID)
+{
+	uint3 dims;
+	uint3 pos						=sub_pos+threadOffset;
+	targetTexture1.GetDimensions(dims.x,dims.y,dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
+		return;
+	float direct_light				=1.0;
+	targetTexture1[int3(pos.xy,0)]	=1.0;
+	const int C=1;
+	for(uint i=1;i<dims.z;i++)
+	{
+	}
+}
+
 vec3 randomDirection(float seed)
 {
 	float x			=rand(vec2(seed,7.71*seed));  
