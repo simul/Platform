@@ -83,6 +83,21 @@ vec2 OvercastDistances(float alt_km,float sine,float overcastBaseKm,float overca
 	return sqrt(range_km/maxFadeDistanceKm);
 }
 
+vec4 IlluminationBuffer(float alt_km,vec2 texCoords,vec2 targetTextureSize
+	,float overcastBaseKm,float overcastRangeKm,float maxFadeDistanceKm
+	,float maxFadeDistance,float terminatorDistance,float radiusOnCylinder,vec3 earthShadowNormal,vec3 sunDir)
+{
+	float azimuth			=3.1415926536*2.0*texCoords.x;
+	float sine				=-1.0+2.0*(texCoords.y*targetTextureSize.y/(targetTextureSize.y-1.0));
+	sine					=clamp(sine,-1.0,1.0);
+	float cosine			=sqrt(1.0-sine*sine);
+	vec3 view				=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
+	vec2 fade_texc			=vec2(1.0,texCoords.y);
+	vec2 full_bright_range	=EarthShadowDistances(fade_texc,view,earthShadowNormal,sunDir,maxFadeDistance,terminatorDistance,radiusOnCylinder);
+	vec2 overcast_range		=OvercastDistances(alt_km,sine,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm);
+    return vec4(full_bright_range,overcast_range);
+}
+
 vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 fade_texc,float alt_km,float maxFadeDistanceKm
 	,float overcast,float overcastBaseKm,float overcastRangeKm,vec2 targetTextureSize)
 {
@@ -118,21 +133,6 @@ vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 
 	insc.rgb				=max(vec3(0,0,0),insc.rgb-insc_diff.rgb*overcast);
 	insc.w					=lerp(insc.a,0,ov_total);
     return insc;
-}
-
-vec4 IlluminationBuffer(float alt_km,vec2 texCoords,vec2 targetTextureSize
-	,float overcastBaseKm,float overcastRangeKm,float maxFadeDistanceKm
-	,float maxFadeDistance,float terminatorDistance,float radiusOnCylinder,vec3 earthShadowNormal,vec3 sunDir)
-{
-	float azimuth			=3.1415926536*2.0*texCoords.x;
-	float sine				=-1.0+2.0*(texCoords.y*targetTextureSize.y/(targetTextureSize.y-1.0));
-	sine					=clamp(sine,-1.0,1.0);
-	float cosine			=sqrt(1.0-sine*sine);
-	vec3 view				=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
-	vec2 fade_texc			=vec2(1.0,texCoords.y);
-	vec2 full_bright_range	=EarthShadowDistances(fade_texc,view,earthShadowNormal,sunDir,maxFadeDistance,terminatorDistance,radiusOnCylinder);
-	vec2 overcast_range		=OvercastDistances(alt_km,sine,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm);
-    return vec4(full_bright_range,overcast_range);
 }
 
 vec4 ShowIlluminationBuffer(Texture2D illTexture,vec2 texCoords)
