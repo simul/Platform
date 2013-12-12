@@ -420,10 +420,10 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 				w/=l;
 				l=hdrFramebuffer.Height/4;
 			}
-			UtilityRenderer::DrawTextureMS(	pContext,0*w,0,w,l,(ID3D1xShaderResourceView*)hdrFramebuffer.GetDepthTex());
-			UtilityRenderer::DrawTexture(	pContext,1*w,0,w,l,(ID3D1xShaderResourceView*)resolvedDepth_fb.GetColorTex());
-			UtilityRenderer::DrawTexture(	pContext,2*w,0,w,l,lowResDepthTexture.shaderResourceView);
-			UtilityRenderer::DrawTexture(	pContext,3*w,0,w,l,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetDepthTex(0));
+			UtilityRenderer::DrawTextureMS(	pContext,0*w,0,w,l,(ID3D1xShaderResourceView*)hdrFramebuffer.GetDepthTex(),10000.0f);
+			UtilityRenderer::DrawTexture(	pContext,1*w,0,w,l,(ID3D1xShaderResourceView*)resolvedDepth_fb.GetColorTex(),10000.0f);
+			UtilityRenderer::DrawTexture(	pContext,2*w,0,w,l,lowResDepthTexture.shaderResourceView,10000.0f);
+			UtilityRenderer::DrawTexture(	pContext,3*w,0,w,l,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetDepthTex(0),10000.0f);
 			simulWeatherRenderer->RenderCompositingTextures(pContext,ScreenWidth,ScreenHeight);
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
