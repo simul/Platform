@@ -312,11 +312,19 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 	{
 		fullResFramebuffer->Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
 		if(baseAtmosphericsRenderer&&ShowSky)
-			baseAtmosphericsRenderer->RenderAsOverlay(context,mainDepthTexture,exposure,viewportRegionXYWH);
-		if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-			base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,UseDefaultFog,false,viewport_id,viewportRegionXYWH);
+			baseAtmosphericsRenderer->RenderInscatter(context,mainDepthTexture,exposure,viewportRegionXYWH,false);
+	//	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
+	//		base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,UseDefaultFog,false,viewport_id,viewportRegionXYWH);
 	}
 	fullResFramebuffer->Deactivate(context);
+	fullResNearFramebuffer->Activate(context);
+	{
+		fullResNearFramebuffer->Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
+		if(baseAtmosphericsRenderer&&ShowSky)
+			baseAtmosphericsRenderer->RenderInscatter(context,mainDepthTexture,exposure,viewportRegionXYWH,true);
+	}
+	fullResNearFramebuffer->Deactivate(context);
+	// Now do the near-pass
 	float godrays_strength		=(float)(!is_cubemap)*environment->cloudKeyframer->GetInterpolatedKeyframe().godray_strength;
 	if(buffered)
 	{
@@ -351,10 +359,10 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	if(msaa)
 	{
 		// Set both regular and MSAA depth variables. Which it is depends on the situation.
-		simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"			,(ID3D1xShaderResourceView*)nearFarDepthTexture);
+		//simul::dx11::setTexture(m_pTonemapEffect,"nearFarDepthTexture"			,(ID3D1xShaderResourceView*)nearFarDepthTexture);
 		simul::dx11::setTexture(m_pTonemapEffect,"depthTextureMS"		,(ID3D1xShaderResourceView*)mainDepthTexture);
 	}
-	else
+//	else
 	{
 		simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"			,(ID3D1xShaderResourceView*)mainDepthTexture);
 	}
@@ -369,7 +377,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
 	hdrConstants.exposure						=1.f;
 	hdrConstants.gamma							=1.f;
-	hdrConstants.viewportToTexRegionScaleBias=vec4(viewportRegionXYWH.z, viewportRegionXYWH.w, viewportRegionXYWH.x, viewportRegionXYWH.y);
+	hdrConstants.viewportToTexRegionScaleBias	=vec4(viewportRegionXYWH.z, viewportRegionXYWH.w, viewportRegionXYWH.x, viewportRegionXYWH.y);
 	float max_fade_distance_metres				=baseSkyRenderer->GetSkyKeyframer()->GetMaxDistanceKm()*1000.f;
 	hdrConstants.depthToLinFadeDistParams		=simul::math::Vector3(proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
 	hdrConstants.lowResTexelSize				=vec2(1.0f/(float)BufferWidth,1.0f/(float)BufferHeight);

@@ -584,7 +584,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 		if(text_date_jdn>binary_date_jdn||!binary_date_jdn)
 			changes_detected=true;
 		else if(text_date_jdn>0)	// maybe some of the includes have changed?
-	{
+		{
 			ID3DBlob *binaryBlob=NULL;
 			ID3DBlob *errorMsgs=NULL;
 			DetectChangesIncludeHandler detectChangesIncludeHandler(path_utf8.c_str(),binary_date_jdn);
@@ -605,10 +605,10 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 		}
 		if(!changes_detected&&binary_date_jdn>0)
 		{
-		hr=D3DX11CreateEffectFromBinaryFileUtf8(text_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
-		if(hr==S_OK)
-			return S_OK;
-	}
+			hr=D3DX11CreateEffectFromBinaryFileUtf8(text_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
+			if(hr==S_OK)
+				return S_OK;
+		}
 	}
 	ID3DBlob *binaryBlob=NULL;
 	ID3DBlob *errorMsgs=NULL;
@@ -644,7 +644,14 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 			int last=pos;
 			pos=err.find("\n",pos+1);
 			std::string line=err.substr(last,pos-last);
-			std::cerr<<line.c_str()<<std::endl;
+			if(line.find(":")>3)
+			{
+				std::string path=path_utf8+"/";
+				line=path+line;
+			}
+			char full[_MAX_PATH];
+			if( _fullpath( full, line.c_str(), _MAX_PATH ) != NULL )
+				std::cerr<<full<<std::endl;
 		};//text_filename_utf8.c_str()<<
 	}
 	if(binaryBlob)

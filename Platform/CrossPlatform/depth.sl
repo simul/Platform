@@ -220,20 +220,22 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 		// At an edge we will do the interpolation for each MSAA sample.
 		vec4 insc_far			=texture_clamp_lod(inscatterTexture,texCoords,0);
 		vec4 insc_near			=texture_clamp_lod(nearInscatterTexture,texCoords,0);
-		for(int i=0;i<numSamples;i++)
+		
+		for(int j=0;j<numSamples;j++)
 		{
-			float hiresDepth	=depthTextureMS.Load(hires_depth_pos2,i).x;
+			float hiresDepth	=depthTextureMS.Load(hires_depth_pos2,j).x;
 			float trueDist		=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
 			cloudNear			=depthDependentFilteredImage(nearImageTexture	,lowResDepthTexture,imageDims,texCoords,vec4(0,1.0,0,0),depthToLinFadeDistParams,trueDist);
 			cloudFar			=depthDependentFilteredImage(farImageTexture	,lowResDepthTexture,imageDims,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
 			float interp		=edge*saturate((nearFarDistLowRes.y-trueDist)/(nearFarDistLowRes.y-nearFarDistLowRes.x));
-			result				+=lerp(cloudFar,cloudNear,interp);
+			vec4 add			=lerp(cloudFar,cloudNear,interp);
+			result				+=add;
 			float hiResInterp	=saturate((nearFarDistHiRes.y-trueDist)/(nearFarDistHiRes.y-nearFarDistHiRes.x));
-			insc				+=lerp(insc_far,insc_near,hiResInterp);
+			insc				=lerp(insc_far,insc_near,hiResInterp);
+			result.rgb			+=insc.rgb*add.a;
 		}
 		// atmospherics: we simply interpolate.
 		result					/=float(numSamples);
-		insc					/=float(numSamples);
 	}
 	else
 	{
@@ -242,9 +244,9 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 		float trueDist			=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
 		result					=depthDependentFilteredImage(farImageTexture,lowResDepthTexture,imageDims,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
 		insc					=texture_clamp_lod(inscatterTexture,texCoords,0);
+		result.rgb					+=insc.rgb*result.a;
 	}
 	//result.g=edge;
-	result.rgb					+=insc.rgb*result.a;
     return result;
 }
 
