@@ -580,7 +580,6 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	skyConstants.Apply(context);
 
 	illuminationTexture->SetResource((ID3D11ShaderResourceView*)illumination_fb.GetColorTex());
-	
 	{
 		V_CHECK(fadeTexture1->SetResource(loss_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(loss_textures[(texture_cycle+1)%3].shaderResourceView));
@@ -600,7 +599,6 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		inscatter_2d->Deactivate(context);
 	}
-
 	{
 		V_CHECK(fadeTexture1->SetResource(skyl_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(skyl_textures[(texture_cycle+1)%3].shaderResourceView));

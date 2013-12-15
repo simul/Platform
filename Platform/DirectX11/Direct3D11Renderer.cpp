@@ -396,6 +396,8 @@ void Direct3D11Renderer::OnD3D11FrameRender(ID3D11Device* pd3dDevice,ID3D11Devic
 {
 	if(!enabled)
 		return;
+	// Because it's the lead platform, profiling will be done with dx11
+	simul::base::SetGpuProfilingInterface(pContext,&simul::dx11::Profiler::GetGlobalProfiler());
 	RenderScene(pContext);
 	if(simulWeatherRenderer)
 	{

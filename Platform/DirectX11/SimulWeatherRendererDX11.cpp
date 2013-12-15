@@ -343,7 +343,7 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context,
 	}
 	if(buffered&&doFinalCloudBufferToScreenComposite)
 		CompositeCloudsToScreen(context,!is_cubemap,mainDepthTexture,lowResDepthTexture,viewportRegionXYWH);
-	SIMUL_COMBINED_PROFILE_END
+	SIMUL_COMBINED_PROFILE_END(context)
 }
 
 void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
@@ -385,7 +385,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	imageTexture->SetResource(NULL);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
-	SIMUL_COMBINED_PROFILE_END
+	SIMUL_COMBINED_PROFILE_END(context)
 }
 
 void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,int height)

@@ -6,7 +6,7 @@ uniform_buffer GpuCloudConstants SIMUL_BUFFER_REGISTER(8)
 	uniform mat4 transformMatrix;
 	uniform vec4 yRange;
 	uniform uint3 threadOffset;
-	uniform float ss;
+	uniform float noiseDimsZ;
 	uniform vec2 extinctions;
 	uniform float stepLength,ttt;
 	uniform uint3 gaussianOffset;

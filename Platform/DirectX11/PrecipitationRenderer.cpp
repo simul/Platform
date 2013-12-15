@@ -307,7 +307,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 		//	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 		}
 	}
-	SIMUL_COMBINED_PROFILE_END
+	SIMUL_COMBINED_PROFILE_END(context)
 	SIMUL_COMBINED_PROFILE_START(context,"Rain/snow Particles")
 	//if(RainToSnow>0)
 	{
@@ -318,7 +318,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	simul::dx11::setTexture(effect,"depthTexture"		,NULL);
 	dx11::setTextureArray(	effect,"rainTextureArray"	,NULL);
 	ApplyPass(pContext,m_hTechniqueRain->GetPassByIndex(0));
-	SIMUL_COMBINED_PROFILE_END
+	SIMUL_COMBINED_PROFILE_END(context)
 }
 
 void PrecipitationRenderer::RenderParticles(void *context)

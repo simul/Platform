@@ -97,6 +97,7 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 
 void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr,int generation_number)
 {
+	noiseSize=noise_size;
 	volume_noise_tex=(GLuint)make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
 	return (void*)volume_noise_tex;
 }
@@ -106,10 +107,11 @@ void GpuCloudGenerator::CycleTexturesForward()
 }
 
 // Fill the stated number of texels of the density texture
-void GpuCloudGenerator::FillDensityGrid(int index,const clouds::GpuCloudsParameters &params
-											,int start_texel
-											,int texels
-											,const simul::clouds::MaskMap &masks)
+void GpuCloudGenerator::FillDensityGrid(int index
+										,const clouds::GpuCloudsParameters &params
+										,int start_texel
+										,int texels
+										,const simul::clouds::MaskMap &masks)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -242,15 +244,11 @@ GL_ERROR_CHECK
 }
 
 // The target is a grid of size given by light_gridsizes, arranged as d w-by-l textures.
-void GpuCloudGenerator::PerformGPURelight(int index,float *target
-										,const int *light_grid
+void GpuCloudGenerator::PerformGPURelight(int index
+										,const clouds::GpuCloudsParameters &params
+										,float *target
 										,int start_texel
-										,int texels
-										,const int * //density_grid
-										,const float *transformMatrix
-									,const float *DensityGridScalesM
-										,const float *lightspace_extinctions_float3
-											,bool wrap_light_tex)
+										,int texels)
 {
 GL_ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
@@ -261,7 +259,7 @@ simul::base::Timer timer;
 timer.StartTime();
 	for(int i=0;i<2;i++)
 	{
-		fb[i].SetWidthAndHeight(light_grid[0],light_grid[1]);
+		fb[i].SetWidthAndHeight(params.light_grid[0],params.light_grid[1]);
 		fb[i].InitColor_Tex(0,GL_RGBA32F_ARB);
 	}
 	// We use the density framebuffer texture as our density texture. This works well
@@ -273,8 +271,8 @@ timer.StartTime();
 	setParameter(lighting_program,"density_texture",1);
 
 	GpuCloudConstants constants;
-	constants.extinctions=lightspace_extinctions_float3;
-	constants.transformMatrix=transformMatrix;
+	constants.extinctions		=params.lightspace_extinctions;
+	constants.transformMatrix	=params.Matrix4x4LightToDensityTexcoords;
 	UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
 	GLint gpuCloudConstants		=glGetUniformBlockIndex(lighting_program,"GpuCloudConstants");
 	if(gpuCloudConstants>=0)
@@ -293,9 +291,9 @@ timer.StartTime();
 	GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_2D,0);
 	GL_ERROR_CHECK
-	int light_gridsize=light_grid[0]*light_grid[1]*light_grid[2];
-	int z0=(start_texel*light_grid[2])/light_gridsize;
-	int z1=((start_texel+texels)*light_grid[2])/light_gridsize;
+	int light_gridsize=params.light_grid[0]*params.light_grid[1]*params.light_grid[2];
+	int z0=(start_texel*params.light_grid[2])/light_gridsize;
+	int z1=((start_texel+texels)*params.light_grid[2])/light_gridsize;
 	if(z0%2)
 	{
 		std::swap(F[0],F[1]);
@@ -306,17 +304,17 @@ timer.StartTime();
 			F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			if(target)
-			glReadPixels(0,0,light_grid[0],light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 		F[0]->Deactivate(NULL);
 		z0++;
 	}
 	if(target)
-	target+=z0*light_grid[0]*light_grid[1]*4;
+	target+=z0*params.light_grid[0]*params.light_grid[1]*4;
 GL_ERROR_CHECK
 	float draw_time=0.f,read_time=0.f;
 	for(int i=z0;i<z1;i++)
 	{
-		float zPosition=((float)i-0.5f)/(float)light_grid[2];
+		float zPosition=((float)i-0.5f)/(float)params.light_grid[2];
 		//setParameter(lighting_program,"zPosition",zPosition);
 		constants.zPosition=zPosition;
 		UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
@@ -338,14 +336,14 @@ GL_ERROR_CHECK
 		// Copy F[1] contents to the target
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			if(target)
-				glReadPixels(0,0,light_grid[0],light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
+				glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
 			read_time+=timer.UpdateTime();
 			GL_ERROR_CHECK
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
 		if(target)
-			target+=light_grid[0]*light_grid[1]*4;
+			target+=params.light_grid[0]*params.light_grid[1]*4;
 	}
 	glUseProgram(0);
 	glDisable(GL_TEXTURE_2D);

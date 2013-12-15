@@ -58,10 +58,11 @@ void Profiler::Initialize(ID3D11Device* device)
 
 void Profiler::Begin(void *ctx,const char *name)
 {
+	IUnknown *unknown=(IUnknown *)ctx;
 	ID3D11DeviceContext *context=(ID3D11DeviceContext*)ctx;
-	last_context.push_back(context);
 	last_name.push_back(name);
-    if(!enabled||!device)
+	last_context.push_back(context);
+	if(!context||!enabled||!device)
         return;
     ProfileData& profileData = profiles[name];
     _ASSERT(profileData.QueryStarted == FALSE);
@@ -96,7 +97,7 @@ void Profiler::End()
 	last_name.pop_back();
 	ID3D11DeviceContext *context=last_context.back();
 	last_context.pop_back();
-    if(!enabled||!device)
+    if(!enabled||!device||!context)
         return;
     ProfileData& profileData = profiles[name];
     if(profileData.QueryStarted != TRUE)

@@ -249,8 +249,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context,
 												bool doFinalCloudBufferToScreenComposite
 												)
 {
-	SIMUL_PROFILE_START("RenderSkyAsOverlay")
-	SIMUL_GPU_PROFILE_START(context,"RenderSkyAsOverlay")
+	SIMUL_COMBINED_PROFILE_START(context,"RenderSkyAsOverlay")
 	BaseWeatherRenderer::RenderSkyAsOverlay(context,
 											exposure,
 											buffered,
@@ -277,8 +276,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context,
 		m_pBufferToScreenEffect->End();
 		m_pBufferToScreenEffect->SetTexture(bufferTexture,NULL);
 	}
-	SIMUL_GPU_PROFILE_END
-	SIMUL_PROFILE_END
+	SIMUL_COMBINED_PROFILE_END(context)
 }
 
 

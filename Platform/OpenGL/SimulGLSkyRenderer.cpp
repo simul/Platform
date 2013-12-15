@@ -258,8 +258,6 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 		}
 		fb[i]->Deactivate(context);
 	}
-	glUseProgram(NULL);
-	
 	glUseProgram(overcast_inscatter_program);
 	
 	setTexture(overcast_inscatter_program,"inscTexture"			,0,(GLuint)inscatter_2d.GetColorTex());
@@ -693,7 +691,7 @@ GL_ERROR_CHECK
 	skyConstants					.LinkToProgram(illumination_buffer_program	,"SkyConstants"		,10);
 	skyConstants					.LinkToProgram(overcast_inscatter_program	,"SkyConstants"		,10);
 	earthShadowUniforms				.LinkToProgram(illumination_buffer_program	,"EarthShadowUniforms",9);
-	//earthShadowUniforms				.LinkToProgram(overcast_inscatter_program	,"EarthShadowUniforms",9);
+	earthShadowUniforms				.LinkToProgram(overcast_inscatter_program	,"EarthShadowUniforms",9);
 }
 
 void SimulGLSkyRenderer::RestoreDeviceObjects(void*)
