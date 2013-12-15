@@ -40,6 +40,7 @@
 	#define SIMUL_SAMPLER_REGISTER(samp_num) : register(s##samp_num)
 	#define SIMUL_BUFFER_REGISTER(buff_num) : register(b##buff_num)
 	#define SIMUL_RWTEXTURE_REGISTER(rwtex_num) : register(u##rwtex_num)
+	#define SIMUL_STATE_REGISTER(snum) : register(s##snum)
 
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) uniform_buffer name SIMUL_BUFFER_REGISTER(buff_num) {
 	#define SIMUL_CONSTANT_BUFFER_END };

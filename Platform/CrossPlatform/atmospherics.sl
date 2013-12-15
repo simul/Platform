@@ -48,7 +48,7 @@ void CalcInsc(	Texture2D inscTexture
     skyl                =texture_clamp_mirror(skylTexture,fade_texc).rgb;
 }
 
-vec3 AtmosphericsInsc(	Texture2D depthTexture
+vec4 AtmosphericsInsc(	Texture2D depthTexture
 						,Texture2D illuminationTexture
 						,Texture2D inscTexture
 						,Texture2D skylTexture
@@ -84,12 +84,17 @@ vec3 AtmosphericsInsc(	Texture2D depthTexture
 
 	vec4 insc			=vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
 	float cos0			=dot(view,lightDir);
+	vec4 skyl			=texture_cmc_lod(skylTexture,fade_texc,0);
+#ifdef INFRARED
+	vec3 colour			=skyl.rgb;
+    colour.rgb			*=infraredIntegrationFactors.xyz;
+    float final_radiance=colour.x+colour.y+colour.z;
+	return vec4(final_radiance,final_radiance,final_radiance,final_radiance);
+#else
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
-
-	vec4 skyl_lookup	=texture_cmc_lod(skylTexture,fade_texc,0);
-	colour				+=skyl_lookup.rgb;
-//colour.rgb=.05*insc.rgb;
-    return				colour;
+	colour				+=skyl.rgb;
+	return vec4(colour,1.0);
+#endif
 }
 
 
@@ -183,7 +188,7 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 	vec3 colour			=skyl.rgb;
     colour.rgb			*=infraredIntegrationFactors.xyz;
     float final_radiance=colour.x+colour.y+colour.z;
-	return float4(final_radiance,final_radiance,final_radiance,1.f);
+	return float4(final_radiance,final_radiance,final_radiance,final_radiance);
 #else
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;

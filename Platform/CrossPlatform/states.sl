@@ -2,7 +2,7 @@
 #define STATES_SL
 
 
-SamplerState wrapMirrorSamplerState:register(s3)
+SamplerState wrapMirrorSamplerState SIMUL_STATE_REGISTER(3)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
@@ -10,7 +10,7 @@ SamplerState wrapMirrorSamplerState:register(s3)
 	AddressW = Wrap;
 };
 
-SamplerState cmcSamplerState:register(s5)
+SamplerState cmcSamplerState SIMUL_STATE_REGISTER(5)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
@@ -33,7 +33,7 @@ SamplerState samplerStateNearestWrap
 	AddressV = Wrap;
 	AddressW = Wrap;
 };
-SamplerState wrapSamplerState:register(s6)
+SamplerState wrapSamplerState SIMUL_STATE_REGISTER(6)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
@@ -41,7 +41,7 @@ SamplerState wrapSamplerState:register(s6)
 	AddressW = Wrap;
 };
 
-SamplerState wwcSamplerState:register(s7)
+SamplerState wwcSamplerState SIMUL_STATE_REGISTER(7)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
@@ -49,7 +49,7 @@ SamplerState wwcSamplerState:register(s7)
 	AddressW = Clamp;
 };
 
-SamplerState cwcSamplerState: register(s8)
+SamplerState cwcSamplerState SIMUL_STATE_REGISTER(8)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
@@ -57,7 +57,7 @@ SamplerState cwcSamplerState: register(s8)
 	AddressW = Clamp;
 };
 
-SamplerState clampSamplerState: register(s9)
+SamplerState clampSamplerState SIMUL_STATE_REGISTER(9)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
@@ -65,7 +65,7 @@ SamplerState clampSamplerState: register(s9)
 	AddressV = Clamp;
 };
 
-SamplerState wrapClampSamplerState: register(s10)
+SamplerState wrapClampSamplerState SIMUL_STATE_REGISTER(10)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Wrap;
@@ -73,7 +73,7 @@ SamplerState wrapClampSamplerState: register(s10)
 	AddressW = Clamp;
 };
 
-SamplerState samplerStateNearest: register(s11)
+SamplerState samplerStateNearest SIMUL_STATE_REGISTER(11)
 {
 	Filter = MIN_MAG_MIP_POINT;
 	AddressU = Clamp;
@@ -81,7 +81,7 @@ SamplerState samplerStateNearest: register(s11)
 	AddressW = Clamp;
 };
 
-SamplerState cwcNearestSamplerState: register(s12)
+SamplerState cwcNearestSamplerState SIMUL_STATE_REGISTER(12)
 {
 	Filter = MIN_MAG_MIP_POINT;
 	AddressU = Clamp;
