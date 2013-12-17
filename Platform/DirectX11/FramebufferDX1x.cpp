@@ -10,12 +10,10 @@
 
 #include "FramebufferDX1x.h"
 
-
 #include <tchar.h>
 #include <dxerr.h>
 #include <string>
 #include <assert.h>
-typedef std::basic_string<TCHAR> tstring;
 
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
@@ -182,11 +180,17 @@ bool Framebuffer::CreateBuffers()
 	if(target_format!=0)
 	{
 		unsigned int numQualityLevels=0;
-		HRESULT hr=m_pd3dDevice->CheckMultisampleQualityLevels(
+		while(numQualityLevels==0&&numAntialiasingSamples>1)
+		{
+			V_CHECK(m_pd3dDevice->CheckMultisampleQualityLevels(
 				target_format,
 				numAntialiasingSamples,
-				&numQualityLevels	);
-		quality=numQualityLevels-1;
+				&numQualityLevels	));
+			if(numQualityLevels>0)
+				quality=numQualityLevels-1;
+			if(numQualityLevels==0)
+				numAntialiasingSamples/=2;
+		};
 		desc.SampleDesc.Count	=numAntialiasingSamples;
 		desc.SampleDesc.Quality	=quality;//numQualityLevels-1;
 
@@ -238,14 +242,15 @@ bool Framebuffer::CreateBuffers()
 		D3D11_TEX2D_DSV dsv;
 		dsv.MipSlice=0;
 		D3D11_DEPTH_STENCIL_VIEW_DESC depthDesc;
-		depthDesc.ViewDimension		=numAntialiasingSamples>0?D3D11_DSV_DIMENSION_TEXTURE2DMS:D3D11_DSV_DIMENSION_TEXTURE2D;
+		depthDesc.ViewDimension		=numAntialiasingSamples>1?D3D11_DSV_DIMENSION_TEXTURE2DMS:D3D11_DSV_DIMENSION_TEXTURE2D;
 		depthDesc.Format			=DXGI_FORMAT_D32_FLOAT;
 		depthDesc.Flags				=0;
 		depthDesc.Texture2D			=dsv;
 		hr=m_pd3dDevice->CreateDepthStencilView((ID3D1xResource*)buffer_depth_texture,&depthDesc, &m_pBufferDepthSurface);
+
 		D3D11_SHADER_RESOURCE_VIEW_DESC depthSrvDesc;
 		depthSrvDesc.Format			=DXGI_FORMAT_R32_FLOAT;
-		depthSrvDesc.ViewDimension	=numAntialiasingSamples>0?D3D_SRV_DIMENSION_TEXTURE2DMS:D3D_SRV_DIMENSION_TEXTURE2D;
+		depthSrvDesc.ViewDimension	=numAntialiasingSamples>1?D3D_SRV_DIMENSION_TEXTURE2DMS:D3D_SRV_DIMENSION_TEXTURE2D;
 		depthSrvDesc.Texture2D.MipLevels=1;
 		depthSrvDesc.Texture2D.MostDetailedMip=0;
 
@@ -369,7 +374,6 @@ void Framebuffer::SaveOldRTs(void *context)
 	pContext->RSGetViewports(&num_v,NULL);
 	if(num_v>0)
 		pContext->RSGetViewports(&num_v,m_OldViewports);
-
 	m_pOldRenderTarget	=NULL;
 	m_pOldDepthSurface	=NULL;
 	pContext->OMGetRenderTargets(	1,
@@ -443,6 +447,7 @@ void Framebuffer::ActivateDepth(void *context)
 	viewport.MaxDepth = 1.0f;
 	viewport.TopLeftX = 0.f;
 	viewport.TopLeftY = 0.f;
+
 	// Create the viewport.
 	pContext->RSSetViewports(1, &viewport);
 }

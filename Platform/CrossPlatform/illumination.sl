@@ -8,8 +8,83 @@ vec2 LimitWithin(vec2 original,vec2 maximum)
 	return original;
 }
 
+vec2 OvercastDistances(float alt_km,float sine,float overcastBaseKm,float overcastRangeKm,float maxFadeDistanceKm)
+{
+	vec2 range_km					=vec2(0.0,maxFadeDistanceKm);
+
+	float cutoff_alt_km				=overcastBaseKm+0.5*overcastRangeKm;
+#if 0
+	float dist_to_plane_km			=clamp((cutoff_alt_km-alt_km)/sine,0,maxFadeDistanceKm);
+	if(dist_to_plane_km==0)
+		dist_to_plane_km			=maxFadeDistanceKm;
+	float over						=saturate(alt_km-cutoff_alt_km);
+	float under						=saturate(cutoff_alt_km-alt_km);
+	if(sine>0)
+	{
+	if(alt_km>cutoff_alt_km)
+	{
+			range_km.x	=maxFadeDistanceKm;
+			range_km.y	=maxFadeDistanceKm;
+		}
+		else
+		{
+			range_km.x	=0.0;
+			range_km.y	=dist_to_plane_km;
+		}
+	}
+	if(sine==0)
+	{
+		if(alt_km>cutoff_alt_km)
+		{
+			range_km.x	=maxFadeDistanceKm;
+			range_km.y	=maxFadeDistanceKm;
+		}
+		else
+		{
+			range_km.x	=0.0;
+			range_km.y	=maxFadeDistanceKm;
+		}
+	}
+		if(sine<0)
+	{
+		if(alt_km>cutoff_alt_km)
+		{
+			range_km.x	=dist_to_plane_km;
+			range_km.y	=maxFadeDistanceKm;
+		}
+		else
+		{
+			range_km.x	=0.0;
+			range_km.y	=maxFadeDistanceKm;
+		}
+	}
+#else
+	if(alt_km>cutoff_alt_km)
+	{
+		range_km.y					=maxFadeDistanceKm;
+		if(sine<0)
+		{
+			range_km.x				=max(0.0,(cutoff_alt_km-alt_km)/sine);
+		}
+		else
+		{
+			range_km.x				=maxFadeDistanceKm;
+	}
+	}
+	else
+	{
+		range_km.x					=0.0;
+		if(sine>0)
+			range_km.y				=max(0.0,(cutoff_alt_km-alt_km)/sine);
+		else
+			range_km.y				=maxFadeDistanceKm;
+	}
+#endif
+	return sqrt(range_km/maxFadeDistanceKm);
+}
+
 vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 fade_texc,float alt_km,float maxFadeDistanceKm
-	,float overcast,float overcastBaseKm,float overcastRangeKm)
+	,float overcast,float overcastBaseKm,float overcastRangeKm,vec2 targetTextureSize)
 {
 	// Texcoords representing the full distance from the eye to the given point.
 	vec4 insc				=texture_cmc_lod(inscTexture,fade_texc,0);
@@ -45,30 +120,6 @@ vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 
     return insc;
 }
 
-vec2 OvercastDistances(float alt_km,float sine,float overcastBaseKm,float overcastRangeKm,float maxFadeDistanceKm)
-{
-	vec2 range_km					=vec2(0.0,maxFadeDistanceKm);
-
-	float cutoff_alt_km				=overcastBaseKm+0.5*overcastRangeKm;
-
-	if(alt_km>cutoff_alt_km)
-	{
-		range_km.y					=maxFadeDistanceKm;
-		if(sine<0)
-			range_km.x				=max(0.0,(cutoff_alt_km-alt_km)/sine);
-		else
-			range_km.x				=maxFadeDistanceKm;
-	}
-	else
-	{
-		range_km.x					=0.0;
-		if(sine>0)
-			range_km.y				=max(0.0,(cutoff_alt_km-alt_km)/sine);
-		else
-			range_km.y				=maxFadeDistanceKm;
-	}
-	return sqrt(range_km/maxFadeDistanceKm);
-}
 vec4 IlluminationBuffer(float alt_km,vec2 texCoords,vec2 targetTextureSize
 	,float overcastBaseKm,float overcastRangeKm,float maxFadeDistanceKm
 	,float maxFadeDistance,float terminatorDistance,float radiusOnCylinder,vec3 earthShadowNormal,vec3 sunDir)
@@ -79,7 +130,7 @@ vec4 IlluminationBuffer(float alt_km,vec2 texCoords,vec2 targetTextureSize
 	float cosine			=sqrt(1.0-sine*sine);
 	vec3 view				=vec3(cosine*sin(azimuth),cosine*cos(azimuth),sine);
 	vec2 fade_texc			=vec2(1.0,texCoords.y);
-	vec2 full_bright_range	=EarthShadowDistances(fade_texc,sine,earthShadowNormal,sunDir,maxFadeDistance,terminatorDistance,radiusOnCylinder);
+	vec2 full_bright_range	=EarthShadowDistances(fade_texc,view,earthShadowNormal,sunDir,maxFadeDistance,terminatorDistance,radiusOnCylinder);
 	vec2 overcast_range		=OvercastDistances(alt_km,sine,overcastBaseKm,overcastRangeKm,maxFadeDistanceKm);
     return vec4(full_bright_range,overcast_range);
 }
@@ -107,5 +158,4 @@ vec4 ShowIlluminationBuffer(Texture2D illTexture,vec2 texCoords)
 		return vec4(result.rgb,1);
 	}
 }
-
 #endif

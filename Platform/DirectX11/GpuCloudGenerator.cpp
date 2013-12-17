@@ -150,7 +150,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 			gpuCloudConstants.maskThickness	=i->second.thickness;
 			gpuCloudConstants.Apply(m_pImmediateContext);
 		ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
-		mask_fb.DrawQuad(m_pImmediateContext);
+			mask_fb.DrawQuad(m_pImmediateContext);
 	}
 	}
 	else
@@ -191,8 +191,8 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0));
 	if(x1>x0)
 		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,subgrid.z);
-	simul::dx11::setTexture			(effect,"volumeNoiseTexture",(ID3D11ShaderResourceView*)NULL);
-	simul::dx11::setTexture			(effect,"maskTexture"		,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture				(effect,"volumeNoiseTexture",(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture				(effect,"maskTexture"		,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setUnorderedAccessView	(effect,"targetTexture"		,(ID3D11UnorderedAccessView*)NULL);
 	ApplyPass(m_pImmediateContext,densityComputeTechnique->GetPassByIndex(0));
 }
@@ -325,9 +325,9 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index,unsigned char 
 	gpuCloudConstants.zPixel			=(1.f/(float)density_grid[2]);
 	gpuCloudConstants.zPixelLightspace	=(1.f/(float)light_grid[2]);
 
-	setTexture(effect,"densityTexture"	,density_texture.shaderResourceView);
-	setTexture(effect,"ambientTexture1"	,directLightTextures[0].shaderResourceView);
-	setTexture(effect,"ambientTexture2"	,indirectLightTextures[0].shaderResourceView);
+	setTexture(effect,"densityTexture"		,density_texture.shaderResourceView);
+	setTexture(effect,"ambientTexture1"		,directLightTextures[0].shaderResourceView);
+	setTexture(effect,"ambientTexture2"		,indirectLightTextures[0].shaderResourceView);
 	setTexture(effect,"lightTexture1"		,directLightTextures[1].shaderResourceView);
 	setTexture(effect,"lightTexture2"		,indirectLightTextures[1].shaderResourceView);
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.

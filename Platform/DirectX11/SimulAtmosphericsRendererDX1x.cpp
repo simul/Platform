@@ -95,6 +95,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 
 	godraysTechnique		=effect->GetTechniqueByName("fast_godrays");
 	godraysNearPassTechnique=effect->GetTechniqueByName("near_depth_godrays");
+
 	depthTexture			=effect->GetVariableByName("depthTexture")->AsShaderResource();
 	cloudDepthTexture		=effect->GetVariableByName("cloudDepthTexture")->AsShaderResource();
 	lossTexture				=effect->GetVariableByName("lossTexture")->AsShaderResource();
@@ -132,13 +133,14 @@ HRESULT SimulAtmosphericsRendererDX1x::Destroy()
 	return S_OK;
 }
 
-void SimulAtmosphericsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void SimulAtmosphericsRendererDX1x::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
 	view=v;
 	proj=p;
 }
 
-void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
+void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *depthTexture,float exposure
+	,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 	HRESULT hr=S_OK;
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
@@ -151,13 +153,12 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	skylTexture->SetResource(skylightTexture_SRV);
 	
 	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
-	simul::dx11::setTexture(effect,"depthTexture",depthTexture_SRV);
-	simul::dx11::setTexture(effect,"depthTextureMS",depthTexture_SRV);
+	simul::dx11::setTexture(effect,"depthTexture"		,depthTexture_SRV);
+	simul::dx11::setTexture(effect,"depthTextureMS"		,depthTexture_SRV);
 	simul::dx11::setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	view(3,0)=view(3,1)=view(3,2)=0;
-
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 
 	D3DXMATRIX p1=proj;

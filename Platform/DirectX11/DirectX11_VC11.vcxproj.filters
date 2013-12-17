@@ -30,16 +30,10 @@
     <ClCompile Include="CreateEffectDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Direct3D1xRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DX11Exception.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Framebuffer3D.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FramebufferCubemapDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FramebufferDX1x.cpp">
@@ -75,19 +69,25 @@
     <ClCompile Include="SimulOpticsRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulPrecipitationRendererDX1x.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SimulSkyRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SimulTerrainRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulWeatherRendererDX1x.cpp">
+    <ClCompile Include="Utilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Utilities.cpp">
+    <ClCompile Include="SimulWeatherRendererDX11.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3D11Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CubemapFramebuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrecipitationRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -101,9 +101,6 @@
     <ClInclude Include="Direct3D11CallbackInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Direct3D1xRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DX11Exception.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -111,9 +108,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Framebuffer3D.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FramebufferCubemapDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FramebufferDX1x.h">
@@ -158,19 +152,25 @@
     <ClInclude Include="SimulOpticsRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulPrecipitationRendererDX1x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SimulSkyRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulTerrainRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulWeatherRendererDX1x.h">
+    <ClInclude Include="Utilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities.h">
+    <ClInclude Include="SimulWeatherRendererDX11.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct3D11Renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CubemapFramebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PrecipitationRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -214,16 +214,6 @@
     <None Include="..\CrossPlatform\states.sl">
       <Filter>CrossPlatform</Filter>
     </None>
-    <None Include="HLSL\CppHLSL.hlsl" />
-    <None Include="HLSL\fft_512x512_c2c.hlsl" />
-    <None Include="HLSL\MixClouds_c.hlsl" />
-    <None Include="HLSL\ocean_shading.hlsl" />
-    <None Include="HLSL\ocean_simulator_cs.hlsl" />
-    <None Include="HLSL\ocean_simulator_vs_ps.hlsl" />
-    <None Include="HLSL\simul_earthshadow.hlsl" />
-    <None Include="HLSL\simul_gpu_sky.hlsl" />
-    <None Include="HLSL\simul_inscatter_fns.hlsl" />
-    <None Include="HLSL\states.hlsl" />
     <None Include="HLSL\atmospherics.fx">
       <Filter>FX</Filter>
     </None>
@@ -265,6 +255,36 @@
     </None>
     <None Include="HLSL\simul_terrain.fx">
       <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\CppHLSL.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\fft_512x512_c2c.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\MixClouds_c.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\ocean_shading.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\ocean_simulator_cs.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\ocean_simulator_vs_ps.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\simul_earthshadow.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\simul_gpu_sky.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\simul_inscatter_fns.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\states.hlsl">
+      <Filter>HLSL</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

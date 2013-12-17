@@ -14,6 +14,7 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/DefaultFileLoader.h"
 #include "Simul/Sky/Float4.h"
+#include "Simul/Math/Matrix4x4.h"
 #include <tchar.h>
 #include "CompileShaderDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
@@ -143,9 +144,9 @@ namespace simul
 		{
 			fileLoader=l;
 		}
-		void GetCameraPosVector(D3DXMATRIX &view,float *dcam_pos,float *view_dir,bool y_vertical)
+		void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,bool y_vertical)
 		{
-			D3DXMATRIX tmp1;
+			D3DXMATRIX tmp1,view(v);
 			D3DXMatrixInverse(&tmp1,NULL,&view);
 			
 			dcam_pos[0]=tmp1._41;
@@ -168,8 +169,9 @@ namespace simul
 			}
 		}
 
-		const float *GetCameraPosVector(D3DXMATRIX &view,bool y_vertical)
+		const float *GetCameraPosVector(const float *v,bool y_vertical)
 		{
+			D3DXMATRIX view(v);
 			static float cam_pos[4],view_dir[4];
 			GetCameraPosVector(view,(float*)cam_pos,(float*)view_dir,y_vertical);
 			return cam_pos;
@@ -204,9 +206,29 @@ namespace simul
 				*texture_path=std::string(path)+"/";
 			}
 		}
-		void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj)
+		void MakeInvViewProjMatrix(float *ivp,const float *v,const float *p)
 		{
-			D3DXMATRIX tmp1, tmp2;
+			simul::math::Matrix4x4 view(v),proj(p);
+			simul::math::Matrix4x4 vpt;
+			simul::math::Matrix4x4 viewproj;
+			view(3,0)=view(3,1)=view(3,2)=0;
+			simul::math::Multiply4x4(viewproj,view,proj);
+			viewproj.Transpose(vpt);
+			simul::math::Matrix4x4 invp;
+			vpt.Inverse(invp);
+			mat4 &invViewProj=*((mat4*)ivp);
+			invViewProj=invp;
+			invViewProj.transpose();
+		}
+		void MakeViewProjMatrix(float *vp,const float *v,const float *p)
+		{
+			D3DXMATRIX viewProj, tmp,view(v),proj(p);
+			D3DXMatrixMultiply(&tmp,&view,&proj);
+			D3DXMatrixTranspose((D3DXMATRIX*)vp,&tmp);
+		}
+		void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,const float *w,const float *v,const float *p)
+		{
+			D3DXMATRIX tmp1,tmp2,view(v),proj(p),world(w);
 			D3DXMatrixMultiply(&tmp1, &world,&view);
 			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
 			D3DXMatrixTranspose(wvp,&tmp2);

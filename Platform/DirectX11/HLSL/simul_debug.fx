@@ -1,6 +1,8 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-TextureCube cubeTexture;
+sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
+Texture2DMS<float4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
+TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
 sampler2D imageTexture;
 
 uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
@@ -45,6 +47,7 @@ v2f Debug2DVS(idOnly IN)
 	return OUT;
 }
 
+
 v2f DebugVS(a2v IN)
 {
 	v2f OUT;
@@ -82,6 +85,7 @@ struct v2f_cubemap
     float4 hPosition	: SV_POSITION;
     float3 wDirection	: TEXCOORD0;
 };
+
 
 v2f_cubemap VS_DrawCubemap(vec3input IN) 
 {
@@ -176,7 +180,6 @@ technique11 draw_cubemap
 		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }
-
 technique11 draw_cubemap_sphere
 {
     pass p0 

@@ -1,5 +1,6 @@
 #include <GL/glew.h>
 #include <stdint.h> // for uintptr_t
+#include <stdint.h> // for uintptr_t
 #include "Simul/Platform/OpenGL/GpuSkyGenerator.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
@@ -127,7 +128,6 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,
 		skyl_cache=new simul::sky::float4[cache_size];
 	}
 	BaseFramebuffer *F[2];
-
 	F[0]=&fb[0];
 	F[1]=&fb[1];
 	glEnable(GL_TEXTURE_1D);

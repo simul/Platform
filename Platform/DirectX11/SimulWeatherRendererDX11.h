@@ -63,7 +63,7 @@ namespace simul
 			void RenderLightning(void *context,int viewport_id);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
 			//! Apply the view and projection matrices, once per frame.
-			void SetMatrices(const D3DXMATRIX &viewmat,const D3DXMATRIX &projmat);
+			void SetMatrices(const simul::math::Matrix4x4 &viewmat,const simul::math::Matrix4x4 &projmat);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 			void SetExposure(float ex){exposure=ex;}
 
@@ -81,8 +81,8 @@ namespace simul
 			void *GetCloudDepthTexture();
 			simul::base::MemoryInterface	*memoryInterface;
 			// Keep copies of these matrices:
-			D3DXMATRIX view;
-			D3DXMATRIX proj;
+			simul::math::Matrix4x4 view;
+			simul::math::Matrix4x4 proj;
 			IDXGISwapChain *pSwapChain;
 			//! The size of the 2D buffer the sky is rendered to.
 			int BufferWidth,BufferHeight;
@@ -109,6 +109,9 @@ namespace simul
 			//simul::dx11::Framebuffer				framebuffer;
 			// Edge pixels are rendered with the near framebuffer as well as the far one.
 			//simul::dx11::Framebuffer				nearFramebuffer;
+			simul::dx11::ConstantBuffer<HdrConstants> hdrConstants;
+			// Edge pixels are rendered with the near framebuffer as well as the far one.
+			simul::dx11::Framebuffer				nearFramebuffer;
 			simul::dx11::ConstantBuffer<HdrConstants> hdrConstants;
 			float									exposure;
 			float									gamma;

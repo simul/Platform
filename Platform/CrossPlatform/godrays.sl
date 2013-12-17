@@ -8,7 +8,7 @@ vec2 GetIlluminationAt2(Texture2D cloudShadowTexture,vec3 texc)
 	float above			=saturate((texc.z-texel.z)/0.5);
 	illumination		+=above;
 	return saturate(illumination);
-	}
+}
 
 vec4 FastGodrays(Texture2D cloudGodraysTexture,Texture2D inscTexture,Texture2D overcTexture,vec2 pos,mat4 invViewProj,float maxFadeDistance,float solid_dist)
 {

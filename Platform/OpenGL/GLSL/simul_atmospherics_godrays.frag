@@ -28,6 +28,6 @@ void main()
 	float depth			=max(solid_depth,cloud_depth);
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToFadeDistance(depth,pos.xy,nearZ,farZ,tanHalfFov);
-	vec4 gr=Godrays(cloudShadowTexture,cloudNearFarTexture,inscTexture,overcTexture,pos,invViewProj,maxFadeDistanceMetres,solid_dist);
+	vec4 gr=vec4(0,0,0,0);
     gl_FragColor=gr;
 }

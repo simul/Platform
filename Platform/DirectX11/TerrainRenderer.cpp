@@ -16,6 +16,7 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Sky/SkyInterface.h"
+
 using namespace simul::dx11;
 
 struct TerrainVertex_t
@@ -34,6 +35,7 @@ TerrainRenderer::TerrainRenderer(simul::base::MemoryInterface *m)
 	,m_pVtxDecl(NULL)
 	,m_pTerrainEffect(NULL)
 	,m_pTechnique(NULL)
+	,numVertices(0)
 {
 }
 
@@ -103,6 +105,7 @@ void TerrainRenderer::RestoreDeviceObjects(void *dev)
     InitData.pSysMem = vertices;
     InitData.SysMemPitch = sizeof(TerrainVertex_t);
 	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer);
+	MakeVertexBuffer();
 	delete [] vertices;
 }
 
@@ -115,7 +118,66 @@ void TerrainRenderer::InvalidateDeviceObjects()
 	terrainConstants.InvalidateDeviceObjects();
 }
 
-void TerrainRenderer::Render(void *context,float exposure)
+void SimulTerrainRendererDX1x::MakeVertexBuffer()
+{
+	ID3D11DeviceContext* pImmediateContext=NULL;
+	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
+	TerrainVertex_t *vertices;
+	D3D11_MAPPED_SUBRESOURCE mapped_vertices;
+	MapBuffer(pImmediateContext,m_pVertexBuffer,&mapped_vertices);
+	vertices=(TerrainVertex_t*)mapped_vertices.pData;
+	
+	int h						=heightMapInterface->GetPageSize();
+	simul::math::Vector3 origin	=heightMapInterface->GetOrigin();
+	float PageWorldX			=heightMapInterface->GetPageWorldX();
+	float PageWorldY			=heightMapInterface->GetPageWorldY();
+	float PageSize				=(float)heightMapInterface->GetPageSize();
+	
+	numVertices=0;
+	for(int i=0;i<h-1;i++)
+	{
+		float x1=(i  )*PageWorldX/(float)PageSize+origin.x;
+		float x2=(i+1)*PageWorldX/(float)PageSize+origin.x;
+		for(int j=0;j<h-1;j++)
+		{
+			int J=j;
+			if(i%2)
+				J=(h-2-j);
+			float y	=(J)*PageWorldX/(float)PageSize+origin.y;
+			float z1=heightMapInterface->GetHeightAt(i,J);
+			float z2=heightMapInterface->GetHeightAt(i+1,J);
+			simul::math::Vector3 X1(x1,y,z1);
+			simul::math::Vector3 X2(x2,y,z2);
+			if(numVertices>=MAX_VERTICES)
+				break;
+			if(i%2==1)
+				std::swap(X1,X2);
+			{
+				TerrainVertex_t &vertex=vertices[numVertices];
+				vertex.pos[0]	=X1.x;
+				vertex.pos[1]	=X1.y;
+				vertex.pos[2]	=X1.z;
+				vertex.n[0]		=0.f;
+				vertex.n[1]		=0.f;
+				vertex.n[2]		=1.f;
+			}
+			numVertices++;
+			{
+				TerrainVertex_t &vertex=vertices[numVertices];
+				vertex.pos[0]	=X2.x;
+				vertex.pos[1]	=X2.y;
+				vertex.pos[2]	=X2.z;
+				vertex.n[0]		=0.f;
+				vertex.n[1]		=0.f;
+				vertex.n[2]		=1.f;
+			}
+			numVertices++;
+		}
+	}
+	UnmapBuffer(pImmediateContext,m_pVertexBuffer);
+}
+
+void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 {
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
 	D3DXMATRIX world;
@@ -145,59 +207,6 @@ void TerrainRenderer::Render(void *context,float exposure)
 
 	terrainConstants.Apply(pContext);
 
-	TerrainVertex_t *vertices;
-	D3D11_MAPPED_SUBRESOURCE mapped_vertices;
-	MapBuffer(pContext,m_pVertexBuffer,&mapped_vertices);
-	vertices=(TerrainVertex_t*)mapped_vertices.pData;
-	
-	int h						=heightMapInterface->GetPageSize();
-	simul::math::Vector3 origin	=heightMapInterface->GetOrigin();
-	float PageWorldX			=heightMapInterface->GetPageWorldX();
-	float PageWorldY			=heightMapInterface->GetPageWorldY();
-	float PageSize				=(float)heightMapInterface->GetPageSize();
-	
-	int v=0;
-	for(int i=0;i<h-1;i++)
-	{
-		float x1=(i  )*PageWorldX/(float)PageSize+origin.x;
-		float x2=(i+1)*PageWorldX/(float)PageSize+origin.x;
-		for(int j=0;j<h-1;j++)
-		{
-			int J=j;
-			if(i%2)
-				J=(h-2-j);
-			float y	=(J)*PageWorldX/(float)PageSize+origin.y;
-			float z1=heightMapInterface->GetHeightAt(i,J);
-			float z2=heightMapInterface->GetHeightAt(i+1,J);
-			simul::math::Vector3 X1(x1,y,z1);
-			simul::math::Vector3 X2(x2,y,z2);
-			if(v>=MAX_VERTICES)
-				break;
-			if(i%2==1)
-				std::swap(X1,X2);
-			{
-				TerrainVertex_t &vertex=vertices[v];
-				vertex.pos[0]	=X1.x;
-				vertex.pos[1]	=X1.y;
-				vertex.pos[2]	=X1.z;
-				vertex.n[0]		=0.f;
-				vertex.n[1]		=0.f;
-				vertex.n[2]		=1.f;
-			}
-			v++;
-			{
-				TerrainVertex_t &vertex=vertices[v];
-				vertex.pos[0]	=X2.x;
-				vertex.pos[1]	=X2.y;
-				vertex.pos[2]	=X2.z;
-				vertex.n[0]		=0.f;
-				vertex.n[1]		=0.f;
-				vertex.n[2]		=1.f;
-			}
-			v++;
-		}
-	}
-	UnmapBuffer(pContext,m_pVertexBuffer);
 	UINT stride =sizeof(TerrainVertex_t);
 	UINT offset =0;
     UINT Strides[1];
@@ -215,8 +224,8 @@ void TerrainRenderer::Render(void *context,float exposure)
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	if((v)>2)
-		pContext->Draw((v)-2,0);
+	if(numVertices>2)
+		pContext->Draw(numVertices-2,0);
 	pContext->IASetPrimitiveTopology(previousTopology);
 	simul::dx11::setTextureArray(m_pTerrainEffect,"textureArray",NULL);
 	simul::dx11::setTexture(m_pTerrainEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)NULL);

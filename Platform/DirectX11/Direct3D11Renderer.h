@@ -15,10 +15,12 @@
 #include "Simul/Platform/CrossPlatform/mixed_resolution_constants.sl"
 #pragma warning(push)
 #pragma warning(disable:4251)
+
 namespace simul
 {
 	namespace camera
 	{
+		class CameraOutputInterface;
 		class CameraOutputInterface;
 	}
 	namespace clouds
@@ -26,6 +28,7 @@ namespace simul
 		class Environment;
 	}
 }
+
 namespace simul
 {
 	namespace dx11
@@ -107,7 +110,8 @@ namespace simul
 				return simulTerrainRenderer;
 			}
 			void	RecompileShaders();
-			void	RenderCubemap(ID3D11DeviceContext* pd3dImmediateContext,D3DXVECTOR3 cam_pos);
+			void			RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos);
+			void			RenderEnvmap(ID3D11DeviceContext* pContext);
 			// D3D11CallbackInterface
 			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
 			virtual void				OnD3D11CreateDevice	(ID3D11Device* pd3dDevice);
@@ -120,7 +124,6 @@ namespace simul
 			virtual bool				OnDeviceRemoved		();
 			virtual void				OnFrameMove			(double fTime,float fTimeStep);
 			virtual const char *		GetDebugText		() const;
-
 			void SetViewType(int view_id,ViewType vt);
 			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
 			
@@ -139,6 +142,7 @@ namespace simul
 			int last_created_view_id;
 			int cubemap_view_id;
 			bool enabled;
+			std::string									screenshotFilenameUtf8;
 			ID3D11Device				*m_pd3dDevice;
 			ID3DX11Effect				*mixedResolutionEffect;
 			SimulOpticsRendererDX1x		*simulOpticsRenderer;

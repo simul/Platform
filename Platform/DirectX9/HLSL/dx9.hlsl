@@ -1,5 +1,6 @@
 #ifndef DX9_HLSL
 #define DX9_HLSL
+#define DX9
 #include "../../CrossPlatform/CppSl.hs"
 #ifndef __cplusplus
 	#define SIMUL_TEXTURE_REGISTER(tex_num)
@@ -57,6 +58,7 @@
 	#define texture_cwc_lod(tex,texc,lod) generic_texture_lookup_lod(tex,texc,lod)
 	#define texture_cmc_lod(tex,texc,lod) generic_texture_lookup_lod(tex,texc,lod)
 	#define texture_nearest_lod(tex,texc,lod) generic_texture_lookup_lod(tex,texc,lod)
+	#define texture_cmc_nearest_lod(tex,texc,lod) generic_texture_lookup_lod(tex,texc,lod)
 	#define texture_clamp_mirror_lod(tex,texc,lod) generic_texture_lookup_lod(tex,texc,lod)
 
 	#define texture_wwc(tex,texc) generic_texture_lookup(tex,texc)

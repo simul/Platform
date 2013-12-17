@@ -214,17 +214,17 @@ vertexOutput VS_Main(vertexInput IN)
 	vec2 noise_texc_0		=mul(noiseMatrix,vec4(n.xy,0,0)).xy/fractalRepeatLength;
 	OUT.texCoordsNoise		=noise_texc_0*IN.layerWorldDist+IN.layerNoiseOffset;
 	OUT.wPosition			=(wPos.xyz);//-eyePosition.xyz);
-	OUT.layerFade			=IN.layerFade;
+	OUT.layerFade=IN.layerFade;
 // Note position.xzy is used if Y is vertical!
 	float3 texCoordLightning=(wPos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
-	texCoordLightning.z		=0.5f;
-	OUT.texCoordLightning	=texCoordLightning;
-	float3 view				=normalize(OUT.wPosition.xyz);
-	float sine				=view.z;
+	texCoordLightning.z=0.5f;
+	OUT.texCoordLightning=texCoordLightning;
+	float3 view=normalize(OUT.wPosition.xyz);
+	float sine	=view.z;
 	OUT.lightColour			=sunlightColour1;
 // Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
 	float dist				=length(OUT.wPosition.xyz)/maxFadeDistanceMetres;
-	//OUT.fade_texc			=float2(,0.5f*(1.f-sine));
+	//OUT.fade_texc=float2(,0.5f*(1.f-sine));
 	OUT.fade_texc			=float2(sqrt(dist),0.5f*(1.f-sine));
     return OUT;
 }
@@ -287,10 +287,10 @@ vec4 PS_Clouds(vertexOutput IN): color
 {
 	vec3 view			=normalize(IN.wPosition);
 	float sine			=view.z;
-	float cos0			=dot(lightDir.xyz,view.xyz);
+	float cos0=dot(lightDir.xyz,view.xyz);
 // Fade mode 1 means using textures for distance fade.
 	vec4 final			=CloudColour(IN,cos0);
-	float opacity		=final.a;
+	float opacity=final.a;
 	vec2 fade_texc		=vec2(IN.fade_texc.x,0.5*(1.0-sine));
 	vec4 insc			=tex2D(sky_inscatter_texture,fade_texc);
 	vec3 loss			=tex2D(sky_loss_texture,fade_texc).rgb;
@@ -299,8 +299,8 @@ vec4 PS_Clouds(vertexOutput IN): color
 	vec2 nearFarTexc	=texture_wrap_mirror(illumination_texture,illum_texc).xy;
 	float sh			=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 	vec3 inscatter		=skyl+sh*InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
-	final.rgb			*=loss;
-	final.rgb			+=inscatter;
+	final.rgb*=loss;
+	final.rgb+=inscatter;
     return vec4(final.rgb,opacity);
 }
 

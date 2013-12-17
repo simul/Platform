@@ -85,8 +85,8 @@ SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck
 	,m_pWrapSamplerState(NULL)
 	,m_pClampSamplerState(NULL)
 {
-	D3DXMatrixIdentity(&view);
-	D3DXMatrixIdentity(&proj);
+	view.Identity();
+	proj.Identity();
 	cam_pos.x=cam_pos.y=cam_pos.z=cam_pos.w=0;
 	texel_index[0]=texel_index[1]=texel_index[2]=texel_index[3]=0;
 }
@@ -124,7 +124,7 @@ void SimulCloudRendererDX1x::RecompileShaders()
 	CreateCloudEffect();
 	if(!m_pd3dDevice)
 		return;
-	HRESULT hr;
+	
 	SAFE_RELEASE(m_pComputeShader);
 	SAFE_RELEASE(computeConstantBuffer);
 	MAKE_CONSTANT_BUFFER(computeConstantBuffer,MixCloudsConstants)
@@ -570,7 +570,6 @@ void SimulCloudRendererDX1x::Map(ID3D11DeviceContext *context,int texture_index)
 	cloud_textures[(texture_cycle+texture_index)%3].map(context);
 }
 
-
 bool SimulCloudRendererDX1x::CreateCloudEffect()
 {
 	if(!m_pd3dDevice)
@@ -688,6 +687,7 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	godrays_fb.Activate(pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	godrays_fb.Deactivate(pContext);
+
 	cloudDensity1->SetResource(NULL);
 	cloudDensity2->SetResource(NULL);
 }
@@ -815,7 +815,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 	{
 		if(near_pass)
 			ApplyPass(pContext,m_hTechniqueRaytraceNearPass->GetPassByIndex(0));
-	else
+		else
 			ApplyPass(pContext,m_hTechniqueRaytraceForward->GetPassByIndex(0));
 	}
 	UtilityRenderer::DrawQuad(pContext);
@@ -929,7 +929,8 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int width,int
 	UtilityRenderer::DrawQuad2(pContext,width-2*(w+8),height-(w+8)-w/2,w*2,w/2,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 
 	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"			,(ID3D1xShaderResourceView*)NULL);
-	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture"	,(ID3D1xShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture"		,(ID3D1xShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"cloudGodraysTexture"	,(ID3D1xShaderResourceView*)NULL);
 	ApplyPass(pContext,m_pCloudEffect->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
 }
 
@@ -1035,13 +1036,6 @@ bool SimulCloudRendererDX1x::RenderLightning(void *context,int viewport_id)
 //	hr=m_pLightningEffect->End();
 	PIXEndNamedEvent();
 	return (hr==S_OK);
-}
-
-void SimulCloudRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
-{
-	view=v;
-	proj=p;
-	cam_pos=GetCameraPosVector(view);
 }
 
 

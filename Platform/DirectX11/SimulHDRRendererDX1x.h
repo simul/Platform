@@ -56,6 +56,7 @@ namespace simul
 
 			void RecompileShaders();
 		protected:
+			void Render(void *context,void *texture_srv,float offsetX);
 			bool Destroy();
 			simul::dx11::Framebuffer glow_fb;
 			int Width,Height;

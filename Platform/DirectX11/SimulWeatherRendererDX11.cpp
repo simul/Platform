@@ -38,6 +38,7 @@ using namespace dx11;
 SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *env
 													,simul::base::MemoryInterface *mem) :
 	BaseWeatherRenderer(env,mem),
+	nearFramebuffer(0,0),
 	m_pd3dDevice(NULL),
 	m_pTonemapEffect(NULL)
 	,directTechnique(NULL)
@@ -68,7 +69,9 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 		base2DCloudRenderer=simul2DCloudRenderer		=::new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
 	basePrecipitationRenderer=simulPrecipitationRenderer=::new(memoryInterface) PrecipitationRenderer();
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer	=::new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
-
+	baseFramebuffer=&framebuffer;
+	framebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+	nearFramebuffer.SetDepthFormat(0);
 	ConnectInterfaces();
 }
 
@@ -89,6 +92,16 @@ void SimulWeatherRendererDX11::SetScreenSize(int view_id,int w,int h)
 		f->SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 		f->RestoreDeviceObjects(m_pd3dDevice);
 		framebuffers[view_id]=f;
+	BufferSizeChanged();
+}
+
+void SimulWeatherRendererDX11::BufferSizeChanged()
+{
+	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
+	BufferWidth		=(ScreenWidth+Downscale-1)/Downscale;
+	BufferHeight	=(ScreenHeight+Downscale-1)/Downscale;
+	framebuffer.SetWidthAndHeight(BufferWidth,BufferHeight);
+	nearFramebuffer.SetWidthAndHeight(BufferWidth,BufferHeight);
 	}
 	framebuffers[view_id]->SetWidthAndHeight(BufferWidth,BufferHeight);
 	if(nearFramebuffers.find(view_id)==nearFramebuffers.end())
@@ -166,6 +179,8 @@ void SimulWeatherRendererDX11::InvalidateDeviceObjects()
 		i->second->InvalidateDeviceObjects();
 	for(FramebufferMap::iterator i=nearFramebuffers.begin();i!=nearFramebuffers.end();i++)
 		i->second->InvalidateDeviceObjects();
+	hdrConstants.InvalidateDeviceObjects();
+	nearFramebuffer.InvalidateDeviceObjects();
 	hdrConstants.InvalidateDeviceObjects();
 	if(simulSkyRenderer)
 		simulSkyRenderer->InvalidateDeviceObjects();
@@ -262,7 +277,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 				1.f,
 				1.f,
 				600000.f);
-			SetMatrices(view_matrices[i],cube_proj);
+			SetMatrices((const float*)&view_matrices[i],(const float*)&cube_proj);
 			RenderSkyAsOverlay(m_pImmediateContext,exposure,false,false,NULL,NULL,0,simul::sky::float4(0,0,1.f,1.f), true);
 		}
 		if(gamma_correction)
@@ -429,7 +444,7 @@ void SimulWeatherRendererDX11::RenderLightning(void *context,int view_id)
 		simulLightningRenderer->Render(context);
 }
 
-void SimulWeatherRendererDX11::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void SimulWeatherRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
 	view=v;
 	proj=p;
@@ -462,7 +477,6 @@ Simul2DCloudRendererDX11 *SimulWeatherRendererDX11::Get2DCloudRenderer()
 {
 	return simul2DCloudRenderer;
 }
-
 //! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 void SimulWeatherRendererDX11::SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb)
 {

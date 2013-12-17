@@ -71,8 +71,6 @@ public:
 	//bool						GetSiderealTransform(D3DXMATRIX *world);
 	//! Render the stars, as points.
 	bool						RenderPointStars(void *,float exposure);
-	//! Call this to draw the sky, usually to the SimulWeatherRenderer's render target.
-	bool						Render(void *,bool blend);
 	//! Draw the fade textures to screen
 	bool						RenderFades(void *,int w,int h);
 #ifdef XBOX

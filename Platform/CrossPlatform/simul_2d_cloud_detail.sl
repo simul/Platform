@@ -21,6 +21,8 @@ vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture,float amplitude)
 vec4 DetailLighting(vec2 texcoords,Texture2D imageTexture)
 {
 	vec4 c=texture_wrap(imageTexture,texcoords);
+	c.a=saturate(c.a-.5);
+    return c;
 	vec2 offset=lightDir2d.xy/256.0;
 	float dens_dist=0.0;
     for(int i=0;i<12;i++)

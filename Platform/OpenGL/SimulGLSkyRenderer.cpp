@@ -63,7 +63,6 @@ SimulGLSkyRenderer::SimulGLSkyRenderer(simul::sky::SkyKeyframer *sk,simul::base:
 	,overcast_inscatter_program(0)
 	,initialized(false)
 {
-
 /* Setup cube vertex data. */
 	v[0][0] = v[1][0] = v[2][0] = v[3][0] = -100.f;
 	v[4][0] = v[5][0] = v[6][0] = v[7][0] =  100.f;
@@ -318,11 +317,12 @@ GL_ERROR_CHECK
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D,0);
 	glActiveTexture(GL_TEXTURE0);
+
 	glBindTexture(GL_TEXTURE_2D,loss_texture);
 	RenderTexture(x0+size+2,y	,size,size);
 	y+=size+8;
 	glBindTexture(GL_TEXTURE_2D,insc_texture);
-	RenderTexture(x0+size+2	,y	,size,size);
+	RenderTexture(x0+size+2,y	,size,size);
 	glBindTexture(GL_TEXTURE_2D,(GLuint)overcast_2d.GetColorTex());
 	RenderTexture(x0		,y	,size,size);
 	y+=size+8;
@@ -503,7 +503,7 @@ void SimulGLSkyRenderer::RenderSun(void *,float exposure)
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); 
 
-	RenderAngledQuad(sun_dir,sun_angular_size);
+	RenderAngledQuad(sun_dir,sun_angular_radius);
 	glUseProgram(0);
 }
 

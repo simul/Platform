@@ -523,7 +523,7 @@ helper->Update2DNoiseCoords();
 	static int isolate_layer=-1;
 	for(CloudGeometryHelper::SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
-		if(isolate_layer>=0&&isolate_layer!=idx)
+		if(isolate_layer>=0&&idx>isolate_layer)
 			continue;
 	GL_ERROR_CHECK
 		simul::clouds::CloudGeometryHelper::Slice *s=*i;
@@ -537,7 +537,7 @@ helper->Update2DNoiseCoords();
 		singleLayerConstants.layerFade_		=L.layerFade;
 		singleLayerConstants.layerDistance_	=L.layerDistance;
 		singleLayerConstants.verticalShift_	=L.verticalShift;
-		//singleLayerConstants.Apply();
+		singleLayerConstants.Apply();
 		glBegin(GL_QUAD_STRIP);
 		if(quad_strip_vertices.size())
 		for(CloudGeometryHelper::QuadStripPtrVector::const_iterator j=(*i)->quad_strips.begin();
@@ -552,7 +552,7 @@ helper->Update2DNoiseCoords();
 				if(v<0||v>=(int)helper->GetVertices().size())
 					continue;
 				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[v];
-				glVertex3f(V.x,V.y,V.z);
+				glVertex3f(V.x*s->layerDistance,V.y*s->layerDistance,V.z*s->layerDistance);
 			}
 		}
 		glEnd();
@@ -971,7 +971,6 @@ void SimulGLCloudRenderer::RenderCrossSections(void *,int width,int height)
 	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
 	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
 	GLint crossSectionOffset	= glGetUniformLocation(cross_section_program,"crossSectionOffset");
-
     glDisable(GL_BLEND);
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
