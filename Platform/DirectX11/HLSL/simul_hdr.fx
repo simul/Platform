@@ -3,6 +3,7 @@
 #include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/hdr_constants.sl"
 #include "../../CrossPlatform/mixed_resolution.sl"
+#include "../../CrossPlatform/sky_compositing_constants.sl"
 //#include "../../CrossPlatform/atmospherics_constants.sl"
 
 Texture2D imageTexture;

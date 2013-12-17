@@ -380,7 +380,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	hdrConstants.viewportToTexRegionScaleBias	=vec4(viewportRegionXYWH.z, viewportRegionXYWH.w, viewportRegionXYWH.x, viewportRegionXYWH.y);
 	float max_fade_distance_metres				=baseSkyRenderer->GetSkyKeyframer()->GetMaxDistanceKm()*1000.f;
 	hdrConstants.depthToLinFadeDistParams		=simul::math::Vector3(proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
-	hdrConstants.lowResTexelSize				=vec2(1.0f/(float)BufferWidth,1.0f/(float)BufferHeight);
+	//hdrConstants.lowResTexelSize				=vec2(1.0f/(float)BufferWidth,1.0f/(float)BufferHeight);
 	hdrConstants.Apply(pContext);
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	imageTexture->SetResource(NULL);
