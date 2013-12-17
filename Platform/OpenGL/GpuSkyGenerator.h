@@ -22,6 +22,7 @@ namespace simul
 				,const simul::sky::GpuSkyAtmosphereParameters &gpuSkyAtmosphereParameters
 				,const simul::sky::GpuSkyInfraredParameters &gpuSkyInfraredParameters);
 			virtual void CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl);
+			virtual void CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl);
 		protected:
 		// framebuffer to render out by distance.
 			FramebufferGL	fb[2];

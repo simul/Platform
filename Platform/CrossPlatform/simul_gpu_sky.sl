@@ -17,9 +17,9 @@ uniform_buffer GpuSkyConstants SIMUL_BUFFER_REGISTER(8)
 
 	uniform float maxOutputAltKm;
 	uniform float planetRadiusKm;
+
 	uniform float maxDensityAltKm;
 	uniform float hazeBaseHeightKm;
-
 	uniform float hazeScaleHeightKm;
 	uniform float seaLevelTemperatureK;
 
@@ -32,13 +32,16 @@ uniform_buffer GpuSkyConstants SIMUL_BUFFER_REGISTER(8)
 
 	uniform vec3 sunIrradiance;
 	uniform float maxDistanceKm;
+
 	uniform vec3 lightDir;
 	uniform float hazeEccentricity;
 
 	uniform vec3 starlight;
 	uniform float previousZCoord;
+
 	uniform vec3 mieRayleighRatio;
 	uniform float iii;
+
 	uniform vec4 yRange;
 };
 

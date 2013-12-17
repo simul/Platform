@@ -501,19 +501,19 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	// fix the projection matrix so this quad is far away:
 	D3DXMATRIX tmp=proj;
 	static float ff=0.0001f;
-	float zFar=(1.f+ff)/tan(sun_angular_size);
+	float zFar=(1.f+ff)/tan(sun_angular_radius);
 	FixProjectionMatrix(proj,zFar*ff,zFar,IsYVertical());
 	HRESULT hr;
 	// if the whole quad was visible, how many pixels would it be?
 	float screen_angular_size=2.f*atan((float)proj._22);
 	float screen_pixel_size=(float)screen_pixel_height;
-	float pixel_diameter=screen_pixel_size*sun_angular_size/screen_angular_size;
+	float pixel_diameter=screen_pixel_size*sun_angular_radius/screen_angular_size;
 	maxPixelsVisible=3.14159f*pixel_diameter*pixel_diameter;
 	// Start the query
 	if(!query_issued)
 	{
 		hr=d3dQuery->Issue(D3DISSUE_BEGIN);
-		hr=RenderAngledQuad(sun_dir,sun_angular_size);
+		hr=RenderAngledQuad(sun_dir,sun_angular_radius);
 		query_issued=1;
 		// End the query, get the data
 		if(query_issued==1)
@@ -539,7 +539,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	proj=tmp;
 	return sun_occlusion;
 }
-float sun_angular_size=3.14159f/180.f/2.f;
+float sun_angular_radius=3.14159f/180.f/2.f;
 
 void SimulSkyRenderer::RenderSun(void *,float exposure)
 {
@@ -570,7 +570,7 @@ void SimulSkyRenderer::RenderSun(void *,float exposure)
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToLight(cam_pos.z*0.001f));
 	if(y_vertical)
 		std::swap(sun_dir.y,sun_dir.z);
-	RenderAngledQuad(sun_dir,sun_angular_size);
+	RenderAngledQuad(sun_dir,sun_angular_radius);
 }
 
 void SimulSkyRenderer::EnsureCorrectTextureSizes()
@@ -682,7 +682,7 @@ bool SimulSkyRenderer::RenderFades(void *,int width,int height)
 	D3DXHANDLE tech=m_pSkyEffect->GetTechniqueByName("show_illumination_buffer");
 	RenderTexture(m_pd3dDevice,x0+size+2,y		,size,size,(LPDIRECT3DBASETEXTURE9)illumination_fb.GetColorTex(),m_pSkyEffect,tech);
 
-	int x=16+size;
+//	int x=16+size;
 	y=y0+8;
 	x0+=2*(size+8);
 	bool show_3=true;//gpuSkyGenerator.GetEnabled()&&(skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator);
@@ -690,7 +690,7 @@ bool SimulSkyRenderer::RenderFades(void *,int width,int height)
 	for(int i=0;i<numAltitudes;i++)
 	{
 		float atc=(float)(numAltitudes-0.5f-i)/(float)(numAltitudes);
-		int x1=x0,x2=x0+s+8;
+		//int x1=x0,x2=x0+s+8;
 		int y=y0+i*(s+2);
 		for(int j=0;j<(show_3?3:2);j++)
 		{

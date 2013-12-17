@@ -13,7 +13,7 @@ namespace simul
 	namespace dx11
 	{
 		//! A DirectX 11 framebuffer class.
-		SIMUL_DIRECTX11_EXPORT_CLASS Framebuffer:public BaseFramebuffer
+		SIMUL_DIRECTX11_EXPORT_CLASS Framebuffer : public BaseFramebuffer
 		{
 		public:
 			Framebuffer(int w=0,int h=0);
@@ -89,6 +89,7 @@ namespace simul
 			ID3D1xRenderTargetView*				m_pOldRenderTarget;
 			ID3D1xDepthStencilView*				m_pOldDepthSurface;
 			D3D1x_VIEWPORT						m_OldViewports[16];
+
 			//! The texture the scene is rendered to.
 		public:
 			ID3D1xTexture2D*					hdr_buffer_texture;

@@ -50,7 +50,7 @@ namespace simul
 			void RestoreDeviceObjects(void* pd3dDevice);
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
-			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
+			void SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
 			//! Render the Atmospherics.
 			void RenderAsOverlay(void *context,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH);
 			void RenderGodrays(void *context,float strength,bool near_pass,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloudDepthTexture);

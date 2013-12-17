@@ -24,6 +24,7 @@ namespace simul
 			void SetDepthFormat(int){}
 			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
 			void RestoreDeviceObjects(void* );
+			void RecompileShaders();
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			void SetCurrentFace(int i);
@@ -32,6 +33,7 @@ namespace simul
 			void Activate(void *context );
 			void ActivateColour(void*,const float viewportXYWH[4]);
 			void Deactivate(void *context);
+			void DeactivateDepth(void *context);
 			void Render(bool){}
 			void Clear(void *context,float,float,float,float,float,int mask=0);
 			void ClearColour(void* context, float, float, float, float );
@@ -42,7 +44,11 @@ namespace simul
 			}
 			virtual void* GetDepthTex()
 			{
-				return (void*)m_pCubeEnvMapDepthSRV;
+				return (void*)NULL;
+			}
+			virtual void* GetDepthTex(int i)
+			{
+				return (void*)m_pCubeEnvDepthMapSRV[i];
 			}
 			bool IsValid()
 			{
@@ -52,8 +58,18 @@ namespace simul
 			ID3D11Texture2D					*GetCopy(void *context);
 			//! Calculate the spherical harmonics of this cubemap and store the result internally.
 			//! Changing the number of bands will resize the internal storeage.
-			void							CalcSphericalHarmonics(void *context,int bands);
+			void				CalcSphericalHarmonics(void *context);
+			StructuredBuffer<vec4> &GetSphericalHarmonics()
+			{
+				return sphericalHarmonics;
+			}
+void SetBands(int b)
+{
+
+bands=b;
+}
 		protected:
+int bands;
 			//! The size of the 2D buffer the sky is rendered to.
 			int Width,Height;
 			ID3D11Texture2D								*stagingTexture;	// Only initialized if CopyToMemory or GetCopy invoked.
@@ -61,14 +77,23 @@ namespace simul
 			ID3D11RenderTargetView*						m_pOldRenderTarget;
 			ID3D11DepthStencilView*						m_pOldDepthSurface;
 			D3D11_VIEWPORT								m_OldViewports[4];
-			ID3D11Texture2D*							m_pCubeEnvDepthMap;
+
+			// One Environment map texture, one Shader Resource View on it, and six Render Target Views on it.
 			ID3D11Texture2D*							m_pCubeEnvMap;
-			ID3D11RenderTargetView*						m_pCubeEnvMapRTV[6];
-			ID3D11DepthStencilView*						m_pCubeEnvDepthMapDSV[6];
 			ID3D11ShaderResourceView*					m_pCubeEnvMapSRV;
+			ID3D11RenderTargetView*						m_pCubeEnvMapRTV[6];
+
+			// Six Depth map textures, each with a DepthStencilView and SRV
+			ID3D11Texture2D*							m_pCubeEnvDepthMap[6];
+			ID3D11DepthStencilView*						m_pCubeEnvDepthMapDSV[6];
+			ID3D11ShaderResourceView*					m_pCubeEnvDepthMapSRV[6];
+
 			ID3D11ShaderResourceView*					m_pCubeEnvMapDepthSRV;
 			int											current_face;
+
 			DXGI_FORMAT									format;
+
+
 			StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;
 			StructuredBuffer<vec4>						sphericalHarmonics;
 	ID3DX11Effect *sphericalHarmonicsEffect;

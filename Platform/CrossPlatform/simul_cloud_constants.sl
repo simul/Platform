@@ -12,6 +12,7 @@ struct LayerData
 	float verticalShift;
 	float pad13;
 };
+
 struct SmallLayerData
 {
 	vec2 noiseOffset;

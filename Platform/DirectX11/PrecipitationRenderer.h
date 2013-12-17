@@ -41,7 +41,7 @@ namespace simul
 			void SetCubemapTexture(void *);
 			//! Call this when the D3D device has been shut down.
 			void InvalidateDeviceObjects();
-			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
+			void SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
 			void Render(void *context);
 			//! Put textures to screen for debugging
 			void RenderTextures(void *context,int width,int height);
@@ -59,7 +59,7 @@ namespace simul
 			
 			ID3DX11EffectTechnique*					m_hTechniqueRain;
 			ID3DX11EffectTechnique*					m_hTechniqueParticles;
-			D3DXMATRIX								view,proj;
+			simul::math::Matrix4x4								view,proj;
 			ConstantBuffer<RainConstants>			rainConstants;
 			ConstantBuffer<RainPerViewConstants>	perViewConstants;
 			float intensity;

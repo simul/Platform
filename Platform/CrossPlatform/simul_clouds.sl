@@ -1,11 +1,11 @@
 #ifndef CLOUDS_SL
 #define CLOUDS_SL
+
 #ifndef GLSL
 Texture3D cloudDensity1					: register(t0);
 Texture3D cloudDensity2					: register(t1);
 Texture2D noiseTexture					: register(t2);
 Texture2D cloudShadowTexture			: register(t2);
-
 Texture2D lossTexture					: register(t3);
 Texture2D inscTexture					: register(t4);
 Texture2D skylTexture					: register(t5);
@@ -16,7 +16,6 @@ Texture3D cloudDensity					: register(t9);
 Texture2D illuminationTexture			: register(t10);
 Texture2D lightTableTexture				: register(t11);
 SamplerState cloudSamplerState			: register( s0);
-
 #endif
 
 #define MIN_SUN_ELEV (0.2)

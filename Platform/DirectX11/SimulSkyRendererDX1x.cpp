@@ -1,4 +1,4 @@
-
+﻿
 // Copyright (c) 2007-2012 Simul Software Ltd
 // All Rights Reserved.
 //
@@ -72,9 +72,9 @@ void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 	};
     m_pd3dDevice->CreateQuery(&qdesc,&d3dQuery);
 	HRESULT hr=S_OK;
-	D3DXMatrixIdentity(&world);
-	D3DXMatrixIdentity(&view);
-	D3DXMatrixIdentity(&proj);
+	world.Identity();
+	view.Identity();
+	proj.Identity();
 	gpuSkyGenerator.RestoreDeviceObjects(m_pd3dDevice);
 	TextureStruct *loss[3],*insc[3],*skyl[3];
 	for(int i=0;i<3;i++)
@@ -409,16 +409,16 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 		return sun_occlusion;
 //	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
-	float sun_angular_size=3.14159f/180.f/2.f;
+	float sun_angular_radius=3.14159f/180.f/2.f;
 
 	// fix the projection matrix so this quad is far away:
 	D3DXMATRIX tmp=proj;
 	static float ff=0.0001f;
-	float zFar=(1.f+ff)/tan(sun_angular_size);
+	float zFar=(1.f+ff)/tan(sun_angular_radius);
 /*
 	// Start the query
 	d3dQuery->Begin();
-	RenderAngledQuad(sun_dir,sun_angular_size);
+	RenderAngledQuad(sun_dir,sun_angular_radius);
 	// End the query, get the data
 	d3dQuery->End();
     // Loop until the data becomes available
@@ -478,8 +478,9 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
-	// As the sun has angular radius of about 1/2 a degree, the angular area is 
-	// equal to pi/(120^2), or about 1/2700 steradians;
+	// As the sun has angular diameter of about 1/2 a degree,
+	// which is pi/360 or 0.00873 radians (actually 0.0095), the angular area is 
+	// equal to 2 pi/(1-cos(angular_radius)), or about  6.87×10−5 steradians;
 	sunlight*=2700.f;
 	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
@@ -490,15 +491,15 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,sun_dir);
 	skyConstants.colour=sunlight;
-	skyConstants.radiusRadians=sun_angular_size;
+	skyConstants.radiusRadians=sun_angular_radius;
 	skyConstants.Apply(pContext);
 	ApplyPass(pContext,m_hTechniqueSun->GetPassByIndex(0));
 	UtilityRenderer::DrawQuad(pContext);
 
-//	UtilityRenderer::RenderAngledQuad(context,sun_dir,sun_angular_size*2.f,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
+//	UtilityRenderer::RenderAngledQuad(context,sun_dir,sun_angular_radius*2.f,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
 	// Start the query
 /*d3dQuery->Begin();
-	hr=RenderAngledQuad(sun_dir,sun_angular_size);
+	hr=RenderAngledQuad(sun_dir,sun_angular_radius);
 	// End the query, get the data
     d3dQuery->End();
 
@@ -549,10 +550,10 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 	colour->SetFloatVector(sunlight);
 	//m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
 	//flareTexture->SetResource(flare_texture_SRV);
-	float sun_angular_size=3.14159f/180.f/2.f;
+	float sun_angular_radius=3.14159f/180.f/2.f;
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
-//	hr=RenderAngledQuad(sun_dir,sun_angular_size*20.f*magnitude);
-	RenderAngledQuad(m_pd3dDevice,sun_dir,sun_angular_size*20.f*magnitude,m_pSkyEffect,m_hTechniqueFlare,view,proj,sun_dir);*/
+//	hr=RenderAngledQuad(sun_dir,sun_angular_radius*20.f*magnitude);
+	RenderAngledQuad(m_pd3dDevice,sun_dir,sun_angular_radius*20.f*magnitude,m_pSkyEffect,m_hTechniqueFlare,view,proj,sun_dir);*/
 	return (hr==S_OK);
 }
 
@@ -637,7 +638,6 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 void SimulSkyRendererDX1x::RenderIlluminationBuffer(void *c)
 {
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
-
 	SetIlluminationConstants(earthShadowUniforms,skyConstants);
 	earthShadowUniforms.Apply(context);
 	skyConstants.Apply(context);
@@ -682,23 +682,21 @@ void SimulSkyRendererDX1x::BuildStarsBuffer()
 	m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pStarsVertexBuffer);
 }
 
-
-
 bool SimulSkyRendererDX1x::RenderPointStars(void *context,float exposure)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	HRESULT hr=S_OK;
 	D3DXMATRIX tmp1, tmp2,wvp;
-	D3DXMatrixInverse(&tmp1,NULL,&view);
+	D3DXMatrixInverse(&tmp1,NULL,(const D3DXMATRIX*)&view);
 	SetCameraPosition(tmp1._41,tmp1._42,tmp1._43);
 
 	GetSiderealTransform((float*)&world);
 	world._41=cam_pos.x;
 	world._42=cam_pos.y;
 	world._43=cam_pos.z;
-	D3DXMatrixInverse(&tmp2,NULL,&world);
-	D3DXMatrixMultiply(&tmp1,&world,&view);
-	D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
+	D3DXMatrixInverse(&tmp2,NULL,(const D3DXMATRIX*)&world);
+	D3DXMatrixMultiply(&tmp1,(const D3DXMATRIX*)&world,(const D3DXMATRIX*)&view);
+	D3DXMatrixMultiply(&tmp2,&tmp1,(const D3DXMATRIX*)&proj);
 	D3DXMatrixTranspose(&wvp,&tmp2);
 	skyConstants.worldViewProj=(const float *)(&tmp2);
 	hr=ApplyPass(pContext,m_hTechniquePointStars->GetPassByIndex(0));
@@ -832,7 +830,7 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	D3DXMATRIX tmp1,tmp2,wvp;
-	D3DXMatrixIdentity(&world);
+	world.Identity();
 	float tan_x=1.0f/proj(0, 0);
 	float tan_y=1.0f/proj(1, 1);
 	D3DXMatrixInverse(&tmp1,NULL,&view);
@@ -859,7 +857,7 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m
 	UtilityRenderer::DrawCube(context);
 }
 
-void SimulSkyRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void SimulSkyRendererDX1x::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
 	view=v;
 	proj=p;

@@ -19,6 +19,7 @@ uniform_buffer Cloud2DConstants SIMUL_BUFFER_REGISTER(11)
 	uniform float cloudInterp;
 	uniform vec3 mieRayleighRatio;
 	uniform float hazeEccentricity;
+
 	uniform float detailScale;
 	uniform float planetRadius;
 	uniform float fractalWavelength;
@@ -30,6 +31,7 @@ uniform_buffer Cloud2DConstants SIMUL_BUFFER_REGISTER(11)
 
 	uniform vec3 depthToLinFadeDistParams;
 	uniform float exposure;
+
 	uniform float time;
 	uniform float maxAltitudeMetres;
 	uniform float offsetScale,maxCloudDistanceMetres;
@@ -47,6 +49,7 @@ uniform_buffer Detail2DConstants SIMUL_BUFFER_REGISTER(12)
 	uniform vec3 lightDir2d;
 	// for coverage
 	uniform float coverageOctaves;
+
 	uniform float coveragePersistence;
 	uniform float humidity;
 	uniform float diffusivity;

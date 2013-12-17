@@ -301,7 +301,6 @@ technique11 godrays_accumulation
 		SetPixelShader(CompileShader(ps_4_0,PS_GodraysAccumulation()));
     }
 }
-
 technique11 cross_section_xz
 {
     pass p0 

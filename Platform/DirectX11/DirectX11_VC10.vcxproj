@@ -206,7 +206,7 @@
     <ClCompile Include="SimulHDRRendererDX1x.cpp" />
     <ClCompile Include="SimulLightningRendererDX11.cpp" />
     <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
-    <ClCompile Include="SimulPrecipitationRendererDX1x.cpp" />
+    <ClCompile Include="PrecipitationRenderer.cpp" />
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="TerrainRenderer.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
@@ -241,7 +241,7 @@
     <ClInclude Include="SimulHDRRendererDX1x.h" />
     <ClInclude Include="SimulLightningRendererDX11.h" />
     <ClInclude Include="SimulOpticsRendererDX1x.h" />
-    <ClInclude Include="SimulPrecipitationRendererDX1x.h" />
+    <ClInclude Include="PrecipitationRenderer.h" />
     <ClInclude Include="SimulSkyRendererDX1x.h" />
     <ClInclude Include="TerrainRenderer.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />
@@ -257,6 +257,7 @@
     <None Include="..\CrossPlatform\earth_shadow_fade.sl" />
     <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
     <None Include="..\CrossPlatform\godrays.sl" />
+    <None Include="..\CrossPlatform\hdr_constants.sl" />
     <None Include="..\CrossPlatform\illumination.sl" />
     <None Include="..\CrossPlatform\ocean_constants.sl" />
     <None Include="..\CrossPlatform\rain_constants.sl" />
@@ -270,6 +271,7 @@
     <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
     <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
     <None Include="..\CrossPlatform\sky_constants.sl" />
+    <None Include="..\CrossPlatform\spherical_harmonics.sl" />
     <None Include="..\CrossPlatform\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\states.sl" />
     <None Include="CSFFT\fft_512x512_c2c.hlsl" />
@@ -278,9 +280,10 @@
     <None Include="HLSL\ocean.fx" />
     <None Include="HLSL\ocean_simulator_cs.hlsl" />
     <None Include="HLSL\ocean_simulator_vs_ps.hlsl" />
+    <None Include="HLSL\mixed_resolution.fx" />
+    <None Include="HLSL\rain.fx" />
     <None Include="HLSL\simul_clouds.fx" />
     <None Include="HLSL\simul_clouds_2d.fx" />
-    <None Include="HLSL\simul_clouds_and_lightning_dx11.fx" />
     <None Include="HLSL\simul_debug.fx" />
     <None Include="HLSL\simul_earthshadow.hlsl" />
     <None Include="HLSL\simul_foliage.fx" />
@@ -290,7 +293,6 @@
     <None Include="HLSL\simul_gpu_sky.fx" />
     <None Include="HLSL\simul_hdr.fx" />
     <None Include="HLSL\simul_lightning.fx" />
-    <None Include="HLSL\simul_rain.fx" />
     <None Include="HLSL\simul_rendernoise.fx" />
     <None Include="HLSL\simul_sky.fx" />
     <None Include="HLSL\simul_terrain.fx" />

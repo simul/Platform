@@ -10,6 +10,7 @@
 
 using namespace simul;
 using namespace opengl;
+
 GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
 			,density_program(0)
 			,lighting_program(0)
@@ -147,7 +148,6 @@ timer.StartTime();
 	setParameter(density_program,"volumeNoiseTexture"	,0);
 
 	GpuCloudConstants constants;
-
 
 	UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
 	GLint gpuCloudConstants		=glGetUniformBlockIndex(density_program,"GpuCloudConstants");

@@ -312,7 +312,8 @@ vec4 PS_OvercastInscatter(vertexOutputPosTexc IN): color
 {
 	// Texcoords representing the full distance from the eye to the given point.
 	vec2 fade_texc	=vec2(IN.texCoords.x,1.0-IN.texCoords.y);
-    return OvercastInscatter(insc_texture,illumination_texture,fade_texc,overcast);
+	float alt_km		=eyePosition.z/1000.0;
+    return OvercastInscatter(insc_texture,illumination_texture,fade_texc,alt_km,maxFadeDistanceKm,overcast,overcastBaseKm,overcastRangeKm,targetTextureSize);
 }
 
 struct vertexInputPosTex

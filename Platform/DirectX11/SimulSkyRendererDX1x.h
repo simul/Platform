@@ -10,15 +10,11 @@
 #pragma once
 #include "Simul/Sky/SkyTexturesCallback.h"
 #include "Simul/Sky/BaseSkyRenderer.h"
+#include "Simul/Math/Matrix4x4.h"
 #include <d3dx9.h>
-#ifdef DX10
-	#include <d3d10.h>
-	#include <d3dx10.h>
-#else
 	#include <d3d11.h>
 	#include <d3dx11.h>
 	#include <d3dx11effect.h>
-#endif
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
@@ -76,7 +72,7 @@ public:
 	//! uses a hardware occlusion query to see how many pixels have passed the z-test.
 	float CalcSunOcclusion(float cloud_occlusion=0.f);
 	//! Call this once per frame to set the matrices.
-	void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
+	void SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
 
 	void Get2DLossAndInscatterTextures(void* *loss,void* *insc,void* *skyl,void* *overc);
 	void *GetIlluminationTexture();
@@ -147,13 +143,12 @@ void SetConstantsForPlanet(SkyConstants &skyConstants,const float *viewmatrix,co
 
 	// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
 	simul::dx11::Framebuffer			illumination_fb;
-
 	ID3D1xShaderResourceView*			flare_texture_SRV;
 	ID3D1xShaderResourceView*			moon_texture_SRV;
 
 	void MapFade(ID3D11DeviceContext *context,int s);
 	void UnmapFade(int i);
-	D3DXMATRIX				world,view,proj;
+	simul::math::Matrix4x4				world,view,proj;
 	void DrawLines(void *context,Vertext *lines,int vertex_count,bool strip=false);
 	void PrintAt3dPos(void *context,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 	simul::dx11::GpuSkyGenerator gpuSkyGenerator;

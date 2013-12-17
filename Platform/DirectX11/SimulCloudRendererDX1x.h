@@ -69,8 +69,6 @@ namespace simul
 			void RenderCrossSections(void *context,int width,int height);
 			//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 			bool RenderLightning(void *context,int viewport_id);
-			//! Call this once per frame to set the matrices.
-			void SetMatrices(const D3DXMATRIX &view,const D3DXMATRIX &proj);
 			//! Return true if the camera is above the cloudbase altitude.
 			bool IsCameraAboveCloudBase() const;
 			void SetEnableStorms(bool s);
@@ -188,8 +186,6 @@ namespace simul
 			
 			ID3D1xBlendState*	blendAndWriteAlpha;
 			ID3D1xBlendState*	blendAndDontWriteAlpha;
-			
-			D3DXMATRIX			view,proj;
 
 			bool UpdateIlluminationTexture(float dt);
 			float LookupLargeScaleTexture(float x,float y);

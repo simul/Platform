@@ -341,7 +341,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Direct3D1xRenderer.cpp"
+				RelativePath=".\CubemapFramebuffer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Direct3D11Renderer.cpp"
 				>
 			</File>
 			<File
@@ -350,10 +354,6 @@
 			</File>
 			<File
 				RelativePath=".\Framebuffer3D.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\FramebufferCubemapDX1x.cpp"
 				>
 			</File>
 			<File
@@ -366,6 +366,10 @@
 			</File>
 			<File
 				RelativePath=".\GpuSkyGenerator.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PrecipitationRenderer.cpp"
 				>
 			</File>
 			<File
@@ -401,10 +405,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\SimulPrecipitationRendererDX1x.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\SimulSkyRendererDX1x.cpp"
 				>
 			</File>
@@ -435,11 +435,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\CubemapFramebuffer.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Direct3D11CallbackInterface.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Direct3D1xRenderer.h"
+				RelativePath=".\Direct3D11Renderer.h"
 				>
 			</File>
 			<File
@@ -452,10 +456,6 @@
 			</File>
 			<File
 				RelativePath=".\Framebuffer3D.h"
-				>
-			</File>
-			<File
-				RelativePath=".\FramebufferCubemapDX1x.h"
 				>
 			</File>
 			<File
@@ -472,6 +472,10 @@
 			</File>
 			<File
 				RelativePath=".\MacrosDx1x.h"
+				>
+			</File>
+			<File
+				RelativePath=".\PrecipitationRenderer.h"
 				>
 			</File>
 			<File
@@ -512,10 +516,6 @@
 			</File>
 			<File
 				RelativePath=".\SimulOpticsRendererDX1x.h"
-				>
-			</File>
-			<File
-				RelativePath=".\SimulPrecipitationRendererDX1x.h"
 				>
 			</File>
 			<File

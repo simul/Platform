@@ -13,7 +13,6 @@ extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *root_filename);
 extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *root_filename,const std::map<std::string,std::string> &defines);
 extern SIMUL_OPENGL_EXPORT GLuint MakeProgramWithGS(const char *filename);
 extern SIMUL_OPENGL_EXPORT GLuint MakeProgramWithGS(const char *filename,const std::map<std::string,std::string> &defines);
-
 extern SIMUL_OPENGL_EXPORT GLuint SetShaders(const char *vert_src,const char *frag_src);
 extern SIMUL_OPENGL_EXPORT GLuint SetShaders(const char *vert_src,const char *frag_src,const std::map<std::string,std::string> &defines);
 extern SIMUL_OPENGL_EXPORT GLuint MakeProgram(const char *vert_filename,const char *geom_filename,const char *frag_filename);

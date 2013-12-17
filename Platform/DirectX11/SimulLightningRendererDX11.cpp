@@ -21,7 +21,7 @@ void SimulLightningRendererDX11::RecompileShaders()
 void SimulLightningRendererDX11::InvalidateDeviceObjects()
 {
 }
-void SimulLightningRendererDX11::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void SimulLightningRendererDX11::SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj)
 {
 }
 void SimulLightningRendererDX11::Render(void *context)

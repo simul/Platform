@@ -30,7 +30,8 @@ Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer
 	simul::clouds::Base2DCloudRenderer(ck,mem)
 	,m_pd3dDevice(NULL)
 	,effect(NULL)
-	,tech(NULL)
+	,msaaTechnique(NULL)
+	,technique(NULL)
 	,vertexBuffer(NULL)
 	,indexBuffer(NULL)
 	,inputLayout(NULL)
@@ -38,6 +39,7 @@ Simul2DCloudRendererDX11::Simul2DCloudRendererDX11(simul::clouds::CloudKeyframer
 	,skyInscatterTexture_SRV(NULL)
 	,skylightTexture_SRV(NULL)
 	,illuminationTexture_SRV(NULL)
+	,lightTableTexture_SRV(NULL)
 {
 }
 
@@ -51,17 +53,17 @@ void Simul2DCloudRendererDX11::RestoreDeviceObjects(void* dev)
 	m_pd3dDevice=(ID3D11Device*)dev;
     RecompileShaders();
 	SAFE_RELEASE(inputLayout);
-	if(tech)
+	if(technique)
 	{
 		D3D11_INPUT_ELEMENT_DESC decl[] =
 		{
 			{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT	,0,0	,D3D11_INPUT_PER_VERTEX_DATA,0},
 		};
 		D3D1x_PASS_DESC PassDesc;
-		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
+		technique->GetPassByIndex(0)->GetDesc(&PassDesc);
 		m_pd3dDevice->CreateInputLayout(decl,1, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &inputLayout);
 	}
-	static float max_cloud_distance=400000.f;
+	static float max_cloud_distance=1.f;
 	helper->MakeDefaultGeometry(max_cloud_distance);
 	const simul::clouds::Cloud2DGeometryHelper::VertexVector &vertices=helper->GetVertices();
 	simul::clouds::Cloud2DGeometryHelper::Vertex *v=::new(memoryInterface) simul::clouds::Cloud2DGeometryHelper::Vertex[vertices.size()];
@@ -141,7 +143,8 @@ void Simul2DCloudRendererDX11::RecompileShaders()
 	if(UseLightTables)
 		defines["USE_LIGHT_TABLES"]="1";
 	CreateEffect(m_pd3dDevice,&effect,"simul_clouds_2d.fx",defines);
-	tech=effect->GetTechniqueByName("simul_clouds_2d");
+	msaaTechnique=effect->GetTechniqueByName("simul_clouds_2d_msaa");
+	technique	=effect->GetTechniqueByName("simul_clouds_2d");
 	cloud2DConstants.LinkToEffect(effect,"Cloud2DConstants");
 	detail2DConstants.LinkToEffect(effect,"Detail2DConstants");
 }
@@ -159,7 +162,6 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	noise_fb.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 	noise_fb.Activate(pContext);
 	{
-	//	ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture noise");
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_random");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		noise_fb.DrawQuad(pContext);
@@ -168,7 +170,6 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	dens_fb.SetWidthAndHeight(noise_texture_size,noise_texture_size);
 	dens_fb.Activate(context);
 	{
-	//	ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture dens");
 		SetDetail2DCloudConstants(detail2DConstants);
 		detail2DConstants.Apply(pContext);
 		simul::dx11::setTexture(effect,"imageTexture"	,(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
@@ -179,23 +180,20 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	dens_fb.Deactivate(context);
 	detail_fb.Activate(context);
 	{
-	//	ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture lighting");
 		simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)dens_fb.GetColorTex());
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_2d_cloud_detail_lighting");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		detail_fb.DrawQuad(context);
 	}
 	detail_fb.Deactivate(context);
-	
-	coverage_fb.Activate(pContext);
+	coverage_fb.Activate(context);
 	{
-	//	ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::RenderDetailTexture coverage");
 		simul::dx11::setTexture(effect,"noiseTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_coverage");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		coverage_fb.DrawQuad(pContext);
 	} 
-	coverage_fb.Deactivate(pContext);
+	coverage_fb.Deactivate(context);
 }
 
 void Simul2DCloudRendererDX11::InvalidateDeviceObjects()
@@ -252,7 +250,7 @@ void Simul2DCloudRendererDX11::EnsureTextureCycle()
 	}
 }
 
-void Simul2DCloudRendererDX11::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void Simul2DCloudRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
 	view=v;
 	proj=p;
@@ -277,7 +275,10 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	simul::dx11::setTexture(effect,"lossTexture",skyLossTexture_SRV);
 	simul::dx11::setTexture(effect,"inscTexture",skyInscatterTexture_SRV);
 	simul::dx11::setTexture(effect,"skylTexture",skylightTexture_SRV);
+	// Set both MS and regular - we'll only use one of them:
 	simul::dx11::setTexture(effect,"depthTexture",depthTexture_SRV);
+	simul::dx11::setTexture(effect,"depthTextureMS",depthTexture_SRV);
+	
 	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
 	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture_SRV);
 	
@@ -300,8 +301,19 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	SET_VERTEX_BUFFER(pContext,vertexBuffer,simul::clouds::Cloud2DGeometryHelper::Vertex);
 	pContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R16_UINT,0);					
 
-
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	ID3DX11EffectTechnique*		tech;
+	if(depthTexture_SRV)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
+		depthTexture_SRV->GetDesc(&depthDesc);
+		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
+			tech=msaaTechnique;
+		else
+			return false;
+	}
+
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	pContext->DrawIndexed(num_indices-2,0,0);
 
@@ -319,6 +331,7 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	simul::dx11::setTexture(effect,"inscTexture"			,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect,"skylTexture"			,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect,"depthTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture(effect,"depthTextureMS"			,(ID3D11ShaderResourceView*)NULL);
 	simul::dx11::setTexture(effect,"illuminationTexture"	,(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	
@@ -375,6 +388,11 @@ void Simul2DCloudRendererDX11::SetIlluminationTexture(void *i)
 {
 	illuminationTexture_SRV=(ID3D11ShaderResourceView*)i;
 }
+void Simul2DCloudRendererDX11::SetLightTableTexture(void *l)
+{
+	lightTableTexture_SRV=(ID3D11ShaderResourceView*)l;
+}
+
 void Simul2DCloudRendererDX11::SetLightTableTexture(void *l)
 {
 	lightTableTexture_SRV=(ID3D11ShaderResourceView*)l;

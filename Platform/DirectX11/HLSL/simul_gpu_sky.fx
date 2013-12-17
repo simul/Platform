@@ -292,7 +292,6 @@ void CS_Skyl( uint3 sub_pos : SV_DispatchThreadID )
 	}
 }
 
-
 vec4 PS_Insc(vertexOutput IN) : SV_TARGET
 {
 	return Insc(input_texture,loss_texture,density_texture,optical_depth_texture,IN.texCoords);
@@ -392,6 +391,14 @@ technique11 simul_gpu_skyl
 		SetPixelShader(CompileShader(ps_4_0,PS_Skyl()));
     }
 }
+technique11 gpu_light_table_compute
+{
+    pass p0 
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_LightTable()));
+    }
+}
+
 technique11 gpu_light_table_compute
 {
     pass p0 

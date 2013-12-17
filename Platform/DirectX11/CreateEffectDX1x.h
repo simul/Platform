@@ -26,16 +26,18 @@ namespace simul
 			ALWAYS_BUILD=1,BUILD_IF_CHANGED,NEVER_BUILD
 		};
 		//! Find the camera position and view direction from the given view matrix.
-		extern SIMUL_DIRECTX11_EXPORT void GetCameraPosVector(D3DXMATRIX &view,float *dcam_pos,float *view_dir,bool y_vertical=false);
+		extern SIMUL_DIRECTX11_EXPORT void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,bool y_vertical=false);
 		//! Find the camera position from the given view matrix.
-		extern SIMUL_DIRECTX11_EXPORT const float *GetCameraPosVector(D3DXMATRIX &view,bool y_vertical=false);
+		extern SIMUL_DIRECTX11_EXPORT const float *GetCameraPosVector(const float *v,bool y_vertical=false);
 		//! Call this to make the FX compiler put its warnings and errors to the standard output when used.
 		extern SIMUL_DIRECTX11_EXPORT void PipeCompilerOutput(bool p);
 		//! When shader should be built, or loaded if available.
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderBuildMode(ShaderBuildMode s);
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderPath(const char *path);
 		extern SIMUL_DIRECTX11_EXPORT void SetTexturePath(const char *path);
-		extern SIMUL_DIRECTX11_EXPORT void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,D3DXMATRIX &world,D3DXMATRIX &view,D3DXMATRIX &proj);
+		extern SIMUL_DIRECTX11_EXPORT void MakeInvViewProjMatrix(float *ivp,const float *v,const float *p);
+		extern SIMUL_DIRECTX11_EXPORT void MakeViewProjMatrix(float *vp,const float *view,const float *proj);
+		extern SIMUL_DIRECTX11_EXPORT void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,const float *world,const float *view,const float *proj);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename);
 		ID3D11Texture1D* make1DTexture(

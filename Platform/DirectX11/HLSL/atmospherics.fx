@@ -98,27 +98,6 @@ vec4 PS_LossMSAA(atmosVertexOutput IN) : SV_TARGET
     return float4(loss.rgb,1.f);
 }
 
-vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
-{
-	vec2 clip_pos		=vec2(-1.f,1.f);
-	clip_pos.x			+=2.0*IN.texCoords.x;
-	clip_pos.y			-=2.0*IN.texCoords.y;
-	vec3 insc			=AtmosphericsInsc(depthTexture
-										,illuminationTexture
-										,inscTexture
-										,skylTexture
-										,invViewProj
-										,IN.texCoords
-										,clip_pos.xy
-										,viewportToTexRegionScaleBias
-										,depthToLinFadeDistParams
-										,tanHalfFov
-										,hazeEccentricity
-										,lightDir
-										,mieRayleighRatio);
-    return float4(insc.rgb*exposure,1.f);
-}
-
 vec4 PS_InscatterMSAA(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 clip_pos		=vec2(-1.f,1.f);
@@ -128,25 +107,25 @@ vec4 PS_InscatterMSAA(atmosVertexOutput IN) : SV_TARGET
 	int numSamples;
 	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
 	int2 pos2=int2(IN.texCoords*vec2(dims.xy));
-	vec4 res=InscatterMSAA(inscTexture
-				,skylTexture
-				,illuminationTexture
+	vec4 res=InscatterMSAA(	inscTexture
+							,skylTexture
+							,illuminationTexture
 							,depthTextureMS
 							,numSamples
-				,IN.texCoords
+							,IN.texCoords
 							,pos2
-				,invViewProj
-				,lightDir
-				,hazeEccentricity
-				,mieRayleighRatio
-				,viewportToTexRegionScaleBias
-				,depthToLinFadeDistParams
-				,tanHalfFov);
-	
+							,invViewProj
+							,lightDir
+							,hazeEccentricity
+							,mieRayleighRatio
+							,viewportToTexRegionScaleBias
+							,depthToLinFadeDistParams
+							,tanHalfFov);
+
 	res.rgb	*=exposure;
 	return res;
 }
-
+	
 vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
@@ -156,6 +135,21 @@ vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
+	return res;
+}
+
+vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
+	if(depth_lookup.z==0)
+		discard;
+	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
+	float depth			=max(depth_lookup.y,cloud_depth);
+	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
+	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
+	
 	return res;
 }
 

@@ -17,6 +17,11 @@
 #include <windows.h>
 #endif
 #include "Simul/Math/Pi.h"
+#ifndef _MSC_VER
+#define DebugBreak()
+#endif
+using namespace simul;
+using namespace opengl;
 
 #ifndef _MSC_VER
 #define DebugBreak()

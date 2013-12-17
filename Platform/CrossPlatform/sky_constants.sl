@@ -9,10 +9,12 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	vec4 lightDir;
 	vec4 mieRayleighRatio;
 	vec4 colour;
+
 	float hazeEccentricity;
 	float skyInterp;
 	float altitudeTexCoord;
 	float starBrightness;
+
 	float radiusRadians;
 	float overcast;
 	float overcastBaseKm;
@@ -20,6 +22,7 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	
 	uniform uint3 threadOffset;
 	float maxFadeDistanceKm;
+
 	float cloudShadowRange;		// As a distance texcoord
 	float illumination_alt_texc;	// Due to earth shadow
 	uint cycled_index;

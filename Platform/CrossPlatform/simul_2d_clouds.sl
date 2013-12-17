@@ -136,12 +136,13 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture,Texture2D coverageTexture
 						,Texture2D lossTexture
 						,Texture2D inscTexture
 						,Texture2D skylTexture
+						,Texture2D noiseTexture
 						,vec2 texc_global
 						,vec2 texc_detail
 						,vec3 wEyeToPos
 						,vec3 sun_irr,vec3 moon_irr,vec3 amb,vec3 lightDir,vec4 lightResponse)
 {
-    vec2 texc_offset	=texc_detail/7.11;//offsetScale;
+    vec2 texc_offset		=texc_detail/7.11;//offsetScale;
     vec4 noise				=texture_wrap(noiseTexture,texc_offset);
     vec4 coverage			=texture_wrap(coverageTexture,texc_global);
     vec4 detail				=texture_wrap(imageTexture,texc_detail+.2*noise.xy);
@@ -154,10 +155,11 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture,Texture2D coverageTexture
 	float hg				=HenyeyGreenstein(cloudEccentricity,cos0);
 
 	float sine				=view.z;
-
+	
 	vec2 fade_texc			=vec2(sqrt(length(wEyeToPos)/maxFadeDistanceMetres),0.5*(1.0-sine));
 
 	vec3 loss				=texture_cmc_lod(lossTexture,fade_texc,0).rgb;
+
 	vec2 illum_texc			=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
 	vec4 illum_lookup		=texture_wrap_mirror(illuminationTexture,illum_texc);
 	vec2 nearFarTexc		=illum_lookup.xy;
@@ -167,7 +169,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture,Texture2D coverageTexture
 	vec2 near_texc			=vec2(min(nearFarTexc.x,fade_texc.x),fade_texc.y);
 	vec2 far_texc			=vec2(min(nearFarTexc.y,fade_texc.x),fade_texc.y);
 	vec4 insc_far			=texture_clamp_mirror(inscTexture,far_texc);
-	vec4 insc_near		=texture_clamp_mirror(inscTexture,near_texc);
+	vec4 insc_near			=texture_clamp_mirror(inscTexture,near_texc);
 
 	vec4 insc				=vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
 	//vec4 insc				=texture_cmc_lod(inscTexture,fade_texc,0);
