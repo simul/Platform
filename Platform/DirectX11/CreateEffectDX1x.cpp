@@ -646,12 +646,14 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 			std::string line=err.substr(last,pos-last);
 			if(line.find(":")>3)
 			{
-				std::string path=path_utf8+"/";
+				std::string path=path_utf8;
+				char full[_MAX_PATH];
+				if( _fullpath( full, path_utf8.c_str(), _MAX_PATH ) != NULL )
+					path=full;
+				path+="/";
 				line=path+line;
 			}
-			char full[_MAX_PATH];
-			if( _fullpath( full, line.c_str(), _MAX_PATH ) != NULL )
-				std::cerr<<full<<std::endl;
+			std::cerr<<line.c_str()<<std::endl;
 		};//text_filename_utf8.c_str()<<
 	}
 	if(binaryBlob)

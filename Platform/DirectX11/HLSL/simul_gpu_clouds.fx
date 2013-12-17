@@ -61,29 +61,6 @@ ColourDepthOutput PS_DensityMask(vertexOutput IN)
 	return result;
 }
 
-
-void CS_CloudDensity(RWTexture3D<float4> targetTexture,uint3 sub_pos)
-{
-	uint3 dims;
-	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
-	uint3 noise_dims;
-	volumeNoiseTexture.GetDimensions(noise_dims.x,noise_dims.y,noise_dims.z);
-	uint3 pos			=sub_pos+threadOffset;
-	if(pos.x>=dims.x||pos.y>=dims.y||pos.z>=dims.z)
-		return;
-	vec3 densityspace_texcoord	=(pos+vec3(0.5,0.5,0.5))/vec3(dims);
-	vec3 noisespace_texcoord	=(densityspace_texcoord+vec3(0,0,0.0*zPixel))*noiseScale+vec3(1.0,1.0,0);
-	// noise_texel is the size of a noise texel
-	float noise_texel			=1.0/noise_dims.z;
-	float height				=noiseScale.z;
-	float noise_val				=NoiseFunction(volumeNoiseTexture,noisespace_texcoord,octaves,persistence,time,height,noise_texel);
-	float hm					=humidity*GetHumidityMultiplier(densityspace_texcoord.z)*texture_clamp_lod(maskTexture,densityspace_texcoord.xy,0).x;
-	float dens					=saturate((noise_val+hm-1.0)/diffusivity);
-	dens						*=saturate(densityspace_texcoord.z/zPixel-0.5)*saturate((1.0-0.5*zPixel-densityspace_texcoord.z)/zPixel);
-	dens						=saturate(dens);
-	targetTexture[pos]			=dens;
-}
-
 [numthreads(8,8,8)]
 void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {

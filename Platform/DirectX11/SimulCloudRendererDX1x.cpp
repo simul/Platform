@@ -751,7 +751,8 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 	skylightTexture->SetResource(skylightTexture_SRV);
 	depthTexture->SetResource(depthTexture_SRV);
 	lightTableTexture	->SetResource(lightTableTexture_SRV);
-
+	
+	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"		,noiseTextureResource);
 	simul::dx11::setTexture(m_pCloudEffect,"illuminationTexture",illuminationTexture_SRV);
 	
 	if(GetCloudInterface()->GetWrap())

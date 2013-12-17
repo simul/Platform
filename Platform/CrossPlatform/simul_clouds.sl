@@ -49,26 +49,6 @@ vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,
 	return density;
 }
 
-vec4 calcColour(vec4 density,float cos0,vec4 lightResponse,vec3 combinedLightColour,vec3 ambientColour)
-{
-	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-	vec3 ambient=density.w*ambientColour.rgb;
-	float opacity=density.z;
-	vec4 final;
-	final.rgb=(density.y*Beta+lightResponse.y*density.x)*combinedLightColour+ambient.rgb;
-	final.a=opacity;
-	return final;
-}
-
-vec4 calcUnfadedColour(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,float layerFade,vec3 noiseval,vec3 fractalScale,float cloud_interp,vec4 lightResponse,vec3 combinedLightColour,vec3 ambientColour,float cos0)
-{
-	vec4 density=calcDensity(cloudDensity1,cloudDensity2,texCoords,layerFade,noiseval,fractalScale,cloud_interp);
-	if(density.z<=0)
-		discard;
-	vec4 final=calcColour(density,cos0,lightResponse,combinedLightColour,ambientColour);
-	return final;
-}
-
 vec3 applyFades(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier)
 {
 	vec4 l=sampleLod(lossTexture		,cmcSamplerState,fade_texc,0);
@@ -461,7 +441,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			{
 				float noise_factor		=lerp(baseNoiseFactor,1.0,saturate(layerTexCoords.z));
 				vec2 noise_texc			=noise_texc_0*layerWorldDist+layer.noiseOffset;
-				vec3 noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
+				noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
 			}
 			density					=calcDensity(cloudDensity1,cloudDensity2,layerTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
             if(do_depth_mix)
@@ -481,17 +461,16 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 
 				float sh				=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 #ifdef INFRARED
-	c.rgb=1.0;//cloudIrRadiance*c.a;
+				c.rgb=cloudIrRadiance*c.a;
 #endif
 				c.rgb					=applyFades2(c.rgb,fade_texc,BetaRayleigh,BetaMie,sh);
 				colour.rgb				+=c.rgb*c.a*(colour.a);
 				meanFadeDistance		+=fadeDistance*c.a*colour.a;
-				//meanFadeDistance		=min(meanFadeDistance,fadeDistance);
+				
 				colour.a				*=(1.0-c.a);
 				if(colour.a*brightness_factor<0.003)
 				{
 					colour.a	=0.0;
-					//meanFadeDistance		=fadeDistance;//lerp(meanFadeDistance,fadeDistance,depthMix);
 					break;
 				}
 			}

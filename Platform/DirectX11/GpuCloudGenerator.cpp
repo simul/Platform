@@ -116,6 +116,8 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 
 void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr,int generation_number)
 {
+	if(last_generation_number==generation_number&&volume_noise_tex_srv!=NULL)
+		return volume_noise_tex_srv;
 	noiseSize=noise_size;
 	//using noise_size and noise_src_ptr, make a 3d texture:
 	SAFE_RELEASE(volume_noise_tex);
@@ -123,6 +125,7 @@ void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_sr
 	volume_noise_tex=make3DTexture(m_pd3dDevice,noise_size,noise_size,noise_size,DXGI_FORMAT_R32_FLOAT,noise_src_ptr);
 	m_pd3dDevice->CreateShaderResourceView(volume_noise_tex,NULL,&volume_noise_tex_srv);
 	//m_pImmediateContext->GenerateMips(volume_noise_tex_srv);
+	last_generation_number=generation_number;
 	return volume_noise_tex_srv;
 }
 

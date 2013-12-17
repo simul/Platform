@@ -258,7 +258,9 @@ void Direct3D11Renderer::ResolveDepth(ID3D11DeviceContext* pContext,const D3DXMA
 	resolvedDepth_fb.Deactivate(pContext);
 	//pContext->ResolveSubresource(resolvedDepthTexture.texture, 0, depthTexture, 0, DXGI_FORMAT_R32_FLOAT);
 	mixedResolutionConstants.scale=uint2(s,s);
-	mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj);
+	mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(
+																		proj
+																		,simulWeatherRenderer->GetBaseSkyRenderer()->GetSkyKeyframer()->GetMaxDistanceKm()*1000.f);
 	mixedResolutionConstants.nearZ=0;
 	mixedResolutionConstants.farZ=0;
 	mixedResolutionConstants.Apply(pContext);
@@ -351,7 +353,7 @@ void Direct3D11Renderer::RenderScene(ID3D11DeviceContext* pContext)
 	if(simulWeatherRenderer)
 	{
 		ResolveDepth(pContext,proj);
-		void *depthTextureMSAA=(ID3D11ShaderResourceView*)hdrFramebuffer.GetDepthTex();//resolvedDepth_fb.GetColorTex();
+		void *depthTextureMSAA=(ID3D11ShaderResourceView*)hdrFramebuffer.GetDepthTex();
 		simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 		static bool test=true;
 		const void* skyBufferDepthTex = (UseSkyBuffer&test)? lowResDepthTexture.shaderResourceView : depthTextureMSAA;

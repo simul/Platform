@@ -1,7 +1,6 @@
 #ifndef STATES_SL
 #define STATES_SL
 
-
 SamplerState wrapMirrorSamplerState SIMUL_STATE_REGISTER(3)
 {
 	Filter = MIN_MAG_MIP_LINEAR;
