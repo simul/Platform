@@ -48,6 +48,35 @@ namespace simul
 	//! This library is deprecated in favour of the \ref dx11 DirectX 11 library.
 	namespace dx9
 	{
+		struct TwoResFramebuffer:public simul::clouds::TwoResFramebuffer
+		{
+			TwoResFramebuffer();
+			BaseFramebuffer *GetLowResFarFramebuffer()
+			{
+				return &lowResFarFramebufferDx11;
+			}
+			BaseFramebuffer *GetLowResNearFramebuffer()
+			{
+				return &lowResNearFramebufferDx11;
+			}
+			BaseFramebuffer *GetHiResFarFramebuffer()
+			{
+				return &hiResFarFramebufferDx11;
+			}
+			BaseFramebuffer *GetHiResNearFramebuffer()
+			{
+				return &hiResNearFramebufferDx11;
+			}
+			dx9::Framebuffer	lowResFarFramebufferDx11;
+			dx9::Framebuffer	lowResNearFramebufferDx11;
+			dx9::Framebuffer	hiResFarFramebufferDx11;
+			dx9::Framebuffer	hiResNearFramebufferDx11;
+			void RestoreDeviceObjects(void *);
+			void InvalidateDeviceObjects();
+			void SetDimensions(int w,int h,int downscale);
+			int Width,Height,Downscale;
+			LPDIRECT3DDEVICE9	m_pd3dDevice;
+		};
 		//! A rendering class that encapsulates Simul skies and clouds.
 		//! Create an instance of this class within a DirectX 9 program.
 		//! You can take this entire class and use it as source in your project.
@@ -132,6 +161,7 @@ namespace simul
 			D3DXHANDLE						bufferTexture;
 
 			bool CreateBuffers();
+			TwoResFramebuffer *				GetFramebuffer(int view_id);
 			SimulSkyRenderer				*simulSkyRenderer;
 			SimulCloudRenderer				*simulCloudRenderer;
 			SimulLightningRenderer			*simulLightningRenderer;

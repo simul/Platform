@@ -30,6 +30,7 @@ static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Decay.h"
+#include "Simul/Math/Pi.h"
 #include "SaveTexture.h"
 #include "Resources.h"
 using namespace simul;
@@ -296,7 +297,6 @@ void SimulSkyRenderer::SetStepsPerDay(int s)
 
 void SimulSkyRenderer::CreateFadeTextures()
 {
-	HRESULT hr;
 	for(int i=0;i<3;i++)
 	{
 		loss_textures		[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,numAltitudes,numFadeElevations,numFadeDistances,sky_tex_format);
@@ -501,6 +501,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	// fix the projection matrix so this quad is far away:
 	D3DXMATRIX tmp=proj;
 	static float ff=0.0001f;
+	float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 	float zFar=(1.f+ff)/tan(sun_angular_radius);
 	FixProjectionMatrix(proj,zFar*ff,zFar,IsYVertical());
 	HRESULT hr;
@@ -539,12 +540,12 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	proj=tmp;
 	return sun_occlusion;
 }
-float sun_angular_radius=3.14159f/180.f/2.f;
 
 void SimulSkyRenderer::RenderSun(void *,float exposure)
 {
 	float alt_km=0.001f*(y_vertical?cam_pos.y:cam_pos.z);
 	simul::sky::float4 sunlight=skyKeyframer->GetLocalIrradiance(alt_km);
+float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 	// GetLocalIrradiance returns a value in Irradiance (watts per square metre).
 	// But our colour values are in Radiance (watts per sq.m. per steradian)
 	// So to get the sun colour, divide by the approximate angular area of the sun.
@@ -902,11 +903,6 @@ void SimulSkyRenderer::RenderIlluminationBuffer(void *context)
 		m_pSkyEffect->End();
 		illumination_fb.Deactivate(context);
 	}
-}
-
-bool SimulSkyRenderer::Render(void *context,bool blend)
-{
-	return true;
 }
 
 float SimulSkyRenderer::GetTiming() const

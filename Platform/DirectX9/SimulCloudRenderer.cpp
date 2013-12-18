@@ -188,6 +188,7 @@ SimulCloudRenderer::SimulCloudRenderer(simul::clouds::CloudKeyframer *ck,simul::
 	,cpu_fade_vertices(NULL)
 	,last_time(0)
 	,NumBuffers(1)
+	,rebuild_shaders(true)
 {
 	for(int i=0;i<3;i++)
 		cloud_textures[i]=NULL;

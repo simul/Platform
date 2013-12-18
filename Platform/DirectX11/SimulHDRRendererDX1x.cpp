@@ -274,7 +274,7 @@ static float g_FilterRadius = 30;
 		simul::dx11::setParameter(m_pTonemapEffect,"offset",1.f/Width,1.f/Height);
 		ApplyPass(m_pImmediateContext,glowTechnique->GetPassByIndex(0));
 		glow_fb.Activate(context);
-		glow_fb.DrawQuad(context);
+		simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
 		glow_fb.Deactivate(context);
 	}
     D3D11_TEXTURE2D_DESC tex_desc;

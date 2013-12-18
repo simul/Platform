@@ -352,7 +352,7 @@ void TextureStruct::ensureTexture1DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		uav_desc.Format				= f;
 		uav_desc.ViewDimension		= D3D11_UAV_DIMENSION_TEXTURE1D;
 		uav_desc.Texture1D.MipSlice	= 0;
-		HRESULT hr;
+		
 		SAFE_RELEASE(unorderedAccessView);
 		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture,&uav_desc,&unorderedAccessView));
 	}
@@ -483,6 +483,31 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 	}
 	pImmediateContext->GenerateMips(m_pArrayTexture_SRV);
 	SAFE_RELEASE(pImmediateContext)
+}
+
+void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORMAT f,bool computable)
+{
+	release();
+	D3D11_TEXTURE2D_DESC desc;
+//	D3D11_SUBRESOURCE_DATA *subResources=new D3D11_SUBRESOURCE_DATA[num];
+	//ID3D11DeviceContext *pImmediateContext=NULL;
+	//pd3dDevice->GetImmediateContext(&pImmediateContext);
+	static int num_mips		=5;
+	desc.Width				=w;
+	desc.Height				=l;
+	desc.Format				=f;
+	desc.BindFlags			=D3D11_BIND_SHADER_RESOURCE|D3D11_BIND_UNORDERED_ACCESS|D3D11_BIND_RENDER_TARGET ;
+	desc.Usage				=D3D11_USAGE_DEFAULT;
+	desc.CPUAccessFlags		=0;
+	desc.ArraySize			=num;
+	desc.MiscFlags			=D3D11_RESOURCE_MISC_GENERATE_MIPS;
+	desc.MipLevels			=num_mips;
+	desc.SampleDesc.Count	=1;
+	desc.SampleDesc.Quality	=0;
+	V_CHECK(pd3dDevice->CreateTexture2D(&desc,NULL,&m_pArrayTexture));
+	V_CHECK(pd3dDevice->CreateShaderResourceView(m_pArrayTexture,NULL,&m_pArrayTexture_SRV));
+	V_CHECK(pd3dDevice->CreateUnorderedAccessView(m_pArrayTexture,NULL,&unorderedAccessView));
+	//SAFE_RELEASE(pImmediateContext)
 }
 
 Mesh::Mesh()
@@ -742,17 +767,18 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 	}
 }
 
-void UtilityRenderer::DrawTexture(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,float brightnessMultiplier,ID3D11ShaderResourceView *t)
+void UtilityRenderer::DrawTexture(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult)
 {
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",t);
-	simul::dx11::setParameter(m_pDebugEffect,"textureMultiplier",brightnessMultiplier);
+	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
 	if(m_pDebugEffect)
 		UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,m_pDebugEffect->GetTechniqueByName("textured"));
 }
 
-void UtilityRenderer::DrawTextureMS(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t)
+void UtilityRenderer::DrawTextureMS(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult)
 {
 	simul::dx11::setTexture(m_pDebugEffect,"imageTextureMS",t);
+	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
 	if(m_pDebugEffect)
 		UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,m_pDebugEffect->GetTechniqueByName("texturedMS"));
 }
@@ -865,15 +891,31 @@ void UtilityRenderer::DrawSphere(void *context,int latitudes,int longitudes)
 void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-	D3DXMATRIX tmp1,tmp2,wvp,world;
+	unsigned int num_v=0;
+	D3D11_VIEWPORT								m_OldViewports[4];
+	pContext->RSGetViewports(&num_v,NULL);
+	if(num_v<=4)
+		pContext->RSGetViewports(&num_v,m_OldViewports);
+	D3D11_VIEWPORT viewport;
+		// Setup the viewport for rendering.
+	viewport.Width		=m_OldViewports[0].Width*0.3f;
+	viewport.Height		=m_OldViewports[0].Height*0.3f;
+	viewport.MinDepth	=0.0f;
+	viewport.MaxDepth	=1.0f;
+	viewport.TopLeftX	=0.5f*(1.f+offsetx)*m_OldViewports[0].Width-viewport.Width/2;
+	viewport.TopLeftY	=0.5f*(1.f-offsety)*m_OldViewports[0].Height-viewport.Height/2;
+	pContext->RSSetViewports(1,&viewport);
+
+	// Create the viewport.
+	D3DXMATRIX wvp,world;
 	D3DXMatrixIdentity(&world);
 	float tan_x=1.0f/proj(0, 0);
 	float tan_y=1.0f/proj(1, 1);
-	D3DXMatrixInverse(&tmp1,NULL,&view);
-	float size_req=tan_x*0.2f;
+	float size_req=tan_x*.5f;
 	static float size=3.f;
 	float d=2.0f*size/size_req;
-	simul::math::Vector3 offs0(offsetx*(tan_x-size_req)*d,offsety*(tan_y-size_req)*d,-d);
+	//simul::math::Vector3 offs0(offsetx*(tan_x-size_req)*d,offsety*(tan_y-size_req)*d,-d);
+	simul::math::Vector3 offs0(0,0,-d);
 	simul::math::Vector3 offs;
 	Multiply3(offs,*((const simul::math::Matrix4x4*)(const float*)view),offs0);
 
@@ -895,4 +937,5 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCub
 	static float rr=6.f;
 	simul::dx11::setParameter(m_pDebugEffect,"radius",rr);
 	UtilityRenderer::DrawSphere(context,16,32);
+	pContext->RSSetViewports(num_v,m_OldViewports);
 }

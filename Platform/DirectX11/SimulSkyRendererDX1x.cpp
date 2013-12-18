@@ -401,7 +401,7 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	skyConstants.LinkToEffect(m_pSkyEffect,"SkyConstants");
 	gpuSkyGenerator.RecompileShaders();
 }
-
+#include "Simul/Math/Pi.h"
 float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 {
 	sun_occlusion=cloud_occlusion;

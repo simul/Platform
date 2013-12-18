@@ -193,6 +193,7 @@ protected:
 	//! Once per frame, fill this 1-D texture with information on the layer distances and noise offsets
 	bool FillRaytraceLayerTexture(int viewport_id);
 	float last_time;
+	bool rebuild_shaders;
 };
 #ifdef _MSC_VER
 	#pragma warning(pop)
