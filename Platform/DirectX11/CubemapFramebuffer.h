@@ -65,8 +65,13 @@ namespace simul
 			}
 void SetBands(int b)
 {
-
+				if(b>MAX_SH_BANDS)
+					b=MAX_SH_BANDS;
+				if(bands!=b)
+				{
 bands=b;
+					sphericalHarmonics.release();
+				}
 }
 		protected:
 int bands;
@@ -88,12 +93,11 @@ int bands;
 			ID3D11DepthStencilView*						m_pCubeEnvDepthMapDSV[6];
 			ID3D11ShaderResourceView*					m_pCubeEnvDepthMapSRV[6];
 
-			ID3D11ShaderResourceView*					m_pCubeEnvMapDepthSRV;
 			int											current_face;
 
 			DXGI_FORMAT									format;
 
-
+			ConstantBuffer<SphericalHarmonicsConstants> sphericalHarmonicsConstants;
 			StructuredBuffer<SphericalHarmonicsSample>	sphericalSamples;
 			StructuredBuffer<vec4>						sphericalHarmonics;
 	ID3DX11Effect *sphericalHarmonicsEffect;

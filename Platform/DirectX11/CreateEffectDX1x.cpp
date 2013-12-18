@@ -43,7 +43,7 @@ static const DWORD default_effect_flags=0;
 // winmm.lib comctl32.lib
 static bool pipe_compiler_output=false;
 
-static ID3D1xDevice		*pd3dDevice		=NULL;
+//static ID3D1xDevice		*pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
 using namespace base;
@@ -644,6 +644,15 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 			int last=pos;
 			pos=err.find("\n",pos+1);
 			std::string line=err.substr(last,pos-last);
+			if(line.find(":")>3)
+			{
+				std::string path=path_utf8;
+				char full[_MAX_PATH];
+				if( _fullpath( full, path_utf8.c_str(), _MAX_PATH ) != NULL )
+					path=full;
+				path+="/";
+				line=path+line;
+			}
 			std::cerr<<line.c_str()<<std::endl;
 		};//text_filename_utf8.c_str()<<
 	}
@@ -970,18 +979,24 @@ HRESULT ApplyPass(ID3D11DeviceContext *pImmediateContext,ID3DX11EffectPass *pass
 void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
 {
     D3DXVECTOR3 vEyePt = D3DXVECTOR3( cam_pos );
-    D3DXVECTOR3 vLookDir;
+    D3DXVECTOR3 vLookAt;
     D3DXVECTOR3 vUpDir;
     ZeroMemory(mat,6*sizeof(D3DXMATRIX) );
+    /*D3DCUBEMAP_FACE_POSITIVE_X     = 0,
+    D3DCUBEMAP_FACE_NEGATIVE_X     = 1,
+    D3DCUBEMAP_FACE_POSITIVE_Y     = 2,
+    D3DCUBEMAP_FACE_NEGATIVE_Y     = 3,
+    D3DCUBEMAP_FACE_POSITIVE_Z     = 4,
+    D3DCUBEMAP_FACE_NEGATIVE_Z     = 5,*/
 	static const D3DVECTOR lookf[6]=
 	{
 		 {1.f,0.f,0.f}		,{-1.f,0.f,0.f}
-		,{0.f,1.f,0.f}		,{0.f,-1.f,0.f}
-		,{0.f,0.f,1.f}		,{0.f,0.f,-1.f}
+		,{0.f,-1.f,0.f}		,{0.f,1.f,0.f}
+		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
 	};
 	static const D3DVECTOR upf[6]=
 	{
-		 {0.f,-1.f,0.f}		,{0.f,-1.f,0.f}
+		 {0.f,1.f,0.f}		,{0.f,1.f,0.f}
 		,{0.f,0.f,-1.f}		,{0.f,0.f,1.f}
 		,{0.f,1.f,0.f}		,{0.f,1.f,0.f}
 	};
@@ -999,14 +1014,14 @@ void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
 	};
 	for(int i=0;i<6;i++)
 	{
-		vLookDir	=vEyePt+lookf[i];
+		vLookAt		=vEyePt+lookf[i];
 		vUpDir		=upf[i];
-		D3DXMatrixLookAtLH(&mat[i], &vEyePt, &vLookDir, &vUpDir );
-		if(ReverseDepth)
+		D3DXMatrixLookAtLH(&mat[i], &vEyePt,&vLookAt, &vUpDir );
+		if(true)//everseDepth)
 		{
-			vLookDir	=vEyePt+lookr[i];
+			vLookAt		=vEyePt+lookr[i];
 			vUpDir		=upr[i];
-			D3DXMatrixLookAtRH(&mat[i], &vEyePt, &vLookDir, &vUpDir );
+			D3DXMatrixLookAtRH(&mat[i], &vEyePt, &vLookAt, &vUpDir );
 		}
 	}
 }

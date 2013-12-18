@@ -228,7 +228,135 @@ vec3 getSkylight(float alt_km, Texture3D insc_texture)
 	vec3 skylight	=InscatterFunction(insc,hazeEccentricity,0.0,mieRayleighRatio);
 	return skylight;
 }
+
+vec3 Blackbody(Texture2D blackbody_texture,float T_K)
+{
+    float tc    =saturate((T_K-200.0)/200.0);
+    tc          =saturate(tc+texelOffset/tableSize.x);
+	vec3 bb		=texture_clamp_lod(blackbody_texture,vec2(tc,tc),0).rgb;
+    return bb;
+}
+
 #ifndef GLSL
+
+
+void CSLoss(RWTexture3D<float4> targetTexture,Texture2D density_texture,uint3 pos,float maxOutputAltKm,float maxDistanceKm,float maxDensityAltKm)
+{
+	uint3 dims;
+	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y)
+		return;
+	vec2 texc			=(pos.xy+0.5)/vec2(dims.xy);
+	vec4 previous_loss	=vec4(1.0,1.0,1.0,1.0);//texture_clamp(input_loss_texture,texc.xy);
+	float sin_e			=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
+	float cos_e			=sqrt(1.0-sin_e*sin_e);
+	float altTexc		=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
+	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
+	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
+	float prevDist_km	=0.0;
+	for(uint i=0;i<dims.z;i++)
+	{
+		uint3 idx			=uint3(pos.xy,i);
+		float zPosition		=pow((float)(i)/((float)dims.z-1.f),2.f);
+		float dist_km		=zPosition*maxDistanceKm;
+		float maxd			=min(spaceDistKm,dist_km);
+		float mind			=min(spaceDistKm,prevDist_km);
+		float dist			=0.5*(mind+maxd);
+		float stepLengthKm	=max(0.0,maxd-mind);
+		float y				=planetRadiusKm+viewAltKm+dist*sin_e;
+		float x				=dist*cos_e;
+		float r				=sqrt(x*x+y*y);
+		float alt_km		=r-planetRadiusKm;
+		// lookups is: dens_factor,ozone_factor,haze_factor;
+		float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
+		vec4 lookups		=texture_clamp_lod(density_texture,dens_texc,0);
+		float dens_factor	=lookups.x;
+		float ozone_factor	=lookups.y;
+		float haze_factor	=getHazeFactorAtAltitude(alt_km);
+		vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie+ozone*ozone_factor;
+		vec4 loss;
+		loss.rgb			=exp(-extinction*stepLengthKm);
+		loss.a				=(loss.r+loss.g+loss.b)/3.0;
+		loss				*=previous_loss;
+		targetTexture[idx]	=vec4(loss.rgb,1.0);
+		prevDist_km			=dist_km;
+		previous_loss		=loss;
+	}
+}
+
+void CSSkyl(RWTexture3D<float4> targetTexture,Texture3D loss_texture,Texture3D insc_texture
+	,Texture2D density_texture,Texture2D blackbody_texture,uint3 pos,float maxOutputAltKm,float maxDistanceKm,float maxDensityAltKm)
+{
+	uint3 dims;
+	targetTexture.GetDimensions(dims.x,dims.y,dims.z);
+	if(pos.x>=dims.x||pos.y>=dims.y)
+		return;
+	vec2 texc			=(pos.xy+0.5)/vec2(dims.xy);
+	
+	vec4 previous_skyl	=vec4(0.0,0.0,0.0,1.0);
+	float sin_e			=max(-1.0,min(1.0,1.0-2.0*(texc.y*texSize.y-texelOffset)/(texSize.y-1.0)));
+	float cos_e			=sqrt(1.0-sin_e*sin_e);
+	float altTexc		=(texc.x*texSize.x-texelOffset)/max(texSize.x-1.0,1.0);
+	float viewAltKm		=altTexc*altTexc*maxOutputAltKm;
+	float spaceDistKm	=getDistanceToSpace(sin_e,viewAltKm);
+
+	float prevDist_km	=0.0;
+	// The midpoint of the step represented by this layer
+	for(int i=0;i<int(dims.z);i++)
+	{
+		uint3 idx			=uint3(pos.xy,i);
+		float zPosition		=pow((float)(i)/((float)dims.z-1.0),2.0);
+		vec3 previous_loss	=loss_texture[idx].rgb;//vec3(IN.texc.xy,pow(distanceKm/maxDistanceKm,0.5))).rgb;// should adjust texc - we want the PREVIOUS loss!
+		
+		float dist_km		=zPosition*maxDistanceKm;
+		if(i==dims.z-1)
+			dist_km=1000.f;
+		float maxd			=min(spaceDistKm,dist_km);
+		float mind			=min(spaceDistKm,prevDist_km);
+		float dist			=0.5*(mind+maxd);
+		float stepLengthKm	=max(0.0,maxd-mind);
+		float y				=planetRadiusKm+viewAltKm+dist*sin_e;
+		float x				=dist*cos_e;
+		float r				=sqrt(x*x+y*y);
+		float alt_km		=r-planetRadiusKm;
+		// lookups is: dens_factor,ozone_factor,haze_factor;
+		float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
+		vec4 lookups		=texture_clamp_lod(density_texture,dens_texc,0);
+		float dens_factor	=lookups.x;
+		float ozone_factor	=lookups.y;
+		float haze_factor	=getHazeFactorAtAltitude(alt_km);
+		vec4 light			=vec4(starlight+getSkylight(alt_km,insc_texture),0.0);
+		vec4 skyl			=light;
+		vec3 extinction		=dens_factor*rayleigh+haze_factor*hazeMie;
+		vec3 total_ext		=extinction+ozone*ozone_factor;
+		vec3 loss			=exp(-extinction*stepLengthKm);
+		skyl.rgb			*=vec3(1.0,1.0,1.0)-loss;
+		float mie_factor	=exp(-skyl.w*stepLengthKm*haze_factor*hazeMie.x);
+		skyl.w				=saturate((1.f-mie_factor)/(1.f-total_ext.x+0.0001f));
+#if 1//def BLACKBODY
+		float dens_dist	=dens_factor*stepLengthKm;
+		float emis_ext  =exp(-emissivity*dens_dist);
+		float3 bb;
+		float T         =seaLevelTemperatureK*lookups.w;
+		bb.xyz          =Blackbody(blackbody_texture,T);
+
+		skyl            *=emis_ext;
+		bb              *=1.0-emis_ext;
+		skyl.rgb        +=bb;
+		//skyl.rgb        =0.000001*skyl.rgb+Blackbody(T);
+ #endif
+		//skyl.w			=(loss.w)*(1.f-previous_skyl.w)*skyl.w+previous_skyl.w;
+		skyl.rgb			*=previous_loss.rgb;
+		skyl.rgb			+=previous_skyl.rgb;
+		
+		float lossw=1.0;
+		skyl.w				=(lossw)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
+		targetTexture[idx]	=skyl;
+		prevDist_km			=dist_km;
+		previous_skyl		=skyl;
+	}
+}
+
 void MakeLightTable(RWTexture3D<float4> targetTexture, Texture3D insc_texture, uint3 sub_pos)
 {
 	// threadOffset.y determines the cycled index.

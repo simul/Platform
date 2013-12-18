@@ -1,13 +1,3 @@
-//=================================================================================================
-//
-//	Query Profiling Sample
-//  by MJP
-//  http://mynameismjp.wordpress.com/
-//
-//  All code and content licensed under Microsoft Public License (Ms-PL)
-//
-//=================================================================================================
-
 #pragma once
 
 // Platform SDK defines, specifies that our min version is Windows Vista
@@ -51,18 +41,23 @@
 
 #include <string>
 #include "simul/base/Timer.h"
+#include "Simul/Base/ProfilingInterface.h"
 #include "MacrosDX1x.h"
 
 #include "Simul/Platform/DirectX11/Export.h"
-SIMUL_DIRECTX11_EXPORT_CLASS Profiler
+namespace simul
 {
+	namespace dx11
+	{
+		SIMUL_DIRECTX11_EXPORT_CLASS Profiler:public simul::base::GpuProfilingInterface
+		{
 public:
 	static Profiler &GetGlobalProfiler();
 	~Profiler();
     void Initialize(ID3D11Device* device);
     void Uninitialize();
-    void StartProfile(ID3D11DeviceContext* context,const std::string& name);
-    void EndProfile(ID3D11DeviceContext* context,const std::string& name);
+			void Begin(void *context,const char *name);
+			void End();
 
     void EndFrame(ID3D11DeviceContext* context);
 	
@@ -70,7 +65,8 @@ public:
 	//! Get all the active profilers as a text report.
 	const char *GetDebugText() const;
 protected:
-
+			std::vector<std::string> last_name;
+			std::vector<ID3D11DeviceContext *> last_context;
     static Profiler GlobalProfiler;
 
     // Constants
@@ -131,5 +127,6 @@ protected:
 	ID3D11DeviceContext* context;
     std::string name;
 };
-
+	}
+}
 #pragma warning(pop)

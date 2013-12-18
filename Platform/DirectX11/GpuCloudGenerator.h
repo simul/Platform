@@ -19,6 +19,10 @@ namespace simul
 		public:
 			GpuCloudGenerator();
 			~GpuCloudGenerator();
+			void SetHarmonicLighting(bool h)
+			{
+				harmonic_secondary=h;
+			}
 			void RestoreDeviceObjects(void *dev);
 			void InvalidateDeviceObjects();
 			void RecompileShaders();
@@ -27,21 +31,17 @@ namespace simul
 				return Enabled&&m_pd3dDevice!=NULL;
 			}
 			int GetDensityGridsize(const int *grid);
-			void* Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr);
+			void* Make3DNoiseTexture(int noise_size,const float  *noise_src_ptr,int generation_number);
 			void FillDensityGrid(	int index
 									,const clouds::GpuCloudsParameters &params
 									,int start_texel
 									,int texels
 									,const simul::clouds::MaskMap &masks);
-			virtual void PerformGPURelight(	int light_index
+			void PerformGPURelight(		int light_index
+											,const clouds::GpuCloudsParameters &params
 											,float *target
-											,const int *light_grid
 											,int start_texel
-											,int texels
-											,const int *density_grid
-											,const float *Matrix4x4LightToDensityTexcoords
-											,const float *lightspace_extinctions_float3
-											,bool wrap_light_tex);
+											,int texels);
 			void GPUTransferDataToTexture(	int index
 											,unsigned char *target
 											,const float *DensityToLightTransform
@@ -73,6 +73,7 @@ namespace simul
 			ID3DX11EffectTechnique*				maskTechnique;
 			ID3DX11EffectTechnique*				lightingComputeTechnique;
 			ID3DX11EffectTechnique*				secondaryLightingComputeTechnique;
+			ID3DX11EffectTechnique*				secondaryHarmonicTechnique;
 			ID3DX11EffectTechnique*				transformComputeTechnique;
 
 			ID3D11Texture3D						*volume_noise_tex;
@@ -86,6 +87,7 @@ namespace simul
 			ID3D11SamplerState*					m_pWwcSamplerState;
 			ID3D11SamplerState*					m_pWccSamplerState;
 			ID3D11SamplerState*					m_pCwcSamplerState;
+	bool harmonic_secondary;
 		};
 	}
 }

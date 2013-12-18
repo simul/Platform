@@ -48,7 +48,7 @@ void CalcInsc(	Texture2D inscTexture
     skyl                =texture_clamp_mirror(skylTexture,fade_texc).rgb;
 }
 
-vec3 AtmosphericsInsc(	Texture2D depthTexture
+vec4 AtmosphericsInsc(	Texture2D depthTexture
 						,Texture2D illuminationTexture
 						,Texture2D inscTexture
 						,Texture2D skylTexture
@@ -84,12 +84,18 @@ vec3 AtmosphericsInsc(	Texture2D depthTexture
 
 	vec4 insc			=vec4(insc_far.rgb-insc_near.rgb,0.5*(insc_near.a+insc_far.a));
 	float cos0			=dot(view,lightDir);
+	vec4 skyl			=texture_cmc_lod(skylTexture,fade_texc,0);
+#ifdef INFRARED
+	vec3 colour			=skyl.rgb;
+    colour.rgb			*=infraredIntegrationFactors.xyz;
+    float final_radiance=colour.x+colour.y+colour.z;
+	return vec4(final_radiance,final_radiance,final_radiance,final_radiance);
+#else
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 
-	vec4 skyl_lookup	=texture_cmc_lod(skylTexture,fade_texc,0);
-	colour				+=skyl_lookup.rgb;
-//colour.rgb=.05*insc.rgb;
-    return				colour;
+	colour				+=skyl.rgb;
+	return vec4(colour,1.0);
+#endif
 }
 
 vec4 InscatterMSAA(	Texture2D inscTexture
@@ -105,7 +111,9 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 				,vec3 mieRayleighRatio
 				,vec4 viewportToTexRegionScaleBias
 				,vec3 depthToLinFadeDistParams
-				,vec2 tanHalfFov)
+				,vec2 tanHalfFov
+				,bool USE_NEAR_FAR
+				,bool nearPass)
 {
 	vec4 clip_pos		=vec4(-1.f,1.f,1.f,1.f);
 	clip_pos.x			+=2.0*texCoords.x;
@@ -120,15 +128,34 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 	float sine			=view.z;
 	float2 fade_texc	=vec2(0,0.5f*(1.f-sine));
 	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-		//float depth1			=depthTextureMS.Load(pos2,0).x;
-		///float dist1			=depthToFadeDistance(depth1,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	float extreme_dist	=0.0;
+	if(USE_NEAR_FAR)
+	{
+		if(nearPass)
+			extreme_dist	=1000.0;
+	}
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 	for(int i=0;i<numSamples;i++)
 	{
 		vec4 insc_i;
         vec3 skyl_i;
-		vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 		float depth			=depthTextureMS.Load(pos2,i).x;
 		float dist			=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+		if(USE_NEAR_FAR)
+		{
+			if(nearPass)
+			{
+				if(dist<extreme_dist)
+					extreme_dist=dist;
+			}
+			else
+			{
+				if(dist>extreme_dist)
+					extreme_dist=dist;
+			}
+		}
+		else
+		{
         CalcInsc(	inscTexture
 					,skylTexture
 					,illuminationTexture
@@ -140,14 +167,28 @@ vec4 InscatterMSAA(	Texture2D inscTexture
         insc+=insc_i;
         skyl+=skyl_i;
 	}
+	}
+	if(USE_NEAR_FAR)
+	{
+        CalcInsc(	inscTexture
+					,skylTexture
+					,illuminationTexture
+					,extreme_dist
+					,fade_texc
+					,illum_texc
+                    ,insc
+					,skyl);}
+	else
+	{
 	insc/=float(numSamples);
 	skyl/=float(numSamples);
+	}
 	float cos0			=dot(view,lightDir);
 #ifdef INFRARED
 	vec3 colour			=skyl.rgb;
     colour.rgb			*=infraredIntegrationFactors.xyz;
     float final_radiance=colour.x+colour.y+colour.z;
-	return float4(final_radiance,final_radiance,final_radiance,1.f);
+	return float4(final_radiance,final_radiance,final_radiance,final_radiance);
 #else
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;

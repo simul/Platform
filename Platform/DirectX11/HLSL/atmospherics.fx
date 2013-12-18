@@ -79,6 +79,27 @@ vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET
     return float4(loss.rgb,1.f);
 }
 
+vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 clip_pos		=vec2(-1.f,1.f);
+	clip_pos.x			+=2.0*IN.texCoords.x;
+	clip_pos.y			-=2.0*IN.texCoords.y;
+	vec3 insc			=AtmosphericsInsc(depthTexture
+										,illuminationTexture
+										,inscTexture
+										,skylTexture
+										,invViewProj
+										,IN.texCoords
+										,clip_pos.xy
+										,viewportToTexRegionScaleBias
+										,depthToLinFadeDistParams
+										,tanHalfFov
+										,hazeEccentricity
+										,lightDir
+										,mieRayleighRatio);
+    return float4(insc.rgb*exposure,1.f);
+}
+
 vec4 PS_LossMSAA(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
@@ -120,8 +141,102 @@ vec4 PS_InscatterMSAA(atmosVertexOutput IN) : SV_TARGET
 							,mieRayleighRatio
 							,viewportToTexRegionScaleBias
 							,depthToLinFadeDistParams
-							,tanHalfFov);
+							,tanHalfFov
+							,false
+							,false);
+	res.rgb	*=exposure;
+	return res;
+}
 
+
+vec4 PS_Loss_Far(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	int2 pos2;
+	int numSamples;
+	GetMSAACoordinates(depthTextureMS,depth_texc,pos2,numSamples);
+	vec3 loss		=AtmosphericsLossMSAA(depthTextureMS
+											,numSamples
+											,viewportToTexRegionScaleBias
+											,lossTexture
+											,invViewProj
+											,IN.texCoords
+											,pos2
+											,IN.pos
+											,depthToLinFadeDistParams
+											,tanHalfFov);
+    return float4(loss.rgb,1.f);
+}
+
+vec4 PS_Loss_Near(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
+	int2 pos2;
+	int numSamples;
+	GetMSAACoordinates(depthTextureMS,depth_texc,pos2,numSamples);
+	vec3 loss		=AtmosphericsLossMSAA(depthTextureMS
+											,numSamples
+											,viewportToTexRegionScaleBias
+											,lossTexture
+											,invViewProj
+											,IN.texCoords
+											,pos2
+											,IN.pos
+											,depthToLinFadeDistParams
+							,tanHalfFov);
+    return float4(loss.rgb,1.f);
+}
+
+vec4 PS_Inscatter_Far(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 clip_pos		=vec2(-1.f,1.f);
+	clip_pos.x			+=2.0*IN.texCoords.x;
+	clip_pos.y			-=2.0*IN.texCoords.y;
+	uint2 dims;
+	int numSamples;
+	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
+	int2 pos2=int2(IN.texCoords*vec2(dims.xy));
+	vec4 res=InscatterMSAA(	inscTexture
+							,skylTexture
+							,illuminationTexture
+							,depthTextureMS
+							,numSamples
+							,IN.texCoords
+							,pos2
+							,invViewProj
+							,lightDir
+							,hazeEccentricity
+							,mieRayleighRatio
+							,viewportToTexRegionScaleBias
+							,depthToLinFadeDistParams
+							,tanHalfFov,true,false);
+	res.rgb	*=exposure;
+	return res;
+}
+
+vec4 PS_Inscatter_Near(atmosVertexOutput IN) : SV_TARGET
+{
+	vec2 clip_pos		=vec2(-1.f,1.f);
+	clip_pos.x			+=2.0*IN.texCoords.x;
+	clip_pos.y			-=2.0*IN.texCoords.y;
+	uint2 dims;
+	int numSamples;
+	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
+	int2 pos2=int2(IN.texCoords*vec2(dims.xy));
+	vec4 res=InscatterMSAA(	inscTexture
+							,skylTexture
+							,illuminationTexture
+							,depthTextureMS
+							,numSamples
+							,IN.texCoords
+							,pos2
+							,invViewProj
+							,lightDir
+							,hazeEccentricity
+							,mieRayleighRatio
+							,viewportToTexRegionScaleBias
+							,depthToLinFadeDistParams
+							,tanHalfFov,true,true);
 	res.rgb	*=exposure;
 	return res;
 }
@@ -153,20 +268,94 @@ vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
 	return res;
 }
 
-vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
+technique11 loss
 {
-	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
-	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
-	if(depth_lookup.z==0)
-		discard;
-	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
-	float depth			=max(depth_lookup.y,cloud_depth);
-	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
-	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
-	
-	return res;
+    pass far
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Loss()));
+    }
+    pass near
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Loss()));
+    }
 }
+	
+technique11 inscatter
+{
+    pass far
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter()));
+    }
+    pass near
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter()));
+}
+}
+
+technique11 loss_msaa
+{
+    pass far
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Loss_Far()));
+    }
+    pass near
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(MultiplyBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Loss_Near()));
+    }
+}
+
+technique11 inscatter_msaa
+{
+    pass far
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Far()));
+    }
+    pass near
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Near()));
+    }
+}
+
 
 technique11 simul_atmospherics_overlay
 {

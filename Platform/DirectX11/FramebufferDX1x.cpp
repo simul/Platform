@@ -171,8 +171,8 @@ bool Framebuffer::CreateBuffers()
 		GenerateMips?0:1,
 		target_format,
 		{1,0},
-		D3D1x_USAGE_DEFAULT,
-		D3D1x_BIND_RENDER_TARGET|D3D11_BIND_SHADER_RESOURCE,
+		D3D11_USAGE_DEFAULT,
+		D3D11_BIND_RENDER_TARGET|D3D11_BIND_SHADER_RESOURCE,
 		0,
 		GenerateMips?D3D11_RESOURCE_MISC_GENERATE_MIPS:0
 	};
@@ -427,17 +427,22 @@ void Framebuffer::ActivateDepth(void *context)
 	if(!hdr_buffer_texture&&!buffer_depth_texture)
 		CreateBuffers();
 	HRESULT hr=S_OK;
+
+	if(m_pOldRenderTarget==NULL&&m_pOldDepthSurface==NULL)
+	{
 	pContext->RSGetViewports(&num_v,NULL);
 	if(num_v>0)
 		pContext->RSGetViewports(&num_v,m_OldViewports);
-
-	m_pOldRenderTarget	=NULL;
-	m_pOldDepthSurface	=NULL;
 	pContext->OMGetRenderTargets(	1,
 												&m_pOldRenderTarget,
 												&m_pOldDepthSurface
 												);
 	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
+	}
+	else
+	{
+		pContext->OMSetRenderTargets(1,&m_pHDRRenderTarget,m_pBufferDepthSurface);
+	}
 	depth_active=(m_pBufferDepthSurface!=NULL);
 	D3D11_VIEWPORT viewport;
 		// Setup the viewport for rendering.
@@ -519,13 +524,6 @@ void Framebuffer::ClearColour(void *context,float r,float g,float b,float a)
 	float clearColor[4]={r,g,b,a};
 	if(m_pHDRRenderTarget)
 		pContext->ClearRenderTargetView(m_pHDRRenderTarget,clearColor);
-}
-
-bool Framebuffer::DrawQuad(void *context)
-{
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-	simul::dx11::UtilityRenderer::DrawQuad(pContext);
-	return true;
 }
 
 void Framebuffer::GetTextureDimensions(const void* tex, unsigned int& widthOut, unsigned int& heightOut) const
