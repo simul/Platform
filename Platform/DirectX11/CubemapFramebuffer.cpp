@@ -5,8 +5,7 @@ const int MIPLEVELS=1;
 using namespace simul::dx11;
 
 CubemapFramebuffer::CubemapFramebuffer()
-	:m_pCubeEnvDepthMap(NULL)
-	,m_pCubeEnvMap(NULL)
+	:m_pCubeEnvMap(NULL)
 	,m_pCubeEnvMapSRV(NULL)
 	,m_pCubeEnvMapDepthSRV(NULL)
 	,Width(0)
@@ -62,7 +61,10 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 	tex2dDesc.CPUAccessFlags = 0;
 	tex2dDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
  
-	V_CHECK( pd3dDevice->CreateTexture2D( &tex2dDesc, NULL, &m_pCubeEnvDepthMap ));
+	for(int i=0;i<6;i++)
+	{
+		V_CHECK(pd3dDevice->CreateTexture2D( &tex2dDesc, NULL, &m_pCubeEnvDepthMap[i]));
+	}
 
 	// Create the depth stencil view for the entire cube
 	D3D1x_DEPTH_STENCIL_VIEW_DESC DescDS;
@@ -78,7 +80,7 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 	{
 		DescDS.Texture2DArray.FirstArraySlice = i;
 		DescDS.Texture2DArray.ArraySize = 1;
-		V_CHECK(pd3dDevice->CreateDepthStencilView(m_pCubeEnvDepthMap, &DescDS, &(m_pCubeEnvDepthMapDSV[i])));
+		V_CHECK(pd3dDevice->CreateDepthStencilView(m_pCubeEnvDepthMap[i], &DescDS, &(m_pCubeEnvDepthMapDSV[i])));
 	}
 	 
 	//////////////////////////////////////////////////////////////////////////////////////////////////
@@ -145,10 +147,10 @@ ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *pd3dDevice,int w,DXGI_FORMAT t
 
 void CubemapFramebuffer::InvalidateDeviceObjects()
 {
-	SAFE_RELEASE(m_pCubeEnvDepthMap);
 	SAFE_RELEASE(m_pCubeEnvMap);
 	for(int i=0;i<6;i++)
 	{
+		SAFE_RELEASE(m_pCubeEnvDepthMap[i]);
 		SAFE_RELEASE(m_pCubeEnvMapRTV[i]);
 		SAFE_RELEASE(m_pCubeEnvDepthMapDSV[i]);
 	}
@@ -284,6 +286,12 @@ void CubemapFramebuffer::Deactivate(void *context)
 	SAFE_RELEASE(m_pOldDepthSurface)
 	// Create the viewport.
 	pContext->RSSetViewports(1,m_OldViewports);
+}
+
+void CubemapFramebuffer::DeactivateDepth(void *context)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	pContext->OMSetRenderTargets(1,&m_pCubeEnvMapRTV[current_face],NULL);
 }
 
 void CubemapFramebuffer::Clear(void *context,float r,float g,float b,float a,float depth,int mask)

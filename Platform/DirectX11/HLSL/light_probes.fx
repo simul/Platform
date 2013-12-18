@@ -1,9 +1,13 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
 #include "../../CrossPlatform/spherical_harmonics_constants.sl"
+#include "../../CrossPlatform/noise.sl"
 #include "../../CrossPlatform/spherical_harmonics.sl"
 #include "../../CrossPlatform/light_probe_constants.sl"
 
+#ifndef pi
+#define pi (3.1415926536)
+#endif
 // A texture (l+1)^2 of basis coefficients.
 StructuredBuffer<float4> basisBuffer;
 
@@ -16,13 +20,21 @@ StructuredBuffer<float4> basisBuffer;
 //A_5 = 0 
 //A_6 = 0.049087 
 
-static float A[]={ 3.141593
+static float A[]={	3.1415926
 				  , 2.094395
 				  , 0.785398
 				  , 0		
 				  , -0.130900
 				  , 0 
-				  , 0.049087 };
+					,0.049087
+					,0
+					,0
+					,0};
+
+float WindowFunction(float x)
+{
+	return saturate((0.0001+sin(pi*x))/(0.0001+pi*x));
+}
 
 vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 {
@@ -40,12 +52,14 @@ vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 	// return a point sample of a Spherical Harmonic basis function 
 	vec4 result		=vec4(0,0,0,0);
 	int n=0;
-	for(int l=0;l<4;l++)
+	for(int l=0;l<MAX_SH_BANDS;l++)
 	{ 
+		float w=WindowFunction(float(l)/float(numSHBands));
 		for(int m=-l;m<=l;m++)
-			result+=basisBuffer[0];//SH(l,m,theta,phi)*A[l]*basisBuffer[n++];
+			result+=SH(l,m,theta,phi)*basisBuffer[n++]*w;
+		//*A[l]/3.1415926
 	} 
-	return result;
+	return max(result,vec4(0,0,0,0));
 }
 
 technique11 irradiance_map

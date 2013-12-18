@@ -904,11 +904,6 @@ void SimulSkyRenderer::RenderIlluminationBuffer(void *context)
 	}
 }
 
-bool SimulSkyRenderer::Render(void *context,bool blend)
-{
-	return true;
-}
-
 float SimulSkyRenderer::GetTiming() const
 {
 	return timing;

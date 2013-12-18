@@ -58,7 +58,7 @@ namespace simul
 			ID3D11Texture2D					*GetCopy(void *context);
 			//! Calculate the spherical harmonics of this cubemap and store the result internally.
 			//! Changing the number of bands will resize the internal storeage.
-			void				CalcSphericalHarmonics(void *context);
+			void				CalcSphericalHarmonics(void *context,int bands);
 			StructuredBuffer<vec4> &GetSphericalHarmonics()
 			{
 				return sphericalHarmonics;

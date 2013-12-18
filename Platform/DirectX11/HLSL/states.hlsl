@@ -100,6 +100,13 @@ BlendState AddBlend
 	DestBlend = ONE;
 };
 
+BlendState AddAlphaBlend
+{
+	BlendEnable[0] = TRUE;
+	SrcBlend = SRC_ALPHA;
+	DestBlend = ONE;
+};
+
 BlendState AddBlendDontWriteAlpha
 {
 	BlendEnable[0] = TRUE;

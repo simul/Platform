@@ -399,14 +399,6 @@ technique11 gpu_light_table_compute
     }
 }
 
-technique11 gpu_light_table_compute
-{
-    pass p0 
-    {
-		SetComputeShader(CompileShader(cs_5_0,CS_LightTable()));
-    }
-}
-
 technique11 gpu_loss_compute
 {
     pass p0 

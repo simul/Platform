@@ -211,7 +211,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 		cubemapFramebuffer.DeactivateDepth(pContext);
 		if(simulWeatherRenderer)
 		{
-			simulWeatherRenderer->SetMatrices(view_matrices[i],cube_proj);
+			simulWeatherRenderer->SetMatrices((const float *)view_matrices[i],(const float *)cube_proj);
 			simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 			simulWeatherRenderer->RenderSkyAsOverlay(pContext,Exposure,false,true,cubemapFramebuffer.GetDepthTex(),NULL,cubemap_view_id,relativeViewportTextureRegionXYWH,true);
 		}
@@ -272,7 +272,7 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pd3dImmedi
 {
 	View *view=views[view_id];
 	if(simulWeatherRenderer)
-		simulWeatherRenderer->SetMatrices(v,proj);
+		simulWeatherRenderer->SetMatrices((const float *)v,(const float *)proj);
 	
 	if(simulTerrainRenderer&&ShowTerrain)
 	{
@@ -350,7 +350,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->SetMatrices(v,proj);
+		simulWeatherRenderer->SetMatrices((const float *)v,(const float *)proj);
 		simulWeatherRenderer->PreRenderUpdate(pd3dImmediateContext);
 	}
 	if(view->viewType==OCULUS_VR)
@@ -422,7 +422,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	RenderScene(view_id,pd3dImmediateContext,v,proj);
 	if(MakeCubemap&&ShowCubemaps&&cubemapFramebuffer.IsValid())
-		UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetColorTex(),v,proj);
+		UtilityRenderer::DrawCubemap(pd3dImmediateContext,(ID3D1xShaderResourceView*)cubemapFramebuffer.GetColorTex(),v,proj,-.7f,.7f);
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 		view->hdrFramebuffer.Deactivate(pd3dImmediateContext);

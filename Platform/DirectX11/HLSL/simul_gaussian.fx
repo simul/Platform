@@ -276,21 +276,6 @@ inline void input_row_color(uint group_id, uint thread_id)
 	GroupMemoryBarrierWithGroupSync();
 }
 
-inline void input_row_color(uint group_id, uint thread_id)
-{
-	uint col = thread_id;
-	uint row = group_id;
-	// Fetch back the data output by vertical filtering pass.
-	while (col < NUM_IMAGE_COLS)
-	{
-		uint int_color = g_rwtOutput[uint2(col, row)];
-		gs_ScanData[col] = uint_to_color3(int_color);
-		col += THREADS_PER_GROUP;
-	}
-	// Wait until all write operations finished
-	GroupMemoryBarrierWithGroupSync();
-}
-
 inline void input_col_color(uint group_id, uint thread_id)
 {
 	uint col = group_id;

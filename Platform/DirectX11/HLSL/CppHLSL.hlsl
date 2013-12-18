@@ -18,7 +18,7 @@
 #define texture_cmc_lod(tex,texc,lod) tex.SampleLevel(cmcSamplerState,texc,lod)
 #define texture_cmc_nearest_lod(tex,texc,lod) tex.SampleLevel(cmcNearestSamplerState,texc,lod)
 #define texture_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearest,texc,lod)
-#define texture_wrap_nearest_lod(tex,texc,lod) tex.SampleLevel(wrapNearestSamplerState,texc,lod)
+#define texture_wrap_nearest_lod(tex,texc,lod) tex.SampleLevel(samplerStateNearestWrap,texc,lod)
 #define texture_clamp_mirror_lod(tex,texc,lod) tex.SampleLevel(samplerStateClampMirror,texc,lod)
 
 #define texture_wwc(tex,texc) tex.Sample(wwcSamplerState,texc)
@@ -40,6 +40,7 @@
 	#define SIMUL_SAMPLER_REGISTER(samp_num) : register(s##samp_num)
 	#define SIMUL_BUFFER_REGISTER(buff_num) : register(b##buff_num)
 	#define SIMUL_RWTEXTURE_REGISTER(rwtex_num) : register(u##rwtex_num)
+	#define SIMUL_STATE_REGISTER(snum) : register(s##snum)
 
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) uniform_buffer name SIMUL_BUFFER_REGISTER(buff_num) {
 	#define SIMUL_CONSTANT_BUFFER_END };
@@ -106,22 +107,6 @@
 		return OUT;
 	}
 
-	posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
-	{
-		posTexVertexOutput OUT;
-		vec2 poss[4]=
-		{
-			{ 1.0, 0.0},
-			{ 1.0, 1.0},
-			{ 0.0, 0.0},
-			{ 0.0, 1.0},
-		};
-		vec2 pos		=poss[IN.vertex_id];
-		OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
-		OUT.hPosition.z	=0.0; 
-		OUT.texCoords	=pos;
-		return OUT;
-	}
 
 #endif
 

@@ -3,6 +3,10 @@
 
 SIMUL_CONSTANT_BUFFER(LightProbeConstants,9)
 	uniform mat4 invViewProj;
+	uniform int numSHBands;
+	uniform float LightProbeConstantsA;
+	uniform float LightProbeConstantsB;
+	uniform float LightProbeConstantsC;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

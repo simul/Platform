@@ -23,6 +23,7 @@
 	#define SIMUL_SAMPLER_REGISTER(s)
 	#define SIMUL_TEXTURE_REGISTER(t)
 	#define SIMUL_RWTEXTURE_REGISTER(u)
+	#define SIMUL_STATE_REGISTER(s)
 
 	#define uniform_buffer ALIGN_16 cbuffer
 

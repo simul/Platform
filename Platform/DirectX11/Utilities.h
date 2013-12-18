@@ -155,6 +155,7 @@ namespace simul
 			static void DrawLines(ID3D11DeviceContext* pd3dImmediateContext,VertexXyzRgba *lines,int vertex_count,bool strip);
 			static void RenderAngledQuad(ID3D11DeviceContext *context,const float *dir,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
 			static void DrawTexture(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,float brightnessMultiplier,ID3D11ShaderResourceView *t);
+			static void DrawTextureMS(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,float brightnessMultiplier,ID3D11ShaderResourceView *t);
 			static void DrawQuad(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech);	
 			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
 			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);

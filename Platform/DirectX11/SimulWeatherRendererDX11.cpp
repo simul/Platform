@@ -66,17 +66,11 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	baseCloudRenderer		=simulCloudRenderer;
 	simulLightningRenderer	=::new(memoryInterface) SimulLightningRendererDX11(ck3d,sk);
 	if(env->cloud2DKeyframer)
-		base2DCloudRenderer=simul2DCloudRenderer		=::new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
-	basePrecipitationRenderer=simulPrecipitationRenderer=::new(memoryInterface) PrecipitationRenderer();
-	baseAtmosphericsRenderer=simulAtmosphericsRenderer	=::new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
-	baseFramebuffer=&framebuffer;
-	framebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
-	nearFramebuffer.SetDepthFormat(0);
-	ConnectInterfaces();
-}
+		base2DCloudRenderer		=simul2DCloudRenderer		=::new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
+	basePrecipitationRenderer	=simulPrecipitationRenderer=::new(memoryInterface) PrecipitationRenderer();
+	baseAtmosphericsRenderer	=simulAtmosphericsRenderer	=::new(memoryInterface) SimulAtmosphericsRendererDX1x(mem);
 
-void SimulWeatherRendererDX11::BufferSizeChanged()
-{
+	ConnectInterfaces();
 }
 
 void SimulWeatherRendererDX11::SetScreenSize(int view_id,int w,int h)
@@ -86,32 +80,44 @@ void SimulWeatherRendererDX11::SetScreenSize(int view_id,int w,int h)
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
 	BufferWidth		=(ScreenWidth+Downscale-1)/Downscale;
 	BufferHeight	=(ScreenHeight+Downscale-1)/Downscale;
-	if(framebuffers.find(view_id)==framebuffers.end())
-	{
-		Framebuffer *f=new Framebuffer(BufferWidth,BufferHeight);
-		f->SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
-		f->RestoreDeviceObjects(m_pd3dDevice);
-		framebuffers[view_id]=f;
-	BufferSizeChanged();
+	BufferSizeChanged(view_id);
 }
 
-void SimulWeatherRendererDX11::BufferSizeChanged()
+void SimulWeatherRendererDX11::BufferSizeChanged(int view_id)
 {
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
 	BufferWidth		=(ScreenWidth+Downscale-1)/Downscale;
 	BufferHeight	=(ScreenHeight+Downscale-1)/Downscale;
-	framebuffer.SetWidthAndHeight(BufferWidth,BufferHeight);
-	nearFramebuffer.SetWidthAndHeight(BufferWidth,BufferHeight);
-	}
-	framebuffers[view_id]->SetWidthAndHeight(BufferWidth,BufferHeight);
-	if(nearFramebuffers.find(view_id)==nearFramebuffers.end())
+	
+	if(framebuffers.find(view_id)==framebuffers.end())
 	{
-		Framebuffer *f=new Framebuffer(BufferWidth,BufferHeight);
-		f->SetDepthFormat(0);
+		Framebuffer *f=new Framebuffer(ScreenWidth,ScreenHeight);
+		f->SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 		f->RestoreDeviceObjects(m_pd3dDevice);
+		framebuffers[view_id]=f;
+		
+		Framebuffer *n=new Framebuffer(ScreenWidth,ScreenHeight);
+		n->SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+		n->RestoreDeviceObjects(m_pd3dDevice);
 		nearFramebuffers[view_id]=f;
+
+		f=new Framebuffer(BufferWidth,BufferHeight);
+		f->SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+		f->RestoreDeviceObjects(m_pd3dDevice);
+		lowResFramebuffers[view_id]=f;
+		
+		n=new Framebuffer(BufferWidth,BufferHeight);
+		n->SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
+		n->RestoreDeviceObjects(m_pd3dDevice);
+		lowResNearFramebuffers[view_id]=f;
 	}
-	nearFramebuffers[view_id]->SetWidthAndHeight(BufferWidth,BufferHeight);
+	else
+	{
+		framebuffers[view_id]			->SetWidthAndHeight(ScreenWidth,ScreenHeight);
+		nearFramebuffers[view_id]		->SetWidthAndHeight(ScreenWidth,ScreenHeight);
+		lowResFramebuffers[view_id]		->SetWidthAndHeight(BufferWidth,BufferHeight);
+		lowResNearFramebuffers[view_id]	->SetWidthAndHeight(BufferWidth,BufferHeight);
+	}
 }
 
 void SimulWeatherRendererDX11::RestoreDeviceObjects(void* dev)

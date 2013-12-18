@@ -131,7 +131,8 @@ vec4 Clouds2DPS(Texture2D imageTexture,Texture2D coverageTexture
 	return		final;
 }
 
-vec4 Clouds2DPS_illum(Texture2D imageTexture,Texture2D coverageTexture
+vec4 Clouds2DPS_illum(Texture2D imageTexture
+						,Texture2D coverageTexture
 						,Texture2D illuminationTexture
 						,Texture2D lossTexture
 						,Texture2D inscTexture

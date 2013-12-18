@@ -131,6 +131,7 @@ vec4 MainPS(v2f IN) : SV_TARGET
 										,lossTexture
 										,inscTexture
 										,skylTexture
+						,noiseTexture
 										,texc_global,texc_detail
 										,wEyeToPos
 										,sun_irr

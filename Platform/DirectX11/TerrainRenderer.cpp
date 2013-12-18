@@ -118,7 +118,7 @@ void TerrainRenderer::InvalidateDeviceObjects()
 	terrainConstants.InvalidateDeviceObjects();
 }
 
-void SimulTerrainRendererDX1x::MakeVertexBuffer()
+void TerrainRenderer::MakeVertexBuffer()
 {
 	ID3D11DeviceContext* pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
@@ -177,7 +177,7 @@ void SimulTerrainRendererDX1x::MakeVertexBuffer()
 	UnmapBuffer(pImmediateContext,m_pVertexBuffer);
 }
 
-void SimulTerrainRendererDX1x::Render(void *context,float exposure)
+void TerrainRenderer::Render(void *context,float exposure)
 {
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
 	D3DXMATRIX world;

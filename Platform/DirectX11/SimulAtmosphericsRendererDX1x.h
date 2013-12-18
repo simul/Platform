@@ -57,7 +57,7 @@ namespace simul
 		protected:
 			HRESULT Destroy();
 			ID3D1xDevice*								m_pd3dDevice;
-			D3DXMATRIX									view,proj;
+			simul::math::Matrix4x4						view,proj;
 
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3D1xEffect*								effect;

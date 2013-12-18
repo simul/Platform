@@ -206,7 +206,6 @@
     <ClCompile Include="SimulHDRRendererDX1x.cpp" />
     <ClCompile Include="SimulLightningRendererDX11.cpp" />
     <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
-    <ClCompile Include="PrecipitationRenderer.cpp" />
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="TerrainRenderer.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
@@ -241,7 +240,6 @@
     <ClInclude Include="SimulHDRRendererDX1x.h" />
     <ClInclude Include="SimulLightningRendererDX11.h" />
     <ClInclude Include="SimulOpticsRendererDX1x.h" />
-    <ClInclude Include="PrecipitationRenderer.h" />
     <ClInclude Include="SimulSkyRendererDX1x.h" />
     <ClInclude Include="TerrainRenderer.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />

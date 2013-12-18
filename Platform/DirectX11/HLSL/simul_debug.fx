@@ -3,7 +3,6 @@
 sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 Texture2DMS<float4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
 TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
-sampler2D imageTexture;
 
 uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
 {

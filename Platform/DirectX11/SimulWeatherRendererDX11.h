@@ -77,7 +77,7 @@ namespace simul
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 
 		protected:
-			void BufferSizeChanged();
+			void BufferSizeChanged(int view_id);
 			void *GetCloudDepthTexture();
 			simul::base::MemoryInterface	*memoryInterface;
 			// Keep copies of these matrices:
@@ -112,7 +112,6 @@ namespace simul
 			simul::dx11::ConstantBuffer<HdrConstants> hdrConstants;
 			// Edge pixels are rendered with the near framebuffer as well as the far one.
 			simul::dx11::Framebuffer				nearFramebuffer;
-			simul::dx11::ConstantBuffer<HdrConstants> hdrConstants;
 			float									exposure;
 			float									gamma;
 			float									exposure_multiplier;

@@ -60,7 +60,7 @@ RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 {
 	vec2 texCoords		=IN.texCoords.xy;
 	texCoords.y		=1.0-texCoords.y;
-	RaytracePixelOutput p	=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,true,texCoords,false);
+	RaytracePixelOutput p	=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,true,texCoords,false,true);
 
 	return p;
 }
@@ -69,7 +69,7 @@ RaytracePixelOutput PS_RaytraceNearPass(RaytraceVertexOutput IN)
 {
 	vec2 texCoords		=IN.texCoords.xy;
 	texCoords.y			=1.0-texCoords.y;
-	RaytracePixelOutput p	=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,true,texCoords,true);
+	RaytracePixelOutput p	=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,true,texCoords,true,true);
 
 	return p;
 }
@@ -104,7 +104,7 @@ vec4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
 	vec2 texCoords		=IN.texCoords.xy;
 	texCoords.y			=1.0-texCoords.y;
-	vec4 r				=SimpleRaytraceCloudsForward(cloudDensity1,cloudDensity2,depthTexture,lightTableTexture,texCoords);
+	vec4 r				=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,true,texCoords,false,false).colour;
 	return r;
 }
 
