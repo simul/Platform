@@ -455,6 +455,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				float brightness_factor	=unshadowedBrightness(BetaClouds,lightResponse,amb);
 				vec4 c					=calcColour2( density,BetaClouds,lightResponse,combinedLightColour,amb);
 				fade_texc.x				=sqrt(fadeDistance);
+				
 			float sh				=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 #ifdef INFRARED
 				c.rgb=cloudIrRadiance*c.a;

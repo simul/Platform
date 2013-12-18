@@ -1,4 +1,5 @@
-#pragma once
+#ifndef COMPILE_SHADER_DX11_H
+#define COMPILE_SHADER_DX11_H
 #include <D3Dcompiler.h>
 #include <string>
 
@@ -39,3 +40,4 @@ private:
 };
 
 HRESULT CompileShaderFromFile( const char* szFileNameUtf8, const char*  szEntryPoint, const char*  szShaderModel, ID3DBlob** ppBlobOut );
+#endif

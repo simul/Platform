@@ -197,7 +197,6 @@
     <ClCompile Include="GpuSkyGenerator.cpp" />
     <ClCompile Include="OceanRenderer.cpp" />
     <ClCompile Include="OceanSimulator.cpp" />
-    <ClCompile Include="PrecipitationRenderer.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
     <ClCompile Include="Simul2DCloudRendererDX1x.cpp" />

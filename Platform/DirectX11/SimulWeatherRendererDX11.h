@@ -35,6 +35,35 @@ namespace simul
 	//! The namespace for the DirectX 11 platform library and its rendering classes.
 	namespace dx11
 	{
+		struct TwoResFramebuffer:public simul::clouds::TwoResFramebuffer
+		{
+			TwoResFramebuffer();
+			BaseFramebuffer *GetLowResFarFramebuffer()
+			{
+				return &lowResFarFramebufferDx11;
+			}
+			BaseFramebuffer *GetLowResNearFramebuffer()
+			{
+				return &lowResNearFramebufferDx11;
+			}
+			BaseFramebuffer *GetHiResFarFramebuffer()
+			{
+				return &hiResFarFramebufferDx11;
+			}
+			BaseFramebuffer *GetHiResNearFramebuffer()
+			{
+				return &hiResNearFramebufferDx11;
+			}
+			dx11::Framebuffer	lowResFarFramebufferDx11;
+			dx11::Framebuffer	lowResNearFramebufferDx11;
+			dx11::Framebuffer	hiResFarFramebufferDx11;
+			dx11::Framebuffer	hiResNearFramebufferDx11;
+			void RestoreDeviceObjects(void *);
+			void InvalidateDeviceObjects();
+			void SetDimensions(int w,int h,int downscale);
+			int Width,Height,Downscale;
+			ID3D11Device*	m_pd3dDevice;
+		};
 		//! An implementation of \link simul::clouds::BaseWeatherRenderer BaseWeatherRenderer\endlink for DirectX 10 and 11
 		//! The DX10 switch is used
 		SIMUL_DIRECTX11_EXPORT_CLASS SimulWeatherRendererDX11 : public simul::clouds::BaseWeatherRenderer
@@ -58,8 +87,15 @@ namespace simul
 									const simul::sky::float4& relativeViewportTextureRegionXYWH,
 									bool doFinalCloudBufferToScreenComposite //indicate whether truesky should do a final low-res cloud up-sample to the main target or whether to leave that to the user (via GetFramebufferTexture())
 									);
-			void RenderFramebufferDepth(void *context,int w,int h);
-			void RenderPrecipitation(void *context);
+			void CompositeCloudsToScreen(void *context
+												,int view_id
+												,bool depth_blend
+												,const void* mainDepthTexture
+												,const void* lowResDepthTexture
+												,const simul::sky::float4& viewportRegionXYWH);
+			void RenderFramebufferDepth(void *context,int view_id,int w,int h);
+			void RenderCompositingTextures(void *context,int view_id,int w,int h);
+			void RenderPrecipitation(void *context,void *depth_tex,simul::sky::float4 depthViewportXYWH);
 			void RenderLightning(void *context,int viewport_id);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
 			//! Apply the view and projection matrices, once per frame.
@@ -105,13 +141,11 @@ namespace simul
 			class SimulAtmosphericsRendererDX1x		*simulAtmosphericsRenderer;
 			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
 			class SimulLightningRendererDX11		*simulLightningRenderer;
-			// The main framebuffer uses far depth for each pixel.
-			//simul::dx11::Framebuffer				framebuffer;
-			// Edge pixels are rendered with the near framebuffer as well as the far one.
-			//simul::dx11::Framebuffer				nearFramebuffer;
+			typedef std::map<int,simul::dx11::TwoResFramebuffer*> FramebufferMapDx11;
+			// Map from view_id to framebuffer.
+			TwoResFramebuffer *						GetFramebuffer(int view_id);
+			FramebufferMapDx11						framebuffersDx11;
 			simul::dx11::ConstantBuffer<HdrConstants> hdrConstants;
-			// Edge pixels are rendered with the near framebuffer as well as the far one.
-			simul::dx11::Framebuffer				nearFramebuffer;
 			float									exposure;
 			float									gamma;
 			float									exposure_multiplier;

@@ -90,22 +90,6 @@
 		OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
 		return OUT;
 	}
-	posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
-	{
-		posTexVertexOutput OUT;
-		vec2 poss[4]=
-		{
-			{ 1.0, 0.0},
-			{ 1.0, 1.0},
-			{ 0.0, 0.0},
-			{ 0.0, 1.0},
-		};
-		vec2 pos		=poss[IN.vertex_id];
-		OUT.hPosition	=vec4(rect.xy+rect.zw*pos,0.0,1.0);
-		OUT.hPosition.z	=0.0; 
-		OUT.texCoords	=pos;
-		return OUT;
-	}
 
 
 #endif

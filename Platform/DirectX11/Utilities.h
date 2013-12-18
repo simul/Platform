@@ -57,6 +57,7 @@ namespace simul
 			ArrayTexture()
 				:m_pArrayTexture(NULL)
 				,m_pArrayTexture_SRV(NULL)
+				,unorderedAccessView(NULL)
 			{
 			}
 			~ArrayTexture()
@@ -67,10 +68,78 @@ namespace simul
 			{
 				SAFE_RELEASE(m_pArrayTexture)
 				SAFE_RELEASE(m_pArrayTexture_SRV)
+				SAFE_RELEASE(unorderedAccessView);
 			}
 			void create(ID3D11Device *pd3dDevice,const std::vector<std::string> &texture_files);
+			void create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORMAT f,bool computable);
 			ID3D11Texture2D*					m_pArrayTexture;
 			ID3D11ShaderResourceView*			m_pArrayTexture_SRV;
+			ID3D11UnorderedAccessView*			unorderedAccessView;
+		};
+		//! A vertex buffer wrapper class for arbitrary vertex types.
+		template<class T> struct VertexBuffer
+		{
+			ID3D11Buffer				*vertexBuffer;
+			//ID3D11UnorderedAccessView	*unorderedAccessView;
+			VertexBuffer()
+				:vertexBuffer(NULL)
+				//,unorderedAccessView(NULL)
+			{
+			}
+			~VertexBuffer()
+			{
+				release();
+			}
+			//! Make sure the buffer has the number of vertices specified.
+			void ensureBufferSize(ID3D11Device *pd3dDevice,int numVertices,void *data=NULL)
+			{
+				release();
+				D3D11_BUFFER_DESC desc	=
+				{
+					numVertices*sizeof(T),
+					D3D11_USAGE_DEFAULT,
+					D3D11_BIND_VERTEX_BUFFER|D3D11_BIND_STREAM_OUTPUT	//D3D11_BIND_UNORDERED_ACCESS is useless for VB's in DX11
+					,0// CPU
+					,0//D3D11_RESOURCE_MISC_BUFFER_STRUCTURED
+					,sizeof(T)			//StructureByteStride
+				};
+				SAFE_RELEASE(vertexBuffer);
+				D3D11_SUBRESOURCE_DATA init;
+				init.pSysMem			=data;
+				init.SysMemPitch		=sizeof(T);
+				init.SysMemSlicePitch	=0;
+				V_CHECK(pd3dDevice->CreateBuffer(&desc,data?(&init):NULL,&vertexBuffer));
+			/*	D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+				ZeroMemory(&uav_desc,sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+				uav_desc.Format					=DXGI_FORMAT_R32_FLOAT;
+				uav_desc.ViewDimension			=D3D11_UAV_DIMENSION_BUFFER;
+				uav_desc.Buffer.FirstElement	=0;
+				uav_desc.Buffer.NumElements		=numVertices;
+				uav_desc.Buffer.Flags			=0;
+				V_CHECK(pd3dDevice->CreateUnorderedAccessView(vertexBuffer, &uav_desc, &unorderedAccessView));*/
+			}
+			//! Use this vertex buffer in the next draw call - wraps IASetVertexBuffers.
+			void apply(ID3D11DeviceContext *pContext,int slot)
+			{
+				UINT stride = sizeof(T);
+				UINT offset = 0;
+				pContext->IASetVertexBuffers(	slot,				// the first input slot for binding
+												1,					// the number of buffers in the array
+												&vertexBuffer,		// the array of vertex buffers
+												&stride,			// array of stride values, one for each buffer
+												&offset );			// array of offset values, one for each buffer
+			}
+			//! Write to this vertex buffer from the Geometry shader in the next draw call - wraps SOSetTargets.
+			void setAsStreamOutTarget(ID3D11DeviceContext *pContext)
+			{
+				UINT offset = 0;
+				pContext->SOSetTargets(1,&vertexBuffer,&offset );
+			}
+			void release()
+			{
+				SAFE_RELEASE(vertexBuffer)
+				//SAFE_RELEASE(unorderedAccessView)
+			}
 		};
 		struct Mesh
 		{
@@ -151,15 +220,15 @@ namespace simul
 			static void InvalidateDeviceObjects();
 			static void RecompileShaders();
 			static void SetScreenSize(int w,int h);
-			static void PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
-			static void DrawLines(ID3D11DeviceContext* pd3dImmediateContext,VertexXyzRgba *lines,int vertex_count,bool strip);
-			static void RenderAngledQuad(ID3D11DeviceContext *context,const float *dir,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
-			static void DrawTexture(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,float brightnessMultiplier,ID3D11ShaderResourceView *t);
-			static void DrawTextureMS(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,float brightnessMultiplier,ID3D11ShaderResourceView *t);
-			static void DrawQuad(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech);	
-			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
-			static void DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
-			static void DrawQuad(ID3D11DeviceContext *m_pImmediateContext);
+			static void PrintAt3dPos(		ID3D11DeviceContext* pContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
+			static void DrawLines(			ID3D11DeviceContext* pContext,VertexXyzRgba *lines,int vertex_count,bool strip);
+			static void RenderAngledQuad(	ID3D11DeviceContext *pContext,const float *dir,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
+			static void DrawTexture(		ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult=1.f);
+			static void DrawTextureMS(		ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult=1.f);
+			static void DrawQuad(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech);	
+			static void DrawQuad2(			ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
+			static void DrawQuad2(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
+			static void DrawQuad(			ID3D11DeviceContext *pContext);
 			static void DrawCube(void *context);
 			static void DrawSphere(void *context,int latitudes,int longitudes);
 			static void DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety);
@@ -170,6 +239,7 @@ namespace simul
 		public:
 			ConstantBuffer()
 				:m_pD3D11Buffer(NULL)
+				,m_pD3DX11EffectConstantBuffer(NULL)
 			{
 				// Clear out the part of memory that corresponds to the base class.
 				// We should ONLY inherit from simple structs.
@@ -180,8 +250,7 @@ namespace simul
 				InvalidateDeviceObjects();
 			}
 			ID3D11Buffer*					m_pD3D11Buffer;
-			//typedef std::map<ID3DX11Effect*,ID3DX11EffectConstantBuffer*> BufferMap;
-			//BufferMap m_EffectBuffers;
+			ID3DX11EffectConstantBuffer*	m_pD3DX11EffectConstantBuffer;
 			//! Create the buffer object.
 			void RestoreDeviceObjects(ID3D11Device *pd3dDevice)
 			{
@@ -199,18 +268,15 @@ namespace simul
 				cb_desc.ByteWidth			= PAD16(sizeof(T));
 				cb_desc.StructureByteStride = 0;
 				pd3dDevice->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
-				//m_EffectBuffers.clear();
+				if(m_pD3DX11EffectConstantBuffer)
+					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 			}
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToEffect(ID3DX11Effect *effect,const char *name)
 			{
-				ID3DX11EffectConstantBuffer *b=effect->GetConstantBufferByName(name);
-
-				if(b)
-				{
-					b->SetConstantBuffer(m_pD3D11Buffer);
-					//m_EffectBuffers[effect]=b;
-				}
+				m_pD3DX11EffectConstantBuffer=effect->GetConstantBufferByName(name);
+				if(m_pD3DX11EffectConstantBuffer)
+					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 				else
 					std::cerr<<"ConstantBuffer<> LinkToEffect did not find the buffer named "<<name<<" in the effect."<<std::endl;
 			}
@@ -218,7 +284,7 @@ namespace simul
 			void InvalidateDeviceObjects()
 			{
 				SAFE_RELEASE(m_pD3D11Buffer);
-				//m_EffectBuffers.clear();
+				m_pD3DX11EffectConstantBuffer=NULL;
 			}
 			//! Apply the stored data using the given context, in preparation for rendering.
 			void Apply(ID3D11DeviceContext *pContext)
@@ -227,14 +293,14 @@ namespace simul
 				pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
 				*(T*)mapped_res.pData = *this;
 				pContext->Unmap(m_pD3D11Buffer, 0);
-				//if(m_pD3DX11EffectConstantBuffer)
-				//	m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
+				if(m_pD3DX11EffectConstantBuffer)
+					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
 			}
 			//! Unbind from the effect.
 			void Unbind(ID3D11DeviceContext *pContext)
 			{
-				//for(BufferMap::iterator i=m_EffectBuffers.begin();i!=m_EffectBuffers.end();i++)
-				//	i->second->SetConstantBuffer(NULL);
+				if(m_pD3DX11EffectConstantBuffer)
+					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
 			}
 		};
 
@@ -253,11 +319,10 @@ namespace simul
 			{
 				release();
 			}
-			void RestoreDeviceObjects(ID3D11Device *pd3dDevice,int size,bool computable=false)
+			void RestoreDeviceObjects(ID3D11Device *pd3dDevice,int s,bool computable=false)
 			{
 				release();
-
-				this->size=size;
+				size=s;
 				D3D11_BUFFER_DESC sbDesc;
 				memset(&sbDesc,0,sizeof(sbDesc));
 				if(computable)
@@ -322,6 +387,7 @@ namespace simul
 				SAFE_RELEASE(unorderedAccessView);
 				SAFE_RELEASE(shaderResourceView);
 				SAFE_RELEASE(buffer);
+				size=0;
 			}
 			ID3D11Buffer						*buffer;
 			ID3D11ShaderResourceView			*shaderResourceView;
@@ -348,6 +414,11 @@ namespace std
 		std::swap(_Left.mapped				,_Right.mapped);
 		std::swap(_Left.format				,_Right.format);
 	}
+	template<class T> inline void swap(simul::dx11::VertexBuffer<T>& _Left, simul::dx11::VertexBuffer<T>& _Right)
+	{
+		std::swap(_Left.vertexBuffer		,_Right.vertexBuffer);
+//		std::swap(_Left.unorderedAccessView	,_Right.unorderedAccessView);
+}
 }
 
 #define SET_VERTEX_BUFFER(context,vertexBuffer,VertexType)\

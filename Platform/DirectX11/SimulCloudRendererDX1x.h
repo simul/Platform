@@ -75,6 +75,7 @@ namespace simul
 			float GetTiming() const;
 			//! Get the list of three textures used for cloud rendering.
 			CloudShadowStruct GetCloudShadowTexture();
+			void *GetRandomTexture3D();
 			void SetLossTexture(void *t);
 			void SetInscatterTextures(void* i,void *s,void *o);
 			void SetIlluminationTexture(void *i);
@@ -97,7 +98,7 @@ namespace simul
 			void New();
 			void SetYVertical(bool y);
 			bool IsYVertical() const;
-			simul::clouds::BaseGpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
+			simul::dx11::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
 		protected:
 			simul::dx11::GpuCloudGenerator gpuCloudGenerator;
 			void RenderCombinedCloudTexture(void *context);

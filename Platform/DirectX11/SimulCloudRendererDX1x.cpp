@@ -363,7 +363,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	random_fb.SetFormat((int)DXGI_FORMAT_R32G32B32A32_FLOAT);
 	ApplyPass(pContext,randomTechnique->GetPassByIndex(0));
 	random_fb.Activate(context);
-		random_fb.DrawQuad(context);
+		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	random_fb.Deactivate(context);
 
 	simul::dx11::Framebuffer n_fb;
@@ -378,7 +378,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 		simul::dx11::setParameter(effect,"octaves"		,texture_octaves);
 		simul::dx11::setParameter(effect,"persistence"	,texture_persistence);
 		ApplyPass(pContext,noiseTechnique->GetPassByIndex(0));
-		n_fb.DrawQuad(context);
+		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	}
 	n_fb.Deactivate(context);
 	// Now copy to a texture.
@@ -752,6 +752,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 	depthTexture		->SetResource(depthTexture_SRV);
 	lightTableTexture	->SetResource(lightTableTexture_SRV);
 
+	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"		,noiseTextureResource);
 	simul::dx11::setTexture(m_pCloudEffect,"illuminationTexture",illuminationTexture_SRV);
 	
 	if(GetCloudInterface()->GetWrap())
@@ -1056,6 +1057,11 @@ CloudShadowStruct SimulCloudRendererDX1x::GetCloudShadowTexture()
 	s.texture			=shadow_fb.GetColorTex();
 	s.godraysTexture	=godrays_fb.GetColorTex();
 	return s;
+}
+
+void *SimulCloudRendererDX1x::GetRandomTexture3D()
+{
+	return noise_texture_3D.shaderResourceView;
 }
 
 void SimulCloudRendererDX1x::SetYVertical(bool y)

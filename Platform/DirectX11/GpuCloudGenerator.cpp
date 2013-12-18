@@ -24,6 +24,7 @@ GpuCloudGenerator::GpuCloudGenerator()
 			,m_pWwcSamplerState(NULL)
 			,m_pCwcSamplerState(NULL)
 			,m_pWccSamplerState(NULL)
+	,harmonic_secondary(false)
 {
 	for(int i=0;i<3;i++)
 		finalTexture[i]=NULL;
@@ -98,6 +99,7 @@ void GpuCloudGenerator::RecompileShaders()
 	{
 		lightingComputeTechnique			=effect->GetTechniqueByName("gpu_lighting_compute");
 		secondaryLightingComputeTechnique	=effect->GetTechniqueByName("gpu_secondary_compute");
+		secondaryHarmonicTechnique			=effect->GetTechniqueByName("gpu_secondary_harmonic");
 		maskTechnique						=effect->GetTechniqueByName("density_mask");
 		densityComputeTechnique				=effect->GetTechniqueByName("gpu_density_compute");
 		transformComputeTechnique			=effect->GetTechniqueByName("gpu_transform_compute");
@@ -112,14 +114,18 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 	return grid[0]*grid[1]*grid[2];
 }
 
-void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr)
+void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr,int generation_number)
 {
+	if(last_generation_number==generation_number&&volume_noise_tex_srv!=NULL)
+		return volume_noise_tex_srv;
+	noiseSize=noise_size;
 	//using noise_size and noise_src_ptr, make a 3d texture:
 	SAFE_RELEASE(volume_noise_tex);
 	SAFE_RELEASE(volume_noise_tex_srv);
 	volume_noise_tex=make3DTexture(m_pd3dDevice,noise_size,noise_size,noise_size,DXGI_FORMAT_R32_FLOAT,noise_src_ptr);
 	m_pd3dDevice->CreateShaderResourceView(volume_noise_tex,NULL,&volume_noise_tex_srv);
 	//m_pImmediateContext->GenerateMips(volume_noise_tex_srv);
+	last_generation_number=generation_number;
 	return volume_noise_tex_srv;
 }
 
@@ -150,7 +156,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 			gpuCloudConstants.maskThickness	=i->second.thickness;
 			gpuCloudConstants.Apply(m_pImmediateContext);
 		ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
-			mask_fb.DrawQuad(m_pImmediateContext);
+	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
 	}
 	}
 	else
@@ -198,21 +204,16 @@ void GpuCloudGenerator::FillDensityGrid(int index
 }
 
 void GpuCloudGenerator::PerformGPURelight	(int light_index
+									,const clouds::GpuCloudsParameters &params
 											,float *target
-											,const int *light_grid_
 											,int start_texel
-											,int texels
-											,const int *density_grid
-											,const float *Matrix4x4LightToDensityTexcoords
-											,const float *lightspace_extinctions_float3
-											,bool wrap_light_tex)
+											,int texels)
 {
 	if(texels<=0)
 		return;
-int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
 	start_texel*=2;
 	texels*=2;
-	int gridsize=light_grid[0]*light_grid[1]*light_grid[2];
+	int gridsize=params.light_grid[0]*params.light_grid[1]*params.light_grid[2];
 	if(start_texel<0)
 		start_texel=0;
 	if(start_texel>gridsize)
@@ -220,27 +221,30 @@ int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
 	if(start_texel+texels>gridsize)
 		texels=gridsize-start_texel; 
 	directLightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice
-				,light_grid[0],light_grid[1],light_grid[2]
+				,params.light_grid[0],params.light_grid[1],params.light_grid[2]
 				,DXGI_FORMAT_R32_FLOAT,true);
 	indirectLightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice
-				,light_grid[0],light_grid[1],light_grid[2]
+				,params.light_grid[0],params.light_grid[1],params.light_grid[2]
 				,DXGI_FORMAT_R32_FLOAT,true);
 
 	ID3D1xEffectShaderResourceVariable*	densityTexture		=effect->GetVariableByName("densityTexture")->AsShaderResource();
-
+	//SetGpuCloudConstants(gpuCloudConstants);
 	gpuCloudConstants.yRange			=vec4(0.0,1.0,0,0);
-	gpuCloudConstants.transformMatrix	=Matrix4x4LightToDensityTexcoords;
+	gpuCloudConstants.transformMatrix	=params.Matrix4x4LightToDensityTexcoords;
 	gpuCloudConstants.transformMatrix.transpose();
-	gpuCloudConstants.extinctions		=lightspace_extinctions_float3;
-	gpuCloudConstants.zPixelLightspace	=(1.f/(float)light_grid[2]);
+	gpuCloudConstants.extinctions		=params.lightspace_extinctions;
+	gpuCloudConstants.zPixelLightspace	=(1.f/(float)params.light_grid[2]);
 
 	//transformMatrix * (0,0,1)
-	simul::sky::float4 step	(gpuCloudConstants.transformMatrix._13,gpuCloudConstants.transformMatrix._23,gpuCloudConstants.transformMatrix._33,0);
-
+	simul::sky::float4 step(gpuCloudConstants.transformMatrix._31,gpuCloudConstants.transformMatrix._32,gpuCloudConstants.transformMatrix._33,0);
+	// We require stepLength to be the distance in km of each step along the light path.
+	// So we divide by the light texel count in the light direction, then multiply by the three density axis scales.
+	step*=gpuCloudConstants.zPixelLightspace;
+	step*=simul::sky::float4(params.DensityGridScalesM[0],params.DensityGridScalesM[1],params.DensityGridScalesM[2],1.0);
 	gpuCloudConstants.stepLength		=simul::sky::length(step); 
-	if(wrap_light_tex)
+	if(params.wrap_light_tex)
 		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pWwcSamplerState);
-	else if(light_grid[0]>light_grid[1])
+	else if(params.light_grid[0]>params.light_grid[1])
 		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pWccSamplerState);
 	else
 		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pCwcSamplerState);
@@ -250,14 +254,14 @@ int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
 	static const int BLOCKWIDTH=8;
 	static const int BLOCKSIZE=BLOCKWIDTH*BLOCKWIDTH;
 	uint3 subgrid;
-	subgrid.x=(light_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
-	subgrid.y=(light_grid[1]+BLOCKWIDTH-1)/BLOCKWIDTH;
-	subgrid.z=1;
+	subgrid.x=(params.light_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.y=(params.light_grid[1]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.z=(params.light_grid[2]+BLOCKWIDTH-1)/BLOCKWIDTH;
 	int subgridsize=subgrid.x*subgrid.y*subgrid.z;
 
 	// discard z dimension:
-	int t0	=(start_texel)/light_grid[2];
-	int t1	=(start_texel+texels+light_grid[2]-1)/light_grid[2];
+	int t0	=(start_texel)/params.light_grid[2];
+	int t1	=(start_texel+texels+params.light_grid[2]-1)/params.light_grid[2];
 	int t	=t1-t0;
 	// which blocks to execute?
 	int x0	=t0/BLOCKSIZE/subgrid.y;
@@ -271,10 +275,20 @@ int light_grid[]={light_grid_[0],light_grid_[1],light_grid_[2]};//};
 		ApplyPass(m_pImmediateContext,lightingComputeTechnique->GetPassByIndex(0));
 		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,1);
 	}
-	int z0	=start_texel/light_grid[1]/light_grid[0];
-	int z1	=(start_texel+texels+light_grid[1]*light_grid[0]-1)/light_grid[1]/light_grid[0];
+	int z0	=start_texel/params.light_grid[1]/params.light_grid[0];
+	int z1	=(start_texel+texels+params.light_grid[1]*params.light_grid[0]-1)/params.light_grid[1]/params.light_grid[0];
 	if(z1>z0)
 	{
+		if(harmonic_secondary)
+		{
+			gpuCloudConstants.threadOffset=uint3(0,0,0);
+			gpuCloudConstants.Apply(m_pImmediateContext);
+			setTexture(effect,"lightTexture1"				,directLightTextures[light_index].shaderResourceView);
+			simul::dx11::setUnorderedAccessView(effect,"targetTexture1",indirectLightTextures[light_index].unorderedAccessView);
+			ApplyPass(m_pImmediateContext,secondaryHarmonicTechnique->GetPassByIndex(0));
+			m_pImmediateContext->Dispatch(subgrid.x,subgrid.y,subgrid.z);
+		}
+		else
 		for(int z=z0;z<z1;z++)
 		{
 			gpuCloudConstants.threadOffset=uint3(0,0,z);

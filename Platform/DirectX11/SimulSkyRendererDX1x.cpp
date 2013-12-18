@@ -401,7 +401,7 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	skyConstants.LinkToEffect(m_pSkyEffect,"SkyConstants");
 	gpuSkyGenerator.RecompileShaders();
 }
-
+#include "Simul/Math/Pi.h"
 float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 {
 	sun_occlusion=cloud_occlusion;
@@ -409,7 +409,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 		return sun_occlusion;
 //	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
-	float sun_angular_radius=3.14159f/180.f/2.f;
+	float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 
 	// fix the projection matrix so this quad is far away:
 	D3DXMATRIX tmp=proj;
@@ -491,7 +491,8 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,sun_dir);
 	skyConstants.colour=sunlight;
-	skyConstants.radiusRadians=sun_angular_radius;
+	// 2 * sun radius because we want glow around it.
+	skyConstants.radiusRadians	=2.f*skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 	skyConstants.Apply(pContext);
 	ApplyPass(pContext,m_hTechniqueSun->GetPassByIndex(0));
 	UtilityRenderer::DrawQuad(pContext);
@@ -550,7 +551,6 @@ bool SimulSkyRendererDX1x::RenderFlare(float exposure)
 	colour->SetFloatVector(sunlight);
 	//m_pSkyEffect->SetTechnique(m_hTechniqueFlare);
 	//flareTexture->SetResource(flare_texture_SRV);
-	float sun_angular_radius=3.14159f/180.f/2.f;
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 //	hr=RenderAngledQuad(sun_dir,sun_angular_radius*20.f*magnitude);
 	RenderAngledQuad(m_pd3dDevice,sun_dir,sun_angular_radius*20.f*magnitude,m_pSkyEffect,m_hTechniqueFlare,view,proj,sun_dir);*/
@@ -579,7 +579,6 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	skyConstants.Apply(context);
 
 	illuminationTexture->SetResource((ID3D11ShaderResourceView*)illumination_fb.GetColorTex());
-	HRESULT hr;
 	{
 		V_CHECK(fadeTexture1->SetResource(loss_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(loss_textures[(texture_cycle+1)%3].shaderResourceView));

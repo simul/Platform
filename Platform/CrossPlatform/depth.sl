@@ -224,7 +224,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 		for(int j=0;j<numSamples;j++)
 		{
 			float hiresDepth	=depthTextureMS.Load(hires_depth_pos2,j).x;
-			float trueDist	=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
+			float trueDist		=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
 			cloudNear		=depthDependentFilteredImage(nearImageTexture	,lowResDepthTexture,imageDims,texCoords,vec4(0,1.0,0,0),depthToLinFadeDistParams,trueDist);
 			cloudFar		=depthDependentFilteredImage(farImageTexture	,lowResDepthTexture,imageDims,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
 			float interp		=edge*saturate((nearFarDistLowRes.y-trueDist)/(nearFarDistLowRes.y-nearFarDistLowRes.x));

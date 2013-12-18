@@ -38,6 +38,56 @@
 static simul::base::Timer timer;
 using namespace simul;
 using namespace dx9;
+
+TwoResFramebuffer::TwoResFramebuffer()
+	:m_pd3dDevice(NULL)
+	,Width(0)
+	,Height(0)
+	,Downscale(0)
+{
+}
+
+void TwoResFramebuffer::RestoreDeviceObjects(void *dev)
+{
+	if(!dev)
+		return;
+	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	D3DFORMAT INTZ=((D3DFORMAT) MAKEFOURCC('I','N','T','Z'));
+	lowResFarFramebufferDx11	.SetDepthFormat(INTZ);
+	lowResNearFramebufferDx11	.SetDepthFormat(0);
+	hiResFarFramebufferDx11		.SetDepthFormat(0);
+	hiResNearFramebufferDx11	.SetDepthFormat(0);
+
+	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
+	int BufferWidth		=(Width+Downscale-1)/Downscale;
+	int BufferHeight	=(Height+Downscale-1)/Downscale;
+	lowResFarFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
+	lowResNearFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
+	hiResFarFramebufferDx11		.SetWidthAndHeight(Width,Height);
+	hiResNearFramebufferDx11	.SetWidthAndHeight(Width,Height);
+	
+	lowResFarFramebufferDx11	.RestoreDeviceObjects(dev);
+	lowResNearFramebufferDx11	.RestoreDeviceObjects(dev);
+	hiResFarFramebufferDx11		.RestoreDeviceObjects(dev);
+	hiResNearFramebufferDx11	.RestoreDeviceObjects(dev);
+}
+
+void TwoResFramebuffer::InvalidateDeviceObjects()
+{
+}
+
+void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
+{
+	if(Width!=w||Height!=h||Downscale!=downscale)
+	{
+		Width=w;
+		Height=h;
+		Downscale=downscale;
+		RestoreDeviceObjects(m_pd3dDevice);
+	}
+}
+
+
 SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 										   simul::base::MemoryInterface *mem,
 											bool usebuffer,int width,
@@ -86,9 +136,22 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer(mem);
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
 #endif
-	framebuffers[0]=&framebuffer;
+	framebuffers[0]=new TwoResFramebuffer();
 	ConnectInterfaces();
 }
+
+TwoResFramebuffer *SimulWeatherRenderer::GetFramebuffer(int view_id)
+{
+	if(framebuffers.find(view_id)==framebuffers.end())
+	{
+		dx9::TwoResFramebuffer *fb=new dx9::TwoResFramebuffer();
+		framebuffers[view_id]=fb;
+		fb->RestoreDeviceObjects(m_pd3dDevice);
+		return fb;
+	}
+	return framebuffers[view_id];
+}
+
 
 /*
 void SimulWeatherRenderer::ConnectInterfaces()
@@ -249,8 +312,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context,
 												bool doFinalCloudBufferToScreenComposite
 												)
 {
-	SIMUL_PROFILE_START("RenderSkyAsOverlay")
-	SIMUL_GPU_PROFILE_START(context,"RenderSkyAsOverlay")
+	SIMUL_COMBINED_PROFILE_START(context,"RenderSkyAsOverlay")
 	BaseWeatherRenderer::RenderSkyAsOverlay(context,
 											exposure,
 											buffered,
@@ -277,8 +339,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context,
 		m_pBufferToScreenEffect->End();
 		m_pBufferToScreenEffect->SetTexture(bufferTexture,NULL);
 	}
-	SIMUL_GPU_PROFILE_END(context,"RenderSkyAsOverlay")
-	SIMUL_PROFILE_END
+	SIMUL_COMBINED_PROFILE_END(context)
 }
 
 
@@ -366,7 +427,7 @@ void SimulWeatherRenderer::PreRenderUpdate(void *context,float dt)
 	}
 	if(simulPrecipitationRenderer)
 	{
-		simulPrecipitationRenderer->PreRenderUpdate(dt);
+		simulPrecipitationRenderer->PreRenderUpdate(context,dt);
 		if(simulCloudRenderer&&environment->cloudKeyframer->GetVisible())
 		{
 			simulPrecipitationRenderer->SetWind(environment->cloudKeyframer->GetWindSpeed(),environment->cloudKeyframer->GetWindHeadingDegrees());
