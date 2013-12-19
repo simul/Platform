@@ -40,10 +40,10 @@ void TwoResFramebuffer::RestoreDeviceObjects(void *)
 {
 	if(Width==0||Height==0||Downscale==0)
 		return;
-	lowResFarFramebuffer	.InitColor_Tex(0,GL_RGBA32F_ARB);
-	lowResNearFramebuffer	.InitColor_Tex(0,GL_RGBA32F_ARB);
-	hiResFarFramebuffer		.InitColor_Tex(0,GL_RGBA32F_ARB);
-	hiResNearFramebuffer	.InitColor_Tex(0,GL_RGBA32F_ARB);
+	lowResFarFramebuffer	.SetFormat(GL_RGBA32F_ARB);
+	lowResNearFramebuffer	.SetFormat(GL_RGBA32F_ARB);
+	hiResFarFramebuffer		.SetFormat(GL_RGBA32F_ARB);
+	hiResNearFramebuffer	.SetFormat(GL_RGBA32F_ARB);
 	lowResFarFramebuffer	.SetDepthFormat(GL_DEPTH_COMPONENT32F);
 	lowResNearFramebuffer	.SetDepthFormat(0);
 	hiResFarFramebuffer		.SetDepthFormat(0);
@@ -57,10 +57,10 @@ void TwoResFramebuffer::RestoreDeviceObjects(void *)
 	hiResFarFramebuffer		.SetWidthAndHeight(Width,Height);
 	hiResNearFramebuffer	.SetWidthAndHeight(Width,Height);
 	
-	lowResFarFramebuffer	.RestoreDeviceObjects(NULL);
+/*	lowResFarFramebuffer	.RestoreDeviceObjects(NULL);
 	lowResNearFramebuffer	.RestoreDeviceObjects(NULL);
 	hiResFarFramebuffer		.RestoreDeviceObjects(NULL);
-	hiResNearFramebuffer	.RestoreDeviceObjects(NULL);
+	hiResNearFramebuffer	.RestoreDeviceObjects(NULL);*/
 }
 
 void TwoResFramebuffer::InvalidateDeviceObjects()
@@ -161,7 +161,7 @@ void SimulGLWeatherRenderer::SetScreenSize(int view_id,int w,int h)
 	clouds::TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	fb->SetDimensions(w,h,Downscale);
 	//scene_buffer->InitColor_Tex(0,internal_buffer_format);
-	fb->RestoreDeviceObjects(0);
+	//fb->RestoreDeviceObjects(0);
 }
 
 void SimulGLWeatherRenderer::RestoreDeviceObjects(void*)

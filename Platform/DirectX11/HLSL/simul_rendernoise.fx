@@ -1,6 +1,7 @@
 #include "CppHlsl.hlsl"
 #include "../../CrossPlatform/states.sl"
 #include "../../CrossPlatform/noise.sl"
+#include "../../CrossPlatform/noise_constants.sl"
 
 Texture2D noise_texture SIMUL_TEXTURE_REGISTER(0);
 Texture3D random_texture_3d SIMUL_TEXTURE_REGISTER(1);

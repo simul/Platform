@@ -47,6 +47,8 @@ void TwoResFramebuffer::RestoreDeviceObjects(void *dev)
 {
 	if(!dev)
 		return;
+	if(Width<=0||Height<=0||Downscale<=0)
+		return;
 	m_pd3dDevice=(ID3D11Device*	)dev;
 	lowResFarFramebufferDx11	.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
 	lowResNearFramebufferDx11	.SetDepthFormat(0);
