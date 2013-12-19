@@ -20,20 +20,17 @@ namespace simul
 				return false;//Enabled;
 			}
 			int GetDensityGridsize(const int *grid);
-			void* Make3DNoiseTexture(int noise_size,const float *noise_src_ptr);
+			void* Make3DNoiseTexture(int noise_size,const float *noise_src_ptr,int generation_number);
 			void CycleTexturesForward();
 			void FillDensityGrid(int index,const clouds::GpuCloudsParameters &params
 									,int start_texel
 									,int texels
 											,const simul::clouds::MaskMap &masks);
-			virtual void PerformGPURelight(int index,float *target
-									,const int *light_grid
-									,int start_texel
-									,int texels
-									,const int *density_grid
-									,const float *Matrix4x4LightToDensityTexcoords
-									,const float *lightspace_extinctions_float3
-									,bool wrap_light_tex);
+			virtual void PerformGPURelight(int light_index
+											,const clouds::GpuCloudsParameters &params
+											,float *target
+											,int start_texel
+											,int texels);
 			void GPUTransferDataToTexture(	int index
 											,unsigned char *target
 											,const float *DensityToLightTransform

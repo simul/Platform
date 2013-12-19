@@ -145,8 +145,6 @@ namespace simul
 			 {
 				 ReverseDepth=false;
 			 }
-			Framebuffer framebuffer;
-			Framebuffer lowdef_framebuffer;
 			bool Restore3DCloudObjects();
 			bool Restore2DCloudObjects();
 			//! The size of the 2D buffer the sky is rendered to.
@@ -161,7 +159,9 @@ namespace simul
 			D3DXHANDLE						bufferTexture;
 
 			bool CreateBuffers();
-			TwoResFramebuffer *				GetFramebuffer(int view_id);
+			clouds::TwoResFramebuffer *		GetFramebuffer(int view_id);
+			typedef std::map<int,TwoResFramebuffer*> FramebufferMap;
+			FramebufferMap framebuffers;
 			SimulSkyRenderer				*simulSkyRenderer;
 			SimulCloudRenderer				*simulCloudRenderer;
 			SimulLightningRenderer			*simulLightningRenderer;

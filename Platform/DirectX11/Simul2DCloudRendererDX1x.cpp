@@ -389,6 +389,11 @@ void Simul2DCloudRendererDX11::SetIlluminationTexture(void *i)
 	illuminationTexture_SRV=(ID3D11ShaderResourceView*)i;
 }
 
+void Simul2DCloudRendererDX11::SetLightTableTexture(void *l)
+{
+	lightTableTexture_SRV=(ID3D11ShaderResourceView*)l;
+}
+
 void Simul2DCloudRendererDX11::SetWindVelocity(float x,float y)
 {
 }

@@ -27,7 +27,7 @@
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Simul/Clouds/CloudKeyframer.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
-#include "Simul/Platform/CrossPlatform/noise.sl"
+#include "Simul/Platform/CrossPlatform/noise_constants.sl"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/TextureGenerator.h"
@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <stdint.h>  // for uintptr_t
+
 using namespace simul;
 using namespace opengl;
 

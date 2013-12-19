@@ -66,9 +66,6 @@
     <ClCompile Include="SimulOpticsRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulPrecipitationRendererDX1x.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SimulSkyRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -96,13 +93,13 @@
     <ClCompile Include="Framebuffer3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrecipitationRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Direct3D11Manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TerrainRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrecipitationRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -162,9 +159,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulOpticsRendererDX1x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimulPrecipitationRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulSkyRendererDX1x.h">
@@ -238,9 +232,6 @@
     <None Include="HLSL\simul_lightning.fx">
       <Filter>FX</Filter>
     </None>
-    <None Include="HLSL\simul_rain.fx">
-      <Filter>FX</Filter>
-    </None>
     <None Include="HLSL\simul_rendernoise.fx">
       <Filter>FX</Filter>
     </None>
@@ -254,9 +245,6 @@
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\simul_clouds_2d.fx">
-      <Filter>FX</Filter>
-    </None>
-    <None Include="HLSL\simul_clouds_and_lightning_dx11.fx">
       <Filter>FX</Filter>
     </None>
     <None Include="HLSL\atmospherics.fx">
@@ -352,6 +340,10 @@
     <None Include="..\CrossPlatform\atmospherics.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="..\CrossPlatform\hdr_constants.sl" />
+    <None Include="..\CrossPlatform\spherical_harmonics.sl" />
+    <None Include="HLSL\mixed_resolution.fx" />
+    <None Include="HLSL\rain.fx" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc">

@@ -69,6 +69,10 @@ void TwoResFramebuffer::RestoreDeviceObjects(void *dev)
 
 void TwoResFramebuffer::InvalidateDeviceObjects()
 {
+	lowResFarFramebufferDx11	.InvalidateDeviceObjects();
+	lowResNearFramebufferDx11	.InvalidateDeviceObjects();
+	hiResFarFramebufferDx11		.InvalidateDeviceObjects();
+	hiResNearFramebufferDx11	.InvalidateDeviceObjects();
 }
 
 void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
@@ -142,7 +146,6 @@ void SimulWeatherRendererDX11::BufferSizeChanged(int view_id)
 {
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	fb->SetDimensions(BufferWidth,BufferHeight,Downscale);
-}
 }
 
 void SimulWeatherRendererDX11::RestoreDeviceObjects(void* dev)
@@ -542,5 +545,5 @@ void SimulWeatherRendererDX11::SetRenderDepthBufferCallback(RenderDepthBufferCal
 
 void *SimulWeatherRendererDX11::GetCloudDepthTexture()
 {
-	return framebuffers.begin()->second->GetLowResFarFramebuffer()->GetDepthTex();
+	return framebuffersDx11.begin()->second->GetLowResFarFramebuffer()->GetDepthTex();
 }
