@@ -63,7 +63,8 @@ namespace simul
 		class SimulTerrainRendererDX1x;
 		class SimulOpticsRendererDX1x;
 
-		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
+		//! A renderer for DirectX11. Rather than incorporating a Direct3D11Renderer instance in your project,
+		//! this class is best used as a guide to implementation.
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface
 			,public simul::graph::meta::Group
