@@ -113,17 +113,12 @@ namespace simul
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 
 		protected:
-			void BufferSizeChanged(int view_id);
 			void *GetCloudDepthTexture();
 			simul::base::MemoryInterface	*memoryInterface;
 			// Keep copies of these matrices:
 			simul::math::Matrix4x4 view;
 			simul::math::Matrix4x4 proj;
 			IDXGISwapChain *pSwapChain;
-			//! The size of the 2D buffer the sky is rendered to.
-			int BufferWidth,BufferHeight;
-			//! The size of the screen:
-			int ScreenWidth,ScreenHeight;
 			ID3D1xDevice*							m_pd3dDevice;
 			
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
