@@ -99,6 +99,7 @@ void Profiler::End()
 	last_context.pop_back();
     if(!enabled||!device||!context)
         return;
+
     ProfileData& profileData = profiles[name];
     if(profileData.QueryStarted != TRUE)
 		return;
