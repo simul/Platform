@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <stdint.h>  // for uintptr_t
+
 using namespace simul;
 using namespace opengl;
 
