@@ -90,7 +90,27 @@ namespace simul
 			//! Call this when the 3D device has been lost.
 			void InvalidateDeviceObjects();
 			//! Platform-dependent. Call this to draw the sky
-			void RenderSkyAsOverlay(void *context,float exposure,bool buffered,bool is_cubemap,const void* depthTexture,int viewport_id,const simul::sky::float4& relativeViewportTextureRegionXYWH);
+			void RenderSkyAsOverlay(void *context
+									,int view_id											
+									,const math::Matrix4x4 &viewmat
+									,const math::Matrix4x4 &projmat
+									,bool is_cubemap
+									,float exposure
+									,bool buffered
+									,const void* mainDepthTexture
+									,const void* lowResDepthTexture
+									,const sky::float4& depthViewportXYWH
+									,bool doFinalCloudBufferToScreenComposite);
+			void RenderMixedResolution(	void *
+										,int 
+										,const math::Matrix4x4 &
+										,const math::Matrix4x4 &
+										,bool 
+										,float 
+										,const void* 		
+										,const void*  
+										,const sky::float4& 
+										){}
 			//! Call this to draw the clouds
 			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			//! Call this to draw lightning.
@@ -111,7 +131,6 @@ namespace simul
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 			void EnableRain(bool e=true);
 			void EnableCloudLayers();
-		//	const char *GetDebugText() const;
 			GLuint GetFramebufferTexture(int view_id);
 		protected:
 			std::string shader;

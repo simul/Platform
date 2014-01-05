@@ -51,7 +51,7 @@ void main(void)
 	vec3 loss			=exp(-extinction*stepLengthKm);
 	insc.rgb			*=vec3(1.0,1.0,1.0)-loss;
 	float mie_factor	=exp(-insc.w*stepLengthKm*haze_factor*hazeMie.x);
-	insc.w				=saturate((1.f-mie_factor)/(1.f-total_ext.x+0.0001f));
+	insc.w				=saturate((1.0-mie_factor)/(1.0-total_ext.x+0.0001));
 	
 	insc.rgb			*=previous_loss.rgb;
 	insc.rgb			+=previous_insc.rgb;

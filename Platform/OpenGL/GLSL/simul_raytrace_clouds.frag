@@ -33,9 +33,9 @@ void main()
 	vec2 texCoords=texc.xy;
 	texCoords.y=1.0-texc.y;
 	vec4 dlookup=sampleLod(depthTexture,clampSamplerState,texCoords.xy,0);
-	vec4 pos=vec4(-1.f,-1.f,1.f,1.f);
-	pos.x+=2.f*texc.x;
-	pos.y+=2.f*texc.y;
+	vec4 pos=vec4(-1.0,-1.0,1.0,1.0);
+	pos.x+=2.0*texc.x;
+	pos.y+=2.0*texc.y;
 	vec3 view=normalize((invViewProj*pos).xyz);
 	vec3 viewPos=vec3(wrld[3][0],wrld[3][1],wrld[3][2]);
 	float cos0=dot(lightDir.xyz,view.xyz);

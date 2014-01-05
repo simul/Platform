@@ -13,6 +13,7 @@
 #include <string>
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
+#include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Sky/SkyInterface.h"
@@ -179,6 +180,7 @@ void TerrainRenderer::MakeVertexBuffer()
 
 void TerrainRenderer::Render(void *context,float exposure)
 {
+	SIMUL_COMBINED_PROFILE_START(context,"TerrainRenderer::Render")
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
 	D3DXMATRIX world;
 	D3DXMatrixIdentity(&world);
@@ -230,6 +232,7 @@ void TerrainRenderer::Render(void *context,float exposure)
 	simul::dx11::setTextureArray(m_pTerrainEffect,"textureArray",NULL);
 	simul::dx11::setTexture(m_pTerrainEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
+	SIMUL_COMBINED_PROFILE_END(context)
 }
 
 void TerrainRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)

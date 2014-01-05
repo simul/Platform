@@ -102,7 +102,7 @@ void SimulGLAtmosphericsRenderer::InvalidateDeviceObjects()
 
 #include "Simul/Camera/Camera.h"
 
-void SimulGLAtmosphericsRenderer::RenderAsOverlay(void *,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
+void SimulGLAtmosphericsRenderer::RenderAsOverlay(void *,const void *depthTexture,float exposure,const simul::sky::float4& depthViewportXYWH)
 {
 	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
 GL_ERROR_CHECK
@@ -141,32 +141,35 @@ GL_ERROR_CHECK
 	simul::math::Matrix4x4 ivp;
 	vpt.Inverse(ivp);
 	
-	AtmosphericsPerViewConstants atmosphericsUniforms2;
-	atmosphericsUniforms2.invViewProj=ivp;
-	atmosphericsUniforms2.invViewProj.transpose();
-	atmosphericsUniforms2.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	atmosphericsUniforms2.nearZ=frustum.nearZ*0.001f/fade_distance_km;
-	atmosphericsUniforms2.farZ=frustum.farZ*0.001f/fade_distance_km;
-	atmosphericsUniforms2.viewPosition	=cam_pos;
+	AtmosphericsPerViewConstants atmosphericsPerViewConstants;
+	atmosphericsPerViewConstants.invViewProj=ivp;
+	atmosphericsPerViewConstants.invViewProj.transpose();
+	atmosphericsPerViewConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	atmosphericsPerViewConstants.nearZ=frustum.nearZ*0.001f/fade_distance_km;
+	atmosphericsPerViewConstants.farZ=frustum.farZ*0.001f/fade_distance_km;
+	atmosphericsPerViewConstants.viewPosition	=cam_pos;
+	
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,proj,proj,depthViewportXYWH);
+	
+	UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniforms2UBO,atmosphericsPerViewConstants,atmosphericsUniforms2BindingIndex)
 
-	UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniforms2UBO,atmosphericsUniforms2,atmosphericsUniforms2BindingIndex)
+	AtmosphericsUniforms a;
+/*	float alt_km			=cam_pos.z/1000.f;
+	a.lightDir			=(const float*)skyInterface->GetDirectionToLight(alt_km);
+	a.mieRayleighRatio	=(const float*)skyInterface->GetMieRayleighRatio();
+	a.texelOffsets		=vec2(0,0);
+	a.hazeEccentricity	=skyInterface->GetMieEccentricity();
+	
+	a.cloudOrigin	=cloud_origin;
+	a.cloudScale		=cloud_scale;
+	a.maxFadeDistanceMetres	=fade_distance_km*1000.f;
+	a.overcast		=overcast;
+	a.exposure		=exposure;*/
+	
+	SetAtmosphericsConstants(a,simul::sky::float4(1.0,1.0,1.0,0.0));
 
-	{
-		AtmosphericsUniforms atmosphericsUniforms;
-		float alt_km			=cam_pos.z/1000.f;
-		atmosphericsUniforms.lightDir			=(const float*)skyInterface->GetDirectionToLight(alt_km);
-		atmosphericsUniforms.mieRayleighRatio	=(const float*)skyInterface->GetMieRayleighRatio();
-		atmosphericsUniforms.texelOffsets		=vec2(0,0);
-		atmosphericsUniforms.hazeEccentricity	=skyInterface->GetMieEccentricity();
-		
-		atmosphericsUniforms.cloudOrigin	=cloud_origin;
-		atmosphericsUniforms.cloudScale		=cloud_scale;
-		atmosphericsUniforms.maxFadeDistanceMetres	=fade_distance_km*1000.f;
-		atmosphericsUniforms.overcast		=overcast;
-		atmosphericsUniforms.exposure		=exposure;
-		
-		UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,atmosphericsUniforms,atmosphericsUniformsBindingIndex)
-	}
+	UPDATE_GL_CONSTANT_BUFFER(atmosphericsUniformsUBO,a,atmosphericsUniformsBindingIndex)
+	
 GL_ERROR_CHECK
 	glEnable(GL_BLEND);
 

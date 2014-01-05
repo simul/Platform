@@ -235,6 +235,7 @@
     <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
     <None Include="..\CrossPlatform\sky_constants.sl" />
     <None Include="..\CrossPlatform\states.sl" />
+    <None Include="GLSL\CloudConstants.glsl" />
     <None Include="GLSL\CppGlsl.hs" />
     <None Include="GLSL\illumination_buffer.frag" />
     <None Include="GLSL\overcast_inscatter.frag" />
@@ -247,6 +248,7 @@
     <None Include="GLSL\simul_2d_noise.frag" />
     <None Include="GLSL\simul_atmospherics.vert" />
     <None Include="GLSL\simul_atmospherics_earthshadow.frag" />
+    <None Include="GLSL\simul_atmospherics_godrays.frag" />
     <None Include="GLSL\simul_cloud_cross_section.frag" />
     <None Include="GLSL\simul_cloud_cross_section.vert" />
     <None Include="GLSL\simul_cloudmix.frag" />
@@ -275,13 +277,18 @@
     <None Include="GLSL\simul_gpu_sky.glsl" />
     <None Include="GLSL\simul_gpu_skyl.frag" />
     <None Include="GLSL\simul_hdr_blur.frag" />
+    <None Include="GLSL\simul_insc.frag" />
+    <None Include="GLSL\simul_insc_earthshadow.frag" />
     <None Include="GLSL\simul_lightning.frag" />
     <None Include="GLSL\simul_lightning.geom" />
     <None Include="GLSL\simul_lightning.vert" />
+    <None Include="GLSL\simul_lightning_glow.frag" />
+    <None Include="GLSL\simul_loss.frag" />
     <None Include="GLSL\simul_noise.frag" />
     <None Include="GLSL\simul_planet.frag" />
     <None Include="GLSL\simul_rain.frag" />
     <None Include="GLSL\simul_rain.vert" />
+    <None Include="GLSL\simul_raytrace_clouds.frag" />
     <None Include="GLSL\simul_simple_lightning.frag" />
     <None Include="GLSL\simul_simple_lightning.vert" />
     <None Include="GLSL\simul_sky.frag" />
@@ -295,6 +302,7 @@
     <None Include="GLSL\simul_terrain.vert" />
     <None Include="GLSL\tonemap.frag" />
     <None Include="GLSL\tonemap.vert" />
+    <None Include="GLSL\view_dir.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />

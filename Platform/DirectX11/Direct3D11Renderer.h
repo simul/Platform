@@ -6,7 +6,6 @@
 
 #include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
 #include "Simul/Base/PropertyMacros.h"
-#include "Simul/Graph/StandardNodes/ShowProgressInterface.h"
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
@@ -26,6 +25,7 @@ namespace simul
 	namespace clouds
 	{
 		class Environment;
+		class BaseWeatherRenderer;
 	}
 }
 
@@ -130,7 +130,7 @@ namespace simul
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
 			// Encompasses drawing the actual scene and putting the hdr buffer to screen.
-			void RenderScene(int view_id,ID3D11DeviceContext* pd3dImmediateContext,D3DXMATRIX v,D3DXMATRIX proj);
+			void RenderScene(int view_id,ID3D11DeviceContext* pd3dImmediateContext,clouds::BaseWeatherRenderer *w,D3DXMATRIX v,D3DXMATRIX proj);
 			// Different kinds of view for Render() to call:
 			void RenderFadeEditView(ID3D11DeviceContext* pd3dImmediateContext);
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);

@@ -31,7 +31,7 @@ vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texc,float
 	vec4 density2=sampleLod(cloudDensity2,cloudSamplerState,texc,0);
 	vec4 density=lerp(density1,density2,cloud_interp);
 	density.z*=layerFade;
-	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
+	density.z=saturate(density.z*(1.0+alphaSharpness)-alphaSharpness);
 	return density;
 }
 
@@ -42,7 +42,7 @@ vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,
 	vec4 density2=sampleLod(cloudDensity2,cloudSamplerState,pos,0);
 	vec4 density=lerp(density1,density2,cloud_interp);
 	density.z*=layerFade;
-	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
+	density.z=saturate(density.z*(1.0+alphaSharpness)-alphaSharpness);
 	return density;
 }
 
@@ -264,7 +264,7 @@ RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
 											,vec2 texCoords)
 {
 	float dlookup 		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
-	vec4 clip_pos		=vec4(-1.f,1.f,1.f,1.f);
+	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x			+=2.0*texCoords.x;
 	clip_pos.y			-=2.0*texCoords.y;
 

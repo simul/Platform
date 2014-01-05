@@ -24,21 +24,17 @@ namespace simul
 			void CycleTexturesForward();
 			void FillDensityGrid(int index,const clouds::GpuCloudsParameters &params
 									,int start_texel
-									,int texels
-											,const simul::clouds::MaskMap &masks);
+									,int texels);
 			virtual void PerformGPURelight(int light_index
 											,const clouds::GpuCloudsParameters &params
 											,float *target
 											,int start_texel
 											,int texels);
-			void GPUTransferDataToTexture(	int index
-											,unsigned char *target
-											,const float *DensityToLightTransform
-											,const float *light,const int *light_grid
-											,const float *ambient,const int *density_grid
-											,int start_texel
-											,int texels
-											,bool wrap_light_tex);
+			void GPUTransferDataToTexture(	int cycled_index
+												,const clouds::GpuCloudsParameters &params
+												,unsigned char *target
+												,int start_texel
+												,int texels);
 		protected:
 			FramebufferGL	fb[2];
 			FramebufferGL	world_fb;

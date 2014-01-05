@@ -141,7 +141,7 @@ void OpenGLRenderer::paintGL()
 	if(ReverseDepth)
 		glLoadMatrixf(cam->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight));
 	else
-		glLoadMatrixf(cam->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight,false));
+		glLoadMatrixf(cam->MakeProjectionMatrix(nearPlane,farPlane,(float)ScreenWidth/(float)ScreenHeight));
 	glViewport(0,0,ScreenWidth,ScreenHeight);
 	static float exposure=1.0f;
 	if(simulWeatherRenderer)
@@ -188,7 +188,13 @@ GL_ERROR_CHECK
 			glBindTexture(GL_TEXTURE_2D,(GLuint)0);
 		}
 		simulWeatherRenderer->RenderLightning(context,viewport_id);
-		simulWeatherRenderer->RenderSkyAsOverlay(context,exposure,UseSkyBuffer,false,depthFramebuffer.GetDepthTex(),viewport_id,simul::sky::float4(0,0,1.f,1.f));
+		
+		simul::math::Matrix4x4 view,proj;
+		glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
+		glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
+		simulWeatherRenderer->RenderSkyAsOverlay(context,viewport_id,view,proj,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTex()
+			,depthFramebuffer.GetDepthTex()
+			,simul::sky::float4(0,0,1.f,1.f),true);
 		simulWeatherRenderer->DoOcclusionTests();
 		simulWeatherRenderer->RenderPrecipitation(context);
 		if(simulOpticsRenderer&&ShowFlares)

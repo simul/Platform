@@ -352,7 +352,7 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_
 
 	D3DXMATRIX p1=proj;
 	AtmosphericsPerViewConstants atmosphericsPerViewConstants;
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,p1,proj,relativeViewportTextureRegionXYWH);
 	
 	// Instead of atmosphericsPerViewConstants.Apply(pContext), we do this:
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,invViewProj);
@@ -360,7 +360,7 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,shadowMatrix);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewportToTexRegionScaleBias);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewPosition);
-	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,pad9);
+	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,exposure);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,tanHalfFov);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,nearZ);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,farZ);
@@ -371,7 +371,7 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_
 	simul::sky::float4 light_dir	=skyInterface->GetDirectionToLight(cam_pos.z/1000.f);
 	simul::sky::float4 ratio		=skyInterface->GetMieRayleighRatio();
 	AtmosphericsUniforms atmosphericsUniforms;
-	SetAtmosphericsConstants(atmosphericsUniforms,exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
+	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
 	// And instead of atmosphericsUniforms.Apply(pContext):
 	
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,lightDir);
@@ -389,7 +389,7 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_
 
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,overcast);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,maxFadeDistanceMetres);
-	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,exposure);
+	//DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,exposure);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,fogBaseAlt);
 
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,fogColour);

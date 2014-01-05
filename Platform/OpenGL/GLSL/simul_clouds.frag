@@ -30,6 +30,10 @@ in vec4 transformed_pos;
 
 void main(void)
 {
+#if 0
+	gl_FragColor=vec4(1,0,1,.5);
+	return;
+#else
 //gl_FragColor=vec4(0.5,0.5,0.5,.5);
 	vec3 half_vec			=vec3(0.5,0.5,0.5);//0.49803921568627452,0.49803921568627452,0.49803921568627452);
 	float cos0				=dot(directionToSun.xyz,normalize(view.xyz));
@@ -54,7 +58,6 @@ void main(void)
 	density					=mix(density,density2,cloud_interp);
 	float opacity			=layerDensity*density.y;
 	//opacity+=rain*rainFade*saturate((0.25-pos.z)*50.0)*(1.0-density.x);
-
 #ifdef USE_DEPTH_TEXTURE
 	//float depth_offset=dist-cloud_dist;
 	//opacity*=saturate(depth_offset/0.01);
@@ -72,7 +75,7 @@ void main(void)
 	
 	vec3 diff					=wPosition.xyz-lightningSourcePos;
 	float dist_from_lightning	=length(diff.xyz);
-	float cc					=dist_from_lightning/2000.f;
+	float cc					=dist_from_lightning/2000.0;
 	float pwr					=exp(-cc*cc);
 	final.rgb					+=lightningColour.rgb*pwr;
 
@@ -84,4 +87,5 @@ void main(void)
 	final.rgb					+=InscatterFunction(insc_lookup,hazeEccentricity,cos0,mieRayleighRatio);
 	final.rgb					+=skyl_lookup;
     gl_FragColor				=vec4(final.rgb*opacity*exposure,1.0-opacity);
+#endif
 }

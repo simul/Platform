@@ -318,9 +318,7 @@ bool SimulGLCloudRenderer::Render(void *,float exposure,bool cubemap,bool near_p
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
-	simul::opengl::ProfileBlock profileBlock("SimulCloudRendererDX1x::Render");
-	simul::base::Timer timer;
-	timer.StartTime();
+	simul::opengl::ProfileBlock profileBlock("SimulGLCloudRenderer::Render");
 GL_ERROR_CHECK
 	cubemap;
 //cloud buffer alpha to screen = ?
@@ -420,8 +418,6 @@ GL_ERROR_CHECK
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	
-GL_ERROR_CHECK
-float time=skyInterface->GetTime();
 //const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
 	//CloudPerViewConstants cloudPerViewConstants;
@@ -569,8 +565,6 @@ GL_ERROR_CHECK
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
 	glPopAttrib();
 GL_ERROR_CHECK
-	timer.FinishTime();
-	gpu_time=profileBlock.GetTime();
 	return true;
 }
 

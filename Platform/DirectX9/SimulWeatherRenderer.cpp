@@ -303,31 +303,35 @@ bool SimulWeatherRenderer::CreateBuffers()
 	return (hr==S_OK);
 }
 
-void SimulWeatherRenderer::RenderSkyAsOverlay(void *context,
-												float exposure,
-												bool buffered,
-												bool is_cubemap,
-												const void* mainDepthTexture,
-												const void* depthTextureForClouds,
-												int viewport_id,
-												const simul::sky::float4& relativeViewportTextureRegionXYWH,
-												bool doFinalCloudBufferToScreenComposite
+void SimulWeatherRenderer::RenderSkyAsOverlay(void *context
+												,int view_id											
+												,const math::Matrix4x4 &viewmat
+												,const math::Matrix4x4 &projmat
+												,bool is_cubemap
+												,float exposure
+												,bool buffered
+												,const void* mainDepthTexture
+												,const void* lowResDepthTexture
+												,const sky::float4& depthViewportXYWH
+												,bool doFinalCloudBufferToScreenComposite
 												)
 {
 	SIMUL_COMBINED_PROFILE_START(context,"RenderSkyAsOverlay")
 	BaseWeatherRenderer::RenderSkyAsOverlay(context,
-											exposure,
+											view_id,
+											viewmat
+											,projmat
+											,exposure,
 											buffered,
 											is_cubemap,
 											mainDepthTexture,
-											depthTextureForClouds,
-											viewport_id,
-											relativeViewportTextureRegionXYWH,
+											lowResDepthTexture,
+											depthViewportXYWH,
 											doFinalCloudBufferToScreenComposite
 											);
 	if(buffered&&doFinalCloudBufferToScreenComposite)
 	{
-		clouds::TwoResFramebuffer *fb=GetFramebuffer(viewport_id);
+		clouds::TwoResFramebuffer *fb=GetFramebuffer(view_id);
 		m_pBufferToScreenEffect->SetTexture(bufferTexture,(LPDIRECT3DBASETEXTURE9)fb->GetLowResFarFramebuffer()->GetColorTex());
 		m_pBufferToScreenEffect->SetTechnique(CloudBlendTechnique);
 		unsigned passes;
@@ -345,7 +349,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context,
 }
 
 
-void SimulWeatherRenderer::RenderLightning(void *context,int viewport_id)
+void SimulWeatherRenderer::RenderLightning(void *context,int view_id)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return simulLightningRenderer->Render(context);
@@ -357,14 +361,14 @@ void SimulWeatherRenderer::RenderPrecipitation(void *context)
 		simulPrecipitationRenderer->Render(context);
 }
 
-void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH)
+void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,bool buf,int view_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH)
 {
 	if(!RenderCloudsLate||!simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return;
 	HRESULT hr=S_OK;
 	LPDIRECT3DSURFACE9	m_pOldRenderTarget=NULL;
 	LPDIRECT3DSURFACE9	m_pOldDepthSurface=NULL;
-		clouds::TwoResFramebuffer *fb=GetFramebuffer(viewport_id);
+		clouds::TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	if(buf)
 	{
 		fb->GetLowResFarFramebuffer()->Activate(NULL);
@@ -376,7 +380,7 @@ void SimulWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,boo
 	{	
 		PIXWrapper(D3DCOLOR_RGBA(255,0,0,255),"CLOUDS")
 		{
-			simulCloudRenderer->Render(context,exposure,false,false,0,false,true,viewport_id,relativeViewportTextureRegionXYWH);
+			simulCloudRenderer->Render(context,exposure,false,false,0,false,true,view_id,relativeViewportTextureRegionXYWH);
 		}
 	}
 	

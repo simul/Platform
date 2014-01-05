@@ -58,10 +58,6 @@ static D3DPOOL default_d3d_pool=D3DPOOL_MANAGED;
 
 #define MAX_VERTICES (12000)
 
-static void SetBits8()
-{
-	simul::clouds::TextureGenerator::SetBits(bits8[0],bits8[1],bits8[2],bits8[3],(unsigned)4,big_endian);
-}
 
 // This is an example of a noise filter:
 class CircleFilter:public simul::math::NoiseFilter
@@ -410,7 +406,7 @@ SimulCloudRenderer::~SimulCloudRenderer()
 	InvalidateDeviceObjects();
 }
 
-void SimulCloudRenderer::CreateNoiseTexture(void *context)
+void SimulCloudRenderer::CreateNoiseTexture(void *)
 {
 	HRESULT hr=S_OK;
 	if(!m_pd3dDevice)
@@ -564,7 +560,7 @@ void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 {
 }
 
-bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
+bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& )
 {
 	if(rebuild_shaders)
 		RecompileShaders();
@@ -712,7 +708,7 @@ void SimulCloudRenderer::NumBuffersChanged()
 {
 }
 
-void SimulCloudRenderer::InternalRenderHorizontal(int viewport_id)
+void SimulCloudRenderer::InternalRenderHorizontal(int )
 {
 }
 
@@ -1049,7 +1045,7 @@ void SimulCloudRenderer::RenderCrossSections(void *,int width,int height)
 	}
 }
 
-void SimulCloudRenderer::RenderAuxiliaryTextures(void *context,int width,int height)
+void SimulCloudRenderer::RenderAuxiliaryTextures(void *,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;
@@ -1255,7 +1251,7 @@ void SimulCloudRenderer::SetLossTexture(void *t1)
 	sky_loss_texture=(LPDIRECT3DBASETEXTURE9)t1;
 }
 
-void SimulCloudRenderer::SetInscatterTextures(void *i,void *s,void *o)
+void SimulCloudRenderer::SetInscatterTextures(void *,void *s,void *o)
 {
 	sky_inscatter_texture=(LPDIRECT3DBASETEXTURE9)o;
 	skylight_texture=(LPDIRECT3DBASETEXTURE9)s;

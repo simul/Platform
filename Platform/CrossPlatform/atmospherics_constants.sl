@@ -17,7 +17,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsUniforms,11)
 
 	uniform float overcast;
 	uniform float maxFadeDistanceMetres;
-	uniform float exposure;
+	uniform float aejarjt;
 	uniform float fogBaseAlt;
 
 	uniform vec3 fogColour;
@@ -32,7 +32,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform mat4 shadowMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
 	uniform vec3 viewPosition;
-	uniform float pad9;
+	uniform float exposure;
 	uniform vec2 tanHalfFov;
 	uniform float nearZ;
 	uniform float farZ;

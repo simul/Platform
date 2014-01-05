@@ -77,16 +77,30 @@ namespace simul
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
 			bool Destroy();
-			void RenderSkyAsOverlay(void *context,
-									float exposure,
-									bool buffered,
-									bool is_cubemap,
-									const void* mainDepthTexture,
-									const void* depthTextureForClouds, //If non-null then we do low-res cloud rendering to an off-screen target of matching dimensions for compositing onto full res target.
-									int viewport_id,
-									const simul::sky::float4& relativeViewportTextureRegionXYWH,
-									bool doFinalCloudBufferToScreenComposite //indicate whether truesky should do a final low-res cloud up-sample to the main target or whether to leave that to the user (via GetFramebufferTexture())
-									);
+			//! Apply the view and projection matrices, once per frame.
+			void SetMatrices(const simul::math::Matrix4x4 &viewmat,const simul::math::Matrix4x4 &projmat);
+			void RenderSkyAsOverlay(void *context
+											,int view_id											
+											,const math::Matrix4x4 &viewmat
+											,const math::Matrix4x4 &projmat
+											,bool is_cubemap
+											,float exposure
+											,bool buffered
+											,const void* mainDepthTexture
+											,const void* lowResDepthTexture
+											,const sky::float4& depthViewportXYWH
+											,bool doFinalCloudBufferToScreenComposite);
+			void RenderMixedResolution(	void *context
+										,int view_id
+										,const math::Matrix4x4 &viewmat
+										,const math::Matrix4x4 &projmat
+										,bool is_cubemap
+										,float exposure
+										,const void* mainDepthTextureMS	
+										,const void* lowResDepthTexture 
+										,const sky::float4& depthViewportXYWH
+										);
+			// This composites the clouds and other buffers to the screen.
 			void CompositeCloudsToScreen(void *context
 												,int view_id
 												,bool depth_blend
@@ -98,8 +112,6 @@ namespace simul
 			void RenderPrecipitation(void *context,void *depth_tex,simul::sky::float4 depthViewportXYWH);
 			void RenderLightning(void *context,int viewport_id);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
-			//! Apply the view and projection matrices, once per frame.
-			void SetMatrices(const simul::math::Matrix4x4 &viewmat,const simul::math::Matrix4x4 &projmat);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 			void SetExposure(float ex){exposure=ex;}
 

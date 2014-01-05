@@ -278,7 +278,7 @@ void SimulGL2DCloudRenderer::PreRenderUpdate(void *)
 {
 }
 
-bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depthTexture, bool, bool,int,const simul::sky::float4& )
+bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool /*cubemap*/,bool /*near_pass*/,const void *depthTexture, bool, bool,int,const simul::sky::float4& )
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
@@ -449,7 +449,7 @@ void SimulGL2DCloudRenderer::SetLossTexture(void *l)
 }
 static GLint earthShadowUniformsBindingIndex=3;
 
-void SimulGL2DCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
+void SimulGL2DCloudRenderer::SetInscatterTextures(void* i,void *s,void *)
 {
 	inscatter_tex=((GLuint)(uintptr_t)i);
 	skylight_tex=((GLuint)(uintptr_t)s);

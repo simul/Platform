@@ -174,17 +174,13 @@ void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)	//SV_DispatchThreadID giv
 	vec3 densityspace_texcoord	=(pos.xyz+0.5)/vec3(dims);
 	vec3 ambient_texcoord		=vec3(densityspace_texcoord.xy,1.0-zPixel/2.0-densityspace_texcoord.z);
 	vec3 lightspace_texcoord	=mul(transformMatrix,vec4(densityspace_texcoord+vec3(0,0,zPixel),1.0)).xyz;
-//	lightspace_texcoord.z		-=zPixelLightspace;
 	vec2 light_lookup			=vec2(filterLight(lightTexture1,lightspace_texcoord)
-		//lightTexture1.SampleLevel(lightSamplerState,lightspace_texcoord,0).x
 										,lightTexture2.SampleLevel(lightSamplerState,lightspace_texcoord,0).x);
 	vec2 amb_texel				=vec2(ambientTexture1.SampleLevel(wwcSamplerState,ambient_texcoord,0).x
 										,ambientTexture2.SampleLevel(wwcSamplerState,ambient_texcoord,0).x);
 	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
 	float density				=saturate(densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x);
-
     vec4 res					=vec4(light_lookup.y,light_lookup.x,density,ambient_lookup);
-   // res							=vec4(lightspace_texcoord.zz,density,lightspace_texcoord.z);
 	targetTexture[pos]			=res;
 }
 
