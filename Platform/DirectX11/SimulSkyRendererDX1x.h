@@ -76,7 +76,7 @@ public:
 
 	void Get2DLossAndInscatterTextures(void* *loss,void* *insc,void* *skyl,void* *overc);
 	void *GetIlluminationTexture();
-			void *GetLightTableTexture();
+	void *GetLightTableTexture();
 
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);

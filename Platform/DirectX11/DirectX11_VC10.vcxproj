@@ -209,6 +209,7 @@
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="TerrainRenderer.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
+    <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -243,6 +244,7 @@
     <ClInclude Include="SimulSkyRendererDX1x.h" />
     <ClInclude Include="TerrainRenderer.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />
+    <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
@@ -275,6 +277,7 @@
     <None Include="CSFFT\fft_512x512_c2c.hlsl" />
     <None Include="HLSL\atmospherics.fx" />
     <None Include="HLSL\CppHLSL.hlsl" />
+    <None Include="HLSL\font.fx" />
     <None Include="HLSL\ocean.fx" />
     <None Include="HLSL\ocean_simulator_cs.hlsl" />
     <None Include="HLSL\ocean_simulator_vs_ps.hlsl" />

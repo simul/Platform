@@ -527,8 +527,14 @@ void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int view_
 		w/=l;
 		l=fb->Height/4;
 	}
-	UtilityRenderer::DrawTexture(pContext,0*w,l,w,l,(ID3D1xShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
-	UtilityRenderer::DrawTexture(pContext,1*w,l,w,l,(ID3D1xShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
+	UtilityRenderer::DrawTexture(pContext	,0*w	,l		,w,l,(ID3D1xShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
+	UtilityRenderer::Print(pContext			,0.f*w	,l		,"Hi-Res Far");
+	UtilityRenderer::DrawTexture(pContext	,1*w,l			,w,l,(ID3D1xShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
+	UtilityRenderer::Print(pContext			,1.f*w	,l		,"Hi-Res Near");
+	UtilityRenderer::DrawTexture(pContext	,0*w	,2*l	,w,l,(ID3D1xShaderResourceView*)fb->lowResFarFramebufferDx11.GetColorTex());
+	UtilityRenderer::Print(pContext			,0.f*w	,2*l	,"Lo-Res Far");
+	UtilityRenderer::DrawTexture(pContext	,1*w	,2*l	,w,l,(ID3D1xShaderResourceView*)fb->lowResNearFramebufferDx11.GetColorTex());
+	UtilityRenderer::Print(pContext			,1.f*w	,2*l	,"Lo-Res Near");
 }
 
 void SimulWeatherRendererDX11::RenderLightning(void *context,int view_id)

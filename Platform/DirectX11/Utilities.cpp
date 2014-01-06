@@ -1,11 +1,20 @@
 #include "Utilities.h"
 #include "MacrosDX1x.h"
+#include "TextRenderer.h"
 #include "Simul\Base\StringToWString.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Vector3.h"
 #include <d3dx11.h>
 using namespace simul;
 using namespace dx11;
+
+namespace simul
+{
+	namespace dx11
+	{
+		TextRenderer textRenderer;
+	}
+}
 
 TextureStruct::TextureStruct()
 	:texture(NULL)
@@ -636,7 +645,7 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D1xDevice *)dev;
 	RecompileShaders();
-
+	textRenderer.RestoreDeviceObjects(m_pd3dDevice);
 	SAFE_RELEASE(m_pVertexBuffer);
 	// Vertex declaration
 	{
@@ -670,10 +679,12 @@ void UtilityRenderer::RecompileShaders()
 {
 	SAFE_RELEASE(m_pDebugEffect);
 	CreateEffect(m_pd3dDevice,&m_pDebugEffect,("simul_debug.fx"));
+	textRenderer.RecompileShaders();
 }
 
 void UtilityRenderer::InvalidateDeviceObjects()
 {
+	textRenderer.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pDebugEffect);
@@ -689,6 +700,11 @@ void UtilityRenderer::SetScreenSize(int w,int h)
 {
 	screen_width=w;
 	screen_height=h;
+}
+
+void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,float x,float y,const char *text)
+{
+	textRenderer.Render(pd3dImmediateContext,x,y,screen_width,screen_height,text);
 }
 
 void UtilityRenderer::PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
