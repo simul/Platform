@@ -271,7 +271,8 @@ void CSLoss(RWTexture3D<float4> targetTexture,Texture2D density_texture,uint3 po
 		float alt_km		=r-planetRadiusKm;
 		// lookups is: dens_factor,ozone_factor,haze_factor;
 		float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-		vec4 lookups		=texture_clamp_lod(density_texture,dens_texc,0);
+		//dens_texc=saturate(dens_texc);
+		vec4 lookups		=texture_nearest_lod(density_texture,dens_texc,0);
 		float dens_factor	=lookups.x;
 		float ozone_factor	=lookups.y;
 		float haze_factor	=getHazeFactorAtAltitude(alt_km);
@@ -280,7 +281,7 @@ void CSLoss(RWTexture3D<float4> targetTexture,Texture2D density_texture,uint3 po
 		loss.rgb			=exp(-extinction*stepLengthKm);
 		loss.a				=(loss.r+loss.g+loss.b)/3.0;
 		loss				*=previous_loss;
-		targetTexture[idx]	=vec4(loss.rgb,1.0);
+		targetTexture[idx]	=vec4(dens_factor,ozone_factor,haze_factor,0);//vec4(loss.rgb,1.0);
 		prevDist_km			=dist_km;
 		previous_loss		=loss;
 	}
