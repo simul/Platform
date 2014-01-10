@@ -206,8 +206,8 @@ bool IsSampleNearer(inout float MinDist,float Z,float ZFull)
 // texture_clamp_lod texture_nearest_lod
 vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
 {
-	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy,imageTexture,nearImageTexture,lowResDepthTexture,depthTextureMS,viewportToTexRegionScaleBias,depthToLinFadeDistParams
-		,inscatterTexture,nearInscatterTexture);
+	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy,imageTexture,nearImageTexture,lowResDepthTexture,depthTexture,depthTextureMS,viewportToTexRegionScaleBias,depthToLinFadeDistParams
+		,inscatterTexture,nearInscatterTexture,true);
 	result.rgb	*=exposure;
 	return result;
 }
