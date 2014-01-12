@@ -62,7 +62,7 @@ namespace simul
 				int height=240,bool sky=true,
 				bool rain=true);
 			virtual ~SimulWeatherRenderer();
-			void SetScreenSize(int view_id,int w,int h);
+			void SetScreenSize(int w,int h);
 			//standard d3d object interface functions
 			bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
 			void RecompileShaders();
