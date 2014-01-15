@@ -15,6 +15,7 @@
 #include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
+#include "Simul/Scene/SceneContext.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include <stdint.h> // for uintptr_t
@@ -22,6 +23,11 @@
 #pragma comment(lib,"opengl32")
 #pragma comment(lib,"glew32")
 #pragma comment(lib,"freeglut")
+#ifdef DEBUG
+#pragma comment(lib,"Scene_MDd")
+#else
+#pragma comment(lib,"Scene_MD")
+#endif
 #ifndef _MSC_VER
 #define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
 #endif
@@ -31,6 +37,7 @@
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 #endif
 using namespace simul::opengl;
+SceneContext * gSceneContext;
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,bool init_glut)
 	:ScreenWidth(0)
 	,ScreenHeight(0)
@@ -55,6 +62,8 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 	simulTerrainRenderer=new SimulGLTerrainRenderer(NULL);
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
+	std::string sceneFilename="C:\\Simul\\dev\\Simul\\External\\FBX\\samples\\ViewScene\\humanoid.fbx";
+	gSceneContext = new SceneContext(!sceneFilename.length() ? sceneFilename.c_str() : NULL, 100, 100, true);
 	if(init_glut)
 	{
 		char argv[]="no program";
@@ -66,6 +75,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 
 OpenGLRenderer::~OpenGLRenderer()
 {
+	delete gSceneContext;
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
 	if(simulWeatherRenderer)
@@ -169,6 +179,9 @@ GL_ERROR_CHECK
 			glDepthMask(GL_TRUE);
 			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		}
+		gSceneContext->OnDisplay();
+		if (gSceneContext->GetStatus() == SceneContext::MUST_BE_LOADED)
+			gSceneContext->LoadFile();
 		depthFramebuffer.Activate(context);
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		if(simulTerrainRenderer&&ShowTerrain)
