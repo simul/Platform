@@ -98,8 +98,7 @@ static GLuint make1DTexture(int w,const float *src)
 	return tex;
 }
 
-
-void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,
+void GpuSkyGenerator::Make2DLossAndInscatterTextures(int /*cycled_index*/,
 				simul::sky::AtmosphericScatteringInterface *skyInterface
 				,const simul::sky::GpuSkyParameters &gpuSkyParameters
 				,const simul::sky::GpuSkyAtmosphereParameters &gpuSkyAtmosphereParameters
@@ -349,7 +348,7 @@ GL_ERROR_CHECK
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_3D);
 }
-void GpuSkyGenerator::CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl)
+void GpuSkyGenerator::CopyToMemory(int /*cycled_index*/,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl)
 {
 	memcpy(loss,loss_cache,cache_size*sizeof(simul::sky::float4));
 	memcpy(insc,insc_cache,cache_size*sizeof(simul::sky::float4));

@@ -313,7 +313,7 @@ simul::math::Matrix4x4 ConvertReversedToRegularProjectionMatrix(const simul::mat
 static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(void *,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
+bool SimulGLCloudRenderer::Render(void *,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);

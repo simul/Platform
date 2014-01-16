@@ -65,7 +65,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 
-	std::string sceneFilename=std::string(GetScenePathUtf8())+"\\Broken Tower\\Broken Tower.fbx";		//Sailboat/Formats/Sailboat
+	std::string sceneFilename=std::string(GetScenePathUtf8())+"\\stmedard_f\\stmedard.fbx";		//Sailboat/Formats/Sailboat
 	gSceneContext = new SceneContext(sceneFilename.length() ? sceneFilename.c_str() : NULL, 1000, 1000, true);
         gSceneContext->SetShadingMode(SHADING_MODE_SHADED);
 	if(init_glut)
@@ -190,9 +190,9 @@ GL_ERROR_CHECK
 		
 		if(gSceneContext)
 		{
-			gSceneContext->OnDisplay();
 			if (gSceneContext->GetStatus() == SceneContext::MUST_BE_LOADED)
 				gSceneContext->LoadFile();
+			gSceneContext->Render();
 			gSceneContext->OnTimerClick();
 		}
 
@@ -291,8 +291,6 @@ void OpenGLRenderer::resizeGL(int w,int h)
 		simulWeatherRenderer->SetScreenSize(0,ScreenWidth,ScreenHeight);
 	if(simulHDRRenderer)
 		simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
-	if(gSceneContext)
-		gSceneContext->OnReshape(ScreenWidth,ScreenHeight);
 	depthFramebuffer.SetWidthAndHeight(ScreenWidth,ScreenHeight);
 }
 

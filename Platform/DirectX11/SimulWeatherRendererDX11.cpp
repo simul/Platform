@@ -386,6 +386,9 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 														)
 {
 	SIMUL_COMBINED_PROFILE_START(context,"RenderMixedResolution")
+	if(baseAtmosphericsRenderer)
+		baseAtmosphericsRenderer->RenderLoss(context,mainDepthTextureMS,depthViewportXYWH,false);
+
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	
 	fb->hiResFarFramebufferDx11.Activate(context);

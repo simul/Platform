@@ -261,6 +261,9 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 	glUseProgram(NULL);
 	
 	glUseProgram(overcast_inscatter_program);
+
+	earthShadowUniforms.targetTextureSize=vec2(numFadeDistances,numFadeElevations);
+	earthShadowUniforms.Apply();
 	
 	setTexture(overcast_inscatter_program,"inscTexture"			,0,(GLuint)inscatter_2d.GetColorTex());
 	setTexture(overcast_inscatter_program,"illuminationTexture"	,1,(GLuint)illumination_fb.GetColorTex());
@@ -386,14 +389,14 @@ void SimulGLSkyRenderer::UseProgram(GLuint p)
 	if(p&&p!=current_program)
 	{
 		current_program=p;
-		MieRayleighRatio_param			=glGetUniformLocation(current_program,"mieRayleighRatio");
-		lightDirection_sky_param		=glGetUniformLocation(current_program,"lightDir");
-		hazeEccentricity_param			=glGetUniformLocation(current_program,"hazeEccentricity");
-		skyInterp_param					=glGetUniformLocation(current_program,"skyInterp");
-		skyTexture1_param				=glGetUniformLocation(current_program,"inscTexture");
-		skylightTexture_param			=glGetUniformLocation(current_program,"skylightTexture");
+		MieRayleighRatio_param		=glGetUniformLocation(current_program,"mieRayleighRatio");
+		lightDirection_sky_param	=glGetUniformLocation(current_program,"lightDir");
+		hazeEccentricity_param		=glGetUniformLocation(current_program,"hazeEccentricity");
+		skyInterp_param				=glGetUniformLocation(current_program,"skyInterp");
+		skyTexture1_param			=glGetUniformLocation(current_program,"inscTexture");
+		skylightTexture_param		=glGetUniformLocation(current_program,"skylightTexture");
 			
-		altitudeTexCoord_param			=glGetUniformLocation(current_program,"altitudeTexCoord");
+		altitudeTexCoord_param		=glGetUniformLocation(current_program,"altitudeTexCoord");
 		
 		earthShadowUniforms			.LinkToProgram(current_program,"EarthShadowUniforms",9);
 		skyConstants				.LinkToProgram(current_program,"SkyConstants",10);
@@ -686,14 +689,15 @@ GL_ERROR_CHECK
 	overcast_inscatter_program		=MakeProgram("simple.vert",NULL,"overcast_inscatter.frag");
 	show_illumination_buffer_program=MakeProgram("simul_fade_3d_to_2d.vert",NULL,"show_illumination_buffer.frag");
 
-	skyConstants					.LinkToProgram(fade_3d_to_2d_program		,"SkyConstants"		,10);
-	skyConstants					.LinkToProgram(stars_program				,"SkyConstants"		,10);
-	skyConstants					.LinkToProgram(planet_program				,"SkyConstants"		,10);
-	skyConstants					.LinkToProgram(sun_program					,"SkyConstants"		,10);
-	skyConstants					.LinkToProgram(illumination_buffer_program	,"SkyConstants"		,10);
-	skyConstants					.LinkToProgram(overcast_inscatter_program	,"SkyConstants"		,10);
-	earthShadowUniforms				.LinkToProgram(illumination_buffer_program	,"EarthShadowUniforms",9);
-	//earthShadowUniforms				.LinkToProgram(overcast_inscatter_program	,"EarthShadowUniforms",9);
+	skyConstants					.LinkToProgram(fade_3d_to_2d_program		,"SkyConstants"			,10);
+	skyConstants					.LinkToProgram(stars_program				,"SkyConstants"			,10);
+	skyConstants					.LinkToProgram(planet_program				,"SkyConstants"			,10);
+	skyConstants					.LinkToProgram(sun_program					,"SkyConstants"			,10);
+	skyConstants					.LinkToProgram(illumination_buffer_program	,"SkyConstants"			,10);
+	skyConstants					.LinkToProgram(overcast_inscatter_program	,"SkyConstants"			,10);
+	earthShadowUniforms				.LinkToProgram(illumination_buffer_program	,"EarthShadowUniforms"	,9);
+//	earthShadowUniforms				.LinkToProgram(overcast_inscatter_program	,"EarthShadowUniforms"	,9);
+	earthShadowUniforms				.LinkToProgram(overcast_inscatter_program	,"EarthShadowUniforms"	,9);
 }
 
 void SimulGLSkyRenderer::RestoreDeviceObjects(void*)

@@ -307,6 +307,11 @@
   <ItemGroup>
     <ResourceCompile Include="OpenGL.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Scene\Scene.vcxproj">
+      <Project>{26213dbd-d6be-4f1c-827a-91aa489cf397}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
