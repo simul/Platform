@@ -37,7 +37,9 @@
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 #endif
 using namespace simul::opengl;
-SceneContext * gSceneContext;
+
+SceneContext * gSceneContext=NULL;
+
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,bool init_glut)
 	:ScreenWidth(0)
 	,ScreenHeight(0)
@@ -62,8 +64,10 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 	simulTerrainRenderer=new SimulGLTerrainRenderer(NULL);
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
-	std::string sceneFilename="C:\\Simul\\dev\\Simul\\External\\FBX\\samples\\ViewScene\\humanoid.fbx";
-	gSceneContext = new SceneContext(!sceneFilename.length() ? sceneFilename.c_str() : NULL, 100, 100, true);
+
+	std::string sceneFilename=std::string(GetScenePathUtf8())+"\\Broken Tower\\Broken Tower.fbx";		//Sailboat/Formats/Sailboat
+	gSceneContext = new SceneContext(sceneFilename.length() ? sceneFilename.c_str() : NULL, 1000, 1000, true);
+        gSceneContext->SetShadingMode(SHADING_MODE_SHADED);
 	if(init_glut)
 	{
 		char argv[]="no program";
@@ -179,13 +183,19 @@ GL_ERROR_CHECK
 			glDepthMask(GL_TRUE);
 			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		}
-		gSceneContext->OnDisplay();
-		if (gSceneContext->GetStatus() == SceneContext::MUST_BE_LOADED)
-			gSceneContext->LoadFile();
 		depthFramebuffer.Activate(context);
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render(context,1.f);
+		
+		if(gSceneContext)
+		{
+			gSceneContext->OnDisplay();
+			if (gSceneContext->GetStatus() == SceneContext::MUST_BE_LOADED)
+				gSceneContext->LoadFile();
+			gSceneContext->OnTimerClick();
+		}
+
 		simulWeatherRenderer->RenderCelestialBackground(context,exposure);
 		depthFramebuffer.Deactivate(context);
 		{
@@ -281,6 +291,8 @@ void OpenGLRenderer::resizeGL(int w,int h)
 		simulWeatherRenderer->SetScreenSize(0,ScreenWidth,ScreenHeight);
 	if(simulHDRRenderer)
 		simulHDRRenderer->SetBufferSize(ScreenWidth,ScreenHeight);
+	if(gSceneContext)
+		gSceneContext->OnReshape(ScreenWidth,ScreenHeight);
 	depthFramebuffer.SetWidthAndHeight(ScreenWidth,ScreenHeight);
 }
 

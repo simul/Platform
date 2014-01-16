@@ -33,8 +33,9 @@ namespace simul
 {
 	namespace opengl
 	{
-		std::string *shaderPathUtf8;
-		std::string *texture_path;
+		std::string *shaderPathUtf8=NULL;
+		std::string *scenePathUtf8=NULL;
+		std::string *texture_path=NULL;
 		void SetFileLoader(simul::base::FileLoader *l)
 		{
 			fileLoader=l;
@@ -44,13 +45,31 @@ namespace simul
 			if(path_utf8&&!shaderPathUtf8)
 			{
 				shaderPathUtf8=new std::string;
-	}
+			}
 			if(path_utf8)
 				*shaderPathUtf8=path_utf8;
 			else
 				delete shaderPathUtf8;
-}
-
+		}
+		void SetScenePath(const char *path_utf8)
+		{
+			if(path_utf8&&!scenePathUtf8)
+			{
+				scenePathUtf8=new std::string;
+			}
+			if(path_utf8)
+				*scenePathUtf8=path_utf8;
+			else
+				delete scenePathUtf8;
+		}
+		const char *GetScenePathUtf8()
+		{
+			if(scenePathUtf8)
+			{
+				return scenePathUtf8->c_str();
+			}
+			return "";
+		}
 static int LineCount(const std::string &str)
 {
 	int pos=str.find('\n');

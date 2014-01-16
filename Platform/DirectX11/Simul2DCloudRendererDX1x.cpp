@@ -268,16 +268,16 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
     ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::Render");
 	
 	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
-	ID3DX11EffectTechnique*		tech;
+	ID3DX11EffectTechnique*		tech=technique;
 	if(depthTexture_SRV)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
 		depthTexture_SRV->GetDesc(&depthDesc);
 		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
 			tech=msaaTechnique;
-		else
-			tech=technique;
 	}
+	if(!tech)
+		return false;
 
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)detail_fb.GetColorTex());
 	simul::dx11::setTexture(effect,"noiseTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
