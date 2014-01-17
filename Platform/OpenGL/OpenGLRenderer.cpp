@@ -15,7 +15,7 @@
 #include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
-#include "Simul/Scene/SceneContext.h"
+#include "Simul/Scene/Scene.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include <stdint.h> // for uintptr_t
@@ -38,7 +38,7 @@
 #endif
 using namespace simul::opengl;
 
-SceneContext * gSceneContext=NULL;
+simul::scene::Scene * gScene=NULL;
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,bool init_glut)
 	:ScreenWidth(0)
@@ -66,20 +66,20 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 
 	std::string sceneFilename=std::string(GetScenePathUtf8())+"\\stmedard_f\\stmedard.fbx";		//Sailboat/Formats/Sailboat
-	gSceneContext = new SceneContext(sceneFilename.length() ? sceneFilename.c_str() : NULL, 1000, 1000, true);
-        gSceneContext->SetShadingMode(SHADING_MODE_SHADED);
+	gScene = new simul::scene::Scene(sceneFilename.length() ? sceneFilename.c_str() : NULL);
+        gScene->SetShadingMode(SHADING_MODE_SHADED);
 	if(init_glut)
 	{
 		char argv[]="no program";
 		char *a=argv;
 		int argc=1;
 	    glutInit(&argc,&a);
-}
+	}
 }
 
 OpenGLRenderer::~OpenGLRenderer()
 {
-	delete gSceneContext;
+	delete gScene;
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
 	if(simulWeatherRenderer)
@@ -188,14 +188,13 @@ GL_ERROR_CHECK
 		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render(context,1.f);
 		
-		if(gSceneContext)
+		if(gScene)
 		{
-			if (gSceneContext->GetStatus() == SceneContext::MUST_BE_LOADED)
-				gSceneContext->LoadFile();
-			gSceneContext->Render();
-			gSceneContext->OnTimerClick();
+			if (gScene->GetStatus() == simul::scene::Scene::MUST_BE_LOADED)
+				gScene->LoadFile();
+			gScene->Render();
+			gScene->OnTimerClick();
 		}
-
 		simulWeatherRenderer->RenderCelestialBackground(context,exposure);
 		depthFramebuffer.Deactivate(context);
 		{

@@ -262,7 +262,7 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 	
 	glUseProgram(overcast_inscatter_program);
 
-	earthShadowUniforms.targetTextureSize=vec2(numFadeDistances,numFadeElevations);
+	earthShadowUniforms.targetTextureSize=vec2((float)numFadeDistances,(float)numFadeElevations);
 	earthShadowUniforms.Apply();
 	
 	setTexture(overcast_inscatter_program,"inscTexture"			,0,(GLuint)inscatter_2d.GetColorTex());

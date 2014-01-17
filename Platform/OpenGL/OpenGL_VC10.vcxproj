@@ -177,6 +177,7 @@
     <ClCompile Include="LoadGLProgram.cpp" />
     <ClCompile Include="objload.cpp" />
     <ClCompile Include="OpenGLRenderer.cpp" />
+    <ClCompile Include="Overlay.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="SimulGL2DCloudRenderer.cpp" />
     <ClCompile Include="SimulGLAtmosphericsRenderer.cpp" />
@@ -199,6 +200,7 @@
     <ClInclude Include="LoadGLProgram.h" />
     <ClInclude Include="objload.h" />
     <ClInclude Include="OpenGLRenderer.h" />
+    <ClInclude Include="Overlay.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SimulGL2DCloudRenderer.h" />
