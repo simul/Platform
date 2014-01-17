@@ -395,8 +395,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float depth;
 	if(near_pass)
 	{
-	//	if(dlookup.z==0)
-//			discard;
+		// Discard if the distance is at maximum, because then we don't need a near-pass interpolation.
+	///	if(dlookup.z==0)
+	//		discard;
 		depth=dlookup.y;
 	}
 	else
@@ -404,6 +405,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		depth=dlookup.x;
 	}
 	float d					=depthToFadeDistance(depth,clip_pos.xy,nearZ,farZ,tanHalfFov);
+//d=100.0;
 	vec4 colour				=vec4(0.0,0.0,0.0,1.0);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 
@@ -474,13 +476,13 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			}
 		}
 	}
-	//if(colour.a>=1.0)
-//	   discard;
+	if(colour.a>=1.0)
+	   discard;
 	meanFadeDistance+=colour.a;
 	RaytracePixelOutput res;
     res.colour		=vec4(exposure*colour.rgb,colour.a);
-	res.colour= vec4(texture_clamp_lod(cloudDensity1,vec3(texCoords.xy,0.5),0).rgb,0.5);
-//	res.colour= vec4(vec3(texCoords.xy,0.5),0.5);
+	// far - near depth
+
 	res.depth		=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,nearZ,farZ,tanHalfFov);
 	return res;
 }
