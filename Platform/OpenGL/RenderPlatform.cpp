@@ -36,7 +36,7 @@ scene::MaterialCache *RenderPlatform::CreateMaterial()
 
 scene::Mesh *RenderPlatform::CreateMesh()
 {
-	return new scene::Mesh;
+	return new opengl::Mesh;
 }
 
 scene::LightCache *RenderPlatform::CreateLight()
