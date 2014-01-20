@@ -1,6 +1,7 @@
 
 #include <GL/glew.h>
 #include <string>
+#include <vector>
 #include "LoadGLImage.h"
 #include "FreeImage.h"
 #include "SimulGLUtilities.h"
@@ -8,6 +9,7 @@
 #include "Simul/Base/StringToWString.h"
 
 static std::string texturePathUtf8="";
+static std::vector<std::string> fallbackTexturePathsUtf8;
 
 namespace simul
 {
@@ -17,15 +19,39 @@ namespace simul
 		{
 			texturePathUtf8=path_utf8;
 		}
+		void PushTexturePath(const char *path_utf8)
+		{
+			fallbackTexturePathsUtf8.push_back(path_utf8);
+		}
+		void PopTexturePath()
+		{ 
+			fallbackTexturePathsUtf8.pop_back();
+		}
 	}
 }
-unsigned char * LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
+static bool FileExists(const std::string& filename_utf8)
+{
+	FILE* pFile = NULL;
+#ifdef _MSC_VER
+	std::wstring wstr=simul::base::Utf8ToWString(filename_utf8.c_str());
+	_wfopen_s(&pFile,wstr.c_str(),L"r");
+#else
+	pFile=fopen(filename_utf8.c_str(),"r");
+#endif
+	bool bExists = (pFile != NULL);
+	if (pFile)
+		fclose(pFile);
+	return bExists;
+}
+
+unsigned char *LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
 {
 #ifdef WIN32
-	std::string fn=filename_utf8;
-	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
-	std::wstring wstr=simul::base::Utf8ToWString(fn);
-	fif = FreeImage_GetFileTypeU(wstr.c_str(), 0);
+	std::string fn			=filename_utf8;
+	FREE_IMAGE_FORMAT fif	=FIF_UNKNOWN;
+
+	std::wstring wstr		=simul::base::Utf8ToWString(fn);
+	fif						=FreeImage_GetFileTypeU(wstr.c_str(), 0);
 	if(fif == FIF_UNKNOWN)
 	{
 		// no signature ?
@@ -57,14 +83,12 @@ unsigned char * LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &wid
 #endif
 }
 
-GLuint LoadGLImage(const char *filename_utf8,unsigned wrap)
+GLuint LoadTexture(const char *filename_utf8,unsigned wrap)
 {
 #ifdef WIN32
-	std::string fn=texturePathUtf8+"/";
-	fn+=filename_utf8;
 	unsigned bpp=0;
 	unsigned width,height;
-	BYTE *pixels=(BYTE*)LoadBitmap(fn.c_str(),bpp,width,height);
+	BYTE *pixels=(BYTE*)LoadBitmap(filename_utf8,bpp,width,height);
 	GLuint image_tex=0;
     glGenTextures(1,&image_tex);
     glBindTexture(GL_TEXTURE_2D,image_tex);
@@ -81,6 +105,48 @@ GLuint LoadGLImage(const char *filename_utf8,unsigned wrap)
 #else
 	return 0;
 #endif
+}
+
+GLuint LoadGLImage(const char *filename_utf8,unsigned wrap)
+{
+	std::string fn=texturePathUtf8+"/";
+	fn+=filename_utf8;
+	// Is it an absolute path? If so use the given file name.
+	// Otherwise use the relative path relative to the texture path.
+	// Failing that, use the bare filename relative to any of the paths on the stack
+	if(!FileExists(fn.c_str()))
+	{
+		std::string name_only_utf8=filename_utf8;
+		// Try the file in different directories.
+		// First, if the path is relative, try appending the relative path to each directory. If this fails, we will use just the filename.
+		if(name_only_utf8.find(":")>=name_only_utf8.length())
+		{
+			for(int i=0;i<(int)fallbackTexturePathsUtf8.size();i++)
+			{
+				fn=fallbackTexturePathsUtf8[i]+"/";
+				fn+=filename_utf8;
+				if(FileExists(fn.c_str()))
+					break;
+			}
+		}
+		if(!FileExists(fn.c_str()))
+		{
+			int slash=name_only_utf8.find_last_of("/");
+			slash=std::max(slash,(int)name_only_utf8.find_last_of("\\"));
+			if(slash>0)
+				name_only_utf8=name_only_utf8.substr(slash+1,name_only_utf8.length()-slash-1);
+			for(int i=0;i<(int)fallbackTexturePathsUtf8.size();i++)
+			{
+				fn=fallbackTexturePathsUtf8[i]+"/";
+				fn+=name_only_utf8;
+				if(FileExists(fn.c_str()))
+					break;
+			}
+		}
+	}
+	if(!FileExists(fn.c_str()))
+		return 0;
+	return LoadTexture(fn.c_str(),wrap);
 }
 
 unsigned char *LoadGLBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)

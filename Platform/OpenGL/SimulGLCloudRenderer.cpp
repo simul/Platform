@@ -528,7 +528,7 @@ helper->Update2DNoiseCoords();
 		const simul::clouds::CloudGeometryHelper::IntVector &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		int layer=(int)helper->GetSlices().size()-1-idx;
-		setParameter(program,"layerNumber",layer);
+//		setParameter(program,"layerNumber",layer);
 		const LayerData &L=layerConstants.layers[helper->GetSlices().size()-1-idx];
 		singleLayerConstants.noiseOffset_	=L.noiseOffset;
 		singleLayerConstants.layerFade_		=L.layerFade;

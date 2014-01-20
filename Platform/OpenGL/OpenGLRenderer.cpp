@@ -7,6 +7,7 @@
 #include "OpenGLRenderer.h"
 // For font definition define:
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
+#include "Simul/Platform/OpenGL/LoadGLImage.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/SimulGLSkyRenderer.h"
@@ -17,7 +18,7 @@
 #include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Scene/Scene.h"
 #include "Simul/Scene/SceneCache.h"
-#include "Simul/Scene/RenderPlatform.h"
+#include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include <stdint.h> // for uintptr_t
@@ -41,7 +42,7 @@
 using namespace simul::opengl;
 
 simul::scene::Scene * gScene=NULL;
-simul::scene::RenderPlatform renderPlatform;
+simul::opengl::RenderPlatform renderPlatform;
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,bool init_glut)
 	:ScreenWidth(0)
@@ -67,11 +68,12 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 	simulTerrainRenderer=new SimulGLTerrainRenderer(NULL);
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
-
-	std::string sceneFilename=std::string(GetScenePathUtf8())+"\\stmedard_f\\stmedard.fbx";		//Sailboat/Formats/Sailboat
-	gScene = new simul::scene::Scene(sceneFilename.length() ? sceneFilename.c_str() : NULL);
-gScene->sceneCache->SetShadingMode(simul::scene::SHADING_MODE_SHADED);
-gScene->sceneCache->SetRenderPlatform(&renderPlatform);
+	
+	simul::opengl::PushTexturePath("C:\\Simul\\dev\\Simul\\Media\\scenes\\stmedard_f");
+	std::string sceneFilename	=std::string(GetScenePathUtf8())+"\\stmedard_f\\stmedard.fbx";//SciFi\\SciFi_HumanCity_Kit05-FBX.fbx";//"\\stmedard_f\\stmedard.fbx";		//
+	gScene						=new simul::scene::Scene(sceneFilename.length() ? sceneFilename.c_str() : NULL);
+	gScene->sceneCache->SetShadingMode(simul::scene::SHADING_MODE_SHADED);
+	gScene->sceneCache->SetRenderPlatform(&renderPlatform);
 	if(init_glut)
 	{
 		char argv[]="no program";

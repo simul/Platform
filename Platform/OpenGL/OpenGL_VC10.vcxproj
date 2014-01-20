@@ -175,10 +175,12 @@
     <ClCompile Include="GpuSkyGenerator.cpp" />
     <ClCompile Include="LoadGLImage.cpp" />
     <ClCompile Include="LoadGLProgram.cpp" />
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="objload.cpp" />
     <ClCompile Include="OpenGLRenderer.cpp" />
     <ClCompile Include="Overlay.cpp" />
     <ClCompile Include="Profiler.cpp" />
+    <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SimulGL2DCloudRenderer.cpp" />
     <ClCompile Include="SimulGLAtmosphericsRenderer.cpp" />
     <ClCompile Include="SimulGLCloudRenderer.cpp" />
@@ -190,6 +192,8 @@
     <ClCompile Include="SimulGLUtilities.cpp" />
     <ClCompile Include="SimulGLWeatherRenderer.cpp" />
     <ClCompile Include="SimulOpticsRendererGL.cpp" />
+    <ClCompile Include="targa.cpp" />
+    <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Export.h" />
@@ -198,10 +202,12 @@
     <ClInclude Include="GpuSkyGenerator.h" />
     <ClInclude Include="LoadGLImage.h" />
     <ClInclude Include="LoadGLProgram.h" />
+    <ClInclude Include="Material.h" />
     <ClInclude Include="objload.h" />
     <ClInclude Include="OpenGLRenderer.h" />
     <ClInclude Include="Overlay.h" />
     <ClInclude Include="Profiler.h" />
+    <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SimulGL2DCloudRenderer.h" />
     <ClInclude Include="SimulGLAtmosphericsRenderer.h" />
@@ -214,6 +220,8 @@
     <ClInclude Include="SimulGLUtilities.h" />
     <ClInclude Include="SimulGLWeatherRenderer.h" />
     <ClInclude Include="SimulOpticsRendererGL.h" />
+    <ClInclude Include="targa.h" />
+    <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\CrossPlatform\atmospherics_constants.sl" />
