@@ -39,9 +39,12 @@
 #ifndef GLUT_BITMAP_HELVETICA_12
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
 #endif
-using namespace simul::opengl;
+using namespace simul;
+using namespace opengl;
 
 simul::scene::Scene * gScene=NULL;
+simul::scene::SceneCache *sceneCache=NULL;
+
 simul::opengl::RenderPlatform renderPlatform;
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,bool init_glut)
@@ -72,8 +75,9 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 	simul::opengl::PushTexturePath("C:\\Simul\\dev\\Simul\\Media\\scenes\\stmedard_f");
 	std::string sceneFilename	=std::string(GetScenePathUtf8())+"\\stmedard_f\\stmedard.fbx";//SciFi\\SciFi_HumanCity_Kit05-FBX.fbx";//"\\stmedard_f\\stmedard.fbx";		//
 	gScene						=new simul::scene::Scene(sceneFilename.length() ? sceneFilename.c_str() : NULL);
-	gScene->sceneCache->SetShadingMode(simul::scene::SHADING_MODE_SHADED);
-	gScene->sceneCache->SetRenderPlatform(&renderPlatform);
+	sceneCache=new scene::SceneCache(gScene);
+	sceneCache->SetShadingMode(simul::scene::SHADING_MODE_SHADED);
+	sceneCache->SetRenderPlatform(&renderPlatform);
 	if(init_glut)
 	{
 		char argv[]="no program";
@@ -85,6 +89,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 
 OpenGLRenderer::~OpenGLRenderer()
 {
+	delete sceneCache;
 	delete gScene;	
 	renderPlatform.InvalidateDeviceObjects();
 	if(simulTerrainRenderer)
@@ -193,16 +198,19 @@ GL_ERROR_CHECK
 		}
 		depthFramebuffer.Activate(context);
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-		if(simulTerrainRenderer&&ShowTerrain)
-			simulTerrainRenderer->Render(context,1.f);
 		
 		if(gScene)
 		{
 			if (gScene->GetStatus() == simul::scene::Scene::MUST_BE_LOADED)
+			{
 				gScene->LoadFile();
-			gScene->sceneCache->Render();
+				sceneCache->LoadCacheRecursive(true);
+			}
+			sceneCache->Render();
 			gScene->OnTimerClick();
 		}
+		if(simulTerrainRenderer&&ShowTerrain)
+			simulTerrainRenderer->Render(context,1.f);
 		simulWeatherRenderer->RenderCelestialBackground(context,exposure);
 		depthFramebuffer.Deactivate(context);
 		{

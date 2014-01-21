@@ -26,6 +26,7 @@ namespace simul
 			virtual void DrawCamera(const double *pGlobalPosition, double pRoll);
 			virtual void DrawLineLoop(const double *mat,int num,const double *vertexArray,const float colr[4]);
 			virtual void ApplyDefaultMaterial();
+			virtual void SetModelMatrix(const double *mat);
 			virtual scene::MaterialCache *CreateMaterial();
 			virtual scene::Mesh *CreateMesh();
 			virtual scene::LightCache *CreateLight();

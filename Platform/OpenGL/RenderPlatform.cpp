@@ -35,7 +35,7 @@ void RenderPlatform::RecompileShaders()
 	SAFE_DELETE_PROGRAM(solid_program);
 	solid_program	=MakeProgram("solid",defines);
 	solidConstants.RestoreDeviceObjects();
-	solidConstants.LinkToProgram(solid_program,"SolidConstants",12);
+	solidConstants.LinkToProgram(solid_program,"SolidConstants",0);
 	//SetCloudConstants(cloudConstants);
 }
 
@@ -48,10 +48,13 @@ void RenderPlatform::StartRender()
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_CULL_FACE);
 	solidConstants.Apply();
+
+	glUseProgram(solid_program);
 }
 
 void RenderPlatform::EndRender()
 {
+	glUseProgram(0);
 	glPopAttrib();
 	glPopAttrib();
 }
@@ -83,7 +86,8 @@ void RenderPlatform::DrawMarker(const double *matrix)
 {
     glColor3f(0.0, 1.0, 1.0);
     glLineWidth(1.0);
-
+	
+	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glMultMatrixd((const double*) matrix);
 
@@ -139,7 +143,8 @@ void RenderPlatform::DrawCrossHair(const double *pGlobalPosition)
 {
     glColor3f(1.0, 1.0, 1.0);
     glLineWidth(1.0);
-
+	
+	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glMultMatrixd((double*) pGlobalPosition);
 
@@ -167,7 +172,8 @@ void RenderPlatform::DrawCrossHair(const double *pGlobalPosition)
     glVertex3dv(lCrossHair[5]);
 
     glEnd();
-
+	
+	glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 }
 
@@ -175,7 +181,8 @@ void RenderPlatform::DrawCamera(const double *pGlobalPosition, double pRoll)
 {
     glColor3d(1.0, 1.0, 1.0);
     glLineWidth(1.0);
-
+	
+	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glMultMatrixd((const double*) pGlobalPosition);
     glRotated(pRoll, 1.0, 0.0, 0.0);
@@ -242,6 +249,30 @@ void RenderPlatform::ApplyDefaultMaterial()
     glMaterialf(GL_FRONT, GL_SHININESS, 0);
 
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+#include "Simul/Math/Matrix4x4.h"
+void MakeWorldViewProjMatrix(float *wvp,const double *w,const float *v,const float *p)
+{
+	simul::math::Matrix4x4 tmp1,view(v),proj(p),model(w);
+	simul::math::Multiply4x4(tmp1,model,view);
+	simul::math::Multiply4x4(*(simul::math::Matrix4x4*)wvp,tmp1,proj);
+	//wvp.Transpose();
+}
+
+void RenderPlatform::SetModelMatrix(const double *m)
+{
+	simul::math::Matrix4x4 proj;
+	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));
+	simul::math::Matrix4x4 view;
+	glGetFloatv(GL_MODELVIEW_MATRIX,view.RowPointer(0));
+	simul::math::Matrix4x4 wvp;
+	simul::math::Matrix4x4 viewproj;
+	simul::math::Matrix4x4 modelviewproj;
+	simul::math::Multiply4x4(viewproj,view,proj);
+	simul::math::Matrix4x4 model(m);
+	simul::math::Multiply4x4(modelviewproj,model,viewproj);
+	solidConstants.worldViewProj=modelviewproj;
+	solidConstants.Apply();
 }
 
 scene::MaterialCache *RenderPlatform::CreateMaterial()

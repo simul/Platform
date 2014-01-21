@@ -67,11 +67,13 @@ void opengl::Mesh::UpdateVertexPositions(int lVertexCount, float *lVertices) con
     }
 }
 
-
 void opengl::Mesh::BeginDraw(scene::ShadingMode pShadingMode,const double* mat) const
 {
+	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glMultMatrixd((const double*)mat);
+	// set this matrix in UBO 0:
+
     // Push OpenGL attributes.
     glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT);
     glPushAttrib(GL_ENABLE_BIT);
@@ -80,26 +82,26 @@ void opengl::Mesh::BeginDraw(scene::ShadingMode pShadingMode,const double* mat) 
     glPushAttrib(GL_TEXTURE_BIT);
 
     // Set vertex position array.
+	glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, mVBONames[VERTEX_VBO]);
-    glVertexPointer(VERTEX_STRIDE, GL_FLOAT, 0, 0);
-    glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexAttribPointer(0,4,GL_FLOAT,false,0,0);
 
     // Set normal array.
     if (mHasNormal && pShadingMode == scene::SHADING_MODE_SHADED)
     {
+		glEnableVertexAttribArray(2);
         glBindBuffer(GL_ARRAY_BUFFER, mVBONames[NORMAL_VBO]);
-        glNormalPointer(GL_FLOAT, 0, 0);
-        glEnableClientState(GL_NORMAL_ARRAY);
+		glVertexAttribPointer(2,3,GL_FLOAT,true,0,0);
     }
     
     // Set UV array.
     if (mHasUV && pShadingMode == scene::SHADING_MODE_SHADED)
     {
+		glEnableVertexAttribArray(1);
         glBindBuffer(GL_ARRAY_BUFFER, mVBONames[UV_VBO]);
-        glTexCoordPointer(UV_STRIDE, GL_FLOAT, 0, 0);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glClientActiveTexture(GL_TEXTURE0); 
+		glVertexAttribPointer(1,2,GL_FLOAT,false,0,0);
     }
-
     // Set index array.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVBONames[INDEX_VBO]);
 
@@ -125,7 +127,7 @@ void opengl::Mesh::BeginDraw(scene::ShadingMode pShadingMode,const double* mat) 
     {
         glColor4fv(WIREFRAME_COLOR);
     }
-	glUseProgram(0);
+	//glUseProgram(0);
 }
 
 void opengl::Mesh::Draw(int pMaterialIndex,scene::ShadingMode pShadingMode) const
@@ -161,6 +163,7 @@ void opengl::Mesh::EndDraw() const
     glPopAttrib();
     glPopAttrib();
     glPopClientAttrib();
-
+	
+	glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 }
