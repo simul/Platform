@@ -85,7 +85,8 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 
 OpenGLRenderer::~OpenGLRenderer()
 {
-	delete gScene;
+	delete gScene;	
+	renderPlatform.InvalidateDeviceObjects();
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
 	if(simulWeatherRenderer)
@@ -137,6 +138,7 @@ GL_ERROR_CHECK
 		simulOpticsRenderer->RestoreDeviceObjects(NULL);
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->RestoreDeviceObjects(NULL);
+	renderPlatform.RestoreDeviceObjects(NULL);
 	RecompileShaders();
 }
 
@@ -312,6 +314,7 @@ void OpenGLRenderer::ReloadTextures()
 
 void OpenGLRenderer::RecompileShaders()
 {
+	renderPlatform.RecompileShaders();
 	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
 	if(simulWeatherRenderer)

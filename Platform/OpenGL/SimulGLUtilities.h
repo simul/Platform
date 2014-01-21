@@ -3,6 +3,8 @@
 
 #include "Simul/Platform/OpenGL/Export.h"
 #include <assert.h>
+#include <stdlib.h>	// For definition of NULL
+#include <iostream>	// for cerr
 
 namespace simul
 {
@@ -19,6 +21,7 @@ namespace simul
 		extern void SetFileLoader(simul::base::FileLoader *l);
 	}
 }
+
 SIMUL_OPENGL_EXPORT_CLASS Utilities
 {
 	static int instance_count;
@@ -165,7 +168,6 @@ namespace simul
 				glBindBuffer(GL_UNIFORM_BUFFER,ubo);
 				glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(T),static_cast<T*>(this));
 				glBindBuffer(GL_UNIFORM_BUFFER,0);
-			//	glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 			}
 		};
 	}

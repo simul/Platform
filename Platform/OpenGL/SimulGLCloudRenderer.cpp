@@ -477,10 +477,6 @@ GL_ERROR_CHECK
 helper->Update2DNoiseCoords();
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply();
-/*	glBindBuffer(GL_UNIFORM_BUFFER,cloudConstantsUBO);
-	glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(CloudConstants),&cloudConstants);
-	glBindBuffer(GL_UNIFORM_BUFFER,0);*
-	glBindBufferBase(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO);*/
 
 	//UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)
 	cloudPerViewConstants.layerIndex=18;
@@ -605,18 +601,11 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 	skylightSampler_param			=glGetUniformLocation(program,"skylightSampler");
 	depthTexture					=glGetUniformLocation(program,"depthTexture");
 
-	//GLint cloudConstants			=glGetUniformBlockIndex(program,"CloudConstants");
-	//GLint cloudPerViewConstants		=glGetUniformBlockIndex(program,"CloudPerViewConstants");
-	//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
 GL_ERROR_CHECK
 	// If that block IS in the shader program, then BIND it to the relevant UBO.
-	cloudConstants.LinkToProgram(program,"CloudConstants",2);
-layerConstants.LinkToProgram(program,"LayerConstants",4);
-singleLayerConstants.LinkToProgram(program,"SingleLayerConstants",5);
-	//if(cloudConstants>=0)
-	//	glUniformBlockBinding(program,cloudConstants,cloudConstantsBindingIndex);
-	//if(cloudPerViewConstants>=0)
-	//	glUniformBlockBinding(program,cloudPerViewConstants,cloudPerViewConstantsBindingIndex);
+	cloudConstants			.LinkToProgram(program,"CloudConstants",2);
+	layerConstants			.LinkToProgram(program,"LayerConstants",4);
+	singleLayerConstants	.LinkToProgram(program,"SingleLayerConstants",5);
 	cloudPerViewConstants.LinkToProgram(program,"CloudPerViewConstants",13);
 GL_ERROR_CHECK
 	
@@ -677,13 +666,10 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 	init=true;
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	
-	//MAKE_GL_CONSTANT_BUFFER(cloudConstantsUBO,CloudConstants,cloudConstantsBindingIndex);
 	cloudConstants.RestoreDeviceObjects();
-	//MAKE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
 	layerConstants.RestoreDeviceObjects();
 	singleLayerConstants.RestoreDeviceObjects();
 	cloudPerViewConstants.RestoreDeviceObjects();
-	//MAKE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,CloudPerViewConstants,cloudPerViewConstantsBindingIndex);
 
 	RecompileShaders();
 	//CreateVolumeNoise();

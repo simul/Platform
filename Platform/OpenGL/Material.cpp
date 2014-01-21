@@ -19,10 +19,10 @@ void Material::Apply() const
 {
 	glActiveTexture(GL_TEXTURE0);
 	float zero[]	={0,0,0,0};
-    glMaterialfv(GL_FRONT_AND_BACK	,GL_EMISSION	,zero);//mEmissive.mColor);
-    glMaterialfv(GL_FRONT_AND_BACK	,GL_AMBIENT		,zero);//mAmbient.mColor);
-    glMaterialfv(GL_FRONT_AND_BACK	,GL_DIFFUSE		,mDiffuse.mColor);//mDiffuse.mColor);
-    glMaterialfv(GL_FRONT_AND_BACK	,GL_SPECULAR	,zero);//mSpecular.mColor);
+    glMaterialfv(GL_FRONT_AND_BACK	,GL_EMISSION	,mEmissive.mColor);
+    glMaterialfv(GL_FRONT_AND_BACK	,GL_AMBIENT		,mAmbient.mColor);
+    glMaterialfv(GL_FRONT_AND_BACK	,GL_DIFFUSE		,mDiffuse.mColor);
+    glMaterialfv(GL_FRONT_AND_BACK	,GL_SPECULAR	,mSpecular.mColor);
     glMaterialf	(GL_FRONT_AND_BACK	,GL_SHININESS	,mShininess);
 	if(mDiffuse.mTextureName)
 		glBindTexture(GL_TEXTURE_2D	,((opengl::Texture *)mDiffuse.mTextureName)->pTextureObject);

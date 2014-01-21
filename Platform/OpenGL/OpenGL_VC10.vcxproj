@@ -173,9 +173,11 @@
     <ClCompile Include="FramebufferGL.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
+    <ClCompile Include="Light.cpp" />
     <ClCompile Include="LoadGLImage.cpp" />
     <ClCompile Include="LoadGLProgram.cpp" />
     <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="objload.cpp" />
     <ClCompile Include="OpenGLRenderer.cpp" />
     <ClCompile Include="Overlay.cpp" />
@@ -200,9 +202,11 @@
     <ClInclude Include="FramebufferGL.h" />
     <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="GpuSkyGenerator.h" />
+    <ClInclude Include="Light.h" />
     <ClInclude Include="LoadGLImage.h" />
     <ClInclude Include="LoadGLProgram.h" />
     <ClInclude Include="Material.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="objload.h" />
     <ClInclude Include="OpenGLRenderer.h" />
     <ClInclude Include="Overlay.h" />
@@ -244,6 +248,7 @@
     <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
     <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
     <None Include="..\CrossPlatform\sky_constants.sl" />
+    <None Include="..\CrossPlatform\solid_constants.sl" />
     <None Include="..\CrossPlatform\states.sl" />
     <None Include="GLSL\CloudConstants.glsl" />
     <None Include="GLSL\CppGlsl.hs" />
@@ -310,6 +315,8 @@
     <None Include="GLSL\simul_terrain.frag" />
     <None Include="GLSL\simul_terrain.geom" />
     <None Include="GLSL\simul_terrain.vert" />
+    <None Include="GLSL\solid.frag" />
+    <None Include="GLSL\solid.vert" />
     <None Include="GLSL\tonemap.frag" />
     <None Include="GLSL\tonemap.vert" />
     <None Include="GLSL\view_dir.glsl" />

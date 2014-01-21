@@ -89,6 +89,12 @@
     <ClCompile Include="Material.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Export.h">
@@ -167,6 +173,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Material.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -437,6 +449,15 @@
     </None>
     <None Include="GLSL\view_dir.glsl">
       <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\solid.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\solid.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\CrossPlatform\solid_constants.sl">
+      <Filter>CrossPlatform</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
