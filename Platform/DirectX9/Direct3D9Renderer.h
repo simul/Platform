@@ -52,6 +52,9 @@ class SimulHDRRenderer;
 class SimulTerrainRenderer;
 class SimulOpticsRendererDX9;
 
+
+//! A renderer that demonstrates usage of trueSKY in DirectX 9. Rather than incorporating a Direct3D9Renderer instance in your project,
+//! this class is best used as a guide to implementation.
 class SIMUL_DIRECTX9_EXPORT Direct3D9Renderer
 	:public Direct3D9CallbackInterface
 	,public simul::graph::meta::Group

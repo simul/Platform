@@ -7,6 +7,7 @@
 	#define SIMUL_SAMPLER_REGISTER(samp_num)
 	#define SIMUL_BUFFER_REGISTER(buff_num)
 	#define SIMUL_RWTEXTURE_REGISTER(rwtex_num)
+	#define SIMUL_STATE_REGISTER(s_num)
 
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num)
 	#define SIMUL_CONSTANT_BUFFER_END
