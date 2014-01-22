@@ -20,6 +20,7 @@ RenderPlatform::~RenderPlatform()
 
 void RenderPlatform::RestoreDeviceObjects(void*)
 {
+	solidConstants.RestoreDeviceObjects();
 	RecompileShaders();
 }
 
@@ -34,9 +35,7 @@ void RenderPlatform::RecompileShaders()
 	std::map<std::string,std::string> defines;
 	SAFE_DELETE_PROGRAM(solid_program);
 	solid_program	=MakeProgram("solid",defines);
-	solidConstants.RestoreDeviceObjects();
 	solidConstants.LinkToProgram(solid_program,"SolidConstants",0);
-	//SetCloudConstants(cloudConstants);
 }
 
 void RenderPlatform::StartRender()
@@ -47,7 +46,6 @@ void RenderPlatform::StartRender()
 	// Draw the front face only, except for the texts and lights.
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_CULL_FACE);
-	solidConstants.Apply();
 
 	glUseProgram(solid_program);
 }

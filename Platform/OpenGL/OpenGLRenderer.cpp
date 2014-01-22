@@ -16,8 +16,8 @@
 #include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
-#include "Simul/Scene/Scene.h"
-#include "Simul/Scene/SceneCache.h"
+#include "Simul/Scene/Object.h"
+#include "Simul/Scene/ObjectRenderer.h"
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
@@ -42,8 +42,8 @@
 using namespace simul;
 using namespace opengl;
 
-simul::scene::Scene * gScene=NULL;
-simul::scene::SceneCache *sceneCache=NULL;
+simul::scene::Object * gScene=NULL;
+simul::scene::ObjectRenderer *sceneCache=NULL;
 
 simul::opengl::RenderPlatform renderPlatform;
 
@@ -65,19 +65,17 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 	,Exposure(1.0f)
 	,simple_program(0)
 {
-	simulHDRRenderer	=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
-	simulWeatherRenderer=new SimulGLWeatherRenderer(env,NULL,ScreenWidth,ScreenHeight);
-	simulOpticsRenderer	=new SimulOpticsRendererGL(m);
-	simulTerrainRenderer=new SimulGLTerrainRenderer(NULL);
+	simulHDRRenderer		=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
+	simulWeatherRenderer	=new SimulGLWeatherRenderer(env,NULL,ScreenWidth,ScreenHeight);
+	simulOpticsRenderer		=new SimulOpticsRendererGL(m);
+	simulTerrainRenderer	=new SimulGLTerrainRenderer(NULL);
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 	
 	simul::opengl::PushTexturePath("C:\\Simul\\dev\\Simul\\Media\\scenes\\stmedard_f");
 	std::string sceneFilename	=std::string(GetScenePathUtf8())+"\\stmedard_f\\stmedard.fbx";//SciFi\\SciFi_HumanCity_Kit05-FBX.fbx";//"\\stmedard_f\\stmedard.fbx";		//
-	gScene						=new simul::scene::Scene(sceneFilename.length() ? sceneFilename.c_str() : NULL);
-	sceneCache=new scene::SceneCache(gScene);
-	sceneCache->SetShadingMode(simul::scene::SHADING_MODE_SHADED);
-	sceneCache->SetRenderPlatform(&renderPlatform);
+	gScene						=new simul::scene::Object(sceneFilename.length() ? sceneFilename.c_str() : NULL);
+	sceneCache=new scene::ObjectRenderer(gScene,&renderPlatform);
 	if(init_glut)
 	{
 		char argv[]="no program";
@@ -201,7 +199,7 @@ GL_ERROR_CHECK
 		
 		if(gScene)
 		{
-			if (gScene->GetStatus() == simul::scene::Scene::MUST_BE_LOADED)
+			if (gScene->GetStatus() == simul::scene::Object::MUST_BE_LOADED)
 			{
 				gScene->LoadFile();
 				sceneCache->LoadCacheRecursive(true);
