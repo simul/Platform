@@ -181,7 +181,7 @@ struct vertexOutput
     float2 texCoordsNoise		: TEXCOORD0;
 	float layerFade				: TEXCOORD1;
     float4 texCoords			: TEXCOORD2;
-	float3 wPosition			: TEXCOORD3;
+	float3 view					: TEXCOORD3;
     float3 texCoordLightning	: TEXCOORD4;
     float3 lightColour			: TEXCOORD5;
     float2 fade_texc			: TEXCOORD6;
@@ -213,17 +213,17 @@ vertexOutput VS_Main(vertexInput IN)
 	n						=normalize(n);
 	vec2 noise_texc_0		=mul(noiseMatrix,vec4(n.xy,0,0)).xy/fractalRepeatLength;
 	OUT.texCoordsNoise		=noise_texc_0*IN.layerWorldDist+IN.layerNoiseOffset;
-	OUT.wPosition			=(wPos.xyz);//-eyePosition.xyz);
+	OUT.view				=IN.position.xyz;
 	OUT.layerFade=IN.layerFade;
 // Note position.xzy is used if Y is vertical!
 	float3 texCoordLightning=(wPos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
 	texCoordLightning.z=0.5f;
 	OUT.texCoordLightning=texCoordLightning;
-	float3 view=normalize(OUT.wPosition.xyz);
+	float3 view				=normalize(OUT.view.xyz);
 	float sine	=view.z;
 	OUT.lightColour			=sunlightColour1;
 // Fade mode ONE - fade is calculated from the fade textures. So we send a texture coordinate:
-	float dist				=length(OUT.wPosition.xyz)/maxFadeDistanceMetres;
+	float dist				=length(OUT.view.xyz)/maxFadeDistanceMetres;
 	//OUT.fade_texc=float2(,0.5f*(1.f-sine));
 	OUT.fade_texc			=float2(sqrt(dist),0.5f*(1.f-sine));
     return OUT;
@@ -250,7 +250,7 @@ float4 CloudColour(vertexOutput IN,float cos0)
 	//if(density.x<=0)
 	//	discard;
 // cloudEccentricity is multiplied by density.z (i.e. direct light) to avoid interpolation artifacts.
-	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity*density.y,cos0);
+	float Beta=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
 	float3 ambient=skylightColour.rgb*density.w;
 	float opacity=density.x;
 	float4 final;
@@ -261,7 +261,7 @@ float4 CloudColour(vertexOutput IN,float cos0)
 
 float4 PS_WithLightning(vertexOutput IN): color
 {
-	float3 view=normalize(IN.wPosition);
+	float3 view=normalize(IN.view);
 	float cos0=dot(lightDir.xyz,view.xyz);
 	vec4 lookup=tex3D(cloud_density_1,IN.texCoords.xyz);
 	return vec4(frac(IN.texCoords.xyz),.5);
@@ -285,7 +285,7 @@ float4 PS_WithLightning(vertexOutput IN): color
 
 vec4 PS_Clouds(vertexOutput IN): color
 {
-	vec3 view			=normalize(IN.wPosition);
+	vec3 view			=normalize(IN.view);
 	float sine			=view.z;
 	float cos0=dot(lightDir.xyz,view.xyz);
 // Fade mode 1 means using textures for distance fade.
