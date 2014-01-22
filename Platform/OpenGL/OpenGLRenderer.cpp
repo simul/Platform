@@ -17,7 +17,7 @@
 #include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
 #include "Simul/Scene/Object.h"
-#include "Simul/Scene/ObjectRenderer.h"
+#include "Simul/Scene/BaseObjectRenderer.h"
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
@@ -43,7 +43,7 @@ using namespace simul;
 using namespace opengl;
 
 simul::scene::Object * gScene=NULL;
-simul::scene::ObjectRenderer *sceneCache=NULL;
+simul::scene::BaseObjectRenderer *sceneCache=NULL;
 
 simul::opengl::RenderPlatform renderPlatform;
 
@@ -75,7 +75,7 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 	simul::opengl::PushTexturePath("C:\\Simul\\dev\\Simul\\Media\\scenes\\stmedard_f");
 	std::string sceneFilename	=std::string(GetScenePathUtf8())+"\\stmedard_f\\stmedard.fbx";//SciFi\\SciFi_HumanCity_Kit05-FBX.fbx";//"\\stmedard_f\\stmedard.fbx";		//
 	gScene						=new simul::scene::Object(sceneFilename.length() ? sceneFilename.c_str() : NULL);
-	sceneCache=new scene::ObjectRenderer(gScene,&renderPlatform);
+	sceneCache=new scene::BaseObjectRenderer(gScene,&renderPlatform);
 	if(init_glut)
 	{
 		char argv[]="no program";
