@@ -109,9 +109,9 @@ namespace simul
 			{
 				return simulTerrainRenderer;
 			}
-			void	RecompileShaders();
-			void			RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos);
-			void			RenderEnvmap(ID3D11DeviceContext* pContext);
+			void						RecompileShaders();
+			void						RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos);
+			void						RenderEnvmap(ID3D11DeviceContext* pContext);
 			// D3D11CallbackInterface
 			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
 			virtual void				OnD3D11CreateDevice	(ID3D11Device* pd3dDevice);

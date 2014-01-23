@@ -239,22 +239,21 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 	{
 		hdrFramebuffer.Activate(NULL);
 		static float depth_start=1.f;
-		pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
+		pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF00FF00,depth_start,0L);
 	}
 	else
 	{
 		pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,1.0f,0L);
 	}
-	if(simulTerrainRenderer&&ShowTerrain)
+/*	if(simulTerrainRenderer&&ShowTerrain)
 	{
 		simulTerrainRenderer->SetMatrices(view,proj);
 		simulTerrainRenderer->Render(NULL,1.f);
-	}
+	}*/
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 		// We would LIKE to use the depth buffer as a texture from here onwards, but this is not well-supported.
 		hdrFramebuffer.DeactivateDepth(NULL);
-		// Therefore we will 
 	}
 	void *depth_texture=hdrFramebuffer.GetDepthTex();
 	if(simulWeatherRenderer)
@@ -285,7 +284,6 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 		simulWeatherRenderer->RenderLightning(NULL,viewport_id);
 		simulWeatherRenderer->RenderPrecipitation(NULL);
 	}
-
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 		hdrFramebuffer.Deactivate(pd3dDevice);

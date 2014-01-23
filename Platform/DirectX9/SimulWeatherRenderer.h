@@ -45,7 +45,7 @@ namespace simul
 {
 	//! The namespace for the DirectX 9 platform library and its rendering classes.
 
-	//! This library is deprecated in favour of the \ref dx11 DirectX 11 library.
+	//! This library is deprecated in favour of the \ref  DirectX 11 library.
 	namespace dx9
 	{
 		struct TwoResFramebuffer:public simul::clouds::TwoResFramebuffer
@@ -53,24 +53,24 @@ namespace simul
 			TwoResFramebuffer();
 			BaseFramebuffer *GetLowResFarFramebuffer()
 			{
-				return &lowResFarFramebufferDx11;
+				return &lowResFarFramebuffer;
 			}
 			BaseFramebuffer *GetLowResNearFramebuffer()
 			{
-				return &lowResNearFramebufferDx11;
+				return &lowResNearFramebuffer;
 			}
 			BaseFramebuffer *GetHiResFarFramebuffer()
 			{
-				return &hiResFarFramebufferDx11;
+				return &hiResFarFramebuffer;
 			}
 			BaseFramebuffer *GetHiResNearFramebuffer()
 			{
-				return &hiResNearFramebufferDx11;
+				return &hiResNearFramebuffer;
 			}
-			dx9::Framebuffer	lowResFarFramebufferDx11;
-			dx9::Framebuffer	lowResNearFramebufferDx11;
-			dx9::Framebuffer	hiResFarFramebufferDx11;
-			dx9::Framebuffer	hiResNearFramebufferDx11;
+			dx9::Framebuffer	lowResFarFramebuffer;
+			dx9::Framebuffer	lowResNearFramebuffer;
+			dx9::Framebuffer	hiResFarFramebuffer;
+			dx9::Framebuffer	hiResNearFramebuffer;
 			void RestoreDeviceObjects(void *);
 			void InvalidateDeviceObjects();
 			void SetDimensions(int w,int h,int downscale);

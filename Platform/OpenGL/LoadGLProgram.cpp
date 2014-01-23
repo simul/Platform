@@ -206,11 +206,11 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 				}
 				if(errpos>=0)
 				{
-					int first_colon=line.find(":");
-					int second_colon=line.find(":",first_colon+1);
-					int third_colon=line.find(":",second_colon+1);
-					int first_bracket=line.find("(");
-					int second_bracket=line.find(")",first_bracket+1);
+					int first_colon		=(int)line.find(":");
+					int second_colon	=(int)line.find(":",first_colon+1);
+					int third_colon		=(int)line.find(":",second_colon+1);
+					int first_bracket	=(int)line.find("(");
+					int second_bracket	=(int)line.find(")",first_bracket+1);
 					int numberstart,numberlen=0;
 					if(third_colon>=0)
 					{
