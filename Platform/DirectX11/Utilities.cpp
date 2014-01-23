@@ -670,8 +670,8 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
 	
     D3D1x_SUBRESOURCE_DATA InitData;
     ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-    InitData.pSysMem = vertices;
-    InitData.SysMemPitch = sizeof(vec3);
+    InitData.pSysMem		=vertices;
+    InitData.SysMemPitch	=sizeof(vec3);
 	V_CHECK(m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer));
 }
 

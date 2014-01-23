@@ -149,14 +149,19 @@ int	Direct3D11Renderer::AddView()
 void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
 {
 	View *view			=GetView(view_id);
-	view->RestoreDeviceObjects(m_pd3dDevice);
-	view->ScreenWidth	=pBackBufferSurfaceDesc->Width;
-	view->ScreenHeight	=pBackBufferSurfaceDesc->Height;
+	if(view)
+	{	
+		view->RestoreDeviceObjects(m_pd3dDevice);
+		view->ScreenWidth	=pBackBufferSurfaceDesc->Width;
+		view->ScreenHeight	=pBackBufferSurfaceDesc->Height;
+	}
 }
 
 void Direct3D11Renderer::EnsureCorrectBufferSizes(int view_id)
 {
 	View *view			=GetView(view_id);
+	if(!view)
+		return;
 	// Must have a whole number of full-res pixels per low-res pixel.
 	int w=view->ScreenWidth,h=view->ScreenHeight;
 	if(simulWeatherRenderer)

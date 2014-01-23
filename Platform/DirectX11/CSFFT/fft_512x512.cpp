@@ -34,7 +34,15 @@ HRESULT CompileShaderFromFile( const char* szFileName, const char* szEntryPoint,
 Fft::Fft()
 	:m_pd3dDevice(NULL)
 	,size(512)
+	,pd3dImmediateContext(NULL)
+	,pRadix008A_CS(NULL)
+	,pRadix008A_CS2(NULL)
+	,pBuffer_Tmp(NULL)
+	,pUAV_Tmp(NULL)
+	,pSRV_Tmp(NULL)
 {
+	for(int i=0;i<6;i++)
+		pRadix008A_CB[i]=NULL;
 }
 Fft::~Fft()
 {

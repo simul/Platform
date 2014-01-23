@@ -388,6 +388,7 @@ bool Framebuffer::IsValid() const
 	bool ok=(m_pHDRRenderTarget!=NULL)||(m_pBufferDepthSurface!=NULL);
 	return ok;
 }
+
 void Framebuffer::Activate(void *context)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;

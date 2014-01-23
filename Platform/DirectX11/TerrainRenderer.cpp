@@ -63,13 +63,9 @@ void TerrainRenderer::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	V_CHECK(CreateEffect(m_pd3dDevice,&m_pTerrainEffect,("simul_terrain.fx"),defines));
-	
 	m_pTechnique		=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
-
 	ReloadTextures();
-
 	terrainConstants.LinkToEffect(m_pTerrainEffect,"TerrainConstants");
-	
 }
 
 void TerrainRenderer::RestoreDeviceObjects(void *dev)
@@ -105,6 +101,7 @@ void TerrainRenderer::RestoreDeviceObjects(void *dev)
     ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
     InitData.pSysMem = vertices;
     InitData.SysMemPitch = sizeof(TerrainVertex_t);
+	SAFE_RELEASE(m_pVertexBuffer);
 	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer);
 	MakeVertexBuffer();
 	delete [] vertices;
@@ -176,6 +173,7 @@ void TerrainRenderer::MakeVertexBuffer()
 		}
 	}
 	UnmapBuffer(pImmediateContext,m_pVertexBuffer);
+	SAFE_RELEASE(pImmediateContext);
 }
 
 void TerrainRenderer::Render(void *context,float exposure)

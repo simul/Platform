@@ -162,6 +162,7 @@ void OceanRenderer::RestoreDeviceObjects(ID3D11Device* dev)
 	m_pd3dDevice=dev;
 	oceanSimulator=new OceanSimulator(seaKeyframer);
 	oceanSimulator->RestoreDeviceObjects(m_pd3dDevice);
+	return;
 	// Update the simulation for the first time.
 	oceanSimulator->updateDisplacementMap(0);
 
@@ -474,6 +475,7 @@ void OceanRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 
 void OceanRenderer::Render(void *context,float exposure)
 {
+	return;
 	if(skyInterface)
 		app_time=skyInterface->GetTime();
 	oceanSimulator->updateDisplacementMap((float)app_time);

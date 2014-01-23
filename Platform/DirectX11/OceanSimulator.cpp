@@ -141,6 +141,7 @@ void createTextureAndViews(ID3D11Device* pd3dDevice, UINT width, UINT height, DX
 
 OceanSimulator::OceanSimulator(simul::terrain::SeaKeyframer *s)
 	:m_param(s)
+	,m_pd3dDevice(NULL)
 	,m_pd3dImmediateContext(NULL)
 	,effect(NULL)
 	,start_time(0.f)
@@ -167,9 +168,10 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	m_pd3dDevice=pd3dDevice;
 	// If the device becomes invalid at some point, delete current instance and generate a new one.
 	assert(pd3dDevice);
+	SAFE_RELEASE(m_pd3dImmediateContext);
+	return;
 	pd3dDevice->GetImmediateContext(&m_pd3dImmediateContext);
 	assert(m_pd3dImmediateContext);
-
 	// Height map H(0)
 	int height_map_size = (m_param->dmap_dim + 4) * (m_param->dmap_dim + 1);
 	D3DXVECTOR2* h0_data = new D3DXVECTOR2[height_map_size * sizeof(D3DXVECTOR2)];
@@ -230,7 +232,6 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	
 	RecompileShaders();
 
-
 	// Constant buffers
 	UINT actual_dim = m_param->dmap_dim;
 
@@ -249,6 +250,8 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 
 void OceanSimulator::RecompileShaders()
 {
+	if(!m_pd3dDevice)
+		return;
 	effect					=LoadEffect(m_pd3dDevice,"ocean.fx");
 	m_fft					.RecompileShaders();
 	immutableConstants		.LinkToEffect(effect,"cbImmutable");
