@@ -104,7 +104,9 @@ void Fft::RecompileShaders()
 
     CompileShaderFromFile("fft_512x512_c2c.hlsl", "Radix008A_CS", "cs_4_0", &pBlobCS);
     CompileShaderFromFile("fft_512x512_c2c.hlsl", "Radix008A_CS2", "cs_4_0", &pBlobCS2);
-
+	
+	SAFE_RELEASE(pRadix008A_CS);
+	SAFE_RELEASE(pRadix008A_CS2);
     m_pd3dDevice->CreateComputeShader(pBlobCS->GetBufferPointer(), pBlobCS->GetBufferSize(), NULL, &pRadix008A_CS);
     m_pd3dDevice->CreateComputeShader(pBlobCS2->GetBufferPointer(), pBlobCS2->GetBufferSize(), NULL, &pRadix008A_CS2);
     

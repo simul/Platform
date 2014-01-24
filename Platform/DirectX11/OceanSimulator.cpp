@@ -168,8 +168,8 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	m_pd3dDevice=pd3dDevice;
 	// If the device becomes invalid at some point, delete current instance and generate a new one.
 	assert(pd3dDevice);
-	SAFE_RELEASE(m_pd3dImmediateContext);
 	return;
+	SAFE_RELEASE(m_pd3dImmediateContext);
 	pd3dDevice->GetImmediateContext(&m_pd3dImmediateContext);
 	assert(m_pd3dImmediateContext);
 	// Height map H(0)
@@ -252,7 +252,9 @@ void OceanSimulator::RecompileShaders()
 {
 	if(!m_pd3dDevice)
 		return;
+	SAFE_RELEASE(effect);
 	effect					=LoadEffect(m_pd3dDevice,"ocean.fx");
+return;
 	m_fft					.RecompileShaders();
 	immutableConstants		.LinkToEffect(effect,"cbImmutable");
 	changePerFrameConstants	.LinkToEffect(effect,"cbChangePerFrame");
