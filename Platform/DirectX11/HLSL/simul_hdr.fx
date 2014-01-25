@@ -3,9 +3,6 @@
 #include "../../CrossPlatform/depth.sl"
 #include "../../CrossPlatform/hdr_constants.sl"
 #include "../../CrossPlatform/mixed_resolution.sl"
-//#include "../../CrossPlatform/sky_compositing_constants.sl"
-//#include "../../CrossPlatform/atmospherics_constants.sl"
-
 Texture2D imageTexture;
 Texture2DMS<float4> imageTextureMS;
 Texture2D nearImageTexture;
@@ -209,8 +206,8 @@ bool IsSampleNearer(inout float MinDist,float Z,float ZFull)
 // texture_clamp_lod texture_nearest_lod
 vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
 {
-	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy,imageTexture,nearImageTexture,lowResDepthTexture,depthTextureMS,viewportToTexRegionScaleBias,depthToLinFadeDistParams
-		,inscatterTexture,nearInscatterTexture);
+	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy,imageTexture,nearImageTexture,lowResDepthTexture,depthTexture,depthTextureMS,viewportToTexRegionScaleBias,depthToLinFadeDistParams
+		,inscatterTexture,nearInscatterTexture,true);
 	result.rgb	*=exposure;
 	return result;
 }

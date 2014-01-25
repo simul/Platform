@@ -393,7 +393,6 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	//
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
-
 	HRESULT hr		=S_OK;
 	static int u	=4;
 	int w			=(width-8)/u;
@@ -406,7 +405,6 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 	simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)framebufferDx11.GetDepthTex());
 	int x			=8;
 	int y			=height-w;
-
 	hdrConstants.tanHalfFov					=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	hdrConstants.nearZ						=frustum.nearZ/max_fade_distance_metres;
 	hdrConstants.farZ						=frustum.farZ/max_fade_distance_metres;
@@ -416,7 +414,6 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int width,in
 													,(float)w/(float)width
 													,(float)w/(float)height);
 	hdrConstants.Apply(pContext);
-
 	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));
 }
 
