@@ -9,6 +9,7 @@ struct Output
 	int width;
 	int height;
 };
+
 class Direct3D11ManagerInterface
 {
 public:
