@@ -156,7 +156,7 @@ namespace simul
 			UtilityRenderer();
 			~UtilityRenderer();
 			static void SetMatrices(D3DXMATRIX v,D3DXMATRIX p);
-			static void RestoreDeviceObjects(void *m_pd3dDevice);
+			static void SIMUL_DIRECTX11_EXPORT RestoreDeviceObjects(void *m_pd3dDevice);
 			static void InvalidateDeviceObjects();
 			static void RecompileShaders();
 			static void SetScreenSize(int w,int h);
