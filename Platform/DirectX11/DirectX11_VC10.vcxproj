@@ -83,7 +83,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(SIMUL)/External/FBX/include;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -112,7 +112,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(SIMUL)/External/FBX/include;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -141,7 +141,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(SIMUL)/External/FBX/include;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -164,7 +164,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(SIMUL)/External/FBX/include;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -195,10 +195,14 @@
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="OceanRenderer.cpp" />
     <ClCompile Include="OceanSimulator.cpp" />
     <ClCompile Include="PrecipitationRenderer.cpp" />
     <ClCompile Include="Profiler.cpp" />
+    <ClCompile Include="RenderPlatform.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
     <ClCompile Include="Simul2DCloudRendererDX1x.cpp" />
     <ClCompile Include="SimulAtmosphericsRendererDX1x.cpp" />
@@ -210,6 +214,7 @@
     <ClCompile Include="TerrainRenderer.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -227,11 +232,15 @@
     <ClInclude Include="FramebufferDX1x.h" />
     <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="GpuSkyGenerator.h" />
+    <ClInclude Include="Light.h" />
     <ClInclude Include="MacrosDx1x.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="OceanRenderer.h" />
     <ClInclude Include="OceanSimulator.h" />
     <ClInclude Include="PrecipitationRenderer.h" />
     <ClInclude Include="Profiler.h" />
+    <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ResourcesDx1x.h" />
     <ClInclude Include="SaveTextureDX1x.h" />
@@ -245,6 +254,7 @@
     <ClInclude Include="TerrainRenderer.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />
     <ClInclude Include="TextRenderer.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>

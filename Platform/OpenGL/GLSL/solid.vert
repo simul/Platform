@@ -16,3 +16,4 @@ void main(void)
     texCoords		=in_coord;
     normal			=in_normal;
 }
+

@@ -13,6 +13,8 @@
 #include "Simul/Platform/DirectX11/Profiler.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/SaveTextureDx1x.h"
+//#include "Simul/Platform/DirectX11/RenderPlatform.h"
+//#include "Simul/Scene/BaseSceneRenderer.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
@@ -23,9 +25,9 @@ using namespace simul;
 using namespace dx11;
 
  View::View()
-	 :camera(NULL)
-	 ,viewType(MAIN_3D_VIEW)
-	 ,ScreenWidth(0)
+	:camera(NULL)
+	,viewType(MAIN_3D_VIEW)
+	,ScreenWidth(0)
 	,ScreenHeight(0)
  {
  }
@@ -51,8 +53,22 @@ void View::InvalidateDeviceObjects()
 	lowResDepthTexture.release();
 }
 
+int View::GetScreenWidth() const
+{
+	return ScreenWidth;
+}
+int View::GetScreenHeight() const
+{
+	return ScreenHeight;
+}
+void View::SetResolution(int w,int h)
+{
+	ScreenWidth=w;
+	ScreenHeight=h;
+}
+//simul::dx11::RenderPlatform renderPlatform;
 
-Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,int w,int h):
+Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,int w,int h):
 		ShowCloudCrossSections(false)
 		,ShowFlares(true)
 		,Show2DCloudTextures(false)
@@ -83,6 +99,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 		,simulHDRRenderer(NULL)
 		,simulTerrainRenderer(NULL)
 		,oceanRenderer(NULL)
+	//	,sceneRenderer(NULL)
 		,memoryInterface(m)
 {
 	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
@@ -91,8 +108,10 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::ba
 	simulTerrainRenderer	=::new(memoryInterface) TerrainRenderer(memoryInterface);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 
-	oceanRenderer=new(memoryInterface) OceanRenderer(env->seaKeyframer);
+	oceanRenderer			=new(memoryInterface) OceanRenderer(env->seaKeyframer);
 	oceanRenderer->SetBaseSkyInterface(env->skyKeyframer);
+
+//	sceneRenderer			=new(memoryInterface) scene::BaseSceneRenderer(sc,&renderPlatform);
 	ReverseDepthChanged();
 	cubemapFramebuffer.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 	cubemapFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
@@ -152,8 +171,7 @@ void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBu
 	if(view)
 	{	
 		view->RestoreDeviceObjects(m_pd3dDevice);
-		view->ScreenWidth	=pBackBufferSurfaceDesc->Width;
-		view->ScreenHeight	=pBackBufferSurfaceDesc->Height;
+		view->SetResolution(pBackBufferSurfaceDesc->Width,pBackBufferSurfaceDesc->Height);
 	}
 }
 
@@ -163,23 +181,22 @@ void Direct3D11Renderer::EnsureCorrectBufferSizes(int view_id)
 	if(!view)
 		return;
 	// Must have a whole number of full-res pixels per low-res pixel.
-	int w=view->ScreenWidth,h=view->ScreenHeight;
+	int w=view->GetScreenWidth(),h=view->GetScreenHeight();
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->SetScreenSize(view_id,view->ScreenWidth,view->ScreenHeight);
-		int					s=simulWeatherRenderer->GetDownscale();
-		w					=(view->ScreenWidth +s-1)/s;
-		h					=(view->ScreenHeight+s-1)/s;
-		view->ScreenWidth	=w*s;
-		view->ScreenHeight	=h*s;
+		simulWeatherRenderer->SetScreenSize(view_id,view->GetScreenWidth(),view->GetScreenHeight());
+		int s					=simulWeatherRenderer->GetDownscale();
+		w						=(view->GetScreenWidth() +s-1)/s;
+		h						=(view->GetScreenHeight()+s-1)/s;
+		view->SetResolution(w*s,h*s);
 	}
-	w=view->ScreenWidth;
+	w=view->GetScreenWidth();
 	if(view->viewType==OCULUS_VR)
-		w=view->ScreenWidth/2;
+		w=view->GetScreenWidth()/2;
 	if(simulHDRRenderer)
-		simulHDRRenderer->SetBufferSize(w,view->ScreenHeight);
-	view->hdrFramebuffer	.SetWidthAndHeight(w,view->ScreenHeight);
-	view->resolvedDepth_fb	.SetWidthAndHeight(w,view->ScreenHeight);
+		simulHDRRenderer->SetBufferSize(w,view->GetScreenHeight());
+	view->hdrFramebuffer	.SetWidthAndHeight(w,view->GetScreenHeight());
+	view->resolvedDepth_fb	.SetWidthAndHeight(w,view->GetScreenHeight());
 	view->hdrFramebuffer	.SetAntialiasing(Antialiasing);
 }
 
@@ -238,7 +255,7 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 	if(!view)
 		return;
 	int w=view->hdrFramebuffer.Width/s;
-	int h=view->ScreenHeight/s;
+	int h=view->GetScreenHeight()/s;
 	// DXGI_FORMAT_D32_FLOAT->DXGI_FORMAT_R32_FLOAT
 	view->lowResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	//lowResDepthTexture_far.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
@@ -345,9 +362,9 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	if(cam)
 	{
 		if(ReverseDepth)
-			proj=cam->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,(float)view->ScreenWidth/(float)view->ScreenHeight);
+			proj=cam->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,(float)view->GetScreenWidth()/(float)view->GetScreenHeight());
 		else
-			proj=cam->MakeProjectionMatrix(nearPlane,farPlane,(float)view->ScreenWidth/(float)view->ScreenHeight);
+			proj=cam->MakeProjectionMatrix(nearPlane,farPlane,(float)view->GetScreenWidth()/(float)view->GetScreenHeight());
 		v=cam->MakeViewMatrix();
 		simul::dx11::UtilityRenderer::SetMatrices(v,proj);
 	}
@@ -362,13 +379,13 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		memset(&viewport,0,sizeof(D3D11_VIEWPORT));
 		viewport.MinDepth			=0.0f;
 		viewport.MaxDepth			=1.0f;
-		viewport.Width				=(float)view->ScreenWidth/2;
-		viewport.Height				=(float)view->ScreenHeight;
+		viewport.Width				=(float)view->GetScreenWidth()/2;
+		viewport.Height				=(float)view->GetScreenHeight();
 		pd3dImmediateContext->RSSetViewports(1, &viewport);
 		//left eye
 		if(cam)
 		{
-			proj=cam->MakeStereoProjectionMatrix(simul::camera::LEFT_EYE,nearPlane,farPlane,(float)view->ScreenWidth/2.f/(float)view->ScreenHeight,ReverseDepth);
+			proj=cam->MakeStereoProjectionMatrix(simul::camera::LEFT_EYE,nearPlane,farPlane,(float)view->GetScreenWidth()/2.f/(float)view->GetScreenHeight(),ReverseDepth);
 			v	=cam->MakeStereoViewMatrix(simul::camera::LEFT_EYE);
 			simul::dx11::UtilityRenderer::SetMatrices(v,proj);
 		}
@@ -387,11 +404,11 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		//right eye
 		if(cam)
 		{
-			proj=cam->MakeStereoProjectionMatrix(simul::camera::RIGHT_EYE,nearPlane,farPlane,(float)view->ScreenWidth/2.f/(float)view->ScreenHeight,ReverseDepth);
+			proj=cam->MakeStereoProjectionMatrix(simul::camera::RIGHT_EYE,nearPlane,farPlane,(float)view->GetScreenWidth()/2.f/(float)view->GetScreenHeight(),ReverseDepth);
 			v	=cam->MakeStereoViewMatrix(simul::camera::RIGHT_EYE);
 			simul::dx11::UtilityRenderer::SetMatrices(v,proj);
 		}
-		viewport.TopLeftX			=view->ScreenWidth/2.f;
+		viewport.TopLeftX			=view->GetScreenWidth()/2.f;
 		pd3dImmediateContext->RSSetViewports(1, &viewport);
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
@@ -434,10 +451,10 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulWeatherRenderer)
 	{
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
-			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
+			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
-		simul::dx11::UtilityRenderer::SetScreenSize(view->ScreenWidth,view->ScreenHeight);
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
+		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
 		if(ShowDepthBuffers)
 		{
 			int w=view->lowResDepthTexture.width*4;
@@ -466,25 +483,25 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
-			simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,0,view->ScreenWidth,view->ScreenHeight);
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
+			simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,0,view->GetScreenWidth(),view->GetScreenHeight());
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
 		{
-			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
+			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
 		}
 		if(simulWeatherRenderer->GetBasePrecipitationRenderer()&&ShowRainTextures)
 		{
-			simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
+			simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 		{
-			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
+			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
 		}
 	}
 	if(oceanRenderer&&ShowWaterTextures)
-		oceanRenderer->RenderTextures(pd3dImmediateContext,view->ScreenWidth,view->ScreenHeight);
+		oceanRenderer->RenderTextures(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
 	Profiler::GetGlobalProfiler().EndFrame(pd3dImmediateContext);
 }
 
@@ -492,7 +509,7 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 {
 	std::string screenshotFilenameUtf8=filename_utf8;
 	View *view=views[0];
-	simul::dx11::Framebuffer fb(view->ScreenWidth,view->ScreenHeight);
+	simul::dx11::Framebuffer fb(view->GetScreenWidth(),view->GetScreenHeight());
 	fb.RestoreDeviceObjects(m_pd3dDevice);
 	ID3D11DeviceContext*			pImmediateContext;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);

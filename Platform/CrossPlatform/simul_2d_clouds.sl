@@ -7,7 +7,7 @@ float NoiseFunction(Texture2D noiseTexture,vec2 pos,float octaves,float persiste
 	float mult=0.5;
 	float sum=0.0;
 	float t=time;
-	int i_oct=int(octaves+1.f);
+	int i_oct=int(octaves+1.0);
 	for(int i=0;i<5;i++)
 	{
 		if(i>=i_oct)

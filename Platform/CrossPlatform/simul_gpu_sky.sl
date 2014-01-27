@@ -368,7 +368,7 @@ void MakeLightTable(RWTexture3D<float4> targetTexture, Texture3D insc_texture, u
 	float alt_texc			=float(pos.x)/float(dims.x);
 	float alt_km			=maxOutputAltKm*alt_texc;
 	vec4 sunlight			=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,alt_km,lightDir);
-	float moon_angular_radius=pi/180.f/2.f;
+	float moon_angular_radius=pi/180.0/2.0;
 	float moon_angular_area_ratio=pi*moon_angular_radius*moon_angular_radius/(4.0*pi);
 	vec4 moonlight			=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,alt_km,directionToMoon)*0.136*moon_angular_area_ratio;
 	// equivalent to GetAnisotropicInscatterFactor(true,altitude_km,pi/2.f,0,1e5f,sun_irradiance,starlight,dir_to_sun,dir_to_moon,haze,overcast,false,0):

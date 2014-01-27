@@ -519,51 +519,6 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORM
 	//SAFE_RELEASE(pImmediateContext)
 }
 
-Mesh::Mesh()
-	:vertexBuffer(NULL)
-	,indexBuffer(NULL)
-	,stride(0)
-	,numVertices(0)
-	,numIndices(0)
-{
-}
-
-Mesh::~Mesh()
-{
-	release();
-}
-
-void Mesh::release()
-{
-	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(indexBuffer);
-	stride=0;
-	numVertices=0;
-	numIndices=0;
-}
-
-void Mesh::apply(ID3D11DeviceContext *pImmediateContext,unsigned instanceStride,ID3D11Buffer *instanceBuffer)
-{
-	UINT strides[]={stride,instanceStride};
-	UINT offsets[]={0,0};
-	ID3D11Buffer *buffers[]={vertexBuffer,instanceBuffer};
-
-	pImmediateContext->IASetVertexBuffers(	0,			// the first input slot for binding
-												2,			// the number of buffers in the array
-												buffers,	// the array of vertex buffers
-												strides,	// array of stride values, one for each buffer
-												offsets);	// array of offset values, one for each buffer
-
-	UINT Strides[1];
-	UINT Offsets[1];
-	Strides[0] = 0;
-	Offsets[0] = 0;
-	pImmediateContext->IASetIndexBuffer(	indexBuffer,
-											DXGI_FORMAT_R16_UINT,	// unsigned short
-											0);						// array of offset values, one for each buffer
-	
-}
-
 int UtilityRenderer::instance_count=0;
 int UtilityRenderer::screen_width=0;
 int UtilityRenderer::screen_height=0;

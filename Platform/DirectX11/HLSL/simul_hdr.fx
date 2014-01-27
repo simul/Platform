@@ -14,8 +14,6 @@ Texture2D<uint> glowTexture;
 Texture2D inscatterTexture;			// Far, or default inscatter
 Texture2D nearInscatterTexture;		// Near inscatter.
 
-
-
 struct a2v
 {
 	uint vertex_id	: SV_VertexID;
@@ -247,7 +245,6 @@ technique11 simul_direct
     }
 }
 
-
 technique11 exposure_gamma
 {
     pass p0
@@ -260,6 +257,7 @@ technique11 exposure_gamma
 		SetPixelShader(CompileShader(ps_4_0,ExposureGammaPS()));
     }
 }
+
 technique11 warp_exposure_gamma
 {
     pass p0

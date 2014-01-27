@@ -5,6 +5,7 @@
 #include "Simul/Platform/OpenGL/Texture.h"
 #include "Simul/Platform/OpenGL/Light.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
+#include "Simul/Platform/OpenGL/LoadGLImage.h"
 
 using namespace simul;
 using namespace opengl;
@@ -35,7 +36,17 @@ void RenderPlatform::RecompileShaders()
 	std::map<std::string,std::string> defines;
 	SAFE_DELETE_PROGRAM(solid_program);
 	solid_program	=MakeProgram("solid",defines);
-	solidConstants.LinkToProgram(solid_program,"SolidConstants",0);
+	solidConstants.LinkToProgram(solid_program,"SolidConstants",1);
+}
+
+void RenderPlatform::PushTexturePath(const char *pathUtf8)
+{
+	simul::opengl::PushTexturePath(pathUtf8);
+}
+
+void RenderPlatform::PopTexturePath()
+{
+	simul::opengl::PopTexturePath();
 }
 
 void RenderPlatform::StartRender()
@@ -46,7 +57,6 @@ void RenderPlatform::StartRender()
 	// Draw the front face only, except for the texts and lights.
 	glEnable(GL_CULL_FACE);
 	glDisable(GL_CULL_FACE);
-
 	glUseProgram(solid_program);
 }
 
@@ -73,14 +83,12 @@ void RenderPlatform::IntializeLightingEnvironment(const float pAmbientLight[3])
     glLightfv(GL_LIGHT0, GL_SPECULAR, DEFAULT_LIGHT_COLOR);
     glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, DEFAULT_LIGHT_SPOT_CUTOFF);
     glEnable(GL_LIGHT0);
-
     // Set ambient light.
-    GLfloat lAmbientLight[] = {static_cast<GLfloat>(pAmbientLight[0]), static_cast<GLfloat>(pAmbientLight[1]),
-        static_cast<GLfloat>(pAmbientLight[2]), 1.0f};
+    GLfloat lAmbientLight[] = {static_cast<GLfloat>(pAmbientLight[0]), static_cast<GLfloat>(pAmbientLight[1]),static_cast<GLfloat>(pAmbientLight[2]), 1.0f};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lAmbientLight);
 }
 
-void RenderPlatform::DrawMarker(const double *matrix)
+void RenderPlatform::DrawMarker(void *,const double *matrix)
 {
     glColor3f(0.0, 1.0, 1.0);
     glLineWidth(1.0);
@@ -120,11 +128,10 @@ void RenderPlatform::DrawMarker(const double *matrix)
         glVertex3f(+1.0f, +1.0f, -1.0f);
         glVertex3f(+1.0f, -1.0f, -1.0f);
     glEnd();
-
     glPopMatrix();
 }
 
-void RenderPlatform::DrawLine(const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)
+void RenderPlatform::DrawLine(void *,const double *pGlobalBasePosition, const double *pGlobalEndPosition,const float *colour,float width)
 {
     glColor3f(colour[0],colour[1],colour[2]);
     glLineWidth(width);
@@ -137,7 +144,7 @@ void RenderPlatform::DrawLine(const double *pGlobalBasePosition, const double *p
     glEnd();
 }
 
-void RenderPlatform::DrawCrossHair(const double *pGlobalPosition)
+void RenderPlatform::DrawCrossHair(void *,const double *pGlobalPosition)
 {
     glColor3f(1.0, 1.0, 1.0);
     glLineWidth(1.0);
@@ -175,7 +182,7 @@ void RenderPlatform::DrawCrossHair(const double *pGlobalPosition)
     glPopMatrix();
 }
 
-void RenderPlatform::DrawCamera(const double *pGlobalPosition, double pRoll)
+void RenderPlatform::DrawCamera(void *,const double *pGlobalPosition, double pRoll)
 {
     glColor3d(1.0, 1.0, 1.0);
     glLineWidth(1.0);
@@ -221,7 +228,7 @@ void RenderPlatform::DrawCamera(const double *pGlobalPosition, double pRoll)
     glPopMatrix();
 }
 
-void RenderPlatform::DrawLineLoop(const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
+void RenderPlatform::DrawLineLoop(void *,const double *mat,int lVerticeCount,const double *vertexArray,const float colr[4])
 {
     glPushMatrix();
     glMultMatrixd((const double*)mat);
@@ -254,10 +261,9 @@ void MakeWorldViewProjMatrix(float *wvp,const double *w,const float *v,const flo
 	simul::math::Matrix4x4 tmp1,view(v),proj(p),model(w);
 	simul::math::Multiply4x4(tmp1,model,view);
 	simul::math::Multiply4x4(*(simul::math::Matrix4x4*)wvp,tmp1,proj);
-	//wvp.Transpose();
 }
 
-void RenderPlatform::SetModelMatrix(const double *m)
+void RenderPlatform::SetModelMatrix(void *,const double *m)
 {
 	simul::math::Matrix4x4 proj;
 	glGetFloatv(GL_PROJECTION_MATRIX,proj.RowPointer(0));

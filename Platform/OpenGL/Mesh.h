@@ -14,10 +14,10 @@ namespace simul
 		public:
 			Mesh();
 			~Mesh();
-			bool Initialize(const FbxMesh * pMesh);
-			void BeginDraw(scene::ShadingMode pShadingMode,const double* mat) const;
-			void Draw(int pMaterialIndex,scene::ShadingMode pShadingMode) const;
-			void EndDraw() const;
+			bool Initialize(const fbxsdk_2014_2_1::FbxMesh * pMesh);
+			void BeginDraw(void *,scene::ShadingMode pShadingMode,const double* mat) const;
+			void Draw(void *,int pMaterialIndex,scene::ShadingMode pShadingMode) const;
+			void EndDraw(void *) const;
 			enum
 			{
 				VERTEX_VBO,
