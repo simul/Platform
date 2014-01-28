@@ -325,7 +325,10 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pd3dImmedi
 	simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
 	static bool test=true;
 	const void* skyBufferDepthTex = (UseSkyBuffer&test)? view->lowResDepthTexture.shaderResourceView : depthTextureResolved;
-	//simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,Exposure,UseSkyBuffer,false,depthTextureMS,skyBufferDepthTex,view_id,relativeViewportTextureRegionXYWH,true);
+	//simulWeatherRenderer->RenderSkyAsOverlay(pd3dImmediateContext,view_id,(const float*)v,(const float*)proj,false,Exposure,UseSkyBuffer
+		//,depthTextureMS,skyBufferDepthTex
+		//,relativeViewportTextureRegionXYWH
+		//,true);
 	simulWeatherRenderer->RenderMixedResolution(pd3dImmediateContext,view_id,(const float*)v,(const float*)proj,false,Exposure,depthTextureMS,skyBufferDepthTex,relativeViewportTextureRegionXYWH);
 	simulWeatherRenderer->RenderLightning(pd3dImmediateContext,view_id);
 	simulWeatherRenderer->DoOcclusionTests();

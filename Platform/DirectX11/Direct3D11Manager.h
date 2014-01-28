@@ -8,6 +8,8 @@
 #include "Simul/Platform/DirectX11/Direct3D11ManagerInterface.h"
 #include "Simul/Platform/DirectX11/Export.h"
 
+#pragma warning(push)
+#pragma warning(disable:4251)
 namespace simul
 {
 	namespace dx11
@@ -59,8 +61,8 @@ namespace simul
 			Output GetOutput(int i);
 
 			void GetVideoCardInfo(char*, int&);
-		protected:
 			Window *GetWindow(HWND hwnd);
+		protected:
 			bool m_vsync_enabled;
 			int m_videoCardMemory;
 			char m_videoCardDescription[128];
@@ -76,3 +78,4 @@ namespace simul
 
 	}
 }
+#pragma warning(pop)

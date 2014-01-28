@@ -135,7 +135,7 @@ namespace simul
 			
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3DX11Effect							*m_pTonemapEffect;
-			ID3DX11EffectTechnique					*directTechnique;
+			ID3DX11EffectTechnique					*simpleCloudBlendTechnique;
 			ID3DX11EffectTechnique					*farNearDepthBlendTechnique;
 			ID3DX11EffectTechnique					*showDepthTechnique;
 			ID3DX11EffectShaderResourceVariable		*imageTexture;

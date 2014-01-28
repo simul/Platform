@@ -207,7 +207,6 @@
     <ClCompile Include="SimulGLUtilities.cpp" />
     <ClCompile Include="SimulGLWeatherRenderer.cpp" />
     <ClCompile Include="SimulOpticsRendererGL.cpp" />
-    <ClCompile Include="targa.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -240,7 +239,6 @@
     <ClInclude Include="SimulGLUtilities.h" />
     <ClInclude Include="SimulGLWeatherRenderer.h" />
     <ClInclude Include="SimulOpticsRendererGL.h" />
-    <ClInclude Include="targa.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
   <ItemGroup>

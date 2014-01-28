@@ -12,6 +12,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{d426409d-fde9-4287-a5d7-83bd95887a7a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CrossPlatform">
+      <UniqueIdentifier>{2bdf6dea-191e-457d-8099-8222f85c79d5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CreateDX9Effect.cpp">
@@ -141,9 +144,6 @@
     <None Include="HLSL\simul_clouds_2d.fx">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="HLSL\simul_clouds_and_lightning.fx">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="HLSL\simul_debug.fx">
       <Filter>Shaders</Filter>
     </None>
@@ -175,6 +175,84 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="HLSL\tonemap.fx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\CrossPlatform\atmospherics_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\cloud_shadow.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\depth.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\earth_shadow.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\earth_shadow_fade.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_inscatter_fns.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\godrays.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\illumination.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\noise.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\rain_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_2d_cloud_detail.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_2d_clouds.hs">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_2d_clouds.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_cloud_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_clouds.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_gpu_clouds.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_gpu_sky.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\states.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\simul_terrain_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\sky_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\spherical_harmonics_constants.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="HLSL\dx9.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\CrossPlatform\CppSl.hs">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="..\CrossPlatform\atmospherics.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="HLSL\simul_clouds.fx">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

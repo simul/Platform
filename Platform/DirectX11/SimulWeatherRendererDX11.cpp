@@ -93,7 +93,7 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	BaseWeatherRenderer(env,mem),
 	m_pd3dDevice(NULL),
 	m_pTonemapEffect(NULL)
-	,directTechnique(NULL)
+	,simpleCloudBlendTechnique(NULL)
 	,imageTexture(NULL)
 	,simulSkyRenderer(NULL)
 	,simulCloudRenderer(NULL)
@@ -189,7 +189,7 @@ void SimulWeatherRendererDX11::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"), defines);
-	directTechnique				=m_pTonemapEffect->GetTechniqueByName("simul_direct");
+	simpleCloudBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("simple_cloud_blend");
 	showDepthTechnique			=m_pTonemapEffect->GetTechniqueByName("show_depth");
 	farNearDepthBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("far_near_depth_blend");
 	imageTexture				=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
@@ -349,14 +349,8 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context
 {
 	SIMUL_COMBINED_PROFILE_START(context,"RenderSkyAsOverlay")
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
-	// First we render the hi-res elements to the hi-res buffer.
-	if(buffered)
-	{
-		fb->hiResFarFramebufferDx11.Activate(context);
-		fb->hiResFarFramebufferDx11.Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
-	}
 	if(baseAtmosphericsRenderer&&ShowSky)
-		baseAtmosphericsRenderer->RenderInscatter(context,mainDepthTexture,exposure,depthViewportXYWH,false);
+		baseAtmosphericsRenderer->RenderAsOverlay(context,mainDepthTexture,exposure,depthViewportXYWH);
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
 		base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,UseDefaultFog,false,view_id,depthViewportXYWH);
 	// Now we render the low-resolution elements to the low-res buffer.
@@ -454,7 +448,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	simul::dx11::setTexture(m_pTonemapEffect,"inscatterTexture"		,(ID3D1xShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
 	simul::dx11::setTexture(m_pTonemapEffect,"nearInscatterTexture"	,(ID3D1xShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
 
-	ID3D1xEffectTechnique *tech					=depth_blend?farNearDepthBlendTechnique:directTechnique;
+	ID3D1xEffectTechnique *tech					=depth_blend?farNearDepthBlendTechnique:simpleCloudBlendTechnique;
 	ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
 	hdrConstants.exposure						=1.f;
 	hdrConstants.gamma							=1.f;

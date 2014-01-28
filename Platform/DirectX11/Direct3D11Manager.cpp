@@ -371,8 +371,11 @@ void Direct3D11Manager::Initialize()
 	// Create the swap chain, Direct3D device, and Direct3D device context.
 	//result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, &featureLevel, 1, 
 	//				       D3D11_SDK_VERSION, &swapChainDesc, &m_swapChain, &d3dDevice, NULL, &d3dDeviceContext);
-
-	result=D3D11CreateDevice(NULL,D3D_DRIVER_TYPE_HARDWARE,NULL, 0, &featureLevel,1,D3D11_SDK_VERSION,&d3dDevice, NULL,&d3dDeviceContext);
+	UINT flags=0;
+#ifdef _DEBUG
+	//flags|=D3D11_CREATE_DEVICE_DEBUG;
+#endif
+	result=D3D11CreateDevice(NULL,D3D_DRIVER_TYPE_HARDWARE,NULL,flags, &featureLevel,1,D3D11_SDK_VERSION,&d3dDevice, NULL,&d3dDeviceContext);
 	SIMUL_ASSERT(result==S_OK);
 }
 
@@ -564,10 +567,23 @@ void Direct3D11Manager::ResizeSwapChain(HWND hwnd,int width,int height)
 		GetWindowRect(hwnd,&rect);
 		int W	=abs(rect.right-rect.left);
 		int H	=abs(rect.bottom-rect.top);
+	ID3D11RenderTargetView *t[]={NULL};
+	//d3dDeviceContext->OMSetRenderTargets(1,t,NULL);
 	SAFE_RELEASE(w->m_renderTargetView);
+	DXGI_SWAP_CHAIN_DESC swapDesc;
+	w->m_swapChain->GetDesc(&swapDesc);
 	HRESULT hr=w->m_swapChain->ResizeBuffers(1,width,height,DXGI_FORMAT_R8G8B8A8_UNORM,0);
 	w->CreateRenderTarget(d3dDevice);
 	w->CreateDepthBuffer(d3dDevice);
+	
+	DXGI_SURFACE_DESC surfaceDesc;
+	w->m_swapChain->GetDesc(&swapDesc);
+	surfaceDesc.Format		=swapDesc.BufferDesc.Format;
+	surfaceDesc.SampleDesc	=swapDesc.SampleDesc;
+	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
+	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
+	if(w->renderer)
+		w->renderer->ResizeView(w->view_id,&surfaceDesc);
 	SIMUL_ASSERT(hr==S_OK);
 }
 

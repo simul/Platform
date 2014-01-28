@@ -29,25 +29,25 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -66,7 +66,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SIMUL)/exe/$(Platform)/VC11/$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Platform)/VC11/$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
@@ -79,23 +79,15 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">$(Platform)/VC11/$(Configuration)\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">$(Platform)/VC11/$(Configuration)\</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">
-    <TargetName>$(ProjectName)_MD</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
-    <TargetName>$(ProjectName)_MDd</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetName>$(ProjectName)_MDd</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <TargetName>$(ProjectName)_MD</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectName)_MD</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)_MDd</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Static Release|Win32'">$(ProjectName)_MD</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">$(ProjectName)_MDd</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(SIMUL)/External/FBX/include;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -105,19 +97,15 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)$(TargetName).dll</OutputFile>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(DXSDK_DIR)/Lib/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC11/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC11/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/VC11/$(Configuration);$(DXSDK_DIR)/Lib/x86;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -128,7 +116,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(SIMUL)/External/FBX/include;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DLL;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -137,13 +125,10 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)$(TargetName).dll</OutputFile>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(DXSDK_DIR)/Lib/x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/VC11/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/VC11/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/VC11/$(Configuration);$(DXSDK_DIR)/Lib/x86;$(DXSDK_DIR)/Samples/C++/DXUT11/Optional/$(Configuration);$(DXSDK_DIR)/Samples/C++/DXUT11/Core/$(Configuration);$(DXSDK_DIR)/Samples/C++/Effects11/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -160,7 +145,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Static Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(SIMUL)/External/FBX/include;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -169,7 +154,6 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseStaticLibs.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Lib>
@@ -184,7 +168,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)\..\;$(SIMUL)/External/FBX/include;$(DXSDK_DIR)\Samples\C++;$(DXSDK_DIR)\Samples\C++\DXUT11\core;$(DXSDK_DIR)\Samples\C++\DXUT11\optional;$(DXSDK_DIR)\Include;$(DXSDK_DIR)\Samples\C++\Effects11;$(DXSDK_DIR)\Samples\C++\Effects11\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CRT_SECURE_NO_DEPRECATE;SIMUL_DIRECTX11_DLL;DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -208,6 +192,7 @@
     <ClCompile Include="CreateEffectDX1x.cpp" />
     <ClCompile Include="CSFFT\fft_512x512.cpp" />
     <ClCompile Include="CubemapFramebuffer.cpp" />
+    <ClCompile Include="Direct3D11Manager.cpp" />
     <ClCompile Include="Direct3D11Renderer.cpp" />
     <ClCompile Include="DX11Exception.cpp" />
     <ClCompile Include="Framebuffer3D.cpp" />
@@ -226,8 +211,8 @@
     <ClCompile Include="SimulLightningRendererDX11.cpp" />
     <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
-    <ClCompile Include="SimulWeatherRendererDX11.cpp" />
     <ClCompile Include="TerrainRenderer.cpp" />
+    <ClCompile Include="SimulWeatherRendererDX11.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
@@ -235,8 +220,10 @@
     <ClInclude Include="CompileShaderDX1x.h" />
     <ClInclude Include="CreateEffectDX1x.h" />
     <ClInclude Include="CSFFT\fft_512x512.h" />
-    <ClInclude Include="CubemapFramebuffer.h" />
+    <ClInclude Include="cubemapframebuffer.h" />
     <ClInclude Include="Direct3D11CallbackInterface.h" />
+    <ClInclude Include="Direct3D11Manager.h" />
+    <ClInclude Include="Direct3D11ManagerInterface.h" />
     <ClInclude Include="Direct3D11Renderer.h" />
     <ClInclude Include="DX11Exception.h" />
     <ClInclude Include="Export.h" />
@@ -244,11 +231,15 @@
     <ClInclude Include="FramebufferDX1x.h" />
     <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="GpuSkyGenerator.h" />
+    <ClInclude Include="Light.h" />
     <ClInclude Include="MacrosDx1x.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="OceanRenderer.h" />
     <ClInclude Include="OceanSimulator.h" />
     <ClInclude Include="PrecipitationRenderer.h" />
     <ClInclude Include="Profiler.h" />
+    <ClInclude Include="RenderPlatform.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ResourcesDx1x.h" />
     <ClInclude Include="SaveTextureDX1x.h" />
@@ -259,49 +250,64 @@
     <ClInclude Include="SimulLightningRendererDX11.h" />
     <ClInclude Include="SimulOpticsRendererDX1x.h" />
     <ClInclude Include="SimulSkyRendererDX1x.h" />
-    <ClInclude Include="SimulWeatherRendererDX11.h" />
     <ClInclude Include="TerrainRenderer.h" />
+    <ClInclude Include="SimulWeatherRendererDX11.h" />
     <ClInclude Include="TextRenderer.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="HLSL\CppHLSL.hlsl" />
-    <None Include="HLSL\fft_512x512_c2c.hlsl" />
-    <None Include="HLSL\MixClouds_c.hlsl" />
-    <None Include="HLSL\ocean_shading.hlsl" />
-    <None Include="HLSL\ocean_simulator_cs.hlsl" />
-    <None Include="HLSL\ocean_simulator_vs_ps.hlsl" />
-    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
-    <None Include="HLSL\simul_earthshadow.hlsl" />
-    <None Include="HLSL\simul_gpu_sky.hlsl" />
-    <None Include="HLSL\simul_inscatter_fns.hlsl" />
-    <None Include="HLSL\states.hlsl" />
+    <None Include="..\CrossPlatform\atmospherics.sl" />
     <None Include="..\CrossPlatform\atmospherics_constants.sl" />
+    <None Include="..\CrossPlatform\cloud_shadow.sl" />
     <None Include="..\CrossPlatform\CppSl.hs" />
     <None Include="..\CrossPlatform\depth.sl" />
     <None Include="..\CrossPlatform\earth_shadow.sl" />
     <None Include="..\CrossPlatform\earth_shadow_fade.sl" />
+    <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
+    <None Include="..\CrossPlatform\godrays.sl" />
+    <None Include="..\CrossPlatform\hdr_constants.sl" />
+    <None Include="..\CrossPlatform\illumination.sl" />
+    <None Include="..\CrossPlatform\ocean_constants.sl" />
+    <None Include="..\CrossPlatform\rain_constants.sl" />
+    <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
     <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
+    <None Include="..\CrossPlatform\simul_2d_cloud_detail.sl" />
+    <None Include="..\CrossPlatform\simul_clouds.sl" />
     <None Include="..\CrossPlatform\simul_cloud_constants.sl" />
     <None Include="..\CrossPlatform\simul_gpu_clouds.sl" />
     <None Include="..\CrossPlatform\simul_gpu_sky.sl" />
     <None Include="..\CrossPlatform\simul_inscatter_fns.sl" />
     <None Include="..\CrossPlatform\simul_terrain_constants.sl" />
+    <None Include="..\CrossPlatform\sky_constants.sl" />
+    <None Include="..\CrossPlatform\spherical_harmonics.sl" />
+    <None Include="..\CrossPlatform\spherical_harmonics_constants.sl" />
     <None Include="..\CrossPlatform\states.sl" />
+    <None Include="CSFFT\fft_512x512_c2c.hlsl" />
     <None Include="HLSL\atmospherics.fx" />
+    <None Include="HLSL\CppHLSL.hlsl" />
+    <None Include="HLSL\font.fx" />
+    <None Include="HLSL\ocean.fx" />
+    <None Include="HLSL\ocean_simulator_cs.hlsl" />
+    <None Include="HLSL\ocean_simulator_vs_ps.hlsl" />
+    <None Include="HLSL\mixed_resolution.fx" />
+    <None Include="HLSL\rain.fx" />
     <None Include="HLSL\simul_clouds.fx" />
     <None Include="HLSL\simul_clouds_2d.fx" />
     <None Include="HLSL\simul_debug.fx" />
+    <None Include="HLSL\simul_earthshadow.hlsl" />
     <None Include="HLSL\simul_foliage.fx" />
     <None Include="HLSL\simul_gaussian.fx" />
     <None Include="HLSL\simul_gpu_clouds.fx" />
+    <None Include="HLSL\simul_gpu_lighting.fx" />
     <None Include="HLSL\simul_gpu_sky.fx" />
     <None Include="HLSL\simul_hdr.fx" />
     <None Include="HLSL\simul_lightning.fx" />
-    <None Include="HLSL\simul_rain.fx" />
     <None Include="HLSL\simul_rendernoise.fx" />
     <None Include="HLSL\simul_sky.fx" />
     <None Include="HLSL\simul_terrain.fx" />
+    <None Include="HLSL\spherical_harmonics.fx" />
+    <None Include="HLSL\states.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc" />

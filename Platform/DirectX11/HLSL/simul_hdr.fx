@@ -172,13 +172,6 @@ float4 WarpExposureGammaPS(v2f IN) : SV_Target
 	c.rgb=pow(c.rgb,gamma);
     return vec4(c.rgb,1.0);
 }
-
-vec4 DirectPS(v2f IN) : SV_TARGET
-{
-	vec4 c=exposure*texture_clamp(imageTexture,IN.texCoords);
-    return vec4(c.rgba);
-}
-
 void UpdateNearestSample(	inout float MinDist,
 							inout vec2 NearestUV,
 							float Z,
@@ -198,6 +191,14 @@ bool IsSampleNearer(inout float MinDist,float Z,float ZFull)
 {
 	float Dist = abs(Z - ZFull);
 	return (Dist < MinDist);
+}
+
+
+vec4 DirectPS(v2f IN) : SV_TARGET
+{
+	vec4 c=texture_clamp(imageTexture,IN.texCoords);
+	c.rgb*=exposure;
+    return c;
 }
 
 // texture_clamp_lod texture_nearest_lod
@@ -230,19 +231,6 @@ vec4 GlowPS(v2f IN) : SV_TARGET
 	c-=1.0*vec4(1.0,1.0,1.0,1.0);
 	c=clamp(c,vec4(0.0,0.0,0.0,0.0),vec4(10.0,10.0,10.0,10.0));
     return c;
-}
-
-technique11 simul_direct
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
-    }
 }
 
 technique11 exposure_gamma
@@ -294,6 +282,19 @@ technique11 glow_exposure_gamma
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,GlowExposureGammaPS()));
+    }
+}
+
+technique11 simple_cloud_blend
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(CloudBufferBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
+		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
     }
 }
 
