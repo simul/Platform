@@ -45,10 +45,6 @@ SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h)
 	,exposureGammaTechnique(NULL)
 	,glowExposureGammaTechnique(NULL)
 	,glowTechnique(NULL)
-	//,Exposure_(NULL)
-	//,Gamma_(NULL)
-	,imageTexture(NULL)
-	//,worldViewProj(NULL)
 {
 }
 
@@ -122,10 +118,6 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	warpExposureGamma			=m_pTonemapEffect->GetTechniqueByName("warp_exposure_gamma");
 	warpGlowExposureGamma		=m_pTonemapEffect->GetTechniqueByName("warp_glow_exposure_gamma");
 	glowTechnique				=m_pTonemapEffect->GetTechniqueByName("simul_glow");
-	//Exposure_					=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
-	//Gamma_						=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
-	imageTexture				=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
-	//worldViewProj				=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	hdrConstants.LinkToEffect(m_pTonemapEffect,"HdrConstants");
 	SAFE_RELEASE(m_pGaussianEffect);
 	
@@ -183,26 +175,29 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
 {
 	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
-	imageTexture->SetResource(textureSRV);
+	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+	textureSRV->GetDesc(&desc);
+	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+	dx11::setTexture(m_pTonemapEffect,"imageTexture",textureSRV);
+	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
 	hdrConstants.gamma=Gamma;
 	hdrConstants.exposure=Exposure;
 	hdrConstants.Apply(pContext);
-	//Gamma_->SetFloat(Gamma);
-	//Exposure_->SetFloat(Exposure);
 	simul::dx11::setParameter(m_pTonemapEffect,"offset",offsetX,0.f);
+	ID3D1xEffectTechnique *tech=exposureGammaTechnique;
 	if(Glow)
 	{
 		RenderGlowTexture(context,texture_srv);
+		tech=glowExposureGammaTechnique;
 		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
-		ApplyPass(pContext,glowExposureGammaTechnique->GetPassByIndex(0));
 	}
-	else
-		ApplyPass(pContext,exposureGammaTechnique->GetPassByIndex(0));
+	ApplyPass(pContext,tech->GetPassByName(msaa?"msaa":"main"));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
-
-	imageTexture->SetResource(NULL);
+	
+	dx11::setTexture(m_pTonemapEffect,"imageTexture",NULL);
+	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",NULL);
 	hdrConstants.Unbind(pContext);
-	ApplyPass(pContext,exposureGammaTechnique->GetPassByIndex(0));
+	ApplyPass(pContext,tech->GetPassByIndex(0));
 }
 
 void SimulHDRRendererDX1x::RenderWithOculusCorrection(void *context,void *texture_srv
@@ -210,7 +205,8 @@ void SimulHDRRendererDX1x::RenderWithOculusCorrection(void *context,void *textur
 {
 	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
-	imageTexture->SetResource(textureSRV);
+	dx11::setTexture(m_pTonemapEffect,"imageTexture",textureSRV);
+	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
 	hdrConstants.gamma				=Gamma;
 	hdrConstants.exposure			=Exposure;
 	
@@ -242,8 +238,9 @@ void SimulHDRRendererDX1x::RenderWithOculusCorrection(void *context,void *textur
 	else
 		ApplyPass(pContext,warpExposureGamma->GetPassByIndex(0));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
-
-	imageTexture->SetResource(NULL);
+	
+	dx11::setTexture(m_pTonemapEffect,"imageTexture",NULL);
+	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",NULL);
 	hdrConstants.Unbind(pContext);
 	ApplyPass(pContext,exposureGammaTechnique->GetPassByIndex(0));
 }
@@ -270,7 +267,8 @@ static float g_FilterRadius = 30;
 	// Render to the low-res glow.
 	if(glowTechnique)
 	{
-		imageTexture->SetResource(textureSRV);
+		dx11::setTexture(m_pTonemapEffect,"imageTexture",textureSRV);
+		dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
 		simul::dx11::setParameter(m_pTonemapEffect,"offset",1.f/Width,1.f/Height);
 		ApplyPass(m_pImmediateContext,glowTechnique->GetPassByIndex(0));
 		glow_fb.Activate(context);

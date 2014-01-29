@@ -72,6 +72,7 @@ namespace simul
 		void setSamplerState		(ID3DX11Effect *effect	,const char *name	,ID3D11SamplerState * value);
 		void setTexture				(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
 		void applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,int pass=0);
+		void applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,const char *pass);
 		void setUnorderedAccessView	(ID3DX11Effect *effect	,const char *name	,ID3D11UnorderedAccessView * value);
 		void setTextureArray		(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value);
 		void setStructuredBuffer	(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);

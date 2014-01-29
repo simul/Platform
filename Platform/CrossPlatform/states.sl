@@ -61,7 +61,7 @@ SamplerState clampSamplerState SIMUL_STATE_REGISTER(9)
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
 	AddressV = Clamp;
-	AddressV = Clamp;
+	AddressW = Clamp;
 };
 
 SamplerState wrapClampSamplerState SIMUL_STATE_REGISTER(10)

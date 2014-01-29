@@ -381,7 +381,7 @@ void Direct3D11Manager::Initialize()
 
 int Direct3D11Manager::GetNumOutputs()
 {
-	return outputs.size();
+	return (int)outputs.size();
 }
 
 Output Direct3D11Manager::GetOutput(int i)

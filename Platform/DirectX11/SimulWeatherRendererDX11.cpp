@@ -431,16 +431,23 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	imageTexture->SetResource(fb->lowResFarFramebufferDx11.buffer_texture_SRV);
-	bool msaa=true;
+	ID3D11ShaderResourceView *depth_SRV=(ID3D11ShaderResourceView*)mainDepthTexture;
+	bool msaa=false;
+	if(depth_SRV)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+		depth_SRV->GetDesc(&desc);
+		msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+	}
 	if(msaa)
 	{
 		// Set both regular and MSAA depth variables. Which it is depends on the situation.
 		//simul::dx11::setTexture(m_pTonemapEffect,"nearFarDepthTexture"			,(ID3D1xShaderResourceView*)nearFarDepthTexture);
-		simul::dx11::setTexture(m_pTonemapEffect,"depthTextureMS"		,(ID3D1xShaderResourceView*)mainDepthTexture);
+		simul::dx11::setTexture(m_pTonemapEffect,"depthTextureMS"		,depth_SRV);
 	}
 //	else
 	{
-		simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"			,(ID3D1xShaderResourceView*)mainDepthTexture);
+		simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"			,depth_SRV);
 	}
 	// The low res depth texture contains the total near and far depths in its x and y.
 	simul::dx11::setTexture(m_pTonemapEffect,"lowResDepthTexture"	,(ID3D1xShaderResourceView*)lowResDepthTexture);
@@ -449,7 +456,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	simul::dx11::setTexture(m_pTonemapEffect,"nearInscatterTexture"	,(ID3D1xShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
 
 	ID3D1xEffectTechnique *tech					=depth_blend?farNearDepthBlendTechnique:simpleCloudBlendTechnique;
-	ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
+	ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(msaa?1:0));
 	hdrConstants.exposure						=1.f;
 	hdrConstants.gamma							=1.f;
 	hdrConstants.viewportToTexRegionScaleBias	=vec4(depthViewportXYWH.z, depthViewportXYWH.w, depthViewportXYWH.x, depthViewportXYWH.y);

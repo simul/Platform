@@ -132,7 +132,6 @@ vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 
 	ov_total				/=12.0;
 	insc.rgb				=max(vec3(0,0,0),insc.rgb-insc_diff.rgb*overcast);
 	insc.w					=lerp(insc.a,0,ov_total);
-	
     return insc;
 }
 

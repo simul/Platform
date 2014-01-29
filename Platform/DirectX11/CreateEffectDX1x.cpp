@@ -453,6 +453,18 @@ void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,
 	V_CHECK(hr);
 }
 
+void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,const char *passname)
+{
+	ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName(name);
+	if(!tech)
+		SIMUL_THROW("Technique not found");
+	ID3DX11EffectPass *pass			=tech->GetPassByName(passname);
+	if(!pass->IsValid())
+		SIMUL_THROW("Pass not found");
+	HRESULT hr=pass->Apply(0,pContext);
+	V_CHECK(hr);
+}
+
 void simul::dx11::setUnorderedAccessView(ID3DX11Effect *effect,const char *name	,ID3D11UnorderedAccessView * value)
 {
 	ID3DX11EffectUnorderedAccessViewVariable*	var	=effect->GetVariableByName(name)->AsUnorderedAccessView();

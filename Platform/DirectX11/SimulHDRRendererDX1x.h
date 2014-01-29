@@ -72,7 +72,6 @@ namespace simul
 			ID3D1xEffectTechnique*				glowTechnique;
 			ID3D1xEffectScalarVariable*			Exposure_;
 			ID3D1xEffectScalarVariable*			Gamma_;
-			ID3D1xEffectShaderResourceVariable*	imageTexture;
 
 			ID3D1xEffect*						m_pGaussianEffect;
 			ID3D1xEffectTechnique*				gaussianRowTechnique;

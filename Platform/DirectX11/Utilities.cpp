@@ -659,7 +659,7 @@ void UtilityRenderer::SetScreenSize(int w,int h)
 
 void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,float x,float y,const char *text)
 {
-	textRenderer.Render(pd3dImmediateContext,x,y,screen_width,screen_height,text);
+	textRenderer.Render(pd3dImmediateContext,x,y,(float)screen_width,(float)screen_height,text);
 }
 
 void UtilityRenderer::PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
@@ -741,15 +741,20 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 void UtilityRenderer::DrawTexture(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult)
 {
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",t);
-	simul::dx11::setParameter(m_pDebugEffect,"textureMultiplier",mult);
-	if(m_pDebugEffect)
+	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
+	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+	t->GetDesc(&desc);
+	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+	if(msaa)
+		DrawTextureMS(pContext,x1,y1,dx,dy,t,mult);
+	else if(m_pDebugEffect)
 		UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,m_pDebugEffect->GetTechniqueByName("textured"));
 }
 
 void UtilityRenderer::DrawTextureMS(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float brightnessMultiplier)
 {
 	simul::dx11::setTexture(m_pDebugEffect,"imageTextureMS",t);
-	simul::dx11::setParameter(m_pDebugEffect,"textureMultiplier",brightnessMultiplier);
+	//simul::dx11::setParameter(m_pDebugEffect,"textureMultiplier",brightnessMultiplier);
 	simul::dx11::setParameter(m_pDebugEffect,"multiplier",brightnessMultiplier);
 	if(m_pDebugEffect)
 		UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,m_pDebugEffect->GetTechniqueByName("texturedMS"));
