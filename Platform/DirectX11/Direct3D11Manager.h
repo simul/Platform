@@ -14,7 +14,7 @@ namespace simul
 {
 	namespace dx11
 	{
-		struct SIMUL_DIRECTX11_EXPORT Window
+		struct SIMUL_DIRECTX11_EXPORT Window:public Direct3DWindow
 		{
 			Window();
 			~Window();
@@ -25,7 +25,6 @@ namespace simul
 			void SetRenderer(Direct3D11CallbackInterface *ci);
 			HWND hwnd;
 			/// The id assigned by the renderer to correspond to this hwnd
-			int view_id;			
 			bool vsync;
 			IDXGISwapChain*				m_swapChain;
 			ID3D11RenderTargetView*		m_renderTargetView;
@@ -61,7 +60,7 @@ namespace simul
 			Output GetOutput(int i);
 
 			void GetVideoCardInfo(char*, int&);
-			Window *GetWindow(HWND hwnd);
+			Direct3DWindow *GetWindow(HWND hwnd);
 		protected:
 			bool m_vsync_enabled;
 			int m_videoCardMemory;

@@ -518,7 +518,7 @@ void Direct3D11Manager::SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci)
 	w->SetRenderer(ci);
 }
 
-Window *Direct3D11Manager::GetWindow(HWND hwnd)
+Direct3DWindow *Direct3D11Manager::GetWindow(HWND hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return NULL;
@@ -528,7 +528,7 @@ Window *Direct3D11Manager::GetWindow(HWND hwnd)
 
 void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output)
 {
-	Window *w=GetWindow(hwnd);
+	Window *w=(Window*)GetWindow(hwnd);
 	if(!w)
 		return;
 	IDXGIOutput *output=outputs[which_output];

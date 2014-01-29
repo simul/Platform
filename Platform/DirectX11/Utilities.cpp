@@ -740,6 +740,8 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 
 void UtilityRenderer::DrawTexture(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult)
 {
+	if(!t)
+		return;
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",t);
 	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;

@@ -10,6 +10,11 @@ struct Output
 	int height;
 };
 
+struct Direct3DWindow
+{
+	int view_id;			
+};
+
 class Direct3D11ManagerInterface
 {
 public:
@@ -24,5 +29,6 @@ public:
 	virtual struct ID3D11DeviceContext*	GetDeviceContext()=0;
 	virtual int							GetNumOutputs()=0;
 	virtual Output						GetOutput(int i)=0;
+	virtual Direct3DWindow*				GetWindow(HWND h)=0;
 };
 #endif

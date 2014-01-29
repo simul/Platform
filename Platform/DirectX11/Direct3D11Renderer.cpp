@@ -1,4 +1,5 @@
 #define NOMINMAX
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/DirectX11/Direct3D11Renderer.h"
 #include "Simul/Platform/DirectX11/SimulWeatherRendererDX11.h"
 #include "Simul/Platform/DirectX11/TerrainRenderer.h"
@@ -377,6 +378,8 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		v=cam->MakeViewMatrix();
 		simul::dx11::UtilityRenderer::SetMatrices(v,proj);
 	}
+	else
+		SIMUL_ASSERT(false);
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->SetMatrices((const float*)v,(const float*)proj);
