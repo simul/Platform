@@ -88,7 +88,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -103,7 +103,7 @@
     <Link>
       <AdditionalDependencies>opengl32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/OpenGL/lib/x64;$(SIMUL)/External/FreeImage/Dist/$(Platform)/$(Configuration);$(SIMUL)/External/glew/lib/Release/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/OpenGL/lib/x64;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/glew/lib/Release/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName).lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
@@ -117,7 +117,7 @@
     <ClCompile>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -131,7 +131,7 @@
     <Link>
       <AdditionalDependencies>opengl32.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/OpenGL/lib/x64;$(SIMUL)/External/FreeImage/Dist/$(Platform)/$(Configuration);$(SIMUL)/External/glew/lib/Release/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WindowsSdkDir)\Lib\$(Platform);$(SIMUL)/lib/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/OpenGL/lib/x64;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/glew/lib/Release/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>$(TargetName).lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
@@ -147,7 +147,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -167,7 +167,7 @@
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC11/$(Configuration);$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
