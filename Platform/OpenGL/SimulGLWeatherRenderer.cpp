@@ -84,8 +84,8 @@ void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
 
 SimulGLWeatherRenderer::SimulGLWeatherRenderer(simul::clouds::Environment *env
 											   ,simul::base::MemoryInterface *mem
-											   ,int width
-											   ,int height)
+											   ,int 
+											   ,int )
 		:BaseWeatherRenderer(env,mem)
 		,BufferWidth(0)
 		,BufferHeight(0)
@@ -276,6 +276,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE,GL_SRC_ALPHA);
 		//fb->GetLowResFarFramebuffer()->Render(context,true);
+		if(doFinalCloudBufferToScreenComposite)
 		{
 		GL_ERROR_CHECK
 			glPushAttrib(GL_ALL_ATTRIB_BITS);

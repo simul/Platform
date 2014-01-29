@@ -39,12 +39,6 @@
 using namespace std;
 using namespace simul;
 using namespace opengl;
-
-#ifdef WIN32
-#include "Simul/Platform/Windows/VisualStudioDebugOutput.h"
-#pragma comment(lib,"freeImage.lib")
-#endif
-
 using std::map;
 
 SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck

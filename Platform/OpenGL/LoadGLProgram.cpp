@@ -56,7 +56,7 @@ namespace simul
 			int count=1;
 			while(pos>=0)
 			{
-				pos=str.find('\n',pos+1);
+				pos=(int)str.find('\n',pos+1);
 				count++;
 			}
 			return count;
@@ -68,7 +68,7 @@ namespace simul
 			int count=0;
 			while(pos>=0&&pos<=line_pos)
 			{
-				pos=str.find('\n',pos+1);
+				pos=(int)str.find('\n',pos+1);
 				if(pos>=0&&pos<=line_pos)
 					count++;
 			}
@@ -176,12 +176,12 @@ namespace simul
 							errpos=line.find("error");
 						if(errpos<0)
 						{
-							errpos=line.find("WARNING");
+							errpos=(int)line.find("WARNING");
 							is_error=false;
 						}
 						if(errpos<0)
 						{
-							errpos=line.find("warning");
+							errpos=(int)line.find("warning");
 							is_error=false;
 						}
 						if(errpos>=0)
@@ -213,14 +213,14 @@ namespace simul
 							int at_pos=err_msg.find("0(");
 							while(at_pos>=0)
 							{
-								int end_brk=err_msg.find(")",at_pos);
+								int end_brk=(int)err_msg.find(")",at_pos);
 								if(end_brk<0)
 									break;
 								std::string l=err_msg.substr(at_pos+2,end_brk-at_pos-2);
 								int num=atoi(l.c_str());
 								NameLine n=filenameChart.find(num);
 								err_msg.replace(at_pos,end_brk-at_pos,n.filename+"("+base::stringFormat("%d",n.line)+") ");
-								at_pos=err_msg.find("0(");
+								at_pos=(int)err_msg.find("0(");
 							}
 							int number=atoi(linestr.c_str());
 							NameLine n=filenameChart.find(number);

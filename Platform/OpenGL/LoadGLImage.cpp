@@ -8,6 +8,11 @@
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
 
+#ifdef _MSC_VER
+#pragma comment(lib,"freeImage.lib")
+#endif
+
+
 static std::string texturePathUtf8="";
 static std::vector<std::string> fallbackTexturePathsUtf8;
 
@@ -46,7 +51,7 @@ static bool FileExists(const std::string& filename_utf8)
 
 unsigned char *LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
 {
-#ifdef WIN32
+#ifdef _MSC_VER
 	std::string fn			=filename_utf8;
 	FREE_IMAGE_FORMAT fif	=FIF_UNKNOWN;
 
@@ -85,7 +90,7 @@ unsigned char *LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &widt
 
 GLuint LoadTexture(const char *filename_utf8,unsigned wrap)
 {
-#ifdef WIN32
+#ifdef _MSC_VER
 	unsigned bpp=0;
 	unsigned width,height;
 	BYTE *pixels=(BYTE*)LoadBitmap(filename_utf8,bpp,width,height);

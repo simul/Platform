@@ -637,7 +637,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 			fileLoader->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
 		}
 	}
-	else
+	else if(errorMsgs)
 	{
 		char *errs=(char*)errorMsgs->GetBufferPointer();
 		std::string err(errs);

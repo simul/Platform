@@ -504,6 +504,8 @@ void Direct3D11Manager::StartRendering(HWND h)
 	d3dDeviceContext->RSSetViewports(1, &w->viewport);
 	// Now set the rasterizer state.
 	d3dDeviceContext->RSSetState(w->m_rasterState);
+	if(w->renderer)
+		w->renderer->Render(w->view_id,GetDevice(),GetDeviceContext());
 }
 
 void Direct3D11Manager::SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci)
