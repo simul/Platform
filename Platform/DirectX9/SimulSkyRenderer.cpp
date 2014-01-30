@@ -650,7 +650,7 @@ void SimulSkyRenderer::RenderPlanet(void* ,void* tex,float rad,const float *dir,
 	RenderAngledQuad(planet_dir,planet_angular_size);
 }
 
-bool SimulSkyRenderer::RenderFades(void *,int width,int height)
+bool SimulSkyRenderer::RenderFades(void *,int x0,int y0,int width,int height)
 {
 	int size=width/6;
 	if(height/4<size)
@@ -658,13 +658,6 @@ bool SimulSkyRenderer::RenderFades(void *,int width,int height)
 	if(size<2)
 		return false;
 	int s=size/numAltitudes-2;
-	int y0=width/2;
-	int x0=8;
-	if(width>height)
-	{
-		x0=width-(size+8)*2-(s+8)*3;
-		y0=8;
-	}
 	int y=y0+8;
 	m_pSkyEffect->SetTexture(fadeTexture2D,(LPDIRECT3DBASETEXTURE9)loss_2d.GetColorTex());
 	RenderTexture(m_pd3dDevice,x0+size+2,y		,size,size,(LPDIRECT3DBASETEXTURE9)loss_2d.GetColorTex(),m_pSkyEffect,m_hTechniqueShowFade);

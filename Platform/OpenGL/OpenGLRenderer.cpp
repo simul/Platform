@@ -238,7 +238,16 @@ GL_ERROR_CHECK
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(context,ScreenWidth,ScreenHeight);
 		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(context,ScreenWidth,ScreenHeight);
+		{
+			int x0=8;
+			int y0=8;
+			if(ScreenWidth>ScreenHeight)
+			{
+				x0=ScreenWidth/2;
+				y0=8;
+			}
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(context,x0,y0,ScreenWidth/2,ScreenHeight/2);
+		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(context,ScreenWidth,ScreenHeight);
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer()&&simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())

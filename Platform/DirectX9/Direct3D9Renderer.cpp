@@ -290,7 +290,7 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 		simulHDRRenderer->Render(pd3dDevice,hdrFramebuffer.GetColorTex());
 	}
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&ShowFades)
-		simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dDevice,width,height);
+		simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dDevice,0,0,width,height);
 	if(simulWeatherRenderer)
 	{
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
