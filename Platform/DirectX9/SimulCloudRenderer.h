@@ -79,7 +79,7 @@ public:
 	{
 		return (LPDIRECT3DTEXTURE9)noise_fb.GetColorTex();
 	}
-	void RenderCrossSections(void *,int width,int height);
+	void RenderCrossSections(void *context,int x0,int y0,int width,int height);
 	void RenderAuxiliaryTextures(void *context,int width,int height);
 	bool RenderLightVolume();
 	void EnableFilter(bool f);

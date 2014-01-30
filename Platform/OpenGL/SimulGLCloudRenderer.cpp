@@ -937,7 +937,7 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 	::DrawLines(vertices,vertex_count,strip);
 }
 
-void SimulGLCloudRenderer::RenderCrossSections(void *,int width,int height)
+void SimulGLCloudRenderer::RenderCrossSections(void *context,int x0,int y0,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;

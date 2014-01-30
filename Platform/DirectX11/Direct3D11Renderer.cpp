@@ -464,19 +464,27 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	{
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
+		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
+		bool vertical_screen=view->GetScreenHeight()>view->GetScreenHeight();
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
+		{
+			int x0=view->GetScreenWidth()/2;
+			int y0=8;
+			if(vertical_screen)
+			{
+				x0=8;
+				y0=view->GetScreenHeight()/2;
+			}
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
+		}
+		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
 			int x0=8;
 			int y0=8;
-			if(view->GetScreenWidth()>view->GetScreenHeight())
-			{
-				x0=view->GetScreenWidth()/2;
-				y0=8;
-			}
-			simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pd3dImmediateContext,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
+			simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,0,view->GetScreenWidth(),view->GetScreenHeight());
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pd3dImmediateContext,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 		}
-		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
 		if(ShowDepthBuffers)
 		{
 			int w=view->lowResDepthTexture.width*4;
@@ -501,17 +509,10 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			//UtilityRenderer::DrawTexture(pd3dImmediateContext,2*w	,0,w,l,(ID3D1xShaderResourceView*)simulWeatherRenderer->GetFramebufferTexture(view_id)	,1.f		);
 			//UtilityRenderer::Print(pd3dImmediateContext			,2.f*w	,0.f,"Near overlay");
 			simulWeatherRenderer->RenderCompositingTextures(pd3dImmediateContext,0,view->hdrFramebuffer.Width,view->hdrFramebuffer.Height);
-		
-			}
-		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
-		{
-			simulWeatherRenderer->RenderFramebufferDepth(pd3dImmediateContext,0,view->GetScreenWidth(),view->GetScreenHeight());
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
 		{
-			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
+			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(pd3dImmediateContext,0,0,view->GetScreenWidth(),view->GetScreenHeight());
 		}
 		if(simulWeatherRenderer->GetBasePrecipitationRenderer()&&ShowRainTextures)
 		{

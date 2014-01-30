@@ -249,9 +249,13 @@ GL_ERROR_CHECK
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(context,x0,y0,ScreenWidth/2,ScreenHeight/2);
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(context,ScreenWidth,ScreenHeight);
+		{
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(context,0,0,ScreenWidth/2,ScreenHeight/2);
+		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer()&&simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
-			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(context,ScreenWidth,ScreenHeight);
+		{
+			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(context,0,0,ScreenWidth,ScreenHeight);
+		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(NULL,ScreenWidth,ScreenHeight);
 	}

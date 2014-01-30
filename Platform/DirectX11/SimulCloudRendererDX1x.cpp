@@ -867,7 +867,7 @@ void SimulCloudRendererDX1x::DrawLines(void *context,VertexXyzRgba *vertices,int
 	simul::dx11::UtilityRenderer::DrawLines(pContext,vertices,vertex_count,strip);
 }
 
-void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int height)
+void SimulCloudRendererDX1x::RenderCrossSections(void *context,int x0,int y0,int width,int height)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	HRESULT hr=S_OK;
@@ -881,7 +881,6 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int width,int hei
 		h=1;
 	h*=gi->GetGridHeight();
 	D3DXVECTOR4 cross_section_offset(0,0,0,0);
-	UtilityRenderer::SetScreenSize(width,height);
 	if(skyInterface)
 	for(int i=0;i<3;i++)
 	{
