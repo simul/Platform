@@ -465,7 +465,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(pd3dImmediateContext,view->GetScreenWidth(),view->GetScreenHeight());
 		simul::dx11::UtilityRenderer::SetScreenSize(view->GetScreenWidth(),view->GetScreenHeight());
-		bool vertical_screen=view->GetScreenHeight()>view->GetScreenHeight();
+		bool vertical_screen=view->GetScreenHeight()>view->GetScreenWidth();
 		if(ShowFades&&simulWeatherRenderer->GetSkyRenderer())
 		{
 			int x0=view->GetScreenWidth()/2;

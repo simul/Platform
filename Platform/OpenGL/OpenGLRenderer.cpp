@@ -237,14 +237,15 @@ GL_ERROR_CHECK
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(context,ScreenWidth,ScreenHeight);
 		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);
+		bool vertical_screen=ScreenHeight>ScreenWidth;
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
 		{
-			int x0=8;
+			int x0=ScreenWidth/2;
 			int y0=8;
-			if(ScreenWidth>ScreenHeight)
+			if(vertical_screen)
 			{
-				x0=ScreenWidth/2;
-				y0=8;
+				x0=8;
+				y0=ScreenHeight/2;
 			}
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(context,x0,y0,ScreenWidth/2,ScreenHeight/2);
 		}
