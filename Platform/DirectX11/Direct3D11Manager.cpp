@@ -506,6 +506,10 @@ void Direct3D11Manager::StartRendering(HWND h)
 	d3dDeviceContext->RSSetState(w->m_rasterState);
 	if(w->renderer)
 		w->renderer->Render(w->view_id,GetDevice(),GetDeviceContext());
+	DWORD dwFlags = 0;
+	UINT SyncInterval = 0;
+    // Show the frame on the primary surface.
+	w->m_swapChain->Present(SyncInterval,dwFlags);
 }
 
 void Direct3D11Manager::SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci)
