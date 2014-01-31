@@ -426,7 +426,7 @@ static float mult=1.f;
 		glBindTexture(GL_TEXTURE_2D,coverage_tex[i]);
 		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
 		glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
-		DrawQuad((i+1)*(w+8)+8,height-w-8,w,w);
+		DrawQuad(x0+(i+1)*(w+8)+8,y0+height-w-8,w,w);
 	}
 	
 	glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)detail_fb.GetColorTex());
