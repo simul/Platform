@@ -18,7 +18,7 @@ Material::~Material()
 void Material::Apply() const
 {
 	glActiveTexture(GL_TEXTURE0);
-	float zero[]	={0,0,0,0};
+//	float zero[]	={0,0,0,0};
     glMaterialfv(GL_FRONT_AND_BACK	,GL_EMISSION	,mEmissive.mColor);
     glMaterialfv(GL_FRONT_AND_BACK	,GL_AMBIENT		,mAmbient.mColor);
     glMaterialfv(GL_FRONT_AND_BACK	,GL_DIFFUSE		,mDiffuse.mColor);

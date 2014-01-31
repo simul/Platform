@@ -904,7 +904,7 @@ void SimulCloudRendererDX1x::RenderCrossSections(void *context,int x0,int y0,int
 	ApplyPass(pContext,m_pCloudEffect->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
 }
 
-void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int width,int height)
+void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	HRESULT hr=S_OK;
@@ -918,7 +918,6 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int width,int
 		h=1;
 	h*=gi->GetGridHeight();
 	D3DXVECTOR4 cross_section_offset(0,0,0,0);
-	UtilityRenderer::SetScreenSize(width,height);
 	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture",noiseTextureResource);
 	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D1xShaderResourceView*)shadow_fb.GetColorTex());

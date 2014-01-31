@@ -373,6 +373,10 @@ void Simul2DCloudRendererDX11::RenderCrossSections(void *context,int x0,int y0,i
 		
 }
 
+void Simul2DCloudRendererDX11::RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height)
+{
+}
+
 void Simul2DCloudRendererDX11::SetLossTexture(void *t)
 {
 	skyLossTexture_SRV=(ID3D11ShaderResourceView*)t;

@@ -252,6 +252,7 @@ GL_ERROR_CHECK
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(context,0,0,ScreenWidth/2,ScreenHeight/2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(context,0,0,ScreenWidth/2,ScreenHeight/2);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer()&&simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{

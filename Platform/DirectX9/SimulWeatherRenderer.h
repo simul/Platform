@@ -33,9 +33,9 @@ namespace simul
 	namespace dx9
 	{
 		class SimulSkyRenderer;
+		class SimulCloudRenderer;
 	}
 }
-class SimulCloudRenderer;
 class SimulLightningRenderer;
 class Simul2DCloudRenderer;
 class SimulPrecipitationRenderer;

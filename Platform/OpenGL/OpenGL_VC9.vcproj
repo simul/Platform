@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="$(SIMUL)/External/stdint;$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/External/stdint&quot;;&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/FBX/include&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;;&quot;$(SIMUL)/External/freeglut/include&quot;;&quot;$(SIMUL)/External/glew/include&quot;;&quot;%(AdditionalIncludeDirectories)&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -67,7 +67,7 @@
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(SafeParentName)_MDd.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib/Win32&quot;;&quot;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC9/$(Configuration)&quot;"
+				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib/Win32&quot;;&quot;$(SIMUL)/External/FreeImage/Dist/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/glew/lib/VC9/$(ConfigurationName)&quot;"
 				IgnoreDefaultLibraryNames="$(SafeParentName)_MD.lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)\$(SafeParentName)_MDd.pdb"
@@ -125,7 +125,7 @@
 				Name="VCCLCompilerTool"
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="$(SIMUL)/External/stdint;$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/External/stdint&quot;;&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/FBX/include&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;;&quot;$(SIMUL)/External/freeglut/include&quot;;&quot;$(SIMUL)/External/glew/include&quot;;&quot;%(AdditionalIncludeDirectories)&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SIMUL_OPENGL_DLL"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -148,7 +148,7 @@
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)\$(SafeParentName)_MD.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib/Win32&quot;;&quot;$(SIMUL)/External/FreeImage/Dist/$(Platform)/VC9/$(Configuration)&quot;"
+				AdditionalLibraryDirectories="&quot;$(SIMUL)/lib/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/OpenGL/lib/Win32&quot;;&quot;$(SIMUL)/External/FreeImage/Dist/$(PlatformName)/VC9/$(ConfigurationName)&quot;;&quot;$(SIMUL)/External/glew/lib/VC9/$(ConfigurationName)&quot;"
 				IgnoreDefaultLibraryNames="$(SafeParentName)_MD.lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)\$(SafeParentName)_MD.pdb"
@@ -208,7 +208,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="$(SIMUL)/External/stdint;$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/External/stdint&quot;;&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/FBX/include&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;;&quot;$(SIMUL)/External/freeglut/include&quot;;&quot;$(SIMUL)/External/glew/include&quot;;&quot;%(AdditionalIncludeDirectories)&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -276,7 +276,7 @@
 				Optimization="0"
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="$(SIMUL)/External/stdint;$(SIMUL)/../;$(SIMUL)/External/FBX/include;$(SIMUL)/External/OpenGL/include;$(SIMUL)/External/FreeImage/Dist;$(SIMUL)/External/freeglut/include;$(SIMUL)/External/glew/include;%(AdditionalIncludeDirectories)"
+				AdditionalIncludeDirectories="&quot;$(SIMUL)/External/stdint&quot;;&quot;$(SIMUL)/../&quot;;&quot;$(SIMUL)/External/FBX/include&quot;;&quot;$(SIMUL)/External/OpenGL/include&quot;;&quot;$(SIMUL)/External/FreeImage/Dist&quot;;&quot;$(SIMUL)/External/freeglut/include&quot;;&quot;$(SIMUL)/External/glew/include&quot;;&quot;%(AdditionalIncludeDirectories)&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -346,11 +346,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Light.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\LoadGLImage.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\LoadGLProgram.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Material.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Mesh.cpp"
 				>
 			</File>
 			<File
@@ -362,7 +374,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Overlay.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Profiler.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\RenderPlatform.cpp"
 				>
 			</File>
 			<File
@@ -409,6 +429,10 @@
 				RelativePath=".\SimulOpticsRendererGL.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\Texture.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -432,11 +456,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Light.h"
+				>
+			</File>
+			<File
 				RelativePath=".\LoadGLImage.h"
 				>
 			</File>
 			<File
 				RelativePath=".\LoadGLProgram.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Material.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Mesh.h"
 				>
 			</File>
 			<File
@@ -448,7 +484,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Overlay.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Profiler.h"
+				>
+			</File>
+			<File
+				RelativePath=".\RenderPlatform.h"
 				>
 			</File>
 			<File
@@ -497,6 +541,10 @@
 			</File>
 			<File
 				RelativePath=".\SimulOpticsRendererGL.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Texture.h"
 				>
 			</File>
 		</Filter>

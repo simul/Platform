@@ -65,7 +65,7 @@ namespace simul
 			//! Call this to draw the clouds, including any illumination by lightning.
 			bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 			void RenderDebugInfo(void *context,int width,int height);
-			void RenderAuxiliaryTextures(void *context,int width,int height);
+			void RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height);
 			void RenderCrossSections(void *context,int x0,int y0,int width,int height);
 			//! Call this to render the lightning bolts (cloud illumination is done in the main Render function).
 			bool RenderLightning(void *context,int viewport_id);

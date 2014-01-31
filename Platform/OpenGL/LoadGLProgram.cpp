@@ -166,14 +166,14 @@ namespace simul
 				if(info_log.find("No errors")>=info_log.length())
 				{
 					int pos=0;
-					int next=info_log.find('\n',pos+1);
+					int next=(int)info_log.find('\n',pos+1);
 					while(next>=0)
 					{
 						std::string line=info_log.substr(pos,next-pos);
 						bool is_error=true;
-						int errpos=line.find("ERROR");
+						int errpos=(int)line.find("ERROR");
 						if(errpos<0)
-							errpos=line.find("error");
+							errpos=(int)line.find("error");
 						if(errpos<0)
 						{
 							errpos=(int)line.find("WARNING");
@@ -205,7 +205,7 @@ namespace simul
 							else
 							{
 								pos=next;
-								next=info_log.find('\n',pos+1);
+								next=(int)info_log.find('\n',pos+1);
 								continue;
 							}
 							std::string linestr=line.substr(numberstart,numberlen);
@@ -265,13 +265,10 @@ namespace simul
 			std::string src=source;
 		/*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
 			const int MAX_STRINGS=12;
-		//	const int MAX_LINES=512;
-		//	const int MAX_LINE_LENGTH=256;					// 255 + NULL terminator
 			const char *strings[MAX_STRINGS];
-
 			int start_of_line=0;
 			// We can insert #defines, but only AFTER the #version string.
-			int pos=src.find("#version");
+			int pos=(int)src.find("#version");
 			if(pos>=0)
 			{
 				start_of_line=src.find("\n",pos)+1;
