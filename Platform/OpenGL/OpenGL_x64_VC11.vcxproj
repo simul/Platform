@@ -337,7 +337,6 @@
     <None Include="GLSL\tonemap.vert" />
     <None Include="GLSL\view_dir.glsl" />
     <None Include="..\CrossPlatform\CppSl.hs" />
-    <None Include="..\CrossPlatform\depth.sl" />
     <None Include="..\CrossPlatform\earth_shadow.sl" />
     <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
     <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
