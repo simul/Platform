@@ -28,6 +28,7 @@ GpuSkyGenerator::GpuSkyGenerator()
 
 GpuSkyGenerator::~GpuSkyGenerator()
 {
+	InvalidateDeviceObjects();
 	delete [] loss_cache;
 	delete [] insc_cache;
 	delete [] skyl_cache;
@@ -40,16 +41,20 @@ void GpuSkyGenerator::RestoreDeviceObjects(void *)
 
 void GpuSkyGenerator::InvalidateDeviceObjects()
 {
+GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(loss_program);
+GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(insc_program);
+GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(skyl_program);
+GL_ERROR_CHECK
 	SAFE_DELETE_BUFFER(gpuSkyConstantsUBO);
+GL_ERROR_CHECK
 }
 
 void GpuSkyGenerator::RecompileShaders()
-{																												SAFE_DELETE_PROGRAM(loss_program);
-	SAFE_DELETE_PROGRAM(insc_program);
-	SAFE_DELETE_PROGRAM(skyl_program);
+{								
+	InvalidateDeviceObjects();
 	loss_program=MakeProgram("simple.vert",NULL,"simul_gpu_loss.frag");
 GL_ERROR_CHECK
 	std::map<std::string,std::string> defines;
@@ -58,6 +63,7 @@ GL_ERROR_CHECK
 	skyl_program=MakeProgram("simple.vert",NULL,"simul_gpu_skyl.frag");
 GL_ERROR_CHECK
 	MAKE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,GpuSkyConstants,gpuSkyConstantsBindingIndex);
+GL_ERROR_CHECK
 }
 
 //! Return true if the derived class can make sky tables using the GPU.

@@ -41,7 +41,7 @@ using namespace opengl;
 using namespace simul;
 using namespace opengl;
 
-simul::opengl::RenderPlatform renderPlatform;
+simul::opengl::RenderPlatform *renderPlatform=NULL;
 
 OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut)
 	:ScreenWidth(0)
@@ -67,8 +67,10 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	simulOpticsRenderer		=new SimulOpticsRendererGL(m);
 	simulTerrainRenderer	=new SimulGLTerrainRenderer(NULL);
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
+	if(!renderPlatform)
+		renderPlatform		=new opengl::RenderPlatform;
 	if(sc)
-		sceneRenderer		=new scene::BaseSceneRenderer(sc,&renderPlatform);
+		sceneRenderer		=new scene::BaseSceneRenderer(sc,renderPlatform);
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 	
 	//sceneCache=new scene::BaseObjectRenderer(gScene,&renderPlatform);
@@ -83,12 +85,17 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 
 OpenGLRenderer::~OpenGLRenderer()
 {
+GL_ERROR_CHECK
 	delete sceneRenderer;
-	renderPlatform.InvalidateDeviceObjects();
+GL_ERROR_CHECK
+	delete renderPlatform;
+GL_ERROR_CHECK
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
+GL_ERROR_CHECK
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
+GL_ERROR_CHECK
 	if(simulHDRRenderer)
 		simulHDRRenderer->InvalidateDeviceObjects();
 	simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
@@ -136,7 +143,7 @@ GL_ERROR_CHECK
 		simulOpticsRenderer->RestoreDeviceObjects(NULL);
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->RestoreDeviceObjects(NULL);
-	renderPlatform.RestoreDeviceObjects(NULL);
+	renderPlatform->RestoreDeviceObjects(NULL);
 	RecompileShaders();
 }
 
@@ -324,7 +331,7 @@ void OpenGLRenderer::ReloadTextures()
 
 void OpenGLRenderer::RecompileShaders()
 {
-	renderPlatform.RecompileShaders();
+	renderPlatform->RecompileShaders();
 	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
 	if(simulWeatherRenderer)

@@ -193,6 +193,7 @@ GL_ERROR_CHECK
 }
 void SimulGLWeatherRenderer::InvalidateDeviceObjects()
 {
+GL_ERROR_CHECK
 	if(simulSkyRenderer)
 		simulSkyRenderer->InvalidateDeviceObjects();
 	if(simulCloudRenderer)
