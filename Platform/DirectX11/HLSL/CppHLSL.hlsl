@@ -44,6 +44,7 @@
 
 	#define SIMUL_CONSTANT_BUFFER(name,buff_num) uniform_buffer name SIMUL_BUFFER_REGISTER(buff_num) {
 	#define SIMUL_CONSTANT_BUFFER_END };
+
 	#define SIMUL_TARGET_OUTPUT : SV_TARGET
 	#define SIMUL_DEPTH_OUTPUT : SV_DEPTH
 
@@ -90,7 +91,6 @@
 		OUT.texCoords	=0.5*(vec2(1.0,1.0)+vec2(pos.x,-pos.y));
 		return OUT;
 	}
-
 	posTexVertexOutput VS_ScreenQuad(idOnly IN,vec4 rect)
 	{
 		posTexVertexOutput OUT;
@@ -107,7 +107,21 @@
 		OUT.texCoords	=pos;
 		return OUT;
 	}
-
+	
+	vec4 texture_resolve(Texture2DMS<vec4> textureMS,vec2 texCoords)
+	{
+		uint2 dims;
+		uint numberOfSamples;
+		textureMS.GetDimensions(dims.x,dims.y,numberOfSamples);
+		uint2 pos=uint2(vec2(dims)*texCoords);
+		vec4 d=vec4(0,0,0,0);
+		for(int k=0;k<numberOfSamples;k++)
+		{
+			d+=textureMS.Load(pos,k);
+		}
+		d/=float(numberOfSamples);
+		return d;
+	}
 #endif
 
 #endif

@@ -28,6 +28,7 @@ GpuSkyGenerator::GpuSkyGenerator()
 
 GpuSkyGenerator::~GpuSkyGenerator()
 {
+	InvalidateDeviceObjects();
 	delete [] loss_cache;
 	delete [] insc_cache;
 	delete [] skyl_cache;
@@ -40,16 +41,20 @@ void GpuSkyGenerator::RestoreDeviceObjects(void *)
 
 void GpuSkyGenerator::InvalidateDeviceObjects()
 {
+GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(loss_program);
+GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(insc_program);
+GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(skyl_program);
+GL_ERROR_CHECK
 	SAFE_DELETE_BUFFER(gpuSkyConstantsUBO);
+GL_ERROR_CHECK
 }
 
 void GpuSkyGenerator::RecompileShaders()
-{																												SAFE_DELETE_PROGRAM(loss_program);
-	SAFE_DELETE_PROGRAM(insc_program);
-	SAFE_DELETE_PROGRAM(skyl_program);
+{								
+	InvalidateDeviceObjects();
 	loss_program=MakeProgram("simple.vert",NULL,"simul_gpu_loss.frag");
 GL_ERROR_CHECK
 	std::map<std::string,std::string> defines;
@@ -58,6 +63,7 @@ GL_ERROR_CHECK
 	skyl_program=MakeProgram("simple.vert",NULL,"simul_gpu_skyl.frag");
 GL_ERROR_CHECK
 	MAKE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,GpuSkyConstants,gpuSkyConstantsBindingIndex);
+GL_ERROR_CHECK
 }
 
 //! Return true if the derived class can make sky tables using the GPU.
@@ -173,7 +179,7 @@ GL_ERROR_CHECK
 		F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 		if(target)
-		glReadPixels(0,0,gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+		glReadPixels(0,0,(GLsizei)gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	target+=gpuSkyParameters.altitudes_km.size()*gpuSkyParameters.numElevations;
@@ -206,7 +212,7 @@ GL_ERROR_CHECK
 //std::cout<<"\tGpu sky: render loss"<<i<<" "<<timer.UpdateTime()<<std::endl;
 	GL_ERROR_CHECK
 			if(target)
-			glReadPixels(0,0,gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+				glReadPixels(0,0,(GLsizei)gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 //std::cout<<"\tGpu sky: loss read"<<i<<" "<<timer.UpdateTime()<<std::endl;
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -219,7 +225,7 @@ GL_ERROR_CHECK
 	
 	// Now we will generate the inscatter texture.
 	// First we make the loss into a 3D texture.
-	GLuint loss_tex=make3DTexture(gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,gpuSkyParameters.numDistances,(const float *)loss_cache);
+	GLuint loss_tex=make3DTexture((int)gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,gpuSkyParameters.numDistances,(const float *)loss_cache);
 	GLuint optd_tex=make2DTexture(gpuSkyAtmosphereParameters.table_size,gpuSkyAtmosphereParameters.table_size,(const float *)gpuSkyAtmosphereParameters.optical_table);
 	// Now render out the inscatter.
 	glUseProgram(insc_program);

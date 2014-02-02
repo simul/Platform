@@ -53,23 +53,23 @@ void TwoResFramebuffer::RestoreDeviceObjects(void *dev)
 		return;
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
 	D3DFORMAT INTZ=((D3DFORMAT) MAKEFOURCC('I','N','T','Z'));
-	lowResFarFramebufferDx11	.SetDepthFormat(INTZ);
-	lowResNearFramebufferDx11	.SetDepthFormat(0);
-	hiResFarFramebufferDx11		.SetDepthFormat(0);
-	hiResNearFramebufferDx11	.SetDepthFormat(0);
+	lowResFarFramebuffer	.SetDepthFormat(INTZ);
+	lowResNearFramebuffer	.SetDepthFormat(0);
+	hiResFarFramebuffer		.SetDepthFormat(0);
+	hiResNearFramebuffer	.SetDepthFormat(0);
 
 	// Make sure the buffer is at least big enough to have Downscale main buffer pixels per pixel
 	int BufferWidth		=(Width+Downscale-1)/Downscale;
 	int BufferHeight	=(Height+Downscale-1)/Downscale;
-	lowResFarFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
-	lowResNearFramebufferDx11	.SetWidthAndHeight(BufferWidth,BufferHeight);
-	hiResFarFramebufferDx11		.SetWidthAndHeight(Width,Height);
-	hiResNearFramebufferDx11	.SetWidthAndHeight(Width,Height);
+	lowResFarFramebuffer	.SetWidthAndHeight(BufferWidth,BufferHeight);
+	lowResNearFramebuffer	.SetWidthAndHeight(BufferWidth,BufferHeight);
+	hiResFarFramebuffer		.SetWidthAndHeight(Width,Height);
+	hiResNearFramebuffer	.SetWidthAndHeight(Width,Height);
 	
-	lowResFarFramebufferDx11	.RestoreDeviceObjects(dev);
-	lowResNearFramebufferDx11	.RestoreDeviceObjects(dev);
-	hiResFarFramebufferDx11		.RestoreDeviceObjects(dev);
-	hiResNearFramebufferDx11	.RestoreDeviceObjects(dev);
+	lowResFarFramebuffer	.RestoreDeviceObjects(dev);
+	lowResNearFramebuffer	.RestoreDeviceObjects(dev);
+	hiResFarFramebuffer		.RestoreDeviceObjects(dev);
+	hiResNearFramebuffer	.RestoreDeviceObjects(dev);
 }
 
 void TwoResFramebuffer::InvalidateDeviceObjects()
@@ -114,7 +114,7 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	
 		simulSkyRenderer=new SimulSkyRenderer(sk);
 		baseSkyRenderer=simulSkyRenderer;
-#if 1
+#if 0
 	{
 		simulCloudRenderer=new SimulCloudRenderer(ck3d,mem);
 		baseCloudRenderer=simulCloudRenderer;

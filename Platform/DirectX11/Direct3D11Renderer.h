@@ -7,6 +7,7 @@
 #include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Graph/Meta/Group.h"
+//#include "Simul/Scene/BaseSceneRenderer.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
@@ -31,6 +32,10 @@ namespace simul
 
 namespace simul
 {
+	namespace scene
+	{
+		class Scene;
+	}
 	namespace dx11
 	{
 		enum ViewType
@@ -45,8 +50,9 @@ namespace simul
 			~View();
 			void RestoreDeviceObjects(ID3D11Device *m_pd3dDevice);
 			void InvalidateDeviceObjects();
-			int ScreenWidth;
-			int ScreenHeight;
+			int GetScreenWidth() const;
+			int GetScreenHeight() const;
+			void SetResolution(int w,int h);
 			// A framebuffer with depth
 			simul::dx11::Framebuffer					hdrFramebuffer;
 			// The depth from the HDR framebuffer can be resolved into this texture:
@@ -54,6 +60,9 @@ namespace simul
 			simul::dx11::TextureStruct					lowResDepthTexture;
 			ViewType									viewType;
 			const simul::camera::CameraOutputInterface	*camera;
+		private:
+			int ScreenWidth;
+			int ScreenHeight;
 		};
 		class SimulWeatherRendererDX11;
 		class SimulHDRRendererDX1x;
@@ -68,7 +77,7 @@ namespace simul
 		{
 		public:
 			//! Constructor - pass a pointer to your Environment, and either an implementation of MemoryInterface, or NULL.
-			Direct3D11Renderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,int w,int h);
+			Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *s,simul::base::MemoryInterface *m,int w,int h);
 			virtual ~Direct3D11Renderer();
 			META_BeginProperties
 				META_ValueProperty(bool,ShowFlares				,"Whether to draw light flares around the sun and moon.")
@@ -109,9 +118,9 @@ namespace simul
 			{
 				return simulTerrainRenderer;
 			}
-			void	RecompileShaders();
-			void			RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos);
-			void			RenderEnvmap(ID3D11DeviceContext* pContext);
+			void						RecompileShaders();
+			void						RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos);
+			void						RenderEnvmap(ID3D11DeviceContext* pContext);
 			// D3D11CallbackInterface
 			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
 			virtual void				OnD3D11CreateDevice	(ID3D11Device* pd3dDevice);
@@ -126,7 +135,6 @@ namespace simul
 			virtual const char *		GetDebugText		() const;
 			void SetViewType(int view_id,ViewType vt);
 			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
-			
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
 			// Encompasses drawing the actual scene and putting the hdr buffer to screen.
@@ -139,22 +147,23 @@ namespace simul
 			void EnsureCorrectBufferSizes(int view_id);
 			View *GetView(int view_id);
 
-			int last_created_view_id;
-			int cubemap_view_id;
-			bool enabled;
+			int											last_created_view_id;
+			int											cubemap_view_id;
+			bool										enabled;
 			std::string									screenshotFilenameUtf8;
-			ID3D11Device				*m_pd3dDevice;
-			ID3DX11Effect				*mixedResolutionEffect;
-			SimulOpticsRendererDX1x		*simulOpticsRenderer;
-			SimulWeatherRendererDX11	*simulWeatherRenderer;
-			SimulHDRRendererDX1x		*simulHDRRenderer;
-			TerrainRenderer	*simulTerrainRenderer;
-			OceanRenderer				*oceanRenderer;
-			typedef std::map<int,View*>	ViewMap;
-			ViewMap						views;
-			simul::dx11::CubemapFramebuffer		cubemapFramebuffer;
-			simul::base::MemoryInterface *memoryInterface;
-			ConstantBuffer<MixedResolutionConstants> mixedResolutionConstants;
+			ID3D11Device								*m_pd3dDevice;
+			ID3DX11Effect								*mixedResolutionEffect;
+			SimulOpticsRendererDX1x						*simulOpticsRenderer;
+			SimulWeatherRendererDX11					*simulWeatherRenderer;
+			SimulHDRRendererDX1x						*simulHDRRenderer;
+			TerrainRenderer								*simulTerrainRenderer;
+			OceanRenderer								*oceanRenderer;
+			//simul::scene::BaseSceneRenderer				*sceneRenderer;
+			typedef std::map<int,View*>					ViewMap;
+			ViewMap										views;
+			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
+			simul::base::MemoryInterface				*memoryInterface;
+			ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
 		};
 	}
 }

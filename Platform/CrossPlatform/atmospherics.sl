@@ -15,16 +15,24 @@ vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,T
 	return loss;
 }
 
-vec3 AtmosphericsLossMSAA(Texture2DMS<float4> depthTextureMS,uint numSampes,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
+vec3 AtmosphericsLossMSAA(Texture2DMS<float4> depthTextureMS,uint numSamples,vec4 viewportToTexRegionScaleBias,Texture2D lossTexture
 	,mat4 invViewProj,vec2 texCoords,uint2 depth_pos2,vec2 clip_pos,vec3 depthToLinFadeDistParams,vec2 tanHalfFov)
 {
 	float3 view	=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
 	view		=normalize(view);
-	float depth	=depthTextureMS.Load(depth_pos2,0).x;
-	float dist	=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	float sine	=view.z;
+	vec3 loss	=vec3(0,0,0);
+	for(uint i=0;i<numSamples;i++)
+	{
+		vec4 insc_i;
+        vec3 skyl_i;
+		vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+		float depth			=depthTextureMS.Load(depth_pos2,i).x;
+	float dist	=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	vec2 texc2	=vec2(pow(dist,0.5),0.5*(1.f-sine));
-	vec3 loss	=texture_clamp_mirror(lossTexture,texc2).rgb;
+		loss				+=texture_clamp_mirror(lossTexture,texc2).rgb;
+	}
+	loss/=float(numSamples);
 	return loss;
 }
 
@@ -188,7 +196,7 @@ vec4 InscatterMSAA(	Texture2D inscTexture
 	vec3 colour			=skyl.rgb;
     colour.rgb			*=infraredIntegrationFactors.xyz;
     float final_radiance=colour.x+colour.y+colour.z;
-	return float4(final_radiance,final_radiance,final_radiance,final_radiance);
+	return float4(final_radiance,final_radiance,final_radiance,1.f);
 #else
 	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
 	colour				+=skyl;

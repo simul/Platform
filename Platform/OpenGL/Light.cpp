@@ -14,7 +14,7 @@ namespace
 }
 
 
-opengl::Light::Light() : scene::LightCache()
+opengl::Light::Light()// : scene::LightCache()
 {
     mLightIndex = GL_LIGHT0 + sLightCount++;
 }
@@ -34,6 +34,7 @@ void opengl::Light::UpdateLight(const double *lLightGlobalPosition,float lConeAn
     glPushAttrib(GL_POLYGON_BIT);
     // Visible for double side.
     glDisable(GL_CULL_FACE);
+  //  glEnable(GL_LIGHTING);
     // Draw wire-frame geometry.
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 const float ANGLE_TO_RADIAN	= 3.1415926f / 180.f;
@@ -54,13 +55,15 @@ const float ANGLE_TO_RADIAN	= 3.1415926f / 180.f;
     {
         // Draw a sphere for other types.
         GLUquadricObj * lQuadObj = gluNewQuadric();
+#if 0
 		static float light_radius=10.f;
         gluSphere(lQuadObj, light_radius,10, 10);
+#endif
         gluDeleteQuadric(lQuadObj);
     }
     glPopAttrib();
     glPopAttrib();
-
+#if 1
     // The transform have been set, so set in local coordinate.
     if (mType == FbxLight::eDirectional)
     {
@@ -86,6 +89,7 @@ const float ANGLE_TO_RADIAN	= 3.1415926f / 180.f;
         }
     }
     glEnable(mLightIndex);
+#endif
 	glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 }

@@ -34,7 +34,15 @@ HRESULT CompileShaderFromFile( const char* szFileName, const char* szEntryPoint,
 Fft::Fft()
 	:m_pd3dDevice(NULL)
 	,size(512)
+	,pd3dImmediateContext(NULL)
+	,pRadix008A_CS(NULL)
+	,pRadix008A_CS2(NULL)
+	,pBuffer_Tmp(NULL)
+	,pUAV_Tmp(NULL)
+	,pSRV_Tmp(NULL)
 {
+	for(int i=0;i<6;i++)
+		pRadix008A_CB[i]=NULL;
 }
 Fft::~Fft()
 {
@@ -96,7 +104,9 @@ void Fft::RecompileShaders()
 
     CompileShaderFromFile("fft_512x512_c2c.hlsl", "Radix008A_CS", "cs_4_0", &pBlobCS);
     CompileShaderFromFile("fft_512x512_c2c.hlsl", "Radix008A_CS2", "cs_4_0", &pBlobCS2);
-
+	
+	SAFE_RELEASE(pRadix008A_CS);
+	SAFE_RELEASE(pRadix008A_CS2);
     m_pd3dDevice->CreateComputeShader(pBlobCS->GetBufferPointer(), pBlobCS->GetBufferSize(), NULL, &pRadix008A_CS);
     m_pd3dDevice->CreateComputeShader(pBlobCS2->GetBufferPointer(), pBlobCS2->GetBufferSize(), NULL, &pRadix008A_CS2);
     

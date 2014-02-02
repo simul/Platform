@@ -16,8 +16,10 @@
 #include "Simul/Platform/OpenGL/SimulGLAtmosphericsRenderer.h"
 #include "Simul/Platform/OpenGL/SimulGLTerrainRenderer.h"
 #include "Simul/Platform/OpenGL/Profiler.h"
+#include "Simul/Scene/Scene.h"
 #include "Simul/Scene/Object.h"
 #include "Simul/Scene/BaseObjectRenderer.h"
+#include "Simul/Scene/BaseSceneRenderer.h"
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
@@ -26,15 +28,12 @@
 #pragma comment(lib,"opengl32")
 #pragma comment(lib,"glew32")
 #pragma comment(lib,"freeglut")
-#ifdef DEBUG
-#pragma comment(lib,"Scene_MDd")
-#else
-#pragma comment(lib,"Scene_MD")
-#endif
 #ifndef _MSC_VER
 #define	sprintf_s(buffer, buffer_size, stringbuffer, ...) (snprintf(buffer, buffer_size, stringbuffer, ##__VA_ARGS__))
 #endif
 
+using namespace simul;
+using namespace opengl;
 
 #ifndef GLUT_BITMAP_HELVETICA_12
 #define GLUT_BITMAP_HELVETICA_12	((void*)7)
@@ -42,12 +41,9 @@
 using namespace simul;
 using namespace opengl;
 
-simul::scene::Object * gScene=NULL;
-simul::scene::BaseObjectRenderer *sceneCache=NULL;
+simul::opengl::RenderPlatform *renderPlatform=NULL;
 
-simul::opengl::RenderPlatform renderPlatform;
-
-OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,bool init_glut)
+OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut)
 	:ScreenWidth(0)
 	,ScreenHeight(0)
 	,cam(NULL)
@@ -64,18 +60,20 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 	,MixCloudsAndTerrain(false)
 	,Exposure(1.0f)
 	,simple_program(0)
+	,sceneRenderer(NULL)
 {
 	simulHDRRenderer		=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
 	simulWeatherRenderer	=new SimulGLWeatherRenderer(env,NULL,ScreenWidth,ScreenHeight);
 	simulOpticsRenderer		=new SimulOpticsRendererGL(m);
 	simulTerrainRenderer	=new SimulGLTerrainRenderer(NULL);
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
+	if(!renderPlatform)
+		renderPlatform		=new opengl::RenderPlatform;
+	if(sc)
+		sceneRenderer		=new scene::BaseSceneRenderer(sc,renderPlatform);
 	simul::opengl::Profiler::GetGlobalProfiler().Initialize(NULL);
 	
-	simul::opengl::PushTexturePath("C:\\Simul\\dev\\Simul\\Media\\scenes\\stmedard_f");
-	std::string sceneFilename	=std::string(GetScenePathUtf8())+"\\stmedard_f\\stmedard.fbx";//SciFi\\SciFi_HumanCity_Kit05-FBX.fbx";//"\\stmedard_f\\stmedard.fbx";		//
-	gScene						=new simul::scene::Object(sceneFilename.length() ? sceneFilename.c_str() : NULL);
-	sceneCache=new scene::BaseObjectRenderer(gScene,&renderPlatform);
+	//sceneCache=new scene::BaseObjectRenderer(gScene,&renderPlatform);
 	if(init_glut)
 	{
 		char argv[]="no program";
@@ -87,13 +85,17 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::base::Memo
 
 OpenGLRenderer::~OpenGLRenderer()
 {
-	delete sceneCache;
-	delete gScene;	
-	renderPlatform.InvalidateDeviceObjects();
+GL_ERROR_CHECK
+	delete sceneRenderer;
+GL_ERROR_CHECK
+	delete renderPlatform;
+GL_ERROR_CHECK
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->InvalidateDeviceObjects();
+GL_ERROR_CHECK
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->InvalidateDeviceObjects();
+GL_ERROR_CHECK
 	if(simulHDRRenderer)
 		simulHDRRenderer->InvalidateDeviceObjects();
 	simul::opengl::Profiler::GetGlobalProfiler().Uninitialize();
@@ -141,7 +143,7 @@ GL_ERROR_CHECK
 		simulOpticsRenderer->RestoreDeviceObjects(NULL);
 	if(simulTerrainRenderer)
 		simulTerrainRenderer->RestoreDeviceObjects(NULL);
-	renderPlatform.RestoreDeviceObjects(NULL);
+	renderPlatform->RestoreDeviceObjects(NULL);
 	RecompileShaders();
 }
 
@@ -197,16 +199,10 @@ GL_ERROR_CHECK
 		depthFramebuffer.Activate(context);
 		depthFramebuffer.Clear(context,0.f,0.f,0.f,0.f,1.f,GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 		
-		if(gScene)
-		{
-			if (gScene->GetStatus() == simul::scene::Object::MUST_BE_LOADED)
-			{
-				gScene->LoadFile();
-				sceneCache->LoadCacheRecursive(true);
-			}
-			sceneCache->Render();
-			gScene->OnTimerClick();
-		}
+		if(sceneRenderer)
+			sceneRenderer->Render(NULL);
+//		gScene->OnTimerClick();
+		
 		if(simulTerrainRenderer&&ShowTerrain)
 			simulTerrainRenderer->Render(context,1.f);
 		simulWeatherRenderer->RenderCelestialBackground(context,exposure);
@@ -248,12 +244,27 @@ GL_ERROR_CHECK
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
 			simulWeatherRenderer->GetSkyRenderer()->RenderCelestialDisplay(context,ScreenWidth,ScreenHeight);
 		SetTopDownOrthoProjection(ScreenWidth,ScreenHeight);
+		bool vertical_screen=ScreenHeight>ScreenWidth;
 		if(ShowFades&&simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
-			simulWeatherRenderer->GetSkyRenderer()->RenderFades(context,ScreenWidth,ScreenHeight);
+		{
+			int x0=ScreenWidth/2;
+			int y0=8;
+			if(vertical_screen)
+			{
+				x0=8;
+				y0=ScreenHeight/2;
+			}
+			simulWeatherRenderer->GetSkyRenderer()->RenderFades(context,x0,y0,ScreenWidth/2,ScreenHeight/2);
+		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(context,ScreenWidth,ScreenHeight);
+		{
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(context,0,0,ScreenWidth/2,ScreenHeight/2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(context,0,0,ScreenWidth/2,ScreenHeight/2);
+		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer()&&simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
-			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(context,ScreenWidth,ScreenHeight);
+		{
+			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(context,0,0,ScreenWidth,ScreenHeight);
+		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(NULL,ScreenWidth,ScreenHeight);
 	}
@@ -320,7 +331,7 @@ void OpenGLRenderer::ReloadTextures()
 
 void OpenGLRenderer::RecompileShaders()
 {
-	renderPlatform.RecompileShaders();
+	renderPlatform->RecompileShaders();
 	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
 	if(simulWeatherRenderer)

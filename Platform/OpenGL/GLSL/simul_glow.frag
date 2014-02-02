@@ -10,7 +10,7 @@ void main(void)
 	c+=texture2D(image_texture,texCoords+offset/2.0);
 	c+=texture2D(image_texture,texCoords-offset/2.0);
 	vec2 offset2=offset;
-	offset2.x=offset.x*-1.0;
+	offset2.x=-offset.x;
 	c+=texture2D(image_texture,texCoords+offset2/2.0);
 	c+=texture2D(image_texture,texCoords-offset2/2.0);
 	c=c*exposure/4.0;

@@ -67,7 +67,7 @@ void opengl::Mesh::UpdateVertexPositions(int lVertexCount, float *lVertices) con
     }
 }
 
-void opengl::Mesh::BeginDraw(scene::ShadingMode pShadingMode,const double* mat) const
+void opengl::Mesh::BeginDraw(void *,scene::ShadingMode pShadingMode,const double* mat) const
 {
 	glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -130,18 +130,18 @@ void opengl::Mesh::BeginDraw(scene::ShadingMode pShadingMode,const double* mat) 
 	//glUseProgram(0);
 }
 
-void opengl::Mesh::Draw(int pMaterialIndex,scene::ShadingMode pShadingMode) const
+void opengl::Mesh::Draw(void *,int pMaterialIndex,scene::ShadingMode pShadingMode) const
 {
     // Where to start.
-    GLsizei lOffset = mSubMeshes[pMaterialIndex]->IndexOffset * sizeof(unsigned int);
+    GLsizei lOffset = GetSubMesh(pMaterialIndex)->IndexOffset * sizeof(unsigned int);
     if ( pShadingMode == scene::SHADING_MODE_SHADED)
     {
-        const GLsizei lElementCount = mSubMeshes[pMaterialIndex]->TriangleCount * 3;
+        const GLsizei lElementCount = GetSubMesh(pMaterialIndex)->TriangleCount * 3;
         glDrawElements(GL_TRIANGLES, lElementCount, GL_UNSIGNED_INT, reinterpret_cast<const GLvoid *>(lOffset));
     }
     else
     {
-        for (int lIndex = 0; lIndex < mSubMeshes[pMaterialIndex]->TriangleCount; ++lIndex)
+        for (int lIndex = 0; lIndex < GetSubMesh(pMaterialIndex)->TriangleCount; ++lIndex)
         {
             // Draw line loop for every triangle.
             glDrawElements(GL_LINE_LOOP, TRIANGLE_VERTEX_COUNT, GL_UNSIGNED_INT, reinterpret_cast<const GLvoid *>(lOffset));
@@ -150,7 +150,7 @@ void opengl::Mesh::Draw(int pMaterialIndex,scene::ShadingMode pShadingMode) cons
     }
 }
 
-void opengl::Mesh::EndDraw() const
+void opengl::Mesh::EndDraw(void *) const
 {
     // Reset VBO binding.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

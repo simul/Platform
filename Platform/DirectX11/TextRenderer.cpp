@@ -140,6 +140,7 @@ void TextRenderer::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
+	SAFE_RELEASE(effect);
 	effect=LoadEffect(m_pd3dDevice,"font.fx",defines);
 	constantBuffer.LinkToEffect(effect,"FontConstants");
 }

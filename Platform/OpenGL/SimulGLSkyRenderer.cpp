@@ -285,21 +285,14 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderFades(void *,int width,int height)
+bool SimulGLSkyRenderer::RenderFades(void *,int x0,int y0,int width,int height)
 {
-	int size=width/6;
+	int size=width/3;
 	if(height/4<size)
 		size=height/4;
 	if(size<2)
 		return false;
 	int s=size/numAltitudes-2;
-	int y0=width/2;
-	int x0=8;
-	if(width>height)
-	{
-		x0=width-(size+8)*2-(s+8)*3;
-		y0=8;
-	}
 	int y=y0+8;
 	static int main_viewport[]={0,0,1,1};
 	glGetIntegerv(GL_VIEWPORT,main_viewport);

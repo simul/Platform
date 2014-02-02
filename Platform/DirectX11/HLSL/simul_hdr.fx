@@ -14,8 +14,6 @@ Texture2D<uint> glowTexture;
 Texture2D inscatterTexture;			// Far, or default inscatter
 Texture2D nearInscatterTexture;		// Near inscatter.
 
-
-
 struct a2v
 {
 	uint vertex_id	: SV_VertexID;
@@ -145,9 +143,27 @@ vec4 GlowExposureGammaPS(v2f IN) : SV_TARGET
     return vec4(c.rgb,1.f);
 }
 
+vec4 GlowExposureGammaPS_MSAA(v2f IN) : SV_TARGET
+{
+	vec4 c=texture_resolve(imageTextureMS,IN.texCoords);
+	vec4 glow=convertInt(glowTexture,IN.texCoords);
+	c.rgb+=glow.rgb;
+	c.rgb*=exposure;
+	c.rgb=pow(c.rgb,gamma);
+    return vec4(c.rgb,1.f);
+}
+
 vec4 ExposureGammaPS(v2f IN) : SV_TARGET
 {
 	vec4 c=texture_nearest_lod(imageTexture,IN.texCoords,0);
+	c.rgb*=exposure;
+	c.rgb=pow(c.rgb,gamma);
+    return vec4(c.rgb,1.f);
+}
+
+vec4 ExposureGammaPS_MSAA(v2f IN) : SV_TARGET
+{
+	vec4 c=texture_resolve(imageTextureMS,IN.texCoords);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
     return vec4(c.rgb,1.f);
@@ -161,7 +177,7 @@ vec2 HmdWarp(vec2 texCoords)
 	vec2 rvector	= theta * (warpHmdWarpParam.x + warpHmdWarpParam.y * rSq +
 								warpHmdWarpParam.z * rSq * rSq +
 								warpHmdWarpParam.w * rSq * rSq * rSq);
-	return warpLensCentre+rvector* warpScale ;
+	return warpLensCentre+rvector*warpScale;
 }
 
 float4 WarpExposureGammaPS(v2f IN) : SV_Target
@@ -174,13 +190,6 @@ float4 WarpExposureGammaPS(v2f IN) : SV_Target
 	c.rgb=pow(c.rgb,gamma);
     return vec4(c.rgb,1.0);
 }
-
-vec4 DirectPS(v2f IN) : SV_TARGET
-{
-	vec4 c=exposure*texture_clamp(imageTexture,IN.texCoords);
-    return vec4(c.rgba);
-}
-
 void UpdateNearestSample(	inout float MinDist,
 							inout vec2 NearestUV,
 							float Z,
@@ -202,18 +211,27 @@ bool IsSampleNearer(inout float MinDist,float Z,float ZFull)
 	return (Dist < MinDist);
 }
 
+
+vec4 DirectPS(v2f IN) : SV_TARGET
+{
+	vec4 c=texture_clamp(imageTexture,IN.texCoords);
+	c.rgb*=exposure;
+    return c;
+}
+
 // texture_clamp_lod texture_nearest_lod
 vec4 NearFarDepthCloudBlendPS(v2f IN) : SV_TARGET
 {
-	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy
-										,imageTexture
-										,nearImageTexture
-										,lowResDepthTexture
-										,depthTextureMS
-										,viewportToTexRegionScaleBias
-										,depthToLinFadeDistParams
-										,inscatterTexture
-										,nearInscatterTexture);
+	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy,imageTexture,nearImageTexture,lowResDepthTexture,depthTexture,depthTextureMS,viewportToTexRegionScaleBias,depthToLinFadeDistParams
+		,inscatterTexture,nearInscatterTexture,false);
+	result.rgb	*=exposure;
+	return result;
+}
+
+vec4 NearFarDepthCloudBlendPS_MSAA(v2f IN) : SV_TARGET
+{
+	vec4 result	=NearFarDepthCloudBlend(IN.texCoords.xy,imageTexture,nearImageTexture,lowResDepthTexture,depthTexture,depthTextureMS,viewportToTexRegionScaleBias,depthToLinFadeDistParams
+		,inscatterTexture,nearInscatterTexture,true);
 	result.rgb	*=exposure;
 	return result;
 }
@@ -234,23 +252,9 @@ vec4 GlowPS(v2f IN) : SV_TARGET
     return c;
 }
 
-technique11 simul_direct
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,MainVS()));
-		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
-    }
-}
-
-
 technique11 exposure_gamma
 {
-    pass p0
+    pass main
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
@@ -259,10 +263,20 @@ technique11 exposure_gamma
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,ExposureGammaPS()));
     }
+    pass msaa
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,ExposureGammaPS_MSAA()));
+    }
 }
+
 technique11 warp_exposure_gamma
 {
-    pass p0
+    pass main
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
@@ -288,7 +302,7 @@ technique11 warp_glow_exposure_gamma
 
 technique11 glow_exposure_gamma
 {
-    pass p0
+    pass main
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
@@ -297,11 +311,33 @@ technique11 glow_exposure_gamma
 		SetVertexShader(CompileShader(vs_4_0,MainVS()));
 		SetPixelShader(CompileShader(ps_4_0,GlowExposureGammaPS()));
     }
+    pass msaa
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(NoBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,GlowExposureGammaPS_MSAA()));
+    }
+}
+
+technique11 simple_cloud_blend
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(CloudBufferBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,MainVS()));
+		SetPixelShader(CompileShader(ps_4_0,DirectPS()));
+    }
 }
 
 technique11 far_near_depth_blend
 {
-    pass p0
+    pass main
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
@@ -309,6 +345,15 @@ technique11 far_near_depth_blend
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,MainVS()));
 		SetPixelShader(CompileShader(ps_5_0,NearFarDepthCloudBlendPS()));
+    }
+    pass msaa
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(CloudBufferBlend,vec4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,MainVS()));
+		SetPixelShader(CompileShader(ps_5_0,NearFarDepthCloudBlendPS_MSAA()));
     }
 }
 

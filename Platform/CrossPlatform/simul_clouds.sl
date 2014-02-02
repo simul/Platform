@@ -375,7 +375,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,bool noise)
 {
 	vec4 dlookup 			=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec4 clip_pos		=vec4(-1.f,1.f,1.f,1.f);
+	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x			+=2.0*texCoords.x;
 	clip_pos.y			-=2.0*texCoords.y;
 	vec3 view			=normalize(mul(invViewProj,clip_pos).xyz);

@@ -139,7 +139,7 @@ namespace simul
 	namespace dx11
 	{
 		std::string *shaderPathUtf8;
-		std::string *texture_path;
+		static std::vector<std::string> texturePathsUtf8;
 		void SetFileLoader(simul::base::FileLoader *l)
 		{
 			fileLoader=l;
@@ -195,16 +195,13 @@ namespace simul
 				*shaderPathUtf8=std::string(path_utf8)+"/";
 			}
 		}
-		void SetTexturePath(const char *path)
+		void PushTexturePath(const char *path_utf8)
 		{
-			if(!path)
-				delete texture_path;
-			else
-			{
-				if(!texture_path)
-					texture_path=new std::string;
-				*texture_path=std::string(path)+"/";
-			}
+			texturePathsUtf8.push_back(path_utf8);
+		}
+		void PopTexturePath()
+		{ 
+			texturePathsUtf8.pop_back();
 		}
 		void MakeInvViewProjMatrix(float *ivp,const float *v,const float *p)
 		{
@@ -252,20 +249,25 @@ ID3D1xShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 {
 	ID3D11ShaderResourceView* tex=NULL;
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
-	ZeroMemory( &loadInfo, sizeof(D3DX11_IMAGE_LOAD_INFO) );
-	loadInfo.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	loadInfo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	ZeroMemory(&loadInfo,sizeof(D3DX11_IMAGE_LOAD_INFO));
+	loadInfo.BindFlags	=D3D11_BIND_SHADER_RESOURCE;
+	loadInfo.Format		=DXGI_FORMAT_R8G8B8A8_UNORM;
 	loadInfo.MipLevels=0;
-	if(!texture_path)
-		texture_path=new std::string("media/textures");
-	std::wstring wstr=simul::base::Utf8ToWString(*texture_path+filename);
-	HRESULT hr=D3DX11CreateShaderResourceViewFromFileW(
+	if(!texturePathsUtf8.size())
+		texturePathsUtf8.push_back("media/textures");
+	for(int i=0;i<(int)texturePathsUtf8.size();i++)
+	{
+		std::wstring wstr	=simul::base::Utf8ToWString((texturePathsUtf8[i]+"/")+filename);
+		HRESULT hr			=D3DX11CreateShaderResourceViewFromFileW(
 										pd3dDevice,
 										wstr.c_str(),
 										&loadInfo,
 										NULL,
 										&tex,
 										&hr);
+		if(hr==S_OK)
+			break;
+	}
 	return tex;
 }
 
@@ -293,15 +295,16 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
     loadInfo.Filter         = D3DX11_FILTER_NONE;
 
 	ID3D11Texture2D *tex=NULL;
-	if(!texture_path)
-		texture_path=new std::string("media/textures");
-	std::wstring wstr=simul::base::Utf8ToWString((*texture_path+filename).c_str());
-	HRESULT hr=D3DX11CreateTextureFromFileW(pd3dDevice,wstr.c_str()
-		,&loadInfo, NULL, ( ID3D11Resource** )&tex, &hr );
-	if(hr!=S_OK)
+	if(!texturePathsUtf8.size())
+		texturePathsUtf8.push_back("media/textures");
+	for(int i=0;i<(int)texturePathsUtf8.size();i++)
 	{
+		std::wstring wstr	=simul::base::Utf8ToWString((texturePathsUtf8[i]+"/")+filename);
+		HRESULT hr=D3DX11CreateTextureFromFileW(pd3dDevice,wstr.c_str(),&loadInfo, NULL, ( ID3D11Resource** )&tex, &hr );
+		if(hr==S_OK)
+			break;
 #ifdef DXTRACE_ERR
-        hr=DXTRACE_ERR( L"CreateEffect", hr );
+        hr=DXTRACE_ERR( L"LoadStagingTexture", hr );
 #endif
 	}
 	return tex;
@@ -444,6 +447,18 @@ void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,
 	if(!tech)
 		SIMUL_THROW("Technique not found");
 	ID3DX11EffectPass *pass			=tech->GetPassByIndex(pass_num);
+	if(!pass->IsValid())
+		SIMUL_THROW("Pass not found");
+	HRESULT hr=pass->Apply(0,pContext);
+	V_CHECK(hr);
+}
+
+void simul::dx11::applyPass(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,const char *passname)
+{
+	ID3DX11EffectTechnique *tech	=effect->GetTechniqueByName(name);
+	if(!tech)
+		SIMUL_THROW("Technique not found");
+	ID3DX11EffectPass *pass			=tech->GetPassByName(passname);
 	if(!pass->IsValid())
 		SIMUL_THROW("Pass not found");
 	HRESULT hr=pass->Apply(0,pContext);
@@ -631,10 +646,10 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 		{
-		fileLoader->Save(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
+			fileLoader->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
+		}
 	}
-	}
-	else
+	else if(errorMsgs)
 	{
 		char *errs=(char*)errorMsgs->GetBufferPointer();
 		std::string err(errs);

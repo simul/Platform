@@ -71,7 +71,7 @@ void main()
 		//if(density.z<=0)
 		//	continue;
 		vec4 c=calcColour(density,cos0,texCoords.z);
-		vec2 fade_texc=vec2(sqrt(z),0.5f*(1.f-sine));
+		vec2 fade_texc=vec2(sqrt(z),0.5*(1.0-sine));
 		c.rgb=applyFades(c.rgb,fade_texc,cos0,earthshadowMultiplier);
 		colour*=(1.0-c.a);
 		colour.rgb+=c.rgb*c.a;

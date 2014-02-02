@@ -343,7 +343,7 @@ void Direct3D11Manager::Initialize()
 	m_videoCardMemory = (int)(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
 
 	// Convert the name of the video card to a character array and store it.
-	unsigned stringLength;
+	size_t stringLength;
 	error = wcstombs_s(&stringLength, m_videoCardDescription, 128, adapterDesc.Description, 128);
 	SIMUL_ASSERT(error==0);
 	//Now that we have stored the numerator and denominator for the refresh rate and the video card information we can release the structures and interfaces used to get that information.
@@ -371,14 +371,17 @@ void Direct3D11Manager::Initialize()
 	// Create the swap chain, Direct3D device, and Direct3D device context.
 	//result = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, &featureLevel, 1, 
 	//				       D3D11_SDK_VERSION, &swapChainDesc, &m_swapChain, &d3dDevice, NULL, &d3dDeviceContext);
-
-	result=D3D11CreateDevice(NULL,D3D_DRIVER_TYPE_HARDWARE,NULL, 0, &featureLevel,1,D3D11_SDK_VERSION,&d3dDevice, NULL,&d3dDeviceContext);
+	UINT flags=0;
+#ifdef _DEBUG
+	//flags|=D3D11_CREATE_DEVICE_DEBUG;
+#endif
+	result=D3D11CreateDevice(NULL,D3D_DRIVER_TYPE_HARDWARE,NULL,flags, &featureLevel,1,D3D11_SDK_VERSION,&d3dDevice, NULL,&d3dDeviceContext);
 	SIMUL_ASSERT(result==S_OK);
 }
 
 int Direct3D11Manager::GetNumOutputs()
 {
-	return outputs.size();
+	return (int)outputs.size();
 }
 
 Output Direct3D11Manager::GetOutput(int i)
@@ -501,6 +504,12 @@ void Direct3D11Manager::StartRendering(HWND h)
 	d3dDeviceContext->RSSetViewports(1, &w->viewport);
 	// Now set the rasterizer state.
 	d3dDeviceContext->RSSetState(w->m_rasterState);
+	if(w->renderer)
+		w->renderer->Render(w->view_id,GetDevice(),GetDeviceContext());
+	DWORD dwFlags = 0;
+	UINT SyncInterval = 0;
+    // Show the frame on the primary surface.
+	w->m_swapChain->Present(SyncInterval,dwFlags);
 }
 
 void Direct3D11Manager::SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci)
@@ -513,7 +522,7 @@ void Direct3D11Manager::SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci)
 	w->SetRenderer(ci);
 }
 
-Window *Direct3D11Manager::GetWindow(HWND hwnd)
+Direct3DWindow *Direct3D11Manager::GetWindow(HWND hwnd)
 {
 	if(windows.find(hwnd)==windows.end())
 		return NULL;
@@ -523,7 +532,7 @@ Window *Direct3D11Manager::GetWindow(HWND hwnd)
 
 void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output)
 {
-	Window *w=GetWindow(hwnd);
+	Window *w=(Window*)GetWindow(hwnd);
 	if(!w)
 		return;
 	IDXGIOutput *output=outputs[which_output];
@@ -564,10 +573,23 @@ void Direct3D11Manager::ResizeSwapChain(HWND hwnd,int width,int height)
 		GetWindowRect(hwnd,&rect);
 		int W	=abs(rect.right-rect.left);
 		int H	=abs(rect.bottom-rect.top);
+	ID3D11RenderTargetView *t[]={NULL};
+	//d3dDeviceContext->OMSetRenderTargets(1,t,NULL);
 	SAFE_RELEASE(w->m_renderTargetView);
+	DXGI_SWAP_CHAIN_DESC swapDesc;
+	w->m_swapChain->GetDesc(&swapDesc);
 	HRESULT hr=w->m_swapChain->ResizeBuffers(1,width,height,DXGI_FORMAT_R8G8B8A8_UNORM,0);
 	w->CreateRenderTarget(d3dDevice);
 	w->CreateDepthBuffer(d3dDevice);
+	
+	DXGI_SURFACE_DESC surfaceDesc;
+	w->m_swapChain->GetDesc(&swapDesc);
+	surfaceDesc.Format		=swapDesc.BufferDesc.Format;
+	surfaceDesc.SampleDesc	=swapDesc.SampleDesc;
+	surfaceDesc.Width		=swapDesc.BufferDesc.Width;
+	surfaceDesc.Height		=swapDesc.BufferDesc.Height;
+	if(w->renderer)
+		w->renderer->ResizeView(w->view_id,&surfaceDesc);
 	SIMUL_ASSERT(hr==S_OK);
 }
 

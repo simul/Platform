@@ -93,7 +93,7 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	BaseWeatherRenderer(env,mem),
 	m_pd3dDevice(NULL),
 	m_pTonemapEffect(NULL)
-	,directTechnique(NULL)
+	,simpleCloudBlendTechnique(NULL)
 	,imageTexture(NULL)
 	,simulSkyRenderer(NULL)
 	,simulCloudRenderer(NULL)
@@ -189,7 +189,7 @@ void SimulWeatherRendererDX11::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"), defines);
-	directTechnique				=m_pTonemapEffect->GetTechniqueByName("simul_direct");
+	simpleCloudBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("simple_cloud_blend");
 	showDepthTechnique			=m_pTonemapEffect->GetTechniqueByName("show_depth");
 	farNearDepthBlendTechnique	=m_pTonemapEffect->GetTechniqueByName("far_near_depth_blend");
 	imageTexture				=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
@@ -349,14 +349,8 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context
 {
 	SIMUL_COMBINED_PROFILE_START(context,"RenderSkyAsOverlay")
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
-	// First we render the hi-res elements to the hi-res buffer.
-	if(buffered)
-	{
-		fb->hiResFarFramebufferDx11.Activate(context);
-		fb->hiResFarFramebufferDx11.Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
-	}
 	if(baseAtmosphericsRenderer&&ShowSky)
-		baseAtmosphericsRenderer->RenderInscatter(context,mainDepthTexture,exposure,depthViewportXYWH,false);
+		baseAtmosphericsRenderer->RenderAsOverlay(context,mainDepthTexture,exposure,depthViewportXYWH);
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
 		base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,UseDefaultFog,false,view_id,depthViewportXYWH);
 	// Now we render the low-resolution elements to the low-res buffer.
@@ -437,16 +431,23 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	imageTexture->SetResource(fb->lowResFarFramebufferDx11.buffer_texture_SRV);
-	bool msaa=true;
+	ID3D11ShaderResourceView *depth_SRV=(ID3D11ShaderResourceView*)mainDepthTexture;
+	bool msaa=false;
+	if(depth_SRV)
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+		depth_SRV->GetDesc(&desc);
+		msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+	}
 	if(msaa)
 	{
 		// Set both regular and MSAA depth variables. Which it is depends on the situation.
 		//simul::dx11::setTexture(m_pTonemapEffect,"nearFarDepthTexture"			,(ID3D1xShaderResourceView*)nearFarDepthTexture);
-		simul::dx11::setTexture(m_pTonemapEffect,"depthTextureMS"		,(ID3D1xShaderResourceView*)mainDepthTexture);
+		simul::dx11::setTexture(m_pTonemapEffect,"depthTextureMS"		,depth_SRV);
 	}
 //	else
 	{
-		simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"			,(ID3D1xShaderResourceView*)mainDepthTexture);
+		simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"			,depth_SRV);
 	}
 	// The low res depth texture contains the total near and far depths in its x and y.
 	simul::dx11::setTexture(m_pTonemapEffect,"lowResDepthTexture"	,(ID3D1xShaderResourceView*)lowResDepthTexture);
@@ -454,8 +455,8 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	simul::dx11::setTexture(m_pTonemapEffect,"inscatterTexture"		,(ID3D1xShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
 	simul::dx11::setTexture(m_pTonemapEffect,"nearInscatterTexture"	,(ID3D1xShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
 
-	ID3D1xEffectTechnique *tech					=depth_blend?farNearDepthBlendTechnique:directTechnique;
-	ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(0));
+	ID3D1xEffectTechnique *tech					=depth_blend?farNearDepthBlendTechnique:simpleCloudBlendTechnique;
+	ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(msaa?1:0));
 	hdrConstants.exposure						=1.f;
 	hdrConstants.gamma							=1.f;
 	hdrConstants.viewportToTexRegionScaleBias	=vec4(depthViewportXYWH.z, depthViewportXYWH.w, depthViewportXYWH.x, depthViewportXYWH.y);

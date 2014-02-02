@@ -44,7 +44,7 @@ void SaveTexture(LPDIRECT3DTEXTURE9 texture,const char *filename_utf8)
 	else if(filename.find(".hdr")<=filename.length())
 		ff=D3DXIFF_HDR;
 
-	int pos=filename.find_last_of('.');
+	int pos=(int)filename.find_last_of('.');
 	std::string ext=filename.substr(pos,filename.length()-pos);
 	std::string root=filename.substr(0,pos);
 	int number=0;
