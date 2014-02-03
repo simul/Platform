@@ -62,8 +62,8 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	SetScreenSize(width,height);
 	
-		simulSkyRenderer=new SimulSkyRenderer(sk);
-		baseSkyRenderer=simulSkyRenderer;
+	simulSkyRenderer=new SimulSkyRenderer(sk);
+	baseSkyRenderer=simulSkyRenderer;
 #if 1
 	{
 		simulCloudRenderer=new SimulCloudRenderer(ck3d,mem);
