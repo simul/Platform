@@ -438,14 +438,14 @@ void Framebuffer::ActivateDepth(void *context)
 
 	if(m_pOldRenderTarget==NULL&&m_pOldDepthSurface==NULL)
 	{
-	pContext->RSGetViewports(&num_v,NULL);
-	if(num_v>0)
-		pContext->RSGetViewports(&num_v,m_OldViewports);
-	pContext->OMGetRenderTargets(	1,
-												&m_pOldRenderTarget,
-												&m_pOldDepthSurface
-												);
-	pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
+		pContext->RSGetViewports(&num_v,NULL);
+		if(num_v>0)
+			pContext->RSGetViewports(&num_v,m_OldViewports);
+		pContext->OMGetRenderTargets(	1,
+										&m_pOldRenderTarget,
+										&m_pOldDepthSurface
+										);
+		pContext->OMSetRenderTargets(1,&m_pOldRenderTarget,m_pBufferDepthSurface);
 	}
 	else
 	{

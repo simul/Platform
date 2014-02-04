@@ -101,7 +101,10 @@ namespace simul
 				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")
 				META_ValueProperty(int,Antialiasing				,"How many antialiasing samples to use.")
 			META_EndProperties
-			bool IsEnabled()const{return enabled;}
+			bool IsEnabled()const
+			{
+				return enabled;
+			}
 			class SimulWeatherRendererDX11 *GetSimulWeatherRenderer()
 			{
 				return simulWeatherRenderer;
