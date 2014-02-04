@@ -633,7 +633,7 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
 void UtilityRenderer::RecompileShaders()
 {
 	SAFE_RELEASE(m_pDebugEffect);
-	CreateEffect(m_pd3dDevice,&m_pDebugEffect,("simul_debug.fx"));
+	CreateEffect(m_pd3dDevice,&m_pDebugEffect,"simul_debug.fx");
 	textRenderer.RecompileShaders();
 }
 
@@ -672,69 +672,69 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 		return;
 	PIXWrapper(0xFF0000FF,"DrawLines")
 	{
-	HRESULT hr=S_OK;
-	D3DXMATRIX world, tmp1, tmp2;
-	D3DXMatrixIdentity(&world);
-	ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_debug");
-	ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
+		HRESULT hr=S_OK;
+		D3DXMATRIX world, tmp1, tmp2;
+		D3DXMatrixIdentity(&world);
+		ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_debug");
+		ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
 
-	D3DXMATRIX wvp;
-	MakeWorldViewProjMatrix(&wvp,world,view,proj);
-	worldViewProj->SetMatrix(&wvp._11);
+		D3DXMATRIX wvp;
+		MakeWorldViewProjMatrix(&wvp,world,view,proj);
+		worldViewProj->SetMatrix(&wvp._11);
 	
-	ID3D1xBuffer *					vertexBuffer=NULL;
-	// Create the vertex buffer:
-	D3D1x_BUFFER_DESC desc=
-	{
-        vertex_count*sizeof(VertexXyzRgba),
-        D3D1x_USAGE_DYNAMIC,
-        D3D1x_BIND_VERTEX_BUFFER,
-        D3D1x_CPU_ACCESS_WRITE,
-        0
-	};
-    D3D1x_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
-    InitData.pSysMem = vertices;
-    InitData.SysMemPitch = sizeof(VertexXyzRgba);
-	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
+		ID3D1xBuffer *					vertexBuffer=NULL;
+		// Create the vertex buffer:
+		D3D1x_BUFFER_DESC desc=
+		{
+			vertex_count*sizeof(VertexXyzRgba),
+			D3D1x_USAGE_DYNAMIC,
+			D3D1x_BIND_VERTEX_BUFFER,
+			D3D1x_CPU_ACCESS_WRITE,
+			0
+		};
+		D3D1x_SUBRESOURCE_DATA InitData;
+		ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+		InitData.pSysMem = vertices;
+		InitData.SysMemPitch = sizeof(VertexXyzRgba);
+		hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&vertexBuffer);
 
-	const D3D1x_INPUT_ELEMENT_DESC decl[] =
-    {
-        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
-    };
-	D3D1x_PASS_DESC PassDesc;
-	ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
-	hr=pass->GetDesc(&PassDesc);
+		const D3D1x_INPUT_ELEMENT_DESC decl[] =
+		{
+			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD",	0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
+		};
+		D3D1x_PASS_DESC PassDesc;
+		ID3D1xEffectPass *pass=tech->GetPassByIndex(0);
+		hr=pass->GetDesc(&PassDesc);
 
-	ID3D1xInputLayout*				m_pVtxDecl=NULL;
-	SAFE_RELEASE(m_pVtxDecl);
-	hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+		ID3D1xInputLayout*				m_pVtxDecl=NULL;
+		SAFE_RELEASE(m_pVtxDecl);
+		hr=m_pd3dDevice->CreateInputLayout( decl,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
-	m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
-	ID3D11InputLayout* previousInputLayout;
-	m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
-	m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
-	m_pImmediateContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	UINT stride = sizeof(VertexXyzRgba);
-	UINT offset = 0;
-    UINT Strides[1];
-    UINT Offsets[1];
-    Strides[0] = stride;
-    Offsets[0] = 0;
-	m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
-												1,				// the number of buffers in the array
-												&vertexBuffer,	// the array of vertex buffers
-												&stride,		// array of stride values, one for each buffer
-												&offset);		// array of 
-	hr=ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
-	m_pImmediateContext->Draw(vertex_count,0);
-	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
-	m_pImmediateContext->IASetInputLayout( previousInputLayout );
-	SAFE_RELEASE(previousInputLayout);
-	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(m_pVtxDecl);
+		m_pImmediateContext->IASetInputLayout(m_pVtxDecl);
+		ID3D11InputLayout* previousInputLayout;
+		m_pImmediateContext->IAGetInputLayout( &previousInputLayout );
+		D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+		m_pImmediateContext->IAGetPrimitiveTopology(&previousTopology);
+		m_pImmediateContext->IASetPrimitiveTopology(strip?D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		UINT stride = sizeof(VertexXyzRgba);
+		UINT offset = 0;
+		UINT Strides[1];
+		UINT Offsets[1];
+		Strides[0] = stride;
+		Offsets[0] = 0;
+		m_pImmediateContext->IASetVertexBuffers(	0,				// the first input slot for binding
+													1,				// the number of buffers in the array
+													&vertexBuffer,	// the array of vertex buffers
+													&stride,		// array of stride values, one for each buffer
+													&offset);		// array of 
+		hr=ApplyPass(m_pImmediateContext,tech->GetPassByIndex(0));
+		m_pImmediateContext->Draw(vertex_count,0);
+		m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
+		m_pImmediateContext->IASetInputLayout( previousInputLayout );
+		SAFE_RELEASE(previousInputLayout);
+		SAFE_RELEASE(vertexBuffer);
+		SAFE_RELEASE(m_pVtxDecl);
 	}
 }
 

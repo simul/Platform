@@ -244,7 +244,14 @@ namespace simul
 					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
 			}
 		};
-
+		
+		inline void SetDebugObjectName( ID3D11DeviceChild* resource,const char *name)
+		{
+		  #if defined(_DEBUG) || defined(PROFILE)
+			if(resource)
+			 resource->SetPrivateData(WKPDID_D3DDebugObjectName,name?strlen(name):0,name?name:"un-named resource");
+		  #endif
+		}
 		template<class T> class StructuredBuffer 
 		{
 		public:
