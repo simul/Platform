@@ -203,14 +203,14 @@ void Direct3D9Renderer::EnsureCorrectBufferSizes(int view_id)
 	int w=width,h=height;
 	if(simulWeatherRenderer)
 	{
-		simulWeatherRenderer->SetScreenSize(view_id,w,h);
+		simulWeatherRenderer->SetScreenSize(view_id,width,height);
 		int s					=simulWeatherRenderer->GetDownscale();
 		w						=(w +s-1)/s;
 		h						=(h+s-1)/s;
 	}
 	if(simulHDRRenderer)
-		simulHDRRenderer->SetBufferSize(w,h);
-	hdrFramebuffer	.SetWidthAndHeight(w,h);
+		simulHDRRenderer->SetBufferSize(width,height);
+	hdrFramebuffer	.SetWidthAndHeight(width,height);
 }
 
 void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime, float fTimeStep)

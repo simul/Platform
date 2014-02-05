@@ -49,10 +49,10 @@ TwoResFramebuffer::TwoResFramebuffer()
 
 void TwoResFramebuffer::RestoreDeviceObjects(void *dev)
 {
-	if(!dev)
-		return;
 	InvalidateDeviceObjects();
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	if(!m_pd3dDevice||!Width||!Height||!Downscale)
+		return;
 	D3DFORMAT INTZ=((D3DFORMAT) MAKEFOURCC('I','N','T','Z'));
 	lowResFarFramebuffer	.SetDepthFormat(INTZ);
 	lowResNearFramebuffer	.SetDepthFormat(0);
@@ -84,6 +84,8 @@ void TwoResFramebuffer::InvalidateDeviceObjects()
 
 void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
 {
+	if(!m_pd3dDevice)
+		return;
 	if(Width!=w||Height!=h||Downscale!=downscale)
 	{
 		Width=w;
@@ -334,8 +336,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context
 											,mainDepthTexture
 											,lowResDepthTexture
 											,depthViewportXYWH
-											,doFinalCloudBufferToScreenComposite
-											);
+											,doFinalCloudBufferToScreenComposite );
 	if(buffered&&doFinalCloudBufferToScreenComposite&&m_pBufferToScreenEffect)
 	{
 		clouds::TwoResFramebuffer *fb=GetFramebuffer(view_id);
@@ -347,7 +348,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context
 		m_pBufferToScreenEffect->Begin(&passes,0);
 		m_pBufferToScreenEffect->BeginPass(0);
 
-	//	simul::dx9::DrawQuad(m_pd3dDevice);
+		simul::dx9::DrawQuad(m_pd3dDevice);
 		m_pBufferToScreenEffect->EndPass();
 		m_pBufferToScreenEffect->End();
 		m_pBufferToScreenEffect->SetTexture(bufferTexture,NULL);

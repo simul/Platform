@@ -119,6 +119,10 @@ void Framebuffer::Activate(void *context)
 {
 	m_pOldRenderTarget=NULL;
 	m_pOldDepthSurface=NULL;
+	if(!m_pHDRRenderTarget)
+		this->RestoreDeviceObjects(m_pd3dDevice);
+	if(!m_pHDRRenderTarget)
+		return;
 	//D3DSURFACE_DESC desc;
 	//V_CHECK(buffer_texture->GetLevelDesc(0,&desc));
 	SaveOldRTs(context);
@@ -166,7 +170,8 @@ void Framebuffer::SetViewport(void*,float viewportX, float viewportY, float view
 
 void Framebuffer::Deactivate(void *)
 {
-	//m_pOldRenderTarget->GetDesc(&desc);
+	if(!m_pHDRRenderTarget)
+		return;
 	m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
 	if(m_pOldDepthSurface)
 		m_pd3dDevice->SetDepthStencilSurface(m_pOldDepthSurface);

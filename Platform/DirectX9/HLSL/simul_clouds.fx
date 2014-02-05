@@ -518,11 +518,12 @@ technique cloud_mask
 		PixelShader  = compile ps_3_0 PS_Mask();
     }
 }
+
 technique simul_clouds
 {
     pass p0 
     {
-		zenable = true;
+		zenable = false;
 		zfunc = lessequal;
 		DepthBias =0;
 		SlopeScaleDepthBias =0;
@@ -544,6 +545,7 @@ technique simul_clouds
 		PixelShader  = compile ps_3_0 PS_Clouds();
     }
 }
+
 technique cross_section_xz
 {
     pass p0 

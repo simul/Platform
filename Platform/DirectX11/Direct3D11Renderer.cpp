@@ -371,10 +371,11 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	const camera::CameraOutputInterface *cam=view->camera;
 	if(cam)
 	{
+		float aspect=(float)view->GetScreenWidth()/(float)view->GetScreenHeight();
 		if(ReverseDepth)
-			proj=cam->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,(float)view->GetScreenWidth()/(float)view->GetScreenHeight());
+			proj=cam->MakeDepthReversedProjectionMatrix(nearPlane,farPlane,aspect);
 		else
-			proj=cam->MakeProjectionMatrix(nearPlane,farPlane,(float)view->GetScreenWidth()/(float)view->GetScreenHeight());
+			proj=cam->MakeProjectionMatrix(nearPlane,farPlane,aspect);
 		v=cam->MakeViewMatrix();
 		simul::dx11::UtilityRenderer::SetMatrices(v,proj);
 	}
