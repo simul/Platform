@@ -930,12 +930,12 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *
 	{
 		D3DX11_EFFECT_DESC effect_desc;
 		e->GetDesc(&effect_desc);
-		for(int i=0;i<effect_desc.Techniques;i++)
+		for(int i=0;i<(int)effect_desc.Techniques;i++)
 		{
 			ID3DX11EffectTechnique * pTech = e->GetTechniqueByIndex(i);
 			D3DX11_TECHNIQUE_DESC techDesc;
 			pTech->GetDesc(&techDesc);
-			for(int j=0;j<techDesc.Passes;j++)
+			for(int j=0;j<(int)techDesc.Passes;j++)
 			{
 				ID3DX11EffectPass * pPass = pTech->GetPassByIndex(j);
 				D3DX11_PASS_DESC passDesc;

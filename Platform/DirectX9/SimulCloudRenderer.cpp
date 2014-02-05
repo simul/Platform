@@ -560,7 +560,7 @@ void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 {
 }
 
-bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& )
+bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& )
 {
 	if(rebuild_shaders)
 		RecompileShaders();
@@ -1039,7 +1039,7 @@ void SimulCloudRenderer::RenderCrossSections(void *context,int x0,int y0,int wid
 		m_pCloudEffect->SetVector(crossSectionOffset,&cross_section_offset);
 		//GetCloudInterface()->GetWrap()?0.5f:0.f);
 		m_pCloudEffect->SetTexture(cloudDensity1				,cloud_textures[(i)%3]);
-		RenderTexture(m_pd3dDevice,i*(w+1)+4,h+8,w,w,
+		RenderTexture(m_pd3dDevice,x0+i*(w+1)+4,y0+h+8,w,w,
 					  cloud_textures[(i)%3],m_pCloudEffect,m_hTechniqueCrossSectionXY);
 		
 	}

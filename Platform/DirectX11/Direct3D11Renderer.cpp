@@ -103,15 +103,15 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 	//	,sceneRenderer(NULL)
 		,memoryInterface(m)
 {
-/*	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
 	simulHDRRenderer		=::new(memoryInterface) SimulHDRRendererDX1x(128,128);
+	simulWeatherRenderer	=::new(memoryInterface) SimulWeatherRendererDX11(env,memoryInterface);
 	simulOpticsRenderer		=::new(memoryInterface) SimulOpticsRendererDX1x(memoryInterface);
 	simulTerrainRenderer	=::new(memoryInterface) TerrainRenderer(memoryInterface);
 	simulTerrainRenderer->SetBaseSkyInterface(env->skyKeyframer);
 
 	oceanRenderer			=new(memoryInterface) OceanRenderer(env->seaKeyframer);
 	oceanRenderer->SetBaseSkyInterface(env->skyKeyframer);
-	*/
+	
 //	sceneRenderer			=new(memoryInterface) scene::BaseSceneRenderer(sc,&renderPlatform);
 	ReverseDepthChanged();
 	cubemapFramebuffer.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
@@ -159,7 +159,7 @@ void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 
 int	Direct3D11Renderer::AddView()
 {
-//	if(!enabled)
+	if(!enabled)
 		return -1;
 	last_created_view_id++;
 	int view_id		=last_created_view_id;
@@ -355,7 +355,7 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pd3dImmedi
 
 void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext)
 {
-//	if(!enabled)
+	if(!enabled)
 		return;
 	simul::base::SetGpuProfilingInterface(pd3dImmediateContext,&simul::dx11::Profiler::GetGlobalProfiler());
 	D3DXMATRIX v,proj;

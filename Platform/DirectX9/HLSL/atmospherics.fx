@@ -146,24 +146,21 @@ float3 illuminationScales;
 #define pi (3.1415926536f)
 #endif
 
-struct atmosVertexInput
-{
-    float2 position			: POSITION;
-};
-
 struct atmosVertexOutput
 {
-    vec4 position		: POSITION;
+    vec4 hPosition		: POSITION;
     vec2 clip_pos		: TEXCOORD0;
     vec2 texCoords		: TEXCOORD1;
 };
 
-atmosVertexOutput VS_Atmos(atmosVertexInput IN)
+atmosVertexOutput VS_Atmos(vertexInputPositionOnly IN)
 {
 	atmosVertexOutput OUT;
-	OUT.position		=vec4(IN.position.xy,0,1);
+	//OUT.position		=vec4(IN.position.xy,0,1);
 	OUT.clip_pos.xy		=IN.position.xy;
-	OUT.texCoords		=0.5*vec2(IN.position.x+1.0,1.0-IN.position.y);
+	//OUT.texCoords		=0.5*vec2(IN.position.x+1.0,1.0-IN.position.y);
+		OUT.hPosition	=vec4(IN.position.xy,0.f,1.f);
+		OUT.texCoords	=0.5*(IN.position.xy+vec2(1.0,1.0));
 	return OUT;
 }
 
@@ -249,13 +246,15 @@ float4 PS_Airglow(atmosVertexOutput IN) : color
     return final;
 }
 
+
 technique simul_atmospherics
 {
     pass loss_pass
     {
+		cullmode = none;
 		VertexShader = compile vs_3_0 VS_Atmos();
 		PixelShader = compile ps_3_0 PS_AtmosOverlayLossPass();
-		alphablendenable = true;
+		AlphaBlendEnable = true;
 		ZWriteEnable = false;
 		ZEnable= false;
 		SrcBlend = Zero;
@@ -263,9 +262,10 @@ technique simul_atmospherics
     }
     pass insc_pass
     {
+		cullmode = none;
 		VertexShader = compile vs_3_0 VS_Atmos();
 		PixelShader = compile ps_3_0 PS_AtmosOverlayInscPass();
-		alphablendenable = true;
+		AlphaBlendEnable = true;
 		ZWriteEnable = false;
 		ZEnable= false;
 		SrcBlend = One;
@@ -277,6 +277,7 @@ technique simul_godrays
 {
     pass
     {
+		cullmode = none;
 		VertexShader = compile vs_3_0 VS_Atmos();
 		PixelShader = compile ps_3_0 PS_Godrays();
 		alphablendenable = true;
@@ -291,6 +292,7 @@ technique simul_airglow
 {
     pass
     {
+		cullmode = none;
 		VertexShader = compile vs_3_0 VS_Atmos();
 		PixelShader = compile ps_3_0 PS_Airglow();
 		alphablendenable = true;

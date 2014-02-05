@@ -81,7 +81,7 @@ namespace simul
 				return (LPDIRECT3DTEXTURE9)noise_fb.GetColorTex();
 			}
 			void RenderCrossSections(void *context,int x0,int y0,int width,int height);
-			void RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height)=0;
+			void RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height);
 			bool RenderLightVolume();
 			void EnableFilter(bool f);
 			bool IsYVertical() const{return y_vertical;}
@@ -96,7 +96,7 @@ namespace simul
 			void EnsureTextureCycle();
 
 			void NumBuffersChanged();
-			//bool y_vertical;
+
 			void InternalRenderHorizontal(int viewport_id);
 			void InternalRenderRaytrace(int viewport_id);
 			void InternalRenderVolumetric(int viewport_id);

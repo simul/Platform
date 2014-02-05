@@ -17,20 +17,20 @@ float gamma=1.f/2.2f;
 struct a2v
 {
     float4 position  : POSITION;
-    float2 texcoord  : TEXCOORD0;
+    float2 texCoords  : TEXCOORD0;
 };
 
 struct v2f
 {
     float4 position  : POSITION;
-    float2 texcoord  : TEXCOORD0;
+    float2 texCoords  : TEXCOORD0;
 };
 
 v2f TonemapVS(a2v IN)
 {
 	v2f OUT;
 	OUT.position = IN.position;
-	OUT.texcoord = IN.texcoord;
+	OUT.texCoords = IN.texCoords;
     return OUT;
 }
 
@@ -39,13 +39,13 @@ v2f TonemapZWriteVS(a2v IN)
 	v2f OUT;
 	OUT.position = IN.position;
 	OUT.position.z=0.1f*OUT.position.w;
-	OUT.texcoord = IN.texcoord;
+	OUT.texCoords = IN.texCoords;
     return OUT;
 }
 
 float4 GammaPS(v2f IN) : COLOR
 {
-	float4 c=tex2D(hdr_texture,IN.texcoord);
+	float4 c=tex2D(hdr_texture,IN.texCoords);
     c.rgb*=exposure;
     c.rgb=pow(c.rgb, gamma);
     return float4(c.rgb,0.f);
@@ -53,13 +53,13 @@ float4 GammaPS(v2f IN) : COLOR
 
 float4 DirectPS(v2f IN) : COLOR
 {
-	float4 c=tex2D(hdr_texture,IN.texcoord);
+	float4 c=tex2D(hdr_texture,IN.texCoords);
     return c;
 }
 
 float4 TonemapPS(v2f IN) : COLOR
 {
-	float4 c=tex2D(hdr_texture,IN.texcoord);
+	float4 c=tex2D(hdr_texture,vec2(IN.texCoords.x,IN.texCoords.y));
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
 	c.a=0;
@@ -68,7 +68,7 @@ float4 TonemapPS(v2f IN) : COLOR
 
 float4 BlendPS(v2f IN) : COLOR
 {
-	float4 c=tex2D(hdr_texture,IN.texcoord);
+	float4 c=tex2D(hdr_texture,IN.texCoords);
     return c;
 }
 
@@ -108,7 +108,7 @@ technique simul_gamma_zwrite
 		ZWriteEnable = true;
 		AlphaBlendEnable = false;
 		AlphaTestEnable=false;
-		VertexShader = compile vs_3_0 TonemapVS();
+		VertexShader = compile vs_3_0 VS_FullScreen();
 		PixelShader = compile ps_3_0 GammaPS();
     }
 }

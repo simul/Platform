@@ -48,8 +48,8 @@ HRESULT CompileShaderFromFile( const char* szFileNameUtf8, const char* szEntryPo
     CloseHandle( hFile );
 
     ID3DBlob* pErrorBlob;
-	int pos=fn_utf8.find_last_of("/");
-	int bpos=fn_utf8.find_last_of("\\");
+	int pos		=(int)fn_utf8.find_last_of("/");
+	int bpos	=(int)fn_utf8.find_last_of("\\");
 	if(pos<0||bpos>pos)
 		pos=bpos;
 	std::string path_utf8=fn_utf8.substr(0,pos);

@@ -20,6 +20,7 @@
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Macros.h"
 #include "Resources.h"
+#include "Simul/Camera/Camera.h"
 
 SimulAtmosphericsRenderer::SimulAtmosphericsRenderer(simul::base::MemoryInterface *m)
 	:BaseAtmosphericsRenderer(m)
@@ -327,11 +328,10 @@ void SimulAtmosphericsRenderer::StartRender(void *)
 	static float depth_start=1.f;
 	hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 }
-#include "Simul/Camera/Camera.h"
+
 void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 	HRESULT hr=S_OK;
-	PIXBeginNamedEvent(0,"SimulAtmosphericsRenderer::RenderAsOverlay");
 	LPDIRECT3DTEXTURE9 depthTexture=(LPDIRECT3DTEXTURE9)depth_texture;
 	D3DSURFACE_DESC desc;
 	depthTexture->GetLevelDesc(0,&desc);
@@ -396,9 +396,8 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,fogScaleHeight);
     DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,infraredIntegrationFactors);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,fogDensity);
-	
+
 	effect->SetTechnique(technique);
-	
 	unsigned passes=0;			// should be 2
 	hr=effect->Begin(&passes,0);
 	for(unsigned i=0;i<passes;i++)
@@ -408,8 +407,6 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_
 		hr=effect->EndPass();
 	}
 	hr=effect->End();
-	
-	PIXEndNamedEvent();
 }
 
 void SimulAtmosphericsRenderer::FinishRender(void *)

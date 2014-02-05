@@ -444,10 +444,6 @@ void Direct3D11Manager::Initialize()
 	// The following single call sets all of the preceding information.
 	HRESULT hr=d3dInfoQueue->AddStorageFilterEntries( &filter );
 	ReportMessageFilterState();
-	if(d3dDebug)
-	{
-	//	d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);//D3D11_RLDO_SUMMARY);
-	}
 #endif
 	d3dDevice->AddRef();
 	UINT refcount2=d3dDevice->Release();
@@ -542,7 +538,7 @@ void Direct3D11Manager::Shutdown()
 	SAFE_RELEASE(d3dDeviceContext);
 	if(d3dDebug)
 	{
-		d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);//);
+		d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 	}
 	ReportMessageFilterState();
 	SAFE_RELEASE(d3dInfoQueue);
@@ -553,7 +549,7 @@ void Direct3D11Manager::Shutdown()
 		UINT references=d3dDevice->Release();
 		if(references>0)
 		{
-			throw simul::base::RuntimeError("Unfreed references remain in DirectX 11");
+			SIMUL_BREAK("Unfreed references remain in DirectX 11");
 		}
 		d3dDevice=NULL;
 	}

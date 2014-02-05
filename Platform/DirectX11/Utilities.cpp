@@ -277,7 +277,7 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		textureDesc.MiscFlags			=rendertarget?D3D11_RESOURCE_MISC_GENERATE_MIPS:0;
 		textureDesc.SampleDesc.Count	= 1;
 		V_CHECK(pd3dDevice->CreateTexture2D(&textureDesc,0,(ID3D11Texture2D**)(&texture)));
-
+		SetDebugObjectName(texture,"TextureStruct::ensureTexture2DSizeAndFormat");
 		D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
 		ZeroMemory(&srv_desc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 		srv_desc.Format						= f;
@@ -285,6 +285,7 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		srv_desc.Texture2D.MipLevels		= 1;
 		srv_desc.Texture2D.MostDetailedMip	= 0;
 		V_CHECK(pd3dDevice->CreateShaderResourceView(texture,&srv_desc,&shaderResourceView));
+		SetDebugObjectName(shaderResourceView,"TextureStruct::ensureTexture2DSizeAndFormat shaderResourceView");
 	}
 	if(computable&&(!unorderedAccessView||!ok))
 	{
@@ -296,6 +297,7 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 
 		SAFE_RELEASE(unorderedAccessView);
 		V_CHECK(pd3dDevice->CreateUnorderedAccessView(texture,&uav_desc,&unorderedAccessView));
+		SetDebugObjectName(unorderedAccessView,"TextureStruct::ensureTexture2DSizeAndFormat unorderedAccessView");
 	}
 	if(rendertarget&&(!renderTargetView||!ok))
 	{
@@ -306,6 +308,7 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		renderTargetViewDesc.Texture2D.MipSlice	=0;
 		// Create the render target in DX11:
 		V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&renderTargetView));
+		SetDebugObjectName(renderTargetView,"TextureStruct::ensureTexture2DSizeAndFormat renderTargetView");
 	}
 }
 
@@ -655,6 +658,11 @@ void UtilityRenderer::SetScreenSize(int w,int h)
 {
 	screen_width=w;
 	screen_height=h;
+}
+
+void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,int x,int y,const char *text)
+{
+	UtilityRenderer::Print(pd3dImmediateContext,(float)x,(float)y,text);
 }
 
 void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,float x,float y,const char *text)
