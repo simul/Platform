@@ -116,6 +116,13 @@ vec2 viewportCoordToTexRegionCoord(vec2 iViewportCoord,vec4 iViewportToTexRegion
 #ifndef GLSL
 #ifndef DX9
 
+void GetCoordinates(Texture2D t,vec2 texc,out int2 pos2)
+{
+	uint2 dims;
+	t.GetDimensions(dims.x,dims.y);
+	pos2		=int2(texc*vec2(dims.xy));
+}
+
 void GetMSAACoordinates(Texture2DMS<float4> textureMS,vec2 texc,out int2 pos2,out int numSamples)
 {
 	uint2 dims;
@@ -197,7 +204,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 	int2 hires_depth_pos2;
 	int numSamples;
 	if(use_msaa)
-	GetMSAACoordinates(depthTextureMS,depth_texc,hires_depth_pos2,numSamples);
+		GetMSAACoordinates(depthTextureMS,depth_texc,hires_depth_pos2,numSamples);
 	else
 	{
 		GetCoordinates(depthTexture,depth_texc,hires_depth_pos2);
