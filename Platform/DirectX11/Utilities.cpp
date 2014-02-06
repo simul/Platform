@@ -1,11 +1,20 @@
 #include "Utilities.h"
 #include "MacrosDX1x.h"
+#include "TextRenderer.h"
 #include "Simul\Base\StringToWString.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Math/Vector3.h"
 #include <d3dx11.h>
 using namespace simul;
 using namespace dx11;
+
+namespace simul
+{
+	namespace dx11
+	{
+		TextRenderer textRenderer;
+	}
+}
 
 TextureStruct::TextureStruct()
 	:texture(NULL)
@@ -510,51 +519,6 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,int w,int l,int num,DXGI_FORM
 	//SAFE_RELEASE(pImmediateContext)
 }
 
-Mesh::Mesh()
-	:vertexBuffer(NULL)
-	,indexBuffer(NULL)
-	,stride(0)
-	,numVertices(0)
-	,numIndices(0)
-{
-}
-
-Mesh::~Mesh()
-{
-	release();
-}
-
-void Mesh::release()
-{
-	SAFE_RELEASE(vertexBuffer);
-	SAFE_RELEASE(indexBuffer);
-	stride=0;
-	numVertices=0;
-	numIndices=0;
-}
-
-void Mesh::apply(ID3D11DeviceContext *pImmediateContext,unsigned instanceStride,ID3D11Buffer *instanceBuffer)
-{
-	UINT strides[]={stride,instanceStride};
-	UINT offsets[]={0,0};
-	ID3D11Buffer *buffers[]={vertexBuffer,instanceBuffer};
-
-	pImmediateContext->IASetVertexBuffers(	0,			// the first input slot for binding
-												2,			// the number of buffers in the array
-												buffers,	// the array of vertex buffers
-												strides,	// array of stride values, one for each buffer
-												offsets);	// array of offset values, one for each buffer
-
-	UINT Strides[1];
-	UINT Offsets[1];
-	Strides[0] = 0;
-	Offsets[0] = 0;
-	pImmediateContext->IASetIndexBuffer(	indexBuffer,
-											DXGI_FORMAT_R16_UINT,	// unsigned short
-											0);						// array of offset values, one for each buffer
-	
-}
-
 int UtilityRenderer::instance_count=0;
 int UtilityRenderer::screen_width=0;
 int UtilityRenderer::screen_height=0;
@@ -636,7 +600,7 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D1xDevice *)dev;
 	RecompileShaders();
-
+	textRenderer.RestoreDeviceObjects(m_pd3dDevice);
 	SAFE_RELEASE(m_pVertexBuffer);
 	// Vertex declaration
 	{
@@ -670,10 +634,12 @@ void UtilityRenderer::RecompileShaders()
 {
 	SAFE_RELEASE(m_pDebugEffect);
 	CreateEffect(m_pd3dDevice,&m_pDebugEffect,("simul_debug.fx"));
+	textRenderer.RecompileShaders();
 }
 
 void UtilityRenderer::InvalidateDeviceObjects()
 {
+	textRenderer.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pDebugEffect);
@@ -689,6 +655,11 @@ void UtilityRenderer::SetScreenSize(int w,int h)
 {
 	screen_width=w;
 	screen_height=h;
+}
+
+void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,float x,float y,const char *text)
+{
+	textRenderer.Render(pd3dImmediateContext,x,y,(float)screen_width,(float)screen_height,text);
 }
 
 void UtilityRenderer::PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
@@ -769,16 +740,24 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 
 void UtilityRenderer::DrawTexture(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult)
 {
+	if(!t)
+		return;
 	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",t);
 	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
-	if(m_pDebugEffect)
+	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+	t->GetDesc(&desc);
+	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+	if(msaa)
+		DrawTextureMS(pContext,x1,y1,dx,dy,t,mult);
+	else if(m_pDebugEffect)
 		UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,m_pDebugEffect->GetTechniqueByName("textured"));
 }
 
-void UtilityRenderer::DrawTextureMS(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult)
+void UtilityRenderer::DrawTextureMS(ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float brightnessMultiplier)
 {
 	simul::dx11::setTexture(m_pDebugEffect,"imageTextureMS",t);
-	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
+	//simul::dx11::setParameter(m_pDebugEffect,"textureMultiplier",brightnessMultiplier);
+	simul::dx11::setParameter(m_pDebugEffect,"multiplier",brightnessMultiplier);
 	if(m_pDebugEffect)
 		UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,m_pDebugEffect->GetTechniqueByName("texturedMS"));
 }
@@ -890,7 +869,6 @@ void UtilityRenderer::DrawSphere(void *context,int latitudes,int longitudes)
 
 void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety)
 {
-
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	unsigned int num_v=0;
 	D3D11_VIEWPORT								m_OldViewports[4];

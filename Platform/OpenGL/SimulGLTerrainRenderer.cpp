@@ -63,6 +63,8 @@ void SimulGLTerrainRenderer::MakeTextures()
 	GL_ERROR_CHECK
 	unsigned char *data=LoadGLBitmap("terrain.png",bpp,width,height);
 	unsigned char *moss=LoadGLBitmap("moss.png",bpp,width,height);
+	if(!data||!moss)
+		return;
 	GL_ERROR_CHECK
 	int num_layers=2;
 	int num_mips=8;
@@ -70,13 +72,16 @@ void SimulGLTerrainRenderer::MakeTextures()
 	for(int i=0;i<num_mips;i++)
 	{
 		glTexImage3D(GL_TEXTURE_2D_ARRAY, i,GL_RGBA	,width/m,height/m,num_layers,0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	GL_ERROR_CHECK
 		if(i==0)
 		{
 			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,0,width/m,height/m,1,(bpp==24)?GL_BGR:GL_BGRA,GL_UNSIGNED_BYTE,data);
 			glTexSubImage3D	(GL_TEXTURE_2D_ARRAY,i,0,0,1,width/m,height/m,1,(bpp==24)?GL_BGR:GL_BGRA,GL_UNSIGNED_BYTE,moss);
 		}
+	GL_ERROR_CHECK
 		m*=2;
 	}
+	GL_ERROR_CHECK
 	//glTexImage3D	(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA, width/2, height/2, num_layers, ...);
 	//glTexImage3D	(GL_TEXTURE_2D_ARRAY, 2, GL_RGBA, width/4, height/4, num_layers, ...);
 

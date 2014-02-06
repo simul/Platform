@@ -57,7 +57,7 @@ struct PosAndId
 	uint vertex_id		: SV_VertexID;
 };
 
-struct PosOnly
+struct posOnly
 {
     float3 position		: POSITION;
 };

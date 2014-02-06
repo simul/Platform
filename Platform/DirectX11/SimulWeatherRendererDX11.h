@@ -35,6 +35,35 @@ namespace simul
 	//! The namespace for the DirectX 11 platform library and its rendering classes.
 	namespace dx11
 	{
+		struct TwoResFramebuffer:public simul::clouds::TwoResFramebuffer
+		{
+			TwoResFramebuffer();
+			BaseFramebuffer *GetLowResFarFramebuffer()
+			{
+				return &lowResFarFramebufferDx11;
+			}
+			BaseFramebuffer *GetLowResNearFramebuffer()
+			{
+				return &lowResNearFramebufferDx11;
+			}
+			BaseFramebuffer *GetHiResFarFramebuffer()
+			{
+				return &hiResFarFramebufferDx11;
+			}
+			BaseFramebuffer *GetHiResNearFramebuffer()
+			{
+				return &hiResNearFramebufferDx11;
+			}
+			dx11::Framebuffer	lowResFarFramebufferDx11;
+			dx11::Framebuffer	lowResNearFramebufferDx11;
+			dx11::Framebuffer	hiResFarFramebufferDx11;
+			dx11::Framebuffer	hiResNearFramebufferDx11;
+			void RestoreDeviceObjects(void *);
+			void InvalidateDeviceObjects();
+			void SetDimensions(int w,int h,int downscale);
+			int Width,Height,Downscale;
+			ID3D11Device*	m_pd3dDevice;
+		};
 		//! An implementation of \link simul::clouds::BaseWeatherRenderer BaseWeatherRenderer\endlink for DirectX 10 and 11
 		//! The DX10 switch is used
 		SIMUL_DIRECTX11_EXPORT_CLASS SimulWeatherRendererDX11 : public simul::clouds::BaseWeatherRenderer
@@ -42,34 +71,47 @@ namespace simul
 		public:
 			SimulWeatherRendererDX11(simul::clouds::Environment *env,simul::base::MemoryInterface *mem);
 			virtual ~SimulWeatherRendererDX11();
-			void SetScreenSize(int w,int h);
+			void SetScreenSize(int view_id,int w,int h);
 			//standard d3d object interface functions
 			void RestoreDeviceObjects(void*);
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
 			bool Destroy();
-			void RenderSkyAsOverlay(void *context,
-									float exposure,
-									bool buffered,
-									bool is_cubemap,
-									const void* mainDepthTexture,
-									const void* depthTextureForClouds, //If non-null then we do low-res cloud rendering to an off-screen target of matching dimensions for compositing onto full res target.
-									int viewport_id,
-									const simul::sky::float4& relativeViewportTextureRegionXYWH,
-									bool doFinalCloudBufferToScreenComposite //indicate whether truesky should do a final low-res cloud up-sample to the main target or whether to leave that to the user (via GetFramebufferTexture())
+			//! Apply the view and projection matrices, once per frame.
+			void SetMatrices(const simul::math::Matrix4x4 &viewmat,const simul::math::Matrix4x4 &projmat);
+			void RenderSkyAsOverlay(void *context
+											,int view_id											
+											,const math::Matrix4x4 &viewmat
+											,const math::Matrix4x4 &projmat
+											,bool is_cubemap
+											,float exposure
+											,bool buffered
+											,const void* mainDepthTexture
+											,const void* lowResDepthTexture
+											,const sky::float4& depthViewportXYWH
+											,bool doFinalCloudBufferToScreenComposite);
+			void RenderMixedResolution(	void *context
+										,int view_id
+										,const math::Matrix4x4 &viewmat
+										,const math::Matrix4x4 &projmat
+										,bool is_cubemap
+										,float exposure
+										,const void* mainDepthTextureMS	
+										,const void* lowResDepthTexture 
+										,const sky::float4& depthViewportXYWH
 									);
+			// This composites the clouds and other buffers to the screen.
 			void CompositeCloudsToScreen(void *context
+												,int view_id
 												,bool depth_blend
 												,const void* mainDepthTexture
 												,const void* lowResDepthTexture
 												,const simul::sky::float4& viewportRegionXYWH);
-			void RenderFramebufferDepth(void *context,int w,int h);
-			void RenderCompositingTextures(void *context,int w,int h);
+			void RenderFramebufferDepth(void *context,int view_id,int w,int h);
+			void RenderCompositingTextures(void *context,int view_id,int w,int h);
 			void RenderPrecipitation(void *context,void *depth_tex,simul::sky::float4 depthViewportXYWH);
 			void RenderLightning(void *context,int viewport_id);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
-			//! Apply the view and projection matrices, once per frame.
-			void SetMatrices(const simul::math::Matrix4x4 &viewmat,const simul::math::Matrix4x4 &projmat);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 			void SetExposure(float ex){exposure=ex;}
 
@@ -83,22 +125,17 @@ namespace simul
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
 
 		protected:
-			void BufferSizeChanged();
 			void *GetCloudDepthTexture();
 			simul::base::MemoryInterface	*memoryInterface;
 			// Keep copies of these matrices:
 			simul::math::Matrix4x4 view;
 			simul::math::Matrix4x4 proj;
 			IDXGISwapChain *pSwapChain;
-			//! The size of the 2D buffer the sky is rendered to.
-			int BufferWidth,BufferHeight;
-			//! The size of the screen:
-			int ScreenWidth,ScreenHeight;
 			ID3D1xDevice*							m_pd3dDevice;
 			
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3DX11Effect							*m_pTonemapEffect;
-			ID3DX11EffectTechnique					*directTechnique;
+			ID3DX11EffectTechnique					*simpleCloudBlendTechnique;
 			ID3DX11EffectTechnique					*farNearDepthBlendTechnique;
 			ID3DX11EffectTechnique					*showDepthTechnique;
 			ID3DX11EffectShaderResourceVariable		*imageTexture;
@@ -111,12 +148,10 @@ namespace simul
 			class SimulAtmosphericsRendererDX1x		*simulAtmosphericsRenderer;
 			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
 			class SimulLightningRendererDX11		*simulLightningRenderer;
-			// The main framebufferDx11 uses far depth for each pixel.
-			simul::dx11::Framebuffer				framebufferDx11;
-			// Edge pixels are rendered with the near framebufferDx11 as well as the far one.
-			simul::dx11::Framebuffer				nearFramebufferDx11;
-			simul::dx11::Framebuffer				fullResFramebufferDx11;
-			simul::dx11::Framebuffer				fullResNearFramebufferDx11;
+			typedef std::map<int,simul::dx11::TwoResFramebuffer*> FramebufferMapDx11;
+			// Map from view_id to framebuffer.
+			TwoResFramebuffer *						GetFramebuffer(int view_id);
+			FramebufferMapDx11						framebuffersDx11;
 			simul::dx11::ConstantBuffer<HdrConstants> hdrConstants;
 			float									exposure;
 			float									gamma;

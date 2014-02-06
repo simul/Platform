@@ -10,7 +10,10 @@
 #include "Simul/Base/Referenced.h"
 #include "Simul/Terrain/BaseTerrainRenderer.h"
 #include "Simul/Platform/OpenGL/Export.h"
-
+namespace simul
+{
+	namespace opengl
+	{
 SIMUL_OPENGL_EXPORT_CLASS SimulGLTerrainRenderer : public simul::terrain::BaseTerrainRenderer
 {
 public:
@@ -31,5 +34,6 @@ private:
 	GLint lightDir_param;
 	GLint sunlight_param;
 };
-
+	}
+}
 #endif

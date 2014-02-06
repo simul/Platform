@@ -39,12 +39,6 @@
 using namespace std;
 using namespace simul;
 using namespace opengl;
-
-#ifdef WIN32
-#include "Simul/Platform/Windows/VisualStudioDebugOutput.h"
-#pragma comment(lib,"freeImage.lib")
-#endif
-
 using std::map;
 
 SimulGL2DCloudRenderer::SimulGL2DCloudRenderer(simul::clouds::CloudKeyframer *ck
@@ -278,7 +272,7 @@ void SimulGL2DCloudRenderer::PreRenderUpdate(void *)
 {
 }
 
-bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool,bool,const void *depthTexture, bool, bool,int,const simul::sky::float4& )
+bool SimulGL2DCloudRenderer::Render(void *context,float exposure,bool /*cubemap*/,bool /*near_pass*/,const void *depthTexture, bool, bool,int,const simul::sky::float4& )
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	GLuint depth_texture=(GLuint)(uintptr_t)depthTexture;
@@ -393,7 +387,7 @@ GL_ERROR_CHECK
 	return true;
 }
 
-void SimulGL2DCloudRenderer::RenderCrossSections(void *,int width,int height)
+void SimulGL2DCloudRenderer::RenderCrossSections(void *context,int x0,int y0,int width,int height)
 {
 	static int u=8;
 	int w=(width-8)/u;
@@ -432,7 +426,7 @@ static float mult=1.f;
 		glBindTexture(GL_TEXTURE_2D,coverage_tex[i]);
 		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
 		glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
-		DrawQuad((i+1)*(w+8)+8,height-w-8,w,w);
+		DrawQuad(x0+(i+1)*(w+8)+8,y0+height-w-8,w,w);
 	}
 	
 	glBindTexture(GL_TEXTURE_2D,(GLuint)(uintptr_t)detail_fb.GetColorTex());
@@ -449,7 +443,7 @@ void SimulGL2DCloudRenderer::SetLossTexture(void *l)
 }
 static GLint earthShadowUniformsBindingIndex=3;
 
-void SimulGL2DCloudRenderer::SetInscatterTextures(void* i,void *s,void *o)
+void SimulGL2DCloudRenderer::SetInscatterTextures(void* i,void *s,void *)
 {
 	inscatter_tex=((GLuint)(uintptr_t)i);
 	skylight_tex=((GLuint)(uintptr_t)s);

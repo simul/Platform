@@ -62,7 +62,8 @@ float4 TonemapPS(v2f IN) : COLOR
 	float4 c=tex2D(hdr_texture,IN.texcoord);
 	c.rgb*=exposure;
 	c.rgb=pow(c.rgb,gamma);
-    return float4(c.rgb,0.f);
+	c.a=0;
+    return c;
 }
 
 float4 BlendPS(v2f IN) : COLOR

@@ -21,6 +21,7 @@ namespace simul
 			void SetWidthAndHeight(int w,int h);
 			void SetFormat(int f);
 			void SetDepthFormat(int f);
+			bool IsValid() const;
 			void SetAntialiasing(int a)
 			{
 				if(numAntialiasingSamples!=a)
@@ -64,10 +65,6 @@ namespace simul
 			ID3D11Texture2D* GetDepthTexture()
 			{
 				return buffer_depth_texture;
-			}
-			bool IsValid()
-			{
-				return (buffer_texture_SRV != NULL);
 			}
 			//! Copy from the rt to the given target memory. If not starting at the top of the texture (start_texel>0), the first byte written
 			//! is at \em target, which is the address to copy the given chunk to, not the base address of the whole in-memory texture.

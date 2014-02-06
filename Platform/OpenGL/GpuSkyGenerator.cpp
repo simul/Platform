@@ -27,6 +27,7 @@ GpuSkyGenerator::GpuSkyGenerator()
 
 GpuSkyGenerator::~GpuSkyGenerator()
 {
+	InvalidateDeviceObjects();
 	delete [] loss_cache;
 	delete [] insc_cache;
 	delete [] skyl_cache;
@@ -39,6 +40,7 @@ void GpuSkyGenerator::RestoreDeviceObjects(void *)
 
 void GpuSkyGenerator::InvalidateDeviceObjects()
 {
+GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(loss_program);
 	SAFE_DELETE_PROGRAM(insc_program);
 	SAFE_DELETE_PROGRAM(skyl_program);
@@ -46,9 +48,8 @@ void GpuSkyGenerator::InvalidateDeviceObjects()
 }
 
 void GpuSkyGenerator::RecompileShaders()
-{																												SAFE_DELETE_PROGRAM(loss_program);
-	SAFE_DELETE_PROGRAM(insc_program);
-	SAFE_DELETE_PROGRAM(skyl_program);
+{								
+	InvalidateDeviceObjects();
 	loss_program=MakeProgram("simple.vert",NULL,"simul_gpu_loss.frag");
 GL_ERROR_CHECK
 	std::map<std::string,std::string> defines;
@@ -57,6 +58,7 @@ GL_ERROR_CHECK
 	skyl_program=MakeProgram("simple.vert",NULL,"simul_gpu_skyl.frag");
 GL_ERROR_CHECK
 	MAKE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,GpuSkyConstants,gpuSkyConstantsBindingIndex);
+GL_ERROR_CHECK
 }
 
 //! Return true if the derived class can make sky tables using the GPU.
@@ -97,39 +99,24 @@ static GLuint make1DTexture(int w,const float *src)
 	return tex;
 }
 
-
-void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,
+void GpuSkyGenerator::Make2DLossAndInscatterTextures(int /*cycled_index*/,
 				simul::sky::AtmosphericScatteringInterface *skyInterface
-				,int numElevations,int numDistances
-				,const std::vector<float> &altitudes_km,float max_distance_km
-				,simul::sky::float4 sun_irradiance
-				,simul::sky::float4 starlight
-				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon
-				,const simul::sky::HazeStruct &hazeStruct
-				,unsigned tables_checksum
-				,float overcast_base_km,float overcast_range_km
-				,simul::sky::float4 ozone
-				,int index,int end_index
-				,const simul::sky::float4 *density_table
-				,const simul::sky::float4 *optical_table
-				,const simul::sky::float4 *blackbody_table
-				,int table_size
-				,float maxDensityAltKm
-				,bool InfraRed,float emissivity
-				,float seaLevelTemperatureK)
+				,const simul::sky::GpuSkyParameters &gpuSkyParameters
+				,const simul::sky::GpuSkyAtmosphereParameters &gpuSkyAtmosphereParameters
+				,const simul::sky::GpuSkyInfraredParameters &gpuSkyInfraredParameters)
 {
 	GLint gpuSkyConstants;
 	if(loss_program<=0)
 		RecompileShaders();
-	float maxOutputAltKm=altitudes_km[altitudes_km.size()-1];
+	float maxOutputAltKm=gpuSkyParameters.altitudes_km[gpuSkyParameters.altitudes_km.size()-1];
 // we will render to these three textures, one distance at a time.
 // The rendertextures are altitudes x elevations
 	for(int i=0;i<2;i++)
 	{
-		fb[i].SetWidthAndHeight(altitudes_km.size(),numElevations);
+		fb[i].SetWidthAndHeight(gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations);
 		fb[i].InitColor_Tex(0,GL_RGBA32F_ARB);
 	}
-	int new_cache_size=altitudes_km.size()*numElevations*numDistances;
+	int new_cache_size=gpuSkyParameters.altitudes_km.size()*gpuSkyParameters.numElevations*gpuSkyParameters.numDistances;
 	if(new_cache_size>cache_size)
 	{
 		delete [] loss_cache;
@@ -146,33 +133,33 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,
 	glEnable(GL_TEXTURE_1D);
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
-	GLuint dens_tex=make1DTexture(table_size,(const float *)density_table);
+	GLuint dens_tex=make1DTexture(gpuSkyAtmosphereParameters.table_size,(const float *)gpuSkyAtmosphereParameters.density_table);
 	glUseProgram(loss_program);
 	GpuSkyConstants constants;
 	{
-		constants.texSize			=vec2((float)altitudes_km.size(),(float)numElevations);
+		constants.texSize			=vec2((float)gpuSkyParameters.altitudes_km.size(),(float)gpuSkyParameters.numElevations);
 		static float tto=0.5f;
 		constants.texelOffset		=tto;
-		constants.tableSize			=vec2((float)table_size,(float)table_size);
+		constants.tableSize			=vec2((float)gpuSkyAtmosphereParameters.table_size,(float)gpuSkyAtmosphereParameters.table_size);
 		constants.distanceKm		=0.0;
-		constants.maxDistanceKm		=max_distance_km;
+		constants.maxDistanceKm		=gpuSkyParameters.max_distance_km;
 		constants.planetRadiusKm	=skyInterface->GetPlanetRadius();
 		constants.maxOutputAltKm	=maxOutputAltKm;
-		constants.maxDensityAltKm	=maxDensityAltKm;
-		constants.hazeBaseHeightKm	=hazeStruct.haze_base_height_km;
-		constants.hazeScaleHeightKm	=hazeStruct.haze_scale_height_km;
-		constants.overcastBaseKmX	=overcast_base_km;
-		constants.overcastRangeKmX	=overcast_range_km;
+		constants.maxDensityAltKm	=gpuSkyAtmosphereParameters.maxDensityAltKm;
+		constants.hazeBaseHeightKm	=gpuSkyParameters.hazeStruct.haze_base_height_km;
+		constants.hazeScaleHeightKm	=gpuSkyParameters.hazeStruct.haze_scale_height_km;
+		constants.overcastBaseKmX	=gpuSkyParameters.overcast_base_km;
+		constants.overcastRangeKmX	=gpuSkyParameters.overcast_range_km;
 		constants.overcastX			=0.f;
 		constants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-		constants.hazeMie			=(const float*)(hazeStruct.haze*skyInterface->GetMie());
+		constants.hazeMie			=(const float*)(gpuSkyParameters.hazeStruct.haze*skyInterface->GetMie());
 		constants.ozone				=(const float*)(skyInterface->GetOzoneStrength()*skyInterface->GetBaseOzone());
-		constants.sunIrradiance		=(const float*)sun_irradiance;
-		constants.lightDir			=(const float*)dir_to_sun;
-		constants.starlight			=(const float*)(starlight);
+		constants.sunIrradiance		=(const float*)gpuSkyParameters.sun_irradiance;
+		constants.lightDir			=(const float*)gpuSkyParameters.dir_to_sun;
+		constants.starlight			=(const float*)gpuSkyParameters.starlight;
 		constants.hazeEccentricity	=1.0;
 		constants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
-		constants.emissivity		=emissivity;
+		constants.emissivity		=gpuSkyInfraredParameters.emissivity;
 		UPDATE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
 	}
 	setParameter(loss_program,"input_loss_texture",0);
@@ -187,18 +174,18 @@ GL_ERROR_CHECK
 		F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 		if(target)
-			glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+		glReadPixels(0,0,(GLsizei)gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-	target+=altitudes_km.size()*numElevations;
+	target+=gpuSkyParameters.altitudes_km.size()*gpuSkyParameters.numElevations;
 GL_ERROR_CHECK
 	float prevDistKm=0.f;
-	for(int i=1;i<numDistances;i++)
+	for(int i=1;i<gpuSkyParameters.numDistances;i++)
 	{
 	// The midpoint of the step represented by this layer
-		float zPosition=pow((float)(i)/((float)numDistances-1.f),2.f);
-		float distKm=zPosition*max_distance_km;
-		if(i==numDistances-1)
+		float zPosition=pow((float)(i)/((float)gpuSkyParameters.numDistances-1.f),2.f);
+		float distKm=zPosition*gpuSkyParameters.max_distance_km;
+		if(i==gpuSkyParameters.numDistances-1)
 			distKm=1000.f;
 		constants.distanceKm		=distKm;
 		constants.prevDistanceKm	=prevDistKm;
@@ -220,21 +207,21 @@ GL_ERROR_CHECK
 //std::cout<<"\tGpu sky: render loss"<<i<<" "<<timer.UpdateTime()<<std::endl;
 	GL_ERROR_CHECK
 			if(target)
-				glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+				glReadPixels(0,0,(GLsizei)gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 //std::cout<<"\tGpu sky: loss read"<<i<<" "<<timer.UpdateTime()<<std::endl;
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
 		if(target)
-			target+=altitudes_km.size()*numElevations;
+		target+=gpuSkyParameters.altitudes_km.size()*gpuSkyParameters.numElevations;
 		prevDistKm=distKm;
 	}
 	glUseProgram(0);
 	
 	// Now we will generate the inscatter texture.
 	// First we make the loss into a 3D texture.
-	GLuint loss_tex=make3DTexture(altitudes_km.size(),numElevations,numDistances,(const float *)loss_cache);
-	GLuint optd_tex=make2DTexture(table_size,table_size,(const float *)optical_table);
+	GLuint loss_tex=make3DTexture((int)gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,gpuSkyParameters.numDistances,(const float *)loss_cache);
+	GLuint optd_tex=make2DTexture(gpuSkyAtmosphereParameters.table_size,gpuSkyAtmosphereParameters.table_size,(const float *)gpuSkyAtmosphereParameters.optical_table);
 	// Now render out the inscatter.
 	glUseProgram(insc_program);
 	gpuSkyConstants		=glGetUniformBlockIndex(insc_program,"GpuSkyConstants");
@@ -249,17 +236,17 @@ GL_ERROR_CHECK
 	F[0]->Activate(NULL);
 		F[0]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-		glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+		glReadPixels(0,0,gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-	target+=altitudes_km.size()*numElevations;
+	target+=gpuSkyParameters.altitudes_km.size()*gpuSkyParameters.numElevations;
 	prevDistKm=0.f;
-	for(int i=1;i<numDistances;i++)
+	for(int i=1;i<gpuSkyParameters.numDistances;i++)
 	{
 	// The midpoint of the step represented by this layer
-		float zPosition=pow((float)(i)/((float)numDistances-1.f),2.f);
-		float distKm=zPosition*max_distance_km;
-		if(i==numDistances-1)
+		float zPosition=pow((float)(i)/((float)gpuSkyParameters.numDistances-1.f),2.f);
+		float distKm=zPosition*gpuSkyParameters.max_distance_km;
+		if(i==gpuSkyParameters.numDistances-1)
 			distKm=1000.f;
 		constants.distanceKm		=distKm;
 		constants.prevDistanceKm	=prevDistKm;
@@ -278,17 +265,17 @@ GL_ERROR_CHECK
 			glBindTexture(GL_TEXTURE_2D,optd_tex);
 			DrawQuad(0,0,1,1);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-			glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			glReadPixels(0,0,gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
-		target+=altitudes_km.size()*numElevations;
+		target+=gpuSkyParameters.altitudes_km.size()*gpuSkyParameters.numElevations;
 		prevDistKm=distKm;
 	}
 	glUseProgram(0);
 	// Finally we will generate the skylight texture.
 	// First we make the inscatter into a 3D texture.
-	GLuint insc_tex=make3DTexture(altitudes_km.size(),numElevations,numDistances,(const float *)insc_cache);
+	GLuint insc_tex=make3DTexture(gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,gpuSkyParameters.numDistances,(const float *)insc_cache);
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_3D,insc_tex);
 	// Now render out the skylight.
@@ -306,17 +293,17 @@ GL_ERROR_CHECK
 	F[0]->Activate(NULL);
 		F[0]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-		glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+		glReadPixels(0,0,gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-	target+=altitudes_km.size()*numElevations;
+	target+=gpuSkyParameters.altitudes_km.size()*gpuSkyParameters.numElevations;
 	prevDistKm=0.f;
-	for(int i=1;i<numDistances;i++)
+	for(int i=1;i<gpuSkyParameters.numDistances;i++)
 	{
 	// The midpoint of the step represented by this layer
-		float zPosition=pow((float)(i)/((float)numDistances-1.f),2.f);
-		float distKm=zPosition*max_distance_km;
-		if(i==numDistances-1)
+		float zPosition=pow((float)(i)/((float)gpuSkyParameters.numDistances-1.f),2.f);
+		float distKm=zPosition*gpuSkyParameters.max_distance_km;
+		if(i==gpuSkyParameters.numDistances-1)
 			distKm=1000.f;
 		constants.distanceKm		=distKm;
 		constants.prevDistanceKm	=prevDistKm;
@@ -336,11 +323,11 @@ GL_ERROR_CHECK
 			DrawQuad(0,0,1,1);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 	GL_ERROR_CHECK
-			glReadPixels(0,0,altitudes_km.size(),numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			glReadPixels(0,0,gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
-		target+=altitudes_km.size()*numElevations;
+		target+=gpuSkyParameters.altitudes_km.size()*gpuSkyParameters.numElevations;
 		prevDistKm=distKm;
 	}
 	glUseProgram(0);
@@ -362,8 +349,7 @@ GL_ERROR_CHECK
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_3D);
 }
-
-void GpuSkyGenerator::CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl)
+void GpuSkyGenerator::CopyToMemory(int /*cycled_index*/,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl)
 {
 	memcpy(loss,loss_cache,cache_size*sizeof(simul::sky::float4));
 	memcpy(insc,insc_cache,cache_size*sizeof(simul::sky::float4));

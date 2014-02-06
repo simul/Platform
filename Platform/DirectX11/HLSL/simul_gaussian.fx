@@ -261,7 +261,6 @@ inline float3 uint_to_color3(uint int_color)
 	// Convert R11G11B10 to float3
 	return float3(r/2047.0f, g/2047.0f, b/1023.0f);
 }
-
 inline void input_row_color(uint group_id, uint thread_id)
 {
 	uint col = thread_id;

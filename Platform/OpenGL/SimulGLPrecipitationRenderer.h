@@ -8,7 +8,7 @@
 #pragma once
 #include "Simul/Math/Vector3.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
-#include "Simul/Platform/OpenGl/Export.h"
+#include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
 typedef long HRESULT;
 class SimulGLPrecipitationRenderer: public simul::clouds::BasePrecipitationRenderer

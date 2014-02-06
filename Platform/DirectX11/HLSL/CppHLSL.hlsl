@@ -108,6 +108,20 @@
 		return OUT;
 	}
 
+	vec4 texture_resolve(Texture2DMS<vec4> textureMS,vec2 texCoords)
+	{
+		uint2 dims;
+		uint numberOfSamples;
+		textureMS.GetDimensions(dims.x,dims.y,numberOfSamples);
+		uint2 pos=uint2(vec2(dims)*texCoords);
+		vec4 d=vec4(0,0,0,0);
+		for(int k=0;k<numberOfSamples;k++)
+		{
+			d+=textureMS.Load(pos,k);
+		}
+		d/=float(numberOfSamples);
+		return d;
+	}
 #endif
 
 #endif

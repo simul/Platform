@@ -359,25 +359,23 @@ std::cout<<"\tGpu clouds: SAFE_DELETE_TEXTURE "<<timer.UpdateTime()<<std::endl;
 
 // Transform light data into a world-oriented cloud texture.
 // The inputs are in RGBA float32 format, with the light values in the RG slots.
-void GpuCloudGenerator::GPUTransferDataToTexture(int index,unsigned char *target
-											,const float *transformMatrix
-											,const float *light,const int *light_grid
-											,const float *ambient,const int *density_grid
+void GpuCloudGenerator::GPUTransferDataToTexture(int /*cycled_index*/
+												,const clouds::GpuCloudsParameters &params
+												,unsigned char *target
 											,int start_texel
-											,int texels
-									,bool wrap_light_tex)
+												,int texels)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	int total_texels=density_grid[0]*density_grid[1]*density_grid[2];
+	int total_texels=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
-	world_fb.SetWidthAndHeight(density_grid[0],density_grid[1]*density_grid[2]);
+	world_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]*params.density_grid[2]);
 	world_fb.InitColor_Tex(0,GL_RGBA);
 	//GLuint density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,1,false,density);
-	GLuint light_texture	=make3DTexture(light_grid[0]	,light_grid[1],light_grid[2]	,4,false,light);
-	GLuint ambient_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,4,false,ambient);
+	GLuint light_texture	=make3DTexture(params.light_grid[0]	,params.light_grid[1],params.light_grid[2]	,4,false,NULL);
+	GLuint ambient_texture	=make3DTexture(params.density_grid[0],params.density_grid[1],params.density_grid[2]	,4,false,NULL);
 			glUseProgram(transform_program);
 	setParameter(transform_program,"density_texture",0);
 	setParameter(transform_program,"light_texture",1);
@@ -387,9 +385,9 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int index,unsigned char *target
 	//setParameter(transform_program,"zPixel",1.f/(float)density_grid[2]);
 
 	GpuCloudConstants constants;
-	constants.transformMatrix	=transformMatrix;
-	constants.zPixel			=1.f/(float)density_grid[2];
-	constants.zSize				=(float)density_grid[2];
+	constants.transformMatrix	=params.Matrix4x4DensityToLightTransform;
+	constants.zPixel			=1.f/(float)params.density_grid[2];
+	constants.zSize				=(float)params.density_grid[2];
 	//constants.zs
 	UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
 	GLint gpuCloudConstants		=glGetUniformBlockIndex(transform_program,"GpuCloudConstants");
@@ -418,13 +416,13 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int index,unsigned char *target
 			GL_ERROR_CHECK
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			GL_ERROR_CHECK
-			int YMAX=density_grid[1]*density_grid[2];
+			int YMAX=params.density_grid[1]*params.density_grid[2];
 			int Y0=(int)(y_start*(float)YMAX);
 			int Y1=(int)(y_end*(float)YMAX);
 			if(target)
 			{
-				target+=Y0*density_grid[0]*4;
-				glReadPixels(0,Y0,density_grid[0],Y1-Y0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
+				target+=Y0*params.density_grid[0]*4;
+				glReadPixels(0,Y0,params.density_grid[0],Y1-Y0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
 			}
 			GL_ERROR_CHECK
 		world_fb.Deactivate(NULL);

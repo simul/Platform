@@ -33,9 +33,9 @@ namespace simul
 	namespace dx9
 	{
 		class SimulSkyRenderer;
+		class SimulCloudRenderer;
 	}
 }
-class SimulCloudRenderer;
 class SimulLightningRenderer;
 class Simul2DCloudRenderer;
 class SimulPrecipitationRenderer;
@@ -45,9 +45,38 @@ namespace simul
 {
 	//! The namespace for the DirectX 9 platform library and its rendering classes.
 
-	//! This library is deprecated in favour of the \ref dx11 DirectX 11 library.
+	//! This library is deprecated in favour of the \ref  DirectX 11 library.
 	namespace dx9
 	{
+		struct TwoResFramebuffer:public simul::clouds::TwoResFramebuffer
+		{
+			TwoResFramebuffer();
+			BaseFramebuffer *GetLowResFarFramebuffer()
+			{
+				return &lowResFarFramebuffer;
+			}
+			BaseFramebuffer *GetLowResNearFramebuffer()
+			{
+				return &lowResNearFramebuffer;
+			}
+			BaseFramebuffer *GetHiResFarFramebuffer()
+			{
+				return &hiResFarFramebuffer;
+			}
+			BaseFramebuffer *GetHiResNearFramebuffer()
+			{
+				return &hiResNearFramebuffer;
+			}
+			dx9::Framebuffer	lowResFarFramebuffer;
+			dx9::Framebuffer	lowResNearFramebuffer;
+			dx9::Framebuffer	hiResFarFramebuffer;
+			dx9::Framebuffer	hiResNearFramebuffer;
+			void RestoreDeviceObjects(void *);
+			void InvalidateDeviceObjects();
+			void SetDimensions(int w,int h,int downscale);
+			int Width,Height,Downscale;
+			LPDIRECT3DDEVICE9	m_pd3dDevice;
+		};
 		//! A rendering class that encapsulates Simul skies and clouds.
 		//! Create an instance of this class within a DirectX 9 program.
 		//! You can take this entire class and use it as source in your project.
@@ -62,7 +91,7 @@ namespace simul
 				int height=240,bool sky=true,
 				bool rain=true);
 			virtual ~SimulWeatherRenderer();
-			void SetScreenSize(int w,int h);
+			void SetScreenSize(int view_id,int w,int h);
 			//standard d3d object interface functions
 			bool Create( LPDIRECT3DDEVICE9 pd3dDevice);
 			void RecompileShaders();
@@ -71,16 +100,28 @@ namespace simul
 			//! Call this when the 3D device has been lost.
 			void InvalidateDeviceObjects();
 			//! Call this to draw the sky and clouds.
-			void RenderSkyAsOverlay(void *context,
-									float exposure,
-									bool buffered,
-									bool is_cubemap,
-									const void* mainDepthTexture,
-									const void* depthTextureForClouds,
-									int viewport_id,
-									const simul::sky::float4& relativeViewportTextureRegionXYWH,
-									bool doFinalCloudBufferToScreenComposite
+			void RenderSkyAsOverlay(void *context
+											,int view_id											
+											,const math::Matrix4x4 &viewmat
+											,const math::Matrix4x4 &projmat
+											,bool is_cubemap
+											,float exposure
+											,bool buffered
+											,const void* mainDepthTexture
+											,const void* lowResDepthTexture
+											,const sky::float4& depthViewportXYWH
+											,bool doFinalCloudBufferToScreenComposite
 									);
+			void RenderMixedResolution(	void *
+										,int 
+										,const math::Matrix4x4 &
+										,const math::Matrix4x4 &
+										,bool 
+										,float 
+										,const void* 		
+										,const void*  
+										,const sky::float4& 
+										){}
 			//! Call this to draw the clouds after the main scene.
 			void RenderLateCloudLayer(void *context,float exposure,bool buf,int viewport_id,const simul::sky::float4 &relativeViewportTextureRegionXYWH);
 			//! Call this to draw lightning.
@@ -116,8 +157,6 @@ namespace simul
 			 {
 				 ReverseDepth=false;
 			 }
-			Framebuffer framebuffer;
-			Framebuffer lowdef_framebuffer;
 			bool Restore3DCloudObjects();
 			bool Restore2DCloudObjects();
 			//! The size of the 2D buffer the sky is rendered to.
@@ -132,6 +171,9 @@ namespace simul
 			D3DXHANDLE						bufferTexture;
 
 			bool CreateBuffers();
+			clouds::TwoResFramebuffer *		GetFramebuffer(int view_id);
+			typedef std::map<int,TwoResFramebuffer*> FramebufferMap;
+			FramebufferMap framebuffers;
 			SimulSkyRenderer				*simulSkyRenderer;
 			SimulCloudRenderer				*simulCloudRenderer;
 			SimulLightningRenderer			*simulLightningRenderer;

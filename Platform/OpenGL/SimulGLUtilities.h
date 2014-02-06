@@ -1,8 +1,11 @@
 #ifndef SIMUL_PLATFORM_OPENGL_SIMULGLUTILITIES_H
 #define SIMUL_PLATFORM_OPENGL_SIMULGLUTILITIES_H
 
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include <assert.h>
+#include <stdlib.h>	// For definition of NULL
+#include <iostream>	// for cerr
 
 namespace simul
 {
@@ -19,6 +22,7 @@ namespace simul
 		extern void SetFileLoader(simul::base::FileLoader *l);
 	}
 }
+
 SIMUL_OPENGL_EXPORT_CLASS Utilities
 {
 	static int instance_count;
@@ -144,6 +148,8 @@ namespace simul
 			//! Find the constant buffer in the given effect, and link to it.
 			void LinkToProgram(GLuint program,const char *name,GLint bindingIndex)
 			{
+				//if(bindingIndex<=0)
+				//	exit(1);
 				this->bindingIndex=bindingIndex;
 				GLint indexInShader=glGetUniformBlockIndex(program,name);
 				if(indexInShader>=0)
@@ -152,7 +158,7 @@ namespace simul
 					glBindBufferRange(GL_UNIFORM_BUFFER,bindingIndex,ubo,0,sizeof(T));	
 				}
 				else
-					std::cerr<<"ConstantBuffer<> LinkToEffect did not find the buffer named "<<name<<" in the program."<<std::endl;
+					std::cerr<<"ConstantBuffer<> LinkToProgram did not find the buffer named "<<name<<" in the program."<<std::endl;
 			}
 			//! Free the allocated buffer.
 			void Release()
@@ -165,7 +171,6 @@ namespace simul
 				glBindBuffer(GL_UNIFORM_BUFFER,ubo);
 				glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(T),static_cast<T*>(this));
 				glBindBuffer(GL_UNIFORM_BUFFER,0);
-			//	glBindBufferBase(GL_UNIFORM_BUFFER,bindingIndex,ubo);
 			}
 		};
 	}

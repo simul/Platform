@@ -116,8 +116,8 @@ vec4 OvercastInscatter(Texture2D inscTexture,Texture2D illuminationTexture,vec2 
 	float ov_total			=0.0;
 	for(int i=0;i<12;i++)
 	{
-		float u1			=float(i)/12.f;
-		float u2			=float(i+1)/12.f;
+		float u1			=float(i)/12.0;
+		float u2			=float(i+1)/12.0;
 		float this_alt_km	=alt_km+sine*dist_km*0.5*(u1+u2);
 		float ov			=saturate(((overcastRangeKm+overcastBaseKm)-this_alt_km)/overcastRangeKm);
 		vec2 fade_texc_1	=vec2(fade_texc.x*u1,fade_texc.y);

@@ -1,11 +1,8 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-
 sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 Texture2DMS<float4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
 TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
-
-#define pi (3.1415926536)
 
 uniform_buffer DebugConstants SIMUL_BUFFER_REGISTER(8)
 {
@@ -95,15 +92,14 @@ struct v2f_cubemap
 {
     float4 hPosition	: SV_POSITION;
     float3 wDirection	: TEXCOORD0;
-    float temp			: TEXCOORD1;
 };
+
 
 v2f_cubemap VS_DrawCubemap(vec3input IN) 
 {
     v2f_cubemap OUT;
     OUT.hPosition	=mul(worldViewProj,float4(IN.position.xyz,1.0));
     OUT.wDirection	=normalize(IN.position.xyz);
-    OUT.temp		=0.0;
     return OUT;
 }
 
@@ -114,15 +110,13 @@ v2f_cubemap VS_DrawCubemapSphere(idOnly IN)
 	uint vertex_id		=IN.vertex_id;
 	uint latitude_strip	=vertex_id/(longitudes+1)/2;
 	vertex_id			-=latitude_strip*(longitudes+1)*2;
-	uint longitude		=vertex_id/2;
+	uint longitude		=(vertex_id)/2;
 	vertex_id			-=longitude*2;
-	float azimuth		=2.0*pi*float(longitude)/float(longitudes);
-	float e				=float(latitude_strip+vertex_id)/float(latitudes+1);
-	float elevation		=(e-0.5)*pi;
+	float azimuth		=2.0*3.1415926536*float(longitude)/float(longitudes);
+	float elevation		=(float(latitude_strip+vertex_id)/float(latitudes)-0.5)*3.1415926536;
 	vec3 pos			=radius*vec3(sin(azimuth)*cos(elevation),cos(azimuth)*cos(elevation),sin(elevation));
-    OUT.hPosition		=mul(worldViewProj,vec4(pos.xyz,1.0));
+    OUT.hPosition		=mul(worldViewProj,float4(pos.xyz,1.0));
     OUT.wDirection		=normalize(pos.xyz);
-	OUT.temp			=elevation;
     return OUT;
 }
 
@@ -136,13 +130,9 @@ SamplerState cubeSamplerState
 
 float4 PS_DrawCubemap(v2f_cubemap IN): SV_TARGET
 {
-	//if(IN.wDirection.x<0)
-	//	discard;
-	vec3 view		=IN.wDirection.xyz;
-	// Note: cubemap lookups are reversed, so we have to use -view.
-	vec4 result		=cubeTexture.Sample(cubeSamplerState,-view);
-	//result.rgb		=IN.temp;
-	return vec4(result.rgb,1.f);
+	float3 view		=(IN.wDirection.xyz);
+	float4 result	=cubeTexture.Sample(cubeSamplerState,view);
+	return float4(result.rgb,1.f);
 }
 
 

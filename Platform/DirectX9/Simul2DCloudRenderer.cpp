@@ -266,7 +266,7 @@ void Simul2DCloudRenderer::PreRenderUpdate(void *)
 {
 }
 
-bool Simul2DCloudRenderer::Render(void *,float expos,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool,int,const simul::sky::float4& )
+bool Simul2DCloudRenderer::Render(void *,float expos,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool,int,const simul::sky::float4& )
 {
 	cubemap;
 	depth_alpha_tex;
@@ -507,7 +507,7 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 	return debug_text;
 }
 
-void Simul2DCloudRenderer::RenderCrossSections(void *,int screen_width,int )
+void Simul2DCloudRenderer::RenderCrossSections(void *,int x0,int y0,int screen_width,int )
 {
 	int w=(screen_width-16)/6;
 	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;
@@ -542,7 +542,7 @@ void Simul2DCloudRenderer::RenderCrossSections(void *,int screen_width,int )
 		{x,			y+h,		0	,1.f},
 	};
 #else
-	float x=0,y=0;
+	float x=(float)x0,y=(float)y0;
 	struct Vertext
 	{
 		float x,y,z,h;

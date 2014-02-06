@@ -5,6 +5,9 @@
 #define pi (3.1415926536)
 #endif
 
+#ifndef RAYLEIGH_BETA_FACTOR
+#define RAYLEIGH_BETA_FACTOR (0.0596831)
+#endif
 
 float CalcRayleighBeta(float cos0)
 {
@@ -28,7 +31,7 @@ vec3 PrecalculatedInscatterFunction(vec4 inscatter_factor,float BetaRayleigh,flo
 
 vec3 InscatterFunction(vec4 inscatter_factor,float hazeEccentricity,float cos0,vec3 mieRayleighRatio)
 {
-	float BetaRayleigh	=0.0596831*(1.0+cos0*cos0);
+	float BetaRayleigh	=CalcRayleighBeta(cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
 	return PrecalculatedInscatterFunction(inscatter_factor,BetaRayleigh,BetaMie,mieRayleighRatio);
 }

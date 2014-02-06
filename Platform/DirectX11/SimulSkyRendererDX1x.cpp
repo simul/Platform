@@ -22,7 +22,6 @@
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Math/Vector3.h"
-#include "Simul/Math/Pi.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
@@ -402,7 +401,7 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	skyConstants.LinkToEffect(m_pSkyEffect,"SkyConstants");
 	gpuSkyGenerator.RecompileShaders();
 }
-
+#include "Simul/Math/Pi.h"
 float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 {
 	sun_occlusion=cloud_occlusion;
@@ -599,6 +598,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		inscatter_2d->Deactivate(context);
 	}
+
 	{
 		V_CHECK(fadeTexture1->SetResource(skyl_textures[(texture_cycle+0)%3].shaderResourceView));
 		V_CHECK(fadeTexture2->SetResource(skyl_textures[(texture_cycle+1)%3].shaderResourceView));
@@ -748,31 +748,23 @@ bool SimulSkyRendererDX1x::Render(void *context,bool blend)
 	return (hr==S_OK);
 }
 
-bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
+bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int height)
 {
-	int size=width/6;
+	int size=width/3;
 	if(height/4<size)
 		size=height/4;
 	if(size<2)
 		return false;
 	int s=size/numAltitudes-2;
-	int y0=width/2;
-	int x0=8;
-	if(width>height)
-	{
-		x0=width-(size+8)*2-(s+8)*3;
-		y0=8;
-	}
-	simul::dx11::UtilityRenderer::SetScreenSize(width,height);
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
 
-	ID3D1xEffectTechnique*	techniqueShowSky				=m_pSkyEffect->GetTechniqueByName("simul_show_sky_texture");
-	ID3D1xEffectTechnique*	techniqueShowFade				=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");
-	ID3D1xEffectShaderResourceVariable*	inscTexture			=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
+	ID3DX11EffectTechnique*	techniqueShowSky				=m_pSkyEffect->GetTechniqueByName("simul_show_sky_texture");
+	ID3DX11EffectTechnique*	techniqueShowFade				=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");
+	ID3DX11EffectShaderResourceVariable*	inscTexture		=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
 
-	ID3D1xEffectTechnique*	techniqueShowLightTable			=m_pSkyEffect->GetTechniqueByName("show_light_table");
-	ID3D1xEffectTechnique*	techniqueShow2DLightTable		=m_pSkyEffect->GetTechniqueByName("show_2d_light_table");
-	ID3D1xEffectTechnique*	techniqueShowIlluminationBuffer	=m_pSkyEffect->GetTechniqueByName("show_illumination_buffer");
+	ID3DX11EffectTechnique*	techniqueShowLightTable			=m_pSkyEffect->GetTechniqueByName("show_light_table");
+	ID3DX11EffectTechnique*	techniqueShow2DLightTable		=m_pSkyEffect->GetTechniqueByName("show_2d_light_table");
+	ID3DX11EffectTechnique*	techniqueShowIlluminationBuffer	=m_pSkyEffect->GetTechniqueByName("show_illumination_buffer");
 	
 	int y=y0+8;
 	inscTexture->SetResource(loss_2d->buffer_texture_SRV);
@@ -801,7 +793,6 @@ bool SimulSkyRendererDX1x::RenderFades(void* c,int width,int height)
 		UtilityRenderer::DrawQuad2(context,x	,y		,8,size	,m_pSkyEffect,techniqueShowLightTable);
 	}
 	simul::dx11::setTexture(m_pSkyEffect,"lightTable2DTexture",light_table_2d.shaderResourceView);
-
 	UtilityRenderer::DrawQuad2(context,x0+9*4	,y,8,size	,m_pSkyEffect,techniqueShow2DLightTable);
 	x0+=2*(size+8);
 	for(int i=0;i<numAltitudes;i++)

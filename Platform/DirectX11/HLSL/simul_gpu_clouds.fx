@@ -61,6 +61,7 @@ ColourDepthOutput PS_DensityMask(vertexOutput IN)
 	return result;
 }
 
+
 [numthreads(8,8,8)]
 void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {

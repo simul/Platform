@@ -301,9 +301,9 @@ void SimulHDRRenderer::Render(void *context,void *tex)
 
 //	B_RETURN(m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET,0xFF000000,depth_start,0L));
 	m_pTonemapEffect->SetTechnique(ToneMapTechnique);
-	(m_pTonemapEffect->SetFloat(Exposure_,Exposure));
-	(m_pTonemapEffect->SetFloat(Gamma_,Gamma));
-	(m_pTonemapEffect->SetTexture(hdrTexture,(LPDIRECT3DBASETEXTURE9)tex));
+	m_pTonemapEffect->SetFloat(Exposure_,Exposure);
+	m_pTonemapEffect->SetFloat(Gamma_,Gamma);
+	m_pTonemapEffect->SetTexture(hdrTexture,(LPDIRECT3DBASETEXTURE9)tex);
 
 	DrawFullScreenQuad(m_pd3dDevice,m_pTonemapEffect);
 

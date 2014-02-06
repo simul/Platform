@@ -31,7 +31,7 @@ vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texc,float
 	vec4 density2=sampleLod(cloudDensity2,cloudSamplerState,texc,0);
 	vec4 density=lerp(density1,density2,cloud_interp);
 	density.z*=layerFade;
-	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
+	density.z=saturate(density.z*(1.0+alphaSharpness)-alphaSharpness);
 	return density;
 }
 
@@ -42,7 +42,7 @@ vec4 calcDensity(Texture3D cloudDensity1,Texture3D cloudDensity2,vec3 texCoords,
 	vec4 density2=sampleLod(cloudDensity2,cloudSamplerState,pos,0);
 	vec4 density=lerp(density1,density2,cloud_interp);
 	density.z*=layerFade;
-	density.z=saturate(density.z*(1.f+alphaSharpness)-alphaSharpness);
+	density.z=saturate(density.z*(1.0+alphaSharpness)-alphaSharpness);
 	return density;
 }
 
@@ -264,7 +264,7 @@ RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
 												,vec2 texCoords)
 {
 	float dlookup 		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
-	vec4 clip_pos		=vec4(-1.f,1.f,1.f,1.f);
+	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x			+=2.0*texCoords.x;
 	clip_pos.y			-=2.0*texCoords.y;
 
@@ -296,7 +296,7 @@ RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
 	//float down			=step(0.1,-sine);
 	// Precalculate hg effects
 	float BetaClouds	=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-	float BetaRayleigh	=0.0596831*(1.0+cos0*cos0);
+	float BetaRayleigh	=CalcRayleighBeta(cos0);
 	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);
 #ifndef USE_LIGHT_TABLES
 	vec3 combinedLightColour=sunlightColour1.rgb;
@@ -375,7 +375,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,bool noise)
 {
 	vec4 dlookup 			=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
-	vec4 clip_pos			=vec4(-1.f,1.f,1.f,1.f);
+	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
 	clip_pos.x				+=2.0*texCoords.x;
 	clip_pos.y				-=2.0*texCoords.y;
 	vec3 view				=normalize(mul(invViewProj,clip_pos).xyz);
@@ -395,9 +395,8 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float depth;
 	if(near_pass)
 	{
-		// Discard if the distance is at maximum, because then we don't need a near-pass interpolation.
-	///	if(dlookup.z==0)
-	//		discard;
+		if(dlookup.z==0)
+			discard;
 		depth=dlookup.y;
 	}
 	else
@@ -417,7 +416,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	float meanFadeDistance	=0.0;
 	// Precalculate hg effects
 	float BetaClouds		=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-	float BetaRayleigh		=0.0596831*(1.0+cos0*cos0);
+	float BetaRayleigh	=CalcRayleighBeta(cos0);
 	float BetaMie			=HenyeyGreenstein(hazeEccentricity,cos0);
 #ifndef USE_LIGHT_TABLES	
 	vec3 amb				=ambientColour.rgb;
@@ -432,7 +431,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		vec3 world_pos				=viewPos+layerWorldDist*view;
 		world_pos.z					-=layer.verticalShift;
 		vec3 layerTexCoords			=(world_pos-cornerPos)*inverseScales;
-
 		float layerFade				=layer.layerFade;//*saturate((abs(sine)-layer.sine_threshold)/layer.sine_range);
 		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
 		{
@@ -481,7 +479,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 	meanFadeDistance+=colour.a;
 	RaytracePixelOutput res;
     res.colour		=vec4(exposure*colour.rgb,colour.a);
-	// far - near depth
 
 	res.depth		=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,nearZ,farZ,tanHalfFov);
 	return res;

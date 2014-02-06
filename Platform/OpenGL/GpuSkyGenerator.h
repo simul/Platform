@@ -18,23 +18,9 @@ namespace simul
 			bool CanPerformGPUGeneration() const;
 			void Make2DLossAndInscatterTextures(int cycled_index,
 				simul::sky::AtmosphericScatteringInterface *skyInterface
-				,int numElevations,int numDistances
-				,const std::vector<float> &altitudes_km,float max_distance_km
-				,simul::sky::float4 sun_irradiance
-				,simul::sky::float4 starlight
-				,simul::sky::float4 dir_to_sun,simul::sky::float4 dir_to_moon
-				,const simul::sky::HazeStruct &hazeStruct
-				,unsigned tables_checksum
-				,float overcast_base_km,float overcast_range_km
-				,simul::sky::float4 ozone
-				,int index,int end_index
-				,const simul::sky::float4 *density_table
-				,const simul::sky::float4 *optical_table
-				,const simul::sky::float4 *blackbody_table
-				,int table_size
-				,float maxDensityAltKm
-				,bool InfraRed,float emissivity
-				,float seaLevelTemperatureK);
+				,const simul::sky::GpuSkyParameters &gpuSkyParameters
+				,const simul::sky::GpuSkyAtmosphereParameters &gpuSkyAtmosphereParameters
+				,const simul::sky::GpuSkyInfraredParameters &gpuSkyInfraredParameters);
 			virtual void CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl);
 		protected:
 		// framebuffer to render out by distance.

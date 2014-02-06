@@ -42,7 +42,8 @@ public:
 	void PreRenderUpdate(void *context);
 	//! OpenGL Implementation of 2D cloud rendering.
 	bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
-	void RenderCrossSections(void *,int width,int height);
+	void RenderCrossSections(void *context,int x0,int y0,int width,int height);
+	void RenderAuxiliaryTextures(void *,int ,int ,int ,int ){}
 	//! Set the platform-dependent atmospheric loss texture.
 	void SetLossTexture(void *l);
 	//! Set the platform-dependent atmospheric inscatter texture.
