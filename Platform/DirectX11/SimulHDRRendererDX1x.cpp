@@ -185,8 +185,6 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
 	hdrConstants.gamma=Gamma;
 	hdrConstants.exposure=Exposure;
 	hdrConstants.Apply(pContext);
-	//Gamma_->SetFloat(Gamma);
-	//Exposure_->SetFloat(Exposure);
 	simul::dx11::setParameter(m_pTonemapEffect,"offset",offsetX,0.f);
 	if(Glow)
 	{

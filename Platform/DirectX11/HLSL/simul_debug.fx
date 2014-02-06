@@ -1,6 +1,5 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-
 sampler2D imageTexture SIMUL_TEXTURE_REGISTER(0);
 Texture2DMS<float4> imageTextureMS SIMUL_TEXTURE_REGISTER(1);
 TextureCube cubeTexture SIMUL_TEXTURE_REGISTER(2);
