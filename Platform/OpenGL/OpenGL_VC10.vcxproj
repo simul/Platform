@@ -337,8 +337,13 @@
     <ResourceCompile Include="OpenGL.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Scene\Scene.vcxproj">
+    <ProjectReference Include="..\..\Scene\Scene_Win32_VC10.vcxproj">
       <Project>{26213dbd-d6be-4f1c-827a-91aa489cf397}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
