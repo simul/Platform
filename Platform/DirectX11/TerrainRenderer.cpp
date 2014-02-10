@@ -7,12 +7,13 @@
 // be copied or disclosed except in accordance with the terms of that 
 // agreement.
 
-#include "SimulTerrainRendererDX1x.h"
+#include "TerrainRenderer.h"
 
 #include <dxerr.h>
 #include <string>
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix4x4.h"
+#include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Sky/SkyInterface.h"
@@ -28,7 +29,7 @@ struct TerrainVertex_t
 };
 static const int MAX_VERTICES=1000000;
 
-SimulTerrainRendererDX1x::SimulTerrainRendererDX1x(simul::base::MemoryInterface *m)
+TerrainRenderer::TerrainRenderer(simul::base::MemoryInterface *m)
 	:BaseTerrainRenderer(m)
 	,m_pd3dDevice(NULL)
 	,m_pVertexBuffer(NULL)
@@ -39,12 +40,12 @@ SimulTerrainRendererDX1x::SimulTerrainRendererDX1x(simul::base::MemoryInterface 
 {
 }
 
-SimulTerrainRendererDX1x::~SimulTerrainRendererDX1x()
+TerrainRenderer::~TerrainRenderer()
 {
 	InvalidateDeviceObjects();
 }
 
-void SimulTerrainRendererDX1x::ReloadTextures()
+void TerrainRenderer::ReloadTextures()
 {
 	std::vector<std::string> texture_files;
 	texture_files.push_back("terrain.png");
@@ -52,7 +53,7 @@ void SimulTerrainRendererDX1x::ReloadTextures()
 	arrayTexture.create(m_pd3dDevice,texture_files);
 }
 
-void SimulTerrainRendererDX1x::RecompileShaders()
+void TerrainRenderer::RecompileShaders()
 {
 	HRESULT hr=S_OK;
 	SAFE_RELEASE(m_pTerrainEffect);
@@ -62,16 +63,14 @@ void SimulTerrainRendererDX1x::RecompileShaders()
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
 	V_CHECK(CreateEffect(m_pd3dDevice,&m_pTerrainEffect,("simul_terrain.fx"),defines));
-	
 	m_pTechnique		=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
 
 	ReloadTextures();
 
 	terrainConstants.LinkToEffect(m_pTerrainEffect,"TerrainConstants");
-	
 }
 
-void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *dev)
+void TerrainRenderer::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
 	m_pd3dDevice=(ID3D1xDevice*)dev;
@@ -89,6 +88,7 @@ void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *dev)
 	hr=pass->GetDesc(&PassDesc);
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateInputLayout(decl,4,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
+	
 	// Create the main vertex buffer:
 	D3D1x_BUFFER_DESC desc=
 	{
@@ -103,12 +103,13 @@ void SimulTerrainRendererDX1x::RestoreDeviceObjects(void *dev)
     ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
     InitData.pSysMem = vertices;
     InitData.SysMemPitch = sizeof(TerrainVertex_t);
+	SAFE_RELEASE(m_pVertexBuffer);
 	hr=m_pd3dDevice->CreateBuffer(&desc,&InitData,&m_pVertexBuffer);
 	MakeVertexBuffer();
 	delete [] vertices;
 }
 
-void SimulTerrainRendererDX1x::InvalidateDeviceObjects()
+void TerrainRenderer::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pTerrainEffect);
@@ -117,7 +118,7 @@ void SimulTerrainRendererDX1x::InvalidateDeviceObjects()
 	terrainConstants.InvalidateDeviceObjects();
 }
 
-void SimulTerrainRendererDX1x::MakeVertexBuffer()
+void TerrainRenderer::MakeVertexBuffer()
 {
 	ID3D11DeviceContext* pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
@@ -177,8 +178,9 @@ void SimulTerrainRendererDX1x::MakeVertexBuffer()
 	SAFE_RELEASE(pImmediateContext);
 }
 
-void SimulTerrainRendererDX1x::Render(void *context,float exposure)
+void TerrainRenderer::Render(void *context,float exposure)
 {
+	SIMUL_COMBINED_PROFILE_START(context,"TerrainRenderer::Render")
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
 	D3DXMATRIX world;
 	D3DXMatrixIdentity(&world);
@@ -230,9 +232,10 @@ void SimulTerrainRendererDX1x::Render(void *context,float exposure)
 	simul::dx11::setTextureArray(m_pTerrainEffect,"textureArray",NULL);
 	simul::dx11::setTexture(m_pTerrainEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
+	SIMUL_COMBINED_PROFILE_END(context)
 }
 
-void SimulTerrainRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
+void TerrainRenderer::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
 {
 	view=v;
 	proj=p;
