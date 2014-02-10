@@ -97,6 +97,7 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 
 void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr,int /*generation_number*/)
 {
+	noiseSize=noise_size;
 	volume_noise_tex=(GLuint)make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
 	return (void*)volume_noise_tex;
 }
@@ -108,7 +109,8 @@ void GpuCloudGenerator::CycleTexturesForward()
 // Fill the stated number of texels of the density texture
 void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsParameters &params
 											,int start_texel
-											,int texels)
+										,int texels
+										,const simul::clouds::MaskMap &masks)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();

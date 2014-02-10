@@ -24,7 +24,8 @@ namespace simul
 			void CycleTexturesForward();
 			void FillDensityGrid(int index,const clouds::GpuCloudsParameters &params
 									,int start_texel
-									,int texels);
+									,int texels
+									,const simul::clouds::MaskMap &masks);
 			virtual void PerformGPURelight(int light_index
 											,const clouds::GpuCloudsParameters &params
 											,float *target
