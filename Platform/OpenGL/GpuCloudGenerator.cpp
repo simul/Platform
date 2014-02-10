@@ -109,8 +109,7 @@ void GpuCloudGenerator::CycleTexturesForward()
 // Fill the stated number of texels of the density texture
 void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsParameters &params
 										,int start_texel
-										,int texels
-										,const simul::clouds::MaskMap &masks)
+										,int texels)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();

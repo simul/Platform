@@ -7,6 +7,7 @@
 
 #pragma once
 #include "Simul/Platform/OpenGL/Export.h"
+#include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Graph/Meta/Group.h"
 #include "Simul/Clouds/BaseWeatherRenderer.h"
 #ifdef _MSC_VER

@@ -294,7 +294,8 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	
 	static float ff=10000.f; 
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
-	Set2DCloudConstants(cloud2DConstants,view,proj,exposure,viewportTextureRegionXYWH);
+	float ir_integration_factors[]={0,0,0,0};
+	Set2DCloudConstants(cloud2DConstants,view,proj,exposure,viewportTextureRegionXYWH,ir_integration_factors);
 	cloud2DConstants.Apply(pContext);
 
 	ID3D11InputLayout* previousInputLayout;

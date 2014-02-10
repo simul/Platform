@@ -522,7 +522,7 @@ technique simul_clouds
 {
     pass p0 
     {
-		zenable = true;
+		zenable = false;
 		zfunc = lessequal;
 		DepthBias =0;
 		SlopeScaleDepthBias =0;
