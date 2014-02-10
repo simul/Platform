@@ -147,6 +147,8 @@ static void CalcShaderModel(LPDIRECT3DDEVICE9 m_pd3dDevice)
 
 	m_pd3dDevice->GetDeviceCaps(&pCaps);
 	const char *shader_str=GetPixelShaderString(pCaps);
+	if(!shader_str)
+		return;
 	std::cout<<"Pixel shader version ";
 	std::cout<<shader_str;
 	std::cout<<std::endl;

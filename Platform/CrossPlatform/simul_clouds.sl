@@ -404,7 +404,6 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		depth=dlookup.x;
 	}
 	float d					=depthToFadeDistance(depth,clip_pos.xy,nearZ,farZ,tanHalfFov);
-//d=100.0;
 	vec4 colour				=vec4(0.0,0.0,0.0,1.0);
 	vec2 fade_texc			=vec2(0.0,0.5*(1.0-sine));
 

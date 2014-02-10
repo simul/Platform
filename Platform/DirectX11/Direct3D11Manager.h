@@ -48,7 +48,6 @@ namespace simul
 			//! Removes the window and destroys its associated Swap Chain.
 			void RemoveWindow(HWND h);
 			void Shutdown();
-			
 			IDXGISwapChain *GetSwapChain(HWND hwnd);
 			void StartRendering(HWND hwnd);
 			void SetRenderer(HWND hwnd,Direct3D11CallbackInterface *ci);
@@ -61,6 +60,7 @@ namespace simul
 
 			void GetVideoCardInfo(char*, int&);
 			Direct3DWindow *GetWindow(HWND hwnd);
+			void ReportMessageFilterState();
 		protected:
 			bool m_vsync_enabled;
 			int m_videoCardMemory;
@@ -73,6 +73,8 @@ namespace simul
 			WindowMap windows;
 			typedef std::map<int,IDXGIOutput*> OutputMap;
 			OutputMap outputs;
+			ID3D11Debug *d3dDebug ;
+	ID3D11InfoQueue *d3dInfoQueue ;
 		};
 
 	}

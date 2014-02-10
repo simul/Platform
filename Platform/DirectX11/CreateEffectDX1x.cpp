@@ -923,6 +923,41 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *
 		DebugBreak();
 	}
 	assert((*effect)->IsValid());
+
+	// Name stuff:
+	ID3DX11Effect *e=*effect;
+	if(e)
+	{
+		D3DX11_EFFECT_DESC effect_desc;
+		e->GetDesc(&effect_desc);
+		for(int i=0;i<(int)effect_desc.Techniques;i++)
+		{
+			ID3DX11EffectTechnique * pTech = e->GetTechniqueByIndex(i);
+			D3DX11_TECHNIQUE_DESC techDesc;
+			pTech->GetDesc(&techDesc);
+			for(int j=0;j<(int)techDesc.Passes;j++)
+			{
+				ID3DX11EffectPass * pPass = pTech->GetPassByIndex(j);
+				D3DX11_PASS_DESC passDesc;
+				pPass->GetDesc(&passDesc);
+
+				D3DX11_PASS_SHADER_DESC vsPassDesc;
+
+				pPass->GetVertexShaderDesc(&vsPassDesc);
+				ID3DX11EffectShaderVariable * pVs;
+				pVs = vsPassDesc.pShaderVariable->AsShader();
+				D3DX11_EFFECT_SHADER_DESC vsDesc;
+				pVs->GetShaderDesc(vsPassDesc.ShaderIndex, &vsDesc);
+				ID3D11VertexShader *vertexShader=NULL;
+				pVs->GetVertexShader(vsPassDesc.ShaderIndex,&vertexShader);
+				if(vertexShader)
+				{
+					simul::dx11::SetDebugObjectName(vertexShader,filename_utf8.c_str());
+					vertexShader->Release();
+				}
+			}
+		}
+	}
 	delete [] macros;
 	return hr;
 }
@@ -1058,9 +1093,13 @@ static ID3D11SamplerState* m_pSamplerStateStored11=NULL;
 void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
 {
     pd3dImmediateContext->OMGetDepthStencilState( &m_pDepthStencilStateStored11, &m_StencilRefStored11 );
+	SetDebugObjectName(m_pDepthStencilStateStored11,"m_pDepthStencilStateStored11");
     pd3dImmediateContext->RSGetState( &m_pRasterizerStateStored11 );
+	SetDebugObjectName(m_pRasterizerStateStored11,"m_pRasterizerStateStored11");
     pd3dImmediateContext->OMGetBlendState( &m_pBlendStateStored11, m_BlendFactorStored11, &m_SampleMaskStored11 );
+	SetDebugObjectName(m_pBlendStateStored11,"m_pBlendStateStored11");
     pd3dImmediateContext->PSGetSamplers( 0, 1, &m_pSamplerStateStored11 );
+	SetDebugObjectName(m_pSamplerStateStored11,"m_pSamplerStateStored11");
 }
 
 void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )

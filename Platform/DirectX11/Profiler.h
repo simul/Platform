@@ -103,7 +103,7 @@ namespace simul
 				}
 			};
 
-			typedef std::map<std::string, ProfileData> ProfileMap;
+			typedef std::map<std::string, ProfileData*> ProfileMap;
 
 			ProfileMap profiles;
 			UINT64 currFrame;

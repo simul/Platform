@@ -1,7 +1,8 @@
-#include "Direct3D11Manager.h"
+#include "Simul/Platform/DirectX11/Direct3D11Manager.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
+#include "Simul/Platform/DirectX11/Utilities.h"
 
 using namespace simul;
 using namespace dx11;
@@ -114,6 +115,7 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice)
 	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
 	SIMUL_ASSERT(result==S_OK);
 	factory->CreateSwapChain(d3dDevice,&swapChainDesc,&m_swapChain);
+//	SetDebugObjectName(m_swapChain,"Window SwapChain");
 	SAFE_RELEASE(factory);
 
 	CreateRenderTarget(d3dDevice);
@@ -154,6 +156,8 @@ void Window::CreateRenderTarget(ID3D11Device* d3dDevice)
 	// Create the render target view with the back buffer pointer.
 	SAFE_RELEASE(m_renderTargetView);
 	result = d3dDevice->CreateRenderTargetView(backBufferPtr, NULL, &m_renderTargetView);
+	SetDebugObjectName( backBufferPtr,"Window backBufferPtr");
+	SetDebugObjectName( m_renderTargetView,"Window m_renderTargetView");
 	SIMUL_ASSERT(result==S_OK);
 	// Release pointer to the back buffer as we no longer need it.
 	SAFE_RELEASE(backBufferPtr);
@@ -193,7 +197,9 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 	// Then this 2D buffer is drawn to the screen.
 
 	// Create the texture for the depth buffer using the filled out description.
+	SAFE_RELEASE(m_depthStencilBuffer);
 	HRESULT result = d3dDevice->CreateTexture2D(&depthBufferDesc, NULL, &m_depthStencilBuffer);
+	SetDebugObjectName( m_depthStencilBuffer,"Window m_depthStencilBuffer");
 	SIMUL_ASSERT(result==S_OK);
 	//Now we need to setup the depth stencil description.
 	//This allows us to control what type of depth test Direct3D will do for each pixel.
@@ -224,7 +230,9 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 //With the description filled out we can now create a depth stencil state.
 
 	// Create the depth stencil state.
+	SAFE_RELEASE(m_depthStencilState);
 	result = d3dDevice->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState);
+	SetDebugObjectName( m_depthStencilState,"Window m_depthStencilState");
 	SIMUL_ASSERT(result==S_OK);
 	//With the created depth stencil state we can now set it so that it takes effect. Notice we use the device context to set it.
 
@@ -242,7 +250,9 @@ void Window::CreateDepthBuffer(ID3D11Device* d3dDevice)
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view.
+	SAFE_RELEASE(m_depthStencilView)
 	result = d3dDevice->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView);
+	SetDebugObjectName( m_depthStencilView,"Window m_depthStencilView");
 	SIMUL_ASSERT(result==S_OK);
 	//The viewport also needs to be setup so that Direct3D can map clip space coordinates to the render target space.
 	//Set this to be the entire size of the window.
@@ -293,6 +303,8 @@ void Window::Release()
 Direct3D11Manager::Direct3D11Manager()
 	:d3dDevice(0)
 	,d3dDeviceContext(0)
+	,d3dDebug(NULL)
+	,d3dInfoQueue(NULL)
 {
 }
 
@@ -373,9 +385,67 @@ void Direct3D11Manager::Initialize()
 	//				       D3D11_SDK_VERSION, &swapChainDesc, &m_swapChain, &d3dDevice, NULL, &d3dDeviceContext);
 	UINT flags=0;
 #ifdef _DEBUG
-	//flags|=D3D11_CREATE_DEVICE_DEBUG;
+	flags|=D3D11_CREATE_DEVICE_DEBUG;
 #endif
 	result=D3D11CreateDevice(NULL,D3D_DRIVER_TYPE_HARDWARE,NULL,flags, &featureLevel,1,D3D11_SDK_VERSION,&d3dDevice, NULL,&d3dDeviceContext);
+
+	d3dDevice->AddRef();
+	UINT refcount=d3dDevice->Release();
+#ifdef _DEBUG
+	SAFE_RELEASE(d3dDebug);
+	SAFE_RELEASE(d3dInfoQueue);
+	d3dDevice->QueryInterface( __uuidof(ID3D11Debug), (void**)&d3dDebug );
+	d3dDebug->QueryInterface( __uuidof(ID3D11InfoQueue), (void**)&d3dInfoQueue );
+ 
+	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
+	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_ERROR, true );
+	
+	ReportMessageFilterState();
+	d3dInfoQueue->ClearStoredMessages();
+	d3dInfoQueue->ClearRetrievalFilter();
+	d3dInfoQueue->ClearStorageFilter();
+	ReportMessageFilterState();
+	
+	D3D11_MESSAGE_CATEGORY cats[] = {/*D3D11_MESSAGE_CATEGORY_APPLICATION_DEFINED
+										,D3D11_MESSAGE_CATEGORY_MISCELLANEOUS	
+										,D3D11_MESSAGE_CATEGORY_INITIALIZATION	
+										,D3D11_MESSAGE_CATEGORY_CLEANUP
+										,D3D11_MESSAGE_CATEGORY_COMPILATION 
+										,D3D11_MESSAGE_CATEGORY_STATE_CREATION
+										,D3D11_MESSAGE_CATEGORY_STATE_SETTING
+										,D3D11_MESSAGE_CATEGORY_STATE_GETTING
+										,D3D11_MESSAGE_CATEGORY_RESOURCE_MANIPULATION*/
+										D3D11_MESSAGE_CATEGORY_EXECUTION
+									};
+	D3D11_MESSAGE_SEVERITY sevs[] = { 
+		D3D11_MESSAGE_SEVERITY_ERROR
+		,D3D11_MESSAGE_SEVERITY_WARNING};
+	UINT ids[] = { D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS,
+		D3D11_MESSAGE_ID_DESTROY_VERTEXSHADER,
+		D3D11_MESSAGE_ID_DESTROY_PIXELSHADER,
+		D3D11_MESSAGE_ID_DESTROY_COMPUTESHADER };
+
+	D3D11_INFO_QUEUE_FILTER filter;
+	memset( &filter, 0, sizeof(filter) );
+
+	// To set the type of messages to allow, 
+	// set filter.AllowList as follows:
+	//filter.AllowList.NumCategories = sizeof(cats) / sizeof(D3D11_MESSAGE_CATEGORY); 
+	//filter.AllowList.pCategoryList = cats;
+	filter.AllowList.NumSeverities = sizeof(sevs)/ sizeof(D3D11_MESSAGE_SEVERITY); 
+	filter.AllowList.pSeverityList = sevs;
+	filter.AllowList.NumIDs = 0;//sizeof(ids) / sizeof(UINT);
+	//..filter.AllowList.pIDList = ids;
+
+	// To set the type of messages to deny, set filter.DenyList 
+	// similarly to the preceding filter.AllowList.
+
+	// The following single call sets all of the preceding information.
+	HRESULT hr=d3dInfoQueue->AddStorageFilterEntries( &filter );
+	ReportMessageFilterState();
+#endif
+	d3dDevice->AddRef();
+	UINT refcount2=d3dDevice->Release();
 	SIMUL_ASSERT(result==S_OK);
 }
 
@@ -464,9 +534,24 @@ void Direct3D11Manager::Shutdown()
 		delete i->second;
 	}
 	windows.clear();
-	SAFE_RELEASE(d3dDevice);
 	SAFE_RELEASE(d3dDeviceContext);
-	return;
+	if(d3dDebug)
+	{
+		d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+	}
+	ReportMessageFilterState();
+	SAFE_RELEASE(d3dInfoQueue);
+	SAFE_RELEASE(d3dDebug);
+	// Finally, we can destroy the device.
+	if(d3dDevice)
+	{
+		UINT references=d3dDevice->Release();
+		if(references>0)
+		{
+			SIMUL_BREAK("Unfreed references remain in DirectX 11");
+		}
+		d3dDevice=NULL;
+	}
 }
 
 void Direct3D11Manager::RemoveWindow(HWND hwnd)
@@ -528,6 +613,20 @@ Direct3DWindow *Direct3D11Manager::GetWindow(HWND hwnd)
 		return NULL;
 	Window *w=windows[hwnd];
 	return w;
+}
+
+void Direct3D11Manager::ReportMessageFilterState()
+{
+	if(!d3dInfoQueue)
+		return;
+	SIZE_T filterlength;
+	d3dInfoQueue->GetStorageFilter(NULL, &filterlength);
+	D3D11_INFO_QUEUE_FILTER *filter = (D3D11_INFO_QUEUE_FILTER*)malloc(filterlength);
+	memset( filter, 0, filterlength );
+	int numfilt=d3dInfoQueue->GetStorageFilterStackSize();
+	d3dInfoQueue->GetStorageFilter(filter,&filterlength);
+	std::cout<<filter->AllowList.NumSeverities<<std::endl;
+	free(filter);
 }
 
 void Direct3D11Manager::SetFullScreen(HWND hwnd,bool fullscreen,int which_output)

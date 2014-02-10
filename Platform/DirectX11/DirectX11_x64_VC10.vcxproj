@@ -103,6 +103,7 @@
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC10/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -188,13 +189,17 @@
   <ItemGroup>
     <ClCompile Include="CompileShaderDX1x.cpp" />
     <ClCompile Include="CreateEffectDX1x.cpp" />
+    <ClCompile Include="CSFFT\fft_512x512.cpp" />
     <ClCompile Include="CubemapFramebuffer.cpp" />
+    <ClCompile Include="Direct3D11Manager.cpp" />
     <ClCompile Include="Direct3D11Renderer.cpp" />
     <ClCompile Include="DX11Exception.cpp" />
     <ClCompile Include="Framebuffer3D.cpp" />
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
+    <ClCompile Include="OceanRenderer.cpp" />
+    <ClCompile Include="OceanSimulator.cpp" />
     <ClCompile Include="PrecipitationRenderer.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
@@ -205,15 +210,19 @@
     <ClCompile Include="SimulLightningRendererDX11.cpp" />
     <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
-    <ClCompile Include="SimulTerrainRendererDX1x.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
+    <ClCompile Include="TerrainRenderer.cpp" />
+    <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompileShaderDX1x.h" />
     <ClInclude Include="CreateEffectDX1x.h" />
+    <ClInclude Include="CSFFT\fft_512x512.h" />
     <ClInclude Include="cubemapframebuffer.h" />
     <ClInclude Include="Direct3D11CallbackInterface.h" />
+    <ClInclude Include="Direct3D11Manager.h" />
+    <ClInclude Include="Direct3D11ManagerInterface.h" />
     <ClInclude Include="direct3d11renderer.h" />
     <ClInclude Include="DX11Exception.h" />
     <ClInclude Include="Export.h" />
@@ -222,6 +231,8 @@
     <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="GpuSkyGenerator.h" />
     <ClInclude Include="MacrosDx1x.h" />
+    <ClInclude Include="OceanRenderer.h" />
+    <ClInclude Include="OceanSimulator.h" />
     <ClInclude Include="precipitationrenderer.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="resource.h" />
@@ -234,8 +245,9 @@
     <ClInclude Include="SimulLightningRendererDX11.h" />
     <ClInclude Include="SimulOpticsRendererDX1x.h" />
     <ClInclude Include="SimulSkyRendererDX1x.h" />
-    <ClInclude Include="SimulTerrainRendererDX1x.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />
+    <ClInclude Include="TerrainRenderer.h" />
+    <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>

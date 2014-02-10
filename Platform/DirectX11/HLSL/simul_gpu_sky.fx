@@ -181,7 +181,7 @@ void CS_Insc( uint3 sub_pos : SV_DispatchThreadID )
 		//final.w=::saturate((1.f-mie_factor)/(1.f-total_loss.x+0.0001f));
 		insc.w				=saturate((1.0-mie_factor.x)/(1.0-previous_loss.x+0.0001f));
 		
-		targetTexture[idx]	=insc;
+		targetTexture[idx]	=RAYLEIGH_BETA_FACTOR*insc;
 		prevDist_km			=dist_km;
 		previous_insc		=insc;
 	}

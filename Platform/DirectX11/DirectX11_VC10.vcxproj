@@ -195,6 +195,8 @@
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
+    <ClCompile Include="OceanRenderer.cpp" />
+    <ClCompile Include="OceanSimulator.cpp" />
     <ClCompile Include="PrecipitationRenderer.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="SaveTextureDX1x.cpp" />
@@ -258,10 +260,7 @@
     <None Include="..\CrossPlatform\godrays.sl" />
     <None Include="..\CrossPlatform\hdr_constants.sl" />
     <None Include="..\CrossPlatform\illumination.sl" />
-    <None Include="..\CrossPlatform\light_probe_constants.sl" />
-    <None Include="..\CrossPlatform\mixed_resolution.sl" />
-    <None Include="..\CrossPlatform\noise.sl" />
-    <None Include="..\CrossPlatform\noise_constants.sl" />
+    <None Include="..\CrossPlatform\ocean_constants.sl" />
     <None Include="..\CrossPlatform\rain_constants.sl" />
     <None Include="..\CrossPlatform\simul_2d_clouds.hs" />
     <None Include="..\CrossPlatform\simul_2d_clouds.sl" />
@@ -279,7 +278,6 @@
     <None Include="CSFFT\fft_512x512_c2c.hlsl" />
     <None Include="HLSL\atmospherics.fx" />
     <None Include="HLSL\CppHLSL.hlsl" />
-    <None Include="HLSL\light_probes.fx" />
     <None Include="HLSL\font.fx" />
     <None Include="HLSL\ocean.fx" />
     <None Include="HLSL\ocean_simulator_cs.hlsl" />

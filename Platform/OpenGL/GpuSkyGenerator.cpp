@@ -1,5 +1,6 @@
 #include <gl/glew.h>
 #include <stdint.h> // for uintptr_t
+#include <stdint.h> // for uintptr_t
 #include "Simul/Platform/OpenGL/GpuSkyGenerator.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
@@ -42,9 +43,13 @@ void GpuSkyGenerator::InvalidateDeviceObjects()
 {
 GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(loss_program);
+GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(insc_program);
+GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(skyl_program);
+GL_ERROR_CHECK
 	SAFE_DELETE_BUFFER(gpuSkyConstantsUBO);
+GL_ERROR_CHECK
 }
 
 void GpuSkyGenerator::RecompileShaders()
@@ -113,10 +118,10 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(int /*cycled_index*/,
 // The rendertextures are altitudes x elevations
 	for(int i=0;i<2;i++)
 	{
-		fb[i].SetWidthAndHeight(gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations);
+		fb[i].SetWidthAndHeight((int)gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations);
 		fb[i].InitColor_Tex(0,GL_RGBA32F_ARB);
 	}
-	int new_cache_size=gpuSkyParameters.altitudes_km.size()*gpuSkyParameters.numElevations*gpuSkyParameters.numDistances;
+	int new_cache_size=(int)gpuSkyParameters.altitudes_km.size()*gpuSkyParameters.numElevations*gpuSkyParameters.numDistances;
 	if(new_cache_size>cache_size)
 	{
 		delete [] loss_cache;
@@ -236,7 +241,7 @@ GL_ERROR_CHECK
 	F[0]->Activate(NULL);
 		F[0]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-		glReadPixels(0,0,gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+		glReadPixels(0,0,(GLsizei)gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	target+=gpuSkyParameters.altitudes_km.size()*gpuSkyParameters.numElevations;
@@ -265,7 +270,7 @@ GL_ERROR_CHECK
 			glBindTexture(GL_TEXTURE_2D,optd_tex);
 			DrawQuad(0,0,1,1);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-			glReadPixels(0,0,gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			glReadPixels(0,0,(GLsizei)gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
@@ -275,7 +280,7 @@ GL_ERROR_CHECK
 	glUseProgram(0);
 	// Finally we will generate the skylight texture.
 	// First we make the inscatter into a 3D texture.
-	GLuint insc_tex=make3DTexture(gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,gpuSkyParameters.numDistances,(const float *)insc_cache);
+	GLuint insc_tex=make3DTexture((int)gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,gpuSkyParameters.numDistances,(const float *)insc_cache);
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_3D,insc_tex);
 	// Now render out the skylight.
@@ -293,7 +298,7 @@ GL_ERROR_CHECK
 	F[0]->Activate(NULL);
 		F[0]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
-		glReadPixels(0,0,gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+		glReadPixels(0,0,(GLsizei)gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 	F[0]->Deactivate(NULL);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	target+=gpuSkyParameters.altitudes_km.size()*gpuSkyParameters.numElevations;
@@ -323,7 +328,7 @@ GL_ERROR_CHECK
 			DrawQuad(0,0,1,1);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 	GL_ERROR_CHECK
-			glReadPixels(0,0,gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			glReadPixels(0,0,(GLsizei)gpuSkyParameters.altitudes_km.size(),gpuSkyParameters.numElevations,GL_RGBA,GL_FLOAT,(GLvoid*)target);
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		std::swap(F[0],F[1]);
