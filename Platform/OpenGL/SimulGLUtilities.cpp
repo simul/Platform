@@ -23,6 +23,12 @@
 using namespace simul;
 using namespace opengl;
 
+#ifndef _MSC_VER
+#define DebugBreak()
+#endif
+using namespace simul;
+using namespace opengl;
+
 int Utilities::instance_count=0;
 int Utilities::screen_width=0;
 int Utilities::screen_height=0;

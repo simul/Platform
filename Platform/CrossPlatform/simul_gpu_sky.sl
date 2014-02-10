@@ -25,10 +25,8 @@ uniform_buffer GpuSkyConstants SIMUL_BUFFER_REGISTER(8)
 
 	uniform vec3 rayleigh;
 	uniform float overcastBaseKmX;
-
 	uniform vec3 hazeMie;
 	uniform float overcastRangeKmX;
-
 	uniform vec3 ozone;
 	uniform float overcastX;
 
@@ -206,7 +204,7 @@ vec4 Insc(Texture2D input_texture,Texture3D loss_texture,Texture2D density_textu
 	vec3 loss			=exp(-extinction*stepLengthKm);
 	insc.rgb			*=vec3(1.0,1.0,1.0)-loss;
 	float mie_factor	=exp(-insc.w*stepLengthKm*haze_factor*hazeMie.x);
-	insc.w				=saturate((1.f-mie_factor)/(1.f-total_ext.x+0.0001f));
+	insc.w				=saturate((1.0-mie_factor)/(1.0-total_ext.x+0.0001));
 	
 	insc.rgb			*=previous_loss.rgb;
 	insc.rgb			+=previous_insc.rgb;
@@ -259,7 +257,7 @@ void CSLoss(RWTexture3D<float4> targetTexture,Texture2D density_texture,uint3 po
 	for(uint i=0;i<dims.z;i++)
 	{
 		uint3 idx			=uint3(pos.xy,i);
-		float zPosition		=pow((float)(i)/((float)dims.z-1.f),2.f);
+		float zPosition		=pow((float)(i)/((float)dims.z-1.0),2.0);
 		float dist_km		=zPosition*maxDistanceKm;
 		float maxd			=min(spaceDistKm,dist_km);
 		float mind			=min(spaceDistKm,prevDist_km);
@@ -271,8 +269,7 @@ void CSLoss(RWTexture3D<float4> targetTexture,Texture2D density_texture,uint3 po
 		float alt_km		=r-planetRadiusKm;
 		// lookups is: dens_factor,ozone_factor,haze_factor;
 		float dens_texc		=(alt_km/maxDensityAltKm*(tableSize.x-1.0)+texelOffset)/tableSize.x;
-		//dens_texc=saturate(dens_texc);
-		vec4 lookups		=texture_nearest_lod(density_texture,dens_texc,0);
+		vec4 lookups		=texture_clamp_lod(density_texture,dens_texc,0);
 		float dens_factor	=lookups.x;
 		float ozone_factor	=lookups.y;
 		float haze_factor	=getHazeFactorAtAltitude(alt_km);
@@ -313,7 +310,7 @@ void CSSkyl(RWTexture3D<float4> targetTexture,Texture3D loss_texture,Texture3D i
 		
 		float dist_km		=zPosition*maxDistanceKm;
 		if(i==dims.z-1)
-			dist_km=1000.f;
+			dist_km=1000.0;
 		float maxd			=min(spaceDistKm,dist_km);
 		float mind			=min(spaceDistKm,prevDist_km);
 		float dist			=0.5*(mind+maxd);
@@ -335,7 +332,7 @@ void CSSkyl(RWTexture3D<float4> targetTexture,Texture3D loss_texture,Texture3D i
 		vec3 loss			=exp(-extinction*stepLengthKm);
 		skyl.rgb			*=vec3(1.0,1.0,1.0)-loss;
 		float mie_factor	=exp(-skyl.w*stepLengthKm*haze_factor*hazeMie.x);
-		skyl.w				=saturate((1.f-mie_factor)/(1.f-total_ext.x+0.0001f));
+		skyl.w				=saturate((1.0-mie_factor)/(1.0-total_ext.x+0.0001));
 #if 1//def BLACKBODY
 		float dens_dist	=dens_factor*stepLengthKm;
 		float emis_ext  =exp(-emissivity*dens_dist);
@@ -348,7 +345,7 @@ void CSSkyl(RWTexture3D<float4> targetTexture,Texture3D loss_texture,Texture3D i
 		skyl.rgb        +=bb;
 		//skyl.rgb        =0.000001*skyl.rgb+Blackbody(T);
  #endif
-		//skyl.w			=(loss.w)*(1.f-previous_skyl.w)*skyl.w+previous_skyl.w;
+		//skyl.w			=(loss.w)*(1.0-previous_skyl.w)*skyl.w+previous_skyl.w;
 		skyl.rgb			*=previous_loss.rgb;
 		skyl.rgb			+=previous_skyl.rgb;
 		
@@ -371,9 +368,9 @@ void MakeLightTable(RWTexture3D<float4> targetTexture, Texture3D insc_texture, u
 	float alt_texc			=float(pos.x)/float(dims.x);
 	float alt_km			=maxOutputAltKm*alt_texc;
 	vec4 sunlight			=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,alt_km,lightDir);
-	float moon_angular_radius=pi/180.f/2.f;
-	float moon_angular_area_ratio=pi*moon_angular_radius*moon_angular_radius/(4.f*pi);
-	vec4 moonlight			=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,alt_km,directionToMoon)*0.136f*moon_angular_area_ratio;
+	float moon_angular_radius=pi/180.0/2.0;
+	float moon_angular_area_ratio=pi*moon_angular_radius*moon_angular_radius/(4.0*pi);
+	vec4 moonlight			=vec4(sunIrradiance,1.0)*getSunlightFactor2(optical_depth_texture,alt_km,directionToMoon)*0.136*moon_angular_area_ratio;
 	// equivalent to GetAnisotropicInscatterFactor(true,altitude_km,pi/2.f,0,1e5f,sun_irradiance,starlight,dir_to_sun,dir_to_moon,haze,overcast,false,0):
 	vec4 ambientLight		=vec4(getSkylight(alt_km, insc_texture),1.0);
 	uint3 pos_sun			=uint3(pos.xy,0);

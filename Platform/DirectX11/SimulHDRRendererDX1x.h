@@ -44,7 +44,9 @@ namespace simul
 			//! Call this when the device has been lost.
 			void InvalidateDeviceObjects();
 			//! Render: write the given texture to screen using the HDR rendering shaders
+			void Render(void *context,void *texture_srv,float offsetX);
 			void Render(void *context,void *texture_srv);
+			void RenderWithOculusCorrection(void *context,void *texture_srv,float offsetX);
 			//! Create the glow texture that will be overlaid due to strong lights.
 			void RenderGlowTexture(void *context,void *texture_srv);
 			//! Get the current debug text as a c-string pointer.
@@ -54,7 +56,6 @@ namespace simul
 
 			void RecompileShaders();
 		protected:
-			void Render(void *context,void *texture_srv,float offsetX);
 			bool Destroy();
 			simul::dx11::Framebuffer glow_fb;
 			int Width,Height;
@@ -65,10 +66,12 @@ namespace simul
 			ID3D1xEffect*						m_pTonemapEffect;
 			ID3D1xEffectTechnique*				exposureGammaTechnique;
 			ID3D1xEffectTechnique*				glowExposureGammaTechnique;
+			ID3D1xEffectTechnique*				warpExposureGamma;
+			ID3D1xEffectTechnique*				warpGlowExposureGamma;
+			
 			ID3D1xEffectTechnique*				glowTechnique;
 			ID3D1xEffectScalarVariable*			Exposure_;
 			ID3D1xEffectScalarVariable*			Gamma_;
-			ID3D1xEffectShaderResourceVariable*	imageTexture;
 
 			ID3D1xEffect*						m_pGaussianEffect;
 			ID3D1xEffectTechnique*				gaussianRowTechnique;

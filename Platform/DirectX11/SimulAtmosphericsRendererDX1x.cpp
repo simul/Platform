@@ -26,6 +26,7 @@
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/Profiler.h"
 
 using namespace simul;
 using namespace dx11;
@@ -152,9 +153,9 @@ void SimulAtmosphericsRendererDX1x::RenderLoss(void *context,const void *depthTe
 	view(3,0)=view(3,1)=view(3,2)=0;
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 	D3DXMATRIX p1=proj;
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,1.f,view,p1,proj,relativeViewportTextureRegionXYWH);
 	atmosphericsPerViewConstants.Apply(pContext);
-	SetAtmosphericsConstants(atmosphericsUniforms,1.f,simul::sky::float4(1.0,1.0,1.0,0.0));
+	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
 	ID3D1xEffectTechnique *tech=effect->GetTechniqueByName("loss");
 	if(depthTexture_SRV)
@@ -190,9 +191,9 @@ void SimulAtmosphericsRendererDX1x::RenderInscatter(void *context,const void *de
 	view(3,0)=view(3,1)=view(3,2)=0;
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
 	D3DXMATRIX p1=proj;
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,p1,proj,relativeViewportTextureRegionXYWH);
 	atmosphericsPerViewConstants.Apply(pContext);
-	SetAtmosphericsConstants(atmosphericsUniforms,exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
+	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
 	ID3D1xEffectTechnique *tech=effect->GetTechniqueByName("inscatter");
 	if(depthTexture_SRV)
@@ -234,11 +235,11 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 
 	D3DXMATRIX p1=proj;
 
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,p1,proj,relativeViewportTextureRegionXYWH);
 	
 	atmosphericsPerViewConstants.Apply(pContext);
 
-	SetAtmosphericsConstants(atmosphericsUniforms,exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
+	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
 	
 	ID3D1xEffectTechnique *tech=twoPassOverlayTechnique;
@@ -286,9 +287,9 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,b
 	or.DefineFromYZ(north,toSun);
 	or.SetPosition((const float*)cam_pos);
 	D3DXMATRIX p1=proj;
-	SetAtmosphericsConstants(atmosphericsUniforms,strength*exposure,simul::sky::float4(1.0,1.0,1.0,0.0));
+	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
-	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,view,p1,proj,relativeViewportTextureRegionXYWH);
+	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,strength*exposure,view,p1,proj,relativeViewportTextureRegionXYWH);
 	SetGodraysConstants(atmosphericsPerViewConstants,view);
 
 	atmosphericsPerViewConstants.Apply(pContext);

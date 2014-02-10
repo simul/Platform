@@ -258,7 +258,12 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 		}
 		fb[i]->Deactivate(context);
 	}
+	glUseProgram(NULL);
+	
 	glUseProgram(overcast_inscatter_program);
+	
+	earthShadowUniforms.targetTextureSize=vec2((float)numFadeDistances,(float)numFadeElevations);
+	earthShadowUniforms.Apply();
 	
 	setTexture(overcast_inscatter_program,"inscTexture"			,0,(GLuint)inscatter_2d.GetColorTex());
 	setTexture(overcast_inscatter_program,"illuminationTexture"	,1,(GLuint)illumination_fb.GetColorTex());
@@ -280,21 +285,14 @@ bool SimulGLSkyRenderer::Render2DFades(void *context)
 	return true;
 }
 
-bool SimulGLSkyRenderer::RenderFades(void *,int width,int height)
+bool SimulGLSkyRenderer::RenderFades(void *,int x0,int y0,int width,int height)
 {
-	int size=width/6;
+	int size=width/3;
 	if(height/4<size)
 		size=height/4;
 	if(size<2)
 		return false;
 	int s=size/numAltitudes-2;
-	int y0=width/2;
-	int x0=8;
-	if(width>height)
-	{
-		x0=width-(size+8)*2-(s+8)*3;
-		y0=8;
-	}
 	int y=y0+8;
 	static int main_viewport[]={0,0,1,1};
 	glGetIntegerv(GL_VIEWPORT,main_viewport);
@@ -501,7 +499,7 @@ void SimulGLSkyRenderer::RenderSun(void *,float exposure)
 	glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);
 	glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); 
 
-	RenderAngledQuad(sun_dir,skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f);
+	RenderAngledQuad(sun_dir,sun_angular_radius);
 	glUseProgram(0);
 }
 
@@ -691,6 +689,7 @@ GL_ERROR_CHECK
 	skyConstants					.LinkToProgram(illumination_buffer_program	,"SkyConstants"		,10);
 	skyConstants					.LinkToProgram(overcast_inscatter_program	,"SkyConstants"		,10);
 	earthShadowUniforms				.LinkToProgram(illumination_buffer_program	,"EarthShadowUniforms",9);
+//	earthShadowUniforms				.LinkToProgram(overcast_inscatter_program	,"EarthShadowUniforms"	,9);
 	earthShadowUniforms				.LinkToProgram(overcast_inscatter_program	,"EarthShadowUniforms",9);
 }
 

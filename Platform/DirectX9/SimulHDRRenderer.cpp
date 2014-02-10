@@ -48,10 +48,6 @@ SimulHDRRenderer::SimulHDRRenderer(int width,int height) :
 	m_pBufferVertexDecl(NULL),
 	m_pd3dDevice(NULL),
 	m_pTonemapEffect(NULL),
-	hdr_buffer_texture(NULL),
-	faded_texture(NULL),
-	buffer_depth_texture(NULL),
-	depth_alpha_texture(NULL),
 	m_pHDRRenderTarget(NULL),
 	m_pBufferDepthSurface(NULL),
 	m_pFadedRenderTarget(NULL),
@@ -96,7 +92,6 @@ void SimulHDRRenderer::RestoreDeviceObjects(void *dev)
 void SimulHDRRenderer::InvalidateDeviceObjects()
 {
 	HRESULT hr=S_OK;
-	SAFE_RELEASE(depth_alpha_texture);
 	SAFE_RELEASE(m_pBufferVertexDecl);
 	SAFE_RELEASE(m_pHDRRenderTarget);
 	SAFE_RELEASE(m_pBufferDepthSurface);
@@ -104,9 +99,6 @@ void SimulHDRRenderer::InvalidateDeviceObjects()
 	if(m_pTonemapEffect)
         hr=m_pTonemapEffect->OnLostDevice();
 	SAFE_RELEASE(m_pTonemapEffect);
-	SAFE_RELEASE(hdr_buffer_texture);
-	SAFE_RELEASE(faded_texture);
-	SAFE_RELEASE(buffer_depth_texture);
 }
 
 SimulHDRRenderer::~SimulHDRRenderer()
@@ -147,7 +139,6 @@ void SimulHDRRenderer::SetBufferSize(int w,int h)
 bool SimulHDRRenderer::CreateBuffers()
 {
 	HRESULT hr=S_OK;
-	SAFE_RELEASE(hdr_buffer_texture);
 #ifndef XBOX
 	D3DFORMAT hdr_format=D3DFMT_A16B16G16R16F;
 #else
@@ -161,36 +152,7 @@ bool SimulHDRRenderer::CreateBuffers()
 		hdr_format=D3DFMT_LIN_A32B32G32R32F;
 #endif
 	B_RETURN(CanUseTexFormat(m_pd3dDevice,hdr_format));
-	B_RETURN(m_pd3dDevice->CreateTexture(	BufferWidth,
-											BufferHeight,
-											1,
-											D3DUSAGE_RENDERTARGET,
-											hdr_format,
-											D3DPOOL_DEFAULT,
-											&hdr_buffer_texture,
-											NULL
-										));
 	
-	SAFE_RELEASE(depth_alpha_texture);
-	B_RETURN(m_pd3dDevice->CreateTexture(	BufferWidth,
-											BufferHeight,
-											1,
-											D3DUSAGE_RENDERTARGET,
-											hdr_format,
-											D3DPOOL_DEFAULT,
-											&depth_alpha_texture,
-											NULL
-										));
-	SAFE_RELEASE(faded_texture);
-	B_RETURN(m_pd3dDevice->CreateTexture(	BufferWidth,
-											BufferHeight,
-											1,
-											D3DUSAGE_RENDERTARGET,
-											hdr_format,
-											D3DPOOL_DEFAULT,
-											&faded_texture,
-											NULL
-										));
 	
 	// For a HUD, we use D3DDECLUSAGE_POSITIONT instead of D3DDECLUSAGE_POSITION
 	D3DVERTEXELEMENT9 decl[] = 
@@ -218,10 +180,6 @@ bool SimulHDRRenderer::CreateBuffers()
 	m_pd3dDevice->GetDirect3D(&d3d);
 	B_RETURN(d3d->GetAdapterDisplayMode( D3DADAPTER_DEFAULT, &d3ddm ));
 	SAFE_RELEASE(m_pHDRRenderTarget);
-	m_pHDRRenderTarget=MakeRenderTarget(hdr_buffer_texture);
-	SAFE_RELEASE(m_pFadedRenderTarget)
-	m_pFadedRenderTarget=MakeRenderTarget(faded_texture);
-	SAFE_RELEASE(buffer_depth_texture);
 	// Try creating a depth texture
 	if(fmtDepthTex!=D3DFMT_UNKNOWN)
 	{
@@ -237,8 +195,6 @@ bool SimulHDRRenderer::CreateBuffers()
 		hr=S_OK;
 	}
 	SAFE_RELEASE(m_pBufferDepthSurface);
-	if(buffer_depth_texture)
-		m_pBufferDepthSurface=MakeRenderTarget(buffer_depth_texture);
 	return (hr==S_OK);
 }
 
@@ -254,41 +210,9 @@ LPDIRECT3DSURFACE9 SimulHDRRenderer::MakeRenderTarget(const LPDIRECT3DTEXTURE9 p
 }
 static float depth_start=1.f;
 
-bool SimulHDRRenderer::StartRender()
-{
-	return (true);
-}
-
 bool SimulHDRRenderer::CopyDepthAlpha()
 {
-	D3DXMATRIX view;
-#ifndef XBOX
-	m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
-#endif
-	// Unselect the current rt
-	HRESULT hr=m_pd3dDevice->SetRenderTarget(0,m_pOldRenderTarget);
-	LPDIRECT3DSURFACE9		depthAlphaRenderTarget=NULL;
-	if(depth_alpha_texture)
-		depthAlphaRenderTarget=MakeRenderTarget(depth_alpha_texture);
-	else
 		return false;
-	// Copy its surface to the depth texture.
-	hr=m_pd3dDevice->StretchRect(	m_pHDRRenderTarget,
-									NULL,
-									depthAlphaRenderTarget,
-									NULL,
-									D3DTEXF_NONE	);
-	SAFE_RELEASE(depthAlphaRenderTarget);
-	// copy the render surface to the depth surface depth_alpha_texture
-	hr=m_pd3dDevice->SetRenderTarget(0,m_pHDRRenderTarget);
-	//if(atmospherics)
-	//	atmospherics->SetInputTextures(depth_alpha_texture,buffer_depth_texture);
-	return (hr==S_OK);
-}
-
-bool SimulHDRRenderer::FinishRender(void *)
-{
-	return true;
 }
 
 void SimulHDRRenderer::Render(void *context,void *tex)
@@ -301,9 +225,9 @@ void SimulHDRRenderer::Render(void *context,void *tex)
 
 //	B_RETURN(m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET,0xFF000000,depth_start,0L));
 	m_pTonemapEffect->SetTechnique(ToneMapTechnique);
-	(m_pTonemapEffect->SetFloat(Exposure_,Exposure));
-	(m_pTonemapEffect->SetFloat(Gamma_,Gamma));
-	(m_pTonemapEffect->SetTexture(hdrTexture,(LPDIRECT3DBASETEXTURE9)tex));
+	m_pTonemapEffect->SetFloat(Exposure_,Exposure);
+	m_pTonemapEffect->SetFloat(Gamma_,Gamma);
+	m_pTonemapEffect->SetTexture(hdrTexture,(LPDIRECT3DBASETEXTURE9)tex);
 
 	DrawFullScreenQuad(m_pd3dDevice,m_pTonemapEffect);
 

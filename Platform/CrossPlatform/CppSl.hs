@@ -106,7 +106,7 @@
 	struct vec2
 	{
 		float x,y;
-		vec2(float X=0.f,float Y=0.f)
+		vec2(float X=0.0,float Y=0.0)
 			:x(X),y(Y)
 		{
 		}

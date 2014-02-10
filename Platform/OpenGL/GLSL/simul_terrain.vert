@@ -1,7 +1,4 @@
 #version 140
-//#extension GL_EXT_geometry_shader4 : enable
-// simul_terrain.vert - an OGLSL vertex shader
-// Copyright 2012 Simul Software Ltd
 
 uniform mat4 worldViewProj;
 in vec3 vertex;

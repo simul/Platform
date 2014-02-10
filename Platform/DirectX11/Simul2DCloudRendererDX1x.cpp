@@ -294,8 +294,7 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	
 	static float ff=10000.f; 
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
-	float ir_integration_factors[]={0,0,0,0};
-	Set2DCloudConstants(cloud2DConstants,view,proj,exposure,viewportTextureRegionXYWH,ir_integration_factors);
+	Set2DCloudConstants(cloud2DConstants,view,proj,exposure,viewportTextureRegionXYWH);
 	cloud2DConstants.Apply(pContext);
 
 	ID3D11InputLayout* previousInputLayout;
@@ -339,7 +338,7 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	return true;
 }
 
-void Simul2DCloudRendererDX11::RenderCrossSections(void *context,int width,int height)
+void Simul2DCloudRendererDX11::RenderCrossSections(void *context,int x0,int y0,int width,int height)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	static int u=8;
@@ -372,6 +371,10 @@ void Simul2DCloudRendererDX11::RenderCrossSections(void *context,int width,int h
 	cloud2DConstants.Apply(pContext);
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(3)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("show_detail_texture"));
 		
+}
+
+void Simul2DCloudRendererDX11::RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height)
+{
 }
 
 void Simul2DCloudRendererDX11::SetLossTexture(void *t)

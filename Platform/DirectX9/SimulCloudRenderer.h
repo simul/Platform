@@ -28,6 +28,7 @@
 	#pragma warning(disable:4251)
 #endif
 
+typedef long HRESULT;
 namespace simul
 {
 	namespace sound
@@ -37,8 +38,8 @@ namespace simul
 			class NodeSound;
 		}
 	}
-}
-typedef long HRESULT;
+	namespace dx9
+	{
 //! A cloud rendering class. Create an instance of this class within a DirectX program,
 //! or use SimulWeatherRenderer to manage cloud and sky rendering together.
 SIMUL_DIRECTX9_EXPORT_CLASS SimulCloudRenderer
@@ -79,8 +80,8 @@ public:
 	{
 		return (LPDIRECT3DTEXTURE9)noise_fb.GetColorTex();
 	}
-	void RenderCrossSections(void *,int width,int height);
-	void RenderAuxiliaryTextures(void *context,int width,int height);
+			void RenderCrossSections(void *context,int x0,int y0,int width,int height);
+			void RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height);
 	bool RenderLightVolume();
 	void EnableFilter(bool f);
 	bool IsYVertical() const{return y_vertical;}
@@ -95,7 +96,7 @@ protected:
 	void EnsureTextureCycle();
 
 	void NumBuffersChanged();
-	//bool y_vertical;
+
 	void InternalRenderHorizontal(int viewport_id);
 	void InternalRenderRaytrace(int viewport_id);
 	void InternalRenderVolumetric(int viewport_id);
@@ -195,6 +196,8 @@ protected:
 	float last_time;
 	bool rebuild_shaders;
 };
+	}
+}
 #ifdef _MSC_VER
 	#pragma warning(pop)
 #endif

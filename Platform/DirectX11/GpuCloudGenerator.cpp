@@ -132,8 +132,7 @@ void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_sr
 void GpuCloudGenerator::FillDensityGrid(int index
 										,const clouds::GpuCloudsParameters &params
 										,int start_texel
-										,int texels
-										,const simul::clouds::MaskMap &masks)
+										,int texels)
 {
 	if(texels<=0)
 		return;
@@ -143,6 +142,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 	mask_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]);
 
 	mask_fb.Activate(m_pImmediateContext);
+	const simul::clouds::MaskMap &masks=*params.masks;
 	if(masks.size())
 	{
 		mask_fb.Clear(m_pImmediateContext,0.f,0.f,0.f,0.f,0.f);
@@ -213,7 +213,12 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 		return;
 	start_texel*=2;
 	texels*=2;
-	int gridsize=params.light_grid[0]*params.light_grid[1]*params.light_grid[2];
+	const int *light_grid=NULL;
+	if(light_index==0)
+		light_grid=params.density_grid;
+	else
+		light_grid=params.light_grid;
+	int gridsize=light_grid[0]*light_grid[1]*light_grid[2];
 	if(start_texel<0)
 		start_texel=0;
 	if(start_texel>gridsize)
@@ -221,19 +226,27 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	if(start_texel+texels>gridsize)
 		texels=gridsize-start_texel;
 	directLightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice
-				,params.light_grid[0],params.light_grid[1],params.light_grid[2]
+				,light_grid[0],light_grid[1],light_grid[2]
 				,DXGI_FORMAT_R32_FLOAT,true);
 	indirectLightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice
-				,params.light_grid[0],params.light_grid[1],params.light_grid[2]
+				,light_grid[0],light_grid[1],light_grid[2]
 				,DXGI_FORMAT_R32_FLOAT,true);
 
 	ID3D1xEffectShaderResourceVariable*	densityTexture		=effect->GetVariableByName("densityTexture")->AsShaderResource();
 	//SetGpuCloudConstants(gpuCloudConstants);
 	gpuCloudConstants.yRange			=vec4(0.0,1.0,0,0);
+	if(light_index==0)
+	{
+		gpuCloudConstants.extinctions		=vec2(params.lightspace_extinctions[2],params.lightspace_extinctions[3]);
+		gpuCloudConstants.transformMatrix	=params.Matrix4x4AmbientToDensityTexcoords;
+	}
+	else
+	{
+		gpuCloudConstants.extinctions		=vec2(params.lightspace_extinctions[0],params.lightspace_extinctions[1]);
 	gpuCloudConstants.transformMatrix	=params.Matrix4x4LightToDensityTexcoords;
+	}
 	gpuCloudConstants.transformMatrix.transpose();
-	gpuCloudConstants.extinctions		=params.lightspace_extinctions;
-	gpuCloudConstants.zPixelLightspace	=(1.f/(float)params.light_grid[2]);
+	gpuCloudConstants.zPixelLightspace	=(1.f/(float)light_grid[2]);
 
 	//transformMatrix * (0,0,1)
 	simul::sky::float4 step(gpuCloudConstants.transformMatrix._31,gpuCloudConstants.transformMatrix._32,gpuCloudConstants.transformMatrix._33,0);
@@ -242,9 +255,9 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	step*=gpuCloudConstants.zPixelLightspace;
 	step*=simul::sky::float4(params.DensityGridScalesM[0],params.DensityGridScalesM[1],params.DensityGridScalesM[2],1.0);
 	gpuCloudConstants.stepLength		=simul::sky::length(step); 
-	if(params.wrap_light_tex)
+	if(params.wrap_light_tex[light_index])
 		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pWwcSamplerState);
-	else if(params.light_grid[0]>params.light_grid[1])
+	else if(light_grid[0]>light_grid[1])
 		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pWccSamplerState);
 	else
 		simul::dx11::setSamplerState(effect,"lightSamplerState",m_pCwcSamplerState);
@@ -254,14 +267,14 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	static const int BLOCKWIDTH=8;
 	static const int BLOCKSIZE=BLOCKWIDTH*BLOCKWIDTH;
 	uint3 subgrid;
-	subgrid.x=(params.light_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
-	subgrid.y=(params.light_grid[1]+BLOCKWIDTH-1)/BLOCKWIDTH;
-	subgrid.z=(params.light_grid[2]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.x=(light_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.y=(light_grid[1]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.z=(light_grid[2]+BLOCKWIDTH-1)/BLOCKWIDTH;
 	int subgridsize=subgrid.x*subgrid.y*subgrid.z;
 
 	// discard z dimension:
-	int t0	=(start_texel)/params.light_grid[2];
-	int t1	=(start_texel+texels+params.light_grid[2]-1)/params.light_grid[2];
+	int t0	=(start_texel)/light_grid[2];
+	int t1	=(start_texel+texels+light_grid[2]-1)/light_grid[2];
 	int t	=t1-t0;
 	// which blocks to execute?
 	int x0	=t0/BLOCKSIZE/subgrid.y;
@@ -275,8 +288,8 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 		ApplyPass(m_pImmediateContext,lightingComputeTechnique->GetPassByIndex(0));
 		m_pImmediateContext->Dispatch(x1-x0,subgrid.y,1);
 	}
-	int z0	=start_texel/params.light_grid[1]/params.light_grid[0];
-	int z1	=(start_texel+texels+params.light_grid[1]*params.light_grid[0]-1)/params.light_grid[1]/params.light_grid[0];
+	int z0	=start_texel/light_grid[1]/light_grid[0];
+	int z1	=(start_texel+texels+light_grid[1]*light_grid[0]-1)/light_grid[1]/light_grid[0];
 	if(z1>z0)
 	{
 		if(harmonic_secondary)
@@ -313,31 +326,29 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	}
 }
 
-void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index,unsigned char *target
-												,const float *DensityToLightTransform
-												,const float *light,const int *light_grid
-												,const float *ambient,const int *density_grid
+void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
+												,const clouds::GpuCloudsParameters &params
+												,unsigned char *target
 												,int start_texel
-												,int texels
-												,bool wrap_light_tex)
+												,int texels)
 {
 	if(texels<=0)
 		return;
-	int density_gridsize				=density_grid[0]*density_grid[1]*density_grid[2];
+	int density_gridsize				=params.density_grid[0]*params.density_grid[1]*params.density_grid[2];
 
-	int z0								=start_texel/(density_grid[0]*density_grid[1]);
-	int z1								=(start_texel+texels)/(density_grid[0]*density_grid[1]);
-	int zmax							=density_grid[2];
+	int z0								=start_texel/(params.density_grid[0]*params.density_grid[1]);
+	int z1								=(start_texel+texels)/(params.density_grid[0]*params.density_grid[1]);
+	int zmax							=params.density_grid[2];
 
 	float y_start						=(float)z0/(float)zmax;
 	float y_range						=(float)z1/(float)zmax-y_start;
 	gpuCloudConstants.yRange			=vec4(y_start,y_range,0,0);
-	gpuCloudConstants.transformMatrix	=DensityToLightTransform;
+	gpuCloudConstants.transformMatrix	=params.Matrix4x4DensityToLightTransform;
 	gpuCloudConstants.transformMatrix.transpose();
 
-	gpuCloudConstants.zSize				=((float)density_grid[2]);
-	gpuCloudConstants.zPixel			=(1.f/(float)density_grid[2]);
-	gpuCloudConstants.zPixelLightspace	=(1.f/(float)light_grid[2]);
+	gpuCloudConstants.zSize				=((float)params.density_grid[2]);
+	gpuCloudConstants.zPixel			=(1.f/(float)params.density_grid[2]);
+	gpuCloudConstants.zPixelLightspace	=(1.f/(float)params.light_grid[2]);
 
 	setTexture(effect,"densityTexture"		,density_texture.shaderResourceView);
 	setTexture(effect,"ambientTexture1"		,directLightTextures[0].shaderResourceView);
@@ -348,15 +359,15 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index,unsigned char 
 	gpuCloudConstants.Apply(m_pImmediateContext);
 	for(int i=0;i<3;i++)
 	{
-		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,density_grid[0],density_grid[1],density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
+		finalTexture[i]->ensureTexture3DSizeAndFormat(m_pd3dDevice,params.density_grid[0],params.density_grid[1],params.density_grid[2],DXGI_FORMAT_R8G8B8A8_UNORM,true);
 	}
 	// divide the grid into 8x8x8 blocks:
 	static const int BLOCKWIDTH=8;
 	static const int BLOCKSIZE=BLOCKWIDTH*BLOCKWIDTH*BLOCKWIDTH;
 	uint3 subgrid;
-	subgrid.x=(density_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
-	subgrid.y=(density_grid[1]+BLOCKWIDTH-1)/BLOCKWIDTH;
-	subgrid.z=(density_grid[2]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.x=(params.density_grid[0]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.y=(params.density_grid[1]+BLOCKWIDTH-1)/BLOCKWIDTH;
+	subgrid.z=(params.density_grid[2]+BLOCKWIDTH-1)/BLOCKWIDTH;
 	int subgridsize=subgrid.x*subgrid.y*subgrid.z;
 	// which blocks to execute?
 	int x0	=start_texel/BLOCKSIZE/subgrid.y/subgrid.z;

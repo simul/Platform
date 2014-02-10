@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <stdint.h>  // for uintptr_t
+
 using namespace simul;
 using namespace opengl;
 
@@ -312,14 +313,12 @@ simul::math::Matrix4x4 ConvertReversedToRegularProjectionMatrix(const simul::mat
 static float transitionDistance=0.01f;
 //we require texture updates to occur while GL is active
 // so better to update from within Render()
-bool SimulGLCloudRenderer::Render(void *,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
+bool SimulGLCloudRenderer::Render(void *,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
-	simul::opengl::ProfileBlock profileBlock("SimulCloudRendererDX1x::Render");
-	simul::base::Timer timer;
-	timer.StartTime();
+	simul::opengl::ProfileBlock profileBlock("SimulGLCloudRenderer::Render");
 GL_ERROR_CHECK
 	cubemap;
 //cloud buffer alpha to screen = ?
@@ -419,8 +418,6 @@ GL_ERROR_CHECK
 	
 	static simul::sky::float4 scr_offset(0,0,0,0);
 	
-GL_ERROR_CHECK
-float time=skyInterface->GetTime();
 //const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
 	//CloudPerViewConstants cloudPerViewConstants;
@@ -480,10 +477,6 @@ GL_ERROR_CHECK
 	helper->Update2DNoiseCoords();
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply();
-/*	glBindBuffer(GL_UNIFORM_BUFFER,cloudConstantsUBO);
-	glBufferSubData(GL_UNIFORM_BUFFER,0,sizeof(CloudConstants),&cloudConstants);
-	glBindBuffer(GL_UNIFORM_BUFFER,0);*
-	glBindBufferBase(GL_UNIFORM_BUFFER,cloudConstantsBindingIndex,cloudConstantsUBO);*/
 
 	//UPDATE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,cloudPerViewConstants,cloudPerViewConstantsBindingIndex)
 	cloudPerViewConstants.layerIndex=18;
@@ -531,7 +524,7 @@ GL_ERROR_CHECK
 		const simul::clouds::CloudGeometryHelper::IntVector &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
 		int layer=(int)helper->GetSlices().size()-1-idx;
-		setParameter(program,"layerNumber",layer);
+//		setParameter(program,"layerNumber",layer);
 		const LayerData &L=layerConstants.layers[helper->GetSlices().size()-1-idx];
 		singleLayerConstants.noiseOffset_	=L.noiseOffset;
 		singleLayerConstants.layerFade_		=L.layerFade;
@@ -568,8 +561,6 @@ GL_ERROR_CHECK
 	glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
 	glPopAttrib();
 GL_ERROR_CHECK
-	timer.FinishTime();
-	gpu_time=profileBlock.GetTime();
 	return true;
 }
 
@@ -610,18 +601,11 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 	skylightSampler_param			=glGetUniformLocation(program,"skylightSampler");
 	depthTexture					=glGetUniformLocation(program,"depthTexture");
 
-	//GLint cloudConstants			=glGetUniformBlockIndex(program,"CloudConstants");
-	//GLint cloudPerViewConstants		=glGetUniformBlockIndex(program,"CloudPerViewConstants");
-	//directLightMultiplier	=glGetUniformLocation(current_program,"directLightMultiplier");
 GL_ERROR_CHECK
 	// If that block IS in the shader program, then BIND it to the relevant UBO.
 	cloudConstants.LinkToProgram(program,"CloudConstants",2);
 layerConstants.LinkToProgram(program,"LayerConstants",4);
 singleLayerConstants.LinkToProgram(program,"SingleLayerConstants",5);
-	//if(cloudConstants>=0)
-	//	glUniformBlockBinding(program,cloudConstants,cloudConstantsBindingIndex);
-	//if(cloudPerViewConstants>=0)
-	//	glUniformBlockBinding(program,cloudPerViewConstants,cloudPerViewConstantsBindingIndex);
 	cloudPerViewConstants.LinkToProgram(program,"CloudPerViewConstants",13);
 GL_ERROR_CHECK
 	
@@ -682,13 +666,10 @@ void SimulGLCloudRenderer::RestoreDeviceObjects(void *)
 	init=true;
 	gpuCloudGenerator.RestoreDeviceObjects(NULL);
 	
-	//MAKE_GL_CONSTANT_BUFFER(cloudConstantsUBO,CloudConstants,cloudConstantsBindingIndex);
 	cloudConstants.RestoreDeviceObjects();
-	//MAKE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,LayerConstants,layerDataConstantsBindingIndex);
 	layerConstants.RestoreDeviceObjects();
 	singleLayerConstants.RestoreDeviceObjects();
 	cloudPerViewConstants.RestoreDeviceObjects();
-	//MAKE_GL_CONSTANT_BUFFER(cloudPerViewConstantsUBO,CloudPerViewConstants,cloudPerViewConstantsBindingIndex);
 
 	RecompileShaders();
 	//CreateVolumeNoise();
@@ -956,7 +937,7 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 	::DrawLines(vertices,vertex_count,strip);
 }
 
-void SimulGLCloudRenderer::RenderCrossSections(void *,int width,int height)
+void SimulGLCloudRenderer::RenderCrossSections(void *context,int x0,int y0,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;

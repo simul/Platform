@@ -75,7 +75,6 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 	tex2dDesc.MiscFlags			=D3D11_RESOURCE_MISC_TEXTURECUBE;
  
 	sphericalHarmonicsConstants.RestoreDeviceObjects(pd3dDevice);
-
 	// Create the depth stencil view for the entire cube
 	D3D11_DEPTH_STENCIL_VIEW_DESC DescDS;
     ZeroMemory( &DescDS, sizeof( DescDS ) );
@@ -103,7 +102,6 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 	tex2dDesc.MipLevels =MIPLEVELS;
  
 	V_CHECK(pd3dDevice->CreateTexture2D(&tex2dDesc,NULL,&m_pCubeEnvMap));
-
 	// Create the 6-face render target view
 	D3D1x_RENDER_TARGET_VIEW_DESC DescRT;
 	DescRT.Format							=tex2dDesc.Format;
@@ -118,7 +116,6 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 		DescRT.Texture2DArray.ArraySize			=1;
 		V_CHECK(pd3dDevice->CreateRenderTargetView(m_pCubeEnvMap, &DescRT, &(m_pCubeEnvMapRTV[i])));
 	}
-	
 	// Create the shader resource view for the cubic env map
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 	ZeroMemory(&SRVDesc,sizeof(SRVDesc));
@@ -140,7 +137,6 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 	 
 	V_CHECK(pd3dDevice->CreateShaderResourceView(m_pCubeEnvDepthMap,&SRVDesc,&m_pCubeEnvMapDepthSRV));*/
 }
-
 ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *pd3dDevice,int w,DXGI_FORMAT target_format)
 {
 	D3D11_TEXTURE2D_DESC tex2dDesc;
@@ -166,6 +162,7 @@ void CubemapFramebuffer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pCubeEnvMap);
 	for(int i=0;i<6;i++)
 	{
+		SAFE_RELEASE(m_pCubeEnvDepthMap[i]);
 		SAFE_RELEASE(m_pCubeEnvMapRTV[i]);
 		SAFE_RELEASE(m_pCubeEnvDepthMapDSV[i]);
 		SAFE_RELEASE(m_pCubeEnvDepthMapSRV[i]);

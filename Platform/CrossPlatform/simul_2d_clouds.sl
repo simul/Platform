@@ -7,7 +7,7 @@ float NoiseFunction(Texture2D noiseTexture,vec2 pos,float octaves,float persiste
 	float mult=0.5;
 	float sum=0.0;
 	float t=time;
-	int i_oct=int(octaves+1.f);
+	int i_oct=int(octaves+1.0);
 	for(int i=0;i<5;i++)
 	{
 		if(i>=i_oct)
@@ -69,7 +69,7 @@ vec3 ApplyEarthshadowFade(Texture2D illuminationTexture
 
 vec3 InscatterFunction2(vec4 inscatter_factor,float hazeEccentricity,float cos0,vec3 mieRayleighRatio)
 {
-	float BetaRayleigh=0.0596831*(1.0+cos0*cos0);
+	float BetaRayleigh=CalcRayleighBeta(cos0);
 	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
 	vec3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz);
 		//(vec3(1.0,1.0,1.0)+0*inscatter_factor.a*mieRayleighRatio.xyz);*/
@@ -131,7 +131,8 @@ vec4 Clouds2DPS(Texture2D imageTexture,Texture2D coverageTexture
 	return		final;
 }
 
-vec4 Clouds2DPS_illum(Texture2D imageTexture,Texture2D coverageTexture
+vec4 Clouds2DPS_illum(Texture2D imageTexture
+						,Texture2D coverageTexture
 						,Texture2D illuminationTexture
 						,Texture2D lossTexture
 						,Texture2D inscTexture

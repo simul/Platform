@@ -10,6 +10,7 @@
 
 #include "Profiler.h"
 #include "DX11Exception.h"
+#include "Utilities.h"
 
 using namespace simul;
 using namespace dx11;
@@ -43,7 +44,11 @@ Profiler::~Profiler()
 
 void Profiler::Uninitialize()
 {
-	//std::cout<<"Profiler::Uninitialize device was "<<(unsigned)device<<std::endl;
+    for(ProfileMap::iterator iter = profiles.begin(); iter != profiles.end(); iter++)
+    {
+        ProfileData *profile = (*iter).second;
+		delete profile;
+	}
 	profiles.clear();
     this->device = NULL;
     enabled=true;
@@ -55,6 +60,13 @@ void Profiler::Initialize(ID3D11Device* device)
     enabled=true;
 //	std::cout<<"Profiler::Initialize device "<<(unsigned)device<<std::endl;
 }
+ID3D11Query *CreateQuery(ID3D11Device* device,D3D11_QUERY_DESC &desc,const char *name)
+{
+	ID3D11Query *q=NULL;
+    DXCall(device->CreateQuery(&desc, &q));
+	SetDebugObjectName( q, name );
+	return q;
+}
 
 void Profiler::Begin(void *ctx,const char *name)
 {
@@ -64,31 +76,35 @@ void Profiler::Begin(void *ctx,const char *name)
 	last_context.push_back(context);
 	if(!context||!enabled||!device)
         return;
-    ProfileData& profileData = profiles[name];
-    _ASSERT(profileData.QueryStarted == FALSE);
-    if(profileData.QueryFinished!= FALSE)
+	if(profiles.find(name)==profiles.end())
+		profiles[name]=new ProfileData;
+    ProfileData *profileData = profiles[name];
+    _ASSERT(profileData->QueryStarted == FALSE);
+    if(profileData->QueryFinished!= FALSE)
         return;
     
-    if(profileData.DisjointQuery[currFrame] == NULL)
+    if(profileData->DisjointQuery[currFrame] == NULL)
     {
         // Create the queries
         D3D11_QUERY_DESC desc;
         desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
         desc.MiscFlags = 0;
-        DXCall(device->CreateQuery(&desc, &profileData.DisjointQuery[currFrame]));
-
+		std::string disjointName="disjoint";
+		std::string startName	="start";
+		std::string endName		="end";
+		profileData->DisjointQuery[currFrame]		=CreateQuery(device,desc,disjointName.c_str());
         desc.Query = D3D11_QUERY_TIMESTAMP;
-        DXCall(device->CreateQuery(&desc, &profileData.TimestampStartQuery[currFrame]));
-        DXCall(device->CreateQuery(&desc, &profileData.TimestampEndQuery[currFrame]));
+        profileData->TimestampStartQuery[currFrame]	=CreateQuery(device,desc, startName.c_str());
+        profileData->TimestampEndQuery[currFrame]	=CreateQuery(device,desc, endName.c_str());
     }
 
     // Start a disjoint query first
-    context->Begin(profileData.DisjointQuery[currFrame]);
+    context->Begin(profileData->DisjointQuery[currFrame]);
 
     // Insert the start timestamp    
-    context->End(profileData.TimestampStartQuery[currFrame]);
+    context->End(profileData->TimestampStartQuery[currFrame]);
 
-    profileData.QueryStarted = TRUE;
+    profileData->QueryStarted = TRUE;
 }
 
 void Profiler::End()
@@ -99,19 +115,20 @@ void Profiler::End()
 	last_context.pop_back();
     if(!enabled||!device||!context)
         return;
-    ProfileData& profileData = profiles[name];
-    if(profileData.QueryStarted != TRUE)
+
+    ProfileData *profileData = profiles[name];
+    if(profileData->QueryStarted != TRUE)
 		return;
-    _ASSERT(profileData.QueryFinished == FALSE);
+    _ASSERT(profileData->QueryFinished == FALSE);
 
     // Insert the end timestamp    
-	context->End(profileData.TimestampEndQuery[currFrame]);
+    context->End(profileData->TimestampEndQuery[currFrame]);
 
     // End the disjoint query
-    context->End(profileData.DisjointQuery[currFrame]);
+    context->End(profileData->DisjointQuery[currFrame]);
 
-    profileData.QueryStarted = FALSE;
-    profileData.QueryFinished = TRUE;
+    profileData->QueryStarted = FALSE;
+    profileData->QueryFinished = TRUE;
 }
 template<typename T> inline std::string ToString(const T& val)
 {
@@ -134,7 +151,7 @@ void Profiler::EndFrame(ID3D11DeviceContext* context)
     ProfileMap::iterator iter;
     for(iter = profiles.begin(); iter != profiles.end(); iter++)
     {
-        ProfileData& profile = (*iter).second;
+        ProfileData& profile = *((*iter).second);
         if(profile.QueryFinished == FALSE)
             continue;
 
@@ -167,7 +184,7 @@ void Profiler::EndFrame(ID3D11DeviceContext* context)
         }        
 
         output+= (*iter).first + ": " + ToString(time) + "ms\n";
-        iter->second.time=time;
+        iter->second->time=time;
     }
 
     output+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
@@ -177,7 +194,7 @@ float Profiler::GetTime(const std::string &name) const
 {
     if(!enabled||!device)
 		return 0.f;
-	return profiles.find(name)->second.time;
+	return profiles.find(name)->second->time;
 }
 #include "Simul/Base/StringFunctions.h"
 const char *Profiler::GetDebugText() const
@@ -188,7 +205,7 @@ const char *Profiler::GetDebugText() const
 	{
 		str+=i->first.c_str();
 		str+=" ";
-		str+=simul::base::stringFormat("%4.4g\n",i->second.time);
+		str+=simul::base::stringFormat("%4.4g\n",i->second->time);
 	}
 	return str.c_str();
 }

@@ -43,6 +43,7 @@
 #include "Simul/Base/Timer.h"
 #include "Simul/Base/ProfilingInterface.h"
 #include "MacrosDX1x.h"
+
 #include "Simul/Platform/DirectX11/Export.h"
 namespace simul
 {
@@ -102,7 +103,7 @@ namespace simul
 				}
 			};
 
-			typedef std::map<std::string, ProfileData> ProfileMap;
+			typedef std::map<std::string, ProfileData*> ProfileMap;
 
 			ProfileMap profiles;
 			UINT64 currFrame;

@@ -944,7 +944,7 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 		{
 			for(size_t j=0;j<tiles.size();j++)
 			{
-				float float_mip=GetMip(i,j);
+				float float_mip=GetMip((int)i,(int)j);
 					if(only&&(i!=0||j!=0))
 						continue;
 				simul::sky::float4 morph(float_mip/mip_scale,float_mip/mip_scale,0,0);

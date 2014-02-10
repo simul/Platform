@@ -103,7 +103,7 @@ float HenyeyGreenstein(float g,float cos0)
 
 float3 InscatterFunction(float4 inscatter_factor,float cos0)
 {
-	float BetaRayleigh=0.0596831f*(1.f+cos0*cos0);
+	float BetaRayleigh=CalcRayleighBeta(cos0);
 	float BetaMie=HenyeyGreenstein(hazeEccentricity,cos0);		// Mie's phase function
 	float3 BetaTotal=(BetaRayleigh+BetaMie*inscatter_factor.a*mieRayleighRatio.xyz)
 		/(float3(1.f,1.f,1.f)+inscatter_factor.a*mieRayleighRatio.xyz);

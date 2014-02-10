@@ -16,6 +16,7 @@
 #include <assert.h>
 
 #include "Simul/Sky/Float4.h"
+#include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
@@ -382,6 +383,12 @@ void Framebuffer::SaveOldRTs(void *context)
 									);
 }
 
+bool Framebuffer::IsValid() const
+{
+	bool ok=(m_pHDRRenderTarget!=NULL)||(m_pBufferDepthSurface!=NULL);
+	return ok;
+}
+
 void Framebuffer::Activate(void *context)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
@@ -390,6 +397,7 @@ void Framebuffer::Activate(void *context)
 	SaveOldRTs(context);
 	if(!hdr_buffer_texture&&!buffer_depth_texture)
 		CreateBuffers();
+	SIMUL_ASSERT(IsValid());
 	if(m_pHDRRenderTarget)
 	{
 		colour_active=true;

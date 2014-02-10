@@ -23,14 +23,19 @@ namespace simul
 	{
 		class Camera;
 	}
+	namespace scene
+	{
+		class Scene;
+		class BaseSceneRenderer;
 }
-
+	namespace opengl
+	{
 SIMUL_OPENGL_EXPORT_CLASS OpenGLRenderer
 	:public OpenGLCallbackInterface
 	,public simul::graph::meta::Group
 {
 public:
-	OpenGLRenderer(simul::clouds::Environment *env,simul::base::MemoryInterface *m,bool init_glut=true);
+			OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,bool init_glut=true);
 	virtual ~OpenGLRenderer();
 	META_BeginProperties
 		META_ValueProperty(bool,ShowCloudCrossSections,"Show cross-sections of the cloud volumes as an overlay.")
@@ -63,12 +68,14 @@ protected:
 	SimulGLHDRRenderer *simulHDRRenderer;
 	SimulOpticsRendererGL *simulOpticsRenderer;
 	class SimulGLTerrainRenderer *simulTerrainRenderer;
+			scene::BaseSceneRenderer *sceneRenderer;
 	FramebufferGL depthFramebuffer;
 	simul::camera::Camera *cam;
 	int ScreenWidth,ScreenHeight;
 	GLuint simple_program;
 };
-
+	}
+}
 #ifdef _MSC_VER
 	#pragma warning(pop)
 #endif

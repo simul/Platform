@@ -74,15 +74,27 @@
     <ClCompile Include="SimulOpticsRendererGL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RenderPlatform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Export.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FramebufferGL.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Glsl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GpuCloudGenerator.h">
@@ -142,6 +154,24 @@
     <ClInclude Include="SimulOpticsRendererGL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Glsl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPlatform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="GLSL\CppGlsl.hs">
@@ -166,9 +196,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="GLSL\simul_atmospherics.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="GLSL\simul_atmospherics_godrays.frag">
       <Filter>Shaders</Filter>
     </None>
     <None Include="GLSL\simul_cloud_cross_section.frag">
@@ -249,12 +276,6 @@
     <None Include="GLSL\simul_hdr_blur.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="GLSL\simul_insc.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="GLSL\simul_insc_earthshadow.frag">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="GLSL\simul_lightning.frag">
       <Filter>Shaders</Filter>
     </None>
@@ -262,9 +283,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="GLSL\simul_lightning.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="GLSL\simul_loss.frag">
       <Filter>Shaders</Filter>
     </None>
     <None Include="GLSL\simul_noise.frag">
@@ -277,9 +295,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="GLSL\simul_rain.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="GLSL\simul_raytrace_clouds.frag">
       <Filter>Shaders</Filter>
     </None>
     <None Include="GLSL\simul_simple_lightning.frag">
@@ -327,6 +342,9 @@
     <None Include="..\CrossPlatform\depth.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="..\CrossPlatform\simul_inscatter_fns.sl">
+      <Filter>CrossPlatform</Filter>
+    </None>
     <None Include="..\CrossPlatform\earth_shadow.sl">
       <Filter>CrossPlatform</Filter>
     </None>
@@ -351,11 +369,23 @@
     <None Include="..\CrossPlatform\simul_gpu_sky.sl">
       <Filter>CrossPlatform</Filter>
     </None>
-    <None Include="..\CrossPlatform\simul_inscatter_fns.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
     <None Include="..\CrossPlatform\simul_terrain_constants.sl">
       <Filter>CrossPlatform</Filter>
+    </None>
+    <None Include="GLSL\simul_atmospherics_godrays.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_insc.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_insc_earthshadow.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_loss.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="GLSL\simul_raytrace_clouds.frag">
+      <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

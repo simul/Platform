@@ -29,7 +29,6 @@ uniform_buffer RainPerViewConstants SIMUL_BUFFER_REGISTER(8)
 	uniform vec2 tanHalfFov;
 	uniform vec2 dumm;
 };
-
 uniform_buffer RainOsdConstants SIMUL_BUFFER_REGISTER(9)
 {
 	uniform vec4 rect;

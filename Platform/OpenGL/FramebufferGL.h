@@ -2,7 +2,7 @@
 #define FRAMEBUFFERGL_H
 
 #include <stack>
-#include <stdint.h> // for uintptr_t
+#include "stdint.h" // for uintptr_t
 #include "LoadGLImage.h"
 #include "Simul/Platform/OpenGL/Export.h"
 #include "Simul/Clouds/BaseFramebuffer.h"

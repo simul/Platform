@@ -69,22 +69,40 @@
     <ClCompile Include="SimulSkyRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulTerrainRendererDX1x.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Utilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SimulWeatherRendererDX11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Direct3D11Renderer.cpp">
+    <ClCompile Include="OceanRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OceanSimulator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CSFFT\fft_512x512.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CubemapFramebuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Direct3D11Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Framebuffer3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3D11Manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TerrainRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="PrecipitationRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TextRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -149,22 +167,46 @@
     <ClInclude Include="SimulSkyRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulTerrainRendererDX1x.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Utilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimulWeatherRendererDX11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OceanRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OceanSimulator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CSFFT\fft_512x512.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cubemapframebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Direct3D11Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CubemapFramebuffer.h">
+    <ClInclude Include="Framebuffer3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PrecipitationRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct3D11Manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct3D11ManagerInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TerrainRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TextRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -289,35 +331,38 @@
     <None Include="..\CrossPlatform\spherical_harmonics_constants.sl">
       <Filter>CrossPlatform</Filter>
     </None>
-    <None Include="..\CrossPlatform\noise.sl">
+    <None Include="CSFFT\fft_512x512_c2c.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\ocean_simulator_cs.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\ocean_simulator_vs_ps.hlsl">
+      <Filter>HLSL</Filter>
+    </None>
+    <None Include="HLSL\ocean.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="..\CrossPlatform\ocean_constants.sl">
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="..\CrossPlatform\atmospherics.sl">
       <Filter>CrossPlatform</Filter>
     </None>
-    <None Include="HLSL\mixed_resolution.fx">
-      <Filter>FX</Filter>
-    </None>
     <None Include="..\CrossPlatform\hdr_constants.sl">
       <Filter>CrossPlatform</Filter>
     </None>
-    <None Include="HLSL\rain.fx">
+    <None Include="HLSL\mixed_resolution.fx">
       <Filter>FX</Filter>
     </None>
-    <None Include="..\CrossPlatform\mixed_resolution.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="HLSL\light_probes.fx">
+    <None Include="HLSL\rain.fx">
       <Filter>FX</Filter>
     </None>
     <None Include="..\CrossPlatform\spherical_harmonics.sl">
       <Filter>CrossPlatform</Filter>
     </None>
-    <None Include="..\CrossPlatform\light_probe_constants.sl">
-      <Filter>CrossPlatform</Filter>
-    </None>
-    <None Include="..\CrossPlatform\noise_constants.sl">
-      <Filter>CrossPlatform</Filter>
+    <None Include="HLSL\font.fx">
+      <Filter>FX</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

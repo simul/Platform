@@ -45,10 +45,6 @@ SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h)
 	,exposureGammaTechnique(NULL)
 	,glowExposureGammaTechnique(NULL)
 	,glowTechnique(NULL)
-	,Exposure_(NULL)
-	,Gamma_(NULL)
-	,imageTexture(NULL)
-	//,worldViewProj(NULL)
 {
 }
 
@@ -119,11 +115,9 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	CreateEffect(m_pd3dDevice,&m_pTonemapEffect,("simul_hdr.fx"));
 	exposureGammaTechnique		=m_pTonemapEffect->GetTechniqueByName("exposure_gamma");
 	glowExposureGammaTechnique	=m_pTonemapEffect->GetTechniqueByName("glow_exposure_gamma");
+	warpExposureGamma			=m_pTonemapEffect->GetTechniqueByName("warp_exposure_gamma");
+	warpGlowExposureGamma		=m_pTonemapEffect->GetTechniqueByName("warp_glow_exposure_gamma");
 	glowTechnique				=m_pTonemapEffect->GetTechniqueByName("simul_glow");
-	Exposure_					=m_pTonemapEffect->GetVariableByName("exposure")->AsScalar();
-	Gamma_						=m_pTonemapEffect->GetVariableByName("gamma")->AsScalar();
-	imageTexture				=m_pTonemapEffect->GetVariableByName("imageTexture")->AsShaderResource();
-	//worldViewProj				=m_pTonemapEffect->GetVariableByName("worldViewProj")->AsMatrix();
 	hdrConstants.LinkToEffect(m_pTonemapEffect,"HdrConstants");
 	SAFE_RELEASE(m_pGaussianEffect);
 	
@@ -181,23 +175,72 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
 {
 	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
-	imageTexture->SetResource(textureSRV);
+	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+	textureSRV->GetDesc(&desc);
+	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+	dx11::setTexture(m_pTonemapEffect,"imageTexture",textureSRV);
+	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
 	hdrConstants.gamma=Gamma;
 	hdrConstants.exposure=Exposure;
 	hdrConstants.Apply(pContext);
-	//Gamma_->SetFloat(Gamma);
-	//Exposure_->SetFloat(Exposure);
+	simul::dx11::setParameter(m_pTonemapEffect,"offset",offsetX,0.f);
+	ID3D1xEffectTechnique *tech=exposureGammaTechnique;
+	if(Glow)
+	{
+		RenderGlowTexture(context,texture_srv);
+		tech=glowExposureGammaTechnique;
+		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
+	}
+	ApplyPass(pContext,tech->GetPassByName(msaa?"msaa":"main"));
+	simul::dx11::UtilityRenderer::DrawQuad(pContext);
+	
+	dx11::setTexture(m_pTonemapEffect,"imageTexture",NULL);
+	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",NULL);
+	hdrConstants.Unbind(pContext);
+	ApplyPass(pContext,tech->GetPassByIndex(0));
+}
+
+void SimulHDRRendererDX1x::RenderWithOculusCorrection(void *context,void *texture_srv
+	,float offsetX)
+{
+	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
+	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
+	dx11::setTexture(m_pTonemapEffect,"imageTexture",textureSRV);
+	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
+	hdrConstants.gamma				=Gamma;
+	hdrConstants.exposure			=Exposure;
+	
+	float direction=(offsetX-0.5f)*2.0f;
+	float x=offsetX/2.0f;
+	float y=0,w=0.5f,h=1.0f;
+    float as = float(640) / float(800);
+	
+	vec4 distortionK(1.0f,0.22f,0.24f,0.0f);
+    // We are using 1/4 of DistortionCenter offset value here, since it is
+    // relative to [-1,1] range that gets mapped to [0, 0.5].
+
+	float Distortion_XCenterOffset	=-direction*0.15197642f;
+	float Distortion_Scale			=1.7146056f;
+    float scaleFactor				=1.0f/Distortion_Scale;
+	hdrConstants.warpHmdWarpParam	=distortionK;
+	hdrConstants.warpLensCentre		=vec2(0.5f+Distortion_XCenterOffset*0.5f, 0.5f);
+	hdrConstants.warpScreenCentre	=vec2(0.5f,0.5f);
+	hdrConstants.warpScale			=vec2(0.5f* scaleFactor, 0.5f* scaleFactor * as);
+	hdrConstants.warpScaleIn		=vec2(2.f,2.f/ as);
+	hdrConstants.Apply(pContext);
 	simul::dx11::setParameter(m_pTonemapEffect,"offset",offsetX,0.f);
 	if(Glow)
 	{
 		RenderGlowTexture(context,texture_srv);
 		simul::dx11::setTexture(m_pTonemapEffect,"glowTexture",glowTexture.g_pSRV_Output);
-		ApplyPass(pContext,glowExposureGammaTechnique->GetPassByIndex(0));
+		ApplyPass(pContext,warpGlowExposureGamma->GetPassByIndex(0));
 	}
 	else
-		ApplyPass(pContext,exposureGammaTechnique->GetPassByIndex(0));
+		ApplyPass(pContext,warpExposureGamma->GetPassByIndex(0));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
-	imageTexture->SetResource(NULL);
+	
+	dx11::setTexture(m_pTonemapEffect,"imageTexture",NULL);
+	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",NULL);
 	hdrConstants.Unbind(pContext);
 	ApplyPass(pContext,exposureGammaTechnique->GetPassByIndex(0));
 }
@@ -217,18 +260,19 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 	if(!m_pGaussianEffect)
 		return;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
 	static int g_NumApproxPasses=3;
 	static int	g_MaxApproxPasses = 8;
 	static float g_FilterRadius = 30;
 	// Render to the low-res glow.
 	if(glowTechnique)
 	{
-		imageTexture->SetResource(textureSRV);
+		dx11::setTexture(m_pTonemapEffect,"imageTexture",textureSRV);
+		dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
 		simul::dx11::setParameter(m_pTonemapEffect,"offset",1.f/Width,1.f/Height);
-		ApplyPass(pContext,glowTechnique->GetPassByIndex(0));
+		ApplyPass(m_pImmediateContext,glowTechnique->GetPassByIndex(0));
 		glow_fb.Activate(context);
-		simul::dx11::UtilityRenderer::DrawQuad(pContext);
+		simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
 		glow_fb.Deactivate(context);
 	}
     D3D11_TEXTURE2D_DESC tex_desc;
@@ -253,14 +297,14 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 
 	// Select pass
 	gaussianColTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_col");
-	gaussianColTechnique->GetPassByIndex(0)->Apply(0,pContext);
-	pContext->Dispatch(tex_desc.Width,1,1);
+	gaussianColTechnique->GetPassByIndex(0)->Apply(0,m_pImmediateContext);
+	m_pImmediateContext->Dispatch(tex_desc.Width,1,1);
 
 	// Unbound CS resource and output
 	ID3D11ShaderResourceView* srv_array[] = {NULL, NULL, NULL, NULL};
-	pContext->CSSetShaderResources(0, 4, srv_array);
+	m_pImmediateContext->CSSetShaderResources(0, 4, srv_array);
 	ID3D11UnorderedAccessView* uav_array[] = {NULL, NULL, NULL, NULL};
-	pContext->CSSetUnorderedAccessViews(0, 4, uav_array, NULL);
+	m_pImmediateContext->CSSetUnorderedAccessViews(0, 4, uav_array, NULL);
 
 	// Step 2. Horizontal passes: Each thread group handles a row in the image
 	// Input texture
@@ -270,12 +314,12 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 
 	// Select pass
 	gaussianRowTechnique = m_pGaussianEffect->GetTechniqueByName("simul_gaussian_row");
-	gaussianRowTechnique->GetPassByIndex(0)->Apply(0,pContext);
-	pContext->Dispatch(tex_desc.Height,1,1);
+	gaussianRowTechnique->GetPassByIndex(0)->Apply(0,m_pImmediateContext);
+	m_pImmediateContext->Dispatch(tex_desc.Height,1,1);
 
 	// Unbound CS resource and output
-	pContext->CSSetShaderResources(0,4,srv_array);
-	pContext->CSSetUnorderedAccessViews(0,4,uav_array, NULL);
+	m_pImmediateContext->CSSetShaderResources(0,4,srv_array);
+	m_pImmediateContext->CSSetUnorderedAccessViews(0,4,uav_array, NULL);
 }
 
 const char *SimulHDRRendererDX1x::GetDebugText() const
