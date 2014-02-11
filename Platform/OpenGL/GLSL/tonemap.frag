@@ -9,7 +9,6 @@ void main(void)
 {
     // original image
     vec4 c = texture2D(image_texture,texCoords);
-	
     // exposure
 	c.rgb*=exposure;
 

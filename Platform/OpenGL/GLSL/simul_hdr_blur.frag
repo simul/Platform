@@ -7,7 +7,7 @@ void main(void)
 	vec4 colour	=vec4(0.0,0.0,0.0,0.0);
 	vec2 offs	=offset;
     // original image
-	for(int i=-25;i<25;i++)
+	for(int i=int(-25);i<int(25);i++)
 	{
 		vec2 d=offs*float(i);
 		vec2 t=texCoords+d;
