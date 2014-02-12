@@ -13,7 +13,6 @@
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/CrossPlatform/mixed_resolution_constants.sl"
-#include "Simul/Platform/CrossPlatform/light_probe_constants.sl"
 #pragma warning(push)
 #pragma warning(disable:4251)
 
@@ -101,7 +100,6 @@ namespace simul
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
 				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")
 				META_ValueProperty(int,Antialiasing				,"How many antialiasing samples to use.")
-				META_ValueProperty(int,SphericalHarmonicsBands	,"How many bands to use for spherical harmonics.")
 			META_EndProperties
 			bool IsEnabled()const
 			{
@@ -148,7 +146,6 @@ namespace simul
 			void RenderFadeEditView(ID3D11DeviceContext* pd3dImmediateContext);
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
 			void DownscaleDepth(int view_id,ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
-
 			void ReverseDepthChanged();
 			void EnsureCorrectBufferSizes(int view_id);
 			View *GetView(int view_id);
@@ -159,7 +156,6 @@ namespace simul
 			std::string									screenshotFilenameUtf8;
 			ID3D11Device								*m_pd3dDevice;
 			ID3DX11Effect								*mixedResolutionEffect;
-			ID3DX11Effect								*lightProbesEffect;
 			SimulOpticsRendererDX1x						*simulOpticsRenderer;
 			SimulWeatherRendererDX11					*simulWeatherRenderer;
 			SimulHDRRendererDX1x						*simulHDRRenderer;
@@ -169,8 +165,6 @@ namespace simul
 			typedef std::map<int,View*>					ViewMap;
 			ViewMap										views;
 			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
-			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
-			ConstantBuffer<LightProbeConstants>			lightProbeConstants;
 			simul::base::MemoryInterface				*memoryInterface;
 			ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
 		};

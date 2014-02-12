@@ -60,7 +60,7 @@ ColourDepthOutput PS_DensityMask(vertexOutput IN)
 [numthreads(8,8,8)]
 void CS_Density(uint3 sub_pos				: SV_DispatchThreadID )	//SV_DispatchThreadID gives the combined id in each dimension.
 {
-    CS_CloudDensity(targetTexture,volumeNoiseTexture,maskTexture,sub_pos);
+    CS_CloudDensity(targetTexture,sub_pos);
 }
 
 static const float glow=0.1;
