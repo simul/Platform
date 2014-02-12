@@ -6,29 +6,17 @@
 
 float depthToLinearDistance(float depth,vec3 depthToLinFadeDistParams)
 {
-#ifdef VISION
-	float linearFadeDistanceZ=nearZ+depth*farZ;
-#else
 	float linearFadeDistanceZ = depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
-#endif
 	return linearFadeDistanceZ;
 }
 vec4 depthToLinearDistance(vec4 depth,vec3 depthToLinFadeDistParams)
 {
-#ifdef VISION
-	vec4 linearFadeDistanceZ=nearZ+depth*farZ;
-#else
 	vec4 linearFadeDistanceZ = depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz);
-#endif
 	return linearFadeDistanceZ;
 }
 vec2 depthToLinearDistance(vec2 depth,vec3 depthToLinFadeDistParams)
 {
-#ifdef VISION
-	vec2 linearFadeDistanceZ=nearZ+depth*farZ;
-#else
 	vec2 linearFadeDistanceZ = depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz);
-#endif
 	return linearFadeDistanceZ;
 }
 // This converts a z-buffer depth into a distance in the units of nearZ and farZ,
@@ -200,7 +188,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 							,Texture2D farImageTexture
 							,Texture2D nearImageTexture
 							,Texture2D lowResDepthTexture
-							,Texture2D depthTexture
+							,Texture2D<float4> depthTexture
 							,Texture2DMS<float4> depthTextureMS
 							,vec4 viewportToTexRegionScaleBias
 							,vec3 depthToLinFadeDistParams

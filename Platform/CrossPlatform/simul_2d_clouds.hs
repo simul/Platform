@@ -37,10 +37,6 @@ uniform_buffer Cloud2DConstants SIMUL_BUFFER_REGISTER(11)
 	uniform float offsetScale,maxCloudDistanceMetres;
 	uniform vec3 moonlight;
 	uniform float agagehrs;
-	uniform vec3 infraredIntegrationFactors;
-	uniform float agagaegehrs;
-	uniform vec3 cloudIrRadiance;
-	uniform float ageahhraj;
 };
 
 uniform_buffer Detail2DConstants SIMUL_BUFFER_REGISTER(12)
