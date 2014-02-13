@@ -731,7 +731,8 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *
 	std::string filename_utf8;
 	for(int i=shaderPathsUtf8.size()-1;i>=0;i--)
 	{
-		filename_utf8=(shaderPathsUtf8[i]+"/")+filename_utf8;
+// Wrong?		filename_utf8=(shaderPathsUtf8[i]+"/")+filename_utf8;
+		filename_utf8 = ( shaderPathsUtf8[i] + "/" ) + text_filename;
 		if(FileExists(filename_utf8))
 			break;
 	}
