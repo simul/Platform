@@ -62,6 +62,7 @@ namespace simul
 			void SetCamera(simul::camera::Camera *c);
 			void ReloadTextures();
 			void RecompileShaders();
+			void SaveScreenshot(const char *filename_utf8);
 		protected:
 			void ReverseDepthChanged();
 			simul::opengl::SimulGLWeatherRenderer *simulWeatherRenderer;

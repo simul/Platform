@@ -573,8 +573,8 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_ut
 HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	HRESULT hr=S_OK;
-	int pos=text_filename_utf8.find_last_of("/");
-	int bpos=text_filename_utf8.find_last_of("\\");
+	int pos=(int)text_filename_utf8.find_last_of("/");
+	int bpos=(int)text_filename_utf8.find_last_of("\\");
 	if(pos<0||bpos>pos)
 		pos=bpos;
 	std::string path_utf8=text_filename_utf8.substr(0,pos);
@@ -731,8 +731,7 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *
 	std::string filename_utf8;
 	for(int i=shaderPathsUtf8.size()-1;i>=0;i--)
 	{
-// Wrong?		filename_utf8=(shaderPathsUtf8[i]+"/")+filename_utf8;
-		filename_utf8 = ( shaderPathsUtf8[i] + "/" ) + text_filename;
+		filename_utf8=(shaderPathsUtf8[i]+"/")+filenameUtf8;
 		if(FileExists(filename_utf8))
 			break;
 	}
