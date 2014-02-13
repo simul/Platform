@@ -17,10 +17,6 @@ namespace simul
 	{
 		struct float4;
 	}
-	namespace opengl
-	{
-		extern void SetFileLoader(simul::base::FileLoader *l);
-	}
 }
 
 SIMUL_OPENGL_EXPORT_CLASS Utilities

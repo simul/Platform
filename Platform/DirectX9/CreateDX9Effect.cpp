@@ -56,7 +56,7 @@ namespace simul
 {
 	namespace dx9
 	{
-		void SetShaderPath(const char *path)
+		void PushShaderPath(const char *path)
 		{
 		#ifdef UNICODE
 			// tstring and TEXT cater for the confusion between wide and regular strings.
@@ -71,7 +71,7 @@ namespace simul
 		#endif
 			shader_path_set=true;
 		}
-		void SetTexturePath(const char *path_utf8)
+		void PushTexturePath(const char *path_utf8)
 		{
 			texture_path_utf8=path_utf8;
 			texture_path_utf8+="/";
@@ -237,7 +237,7 @@ HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &text
 		return CreateDX9Texture(m_pd3dDevice,texture,(*GetResourceId)(filename_utf8));
 	if(!texture_path_set)
 	{
-		std::cerr<<"CreateDX9Texture: Texture path not set, use SetTexturePath() with the relative path to the image files."<<std::endl;
+		std::cerr<<"CreateDX9Texture: Texture path not set, use PushTexturePath() with the relative path to the image files."<<std::endl;
 	}
 	std::string fn_utf8=texture_path_utf8+filename_utf8;
 
@@ -282,7 +282,7 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 
 	if(!shader_path_set)
 	{
-		std::cerr<<"CreateDX9Effect.cpp: Shader path not set, use SetShaderPath() with the relative path to the .fx or .hlsl files."<<std::endl;
+		std::cerr<<"CreateDX9Effect.cpp: Shader path not set, use PushShaderPath() with the relative path to the .fx or .hlsl files."<<std::endl;
 	}
 #ifdef UNICODE
 	// tstring and TEXT cater for the confusion between wide and regular strings.

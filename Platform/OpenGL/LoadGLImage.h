@@ -7,7 +7,6 @@ namespace simul
 {
 	namespace opengl
 	{
-		extern SIMUL_OPENGL_EXPORT void SetTexturePath(const char *path_utf8);
 		extern SIMUL_OPENGL_EXPORT void PushTexturePath(const char *path_utf8);
 		extern SIMUL_OPENGL_EXPORT void PopTexturePath();
 	}
