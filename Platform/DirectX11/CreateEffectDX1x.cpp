@@ -138,7 +138,7 @@ namespace simul
 {
 	namespace dx11
 	{
-		static std::vector<std::string> shaderPathsUtf8;
+		std::vector<std::string> shaderPathsUtf8;
 		static std::vector<std::string> texturePathsUtf8;
 		void SetFileLoader(simul::base::FileLoader *l)
 		{
