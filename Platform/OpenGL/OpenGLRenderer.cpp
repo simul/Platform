@@ -183,7 +183,7 @@ void OpenGLRenderer::paintGL()
 		glFogf(GL_FOG_START,1.0f);						// Fog Start Depth
 		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
 		glDisable(GL_FOG);
-GL_ERROR_CHECK
+		GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
 			simulHDRRenderer->StartRender(context);
@@ -341,6 +341,12 @@ void OpenGLRenderer::RecompileShaders()
 	SAFE_DELETE_PROGRAM(simple_program);
 	simple_program=MakeProgram("simple.vert",NULL,"simple.frag");
 }
+
+void OpenGLRenderer::SaveScreenshot(const char *filename_utf8)
+{
+	SaveGLImage(filename_utf8,(GLuint)(simulHDRRenderer->framebuffer.GetColorTex()));
+}
+
 
 void OpenGLRenderer::ReverseDepthChanged()
 {
