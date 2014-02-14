@@ -645,11 +645,11 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	{
 		char *errs=(char*)errorMsgs->GetBufferPointer();
 		std::string err(errs);
-		unsigned pos=0;
-		while(pos<err.length())
+		int pos=0;
+		while(pos>=0&&pos<err.length())
 		{
 			int last=pos;
-			pos=err.find("\n",pos+1);
+			pos=(int)err.find("\n",pos+1);
 			std::string line=err.substr(last,pos-last);
 			if(line.find(":")>3)
 			{
@@ -681,7 +681,7 @@ ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *file
 	if(!shaderPathsUtf8.size())
 		shaderPathsUtf8.push_back(std::string("media/hlsl/dx11"));
 	std::string fn;
-	for(int i=shaderPathsUtf8.size()-1;i>=0;i--)
+	for(int i=(int)shaderPathsUtf8.size()-1;i>=0;i--)
 	{
 		fn=(shaderPathsUtf8[i]+"/")+filename_utf8;
 		if(FileExists(fn))
@@ -729,7 +729,7 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *
 	HRESULT hr=S_OK;
 	std::string text_filename=(filenameUtf8);
 	std::string filename_utf8;
-	for(int i=shaderPathsUtf8.size()-1;i>=0;i--)
+	for(int i=(int)shaderPathsUtf8.size()-1;i>=0;i--)
 	{
 		filename_utf8=(shaderPathsUtf8[i]+"/")+filenameUtf8;
 		if(FileExists(filename_utf8))
