@@ -11,7 +11,7 @@ SimulGLUnderwaterRenderer::~SimulGLUnderwaterRenderer()
 {
 }
 
-void SimulGLUnderwaterRenderer::Render(bool blend)
+void SimulGLUnderwaterRenderer::Render(bool /*blend*/)
 {
 	EnsureTexturesAreUpToDate();
 }

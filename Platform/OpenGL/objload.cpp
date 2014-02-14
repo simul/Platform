@@ -1568,7 +1568,7 @@ void File::GroupsToVertexArrays()
 					}
 					if(itt==itb->m_TexCoords.end()||itn==itb->m_Normals.end())
 					{
-						idx=itb->m_Vertices.size();
+						idx=(unsigned)itb->m_Vertices.size();
 						itb->m_Vertices.push_back(*v);
 						itb->m_Normals.push_back(*n);
 						itb->m_TexCoords.push_back(*t);
@@ -1586,7 +1586,7 @@ void File::GroupsToVertexArrays()
 					}
 					if (itn == itb->m_Normals.end())
 					{
-						idx=itb->m_Vertices.size();
+						idx=(unsigned)itb->m_Vertices.size();
 						itb->m_Vertices.push_back(*v);
 						itb->m_Normals.push_back(*n);
 						itb->m_TexCoords.push_back(TexCoord());
@@ -1604,7 +1604,7 @@ void File::GroupsToVertexArrays()
 					}
 					if (itt == itb->m_TexCoords.end())
 					{
-						idx=itb->m_Vertices.size();
+						idx=(unsigned)itb->m_Vertices.size();
 						itb->m_Vertices.push_back(*v);
 						itb->m_Normals.push_back(Normal());
 						itb->m_TexCoords.push_back(*t);
@@ -1621,7 +1621,7 @@ void File::GroupsToVertexArrays()
 					}
 					if (itv == itb->m_Vertices.end())
 					{
-						idx=itb->m_Vertices.size();
+						idx=(unsigned)itb->m_Vertices.size();
 						itb->m_Vertices.push_back(*v);
 						itb->m_Normals.push_back(Normal());
 						itb->m_TexCoords.push_back(TexCoord());
@@ -1635,8 +1635,8 @@ void File::GroupsToVertexArrays()
 
 unsigned int File::OnLoadTexture(const char filename[])
 {
-	int last_slash = Filename.find_last_of('/');
-	int last_backslash = Filename.find_last_of('\\');
+	int last_slash = (int)Filename.find_last_of('/');
+	int last_backslash = (int)Filename.find_last_of('\\');
 	if (last_backslash < (int)Filename.length() && last_backslash > last_slash)
 		last_slash = last_backslash;
 	std::string fn = Filename.substr(0, last_slash);

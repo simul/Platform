@@ -79,7 +79,7 @@ void SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
-	int index=0;
+//	int index=0;
 	static float rr=0.2f;
 	D3DVERTEXELEMENT9 decl[]=
 	{

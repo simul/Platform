@@ -209,7 +209,7 @@ void SetPerspectiveProjection(int w,int h,float field_of_view)
 		gluPerspective(field_of_view,(float)w/(float)h,1.0,325000.0);
 	glViewport(0,0,w,h);
 }
-void RenderString(float x, float y, void *font, const char* string)
+void RenderString(float x, float y, void * /*font*/, const char* string)
 {
 	glColor4f(1.f,1.f,1.f,1.f);
 	glRasterPos2f(x,win_h-y);
