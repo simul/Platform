@@ -646,7 +646,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 		char *errs=(char*)errorMsgs->GetBufferPointer();
 		std::string err(errs);
 		int pos=0;
-		while(pos>=0&&pos<err.length())
+		while(pos>=0&&pos<(int)err.length())
 		{
 			int last=pos;
 			pos=(int)err.find("\n",pos+1);
