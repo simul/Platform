@@ -33,7 +33,7 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT void PipeCompilerOutput(bool p);
 		//! When shader should be built, or loaded if available.
 		extern SIMUL_DIRECTX11_EXPORT void SetShaderBuildMode(ShaderBuildMode s);
-		extern SIMUL_DIRECTX11_EXPORT void SetShaderPath(const char *path);
+		extern SIMUL_DIRECTX11_EXPORT void PushShaderPath(const char *path);
 		extern SIMUL_DIRECTX11_EXPORT void PushTexturePath(const char *pathUtf8);
 		extern SIMUL_DIRECTX11_EXPORT void PopTexturePath();
 		extern SIMUL_DIRECTX11_EXPORT void MakeInvViewProjMatrix(float *ivp,const float *v,const float *p);

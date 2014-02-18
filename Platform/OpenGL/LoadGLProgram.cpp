@@ -27,19 +27,13 @@ using namespace base;
 using namespace opengl;
 using namespace std;
 
-static DefaultFileLoader fl;
-static FileLoader *fileLoader=&fl;
 namespace simul
 {
 	namespace opengl
 	{
 		std::string *shaderPathUtf8=NULL;
 		std::string *texture_path=NULL;
-		void SetFileLoader(simul::base::FileLoader *l)
-		{
-			fileLoader=l;
-		}
-		void SetShaderPath(const char *path_utf8)
+		void PushShaderPath(const char *path_utf8)
 		{
 			if(path_utf8&&!shaderPathUtf8)
 			{
@@ -52,7 +46,7 @@ namespace simul
 		}
 static int LineCount(const std::string &str)
 {
-	int pos=str.find('\n');
+			int pos=(int)str.find('\n');
 	int count=1;
 	while(pos>=0)
 	{
@@ -210,7 +204,7 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 					}
 					std::string linestr=line.substr(numberstart,numberlen);
 					std::string err_msg=line.substr(numberstart+numberlen+1,line.length()-numberstart-numberlen-1);
-					int at_pos=err_msg.find("0(");
+							int at_pos=(int)err_msg.find("0(");
 					while(at_pos>=0)
 					{
 								int end_brk=(int)err_msg.find(")",at_pos);
@@ -228,7 +222,7 @@ void printShaderInfoLog(GLuint sh,const FilenameChart &filenameChart)
 					std::cerr<<(*shaderPathUtf8).c_str()<<"/"<<n.filename.c_str()<<"("<<n.line<<"): "<<err_warn<<" G1000: "<<err_msg.c_str()<<std::endl;
 				}
 				pos=next;
-				next=info_log.find('\n',pos+1);
+						next=(int)info_log.find('\n',pos+1);
 			}
 		}
 		free(infoLog);
@@ -455,7 +449,7 @@ std::string loadShaderSource(const char *filename_utf8)
 	
 	void *shader_source=NULL;
 	unsigned fileSize=0;
-	fileLoader->AcquireFileContents(shader_source,fileSize,filenameUtf8.c_str(),true);
+			simul::base::FileLoader::GetFileLoader()->AcquireFileContents(shader_source,fileSize,filenameUtf8.c_str(),true);
 	if(!shader_source)
 	{
 		std::cerr<<"\nERROR:\tShader file "<<filename_utf8<<" not found, exiting.\n";
@@ -476,7 +470,7 @@ std::string loadShaderSource(const char *filename_utf8)
 	//if(ptr!=shader_source)
 	//	ptr[-2]=0;
 	std::string str((const char*)shader_source);
-	fileLoader->ReleaseFileContents(shader_source);
+			simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(shader_source);
 	int pos=str.find("\n");
 	while(pos>=0)
 	{

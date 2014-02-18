@@ -114,6 +114,7 @@ HRESULT Direct3D9Renderer::OnResetDevice(IDirect3DDevice9* pd3dDevice, const D3D
 		RestoreDeviceObjects(pd3dDevice);
 	return S_OK;
 }
+
 void Direct3D9Renderer::ReverseDepthChanged()
 {
 }
@@ -374,6 +375,11 @@ const char *Direct3D9Renderer::GetDebugText() const
 	if(simulWeatherRenderer)
 		sprintf_s(debug_text,256,("DirectX 9\n%s\nFramerate %3.3g Render time %3.3g weather %3.3g hdr %3.3g\nUpdate time %3.3g"),weather_text.c_str(),framerate,render_timing,weather_timing,hdr_timing,update_timing);
 	return debug_text;
+}
+#include "SaveTexture.h"
+void Direct3D9Renderer::SaveScreenshot(const char *filename_utf8)
+{
+	SaveTexture((LPDIRECT3DTEXTURE9)(hdrFramebuffer.GetColorTex()),filename_utf8);
 }
 
 void Direct3D9Renderer::RecompileShaders()

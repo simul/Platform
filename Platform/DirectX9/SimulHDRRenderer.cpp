@@ -212,12 +212,12 @@ static float depth_start=1.f;
 
 bool SimulHDRRenderer::CopyDepthAlpha()
 {
-		return false;
+	return false;
 }
 
-void SimulHDRRenderer::Render(void *context,void *tex)
+void SimulHDRRenderer::Render(void *,void *tex)
 {
-	D3DSURFACE_DESC desc;
+//	D3DSURFACE_DESC desc;
 	m_pd3dDevice->SetRenderState(D3DRS_ZENABLE,FALSE);
 	m_pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
 	m_pd3dDevice->SetRenderState(D3DRS_ZFUNC,D3DCMP_LESSEQUAL);

@@ -99,7 +99,7 @@ void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
 SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 										   simul::base::MemoryInterface *mem,
 											bool usebuffer,int width,
-											int height,bool sky,bool rain)
+											int height,bool ,bool rain)
 	:BaseWeatherRenderer(env,mem)
 	,m_pd3dDevice(NULL)
 	,m_pBufferToScreenEffect(NULL)
@@ -116,17 +116,17 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	,show_rain(rain)
 {
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer;
-	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer;
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	SetScreenSize(0,width,height);
 	
-	simulSkyRenderer=new SimulSkyRenderer(sk);
-	baseSkyRenderer=simulSkyRenderer;
+		simulSkyRenderer=new SimulSkyRenderer(sk);
+		baseSkyRenderer=simulSkyRenderer;
 	{
 		simulCloudRenderer=new SimulCloudRenderer(ck3d,mem);
 		baseCloudRenderer=simulCloudRenderer;
 	}
 #if 0
+	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer;
 	/*
 	{
 		simulLightningRenderer=new SimulLightningRenderer(ck3d,sk);
@@ -179,7 +179,7 @@ void SimulWeatherRenderer::ConnectInterfaces()
 		simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 }
 */
-void SimulWeatherRenderer::SetScreenSize(int view_id,int w,int h)
+void SimulWeatherRenderer::SetScreenSize(int /*view_id*/,int w,int h)
 {
 	for(FramebufferMap::iterator i=framebuffers.begin();i!=framebuffers.end();i++)
 	{
@@ -357,7 +357,7 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context
 }
 
 
-void SimulWeatherRenderer::RenderLightning(void *context,int view_id)
+void SimulWeatherRenderer::RenderLightning(void *context,int /*view_id*/)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		return simulLightningRenderer->Render(context);

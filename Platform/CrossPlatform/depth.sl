@@ -202,7 +202,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 							,Texture2D farImageTexture
 							,Texture2D nearImageTexture
 							,Texture2D lowResDepthTexture
-							,Texture2D depthTexture
+							,Texture2D<float4> depthTexture
 							,Texture2DMS<float4> depthTextureMS
 							,vec4 viewportToTexRegionScaleBias
 							,vec3 depthToLinFadeDistParams

@@ -654,7 +654,7 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool /
 	float time=skyInterface->GetTime();
 	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
-	if(enable_lightning)
+	if(enable_lightning&&lightningRenderInterface)
 	{
 		static float bb=2.f;
 		simul::sky::float4 lightning_multipliers;
@@ -998,7 +998,7 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 	fb.InvalidateDeviceObjects();
 }
 
-void SimulCloudRenderer::RenderCrossSections(void *context,int x0,int y0,int width,int height)
+void SimulCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;
@@ -1060,7 +1060,7 @@ void SimulCloudRenderer::RenderAuxiliaryTextures(void *,int x0,int y0,int width,
 	m_pCloudEffect->SetTexture(noiseTexture,(LPDIRECT3DTEXTURE9)noise_fb.GetColorTex());
 	D3DXHANDLE tech			=GetDX9Technique(m_pCloudEffect,"show_noise");
 	RenderTexture(m_pd3dDevice
-		,width-(w+8),height-(w+8),w,w
+		,x0+width-(w+8),y0+height-(w+8),w,w
 		,(LPDIRECT3DTEXTURE9)noise_fb.GetColorTex()
 		,m_pCloudEffect,tech);
 }

@@ -13,7 +13,6 @@ namespace simul
 {
 	namespace dx11
 	{
-		extern void SetFileLoader(simul::base::FileLoader *l);
 		struct SIMUL_DIRECTX11_EXPORT TextureStruct
 		{
 			TextureStruct();

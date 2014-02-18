@@ -523,7 +523,7 @@ GL_ERROR_CHECK
 		helper->MakeLayerGeometry(s,effective_world_radius_metres);
 		const simul::clouds::CloudGeometryHelper::IntVector &quad_strip_vertices=helper->GetQuadStripIndices();
 		size_t qs_vert=0;
-		int layer=(int)helper->GetSlices().size()-1-idx;
+//		int layer=(int)helper->GetSlices().size()-1-idx;
 //		setParameter(program,"layerNumber",layer);
 		const LayerData &L=layerConstants.layers[helper->GetSlices().size()-1-idx];
 		singleLayerConstants.noiseOffset_	=L.noiseOffset;
@@ -937,7 +937,7 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 	::DrawLines(vertices,vertex_count,strip);
 }
 
-void SimulGLCloudRenderer::RenderCrossSections(void *context,int x0,int y0,int width,int height)
+void SimulGLCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;
@@ -973,13 +973,13 @@ void SimulGLCloudRenderer::RenderCrossSections(void *context,int x0,int y0,int w
 		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
 		glUniform4f(lightResponse_param,light_response.x,light_response.y,light_response.z,light_response.w);
 		glUniform1f(yz_param,0.f);
-		DrawQuad(i*(w+1)+4,4,w,h);
+		DrawQuad(x0+i*(w+1)+4,y0+4,w,h);
 		glUniform1f(yz_param,1.f);
-		DrawQuad(i*(w+1)+4,h+8,w,w);
+		DrawQuad(x0+i*(w+1)+4,y0+h+8,w,w);
 	}
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
 	glUseProgram(Utilities::GetSingleton().simple_program);
-	DrawQuad(width-(w+8),height-(w+8),w,w);
+	DrawQuad(x0+width-(w+8),y0+height-(w+8),w,w);
 	glUseProgram(0);
 }

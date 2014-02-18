@@ -14,7 +14,7 @@ vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture,float amplitude)
 		mult*=persistence;
     }
     result.rgb=saturate(result.rrr*1.5);
-	result.a=saturate(result.a+1.2*density-0.5);//(result.a+density+diffusivity-1.0)/diffusivity);
+	result.a=saturate((result.a+density+diffusivity-1.0)/diffusivity);
     return result;
 }
 

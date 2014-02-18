@@ -342,6 +342,12 @@ void OpenGLRenderer::RecompileShaders()
 	simple_program=MakeProgram("simple.vert",NULL,"simple.frag");
 }
 
+void OpenGLRenderer::SaveScreenshot(const char *filename_utf8)
+{
+	SaveGLImage(filename_utf8,(GLuint)(simulHDRRenderer->framebuffer.GetColorTex()));
+}
+
+
 void OpenGLRenderer::ReverseDepthChanged()
 {
 	// We do not yet support ReverseDepth on OpenGL, because GL matrices do not take advantage of this.

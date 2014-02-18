@@ -101,6 +101,7 @@ public:
 	void	RecompileShaders();
 	simul::clouds::BaseGpuCloudGenerator *GetGpuCloudGenerator(){return NULL;}
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return NULL;}
+	void SaveScreenshot(const char *filename_utf8);
 protected:
 	void EnsureCorrectBufferSizes(int view_id);
 	void ReverseDepthChanged();
