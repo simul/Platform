@@ -48,8 +48,6 @@ using namespace simul;
 using namespace dx11;
 using namespace base;
 ShaderBuildMode shaderBuildMode=BUILD_IF_CHANGED;
-static DefaultFileLoader fl;
-static FileLoader *fileLoader=&fl;
 
 HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
 {
@@ -69,7 +67,7 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 		}
 		void *buf=NULL;
 		unsigned fileSize=0;
-		fileLoader->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
+		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
 		*ppData = buf;
 		*pBytes = (UINT)fileSize;
 		if(!*ppData)
@@ -85,7 +83,7 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 
 HRESULT __stdcall ShaderIncludeHandler::Close(LPCVOID pData)
 {
-	fileLoader->ReleaseFileContents((void*)pData);
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
 	return S_OK;
 }
 
@@ -107,13 +105,13 @@ HRESULT __stdcall DetectChangesIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType
 		}
 		void *buf=NULL;
 		unsigned fileSize=0;
-		double dateTimeJdn=fileLoader->GetFileDate(finalPathUtf8.c_str());
+		double dateTimeJdn=simul::base::FileLoader::GetFileLoader()->GetFileDate(finalPathUtf8.c_str());
 		if(dateTimeJdn>lastCompileTime)
 		{
 			anyChanges=true;
 			return E_FAIL;
 		}
-		fileLoader->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
+		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
 		*ppData = buf;
 		*pBytes = (UINT)fileSize;
 		if(!*ppData)
@@ -129,7 +127,7 @@ HRESULT __stdcall DetectChangesIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType
 
 HRESULT __stdcall DetectChangesIncludeHandler::Close(LPCVOID pData)
 {
-	fileLoader->ReleaseFileContents((void*)pData);
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
 	return S_OK;
 }
 
@@ -140,10 +138,6 @@ namespace simul
 	{
 		std::vector<std::string> shaderPathsUtf8;
 		static std::vector<std::string> texturePathsUtf8;
-		void SetFileLoader(simul::base::FileLoader *l)
-		{
-			fileLoader=l;
-		}
 		void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,bool y_vertical)
 		{
 			D3DXMATRIX tmp1,view(v);
@@ -248,19 +242,16 @@ ID3D1xShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 	loadInfo.MipLevels=0;
 	if(!texturePathsUtf8.size())
 		texturePathsUtf8.push_back("media/textures");
-	for(int i=0;i<(int)texturePathsUtf8.size();i++)
-	{
-		std::wstring wstr	=simul::base::Utf8ToWString((texturePathsUtf8[i]+"/")+filename);
-		HRESULT hr			=D3DX11CreateShaderResourceViewFromFileW(
-										pd3dDevice,
-										wstr.c_str(),
-										&loadInfo,
-										NULL,
-										&tex,
-										&hr);
-		if(hr==S_OK)
-			break;
-	}
+	std::string str=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename,texturePathsUtf8);
+	
+	std::wstring wstr	=simul::base::Utf8ToWString(str);
+	HRESULT hr			=D3DX11CreateShaderResourceViewFromFileW(
+									pd3dDevice,
+									wstr.c_str(),
+									&loadInfo,
+									NULL,
+									&tex,
+									&hr);
 	return tex;
 }
 
@@ -557,7 +548,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_ut
 	std::string binary_filename_utf8=std::string(text_filename_utf8)+"o";
 	void *pData=NULL;
 	unsigned sz=0;
-	fileLoader->AcquireFileContents(pData,sz,binary_filename_utf8.c_str(),false);
+	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(pData,sz,binary_filename_utf8.c_str(),false);
 	if(sz>0)
 	{
 		hr=D3DX11CreateEffectFromMemory(pData,sz,FXFlags,pDevice,ppEffect);
@@ -566,7 +557,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_ut
 	}
 	else
 		std::cerr<<"D3DX11CreateEffectFromBinaryFile cannot find file "<<binary_filename_utf8.c_str()<<std::endl;
-	fileLoader->ReleaseFileContents(pData);
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(pData);
 	return hr;
 }
 
@@ -581,12 +572,12 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	std::string binary_filename_utf8=text_filename_utf8+"o";
 	void *textData=NULL;
 	unsigned textSize=0;
-	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
+	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
 	// See if there's a binary that's newer than the file date.
 	if(shaderBuildMode==BUILD_IF_CHANGED)
 	{
-		double text_date_jdn	=fileLoader->GetFileDate(text_filename_utf8.c_str());
-		double binary_date_jdn	=fileLoader->GetFileDate(binary_filename_utf8.c_str());
+		double text_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
+		double binary_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
 		bool changes_detected=false;
 		if(text_date_jdn>binary_date_jdn||!binary_date_jdn)
 			changes_detected=true;
@@ -632,13 +623,13 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 						&binaryBlob,				//ID3DBlob **ppCode,
 						&errorMsgs					//ID3DBlob **ppErrorMsgs
 						);
-	fileLoader->ReleaseFileContents(textData);
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(textData);
 	if(hr==S_OK)
 	{
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 		{
-			fileLoader->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
+			simul::base::FileLoader::GetFileLoader()->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
 		}
 	}
 	else if(errorMsgs)
