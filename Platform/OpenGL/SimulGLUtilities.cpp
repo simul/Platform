@@ -226,6 +226,8 @@ void RenderString(float x, float y, void *font, const char* string)
 #ifndef WIN64
 		else
 			glutBitmapCharacter(font,*s);
+#else
+		font;
 #endif
 		s++;
 	}

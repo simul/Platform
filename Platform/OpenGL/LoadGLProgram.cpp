@@ -46,7 +46,7 @@ namespace simul
 		}
 		static int LineCount(const std::string &str)
 		{
-			int pos=str.find('\n');
+			int pos=(int)str.find('\n');
 			int count=1;
 			while(pos>=0)
 			{
@@ -204,7 +204,7 @@ namespace simul
 							}
 							std::string linestr=line.substr(numberstart,numberlen);
 							std::string err_msg=line.substr(numberstart+numberlen+1,line.length()-numberstart-numberlen-1);
-							int at_pos=err_msg.find("0(");
+							int at_pos=(int)err_msg.find("0(");
 							while(at_pos>=0)
 							{
 								int end_brk=(int)err_msg.find(")",at_pos);
@@ -222,7 +222,7 @@ namespace simul
 							std::cerr<<(*shaderPathUtf8).c_str()<<"/"<<n.filename.c_str()<<"("<<n.line<<"): "<<err_warn<<" G1000: "<<err_msg.c_str()<<std::endl;
 						}
 						pos=next;
-						next=info_log.find('\n',pos+1);
+						next=(int)info_log.find('\n',pos+1);
 					}
 				}
 				free(infoLog);

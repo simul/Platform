@@ -228,13 +228,13 @@ void SimulGLWeatherRenderer::RecompileShaders()
 
 void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context
 									,int view_id											
-									,const math::Matrix4x4 &viewmat
-									,const math::Matrix4x4 &projmat
+									,const math::Matrix4x4 & /*viewmat*/
+									,const math::Matrix4x4 & /*projmat*/
 									,bool is_cubemap
 									,float exposure
 									,bool buffered
 									,const void* mainDepthTexture
-									,const void* lowResDepthTexture
+									,const void* /*lowResDepthTexture*/
 									,const sky::float4& depthViewportXYWH
 									,bool doFinalCloudBufferToScreenComposite)
 {
@@ -330,7 +330,7 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,b
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 }
 
-void SimulGLWeatherRenderer::RenderLightning(void *context,int view_id)
+void SimulGLWeatherRenderer::RenderLightning(void *context,int /*view_id*/)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
 		simulLightningRenderer->Render(context);

@@ -24,7 +24,7 @@ using namespace simul::dx11;
 HRESULT CompileShaderFromFile( const char* szFileNameUtf8, const char* szEntryPoint, const char* szShaderModel, ID3DBlob** ppBlobOut )
 {
 	std::string fn_utf8;
-	for(int i=shaderPathsUtf8.size()-1;i>=0;i--)
+	for(int i=(int)shaderPathsUtf8.size()-1;i>=0;i--)
 	{
 		fn_utf8=(shaderPathsUtf8[i]+"/")+szFileNameUtf8;
 		if(simul::base::FileExists(fn_utf8))
