@@ -114,7 +114,7 @@ unsigned short *pIndices;
 	
 	GLint		maxFadeDistanceMetres_param;
 
-	GLuint		cloud_tex[3];
+	simul::opengl::TextureStruct	cloud_textures[3];
 	// 2D textures (x=distance, y=elevation) for fades, updated per-frame:
 	GLuint		loss_tex;
 	GLuint		inscatter_tex;
