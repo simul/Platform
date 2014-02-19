@@ -81,7 +81,7 @@ namespace simul
 			ID3D11SamplerState*					m_pWwcSamplerState;
 			ID3D11SamplerState*					m_pWccSamplerState;
 			ID3D11SamplerState*					m_pCwcSamplerState;
-	bool harmonic_secondary;
+			bool harmonic_secondary;
 		};
 	}
 }
