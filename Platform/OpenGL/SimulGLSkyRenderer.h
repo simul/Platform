@@ -53,6 +53,7 @@ public:
 	virtual void SetFadeTextureSize(unsigned ,unsigned ,unsigned ){}
 	virtual void FillFadeTexturesSequentially(int ,int ,const float *,const float *)
 	{
+		std::cerr<<"exit(1)"<<std::endl;
 		exit(1);
 	}
 	virtual		void CycleTexturesForward(){}

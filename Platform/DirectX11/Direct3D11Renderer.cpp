@@ -58,10 +58,12 @@ int View::GetScreenWidth() const
 {
 	return ScreenWidth;
 }
+
 int View::GetScreenHeight() const
 {
 	return ScreenHeight;
 }
+
 void View::SetResolution(int w,int h)
 {
 	ScreenWidth=w;
@@ -176,7 +178,7 @@ int	Direct3D11Renderer::AddView()
 }
 
 void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc)
-	{
+{
 	View *view			=GetView(view_id);
 	if(view)
 	{	
@@ -186,7 +188,7 @@ void Direct3D11Renderer::ResizeView(int view_id,const DXGI_SURFACE_DESC* pBackBu
 }
 
 void Direct3D11Renderer::EnsureCorrectBufferSizes(int view_id)
-	{
+{
 	View *view			=GetView(view_id);
 	if(!view)
 		return;
@@ -401,7 +403,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	D3DXMATRIX v,proj;
 	static float nearPlane=1.f;
 	static float farPlane=250000.f;
-	View *view=views[view_id];
+	View *view=GetView(view_id);
 	if(view->viewType==FADE_EDITING)
 	{
 		RenderFadeEditView(pContext);
@@ -614,6 +616,7 @@ void Direct3D11Renderer::OnD3D11LostDevice()
 	cubemapFramebuffer.InvalidateDeviceObjects();
 	simul::dx11::UtilityRenderer::InvalidateDeviceObjects();
 	SAFE_RELEASE(mixedResolutionEffect);
+	SAFE_RELEASE(lightProbesEffect);
 	mixedResolutionConstants.InvalidateDeviceObjects();
 	m_pd3dDevice=NULL;
 }

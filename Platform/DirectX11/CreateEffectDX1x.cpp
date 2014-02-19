@@ -187,9 +187,9 @@ namespace simul
 			texturePathsUtf8.push_back(path_utf8);
 		}
 		void PopTexturePath()
-			{
+		{
 			texturePathsUtf8.pop_back();
-			}
+		}
 		void MakeInvViewProjMatrix(float *ivp,const float *v,const float *p)
 		{
 			simul::math::Matrix4x4 view(v),proj(p);
@@ -289,6 +289,8 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 			break;
 #ifdef DXTRACE_ERR
         hr=DXTRACE_ERR( L"LoadStagingTexture", hr );
+#else
+		std::cerr<<"Failed to load texture: "<<texturePathsUtf8.c_str()<<std::endl;
 #endif
 	}
 	return tex;
@@ -671,14 +673,8 @@ ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *file
 {
 	if(!shaderPathsUtf8.size())
 		shaderPathsUtf8.push_back(std::string("media/hlsl/dx11"));
-	std::string fn;
-	for(int i=(int)shaderPathsUtf8.size()-1;i>=0;i--)
-	{
-		fn=(shaderPathsUtf8[i]+"/")+filename_utf8;
-		if(FileExists(fn))
-			break;
-	}
-	if(!FileExists(fn))
+	std::string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,shaderPathsUtf8);
+	if(!simul::base::FileLoader::GetFileLoader()->FileExists(fn.c_str()))
 		return NULL;
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined( _DEBUG )
@@ -718,15 +714,9 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *
 {
 	SIMUL_ASSERT(d3dDevice!=NULL);
 	HRESULT hr=S_OK;
-	std::string text_filename=(filenameUtf8);
-	std::string filename_utf8;
-	for(int i=(int)shaderPathsUtf8.size()-1;i>=0;i--)
-	{
-		filename_utf8=(shaderPathsUtf8[i]+"/")+filenameUtf8;
-		if(FileExists(filename_utf8))
-			break;
-	}
-	if(!FileExists(filename_utf8))
+	//std::string text_filename=(filenameUtf8);
+	std::string filename_utf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filenameUtf8,shaderPathsUtf8);
+	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filename_utf8.c_str()))
 		return S_FALSE;
 	
 	D3D10_SHADER_MACRO *macros=NULL;
@@ -922,40 +912,6 @@ void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
 void BreakIfDebugging()
 {
 	DebugBreak();
-}
-
-// Stored states
-static ID3D11DepthStencilState* m_pDepthStencilStateStored11=NULL;
-static UINT m_StencilRefStored11;
-static ID3D11RasterizerState* m_pRasterizerStateStored11=NULL;
-static ID3D11BlendState* m_pBlendStateStored11=NULL;
-static float m_BlendFactorStored11[4];
-static UINT m_SampleMaskStored11;
-static ID3D11SamplerState* m_pSamplerStateStored11=NULL;
-
-void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
-{
-    pd3dImmediateContext->OMGetDepthStencilState( &m_pDepthStencilStateStored11, &m_StencilRefStored11 );
-	SetDebugObjectName(m_pDepthStencilStateStored11,"m_pDepthStencilStateStored11");
-    pd3dImmediateContext->RSGetState( &m_pRasterizerStateStored11 );
-	SetDebugObjectName(m_pRasterizerStateStored11,"m_pRasterizerStateStored11");
-    pd3dImmediateContext->OMGetBlendState( &m_pBlendStateStored11, m_BlendFactorStored11, &m_SampleMaskStored11 );
-	SetDebugObjectName(m_pBlendStateStored11,"m_pBlendStateStored11");
-    pd3dImmediateContext->PSGetSamplers( 0, 1, &m_pSamplerStateStored11 );
-	SetDebugObjectName(m_pSamplerStateStored11,"m_pSamplerStateStored11");
-}
-
-void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
-{
-    pd3dImmediateContext->OMSetDepthStencilState( m_pDepthStencilStateStored11, m_StencilRefStored11 );
-    pd3dImmediateContext->RSSetState( m_pRasterizerStateStored11 );
-    pd3dImmediateContext->OMSetBlendState( m_pBlendStateStored11, m_BlendFactorStored11, m_SampleMaskStored11 );
-    pd3dImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerStateStored11 );
-
-    SAFE_RELEASE( m_pDepthStencilStateStored11 );
-    SAFE_RELEASE( m_pRasterizerStateStored11 );
-    SAFE_RELEASE( m_pBlendStateStored11 );
-    SAFE_RELEASE( m_pSamplerStateStored11 );
 }
 
 int simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )

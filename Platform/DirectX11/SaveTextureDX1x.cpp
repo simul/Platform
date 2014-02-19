@@ -3,6 +3,7 @@
 #include "SaveTextureDX1x.h"
 #include "MacrosDX1x.h"
 #include "Simul/Base/StringToWString.h"
+#include "Simul/Base/FileLoader.h"
 #include <string>
 #include <d3dx11.h>
 #include <dxerr.h>
@@ -20,7 +21,7 @@ namespace simul
 			if(fn_utf8.find(".dds")<fn_utf8.length())
 				as_dds=true;
 			int number=0;
-			while(simul::base::FileExists(fn_utf8))
+			while(simul::base::FileLoader::GetFileLoader()->FileExists(fn_utf8.c_str()))
 			{
 				number++;
 				char number_text[10];
