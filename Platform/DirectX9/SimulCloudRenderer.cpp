@@ -654,7 +654,7 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool /
 	float time=skyInterface->GetTime();
 	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
 
-	if(enable_lightning)
+	if(enable_lightning&&lightningRenderInterface)
 	{
 		static float bb=2.f;
 		simul::sky::float4 lightning_multipliers;

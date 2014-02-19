@@ -8,6 +8,15 @@
 using namespace simul;
 using namespace dx11;
 
+// Stored states
+static ID3D11DepthStencilState* m_pDepthStencilStateStored11=NULL;
+static ID3D11RasterizerState* m_pRasterizerStateStored11=NULL;
+static ID3D11BlendState* m_pBlendStateStored11=NULL;
+static ID3D11SamplerState* m_pSamplerStateStored11=NULL;
+static UINT m_StencilRefStored11;
+static float m_BlendFactorStored11[4];
+static UINT m_SampleMaskStored11;
+
 namespace simul
 {
 	namespace dx11
@@ -465,6 +474,8 @@ void ArrayTexture::create(ID3D11Device *pd3dDevice,const std::vector<std::string
 	pd3dDevice->GetImmediateContext(&pImmediateContext);
 	for(int i=0;i<(int)textures.size();i++)
 	{
+		if(!textures[i])
+			return;
 		textures[i]->GetDesc(&desc);
 		D3D11_MAPPED_SUBRESOURCE mapped_res;
 		pImmediateContext->Map(textures[i],0,D3D11_MAP_READ,0,&mapped_res);	
@@ -646,6 +657,10 @@ void UtilityRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(m_pCubemapVtxDecl);
 	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pDebugEffect);
+    SAFE_RELEASE( m_pDepthStencilStateStored11 );
+    SAFE_RELEASE( m_pRasterizerStateStored11 );
+    SAFE_RELEASE( m_pBlendStateStored11 );
+    SAFE_RELEASE( m_pSamplerStateStored11 );
 }
 
 void UtilityRenderer::SetMatrices(D3DXMATRIX v,D3DXMATRIX p)
@@ -925,4 +940,30 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCub
 	simul::dx11::setParameter(m_pDebugEffect,"radius",rr);
 	UtilityRenderer::DrawSphere(context,16,32);
 	pContext->RSSetViewports(num_v,m_OldViewports);
+}
+
+
+void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
+{
+    pd3dImmediateContext->OMGetDepthStencilState( &m_pDepthStencilStateStored11, &m_StencilRefStored11 );
+	SetDebugObjectName(m_pDepthStencilStateStored11,"m_pDepthStencilStateStored11");
+    pd3dImmediateContext->RSGetState( &m_pRasterizerStateStored11 );
+	SetDebugObjectName(m_pRasterizerStateStored11,"m_pRasterizerStateStored11");
+    pd3dImmediateContext->OMGetBlendState( &m_pBlendStateStored11, m_BlendFactorStored11, &m_SampleMaskStored11 );
+	SetDebugObjectName(m_pBlendStateStored11,"m_pBlendStateStored11");
+    pd3dImmediateContext->PSGetSamplers( 0, 1, &m_pSamplerStateStored11 );
+	SetDebugObjectName(m_pSamplerStateStored11,"m_pSamplerStateStored11");
+}
+
+void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
+{
+    pd3dImmediateContext->OMSetDepthStencilState( m_pDepthStencilStateStored11, m_StencilRefStored11 );
+    pd3dImmediateContext->RSSetState( m_pRasterizerStateStored11 );
+    pd3dImmediateContext->OMSetBlendState( m_pBlendStateStored11, m_BlendFactorStored11, m_SampleMaskStored11 );
+    pd3dImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerStateStored11 );
+
+    SAFE_RELEASE( m_pDepthStencilStateStored11 );
+    SAFE_RELEASE( m_pRasterizerStateStored11 );
+    SAFE_RELEASE( m_pBlendStateStored11 );
+    SAFE_RELEASE( m_pSamplerStateStored11 );
 }

@@ -101,7 +101,7 @@ float GpuCloudMask(vec2 texCoords,vec2 maskCentre,float maskRadius,float maskFea
 }
 
 #ifndef GLSL
-void CS_CloudDensity(RWTexture3D<float4> targetTexture,uint3 sub_pos)
+void CS_CloudDensity(RWTexture3D<float4> targetTexture,Texture3D volumeNoiseTexture,Texture2D maskTexture,uint3 sub_pos)
 {
 	uint3 dims;
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);

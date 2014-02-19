@@ -455,6 +455,7 @@ namespace simul
 				std::cerr<<"\nERROR:\tShader file "<<filename_utf8<<" not found, exiting.\n";
 				std::cerr<<"\n\t\tShader path is "<<shaderPathUtf8->c_str()<<", is this correct?\n";
 				DebugBreak();
+		std::cerr<<"exit(1)"<<std::endl;
 				exit(1);
 			}
 		/*	char *ptr=shader_source;
@@ -475,7 +476,7 @@ namespace simul
 			while(pos>=0)
 			{
 				str.replace(pos,1,"\r\n");
-				pos=str.find("\n",pos+2);
+		pos=(int)str.find("\n",pos+2);
 			}
 			return str;
 		}
@@ -506,11 +507,11 @@ namespace simul
 					pos++;
 					continue;
 				}
-				int start_of_line=pos;
-				int start_line=GetLineNumber(src,pos);
+		int start_of_line=(int)pos;
+		int start_line=GetLineNumber(src,(int)pos);
 				pos+=9;
-				int n=src.find("\n",pos+1);
-				int r=src.find("\r",pos+1);
+		int n=(int)src.find("\n",pos+1);
+		int r=(int)src.find("\r",pos+1);
 				int eol=n;
 				if(r>=0&&r<n)
 					eol=r;
