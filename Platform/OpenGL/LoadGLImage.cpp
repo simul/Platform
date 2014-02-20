@@ -126,7 +126,7 @@ GL_ERROR_CHECK
 	GLint width,height;
 	{
 		GLint internalFormat;
-		GLint targetFormat=GL_RGB;
+//		GLint targetFormat=GL_RGB;
 		glBindTexture(GL_TEXTURE_2D, tex);
 		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPONENTS, &internalFormat); // get internal format type of GL texture
 		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width); // get width of GL texture

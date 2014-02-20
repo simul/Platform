@@ -21,6 +21,8 @@ GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
 			,gpuCloudConstantsUBO(0)
 			,gpuCloudConstantsBindingIndex(2)
 {
+	for(int i=0;i<3;i++)
+		finalTexture[i]=NULL;
 }
 
 GpuCloudGenerator::~GpuCloudGenerator()
@@ -106,6 +108,49 @@ void GpuCloudGenerator::CycleTexturesForward()
 {
 }
 
+void CopyTo3DTexture(int start_texel,int texels,const int grid[3])
+{
+	glEnable(GL_TEXTURE_3D);
+	// Now instead of reading the pixels back to memory, we will copy them layer-by-layer into the volume texture.
+	int Y=start_texel/grid[0];
+	int H=texels/grid[0];
+	int z0=Y/grid[1];
+	int z1=(start_texel+texels)/grid[0]/grid[1];
+	int y0=Y-z0*grid[1];
+	int y1=Y+H-(z1-1)*grid[1];
+	if(y1>grid[1])
+	{
+		y1-=grid[1];
+		z1++;
+	}
+	if(z1>grid[2])
+		z1=grid[2];
+	for(int i=z0;i<z1;i++)
+	{
+		int y=0,dy=grid[1];
+		if(i==z0)
+		{
+			y=y0;
+			dy=grid[1]-y0;
+		}
+		if(i==z1-1)
+		{
+			dy=y1-y;
+		}
+GL_ERROR_CHECK
+		glCopyTexSubImage3D(	GL_TEXTURE_3D,
+								0,							//	level
+								0,							//	x offset in 3D texture
+								y,							//	y offset in 3D texture
+								i,							//	z offset in 3D texture
+								0,							//	x=0 in source 2D texture
+								i*grid[1]+y,	//	y offset in source 2D texture
+								grid[0],		//	width to copy
+								dy);						// length to copy.
+GL_ERROR_CHECK
+GL_ERROR_CHECK
+	}
+}
 // Fill the stated number of texels of the density texture
 void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsParameters &params
 										,int start_texel
@@ -115,8 +160,6 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-simul::base::Timer timer;
-timer.StartTime();
 	int total_texels=GetDensityGridsize(params.density_grid);
 	if(!density_program)
 		RecompileShaders();
@@ -169,7 +212,6 @@ GL_ERROR_CHECK
 //dens_fb.Clear(0,0,0,0);
 GL_ERROR_CHECK
 		DrawQuad(0.f,y_start,1.f,y_end-y_start);
-std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 
 		glActiveTexture(GL_TEXTURE0);
@@ -191,47 +233,14 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 			density_texture	=make3DTexture(params.density_grid[0],params.density_grid[1],params.density_grid[2],iformat==GL_RGBA32F_ARB?4:1,false,NULL);
 			glBindTexture(GL_TEXTURE_3D,density_texture);
 		}
-		glEnable(GL_TEXTURE_3D);
 	GL_ERROR_CHECK
-		{
-			// Now instead of reading the pixels back to memory, we will copy them layer-by-layer into the volume texture.
-			int Y=start_texel/params.density_grid[0];
-			int H=texels/params.density_grid[0];
-			int z0=Y/params.density_grid[1];
-			int z1=(start_texel+texels)/params.density_grid[0]/params.density_grid[1];
-			int y0=Y-z0*params.density_grid[1];
-			int y1=Y+H-(z1-1)*params.density_grid[1];
-			for(int i=z0;i<z1;i++)
-			{
-				int y=0,dy=params.density_grid[1];
-				if(i==z0)
-				{
-					y=y0;
-					dy=params.density_grid[1]-y0;
-				}
-				if(i==z1-1)
-				{
-					dy=y1-y;
-				}
-		GL_ERROR_CHECK
-				glCopyTexSubImage3D(	GL_TEXTURE_3D,
- 										0,						//	level
- 										0,						//	x offset in 3D texture
- 										y,						//	y offset in 3D texture
- 										i,						//	z offset in 3D texture
- 										0,						//	x=0 in source 2D texture
- 										i*params.density_grid[1]+y,	//	y offset in source 2D texture
- 										params.density_grid[0],	
- 										dy);
-		GL_ERROR_CHECK
- 			}
-		}
+		CopyTo3DTexture(start_texel,texels,params.density_grid);
+		
 		dens_fb.Deactivate(NULL);
 	}
 	glDisable(GL_TEXTURE_3D);
 	glUseProgram(0);
 GL_ERROR_CHECK
-std::cout<<"\tGpu clouds: glReadPixels "<<timer.UpdateTime()<<std::endl;
 	glDeleteTextures(1,&volume_noise_tex);
 GL_ERROR_CHECK
 	glMatrixMode(GL_MODELVIEW);
@@ -253,8 +262,6 @@ GL_ERROR_CHECK
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-simul::base::Timer timer;
-timer.StartTime();
 	for(int i=0;i<2;i++)
 	{
 		fb[i].SetWidthAndHeight(params.light_grid[0],params.light_grid[1]);
@@ -329,13 +336,11 @@ GL_ERROR_CHECK
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
 			DrawQuad(0,0,1,1);
-			draw_time+=timer.UpdateTime();
 			GL_ERROR_CHECK
 		// Copy F[1] contents to the target
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			if(target)
 				glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
-			read_time+=timer.UpdateTime();
 			GL_ERROR_CHECK
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -346,9 +351,6 @@ GL_ERROR_CHECK
 	glUseProgram(0);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_3D);
-std::cout<<"\tGpu clouds: DrawQuad "<<draw_time<<std::endl;
-std::cout<<"\tGpu clouds: glReadPixels "<<read_time<<std::endl;
-std::cout<<"\tGpu clouds: SAFE_DELETE_TEXTURE "<<timer.UpdateTime()<<std::endl;
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
@@ -357,12 +359,14 @@ std::cout<<"\tGpu clouds: SAFE_DELETE_TEXTURE "<<timer.UpdateTime()<<std::endl;
 
 // Transform light data into a world-oriented cloud texture.
 // The inputs are in RGBA float32 format, with the light values in the RG slots.
-void GpuCloudGenerator::GPUTransferDataToTexture(int /*cycled_index*/
+void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 												,const clouds::GpuCloudsParameters &params
 												,unsigned char *target
 											,int start_texel
 												,int texels)
 {
+	if(texels<=0)
+		return;
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -422,6 +426,9 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int /*cycled_index*/
 				target+=Y0*params.density_grid[0]*4;
 				glReadPixels(0,Y0,params.density_grid[0],Y1-Y0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
 			}
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_3D,finalTexture[cycled_index]->tex);
+		CopyTo3DTexture(start_texel,texels,params.density_grid);
 			GL_ERROR_CHECK
 		world_fb.Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -432,7 +439,6 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int /*cycled_index*/
 	glDisable(GL_TEXTURE_3D);
 	glDisable(GL_TEXTURE_2D);
 	glDeleteTextures(1,&ambient_texture);
-	//glDeleteTextures(1,&density_texture);
 	glDeleteTextures(1,&light_texture);
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();

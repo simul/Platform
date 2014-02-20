@@ -1,6 +1,7 @@
 #pragma once
 #include "Simul/Clouds/BaseGpuCloudGenerator.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/Export.h"
 
 namespace simul
@@ -35,6 +36,17 @@ namespace simul
 											,unsigned char *target
 											,int start_texel
 												,int texels);
+			// If we want the generator to put the data directly into 3d textures:
+			void SetDirectTargets(TextureStruct **textures)
+			{
+				for(int i=0;i<3;i++)
+				{
+					if(textures)
+						finalTexture[i]=textures[i];
+					else
+						finalTexture[i]=NULL;
+				}
+			}
 		protected:
 			FramebufferGL	fb[2];
 			FramebufferGL	world_fb;
@@ -46,6 +58,7 @@ namespace simul
 			GLenum			iformat;
 			GLenum			itype;
 			GLuint			density_texture;
+			TextureStruct	*finalTexture[3];
 			bool			readback_to_cpu;
 			float			*density;	// used if we are using CPU to read back the density texture.
 			int				density_gridsize;
