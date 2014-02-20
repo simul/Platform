@@ -31,18 +31,11 @@ namespace simul
 {
 	namespace opengl
 	{
-		std::string *shaderPathUtf8=NULL;
-		std::string *texture_path=NULL;
+		std::vector<std::string> texturePathsUtf8;
+		std::vector<std::string> shaderPathsUtf8;
 		void PushShaderPath(const char *path_utf8)
 		{
-			if(path_utf8&&!shaderPathUtf8)
-			{
-				shaderPathUtf8=new std::string;
-			}
-			if(path_utf8)
-				*shaderPathUtf8=path_utf8;
-			else
-				delete shaderPathUtf8;
+			shaderPathsUtf8.push_back(std::string(path_utf8)+"/");
 		}
 		static int LineCount(const std::string &str)
 		{
@@ -219,7 +212,7 @@ namespace simul
 							int number=atoi(linestr.c_str());
 							NameLine n=filenameChart.find(number);
 							const char *err_warn=is_error?"error":"warning";
-							std::cerr<<(*shaderPathUtf8).c_str()<<"/"<<n.filename.c_str()<<"("<<n.line<<"): "<<err_warn<<" G1000: "<<err_msg.c_str()<<std::endl;
+							std::cerr<<n.filename.c_str()<<"("<<n.line<<"): "<<err_warn<<" G1000: "<<err_msg.c_str()<<std::endl;
 						}
 						pos=next;
 						next=(int)info_log.find('\n',pos+1);
@@ -265,9 +258,9 @@ namespace simul
 			int pos=(int)src.find("#version");
 			if(pos>=0)
 			{
-				start_of_line=src.find("\n",pos)+1;
+				start_of_line=(int)src.find("\n",pos)+1;
 				if(start_of_line<0)
-					start_of_line=src.length();
+					start_of_line=(int)src.length();
 			}
 			for(map<string,string>::const_iterator i=defines.begin();i!=defines.end();i++)
 			{
@@ -283,7 +276,7 @@ namespace simul
 			}
 			int lenOfStrings[MAX_STRINGS];
 			strings[0]		=src.c_str();
-			lenOfStrings[0]	=strlen(strings[0]);
+			lenOfStrings[0]	=(int)strlen(strings[0]);
 			glShaderSource(sh,1,strings,NULL);
 		GL_ERROR_CHECK
 			if(!sh)
@@ -435,48 +428,26 @@ namespace simul
 
 		std::string loadShaderSource(const char *filename_utf8)
 		{
-		/*  No vertex or fragment program should be longer than 512 lines by 255 characters. */
-		//	const int MAX_LINES=512;
-		//	const int MAX_LINE_LENGTH=256;   // 255 + NULL terminator
-			//char shader_source[MAX_LINES*MAX_LINE_LENGTH];
-			std::string filenameUtf8=*shaderPathUtf8;
-			char last=0;
-			if(shaderPathUtf8->length())
-				last=filenameUtf8[shaderPathUtf8->length()-1];
-			if(last!='/'&&last!='\\')
-				filenameUtf8+="/";
-			filenameUtf8+=filename_utf8;
-	
 			void *shader_source=NULL;
 			unsigned fileSize=0;
-			simul::base::FileLoader::GetFileLoader()->AcquireFileContents(shader_source,fileSize,filenameUtf8.c_str(),true);
+			simul::base::FileLoader::GetFileLoader()->AcquireFileContents(shader_source,fileSize,filename_utf8,true);
 			if(!shader_source)
 			{
 				std::cerr<<"\nERROR:\tShader file "<<filename_utf8<<" not found, exiting.\n";
-				std::cerr<<"\n\t\tShader path is "<<shaderPathUtf8->c_str()<<", is this correct?\n";
+				std::cerr<<"\n\t\tShader paths are:"<<std::endl;
+				for(int i=0;i<shaderPathsUtf8.size();i++)
+					std::cerr<<" "<<shaderPathsUtf8[i].c_str()<<std::endl;
 				DebugBreak();
-		std::cerr<<"exit(1)"<<std::endl;
+				std::cerr<<"exit(1)"<<std::endl;
 				exit(1);
 			}
-		/*	char *ptr=shader_source;
-			while(!ifs.eof())
-			{
-				ifs.getline(ptr,MAX_LINE_LENGTH);
-				int len=strlen(ptr);
-				ptr+=len;
-				*ptr++='\r';
-				*ptr++='\n';
-			}
-			ifs.close();*/
-			//if(ptr!=shader_source)
-			//	ptr[-2]=0;
 			std::string str((const char*)shader_source);
 			simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(shader_source);
-			int pos=str.find("\n");
+			int pos=(int)str.find("\n");
 			while(pos>=0)
 			{
 				str.replace(pos,1,"\r\n");
-		pos=(int)str.find("\n",pos+2);
+				pos=(int)str.find("\n",pos+2);
 			}
 			return str;
 		}
@@ -493,10 +464,11 @@ namespace simul
 				shader_type=GL_GEOMETRY_SHADER;
 			else throw simul::base::RuntimeError((std::string("Shader type not known for file ")+filename_str).c_str());
 		GL_ERROR_CHECK
-			std::string src=loadShaderSource(filename);
+			std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename,shaderPathsUtf8);
+			std::string src				=loadShaderSource(filenameUtf8.c_str());
 		GL_ERROR_CHECK
 			FilenameChart filenameChart;
-			filenameChart.add(filename,0,src);
+			filenameChart.add(filenameUtf8.c_str(),0,src);
 			// process #includes.
 			std::vector<std::string> include_files;
 			size_t pos=0;
@@ -521,9 +493,11 @@ namespace simul
 				src=src.insert(start_of_line,"//");
 				eol+=2;
 				src=src.insert(eol,"\r\n");
-				std::string newsrc=loadShaderSource(include_file.c_str());
+				std::string filenameUtf8	=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(include_file.c_str(),shaderPathsUtf8);
+			
+				std::string newsrc=loadShaderSource(filenameUtf8.c_str());
 				src=src.insert(eol+2,newsrc);
-				filenameChart.add(include_file.c_str(),start_line+1,newsrc);
+				filenameChart.add(filenameUtf8.c_str(),start_line+1,newsrc);
 			}
 		GL_ERROR_CHECK
 			GLuint sh=glCreateShader(shader_type);
