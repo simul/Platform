@@ -34,6 +34,25 @@ int Utilities::screen_width=0;
 int Utilities::screen_height=0;
 Utilities *Utilities::ut=NULL;
 
+
+void simul::opengl::TextureStruct::setTexels(void *,const void *src,int x,int y,int z,int w,int l,int d)
+{
+	glTexSubImage3D(	GL_TEXTURE_3D,0,
+						x,y,z,
+						w,l,d,
+						GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
+						src);
+}
+
+void simul::opengl::TextureStruct::ensureTexture3DSizeAndFormat(void *,int w,int l,int d,int frmt,bool /*computable*/)
+{
+	glGenTextures(1,&(tex));
+	glBindTexture(GL_TEXTURE_3D,tex);
+	glTexImage3D(GL_TEXTURE_3D,0,(GLint)frmt,w,l,d,0,GL_RGBA,((frmt==GL_RGBA)?GL_UNSIGNED_INT:GL_UNSIGNED_SHORT),0);
+	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+}
+
 struct UtKiller
 {
 	~UtKiller()

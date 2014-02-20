@@ -28,7 +28,7 @@ void opengl::Texture::LoadFromFile(const char *pFilePathUtf8)
 	int dot_pos	=(int)filename.find_last_of(".");
 	std::string extension;
 	pTextureObject		=0;
-	if(dot_pos>=0&&dot_pos<filename.length())
+	if(dot_pos>=0&&dot_pos<(int)filename.length())
 		extension		=filename.substr(dot_pos+1,filename.length()-dot_pos-1);
 	pTextureObject		=LoadGLImage(pFilePathUtf8,GL_REPEAT);
 	return ;
