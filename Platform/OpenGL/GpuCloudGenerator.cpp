@@ -12,14 +12,14 @@ using namespace simul;
 using namespace opengl;
 
 GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
-			,density_program(0)
-			,lighting_program(0)
-			,transform_program(0)
-			,density(NULL)
-			,density_gridsize(0)
-			,readback_to_cpu(true)
-			,gpuCloudConstantsUBO(0)
-			,gpuCloudConstantsBindingIndex(2)
+	,density_program(0)
+	,lighting_program(0)
+	,transform_program(0)
+	,density(NULL)
+	,density_gridsize(0)
+	,readback_to_cpu(true)
+	,gpuCloudConstantsUBO(0)
+	,gpuCloudConstantsBindingIndex(2)
 {
 }
 
@@ -115,8 +115,6 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-simul::base::Timer timer;
-timer.StartTime();
 	int total_texels=GetDensityGridsize(params.density_grid);
 	if(!density_program)
 		RecompileShaders();
@@ -169,7 +167,6 @@ GL_ERROR_CHECK
 //dens_fb.Clear(0,0,0,0);
 GL_ERROR_CHECK
 		DrawQuad(0.f,y_start,1.f,y_end-y_start);
-std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 
 		glActiveTexture(GL_TEXTURE0);
@@ -231,7 +228,6 @@ std::cout<<"\tGpu clouds: DrawQuad "<<timer.UpdateTime()<<std::endl;
 	glDisable(GL_TEXTURE_3D);
 	glUseProgram(0);
 GL_ERROR_CHECK
-std::cout<<"\tGpu clouds: glReadPixels "<<timer.UpdateTime()<<std::endl;
 	glDeleteTextures(1,&volume_noise_tex);
 GL_ERROR_CHECK
 	glMatrixMode(GL_MODELVIEW);
@@ -253,8 +249,6 @@ GL_ERROR_CHECK
 	glPushMatrix();
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-simul::base::Timer timer;
-timer.StartTime();
 	for(int i=0;i<2;i++)
 	{
 		fb[i].SetWidthAndHeight(params.light_grid[0],params.light_grid[1]);
@@ -329,13 +323,11 @@ GL_ERROR_CHECK
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D,(GLuint)F[0]->GetColorTex());
 			DrawQuad(0,0,1,1);
-			draw_time+=timer.UpdateTime();
 			GL_ERROR_CHECK
 		// Copy F[1] contents to the target
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			if(target)
 				glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
-			read_time+=timer.UpdateTime();
 			GL_ERROR_CHECK
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -346,9 +338,6 @@ GL_ERROR_CHECK
 	glUseProgram(0);
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_TEXTURE_3D);
-std::cout<<"\tGpu clouds: DrawQuad "<<draw_time<<std::endl;
-std::cout<<"\tGpu clouds: glReadPixels "<<read_time<<std::endl;
-std::cout<<"\tGpu clouds: SAFE_DELETE_TEXTURE "<<timer.UpdateTime()<<std::endl;
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);

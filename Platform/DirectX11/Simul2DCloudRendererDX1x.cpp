@@ -288,7 +288,6 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	// Set both MS and regular - we'll only use one of them:
 	simul::dx11::setTexture(effect,"depthTexture",depthTexture_SRV);
 	simul::dx11::setTexture(effect,"depthTextureMS",depthTexture_SRV);
-	
 	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
 	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture_SRV);
 	
