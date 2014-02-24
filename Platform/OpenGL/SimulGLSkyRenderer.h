@@ -78,7 +78,7 @@ protected:
 	void		UseProgram(GLuint);
 	void		SetFadeTexSize(int width_num_distances,int height_num_elevations,int num_altitudes);
 	void		FillFadeTextureBlocks(int texture_index,int x,int y,int z,int w,int l,int d
-					,const float *loss_float4_array,const float *inscatter_float4_array,const float *skylight_float4_array);
+				,const float *loss_float4_array,const float *inscatter_float4_array,const float *skylight_float4_array);
 
 	void		EnsureTexturesAreUpToDate(void *);
 	void		EnsureTextureCycle();
@@ -140,10 +140,10 @@ protected:
 	GLint			viewPosition;
 	GLint			overcast_param;
 
-	GLint			altitudeTexCoord_fade;
-	GLint			skyInterp_fade;
-	GLint			fadeTexture1_fade;
-	GLint			fadeTexture2_fade;
+	GLint			altitudeTexCoord_fade	;
+	GLint			skyInterp_fade		;
+	GLint			fadeTexture1_fade		;
+	GLint			fadeTexture2_fade		;
 	
 	FramebufferGL	loss_2d;
 	FramebufferGL	inscatter_2d;

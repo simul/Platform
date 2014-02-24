@@ -195,7 +195,7 @@ void CS_Skyl( uint3 sub_pos : SV_DispatchThreadID )
 	uint linear_pos		=sub_pos.x+threadOffset.x;
 	uint3 pos			=LinearThreadToPos2D(linear_pos,dims);
 	CSSkyl(targetTexture,loss_texture,insc_texture,density_texture,blackbody_texture,pos,maxOutputAltKm,maxDistanceKm,maxDensityAltKm);
-
+	
 }
 
 vec4 PS_Insc(vertexOutput IN) : SV_TARGET
@@ -297,7 +297,6 @@ technique11 simul_gpu_skyl
 		SetPixelShader(CompileShader(ps_4_0,PS_Skyl()));
     }
 }
-
 technique11 gpu_light_table_compute
 {
     pass p0 

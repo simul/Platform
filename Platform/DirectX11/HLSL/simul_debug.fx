@@ -31,7 +31,7 @@ struct v2f
 
 v2f Debug2DVS(idOnly IN)
 {
-    v2f OUT;
+	v2f OUT;
 	float2 poss[4]=
 	{
 		{ 1.0, 0.0},
@@ -43,7 +43,7 @@ v2f Debug2DVS(idOnly IN)
 	OUT.hPosition	=float4(rect.xy+rect.zw*pos,0.0,1.0);
 	OUT.hPosition.z	=0.0; 
 	OUT.colour		=vec4(pos.x,1.0-pos.y,0,0);
-    return OUT;
+	return OUT;
 }
 
 v2f DebugVS(a2v IN)

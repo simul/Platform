@@ -343,7 +343,7 @@ Raytrace=false;
 	else
 	{
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+			glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 	}
 	simul::sky::float4 gl_fog;
 	if(default_fog)
@@ -467,7 +467,7 @@ GL_ERROR_CHECK
 		effective_world_radius_metres	=helper->GetEffectiveEarthRadiusToMeetHorizon(base_alt,helper->GetMaxCloudDistance());
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),effective_world_radius_metres,false,X1.z,false);
 
-	helper->Update2DNoiseCoords();
+helper->Update2DNoiseCoords();
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply();
 
@@ -596,9 +596,9 @@ void SimulGLCloudRenderer::UseShader(GLuint program)
 
 GL_ERROR_CHECK
 	// If that block IS in the shader program, then BIND it to the relevant UBO.
-	cloudConstants.LinkToProgram(program,"CloudConstants",2);
-layerConstants.LinkToProgram(program,"LayerConstants",4);
-singleLayerConstants.LinkToProgram(program,"SingleLayerConstants",5);
+	cloudConstants			.LinkToProgram(program,"CloudConstants",2);
+	layerConstants			.LinkToProgram(program,"LayerConstants",4);
+	singleLayerConstants	.LinkToProgram(program,"SingleLayerConstants",5);
 	cloudPerViewConstants.LinkToProgram(program,"CloudPerViewConstants",13);
 GL_ERROR_CHECK
 	
@@ -629,10 +629,10 @@ GL_ERROR_CHECK
 	defines["USE_DEPTH_TEXTURE"]="1";
 	clouds_foreground_program	=MakeProgram("simul_clouds",defines);
 	raytrace_program			=MakeProgram("simple.vert",NULL,"simul_raytrace_clouds.frag",defines);
-	noise_prog					=MakeProgram("simple.vert",NULL,"simul_noise.frag");
-	edge_noise_prog				=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
+	noise_prog=MakeProgram("simple.vert",NULL,"simul_noise.frag");
+	edge_noise_prog=MakeProgram("simple.vert",NULL,"simul_2d_noise.frag");
 
-	cross_section_program		=MakeProgram("simul_cloud_cross_section");
+	cross_section_program	=MakeProgram("simul_cloud_cross_section");
 	
 	SAFE_DELETE_PROGRAM(cloud_shadow_program);
 	cloud_shadow_program=MakeProgram("simple.vert",NULL,"simul_cloud_shadow.frag");
@@ -643,7 +643,7 @@ GL_ERROR_CHECK
 	//glBindBufferRange(GL_UNIFORM_BUFFER,cloudPerViewConstantsBindingIndex,cloudPerViewConstantsUBO,0, sizeof(CloudPerViewConstants));
 	cloudPerViewConstants.LinkToProgram(clouds_background_program,"CloudPerViewConstants",13);
 	cloudPerViewConstants.LinkToProgram(clouds_foreground_program,"CloudPerViewConstants",13);
-	
+
 	layerConstants.LinkToProgram(clouds_background_program,"LayerConstants",4);
 	layerConstants.LinkToProgram(clouds_foreground_program,"LayerConstants",4);
 	
@@ -950,10 +950,10 @@ void SimulGLCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,in
 	if(h<1)
 		h=1;
 	h*=gi->GetGridHeight();
-	GLint cloudDensity1_param	=glGetUniformLocation(cross_section_program,"cloud_density");
-	GLint lightResponse_param	=glGetUniformLocation(cross_section_program,"lightResponse");
-	GLint yz_param				=glGetUniformLocation(cross_section_program,"yz");
-	GLint crossSectionOffset	=glGetUniformLocation(cross_section_program,"crossSectionOffset");
+	GLint cloudDensity1_param	= glGetUniformLocation(cross_section_program,"cloud_density");
+	GLint lightResponse_param	= glGetUniformLocation(cross_section_program,"lightResponse");
+	GLint yz_param				= glGetUniformLocation(cross_section_program,"yz");
+	GLint crossSectionOffset	= glGetUniformLocation(cross_section_program,"crossSectionOffset");
     glDisable(GL_BLEND);
 	glDisable(GL_CULL_FACE);
 	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -981,7 +981,7 @@ void SimulGLCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,in
 	}
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D,noise_tex);
-	glUseProgram(Utilities::GetSingleton().simple_program);
+glUseProgram(Utilities::GetSingleton().simple_program);
 	DrawQuad(x0+width-(w+8),y0+height-(w+8),w,w);
 	glUseProgram(0);
 }

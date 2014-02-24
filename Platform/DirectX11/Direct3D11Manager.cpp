@@ -24,6 +24,7 @@ Window::~Window()
 {
 	Release();
 }
+
 void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice)
 {
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;

@@ -33,8 +33,8 @@ namespace simul
 											,int texels);
 			void GPUTransferDataToTexture(	int cycled_index
 												,const clouds::GpuCloudsParameters &params
-											,unsigned char *target
-											,int start_texel
+												,unsigned char *target
+												,int start_texel
 												,int texels);
 			// If we want the generator to put the data directly into 3d textures:
 			void SetDirectTargets(TextureStruct **textures)
@@ -54,7 +54,7 @@ namespace simul
 			GLuint			density_program;
 			GLuint			lighting_program;
 			GLuint			transform_program;
-			GLuint volume_noise_tex;
+			GLuint			volume_noise_tex;
 			GLenum			iformat;
 			GLenum			itype;
 			GLuint			density_texture;

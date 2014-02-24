@@ -103,11 +103,11 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 	float indirect_light			=0.0;
 	if(pos.z>0)
 	{
-		int Z				=pos.z-1;
-		int x1				=(pos.x+2)%dims.x;
-		int xn				=(pos.x+dims.x-2)%dims.x;
-		int y1				=(pos.y+2)%dims.y;
-		int yn				=(pos.y+dims.y-2)%dims.y;
+		int Z			=pos.z-1;
+		int x1			=(pos.x+2)%dims.x;
+		int xn			=(pos.x+dims.x-2)%dims.x;
+		int y1			=(pos.y+2)%dims.y;
+		int yn			=(pos.y+dims.y-2)%dims.y;
 		int3 sample_pts[]	={int3(pos.xy,Z),int3(xn,pos.y,Z),int3(x1,pos.y,Z),int3(pos.x,yn,Z),int3(pos.x,y1,Z)};
 		for(int i=0;i<5;i++)
 		{
@@ -116,7 +116,7 @@ void CS_SecondaryLighting(uint3 sub_pos : SV_DispatchThreadID)
 			//float density				=densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x;
 			indirect_light	+=targetTexture1[sample_pts[i]];
 		}
-		indirect_light		/=5.0;
+		indirect_light	/=5.0;
 	}
 	int i=pos.z;
 	{
@@ -181,7 +181,6 @@ void CS_Transform(uint3 sub_pos	: SV_DispatchThreadID)	//SV_DispatchThreadID giv
 										,ambientTexture2.SampleLevel(wwcSamplerState,ambient_texcoord,0).x);
 	float ambient_lookup		=saturate(0.5*(amb_texel.x+amb_texel.y));
 	float density				=saturate(densityTexture.SampleLevel(wwcSamplerState,densityspace_texcoord,0).x);
-
     vec4 res					=vec4(light_lookup.y,light_lookup.x,density,ambient_lookup);
 	targetTexture[pos]			=res;
 }

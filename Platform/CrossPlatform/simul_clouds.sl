@@ -15,7 +15,7 @@ Texture3D lightningIlluminationTexture	: register(t8);
 Texture3D cloudDensity					: register(t9);
 Texture2D illuminationTexture			: register(t10);
 Texture2D lightTableTexture				: register(t11);
-SamplerState cloudSamplerState			: register(s0);
+SamplerState cloudSamplerState			: register( s0);
 #endif
 
 #define MIN_SUN_ELEV (0.2)
@@ -455,7 +455,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				float brightness_factor	=unshadowedBrightness(BetaClouds,lightResponse,amb);
 				vec4 c					=calcColour2( density,BetaClouds,lightResponse,combinedLightColour,amb);
 				fade_texc.x				=sqrt(fadeDistance);
-
+				
 				float sh				=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 #ifdef INFRARED
 				c.rgb=cloudIrRadiance*c.a;

@@ -168,7 +168,7 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 	int start_loss	=range(start_step			,0,xy_size);
 	int end_loss	=range(end_step				,0,xy_size);
 	int num_loss	=range(end_loss-start_loss	,0,xy_size);
-	int subgrid		=(num_loss+BLOCKWIDTH-1)/BLOCKWIDTH;
+	int subgrid=(num_loss+BLOCKWIDTH-1)/BLOCKWIDTH;
 	
 	if(subgrid>0)
 	{

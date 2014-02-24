@@ -14,8 +14,6 @@ Texture2D<uint> glowTexture;
 Texture2D inscatterTexture;			// Far, or default inscatter
 Texture2D nearInscatterTexture;		// Near inscatter.
 
-
-
 struct a2v
 {
 	uint vertex_id	: SV_VertexID;
@@ -25,8 +23,8 @@ struct a2v
 
 struct v2f
 {
-    float4 hPosition: SV_POSITION;
-    float2 texCoords: TEXCOORD0;
+    float4 hPosition	: SV_POSITION;
+    float2 texCoords	: TEXCOORD0;
 };
 
 v2f MainVS(idOnly IN)
@@ -179,7 +177,7 @@ vec2 HmdWarp(vec2 texCoords)
 	vec2 rvector	= theta * (warpHmdWarpParam.x + warpHmdWarpParam.y * rSq +
 								warpHmdWarpParam.z * rSq * rSq +
 								warpHmdWarpParam.w * rSq * rSq * rSq);
-	return warpLensCentre+rvector* warpScale ;
+	return warpLensCentre+rvector*warpScale;
 }
 
 float4 WarpExposureGammaPS(v2f IN) : SV_Target
@@ -275,6 +273,7 @@ technique11 exposure_gamma
 		SetPixelShader(CompileShader(ps_5_0,ExposureGammaPS_MSAA()));
     }
 }
+
 technique11 warp_exposure_gamma
 {
     pass main
@@ -376,8 +375,8 @@ technique11 show_depth
 {
     pass p0
     {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth,0);
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(NoBlend,vec4( 0.0f, 0.0f, 0.0f, 0.0f), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,QuadVS()));

@@ -123,21 +123,21 @@ namespace simul
 			{
 				return simulTerrainRenderer;
 			}
-			void			RecompileShaders();
-			void			RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos);
-			void			RenderEnvmap(ID3D11DeviceContext* pContext);
+			void						RecompileShaders();
+			void						RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3 cam_pos);
+			void						RenderEnvmap(ID3D11DeviceContext* pContext);
 			// D3D11CallbackInterface
 			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
 			virtual void				OnD3D11CreateDevice	(ID3D11Device* pd3dDevice);
 			virtual int					AddView				();
 			virtual void				ResizeView			(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
 			virtual void				Render				(int,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext);
-			virtual void	OnD3D11LostDevice();
-			virtual void	OnD3D11DestroyDevice();
+			virtual void				OnD3D11LostDevice	();
+			virtual void				OnD3D11DestroyDevice();
 			virtual void				RemoveView			(int);
-			virtual bool	OnDeviceRemoved();
-			virtual void    OnFrameMove(double fTime,float fTimeStep);
-			virtual const	char *GetDebugText() const;
+			virtual bool				OnDeviceRemoved		();
+			virtual void				OnFrameMove			(double fTime,float fTimeStep);
+			virtual const char *		GetDebugText		() const;
 			void SetViewType(int view_id,ViewType vt);
 			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
 			void SaveScreenshot(const char *filename_utf8);

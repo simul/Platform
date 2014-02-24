@@ -58,8 +58,8 @@ RaytraceVertexOutput VS_Raytrace(idOnly IN)
 
 RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 {
-	vec2 texCoords			=IN.texCoords.xy;
-	texCoords.y				=1.0-texCoords.y;
+	vec2 texCoords		=IN.texCoords.xy;
+	texCoords.y		=1.0-texCoords.y;
 	RaytracePixelOutput p	=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,true,texCoords,false,true);
 
 	return p;
@@ -67,8 +67,8 @@ RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 
 RaytracePixelOutput PS_RaytraceNearPass(RaytraceVertexOutput IN)
 {
-	vec2 texCoords			=IN.texCoords.xy;
-	texCoords.y				=1.0-texCoords.y;
+	vec2 texCoords		=IN.texCoords.xy;
+	texCoords.y			=1.0-texCoords.y;
 	RaytracePixelOutput p	=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,true,texCoords,true,true);
 
 	return p;
@@ -76,7 +76,7 @@ RaytracePixelOutput PS_RaytraceNearPass(RaytraceVertexOutput IN)
 
 struct vertexInputCS
 {
-    vec4 position			: POSITION;
+    vec4 position		: POSITION;
     vec2 texCoords		: TEXCOORD0;
 };
 

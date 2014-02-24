@@ -90,7 +90,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	//defines["GODRAYS_STEPS"]=simul::base::stringFormat("%d",
 	V_CHECK(CreateEffect(m_pd3dDevice,&effect,"atmospherics.fx",defines));
 
-	twoPassOverlayTechnique		=effect->GetTechniqueByName("simul_atmospherics_overlay");
+	twoPassOverlayTechnique	=effect->GetTechniqueByName("simul_atmospherics_overlay");
 	twoPassOverlayTechniqueMSAA	=effect->GetTechniqueByName("simul_atmospherics_overlay_msaa");
 
 	godraysTechnique		=effect->GetTechniqueByName("fast_godrays");
@@ -135,7 +135,7 @@ HRESULT SimulAtmosphericsRendererDX1x::Destroy()
 
 void SimulAtmosphericsRendererDX1x::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
 {
-	view=v;
+ 	view=v;
 	proj=p;
 }
 
@@ -238,7 +238,7 @@ void SimulAtmosphericsRendererDX1x::RenderAsOverlay(void *context,const void *de
 	SetAtmosphericsPerViewConstants(atmosphericsPerViewConstants,exposure,view,p1,proj,relativeViewportTextureRegionXYWH);
 	
 	atmosphericsPerViewConstants.Apply(pContext);
-
+	
 	SetAtmosphericsConstants(atmosphericsUniforms,simul::sky::float4(1.0,1.0,1.0,0.0));
 	atmosphericsUniforms.Apply(pContext);
 	
@@ -297,7 +297,7 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,b
 	if(near_pass)
 		ApplyPass(pContext,godraysNearPassTechnique->GetPassByIndex(0));
 	else
-		ApplyPass(pContext,godraysTechnique->GetPassByIndex(0));
+	ApplyPass(pContext,godraysTechnique->GetPassByIndex(0));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	lossTexture			->SetResource(NULL);
 	inscTexture			->SetResource(NULL);

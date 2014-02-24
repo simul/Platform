@@ -43,25 +43,25 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename);
 		ID3D11Texture1D* make1DTexture(
 							ID3D1xDevice			*m_pd3dDevice
-							,int w
-							,DXGI_FORMAT format
-							,const float *src);
+										,int w
+										,DXGI_FORMAT format
+										,const float *src);
 		ID3D11Texture2D* make2DTexture(
 							ID3D1xDevice			*m_pd3dDevice
-							,int w,int h
-							,DXGI_FORMAT format
-							,const float *src);
+										,int w,int h
+										,DXGI_FORMAT format
+										,const float *src);
 		ID3D11Texture3D* make3DTexture(
 							ID3D1xDevice			*m_pd3dDevice
-							,int w,int l,int d
-							,DXGI_FORMAT format
-							,const void *src);
+										,int w,int l,int d
+										,DXGI_FORMAT format
+										,const void *src);
 		void Ensure3DTextureSizeAndFormat(
 							ID3D1xDevice			*m_pd3dDevice
-							,ID3D1xTexture3D		* &tex
-							,ID3D11ShaderResourceView* &srv
-							,int w,int l,int d
-							,DXGI_FORMAT format);
+											,ID3D1xTexture3D		* &tex
+											,ID3D11ShaderResourceView* &srv
+											,int w,int l,int d
+											,DXGI_FORMAT format);
 							
 		D3DXMATRIX SIMUL_DIRECTX11_EXPORT ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj);
 	
@@ -111,8 +111,8 @@ extern SIMUL_DIRECTX11_EXPORT HRESULT ApplyPass(ID3D11DeviceContext *pImmediateC
 
 extern void SIMUL_DIRECTX11_EXPORT MakeCubeMatrices(D3DXMATRIX g_amCubeMapViewAdjust[],const float *cam_pos,bool ReverseDepth);
 
-void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
-void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext );
+void StoreD3D11State(ID3D11DeviceContext* pd3dImmediateContext);
+void RestoreD3D11State(ID3D11DeviceContext* pd3dImmediateContext);
 
 #define PAD16(n) (((n)+15)/16*16)
 #endif

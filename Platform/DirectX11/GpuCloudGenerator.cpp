@@ -149,15 +149,15 @@ void GpuCloudGenerator::FillDensityGrid(int index
 		
 		for(simul::clouds::MaskMap::const_iterator i=masks.begin();i!=masks.end();i++)
 		{
-			gpuCloudConstants.yRange		=vec4(0,1.f,0,0);
+	gpuCloudConstants.yRange		=vec4(0,1.f,0,0);
 			gpuCloudConstants.maskCentre	=vec2(i->second.x,i->second.y);
 			gpuCloudConstants.maskRadius	=i->second.radius;
 			gpuCloudConstants.maskFeather	=0.1f;
 			gpuCloudConstants.maskThickness	=i->second.thickness;
 			gpuCloudConstants.Apply(m_pImmediateContext);
-			ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
+		ApplyPass(m_pImmediateContext,maskTechnique->GetPassByIndex(0));
 	simul::dx11::UtilityRenderer::DrawQuad(m_pImmediateContext);
-		}
+	}
 	}
 	else
 	{
@@ -204,7 +204,7 @@ void GpuCloudGenerator::FillDensityGrid(int index
 }
 
 void GpuCloudGenerator::PerformGPURelight	(int light_index
-									,const clouds::GpuCloudsParameters &params
+											,const clouds::GpuCloudsParameters &params
 											,float *target
 											,int start_texel
 											,int texels)
@@ -224,7 +224,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	if(start_texel>gridsize)
 		start_texel=gridsize;	
 	if(start_texel+texels>gridsize)
-		texels=gridsize-start_texel;
+		texels=gridsize-start_texel; 
 	directLightTextures[light_index].ensureTexture3DSizeAndFormat(m_pd3dDevice
 				,light_grid[0],light_grid[1],light_grid[2]
 				,DXGI_FORMAT_R32_FLOAT,true);
@@ -243,7 +243,7 @@ void GpuCloudGenerator::PerformGPURelight	(int light_index
 	else
 	{
 		gpuCloudConstants.extinctions		=vec2(params.lightspace_extinctions[0],params.lightspace_extinctions[1]);
-	gpuCloudConstants.transformMatrix	=params.Matrix4x4LightToDensityTexcoords;
+		gpuCloudConstants.transformMatrix	=params.Matrix4x4LightToDensityTexcoords;
 	}
 	gpuCloudConstants.transformMatrix.transpose();
 	gpuCloudConstants.zPixelLightspace	=(1.f/(float)light_grid[2]);

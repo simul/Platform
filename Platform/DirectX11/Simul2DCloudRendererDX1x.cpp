@@ -288,7 +288,6 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	// Set both MS and regular - we'll only use one of them:
 	simul::dx11::setTexture(effect,"depthTexture",depthTexture_SRV);
 	simul::dx11::setTexture(effect,"depthTextureMS",depthTexture_SRV);
-
 	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
 	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture_SRV);
 	
@@ -313,11 +312,11 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	pContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R16_UINT,0);					
 
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	
-	
+
+
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	pContext->DrawIndexed(num_indices-2,0,0);
-		
+
 	pContext->IASetPrimitiveTopology(previousTopology);
 	pContext->IASetInputLayout(previousInputLayout);
 	pContext->IASetIndexBuffer(pPrevBuffer, prevFormat, prevOffset);

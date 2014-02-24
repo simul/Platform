@@ -22,11 +22,11 @@ namespace simul
 		void PushTexturePath(const char *path_utf8)
 		{
 			texturePathsUtf8.push_back(path_utf8);
-	}
+		}
 		void PopTexturePath()
 		{ 
 			texturePathsUtf8.pop_back();
-}
+		}
 	}
 }
 static bool FileExists(const std::string& filename_utf8)
@@ -44,14 +44,14 @@ static bool FileExists(const std::string& filename_utf8)
 	return bExists;
 }
 
-unsigned char * LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
+unsigned char *LoadBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
 {
 #ifdef _MSC_VER
-	std::string fn=filename_utf8;
-	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
+	std::string fn			=filename_utf8;
+	FREE_IMAGE_FORMAT fif	=FIF_UNKNOWN;
 
-	std::wstring wstr=simul::base::Utf8ToWString(fn);
-	fif = FreeImage_GetFileTypeU(wstr.c_str(), 0);
+	std::wstring wstr		=simul::base::Utf8ToWString(fn);
+	fif						=FreeImage_GetFileTypeU(wstr.c_str(), 0);
 	if(fif == FIF_UNKNOWN)
 	{
 		// no signature ?
@@ -113,10 +113,10 @@ GLuint LoadGLImage(const char *filename_utf8,unsigned wrap)
 	if(!FileExists(fn.c_str()))
 		return 0;
 	return LoadTexture(fn.c_str(),wrap);
-		}
+}
 
 void SaveGLImage(const char *filename_utf8,GLuint tex)
-		{
+{
 	FREE_IMAGE_FORMAT fif	=FIF_UNKNOWN;
 GL_ERROR_CHECK
 	std::wstring wstr		=simul::base::Utf8ToWString(filename_utf8);
@@ -161,8 +161,8 @@ GL_ERROR_CHECK
 			bytes_per_pixel=24;
 			break;
 		default: // unsupported type
-					break;
-			}
+		break;
+		}
 		if(numBytes)
 		{
 			GL_ERROR_CHECK

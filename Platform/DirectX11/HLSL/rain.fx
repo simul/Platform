@@ -41,8 +41,8 @@ SamplerState rainSampler
 
 struct vertexInputRenderRainTexture
 {
-    float4 position		: POSITION;
-    float2 texCoords	: TEXCOORD0;
+    float4 position			: POSITION;
+    float2 texCoords		: TEXCOORD0;
 };
 
 struct vertexInput
@@ -81,17 +81,17 @@ struct vertexOutput
 
 struct rainVertexOutput
 {
-    float4 position		: SV_POSITION;
+    float4 position			: SV_POSITION;
     float2 clip_pos		: TEXCOORD1;
-    float2 texCoords	: TEXCOORD0;
+    float2 texCoords		: TEXCOORD0;
 };
 
 struct particleGeometryOutput
 {
-    float4 position		:SV_POSITION;
-    float2 texCoords	:TEXCOORD0;
-	float brightness	:TEXCOORD1;
-	vec3 view			:TEXCOORD2;
+    float4 position			:SV_POSITION;
+    float2 texCoords		:TEXCOORD0;
+	float brightness		:TEXCOORD1;
+	vec3 view				:TEXCOORD2;
 	float fade			:TEXCOORD3;
 };
 
@@ -248,7 +248,7 @@ cbuffer cbImmutable
 [maxvertexcount(6)]
 void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<particleGeometryOutput> SpriteStream)
 {
-    particleGeometryOutput	output;
+    particleGeometryOutput output;
 	// Emit four new triangles.
 
 	// The two centres of the streak positions.
@@ -262,9 +262,9 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
 		pos1=pos_temp;
 	}
 	float sz=input[0].pointSize;
-	output.brightness	=input[0].brightness;  
+        output.brightness	=input[0].brightness;  
 	output.fade			=input[0].fade*sz/(sz+length(pos2-pos1));  
-	output.view			=input[0].view;
+        output.view			=input[0].view;     
 	if(pos1.x/pos1.w<=pos2.x/pos2.w)
 	{
 		// bottom-left quadrant:
@@ -308,7 +308,7 @@ void GS_Particles(point particleVertexOutput input[1], inout TriangleStream<part
 		output.position		=pos1+vec4(g_positions[1].xy*sz,0,0); 
 		output.texCoords	=g_texcoords[1];
 		SpriteStream.Append(output);
-	}
+    }
     SpriteStream.RestartStrip();
 }
 
@@ -850,7 +850,7 @@ technique11 init_particles
         
         SetDepthStencilState( DisableDepth, 0 );
     }  
-}
+    }
 
 GeometryShader gsStreamOut2 = ConstructGSWithSO( CompileShader( vs_5_0, VS_MoveParticles() ), "POSITION.xyz; TYPE.x; VELOCITY.xyz" );
 
@@ -864,5 +864,5 @@ technique11 move_particles
         SetPixelShader( NULL );
         
         SetDepthStencilState( DisableDepth, 0 );
-    }  
+}
 }

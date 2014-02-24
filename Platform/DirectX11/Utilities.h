@@ -149,7 +149,7 @@ namespace simul
 			static D3DXMATRIX proj;
 		public:
 			static ID3D1xEffect		*m_pDebugEffect;
-			static ID3D11InputLayout*m_pCubemapVtxDecl;
+			static ID3D11InputLayout	*m_pCubemapVtxDecl;
 			static ID3D1xBuffer		* m_pVertexBuffer;
 			static ID3D1xDevice		*m_pd3dDevice;
 			UtilityRenderer();
@@ -197,17 +197,17 @@ namespace simul
 			{
 				InvalidateDeviceObjects();
 				SAFE_RELEASE(m_pD3D11Buffer);	
-				D3D11_SUBRESOURCE_DATA			cb_init_data;
-				cb_init_data.pSysMem			= this;
-				cb_init_data.SysMemPitch		= 0;
-				cb_init_data.SysMemSlicePitch	= 0;
-				D3D11_BUFFER_DESC				cb_desc;
-				cb_desc.Usage					= D3D11_USAGE_DYNAMIC;
-				cb_desc.BindFlags				= D3D11_BIND_CONSTANT_BUFFER;
-				cb_desc.CPUAccessFlags			= D3D11_CPU_ACCESS_WRITE;
-				cb_desc.MiscFlags				= 0;
-				cb_desc.ByteWidth				= PAD16(sizeof(T));
-				cb_desc.StructureByteStride		= 0;
+				D3D11_SUBRESOURCE_DATA cb_init_data;
+				cb_init_data.pSysMem = this;
+				cb_init_data.SysMemPitch = 0;
+				cb_init_data.SysMemSlicePitch = 0;
+				D3D11_BUFFER_DESC cb_desc;
+				cb_desc.Usage				= D3D11_USAGE_DYNAMIC;
+				cb_desc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
+				cb_desc.CPUAccessFlags		= D3D11_CPU_ACCESS_WRITE;
+				cb_desc.MiscFlags			= 0;
+				cb_desc.ByteWidth			= PAD16(sizeof(T));
+				cb_desc.StructureByteStride = 0;
 				pd3dDevice->CreateBuffer(&cb_desc,&cb_init_data, &m_pD3D11Buffer);
 				if(m_pD3DX11EffectConstantBuffer)
 					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(m_pD3D11Buffer);
@@ -244,7 +244,7 @@ namespace simul
 					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
 			}
 		};
-
+		
 		inline void SetDebugObjectName( ID3D11DeviceChild* resource,const char *name)
 		{
 		  #if defined(_DEBUG) || defined(PROFILE)
@@ -281,9 +281,9 @@ namespace simul
 				}
 				else
 				{
-					sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE;
-					sbDesc.Usage				=D3D11_USAGE_DYNAMIC;
-					sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
+				sbDesc.BindFlags			=D3D11_BIND_SHADER_RESOURCE ;
+				sbDesc.Usage				=D3D11_USAGE_DYNAMIC;
+				sbDesc.CPUAccessFlags		=D3D11_CPU_ACCESS_WRITE;
 				}
 				sbDesc.MiscFlags			=D3D11_RESOURCE_MISC_BUFFER_STRUCTURED ;
 				sbDesc.StructureByteStride	=sizeof(T);
@@ -299,7 +299,7 @@ namespace simul
 				srv_desc.Buffer.FirstElement		=0;
 				srv_desc.Buffer.NumElements			=size;
 				V_CHECK(pd3dDevice->CreateShaderResourceView(buffer, &srv_desc,&shaderResourceView));
-				
+
 				if(computable)
 				{
 					D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
@@ -310,7 +310,7 @@ namespace simul
 					uav_desc.Buffer.Flags				=0;
 					uav_desc.Buffer.NumElements			=size;
 					V_CHECK(pd3dDevice->CreateUnorderedAccessView(buffer, &uav_desc,&unorderedAccessView));
-				}
+			}
 			}
 			T *GetBuffer(ID3D11DeviceContext *pContext)
 			{
@@ -366,7 +366,7 @@ namespace std
 	{
 		std::swap(_Left.vertexBuffer		,_Right.vertexBuffer);
 //		std::swap(_Left.unorderedAccessView	,_Right.unorderedAccessView);
-	}
+}
 }
 
 #define SET_VERTEX_BUFFER(context,vertexBuffer,VertexType)\

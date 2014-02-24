@@ -21,8 +21,8 @@ vec2 OvercastDistances(float alt_km,float sine,float overcastBaseKm,float overca
 	float under						=saturate(cutoff_alt_km-alt_km);
 	if(sine>0)
 	{
-		if(alt_km>cutoff_alt_km)
-		{
+	if(alt_km>cutoff_alt_km)
+	{
 			range_km.x	=maxFadeDistanceKm;
 			range_km.y	=maxFadeDistanceKm;
 		}
@@ -45,7 +45,7 @@ vec2 OvercastDistances(float alt_km,float sine,float overcastBaseKm,float overca
 			range_km.y	=maxFadeDistanceKm;
 		}
 	}
-	if(sine<0)
+		if(sine<0)
 	{
 		if(alt_km>cutoff_alt_km)
 		{
@@ -69,7 +69,7 @@ vec2 OvercastDistances(float alt_km,float sine,float overcastBaseKm,float overca
 		else
 		{
 			range_km.x				=maxFadeDistanceKm;
-		}
+	}
 	}
 	else
 	{

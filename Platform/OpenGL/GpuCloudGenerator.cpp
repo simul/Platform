@@ -12,14 +12,14 @@ using namespace simul;
 using namespace opengl;
 
 GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
-			,density_program(0)
-			,lighting_program(0)
-			,transform_program(0)
-			,density(NULL)
-			,density_gridsize(0)
-			,readback_to_cpu(true)
-			,gpuCloudConstantsUBO(0)
-			,gpuCloudConstantsBindingIndex(2)
+	,density_program(0)
+	,lighting_program(0)
+	,transform_program(0)
+	,density(NULL)
+	,density_gridsize(0)
+	,readback_to_cpu(true)
+	,gpuCloudConstantsUBO(0)
+	,gpuCloudConstantsBindingIndex(2)
 {
 	for(int i=0;i<3;i++)
 		finalTexture[i]=NULL;
@@ -153,8 +153,8 @@ GL_ERROR_CHECK
 }
 // Fill the stated number of texels of the density texture
 void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsParameters &params
-										,int start_texel
-										,int texels)
+											,int start_texel
+											,int texels)
 {
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -252,10 +252,10 @@ GL_ERROR_CHECK
 
 // The target is a grid of size given by light_gridsizes, arranged as d w-by-l textures.
 void GpuCloudGenerator::PerformGPURelight(int /*light_index*/
-										,const clouds::GpuCloudsParameters &params
-										,float *target
-										,int start_texel
-										,int texels)
+											,const clouds::GpuCloudsParameters &params
+											,float *target
+											,int start_texel
+											,int texels)
 {
 GL_ERROR_CHECK
 	glMatrixMode(GL_PROJECTION);
@@ -362,7 +362,7 @@ GL_ERROR_CHECK
 void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 												,const clouds::GpuCloudsParameters &params
 												,unsigned char *target
-											,int start_texel
+												,int start_texel
 												,int texels)
 {
 	if(texels<=0)
@@ -378,7 +378,7 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	//GLuint density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,1,false,density);
 	GLuint light_texture	=make3DTexture(params.light_grid[0]	,params.light_grid[1],params.light_grid[2]	,4,false,NULL);
 	GLuint ambient_texture	=make3DTexture(params.density_grid[0],params.density_grid[1],params.density_grid[2]	,4,false,NULL);
-			glUseProgram(transform_program);
+	glUseProgram(transform_program);
 	setParameter(transform_program,"density_texture",0);
 	setParameter(transform_program,"light_texture",1);
 	setParameter(transform_program,"ambient_texture",2);

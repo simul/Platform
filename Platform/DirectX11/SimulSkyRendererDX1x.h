@@ -12,9 +12,9 @@
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Math/Matrix4x4.h"
 #include <d3dx9.h>
-#include <d3d11.h>
-#include <d3dx11.h>
-#include <d3dx11effect.h>
+	#include <d3d11.h>
+	#include <d3dx11.h>
+	#include <d3dx11effect.h>
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
@@ -76,7 +76,7 @@ public:
 
 	void Get2DLossAndInscatterTextures(void* *loss,void* *insc,void* *skyl,void* *overc);
 	void *GetIlluminationTexture();
-			void *GetLightTableTexture();
+	void *GetLightTableTexture();
 
 	float GetFadeInterp() const;
 	void SetStepsPerDay(unsigned steps);

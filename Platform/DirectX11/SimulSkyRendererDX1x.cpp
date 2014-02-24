@@ -485,12 +485,12 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 	// But to avoid artifacts like aliasing at the edges, we will rescale the colour itself
 	// to the range [0,1], and store a brightness multiplier in the alpha channel!
 	sunlight.w=1.f;
-	float max_bright	=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
-	sunlight.w			=1.0f/(max_bright*exposure);
-	sunlight			*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
+	float max_bright=std::max(std::max(sunlight.x,sunlight.y),sunlight.z);
+	sunlight.w=1.0f/(max_bright*exposure);
+	sunlight*=1.f-sun_occlusion;//pow(1.f-sun_occlusion,0.25f);
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,sun_dir);
-	skyConstants.colour			=sunlight;
+	skyConstants.colour=sunlight;
 	// 2 * sun radius because we want glow around it.
 	skyConstants.radiusRadians	=2.f*skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 	skyConstants.Apply(pContext);
@@ -755,8 +755,8 @@ bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int heigh
 		size=height/4;
 	if(size<2)
 		return false;
-	int s=size/numAltitudes-2;
-	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
+	int s							=size/numAltitudes-2;
+	ID3D11DeviceContext *context	=(ID3D11DeviceContext *)c;
 
 	ID3DX11EffectTechnique*	techniqueShowSky				=m_pSkyEffect->GetTechniqueByName("simul_show_sky_texture");
 	ID3DX11EffectTechnique*	techniqueShowFade				=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");

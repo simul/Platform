@@ -64,9 +64,7 @@ void TerrainRenderer::RecompileShaders()
 		defines["REVERSE_DEPTH"]="1";
 	V_CHECK(CreateEffect(m_pd3dDevice,&m_pTerrainEffect,("simul_terrain.fx"),defines));
 	m_pTechnique		=m_pTerrainEffect->GetTechniqueByName("simul_terrain");
-
 	ReloadTextures();
-
 	terrainConstants.LinkToEffect(m_pTerrainEffect,"TerrainConstants");
 }
 

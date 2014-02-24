@@ -428,8 +428,8 @@ technique11 overcast_inscatter
 {
     pass p0 
     {
-		SetRasterizerState(RenderNoCull);
-		SetDepthStencilState(DisableDepth, 0 );
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
 		SetBlendState(DontBlend,float4(0.0,0.0,0.0,0.0),0xFFFFFFFF);
 		SetVertexShader(CompileShader(vs_4_0,VS_Fade3DTo2D()));
         SetGeometryShader(NULL);

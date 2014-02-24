@@ -12,7 +12,7 @@ struct Output
 
 struct Direct3DWindow
 {
-	int view_id;
+	int view_id;			
 	Direct3DWindow():view_id(-1){}		
 };
 

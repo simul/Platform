@@ -261,9 +261,9 @@ void SimulHDRRendererDX1x::RenderGlowTexture(void *context,void *texture_srv)
 		return;
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	static int g_NumApproxPasses=3;
-	static int	g_MaxApproxPasses = 8;
-	static float g_FilterRadius = 30;
+static int g_NumApproxPasses=3;
+static int	g_MaxApproxPasses = 8;
+static float g_FilterRadius = 30;
 	// Render to the low-res glow.
 	if(glowTechnique)
 	{

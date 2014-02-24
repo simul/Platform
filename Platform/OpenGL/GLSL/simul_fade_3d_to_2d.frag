@@ -14,8 +14,8 @@ out vec4 gl_FragColor;
 void main()
 {
 	vec3 texcoord	=vec3(altitudeTexCoord,texCoords.yx);
-	vec4 texel1		=texture3D(fadeTexture1,texcoord);
-	vec4 texel2		=texture3D(fadeTexture2,texcoord);
-	vec4 texel		=mix(texel1,texel2,skyInterp);
-    gl_FragColor	=texel;
+	vec4 texel1=texture3D(fadeTexture1,texcoord);
+	vec4 texel2=texture3D(fadeTexture2,texcoord);
+	vec4 texel=mix(texel1,texel2,skyInterp);
+    gl_FragColor=texel;
 }

@@ -36,11 +36,11 @@ namespace simul
 									,const clouds::GpuCloudsParameters &params
 									,int start_texel
 									,int texels);
-			void PerformGPURelight(		int light_index
-											,const clouds::GpuCloudsParameters &params
-											,float *target
-											,int start_texel
-											,int texels);
+			void PerformGPURelight(	int light_index
+									,const clouds::GpuCloudsParameters &params
+									,float *target
+									,int start_texel
+									,int texels);
 			void GPUTransferDataToTexture(	int cycled_index
 											,const clouds::GpuCloudsParameters &params
 											,unsigned char *target
@@ -81,7 +81,7 @@ namespace simul
 			ID3D11SamplerState*					m_pWwcSamplerState;
 			ID3D11SamplerState*					m_pWccSamplerState;
 			ID3D11SamplerState*					m_pCwcSamplerState;
-			bool harmonic_secondary;
+	bool harmonic_secondary;
 		};
 	}
 }

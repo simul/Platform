@@ -232,7 +232,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 	vec4 result					=vec4(0,0,0,0);
 	vec2 nearFarDistLowRes		=depthToLinearDistance(lowres.yx,depthToLinFadeDistParams);
 	vec4 insc					=vec4(0,0,0,0);
-	vec4 insc_far				=texture_clamp_lod(farInscatterTexture,texCoords,0);
+		vec4 insc_far			=texture_clamp_lod(farInscatterTexture,texCoords,0);
 		vec4 insc_near			=texture_clamp_lod(nearInscatterTexture,texCoords,0);
 	if(edge>0.0)
 	{
@@ -273,7 +273,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 			result.rgb			+=insc.rgb*add.a;
 		}
 		// atmospherics: we simply interpolate.
-		result					/=float(numSamples);
+		result/=float(numSamples);
 		hiResInterp				/=float(numSamples);
 	//	result=insc_far;
 	}
@@ -285,9 +285,9 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 			hiresDepth			=depthTextureMS.Load(hires_depth_pos2,0).x;
 		else
 			hiresDepth			=depthTexture[hires_depth_pos2].x;
-		float trueDist			=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
-		result					=depthDependentFilteredImage(farImageTexture,lowResDepthTexture,imageDims,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
-		result.rgb				+=insc_far.rgb*result.a;
+		float trueDist		=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
+		result				=depthDependentFilteredImage(farImageTexture,lowResDepthTexture,imageDims,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
+		result.rgb			+=insc_far.rgb*result.a;
 	}
     return result;
 }

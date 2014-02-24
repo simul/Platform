@@ -56,8 +56,8 @@ namespace simul
 			~Profiler();
 			void Initialize(ID3D11Device* device);
 			void Uninitialize();
-			void Begin(void *context,const char *name);
-			void End();
+					void Begin(void *context,const char *name);
+					void End();
 
 			void EndFrame(ID3D11DeviceContext* context);
 	

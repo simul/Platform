@@ -345,17 +345,17 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 {
 	ID3D11DeviceContext* pContext			=(ID3D11DeviceContext*)context;
 
-	int noise_texture_size					=cloudKeyframer->GetEdgeNoiseTextureSize();
-	int noise_texture_frequency				=cloudKeyframer->GetEdgeNoiseFrequency();
-	int texture_octaves						=cloudKeyframer->GetEdgeNoiseOctaves();
-	float texture_persistence				=cloudKeyframer->GetEdgeNoisePersistence();
+	int noise_texture_size		=cloudKeyframer->GetEdgeNoiseTextureSize();
+	int noise_texture_frequency	=cloudKeyframer->GetEdgeNoiseFrequency();
+	int texture_octaves			=cloudKeyframer->GetEdgeNoiseOctaves();
+	float texture_persistence	=cloudKeyframer->GetEdgeNoisePersistence();
 
-	ID3D1xEffect*					effect	=NULL;
+	ID3D1xEffect*					effect=NULL;
 	ID3D1xEffectTechnique *randomTechnique	=NULL;
 	ID3D1xEffectTechnique *noiseTechnique	=NULL;
 	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_rendernoise.fx");
-	randomTechnique							=effect->GetTechniqueByName("simul_random");
-	noiseTechnique							=effect->GetTechniqueByName("simul_noise_2d");
+	randomTechnique					=effect->GetTechniqueByName("simul_random");
+	noiseTechnique					=effect->GetTechniqueByName("simul_noise_2d");
 
 	simul::dx11::Framebuffer	random_fb;
 	random_fb.RestoreDeviceObjects(m_pd3dDevice);
@@ -423,10 +423,10 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
 	//using noise_size and noise_src_ptr, make a 3d texture:
 
-	int noise_texture_frequency						=cloudKeyframer->GetEdgeNoiseFrequency();
+	int noise_texture_frequency				=cloudKeyframer->GetEdgeNoiseFrequency();
 	int noise_texture_size							=cloudKeyframer->GetEdgeNoiseTextureSize();
-	ID3D1xEffect *effect							=NULL;
-	HRESULT hr										=CreateEffect(m_pd3dDevice,&effect,"simul_rendernoise.fx");
+	ID3D1xEffect *effect					=NULL;
+	HRESULT hr								=CreateEffect(m_pd3dDevice,&effect,"simul_rendernoise.fx");
 	ID3DX11EffectTechnique *randomComputeTechnique	=effect->GetTechniqueByName("random_3d_compute");
 	ID3DX11EffectTechnique *noise3DComputeTechnique	=effect->GetTechniqueByName("noise_3d_compute");
 
@@ -447,7 +447,7 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 	noise_texture_3D.ensureTexture3DSizeAndFormat(m_pd3dDevice
 		,noise_texture_size,noise_texture_size,noise_texture_size
 		,DXGI_FORMAT_R8G8B8A8_SNORM,true);
-	
+
 	simul::dx11::setTexture(effect,"random_texture_3d",random_3d.shaderResourceView);
 	simul::dx11::setUnorderedAccessView(effect,"targetTexture",noise_texture_3D.unorderedAccessView);
 	int texture_octaves			=cloudKeyframer->GetEdgeNoiseOctaves();
@@ -741,17 +741,17 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
-	cloudDensity->SetResource(cloud_texture.shaderResourceView);
-	cloudDensity1->SetResource(cloud_textures[(texture_cycle)  %3].shaderResourceView);
-	cloudDensity2->SetResource(cloud_textures[(texture_cycle+1)%3].shaderResourceView);
-	noiseTexture->SetResource(noiseTextureResource);
-	noiseTexture3D->SetResource(noise_texture_3D.shaderResourceView);
-	skyLossTexture->SetResource(skyLossTexture_SRV);
-	skyInscatterTexture->SetResource(overcInscTexture_SRV);
-	skylightTexture->SetResource(skylightTexture_SRV);
-	depthTexture->SetResource(depthTexture_SRV);
+	cloudDensity		->SetResource(cloud_texture.shaderResourceView);
+	cloudDensity1		->SetResource(cloud_textures[(texture_cycle)  %3].shaderResourceView);
+	cloudDensity2		->SetResource(cloud_textures[(texture_cycle+1)%3].shaderResourceView);
+	noiseTexture		->SetResource(noiseTextureResource);
+	noiseTexture3D		->SetResource(noise_texture_3D.shaderResourceView);
+	skyLossTexture		->SetResource(skyLossTexture_SRV);
+	skyInscatterTexture	->SetResource(overcInscTexture_SRV);
+	skylightTexture		->SetResource(skylightTexture_SRV);
+	depthTexture		->SetResource(depthTexture_SRV);
 	lightTableTexture	->SetResource(lightTableTexture_SRV);
-	
+
 	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"		,noiseTextureResource);
 	simul::dx11::setTexture(m_pCloudEffect,"illuminationTexture",illuminationTexture_SRV);
 	

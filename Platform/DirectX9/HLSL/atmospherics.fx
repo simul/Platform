@@ -146,7 +146,6 @@ float3 illuminationScales;
 #define pi (3.1415926536f)
 #endif
 
-
 struct atmosVertexOutput
 {
     vec4 hPosition		: POSITION;
@@ -247,6 +246,7 @@ float4 PS_Airglow(atmosVertexOutput IN) : color
     return final;
 }
 
+
 technique simul_atmospherics
 {
     pass loss_pass
@@ -254,7 +254,7 @@ technique simul_atmospherics
 		cullmode = none;
 		VertexShader = compile vs_3_0 VS_Atmos();
 		PixelShader = compile ps_3_0 PS_AtmosOverlayLossPass();
-		alphablendenable = true;
+		AlphaBlendEnable = true;
 		ZWriteEnable = false;
 		ZEnable= false;
 		SrcBlend = Zero;
@@ -265,7 +265,7 @@ technique simul_atmospherics
 		cullmode = none;
 		VertexShader = compile vs_3_0 VS_Atmos();
 		PixelShader = compile ps_3_0 PS_AtmosOverlayInscPass();
-		alphablendenable = true;
+		AlphaBlendEnable = true;
 		ZWriteEnable = false;
 		ZEnable= false;
 		SrcBlend = One;

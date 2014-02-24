@@ -99,7 +99,7 @@ namespace simul
 										,const void* mainDepthTextureMS	
 										,const void* lowResDepthTexture 
 										,const sky::float4& depthViewportXYWH
-									);
+										);
 			// This composites the clouds and other buffers to the screen.
 			void CompositeCloudsToScreen(void *context
 												,int view_id

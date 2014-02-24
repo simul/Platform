@@ -221,13 +221,13 @@ HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &text
 {
 	if(BUNDLE_SHADERS)
 		return CreateDX9Texture(m_pd3dDevice,texture,(*GetResourceId)(filename_utf8));
-
 	std::string fn_utf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(fn_utf8.c_str()))
 	{
 		std::cerr<<"File not found: "<<filename_utf8<<std::endl;
 		return S_FALSE;
 	}
+
 	std::wstring wstr	=simul::base::Utf8ToWString(fn_utf8.c_str());
 	HRESULT hr=D3DXCreateTextureFromFileExW(	m_pd3dDevice,
 												wstr.c_str(),

@@ -13,14 +13,14 @@ void main(void)
 	vec4 result;
 	// IN.tex is +- 1.
 	vec2 rad		=2.0*(texCoords-vec2(0.5,0.5));
-	float r			=length(rad);
+	float r=length(rad);
 	if(r>1.0)
 		discard;
-	float u			=saturate((1.0-r)/0.1);
+	float u=saturate((1.0-r)/0.1);
 	float brightness=sunlight.a*pow(u,6.0);
 	result.rgb		=colour.rgb;
-	result.a		=u;
-    gl_FragColor	=result;
+	result.a=u;
+    gl_FragColor=result;
 }
 
  

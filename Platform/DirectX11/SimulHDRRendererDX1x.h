@@ -78,7 +78,7 @@ namespace simul
 			ID3D1xEffectTechnique*				gaussianColTechnique;
 
 			float timing;
-			simul::dx11::ComputableTexture					glowTexture;
+			simul::dx11::ComputableTexture		glowTexture;
 			ConstantBuffer<HdrConstants>		hdrConstants;
 		};
 	}

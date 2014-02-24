@@ -240,7 +240,7 @@ vec4 PS_Inscatter_Near(atmosVertexOutput IN) : SV_TARGET
 	res.rgb	*=exposure;
 	return res;
 }
-
+	
 vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);

@@ -220,7 +220,7 @@
     <ClInclude Include="CompileShaderDX1x.h" />
     <ClInclude Include="CreateEffectDX1x.h" />
     <ClInclude Include="CSFFT\fft_512x512.h" />
-    <ClInclude Include="CubemapFramebuffer.h" />
+    <ClInclude Include="cubemapframebuffer.h" />
     <ClInclude Include="Direct3D11CallbackInterface.h" />
     <ClInclude Include="Direct3D11Manager.h" />
     <ClInclude Include="Direct3D11ManagerInterface.h" />

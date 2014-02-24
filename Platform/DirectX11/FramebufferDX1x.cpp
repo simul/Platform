@@ -311,7 +311,7 @@ m_pd3dDevice->GetImmediateContext(&pContext);
 	sourceRegion.front = 0;
 	sourceRegion.back = 1;
 	pContext->CopySubresourceRegion(stagingTexture,0,0,0,0,GetColorTexture(),0,&sourceRegion);
-	HRESULT hr=S_OK;
+HRESULT hr=S_OK;
 	D3D11_MAPPED_SUBRESOURCE msr;
 	V_CHECK(pContext->Map(stagingTexture, 0, D3D11_MAP_READ, 0, &msr));
 	int byteSize=simul::dx11::ByteSizeOfFormatElement(target_format);
@@ -378,9 +378,15 @@ void Framebuffer::SaveOldRTs(void *context)
 	m_pOldRenderTarget	=NULL;
 	m_pOldDepthSurface	=NULL;
 	pContext->OMGetRenderTargets(	1,
-									&m_pOldRenderTarget,
-									&m_pOldDepthSurface
-									);
+												&m_pOldRenderTarget,
+												&m_pOldDepthSurface
+												);
+}
+
+bool Framebuffer::IsValid() const
+{
+	bool ok=(m_pHDRRenderTarget!=NULL)||(m_pBufferDepthSurface!=NULL);
+	return ok;
 }
 
 bool Framebuffer::IsValid() const
@@ -453,8 +459,8 @@ void Framebuffer::ActivateDepth(void *context)
 	}
 	depth_active=(m_pBufferDepthSurface!=NULL);
 	D3D11_VIEWPORT viewport;
-	// Setup the viewport for rendering.
-	viewport.Width = (float) Width;
+		// Setup the viewport for rendering.
+	viewport.Width = (float)Width;
 	viewport.Height = (float)Height;
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;

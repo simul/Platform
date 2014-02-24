@@ -58,12 +58,10 @@ int View::GetScreenWidth() const
 {
 	return ScreenWidth;
 }
-
 int View::GetScreenHeight() const
 {
 	return ScreenHeight;
 }
-
 void View::SetResolution(int w,int h)
 {
 	ScreenWidth=w;
@@ -141,7 +139,7 @@ D3D_FEATURE_LEVEL Direct3D11Renderer::GetMinimumFeatureLevel() const
 	return D3D_FEATURE_LEVEL_11_0;
 }
 
-void	Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
+void Direct3D11Renderer::OnD3D11CreateDevice(ID3D11Device* pd3dDevice)
 {
 	m_pd3dDevice=pd3dDevice;
 	enabled=true;
@@ -257,7 +255,7 @@ void Direct3D11Renderer::RenderCubemap(ID3D11DeviceContext* pContext,D3DXVECTOR3
 	if(oceanRenderer)
 		oceanRenderer->SetCubemapTexture(cubemapFramebuffer.GetColorTex());
 }
-	
+
 void Direct3D11Renderer::RenderEnvmap(ID3D11DeviceContext* pContext)
 {
 	cubemapFramebuffer.SetBands(SphericalHarmonicsBands);
@@ -303,7 +301,6 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 	view->lowResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	//lowResDepthTexture_far.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
 	//lowResDepthTexture_scratch.ensureTexture2DSizeAndFormat(m_pd3dDevice,w,h,DXGI_FORMAT_R32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
-
 	ID3D11ShaderResourceView *depth_SRV=(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex();
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	depth_SRV->GetDesc(&desc);
@@ -312,9 +309,9 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 	ID3D11Texture2D *depthTexture=view->hdrFramebuffer.GetDepthTexture();
 	// Sadly, ResolveSubresource doesn't work for depth. And compute can't do MS lookups. So we use a framebufferinstead.
 	view->resolvedDepth_fb.Activate(pContext);
-		simul::dx11::setTexture		(mixedResolutionEffect,"sourceMSDepthTexture"	,depth_SRV);
-		simul::dx11::setTexture		(mixedResolutionEffect,"sourceDepthTexture"		,depth_SRV);
-		ID3DX11EffectTechnique *tech	=mixedResolutionEffect->GetTechniqueByName("resolve_depth");
+		simul::dx11::setTexture(mixedResolutionEffect,"sourceMSDepthTexture"	,depth_SRV);
+		simul::dx11::setTexture(mixedResolutionEffect,"sourceDepthTexture"		,depth_SRV);
+		ID3DX11EffectTechnique *tech=mixedResolutionEffect->GetTechniqueByName("resolve_depth");
 		V_CHECK(ApplyPass(pContext,tech->GetPassByIndex(0)));
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	view->resolvedDepth_fb.Deactivate(pContext);
@@ -344,15 +341,15 @@ void Direct3D11Renderer::RenderFadeEditView(ID3D11DeviceContext* pContext)
 void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,simul::clouds::BaseWeatherRenderer *w,D3DXMATRIX v,D3DXMATRIX proj)
 {
 	View *view=views[view_id];
-		if(simulWeatherRenderer)
+	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetMatrices((const float*)v,(const float*)proj);
 	if(simulTerrainRenderer&&ShowTerrain)
-		{
+	{
 		simulTerrainRenderer->SetMatrices((const float*)v,(const float*)proj);
 		if(simulWeatherRenderer&&simulWeatherRenderer->GetBaseCloudRenderer())
 			simulTerrainRenderer->SetCloudShadowTexture(simulWeatherRenderer->GetBaseCloudRenderer()->GetCloudShadowTexture());
 		simulTerrainRenderer->Render(pContext,1.f);	
-		}
+	}
 	if(oceanRenderer&&ShowWater)
 	{
 		oceanRenderer->SetMatrices((const float*)v,(const float*)proj);
@@ -360,7 +357,7 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,s
 		if(oceanRenderer->GetShowWireframes())
 			oceanRenderer->RenderWireframe(pContext);
 	}
-		if(simulWeatherRenderer)
+	if(simulWeatherRenderer)
 		simulWeatherRenderer->RenderCelestialBackground(pContext,Exposure);
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		view->hdrFramebuffer.DeactivateDepth(pContext);
@@ -393,7 +390,7 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,s
 	float occ	=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 	float exp	=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
 	simulOpticsRenderer->RenderFlare(pContext,exp,dir,light);
-	}
+}
 
 void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext)
 {
@@ -490,7 +487,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		view->hdrFramebuffer.SetAntialiasing(Antialiasing);
 		view->hdrFramebuffer.Activate(pContext);
 		view->hdrFramebuffer.Clear(pContext,0.f,0.f,0.f,0.f,ReverseDepth?0.f:1.f);
-		}
+	}
 	else
 	{
 	//	view->hdrFramebuffer.ActivateDepth(pContext);
@@ -525,13 +522,13 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			simulWeatherRenderer->GetSkyRenderer()->RenderFades(pContext,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
-	{
+		{
 			int x0=8;
 			int y0=8;
 			simulWeatherRenderer->RenderFramebufferDepth(pContext,0,view->GetScreenWidth(),view->GetScreenHeight());
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pContext,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pContext,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
-	}
+		}
 		if(ShowDepthBuffers)
 		{
 			int w=view->lowResDepthTexture.width*4;
@@ -581,7 +578,7 @@ void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)
 	View *view=views[0];
 	simul::dx11::Framebuffer fb(view->GetScreenWidth(),view->GetScreenHeight());
 	fb.RestoreDeviceObjects(m_pd3dDevice);
-	ID3D11DeviceContext*			pImmediateContext;
+	ID3D11DeviceContext *pImmediateContext;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
 	fb.Activate(pImmediateContext);
 	Render(0,m_pd3dDevice,pImmediateContext);
@@ -676,7 +673,7 @@ void Direct3D11Renderer::RecompileShaders()
 	lightProbeConstants.LinkToEffect(lightProbesEffect,"LightProbeConstants");
 }
 
-void Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
+void    Direct3D11Renderer::OnFrameMove(double fTime,float fTimeStep)
 {
 }
 

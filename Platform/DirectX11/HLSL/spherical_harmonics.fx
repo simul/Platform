@@ -27,7 +27,7 @@ void CS_Clear(uint3 sub_pos: SV_DispatchThreadID )
 void CS_Encode(uint3 sub_pos: SV_DispatchThreadID )
 {
 	// The sub_pos gives the co-ordinate in the table of sam
-	const double weight					=4.0*PI; 
+	const double weight				=4.0*PI; 
 	// divide the result by weight and number of samples 
 	double factor						=weight*invNumJitterSamples; 
 #if 0
@@ -36,7 +36,7 @@ void CS_Encode(uint3 sub_pos: SV_DispatchThreadID )
 	for(int n=0;n<num_bands;n++)
 	{ 
 		targetBuffer[n]					+=colour;//*factor*sample.coeff[n]; 
-	}
+	} 
 #else
 	//if(sub_pos.x<num_bands)
 	for(int n=0;n<numJitterSamples;n++)

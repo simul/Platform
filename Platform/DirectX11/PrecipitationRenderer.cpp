@@ -35,15 +35,15 @@ void PrecipitationRenderer::RecompileShaders()
 		return;
 	CreateEffect(m_pd3dDevice,&effect,"rain.fx");
 	SAFE_RELEASE(rain_texture);
-	m_hTechniqueRain			=effect->GetTechniqueByName("simul_rain");
-	m_hTechniqueParticles		=effect->GetTechniqueByName("simul_particles");
+	m_hTechniqueRain		=effect->GetTechniqueByName("simul_rain");
+	m_hTechniqueParticles	=effect->GetTechniqueByName("simul_particles");
 	m_hTechniqueRainParticles	=effect->GetTechniqueByName("rain_particles");
 	techniqueMoveParticles		=effect->GetTechniqueByName("move_particles");
-	rainTexture					=effect->GetVariableByName("rainTexture")->AsShaderResource();
+	rainTexture				=effect->GetVariableByName("rainTexture")->AsShaderResource();
 
 	rainConstants.LinkToEffect(effect,"RainConstants");
 	perViewConstants.LinkToEffect(effect,"RainPerViewConstants");
-	
+
 	ID3D11DeviceContext *pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
 	ID3DX11EffectTechnique *tech		=effect->GetTechniqueByName("create_rain_texture");
@@ -63,14 +63,14 @@ void PrecipitationRenderer::RecompileShaders()
 	// shader has been created:
 	dx11::setUnorderedAccessView(effect,"targetTextureArray",rainArrayTexture.unorderedAccessView);
 	ApplyPass(pImmediateContext,effect->GetTechniqueByName("make_rain_texture_array")->GetPassByIndex(0));
-	
+
 	pImmediateContext->Dispatch(16,512,32);
-	
+
 	// We can't detect if this has worked or not.
 	pImmediateContext->GenerateMips(rainArrayTexture.m_pArrayTexture_SRV);
 
 	D3D11_INPUT_ELEMENT_DESC decl[] =
-	{
+{
 		{"POSITION"	,0	,DXGI_FORMAT_R32G32B32_FLOAT	,0	,0	,D3D11_INPUT_PER_VERTEX_DATA,0},
 		{"TYPE"		,0	,DXGI_FORMAT_R32_UINT			,0	,12	,D3D11_INPUT_PER_VERTEX_DATA,0},
 		{"VELOCITY"	,0	,DXGI_FORMAT_R32G32B32_FLOAT	,0	,16	,D3D11_INPUT_PER_VERTEX_DATA,0},
@@ -149,7 +149,7 @@ void PrecipitationRenderer::InvalidateDeviceObjects()
 	SAFE_RELEASE(effect);
 	SAFE_RELEASE(m_pVtxDecl);
 	SAFE_RELEASE(rain_texture);
-
+	
 	rainConstants.InvalidateDeviceObjects();
 	perViewConstants.InvalidateDeviceObjects();
 }
@@ -195,15 +195,15 @@ void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 }
 
 /*	Here, we only consider the effect of exposure time on the transparency of the rain streak. It has been
-	shown [Garg and Nayar 2005] that the intensity Ir at a rain-affected
-	pixel is given by Ir =(1-a) Ib+a Istreak, where Ib and Istreak are the
-	intensities of the background and the streak at a rain-effected pixel.
-	The transparency factor a depends on drop size r0 and velocity v
-	and is given by a = 2 r0/v Texp. Also, the rain streaks become more
-	opaque with shorter exposure time. In the last step, we use the userspecified
-	depth map of the scene to find the pixels for which the rain
-	streak is not occluded by the scene. The streak is rendered only over
-	those pixels.
+shown [Garg and Nayar 2005] that the intensity Ir at a rain-affected
+pixel is given by Ir =(1-a) Ib+a Istreak, where Ib and Istreak are the
+intensities of the background and the streak at a rain-effected pixel.
+The transparency factor a depends on drop size r0 and velocity v
+and is given by a = 2 r0/v Texp. Also, the rain streaks become more
+opaque with shorter exposure time. In the last step, we use the userspecified
+depth map of the scene to find the pixels for which the rain
+streak is not occluded by the scene. The streak is rendered only over
+those pixels.
 */
 void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH)
 {
@@ -266,7 +266,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	perViewConstants.worldViewProj[1]	=wvp;
 	perViewConstants.worldViewProj[1].transpose();
 	perViewConstants.offset[1]		=offs;
-	perViewConstants.tanHalfFov		=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	perViewConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	perViewConstants.nearZ=0;//frustum.nearZ*0.001f/fade_distance_km;
 	perViewConstants.farZ=0;//frustum.farZ*0.001f/fade_distance_km;
 	perViewConstants.viewPos[1]		=viewPos;
@@ -296,7 +296,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	perViewConstants.depthToLinFadeDistParams = simul::math::Vector3( proj.m[3][2], max_fade_distance_metres, proj.m[2][2]*max_fade_distance_metres );
 	
 	perViewConstants.viewportToTexRegionScaleBias = simul::sky::float4(viewportTextureRegionXYWH.z, viewportTextureRegionXYWH.w, viewportTextureRegionXYWH.x, viewportTextureRegionXYWH.y);
-	
+
 	perViewConstants.Apply(pContext);
 	{
 		rainConstants.Apply(pContext);

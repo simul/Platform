@@ -41,7 +41,6 @@ namespace simul
 		public:
 			Direct3D11Manager();
 			~Direct3D11Manager();
-
 			void Initialize();
 			//! Add a window. Creates a new Swap Chain.
 			void AddWindow(HWND h);
@@ -73,6 +72,7 @@ namespace simul
 			WindowMap windows;
 			typedef std::map<int,IDXGIOutput*> OutputMap;
 			OutputMap outputs;
+
 			ID3D11Debug *d3dDebug ;
 	ID3D11InfoQueue *d3dInfoQueue ;
 		};

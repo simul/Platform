@@ -54,7 +54,7 @@ technique11 downscale_depth_far_near
     pass msaa
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear_MSAA()));
-}
+    }
 }
 
 technique11 resolve_depth

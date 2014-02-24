@@ -150,8 +150,8 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
 	float opacity			=saturate(detail.a*2.0*Y(coverage));//+2.0*Y(coverage)-1.0);
 	if(opacity<=0)
 		discard;
-	vec3 view				=normalize(wEyeToPos);
-	float cos0				=dot(normalize(lightDir),view);
+	vec3 view	=normalize(wEyeToPos);
+	float cos0	=dot(normalize(lightDir),view);
 	float scattered_light	=exp(-detail.r*extinction);
 	float hg				=HenyeyGreenstein(cloudEccentricity,cos0);
 

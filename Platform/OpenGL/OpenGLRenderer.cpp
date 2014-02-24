@@ -62,10 +62,10 @@ OpenGLRenderer::OpenGLRenderer(simul::clouds::Environment *env,simul::scene::Sce
 	,simple_program(0)
 	,sceneRenderer(NULL)
 {
-	simulHDRRenderer	=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
-	simulWeatherRenderer=new SimulGLWeatherRenderer(env,NULL,ScreenWidth,ScreenHeight);
-	simulOpticsRenderer	=new SimulOpticsRendererGL(m);
-	simulTerrainRenderer=new SimulGLTerrainRenderer(NULL);
+	simulHDRRenderer		=new SimulGLHDRRenderer(ScreenWidth,ScreenHeight);
+	simulWeatherRenderer	=new SimulGLWeatherRenderer(env,NULL,ScreenWidth,ScreenHeight);
+	simulOpticsRenderer		=new SimulOpticsRendererGL(m);
+	simulTerrainRenderer	=new SimulGLTerrainRenderer(NULL);
 	simulTerrainRenderer->SetBaseSkyInterface(simulWeatherRenderer->GetSkyKeyframer());
 	if(!renderPlatform)
 		renderPlatform		=new opengl::RenderPlatform;
@@ -183,7 +183,7 @@ void OpenGLRenderer::paintGL()
 		glFogf(GL_FOG_START,1.0f);						// Fog Start Depth
 		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
 		glDisable(GL_FOG);
-GL_ERROR_CHECK
+		GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
 			simulHDRRenderer->StartRender(context);
