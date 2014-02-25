@@ -1,7 +1,6 @@
 #include <GL/glew.h>
 #include <stdint.h> // for uintptr_t
 #include <stdint.h> // for uintptr_t
-#include <stdint.h> // for uintptr_t
 #include "Simul/Platform/OpenGL/GpuSkyGenerator.h"
 #include "Simul/Platform/OpenGL/LoadGLProgram.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"

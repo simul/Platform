@@ -822,6 +822,7 @@ void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 	for(int i=0;i<3;i++)
 	{
 		cloud_textures[i].ensureTexture3DSizeAndFormat(NULL,width_x,length_y,depth_z,GL_RGBA,true);
+GL_ERROR_CHECK
 	/*	glGenTextures(1,&(cloud_textures[i].tex));
 		glBindTexture(GL_TEXTURE_3D,cloud_textures[i].tex);
 		if(sizeof(simul::clouds::CloudTexelType)==sizeof(GLushort))
