@@ -18,8 +18,7 @@ GpuCloudGenerator::GpuCloudGenerator():BaseGpuCloudGenerator()
 	,density(NULL)
 	,density_gridsize(0)
 	,readback_to_cpu(true)
-	,gpuCloudConstantsUBO(0)
-	,gpuCloudConstantsBindingIndex(2)
+	,last_generation_number(-1)
 {
 	for(int i=0;i<3;i++)
 		finalTexture[i]=NULL;
@@ -36,7 +35,7 @@ void GpuCloudGenerator::RestoreDeviceObjects(void *)
 	itype=GL_LUMINANCE;
 	RecompileShaders();
 	density_texture=0;
-	MAKE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,GpuCloudConstants,gpuCloudConstantsBindingIndex);
+	gpuCloudConstants.RestoreDeviceObjects();
 }
 
 void GpuCloudGenerator::InvalidateDeviceObjects()
@@ -49,7 +48,8 @@ void GpuCloudGenerator::InvalidateDeviceObjects()
 	SAFE_DELETE_PROGRAM(transform_program);
 	SAFE_DELETE_PROGRAM(lighting_program);
 	SAFE_DELETE_TEXTURE(density_texture);
-	SAFE_DELETE_BUFFER(gpuCloudConstantsUBO);
+	gpuCloudConstants.Release();
+	SAFE_DELETE_TEXTURE(volume_noise_tex);
 }
 
 void GpuCloudGenerator::RecompileShaders()
@@ -60,6 +60,9 @@ void GpuCloudGenerator::RecompileShaders()
 	density_program		=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_density.frag");
 	lighting_program	=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_clouds.frag");
 	transform_program	=MakeProgram("simul_gpu_clouds.vert",NULL,"simul_gpu_cloud_transform.frag");
+	gpuCloudConstants			.LinkToProgram(density_program	,"GpuCloudConstants",8);
+	gpuCloudConstants			.LinkToProgram(lighting_program	,"GpuCloudConstants",8);
+	gpuCloudConstants			.LinkToProgram(transform_program,"GpuCloudConstants",8);
 }
 
 static GLuint make3DTexture(int w,int l,int d,int stride,bool wrap_z,const float *src)
@@ -97,10 +100,14 @@ int GpuCloudGenerator::GetDensityGridsize(const int *grid)
 	return grid[0]*grid[1]*grid[2];
 }
 
-void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr,int /*generation_number*/)
+void* GpuCloudGenerator::Make3DNoiseTexture(int noise_size,const float *noise_src_ptr,int generation_number)
 {
-	noiseSize=noise_size;
-	volume_noise_tex=(GLuint)make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
+	if(generation_number==last_generation_number&&volume_noise_tex)
+		return (void*)volume_noise_tex;
+	last_generation_number	=generation_number;
+	noiseSize				=noise_size;
+	SAFE_DELETE_TEXTURE(volume_noise_tex);
+	volume_noise_tex		=(GLuint)make3DTexture(noise_size,noise_size,noise_size,1,true,noise_src_ptr);
 	return (void*)volume_noise_tex;
 }
 
@@ -125,15 +132,15 @@ void CopyTo3DTexture(int start_texel,int texels,const int grid[3])
 	}
 	if(z1>grid[2])
 		z1=grid[2];
-	for(int i=z0;i<z1;i++)
+	for(int z=z0;z<z1;z++)
 	{
 		int y=0,dy=grid[1];
-		if(i==z0)
+		if(z==z0)
 		{
 			y=y0;
 			dy=grid[1]-y0;
 		}
-		if(i==z1-1)
+		if(z==z1-1)
 		{
 			dy=y1-y;
 		}
@@ -142,14 +149,27 @@ GL_ERROR_CHECK
 								0,							//	level
 								0,							//	x offset in 3D texture
 								y,							//	y offset in 3D texture
-								i,							//	z offset in 3D texture
+								z,							//	z offset in 3D texture
 								0,							//	x=0 in source 2D texture
-								i*grid[1]+y,	//	y offset in source 2D texture
-								grid[0],		//	width to copy
+								z*grid[1]+y,				//	y offset in source 2D texture
+								grid[0],					//	width to copy
 								dy);						// length to copy.
 GL_ERROR_CHECK
 GL_ERROR_CHECK
 	}
+}
+static void CopyTo3DTextureLayer(int z,const int grid[3])
+{
+	glEnable(GL_TEXTURE_3D);
+	glCopyTexSubImage3D(	GL_TEXTURE_3D,
+							0,							//	level
+							0,							//	x offset in 3D texture
+							0,							//	y offset in 3D texture
+							z,							//	z offset in 3D texture
+							0,							//	x=0 in source 2D texture
+							0,							//	y offset in source 2D texture
+							grid[0],					//	width to copy
+							grid[1]);					// length to copy.
 }
 // Fill the stated number of texels of the density texture
 void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsParameters &params
@@ -177,39 +197,30 @@ void GpuCloudGenerator::FillDensityGrid(int /*index*/,const clouds::GpuCloudsPar
 		}
 	}
 	int stride=(iformat==GL_RGBA32F_ARB)?4:1;
-
 	simul::math::Vector3 noise_scale(1.f,1.f,(float)params.density_grid[2]/(float)params.density_grid[0]);
-
 	//using noise_size and noise_src_ptr, make a 3d texture:
-	
-	glEnable(GL_TEXTURE_3D);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D,volume_noise_tex);
-	
 	glUseProgram(density_program);
-	
 	setParameter(density_program,"volumeNoiseTexture"	,0);
-
-	GpuCloudConstants constants;
-
-	UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
-	GLint gpuCloudConstants		=glGetUniformBlockIndex(density_program,"GpuCloudConstants");
-	if(gpuCloudConstants>=0)
-		glUniformBlockBinding(density_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
 	//MakeVertexMatrix(params.density_grid,start_texel,texels);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(0,1.0,0.0,1.0,-1.0,1.0);
 	float y_start=(float)start_texel/(float)total_texels;
 	float y_end=(float)(start_texel+texels)/(float)total_texels;
-	SetGpuCloudConstants(constants,params,y_start,y_end-y_start);
-
+	gpuCloudConstants.transformMatrix	=params.Matrix4x4DensityToLightTransform;
+	SetGpuCloudConstants(gpuCloudConstants,params,y_start,y_end-y_start);
+	gpuCloudConstants.zPixel			=1.f/(float)params.density_grid[2];
+	gpuCloudConstants.zSize				=(float)params.density_grid[2];
+	gpuCloudConstants.Apply();
+	glEnable(GL_TEXTURE_3D);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D,volume_noise_tex);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	{
 GL_ERROR_CHECK
 		dens_fb.Activate(NULL);
-//dens_fb.Clear(0,0,0,0);
+//dens_fb.Clear(1,0,0,0);
 GL_ERROR_CHECK
 		DrawQuad(0.f,y_start,1.f,y_end-y_start);
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
@@ -218,9 +229,9 @@ GL_ERROR_CHECK
 		glBindTexture(GL_TEXTURE_3D,density_texture);
 
 		int w,l,d;
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_WIDTH,&w);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_HEIGHT,&l);
-		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_DEPTH,&d);
+		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_WIDTH	,&w);
+		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_HEIGHT	,&l);
+		glGetTexLevelParameteriv(GL_TEXTURE_3D,0,GL_TEXTURE_DEPTH	,&d);
 
 		if(!density_texture||density_gridsize!=total_texels*stride||w!=params.density_grid[0]||l!=params.density_grid[1]||d!=params.density_grid[2])
 		{
@@ -235,13 +246,11 @@ GL_ERROR_CHECK
 		}
 	GL_ERROR_CHECK
 		CopyTo3DTexture(start_texel,texels,params.density_grid);
-		
 		dens_fb.Deactivate(NULL);
 	}
 	glDisable(GL_TEXTURE_3D);
 	glUseProgram(0);
 GL_ERROR_CHECK
-	glDeleteTextures(1,&volume_noise_tex);
 GL_ERROR_CHECK
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
@@ -251,7 +260,7 @@ GL_ERROR_CHECK
 }
 
 // The target is a grid of size given by light_gridsizes, arranged as d w-by-l textures.
-void GpuCloudGenerator::PerformGPURelight(int /*light_index*/
+void GpuCloudGenerator::PerformGPURelight(int light_index
 											,const clouds::GpuCloudsParameters &params
 											,float *target
 											,int start_texel
@@ -267,6 +276,12 @@ GL_ERROR_CHECK
 		fb[i].SetWidthAndHeight(params.light_grid[0],params.light_grid[1]);
 		fb[i].InitColor_Tex(0,GL_RGBA32F_ARB);
 	}
+	directLightTextures[light_index].ensureTexture3DSizeAndFormat(NULL
+				,params.light_grid[0],params.light_grid[1],params.light_grid[2]
+				,GL_RGBA32F_ARB/*GL_LUMINANCE32F_ARB*/,true);
+	indirectLightTextures[light_index].ensureTexture3DSizeAndFormat(NULL
+				,params.light_grid[0],params.light_grid[1],params.light_grid[2]
+				,GL_LUMINANCE32F_ARB,true);
 	// We use the density framebuffer texture as our density texture. This works well
 	// because we don't need to do any filtering.
 	//GLuint density_texture	=dens_fb.GetColorTex();
@@ -275,13 +290,13 @@ GL_ERROR_CHECK
 	setParameter(lighting_program,"input_light_texture",0);
 	setParameter(lighting_program,"density_texture",1);
 
-	GpuCloudConstants constants;
-	constants.extinctions		=params.lightspace_extinctions;
-	constants.transformMatrix	=params.Matrix4x4LightToDensityTexcoords;
-	UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
-	GLint gpuCloudConstants		=glGetUniformBlockIndex(lighting_program,"GpuCloudConstants");
-	if(gpuCloudConstants>=0)
-		glUniformBlockBinding(lighting_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
+	int total_texels=params.light_grid[0]*params.light_grid[1]*params.light_grid[2];
+	float y_start=(float)start_texel/(float)total_texels;
+	float y_end=(float)(start_texel+texels)/(float)total_texels;
+	gpuCloudConstants.transformMatrix	=params.Matrix4x4LightToDensityTexcoords;
+	SetGpuCloudConstants(gpuCloudConstants,params,y_start,y_end-y_start);
+	gpuCloudConstants.extinctions		=params.lightspace_extinctions;
+	gpuCloudConstants.Apply();
 	// initialize the first input texture.
 	FramebufferGL *F[2];
 	F[0]=&fb[0];
@@ -309,7 +324,10 @@ GL_ERROR_CHECK
 			F[0]->Clear(NULL,1.f,1.f,1.f,1.f,1.f);
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			if(target)
-			glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
+				glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].tex);
+			CopyTo3DTextureLayer(0,params.light_grid);
 		F[0]->Deactivate(NULL);
 		z0++;
 	}
@@ -320,13 +338,12 @@ GL_ERROR_CHECK
 	for(int i=z0;i<z1;i++)
 	{
 		float zPosition=((float)i-0.5f)/(float)params.light_grid[2];
-		//setParameter(lighting_program,"zPosition",zPosition);
-		constants.zPosition=zPosition;
-		UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
-		GLint gpuCloudConstants		=glGetUniformBlockIndex(lighting_program,"GpuCloudConstants");
-		if(gpuCloudConstants>=0)
-			glUniformBlockBinding(lighting_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
+
+		gpuCloudConstants.zPosition=zPosition;
+		gpuCloudConstants.Apply();
 		F[1]->Activate(NULL);
+float u=(float)i/(float)z1;
+F[1]->Clear(NULL,u,u,u,u,1.f);
 			glMatrixMode(GL_PROJECTION);
 			glLoadIdentity();
 			glOrtho(0,1.0,0,1.0,-1.0,1.0);
@@ -341,6 +358,9 @@ GL_ERROR_CHECK
 			glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 			if(target)
 				glReadPixels(0,0,params.light_grid[0],params.light_grid[1],GL_RGBA,GL_FLOAT,(GLvoid*)target);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_3D,directLightTextures[light_index].tex);
+			CopyTo3DTextureLayer(i,params.light_grid);
 			GL_ERROR_CHECK
 		F[1]->Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -375,36 +395,28 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	// For each level in the z direction, we render out a 2D texture and copy it to the target.
 	world_fb.SetWidthAndHeight(params.density_grid[0],params.density_grid[1]*params.density_grid[2]);
 	world_fb.InitColor_Tex(0,GL_RGBA);
-	//GLuint density_texture	=make3DTexture(density_grid[0],density_grid[1],density_grid[2]	,1,false,density);
-	GLuint light_texture	=make3DTexture(params.light_grid[0]	,params.light_grid[1],params.light_grid[2]	,4,false,NULL);
-	GLuint ambient_texture	=make3DTexture(params.density_grid[0],params.density_grid[1],params.density_grid[2]	,4,false,NULL);
 	glUseProgram(transform_program);
 	setParameter(transform_program,"density_texture",0);
 	setParameter(transform_program,"light_texture",1);
 	setParameter(transform_program,"ambient_texture",2);
-	//setMatrix(transform_program,"transformMatrix",transformMatrix);
-//	setParameter(transform_program,"zSize",(float)density_grid[2]);
-	//setParameter(transform_program,"zPixel",1.f/(float)density_grid[2]);
 
-	GpuCloudConstants constants;
-	constants.transformMatrix	=params.Matrix4x4DensityToLightTransform;
-	constants.zPixel			=1.f/(float)params.density_grid[2];
-	constants.zSize				=(float)params.density_grid[2];
-	//constants.zs
-	UPDATE_GL_CONSTANT_BUFFER(gpuCloudConstantsUBO,constants,gpuCloudConstantsBindingIndex)
-	GLint gpuCloudConstants		=glGetUniformBlockIndex(transform_program,"GpuCloudConstants");
-	if(gpuCloudConstants>=0)
-		glUniformBlockBinding(transform_program,gpuCloudConstants,gpuCloudConstantsBindingIndex);
+	float y_start=(float)start_texel/(float)total_texels;
+	float y_end=(float)(start_texel+texels)/(float)total_texels;
+	gpuCloudConstants.transformMatrix	=params.Matrix4x4DensityToLightTransform;
+	SetGpuCloudConstants(gpuCloudConstants,params,y_start,y_end-y_start);
+
+	gpuCloudConstants.zPixel			=1.f/(float)params.density_grid[2];
+	gpuCloudConstants.zSize				=(float)params.density_grid[2];
+
+	gpuCloudConstants.Apply();
 	glEnable(GL_TEXTURE_3D);
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D,density_texture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_3D,light_texture);
+	glBindTexture(GL_TEXTURE_3D,directLightTextures[1].tex);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_3D,ambient_texture);
-	float y_start=(float)start_texel/(float)total_texels;
-	float y_end=(float)(start_texel+texels)/(float)total_texels;
+	glBindTexture(GL_TEXTURE_3D,directLightTextures[0].tex);
 	// Instead of a loop, we do a single big render, by tiling the z layers in the y direction.
 	{
 		world_fb.Activate(NULL);
@@ -426,9 +438,9 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 				target+=Y0*params.density_grid[0]*4;
 				glReadPixels(0,Y0,params.density_grid[0],Y1-Y0,GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,(GLvoid*)target);
 			}
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D,finalTexture[cycled_index]->tex);
-		CopyTo3DTexture(start_texel,texels,params.density_grid);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_3D,finalTexture[cycled_index]->tex);
+			CopyTo3DTexture(start_texel,texels,params.density_grid);
 			GL_ERROR_CHECK
 		world_fb.Deactivate(NULL);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
@@ -438,8 +450,6 @@ void GpuCloudGenerator::GPUTransferDataToTexture(int cycled_index
 	glUseProgram(0);
 	glDisable(GL_TEXTURE_3D);
 	glDisable(GL_TEXTURE_2D);
-	glDeleteTextures(1,&ambient_texture);
-	glDeleteTextures(1,&light_texture);
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
