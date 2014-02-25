@@ -238,7 +238,7 @@ void CubemapFramebuffer::CalcSphericalHarmonics(void *context)
 	ID3DX11EffectTechnique *tech		=sphericalHarmonicsEffect->GetTechniqueByName("encode");
 	simul::dx11::setTexture				(sphericalHarmonicsEffect,"cubemapTexture"	,m_pCubeEnvMapSRV);
 	simul::dx11::setTexture				(sphericalHarmonicsEffect,"samplesBuffer"	,sphericalSamples.shaderResourceView);
-	static bool sh_by_samples=false;
+	
 	static bool sh_by_samples=false;
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	pContext->Dispatch(sh_by_samples?sphericalHarmonicsConstants.numJitterSamples:num_coefficients,1,1);
