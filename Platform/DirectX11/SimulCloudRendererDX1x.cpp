@@ -1075,7 +1075,7 @@ bool SimulCloudRendererDX1x::IsYVertical() const
 
 void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 {
-	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
+	simul::sky::int3 i=cloudKeyframer->GetTextureSizes();
 	int width_x=i.x;
 	int length_y=i.y;
 	int depth_z=i.z;
@@ -1114,7 +1114,7 @@ void SimulCloudRendererDX1x::EnsureTexturesAreUpToDate(void *context)
 	for(int i=0;i<3;i++)
 	{
 		TextureStruct &texture=cloud_textures[(texture_cycle+i)%3];
-		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
+		simul::sky::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
 		if(!texture_fill.num_texels)
 			continue;
 		if(!texture.isMapped()&&texture_fill.texel_index>0&&texture_fill.num_texels>0)

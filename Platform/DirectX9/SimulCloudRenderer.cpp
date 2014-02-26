@@ -510,7 +510,7 @@ void SimulCloudRenderer::EnsureCorrectIlluminationTextureSizes()
 
 void SimulCloudRenderer::EnsureCorrectTextureSizes()
 {
-	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
+	simul::sky::int3 i=cloudKeyframer->GetTextureSizes();
 	int width_x=i.x;
 	int length_y=i.y;
 	int depth_z=i.z;
@@ -541,7 +541,7 @@ void SimulCloudRenderer::EnsureTexturesAreUpToDate(void* context)
 		CreateNoiseTexture(context);
 	for(int i=0;i<3;i++)
 	{
-		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
+		simul::sky::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
 		if(!texture_fill.num_texels)
 			continue;
 		if(!cloud_textures[i])

@@ -27,7 +27,6 @@ static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Geometry/Orientation.h"
-#include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Decay.h"
 #include "Simul/Math/Pi.h"
@@ -256,11 +255,7 @@ void SimulSkyRenderer::FillSunlightTexture(int texture_index,int texel_index,int
 		return;
 	if(sky_tex_format==D3DFMT_A16B16G16R16F)
 	{
-		// Convert the array of floats into float16 values for the texture.
-		short *short_ptr=(short *)(lockedRect.pBits);
-		short_ptr+=4*texel_index;
-		for(int i=0;i<num_texels*4;i++)
-			*short_ptr++=simul::sky::TextureGenerator::ToFloat16(*float4_array++);
+		SIMUL_ASSERT("unsupported format in SkyRenderer"==0);
 	}
 	else
 	{
@@ -589,7 +584,7 @@ void SimulSkyRenderer::EnsureTexturesAreUpToDate(void*)
 	EnsureTextureCycle();
 	for(int i=0;i<3;i++)
 	{
-		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(i,fade_texture_iterator[i]);
+		simul::sky::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(i,fade_texture_iterator[i]);
 		if(texture_fill.num_texels)
 		{
 			FillFadeTexturesSequentially(i,texture_fill.texel_index,texture_fill.num_texels

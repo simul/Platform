@@ -13,7 +13,6 @@
 
 #include "SimulGLSkyRenderer.h"
 #include "Simul/Sky/Sky.h"
-#include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Geometry/Orientation.h"
 #include "Simul/Math/Pi.h"
@@ -600,8 +599,8 @@ void SimulGLSkyRenderer::EnsureTexturesAreUpToDate(void *)
 	EnsureTextureCycle();
 	for(int i=0;i<3;i++)
 	{
-		simul::sky::BaseKeyframer::seq_texture_iterator &ft=fade_texture_iterator[i];
-		simul::sky::BaseKeyframer::block_texture_fill t;
+		simul::sky::seq_texture_iterator &ft=fade_texture_iterator[i];
+		sky::block_texture_fill t;
 		while((t=skyKeyframer->GetBlockFadeTextureFill(i,ft)).w!=0)
 		{
 			FillFadeTextureBlocks(i,t.x,t.y,t.z,t.w,t.l,t.d,(const float*)t.float_array_1,(const float*)t.float_array_2,(const float*)t.float_array_3);

@@ -215,7 +215,7 @@ void Simul2DCloudRendererDX11::InvalidateDeviceObjects()
 
 void Simul2DCloudRendererDX11::EnsureCorrectTextureSizes()
 {
-	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
+	simul::sky::int3 i=cloudKeyframer->GetTextureSizes();
 	int width_x=i.x;
 	int length_y=i.y;
 	coverage_fb.SetWidthAndHeight(width_x,length_y);

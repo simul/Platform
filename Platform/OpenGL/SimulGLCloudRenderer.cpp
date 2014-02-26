@@ -30,7 +30,6 @@
 #include "Simul/Platform/CrossPlatform/noise_constants.sl"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
-#include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
 #include "LoadGLProgram.h"
@@ -809,7 +808,7 @@ void SimulGLCloudRenderer::New()
 #pragma warning(disable:4127) // "Conditional expression is constant".
 void SimulGLCloudRenderer::EnsureCorrectTextureSizes()
 {
-	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
+	sky::int3 i=cloudKeyframer->GetTextureSizes();
 	int width_x=i.x;
 	int length_y=i.y;
 	int depth_z=i.z;
