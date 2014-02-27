@@ -525,7 +525,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		{
 			int x0=8;
 			int y0=8;
-			simulWeatherRenderer->RenderFramebufferDepth(pContext,0,view->GetScreenWidth(),view->GetScreenHeight());
+			simulWeatherRenderer->RenderFramebufferDepth(pContext,view_id,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pContext,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pContext,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 		}
@@ -552,7 +552,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 			UtilityRenderer::Print(pContext			,1.f*w	,0.f,"Lo-Res Depth");
 			//UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,(ID3D1xShaderResourceView*)simulWeatherRenderer->GetFramebufferTexture(view_id)	,1.f		);
 			//UtilityRenderer::Print(pContext			,2.f*w	,0.f,"Near overlay");
-			simulWeatherRenderer->RenderCompositingTextures(pContext,0,view->hdrFramebuffer.Width,view->hdrFramebuffer.Height);
+			simulWeatherRenderer->RenderCompositingTextures(pContext,view_id,0,0,view->hdrFramebuffer.Width,view->hdrFramebuffer.Height);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
 		{

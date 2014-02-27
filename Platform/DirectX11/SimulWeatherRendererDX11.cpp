@@ -469,7 +469,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	SIMUL_COMBINED_PROFILE_END(context)
 }
 
-void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int view_id,int width,int height)
+void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int view_id,int x0,int y0,int width,int height)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
@@ -483,19 +483,19 @@ void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int view_id,
 	if(!environment->skyKeyframer)
 		return;
 	float max_fade_distance_metres=environment->skyKeyframer->GetMaxDistanceKm()*1000.f;
-	UtilityRenderer::SetScreenSize(width,height);
 	simul::dx11::setTexture(m_pTonemapEffect,"depthTexture"	,(ID3D1xShaderResourceView*)fb->lowResFarFramebufferDx11.GetDepthTex());
-	int x=8;
-	int y=height-w;
-
+	int x=x0+8;
+	int y=y0+height-(w+8);
+	int screenWidth,screenHeight;
+	UtilityRenderer::GetScreenSize(screenWidth,screenHeight);
 	hdrConstants.tanHalfFov					=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
 	hdrConstants.nearZ						=frustum.nearZ/max_fade_distance_metres;
 	hdrConstants.farZ						=frustum.farZ/max_fade_distance_metres;
 	hdrConstants.depthToLinFadeDistParams	=vec3(proj[14], max_fade_distance_metres, proj[10]*max_fade_distance_metres);
-	hdrConstants.rect						=vec4((float)x/(float)width
-												,(float)y/(float)height
-												,(float)w/(float)width
-												,(float)w/(float)height);
+	hdrConstants.rect						=vec4((float)x/(float)screenWidth
+												,(float)y/(float)screenHeight
+												,(float)w/(float)screenWidth
+												,(float)w/(float)screenHeight);
 	hdrConstants.Apply(pContext);
 	UtilityRenderer::DrawQuad2(pContext,x,y,w,w,m_pTonemapEffect,m_pTonemapEffect->GetTechniqueByName("show_depth"));
 }
@@ -512,7 +512,7 @@ void SimulWeatherRendererDX11::RenderPrecipitation(void *context,void *depth_tex
 		simulPrecipitationRenderer->Render(context,depth_tex,max_fade_dist_metres,depthViewportXYWH);
 }
 
-void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int view_id,int width,int length)
+void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int view_id,int x0,int y0,int width,int length)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	int w=width*4;

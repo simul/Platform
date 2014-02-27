@@ -675,6 +675,12 @@ void UtilityRenderer::SetScreenSize(int w,int h)
 	screen_height=h;
 }
 
+void UtilityRenderer::GetScreenSize(int& w,int& h)
+{
+	w=screen_width;
+	h=screen_height;
+}
+
 void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,int x,int y,const char *text)
 {
 	UtilityRenderer::Print(pd3dImmediateContext,(float)x,(float)y,text);
