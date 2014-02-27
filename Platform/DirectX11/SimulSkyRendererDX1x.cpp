@@ -275,23 +275,26 @@ void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate(void *c)
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
-	if(gpuSkyGenerator.GetEnabled())
+	
+	sky::GpuSkyParameters p;
+	sky::GpuSkyAtmosphereParameters a;
+	sky::GpuSkyInfraredParameters ir;
+	for(int i=0;i<3;i++)
 	{
-		sky::GpuSkyParameters p;
-		sky::GpuSkyAtmosphereParameters a;
-		sky::GpuSkyInfraredParameters ir;
-		for(int i=0;i<3;i++)
-		{
-			skyKeyframer->GetGpuSkyParameters(p,a,ir,i);
-			int cycled_index=(texture_cycle+i)%3;
-			gpuSkyGenerator.Make2DLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
-		}
-		return;
+		skyKeyframer->GetGpuSkyParameters(p,a,ir,i);
+		int cycled_index=(texture_cycle+i)%3;
+		if(gpuSkyGenerator.GetEnabled())
+			gpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+		else
+			skyKeyframer->cpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
 	}
+	if(gpuSkyGenerator.GetEnabled())
+		return;
 	for(int i=0;i<3;i++)
 	{
 		bool reset=false;
-		simul::sky::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(i,fade_texture_iterator[i]);
+		int cycled_index=(texture_cycle+i)%3;
+		simul::sky::seq_texture_fill texture_fill=skyKeyframer->cpuSkyGenerator.GetSequentialFadeTextureFill(cycled_index,fade_texture_iterator[i]);
 		if(reset)
 		{
 			fade_texture_iterator[i].texel_index=0;

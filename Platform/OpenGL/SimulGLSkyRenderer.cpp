@@ -518,7 +518,7 @@ void SimulGLSkyRenderer::RenderPlanet(void *,void* tex,float planet_angular_size
 
 	simul::sky::float4 planet_colour(colr[0],colr[1],colr[2],1.f);
 	float planet_elevation=asin(planet_dir4.z);
-	planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
+	//planet_colour*=skyKeyframer->GetIsotropicColourLossFactor(alt_km,planet_elevation,0,1e10f);
 
 	glEnable(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE0);
@@ -597,11 +597,28 @@ void SimulGLSkyRenderer::EnsureTexturesAreUpToDate(void *)
 	illumination_fb.SetWidthAndHeight(128,numFadeElevations);
 	illumination_fb.InitColor_Tex(0,GL_RGBA32F_ARB);
 	EnsureTextureCycle();
+	sky::GpuSkyParameters p;
+	sky::GpuSkyAtmosphereParameters a;
+	sky::GpuSkyInfraredParameters ir;
+	{
+		for(int i=0;i<3;i++)
+		{
+			skyKeyframer->GetGpuSkyParameters(p,a,ir,i);
+			int cycled_index=(texture_cycle+i)%3;
+			if(gpuSkyGenerator.GetEnabled())
+				gpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+			else
+				skyKeyframer->cpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+		}
+	}
+	if(gpuSkyGenerator.GetEnabled())
+		return;
 	for(int i=0;i<3;i++)
 	{
+		int cycled_index=(texture_cycle+i)%3;
 		simul::sky::seq_texture_iterator &ft=fade_texture_iterator[i];
 		sky::block_texture_fill t;
-		while((t=skyKeyframer->GetBlockFadeTextureFill(i,ft)).w!=0)
+		while((t=skyKeyframer->cpuSkyGenerator.GetBlockFadeTextureFill(cycled_index,ft)).w!=0)
 		{
 			FillFadeTextureBlocks(i,t.x,t.y,t.z,t.w,t.l,t.d,(const float*)t.float_array_1,(const float*)t.float_array_2,(const float*)t.float_array_3);
 		}

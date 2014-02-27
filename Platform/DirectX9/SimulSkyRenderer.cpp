@@ -582,9 +582,17 @@ void SimulSkyRenderer::EnsureTexturesAreUpToDate(void*)
 {
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
+	sky::GpuSkyParameters p;
+	sky::GpuSkyAtmosphereParameters a;
+	sky::GpuSkyInfraredParameters ir;
+	
 	for(int i=0;i<3;i++)
 	{
-		simul::sky::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(i,fade_texture_iterator[i]);
+		skyKeyframer->GetGpuSkyParameters(p,a,ir,i);
+		int cycled_index=(texture_cycle+i)%3;
+		skyKeyframer->cpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+		
+		simul::sky::seq_texture_fill texture_fill=skyKeyframer->cpuSkyGenerator.GetSequentialFadeTextureFill(cycled_index,fade_texture_iterator[i]);
 		if(texture_fill.num_texels)
 		{
 			FillFadeTexturesSequentially(i,texture_fill.texel_index,texture_fill.num_texels

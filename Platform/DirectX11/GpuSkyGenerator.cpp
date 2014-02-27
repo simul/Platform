@@ -76,10 +76,10 @@ static int range(int x,int start,int end)
 //! Return true if the derived class can make sky tables using the GPU.
 bool GpuSkyGenerator::CanPerformGPUGeneration() const
 {
-	return Enabled&&m_pd3dDevice!=NULL;
+	return m_pd3dDevice!=NULL;
 }
 
-void GpuSkyGenerator::Make2DLossAndInscatterTextures(
+void GpuSkyGenerator::MakeLossAndInscatterTextures(
 				int cycled_index,
 				simul::sky::AtmosphericScatteringInterface *skyInterface
 				,const sky::GpuSkyParameters &p

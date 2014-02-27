@@ -19,7 +19,6 @@ GpuSkyGenerator::GpuSkyGenerator()
 	:loss_program(0)
 	,insc_program(0)
 	,skyl_program(0)
-	,gpuSkyConstantsBindingIndex(5)
 	,loss_cache(NULL)
 	,insc_cache(NULL)
 	,skyl_cache(NULL)
@@ -36,6 +35,7 @@ GpuSkyGenerator::~GpuSkyGenerator()
 
 void GpuSkyGenerator::RestoreDeviceObjects(void *)
 {
+	gpuSkyConstants.RestoreDeviceObjects();
 	RecompileShaders();
 }
 
@@ -43,26 +43,27 @@ void GpuSkyGenerator::InvalidateDeviceObjects()
 {
 GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(loss_program);
-GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(insc_program);
-GL_ERROR_CHECK
 	SAFE_DELETE_PROGRAM(skyl_program);
 GL_ERROR_CHECK
-	SAFE_DELETE_BUFFER(gpuSkyConstantsUBO);
+	gpuSkyConstants.Release();
 GL_ERROR_CHECK
 }
 
 void GpuSkyGenerator::RecompileShaders()
-{								
-	InvalidateDeviceObjects();
+{
+	SAFE_DELETE_PROGRAM(loss_program);
+	SAFE_DELETE_PROGRAM(insc_program);
+	SAFE_DELETE_PROGRAM(skyl_program);
 	loss_program=MakeProgram("simple.vert",NULL,"simul_gpu_loss.frag");
 GL_ERROR_CHECK
 	std::map<std::string,std::string> defines;
-	//defines["OVERCAST"]="1";
+
 	insc_program=MakeProgram("simple.vert",NULL,"simul_gpu_insc.frag",defines);
 	skyl_program=MakeProgram("simple.vert",NULL,"simul_gpu_skyl.frag");
-GL_ERROR_CHECK
-	MAKE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,GpuSkyConstants,gpuSkyConstantsBindingIndex);
+	gpuSkyConstants.LinkToProgram(loss_program,"GpuSkyConstants",8);
+	gpuSkyConstants.LinkToProgram(insc_program,"GpuSkyConstants",8);
+	gpuSkyConstants.LinkToProgram(skyl_program,"GpuSkyConstants",8);
 GL_ERROR_CHECK
 }
 
@@ -104,14 +105,13 @@ static GLuint make1DTexture(int w,const float *src)
 	return tex;
 }
 
-void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,
+void GpuSkyGenerator::MakeLossAndInscatterTextures(int cycled_index,
 				simul::sky::AtmosphericScatteringInterface *skyInterface
 				,const simul::sky::GpuSkyParameters &p
-				,const simul::sky::GpuSkyAtmosphereParameters &gpuSkyAtmosphereParameters
-				,const simul::sky::GpuSkyInfraredParameters &gpuSkyInfraredParameters)
+				,const simul::sky::GpuSkyAtmosphereParameters &a
+				,const simul::sky::GpuSkyInfraredParameters &ir)
 {
 	keyframe_checksums[cycled_index]	=p.keyframe_checksum;
-	GLint gpuSkyConstants;
 	if(loss_program<=0)
 		RecompileShaders();
 	float maxOutputAltKm=p.altitudes_km[p.altitudes_km.size()-1];
@@ -139,19 +139,19 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,
 	glEnable(GL_TEXTURE_1D);
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
-	GLuint dens_tex=make1DTexture(gpuSkyAtmosphereParameters.table_size,(const float *)gpuSkyAtmosphereParameters.density_table);
+	GLuint dens_tex=make1DTexture(a.table_size,(const float *)a.density_table);
 	glUseProgram(loss_program);
-	GpuSkyConstants constants;
-	{
+	this->SetGpuSkyConstants(gpuSkyConstants,p,a,ir);
+	/*{
 		constants.texSize			=vec2((float)p.altitudes_km.size(),(float)p.numElevations);
 		static float tto=0.5f;
 		constants.texelOffset		=tto;
-		constants.tableSize			=vec2((float)gpuSkyAtmosphereParameters.table_size,(float)gpuSkyAtmosphereParameters.table_size);
+		constants.tableSize			=vec2((float)a.table_size,(float)a.table_size);
 		constants.distanceKm		=0.0;
 		constants.maxDistanceKm		=p.max_distance_km;
 		constants.planetRadiusKm	=skyInterface->GetPlanetRadius();
 		constants.maxOutputAltKm	=maxOutputAltKm;
-		constants.maxDensityAltKm	=gpuSkyAtmosphereParameters.maxDensityAltKm;
+		constants.maxDensityAltKm	=a.maxDensityAltKm;
 		constants.hazeBaseHeightKm	=p.hazeStruct.haze_base_height_km;
 		constants.hazeScaleHeightKm	=p.hazeStruct.haze_scale_height_km;
 		constants.overcastBaseKmX	=p.overcast_base_km;
@@ -165,14 +165,12 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(int cycled_index,
 		constants.starlight			=(const float*)p.starlight;
 		constants.hazeEccentricity	=1.0;
 		constants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
-		constants.emissivity		=gpuSkyInfraredParameters.emissivity;
+		constants.emissivity		=ir.emissivity;
 		UPDATE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
-	}
+	}*/
 	setParameter(loss_program,"input_loss_texture",0);
 	setParameter(loss_program,"density_texture",1);
-	gpuSkyConstants		=glGetUniformBlockIndex(loss_program,"GpuSkyConstants");
-	if(gpuSkyConstants>=0)
-		glUniformBlockBinding(loss_program,gpuSkyConstants,gpuSkyConstantsBindingIndex);
+	gpuSkyConstants.Apply();
 
 	simul::sky::float4 *target=loss_cache;
 GL_ERROR_CHECK
@@ -193,11 +191,9 @@ GL_ERROR_CHECK
 		float distKm=zPosition*p.max_distance_km;
 		if(i==p.numDistances-1)
 			distKm=1000.f;
-		constants.distanceKm		=distKm;
-		constants.prevDistanceKm	=prevDistKm;
-		UPDATE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
-		if(gpuSkyConstants>=0)
-			glUniformBlockBinding(loss_program,gpuSkyConstants,gpuSkyConstantsBindingIndex);
+		gpuSkyConstants.distanceKm		=distKm;
+		gpuSkyConstants.prevDistanceKm	=prevDistKm;
+		gpuSkyConstants.Apply();
 	GL_ERROR_CHECK
 		F[1]->Activate(NULL);
 	GL_ERROR_CHECK
@@ -227,12 +223,10 @@ GL_ERROR_CHECK
 	// Now we will generate the inscatter texture.
 	// First we make the loss into a 3D texture.
 	GLuint loss_tex=make3DTexture((int)p.altitudes_km.size(),p.numElevations,p.numDistances,(const float *)loss_cache);
-	GLuint optd_tex=make2DTexture(gpuSkyAtmosphereParameters.table_size,gpuSkyAtmosphereParameters.table_size,(const float *)gpuSkyAtmosphereParameters.optical_table);
+	GLuint optd_tex=make2DTexture(a.table_size,a.table_size,(const float *)a.optical_table);
 	// Now render out the inscatter.
 	glUseProgram(insc_program);
-	gpuSkyConstants		=glGetUniformBlockIndex(insc_program,"GpuSkyConstants");
-	if(gpuSkyConstants>=0)
-		glUniformBlockBinding(insc_program,gpuSkyConstants,gpuSkyConstantsBindingIndex);
+	gpuSkyConstants.Apply();
 	setParameter(insc_program,"input_insc_texture",0);
 	setParameter(insc_program,"density_texture",1);
 	setParameter(insc_program,"loss_texture",2);
@@ -254,9 +248,9 @@ GL_ERROR_CHECK
 		float distKm=zPosition*p.max_distance_km;
 		if(i==p.numDistances-1)
 			distKm=1000.f;
-		constants.distanceKm		=distKm;
-		constants.prevDistanceKm	=prevDistKm;
-		UPDATE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
+		gpuSkyConstants.distanceKm		=distKm;
+		gpuSkyConstants.prevDistanceKm	=prevDistKm;
+		gpuSkyConstants.Apply();
 		F[1]->Activate(NULL);
 			F[1]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 			OrthoMatrices();
@@ -286,9 +280,7 @@ GL_ERROR_CHECK
 	glBindTexture(GL_TEXTURE_3D,insc_tex);
 	// Now render out the skylight.
 	glUseProgram(skyl_program);
-	gpuSkyConstants		=glGetUniformBlockIndex(skyl_program,"GpuSkyConstants");
-	if(gpuSkyConstants>=0)
-		glUniformBlockBinding(skyl_program,gpuSkyConstants,gpuSkyConstantsBindingIndex);
+	gpuSkyConstants.Apply();
 	setParameter(skyl_program,"input_skyl_texture",0);
 	setParameter(skyl_program,"density_texture",1);
 	setParameter(skyl_program,"loss_texture",2);
@@ -311,9 +303,9 @@ GL_ERROR_CHECK
 		float distKm=zPosition*p.max_distance_km;
 		if(i==p.numDistances-1)
 			distKm=1000.f;
-		constants.distanceKm		=distKm;
-		constants.prevDistanceKm	=prevDistKm;
-		UPDATE_GL_CONSTANT_BUFFER(gpuSkyConstantsUBO,constants,gpuSkyConstantsBindingIndex)
+		gpuSkyConstants.distanceKm		=distKm;
+		gpuSkyConstants.prevDistanceKm	=prevDistKm;
+		gpuSkyConstants.Apply();
 		F[1]->Activate(NULL);
 			F[1]->Clear(NULL,0.f,0.f,0.f,0.f,1.f);
 			OrthoMatrices();

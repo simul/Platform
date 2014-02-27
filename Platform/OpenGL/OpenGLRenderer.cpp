@@ -174,14 +174,14 @@ void OpenGLRenderer::paintGL()
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->PreRenderUpdate(context);
-		GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
+		/*GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
 		GLuint fogfilter=0;								// Which Fog To Use
 		simul::sky::float4 fogColor=simulWeatherRenderer->GetHorizonColour(0.001f*cam->GetPosition()[2]);
 		glFogi(GL_FOG_MODE,fogMode[fogfilter]);			// Fog Mode
 		glFogfv(GL_FOG_COLOR,fogColor);					// Set Fog Color
 		glFogf(GL_FOG_DENSITY,0.35f);					// How Dense Will The Fog Be
 		glFogf(GL_FOG_START,1.0f);						// Fog Start Depth
-		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
+		glFogf(GL_FOG_END,5.0f);						// Fog End Depth*/
 		glDisable(GL_FOG);
 		GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
