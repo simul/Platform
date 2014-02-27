@@ -253,11 +253,7 @@ void SimulSkyRenderer::FillSunlightTexture(int texture_index,int texel_index,int
 	D3DLOCKED_RECT lockedRect={0};
 	if(FAILED(hr=tex->LockRect(0,&lockedRect,NULL,NULL)))
 		return;
-	if(sky_tex_format==D3DFMT_A16B16G16R16F)
-	{
-		SIMUL_ASSERT("unsupported format in SkyRenderer"==0);
-	}
-	else
+	SIMUL_ASSERT(sky_tex_format!=D3DFMT_A16B16G16R16F)
 	{
 		// Convert the array of floats into float16 values for the texture.
 		float *float_ptr=(float *)(lockedRect.pBits);
