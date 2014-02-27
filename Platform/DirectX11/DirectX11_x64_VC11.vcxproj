@@ -303,6 +303,24 @@
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Clouds\Clouds_x64_VC11.vcxproj">
+      <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Sky\Sky_x64_VC11.vcxproj">
+      <Project>{2dfe8ef4-e245-4d56-b2be-f7f8f38abe9c}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

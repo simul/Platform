@@ -133,17 +133,17 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		gpuSkyConstants.planetRadiusKm		=skyInterface->GetPlanetRadius();
 		gpuSkyConstants.maxOutputAltKm		=maxOutputAltKm;
 		gpuSkyConstants.maxDensityAltKm		=a.maxDensityAltKm;
-		gpuSkyConstants.hazeBaseHeightKm	=p.hazeStruct.haze_base_height_km;
-		gpuSkyConstants.hazeScaleHeightKm	=p.hazeStruct.haze_scale_height_km;
+		gpuSkyConstants.hazeBaseHeightKm	=p.physical.hazeStruct.haze_base_height_km;
+		gpuSkyConstants.hazeScaleHeightKm	=p.physical.hazeStruct.haze_scale_height_km;
 
 		gpuSkyConstants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-		gpuSkyConstants.hazeMie				=(const float*)(p.hazeStruct.haze*p.hazeStruct.mie);
-		gpuSkyConstants.ozone				=(const float*)(p.ozone);
+		gpuSkyConstants.hazeMie				=(const float*)(p.physical.hazeStruct.haze*p.physical.hazeStruct.mie);
+		gpuSkyConstants.ozone				=(const float*)(p.physical.ozone);
 
-		gpuSkyConstants.sunIrradiance		=(const float*)p.sun_irradiance;
-		gpuSkyConstants.lightDir			=(const float*)p.dir_to_sun;
-		gpuSkyConstants.directionToMoon		=(const float*)p.dir_to_moon;
-		gpuSkyConstants.starlight			=(const float*)(p.starlight);
+		gpuSkyConstants.sunIrradiance		=(const float*)p.physical.sun_irradiance;
+		gpuSkyConstants.lightDir			=(const float*)p.physical.dir_to_sun;
+		gpuSkyConstants.directionToMoon		=(const float*)p.physical.dir_to_moon;
+		gpuSkyConstants.starlight			=(const float*)(p.physical.starlight);
 		
 		gpuSkyConstants.hazeEccentricity	=1.0;
 		gpuSkyConstants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
@@ -239,7 +239,6 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	loss_texture->SetResource(NULL);
 	insc_texture->SetResource(NULL);
 	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
-	
 	SIMUL_PROFILE_END
 }
 
