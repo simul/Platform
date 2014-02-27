@@ -20,7 +20,6 @@
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/SkyKeyframer.h"
-#include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
@@ -216,7 +215,7 @@ float SimulSkyRendererDX1x::GetFadeInterp() const
 
 void SimulSkyRendererDX1x::EnsureCorrectTextureSizes()
 {
-	simul::sky::BaseKeyframer::int3 i=skyKeyframer->GetTextureSizes();
+	simul::sky::int3 i=skyKeyframer->GetTextureSizes();
 	int num_dist=i.x;
 	int num_elev=i.y;
 	int num_alt=i.z;
@@ -276,12 +275,23 @@ void SimulSkyRendererDX1x::EnsureTexturesAreUpToDate(void *c)
 	ID3D11DeviceContext *context=(ID3D11DeviceContext *)c;
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
-	if(gpuSkyGenerator.GetEnabled()&&skyKeyframer->GetGpuSkyGenerator()==&gpuSkyGenerator)
+	if(gpuSkyGenerator.GetEnabled())
+	{
+		sky::GpuSkyParameters p;
+		sky::GpuSkyAtmosphereParameters a;
+		sky::GpuSkyInfraredParameters ir;
+		for(int i=0;i<3;i++)
+		{
+			skyKeyframer->GetGpuSkyParameters(p,a,ir,i);
+			int cycled_index=(texture_cycle+i)%3;
+			gpuSkyGenerator.Make2DLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+		}
 		return;
+	}
 	for(int i=0;i<3;i++)
 	{
 		bool reset=false;
-		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(i,fade_texture_iterator[i]);
+		simul::sky::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(i,fade_texture_iterator[i]);
 		if(reset)
 		{
 			fade_texture_iterator[i].texel_index=0;

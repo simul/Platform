@@ -87,6 +87,13 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				,const sky::GpuSkyInfraredParameters &ir
 				)
 {
+	if(p.fill_up_to_texels<0)
+		return;
+	if(keyframe_checksums[cycled_index]!=p.keyframe_checksum)
+	{
+		keyframe_checksums[cycled_index]	=p.keyframe_checksum;
+		fadeTexIndex[cycled_index]=0;
+	}
 	SIMUL_PROFILE_START("GpuSkyGenerator init")
 	HRESULT hr=S_OK;
 	int gridsize			=(int)p.altitudes_km.size()*p.numElevations*p.numDistances;
@@ -162,8 +169,8 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 
 	int xy_size		=(int)p.altitudes_km.size()*p.numElevations;
 	
-	int start_step	=(p.start_texel*3)/p.numDistances;
-	int end_step	=((p.start_texel+p.num_texels)*3+p.numDistances-1)/p.numDistances;
+	int start_step	=(fadeTexIndex[cycled_index]*3)/p.numDistances;
+	int end_step	=((p.fill_up_to_texels)*3+p.numDistances-1)/p.numDistances;
 
 	int start_loss	=range(start_step			,0,xy_size);
 	int end_loss	=range(end_step				,0,xy_size);
