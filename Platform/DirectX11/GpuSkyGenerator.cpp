@@ -30,7 +30,7 @@ GpuSkyGenerator::~GpuSkyGenerator()
 
 void GpuSkyGenerator::RestoreDeviceObjects(void *dev)
 {
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	gpuSkyConstants.RestoreDeviceObjects(m_pd3dDevice);

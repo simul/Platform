@@ -53,7 +53,7 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 		SAFE_RELEASE(m_pCubeEnvDepthMapSRV[i]);
 	}
 	HRESULT hr=S_OK;
-	pd3dDevice=(ID3D1xDevice*)dev;
+	pd3dDevice=(ID3D11Device*)dev;
 	// The table of coefficients.
 	int s=(bands+1);
 	if(s<4)
@@ -137,7 +137,7 @@ void CubemapFramebuffer::RestoreDeviceObjects(void* dev)
 	 
 	V_CHECK(pd3dDevice->CreateShaderResourceView(m_pCubeEnvDepthMap,&SRVDesc,&m_pCubeEnvMapDepthSRV));*/
 }
-ID3D11Texture2D* makeStagingTexture(ID3D1xDevice *pd3dDevice,int w,DXGI_FORMAT target_format)
+ID3D11Texture2D* makeStagingTexture(ID3D11Device *pd3dDevice,int w,DXGI_FORMAT target_format)
 {
 	D3D11_TEXTURE2D_DESC tex2dDesc;
 	tex2dDesc.Width					= w;

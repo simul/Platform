@@ -537,10 +537,10 @@ int UtilityRenderer::instance_count=0;
 int UtilityRenderer::screen_width=0;
 int UtilityRenderer::screen_height=0;
 D3DXMATRIX UtilityRenderer::view,UtilityRenderer::proj;
-ID3D1xEffect *UtilityRenderer::m_pDebugEffect=NULL;
+ID3DX11Effect *UtilityRenderer::m_pDebugEffect=NULL;
 ID3D11InputLayout *UtilityRenderer::m_pCubemapVtxDecl=NULL;
 ID3D1xBuffer* UtilityRenderer::m_pVertexBuffer=NULL;
-ID3D1xDevice* UtilityRenderer::m_pd3dDevice=NULL;
+ID3D11Device* UtilityRenderer::m_pd3dDevice=NULL;
 UtilityRenderer utilityRenderer;
 
 UtilityRenderer::UtilityRenderer()
@@ -612,7 +612,7 @@ static Vertex3_t vertices[36] =
 
 void UtilityRenderer::RestoreDeviceObjects(void *dev)
 {
-	m_pd3dDevice=(ID3D1xDevice *)dev;
+	m_pd3dDevice=(ID3D11Device *)dev;
 	RecompileShaders();
 	textRenderer.RestoreDeviceObjects(m_pd3dDevice);
 	SAFE_RELEASE(m_pVertexBuffer);
@@ -801,7 +801,7 @@ void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext)
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 }			
 
-void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3D1xEffect* eff,ID3D1xEffectTechnique* tech)
+void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3DX11Effect* eff,ID3D1xEffectTechnique* tech)
 {
 	DrawQuad2(m_pImmediateContext
 		,2.f*(float)x1/(float)screen_width-1.f
@@ -811,7 +811,7 @@ void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,
 		,eff,tech);
 }
 
-void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3D1xEffect* eff,ID3D1xEffectTechnique* tech)
+void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3DX11Effect* eff,ID3D1xEffectTechnique* tech)
 {
 	HRESULT hr=S_OK;
 	setParameter(eff,"rect",x1,y1,dx,dy);
@@ -826,7 +826,7 @@ void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x
 void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pImmediateContext
 									   ,const float *dr
 									   ,float half_angle_radians
-										,ID3D1xEffect* effect
+										,ID3DX11Effect* effect
 										,ID3D1xEffectTechnique* tech
 										,D3DXMATRIX view
 										,D3DXMATRIX proj

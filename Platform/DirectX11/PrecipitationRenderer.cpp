@@ -21,7 +21,6 @@ using namespace dx11;
 PrecipitationRenderer::PrecipitationRenderer() :
 	m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
-	//,m_pVertexBufferSwap(NULL)
 	,effect(NULL)
 	,rain_texture(NULL)
 	,cubemap_SRV(NULL)

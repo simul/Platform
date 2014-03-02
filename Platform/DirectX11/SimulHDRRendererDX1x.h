@@ -59,11 +59,11 @@ namespace simul
 			bool Destroy();
 			simul::dx11::Framebuffer glow_fb;
 			int Width,Height;
-			ID3D1xDevice*						m_pd3dDevice;
+			ID3D11Device*						m_pd3dDevice;
 			ID3D1xBuffer*						m_pVertexBuffer;
 
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			ID3D1xEffect*						m_pTonemapEffect;
+			ID3DX11Effect*						m_pTonemapEffect;
 			ID3D1xEffectTechnique*				exposureGammaTechnique;
 			ID3D1xEffectTechnique*				glowExposureGammaTechnique;
 			ID3D1xEffectTechnique*				warpExposureGamma;
@@ -73,7 +73,7 @@ namespace simul
 			ID3D1xEffectScalarVariable*			Exposure_;
 			ID3D1xEffectScalarVariable*			Gamma_;
 
-			ID3D1xEffect*						m_pGaussianEffect;
+			ID3DX11Effect*						m_pGaussianEffect;
 			ID3D1xEffectTechnique*				gaussianRowTechnique;
 			ID3D1xEffectTechnique*				gaussianColTechnique;
 

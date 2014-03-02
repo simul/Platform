@@ -43,7 +43,7 @@ static const DWORD default_effect_flags=0;
 // winmm.lib comctl32.lib
 static bool pipe_compiler_output=false;
 
-//static ID3D1xDevice		*pd3dDevice		=NULL;
+//static ID3D11Device		*pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
 using namespace base;
@@ -297,7 +297,7 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 }
 
 ID3D1xTexture1D* simul::dx11::make1DTexture(
-							ID3D1xDevice			*m_pd3dDevice
+							ID3D11Device			*m_pd3dDevice
 							,int w
 							,DXGI_FORMAT format
 							,const float *src)
@@ -326,7 +326,7 @@ ID3D1xTexture1D* simul::dx11::make1DTexture(
 }
 
 ID3D11Texture2D* simul::dx11::make2DTexture(
-							ID3D1xDevice			*m_pd3dDevice
+							ID3D11Device			*m_pd3dDevice
 							,int w,int h
 							,DXGI_FORMAT format
 							,const float *src)
@@ -356,7 +356,7 @@ ID3D11Texture2D* simul::dx11::make2DTexture(
 
 
 ID3D1xTexture3D* simul::dx11::make3DTexture(
-							ID3D1xDevice			*m_pd3dDevice
+							ID3D11Device			*m_pd3dDevice
 							,int w,int l,int d
 							,DXGI_FORMAT format
 							,const void *src)
@@ -383,7 +383,7 @@ ID3D1xTexture3D* simul::dx11::make3DTexture(
 }
 							
 void simul::dx11::Ensure3DTextureSizeAndFormat(
-							ID3D1xDevice			*m_pd3dDevice
+							ID3D11Device			*m_pd3dDevice
 							,ID3D1xTexture3D* &tex
 							,ID3D11ShaderResourceView* &srv
 							,int w,int l,int d
@@ -663,13 +663,13 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	return hr;
 }
 
-HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *filename)
+HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename)
 {
 	std::map<std::string,std::string> defines;
 	return CreateEffect(d3dDevice,effect,filename,defines);
 }
 
-ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *filename_utf8)
+ID3D11ComputeShader *LoadComputeShader(ID3D11Device *pd3dDevice,const char *filename_utf8)
 {
 	if(!shaderPathsUtf8.size())
 		shaderPathsUtf8.push_back(std::string("media/hlsl/dx11"));
@@ -710,7 +710,7 @@ ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *file
 	}
 }
 
-HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines)
+HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines)
 {
 	SIMUL_ASSERT(d3dDevice!=NULL);
 	HRESULT hr=S_OK;
@@ -795,13 +795,13 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *
 	return hr;
 }
 
-ID3DX11Effect *LoadEffect(ID3D1xDevice *d3dDevice,const char *filename_utf8)
+ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8)
 {
 	std::map<std::string,std::string> defines;
 	return LoadEffect(d3dDevice,filename_utf8,defines);
 }
 
-ID3DX11Effect *LoadEffect(ID3D1xDevice *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines)
+ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines)
 {
 	ID3DX11Effect *effect=NULL;
 	CreateEffect(d3dDevice,&effect,filename_utf8,defines);

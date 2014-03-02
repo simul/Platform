@@ -31,8 +31,8 @@ namespace simul
 			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 		protected:
 			D3DXMATRIX								view,proj;
-			ID3D1xDevice *							m_pd3dDevice;
-			ID3D1xEffect*							m_pFlareEffect;
+			ID3D11Device *							m_pd3dDevice;
+			ID3DX11Effect*							m_pFlareEffect;
 			ID3D1xEffectTechnique*					m_hTechniqueFlare;
 			ID3D1xEffectMatrixVariable*				worldViewProj;
 			ID3D1xEffectVectorVariable*				colour;

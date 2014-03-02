@@ -116,15 +116,15 @@ namespace simul
 			void Map(ID3D11DeviceContext *context,int texture_index);
 			unsigned texel_index[4];
 			bool lightning_active;
-			ID3D1xDevice*							m_pd3dDevice;
+			ID3D11Device*							m_pd3dDevice;
 		
 			ID3D1xInputLayout*						m_pLightningVtxDecl;
 			ID3D11SamplerState*						m_pWrapSamplerState;
 			ID3D11SamplerState*						m_pClampSamplerState;
 
-			ID3D1xEffect*							m_pLightningEffect;
+			ID3DX11Effect*							m_pLightningEffect;
 			ID3D1xEffectTechnique*					m_hTechniqueLightning;
-			ID3D1xEffect*							m_pCloudEffect;
+			ID3DX11Effect*							m_pCloudEffect;
 			ID3D1xEffectTechnique*					m_hTechniqueCloud;
 			ID3D1xEffectTechnique*					m_hTechniqueRaytraceNearPass;
 			ID3D1xEffectTechnique*					m_hTechniqueRaytraceForward;

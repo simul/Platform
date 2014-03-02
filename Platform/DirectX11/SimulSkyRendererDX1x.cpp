@@ -64,7 +64,7 @@ void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
 
 void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 {
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	D3D1x_QUERY_DESC qdesc=
 	{
 		D3D1x_QUERY_OCCLUSION,0

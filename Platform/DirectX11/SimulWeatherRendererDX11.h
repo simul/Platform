@@ -131,7 +131,7 @@ namespace simul
 			simul::math::Matrix4x4 view;
 			simul::math::Matrix4x4 proj;
 			IDXGISwapChain *pSwapChain;
-			ID3D1xDevice*							m_pd3dDevice;
+			ID3D11Device*							m_pd3dDevice;
 			
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3DX11Effect							*m_pTonemapEffect;
@@ -147,7 +147,7 @@ namespace simul
 			class PrecipitationRenderer	*simulPrecipitationRenderer;
 			class SimulAtmosphericsRendererDX1x		*simulAtmosphericsRenderer;
 			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
-			class SimulLightningRendererDX11		*simulLightningRenderer;
+			class LightningRenderer		*simulLightningRenderer;
 			typedef std::map<int,simul::dx11::TwoResFramebuffer*> FramebufferMapDx11;
 			// Map from view_id to framebuffer.
 			TwoResFramebuffer *						GetFramebuffer(int view_id);

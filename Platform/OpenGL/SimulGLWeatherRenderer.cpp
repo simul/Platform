@@ -332,8 +332,9 @@ void SimulGLWeatherRenderer::RenderLateCloudLayer(void *context,float exposure,b
 
 void SimulGLWeatherRenderer::RenderLightning(void *context,int /*view_id*/)
 {
+	math::Matrix4x4 view,proj;
 	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		simulLightningRenderer->Render(context);
+		simulLightningRenderer->Render(context,view,proj);
 }
 
 void SimulGLWeatherRenderer::RenderPrecipitation(void *context)

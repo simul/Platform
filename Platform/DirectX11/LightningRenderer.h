@@ -15,17 +15,19 @@ namespace simul
 {
 	namespace dx11
 	{
-		SIMUL_DIRECTX11_EXPORT_CLASS SimulLightningRendererDX11: public simul::clouds::BaseLightningRenderer
+		SIMUL_DIRECTX11_EXPORT_CLASS LightningRenderer: public simul::clouds::BaseLightningRenderer
 		{
 		public:
-			SimulLightningRendererDX11(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk);
-			~SimulLightningRendererDX11();
+			LightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk);
+			~LightningRenderer();
 			void RestoreDeviceObjects(void* dev);
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
-			void SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
-			void Render(void *context);
+			void Render(void *context,const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
 		protected:
+			ID3DX11Effect*	effect;
+			ID3D11Device *	m_pd3dDevice;
+			VertexBuffer<LightningVertex>		vertexBuffer;
 		};
 	}
 }

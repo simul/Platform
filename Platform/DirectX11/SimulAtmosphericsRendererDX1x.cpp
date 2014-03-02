@@ -113,7 +113,7 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 void SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(void* dev)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	atmosphericsPerViewConstants.RestoreDeviceObjects(m_pd3dDevice);
 	atmosphericsUniforms.RestoreDeviceObjects(m_pd3dDevice);
 	RecompileShaders();

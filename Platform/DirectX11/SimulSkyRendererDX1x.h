@@ -103,11 +103,11 @@ protected:
 	
 	void BuildStarsBuffer();
 	
-	ID3D1xDevice*						m_pd3dDevice;
+	ID3D11Device*						m_pd3dDevice;
 	ID3D1xBuffer*						m_pVertexBuffer;
 	ID3D1xInputLayout*					m_pStarsVtxDecl;
 	ID3D1xBuffer*						m_pStarsVertexBuffer;
-	ID3D1xEffect*						m_pSkyEffect;
+	ID3DX11Effect*						m_pSkyEffect;
 	ID3D1xQuery*						d3dQuery;
 
 	ID3D1xEffectTechnique*				m_hTechniqueFade3DTo2D;

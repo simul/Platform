@@ -350,7 +350,7 @@ void SimulCloudRendererDX1x::RenderNoise(void *context)
 	int texture_octaves			=cloudKeyframer->GetEdgeNoiseOctaves();
 	float texture_persistence	=cloudKeyframer->GetEdgeNoisePersistence();
 
-	ID3D1xEffect*					effect=NULL;
+	ID3DX11Effect*					effect=NULL;
 	ID3D1xEffectTechnique *randomTechnique	=NULL;
 	ID3D1xEffectTechnique *noiseTechnique	=NULL;
 	HRESULT hr=CreateEffect(m_pd3dDevice,&effect,"simul_rendernoise.fx");
@@ -425,7 +425,7 @@ void SimulCloudRendererDX1x::Create3DNoiseTexture(void *context)
 
 	int noise_texture_frequency				=cloudKeyframer->GetEdgeNoiseFrequency();
 	int noise_texture_size							=cloudKeyframer->GetEdgeNoiseTextureSize();
-	ID3D1xEffect *effect					=NULL;
+	ID3DX11Effect *effect					=NULL;
 	HRESULT hr								=CreateEffect(m_pd3dDevice,&effect,"simul_rendernoise.fx");
 	ID3DX11EffectTechnique *randomComputeTechnique	=effect->GetTechniqueByName("random_3d_compute");
 	ID3DX11EffectTechnique *noise3DComputeTechnique	=effect->GetTechniqueByName("noise_3d_compute");

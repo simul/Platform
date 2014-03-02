@@ -65,7 +65,7 @@ void SimulHDRRendererDX1x::SetBufferSize(int w,int h)
 void SimulHDRRendererDX1x::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	glow_fb.RestoreDeviceObjects(m_pd3dDevice);
 
 	glowTexture.release();

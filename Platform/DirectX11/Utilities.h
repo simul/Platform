@@ -117,6 +117,16 @@ namespace simul
 				uav_desc.Buffer.Flags			=0;
 				V_CHECK(pd3dDevice->CreateUnorderedAccessView(vertexBuffer, &uav_desc, &unorderedAccessView));*/
 			}
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			T *Map(ID3D11DeviceContext *pContext)
+			{
+				pContext->Map(vertexBuffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+				return (T*)mapped.pData;
+			}
+			void Unmap(ID3D11DeviceContext *pContext)
+			{
+				pContext->Unmap(vertexBuffer,0);
+			}
 			//! Use this vertex buffer in the next draw call - wraps IASetVertexBuffers.
 			void apply(ID3D11DeviceContext *pContext,int slot)
 			{
@@ -148,10 +158,10 @@ namespace simul
 			static D3DXMATRIX view;
 			static D3DXMATRIX proj;
 		public:
-			static ID3D1xEffect		*m_pDebugEffect;
+			static ID3DX11Effect		*m_pDebugEffect;
 			static ID3D11InputLayout	*m_pCubemapVtxDecl;
 			static ID3D1xBuffer		* m_pVertexBuffer;
-			static ID3D1xDevice		*m_pd3dDevice;
+			static ID3D11Device		*m_pd3dDevice;
 			UtilityRenderer();
 			~UtilityRenderer();
 			static void SetMatrices(D3DXMATRIX v,D3DXMATRIX p);
@@ -162,14 +172,14 @@ namespace simul
 			static void GetScreenSize(int& w,int& h);
 			static void PrintAt3dPos(		ID3D11DeviceContext* pContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 			static void DrawLines(			ID3D11DeviceContext* pContext,VertexXyzRgba *lines,int vertex_count,bool strip);
-			static void RenderAngledQuad(	ID3D11DeviceContext *pContext,const float *dir,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
+			static void RenderAngledQuad(	ID3D11DeviceContext *pContext,const float *dir,float half_angle_radians,ID3DX11Effect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
 			static void Print(				ID3D11DeviceContext *pContext,int x,int y,const char *text);
 			static void Print(				ID3D11DeviceContext *pContext,float x,float y,const char *text);
 			static void DrawTexture(		ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult=1.f);
 			static void DrawTextureMS(		ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult=1.f);
 			static void DrawQuad(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech);	
-			static void DrawQuad2(			ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
-			static void DrawQuad2(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
+			static void DrawQuad2(			ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3DX11Effect *eff,ID3D1xEffectTechnique* tech);
+			static void DrawQuad2(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11Effect *eff,ID3D1xEffectTechnique* tech);
 			static void DrawQuad(			ID3D11DeviceContext *pContext);
 			static void DrawCube(void *context);
 			static void DrawSphere(void *context,int latitudes,int longitudes);

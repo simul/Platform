@@ -71,7 +71,7 @@ void TerrainRenderer::RecompileShaders()
 void TerrainRenderer::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	terrainConstants.RestoreDeviceObjects(m_pd3dDevice);
 	RecompileShaders();
 	const D3D1x_INPUT_ELEMENT_DESC decl[] =

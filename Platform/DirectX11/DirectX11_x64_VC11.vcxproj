@@ -210,7 +210,7 @@
     <ClCompile Include="SimulAtmosphericsRendererDX1x.cpp" />
     <ClCompile Include="SimulCloudRendererDX1x.cpp" />
     <ClCompile Include="SimulHDRRendererDX1x.cpp" />
-    <ClCompile Include="SimulLightningRendererDX11.cpp" />
+    <ClCompile Include="LightningRenderer.cpp" />
     <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
@@ -245,7 +245,7 @@
     <ClInclude Include="SimulAtmosphericsRendererDX1x.h" />
     <ClInclude Include="SimulCloudRendererDX1x.h" />
     <ClInclude Include="SimulHDRRendererDX1x.h" />
-    <ClInclude Include="SimulLightningRendererDX11.h" />
+    <ClInclude Include="LightningRenderer.h" />
     <ClInclude Include="SimulOpticsRendererDX1x.h" />
     <ClInclude Include="SimulSkyRendererDX1x.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />
@@ -258,6 +258,7 @@
     <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
     <None Include="..\CrossPlatform\godrays.sl" />
     <None Include="..\CrossPlatform\illumination.sl" />
+    <None Include="..\CrossPlatform\lightning_constants.sl" />
     <None Include="..\CrossPlatform\rain_constants.sl" />
     <None Include="..\CrossPlatform\simul_2d_cloud_detail.sl" />
     <None Include="..\CrossPlatform\simul_clouds.sl" />
@@ -295,7 +296,6 @@
     <None Include="HLSL\simul_gpu_sky.fx" />
     <None Include="HLSL\simul_hdr.fx" />
     <None Include="HLSL\simul_lightning.fx" />
-    <None Include="HLSL\simul_rain.fx" />
     <None Include="HLSL\simul_rendernoise.fx" />
     <None Include="HLSL\simul_sky.fx" />
     <None Include="HLSL\simul_terrain.fx" />
@@ -320,6 +320,11 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSL\rain.fx">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

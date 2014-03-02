@@ -15,7 +15,7 @@ public:
 	SimulGLLightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk);
 	~SimulGLLightningRenderer();
 	void RestoreDeviceObjects();
-	void Render(void*);
+	void Render(void*,const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
 	void InvalidateDeviceObjects();
 	//! This function does nothing as Y is never the vertical in this implementation
 	virtual void SetYVertical(bool ){}

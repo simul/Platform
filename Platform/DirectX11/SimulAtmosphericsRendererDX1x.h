@@ -58,11 +58,11 @@ namespace simul
 			void RenderGodrays(void *context,float strength,bool near_pass,const void *depthTexture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH,const void *cloudDepthTexture);
 		protected:
 			HRESULT Destroy();
-			ID3D1xDevice*								m_pd3dDevice;
+			ID3D11Device*								m_pd3dDevice;
 			simul::math::Matrix4x4						view,proj;
 
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-			ID3D1xEffect*								effect;
+			ID3DX11Effect*								effect;
 
 			ID3D1xEffectTechnique*						twoPassOverlayTechnique;
 			ID3D1xEffectTechnique*							twoPassOverlayTechniqueMSAA;

@@ -27,7 +27,7 @@
 
 #include "SimulCloudRendererDX1x.h"
 #include "Simul2DCloudRendererDX1x.h"
-#include "SimulLightningRendererDX11.h"
+#include "LightningRenderer.h"
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
@@ -114,7 +114,7 @@ SimulWeatherRendererDX11::SimulWeatherRendererDX11(simul::clouds::Environment *e
 	}
 	simulCloudRenderer		=::new(memoryInterface) SimulCloudRendererDX1x(ck3d, memoryInterface);
 	baseCloudRenderer		=simulCloudRenderer;
-	simulLightningRenderer	=::new(memoryInterface) SimulLightningRendererDX11(ck3d,sk);
+	simulLightningRenderer	=::new(memoryInterface) LightningRenderer(ck3d,sk);
 	if(env->cloud2DKeyframer)
 		base2DCloudRenderer		=simul2DCloudRenderer		=::new(memoryInterface) Simul2DCloudRendererDX11(ck2d, memoryInterface);
 	basePrecipitationRenderer	=simulPrecipitationRenderer=::new(memoryInterface) PrecipitationRenderer();
@@ -144,7 +144,7 @@ void SimulWeatherRendererDX11::SetScreenSize(int view_id,int w,int h)
 void SimulWeatherRendererDX11::RestoreDeviceObjects(void* dev)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	for(FramebufferMapDx11::iterator i=framebuffersDx11.begin();i!=framebuffersDx11.end();i++)
 		i->second->RestoreDeviceObjects(m_pd3dDevice);
 	hdrConstants.RestoreDeviceObjects(m_pd3dDevice);
@@ -544,7 +544,7 @@ void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int view_
 void SimulWeatherRendererDX11::RenderLightning(void *context,int view_id)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
-		simulLightningRenderer->Render(context);
+		simulLightningRenderer->Render(context,view,proj);
 }
 
 void SimulWeatherRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
@@ -562,8 +562,6 @@ void SimulWeatherRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const
 		simul2DCloudRenderer->SetMatrices(view,proj);
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->SetMatrices(view,proj);
-	if(simulLightningRenderer)
-		simulLightningRenderer->SetMatrices(view,proj);
 }
 
 SimulSkyRendererDX1x *SimulWeatherRendererDX11::GetSkyRenderer()

@@ -74,7 +74,7 @@ namespace simul
 			DXGI_FORMAT target_format;
 			DXGI_FORMAT depth_format;
 			bool Destroy();
-			ID3D1xDevice*						m_pd3dDevice;
+			ID3D11Device*						m_pd3dDevice;
 
 		public:
 			ID3D1xRenderTargetView*				m_pHDRRenderTarget;

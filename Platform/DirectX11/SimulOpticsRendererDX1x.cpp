@@ -24,7 +24,7 @@ SimulOpticsRendererDX1x::~SimulOpticsRendererDX1x()
 
 void SimulOpticsRendererDX1x::RestoreDeviceObjects(void *dev)
 {
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	SAFE_RELEASE(flare_texture);
 	flare_texture=simul::dx11::LoadTexture(m_pd3dDevice,FlareTexture.c_str());
 	
@@ -77,8 +77,8 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,const flo
 	HRESULT hr=S_OK;
 	if(!m_pFlareEffect)
 		return;
-	ID3D11DeviceContext *m_pImmediateContext=(ID3D11DeviceContext *)context;
-	StoreD3D11State(m_pImmediateContext);
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	StoreD3D11State(pContext);
 	D3DXVECTOR3 sun_dir(dir);//skyKeyframer->GetDirectionToLight());
 	float magnitude=exposure;//*(1.f-sun_occlusion);
 	simul::math::FirstOrderDecay(flare_magnitude,magnitude,5.f,0.1f);
@@ -108,7 +108,7 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,const flo
 	colour->SetFloatVector((const float*)(&sunlight));
 	if(flare_magnitude>0.f)
 	{
-		UtilityRenderer::RenderAngledQuad(m_pImmediateContext,sun_dir,flare_angular_size*flare_magnitude,m_pFlareEffect,m_hTechniqueFlare,view,proj,sun_dir);
+		UtilityRenderer::RenderAngledQuad(pContext,sun_dir,flare_angular_size*flare_magnitude,m_pFlareEffect,m_hTechniqueFlare,view,proj,sun_dir);
 		sunlight*=0.25f;
 		for(int i=0;i<lensFlare.GetNumArtifacts();i++)
 		{
@@ -117,13 +117,13 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,const flo
 			int t=lensFlare.GetArtifactType(i);
 			flareTexture->SetResource(halo_textures[t]);
 			colour->SetFloatVector((const float*)(&sunlight));
-			UtilityRenderer::RenderAngledQuad(m_pImmediateContext,pos,flare_angular_size*sz*flare_magnitude,m_pFlareEffect,m_hTechniqueFlare,view,proj,sun_dir);
+			UtilityRenderer::RenderAngledQuad(pContext,pos,flare_angular_size*sz*flare_magnitude,m_pFlareEffect,m_hTechniqueFlare,view,proj,sun_dir);
 		}
 	}
-	m_pImmediateContext->VSSetShader(NULL, NULL, 0);
-	m_pImmediateContext->GSSetShader(NULL, NULL, 0);
-	m_pImmediateContext->PSSetShader(NULL, NULL, 0);
-	RestoreD3D11State(m_pImmediateContext );
+	pContext->VSSetShader(NULL, NULL, 0);
+	pContext->GSSetShader(NULL, NULL, 0);
+	pContext->PSSetShader(NULL, NULL, 0);
+	RestoreD3D11State(pContext );
 }
 
 void SimulOpticsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
