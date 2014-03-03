@@ -91,9 +91,9 @@ void TerrainRenderer::RestoreDeviceObjects(void *dev)
 	D3D1x_BUFFER_DESC desc=
 	{
         MAX_VERTICES*sizeof(TerrainVertex_t),
-        D3D1x_USAGE_DYNAMIC,
-        D3D1x_BIND_VERTEX_BUFFER,
-        D3D1x_CPU_ACCESS_WRITE,
+        D3D11_USAGE_DYNAMIC,
+        D3D11_BIND_VERTEX_BUFFER,
+        D3D11_CPU_ACCESS_WRITE,
         0
 	};
 	TerrainVertex_t *vertices=new TerrainVertex_t[MAX_VERTICES];

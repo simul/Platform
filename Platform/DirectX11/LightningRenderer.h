@@ -27,7 +27,10 @@ namespace simul
 		protected:
 			ID3DX11Effect*	effect;
 			ID3D11Device *	m_pd3dDevice;
-			VertexBuffer<LightningVertex>		vertexBuffer;
+			ID3D11InputLayout* inputLayout;
+			VertexBuffer<LightningVertex>				vertexBuffer;
+			ConstantBuffer<LightningConstants>			lightningConstants;
+			ConstantBuffer<LightningPerViewConstants>	lightningPerViewConstants;
 		};
 	}
 }

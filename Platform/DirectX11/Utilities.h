@@ -79,7 +79,7 @@ namespace simul
 		template<class T> struct VertexBuffer
 		{
 			ID3D11Buffer				*vertexBuffer;
-			//ID3D11UnorderedAccessView	*unorderedAccessView;
+			
 			VertexBuffer()
 				:vertexBuffer(NULL)
 				//,unorderedAccessView(NULL)
@@ -90,15 +90,16 @@ namespace simul
 				release();
 			}
 			//! Make sure the buffer has the number of vertices specified.
-			void ensureBufferSize(ID3D11Device *pd3dDevice,int numVertices,void *data=NULL)
+			void ensureBufferSize(ID3D11Device *pd3dDevice,int numVertices,void *data=NULL
+				,bool stream_output=true,bool cpu_write=false)
 			{
 				release();
 				D3D11_BUFFER_DESC desc	=
 				{
 					numVertices*sizeof(T),
-					D3D11_USAGE_DEFAULT,
-					D3D11_BIND_VERTEX_BUFFER|D3D11_BIND_STREAM_OUTPUT	//D3D11_BIND_UNORDERED_ACCESS is useless for VB's in DX11
-					,0// CPU
+					cpu_write?D3D11_USAGE_DYNAMIC:D3D11_USAGE_DEFAULT,
+					D3D11_BIND_VERTEX_BUFFER|(stream_output?D3D11_BIND_STREAM_OUTPUT:0)//D3D11_BIND_UNORDERED_ACCESS is useless for VB's in DX11
+					,(cpu_write?D3D11_CPU_ACCESS_WRITE:0)// CPU
 					,0//D3D11_RESOURCE_MISC_BUFFER_STRUCTURED
 					,sizeof(T)			//StructureByteStride
 				};
@@ -120,7 +121,8 @@ namespace simul
 			D3D11_MAPPED_SUBRESOURCE mapped;
 			T *Map(ID3D11DeviceContext *pContext)
 			{
-				pContext->Map(vertexBuffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+				HRESULT hr=pContext->Map(vertexBuffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+		//		SIMUL_ASSERT(hr==S_OK);
 				return (T*)mapped.pData;
 			}
 			void Unmap(ID3D11DeviceContext *pContext)

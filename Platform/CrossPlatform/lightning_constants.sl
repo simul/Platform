@@ -3,23 +3,14 @@
 
 uniform_buffer LightningConstants SIMUL_BUFFER_REGISTER(10)
 {
-	uniform vec4 lightColour;
+	uniform vec4 lightningColour;
 };
 
 uniform_buffer LightningPerViewConstants SIMUL_BUFFER_REGISTER(8)
 {
-	uniform mat4 worldViewProj[2];
-	uniform mat4 worldView[2];
-	uniform mat4 invViewProj[2];
-	uniform vec4 viewPos[2];
-	uniform vec4 offset[2];
-	uniform float nearZ;
-	uniform float farZ;
+	uniform mat4 worldViewProj;
 	uniform vec3 depthToLinFadeDistParams;
-	uniform float nearRainDistance;			// as a proportion of max fade distance
-	uniform vec4 viewportToTexRegionScaleBias;
-	uniform vec2 tanHalfFov;
-	uniform vec2 dumm;
+	uniform float xxxxxxx;
 };
 
 struct LightningVertex
@@ -27,5 +18,13 @@ struct LightningVertex
     vec4 position;
 	vec4 texCoords;
 };
+
+#ifndef __cplusplus
+struct LightningVertexInput
+{
+    vec4 position		: POSITION;
+    vec4 texCoords		: TEXCOORD0;
+};
+#endif
 
 #endif

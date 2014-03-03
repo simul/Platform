@@ -8,6 +8,7 @@ using namespace dx11;
 LightningRenderer::LightningRenderer(simul::clouds::CloudKeyframer *ck,simul::sky::BaseSkyInterface *sk)
 	:BaseLightningRenderer(ck,sk)
 	,effect(NULL)
+	,inputLayout(NULL)
 {
 }
 
@@ -18,7 +19,9 @@ LightningRenderer::~LightningRenderer()
 void LightningRenderer::RestoreDeviceObjects(void* dev)
 {
 	m_pd3dDevice=(ID3D11Device*)dev;
-	vertexBuffer.ensureBufferSize(m_pd3dDevice,1000,NULL);
+	vertexBuffer.ensureBufferSize(m_pd3dDevice,1000,NULL,false,true);
+	lightningConstants.RestoreDeviceObjects(m_pd3dDevice);
+	lightningPerViewConstants.RestoreDeviceObjects(m_pd3dDevice);
 	RecompileShaders();
 }
 
@@ -29,11 +32,26 @@ void LightningRenderer::RecompileShaders()
 		return;
 	std::map<std::string,std::string> defines;
 	CreateEffect(m_pd3dDevice,&effect,"lightning.fx",defines);
+	D3DX11_PASS_DESC PassDesc;
+	effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->GetDesc(&PassDesc);
+	SAFE_RELEASE(inputLayout);
+	const D3D11_INPUT_ELEMENT_DESC mesh_layout_desc[] =
+    {
+        {"POSITION",0, DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,	D3D11_INPUT_PER_VERTEX_DATA,0},
+        {"TEXCOORD",0, DXGI_FORMAT_R32G32B32A32_FLOAT,0,16,	D3D11_INPUT_PER_VERTEX_DATA,0},
+    };
+	V_CHECK(m_pd3dDevice->CreateInputLayout(mesh_layout_desc,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&inputLayout));
+
+	lightningConstants.LinkToEffect(effect,"LightningConstants");
+	lightningPerViewConstants.LinkToEffect(effect,"LightningPerViewConstants");
 }
 
 void LightningRenderer::InvalidateDeviceObjects()
 {
 	SAFE_RELEASE(effect);
+	SAFE_RELEASE(inputLayout);
+	lightningConstants.InvalidateDeviceObjects();
+	lightningPerViewConstants.InvalidateDeviceObjects();
 	vertexBuffer.release();
 }
 
@@ -42,6 +60,22 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	const simul::clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
 	LightningVertex *vertices=vertexBuffer.Map(pContext);
+	if(!vertices)
+		return;
+
+	ID3D11InputLayout* previousInputLayout;
+	pContext->IAGetInputLayout(&previousInputLayout);
+	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	pContext->IAGetPrimitiveTopology(&previousTopology);
+
+	D3DXMATRIX wvp;
+	simul::dx11::MakeViewProjMatrix(wvp,(const float*)&view,(const float*)&proj);
+	lightningPerViewConstants.worldViewProj=wvp;
+	lightningPerViewConstants.worldViewProj.transpose();
+	lightningPerViewConstants.Apply(pContext);
+	std::vector<int> start;
+	std::vector<int> count;
+	int v=0;
 	float time=baseSkyInterface->GetTime();
 	for(int i=0;i<cloudKeyframer->GetNumLightningBolts(time);i++)
 	{
@@ -51,6 +85,9 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 		if(!lightningRenderInterface->IsSourceStarted(time))
 			continue;
 		sky::float4 colour=lightningRenderInterface->GetLightningColour();
+		lightningConstants.lightningColour	=colour;
+		lightningConstants.Apply(pContext);
+
 		dx11::setParameter(effect,"lightningColour",colour);
 		simul::sky::float4 x1,x2;
 		static float maxwidth=8.f;
@@ -58,20 +95,20 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 		simul::math::Vector3 view_dir,cam_pos;
 		GetCameraPosVector((const float*)&view);
 		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
-		int v=0;
 		for(int j=0;j<lightningRenderInterface->GetNumLevels();j++)
 		{
 			for(int jj=0;jj<lightningRenderInterface->GetNumBranches(j);jj++)
 			{
 				const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(time,j,jj);
 				float dist=0.001f*(cam_pos-simul::math::Vector3(branch.vertices[0])).Magnitude();
-				/*glLineWidth(maxwidth*branch.width/dist);
-				if(enable_geometry_shaders)
-					glBegin(GL_LINE_STRIP_ADJACENCY);
-				else
-					glBegin(GL_LINE_STRIP);*/
+
+				int v_start=v;
+				start.push_back(v);
+
 				for(int k=-1;k<branch.numVertices;k++)
 				{
+					if(v>=1000)
+						break;
 					bool start=(k<0);
 					if(start)
 						x1=(const float *)branch.vertices[k+2];
@@ -104,9 +141,22 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 					vertices[v].position=vec4(x1.x,x1.y,x1.z+vertical_shift,x1.w);
 					v++;
 				}
+				count.push_back(v-v_start);
 			}
 		}
 	}
+	vertexBuffer.Unmap(pContext);
+
 	vertexBuffer.apply(pContext,0);
-	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+	pContext->IASetInputLayout(inputLayout);
+
+	ApplyPass(pContext,effect->GetTechniqueByIndex(0)->GetPassByIndex(0));
+	for(int i=0;i<start.size();i++)
+	{
+		if(count[i]>0)
+			pContext->Draw(count[i],start[i]);
+	}
+	pContext->IASetPrimitiveTopology(previousTopology);
+	pContext->IASetInputLayout(previousInputLayout);
 }

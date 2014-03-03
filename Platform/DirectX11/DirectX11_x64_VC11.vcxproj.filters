@@ -304,9 +304,6 @@
     <None Include="HLSL\simul_hdr.fx">
       <Filter>FX</Filter>
     </None>
-    <None Include="HLSL\simul_lightning.fx">
-      <Filter>FX</Filter>
-    </None>
     <None Include="HLSL\simul_rendernoise.fx">
       <Filter>FX</Filter>
     </None>
@@ -344,6 +341,9 @@
       <Filter>CrossPlatform</Filter>
     </None>
     <None Include="HLSL\rain.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\lightning.fx">
       <Filter>FX</Filter>
     </None>
   </ItemGroup>
