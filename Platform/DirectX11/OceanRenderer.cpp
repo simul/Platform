@@ -450,7 +450,7 @@ void OceanRenderer::createFresnelMap()
 
 void OceanRenderer::loadTextures()
 {
-    WCHAR strPath[MAX_PATH];
+//    WCHAR strPath[MAX_PATH];
 	SAFE_RELEASE(g_pSRV_Perlin);
     //swprintf_s(strPath, MAX_PATH, L"../../Platform/DirectX11/Textures/perlin_noise.dds");
 	g_pSRV_Perlin=simul::dx11::LoadTexture(m_pd3dDevice,"perlin_noise.dds");

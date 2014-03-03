@@ -11,12 +11,14 @@ uniform_buffer LightningPerViewConstants SIMUL_BUFFER_REGISTER(8)
 	uniform mat4 worldViewProj;
 	uniform vec3 depthToLinFadeDistParams;
 	uniform float xxxxxxx;
+	uniform vec2 viewportPixels;
+	uniform vec2 _line_width;
 };
 
 struct LightningVertex
 {
     vec4 position;
-	vec4 texCoords;
+	vec4 texCoords;				// x= width in pixels
 };
 
 #ifndef __cplusplus

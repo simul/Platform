@@ -68,10 +68,17 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 
+	D3D11_VIEWPORT viewport;
+	UINT num_v		=1;
+	pContext->RSGetViewports(&num_v,&viewport);
+
 	D3DXMATRIX wvp;
 	simul::dx11::MakeViewProjMatrix(wvp,(const float*)&view,(const float*)&proj);
 	lightningPerViewConstants.worldViewProj=wvp;
 	lightningPerViewConstants.worldViewProj.transpose();
+	
+	lightningPerViewConstants.viewportPixels=vec2(viewport.Width,viewport.Height);
+	lightningPerViewConstants._line_width=4;
 	lightningPerViewConstants.Apply(pContext);
 	std::vector<int> start;
 	std::vector<int> count;
@@ -91,7 +98,7 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 		dx11::setParameter(effect,"lightningColour",colour);
 		simul::sky::float4 x1,x2;
 		static float maxwidth=8.f;
-					static float ww=50.f;
+	static float ww=5.f;
 		simul::math::Vector3 view_dir,cam_pos;
 		GetCameraPosVector((const float*)&view);
 		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
@@ -137,7 +144,7 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 					}
 					if(end)
 						brightness=0.f;
-					vertices[v].texCoords=vec4(0,width,x1.w,brightness);
+					vertices[v].texCoords=vec4(width,width,x1.w,brightness);
 					vertices[v].position=vec4(x1.x,x1.y,x1.z+vertical_shift,x1.w);
 					v++;
 				}
@@ -148,12 +155,20 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	vertexBuffer.Unmap(pContext);
 
 	vertexBuffer.apply(pContext,0);
-	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
 	pContext->IASetInputLayout(inputLayout);
 
-	ApplyPass(pContext,effect->GetTechniqueByIndex(0)->GetPassByIndex(0));
+	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("lightning_thick");
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
+
+	ApplyPass(pContext,tech->GetPassByIndex(0));
 	for(int i=0;i<start.size();i++)
 	{
+		if(i)
+		{
+			pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+			tech=effect->GetTechniqueByName("lightning_thin");
+			ApplyPass(pContext,tech->GetPassByIndex(0));
+		}
 		if(count[i]>0)
 			pContext->Draw(count[i],start[i]);
 	}
