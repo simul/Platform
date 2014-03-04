@@ -89,8 +89,6 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 		const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,i);
 		if(!lightningRenderInterface)
 			continue;
-		if(!lightningRenderInterface->IsSourceStarted(time))
-			continue;
 		sky::float4 colour=lightningRenderInterface->GetLightningColour();
 		lightningConstants.lightningColour	=colour;
 		lightningConstants.Apply(pContext);

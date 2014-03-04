@@ -133,8 +133,6 @@ GL_ERROR_CHECK
 		const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,i);
 		if(!lightningRenderInterface)
 			continue;
-		if(!lightningRenderInterface->IsSourceStarted(time))
-			continue;
 	float4 colour=lightningRenderInterface->GetLightningColour();
 	setParameter(lightning_program,"lightningColour",colour.x,colour.y,colour.z);
 		simul::sky::float4 x1,x2;

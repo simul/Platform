@@ -134,6 +134,12 @@ float4 PS_Main(transformedVertex IN): SV_TARGET
     return colour;
 }
 
+float4 PS_Thin(transformedVertex IN): SV_TARGET
+{
+	float4 colour=vec4(1,0,1,1);//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+    return colour;
+}
+
 technique11 lightning_thick
 {
     pass p0 
@@ -147,17 +153,30 @@ technique11 lightning_thick
 		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
     }
 }
+RasterizerState lightningLineRasterizer
+{
+	FillMode					= WIREFRAME;
+	CullMode					= none;
+	FrontCounterClockwise		= false;
+	DepthBias					= 0;//DEPTH_BIAS_D32_FLOAT(-0.00001);
+	DepthBiasClamp				= 0.f;
+	SlopeScaledDepthBias		= 0.f;
+	DepthClipEnable				= false;
+	ScissorEnable				= false;
+	MultisampleEnable			= true;
+	AntialiasedLineEnable		= false;
+};
 
 technique11 lightning_thin
 {
     pass p0 
     {
 		SetDepthStencilState(DisableDepth,0);
-        SetRasterizerState(RenderNoCull);
+        SetRasterizerState(lightningLineRasterizer);
 		SetBlendState(DoBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thin()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Thin()));
     }
 }
 

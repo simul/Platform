@@ -196,10 +196,7 @@ void SimulAtmosphericsRenderer::SetLightningProperties(	void *tex,
 	lightning_illumination_texture=(LPDIRECT3DBASETEXTURE9)tex;
 	for(int i=0;i<4;i++)
 	{
-		if(i<(int)lri->GetNumLightSources())
-			(lightning_multipliers.operator float *())[i]=lri->GetLightSourceBrightness(0.f);
-		else
-			(lightning_multipliers.operator float *())[i]=0;
+		(lightning_multipliers.operator float *())[i]=0;
 	}
 	illumination_scales=lri->GetIlluminationScales();
 	illumination_scales.x=1.f/illumination_scales.x;

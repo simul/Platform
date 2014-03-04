@@ -662,9 +662,7 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool /
 		lightning_colour*=exposure;
 		for(int i=0;i<4;i++)
 		{
-			if(i<lightningRenderInterface->GetNumLightSources())
-				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(time);
-			else lightning_multipliers[i]=0;
+			lightning_multipliers[i]=0;
 		}
 		static float lightning_effect_on_cloud=20.f;
 		lightning_colour.w=lightning_effect_on_cloud;
