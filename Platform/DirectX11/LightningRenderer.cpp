@@ -87,6 +87,8 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	for(int i=0;i<cloudKeyframer->GetNumLightningBolts(time);i++)
 	{
 		const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,i);
+		simul::clouds::LightningProperties props;
+		props.seed=1;
 		if(!lightningRenderInterface)
 			continue;
 		sky::float4 colour=lightningRenderInterface->GetLightningColour();
@@ -104,7 +106,7 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 		{
 			for(int jj=0;jj<lightningRenderInterface->GetNumBranches(j);jj++)
 			{
-				const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(time,j,jj);
+				const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(props,time,j,jj);
 				float dist=0.001f*(cam_pos-simul::math::Vector3(branch.vertices[0])).Magnitude();
 
 				int v_start=v;
