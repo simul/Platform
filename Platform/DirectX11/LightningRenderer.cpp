@@ -153,7 +153,6 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 		}
 	}
 	vertexBuffer.Unmap(pContext);
-
 	vertexBuffer.apply(pContext,0);
 	pContext->IASetInputLayout(inputLayout);
 
