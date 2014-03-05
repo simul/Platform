@@ -254,11 +254,13 @@
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CrossPlatform\atmospherics.sl" />
     <None Include="..\CrossPlatform\cloud_shadow.sl" />
     <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
     <None Include="..\CrossPlatform\godrays.sl" />
     <None Include="..\CrossPlatform\illumination.sl" />
     <None Include="..\CrossPlatform\lightning_constants.sl" />
+    <None Include="..\CrossPlatform\optics_constants.sl" />
     <None Include="..\CrossPlatform\rain_constants.sl" />
     <None Include="..\CrossPlatform\simul_2d_cloud_detail.sl" />
     <None Include="..\CrossPlatform\simul_clouds.sl" />
@@ -323,6 +325,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\rain.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSL\optics.fx">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

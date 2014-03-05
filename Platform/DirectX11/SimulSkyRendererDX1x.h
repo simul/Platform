@@ -12,9 +12,9 @@
 #include "Simul/Sky/BaseSkyRenderer.h"
 #include "Simul/Math/Matrix4x4.h"
 #include <d3dx9.h>
-	#include <d3d11.h>
-	#include <d3dx11.h>
-	#include <d3dx11effect.h>
+#include <d3d11.h>
+#include <d3dx11.h>
+#include <d3dx11effect.h>
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
@@ -127,12 +127,11 @@ protected:
 	
 	ConstantBuffer<EarthShadowUniforms>	earthShadowUniforms;
 	ConstantBuffer<SkyConstants>		skyConstants;
-void SetConstantsForPlanet(SkyConstants &skyConstants,const float *viewmatrix,const float *projmatrix,const float *dir,const float *light_dir);
 
 	TextureStruct						loss_textures[3];
 	TextureStruct						insc_textures[3];
 	TextureStruct						skyl_textures[3];
-			TextureStruct						light_table;
+	TextureStruct						light_table;
 
 	// Small framebuffers we render to once per frame to perform fade interpolation.
 	simul::dx11::Framebuffer*			loss_2d;

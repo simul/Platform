@@ -188,6 +188,12 @@ namespace simul
 			static void DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety);
 		};
 		//! Useful Wrapper class to encapsulate constant buffer behaviour
+		
+		//! Usage: You \em must use the following member functions to use this buffer.
+		//! On device restore, call RestoreDeviceObjects(m_pd3dDevice).
+		//! After creating any effect that uses the buffer, call LinkToEffect(m_pSkyEffect,"BufferNameInFxFile").
+		//! On device shutdown, call InvalidateDeviceObjects().
+		//! Before applying the effect pass, call Apply(pContext)
 		template<class T> class ConstantBuffer:public T
 		{
 		public:
