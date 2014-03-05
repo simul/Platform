@@ -1,6 +1,7 @@
 #include "CppHLSL.hlsl"
 #include "states.hlsl"
 #include "../../CrossPlatform/optics_constants.sl"
+#include "../../CrossPlatform/depth.sl"
 
 Texture2D flareTexture;
 Texture2D rainbowLookupTexture;
@@ -91,8 +92,12 @@ vec4 CalculateRainbowColor(rainbowVertexOutput IN, float d, out vec4 moisture )
 	//d will be clamped between 0 and 1 by the texture sampler
 	// this gives up the dot product result in the range of [0 to 1]
 	// that is to say, an angle of 0 to 90 degrees
-	vec4 scattered = texture_clamp(rainbowLookupTexture, vec2( dropletRadius, d));
-	moisture = vec4(1.0,1.0,1.0,1.0);//texture_clamp(moistureTexture,IN.texCoords);
+	vec4 scattered	=texture_clamp(rainbowLookupTexture, vec2( dropletRadius, d));
+
+	float depth		=texture_clamp(depthTexture,IN.texCoords.xy);
+	float dist		=saturate(depthToLinearDistance(depth,depthToLinFadeDistParams));
+
+	moisture = dist;//texture_clamp(moistureTexture,IN.texCoords);
 	return scattered;
 }
 

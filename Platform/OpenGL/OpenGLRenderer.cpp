@@ -237,7 +237,7 @@ void OpenGLRenderer::paintGL()
 			light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 			float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-			simulOpticsRenderer->RenderFlare(context,exp,view,proj,dir,light);
+			simulOpticsRenderer->RenderFlare(context,exp,depthFramebuffer.GetDepthTex(),view,proj,dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(context);
