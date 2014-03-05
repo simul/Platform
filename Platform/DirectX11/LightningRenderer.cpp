@@ -37,13 +37,12 @@ void LightningRenderer::RecompileShaders()
 	SAFE_RELEASE(inputLayout);
 	const D3D11_INPUT_ELEMENT_DESC mesh_layout_desc[] =
     {
-        {"POSITION",0, DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,	D3D11_INPUT_PER_VERTEX_DATA,0},
-        {"TEXCOORD",0, DXGI_FORMAT_R32G32B32A32_FLOAT,0,16,	D3D11_INPUT_PER_VERTEX_DATA,0},
+        {"POSITION",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,	D3D11_INPUT_PER_VERTEX_DATA,0},
+        {"TEXCOORD",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,16,	D3D11_INPUT_PER_VERTEX_DATA,0},
     };
 	V_CHECK(m_pd3dDevice->CreateInputLayout(mesh_layout_desc,2,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&inputLayout));
-
-	lightningConstants.LinkToEffect(effect,"LightningConstants");
-	lightningPerViewConstants.LinkToEffect(effect,"LightningPerViewConstants");
+	lightningConstants			.LinkToEffect(effect,"LightningConstants");
+	lightningPerViewConstants	.LinkToEffect(effect,"LightningPerViewConstants");
 }
 
 void LightningRenderer::InvalidateDeviceObjects()
@@ -78,33 +77,31 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	lightningPerViewConstants.worldViewProj.transpose();
 	
 	lightningPerViewConstants.viewportPixels=vec2(viewport.Width,viewport.Height);
-	lightningPerViewConstants._line_width=4;
+	lightningPerViewConstants._line_width	=4;
 	lightningPerViewConstants.Apply(pContext);
 	std::vector<int> start;
 	std::vector<int> count;
 	int v=0;
-	float time=baseSkyInterface->GetTime();
+	float time	=baseSkyInterface->GetTime();
 	for(int i=0;i<cloudKeyframer->GetNumLightningBolts(time);i++)
 	{
 		const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,i);
-		simul::clouds::LightningProperties props;
-		props.seed=1;
+		simul::clouds::LightningProperties props	=cloudKeyframer->GetLightningProperties(time,i);
 		if(!lightningRenderInterface)
 			continue;
-		sky::float4 colour=lightningRenderInterface->GetLightningColour();
-		lightningConstants.lightningColour	=colour;
+		lightningConstants.lightningColour	=props.colour;
 		lightningConstants.Apply(pContext);
 
-		dx11::setParameter(effect,"lightningColour",colour);
+		//dx11::setParameter(effect,"lightningColour",props.colour);
 		simul::sky::float4 x1,x2;
 		static float maxwidth=8.f;
-	static float ww=5.f;
+		static float ww=5.f;
 		simul::math::Vector3 view_dir,cam_pos;
 		GetCameraPosVector((const float*)&view);
 		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
-		for(int j=0;j<lightningRenderInterface->GetNumLevels();j++)
+		for(int j=0;j<props.numLevels;j++)
 		{
-			for(int jj=0;jj<lightningRenderInterface->GetNumBranches(j);jj++)
+			for(int jj=0;jj<(j>0?props.branchCount:1);jj++)
 			{
 				const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(props,time,j,jj);
 				float dist=0.001f*(cam_pos-simul::math::Vector3(branch.vertices[0])).Magnitude();

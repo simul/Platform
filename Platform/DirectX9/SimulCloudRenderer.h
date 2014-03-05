@@ -186,7 +186,6 @@ namespace simul
 			LPDIRECT3DBASETEXTURE9		skylight_texture;
 			LPDIRECT3DBASETEXTURE9		illumination_texture;
 			LPDIRECT3DCUBETEXTURE9		cloud_cubemap;
-			D3DXVECTOR4					lightning_colour;
 			D3DXMATRIX					world,view,proj;
 			LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 			LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;

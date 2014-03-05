@@ -652,13 +652,14 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool /
 	m_pCloudEffect->SetFloat	(cloudEccentricity	,GetCloudInterface()->GetMieAsymmetry());
 	m_pCloudEffect->SetFloat	(alphaSharpness		,K.edge_sharpness);
 	float time=skyInterface->GetTime();
-	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
-
+	const simul::clouds::LightningProperties &lightning=cloudKeyframer->GetLightningProperties(time,0);
+	
+	simul::sky::float4 lightning_colour;
 	if(enable_lightning&&lightningRenderInterface)
 	{
 		static float bb=2.f;
 		simul::sky::float4 lightning_multipliers;
-		lightning_colour=lightningRenderInterface->GetLightningColour();
+		lightning_colour=lightning.colour;
 		lightning_colour*=exposure;
 		for(int i=0;i<4;i++)
 		{
@@ -667,7 +668,7 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool /
 		static float lightning_effect_on_cloud=20.f;
 		lightning_colour.w=lightning_effect_on_cloud;
 		m_pCloudEffect->SetVector	(lightningMultipliers	,(D3DXVECTOR4*)(&lightning_multipliers));
-		m_pCloudEffect->SetVector	(lightningColour		,&lightning_colour);
+		m_pCloudEffect->SetVector	(lightningColour		,(D3DXVECTOR4*)(&lightning_colour));
 
 		simul::math::Vector3 light_X1,light_X2,light_DX;
 		light_X1=lightningRenderInterface->GetIlluminationOrigin();

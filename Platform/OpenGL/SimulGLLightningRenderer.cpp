@@ -133,16 +133,18 @@ GL_ERROR_CHECK
 		const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,i);
 		if(!lightningRenderInterface)
 			continue;
-	float4 colour=lightningRenderInterface->GetLightningColour();
-	setParameter(lightning_program,"lightningColour",colour.x,colour.y,colour.z);
+		simul::clouds::LightningProperties props;
+		props.seed=0;
+		setParameter(lightning_program,"lightningColour",props.colour);
 		simul::sky::float4 x1,x2;
-		static float maxwidth=8.f;
-		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
-		for(int j=0;j<lightningRenderInterface->GetNumLevels();j++)
+		static float maxwidth	=8.f;
+		float vertical_shift	=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
+		for(int j=0;j<props.numLevels;j++)
 		{
-			for(int jj=0;jj<lightningRenderInterface->GetNumBranches(j);jj++)
+			for(int jj=0;jj<props.branchCount;jj++)
 			{
-				const simul::clouds::LightningRenderInterface::Branch &branch=lightningRenderInterface->GetBranch(time,j,jj);
+				const simul::clouds::LightningRenderInterface::Branch &branch
+					=lightningRenderInterface->GetBranch(props,time,j,jj);
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_ONE,GL_ONE);
 				glBlendFuncSeparate(GL_ONE,GL_ONE,GL_ONE,GL_ONE);

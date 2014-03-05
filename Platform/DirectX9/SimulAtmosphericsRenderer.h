@@ -16,6 +16,7 @@
 #endif
 #include "Simul/Platform/DirectX9/Export.h"
 #include "Simul/Sky/BaseAtmosphericsRenderer.h"
+#include "Simul/Clouds/LightningRenderInterface.h"
 typedef long HRESULT;
 namespace simul
 {
@@ -70,7 +71,7 @@ public:
 	//! Render godrays
 	bool RenderGodRays(float strength);
 	//! Set properties for rendering lightning airglow.
-	void SetLightningProperties(void *tex,simul::clouds::LightningRenderInterface *lri);
+	void SetLightningProperties(void *tex,const simul::clouds::LightningProperties &prop);
 	//! Render airglow due to lightning
 	bool RenderAirglow();
 #ifdef XBOX
