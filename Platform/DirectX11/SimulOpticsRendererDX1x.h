@@ -27,12 +27,10 @@ namespace simul
 			virtual ~SimulOpticsRendererDX1x();
 			virtual void RestoreDeviceObjects(void *device);
 			virtual void InvalidateDeviceObjects();
-			virtual void RenderFlare(void *context,float exposure,const float *dir,const float *light);
-			virtual void RenderRainbowAndCorona(void *context,float exposure,const float *dir_to_sun,const float *light);
+			virtual void RenderFlare(void *context,float exposure,void *depthTexture,const float *v,const float *p,const float *dir,const float *light);
+			virtual void RenderRainbowAndCorona(void *context,float exposure,void *depthTexture,const float *v,const float *p,const float *dir_to_sun,const float *light);
 			virtual void RecompileShaders();
-			void SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p);
 		protected:
-			D3DXMATRIX								view,proj;
 			ID3D11Device *							m_pd3dDevice;
 			ID3DX11Effect*							effect;
 			ID3D1xEffectTechnique*					m_hTechniqueFlare;

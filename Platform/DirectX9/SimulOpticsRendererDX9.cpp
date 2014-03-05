@@ -90,11 +90,13 @@ void SimulOpticsRendererDX9::SetFlare(LPDIRECT3DTEXTURE9 tex,float rad)
 	external_flare_texture=true;
 }
 
-void SimulOpticsRendererDX9::RenderFlare(void *,float exposure,const float *dir,const float *light)
+void SimulOpticsRendererDX9::RenderFlare(void *,float exposure,const float *dir,const float *v,const float *p,const float *light)
 {
 	HRESULT hr=S_OK;
 	if(!m_pFlareEffect)
 		return ;
+	D3DXMATRIX view=v;
+	D3DXMATRIX proj=p;
 	D3DXVECTOR3 sun_dir(dir);//skyKeyframer->GetDirectionToLight());
 	float magnitude=exposure;//*(1.f-sun_occlusion);
 	simul::math::FirstOrderDecay(flare_magnitude,magnitude,5.f,0.1f);
@@ -138,10 +140,4 @@ void SimulOpticsRendererDX9::RenderFlare(void *,float exposure,const float *dir,
 			hr=RenderAngledQuad(m_pd3dDevice,cam_pos,pos,false,flare_angular_size*sz*flare_magnitude,m_pFlareEffect);
 		}
 	}
-}
-
-void SimulOpticsRendererDX9::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
-{
-	view=v;
-	proj=p;
 }

@@ -386,10 +386,9 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,s
 		return;
 	dir			=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetDirectionToSun();
 	light		=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
-	simulOpticsRenderer->SetMatrices(v,proj);
 	float occ	=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 	float exp	=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-	simulOpticsRenderer->RenderFlare(pContext,exp,dir,light);
+	simulOpticsRenderer->RenderFlare(pContext,exp,v,proj,dir,light);
 }
 
 void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext)

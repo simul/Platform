@@ -3,7 +3,7 @@
 #include "MacrosDX1x.h"
 #include "CreateEffectDX1x.h"
 #include "Simul/Math/Decay.h"
-
+#include "Simul/Math/Matrix4x4.h"
 #include "Simul/Base/StringToWString.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 using namespace simul::dx11;
@@ -82,11 +82,12 @@ void SimulOpticsRendererDX1x::RecompileShaders()
 	opticsConstants.LinkToEffect(effect,"OpticsConstants");
 }
 
-void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,const float *dir,const float *light)
+void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,void * depthTexture,const float *v,const float *p,const float *dir,const float *light)
 {
 	HRESULT hr=S_OK;
 	if(!effect)
 		return;
+	simul::math::Matrix4x4 view(v),proj(p);
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	StoreD3D11State(pContext);
 	D3DXVECTOR3 sun_dir(dir);
@@ -131,13 +132,14 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,const flo
 	pContext->GSSetShader(NULL, NULL, 0);
 	pContext->PSSetShader(NULL, NULL, 0);
 	RestoreD3D11State(pContext );
-	RenderRainbowAndCorona(context,exposure,dir,light);
+	RenderRainbowAndCorona(context,exposure,depthTexture,v,p,dir,light);
 }
-void SimulOpticsRendererDX1x::RenderRainbowAndCorona(void *context,float exposure,const float *dir_to_sun,const float *light)
+void SimulOpticsRendererDX1x::RenderRainbowAndCorona(void *context,float exposure,void *depthTexture,const float *v,const float *p,const float *dir_to_sun,const float *light)
 {
 	HRESULT hr=S_OK;
 	if(!effect)
 		return;
+	simul::math::Matrix4x4 view(v),proj(p);
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	StoreD3D11State(pContext);
 	float magnitude=exposure;
@@ -149,7 +151,7 @@ void SimulOpticsRendererDX1x::RenderRainbowAndCorona(void *context,float exposur
 	simul::dx11::GetCameraPosVector(view,(float*)&cam_pos,(float*)&cam_dir,false);
 	dx11::setTexture(effect,"rainbowLookupTexture"	,rainbowLookupTexture);
 	dx11::setTexture(effect,"coronaLookupTexture"	,coronaLookupTexture);
-	//dx11::setTexture(effect,"moistureTexture"		,moistureTexture);
+	dx11::setTexture(effect,"depthTexture"			,(ID3D11ShaderResourceView*)depthTexture);
 	SetOpticsConstants(opticsConstants,view,proj,dir_to_sun,sunlight,flare_angular_size*flare_magnitude);
 	opticsConstants.Apply(pContext);
 	ApplyPass(pContext,techniqueRainbowCorona->GetPassByIndex(0));
@@ -158,10 +160,4 @@ void SimulOpticsRendererDX1x::RenderRainbowAndCorona(void *context,float exposur
 	pContext->GSSetShader(NULL,NULL,0);
 	pContext->PSSetShader(NULL,NULL,0);
 	RestoreD3D11State(pContext );
-}
-
-void SimulOpticsRendererDX1x::SetMatrices(const D3DXMATRIX &v,const D3DXMATRIX &p)
-{
-	view=v;
-	proj=p;
 }

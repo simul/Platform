@@ -6,6 +6,7 @@ Texture2D flareTexture;
 Texture2D rainbowLookupTexture;
 Texture2D coronaLookupTexture;
 Texture2D moistureTexture;
+Texture2D depthTexture;
 
 struct indexVertexInput
 {
@@ -63,12 +64,12 @@ rainbowVertexOutput VS_rainbow(idOnly id)
 	OUT.hPosition = posTex.hPosition;
 	OUT.texCoords = posTex.texCoords;
 	//  input is a full screen quad
-	vec2 clip_pos	=posTex.texCoords*2.0-vec2(1.0,1.0);
+	vec2 clip_pos	=OUT.hPosition.xy;
 	OUT.eyeVec		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
     return OUT;
 }
 
-vec4 CalculateRainbowColor(rainbowVertexOutput IN, out float d, out vec4 moisture )
+vec4 CalculateRainbowColor(rainbowVertexOutput IN, float d, out vec4 moisture )
 {
 /*
  NB:
@@ -87,23 +88,19 @@ vec4 CalculateRainbowColor(rainbowVertexOutput IN, out float d, out vec4 moistur
     aka simplified..rainbow color * light color
     
 */
-
-	d =  dot( 
-				lightDir,			//this can be normalized per vertex  
-	          	normalize(IN.eyeVec ) 	//this must be normalized per pixel to prevent banding
-	         );
- 
 	//d will be clamped between 0 and 1 by the texture sampler
 	// this gives up the dot product result in the range of [0 to 1]
 	// that is to say, an angle of 0 to 90 degrees
-	vec4 scattered = vec4((IN.eyeVec ),1);//texture_clamp(rainbowLookupTexture, vec2( dropletRadius, d));
+	vec4 scattered = texture_clamp(rainbowLookupTexture, vec2( dropletRadius, d));
 	moisture = vec4(1.0,1.0,1.0,1.0);//texture_clamp(moistureTexture,IN.texCoords);
 	return scattered;
 }
 
 vec4 PS_rainbowOnly(rainbowVertexOutput IN) : SV_TARGET
 {
-	float d;
+	float d=  -dot( lightDir,normalize(IN.eyeVec ) 	);
+	// eyeVec must be normalized per pixel to prevent banding
+  
  	vec4 moisture; 
 	vec4 scattered=CalculateRainbowColor(IN, d,  moisture );	
 	return scattered*rainbowIntensity*moisture.x;
@@ -112,18 +109,19 @@ vec4 PS_rainbowOnly(rainbowVertexOutput IN) : SV_TARGET
 vec4 PS_rainbowAndCorona(rainbowVertexOutput IN) : SV_TARGET
 {
 	//return texture_clamp(coronaLookupTexture,IN.texCoords.xy);
-	float d; //note: use a float for d here, since a half corrupts the corona
+	 //note: use a float for d here, since a half corrupts the corona
+	float d=  -dot( lightDir,normalize(IN.eyeVec ) 	);
 	
 	vec4 moisture;
 
 	vec4 scattered=CalculateRainbowColor(IN, d,  moisture );	
-return scattered;
+
 	//(1 + d) will be clamped between 0 and 1 by the texture sampler
 	// this gives up the dot product result in the range of [-1 to 0]
 	// that is to say, an angle of 90 to 180 degrees
 	vec4 coronaDiffracted = texture_clamp(coronaLookupTexture, vec2(dropletRadius, 1.0 + d));
 
-	return (coronaDiffracted + scattered);//*rainbowIntensity*moisture.x;
+	return (coronaDiffracted + scattered)*rainbowIntensity*moisture.x;
 }
 
 technique11 simul_flare
