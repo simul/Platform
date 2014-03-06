@@ -361,4 +361,15 @@
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="HLSL\simul_render_cubemap.fx">
+      <Filter>FX</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\spherical_harmonics.fx">
+      <Filter>FX</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\light_probes.fx">
+      <Filter>FX</Filter>
+    </FxCompile>
+  </ItemGroup>
 </Project>

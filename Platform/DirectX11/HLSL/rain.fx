@@ -318,7 +318,7 @@ vec4 PS_Particles(particleGeometryOutput IN): SV_TARGET
 	vec2 pos		=IN.texCoords*2.0-1.0;
 	float radius	=length(pos.xy);
 	float angle		=atan2(pos.x,pos.y);
-	//float spoke		=fract(angle/pi*3.0)-0.5;
+	//float spoke	=fract(angle/pi*3.0)-0.5;
 	float opacity	=IN.fade*saturate(1.0-radius);//-spoke*spoke);
 	
 	return (vec4(result.rgb,opacity));
@@ -464,19 +464,19 @@ bool cullSprite( float3 position, float SpriteSize)
 float g_SpriteSize=0.01;
 void GenRainSpriteVertices(float3 worldPos, float3 velVec, float3 eyePos, out float3 outPos[4])
 {
-    float height =length(velVec);// g_SpriteSize/2.0;
-    float width = g_SpriteSize;
+    float height			=length(velVec);	// g_SpriteSize/2.0;
+    float width				=g_SpriteSize;
 
-    velVec = normalize(velVec);
-    float3 eyeVec = - worldPos;
-    float3 eyeOnVelVecPlane =  - ((dot(eyeVec, velVec)) * velVec);
-    float3 projectedEyeVec = eyeOnVelVecPlane - worldPos;
-    float3 sideVec = normalize(cross(projectedEyeVec, velVec));
-    
-    outPos[0] =  worldPos - (sideVec * 0.5*width);
-    outPos[1] = outPos[0] + (sideVec * width);
-    outPos[2] = outPos[0] + (velVec * height);
-    outPos[3] = outPos[2] + (sideVec * width );
+    velVec					=normalize(velVec);
+    float3 eyeVec			=-worldPos;
+    float3 eyeOnVelVecPlane	=-((dot(eyeVec, velVec)) * velVec);
+    float3 projectedEyeVec	=eyeOnVelVecPlane - worldPos;
+    float3 sideVec			=vec3(1,0,0);//normalize(cross(projectedEyeVec, velVec));
+
+    outPos[0]				=worldPos - (sideVec * 0.5*width);
+    outPos[1]				=outPos[0] + (sideVec * width);
+    outPos[2]				=outPos[0] + (velVec * height);
+    outPos[3]				=outPos[2] + (sideVec * width );
 }
     
 // GS for rendering rain as point sprites.  Takes a point and turns it into 2 tris.
@@ -676,10 +676,9 @@ void rainResponse(PSSceneIn input, float3 lightVector, float lightIntensity, flo
 }
 
 vec4 PS_RainParticles(PSSceneIn input) : SV_Target
-{     
-      //return float4(1,0,0,0.1);
+{
 	vec3 light			=cubeTexture.Sample(wrapSamplerState,-input.view).rgb;
-	vec4 texel			=rainTextureArray.Sample(samAniso,vec3(input.texCoords,input.type));
+	vec4 texel			=.5*rainTextureArray.Sample(samAniso,vec3(input.texCoords,input.type));
 	//directional lighting---------------------------------------------------------------------------------
 	vec4 directionalLight	=vec4(1,1,1,1);
 	//rainResponse(input, input.lightDir, 2.0*dirLightIntensity*g_ResponseDirLight*input.random, float3(1.0,1.0,1.0), input.eyeVec, false, directionalLight);

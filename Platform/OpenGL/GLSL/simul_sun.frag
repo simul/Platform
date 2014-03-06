@@ -1,6 +1,6 @@
 #version 140
 // simul_sun.frag - a GLSL fragment shader
-// Copyright 2013 Simul Software Ltd
+// Copyright 2014 Simul Software Ltd
 #include "CppGlsl.hs"
 #include "../../CrossPlatform/sky_constants.sl"
 uniform vec4 sunlight;

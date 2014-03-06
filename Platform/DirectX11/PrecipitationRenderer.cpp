@@ -34,11 +34,11 @@ void PrecipitationRenderer::RecompileShaders()
 		return;
 	CreateEffect(m_pd3dDevice,&effect,"rain.fx");
 	SAFE_RELEASE(rain_texture);
-	m_hTechniqueRain		=effect->GetTechniqueByName("simul_rain");
-	m_hTechniqueParticles	=effect->GetTechniqueByName("simul_particles");
+	m_hTechniqueRain			=effect->GetTechniqueByName("simul_rain");
+	m_hTechniqueParticles		=effect->GetTechniqueByName("simul_particles");
 	m_hTechniqueRainParticles	=effect->GetTechniqueByName("rain_particles");
 	techniqueMoveParticles		=effect->GetTechniqueByName("move_particles");
-	rainTexture				=effect->GetVariableByName("rainTexture")->AsShaderResource();
+	rainTexture					=effect->GetVariableByName("rainTexture")->AsShaderResource();
 
 	rainConstants.LinkToEffect(effect,"RainConstants");
 	perViewConstants.LinkToEffect(effect,"RainPerViewConstants");
@@ -127,8 +127,8 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 		dat[i].position.x=10*(i/125000.0f-.5f);
 	}
 	
-	vertexBuffer.ensureBufferSize(m_pd3dDevice,125000,dat);
-	vertexBufferSwap.ensureBufferSize(m_pd3dDevice,125000,dat);
+	vertexBuffer.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
+	vertexBufferSwap.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
 	delete dat;
 
     RecompileShaders();
@@ -164,20 +164,19 @@ void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 		dt*=-1.0f;
 	if(dt>1.0f)
 		dt=1.0f;
-		return;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	BasePrecipitationRenderer::PreRenderUpdate(context,dt);
 	
 	rainConstants.meanFallVelocity	=meanVelocity;
 	rainConstants.timeStepSeconds	=dt;
 	rainConstants.Apply(pContext);
-
+	
 	ID3D11InputLayout* previousInputLayout;
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetInputLayout(&previousInputLayout);
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	{
-		pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST );
+		pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 		pContext->IASetInputLayout(m_pVtxDecl);
 		vertexBuffer.apply(pContext,0);
 		vertexBufferSwap.setAsStreamOutTarget(pContext);

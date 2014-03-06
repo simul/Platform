@@ -27,9 +27,9 @@ void CS_Clear(uint3 sub_pos: SV_DispatchThreadID )
 void CS_Encode(uint3 sub_pos: SV_DispatchThreadID )
 {
 	// The sub_pos gives the co-ordinate in the table of sam
-	const double weight				=4.0*PI; 
+	const float weight				=4.0*PI; 
 	// divide the result by weight and number of samples 
-	double factor						=weight*invNumJitterSamples; 
+	float factor						=weight*invNumJitterSamples; 
 #if 0
 	SphericalHarmonicsSample sample		=samplesBuffer[sub_pos.x];
 	vec4 colour							=cubemapTexture.SampleLevel(wrapSamplerState,-sample.dir,0);
