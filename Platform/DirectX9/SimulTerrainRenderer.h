@@ -90,18 +90,6 @@ public:
 	{
 		show_wireframe=s;
 	}
-	void SetYVertical(bool s)
-	{
-		if(s!=y_vertical)
-		{
-			y_vertical=s;
-			if(m_pd3dDevice)
-			{
-				InvalidateDeviceObjects();
-				RestoreDeviceObjects(m_pd3dDevice);
-			}
-		}
-	}
 	void SetMaxFadeDistanceKm(float dist_km)
 	{
 		max_fade_distance_metres=dist_km*1000.f;

@@ -24,6 +24,7 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Camera/Camera.h"
 
 using namespace simul::dx11;
 
@@ -807,7 +808,7 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m
 	world._41=pos.x;
 	world._42=pos.y;
 	world._43=pos.z;
-	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
 	skyConstants.worldViewProj=&wvp._11;
 	skyConstants.worldViewProj.transpose();
 	skyConstants.Apply(pContext);
@@ -854,10 +855,6 @@ void *SimulSkyRendererDX1x::GetLightTableTexture()
 	return light_table_2d.shaderResourceView;
 }
 
-void SimulSkyRendererDX1x::SetYVertical(bool y)
-{
-	RecompileShaders();
-}
 
 void SimulSkyRendererDX1x::DrawLines(void *context,Vertext *lines,int vertex_count,bool strip)
 {

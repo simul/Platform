@@ -446,7 +446,7 @@ void SimulWeatherRenderer::PreRenderUpdate(void *context,float dt)
 			D3DXMATRIX view;
 			m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 		#endif
-			GetCameraPosVector(view,simulCloudRenderer->IsYVertical(),cam_pos);
+			GetCameraPosVector(view,false,cam_pos);
 			simulPrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
 		}
 		else

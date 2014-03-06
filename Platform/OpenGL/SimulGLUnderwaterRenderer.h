@@ -12,13 +12,11 @@ namespace simul
 		~SimulGLUnderwaterRenderer();
 		void Render(bool blend);
 		void RecompileShaders();
-		bool IsYVertical() const;
 	protected:
 	// Make up to date with respect to keyframer:
 		void EnsureCorrectTextureSizes();
 		void EnsureTexturesAreUpToDate();
 		void EnsureTextureCycle();
-		bool IsYVertical(){return false;}
 	};
 	}
 }

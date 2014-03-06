@@ -1,6 +1,7 @@
 #define NOMINMAX
 #include "LightningRenderer.h"
 #include "Simul/Sky/SkyInterface.h"
+#include "Simul/Camera/Camera.h"
 
 using namespace simul;
 using namespace dx11;
@@ -72,7 +73,7 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	pContext->RSGetViewports(&num_v,&viewport);
 
 	D3DXMATRIX wvp;
-	simul::dx11::MakeViewProjMatrix(wvp,(const float*)&view,(const float*)&proj);
+	camera::MakeViewProjMatrix(wvp,(const float*)&view,(const float*)&proj);
 	lightningPerViewConstants.worldViewProj=wvp;
 	lightningPerViewConstants.worldViewProj.transpose();
 	

@@ -18,9 +18,8 @@ typedef long HRESULT;
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHLSL.hlsl"
-#include "Simul/Platform/CrossPlatform/CppSl.hs"
-#include "Simul/Platform/CrossPlatform/rain_constants.sl"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Math/Matrix4x4.h"
 typedef long HRESULT;
 
@@ -41,20 +40,27 @@ namespace simul
 			void SetCubemapTexture(void *);
 			//! Call this when the D3D device has been shut down.
 			void InvalidateDeviceObjects();
-			void SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
 			void PreRenderUpdate(void *context,float time_step_seconds);
-			void Render(void *context,void *depth_tex,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH);
+			void RenderMoisture(void *context,
+				const DepthTextureStruct &depth
+				,const ViewStruct &viewStruct);
+			void Render(void *context,const void *depth_tex
+				,const simul::math::Matrix4x4 &v
+				,const simul::math::Matrix4x4 &p
+				,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH);
 			//! Put textures to screen for debugging
-			void RenderTextures(void *context,int width,int height);
+			void RenderTextures(void *context,int x0,int y0,int dx,int dy);
 			//! Provide a random 3D texture. This is set externally so the texture can be shared.
-			void SetRandomTexture3D(void *text);
+			void SetRandomTexture3D(void *texture);
+			void *GetMoistureTexture();
 		protected:
 			void RenderParticles(void *context);
 			ID3D11Device*							m_pd3dDevice;
 			ID3D11InputLayout*						m_pVtxDecl;
 			VertexBuffer<PrecipitationVertex>		vertexBuffer;
 			VertexBuffer<PrecipitationVertex>		vertexBufferSwap;
-			simul::dx11::ArrayTexture				rainArrayTexture;
+			dx11::ArrayTexture						rainArrayTexture;
+			dx11::Framebuffer						moisture_fb;
 			//ID3D11Buffer*							m_pVertexBufferSwap;
 			ID3DX11Effect*							effect;					// The fx file for this renderer
 			ID3D11ShaderResourceView*				rain_texture;
@@ -63,13 +69,13 @@ namespace simul
 			ID3D1xEffectShaderResourceVariable*		rainTexture;
 			vec3  *particles;
 			
-			ID3DX11EffectTechnique*					m_hTechniqueRain;
-			ID3DX11EffectTechnique*					m_hTechniqueParticles;
-			ID3DX11EffectTechnique*					m_hTechniqueRainParticles;
-			ID3DX11EffectTechnique*					techniqueMoveParticles;
-			simul::math::Matrix4x4								view,proj;
-			ConstantBuffer<RainConstants>			rainConstants;
-			ConstantBuffer<RainPerViewConstants>	perViewConstants;
+			ID3DX11EffectTechnique*						m_hTechniqueRain;
+			ID3DX11EffectTechnique*						m_hTechniqueParticles;
+			ID3DX11EffectTechnique*						m_hTechniqueRainParticles;
+			ID3DX11EffectTechnique*						techniqueMoveParticles;
+			ConstantBuffer<RainConstants>				rainConstants;
+			ConstantBuffer<RainPerViewConstants>		perViewConstants;
+			ConstantBuffer<MoisturePerViewConstants>	moisturePerViewConstants;
 			float intensity;
 
 			bool view_initialized;

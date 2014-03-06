@@ -1,6 +1,5 @@
 #pragma once
 #include "Simul/Sky/BaseGpuSkyGenerator.h"
-#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include <d3dx9.h>
 #include <d3d11.h>

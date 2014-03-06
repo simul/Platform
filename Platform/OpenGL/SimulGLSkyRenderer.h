@@ -66,8 +66,6 @@ public:
 
 	void		Get2DLossAndInscatterTextures(void* *l1,void* *i1,void * *s,void* *o);
 
-	//! This function does nothing as Y is never the vertical in this implementation
-	virtual		void SetYVertical(bool ){}
 	const		char *GetDebugText();
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:

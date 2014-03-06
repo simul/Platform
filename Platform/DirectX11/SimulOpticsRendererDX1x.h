@@ -27,7 +27,7 @@ namespace simul
 			virtual ~SimulOpticsRendererDX1x();
 			virtual void RestoreDeviceObjects(void *device);
 			virtual void InvalidateDeviceObjects();
-			virtual void RenderFlare(void *context,float exposure,void *depthTexture,const float *v,const float *p,const float *dir,const float *light);
+			virtual void RenderFlare(void *context,float exposure,void *moistureTexture,const float *v,const float *p,const float *dir,const float *light);
 			virtual void RenderRainbowAndCorona(void *context,float exposure,void *depthTexture,const float *v,const float *p,const float *dir_to_sun,const float *light);
 			virtual void RecompileShaders();
 		protected:

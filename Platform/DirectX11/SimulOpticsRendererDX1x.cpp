@@ -82,7 +82,7 @@ void SimulOpticsRendererDX1x::RecompileShaders()
 	opticsConstants.LinkToEffect(effect,"OpticsConstants");
 }
 
-void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,void * depthTexture,const float *v,const float *p,const float *dir,const float *light)
+void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,void *moistureTexture,const float *v,const float *p,const float *dir,const float *light)
 {
 	HRESULT hr=S_OK;
 	if(!effect)
@@ -132,9 +132,9 @@ void SimulOpticsRendererDX1x::RenderFlare(void *context,float exposure,void * de
 	pContext->GSSetShader(NULL, NULL, 0);
 	pContext->PSSetShader(NULL, NULL, 0);
 	RestoreD3D11State(pContext );
-	RenderRainbowAndCorona(context,exposure,depthTexture,v,p,dir,light);
+	//RenderRainbowAndCorona(context,exposure,moistureTexture,v,p,dir,light);
 }
-void SimulOpticsRendererDX1x::RenderRainbowAndCorona(void *context,float exposure,void *depthTexture,const float *v,const float *p,const float *dir_to_sun,const float *light)
+void SimulOpticsRendererDX1x::RenderRainbowAndCorona(void *context,float exposure,void *moistureTexture,const float *v,const float *p,const float *dir_to_sun,const float *light)
 {
 	HRESULT hr=S_OK;
 	if(!effect)
@@ -151,7 +151,7 @@ void SimulOpticsRendererDX1x::RenderRainbowAndCorona(void *context,float exposur
 	simul::dx11::GetCameraPosVector(view,(float*)&cam_pos,(float*)&cam_dir,false);
 	dx11::setTexture(effect,"rainbowLookupTexture"	,rainbowLookupTexture);
 	dx11::setTexture(effect,"coronaLookupTexture"	,coronaLookupTexture);
-	dx11::setTexture(effect,"depthTexture"			,(ID3D11ShaderResourceView*)depthTexture);
+	dx11::setTexture(effect,"moistureTexture"		,(ID3D11ShaderResourceView*)moistureTexture);
 	SetOpticsConstants(opticsConstants,view,proj,dir_to_sun,sunlight,flare_angular_size*flare_magnitude);
 	opticsConstants.Apply(pContext);
 	ApplyPass(pContext,techniqueRainbowCorona->GetPassByIndex(0));

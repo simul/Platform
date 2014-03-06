@@ -24,12 +24,11 @@ vec4 FastGodrays(Texture2D cloudGodraysTexture,Texture2D inscTexture,Texture2D o
 	float sine			=view.z;
 	float cos0			=dot(view,lightDir);
 	vec2 solid_fade_texc	=vec2(pow(solid_dist,0.5),0.5*(1.0-sine));
-	vec4 insc_s				=texture_clamp_mirror(inscTexture,solid_fade_texc)
-								-texture_clamp_mirror(overcTexture,solid_fade_texc);
+	vec4 insc_s				=texture_clamp_mirror(inscTexture,solid_fade_texc)-texture_clamp_mirror(overcTexture,solid_fade_texc);
 	vec4 extra_insc			=insc_s*saturate(illum_amount.x);
 	vec3 gr					=InscatterFunction(extra_insc,hazeEccentricity,cos0,mieRayleighRatio);
 	gr						*=exposure;
-		return vec4(gr,1.0);
+	return vec4(gr,illum_amount.x);
 }
 
 	

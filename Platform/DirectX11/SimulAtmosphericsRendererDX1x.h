@@ -86,6 +86,8 @@ namespace simul
 			ID3D1xShaderResourceView*					skylightTexture_SRV;
 
 			ID3D1xShaderResourceView*					illuminationTexture_SRV;
+			ID3D1xShaderResourceView*				rainbowLookupTexture;
+			ID3D1xShaderResourceView*				coronaLookupTexture;
 
 			ConstantBuffer<AtmosphericsPerViewConstants>	atmosphericsPerViewConstants;
 			ConstantBuffer<AtmosphericsUniforms>			atmosphericsUniforms;

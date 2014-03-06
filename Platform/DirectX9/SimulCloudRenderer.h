@@ -84,7 +84,6 @@ namespace simul
 			void RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height);
 			bool RenderLightVolume();
 			void EnableFilter(bool f);
-			bool IsYVertical() const{return y_vertical;}
 
 		protected:
 			void DrawLines(void*,VertexXyzRgba *,int num,bool strip);

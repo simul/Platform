@@ -65,14 +65,8 @@ vec3 applyFades(vec3 final,vec2 fade_texc,float cos0,float earthshadowMultiplier
 vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,mat4 shadowMatrix,vec3 cornerPos,vec3 inverseScales)
 {
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
-#ifdef RADIAL_CLOUD_SHADOW
-	float theta						=texCoords.y*2.0*3.1415926536;
-	float distance_off_centre		=pow(texCoords.x,2.0);
-	vec2 pos_xy						=distance_off_centre*vec2(cos(theta),sin(theta));
-#else
 	vec2 pos_xy						=2.0*texCoords.xy-1.0;
 	//float distance_off_centre		=length(pos_xy);
-#endif
 	vec2 illumination				=vec2(1.0,1.0);
 	float U							=-1.0;
 	#define NUM_STEPS 12
@@ -114,23 +108,15 @@ vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 
 	const float L					=0.0;
 	int N							=1*shadowTextureSize;
 	float pixel						=1.0/float(shadowTextureSize);
-#ifdef RADIAL_CLOUD_SHADOW
-	vec2 offset						=vec2(0,pixel/1.0);
-#else
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
 	float theta						=texCoords.x*2.0*3.1415926536;
 	vec2 offset						=vec2(-sin(theta),cos(theta))*pixel/4.0;
-#endif
 	// First find the range where there is ANY shadow:
 	for(int i=0;i<N;i++)
 	{
 		float interp					=float(i)/float(N-1);
-#ifdef RADIAL_CLOUD_SHADOW
-		vec2 shadow_texc				=vec2(sqrt(interp),texCoords.x);
-#else
 		float distance_off_centre		=interp;
 		vec2 shadow_texc				=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
-#endif
 		vec4 illumination				=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
 		illumination					+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
 		illumination					+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
@@ -149,12 +135,8 @@ vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 
 	for(int j=0;j<N;j++)
 	{
 		float interp					=float(j)/float(N-1);
-#ifdef RADIAL_CLOUD_SHADOW
-		vec2 shadow_texc				=vec2(sqrt(interp),texCoords.x);
-#else
 		float distance_off_centre		=interp;
 		vec2 shadow_texc				=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
-#endif
 		vec4 illumination				=texture_cwc_lod(cloudShadowTexture,shadow_texc,0);
 		illumination					+=texture_cwc_lod(cloudShadowTexture,shadow_texc-offset,0);
 		illumination					+=texture_cwc_lod(cloudShadowTexture,shadow_texc+offset,0);
@@ -175,28 +157,18 @@ vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 
 
 vec4 GodraysAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 texCoords)
 {
-	//const float U					=1.0;
-	//const float L					=0.0;
 	int N							=int(texCoords.y*float(shadowTextureSize));
 	float pixel						=1.0/float(shadowTextureSize);
-#ifdef RADIAL_CLOUD_SHADOW
-	vec2 offset						=vec2(0,pixel/1.0);
-#else
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
 	float theta						=texCoords.x*2.0*3.1415926536;
 	vec2 offset						=vec2(-sin(theta),cos(theta))*pixel/4.0;
-#endif
 	vec4 total_ill					=vec4(0,0,0,0);
 	// Find the total illumination
 	for(int i=0;i<N;i++)
 	{
 		float interp				=float(i)/float(shadowTextureSize-1);
-#ifdef RADIAL_CLOUD_SHADOW
-		vec2 shadow_texc			=vec2(sqrt(interp),texCoords.x);
-#else
 		float distance_off_centre	=interp;
 		vec2 shadow_texc			=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
-#endif
 		vec4 illumination			=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
 		illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
 		illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
@@ -210,11 +182,7 @@ vec4 ShowCloudShadow(Texture2D cloudShadowTexture,Texture2D cloudGodraysTexture,
 	vec2 tex_pos=2.0*texCoords.xy-vec2(1.0,1.0);
 	float dist=length(tex_pos.xy);
 	vec2 radial_texc=vec2(sqrt(length(tex_pos.xy)),atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536));
-#ifdef RADIAL_CLOUD_SHADOW
-    vec4 lookup=texture_cwc_lod(cloudShadowTexture,radial_texc,0);
-#else
     vec4 lookup=texture_clamp_lod(cloudShadowTexture,texCoords.xy,0);
-#endif
 	lookup*=0.5;
 	if(radial_texc.y<0)
 		radial_texc.y+=1.0;

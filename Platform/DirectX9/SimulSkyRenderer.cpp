@@ -494,7 +494,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	static float ff=0.0001f;
 	float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 	float zFar=(1.f+ff)/tan(sun_angular_radius);
-	FixProjectionMatrix(proj,zFar*ff,zFar,IsYVertical());
+	FixProjectionMatrix(proj,zFar*ff,zFar,false);
 	HRESULT hr;
 	// if the whole quad was visible, how many pixels would it be?
 	float screen_angular_size=2.f*atan((float)proj._22);

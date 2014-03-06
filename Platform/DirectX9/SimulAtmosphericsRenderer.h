@@ -103,11 +103,6 @@ public:
 	{
 		fade_interp=s;
 	}
-	// implementing BaseAtmosphericsRenderer
-	void SetYVertical(bool y)
-	{
-		y_vertical=y;
-	}
 	void SetBufferSize(int,int){}
 protected:
 	bool Render();

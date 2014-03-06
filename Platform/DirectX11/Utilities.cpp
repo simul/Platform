@@ -1,8 +1,10 @@
+#define NOMINMAX
 #include "Utilities.h"
 #include "MacrosDX1x.h"
 #include "TextRenderer.h"
 #include "Simul\Base\StringToWString.h"
 #include "Simul/Sky/Float4.h"
+#include "Simul/Camera/Camera.h"
 #include "Simul/Math/Vector3.h"
 #include <d3dx11.h>
 using namespace simul;
@@ -103,7 +105,7 @@ void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *p
 		if(col>0)
 		{
 			source		+=col*byteSize;
-			int columns	=min(num_texels,width-col);
+			int columns	=std::min(num_texels,width-col);
 			memcpy(dest,source,columns*byteSize);
 			source		+=mappedResource.RowPitch;
 			dest		+=columns*byteSize;
@@ -146,7 +148,7 @@ void TextureStruct::setTexels(ID3D11DeviceContext *context,const void *src,int t
 		int col		=texel_index-row*width;
 		target		+=row*block*byteSize;
 		source		+=col*byteSize;
-		int columns=min(num_texels,width-col);
+		int columns=std::min(num_texels,width-col);
 		memcpy(target,source,columns*byteSize);
 		source		+=columns*byteSize;
 		target		+=block*byteSize;
@@ -708,7 +710,7 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 		ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
 
 		D3DXMATRIX wvp;
-		MakeWorldViewProjMatrix(&wvp,world,view,proj);
+		camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
 		worldViewProj->SetMatrix(&wvp._11);
 	
 		ID3D1xBuffer *					vertexBuffer=NULL;
@@ -933,7 +935,7 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCub
 	view._41=0;
 	view._42=0;
 	view._43=0;
-	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
 	simul::dx11::setMatrix(m_pDebugEffect,"worldViewProj",&wvp._11);
 	//ID3D1xEffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
 	ID3D1xEffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");

@@ -97,7 +97,6 @@ public:
 	void    OnLostDevice();
 	void    OnDestroyDevice();
 
-	void	SetYVertical(bool y);
 	void	RecompileShaders();
 	simul::clouds::BaseGpuCloudGenerator *GetGpuCloudGenerator(){return NULL;}
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return NULL;}

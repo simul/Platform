@@ -96,8 +96,6 @@ namespace simul
 			std::istream &Load(std::istream &is) const;
 			//! Clear the sequence()
 			void New();
-			void SetYVertical(bool y);
-			bool IsYVertical() const;
 			simul::dx11::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
 		protected:
 			simul::dx11::GpuCloudGenerator gpuCloudGenerator;

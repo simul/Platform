@@ -87,14 +87,12 @@ public:
 						const simul::sky::float4 *inscatter_float4_array,
 						const simul::sky::float4 *skylight_float4_array);
 	void CycleTexturesForward();
-	void SetYVertical(bool y);
 
 	// for testing:
 	void DrawCubemap(void *context,ID3D1xShaderResourceView*	m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
 	simul::sky::BaseGpuSkyGenerator *GetBaseGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
 	int cycle;
-	bool IsYVertical(){return false;}
 
 	void CreateFadeTextures();
 	void EnsureCorrectTextureSizes();

@@ -173,10 +173,6 @@ protected:
 	void						CreateFadeTextures();
 	void						CreateSunlightTextures();
 	bool						RenderAngledQuad(D3DXVECTOR4 dir,float half_angle_radians);
-	virtual bool IsYVertical()
-	{
-		return y_vertical;
-	}
 	float						maxPixelsVisible;
 };
 }

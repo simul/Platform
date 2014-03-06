@@ -49,6 +49,8 @@ SimulAtmosphericsRendererDX1x::SimulAtmosphericsRendererDX1x(simul::base::Memory
 	,overcInscTexture_SRV(NULL)
 	,skylightTexture_SRV(NULL)
 	,illuminationTexture_SRV(NULL)
+	,rainbowLookupTexture(NULL)
+	,coronaLookupTexture(NULL)
 {
 }
 
@@ -117,6 +119,10 @@ void SimulAtmosphericsRendererDX1x::RestoreDeviceObjects(void* dev)
 	atmosphericsPerViewConstants.RestoreDeviceObjects(m_pd3dDevice);
 	atmosphericsUniforms.RestoreDeviceObjects(m_pd3dDevice);
 	RecompileShaders();
+	SAFE_RELEASE(rainbowLookupTexture);
+	SAFE_RELEASE(coronaLookupTexture);
+	rainbowLookupTexture=simul::dx11::LoadTexture(m_pd3dDevice,"rainbow_scatter.png");
+	coronaLookupTexture=simul::dx11::LoadTexture(m_pd3dDevice,"rainbow_diffraction_i_vs_a.png");
 }
 
 void SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
@@ -125,6 +131,8 @@ void SimulAtmosphericsRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(effect);
 	atmosphericsPerViewConstants.InvalidateDeviceObjects();
 	atmosphericsUniforms.InvalidateDeviceObjects();
+	SAFE_RELEASE(rainbowLookupTexture);
+	SAFE_RELEASE(coronaLookupTexture);
 }
 
 HRESULT SimulAtmosphericsRendererDX1x::Destroy()
@@ -294,10 +302,14 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,b
 
 	atmosphericsPerViewConstants.Apply(pContext);
 
+	dx11::setTexture(effect,"rainbowLookupTexture"	,rainbowLookupTexture);
+	dx11::setTexture(effect,"coronaLookupTexture"	,coronaLookupTexture);
+//	dx11::setTexture(effect,"moistureTexture"		,(ID3D11ShaderResourceView*)moistureTexture);
+
 	if(near_pass)
 		ApplyPass(pContext,godraysNearPassTechnique->GetPassByIndex(0));
 	else
-	ApplyPass(pContext,godraysTechnique->GetPassByIndex(0));
+		ApplyPass(pContext,godraysTechnique->GetPassByIndex(0));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	lossTexture			->SetResource(NULL);
 	inscTexture			->SetResource(NULL);

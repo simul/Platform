@@ -355,21 +355,19 @@
     <None Include="..\CrossPlatform\atmospherics.sl">
       <Filter>CrossPlatform</Filter>
     </None>
+    <None Include="HLSL\light_probes.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\simul_render_cubemap.fx">
+      <Filter>FX</Filter>
+    </None>
+    <None Include="HLSL\spherical_harmonics.fx">
+      <Filter>FX</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX11.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="HLSL\simul_render_cubemap.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\spherical_harmonics.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSL\light_probes.fx">
-      <Filter>FX</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

@@ -36,9 +36,6 @@ namespace simul
 		extern SIMUL_DIRECTX11_EXPORT void PushShaderPath(const char *path);
 		extern SIMUL_DIRECTX11_EXPORT void PushTexturePath(const char *pathUtf8);
 		extern SIMUL_DIRECTX11_EXPORT void PopTexturePath();
-		extern SIMUL_DIRECTX11_EXPORT void MakeInvViewProjMatrix(float *ivp,const float *v,const float *p);
-		extern SIMUL_DIRECTX11_EXPORT void MakeViewProjMatrix(float *vp,const float *view,const float *proj);
-		extern SIMUL_DIRECTX11_EXPORT void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,const float *world,const float *view,const float *proj);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11ShaderResourceView* LoadTexture(ID3D11Device* dev,const char *filename);
 		extern SIMUL_DIRECTX11_EXPORT ID3D11Texture2D* LoadStagingTexture(ID3D11Device* dev,const char *filename);
 		ID3D11Texture1D* make1DTexture(

@@ -54,7 +54,7 @@ struct rainbowVertexOutput
 {
     vec4 hPosition	: SV_POSITION;
     vec2 texCoords	: TEXCOORD0;	// quad texture coordinates
-    vec3 eyeVec		: TEXCOORD1;	// eye vector
+    vec3 view		: TEXCOORD1;	// eye vector
 };
 
 rainbowVertexOutput VS_rainbow(idOnly id)
@@ -66,7 +66,7 @@ rainbowVertexOutput VS_rainbow(idOnly id)
 	OUT.texCoords = posTex.texCoords;
 	//  input is a full screen quad
 	vec2 clip_pos	=OUT.hPosition.xy;
-	OUT.eyeVec		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
+	OUT.view		=mul(invViewProj,vec4(clip_pos.xy,1.0,1.0)).xyz;
     return OUT;
 }
 
@@ -93,18 +93,14 @@ vec4 CalculateRainbowColor(rainbowVertexOutput IN, float d, out vec4 moisture )
 	// this gives up the dot product result in the range of [0 to 1]
 	// that is to say, an angle of 0 to 90 degrees
 	vec4 scattered	=texture_clamp(rainbowLookupTexture, vec2( dropletRadius, d));
-
-	float depth		=texture_clamp(depthTexture,IN.texCoords.xy);
-	float dist		=saturate(depthToLinearDistance(depth,depthToLinFadeDistParams));
-
-	moisture = dist;//texture_clamp(moistureTexture,IN.texCoords);
+	moisture		=texture_clamp(moistureTexture,IN.texCoords);
 	return scattered;
 }
 
 vec4 PS_rainbowOnly(rainbowVertexOutput IN) : SV_TARGET
 {
-	float d=  -dot( lightDir,normalize(IN.eyeVec ) 	);
-	// eyeVec must be normalized per pixel to prevent banding
+	float d=  -dot( lightDir,normalize(IN.view ) 	);
+	// view must be normalized per pixel to prevent banding
   
  	vec4 moisture; 
 	vec4 scattered=CalculateRainbowColor(IN, d,  moisture );	
@@ -115,7 +111,7 @@ vec4 PS_rainbowAndCorona(rainbowVertexOutput IN) : SV_TARGET
 {
 	//return texture_clamp(coronaLookupTexture,IN.texCoords.xy);
 	 //note: use a float for d here, since a half corrupts the corona
-	float d=  -dot( lightDir,normalize(IN.eyeVec ) 	);
+	float d=  -dot( lightDir,normalize(IN.view ) 	);
 	
 	vec4 moisture;
 
@@ -126,7 +122,7 @@ vec4 PS_rainbowAndCorona(rainbowVertexOutput IN) : SV_TARGET
 	// that is to say, an angle of 90 to 180 degrees
 	vec4 coronaDiffracted = texture_clamp(coronaLookupTexture, vec2(dropletRadius, 1.0 + d));
 
-	return (coronaDiffracted + scattered)*rainbowIntensity*moisture.x;
+	return vec4(.1,0,0,0);//(coronaDiffracted + scattered)*rainbowIntensity*moisture.x;
 }
 
 technique11 simul_flare

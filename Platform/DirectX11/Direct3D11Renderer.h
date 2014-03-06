@@ -9,6 +9,7 @@
 #include "Simul/Graph/Meta/Group.h"
 //#include "Simul/Scene/BaseSceneRenderer.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
@@ -142,6 +143,7 @@ namespace simul
 			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
+			void RenderDepthBuffers(void *context,int view_id,int x0,int y0,int w,int h);
 			// Encompasses drawing the actual scene and putting the hdr buffer to screen.
 			void RenderScene(int view_id,ID3D11DeviceContext* pd3dImmediateContext,clouds::BaseWeatherRenderer *w,D3DXMATRIX v,D3DXMATRIX proj);
 			// Different kinds of view for Render() to call:

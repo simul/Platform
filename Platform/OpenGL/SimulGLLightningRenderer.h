@@ -17,8 +17,6 @@ public:
 	void RestoreDeviceObjects();
 	void Render(void*,const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
 	void InvalidateDeviceObjects();
-	//! This function does nothing as Y is never the vertical in this implementation
-	virtual void SetYVertical(bool ){}
 	void RecompileShaders();
 protected:
 	struct float2

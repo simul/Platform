@@ -373,7 +373,7 @@ float4 PS_RenderRandomTexture(rainVertexOutput IN): SV_TARGET
 
 float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 {
-	vec3 view				=normalize(mul(invViewProj[1],vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
+	vec3 view				=normalize(mul(invViewProj_2[1],vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
 	
 	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	float depth				=texture_clamp(depthTexture,depth_texc).x;
@@ -400,6 +400,15 @@ float4 PS_Overlay(rainVertexOutput IN) : SV_TARGET
 	}
 	result.a=saturate(result.a);
 	return result;
+}
+
+float4 PS_Moisture(rainVertexOutput IN) : SV_TARGET
+{
+	vec3 view				=normalize(mul(invViewProj_2[1],vec4(IN.clip_pos.xy,1.0,1.0)).xyz);
+	vec2 depth_texc			=viewportCoordToTexRegionCoord(IN.texCoords.xy,depthViewport.zwxy);
+	vec4 depth				=texture_clamp(depthTexture,depth_texc);
+	float dist				=depthToFadeDistance(depth.x,IN.clip_pos.xy,depthToLinFadeDist,tanHalfFov);
+	return dist;
 }
 
 //--------------------------------------------------------------------------------------------
@@ -797,6 +806,19 @@ technique11 show_texture
     }
 }
 
+technique11 moisture
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_FullScreen()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Moisture()));
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+    }
+}
+
 //--------------------------------------------------------------------------------------------
 // advance rain
 //--------------------------------------------------------------------------------------------
@@ -849,7 +871,7 @@ technique11 init_particles
         
         SetDepthStencilState( DisableDepth, 0 );
     }  
-    }
+}
 
 GeometryShader gsStreamOut2 = ConstructGSWithSO( CompileShader( vs_5_0, VS_MoveParticles() ), "POSITION.xyz; TYPE.x; VELOCITY.xyz" );
 
@@ -863,5 +885,5 @@ technique11 move_particles
         SetPixelShader( NULL );
         
         SetDepthStencilState( DisableDepth, 0 );
-}
+	}
 }

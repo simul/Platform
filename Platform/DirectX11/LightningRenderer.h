@@ -2,7 +2,6 @@
 #include <tchar.h>
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
-#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include <d3dx9.h>
 #include <d3d11.h>

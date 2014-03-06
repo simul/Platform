@@ -919,13 +919,16 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int x0,int y0
 	h*=gi->GetGridHeight();
 	D3DXVECTOR4 cross_section_offset(0,0,0,0);
 	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture",noiseTextureResource);
-	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
+	UtilityRenderer::DrawQuad2(pContext	,width-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
+	UtilityRenderer::Print(pContext		,width-(w+8),height-(w+8)	,"2D Noise");
 	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D1xShaderResourceView*)shadow_fb.GetColorTex());
 	simul::dx11::setTexture(m_pCloudEffect,"cloudGodraysTexture",(ID3D11ShaderResourceView*)godrays_fb.GetColorTex());
-	UtilityRenderer::DrawQuad2(pContext,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
+	UtilityRenderer::DrawQuad2(pContext	,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
+	UtilityRenderer::Print(pContext		,width-(w+8)-(w+8),height-(w+8)	,"shadow texture");
 
 	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture",(ID3D11ShaderResourceView*)godrays_fb.GetColorTex());
-	UtilityRenderer::DrawQuad2(pContext,width-2*(w+8),height-(w+8)-w/2,w*2,w/2,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
+	UtilityRenderer::DrawQuad2(pContext	,width-2*(w+8),height-(w+8)-w/2	,w*2,w/2,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
+	UtilityRenderer::Print(pContext		,width-2*(w+8),height-(w+8)-w/2	,"godrays framebuffer");
 
 	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"			,(ID3D1xShaderResourceView*)NULL);
 	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture"		,(ID3D1xShaderResourceView*)NULL);
@@ -961,17 +964,6 @@ CloudShadowStruct SimulCloudRendererDX1x::GetCloudShadowTexture()
 void *SimulCloudRendererDX1x::GetRandomTexture3D()
 {
 	return noise_texture_3D.shaderResourceView;
-}
-
-void SimulCloudRendererDX1x::SetYVertical(bool y)
-{
-	BaseCloudRenderer::SetYVertical(y);
-	CreateCloudEffect();
-}
-
-bool SimulCloudRendererDX1x::IsYVertical() const
-{
-	return y_vertical;
 }
 
 void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()

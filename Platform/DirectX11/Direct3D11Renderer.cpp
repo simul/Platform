@@ -273,7 +273,7 @@ void Direct3D11Renderer::RenderEnvmap(ID3D11DeviceContext* pContext)
 		envmapFramebuffer.Activate(pContext);
 		D3DXMATRIX cube_proj=simul::camera::Camera::MakeProjectionMatrix(pi/2.f,pi/2.f,1.f,200000.f);
 		{
-			MakeInvViewProjMatrix(invViewProj,view_matrices[i],cube_proj);
+			camera::MakeInvViewProjMatrix(invViewProj,view_matrices[i],cube_proj);
 			lightProbeConstants.invViewProj	=invViewProj;
 			lightProbeConstants.numSHBands	=SphericalHarmonicsBands;
 			lightProbeConstants.Apply(pContext);
@@ -376,9 +376,6 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,s
 		//,relativeViewportTextureRegionXYWH
 		//,true);
 	simulWeatherRenderer->RenderMixedResolution(pContext,view_id,(const float*)v,(const float*)proj,false,Exposure,depthTextureMS,skyBufferDepthTex,relativeViewportTextureRegionXYWH);
-	//simulWeatherRenderer->RenderLightning(pContext,view_id);
-	simulWeatherRenderer->DoOcclusionTests();
-	simulWeatherRenderer->RenderPrecipitation(pContext,depthTextureResolved,relativeViewportTextureRegionXYWH);
 	if(!simulOpticsRenderer||!ShowFlares)
 		return;
 	simul::sky::float4 dir,light;
@@ -388,7 +385,10 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,s
 	light		=simulWeatherRenderer->GetSkyRenderer()->GetLightColour();
 	float occ	=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 	float exp	=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-	simulOpticsRenderer->RenderFlare(pContext,exp,depthTextureResolved,v,proj,dir,light);
+	void *moistureTexture=NULL;
+	if(simulWeatherRenderer->GetBasePrecipitationRenderer())
+		moistureTexture=simulWeatherRenderer->GetBasePrecipitationRenderer()->GetMoistureTexture();
+	simulOpticsRenderer->RenderFlare(pContext,exp,moistureTexture,v,proj,dir,light);
 }
 
 void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pContext)
@@ -522,36 +522,13 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer())
 		{
-			int x0=8;
-			int y0=8;
-			simulWeatherRenderer->RenderFramebufferDepth(pContext,view_id,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pContext,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
-			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pContext,x0,y0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
+			simulWeatherRenderer->RenderFramebufferDepth(pContext,view_id,0,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(pContext,0,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(pContext,0,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 		}
 		if(ShowDepthBuffers)
 		{
-			int w=view->lowResDepthTexture.width*4;
-			int l=view->lowResDepthTexture.length*4;
-			if(w>view->hdrFramebuffer.Width/4)
-			{
-				l*=view->hdrFramebuffer.Width/4;
-				l/=w;
-				w=view->hdrFramebuffer.Width/4;
-			}
-			if(l>view->hdrFramebuffer.Height/4)
-			{
-				w*=view->hdrFramebuffer.Height/4;
-				w/=l;
-				l=view->hdrFramebuffer.Height/4;
-			}
-			UtilityRenderer::DrawTexture(pContext	,0*w	,0,w,l,(ID3D1xShaderResourceView*)view->hdrFramebuffer.GetDepthTex()				,10000.0f	);
-			UtilityRenderer::Print(pContext			,0.f*w	,0.f,"Main Depth");
-			//UtilityRenderer::DrawTexture(pContext,1*w	,0,w,l,(ID3D1xShaderResourceView*)view->resolvedDepth_fb.GetColorTex()					,10000.0f	);
-			UtilityRenderer::DrawTexture(pContext	,1*w	,0,w,l,view->lowResDepthTexture.shaderResourceView									,10000.0f	);
-			UtilityRenderer::Print(pContext			,1.f*w	,0.f,"Lo-Res Depth");
-			//UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,(ID3D1xShaderResourceView*)simulWeatherRenderer->GetFramebufferTexture(view_id)	,1.f		);
-			//UtilityRenderer::Print(pContext			,2.f*w	,0.f,"Near overlay");
-			simulWeatherRenderer->RenderCompositingTextures(pContext,view_id,0,0,view->hdrFramebuffer.Width,view->hdrFramebuffer.Height);
+			RenderDepthBuffers(pContext,view_id,view->GetScreenWidth()/2,0,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer())
 		{
@@ -559,7 +536,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 		}
 		if(simulWeatherRenderer->GetBasePrecipitationRenderer()&&ShowRainTextures)
 		{
-			simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(pContext,view->GetScreenWidth(),view->GetScreenHeight());
+			simulWeatherRenderer->GetBasePrecipitationRenderer()->RenderTextures(pContext,0,view->GetScreenHeight()/2,view->GetScreenWidth()/2,view->GetScreenHeight()/2);
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 		{
@@ -569,6 +546,34 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	if(oceanRenderer&&ShowWaterTextures)
 		oceanRenderer->RenderTextures(pContext,view->GetScreenWidth(),view->GetScreenHeight());
 	Profiler::GetGlobalProfiler().EndFrame(pContext);
+}
+
+void Direct3D11Renderer::RenderDepthBuffers(void *context,int view_id,int x0,int y0,int dx,int dy)
+{
+	ID3D11DeviceContext* pContext=(ID3D11DeviceContext* )context;
+	View *view=GetView(view_id);
+	int w=view->lowResDepthTexture.width*4;
+	int l=view->lowResDepthTexture.length*4;
+	if(w>dx/2)
+	{
+		l*=dx/2;
+		l/=w;
+		w=dx/2;
+	}
+	if(l>dy/2)
+	{
+		w*=dy/2;
+		w/=l;
+		l=dy/2;
+	}
+	UtilityRenderer::DrawTexture(pContext	,x0+0*w		,y0	,w,l,(ID3D1xShaderResourceView*)view->hdrFramebuffer.GetDepthTex()				,10000.0f	);
+	UtilityRenderer::Print(pContext			,x0+0*w	,y0	,"Main Depth");
+	//UtilityRenderer::DrawTexture(pContext,1*w	,0,w,l,(ID3D1xShaderResourceView*)view->resolvedDepth_fb.GetColorTex()					,10000.0f	);
+	UtilityRenderer::DrawTexture(pContext	,x0+1*w		,y0	,w,l,view->lowResDepthTexture.shaderResourceView									,10000.0f	);
+	UtilityRenderer::Print(pContext			,x0+1*w	,y0	,"Lo-Res Depth");
+	//UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,(ID3D1xShaderResourceView*)simulWeatherRenderer->GetFramebufferTexture(view_id)	,1.f		);
+	//UtilityRenderer::Print(pContext			,2.f*w	,0.f,"Near overlay");
+	simulWeatherRenderer->RenderCompositingTextures(pContext,view_id,x0,0,dx,dy);
 }
 
 void Direct3D11Renderer::SaveScreenshot(const char *filename_utf8)

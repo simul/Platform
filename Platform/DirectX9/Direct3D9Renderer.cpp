@@ -57,10 +57,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
 /*	simulTerrainRenderer=new SimulTerrainRenderer(NULL);
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
-		simulWeatherRenderer->GetSkyRenderer()->EnableMoon(true);
-	SetYVertical(false);
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->SetYVertical(false);*/
+		simulWeatherRenderer->GetSkyRenderer()->EnableMoon(true);*/
 	simulOpticsRenderer=new SimulOpticsRendererDX9(NULL);
 }
 
@@ -164,14 +161,6 @@ void Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 	std::cout<<std::setprecision(4)<<"RESTORE TIMINGS: weather="<<weather_restore_time
 		<<", hdr="<<hdr_restore_time<<", terrain="<<terrain_restore_time<<", optics="<<optics_restore_time<<std::endl;
 	device_reset=false;
-}
-
-void Direct3D9Renderer::SetYVertical(bool )
-{
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->SetYVertical(false);
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->SetYVertical(false);
 }
 static float render_timing=0,update_timing=0,weather_timing=0,hdr_timing=0;
 void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)

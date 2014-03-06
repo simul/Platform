@@ -17,6 +17,7 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Sky/SkyInterface.h"
+#include "Simul/Camera/Camera.h"
 
 using namespace simul::dx11;
 
@@ -183,7 +184,7 @@ void TerrainRenderer::Render(void *context,float exposure)
 	D3DXMATRIX world;
 	D3DXMatrixIdentity(&world);
 	D3DXMATRIX wvp;
-	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	simul::dx11::setTextureArray(	m_pTerrainEffect,"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
 	simul::dx11::setTexture(		m_pTerrainEffect,"cloudShadowTexture"	,(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
