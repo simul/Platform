@@ -64,11 +64,11 @@ namespace simul
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3DX11Effect*								effect;
 
-			ID3D1xEffectTechnique*						twoPassOverlayTechnique;
-			ID3D1xEffectTechnique*							twoPassOverlayTechniqueMSAA;
+			ID3DX11EffectTechnique*						twoPassOverlayTechnique;
+			ID3DX11EffectTechnique*						twoPassOverlayTechniqueMSAA;
 
-			ID3D1xEffectTechnique*						godraysTechnique;
-			ID3D1xEffectTechnique*							godraysNearPassTechnique;
+			ID3DX11EffectTechnique*						godraysTechnique;
+			ID3DX11EffectTechnique*						godraysNearPassTechnique;
 			// Variables for this effect:
 			ID3D1xEffectShaderResourceVariable*			depthTexture;
 			ID3D1xEffectShaderResourceVariable*			cloudDepthTexture;

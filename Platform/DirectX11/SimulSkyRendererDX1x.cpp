@@ -580,7 +580,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 			simul::dx11::UtilityRenderer::DrawQuad(context);
 		skylight_2d->Deactivate(context);
 	}
-	ID3D1xEffectTechnique* hTechniqueOverc		=m_pSkyEffect->GetTechniqueByName("overcast_inscatter");
+	ID3DX11EffectTechnique* hTechniqueOverc		=m_pSkyEffect->GetTechniqueByName("overcast_inscatter");
 	// We will bake the overcast effect into the overcast_2d texture.
 	{
 		V_CHECK(inscTexture->SetResource((ID3D11ShaderResourceView*)inscatter_2d->GetColorTex()));
@@ -593,7 +593,7 @@ bool SimulSkyRendererDX1x::Render2DFades(void *c)
 	{
 		simul::dx11::setTexture(m_pSkyEffect				,"sourceTexture"	,light_table.shaderResourceView);
 		simul::dx11::setUnorderedAccessView(m_pSkyEffect	,"targetTexture"	,light_table_2d.unorderedAccessView);
-		ID3D1xEffectTechnique* m_TechniqueLightTableInterp	=m_pSkyEffect->GetTechniqueByName("interp_light_table");
+		ID3DX11EffectTechnique* m_TechniqueLightTableInterp	=m_pSkyEffect->GetTechniqueByName("interp_light_table");
 		V_CHECK(ApplyPass(context,m_TechniqueLightTableInterp->GetPassByIndex(0)));
 		context->Dispatch(light_table_2d.width,light_table_2d.length,1);
 		simul::dx11::setTexture(m_pSkyEffect				,"sourceTexture"	,(ID3D11ShaderResourceView*)NULL);
@@ -615,7 +615,7 @@ void SimulSkyRendererDX1x::RenderIlluminationBuffer(void *c)
 	// Clear the screen to black:
 	static float clearColor[4]={0.0,1.0,0.0,1.0};
 	{
-		ID3D1xEffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
+		ID3DX11EffectTechnique *tech=m_pSkyEffect->GetTechniqueByName("illumination_buffer");
 		ApplyPass(context,tech->GetPassByIndex(0));
 		illumination_fb.Activate(context);
 		context->ClearRenderTargetView(illumination_fb.m_pHDRRenderTarget,clearColor);
@@ -812,7 +812,7 @@ void SimulSkyRendererDX1x::DrawCubemap(void *context,ID3D1xShaderResourceView *m
 	skyConstants.worldViewProj=&wvp._11;
 	skyConstants.worldViewProj.transpose();
 	skyConstants.Apply(pContext);
-	ID3D1xEffectTechnique*				tech		=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
+	ID3DX11EffectTechnique*				tech		=m_pSkyEffect->GetTechniqueByName("draw_cubemap");
 	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pSkyEffect->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
 	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));

@@ -108,14 +108,14 @@ protected:
 	ID3DX11Effect*						m_pSkyEffect;
 	ID3D1xQuery*						d3dQuery;
 
-	ID3D1xEffectTechnique*				m_hTechniqueFade3DTo2D;
-	ID3D1xEffectTechnique*				m_hTechniqueSun;
-	ID3D1xEffectTechnique*				m_hTechniqueQuery;
-	ID3D1xEffectTechnique*				m_hTechniqueFlare;
-	ID3D1xEffectTechnique*				m_hTechniquePlanet;
-	ID3D1xEffectTechnique*				m_hTechniquePointStars;
+	ID3DX11EffectTechnique*				m_hTechniqueFade3DTo2D;
+	ID3DX11EffectTechnique*				m_hTechniqueSun;
+	ID3DX11EffectTechnique*				m_hTechniqueQuery;
+	ID3DX11EffectTechnique*				m_hTechniqueFlare;
+	ID3DX11EffectTechnique*				m_hTechniquePlanet;
+	ID3DX11EffectTechnique*				m_hTechniquePointStars;
 
-			ID3D1xEffectTechnique*				m_TechniqueLightTableInterp;
+			ID3DX11EffectTechnique*				m_TechniqueLightTableInterp;
 	ID3D1xEffectShaderResourceVariable*	flareTexture;
 	ID3D1xEffectShaderResourceVariable*	inscTexture;
 	ID3D1xEffectShaderResourceVariable*	skylTexture;

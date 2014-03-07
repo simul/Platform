@@ -352,9 +352,9 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *,const void *depth_texture
 	// Instead of atmosphericsPerViewConstants.Apply(pContext), we do this:
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,invViewProj);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,invShadowMatrix);
-	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,shadowMatrix);
+//	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,//shadowMatrix);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewportToTexRegionScaleBias);
-	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewPosition);
+//	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewPosition);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,exposure);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,tanHalfFov);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,nearZ);

@@ -263,7 +263,7 @@ void SimulWeatherRendererDX11::SaveCubemapToFile(const char *filename_utf8,float
 	gamma_correct.SetWidthAndHeight(cubesize,cubesize);
 	gamma_correct.RestoreDeviceObjects(m_pd3dDevice);
 
-	ID3D1xEffectTechnique *tech=m_pTonemapEffect->GetTechniqueByName("exposure_gamma");
+	ID3DX11EffectTechnique *tech=m_pTonemapEffect->GetTechniqueByName("exposure_gamma");
 
 	cam_pos=GetCameraPosVector(view);
 	D3DXMATRIX view_matrices[6];
@@ -416,9 +416,9 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 								,view
 								,proj
 		};
-		basePrecipitationRenderer->RenderMoisture(context
-												,depth
-												,viewStruct);
+		//basePrecipitationRenderer->RenderMoisture(context
+		//										,depth
+		//										,viewStruct);
 	}
 	RenderLowResolutionElements(context,exposure,godrays_strength,is_cubemap,false,lowResDepthTexture,view_id,depthViewportXYWH);
 	fb->lowResFarFramebufferDx11.Deactivate(context);
@@ -472,7 +472,7 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	simul::dx11::setTexture(m_pTonemapEffect,"inscatterTexture"		,(ID3D1xShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
 	simul::dx11::setTexture(m_pTonemapEffect,"nearInscatterTexture"	,(ID3D1xShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
 
-	ID3D1xEffectTechnique *tech					=depth_blend?farNearDepthBlendTechnique:simpleCloudBlendTechnique;
+	ID3DX11EffectTechnique *tech					=depth_blend?farNearDepthBlendTechnique:simpleCloudBlendTechnique;
 	ApplyPass((ID3D11DeviceContext*)context,tech->GetPassByIndex(msaa?1:0));
 	hdrConstants.exposure						=1.f;
 	hdrConstants.gamma							=1.f;

@@ -121,17 +121,17 @@ namespace simul
 			ID3D11SamplerState*						m_pClampSamplerState;
 
 			ID3DX11Effect*							m_pLightningEffect;
-			ID3D1xEffectTechnique*					m_hTechniqueLightning;
+			ID3DX11EffectTechnique*					m_hTechniqueLightning;
 			ID3DX11Effect*							m_pCloudEffect;
-			ID3D1xEffectTechnique*					m_hTechniqueCloud;
-			ID3D1xEffectTechnique*					m_hTechniqueRaytraceNearPass;
-			ID3D1xEffectTechnique*					m_hTechniqueRaytraceForward;
-			ID3D1xEffectTechnique*					m_hTechniqueSimpleRaytrace;
-			ID3D1xEffectTechnique*					m_hTechniqueRaytrace3DNoise;
-			ID3D1xEffectTechnique*					m_hTechniqueCloudsAndLightning;
+			ID3DX11EffectTechnique*					m_hTechniqueCloud;
+			ID3DX11EffectTechnique*					m_hTechniqueRaytraceNearPass;
+			ID3DX11EffectTechnique*					m_hTechniqueRaytraceForward;
+			ID3DX11EffectTechnique*					m_hTechniqueSimpleRaytrace;
+			ID3DX11EffectTechnique*					m_hTechniqueRaytrace3DNoise;
+			ID3DX11EffectTechnique*					m_hTechniqueCloudsAndLightning;
 
-			ID3D1xEffectTechnique*					m_hTechniqueCrossSectionXZ;
-			ID3D1xEffectTechnique*					m_hTechniqueCrossSectionXY;
+			ID3DX11EffectTechnique*					m_hTechniqueCrossSectionXZ;
+			ID3DX11EffectTechnique*					m_hTechniqueCrossSectionXY;
 			
 			ConstantBuffer<CloudConstants>			cloudConstants;
 			StructuredBuffer<SmallLayerData>		layerBuffer;
@@ -163,6 +163,7 @@ namespace simul
 			ID3D1xShaderResourceView*				illuminationTexture_SRV;
 			ID3D1xShaderResourceView*				lightTableTexture_SRV;
 			simul::dx11::Framebuffer				shadow_fb;
+			simul::dx11::Framebuffer				moisture_fb;
 
 			// A texture whose x-axis represents azimuth, and whose y-axis represents distance
 			// as a proportion of shadow range. The texels represent how much illumination accumulates between the viewer

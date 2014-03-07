@@ -33,8 +33,8 @@ namespace simul
 		protected:
 			ID3D11Device *							m_pd3dDevice;
 			ID3DX11Effect*							effect;
-			ID3D1xEffectTechnique*					m_hTechniqueFlare;
-			ID3D1xEffectTechnique*					techniqueRainbowCorona;
+			ID3DX11EffectTechnique*					m_hTechniqueFlare;
+			ID3DX11EffectTechnique*					techniqueRainbowCorona;
 			ID3D1xShaderResourceView*				flare_texture;
 			std::vector<ID3D1xShaderResourceView*>	halo_textures;
 			ID3D1xShaderResourceView*				rainbowLookupTexture;

@@ -621,7 +621,7 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
 	// Vertex declaration
 	{
 		D3DX11_PASS_DESC PassDesc;
-		ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("vec3_input_signature");
+		ID3DX11EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("vec3_input_signature");
 		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
 		D3D1x_INPUT_ELEMENT_DESC decl[]=
 		{
@@ -683,14 +683,14 @@ void UtilityRenderer::GetScreenSize(int& w,int& h)
 	h=screen_height;
 }
 
-void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,int x,int y,const char *text)
+void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,int x,int y,const char *text,const float *clr)
 {
-	UtilityRenderer::Print(pd3dImmediateContext,(float)x,(float)y,text);
+	UtilityRenderer::Print(pd3dImmediateContext,(float)x,(float)y,text,clr);
 }
 
-void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,float x,float y,const char *text)
+void UtilityRenderer::Print(ID3D11DeviceContext* pd3dImmediateContext,float x,float y,const char *text,const float *clr)
 {
-	textRenderer.Render(pd3dImmediateContext,x,y,(float)screen_width,(float)screen_height,text);
+	textRenderer.Render(pd3dImmediateContext,x,y,(float)screen_width,(float)screen_height,text,clr);
 }
 
 void UtilityRenderer::PrintAt3dPos(ID3D11DeviceContext* pd3dImmediateContext,const float *p,const char *text,const float* colr,int offsetx,int offsety)
@@ -706,7 +706,7 @@ void UtilityRenderer::DrawLines(ID3D11DeviceContext* m_pImmediateContext,VertexX
 		HRESULT hr=S_OK;
 		D3DXMATRIX world, tmp1, tmp2;
 		D3DXMatrixIdentity(&world);
-		ID3D1xEffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_debug");
+		ID3DX11EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("simul_debug");
 		ID3D1xEffectMatrixVariable*	worldViewProj=m_pDebugEffect->GetVariableByName("worldViewProj")->AsMatrix();
 
 		D3DXMATRIX wvp;
@@ -803,7 +803,7 @@ void UtilityRenderer::DrawQuad(ID3D11DeviceContext *m_pImmediateContext)
 	m_pImmediateContext->IASetPrimitiveTopology(previousTopology);
 }			
 
-void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3DX11Effect* eff,ID3D1xEffectTechnique* tech)
+void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,int y1,int dx,int dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
 {
 	DrawQuad2(m_pImmediateContext
 		,2.f*(float)x1/(float)screen_width-1.f
@@ -813,7 +813,7 @@ void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,int x1,
 		,eff,tech);
 }
 
-void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3DX11Effect* eff,ID3D1xEffectTechnique* tech)
+void UtilityRenderer::DrawQuad2(ID3D11DeviceContext *m_pImmediateContext,float x1,float y1,float dx,float dy,ID3DX11Effect* eff,ID3DX11EffectTechnique* tech)
 {
 	HRESULT hr=S_OK;
 	setParameter(eff,"rect",x1,y1,dx,dy);
@@ -829,7 +829,7 @@ void UtilityRenderer::RenderAngledQuad(ID3D11DeviceContext *pImmediateContext
 									   ,const float *dr
 									   ,float half_angle_radians
 										,ID3DX11Effect* effect
-										,ID3D1xEffectTechnique* tech
+										,ID3DX11EffectTechnique* tech
 										,D3DXMATRIX view
 										,D3DXMATRIX proj
 										,D3DXVECTOR3 sun_dir)
@@ -937,8 +937,8 @@ void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCub
 	view._43=0;
 	camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
 	simul::dx11::setMatrix(m_pDebugEffect,"worldViewProj",&wvp._11);
-	//ID3D1xEffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
-	ID3D1xEffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");
+	//ID3DX11EffectTechnique*			tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap");
+	ID3DX11EffectTechnique*				tech		=m_pDebugEffect->GetTechniqueByName("draw_cubemap_sphere");
 	ID3D1xEffectShaderResourceVariable*	cubeTexture	=m_pDebugEffect->GetVariableByName("cubeTexture")->AsShaderResource();
 	cubeTexture->SetResource(m_pCubeEnvMapSRV);
 	HRESULT hr=ApplyPass(pContext,tech->GetPassByIndex(0));

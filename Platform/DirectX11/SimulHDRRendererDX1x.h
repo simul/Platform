@@ -64,18 +64,18 @@ namespace simul
 
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3DX11Effect*						m_pTonemapEffect;
-			ID3D1xEffectTechnique*				exposureGammaTechnique;
-			ID3D1xEffectTechnique*				glowExposureGammaTechnique;
-			ID3D1xEffectTechnique*				warpExposureGamma;
-			ID3D1xEffectTechnique*				warpGlowExposureGamma;
+			ID3DX11EffectTechnique*				exposureGammaTechnique;
+			ID3DX11EffectTechnique*				glowExposureGammaTechnique;
+			ID3DX11EffectTechnique*				warpExposureGamma;
+			ID3DX11EffectTechnique*				warpGlowExposureGamma;
 			
-			ID3D1xEffectTechnique*				glowTechnique;
+			ID3DX11EffectTechnique*				glowTechnique;
 			ID3D1xEffectScalarVariable*			Exposure_;
 			ID3D1xEffectScalarVariable*			Gamma_;
 
 			ID3DX11Effect*						m_pGaussianEffect;
-			ID3D1xEffectTechnique*				gaussianRowTechnique;
-			ID3D1xEffectTechnique*				gaussianColTechnique;
+			ID3DX11EffectTechnique*				gaussianRowTechnique;
+			ID3DX11EffectTechnique*				gaussianColTechnique;
 
 			float timing;
 			simul::dx11::ComputableTexture		glowTexture;

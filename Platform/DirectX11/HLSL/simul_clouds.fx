@@ -93,6 +93,12 @@ vec4 PS_GodraysAccumulation( posTexVertexOutput IN):SV_TARGET
 	return GodraysAccumulation(cloudShadowTexture,shadowTextureSize,IN.texCoords);
 }
 
+vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
+{
+	float m=MoistureAccumulation(cloudShadowTexture,shadowTextureSize,IN.texCoords);
+	return vec4(m,m,m,m);
+}
+
 vec4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
 	vec2 texCoords		=IN.texCoords.xy;
@@ -294,6 +300,20 @@ technique11 godrays_accumulation
 		SetPixelShader(CompileShader(ps_4_0,PS_GodraysAccumulation()));
     }
 }
+
+technique11 moisture_accumulation
+{
+    pass p0
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_4_0,PS_MoistureAccumulation()));
+    }
+}
+
 technique11 cross_section_xz
 {
     pass p0 
@@ -358,6 +378,7 @@ technique11 show_shadow
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowShadow()));
     }
 }
+
 technique11 show_godrays_texture
 {
     pass p0

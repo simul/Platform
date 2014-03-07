@@ -155,6 +155,13 @@
 			this->z=z;
 			this->w=w;
 		}
+		vec4(const float *v)
+		{
+			this->x=v[0];
+			this->y=v[1];
+			this->z=v[2];
+			this->w=v[3];
+		}
 		operator const float *()
 		{
 			return &x;

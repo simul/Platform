@@ -21,7 +21,7 @@ typedef std::basic_string<TCHAR> tstring;
 #define ID3D1xQuery									ID3D11Query
 #define ID3DX11Effect								ID3DX11Effect
 #define ID3D1xEffectPass							ID3DX11EffectPass
-#define ID3D1xEffectTechnique						ID3DX11EffectTechnique	
+#define ID3DX11EffectTechnique						ID3DX11EffectTechnique	
 #define ID3D1xEffectMatrixVariable					ID3DX11EffectMatrixVariable
 #define ID3D1xEffectVectorVariable					ID3DX11EffectVectorVariable
 #define ID3D1xEffectScalarVariable					ID3DX11EffectScalarVariable
