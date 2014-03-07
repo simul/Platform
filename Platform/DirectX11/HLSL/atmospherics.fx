@@ -275,7 +275,7 @@ vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET
 
 	// NOTE: inefficient as we're calculating view in FastGodrays as well.
 	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	res					+=saturate(res.a*10.0)*RainbowAndCorona(view,lightDir,IN.texCoords.xy);
+	res					+=saturate(res.a*2.0)*RainbowAndCorona(view,lightDir,IN.texCoords.xy);
 	return vec4(res.rgb,1.0);
 }
 
@@ -292,7 +292,7 @@ vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
 	vec4 res			=FastGodrays(cloudGodraysTexture,inscTexture,overcTexture,IN.pos,invViewProj,maxFadeDistanceMetres,solid_dist);
 	
 	vec3 view			=mul(invViewProj,vec4(IN.pos.xy,1.0,1.0)).xyz;
-	res					+=saturate(res.a*10.0)*RainbowAndCorona(view,lightDir,IN.texCoords.xy);
+	res					+=saturate(res.a*2.0)*RainbowAndCorona(view,lightDir,IN.texCoords.xy);
 	return vec4(res.rgb,1.0);
 }
 

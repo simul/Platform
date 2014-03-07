@@ -203,9 +203,13 @@ void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 	pContext->IASetInputLayout(previousInputLayout);
 }
 
+// Render an image representing the optical thickness of moisture in any direction within a given view.
+// The depth texture provides the distance to any solid object.
+// The CloudShadowStruct tells us how much cloud is in any given 2D direction.
 void PrecipitationRenderer::RenderMoisture(void *context
 				,const DepthTextureStruct &depthStruct
-				,const ViewStruct &viewStruct)
+				,const ViewStruct &viewStruct
+				,const CloudShadowStruct &cloudShadowStruct)
 {
 	if(viewStruct.view_id!=0)
 		return;
