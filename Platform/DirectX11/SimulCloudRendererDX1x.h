@@ -168,7 +168,7 @@ namespace simul
 			// A texture whose x-axis represents azimuth, and whose y-axis represents distance
 			// as a proportion of shadow range. The texels represent how much illumination accumulates between the viewer
 			// and that distance.
-			simul::dx11::Framebuffer				godrays_fb;
+			simul::dx11::TextureStruct				godrays_texture;
 
 			simul::dx11::TextureStruct				cloud_texture;
 			

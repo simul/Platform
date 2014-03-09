@@ -12,7 +12,7 @@ vec2 GetIlluminationAt2(Texture2D cloudShadowTexture,vec3 texc)
 
 // A loss term due to rain
 // The moisture texture gives the amount if moisture from 0 to 1 visible horizontally in any direction.
-vec4 RainShadowLoss(Texture2D moistureTexture,vec2 pos,mat4 invViewProj,mat4 worldToMoistureSpaceMatrix,float maxFadeDistance,float solid_dist)
+vec4 RainShadowLoss(Texture2D moistureTexture,vec2 pos,mat4 invViewProj,vec3 viewPos,mat4 worldToMoistureSpaceMatrix,float maxFadeDistance,float solid_dist)
 {
 	vec3 view				=mul(invViewProj,vec4(pos.xy,1.0,1.0)).xyz;
 	view					=normalize(view);
@@ -22,9 +22,9 @@ vec4 RainShadowLoss(Texture2D moistureTexture,vec2 pos,mat4 invViewProj,mat4 wor
 	float azimuth_texc		=atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536);
 	float true_distance		=solid_dist*maxFadeDistance;
 	// But if we're looking towards the sky, only a part of this distance is under cloud.
-	if(sine>0.001)
+	if(sine>0.0)
 	{
-		float dh			=3000.0-500.0;
+		float dh			=max(0,3000.0-viewPos.z);
 		true_distance		=min(true_distance,dh/sine);
 	}
 	float dist_texc			=length(view_s.xy)/length(view_s)*true_distance/shadowRange;

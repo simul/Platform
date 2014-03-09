@@ -304,7 +304,7 @@ vec4 PS_RainShadowLoss(atmosVertexOutput IN) : SV_TARGET
 	float depth			=max(depth_lookup.x,cloud_depth);
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	vec4 res			=RainShadowLoss(moistureTexture,IN.pos,invViewProj,worldToMoistureSpaceMatrix,maxFadeDistanceMetres,solid_dist);
+	vec4 res			=RainShadowLoss(moistureTexture,IN.pos,invViewProj,viewPosition,worldToMoistureSpaceMatrix,maxFadeDistanceMetres,solid_dist);
 	
 	return res;
 }
@@ -319,7 +319,7 @@ vec4 PS_NearRainShadow(atmosVertexOutput IN) : SV_TARGET
 	float depth			=max(depth_lookup.y,cloud_depth);
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
 	float solid_dist	=depthToFadeDistance(depth,IN.pos.xy,depthToLinFadeDistParams,tanHalfFov);
-	vec4 res			=RainShadowLoss(moistureTexture,IN.pos,invViewProj,worldToMoistureSpaceMatrix,maxFadeDistanceMetres,solid_dist);
+	vec4 res			=RainShadowLoss(moistureTexture,IN.pos,invViewProj,viewPosition,worldToMoistureSpaceMatrix,maxFadeDistanceMetres,solid_dist);
 	
 	return res;
 }
@@ -490,7 +490,7 @@ technique11 fast_godrays
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_FastGodrays()));
     }
-    pass rain_shadow
+/*	pass rain_shadow
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
@@ -498,7 +498,7 @@ technique11 fast_godrays
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_RainShadowLoss()));
-    }
+    }*/
 }
 
 technique11 near_depth_godrays
@@ -512,7 +512,7 @@ technique11 near_depth_godrays
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_NearGodrays()));
     }
-   pass rain_shadow
+/*	pass rain_shadow
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
@@ -520,5 +520,5 @@ technique11 near_depth_godrays
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_NearRainShadow()));
-    }
+    }*/
 }

@@ -2,6 +2,7 @@
 #include "states.hlsl"
 Texture2D nearFarTexture	: register(t3);
 Texture2D cloudGodraysTexture;
+RWTexture2D<float> targetTexture1;
 #include "../../CrossPlatform/simul_inscatter_fns.sl"
 #include "../../CrossPlatform/simul_cloud_constants.sl"
 #include "../../CrossPlatform/depth.sl"
@@ -58,18 +59,40 @@ RaytraceVertexOutput VS_Raytrace(idOnly IN)
 
 RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 {
-	vec2 texCoords		=IN.texCoords.xy;
-	texCoords.y		=1.0-texCoords.y;
-	RaytracePixelOutput p	=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,true,texCoords,false,true);
+	vec2 texCoords			=IN.texCoords.xy;
+	texCoords.y				=1.0-texCoords.y;
+	RaytracePixelOutput p	=RaytraceCloudsForward(
+									cloudDensity1
+									,cloudDensity2
+									,noiseTexture
+									,noiseTexture3D
+									,depthTexture
+									,lightTableTexture
+									,true
+									,texCoords
+									,false
+									,true
+									,false);
 
 	return p;
 }
 
 RaytracePixelOutput PS_RaytraceNearPass(RaytraceVertexOutput IN)
 {
-	vec2 texCoords		=IN.texCoords.xy;
-	texCoords.y			=1.0-texCoords.y;
-	RaytracePixelOutput p	=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,true,texCoords,true,true);
+	vec2 texCoords			=IN.texCoords.xy;
+	texCoords.y				=1.0-texCoords.y;
+	RaytracePixelOutput p	=RaytraceCloudsForward(
+									cloudDensity1
+									,cloudDensity2
+									,noiseTexture
+									,noiseTexture3D
+									,depthTexture
+									,lightTableTexture
+									,true
+									,texCoords
+									,true
+									,true
+									,false);
 
 	return p;
 }
@@ -88,9 +111,10 @@ vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 	return CloudShadow(cloudDensity1,cloudDensity2,IN.texCoords,shadowMatrix,cornerPos,inverseScales);
 }
 
-vec4 PS_GodraysAccumulation( posTexVertexOutput IN):SV_TARGET
+[numthreads(1,1,1)]
+CS_GodraysAccumulation(uint3 idx: SV_DispatchThreadID):SV_TARGET
 {
-	return GodraysAccumulation(cloudShadowTexture,shadowTextureSize,IN.texCoords);
+	GodraysAccumulation(targetTexture1,cloudShadowTexture,idx.x,shadowTextureSize,IN.texCoords);
 }
 
 vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
@@ -103,7 +127,8 @@ vec4 PS_SimpleRaytrace(RaytraceVertexOutput IN) : SV_TARGET
 {
 	vec2 texCoords		=IN.texCoords.xy;
 	texCoords.y			=1.0-texCoords.y;
-	vec4 r				=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture,depthTexture,lightTableTexture,true,texCoords,false,false).colour;
+	vec4 r				=RaytraceCloudsForward(cloudDensity1,cloudDensity2,noiseTexture
+									,noiseTexture3D,depthTexture,lightTableTexture,true,texCoords,false,false,false).colour;
 	return r;
 }
 
@@ -111,7 +136,16 @@ RaytracePixelOutput PS_Raytrace3DNoise(RaytraceVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
 	texCoords.y				=1.0-texCoords.y;
-	RaytracePixelOutput r	=RaytraceCloudsForward3DNoise(cloudDensity1,cloudDensity2,noiseTexture3D,depthTexture,lightTableTexture,texCoords);
+	RaytracePixelOutput r	=RaytraceCloudsForward(cloudDensity1,cloudDensity2
+									,noiseTexture
+									,noiseTexture3D
+									,depthTexture
+									,lightTableTexture
+									,true
+									,texCoords
+									,true
+									,true
+									,true);
 	return r;
 }
 
@@ -292,12 +326,7 @@ technique11 godrays_accumulation
 {
     pass p0
     {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_FullScreen()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_GodraysAccumulation()));
+		SetComputeShader(cs_5_0,CS_GodraysAccumulation()));
     }
 }
 

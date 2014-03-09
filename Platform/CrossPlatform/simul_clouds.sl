@@ -154,17 +154,17 @@ vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 
 	return vec4(shadow_range,light_range);
 }
 
-
-vec4 GodraysAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 texCoords)
+#ifndef GLSL
+vec4 GodraysAccumulation(RWTexture2D<float> targetTexture1,Texture2D cloudShadowTexture,int posx,int shadowTextureSize,vec2 texCoords)
 {
-	int N							=int(texCoords.y*float(shadowTextureSize));
-	float pixel						=1.0/float(shadowTextureSize);
+	uint2 dims;
+	targetTexture1.GetDimenstions(dims);
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
-	float theta						=texCoords.x*2.0*3.1415926536;
+	float theta						=float(posx)/float(dims.x)*2.0*3.1415926536;
 	vec2 offset						=vec2(-sin(theta),cos(theta))*pixel/4.0;
 	vec4 total_ill					=vec4(0,0,0,0);
 	// Find the total illumination
-	for(int i=0;i<N;i++)
+	for(int i=0;i<dims.y;i++)
 	{
 		float interp				=float(i)/float(shadowTextureSize-1);
 		float distance_off_centre	=interp;
@@ -173,6 +173,7 @@ vec4 GodraysAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,vec2
 		illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
 		illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
 		total_ill					+=illumination.xxxx;
+		targetTexture1
 	}
 	return total_ill/float(shadowTextureSize);
 }
@@ -198,7 +199,7 @@ float MoistureAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,ve
 	}
 	return 1.0-transparency;
 }
-
+#endif
 vec4 ShowCloudShadow(Texture2D cloudShadowTexture,Texture2D cloudGodraysTexture,vec2 texCoords)
 {
 	vec2 tex_pos=2.0*texCoords.xy-vec2(1.0,1.0);
@@ -246,123 +247,17 @@ float unshadowedBrightness(float Beta,vec4 lightResponse,vec3 ambientColour)
 }
 
 #ifndef GLSL
-RaytracePixelOutput RaytraceCloudsForward3DNoise(Texture3D cloudDensity1
-											,Texture3D cloudDensity2
-											,Texture3D noiseTexture3D
-											,Texture2D depthTexture
-											,Texture2D lightTableTexture
-											,vec2 texCoords)
-{
-	float dlookup 		=sampleLod(depthTexture,clampSamplerState,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0).r;
-	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
-	clip_pos.x			+=2.0*texCoords.x;
-	clip_pos.y			-=2.0*texCoords.y;
-
-	float s				=saturate((directionToSun.z+MIN_SUN_ELEV)/0.01);
-	vec3 lightDir		=lerp(directionToMoon,directionToSun,s);
-
-	vec3 view			=normalize(mul(invViewProj,clip_pos).xyz);
-	float cos0			=dot(lightDir.xyz,view.xyz);
-	float sine			=view.z;
-	vec3 n				=vec3(clip_pos.xy*tanHalfFov,1.0);
-	n					=normalize(n);
-	//vec2 noise_texc_0	=mul(noiseMatrix,vec4(n.xy,0,0)).xy;
-
-	float min_texc_z	=-fractalScale.z*1.5;
-	float max_texc_z	=1.0-min_texc_z;
-
-	float depth			=dlookup;
-	float d				=depthToFadeDistance(depth,clip_pos.xy,nearZ,farZ,tanHalfFov);
-	vec4 colour			=vec4(0.0,0.0,0.0,1.0);
-	vec2 fade_texc		=vec2(0.0,0.5*(1.0-sine));
-
-	// Lookup in the illumination texture.
-	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
-	vec4 illum_lookup	=texture_wrap_mirror(illuminationTexture,illum_texc);
-	vec2 nearFarTexc	=illum_lookup.xy;
-
-	float meanFadeDistance		=0.0;
-	//float up			=step(0.1,sine);
-	//float down			=step(0.1,-sine);
-	// Precalculate hg effects
-	float BetaClouds	=lightResponse.x*HenyeyGreenstein(cloudEccentricity,cos0);
-	float BetaRayleigh	=CalcRayleighBeta(cos0);
-	float BetaMie		=HenyeyGreenstein(hazeEccentricity,cos0);
-#ifndef USE_LIGHT_TABLES
-	vec3 combinedLightColour=sunlightColour1.rgb;
-	vec3 ambientLightColour	=ambientColour.rgb;
-#endif
-	// This provides the range of texcoords that is lit.
-	for(int i=0;i<layerCount;i++)
-	{
-		vec4 density			=vec4(0,0,0,0);
-		const LayerData layer	=layers[i];
-		float layerWorldDist	=layer.layerDistance;
-		float fadeDistance		=saturate(layerWorldDist/maxFadeDistanceMetres);
-		vec3 world_pos			=viewPos+layerWorldDist*view;
-		world_pos.z				-=layer.verticalShift;
-		vec3 layerTexCoords		=(world_pos-cornerPos)*inverseScales;
-		float layerFade			=layer.layerFade;//*saturate((abs(sine)-layer.sine_threshold)/layer.sine_range);
-		if(layerFade>0&&fadeDistance<=d&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
-		{
-			float noise_factor		=lerp(baseNoiseFactor,1.0,saturate(layerTexCoords.z));
-			vec3 noiseval			=vec3(0.0,0.0,0.0);
-			vec3 noise_texc			=layerTexCoords.xyz*noise3DTexcoordScale;
-			float mult=0.5;
-			for(int j=0;j<4;j++)
-			{
-				noiseval			+=(texture_wrap_lod(noiseTexture3D,noise_texc,0).xyz)*mult;
-				noise_texc			*=2.0;
-				mult				*=noise3DPersistence;
-			}
-			noiseval				*=noise_factor;
-			density					=calcDensity(cloudDensity1,cloudDensity2,layerTexCoords,layerFade,noiseval,fractalScale,cloud_interp);
-			density.z				*=saturate((d-fadeDistance)/0.001);
-		}
-		if(density.z>0)
-		{
-#ifdef USE_LIGHT_TABLES
-			float alt_texc			=world_pos.z/maxAltitudeMetres;
-			vec3 combinedLightColour=texture_clamp_lod(lightTableTexture,vec2(alt_texc,3.5/4.0),0).rgb;
-			vec3 ambientLightColour	=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;
-#endif
-			float brightness_factor	=unshadowedBrightness(BetaClouds,lightResponse,ambientLightColour);
-			vec4 c					=calcColour2( density,BetaClouds,lightResponse,combinedLightColour,ambientLightColour);
-			
-			fade_texc.x				=sqrt(fadeDistance);
-			float sh				=saturate((fade_texc.x-nearFarTexc.x)/0.1);
-			c.rgb					*=sh;
-			c.rgb					=applyFades2(c.rgb,fade_texc,BetaRayleigh,BetaMie,sh);
-			colour.rgb				+=c.rgb*c.a*(colour.a);
-			// depth here:
-			meanFadeDistance					+=fadeDistance*c.a*colour.a;
-			colour.a				*=(1.0-c.a);
-			if(colour.a*brightness_factor<0.003)
-			{
-				colour.a	=0.0;
-				//meanFadeDistance		=fadeDistance;//lerp(meanFadeDistance,fadeDistance,depthMix);
-				break;
-			}
-		}
-	}
-	if(colour.a>=1.0)
-	   discard;
-	meanFadeDistance+=colour.a;
-	RaytracePixelOutput res;
-    res.colour		=vec4(exposure*colour.rgb,colour.a);
-	res.depth		=fadeDistanceToDepth(meanFadeDistance,clip_pos.xy,nearZ,farZ,tanHalfFov);
-	return res;
-}
-
 RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,Texture3D cloudDensity2
 											,Texture2D noiseTexture
+											,Texture3D noiseTexture3D
 											,Texture2D depthTexture
 											,Texture2D lightTableTexture
                                             ,bool do_depth_mix
 											,vec2 texCoords
 											,bool near_pass
-											,bool noise)
+											,bool noise
+											,bool noise_3d)
 {
 	vec4 dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
 	vec4 clip_pos		=vec4(-1.0,1.0,1.0,1.0);
@@ -421,18 +316,34 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		world_pos.z					-=layer.verticalShift;
 		vec3 layerTexCoords			=(world_pos-cornerPos)*inverseScales;
 		float layerFade				=layer.layerFade;//*saturate((abs(sine)-layer.sine_threshold)/layer.sine_range);
-		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)&&layerTexCoords.z>=min_texc_z&&layerTexCoords.z<=max_texc_z)
+		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)/*&&layerTexCoords.z>=min_texc_z*/&&layerTexCoords.z<=max_texc_z)
 		{
 			vec3 noiseval			=vec3(0,0,0);
 			if(noise)
 			{
-				float noise_factor	=lerp(baseNoiseFactor,1.0,saturate(layerTexCoords.z));
-				vec2 noise_texc		=noise_texc_0*layerWorldDist+layer.noiseOffset;
-				noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
+				float noise_factor		=lerp(baseNoiseFactor,1.0,saturate(layerTexCoords.z));
+				if(noise_3d)
+				{
+					vec3 noise_texc			=layerTexCoords.xyz*noise3DTexcoordScale;
+					float mult=0.5;
+					for(int j=0;j<4;j++)
+					{
+						noiseval			+=(texture_wrap_lod(noiseTexture3D,noise_texc,0).xyz)*mult;
+						noise_texc			*=2.0;
+						mult				*=noise3DPersistence;
+					}
+					noiseval				*=noise_factor;
+				}
+				else
+				{
+					vec2 noise_texc		=noise_texc_0*layerWorldDist+layer.noiseOffset;
+					noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
+				}
 			}
 			density					=calcDensity(cloudDensity1,cloudDensity2,layerTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
             if(do_depth_mix)
 				density.z			*=saturate((d-fadeDistance)/0.01);
+			//density.z				=saturate(density.z+.4*(1.0-density.x)*saturate(5.0-10*layerTexCoords.z));
 			if(density.z>0)
 			{
 #ifdef USE_LIGHT_TABLES

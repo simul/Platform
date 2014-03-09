@@ -220,7 +220,6 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 
 	shadow_fb.RestoreDeviceObjects(m_pd3dDevice);
 	moisture_fb.RestoreDeviceObjects(m_pd3dDevice);
-	godrays_fb.RestoreDeviceObjects(m_pd3dDevice);
 
 	SAFE_RELEASE(m_pWrapSamplerState);
 	SAFE_RELEASE(m_pClampSamplerState);
@@ -282,7 +281,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	gpuCloudGenerator.InvalidateDeviceObjects();
 	Unmap();
 	shadow_fb.InvalidateDeviceObjects();
-	godrays_fb.InvalidateDeviceObjects();
+	godrays_texture.release();
 	moisture_fb.InvalidateDeviceObjects();
 	//if(illumination_texture)
 	//	Unmap3D(mapped_context,illumination_texture);
@@ -682,14 +681,13 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	shadow_fb.Deactivate(pContext);
 	
-	
-	tech	=m_pCloudEffect->GetTechniqueByName("godrays_accumulation");
-	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
-	ApplyPass(pContext,tech->GetPassByIndex(0));
-	godrays_fb.Activate(pContext);
-		simul::dx11::UtilityRenderer::DrawQuad(pContext);
-	godrays_fb.Deactivate(pContext);
-	
+	{
+		tech	=m_pCloudEffect->GetTechniqueByName("godrays_accumulation");
+		simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
+		simul::dx11::setUnorderedAccessView(m_pCloudEffect,"targetTexture1",godrays_texture.unorderedAccessView);
+		pContext->Dispatch(godrays_texture.width,1,1);
+		ApplyPass(pContext,tech->GetPassByIndex(0));
+	}
 	
 	tech	=m_pCloudEffect->GetTechniqueByName("moisture_accumulation");
 	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
@@ -718,21 +716,6 @@ void SimulCloudRendererDX1x::PreRenderUpdate(void *context)
 // We expect to be able to create views with flags e.g for whether they will render with noise and therefore need to 
 // do a per frame view specific update.
 // We'll then have a global update and per view updates.
-/*	simul::math::Vector3 X(cam_pos.x,cam_pos.y,cam_pos.z);
-	simul::math::Vector3 wind_offset=GetCloudInterface()->GetWindOffset();
-	if(y_vertical)
-		std::swap(wind_offset.y,wind_offset.z);
-	X+=wind_offset;
-	simul::math::Vector3 view_dir	(view._13,view._23,view._33);
-	if(!y_vertical)
-		view_dir.Define(-view._13,-view._23,-view._33);
-	simul::math::Vector3 up(view._12,view._22,view._32);
-	helper->Update((const float*)cam_pos,wind_offset,view_dir,up);
-	float tan_half_fov_vertical=1.f/proj._22;
-	float tan_half_fov_horizontal=1.f/proj._11;
-	helper->SetNoFrustumLimit(true);
-	helper->SetFrustum(tan_half_fov_horizontal,tan_half_fov_vertical);
-	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),enable_lightning);*/
 }
 static int test=29999;
 bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bool near_pass,const void *depth_tex
@@ -932,11 +915,11 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int x0,int y0
 	UtilityRenderer::DrawQuad2(pContext	,width-w,height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 	UtilityRenderer::Print(pContext		,width-w,height-(w+8)	,"2D Noise");
 	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D1xShaderResourceView*)shadow_fb.GetColorTex());
-	simul::dx11::setTexture(m_pCloudEffect,"cloudGodraysTexture",(ID3D11ShaderResourceView*)godrays_fb.GetColorTex());
+	simul::dx11::setTexture(m_pCloudEffect,"cloudGodraysTexture",(ID3D11ShaderResourceView*)godrays_texture.shaderResourceView);
 	UtilityRenderer::DrawQuad2(pContext	,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
 	UtilityRenderer::Print(pContext		,width-(w+8)-(w+8),height-(w+8)	,"shadow texture");
 
-	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture",(ID3D11ShaderResourceView*)godrays_fb.GetColorTex());
+	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture",(ID3D11ShaderResourceView*)godrays_texture.shaderResourceView);
 	UtilityRenderer::DrawQuad2(pContext	,width-2*w,height-(w+8)-w/2	,w*2,w/2,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 	UtilityRenderer::Print(pContext		,width-2*w,height-(w+8)-w/2	,"godrays framebuffer",vec4(0.f,0.6f,0.f,1.f));
 
@@ -970,7 +953,7 @@ CloudShadowStruct SimulCloudRendererDX1x::GetCloudShadowTexture()
 {
 	CloudShadowStruct s	=BaseCloudRenderer::GetCloudShadowTexture();
 	s.texture			=shadow_fb.GetColorTex();
-	s.godraysTexture	=godrays_fb.GetColorTex();
+	s.godraysTexture	=godrays_texture.shaderResourceView;
 	s.moistureTexture	=moisture_fb.GetColorTex();
 	return s;
 }
@@ -992,9 +975,9 @@ void SimulCloudRendererDX1x::EnsureCorrectTextureSizes()
 	{
 		cloud_textures[i].ensureTexture3DSizeAndFormat(m_pd3dDevice,width_x,length_y,depth_z,cloud_tex_format,uav);
 	}
-	shadow_fb.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize(),cloudKeyframer->GetShadowTextureSize());
-	godrays_fb.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize()*2,cloudKeyframer->GetShadowTextureSize());
-	moisture_fb.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize()*2,cloudKeyframer->GetShadowTextureSize()/2);
+	shadow_fb.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize(),cloudKeyframer->GetGodraysSteps());
+	godrays_texture.ensureTexture2DSizeAndFormat(m_pd3dDevice,cloudKeyframer->GetShadowTextureSize()*2,cloudKeyframer->GetGodraysSteps(),DXGI_FORMAT_R32_FLOAT,true,false);
+	moisture_fb.SetWidthAndHeight(cloudKeyframer->GetShadowTextureSize()*2,cloudKeyframer->GetGodraysSteps());
 	if(!width_x||!length_y||!depth_z)
 		return;
 	if(width_x==cloud_tex_width_x&&length_y==cloud_tex_length_y&&depth_z==cloud_tex_depth_z&&cloud_textures[texture_cycle%3].texture!=NULL)

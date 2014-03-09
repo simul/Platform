@@ -186,8 +186,8 @@ void TerrainRenderer::Render(void *context,float exposure)
 	D3DXMATRIX wvp;
 	camera::MakeWorldViewProjMatrix((float*)&wvp,world,view,proj);
 	simul::math::Vector3 cam_pos=simul::dx11::GetCameraPosVector(view,false);
-	simul::dx11::setTextureArray(	m_pTerrainEffect,"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
-	simul::dx11::setTexture(		m_pTerrainEffect,"cloudShadowTexture"	,(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
+	dx11::setTextureArray(	m_pTerrainEffect,"textureArray"			,arrayTexture.m_pArrayTexture_SRV);
+	dx11::setTexture(		m_pTerrainEffect,"cloudShadowTexture"	,(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	terrainConstants.eyePosition=cam_pos;
 	if(baseSkyInterface)
 	{
@@ -197,9 +197,8 @@ void TerrainRenderer::Render(void *context,float exposure)
 	}
 	terrainConstants.worldViewProj=wvp;
 	terrainConstants.worldViewProj.transpose();
-
-	simul::math::Matrix4x4 shadowMatrix		=cloudShadowStruct.simpleOffsetMatrix;
-	simul::math::Matrix4x4 invShadowMatrix;
+	math::Matrix4x4 shadowMatrix		=cloudShadowStruct.simpleOffsetMatrix;
+	math::Matrix4x4 invShadowMatrix;
 	shadowMatrix.Inverse(invShadowMatrix);
 	terrainConstants.invShadowMatrix		=invShadowMatrix;
 	terrainConstants.extentZMetres			=cloudShadowStruct.extentZMetres;

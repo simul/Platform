@@ -32,7 +32,7 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	//uniform mat4 shadowMatrix;
 	uniform mat4 worldToMoistureSpaceMatrix;
 	uniform vec4 viewportToTexRegionScaleBias;
-	uniform vec3 viewPositionXXXXXXX;
+	uniform vec3 viewPosition;
 	uniform float exposure;
 	uniform vec2 tanHalfFov;
 	uniform float nearZ;
