@@ -423,7 +423,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 		return sun_occlusion;
 //	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
-	float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
+	float sun_angular_radius=skyK eyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 
 	// fix the projection matrix so this quad is far away:
 	D3DXMATRIX tmp=proj;
