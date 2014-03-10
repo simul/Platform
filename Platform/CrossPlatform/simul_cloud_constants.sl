@@ -111,6 +111,7 @@ uniform_buffer CloudShadowStruct
 	float extentZMetres;
 	float startZMetres;
 	float shadowRange;
+	float rainbowIntensity;
 };
 #endif
 #endif

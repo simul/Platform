@@ -69,7 +69,7 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 	//float distance_off_centre		=length(pos_xy);
 	vec2 illumination				=vec2(1.0,1.0);
 	float U							=-1.0;
-	#define NUM_STEPS 12
+	#define NUM_STEPS 24
 	vec3 cartesian_1				=vec3(pos_xy.xy,1.0);
 	vec3 wpos_1						=mul(shadowMatrix,vec4(cartesian_1,1.0)).xyz;
 	vec3 cartesian_2				=vec3(pos_xy.xy,0.0);
@@ -83,6 +83,7 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 		//vec3 cartesian			=vec3(pos_xy.xy,u);
 		//vec3 wpos					=mul(shadowMatrix,vec4(cartesian,1.0)).xyz;
 		vec3 texc					=lerp(texc_1,texc_2,u);//(wpos-cornerPos)*inverseScales;
+	
 		vec4 density1				=sampleLod(cloudDensity1,cloudSamplerState,texc,0);
 		vec4 density2				=sampleLod(cloudDensity2,cloudSamplerState,texc,0);
 		vec4 density				=lerp(density1,density2,cloud_interp);
@@ -95,6 +96,20 @@ vec4 CloudShadow(Texture3D cloudDensity1,Texture3D cloudDensity2,vec2 texCoords,
 	vec3 simple_texc				=vec3(texCoords,0);
 	vec2 shadow						=lerp(sampleLod(cloudDensity1,wwcSamplerState,simple_texc,0).xy,sampleLod(cloudDensity2,wwcSamplerState,simple_texc,0).xy,cloud_interp);
 	return vec4(illumination,U,0.5*(shadow.x+shadow.y));//*edge
+}
+
+vec4 ShowCloudShadow(Texture2D cloudShadowTexture,Texture2D cloudGodraysTexture,vec2 texCoords)
+{
+	vec2 tex_pos		=2.0*texCoords.xy-vec2(1.0,1.0);
+	float dist			=length(tex_pos.xy);
+	vec2 radial_texc	=vec2(sqrt(length(tex_pos.xy)),atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536));
+    vec4 lookup			=texture_clamp_lod(cloudShadowTexture,texCoords.xy,0);
+	//lookup				*=0.5;
+	if(radial_texc.y<0)
+		radial_texc.y	+=1.0;
+	vec4 godrays_illum	=texture_wrap_clamp(cloudGodraysTexture,vec2(radial_texc.y,dist));
+	//lookup.rgb			+=godrays_illum.xxx;
+	return vec4(lookup.rgb,1.0);
 }
 
 // from the viewer, trace outwards to find the outer and inner ranges of cloud shadow.
@@ -155,27 +170,26 @@ vec4 CloudShadowNearFar(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 
 }
 
 #ifndef GLSL
-vec4 GodraysAccumulation(RWTexture2D<float> targetTexture1,Texture2D cloudShadowTexture,int posx,int shadowTextureSize,vec2 texCoords)
+void GodraysAccumulation(RWTexture2D<float> targetTexture1,Texture2D cloudShadowTexture,int posx)
 {
 	uint2 dims;
-	targetTexture1.GetDimenstions(dims);
+	targetTexture1.GetDimensions(dims.x,dims.y);
 //for this texture, let x be the square root of distance and y be the angle anticlockwise from the x-axis.
 	float theta						=float(posx)/float(dims.x)*2.0*3.1415926536;
-	vec2 offset						=vec2(-sin(theta),cos(theta))*pixel/4.0;
-	vec4 total_ill					=vec4(0,0,0,0);
+	//vec2 offset					=vec2(-sin(theta),cos(theta))*pixel/4.0;
+	float total_ill					=0.0;
 	// Find the total illumination
 	for(int i=0;i<dims.y;i++)
 	{
-		float interp				=float(i)/float(shadowTextureSize-1);
+		float interp				=float(i)/float(dims.y-1);
 		float distance_off_centre	=interp;
 		vec2 shadow_texc			=0.5*(distance_off_centre*vec2(cos(theta),sin(theta))+1.0);
 		vec4 illumination			=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc,0);
-		illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
-		illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
-		total_ill					+=illumination.xxxx;
-		targetTexture1
+	//	illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc-offset,0);
+	//	illumination				+=sampleLod(cloudShadowTexture,cwcNearestSamplerState,shadow_texc+offset,0);
+		total_ill					+=illumination.x;
+		targetTexture1[uint2(posx,i)]=total_ill/float(dims.y);
 	}
-	return total_ill/float(shadowTextureSize);
 }
 
 float MoistureAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,vec2 texCoords)
@@ -200,19 +214,6 @@ float MoistureAccumulation(Texture2D cloudShadowTexture,int shadowTextureSize,ve
 	return 1.0-transparency;
 }
 #endif
-vec4 ShowCloudShadow(Texture2D cloudShadowTexture,Texture2D cloudGodraysTexture,vec2 texCoords)
-{
-	vec2 tex_pos=2.0*texCoords.xy-vec2(1.0,1.0);
-	float dist=length(tex_pos.xy);
-	vec2 radial_texc=vec2(sqrt(length(tex_pos.xy)),atan2(tex_pos.y,tex_pos.x)/(2.0*3.1415926536));
-    vec4 lookup=texture_clamp_lod(cloudShadowTexture,texCoords.xy,0);
-	lookup*=0.5;
-	if(radial_texc.y<0)
-		radial_texc.y+=1.0;
-	vec4 godrays_illum=texture_wrap_clamp(cloudGodraysTexture,vec2(radial_texc.y,dist));
-	lookup.rgb+=godrays_illum.xxx;
-	return vec4(lookup.rgb,1.0);
-}
 
 vec3 applyFades2(vec3 final,vec2 fade_texc,float BetaRayleigh,float BetaMie,float earthshadowMultiplier)
 {

@@ -730,7 +730,7 @@ bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int heigh
 	int s							=size/numAltitudes-2;
 	ID3D11DeviceContext *context	=(ID3D11DeviceContext *)c;
 
-	ID3DX11EffectTechnique*	techniqueShowSky				=m_pSkyEffect->GetTechniqueByName("simul_show_sky_texture");
+	ID3DX11EffectTechnique*	techShowFadeTable				=m_pSkyEffect->GetTechniqueByName("simul_show_fade_table");
 	ID3DX11EffectTechnique*	techniqueShowFade				=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");
 	ID3DX11EffectShaderResourceVariable*	inscTexture		=m_pSkyEffect->GetVariableByName("inscTexture")->AsShaderResource();
 
@@ -740,15 +740,21 @@ bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int heigh
 	
 	int y=y0+8;
 	inscTexture->SetResource(loss_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowSky);
+	skyConstants.overlayAlpha=0.f;
+	skyConstants.Apply(context);
+	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techShowFadeTable);
 	y+=size+8;
 	inscTexture->SetResource(inscatter_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowSky);
+	skyConstants.overlayAlpha=1.f;
+	skyConstants.Apply(context);
+	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techShowFadeTable);
 	inscTexture->SetResource(overcast_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x0,y,size,size,m_pSkyEffect,techShowFadeTable);
 	y+=size+8;
+	skyConstants.overlayAlpha=0.f;
+	skyConstants.Apply(context);
 	inscTexture->SetResource(skylight_2d->buffer_texture_SRV);
-	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowSky);
+	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techShowFadeTable);
 	y+=size+8;
 	inscTexture->SetResource(illumination_fb.buffer_texture_SRV);
 	UtilityRenderer::DrawQuad2(context,x0+size+2,y,size,size,m_pSkyEffect,techniqueShowIlluminationBuffer);

@@ -42,7 +42,9 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
     uniform vec2 depthPixelScales;
 	uniform float shadowRange;
 
-	uniform float AtmosphericsPerViewConstantspad2;
+	uniform float dropletRadius;
+	uniform float rainbowIntensity;
+	uniform float aoehg,aeoithjaoe,aetaetyjk;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

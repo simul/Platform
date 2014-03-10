@@ -170,10 +170,10 @@ vertexOutput3Dto2D VS_ShowFade(idOnly IN)
     return OUT;
 }
 
-float4 PS_ShowSkyTexture(vertexOutput3Dto2D IN): SV_TARGET
+float4 PS_ShowFadeTable(vertexOutput3Dto2D IN): SV_TARGET
 {
 	float4 result=inscTexture.Sample(cmcSamplerState,IN.texCoords.xy);
-	//result.rgb*=result.a;
+	result.rgb+=overlayAlpha*result.a;
     return float4(result.rgb,1);
 }
 
@@ -346,7 +346,7 @@ float4 PS_Planet(svertexOutput IN): SV_TARGET
 	return result;
 }
 
-technique11 simul_show_sky_texture
+technique11 simul_show_fade_table
 {
     pass p0 
     {
@@ -355,7 +355,7 @@ technique11 simul_show_sky_texture
 		SetBlendState(DontBlend,float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
 		SetVertexShader(CompileShader(vs_4_0,VS_ShowFade()));
         SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowSkyTexture()));
+		SetPixelShader(CompileShader(ps_4_0,PS_ShowFadeTable()));
     }
 }
 

@@ -657,7 +657,7 @@ void SimulCloudRendererDX1x::RenderCombinedCloudTexture(void *context)
 void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
-    ProfileBlock profileBlock(pContext,"SimulCloudRendererDX1x::RenderCloudShadow");
+    SIMUL_COMBINED_PROFILE_START(context,"RenderCloudShadow")
 	ID3DX11EffectTechnique *tech	=m_pCloudEffect->GetTechniqueByName("cloud_shadow");
 	cloudConstants.Apply(pContext);
 	// per view:
@@ -680,15 +680,20 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	shadow_fb.Activate(pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	shadow_fb.Deactivate(pContext);
-	
+    SIMUL_COMBINED_PROFILE_END(context)
+    SIMUL_COMBINED_PROFILE_START(context,"GodraysAccumulation")
 	{
 		tech	=m_pCloudEffect->GetTechniqueByName("godrays_accumulation");
 		simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
 		simul::dx11::setUnorderedAccessView(m_pCloudEffect,"targetTexture1",godrays_texture.unorderedAccessView);
+		ApplyPass(pContext,tech->GetPassByIndex(0));
 		pContext->Dispatch(godrays_texture.width,1,1);
+		simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",NULL);
+		simul::dx11::setUnorderedAccessView(m_pCloudEffect,"targetTexture1",NULL);
 		ApplyPass(pContext,tech->GetPassByIndex(0));
 	}
-	
+    SIMUL_COMBINED_PROFILE_END(context)
+    SIMUL_COMBINED_PROFILE_START(context,"MoistureAccumulation")
 	tech	=m_pCloudEffect->GetTechniqueByName("moisture_accumulation");
 	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
 	ApplyPass(pContext,tech->GetPassByIndex(0));
@@ -698,6 +703,7 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 
 	cloudDensity1->SetResource(NULL);
 	cloudDensity2->SetResource(NULL);
+    SIMUL_COMBINED_PROFILE_END(context)
 }
 
 void SimulCloudRendererDX1x::PreRenderUpdate(void *context)
@@ -919,12 +925,11 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int x0,int y0
 	UtilityRenderer::DrawQuad2(pContext	,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
 	UtilityRenderer::Print(pContext		,width-(w+8)-(w+8),height-(w+8)	,"shadow texture");
 
-	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture",(ID3D11ShaderResourceView*)godrays_texture.shaderResourceView);
-	UtilityRenderer::DrawQuad2(pContext	,width-2*w,height-(w+8)-w/2	,w*2,w/2,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
-	UtilityRenderer::Print(pContext		,width-2*w,height-(w+8)-w/2	,"godrays framebuffer",vec4(0.f,0.6f,0.f,1.f));
+	UtilityRenderer::DrawTexture(pContext	,width-2*w,height-(w+8)-w/2	,w*2,w/2,godrays_texture.shaderResourceView);
+	UtilityRenderer::Print(pContext			,width-2*w,height-(w+8)-w/2	,"godrays framebuffer",vec4(0.f,0.6f,0.f,1.f));
 
-	UtilityRenderer::DrawTexture(pContext,width-2*w,height-(w+8)-w	,w*2,w/2	,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex());
-	UtilityRenderer::Print(pContext		,width-2*w,height-(w+8)-w	,"moisture framebuffer",vec4(1.f,0.f,0.f,1.f));
+	UtilityRenderer::DrawTexture(pContext	,width-2*w,height-(w+8)-w	,w*2,w/2	,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex());
+	UtilityRenderer::Print(pContext			,width-2*w,height-(w+8)-w	,"moisture framebuffer",vec4(1.f,0.f,0.f,1.f));
 
 	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"			,(ID3D1xShaderResourceView*)NULL);
 	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture"		,(ID3D1xShaderResourceView*)NULL);

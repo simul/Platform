@@ -83,27 +83,6 @@ vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET
     return float4(loss.rgb,1.f);
 }
 
-vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
-{
-	vec2 clip_pos		=vec2(-1.f,1.f);
-	clip_pos.x			+=2.0*IN.texCoords.x;
-	clip_pos.y			-=2.0*IN.texCoords.y;
-	vec3 insc			=AtmosphericsInsc(depthTexture
-										,illuminationTexture
-										,inscTexture
-										,skylTexture
-										,invViewProj
-										,IN.texCoords
-										,clip_pos.xy
-										,viewportToTexRegionScaleBias
-										,depthToLinFadeDistParams
-										,tanHalfFov
-										,hazeEccentricity
-										,lightDir
-										,mieRayleighRatio);
-    return float4(insc.rgb*exposure,1.f);
-}
-
 vec4 PS_LossMSAA(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
@@ -123,11 +102,31 @@ vec4 PS_LossMSAA(atmosVertexOutput IN) : SV_TARGET
     return float4(loss.rgb,1.f);
 }
 
+
+vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
+{
+	int numSamples	=1;
+	vec4 insc		=Inscatter(	 inscTexture
+								,skylTexture
+								,depthTexture
+								,depthTextureMS
+								,numSamples
+								,illuminationTexture
+								,invViewProj
+								,IN.texCoords
+								,lightDir
+								,hazeEccentricity
+								,mieRayleighRatio
+								,viewportToTexRegionScaleBias
+								,depthToLinFadeDistParams
+								,tanHalfFov
+								,true
+								,false);
+    return float4(insc.rgb*exposure,1.f);
+}
+
 vec4 PS_InscatterMSAA(atmosVertexOutput IN) : SV_TARGET
 {
-	vec2 clip_pos		=vec2(-1.f,1.f);
-	clip_pos.x			+=2.0*IN.texCoords.x;
-	clip_pos.y			-=2.0*IN.texCoords.y;
 	uint2 dims;
 	int numSamples;
 	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
@@ -191,11 +190,8 @@ vec4 PS_Loss_Near(atmosVertexOutput IN) : SV_TARGET
     return float4(loss.rgb,1.f);
 }
 
-vec4 PS_Inscatter_Far(atmosVertexOutput IN) : SV_TARGET
+vec4 PS_Inscatter_Far_MSAA(atmosVertexOutput IN) : SV_TARGET
 {
-	vec2 clip_pos		=vec2(-1.f,1.f);
-	clip_pos.x			+=2.0*IN.texCoords.x;
-	clip_pos.y			-=2.0*IN.texCoords.y;
 	uint2 dims;
 	int numSamples;
 	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
@@ -218,11 +214,8 @@ vec4 PS_Inscatter_Far(atmosVertexOutput IN) : SV_TARGET
 	return res;
 }
 
-vec4 PS_Inscatter_Near(atmosVertexOutput IN) : SV_TARGET
+vec4 PS_Inscatter_Near_MSAA(atmosVertexOutput IN) : SV_TARGET
 {
-	vec2 clip_pos		=vec2(-1.f,1.f);
-	clip_pos.x			+=2.0*IN.texCoords.x;
-	clip_pos.y			-=2.0*IN.texCoords.y;
 	uint2 dims;
 	int numSamples;
 	depthTextureMS.GetDimensions(dims.x,dims.y,numSamples);
@@ -247,8 +240,6 @@ vec4 PS_Inscatter_Near(atmosVertexOutput IN) : SV_TARGET
 
 vec4 RainbowAndCorona(vec3 view,vec3 lightDir,vec2 texCoords)
 {
-float dropletRadius	=6.25;
-float rainbowIntensity=0.5;
 	//return texture_clamp(coronaLookupTexture,IN.texCoords.xy);
 	 //note: use a float for d here, since a half corrupts the corona
 	float d=  -dot( lightDir,normalize(view ) 	);
@@ -399,7 +390,7 @@ technique11 inscatter_msaa
 		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Far()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Far_MSAA()));
     }
     pass near
     {
@@ -408,7 +399,7 @@ technique11 inscatter_msaa
 		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
-		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Near()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Near_MSAA()));
     }
 }
 

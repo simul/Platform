@@ -112,9 +112,9 @@ vec4 PS_CloudShadow( posTexVertexOutput IN):SV_TARGET
 }
 
 [numthreads(1,1,1)]
-CS_GodraysAccumulation(uint3 idx: SV_DispatchThreadID):SV_TARGET
+void CS_GodraysAccumulation(uint3 idx: SV_DispatchThreadID)
 {
-	GodraysAccumulation(targetTexture1,cloudShadowTexture,idx.x,shadowTextureSize,IN.texCoords);
+	GodraysAccumulation(targetTexture1,cloudShadowTexture,idx.x);
 }
 
 vec4 PS_MoistureAccumulation( posTexVertexOutput IN):SV_TARGET
@@ -216,11 +216,6 @@ vec4 PS_ShowShadow( posTexVertexOutput IN):SV_TARGET
 	return ShowCloudShadow(cloudShadowTexture,cloudGodraysTexture,IN.texCoords);
 }
 
-vec4 PS_ShowGodraysTexture( posTexVertexOutput IN):SV_TARGET
-{
-	return texture_wrap_clamp(cloudGodraysTexture,IN.texCoords);
-}
-
 SamplerState crossSectionSamplerState
 {
 	Filter = MIN_MAG_MIP_POINT;
@@ -230,7 +225,6 @@ SamplerState crossSectionSamplerState
 };
 
 #define CROSS_SECTION_STEPS 32
-
 vec4 PS_CrossSection(vec2 texCoords,float yz)
 {
 	vec3 texc=crossSectionOffset+vec3(texCoords.x,yz*texCoords.y,(1.0-yz)*texCoords.y);
@@ -326,7 +320,7 @@ technique11 godrays_accumulation
 {
     pass p0
     {
-		SetComputeShader(cs_5_0,CS_GodraysAccumulation()));
+		SetComputeShader(CompileShader(cs_5_0,CS_GodraysAccumulation()));
     }
 }
 
@@ -405,18 +399,5 @@ technique11 show_shadow
 		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
         SetGeometryShader(NULL);
 		SetPixelShader(CompileShader(ps_4_0,PS_ShowShadow()));
-    }
-}
-
-technique11 show_godrays_texture
-{
-    pass p0
-    {
-		SetRasterizerState( RenderNoCull );
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-		SetVertexShader(CompileShader(vs_4_0,VS_CrossSection()));
-        SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_4_0,PS_ShowGodraysTexture()));
     }
 }
