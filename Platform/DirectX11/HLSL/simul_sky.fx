@@ -320,6 +320,13 @@ float4 PS_Sun( svertexOutput IN): SV_TARGET
 	return float4(result,1.f);
 }
 
+float4 PS_SunQuery( svertexOutput IN): SV_TARGET
+{
+	float r=2.0*length(IN.tex);
+	if(r>1.0)
+		discard;
+	return float4(1.0,0.0,0.0,1.0);
+}
 float4 PS_Flare( svertexOutput IN): SV_TARGET
 {
 	float3 output=colour.rgb*flareTexture.Sample(flareSamplerState,float2(.5f,.5f)+0.5f*IN.tex).rgb;
@@ -471,7 +478,7 @@ technique11 simul_stars
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Stars()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Stars()));
-		SetDepthStencilState( EnableDepth, 0 );
+		SetDepthStencilState( TestDepth, 0 );
 		SetBlendState(AddBlend, float4(1.0f,1.0f,1.0f,1.0f ), 0xFFFFFFFF );
     }
 }
@@ -485,7 +492,21 @@ technique11 simul_sun
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
-		SetDepthStencilState(EnableDepth,0);
+		SetDepthStencilState(TestDepth,0);
+		SetBlendState(AddBlend,float4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
+    }
+}
+
+
+technique11 sun_query
+{
+    pass p0 
+    {
+		SetRasterizerState( RenderNoCull );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
+		SetPixelShader(CompileShader(ps_4_0,PS_SunQuery()));
+		SetDepthStencilState(TestDepth,0);
 		SetBlendState(AddBlend,float4(1.0f,1.0f,1.0f,1.0f), 0xFFFFFFFF );
     }
 }
@@ -504,20 +525,6 @@ technique11 simul_flare
     }
 }
 
-
-technique11 simul_query
-{
-    pass p0 
-    {
-		SetRasterizerState( RenderNoCull );
-        SetGeometryShader(NULL);
-		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
-		SetPixelShader(CompileShader(ps_4_0,PS_Sun()));
-		SetDepthStencilState( DisableDepth, 0 );
-		SetBlendState(AddBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
-    }
-}
-
 technique11 simul_planet
 {
     pass p0 
@@ -526,7 +533,7 @@ technique11 simul_planet
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Sun()));
 		SetPixelShader(CompileShader(ps_4_0,PS_Planet()));
-		SetDepthStencilState( EnableDepth, 0 );
+		SetDepthStencilState( TestDepth, 0 );
 		SetBlendState(AlphaBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
     }
 }

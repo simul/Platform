@@ -262,7 +262,7 @@ void SimulGLWeatherRenderer::RenderSkyAsOverlay(void *context
 		float cloud_occlusion=0;
 		if(baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
 			cloud_occlusion=baseCloudRenderer->GetSunOcclusion();
-		baseSkyRenderer->CalcSunOcclusion(cloud_occlusion);
+		baseSkyRenderer->CalcSunOcclusion(context,cloud_occlusion);
 	}
 	// Do this AFTER sky render, to catch any changes to texture definitions:
 	UpdateSkyAndCloudHookup();

@@ -227,7 +227,7 @@ GL_ERROR_CHECK
 		simulWeatherRenderer->RenderSkyAsOverlay(context,viewport_id,view,proj,false,exposure,UseSkyBuffer,depthFramebuffer.GetDepthTex()
 			,depthFramebuffer.GetDepthTex()
 			,simul::sky::float4(0,0,1.f,1.f),true);
-		simulWeatherRenderer->DoOcclusionTests();
+		simulWeatherRenderer->DoOcclusionTests(context);
 		simulWeatherRenderer->RenderPrecipitation(context);
 		if(simulOpticsRenderer&&ShowFlares)
 		{
