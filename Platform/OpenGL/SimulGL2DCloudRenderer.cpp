@@ -26,7 +26,6 @@
 #include "Simul/Clouds/TextureGenerator.h"
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/Float4.h"
-#include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Base/SmartPtr.h"
 #include "Simul/LicenseKey.h"
@@ -126,7 +125,7 @@ GL_ERROR_CHECK
 #pragma warning(disable:4127) // "Conditional expression is constant".
 void SimulGL2DCloudRenderer::EnsureCorrectTextureSizes()
 {
-	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
+	simul::sky::int3 i=cloudKeyframer->GetTextureSizes();
 	int width_x=i.x;
 	int length_y=i.y;
 	if(cloud_tex_width_x==width_x&&cloud_tex_length_y==length_y&&cloud_tex_depth_z==1
@@ -171,7 +170,7 @@ void SimulGL2DCloudRenderer::EnsureTexturesAreUpToDate(void *)
 {
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
-	typedef simul::clouds::CloudKeyframer::block_texture_fill iter;
+	typedef simul::sky::block_texture_fill iter;
 	for(int i=0;i<3;i++)
 	{
 		if(!coverage_tex[i])
@@ -387,7 +386,7 @@ GL_ERROR_CHECK
 	return true;
 }
 
-void SimulGL2DCloudRenderer::RenderCrossSections(void *context,int x0,int y0,int width,int height)
+void SimulGL2DCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,int height)
 {
 	static int u=8;
 	int w=(width-8)/u;

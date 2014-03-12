@@ -13,24 +13,19 @@
 #endif
 
 
-static std::string texturePathUtf8="";
-static std::vector<std::string> fallbackTexturePathsUtf8;
+static std::vector<std::string> texturePathsUtf8;
 
 namespace simul
 {
 	namespace opengl
 	{
-		void SetTexturePath(const char *path_utf8)
-		{
-			texturePathUtf8=path_utf8;
-		}
 		void PushTexturePath(const char *path_utf8)
 		{
-			fallbackTexturePathsUtf8.push_back(path_utf8);
+			texturePathsUtf8.push_back(path_utf8);
 		}
 		void PopTexturePath()
 		{ 
-			fallbackTexturePathsUtf8.pop_back();
+			texturePathsUtf8.pop_back();
 		}
 	}
 }
@@ -111,52 +106,80 @@ GLuint LoadTexture(const char *filename_utf8,unsigned wrap)
 	return 0;
 #endif
 }
-
+#include "Simul/Base/FileLoader.h"
 GLuint LoadGLImage(const char *filename_utf8,unsigned wrap)
 {
-	std::string fn=texturePathUtf8+"/";
-	fn+=filename_utf8;
-	// Is it an absolute path? If so use the given file name.
-	// Otherwise use the relative path relative to the texture path.
-	// Failing that, use the bare filename relative to any of the paths on the stack
-	if(!FileExists(fn.c_str()))
-	{
-		std::string name_only_utf8=filename_utf8;
-		// Try the file in different directories.
-		// First, if the path is relative, try appending the relative path to each directory. If this fails, we will use just the filename.
-		if(name_only_utf8.find(":")>=name_only_utf8.length())
-		{
-			for(int i=0;i<(int)fallbackTexturePathsUtf8.size();i++)
-			{
-				fn=fallbackTexturePathsUtf8[i]+"/";
-				fn+=filename_utf8;
-				if(FileExists(fn.c_str()))
-					break;
-			}
-		}
-		if(!FileExists(fn.c_str()))
-		{
-			int slash=name_only_utf8.find_last_of("/");
-			slash=std::max(slash,(int)name_only_utf8.find_last_of("\\"));
-			if(slash>0)
-				name_only_utf8=name_only_utf8.substr(slash+1,name_only_utf8.length()-slash-1);
-			for(int i=0;i<(int)fallbackTexturePathsUtf8.size();i++)
-			{
-				fn=fallbackTexturePathsUtf8[i]+"/";
-				fn+=name_only_utf8;
-				if(FileExists(fn.c_str()))
-					break;
-			}
-		}
-	}
+	std::string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
 	if(!FileExists(fn.c_str()))
 		return 0;
 	return LoadTexture(fn.c_str(),wrap);
 }
 
+void SaveGLImage(const char *filename_utf8,GLuint tex)
+{
+	FREE_IMAGE_FORMAT fif	=FIF_UNKNOWN;
+GL_ERROR_CHECK
+	std::wstring wstr		=simul::base::Utf8ToWString(filename_utf8);
+	fif						=FreeImage_GetFIFFromFilenameU(wstr.c_str());
+	BYTE* pixels = NULL;
+	int bytes_per_pixel=0;
+	GLint width,height;
+	{
+		GLint internalFormat;
+//		GLint targetFormat=GL_RGB;
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPONENTS, &internalFormat); // get internal format type of GL texture
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width); // get width of GL texture
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height); // get height of GL texture
+GL_ERROR_CHECK
+		// GL_TEXTURE_COMPONENTS and GL_INTERNAL_FORMAT are the same.
+		// just work with RGB8 and RGBA8
+		GLint numBytes = 0;
+		GLenum type=GL_FLOAT;
+		switch(internalFormat)
+		{
+		case GL_RGB:
+			numBytes = width * height * 3;
+			type=GL_UNSIGNED_BYTE;
+			bytes_per_pixel=24;
+		break;
+		case GL_RGBA:
+			numBytes = width * height * 4;
+			type=GL_UNSIGNED_BYTE;
+			bytes_per_pixel=24;
+		break;
+		case GL_RGBA32F:
+			numBytes = width * height * 4*sizeof(float);
+			type=GL_FLOAT;
+			bytes_per_pixel=4*4*sizeof(float);
+			bytes_per_pixel=24;
+		break;
+		case GL_RGB32F:
+			numBytes = width * height * 3*sizeof(float);
+			type=GL_FLOAT;
+			bytes_per_pixel=4*3*sizeof(float);
+			bytes_per_pixel=24;
+			break;
+		default: // unsupported type
+		break;
+		}
+		if(numBytes)
+		{
+			GL_ERROR_CHECK
+			pixels = (unsigned char*)malloc(numBytes); // allocate image data into RAM
+			glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+	GL_ERROR_CHECK
+		}
+	}
+	FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, width, height, 3 * width, bytes_per_pixel, 0x00FF00, 0xFF0000,0x0000FF , false);
+
+	FreeImage_SaveU(fif,image, wstr.c_str());
+	FreeImage_Unload(image);
+	delete [] pixels;
+}
+#include "Simul/Base/FileLoader.h"
 unsigned char *LoadGLBitmap(const char *filename_utf8,unsigned &bpp,unsigned &width,unsigned &height)
 {
-	std::string fn=texturePathUtf8+"/";
-	fn+=filename_utf8;
+	std::string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
 	return LoadBitmap(fn.c_str(),bpp,width,height);
 }

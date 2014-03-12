@@ -2,7 +2,7 @@
 #include "CppGlsl.hs"
 #include "../../CrossPlatform/sky_constants.sl"
 // GLSL fragment shader
-// Copyright 2013 Simul Software Ltd
+// Copyright 2014 Simul Software Ltd
 
 uniform sampler3D fadeTexture1;
 uniform sampler3D fadeTexture2;

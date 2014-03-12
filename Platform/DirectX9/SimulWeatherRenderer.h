@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -159,8 +159,6 @@ namespace simul
 			 }
 			bool Restore3DCloudObjects();
 			bool Restore2DCloudObjects();
-			//! The size of the 2D buffer the sky is rendered to.
-			int BufferWidth,BufferHeight;
 			LPDIRECT3DDEVICE9				m_pd3dDevice;
 			LPDIRECT3DTEXTURE9 temp_depth_texture;
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.

@@ -1,5 +1,5 @@
 #define NOMINMAX
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -79,7 +79,7 @@ void SimulPrecipitationRenderer::RestoreDeviceObjects(void *dev)
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
 	D3DXMatrixIdentity(&view);
 	D3DXMatrixIdentity(&proj);
-	int index=0;
+//	int index=0;
 	static float rr=0.2f;
 	D3DVERTEXELEMENT9 decl[]=
 	{

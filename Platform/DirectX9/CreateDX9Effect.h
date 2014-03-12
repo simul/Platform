@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -22,8 +22,8 @@ namespace simul
 {
 	namespace dx9
 	{
-		extern void SIMUL_DIRECTX9_EXPORT SetShaderPath(const char *path);
-		extern void SIMUL_DIRECTX9_EXPORT SetTexturePath(const char *path);
+		extern void SIMUL_DIRECTX9_EXPORT PushShaderPath(const char *path);
+		extern void SIMUL_DIRECTX9_EXPORT PushTexturePath(const char *path);
 	}
 }
 // Get the technique, or look for a less hardware-demanding equivalent:

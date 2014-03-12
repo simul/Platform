@@ -26,7 +26,7 @@ SIMUL_CONSTANT_BUFFER(SkyConstants,10)
 	float cloudShadowRange;		// As a distance texcoord
 	float illumination_alt_texc;	// Due to earth shadow
 	uint cycled_index;
-	float a3;
+	float overlayAlpha;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif

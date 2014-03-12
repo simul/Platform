@@ -1,5 +1,5 @@
 #define NOMINMAX
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -509,7 +509,7 @@ void SimulCloudRenderer::EnsureCorrectIlluminationTextureSizes()
 
 void SimulCloudRenderer::EnsureCorrectTextureSizes()
 {
-	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
+	simul::sky::int3 i=cloudKeyframer->GetTextureSizes();
 	int width_x=i.x;
 	int length_y=i.y;
 	int depth_z=i.z;
@@ -540,7 +540,7 @@ void SimulCloudRenderer::EnsureTexturesAreUpToDate(void* context)
 		CreateNoiseTexture(context);
 	for(int i=0;i<3;i++)
 	{
-		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
+		simul::sky::seq_texture_fill texture_fill=cloudKeyframer->GetSequentialTextureFill(seq_texture_iterator[i]);
 		if(!texture_fill.num_texels)
 			continue;
 		if(!cloud_textures[i])
@@ -559,7 +559,7 @@ void SimulCloudRenderer::EnsureIlluminationTexturesAreUpToDate()
 {
 }
 
-bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& )
+bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool /*near_pass*/,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& )
 {
 	if(rebuild_shaders)
 		RecompileShaders();
@@ -651,24 +651,23 @@ bool SimulCloudRenderer::Render(void *context,float exposure,bool cubemap,bool n
 	m_pCloudEffect->SetFloat	(cloudEccentricity	,GetCloudInterface()->GetMieAsymmetry());
 	m_pCloudEffect->SetFloat	(alphaSharpness		,K.edge_sharpness);
 	float time=skyInterface->GetTime();
-	const simul::clouds::LightningRenderInterface *lightningRenderInterface=cloudKeyframer->GetLightningBolt(time,0);
-
-	if(enable_lightning)
+	const simul::clouds::LightningProperties &lightning=cloudKeyframer->GetLightningProperties(time,0);
+	
+	simul::sky::float4 lightning_colour;
+	if(enable_lightning&&lightningRenderInterface)
 	{
 		static float bb=2.f;
 		simul::sky::float4 lightning_multipliers;
-		lightning_colour=lightningRenderInterface->GetLightningColour();
+		lightning_colour=lightning.colour;
 		lightning_colour*=exposure;
 		for(int i=0;i<4;i++)
 		{
-			if(i<lightningRenderInterface->GetNumLightSources())
-				lightning_multipliers[i]=bb*lightningRenderInterface->GetLightSourceBrightness(time);
-			else lightning_multipliers[i]=0;
+			lightning_multipliers[i]=0;
 		}
 		static float lightning_effect_on_cloud=20.f;
 		lightning_colour.w=lightning_effect_on_cloud;
 		m_pCloudEffect->SetVector	(lightningMultipliers	,(D3DXVECTOR4*)(&lightning_multipliers));
-		m_pCloudEffect->SetVector	(lightningColour		,&lightning_colour);
+		m_pCloudEffect->SetVector	(lightningColour		,(D3DXVECTOR4*)(&lightning_colour));
 
 		simul::math::Vector3 light_X1,light_X2,light_DX;
 		light_X1=lightningRenderInterface->GetIlluminationOrigin();
@@ -996,7 +995,7 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 	fb.InvalidateDeviceObjects();
 }
 
-void SimulCloudRenderer::RenderCrossSections(void *context,int x0,int y0,int width,int height)
+void SimulCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;
@@ -1037,7 +1036,7 @@ void SimulCloudRenderer::RenderCrossSections(void *context,int x0,int y0,int wid
 		m_pCloudEffect->SetVector(crossSectionOffset,&cross_section_offset);
 		//GetCloudInterface()->GetWrap()?0.5f:0.f);
 		m_pCloudEffect->SetTexture(cloudDensity1				,cloud_textures[(i)%3]);
-		RenderTexture(m_pd3dDevice,i*(w+1)+4,h+8,w,w,
+		RenderTexture(m_pd3dDevice,x0+i*(w+1)+4,y0+h+8,w,w,
 					  cloud_textures[(i)%3],m_pCloudEffect,m_hTechniqueCrossSectionXY);
 		
 	}
@@ -1058,7 +1057,7 @@ void SimulCloudRenderer::RenderAuxiliaryTextures(void *,int x0,int y0,int width,
 	m_pCloudEffect->SetTexture(noiseTexture,(LPDIRECT3DTEXTURE9)noise_fb.GetColorTex());
 	D3DXHANDLE tech			=GetDX9Technique(m_pCloudEffect,"show_noise");
 	RenderTexture(m_pd3dDevice
-		,width-(w+8),height-(w+8),w,w
+		,x0+width-(w+8),y0+height-(w+8),w,w
 		,(LPDIRECT3DTEXTURE9)noise_fb.GetColorTex()
 		,m_pCloudEffect,tech);
 }

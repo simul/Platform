@@ -1,5 +1,5 @@
 #define NOMINMAX
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -20,6 +20,7 @@
 #include "Simul/Clouds/LightningRenderInterface.h"
 #include "Macros.h"
 #include "Resources.h"
+#include "Simul/Camera/Camera.h"
 
 SimulAtmosphericsRenderer::SimulAtmosphericsRenderer(simul::base::MemoryInterface *m)
 	:BaseAtmosphericsRenderer(m)
@@ -188,24 +189,19 @@ void SimulAtmosphericsRenderer::SetCloudProperties(void* c1,void* c2,
 }
 
 void SimulAtmosphericsRenderer::SetLightningProperties(	void *tex,
-		simul::clouds::LightningRenderInterface *lri)
+		const simul::clouds::LightningProperties &prop)
 {
-	if(!lri)
-		return;
 	lightning_illumination_texture=(LPDIRECT3DBASETEXTURE9)tex;
 	for(int i=0;i<4;i++)
 	{
-		if(i<(int)lri->GetNumLightSources())
-			(lightning_multipliers.operator float *())[i]=lri->GetLightSourceBrightness(0.f);
-		else
-			(lightning_multipliers.operator float *())[i]=0;
+		(lightning_multipliers.operator float *())[i]=0;
 	}
-	illumination_scales=lri->GetIlluminationScales();
-	illumination_scales.x=1.f/illumination_scales.x;
-	illumination_scales.y=1.f/illumination_scales.y;
-	illumination_scales.z=1.f/illumination_scales.z;
-	illumination_offset=lri->GetIlluminationOrigin();
-	lightning_colour=lri->GetLightningColour();
+	illumination_scales		=prop.illuminationScales;
+	illumination_scales.x	=1.f/illumination_scales.x;
+	illumination_scales.y	=1.f/illumination_scales.y;
+	illumination_scales.z	=1.f/illumination_scales.z;
+	illumination_offset		=prop.illuminationOrigin;
+	lightning_colour		=prop.colour;
 }
 
 bool SimulAtmosphericsRenderer::RenderGodRays(float strength)
@@ -327,11 +323,10 @@ void SimulAtmosphericsRenderer::StartRender(void *)
 	static float depth_start=1.f;
 	hr=m_pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 }
-#include "Simul/Camera/Camera.h"
-void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
+
+void SimulAtmosphericsRenderer::RenderAsOverlay(void *,const void *depth_texture,float exposure,const simul::sky::float4& relativeViewportTextureRegionXYWH)
 {
 	HRESULT hr=S_OK;
-	PIXBeginNamedEvent(0,"SimulAtmosphericsRenderer::RenderAsOverlay");
 	LPDIRECT3DTEXTURE9 depthTexture=(LPDIRECT3DTEXTURE9)depth_texture;
 	D3DSURFACE_DESC desc;
 	depthTexture->GetLevelDesc(0,&desc);
@@ -357,9 +352,9 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_
 	// Instead of atmosphericsPerViewConstants.Apply(pContext), we do this:
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,invViewProj);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,invShadowMatrix);
-	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,shadowMatrix);
+//	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,//shadowMatrix);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewportToTexRegionScaleBias);
-	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewPosition);
+//	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,viewPosition);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,exposure);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,tanHalfFov);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsPerViewConstants,nearZ);
@@ -396,9 +391,8 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,fogScaleHeight);
     DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,infraredIntegrationFactors);
 	DX9_STRUCTMEMBER_SET(effect,atmosphericsUniforms,fogDensity);
-	
+
 	effect->SetTechnique(technique);
-	
 	unsigned passes=0;			// should be 2
 	hr=effect->Begin(&passes,0);
 	for(unsigned i=0;i<passes;i++)
@@ -408,8 +402,6 @@ void SimulAtmosphericsRenderer::RenderAsOverlay(void *context,const void *depth_
 		hr=effect->EndPass();
 	}
 	hr=effect->End();
-	
-	PIXEndNamedEvent();
 }
 
 void SimulAtmosphericsRenderer::FinishRender(void *)

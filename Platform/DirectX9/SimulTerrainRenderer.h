@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -89,18 +89,6 @@ public:
 	void SetShowWireframe(bool s)
 	{
 		show_wireframe=s;
-	}
-	void SetYVertical(bool s)
-	{
-		if(s!=y_vertical)
-		{
-			y_vertical=s;
-			if(m_pd3dDevice)
-			{
-				InvalidateDeviceObjects();
-				RestoreDeviceObjects(m_pd3dDevice);
-			}
-		}
 	}
 	void SetMaxFadeDistanceKm(float dist_km)
 	{

@@ -30,7 +30,7 @@ GpuSkyGenerator::~GpuSkyGenerator()
 
 void GpuSkyGenerator::RestoreDeviceObjects(void *dev)
 {
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	SAFE_RELEASE(m_pImmediateContext);
 	m_pd3dDevice->GetImmediateContext(&m_pImmediateContext);
 	gpuSkyConstants.RestoreDeviceObjects(m_pd3dDevice);
@@ -76,10 +76,10 @@ static int range(int x,int start,int end)
 //! Return true if the derived class can make sky tables using the GPU.
 bool GpuSkyGenerator::CanPerformGPUGeneration() const
 {
-	return Enabled&&m_pd3dDevice!=NULL;
+	return m_pd3dDevice!=NULL;
 }
 
-void GpuSkyGenerator::Make2DLossAndInscatterTextures(
+void GpuSkyGenerator::MakeLossAndInscatterTextures(
 				int cycled_index,
 				simul::sky::AtmosphericScatteringInterface *skyInterface
 				,const sky::GpuSkyParameters &p
@@ -87,6 +87,13 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 				,const sky::GpuSkyInfraredParameters &ir
 				)
 {
+	if(p.fill_up_to_texels<0)
+		return;
+	if(keyframe_checksums[cycled_index]!=p.keyframe_checksum)
+	{
+		keyframe_checksums[cycled_index]	=p.keyframe_checksum;
+		fadeTexIndex[cycled_index]=0;
+	}
 	SIMUL_PROFILE_START("GpuSkyGenerator init")
 	HRESULT hr=S_OK;
 	int gridsize			=(int)p.altitudes_km.size()*p.numElevations*p.numDistances;
@@ -126,17 +133,17 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 		gpuSkyConstants.planetRadiusKm		=skyInterface->GetPlanetRadius();
 		gpuSkyConstants.maxOutputAltKm		=maxOutputAltKm;
 		gpuSkyConstants.maxDensityAltKm		=a.maxDensityAltKm;
-		gpuSkyConstants.hazeBaseHeightKm	=p.hazeStruct.haze_base_height_km;
-		gpuSkyConstants.hazeScaleHeightKm	=p.hazeStruct.haze_scale_height_km;
+		gpuSkyConstants.hazeBaseHeightKm	=p.physical.hazeStruct.haze_base_height_km;
+		gpuSkyConstants.hazeScaleHeightKm	=p.physical.hazeStruct.haze_scale_height_km;
 
 		gpuSkyConstants.rayleigh			=(const float*)skyInterface->GetRayleigh();
-		gpuSkyConstants.hazeMie				=(const float*)(p.hazeStruct.haze*p.hazeStruct.mie);
-		gpuSkyConstants.ozone				=(const float*)(p.ozone);
+		gpuSkyConstants.hazeMie				=(const float*)(p.physical.hazeStruct.haze*p.physical.hazeStruct.mie);
+		gpuSkyConstants.ozone				=(const float*)(p.physical.ozone);
 
-		gpuSkyConstants.sunIrradiance		=(const float*)p.sun_irradiance;
-		gpuSkyConstants.lightDir			=(const float*)p.dir_to_sun;
-		gpuSkyConstants.directionToMoon		=(const float*)p.dir_to_moon;
-		gpuSkyConstants.starlight			=(const float*)(p.starlight);
+		gpuSkyConstants.sunIrradiance		=(const float*)p.physical.sun_irradiance;
+		gpuSkyConstants.lightDir			=(const float*)p.physical.dir_to_sun;
+		gpuSkyConstants.directionToMoon		=(const float*)p.physical.dir_to_moon;
+		gpuSkyConstants.starlight			=(const float*)(p.physical.starlight);
 		
 		gpuSkyConstants.hazeEccentricity	=1.0;
 		gpuSkyConstants.mieRayleighRatio	=(const float*)(skyInterface->GetMieRayleighRatio());
@@ -162,8 +169,8 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 
 	int xy_size		=(int)p.altitudes_km.size()*p.numElevations;
 	
-	int start_step	=(p.start_texel*3)/p.numDistances;
-	int end_step	=((p.start_texel+p.num_texels)*3+p.numDistances-1)/p.numDistances;
+	int start_step	=(fadeTexIndex[cycled_index]*3)/p.numDistances;
+	int end_step	=((p.fill_up_to_texels)*3+p.numDistances-1)/p.numDistances;
 
 	int start_loss	=range(start_step			,0,xy_size);
 	int end_loss	=range(end_step				,0,xy_size);
@@ -232,7 +239,6 @@ void GpuSkyGenerator::Make2DLossAndInscatterTextures(
 	loss_texture->SetResource(NULL);
 	insc_texture->SetResource(NULL);
 	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
-	
 	SIMUL_PROFILE_END
 }
 

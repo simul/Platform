@@ -2,6 +2,8 @@
 #include "CompileShaderDX1x.h"
 #include "Simul/Base/RuntimeError.h"
 #include "Simul/Base/StringToWString.h"
+#include "Simul/Base/FileLoader.h"
+#include <vector>
 
 #define D3D10_SHADER_ENABLE_STRICTNESS              (1 << 11)
 #ifndef SAFE_RELEASE
@@ -14,15 +16,17 @@ namespace simul
 {
 	namespace dx11
 	{
-		extern std::string *shaderPathUtf8;
+		extern std::vector<std::string> shaderPathsUtf8;
 	}
 }
 
 using namespace simul::dx11;
 
-HRESULT CompileShaderFromFile( const char* szFileNameUtf8, const char* szEntryPoint, const char* szShaderModel, ID3DBlob** ppBlobOut )
+HRESULT CompileShaderFromFile( const char* filename_utf8, const char* szEntryPoint, const char* szShaderModel, ID3DBlob** ppBlobOut )
 {
-	std::string fn_utf8=*shaderPathUtf8+szFileNameUtf8;
+	std::string fn_utf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,shaderPathsUtf8);
+	if(!simul::base::FileLoader::GetFileLoader()->FileExists(fn_utf8.c_str()))
+		return NULL;
     HRESULT hr = S_OK;
 
     // open the file
@@ -48,13 +52,13 @@ HRESULT CompileShaderFromFile( const char* szFileNameUtf8, const char* szEntryPo
     CloseHandle( hFile );
 
     ID3DBlob* pErrorBlob;
-	int pos=fn_utf8.find_last_of("/");
-	int bpos=fn_utf8.find_last_of("\\");
+	int pos		=(int)fn_utf8.find_last_of("/");
+	int bpos	=(int)fn_utf8.find_last_of("\\");
 	if(pos<0||bpos>pos)
 		pos=bpos;
 	std::string path_utf8=fn_utf8.substr(0,pos);
 	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"");
-    hr = D3DCompile( pFileData, FileSize.LowPart, szFileNameUtf8, NULL
+    hr = D3DCompile( pFileData, FileSize.LowPart, filename_utf8, NULL
 		//, NULL
 		,&shaderIncludeHandler		//ID3DInclude *pInclude,
 		, szEntryPoint
@@ -66,7 +70,7 @@ HRESULT CompileShaderFromFile( const char* szFileNameUtf8, const char* szEntryPo
     {
         OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
         SAFE_RELEASE( pErrorBlob );
-        throw simul::base::RuntimeError(std::string("Failed to load: ")+(szFileNameUtf8));
+        throw simul::base::RuntimeError(std::string("Failed to load: ")+(filename_utf8));
     }
     SAFE_RELEASE( pErrorBlob );
 

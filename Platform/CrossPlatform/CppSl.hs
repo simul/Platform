@@ -1,7 +1,6 @@
 #ifndef CPPSL_HS
 #define CPPSL_HS
 #undef RADIAL_CLOUD_SHADOW
-//#define RADIAL_CLOUD_SHADOW
 // Definitions shared across C++, HLSL, and GLSL!
 
 #ifndef __cplusplus
@@ -155,6 +154,13 @@
 			this->y=y;
 			this->z=z;
 			this->w=w;
+		}
+		vec4(const float *v)
+		{
+			this->x=v[0];
+			this->y=v[1];
+			this->z=v[2];
+			this->w=v[3];
 		}
 		operator const float *()
 		{

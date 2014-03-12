@@ -11,7 +11,7 @@ SimulGLUnderwaterRenderer::~SimulGLUnderwaterRenderer()
 {
 }
 
-void SimulGLUnderwaterRenderer::Render(bool blend)
+void SimulGLUnderwaterRenderer::Render(bool /*blend*/)
 {
 	EnsureTexturesAreUpToDate();
 }
@@ -31,9 +31,4 @@ void SimulGLUnderwaterRenderer::EnsureTexturesAreUpToDate()
 
 void SimulGLUnderwaterRenderer::EnsureTextureCycle()
 {
-}
-
-bool SimulGLUnderwaterRenderer::IsYVertical() const
-{
-	return false;
 }

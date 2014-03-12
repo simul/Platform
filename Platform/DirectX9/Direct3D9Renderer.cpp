@@ -30,6 +30,7 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	,simulWeatherRenderer(NULL)
 	,simulHDRRenderer(NULL)
 	,simulTerrainRenderer(NULL)
+	,simulOpticsRenderer(NULL)
 	,ShowCloudCrossSections(false)
 	,Show2DCloudTextures(false)
 	,ShowLightVolume(false)
@@ -54,12 +55,9 @@ Direct3D9Renderer::Direct3D9Renderer(simul::clouds::Environment *env,int w,int h
 	hdrFramebuffer.SetDepthFormat(INTZ);//D3DFMT_D24X8);			//! This is one of only three formats that can be used as textures.
 	if(simulHDRRenderer&&simulWeatherRenderer)
 		simulHDRRenderer->SetAtmospherics(simulWeatherRenderer->GetAtmosphericsRenderer());
-	simulTerrainRenderer=new SimulTerrainRenderer(NULL);
+/*	simulTerrainRenderer=new SimulTerrainRenderer(NULL);
 	if(simulWeatherRenderer&&simulWeatherRenderer->GetSkyRenderer())
-		simulWeatherRenderer->GetSkyRenderer()->EnableMoon(true);
-	SetYVertical(false);
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->SetYVertical(false);
+		simulWeatherRenderer->GetSkyRenderer()->EnableMoon(true);*/
 	simulOpticsRenderer=new SimulOpticsRendererDX9(NULL);
 }
 
@@ -113,11 +111,12 @@ HRESULT Direct3D9Renderer::OnResetDevice(IDirect3DDevice9* pd3dDevice, const D3D
 		RestoreDeviceObjects(pd3dDevice);
 	return S_OK;
 }
+
 void Direct3D9Renderer::ReverseDepthChanged()
 {
 }
 
-HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
+void Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 {
 	hdrFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	RT::RestoreDeviceObjects(pd3dDevice);
@@ -162,15 +161,6 @@ HRESULT Direct3D9Renderer::RestoreDeviceObjects(IDirect3DDevice9* pd3dDevice)
 	std::cout<<std::setprecision(4)<<"RESTORE TIMINGS: weather="<<weather_restore_time
 		<<", hdr="<<hdr_restore_time<<", terrain="<<terrain_restore_time<<", optics="<<optics_restore_time<<std::endl;
 	device_reset=false;
-	return S_OK;
-}
-
-void Direct3D9Renderer::SetYVertical(bool )
-{
-	if(simulWeatherRenderer)
-		simulWeatherRenderer->SetYVertical(false);
-	if(simulTerrainRenderer)
-		simulTerrainRenderer->SetYVertical(false);
 }
 static float render_timing=0,update_timing=0,weather_timing=0,hdr_timing=0;
 void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
@@ -196,8 +186,25 @@ void Direct3D9Renderer::OnFrameMove(double fTime, float fTimeStep)
 	simul::math::FirstOrderDecay(update_timing,timer.TimeSum,1.f,fTimeStep);
 }
 
+void Direct3D9Renderer::EnsureCorrectBufferSizes(int view_id)
+{
+	// Must have a whole number of full-res pixels per low-res pixel.
+	int w=width,h=height;
+	if(simulWeatherRenderer)
+	{
+		simulWeatherRenderer->SetScreenSize(view_id,width,height);
+		int s					=simulWeatherRenderer->GetDownscale();
+		w						=(w +s-1)/s;
+		h						=(h+s-1)/s;
+	}
+	if(simulHDRRenderer)
+		simulHDRRenderer->SetBufferSize(width,height);
+	hdrFramebuffer	.SetWidthAndHeight(width,height);
+}
+
 void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime, float fTimeStep)
 {
+	EnsureCorrectBufferSizes(0);
 	static float exposure=1.f;
 	static int viewport_id=0;
 	if(simulWeatherRenderer)
@@ -209,7 +216,7 @@ void Direct3D9Renderer::OnFrameRender(IDirect3DDevice9* pd3dDevice, double fTime
 	if(camera)
 	{
 		view=camera->MakeViewMatrix();
-		proj=camera->MakeProjectionMatrix(1.f,250000.f,aspect,false);
+		proj=camera->MakeProjectionMatrix(1.f,250000.f,aspect);
 	}
 	D3DXMatrixIdentity(&world);
     if(!SUCCEEDED(pd3dDevice->BeginScene()))
@@ -239,7 +246,7 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 	{
 		hdrFramebuffer.Activate(NULL);
 		static float depth_start=1.f;
-		pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF00FF00,depth_start,0L);
+		pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0xFF000000,depth_start,0L);
 	}
 	else
 	{
@@ -260,7 +267,11 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 	{
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 		simulWeatherRenderer->RenderSkyAsOverlay(pd3dDevice,viewport_id,(const float*)view,(const float*)proj,false,exposure,UseSkyBuffer,depth_texture,NULL,simul::sky::float4(0,0,1.f,1.f),true);
+<<<<<<< HEAD
 		simulWeatherRenderer->DoOcclusionTests(pd3dDevice);
+=======
+	/*	simulWeatherRenderer->DoOcclusionTests();
+>>>>>>> bd36ec2d660669578f92e3ee5e6fd341246f9ff0
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir(0,0,1.f,0),light(0,0,0,0);
@@ -279,7 +290,7 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 					exposure*(1.f-simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion())
 					,dir,light);
 			}
-		}
+		}*/
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 		simulWeatherRenderer->RenderLightning(NULL,viewport_id);
 		simulWeatherRenderer->RenderPrecipitation(NULL);
@@ -357,6 +368,11 @@ const char *Direct3D9Renderer::GetDebugText() const
 	if(simulWeatherRenderer)
 		sprintf_s(debug_text,256,("DirectX 9\n%s\nFramerate %3.3g Render time %3.3g weather %3.3g hdr %3.3g\nUpdate time %3.3g"),weather_text.c_str(),framerate,render_timing,weather_timing,hdr_timing,update_timing);
 	return debug_text;
+}
+#include "SaveTexture.h"
+void Direct3D9Renderer::SaveScreenshot(const char *filename_utf8)
+{
+	SaveTexture((LPDIRECT3DTEXTURE9)(hdrFramebuffer.GetColorTex()),filename_utf8);
 }
 
 void Direct3D9Renderer::RecompileShaders()

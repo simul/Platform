@@ -43,6 +43,7 @@ SIMUL_CONSTANT_BUFFER(CloudPerViewConstants,13)
 	uniform uint layerIndex;
 	uniform mat4 invViewProj;
 	uniform mat4 shadowMatrix;		// Transform from texcoords xy to world viewplane XYZ
+	uniform mat4 moistureToWorldSpaceMatrix;
 	uniform mat4 noiseMatrix;
 	uniform vec3 depthToLinFadeDistParams;
 	uniform float exposure;
@@ -101,13 +102,16 @@ SIMUL_CONSTANT_BUFFER_END
 //! information on how to project it.
 uniform_buffer CloudShadowStruct 
 {
-	void *texture;			// texture, or SRV for DX11
-	void *godraysTexture;	// texture, or SRV for DX11, represents accumulated illumination at a given angle and distance.
-	mat4 shadowMatrix;
+	void *texture;						// texture, or SRV for DX11
+	void *godraysTexture;				// texture, or SRV for DX11, represents accumulated illumination at a given angle and distance.
+	void *moistureTexture;				// Texture, or SRV for DX11, represents optical thickness of moisture at a given horizontal angle and distance.
+	mat4 shadowMatrix;					// Transform a position from shadow space to world space
+	mat4 worldToMoistureSpaceMatrix;	// Transform a position from world space to moisture space.
 	mat4 simpleOffsetMatrix;
 	float extentZMetres;
 	float startZMetres;
 	float shadowRange;
+	float rainbowIntensity;
 };
 #endif
 #endif

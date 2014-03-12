@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -65,7 +65,7 @@ void SimulHDRRendererDX1x::SetBufferSize(int w,int h)
 void SimulHDRRendererDX1x::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	glow_fb.RestoreDeviceObjects(m_pd3dDevice);
 
 	glowTexture.release();
@@ -184,7 +184,7 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
 	hdrConstants.exposure=Exposure;
 	hdrConstants.Apply(pContext);
 	simul::dx11::setParameter(m_pTonemapEffect,"offset",offsetX,0.f);
-	ID3D1xEffectTechnique *tech=exposureGammaTechnique;
+	ID3DX11EffectTechnique *tech=exposureGammaTechnique;
 	if(Glow)
 	{
 		RenderGlowTexture(context,texture_srv);

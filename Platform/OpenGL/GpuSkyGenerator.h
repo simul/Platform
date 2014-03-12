@@ -1,6 +1,7 @@
 #pragma once
 #include "Simul/Sky/BaseGpuSkyGenerator.h"
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
+#include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 
 namespace simul
 {
@@ -16,7 +17,7 @@ namespace simul
 			void RecompileShaders();
 			//! Return true if the derived class can make sky tables using the GPU.
 			bool CanPerformGPUGeneration() const;
-			void Make2DLossAndInscatterTextures(int cycled_index,
+			void MakeLossAndInscatterTextures(int cycled_index,
 				simul::sky::AtmosphericScatteringInterface *skyInterface
 				,const simul::sky::GpuSkyParameters &gpuSkyParameters
 				,const simul::sky::GpuSkyAtmosphereParameters &gpuSkyAtmosphereParameters
@@ -28,8 +29,7 @@ namespace simul
 			GLuint				loss_program;
 			GLuint				insc_program;
 			GLuint				skyl_program;
-			GLuint				gpuSkyConstantsUBO;
-			GLint				gpuSkyConstantsBindingIndex;
+			simul::opengl::ConstantBuffer<GpuSkyConstants> gpuSkyConstants;
 			simul::sky::float4	*loss_cache;
 			simul::sky::float4	*insc_cache;
 			simul::sky::float4	*skyl_cache;

@@ -1,5 +1,5 @@
 #define NOMINMAX
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -223,7 +223,7 @@ void SimulTerrainRenderer::GPUGenerateHeightmap()
 		D3DXHANDLE remapHeightsTexture=pRenderHeightmapEffect->GetParameterByName(NULL,"remapHeightsTexture");
 
 		LPDIRECT3DTEXTURE9 remap_heights_texture=NULL;
-		int remap_size=filter->remap_heights.size();
+		int remap_size=(int)filter->remap_heights.size();
 		if(remap_size)
 		{
 			if(FAILED(hr=D3DXCreateTexture(m_pd3dDevice,remap_size,1,1,D3DUSAGE_AUTOGENMIPMAP,D3DFMT_R32F,D3DPOOL_MANAGED,&remap_heights_texture)))
@@ -940,9 +940,9 @@ bool SimulTerrainRenderer::InternalRender(bool depth_only)
 			(cloud_textures&&p==LIGHTING_PASS_WITH_SHADOWS)||
 			(!cloud_textures&&p==LIGHTING_PASS)||
 			(show_wireframe&&p==WIREFRAME_PASS))
-		for(size_t i=0;i<tiles.size();i++)
+		for(int i=0;i<(int)tiles.size();i++)
 		{
-			for(size_t j=0;j<tiles.size();j++)
+			for(int j=0;j<(int)tiles.size();j++)
 			{
 				float float_mip=GetMip((int)i,(int)j);
 					if(only&&(i!=0||j!=0))

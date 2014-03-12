@@ -1,5 +1,5 @@
 #define NOMINMAX
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -15,8 +15,8 @@
 #include <dxerr.h>
 #include <string>
 typedef std::basic_string<TCHAR> tstring;
-static tstring shader_path=TEXT("");
-static std::string texture_path_utf8;
+std::vector<std::string> shaderPathsUtf8;
+std::vector<std::string> texturePathsUtf8;
 static DWORD default_effect_flags=D3DXSHADER_SKIPVALIDATION;//D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY;
 #include <vector>
 #include <iostream>
@@ -25,7 +25,8 @@ static DWORD default_effect_flags=D3DXSHADER_SKIPVALIDATION;//D3DXSHADER_ENABLE_
 #include "Resources.h"
 #include "Simul/Geometry/Orientation.h"
 #include "Simul/Base/StringToWString.h"
-
+#include "Simul/Base/DefaultFileLoader.h"
+using namespace simul;
 unsigned (*GetResourceId)(const char *filename)=NULL;
 LPDIRECT3DDEVICE9				last_d3dDevice			=NULL;
 LPDIRECT3DVERTEXDECLARATION9	m_pHudVertexDecl		=NULL;
@@ -49,33 +50,18 @@ struct d3dMacro
 };
 static ShaderModel shaderModel=NO_SHADERMODEL;
 static ShaderModel maxShaderModel=USE_SHADER_3;
-static bool shader_path_set=false;
-static bool texture_path_set=false;
 ID3DXFont *m_pFont=NULL;
 namespace simul
 {
 	namespace dx9
 	{
-		void SetShaderPath(const char *path)
+		void PushShaderPath(const char *path_utf8)
 		{
-		#ifdef UNICODE
-			// tstring and TEXT cater for the confusion between wide and regular strings.
-			shader_path.resize(strlen(path),L' '); // Make room for characters
-			// Copy string to wstring.
-			std::copy(path,path+strlen(path),shader_path.begin());
-
-			shader_path+=L"/";
-		#else
-			shader_path=path;
-			shader_path+="/";
-		#endif
-			shader_path_set=true;
+			shaderPathsUtf8.push_back(std::string(path_utf8)+"/");
 		}
-		void SetTexturePath(const char *path_utf8)
+		void PushTexturePath(const char *path_utf8)
 		{
-			texture_path_utf8=path_utf8;
-			texture_path_utf8+="/";
-			texture_path_set=true;
+			texturePathsUtf8.push_back(std::string(path_utf8)+"/");
 		}
 	}
 }
@@ -147,6 +133,8 @@ static void CalcShaderModel(LPDIRECT3DDEVICE9 m_pd3dDevice)
 
 	m_pd3dDevice->GetDeviceCaps(&pCaps);
 	const char *shader_str=GetPixelShaderString(pCaps);
+	if(!shader_str)
+		return;
 	std::cout<<"Pixel shader version ";
 	std::cout<<shader_str;
 	std::cout<<std::endl;
@@ -233,11 +221,12 @@ HRESULT CreateDX9Texture(LPDIRECT3DDEVICE9 m_pd3dDevice,LPDIRECT3DTEXTURE9 &text
 {
 	if(BUNDLE_SHADERS)
 		return CreateDX9Texture(m_pd3dDevice,texture,(*GetResourceId)(filename_utf8));
-	if(!texture_path_set)
+	std::string fn_utf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,texturePathsUtf8);
+	if(!simul::base::FileLoader::GetFileLoader()->FileExists(fn_utf8.c_str()))
 	{
-		std::cerr<<"CreateDX9Texture: Texture path not set, use SetTexturePath() with the relative path to the image files."<<std::endl;
+		std::cerr<<"File not found: "<<filename_utf8<<std::endl;
+		return S_FALSE;
 	}
-	std::string fn_utf8=texture_path_utf8+filename_utf8;
 
 	std::wstring wstr	=simul::base::Utf8ToWString(fn_utf8.c_str());
 	HRESULT hr=D3DXCreateTextureFromFileExW(	m_pd3dDevice,
@@ -277,20 +266,15 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 	std::cout<<"CreateDX9Effect "<<filename<<std::endl;
 	HRESULT hr;
     LPD3DXBUFFER errors=0;
+	std::string full_path_utf8=base::FileLoader::GetFileLoader()->FindFileInPathStack(filename,shaderPathsUtf8);
 
-	if(!shader_path_set)
-	{
-		std::cerr<<"CreateDX9Effect.cpp: Shader path not set, use SetShaderPath() with the relative path to the .fx or .hlsl files."<<std::endl;
-	}
 #ifdef UNICODE
 	// tstring and TEXT cater for the confusion between wide and regular strings.
-	std::wstring wfilename(strlen(filename),L' '); // Make room for characters
+	std::wstring wfilename(full_path_utf8.length(),L' '); // Make room for characters
 	// Copy string to wstring.
-	std::copy(filename,filename+strlen(filename),wfilename.begin());
-	tstring fn=shader_path+wfilename;
+	std::copy(full_path_utf8.begin(),full_path_utf8.end(),wfilename.begin());
 #else
-	tstring fn=filename;
-	fn=shader_path+fn;
+	std::wstring wfilename=filename;
 #endif
 	D3DXMACRO *macros=MakeMacroList(defines);
 
@@ -298,9 +282,9 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 	hr=S_FALSE;
 	while(hr!=S_OK)
 	{
-		hr=D3DXCreateEffectFromFile(
+		hr=D3DXCreateEffectFromFileW(
 				m_pd3dDevice,
-				fn.c_str(),
+				wfilename.c_str(),
 				macros,
 				NULL,
 				default_effect_flags,
@@ -315,21 +299,7 @@ HRESULT CreateDX9Effect(LPDIRECT3DDEVICE9 m_pd3dDevice,LPD3DXEFFECT &effect,cons
 			else
 				std::cerr<<"Warnings building "<<filename<<std::endl;
 			err=static_cast<const char*>(errors->GetBufferPointer());
-			std::cerr<<err<<std::endl;
-		}
-		if(FAILED(hr))
-		{
-			const TCHAR *err=DXGetErrorString(hr);
-			std::cerr<<err<<std::endl;
-			if(GetResourceId)
-				hr=CreateDX9Effect(m_pd3dDevice,effect,GetResourceId(filename),defines);
-			if(FAILED(hr))
-			{
-	#ifdef DXTRACE_ERR
-				hr=DXTRACE_ERR(_T("CreateDX9Effect"), hr );
-	#endif
-				DebugBreak();
-			}
+			std::cerr<<err.c_str()<<std::endl;
 		}
 	}
 	delete [] macros;

@@ -72,8 +72,8 @@
 	};
 	struct posTexVertexOutput
 	{
-		float4 hPosition	: SV_POSITION;
-		float2 texCoords	: TEXCOORD0;		
+		vec4 hPosition	: SV_POSITION;
+		vec2 texCoords	: TEXCOORD0;		
 	};
 	posTexVertexOutput VS_SimpleFullscreen(idOnly IN)
 	{

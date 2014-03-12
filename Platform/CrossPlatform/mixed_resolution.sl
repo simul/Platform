@@ -46,7 +46,6 @@ void DownscaleDepthFarNear(Texture2DMS<float4> sourceMSDepthTexture,RWTexture2D<
 			{
 				uint2 hires_pos		=pos2+uint2(i,j);
 				float d				=sourceMSDepthTexture.Load(hires_pos,k).x;
-				nearest_depth=d;
 #ifdef REVERSE_DEPTH
 				if(d>nearest_depth)
 					nearest_depth	=d;
@@ -64,7 +63,7 @@ void DownscaleDepthFarNear(Texture2DMS<float4> sourceMSDepthTexture,RWTexture2D<
 	float n		=depthToLinearDistance(nearest_depth,depthToLinFadeDistParams);
 	float f		=depthToLinearDistance(farthest_depth,depthToLinFadeDistParams);
 	float edge=f-n;
-	edge		=1;//step(0.002,edge);
+	edge		=step(0.002,edge);
 	target2DTexture[pos.xy]	=vec4(farthest_depth,nearest_depth,edge,0.0);
 }
 

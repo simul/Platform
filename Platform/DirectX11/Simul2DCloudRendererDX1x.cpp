@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -215,7 +215,7 @@ void Simul2DCloudRendererDX11::InvalidateDeviceObjects()
 
 void Simul2DCloudRendererDX11::EnsureCorrectTextureSizes()
 {
-	simul::clouds::CloudKeyframer::int3 i=cloudKeyframer->GetTextureSizes();
+	simul::sky::int3 i=cloudKeyframer->GetTextureSizes();
 	int width_x=i.x;
 	int length_y=i.y;
 	coverage_fb.SetWidthAndHeight(width_x,length_y);
@@ -288,13 +288,13 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	// Set both MS and regular - we'll only use one of them:
 	simul::dx11::setTexture(effect,"depthTexture",depthTexture_SRV);
 	simul::dx11::setTexture(effect,"depthTextureMS",depthTexture_SRV);
-	
 	simul::dx11::setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
 	simul::dx11::setTexture(effect,"lightTableTexture",lightTableTexture_SRV);
 	
 	static float ff=10000.f; 
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
-	Set2DCloudConstants(cloud2DConstants,view,proj,exposure,viewportTextureRegionXYWH);
+	float ir_integration_factors[]={0,0,0,0};
+	Set2DCloudConstants(cloud2DConstants,view,proj,exposure,viewportTextureRegionXYWH,ir_integration_factors);
 	cloud2DConstants.Apply(pContext);
 
 	ID3D11InputLayout* previousInputLayout;

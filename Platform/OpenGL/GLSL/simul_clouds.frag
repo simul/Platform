@@ -1,5 +1,5 @@
 // simul_clouds.frag - a GLSL fragment shader
-// Copyright 2008-2013 Simul Software Ltd
+// Copyright 2008-2014 Simul Software Ltd
 #version 140
 
 #include "../../CrossPlatform/simul_inscatter_fns.sl"

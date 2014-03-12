@@ -174,16 +174,16 @@ void OpenGLRenderer::paintGL()
 	if(simulWeatherRenderer)
 	{
 		simulWeatherRenderer->PreRenderUpdate(context);
-		GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
+		/*GLuint fogMode[]={GL_EXP,GL_EXP2,GL_LINEAR};	// Storage For Three Types Of Fog
 		GLuint fogfilter=0;								// Which Fog To Use
 		simul::sky::float4 fogColor=simulWeatherRenderer->GetHorizonColour(0.001f*cam->GetPosition()[2]);
 		glFogi(GL_FOG_MODE,fogMode[fogfilter]);			// Fog Mode
 		glFogfv(GL_FOG_COLOR,fogColor);					// Set Fog Color
 		glFogf(GL_FOG_DENSITY,0.35f);					// How Dense Will The Fog Be
 		glFogf(GL_FOG_START,1.0f);						// Fog Start Depth
-		glFogf(GL_FOG_END,5.0f);						// Fog End Depth
+		glFogf(GL_FOG_END,5.0f);						// Fog End Depth*/
 		glDisable(GL_FOG);
-GL_ERROR_CHECK
+		GL_ERROR_CHECK
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 		{
 			simulHDRRenderer->StartRender(context);
@@ -237,7 +237,7 @@ GL_ERROR_CHECK
 			light=simulWeatherRenderer->GetEnvironment()->skyKeyframer->GetLocalIrradiance(cam_pos.z/1000.f);
 			float occ=simulWeatherRenderer->GetSkyRenderer()->GetSunOcclusion();
 			float exp=(simulHDRRenderer?simulHDRRenderer->GetExposure():1.f)*(1.f-occ);
-			simulOpticsRenderer->RenderFlare(context,exp,dir,light);
+			simulOpticsRenderer->RenderFlare(context,exp,depthFramebuffer.GetDepthTex(),view,proj,dir,light);
 		}
 		if(simulHDRRenderer&&UseHdrPostprocessor)
 			simulHDRRenderer->FinishRender(context);
@@ -341,6 +341,12 @@ void OpenGLRenderer::RecompileShaders()
 	SAFE_DELETE_PROGRAM(simple_program);
 	simple_program=MakeProgram("simple.vert",NULL,"simple.frag");
 }
+
+void OpenGLRenderer::SaveScreenshot(const char *filename_utf8)
+{
+	SaveGLImage(filename_utf8,(GLuint)(simulHDRRenderer->framebuffer.GetColorTex()));
+}
+
 
 void OpenGLRenderer::ReverseDepthChanged()
 {

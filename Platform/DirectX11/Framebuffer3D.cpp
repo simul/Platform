@@ -22,7 +22,7 @@ Framebuffer3D::~Framebuffer3D()
 void Framebuffer3D::RestoreDeviceObjects(void *dev)
 {
 	HRESULT hr=S_OK;
-	m_pd3dDevice=(ID3D1xDevice*)dev;
+	m_pd3dDevice=(ID3D11Device*)dev;
 	if(!m_pd3dDevice)
 		return;
 	CreateBuffers();

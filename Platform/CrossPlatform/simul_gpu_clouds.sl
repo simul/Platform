@@ -5,13 +5,13 @@ uniform_buffer GpuCloudConstants SIMUL_BUFFER_REGISTER(8)
 {
 	uniform mat4 transformMatrix;
 	uniform vec4 yRange;
-	uniform uint3 threadOffset;
+	uniform vec3 noiseScale;
 	uniform float noiseDimsZ;
 	uniform vec2 extinctions;
 	uniform float stepLength,ttt;
 	uniform uint3 gaussianOffset;
 	uniform int octaves;
-	uniform vec3 noiseScale;
+	uniform uint3 threadOffset;
 	uniform float zPosition;
 
 	uniform float time;
@@ -101,7 +101,7 @@ float GpuCloudMask(vec2 texCoords,vec2 maskCentre,float maskRadius,float maskFea
 }
 
 #ifndef GLSL
-void CS_CloudDensity(RWTexture3D<float4> targetTexture,uint3 sub_pos)
+void CS_CloudDensity(RWTexture3D<float4> targetTexture,Texture3D volumeNoiseTexture,Texture2D maskTexture,uint3 sub_pos)
 {
 	uint3 dims;
 	targetTexture.GetDimensions(dims.x,dims.y,dims.z);

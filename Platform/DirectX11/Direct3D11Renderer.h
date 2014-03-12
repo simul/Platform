@@ -9,10 +9,12 @@
 #include "Simul/Graph/Meta/Group.h"
 //#include "Simul/Scene/BaseSceneRenderer.h"
 #include "Simul/Platform/DirectX11/Export.h"
+#include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/CrossPlatform/mixed_resolution_constants.sl"
+#include "Simul/Platform/CrossPlatform/light_probe_constants.sl"
 #pragma warning(push)
 #pragma warning(disable:4251)
 
@@ -100,8 +102,12 @@ namespace simul
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
 				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")
 				META_ValueProperty(int,Antialiasing				,"How many antialiasing samples to use.")
+				META_ValueProperty(int,SphericalHarmonicsBands	,"How many bands to use for spherical harmonics.")
 			META_EndProperties
-			bool IsEnabled()const{return enabled;}
+			bool IsEnabled()const
+			{
+				return enabled;
+			}
 			class SimulWeatherRendererDX11 *GetSimulWeatherRenderer()
 			{
 				return simulWeatherRenderer;
@@ -137,6 +143,7 @@ namespace simul
 			void SetCamera(int view_id,const simul::camera::CameraOutputInterface *c);
 			void SaveScreenshot(const char *filename_utf8);
 		protected:
+			void RenderDepthBuffers(void *context,int view_id,int x0,int y0,int w,int h);
 			// Encompasses drawing the actual scene and putting the hdr buffer to screen.
 			void RenderScene(int view_id,ID3D11DeviceContext* pd3dImmediateContext,clouds::BaseWeatherRenderer *w,D3DXMATRIX v,D3DXMATRIX proj);
 			// Different kinds of view for Render() to call:
@@ -153,6 +160,7 @@ namespace simul
 			std::string									screenshotFilenameUtf8;
 			ID3D11Device								*m_pd3dDevice;
 			ID3DX11Effect								*mixedResolutionEffect;
+			ID3DX11Effect								*lightProbesEffect;
 			SimulOpticsRendererDX1x						*simulOpticsRenderer;
 			SimulWeatherRendererDX11					*simulWeatherRenderer;
 			SimulHDRRendererDX1x						*simulHDRRenderer;
@@ -162,6 +170,8 @@ namespace simul
 			typedef std::map<int,View*>					ViewMap;
 			ViewMap										views;
 			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
+			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
+			ConstantBuffer<LightProbeConstants>			lightProbeConstants;
 			simul::base::MemoryInterface				*memoryInterface;
 			ConstantBuffer<MixedResolutionConstants>	mixedResolutionConstants;
 		};

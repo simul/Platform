@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -107,9 +107,9 @@ namespace simul
 												,const void* mainDepthTexture
 												,const void* lowResDepthTexture
 												,const simul::sky::float4& viewportRegionXYWH);
-			void RenderFramebufferDepth(void *context,int view_id,int w,int h);
-			void RenderCompositingTextures(void *context,int view_id,int w,int h);
-			void RenderPrecipitation(void *context,void *depth_tex,simul::sky::float4 depthViewportXYWH);
+			void RenderFramebufferDepth(void *context,int view_id,int x0,int y0,int w,int h);
+			void RenderCompositingTextures(void *context,int view_id,int x0,int y0,int w,int h);
+			void RenderPrecipitation(void *context,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
 			void RenderLightning(void *context,int viewport_id);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.
@@ -131,7 +131,7 @@ namespace simul
 			simul::math::Matrix4x4 view;
 			simul::math::Matrix4x4 proj;
 			IDXGISwapChain *pSwapChain;
-			ID3D1xDevice*							m_pd3dDevice;
+			ID3D11Device*							m_pd3dDevice;
 			
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3DX11Effect							*m_pTonemapEffect;
@@ -147,7 +147,7 @@ namespace simul
 			class PrecipitationRenderer	*simulPrecipitationRenderer;
 			class SimulAtmosphericsRendererDX1x		*simulAtmosphericsRenderer;
 			class Simul2DCloudRendererDX11			*simul2DCloudRenderer;
-			class SimulLightningRendererDX11		*simulLightningRenderer;
+			class LightningRenderer		*simulLightningRenderer;
 			typedef std::map<int,simul::dx11::TwoResFramebuffer*> FramebufferMapDx11;
 			// Map from view_id to framebuffer.
 			TwoResFramebuffer *						GetFramebuffer(int view_id);

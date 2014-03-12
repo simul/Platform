@@ -217,7 +217,7 @@ vertexOutput VS_Main(vertexInput IN)
 	OUT.layerFade=IN.layerFade;
 // Note position.xzy is used if Y is vertical!
 	float3 texCoordLightning=(wPos.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
-	texCoordLightning.z=0.5f;
+	texCoordLightning.z		=0.5f;
 	OUT.texCoordLightning=texCoordLightning;
 	float3 view				=normalize(OUT.view.xyz);
 	float sine	=view.z;
@@ -518,11 +518,12 @@ technique cloud_mask
 		PixelShader  = compile ps_3_0 PS_Mask();
     }
 }
+
 technique simul_clouds
 {
     pass p0 
     {
-		zenable = true;
+		zenable = false;
 		zfunc = lessequal;
 		DepthBias =0;
 		SlopeScaleDepthBias =0;
@@ -544,6 +545,7 @@ technique simul_clouds
 		PixelShader  = compile ps_3_0 PS_Clouds();
     }
 }
+
 technique cross_section_xz
 {
     pass p0 

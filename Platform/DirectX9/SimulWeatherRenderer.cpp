@@ -1,5 +1,5 @@
 #define NOMINMAX
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -49,9 +49,10 @@ TwoResFramebuffer::TwoResFramebuffer()
 
 void TwoResFramebuffer::RestoreDeviceObjects(void *dev)
 {
-	if(!dev)
-		return;
+	InvalidateDeviceObjects();
 	m_pd3dDevice=(LPDIRECT3DDEVICE9)dev;
+	if(!m_pd3dDevice||!Width||!Height||!Downscale)
+		return;
 	D3DFORMAT INTZ=((D3DFORMAT) MAKEFOURCC('I','N','T','Z'));
 	lowResFarFramebuffer	.SetDepthFormat(INTZ);
 	lowResNearFramebuffer	.SetDepthFormat(0);
@@ -74,10 +75,17 @@ void TwoResFramebuffer::RestoreDeviceObjects(void *dev)
 
 void TwoResFramebuffer::InvalidateDeviceObjects()
 {
+	lowResFarFramebuffer	.InvalidateDeviceObjects();
+	lowResNearFramebuffer	.InvalidateDeviceObjects();
+	hiResFarFramebuffer		.InvalidateDeviceObjects();
+	hiResNearFramebuffer	.InvalidateDeviceObjects();
+	m_pd3dDevice=NULL;
 }
 
 void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
 {
+	if(!m_pd3dDevice)
+		return;
 	if(Width!=w||Height!=h||Downscale!=downscale)
 	{
 		Width=w;
@@ -91,7 +99,7 @@ void TwoResFramebuffer::SetDimensions(int w,int h,int downscale)
 SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 										   simul::base::MemoryInterface *mem,
 											bool usebuffer,int width,
-											int height,bool sky,bool rain)
+											int height,bool ,bool rain)
 	:BaseWeatherRenderer(env,mem)
 	,m_pd3dDevice(NULL)
 	,m_pBufferToScreenEffect(NULL)
@@ -108,17 +116,17 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	,show_rain(rain)
 {
 	simul::sky::SkyKeyframer *sk=env->skyKeyframer;
-	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer;
 	simul::clouds::CloudKeyframer *ck3d=env->cloudKeyframer;
 	SetScreenSize(0,width,height);
 	
 		simulSkyRenderer=new SimulSkyRenderer(sk);
 		baseSkyRenderer=simulSkyRenderer;
-#if 0
 	{
 		simulCloudRenderer=new SimulCloudRenderer(ck3d,mem);
 		baseCloudRenderer=simulCloudRenderer;
 	}
+#if 0
+	simul::clouds::CloudKeyframer *ck2d=env->cloud2DKeyframer;
 	/*
 	{
 		simulLightningRenderer=new SimulLightningRenderer(ck3d,sk);
@@ -133,9 +141,9 @@ SimulWeatherRenderer::SimulWeatherRenderer(	simul::clouds::Environment *env,
 	}
 	if(rain)
 		simulPrecipitationRenderer=new SimulPrecipitationRenderer();*/
+#endif
 	simulAtmosphericsRenderer=new SimulAtmosphericsRenderer(mem);
 	baseAtmosphericsRenderer=simulAtmosphericsRenderer;
-#endif
 	framebuffers[0]=new TwoResFramebuffer();
 	ConnectInterfaces();
 }
@@ -171,10 +179,12 @@ void SimulWeatherRenderer::ConnectInterfaces()
 		simulAtmosphericsRenderer->SetSkyInterface(simulSkyRenderer->GetSkyKeyframer());
 }
 */
-void SimulWeatherRenderer::SetScreenSize(int view_id,int w,int h)
+void SimulWeatherRenderer::SetScreenSize(int /*view_id*/,int w,int h)
 {
-	BufferWidth=w/Downscale;
-	BufferHeight=h/Downscale;
+	for(FramebufferMap::iterator i=framebuffers.begin();i!=framebuffers.end();i++)
+	{
+		i->second->SetDimensions(w,h,Downscale);
+	}
 }
 
 
@@ -212,8 +222,7 @@ bool SimulWeatherRenderer::Restore3DCloudObjects()
 		}
 		if(simulPrecipitationRenderer)
 			simulPrecipitationRenderer->RestoreDeviceObjects(m_pd3dDevice);
-		if(simulLightningRenderer)
-			simulLightningRenderer->RestoreDeviceObjects(m_pd3dDevice);
+		
 	}
 	return (hr==S_OK);
 }
@@ -267,8 +276,6 @@ void SimulWeatherRenderer::InvalidateDeviceObjects()
 		simulPrecipitationRenderer->InvalidateDeviceObjects();
 	if(simulAtmosphericsRenderer)
 		simulAtmosphericsRenderer->InvalidateDeviceObjects();
-	if(simulLightningRenderer)
-		simulLightningRenderer->InvalidateDeviceObjects();
 	if(m_pBufferToScreenEffect)
         hr=m_pBufferToScreenEffect->OnLostDevice();
 	SAFE_RELEASE(m_pBufferToScreenEffect);
@@ -296,8 +303,7 @@ bool SimulWeatherRenderer::CreateBuffers()
 	HRESULT hr=S_OK;
 	for(FramebufferMap::iterator i=framebuffers.begin();i!=framebuffers.end();i++)
 	{
-		i->second->SetDimensions(BufferWidth,BufferHeight,Downscale);
-	
+		//i->second->SetDimensions(ScreenWidth,BufferHeight,Downscale);
 		i->second->RestoreDeviceObjects(m_pd3dDevice);
 	}
 	return (hr==S_OK);
@@ -317,19 +323,18 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context
 												)
 {
 	SIMUL_COMBINED_PROFILE_START(context,"RenderSkyAsOverlay")
-	BaseWeatherRenderer::RenderSkyAsOverlay(context,
-											view_id,
-											viewmat
+	BaseWeatherRenderer::RenderSkyAsOverlay(context
+											,view_id
+											,viewmat
 											,projmat
-											,exposure,
-											buffered,
-											is_cubemap,
-											mainDepthTexture,
-											lowResDepthTexture,
-											depthViewportXYWH,
-											doFinalCloudBufferToScreenComposite
-											);
-	if(buffered&&doFinalCloudBufferToScreenComposite)
+											,is_cubemap
+											,exposure
+											,buffered
+											,mainDepthTexture
+											,lowResDepthTexture
+											,depthViewportXYWH
+											,doFinalCloudBufferToScreenComposite );
+	if(buffered&&doFinalCloudBufferToScreenComposite&&m_pBufferToScreenEffect)
 	{
 		clouds::TwoResFramebuffer *fb=GetFramebuffer(view_id);
 		m_pBufferToScreenEffect->SetTexture(bufferTexture,(LPDIRECT3DBASETEXTURE9)fb->GetLowResFarFramebuffer()->GetColorTex());
@@ -349,10 +354,8 @@ void SimulWeatherRenderer::RenderSkyAsOverlay(void *context
 }
 
 
-void SimulWeatherRenderer::RenderLightning(void *context,int view_id)
+void SimulWeatherRenderer::RenderLightning(void *context,int /*view_id*/)
 {
-	if(simulCloudRenderer&&simulLightningRenderer&&simulCloudRenderer->GetCloudKeyframer()->GetVisible())
-		return simulLightningRenderer->Render(context);
 }
 
 void SimulWeatherRenderer::RenderPrecipitation(void *context)
@@ -443,7 +446,7 @@ void SimulWeatherRenderer::PreRenderUpdate(void *context,float dt)
 			D3DXMATRIX view;
 			m_pd3dDevice->GetTransform(D3DTS_VIEW,&view);
 		#endif
-			GetCameraPosVector(view,simulCloudRenderer->IsYVertical(),cam_pos);
+			GetCameraPosVector(view,false,cam_pos);
 			simulPrecipitationRenderer->SetIntensity(environment->cloudKeyframer->GetPrecipitationIntensity(cam_pos));
 		}
 		else

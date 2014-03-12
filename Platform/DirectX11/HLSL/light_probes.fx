@@ -56,7 +56,7 @@ vec4 PS_IrradianceMap(posTexVertexOutput IN) : SV_TARGET
 	{ 
 		float w=WindowFunction(float(l)/float(numSHBands));
 		for(int m=-l;m<=l;m++)
-			result+=SH(l,m,theta,phi)*basisBuffer[n++]*w;
+			result+=SH(l,m,theta,phi)*w*basisBuffer[n++];
 		//*A[l]/3.1415926
 	} 
 	return max(result,vec4(0,0,0,0));

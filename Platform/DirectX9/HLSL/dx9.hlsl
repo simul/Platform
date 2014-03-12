@@ -2,6 +2,7 @@
 #define DX9_HLSL
 #define DX9
 #include "../../CrossPlatform/CppSl.hs"
+
 #ifndef __cplusplus
 	#define SIMUL_TEXTURE_REGISTER(tex_num)
 	#define SIMUL_SAMPLER_REGISTER(samp_num)
@@ -15,7 +16,6 @@
 	#define SIMUL_TARGET_OUTPUT : COLOR
 	#define SIMUL_DEPTH_OUTPUT
 #endif
-
 	#define vec2 float2
 	#define vec3 float3
 	#define vec4 float4

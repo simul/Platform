@@ -7,6 +7,7 @@ cbuffer FontConstants
 {
 	vec4	rect;
 	vec4	texc;
+	vec4	colour;
 };
 
 posTexVertexOutput FontVertexShader(idOnly IN)
@@ -18,9 +19,10 @@ posTexVertexOutput FontVertexShader(idOnly IN)
 
 vec4 FontPixelShader(posTexVertexOutput input) : SV_TARGET
 {
-	vec4 colour	=texture_nearest_lod(fontTexture,input.texCoords,0);
-	colour.a	=colour.r;
-    return colour;
+	vec4 result	=texture_nearest_lod(fontTexture,input.texCoords,0);
+	result.a	=result.r;
+	result		*=colour;
+    return result;
 }
 
 technique11 font

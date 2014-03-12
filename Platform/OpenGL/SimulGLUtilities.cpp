@@ -34,6 +34,47 @@ int Utilities::screen_width=0;
 int Utilities::screen_height=0;
 Utilities *Utilities::ut=NULL;
 
+
+void simul::opengl::TextureStruct::setTexels(void *,const void *src,int x,int y,int z,int w,int l,int d)
+{
+	glTexSubImage3D(	GL_TEXTURE_3D,0,
+						x,y,z,
+						w,l,d,
+						GL_RGBA,GL_UNSIGNED_INT_8_8_8_8,
+						src);
+}
+
+void simul::opengl::TextureStruct::ensureTexture3DSizeAndFormat(void *,int w,int l,int d,int frmt,bool /*computable*/)
+{
+	glGenTextures(1,&(tex));
+	glBindTexture(GL_TEXTURE_3D,tex);
+	GLenum number_format=GL_RGBA;
+	GLenum number_type	=GL_UNSIGNED_INT;
+	switch(frmt)
+	{
+	case GL_RGBA:
+		number_format	=GL_RGBA;
+		number_type		=GL_UNSIGNED_INT;
+		break;
+	case GL_RGBA32F:
+		number_format	=GL_RGBA;
+		number_type		=GL_FLOAT;
+		break;
+	case GL_LUMINANCE32F_ARB:
+		number_format	=GL_LUMINANCE;
+		number_type		=GL_FLOAT;
+		break;
+	//((frmt==GL_RGBA)?GL_UNSIGNED_INT:GL_UNSIGNED_SHORT)
+	default:
+		break;
+	};
+	glTexImage3D(GL_TEXTURE_3D,0,(GLint)frmt,w,l,d,0,number_format,number_type,0);
+GL_ERROR_CHECK
+//	glTexImage3D(GL_TEXTURE_3D,0,GL_LUMINANCE32F_ARB:GL_RGBA32F_ARB,w,l,d,0,GL_LUMINANCE:GL_RGBA,GL_FLOAT,src);
+	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+}
+
 struct UtKiller
 {
 	~UtKiller()
@@ -226,6 +267,8 @@ void RenderString(float x, float y, void *font, const char* string)
 #ifndef WIN64
 		else
 			glutBitmapCharacter(font,*s);
+#else
+		font;
 #endif
 		s++;
 	}

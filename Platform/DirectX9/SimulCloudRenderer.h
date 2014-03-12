@@ -1,5 +1,5 @@
 
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -81,10 +81,9 @@ namespace simul
 				return (LPDIRECT3DTEXTURE9)noise_fb.GetColorTex();
 			}
 			void RenderCrossSections(void *context,int x0,int y0,int width,int height);
-			void RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height)=0;
+			void RenderAuxiliaryTextures(void *context,int x0,int y0,int width,int height);
 			bool RenderLightVolume();
 			void EnableFilter(bool f);
-			bool IsYVertical() const{return y_vertical;}
 
 		protected:
 			void DrawLines(void*,VertexXyzRgba *,int num,bool strip);
@@ -96,7 +95,7 @@ namespace simul
 			void EnsureTextureCycle();
 
 			void NumBuffersChanged();
-			//bool y_vertical;
+
 			void InternalRenderHorizontal(int viewport_id);
 			void InternalRenderRaytrace(int viewport_id);
 			void InternalRenderVolumetric(int viewport_id);
@@ -186,7 +185,6 @@ namespace simul
 			LPDIRECT3DBASETEXTURE9		skylight_texture;
 			LPDIRECT3DBASETEXTURE9		illumination_texture;
 			LPDIRECT3DCUBETEXTURE9		cloud_cubemap;
-			D3DXVECTOR4					lightning_colour;
 			D3DXMATRIX					world,view,proj;
 			LPDIRECT3DVERTEXBUFFER9		unitSphereVertexBuffer;
 			LPDIRECT3DINDEXBUFFER9		unitSphereIndexBuffer;

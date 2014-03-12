@@ -21,7 +21,6 @@ using namespace dx11;
 PrecipitationRenderer::PrecipitationRenderer() :
 	m_pd3dDevice(NULL)
 	,m_pVtxDecl(NULL)
-	//,m_pVertexBufferSwap(NULL)
 	,effect(NULL)
 	,rain_texture(NULL)
 	,cubemap_SRV(NULL)
@@ -35,14 +34,15 @@ void PrecipitationRenderer::RecompileShaders()
 		return;
 	CreateEffect(m_pd3dDevice,&effect,"rain.fx");
 	SAFE_RELEASE(rain_texture);
-	m_hTechniqueRain		=effect->GetTechniqueByName("simul_rain");
-	m_hTechniqueParticles	=effect->GetTechniqueByName("simul_particles");
+	m_hTechniqueRain			=effect->GetTechniqueByName("simul_rain");
+	m_hTechniqueParticles		=effect->GetTechniqueByName("simul_particles");
 	m_hTechniqueRainParticles	=effect->GetTechniqueByName("rain_particles");
 	techniqueMoveParticles		=effect->GetTechniqueByName("move_particles");
-	rainTexture				=effect->GetVariableByName("rainTexture")->AsShaderResource();
+	rainTexture					=effect->GetVariableByName("rainTexture")->AsShaderResource();
 
 	rainConstants.LinkToEffect(effect,"RainConstants");
 	perViewConstants.LinkToEffect(effect,"RainPerViewConstants");
+	moisturePerViewConstants.LinkToEffect(effect,"MoisturePerViewConstants");
 
 	ID3D11DeviceContext *pImmediateContext=NULL;
 	m_pd3dDevice->GetImmediateContext(&pImmediateContext);
@@ -111,13 +111,16 @@ void PrecipitationRenderer::SetRandomTexture3D(void *t)
 	randomTexture3D=(ID3D11ShaderResourceView*)t;
 }
 
+void *PrecipitationRenderer::GetMoistureTexture()
+{
+	return moisture_fb.GetColorTex();
+}
+
 void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 {
 	m_pd3dDevice=(ID3D11Device*)dev;
 	HRESULT hr=S_OK;
 	cam_pos.x=cam_pos.y=cam_pos.z=0;
-	view.Identity();
-	proj.Identity();
 	MakeMesh();
 
 	PrecipitationVertex *dat=new PrecipitationVertex[125000];
@@ -128,15 +131,20 @@ void PrecipitationRenderer::RestoreDeviceObjects(void *dev)
 		dat[i].position.x=10*(i/125000.0f-.5f);
 	}
 	
-	vertexBuffer.ensureBufferSize(m_pd3dDevice,125000,dat);
-	vertexBufferSwap.ensureBufferSize(m_pd3dDevice,125000,dat);
+	vertexBuffer.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
+	vertexBufferSwap.ensureBufferSize(m_pd3dDevice,125000,dat,true,false);
 	delete dat;
 
     RecompileShaders();
 	
 	rainConstants.RestoreDeviceObjects(m_pd3dDevice);
 	perViewConstants.RestoreDeviceObjects(m_pd3dDevice);
+	moisturePerViewConstants.RestoreDeviceObjects(m_pd3dDevice);
+	
 
+	moisture_fb.RestoreDeviceObjects(m_pd3dDevice);
+	moisture_fb.SetWidthAndHeight(512,512);
+	moisture_fb.SetFormat(DXGI_FORMAT_R8G8B8A8_UNORM);
 }
 
 void PrecipitationRenderer::InvalidateDeviceObjects()
@@ -152,6 +160,8 @@ void PrecipitationRenderer::InvalidateDeviceObjects()
 	
 	rainConstants.InvalidateDeviceObjects();
 	perViewConstants.InvalidateDeviceObjects();
+	moisturePerViewConstants.InvalidateDeviceObjects();
+	moisture_fb.InvalidateDeviceObjects();
 }
 
 PrecipitationRenderer::~PrecipitationRenderer()
@@ -165,20 +175,19 @@ void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 		dt*=-1.0f;
 	if(dt>1.0f)
 		dt=1.0f;
-		return;
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	BasePrecipitationRenderer::PreRenderUpdate(context,dt);
 	
 	rainConstants.meanFallVelocity	=meanVelocity;
 	rainConstants.timeStepSeconds	=dt;
 	rainConstants.Apply(pContext);
-
+	
 	ID3D11InputLayout* previousInputLayout;
 	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetInputLayout(&previousInputLayout);
 	pContext->IAGetPrimitiveTopology(&previousTopology);
 	{
-		pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST );
+		pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 		pContext->IASetInputLayout(m_pVtxDecl);
 		vertexBuffer.apply(pContext,0);
 		vertexBufferSwap.setAsStreamOutTarget(pContext);
@@ -194,6 +203,32 @@ void PrecipitationRenderer::PreRenderUpdate(void *context,float dt)
 	pContext->IASetInputLayout(previousInputLayout);
 }
 
+// Render an image representing the optical thickness of moisture in any direction within a given view.
+// The depth texture provides the distance to any solid object.
+// The CloudShadowStruct tells us how much cloud is in any given 2D direction.
+void PrecipitationRenderer::RenderMoisture(void *context
+				,const DepthTextureStruct &depthStruct
+				,const ViewStruct &viewStruct
+				,const CloudShadowStruct &cloudShadowStruct)
+{
+	if(viewStruct.view_id!=0)
+		return;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	SIMUL_COMBINED_PROFILE_START(context,"Moisture")
+	moisture_fb.SetWidthAndHeight(512,512);
+	moisture_fb.Activate(context);
+	{
+		SetMoistureConstants(moisturePerViewConstants,depthStruct,viewStruct);
+		moisturePerViewConstants.Apply(pContext);
+		simul::dx11::setTexture(effect,"depthTexture"	,(ID3D11ShaderResourceView*)depthStruct.depth_tex);
+		ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("moisture");
+		tech->GetPassByIndex(0)->Apply(0,pContext);
+		simul::dx11::UtilityRenderer::DrawQuad(pContext);
+	}
+	moisture_fb.Deactivate(context);
+	SIMUL_COMBINED_PROFILE_END(context)
+}
+
 /*	Here, we only consider the effect of exposure time on the transparency of the rain streak. It has been
 shown [Garg and Nayar 2005] that the intensity Ir at a rain-affected
 pixel is given by Ir =(1-a) Ib+a Istreak, where Ib and Istreak are the
@@ -205,7 +240,12 @@ depth map of the scene to find the pixels for which the rain
 streak is not occluded by the scene. The streak is rendered only over
 those pixels.
 */
-void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_distance_metres,simul::sky::float4 viewportTextureRegionXYWH)
+void PrecipitationRenderer::Render(void *context
+				,const void *depth_tex
+				,const simul::math::Matrix4x4 &view
+				,const simul::math::Matrix4x4 &proj
+				,float max_fade_distance_metres
+				,simul::sky::float4 viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	static float cc=0.006f;
@@ -220,13 +260,14 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	dx11::setTexture(effect,"randomTexture3D",randomTexture3D);
 	dx11::setTexture(effect,"depthTexture",(ID3D11ShaderResourceView*)depth_tex);
 	dx11::setTextureArray(effect,"rainTextureArray",rainArrayTexture.m_pArrayTexture_SRV);
-	//pContext->IASetInputLayout( m_pVtxDecl );
+	
 	//set up matrices
 	D3DXMATRIX world,wvp;
 	D3DXMatrixIdentity(&world);
-	vec3 viewPos=simul::dx11::GetCameraPosVector(view,false);
-	view._41=view._42=view._43=0;
-	simul::dx11::MakeWorldViewProjMatrix(&wvp,world,view,proj);
+	vec3 viewPos			=simul::dx11::GetCameraPosVector(view,false);
+	simul::math::Matrix4x4 v=view;
+	v._41=v._42=v._43=0;
+	camera::MakeCentredViewProjMatrix((float*)&wvp,view,proj);
 	
 	rainConstants.lightColour	=(const float*)light_colour;
 	rainConstants.lightDir		=(const float*)light_dir;
@@ -236,7 +277,6 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	rainConstants.snowSize		=0.05f;
 
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);
-
 	simul::math::Matrix4x4 p1=proj;
 	if(ReverseDepth)
 	{
@@ -244,7 +284,7 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 		p1=proj;//simul::dx11::ConvertReversedToRegularProjectionMatrix(proj);
 		simul::camera::ConvertReversedToRegularProjectionMatrix(p1);
 	}
-	simul::math::Matrix4x4 vpt,viewproj,v((const float *)view),p((const float*)p1);
+	simul::math::Matrix4x4 vpt,viewproj,p((const float*)p1);
 
 	simul::math::Multiply4x4(viewproj,v,p);
 	viewproj.Transpose(vpt);
@@ -252,28 +292,28 @@ void PrecipitationRenderer::Render(void *context,void *depth_tex,float max_fade_
 	vpt.Inverse(ivp);
 	if(view_initialized)
 	{
-		perViewConstants.invViewProj[0]		=perViewConstants.invViewProj[1];
+		perViewConstants.invViewProj_2[0]	=perViewConstants.invViewProj_2[1];
 		perViewConstants.worldViewProj[0]	=perViewConstants.worldViewProj[1];
 		perViewConstants.worldView[0]		=perViewConstants.worldView[1];
 		perViewConstants.offset[0]			=perViewConstants.offset[1];
 		perViewConstants.viewPos[0]			=perViewConstants.viewPos[1];
 	}
 
-	perViewConstants.invViewProj[1]		=ivp;
-	perViewConstants.invViewProj[1].transpose();
+	perViewConstants.invViewProj_2[1]		=ivp;
+	perViewConstants.invViewProj_2[1].transpose();
 	perViewConstants.worldView[1]		=view;
 	perViewConstants.worldView[1].transpose();
 	perViewConstants.worldViewProj[1]	=wvp;
 	perViewConstants.worldViewProj[1].transpose();
 	perViewConstants.offset[1]		=offs;
-	perViewConstants.tanHalfFov=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
-	perViewConstants.nearZ=0;//frustum.nearZ*0.001f/fade_distance_km;
-	perViewConstants.farZ=0;//frustum.farZ*0.001f/fade_distance_km;
+	perViewConstants.tanHalfFov		=vec2(frustum.tanHalfHorizontalFov,frustum.tanHalfVerticalFov);
+	perViewConstants.nearZ			=0;//frustum.nearZ*0.001f/fade_distance_km;
+	perViewConstants.farZ			=0;//frustum.farZ*0.001f/fade_distance_km;
 	perViewConstants.viewPos[1]		=viewPos;
 	
 	if(!view_initialized)
 	{
-		perViewConstants.invViewProj[0]		=perViewConstants.invViewProj[1];
+		perViewConstants.invViewProj_2[0]		=perViewConstants.invViewProj_2[1];
 		perViewConstants.worldViewProj[0]	=perViewConstants.worldViewProj[1];
 		perViewConstants.worldView[0]		=perViewConstants.worldView[1];
 		perViewConstants.offset[0]			=perViewConstants.offset[1];
@@ -344,25 +384,24 @@ void PrecipitationRenderer::RenderParticles(void *context)
 	SAFE_RELEASE(previousInputLayout);
 }
 
-void PrecipitationRenderer::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
-{
-	view=v;
-	proj=p;
-}
-
-void PrecipitationRenderer::RenderTextures(void *context,int width,int height)
+void PrecipitationRenderer::RenderTextures(void *context,int x0,int y0,int dx,int dy)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	HRESULT hr=S_OK;
 	static int u=1;
-	int w=(width-8)/u;
-	//if(w/8>height/3)
-	//	w=8*height/3;
+	int w=(dx-8)/u;
 	int h=w/8;
-	UtilityRenderer::SetScreenSize(width,height);
 	simul::dx11::setTexture(effect,"showTexture",rain_texture);
-	UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-(h+8),w,h,effect,effect->GetTechniqueByName("show_texture"));
-	//simul::dx11::setTexture(effect,"showTexture",random_SRV);
-	//UtilityRenderer::DrawQuad2(pContext,width-(w+8),height-2*(h+8),h,h,effect,effect->GetTechniqueByName("show_texture"));
+	UtilityRenderer::DrawQuad2(pContext,x0,y0+dy-(h+8),w,h,effect,effect->GetTechniqueByName("show_texture"));
 	simul::dx11::setTexture(effect,"showTexture",NULL);
+
+	w=moisture_fb.Width;
+	h=moisture_fb.Height;
+	while(w>dx||h>dy)
+	{
+		w/=2;
+		h/=2;
+	}
+	UtilityRenderer::DrawTexture(pContext	,x0,y0	,w,h,(ID3D1xShaderResourceView*)moisture_fb.GetColorTex(),1.f);
+	UtilityRenderer::Print(pContext			,x0,y0	,"Moisture");
 }

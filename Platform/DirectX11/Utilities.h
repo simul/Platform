@@ -13,7 +13,6 @@ namespace simul
 {
 	namespace dx11
 	{
-		extern void SetFileLoader(simul::base::FileLoader *l);
 		struct SIMUL_DIRECTX11_EXPORT TextureStruct
 		{
 			TextureStruct();
@@ -80,7 +79,7 @@ namespace simul
 		template<class T> struct VertexBuffer
 		{
 			ID3D11Buffer				*vertexBuffer;
-			//ID3D11UnorderedAccessView	*unorderedAccessView;
+			
 			VertexBuffer()
 				:vertexBuffer(NULL)
 				//,unorderedAccessView(NULL)
@@ -91,15 +90,16 @@ namespace simul
 				release();
 			}
 			//! Make sure the buffer has the number of vertices specified.
-			void ensureBufferSize(ID3D11Device *pd3dDevice,int numVertices,void *data=NULL)
+			void ensureBufferSize(ID3D11Device *pd3dDevice,int numVertices,void *data=NULL
+				,bool stream_output=true,bool cpu_write=false)
 			{
 				release();
 				D3D11_BUFFER_DESC desc	=
 				{
 					numVertices*sizeof(T),
-					D3D11_USAGE_DEFAULT,
-					D3D11_BIND_VERTEX_BUFFER|D3D11_BIND_STREAM_OUTPUT	//D3D11_BIND_UNORDERED_ACCESS is useless for VB's in DX11
-					,0// CPU
+					cpu_write?D3D11_USAGE_DYNAMIC:D3D11_USAGE_DEFAULT,
+					D3D11_BIND_VERTEX_BUFFER|(stream_output?D3D11_BIND_STREAM_OUTPUT:0)//D3D11_BIND_UNORDERED_ACCESS is useless for VB's in DX11
+					,(cpu_write?D3D11_CPU_ACCESS_WRITE:0)// CPU
 					,0//D3D11_RESOURCE_MISC_BUFFER_STRUCTURED
 					,sizeof(T)			//StructureByteStride
 				};
@@ -117,6 +117,17 @@ namespace simul
 				uav_desc.Buffer.NumElements		=numVertices;
 				uav_desc.Buffer.Flags			=0;
 				V_CHECK(pd3dDevice->CreateUnorderedAccessView(vertexBuffer, &uav_desc, &unorderedAccessView));*/
+			}
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			T *Map(ID3D11DeviceContext *pContext)
+			{
+				HRESULT hr=pContext->Map(vertexBuffer,0,D3D11_MAP_WRITE_DISCARD,0,&mapped);
+		//		SIMUL_ASSERT(hr==S_OK);
+				return (T*)mapped.pData;
+			}
+			void Unmap(ID3D11DeviceContext *pContext)
+			{
+				pContext->Unmap(vertexBuffer,0);
 			}
 			//! Use this vertex buffer in the next draw call - wraps IASetVertexBuffers.
 			void apply(ID3D11DeviceContext *pContext,int slot)
@@ -149,10 +160,10 @@ namespace simul
 			static D3DXMATRIX view;
 			static D3DXMATRIX proj;
 		public:
-			static ID3D1xEffect		*m_pDebugEffect;
+			static ID3DX11Effect		*m_pDebugEffect;
 			static ID3D11InputLayout	*m_pCubemapVtxDecl;
 			static ID3D1xBuffer		* m_pVertexBuffer;
-			static ID3D1xDevice		*m_pd3dDevice;
+			static ID3D11Device		*m_pd3dDevice;
 			UtilityRenderer();
 			~UtilityRenderer();
 			static void SetMatrices(D3DXMATRIX v,D3DXMATRIX p);
@@ -160,21 +171,29 @@ namespace simul
 			static void InvalidateDeviceObjects();
 			static void RecompileShaders();
 			static void SetScreenSize(int w,int h);
+			static void GetScreenSize(int& w,int& h);
 			static void PrintAt3dPos(		ID3D11DeviceContext* pContext,const float *p,const char *text,const float* colr,int offsetx=0,int offsety=0);
 			static void DrawLines(			ID3D11DeviceContext* pContext,VertexXyzRgba *lines,int vertex_count,bool strip);
-			static void RenderAngledQuad(	ID3D11DeviceContext *pContext,const float *dir,float half_angle_radians,ID3D1xEffect* effect,ID3D1xEffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
-			static void Print(				ID3D11DeviceContext *pContext,float x,float y,const char *text);
+			static void RenderAngledQuad(	ID3D11DeviceContext *pContext,const float *dir,float half_angle_radians,ID3DX11Effect* effect,ID3DX11EffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
+			static void Print(				ID3D11DeviceContext *pContext,int x,int y,const char *text,const float *clr=NULL);
+			static void Print(				ID3D11DeviceContext *pContext,float x,float y,const char *text,const float *clr=NULL);
 			static void DrawTexture(		ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult=1.f);
 			static void DrawTextureMS(		ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult=1.f);
-			static void DrawQuad(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3D1xEffectTechnique* tech);	
-			static void DrawQuad2(			ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
-			static void DrawQuad2(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3D1xEffect *eff,ID3D1xEffectTechnique* tech);
+			static void DrawQuad(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11EffectTechnique* tech);	
+			static void DrawQuad2(			ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);
+			static void DrawQuad2(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);
 			static void DrawQuad(			ID3D11DeviceContext *pContext);
 			static void DrawCube(void *context);
 			static void DrawSphere(void *context,int latitudes,int longitudes);
 			static void DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety);
 		};
 		//! Useful Wrapper class to encapsulate constant buffer behaviour
+		
+		//! Usage: You \em must use the following member functions to use this buffer.
+		//! On device restore, call RestoreDeviceObjects(m_pd3dDevice).
+		//! After creating any effect that uses the buffer, call LinkToEffect(m_pSkyEffect,"BufferNameInFxFile").
+		//! On device shutdown, call InvalidateDeviceObjects().
+		//! Before applying the effect pass, call Apply(pContext)
 		template<class T> class ConstantBuffer:public T
 		{
 		public:
@@ -244,7 +263,14 @@ namespace simul
 					m_pD3DX11EffectConstantBuffer->SetConstantBuffer(NULL);
 			}
 		};
-
+		
+		inline void SetDebugObjectName( ID3D11DeviceChild* resource,const char *name)
+		{
+		  #if defined(_DEBUG) || defined(PROFILE)
+			if(resource)
+			 resource->SetPrivateData(WKPDID_D3DDebugObjectName,(UINT)(name?strlen(name):0),name?name:"un-named resource");
+		  #endif
+		}
 		template<class T> class StructuredBuffer 
 		{
 		public:

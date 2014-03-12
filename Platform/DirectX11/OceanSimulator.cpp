@@ -150,6 +150,7 @@ OceanSimulator::OceanSimulator(simul::terrain::SeaKeyframer *s)
 
 void OceanSimulator::InvalidateDeviceObjects()
 {
+	SAFE_RELEASE(effect);
 	immutableConstants		.InvalidateDeviceObjects();
 	changePerFrameConstants	.InvalidateDeviceObjects();
 
@@ -159,6 +160,7 @@ void OceanSimulator::InvalidateDeviceObjects()
 	gradient	.release();
 	dxyz		.release();
 	h0			.release();
+	m_fft.InvalidateDeviceObjects();
 
 	SAFE_RELEASE(m_pd3dImmediateContext);
 }
@@ -168,7 +170,6 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	m_pd3dDevice=pd3dDevice;
 	// If the device becomes invalid at some point, delete current instance and generate a new one.
 	assert(pd3dDevice);
-	return;
 	SAFE_RELEASE(m_pd3dImmediateContext);
 	pd3dDevice->GetImmediateContext(&m_pd3dImmediateContext);
 	assert(m_pd3dImmediateContext);
@@ -189,7 +190,7 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	for(int i=0;i<3 * output_size * 2;i++)
 		zero_data[i]=0.f;
 	//memset(zero_data, 0, 3 * output_size * sizeof(float) * 2);
-
+	
 	// RW buffer allocations
 	// H0
 	UINT float2_stride = 2 * sizeof(float);
@@ -225,8 +226,6 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	displacement.ensureTexture2DSizeAndFormat(pd3dDevice,hmap_dim,hmap_dim,DXGI_FORMAT_R32G32B32A32_FLOAT,false,true);
 	gradient.ensureTexture2DSizeAndFormat(pd3dDevice,hmap_dim,hmap_dim,DXGI_FORMAT_R16G16B16A16_FLOAT,false,true);
 
-	
-	
 	immutableConstants		.RestoreDeviceObjects(pd3dDevice);
 	changePerFrameConstants	.RestoreDeviceObjects(pd3dDevice);
 	
@@ -236,10 +235,10 @@ void OceanSimulator::RestoreDeviceObjects(ID3D11Device* pd3dDevice)
 	UINT actual_dim = m_param->dmap_dim;
 
 	// We use full sized data here. The value "output_width" should be actual_dim/2+1 though.
-	immutableConstants.g_ActualDim		=actual_dim;
+	immutableConstants.g_ActualDim			=actual_dim;
 	immutableConstants.g_InWidth			=actual_dim + 4;
-	immutableConstants.g_OutWidth		=actual_dim;
-	immutableConstants.g_OutHeight		=actual_dim;
+	immutableConstants.g_OutWidth			=actual_dim;
+	immutableConstants.g_OutHeight			=actual_dim;
 	immutableConstants.g_DxAddressOffset	=actual_dim*actual_dim;
 	immutableConstants.g_DyAddressOffset	=actual_dim*actual_dim*2;
 
@@ -254,7 +253,6 @@ void OceanSimulator::RecompileShaders()
 		return;
 	SAFE_RELEASE(effect);
 	effect					=LoadEffect(m_pd3dDevice,"ocean.fx");
-return;
 	m_fft					.RecompileShaders();
 	immutableConstants		.LinkToEffect(effect,"cbImmutable");
 	changePerFrameConstants	.LinkToEffect(effect,"cbChangePerFrame");

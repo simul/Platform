@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license or nondisclosure
@@ -96,8 +96,6 @@ namespace simul
 			std::istream &Load(std::istream &is) const;
 			//! Clear the sequence()
 			void New();
-			void SetYVertical(bool y);
-			bool IsYVertical() const;
 			simul::dx11::GpuCloudGenerator *GetGpuCloudGenerator(){return &gpuCloudGenerator;}
 		protected:
 			simul::dx11::GpuCloudGenerator gpuCloudGenerator;
@@ -116,24 +114,24 @@ namespace simul
 			void Map(ID3D11DeviceContext *context,int texture_index);
 			unsigned texel_index[4];
 			bool lightning_active;
-			ID3D1xDevice*							m_pd3dDevice;
+			ID3D11Device*							m_pd3dDevice;
 		
 			ID3D1xInputLayout*						m_pLightningVtxDecl;
 			ID3D11SamplerState*						m_pWrapSamplerState;
 			ID3D11SamplerState*						m_pClampSamplerState;
 
-			ID3D1xEffect*							m_pLightningEffect;
-			ID3D1xEffectTechnique*					m_hTechniqueLightning;
-			ID3D1xEffect*							m_pCloudEffect;
-			ID3D1xEffectTechnique*					m_hTechniqueCloud;
-			ID3D1xEffectTechnique*					m_hTechniqueRaytraceNearPass;
-			ID3D1xEffectTechnique*					m_hTechniqueRaytraceForward;
-			ID3D1xEffectTechnique*					m_hTechniqueSimpleRaytrace;
-			ID3D1xEffectTechnique*					m_hTechniqueRaytrace3DNoise;
-			ID3D1xEffectTechnique*					m_hTechniqueCloudsAndLightning;
+			ID3DX11Effect*							m_pLightningEffect;
+			ID3DX11EffectTechnique*					m_hTechniqueLightning;
+			ID3DX11Effect*							m_pCloudEffect;
+			ID3DX11EffectTechnique*					m_hTechniqueCloud;
+			ID3DX11EffectTechnique*					m_hTechniqueRaytraceNearPass;
+			ID3DX11EffectTechnique*					m_hTechniqueRaytraceForward;
+			ID3DX11EffectTechnique*					m_hTechniqueSimpleRaytrace;
+			ID3DX11EffectTechnique*					m_hTechniqueRaytrace3DNoise;
+			ID3DX11EffectTechnique*					m_hTechniqueCloudsAndLightning;
 
-			ID3D1xEffectTechnique*					m_hTechniqueCrossSectionXZ;
-			ID3D1xEffectTechnique*					m_hTechniqueCrossSectionXY;
+			ID3DX11EffectTechnique*					m_hTechniqueCrossSectionXZ;
+			ID3DX11EffectTechnique*					m_hTechniqueCrossSectionXY;
 			
 			ConstantBuffer<CloudConstants>			cloudConstants;
 			StructuredBuffer<SmallLayerData>		layerBuffer;
@@ -165,11 +163,12 @@ namespace simul
 			ID3D1xShaderResourceView*				illuminationTexture_SRV;
 			ID3D1xShaderResourceView*				lightTableTexture_SRV;
 			simul::dx11::Framebuffer				shadow_fb;
+			simul::dx11::Framebuffer				moisture_fb;
 
 			// A texture whose x-axis represents azimuth, and whose y-axis represents distance
 			// as a proportion of shadow range. The texels represent how much illumination accumulates between the viewer
 			// and that distance.
-			simul::dx11::Framebuffer				godrays_fb;
+			simul::dx11::TextureStruct				godrays_texture;
 
 			simul::dx11::TextureStruct				cloud_texture;
 			

@@ -97,13 +97,14 @@ public:
 	void    OnLostDevice();
 	void    OnDestroyDevice();
 
-	void	SetYVertical(bool y);
 	void	RecompileShaders();
 	simul::clouds::BaseGpuCloudGenerator *GetGpuCloudGenerator(){return NULL;}
 	simul::sky::BaseGpuSkyGenerator *GetGpuSkyGenerator(){return NULL;}
+	void SaveScreenshot(const char *filename_utf8);
 protected:
+	void EnsureCorrectBufferSizes(int view_id);
 	void ReverseDepthChanged();
-	HRESULT RestoreDeviceObjects(IDirect3DDevice9* pDevice);
+	void RestoreDeviceObjects(IDirect3DDevice9* pDevice);
 	simul::camera::Camera *camera;
 	float aspect;
 	bool device_reset;

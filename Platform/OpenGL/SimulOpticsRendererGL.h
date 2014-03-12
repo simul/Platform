@@ -19,7 +19,7 @@ public:
 	virtual ~SimulOpticsRendererGL();
 	virtual void RestoreDeviceObjects(void *device);
 	virtual void InvalidateDeviceObjects();
-	virtual void RenderFlare(void *context,float exposure,const float *dir,const float *light);
+	virtual void RenderFlare(void *context,float exposure,void *depthTexture,const float *v,const float *p,const float *dir,const float *light);
 	virtual void RecompileShaders();
 
 	GLuint			flare_program;

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -43,13 +43,11 @@ static const DWORD default_effect_flags=0;
 // winmm.lib comctl32.lib
 static bool pipe_compiler_output=false;
 
-//static ID3D1xDevice		*pd3dDevice		=NULL;
+//static ID3D11Device		*pd3dDevice		=NULL;
 using namespace simul;
 using namespace dx11;
 using namespace base;
 ShaderBuildMode shaderBuildMode=BUILD_IF_CHANGED;
-static DefaultFileLoader fl;
-static FileLoader *fileLoader=&fl;
 
 HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileNameUtf8, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
 {
@@ -69,7 +67,7 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 		}
 		void *buf=NULL;
 		unsigned fileSize=0;
-		fileLoader->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
+		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
 		*ppData = buf;
 		*pBytes = (UINT)fileSize;
 		if(!*ppData)
@@ -85,7 +83,7 @@ HRESULT __stdcall ShaderIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType, LPCST
 
 HRESULT __stdcall ShaderIncludeHandler::Close(LPCVOID pData)
 {
-	fileLoader->ReleaseFileContents((void*)pData);
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
 	return S_OK;
 }
 
@@ -107,13 +105,13 @@ HRESULT __stdcall DetectChangesIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType
 		}
 		void *buf=NULL;
 		unsigned fileSize=0;
-		double dateTimeJdn=fileLoader->GetFileDate(finalPathUtf8.c_str());
+		double dateTimeJdn=simul::base::FileLoader::GetFileLoader()->GetFileDate(finalPathUtf8.c_str());
 		if(dateTimeJdn>lastCompileTime)
 		{
 			anyChanges=true;
 			return E_FAIL;
 		}
-		fileLoader->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
+		simul::base::FileLoader::GetFileLoader()->AcquireFileContents(buf,fileSize,finalPathUtf8.c_str(),false);
 		*ppData = buf;
 		*pBytes = (UINT)fileSize;
 		if(!*ppData)
@@ -129,7 +127,7 @@ HRESULT __stdcall DetectChangesIncludeHandler::Open(D3D_INCLUDE_TYPE IncludeType
 
 HRESULT __stdcall DetectChangesIncludeHandler::Close(LPCVOID pData)
 {
-	fileLoader->ReleaseFileContents((void*)pData);
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents((void*)pData);
 	return S_OK;
 }
 
@@ -138,12 +136,8 @@ namespace simul
 {
 	namespace dx11
 	{
-		std::string *shaderPathUtf8;
+		std::vector<std::string> shaderPathsUtf8;
 		static std::vector<std::string> texturePathsUtf8;
-		void SetFileLoader(simul::base::FileLoader *l)
-		{
-			fileLoader=l;
-		}
 		void GetCameraPosVector(const float *v,float *dcam_pos,float *view_dir,bool y_vertical)
 		{
 			D3DXMATRIX tmp1,view(v);
@@ -184,16 +178,9 @@ namespace simul
 		{
 			shaderBuildMode=b;
 		}
-		void SetShaderPath(const char *path_utf8)
+		void PushShaderPath(const char *path_utf8)
 		{
-			if(!path_utf8)
-				delete shaderPathUtf8;
-			else
-			{
-				if(!shaderPathUtf8)
-					shaderPathUtf8=new std::string;
-				*shaderPathUtf8=std::string(path_utf8)+"/";
-			}
+			shaderPathsUtf8.push_back(std::string(path_utf8)+"/");
 		}
 		void PushTexturePath(const char *path_utf8)
 		{
@@ -202,33 +189,6 @@ namespace simul
 		void PopTexturePath()
 		{ 
 			texturePathsUtf8.pop_back();
-		}
-		void MakeInvViewProjMatrix(float *ivp,const float *v,const float *p)
-		{
-			simul::math::Matrix4x4 view(v),proj(p);
-			simul::math::Matrix4x4 vpt;
-			simul::math::Matrix4x4 viewproj;
-			view(3,0)=view(3,1)=view(3,2)=0;
-			simul::math::Multiply4x4(viewproj,view,proj);
-			viewproj.Transpose(vpt);
-			simul::math::Matrix4x4 invp;
-			vpt.Inverse(invp);
-			mat4 &invViewProj=*((mat4*)ivp);
-			invViewProj=invp;
-			invViewProj.transpose();
-		}
-		void MakeViewProjMatrix(float *vp,const float *v,const float *p)
-		{
-			D3DXMATRIX viewProj, tmp,view(v),proj(p);
-			D3DXMatrixMultiply(&tmp,&view,&proj);
-			D3DXMatrixTranspose((D3DXMATRIX*)vp,&tmp);
-		}
-		void MakeWorldViewProjMatrix(D3DXMATRIX *wvp,const float *w,const float *v,const float *p)
-		{
-			D3DXMATRIX tmp1,tmp2,view(v),proj(p),world(w);
-			D3DXMatrixMultiply(&tmp1, &world,&view);
-			D3DXMatrixMultiply(&tmp2, &tmp1,&proj);
-			D3DXMatrixTranspose(wvp,&tmp2);
 		}
 		D3DXMATRIX ConvertReversedToRegularProjectionMatrix(const D3DXMATRIX &proj)
 		{
@@ -255,19 +215,16 @@ ID3D1xShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,cons
 	loadInfo.MipLevels=0;
 	if(!texturePathsUtf8.size())
 		texturePathsUtf8.push_back("media/textures");
-	for(int i=0;i<(int)texturePathsUtf8.size();i++)
-	{
-		std::wstring wstr	=simul::base::Utf8ToWString((texturePathsUtf8[i]+"/")+filename);
-		HRESULT hr			=D3DX11CreateShaderResourceViewFromFileW(
-										pd3dDevice,
-										wstr.c_str(),
-										&loadInfo,
-										NULL,
-										&tex,
-										&hr);
-		if(hr==S_OK)
-			break;
-	}
+	std::string str=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename,texturePathsUtf8);
+	
+	std::wstring wstr	=simul::base::Utf8ToWString(str);
+	HRESULT hr			=D3DX11CreateShaderResourceViewFromFileW(
+									pd3dDevice,
+									wstr.c_str(),
+									&loadInfo,
+									NULL,
+									&tex,
+									&hr);
 	return tex;
 }
 
@@ -305,13 +262,15 @@ ID3D11Texture2D* simul::dx11::LoadStagingTexture(ID3D11Device* pd3dDevice,const 
 			break;
 #ifdef DXTRACE_ERR
         hr=DXTRACE_ERR( L"LoadStagingTexture", hr );
+#else
+		std::cerr<<"Failed to load texture: "<<texturePathsUtf8.c_str()<<std::endl;
 #endif
 	}
 	return tex;
 }
 
 ID3D1xTexture1D* simul::dx11::make1DTexture(
-							ID3D1xDevice			*m_pd3dDevice
+							ID3D11Device			*m_pd3dDevice
 							,int w
 							,DXGI_FORMAT format
 							,const float *src)
@@ -340,7 +299,7 @@ ID3D1xTexture1D* simul::dx11::make1DTexture(
 }
 
 ID3D11Texture2D* simul::dx11::make2DTexture(
-							ID3D1xDevice			*m_pd3dDevice
+							ID3D11Device			*m_pd3dDevice
 							,int w,int h
 							,DXGI_FORMAT format
 							,const float *src)
@@ -370,7 +329,7 @@ ID3D11Texture2D* simul::dx11::make2DTexture(
 
 
 ID3D1xTexture3D* simul::dx11::make3DTexture(
-							ID3D1xDevice			*m_pd3dDevice
+							ID3D11Device			*m_pd3dDevice
 							,int w,int l,int d
 							,DXGI_FORMAT format
 							,const void *src)
@@ -397,7 +356,7 @@ ID3D1xTexture3D* simul::dx11::make3DTexture(
 }
 							
 void simul::dx11::Ensure3DTextureSizeAndFormat(
-							ID3D1xDevice			*m_pd3dDevice
+							ID3D11Device			*m_pd3dDevice
 							,ID3D1xTexture3D* &tex
 							,ID3D11ShaderResourceView* &srv
 							,int w,int l,int d
@@ -564,7 +523,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_ut
 	std::string binary_filename_utf8=std::string(text_filename_utf8)+"o";
 	void *pData=NULL;
 	unsigned sz=0;
-	fileLoader->AcquireFileContents(pData,sz,binary_filename_utf8.c_str(),false);
+	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(pData,sz,binary_filename_utf8.c_str(),false);
 	if(sz>0)
 	{
 		hr=D3DX11CreateEffectFromMemory(pData,sz,FXFlags,pDevice,ppEffect);
@@ -573,28 +532,27 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_ut
 	}
 	else
 		std::cerr<<"D3DX11CreateEffectFromBinaryFile cannot find file "<<binary_filename_utf8.c_str()<<std::endl;
-	fileLoader->ReleaseFileContents(pData);
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(pData);
 	return hr;
 }
 
 HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	HRESULT hr=S_OK;
-	int pos=text_filename_utf8.find_last_of("/");
-	int bpos=text_filename_utf8.find_last_of("\\");
+	int pos=(int)text_filename_utf8.find_last_of("/");
+	int bpos=(int)text_filename_utf8.find_last_of("\\");
 	if(pos<0||bpos>pos)
 		pos=bpos;
 	std::string path_utf8=text_filename_utf8.substr(0,pos);
-#if 1
 	std::string binary_filename_utf8=text_filename_utf8+"o";
 	void *textData=NULL;
 	unsigned textSize=0;
-	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
+	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
 	// See if there's a binary that's newer than the file date.
 	if(shaderBuildMode==BUILD_IF_CHANGED)
 	{
-		double text_date_jdn	=fileLoader->GetFileDate(text_filename_utf8.c_str());
-		double binary_date_jdn	=fileLoader->GetFileDate(binary_filename_utf8.c_str());
+		double text_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(text_filename_utf8.c_str());
+		double binary_date_jdn	=simul::base::FileLoader::GetFileLoader()->GetFileDate(binary_filename_utf8.c_str());
 		bool changes_detected=false;
 		if(text_date_jdn>binary_date_jdn||!binary_date_jdn)
 			changes_detected=true;
@@ -640,24 +598,24 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 						&binaryBlob,				//ID3DBlob **ppCode,
 						&errorMsgs					//ID3DBlob **ppErrorMsgs
 						);
-	fileLoader->ReleaseFileContents(textData);
+	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(textData);
 	if(hr==S_OK)
 	{
 		hr=D3DX11CreateEffectFromMemory(binaryBlob->GetBufferPointer(),binaryBlob->GetBufferSize(),FXFlags,pDevice,ppEffect);
 		if(hr==S_OK)
 		{
-			fileLoader->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
+			simul::base::FileLoader::GetFileLoader()->Save(binaryBlob->GetBufferPointer(),(unsigned int)binaryBlob->GetBufferSize(),binary_filename_utf8.c_str(),false);
 		}
 	}
 	else if(errorMsgs)
 	{
 		char *errs=(char*)errorMsgs->GetBufferPointer();
 		std::string err(errs);
-		unsigned pos=0;
-		while(pos<err.length())
+		int pos=0;
+		while(pos>=0&&pos<(int)err.length())
 		{
 			int last=pos;
-			pos=err.find("\n",pos+1);
+			pos=(int)err.find("\n",pos+1);
 			std::string line=err.substr(last,pos-last);
 			if(line.find(":")>3)
 			{
@@ -675,174 +633,22 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 		binaryBlob->Release();
 	if(errorMsgs)
 		errorMsgs->Release();
-#else
-	// first try to find an existing text source with this filename, and compile it.
-	std::string filename_utf8= text_filename_utf8;
-	int pos=(int)text_filename_utf8.find_last_of("/");
-	if(pos<0)
-		pos=(int)text_filename_utf8.find_last_of("\\");
-	std::string temporary_filename_utf8=std::string(text_filename_utf8)+"temp";
-	void *textData=NULL;
-	unsigned textSize=0;
-	fileLoader->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
-	
-	void *binaryData=NULL;
-	unsigned binarySize=0;
-	fileLoader->AcquireFileContents(binaryData,binarySize,binary_filename_utf8.c_str(),false);
-	
-	fileLoader->ReleaseFileContents(textData);
-	fileLoader->ReleaseFileContents(binaryData);
-	
-	//ALWAYS_BUILD=1,BUILD_IF_CHANGED,NEVER_BUILD
-	if(textSize>0&&(shaderBuildMode==ALWAYS_BUILD||(shaderBuildMode==BUILD_IF_CHANGED&&binarySize==0)))
-	{
-		//std::cout<<"Create DX11 effect: "<<text_filename.c_str()<<std::endl;
-		DeleteFileW(simul::base::Utf8ToWString(binary_filename_utf8).c_str());
-		std::wstring wcommand=simul::base::Utf8ToWString(simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("DXSDK_DIR"));
-		if(!wcommand.length())
-		{
-			std::string progfiles=simul::base::EnvironmentVariables::GetSimulEnvironmentVariable("ProgramFiles");
-			wcommand=simul::base::Utf8ToWString(progfiles)+L"/Microsoft DirectX SDK (June 2010)/";
-			std::cerr<<"Missing DXSDK_DIR environment variable, defaulting to June 2010 "<<std::endl;
-		}
-		{
-//>"fxc.exe" /T fx_2_0 /Fo "..\..\gamma.fx"o "..\..\gamma.fx"
-			wcommand=L"\""+wcommand;
-			wcommand+=L"Utilities\\Bin\\x86\\fxc.exe\"";
-			wcommand+=L" /nologo /Tfx_5_0 /Fo \"";
-			wcommand+=simul::base::Utf8ToWString(temporary_filename_utf8)+L"\" \"";
-			wcommand+=simul::base::Utf8ToWString(text_filename_utf8)+L"\"";
-			if(macros)
-			{
-				while(macros->Name)
-				{
-					wcommand+=L" /D";
-					wcommand+=simul::base::Utf8ToWString(macros->Name);
-					wcommand+=L"=";
-					wcommand+=simul::base::Utf8ToWString(macros->Definition);
-					macros++;
-				}
-			}
-		//	command+=" > \""+text_filename+".log\"";
-			STARTUPINFOW si;
-			PROCESS_INFORMATION pi;
-			ZeroMemory( &si, sizeof(si) );
-			si.cb = sizeof(si);
-			ZeroMemory( &pi, sizeof(pi) );
-			si.wShowWindow=false;
-			wchar_t com[500];
-			wcscpy(com,wcommand.c_str());
-			si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-			si.wShowWindow = SW_HIDE;
-
-			HANDLE hReadOutPipe = NULL;
-			HANDLE hWriteOutPipe = NULL;
-			HANDLE hReadErrorPipe = NULL;
-			HANDLE hWriteErrorPipe = NULL;
-			SECURITY_ATTRIBUTES saAttr; 
-// Set the bInheritHandle flag so pipe handles are inherited. 
-		 
-			if(pipe_compiler_output)
-			{
-				saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
-				saAttr.bInheritHandle = TRUE; 
-				saAttr.lpSecurityDescriptor = NULL; 
-				CreatePipe( &hReadOutPipe, &hWriteOutPipe, &saAttr, 100 );
-				CreatePipe( &hReadErrorPipe, &hWriteErrorPipe, &saAttr, 100 );
-			}
-
-			si.hStdOutput = hWriteOutPipe;
-			si.hStdError= hWriteErrorPipe;
-			CreateProcessW( NULL,		// No module name (use command line)
-					com,				// Command line
-					NULL,				// Process handle not inheritable
-					NULL,				// Thread handle not inheritable
-					TRUE,				// Set handle inheritance to FALSE
-					0,//CREATE_NO_WINDOW,	// No nasty console windows
-					NULL,				// Use parent's environment block
-					NULL,				// Use parent's starting directory 
-					&si,				// Pointer to STARTUPINFO structure
-					&pi )				// Pointer to PROCESS_INFORMATION structure
-				;
-			// Wait until child process exits.
-
-		HANDLE WaitHandles[] = {
-				pi.hProcess, hReadOutPipe, hReadErrorPipe
-			};
-
-		const DWORD BUFSIZE = 4096;
-		BYTE buff[BUFSIZE];
-		bool has_errors=false;
-		while (1)
-		{
-			DWORD dwBytesRead, dwBytesAvailable;
-			DWORD dwWaitResult = WaitForMultipleObjects(pipe_compiler_output?3:1, WaitHandles, FALSE, 60000L);
-
-			// Read from the pipes...
-			if(pipe_compiler_output)
-			{
-				while( PeekNamedPipe(hReadOutPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
-				{
-				  ReadFile(hReadOutPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
-				  std::cout << std::string((char*)buff, (size_t)dwBytesRead).c_str();
-				}
-				while( PeekNamedPipe(hReadErrorPipe, NULL, 0, NULL, &dwBytesAvailable, NULL) && dwBytesAvailable )
-				{
-					ReadFile(hReadErrorPipe, buff, BUFSIZE-1, &dwBytesRead, 0);
-					std::string str((char*)buff, (size_t)dwBytesRead);
-					size_t pos=str.find("rror");
-					if(pos>=str.length())
-						pos=str.find("failed");
-					if(pos<str.length())
-						has_errors=true;
-					int bracket_pos=(int)str.find("(");
-					if(bracket_pos>0)
-					{
-						int close_bracket_pos	=(int)str.find(")",bracket_pos);
-						int comma_pos			=(int)str.find(",",bracket_pos);
-						if(comma_pos>bracket_pos&&comma_pos<close_bracket_pos)
-						{
-							str.replace(comma_pos,close_bracket_pos-comma_pos,"");
-						}
-					}
-					// IF it's not an absolute path:
-					if(shaderPathUtf8&&str.find(":")!=1)
-					{
-						str=*shaderPathUtf8+str;
-					}
-					std::cerr<<str.c_str();
-				}
-			}
-			// Process is done, or we timed out:
-			if(dwWaitResult == WAIT_OBJECT_0 || dwWaitResult == WAIT_TIMEOUT)
-			break;
-		  }
-
-			//WaitForSingleObject( pi.hProcess, INFINITE );
-			CloseHandle( pi.hProcess );
-			CloseHandle( pi.hThread );
-
-			if(has_errors)
-				return S_FALSE;
-		}
-	}
-	MoveFileW(simul::base::Utf8ToWString(temporary_filename_utf8).c_str(),simul::base::Utf8ToWString(binary_filename_utf8).c_str());
-	hr=D3DX11CreateEffectFromBinaryFileUtf8(filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
-#endif
 	return hr;
 }
 
-HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *filename)
+HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filename)
 {
 	std::map<std::string,std::string> defines;
 	return CreateEffect(d3dDevice,effect,filename,defines);
 }
 
-ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *filename_utf8)
+ID3D11ComputeShader *LoadComputeShader(ID3D11Device *pd3dDevice,const char *filename_utf8)
 {
-	if(!shaderPathUtf8)
-		shaderPathUtf8=new std::string("media/hlsl/dx11");
-	std::string fn=(*shaderPathUtf8+"/")+filename_utf8;
+	if(!shaderPathsUtf8.size())
+		shaderPathsUtf8.push_back(std::string("media/hlsl/dx11"));
+	std::string fn=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filename_utf8,shaderPathsUtf8);
+	if(!simul::base::FileLoader::GetFileLoader()->FileExists(fn.c_str()))
+		return NULL;
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined( _DEBUG )
 	dwShaderFlags |= D3DCOMPILE_DEBUG;
@@ -877,14 +683,14 @@ ID3D11ComputeShader *LoadComputeShader(ID3D1xDevice *pd3dDevice,const char *file
 	}
 }
 
-HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines)
+HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines)
 {
 	SIMUL_ASSERT(d3dDevice!=NULL);
 	HRESULT hr=S_OK;
-	std::string text_filename=(filenameUtf8);
-	if(!shaderPathUtf8)
-		shaderPathUtf8=new std::string("media/hlsl/dx11");
-	std::string filename_utf8=*shaderPathUtf8+filenameUtf8;
+	//std::string text_filename=(filenameUtf8);
+	std::string filename_utf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filenameUtf8,shaderPathsUtf8);
+	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filename_utf8.c_str()))
+		return S_FALSE;
 	
 	D3D10_SHADER_MACRO *macros=NULL;
 	std::vector<std::string> d3dmacros;
@@ -923,17 +729,52 @@ HRESULT CreateEffect(ID3D1xDevice *d3dDevice,ID3DX11Effect **effect,const char *
 		DebugBreak();
 	}
 	assert((*effect)->IsValid());
+
+	// Name stuff:
+	ID3DX11Effect *e=*effect;
+	if(e)
+	{
+		D3DX11_EFFECT_DESC effect_desc;
+		e->GetDesc(&effect_desc);
+		for(int i=0;i<(int)effect_desc.Techniques;i++)
+		{
+			ID3DX11EffectTechnique * pTech = e->GetTechniqueByIndex(i);
+			D3DX11_TECHNIQUE_DESC techDesc;
+			pTech->GetDesc(&techDesc);
+			for(int j=0;j<(int)techDesc.Passes;j++)
+			{
+				ID3DX11EffectPass * pPass = pTech->GetPassByIndex(j);
+				D3DX11_PASS_DESC passDesc;
+				pPass->GetDesc(&passDesc);
+
+				D3DX11_PASS_SHADER_DESC vsPassDesc;
+
+				pPass->GetVertexShaderDesc(&vsPassDesc);
+				ID3DX11EffectShaderVariable * pVs;
+				pVs = vsPassDesc.pShaderVariable->AsShader();
+				D3DX11_EFFECT_SHADER_DESC vsDesc;
+				pVs->GetShaderDesc(vsPassDesc.ShaderIndex, &vsDesc);
+				ID3D11VertexShader *vertexShader=NULL;
+				pVs->GetVertexShader(vsPassDesc.ShaderIndex,&vertexShader);
+				if(vertexShader)
+				{
+					simul::dx11::SetDebugObjectName(vertexShader,filename_utf8.c_str());
+					vertexShader->Release();
+				}
+			}
+		}
+	}
 	delete [] macros;
 	return hr;
 }
 
-ID3DX11Effect *LoadEffect(ID3D1xDevice *d3dDevice,const char *filename_utf8)
+ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8)
 {
 	std::map<std::string,std::string> defines;
 	return LoadEffect(d3dDevice,filename_utf8,defines);
 }
 
-ID3DX11Effect *LoadEffect(ID3D1xDevice *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines)
+ID3DX11Effect *LoadEffect(ID3D11Device *d3dDevice,const char *filename_utf8,const std::map<std::string,std::string>&defines)
 {
 	ID3DX11Effect *effect=NULL;
 	CreateEffect(d3dDevice,&effect,filename_utf8,defines);
@@ -1044,36 +885,6 @@ void MakeCubeMatrices(D3DXMATRIX mat[],const float *cam_pos,bool ReverseDepth)
 void BreakIfDebugging()
 {
 	DebugBreak();
-}
-
-// Stored states
-static ID3D11DepthStencilState* m_pDepthStencilStateStored11=NULL;
-static UINT m_StencilRefStored11;
-static ID3D11RasterizerState* m_pRasterizerStateStored11=NULL;
-static ID3D11BlendState* m_pBlendStateStored11=NULL;
-static float m_BlendFactorStored11[4];
-static UINT m_SampleMaskStored11;
-static ID3D11SamplerState* m_pSamplerStateStored11=NULL;
-
-void StoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
-{
-    pd3dImmediateContext->OMGetDepthStencilState( &m_pDepthStencilStateStored11, &m_StencilRefStored11 );
-    pd3dImmediateContext->RSGetState( &m_pRasterizerStateStored11 );
-    pd3dImmediateContext->OMGetBlendState( &m_pBlendStateStored11, m_BlendFactorStored11, &m_SampleMaskStored11 );
-    pd3dImmediateContext->PSGetSamplers( 0, 1, &m_pSamplerStateStored11 );
-}
-
-void RestoreD3D11State( ID3D11DeviceContext* pd3dImmediateContext )
-{
-    pd3dImmediateContext->OMSetDepthStencilState( m_pDepthStencilStateStored11, m_StencilRefStored11 );
-    pd3dImmediateContext->RSSetState( m_pRasterizerStateStored11 );
-    pd3dImmediateContext->OMSetBlendState( m_pBlendStateStored11, m_BlendFactorStored11, m_SampleMaskStored11 );
-    pd3dImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerStateStored11 );
-
-    SAFE_RELEASE( m_pDepthStencilStateStored11 );
-    SAFE_RELEASE( m_pRasterizerStateStored11 );
-    SAFE_RELEASE( m_pBlendStateStored11 );
-    SAFE_RELEASE( m_pSamplerStateStored11 );
 }
 
 int simul::dx11::ByteSizeOfFormatElement( DXGI_FORMAT format )

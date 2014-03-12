@@ -1,5 +1,5 @@
 #define NOMINMAX
-// Copyright (c) 2007-2013 Simul Software Ltd
+// Copyright (c) 2007-2014 Simul Software Ltd
 // All Rights Reserved.
 //
 // This source code is supplied under the terms of a license agreement or
@@ -27,7 +27,6 @@ static D3DPOOL d3d_memory_pool=D3DPOOL_MANAGED;
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/SkyKeyframer.h"
 #include "Simul/Geometry/Orientation.h"
-#include "Simul/Sky/TextureGenerator.h"
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Decay.h"
 #include "Simul/Math/Pi.h"
@@ -254,15 +253,7 @@ void SimulSkyRenderer::FillSunlightTexture(int texture_index,int texel_index,int
 	D3DLOCKED_RECT lockedRect={0};
 	if(FAILED(hr=tex->LockRect(0,&lockedRect,NULL,NULL)))
 		return;
-	if(sky_tex_format==D3DFMT_A16B16G16R16F)
-	{
-		// Convert the array of floats into float16 values for the texture.
-		short *short_ptr=(short *)(lockedRect.pBits);
-		short_ptr+=4*texel_index;
-		for(int i=0;i<num_texels*4;i++)
-			*short_ptr++=simul::sky::TextureGenerator::ToFloat16(*float4_array++);
-	}
-	else
+	SIMUL_ASSERT(sky_tex_format!=D3DFMT_A16B16G16R16F)
 	{
 		// Convert the array of floats into float16 values for the texture.
 		float *float_ptr=(float *)(lockedRect.pBits);
@@ -503,7 +494,7 @@ float SimulSkyRenderer::CalcSunOcclusion(float cloud_occlusion)
 	static float ff=0.0001f;
 	float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 	float zFar=(1.f+ff)/tan(sun_angular_radius);
-	FixProjectionMatrix(proj,zFar*ff,zFar,IsYVertical());
+	FixProjectionMatrix(proj,zFar*ff,zFar,false);
 	HRESULT hr;
 	// if the whole quad was visible, how many pixels would it be?
 	float screen_angular_size=2.f*atan((float)proj._22);
@@ -587,9 +578,17 @@ void SimulSkyRenderer::EnsureTexturesAreUpToDate(void*)
 {
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
+	sky::GpuSkyParameters p;
+	sky::GpuSkyAtmosphereParameters a;
+	sky::GpuSkyInfraredParameters ir;
+	
 	for(int i=0;i<3;i++)
 	{
-		simul::sky::BaseKeyframer::seq_texture_fill texture_fill=skyKeyframer->GetSequentialFadeTextureFill(i,fade_texture_iterator[i]);
+		skyKeyframer->GetGpuSkyParameters(p,a,ir,i);
+		int cycled_index=(texture_cycle+i)%3;
+		skyKeyframer->cpuSkyGenerator.MakeLossAndInscatterTextures(cycled_index,skyKeyframer->GetSkyInterface(),p,a,ir);
+		
+		simul::sky::seq_texture_fill texture_fill=skyKeyframer->cpuSkyGenerator.GetSequentialFadeTextureFill(cycled_index,fade_texture_iterator[i]);
 		if(texture_fill.num_texels)
 		{
 			FillFadeTexturesSequentially(i,texture_fill.texel_index,texture_fill.num_texels

@@ -96,7 +96,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ForcedIncludeFiles>Simul/UseDlls.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -107,7 +107,6 @@
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>$(SIMUL)/lib/$(Platform)/VC11/$(Configuration)/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
-      <ShowProgress>LinkVerboseLib</ShowProgress>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -211,7 +210,7 @@
     <ClCompile Include="SimulAtmosphericsRendererDX1x.cpp" />
     <ClCompile Include="SimulCloudRendererDX1x.cpp" />
     <ClCompile Include="SimulHDRRendererDX1x.cpp" />
-    <ClCompile Include="SimulLightningRendererDX11.cpp" />
+    <ClCompile Include="LightningRenderer.cpp" />
     <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
@@ -246,7 +245,7 @@
     <ClInclude Include="SimulAtmosphericsRendererDX1x.h" />
     <ClInclude Include="SimulCloudRendererDX1x.h" />
     <ClInclude Include="SimulHDRRendererDX1x.h" />
-    <ClInclude Include="SimulLightningRendererDX11.h" />
+    <ClInclude Include="LightningRenderer.h" />
     <ClInclude Include="SimulOpticsRendererDX1x.h" />
     <ClInclude Include="SimulSkyRendererDX1x.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />
@@ -255,10 +254,13 @@
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\CrossPlatform\atmospherics.sl" />
     <None Include="..\CrossPlatform\cloud_shadow.sl" />
     <None Include="..\CrossPlatform\earth_shadow_uniforms.sl" />
     <None Include="..\CrossPlatform\godrays.sl" />
     <None Include="..\CrossPlatform\illumination.sl" />
+    <None Include="..\CrossPlatform\lightning_constants.sl" />
+    <None Include="..\CrossPlatform\optics_constants.sl" />
     <None Include="..\CrossPlatform\rain_constants.sl" />
     <None Include="..\CrossPlatform\simul_2d_cloud_detail.sl" />
     <None Include="..\CrossPlatform\simul_clouds.sl" />
@@ -295,8 +297,7 @@
     <None Include="HLSL\simul_gpu_clouds.fx" />
     <None Include="HLSL\simul_gpu_sky.fx" />
     <None Include="HLSL\simul_hdr.fx" />
-    <None Include="HLSL\simul_lightning.fx" />
-    <None Include="HLSL\simul_rain.fx" />
+    <None Include="HLSL\lightning.fx" />
     <None Include="HLSL\simul_rendernoise.fx" />
     <None Include="HLSL\simul_sky.fx" />
     <None Include="HLSL\simul_terrain.fx" />
@@ -307,7 +308,50 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Clouds\Clouds_x64_VC11.vcxproj">
       <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
+<<<<<<< HEAD
     </ProjectReference>
+=======
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Sky\Sky_x64_VC11.vcxproj">
+      <Project>{2dfe8ef4-e245-4d56-b2be-f7f8f38abe9c}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSL\rain.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSL\optics.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSL\light_probes.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\simul_render_cubemap.fx">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSL\spherical_harmonics.fx">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSL\font.fx">
+      <FileType>Document</FileType>
+    </None>
+>>>>>>> bd36ec2d660669578f92e3ee5e6fd341246f9ff0
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
