@@ -474,7 +474,6 @@ GL_ERROR_CHECK
 		effective_world_radius_metres	=helper->GetEffectiveEarthRadiusToMeetHorizon(base_alt,helper->GetMaxCloudDistance());
 	helper->MakeGeometry(GetCloudInterface(),GetCloudGridInterface(),effective_world_radius_metres,false,X1.z,false);
 
-helper->Update2DNoiseCoords();
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply();
 
@@ -514,14 +513,14 @@ helper->Update2DNoiseCoords();
 //	UPDATE_GL_CONSTANT_BUFFER(layerDataConstantsUBO,layerConstants,layerDataConstantsBindingIndex)
 	int idx=0;
 	static int isolate_layer=-1;
-	for(CloudGeometryHelper::SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
+	for(SliceVector::const_iterator i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++,idx++)
 	{
 		if(isolate_layer>=0&&idx>isolate_layer)
 			continue;
 	GL_ERROR_CHECK
-		simul::clouds::CloudGeometryHelper::Slice *s=*i;
-		helper->MakeLayerGeometry(s,effective_world_radius_metres);
-		const simul::clouds::CloudGeometryHelper::IntVector &quad_strip_vertices=helper->GetQuadStripIndices();
+		simul::clouds::Slice *RS=*i;
+		clouds::SliceInstance s=helper->MakeLayerGeometry(RS,effective_world_radius_metres);
+		const simul::clouds::IntVector &quad_strip_vertices=s.quad_strip_indices;
 		size_t qs_vert=0;
 		int layer=(int)helper->GetSlices().size()-1-idx;
 //		setParameter(program,"layerNumber",layer);
@@ -533,19 +532,19 @@ helper->Update2DNoiseCoords();
 		singleLayerConstants.Apply();
 		glBegin(GL_QUAD_STRIP);
 		if(quad_strip_vertices.size())
-		for(CloudGeometryHelper::QuadStripPtrVector::const_iterator j=(*i)->quad_strips.begin();
-			j!=(*i)->quad_strips.end();j++)
+		for(QuadStripVector::const_iterator j=s.quadStrips.begin();
+			j!=s.quadStrips.end();j++)
 		{
 			// The distance-fade for these clouds. At distance dist, how much of the cloud's colour is lost?
-			for(unsigned k=0;k<(*j)->num_vertices;k++,qs_vert++)
+			for(unsigned k=0;k<j->num_vertices;k++,qs_vert++)
 			{
 				if(qs_vert<0||qs_vert>=quad_strip_vertices.size())
 					continue;
 				int v=quad_strip_vertices[qs_vert];
-				if(v<0||v>=(int)helper->GetVertices().size())
+				if(v<0||v>=(int)s.vertices.size())
 					continue;
-				const CloudGeometryHelper::Vertex &V=helper->GetVertices()[v];
-				glVertex3f(V.x*s->layerDistance,V.y*s->layerDistance,V.z*s->layerDistance);
+				const Vertex &V=s.vertices[v];
+				glVertex3f(V.x*RS->layerDistance,V.y*RS->layerDistance,V.z*RS->layerDistance);
 			}
 		}
 		glEnd();
