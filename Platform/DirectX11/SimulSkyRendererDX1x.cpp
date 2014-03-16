@@ -16,14 +16,15 @@
 #include <d3dx10.h>
 #include <dxerr.h>
 #include <string>
-#include "SimulSkyRendererDX1x.h"
+#include "Simul/Math/Vector3.h"
+#include "Simul/Math/Pi.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Sky.h"
 #include "Simul/Sky/SkyKeyframer.h"
-#include "Simul/Math/Vector3.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/SimulSkyRendererDX1x.h"
 #include "Simul/Camera/Camera.h"
 
 using namespace simul::dx11;
@@ -415,7 +416,7 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	skyConstants.LinkToEffect(m_pSkyEffect,"SkyConstants");
 	gpuSkyGenerator.RecompileShaders();
 }
-#include "Simul/Math/Pi.h"
+
 float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 {
 	sun_occlusion=cloud_occlusion;
@@ -423,7 +424,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
 		return sun_occlusion;
 //	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
-	float sun_angular_radius=skyK eyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
+	float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 
 	// fix the projection matrix so this quad is far away:
 	D3DXMATRIX tmp=proj;
@@ -729,6 +730,11 @@ bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int heigh
 		return false;
 	int s							=size/numAltitudes-2;
 	ID3D11DeviceContext *context	=(ID3D11DeviceContext *)c;
+	
+	D3D11_VIEWPORT viewport;
+	UINT num_v		=1;
+	context->RSGetViewports(&num_v,&viewport);
+	UtilityRenderer::SetScreenSize(viewport.Width,viewport.Height);
 
 	ID3DX11EffectTechnique*	techShowFadeTable				=m_pSkyEffect->GetTechniqueByName("simul_show_fade_table");
 	ID3DX11EffectTechnique*	techniqueShowFade				=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");
