@@ -308,9 +308,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Clouds\Clouds_x64_VC11.vcxproj">
       <Project>{ba686093-89a1-438d-948a-34ecf718d106}</Project>
-<<<<<<< HEAD
-    </ProjectReference>
-=======
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -351,7 +348,6 @@
     <None Include="HLSL\font.fx">
       <FileType>Document</FileType>
     </None>
->>>>>>> bd36ec2d660669578f92e3ee5e6fd341246f9ff0
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

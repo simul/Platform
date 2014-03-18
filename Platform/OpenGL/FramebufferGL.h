@@ -36,7 +36,7 @@ public:
 	// InitDepth_RB or InitDepth_Tex needs to be called.
 	void InitDepth_RB(GLenum iformat = GL_DEPTH_COMPONENT24);
 	void InitDepth_Tex(GLenum iformat = GL_DEPTH_COMPONENT24);
-	void Init();
+	bool Init();
 	/// Use the existing depth buffer
 	void NoDepth();
 	/// Activate / deactivate the FBO as a render target

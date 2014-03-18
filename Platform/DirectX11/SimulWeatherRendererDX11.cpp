@@ -432,7 +432,6 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	CompositeCloudsToScreen(context,view_id,!is_cubemap,mainDepthTextureMS,lowResDepthTexture,depthViewportXYWH);
 	
 	RenderLightning(context,view_id);
-	DoOcclusionTests();
 	RenderPrecipitation(context,lowResDepthTexture,depthViewportXYWH,view,proj);
 	SIMUL_COMBINED_PROFILE_END(context)
 }
@@ -548,16 +547,6 @@ void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int view_
 		w/=l;
 		l=dy/2;
 	}
-<<<<<<< HEAD
-	UtilityRenderer::DrawTexture(pContext	,0*w	,l		,w,l,(ID3D1xShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
-	UtilityRenderer::Print(pContext			,0*w	,l		,"Hi-Res Far");
-	UtilityRenderer::DrawTexture(pContext	,1*w,l			,w,l,(ID3D1xShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
-	UtilityRenderer::Print(pContext			,1*w	,l		,"Hi-Res Near");
-	UtilityRenderer::DrawTexture(pContext	,0*w	,2*l	,w,l,(ID3D1xShaderResourceView*)fb->lowResFarFramebufferDx11.GetColorTex());
-	UtilityRenderer::Print(pContext			,0*w	,2*l	,"Lo-Res Far");
-	UtilityRenderer::DrawTexture(pContext	,1*w	,2*l	,w,l,(ID3D1xShaderResourceView*)fb->lowResNearFramebufferDx11.GetColorTex());
-	UtilityRenderer::Print(pContext			,1*w	,2*l	,"Lo-Res Near");
-=======
 	UtilityRenderer::DrawTexture(pContext	,x0+0*w	,y0+l	,w,l,(ID3D1xShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
 	UtilityRenderer::Print(pContext			,x0+0*w	,y0+l	,"Hi-Res Far");
 	UtilityRenderer::DrawTexture(pContext	,x0+1*w	,y0+l	,w,l,(ID3D1xShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
@@ -566,7 +555,6 @@ void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int view_
 	UtilityRenderer::Print(pContext			,x0+0*w	,y0+2*l	,"Lo-Res Far");
 	UtilityRenderer::DrawTexture(pContext	,x0+1*w	,y0+2*l	,w,l,(ID3D1xShaderResourceView*)fb->lowResNearFramebufferDx11.GetColorTex());
 	UtilityRenderer::Print(pContext			,x0+1*w	,y0+2*l	,"Lo-Res Near");
->>>>>>> bd36ec2d660669578f92e3ee5e6fd341246f9ff0
 }
 
 void SimulWeatherRendererDX11::RenderLightning(void *context,int view_id)

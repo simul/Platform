@@ -267,11 +267,8 @@ V_CHECK(pd3dDevice->Clear(0L,NULL,D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER,0x77FF7777,1.
 	{
 		pd3dDevice->SetTransform(D3DTS_VIEW,&view);
 		simulWeatherRenderer->RenderSkyAsOverlay(pd3dDevice,viewport_id,(const float*)view,(const float*)proj,false,exposure,UseSkyBuffer,depth_texture,NULL,simul::sky::float4(0,0,1.f,1.f),true);
-<<<<<<< HEAD
-		simulWeatherRenderer->DoOcclusionTests(pd3dDevice);
-=======
-	/*	simulWeatherRenderer->DoOcclusionTests();
->>>>>>> bd36ec2d660669578f92e3ee5e6fd341246f9ff0
+
+	/*	simulWeatherRenderer->DoOcclusionTests(pd3dDevice);
 		if(simulOpticsRenderer&&ShowFlares)
 		{
 			simul::sky::float4 dir(0,0,1.f,0),light(0,0,0,0);

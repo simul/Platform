@@ -24,11 +24,8 @@
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
-<<<<<<< HEAD
 #include "Simul/Math/Pi.h"
-=======
 #include "Simul/Camera/Camera.h"
->>>>>>> bd36ec2d660669578f92e3ee5e6fd341246f9ff0
 
 using namespace simul::dx11;
 
@@ -68,17 +65,8 @@ void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
 
 void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 {
-<<<<<<< HEAD
-	m_pd3dDevice=(ID3D1xDevice*)dev;
-	sunQuery.RestoreDeviceObjects(dev);
-=======
 	m_pd3dDevice=(ID3D11Device*)dev;
-	D3D1x_QUERY_DESC qdesc=
-	{
-		D3D1x_QUERY_OCCLUSION,0
-	};
-    m_pd3dDevice->CreateQuery(&qdesc,&d3dQuery);
->>>>>>> bd36ec2d660669578f92e3ee5e6fd341246f9ff0
+	sunQuery.RestoreDeviceObjects(dev);
 	HRESULT hr=S_OK;
 	world.Identity();
 	view.Identity();
@@ -423,78 +411,7 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	skyConstants.LinkToEffect(m_pSkyEffect,"SkyConstants");
 	gpuSkyGenerator.RecompileShaders();
 }
-<<<<<<< HEAD
 
-#include "Simul/Geometry/Orientation.h"
-
-void SimulSkyRendererDX1x::SetConstantsForPlanet(SkyConstants &skyConstants,const float *v,const float *p,const float *direction,const float *light_dir)
-{
-	//simul::math::Vector3 pos;
-	simul::math::Vector3 dir(direction);
-	//pos=GetCameraPosVector(view,false);
-	float Yaw=atan2(dir.x,dir.y);
-	float Pitch=-asin(dir.z);
-	HRESULT hr=S_OK;
-	simul::math::Matrix4x4 world, tmp1, tmp2;
-	simul::math::Matrix4x4 view(v);
-	simul::math::Matrix4x4 proj(p);
-	
-	simul::geometry::SimulOrientation or;
-	or.Rotate(3.14159f-Yaw,simul::math::Vector3(0,0,1.f));
-	or.LocalRotate(3.14159f/2.f+Pitch,simul::math::Vector3(1.f,0,0));
-	world=or.T4;
-	//set up matrices
-	view._41=0.f;
-	view._42=0.f;
-	view._43=0.f;
-	simul::math::Vector3 sun2;
-	simul::math::Matrix4x4 inv_world;
-	world.Inverse(inv_world);
-	or.GlobalToLocalDirection(sun2,light_dir);
-	/*D3DXVec3TransformNormal(  &sun2,
-							  &dir,
-							  &inv_world);*/
-	simul::math::Multiply4x4(tmp1,world,view);
-	simul::math::Multiply4x4(tmp2,tmp1,proj);
-	//D3DXMatrixMultiply(&tmp1,&worldcl,&view);
-	//D3DXMatrixMultiply(&tmp2,&tmp1,&proj);
-	//D3DXMatrixTranspose(&tmp1,&tmp2);
-	skyConstants.worldViewProj=tmp2;
-	skyConstants.lightDir=sun2;
-}
-=======
-#include "Simul/Math/Pi.h"
-float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
-{
-	sun_occlusion=cloud_occlusion;
-	if(!m_hTechniqueQuery)
-		return sun_occlusion;
-//	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
-	float sun_angular_radius=skyK eyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
-
-	// fix the projection matrix so this quad is far away:
-	D3DXMATRIX tmp=proj;
-	static float ff=0.0001f;
-	float zFar=(1.f+ff)/tan(sun_angular_radius);
-/*
-	// Start the query
-	d3dQuery->Begin();
-	RenderAngledQuad(sun_dir,sun_angular_radius);
-	// End the query, get the data
-	d3dQuery->End();
-    // Loop until the data becomes available
-    UINT64 pixelsVisible = 0;
-    while (d3dQuery->GetData((void *) &pixelsVisible,sizeof(UINT64),0) == S_FALSE);
-	sun_occlusion=1.f-(float)pixelsVisible/560.f;
-	if(sun_occlusion<0)
-		sun_occlusion=0;
-	sun_occlusion=1.f-(1.f-cloud_occlusion)*(1.f-sun_occlusion);
-	proj=tmp;*/
-	return sun_occlusion;
-}
-
->>>>>>> bd36ec2d660669578f92e3ee5e6fd341246f9ff0
 
 void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 {
@@ -532,9 +449,8 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(void *context,float cloud_occlusion
 		return sun_occlusion;
 	
 	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
-	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,sun_dir);
+	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f,sky::float4(1,1,1,1),sun_dir);
 	// 2 * sun radius because we want glow arprofileData.DisjointQuery[currFrame]ound it.
-	skyConstants.radiusRadians	=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
 	skyConstants.Apply(pContext);
 
 	// Start the query

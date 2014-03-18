@@ -378,14 +378,10 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,s
 		//,depthTextureMS,skyBufferDepthTex
 		//,relativeViewportTextureRegionXYWH
 		//,true);
-<<<<<<< HEAD
-	simulWeatherRenderer->RenderMixedResolution(pd3dImmediateContext,view_id,(const float*)v,(const float*)proj,false,Exposure,depthTextureMS,skyBufferDepthTex,relativeViewportTextureRegionXYWH);
-	simulWeatherRenderer->RenderLightning(pd3dImmediateContext,view_id);
-	simulWeatherRenderer->DoOcclusionTests(pd3dImmediateContext);
-	simulWeatherRenderer->RenderPrecipitation(pd3dImmediateContext,depthTextureResolved,relativeViewportTextureRegionXYWH);
-=======
 	simulWeatherRenderer->RenderMixedResolution(pContext,view_id,(const float*)v,(const float*)proj,false,Exposure,depthTextureMS,skyBufferDepthTex,relativeViewportTextureRegionXYWH);
->>>>>>> bd36ec2d660669578f92e3ee5e6fd341246f9ff0
+	simulWeatherRenderer->RenderLightning(pContext,view_id);
+	simulWeatherRenderer->DoOcclusionTests(pContext);
+	simulWeatherRenderer->RenderPrecipitation(pContext,depthTextureResolved,relativeViewportTextureRegionXYWH,(const float*)v,(const float*)proj);
 	if(!simulOpticsRenderer||!ShowFlares)
 		return;
 	simul::sky::float4 dir,light;

@@ -28,7 +28,7 @@ void main(void)
     gl_Position			=transformed_pos;
 
 	layerDensity		=layer.layerFade;
-	texCoordLightning	=(wPosition.xyz-illuminationOrigin.xyz)/illuminationScales.xyz;
+	texCoordLightning	=(wPosition.xyz-lightningOrigin.xyz)*lightningInvScales.xyz;
 	float depth			=length(pos)/maxFadeDistanceMetres;
 	view				=normalize(pos);
 	wPosition			=viewPos+pos;

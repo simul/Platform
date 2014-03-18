@@ -239,7 +239,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 		}
 		// Given that we have the near and far depths, 
 		// At an edge we will do the interpolation for each MSAA sample.
-		float hiResInterp		=0.f;
+		float hiResInterp		=0.0;
 		for(int j=0;j<numSamples;j++)
 		{
 			float hiresDepth=0.0;

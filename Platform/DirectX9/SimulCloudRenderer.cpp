@@ -835,9 +835,9 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,screenCoordOffset);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,mieRayleighRatio);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,alphaSharpness);
-		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,illuminationOrigin);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,lightningOrigin);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,maxFadeDistanceMetres);
-		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,illuminationScales);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,lightningInvScales);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,noise3DPersistence);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,crossSectionOffset);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,noise3DOctaves);

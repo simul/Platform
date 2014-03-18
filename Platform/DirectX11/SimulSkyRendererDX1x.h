@@ -105,13 +105,8 @@ protected:
 	ID3D1xBuffer*						m_pVertexBuffer;
 	ID3D1xInputLayout*					m_pStarsVtxDecl;
 	ID3D1xBuffer*						m_pStarsVertexBuffer;
-<<<<<<< HEAD
-	ID3D1xEffect*						m_pSkyEffect;
-	Query								sunQuery;
-=======
 	ID3DX11Effect*						m_pSkyEffect;
-	ID3D1xQuery*						d3dQuery;
->>>>>>> bd36ec2d660669578f92e3ee5e6fd341246f9ff0
+	Query								sunQuery;
 
 	ID3DX11EffectTechnique*				m_hTechniqueFade3DTo2D;
 	ID3DX11EffectTechnique*				m_hTechniqueSun;
