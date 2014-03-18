@@ -84,6 +84,7 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	lightningPerViewConstants.Apply(pContext);
 	std::vector<int> start;
 	std::vector<int> count;
+	std::vector<bool> thick;
 	int v=0;
 	float time	=baseSkyInterface->GetTime();
 	for(int i=0;i<cloudKeyframer->GetNumLightningBolts(time);i++)
@@ -98,9 +99,8 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 		//dx11::setParameter(effect,"lightningColour",props.colour);
 		simul::sky::float4 x1,x2;
 		static float maxwidth=8.f;
-		static float ww=5.f;
-		simul::math::Vector3 view_dir,cam_pos;
-		GetCameraPosVector((const float*)&view);
+		static float pixel_width_threshold=3.f;
+		simul::math::Vector3 cam_pos=GetCameraPosVector((const float*)&view);
 		float vertical_shift=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);
 		for(int j=0;j<props.numLevels;j++)
 		{
@@ -111,6 +111,11 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 
 				int v_start=v;
 				start.push_back(v);
+				math::Vector3 diff=((const float *)branch.vertices[0]);
+				diff-=cam_pos;
+				float pixel_width=branch.width/diff.Magnitude()*viewport.Width;
+				bool draw_thick=pixel_width>pixel_width_threshold;
+				thick.push_back(draw_thick);
 
 				for(int k=-1;k<branch.numVertices;k++)
 				{
@@ -131,8 +136,6 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 						simul::sky::float4 dir=x2-x1;
 						x1=x2+dir;
 					}
-					float width=branch.brightness*branch.width;
-					width*=ww;
 
 					float brightness=branch.brightness;
 					float dh=x1.z/1000.f-K.cloud_base_km;
@@ -144,7 +147,9 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 					}
 					if(end)
 						brightness=0.f;
-					vertices[v].texCoords=vec4(width,width,x1.w,brightness);
+					if(!draw_thick)
+						brightness*=pixel_width/pixel_width_threshold;
+					vertices[v].texCoords=vec4(branch.width*x1.w,branch.width*x1.w,x1.w,brightness*x1.w);
 					vertices[v].position=vec4(x1.x,x1.y,x1.z+vertical_shift,x1.w);
 					v++;
 				}
@@ -162,7 +167,7 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	for(int i=0;i<start.size();i++)
 	{
-		if(i)
+		if(!thick[i])
 		{
 			pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
 			tech=effect->GetTechniqueByName("lightning_thin");

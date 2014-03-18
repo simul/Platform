@@ -130,6 +130,7 @@ void Profiler::End()
     profileData->QueryStarted = FALSE;
     profileData->QueryFinished = TRUE;
 }
+
 template<typename T> inline std::string ToString(const T& val)
 {
     std::ostringstream stream;

@@ -225,18 +225,17 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(0);
-	helper->GenerateSphereVertices();
-	V_CHECK(m_pd3dDevice->CreateVertexBuffer((unsigned)(helper->GetVertices().size()*sizeof(PosVert_t)),D3DUSAGE_WRITEONLY,0,
-									  D3DPOOL_DEFAULT, &unitSphereVertexBuffer,
-									  NULL));
+	clouds::SliceInstance s=helper->GenerateSphereVertices();
+	V_CHECK(m_pd3dDevice->CreateVertexBuffer((unsigned)(s.vertices.size()*sizeof(PosVert_t)),D3DUSAGE_WRITEONLY,0,
+									  D3DPOOL_DEFAULT, &unitSphereVertexBuffer,NULL));
 	PosVert_t *unit_sphere_vertices;
 	if(unitSphereVertexBuffer)
 	{
 		V_CHECK(unitSphereVertexBuffer->Lock(0,sizeof(PosVert_t),(void**)&unit_sphere_vertices,0 ));
 		PosVert_t *V=unit_sphere_vertices;
-		for(size_t i=0;i<helper->GetVertices().size();i++)
+		for(size_t i=0;i<s.vertices.size();i++)
 		{
-			const simul::clouds::CloudGeometryHelper::Vertex &v=helper->GetVertices()[i];
+			const simul::clouds::Vertex &v=s.vertices[i];
 			V->position.x=v.x;
 			V->position.y=v.y;
 			V->position.z=v.z;
@@ -244,7 +243,7 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 		}
 		V_CHECK(unitSphereVertexBuffer->Unlock());
 	}
-	unsigned num_indices=(unsigned)helper->GetQuadStripIndices().size();
+	unsigned num_indices=(unsigned)s.quad_strip_indices.size();
 	SAFE_RELEASE(unitSphereIndexBuffer);
 	if(num_indices)
 	{
@@ -255,7 +254,7 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 		unsigned *index=indexData;
 		for(unsigned i=0;i<num_indices;i++)
 		{
-			*(index++)	=helper->GetQuadStripIndices()[i];
+			*(index++)	=s.quad_strip_indices[i];
 		}
 		V_CHECK(unitSphereIndexBuffer->Unlock());
 	}
@@ -718,7 +717,7 @@ bool SimulCloudRenderer::FillRaytraceLayerTexture(int viewport_id)
 	HRESULT hr=S_OK;
 	B_RETURN(raytrace_layer_texture->LockRect(0,&lockedRect,NULL,NULL));
 	float *float_ptr=(float *)(lockedRect.pBits);
-	typedef simul::clouds::CloudGeometryHelper::SliceVector::const_reverse_iterator iter;
+	typedef simul::clouds::SliceVector::const_reverse_iterator iter;
 	static float cutoff=100000.f;
 	int j=0;
 	for(iter i=helper->GetSlices().rbegin();i!=helper->GetSlices().rend()&&j<128;i++,j++)
@@ -836,9 +835,9 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,screenCoordOffset);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,mieRayleighRatio);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,alphaSharpness);
-		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,illuminationOrigin);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,lightningOrigin);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,maxFadeDistanceMetres);
-		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,illuminationScales);
+		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,lightningInvScales);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,noise3DPersistence);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,crossSectionOffset);
 		DX9_STRUCTMEMBER_SET(m_pCloudEffect,cloudConstants,noise3DOctaves);
@@ -876,7 +875,7 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	helper->GetGrid(el_grid,grid_x);
 	simul::sky::float4 view_km=(const float*)cam_pos;
 	view_km*=0.001f;
-	typedef simul::clouds::CloudGeometryHelper::SliceVector::const_iterator iter;
+	typedef simul::clouds::SliceVector::const_iterator iter;
 	static float cutoff=100000.f;	// Get the sunlight at this altitude:
 	simul::sky::float4 sunlight=skyInterface->GetLocalIrradiance(base_alt_km);
 	const simul::clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
@@ -884,18 +883,17 @@ void SimulCloudRenderer::InternalRenderVolumetric(int viewport_id)
 	for(iter i=helper->GetSlices().begin();i!=helper->GetSlices().end();i++)
 	{
 		float distance=(*i)->layerDistance;
-		helper->MakeLayerGeometry(*i,6378000.f);
-		const simul::clouds::CloudGeometryHelper::IntVector &quad_strip_vertices=helper->GetQuadStripIndices();
+		clouds::SliceInstance s=helper->MakeLayerGeometry(*i,6378000.0f);
+		simul::clouds::IntVector &quad_strip_vertices=s.quad_strip_indices;
 		size_t qs_vert=0;
 		float fade=(*i)->layerFade;
 		bool start=true;
-		for(simul::clouds::CloudGeometryHelper::QuadStripPtrVector::const_iterator j=(*i)->quad_strips.begin();
-			j!=(*i)->quad_strips.end();j++)
+		for(simul::clouds::QuadStripVector::const_iterator j=s.quadStrips.begin();j!=s.quadStrips.end();j++)
 		{
 			bool l=0;
-			for(size_t k=0;k<(*j)->num_vertices;k++,qs_vert++,l++,v++)
+			for(size_t k=0;k<(j)->num_vertices;k++,qs_vert++,l++,v++)
 			{
-				const simul::clouds::CloudGeometryHelper::Vertex &V=helper->GetVertices()[quad_strip_vertices[qs_vert]];
+				const simul::clouds::Vertex &V=s.vertices[quad_strip_vertices[qs_vert]];
 				pos.Set(V.x,V.y,V.z,0);
 				if(v>=MAX_VERTICES)
 				{

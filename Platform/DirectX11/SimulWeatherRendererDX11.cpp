@@ -443,7 +443,6 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	CompositeCloudsToScreen(context,view_id,!is_cubemap,mainDepthTextureMS,lowResDepthTexture,depthViewportXYWH);
 	
 	RenderLightning(context,view_id);
-	DoOcclusionTests();
 	RenderPrecipitation(context,lowResDepthTexture,depthViewportXYWH,view,proj);
 	SIMUL_COMBINED_PROFILE_END(context)
 }
@@ -547,7 +546,7 @@ void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int view_
 	D3D11_VIEWPORT viewport;
 	UINT num_v		=1;
 	pContext->RSGetViewports(&num_v,&viewport);
-	UtilityRenderer::SetScreenSize(viewport.Width,viewport.Height);
+	UtilityRenderer::SetScreenSize((int)viewport.Width,(int)viewport.Height);
 
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	int w=dx*4;

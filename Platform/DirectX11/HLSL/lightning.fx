@@ -8,11 +8,21 @@ struct transformedVertex
 {
     vec4 hPosition	: SV_POSITION;
 	vec4 texCoords	: TEXCOORD0;
+    vec2 hPosCentre1: TEXCOORD1;
+    vec2 hPosCentre2: TEXCOORD2;
+	vec2 screenPos:	TEXCOORD3;
+    float along: TEXCOORD4;
+	float width: TEXCOORD5;
+};
+struct transformedThinVertex
+{
+    vec4 hPosition	: SV_POSITION;
+	vec4 texCoords	: TEXCOORD0;
 };
 
-transformedVertex VS_Thin(LightningVertexInput IN)
+transformedThinVertex VS_Thin(LightningVertexInput IN)
 {
-    transformedVertex OUT;
+    transformedThinVertex OUT;
     OUT.hPosition	=mul(worldViewProj, vec4(IN.position.xyz , 1.0));
 	OUT.texCoords	=IN.texCoords;
     return OUT;
@@ -26,7 +36,7 @@ LightningVertexInput VS_Thick(LightningVertexInput IN)
     return OUT;
 }
 
-vec2 screen_space(vec4 vertex)
+vec2 PixelPos(vec4 vertex)
 {
 	return vec2(vertex.xy/vertex.w)*viewportPixels;
 }
@@ -44,10 +54,10 @@ void GS_Thick(lineadj LightningVertexInput input[4], inout TriangleStream<transf
     //  |      |                   |      |
     //  |      |                   |      |
     //  d - - - - - - - - - - - - - - - - c
-	vec2 p0		=screen_space(input[0].position);
-	vec2 p1		=screen_space(input[1].position);
-	vec2 p2		=screen_space(input[2].position);
-	vec2 p3		=screen_space(input[3].position);
+	vec2 p0		=PixelPos(input[0].position);
+	vec2 p1		=PixelPos(input[1].position);
+	vec2 p2		=PixelPos(input[2].position);
+	vec2 p3		=PixelPos(input[3].position);
 	vec2 area	=viewportPixels * 1.2;
 	if(p1.x<-area.x||p1.x>area.x) return;
 	if(p1.y<-area.y||p1.y>area.y) return;
@@ -67,39 +77,57 @@ void GS_Thick(lineadj LightningVertexInput input[4], inout TriangleStream<transf
 	vec2 miter_a		=normalize(n0 + n1);	// miter at start of current segment
 	vec2 miter_b		=normalize(n1 + n2);	// miter at end of current segment
 	// determine the length of the miter by projecting it onto normal and then inverse it
-	float widthPixels1	=input[1].texCoords.x;
-	float widthPixels2	=input[2].texCoords.x;
-	float length_a		=widthPixels1/input[1].position.w*viewportPixels.x/dot(miter_a, n1);
-	float length_b		=widthPixels2/input[2].position.w*viewportPixels.x/dot(miter_b, n1);
-	const float	MITER_LIMIT=1.0;//0.75;
+	float width1		=input[1].texCoords.x;
+	float width2		=input[2].texCoords.x;
+	float lengthPixels_a		=width1/input[1].position.w*viewportPixels.x/dot(miter_a, n1);
+	float lengthPixels_b		=width2/input[2].position.w*viewportPixels.x/dot(miter_b, n1);
+	const float	MITER_LIMIT=1.0;
+	output.hPosCentre1	=vec2(p1.xy/viewportPixels);
+	output.hPosCentre2	=vec2(p2.xy/viewportPixels);
+	output.width		=width1/input[1].position.w;
+	vec2 diff	=output.hPosCentre2-output.hPosCentre1;
+	float dist	=length(diff);
+	float d2	=dist*dist;
 	// prevent excessively long miters at sharp corners
 	if( dot(v0,v1) < -MITER_LIMIT )
 	{
 		miter_a = n1;
-		length_a = widthPixels1;
+		lengthPixels_a = width1;
 		// close the gap
 		if(dot(v0,n1)>0)
 		{
-			output.hPosition	=vec4( (p1 + widthPixels1 * n0) / viewportPixels, 0.0, 1.0 );
+			output.hPosition	=vec4( (p1 + width1 * n0) / viewportPixels, 0.0, 1.0 );
+			output.screenPos	=output.hPosition.xy;
+			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(0,input[1].texCoords.yzw);
 			SpriteStream.Append(output);
-			output.hPosition	=vec4( (p1 + widthPixels1 * n1) / viewportPixels, 0.0, 1.0 );
+			output.hPosition	=vec4( (p1 + width1 * n1) / viewportPixels, 0.0, 1.0 );
+			output.screenPos	=output.hPosition.xy;
+			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(0,input[1].texCoords.yzw);
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( p1 / viewportPixels, 0.0, 1.0 );
-			output.texCoords	=vec4(.5,input[1].texCoords.yzw);
+			output.screenPos	=output.hPosition.xy;
+			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
+			output.texCoords	=vec4(0.5,input[1].texCoords.yzw);
 			SpriteStream.Append(output);
 			SpriteStream.RestartStrip();
 		}
 		else
 		{
-			output.hPosition	=vec4( (p1 - widthPixels2 * n1) / viewportPixels, 0.0, 1.0 );
+			output.hPosition	=vec4( (p1 - width2 * n1) / viewportPixels, 0.0, 1.0 );
+			output.screenPos	=output.hPosition.xy;
+			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(1.0,input[1].texCoords.yzw);
 			SpriteStream.Append(output);
-			output.hPosition	=vec4( (p1 - widthPixels2 * n0) / viewportPixels, 0.0, 1.0 );
+			output.hPosition	=vec4( (p1 - width2 * n0) / viewportPixels, 0.0, 1.0 );
+			output.screenPos	=output.hPosition.xy;
+			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(1.0,input[1].texCoords.yzw);
 			SpriteStream.Append(output);
 			output.hPosition	=vec4( p1 / viewportPixels, 0.0, 1.0 );
+			output.screenPos	=output.hPosition.xy;
+			output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 			output.texCoords	=vec4(0.5,input[1].texCoords.yzw);
 			SpriteStream.Append(output);
 			SpriteStream.RestartStrip();
@@ -108,19 +136,29 @@ void GS_Thick(lineadj LightningVertexInput input[4], inout TriangleStream<transf
 	if( dot(v1,v2) < -MITER_LIMIT )
 	{
 		miter_b = n1;
-		length_b = widthPixels2;
+		lengthPixels_b = width2;
 	}
   // generate the triangle strip
-	output.hPosition	=vec4((p1 + length_a * miter_a)/viewportPixels,0.0,1.0);
+	output.width		=width1/input[1].position.w;
+	output.hPosition	=vec4((p1 + lengthPixels_a * miter_a)/viewportPixels,0.0,1.0);
+	output.screenPos	=output.hPosition.xy;
+	output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2*1.1-0.05;
 	output.texCoords	=vec4(0.0,input[1].texCoords.yzw);
 	SpriteStream.Append(output);
-	output.hPosition	=vec4( (p1 - length_a * miter_a)/viewportPixels,0.0,1.0);
+	output.hPosition	=vec4( (p1 - lengthPixels_a * miter_a)/viewportPixels,0.0,1.0);
+	output.screenPos	=output.hPosition.xy;
+	output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 	output.texCoords	=vec4(1.0,input[1].texCoords.yzw);
 	SpriteStream.Append(output);
-	output.hPosition	=vec4((p2 + length_b * miter_b)/viewportPixels,0.0,1.0);
+	output.width		=width2/input[2].position.w;
+	output.hPosition	=vec4((p2 + lengthPixels_b * miter_b)/viewportPixels,0.0,1.0);
+	output.screenPos	=output.hPosition.xy;
+	output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 	output.texCoords	=vec4(0.0,input[2].texCoords.yzw);
 	SpriteStream.Append(output);
-	output.hPosition	=vec4((p2 - length_b * miter_b)/viewportPixels,0.0,1.0);
+	output.hPosition	=vec4((p2 - lengthPixels_b * miter_b)/viewportPixels,0.0,1.0);
+	output.screenPos	=output.hPosition.xy;
+	output.along		=dot(output.hPosition.xy-output.hPosCentre1.xy,diff)/d2;
 	output.texCoords	=vec4(1.0,input[2].texCoords.yzw);
 	SpriteStream.Append(output);
     SpriteStream.RestartStrip();
@@ -129,14 +167,19 @@ void GS_Thick(lineadj LightningVertexInput input[4], inout TriangleStream<transf
 float4 PS_Main(transformedVertex IN): SV_TARGET
 {
 	float b=2.0*(IN.texCoords.x-0.5);
-	float br=pow(1.0-b*b,4.0);
-	float4 colour=vec4(br,br,br,br);//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	float br=pow(1.0-b*b,4.0)*IN.texCoords.w;// w is the local brightness factor
+	vec2 centre=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along));
+	vec2 diff=IN.screenPos-centre;
+	float dist=length(diff)/IN.width;
+	br		*=exp(-6.0*dist);
+	float4 colour=br*lightningColour;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	
     return colour;
 }
 
-float4 PS_Thin(transformedVertex IN): SV_TARGET
+float4 PS_Thin(transformedThinVertex IN): SV_TARGET
 {
-	float4 colour=vec4(1,0,1,1);//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
+	float4 colour=lightningColour*IN.texCoords.w;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
     return colour;
 }
 

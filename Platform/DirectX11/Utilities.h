@@ -330,7 +330,7 @@ namespace simul
 					uav_desc.Buffer.Flags				=0;
 					uav_desc.Buffer.NumElements			=size;
 					V_CHECK(pd3dDevice->CreateUnorderedAccessView(buffer, &uav_desc,&unorderedAccessView));
-			}
+				}
 			}
 			T *GetBuffer(ID3D11DeviceContext *pContext)
 			{
@@ -363,6 +363,57 @@ namespace simul
 			D3D11_MAPPED_SUBRESOURCE			mapped;
 			int size;
 			ID3D11DeviceContext					*lastContext;
+		};
+		struct Query
+		{
+			static const UINT64 QueryLatency = 5;
+			ID3D11Query *d3d11Query[QueryLatency];
+			bool QueryStarted;
+			bool QueryFinished;
+			int currFrame;
+			Query()
+				:QueryStarted(false)
+				,QueryFinished(false)
+				,currFrame(0)
+			{
+				for(int i=0;i<QueryLatency;i++)
+					d3d11Query[i]		=0;
+			}
+			~Query()
+			{
+				InvalidateDeviceObjects();
+			}
+			void RestoreDeviceObjects(void *dev)
+			{
+				ID3D11Device *m_pd3dDevice=(ID3D11Device*)dev;
+				D3D11_QUERY_DESC qdesc=
+				{
+					D3D11_QUERY_OCCLUSION,0
+				};
+				for(int i=0;i<QueryLatency;i++)
+					m_pd3dDevice->CreateQuery(&qdesc,&d3d11Query[i]);
+			}
+			void InvalidateDeviceObjects()
+			{
+				for(int i=0;i<QueryLatency;i++)
+					SAFE_RELEASE(d3d11Query[i]);
+			}
+			void Begin(void *context)
+			{
+				ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+				pContext->Begin(d3d11Query[currFrame]);
+			}
+			void End(void *context)
+			{
+				ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+				pContext->End(d3d11Query[currFrame]);
+				currFrame = (currFrame + 1) % QueryLatency;  
+			}
+			void GetData(void *context,void *data,size_t sz)
+			{
+				ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+				while (pContext->GetData(d3d11Query[currFrame],data,(UINT)sz,0) == S_FALSE);
+			}
 		};
 	}
 }

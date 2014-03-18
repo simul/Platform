@@ -70,7 +70,7 @@ public:
 	//! objects like mountains etc. in it, and make sure these have already been drawn.
 	//! GetSunOcclusion executes a pseudo-render of an invisible billboard, then
 	//! uses a hardware occlusion query to see how many pixels have passed the z-test.
-	float CalcSunOcclusion(float cloud_occlusion=0.f);
+	float CalcSunOcclusion(void *context,float cloud_occlusion=0.f);
 	//! Call this once per frame to set the matrices.
 	void SetMatrices(const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
 
@@ -106,7 +106,7 @@ protected:
 	ID3D1xInputLayout*					m_pStarsVtxDecl;
 	ID3D1xBuffer*						m_pStarsVertexBuffer;
 	ID3DX11Effect*						m_pSkyEffect;
-	ID3D1xQuery*						d3dQuery;
+	Query								sunQuery;
 
 	ID3DX11EffectTechnique*				m_hTechniqueFade3DTo2D;
 	ID3DX11EffectTechnique*				m_hTechniqueSun;

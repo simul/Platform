@@ -25,6 +25,7 @@
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/SimulSkyRendererDX1x.h"
+#include "Simul/Math/Pi.h"
 #include "Simul/Camera/Camera.h"
 
 using namespace simul::dx11;
@@ -48,7 +49,6 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	,inscatter_2d(NULL)
 	,overcast_2d(NULL)
 	,skylight_2d(NULL)
-	,d3dQuery(NULL)
 	,cycle(0)
 {
 	SetCameraPosition(0,0,400.f);
@@ -67,11 +67,7 @@ void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)
 void SimulSkyRendererDX1x::RestoreDeviceObjects( void* dev)
 {
 	m_pd3dDevice=(ID3D11Device*)dev;
-	D3D1x_QUERY_DESC qdesc=
-	{
-		D3D1x_QUERY_OCCLUSION,0
-	};
-    m_pd3dDevice->CreateQuery(&qdesc,&d3dQuery);
+	sunQuery.RestoreDeviceObjects(dev);
 	HRESULT hr=S_OK;
 	world.Identity();
 	view.Identity();
@@ -173,7 +169,7 @@ void SimulSkyRendererDX1x::InvalidateDeviceObjects()
 	light_table_2d.release();
 	// Set the stored texture sizes to zero, so the textures will be re-created.
 	numFadeDistances=numFadeElevations=numAltitudes=0;
-	SAFE_RELEASE(d3dQuery);
+	sunQuery.InvalidateDeviceObjects();
 	earthShadowUniforms.InvalidateDeviceObjects();
 	skyConstants.InvalidateDeviceObjects();
 	gpuSkyGenerator.InvalidateDeviceObjects();
@@ -410,43 +406,12 @@ void SimulSkyRendererDX1x::RecompileShaders()
 	fadeTexture1				=m_pSkyEffect->GetVariableByName("fadeTexture1")->AsShaderResource();
 	fadeTexture2				=m_pSkyEffect->GetVariableByName("fadeTexture2")->AsShaderResource();
 	illuminationTexture			=m_pSkyEffect->GetVariableByName("illuminationTexture")->AsShaderResource();
-	m_hTechniqueQuery			=m_pSkyEffect->GetTechniqueByName("simul_query");
+	m_hTechniqueQuery			=m_pSkyEffect->GetTechniqueByName("sun_query");
 
 	earthShadowUniforms.LinkToEffect(m_pSkyEffect,"EarthShadowUniforms");
 	skyConstants.LinkToEffect(m_pSkyEffect,"SkyConstants");
 	gpuSkyGenerator.RecompileShaders();
 }
-
-float SimulSkyRendererDX1x::CalcSunOcclusion(float cloud_occlusion)
-{
-	sun_occlusion=cloud_occlusion;
-	if(!m_hTechniqueQuery)
-		return sun_occlusion;
-//	m_pSkyEffect->SetTechnique(m_hTechniqueQuery);
-	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
-	float sun_angular_radius=skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f;
-
-	// fix the projection matrix so this quad is far away:
-	D3DXMATRIX tmp=proj;
-	static float ff=0.0001f;
-	float zFar=(1.f+ff)/tan(sun_angular_radius);
-/*
-	// Start the query
-	d3dQuery->Begin();
-	RenderAngledQuad(sun_dir,sun_angular_radius);
-	// End the query, get the data
-	d3dQuery->End();
-    // Loop until the data becomes available
-    UINT64 pixelsVisible = 0;
-    while (d3dQuery->GetData((void *) &pixelsVisible,sizeof(UINT64),0) == S_FALSE);
-	sun_occlusion=1.f-(float)pixelsVisible/560.f;
-	if(sun_occlusion<0)
-		sun_occlusion=0;
-	sun_occlusion=1.f-(1.f-cloud_occlusion)*(1.f-sun_occlusion);
-	proj=tmp;*/
-	return sun_occlusion;
-}
-
 
 void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 {
@@ -472,17 +437,43 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 	ApplyPass(pContext,m_hTechniqueSun->GetPassByIndex(0));
 	UtilityRenderer::DrawQuad(pContext);
 
-//	UtilityRenderer::RenderAngledQuad(context,sun_dir,sun_angular_radius*2.f,m_pSkyEffect,m_hTechniqueSun,view,proj,sun_dir);
-	// Start the query
-/*d3dQuery->Begin();
-	hr=RenderAngledQuad(sun_dir,sun_angular_radius);
-	// End the query, get the data
-    d3dQuery->End();
+	ApplyPass(pContext,m_hTechniqueSun->GetPassByIndex(0));
+	UtilityRenderer::DrawQuad(pContext);
+}
 
-    // Loop until the data becomes available
-    UINT64 pixelsVisible = 0;
-    
-    while (d3dQuery->GetData((void *) &pixelsVisible,sizeof(UINT64),0) == S_FALSE);*/
+float SimulSkyRendererDX1x::CalcSunOcclusion(void *context,float cloud_occlusion)
+{
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	sun_occlusion=cloud_occlusion;
+	if(!m_hTechniqueQuery||!m_hTechniqueQuery->IsValid())
+		return sun_occlusion;
+	// Start the query
+	D3DXVECTOR4 sun_dir(skyKeyframer->GetDirectionToSun());
+	SetConstantsForPlanet(skyConstants,view,proj,sun_dir,skyKeyframer->GetSkyInterface()->GetSunRadiusArcMinutes()/60.f*pi/180.f,sky::float4(1,1,1,1),sun_dir);
+	// 2 * sun radius because we want glow arprofileData.DisjointQuery[currFrame]ound it.
+	skyConstants.Apply(pContext);
+/*d3dQuery->Begin();*/
+	// Start the query
+    sunQuery.Begin(context);
+	{
+		ApplyPass(pContext,m_hTechniqueQuery->GetPassByIndex(0));
+		UtilityRenderer::DrawQuad(pContext);
+	}
+	// End the query, get the data
+	sunQuery.End(context);
+	D3D11_VIEWPORT viewport;
+	UINT num_v=1;
+	pContext->RSGetViewports(&num_v,&viewport);
+	float tan_half_fov_horizontal=1.f/proj._11;
+	float pixelRadius		=tan(skyConstants.radiusRadians/2.f)*viewport.Width/tan_half_fov_horizontal;
+	float maxPixelsVisible	=pi*pixelRadius*pixelRadius;
+    UINT64 pixelsVisible	=0;
+	sunQuery.GetData(context,&pixelsVisible,sizeof(UINT64));
+ 	sun_occlusion			=1.f-(float)pixelsVisible/maxPixelsVisible;
+	if(sun_occlusion<0)
+		sun_occlusion		=0;
+	sun_occlusion			=1.f-(1.f-cloud_occlusion)*(1.f-sun_occlusion);
+	return sun_occlusion;
 }
 
 void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float *dir,const float *colr,bool do_lighting)
@@ -501,7 +492,6 @@ void SimulSkyRendererDX1x::RenderPlanet(void *c,void* tex,float rad,const float 
 	D3DXVECTOR3 sun_dir(skyKeyframer->GetDirectionToSun());
 	SetConstantsForPlanet(skyConstants,view,proj,planet_dir,rad,planet_colour,sun_dir);
 	skyConstants.Apply(pContext);
-	
 	ApplyPass(pContext,(do_lighting?m_hTechniquePlanet:m_hTechniqueFlare)->GetPassByIndex(0));
 	UtilityRenderer::DrawQuad(pContext);
 }

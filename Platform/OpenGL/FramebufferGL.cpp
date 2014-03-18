@@ -88,14 +88,13 @@ void FramebufferGL::SetWrapClampMode(GLint wr)
 bool FramebufferGL::InitColor_Tex(int , GLenum iformat)
 {
 	SetFormat(iformat);
-	Init();
-	return true;
+	return Init();
 }
 
-void FramebufferGL::Init()
+bool FramebufferGL::Init()
 {
 	if(!Width||!Height)
-		return;
+		return false;
 GL_ERROR_CHECK
 	initialized=true;
 	if(!m_fb)
@@ -116,7 +115,10 @@ GL_ERROR_CHECK
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D,0, colour_iformat, Width, Height,0,GL_RGBA, GL_UNSIGNED_INT, NULL);
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_tex_col[0], 0);
-		CheckFramebufferStatus();
+		
+		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if(status!=GL_FRAMEBUFFER_COMPLETE)
+			return false;
 	}
 	if(depth_iformat)
 	{
@@ -132,13 +134,17 @@ GL_ERROR_CHECK
 		glTexImage2D(GL_TEXTURE_2D, 0, depth_iformat, Width, Height, 0,GL_DEPTH_COMPONENT,GL_UNSIGNED_INT, NULL);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_TEXTURE_2D,m_tex_depth,0);
-		CheckFramebufferStatus();
+		
+		GLenum status= (GLenum) glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if(status!=GL_FRAMEBUFFER_COMPLETE)
+			return false;
 	}
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
 GL_ERROR_CHECK
+	return true;
 }
+
 // In order to use a depth buffer, either
 // InitDepth_RB or InitDepth_Tex needs to be called.
 void FramebufferGL::InitDepth_RB(GLenum iformat)

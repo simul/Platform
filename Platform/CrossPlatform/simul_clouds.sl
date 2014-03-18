@@ -247,6 +247,15 @@ float unshadowedBrightness(float Beta,vec4 lightResponse,vec3 ambientColour)
 	return final;
 }
 
+vec3 calcLightningColour(vec3 world_pos,vec3 lightningColour,vec3 lightningOrigin,vec3 lightningInvScales)
+{
+	vec3 texCoords=(world_pos-lightningOrigin)*lightningInvScales;
+	float diff=length(texCoords-vec3(.5,.5,.5));
+	float b=1.0/pow(diff+.0001,2.0);
+	vec3 colour=b*lightningColour;
+	return colour;
+}
+
 #ifndef GLSL
 RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 											,Texture3D cloudDensity2
@@ -315,17 +324,17 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 		float fadeDistance			=saturate(layerWorldDist/maxFadeDistanceMetres);
 		vec3 world_pos				=viewPos+layerWorldDist*view;
 		world_pos.z					-=layer.verticalShift;
-		vec3 layerTexCoords			=(world_pos-cornerPos)*inverseScales;
+		vec3 cloudTexCoords			=(world_pos-cornerPos)*inverseScales;
 		float layerFade				=layer.layerFade;//*saturate((abs(sine)-layer.sine_threshold)/layer.sine_range);
-		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)/*&&layerTexCoords.z>=min_texc_z*/&&layerTexCoords.z<=max_texc_z)
+		if(layerFade>0&&(fadeDistance<=d||!do_depth_mix)/*&&cloudTexCoords.z>=min_texc_z*/&&cloudTexCoords.z<=max_texc_z)
 		{
 			vec3 noiseval			=vec3(0,0,0);
 			if(noise)
 			{
-				float noise_factor		=lerp(baseNoiseFactor,1.0,saturate(layerTexCoords.z));
+				float noise_factor		=lerp(baseNoiseFactor,1.0,saturate(cloudTexCoords.z));
 				if(noise_3d)
 				{
-					vec3 noise_texc			=layerTexCoords.xyz*noise3DTexcoordScale;
+					vec3 noise_texc			=cloudTexCoords.xyz*noise3DTexcoordScale;
 					float mult=0.5;
 					for(int j=0;j<4;j++)
 					{
@@ -341,10 +350,10 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 					noiseval			=noise_factor*texture_wrap_lod(noiseTexture,noise_texc,0).xyz;
 				}
 			}
-			density					=calcDensity(cloudDensity1,cloudDensity2,layerTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
+			density					=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
             if(do_depth_mix)
 				density.z			*=saturate((d-fadeDistance)/0.01);
-			//density.z				=saturate(density.z+.4*(1.0-density.x)*saturate(5.0-10*layerTexCoords.z));
+			//density.z				=saturate(density.z+.4*(1.0-density.x)*saturate(5.0-10*cloudTexCoords.z));
 			if(density.z>0)
 			{
 #ifdef USE_LIGHT_TABLES
@@ -352,15 +361,16 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				vec3 combinedLightColour=texture_clamp_lod(lightTableTexture,vec2(alt_texc,3.5/4.0),0).rgb;
 				vec3 amb				=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;
 #else
-				vec3 combinedLightColour=lerp(sunlightColour1.rgb,sunlightColour2.rgb,layerTexCoords.z);
+				vec3 combinedLightColour=lerp(sunlightColour1.rgb,sunlightColour2.rgb,cloudTexCoords.z);
 #endif
 				float brightness_factor	=unshadowedBrightness(BetaClouds,lightResponse,amb);
-				vec4 c					=calcColour2( density,BetaClouds,lightResponse,combinedLightColour,amb);
+				vec4 c					=calcColour2(density,BetaClouds,lightResponse,combinedLightColour,amb);
+				c.rgb					+=calcLightningColour(world_pos,lightningColour,lightningOrigin,lightningInvScales);
 				fade_texc.x				=sqrt(fadeDistance);
 				
 				float sh				=saturate((fade_texc.x-nearFarTexc.x)/0.1);
 #ifdef INFRARED
-				c.rgb=cloudIrRadiance*c.a;
+				c.rgb					=cloudIrRadiance*c.a;
 #endif
 				c.rgb					=applyFades2(c.rgb,fade_texc,BetaRayleigh,BetaMie,sh);
 				colour.rgb				+=c.rgb*c.a*(colour.a);

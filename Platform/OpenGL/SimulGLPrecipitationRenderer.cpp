@@ -61,8 +61,8 @@ SimulGLPrecipitationRenderer::~SimulGLPrecipitationRenderer()
 }
 
 void SimulGLPrecipitationRenderer::Render(void * /*context*/,const void * /*depth_tex*/
-				,const simul::math::Matrix4x4 &v
-				,const simul::math::Matrix4x4 &p,float /*max_fade_distance_metres*/,simul::sky::float4 /*viewportTextureRegionXYWH*/)
+				,const simul::math::Matrix4x4 &
+				,const simul::math::Matrix4x4 &,float /*max_fade_distance_metres*/,simul::sky::float4 /*viewportTextureRegionXYWH*/)
 {
 	if(!baseSkyInterface)
 		return;
