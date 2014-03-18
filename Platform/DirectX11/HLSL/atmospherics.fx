@@ -274,8 +274,8 @@ vec4 PS_NearGodrays(atmosVertexOutput IN) : SV_TARGET
 {
 	vec2 depth_texc		=viewportCoordToTexRegionCoord(IN.texCoords.xy,viewportToTexRegionScaleBias);
 	vec4 depth_lookup	=depthTexture.Sample(clampSamplerState,depth_texc);
-	if(depth_lookup.z==0)
-		discard;
+//	if(depth_lookup.z==0)
+//		discard;
 	float cloud_depth	=cloudDepthTexture.Sample(clampSamplerState,IN.texCoords.xy).x;
 	float depth			=max(depth_lookup.y,cloud_depth);
 	// Convert to true distance, in units of the fade distance (i.e. 1.0= at maximum fade):
@@ -472,7 +472,7 @@ BlendState MoistureBlend
 
 technique11 fast_godrays
 {
-    pass godrays
+    pass far
     {
 		SetRasterizerState( RenderNoCull );
 		SetDepthStencilState( DisableDepth, 0 );
@@ -480,6 +480,15 @@ technique11 fast_godrays
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
 		SetPixelShader(CompileShader(ps_4_0,PS_FastGodrays()));
+    }
+    pass near
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(AddBlendDontWriteAlpha, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_4_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_4_0,PS_NearGodrays()));
     }
 /*	pass rain_shadow
     {

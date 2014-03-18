@@ -1,5 +1,6 @@
 #define NOMINMAX
 #include "LightningRenderer.h"
+#include "Simul/Base/ProfilingInterface.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Camera/Camera.h"
 
@@ -58,6 +59,7 @@ void LightningRenderer::InvalidateDeviceObjects()
 void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	SIMUL_COMBINED_PROFILE_START(context,"LightningRenderer::Render")
 	const simul::clouds::CloudKeyframer::Keyframe &K=cloudKeyframer->GetInterpolatedKeyframe();
 	LightningVertex *vertices=vertexBuffer.Map(pContext);
 	if(!vertices)
@@ -171,4 +173,5 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	}
 	pContext->IASetPrimitiveTopology(previousTopology);
 	pContext->IASetInputLayout(previousInputLayout);
+	SIMUL_COMBINED_PROFILE_END(context)
 }

@@ -61,6 +61,7 @@ RaytracePixelOutput PS_RaytraceForward(RaytraceVertexOutput IN)
 {
 	vec2 texCoords			=IN.texCoords.xy;
 	texCoords.y				=1.0-texCoords.y;
+
 	RaytracePixelOutput p	=RaytraceCloudsForward(
 									cloudDensity1
 									,cloudDensity2

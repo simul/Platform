@@ -250,7 +250,7 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 			float trueDist		=depthToLinearDistance(hiresDepth,depthToLinFadeDistParams);
 			cloudNear			=depthDependentFilteredImage(nearImageTexture	,lowResDepthTexture,imageDims,texCoords,vec4(0,1.0,0,0),depthToLinFadeDistParams,trueDist);
 			cloudFar			=depthDependentFilteredImage(farImageTexture	,lowResDepthTexture,imageDims,texCoords,vec4(1.0,0,0,0),depthToLinFadeDistParams,trueDist);
-			float interp		=saturate(edge*(nearFarDistLowRes.y-trueDist)/abs(nearFarDistLowRes.y-nearFarDistLowRes.x));
+			float interp		=saturate(/*edge**/(nearFarDistLowRes.y-trueDist)/abs(nearFarDistLowRes.y-nearFarDistLowRes.x));
 			vec4 add			=lerp(cloudFar,cloudNear,interp);
 			result				+=add;
 		

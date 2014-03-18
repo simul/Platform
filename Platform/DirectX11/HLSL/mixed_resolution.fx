@@ -5,8 +5,23 @@
 #include "../../CrossPlatform/mixed_resolution.sl"
 Texture2DMS<float4> sourceMSDepthTexture SIMUL_TEXTURE_REGISTER(0);
 Texture2DMS<float4> sourceTextureMS SIMUL_TEXTURE_REGISTER(0);
-Texture2D<float4> sourceDepthTexture SIMUL_TEXTURE_REGISTER(0);
+Texture2D<float4> sourceDepthTexture SIMUL_TEXTURE_REGISTER(1);
 RWTexture2D<float4> target2DTexture SIMUL_RWTEXTURE_REGISTER(1);
+	
+[numthreads(8,8,1)]
+void CS_MakeDepthFarNear(uint3 pos : SV_DispatchThreadID )
+{
+	MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,1,target2DTexture,pos,depthToLinFadeDistParams);
+}
+
+[numthreads(8,8,1)]
+void CS_MakeDepthFarNear_MSAA(uint3 pos : SV_DispatchThreadID )
+{
+	uint2 source_dims;
+	uint numberOfSamples;
+	sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
+	MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,numberOfSamples,target2DTexture,pos,depthToLinFadeDistParams);
+}
 
 [numthreads(8,8,1)]
 void CS_Resolve(uint3 pos : SV_DispatchThreadID )
@@ -17,7 +32,6 @@ void CS_Resolve(uint3 pos : SV_DispatchThreadID )
 [numthreads(8,8,1)]
 void CS_DownscaleDepthFarNear(uint3 pos : SV_DispatchThreadID )
 {
-//	target2DTexture[pos.xy]=pos.x/100000.0;
 	DownscaleDepthFarNear2(sourceDepthTexture,target2DTexture,pos,scale,depthToLinFadeDistParams);
 }
 
@@ -25,7 +39,13 @@ void CS_DownscaleDepthFarNear(uint3 pos : SV_DispatchThreadID )
 void CS_DownscaleDepthFarNear_MSAA(uint3 pos : SV_DispatchThreadID )
 {
 	//target2DTexture[pos.xy]=sourceMSDepthTexture.Load(pos.xy,0);
-	DownscaleDepthFarNear(sourceMSDepthTexture,target2DTexture,pos,scale,depthToLinFadeDistParams);
+	DownscaleDepthFarNear_MSAA(sourceMSDepthTexture,target2DTexture,pos,scale,depthToLinFadeDistParams);
+}
+
+[numthreads(8,8,1)]
+void CS_DownscaleDepthFarNearFromHiRes(uint3 pos : SV_DispatchThreadID )
+{
+	DownscaleDepthFarNear2(sourceDepthTexture,target2DTexture,pos,scale,depthToLinFadeDistParams);
 }
 
 vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
@@ -54,6 +74,26 @@ technique11 downscale_depth_far_near
     pass msaa
     {
 		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNear_MSAA()));
+    }
+}
+
+technique11 downscale_depth_far_near_from_hires
+{
+    pass main
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_DownscaleDepthFarNearFromHiRes()));
+    }
+}
+
+technique11 make_depth_far_near
+{
+    pass main
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MakeDepthFarNear()));
+    }
+    pass msaa
+    {
+		SetComputeShader(CompileShader(cs_5_0,CS_MakeDepthFarNear_MSAA()));
     }
 }
 

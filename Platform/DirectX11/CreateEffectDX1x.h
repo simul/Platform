@@ -65,22 +65,22 @@ namespace simul
 		// These functions encapsulate getting an effect variable of the given name if it exists, and
 		// if so, setting its value. Due to inefficiency it is best to replace usage of this over time
 		// with Effect variable pointers, but this is a good way to write new render code quickly
-		void setDepthState			(ID3DX11Effect *effect	,const char *name	,ID3D11DepthStencilState * value);
-		void setSamplerState		(ID3DX11Effect *effect	,const char *name	,ID3D11SamplerState * value);
-		void setTexture				(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
-		void applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,int pass=0);
-		void applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,const char *pass);
-		void setUnorderedAccessView	(ID3DX11Effect *effect	,const char *name	,ID3D11UnorderedAccessView * value);
-		void setTextureArray		(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value);
-		void setStructuredBuffer	(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
-		void setParameter			(ID3DX11Effect *effect	,const char *name	,float value);
-		void setParameter			(ID3DX11Effect *effect	,const char *name	,float x,float y);
-		void setParameter			(ID3DX11Effect *effect	,const char *name	,float x,float y,float z,float w);
-		void setParameter			(ID3DX11Effect *effect	,const char *name	,int value);
-		void setParameter			(ID3DX11Effect *effect	,const char *name	,float *vec);
-		void setMatrix				(ID3DX11Effect *effect	,const char *name	,const float *value);
-		void setConstantBuffer		(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b);
-		void unbindTextures			(ID3DX11Effect *effect);
+		void SIMUL_DIRECTX11_EXPORT setDepthState			(ID3DX11Effect *effect	,const char *name	,ID3D11DepthStencilState * value);
+		void SIMUL_DIRECTX11_EXPORT setSamplerState			(ID3DX11Effect *effect	,const char *name	,ID3D11SamplerState * value);
+		void SIMUL_DIRECTX11_EXPORT setTexture				(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
+		void SIMUL_DIRECTX11_EXPORT applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,int pass=0);
+		void SIMUL_DIRECTX11_EXPORT applyPass				(ID3D11DeviceContext *pContext,ID3DX11Effect *effect,const char *name,const char *pass);
+		void SIMUL_DIRECTX11_EXPORT setUnorderedAccessView	(ID3DX11Effect *effect	,const char *name	,ID3D11UnorderedAccessView * value);
+		void SIMUL_DIRECTX11_EXPORT setTextureArray			(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView *value);
+		void SIMUL_DIRECTX11_EXPORT setStructuredBuffer		(ID3DX11Effect *effect	,const char *name	,ID3D11ShaderResourceView * value);
+		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float value);
+		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float x,float y);
+		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float x,float y,float z,float w);
+		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,int value);
+		void SIMUL_DIRECTX11_EXPORT setParameter			(ID3DX11Effect *effect	,const char *name	,float *vec);
+		void SIMUL_DIRECTX11_EXPORT setMatrix				(ID3DX11Effect *effect	,const char *name	,const float *value);
+		void SIMUL_DIRECTX11_EXPORT setConstantBuffer		(ID3DX11Effect *effect	,const char *name	,ID3D11Buffer *b);
+		void SIMUL_DIRECTX11_EXPORT unbindTextures			(ID3DX11Effect *effect);
 							
 		int ByteSizeOfFormatElement( DXGI_FORMAT format );
 	}

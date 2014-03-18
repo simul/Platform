@@ -68,7 +68,6 @@ namespace simul
 			ID3DX11EffectTechnique*						twoPassOverlayTechniqueMSAA;
 
 			ID3DX11EffectTechnique*						godraysTechnique;
-			ID3DX11EffectTechnique*						godraysNearPassTechnique;
 			// Variables for this effect:
 			ID3D1xEffectShaderResourceVariable*			depthTexture;
 			ID3D1xEffectShaderResourceVariable*			cloudDepthTexture;

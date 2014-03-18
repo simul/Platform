@@ -8,7 +8,7 @@
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/CrossPlatform/CppSl.hs"
 #include "Simul/Base/FileLoader.h"
-
+#pragma warning(disable:4251)
 namespace simul
 {
 	namespace dx11
@@ -152,7 +152,7 @@ namespace simul
 				//SAFE_RELEASE(unorderedAccessView)
 			}
 		};
-		class UtilityRenderer
+		class SIMUL_DIRECTX11_EXPORT UtilityRenderer
 		{
 			static int instance_count;
 			static int screen_width;
@@ -166,8 +166,9 @@ namespace simul
 			static ID3D11Device		*m_pd3dDevice;
 			UtilityRenderer();
 			~UtilityRenderer();
+			static ID3DX11Effect		*GetDebugEffect();
 			static void SetMatrices(D3DXMATRIX v,D3DXMATRIX p);
-			static void SIMUL_DIRECTX11_EXPORT RestoreDeviceObjects(void *m_pd3dDevice);
+			static void RestoreDeviceObjects(void *m_pd3dDevice);
 			static void InvalidateDeviceObjects();
 			static void RecompileShaders();
 			static void SetScreenSize(int w,int h);

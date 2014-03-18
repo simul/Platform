@@ -111,7 +111,6 @@ vec4 Inscatter(	Texture2D inscTexture
 #endif
 }
 
-
 vec4 InscatterMSAA(	Texture2D inscTexture
 				,Texture2D skylTexture
 				,Texture2D illuminationTexture

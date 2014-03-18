@@ -517,13 +517,12 @@ struct d3dMacro
 	std::string define;
 };
 
-HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_utf8, UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
+HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *binary_filename_utf8, UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	HRESULT hr=(HRESULT)(-1);
-	std::string binary_filename_utf8=std::string(text_filename_utf8)+"o";
 	void *pData=NULL;
 	unsigned sz=0;
-	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(pData,sz,binary_filename_utf8.c_str(),false);
+	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(pData,sz,binary_filename_utf8,false);
 	if(sz>0)
 	{
 		hr=D3DX11CreateEffectFromMemory(pData,sz,FXFlags,pDevice,ppEffect);
@@ -531,7 +530,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *text_filename_ut
 			std::cerr<<"D3DX11CreateEffectFromBinaryFile error "<<(int)hr<<std::endl;
 	}
 	else
-		std::cerr<<"D3DX11CreateEffectFromBinaryFile cannot find file "<<binary_filename_utf8.c_str()<<std::endl;
+		std::cerr<<"D3DX11CreateEffectFromBinaryFile cannot find file "<<binary_filename_utf8<<std::endl;
 	simul::base::FileLoader::GetFileLoader()->ReleaseFileContents(pData);
 	return hr;
 }
@@ -544,7 +543,8 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	if(pos<0||bpos>pos)
 		pos=bpos;
 	std::string path_utf8=text_filename_utf8.substr(0,pos);
-	std::string binary_filename_utf8=text_filename_utf8+"o";
+	std::string name_utf8=text_filename_utf8.substr(pos+1,text_filename_utf8.length()-pos-1);
+	std::string binary_filename_utf8=name_utf8+"o";
 	void *textData=NULL;
 	unsigned textSize=0;
 	simul::base::FileLoader::GetFileLoader()->AcquireFileContents(textData,textSize,text_filename_utf8.c_str(),true);
@@ -578,7 +578,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 		}
 		if(!changes_detected&&binary_date_jdn>0)
 		{
-			hr=D3DX11CreateEffectFromBinaryFileUtf8(text_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
+			hr=D3DX11CreateEffectFromBinaryFileUtf8(binary_filename_utf8.c_str(),FXFlags,pDevice,ppEffect);
 			if(hr==S_OK)
 				return S_OK;
 		}

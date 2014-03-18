@@ -72,7 +72,6 @@ static int range(int x,int start,int end)
 	return x;
 }
 
-
 //! Return true if the derived class can make sky tables using the GPU.
 bool GpuSkyGenerator::CanPerformGPUGeneration() const
 {

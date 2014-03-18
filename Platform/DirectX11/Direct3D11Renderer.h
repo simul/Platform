@@ -59,6 +59,7 @@ namespace simul
 			simul::dx11::Framebuffer					hdrFramebuffer;
 			// The depth from the HDR framebuffer can be resolved into this texture:
 			simul::dx11::Framebuffer					resolvedDepth_fb;
+			simul::dx11::TextureStruct					hiResDepthTexture;
 			simul::dx11::TextureStruct					lowResDepthTexture;
 			ViewType									viewType;
 			const simul::camera::CameraOutputInterface	*camera;

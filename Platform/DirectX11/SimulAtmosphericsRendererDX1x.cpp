@@ -96,7 +96,6 @@ void SimulAtmosphericsRendererDX1x::RecompileShaders()
 	twoPassOverlayTechniqueMSAA	=effect->GetTechniqueByName("simul_atmospherics_overlay_msaa");
 
 	godraysTechnique		=effect->GetTechniqueByName("fast_godrays");
-	godraysNearPassTechnique=effect->GetTechniqueByName("near_depth_godrays");
 
 	depthTexture			=effect->GetVariableByName("depthTexture")->AsShaderResource();
 	cloudDepthTexture		=effect->GetVariableByName("cloudDepthTexture")->AsShaderResource();
@@ -307,18 +306,12 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,b
 	dx11::setTexture(effect,"coronaLookupTexture"	,coronaLookupTexture);
 //	dx11::setTexture(effect,"moistureTexture"		,(ID3D11ShaderResourceView*)moistureTexture);
 
-	ID3DX11EffectTechnique *tech=NULL;
-	if(near_pass)
-		tech=godraysNearPassTechnique;
-	else
-		tech=godraysTechnique;
-	D3DX11_TECHNIQUE_DESC desc;
-	tech->GetDesc(&desc);
-	for(int i=0;i<desc.Passes;i++)
-	{
-		ApplyPass(pContext,tech->GetPassByIndex(i));
-		simul::dx11::UtilityRenderer::DrawQuad(pContext);
-	}
+	//D3DX11_TECHNIQUE_DESC desc;
+	//tech->GetDesc(&desc);
+	
+	ApplyPass(pContext,godraysTechnique->GetPassByName(near_pass?"near":"far"));
+	simul::dx11::UtilityRenderer::DrawQuad(pContext);
+
 
 	lossTexture			->SetResource(NULL);
 	inscTexture			->SetResource(NULL);
