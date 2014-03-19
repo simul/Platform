@@ -91,7 +91,7 @@ void GetCameraPosVector(simul::math::Vector3 &cam_pos,simul::math::Vector3 &cam_
 					static float ww=50.f;
 					static float uu=9.f;
 
-void SimulGLLightningRenderer::Render(void*,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)
+void SimulGLLightningRenderer::Render(void*,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *cloud_depth_tex)
 {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 	if(glStringMarkerGREMEDY)

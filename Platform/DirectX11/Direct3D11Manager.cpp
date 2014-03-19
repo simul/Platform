@@ -25,7 +25,7 @@ Window::~Window()
 	Release();
 }
 
-void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice)
+void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,int numerator,int denominator)
 {
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
 	D3D11_RASTERIZER_DESC rasterDesc;
@@ -61,12 +61,12 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice)
 	// false then it will draw the screen as many times a second as it can, however this can cause some visual artifacts.
 
 	// Set the refresh rate of the back buffer.
-	//if(m_vsync_enabled)
+	if(m_vsync_enabled)
 	{
-	//	swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
-	//	swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
+		swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
+		swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
 	}
-//	else
+	else
 	{
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;
 		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
@@ -510,8 +510,8 @@ Output Direct3D11Manager::GetOutput(int i)
 		{
 			if(displayModeList[i].Height == (unsigned int)o.height)
 			{
-				unsigned numerator = displayModeList[i].RefreshRate.Numerator;
-				unsigned denominator = displayModeList[i].RefreshRate.Denominator;
+				o.numerator = displayModeList[i].RefreshRate.Numerator;
+				o.denominator = displayModeList[i].RefreshRate.Denominator;
 			}
 		}
 	}
@@ -710,5 +710,6 @@ void Direct3D11Manager::AddWindow(HWND hwnd)
 	Window *window=new Window;
 	windows[hwnd]=window;
 	window->hwnd=hwnd;
-	window->RestoreDeviceObjects(d3dDevice);
+	Output o=GetOutput(0);
+	window->RestoreDeviceObjects(d3dDevice,m_vsync_enabled,o.numerator,o.denominator);
 }

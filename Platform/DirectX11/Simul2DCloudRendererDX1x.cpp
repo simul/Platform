@@ -262,13 +262,19 @@ void Simul2DCloudRendererDX11::PreRenderUpdate(void *context)
 	RenderDetailTexture(context);
 }
 
+void FixProjectionMatrix(simul::math::Matrix4x4 &proj,float zNear,float zFar)
+{
+	proj._33	=zNear/(zFar-zNear);	
+	proj._43	=zFar*zNear/(zFar-zNear);
+}
+
 bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depthTexture,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
     ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::Render");
 	
-	ID3D1xShaderResourceView* depthTexture_SRV=(ID3D1xShaderResourceView*)depthTexture;
-	ID3DX11EffectTechnique*		tech=technique;
+	ID3D1xShaderResourceView* depthTexture_SRV	=(ID3D1xShaderResourceView*)depthTexture;
+	ID3DX11EffectTechnique*		tech			=technique;
 	if(depthTexture_SRV)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
@@ -294,6 +300,8 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	static float ff=10000.f; 
 	cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	float ir_integration_factors[]={0,0,0,0};
+	FixProjectionMatrix(proj,10.f,500000.f);
+
 	Set2DCloudConstants(cloud2DConstants,view,proj,exposure,viewportTextureRegionXYWH,ir_integration_factors);
 	cloud2DConstants.Apply(pContext);
 
@@ -312,7 +320,6 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	pContext->IASetIndexBuffer(indexBuffer,DXGI_FORMAT_R16_UINT,0);					
 
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
 
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	pContext->DrawIndexed(num_indices-2,0,0);

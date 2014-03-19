@@ -1,8 +1,13 @@
 #include "CppHlsl.hlsl"
+#include "states.hlsl"
 #include "../../CrossPlatform/lightning_constants.sl"
+#include "../../CrossPlatform/depth.sl"
 #include "states.hlsl"
 
 Texture2D lightningTexture;
+Texture2D depthTexture;
+Texture2DMS<float4> depthTextureMS;
+Texture2D cloudDepthTexture;
 
 struct transformedVertex
 {
@@ -14,6 +19,7 @@ struct transformedVertex
     float along: TEXCOORD4;
 	float width: TEXCOORD5;
 };
+
 struct transformedThinVertex
 {
     vec4 hPosition	: SV_POSITION;
@@ -63,6 +69,8 @@ void GS_Thick(lineadj LightningVertexInput input[4], inout TriangleStream<transf
 	if(p1.y<-area.y||p1.y>area.y) return;
 	if(p2.x<-area.x||p2.x>area.x) return;
 	if(p2.y<-area.y||p2.y>area.y) return;
+	if(input[0].position.z<0) return;
+	if(input[0].position.z>1.0) return;
     vec4 start			=input[0].position;
     vec4 end			=input[1].position;
 	// determine the direction of each of the 3 segments (previous, current, next
@@ -166,6 +174,13 @@ void GS_Thick(lineadj LightningVertexInput input[4], inout TriangleStream<transf
 
 float4 PS_Main(transformedVertex IN): SV_TARGET
 {
+	vec2 texCoords=IN.screenPos*0.5-0.5;
+	vec4 dlookup 		=sampleLod(depthTexture,samplerStateNearest,viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias),0);
+	vec4 clip_pos		=vec4(IN.screenPos,1.0,1.0);
+
+	//if(dlookup.x<depth)
+	//	discard;
+	
 	float b=2.0*(IN.texCoords.x-0.5);
 	float br=pow(1.0-b*b,4.0)*IN.texCoords.w;// w is the local brightness factor
 	vec2 centre=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along));
@@ -187,7 +202,7 @@ technique11 lightning_thick
 {
     pass p0 
     {
-		SetDepthStencilState(DisableDepth,0);
+		SetDepthStencilState(TestDepth,0);
         SetRasterizerState(RenderNoCull);
 		SetBlendState(DoBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
@@ -214,7 +229,7 @@ technique11 lightning_thin
 {
     pass p0 
     {
-		SetDepthStencilState(DisableDepth,0);
+		SetDepthStencilState(TestDepth,0);
         SetRasterizerState(lightningLineRasterizer);
 		SetBlendState(DoBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);

@@ -110,7 +110,7 @@ namespace simul
 			void RenderFramebufferDepth(void *context,int view_id,int x0,int y0,int w,int h);
 			void RenderCompositingTextures(void *context,int view_id,int x0,int y0,int w,int h);
 			void RenderPrecipitation(void *context,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p);
-			void RenderLightning(void *context,int viewport_id);
+			void RenderLightning(void *context,int viewport_id,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex);
 			void SaveCubemapToFile(const char *filename,float exposure,float gamma);
 			//! Set the exposure, if we're using an hdr shader to render the sky buffer.
 			void SetExposure(float ex){exposure=ex;}
@@ -123,9 +123,9 @@ namespace simul
 			class Simul2DCloudRendererDX11 *Get2DCloudRenderer();
 			//! Set a callback to fill in the depth/Z buffer in the lo-res sky texture.
 			void SetRenderDepthBufferCallback(RenderDepthBufferCallback *cb);
+			void *GetCloudDepthTexture();
 
 		protected:
-			void *GetCloudDepthTexture();
 			simul::base::MemoryInterface	*memoryInterface;
 			// Keep copies of these matrices:
 			simul::math::Matrix4x4 view;

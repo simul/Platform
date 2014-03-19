@@ -13,6 +13,7 @@ uniform_buffer LightningPerViewConstants SIMUL_BUFFER_REGISTER(8)
 	uniform float xxxxxxx;
 	uniform vec2 viewportPixels;
 	uniform vec2 _line_width;
+	uniform vec4 viewportToTexRegionScaleBias;
 };
 
 struct LightningVertex

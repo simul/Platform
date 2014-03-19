@@ -351,8 +351,8 @@ void SimulWeatherRendererDX11::RenderSkyAsOverlay(void *context
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	if(baseAtmosphericsRenderer&&ShowSky)
 		baseAtmosphericsRenderer->RenderAsOverlay(context,mainDepthTexture,exposure,depthViewportXYWH);
-	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-		base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,UseDefaultFog,false,view_id,depthViewportXYWH);
+	//if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
+	//	base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,UseDefaultFog,false,view_id,depthViewportXYWH);
 	// Now we render the low-resolution elements to the low-res buffer.
 	float godrays_strength		=(float)(!is_cubemap)*environment->cloudKeyframer->GetInterpolatedKeyframe().godray_strength;
 	if(buffered)
@@ -392,8 +392,8 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	
 	if(baseAtmosphericsRenderer)
 		baseAtmosphericsRenderer->RenderInscatter(context,mainDepthTextureMS,exposure,depthViewportXYWH,false);
-	//	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-	//		base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTexture,UseDefaultFog,false,view_id,depthViewportXYWH);
+	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
+		base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTextureMS,UseDefaultFog,false,view_id,depthViewportXYWH);
 	
 	fb->hiResFarFramebufferDx11.Deactivate(context);
 	
@@ -442,7 +442,7 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	
 	CompositeCloudsToScreen(context,view_id,!is_cubemap,mainDepthTextureMS,lowResDepthTexture,depthViewportXYWH);
 	
-	RenderLightning(context,view_id);
+	//RenderLightning(context,view_id,mainDepthTextureMS,depthViewportXYWH,GetCloudDepthTexture());
 	RenderPrecipitation(context,lowResDepthTexture,depthViewportXYWH,view,proj);
 	SIMUL_COMBINED_PROFILE_END(context)
 }
@@ -574,10 +574,10 @@ void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int view_
 	UtilityRenderer::Print		(pContext	,x0+1*w	,y0+2*l	,"Lo-Res Near");
 }
 
-void SimulWeatherRendererDX11::RenderLightning(void *context,int view_id)
+void SimulWeatherRendererDX11::RenderLightning(void *context,int view_id,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *low_res_depth_tex)
 {
 	if(simulCloudRenderer&&simulLightningRenderer&&baseCloudRenderer&&baseCloudRenderer->GetCloudKeyframer()->GetVisible())
-		simulLightningRenderer->Render(context,view,proj);
+		simulLightningRenderer->Render(context,view,proj,depth_tex,depthViewportXYWH,low_res_depth_tex);
 }
 
 void SimulWeatherRendererDX11::SetMatrices(const simul::math::Matrix4x4 &v,const simul::math::Matrix4x4 &p)

@@ -45,6 +45,8 @@ SIMUL_CONSTANT_BUFFER(AtmosphericsPerViewConstants,12)
 	uniform float dropletRadius;
 	uniform float rainbowIntensity;
 	uniform float aoehg,aeoithjaoe,aetaetyjk;
+    uniform vec3 lightIrradiance;
+	uniform float xxxxxxx;
 SIMUL_CONSTANT_BUFFER_END
 
 #endif
