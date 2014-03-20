@@ -251,7 +251,7 @@ vec3 calcLightningColour(vec3 world_pos,vec3 lightningColour,vec3 lightningOrigi
 {
 	vec3 texCoords=(world_pos-lightningOrigin)*lightningInvScales;
 	float diff=length(texCoords-vec3(.5,.5,.5));
-	float b=1.0/pow(diff+.0001,2.0);
+	float b=1.0/pow(diff+.0001,1.0);
 	vec3 colour=b*lightningColour;
 	return colour;
 }

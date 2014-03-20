@@ -120,25 +120,24 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 				bool draw_thick=pixel_width>pixel_width_threshold;
 				thick.push_back(draw_thick);
 
-				for(int k=-1;k<branch.numVertices;k++)
+				for(int k=draw_thick?-1:0;k<branch.numVertices;k++)
 				{
 					if(v>=1000)
 						break;
 					bool start=(k<0);
 					if(start)
+					{
 						x1=(const float *)branch.vertices[k+2];
+						if(k+1<branch.numVertices)
+						{
+							x2=(const float *)branch.vertices[k+1];
+							simul::sky::float4 dir=x2-x1;
+							x1=x2+dir;
+						}
+					}
 					else
 						x1=(const float *)branch.vertices[k];
-					if(k+1<branch.numVertices)
-						x2=(const float *)branch.vertices[k+1];
-					else
-						x2=2.f*x1-simul::sky::float4((const float *)branch.vertices[k-1]);
 					bool end=(k==branch.numVertices-1);
-					if(k<0)
-					{
-						simul::sky::float4 dir=x2-x1;
-						x1=x2+dir;
-					}
 
 					float brightness=branch.brightness;
 					float dh=x1.z/1000.f-K.cloud_base_km;
