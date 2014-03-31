@@ -60,9 +60,6 @@
     <ClCompile Include="SimulHDRRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimulLightningRendererDX11.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SimulOpticsRendererDX1x.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -103,6 +100,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TextRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LightningRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -158,9 +158,6 @@
     <ClInclude Include="SimulHDRRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimulLightningRendererDX11.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SimulOpticsRendererDX1x.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -207,6 +204,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LightningRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
