@@ -373,6 +373,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LightningRenderer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\OceanRenderer.cpp"
 				>
 			</File>
@@ -406,10 +410,6 @@
 			</File>
 			<File
 				RelativePath=".\SimulHDRRendererDX1x.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\SimulLightningRendererDX11.cpp"
 				>
 			</File>
 			<File
@@ -491,6 +491,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\LightningRenderer.h"
+				>
+			</File>
+			<File
 				RelativePath=".\MacrosDx1x.h"
 				>
 			</File>
@@ -536,10 +540,6 @@
 			</File>
 			<File
 				RelativePath=".\SimulHDRRendererDX1x.h"
-				>
-			</File>
-			<File
-				RelativePath=".\SimulLightningRendererDX11.h"
 				>
 			</File>
 			<File
