@@ -251,7 +251,8 @@ namespace simul
 			void Apply(ID3D11DeviceContext *pContext)
 			{
 				D3D11_MAPPED_SUBRESOURCE mapped_res;
-				pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res);
+				if(pContext->Map(m_pD3D11Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_res)!=S_OK)
+					return;
 				*(T*)mapped_res.pData = *this;
 				pContext->Unmap(m_pD3D11Buffer, 0);
 				if(m_pD3DX11EffectConstantBuffer)
