@@ -22,6 +22,7 @@
 // C++ Standard Library Header Files
 #include <string>
 #include <vector>
+#include <set>
 #include <map>
 #include <sstream>
 
@@ -65,6 +66,7 @@ namespace simul
 			//! Get all the active profilers as a text report.
 			const char *GetDebugText() const;
 		protected:
+			std::string GetChildText(const char *name,std::string tab) const;
 			std::vector<std::string> last_name;
 			std::vector<ID3D11DeviceContext *> last_context;
 			static Profiler GlobalProfiler;
@@ -79,11 +81,15 @@ namespace simul
 				ID3D11Query *TimestampEndQuery[QueryLatency];
 				BOOL QueryStarted;
 				BOOL QueryFinished;
+				ProfileData *parent;
+				std::string name;
+				std::string full_name;
 				float time;
 				ProfileData()
 					:QueryStarted(false)
 					,QueryFinished(false)
-					, time(0.f)
+					,time(0.f)
+					,parent(NULL)
 				{
 					for(int i=0;i<QueryLatency;i++)
 					{
@@ -101,6 +107,7 @@ namespace simul
 						SAFE_RELEASE(TimestampEndQuery[i]);
 					}
 				}
+				std::set<ProfileData*> children;
 			};
 
 			typedef std::map<std::string, ProfileData*> ProfileMap;

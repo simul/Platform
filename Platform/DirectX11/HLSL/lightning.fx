@@ -166,14 +166,13 @@ void GS_Thick(lineadj LightningVertexInput input[4], inout TriangleStream<transf
 
 float4 PS_Main(transformedVertex IN): SV_TARGET
 {
-	float b=2.0*(IN.texCoords.x-0.5);
-	float br=pow(1.0-b*b,4.0)*IN.texCoords.w;// w is the local brightness factor
-	vec2 centre=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along));
-	vec2 diff=IN.screenPos-centre;
-	float dist=length(diff)/IN.width;
-	br		*=exp(-6.0*dist);
-	float4 colour=br*lightningColour;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
-	
+	float b			=2.0*(IN.texCoords.x-0.5);
+	float br		=pow(1.0-b*b,4.0)*IN.texCoords.w;// w is the local brightness factor
+	vec2 centre		=lerp(IN.hPosCentre1,IN.hPosCentre2,saturate(IN.along));
+	vec2 diff		=IN.screenPos-centre;
+	float dist		=length(diff)/IN.width;
+	br				*=exp(-6.0*dist);
+	float4 colour	=br*lightningColour;//lightningTexture.Sample(clampSamplerState,IN.texCoords.xy);
     return colour;
 }
 
@@ -192,7 +191,7 @@ technique11 lightning_thick
 		SetBlendState(DoBlend,vec4(0.0f,0.0f,0.0f,0.0f),0xFFFFFFFF);
         SetGeometryShader(NULL);
 		SetVertexShader(CompileShader(vs_5_0,VS_Thick()));
-        SetGeometryShader( CompileShader( gs_5_0, GS_Thick() ) );
+        SetGeometryShader( CompileShader(gs_5_0, GS_Thick()));
 		SetPixelShader(CompileShader(ps_5_0,PS_Main()));
     }
 }

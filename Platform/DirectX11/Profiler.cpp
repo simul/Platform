@@ -11,6 +11,7 @@
 #include "Profiler.h"
 #include "DX11Exception.h"
 #include "Utilities.h"
+#include "Simul/Base/StringFunctions.h"
 
 using namespace simul;
 using namespace dx11;
@@ -50,16 +51,17 @@ void Profiler::Uninitialize()
 		delete profile;
 	}
 	profiles.clear();
-    this->device = NULL;
+    this->device=NULL;
     enabled=true;
 }
 
 void Profiler::Initialize(ID3D11Device* device)
 {
-    this->device = device;
-    enabled=true;
+    this->device	=device;
+    enabled			=true;
 //	std::cout<<"Profiler::Initialize device "<<(unsigned)device<<std::endl;
 }
+
 ID3D11Query *CreateQuery(ID3D11Device* device,D3D11_QUERY_DESC &desc,const char *name)
 {
 	ID3D11Query *q=NULL;
@@ -72,17 +74,32 @@ void Profiler::Begin(void *ctx,const char *name)
 {
 	IUnknown *unknown=(IUnknown *)ctx;
 	ID3D11DeviceContext *context=(ID3D11DeviceContext*)ctx;
-	last_name.push_back(name);
+	std::string parent;
+	std::string full_name=name;
+	ProfileData *parentProfileData=NULL;
+	if(last_name.size())
+	{
+		parent=last_name.back();
+		full_name=parent+".";
+		full_name+=name;
+		parentProfileData = profiles[parent];
+	}
+	last_name.push_back(full_name);
 	last_context.push_back(context);
 	if(!context||!enabled||!device)
         return;
-	if(profiles.find(name)==profiles.end())
-		profiles[name]=new ProfileData;
-    ProfileData *profileData = profiles[name];
+	if(profiles.find(full_name)==profiles.end())
+		profiles[full_name]=new ProfileData;
+    ProfileData *profileData=profiles[full_name];
+		
+	profileData->name		=name;
+	profileData->full_name	=full_name;
+	if(parentProfileData)
+		parentProfileData->children.insert(profileData);
     _ASSERT(profileData->QueryStarted == FALSE);
     if(profileData->QueryFinished!= FALSE)
         return;
-    
+	profileData->parent=parentProfileData;
     if(profileData->DisjointQuery[currFrame] == NULL)
     {
         // Create the queries
@@ -197,16 +214,37 @@ float Profiler::GetTime(const std::string &name) const
 		return 0.f;
 	return profiles.find(name)->second->time;
 }
-#include "Simul/Base/StringFunctions.h"
+
+std::string Profiler::GetChildText(const char *name,std::string tab) const
+{
+	std::string str;
+	str="";
+	Profiler::ProfileMap::const_iterator i=profiles.find(name);
+	ProfileData *p=i->second;
+	for(std::set<ProfileData*>::const_iterator i=p->children.begin();i!=p->children.end();i++)
+	{
+		str+=tab;
+		str+=(*i)->name.c_str();
+		str+=" ";
+		str+=simul::base::stringFormat("%4.4g\n",(*i)->time);
+		str+=GetChildText((*i)->full_name.c_str(),tab+"\t");
+	}
+	return str;
+}
+
 const char *Profiler::GetDebugText() const
 {
 	static std::string str;
 	str="";
 	for(Profiler::ProfileMap::const_iterator i=profiles.begin();i!=profiles.end();i++)
 	{
-		str+=i->first.c_str();
-		str+=" ";
-		str+=simul::base::stringFormat("%4.4g\n",i->second->time);
+		if(i->second->parent==NULL)
+		{
+			str+=i->first.c_str();
+			str+=" ";
+			str+=simul::base::stringFormat("%4.4g\n",i->second->time);
+			str+=GetChildText(i->first.c_str(),"\t");
+		}
 	}
 	return str.c_str();
 }
