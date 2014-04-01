@@ -737,7 +737,8 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 		pContext->OMSetBlendState(blendAndWriteAlpha,blendFactor,sampleMask);
 	else
 		pContext->OMSetBlendState(blendAndDontWriteAlpha,blendFactor,sampleMask);
-
+	simul::math::Vector3 view_dir(view._13,view._23,view._33);
+	dx11::GetCameraPosVector(view,view_dir,false);
 	HRESULT hr=S_OK;
 	PIXBeginNamedEvent(1,"Render Clouds Layers");
 	cloudDensity		->SetResource(cloud_texture.shaderResourceView);
@@ -777,7 +778,6 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 		if(y_vertical)
 			std::swap(wind_offset.y,wind_offset.z);
 		X+=wind_offset;
-		simul::math::Vector3 view_dir(view._13,view._23,view._33);
 		if(!y_vertical)
 			view_dir.Define(-view._13,-view._23,-view._33);
 		simul::math::Vector3 up(view._12,view._22,view._32);

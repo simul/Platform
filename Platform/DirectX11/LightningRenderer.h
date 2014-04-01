@@ -22,7 +22,7 @@ namespace simul
 			void RestoreDeviceObjects(void* dev);
 			void RecompileShaders();
 			void InvalidateDeviceObjects();
-			void Render(void *context,const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj);
+			void Render(void *context,const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *cloud_depth_tex);
 		protected:
 			ID3DX11Effect*	effect;
 			ID3D11Device *	m_pd3dDevice;

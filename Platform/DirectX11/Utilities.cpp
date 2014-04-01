@@ -665,7 +665,11 @@ void UtilityRenderer::InvalidateDeviceObjects()
     SAFE_RELEASE( m_pSamplerStateStored11 );
 }
 
-			 ID3DX11Effect		*UtilityRenderer::GetDebugEffect(){return m_pDebugEffect;}
+ID3DX11Effect		*UtilityRenderer::GetDebugEffect()
+{
+	return m_pDebugEffect;
+}
+
 void UtilityRenderer::SetMatrices(D3DXMATRIX v,D3DXMATRIX p)
 {
 	view=v;

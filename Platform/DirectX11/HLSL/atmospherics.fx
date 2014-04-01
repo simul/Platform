@@ -251,7 +251,7 @@ vec4 RainbowAndCorona(vec3 view,vec3 lightDir,vec2 texCoords)
 	// this gives up the dot product result in the range of [-1 to 0]
 	// that is to say, an angle of 90 to 180 degrees
 	vec4 coronaDiffracted = texture_clamp(coronaLookupTexture, vec2(dropletRadius, 1.0 + d));
-	return (coronaDiffracted + scattered)*rainbowIntensity*moisture.x;
+	return (coronaDiffracted + scattered)*vec4(lightIrradiance/25.0,1.0)*rainbowIntensity*moisture.x;
 }
 
 vec4 PS_FastGodrays(atmosVertexOutput IN) : SV_TARGET

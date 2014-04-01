@@ -724,7 +724,7 @@ bool SimulSkyRendererDX1x::RenderFades(void *c,int x0,int y0,int width,int heigh
 	D3D11_VIEWPORT viewport;
 	UINT num_v		=1;
 	context->RSGetViewports(&num_v,&viewport);
-	UtilityRenderer::SetScreenSize(viewport.Width,viewport.Height);
+	UtilityRenderer::SetScreenSize((int)viewport.Width,(int)viewport.Height);
 
 	ID3DX11EffectTechnique*	techShowFadeTable				=m_pSkyEffect->GetTechniqueByName("simul_show_fade_table");
 	ID3DX11EffectTechnique*	techniqueShowFade				=m_pSkyEffect->GetTechniqueByName("simul_show_fade_texture");

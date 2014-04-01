@@ -33,6 +33,7 @@ void LightningRenderer::RecompileShaders()
 	if(!m_pd3dDevice)
 		return;
 	std::map<std::string,std::string> defines;
+	defines["REVERSE_DEPTH"]="1";
 	CreateEffect(m_pd3dDevice,&effect,"lightning.fx",defines);
 	D3DX11_PASS_DESC PassDesc;
 	effect->GetTechniqueByIndex(0)->GetPassByIndex(0)->GetDesc(&PassDesc);
@@ -56,7 +57,7 @@ void LightningRenderer::InvalidateDeviceObjects()
 	vertexBuffer.release();
 }
 
-void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj)
+void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,const simul::math::Matrix4x4 &proj,const void *depth_tex,simul::sky::float4 depthViewportXYWH,const void *cloud_depth_tex)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	SIMUL_COMBINED_PROFILE_START(context,"LightningRenderer::Render")
@@ -81,6 +82,8 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 	
 	lightningPerViewConstants.viewportPixels=vec2(viewport.Width,viewport.Height);
 	lightningPerViewConstants._line_width	=4;
+	lightningPerViewConstants.viewportToTexRegionScaleBias			=vec4(depthViewportXYWH.z,depthViewportXYWH.w,depthViewportXYWH.x,depthViewportXYWH.y);
+
 	lightningPerViewConstants.Apply(pContext);
 	std::vector<int> start;
 	std::vector<int> count;
@@ -117,25 +120,24 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 				bool draw_thick=pixel_width>pixel_width_threshold;
 				thick.push_back(draw_thick);
 
-				for(int k=-1;k<branch.numVertices;k++)
+				for(int k=draw_thick?-1:0;k<branch.numVertices;k++)
 				{
 					if(v>=1000)
 						break;
 					bool start=(k<0);
 					if(start)
+					{
 						x1=(const float *)branch.vertices[k+2];
+						if(k+1<branch.numVertices)
+						{
+							x2=(const float *)branch.vertices[k+1];
+							simul::sky::float4 dir=x2-x1;
+							x1=x2+dir;
+						}
+					}
 					else
 						x1=(const float *)branch.vertices[k];
-					if(k+1<branch.numVertices)
-						x2=(const float *)branch.vertices[k+1];
-					else
-						x2=2.f*x1-simul::sky::float4((const float *)branch.vertices[k-1]);
 					bool end=(k==branch.numVertices-1);
-					if(k<0)
-					{
-						simul::sky::float4 dir=x2-x1;
-						x1=x2+dir;
-					}
 
 					float brightness=branch.brightness;
 					float dh=x1.z/1000.f-K.cloud_base_km;
@@ -163,7 +165,9 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 
 	ID3DX11EffectTechnique *tech=effect->GetTechniqueByName("lightning_thick");
 	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ);
-
+	dx11::setTexture(effect,"depthTextureMS",(ID3D11ShaderResourceView*)depth_tex);
+	dx11::setTexture(effect,"depthTexture",(ID3D11ShaderResourceView*)depth_tex);
+	dx11::setTexture(effect,"cloudDepthTexture",(ID3D11ShaderResourceView*)cloud_depth_tex);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
 	for(int i=0;i<start.size();i++)
 	{

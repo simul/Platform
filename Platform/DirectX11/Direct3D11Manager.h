@@ -18,7 +18,7 @@ namespace simul
 		{
 			Window();
 			~Window();
-			void RestoreDeviceObjects(ID3D11Device* d3dDevice);
+			void RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,int numerator,int denominator);
 			void Release();
 			void CreateRenderTarget(ID3D11Device* d3dDevice);
 			void CreateDepthBuffer(ID3D11Device* d3dDevice);

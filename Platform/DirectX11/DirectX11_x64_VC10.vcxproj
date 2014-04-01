@@ -198,6 +198,7 @@
     <ClCompile Include="FramebufferDX1x.cpp" />
     <ClCompile Include="GpuCloudGenerator.cpp" />
     <ClCompile Include="GpuSkyGenerator.cpp" />
+    <ClCompile Include="LightningRenderer.cpp" />
     <ClCompile Include="OceanRenderer.cpp" />
     <ClCompile Include="OceanSimulator.cpp" />
     <ClCompile Include="PrecipitationRenderer.cpp" />
@@ -207,7 +208,6 @@
     <ClCompile Include="SimulAtmosphericsRendererDX1x.cpp" />
     <ClCompile Include="SimulCloudRendererDX1x.cpp" />
     <ClCompile Include="SimulHDRRendererDX1x.cpp" />
-    <ClCompile Include="SimulLightningRendererDX11.cpp" />
     <ClCompile Include="SimulOpticsRendererDX1x.cpp" />
     <ClCompile Include="SimulSkyRendererDX1x.cpp" />
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
@@ -230,6 +230,7 @@
     <ClInclude Include="FramebufferDX1x.h" />
     <ClInclude Include="GpuCloudGenerator.h" />
     <ClInclude Include="GpuSkyGenerator.h" />
+    <ClInclude Include="LightningRenderer.h" />
     <ClInclude Include="MacrosDx1x.h" />
     <ClInclude Include="OceanRenderer.h" />
     <ClInclude Include="OceanSimulator.h" />
@@ -242,7 +243,6 @@
     <ClInclude Include="SimulAtmosphericsRendererDX1x.h" />
     <ClInclude Include="SimulCloudRendererDX1x.h" />
     <ClInclude Include="SimulHDRRendererDX1x.h" />
-    <ClInclude Include="SimulLightningRendererDX11.h" />
     <ClInclude Include="SimulOpticsRendererDX1x.h" />
     <ClInclude Include="SimulSkyRendererDX1x.h" />
     <ClInclude Include="SimulWeatherRendererDX11.h" />
