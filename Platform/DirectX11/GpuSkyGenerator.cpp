@@ -21,6 +21,7 @@ GpuSkyGenerator::GpuSkyGenerator()
 	,light_table(NULL)
 {
 	SetDirectTargets(NULL,NULL,NULL,NULL);
+	Enabled=true;
 }
 
 GpuSkyGenerator::~GpuSkyGenerator()
