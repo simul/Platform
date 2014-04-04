@@ -207,8 +207,10 @@ void SimulAtmosphericsRendererDX1x::RenderInscatter(void *context,const void *de
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC depthDesc;
 		depthTexture_SRV->GetDesc(&depthDesc);
-		if(depthTexture&&depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
+		if(depthDesc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS)
 			tech=effect->GetTechniqueByName("inscatter_msaa");
+		else if(depthDesc.Format==DXGI_FORMAT_R32G32B32A32_FLOAT)
+			tech=effect->GetTechniqueByName("inscatter_nearfardepth");
 	}
 	ApplyPass(pContext,tech->GetPassByName(near_pass?"near":"far"));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);

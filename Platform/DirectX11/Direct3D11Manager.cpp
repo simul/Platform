@@ -317,6 +317,7 @@ Direct3D11Manager::~Direct3D11Manager()
 
 void Direct3D11Manager::Initialize()
 {
+	std::cout<<"1"<<std::endl;
 	HRESULT result;
 	IDXGIFactory* factory;
 	int  i;//, numerator, denominator;
@@ -325,7 +326,7 @@ void Direct3D11Manager::Initialize()
 	D3D_FEATURE_LEVEL featureLevel;
 
 	// Store the vsync setting.
-	m_vsync_enabled = true;
+	m_vsync_enabled = false;
 	// Create a DirectX graphics interface factory.
 	result = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
 	SIMUL_ASSERT(result==S_OK);
@@ -345,6 +346,7 @@ void Direct3D11Manager::Initialize()
 		SIMUL_ASSERT(result==S_OK);
 		i++;
 	}
+	std::cout<<"2"<<std::endl;
 	//We now have the numerator and denominator for the refresh rate.
 	//The last thing we will retrieve using the adapter is the name of the video card and the amount of memory on the video card.
 
@@ -363,7 +365,8 @@ void Direct3D11Manager::Initialize()
 
 	// Release the factory.
 	SAFE_RELEASE(factory);
-
+	
+	std::cout<<"3"<<std::endl;
 	//After setting up the swap chain description we also need to setup one more variable called the feature level.
 	// This variable tells DirectX what version we plan to use. Here we set the feature level to 11.0 which is DirectX 11.
 	// You can set this to 10 or 9 to use a lower level version of DirectX if you plan on supporting multiple versions or running on lower end hardware.
@@ -388,8 +391,9 @@ void Direct3D11Manager::Initialize()
 #ifdef _DEBUG
 	flags|=D3D11_CREATE_DEVICE_DEBUG;
 #endif
+	std::cout<<"D3D11CreateDevice "<<std::endl;
 	result=D3D11CreateDevice(NULL,D3D_DRIVER_TYPE_HARDWARE,NULL,flags, &featureLevel,1,D3D11_SDK_VERSION,&d3dDevice, NULL,&d3dDeviceContext);
-
+	std::cout<<"D3D11CreateDevice result "<<result<<std::endl;
 	d3dDevice->AddRef();
 	UINT refcount=d3dDevice->Release();
 #ifdef _DEBUG
@@ -447,6 +451,7 @@ void Direct3D11Manager::Initialize()
 #endif
 	d3dDevice->AddRef();
 	UINT refcount2=d3dDevice->Release();
+	std::cout<<"result "<<result<<std::endl;
 	SIMUL_ASSERT(result==S_OK);
 }
 

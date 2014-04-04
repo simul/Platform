@@ -11,7 +11,7 @@ struct FontIndex
 };
 
 FontIndex fontIndices[]={
-{0.0f		,0.0f			,0},
+{0.0f		,0.0f			,10},
 {0.0f		,0.000976563f	,1},
 {0.00195313f,0.00488281f	,3},
 {0.00585938f,0.0136719f		,8},
@@ -163,12 +163,15 @@ void TextRenderer::Render(ID3D11DeviceContext* pContext,float x,float y,float sc
 		if(idx<0||idx>100)
 			continue;
 		const FontIndex &f=fontIndices[idx];
-		constantBuffer.rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+16.f)/screen_height,2.0f*(float)f.pixel_width/screen_width,2.0f*16.f/screen_height);
-		static float u			=1024.f/598.f;
-		constantBuffer.texc		=vec4(f.x*u,1.0f,(f.w-f.x)*u,-1.0f);
-		constantBuffer.colour	=vec4(clr);
-		constantBuffer.Apply(pContext);
-		pContext->Draw(4,0);
+		if(idx>0)
+		{
+			constantBuffer.rect		=vec4(2.0f*x/screen_width-1.f,1.f-2.0f*(y+16.f)/screen_height,2.0f*(float)f.pixel_width/screen_width,2.0f*16.f/screen_height);
+			static float u			=1024.f/598.f;
+			constantBuffer.texc		=vec4(f.x*u,1.0f,(f.w-f.x)*u,-1.0f);
+			constantBuffer.colour	=vec4(clr);
+			constantBuffer.Apply(pContext);
+			pContext->Draw(4,0);
+		}
 		x+=f.pixel_width+1;
 	}
 	pContext->IASetPrimitiveTopology(previousTopology);

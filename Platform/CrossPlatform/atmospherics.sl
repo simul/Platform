@@ -111,6 +111,69 @@ vec4 Inscatter(	Texture2D inscTexture
 #endif
 }
 
+// In depthTextureNF, x=far, y=near, z=edge
+vec4 Inscatter_NFDepth(	Texture2D inscTexture
+				,Texture2D skylTexture
+				,Texture2D illuminationTexture
+				,Texture2D depthTextureNF
+				,vec2 texCoords
+				,mat4 invViewProj
+				,vec3 lightDir
+				,float hazeEccentricity
+				,vec3 mieRayleighRatio
+				,vec4 viewportToTexRegionScaleBias
+				,vec3 depthToLinFadeDistParams
+				,vec2 tanHalfFov
+				,bool USE_NEAR_FAR
+				,bool nearPass)
+{
+	vec2 clip_pos		=vec2(-1.0,1.0);
+	clip_pos.x			+=2.0*texCoords.x;
+	clip_pos.y			-=2.0*texCoords.y;
+	vec3 view			=normalize(mul(invViewProj,vec4(clip_pos,1.0,1.0)).xyz);
+	view				=normalize(view);
+	vec4 insc			=vec4(0,0,0,0);
+	vec3 skyl			=vec3(0,0,0);
+	vec2 offset[]		={	vec2(1.0,1.0),vec2(1.0,0.0),vec2(1.0,-1.0)
+							,vec2(-1.0,1.0),vec2(-1.0,0.0),vec2(-1.0,-1.0)
+							,vec2(0.0,1.0),vec2(0.0,-1.0),vec2(0.0,0.0)};
+	float sine			=view.z;
+	float2 fade_texc	=vec2(0,0.5f*(1.f-sine));
+	vec2 illum_texc		=vec2(atan2(view.x,view.y)/(3.1415926536*2.0),fade_texc.y);
+	vec2 depth_texc		=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
+	
+	vec4 depth_lookup	=texture_nearest_lod(depthTextureNF,depth_texc,0);
+	float depth			=0.0;
+	
+	if(nearPass)
+		depth			=depth_lookup.y;
+	else
+		depth			=depth_lookup.x;
+	
+	float dist			=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
+	
+    CalcInsc(	inscTexture
+				,skylTexture
+				,illuminationTexture
+				,dist
+				,fade_texc
+				,illum_texc
+                ,insc
+				,skyl);
+	float cos0			=dot(view,lightDir);
+#ifdef INFRARED
+	vec3 colour			=skyl.rgb;
+    colour.rgb			*=infraredIntegrationFactors.xyz;
+    float final_radiance=colour.x+colour.y+colour.z;
+	return float4(final_radiance,final_radiance,final_radiance,1.f);
+#else
+	vec3 colour	    	=InscatterFunction(insc,hazeEccentricity,cos0,mieRayleighRatio);
+	colour				+=skyl;
+
+	return float4(colour.rgb,1.0);
+#endif
+}
+
 vec4 InscatterMSAA(	Texture2D inscTexture
 				,Texture2D skylTexture
 				,Texture2D illuminationTexture

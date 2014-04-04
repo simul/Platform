@@ -237,6 +237,43 @@ vec4 PS_Inscatter_Near_MSAA(atmosVertexOutput IN) : SV_TARGET
 	res.rgb	*=exposure;
 	return res;
 }
+vec4 PS_Inscatter_Far_NFDepth(atmosVertexOutput IN) : SV_TARGET
+{
+//	discard;
+	vec4 res=Inscatter_NFDepth(	inscTexture
+							,skylTexture
+							,illuminationTexture
+							,depthTexture
+							,IN.texCoords
+							,invViewProj
+							,lightDir
+							,hazeEccentricity
+							,mieRayleighRatio
+							,viewportToTexRegionScaleBias
+							,depthToLinFadeDistParams
+							,tanHalfFov,true,false);
+	//vec4 res=vec4(1,0,0,0);
+	res.rgb	*=exposure;
+	return res;
+}
+
+vec4 PS_Inscatter_Near_NFDepth(atmosVertexOutput IN) : SV_TARGET
+{
+	vec4 res=Inscatter_NFDepth(	inscTexture
+							,skylTexture
+							,illuminationTexture
+							,depthTexture
+							,IN.texCoords
+							,invViewProj
+							,lightDir
+							,hazeEccentricity
+							,mieRayleighRatio
+							,viewportToTexRegionScaleBias
+							,depthToLinFadeDistParams
+							,tanHalfFov,true,true);
+	res.rgb	*=exposure;
+	return res;
+}
 
 vec4 RainbowAndCorona(vec3 view,vec3 lightDir,vec2 texCoords)
 {
@@ -381,6 +418,7 @@ technique11 loss_msaa
     }
 }
 
+// An inscatter technique that expects an MSAA depth texture. Probably too inefficient for everyday use.
 technique11 inscatter_msaa
 {
     pass far
@@ -403,6 +441,28 @@ technique11 inscatter_msaa
     }
 }
 
+// An inscatter technique that expects a depth texture containing near, far and edge components.
+technique11 inscatter_nearfardepth
+{
+    pass far
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Far_NFDepth()));
+    }
+    pass near
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, float4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+        SetGeometryShader(NULL);
+		SetVertexShader(CompileShader(vs_5_0,VS_Atmos()));
+		SetPixelShader(CompileShader(ps_5_0,PS_Inscatter_Near_NFDepth()));
+    }
+}
 
 technique11 simul_atmospherics_overlay
 {

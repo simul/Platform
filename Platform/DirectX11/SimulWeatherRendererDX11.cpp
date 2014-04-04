@@ -379,17 +379,19 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 														,const sky::float4& depthViewportXYWH
 														)
 {
-	SIMUL_COMBINED_PROFILE_START(context,"RenderMixedResolution Loss")
+	SIMUL_COMBINED_PROFILE_START(context,"RenderMixedResolution")
+#if 0
+	SIMUL_GPU_PROFILE_START(context,"Loss")
 	if(baseAtmosphericsRenderer)
 		baseAtmosphericsRenderer->RenderLoss(context,mainDepthTextureMS,depthViewportXYWH,false);
 
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	
-	SIMUL_COMBINED_PROFILE_END(context)
-	SIMUL_COMBINED_PROFILE_START(context,"RenderMixedResolution Hi-Res FAR")
+	SIMUL_GPU_PROFILE_END(context)
+	SIMUL_GPU_PROFILE_START(context,"Hi-Res FAR")
 	fb->hiResFarFramebufferDx11.Activate(context);
-	fb->hiResFarFramebufferDx11.Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
-	
+	//fb->hiResFarFramebufferDx11.Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
+	// RenderInscatter also clears the buffer.
 	if(baseAtmosphericsRenderer)
 		baseAtmosphericsRenderer->RenderInscatter(context,mainDepthTextureMS,exposure,depthViewportXYWH,false);
 	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
@@ -397,8 +399,8 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	
 	fb->hiResFarFramebufferDx11.Deactivate(context);
 	
-	SIMUL_COMBINED_PROFILE_END(context)
-	SIMUL_COMBINED_PROFILE_START(context,"RenderMixedResolution Hi-Res NEAR")
+	SIMUL_GPU_PROFILE_END(context)
+	SIMUL_GPU_PROFILE_START(context,"Hi-Res NEAR")
 	fb->hiResNearFramebufferDx11.Activate(context);
 	fb->hiResNearFramebufferDx11.Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
 	
@@ -409,8 +411,8 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	// Now do the near-pass
 	float godrays_strength		=(float)(!is_cubemap)*environment->cloudKeyframer->GetInterpolatedKeyframe().godray_strength;
 	
-	SIMUL_COMBINED_PROFILE_END(context)
-	SIMUL_COMBINED_PROFILE_START(context,"RenderMixedResolution LO-RES FAR")
+	SIMUL_GPU_PROFILE_END(context)
+	SIMUL_GPU_PROFILE_START(context,"LO-RES FAR")
 	// Now we will render the main, FAR pass, of the clouds.
 	fb->lowResFarFramebufferDx11.ActivateViewport(context,depthViewportXYWH.x,depthViewportXYWH.y,depthViewportXYWH.z,depthViewportXYWH.w);
 	fb->lowResFarFramebufferDx11.Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
@@ -430,20 +432,22 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	RenderLowResolutionElements(context,exposure,godrays_strength,is_cubemap,false,lowResDepthTexture,view_id,depthViewportXYWH);
 	fb->lowResFarFramebufferDx11.Deactivate(context);
 	
-	SIMUL_COMBINED_PROFILE_END(context)
-	SIMUL_COMBINED_PROFILE_START(context,"RenderMixedResolution LO-RES NEAR")
+	SIMUL_GPU_PROFILE_END(context)
+	SIMUL_GPU_PROFILE_START(context,"LO-RES NEAR")
 	// Now we will render the secondary, NEAR pass of the clouds.
 	fb->lowResNearFramebufferDx11.ActivateColour(context);
 	fb->lowResNearFramebufferDx11.ClearColour(context,0.0f,0.0f,0.f,1.f);
 	RenderLowResolutionElements(context,exposure,godrays_strength,is_cubemap,true,lowResDepthTexture,view_id,depthViewportXYWH);
 	fb->lowResNearFramebufferDx11.Deactivate(context);
-	SIMUL_COMBINED_PROFILE_END(context)
-	SIMUL_COMBINED_PROFILE_START(context,"RenderMixedResolution Composite")
+	SIMUL_GPU_PROFILE_END(context)
+	SIMUL_GPU_PROFILE_START(context,"Composite")
 	
 	CompositeCloudsToScreen(context,view_id,!is_cubemap,mainDepthTextureMS,lowResDepthTexture,depthViewportXYWH);
 	
 	//RenderLightning(context,view_id,mainDepthTextureMS,depthViewportXYWH,GetCloudDepthTexture());
 	RenderPrecipitation(context,lowResDepthTexture,depthViewportXYWH,view,proj);
+	SIMUL_GPU_PROFILE_END(context)
+#endif
 	SIMUL_COMBINED_PROFILE_END(context)
 }
 
@@ -454,7 +458,6 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 												,const void* lowResDepthTexture
 												,const simul::sky::float4& depthViewportXYWH)
 {
-	SIMUL_COMBINED_PROFILE_START(context,"Composite Clouds to Screen")
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
 	imageTexture->SetResource(fb->lowResFarFramebufferDx11.buffer_texture_SRV);
@@ -493,7 +496,6 @@ void SimulWeatherRendererDX11::CompositeCloudsToScreen(void *context
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	imageTexture->SetResource(NULL);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
-	SIMUL_COMBINED_PROFILE_END(context)
 }
 
 void SimulWeatherRendererDX11::RenderFramebufferDepth(void *context,int view_id,int x0,int y0,int width,int height)

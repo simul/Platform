@@ -297,7 +297,8 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 	View *view=GetView(view_id);
 	if(!view)
 		return;
-	SIMUL_COMBINED_PROFILE_START(pContext,"Direct3D11Renderer::DownscaleDepth Resolve Depth")
+	SIMUL_COMBINED_PROFILE_START(pContext,"DownscaleDepth")
+	SIMUL_COMBINED_PROFILE_START(pContext,"Resolve Depth")
 	int W=view->hdrFramebuffer.Width;
 	int H=view->hdrFramebuffer.Height;
 	int w=W/s;
@@ -317,11 +318,11 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 		V_CHECK(ApplyPass(pContext,tech->GetPassByIndex(0)));
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	view->resolvedDepth_fb.Deactivate(pContext);
-	
 	SIMUL_COMBINED_PROFILE_END(pContext)
+
 	{
 		view->hiResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,W,H,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
-		SIMUL_COMBINED_PROFILE_START(pContext,"Direct3D11Renderer::DownscaleDepth Make Hi-res Depth")
+		SIMUL_COMBINED_PROFILE_START(pContext,"Make Hi-res Depth")
 		//pContext->ResolveSubresource(resolvedDepthTexture.texture, 0, depthTexture, 0, DXGI_FORMAT_R32_FLOAT);
 		mixedResolutionConstants.scale=uint2(s,s);
 		mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj);
@@ -341,7 +342,7 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 		SIMUL_COMBINED_PROFILE_END(pContext)
 	}
 	{
-		SIMUL_COMBINED_PROFILE_START(pContext,"Direct3D11Renderer::DownscaleDepth Make Lo-res Depth")
+		SIMUL_COMBINED_PROFILE_START(pContext,"Make Lo-res Depth")
 		//pContext->ResolveSubresource(resolvedDepthTexture.texture, 0, depthTexture, 0, DXGI_FORMAT_R32_FLOAT);
 		mixedResolutionConstants.scale=uint2(s,s);
 		mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj);
@@ -360,6 +361,7 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 		simul::dx11::applyPass(pContext,mixedResolutionEffect,"downscale_depth_far_near_from_hires");//,msaa?"msaa":"main");
 		SIMUL_COMBINED_PROFILE_END(pContext)
 	}
+	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
 void Direct3D11Renderer::RenderFadeEditView(ID3D11DeviceContext* pContext)
@@ -370,7 +372,7 @@ void Direct3D11Renderer::RenderFadeEditView(ID3D11DeviceContext* pContext)
 void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,simul::clouds::BaseWeatherRenderer *w,D3DXMATRIX v,D3DXMATRIX proj)
 {
 	SIMUL_COMBINED_PROFILE_START(pContext,"RenderScene")
-	View *view=views[view_id];
+		View *view=views[view_id];
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->SetMatrices((const float*)v,(const float*)proj);
 	if(simulTerrainRenderer&&ShowTerrain)
@@ -395,7 +397,7 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,s
 		view->hdrFramebuffer.Deactivate(pContext);
 	if(!simulWeatherRenderer)
 		return;
-	void *depthTextureMS		=view->hdrFramebuffer.GetDepthTex();
+	void *depthTextureMS		=view->hiResDepthTexture.shaderResourceView;
 	void *depthTextureResolved	=view->resolvedDepth_fb.GetColorTex();
 	DownscaleDepth(view_id,pContext,proj);
 	simul::sky::float4 relativeViewportTextureRegionXYWH(0.0f,0.0f,1.0f,1.0f);
@@ -405,7 +407,9 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,s
 		//,depthTextureMS,skyBufferDepthTex
 		//,relativeViewportTextureRegionXYWH
 		//,true);
+#if 1
 	simulWeatherRenderer->RenderMixedResolution(pContext,view_id,(const float*)v,(const float*)proj,false,Exposure,depthTextureMS,skyBufferDepthTex,relativeViewportTextureRegionXYWH);
+#endif
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		view->hdrFramebuffer.ActivateDepth(pContext);
 	simulWeatherRenderer->RenderLightning(pContext,view_id,depthTextureMS,relativeViewportTextureRegionXYWH,simulWeatherRenderer->GetCloudDepthTexture());
@@ -514,9 +518,11 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	SIMUL_COMBINED_PROFILE_START(pContext,"Render")
 	if(MakeCubemap)
 	{
+		SIMUL_COMBINED_PROFILE_START(pContext,"Env+Cubemap")
 		D3DXVECTOR3 cam_pos=simul::dx11::GetCameraPosVector(v);
 		RenderCubemap(pContext,cam_pos);
 		RenderEnvmap(pContext);
+		SIMUL_COMBINED_PROFILE_END(pContext)
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
@@ -537,9 +543,12 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
+		SIMUL_COMBINED_PROFILE_START(pContext,"HDR")
 		view->hdrFramebuffer.Deactivate(pContext);
 		simulHDRRenderer->Render(pContext,view->hdrFramebuffer.GetColorTex());
+		SIMUL_COMBINED_PROFILE_END(pContext)
 	}
+	SIMUL_COMBINED_PROFILE_START(pContext,"Overlays")
 	if(simulWeatherRenderer)
 	{
 		if(simulWeatherRenderer->GetSkyRenderer()&&CelestialDisplay)
@@ -583,6 +592,7 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	if(oceanRenderer&&ShowWaterTextures)
 		oceanRenderer->RenderTextures(pContext,view->GetScreenWidth(),view->GetScreenHeight());
 	SIMUL_COMBINED_PROFILE_END(pContext)
+	SIMUL_COMBINED_PROFILE_END(pContext)
 	Profiler::GetGlobalProfiler().EndFrame(pContext);
 }
 
@@ -607,7 +617,7 @@ void Direct3D11Renderer::RenderDepthBuffers(void *context,int view_id,int x0,int
 	UtilityRenderer::DrawTexture(pContext	,x0		,y0		,w,l,(ID3D1xShaderResourceView*)view->hdrFramebuffer.GetDepthTex()			,10000.0f	);
 	UtilityRenderer::Print(pContext			,x0		,y0		,"Main Depth");
 	UtilityRenderer::DrawTexture(pContext	,x0		,y0+l	,w,l,view->hiResDepthTexture.shaderResourceView								,10000.0f	);
-	UtilityRenderer::Print(pContext			,x0		,y0+l	,"HiRes Depth");
+	UtilityRenderer::Print(pContext			,x0		,y0+l	,"Hi-Res Depth");
 	//UtilityRenderer::DrawTexture(pContext,1*w	,0,w,l,(ID3D1xShaderResourceView*)view->resolvedDepth_fb.GetColorTex()					,10000.0f	);
 	UtilityRenderer::DrawTexture(pContext	,x0+w	,y0+l	,w,l,view->lowResDepthTexture.shaderResourceView							,10000.0f	);
 	UtilityRenderer::Print(pContext			,x0+w	,y0+l	,"Lo-Res Depth");
