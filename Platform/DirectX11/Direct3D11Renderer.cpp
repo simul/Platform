@@ -360,6 +360,10 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 		unbindTextures(mixedResolutionEffect);
 		simul::dx11::applyPass(pContext,mixedResolutionEffect,"downscale_depth_far_near_from_hires");//,msaa?"msaa":"main");
 		SIMUL_COMBINED_PROFILE_END(pContext)
+			
+		simul::dx11::setTexture(mixedResolutionEffect,"sourceMSDepthTexture",NULL);
+		simul::dx11::setTexture(mixedResolutionEffect,"sourceDepthTexture"	,NULL);
+		V_CHECK(ApplyPass(pContext,tech->GetPassByIndex(0)));
 	}
 	SIMUL_COMBINED_PROFILE_END(pContext)
 }

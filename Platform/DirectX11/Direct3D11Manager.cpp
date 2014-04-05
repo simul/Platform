@@ -404,6 +404,7 @@ void Direct3D11Manager::Initialize()
  
 	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_CORRUPTION, true );
 	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_ERROR, true );
+	d3dInfoQueue->SetBreakOnSeverity( D3D11_MESSAGE_SEVERITY_WARNING, true );
 	
 	ReportMessageFilterState();
 	d3dInfoQueue->ClearStoredMessages();
