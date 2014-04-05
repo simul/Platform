@@ -96,6 +96,8 @@ void LightningRenderer::Render(void *context,const simul::math::Matrix4x4 &view,
 		simul::clouds::LightningProperties props	=cloudKeyframer->GetLightningProperties(time,i);
 		if(!lightningRenderInterface)
 			continue;
+		if(!props.numLevels)
+			continue;
 		lightningConstants.lightningColour	=props.colour;
 		lightningConstants.Apply(pContext);
 

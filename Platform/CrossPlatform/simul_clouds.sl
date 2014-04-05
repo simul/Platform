@@ -353,7 +353,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 			density					=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
             if(do_depth_mix)
 				density.z			*=saturate((d-fadeDistance)/0.01);
-			//density.z				=saturate(density.z+.4*(1.0-density.x)*saturate(5.0-10*cloudTexCoords.z));
+		//	density.z				=saturate(density.z+.2*(1.0-density.x)*saturate(5.0-10*cloudTexCoords.z));
 			if(density.z>0)
 			{
 #ifdef USE_LIGHT_TABLES
@@ -377,6 +377,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				meanFadeDistance		+=fadeDistance*c.a*colour.a;
 				
 			colour.a				*=(1.0-c.a);
+			//colour.a				*=(1.0-.1*(1.0-density.y));
 				if(colour.a*brightness_factor<0.003)
 			{
 				colour.a	=0.0;
