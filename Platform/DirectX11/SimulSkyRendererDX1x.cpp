@@ -16,6 +16,7 @@
 #include <d3dx10.h>
 #include <dxerr.h>
 #include <string>
+#include <algorithm>			// for std::min / max
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Pi.h"
 #include "Simul/Sky/SkyInterface.h"

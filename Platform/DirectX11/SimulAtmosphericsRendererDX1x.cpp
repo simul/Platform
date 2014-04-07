@@ -152,10 +152,10 @@ void SimulAtmosphericsRendererDX1x::RenderLoss(void *context,const void *depthTe
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
 	ID3D11ShaderResourceView* depthTexture_SRV=(ID3D11ShaderResourceView*)depthTexture;
 	lossTexture->SetResource(skyLossTexture_SRV);
-	setTexture(effect,"illuminationTexture",illuminationTexture_SRV);
+	setTexture(effect,"illuminationTexture"	,illuminationTexture_SRV);
 	setTexture(effect,"depthTexture"		,depthTexture_SRV);
 	setTexture(effect,"depthTextureMS"		,depthTexture_SRV);
-	setTexture(effect,"cloudShadowTexture",(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
+	setTexture(effect,"cloudShadowTexture"	,(ID3D11ShaderResourceView*)cloudShadowStruct.texture);
 	sky::float4 cam_pos=simul::dx11::GetCameraPosVector(view,false);
 	view(3,0)=view(3,1)=view(3,2)=0;
 	simul::camera::Frustum frustum=simul::camera::GetFrustumFromProjectionMatrix((const float*)proj);

@@ -36,8 +36,13 @@ namespace simul
 			void map(ID3D11DeviceContext *context);
 			bool isMapped() const;
 			void unmap();
+			void activateRenderTarget(ID3D11DeviceContext *context);
+			void deactivateRenderTarget();
 		private:
 			ID3D11DeviceContext *last_context;
+			ID3D11RenderTargetView*				m_pOldRenderTarget;
+			ID3D11DepthStencilView*				m_pOldDepthSurface;
+			D3D11_VIEWPORT						m_OldViewports[16];
 		};
 		struct ComputableTexture
 		{

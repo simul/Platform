@@ -7,20 +7,38 @@ Texture2DMS<float4> sourceMSDepthTexture SIMUL_TEXTURE_REGISTER(0);
 Texture2DMS<float4> sourceTextureMS SIMUL_TEXTURE_REGISTER(0);
 Texture2D<float4> sourceDepthTexture SIMUL_TEXTURE_REGISTER(1);
 RWTexture2D<float4> target2DTexture SIMUL_RWTEXTURE_REGISTER(1);
-	
-[numthreads(8,8,1)]
-void CS_MakeDepthFarNear(uint3 pos : SV_DispatchThreadID )
+
+vec4 PS_MakeDepthFarNear(posTexVertexOutput IN):SV_Target
 {
-	MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,1,target2DTexture,pos,depthToLinFadeDistParams);
+	uint2 source_dims;
+	sourceDepthTexture.GetDimensions(source_dims.x,source_dims.y);
+	uint2 pos=uint2(IN.texCoords.xy*source_dims.xy);
+	return MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,1,pos,depthToLinFadeDistParams);
 }
 
-[numthreads(8,8,1)]
+vec4 PS_MakeDepthFarNear_MSAA(posTexVertexOutput IN):SV_Target
+{
+	uint2 source_dims;
+	uint numberOfSamples;
+	sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
+	uint2 pos=uint2(IN.texCoords.xy*source_dims.xy);
+	return MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,numberOfSamples,pos,depthToLinFadeDistParams);
+}
+
+
+[numthreads(16,16,1)]
+void CS_MakeDepthFarNear(uint3 pos : SV_DispatchThreadID )
+{
+	target2DTexture[pos.xy]	=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,1,pos,depthToLinFadeDistParams);
+}
+
+[numthreads(16,16,1)]
 void CS_MakeDepthFarNear_MSAA(uint3 pos : SV_DispatchThreadID )
 {
 	uint2 source_dims;
 	uint numberOfSamples;
 	sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
-	MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,numberOfSamples,target2DTexture,pos,depthToLinFadeDistParams);
+	target2DTexture[pos.xy]=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,numberOfSamples,pos,depthToLinFadeDistParams);
 }
 
 [numthreads(8,8,1)]
@@ -86,6 +104,28 @@ technique11 downscale_depth_far_near_from_hires
 }
 
 technique11 make_depth_far_near
+{
+    pass main
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_MakeDepthFarNear()));
+    }
+    pass msaa
+    {
+		SetRasterizerState( RenderNoCull );
+		SetDepthStencilState( DisableDepth, 0 );
+		SetBlendState(DontBlend, vec4( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF );
+		SetVertexShader(CompileShader(vs_5_0,VS_SimpleFullscreen()));
+        SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0,PS_MakeDepthFarNear_MSAA()));
+    }
+}
+
+technique11 cs_make_depth_far_near
 {
     pass main
     {

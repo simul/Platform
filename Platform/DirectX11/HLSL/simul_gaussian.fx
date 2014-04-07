@@ -318,9 +318,6 @@ inline void output_row_color(uint group_id, uint thread_id)
 
 // The compute shaders for column and row filtering are created from the same
 // function, distinguished by macro "SCAN_COL_PASS" parsed from compiler.
-#define input_color(a, b)	input_col_color(a, b)
-#define output_color(a, b)	output_col_color(a, b)
-#define DATA_SIZE			NUM_IMAGE_ROWS
 
 //-----------------------------------------------------------------------------
 // Name: GaussianColor_CS
@@ -332,39 +329,35 @@ void GaussianCol_CS(uint3 GroupID			: SV_GroupID,
 					  uint3 GroupThreadID	: SV_GroupThreadID)
 {
 	// Step 1: Fetch the entire column (or row) of texels into shared memory
-	input_color(GroupID.x, GroupThreadID.x);
+	input_col_color(GroupID.x, GroupThreadID.x);
 
 	// Step 2. Scan the columns or rows in-place for the first time
-	scan_inclusive(GroupThreadID.x, DATA_SIZE);
+	scan_inclusive(GroupThreadID.x, NUM_IMAGE_ROWS);
 
 	// Step 3: Perform box filtering repeatly for approximating Gaussian blur
 	for (uint i = 0; i < g_NumApproxPasses; i ++)
-		scan_inclusive_filtering(GroupThreadID.x, DATA_SIZE);
+		scan_inclusive_filtering(GroupThreadID.x, NUM_IMAGE_ROWS);
 
 	// Step 4: Write back to global memory
-	output_color(GroupID.x, GroupThreadID.x);
+	output_col_color(GroupID.x, GroupThreadID.x);
 }
-
-#define input_color(a, b)	input_row_color(a, b)
-#define output_color(a, b)	output_row_color(a, b)
-#define DATA_SIZE			NUM_IMAGE_COLS
 
 [numthreads(THREADS_PER_GROUP, 1, 1)]
 void GaussianRow_CS(uint3 GroupID			: SV_GroupID,
 					  uint3 GroupThreadID	: SV_GroupThreadID)
 {
 	// Step 1: Fetch the entire column (or row) of texels into shared memory
-	input_color(GroupID.x, GroupThreadID.x);
+	input_row_color(GroupID.x, GroupThreadID.x);
 
 	// Step 2. Scan the columns or rows in-place for the first time
-	scan_inclusive(GroupThreadID.x, DATA_SIZE);
+	scan_inclusive(GroupThreadID.x, NUM_IMAGE_COLS);
 
 	// Step 3: Perform box filtering repeatly for approximating Gaussian blur
 	for (uint i = 0; i < g_NumApproxPasses; i ++)
-		scan_inclusive_filtering(GroupThreadID.x, DATA_SIZE);
+		scan_inclusive_filtering(GroupThreadID.x, NUM_IMAGE_COLS);
 
 	// Step 4: Write back to global memory
-	output_color(GroupID.x, GroupThreadID.x);
+	output_row_color(GroupID.x, GroupThreadID.x);
 }
 
 

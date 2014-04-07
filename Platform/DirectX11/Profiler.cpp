@@ -12,6 +12,7 @@
 #include "DX11Exception.h"
 #include "Utilities.h"
 
+//#include <D3D11_1.h>
 using namespace simul;
 using namespace dx11;
 using std::string;
@@ -73,6 +74,12 @@ void Profiler::Begin(void *ctx,const char *name)
 {
 	IUnknown *unknown=(IUnknown *)ctx;
 	ID3D11DeviceContext *context=(ID3D11DeviceContext*)ctx;
+
+	//ID3DUserDefinedAnnotation* d3DUserDefinedAnnotation=NULL;
+	//if (context->QueryInterface(__uuidof(ID3D11Texture3D), (void**)&ppd) != S_OK)
+
+	//	d3DUserDefinedAnnotation->BeginEvent(name);
+	//d3DUserDefinedAnnotation->EndEvent();
 	std::string parent;
 	if(last_name.size())
 		parent=(last_name.back());
@@ -160,7 +167,7 @@ template<typename T> inline std::string ToString(const T& val)
         throw std::runtime_error("Error converting value to string");
     return stream.str();
 }
-
+#pragma optimize("",off)
 void Profiler::EndFrame(ID3D11DeviceContext* context)
 {
     if(!enabled||!device)
@@ -168,13 +175,16 @@ void Profiler::EndFrame(ID3D11DeviceContext* context)
 
     currFrame = (currFrame + 1) % QueryLatency;    
 
-    float queryTime = 0.0f;
-	output="";
+    queryTime = 0.0f;
     // Iterate over all of the profileMap
     ProfileMap::iterator iter;
     for(iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         ProfileData& profile = *((*iter).second);
+
+		static float mix=0.01f;
+		iter->second->time*=(1.f-mix);
+
         if(profile.QueryFinished == FALSE)
             continue;
 
@@ -206,13 +216,8 @@ void Profiler::EndFrame(ID3D11DeviceContext* context)
             time = (delta / frequency) * 1000.0f;
         }        
 
-        output+= (*iter).first + ": " + ToString(time) + "ms\n";
-		static float mix=0.01f;
-		iter->second->time*=(1.f-mix);
         iter->second->time+=mix*time;
     }
-
-    output+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
 }
 
 float Profiler::GetTime(const std::string &name) const
@@ -233,7 +238,7 @@ std::string Walk(Profiler::ProfileData *p,int tab,float parent_time)
 			str+="  ";
 		str+=i->second->unqualifiedName.c_str();
 		str+=" ";
-		str+=simul::base::stringFormat("%4.4g (%3.3g%%)\n",i->second->time,100.f*i->second->time/parent_time);
+		str+=simul::base::stringFormat("%4.4f (%3.3f%%)\n",i->second->time,100.f*i->second->time/parent_time);
 		str+=Walk(i->second,tab+1,i->second->time);
 	}
 	return str;
@@ -247,9 +252,11 @@ const char *Profiler::GetDebugText() const
 	{
 		str+=i->second->unqualifiedName.c_str();
 		str+=" ";
-		str+=simul::base::stringFormat("%4.4g\n",i->second->time);
+		str+=simul::base::stringFormat("%4.4f\n",i->second->time);
 		str+=Walk(i->second,1,i->second->time);
 	}
+
+    str+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
 	return str.c_str();
 }
 

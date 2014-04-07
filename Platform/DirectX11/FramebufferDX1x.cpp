@@ -378,9 +378,9 @@ void Framebuffer::SaveOldRTs(void *context)
 	m_pOldRenderTarget	=NULL;
 	m_pOldDepthSurface	=NULL;
 	pContext->OMGetRenderTargets(	1,
-												&m_pOldRenderTarget,
-												&m_pOldDepthSurface
-												);
+									&m_pOldRenderTarget,
+									&m_pOldDepthSurface
+									);
 }
 
 bool Framebuffer::IsValid() const

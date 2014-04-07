@@ -15,6 +15,7 @@
 #include <tchar.h>
 #include <dxerr.h>
 #include <string>
+#include <algorithm>			// for std::min / max
 
 #include "Simul/Base/Timer.h"
 #include "Simul/Math/Pi.h"

@@ -539,7 +539,7 @@ HRESULT WINAPI D3DX11CreateEffectFromBinaryFileUtf8(const char *binary_filename_
 	return hr;
 }
 
-HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D10_SHADER_MACRO *macros,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
+HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D10_SHADER_MACRO *macros,UINT ShaderFlags,UINT FXFlags, ID3D11Device *pDevice, ID3DX11Effect **ppEffect)
 {
 	HRESULT hr=S_OK;
 	int pos=(int)text_filename_utf8.find_last_of("/");
@@ -570,8 +570,8 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 								,text_filename_utf8.c_str()		//in   LPCSTR pSourceName,
 								,macros							//in   const D3D_SHADER_MACRO *pDefines,
 								,&detectChangesIncludeHandler	//in   ID3DInclude pInclude,
-								,&binaryBlob				//ID3DBlob **ppCodeText,
-								,&errorMsgs					//ID3DBlob **ppErrorMsgs
+								,&binaryBlob					//ID3DBlob **ppCodeText,
+								,&errorMsgs						//ID3DBlob **ppErrorMsgs
 								);
 			if(hr!=S_OK||detectChangesIncludeHandler.HasDetectedChanges())
 				changes_detected=true;
@@ -587,8 +587,8 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 				return S_OK;
 		}
 	}
-	ID3DBlob *binaryBlob=NULL;
-	ID3DBlob *errorMsgs=NULL;
+	ID3DBlob *binaryBlob	=NULL;
+	ID3DBlob *errorMsgs		=NULL;
 	ShaderIncludeHandler shaderIncludeHandler(path_utf8.c_str(),"");
 	hr=D3DCompile(		textData,
 						textSize,
@@ -597,7 +597,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 						&shaderIncludeHandler,		//ID3DInclude *pInclude,
 						NULL,						//LPCSTR pEntrypoint,
 						"fx_5_0",					//LPCSTR pTarget,
-						0,							//UINT Flags1,
+						ShaderFlags,				//UINT Flags1,
 						FXFlags,					//UINT Flags2,
 						&binaryBlob,				//ID3DBlob **ppCode,
 						&errorMsgs					//ID3DBlob **ppErrorMsgs
@@ -687,7 +687,7 @@ ID3D11ComputeShader *LoadComputeShader(ID3D11Device *pd3dDevice,const char *file
 	}
 }
 
-HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines)
+HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *filenameUtf8,const std::map<std::string,std::string>&defines,unsigned int shader_flags)
 {
 	SIMUL_ASSERT(d3dDevice!=NULL);
 	HRESULT hr=S_OK;
@@ -721,6 +721,7 @@ HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *
 	{
 		hr=D3DX11CreateEffectFromFileUtf8(	filename_utf8,
 											macros,
+											shader_flags,
 											flags,
 											d3dDevice,
 											effect);

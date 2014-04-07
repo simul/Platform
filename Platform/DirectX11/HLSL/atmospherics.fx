@@ -510,14 +510,6 @@ technique11 simul_atmospherics_overlay_msaa
 		SetPixelShader(CompileShader(ps_5_0,PS_InscatterMSAA()));
     }
 }
-BlendState MultiplyRGBABlend
-{
-	BlendEnable[0] = TRUE;
-	SrcBlend = ZERO;
-	DestBlend = SRC_COLOR;
-    SrcBlendAlpha = ZERO;
-    DestBlendAlpha = SRC_ALPHA;
-};
 BlendState MoistureBlend
 {
 	BlendEnable[0] = TRUE;

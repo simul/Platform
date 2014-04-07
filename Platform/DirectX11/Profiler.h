@@ -119,7 +119,7 @@ namespace simul
 			ID3D11Device* device;
 
 			simul::base::Timer timer;
-			std::string output;
+			float queryTime;
 		};
 
 		class ProfileBlock

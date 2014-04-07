@@ -12,6 +12,7 @@
 #include <tchar.h>
 #include <dxerr.h>
 #include <string>
+#include <algorithm>			// for std::min / max
 #include <assert.h>
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Sky/Float4.h"
@@ -121,7 +122,7 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	hdrConstants.LinkToEffect(m_pTonemapEffect,"HdrConstants");
 	SAFE_RELEASE(m_pGaussianEffect);
 	
-	int	threadsPerGroup = 256;
+	static int	threadsPerGroup = 128;
 
 //static const uint THREADS_PER_GROUP = 128;
 //static const uint SCAN_SMEM_SIZE = 1200;
@@ -140,7 +141,7 @@ void SimulHDRRendererDX1x::RecompileShaders()
 	defs["NUM_IMAGE_COLS"]	=string_format("%d",W);
 	defs["NUM_IMAGE_ROWS"]	=string_format("%d",H);
 	
-	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs);
+	CreateEffect(m_pd3dDevice,&m_pGaussianEffect,"simul_gaussian.fx",defs,0);
 	hdrConstants.LinkToEffect(m_pGaussianEffect,"HdrConstants");
 }
 
@@ -174,6 +175,7 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv)
 void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
 {
 	ID3D11DeviceContext *pContext		=(ID3D11DeviceContext *)context;
+	SIMUL_COMBINED_PROFILE_START(pContext,"HDR")
 	ID3D11ShaderResourceView *textureSRV=(ID3D11ShaderResourceView*)texture_srv;
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	textureSRV->GetDesc(&desc);
@@ -198,6 +200,7 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
 	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",NULL);
 	hdrConstants.Unbind(pContext);
 	ApplyPass(pContext,tech->GetPassByIndex(0));
+	SIMUL_COMBINED_PROFILE_END(pContext)
 }
 
 void SimulHDRRendererDX1x::RenderWithOculusCorrection(void *context,void *texture_srv

@@ -7,6 +7,7 @@
 #include "Simul/Camera/Camera.h"
 #include "Simul/Math/Vector3.h"
 #include <d3dx11.h>
+#include <algorithm>			// for std::min / max
 using namespace simul;
 using namespace dx11;
 
@@ -36,6 +37,8 @@ TextureStruct::TextureStruct()
 	,width(0)
 	,length(0)
 	,last_context(NULL)
+	,m_pOldRenderTarget(NULL)
+	,m_pOldDepthSurface(NULL)
 {
 	memset(&mapped,0,sizeof(mapped));
 }
@@ -400,6 +403,53 @@ void TextureStruct::unmap()
 		last_context->Unmap(texture,0);
 	mapped.pData=NULL;
 	last_context=NULL;
+}
+
+void TextureStruct::activateRenderTarget(ID3D11DeviceContext *pContext)
+{
+	if(!pContext)
+		return;
+	last_context=pContext;
+	{
+		uint num_v=0;
+		pContext->RSGetViewports(&num_v,NULL);
+		if(num_v>0)
+			pContext->RSGetViewports(&num_v,m_OldViewports);
+		m_pOldRenderTarget	=NULL;
+		m_pOldDepthSurface	=NULL;
+		pContext->OMGetRenderTargets(	1,
+										&m_pOldRenderTarget,
+										&m_pOldDepthSurface
+										);
+	}
+	pContext->OMSetRenderTargets(1,&renderTargetView,NULL);
+	{
+		ID3D11Texture2D* ppd(NULL);
+		if(texture->QueryInterface( __uuidof(ID3D11Texture2D),(void**)&ppd)!=S_OK)
+			return;
+		D3D11_TEXTURE2D_DESC textureDesc;
+		ppd->GetDesc(&textureDesc);
+		SAFE_RELEASE(ppd);
+		D3D11_VIEWPORT viewport;
+		viewport.Width = (float)textureDesc.Width;
+		viewport.Height = (float)textureDesc.Height;
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		pContext->RSSetViewports(1, &viewport);
+	}
+}
+
+void TextureStruct::deactivateRenderTarget()
+{
+	if(!last_context)
+		return;
+	last_context->OMSetRenderTargets(	1,
+										&m_pOldRenderTarget,
+										m_pOldDepthSurface
+										);
+	last_context->RSSetViewports(1,m_OldViewports);
 }
 
 ComputableTexture::ComputableTexture()

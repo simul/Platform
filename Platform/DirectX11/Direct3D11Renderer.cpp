@@ -304,9 +304,9 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 	depth_SRV->GetDesc(&desc);
 	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
 	// Sadly, ResolveSubresource doesn't work for depth. And compute can't do MS lookups.
-
+	static bool use_rt=false;
 	{
-		view->hiResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,W,H,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/true,/*rendertarget=*/false);
+		view->hiResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,W,H,DXGI_FORMAT_R32G32B32A32_FLOAT,/*computable=*/!use_rt,/*rendertarget=*/use_rt);
 		SIMUL_COMBINED_PROFILE_START(pContext,"Make Hi-res Depth")
 		mixedResolutionConstants.scale=uint2(s,s);
 		mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj);
@@ -319,10 +319,20 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 		simul::dx11::setTexture				(mixedResolutionEffect,"sourceDepthTexture"		,depth_SRV);
 		simul::dx11::setUnorderedAccessView	(mixedResolutionEffect,"target2DTexture"		,view->hiResDepthTexture.unorderedAccessView);
 	
-		simul::dx11::applyPass(pContext,mixedResolutionEffect,"make_depth_far_near",msaa?"msaa":"main");
-		pContext->Dispatch(subgrid.x,subgrid.y,1);
+		if(use_rt)
+		{
+			view->hiResDepthTexture.activateRenderTarget(pContext);
+			simul::dx11::applyPass(pContext,mixedResolutionEffect,"make_depth_far_near",msaa?"msaa":"main");
+			UtilityRenderer::DrawQuad(pContext);
+			view->hiResDepthTexture.deactivateRenderTarget();
+		}
+		else
+		{
+			simul::dx11::applyPass(pContext,mixedResolutionEffect,"cs_make_depth_far_near",msaa?"msaa":"main");
+			pContext->Dispatch(subgrid.x,subgrid.y,1);
+		}
 		unbindTextures(mixedResolutionEffect);
-		simul::dx11::applyPass(pContext,mixedResolutionEffect,"make_depth_far_near",msaa?"msaa":"main");
+		simul::dx11::applyPass(pContext,mixedResolutionEffect,"cs_make_depth_far_near",msaa?"msaa":"main");
 		SIMUL_COMBINED_PROFILE_END(pContext)
 	}
 	{
@@ -529,10 +539,8 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	}
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
-		SIMUL_COMBINED_PROFILE_START(pContext,"HDR")
 		view->hdrFramebuffer.Deactivate(pContext);
 		simulHDRRenderer->Render(pContext,view->hdrFramebuffer.GetColorTex());
-		SIMUL_COMBINED_PROFILE_END(pContext)
 	}
 	SIMUL_COMBINED_PROFILE_START(pContext,"Overlays")
 	if(simulWeatherRenderer)
