@@ -11,7 +11,6 @@
 #include "Profiler.h"
 #include "DX11Exception.h"
 #include "Utilities.h"
-#include "Simul/Base/StringFunctions.h"
 
 using namespace simul;
 using namespace dx11;
@@ -45,20 +44,20 @@ Profiler::~Profiler()
 
 void Profiler::Uninitialize()
 {
-    for(ProfileMap::iterator iter = profiles.begin(); iter != profiles.end(); iter++)
+    for(ProfileMap::iterator iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         ProfileData *profile = (*iter).second;
 		delete profile;
 	}
-	profiles.clear();
-    this->device=NULL;
+	profileMap.clear();
+    this->device = NULL;
     enabled=true;
 }
 
 void Profiler::Initialize(ID3D11Device* device)
 {
-    this->device	=device;
-    enabled			=true;
+    this->device = device;
+    enabled=true;
 //	std::cout<<"Profiler::Initialize device "<<(unsigned)device<<std::endl;
 }
 
@@ -75,31 +74,37 @@ void Profiler::Begin(void *ctx,const char *name)
 	IUnknown *unknown=(IUnknown *)ctx;
 	ID3D11DeviceContext *context=(ID3D11DeviceContext*)ctx;
 	std::string parent;
-	std::string full_name=name;
-	ProfileData *parentProfileData=NULL;
 	if(last_name.size())
-	{
-		parent=last_name.back();
-		full_name=parent+".";
-		full_name+=name;
-		parentProfileData = profiles[parent];
-	}
-	last_name.push_back(full_name);
+		parent=(last_name.back());
+	std::string qualified_name(name);
+	if(last_name.size())
+		qualified_name=(parent+".")+name;
+	last_name.push_back(qualified_name);
 	last_context.push_back(context);
 	if(!context||!enabled||!device)
         return;
-	if(profiles.find(full_name)==profiles.end())
-		profiles[full_name]=new ProfileData;
-    ProfileData *profileData=profiles[full_name];
-		
-	profileData->name		=name;
-	profileData->full_name	=full_name;
-	if(parentProfileData)
-		parentProfileData->children.insert(profileData);
+    ProfileData *profileData = NULL;
+	if(profileMap.find(qualified_name)==profileMap.end())
+	{
+		profileData=profileMap[qualified_name]=new ProfileData;
+		profileData->unqualifiedName=name;
+	}
+	else
+	{
+		profileData=profileMap[qualified_name];
+	}
+    ProfileData *parentData=NULL;
+	if(parent.length())
+		parentData=profileMap[parent];
+	if(parentData)
+		parentData->children[qualified_name]=profileData;
+	profileData->parent=parentData;
+	if(!parentData)
+		rootMap[qualified_name]=profileData;
     _ASSERT(profileData->QueryStarted == FALSE);
     if(profileData->QueryFinished!= FALSE)
         return;
-	profileData->parent=parentProfileData;
+    
     if(profileData->DisjointQuery[currFrame] == NULL)
     {
         // Create the queries
@@ -133,7 +138,7 @@ void Profiler::End()
     if(!enabled||!device||!context)
         return;
 
-    ProfileData *profileData = profiles[name];
+    ProfileData *profileData = profileMap[name];
     if(profileData->QueryStarted != TRUE)
 		return;
     _ASSERT(profileData->QueryFinished == FALSE);
@@ -165,9 +170,9 @@ void Profiler::EndFrame(ID3D11DeviceContext* context)
 
     float queryTime = 0.0f;
 	output="";
-    // Iterate over all of the profiles
+    // Iterate over all of the profileMap
     ProfileMap::iterator iter;
-    for(iter = profiles.begin(); iter != profiles.end(); iter++)
+    for(iter = profileMap.begin(); iter != profileMap.end(); iter++)
     {
         ProfileData& profile = *((*iter).second);
         if(profile.QueryFinished == FALSE)
@@ -202,7 +207,9 @@ void Profiler::EndFrame(ID3D11DeviceContext* context)
         }        
 
         output+= (*iter).first + ": " + ToString(time) + "ms\n";
-        iter->second->time=time;
+		static float mix=0.01f;
+		iter->second->time*=(1.f-mix);
+        iter->second->time+=mix*time;
     }
 
     output+= "Time spent waiting for queries: " + ToString(queryTime) + "ms";
@@ -212,22 +219,22 @@ float Profiler::GetTime(const std::string &name) const
 {
     if(!enabled||!device)
 		return 0.f;
-	return profiles.find(name)->second->time;
+	return profileMap.find(name)->second->time;
 }
-
-std::string Profiler::GetChildText(const char *name,std::string tab) const
+#include "Simul/Base/StringFunctions.h"
+std::string Walk(Profiler::ProfileData *p,int tab,float parent_time)
 {
+	if(p->children.size()==0)
+		return "";
 	std::string str;
-	str="";
-	Profiler::ProfileMap::const_iterator i=profiles.find(name);
-	ProfileData *p=i->second;
-	for(std::set<ProfileData*>::const_iterator i=p->children.begin();i!=p->children.end();i++)
+	for(Profiler::ProfileMap::const_iterator i=p->children.begin();i!=p->children.end();i++)
 	{
-		str+=tab;
-		str+=(*i)->name.c_str();
+		for(int j=0;j<tab;j++)
+			str+="  ";
+		str+=i->second->unqualifiedName.c_str();
 		str+=" ";
-		str+=simul::base::stringFormat("%4.4g\n",(*i)->time);
-		str+=GetChildText((*i)->full_name.c_str(),tab+"\t");
+		str+=simul::base::stringFormat("%4.4g (%3.3g%%)\n",i->second->time,100.f*i->second->time/parent_time);
+		str+=Walk(i->second,tab+1,i->second->time);
 	}
 	return str;
 }
@@ -236,15 +243,12 @@ const char *Profiler::GetDebugText() const
 {
 	static std::string str;
 	str="";
-	for(Profiler::ProfileMap::const_iterator i=profiles.begin();i!=profiles.end();i++)
+	for(Profiler::ProfileMap::const_iterator i=rootMap.begin();i!=rootMap.end();i++)
 	{
-		if(i->second->parent==NULL)
-		{
-			str+=i->first.c_str();
-			str+=" ";
-			str+=simul::base::stringFormat("%4.4g\n",i->second->time);
-			str+=GetChildText(i->first.c_str(),"\t");
-		}
+		str+=i->second->unqualifiedName.c_str();
+		str+=" ";
+		str+=simul::base::stringFormat("%4.4g\n",i->second->time);
+		str+=Walk(i->second,1,i->second->time);
 	}
 	return str.c_str();
 }

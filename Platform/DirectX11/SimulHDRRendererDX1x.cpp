@@ -193,7 +193,7 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
 	}
 	ApplyPass(pContext,tech->GetPassByName(msaa?"msaa":"main"));
 	simul::dx11::UtilityRenderer::DrawQuad(pContext);
-	
+
 	dx11::setTexture(m_pTonemapEffect,"imageTexture",NULL);
 	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",NULL);
 	hdrConstants.Unbind(pContext);

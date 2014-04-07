@@ -57,6 +57,7 @@ SimulSkyRendererDX1x::SimulSkyRendererDX1x(simul::sky::SkyKeyframer *sk,simul::b
 	inscatter_2d=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	overcast_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
 	skylight_2d	=new(memoryInterface) simul::dx11::Framebuffer(0,0);
+	skyKeyframer->SetGpuSkyGenerator(GetBaseGpuSkyGenerator());
 }
 
 void SimulSkyRendererDX1x::SetStepsPerDay(unsigned steps)

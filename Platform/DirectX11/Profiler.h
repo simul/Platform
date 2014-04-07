@@ -65,25 +65,26 @@ namespace simul
 			float GetTime(const std::string &name) const;
 			//! Get all the active profilers as a text report.
 			const char *GetDebugText() const;
-		protected:
 			std::string GetChildText(const char *name,std::string tab) const;
 			std::vector<std::string> last_name;
 			std::vector<ID3D11DeviceContext *> last_context;
 			static Profiler GlobalProfiler;
 
 			// Constants
-			static const UINT64 QueryLatency = 5;
+			static const UINT64 QueryLatency = 15;
 
+			struct ProfileData;
+			typedef std::map<std::string,ProfileData*> ProfileMap;
 			struct ProfileData
 			{
+				ProfileData *parent;
 				ID3D11Query *DisjointQuery[QueryLatency];
 				ID3D11Query *TimestampStartQuery[QueryLatency];
 				ID3D11Query *TimestampEndQuery[QueryLatency];
 				BOOL QueryStarted;
 				BOOL QueryFinished;
-				ProfileData *parent;
-				std::string name;
 				std::string full_name;
+				std::string unqualifiedName;
 				float time;
 				ProfileData()
 					:QueryStarted(false)
@@ -107,12 +108,12 @@ namespace simul
 						SAFE_RELEASE(TimestampEndQuery[i]);
 					}
 				}
-				std::set<ProfileData*> children;
+				ProfileMap children;
 			};
+		protected:
 
-			typedef std::map<std::string, ProfileData*> ProfileMap;
-
-			ProfileMap profiles;
+			ProfileMap profileMap;
+			ProfileMap rootMap;
 			UINT64 currFrame;
 
 			ID3D11Device* device;
