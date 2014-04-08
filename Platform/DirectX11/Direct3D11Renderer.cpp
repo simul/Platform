@@ -38,6 +38,7 @@ using namespace dx11;
 
 void View::RestoreDeviceObjects(ID3D11Device *pd3dDevice)
 {
+	m_pd3dDevice=pd3dDevice;
 	hdrFramebuffer.RestoreDeviceObjects(pd3dDevice);
 	hdrFramebuffer.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 	hdrFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
@@ -48,6 +49,7 @@ void View::InvalidateDeviceObjects()
 	hdrFramebuffer.InvalidateDeviceObjects();
 	lowResDepthTexture.release();
 	hiResDepthTexture.release();
+	resolvedTexture.release();
 }
 
 int View::GetScreenWidth() const
@@ -62,6 +64,23 @@ void View::SetResolution(int w,int h)
 {
 	ScreenWidth=w;
 	ScreenHeight=h;
+}
+
+void View::ResolveFramebuffer(ID3D11DeviceContext *pContext)
+{
+	if(hdrFramebuffer.numAntialiasingSamples>1)
+	{
+		resolvedTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,ScreenWidth,ScreenHeight,DXGI_FORMAT_R32G32B32A32_FLOAT,false,true);
+		pContext->ResolveSubresource(resolvedTexture.texture,0,hdrFramebuffer.GetColorTexture(),0,DXGI_FORMAT_R32G32B32A32_FLOAT);
+	}
+}
+
+ID3D11ShaderResourceView *View::GetResolvedHDRBuffer()
+{
+//	if(hdrFramebuffer.numAntialiasingSamples>1)
+	//	return resolvedTexture.shaderResourceView;
+	//else
+		return (ID3D11ShaderResourceView*)hdrFramebuffer.GetColorTex();
 }
 //simul::dx11::RenderPlatform renderPlatform;
 
@@ -540,7 +559,8 @@ void Direct3D11Renderer::Render(int view_id,ID3D11Device* pd3dDevice,ID3D11Devic
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 	{
 		view->hdrFramebuffer.Deactivate(pContext);
-		simulHDRRenderer->Render(pContext,view->hdrFramebuffer.GetColorTex());
+		view->ResolveFramebuffer(pContext);
+		simulHDRRenderer->Render(pContext,view->GetResolvedHDRBuffer());
 	}
 	SIMUL_COMBINED_PROFILE_START(pContext,"Overlays")
 	if(simulWeatherRenderer)

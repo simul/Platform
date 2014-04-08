@@ -387,7 +387,7 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	
 	SIMUL_GPU_PROFILE_END(context)
-#if 0
+#if 1
 	SIMUL_GPU_PROFILE_START(context,"Hi-Res FAR")
 	fb->hiResFarFramebufferDx11.Activate(context);
 	//fb->hiResFarFramebufferDx11.Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);

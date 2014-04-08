@@ -50,11 +50,13 @@ namespace simul
 		{
 			View();
 			~View();
-			void RestoreDeviceObjects(ID3D11Device *m_pd3dDevice);
+			void RestoreDeviceObjects(ID3D11Device *pd3dDevice);
 			void InvalidateDeviceObjects();
 			int GetScreenWidth() const;
 			int GetScreenHeight() const;
 			void SetResolution(int w,int h);
+			void ResolveFramebuffer(ID3D11DeviceContext *pContext);
+			ID3D11ShaderResourceView *View::GetResolvedHDRBuffer();
 			// A framebuffer with depth
 			simul::dx11::Framebuffer					hdrFramebuffer;
 			// The depth from the HDR framebuffer can be resolved into this texture:
@@ -65,6 +67,8 @@ namespace simul
 		private:
 			int ScreenWidth;
 			int ScreenHeight;
+			simul::dx11::TextureStruct					resolvedTexture;
+			ID3D11Device								*m_pd3dDevice;
 		};
 		class SimulWeatherRendererDX11;
 		class SimulHDRRendererDX1x;
