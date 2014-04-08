@@ -380,6 +380,7 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 														)
 {
 	SIMUL_COMBINED_PROFILE_START(context,"RenderMixedResolution")
+#if 0
 	SIMUL_GPU_PROFILE_START(context,"Loss")
 	if(baseAtmosphericsRenderer)
 		baseAtmosphericsRenderer->RenderLoss(context,mainDepthTextureMS,depthViewportXYWH,false);
@@ -387,15 +388,14 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	
 	SIMUL_GPU_PROFILE_END(context)
-#if 1
 	SIMUL_GPU_PROFILE_START(context,"Hi-Res FAR")
 	fb->hiResFarFramebufferDx11.Activate(context);
-	//fb->hiResFarFramebufferDx11.Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
+	fb->hiResFarFramebufferDx11.Clear(context,0.0f,0.0f,0.f,1.f,ReverseDepth?0.0f:1.0f);
 	// RenderInscatter also clears the buffer.
 	if(baseAtmosphericsRenderer)
 		baseAtmosphericsRenderer->RenderInscatter(context,mainDepthTextureMS,exposure,depthViewportXYWH,false);
-	if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
-		base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTextureMS,UseDefaultFog,false,view_id,depthViewportXYWH);
+	//if(base2DCloudRenderer&&base2DCloudRenderer->GetCloudKeyframer()->GetVisible())
+//		base2DCloudRenderer->Render(context,exposure,false,false,mainDepthTextureMS,UseDefaultFog,false,view_id,depthViewportXYWH);
 	
 	fb->hiResFarFramebufferDx11.Deactivate(context);
 	

@@ -701,9 +701,11 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 	moisture_fb.Activate(pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	moisture_fb.Deactivate(pContext);
-
+	
+	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",NULL);
 	cloudDensity1->SetResource(NULL);
 	cloudDensity2->SetResource(NULL);
+	ApplyPass(pContext,tech->GetPassByIndex(0));
     SIMUL_COMBINED_PROFILE_END(context)
 }
 

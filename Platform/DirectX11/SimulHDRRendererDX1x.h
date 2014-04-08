@@ -60,7 +60,6 @@ namespace simul
 			simul::dx11::Framebuffer glow_fb;
 			int Width,Height;
 			ID3D11Device*						m_pd3dDevice;
-			ID3D1xBuffer*						m_pVertexBuffer;
 
 			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
 			ID3DX11Effect*						m_pTonemapEffect;

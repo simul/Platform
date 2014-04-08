@@ -80,7 +80,7 @@ vec4 PS_Loss(atmosVertexOutput IN) : SV_TARGET
 									,IN.pos
 									,depthToLinFadeDistParams
 									,tanHalfFov);
-    return float4(loss.rgb,1.f);
+    return float4(loss.rgb,1.0);
 }
 
 vec4 PS_LossMSAA(atmosVertexOutput IN) : SV_TARGET
@@ -99,7 +99,7 @@ vec4 PS_LossMSAA(atmosVertexOutput IN) : SV_TARGET
 							,IN.pos
 							,depthToLinFadeDistParams
 							,tanHalfFov);
-    return float4(loss.rgb,1.f);
+    return float4(loss.rgb,1.0);
 }
 
 
@@ -122,7 +122,7 @@ vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 								,tanHalfFov
 								,true
 								,false);
-    return float4(insc.rgb*exposure,1.f);
+    return float4(insc.rgb*exposure,1.0);
 }
 
 vec4 PS_InscatterMSAA(atmosVertexOutput IN) : SV_TARGET
@@ -168,7 +168,7 @@ vec4 PS_Loss_Far(atmosVertexOutput IN) : SV_TARGET
 											,IN.pos
 											,depthToLinFadeDistParams
 											,tanHalfFov);
-    return float4(loss.rgb,1.f);
+    return float4(loss.rgb,1.0);
 }
 
 vec4 PS_Loss_Near(atmosVertexOutput IN) : SV_TARGET
@@ -187,7 +187,7 @@ vec4 PS_Loss_Near(atmosVertexOutput IN) : SV_TARGET
 											,IN.pos
 											,depthToLinFadeDistParams
 							,tanHalfFov);
-    return float4(loss.rgb,1.f);
+    return float4(loss.rgb,1.0);
 }
 
 vec4 PS_Inscatter_Far_MSAA(atmosVertexOutput IN) : SV_TARGET

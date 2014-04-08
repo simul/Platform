@@ -60,6 +60,8 @@ void TextureStruct::release()
 	SAFE_RELEASE(unorderedAccessView);
 	SAFE_RELEASE(renderTargetView);
 	SAFE_RELEASE(stagingBuffer);
+	SAFE_RELEASE(m_pOldRenderTarget);
+	SAFE_RELEASE(m_pOldDepthSurface);
 }
 
 void TextureStruct::copyToMemory(ID3D11Device *pd3dDevice,ID3D11DeviceContext *pContext,void *target,int start_texel,int num_texels)
@@ -321,6 +323,7 @@ void TextureStruct::ensureTexture2DSizeAndFormat(ID3D11Device *pd3dDevice,int w,
 		renderTargetViewDesc.ViewDimension		=D3D11_RTV_DIMENSION_TEXTURE2D;
 		renderTargetViewDesc.Texture2D.MipSlice	=0;
 		// Create the render target in DX11:
+		SAFE_RELEASE(renderTargetView);
 		V_CHECK(pd3dDevice->CreateRenderTargetView(texture,&renderTargetViewDesc,&renderTargetView));
 		SetDebugObjectName(renderTargetView,"TextureStruct::ensureTexture2DSizeAndFormat renderTargetView");
 	}
@@ -415,8 +418,8 @@ void TextureStruct::activateRenderTarget(ID3D11DeviceContext *pContext)
 		pContext->RSGetViewports(&num_v,NULL);
 		if(num_v>0)
 			pContext->RSGetViewports(&num_v,m_OldViewports);
-		m_pOldRenderTarget	=NULL;
-		m_pOldDepthSurface	=NULL;
+		SAFE_RELEASE(m_pOldRenderTarget);
+		SAFE_RELEASE(m_pOldDepthSurface);
 		pContext->OMGetRenderTargets(	1,
 										&m_pOldRenderTarget,
 										&m_pOldDepthSurface
@@ -450,6 +453,8 @@ void TextureStruct::deactivateRenderTarget()
 										m_pOldDepthSurface
 										);
 	last_context->RSSetViewports(1,m_OldViewports);
+	SAFE_RELEASE(m_pOldRenderTarget);
+	SAFE_RELEASE(m_pOldDepthSurface);
 }
 
 ComputableTexture::ComputableTexture()

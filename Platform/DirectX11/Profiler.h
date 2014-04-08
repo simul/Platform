@@ -71,10 +71,11 @@ namespace simul
 			static Profiler GlobalProfiler;
 
 			// Constants
-			static const UINT64 QueryLatency = 15;
+			static const UINT64 QueryLatency = 5;
 
 			struct ProfileData;
 			typedef std::map<std::string,ProfileData*> ProfileMap;
+			typedef std::map<int,ProfileData*> ChildMap;
 			struct ProfileData
 			{
 				ProfileData *parent;
@@ -91,6 +92,8 @@ namespace simul
 					,QueryFinished(false)
 					,time(0.f)
 					,parent(NULL)
+					,last_child_updated(0)
+					,child_index(0)
 				{
 					for(int i=0;i<QueryLatency;i++)
 					{
@@ -108,10 +111,11 @@ namespace simul
 						SAFE_RELEASE(TimestampEndQuery[i]);
 					}
 				}
-				ProfileMap children;
+				ChildMap children;
+				int last_child_updated;
+				int child_index;
 			};
 		protected:
-
 			ProfileMap profileMap;
 			ProfileMap rootMap;
 			UINT64 currFrame;

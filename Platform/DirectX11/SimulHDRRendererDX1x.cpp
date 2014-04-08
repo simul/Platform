@@ -33,7 +33,6 @@ using namespace dx11;
 
 SimulHDRRendererDX1x::SimulHDRRendererDX1x(int w,int h)
 	:m_pd3dDevice(NULL)
-	,m_pVertexBuffer(NULL)
 	,m_pTonemapEffect(NULL)
 	,m_pGaussianEffect(NULL)
 	,Exposure(1.f)
@@ -150,7 +149,6 @@ void SimulHDRRendererDX1x::InvalidateDeviceObjects()
 	hdrConstants.InvalidateDeviceObjects();
 	glow_fb.InvalidateDeviceObjects();
 	SAFE_RELEASE(m_pTonemapEffect);
-	SAFE_RELEASE(m_pVertexBuffer);
 	SAFE_RELEASE(m_pGaussianEffect);
 	glowTexture.release();
 	m_pd3dDevice=NULL;
@@ -180,10 +178,10 @@ void SimulHDRRendererDX1x::Render(void *context,void *texture_srv,float offsetX)
 	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 	textureSRV->GetDesc(&desc);
 	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
-	dx11::setTexture(m_pTonemapEffect,"imageTexture",textureSRV);
-	dx11::setTexture(m_pTonemapEffect,"imageTextureMS",textureSRV);
-	hdrConstants.gamma=Gamma;
-	hdrConstants.exposure=Exposure;
+	dx11::setTexture(m_pTonemapEffect,"imageTexture"	,textureSRV);
+	dx11::setTexture(m_pTonemapEffect,"imageTextureMS"	,textureSRV);
+	hdrConstants.gamma		=Gamma;
+	hdrConstants.exposure	=Exposure;
 	hdrConstants.Apply(pContext);
 	simul::dx11::setParameter(m_pTonemapEffect,"offset",offsetX,0.f);
 	ID3DX11EffectTechnique *tech=exposureGammaTechnique;

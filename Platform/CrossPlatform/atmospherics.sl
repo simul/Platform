@@ -8,6 +8,7 @@ vec3 AtmosphericsLoss(Texture2D depthTexture,vec4 viewportToTexRegionScaleBias,T
 	view			=normalize(view);
 	vec2 depth_texc	=viewportCoordToTexRegionCoord(texCoords.xy,viewportToTexRegionScaleBias);
 	float depth		=texture_clamp(depthTexture,depth_texc).x;
+	//discardOnFar(depth);
 	float dist		=depthToFadeDistance(depth,clip_pos.xy,depthToLinFadeDistParams,tanHalfFov);
 	float sine		=view.z;
 	vec2 texc2		=vec2(pow(dist,0.5),0.5*(1.f-sine));

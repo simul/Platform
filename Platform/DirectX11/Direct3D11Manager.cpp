@@ -27,6 +27,8 @@ Window::~Window()
 
 void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,int numerator,int denominator)
 {
+	if(!d3dDevice)
+		return;
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
 	D3D11_RASTERIZER_DESC rasterDesc;
 
@@ -151,6 +153,8 @@ void Window::RestoreDeviceObjects(ID3D11Device* d3dDevice,bool m_vsync_enabled,i
 
 void Window::CreateRenderTarget(ID3D11Device* d3dDevice)
 {
+	if(!d3dDevice)
+		return;
 	ID3D11Texture2D* backBufferPtr;
 	HRESULT result = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
 	SIMUL_ASSERT(result==S_OK);
@@ -272,10 +276,10 @@ void Window::SetRenderer(Direct3D11CallbackInterface *ci)
 	if(renderer==ci)
 		return;
 	if(renderer)
-	{
 		renderer->RemoveView(view_id);
-	}
 	renderer=ci;
+	if(!m_swapChain)
+		return;
 	DXGI_SWAP_CHAIN_DESC swapDesc;
 	DXGI_SURFACE_DESC surfaceDesc;
 	m_swapChain->GetDesc(&swapDesc);
@@ -394,6 +398,8 @@ void Direct3D11Manager::Initialize()
 	std::cout<<"D3D11CreateDevice "<<std::endl;
 	result=D3D11CreateDevice(NULL,D3D_DRIVER_TYPE_HARDWARE,NULL,flags, &featureLevel,1,D3D11_SDK_VERSION,&d3dDevice, NULL,&d3dDeviceContext);
 	std::cout<<"D3D11CreateDevice result "<<result<<std::endl;
+	if(result!=S_OK)
+		return;
 	d3dDevice->AddRef();
 	UINT refcount=d3dDevice->Release();
 #ifdef _DEBUG

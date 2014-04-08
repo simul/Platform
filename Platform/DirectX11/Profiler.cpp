@@ -100,11 +100,25 @@ void Profiler::Begin(void *ctx,const char *name)
 	{
 		profileData=profileMap[qualified_name];
 	}
+	profileData->last_child_updated=0;
+	int new_child_index=0;
     ProfileData *parentData=NULL;
 	if(parent.length())
 		parentData=profileMap[parent];
 	if(parentData)
-		parentData->children[qualified_name]=profileData;
+	{
+		new_child_index=++parentData->last_child_updated;
+		while(parentData->children.find(new_child_index)!=parentData->children.end()&&parentData->children[new_child_index]!=profileData)
+		{
+			new_child_index++;
+		}
+		parentData->children[new_child_index]=profileData;
+		if(profileData->child_index!=0&&new_child_index!=profileData->child_index&&parentData->children.find(profileData->child_index)!=parentData->children.end())
+		{
+			parentData->children.erase(profileData->child_index);
+		}
+		profileData->child_index=new_child_index;
+	}
 	profileData->parent=parentData;
 	if(!parentData)
 		rootMap[qualified_name]=profileData;
@@ -118,13 +132,13 @@ void Profiler::Begin(void *ctx,const char *name)
         D3D11_QUERY_DESC desc;
         desc.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
         desc.MiscFlags = 0;
-		std::string disjointName="disjoint";
-		std::string startName	="start";
-		std::string endName		="end";
+		std::string disjointName=qualified_name+"disjoint";
+		std::string startName	=qualified_name+"start";
+		std::string endName		=qualified_name+"end";
 		profileData->DisjointQuery[currFrame]		=CreateQuery(device,desc,disjointName.c_str());
         desc.Query = D3D11_QUERY_TIMESTAMP;
-        profileData->TimestampStartQuery[currFrame]	=CreateQuery(device,desc, startName.c_str());
-        profileData->TimestampEndQuery[currFrame]	=CreateQuery(device,desc, endName.c_str());
+        profileData->TimestampStartQuery[currFrame]	=CreateQuery(device,desc,startName.c_str());
+        profileData->TimestampEndQuery[currFrame]	=CreateQuery(device,desc,endName.c_str());
     }
 
     // Start a disjoint query first
@@ -232,7 +246,7 @@ std::string Walk(Profiler::ProfileData *p,int tab,float parent_time)
 	if(p->children.size()==0)
 		return "";
 	std::string str;
-	for(Profiler::ProfileMap::const_iterator i=p->children.begin();i!=p->children.end();i++)
+	for(Profiler::ChildMap::const_iterator i=p->children.begin();i!=p->children.end();i++)
 	{
 		for(int j=0;j<tab;j++)
 			str+="  ";
