@@ -105,7 +105,7 @@ namespace simul
 				META_ValuePropertyWithSetCall(bool,ReverseDepth,ReverseDepthChanged,"Reverse the direction of the depth (Z) buffer, so that depth 0 is the far plane.")
 				META_ValueProperty(bool,ShowOSD					,"Show debug display.")
 				META_ValueProperty(float,Exposure				,"A linear multiplier for rendered brightness.")
-				META_ValueProperty(int,Antialiasing				,"How many antialiasing samples to use.")
+				META_ValuePropertyWithSetCall(int,Antialiasing	,AntialiasingChanged,"How many antialiasing samples to use.")
 				META_ValueProperty(int,SphericalHarmonicsBands	,"How many bands to use for spherical harmonics.")
 			META_EndProperties
 			bool IsEnabled()const
@@ -155,6 +155,7 @@ namespace simul
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);
 			void DownscaleDepth(int view_id,ID3D11DeviceContext* pContext,const D3DXMATRIX &proj);
 			void ReverseDepthChanged();
+			void AntialiasingChanged();
 			void EnsureCorrectBufferSizes(int view_id);
 			View *GetView(int view_id);
 

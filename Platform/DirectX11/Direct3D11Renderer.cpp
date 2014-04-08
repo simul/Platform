@@ -1,5 +1,6 @@
 #define NOMINMAX
 #include "Simul/Base/RuntimeError.h"
+#include "Simul/Base/StringFunctions.h"
 #include "Simul/Platform/DirectX11/Direct3D11Renderer.h"
 #include "Simul/Platform/DirectX11/SimulWeatherRendererDX11.h"
 #include "Simul/Platform/DirectX11/TerrainRenderer.h"
@@ -328,14 +329,15 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 	depth_SRV->GetDesc(&desc);
 	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
 	// Sadly, ResolveSubresource doesn't work for depth. And compute can't do MS lookups.
-	static bool use_rt=false;
+	static bool use_rt=true;
 	{
 		view->hiResDepthTexture.ensureTexture2DSizeAndFormat(m_pd3dDevice,W,H,DXGI_FORMAT_R16G16B16A16_FLOAT,/*computable=*/!use_rt,/*rendertarget=*/use_rt);
 		SIMUL_COMBINED_PROFILE_START(pContext,"Make Hi-res Depth")
-		mixedResolutionConstants.scale=uint2(s,s);
+		mixedResolutionConstants.scale		=uint2(s,s);
 		mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj);
-		mixedResolutionConstants.nearZ=0;
-		mixedResolutionConstants.farZ=0;
+		mixedResolutionConstants.nearZ		=0;
+		mixedResolutionConstants.farZ		=0;
+		mixedResolutionConstants.source_dims=uint2(view->hiResDepthTexture.width,view->hiResDepthTexture.length);
 		mixedResolutionConstants.Apply(pContext);
 		static int BLOCKWIDTH			=8;
 		uint2 subgrid						=uint2((view->hiResDepthTexture.width+BLOCKWIDTH-1)/BLOCKWIDTH,(view->hiResDepthTexture.length+BLOCKWIDTH-1)/BLOCKWIDTH);
@@ -365,6 +367,7 @@ void Direct3D11Renderer::DownscaleDepth(int view_id,ID3D11DeviceContext* pContex
 		mixedResolutionConstants.depthToLinFadeDistParams=simulWeatherRenderer->GetBaseSkyRenderer()->GetDepthToDistanceParameters(proj);
 		mixedResolutionConstants.nearZ=0;
 		mixedResolutionConstants.farZ=0;
+		mixedResolutionConstants.source_dims=uint2(view->hiResDepthTexture.width,view->hiResDepthTexture.length);
 		mixedResolutionConstants.Apply(pContext);
 		static int BLOCKWIDTH			=8;
 		uint2 subgrid						=uint2((view->lowResDepthTexture.width+BLOCKWIDTH-1)/BLOCKWIDTH,(view->lowResDepthTexture.length+BLOCKWIDTH-1)/BLOCKWIDTH);
@@ -412,7 +415,7 @@ void Direct3D11Renderer::RenderScene(int view_id,ID3D11DeviceContext* pContext,s
 	}
 	if(simulWeatherRenderer)
 		simulWeatherRenderer->RenderCelestialBackground(pContext,Exposure);
-#if 0
+#if 1
 	if(simulHDRRenderer&&UseHdrPostprocessor)
 		view->hdrFramebuffer.DeactivateDepth(pContext);
 	else
@@ -732,12 +735,11 @@ void Direct3D11Renderer::RecompileShaders()
 		oceanRenderer->RecompileShaders();
 	if(simulHDRRenderer)
 		simulHDRRenderer->RecompileShaders();
-//	if(simulTerrainRenderer.get())
-//		simulTerrainRenderer->RecompileShaders();
 	SAFE_RELEASE(mixedResolutionEffect);
 	std::map<std::string,std::string> defines;
 	if(ReverseDepth)
 		defines["REVERSE_DEPTH"]="1";
+	defines["NUM_AA_SAMPLES"]=base::stringFormat("%d",Antialiasing);
 	HRESULT hr=CreateEffect(m_pd3dDevice,&mixedResolutionEffect,"mixed_resolution.fx",defines);
 	mixedResolutionConstants.LinkToEffect(mixedResolutionEffect,"MixedResolutionConstants");
 	SAFE_RELEASE(lightProbesEffect);
@@ -787,6 +789,11 @@ void Direct3D11Renderer::ReverseDepthChanged()
 		simulTerrainRenderer->SetReverseDepth(ReverseDepth);
 	if(oceanRenderer)
 		oceanRenderer->SetReverseDepth(ReverseDepth);
+}
+
+void Direct3D11Renderer::AntialiasingChanged()
+{
+	RecompileShaders();
 }
 
 View *Direct3D11Renderer::GetView(int view_id)

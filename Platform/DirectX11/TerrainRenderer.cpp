@@ -75,21 +75,21 @@ void TerrainRenderer::RestoreDeviceObjects(void *dev)
 	m_pd3dDevice=(ID3D11Device*)dev;
 	terrainConstants.RestoreDeviceObjects(m_pd3dDevice);
 	RecompileShaders();
-	const D3D1x_INPUT_ELEMENT_DESC decl[] =
+	const D3D11_INPUT_ELEMENT_DESC decl[] =
     {
-        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	12,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	1, DXGI_FORMAT_R32G32_FLOAT,		0,	24,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
-        { "TEXCOORD",	2, DXGI_FORMAT_R32_FLOAT,			0,	32,	D3D1x_INPUT_PER_VERTEX_DATA, 0 },
+        { "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	0,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	12,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD",	1, DXGI_FORMAT_R32G32_FLOAT,		0,	24,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "TEXCOORD",	2, DXGI_FORMAT_R32_FLOAT,			0,	32,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
-	D3D1x_PASS_DESC PassDesc;
-	ID3D1xEffectPass *pass=m_pTechnique->GetPassByIndex(0);
+	D3DX11_PASS_DESC PassDesc;
+	ID3DX11EffectPass *pass=m_pTechnique->GetPassByIndex(0);
 	hr=pass->GetDesc(&PassDesc);
 	SAFE_RELEASE(m_pVtxDecl);
 	hr=m_pd3dDevice->CreateInputLayout(decl,4,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
 	
 	// Create the main vertex buffer:
-	D3D1x_BUFFER_DESC desc=
+	D3D11_BUFFER_DESC desc=
 	{
         MAX_VERTICES*sizeof(TerrainVertex_t),
         D3D11_USAGE_DYNAMIC,
@@ -98,8 +98,8 @@ void TerrainRenderer::RestoreDeviceObjects(void *dev)
         0
 	};
 	TerrainVertex_t *vertices=new TerrainVertex_t[MAX_VERTICES];
-    D3D1x_SUBRESOURCE_DATA InitData;
-    ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
+    D3D11_SUBRESOURCE_DATA InitData;
+    ZeroMemory( &InitData, sizeof(D3D11_SUBRESOURCE_DATA) );
     InitData.pSysMem = vertices;
     InitData.SysMemPitch = sizeof(TerrainVertex_t);
 	SAFE_RELEASE(m_pVertexBuffer);
@@ -221,9 +221,9 @@ void TerrainRenderer::Render(void *context,float exposure)
 	ApplyPass(pContext,m_pTechnique->GetPassByIndex(0));
 	// Set the input layout
 	pContext->IASetInputLayout(m_pVtxDecl);
-	D3D10_PRIMITIVE_TOPOLOGY previousTopology;
+	D3D11_PRIMITIVE_TOPOLOGY previousTopology;
 	pContext->IAGetPrimitiveTopology(&previousTopology);
-	pContext->IASetPrimitiveTopology(D3D1x_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	if(numVertices>2)
 		pContext->Draw(numVertices-2,0);
 	pContext->IASetPrimitiveTopology(previousTopology);

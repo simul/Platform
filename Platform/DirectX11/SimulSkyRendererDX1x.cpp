@@ -446,6 +446,7 @@ void SimulSkyRendererDX1x::RenderSun(void *c,float exposure)
 float SimulSkyRendererDX1x::CalcSunOcclusion(void *context,float cloud_occlusion)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+#if 0
 	sun_occlusion=cloud_occlusion;
 	if(!m_hTechniqueQuery||!m_hTechniqueQuery->IsValid())
 		return sun_occlusion;
@@ -475,6 +476,7 @@ float SimulSkyRendererDX1x::CalcSunOcclusion(void *context,float cloud_occlusion
 	if(sun_occlusion<0)
 		sun_occlusion		=0;
 	sun_occlusion			=1.f-(1.f-cloud_occlusion)*(1.f-sun_occlusion);
+#endif
 	return sun_occlusion;
 }
 

@@ -380,7 +380,7 @@ void SimulWeatherRendererDX11::RenderMixedResolution(	void *context
 														)
 {
 	SIMUL_COMBINED_PROFILE_START(context,"RenderMixedResolution")
-#if 0
+#if 1
 	SIMUL_GPU_PROFILE_START(context,"Loss")
 	if(baseAtmosphericsRenderer)
 		baseAtmosphericsRenderer->RenderLoss(context,mainDepthTextureMS,depthViewportXYWH,false);

@@ -10,19 +10,18 @@ RWTexture2D<float4> target2DTexture SIMUL_RWTEXTURE_REGISTER(1);
 
 vec4 PS_MakeDepthFarNear(posTexVertexOutput IN):SV_Target
 {
-	uint2 source_dims;
-	sourceDepthTexture.GetDimensions(source_dims.x,source_dims.y);
+	//uint2 source_dims;
 	uint2 pos=uint2(IN.texCoords.xy*source_dims.xy);
 	return MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,1,pos,depthToLinFadeDistParams);
 }
 
 vec4 PS_MakeDepthFarNear_MSAA(posTexVertexOutput IN):SV_Target
 {
-	uint2 source_dims;
-	uint numberOfSamples;
-	sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
+	//uint2 source_dims;
+	//uint numberOfSamples;
+	//sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
 	uint2 pos=uint2(IN.texCoords.xy*source_dims.xy);
-	return MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,numberOfSamples,pos,depthToLinFadeDistParams);
+	return MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,NUM_AA_SAMPLES,pos,depthToLinFadeDistParams);
 }
 
 
@@ -35,10 +34,10 @@ void CS_MakeDepthFarNear(uint3 pos : SV_DispatchThreadID )
 [numthreads(16,16,1)]
 void CS_MakeDepthFarNear_MSAA(uint3 pos : SV_DispatchThreadID )
 {
-	uint2 source_dims;
-	uint numberOfSamples;
-	sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
-	target2DTexture[pos.xy]=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,numberOfSamples,pos,depthToLinFadeDistParams);
+	//uint2 source_dims;
+	//uint numberOfSamples;
+	//sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
+	target2DTexture[pos.xy]=MakeDepthFarNear(sourceDepthTexture,sourceMSDepthTexture,NUM_AA_SAMPLES,pos,depthToLinFadeDistParams);
 }
 
 [numthreads(8,8,1)]
@@ -68,9 +67,9 @@ void CS_DownscaleDepthFarNearFromHiRes(uint3 pos : SV_DispatchThreadID )
 
 vec4 PS_ResolveDepth(posTexVertexOutput IN):SV_Target
 {
-	uint2 source_dims;
-	uint numberOfSamples;
-	sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,numberOfSamples);
+	//uint2 source_dims;
+	//uint numberOfSamples;
+	//sourceMSDepthTexture.GetDimensions(source_dims.x,source_dims.y,NUM_AA_SAMPLES);
 	uint2 hires_pos		=uint2(vec2(source_dims)*IN.texCoords.xy);
 	return sourceMSDepthTexture.Load(hires_pos,0).x;
 }

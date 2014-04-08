@@ -181,7 +181,7 @@ template<typename T> inline std::string ToString(const T& val)
         throw std::runtime_error("Error converting value to string");
     return stream.str();
 }
-#pragma optimize("",off)
+
 void Profiler::EndFrame(ID3D11DeviceContext* context)
 {
     if(!enabled||!device)
