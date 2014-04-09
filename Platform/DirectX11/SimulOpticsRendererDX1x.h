@@ -35,11 +35,11 @@ namespace simul
 			ID3DX11Effect*							effect;
 			ID3DX11EffectTechnique*					m_hTechniqueFlare;
 			ID3DX11EffectTechnique*					techniqueRainbowCorona;
-			ID3D1xShaderResourceView*				flare_texture;
-			std::vector<ID3D1xShaderResourceView*>	halo_textures;
-			ID3D1xShaderResourceView*				rainbowLookupTexture;
-			ID3D1xShaderResourceView*				coronaLookupTexture;
-			//ID3D1xShaderResourceView*				moistureTexture;
+			ID3D11ShaderResourceView*				flare_texture;
+			std::vector<ID3D11ShaderResourceView*>	halo_textures;
+			ID3D11ShaderResourceView*				rainbowLookupTexture;
+			ID3D11ShaderResourceView*				coronaLookupTexture;
+			//ID3D11ShaderResourceView*				moistureTexture;
 		protected:
 			std::string								FlareTexture;
 			ConstantBuffer<OpticsConstants>			opticsConstants;

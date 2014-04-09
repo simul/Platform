@@ -162,7 +162,9 @@ void Simul2DCloudRendererDX11::RenderDetailTexture(void *context)
 	noise_fb.SetFormat(DXGI_FORMAT_R32G32B32A32_FLOAT);
 	noise_fb.Activate(pContext);
 	{
-		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("simul_random");
+		SetDetail2DCloudConstants(detail2DConstants);
+		detail2DConstants.Apply(pContext);
+		ID3DX11EffectTechnique *t=effect->GetTechniqueByName("random");
 		t->GetPassByIndex(0)->Apply(0,pContext);
 		simul::dx11::UtilityRenderer::DrawQuad(pContext);
 	} 
@@ -231,9 +233,10 @@ void Simul2DCloudRendererDX11::EnsureCorrectTextureSizes()
 void Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate(void *context)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-    ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate");
+    SIMUL_COMBINED_PROFILE_START(pContext,"Simul2DCloudRendererDX11::EnsureTexturesAreUpToDate");
 	EnsureCorrectTextureSizes();
 	EnsureTextureCycle();
+    SIMUL_COMBINED_PROFILE_END(context)
 }
 
 void Simul2DCloudRendererDX11::EnsureTextureCycle()
@@ -273,7 +276,7 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
     ProfileBlock profileBlock(pContext,"Simul2DCloudRendererDX11::Render");
 	
-	ID3D1xShaderResourceView* depthTexture_SRV	=(ID3D1xShaderResourceView*)depthTexture;
+	ID3D11ShaderResourceView* depthTexture_SRV	=(ID3D11ShaderResourceView*)depthTexture;
 	ID3DX11EffectTechnique*		tech			=technique;
 	if(depthTexture_SRV)
 	{
@@ -370,13 +373,17 @@ void Simul2DCloudRendererDX11::RenderCrossSections(void *context,int x0,int y0,i
 	}
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)coverage_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(0)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
+	simul::dx11::UtilityRenderer::Print(pContext,(0)*(w+8)+8,height-8-w,"coverage");
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)noise_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(1)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
+	simul::dx11::UtilityRenderer::Print(pContext,(1)*(w+8)+8,height-8-w,"noise");
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)dens_fb.GetColorTex());
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(2)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("simple"));
+	simul::dx11::UtilityRenderer::Print(pContext,(2)*(w+8)+8,height-8-w,"dens");
 	simul::dx11::setTexture(effect,"imageTexture",(ID3D11ShaderResourceView*)detail_fb.GetColorTex());
 	cloud2DConstants.Apply(pContext);
 	simul::dx11::UtilityRenderer::DrawQuad2(pContext,(3)*(w+8)+8,height-8-w,w,w,effect,effect->GetTechniqueByName("show_detail_texture"));
+	simul::dx11::UtilityRenderer::Print(pContext,(3)*(w+8)+8,height-8-w,"detail");
 		
 }
 

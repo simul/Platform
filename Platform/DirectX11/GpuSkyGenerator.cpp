@@ -94,7 +94,7 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		keyframe_checksums[cycled_index]	=p.keyframe_checksum;
 		fadeTexIndex[cycled_index]=0;
 	}
-	SIMUL_PROFILE_START("GpuSkyGenerator init")
+	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator init")
 	HRESULT hr=S_OK;
 	int gridsize			=(int)p.altitudes_km.size()*p.numElevations*p.numDistances;
 	int gridsize_2d			=(int)p.altitudes_km.size()*p.numElevations;
@@ -109,8 +109,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		optd_tex.setTexels(m_pImmediateContext,(unsigned *)a.optical_table,0,a.table_size*a.table_size);
 		tables_checksum=a.tables_checksum;
 	}
-	SIMUL_PROFILE_END
-	SIMUL_PROFILE_START("GpuSkyGenerator 1")
+	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
+	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 1")
 
 	ID3D1xEffectScalarVariable *distKm							=effect->GetVariableByName("distKm")->AsScalar();
 	ID3D1xEffectScalarVariable *prevDistKm						=effect->GetVariableByName("prevDistKm")->AsScalar();
@@ -161,8 +161,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	if(light_table)
 		light_table->ensureTexture3DSizeAndFormat(m_pd3dDevice,(int)p.altitudes_km.size()*32,3,4,DXGI_FORMAT_R32G32B32A32_FLOAT,true);
 	density_texture->SetResource(dens_tex.shaderResourceView);
-	SIMUL_PROFILE_END
-	SIMUL_PROFILE_START("GpuSkyGenerator 2")
+	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
+	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 2")
 
 	// divide the grid into blocks:
 	static const int BLOCKWIDTH=8;
@@ -200,8 +200,8 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 		V_CHECK(ApplyPass(m_pImmediateContext,inscComputeTechnique->GetPassByIndex(0)));
 		m_pImmediateContext->Dispatch(subgrid,1,1);
 	}
-	SIMUL_PROFILE_END
-	SIMUL_PROFILE_START("GpuSkyGenerator 3")
+	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
+	SIMUL_COMBINED_PROFILE_START(m_pImmediateContext,"GpuSkyGenerator 3")
 	int start_skyl	=range(start_step-2*xy_size	,0	,xy_size);
 	int end_skyl	=range(end_step-2*xy_size	,0	,xy_size);
 	int num_skyl	=range(end_skyl-start_skyl	,0	,xy_size);
@@ -239,7 +239,10 @@ void GpuSkyGenerator::MakeLossAndInscatterTextures(
 	loss_texture->SetResource(NULL);
 	insc_texture->SetResource(NULL);
 	V_CHECK(ApplyPass(m_pImmediateContext,skylComputeTechnique->GetPassByIndex(0)));
-	SIMUL_PROFILE_END
+	
+	fadeTexIndex[cycled_index]=p.fill_up_to_texels;
+
+	SIMUL_COMBINED_PROFILE_END(m_pImmediateContext)
 }
 
 void GpuSkyGenerator::CopyToMemory(int cycled_index,simul::sky::float4 *loss,simul::sky::float4 *insc,simul::sky::float4 *skyl)

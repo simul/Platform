@@ -80,7 +80,7 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform vec3 sunlightColour2;
 	uniform float maxAltitudeMetres;
 	uniform vec2 screenCoordOffset;
-	uniform vec2 y1;
+	uniform vec2 awehrasj;
 	uniform vec3 mieRayleighRatio;
 	uniform float alphaSharpness;
 	uniform vec3 lightningOrigin;
@@ -90,11 +90,13 @@ SIMUL_CONSTANT_BUFFER(CloudConstants,9)
 	uniform vec3 crossSectionOffset	;
 	uniform int noise3DOctaves;
 	uniform vec3 noise3DTexcoordScale;
-	uniform float z1;
+	uniform float rainEffect;
 	uniform vec3 cloudIrRadiance;
 	uniform float x5;
 	uniform vec3 directionToMoon;
 	uniform float baseNoiseFactor;
+	uniform vec2 rainBoundary;
+	uniform vec2 rainRegionNormal;
 SIMUL_CONSTANT_BUFFER_END
 
 #ifdef __cplusplus

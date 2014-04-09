@@ -97,6 +97,7 @@ namespace simul
 										,bool is_cubemap
 										,float exposure
 										,const void* mainDepthTextureMS	
+										,const void* hiResDepthTexture	
 										,const void* lowResDepthTexture 
 										,const sky::float4& depthViewportXYWH
 										);
@@ -141,7 +142,7 @@ namespace simul
 			ID3DX11EffectShaderResourceVariable		*imageTexture;
 
 			bool CreateBuffers();
-			bool RenderBufferToScreen(ID3D1xShaderResourceView* texture,int w,int h,bool do_tonemap);
+			bool RenderBufferToScreen(ID3D11ShaderResourceView* texture,int w,int h,bool do_tonemap);
 			class SimulSkyRendererDX1x				*simulSkyRenderer;
 			class SimulCloudRendererDX1x			*simulCloudRenderer;
 			class PrecipitationRenderer	*simulPrecipitationRenderer;

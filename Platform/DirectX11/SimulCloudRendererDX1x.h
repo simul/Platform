@@ -154,14 +154,14 @@ namespace simul
 
 			TextureStruct							cloud_textures[3];
 
-			ID3D1xShaderResourceView*				noiseTextureResource;
-			ID3D1xShaderResourceView*				lightningIlluminationTextureResource;
-			ID3D1xShaderResourceView*				skyLossTexture_SRV;
-			ID3D1xShaderResourceView*				skyInscatterTexture_SRV;
-			ID3D1xShaderResourceView*				overcInscTexture_SRV;
-			ID3D1xShaderResourceView*				skylightTexture_SRV;
-			ID3D1xShaderResourceView*				illuminationTexture_SRV;
-			ID3D1xShaderResourceView*				lightTableTexture_SRV;
+			ID3D11ShaderResourceView*				noiseTextureResource;
+			ID3D11ShaderResourceView*				lightningIlluminationTextureResource;
+			ID3D11ShaderResourceView*				skyLossTexture_SRV;
+			ID3D11ShaderResourceView*				skyInscatterTexture_SRV;
+			ID3D11ShaderResourceView*				overcInscTexture_SRV;
+			ID3D11ShaderResourceView*				skylightTexture_SRV;
+			ID3D11ShaderResourceView*				illuminationTexture_SRV;
+			ID3D11ShaderResourceView*				lightTableTexture_SRV;
 			simul::dx11::Framebuffer				shadow_fb;
 			simul::dx11::Framebuffer				moisture_fb;
 

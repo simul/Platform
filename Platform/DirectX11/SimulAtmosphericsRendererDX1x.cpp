@@ -61,19 +61,19 @@ SimulAtmosphericsRendererDX1x::~SimulAtmosphericsRendererDX1x()
 
 void SimulAtmosphericsRendererDX1x::SetLossTexture(void* t)
 {
-	skyLossTexture_SRV=(ID3D1xShaderResourceView*)t;
+	skyLossTexture_SRV=(ID3D11ShaderResourceView*)t;
 }
 
 void SimulAtmosphericsRendererDX1x::SetInscatterTextures(void* i,void *s,void *o)
 {
-	skyInscatterTexture_SRV=(ID3D1xShaderResourceView*)i;
-	skylightTexture_SRV=(ID3D1xShaderResourceView*)s;
-	overcInscTexture_SRV=(ID3D1xShaderResourceView*)o;
+	skyInscatterTexture_SRV=(ID3D11ShaderResourceView*)i;
+	skylightTexture_SRV=(ID3D11ShaderResourceView*)s;
+	overcInscTexture_SRV=(ID3D11ShaderResourceView*)o;
 }
 
 void SimulAtmosphericsRendererDX1x::SetIlluminationTexture(void *i)
 {
-	illuminationTexture_SRV=(ID3D1xShaderResourceView*)i;
+	illuminationTexture_SRV=(ID3D11ShaderResourceView*)i;
 }
 
 void SimulAtmosphericsRendererDX1x::SetCloudsTexture(void *)
@@ -278,8 +278,8 @@ void SimulAtmosphericsRendererDX1x::RenderGodrays(void *context,float strength,b
 	if(!ShowGodrays)
 		return;
 	ID3D11DeviceContext* pContext=(ID3D11DeviceContext*)context;
-	ID3D11ShaderResourceView* depthTexture_SRV		=(ID3D1xShaderResourceView*)depth_texture;
-	ID3D11ShaderResourceView* cloudDepthTexture_SRV	=(ID3D1xShaderResourceView*)cloud_depth_texture;
+	ID3D11ShaderResourceView* depthTexture_SRV		=(ID3D11ShaderResourceView*)depth_texture;
+	ID3D11ShaderResourceView* cloudDepthTexture_SRV	=(ID3D11ShaderResourceView*)cloud_depth_texture;
 	lossTexture			->SetResource(skyLossTexture_SRV);
 	inscTexture			->SetResource(skyInscatterTexture_SRV);
 	skylTexture			->SetResource(skylightTexture_SRV);

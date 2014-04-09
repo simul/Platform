@@ -39,7 +39,7 @@ namespace simul
 			ConstantBuffer<ConstantBufferType>	constantBuffer;
 			ID3D11SamplerState* m_sampleState;
 			ID3D11Buffer* m_pixelBuffer;
-			ID3D1xShaderResourceView*			font_texture_SRV;
+			ID3D11ShaderResourceView*			font_texture_SRV;
 		};
 	}
 }

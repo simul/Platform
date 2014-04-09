@@ -91,14 +91,14 @@ vec4 PS_LossMSAA(atmosVertexOutput IN) : SV_TARGET
 	GetMSAACoordinates(depthTextureMS,depth_texc,pos2,numSamples);
 	vec3 loss		=AtmosphericsLossMSAA(depthTextureMS
 											,numSamples
-							,viewportToTexRegionScaleBias
-							,lossTexture
-							,invViewProj
-							,IN.texCoords
+											,viewportToTexRegionScaleBias
+											,lossTexture
+											,invViewProj
+											,IN.texCoords
 											,pos2
-							,IN.pos
-							,depthToLinFadeDistParams
-							,tanHalfFov);
+											,IN.pos
+											,depthToLinFadeDistParams
+											,tanHalfFov);
     return float4(loss.rgb,1.0);
 }
 

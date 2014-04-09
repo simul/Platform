@@ -62,11 +62,11 @@ namespace simul
 			ConstantBuffer<Detail2DConstants>	detail2DConstants;
 			int num_indices;
 			
-			ID3D1xShaderResourceView*	skyLossTexture_SRV;
-			ID3D1xShaderResourceView*	skyInscatterTexture_SRV;
-			ID3D1xShaderResourceView*	skylightTexture_SRV;
-			ID3D1xShaderResourceView*	illuminationTexture_SRV;
-			ID3D1xShaderResourceView*	lightTableTexture_SRV;
+			ID3D11ShaderResourceView*	skyLossTexture_SRV;
+			ID3D11ShaderResourceView*	skyInscatterTexture_SRV;
+			ID3D11ShaderResourceView*	skylightTexture_SRV;
+			ID3D11ShaderResourceView*	illuminationTexture_SRV;
+			ID3D11ShaderResourceView*	lightTableTexture_SRV;
 
 			simul::dx11::Framebuffer	coverage_fb;
 			simul::dx11::Framebuffer	detail_fb;

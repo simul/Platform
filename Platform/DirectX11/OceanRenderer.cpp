@@ -238,18 +238,18 @@ void OceanRenderer::RestoreDeviceObjects(ID3D11Device* dev)
 
 void OceanRenderer::SetCubemapTexture(void *c)
 {
-	g_pSRV_ReflectCube=(ID3D1xShaderResourceView*)c;
+	g_pSRV_ReflectCube=(ID3D11ShaderResourceView*)c;
 }
 
 void OceanRenderer::SetLossTexture(void *t)
 {
-	skyLossTexture_SRV=((ID3D1xShaderResourceView*)t);
+	skyLossTexture_SRV=((ID3D11ShaderResourceView*)t);
 }
 
 void OceanRenderer::SetInscatterTextures(void *t,void *s)
 {
-	skyInscatterTexture_SRV	=((ID3D1xShaderResourceView*)t);
-	skylightTexture_SRV		=((ID3D1xShaderResourceView*)s);
+	skyInscatterTexture_SRV	=((ID3D11ShaderResourceView*)t);
+	skylightTexture_SRV		=((ID3D11ShaderResourceView*)s);
 }
 
 void OceanRenderer::InvalidateDeviceObjects()

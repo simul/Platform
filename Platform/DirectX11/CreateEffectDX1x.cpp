@@ -209,7 +209,7 @@ namespace simul
 	}
 }
 
-ID3D1xShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename)
+ID3D11ShaderResourceView* simul::dx11::LoadTexture(ID3D11Device* pd3dDevice,const char *filename)
 {
 	ID3D11ShaderResourceView* tex=NULL;
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
@@ -549,7 +549,7 @@ HRESULT WINAPI D3DX11CreateEffectFromFileUtf8(std::string text_filename_utf8,D3D
 	std::string path_utf8=text_filename_utf8.substr(0,pos);
 	int dot=(int)text_filename_utf8.find_last_of(".");
 	if(dot<0)
-		dot=text_filename_utf8.length();
+		dot=(int)text_filename_utf8.length();
 	std::string name_utf8=text_filename_utf8.substr(pos+1,dot-pos-1);
 	std::string binary_filename_utf8=name_utf8;
 	// Modify the binary file with the macros so the output is unique to the specified values.

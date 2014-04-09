@@ -351,9 +351,9 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				}
 			}
 			density					=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
+density.z				=saturate(density.z+rainEffect*saturate(dot(world_pos.xy-rainBoundary.xy,rainRegionNormal.xy)*0.001)*(1.0-density.x)*saturate(5.0-10*cloudTexCoords.z)*saturate(cloudTexCoords.z+2.0));
             if(do_depth_mix)
 				density.z			*=saturate((d-fadeDistance)/0.01);
-		//	density.z				=saturate(density.z+.2*(1.0-density.x)*saturate(5.0-10*cloudTexCoords.z));
 			if(density.z>0)
 			{
 #ifdef USE_LIGHT_TABLES
@@ -378,7 +378,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				
 			colour.a				*=(1.0-c.a);
 			//colour.a				*=(1.0-.1*(1.0-density.y));
-				if(colour.a*brightness_factor<0.003)
+			if(colour.a*brightness_factor<0.003)
 			{
 				colour.a	=0.0;
 				break;

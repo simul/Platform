@@ -126,12 +126,13 @@ vec4 MainPS(v2f IN) : SV_TARGET
 	vec3 moon_irr		=moonlight.rgb;
 	vec3 ambient_light	=ambientLight.rgb;
 #endif
-	vec4 ret			=Clouds2DPS_illum(imageTexture,coverageTexture
+	vec4 ret			=Clouds2DPS_illum(imageTexture
+										,coverageTexture
 										,illuminationTexture
 										,lossTexture
 										,inscTexture
 										,skylTexture
-						,noiseTexture
+										,noiseTexture
 										,texc_global,texc_detail
 										,wEyeToPos
 										,sun_irr
@@ -184,7 +185,7 @@ v2f2 SimpleVS(idOnly IN)
 
 float4 SimplePS(v2f2 IN) : SV_TARGET
 {
-	return texture2D(imageTexture,IN.texCoords);
+	return texture2D(imageTexture,.5+IN.texCoords);
 }
 
 float4 CoveragePS(v2f2 IN) : SV_TARGET
@@ -204,7 +205,7 @@ float rand(vec2 co)
 
 float4 RandomPS(v2f2 IN) : SV_TARGET
 {
-    vec4 c=vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords));
+    vec4 c	=vec4(rand(IN.texCoords),rand(1.7*IN.texCoords),rand(0.11*IN.texCoords),rand(513.1*IN.texCoords));
     return frac(c);
 }
 
@@ -257,7 +258,7 @@ technique11 show_detail_texture
     }
 }
 
-technique11 simul_random
+technique11 random
 {
     pass p0
     {

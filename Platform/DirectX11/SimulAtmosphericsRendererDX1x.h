@@ -79,14 +79,14 @@ namespace simul
 			ID3D1xEffectShaderResourceVariable*			cloudShadowTexture;
 			ID3D1xEffectShaderResourceVariable*				cloudGodraysTexture;
 
-			ID3D1xShaderResourceView*					skyLossTexture_SRV;
-			ID3D1xShaderResourceView*					skyInscatterTexture_SRV;
-			ID3D1xShaderResourceView*					overcInscTexture_SRV;
-			ID3D1xShaderResourceView*					skylightTexture_SRV;
+			ID3D11ShaderResourceView*					skyLossTexture_SRV;
+			ID3D11ShaderResourceView*					skyInscatterTexture_SRV;
+			ID3D11ShaderResourceView*					overcInscTexture_SRV;
+			ID3D11ShaderResourceView*					skylightTexture_SRV;
 
-			ID3D1xShaderResourceView*					illuminationTexture_SRV;
-			ID3D1xShaderResourceView*				rainbowLookupTexture;
-			ID3D1xShaderResourceView*				coronaLookupTexture;
+			ID3D11ShaderResourceView*					illuminationTexture_SRV;
+			ID3D11ShaderResourceView*				rainbowLookupTexture;
+			ID3D11ShaderResourceView*				coronaLookupTexture;
 
 			ConstantBuffer<AtmosphericsPerViewConstants>	atmosphericsPerViewConstants;
 			ConstantBuffer<AtmosphericsUniforms>			atmosphericsUniforms;

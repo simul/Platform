@@ -28,7 +28,7 @@ typedef std::basic_string<TCHAR> tstring;
 #define ID3D1xEffectShaderResourceVariable			ID3DX11EffectShaderResourceVariable
 #define ID3D1xEffectConstantBuffer					ID3DX11EffectConstantBuffer
 #define D3D1xCalcSubresource						D3D11CalcSubresource
-#define ID3D1xShaderResourceView					ID3D11ShaderResourceView
+#define ID3D11ShaderResourceView					ID3D11ShaderResourceView
 #define ID3D1xBlendState							ID3D11BlendState
 
 #define D3D1x_USAGE_DEFAULT							D3D11_USAGE_DEFAULT

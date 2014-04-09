@@ -58,9 +58,9 @@ namespace simul
 			// Environment maps
 			ID3D11ShaderResourceView* g_pSRV_ReflectCube;
 			// Atmospheric scattering
-			ID3D1xShaderResourceView* skyLossTexture_SRV;
-			ID3D1xShaderResourceView* skyInscatterTexture_SRV;
-			ID3D1xShaderResourceView* skylightTexture_SRV;
+			ID3D11ShaderResourceView* skyLossTexture_SRV;
+			ID3D11ShaderResourceView* skyInscatterTexture_SRV;
+			ID3D11ShaderResourceView* skylightTexture_SRV;
 			simul::dx11::ConstantBuffer<cbShading>			shadingConstants;
 			simul::dx11::ConstantBuffer<cbChangePerCall>	changePerCallConstants;
 	

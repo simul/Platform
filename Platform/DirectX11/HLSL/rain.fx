@@ -195,7 +195,7 @@ void CS_MoveParticles(uint3 idx	: SV_DispatchThreadID )
 {
 	int i						=idx.z*400+idx.y*20+idx.x;
 	vec3 pos					=targetVertexBuffer[i].position;
-	pos							+=(meanFallVelocity+meanFallVelocity.z*targetVertexBuffer[i].velocity*flurry*0.1)*timeStepSeconds;
+	pos							+=(meanFallVelocity+meanFallVelocity.z*targetVertexBuffer[i].velocity*flurry*0.2)*timeStepSeconds;
 	//pos							+=meanFallVelocity*timeStepSeconds;
 	if(pos.z<-particleZoneSize)
 		pos.z+=2.0*particleZoneSize;
@@ -517,21 +517,21 @@ void GS_RainParticles(point RainParticleVertexOutput input[1], inout TriangleStr
         output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[1];
         output.view				=normalize(pos[1]);
-        output.texCoords				=g_texcoords[1];
+        output.texCoords		=g_texcoords[1];
         SpriteStream.Append(output);
         
         output.pos				=mul(worldViewProj[1],float4(pos[2],1.0));
         output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[2];
         output.view				=normalize(pos[2]);
-        output.texCoords				=g_texcoords[2];
+        output.texCoords		=g_texcoords[2];
         SpriteStream.Append(output);
                 
         output.pos				=mul(worldViewProj[1],float4(pos[3],1.0));
         output.lightDir			=lightDir;
         output.pointLightDir	=closestPointLight	-pos[3];
         output.view				=normalize(pos[3]);
-        output.texCoords				=g_texcoords[3];
+        output.texCoords		=g_texcoords[3];
         SpriteStream.Append(output);
         
         SpriteStream.RestartStrip();

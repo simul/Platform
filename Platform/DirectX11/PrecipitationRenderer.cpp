@@ -248,7 +248,7 @@ void PrecipitationRenderer::Render(void *context
 				,simul::sky::float4 viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
-	static float cc=0.006f;
+	static float cc=0.02f;
 	intensity*=1.f-cc;
 	intensity+=cc*Intensity;
 	intensity=Intensity;
@@ -402,6 +402,6 @@ void PrecipitationRenderer::RenderTextures(void *context,int x0,int y0,int dx,in
 		w/=2;
 		h/=2;
 	}
-	UtilityRenderer::DrawTexture(pContext	,x0,y0	,w,h,(ID3D1xShaderResourceView*)moisture_fb.GetColorTex(),1.f);
+	UtilityRenderer::DrawTexture(pContext	,x0,y0	,w,h,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex(),1.f);
 	UtilityRenderer::Print(pContext			,x0,y0	,"Moisture");
 }

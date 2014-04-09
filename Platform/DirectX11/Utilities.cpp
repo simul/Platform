@@ -960,7 +960,7 @@ void UtilityRenderer::DrawSphere(void *context,int latitudes,int longitudes)
 	pContext->IASetPrimitiveTopology(previousTopology);
 }
 
-void UtilityRenderer::DrawCubemap(void *context,ID3D1xShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety)
+void UtilityRenderer::DrawCubemap(void *context,ID3D11ShaderResourceView *m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj,float offsetx,float offsety)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
 	unsigned int num_v=0;

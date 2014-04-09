@@ -3,19 +3,22 @@
 
 vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture,float amplitude)
 {
-	vec4 result=vec4(0,0,0,0);
-	float mult=0.5;
+	vec2 result			=vec2(0,0);
+	float mult			=0.5;
+	float current_phase	=phase;
     for(int i=0;i<octaves;i++)
     {
-		vec4 c=texture_wrap(imageTexture,texcoords);
-		texcoords*=2.0;
-		texcoords+=mult*vec2(0.1,0.1)*amplitude*c.xy;
-		result+=mult*c;
-		mult*=persistence;
+		vec2 c			=texture_wrap(imageTexture,texcoords).xy;
+		vec2 u			=cos(2.0*3.14159*(c+current_phase))*0.5+0.5;
+		texcoords		*=2.0;
+		texcoords		+=mult*vec2(0.1,0.1)*amplitude*u.xy;
+		result			+=mult*u.xy;
+		mult			*=persistence;
+		current_phase	*=2.0;
     }
-    result.rgb=saturate(result.rrr*1.5);
-	result.a=saturate((result.a+density+diffusivity-1.0)/diffusivity);
-    return result;
+    result.x			=saturate(result.x*1.5);
+	result.y			=saturate((result.y+density+diffusivity-1.0)/diffusivity);
+    return vec4(result.xxx,result.y);
 }
 
 vec4 DetailLighting(vec2 texcoords,Texture2D imageTexture)

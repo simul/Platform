@@ -89,7 +89,7 @@ public:
 	void CycleTexturesForward();
 
 	// for testing:
-	void DrawCubemap(void *context,ID3D1xShaderResourceView*	m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
+	void DrawCubemap(void *context,ID3D11ShaderResourceView*	m_pCubeEnvMapSRV,D3DXMATRIX view,D3DXMATRIX proj);
 	simul::sky::BaseGpuSkyGenerator *GetBaseGpuSkyGenerator(){return &gpuSkyGenerator;}
 protected:
 	int cycle;
@@ -140,8 +140,8 @@ protected:
 
 	// A framebuffer where x=azimuth, y=elevation, r=start depth, g=end depth.
 	simul::dx11::Framebuffer			illumination_fb;
-	ID3D1xShaderResourceView*			flare_texture_SRV;
-	ID3D1xShaderResourceView*			moon_texture_SRV;
+	ID3D11ShaderResourceView*			flare_texture_SRV;
+	ID3D11ShaderResourceView*			moon_texture_SRV;
 
 	void MapFade(ID3D11DeviceContext *context,int s);
 	void UnmapFade(int i);

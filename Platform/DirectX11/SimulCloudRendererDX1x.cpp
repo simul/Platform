@@ -106,12 +106,12 @@ void SimulCloudRendererDX1x::SetInscatterTextures(void *i,void *s,void *o)
 
 void SimulCloudRendererDX1x::SetIlluminationTexture(void *i)
 {
-	illuminationTexture_SRV=(ID3D1xShaderResourceView*)i;
+	illuminationTexture_SRV=(ID3D11ShaderResourceView*)i;
 }
 
 void SimulCloudRendererDX1x::SetLightTableTexture(void *l)
 {
-	lightTableTexture_SRV=(ID3D1xShaderResourceView*)l;
+	lightTableTexture_SRV=(ID3D11ShaderResourceView*)l;
 }
 
 struct MixCloudsConstants
@@ -712,11 +712,13 @@ void SimulCloudRendererDX1x::RenderCloudShadowTexture(void *context)
 void SimulCloudRendererDX1x::PreRenderUpdate(void *context)
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
+    SIMUL_COMBINED_PROFILE_START(context,"SimulCloudRendererDX1x::PreRenderUpdate")
 	EnsureTexturesAreUpToDate(pContext);
 	SetCloudConstants(cloudConstants);
 	cloudConstants.Apply(pContext);
 	RenderCombinedCloudTexture(pContext);
 	RenderCloudShadowTexture(pContext);
+    SIMUL_COMBINED_PROFILE_END(context)
 	//set up matrices
 // Commented this out and moved to Render as was causing cloud noise problem due to the camera
 // matrix it was using being for light probes rather than the main view.
@@ -731,7 +733,7 @@ bool SimulCloudRendererDX1x::Render(void* context,float exposure,bool cubemap,bo
 ,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH)
 {
 	ID3D11DeviceContext* pContext	=(ID3D11DeviceContext*)context;
-	ID3D1xShaderResourceView *depthTexture_SRV	=(ID3D1xShaderResourceView *)depth_tex;
+	ID3D11ShaderResourceView *depthTexture_SRV	=(ID3D11ShaderResourceView *)depth_tex;
     ProfileBlock profileBlock(pContext,cubemap?"SimulCloudRendererDX1x::Render (cubemap side)":"SimulCloudRendererDX1x::Render");
 
 	float blendFactor[] = {0, 0, 0, 0};
@@ -923,7 +925,7 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int x0,int y0
 	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture",noiseTextureResource);
 	UtilityRenderer::DrawQuad2(pContext	,width-w,height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_noise"));
 	UtilityRenderer::Print(pContext		,width-w,height-(w+8)	,"2D Noise");
-	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D1xShaderResourceView*)shadow_fb.GetColorTex());
+	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture",(ID3D11ShaderResourceView*)shadow_fb.GetColorTex());
 	simul::dx11::setTexture(m_pCloudEffect,"cloudGodraysTexture",(ID3D11ShaderResourceView*)godrays_texture.shaderResourceView);
 	UtilityRenderer::DrawQuad2(pContext	,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
 	UtilityRenderer::Print(pContext		,width-(w+8)-(w+8),height-(w+8)	,"shadow texture");
@@ -934,9 +936,9 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int x0,int y0
 	UtilityRenderer::DrawTexture(pContext	,width-2*w,height-(w+8)-w	,w*2,w/2	,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex());
 	UtilityRenderer::Print(pContext			,width-2*w,height-(w+8)-w	,"moisture framebuffer",vec4(1.f,0.f,0.f,1.f));
 
-	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"			,(ID3D1xShaderResourceView*)NULL);
-	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture"		,(ID3D1xShaderResourceView*)NULL);
-	simul::dx11::setTexture(m_pCloudEffect,"cloudGodraysTexture"	,(ID3D1xShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"			,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"cloudShadowTexture"		,(ID3D11ShaderResourceView*)NULL);
+	simul::dx11::setTexture(m_pCloudEffect,"cloudGodraysTexture"	,(ID3D11ShaderResourceView*)NULL);
 	ApplyPass(pContext,m_pCloudEffect->GetTechniqueByName("show_shadow")->GetPassByIndex(0));
 }
 
