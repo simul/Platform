@@ -3,28 +3,30 @@
 
 vec4 DetailDensity(vec2 texcoords,Texture2D imageTexture,float amplitude)
 {
-	vec2 result			=vec2(0,0);
+	float dens			=0.0;
 	float mult			=0.5;
 	float current_phase	=phase;
-    for(int i=0;i<octaves;i++)
+    for(int i=0;i<2;i++)//octaves
     {
-		vec2 c			=texture_wrap(imageTexture,texcoords).xy;
-		vec2 u			=cos(2.0*3.14159*(c+current_phase))*0.5+0.5;
+		vec4 c			=texture_wrap(imageTexture,texcoords);
+		vec2 u			=saturate(cos(2.0*3.14159*4*texcoords.xy)/(4.0+c.a)+c.a);//(c+current_phase));
+		
 		texcoords		*=2.0;
 		texcoords		+=mult*vec2(0.1,0.1)*amplitude*u.xy;
-		result			+=mult*u.xy;
+		dens			+=mult*(u.x*u.y);
 		mult			*=persistence;
 		current_phase	*=2.0;
     }
-    result.x			=saturate(result.x*1.5);
-	result.y			=saturate((result.y+density+diffusivity-1.0)/diffusivity);
-    return vec4(result.xxx,result.y);
+    vec4 result;
+	result.a			=saturate((dens+2.0*density+diffusivity-2.0)/diffusivity);
+	result.xyz			=result.aaa;//saturate(dens*1.5);
+    return result;
 }
 
 vec4 DetailLighting(vec2 texcoords,Texture2D imageTexture)
 {
 	vec4 c=texture_wrap(imageTexture,texcoords);
-	c.a=saturate(c.a-.5);
+	//c.a=saturate(c.a-.5);
     return c;
 	vec2 offset=lightDir2d.xy/256.0;
 	float dens_dist=0.0;

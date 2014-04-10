@@ -27,7 +27,7 @@ float NoiseFunction(Texture2D noiseTexture,vec2 pos,float octaves,float persiste
 vec4 Coverage(vec2 texCoords,float humidity,float diffusivity,float octaves,float persistence,float time,Texture2D noiseTexture,float noiseTextureScale)
 {
 	float noise_val			=NoiseFunction(noiseTexture,texCoords/* /noiseTextureScale */,octaves,persistence,time);
-	float dens				=saturate((noise_val+humidity+diffusivity-1.0)/diffusivity);
+	float dens				=saturate((noise_val+2.0*humidity+diffusivity-2.0)/diffusivity);
     return vec4(dens,dens,dens,dens);
 }
 
@@ -151,7 +151,7 @@ vec4 Clouds2DPS_illum(Texture2D imageTexture
     vec4 noise				=texture_wrap(noiseTexture,texc_offset);
     vec4 coverage			=texture_wrap(coverageTexture,texc_global);
 	
-    vec4 detail				=vec4(1,1,1,1);//texture_wrap(imageTexture,texc_detail+.2*noise.xy);
+    vec4 detail				=texture_wrap(imageTexture,texc_detail+.2*noise.xy);
 	float opacity			=saturate(detail.a*2.0*Y(coverage));//+2.0*Y(coverage)-1.0);
 	if(opacity<=0)
 		discard;
