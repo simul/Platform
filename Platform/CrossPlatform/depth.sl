@@ -9,16 +9,19 @@ float depthToLinearDistance(float depth,vec3 depthToLinFadeDistParams)
 	float linearFadeDistanceZ = depthToLinFadeDistParams.x / (depth*depthToLinFadeDistParams.y + depthToLinFadeDistParams.z);
 	return linearFadeDistanceZ;
 }
+
 vec4 depthToLinearDistance(vec4 depth,vec3 depthToLinFadeDistParams)
 {
 	vec4 linearFadeDistanceZ = depthToLinFadeDistParams.xxxx / (depth*depthToLinFadeDistParams.yyyy + depthToLinFadeDistParams.zzzz);
 	return linearFadeDistanceZ;
 }
+
 vec2 depthToLinearDistance(vec2 depth,vec3 depthToLinFadeDistParams)
 {
 	vec2 linearFadeDistanceZ = depthToLinFadeDistParams.xx / (depth*depthToLinFadeDistParams.yy + depthToLinFadeDistParams.zz);
 	return linearFadeDistanceZ;
 }
+
 void discardOnFar(float depth)
 {
 #ifdef REVERSE_DEPTH
@@ -265,14 +268,20 @@ vec4 NearFarDepthCloudBlend(vec2 texCoords
 			vec4 add		=lerp(cloudFar,cloudNear,interp);
 			result			+=add;
 		
-			hiResInterp		=saturate((nearFarDistHiRes.y-trueDist)/(nearFarDistHiRes.y-nearFarDistHiRes.x));
-			insc			=lerp(insc_far,insc_near,hiResInterp);
-			result.rgb		+=insc.rgb*add.a;
+			if(use_msaa)
+			{
+				hiResInterp		=saturate((nearFarDistHiRes.y-trueDist)/(nearFarDistHiRes.y-nearFarDistHiRes.x));
+				insc			=lerp(insc_far,insc_near,hiResInterp);
+				result.rgb		+=insc.rgb*add.a;
+			}
 		}
 		// atmospherics: we simply interpolate.
-		result/=float(numSamples);
+		result				/=float(numSamples);
 		hiResInterp			/=float(numSamples);
-	//	result=insc_far;
+		if(!use_msaa)
+		{
+			result.rgb		+=insc_far.rgb*result.a;
+		}
 	}
 	else
 	{

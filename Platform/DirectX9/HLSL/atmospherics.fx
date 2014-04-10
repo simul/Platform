@@ -179,19 +179,20 @@ vec4 PS_AtmosOverlayLossPass(atmosVertexOutput IN) : color
 
 vec4 PS_AtmosOverlayInscPass(atmosVertexOutput IN) : color
 {
-	vec3 insc=AtmosphericsInsc(depth_texture
-							,illumination_texture
-							,insc_texture
+	vec3 insc=Inscatter(	insc_texture
 							,skyl_texture
+							,depth_texture
+							,1
+							,illumination_texture
 							,invViewProj
 							,IN.texCoords
-							,IN.clip_pos
+							,lightDir
+							,hazeEccentricity
+							,mieRayleighRatio
 							,viewportToTexRegionScaleBias
 							,depthToLinFadeDistParams
 							,tanHalfFov
-							,hazeEccentricity
-							,lightDir
-							,mieRayleighRatio);
+							,false,false);
 
 	return vec4(insc*exposure,1.0);
 }

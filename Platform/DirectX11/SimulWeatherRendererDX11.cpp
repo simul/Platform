@@ -545,28 +545,10 @@ void SimulWeatherRendererDX11::RenderPrecipitation(void *context,const void *dep
 void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int view_id,int x0,int y0,int dx,int dy)
 {
 	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
-	
-	D3D11_VIEWPORT viewport;
-	UINT num_v		=1;
-	pContext->RSGetViewports(&num_v,&viewport);
-	UtilityRenderer::SetScreenSize((int)viewport.Width,(int)viewport.Height);
 
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
-	int w=dx*4;
-	int l=dy*4;
-	
-	if(w>dx/2)
-	{
-		l*=dx/2;
-		l/=w;
-		w=dx/2;
-	}
-	if(l>dy/2)
-	{
-		w*=dy/2;
-		w/=l;
-		l=dy/2;
-	}
+	int w=dx/2;
+	int l=dy/2;
 	UtilityRenderer::DrawTexture(pContext	,x0+0*w	,y0+l	,w,l,(ID3D11ShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
 	UtilityRenderer::Print		(pContext	,x0+0*w	,y0+l	,"Hi-Res Far");
 	UtilityRenderer::DrawTexture(pContext	,x0+1*w	,y0+l	,w,l,(ID3D11ShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());

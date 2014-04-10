@@ -639,12 +639,14 @@ void Direct3D11Renderer::RenderDepthBuffers(void *context,int view_id,int x0,int
 		l*=dx/2;
 		l/=w;
 		w=dx/2;
+		dy=(dx*l)/w;
 	}
 	if(l>dy/2)
 	{
 		w*=dy/2;
 		w/=l;
 		l=dy/2;
+		dx=(dy*w)/l;
 	}
 	UtilityRenderer::DrawTexture(pContext	,x0		,y0		,w,l,(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex()			,10000.0f	);
 	UtilityRenderer::Print(pContext			,x0		,y0		,"Main Depth");

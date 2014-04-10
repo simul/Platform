@@ -109,7 +109,6 @@ vec4 PS_Inscatter(atmosVertexOutput IN) : SV_TARGET
 	vec4 insc		=Inscatter(	 inscTexture
 								,skylTexture
 								,depthTexture
-								,depthTextureMS
 								,numSamples
 								,illuminationTexture
 								,invViewProj

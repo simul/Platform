@@ -60,7 +60,6 @@ void CalcInsc(	Texture2D inscTexture
 vec4 Inscatter(	Texture2D inscTexture
 						,Texture2D skylTexture
 						,Texture2D depthTexture
-						,Texture2DMS<float4> depthTextureMS
 						,int numSamples
 						,Texture2D illuminationTexture
 						,mat4 invViewProj
