@@ -351,7 +351,7 @@ RaytracePixelOutput RaytraceCloudsForward(Texture3D cloudDensity1
 				}
 			}
 			density					=calcDensity(cloudDensity1,cloudDensity2,cloudTexCoords,layer.layerFade,noiseval,fractalScale,cloud_interp);
-density.z				=saturate(density.z+layer.layerFade*rainEffect*saturate(dot(world_pos.xy-rainBoundary.xy,rainRegionNormal.xy)*0.001)*(1.0-density.x)*saturate(5.0-10*cloudTexCoords.z)*saturate(cloudTexCoords.z+2.0));
+density.z				=saturate(density.z+layer.layerFade*rainEffect*saturate(1.0-density.w)*saturate(dot(world_pos.xy-rainBoundary.xy,rainRegionNormal.xy)*0.001)*saturate(5.0-10*cloudTexCoords.z)*saturate(cloudTexCoords.z+2.0));
             if(do_depth_mix)
 				density.z			*=saturate((d-fadeDistance)/0.01);
 			if(density.z>0)
@@ -361,7 +361,7 @@ density.z				=saturate(density.z+layer.layerFade*rainEffect*saturate(dot(world_p
 				vec3 combinedLightColour=texture_clamp_lod(lightTableTexture,vec2(alt_texc,3.5/4.0),0).rgb;
 				vec3 amb				=lightResponse.w*texture_clamp_lod(lightTableTexture,vec2(alt_texc,2.5/4.0),0).rgb;
 #else
-				vec3 combinedLightColour=lerp(sunlightColour1.rgb,sunlightColour2.rgb,cloudTexCoords.z);
+				vec3 combinedLightColour=lerp(sunlightColour1.rgb,sunlightColour2.rgb,saturate(cloudTexCoords.z));
 #endif
 				float brightness_factor	=unshadowedBrightness(BetaClouds,lightResponse,amb);
 				vec4 c					=calcColour2(density,BetaClouds,lightResponse,combinedLightColour,amb);
