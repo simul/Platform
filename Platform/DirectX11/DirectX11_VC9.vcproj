@@ -436,6 +436,10 @@
 				RelativePath=".\Utilities.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\View.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -564,6 +568,10 @@
 			</File>
 			<File
 				RelativePath=".\Utilities.h"
+				>
+			</File>
+			<File
+				RelativePath=".\View.h"
 				>
 			</File>
 		</Filter>

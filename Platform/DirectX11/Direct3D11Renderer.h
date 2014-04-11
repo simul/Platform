@@ -13,6 +13,7 @@
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
+#include "Simul/Platform/DirectX11/View.h"
 #include "Simul/Platform/CrossPlatform/mixed_resolution_constants.sl"
 #include "Simul/Platform/CrossPlatform/light_probe_constants.sl"
 #pragma warning(push)
@@ -40,36 +41,6 @@ namespace simul
 	}
 	namespace dx11
 	{
-		enum ViewType
-		{
-			MAIN_3D_VIEW
-			,OCULUS_VR
-			,FADE_EDITING
-		};
-		struct View
-		{
-			View();
-			~View();
-			void RestoreDeviceObjects(ID3D11Device *pd3dDevice);
-			void InvalidateDeviceObjects();
-			int GetScreenWidth() const;
-			int GetScreenHeight() const;
-			void SetResolution(int w,int h);
-			void ResolveFramebuffer(ID3D11DeviceContext *pContext);
-			ID3D11ShaderResourceView *View::GetResolvedHDRBuffer();
-			// A framebuffer with depth
-			simul::dx11::Framebuffer					hdrFramebuffer;
-			// The depth from the HDR framebuffer can be resolved into this texture:
-			simul::dx11::TextureStruct					hiResDepthTexture;
-			simul::dx11::TextureStruct					lowResDepthTexture;
-			ViewType									viewType;
-			const simul::camera::CameraOutputInterface	*camera;
-		private:
-			int ScreenWidth;
-			int ScreenHeight;
-			simul::dx11::TextureStruct					resolvedTexture;
-			ID3D11Device								*m_pd3dDevice;
-		};
 		class SimulWeatherRendererDX11;
 		class SimulHDRRendererDX1x;
 		class TerrainRenderer;
@@ -79,7 +50,7 @@ namespace simul
 		//! A renderer for DirectX11. Use this class as a guide to implementing your own rendering in DX11.
 		class SIMUL_DIRECTX11_EXPORT Direct3D11Renderer
 			:public Direct3D11CallbackInterface
-			,public simul::graph::meta::Group
+			,public simul::base::Referenced
 		{
 		public:
 			//! Constructor - pass a pointer to your Environment, and either an implementation of MemoryInterface, or NULL.
@@ -135,11 +106,11 @@ namespace simul
 			virtual D3D_FEATURE_LEVEL	GetMinimumFeatureLevel() const;
 			virtual void				OnD3D11CreateDevice	(ID3D11Device* pd3dDevice);
 			virtual int					AddView				();
+			virtual void				RemoveView			(int);
 			virtual void				ResizeView			(int view_id,const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc);
 			virtual void				Render				(int,ID3D11Device* pd3dDevice,ID3D11DeviceContext* pd3dImmediateContext);
 			virtual void				OnD3D11LostDevice	();
 			virtual void				OnD3D11DestroyDevice();
-			virtual void				RemoveView			(int);
 			virtual bool				OnDeviceRemoved		();
 			virtual void				OnFrameMove			(double fTime,float fTimeStep);
 			virtual const char *		GetDebugText		() const;
@@ -157,9 +128,7 @@ namespace simul
 			void ReverseDepthChanged();
 			void AntialiasingChanged();
 			void EnsureCorrectBufferSizes(int view_id);
-			View *GetView(int view_id);
 
-			int											last_created_view_id;
 			int											cubemap_view_id;
 			bool										enabled;
 			std::string									screenshotFilenameUtf8;
@@ -172,8 +141,7 @@ namespace simul
 			TerrainRenderer								*simulTerrainRenderer;
 			OceanRenderer								*oceanRenderer;
 			//simul::scene::BaseSceneRenderer				*sceneRenderer;
-			typedef std::map<int,View*>					ViewMap;
-			ViewMap										views;
+			ViewManager									viewManager;
 			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
 			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
 			ConstantBuffer<LightProbeConstants>			lightProbeConstants;

@@ -211,6 +211,7 @@
     <ClCompile Include="SimulWeatherRendererDX11.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Utilities.cpp" />
+    <ClCompile Include="View.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompileShaderDX1x.h" />
@@ -247,6 +248,7 @@
     <ClInclude Include="SimulWeatherRendererDX11.h" />
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Utilities.h" />
+    <ClInclude Include="View.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\CrossPlatform\atmospherics.sl" />
