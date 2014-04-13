@@ -35,7 +35,7 @@ namespace simul
 			void DrawLineLoop	(void *context,const double *mat,int num,const double *vertexArray,const float colr[4]);
 			void ApplyDefaultMaterial();
 			void SetModelMatrix(void *,const double *mat);
-			scene::MaterialCache *CreateMaterial();
+			scene::Material *CreateMaterial();
 			scene::Mesh *CreateMesh();
 			scene::LightCache *CreateLight();
 			scene::Texture *CreateTexture(const char *lFileNameUtf8);

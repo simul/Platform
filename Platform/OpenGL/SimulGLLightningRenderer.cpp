@@ -135,7 +135,7 @@ GL_ERROR_CHECK
 			continue;
 		simul::clouds::LightningProperties props=cloudKeyframer->GetLightningProperties(time,i);
 		props.seed=0;
-		setParameter(lightning_program,"lightningColour",props.colour);
+		//setParameter(lightning_program,"lightningColour",props.colour);
 		simul::sky::float4 x1,x2;
 		static float maxwidth	=8.f;
 		float vertical_shift	=0;//helper->GetVerticalShiftDueToCurvature(dist,x1.z);

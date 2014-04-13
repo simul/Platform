@@ -281,7 +281,7 @@ void RenderPlatform::SetModelMatrix(void *context,const double *m)
 	solidConstants.Apply(pContext);
 }
 
-scene::MaterialCache *RenderPlatform::CreateMaterial()
+scene::Material *RenderPlatform::CreateMaterial()
 {
 	return new dx11::Material;
 }

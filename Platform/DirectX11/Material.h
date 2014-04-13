@@ -8,7 +8,7 @@ namespace simul
 {
 	namespace dx11
 	{
-		class SIMUL_DIRECTX11_EXPORT Material:public scene::MaterialCache
+		class SIMUL_DIRECTX11_EXPORT Material:public scene::Material
 		{
 		public:
 			Material();

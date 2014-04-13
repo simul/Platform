@@ -56,7 +56,7 @@ void main(void)
 	vec4 density2			=textureLod(cloudDensity2,pos,0);
 	//vec4 lightning=texture(illumSampler,texCoordLightning.xyz);
 	density					=mix(density,density2,cloud_interp);
-	float opacity			=layerDensity*density.y;
+	float opacity			=layerFade_*density.y;
 	//opacity+=rain*rainFade*saturate((0.25-pos.z)*50.0)*(1.0-density.x);
 #ifdef USE_DEPTH_TEXTURE
 	//float depth_offset=dist-cloud_dist;

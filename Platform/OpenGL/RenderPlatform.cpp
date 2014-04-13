@@ -279,7 +279,7 @@ void RenderPlatform::SetModelMatrix(void *,const double *m)
 	solidConstants.Apply();
 }
 
-scene::MaterialCache *RenderPlatform::CreateMaterial()
+scene::Material *RenderPlatform::CreateMaterial()
 {
 	return new opengl::Material;
 }
