@@ -6,7 +6,7 @@
 #include <utility>
 #include <vector>
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
-#include "Simul/Platform/CrossPlatform/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
 #include "Simul/Base/FileLoader.h"
 #pragma warning(disable:4251)
 namespace simul
@@ -183,8 +183,6 @@ namespace simul
 			static void RenderAngledQuad(	ID3D11DeviceContext *pContext,const float *dir,float half_angle_radians,ID3DX11Effect* effect,ID3DX11EffectTechnique* tech,D3DXMATRIX view,D3DXMATRIX proj,D3DXVECTOR3 sun_dir);
 			static void Print(				ID3D11DeviceContext *pContext,int x,int y,const char *text,const float *clr=NULL);
 			static void Print(				ID3D11DeviceContext *pContext,float x,float y,const char *text,const float *clr=NULL);
-			static void DrawTexture(		ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult=1.f);
-			static void DrawTextureMS(		ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3D11ShaderResourceView *t,float mult=1.f);
 			static void DrawQuad(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11EffectTechnique* tech);	
 			static void DrawQuad2(			ID3D11DeviceContext *pContext,int x1,int y1,int dx,int dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);
 			static void DrawQuad2(			ID3D11DeviceContext *pContext,float x1,float y1,float dx,float dy,ID3DX11Effect *eff,ID3DX11EffectTechnique* tech);

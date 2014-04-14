@@ -33,6 +33,8 @@
 #include "Simul/Platform/DirectX11/CreateEffectDX1x.h"
 #include "Simul/Platform/DirectX11/Profiler.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
+#include "Simul/Platform/DirectX11/RenderPlatform.h"
+extern simul::dx11::RenderPlatform renderPlatformDx11;
 
 using namespace simul;
 using namespace dx11;
@@ -204,8 +206,6 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 	// Get a count of the elements in the layout.
 	int numElements = sizeof(decl) / sizeof(decl[0]);
 
-	//hr=m_pd3dDevice->CreateInputLayout( decl,numElements,PassDesc.pIAInputSignature,PassDesc.IAInputSignatureSize,&m_pVtxDecl);
-	CreateMeshBuffers();
 	
 	if(m_hTechniqueLightning)
 	{
@@ -240,40 +240,6 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
     samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
     samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	m_pd3dDevice->CreateSamplerState(&samplerDesc,&m_pClampSamplerState);
-}
-	
-void SimulCloudRendererDX1x::CreateMeshBuffers()
-{
-	unsigned el,az;
-	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(0);
-	helper->GetGrid(el,az);
-	helper->GenerateSphereVertices();
-	std::vector<vec3> v;
-	std::vector<unsigned short> ind;
-	simul::clouds::CloudGeometryHelper::GenerateSphereVertices(
-				v
-				,ind
-				,el,az);
-
-	int num_vertices=32;
-	int num_indices=33;
-	// Create the main vertex buffer:
-	vec3 *vertices=new vec3[num_vertices];
-	unsigned short *indices=new unsigned short[num_indices];
-	vec3 *dest=vertices;
-	for(int i=0;i<num_vertices;i++,dest++)
-	{
-		float angle=2.f*pi*(float)i/(float)num_vertices;
-		dest->x = sin(angle);
-		dest->y = cos(angle);
-		dest->z = 0.f;		
-	}
-	for(int i=0;i<num_indices;i++)
-	{
-		indices[i]=i%num_vertices;
-	}
-    delete [] vertices;
-    delete [] indices;
 }
 
 void SimulCloudRendererDX1x::InvalidateDeviceObjects()
@@ -930,10 +896,10 @@ void SimulCloudRendererDX1x::RenderAuxiliaryTextures(void *context,int x0,int y0
 	UtilityRenderer::DrawQuad2(pContext	,width-(w+8)-(w+8),height-(w+8),w,w,m_pCloudEffect,m_pCloudEffect->GetTechniqueByName("show_shadow"));
 	UtilityRenderer::Print(pContext		,width-(w+8)-(w+8),height-(w+8)	,"shadow texture");
 
-	UtilityRenderer::DrawTexture(pContext	,width-2*w,height-(w+8)-w/2	,w*2,w/2,godrays_texture.shaderResourceView);
+	renderPlatformDx11.DrawTexture(pContext	,width-2*w,height-(w+8)-w/2	,w*2,w/2,godrays_texture.shaderResourceView);
 	UtilityRenderer::Print(pContext			,width-2*w,height-(w+8)-w/2	,"godrays framebuffer",vec4(0.f,0.6f,0.f,1.f));
 
-	UtilityRenderer::DrawTexture(pContext	,width-2*w,height-(w+8)-w	,w*2,w/2	,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex());
+	renderPlatformDx11.DrawTexture(pContext	,width-2*w,height-(w+8)-w	,w*2,w/2	,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex());
 	UtilityRenderer::Print(pContext			,width-2*w,height-(w+8)-w	,"moisture framebuffer",vec4(1.f,0.f,0.f,1.f));
 
 	simul::dx11::setTexture(m_pCloudEffect,"noiseTexture"			,(ID3D11ShaderResourceView*)NULL);

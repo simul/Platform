@@ -15,6 +15,7 @@
 #include "Simul/Platform/DirectX11/Profiler.h"
 #include "Simul/Platform/DirectX11/MacrosDX1x.h"
 #include "Simul/Platform/DirectX11/SaveTextureDx1x.h"
+#include "Simul/Platform/DirectX11/RenderPlatform.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Clouds/CloudInterface.h"
 #include "Simul/Clouds/BasePrecipitationRenderer.h"
@@ -24,7 +25,7 @@
 using namespace simul;
 using namespace dx11;
 
-//simul::dx11::RenderPlatform renderPlatform;
+simul::dx11::RenderPlatform renderPlatformDx11;
 
 Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::scene::Scene *sc,simul::base::MemoryInterface *m,int w,int h):
 		ShowCloudCrossSections(false)
@@ -70,7 +71,7 @@ Direct3D11Renderer::Direct3D11Renderer(simul::clouds::Environment *env,simul::sc
 	oceanRenderer			=new(memoryInterface) OceanRenderer(env->seaKeyframer);
 	oceanRenderer->SetBaseSkyInterface(env->skyKeyframer);
 	
-//	sceneRenderer			=new(memoryInterface) scene::BaseSceneRenderer(sc,&renderPlatform);
+//	sceneRenderer			=new(memoryInterface) scene::BaseSceneRenderer(sc,&renderPlatformDx11);
 	ReverseDepthChanged();
 	cubemapFramebuffer.SetFormat(DXGI_FORMAT_R16G16B16A16_FLOAT);
 	cubemapFramebuffer.SetDepthFormat(DXGI_FORMAT_D32_FLOAT);
@@ -582,11 +583,11 @@ void Direct3D11Renderer::RenderDepthBuffers(void *context,int view_id,int x0,int
 		l=dy/2;
 		dx=(dy*w)/l;
 	}
-	UtilityRenderer::DrawTexture(pContext	,x0		,y0		,w,l,(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex()			,10000.0f	);
+	renderPlatformDx11.DrawTexture(pContext	,x0		,y0		,w,l,(ID3D11ShaderResourceView*)view->hdrFramebuffer.GetDepthTex()			,10000.0f	);
 	UtilityRenderer::Print(pContext			,x0		,y0		,"Main Depth");
-	UtilityRenderer::DrawTexture(pContext	,x0		,y0+l	,w,l,view->hiResDepthTexture.shaderResourceView								,10000.0f	);
+	renderPlatformDx11.DrawTexture(pContext	,x0		,y0+l	,w,l,view->hiResDepthTexture.shaderResourceView								,10000.0f	);
 	UtilityRenderer::Print(pContext			,x0		,y0+l	,"Hi-Res Depth");
-	UtilityRenderer::DrawTexture(pContext	,x0+w	,y0+l	,w,l,view->lowResDepthTexture.shaderResourceView							,10000.0f	);
+	renderPlatformDx11.DrawTexture(pContext	,x0+w	,y0+l	,w,l,view->lowResDepthTexture.shaderResourceView							,10000.0f	);
 	UtilityRenderer::Print(pContext			,x0+w	,y0+l	,"Lo-Res Depth");
 	//UtilityRenderer::DrawTexture(pContext,2*w	,0,w,l,(ID3D11ShaderResourceView*)simulWeatherRenderer->GetFramebufferTexture(view_id)	,1.f		);
 	//UtilityRenderer::Print(pContext			,2.f*w	,0.f,"Near overlay");

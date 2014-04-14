@@ -291,7 +291,7 @@ scene::Mesh *RenderPlatform::CreateMesh()
 	return new dx11::Mesh;
 }
 
-scene::LightCache *RenderPlatform::CreateLight()
+scene::Light *RenderPlatform::CreateLight()
 {
 	return new dx11::Light();
 }
@@ -301,4 +301,26 @@ scene::Texture *RenderPlatform::CreateTexture(const char *fileNameUtf8)
 	scene::Texture * tex=new dx11::Texture(device);
 	tex->LoadFromFile(fileNameUtf8);
 	return tex;
+}
+
+void RenderPlatform::DrawTexture(void *context,int x1,int y1,int dx,int dy,void *t,float mult)
+{
+	if(!t)
+		return;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext *)context;
+	ID3DX11Effect		*m_pDebugEffect=UtilityRenderer::GetDebugEffect();
+	ID3D11ShaderResourceView *srv=(ID3D11ShaderResourceView*)t;
+	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",srv);
+	simul::dx11::setParameter(m_pDebugEffect,"multiplier",mult);
+	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+	srv->GetDesc(&desc);
+	ID3DX11EffectTechnique *tech=m_pDebugEffect->GetTechniqueByName("textured");
+	bool msaa=(desc.ViewDimension==D3D11_SRV_DIMENSION_TEXTURE2DMS);
+	if(msaa)
+	{
+		tech=m_pDebugEffect->GetTechniqueByName("textured");
+		simul::dx11::setTexture(m_pDebugEffect,"imageTextureMS",srv);
+	}
+	UtilityRenderer::DrawQuad2(pContext,x1,y1,dx,dy,m_pDebugEffect,tech);
+	simul::dx11::setTexture(m_pDebugEffect,"imageTexture",NULL);
 }

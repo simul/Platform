@@ -1,12 +1,12 @@
 #version 140
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/simul_cloud_constants.sl"
+#include "../../CrossPlatform/SL/simul_cloud_constants.sl"
 
 uniform mat4 worldViewProj;
 
 uniform int layerNumber;
 
-in vec4 vertex;
+in vec3 vertex;
 
 out float layerDensity;
 out float rainFade;
@@ -21,7 +21,7 @@ out vec4 transformed_pos;
 void main(void)
 {
 	LayerData layer		=layers[layerIndex];//layerCount-1-layerNumber];
-	vec3 pos			=vertex.xyz;
+	vec3 pos			=vertex.xyz*layerDistance_;
 //	pos.xyz				*=layer.layerDistance;
     wPosition			=pos.xyz;
     transformed_pos		=vec4(vertex.xyz,1.0)*worldViewProj;

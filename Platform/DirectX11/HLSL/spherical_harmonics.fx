@@ -1,8 +1,8 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-#include "../../CrossPlatform/spherical_harmonics_constants.sl"
-#include "../../CrossPlatform/noise.sl"
-#include "../../CrossPlatform/spherical_harmonics.sl"
+#include "../../CrossPlatform/SL/spherical_harmonics_constants.sl"
+#include "../../CrossPlatform/SL/noise.sl"
+#include "../../CrossPlatform/SL/spherical_harmonics.sl"
 // The cubemap input we are creating coefficients for.
 TextureCube cubemapTexture;
 // A texture (l_max+1)^2 of coefficients.

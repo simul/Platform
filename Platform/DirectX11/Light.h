@@ -11,7 +11,7 @@ namespace simul
 {
 	namespace dx11
 	{
-		class SIMUL_DIRECTX11_EXPORT Light:public scene::LightCache
+		class SIMUL_DIRECTX11_EXPORT Light:public scene::Light
 		{
 		public:
 			Light();

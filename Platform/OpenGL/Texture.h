@@ -15,6 +15,7 @@ namespace simul
 			Texture();
 			~Texture();
 			void LoadFromFile(const char *pFilePathUtf8);
+			bool IsValid() const;
 			GLuint pTextureObject;
 		};
 	}

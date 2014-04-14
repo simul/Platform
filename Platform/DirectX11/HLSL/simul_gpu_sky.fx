@@ -21,10 +21,10 @@ SamplerState samplerState
 	AddressV = Mirror;
 	AddressW = Clamp;
 };
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 #include "CppHlsl.hlsl"
-#include "../../CrossPlatform/states.sl"
-#include "../../CrossPlatform/simul_gpu_sky.sl"
+#include "../../CrossPlatform/SL/states.sl"
+#include "../../CrossPlatform/SL/simul_gpu_sky.sl"
 
 struct vertexInput
 {

@@ -242,6 +242,14 @@ void RenderPlatform::DrawLineLoop(void *,const double *mat,int lVerticeCount,con
     glPopMatrix();
 }
 
+void RenderPlatform::DrawTexture	(void *context,int x1,int y1,int dx,int dy,void *tex,float mult)
+{
+	glBindTexture(GL_TEXTURE_2D,(GLuint)tex);
+	glUseProgram(Utilities::GetSingleton().simple_program);
+	DrawQuad(x1,y1,dx,dy);
+	glUseProgram(0);	
+}
+
 void RenderPlatform::ApplyDefaultMaterial()
 {
     const GLfloat BLACK_COLOR[] = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -289,7 +297,7 @@ scene::Mesh *RenderPlatform::CreateMesh()
 	return new opengl::Mesh;
 }
 
-scene::LightCache *RenderPlatform::CreateLight()
+scene::Light *RenderPlatform::CreateLight()
 {
 	return new opengl::Light();
 }

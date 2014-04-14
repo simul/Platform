@@ -13,7 +13,7 @@ RWTexture3D<float4> targetTexture SIMUL_RWTEXTURE_REGISTER(0);
 RWTexture3D<float> targetTexture1 SIMUL_RWTEXTURE_REGISTER(1);
 
 #include "states.hlsl"
-#include "../../CrossPlatform/simul_gpu_clouds.sl"
+#include "../../CrossPlatform/SL/simul_gpu_clouds.sl"
 
 SamplerState lightSamplerState : register(s8);
 

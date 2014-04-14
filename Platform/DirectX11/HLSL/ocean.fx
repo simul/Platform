@@ -1,8 +1,8 @@
 #include "CppHLSL.hlsl"
 #include "states.hlsl"
-#include "../../CrossPlatform/states.sl"
-#include "../../CrossPlatform/ocean_constants.sl"
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/states.sl"
+#include "../../CrossPlatform/SL/ocean_constants.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 
 #define PATCH_BLEND_BEGIN		800
 #define PATCH_BLEND_END			20000

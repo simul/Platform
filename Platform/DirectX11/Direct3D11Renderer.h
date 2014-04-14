@@ -14,8 +14,8 @@
 #include "Simul/Platform/DirectX11/CubemapFramebuffer.h"
 #include "Simul/Platform/DirectX11/OceanRenderer.h"
 #include "Simul/Platform/DirectX11/View.h"
-#include "Simul/Platform/CrossPlatform/mixed_resolution_constants.sl"
-#include "Simul/Platform/CrossPlatform/light_probe_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/mixed_resolution_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/light_probe_constants.sl"
 #pragma warning(push)
 #pragma warning(disable:4251)
 

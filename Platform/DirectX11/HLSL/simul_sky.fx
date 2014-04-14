@@ -32,11 +32,11 @@ cbuffer cbPerObject : register(b11)
 
 #include "CppHLSL.hlsl"
 #include "states.hlsl"
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/earth_shadow_uniforms.sl"
-#include "../../CrossPlatform/earth_shadow.sl"
-#include "../../CrossPlatform/sky_constants.sl"
-#include "../../CrossPlatform/illumination.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
+#include "../../CrossPlatform/SL/earth_shadow.sl"
+#include "../../CrossPlatform/SL/sky_constants.sl"
+#include "../../CrossPlatform/SL/illumination.sl"
 
 struct vertexInput
 {

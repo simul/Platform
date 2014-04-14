@@ -3,12 +3,12 @@
 Texture2D nearFarTexture	: register(t3);
 Texture2D cloudGodraysTexture;
 RWTexture2D<float> targetTexture1;
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/simul_cloud_constants.sl"
-#include "../../CrossPlatform/depth.sl"
-#include "../../CrossPlatform/simul_clouds.sl"
-#include "../../CrossPlatform/states.sl"
-#include "../../CrossPlatform/earth_shadow_fade.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/simul_cloud_constants.sl"
+#include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/simul_clouds.sl"
+#include "../../CrossPlatform/SL/states.sl"
+#include "../../CrossPlatform/SL/earth_shadow_fade.sl"
 
 StructuredBuffer<SmallLayerData> layersSB;
 

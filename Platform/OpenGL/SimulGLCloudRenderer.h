@@ -11,6 +11,7 @@
 #include "Simul/Platform/OpenGL/FramebufferGL.h"
 #include "Simul/Platform/OpenGL/GpuCloudGenerator.h"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
+#include "Simul/Platform/OpenGL/Mesh.h"
 namespace simul
 {
 	namespace clouds
@@ -42,7 +43,7 @@ public:
 	bool Render(void *context,float exposure,bool cubemap,bool near_pass,const void *depth_alpha_tex,bool default_fog,bool write_alpha,int viewport_id,const simul::sky::float4& viewportTextureRegionXYWH);
 	//! Show the cross sections on-screen.
 	void RenderCrossSections(void *context,int x0,int y0,int width,int height);
-	void RenderAuxiliaryTextures(void *,int ,int ,int ,int ){}
+	void RenderAuxiliaryTextures(void *,int x0,int y0,int width,int height);
 	void SetLossTexture(void *);
 	void SetInscatterTextures(void* t,void *s,void *o);
 	void SetIlluminationTexture(void *i);
@@ -57,7 +58,7 @@ public:
 	void SetIlluminationGridSize(unsigned ,unsigned ,unsigned );
 	void FillIlluminationSequentially(int ,int ,int ,const unsigned char *);
 	void FillIlluminationBlock(int ,int ,int ,int ,int ,int ,int ,const unsigned char *);
-	void GPUTransferDataToTexture(int index,	unsigned char *target_texture
+	void GPUTransferDataToTexture(int index,unsigned char *target_texture
 									,const unsigned char *direct_grid
 									,const unsigned char *indirect_grid
 									,const unsigned char *ambient_grid
@@ -101,8 +102,8 @@ protected:
 	GLint illumSampler_param;
 	GLint skylightSampler_param;
 	GLint depthTexture;
-	//GLint layerDistance_param;
-unsigned short *pIndices;
+	
+	unsigned short *pIndices;
 
 	simul::opengl::ConstantBuffer<CloudConstants> cloudConstants;
 	simul::opengl::ConstantBuffer<CloudPerViewConstants> cloudPerViewConstants;
@@ -129,6 +130,8 @@ unsigned short *pIndices;
 
 	GLuint		sphere_vbo;
 	GLuint		sphere_ibo;
+
+	simul::opengl::Mesh sphereMesh;
 
 	void CreateVolumeNoise();
 	void CreateNoiseTexture(void *);

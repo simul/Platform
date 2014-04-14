@@ -2,7 +2,7 @@
 // Copyright 2011 Simul Software Ltd
 #version 140
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/sky_constants.sl"
+#include "../../CrossPlatform/SL/sky_constants.sl"
 
 in vec2 texCoords;
 in vec3 pos;

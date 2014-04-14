@@ -9,7 +9,7 @@
 #include "Simul/Math/Matrix.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/CrossPlatform/simul_gpu_sky.sl"
+#include "Simul/Platform/CrossPlatform/SL/simul_gpu_sky.sl"
 #include "Simul/Base/Timer.h"
 #include <math.h>
 using namespace simul;

@@ -14,6 +14,8 @@
 #include "Simul/Camera/Camera.h"
 #include "Simul/Math/RandomNumberGenerator.h"
 #include "Simul/Base/ProfilingInterface.h"
+#include "Simul/Platform/DirectX11/RenderPlatform.h"
+extern simul::dx11::RenderPlatform renderPlatformDx11;
 
 using namespace simul;
 using namespace dx11;
@@ -402,6 +404,6 @@ void PrecipitationRenderer::RenderTextures(void *context,int x0,int y0,int dx,in
 		w/=2;
 		h/=2;
 	}
-	UtilityRenderer::DrawTexture(pContext	,x0,y0	,w,h,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex(),1.f);
+	renderPlatformDx11.DrawTexture(pContext	,x0,y0	,w,h,(ID3D11ShaderResourceView*)moisture_fb.GetColorTex(),1.f);
 	UtilityRenderer::Print(pContext			,x0,y0	,"Moisture");
 }

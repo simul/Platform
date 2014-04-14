@@ -1,6 +1,6 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-#include "../../CrossPlatform/states.sl"
+#include "../../CrossPlatform/SL/states.sl"
 Texture2D fontTexture;
 
 cbuffer FontConstants

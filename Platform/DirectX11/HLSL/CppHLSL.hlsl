@@ -1,6 +1,6 @@
 #ifndef CPP_HLSL
 #define CPP_HLSL
-#include "../../CrossPlatform/CppSl.hs"
+#include "../../CrossPlatform/SL/CppSl.hs"
 
 #ifndef __cplusplus
 #define texture_clamp_mirror(tex,texc) tex.Sample(samplerStateClampMirror,texc)

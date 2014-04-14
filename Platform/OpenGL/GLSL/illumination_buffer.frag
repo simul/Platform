@@ -1,9 +1,9 @@
 #version 140
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/earth_shadow.sl"
-#include "../../CrossPlatform/illumination.sl"
-#include "../../CrossPlatform/sky_constants.sl"
-#include "../../CrossPlatform/earth_shadow_uniforms.sl"
+#include "../../CrossPlatform/SL/earth_shadow.sl"
+#include "../../CrossPlatform/SL/illumination.sl"
+#include "../../CrossPlatform/SL/sky_constants.sl"
+#include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
 in vec2 texCoords;
 out vec4 gl_FragColor;
 

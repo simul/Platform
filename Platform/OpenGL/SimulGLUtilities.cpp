@@ -193,6 +193,7 @@ bool IsExtensionSupported(const char *name)
 }
 
 
+
 bool CheckExtension(const char *txt)
 {
 GL_ERROR_CHECK

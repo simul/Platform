@@ -18,16 +18,16 @@ SamplerState samplerState
 	AddressV = Wrap;
 };
 
-#include "../../CrossPlatform/simul_2d_clouds.hs"
+#include "../../CrossPlatform/SL/simul_2d_clouds.hs"
 
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/earth_shadow_uniforms.sl"
-#include "../../CrossPlatform/earth_shadow.sl"
-#include "../../CrossPlatform/earth_shadow_fade.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/earth_shadow_uniforms.sl"
+#include "../../CrossPlatform/SL/earth_shadow.sl"
+#include "../../CrossPlatform/SL/earth_shadow_fade.sl"
 
-#include "../../CrossPlatform/simul_2d_clouds.sl"
-#include "../../CrossPlatform/simul_2d_cloud_detail.sl"
-#include "../../CrossPlatform/depth.sl"
+#include "../../CrossPlatform/SL/simul_2d_clouds.sl"
+#include "../../CrossPlatform/SL/simul_2d_cloud_detail.sl"
+#include "../../CrossPlatform/SL/depth.sl"
 
 struct a2v
 {

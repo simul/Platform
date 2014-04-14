@@ -1,6 +1,6 @@
 #version 140
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/simul_2d_clouds.hs"
+#include "../../CrossPlatform/SL/simul_2d_clouds.hs"
 
 in vec4 vertex;
 

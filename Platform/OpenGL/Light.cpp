@@ -15,7 +15,7 @@ namespace
 }
 
 
-opengl::Light::Light()// : scene::LightCache()
+opengl::Light::Light()// : scene::Light()
 {
     mLightIndex = GL_LIGHT0 + sLightCount++;
 }

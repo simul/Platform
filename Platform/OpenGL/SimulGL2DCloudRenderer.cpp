@@ -33,7 +33,7 @@
 #include "LoadGLProgram.h"
 #include "SimulGLUtilities.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/CrossPlatform/simul_2d_clouds.hs"
+#include "Simul/Platform/CrossPlatform/SL/simul_2d_clouds.hs"
 #include "Simul/Camera/Camera.h"
 using namespace std;
 using namespace simul;

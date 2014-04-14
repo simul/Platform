@@ -109,7 +109,6 @@ namespace simul
 			void EnsureIlluminationTexturesAreUpToDate();
 			void EnsureTextureCycle();
 
-			void CreateMeshBuffers();
 			void Unmap();
 			void Map(ID3D11DeviceContext *context,int texture_index);
 			unsigned texel_index[4];

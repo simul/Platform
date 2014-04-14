@@ -1,8 +1,8 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-#include "../../CrossPlatform/mixed_resolution_constants.sl"
-#include "../../CrossPlatform/depth.sl"
-#include "../../CrossPlatform/mixed_resolution.sl"
+#include "../../CrossPlatform/SL/mixed_resolution_constants.sl"
+#include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/mixed_resolution.sl"
 Texture2DMS<float4> sourceMSDepthTexture SIMUL_TEXTURE_REGISTER(0);
 Texture2DMS<float4> sourceTextureMS SIMUL_TEXTURE_REGISTER(0);
 Texture2D<float4> sourceDepthTexture SIMUL_TEXTURE_REGISTER(1);

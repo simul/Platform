@@ -30,3 +30,9 @@ void dx11::Texture::LoadFromFile(const char *pFilePathUtf8)
 	InvalidateDeviceObjects();
 	shaderResourceView	=simul::dx11::LoadTexture(device,pFilePathUtf8);
 }
+
+
+bool dx11::Texture::IsValid() const
+{
+	return (shaderResourceView!=NULL);
+}

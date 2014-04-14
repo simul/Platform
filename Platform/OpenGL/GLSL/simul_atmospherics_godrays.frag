@@ -1,14 +1,14 @@
 #version 140
 #include "CppGlsl.hs"
 #include "saturate.glsl"
-#include "../../CrossPlatform/atmospherics_constants.sl"
+#include "../../CrossPlatform/SL/atmospherics_constants.sl"
 #include "view_dir.glsl"
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
 // Godrays are cloud-dependent. So we require the cloud texture.
 uniform sampler2D cloudShadowTexture;
-#include "../../CrossPlatform/cloud_shadow.sl"
-#include "../../CrossPlatform/godrays.sl"
-#include "../../CrossPlatform/depth.sl"
+#include "../../CrossPlatform/SL/cloud_shadow.sl"
+#include "../../CrossPlatform/SL/godrays.sl"
+#include "../../CrossPlatform/SL/depth.sl"
 uniform sampler2D imageTexture;
 uniform sampler2D overcTexture;
 uniform sampler2D inscTexture;

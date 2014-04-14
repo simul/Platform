@@ -21,7 +21,7 @@
 #include "Simul/Base/SmartPtr.h"
 #include "LoadGLImage.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/CrossPlatform/earth_shadow_uniforms.sl"
+#include "Simul/Platform/CrossPlatform/SL/earth_shadow_uniforms.sl"
 using namespace simul;
 using namespace opengl;
 

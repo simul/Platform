@@ -8,7 +8,7 @@ void main(void)
 {
     vec4 c = texture2D(imageTexture,texCoords);
 	c.a=1.0;
-	float light=normal.z;
+	float light=clamp(normal.z,0.0,1.0);
 	c.rgb*=light;
     gl_FragColor=c;
 }

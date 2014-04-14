@@ -225,17 +225,22 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 
 	SAFE_RELEASE(unitSphereVertexBuffer);
 	simul::clouds::CloudGeometryHelper *helper=GetCloudGeometryHelper(0);
-	clouds::SliceInstance s=helper->GenerateSphereVertices();
-	V_CHECK(m_pd3dDevice->CreateVertexBuffer((unsigned)(s.vertices.size()*sizeof(PosVert_t)),D3DUSAGE_WRITEONLY,0,
+
+	std::vector<vec3> vertices;
+	std::vector<unsigned int> indices;
+	clouds::CloudGeometryHelper::GenerateSphereVertices(vertices,indices,12,15);
+
+
+	V_CHECK(m_pd3dDevice->CreateVertexBuffer((unsigned)(vertices.size()*sizeof(PosVert_t)),D3DUSAGE_WRITEONLY,0,
 									  D3DPOOL_DEFAULT, &unitSphereVertexBuffer,NULL));
 	PosVert_t *unit_sphere_vertices;
 	if(unitSphereVertexBuffer)
 	{
 		V_CHECK(unitSphereVertexBuffer->Lock(0,sizeof(PosVert_t),(void**)&unit_sphere_vertices,0 ));
 		PosVert_t *V=unit_sphere_vertices;
-		for(size_t i=0;i<s.vertices.size();i++)
+		for(size_t i=0;i<vertices.size();i++)
 		{
-			const simul::clouds::Vertex &v=s.vertices[i];
+			const vec3 &v=vertices[i];
 			V->position.x=v.x;
 			V->position.y=v.y;
 			V->position.z=v.z;
@@ -243,7 +248,7 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 		}
 		V_CHECK(unitSphereVertexBuffer->Unlock());
 	}
-	unsigned num_indices=(unsigned)s.quad_strip_indices.size();
+	unsigned num_indices=(unsigned)indices.size();
 	SAFE_RELEASE(unitSphereIndexBuffer);
 	if(num_indices)
 	{
@@ -254,7 +259,7 @@ void SimulCloudRenderer::RestoreDeviceObjects(void *dev)
 		unsigned *index=indexData;
 		for(unsigned i=0;i<num_indices;i++)
 		{
-			*(index++)	=s.quad_strip_indices[i];
+			*(index++)	=indices[i];
 		}
 		V_CHECK(unitSphereIndexBuffer->Unlock());
 	}

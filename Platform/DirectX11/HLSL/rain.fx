@@ -5,10 +5,10 @@ float particleZoneSize=15.0;	// = 625 m^3
 // Concentrations of raindrops typically range from 100 to 1,000 per cubic m (3 to 30 per cubic foot);
 // drizzle droplets usually are more numerous. 
 
-#include "../../CrossPlatform/rain_constants.sl"
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/depth.sl"
-#include "../../CrossPlatform/noise.sl"
+#include "../../CrossPlatform/SL/rain_constants.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/noise.sl"
 texture3D randomTexture3D;
 // Same as transformedParticle, but with semantics
 struct particleVertexOutput

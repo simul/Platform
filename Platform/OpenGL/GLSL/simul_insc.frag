@@ -1,9 +1,9 @@
 #version 140
 #include "CppGlsl.hs"
 #include "saturate.glsl"
-#include "../../CrossPlatform/atmospherics_constants.sl"
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/depth.sl"
+#include "../../CrossPlatform/SL/atmospherics_constants.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/depth.sl"
 uniform sampler2D depthTexture;
 uniform sampler2D inscTexture;
 uniform sampler2D skylightTexture;

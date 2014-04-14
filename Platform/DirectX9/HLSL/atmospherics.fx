@@ -1,9 +1,9 @@
 #include "dx9.hlsl"
-#include "../../CrossPlatform/atmospherics_constants.sl"
-#include "../../CrossPlatform/depth.sl"
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/depth.sl"
-#include "../../CrossPlatform/atmospherics.sl"
+#include "../../CrossPlatform/SL/atmospherics_constants.sl"
+#include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/atmospherics.sl"
 
 texture maxDistanceTexture;
 sampler2D distance_texture= sampler_state 

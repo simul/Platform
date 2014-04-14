@@ -2,7 +2,7 @@
 // simul_sun.frag - a GLSL fragment shader
 // Copyright 2014 Simul Software Ltd
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/sky_constants.sl"
+#include "../../CrossPlatform/SL/sky_constants.sl"
 uniform vec4 sunlight;
 // varyings are written by vert shader, interpolated, and read by frag shader.
 in vec2 texCoords;

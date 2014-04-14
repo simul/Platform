@@ -31,6 +31,8 @@
 #include "Simul/Base/Timer.h"
 #include "CreateEffectDX1x.h"
 #include "MacrosDX1x.h"
+#include "Simul/Platform/DirectX11/RenderPlatform.h"
+extern simul::dx11::RenderPlatform renderPlatformDx11;
 
 using namespace simul;
 using namespace dx11;
@@ -549,13 +551,13 @@ void SimulWeatherRendererDX11::RenderCompositingTextures(void *context,int view_
 	TwoResFramebuffer *fb=GetFramebuffer(view_id);
 	int w=dx/2;
 	int l=dy/2;
-	UtilityRenderer::DrawTexture(pContext	,x0+0*w	,y0+l	,w,l,(ID3D11ShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
+	renderPlatformDx11.DrawTexture(pContext	,x0+0*w	,y0+l	,w,l,(ID3D11ShaderResourceView*)fb->hiResFarFramebufferDx11.GetColorTex());
 	UtilityRenderer::Print		(pContext	,x0+0*w	,y0+l	,"Hi-Res Far");
-	UtilityRenderer::DrawTexture(pContext	,x0+1*w	,y0+l	,w,l,(ID3D11ShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
+	renderPlatformDx11.DrawTexture(pContext	,x0+1*w	,y0+l	,w,l,(ID3D11ShaderResourceView*)fb->hiResNearFramebufferDx11.GetColorTex());
 	UtilityRenderer::Print		(pContext	,x0+1*w	,y0+l	,"Hi-Res Near");
-	UtilityRenderer::DrawTexture(pContext	,x0+0*w	,y0+2*l	,w,l,(ID3D11ShaderResourceView*)fb->lowResFarFramebufferDx11.GetColorTex());
+	renderPlatformDx11.DrawTexture(pContext	,x0+0*w	,y0+2*l	,w,l,(ID3D11ShaderResourceView*)fb->lowResFarFramebufferDx11.GetColorTex());
 	UtilityRenderer::Print		(pContext	,x0+0*w	,y0+2*l	,"Lo-Res Far");
-	UtilityRenderer::DrawTexture(pContext	,x0+1*w	,y0+2*l	,w,l,(ID3D11ShaderResourceView*)fb->lowResNearFramebufferDx11.GetColorTex());
+	renderPlatformDx11.DrawTexture(pContext	,x0+1*w	,y0+2*l	,w,l,(ID3D11ShaderResourceView*)fb->lowResNearFramebufferDx11.GetColorTex());
 	UtilityRenderer::Print		(pContext	,x0+1*w	,y0+2*l	,"Lo-Res Near");
 }
 

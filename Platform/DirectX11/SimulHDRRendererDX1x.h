@@ -11,8 +11,8 @@
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <d3dx11effect.h>
-#include "Simul/Platform/CrossPlatform/CppSl.hs"
-#include "Simul/Platform/CrossPlatform/hdr_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/CppSl.hs"
+#include "Simul/Platform/CrossPlatform/SL/hdr_constants.sl"
 #include "Simul/Platform/DirectX11/MacrosDx1x.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"

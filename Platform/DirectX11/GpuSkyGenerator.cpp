@@ -2,7 +2,7 @@
 #include "CreateEffectDX1x.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Platform/DirectX11/HLSL/CppHlsl.hlsl"
-#include "Simul/Platform/CrossPlatform/simul_gpu_sky.sl"
+#include "Simul/Platform/CrossPlatform/SL/simul_gpu_sky.sl"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Math/Vector3.h"
 #include "Simul/Math/Matrix.h"

@@ -7,8 +7,8 @@
 #include "Simul/Sky/Float4.h"
 #include "Simul/Sky/SkyInterface.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/CrossPlatform/earth_shadow_uniforms.sl"
-#include "Simul/Platform/CrossPlatform/atmospherics_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/earth_shadow_uniforms.sl"
+#include "Simul/Platform/CrossPlatform/SL/atmospherics_constants.sl"
 #include <stdint.h>  // for uintptr_t
 #include <string.h>  // for memset
 using namespace simul;

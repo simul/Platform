@@ -1,7 +1,7 @@
 #include "CppHLSL.hlsl"
 #include "states.hlsl"
-#include "../../CrossPlatform/optics_constants.sl"
-#include "../../CrossPlatform/depth.sl"
+#include "../../CrossPlatform/SL/optics_constants.sl"
+#include "../../CrossPlatform/SL/depth.sl"
 
 Texture2D flareTexture;
 Texture2D rainbowLookupTexture;

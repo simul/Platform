@@ -2,7 +2,7 @@
 #include "Export.h"
 #include "Simul/Scene/RenderPlatform.h"
 #include "Simul/Platform/OpenGL/GLSL/CppGlsl.hs"
-#include "Simul/Platform/CrossPlatform/solid_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/solid_constants.sl"
 #include "Simul/Platform/OpenGL/SimulGLUtilities.h"
 
 #ifdef _MSC_VER
@@ -33,11 +33,12 @@ namespace simul
 			void DrawCrossHair	(void *context,const double *pGlobalPosition);
 			void DrawCamera		(void *context,const double *pGlobalPosition, double pRoll);
 			void DrawLineLoop	(void *context,const double *mat,int num,const double *vertexArray,const float colr[4]);
+			void DrawTexture	(void *context,int x1,int y1,int dx,int dy,void *tex,float mult=1.f);
 			void ApplyDefaultMaterial();
 			void SetModelMatrix(void *,const double *mat);
 			scene::Material *CreateMaterial();
 			scene::Mesh *CreateMesh();
-			scene::LightCache *CreateLight();
+			scene::Light *CreateLight();
 			scene::Texture *CreateTexture(const char *lFileNameUtf8);
 			
 			GLuint solid_program;

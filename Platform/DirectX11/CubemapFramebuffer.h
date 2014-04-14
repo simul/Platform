@@ -7,7 +7,7 @@
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Clouds/BaseFramebuffer.h"
-#include "Simul/Platform/CrossPlatform/spherical_harmonics_constants.sl"
+#include "Simul/Platform/CrossPlatform/SL/spherical_harmonics_constants.sl"
 #pragma warning(disable:4251)
 namespace simul
 {

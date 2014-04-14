@@ -1,6 +1,6 @@
 #version 140
 #include "CppGlsl.hs"
-#include "../../CrossPlatform/sky_constants.sl"
+#include "../../CrossPlatform/SL/sky_constants.sl"
 // GLSL fragment shader
 // Copyright 2014 Simul Software Ltd
 

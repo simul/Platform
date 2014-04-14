@@ -1,9 +1,9 @@
 #include "CppHlsl.hlsl"
 #include "states.hlsl"
-#include "../../CrossPlatform/depth.sl"
-#include "../../CrossPlatform/simul_inscatter_fns.sl"
-#include "../../CrossPlatform/atmospherics.sl"
-#include "../../CrossPlatform/atmospherics_constants.sl"
+#include "../../CrossPlatform/SL/depth.sl"
+#include "../../CrossPlatform/SL/simul_inscatter_fns.sl"
+#include "../../CrossPlatform/SL/atmospherics.sl"
+#include "../../CrossPlatform/SL/atmospherics_constants.sl"
 
 Texture2D depthTexture;
 Texture2DMS<float4> depthTextureMS;
@@ -29,8 +29,8 @@ SamplerState samplerState: register(s1)
 	AddressV = Clamp;
 };
 
-#include "../../CrossPlatform/cloud_shadow.sl"
-#include "../../CrossPlatform/godrays.sl"
+#include "../../CrossPlatform/SL/cloud_shadow.sl"
+#include "../../CrossPlatform/SL/godrays.sl"
 
 #define pi (3.1415926536)
 

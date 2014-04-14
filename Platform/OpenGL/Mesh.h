@@ -3,6 +3,7 @@
 
 #include "Export.h"
 #include "Simul/Scene/Mesh.h"
+#include "Simul/Platform/CrossPlatform/SL/Cppsl.hs"
 
 namespace simul
 {
@@ -14,7 +15,8 @@ namespace simul
 		public:
 			Mesh();
 			~Mesh();
-			bool Initialize(const fbxsdk_2014_2_1::FbxMesh * pMesh);
+			//bool Initialize(const fbxsdk_2014_2_1::FbxMesh * pMesh);
+			bool Initialize(const std::vector<vec3> &vertices,const std::vector<unsigned int> &indices);
 			void BeginDraw(void *,scene::ShadingMode pShadingMode,const double* mat) const;
 			void Draw(void *,int pMaterialIndex,scene::ShadingMode pShadingMode) const;
 			void EndDraw(void *) const;
