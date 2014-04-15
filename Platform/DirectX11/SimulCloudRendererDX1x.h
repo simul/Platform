@@ -115,12 +115,9 @@ namespace simul
 			bool lightning_active;
 			ID3D11Device*							m_pd3dDevice;
 		
-			ID3D1xInputLayout*						m_pLightningVtxDecl;
 			ID3D11SamplerState*						m_pWrapSamplerState;
 			ID3D11SamplerState*						m_pClampSamplerState;
 
-			ID3DX11Effect*							m_pLightningEffect;
-			ID3DX11EffectTechnique*					m_hTechniqueLightning;
 			ID3DX11Effect*							m_pCloudEffect;
 			ID3DX11EffectTechnique*					m_hTechniqueCloud;
 			ID3DX11EffectTechnique*					m_hTechniqueRaytraceNearPass;

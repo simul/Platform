@@ -706,10 +706,11 @@ HRESULT CreateEffect(ID3D11Device *d3dDevice,ID3DX11Effect **effect,const char *
 	//std::string text_filename=(filenameUtf8);
 	std::string filename_utf8=simul::base::FileLoader::GetFileLoader()->FindFileInPathStack(filenameUtf8,shaderPathsUtf8);
 	if(!simul::base::FileLoader::GetFileLoader()->FileExists(filename_utf8.c_str()))
+	{
+		throw simul::base::RuntimeError(std::string("Shader not found: ")+filenameUtf8);
 		return S_FALSE;
-	
+	}
 	D3D10_SHADER_MACRO *macros=NULL;
-	
 	{
 		size_t num_defines=defines.size();
 		if(num_defines)

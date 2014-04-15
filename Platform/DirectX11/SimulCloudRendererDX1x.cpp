@@ -58,14 +58,10 @@ PosTexVert_t *lightning_vertices=NULL;
 
 SimulCloudRendererDX1x::SimulCloudRendererDX1x(simul::clouds::CloudKeyframer *ck,simul::base::MemoryInterface *mem) :
 	simul::clouds::BaseCloudRenderer(ck,mem)
-	,m_hTechniqueLightning(NULL)
 	,m_hTechniqueCrossSectionXZ(NULL)
 	,m_hTechniqueCrossSectionXY(NULL)
 	,m_pd3dDevice(NULL)
-//	,m_pVtxDecl(NULL)
-	,m_pLightningVtxDecl(NULL)
 	,m_pCloudEffect(NULL)
-	,m_pLightningEffect(NULL)
 	,cloudPerViewConstantBuffer(NULL)
 	,layerConstantsBuffer(NULL)
 	,noise_texture(NULL)
@@ -132,12 +128,6 @@ void SimulCloudRendererDX1x::RecompileShaders()
 	SAFE_RELEASE(computeConstantBuffer);
 	MAKE_CONSTANT_BUFFER(computeConstantBuffer,MixCloudsConstants)
 	m_pComputeShader=LoadComputeShader(m_pd3dDevice,"MixClouds_c.hlsl");
-	V_CHECK(CreateEffect(m_pd3dDevice,&m_pLightningEffect,"simul_lightning.fx"));
-	if(m_pLightningEffect)
-	{
-		m_hTechniqueLightning	=m_pLightningEffect->GetTechniqueByName("simul_lightning");
-		l_worldViewProj			=m_pLightningEffect->GetVariableByName("worldViewProj")->AsMatrix();
-	}
 	MAKE_CONSTANT_BUFFER(cloudPerViewConstantBuffer,CloudPerViewConstants);
 	MAKE_CONSTANT_BUFFER(layerConstantsBuffer,LayerConstants);
 	
@@ -200,19 +190,11 @@ void SimulCloudRendererDX1x::RestoreDeviceObjects(void* dev)
 	D3DX11_PASS_DESC PassDesc;
 	ID3DX11EffectPass *pass=m_hTechniqueCloud->GetPassByIndex(0);
 	HRESULT hr=pass->GetDesc(&PassDesc);
-//	SAFE_RELEASE(m_pVtxDecl);
-	SAFE_RELEASE(m_pLightningVtxDecl);
 
 	// Get a count of the elements in the layout.
 	int numElements = sizeof(decl) / sizeof(decl[0]);
 
 	
-	if(m_hTechniqueLightning)
-	{
-		pass=m_hTechniqueLightning->GetPassByIndex(0);
-		hr=pass->GetDesc(&PassDesc);
-		hr=m_pd3dDevice->CreateInputLayout( std_decl, 2, PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pLightningVtxDecl);
-	}
 	if(lightningIlluminationTextureResource)
 		lightningIlluminationTexture->SetResource(lightningIlluminationTextureResource);
 	ClearIterators();
@@ -258,9 +240,7 @@ void SimulCloudRendererDX1x::InvalidateDeviceObjects()
 	SAFE_RELEASE(computeConstantBuffer);
 	SAFE_RELEASE(cloudPerViewConstantBuffer);
 	SAFE_RELEASE(layerConstantsBuffer);
-	SAFE_RELEASE(m_pLightningVtxDecl);
 	SAFE_RELEASE(m_pCloudEffect);
-	SAFE_RELEASE(m_pLightningEffect);
 	for(int i=0;i<3;i++)
 	{
 		cloud_textures[i].release();

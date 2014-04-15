@@ -678,14 +678,14 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
 		D3DX11_PASS_DESC PassDesc;
 		ID3DX11EffectTechnique *tech	=m_pDebugEffect->GetTechniqueByName("vec3_input_signature");
 		tech->GetPassByIndex(0)->GetDesc(&PassDesc);
-		D3D1x_INPUT_ELEMENT_DESC decl[]=
+		D3D11_INPUT_ELEMENT_DESC decl[]=
 		{
 			{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,	0,	0,	D3D1x_INPUT_PER_VERTEX_DATA, 0 }
 		};
 		SAFE_RELEASE(m_pCubemapVtxDecl);
 		V_CHECK(m_pd3dDevice->CreateInputLayout(decl,1,PassDesc.pIAInputSignature, PassDesc.IAInputSignatureSize, &m_pCubemapVtxDecl));
 	}
-	D3D1x_BUFFER_DESC desc=
+	D3D11_BUFFER_DESC desc=
 	{
         36*sizeof(vec3),
         D3D1x_USAGE_DEFAULT,
@@ -694,7 +694,7 @@ void UtilityRenderer::RestoreDeviceObjects(void *dev)
         0
 	};
 	
-    D3D1x_SUBRESOURCE_DATA InitData;
+    D3D11_SUBRESOURCE_DATA InitData;
     ZeroMemory( &InitData, sizeof(D3D1x_SUBRESOURCE_DATA) );
     InitData.pSysMem		=vertices;
     InitData.SysMemPitch	=sizeof(vec3);

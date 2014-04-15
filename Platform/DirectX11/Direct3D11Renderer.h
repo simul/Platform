@@ -7,7 +7,7 @@
 #include "Simul/Platform/DirectX11/Direct3D11CallbackInterface.h"
 #include "Simul/Base/PropertyMacros.h"
 #include "Simul/Graph/Meta/Group.h"
-//#include "Simul/Scene/BaseSceneRenderer.h"
+#include "Simul/Scene/BaseSceneRenderer.h"
 #include "Simul/Platform/DirectX11/Export.h"
 #include "Simul/Platform/DirectX11/FramebufferDX1x.h"
 #include "Simul/Platform/DirectX11/GpuSkyGenerator.h"
@@ -140,7 +140,7 @@ namespace simul
 			SimulHDRRendererDX1x						*simulHDRRenderer;
 			TerrainRenderer								*simulTerrainRenderer;
 			OceanRenderer								*oceanRenderer;
-			//simul::scene::BaseSceneRenderer				*sceneRenderer;
+			simul::scene::BaseSceneRenderer				*sceneRenderer;
 			ViewManager									viewManager;
 			simul::dx11::CubemapFramebuffer				cubemapFramebuffer;
 			simul::dx11::CubemapFramebuffer				envmapFramebuffer;
