@@ -5,6 +5,9 @@
 #include "CreateDX9Effect.h"
 #include "Simul/Math/Decay.h"
 
+using namespace simul;
+using namespace dx9;
+
 SimulOpticsRendererDX9::SimulOpticsRendererDX9(simul::base::MemoryInterface *m)
 	:BaseOpticsRenderer(m)
 	,m_pd3dDevice(NULL)

@@ -31,10 +31,10 @@ namespace simul
 		class Environment;
 		class BaseWeatherRenderer;
 	}
-}
-
-namespace simul
-{
+	namespace crossplatform
+	{
+		struct DeviceContext;
+	}
 	namespace scene
 	{
 		class Scene;
@@ -120,7 +120,7 @@ namespace simul
 		protected:
 			void RenderDepthBuffers(void *context,int view_id,int x0,int y0,int w,int h);
 			// Encompasses drawing the actual scene and putting the hdr buffer to screen.
-			void RenderScene(int view_id,ID3D11DeviceContext* pd3dImmediateContext,clouds::BaseWeatherRenderer *w,D3DXMATRIX v,D3DXMATRIX proj);
+			void RenderScene(int view_id,crossplatform::DeviceContext &deviceContext,clouds::BaseWeatherRenderer *w,D3DXMATRIX v,D3DXMATRIX proj);
 			// Different kinds of view for Render() to call:
 			void RenderFadeEditView(ID3D11DeviceContext* pd3dImmediateContext);
 			void RenderOculusView(ID3D11DeviceContext* pd3dImmediateContext);

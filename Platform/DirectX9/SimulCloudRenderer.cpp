@@ -1000,7 +1000,7 @@ void SimulCloudRenderer::SaveCloudTexture(const char *filename)
 	fb.InvalidateDeviceObjects();
 }
 
-void SimulCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,int height)
+void SimulCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;

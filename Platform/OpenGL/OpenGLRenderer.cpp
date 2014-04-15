@@ -21,6 +21,7 @@
 #include "Simul/Scene/BaseObjectRenderer.h"
 #include "Simul/Scene/BaseSceneRenderer.h"
 #include "Simul/Platform/OpenGL/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
 #include "Simul/Sky/Float4.h"
 #include "Simul/Base/Timer.h"
 #include <stdint.h> // for uintptr_t
@@ -150,6 +151,8 @@ GL_ERROR_CHECK
 void OpenGLRenderer::paintGL()
 {
 	void *context=NULL;
+	crossplatform::DeviceContext deviceContext;
+	
 	static int viewport_id=0;
 	if(renderPlatform)
 		renderPlatform->SetReverseDepth(ReverseDepth);
@@ -268,12 +271,12 @@ void OpenGLRenderer::paintGL()
 		}
 		if(ShowCloudCrossSections&&simulWeatherRenderer->GetCloudRenderer()&&simulWeatherRenderer->GetCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{
-			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(context,0,0,ScreenWidth/2,ScreenHeight/2);
+			simulWeatherRenderer->GetCloudRenderer()->RenderCrossSections(deviceContext,0,0,ScreenWidth/2,ScreenHeight/2);
 			simulWeatherRenderer->GetCloudRenderer()->RenderAuxiliaryTextures(context,0,0,ScreenWidth/2,ScreenHeight/2);
 		}
 		if(Show2DCloudTextures&&simulWeatherRenderer->Get2DCloudRenderer()&&simulWeatherRenderer->Get2DCloudRenderer()->GetCloudKeyframer()->GetVisible())
 		{
-			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(context,0,0,ScreenWidth,ScreenHeight);
+			simulWeatherRenderer->Get2DCloudRenderer()->RenderCrossSections(deviceContext,0,0,ScreenWidth,ScreenHeight);
 		}
 		if(ShowOSD&&simulWeatherRenderer->GetCloudRenderer())
 			simulWeatherRenderer->GetCloudRenderer()->RenderDebugInfo(NULL,ScreenWidth,ScreenHeight);

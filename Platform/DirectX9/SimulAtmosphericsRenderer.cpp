@@ -21,6 +21,9 @@
 #include "Macros.h"
 #include "Resources.h"
 #include "Simul/Camera/Camera.h"
+using namespace simul;
+using namespace dx9;
+
 
 SimulAtmosphericsRenderer::SimulAtmosphericsRenderer(simul::base::MemoryInterface *m)
 	:BaseAtmosphericsRenderer(m)

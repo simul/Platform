@@ -34,12 +34,12 @@ namespace simul
 	{
 		class SimulSkyRenderer;
 		class SimulCloudRenderer;
+		class Simul2DCloudRenderer;
+		class SimulLightningRenderer;
+		class SimulPrecipitationRenderer;
+		class SimulAtmosphericsRenderer;
 	}
 }
-class SimulLightningRenderer;
-class Simul2DCloudRenderer;
-class SimulPrecipitationRenderer;
-class SimulAtmosphericsRenderer;
 
 namespace simul
 {

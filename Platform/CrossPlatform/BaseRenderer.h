@@ -13,12 +13,6 @@ namespace simul
 			simul::math::Matrix4x4 view;
 			simul::math::Matrix4x4 proj;
 		};
-		//! A context in the DirectX11 sense, encompassing a platform-specific deviceContext pointer
-		struct RenderContext
-		{
-			void *platform_context;
-			ViewStruct viewStruct;
-		};
 		//! The base class for renderers. Placeholder for now.
 		class BaseRenderer
 		{

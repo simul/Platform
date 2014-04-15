@@ -34,6 +34,8 @@
 #include "Simul/Platform/DirectX11/Profiler.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Platform/DirectX11/RenderPlatform.h"
+#include "Simul/Platform/CrossPlatform/DeviceContext.h"
+
 extern simul::dx11::RenderPlatform renderPlatformDx11;
 
 using namespace simul;
@@ -817,9 +819,9 @@ void SimulCloudRendererDX1x::DrawLines(void *context,VertexXyzRgba *vertices,int
 	simul::dx11::UtilityRenderer::DrawLines(pContext,vertices,vertex_count,strip);
 }
 
-void SimulCloudRendererDX1x::RenderCrossSections(void *context,int x0,int y0,int width,int height)
+void SimulCloudRendererDX1x::RenderCrossSections(crossplatform::DeviceContext &context,int x0,int y0,int width,int height)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext *pContext=context.asD3D11DeviceContext();
 	HRESULT hr=S_OK;
 	static int u=4;
 	int w=(width-8)/u;

@@ -19,6 +19,7 @@
 #include "Simul/Math/Pi.h"
 #include "Simul/LicenseKey.h"
 #include "CreateEffectDX1x.h"
+#include "Simul/Platform/Crossplatform/DeviceContext.h"
 #include "Simul/Platform/DirectX11/Utilities.h"
 #include "Simul/Camera/Camera.h"
 #include "Simul/Platform/DirectX11/Profiler.h"
@@ -348,9 +349,9 @@ bool Simul2DCloudRendererDX11::Render(void *context,float exposure,bool cubemap,
 	return true;
 }
 
-void Simul2DCloudRendererDX11::RenderCrossSections(void *context,int x0,int y0,int width,int height)
+void Simul2DCloudRendererDX11::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int width,int height)
 {
-	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)context;
+	ID3D11DeviceContext *pContext=(ID3D11DeviceContext*)deviceContext.asD3D11DeviceContext();
 	static int u=8;
 	int w=(width-8)/u;
 	if(w>height/2)

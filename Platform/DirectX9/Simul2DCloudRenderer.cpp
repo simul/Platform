@@ -87,6 +87,8 @@ struct float3
 		z=f[2];
 	}
 };
+using namespace simul;
+using namespace dx9;
 
 struct PosTexVert_t
 {
@@ -505,7 +507,7 @@ const char *Simul2DCloudRenderer::GetDebugText() const
 	return debug_text;
 }
 
-void Simul2DCloudRenderer::RenderCrossSections(void *,int x0,int y0,int screen_width,int )
+void Simul2DCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &deviceContext,int x0,int y0,int screen_width,int )
 {
 	int w=(screen_width-16)/6;
 	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl=NULL;

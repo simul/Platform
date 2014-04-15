@@ -20,61 +20,68 @@
 	#pragma warning(disable:4251)
 #endif
 
-SIMUL_DIRECTX9_EXPORT_CLASS SimulHDRRenderer: public simul::base::Referenced
+namespace simul
 {
-public:
-	SimulHDRRenderer(int width,int height);
-	virtual ~SimulHDRRenderer();
-	META_BeginProperties
-		META_ValueProperty(float,Gamma,"A tone-mapping factor")
-		META_ValueProperty(float,Exposure,"A brightness factor")
-	META_EndProperties
-	//standard d3d object interface functions
-	void RecompileShaders();
-	//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
-	void RestoreDeviceObjects(void *pd3dDevice);
-	//! Call this when the device has been lost.
-	void InvalidateDeviceObjects();
-	//! Copy out the current buffer, before resuming rendering.
-	bool CopyDepthAlpha();
-	void Render(void *context,void *tex);
-	//! Get the current debug text as a c-string pointer.
-	const char *GetDebugText() const;
-	//! Get a timing value for debugging.
-	float GetTiming() const;
-	//! Set the atmospherics renderer - null means no post-process fade.
-	void SetAtmospherics(class SimulAtmosphericsInterface *a){atmospherics=a;}
-	void SetBufferSize(int w,int h);
-protected:
-	//! The size of the 2D buffer the sky is rendered to.
-	int BufferWidth,BufferHeight;
-	LPDIRECT3DDEVICE9				m_pd3dDevice;
-	LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl;
+	namespace dx9
+	{
 
-	//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
-	LPD3DXEFFECT			m_pTonemapEffect;
-	D3DXHANDLE				ToneMapTechnique;
-	D3DXHANDLE				ToneMapZWriteTechnique;
-	D3DXHANDLE				Exposure_;
-	D3DXHANDLE				Gamma_;
-	D3DXHANDLE				hdrTexture;
+		SIMUL_DIRECTX9_EXPORT_CLASS SimulHDRRenderer: public simul::base::Referenced
+		{
+		public:
+			SimulHDRRenderer(int width,int height);
+			virtual ~SimulHDRRenderer();
+			META_BeginProperties
+				META_ValueProperty(float,Gamma,"A tone-mapping factor")
+				META_ValueProperty(float,Exposure,"A brightness factor")
+			META_EndProperties
+			//standard d3d object interface functions
+			void RecompileShaders();
+			//! Call when we've got a fresh d3d device - on startup or when the device has been restored.
+			void RestoreDeviceObjects(void *pd3dDevice);
+			//! Call this when the device has been lost.
+			void InvalidateDeviceObjects();
+			//! Copy out the current buffer, before resuming rendering.
+			bool CopyDepthAlpha();
+			void Render(void *context,void *tex);
+			//! Get the current debug text as a c-string pointer.
+			const char *GetDebugText() const;
+			//! Get a timing value for debugging.
+			float GetTiming() const;
+			//! Set the atmospherics renderer - null means no post-process fade.
+			void SetAtmospherics(class SimulAtmosphericsInterface *a){atmospherics=a;}
+			void SetBufferSize(int w,int h);
+		protected:
+			//! The size of the 2D buffer the sky is rendered to.
+			int BufferWidth,BufferHeight;
+			LPDIRECT3DDEVICE9				m_pd3dDevice;
+			LPDIRECT3DVERTEXDECLARATION9	m_pBufferVertexDecl;
 
-	LPDIRECT3DSURFACE9		m_pHDRRenderTarget;
-	LPDIRECT3DSURFACE9		m_pFadedRenderTarget;
-	LPDIRECT3DSURFACE9		m_pBufferDepthSurface;
-	LPDIRECT3DSURFACE9		m_pOldRenderTarget;
-	LPDIRECT3DSURFACE9		m_pOldDepthSurface;
+			//! The HDR tonemapping hlsl effect used to render the hdr buffer to an ldr screen.
+			LPD3DXEFFECT			m_pTonemapEffect;
+			D3DXHANDLE				ToneMapTechnique;
+			D3DXHANDLE				ToneMapZWriteTechnique;
+			D3DXHANDLE				Exposure_;
+			D3DXHANDLE				Gamma_;
+			D3DXHANDLE				hdrTexture;
 
-	bool IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
-	bool CreateBuffers();
-	class SimulSkyRenderer *simulSkyRenderer;
-	class SimulCloudRenderer *simulCloudRenderer;
-	class Simul2DCloudRenderer *simul2DCloudRenderer;
-	class SimulPrecipitationRenderer *simulPrecipitationRenderer;
-	LPDIRECT3DSURFACE9 MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture);
-	float timing;
-	class SimulAtmosphericsInterface *atmospherics;
-};
+			LPDIRECT3DSURFACE9		m_pHDRRenderTarget;
+			LPDIRECT3DSURFACE9		m_pFadedRenderTarget;
+			LPDIRECT3DSURFACE9		m_pBufferDepthSurface;
+			LPDIRECT3DSURFACE9		m_pOldRenderTarget;
+			LPDIRECT3DSURFACE9		m_pOldDepthSurface;
+
+			bool IsDepthFormatOk(D3DFORMAT DepthFormat, D3DFORMAT AdapterFormat, D3DFORMAT BackBufferFormat);
+			bool CreateBuffers();
+			class SimulSkyRenderer *simulSkyRenderer;
+			class SimulCloudRenderer *simulCloudRenderer;
+			class Simul2DCloudRenderer *simul2DCloudRenderer;
+			class SimulPrecipitationRenderer *simulPrecipitationRenderer;
+			LPDIRECT3DSURFACE9 MakeRenderTarget(const LPDIRECT3DTEXTURE9 pTexture);
+			float timing;
+			class SimulAtmosphericsInterface *atmospherics;
+		};
+	}
+}
 #ifdef _MSC_VER
 	#pragma warning(pop)
 #endif

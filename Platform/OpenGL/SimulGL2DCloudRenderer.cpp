@@ -386,7 +386,7 @@ GL_ERROR_CHECK
 	return true;
 }
 
-void SimulGL2DCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,int height)
+void SimulGL2DCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &context,int x0,int y0,int width,int height)
 {
 	static int u=8;
 	int w=(width-8)/u;

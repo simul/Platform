@@ -906,7 +906,7 @@ void SimulGLCloudRenderer::DrawLines(void *,VertexXyzRgba *vertices,int vertex_c
 	::DrawLines(vertices,vertex_count,strip);
 }
 
-void SimulGLCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,int height)
+void SimulGLCloudRenderer::RenderCrossSections(crossplatform::DeviceContext &context,int x0,int y0,int width,int height)
 {
 	static int u=4;
 	int w=(width-8)/u;
@@ -936,7 +936,6 @@ void SimulGLCloudRenderer::RenderCrossSections(void *,int x0,int y0,int width,in
 		if(!kf)
 			break;
 		simul::sky::float4 light_response(kf->direct_light,kf->indirect_light,kf->ambient_light,0);
-
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,cloud_textures[(texture_cycle+i)%3].tex);
 		glUniform1f(crossSectionOffset,GetCloudInterface()->GetWrap()?0.5f:0.f);
